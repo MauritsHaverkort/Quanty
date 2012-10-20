@@ -1,0 +1,552 @@
+void TestStruct()
+{
+/*
+*   Just set up some structures, fill them and print them
+*/
+  printf("Start of TestStruct\n");
+  printf("Initiallize several structures and print them\n");
+  printf("Complex16\n");
+  Complex16 a, b;
+  a.Re=12;
+  a.Im=5;
+  b.Re=5;
+  b.Im=6;
+  printf("a  =%22.15E + I %22.15E\nb  =%22.15E + I %22.15E\n",a.Re,a.Im,b.Re,b.Im);
+  a.Re+=b.Re;
+  a.Im+=b.Im;
+  printf("a+b=%22.15E + I %22.15E\n",a.Re,a.Im);
+  printf("WaveFunctionType\n");
+  printf("OperatorFixedLengthType\n");
+  printf("OperatorType\n");
+  printf("MatrixType\n");
+  printf("SparseMatrixType\n");
+  printf("TriDiagonalMatrixType\n");
+  printf("AndersonMatrixType\n");
+  printf("BlokTriDiagonalMatrixType\n");
+  printf("BlokAndersonMatrixType\n");
+  printf("DoubleTriDiagonalMatrixType\n");
+  printf("BlokDoubleTriDiagonalMatrixType\n");
+  printf("ChebyshevExpansion\n");
+  printf("HarmonicsExpansion\n");
+  printf("SpectraType\n");
+};
+
+
+void TestHash()
+{
+  printf("uint32_t Hash(&Psi[0],NWord,NBitsKey)                   \n");
+  printf("returns a Key of Psi between 0 and 2^NBitsKey-1         \n");
+  printf("NBitsKey can range from 0 to 31                         \n");
+  printf("NWord is the length of the array Psi in words (8-bit).  \n");
+  printf("Psi is an array of uint8_t                              \n");
+  
+  
+  uint32_t NBitsKey;
+  uint32_t NorbWord,Norb;
+  uint32_t Key;
+  NorbWord=8;
+  Norb=8*NorbWord;
+  uint8_t Psi[NorbWord];
+  Psi[0]=0xFF;
+  Psi[1]=0xFF;
+  Psi[2]=0xFF;
+  Psi[3]=0xFF;
+  Psi[4]=0xF0;
+  Psi[5]=0x00;
+  Psi[6]=0x00;
+  Psi[7]=0x01;
+  NBitsKey=2;
+  Key=hash(Psi,NorbWord,NBitsKey);
+  printf("Key= %X\n",Key);
+  NBitsKey=4;
+  Key=hash(Psi,NorbWord,NBitsKey);
+  printf("Key= %X\n",Key);
+  NBitsKey=6;
+  Key=hash(Psi,NorbWord,NBitsKey);
+  printf("Key= %X\n",Key);
+  NBitsKey=8;
+  Key=hash(Psi,NorbWord,NBitsKey);
+  printf("Key= %X\n",Key);
+  NBitsKey=12;
+  Key=hash(Psi,NorbWord,NBitsKey);
+  printf("Key= %X\n",Key);
+  NBitsKey=16;
+  Key=hash(Psi,NorbWord,NBitsKey);
+  printf("Key= %X\n",Key);
+  NBitsKey=20;
+  Key=hash(Psi,NorbWord,NBitsKey);
+  printf("Key= %X\n",Key);
+  NBitsKey=24;
+  Key=hash(Psi,NorbWord,NBitsKey);
+  printf("Key= %X\n",Key);
+  NBitsKey=28;
+  Key=hash(Psi,NorbWord,NBitsKey);
+  printf("Key= %X\n",Key);
+  NBitsKey=31;
+  Key=hash(Psi,NorbWord,NBitsKey);
+  printf("Key= %X\n",Key);
+
+};
+
+void TestAddFermion()
+{
+  WaveFunctionType psi,psiNew;
+  uint32_t i;
+  uint8_t det[10];
+  psi.QComplex=0;
+  psi.NFermion=16;
+  psi.NBoson=1;
+  psi.NBitsKey=10;
+  WaveFunctionInit(&psi);
+  for(i=1;i<10;i++)
+  {
+    det[0]=(uint8_t)i;
+    det[1]=(uint8_t)255;
+    det[2]=(uint8_t)16;
+    RealWaveFunctionAddElement(&psi,det,0.5/((double)i));
+  }
+  WaveFunctionAddFermion(psi, &psiNew, 3, 0);
+  PrintWaveFunctionFullReadable(psi);
+  PrintWaveFunctionFullReadable(psiNew);
+}
+
+
+void TestWaveFunctionArithmetic()
+{
+  uint32_t i;
+  WaveFunctionType psi;
+  uint8_t *Determinant;
+  double a;
+  strcpy(psi.Name,"Test WaveFunction");
+  psi.QComplex=0;
+  psi.N=0;
+  psi.NBlok=1;
+  psi.NFermion=20;
+  psi.NBoson=0;
+  psi.NWord=3;
+  psi.NBitsKey=10;
+  psi.KeyList=calloc((uint32_t)1<<(psi.NBitsKey),sizeof(uint32_t));
+  psi.ValueRe=malloc(psi.NBlok*sizeof(double *));
+  psi.Next=malloc(psi.NBlok*sizeof(uint32_t *));
+  psi.Determinant=malloc(psi.NBlok*sizeof(uint8_t *));
+  if((psi.ValueRe==NULL)||(psi.Next==NULL)||(psi.Determinant==NULL)) AllocFailed();
+  psi.ValueRe[psi.NBlok-1]=malloc(BlokSize*sizeof(double));
+  psi.Next[psi.NBlok-1]=malloc(BlokSize*sizeof(uint32_t));
+  psi.Determinant[psi.NBlok-1]=malloc(BlokSize*psi.NWord*sizeof(uint8_t));
+  if((psi.ValueRe[psi.NBlok-1]==NULL)||(psi.Next[psi.NBlok-1]==NULL)||(psi.Determinant[psi.NBlok-1]==NULL)) AllocFailed();
+  Determinant=calloc(psi.NWord,sizeof(uint8_t));
+  Determinant[0]=255;
+  Determinant[1]=64;
+  Determinant[2]=0;
+  a=0.123;
+  RealWaveFunctionAddElement(&psi,Determinant,a);
+  Determinant[0]=255;
+  Determinant[1]=65;
+  Determinant[2]=0;
+  a=1000.123456;
+  RealWaveFunctionAddElement(&psi,Determinant,a);
+  Determinant[0]=255;
+  Determinant[1]=66;
+  Determinant[2]=0;
+  a=0.123456789;
+  RealWaveFunctionAddElement(&psi,Determinant,a);
+  PrintWaveFunctionFullReadable(psi);
+  
+  for(i=1;i<46;i++)
+  {
+    Determinant[0]=255;
+    Determinant[1]=i;
+    Determinant[2]=0;
+    RealWaveFunctionAddElement(&psi,Determinant,i);
+  }
+  
+  Determinant[0]=255;
+  Determinant[1]=30;
+  Determinant[2]=0;
+  a=0.123456789;
+  RealWaveFunctionAddElement(&psi,Determinant,a);
+ 
+  RealWaveFunctionNormalize(&psi);
+  printf("Wave Function\n");
+  PrintWaveFunctionFullReadable(psi);
+  RealWaveFunctionTruncateBasis(&psi,0.01);
+  printf("Wave Function truncated\n");
+  PrintWaveFunctionFullReadable(psi);
+
+  RealWaveFunctionFree(&psi);
+  
+  strcpy(psi.Name,"Second Test WaveFunction");
+  psi.QComplex=0;
+  psi.N=0;
+  psi.NBlok=1;
+  psi.NFermion=20;
+  psi.NBoson=0;
+  psi.NWord=3;
+  psi.NBitsKey=10;
+  psi.KeyList=calloc((uint32_t)1<<(psi.NBitsKey),sizeof(uint32_t));
+  psi.ValueRe=malloc(psi.NBlok*sizeof(double *));
+  psi.Next=malloc(psi.NBlok*sizeof(uint32_t *));
+  psi.Determinant=malloc(psi.NBlok*sizeof(uint8_t *));
+  if((psi.ValueRe==NULL)||(psi.Next==NULL)||(psi.Determinant==NULL)) AllocFailed();
+  psi.ValueRe[psi.NBlok-1]=malloc(BlokSize*sizeof(double));
+  psi.Next[psi.NBlok-1]=malloc(BlokSize*sizeof(uint32_t));
+  psi.Determinant[psi.NBlok-1]=malloc(BlokSize*psi.NWord*sizeof(uint8_t));
+  if((psi.ValueRe[psi.NBlok-1]==NULL)||(psi.Next[psi.NBlok-1]==NULL)||(psi.Determinant[psi.NBlok-1]==NULL)) AllocFailed();
+  
+  
+  for(i=1;i<50;i++)
+  {
+    Determinant[0]=255;
+    Determinant[1]=i;
+    Determinant[2]=0;
+    RealWaveFunctionAddElement(&psi,Determinant,i);
+  }
+
+  PrintWaveFunctionFullReadable(psi);
+  
+  for(i=25;i<75;i++)
+  {
+    Determinant[0]=255;
+    Determinant[1]=i;
+    Determinant[2]=0;
+    RealWaveFunctionAddElementConserveBasis(psi,Determinant,i);
+  }
+  PrintWaveFunctionFullReadable(psi);
+
+};
+
+void TestOperatorArithmeticNormalOrder()
+{
+  uint32_t i,j;
+  uint16_t oadd[6];
+  double k[3],r[3],NCell=4;
+  OperatorType O;
+  InitOperator(&O);
+  O.NFermion=20*NCell;
+  O.NWord=Min(O.NFermion,1+(O.NFermion-1)/8);
+  InitOperatorFixedLength(&O,2,8);
+  k[0]=0;
+  k[1]=0;
+  k[2]=Pi;
+  for(i=0;i<NCell;i++)
+    {
+      r[0]=0;
+      r[1]=0;
+      r[2]=i*1.0/NCell;
+      oadd[1]=CrAnMask+1+2*i;     oadd[0]=1+2*i;     ComplexOperatorAddLaderNormalOrder(&O, oadd, 2, cos(Dot(r,k))*sqrt(0.25/(NCell)), sin(Dot(r,k))*sqrt(0.25/(NCell)), &QDetNotOrderedFcFaBcBa);
+      oadd[1]=CrAnMask  +2*i;     oadd[0]=  2*i;     ComplexOperatorAddLaderNormalOrder(&O, oadd, 2, cos(Dot(r,k))*sqrt(0.25/(NCell)), sin(Dot(r,k))*sqrt(0.25/(NCell)), &QDetNotOrderedFcFaBcBa);
+    }
+  PrintOperatorFullReadable(O);
+  InitOperatorFixedLength(&O,4,8);
+  InitOperatorFixedLength(&O,6,8);
+  for(i=0;i<NCell;i++)
+  {
+    j=(i+1)%(uint32_t)NCell;
+    printf("i=%i j=%i\n",i,j);
+        oadd[5]=CrAnMask+2*i+1; oadd[4]=2*i+1; oadd[3]=CrAnMask+2*j+1; oadd[2]=CrAnMask+2*j  ; oadd[1]=2*j  ; oadd[0]=2*j+1;
+        RealOperatorAddLaderNormalOrder(&O, oadd, 6, 0.15, &QDetNotOrderedFcFaBcBa);
+        oadd[5]=CrAnMask+2*i  ; oadd[4]=2*i  ; oadd[3]=CrAnMask+2*j+1; oadd[2]=CrAnMask+2*j  ; oadd[1]=2*j  ; oadd[0]=2*j+1;
+        RealOperatorAddLaderNormalOrder(&O, oadd, 6, 0.15, &QDetNotOrderedFcFaBcBa);
+        oadd[5]=CrAnMask+2*j+1; oadd[4]=2*j+1; oadd[3]=CrAnMask+2*i+1; oadd[2]=CrAnMask+2*i  ; oadd[1]=2*i  ; oadd[0]=2*i+1;
+        RealOperatorAddLaderNormalOrder(&O, oadd, 6, 0.15, &QDetNotOrderedFcFaBcBa);
+        oadd[5]=CrAnMask+2*j  ; oadd[4]=2*j  ; oadd[3]=CrAnMask+2*i+1; oadd[2]=CrAnMask+2*i  ; oadd[1]=2*i  ; oadd[0]=2*i+1;
+        RealOperatorAddLaderNormalOrder(&O, oadd, 6, 0.15, &QDetNotOrderedFcFaBcBa);
+
+        oadd[5]=CrAnMask+2*i  ; oadd[4]=CrAnMask+2*i+1; oadd[3]=2*i+1; oadd[2]=CrAnMask+2*j+1; oadd[1]=2*j+1; oadd[0]=2*j  ;
+        RealOperatorAddLaderNormalOrder(&O, oadd, 6, -1.0, &QDetNotOrderedFcFaBcBa);
+        oadd[5]=CrAnMask+2*i+1; oadd[4]=CrAnMask+2*i  ; oadd[3]=2*i  ; oadd[2]=CrAnMask+2*j  ; oadd[1]=2*j  ; oadd[0]=2*j+1;
+        RealOperatorAddLaderNormalOrder(&O, oadd, 6, -1.0, &QDetNotOrderedFcFaBcBa);
+        oadd[5]=CrAnMask+2*j  ; oadd[4]=CrAnMask+2*j+1; oadd[3]=2*j+1; oadd[2]=CrAnMask+2*i+1; oadd[1]=2*i+1; oadd[0]=2*i  ;
+        RealOperatorAddLaderNormalOrder(&O, oadd, 6, -1.0, &QDetNotOrderedFcFaBcBa);
+        oadd[5]=CrAnMask+2*j+1; oadd[4]=CrAnMask+2*j  ; oadd[3]=2*j  ; oadd[2]=CrAnMask+2*i  ; oadd[1]=2*i  ; oadd[0]=2*i+1;
+        RealOperatorAddLaderNormalOrder(&O, oadd, 6, -1.0, &QDetNotOrderedFcFaBcBa);
+    j=(uint32_t)(((int)i+3)%(int)NCell);
+    printf("i=%i j=%i\n",i,j);
+        oadd[5]=CrAnMask+2*i+1; oadd[4]=2*i+1; oadd[3]=CrAnMask+2*j+1; oadd[2]=CrAnMask+2*j  ; oadd[1]=2*j  ; oadd[0]=2*j+1;
+        RealOperatorAddLaderNormalOrder(&O, oadd, 6, 0.15, &QDetNotOrderedFcFaBcBa);
+        oadd[5]=CrAnMask+2*i  ; oadd[4]=2*i  ; oadd[3]=CrAnMask+2*j+1; oadd[2]=CrAnMask+2*j  ; oadd[1]=2*j  ; oadd[0]=2*j+1;
+        RealOperatorAddLaderNormalOrder(&O, oadd, 6, 0.15, &QDetNotOrderedFcFaBcBa);
+        oadd[5]=CrAnMask+2*j+1; oadd[4]=2*j+1; oadd[3]=CrAnMask+2*i+1; oadd[2]=CrAnMask+2*i  ; oadd[1]=2*i  ; oadd[0]=2*i+1;
+        RealOperatorAddLaderNormalOrder(&O, oadd, 6, 0.15, &QDetNotOrderedFcFaBcBa);
+        oadd[5]=CrAnMask+2*j  ; oadd[4]=2*j  ; oadd[3]=CrAnMask+2*i+1; oadd[2]=CrAnMask+2*i  ; oadd[1]=2*i  ; oadd[0]=2*i+1;
+        RealOperatorAddLaderNormalOrder(&O, oadd, 6, 0.15, &QDetNotOrderedFcFaBcBa);
+
+        oadd[5]=CrAnMask+2*i  ; oadd[4]=CrAnMask+2*i+1; oadd[3]=2*i+1; oadd[2]=CrAnMask+2*j+1; oadd[1]=2*j+1; oadd[0]=2*j  ;
+        RealOperatorAddLaderNormalOrder(&O, oadd, 6, -1.0, &QDetNotOrderedFcFaBcBa);
+        oadd[5]=CrAnMask+2*i+1; oadd[4]=CrAnMask+2*i  ; oadd[3]=2*i  ; oadd[2]=CrAnMask+2*j  ; oadd[1]=2*j  ; oadd[0]=2*j+1;
+        RealOperatorAddLaderNormalOrder(&O, oadd, 6, -1.0, &QDetNotOrderedFcFaBcBa);
+        oadd[5]=CrAnMask+2*j  ; oadd[4]=CrAnMask+2*j+1; oadd[3]=2*j+1; oadd[2]=CrAnMask+2*i+1; oadd[1]=2*i+1; oadd[0]=2*i  ;
+        RealOperatorAddLaderNormalOrder(&O, oadd, 6, -1.0, &QDetNotOrderedFcFaBcBa);
+        oadd[5]=CrAnMask+2*j+1; oadd[4]=CrAnMask+2*j  ; oadd[3]=2*j  ; oadd[2]=CrAnMask+2*i  ; oadd[1]=2*i  ; oadd[0]=2*i+1;
+        RealOperatorAddLaderNormalOrder(&O, oadd, 6, -1.0, &QDetNotOrderedFcFaBcBa);
+  }
+  PrintOperatorFullReadable(O);
+}
+
+
+void TestOperatorArithmetic()
+{
+  MatrixType U;
+  uint16_t LaderOperator[4],LaderOperatorSec[4];
+  OperatorType O,A,B,AB;
+  InitOperator(&O);
+  PrintOperatorFullReadable(O);
+  InitOperatorFixedLength(&O,2,8);
+  InitOperatorFixedLength(&O,4,8);
+  PrintOperatorFullReadable(O);
+  O.NFermion=5;
+  O.NBoson=2;
+  O.NWord=3;
+  LaderOperator[0]=         1;
+  LaderOperator[1]=         4;
+  LaderOperator[2]=CrAnMask|1;
+  LaderOperator[3]=CrAnMask|4;
+  LaderOperatorSec[0]=         6;
+  LaderOperatorSec[1]=CrAnMask|6;
+  LaderOperatorSec[2]=CrAnMask|6;
+  LaderOperatorSec[3]=         7;
+  RealOperatorAddLader(&O,LaderOperator,2,1.0);
+  RealOperatorAddLader(&O,LaderOperator,2,1.0);
+  RealOperatorAddLader(&O,LaderOperatorSec,2,1.0);
+  RealOperatorAddLader(&O,LaderOperator,2,1.0);
+  PrintOperatorFullReadable(O);
+  OperatorRemoveSmallValues(&O,2);
+  PrintOperatorFullReadable(O);
+  RealOperatorAddLader(&O,LaderOperator,1,1.0);
+  RealOperatorAddLader(&O,LaderOperatorSec,1,1.0);
+  RealOperatorAddLader(&O,LaderOperatorSec,2,1.0);
+  PrintOperatorFullReadable(O);
+  OperatorRemoveSmallValues(&O,10);
+  RealOperatorAddLaderNormalOrder(&O,LaderOperator,4,1.0,&QDetNotOrderedFaFcBcBa);
+  RealOperatorAddLaderNormalOrder(&O,LaderOperatorSec,4,1.0,&QDetNotOrderedFaFcBcBa);
+  PrintOperatorFullReadable(O);
+  printf("\n\n\n\n\n===============\n\n\n\n\n");
+  InitOperator(&A);
+  InitOperatorFixedLength(&A,2,8);
+  InitOperatorCopySettings(&AB,O);
+  InitOperatorCopySettings(&B,A);
+  RealOperatorAddLaderNormalOrder(&A,LaderOperator,2,1.0,&QDetNotOrderedFcFaBcBa);
+  RealOperatorAddLaderNormalOrder(&B,LaderOperatorSec,2,1.0,&QDetNotOrderedFcFaBcBa);
+  OperatorMultiply(&AB,A,B);
+  PrintOperatorFullReadable(A);
+  PrintOperatorFullReadable(B);
+  PrintOperatorFullReadable(AB);
+  printf("\n\n\n\n\n===============\n\n\n\n\n");
+  FreeOperator(&A);
+  FreeOperator(&B);
+  InitOperator(&A);
+  InitOperatorFixedLength(&A,2,8);
+  A.NFermion=5;
+  A.NBoson=2;
+  A.NWord=3;
+  InitOperatorCopySettings(&B,A);
+  LaderOperator[0]=CrAnMask|1;
+  LaderOperator[1]=         0;
+  RealOperatorAddLader(&A,LaderOperator,2,1.0);
+  LaderOperator[0]=CrAnMask|0;
+  LaderOperator[1]=         1;
+  RealOperatorAddLader(&A,LaderOperator,2,1.0);
+  RealOperatorAddLader(&A,LaderOperator,1,3.0);
+  RealOperatorAddLader(&A,LaderOperator,0,-3.0);
+  PrintOperatorFullReadable(A);
+  PrintOperatorFullReadable(B);
+  U.QComplex=0;
+  U.Ni=7;
+  U.Nj=7;
+  InitMatrix(&U);
+  U.VRe[0][0]=sqrt(0.5);
+  U.VRe[0][1]=sqrt(0.5);
+  U.VRe[1][0]=sqrt(0.5);
+  U.VRe[1][1]=-sqrt(0.5);
+  U.VRe[2][2]=1;
+  U.VRe[3][3]=1;
+  U.VRe[4][4]=1;
+  U.VRe[5][5]=1;
+  U.VRe[6][6]=1;
+  PrintMatrix(U);
+  MappedOperatorAdd(&B,A,U);
+  PrintOperatorFullReadable(B);
+  
+  
+};
+
+void TestCreate()
+{
+
+};
+
+void TestVectorMatrixParallel()
+{
+
+  uint32_t i;
+  WaveFunctionType psi;
+  uint8_t *Determinant;
+  double a;
+  psi.QComplex=0;
+  psi.N=0;
+  psi.NBlok=1;
+  psi.NFermion=20;
+  psi.NBoson=0;
+  psi.NWord=3;
+  psi.NBitsKey=10;
+  psi.KeyList=calloc((uint32_t)1<<(psi.NBitsKey),sizeof(uint32_t));
+  psi.ValueRe=malloc(psi.NBlok*sizeof(double *));
+  psi.Next=malloc(psi.NBlok*sizeof(uint32_t *));
+  psi.Determinant=malloc(psi.NBlok*sizeof(uint8_t *));
+  if((psi.ValueRe==NULL)||(psi.Next==NULL)||(psi.Determinant==NULL)) AllocFailed();
+  psi.ValueRe[psi.NBlok-1]=malloc(BlokSize*sizeof(double));
+  psi.Next[psi.NBlok-1]=malloc(BlokSize*sizeof(uint32_t));
+  psi.Determinant[psi.NBlok-1]=malloc(BlokSize*psi.NWord*sizeof(uint8_t));
+  if((psi.ValueRe[psi.NBlok-1]==NULL)||(psi.Next[psi.NBlok-1]==NULL)||(psi.Determinant[psi.NBlok-1]==NULL)) AllocFailed();
+  Determinant=calloc(psi.NWord,sizeof(uint8_t));
+  Determinant[0]=255;
+  Determinant[1]=64;
+  Determinant[2]=0;
+  a=0.123;
+  RealWaveFunctionAddElement(&psi,Determinant,a);
+  Determinant[0]=255;
+  Determinant[1]=65;
+  Determinant[2]=0;
+  a=1000.123456;
+  RealWaveFunctionAddElement(&psi,Determinant,a);
+  Determinant[0]=255;
+  Determinant[1]=66;
+  Determinant[2]=0;
+  a=0.123456789;
+  RealWaveFunctionAddElement(&psi,Determinant,a);
+  PrintWaveFunctionFullReadable(psi);
+  for(i=1;i<46;i++)
+  {
+    Determinant[0]=255;
+    Determinant[1]=i;
+    Determinant[2]=0;
+    RealWaveFunctionAddElement(&psi,Determinant,i);
+  }
+  
+  
+  
+  Determinant[0]=255;
+  Determinant[1]=30;
+  Determinant[2]=0;
+  a=0.123456789;
+  RealWaveFunctionAddElement(&psi,Determinant,a);
+  
+  
+  printf("Wave Function AAA\n");
+  PrintWaveFunctionFullReadable(psi);
+  
+  for(i=0;i<1000;i++)
+  {
+    RealWaveFunctionMultiply(psi, 2.0);
+    RealWaveFunctionNormalize(&psi);
+  }
+
+  printf("Wave Function\n");
+  PrintWaveFunctionFullReadable(psi);
+  RealWaveFunctionTruncateBasis(&psi,0.01);
+  printf("Wave Function truncated\n");
+  PrintWaveFunctionFullReadable(psi);
+
+  RealWaveFunctionFree(&psi);
+  psi.N=0;
+  psi.NBlok=1;
+  psi.NFermion=20;
+  psi.NBoson=0;
+  psi.NWord=3;
+  psi.NBitsKey=10;
+  psi.KeyList=calloc((uint32_t)1<<(psi.NBitsKey),sizeof(uint32_t));
+  psi.ValueRe=malloc(psi.NBlok*sizeof(double *));
+  psi.Next=malloc(psi.NBlok*sizeof(uint32_t *));
+  psi.Determinant=malloc(psi.NBlok*sizeof(uint8_t *));
+  if((psi.ValueRe==NULL)||(psi.Next==NULL)||(psi.Determinant==NULL)) AllocFailed();
+  psi.ValueRe[psi.NBlok-1]=malloc(BlokSize*sizeof(double));
+  psi.Next[psi.NBlok-1]=malloc(BlokSize*sizeof(uint32_t));
+  psi.Determinant[psi.NBlok-1]=malloc(BlokSize*psi.NWord*sizeof(uint8_t));
+  if((psi.ValueRe[psi.NBlok-1]==NULL)||(psi.Next[psi.NBlok-1]==NULL)||(psi.Determinant[psi.NBlok-1]==NULL)) AllocFailed();
+  
+  
+  for(i=1;i<50;i++)
+  {
+    Determinant[0]=255;
+    Determinant[1]=i;
+    Determinant[2]=0;
+    RealWaveFunctionAddElement(&psi,Determinant,i);
+  }
+
+  PrintWaveFunctionFullReadable(psi);
+  
+  for(i=25;i<75;i++)
+  {
+    Determinant[0]=255;
+    Determinant[1]=i;
+    Determinant[2]=0;
+    RealWaveFunctionAddElementConserveBasis(psi,Determinant,i);
+  }
+  PrintWaveFunctionFullReadable(psi);
+
+} 
+
+
+
+void TestLanczos()
+{
+  uint32_t i;
+  uint16_t oadd[6];
+  double NCell=20;
+  OperatorType O;
+  double epsilon,zero;
+  WaveFunctionType psi;
+  uint8_t *Determinant;
+  double a;
+  psi.QComplex=0;
+  psi.N=0;
+  psi.NBlok=1;
+  psi.NFermion=NCell;
+  psi.NBoson=0;
+  psi.NWord=Min(psi.NFermion,1+(psi.NFermion-1)/8);
+  psi.NBitsKey=10;
+  psi.KeyList=calloc((uint32_t)1<<(psi.NBitsKey),sizeof(uint32_t));
+  psi.ValueRe=malloc(psi.NBlok*sizeof(double *));
+  psi.Next=malloc(psi.NBlok*sizeof(uint32_t *));
+  psi.Determinant=malloc(psi.NBlok*sizeof(uint8_t *));
+  if((psi.ValueRe==NULL)||(psi.Next==NULL)||(psi.Determinant==NULL)) AllocFailed();
+  psi.ValueRe[psi.NBlok-1]=malloc(BlokSize*sizeof(double));
+  psi.Next[psi.NBlok-1]=malloc(BlokSize*sizeof(uint32_t));
+  psi.Determinant[psi.NBlok-1]=malloc(BlokSize*psi.NWord*sizeof(uint8_t));
+  if((psi.ValueRe[psi.NBlok-1]==NULL)||(psi.Next[psi.NBlok-1]==NULL)||(psi.Determinant[psi.NBlok-1]==NULL)) AllocFailed();
+  Determinant=calloc(psi.NWord,sizeof(uint8_t));
+  for(i=0;i<psi.NWord;i++)
+  {
+    Determinant[i]=0;
+  }
+  a=1;Determinant[0]=2;
+  RealWaveFunctionAddElement(&psi,Determinant,a);
+  a=1;Determinant[0]=5;
+  RealWaveFunctionAddElement(&psi,Determinant,a);
+  RealWaveFunctionNormalize(&psi);
+  PrintWaveFunctionFullReadable(psi);
+  
+  InitOperator(&O);
+  O.NFermion=NCell;
+  O.NBoson=0;
+  O.NWord=Min(O.NFermion,1+(O.NFermion-1)/8);
+  O.QComplex=0;
+  InitOperatorFixedLength(&O,2,8);
+  InitOperatorFixedLength(&O,4,8);
+  for(i=1;i<NCell;i++)
+    {
+      oadd[1]=CrAnMask+i-1;     oadd[0]=i  ;     OperatorAddLaderNormalOrder(&O, oadd, 2, 0.0, 1, &QDetNotOrderedFcFaBcBa);
+      oadd[1]=CrAnMask+i  ;     oadd[0]=i-1;     OperatorAddLaderNormalOrder(&O, oadd, 2, 0.0,-1, &QDetNotOrderedFcFaBcBa);
+      oadd[3]=CrAnMask+i  ;  oadd[2]=i  ;     oadd[1]=CrAnMask+i-1;   oadd[0]=i-1;     OperatorAddLaderNormalOrder(&O, oadd, 4, 1.0, 0, &QDetNotOrderedFcFaBcBa);
+    }
+  OperatorAddLader(&O, oadd, 0, -20.0, 0);
+  SetQComplexOperator(&O);
+  PrintOperatorFullReadable(O);
+  
+  epsilon=0.0000000001;
+  zero=   0.0000000001;
+  LanczosGroundState(O, &psi, &epsilon, zero, 0.0, &psi, 0);
+  PrintWaveFunctionFullReadable(psi);
+  
+  
+}

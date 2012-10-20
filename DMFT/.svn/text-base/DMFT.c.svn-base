@@ -1,0 +1,371 @@
+#include <stdio.h>
+#include <time.h>
+#include <stdlib.h>
+#include <stdint.h> 
+#include <string.h>
+#include <math.h>
+#include <float.h>
+#include "../Core/StructDef.c"
+#include "../header.h"
+#include "../Core/TimeStamp.c"
+#include "../Core/Hash.c"
+#include "../Core/BasicMath.c"
+#include "../IO/Print.c"
+#include "../IO/Read.c"
+#include "../IO/BitMap.c"
+#include "../Core/Error.c"
+#include "../Core/WaveFunctionArithmetic.c"
+#include "../Core/OperatorArithmetic.c"
+#include "../Core/OperatorWaveFunction.c"
+#include "../Core/Lanczos.c"
+#include "../Core/Spectral.c"
+#include "../Core/DensityMatrix.c"
+#include "../Core/Random.c"
+#include "../Core/MatrixOperator.c"
+#include "../Model/StandardOperators.c"
+#include "../Hubbard_Model/CellFunctions.c"
+#include "../Tight_Binding/Tight_Binding_lib.c"
+#include "../Tight_Binding/ImpurityUnfolding.c"
+#include "../DMFT/SingleSiteFunctions.c"
+
+int main(int argc, const char * argv[])
+{
+  DMFTSettings HSet;
+  WaveFunctionType Psi,OPsi,PsiTemp;
+  TriDiagonalMatrixType G0,GBath,GclPup,GclPdn,GclMup,GclMdn,Gclup,Gcldn,Gcl,Sigma,GLocal,GBathNew,GBathOld;
+  DoubleTriDiagonalMatrixType GAnd;
+  OperatorType HAnd, OPESdn,OPESup,OIPESdn,OIPESup;
+  TimeType Time;
+  MatrixType T;
+  SpectraType Spectra[10];
+  char GBathFileName[255],PsiFileName[255],SpecFileName[25],Buffer[255];
+  uint32_t iOuter,i,PsiNBathV,PsiNBathC;
+  double Ef=0.0,epsilonAnd=0.0000001,mu;
+  double PsiEnergy,PsiQuality,PsiHist[20],*PsiRho;
+  InitializeTiming(&Time);
+  BeginTiming("Total",&Time);
+  TimeStampAll();
+  argc-=1;
+/* read the DMFT settings */
+  if(FileReadDMFTSettings(&HSet,argv[argc])){printf("Fatal Error in main\n Failed to read DMFT Settings from file %s\n",argv[argc]);return 1;};
+  PrintDMFTSettings(HSet);
+/* read G0 */
+  if(FileReadPlainTriDiagonalMatrixType(&G0,HSet.G0FileName)){printf("Fatal Error in main\n Failed to read G0 from file %s\n",HSet.G0FileName);return 1;};
+  strcpy(G0.Name,"G0");
+/* read G_Bath_iStart and psi_iStart*/
+  if(HSet.iStart==0)
+  {
+    sprintf(GBathFileName,"%s000",HSet.GRootFileName);
+    sprintf(PsiFileName,"%s000",HSet.WaveFunctionRootFileName);
+  }
+  else if(HSet.iStart<10)
+  {
+    sprintf(GBathFileName,"%s00%1i",HSet.GRootFileName,HSet.iStart);
+    sprintf(PsiFileName,"%s00%1i",HSet.WaveFunctionRootFileName,HSet.iStart);
+  }
+  else if(HSet.iStart<100)
+  {
+    sprintf(GBathFileName,"%s0%2i",HSet.GRootFileName,HSet.iStart);
+    sprintf(PsiFileName,"%s0%2i",HSet.WaveFunctionRootFileName,HSet.iStart);
+  }
+  else
+  {
+    sprintf(GBathFileName,"%s%i",HSet.GRootFileName,HSet.iStart);
+    sprintf(PsiFileName,"%s%i",HSet.WaveFunctionRootFileName,HSet.iStart);
+  }
+  if(FileReadPlainTriDiagonalMatrixType(&GBath,GBathFileName)){printf("Fatal Error in main\n Failed to read GBath from file %s !\n",GBathFileName);return 1;};
+  if(file_exists(PsiFileName))
+  {
+    Psi.NBitsKey=HSet.NBitsKey;
+    if(FileReadWaveFunctionPlainBinary(&Psi, PsiFileName)){printf("Fatal Error in main\n Failed to read Psi from file %s !\n",PsiFileName);return 1;};
+    printf("\nRead the starting wave function from the file %s\n",PsiFileName);
+    sscanf(Psi.Name,"%s %i %i",Buffer,&PsiNBathC,&PsiNBathV);
+    printf("Wave-function \"%s\" found has %i conduction bath sites, %i valence bath sites and %i Fermions in basis\n",Psi.Name,PsiNBathC,PsiNBathV,Psi.NFermion);
+    if((2*(PsiNBathC+PsiNBathV+1))!=Psi.NFermion)
+    {
+      printf("The total number of Fermions is incompatible witht the bath sizes\n");
+      printf("This wave-function can not be used to start from\n");
+      return 1;
+    }
+  }
+  else
+  {
+    printf("\nWave-function file: '%s' does not excist\n Started from new function\n",PsiFileName);
+    CreateWaveFunctionDMFT(&Psi, HSet.NBath, HSet.NBath, HSet.NBitsKey);
+  }
+  strcpy(GBath.Name,"Gbath");
+/* do the DMFT loops */
+  for(iOuter=HSet.iStart;iOuter<HSet.iStart+HSet.Ni;iOuter++)
+  {
+    BeginTiming("DMFTLoop",&Time);
+    printf("\n\n***********************************************************************\n");
+    printf("Start of loop %i from %i to %i\n",iOuter+1,HSet.iStart,HSet.iStart+HSet.Ni);
+    printf("***********************************************************************\n\n\n");
+    TriDiagonalMatrixToDoubleTriDiagonalMatrix(GBath, &T, &GAnd, Ef, epsilonAnd);
+    FreeMatrix(&T);
+    if(GAnd.con.N<HSet.NBath)
+    {
+      printf("Warning: GAnd.con.N(%i)<HSet.NBath(%i)\n",GAnd.con.N,HSet.NBath);
+    }
+    else
+    {
+      GAnd.con.N=HSet.NBath;
+    }
+    if(GAnd.val.N<HSet.NBath)
+    {
+      printf("Warning: GAnd.val.N(%i)<HSet.NBath(%i)\n",GAnd.val.N,HSet.NBath);
+    }
+    else
+    {
+      GAnd.val.N=HSet.NBath;
+    }
+    mu=-HSet.U/2;
+    DoubleTriDiagonalMatrixToAndersonImpurityOperator(&HAnd, GAnd, GAnd, HSet.U, mu);
+  /* test if psi has correct dimensions and correct if needed */
+    sscanf(Psi.Name,"%s %i %i",Buffer,&PsiNBathC,&PsiNBathV);
+    if(PsiNBathC!=GAnd.con.N)
+    {
+      printf("\nBefore diagonalizing:\nThe wavefunction has %i conduction bath sites\nThe Anderson Hamiltonian %i\n",PsiNBathC,GAnd.con.N);
+      if(PsiNBathC>GAnd.con.N)
+      {
+        printf("Removing %i unoccupied fermions from the wave-function\n",PsiNBathC-GAnd.con.N);
+        for(i=0;i<PsiNBathC-GAnd.con.N;i++)
+        {
+          WaveFunctionRemoveFermion(Psi, &PsiTemp, Psi.NFermion-1);
+          WaveFunctionFree(&Psi);
+          WaveFunctionRemoveFermion(PsiTemp, &Psi, 2+PsiNBathV+PsiNBathC-i-1);
+          WaveFunctionFree(&PsiTemp);
+        }
+      }
+      else
+      {
+        printf("Adding %i unoccupied fermions to the wave-function\n",GAnd.con.N-PsiNBathC);
+        for(i=0;i<GAnd.con.N-PsiNBathC;i++)
+        {
+          WaveFunctionAddFermion(Psi, &PsiTemp, Psi.NFermion,0);
+          WaveFunctionFree(&Psi);
+          WaveFunctionAddFermion(PsiTemp, &Psi, 2+PsiNBathV+PsiNBathC+i,0);
+          WaveFunctionFree(&PsiTemp);
+        }
+      }
+    }
+    if(PsiNBathV!=GAnd.val.N)
+    {
+      printf("\nBefore diagonalizing:\nThe wavefunction has %i valence bath sites\nThe Anderson Hamiltonian %i\n",PsiNBathV,GAnd.val.N);
+      if(PsiNBathV>GAnd.val.N)
+      {
+        printf("Removing %i occupied fermions from the wave-function\n",PsiNBathV-GAnd.val.N);
+        for(i=0;i<PsiNBathV-GAnd.val.N;i++)
+        {
+          WaveFunctionRemoveFermion(Psi, &PsiTemp, Psi.NFermion-GAnd.con.N-1);
+          WaveFunctionFree(&Psi);
+          WaveFunctionRemoveFermion(PsiTemp, &Psi, 2+PsiNBathV-i-1);
+          WaveFunctionFree(&PsiTemp);
+        }
+      }
+      else
+      {
+        printf("Adding %i occupied fermions to the wave-function\n",GAnd.val.N-PsiNBathV);
+        for(i=0;i<GAnd.val.N-PsiNBathV;i++)
+        {
+          WaveFunctionAddFermion(Psi, &PsiTemp, Psi.NFermion-GAnd.val.N,1);
+          WaveFunctionFree(&Psi);
+          WaveFunctionAddFermion(PsiTemp, &Psi, 2+PsiNBathV+i,1);
+          WaveFunctionFree(&PsiTemp);
+        }
+      }
+      printf("Corrected basis\n");
+      PrintWaveFunctionReadableTruncated(Psi, 0.1);
+    }
+    sprintf(Psi.Name,"DMFT %i %i",GAnd.con.N,GAnd.val.N);
+  /* create ground-state wave-funciton */
+    BeginTiming("Lanczos GroundState",&Time);
+    LanczosGroundState(HAnd,&Psi,&HSet.zeroLancWavefunction,HSet.zeroLancEnergy,HSet.U,&Psi,0);
+    LanczosGroundState(HAnd,&Psi,&HSet.zeroLancWavefunction,HSet.zeroLancEnergy,HSet.U,&Psi,0);
+    EndTiming("Lanczos GroundState",&Time);
+    PsiHermitianOperatorPsi(HAnd, Psi, &PsiEnergy);
+    PsiHermitianOperatorSqrPsi(HAnd,Psi,&PsiQuality);
+    PsiQuality/=Sqr(PsiEnergy);
+    PrintWaveFunctionReadableTruncated(Psi, 0.1);
+    CalculatePrefactorHistogram(PsiHist, Psi, 10.0, 20);
+    printf("\nHistogram of prefactors in Wave-function\n");
+    for(i=0;i<19;i++)
+    {
+      printf("10^(-%2i) to 10^(-%2i) | %22.15E\n",i,i+1,PsiHist[i]);
+    }
+    printf("10^(-%2i) to 0        | %22.15E\n",i,PsiHist[19]);
+    printf("\n");
+    printf("Energy                  <psi|H^2|psi>/(<psi|H|psi>^2)\n");
+    printf("%22.15E  %22.15E\n",PsiEnergy,PsiQuality);
+    PsiRho=calloc(Psi.NFermion,sizeof(double));
+    if(PsiRho==NULL){printf("calloc failed in main for PsiRho\n Fatal Error\n");fflush(stdout);return 1;}
+    CalculateDensity(PsiRho,Psi);
+    printf("Occupation \n");
+    for(i=0;i<Psi.NFermion;i++)
+    {
+      printf("%5i %22.15E\n",i,PsiRho[i]);
+    }
+    free(PsiRho);
+  /* create spin up and spin down PES and IPES */
+    CreatePESdnOperatorDMFT(&OPESdn, HAnd.NFermion);
+    CreatePESupOperatorDMFT(&OPESup, HAnd.NFermion);
+    CreateIPESdnOperatorDMFT(&OIPESdn, HAnd.NFermion);
+    CreateIPESupOperatorDMFT(&OIPESup, HAnd.NFermion);
+    GclMup.N=HSet.NTriDiag;
+    InitTriDiagonalMatrix(&GclMup);
+    GclMdn.N=HSet.NTriDiag;
+    InitTriDiagonalMatrix(&GclMdn);
+    GclPup.N=HSet.NTriDiag;
+    InitTriDiagonalMatrix(&GclPup);
+    GclPdn.N=HSet.NTriDiag;
+    InitTriDiagonalMatrix(&GclPdn);
+    BeginTiming("Lanczos Tri Diagonalization PES up",&Time);
+    OperatorPsi(OPESup,Psi,&OPsi);
+    LanczosTriDiagonalize(HAnd, OPsi, HSet.zeroLancWavefunction,&GclMup,HSet.Gamma);
+    EndTiming("Lanczos Tri Diagonalization PES up",&Time);
+    BeginTiming("Lanczos Tri Diagonalization PES dn",&Time);
+    OperatorPsi(OPESdn,Psi,&OPsi);
+    LanczosTriDiagonalize(HAnd, OPsi, HSet.zeroLancWavefunction,&GclMdn,HSet.Gamma);
+    EndTiming("Lanczos Tri Diagonalization PES dn",&Time);
+    BeginTiming("Lanczos Tri Diagonalization IPES up",&Time);
+    OperatorPsi(OIPESup,Psi,&OPsi);
+    LanczosTriDiagonalize(HAnd, OPsi, HSet.zeroLancWavefunction,&GclPup,HSet.Gamma);
+    EndTiming("Lanczos Tri Diagonalization IPES up",&Time);
+    BeginTiming("Lanczos Tri Diagonalization IPES dn",&Time);
+    OperatorPsi(OIPESdn,Psi,&OPsi);
+    LanczosTriDiagonalize(HAnd, OPsi, HSet.zeroLancWavefunction,&GclPdn,HSet.Gamma);
+    EndTiming("Lanczos Tri Diagonalization IPES dn",&Time);
+  /* G math */
+    printf("Start G math\n");
+    ShiftTriDiagonalMatrix(&GclMdn, -PsiEnergy);
+    ShiftTriDiagonalMatrix(&GclMup, -PsiEnergy);
+    ShiftTriDiagonalMatrix(&GclPdn, -PsiEnergy);
+    ShiftTriDiagonalMatrix(&GclPup, -PsiEnergy);
+    for(i=1;i<=GclMdn.N;i++)
+    {
+      GclMdn.a[i]*=-1;
+    }
+    for(i=1;i<=GclMup.N;i++)
+    {
+      GclMup.a[i]*=-1;
+    }
+    strcpy(GclPup.Name,"Gcluster-Plus-Up");
+    strcpy(GclPdn.Name,"Gcluster-Plus-Dn");
+    strcpy(GclMup.Name,"Gcluster-Min-Up");
+    strcpy(GclMdn.Name,"Gcluster-Min-Dn");
+    printf("  Start SumGreensfunctionsTriDiagonalRepresentation\n");fflush(stdout);
+    SumGreensfunctionsTriDiagonalRepresentation(GclPup, GclMup, &Gclup);
+    strcpy(Gclup.Name,"Gcluster-Up");
+    SumGreensfunctionsTriDiagonalRepresentation(GclPdn, GclMdn, &Gcldn);
+    strcpy(Gcldn.Name,"Gcluster-Dn");
+    SumGreensfunctionsTriDiagonalRepresentation(Gclup, Gcldn, &Gcl);
+    strcpy(Gcl.Name,"Gcluster");
+    Gcl.b[0]=1.0;
+    SymmetrizeTridiagonalMatrix(&Gcl);
+    Gcl.N=Min(Gcl.N,4*HSet.NTriDiag);
+    printf("  Start SelfEnergyTriDiagonalRepresentation\n");
+    SelfEnergyTriDiagonalRepresentation(GBath, Gcl, &Sigma);
+    Sigma.N=Min(Sigma.N,4*HSet.NTriDiag);
+    strcpy(Sigma.Name,"Sigma");
+    SymmetrizeTridiagonalMatrix(&Sigma);
+    Sigma.N=Min(Sigma.N,4*HSet.NTriDiag);
+    printf("  Start GLocalTriDiagonalRepresentation\n");
+    GLocalTriDiagonalRepresentation(G0, Sigma, &GLocal, HSet.NTriDiag);
+    GLocal.N=Min(GLocal.N,4*HSet.NTriDiag);
+    strcpy(GLocal.Name,"Glocal");
+    SymmetrizeTridiagonalMatrix(&GLocal);
+    GLocal.N=Min(GLocal.N,4*HSet.NTriDiag);
+    printf("  Start GBathNewTriDiagonalRepresentation\n");
+    GBathNewTriDiagonalRepresentation(GLocal, Sigma, &GBathNew);
+    GBathNew.N=Min(GBathNew.N,4*HSet.NTriDiag);
+    strcpy(GBathNew.Name,"Gbath-New");
+    SymmetrizeTridiagonalMatrix(&GBathNew);
+    GBathNew.N=Min(GBathNew.N,4*HSet.NTriDiag);
+  /* calculate GBath for the next loop by mixing GBath with GBathNew */
+    printf("Start mixing GBath with GBathNew\n");
+    TriDiagonalMatrixCopy(&GBathOld, GBath);
+    strcpy(GBathOld.Name,"Gbath-Old");
+    FreeTriDiagonalMatrix(&GBath);
+    GBathOld.b[0]=sqrt(HSet.Mix);
+    GBathNew.b[0]=sqrt(1-HSet.Mix);
+    SumGreensfunctionsTriDiagonalRepresentation(GBathNew, GBathOld, &GBath);
+    strcpy(GBath.Name,"Gbath");
+    GBathOld.b[0]=1;
+    GBathNew.b[0]=1;
+    SymmetrizeTridiagonalMatrix(&GBath);
+    GBath.N=Min(GBath.N,4*HSet.NTriDiag);
+  /* create spectra */
+    printf("Start create spectra\n");
+    Spectra[0].N       =HSet.NE;
+    Spectra[0].Emin    =HSet.Emin;
+    Spectra[0].Emax    =HSet.Emax;
+    Spectra[0].dE      =(HSet.Emax-HSet.Emin)/HSet.NE;
+    Spectra[0].EminPole=HSet.Emin;
+    Spectra[0].EmaxPole=HSet.Emax;
+    Spectra[0].Gamma   =HSet.Gamma;
+    for(i=0;i<10;i++)
+    {
+      SpectrumAllocate(Spectra[0], &Spectra[i]);
+    }
+    TriDiagonalMatrixToSpectrum(0,GBath,&(Spectra[0]));
+    TriDiagonalMatrixToSpectrum(0,GBathOld,&(Spectra[1]));
+    TriDiagonalMatrixToSpectrum(0,GBathNew,&(Spectra[2]));
+    DoubleTriDiagonalMatrixToSpectrum(0,GAnd,&(Spectra[3]));
+    TriDiagonalMatrixToSpectrum(0,G0,&(Spectra[4]));
+    TriDiagonalMatrixToSpectrum(0,Sigma,&(Spectra[5]));
+    TriDiagonalMatrixToSpectrum(0,GLocal,&(Spectra[6]));
+    TriDiagonalMatrixToSpectrum(0,Gclup,&(Spectra[7]));
+    TriDiagonalMatrixToSpectrum(0,Gcldn,&(Spectra[8]));
+    TriDiagonalMatrixToSpectrum(0,Gcl,&(Spectra[9]));
+  /* write to disk */
+    printf("Start write to dist\n");
+    if(iOuter==0)
+    {
+      sprintf(GBathFileName,"%s001",HSet.GRootFileName);
+      sprintf(PsiFileName,"%s001",HSet.WaveFunctionRootFileName);
+      sprintf(SpecFileName,"%s001",HSet.SpecRootFileName);
+    }
+    else if(iOuter<9)
+    {
+      sprintf(GBathFileName,"%s00%1i",HSet.GRootFileName,iOuter+1);
+      sprintf(PsiFileName,"%s00%1i",HSet.WaveFunctionRootFileName,iOuter+1);
+      sprintf(SpecFileName,"%s00%1i",HSet.SpecRootFileName,iOuter+1);
+    }
+    else if(iOuter<99)
+    {
+      sprintf(GBathFileName,"%s0%2i",HSet.GRootFileName,iOuter+1);
+      sprintf(PsiFileName,"%s0%2i",HSet.WaveFunctionRootFileName,iOuter+1);
+      sprintf(SpecFileName,"%s0%2i",HSet.SpecRootFileName,iOuter+1);
+    }
+    else if(iOuter<999)
+    {
+      sprintf(GBathFileName,"%s%3i",HSet.GRootFileName,iOuter+1);
+      sprintf(PsiFileName,"%s%3i",HSet.WaveFunctionRootFileName,iOuter+1);
+      sprintf(SpecFileName,"%s%3i",HSet.SpecRootFileName,iOuter+1);
+    }
+    FilePrintSpectra(Spectra, 10, SpecFileName, "w");
+    FilePrintPlainTriDiagonalMatrix(GBath,GBathFileName,"w");
+    FilePrintWaveFunctionPlainBinary(Psi, PsiFileName, "w");
+  /* free variables */
+    printf("Start free variables\n");
+    FreeOperator(&HAnd);
+    FreeOperator(&OPESdn);
+    FreeOperator(&OPESup);
+    FreeOperator(&OIPESdn);
+    FreeOperator(&OIPESup);
+    FreeTriDiagonalMatrix(&GclMup);
+    FreeTriDiagonalMatrix(&GclMdn);
+    FreeTriDiagonalMatrix(&GclPup);
+    FreeTriDiagonalMatrix(&GclPdn);
+    FreeTriDiagonalMatrix(&Gcl);
+    FreeTriDiagonalMatrix(&GLocal);
+    FreeTriDiagonalMatrix(&Sigma);
+    FreeTriDiagonalMatrix(&GBathNew);
+    FreeTriDiagonalMatrix(&GBathOld);
+    FreeDoubleTriDiagonalMatrix(&GAnd);
+    EndTiming("DMFTLoop",&Time);
+  }
+  EndTiming("Total",&Time);
+  PrintTiming(Time);
+  return 0;
+};
