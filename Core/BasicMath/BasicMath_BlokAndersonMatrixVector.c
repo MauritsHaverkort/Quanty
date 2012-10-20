@@ -11,6 +11,7 @@
 */
 
 
+
 void FreeBlokAndersonMatrix(BlokAndersonMatrixType *const M)
 {
   uint32_t i;

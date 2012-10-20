@@ -12,6 +12,7 @@ double Factorial(int a)
   return result;
 }
 
+
 /*  computes n over k (the number of ways k elements can be placed in n spaces)
  *
  */

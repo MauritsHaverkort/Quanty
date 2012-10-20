@@ -9,6 +9,7 @@
 */
 
 
+
 /* Free an AndersonMatrix M (the structure is not freed)
  */
 void FreeAndersonMatrix(AndersonMatrixType *const M)

@@ -15,6 +15,7 @@
 */
 
 
+
 /*  Remove M from memory, free each matrix M.a[i] and M.b[i] as well
  *  as the list of pointers M.a and M.b
  */

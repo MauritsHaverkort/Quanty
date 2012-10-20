@@ -15,6 +15,7 @@
 */
 
 
+
 /* Free a DoubleTriDiagonalMatrix M (the structure is not freed)
  */
 void FreeDoubleTriDiagonalMatrix(DoubleTriDiagonalMatrixType *const M)
