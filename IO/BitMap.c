@@ -293,7 +293,6 @@ uint32_t PrintRealMatrixToBitmap(MatrixType M, void (*RealToRGBColor)(double,uns
 
 
 
-
 /*  Print a Matrix to a stream as a bitmap with collor coding acording to the function RealToRGBColor
  *
  */

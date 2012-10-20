@@ -7,7 +7,6 @@
  *
  */
 
-
 void TestLanczosDyson()
 {
   printf("Start Test Lanczos Dyson\n");
