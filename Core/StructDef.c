@@ -100,7 +100,7 @@ OperatorFixedLengthType;
 typedef struct OperatorType
 {
   char                     Name[MAXStrLength];
-  uint32_t                 QComplex;                     /* If all l[j].QComplex values are 0 then QComplex=0 if one is nonzero then QComplex=1 if all relavant are complex then QComplex=2 */
+  uint32_t                 QComplex;                     /* If all operators with non-zero value of O.l[ilength].N are real    O.QComplex=0; * If all operators with non-zero value of O.l[ilength].N are complex O.QComplex=1; * If there is a mixture of real and complex values                   O.QComplex=2; */
   uint32_t                 NFermion;                     /* Number of fermions in the basis */
   uint32_t                 NBoson;                       /* Number of bosons in the basis */
   uint32_t                 NWord;                        /* NFermionWord+NBoson */

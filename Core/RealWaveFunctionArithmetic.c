@@ -780,6 +780,7 @@ uint32_t RealWaveFunctionOrthogonalize(WaveFunctionType *const psi, const WaveFu
     a=RealWaveFunctionDotProduct(*psi, OtherPsi[i]);
     if(RealWaveFunctionAddMultipliedUnionBasis(psi, OtherPsi[i],-a))
     {
+      printf("RealWaveFunctionAddMultipliedUnionBasis failed in RealWaveFunctionOrthogonalize\n");
       return 1;
     }
   }

@@ -3082,3 +3082,61 @@ uint32_t PsiHermitianOperatorSqrPsi(const OperatorType O, const WaveFunctionType
   }
   return PsiOperatorSqrPsiMHR(O, psi, VRe);
 }
+
+
+/*  Calcualtes the matrix of dimensions [i,j] <psiPrime_i|O|psi_j>
+ *  On entry V.Ni contains the length of psiPrime
+ *  On entry V.Nj contains the length of psi
+ */
+uint32_t PsiPrimeOperatorPsiMatrix(const OperatorType O, const WaveFunctionType *psiPrime, const WaveFunctionType *psi, MatrixType *const V)
+{
+  uint32_t i,j;
+  WaveFunctionType Opsi;
+  double DotRe,DotIm;
+  for(j=0;j<V->Nj;j++)
+  {
+    if(OperatorPsi(O,psi[j],&Opsi))
+    {
+      printf("OperatorPsi failed in PsiPrimeOperatorPsiMatrix at level i=%5i j=%5i",i,j);
+      return 1;
+    }
+    for(i=0;i<V->Ni;i++)
+    {
+      WaveFunctionDotProduct(psiPrime[i], Opsi, &DotRe, &DotIm);
+      V->VRe[i][j]=DotRe;
+      if(V->QComplex)V->VIm[i][j]=DotIm;
+    }
+    WaveFunctionFree(&Opsi);
+  }
+  return 0;
+}
+
+/*  Calcualtes the matrix of dimensions [i,j] <psi_i|O|psi_j>
+ *  On entry V.Ni contains the length of psi
+ *  On entry V.Nj contains the length of psi
+ */
+uint32_t PsiOperatorPsiMatrix(const OperatorType O, const WaveFunctionType *psi, MatrixType *const V)
+{
+  return PsiPrimeOperatorPsiMatrix(O, psi, psi, V);
+}
+
+/*  Calcualtes <psiPrime|O|psi>
+ *
+ */
+uint32_t PsiPrimeOperatorPsi(const OperatorType O, const WaveFunctionType psiPrime, const WaveFunctionType psi, double *VRe, double *VIm)
+{
+  MatrixType V;
+  uint32_t returnVal;
+  V.Ni=1;
+  V.Nj=1;
+  V.QComplex=1;
+  InitMatrix(&V);
+  V.VRe[0][0]=0;
+  V.VIm[0][0]=0;
+  
+  returnVal=PsiPrimeOperatorPsiMatrix(O, &psiPrime, &psi, &V);
+  
+  *VRe=V.VRe[0][0];
+  *VIm=V.VIm[0][0];
+  return returnVal;
+}

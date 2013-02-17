@@ -416,7 +416,24 @@ uint32_t TriDiagonalMatrixToDoubleTriDiagonalMatrix(TriDiagonalMatrixType const 
   return 0;
 }
 
-
+uint32_t TriDiagonalMatrixToMatrix(TriDiagonalMatrixType const M, MatrixType *const A)
+{
+  uint32_t i;
+  A->QComplex=0;
+  A->Ni=M.N;
+  A->Nj=M.N;
+  if(InitMatrix(A)){printf("InitMatrix failed in TriDiagonalMatrixToMatrix\n");return 1;}
+  A->a0=M.a[0];
+  A->b0=M.b[0];
+  for(i=1;i<M.N;i++)
+  {
+    A->VRe[i-1][i-1]=M.a[i];
+    A->VRe[i][i-1]=M.b[i];
+    A->VRe[i-1][i]=M.b[i];
+  }
+  A->VRe[M.N-1][M.N-1]=M.a[M.N];
+  return 0;
+}
 
 
 
@@ -507,7 +524,14 @@ uint32_t SparseMatrixToTriDiagonalMatrix(SparseMatrixType M, MatrixType *const T
     RealVectorAdd(T->VRe[i],T->VRe[i-1],T->Nj,-H->a[i]);
     RealVectorDotVector(T->VRe[i],T->VRe[i],T->Nj,&(H->b[i]));
     H->b[i]=sqrt(H->b[i]);
-    RealVectorMultiply(T->VRe[i],T->Nj,1.0/H->b[i]);
+    if(H->b[i]<(100*DBL_MIN))
+    {
+      RealVectorMultiply(T->VRe[i],T->Nj,0);
+    }
+    else
+    {
+      RealVectorMultiply(T->VRe[i],T->Nj,1.0/H->b[i]);
+    }
     for(j=0;j<i;j++)
     {
       RealVectorDotVector(T->VRe[j],T->VRe[i],T->Nj,&tempRe);
@@ -516,7 +540,14 @@ uint32_t SparseMatrixToTriDiagonalMatrix(SparseMatrixType M, MatrixType *const T
     RealVectorDotVector(T->VRe[i],T->VRe[i],T->Nj,&tempRe);
     tempRe=sqrt(tempRe);
     H->b[i]*=tempRe;
-    RealVectorMultiply(T->VRe[i],T->Nj,1.0/tempRe); 
+    if(tempRe<(100*DBL_MIN))
+    {
+      RealVectorMultiply(T->VRe[i],T->Nj,0);
+    }
+    else
+    {
+      RealVectorMultiply(T->VRe[i],T->Nj,1.0/tempRe);
+    }
   }
   RealVectorSparseMatrixVector(M,T->VRe[NTriDiag-1],&(H->a[NTriDiag]));
   return 0;

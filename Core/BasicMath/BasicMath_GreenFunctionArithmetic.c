@@ -237,11 +237,17 @@ uint32_t GBathNewTriDiagonalRepresentation(TriDiagonalMatrixType const Glocal, T
   return 0;
 }
 
+
+
+
+/*  This routine returns a tri-diagonal matrix representing a greensfunction as a continued fraction in Gnew
+ *  
+ */
 uint32_t TriDiagonalMatrixDysonScalar(TriDiagonalMatrixType const G, TriDiagonalMatrixType *const Gnew, MatrixType const Rho, uint32_t const NRho, TriDiagonalMatrixType *const Gp)
 {
   SparseMatrixType M;
   MatrixType T;
-  uint32_t i,j,k,l,NTriDiag;
+  uint32_t i,j,k,l,NTriDiag,jstuck;
   M.Ni=G.N;
   for(i=0;i<NRho;i++)
   {
@@ -262,21 +268,30 @@ uint32_t TriDiagonalMatrixDysonScalar(TriDiagonalMatrixType const G, TriDiagonal
     j++;
   }
   RealSparseMatrixAddElement(&M, j, j, G.a[G.N]);
+  j++;
+  jstuck=j;
   for(k=0;k<NRho;k++)
   {
     for(l=0;l<G.N;l++)
     {
       RealSparseMatrixAddElement(&M, l, j, Gp[k].b[0]*sqrt(fabs(Rho.VRe[l][k])));
       RealSparseMatrixAddElement(&M, j, l, Gp[k].b[0]*sqrt(fabs(Rho.VRe[l][k])));
-      for(i=0;i<Gp[k].N;i++)
+      for(i=0;i<Gp[k].N-1;i++)
       {
         RealSparseMatrixAddElement(&M, j, j, Gp[k].a[i+1]);
         RealSparseMatrixAddElement(&M, j, j+1, Gp[k].b[i+1]);
         RealSparseMatrixAddElement(&M, j+1, j, Gp[k].b[i+1]);
         j++;
       }
+      RealSparseMatrixAddElement(&M, j, j, Gp[k].a[Gp[k].N]);
+      j++;
     }
   }
+  /*
+  printf("\n\n\n\n\n\n\n\n ******* \n\n\n\n\n");
+  PrintSparseMatrix(M);
+  */
+  
   NTriDiag=G.N;
   for(i=0;i<NRho;i++)
   {
@@ -285,5 +300,141 @@ uint32_t TriDiagonalMatrixDysonScalar(TriDiagonalMatrixType const G, TriDiagonal
   if(SparseMatrixToTriDiagonalMatrix(M, &T, Gnew, NTriDiag)){printf("SparseMatrixToTriDiagonalMatrix failed in TriDiagonalMatrixDysonScalar\n");fflush(stdout);return 1;}
   FreeMatrix(&T);
   FreeSparseMatrix(&M);
+  return 0;
+}
+
+
+/*  We start from the following Hamiltonian
+ *
+ *     ( O       V1      0       0       0         V2      0       0       0         ...       V3      0       0       0   )
+ *     ( V1^+    H1+g1a1 g1b1    0       0         0       0       0       0         ...       0       0       0       0   )
+ *     ( 0       g1b1    H1+g1a2 g1b2    0         0       0       0       0         ...       0       0       0       0   )
+ *     ( 0       0       g1b2    H1+g1a3 ...       0       0       0       0         ...       0       0       0       0   )
+ *     ( 0       0       0       ...     ...       0       0       0       0         ...       0       0       0       0   )
+ *
+ *     ( V2^+    0       0       0       0         H2+g2a1 g2b1    0       0         ...       0       0       0       0   )
+ *     ( 0       0       0       0       0         g2b1    H2+g2a2 g2b2    0         ...       0       0       0       0   )
+ *     ( 0       0       0       0       0         0       g2b2    H2+g2a3 ...       ...       0       0       0       0   )
+ *     ( 0       0       0       0       0         0       0       ...     ...       ...       0       0       0       0   )
+ *
+ *     ( ...     ...     ...     ...     ...       ...     ...     ...     ...       ...       ...     ...     ...     ... )
+ *
+ *     ( V3^+    0       0       0       0         0       0       0       0         ...       H3+g3a1 g3b1    0       0   )
+ *     ( 0       0       0       0       0         0       0       0       0         ...       g3b1    H3+g3a2 g3b2    0   )
+ *     ( 0       0       0       0       0         0       0       0       0         ...       0       g3b2    H3+g3a3 ... )
+ *     ( 0       0       0       0       0         0       0       0       0         ...       0       0       ...     ... )
+ *
+ *  and want to create a tridiagonal matrix on a Krylov basis starting from the first basis function
+ *
+ *  The matrices included are of special form:
+ *  O     - tridiagonal
+ *  Vi    - a dense matrix
+ *  Hi    - diagonal matrix
+ *  gi    - tridiagonal matrix, representing the coupled bath.
+ *
+ *  gnew  - resulting tridiagonal matrix of length gnew.N (set on entry)
+ *
+ *  H.Ni counts the number of blocks or the number of matrices V there are
+ *  H.Nj is Max[V[i].Nj] for all i or larger
+ *
+ */
+uint32_t TridiagonalizeImpurityCoupledToBathDyson(TriDiagonalMatrixType const O, MatrixType const *V, MatrixType const H, TriDiagonalMatrixType const *g, uint32_t N, TriDiagonalMatrixType * const gnew)
+{
+  SparseMatrixType Htot;
+  MatrixType T;
+  uint32_t i,j,k,l;
+  Htot.Ni=O.N;
+  for(i=0;i<N;i++)
+  {
+    Htot.Ni+=g[i].N * V[i].Nj;
+  }
+  Htot.Nj=Htot.Ni;
+  if(Htot.Ni<16000)
+  {
+    Htot.NBitsKey=16;
+  }
+  else
+  {
+    Htot.NBitsKey=24;
+  }
+  Htot.QComplex = 0;
+  Htot.a0=O.a[0];
+  Htot.b0=O.b[0];
+  for(i=0;i<N;i++)
+  {
+    if(V[i].QComplex)Htot.QComplex=1;
+  }
+  if(InitSparseMatrix(&Htot)){printf("Could not initiallize sparse matrix in TridiagonalizeImpurityCoupledToBathDyson\n");return 1;}
+  SparseMatrixAddTridiagonalMatrix(&Htot, 0, 0, O);
+  j=O.N;
+  for(i=0;i<N;i++)
+  {
+    SparseMatrixAddMatrixTransposed(&Htot, 0, j, V[i], DBL_EPSILON);
+    SparseMatrixAddMatrix(&Htot, j, 0, V[i], DBL_EPSILON);
+    j+=g[i].N * V[i].Nj;    
+  }
+  l=O.N;
+  if(Htot.QComplex)
+  {
+    for(i=0;i<N;i++)
+    {
+      for(j=0;j<g[i].N;j++)
+      {
+        for(k=0;k<V[i].Nj;k++)
+        {
+          ComplexSparseMatrixAddElement(&Htot, l, l, H.VRe[i][k]+g[i].a[j+1],0);
+          if(j!=g[i].N-1)
+          {
+            ComplexSparseMatrixAddElement(&Htot, l, l+V[i].Nj, g[i].b[j+1],0);
+            ComplexSparseMatrixAddElement(&Htot, l+V[i].Nj, l, g[i].b[j+1],0);
+          }
+          l++;
+        }
+      }
+    }
+  }
+  else
+  {
+    for(i=0;i<N;i++)
+    {
+      for(j=0;j<g[i].N;j++)
+      {
+        for(k=0;k<V[i].Nj;k++)
+        {
+          RealSparseMatrixAddElement(&Htot, l, l, H.VRe[i][k]+g[i].a[j+1]);
+          if(j!=g[i].N-1)
+          {
+            RealSparseMatrixAddElement(&Htot, l, l+V[i].Nj, g[i].b[j+1]);
+            RealSparseMatrixAddElement(&Htot, l+V[i].Nj, l, g[i].b[j+1]); 
+          }
+          l++;
+        }
+      }
+    }
+  }
+  SparseMatrixToTriDiagonalMatrix(Htot, &T, gnew, gnew->N);
+  PrintSparseMatrix(Htot);
+  FreeMatrix(&T);
+  FreeSparseMatrix(&Htot);
+  return 0;
+}
+
+/*  We start from the following Hamiltonian
+ *
+ *     ( H_1     H_12^1         H_12^2          ...   N_12^n        )
+ *     ( H_12^1  H_1^2 + H_2^1  0               0     0             )
+ *     ( H_12^2  0              H_1^2 + H_2^2   0     0             )
+ *     ( ...     0              0               ...   0             )
+ *     ( H_12^n  0              0               0     H_1^n + H_2^n )
+ *
+ *     H_1 is provided on a finite basis in tridiagonal form (G1)
+ *     on the same basis the matrix H_12^i H_12^i is given   (M12)
+ *     The one particle green function for H2 with the coupling H_12^i is given in tridiagonal form (g2^i)
+ *     The expectation value of H_12^i H_1 H_12^i devided by the expectation value of H_12^i H_12^i is given (Emu^i)
+ *
+ *     Calculated is a tridiaonal matrix representing { 1/(w-H) }_[1,1]
+ */
+uint32_t TridDiagonalMatrixDysonToMuchSimplified(TriDiagonalMatrixType const G1, MatrixType const *M12, TriDiagonalMatrixType const *g2, MatrixType const *Emu, int32_t const Ni, TriDiagonalMatrixType * const Gnew)
+{
   return 0;
 }

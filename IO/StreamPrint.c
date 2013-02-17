@@ -786,3 +786,42 @@ uint32_t StreamPrintDMFTSettings(DMFTSettings O, FILE *stream)
   fprintf(stream,"NBitsKey                 : %i\n",O.NBitsKey);
   return 0;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*  Prints a matrix
+ */
+uint32_t StreamPrintSparseMatrix(SparseMatrixType M, FILE *stream)
+{
+  uint32_t i;
+  M.Name[MAXStrLength-1]='\0';
+  fprintf(stream,"%s =\n",M.Name);
+  if(M.QComplex)
+  {
+    fprintf(stream,"   [i]    [j]          Re(M[i][j])          Im(M[i][j])\n");
+    for(i=0;i<M.N;i++)
+    {
+      fprintf(stream,"%6i %6i %22.15E %22.15E\n",M.i[i],M.j[i],M.VRe[i],M.VRe[i]);
+    }
+  }
+  else
+  {
+    fprintf(stream,"   [i]    [j]          Re(M[i][j])\n");
+    for(i=0;i<M.N;i++)
+    {
+      fprintf(stream,"%6i %6i %22.15E\n",M.i[i],M.j[i],M.VRe[i]);
+    }
+  }
+  fprintf(stream,"\n");
+  return 0;
+}

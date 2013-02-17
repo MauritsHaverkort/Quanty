@@ -263,12 +263,26 @@ void WaveFunctionTruncateBasis(WaveFunctionType *const a, const double epsilon)
 
 void WaveFunctionOrthogonalizeConserveBasis(WaveFunctionType *const psi, const WaveFunctionType *const OtherPsi, const uint32_t Npsi)
 {
-
+  if(psi->QComplex==0)
+  {
+    RealWaveFunctionOrthogonalizeConserveBasis(psi, OtherPsi, Npsi);
+  }
+  else
+  {
+    ComplexWaveFunctionOrthogonalizeConserveBasis(psi, OtherPsi, Npsi);
+  }
 }
 
 uint32_t WaveFunctionOrthogonalize(WaveFunctionType *const psi, const WaveFunctionType *const OtherPsi, const uint32_t Npsi)
 {
-  return 0;
+  if(psi->QComplex==0)
+  {
+    return RealWaveFunctionOrthogonalize(psi, OtherPsi, Npsi);
+  }
+  else
+  {
+    return ComplexWaveFunctionOrthogonalize(psi, OtherPsi, Npsi);
+  }
 }
 
 

@@ -771,7 +771,7 @@ void TestDGESVD3()
     }
     printf("\n");
   }
-  DGESVD( JOBU, JOBVT, &M, &N, A, &LDA, S, U, &LDU, VT, &LDVT, WORK, &LWORK, &INFO );
+  dgesvd( JOBU, JOBVT, &M, &N, A, &LDA, S, U, &LDU, VT, &LDVT, WORK, &LWORK, &INFO );
   printf("U=\n");
   for(i=0;i<M;i++)
   {
@@ -833,7 +833,7 @@ void TestDGESVD2()
     }
     printf("\n");
   }
-  DGESVD( JOBU, JOBVT, &M, &N, A, &LDA, S, U, &LDU, VT, &LDVT, WORK, &LWORK, &INFO );
+  dgesvd( JOBU, JOBVT, &M, &N, A, &LDA, S, U, &LDU, VT, &LDVT, WORK, &LWORK, &INFO );
   printf("U=\n");
   for(i=0;i<M;i++)
   {
@@ -902,7 +902,7 @@ void TestDGESVD()
     }
     printf("\n");
   }
-  DGESVD( JOBU, JOBVT, &M, &N, A, &LDA, S, U, &LDU, VT, &LDVT, WORK, &LWORK, &INFO );
+  dgesvd( JOBU, JOBVT, &M, &N, A, &LDA, S, U, &LDU, VT, &LDVT, WORK, &LWORK, &INFO );
   printf("U=\n");
   for(i=0;i<M;i++)
   {

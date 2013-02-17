@@ -77,6 +77,8 @@ uint32_t PrintDMFTXASSettings(DMFTXASSettings O)
 uint32_t PrintDMFTSettings(DMFTSettings O)
 { return StreamPrintDMFTSettings(O,stdout);}
 
+uint32_t PrintSparseMatrix(SparseMatrixType M)
+{ return StreamPrintSparseMatrix(M,stdout);}
 
 
 
@@ -85,30 +87,6 @@ uint32_t PrintDMFTSettings(DMFTSettings O)
 
 /* old */
 
-uint32_t PrintSparseMatrix(SparseMatrixType M)
-{
-  uint32_t i;
-  M.Name[MAXStrLength-1]='\0';
-  printf("%s =\n",M.Name);
-  if(M.QComplex)
-  {
-    printf("   [i]    [j]          Re(M[i][j])          Im(M[i][j])\n");
-    for(i=0;i<M.N;i++)
-    {
-      printf("%6i %6i %22.15E %22.15E\n",M.i[i],M.j[i],M.VRe[i],M.VRe[i]);
-    }
-  }
-  else
-  {
-    printf("   [i]    [j]          Re(M[i][j])\n");
-    for(i=0;i<M.N;i++)
-    {
-      printf("%6i %6i %22.15E\n",M.i[i],M.j[i],M.VRe[i]);
-    }
-  }
-  printf("\n");
-  return 0;
-}
 
 uint32_t PrintTriDiagonalMatrix(TriDiagonalMatrixType M)
 {

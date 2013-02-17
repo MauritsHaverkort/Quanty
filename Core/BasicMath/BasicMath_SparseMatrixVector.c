@@ -546,6 +546,175 @@ uint32_t SparseMatrixAddElement(SparseMatrixType *const M, uint32_t i, uint32_t 
   return ComplexSparseMatrixAddElement(M, i, j, VRe, VIm);
 }
 
+/*  add several elements to a sparse matrix starting at position i,j
+ *
+ */
+uint32_t SparseMatrixAddMatrix(SparseMatrixType *const M, uint32_t i, uint32_t j, MatrixType A, double const epsilon)
+{
+  uint32_t ai,aj;
+  const double epsilonsqr=Sqr(epsilon);
+  if(i+A.Ni>M->Ni){printf("Trid to add elements outside boundary of SparseMatrix in SparseMatrixAddMatrix\n");return 1;}
+  if(j+A.Nj>M->Nj){printf("Trid to add elements outside boundary of SparseMatrix in SparseMatrixAddMatrix\n");return 1;}
+  if(M->QComplex)
+  {
+    if(A.QComplex)
+    {
+      for(ai=0;ai<A.Ni;ai++)
+      {
+        for(aj=0;aj<A.Nj;aj++)
+        {
+          if((Sqr(A.VRe[ai][aj])+Sqr(A.VIm[ai][aj]))>epsilonsqr)
+          {
+            if(ComplexSparseMatrixAddElement(M, i+ai, j+aj, A.VRe[ai][aj], A.VIm[ai][aj])){printf("ComplexSparseMatrixAddElement failed in SparseMatrixAddMatrix\n");return 1;}
+          }
+        }
+      }
+    }
+    else
+    {
+      for(ai=0;ai<A.Ni;ai++)
+      {
+        for(aj=0;aj<A.Nj;aj++)
+        {
+          if(Sqr(A.VRe[ai][aj])>epsilonsqr)
+          {
+            if(ComplexSparseMatrixAddElement(M, i+ai, j+aj, A.VRe[ai][aj], 0.0)){printf("ComplexSparseMatrixAddElement failed in SparseMatrixAddMatrix\n");return 1;}
+          }
+        }
+      }
+    }
+  }
+  else
+  {
+    if(A.QComplex)
+    {
+      if (MakeRealSparseMatrixComplex(M)) return 1;
+      for(ai=0;ai<A.Ni;ai++)
+      {
+        for(aj=0;aj<A.Nj;aj++)
+        {
+          if((Sqr(A.VRe[ai][aj])+Sqr(A.VIm[ai][aj]))>epsilonsqr)
+          {
+            if(ComplexSparseMatrixAddElement(M, i+ai, j+aj, A.VRe[ai][aj], A.VIm[ai][aj])){printf("ComplexSparseMatrixAddElement failed in SparseMatrixAddMatrix\n");return 1;}
+          }
+        }
+      }
+    }
+    else
+    {
+      for(ai=0;ai<A.Ni;ai++)
+      {
+        for(aj=0;aj<A.Nj;aj++)
+        {
+          if(Sqr(A.VRe[ai][aj])>epsilonsqr)
+          {
+            if(RealSparseMatrixAddElement(M, i+ai, j+aj, A.VRe[ai][aj])){printf("RealSparseMatrixAddElement failed in SparseMatrixAddMatrix\n");return 1;}
+          }
+        }
+      }
+    }
+  }
+  return 0;
+}
+
+
+/*  add several elements to a sparse matrix starting at position i,j
+ *
+ */
+uint32_t SparseMatrixAddMatrixTransposed(SparseMatrixType *const M, uint32_t i, uint32_t j, MatrixType A, double const epsilon)
+{
+  uint32_t ai,aj;
+  const double epsilonsqr=Sqr(epsilon);
+  if(i+A.Nj>M->Ni){printf("Trid to add elements outside boundary of SparseMatrix in SparseMatrixAddMatrixTransposed\n");return 1;}
+  if(j+A.Ni>M->Nj){printf("Trid to add elements outside boundary of SparseMatrix in SparseMatrixAddMatrixTransposed\n");return 1;}
+  if(M->QComplex)
+  {
+    if(A.QComplex)
+    {
+      for(ai=0;ai<A.Nj;ai++)
+      {
+        for(aj=0;aj<A.Ni;aj++)
+        {
+          if((Sqr(A.VRe[aj][ai])+Sqr(A.VIm[aj][ai]))>epsilonsqr)
+          {
+            if(ComplexSparseMatrixAddElement(M, i+ai, j+aj, A.VRe[aj][ai], A.VIm[aj][ai])){printf("ComplexSparseMatrixAddElement failed in SparseMatrixAddMatrixTransposed\n");return 1;}
+          }
+        }
+      }
+    }
+    else
+    {
+      for(ai=0;ai<A.Nj;ai++)
+      {
+        for(aj=0;aj<A.Ni;aj++)
+        {
+          if(Sqr(A.VRe[aj][ai])>epsilonsqr)
+          {
+            if(ComplexSparseMatrixAddElement(M, i+ai, j+aj, A.VRe[aj][ai], 0.0)){printf("ComplexSparseMatrixAddElement failed in SparseMatrixAddMatrixTransposed\n");return 1;}
+          }
+        }
+      }
+    }
+  }
+  else
+  {
+    if(A.QComplex)
+    {
+      if (MakeRealSparseMatrixComplex(M)) return 1;
+      for(ai=0;ai<A.Nj;ai++)
+      {
+        for(aj=0;aj<A.Ni;aj++)
+        {
+          if((Sqr(A.VRe[aj][ai])+Sqr(A.VIm[aj][ai]))>epsilonsqr)
+          {
+            if(ComplexSparseMatrixAddElement(M, i+ai, j+aj, A.VRe[aj][ai], A.VIm[aj][ai])){printf("ComplexSparseMatrixAddElement failed in SparseMatrixAddMatrixTransposed\n");return 1;}
+          }
+        }
+      }
+    }
+    else
+    {
+      for(ai=0;ai<A.Nj;ai++)
+      {
+        for(aj=0;aj<A.Ni;aj++)
+        {
+          if(Sqr(A.VRe[aj][ai])>epsilonsqr)
+          {
+            if(RealSparseMatrixAddElement(M, i+ai, j+aj, A.VRe[aj][ai])){printf("RealSparseMatrixAddElement failed in SparseMatrixAddMatrixTransposed\n");return 1;}
+          }
+        }
+      }
+    }
+  }
+  return 0;
+}
+
+
+/*  add several elements to a sparse matrix starting at position i,j
+ *
+ */
+uint32_t SparseMatrixAddTridiagonalMatrix(SparseMatrixType *const M, uint32_t i, uint32_t j, TriDiagonalMatrixType A)
+{
+  uint32_t ai;
+  if(i+A.N>M->Ni){printf("Tried to add elements outside boundary of SparseMatrix in SparseMatrixAddTridiagonalMatrix\n");return 1;}
+  if(j+A.N>M->Nj){printf("Tried to add elements outside boundary of SparseMatrix in SparseMatrixAddTridiagonalMatrix\n");return 1;}
+  if(M->QComplex)
+  {
+    
+  }
+  else
+  {
+    for(ai=0;ai<A.N-1;ai++)
+    {
+      if(RealSparseMatrixAddElement(M, i+ai,   j+ai,   A.a[ai+1])){printf("RealSparseMatrixAddElement failed in SparseMatrixAddTridiagonalMatrix\n");return 1;}
+      if(RealSparseMatrixAddElement(M, i+ai+1, j+ai,   A.b[ai+1])){printf("RealSparseMatrixAddElement failed in SparseMatrixAddTridiagonalMatrix\n");return 1;}
+      if(RealSparseMatrixAddElement(M, i+ai,   j+ai+1, A.b[ai+1])){printf("RealSparseMatrixAddElement failed in SparseMatrixAddTridiagonalMatrix\n");return 1;}
+    }
+    if(RealSparseMatrixAddElement(M, i+A.N-1,   j+A.N-1,   A.a[A.N])) {printf("RealSparseMatrixAddElement failed in SparseMatrixAddTridiagonalMatrix\n");return 1;}
+  }
+  return 0;
+}
+
 /*  Set the values of VRe and VIm equal to M[i][j]
  */
 void SparseMatrixExtractElement(SparseMatrixType const M, uint32_t const i, uint32_t const j, double *VRe, double *VIm)

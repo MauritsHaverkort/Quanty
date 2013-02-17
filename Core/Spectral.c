@@ -1040,6 +1040,59 @@ void TriDiagonalMatrixToSpectrum(const double Energy, const TriDiagonalMatrixTyp
   }
 }
 
+
+
+/*  the spectrum returns the function
+ *  ( w + E0 - M - sum_j Mw_j * gw_j(w) + i Gamma/2 )^{-1}_[1,1]
+ *  it is the users obbligation to define the matrices such that the inversion is not singular
+ *  The functions gw must be defined on the same grid (emin, emax, dE, N) as the function G
+ */
+uint32_t MatrixToSpectrum(const MatrixType M, const double E0, const double Gamma, const MatrixType *Mw, const SpectraType *Gw, uint32_t NGw, SpectraType *const G)
+{
+  printf("Start of MatrixToSpectrum\n");
+  
+  MatrixType Mtot,Mtest,MtestI;
+  uint32_t i,j;
+  double w;
+  for(i=0;i<=G->N;i++)
+  {
+    w=G->Emin+i*G->dE;
+    Mtot.QComplex=1;
+    Mtot.Ni=M.Ni;
+    Mtot.Nj=M.Nj;
+    InitIdentityMatrix(&Mtot);
+    MatrixScalarMultiply(&Mtot, w+E0, Gamma/2.0);
+    MatrixAdd(&Mtot, M, -1, 0);
+    for(j=0;j<NGw;j++)
+    {
+      MatrixAdd(&Mtot, Mw[j],-Gw[j].Re[i],-Gw[j].Im[i]);
+    }
+    
+    if(i==2000)
+    {
+      MatrixCopy(&Mtest, Mtot);
+    }
+    
+    printf("%lf %lf %lf %lf %lf | ",w,Mtot.VRe[0][0],Mtot.VIm[0][0],Gw[0].Re[i],Gw[0].Im[i]);
+    MatrixInverse(&Mtot);
+    printf("%lf %lf \n",Mtot.VRe[0][0],Mtot.VIm[0][0]);
+    G->Re[i]=Mtot.VRe[0][0];
+    G->Im[i]=Mtot.VIm[0][0];
+    
+    if(i==2000)
+    {
+      PrintMatrix(Mtest);
+      PrintMatrix(Mtot);
+      MatrixMultiply(&MtestI, Mtest, Mtot);
+      PrintMatrix(MtestI);
+    }
+    
+    FreeMatrix(&Mtot);
+  }
+  return 0;
+}
+
+
 /*
  *
  */

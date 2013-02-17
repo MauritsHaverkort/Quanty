@@ -1,4 +1,17 @@
 /**********************************************************/
+/*****************       blas/lapack      *****************/
+/**********************************************************/
+int dstev();
+int dstevd();
+int dsyev();
+int dsyevd();
+int zheev();
+int zheevd();
+int dgesvd();
+int zgesvd();
+
+
+/**********************************************************/
 /*****************       IO/Print.c       *****************/
 /**********************************************************/
 
@@ -499,7 +512,7 @@ uint32_t CopyCrystalStructure(CrystalStructureType A, CrystalStructureType *B);
 /**********************************************************/
 int SetNFermionIndexTightBindingDef(TightBindingDef *A);
 uint32_t CreateUSperCell(OperatorType U, OperatorType *USuperCell, CrystalStructureSuperCellType SuperCell);
-
+int CreateTightBindingSuperCell();
 
 
 
