@@ -327,6 +327,36 @@ typedef struct BlokDoubleTriDiagonalMatrixType
 }
 BlokDoubleTriDiagonalMatrixType;
 
+
+/*     ( A[0][0]=Dt.a0  | A[0][1]=Dt.b0  | 0              | 0           | 0           | 0           | 0           | 0           )
+ *     ( A[1][0]=Dt.b0  | A[1][1]=Dt.avc0| A[1][2]=Dt.bv0 | 0           | 0           | A[1][5]=bc0 | 0           | 0           )
+ *   A=( 0              | A[2][1]=Dt.bv0 | A[2][2]=Dt.av1 | A[2][3]=bv1 | 0           | 0           | 0           | 0           )
+ *     ( 0              | 0              | A[3][2]=Dt.bv1 | A[3][3]=av2 | A[3][4]=bv2 | 0           | 0           | 0           )
+ *     ( 0              | 0              | 0              | A[4][3]=bv2 | A[4][4]=av3 | 0           | 0           | 0           )
+ *     ( 0              | A[5][1]=Dt.bc0 | 0              | 0           | 0           | A[5][5]=ac1 | A[5][6]=bc1 | 0           )
+ *     ( 0              | 0              | 0              | 0           | 0           | A[6][5]=bc1 | A[6][6]=ac2 | A[6][7]=bc2 )
+ *     ( 0              | 0              | 0              | 0           | 0           | 0           | A[7][6]=bc2 | A[7][7]=ac3 )
+ *
+ *   avc0 = (a0val + a0con)/2
+ *
+ *   (A B)[i][j] = \sum_k A[i][k] B[k][j]
+ *
+ *   Note that the block A[1;;3][1;;3] and the block A[4;;6][4;;6] are normal tri-diagonal matrices
+ */
+typedef struct SecondDoubleTriDiagonalMatrixType
+{
+  char       Name[MAXStrLength]; /* A pointer to a name string that can be used to lable functions, good for printing etc. */
+  double     Ef;       /* border if a number belongs to val or con */
+  double     Epsilon;  /* values in a range of [Ef-1/2 Epsilon , Ef+1/2 Epsilon] contribute half to val and half to con */
+  double     a0;       /* storing a possible real shift if a continued fraction notation is used */
+  double     b0;       /* storing a possilbe over-all scaling if a continued fraction notation is used */
+  DoubleTriDiagonalMatrixType Dt;
+}
+SecondDoubleTriDiagonalMatrixType;
+
+
+
+
 typedef struct ChebyshevExpansion
 {
   int    N;
@@ -466,6 +496,7 @@ typedef struct DMFTSettings
   char     WaveFunctionRootFileName[256];    /* filename of wave-function  */
   uint32_t iStart;                           /* start value of loop number */
   uint32_t Ni;                               /* number of loops to do */
+  uint32_t Dyson;                            /* 0 no Dyson like perturbation - 1 full perturbation - 2 ... */
   double   Mix;                              /* mixing of old into new function */
   double   U;                                /* valence - valence Coulomb repulsion */
   double   Nelectron;                        /* number of electrons per spin per site */

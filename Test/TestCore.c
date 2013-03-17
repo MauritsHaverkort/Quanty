@@ -288,7 +288,7 @@ void TestOperatorArithmetic()
 {
   MatrixType U;
   uint16_t LaderOperator[4],LaderOperatorSec[4];
-  OperatorType O,A,B,AB;
+  OperatorType O,A,B,AB,cO,OO;
   InitOperator(&O);
   PrintOperatorFullReadable(O);
   InitOperatorFixedLength(&O,2,8);
@@ -366,8 +366,24 @@ void TestOperatorArithmetic()
   PrintMatrix(U);
   MappedOperatorAdd(&B,A,U);
   PrintOperatorFullReadable(B);
+  printf("\n\n ***** Operator copy \n\n");
+  OperatorCopy(&cO,O);
+  PrintOperatorReadable(O);
+  PrintOperatorReadable(cO);
   
-  
+  InitOperator(&OO);
+  OO.NFermion=5;
+  OO.NBoson=2;
+  OO.NWord=3;
+  InitOperatorFixedLength(&OO, 2, 8);
+  InitOperatorFixedLength(&OO, 4, 8);
+  InitOperatorFixedLength(&OO, 6, 8);
+  InitOperatorFixedLength(&OO, 8, 8);
+  InitOperatorFixedLength(&OO,10, 8);
+  InitOperatorFixedLength(&OO,12, 8);
+  OperatorMultiply3NormalOrder(&OO, O, O, O, 'N', 'N', 'N',&QDetNotOrderedFcFaBcBa);
+  OperatorChop(&OO, DBL_EPSILON);
+  PrintOperatorReadable(OO);
 };
 
 void TestCreate()

@@ -999,3 +999,125 @@ void TestTriDiagonalMatrix()
   PrintTriDiagonalMatrix(B);
   PrintListOfPoles(E);
 }
+
+/*
+ *
+ */
+void TestGeneralizedEigensystem()
+{
+  uint32_t i,j;
+  MatrixType H,H1,H2,H12;
+  MatrixType HNO,H1NO,H2NO,H12NO;
+  MatrixType S2,B2,B2T,temp1,temp2,temp3;
+  MatrixType funH2,funH2NO,S2root;
+  double valH2[5],valH2NO[5];
+  H.QComplex=0;     H.Ni=7;     H.Nj=7;
+  H1.QComplex=0;    H1.Ni=2;    H1.Nj=2;
+  H2.QComplex=0;    H2.Ni=5;    H2.Nj=5;
+  H12.QComplex=0;   H12.Ni=2;   H12.Nj=5;
+  HNO.QComplex=0;   HNO.Ni=7;   HNO.Nj=7;
+  H1NO.QComplex=0;  H1NO.Ni=2;  H1NO.Nj=2;
+  H2NO.QComplex=0;  H2NO.Ni=5;  H2NO.Nj=5;
+  H12NO.QComplex=0; H12NO.Ni=2; H12NO.Nj=5;
+  S2.QComplex=0;    S2.Ni=5;    S2.Nj=5;
+  B2.QComplex=0;    B2.Ni=5;    B2.Nj=5;
+  InitMatrix(&H);      strcpy(H.Name,"H    ");
+  InitMatrix(&H1);     strcpy(H1.Name,"H1   ");
+  InitMatrix(&H2);     strcpy(H2.Name,"H2   ");
+  InitMatrix(&H12);    strcpy(H12.Name,"H12  ");
+  InitMatrix(&HNO);    strcpy(HNO.Name,"HNO  ");
+  InitMatrix(&H1NO);   strcpy(H1NO.Name,"H1NO ");
+//  InitMatrix(&H2NO);   strcpy(H2NO.Name,"H2NO ");
+  InitMatrix(&H12NO);  strcpy(H12NO.Name,"H12NO");
+//  InitMatrix(&S2);     strcpy(S2.Name,"Overlap S2");
+  InitMatrix(&B2);     strcpy(B2.Name,"Basis B2");
+  H1.VRe[0][0]=-2;
+  H1.VRe[1][1]=-1;
+  H1.VRe[0][1]=1;
+  H1.VRe[1][0]=1;
+  H2.VRe[0][0]=1;
+  for(i=1;i<5;i++)
+  {
+    H2.VRe[i-1][i]=1;
+    H2.VRe[i][i-1]=1;
+    H2.VRe[i][i]=i+1;
+  }
+  H12.VRe[0][0]= 1;
+  H12.VRe[0][3]=-1;
+  H12.VRe[1][1]= 1;
+  H12.VRe[1][3]=-1;
+  H12.VRe[1][4]= 1;
+  H1NO.VRe[0][0]=-2;
+  H1NO.VRe[1][1]=-1;
+  H1NO.VRe[0][1]=1;
+  H1NO.VRe[1][0]=1;
+  for(i=0;i<5;i++)
+  {
+    for(j=0;j<=i;j++)
+    {
+      B2.VRe[i][j]=1;
+    }
+  }
+  MatrixCopy(&B2T, B2);
+  MatrixTranspose(&B2T);
+  MatrixMultiply(&S2, B2, B2T);
+  strcpy(S2.Name,"Overlap S2");
+  MatrixMultiply(&temp1, H2, B2T);
+  MatrixMultiply(&H2NO, B2, temp1);
+  FreeMatrix(&temp1);
+  strcpy(H2NO.Name,"H2NO ");
+  
+  PrintMatrix(B2);
+  PrintMatrix(S2);
+  PrintMatrix(H2);
+  PrintMatrix(H2NO);
+  
+  Eigensystem(H2, &funH2, valH2);
+  GeneralizedEigensystem(H2NO, S2, &funH2NO, &S2root, valH2NO);
+  
+  PrintMatrix(funH2);
+  PrintMatrix(funH2NO);
+  PrintMatrix(S2root);
+  for(i=0;i<5;i++) printf("i=%i Energy=%lf, %lf\n",i,valH2[i],valH2NO[i]);
+  
+  MatrixCopy(&temp1,funH2);
+  MatrixTranspose(&temp1);
+  MatrixMultiply(&temp2, H2, temp1);
+  MatrixMultiply(&temp3,funH2,temp2);
+  MatrixChop(&temp3,10E-15);
+  strcpy(temp3.Name,"funH2 . H2 . funH2^T");
+  PrintMatrix(temp3);
+  FreeMatrix(&temp2);
+  FreeMatrix(&temp3);
+  MatrixMultiply(&temp2,funH2,temp1);
+  MatrixChop(&temp2,10E-15);
+  strcpy(temp2.Name,"funH2 . funH2^T");
+  PrintMatrix(temp2);
+  FreeMatrix(&temp1);
+  FreeMatrix(&temp2);
+  
+  MatrixCopy(&temp1,funH2NO);
+  MatrixTranspose(&temp1);
+  MatrixMultiply(&temp2, H2NO, temp1);
+  MatrixMultiply(&temp3,funH2NO,temp2);
+  MatrixChop(&temp3,10E-15);
+  strcpy(temp3.Name,"funH2NO . H2NO . funH2NO^T");
+  PrintMatrix(temp3);
+  FreeMatrix(&temp2);
+  FreeMatrix(&temp3);
+  MatrixMultiply(&temp2, S2, temp1);
+  MatrixMultiply(&temp3,funH2NO,temp2);
+  MatrixChop(&temp3,10E-15);
+  strcpy(temp3.Name,"funH2NO . S2 . funH2NO^T");
+  PrintMatrix(temp3);
+  FreeMatrix(&temp2);
+  FreeMatrix(&temp3);
+  MatrixMultiply(&temp2,funH2NO,temp1);
+  MatrixChop(&temp2,10E-15);
+  strcpy(temp2.Name,"funH2NO . funH2NO^T");
+  PrintMatrix(temp2);
+  FreeMatrix(&temp1);
+  FreeMatrix(&temp2);
+  
+  
+}

@@ -773,6 +773,7 @@ uint32_t StreamPrintDMFTSettings(DMFTSettings O, FILE *stream)
   fprintf(stream,"WaveFunctionRootFileName : %s\n",O.WaveFunctionRootFileName);  
   fprintf(stream,"iStart                   : %i\n",O.iStart);
   fprintf(stream,"Ni                       : %i\n",O.Ni);
+  fprintf(stream,"Dyson perturbation       : %i\n",O.Dyson);
   fprintf(stream,"Mix                      : %24.17E\n",O.Mix);
   fprintf(stream,"U                        : %24.17E\n",O.U);
   fprintf(stream,"NBath                    : %i\n",O.NBath);

@@ -9,6 +9,10 @@ int zheev();
 int zheevd();
 int dgesvd();
 int zgesvd();
+int dsygv();
+int zhegv();
+int dsygvd();
+int zhegvd();
 
 
 /**********************************************************/
@@ -291,6 +295,7 @@ uint32_t SparseMatrixToBlokDoubleTriDiagonalMatrix();
 uint32_t MatrixToSparseMatrix();
 uint32_t MatrixToTriDiagonalMatrix();          uint32_t TriDiagonalize();
 uint32_t MatrixToEigensystem();                uint32_t Eigensystem();
+uint32_t MatrixToGeneralizedEigensystem();     uint32_t GeneralizedEigensystem();
 uint32_t MatrixToAndersonMatrix();
 uint32_t MatrixToBlokTriDiagonalMatrix();      uint32_t BlokTriDiagonalize();
 uint32_t MatrixToBlokAndersonMatrix();

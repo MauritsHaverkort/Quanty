@@ -16,8 +16,6 @@
 #include <limits.h>
 #include <unistd.h>
 
-
-
 #ifdef _OPENMP
 #include <omp.h>
 #else
@@ -99,9 +97,11 @@ int main (int argc, const char * argv[])
     if (!strncmp("bmp",argv[argc],strlen(argv[argc]))) TestBMP();
     if (!strncmp("waveIO",argv[argc],strlen(argv[argc]))) TestWaveIO();
 
-    if (!strncmp("TriMatrix",argv[argc],strlen(argv[argc])))TestTriDiagonalMatrix();
+    if (!strncmp("TriMatrix",argv[argc],strlen(argv[argc]))) TestTriDiagonalMatrix();
     
-    if (!strncmp("LancDy",argv[argc],strlen(argv[argc])))TestLanczosDyson();
+    if (!strncmp("LancDy",argv[argc],strlen(argv[argc]))) TestLanczosDyson();
+    
+    if (!strncmp("GenEig",argv[argc],strlen(argv[argc]))) TestGeneralizedEigensystem();
   }
   return 0;
 }

@@ -1185,6 +1185,23 @@ void DoubleTriDiagonalMatrixToSpectrum(const double Energy, const DoubleTriDiago
   SpectrumFree(&GC);
 }
 
+void SecondDoubleTriDiagonalMatrixToSpectrum(const double Energy, const SecondDoubleTriDiagonalMatrixType M, SpectraType *const G)
+{
+  SpectraType GSec;
+  double hnu,denom;
+  uint32_t i;
+  SpectrumAllocate(*G,&GSec);
+  DoubleTriDiagonalMatrixToSpectrum(Energy,M.Dt,&GSec);
+  for(i=0;i<=G->N;i++)
+  {
+    hnu=((double)i*G->dE)+G->Emin+Energy;
+    denom=Sqr(GSec.Im[i])+Sqr(hnu-GSec.Re[i]);
+    G->Re[i]=M.a0+Sqr(M.b0)*(hnu-GSec.Re[i])/denom;
+    G->Im[i]=Sqr(M.b0)*GSec.Im[i]/denom;
+  }
+  SpectrumFree(&GSec);
+}
+
 void DoubleTriDiagonalMatrixToSpectrumOld(const double Energy, const TriDiagonalMatrixType V, const TriDiagonalMatrixType C, SpectraType *const G)
 {
   double hnu,valReC,valImC,valReV,valImV,denom;

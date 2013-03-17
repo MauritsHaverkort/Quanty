@@ -458,6 +458,7 @@ uint32_t StreamReadDMFTSettings(DMFTSettings * O, FILE *stream)
   fscanf(stream,"%s",(O->WaveFunctionRootFileName)); fgets(comments,1000,stream);
   fscanf(stream,"%i",&(O->iStart));                  fgets(comments,1000,stream);
   fscanf(stream,"%i",&(O->Ni));                      fgets(comments,1000,stream);
+  fscanf(stream,"%i",&(O->Dyson));                   fgets(comments,1000,stream);
   fscanf(stream,"%lf",&(O->Mix));                    fgets(comments,1000,stream);
   fscanf(stream,"%lf",&(O->U));                      fgets(comments,1000,stream);
   fscanf(stream,"%i",&(O->NBath));                   fgets(comments,1000,stream);

@@ -4,6 +4,11 @@
 <dict>
 	<key>SchemeUserState</key>
 	<dict>
+		<key>DMFT.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>2</integer>
+		</dict>
 		<key>Model.xcscheme</key>
 		<dict>
 			<key>orderHint</key>
@@ -23,6 +28,11 @@
 			<true/>
 		</dict>
 		<key>4C2AAABB163265F500138620</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>4C5CA61616D18BBF00BE1C25</key>
 		<dict>
 			<key>primary</key>
 			<true/>

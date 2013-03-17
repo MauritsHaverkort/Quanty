@@ -41,7 +41,6 @@
 		4C2AAA93163265DD00138620 /* StructDef.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA48163265DD00138620 /* StructDef.c */; };
 		4C2AAA94163265DD00138620 /* TimeStamp.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA49163265DD00138620 /* TimeStamp.c */; };
 		4C2AAA95163265DD00138620 /* WaveFunctionArithmetic.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA4A163265DD00138620 /* WaveFunctionArithmetic.c */; };
-		4C2AAA96163265DD00138620 /* DMFT.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA4C163265DD00138620 /* DMFT.c */; };
 		4C2AAA97163265DD00138620 /* SingleSiteFunctions.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA4D163265DD00138620 /* SingleSiteFunctions.c */; };
 		4C2AAA98163265DD00138620 /* SingleSiteXAS.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA4E163265DD00138620 /* SingleSiteXAS.c */; };
 		4C2AAA99163265DD00138620 /* CellFunctions.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA51163265DD00138620 /* CellFunctions.c */; };
@@ -63,7 +62,6 @@
 		4C2AAAA9163265DD00138620 /* Old_Functions.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA64163265DD00138620 /* Old_Functions.c */; };
 		4C2AAAAA163265DD00138620 /* PointerAritmethic.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA65163265DD00138620 /* PointerAritmethic.c */; };
 		4C2AAAAC163265DD00138620 /* TestBasicMath.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA67163265DD00138620 /* TestBasicMath.c */; };
-		4C2AAAAD163265DD00138620 /* TestBasisMath.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA68163265DD00138620 /* TestBasisMath.c */; };
 		4C2AAAAE163265DD00138620 /* TestCore.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA69163265DD00138620 /* TestCore.c */; };
 		4C2AAAAF163265DD00138620 /* TestFinitsizeClusterModels.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA6A163265DD00138620 /* TestFinitsizeClusterModels.c */; };
 		4C2AAAB0163265DD00138620 /* TestIO.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA6B163265DD00138620 /* TestIO.c */; };
@@ -77,6 +75,9 @@
 		4C2AAACC1632662000138620 /* Test.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA66163265DD00138620 /* Test.c */; };
 		4C2AAACE163266DD00138620 /* libblas.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACD163266DD00138620 /* libblas.dylib */; };
 		4C2AAAD0163266F900138620 /* liblapack.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACF163266F900138620 /* liblapack.dylib */; };
+		4C5CA62016D18C3400BE1C25 /* DMFT.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA4C163265DD00138620 /* DMFT.c */; };
+		4C5CA62316D18CB100BE1C25 /* liblapack.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACF163266F900138620 /* liblapack.dylib */; };
+		4C5CA62416D18CD000BE1C25 /* libblas.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACD163266DD00138620 /* libblas.dylib */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -91,6 +92,15 @@
 			runOnlyForDeploymentPostprocessing = 1;
 		};
 		4C2AAABA163265F500138620 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		4C5CA61516D18BBF00BE1C25 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = /usr/share/man/man1/;
@@ -164,7 +174,6 @@
 		4C2AAA65163265DD00138620 /* PointerAritmethic.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = PointerAritmethic.c; sourceTree = "<group>"; };
 		4C2AAA66163265DD00138620 /* Test.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = Test.c; sourceTree = "<group>"; };
 		4C2AAA67163265DD00138620 /* TestBasicMath.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = TestBasicMath.c; sourceTree = "<group>"; };
-		4C2AAA68163265DD00138620 /* TestBasisMath.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = TestBasisMath.c; sourceTree = "<group>"; };
 		4C2AAA69163265DD00138620 /* TestCore.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = TestCore.c; sourceTree = "<group>"; };
 		4C2AAA6A163265DD00138620 /* TestFinitsizeClusterModels.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = TestFinitsizeClusterModels.c; sourceTree = "<group>"; };
 		4C2AAA6B163265DD00138620 /* TestIO.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = TestIO.c; sourceTree = "<group>"; };
@@ -178,6 +187,7 @@
 		4C2AAABC163265F500138620 /* Test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Test; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C2AAACD163266DD00138620 /* libblas.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libblas.dylib; path = usr/lib/libblas.dylib; sourceTree = SDKROOT; };
 		4C2AAACF163266F900138620 /* liblapack.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = liblapack.dylib; path = usr/lib/liblapack.dylib; sourceTree = SDKROOT; };
+		4C5CA61716D18BBF00BE1C25 /* DMFT */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = DMFT; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -194,6 +204,15 @@
 			files = (
 				4C2AAACE163266DD00138620 /* libblas.dylib in Frameworks */,
 				4C2AAAD0163266F900138620 /* liblapack.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4C5CA61416D18BBF00BE1C25 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4C5CA62416D18CD000BE1C25 /* libblas.dylib in Frameworks */,
+				4C5CA62316D18CB100BE1C25 /* liblapack.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -227,6 +246,7 @@
 			children = (
 				4C2AAA191632655300138620 /* Model */,
 				4C2AAABC163265F500138620 /* Test */,
+				4C5CA61716D18BBF00BE1C25 /* DMFT */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -344,7 +364,6 @@
 				4C2AAA65163265DD00138620 /* PointerAritmethic.c */,
 				4C2AAA66163265DD00138620 /* Test.c */,
 				4C2AAA67163265DD00138620 /* TestBasicMath.c */,
-				4C2AAA68163265DD00138620 /* TestBasisMath.c */,
 				4C2AAA69163265DD00138620 /* TestCore.c */,
 				4C2AAA6A163265DD00138620 /* TestFinitsizeClusterModels.c */,
 				4C2AAA6B163265DD00138620 /* TestIO.c */,
@@ -410,6 +429,23 @@
 			productReference = 4C2AAABC163265F500138620 /* Test */;
 			productType = "com.apple.product-type.tool";
 		};
+		4C5CA61616D18BBF00BE1C25 /* DMFT */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4C5CA61F16D18BBF00BE1C25 /* Build configuration list for PBXNativeTarget "DMFT" */;
+			buildPhases = (
+				4C5CA61316D18BBF00BE1C25 /* Sources */,
+				4C5CA61416D18BBF00BE1C25 /* Frameworks */,
+				4C5CA61516D18BBF00BE1C25 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = DMFT;
+			productName = DMFT;
+			productReference = 4C5CA61716D18BBF00BE1C25 /* DMFT */;
+			productType = "com.apple.product-type.tool";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -433,6 +469,7 @@
 			targets = (
 				4C2AAA181632655300138620 /* Model */,
 				4C2AAABB163265F500138620 /* Test */,
+				4C5CA61616D18BBF00BE1C25 /* DMFT */,
 			);
 		};
 /* End PBXProject section */
@@ -475,7 +512,6 @@
 				4C2AAA93163265DD00138620 /* StructDef.c in Sources */,
 				4C2AAA94163265DD00138620 /* TimeStamp.c in Sources */,
 				4C2AAA95163265DD00138620 /* WaveFunctionArithmetic.c in Sources */,
-				4C2AAA96163265DD00138620 /* DMFT.c in Sources */,
 				4C2AAA97163265DD00138620 /* SingleSiteFunctions.c in Sources */,
 				4C2AAA98163265DD00138620 /* SingleSiteXAS.c in Sources */,
 				4C2AAA99163265DD00138620 /* CellFunctions.c in Sources */,
@@ -497,7 +533,6 @@
 				4C2AAAA9163265DD00138620 /* Old_Functions.c in Sources */,
 				4C2AAAAA163265DD00138620 /* PointerAritmethic.c in Sources */,
 				4C2AAAAC163265DD00138620 /* TestBasicMath.c in Sources */,
-				4C2AAAAD163265DD00138620 /* TestBasisMath.c in Sources */,
 				4C2AAAAE163265DD00138620 /* TestCore.c in Sources */,
 				4C2AAAAF163265DD00138620 /* TestFinitsizeClusterModels.c in Sources */,
 				4C2AAAB0163265DD00138620 /* TestIO.c in Sources */,
@@ -516,6 +551,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				4C2AAACC1632662000138620 /* Test.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4C5CA61316D18BBF00BE1C25 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4C5CA62016D18C3400BE1C25 /* DMFT.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -605,6 +648,28 @@
 			};
 			name = Release;
 		};
+		4C5CA61D16D18BBF00BE1C25 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				GCC_WARN_TYPECHECK_CALLS_TO_PRINTF = NO;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		4C5CA61E16D18BBF00BE1C25 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				GCC_WARN_TYPECHECK_CALLS_TO_PRINTF = NO;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -631,6 +696,15 @@
 			buildConfigurations = (
 				4C2AAAC4163265F500138620 /* Debug */,
 				4C2AAAC5163265F500138620 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4C5CA61F16D18BBF00BE1C25 /* Build configuration list for PBXNativeTarget "DMFT" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4C5CA61D16D18BBF00BE1C25 /* Debug */,
+				4C5CA61E16D18BBF00BE1C25 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

@@ -12,8 +12,8 @@ void TestLanczosDyson()
   
   uint32_t i;
   uint16_t oadd[6];
-  uint32_t NCell=5,NCelltot=200,NTriDiag=10;
-  OperatorType O,TPES,h12;
+  uint32_t NCell=5,NCelltot=200,NTriDiag=5;
+  OperatorType O,TPES,h12,h12Dag;
   double epsilon,zero,ZeroEneryShift=-30;
   double *OMatrixExtendedEigenVal;
   WaveFunctionType psi,Opsi,*PsiKrylov,*PsiKrylovExtended;
@@ -21,7 +21,7 @@ void TestLanczosDyson()
   double PsiEnergy,PsiQuality,PsiHist[20],*PsiRho;
   MatrixType Rho,h12matrix,h12matrixEigenOExtended,OMatrixExdended,OMatrixExtendedEigenFun;
   MatrixType test1,test2,test3,OExtendedEigenVal, V[1];
-  TriDiagonalMatrixType G,Gp[1],GKrylov,GwithBath;
+  TriDiagonalMatrixType G,Gp[1],GKrylov,GwithBath,GwithBathSec,GwithBathSecLowMem;
   SpectraType Spectra[6];
   
   psi.QComplex=0;
@@ -85,8 +85,8 @@ void TestLanczosDyson()
   OperatorAddLader(&O, oadd, 0, ZeroEneryShift, 0);
   SetQComplexOperator(&O);
   
-  epsilon=0.000000001;
-  zero=   0.000000001;
+  epsilon=1E-15;
+  zero=   1E-15;
   LanczosGroundState(O, &psi, &epsilon, zero, 0.0, &psi, 0);
   LanczosGroundState(O, &psi, &epsilon, zero, 0.0, &psi, 0);
     
@@ -186,7 +186,7 @@ void TestLanczosDyson()
   Eigensystem(OMatrixExdended, &OMatrixExtendedEigenFun, OMatrixExtendedEigenVal);
   
   printf("Eigenfun and eigenval OExtended\n");
-  for(i=0;i<6;i++)
+  for(i=0;i<NTriDiag;i++)
   {
     printf("%lf ",OMatrixExtendedEigenVal[i]);
   }
@@ -241,6 +241,15 @@ void TestLanczosDyson()
   TridiagonalizeImpurityCoupledToBathDyson(GKrylov, V, OExtendedEigenVal, Gp, 1, &GwithBath);
   
   
+  OperatorPsi(TPES,psi,&Opsi);
+  GwithBathSec.N=200;
+  LanczosTriDiagonalizeDyson(O, Opsi, epsilon, NTriDiag, &h12, Gp, 1, &GwithBathSec);
+  
+  OperatorTranspose(h12, &h12Dag);
+  OperatorPsi(TPES,psi,&Opsi);
+  GwithBathSecLowMem.N=200;
+  LanczosTriDiagonalizeDysonLowMem(O, Opsi, epsilon, NTriDiag, &h12, Gp, 1, &GwithBathSecLowMem);
+  
   
   printf("Start creation of Spectra\n");
   
@@ -248,8 +257,10 @@ void TestLanczosDyson()
   TriDiagonalMatrixToSpectrum(PsiEnergy, G, &Spectra[1]);
   TriDiagonalMatrixToSpectrum(PsiEnergy, GKrylov, &Spectra[2]);
   TriDiagonalMatrixToSpectrum(PsiEnergy, GwithBath, &Spectra[3]);
+  TriDiagonalMatrixToSpectrum(PsiEnergy, GwithBathSec, &Spectra[4]);
+  TriDiagonalMatrixToSpectrum(PsiEnergy, GwithBathSecLowMem, &Spectra[5]);
   
-  FilePrintSpectra(Spectra, 4, "/Users/haverkort/ProgramOutput/LancDyson", "w");
+  FilePrintSpectra(Spectra, 6, "/Users/haverkort/ProgramOutput/LancDyson", "w");
   
   printf("End of Test Lanczos Dyson\n");
 }

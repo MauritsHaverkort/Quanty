@@ -2401,54 +2401,108 @@ uint32_t ArnoldiTriDiagonalizeKrylov(const OperatorType H, WaveFunctionType psi,
  */
 uint32_t ExtendKrylovBasis(const OperatorType h12, WaveFunctionType *const PsiBasis, WaveFunctionType *const PsiBasisExtended, uint32_t NPsi, double epsilon)
 {
-  uint32_t i,j;
+  uint32_t i,j,stop;
   double norm;
   for(i=0;i<NPsi;i++)
   {
     while(OperatorPsi(h12, PsiBasis[i], &(PsiBasisExtended[i])))
     {
       printf("OperatorPsi failed in ExtendKrylovBasis\n");
-      printf("Reduce accuracy from %lf to %lf",epsilon,epsilon*2);
+      printf("Reduce accuracy from %g to %g",epsilon,epsilon*2);
       fflush(stdout);
       epsilon*=2;
+      stop=1;
       for(j=0;j<NPsi;j++)
       {
-        WaveFunctionTruncateBasis(&(PsiBasis[j]), epsilon);
+        if(PsiBasis[j].NBlok!=1)
+        {
+          WaveFunctionTruncateBasis(&(PsiBasis[j]), epsilon);
+          stop=0;
+        }
       }
       for(j=0;j<i;j++)
       {
-        WaveFunctionTruncateBasis(&(PsiBasisExtended[j]), epsilon);
+        if(PsiBasisExtended[j].NBlok!=1)
+        {
+          WaveFunctionTruncateBasis(&(PsiBasisExtended[j]), epsilon);
+          stop=0;
+        }
+      }
+      if(stop)
+      {
+        printf("OperatorPsi failed in ExtendKrylovBasis\n");
+        printf("Reducing accuracy does not help as all functions have NBlok=1\n");
+        printf("Stop at i=%i in ExtendKrylovBasis\n",i);
+        AllocFailed();
       }
     }
+    
+    
+    WaveFunctionCalculateNorm(PsiBasisExtended[i], &norm);
+    printf("In ExtendKrylov Norm%i=%lf\n",i,norm);
+    
     while(WaveFunctionOrthogonalize(&(PsiBasisExtended[i]), PsiBasisExtended, i))
     {
       printf("WaveFunctionOrthogonalize failed in ExtendKrylovBasis\n");
-      printf("Reduce accuracy from %lf to %lf",epsilon,epsilon*2);
+      printf("Reduce accuracy from %g to %g",epsilon,epsilon*2);
       fflush(stdout);
       epsilon*=2;
+      stop=1;
       for(j=0;j<NPsi;j++)
       {
-        WaveFunctionTruncateBasis(&(PsiBasis[j]), epsilon);
+        if(PsiBasis[j].NBlok!=1)
+        {
+          WaveFunctionTruncateBasis(&(PsiBasis[j]), epsilon);
+          stop=0;
+        }
       }
       for(j=0;j<i;j++)
       {
-        WaveFunctionTruncateBasis(&(PsiBasisExtended[j]), epsilon);
+        if(PsiBasisExtended[j].NBlok!=1)
+        {
+          WaveFunctionTruncateBasis(&(PsiBasisExtended[j]), epsilon);
+          stop=0;
+        }
+      }
+      if(stop)
+      {
+        printf("OperatorPsi failed in ExtendKrylovBasis\n");
+        printf("Reducing accuracy does not help as all functions have NBlok=1\n");
+        printf("Stop at i=%i in ExtendKrylovBasis\n",i);
+        AllocFailed();
       }
     }
+    
     WaveFunctionNormalize(&(PsiBasisExtended[i]));
     while(WaveFunctionOrthogonalize(&(PsiBasisExtended[i]), PsiBasisExtended, i))
     {
       printf("WaveFunctionOrthogonalize failed in ExtendKrylovBasis\n");
-      printf("Reduce accuracy from %lf to %lf",epsilon,epsilon*2);
+      printf("Reduce accuracy from %g to %g",epsilon,epsilon*2);
       fflush(stdout);
       epsilon*=2;
+      stop=1;
       for(j=0;j<NPsi;j++)
       {
-        WaveFunctionTruncateBasis(&(PsiBasis[j]), epsilon);
+        if(PsiBasis[j].NBlok!=1)
+        {
+          WaveFunctionTruncateBasis(&(PsiBasis[j]), epsilon);
+          stop=0;
+        }
       }
       for(j=0;j<i;j++)
       {
-        WaveFunctionTruncateBasis(&(PsiBasisExtended[j]), epsilon);
+        if(PsiBasisExtended[j].NBlok!=1)
+        {
+          WaveFunctionTruncateBasis(&(PsiBasisExtended[j]), epsilon);
+          stop=0;
+        }
+      }
+      if(stop)
+      {
+        printf("OperatorPsi failed in ExtendKrylovBasis\n");
+        printf("Reducing accuracy does not help as all functions have NBlok=1\n");
+        printf("Stop at i=%i in ExtendKrylovBasis\n",i);
+        AllocFailed();
       }
     }
     WaveFunctionCalculateNorm(PsiBasisExtended[i], &norm);
@@ -2458,16 +2512,32 @@ uint32_t ExtendKrylovBasis(const OperatorType h12, WaveFunctionType *const PsiBa
       while(WaveFunctionOrthogonalize(&(PsiBasisExtended[i]), PsiBasisExtended, i))
       {
         printf("WaveFunctionOrthogonalize failed in ExtendKrylovBasis\n");
-        printf("Reduce accuracy from %lf to %lf",epsilon,epsilon*2);
+        printf("Reduce accuracy from %g to %g",epsilon,epsilon*2);
         fflush(stdout);
         epsilon*=2;
+        stop=1;
         for(j=0;j<NPsi;j++)
         {
-          WaveFunctionTruncateBasis(&(PsiBasis[j]), epsilon);
+          if(PsiBasis[j].NBlok!=1)
+          {
+            WaveFunctionTruncateBasis(&(PsiBasis[j]), epsilon);
+            stop=0;
+          }
         }
         for(j=0;j<i;j++)
         {
-          WaveFunctionTruncateBasis(&(PsiBasisExtended[j]), epsilon);
+          if(PsiBasisExtended[j].NBlok!=1)
+          {
+            WaveFunctionTruncateBasis(&(PsiBasisExtended[j]), epsilon);
+            stop=0;
+          }
+        }
+        if(stop)
+        {
+          printf("OperatorPsi failed in ExtendKrylovBasis\n");
+          printf("Reducing accuracy does not help as all functions have NBlok=1\n");
+          printf("Stop at i=%i in ExtendKrylovBasis\n",i);
+          AllocFailed();
         }
       }
       WaveFunctionCalculateNorm(PsiBasisExtended[i], &norm);
@@ -2485,4 +2555,214 @@ uint32_t ExtendKrylovBasis(const OperatorType h12, WaveFunctionType *const PsiBa
   return 0;
 }
 
+/* Given wavefunction psi and operator O a tridiagonal matrix and its Krylov basis is created of length NKrylov
+ * For each operator V[i], with i from 0 to NV-1 the following steps are taken
+ *   The extended basis is defined as V[i] PsiKrilov[k], but will never be calculated.
+ *   Stemp contains the overlap of the basis functions, representing the non-orthogonality of the basis
+ *   Htemp contains the Hamiltonian on this non-orthogonal basis
+ *   Calculate the matrix Stemp with elements stemp[j,k] = <PsiKrylov[j] | V[i]^dag   V[i] PsiKrilov[k]>
+ *   Calculate the matrix Htemp with elements htemp[j,k] = <PsiKrylov[j] | V[i]^dag O V[i] PsiKrilov[k]>
+ *   Diagonalize Htemp with respect to the overlap matrix Stemp and store eigenvalues in Hval[i], Eigenvectors in HtempEigenVec
+ *   Create Vmat[i] as Vmat[i] = Stemp . ConjuagetTranspose[HtempEigenVec]
+ *
+ *  Once Hval and VMat are know one can call TridiagonalizeImpurityCoupledToBathDyson
+ *
+ *  Gout->N contains the length of the newly created tri-diagonal matrix and has to be set on input
+ *  Gout will be initiallized within the routine
+ */
+uint32_t LanczosTriDiagonalizeDysonLowMem(OperatorType const O, WaveFunctionType psi, double epsilon, uint32_t const NKrylov, OperatorType const *V, TriDiagonalMatrixType const *g, uint32_t const NV, TriDiagonalMatrixType *Gout)
+{
+  uint32_t i,j;
+  TriDiagonalMatrixType OKrylov;
+  MatrixType Stemp,Htemp,HtempEigenFun,StempRoot;
+  MatrixType Hval, *VMat;
+  WaveFunctionType *PsiKrylov;
+  OperatorType Otemp;
+  /* Initiallize matrices */
+  Htemp.Ni=NKrylov;
+  Htemp.Nj=NKrylov;
+  Htemp.QComplex=(O.QComplex||psi.QComplex);
+  for(i=0;i<NV;i++)
+  {
+    Htemp.QComplex=(Htemp.QComplex||V[i].QComplex);
+  }
+  if(InitMatrix(&Htemp))                                                           {printf("InitMatrix failed in LanczosTriDiagonalizeDyson\n");fflush(stdout);return 1;};
+  Stemp.Ni=NKrylov;
+  Stemp.Nj=NKrylov;
+  Stemp.QComplex=Htemp.QComplex;
+  if(InitMatrix(&Stemp))                                                           {printf("InitMatrix failed in LanczosTriDiagonalizeDyson\n");fflush(stdout);return 1;};
+  Hval.Ni=NV;
+  Hval.Nj=NKrylov;
+  Hval.QComplex=0;
+  if(InitMatrix(&Hval))                                                            {printf("InitMatrix failed in LanczosTriDiagonalizeDyson\n");fflush(stdout);return 1;};
+  if((VMat=calloc(NV,sizeof(MatrixType)))==NULL)                                   {printf("calloc failed in LanczosTriDiagonalizeDyson\n");fflush(stdout);return 1;};
+  /* Create Krylov basis of O */
+  OKrylov.N=NKrylov;
+  InitTriDiagonalMatrix(&OKrylov);
+  if((PsiKrylov=calloc(NKrylov,sizeof(WaveFunctionType)))==NULL)                   {printf("calloc failed in LanczosTriDiagonalizeDyson\n");fflush(stdout);return 1;};
+  LanczosTriDiagonalizeKrylov(O,psi, epsilon, &OKrylov, PsiKrylov);
+  /* loop over all V[i] */
+  for(i=0;i<NV;i++)
+  {
+    /* create extended non orthonormal matrices on original basis */
+    /* initiallize Otemp for V^{\dag} V */
+    InitOperator(&Otemp);
+    Otemp.QComplex=0;
+    Otemp.NFermion=V[i].NFermion;
+    Otemp.NBoson=V[i].NBoson;
+    Otemp.NWord=V[i].NWord;
+    for(j=1;j<=2*V[i].MaxLength;j++)
+    {
+      InitOperatorFixedLength(&Otemp, j, 8);
+    }
+    /* create Stemp */
+    OperatorMultiply2NormalOrder(&Otemp, V[i], V[i], 'N', 'D',&QDetNotOrderedFcFaBcBa);
+    PsiOperatorPsiMatrix(Otemp, PsiKrylov, &Stemp);
+    FreeOperator(&Otemp);
+    /* initiallize Otemp for V^{\dag} O V */
+    InitOperator(&Otemp);
+    Otemp.QComplex=0;
+    Otemp.NFermion=V[i].NFermion;
+    Otemp.NBoson=V[i].NBoson;
+    Otemp.NWord=V[i].NWord;
+    for(j=1;j<=2*V[i].MaxLength+O.MaxLength;j++)
+    {
+      InitOperatorFixedLength(&Otemp, j, 8);
+    }
+    /* create Htemp */
+    OperatorMultiply3NormalOrder(&Otemp, V[i], O, V[i], 'N', 'N', 'D',&QDetNotOrderedFcFaBcBa);
+    PsiOperatorPsiMatrix(Otemp, PsiKrylov, &Htemp);
+    FreeOperator(&Otemp);
+    GeneralizedEigensystem(Htemp, Stemp, &HtempEigenFun, &StempRoot, Hval.VRe[i]);
+    /* create V on orthonormal eigenbasis of Htemp */
+    MatrixMultiply(&(VMat[i]), HtempEigenFun, Stemp);
+    /* Free HtempEigenFun */
+    FreeMatrix(&HtempEigenFun);
+  }
+  /* Free PsiKrylov */
+  for(j=0;j<NKrylov;j++)
+  {
+    WaveFunctionFree(&(PsiKrylov[j]));
+  }
+  free(PsiKrylov);
+  FreeMatrix(&Htemp);
+  FreeMatrix(&Stemp);
+  /* create Gout */
+  if(TridiagonalizeImpurityCoupledToBathDyson(OKrylov, VMat, Hval, g, NV, Gout))
+  {
+    printf("TridiagonalizeImpurityCoupledToBathDyson failed in LanczosTriDiagonalizeDyson\n");
+    FreeTriDiagonalMatrix(&OKrylov);
+    FreeMatrix(&Hval);
+    for(i=0;i<NV;i++)
+    {
+      FreeMatrix(&(VMat[i]));
+    }
+    free(VMat);
+    return 1;
+  }
+  /* Free things allocated */
+  FreeTriDiagonalMatrix(&OKrylov);
+  FreeMatrix(&Hval);
+  for(i=0;i<NV;i++)
+  {
+    FreeMatrix(&(VMat[i]));
+  }
+  free(VMat);
+  return 0;
+}
 
+
+/*  Given wavefunction psi and operator O a tridiagonal matrix and its Krylov basis is created of length NKrylov
+ *  For each operator V[i], with i from 0 to NV-1 the following steps are taken
+ *    Create an extended Krylov basis as V[i] PsiKrylov[j]
+ *    On this basis calculate the operator O store in matrix Htemp
+ *    Between the original and the extended Krylov basis calculate the operator V store in matrix Vtemp
+ *    Diagonalize Htemp store eigenvalues in Hval[i]
+ *    Transform Vtemp to eigenbasis of Htemp and store new matrix in VMat[i]
+ *    Remove Vtemp and Htemp from memory
+ *
+ *  Once Hval and VMat are known one can call TridiagonalizeImpurityCoupledToBathDyson
+ *
+ *  Gout->N contains the length of the newly created tri-diagonal matrix and has to be set on input
+ *  Gout will be initiallized within the routine
+ */
+uint32_t LanczosTriDiagonalizeDyson(OperatorType const O, WaveFunctionType psi, double epsilon, uint32_t const NKrylov, OperatorType const *V, TriDiagonalMatrixType const *g, uint32_t const NV, TriDiagonalMatrixType *Gout)
+{
+  uint32_t i,j;
+  TriDiagonalMatrixType OKrylov;
+  WaveFunctionType *PsiKrylov,*VPsiKrylov;
+  MatrixType Htemp,Vtemp,Hval,HtempEigenFun,*VMat;
+  /* Create Krylov basis of O */
+  OKrylov.N=NKrylov;
+  InitTriDiagonalMatrix(&OKrylov);
+  if((PsiKrylov=calloc(NKrylov,sizeof(WaveFunctionType)))==NULL)                   {printf("calloc failed in LanczosTriDiagonalizeDyson\n");fflush(stdout);return 1;};
+  LanczosTriDiagonalizeKrylov(O,psi, epsilon, &OKrylov, PsiKrylov);
+  /* Create extended matrices initiallize */
+  if((VPsiKrylov=calloc(NKrylov,sizeof(WaveFunctionType)))==NULL)                  {printf("calloc failed in LanczosTriDiagonalizeDyson\n");fflush(stdout);return 1;};
+  Htemp.Ni=NKrylov;
+  Htemp.Nj=NKrylov;
+  Htemp.QComplex=(O.QComplex||psi.QComplex);
+  for(i=0;i<NV;i++)
+  {
+    Htemp.QComplex=(Htemp.QComplex||V[i].QComplex);
+  }
+  if(InitMatrix(&Htemp))                                                           {printf("InitMatrix failed in LanczosTriDiagonalizeDyson\n");fflush(stdout);return 1;};
+  Vtemp.Ni=NKrylov;
+  Vtemp.Nj=NKrylov;
+  Vtemp.QComplex=Htemp.QComplex;
+  if(InitMatrix(&Vtemp))                                                           {printf("InitMatrix failed in LanczosTriDiagonalizeDyson\n");fflush(stdout);return 1;};
+  Hval.Ni=NV;
+  Hval.Nj=NKrylov;
+  Hval.QComplex=0;
+  if(InitMatrix(&Hval))                                                            {printf("InitMatrix failed in LanczosTriDiagonalizeDyson\n");fflush(stdout);return 1;};
+  if((VMat=calloc(NV,sizeof(MatrixType)))==NULL)                                   {printf("calloc failed in LanczosTriDiagonalizeDyson\n");fflush(stdout);return 1;};
+  /* Create extended matrices loop over all operators */
+  for(i=0;i<NV;i++)
+  {
+    /* Create extended matrices on original basis */
+    ExtendKrylovBasis(V[i], PsiKrylov, VPsiKrylov, NKrylov, epsilon);
+    PsiPrimeOperatorPsiMatrix(V[i], VPsiKrylov, PsiKrylov, &Vtemp);
+    PsiOperatorPsiMatrix(O, VPsiKrylov, &Htemp);
+    /* Free VPsiKrylov */
+    for(j=0;j<NKrylov;j++)
+    {
+      WaveFunctionFree(&(VPsiKrylov[j]));
+    }
+    /* Basis transform to eigenbasis of Htemp */
+    Eigensystem(Htemp, &HtempEigenFun, Hval.VRe[i]);
+    MatrixMultiply(&(VMat[i]), HtempEigenFun, Vtemp);
+    /* Free HtempEigenFun */
+    FreeMatrix(&HtempEigenFun);
+  }
+  /* Free PsiKrylov */
+  for(j=0;j<NKrylov;j++)
+  {
+    WaveFunctionFree(&(PsiKrylov[j]));
+  }
+  free(PsiKrylov);
+  free(VPsiKrylov);
+  FreeMatrix(&Htemp);
+  FreeMatrix(&Vtemp);
+  /* create Gout */
+  if(TridiagonalizeImpurityCoupledToBathDyson(OKrylov, VMat, Hval, g, NV, Gout))
+  {
+    printf("TridiagonalizeImpurityCoupledToBathDyson failed in LanczosTriDiagonalizeDyson\n");
+    FreeTriDiagonalMatrix(&OKrylov);
+    FreeMatrix(&Hval);
+    for(i=0;i<NV;i++)
+    {
+      FreeMatrix(&(VMat[i]));
+    }
+    free(VMat);
+    return 1;
+  }
+  /* Free things allocated */
+  FreeTriDiagonalMatrix(&OKrylov);
+  FreeMatrix(&Hval);
+  for(i=0;i<NV;i++)
+  {
+    FreeMatrix(&(VMat[i]));
+  }
+  free(VMat);
+  return 0;
+}

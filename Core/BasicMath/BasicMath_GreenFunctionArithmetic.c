@@ -173,9 +173,52 @@ uint32_t SelfEnergyTriDiagonalRepresentation(TriDiagonalMatrixType const G0, Tri
 }
 
 /*   GLocal(w) = G0( w - Sigma(w) )
+ *             = 1/( w - H0 - Sigma(w) )
+ *
+ *   GLocal(w)^{-1} = w - H0 - Sigma(w)
+ *                  = - ( -G0^{-1} + Sigma(w) )
  *
  */
 uint32_t GLocalTriDiagonalRepresentation(TriDiagonalMatrixType const G0, TriDiagonalMatrixType const Sigma, TriDiagonalMatrixType *const G, uint32_t NTriDiag)
+{
+  TriDiagonalMatrixType G0Inv;
+  uint32_t i;
+  
+  G0Inv.N=G0.N-1;
+  G0Inv.a=&(G0.a[1]);
+  G0Inv.b=&(G0.b[1]);
+  if(SumGreensfunctionsTriDiagonalRepresentation(G0Inv, Sigma, G)){printf("SumGreensfunctionsTriDiagonalRepresentation failed in GLocalTriDiagonalRepresentation\n");return 1;};
+  G->a[G->N]=G->a[G->N-1];
+  for(i=G->N-1;i>0;i--)
+  {
+    G->a[i]=G->a[i-1];
+    G->b[i]=G->b[i-1];
+  }
+  G->a[0]=G0.a[0];
+  G->b[0]=G0.b[0];
+  
+  if(NTriDiag>(G->N))
+  {
+    printf("Warning GLocalTriDiagonalRepresentation called with NTriDiag=%i, but G0.N=%i and Sigma.N=%i\n",NTriDiag,G0.N,Sigma.N);
+    printf("Returned Glocal with Glocal.N=%i\n",(G->N));
+  }
+  else
+  {
+    G->N=NTriDiag;
+  }
+  return 0;
+}
+
+
+/*   GLocal(w) = G0( w - Sigma(w) )
+ *
+ *             = 1/( w - H0 - Sigma(w) )
+ *
+ *   Sigma(w) = sa0 + (sb0^2)/(w - sa1 - sb1^2 (w-sa2 ...
+ *   G0(w)    = 0   +    1   /(w - ga1 - gb1^2 (w-ga2 ...
+ *
+ */
+uint32_t GLocalTriDiagonalRepresentationOld(TriDiagonalMatrixType const G0, TriDiagonalMatrixType const Sigma, TriDiagonalMatrixType *const G, uint32_t NTriDiag)
 {
   uint32_t i,j;
   MatrixType T;
@@ -413,7 +456,6 @@ uint32_t TridiagonalizeImpurityCoupledToBathDyson(TriDiagonalMatrixType const O,
     }
   }
   SparseMatrixToTriDiagonalMatrix(Htot, &T, gnew, gnew->N);
-  PrintSparseMatrix(Htot);
   FreeMatrix(&T);
   FreeSparseMatrix(&Htot);
   return 0;

@@ -159,7 +159,7 @@ uint32_t AndersonMatrixToDoubleTriDiagonalMatrixNonOrthogonal(AndersonMatrixType
 *
 *  diagonal energies in the AndersonMatrix larger  then Ef+epsilon belong to the conduction part of the double tri diagonal matrix
 *  diagonal energies in the AndersonMatrix smaller then Ef-epsilon belong to the valence    part of the double tri diagonal matrix
-*  diagonal energies in the AndersonMatrix in the interval Ef-epsilon to Ef+epsilon contribute half to the valence, half to the conductin part
+*  diagonal energies in the AndersonMatrix in the interval Ef-epsilon to Ef+epsilon contribute partly to the valence, partly to the conductin part, weighted according to distance with Ef
 */
 uint32_t AndersonMatrixToDoubleTriDiagonalMatrix(AndersonMatrixType const M, MatrixType *const T, DoubleTriDiagonalMatrixType *const H, double const Ef, double const epsilon)
 {
@@ -211,11 +211,11 @@ uint32_t AndersonMatrixToDoubleTriDiagonalMatrix(AndersonMatrixType const M, Mat
       {
         MV.N++;
         MV.a[MV.N]=M.a[i];
-        MV.b[MV.N-1]=M.b[i-1]/sqrt(2.0);
+        MV.b[MV.N-1]=M.b[i-1]*sqrt(0.5-(M.a[i]-Ef)/(DBL_MIN+2*epsilon));
         mapV[MV.N-1]=i-1;
         MC.N++;
         MC.a[MC.N]=M.a[i];
-        MC.b[MC.N-1]=M.b[i-1]/sqrt(2.0);
+        MC.b[MC.N-1]=M.b[i-1]*sqrt(0.5+(M.a[i]-Ef)/(DBL_MIN+2*epsilon));
         mapC[MC.N-1]=i-1;
       }
     }
@@ -415,6 +415,20 @@ uint32_t TriDiagonalMatrixToDoubleTriDiagonalMatrix(TriDiagonalMatrixType const 
   FreeMatrix(&Ttwo);
   return 0;
 }
+
+
+uint32_t TriDiagonalMatrixToSecondDoubleTriDiagonalMatrix(TriDiagonalMatrixType const M, MatrixType *const T, SecondDoubleTriDiagonalMatrixType *const A, double Ef, double epsilon)
+{
+  TriDiagonalMatrixType SecTri;
+  if(M.N<2){printf("Help error in TriDiagonalMatrixToSecondDoubleTriDiagonalMatrix catch not programmed yet\n");};
+  A->a0=M.a[0];
+  A->b0=M.b[0];
+  SecTri.N=M.N-1;
+  SecTri.a=&(M.a[1]);
+  SecTri.b=&(M.b[1]);
+  return TriDiagonalMatrixToDoubleTriDiagonalMatrix(SecTri, T, &(A->Dt), Ef, epsilon);
+}
+
 
 uint32_t TriDiagonalMatrixToMatrix(TriDiagonalMatrixType const M, MatrixType *const A)
 {
@@ -796,6 +810,136 @@ uint32_t MatrixToEigensystem(MatrixType const M, MatrixType *const T, double *va
 {
   return Eigensystem(M,T,val);
 }
+
+
+/*  Returns the Generalized Eigensystem of a non-orthnormal matrix.
+ *  Given a basis psi_i
+ *  Matrix M contains the values psi_i^* . H . psi_j
+ *  Matrix S contains the values psi_i^* . psi_j
+ *
+ *  on exit val defines a diagonal matrix H and
+ *  H = T . M . T^{\dag}
+ *  I = T . S . T^{\dag}
+ *  S = Sroot . Sroot^{\dag}
+ *
+ */
+uint32_t GeneralizedEigensystem(MatrixType const M, MatrixType const S, MatrixType *const T, MatrixType *const Sroot, double *val)
+{
+  int info,itype=1;
+  const char* jobz="V";
+  const char* uplo="U";
+  int lwork=1+6*M.Ni+2*Sqr(M.Ni);
+  int liwork=3+5*M.Ni;
+  int iwork[liwork];
+  double work[lwork];
+  uint32_t i,j;
+  if(M.Ni!=M.Nj)
+  {
+    printf("Generalized Eigensystem called with non-square matrix\n");
+    printf("ERORR!!!!!!\n");
+    return 1;
+  }
+  if(M.QComplex==0)
+  {/* Real */
+    if(MatrixCopy(Sroot,S)) {printf("MatrixCopy failed to copy S to Sroot in GeneralizedEigensystem\n");return 1;}
+    strcpy(Sroot->Name,"Sqrt of ");
+    strncat(Sroot->Name, S.Name, MAX(0,MAXStrLength-8));
+    for(i=0;i<Sroot->Ni;i++)
+    {
+      for(j=i+1;j<Sroot->Nj;j++)
+      {
+        Sroot->VRe[i][j]=0;
+      }
+    }
+    if(MatrixCopy(T, M)) {printf("MatrixCopy failed to copy M to T in GeneralizedEigensystem\n");FreeMatrix(Sroot);return 1;}
+    strcpy(T->Name,"Eigenvectors of ");
+    strncat(T->Name, M.Name, MAX(0,MAXStrLength-16));
+    dsygv( &itype, jobz, uplo, &M.Ni, T->VRe[0], &M.Ni, Sroot->VRe[0], &M.Ni, val, work, &lwork, &info );
+    if(info)
+    {
+      printf("dsygv failed in Generalized Eigensystem with info value %i\n",info);
+      printf("While working on matrix %s\n",M.Name);
+      printf("continue diagonalization with dsygvd\n");
+      fflush(stdout);
+      dsygvd( &itype, jobz, uplo, &M.Ni, T->VRe[0], &M.Ni, Sroot->VRe[0], &M.Ni, val, work, &lwork, iwork, &liwork, &info);
+      if(info)
+      {
+        printf("also dsygvd failed in Eigensystem with info value %i\n",info);
+        printf("ERORR!!!!!!!!!!\n");
+        printf("Matrix to diagonalize\n");
+        PrintMatrix(M);
+        printf("Overlap matrix\n");
+        PrintMatrix(S);
+        fflush(stdout);
+        return 1;
+      }
+    }
+    return 0;
+  }
+  else
+  {/* complex */
+    Complex16 MReIm[M.Ni*M.Ni];
+    Complex16 SReIm[M.Ni*M.Ni];
+    int lcwork=2*M.Ni+Sqr(M.Ni);
+    Complex16 cwork[lcwork];
+    T->Ni=M.Ni;
+    T->Nj=M.Nj;
+    T->QComplex=M.QComplex;
+    Sroot->Ni=M.Ni;
+    Sroot->Nj=M.Nj;
+    Sroot->QComplex=M.QComplex;
+    if(InitMatrix(T)) return 1;
+    if(InitMatrix(Sroot)) return 1;
+    strcpy(T->Name,"Eigenvectors of ");
+    strncat(T->Name, M.Name, MAX(0,MAXStrLength-16));
+    strcpy(Sroot->Name,"Sqrt of ");
+    strncat(Sroot->Name, S.Name, MAX(0,MAXStrLength-8));
+    for(i=0;i<M.Ni*M.Ni;i++)
+    {
+      MReIm[i].Re=M.VRe[0][i];
+      MReIm[i].Im=M.VIm[0][i];
+      SReIm[i].Re=S.VRe[0][i];
+      SReIm[i].Im=S.VIm[0][i];
+    }
+    zhegv(&itype,jobz,uplo,&M.Ni,MReIm,&M.Ni,SReIm,&M.Ni,val,cwork,&lcwork,work,&info);
+    if(info!=0)
+    {
+      printf("zhegv failed in Generalized Eigensystem with info value %i\n",info);
+      printf("While working on matrix %s\n",M.Name);
+      printf("continue diagonalization with zhegvd\n");
+      fflush(stdout);
+      zhegvd(&itype,jobz,uplo,&M.Ni,MReIm,&M.Ni,SReIm,&M.Ni,val,cwork,&lcwork,work,&lwork,iwork,&liwork,&info);
+      if(info!=0)
+      {
+        printf("also zhegvd failed in Generalized Eigensystem with info value %i\n",info);
+        printf("ERORR!!!!!!!!!!\n");
+        fflush(stdout);
+        return 1;
+      }
+    }
+    for(i=0;i<M.Ni*M.Ni;i++)
+    {
+      T->VRe[0][i]=MReIm[i].Re;
+      T->VIm[0][i]=-MReIm[i].Im;
+      Sroot->VRe[0][i]=SReIm[i].Re;
+      Sroot->VIm[0][i]=-SReIm[i].Im;
+    }
+    for(i=0;i<Sroot->Ni;i++)
+    {
+      for(j=i+1;j<Sroot->Nj;j++)
+      {
+        Sroot->VRe[i][j]=0;
+        Sroot->VIm[i][j]=0;
+      }
+    }
+  }
+  return 0;
+}
+uint32_t MatrixToGeneralizedEigensystem(MatrixType const M, MatrixType const S, MatrixType *const T, MatrixType *const Sroot, double *val)
+{
+  return GeneralizedEigensystem(M,S,T,Sroot,val);
+}
+
 
 /*
 *  M=T.H.T^{\dag}

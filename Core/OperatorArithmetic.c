@@ -867,6 +867,53 @@ uint32_t OperatorAddLaderNormalOrder(OperatorType *const O, const uint16_t *cons
   return ComplexOperatorAddLaderNormalOrder(O, oadd, length, VRe, VIm, QDetNotOrdered);
 }
 
+/*  Ocopy <- O
+ */
+uint32_t OperatorFixedLengthCopy(OperatorFixedLengthType *const Ocopy, OperatorFixedLengthType const O, uint32_t const length)
+{
+  Ocopy->N=O.N;
+  Ocopy->NBitsKey=O.NBitsKey;
+  Ocopy->NAloc=O.NAloc;
+  Ocopy->QComplex=O.QComplex;
+  if(O.NAloc)
+  {
+    if(Ocopy->QComplex)
+    {
+      if((Ocopy->V=malloc(Ocopy->NAloc*sizeof(Complex16)))==NULL) {printf("malloc failed for V in OperatorFixedLengthCopy\n");return 1;}
+      memcpy(Ocopy->V, O.V, Ocopy->NAloc*sizeof(Complex16));
+    }
+    else
+    {
+      if((Ocopy->VRe=malloc(Ocopy->NAloc*sizeof(double)))==NULL) {printf("malloc failed for VRe in OperatorFixedLengthCopy\n");return 1;}
+      memcpy(Ocopy->VRe, O.VRe, Ocopy->NAloc*sizeof(double));
+    }
+    if(length)
+    {
+      if((Ocopy->o=malloc(length*Ocopy->NAloc*sizeof(uint16_t)))==NULL) {printf("malloc failed for o in OperatorFixedLengthCopy\n");return 1;}
+      memcpy(Ocopy->o, O.o, length*Ocopy->NAloc*sizeof(uint16_t));
+      if((Ocopy->Next=malloc(Ocopy->NAloc*sizeof(uint32_t)))==NULL) {printf("malloc failed for Next in OperatorFixedLengthCopy\n");return 1;}
+      memcpy(Ocopy->Next, O.Next, Ocopy->NAloc*sizeof(uint32_t));
+      memcpy(Ocopy->KeyList, O.KeyList, ((uint32_t)1<<Ocopy->NBitsKey)*sizeof(uint32_t *));
+    }
+  }
+  return 0;
+}
+
+/*   Ocopy <- O
+ */
+uint32_t OperatorCopy(OperatorType *const Ocopy, OperatorType const O)
+{
+  uint32_t length;
+  if(InitOperatorCopySettings(Ocopy, O)){printf("InitOperatorCopySettings failed in OperatorCopy\n");return 1;}
+  for(length=0;length<=Ocopy->MaxLength;length++)
+  {
+    if(OperatorFixedLengthCopy(&(Ocopy->l[length]), O.l[length], length)){printf("OperatorFixedLengthCopy for length=%i failed in OperatorCopy\n",length);return 1;}
+  }
+  SetQComplexOperator(Ocopy);
+  return 0;
+}
+
+
 /*  epsilon might be set to DBL_MIN in order to prevent 0's not to be recognized
 *   After diagonalization epsilon might be set to DBL_EPSILON*(...) with (...) the
 *   maximum value in the operator in order to recognize all numerical unimportant elements.
@@ -1153,6 +1200,2384 @@ uint32_t NormalOrderOperator(const OperatorType O, OperatorType *const Oo, uint3
   SetQComplexOperator(Oo);
   return 0;
 }
+
+/*  Depending on Aset and Bset
+ *    O <- O + A^'Aset' B^'Bset'
+ *    whereby set can be
+ *    'N' normal
+ *    'C' conjugated (a^dag remains a^dag, prefactors become complex conjugated)
+ *    'T' transposed (a^dag becomes a, prefactors remain)
+ *    'D' conjugate transposed (a^dag becomes a, prefactors become complex conjugated)
+ *
+ *  O must be initiallized, i.e O.Maxlength must be A.Maxlength+B.Maxlength
+ *  it is advised to set O.l[il].NBitsKey to sensible values
+ */
+uint32_t OperatorMultiply2(OperatorType *const O, OperatorType const A, OperatorType const B, char const Aset, char const Bset)
+{
+  uint32_t ilA, ilB, iNA, iNB, k;
+  uint16_t det[A.MaxLength+B.MaxLength];
+  if     ((Aset=='N')&&(Bset=='N'))
+  {
+    for(ilA=0;ilA<=A.MaxLength;ilA++)
+    {
+      for(ilB=0;ilB<=B.MaxLength;ilB++)
+      {
+        if((O->l[ilA+ilB].QComplex)&&(A.l[ilA].QComplex)&&(B.l[ilB].QComplex))
+        {/* at least one complex */
+          if(!(O->l[ilA+ilB].QComplex)) if(MakeRealOperatorFixedLengthComplex(O,ilA+ilB)) {printf("MakeRealOperatorFixedLengthComplex at length=%i failed in OperatorMultiply2\n",ilA+ilB);fflush(stdout);return 1;}
+          if(A.l[ilA].QComplex)
+          { /* A complex */
+            if(B.l[ilB].QComplex)
+            { /* A and B complex */
+              for(iNA=0;iNA<A.l[ilA].N;iNA++)
+              {
+                for(k=0;k<ilA;k++)
+                {
+                  det[k]=A.l[ilA].o[iNA*ilA+k];
+                }
+                for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                {
+                  for(k=0;k<ilB;k++)
+                  {
+                    det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                  }
+                  if(ComplexOperatorAddLader(O,det,ilA+ilB,A.l[ilA].V[iNA].Re*B.l[ilB].V[iNB].Re-A.l[ilA].V[iNA].Im*B.l[ilB].V[iNB].Im,A.l[ilA].V[iNA].Re*B.l[ilB].V[iNB].Im+A.l[ilA].V[iNA].Im*B.l[ilB].V[iNB].Re)) {printf("ComplexOperatorAddLader failed in OperatorMultiply\n");fflush(stdout);return 1;}
+                }
+              }
+            }
+            else
+            { /* A complex B real */
+              for(iNA=0;iNA<A.l[ilA].N;iNA++)
+              {
+                for(k=0;k<ilA;k++)
+                {
+                  det[k]=A.l[ilA].o[iNA*ilA+k];
+                }
+                for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                {
+                  for(k=0;k<ilB;k++)
+                  {
+                    det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                  }
+                  if(ComplexOperatorAddLader(O,det,ilA+ilB,A.l[ilA].V[iNA].Re*B.l[ilB].VRe[iNB],A.l[ilA].V[iNA].Im*B.l[ilB].VRe[iNB])) {printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");fflush(stdout);return 1;}
+                }
+              }
+            }
+          }
+          else
+          { /* A real */
+            if(B.l[ilB].QComplex)
+            { /* A real and B complex */
+              for(iNA=0;iNA<A.l[ilA].N;iNA++)
+              {
+                for(k=0;k<ilA;k++)
+                {
+                  det[k]=A.l[ilA].o[iNA*ilA+k];
+                }
+                for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                {
+                  for(k=0;k<ilB;k++)
+                  {
+                    det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                  }
+                  if(ComplexOperatorAddLader(O,det,ilA+ilB,A.l[ilA].VRe[iNA]*B.l[ilB].V[iNB].Re,A.l[ilA].VRe[iNA]*B.l[ilB].V[iNB].Im)) {printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");fflush(stdout);return 1;}
+                }
+              }
+            }
+            else
+            { /* A and B real */
+              for(iNA=0;iNA<A.l[ilA].N;iNA++)
+              {
+                for(k=0;k<ilA;k++)
+                {
+                  det[k]=A.l[ilA].o[iNA*ilA+k];
+                }
+                for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                {
+                  for(k=0;k<ilB;k++)
+                  {
+                    det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                  }
+                  if(ComplexOperatorAddLader(O,det,ilA+ilB,A.l[ilA].VRe[iNA]*B.l[ilB].VRe[iNB],0)) {printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");fflush(stdout);return 1;}
+                }
+              }
+            }
+          }
+        }
+        else
+        { /* All real */
+          for(iNA=0;iNA<A.l[ilA].N;iNA++)
+          {
+            for(k=0;k<ilA;k++)
+            {
+              det[k]=A.l[ilA].o[iNA*ilA+k];
+            }
+            for(iNB=0;iNB<B.l[ilB].N;iNB++)
+            {
+              for(k=0;k<ilB;k++)
+              {
+                det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+              }
+              if(RealOperatorAddLader(O,det,ilA+ilB,A.l[ilA].VRe[iNA]*B.l[ilB].VRe[iNB])) {printf("RealOperatorAddLader failed in OperatorMultiply2\n");fflush(stdout);return 1;}
+            }
+          }
+        }
+      }
+    }
+    /* End of NN */
+  }
+  else if((Aset=='N')&&(Bset=='D'))
+  {
+    for(ilA=0;ilA<=A.MaxLength;ilA++)
+    {
+      for(ilB=0;ilB<=B.MaxLength;ilB++)
+      {
+        if((O->l[ilA+ilB].QComplex)&&(A.l[ilA].QComplex)&&(B.l[ilB].QComplex))
+        {/* at least one complex */
+          if(!(O->l[ilA+ilB].QComplex)) if(MakeRealOperatorFixedLengthComplex(O,ilA+ilB)) {printf("MakeRealOperatorFixedLengthComplex at length=%i failed in OperatorMultiply2\n",ilA+ilB);fflush(stdout);return 1;}
+          if(A.l[ilA].QComplex)
+          { /* A complex */
+            if(B.l[ilB].QComplex)
+            { /* A and B complex */
+              for(iNA=0;iNA<A.l[ilA].N;iNA++)
+              {
+                for(k=0;k<ilA;k++)
+                {
+                  det[k]=A.l[ilA].o[iNA*ilA+k];
+                }
+                for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                {
+                  for(k=0;k<ilB;k++)
+                  {
+                    det[ilB-1-k+ilA]=B.l[ilB].o[iNB*ilB+k]^CrAnMask;
+                  }
+                  if(ComplexOperatorAddLader(O,det,ilA+ilB,A.l[ilA].V[iNA].Re*B.l[ilB].V[iNB].Re+A.l[ilA].V[iNA].Im*B.l[ilB].V[iNB].Im,-A.l[ilA].V[iNA].Re*B.l[ilB].V[iNB].Im+A.l[ilA].V[iNA].Im*B.l[ilB].V[iNB].Re)) {printf("ComplexOperatorAddLader failed in OperatorMultiply\n");fflush(stdout);return 1;}
+                }
+              }
+            }
+            else
+            { /* A complex B real */
+              for(iNA=0;iNA<A.l[ilA].N;iNA++)
+              {
+                for(k=0;k<ilA;k++)
+                {
+                  det[k]=A.l[ilA].o[iNA*ilA+k];
+                }
+                for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                {
+                  for(k=0;k<ilB;k++)
+                  {
+                    det[ilB-1-k+ilA]=B.l[ilB].o[iNB*ilB+k]^CrAnMask;
+                  }
+                  if(ComplexOperatorAddLader(O,det,ilA+ilB,A.l[ilA].V[iNA].Re*B.l[ilB].VRe[iNB],A.l[ilA].V[iNA].Im*B.l[ilB].VRe[iNB])) {printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");fflush(stdout);return 1;}
+                }
+              }
+            }
+          }
+          else
+          { /* A real */
+            if(B.l[ilB].QComplex)
+            { /* A real and B complex */
+              for(iNA=0;iNA<A.l[ilA].N;iNA++)
+              {
+                for(k=0;k<ilA;k++)
+                {
+                  det[k]=A.l[ilA].o[iNA*ilA+k];
+                }
+                for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                {
+                  for(k=0;k<ilB;k++)
+                  {
+                    det[ilB-1-k+ilA]=B.l[ilB].o[iNB*ilB+k]^CrAnMask;
+                  }
+                  if(ComplexOperatorAddLader(O,det,ilA+ilB,A.l[ilA].VRe[iNA]*B.l[ilB].V[iNB].Re,-A.l[ilA].VRe[iNA]*B.l[ilB].V[iNB].Im)) {printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");fflush(stdout);return 1;}
+                }
+              }
+            }
+            else
+            { /* A and B real */
+              for(iNA=0;iNA<A.l[ilA].N;iNA++)
+              {
+                for(k=0;k<ilA;k++)
+                {
+                  det[k]=A.l[ilA].o[iNA*ilA+k];
+                }
+                for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                {
+                  for(k=0;k<ilB;k++)
+                  {
+                    det[ilB-1-k+ilA]=B.l[ilB].o[iNB*ilB+k]^CrAnMask;
+                  }
+                  if(ComplexOperatorAddLader(O,det,ilA+ilB,A.l[ilA].VRe[iNA]*B.l[ilB].VRe[iNB],0)) {printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");fflush(stdout);return 1;}
+                }
+              }
+            }
+          }
+        }
+        else
+        { /* All real */
+          for(iNA=0;iNA<A.l[ilA].N;iNA++)
+          {
+            for(k=0;k<ilA;k++)
+            {
+              det[k]=A.l[ilA].o[iNA*ilA+k];
+            }
+            for(iNB=0;iNB<B.l[ilB].N;iNB++)
+            {
+              for(k=0;k<ilB;k++)
+              {
+                det[ilB-1-k+ilA]=B.l[ilB].o[iNB*ilB+k]^CrAnMask;
+              }
+              if(RealOperatorAddLader(O,det,ilA+ilB,A.l[ilA].VRe[iNA]*B.l[ilB].VRe[iNB])) {printf("RealOperatorAddLader failed in OperatorMultiply2\n");fflush(stdout);return 1;}
+            }
+          }
+        }
+      }
+    }
+    /* End of ND */
+  }
+  else if((Aset=='D')&&(Bset=='N'))
+  {
+    for(ilA=0;ilA<=A.MaxLength;ilA++)
+    {
+      for(ilB=0;ilB<=B.MaxLength;ilB++)
+      {
+        if((O->l[ilA+ilB].QComplex)&&(A.l[ilA].QComplex)&&(B.l[ilB].QComplex))
+        {/* at least one complex */
+          if(!(O->l[ilA+ilB].QComplex)) if(MakeRealOperatorFixedLengthComplex(O,ilA+ilB)) {printf("MakeRealOperatorFixedLengthComplex at length=%i failed in OperatorMultiply2\n",ilA+ilB);fflush(stdout);return 1;}
+          if(A.l[ilA].QComplex)
+          { /* A complex */
+            if(B.l[ilB].QComplex)
+            { /* A and B complex */
+              for(iNA=0;iNA<A.l[ilA].N;iNA++)
+              {
+                for(k=0;k<ilA;k++)
+                {
+                  det[ilA-1-k]=A.l[ilA].o[iNA*ilA+k]^CrAnMask;
+                }
+                for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                {
+                  for(k=0;k<ilB;k++)
+                  {
+                    det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                  }
+                  if(ComplexOperatorAddLader(O,det,ilA+ilB,A.l[ilA].V[iNA].Re*B.l[ilB].V[iNB].Re+A.l[ilA].V[iNA].Im*B.l[ilB].V[iNB].Im,A.l[ilA].V[iNA].Re*B.l[ilB].V[iNB].Im-A.l[ilA].V[iNA].Im*B.l[ilB].V[iNB].Re)) {printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");fflush(stdout);return 1;}
+                }
+              }
+            }
+            else
+            { /* A complex B real */
+              for(iNA=0;iNA<A.l[ilA].N;iNA++)
+              {
+                for(k=0;k<ilA;k++)
+                {
+                  det[ilA-1-k]=A.l[ilA].o[iNA*ilA+k]^CrAnMask;
+                }
+                for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                {
+                  for(k=0;k<ilB;k++)
+                  {
+                    det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                  }
+                  if(ComplexOperatorAddLader(O,det,ilA+ilB,A.l[ilA].V[iNA].Re*B.l[ilB].VRe[iNB],-A.l[ilA].V[iNA].Im*B.l[ilB].VRe[iNB])) {printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");fflush(stdout);return 1;}
+                }
+              }
+            }
+          }
+          else
+          { /* A real */
+            if(B.l[ilB].QComplex)
+            { /* A real and B complex */
+              for(iNA=0;iNA<A.l[ilA].N;iNA++)
+              {
+                for(k=0;k<ilA;k++)
+                {
+                  det[ilA-1-k]=A.l[ilA].o[iNA*ilA+k]^CrAnMask;
+                }
+                for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                {
+                  for(k=0;k<ilB;k++)
+                  {
+                    det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                  }
+                  if(ComplexOperatorAddLader(O,det,ilA+ilB,A.l[ilA].VRe[iNA]*B.l[ilB].V[iNB].Re,A.l[ilA].VRe[iNA]*B.l[ilB].V[iNB].Im)) {printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");fflush(stdout);return 1;}
+                }
+              }
+            }
+            else
+            { /* A and B real */
+              for(iNA=0;iNA<A.l[ilA].N;iNA++)
+              {
+                for(k=0;k<ilA;k++)
+                {
+                  det[ilA-1-k]=A.l[ilA].o[iNA*ilA+k]^CrAnMask;
+                }
+                for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                {
+                  for(k=0;k<ilB;k++)
+                  {
+                    det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                  }
+                  if(ComplexOperatorAddLader(O,det,ilA+ilB,A.l[ilA].VRe[iNA]*B.l[ilB].VRe[iNB],0)) {printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");fflush(stdout);return 1;}
+                }
+              }
+            }
+          }
+        }
+        else
+        { /* All real */
+          for(iNA=0;iNA<A.l[ilA].N;iNA++)
+          {
+            for(k=0;k<ilA;k++)
+            {
+              det[ilA-1-k]=A.l[ilA].o[iNA*ilA+k]^CrAnMask;
+            }
+            for(iNB=0;iNB<B.l[ilB].N;iNB++)
+            {
+              for(k=0;k<ilB;k++)
+              {
+                det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+              }
+              if(RealOperatorAddLader(O,det,ilA+ilB,A.l[ilA].VRe[iNA]*B.l[ilB].VRe[iNB])) {printf("RealOperatorAddLader failed in OperatorMultiply2\n");fflush(stdout);return 1;}
+            }
+          }
+        }
+      }
+    }
+    /* End of DN */
+  }
+  else if((Aset=='D')&&(Bset=='D'))
+  {
+    printf("in OperatorMultiply2 Still to do\n");
+    return 1;
+  }
+  else
+  {
+    printf("in OperatorMultiply2 unrecognized input for Aset and or Bset\n");
+    return 1;
+  }
+  SetQComplexOperator(O);
+  return 0;
+}
+
+
+
+/*  Depending on Aset and Bset
+ *    O <- O + A^'Aset' B^'Bset'
+ *    whereby set can be
+ *    'N' normal
+ *    'C' conjugated (a^dag remains a^dag, prefactors become complex conjugated)
+ *    'T' transposed (a^dag becomes a, prefactors remain)
+ *    'D' conjugate transposed (a^dag becomes a, prefactors become complex conjugated)
+ *
+ *  O must be initiallized, i.e O.Maxlength must be A.Maxlength+B.Maxlength
+ *  it is advised to set O.l[il].NBitsKey to sensible values
+ */
+uint32_t OperatorMultiply2NormalOrder(OperatorType *const O, OperatorType const A, OperatorType const B, char const Aset, char const Bset, uint32_t (*QDetNotOrdered)(uint16_t,uint16_t,uint32_t))
+{
+  uint32_t ilA, ilB, iNA, iNB, k;
+  uint16_t det[A.MaxLength+B.MaxLength];
+  if     ((Aset=='N')&&(Bset=='N'))
+  {
+    for(ilA=0;ilA<=A.MaxLength;ilA++)
+    {
+      for(ilB=0;ilB<=B.MaxLength;ilB++)
+      {
+        if((O->l[ilA+ilB].QComplex)&&(A.l[ilA].QComplex)&&(B.l[ilB].QComplex))
+        {/* at least one complex */
+          if(!(O->l[ilA+ilB].QComplex)) if(MakeRealOperatorFixedLengthComplex(O,ilA+ilB)) {printf("MakeRealOperatorFixedLengthComplex at length=%i failed in OperatorMultiply2\n",ilA+ilB);fflush(stdout);return 1;}
+          if(A.l[ilA].QComplex)
+          { /* A complex */
+            if(B.l[ilB].QComplex)
+            { /* A and B complex */
+              for(iNA=0;iNA<A.l[ilA].N;iNA++)
+              {
+                for(k=0;k<ilA;k++)
+                {
+                  det[k]=A.l[ilA].o[iNA*ilA+k];
+                }
+                for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                {
+                  for(k=0;k<ilB;k++)
+                  {
+                    det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                  }
+                  if(ComplexOperatorAddLaderNormalOrder(O,det,ilA+ilB,A.l[ilA].V[iNA].Re*B.l[ilB].V[iNB].Re-A.l[ilA].V[iNA].Im*B.l[ilB].V[iNB].Im,A.l[ilA].V[iNA].Re*B.l[ilB].V[iNB].Im+A.l[ilA].V[iNA].Im*B.l[ilB].V[iNB].Re,QDetNotOrdered)) {printf("ComplexOperatorAddLader failed in OperatorMultiply\n");fflush(stdout);return 1;}
+                }
+              }
+            }
+            else
+            { /* A complex B real */
+              for(iNA=0;iNA<A.l[ilA].N;iNA++)
+              {
+                for(k=0;k<ilA;k++)
+                {
+                  det[k]=A.l[ilA].o[iNA*ilA+k];
+                }
+                for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                {
+                  for(k=0;k<ilB;k++)
+                  {
+                    det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                  }
+                  if(ComplexOperatorAddLaderNormalOrder(O,det,ilA+ilB,A.l[ilA].V[iNA].Re*B.l[ilB].VRe[iNB],A.l[ilA].V[iNA].Im*B.l[ilB].VRe[iNB],QDetNotOrdered)) {printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");fflush(stdout);return 1;}
+                }
+              }
+            }
+          }
+          else
+          { /* A real */
+            if(B.l[ilB].QComplex)
+            { /* A real and B complex */
+              for(iNA=0;iNA<A.l[ilA].N;iNA++)
+              {
+                for(k=0;k<ilA;k++)
+                {
+                  det[k]=A.l[ilA].o[iNA*ilA+k];
+                }
+                for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                {
+                  for(k=0;k<ilB;k++)
+                  {
+                    det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                  }
+                  if(ComplexOperatorAddLaderNormalOrder(O,det,ilA+ilB,A.l[ilA].VRe[iNA]*B.l[ilB].V[iNB].Re,A.l[ilA].VRe[iNA]*B.l[ilB].V[iNB].Im,QDetNotOrdered)) {printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");fflush(stdout);return 1;}
+                }
+              }
+            }
+            else
+            { /* A and B real */
+              for(iNA=0;iNA<A.l[ilA].N;iNA++)
+              {
+                for(k=0;k<ilA;k++)
+                {
+                  det[k]=A.l[ilA].o[iNA*ilA+k];
+                }
+                for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                {
+                  for(k=0;k<ilB;k++)
+                  {
+                    det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                  }
+                  if(ComplexOperatorAddLaderNormalOrder(O,det,ilA+ilB,A.l[ilA].VRe[iNA]*B.l[ilB].VRe[iNB],0,QDetNotOrdered)) {printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");fflush(stdout);return 1;}
+                }
+              }
+            }
+          }
+        }
+        else
+        { /* All real */
+          for(iNA=0;iNA<A.l[ilA].N;iNA++)
+          {
+            for(k=0;k<ilA;k++)
+            {
+              det[k]=A.l[ilA].o[iNA*ilA+k];
+            }
+            for(iNB=0;iNB<B.l[ilB].N;iNB++)
+            {
+              for(k=0;k<ilB;k++)
+              {
+                det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+              }
+              if(RealOperatorAddLaderNormalOrder(O,det,ilA+ilB,A.l[ilA].VRe[iNA]*B.l[ilB].VRe[iNB],QDetNotOrdered)) {printf("RealOperatorAddLader failed in OperatorMultiply2\n");fflush(stdout);return 1;}
+            }
+          }
+        }
+      }
+    }
+    /* End of NN */
+  }
+  else if((Aset=='N')&&(Bset=='D'))
+  {
+    for(ilA=0;ilA<=A.MaxLength;ilA++)
+    {
+      for(ilB=0;ilB<=B.MaxLength;ilB++)
+      {
+        if((O->l[ilA+ilB].QComplex)&&(A.l[ilA].QComplex)&&(B.l[ilB].QComplex))
+        {/* at least one complex */
+          if(!(O->l[ilA+ilB].QComplex)) if(MakeRealOperatorFixedLengthComplex(O,ilA+ilB)) {printf("MakeRealOperatorFixedLengthComplex at length=%i failed in OperatorMultiply2\n",ilA+ilB);fflush(stdout);return 1;}
+          if(A.l[ilA].QComplex)
+          { /* A complex */
+            if(B.l[ilB].QComplex)
+            { /* A and B complex */
+              for(iNA=0;iNA<A.l[ilA].N;iNA++)
+              {
+                for(k=0;k<ilA;k++)
+                {
+                  det[k]=A.l[ilA].o[iNA*ilA+k];
+                }
+                for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                {
+                  for(k=0;k<ilB;k++)
+                  {
+                    det[ilB-1-k+ilA]=B.l[ilB].o[iNB*ilB+k]^CrAnMask;
+                  }
+                  if(ComplexOperatorAddLaderNormalOrder(O,det,ilA+ilB,A.l[ilA].V[iNA].Re*B.l[ilB].V[iNB].Re+A.l[ilA].V[iNA].Im*B.l[ilB].V[iNB].Im,-A.l[ilA].V[iNA].Re*B.l[ilB].V[iNB].Im+A.l[ilA].V[iNA].Im*B.l[ilB].V[iNB].Re,QDetNotOrdered)) {printf("ComplexOperatorAddLader failed in OperatorMultiply\n");fflush(stdout);return 1;}
+                }
+              }
+            }
+            else
+            { /* A complex B real */
+              for(iNA=0;iNA<A.l[ilA].N;iNA++)
+              {
+                for(k=0;k<ilA;k++)
+                {
+                  det[k]=A.l[ilA].o[iNA*ilA+k];
+                }
+                for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                {
+                  for(k=0;k<ilB;k++)
+                  {
+                    det[ilB-1-k+ilA]=B.l[ilB].o[iNB*ilB+k]^CrAnMask;
+                  }
+                  if(ComplexOperatorAddLaderNormalOrder(O,det,ilA+ilB,A.l[ilA].V[iNA].Re*B.l[ilB].VRe[iNB],A.l[ilA].V[iNA].Im*B.l[ilB].VRe[iNB],QDetNotOrdered)) {printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");fflush(stdout);return 1;}
+                }
+              }
+            }
+          }
+          else
+          { /* A real */
+            if(B.l[ilB].QComplex)
+            { /* A real and B complex */
+              for(iNA=0;iNA<A.l[ilA].N;iNA++)
+              {
+                for(k=0;k<ilA;k++)
+                {
+                  det[k]=A.l[ilA].o[iNA*ilA+k];
+                }
+                for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                {
+                  for(k=0;k<ilB;k++)
+                  {
+                    det[ilB-1-k+ilA]=B.l[ilB].o[iNB*ilB+k]^CrAnMask;
+                  }
+                  if(ComplexOperatorAddLaderNormalOrder(O,det,ilA+ilB,A.l[ilA].VRe[iNA]*B.l[ilB].V[iNB].Re,-A.l[ilA].VRe[iNA]*B.l[ilB].V[iNB].Im,QDetNotOrdered)) {printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");fflush(stdout);return 1;}
+                }
+              }
+            }
+            else
+            { /* A and B real */
+              for(iNA=0;iNA<A.l[ilA].N;iNA++)
+              {
+                for(k=0;k<ilA;k++)
+                {
+                  det[k]=A.l[ilA].o[iNA*ilA+k];
+                }
+                for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                {
+                  for(k=0;k<ilB;k++)
+                  {
+                    det[ilB-1-k+ilA]=B.l[ilB].o[iNB*ilB+k]^CrAnMask;
+                  }
+                  if(ComplexOperatorAddLaderNormalOrder(O,det,ilA+ilB,A.l[ilA].VRe[iNA]*B.l[ilB].VRe[iNB],0,QDetNotOrdered)) {printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");fflush(stdout);return 1;}
+                }
+              }
+            }
+          }
+        }
+        else
+        { /* All real */
+          for(iNA=0;iNA<A.l[ilA].N;iNA++)
+          {
+            for(k=0;k<ilA;k++)
+            {
+              det[k]=A.l[ilA].o[iNA*ilA+k];
+            }
+            for(iNB=0;iNB<B.l[ilB].N;iNB++)
+            {
+              for(k=0;k<ilB;k++)
+              {
+                det[ilB-1-k+ilA]=B.l[ilB].o[iNB*ilB+k]^CrAnMask;
+              }
+              if(RealOperatorAddLaderNormalOrder(O,det,ilA+ilB,A.l[ilA].VRe[iNA]*B.l[ilB].VRe[iNB],QDetNotOrdered)) {printf("RealOperatorAddLader failed in OperatorMultiply2\n");fflush(stdout);return 1;}
+            }
+          }
+        }
+      }
+    }
+    /* End of ND */
+  }
+  else if((Aset=='D')&&(Bset=='N'))
+  {
+    for(ilA=0;ilA<=A.MaxLength;ilA++)
+    {
+      for(ilB=0;ilB<=B.MaxLength;ilB++)
+      {
+        if((O->l[ilA+ilB].QComplex)&&(A.l[ilA].QComplex)&&(B.l[ilB].QComplex))
+        {/* at least one complex */
+          if(!(O->l[ilA+ilB].QComplex)) if(MakeRealOperatorFixedLengthComplex(O,ilA+ilB)) {printf("MakeRealOperatorFixedLengthComplex at length=%i failed in OperatorMultiply2\n",ilA+ilB);fflush(stdout);return 1;}
+          if(A.l[ilA].QComplex)
+          { /* A complex */
+            if(B.l[ilB].QComplex)
+            { /* A and B complex */
+              for(iNA=0;iNA<A.l[ilA].N;iNA++)
+              {
+                for(k=0;k<ilA;k++)
+                {
+                  det[ilA-1-k]=A.l[ilA].o[iNA*ilA+k]^CrAnMask;
+                }
+                for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                {
+                  for(k=0;k<ilB;k++)
+                  {
+                    det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                  }
+                  if(ComplexOperatorAddLaderNormalOrder(O,det,ilA+ilB,A.l[ilA].V[iNA].Re*B.l[ilB].V[iNB].Re+A.l[ilA].V[iNA].Im*B.l[ilB].V[iNB].Im,A.l[ilA].V[iNA].Re*B.l[ilB].V[iNB].Im-A.l[ilA].V[iNA].Im*B.l[ilB].V[iNB].Re,QDetNotOrdered)) {printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");fflush(stdout);return 1;}
+                }
+              }
+            }
+            else
+            { /* A complex B real */
+              for(iNA=0;iNA<A.l[ilA].N;iNA++)
+              {
+                for(k=0;k<ilA;k++)
+                {
+                  det[ilA-1-k]=A.l[ilA].o[iNA*ilA+k]^CrAnMask;
+                }
+                for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                {
+                  for(k=0;k<ilB;k++)
+                  {
+                    det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                  }
+                  if(ComplexOperatorAddLaderNormalOrder(O,det,ilA+ilB,A.l[ilA].V[iNA].Re*B.l[ilB].VRe[iNB],-A.l[ilA].V[iNA].Im*B.l[ilB].VRe[iNB],QDetNotOrdered)) {printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");fflush(stdout);return 1;}
+                }
+              }
+            }
+          }
+          else
+          { /* A real */
+            if(B.l[ilB].QComplex)
+            { /* A real and B complex */
+              for(iNA=0;iNA<A.l[ilA].N;iNA++)
+              {
+                for(k=0;k<ilA;k++)
+                {
+                  det[ilA-1-k]=A.l[ilA].o[iNA*ilA+k]^CrAnMask;
+                }
+                for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                {
+                  for(k=0;k<ilB;k++)
+                  {
+                    det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                  }
+                  if(ComplexOperatorAddLaderNormalOrder(O,det,ilA+ilB,A.l[ilA].VRe[iNA]*B.l[ilB].V[iNB].Re,A.l[ilA].VRe[iNA]*B.l[ilB].V[iNB].Im,QDetNotOrdered)) {printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");fflush(stdout);return 1;}
+                }
+              }
+            }
+            else
+            { /* A and B real */
+              for(iNA=0;iNA<A.l[ilA].N;iNA++)
+              {
+                for(k=0;k<ilA;k++)
+                {
+                  det[ilA-1-k]=A.l[ilA].o[iNA*ilA+k]^CrAnMask;
+                }
+                for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                {
+                  for(k=0;k<ilB;k++)
+                  {
+                    det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                  }
+                  if(ComplexOperatorAddLaderNormalOrder(O,det,ilA+ilB,A.l[ilA].VRe[iNA]*B.l[ilB].VRe[iNB],0,QDetNotOrdered)) {printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");fflush(stdout);return 1;}
+                }
+              }
+            }
+          }
+        }
+        else
+        { /* All real */
+          for(iNA=0;iNA<A.l[ilA].N;iNA++)
+          {
+            for(k=0;k<ilA;k++)
+            {
+              det[ilA-1-k]=A.l[ilA].o[iNA*ilA+k]^CrAnMask;
+            }
+            for(iNB=0;iNB<B.l[ilB].N;iNB++)
+            {
+              for(k=0;k<ilB;k++)
+              {
+                det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+              }
+              if(RealOperatorAddLaderNormalOrder(O,det,ilA+ilB,A.l[ilA].VRe[iNA]*B.l[ilB].VRe[iNB],QDetNotOrdered)) {printf("RealOperatorAddLader failed in OperatorMultiply2\n");fflush(stdout);return 1;}
+            }
+          }
+        }
+      }
+    }
+    /* End of DN */
+  }
+  else if((Aset=='D')&&(Bset=='D'))
+  {
+    printf("in OperatorMultiply2 Still to do\n");
+    return 1;
+  }
+  else
+  {
+    printf("in OperatorMultiply2 unrecognized input for Aset and or Bset\n");
+    return 1;
+  }
+  SetQComplexOperator(O);
+  return 0;
+}
+
+
+/*  Depending on Aset, Bset and Cset
+ *    O <- O + A^'Aset' B^'Bset' C^'Cset
+ *    whereby set can be
+ *    'N' normal
+ *    'C' conjugated (a^dag remains a^dag, prefactors become complex conjugated)
+ *    'T' transposed (a^dag becomes a, prefactors remain)
+ *    'D' conjugate transposed (a^dag becomes a, prefactors become complex conjugated)
+ */
+uint32_t OperatorMultiply3(OperatorType *const O, OperatorType const A, OperatorType const B, OperatorType const C, char const Aset, char const Bset, char const Cset)
+{
+  uint32_t ilA, ilB, ilC, iNA, iNB, iNC, k;
+  uint16_t det[A.MaxLength+B.MaxLength+C.MaxLength];
+  if     ((Aset=='N')&&(Bset=='N')&&(Cset=='N'))
+  { 
+    for(ilA=0;ilA<=A.MaxLength;ilA++)
+    {
+      for(ilB=0;ilB<=B.MaxLength;ilB++)
+      {
+        for(ilC=0;ilC<=C.MaxLength;ilC++)
+        {
+          if((O->l[ilA+ilB].QComplex)&&(A.l[ilA].QComplex)&&(B.l[ilB].QComplex)&&(C.l[ilC].QComplex))
+          {/* at least one complex */
+            if(!(O->l[ilA+ilB+ilC].QComplex)) if(MakeRealOperatorFixedLengthComplex(O,ilA+ilB+ilC)) {printf("MakeRealOperatorFixedLengthComplex at length=%i failed in OperatorMultiply3\n",ilA+ilB+ilC);fflush(stdout);return 1;}
+            if(A.l[ilA].QComplex)
+            { /* A complex */
+              if(B.l[ilB].QComplex)
+              { /* A and B complex */
+                if(C.l[ilC].QComplex)
+                { /* A and B and C complex */
+                  for(iNA=0;iNA<A.l[ilA].N;iNA++)
+                  {
+                    for(k=0;k<ilA;k++)
+                    {
+                      det[k]=A.l[ilA].o[iNA*ilA+k];
+                    }
+                    for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                    {
+                      for(k=0;k<ilB;k++)
+                      {
+                        det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                      }
+                      for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                      {
+                        for(k=0;k<ilC;k++)
+                        {
+                          det[k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k];
+                        }
+                        if(ComplexOperatorAddLader(O,det,ilA+ilB+ilC,A.l[ilA].V[iNA].Re*B.l[ilB].V[iNB].Re*C.l[ilC].V[iNC].Re-A.l[ilA].V[iNA].Re*B.l[ilB].V[iNB].Im*C.l[ilC].V[iNC].Im-A.l[ilA].V[iNA].Im*B.l[ilB].V[iNB].Re*C.l[ilC].V[iNC].Im-A.l[ilA].V[iNA].Im*B.l[ilB].V[iNB].Im*C.l[ilC].V[iNC].Re,A.l[ilA].V[iNA].Im*B.l[ilB].V[iNB].Re*C.l[ilC].V[iNC].Re+A.l[ilA].V[iNA].Re*B.l[ilB].V[iNB].Im*C.l[ilC].V[iNC].Re+A.l[ilA].V[iNA].Re*B.l[ilB].V[iNB].Re*C.l[ilC].V[iNC].Im-A.l[ilA].V[iNA].Im*B.l[ilB].V[iNB].Im*C.l[ilC].V[iNC].Im)) {printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                      }
+                    }
+                  }
+                }
+                else
+                { /* A and B complex, C real */
+                  for(iNA=0;iNA<A.l[ilA].N;iNA++)
+                  {
+                    for(k=0;k<ilA;k++)
+                    {
+                      det[k]=A.l[ilA].o[iNA*ilA+k];
+                    }
+                    for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                    {
+                      for(k=0;k<ilB;k++)
+                      {
+                        det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                      }
+                      for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                      {
+                        for(k=0;k<ilC;k++)
+                        {
+                          det[k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k];
+                        }
+                        if(ComplexOperatorAddLader(O,det,ilA+ilB+ilC,A.l[ilA].V[iNA].Re*B.l[ilB].V[iNB].Re*C.l[ilC].VRe[iNC]-A.l[ilA].V[iNA].Im*B.l[ilB].V[iNB].Im*C.l[ilC].VRe[iNC],A.l[ilA].V[iNA].Im*B.l[ilB].V[iNB].Re*C.l[ilC].VRe[iNC]+A.l[ilA].V[iNA].Re*B.l[ilB].V[iNB].Im*C.l[ilC].VRe[iNC])) {printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                      }
+                    }
+                  }
+                }
+              }
+              else
+              { /* A complex B real */
+                if(C.l[ilC].QComplex)
+                { /* A complex B real C complex */
+                  for(iNA=0;iNA<A.l[ilA].N;iNA++)
+                  {
+                    for(k=0;k<ilA;k++)
+                    {
+                      det[k]=A.l[ilA].o[iNA*ilA+k];
+                    }
+                    for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                    {
+                      for(k=0;k<ilB;k++)
+                      {
+                        det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                      }
+                      for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                      {
+                        for(k=0;k<ilC;k++)
+                        {
+                          det[k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k];
+                        }
+                        if(ComplexOperatorAddLader(O,det,ilA+ilB+ilC,A.l[ilA].V[iNA].Re*B.l[ilB].VRe[iNB]*C.l[ilC].V[iNC].Re-A.l[ilA].V[iNA].Im*B.l[ilB].VRe[iNB]*C.l[ilC].V[iNC].Im,A.l[ilA].V[iNA].Im*B.l[ilB].VRe[iNB]*C.l[ilC].V[iNC].Re+A.l[ilA].V[iNA].Re*B.l[ilB].VRe[iNB]*C.l[ilC].V[iNC].Im)) {printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                      }
+                    }
+                  }
+                }
+                else
+                { /* A complex B real C real */
+                  for(iNA=0;iNA<A.l[ilA].N;iNA++)
+                  {
+                    for(k=0;k<ilA;k++)
+                    {
+                      det[k]=A.l[ilA].o[iNA*ilA+k];
+                    }
+                    for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                    {
+                      for(k=0;k<ilB;k++)
+                      {
+                        det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                      }
+                      for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                      {
+                        for(k=0;k<ilC;k++)
+                        {
+                          det[k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k];
+                        }
+                        if(ComplexOperatorAddLader(O,det,ilA+ilB+ilC,A.l[ilA].V[iNA].Re*B.l[ilB].VRe[iNB]*C.l[ilC].VRe[iNC],A.l[ilA].V[iNA].Im*B.l[ilB].VRe[iNB]*C.l[ilC].VRe[iNC])) {printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            else
+            { /* A real */
+              if(B.l[ilB].QComplex)
+              { /* A real and B complex */
+                if(C.l[ilC].QComplex)
+                { /* A real B complex C complex */
+                  for(iNA=0;iNA<A.l[ilA].N;iNA++)
+                  {
+                    for(k=0;k<ilA;k++)
+                    {
+                      det[k]=A.l[ilA].o[iNA*ilA+k];
+                    }
+                    for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                    {
+                      for(k=0;k<ilB;k++)
+                      {
+                        det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                      }
+                      for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                      {
+                        for(k=0;k<ilC;k++)
+                        {
+                          det[k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k];
+                        }
+                        if(ComplexOperatorAddLader(O,det,ilA+ilB+ilC,A.l[ilA].VRe[iNA]*B.l[ilB].V[iNB].Re*C.l[ilC].V[iNC].Re-A.l[ilA].VRe[iNA]*B.l[ilB].V[iNB].Im*C.l[ilC].V[iNC].Im,A.l[ilA].VRe[iNA]*B.l[ilB].V[iNB].Im*C.l[ilC].V[iNC].Re+A.l[ilA].VRe[iNA]*B.l[ilB].V[iNB].Re*C.l[ilC].V[iNC].Im)) {printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                      }
+                    }
+                  }
+                }
+                else
+                { /* A real B complex C real */
+                  for(iNA=0;iNA<A.l[ilA].N;iNA++)
+                  {
+                    for(k=0;k<ilA;k++)
+                    {
+                      det[k]=A.l[ilA].o[iNA*ilA+k];
+                    }
+                    for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                    {
+                      for(k=0;k<ilB;k++)
+                      {
+                        det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                      }
+                      for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                      {
+                        for(k=0;k<ilC;k++)
+                        {
+                          det[k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k];
+                        }
+                        if(ComplexOperatorAddLader(O,det,ilA+ilB+ilC,A.l[ilA].VRe[iNA]*B.l[ilB].V[iNB].Re*C.l[ilC].VRe[iNC],A.l[ilA].VRe[iNA]*B.l[ilB].V[iNB].Im*C.l[ilC].VRe[iNC])) {printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                      }
+                    }
+                  }
+                }
+              }
+              else
+              { /* A and B real */
+                if(C.l[ilC].QComplex)
+                { /* A and B real C complex */
+                  for(iNA=0;iNA<A.l[ilA].N;iNA++)
+                  {
+                    for(k=0;k<ilA;k++)
+                    {
+                      det[k]=A.l[ilA].o[iNA*ilA+k];
+                    }
+                    for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                    {
+                      for(k=0;k<ilB;k++)
+                      {
+                        det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                      }
+                      for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                      {
+                        for(k=0;k<ilC;k++)
+                        {
+                          det[k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k];
+                        }
+                        if(ComplexOperatorAddLader(O,det,ilA+ilB+ilC,A.l[ilA].VRe[iNA]*B.l[ilB].VRe[iNB]*C.l[ilC].V[iNC].Re,A.l[ilA].VRe[iNA]*B.l[ilB].VRe[iNB]*C.l[ilC].V[iNC].Im)) {printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                      }
+                    }
+                  }
+                }
+                else
+                { /* A, B and C real (O complex) */
+                  for(iNA=0;iNA<A.l[ilA].N;iNA++)
+                  {
+                    for(k=0;k<ilA;k++)
+                    {
+                      det[k]=A.l[ilA].o[iNA*ilA+k];
+                    }
+                    for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                    {
+                      for(k=0;k<ilB;k++)
+                      {
+                        det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                      }
+                      for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                      {
+                        for(k=0;k<ilC;k++)
+                        {
+                          det[k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k];
+                        }
+                        if(ComplexOperatorAddLader(O,det,ilA+ilB+ilC,A.l[ilA].VRe[iNA]*B.l[ilB].VRe[iNB]*C.l[ilC].VRe[iNC],0)) {printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+          else
+          { /* All real */
+            for(iNA=0;iNA<A.l[ilA].N;iNA++)
+            {
+              for(k=0;k<ilA;k++)
+              {
+                det[k]=A.l[ilA].o[iNA*ilA+k];
+              }
+              for(iNB=0;iNB<B.l[ilB].N;iNB++)
+              {
+                for(k=0;k<ilB;k++)
+                {
+                  det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                }
+                for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                {
+                  for(k=0;k<ilC;k++)
+                  {
+                    det[k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k];
+                  }
+                  if(RealOperatorAddLader(O,det,ilA+ilB+ilC,A.l[ilA].VRe[iNA]*B.l[ilB].VRe[iNB]*C.l[ilC].VRe[iNC])) {printf("RealOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    /* End of NNN */
+  }
+  else if((Aset=='N')&&(Bset=='D')&&(Cset=='N'))
+  {
+    printf("in OperatorMultiply3 Still to do\n");
+    return 1;
+  }
+  else if((Aset=='D')&&(Bset=='N')&&(Cset=='N'))
+  {
+    for(ilA=0;ilA<=A.MaxLength;ilA++)
+    {
+      for(ilB=0;ilB<=B.MaxLength;ilB++)
+      {
+        for(ilC=0;ilC<=C.MaxLength;ilC++)
+        {
+          if((O->l[ilA+ilB].QComplex)&&(A.l[ilA].QComplex)&&(B.l[ilB].QComplex)&&(C.l[ilC].QComplex))
+          {/* at least one complex */
+            if(!(O->l[ilA+ilB+ilC].QComplex)) if(MakeRealOperatorFixedLengthComplex(O,ilA+ilB+ilC)) {printf("MakeRealOperatorFixedLengthComplex at length=%i failed in OperatorMultiply3\n",ilA+ilB+ilC);fflush(stdout);return 1;}
+            if(A.l[ilA].QComplex)
+            { /* A complex */
+              if(B.l[ilB].QComplex)
+              { /* A and B complex */
+                if(C.l[ilC].QComplex)
+                { /* A and B and C complex */
+                  for(iNA=0;iNA<A.l[ilA].N;iNA++)
+                  {
+                    for(k=0;k<ilA;k++)
+                    {
+                      det[ilA-1-k]=A.l[ilA].o[iNA*ilA+k]^CrAnMask;
+                    }
+                    for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                    {
+                      for(k=0;k<ilB;k++)
+                      {
+                        det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                      }
+                      for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                      {
+                        for(k=0;k<ilC;k++)
+                        {
+                          det[k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k];
+                        }
+                        if(ComplexOperatorAddLader(O,det,ilA+ilB+ilC,A.l[ilA].V[iNA].Re*B.l[ilB].V[iNB].Re*C.l[ilC].V[iNC].Re-A.l[ilA].V[iNA].Re*B.l[ilB].V[iNB].Im*C.l[ilC].V[iNC].Im+A.l[ilA].V[iNA].Im*B.l[ilB].V[iNB].Re*C.l[ilC].V[iNC].Im+A.l[ilA].V[iNA].Im*B.l[ilB].V[iNB].Im*C.l[ilC].V[iNC].Re,-A.l[ilA].V[iNA].Im*B.l[ilB].V[iNB].Re*C.l[ilC].V[iNC].Re+A.l[ilA].V[iNA].Re*B.l[ilB].V[iNB].Im*C.l[ilC].V[iNC].Re+A.l[ilA].V[iNA].Re*B.l[ilB].V[iNB].Re*C.l[ilC].V[iNC].Im+A.l[ilA].V[iNA].Im*B.l[ilB].V[iNB].Im*C.l[ilC].V[iNC].Im)) {printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                      }
+                    }
+                  }
+                }
+                else
+                { /* A and B complex, C real */
+                  for(iNA=0;iNA<A.l[ilA].N;iNA++)
+                  {
+                    for(k=0;k<ilA;k++)
+                    {
+                      det[ilA-1-k]=A.l[ilA].o[iNA*ilA+k]^CrAnMask;
+                    }
+                    for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                    {
+                      for(k=0;k<ilB;k++)
+                      {
+                        det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                      }
+                      for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                      {
+                        for(k=0;k<ilC;k++)
+                        {
+                          det[k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k];
+                        }
+                        if(ComplexOperatorAddLader(O,det,ilA+ilB+ilC,A.l[ilA].V[iNA].Re*B.l[ilB].V[iNB].Re*C.l[ilC].VRe[iNC]+A.l[ilA].V[iNA].Im*B.l[ilB].V[iNB].Im*C.l[ilC].VRe[iNC],-A.l[ilA].V[iNA].Im*B.l[ilB].V[iNB].Re*C.l[ilC].VRe[iNC]+A.l[ilA].V[iNA].Re*B.l[ilB].V[iNB].Im*C.l[ilC].VRe[iNC])) {printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                      }
+                    }
+                  }
+                }
+              }
+              else
+              { /* A complex B real */
+                if(C.l[ilC].QComplex)
+                { /* A complex B real C complex */
+                  for(iNA=0;iNA<A.l[ilA].N;iNA++)
+                  {
+                    for(k=0;k<ilA;k++)
+                    {
+                      det[ilA-1-k]=A.l[ilA].o[iNA*ilA+k]^CrAnMask;
+                    }
+                    for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                    {
+                      for(k=0;k<ilB;k++)
+                      {
+                        det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                      }
+                      for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                      {
+                        for(k=0;k<ilC;k++)
+                        {
+                          det[k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k];
+                        }
+                        if(ComplexOperatorAddLader(O,det,ilA+ilB+ilC,A.l[ilA].V[iNA].Re*B.l[ilB].VRe[iNB]*C.l[ilC].V[iNC].Re+A.l[ilA].V[iNA].Im*B.l[ilB].VRe[iNB]*C.l[ilC].V[iNC].Im,-A.l[ilA].V[iNA].Im*B.l[ilB].VRe[iNB]*C.l[ilC].V[iNC].Re+A.l[ilA].V[iNA].Re*B.l[ilB].VRe[iNB]*C.l[ilC].V[iNC].Im)) {printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                      }
+                    }
+                  }
+                }
+                else
+                { /* A complex B real C real */
+                  for(iNA=0;iNA<A.l[ilA].N;iNA++)
+                  {
+                    for(k=0;k<ilA;k++)
+                    {
+                      det[ilA-1-k]=A.l[ilA].o[iNA*ilA+k]^CrAnMask;
+                    }
+                    for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                    {
+                      for(k=0;k<ilB;k++)
+                      {
+                        det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                      }
+                      for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                      {
+                        for(k=0;k<ilC;k++)
+                        {
+                          det[k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k];
+                        }
+                        if(ComplexOperatorAddLader(O,det,ilA+ilB+ilC,A.l[ilA].V[iNA].Re*B.l[ilB].VRe[iNB]*C.l[ilC].VRe[iNC],-A.l[ilA].V[iNA].Im*B.l[ilB].VRe[iNB]*C.l[ilC].VRe[iNC])) {printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            else
+            { /* A real */
+              if(B.l[ilB].QComplex)
+              { /* A real and B complex */
+                if(C.l[ilC].QComplex)
+                { /* A real B complex C complex */
+                  for(iNA=0;iNA<A.l[ilA].N;iNA++)
+                  {
+                    for(k=0;k<ilA;k++)
+                    {
+                      det[ilA-1-k]=A.l[ilA].o[iNA*ilA+k]^CrAnMask;
+                    }
+                    for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                    {
+                      for(k=0;k<ilB;k++)
+                      {
+                        det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                      }
+                      for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                      {
+                        for(k=0;k<ilC;k++)
+                        {
+                          det[k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k];
+                        }
+                        if(ComplexOperatorAddLader(O,det,ilA+ilB+ilC,A.l[ilA].VRe[iNA]*B.l[ilB].V[iNB].Re*C.l[ilC].V[iNC].Re-A.l[ilA].VRe[iNA]*B.l[ilB].V[iNB].Im*C.l[ilC].V[iNC].Im,A.l[ilA].VRe[iNA]*B.l[ilB].V[iNB].Im*C.l[ilC].V[iNC].Re+A.l[ilA].VRe[iNA]*B.l[ilB].V[iNB].Re*C.l[ilC].V[iNC].Im)) {printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                      }
+                    }
+                  }
+                }
+                else
+                { /* A real B complex C real */
+                  for(iNA=0;iNA<A.l[ilA].N;iNA++)
+                  {
+                    for(k=0;k<ilA;k++)
+                    {
+                      det[ilA-1-k]=A.l[ilA].o[iNA*ilA+k]^CrAnMask;
+                    }
+                    for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                    {
+                      for(k=0;k<ilB;k++)
+                      {
+                        det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                      }
+                      for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                      {
+                        for(k=0;k<ilC;k++)
+                        {
+                          det[k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k];
+                        }
+                        if(ComplexOperatorAddLader(O,det,ilA+ilB+ilC,A.l[ilA].VRe[iNA]*B.l[ilB].V[iNB].Re*C.l[ilC].VRe[iNC],A.l[ilA].VRe[iNA]*B.l[ilB].V[iNB].Im*C.l[ilC].VRe[iNC])) {printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                      }
+                    }
+                  }
+                }
+              }
+              else
+              { /* A and B real */
+                if(C.l[ilC].QComplex)
+                { /* A and B real C complex */
+                  for(iNA=0;iNA<A.l[ilA].N;iNA++)
+                  {
+                    for(k=0;k<ilA;k++)
+                    {
+                      det[ilA-1-k]=A.l[ilA].o[iNA*ilA+k]^CrAnMask;
+                    }
+                    for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                    {
+                      for(k=0;k<ilB;k++)
+                      {
+                        det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                      }
+                      for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                      {
+                        for(k=0;k<ilC;k++)
+                        {
+                          det[k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k];
+                        }
+                        if(ComplexOperatorAddLader(O,det,ilA+ilB+ilC,A.l[ilA].VRe[iNA]*B.l[ilB].VRe[iNB]*C.l[ilC].V[iNC].Re,A.l[ilA].VRe[iNA]*B.l[ilB].VRe[iNB]*C.l[ilC].V[iNC].Im)) {printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                      }
+                    }
+                  }
+                }
+                else
+                { /* A, B and C real (O complex) */
+                  for(iNA=0;iNA<A.l[ilA].N;iNA++)
+                  {
+                    for(k=0;k<ilA;k++)
+                    {
+                      det[ilA-1-k]=A.l[ilA].o[iNA*ilA+k]^CrAnMask;
+                    }
+                    for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                    {
+                      for(k=0;k<ilB;k++)
+                      {
+                        det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                      }
+                      for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                      {
+                        for(k=0;k<ilC;k++)
+                        {
+                          det[k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k];
+                        }
+                        if(ComplexOperatorAddLader(O,det,ilA+ilB+ilC,A.l[ilA].VRe[iNA]*B.l[ilB].VRe[iNB]*C.l[ilC].VRe[iNC],0)) {printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+          else
+          { /* All real */
+            for(iNA=0;iNA<A.l[ilA].N;iNA++)
+            {
+              for(k=0;k<ilA;k++)
+              {
+                det[ilA-1-k]=A.l[ilA].o[iNA*ilA+k]^CrAnMask;
+              }
+              for(iNB=0;iNB<B.l[ilB].N;iNB++)
+              {
+                for(k=0;k<ilB;k++)
+                {
+                  det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                }
+                for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                {
+                  for(k=0;k<ilC;k++)
+                  {
+                    det[k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k];
+                  }
+                  if(RealOperatorAddLader(O,det,ilA+ilB+ilC,A.l[ilA].VRe[iNA]*B.l[ilB].VRe[iNB]*C.l[ilC].VRe[iNC])) {printf("RealOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    /* End of DNN */
+  }
+  else if((Aset=='D')&&(Bset=='D')&&(Cset=='N'))
+  {
+    printf("in OperatorMultiply3 Still to do\n");
+    return 1;
+  }
+  else if((Aset=='N')&&(Bset=='N')&&(Cset=='D'))
+  {
+    for(ilA=0;ilA<=A.MaxLength;ilA++)
+    {
+      for(ilB=0;ilB<=B.MaxLength;ilB++)
+      {
+        for(ilC=0;ilC<=C.MaxLength;ilC++)
+        {
+          if((O->l[ilA+ilB].QComplex)&&(A.l[ilA].QComplex)&&(B.l[ilB].QComplex)&&(C.l[ilC].QComplex))
+          {/* at least one complex */
+            if(!(O->l[ilA+ilB+ilC].QComplex)) if(MakeRealOperatorFixedLengthComplex(O,ilA+ilB+ilC)) {printf("MakeRealOperatorFixedLengthComplex at length=%i failed in OperatorMultiply3\n",ilA+ilB+ilC);fflush(stdout);return 1;}
+            if(A.l[ilA].QComplex)
+            { /* A complex */
+              if(B.l[ilB].QComplex)
+              { /* A and B complex */
+                if(C.l[ilC].QComplex)
+                { /* A and B and C complex */
+                  for(iNA=0;iNA<A.l[ilA].N;iNA++)
+                  {
+                    for(k=0;k<ilA;k++)
+                    {
+                      det[k]=A.l[ilA].o[iNA*ilA+k];
+                    }
+                    for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                    {
+                      for(k=0;k<ilB;k++)
+                      {
+                        det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                      }
+                      for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                      {
+                        for(k=0;k<ilC;k++)
+                        {
+                          det[ilC-1-k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k]^CrAnMask;
+                        }
+                        if(ComplexOperatorAddLader(O,det,ilA+ilB+ilC,A.l[ilA].V[iNA].Re*B.l[ilB].V[iNB].Re*C.l[ilC].V[iNC].Re+A.l[ilA].V[iNA].Re*B.l[ilB].V[iNB].Im*C.l[ilC].V[iNC].Im+A.l[ilA].V[iNA].Im*B.l[ilB].V[iNB].Re*C.l[ilC].V[iNC].Im-A.l[ilA].V[iNA].Im*B.l[ilB].V[iNB].Im*C.l[ilC].V[iNC].Re,A.l[ilA].V[iNA].Im*B.l[ilB].V[iNB].Re*C.l[ilC].V[iNC].Re+A.l[ilA].V[iNA].Re*B.l[ilB].V[iNB].Im*C.l[ilC].V[iNC].Re-A.l[ilA].V[iNA].Re*B.l[ilB].V[iNB].Re*C.l[ilC].V[iNC].Im+A.l[ilA].V[iNA].Im*B.l[ilB].V[iNB].Im*C.l[ilC].V[iNC].Im)) {printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                      }
+                    }
+                  }
+                }
+                else
+                { /* A and B complex, C real */
+                  for(iNA=0;iNA<A.l[ilA].N;iNA++)
+                  {
+                    for(k=0;k<ilA;k++)
+                    {
+                      det[k]=A.l[ilA].o[iNA*ilA+k];
+                    }
+                    for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                    {
+                      for(k=0;k<ilB;k++)
+                      {
+                        det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                      }
+                      for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                      {
+                        for(k=0;k<ilC;k++)
+                        {
+                          det[ilC-1-k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k]^CrAnMask;
+                        }
+                        if(ComplexOperatorAddLader(O,det,ilA+ilB+ilC,A.l[ilA].V[iNA].Re*B.l[ilB].V[iNB].Re*C.l[ilC].VRe[iNC]-A.l[ilA].V[iNA].Im*B.l[ilB].V[iNB].Im*C.l[ilC].VRe[iNC],A.l[ilA].V[iNA].Im*B.l[ilB].V[iNB].Re*C.l[ilC].VRe[iNC]+A.l[ilA].V[iNA].Re*B.l[ilB].V[iNB].Im*C.l[ilC].VRe[iNC])) {printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                      }
+                    }
+                  }
+                }
+              }
+              else
+              { /* A complex B real */
+                if(C.l[ilC].QComplex)
+                { /* A complex B real C complex */
+                  for(iNA=0;iNA<A.l[ilA].N;iNA++)
+                  {
+                    for(k=0;k<ilA;k++)
+                    {
+                      det[k]=A.l[ilA].o[iNA*ilA+k];
+                    }
+                    for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                    {
+                      for(k=0;k<ilB;k++)
+                      {
+                        det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                      }
+                      for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                      {
+                        for(k=0;k<ilC;k++)
+                        {
+                          det[ilC-1-k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k]^CrAnMask;
+                        }
+                        if(ComplexOperatorAddLader(O,det,ilA+ilB+ilC,A.l[ilA].V[iNA].Re*B.l[ilB].VRe[iNB]*C.l[ilC].V[iNC].Re+A.l[ilA].V[iNA].Im*B.l[ilB].VRe[iNB]*C.l[ilC].V[iNC].Im,A.l[ilA].V[iNA].Im*B.l[ilB].VRe[iNB]*C.l[ilC].V[iNC].Re-A.l[ilA].V[iNA].Re*B.l[ilB].VRe[iNB]*C.l[ilC].V[iNC].Im)) {printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                      }
+                    }
+                  }
+                }
+                else
+                { /* A complex B real C real */
+                  for(iNA=0;iNA<A.l[ilA].N;iNA++)
+                  {
+                    for(k=0;k<ilA;k++)
+                    {
+                      det[k]=A.l[ilA].o[iNA*ilA+k];
+                    }
+                    for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                    {
+                      for(k=0;k<ilB;k++)
+                      {
+                        det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                      }
+                      for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                      {
+                        for(k=0;k<ilC;k++)
+                        {
+                          det[ilC-1-k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k]^CrAnMask;
+                        }
+                        if(ComplexOperatorAddLader(O,det,ilA+ilB+ilC,A.l[ilA].V[iNA].Re*B.l[ilB].VRe[iNB]*C.l[ilC].VRe[iNC],A.l[ilA].V[iNA].Im*B.l[ilB].VRe[iNB]*C.l[ilC].VRe[iNC])) {printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            else
+            { /* A real */
+              if(B.l[ilB].QComplex)
+              { /* A real and B complex */
+                if(C.l[ilC].QComplex)
+                { /* A real B complex C complex */
+                  for(iNA=0;iNA<A.l[ilA].N;iNA++)
+                  {
+                    for(k=0;k<ilA;k++)
+                    {
+                      det[k]=A.l[ilA].o[iNA*ilA+k];
+                    }
+                    for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                    {
+                      for(k=0;k<ilB;k++)
+                      {
+                        det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                      }
+                      for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                      {
+                        for(k=0;k<ilC;k++)
+                        {
+                          det[ilC-1-k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k]^CrAnMask;
+                        }
+                        if(ComplexOperatorAddLader(O,det,ilA+ilB+ilC,A.l[ilA].VRe[iNA]*B.l[ilB].V[iNB].Re*C.l[ilC].V[iNC].Re+A.l[ilA].VRe[iNA]*B.l[ilB].V[iNB].Im*C.l[ilC].V[iNC].Im,A.l[ilA].VRe[iNA]*B.l[ilB].V[iNB].Im*C.l[ilC].V[iNC].Re-A.l[ilA].VRe[iNA]*B.l[ilB].V[iNB].Re*C.l[ilC].V[iNC].Im)) {printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                      }
+                    }
+                  }
+                }
+                else
+                { /* A real B complex C real */
+                  for(iNA=0;iNA<A.l[ilA].N;iNA++)
+                  {
+                    for(k=0;k<ilA;k++)
+                    {
+                      det[k]=A.l[ilA].o[iNA*ilA+k];
+                    }
+                    for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                    {
+                      for(k=0;k<ilB;k++)
+                      {
+                        det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                      }
+                      for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                      {
+                        for(k=0;k<ilC;k++)
+                        {
+                          det[ilC-1-k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k]^CrAnMask;
+                        }
+                        if(ComplexOperatorAddLader(O,det,ilA+ilB+ilC,A.l[ilA].VRe[iNA]*B.l[ilB].V[iNB].Re*C.l[ilC].VRe[iNC],A.l[ilA].VRe[iNA]*B.l[ilB].V[iNB].Im*C.l[ilC].VRe[iNC])) {printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                      }
+                    }
+                  }
+                }
+              }
+              else
+              { /* A and B real */
+                if(C.l[ilC].QComplex)
+                { /* A and B real C complex */
+                  for(iNA=0;iNA<A.l[ilA].N;iNA++)
+                  {
+                    for(k=0;k<ilA;k++)
+                    {
+                      det[k]=A.l[ilA].o[iNA*ilA+k];
+                    }
+                    for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                    {
+                      for(k=0;k<ilB;k++)
+                      {
+                        det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                      }
+                      for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                      {
+                        for(k=0;k<ilC;k++)
+                        {
+                          det[ilC-1-k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k]^CrAnMask;
+                        }
+                        if(ComplexOperatorAddLader(O,det,ilA+ilB+ilC,A.l[ilA].VRe[iNA]*B.l[ilB].VRe[iNB]*C.l[ilC].V[iNC].Re,-A.l[ilA].VRe[iNA]*B.l[ilB].VRe[iNB]*C.l[ilC].V[iNC].Im)) {printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                      }
+                    }
+                  }
+                }
+                else
+                { /* A, B and C real (O complex) */
+                  for(iNA=0;iNA<A.l[ilA].N;iNA++)
+                  {
+                    for(k=0;k<ilA;k++)
+                    {
+                      det[k]=A.l[ilA].o[iNA*ilA+k];
+                    }
+                    for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                    {
+                      for(k=0;k<ilB;k++)
+                      {
+                        det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                      }
+                      for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                      {
+                        for(k=0;k<ilC;k++)
+                        {
+                          det[ilC-1-k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k]^CrAnMask;
+                        }
+                        if(ComplexOperatorAddLader(O,det,ilA+ilB+ilC,A.l[ilA].VRe[iNA]*B.l[ilB].VRe[iNB]*C.l[ilC].VRe[iNC],0)) {printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+          else
+          { /* All real */
+            for(iNA=0;iNA<A.l[ilA].N;iNA++)
+            {
+              for(k=0;k<ilA;k++)
+              {
+                det[k]=A.l[ilA].o[iNA*ilA+k];
+              }
+              for(iNB=0;iNB<B.l[ilB].N;iNB++)
+              {
+                for(k=0;k<ilB;k++)
+                {
+                  det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                }
+                for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                {
+                  for(k=0;k<ilC;k++)
+                  {
+                    det[ilC-1-k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k]^CrAnMask;
+                  }
+                  if(RealOperatorAddLader(O,det,ilA+ilB+ilC,A.l[ilA].VRe[iNA]*B.l[ilB].VRe[iNB]*C.l[ilC].VRe[iNC])) {printf("RealOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    /* End of NND */
+  }
+  else if((Aset=='N')&&(Bset=='D')&&(Cset=='D'))
+  {
+    printf("in OperatorMultiply3 Still to do\n");
+    return 1;
+  }
+  else if((Aset=='D')&&(Bset=='N')&&(Cset=='D'))
+  {
+    printf("in OperatorMultiply3 Still to do\n");
+    return 1;
+  }
+  else if((Aset=='D')&&(Bset=='D')&&(Cset=='D'))
+  {
+    printf("in OperatorMultiply3 Still to do\n");
+    return 1;
+  }
+  else
+  {
+    printf("in OperatorMultiply3 unrecognized input for Aset and or Bset\n");
+    return 1;
+  }
+  return 0;
+}
+
+
+
+
+/*  Depending on Aset, Bset and Cset
+ *    O <- O + A^'Aset' B^'Bset' C^'Cset
+ *    whereby set can be
+ *    'N' normal
+ *    'C' conjugated (a^dag remains a^dag, prefactors become complex conjugated)
+ *    'T' transposed (a^dag becomes a, prefactors remain)
+ *    'D' conjugate transposed (a^dag becomes a, prefactors become complex conjugated)
+ */
+uint32_t OperatorMultiply3NormalOrder(OperatorType *const O, OperatorType const A, OperatorType const B, OperatorType const C, char const Aset, char const Bset, char const Cset, uint32_t (*QDetNotOrdered)(uint16_t,uint16_t,uint32_t))
+{
+  uint32_t ilA, ilB, ilC, iNA, iNB, iNC, k;
+  uint16_t det[A.MaxLength+B.MaxLength+C.MaxLength];
+  if     ((Aset=='N')&&(Bset=='N')&&(Cset=='N'))
+  {
+    for(ilA=0;ilA<=A.MaxLength;ilA++)
+    {
+      for(ilB=0;ilB<=B.MaxLength;ilB++)
+      {
+        for(ilC=0;ilC<=C.MaxLength;ilC++)
+        {
+          if((O->l[ilA+ilB].QComplex)&&(A.l[ilA].QComplex)&&(B.l[ilB].QComplex)&&(C.l[ilC].QComplex))
+          {/* at least one complex */
+            if(!(O->l[ilA+ilB+ilC].QComplex)) if(MakeRealOperatorFixedLengthComplex(O,ilA+ilB+ilC)) {printf("MakeRealOperatorFixedLengthComplex at length=%i failed in OperatorMultiply3\n",ilA+ilB+ilC);fflush(stdout);return 1;}
+            if(A.l[ilA].QComplex)
+            { /* A complex */
+              if(B.l[ilB].QComplex)
+              { /* A and B complex */
+                if(C.l[ilC].QComplex)
+                { /* A and B and C complex */
+                  for(iNA=0;iNA<A.l[ilA].N;iNA++)
+                  {
+                    for(k=0;k<ilA;k++)
+                    {
+                      det[k]=A.l[ilA].o[iNA*ilA+k];
+                    }
+                    for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                    {
+                      for(k=0;k<ilB;k++)
+                      {
+                        det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                      }
+                      for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                      {
+                        for(k=0;k<ilC;k++)
+                        {
+                          det[k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k];
+                        }
+                        if(ComplexOperatorAddLaderNormalOrder(O,det,ilA+ilB+ilC,A.l[ilA].V[iNA].Re*B.l[ilB].V[iNB].Re*C.l[ilC].V[iNC].Re-A.l[ilA].V[iNA].Re*B.l[ilB].V[iNB].Im*C.l[ilC].V[iNC].Im-A.l[ilA].V[iNA].Im*B.l[ilB].V[iNB].Re*C.l[ilC].V[iNC].Im-A.l[ilA].V[iNA].Im*B.l[ilB].V[iNB].Im*C.l[ilC].V[iNC].Re,A.l[ilA].V[iNA].Im*B.l[ilB].V[iNB].Re*C.l[ilC].V[iNC].Re+A.l[ilA].V[iNA].Re*B.l[ilB].V[iNB].Im*C.l[ilC].V[iNC].Re+A.l[ilA].V[iNA].Re*B.l[ilB].V[iNB].Re*C.l[ilC].V[iNC].Im-A.l[ilA].V[iNA].Im*B.l[ilB].V[iNB].Im*C.l[ilC].V[iNC].Im,QDetNotOrdered)) {printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                      }
+                    }
+                  }
+                }
+                else
+                { /* A and B complex, C real */
+                  for(iNA=0;iNA<A.l[ilA].N;iNA++)
+                  {
+                    for(k=0;k<ilA;k++)
+                    {
+                      det[k]=A.l[ilA].o[iNA*ilA+k];
+                    }
+                    for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                    {
+                      for(k=0;k<ilB;k++)
+                      {
+                        det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                      }
+                      for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                      {
+                        for(k=0;k<ilC;k++)
+                        {
+                          det[k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k];
+                        }
+                        if(ComplexOperatorAddLaderNormalOrder(O,det,ilA+ilB+ilC,A.l[ilA].V[iNA].Re*B.l[ilB].V[iNB].Re*C.l[ilC].VRe[iNC]-A.l[ilA].V[iNA].Im*B.l[ilB].V[iNB].Im*C.l[ilC].VRe[iNC],A.l[ilA].V[iNA].Im*B.l[ilB].V[iNB].Re*C.l[ilC].VRe[iNC]+A.l[ilA].V[iNA].Re*B.l[ilB].V[iNB].Im*C.l[ilC].VRe[iNC],QDetNotOrdered)) {printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                      }
+                    }
+                  }
+                }
+              }
+              else
+              { /* A complex B real */
+                if(C.l[ilC].QComplex)
+                { /* A complex B real C complex */
+                  for(iNA=0;iNA<A.l[ilA].N;iNA++)
+                  {
+                    for(k=0;k<ilA;k++)
+                    {
+                      det[k]=A.l[ilA].o[iNA*ilA+k];
+                    }
+                    for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                    {
+                      for(k=0;k<ilB;k++)
+                      {
+                        det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                      }
+                      for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                      {
+                        for(k=0;k<ilC;k++)
+                        {
+                          det[k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k];
+                        }
+                        if(ComplexOperatorAddLaderNormalOrder(O,det,ilA+ilB+ilC,A.l[ilA].V[iNA].Re*B.l[ilB].VRe[iNB]*C.l[ilC].V[iNC].Re-A.l[ilA].V[iNA].Im*B.l[ilB].VRe[iNB]*C.l[ilC].V[iNC].Im,A.l[ilA].V[iNA].Im*B.l[ilB].VRe[iNB]*C.l[ilC].V[iNC].Re+A.l[ilA].V[iNA].Re*B.l[ilB].VRe[iNB]*C.l[ilC].V[iNC].Im,QDetNotOrdered)) {printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                      }
+                    }
+                  }
+                }
+                else
+                { /* A complex B real C real */
+                  for(iNA=0;iNA<A.l[ilA].N;iNA++)
+                  {
+                    for(k=0;k<ilA;k++)
+                    {
+                      det[k]=A.l[ilA].o[iNA*ilA+k];
+                    }
+                    for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                    {
+                      for(k=0;k<ilB;k++)
+                      {
+                        det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                      }
+                      for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                      {
+                        for(k=0;k<ilC;k++)
+                        {
+                          det[k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k];
+                        }
+                        if(ComplexOperatorAddLaderNormalOrder(O,det,ilA+ilB+ilC,A.l[ilA].V[iNA].Re*B.l[ilB].VRe[iNB]*C.l[ilC].VRe[iNC],A.l[ilA].V[iNA].Im*B.l[ilB].VRe[iNB]*C.l[ilC].VRe[iNC],QDetNotOrdered)) {printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            else
+            { /* A real */
+              if(B.l[ilB].QComplex)
+              { /* A real and B complex */
+                if(C.l[ilC].QComplex)
+                { /* A real B complex C complex */
+                  for(iNA=0;iNA<A.l[ilA].N;iNA++)
+                  {
+                    for(k=0;k<ilA;k++)
+                    {
+                      det[k]=A.l[ilA].o[iNA*ilA+k];
+                    }
+                    for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                    {
+                      for(k=0;k<ilB;k++)
+                      {
+                        det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                      }
+                      for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                      {
+                        for(k=0;k<ilC;k++)
+                        {
+                          det[k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k];
+                        }
+                        if(ComplexOperatorAddLaderNormalOrder(O,det,ilA+ilB+ilC,A.l[ilA].VRe[iNA]*B.l[ilB].V[iNB].Re*C.l[ilC].V[iNC].Re-A.l[ilA].VRe[iNA]*B.l[ilB].V[iNB].Im*C.l[ilC].V[iNC].Im,A.l[ilA].VRe[iNA]*B.l[ilB].V[iNB].Im*C.l[ilC].V[iNC].Re+A.l[ilA].VRe[iNA]*B.l[ilB].V[iNB].Re*C.l[ilC].V[iNC].Im,QDetNotOrdered)) {printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                      }
+                    }
+                  }
+                }
+                else
+                { /* A real B complex C real */
+                  for(iNA=0;iNA<A.l[ilA].N;iNA++)
+                  {
+                    for(k=0;k<ilA;k++)
+                    {
+                      det[k]=A.l[ilA].o[iNA*ilA+k];
+                    }
+                    for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                    {
+                      for(k=0;k<ilB;k++)
+                      {
+                        det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                      }
+                      for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                      {
+                        for(k=0;k<ilC;k++)
+                        {
+                          det[k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k];
+                        }
+                        if(ComplexOperatorAddLaderNormalOrder(O,det,ilA+ilB+ilC,A.l[ilA].VRe[iNA]*B.l[ilB].V[iNB].Re*C.l[ilC].VRe[iNC],A.l[ilA].VRe[iNA]*B.l[ilB].V[iNB].Im*C.l[ilC].VRe[iNC],QDetNotOrdered)) {printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                      }
+                    }
+                  }
+                }
+              }
+              else
+              { /* A and B real */
+                if(C.l[ilC].QComplex)
+                { /* A and B real C complex */
+                  for(iNA=0;iNA<A.l[ilA].N;iNA++)
+                  {
+                    for(k=0;k<ilA;k++)
+                    {
+                      det[k]=A.l[ilA].o[iNA*ilA+k];
+                    }
+                    for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                    {
+                      for(k=0;k<ilB;k++)
+                      {
+                        det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                      }
+                      for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                      {
+                        for(k=0;k<ilC;k++)
+                        {
+                          det[k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k];
+                        }
+                        if(ComplexOperatorAddLaderNormalOrder(O,det,ilA+ilB+ilC,A.l[ilA].VRe[iNA]*B.l[ilB].VRe[iNB]*C.l[ilC].V[iNC].Re,A.l[ilA].VRe[iNA]*B.l[ilB].VRe[iNB]*C.l[ilC].V[iNC].Im,QDetNotOrdered)) {printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                      }
+                    }
+                  }
+                }
+                else
+                { /* A, B and C real (O complex) */
+                  for(iNA=0;iNA<A.l[ilA].N;iNA++)
+                  {
+                    for(k=0;k<ilA;k++)
+                    {
+                      det[k]=A.l[ilA].o[iNA*ilA+k];
+                    }
+                    for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                    {
+                      for(k=0;k<ilB;k++)
+                      {
+                        det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                      }
+                      for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                      {
+                        for(k=0;k<ilC;k++)
+                        {
+                          det[k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k];
+                        }
+                        if(ComplexOperatorAddLaderNormalOrder(O,det,ilA+ilB+ilC,A.l[ilA].VRe[iNA]*B.l[ilB].VRe[iNB]*C.l[ilC].VRe[iNC],0,QDetNotOrdered)) {printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+          else
+          { /* All real */
+            for(iNA=0;iNA<A.l[ilA].N;iNA++)
+            {
+              for(k=0;k<ilA;k++)
+              {
+                det[k]=A.l[ilA].o[iNA*ilA+k];
+              }
+              for(iNB=0;iNB<B.l[ilB].N;iNB++)
+              {
+                for(k=0;k<ilB;k++)
+                {
+                  det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                }
+                for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                {
+                  for(k=0;k<ilC;k++)
+                  {
+                    det[k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k];
+                  }
+                  if(RealOperatorAddLaderNormalOrder(O,det,ilA+ilB+ilC,A.l[ilA].VRe[iNA]*B.l[ilB].VRe[iNB]*C.l[ilC].VRe[iNC],QDetNotOrdered)) {printf("RealOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    /* End of NNN */
+  }
+  else if((Aset=='N')&&(Bset=='D')&&(Cset=='N'))
+  {
+    printf("in OperatorMultiply3 Still to do\n");
+    return 1;
+  }
+  else if((Aset=='D')&&(Bset=='N')&&(Cset=='N'))
+  {
+    for(ilA=0;ilA<=A.MaxLength;ilA++)
+    {
+      for(ilB=0;ilB<=B.MaxLength;ilB++)
+      {
+        for(ilC=0;ilC<=C.MaxLength;ilC++)
+        {
+          if((O->l[ilA+ilB].QComplex)&&(A.l[ilA].QComplex)&&(B.l[ilB].QComplex)&&(C.l[ilC].QComplex))
+          {/* at least one complex */
+            if(!(O->l[ilA+ilB+ilC].QComplex)) if(MakeRealOperatorFixedLengthComplex(O,ilA+ilB+ilC)) {printf("MakeRealOperatorFixedLengthComplex at length=%i failed in OperatorMultiply3\n",ilA+ilB+ilC);fflush(stdout);return 1;}
+            if(A.l[ilA].QComplex)
+            { /* A complex */
+              if(B.l[ilB].QComplex)
+              { /* A and B complex */
+                if(C.l[ilC].QComplex)
+                { /* A and B and C complex */
+                  for(iNA=0;iNA<A.l[ilA].N;iNA++)
+                  {
+                    for(k=0;k<ilA;k++)
+                    {
+                      det[ilA-1-k]=A.l[ilA].o[iNA*ilA+k]^CrAnMask;
+                    }
+                    for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                    {
+                      for(k=0;k<ilB;k++)
+                      {
+                        det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                      }
+                      for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                      {
+                        for(k=0;k<ilC;k++)
+                        {
+                          det[k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k];
+                        }
+                        if(ComplexOperatorAddLaderNormalOrder(O,det,ilA+ilB+ilC,A.l[ilA].V[iNA].Re*B.l[ilB].V[iNB].Re*C.l[ilC].V[iNC].Re-A.l[ilA].V[iNA].Re*B.l[ilB].V[iNB].Im*C.l[ilC].V[iNC].Im+A.l[ilA].V[iNA].Im*B.l[ilB].V[iNB].Re*C.l[ilC].V[iNC].Im+A.l[ilA].V[iNA].Im*B.l[ilB].V[iNB].Im*C.l[ilC].V[iNC].Re,-A.l[ilA].V[iNA].Im*B.l[ilB].V[iNB].Re*C.l[ilC].V[iNC].Re+A.l[ilA].V[iNA].Re*B.l[ilB].V[iNB].Im*C.l[ilC].V[iNC].Re+A.l[ilA].V[iNA].Re*B.l[ilB].V[iNB].Re*C.l[ilC].V[iNC].Im+A.l[ilA].V[iNA].Im*B.l[ilB].V[iNB].Im*C.l[ilC].V[iNC].Im,QDetNotOrdered)) {printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                      }
+                    }
+                  }
+                }
+                else
+                { /* A and B complex, C real */
+                  for(iNA=0;iNA<A.l[ilA].N;iNA++)
+                  {
+                    for(k=0;k<ilA;k++)
+                    {
+                      det[ilA-1-k]=A.l[ilA].o[iNA*ilA+k]^CrAnMask;
+                    }
+                    for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                    {
+                      for(k=0;k<ilB;k++)
+                      {
+                        det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                      }
+                      for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                      {
+                        for(k=0;k<ilC;k++)
+                        {
+                          det[k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k];
+                        }
+                        if(ComplexOperatorAddLaderNormalOrder(O,det,ilA+ilB+ilC,A.l[ilA].V[iNA].Re*B.l[ilB].V[iNB].Re*C.l[ilC].VRe[iNC]+A.l[ilA].V[iNA].Im*B.l[ilB].V[iNB].Im*C.l[ilC].VRe[iNC],-A.l[ilA].V[iNA].Im*B.l[ilB].V[iNB].Re*C.l[ilC].VRe[iNC]+A.l[ilA].V[iNA].Re*B.l[ilB].V[iNB].Im*C.l[ilC].VRe[iNC],QDetNotOrdered)) {printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                      }
+                    }
+                  }
+                }
+              }
+              else
+              { /* A complex B real */
+                if(C.l[ilC].QComplex)
+                { /* A complex B real C complex */
+                  for(iNA=0;iNA<A.l[ilA].N;iNA++)
+                  {
+                    for(k=0;k<ilA;k++)
+                    {
+                      det[ilA-1-k]=A.l[ilA].o[iNA*ilA+k]^CrAnMask;
+                    }
+                    for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                    {
+                      for(k=0;k<ilB;k++)
+                      {
+                        det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                      }
+                      for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                      {
+                        for(k=0;k<ilC;k++)
+                        {
+                          det[k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k];
+                        }
+                        if(ComplexOperatorAddLaderNormalOrder(O,det,ilA+ilB+ilC,A.l[ilA].V[iNA].Re*B.l[ilB].VRe[iNB]*C.l[ilC].V[iNC].Re+A.l[ilA].V[iNA].Im*B.l[ilB].VRe[iNB]*C.l[ilC].V[iNC].Im,-A.l[ilA].V[iNA].Im*B.l[ilB].VRe[iNB]*C.l[ilC].V[iNC].Re+A.l[ilA].V[iNA].Re*B.l[ilB].VRe[iNB]*C.l[ilC].V[iNC].Im,QDetNotOrdered)) {printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                      }
+                    }
+                  }
+                }
+                else
+                { /* A complex B real C real */
+                  for(iNA=0;iNA<A.l[ilA].N;iNA++)
+                  {
+                    for(k=0;k<ilA;k++)
+                    {
+                      det[ilA-1-k]=A.l[ilA].o[iNA*ilA+k]^CrAnMask;
+                    }
+                    for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                    {
+                      for(k=0;k<ilB;k++)
+                      {
+                        det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                      }
+                      for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                      {
+                        for(k=0;k<ilC;k++)
+                        {
+                          det[k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k];
+                        }
+                        if(ComplexOperatorAddLaderNormalOrder(O,det,ilA+ilB+ilC,A.l[ilA].V[iNA].Re*B.l[ilB].VRe[iNB]*C.l[ilC].VRe[iNC],-A.l[ilA].V[iNA].Im*B.l[ilB].VRe[iNB]*C.l[ilC].VRe[iNC],QDetNotOrdered)) {printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            else
+            { /* A real */
+              if(B.l[ilB].QComplex)
+              { /* A real and B complex */
+                if(C.l[ilC].QComplex)
+                { /* A real B complex C complex */
+                  for(iNA=0;iNA<A.l[ilA].N;iNA++)
+                  {
+                    for(k=0;k<ilA;k++)
+                    {
+                      det[ilA-1-k]=A.l[ilA].o[iNA*ilA+k]^CrAnMask;
+                    }
+                    for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                    {
+                      for(k=0;k<ilB;k++)
+                      {
+                        det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                      }
+                      for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                      {
+                        for(k=0;k<ilC;k++)
+                        {
+                          det[k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k];
+                        }
+                        if(ComplexOperatorAddLaderNormalOrder(O,det,ilA+ilB+ilC,A.l[ilA].VRe[iNA]*B.l[ilB].V[iNB].Re*C.l[ilC].V[iNC].Re-A.l[ilA].VRe[iNA]*B.l[ilB].V[iNB].Im*C.l[ilC].V[iNC].Im,A.l[ilA].VRe[iNA]*B.l[ilB].V[iNB].Im*C.l[ilC].V[iNC].Re+A.l[ilA].VRe[iNA]*B.l[ilB].V[iNB].Re*C.l[ilC].V[iNC].Im,QDetNotOrdered)) {printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                      }
+                    }
+                  }
+                }
+                else
+                { /* A real B complex C real */
+                  for(iNA=0;iNA<A.l[ilA].N;iNA++)
+                  {
+                    for(k=0;k<ilA;k++)
+                    {
+                      det[ilA-1-k]=A.l[ilA].o[iNA*ilA+k]^CrAnMask;
+                    }
+                    for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                    {
+                      for(k=0;k<ilB;k++)
+                      {
+                        det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                      }
+                      for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                      {
+                        for(k=0;k<ilC;k++)
+                        {
+                          det[k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k];
+                        }
+                        if(ComplexOperatorAddLaderNormalOrder(O,det,ilA+ilB+ilC,A.l[ilA].VRe[iNA]*B.l[ilB].V[iNB].Re*C.l[ilC].VRe[iNC],A.l[ilA].VRe[iNA]*B.l[ilB].V[iNB].Im*C.l[ilC].VRe[iNC],QDetNotOrdered)) {printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                      }
+                    }
+                  }
+                }
+              }
+              else
+              { /* A and B real */
+                if(C.l[ilC].QComplex)
+                { /* A and B real C complex */
+                  for(iNA=0;iNA<A.l[ilA].N;iNA++)
+                  {
+                    for(k=0;k<ilA;k++)
+                    {
+                      det[ilA-1-k]=A.l[ilA].o[iNA*ilA+k]^CrAnMask;
+                    }
+                    for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                    {
+                      for(k=0;k<ilB;k++)
+                      {
+                        det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                      }
+                      for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                      {
+                        for(k=0;k<ilC;k++)
+                        {
+                          det[k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k];
+                        }
+                        if(ComplexOperatorAddLaderNormalOrder(O,det,ilA+ilB+ilC,A.l[ilA].VRe[iNA]*B.l[ilB].VRe[iNB]*C.l[ilC].V[iNC].Re,A.l[ilA].VRe[iNA]*B.l[ilB].VRe[iNB]*C.l[ilC].V[iNC].Im,QDetNotOrdered)) {printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                      }
+                    }
+                  }
+                }
+                else
+                { /* A, B and C real (O complex) */
+                  for(iNA=0;iNA<A.l[ilA].N;iNA++)
+                  {
+                    for(k=0;k<ilA;k++)
+                    {
+                      det[ilA-1-k]=A.l[ilA].o[iNA*ilA+k]^CrAnMask;
+                    }
+                    for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                    {
+                      for(k=0;k<ilB;k++)
+                      {
+                        det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                      }
+                      for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                      {
+                        for(k=0;k<ilC;k++)
+                        {
+                          det[k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k];
+                        }
+                        if(ComplexOperatorAddLaderNormalOrder(O,det,ilA+ilB+ilC,A.l[ilA].VRe[iNA]*B.l[ilB].VRe[iNB]*C.l[ilC].VRe[iNC],0,QDetNotOrdered)) {printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+          else
+          { /* All real */
+            for(iNA=0;iNA<A.l[ilA].N;iNA++)
+            {
+              for(k=0;k<ilA;k++)
+              {
+                det[ilA-1-k]=A.l[ilA].o[iNA*ilA+k]^CrAnMask;
+              }
+              for(iNB=0;iNB<B.l[ilB].N;iNB++)
+              {
+                for(k=0;k<ilB;k++)
+                {
+                  det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                }
+                for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                {
+                  for(k=0;k<ilC;k++)
+                  {
+                    det[k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k];
+                  }
+                  if(RealOperatorAddLaderNormalOrder(O,det,ilA+ilB+ilC,A.l[ilA].VRe[iNA]*B.l[ilB].VRe[iNB]*C.l[ilC].VRe[iNC],QDetNotOrdered)) {printf("RealOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    /* End of DNN */
+  }
+  else if((Aset=='D')&&(Bset=='D')&&(Cset=='N'))
+  {
+    printf("in OperatorMultiply3 Still to do\n");
+    return 1;
+  }
+  else if((Aset=='N')&&(Bset=='N')&&(Cset=='D'))
+  {
+    for(ilA=0;ilA<=A.MaxLength;ilA++)
+    {
+      for(ilB=0;ilB<=B.MaxLength;ilB++)
+      {
+        for(ilC=0;ilC<=C.MaxLength;ilC++)
+        {
+          if((O->l[ilA+ilB].QComplex)&&(A.l[ilA].QComplex)&&(B.l[ilB].QComplex)&&(C.l[ilC].QComplex))
+          {/* at least one complex */
+            if(!(O->l[ilA+ilB+ilC].QComplex)) if(MakeRealOperatorFixedLengthComplex(O,ilA+ilB+ilC)) {printf("MakeRealOperatorFixedLengthComplex at length=%i failed in OperatorMultiply3\n",ilA+ilB+ilC);fflush(stdout);return 1;}
+            if(A.l[ilA].QComplex)
+            { /* A complex */
+              if(B.l[ilB].QComplex)
+              { /* A and B complex */
+                if(C.l[ilC].QComplex)
+                { /* A and B and C complex */
+                  for(iNA=0;iNA<A.l[ilA].N;iNA++)
+                  {
+                    for(k=0;k<ilA;k++)
+                    {
+                      det[k]=A.l[ilA].o[iNA*ilA+k];
+                    }
+                    for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                    {
+                      for(k=0;k<ilB;k++)
+                      {
+                        det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                      }
+                      for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                      {
+                        for(k=0;k<ilC;k++)
+                        {
+                          det[ilC-1-k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k]^CrAnMask;
+                        }
+                        if(ComplexOperatorAddLaderNormalOrder(O,det,ilA+ilB+ilC,A.l[ilA].V[iNA].Re*B.l[ilB].V[iNB].Re*C.l[ilC].V[iNC].Re+A.l[ilA].V[iNA].Re*B.l[ilB].V[iNB].Im*C.l[ilC].V[iNC].Im+A.l[ilA].V[iNA].Im*B.l[ilB].V[iNB].Re*C.l[ilC].V[iNC].Im-A.l[ilA].V[iNA].Im*B.l[ilB].V[iNB].Im*C.l[ilC].V[iNC].Re,A.l[ilA].V[iNA].Im*B.l[ilB].V[iNB].Re*C.l[ilC].V[iNC].Re+A.l[ilA].V[iNA].Re*B.l[ilB].V[iNB].Im*C.l[ilC].V[iNC].Re-A.l[ilA].V[iNA].Re*B.l[ilB].V[iNB].Re*C.l[ilC].V[iNC].Im+A.l[ilA].V[iNA].Im*B.l[ilB].V[iNB].Im*C.l[ilC].V[iNC].Im,QDetNotOrdered)) {printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                      }
+                    }
+                  }
+                }
+                else
+                { /* A and B complex, C real */
+                  for(iNA=0;iNA<A.l[ilA].N;iNA++)
+                  {
+                    for(k=0;k<ilA;k++)
+                    {
+                      det[k]=A.l[ilA].o[iNA*ilA+k];
+                    }
+                    for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                    {
+                      for(k=0;k<ilB;k++)
+                      {
+                        det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                      }
+                      for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                      {
+                        for(k=0;k<ilC;k++)
+                        {
+                          det[ilC-1-k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k]^CrAnMask;
+                        }
+                        if(ComplexOperatorAddLaderNormalOrder(O,det,ilA+ilB+ilC,A.l[ilA].V[iNA].Re*B.l[ilB].V[iNB].Re*C.l[ilC].VRe[iNC]-A.l[ilA].V[iNA].Im*B.l[ilB].V[iNB].Im*C.l[ilC].VRe[iNC],A.l[ilA].V[iNA].Im*B.l[ilB].V[iNB].Re*C.l[ilC].VRe[iNC]+A.l[ilA].V[iNA].Re*B.l[ilB].V[iNB].Im*C.l[ilC].VRe[iNC],QDetNotOrdered)) {printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                      }
+                    }
+                  }
+                }
+              }
+              else
+              { /* A complex B real */
+                if(C.l[ilC].QComplex)
+                { /* A complex B real C complex */
+                  for(iNA=0;iNA<A.l[ilA].N;iNA++)
+                  {
+                    for(k=0;k<ilA;k++)
+                    {
+                      det[k]=A.l[ilA].o[iNA*ilA+k];
+                    }
+                    for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                    {
+                      for(k=0;k<ilB;k++)
+                      {
+                        det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                      }
+                      for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                      {
+                        for(k=0;k<ilC;k++)
+                        {
+                          det[ilC-1-k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k]^CrAnMask;
+                        }
+                        if(ComplexOperatorAddLaderNormalOrder(O,det,ilA+ilB+ilC,A.l[ilA].V[iNA].Re*B.l[ilB].VRe[iNB]*C.l[ilC].V[iNC].Re+A.l[ilA].V[iNA].Im*B.l[ilB].VRe[iNB]*C.l[ilC].V[iNC].Im,A.l[ilA].V[iNA].Im*B.l[ilB].VRe[iNB]*C.l[ilC].V[iNC].Re-A.l[ilA].V[iNA].Re*B.l[ilB].VRe[iNB]*C.l[ilC].V[iNC].Im,QDetNotOrdered)) {printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                      }
+                    }
+                  }
+                }
+                else
+                { /* A complex B real C real */
+                  for(iNA=0;iNA<A.l[ilA].N;iNA++)
+                  {
+                    for(k=0;k<ilA;k++)
+                    {
+                      det[k]=A.l[ilA].o[iNA*ilA+k];
+                    }
+                    for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                    {
+                      for(k=0;k<ilB;k++)
+                      {
+                        det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                      }
+                      for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                      {
+                        for(k=0;k<ilC;k++)
+                        {
+                          det[ilC-1-k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k]^CrAnMask;
+                        }
+                        if(ComplexOperatorAddLaderNormalOrder(O,det,ilA+ilB+ilC,A.l[ilA].V[iNA].Re*B.l[ilB].VRe[iNB]*C.l[ilC].VRe[iNC],A.l[ilA].V[iNA].Im*B.l[ilB].VRe[iNB]*C.l[ilC].VRe[iNC],QDetNotOrdered)) {printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            else
+            { /* A real */
+              if(B.l[ilB].QComplex)
+              { /* A real and B complex */
+                if(C.l[ilC].QComplex)
+                { /* A real B complex C complex */
+                  for(iNA=0;iNA<A.l[ilA].N;iNA++)
+                  {
+                    for(k=0;k<ilA;k++)
+                    {
+                      det[k]=A.l[ilA].o[iNA*ilA+k];
+                    }
+                    for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                    {
+                      for(k=0;k<ilB;k++)
+                      {
+                        det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                      }
+                      for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                      {
+                        for(k=0;k<ilC;k++)
+                        {
+                          det[ilC-1-k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k]^CrAnMask;
+                        }
+                        if(ComplexOperatorAddLaderNormalOrder(O,det,ilA+ilB+ilC,A.l[ilA].VRe[iNA]*B.l[ilB].V[iNB].Re*C.l[ilC].V[iNC].Re+A.l[ilA].VRe[iNA]*B.l[ilB].V[iNB].Im*C.l[ilC].V[iNC].Im,A.l[ilA].VRe[iNA]*B.l[ilB].V[iNB].Im*C.l[ilC].V[iNC].Re-A.l[ilA].VRe[iNA]*B.l[ilB].V[iNB].Re*C.l[ilC].V[iNC].Im,QDetNotOrdered)) {printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                      }
+                    }
+                  }
+                }
+                else
+                { /* A real B complex C real */
+                  for(iNA=0;iNA<A.l[ilA].N;iNA++)
+                  {
+                    for(k=0;k<ilA;k++)
+                    {
+                      det[k]=A.l[ilA].o[iNA*ilA+k];
+                    }
+                    for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                    {
+                      for(k=0;k<ilB;k++)
+                      {
+                        det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                      }
+                      for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                      {
+                        for(k=0;k<ilC;k++)
+                        {
+                          det[ilC-1-k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k]^CrAnMask;
+                        }
+                        if(ComplexOperatorAddLaderNormalOrder(O,det,ilA+ilB+ilC,A.l[ilA].VRe[iNA]*B.l[ilB].V[iNB].Re*C.l[ilC].VRe[iNC],A.l[ilA].VRe[iNA]*B.l[ilB].V[iNB].Im*C.l[ilC].VRe[iNC],QDetNotOrdered)) {printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                      }
+                    }
+                  }
+                }
+              }
+              else
+              { /* A and B real */
+                if(C.l[ilC].QComplex)
+                { /* A and B real C complex */
+                  for(iNA=0;iNA<A.l[ilA].N;iNA++)
+                  {
+                    for(k=0;k<ilA;k++)
+                    {
+                      det[k]=A.l[ilA].o[iNA*ilA+k];
+                    }
+                    for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                    {
+                      for(k=0;k<ilB;k++)
+                      {
+                        det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                      }
+                      for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                      {
+                        for(k=0;k<ilC;k++)
+                        {
+                          det[ilC-1-k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k]^CrAnMask;
+                        }
+                        if(ComplexOperatorAddLaderNormalOrder(O,det,ilA+ilB+ilC,A.l[ilA].VRe[iNA]*B.l[ilB].VRe[iNB]*C.l[ilC].V[iNC].Re,-A.l[ilA].VRe[iNA]*B.l[ilB].VRe[iNB]*C.l[ilC].V[iNC].Im,QDetNotOrdered)) {printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                      }
+                    }
+                  }
+                }
+                else
+                { /* A, B and C real (O complex) */
+                  for(iNA=0;iNA<A.l[ilA].N;iNA++)
+                  {
+                    for(k=0;k<ilA;k++)
+                    {
+                      det[k]=A.l[ilA].o[iNA*ilA+k];
+                    }
+                    for(iNB=0;iNB<B.l[ilB].N;iNB++)
+                    {
+                      for(k=0;k<ilB;k++)
+                      {
+                        det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                      }
+                      for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                      {
+                        for(k=0;k<ilC;k++)
+                        {
+                          det[ilC-1-k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k]^CrAnMask;
+                        }
+                        if(ComplexOperatorAddLaderNormalOrder(O,det,ilA+ilB+ilC,A.l[ilA].VRe[iNA]*B.l[ilB].VRe[iNB]*C.l[ilC].VRe[iNC],0,QDetNotOrdered)) {printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+          else
+          { /* All real */
+            for(iNA=0;iNA<A.l[ilA].N;iNA++)
+            {
+              for(k=0;k<ilA;k++)
+              {
+                det[k]=A.l[ilA].o[iNA*ilA+k];
+              }
+              for(iNB=0;iNB<B.l[ilB].N;iNB++)
+              {
+                for(k=0;k<ilB;k++)
+                {
+                  det[k+ilA]=B.l[ilB].o[iNB*ilB+k];
+                }
+                for(iNC=0;iNC<C.l[ilC].N;iNC++)
+                {
+                  for(k=0;k<ilC;k++)
+                  {
+                    det[ilC-1-k+ilA+ilB]=C.l[ilC].o[iNC*ilC+k]^CrAnMask;
+                  }
+                  if(RealOperatorAddLaderNormalOrder(O,det,ilA+ilB+ilC,A.l[ilA].VRe[iNA]*B.l[ilB].VRe[iNB]*C.l[ilC].VRe[iNC],QDetNotOrdered)) {printf("RealOperatorAddLader failed in OperatorMultiply3\n");fflush(stdout);return 1;}
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    /* End of NND */
+  }
+  else if((Aset=='N')&&(Bset=='D')&&(Cset=='D'))
+  {
+    printf("in OperatorMultiply3 Still to do\n");
+    return 1;
+  }
+  else if((Aset=='D')&&(Bset=='N')&&(Cset=='D'))
+  {
+    printf("in OperatorMultiply3 Still to do\n");
+    return 1;
+  }
+  else if((Aset=='D')&&(Bset=='D')&&(Cset=='D'))
+  {
+    printf("in OperatorMultiply3 Still to do\n");
+    return 1;
+  }
+  else
+  {
+    printf("in OperatorMultiply3 unrecognized input for Aset and or Bset\n");
+    return 1;
+  }
+  return 0;
+}
+
+
+
+
 
 /*  add the product of two operators to AB
  *  AB <- AB + A B
