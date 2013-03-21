@@ -1,6 +1,6 @@
 /*
 -------------------------------------------------------------------------------
-Taken from:
+Adepted from:
 lookup3.c, by Bob Jenkins, May 2006, Public Domain.
 */
 

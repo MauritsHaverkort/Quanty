@@ -1195,9 +1195,9 @@ void SecondDoubleTriDiagonalMatrixToSpectrum(const double Energy, const SecondDo
   for(i=0;i<=G->N;i++)
   {
     hnu=((double)i*G->dE)+G->Emin+Energy;
-    denom=Sqr(GSec.Im[i])+Sqr(hnu-GSec.Re[i]);
+    denom=Sqr(G->Gamma*0.5-GSec.Im[i])+Sqr(hnu-GSec.Re[i]);
     G->Re[i]=M.a0+Sqr(M.b0)*(hnu-GSec.Re[i])/denom;
-    G->Im[i]=Sqr(M.b0)*GSec.Im[i]/denom;
+    G->Im[i]=Sqr(M.b0)*(-G->Gamma*0.5+GSec.Im[i])/denom;
   }
   SpectrumFree(&GSec);
 }

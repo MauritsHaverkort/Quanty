@@ -60,9 +60,17 @@ uint32_t AndersonMatrixToTriDiagonalMatrixNonOrthogonal(AndersonMatrixType const
     RealVectorAdd(vec[i%3],vec[(i-1)%3],M.N,-H->a[i]);              /* vec[i] -= a[i] vec[i-1]        */
     RealVectorDotVector(vec[i%3],vec[i%3],M.N,&(H->b[i]));          /* b[i] = sqrt( vec[i] . vec[i] ) */
     H->b[i]=sqrt(H->b[i]);
-    if(H->b[i]>10*DBL_MIN)                                          /* vec[i] *= 1/b[i]               */
+    if(H->b[i]>H->b[1]*100*DBL_EPSILON)                             /* vec[i] *= 1/b[i]               */
     {
       RealVectorMultiply(vec[i%3],M.N,1.0/H->b[i]); 
+    }
+    else
+    {
+      RealVectorMultiply(vec[i%3],M.N,0);
+      H->b[i]=0;
+      H->a[i+1]=0;
+      H->N=i;
+      i=NTriDiag;
     }
   }
   RealVectorAndersonMatrixVector(M, vec[(H->N-1)%3], &(H->a[H->N])); /* a[N] = vec[N-1] M vec[N-1]    */
@@ -112,7 +120,7 @@ uint32_t AndersonMatrixToTriDiagonalMatrix(AndersonMatrixType const M, MatrixTyp
     RealVectorAdd(T->VRe[i],T->VRe[i-1],T->Nj,-H->a[i]);
     RealVectorDotVector(T->VRe[i],T->VRe[i],T->Nj,&(H->b[i]));
     H->b[i]=sqrt(H->b[i]);
-    if(H->b[i]>100*DBL_MIN)
+    if(H->b[i]>H->b[1]*100*DBL_EPSILON)
     {
       RealVectorMultiply(T->VRe[i],T->Nj,1.0/H->b[i]);
       for(j=0;j<i;j++)
@@ -135,6 +143,10 @@ uint32_t AndersonMatrixToTriDiagonalMatrix(AndersonMatrixType const M, MatrixTyp
     else
     {
       RealVectorMultiply(T->VRe[i],T->Nj,0);
+      H->b[i]=0;
+      H->a[i+1]=0;
+      H->N=i+1;
+      i=NTriDiag;
     }
   }
   RealVectorAndersonMatrixVector(M,T->VRe[NTriDiag-1],&(H->a[NTriDiag]));
@@ -466,7 +478,74 @@ uint32_t TriDiagonalMatrixToMatrix(TriDiagonalMatrixType const M, MatrixType *co
 /********************         DoubleTriDiagonalMatrix To ... ********************/
 /********************************************************************************/
 
-
+uint32_t DoubleTriDiagonalMatrixToTriDiagonalMatrix(DoubleTriDiagonalMatrixType const M, TriDiagonalMatrixType *const H, uint32_t NTriDiag)
+{
+  uint32_t i,j;
+  double tempRe;
+  MatrixType T;
+  T.QComplex=0;
+  T.Ni=NTriDiag;
+  T.Nj=M.val.N+M.con.N+1;
+  InitMatrix(&T);
+  H->N=NTriDiag;
+  if(InitTriDiagonalMatrix(H))
+  {
+    FreeMatrix(&T);
+    printf("InitTriDiagonalMatrix failed in DoubleTriDiagonalMatrixToTriDiagonalMatrix\n");
+    return 1;
+  }
+  strcpy(T.Name,"TriDiagonalizer of ");
+  strncat(T.Name, M.Name, MAX(0,MAXStrLength-20));
+  strcpy(H->Name,"TriDiagonal form of ");
+  strncat(H->Name, M.Name, MAX(0,MAXStrLength-22));
+  H->a[0]=M.a0;
+  H->b[0]=M.b0;
+  for(i=0;i<M.val.N+M.con.N+1;i++)
+  {
+    T.VRe[0][i]=0;
+  }
+  T.VRe[0][0]=1;
+  for(i=1;i<NTriDiag;i++)
+  {
+    RealDoubleTriDiagonalMatrixVector(M, T.VRe[i-1], T.VRe[i]);
+    for(j=0;j<i-1;j++)
+    {
+      RealVectorDotVector(T.VRe[j],T.VRe[i],T.Nj,&tempRe);
+      RealVectorAdd(T.VRe[i],T.VRe[j],T.Nj,-tempRe);
+    }
+    RealVectorDotVector(T.VRe[i-1],T.VRe[i],T.Nj,&(H->a[i]));
+    RealVectorAdd(T.VRe[i],T.VRe[i-1],T.Nj,-H->a[i]);
+    RealVectorDotVector(T.VRe[i],T.VRe[i],T.Nj,&(H->b[i]));
+    H->b[i]=sqrt(H->b[i]);
+    if(H->b[i]>100*DBL_MIN)
+    {
+      RealVectorMultiply(T.VRe[i],T.Nj,1.0/H->b[i]);
+      for(j=0;j<i;j++)
+      {
+        RealVectorDotVector(T.VRe[j],T.VRe[i],T.Nj,&tempRe);
+        RealVectorAdd(T.VRe[i],T.VRe[j],T.Nj,-tempRe);
+      }
+      RealVectorDotVector(T.VRe[i],T.VRe[i],T.Nj,&tempRe);
+      tempRe=sqrt(tempRe);
+      H->b[i]*=tempRe;
+      if(tempRe>100*DBL_MIN)
+      {
+        RealVectorMultiply(T.VRe[i],T.Nj,1.0/tempRe);
+      }
+      else
+      {
+        RealVectorMultiply(T.VRe[i],T.Nj,0);
+      }
+    }
+    else
+    {
+      RealVectorMultiply(T.VRe[i],T.Nj,0);
+    }
+  }
+  RealVectorDoubleTriDiagonalMatrixVector(M,T.VRe[NTriDiag-1],&(H->a[NTriDiag]));
+  FreeMatrix(&T);
+  return 0;
+}
 
 
 
@@ -505,7 +584,7 @@ uint32_t SparseMatrixToTriDiagonalMatrix(SparseMatrixType M, MatrixType *const T
   if(M.QComplex){printf("SparseMatrixToTriDiagonalMatrix not implemented for complex sparse matricess");fflush(stdout);return 1;};
   T->QComplex=M.QComplex;
   T->Ni=NTriDiag;
-  T->Nj=M.N;
+  T->Nj=M.Nj;
   if(InitMatrix(T)) {printf("InitMatrix failed in SparseMatrixToTriDiagonalMatrix\n");fflush(stdout);return 1;};
   H->N=NTriDiag;
   if(InitTriDiagonalMatrix(H))

@@ -246,8 +246,8 @@ uint32_t RealDoubleTriDiagonalMatrixVector(DoubleTriDiagonalMatrixType const M, 
   y[M.val.N+1]+=M.val.b[0]*x[0];
   for(i=M.val.N+1;i<M.val.N+M.con.N;i++)
   {
-    y[i+1]+=M.val.b[i-M.val.N]*x[i];
-    y[i]+=M.val.b[i-M.val.N]*x[i+1];
+    y[i+1]+=M.con.b[i-M.val.N]*x[i];
+    y[i]+=M.con.b[i-M.val.N]*x[i+1];
   }
   return 0;
 }
@@ -317,7 +317,7 @@ uint32_t RealVectorDoubleTriDiagonalMatrixVector(DoubleTriDiagonalMatrixType con
   *y+=2*x[M.val.N+1]*M.val.b[0]*x[0];
   for(i=1+M.val.N;i<M.con.N+M.val.N;i++)
   {
-    *y+=2*x[i]*M.val.b[i-M.val.N]*x[i+1];
+    *y+=2*x[i]*M.con.b[i-M.val.N]*x[i+1];
   }
   return 0;
 }

@@ -1540,7 +1540,7 @@ uint32_t LanczosTriDiagonalizeKrylovRR(const OperatorType H, WaveFunctionType ps
 {
   printf("\nStart of LanczosTriDiagonalizeKrylovRR\n\n");
   fflush(stdout);
-  uint32_t i,j,stop;
+  uint32_t i,j,k,stop;
   double temp,dot;
   double errorestimate=1;
   /* copy the name of psi to PsiBasis[0] in order to do the loop more cleanely  */
@@ -1612,11 +1612,11 @@ uint32_t LanczosTriDiagonalizeKrylovRR(const OperatorType H, WaveFunctionType ps
           RealWaveFunctionTruncateBasis(&(PsiBasis[i]),epsilon*temp/errorestimate);
           stop=0;
         }
-        for(j=0;j<i;j++)
+        for(k=0;k<i;k++)
         {
-          if(PsiBasis[j].NBlok!=1)
+          if(PsiBasis[k].NBlok!=1)
           {
-            RealWaveFunctionTruncateBasis(&(PsiBasis[j]),epsilon/errorestimate);
+            RealWaveFunctionTruncateBasis(&(PsiBasis[k]),epsilon/errorestimate);
             stop=0;
           }
         }

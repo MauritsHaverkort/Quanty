@@ -45,7 +45,7 @@
  *
  *   input A and B defined, M not initiallized
  */
-uint32_t SumGreensfunctionsTriDiagonalRepresentation(TriDiagonalMatrixType const A, TriDiagonalMatrixType const B, TriDiagonalMatrixType *const M)
+uint32_t SumGreensfunctionsTriDiagonalRepresentationNonOrtho(TriDiagonalMatrixType const A, TriDiagonalMatrixType const B, TriDiagonalMatrixType *const M)
 {
   double vecA[3][A.N],vecB[3][B.N];
   double Atemp,Btemp;
@@ -86,18 +86,82 @@ uint32_t SumGreensfunctionsTriDiagonalRepresentation(TriDiagonalMatrixType const
     M->b[i]=sqrt(Atemp+Btemp);
     if(M->b[i]>100*DBL_MIN)                                         /* vec[i] *= 1/b[i] */
     {
-      RealVectorMultiply(vecA[i%3],A.N,1.0/M->b[i]); 
-      RealVectorMultiply(vecB[i%3],B.N,1.0/M->b[i]); 
+      RealVectorMultiply(vecA[i%3],A.N,1.0/M->b[i]);
+      RealVectorMultiply(vecB[i%3],B.N,1.0/M->b[i]);
     }
     else
     {
       M->N=i;
-      RealVectorMultiply(vecA[i%3],A.N,0); 
+      RealVectorMultiply(vecA[i%3],A.N,0);
       RealVectorMultiply(vecB[i%3],B.N,0);
     }
   }
   RealVectorTriDiagonalMatrixVector(A, vecA[(M->N-1)%3], &Atemp);   /* a[N] = vec[N-1] A vec[N-1] */
   RealVectorTriDiagonalMatrixVector(B, vecB[(M->N-1)%3], &Btemp);
+  M->a[M->N]=Atemp+Btemp;
+  return 0;
+
+}
+
+uint32_t SumGreensfunctionsTriDiagonalRepresentation(TriDiagonalMatrixType const A, TriDiagonalMatrixType const B, TriDiagonalMatrixType *const M)
+{
+  double vecA[A.N+B.N][A.N];
+  double vecB[A.N+B.N][B.N];
+  double Atemp,Btemp;
+  uint32_t i,j;
+  M->N=A.N+B.N;
+  if(InitTriDiagonalMatrix(M)){printf("InitTriDiagonalMatrix failed in SumGreensfunctionsTriDiagonalRepresentation\n");fflush(stdout);return 1;};
+  M->a[0]=A.a[0]+B.a[0];
+  M->b[0]=sqrt(Sqr(A.b[0])+Sqr(B.b[0]));
+  for(i=0;i<3;i++)
+  {
+    for(j=0;j<A.N;j++)
+    {
+      vecA[i][j]=0;
+    }
+    for(j=0;j<B.N;j++)
+    {
+      vecB[i][j]=0;
+    }
+  }
+  if(M->b[0]>10*DBL_MIN)
+  {
+    vecA[0][0]=A.b[0]/M->b[0];
+    vecB[0][0]=B.b[0]/M->b[0];
+  }
+  for(i=1;i<M->N;i++)
+  {
+    RealTriDiagonalMatrixVector(A, vecA[(i-1)], vecA[i]);           /* vec[i] = A vec[i-1] */
+    RealTriDiagonalMatrixVector(B, vecB[(i-1)], vecB[i]);
+    for(j=i;j>0;)
+    {
+      j--;
+      RealVectorDotVector(vecA[j], vecA[i], A.N, &Atemp);           /* orthogonalization of vec[i] to vec[j<i-1] */
+      RealVectorDotVector(vecB[j], vecB[i], B.N, &Btemp);
+      RealVectorAdd(vecA[i],vecA[j],A.N,-(Atemp+Btemp));
+      RealVectorAdd(vecB[i],vecB[j],B.N,-(Atemp+Btemp));
+      if(j==i-1)
+      {
+        M->a[i]=Atemp+Btemp;
+      }
+    }
+    RealVectorDotVector(vecA[i],vecA[i],A.N,&Atemp);                /* b[i] = sqrt( vec[i] . vec[i] ) */
+    RealVectorDotVector(vecB[i],vecB[i],B.N,&Btemp);
+    M->b[i]=sqrt(Atemp+Btemp);
+    if(M->b[i]>100*DBL_MIN)                                         /* vec[i] *= 1/b[i] */
+    {
+      RealVectorMultiply(vecA[i],A.N,1.0/M->b[i]); 
+      RealVectorMultiply(vecB[i],B.N,1.0/M->b[i]);
+    }
+    else
+    {
+      M->N=i;
+      RealVectorMultiply(vecA[i],A.N,0); 
+      RealVectorMultiply(vecB[i],B.N,0);
+    }
+  }
+  RealVectorTriDiagonalMatrixVector(A, vecA[(M->N-1)], &Atemp);     /* a[N] = vec[N-1] A vec[N-1] */
+  RealVectorTriDiagonalMatrixVector(B, vecB[(M->N-1)], &Btemp);
   M->a[M->N]=Atemp+Btemp;
   return 0;
 }
@@ -123,6 +187,68 @@ uint32_t SymmetrizeTridiagonalMatrix(TriDiagonalMatrixType *const M)
   FreeTriDiagonalMatrix(&Mmin);
   return 0;
 }
+
+
+uint32_t ReducePolesAndersonMatrix(AndersonMatrixType *const A, double tMin, double Ef)
+{
+  uint32_t i;
+  for(i=2;i<A->N;i++)
+  {
+    if(A->b[i-1]<100*DBL_MIN)
+    {
+      A->b[i-1]=0;
+    }
+    else if(A->a[i+1]<Ef)
+    {
+      if(A->b[i-1]<tMin)
+      {
+        A->a[i+1]=(Sqr(A->b[i-1])*A->a[i]+Sqr(A->b[i])*A->a[i+1])/(Sqr(A->b[i-1])+Sqr(A->b[i]));
+        A->a[i]=0;
+        A->b[i]=sqrt(Sqr(A->b[i-1])+Sqr(A->b[i]));
+        A->b[i-1]=0;
+      }
+    }
+  }
+  for(i=A->N;i>2;i--)
+  {
+    if(A->b[i-1]<100*DBL_MIN)
+    {
+      A->b[i-1]=0;
+    }
+    else if(A->a[i-1]>Ef)
+    {
+      if(A->b[i-1]<tMin)
+      {
+        A->a[i-1]=(Sqr(A->b[i-1])*A->a[i]+Sqr(A->b[i-2])*A->a[i-1])/(Sqr(A->b[i-1])+Sqr(A->b[i-2]));
+        A->a[i]=0;
+        A->b[i-2]=sqrt(Sqr(A->b[i-1])+Sqr(A->b[i-2]));
+        A->b[i-1]=0;
+      }
+    }
+  }
+  return 0;
+}
+/*  
+ *
+ */
+uint32_t ReducePolesTriDiagonalMatrix(TriDiagonalMatrixType *const A, uint32_t const NpolesMax, double const Ef)
+{
+  double tMin;
+  AndersonMatrixType An;
+  MatrixType(Tone);
+  if(TriDiagonalMatrixToAndersonMatrix(*A,&Tone,&An)){printf("TriDiagonalMatrixToAndersonMatrix failed in ReducePolesTriDiagonalMatrix\n");fflush(stdout);return 1;};
+  FreeMatrix(&Tone);
+  tMin=A->b[1]/sqrt((double)NpolesMax)+100*DBL_MIN;
+  printf("For %s,\nReduce Poles around %lf, from %i ",A->Name,Ef,A->N);
+  ReducePolesAndersonMatrix(&An, tMin, Ef);
+  FreeTriDiagonalMatrix(A);
+  AndersonMatrixToTriDiagonalMatrix(An, &Tone, A, An.N);
+  printf(" to %i by makeing all hybridizations larger than %lf\n",A->N,tMin);
+  FreeMatrix(&Tone);
+  return 0;
+}
+
+
 
 /* M=A-B
  *
@@ -171,6 +297,76 @@ uint32_t SelfEnergyTriDiagonalRepresentation(TriDiagonalMatrixType const G0, Tri
   strncat(IG.Name, "^-1 (-1)", MAX(0,(int)((int)MAXStrLength-(int)strlen(IG.Name))));
   return DifferenceGreensFunctionTriDiagonalRepresentation(IG, IG0, Sigma);
 }
+
+/*  GBath(w) = 1 / ( G_0(w-Sigma(w))^{-1} + Sigma(w) )
+ *    G_0(w-Sigma(w))                     = 1 / (w - S - a1 - b1^2 / (w - S - a2 - b2^2 / (w - S - ...
+ *    G_0(w-Sigma(w))^{-1}                =     (w - S - a1 - b1^2 / (w - S - a2 - b2^2 / (w - S - ...
+ *    G_0(w-Sigma(w))^{-1} + Sigma        =     (w     - a1 - b1^2 / (w - S - a2 - b2^2 / (w - S - ...
+ *  ( G_0(w-Sigma(w))^{-1} + Sigma )^{-1} = 1 / (w     - a1 - b1^2 / (w - S - a2 - b2^2 / (w - S - ...
+ */
+uint32_t GBathTriDiagonalRepresentation(TriDiagonalMatrixType const G0, TriDiagonalMatrixType const Sigma, TriDiagonalMatrixType *const GBath, uint32_t NTriDiag)
+{
+  uint32_t i,j;
+  MatrixType T;
+  SparseMatrixType GS;
+  GS.Ni=(G0.N-1)*(Sigma.N+1)+1;
+  GS.Nj=(G0.N-1)*(Sigma.N+1)+1;
+  GS.QComplex=0;
+  GS.NBitsKey=8*((uint32_t)(log((double)GS.Ni)/(8*log(2.0)))+1);
+  if(InitSparseMatrix(&GS)){printf("InitSparseMatrix failed in GLocalTriDiagonalRepresentation\n");fflush(stdout);return 1;};
+  GS.a0=G0.a[0];
+  GS.b0=G0.b[0];
+  RealSparseMatrixAddElement(&GS,0,0,G0.a[1]);
+  RealSparseMatrixAddElement(&GS,0,1,G0.b[1]);
+  RealSparseMatrixAddElement(&GS,1,0,G0.b[1]);
+  for(i=0;i<G0.N-1;i++)
+  {
+    RealSparseMatrixAddElement(&GS,1+(i*(Sigma.N+1)),1+(i*(Sigma.N+1)),G0.a[i+2]-Sigma.a[0]);
+    for(j=1;j<Sigma.N+1;j++)
+    {
+      RealSparseMatrixAddElement(&GS,j+1+(i*(Sigma.N+1)) , j+1+(i*(Sigma.N+1)) , Sigma.a[j]  );
+      RealSparseMatrixAddElement(&GS,j  +(i*(Sigma.N+1)) , j+1+(i*(Sigma.N+1)) , Sigma.b[j-1]);
+      RealSparseMatrixAddElement(&GS,j+1+(i*(Sigma.N+1)) , j  +(i*(Sigma.N+1)) , Sigma.b[j-1]);
+    }
+  }
+  for(i=1;i<G0.N-1;i++)
+  {
+    RealSparseMatrixAddElement(&GS,1+((i-1)*(Sigma.N+1)) , 1+(i    *(Sigma.N+1)),G0.b[i+1]);
+    RealSparseMatrixAddElement(&GS,1+(i    *(Sigma.N+1)) , 1+((i-1)*(Sigma.N+1)),G0.b[i+1]);
+  }
+  if(SparseMatrixToTriDiagonalMatrix(GS,&T,GBath,NTriDiag)){printf("SparseMatrixToTriDiagonalMatrix failed in GLocalTriDiagonalRepresentation\n");fflush(stdout);return 1;};
+  FreeMatrix(&T);
+  FreeSparseMatrix(&GS);
+  return 0;
+}
+
+
+uint32_t OldGBathTriDiagonalRepresentation(TriDiagonalMatrixType const G0, TriDiagonalMatrixType const Sigma, TriDiagonalMatrixType *const GBath)
+{
+  uint32_t i;
+  TriDiagonalMatrixType G0Inv,G;
+  G0Inv.N=G0.N-2;
+  G0Inv.a=&(G0.a[2]);
+  G0Inv.b=&(G0.b[2]);
+  if(SumGreensfunctionsTriDiagonalRepresentation(G0Inv, Sigma, &G)){printf("SumGreensfunctionsTriDiagonalRepresentation failed in GLocalTriDiagonalRepresentation\n");return 1;};
+  GBath->N=G.N+2;
+  InitTriDiagonalMatrix(GBath);
+  GBath->a[0]=0;
+  GBath->b[0]=1;
+  GBath->a[1]=G0.a[1];
+  GBath->b[1]=G0.b[1];
+  for(i=2;i<GBath->N;i++)
+  {
+    GBath->a[i]=G.a[i-2];
+    GBath->b[i]=G.b[i-2];
+  }
+  GBath->a[GBath->N]=G.a[GBath->N-2];
+  FreeTriDiagonalMatrix(&G);
+  return 0;
+}
+
+
+
 
 /*   GLocal(w) = G0( w - Sigma(w) )
  *             = 1/( w - H0 - Sigma(w) )
@@ -251,12 +447,54 @@ uint32_t GLocalTriDiagonalRepresentationOld(TriDiagonalMatrixType const G0, TriD
   return 0;
 }
 
+/*  GbathNew = (Gcl^{-1}-Sigma^{-1}) ^{-1}
+ *
+ *  Assume Gcl.a[0]=0;
+ *         Gcl.b[0]=1;
+ */
+uint32_t OldGBathNewTriDiagonalRepresentation(TriDiagonalMatrixType const Gcl, TriDiagonalMatrixType const Sigma, TriDiagonalMatrixType * const GBathNew)
+{
+  uint32_t i;
+  TriDiagonalMatrixType GclInv,SigmaInv,GBathNewInv;
+  GclInv.N=Gcl.N-1;
+  GclInv.a=&(Gcl.a[1]);
+  GclInv.b=&(Gcl.b[1]);
+  strcpy(GclInv.Name,Gcl.Name);
+  strncat(GclInv.Name, "^-1 (-1)", MAX(0,(int)((int)MAXStrLength-(int)strlen(Gcl.Name))));
+  SigmaInv.N=Sigma.N+1;
+  InitTriDiagonalMatrix(&SigmaInv);
+  SigmaInv.a[0]=0;
+  SigmaInv.b[0]=1;
+  for(i=0;i<Sigma.N;i++)
+  {
+    SigmaInv.a[i+1]=Sigma.a[i];
+    SigmaInv.b[i+1]=Sigma.b[i];
+  }
+  SigmaInv.a[Sigma.N+1]=Sigma.a[Sigma.N];
+  
+  DifferenceGreensFunctionTriDiagonalRepresentation(SigmaInv, GclInv, &GBathNewInv);
+  GBathNew->N=GBathNewInv.N+1;
+  InitTriDiagonalMatrix(GBathNew);
+  GBathNew->a[0]=0;
+  GBathNew->b[0]=1;
+  for(i=1;i<GBathNew->N;i++)
+  {
+    GBathNew->a[i]=GBathNewInv.a[i-1];
+    GBathNew->b[i]=GBathNewInv.b[i-1];
+  }
+  GBathNew->a[GBathNew->N]=GBathNewInv.a[GBathNew->N-1];
+  FreeTriDiagonalMatrix(&GBathNewInv);
+  FreeTriDiagonalMatrix(&SigmaInv);
+  return 0;
+}
+
+
 /*  GbathNew = (Sigma + Glocal^{-1}) ^{-1}
  *
  *  Assume Glocal.a[0]=0;
  *         Glocal.b[0]=1;
  */
-uint32_t GBathNewTriDiagonalRepresentation(TriDiagonalMatrixType const Glocal, TriDiagonalMatrixType const Sigma, TriDiagonalMatrixType * const GBathNew)
+uint32_t VeryOldGBathNewTriDiagonalRepresentation(TriDiagonalMatrixType const Glocal, TriDiagonalMatrixType const Sigma, TriDiagonalMatrixType * const GBathNew)
 {
   uint32_t i;
   TriDiagonalMatrixType GlocInv,GBathNewInv;
