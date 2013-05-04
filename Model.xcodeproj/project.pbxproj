@@ -188,6 +188,7 @@
 		4C2AAACD163266DD00138620 /* libblas.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libblas.dylib; path = usr/lib/libblas.dylib; sourceTree = SDKROOT; };
 		4C2AAACF163266F900138620 /* liblapack.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = liblapack.dylib; path = usr/lib/liblapack.dylib; sourceTree = SDKROOT; };
 		4C5CA61716D18BBF00BE1C25 /* DMFT */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = DMFT; sourceTree = BUILT_PRODUCTS_DIR; };
+		4CA262D8170787D900B8E76E /* TestGreenFunctions.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = TestGreenFunctions.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -369,6 +370,7 @@
 				4C2AAA6B163265DD00138620 /* TestIO.c */,
 				4C2AAA6C163265DD00138620 /* TestSpectral.c */,
 				4C2AAA6D163265DD00138620 /* TestVectorMatrixParallel.c */,
+				4CA262D8170787D900B8E76E /* TestGreenFunctions.c */,
 			);
 			path = Test;
 			sourceTree = "<group>";

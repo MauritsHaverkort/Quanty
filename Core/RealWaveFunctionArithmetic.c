@@ -526,21 +526,32 @@ void RealWaveFunctionNormalize(WaveFunctionType *const a)
   uint32_t iBlok,iElement;
   int iOMP;
   double NormA=0,NormB=0,Norm=0;
+  volatile double c,t,y;
   a->ValueRe[0][0]=0;
   iBlok=a->NBlok-1;
-  #pragma omp parallel for private(iElement) reduction(+ : NormA)
+  c=0;
+  #pragma omp parallel for firstprivate(c) private(iElement,t,y) reduction(+ : NormA)
   for(iOMP=0;iOMP<=(int)(a->N-iBlok*BlokSize);iOMP++)
   {
     iElement=(uint32_t)iOMP;
-    NormA+=a->ValueRe[iBlok][iElement]*a->ValueRe[iBlok][iElement];
+    y=a->ValueRe[iBlok][iElement]*a->ValueRe[iBlok][iElement]-c;
+    t=NormA+y;
+    c=t-NormA;
+    c-=y;
+    NormA=t;
   }
-  #pragma omp parallel for private(iElement,iBlok) reduction(+ : NormB)
+  c=0;
+  #pragma omp parallel for firstprivate(c) private(iElement,iBlok,t,y) reduction(+ : NormB)
   for(iOMP=0;iOMP<(int)(a->NBlok-1);iOMP++)
   {
     iBlok=(uint32_t)iOMP;
     for(iElement=0;iElement<BlokSize;++iElement)
     {
-      NormB+=a->ValueRe[iBlok][iElement]*a->ValueRe[iBlok][iElement];
+      y=a->ValueRe[iBlok][iElement]*a->ValueRe[iBlok][iElement]-c;
+      t=NormB+y;
+      c=t-NormB;
+      c-=y;
+      NormB=t;
     }
   }
   Norm=sqrt(NormA+NormB);
@@ -597,22 +608,33 @@ void RealWaveFunctionMultiply(WaveFunctionType a, const double b)
 double RealWaveFunctionCalculateNorm(const WaveFunctionType a)
 {
   uint32_t iBlok,iElement;
+  volatile double c,t,y;
   int iOMP;
   double NormA=0,NormB=0,Norm=0;
   iBlok=a.NBlok-1;
-  #pragma omp parallel for private(iElement) reduction(+ : NormA)
+  c=0;
+  #pragma omp parallel for firstprivate(c) private(iElement,t,y) reduction(+ : NormA)
   for(iOMP=0;iOMP<=(int)(a.N-iBlok*BlokSize);++iOMP)
   {
     iElement=(uint32_t)iOMP;
-    NormA+=a.ValueRe[iBlok][iElement]*a.ValueRe[iBlok][iElement];
+    y=a.ValueRe[iBlok][iElement]*a.ValueRe[iBlok][iElement]-c;
+    t=NormA+y;
+    c=t-NormA;
+    c-=y;
+    NormA=t;
   }
-  #pragma omp parallel for private(iElement,iBlok) reduction(+ : NormB)
+  c=0;
+  #pragma omp parallel for firstprivate(c) private(iElement,iBlok,t,y) reduction(+ : NormB)
   for(iOMP=0;iOMP<(int)(a.NBlok-1);iOMP++)
   {
     iBlok=(uint32_t)iOMP;
     for(iElement=0;iElement<BlokSize;++iElement)
     {
-      NormB+=a.ValueRe[iBlok][iElement]*a.ValueRe[iBlok][iElement];
+      y=a.ValueRe[iBlok][iElement]*a.ValueRe[iBlok][iElement]-c;
+      t=NormB+y;
+      c=t-NormB;
+      c-=y;
+      NormB=t;
     }
   }
   Norm=sqrt(NormA+NormB);
@@ -627,20 +649,31 @@ double RealWaveFunctionDotProductSameBasis(const WaveFunctionType a, const WaveF
   uint32_t iBlok,iElement;
   int iOMP;
   double DotA=0,DotB=0,Dot=0;
+  volatile double c,t,y;
   iBlok=a.NBlok-1;
-  #pragma omp parallel for private(iElement) reduction(+ : DotA)
+  c=0;
+  #pragma omp parallel for firstprivate(c) private(iElement,t,y) reduction(+ : DotA)
   for(iOMP=0;iOMP<=(int)(a.N-iBlok*BlokSize);++iOMP)
   {
     iElement=(uint32_t)iOMP;
-    DotA+=a.ValueRe[iBlok][iElement]*b.ValueRe[iBlok][iElement];
+    y=a.ValueRe[iBlok][iElement]*b.ValueRe[iBlok][iElement]-c;
+    t=DotA+y;
+    c=t-DotA;
+    c-=y;
+    DotA=t;
   }
-  #pragma omp parallel for private(iElement,iBlok) reduction(+ : DotB)
+  c=0;
+  #pragma omp parallel for firstprivate(c) private(iElement,iBlok,t,y) reduction(+ : DotB)
   for(iOMP=0;iOMP<(int)(a.NBlok-1);iOMP++)
   {
     iBlok=(uint32_t)iOMP;
     for(iElement=0;iElement<BlokSize;++iElement)
     {
-      DotB+=a.ValueRe[iBlok][iElement]*b.ValueRe[iBlok][iElement];
+      y=a.ValueRe[iBlok][iElement]*b.ValueRe[iBlok][iElement]-c;
+      t=DotB+y;
+      c=t-DotB;
+      c-=y;
+      DotB=t;
     }
   }
   Dot=DotA+DotB;
@@ -655,7 +688,9 @@ double RealWaveFunctionDotProduct(const WaveFunctionType a, const WaveFunctionTy
   uint32_t i,j,NextIndex,PsiAIsPsiB;
   int iOMP;
   double Dot=0;
-  #pragma omp parallel for private(i,j,NextIndex,PsiAIsPsiB) reduction(+ : Dot)
+  volatile double c,t,y;
+  c=0;
+  #pragma omp parallel for firstprivate(c) private(i,j,NextIndex,PsiAIsPsiB,t,y) reduction(+ : Dot)
   for(iOMP=1;iOMP<=(int)(a.N);++iOMP)
   {
     i=(uint32_t)iOMP;
@@ -669,7 +704,11 @@ double RealWaveFunctionDotProduct(const WaveFunctionType a, const WaveFunctionTy
       }
       if(PsiAIsPsiB)
       {/* a=b found add the product to Dot and leave loop  */
-        Dot+=a.ValueRe[BlokElement(i)]*b.ValueRe[BlokElement(NextIndex)];
+        y=a.ValueRe[BlokElement(i)]*b.ValueRe[BlokElement(NextIndex)]-c;
+        t=Dot+y;
+        c=t-Dot;
+        c-=y;
+        Dot=t;
         NextIndex=0;
       }
       else

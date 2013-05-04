@@ -54,6 +54,7 @@
 #include "../Test/TestFinitsizeClusterModels.c"
 #include "../Test/TestIO.c"
 #include "../Test/LanczosDyson.c"
+#include "../Test/TestGreenFunctions.c"
 
 int main (int argc, const char * argv[]) 
 {
@@ -100,8 +101,11 @@ int main (int argc, const char * argv[])
     if (!strncmp("TriMatrix",argv[argc],strlen(argv[argc]))) TestTriDiagonalMatrix();
     
     if (!strncmp("LancDy",argv[argc],strlen(argv[argc]))) TestLanczosDyson();
+    if (!strncmp("LancDy2",argv[argc],strlen(argv[argc]))) TestLanczosDyson2();
     
     if (!strncmp("GenEig",argv[argc],strlen(argv[argc]))) TestGeneralizedEigensystem();
+    
+    if (!strncmp("Green",argv[argc],strlen(argv[argc]))) TestGreenFunctionArithmetic();
   }
   return 0;
 }

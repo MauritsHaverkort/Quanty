@@ -6,6 +6,256 @@
  *
  */
 
+void TestLanczosDyson2()
+{
+  printf("Start Test Lanczos Dyson\n");
+  
+  MatrixType T;
+  TriDiagonalMatrixType G0,Gp[2],GPES,GIPES,GPESD1,GIPESD1;
+  SecondDoubleTriDiagonalMatrixType G0Double;
+  OperatorType V[2],O,TPES,TIPES;
+  WaveFunctionType psi,Opsi;
+  uint32_t i,NTriDiag=6,NCellV=3,NCellC=3,NKrylov=1000;
+  uint16_t oadd[2];
+  uint8_t *Determinant;
+  double PsiEnergy,PsiQuality,PsiHist[20],*PsiRho;
+  double epsilon,zero;
+  SpectraType Spectra[6];
+  G0.N=1000;
+  InitTriDiagonalMatrix(&G0);
+  for(i=1;i<G0.N;i++)
+  {
+    G0.a[i]=0.0;
+    G0.b[i]=1.0;
+  }
+  G0.a[G0.N]=0.0;
+  TriDiagonalMatrixToSecondDoubleTriDiagonalMatrix(G0, &T, &G0Double, 0.0, 0.00000001);
+  FreeMatrix(&T);
+  PrintTriDiagonalMatrix(G0);
+  PrintSecondDoubleTriDiagonalMatrix(G0Double);
+  
+  InitOperator(&O);
+  O.NFermion=2+NCellV+NCellC;
+  O.NBoson=0;
+  O.NWord=Min(O.NFermion,1+(O.NFermion-1)/8);
+  O.QComplex=0;
+  InitOperatorFixedLength(&O,2,8);
+  
+  oadd[1]=CrAnMask+0; oadd[0]=0;     OperatorAddLaderNormalOrder(&O, oadd, 2, G0Double.Dt.a0, 0.0, &QDetNotOrderedFcFaBcBa);
+  oadd[1]=CrAnMask+1; oadd[0]=1;     OperatorAddLaderNormalOrder(&O, oadd, 2, (G0Double.Dt.val.a[0]+G0Double.Dt.con.a[0])/2, 0.0, &QDetNotOrderedFcFaBcBa);
+  oadd[1]=CrAnMask+1; oadd[0]=0;     OperatorAddLaderNormalOrder(&O, oadd, 2, G0Double.Dt.b0, 0.0, &QDetNotOrderedFcFaBcBa);
+  oadd[1]=CrAnMask+0; oadd[0]=1;     OperatorAddLaderNormalOrder(&O, oadd, 2, G0Double.Dt.b0, 0.0, &QDetNotOrderedFcFaBcBa);
+  
+  oadd[1]=CrAnMask+2; oadd[0]=2;     OperatorAddLaderNormalOrder(&O, oadd, 2, G0Double.Dt.val.a[1], 0.0, &QDetNotOrderedFcFaBcBa);
+  oadd[1]=CrAnMask+2; oadd[0]=1;     OperatorAddLaderNormalOrder(&O, oadd, 2, G0Double.Dt.val.b[0], 0.0, &QDetNotOrderedFcFaBcBa);
+  oadd[1]=CrAnMask+1; oadd[0]=2;     OperatorAddLaderNormalOrder(&O, oadd, 2, G0Double.Dt.val.b[0], 0.0, &QDetNotOrderedFcFaBcBa);
+  
+  for(i=1;i<NCellV;i++)
+  {
+    oadd[1]=CrAnMask+i+2; oadd[0]=i+2;     OperatorAddLaderNormalOrder(&O, oadd, 2, G0Double.Dt.val.a[i+1], 0.0, &QDetNotOrderedFcFaBcBa);
+    oadd[1]=CrAnMask+i+2; oadd[0]=i+1;     OperatorAddLaderNormalOrder(&O, oadd, 2, G0Double.Dt.val.b[i], 0.0, &QDetNotOrderedFcFaBcBa);
+    oadd[1]=CrAnMask+i+1; oadd[0]=i+2;     OperatorAddLaderNormalOrder(&O, oadd, 2, G0Double.Dt.val.b[i], 0.0, &QDetNotOrderedFcFaBcBa);
+  }
+  
+  oadd[1]=CrAnMask+2+NCellV; oadd[0]=2+NCellV;     OperatorAddLaderNormalOrder(&O, oadd, 2, G0Double.Dt.con.a[1], 0.0, &QDetNotOrderedFcFaBcBa);
+  oadd[1]=CrAnMask+2+NCellV; oadd[0]=1;            OperatorAddLaderNormalOrder(&O, oadd, 2, G0Double.Dt.con.b[0], 0.0, &QDetNotOrderedFcFaBcBa);
+  oadd[1]=CrAnMask+1;        oadd[0]=2+NCellV;     OperatorAddLaderNormalOrder(&O, oadd, 2, G0Double.Dt.con.b[0], 0.0, &QDetNotOrderedFcFaBcBa);
+  
+  for(i=1;i<NCellC;i++)
+  {
+    oadd[1]=CrAnMask+i+2+NCellV; oadd[0]=i+2+NCellV;     OperatorAddLaderNormalOrder(&O, oadd, 2, G0Double.Dt.con.a[i+1], 0.0, &QDetNotOrderedFcFaBcBa);
+    oadd[1]=CrAnMask+i+2+NCellV; oadd[0]=i+1+NCellV;     OperatorAddLaderNormalOrder(&O, oadd, 2, G0Double.Dt.con.b[i], 0.0, &QDetNotOrderedFcFaBcBa);
+    oadd[1]=CrAnMask+i+1+NCellV; oadd[0]=i+2+NCellV;     OperatorAddLaderNormalOrder(&O, oadd, 2, G0Double.Dt.con.b[i], 0.0, &QDetNotOrderedFcFaBcBa);
+  }
+  
+  PrintOperatorReadable(O);
+  
+  for(i=0;i<2;i++)
+  {
+    InitOperator(&V[i]);
+    V[i].NFermion=2+NCellV+NCellC;
+    V[i].NBoson=0;
+    V[i].NWord=Min(V[i].NFermion,1+(V[i].NFermion-1)/8);
+    V[i].QComplex=0;
+    InitOperatorFixedLength(&V[i],1,1);
+  }
+  oadd[0]=CrAnMask+1+NCellV; OperatorAddLaderNormalOrder(&V[0], oadd, 1, G0Double.Dt.val.b[NCellV], 0.0, &QDetNotOrderedFcFaBcBa);
+  oadd[0]=         1+NCellV+NCellC; OperatorAddLaderNormalOrder(&V[1], oadd, 1, G0Double.Dt.con.b[NCellC], 0.0, &QDetNotOrderedFcFaBcBa);
+  
+  PrintOperatorReadable(V[0]);
+  PrintOperatorReadable(V[1]);
+  
+  Gp[0].N=G0Double.Dt.val.N-NCellV;
+  InitTriDiagonalMatrix(&Gp[0]);
+  for(i=1;i<Gp[0].N;i++)
+  {
+    Gp[0].a[i]=-G0Double.Dt.val.a[i+NCellV];
+    Gp[0].b[i]=G0Double.Dt.val.b[i+NCellV];
+  }
+  Gp[0].a[Gp[0].N]=-G0Double.Dt.val.a[Gp[0].N+NCellV];
+  
+  Gp[1].N=G0Double.Dt.con.N-NCellC;
+  InitTriDiagonalMatrix(&Gp[1]);
+  for(i=1;i<Gp[1].N;i++)
+  {
+    Gp[1].a[i]=G0Double.Dt.con.a[i+NCellC];
+    Gp[1].b[i]=G0Double.Dt.con.b[i+NCellC];
+  }
+  Gp[1].a[Gp[1].N]=G0Double.Dt.con.a[Gp[1].N+NCellC];
+  
+  PrintTriDiagonalMatrix(Gp[0]);
+  PrintTriDiagonalMatrix(Gp[1]);
+  
+  InitOperator(&TPES);
+  TPES.NFermion=2+NCellV+NCellC;
+  TPES.NBoson=0;
+  TPES.NWord=Min(TPES.NFermion,1+(TPES.NFermion-1)/8);
+  TPES.QComplex=0;
+  InitOperatorFixedLength(&TPES,1,1);
+  oadd[0]=0;
+  RealOperatorAddLader(&TPES, oadd, 1, 1.0);
+  
+  InitOperator(&TIPES);
+  TIPES.NFermion=2+NCellV+NCellC;
+  TIPES.NBoson=0;
+  TIPES.NWord=Min(TIPES.NFermion,1+(TIPES.NFermion-1)/8);
+  TIPES.QComplex=0;
+  InitOperatorFixedLength(&TIPES,1,1);
+  oadd[0]=CrAnMask+0;
+  RealOperatorAddLader(&TIPES, oadd, 1, 1.0);
+  
+  PrintOperatorReadable(TPES);
+  PrintOperatorReadable(TIPES);
+  
+  psi.QComplex=0;
+  psi.NFermion=2+NCellV+NCellC;
+  psi.NBoson=0;
+  psi.NBitsKey=16;
+  WaveFunctionInit(&psi);
+  Determinant=calloc(psi.NWord,sizeof(uint8_t));
+  for(i=0;i<psi.NWord;i++)
+  {
+    Determinant[i]=0;
+  }
+  for(i=1;i<2+NCellV;i++)
+  {
+    OperatorCr(Determinant,i,psi.NFermion);
+  }
+  RealWaveFunctionAddElement(&psi,Determinant,1.0);
+  PrintWaveFunctionFullReadable(psi);
+  
+  epsilon=1E-15;
+  zero=   1E-15;
+  LanczosGroundState(O, &psi, &epsilon, zero, 0.0, &psi, 0);
+  LanczosGroundState(O, &psi, &epsilon, zero, 0.0, &psi, 0);
+  
+  PrintWaveFunctionReadableTruncated(psi, 0.1);
+  PsiHermitianOperatorPsi(O, psi, &PsiEnergy);
+  PsiHermitianOperatorSqrPsi(O,psi,&PsiQuality);
+  PsiQuality/=Sqr(PsiEnergy);
+  CalculatePrefactorHistogram(PsiHist, psi, 10.0, 20);
+  printf("\nHistogram of prefactors in Wave-function\n");
+  for(i=0;i<19;i++)
+  {
+    printf("10^(-%2i) to 10^(-%2i) | %22.15E\n",i,i+1,PsiHist[i]);
+  }
+  printf("10^(-%2i) to 0        | %22.15E\n",i,PsiHist[19]);
+  printf("\n");
+  printf("Energy                  <psi|H^2|psi>/(<psi|H|psi>^2)\n");
+  printf("%22.15E  %22.15E\n",PsiEnergy,PsiQuality);
+  PsiRho=calloc(psi.NFermion,sizeof(double));
+  if(PsiRho==NULL){printf("calloc failed in main for PsiRho\n Fatal Error\n");fflush(stdout);return;}
+  CalculateDensity(PsiRho,psi);
+  printf("Occupation \n");
+  for(i=0;i<psi.NFermion;i++)
+  {
+    printf("%5i %22.15E\n",i,PsiRho[i]);
+  }
+  free(PsiRho);
+  
+  fflush(stdout);
+  
+  GPES.N=NTriDiag;
+  GIPES.N=NTriDiag;
+  GPESD1.N=NKrylov;
+  GIPESD1.N=NKrylov;
+  InitTriDiagonalMatrix(&GPES);
+  InitTriDiagonalMatrix(&GIPES);
+  InitTriDiagonalMatrix(&GPESD1);
+  InitTriDiagonalMatrix(&GIPESD1);
+  
+  OperatorPsi(TPES,psi,&Opsi);
+  LanczosTriDiagonalize(O, Opsi, epsilon, &GPES, 0);
+  
+  OperatorPsi(TIPES,psi,&Opsi);
+  LanczosTriDiagonalize(O, Opsi, epsilon, &GIPES, 0);
+  
+  OperatorPsi(TPES,psi,&Opsi);
+  LanczosTriDiagonalizeDysonLowMem(O, Opsi, epsilon, NTriDiag, V, Gp, 2, &GPESD1);
+  
+  OperatorPsi(TIPES,psi,&Opsi);
+  LanczosTriDiagonalizeDysonLowMem(O, Opsi, epsilon, NTriDiag, V, Gp, 2, &GIPESD1);
+  
+  printf("End Tridiagonalization\n");
+  
+  fflush(stdout);
+  
+  Spectra[0].N       =5000;
+  Spectra[0].Emin    =-1;
+  Spectra[0].Emax    =4;
+  Spectra[0].dE      =(Spectra[0].Emax-Spectra[0].Emin)/Spectra[0].N;
+  Spectra[0].EminPole=-1;
+  Spectra[0].EmaxPole=1;
+  Spectra[0].Gamma   =0.01;
+  for(i=0;i<6;i++)
+  {
+    SpectrumAllocate(Spectra[0], &Spectra[i]);
+  }
+  
+  TriDiagonalMatrixToSpectrum(PsiEnergy, GPES, &Spectra[0]);
+  TriDiagonalMatrixToSpectrum(PsiEnergy, GIPES, &Spectra[1]);
+  TriDiagonalMatrixToSpectrum(PsiEnergy, GPESD1, &Spectra[2]);
+  TriDiagonalMatrixToSpectrum(PsiEnergy, GIPESD1, &Spectra[3]);
+  
+  
+  
+  FilePrintSpectra(Spectra, 4, "/Users/haverkort/ProgramOutput/LancDyson2", "w");
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void TestLanczosDyson()
 {
   printf("Start Test Lanczos Dyson\n");

@@ -84,7 +84,7 @@ uint32_t NearestNeighborHyperCubicTBToGTriDiagonalRepresentation(uint32_t Dim, u
   if(P.N>1000*NTriDiag)
   {
     printf("Need to reduce the number of poles from %12i\n",P.N);
-    ReduceListOfPoles(&P, 0.001/NTriDiag);
+    ReduceListOfPolesSpacing(&P, 0.001/NTriDiag);
     printf("                                   to   %12i\n",P.N);
   }
   if(ListOfPolesToTridiagonalMatrix(P, G, NTriDiag)){printf("ListOfPolesToTridiagonalMatrix failed in NearestNeighborHyperCubicTBToGTriDiagonalRepresentation\n");fflush(stdout);FreeListOfPoles(&P);return 1;};
@@ -143,7 +143,7 @@ uint32_t NearestNeighborTriangularTBToGTriDiagonalRepresentation(uint32_t NTriDi
   if(P.N>10*NTriDiag)
   {
     printf("Need to reduce the number of poles from %12i\n",P.N);
-    ReduceListOfPoles(&P, 0.1/NTriDiag);
+    ReduceListOfPolesSpacing(&P, 0.1/NTriDiag);
     printf("                                   to   %12i\n",P.N);
   }
   if(ListOfPolesToTridiagonalMatrix(P, G, NTriDiag)){printf("ListOfPolesToTridiagonalMatrix failed in NearestNeighborHyperCubicTBToGTriDiagonalRepresentation\n");fflush(stdout);FreeListOfPoles(&P);return 1;};

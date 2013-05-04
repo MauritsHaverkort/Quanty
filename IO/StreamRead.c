@@ -452,6 +452,7 @@ uint32_t StreamReadDMFTXASSettings(DMFTXASSettings * O, FILE *stream)
 uint32_t StreamReadDMFTSettings(DMFTSettings * O, FILE *stream)
 {
   char comments[1000];
+  uint32_t i;
   fscanf(stream,"%s",(O->G0FileName));               fgets(comments,1000,stream);
   fscanf(stream,"%s",(O->GRootFileName));            fgets(comments,1000,stream);
   fscanf(stream,"%s",(O->SpecRootFileName));         fgets(comments,1000,stream);
@@ -459,9 +460,26 @@ uint32_t StreamReadDMFTSettings(DMFTSettings * O, FILE *stream)
   fscanf(stream,"%i",&(O->iStart));                  fgets(comments,1000,stream);
   fscanf(stream,"%i",&(O->Ni));                      fgets(comments,1000,stream);
   fscanf(stream,"%i",&(O->Dyson));                   fgets(comments,1000,stream);
+  fscanf(stream,"%i",&(O->NGCluster));               fgets(comments,1000,stream);
+  fscanf(stream,"%i",&(O->NGBath));                  fgets(comments,1000,stream);
   fscanf(stream,"%lf",&(O->Mix));                    fgets(comments,1000,stream);
   fscanf(stream,"%lf",&(O->U));                      fgets(comments,1000,stream);
   fscanf(stream,"%i",&(O->NBath));                   fgets(comments,1000,stream);
+  fscanf(stream,"%i",&(O->Spectra));
+  O->NQ=1;
+  if((O->Spectra)&12)
+  {
+    fscanf(stream,"%i",&(O->NQ));
+    O->Q=malloc(O->NQ*sizeof(double));
+    for(i=0;i<O->NQ;i++)
+    {
+      fscanf(stream,"%lf",&(O->Q[i]));
+    }
+    if(O->NQ==0)
+    {
+      O->Spectra&=!((uint32_t)12);
+    }
+  }                                                  fgets(comments,1000,stream);
   fscanf(stream,"%i",&(O->NE));                      fgets(comments,1000,stream);
   fscanf(stream,"%lf",&(O->Emin));                   fgets(comments,1000,stream);
   fscanf(stream,"%lf",&(O->Emax));                   fgets(comments,1000,stream);

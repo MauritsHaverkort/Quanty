@@ -64,6 +64,14 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "Green"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "LancDy2"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "Opar"
             isEnabled = "NO">
          </CommandLineArgument>
@@ -73,7 +81,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "LancDy"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
       <AdditionalOptions>

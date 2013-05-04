@@ -1357,4 +1357,15 @@ void MatrixOrthonormalize(MatrixType * const M)
   return;
 }
 
+/*  S contains the overlap matrix <psi_i psi_j>
+ *  on return T contans a transformation matrix returning an orthonormal basis
+ */
+uint32_t MatrixBasisOrthonormalize(MatrixType const S, MatrixType *const T)
+{
+
+  return 0;
+}
+
+
+
 

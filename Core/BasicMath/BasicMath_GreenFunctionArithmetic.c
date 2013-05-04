@@ -148,7 +148,7 @@ uint32_t SumGreensfunctionsTriDiagonalRepresentation(TriDiagonalMatrixType const
     RealVectorDotVector(vecA[i],vecA[i],A.N,&Atemp);                /* b[i] = sqrt( vec[i] . vec[i] ) */
     RealVectorDotVector(vecB[i],vecB[i],B.N,&Btemp);
     M->b[i]=sqrt(Atemp+Btemp);
-    if(M->b[i]>100*DBL_MIN)                                         /* vec[i] *= 1/b[i] */
+    if(M->b[i]>100*(DBL_MIN+M->b[1]*DBL_EPSILON))                   /* vec[i] *= 1/b[i] */
     {
       RealVectorMultiply(vecA[i],A.N,1.0/M->b[i]); 
       RealVectorMultiply(vecB[i],B.N,1.0/M->b[i]);
@@ -156,6 +156,7 @@ uint32_t SumGreensfunctionsTriDiagonalRepresentation(TriDiagonalMatrixType const
     else
     {
       M->N=i;
+      M->b[i]=0;
       RealVectorMultiply(vecA[i],A.N,0); 
       RealVectorMultiply(vecB[i],B.N,0);
     }
@@ -189,9 +190,230 @@ uint32_t SymmetrizeTridiagonalMatrix(TriDiagonalMatrixType *const M)
 }
 
 
+
+/*  Create a new set of poles, which has lenght N, by removing the M->N-N poles with the smallest weight
+ *  This algorithm combines the pole with the smallest weight with its nearest two neighbors
+ *  and repeats this untill the number of nonzero poles is N
+ */
+void ReduceSqrtListOfPolesNumber(ListOfPoles * M, uint32_t N)
+{
+  if(M->N<N) return;
+  uint32_t i,imin;
+  double biminLeft,biminRight,temp;
+  OrderListOfPoles(M);
+  while(M->N>N)
+  {
+    imin=0;
+    for(i=1;i<M->N;i++)
+    {
+      if(M->b[i]<M->b[imin])
+      {
+        imin=i;
+      }
+    }
+    if(M->b[imin]>DBL_MIN)
+    {
+      if(imin==0)
+      {
+        M->a[imin+1]=(Sqr(M->b[imin]/M->b[imin+1])*M->a[imin]+M->a[imin+1])/(Sqr(M->b[imin]/M->b[imin+1])+1);
+        M->b[imin+1]=sqrt(Sqr(M->b[imin])+Sqr(M->b[imin+1]));
+      }
+      else if(imin==M->N-1)
+      {
+        M->a[imin-1]=(Sqr(M->b[imin]/M->b[imin-1])*M->a[imin]+M->a[imin-1])/(Sqr(M->b[imin]/M->b[imin-1])+1);
+        M->b[imin-1]=sqrt(Sqr(M->b[imin])+Sqr(M->b[imin-1]));
+      }
+      else
+      {
+        if(fabs((M->a[imin+1]-M->a[imin-1]))<fabs(10*(DBL_MIN+DBL_EPSILON*M->a[imin])))
+        {
+          biminLeft=M->b[imin]*sqrt(0.5);
+          biminRight=M->b[imin]*sqrt(0.5);
+        }
+        else if(fabs((M->a[imin+1]-M->a[imin]))<fabs(10*(DBL_MIN+DBL_EPSILON*M->a[imin])))
+        {
+          biminLeft=M->b[imin];
+          biminRight=0;
+        }
+        else if(fabs((M->a[imin]-M->a[imin-1]))<fabs(10*(DBL_MIN+DBL_EPSILON*M->a[imin])))
+        {
+          biminLeft=0;
+          biminRight=M->b[imin];
+        }
+        else
+        {
+          biminLeft =M->b[imin]*sqrt((M->a[imin+1]-M->a[imin  ])/(M->a[imin+1]-M->a[imin-1]));
+          biminRight=M->b[imin]*sqrt((M->a[imin  ]-M->a[imin-1])/(M->a[imin+1]-M->a[imin-1]));
+        }
+        M->a[imin+1]=(Sqr(biminRight/M->b[imin+1])*M->a[imin]+M->a[imin+1])/(Sqr(biminRight/M->b[imin+1])+1);
+        M->b[imin+1]=sqrt(Sqr(biminRight)+Sqr(M->b[imin+1]));
+        M->a[imin-1]=(Sqr(biminLeft /M->b[imin-1])*M->a[imin]+M->a[imin-1])/(Sqr(biminLeft /M->b[imin-1])+1);
+        M->b[imin-1]=sqrt(Sqr(biminLeft )+Sqr(M->b[imin-1]));
+      }
+    }
+    for(i=imin;i<M->N-1;i++)
+    {
+      M->a[i]=M->a[i+1];
+      M->b[i]=M->b[i+1];
+    }
+    M->N--;
+    i=imin;
+    while((i>1)&&(M->a[i-1]<M->a[i-2]))
+    {
+      temp=M->a[i-1];
+      M->a[i-1]=M->a[i-2];
+      M->a[i-2]=temp;
+      temp=M->b[i-1];
+      M->b[i-1]=M->b[i-2];
+      M->b[i-2]=temp;
+      i--;
+    }
+    i=imin;
+    while((i<M->N-1)&&(M->a[i]>M->a[i+1]))
+    {
+      temp=M->a[i];
+      M->a[i]=M->a[i+1];
+      M->a[i+1]=temp;
+      temp=M->b[i];
+      M->b[i]=M->b[i+1];
+      M->b[i+1]=temp;
+      i++;
+    }
+  }
+}
+
+
+/*  Create a new set of poles, which has lenght N, by removing the M->N-N poles with the smallest weight
+ *  This algorithm combines the pole with the smallest weight with its nearest two neighbors
+ *  and repeats this untill the number of nonzero poles is N
+ */
+void ReduceSqrtListOfPolesMoment(ListOfPoles * M, uint32_t N)
+{
+  if(M->N<N) return;
+  uint32_t i,imin;
+  double biminLeft,biminRight,temp,MinMoment,TestMoment;
+  OrderListOfPoles(M);
+  while(M->N>N)
+  {
+    imin=0;
+    MinMoment=Sqr(M->b[imin])*(M->a[imin+1]-M->a[imin]);
+    TestMoment=Sqr(M->b[M->N-1])*(M->a[M->N-1]-M->a[M->N-2]);
+    if(TestMoment<MinMoment)
+    {
+      MinMoment=TestMoment;
+      imin=M->N-1;
+    }
+    for(i=1;i<M->N-1;i++)
+    {
+      TestMoment=Sqr(M->b[i])*Min(M->a[i+1]-M->a[i],M->a[i]-M->a[i-1]);
+      if(TestMoment<MinMoment)
+      {
+        imin=i;
+        MinMoment=TestMoment;
+      }
+    }
+    if(M->b[imin]>DBL_MIN)
+    {
+      if(imin==0)
+      {
+        M->a[imin+1]=(Sqr(M->b[imin]/M->b[imin+1])*M->a[imin]+M->a[imin+1])/(Sqr(M->b[imin]/M->b[imin+1])+1);
+        M->b[imin+1]=sqrt(Sqr(M->b[imin])+Sqr(M->b[imin+1]));
+      }
+      else if(imin==M->N-1)
+      {
+        M->a[imin-1]=(Sqr(M->b[imin]/M->b[imin-1])*M->a[imin]+M->a[imin-1])/(Sqr(M->b[imin]/M->b[imin-1])+1);
+        M->b[imin-1]=sqrt(Sqr(M->b[imin])+Sqr(M->b[imin-1]));
+      }
+      else
+      {
+        if(fabs((M->a[imin+1]-M->a[imin-1]))<fabs(10*(DBL_MIN+DBL_EPSILON*M->a[imin])))
+        {
+          biminLeft=M->b[imin]*sqrt(0.5);
+          biminRight=M->b[imin]*sqrt(0.5);
+        }
+        else if(fabs((M->a[imin+1]-M->a[imin]))<fabs(10*(DBL_MIN+DBL_EPSILON*M->a[imin])))
+        {
+          biminLeft=M->b[imin];
+          biminRight=0;
+        }
+        else if(fabs((M->a[imin]-M->a[imin-1]))<fabs(10*(DBL_MIN+DBL_EPSILON*M->a[imin])))
+        {
+          biminLeft=0;
+          biminRight=M->b[imin];
+        }
+        else
+        {
+          biminLeft =M->b[imin]*sqrt((M->a[imin+1]-M->a[imin  ])/(M->a[imin+1]-M->a[imin-1]));
+          biminRight=M->b[imin]*sqrt((M->a[imin  ]-M->a[imin-1])/(M->a[imin+1]-M->a[imin-1]));
+        }
+        M->a[imin+1]=(Sqr(biminRight/M->b[imin+1])*M->a[imin]+M->a[imin+1])/(Sqr(biminRight/M->b[imin+1])+1);
+        M->b[imin+1]=sqrt(Sqr(biminRight)+Sqr(M->b[imin+1]));
+        M->a[imin-1]=(Sqr(biminLeft /M->b[imin-1])*M->a[imin]+M->a[imin-1])/(Sqr(biminLeft /M->b[imin-1])+1);
+        M->b[imin-1]=sqrt(Sqr(biminLeft )+Sqr(M->b[imin-1]));
+      }
+    }
+    for(i=imin;i<M->N-1;i++)
+    {
+      M->a[i]=M->a[i+1];
+      M->b[i]=M->b[i+1];
+    }
+    M->N--;
+    i=imin;
+    while((i>1)&&(M->a[i-1]<M->a[i-2]))
+    {
+      temp=M->a[i-1];
+      M->a[i-1]=M->a[i-2];
+      M->a[i-2]=temp;
+      temp=M->b[i-1];
+      M->b[i-1]=M->b[i-2];
+      M->b[i-2]=temp;
+      i--;
+    }
+    i=imin;
+    while((i<M->N-1)&&(M->a[i]>M->a[i+1]))
+    {
+      temp=M->a[i];
+      M->a[i]=M->a[i+1];
+      M->a[i+1]=temp;
+      temp=M->b[i];
+      M->b[i]=M->b[i+1];
+      M->b[i+1]=temp;
+      i++;
+    }
+  }
+}
+
+
+
+uint32_t ReducePolesAndersonMatrixNumber(AndersonMatrixType *const A, uint32_t N)
+{
+  ListOfPoles Alp;
+  if(A->N<=N) {printf("warning in ReducePolesAndersonMatrixNumber, A->N=%i and N is %i\n",A->N,N);return 0;}
+  if(N<=1) {printf("Error in ReducePolesAndersonMatrixNumber N=%i\n",N);return 1;}
+  Alp.a=&(A->a[2]);
+  Alp.b=&(A->b[1]);
+  Alp.N=A->N-1;
+  ReduceSqrtListOfPolesNumber(&Alp, N-1);
+  A->N=Alp.N+1;
+  return 0;
+}
+
+uint32_t ReducePolesAndersonMatrixMoment(AndersonMatrixType *const A, uint32_t N)
+{
+  ListOfPoles Alp;
+  if(A->N<=N) {printf("warning in ReducePolesAndersonMatrixNumber, A->N=%i and N is %i\n",A->N,N);return 0;}
+  if(N<=1) {printf("Error in ReducePolesAndersonMatrixNumber N=%i\n",N);return 1;}
+  Alp.a=&(A->a[2]);
+  Alp.b=&(A->b[1]);
+  Alp.N=A->N-1;
+  ReduceSqrtListOfPolesMoment(&Alp, N-1);
+  A->N=Alp.N+1;
+  return 0;
+}
+
 uint32_t ReducePolesAndersonMatrix(AndersonMatrixType *const A, double tMin, double Ef)
 {
-  uint32_t i;
+  uint32_t i,j;
   for(i=2;i<A->N;i++)
   {
     if(A->b[i-1]<100*DBL_MIN)
@@ -224,6 +446,23 @@ uint32_t ReducePolesAndersonMatrix(AndersonMatrixType *const A, double tMin, dou
         A->b[i-2]=sqrt(Sqr(A->b[i-1])+Sqr(A->b[i-2]));
         A->b[i-1]=0;
       }
+    }
+  }
+  i=2;
+  while(i<A->N)
+  {
+    if(A->b[i]==0)
+    {
+      for(j=i+1;j<A->N;j++)
+      {
+        A->b[j-1]=A->b[j];
+        A->a[j]=A->a[j+1];
+      }
+      A->N--;
+    }
+    else
+    {
+      i++;
     }
   }
   return 0;
@@ -279,6 +518,7 @@ uint32_t DifferenceGreensFunctionTriDiagonalRepresentation(TriDiagonalMatrixType
   return 0;
 }
 
+
 /* S = G0^{-1} - G^{-1}
  *
  */
@@ -298,6 +538,34 @@ uint32_t SelfEnergyTriDiagonalRepresentation(TriDiagonalMatrixType const G0, Tri
   return DifferenceGreensFunctionTriDiagonalRepresentation(IG, IG0, Sigma);
 }
 
+uint32_t SelfEnergyListOfPolesFromAndersonRepresentation(AndersonMatrixType const G0, AndersonMatrixType const G, ListOfPoles *const Sigma)
+{
+  ListOfPoles IG0;
+  if(AndersonMatrixInverseToListOfPoles(G,Sigma)){printf("AndersonMatrixInverseToListOfPoles failed in SelfEnergyListOfPolesFromAndersonRepresentation\n");return 1;}
+  if(AndersonMatrixInverseToListOfPoles(G0, &IG0)){printf("AndersonMatrixInverseToListOfPoles failed in SelfEnergyListOfPolesFromAndersonRepresentation\n");return 1;}
+  if(SubtractListOfPoles(Sigma, IG0)){printf("SubtractListOfPoles failed in SelfEnergyListOfPolesFromAndersonRepresentation\n");return 1;};
+  FreeListOfPoles(&IG0);
+  return 0;
+}
+
+uint32_t SelfEnergyListOfPolesFromTriDiagonalRepresentation(TriDiagonalMatrixType const G0, TriDiagonalMatrixType const G, ListOfPoles *const Sigma)
+{
+  ListOfPoles IG0;
+  AndersonMatrixType G0And, GAnd;
+  MatrixType T;
+  if(TriDiagonalMatrixToAndersonMatrix(G0, &T, &G0And)){printf("TriDiagonalMatrixToAndersonMatrix failed in SelfEnergyListOfPolesFromTriDiagonalRepresentation\n");return 1;}
+  FreeMatrix(&T);
+  if(TriDiagonalMatrixToAndersonMatrix(G, &T, &GAnd)){printf("TriDiagonalMatrixToAndersonMatrix failed in SelfEnergyListOfPolesFromTriDiagonalRepresentation\n");return 1;}
+  FreeMatrix(&T);
+  if(AndersonMatrixInverseToListOfPoles(GAnd,Sigma)){printf("AndersonMatrixInverseToListOfPoles failed in SelfEnergyListOfPolesFromAndersonRepresentation\n");return 1;}
+  FreeAndersonMatrix(&GAnd);
+  if(AndersonMatrixInverseToListOfPoles(G0And, &IG0)){printf("AndersonMatrixInverseToListOfPoles failed in SelfEnergyListOfPolesFromAndersonRepresentation\n");return 1;}
+  FreeAndersonMatrix(&G0And);
+  if(SubtractListOfPoles(Sigma, IG0)){printf("SubtractListOfPoles failed in SelfEnergyListOfPolesFromAndersonRepresentation\n");return 1;};
+  FreeListOfPoles(&IG0);
+  return 0;
+}
+
 /*  GBath(w) = 1 / ( G_0(w-Sigma(w))^{-1} + Sigma(w) )
  *    G_0(w-Sigma(w))                     = 1 / (w - S - a1 - b1^2 / (w - S - a2 - b2^2 / (w - S - ...
  *    G_0(w-Sigma(w))^{-1}                =     (w - S - a1 - b1^2 / (w - S - a2 - b2^2 / (w - S - ...
@@ -313,7 +581,7 @@ uint32_t GBathTriDiagonalRepresentation(TriDiagonalMatrixType const G0, TriDiago
   GS.Nj=(G0.N-1)*(Sigma.N+1)+1;
   GS.QComplex=0;
   GS.NBitsKey=8*((uint32_t)(log((double)GS.Ni)/(8*log(2.0)))+1);
-  if(InitSparseMatrix(&GS)){printf("InitSparseMatrix failed in GLocalTriDiagonalRepresentation\n");fflush(stdout);return 1;};
+  if(InitSparseMatrix(&GS)){printf("InitSparseMatrix failed in GBathTriDiagonalRepresentation\n");fflush(stdout);return 1;};
   GS.a0=G0.a[0];
   GS.b0=G0.b[0];
   RealSparseMatrixAddElement(&GS,0,0,G0.a[1]);
@@ -334,118 +602,103 @@ uint32_t GBathTriDiagonalRepresentation(TriDiagonalMatrixType const G0, TriDiago
     RealSparseMatrixAddElement(&GS,1+((i-1)*(Sigma.N+1)) , 1+(i    *(Sigma.N+1)),G0.b[i+1]);
     RealSparseMatrixAddElement(&GS,1+(i    *(Sigma.N+1)) , 1+((i-1)*(Sigma.N+1)),G0.b[i+1]);
   }
-  if(SparseMatrixToTriDiagonalMatrix(GS,&T,GBath,NTriDiag)){printf("SparseMatrixToTriDiagonalMatrix failed in GLocalTriDiagonalRepresentation\n");fflush(stdout);return 1;};
+  if(SparseMatrixToTriDiagonalMatrix(GS,&T,GBath,NTriDiag)){printf("SparseMatrixToTriDiagonalMatrix failed in GBathTriDiagonalRepresentation\n");fflush(stdout);return 1;};
   FreeMatrix(&T);
   FreeSparseMatrix(&GS);
   return 0;
 }
 
-
-uint32_t OldGBathTriDiagonalRepresentation(TriDiagonalMatrixType const G0, TriDiagonalMatrixType const Sigma, TriDiagonalMatrixType *const GBath)
-{
-  uint32_t i;
-  TriDiagonalMatrixType G0Inv,G;
-  G0Inv.N=G0.N-2;
-  G0Inv.a=&(G0.a[2]);
-  G0Inv.b=&(G0.b[2]);
-  if(SumGreensfunctionsTriDiagonalRepresentation(G0Inv, Sigma, &G)){printf("SumGreensfunctionsTriDiagonalRepresentation failed in GLocalTriDiagonalRepresentation\n");return 1;};
-  GBath->N=G.N+2;
-  InitTriDiagonalMatrix(GBath);
-  GBath->a[0]=0;
-  GBath->b[0]=1;
-  GBath->a[1]=G0.a[1];
-  GBath->b[1]=G0.b[1];
-  for(i=2;i<GBath->N;i++)
-  {
-    GBath->a[i]=G.a[i-2];
-    GBath->b[i]=G.b[i-2];
-  }
-  GBath->a[GBath->N]=G.a[GBath->N-2];
-  FreeTriDiagonalMatrix(&G);
-  return 0;
-}
-
-
-
-
-/*   GLocal(w) = G0( w - Sigma(w) )
- *             = 1/( w - H0 - Sigma(w) )
- *
- *   GLocal(w)^{-1} = w - H0 - Sigma(w)
- *                  = - ( -G0^{-1} + Sigma(w) )
- *
+/*  GBath(w) = 1 / ( G_0(w-Sigma(w))^{-1} + Sigma(w) )
+ *    G_0(w-Sigma(w))                     = 1 / (w - S - a1 - sum_i b_i^2 / (w - a_{i+1} - S)
+ *    G_0(w-Sigma(w))^{-1}                =     (w - S - a1 - sum_i b_i^2 / (w - a_{i+1} - S)
+ *    G_0(w-Sigma(w))^{-1} + Sigma        =     (w     - a1 - sum_i b_i^2 / (w - a_{i+1} - S)
+ *  ( G_0(w-Sigma(w))^{-1} + Sigma )^{-1} = 1 / (w     - a1 - sum_i b_i^2 / (w - a_{i+1} - S)
  */
-uint32_t GLocalTriDiagonalRepresentation(TriDiagonalMatrixType const G0, TriDiagonalMatrixType const Sigma, TriDiagonalMatrixType *const G, uint32_t NTriDiag)
+uint32_t GBathAndListAndRepresentation(AndersonMatrixType const G0, ListOfPoles const Sigma, AndersonMatrixType *const G)
 {
-  TriDiagonalMatrixType G0Inv;
-  uint32_t i;
-  
-  G0Inv.N=G0.N-1;
-  G0Inv.a=&(G0.a[1]);
-  G0Inv.b=&(G0.b[1]);
-  if(SumGreensfunctionsTriDiagonalRepresentation(G0Inv, Sigma, G)){printf("SumGreensfunctionsTriDiagonalRepresentation failed in GLocalTriDiagonalRepresentation\n");return 1;};
-  G->a[G->N]=G->a[G->N-1];
-  for(i=G->N-1;i>0;i--)
+  uint32_t i,j;
+  ListOfPoles bSigmaPole;
+  AndersonMatrixType bSigma;
+  G->N=(G0.N-1)*(Sigma.N+1)+1;
+  if(InitAndersonMatrix(G)){printf("InitAndersonMatrix failed in GBathAndListAndRepresentation\n");return 1;}
+  bSigma.N=Sigma.N+1;
+  if(InitAndersonMatrix(&bSigma)){printf("InitAndersonMatrix failed in GBathAndListAndRepresentation\n");return 1;}
+  bSigma.a[0]=0;
+  for(i=1;i<G0.N;i++)
   {
-    G->a[i]=G->a[i-1];
-    G->b[i]=G->b[i-1];
+    bSigma.b[0]=G0.b[i];
+    bSigma.a[1]=G0.a[i+1]+Sigma.a0;
+    for(j=0;j<Sigma.N;j++)
+    {
+      bSigma.a[j+2]=Sigma.a[j];
+      bSigma.b[j+1]=sqrt(Sigma.b[j]);
+    }
+    if(AndersonMatrixToListOfPoles(bSigma, &bSigmaPole)){printf("AndersonMatrixToListOfPoles failed in GBathAndListAndRepresentation\n");return 1;}
+    for(j=0;j<bSigmaPole.N;j++)
+    {
+      G->a[j+(i-1)*(Sigma.N+1)+2]=bSigmaPole.a[j];
+      G->b[j+(i-1)*(Sigma.N+1)+1]=sqrt(bSigmaPole.b[j]);
+    }
+    for(j=bSigmaPole.N;j<bSigma.N;j++)
+    {
+      G->a[j+(i-1)*(Sigma.N+1)+2]=0;
+      G->b[j+(i-1)*(Sigma.N+1)+1]=0;
+    }
+    FreeListOfPoles(&bSigmaPole);
   }
   G->a[0]=G0.a[0];
   G->b[0]=G0.b[0];
-  
-  if(NTriDiag>(G->N))
-  {
-    printf("Warning GLocalTriDiagonalRepresentation called with NTriDiag=%i, but G0.N=%i and Sigma.N=%i\n",NTriDiag,G0.N,Sigma.N);
-    printf("Returned Glocal with Glocal.N=%i\n",(G->N));
-  }
-  else
-  {
-    G->N=NTriDiag;
-  }
+  G->a[1]=G0.a[1];
+  FreeAndersonMatrix(&bSigma);
   return 0;
 }
 
 
-/*   GLocal(w) = G0( w - Sigma(w) )
- *
- *             = 1/( w - H0 - Sigma(w) )
- *
- *   Sigma(w) = sa0 + (sb0^2)/(w - sa1 - sb1^2 (w-sa2 ...
- *   G0(w)    = 0   +    1   /(w - ga1 - gb1^2 (w-ga2 ...
- *
+/*  GBath(w) = 1 / ( G_0(w-Sigma(w))^{-1} + Sigma(w) )
+ *    G_0(w-Sigma(w))                     = 1 / (w - S - a1 - sum_i b_i^2 / (w - a_{i+1} - S)
+ *    G_0(w-Sigma(w))^{-1}                =     (w - S - a1 - sum_i b_i^2 / (w - a_{i+1} - S)
+ *    G_0(w-Sigma(w))^{-1} + Sigma        =     (w     - a1 - sum_i b_i^2 / (w - a_{i+1} - S)
+ *  ( G_0(w-Sigma(w))^{-1} + Sigma )^{-1} = 1 / (w     - a1 - sum_i b_i^2 / (w - a_{i+1} - S)
  */
-uint32_t GLocalTriDiagonalRepresentationOld(TriDiagonalMatrixType const G0, TriDiagonalMatrixType const Sigma, TriDiagonalMatrixType *const G, uint32_t NTriDiag)
+uint32_t GBathAndTriAndRepresentation(AndersonMatrixType const G0, TriDiagonalMatrixType const Sigma, AndersonMatrixType *const G)
 {
   uint32_t i,j;
-  MatrixType T;
-  SparseMatrixType GS;
-  GS.Ni=G0.N*(Sigma.N+1);
-  GS.Nj=G0.N*(Sigma.N+1);
-  GS.QComplex=0;
-  GS.NBitsKey=8*((uint32_t)(log((double)GS.Ni)/(8*log(2.0)))+1);
-  if(InitSparseMatrix(&GS)){printf("InitSparseMatrix failed in GLocalTriDiagonalRepresentation\n");fflush(stdout);return 1;};
-  GS.a0=G0.a[0];
-  GS.b0=G0.b[0];
-  for(i=0;i<G0.N;i++)
+  ListOfPoles bSigmaPole;
+  TriDiagonalMatrixType bSigma;
+  G->N=(G0.N-1)*(Sigma.N+1)+1;
+  if(InitAndersonMatrix(G)){printf("InitAndersonMatrix failed in GBathAndListAndRepresentation\n");return 1;}
+  bSigma.N=Sigma.N+1;
+  if(InitTriDiagonalMatrix(&bSigma)){printf("InitTriDiagonalMatrix failed in GBathAndListAndRepresentation\n");return 1;}
+  bSigma.a[0]=0;
+  for(j=0;j<Sigma.N;j++)
   {
-    RealSparseMatrixAddElement(&GS,i*(Sigma.N+1),i*(Sigma.N+1),G0.a[i+1]-Sigma.a[0]);
-    for(j=1;j<Sigma.N+1;j++)
-    {
-      RealSparseMatrixAddElement(&GS,i*(Sigma.N+1)+j  ,i*(Sigma.N+1)+j  , Sigma.a[j]  );
-      RealSparseMatrixAddElement(&GS,i*(Sigma.N+1)+j-1,i*(Sigma.N+1)+j  , Sigma.b[j-1]);
-      RealSparseMatrixAddElement(&GS,i*(Sigma.N+1)+j  ,i*(Sigma.N+1)+j-1, Sigma.b[j-1]);
-    }
+    bSigma.a[j+2]=Sigma.a[j+1];
+    bSigma.b[j+1]=Sigma.b[j];
   }
   for(i=1;i<G0.N;i++)
   {
-    RealSparseMatrixAddElement(&GS,(i-1)*(Sigma.N+1),(i  )*(Sigma.N+1),G0.b[i]);
-    RealSparseMatrixAddElement(&GS,(i  )*(Sigma.N+1),(i-1)*(Sigma.N+1),G0.b[i]);
+    bSigma.b[0]=G0.b[i];
+    bSigma.a[1]=G0.a[i+1]+Sigma.a[0];
+    if(TriDiagonalMatrixToListOfPoles(bSigma, &bSigmaPole)){printf("TriDiagonalMatrixToListOfPoles failed in GBathAndListAndRepresentation\n");return 1;}
+    for(j=0;j<bSigmaPole.N;j++)
+    {
+      G->a[j+(i-1)*(Sigma.N+1)+2]=bSigmaPole.a[j];
+      G->b[j+(i-1)*(Sigma.N+1)+1]=sqrt(bSigmaPole.b[j]);
+    }
+    for(j=bSigmaPole.N;j<bSigma.N;j++)
+    {
+      G->a[j+(i-1)*(Sigma.N+1)+2]=0;
+      G->b[j+(i-1)*(Sigma.N+1)+1]=0;
+    }
+    FreeListOfPoles(&bSigmaPole);
   }
-  if(SparseMatrixToTriDiagonalMatrix(GS,&T,G,NTriDiag)){printf("SparseMatrixToTriDiagonalMatrix failed in GLocalTriDiagonalRepresentation\n");fflush(stdout);return 1;};
-  FreeMatrix(&T);
-  FreeSparseMatrix(&GS);
+  G->a[0]=G0.a[0];
+  G->b[0]=G0.b[0];
+  G->a[1]=G0.a[1];
+  FreeTriDiagonalMatrix(&bSigma);
   return 0;
 }
+
 
 /*  GbathNew = (Gcl^{-1}-Sigma^{-1}) ^{-1}
  *
@@ -615,7 +868,9 @@ uint32_t TriDiagonalMatrixDysonScalar(TriDiagonalMatrixType const G, TriDiagonal
  *
  *  gnew  - resulting tridiagonal matrix of length gnew.N (set on entry)
  *
- *  H.Ni counts the number of blocks or the number of matrices V there are
+ *  N counts teh number of perturbing Operators V
+ *
+ *  H.Ni Equal to N
  *  H.Nj is Max[V[i].Nj] for all i or larger
  *
  */
@@ -699,6 +954,183 @@ uint32_t TridiagonalizeImpurityCoupledToBathDyson(TriDiagonalMatrixType const O,
   return 0;
 }
 
+
+/*  We start from the following Hamiltonian
+ *
+ *     ( O       V1      0       0       0         V2      0       0       0         ...       V3      0       0       0         0             0             0             0       0             0             0             0       0             0             0             0     0   )
+ *
+ *     ( V1^+    H1+g1a1 g1b1    0       0         0       0       0       0         ...       0       0       0       0         V12           0             0             0       0             0             0             0       0             0             0             0     0   )
+ *     ( 0       g1b1    H1+g1a2 g1b2    0         0       0       0       0         ...       0       0       0       0         0             V12           0             0       0             0             0             0       0             0             0             0     0   )
+ *     ( 0       0       g1b2    H1+g1a3 ...       0       0       0       0         ...       0       0       0       0         0             0             V12           0       0             0             0             0       0             0             0             0     0   )
+ *     ( 0       0       0       ...     ...       0       0       0       0         ...       0       0       0       0         0             0             0             ...     0             0             0             0       0             0             0             0     0   )
+ *
+ *     ( V2^+    0       0       0       0         H2+g2a1 g2b1    0       0         ...       0       0       0       0         V21           0             0             0       0             0             0             0       0             0             0             0     0   )
+ *     ( 0       0       0       0       0         g2b1    H2+g2a2 g2b2    0         ...       0       0       0       0         0             0             0             0       V21           0             0             0       0             0             0             0     0   )
+ *     ( 0       0       0       0       0         0       g2b2    H2+g2a3 ...       ...       0       0       0       0         0             0             0             0       0             0             0             0       V21           0             0             0     0   )
+ *     ( 0       0       0       0       0         0       0       ...     ...       ...       0       0       0       0         0             0             0             0       0             0             0             0       0             0             0             0     ... )
+ *
+ *     ( ...     ...     ...     ...     ...       ...     ...     ...     ...       ...       ...     ...     ...     ...       ...           ...           ...           ...     ...           ...           ...           ...     ...           ...           ...           ...   ... )
+ *
+ *     ( V3^+    0       0       0       0         0       0       0       0         ...       H3+g3a1 g3b1    0       0         0             0             0             0       0             0             0             0       0             0             0             0     0   )
+ *     ( 0       0       0       0       0         0       0       0       0         ...       g3b1    H3+g3a2 g3b2    0         0             0             0             0       0             0             0             0       0             0             0             0     0   )
+ *     ( 0       0       0       0       0         0       0       0       0         ...       0       g3b2    H3+g3a3 ...       0             0             0             0       0             0             0             0       0             0             0             0     0   )
+ *     ( 0       0       0       0       0         0       0       0       0         ...       0       0       ...     ...       0             0             0             0       0             0             0             0       0             0             0             0     0   )
+ *
+ *     ( 0       V12^+   0       0       0         V21^+   0       0       0         ...       0       0       0       0         H12+g1a1+g2a1 g1b1          0             0       g2b1          0             0             0       0             0             0             0     0   )
+ *     ( 0       0       V12^+   0       0         0       0       0       0         ...       0       0       0       0         g1b1          H12+g1a2+g2a1 g1b2          0       0             g2b1          0             0       0             0             0             0     0   )
+ *     ( 0       0       0       V12^+   0         0       0       0       0         ...       0       0       0       0         0             g1b2          H12+g1a3+g2a1 ...     0             0             g2b1          0       0             0             0             0     0   )
+ *     ( 0       0       0       0       ...       0       0       0       0         ...       0       0       0       0         0             0             ...           ...     0             0             0             ...     0             0             0             0     0   )
+ *
+ *     ( 0       0       0       0       0         0       0       0       0         ...       0       0       0       0         g2b1          0             0             0       H12+g1a1+g2a2 g1b1          0             0       g2b2          0             0             0     0   )
+ *     ( 0       0       0       0       0         0       V21^+   0       0         ...       0       0       0       0         0             g2b1          0             0       g1b1          H12+g1a2+g2a2 g1b2          0       0             g2b2          0             0     0   )
+ *     ( 0       0       0       0       0         0       0       0       0         ...       0       0       0       0         0             0             g2b1          0       0             g1b2          H12+g1a3+g2a2 ...     0             0             g2b2          0     0   )
+ *     ( 0       0       0       0       0         0       0       0       0         ...       0       0       0       0         0             0             0             ...     0             0             ...           ...     0             0             0             ...   0   )
+ *
+ *     ( 0       0       0       0       0         0       0       0       0         ...       0       0       0       0         0             0             0             0       g2b2          0             0             0       H12+g1a1+g2a3 g1b1          0             0     ... )
+ *     ( 0       0       0       0       0         0       0       0       0         ...       0       0       0       0         0             0             0             0       0             g2b2          0             0       g1b1          H12+g1a2+g2a3 g1b2          0     ... )
+ *     ( 0       0       0       0       0         0       0       V21^+   0         ...       0       0       0       0         0             0             0             0       0             0             g2b2          0       0             g1b2          H12+g1a3+g2a3 ...   ... )
+ *     ( 0       0       0       0       0         0       0       0       0         ...       0       0       0       0         0             0             0             0       0             0             0             ...     0             0             ...           ...   ... )
+ *
+ *     ( 0       0       0       0       0         0       0       0       ...       ...       0       0       0       0         0             0             0             0       0             0             0             0       ...           ...           ...           ...   ... )
+ *
+ *  and want to create a tridiagonal matrix on a Krylov basis starting from the first basis function
+ *
+ *  The matrices included are of special form:
+ *  O     - tridiagonal
+ *  Vi    - a dense matrix
+ *  Vii   - a dense matrix
+ *  Hi    - diagonal matrix
+ *  Hii   - diagonal matrix
+ *  gi    - tridiagonal matrix, representing the coupled bath.
+ *
+ *  gnew  - resulting tridiagonal matrix of length gnew.N (set on entry)
+ *
+ *  N counts the number of perturbing Operators V
+ *
+ *  Hi.Ni Equal to N
+ *  Hi.Nj is Max[V[i].Nj] for all i or larger
+ *
+ *  Hii.Ni Equal to (N^2-N)/2
+ *  Hii.Nj is Max[V[ij].Nj] for all i,j or larger
+ *
+ *  Vi,Vii will be labeled V1 and V2 below.
+ */
+uint32_t TridiagonalizeImpurityCoupledToBathDysonSecondOrder(TriDiagonalMatrixType const O, MatrixType const *V1, MatrixType const **V2, MatrixType const H1, MatrixType const H2, TriDiagonalMatrixType const *g, uint32_t N, TriDiagonalMatrixType * const gnew)
+{
+  SparseMatrixType Htot;
+  MatrixType T;
+  uint32_t i,ii,j,k,l;
+  Htot.Ni=O.N;
+  for(i=0;i<N;i++)
+  {
+    Htot.Ni+=g[i].N * V1[i].Nj;
+    for(ii=0;ii<i;ii++)
+    {
+      Htot.Ni+=g[i].N*g[ii].N*V2[i][ii].Nj;
+    }
+  }
+  Htot.Nj=Htot.Ni;
+  if(Htot.Ni<16000)
+  {
+    Htot.NBitsKey=16;
+  }
+  else
+  {
+    Htot.NBitsKey=24;
+  }
+  Htot.QComplex = 0;
+  Htot.a0=O.a[0];
+  Htot.b0=O.b[0];
+  for(i=0;i<N;i++)
+  {
+    if(V1[i].QComplex)Htot.QComplex=1;
+    for(j=0;j<N;j++)
+    {
+      if(V2[i][j].QComplex)Htot.QComplex=1;
+    }
+  }
+  if(InitSparseMatrix(&Htot)){printf("Could not initiallize sparse matrix in TridiagonalizeImpurityCoupledToBathDyson\n");return 1;}
+  /* Add matrix O to Htot */
+  SparseMatrixAddTridiagonalMatrix(&Htot, 0, 0, O);
+  /* Add matrices V1 to Htot */
+  j=O.N;
+  for(i=0;i<N;i++)
+  {
+    SparseMatrixAddMatrixTransposed(&Htot, 0, j, V1[i], DBL_EPSILON);
+    SparseMatrixAddMatrix(&Htot, j, 0, V1[i], DBL_EPSILON);
+    j+=g[i].N * V1[i].Nj;
+  }
+  /* Add matrices V2 to Htot */
+  for(i=0;i<N;i++)
+  {
+    for(ii=0;j<i;ii++)
+    {
+      for(k=0;k<g[i].N;k++)
+      {
+        SparseMatrixAddMatrixTransposed(&Htot, (k+1)*V1[i].Ni, j+k*V1[i].Ni, V2[i][ii], DBL_EPSILON);
+        SparseMatrixAddMatrix(&Htot, j+k*V1[i].Ni, (k+1)*V1[i].Ni, V2[i][ii], DBL_EPSILON);
+      }
+    }
+  }
+  /* Add matrices H1 and g to Htot */
+  l=O.N;
+  if(Htot.QComplex)
+  {
+    for(i=0;i<N;i++)
+    {
+      for(j=0;j<g[i].N;j++)
+      {
+        for(k=0;k<V1[i].Nj;k++)
+        {
+          ComplexSparseMatrixAddElement(&Htot, l, l, H1.VRe[i][k]+g[i].a[j+1],0);
+          if(j!=g[i].N-1)
+          {
+            ComplexSparseMatrixAddElement(&Htot, l, l+V1[i].Nj, g[i].b[j+1],0);
+            ComplexSparseMatrixAddElement(&Htot, l+V1[i].Nj, l, g[i].b[j+1],0);
+          }
+          l++;
+        }
+      }
+    }
+  }
+  else
+  {
+    for(i=0;i<N;i++)
+    {
+      for(j=0;j<g[i].N;j++)
+      {
+        for(k=0;k<V1[i].Nj;k++)
+        {
+          RealSparseMatrixAddElement(&Htot, l, l, H1.VRe[i][k]+g[i].a[j+1]);
+          if(j!=g[i].N-1)
+          {
+            RealSparseMatrixAddElement(&Htot, l, l+V1[i].Nj, g[i].b[j+1]);
+            RealSparseMatrixAddElement(&Htot, l+V1[i].Nj, l, g[i].b[j+1]);
+          }
+          l++;
+        }
+      }
+    }
+  }
+  /* Add matrices H2 and g to Htot */
+  if(Htot.QComplex)
+  {
+    
+  }
+  else
+  {
+    
+  }
+  /* tridiagonalize Htot */
+  SparseMatrixToTriDiagonalMatrix(Htot, &T, gnew, gnew->N);
+  FreeMatrix(&T);
+  FreeSparseMatrix(&Htot);
+  return 0;
+}
+
+
+
+
 /*  We start from the following Hamiltonian
  *
  *     ( H_1     H_12^1         H_12^2          ...   N_12^n        )
@@ -718,3 +1150,58 @@ uint32_t TridDiagonalMatrixDysonToMuchSimplified(TriDiagonalMatrixType const G1,
 {
   return 0;
 }
+
+
+
+
+/*
+ *  assume f.a[0]=0
+ *         g.a[0]=0;
+ *         f.b[0]=1;
+ *         g.b[0]=1;
+ */
+uint32_t GreenFunctionConvoluteTriDiagonalRepresentation(TriDiagonalMatrixType *const fg, TriDiagonalMatrixType const f, TriDiagonalMatrixType const g, uint32_t const NTriDiag)
+{
+  uint32_t i,j,k;
+  SparseMatrixType fgSparse;
+  MatrixType T;
+  fgSparse.NBitsKey=16;
+  fgSparse.QComplex=0;
+  fgSparse.Ni=f.N*g.N;
+  fgSparse.Nj=f.N*g.N;
+  if(InitSparseMatrix(&fgSparse)){printf("InitSparseMatrix failed in GreenFunctionConvoluteTriDiagonalRepresentation\n");return 1;};
+  fgSparse.a0=0;
+  fgSparse.b0=1;
+  k=0;
+  for(i=1;i<f.N;i++)
+  {
+    for(j=1;j<g.N;j++)
+    {
+      RealSparseMatrixAddElement(&fgSparse, k    , k    , f.a[i]+g.a[j]);
+      RealSparseMatrixAddElement(&fgSparse, k    , k+1  , g.b[j]);
+      RealSparseMatrixAddElement(&fgSparse, k+1  , k    , g.b[j]);
+      RealSparseMatrixAddElement(&fgSparse, k    , k+g.N, f.b[i]);
+      RealSparseMatrixAddElement(&fgSparse, k+g.N, k    , f.b[i]);
+      k++;
+    }
+    RealSparseMatrixAddElement(&fgSparse, k    , k    , f.a[i]+g.a[g.N]);
+    RealSparseMatrixAddElement(&fgSparse, k    , k+g.N, f.b[i]);
+    RealSparseMatrixAddElement(&fgSparse, k+g.N, k    , f.b[i]);
+    k++;
+  }
+  for(j=1;j<g.N;j++)
+  {
+    RealSparseMatrixAddElement(&fgSparse, k    , k    , f.a[f.N]+g.a[j]);
+    RealSparseMatrixAddElement(&fgSparse, k    , k+1  , g.b[j]);
+    RealSparseMatrixAddElement(&fgSparse, k+1  , k    , g.b[j]);
+    k++;
+  }
+  RealSparseMatrixAddElement(&fgSparse, k    , k    , f.a[f.N]+g.a[g.N]);
+  if(SparseMatrixToTriDiagonalMatrix(fgSparse, &T, fg, NTriDiag)){printf("SparseMatrixToTriDiagonalMatrix failed in GreenFunctionConvoluteTriDiagonalRepresentation\n");return 1;};
+  FreeMatrix(&T);
+  FreeSparseMatrix(&fgSparse);
+  return 0;
+}
+
+
+

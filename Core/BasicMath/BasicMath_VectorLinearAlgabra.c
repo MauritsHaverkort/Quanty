@@ -50,12 +50,24 @@ void ComplexVectorMultiply(double *const uRe, double *const uIm, const uint32_t 
 void RealVectorDotVector(const double *const u, const double *const v, uint32_t N, double *const a)
 {
   uint32_t i;
+  volatile double c,y,t;
   *a=0;
+  c=0.0;
+  y=0.0;
+  t=0.0;
   for(i=0;i<N;i++)
   {
-    *a+=u[i]*v[i];
+    y=u[i]*v[i]-c;
+    t=*a+y;
+    c=(t-*a);
+    c=c-y;
+    *a=t;
   }
 }
+
+
+
+
 void ComplexVectorDotVector(const double *const uRe, const double *const uIm, const double *const vRe, const double *const vIm, const uint32_t N, double *const aRe, double *const aIm)
 {
   /* Warning u is complex conjugated */ 

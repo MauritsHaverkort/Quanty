@@ -1553,7 +1553,9 @@ uint32_t PsiOperatorPsiRR(const OperatorType O, const WaveFunctionType psi, doub
   uint8_t  *Det;
   int      iOMP;
   double   ExpecValue=0;
-  #pragma omp parallel private(Det,i,j,k,l,ii,ij,ik,phase,iOMP) reduction(+ : ExpecValue)
+  volatile double c,t,y;
+  c=0;
+  #pragma omp parallel firstprivate(c) private(Det,i,j,k,l,ii,ij,ik,phase,iOMP,t,y) reduction(+ : ExpecValue)
   {
     Det=malloc(psi.NWord*sizeof(uint8_t));
     if(Det==NULL) AllocFailed();
@@ -1570,7 +1572,14 @@ uint32_t PsiOperatorPsiRR(const OperatorType O, const WaveFunctionType psi, doub
         {
           for(k=0;k<psi.NWord;k++) Det[k]=psi.Determinant[ii][ij+k];
           phase=OperatorLader(Det, &(O.l[l].o[l*j]), l, O.NFermion);
-          if(phase) ExpecValue+=phase*RealWaveFunctionPrefactorDet(psi, Det)*O.l[l].VRe[j]*psi.ValueRe[ii][ik];
+          if(phase)
+          {
+            y=(phase*RealWaveFunctionPrefactorDet(psi, Det)*O.l[l].VRe[j]*psi.ValueRe[ii][ik])-c;
+            t=ExpecValue+y;
+            c=t-ExpecValue;
+            c-=y;
+            ExpecValue=t;
+          }
         }
       }
     }

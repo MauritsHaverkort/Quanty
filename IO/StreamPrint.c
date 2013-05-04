@@ -766,6 +766,7 @@ uint32_t StreamPrintDMFTXASSettings(DMFTXASSettings O, FILE *stream)
  */
 uint32_t StreamPrintDMFTSettings(DMFTSettings O, FILE *stream)
 {
+  uint32_t i;
   fprintf(stream,"\nSettigns of self-consistent DMFT calculation\n");
   fprintf(stream,"G0FileName               : %s\n",O.G0FileName);  
   fprintf(stream,"GRootFileName            : %s\n",O.GRootFileName);  
@@ -774,9 +775,20 @@ uint32_t StreamPrintDMFTSettings(DMFTSettings O, FILE *stream)
   fprintf(stream,"iStart                   : %i\n",O.iStart);
   fprintf(stream,"Ni                       : %i\n",O.Ni);
   fprintf(stream,"Dyson perturbation       : %i\n",O.Dyson);
+  fprintf(stream,"NGCluster                : %i\n",O.NGCluster);
+  fprintf(stream,"NGBath                   : %i\n",O.NGBath);
   fprintf(stream,"Mix                      : %24.17E\n",O.Mix);
   fprintf(stream,"U                        : %24.17E\n",O.U);
   fprintf(stream,"NBath                    : %i\n",O.NBath);
+  fprintf(stream,"Spectra                  : %i\n",O.Spectra);
+  if((O.Spectra)&4)
+  {
+    fprintf(stream,"  NQ                     : %i\n",O.NQ);
+    for(i=0;i<O.NQ;i++)
+    {
+      fprintf(stream,"  Q[%3i]                 : %24.17E\n",i,O.Q[i]);
+    }
+  }
   fprintf(stream,"NE                       : %i\n",O.NE);
   fprintf(stream,"Emin                     : %24.17E\n",O.Emin);
   fprintf(stream,"Emax                     : %24.17E\n",O.Emax);

@@ -1284,7 +1284,7 @@ void AndersonImpurityMatrixToSpectrum(const double Energy, const AndersonMatrixT
       valRe+=Sqr(M.b[j-1])*(hnu-M.a[j])/denom;
       valIm+=Sqr(M.b[j-1])*(-G->Gamma/2.0)/denom;
     }
-    denom=Pi*(Sqr(G->Gamma/2.0-valIm)+Sqr(hnu-M.a[1]-valRe));
+    denom=(Sqr(G->Gamma/2.0-valIm)+Sqr(hnu-M.a[1]-valRe));
     G->Re[i]=M.a[0]+(hnu-M.a[1]-valRe)*Sqr(M.b[0])/denom;
     G->Im[i]=(valIm-G->Gamma/2.0)*Sqr(M.b[0])/denom;
   }

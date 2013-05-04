@@ -223,12 +223,16 @@ typedef struct AndersonMatrixType
 }
 AndersonMatrixType;
 
+/*  The structure ListOfPoles can represent a function as a sum of Lorenzians
+ *  g(w) = a0 + sum_i b_i^2 / (w - a_i)
+ */
 typedef struct ListOfPoles
 {
   char     Name[MAXStrLength]; /* A pointer to a name string that can be used to lable functions, good for printing etc. */
   uint32_t N;                  /* dimension of list */
   double   *a;                 /* energy of pole */
   double   *b;                 /* weight of pole */
+  double   a0;                 /* a possible real ofset */
 }
 ListOfPoles;
 
@@ -354,7 +358,22 @@ typedef struct SecondDoubleTriDiagonalMatrixType
 }
 SecondDoubleTriDiagonalMatrixType;
 
-
+/*     ( A[0][0]=Dt.a[0] | A[0][1]=Dt.b[0] | 0               | 0               | 0               )
+ *     ( A[1][0]=Dt.b[0] | A[1][1]=Dt.a[1] | A[1][2]=Dt.b[1] | A[1][2]=Dt.b[2] | A[1][2]=Dt.b[3] )
+ *   A=( 0               | A[2][1]=Dt.b[1] | A[2][2]=Dt.a[2] | 0               | 0               )
+ *     ( 0               | A[1][2]=Dt.b[2] | 0               | A[2][2]=Dt.a[3] | 0               )
+ *     ( 0               | A[1][2]=Dt.b[3] | 0               | 0               | A[2][2]=Dt.a[4] )
+ */
+typedef struct SecondAndersonMatrixType
+{
+  char       Name[MAXStrLength]; /* A pointer to a name string that can be used to lable functions, good for printing etc. */
+  double     Ef;       /* border if a number belongs to val or con */
+  double     Epsilon;  /* values in a range of [Ef-1/2 Epsilon , Ef+1/2 Epsilon] contribute half to val and half to con */
+  double     a0;       /* storing a possible real shift if a continued fraction notation is used */
+  double     b0;       /* storing a possilbe over-all scaling if a continued fraction notation is used */
+  AndersonMatrixType Dt;
+}
+SecondAndersonMatrixType;
 
 
 typedef struct ChebyshevExpansion
@@ -497,10 +516,18 @@ typedef struct DMFTSettings
   uint32_t iStart;                           /* start value of loop number */
   uint32_t Ni;                               /* number of loops to do */
   uint32_t Dyson;                            /* 0 no Dyson like perturbation - 1 full perturbation - 2 ... */
+  uint32_t NGBath;                           /* Number of poles in the resulting bath green function */
+  uint32_t NGCluster;                        /* Number of poles in the resulting cluster green function */
   double   Mix;                              /* mixing of old into new function */
   double   U;                                /* valence - valence Coulomb repulsion */
   double   Nelectron;                        /* number of electrons per spin per site */
   uint32_t NBath;                            /* Number of Bath states to include */
+  uint32_t Spectra;                          /* 0000 no spectra will be calculated at the end of the DMFT loop */
+                                             /* 0001 Magnetic susceptibility will be calculated (nup-ndn) */
+                                             /* 0010 occupation will be calculated (nup+ndn) */
+                                             /* 0100 XAS will be calculated with NQ values for core - valence interaction */
+  uint32_t NQ;                               /* number of XAS spectra */
+  double   *Q;                               /* NQ values of core - valence interaction strengths */
   uint32_t NE;                               /* number of points in the spectrum */
   double   Emin;                             /* minimum energy */
   double   Emax;                             /* maximum energy */

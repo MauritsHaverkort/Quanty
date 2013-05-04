@@ -1657,6 +1657,7 @@ void ComplexConjugateTransposeSparseMatrixVector(SparseMatrixType const M, const
  */
 uint32_t RealVectorSparseMatrixVector(SparseMatrixType const M, const double * const a, double *const b)
 {
+  volatile double c,y,t;
   int k;
   if(M.QComplex)
   {
@@ -1665,9 +1666,17 @@ uint32_t RealVectorSparseMatrixVector(SparseMatrixType const M, const double * c
     return 1;
   }
   *b=0;
+  c=0.0;
+  y=0.0;
+  t=0.0;
   for(k=0;k<M.N;k++)
   {
-    *b+=a[M.i[k]]*M.VRe[k]*a[M.j[k]];
+    y=a[M.i[k]]*M.VRe[k]*a[M.j[k]]-c;
+    t=*b+y;
+    c=t-*b;
+    c=c-y;
+    *b=t;
+    /* *b+=a[M.i[k]]*M.VRe[k]*a[M.j[k]]; */
   }
   return 0;
 }

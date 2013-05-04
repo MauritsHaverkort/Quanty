@@ -131,13 +131,18 @@ uint32_t AndersonMatrixToTriDiagonalMatrix(AndersonMatrixType const M, MatrixTyp
       RealVectorDotVector(T->VRe[i],T->VRe[i],T->Nj,&tempRe);
       tempRe=sqrt(tempRe);
       H->b[i]*=tempRe;
-      if(tempRe>100*DBL_MIN)
+      if(tempRe>100*DBL_EPSILON)
       {
         RealVectorMultiply(T->VRe[i],T->Nj,1.0/tempRe);
       }
       else
       {
         RealVectorMultiply(T->VRe[i],T->Nj,0);
+        H->b[i]=0;
+        H->a[i+1]=0;
+        H->N=i+1;
+        T->Ni=i+1;
+        i=NTriDiag;
       }
     }
     else
@@ -146,6 +151,7 @@ uint32_t AndersonMatrixToTriDiagonalMatrix(AndersonMatrixType const M, MatrixTyp
       H->b[i]=0;
       H->a[i+1]=0;
       H->N=i+1;
+      T->Ni=i+1;
       i=NTriDiag;
     }
   }
@@ -299,6 +305,63 @@ uint32_t AndersonMatrixToDoubleTriDiagonalMatrix(AndersonMatrixType const M, Mat
   return 0;
 }
 
+/*  This algorithm assumes M.a[0]=0 and M.b[0]=1
+ *  Gand = a0 + b0^2 1 / (w - a1 - \sum_i b_i^2 / ( w - a_i+1 ))
+ *  a0=0 and b0=1 assumed
+ *  -Gand^-1 = a1 + \sum_i b_i^2 / ( w - a_i+1 )
+ *  Notice the minus sign
+ */
+uint32_t AndersonMatrixInverseToListOfPoles(AndersonMatrixType const M, ListOfPoles *const H)
+{
+  uint32_t i;
+  H->N=M.N-1;
+  H->a0=M.a[1];
+  if(InitListOfPoles(H)){printf("InitListOfPoles failed in AndersonMatrixInverseToListOfPoles\n");return 1;}
+  for(i=0;i<H->N;i++)
+  {
+    H->b[i]=Sqr(M.b[i+1]);
+    H->a[i]=M.a[i+2];
+  }
+  return 0;
+}
+
+/*
+ *
+ */
+
+uint32_t AndersonMatrixToEigensystem(AndersonMatrixType const M, MatrixType *const T, double *val)
+{
+  MatrixType Tone,Ttwo;
+  TriDiagonalMatrixType Mtri;
+  if(AndersonMatrixToTriDiagonalMatrix(M, &Tone, &Mtri, M.N)){printf("AndersonMatrixToTriDiagonalMatrix failed in AndersonMatrixToEigensystem\n");return 1;}
+  if(TriDiagonalMatrixToEigensystem(Mtri, &Ttwo, val)){printf("TriDiagonalMatrixToEigensystem failed in AndersonMatrixToEigensystem\n");return 1;};
+  if(MatrixMultiply(T, Ttwo, Tone)){printf("MatrixMultiply failed in AndersonMatrixToEigensystem\n");return 1;};
+  
+  FreeMatrix(&Tone);
+  FreeMatrix(&Ttwo);
+  FreeTriDiagonalMatrix(&Mtri);
+  return 0;
+}
+
+/*
+ *
+ */
+uint32_t AndersonMatrixToListOfPoles(AndersonMatrixType const M, ListOfPoles *const A)
+{
+  MatrixType T;
+  uint32_t i;
+  A->N=M.N+1;
+  if(InitListOfPoles(A)){printf("InitListOfPoles failed in TriDiagonalMatrixToListOfPoles\n");fflush(stdout);return 1;};
+  if(AndersonMatrixToEigensystem(M, &T, A->a)){printf("TriDiagonalMatrixToEigensystem failed in TriDiagonalMatrixToListOfPoles\n");fflush(stdout);return 1;};
+  A->N=T.Ni;
+  for(i=0;i<A->N;i++)
+  {
+    A->b[i]=Sqr(M.b[0]*T.VRe[i][0]);
+  }
+  FreeMatrix(&T);
+  return 0;
+}
+
 /****************************************************************************/
 /********************         Matrix conversions         ********************/
 /********************         BlokAndersonMatrix To ...  ********************/
@@ -367,6 +430,7 @@ uint32_t TriDiagonalMatrixToListOfPoles(TriDiagonalMatrixType const M, ListOfPol
     A->b[i]=Sqr(M.b[0]*T.VRe[i][0]);
   }
   FreeMatrix(&T);
+  A->a0=M.a[0];
   return 0;
 }
 
@@ -549,8 +613,29 @@ uint32_t DoubleTriDiagonalMatrixToTriDiagonalMatrix(DoubleTriDiagonalMatrixType 
 
 
 
+/**************************************************************************************/
+/********************         Matrix conversions                   ********************/
+/********************         SecondDoubleTriDiagonalMatrix To ... ********************/
+/**************************************************************************************/
 
-
+uint32_t SecondDoubleTriDiagonalMatrixToTriDiagonalMatrix(SecondDoubleTriDiagonalMatrixType const M, TriDiagonalMatrixType *const H, uint32_t const NTriDiag)
+{
+  uint32_t i;
+  TriDiagonalMatrixType Hlow;
+  if(NTriDiag>1) if(DoubleTriDiagonalMatrixToTriDiagonalMatrix(M.Dt, &Hlow, NTriDiag-1)){printf("DoubleTriDiagonalMatrixToTriDiagonalMatrix failed in SecondDoubleTriDiagonalMatrixToTriDiagonalMatrix\n");return 1;};
+  H->N=NTriDiag;
+  InitTriDiagonalMatrix(H);
+  H->a[0]=M.a0;
+  H->b[0]=M.b0;
+  H->a[1]=Hlow.a[0];
+  for(i=0;i<NTriDiag-1;i++)
+  {
+    H->b[i+1]=Hlow.b[i];
+    H->a[i+2]=Hlow.a[i+1];
+  }
+  FreeTriDiagonalMatrix(&Hlow);
+  return 0;
+}
 
 
 
@@ -605,7 +690,7 @@ uint32_t SparseMatrixToTriDiagonalMatrix(SparseMatrixType M, MatrixType *const T
     T->VRe[0][i]=0;
   }
   T->VRe[0][0]=1;
-  for(i=1;i<NTriDiag;i++)
+  for(i=1;i<H->N;i++)
   {
     RealSparseMatrixVector(M,T->VRe[i-1],T->VRe[i]);
     for(j=0;j<i-1;j++)
@@ -617,9 +702,10 @@ uint32_t SparseMatrixToTriDiagonalMatrix(SparseMatrixType M, MatrixType *const T
     RealVectorAdd(T->VRe[i],T->VRe[i-1],T->Nj,-H->a[i]);
     RealVectorDotVector(T->VRe[i],T->VRe[i],T->Nj,&(H->b[i]));
     H->b[i]=sqrt(H->b[i]);
-    if(H->b[i]<(100*DBL_MIN))
+    if(H->b[i]<(100*DBL_MIN+DBL_EPSILON*H->b[1]))
     {
       RealVectorMultiply(T->VRe[i],T->Nj,0);
+      H->N=i;
     }
     else
     {
@@ -831,6 +917,10 @@ uint32_t Eigensystem(MatrixType const M, MatrixType *const T, double *val)
       printf("While working on matrix %s\n",M.Name);
       printf("continue diagonalization with dsyvd\n");
       fflush(stdout);
+      FreeMatrix(T);
+      if(MatrixCopy(T, M)) return 1;
+      strcpy(T->Name,"Eigenvectors of ");
+      strncat(T->Name, M.Name, MAX(0,MAXStrLength-16));
       dsyevd( jobz, uplo, &M.Ni, T->VRe[0], &M.Ni, val, work, &lwork,iwork,&liwork,&info);
       if(info)
       {
@@ -867,6 +957,11 @@ uint32_t Eigensystem(MatrixType const M, MatrixType *const T, double *val)
       printf("While working on matrix %s\n",M.Name);
       printf("continue diagonalization with zheevd\n");
       fflush(stdout);
+      for(i=0;i<M.Ni*M.Ni;i++)
+      {
+        MReIm[i].Re=M.VRe[0][i];
+        MReIm[i].Im=M.VIm[0][i];
+      }
       zheevd(jobz,uplo,&M.Ni,MReIm,&M.Ni,val,cwork,&lcwork,work,&lwork,iwork,&liwork,&info);
       if(info!=0)
       {
@@ -940,15 +1035,30 @@ uint32_t GeneralizedEigensystem(MatrixType const M, MatrixType const S, MatrixTy
       printf("While working on matrix %s\n",M.Name);
       printf("continue diagonalization with dsygvd\n");
       fflush(stdout);
+      FreeMatrix(T);
+      FreeMatrix(Sroot);
+      if(MatrixCopy(Sroot,S)) {printf("MatrixCopy failed to copy S to Sroot in GeneralizedEigensystem\n");return 1;}
+      strcpy(Sroot->Name,"Sqrt of ");
+      strncat(Sroot->Name, S.Name, MAX(0,MAXStrLength-8));
+      for(i=0;i<Sroot->Ni;i++)
+      {
+        for(j=i+1;j<Sroot->Nj;j++)
+        {
+          Sroot->VRe[i][j]=0;
+        }
+      }
+      if(MatrixCopy(T, M)) {printf("MatrixCopy failed to copy M to T in GeneralizedEigensystem\n");FreeMatrix(Sroot);return 1;}
+      strcpy(T->Name,"Eigenvectors of ");
+      strncat(T->Name, M.Name, MAX(0,MAXStrLength-16));
       dsygvd( &itype, jobz, uplo, &M.Ni, T->VRe[0], &M.Ni, Sroot->VRe[0], &M.Ni, val, work, &lwork, iwork, &liwork, &info);
       if(info)
       {
         printf("also dsygvd failed in Eigensystem with info value %i\n",info);
         printf("ERORR!!!!!!!!!!\n");
-        printf("Matrix to diagonalize\n");
-        PrintMatrix(M);
-        printf("Overlap matrix\n");
-        PrintMatrix(S);
+        printf("ERORR!!!!!!!!!!\n");
+        printf("ERORR!!!!!!!!!!\n");
+        printf("ERORR!!!!!!!!!!\n");
+        printf("ERORR!!!!!!!!!!\n");
         fflush(stdout);
         return 1;
       }
@@ -987,10 +1097,22 @@ uint32_t GeneralizedEigensystem(MatrixType const M, MatrixType const S, MatrixTy
       printf("While working on matrix %s\n",M.Name);
       printf("continue diagonalization with zhegvd\n");
       fflush(stdout);
+      for(i=0;i<M.Ni*M.Ni;i++)
+      {
+        MReIm[i].Re=M.VRe[0][i];
+        MReIm[i].Im=M.VIm[0][i];
+        SReIm[i].Re=S.VRe[0][i];
+        SReIm[i].Im=S.VIm[0][i];
+      }
       zhegvd(&itype,jobz,uplo,&M.Ni,MReIm,&M.Ni,SReIm,&M.Ni,val,cwork,&lcwork,work,&lwork,iwork,&liwork,&info);
       if(info!=0)
       {
         printf("also zhegvd failed in Generalized Eigensystem with info value %i\n",info);
+        printf("ERORR!!!!!!!!!!\n");
+        printf("ERORR!!!!!!!!!!\n");
+        printf("ERORR!!!!!!!!!!\n");
+        printf("ERORR!!!!!!!!!!\n");
+        printf("ERORR!!!!!!!!!!\n");
         printf("ERORR!!!!!!!!!!\n");
         fflush(stdout);
         return 1;
@@ -1017,6 +1139,78 @@ uint32_t GeneralizedEigensystem(MatrixType const M, MatrixType const S, MatrixTy
 uint32_t MatrixToGeneralizedEigensystem(MatrixType const M, MatrixType const S, MatrixType *const T, MatrixType *const Sroot, double *val)
 {
   return GeneralizedEigensystem(M,S,T,Sroot,val);
+}
+
+
+
+
+/*  Returns the Generalized Eigensystem of a non-orthnormal matrix.
+ *  Given a basis psi_i
+ *  Matrix M contains the values psi_i^* . H . psi_j
+ *  Matrix S contains the values psi_i^* . psi_j
+ *
+ *  on exit val defines a diagonal matrix H and
+ *  H = T . M . T^{\dag}
+ *  I = T . S . T^{\dag}
+ *  S = Sroot . Sroot^{\dag}
+ *
+ */
+uint32_t GeneralizedEigensystemSingular(MatrixType const M, MatrixType const S, MatrixType *const T, MatrixType *const Sroot, double *val)
+{
+  uint32_t i,j,NewDim,retval=0;
+  double Sval[S.Ni];
+  MatrixType EigenSysS,TMT,TST,Ttemp;
+  MatrixCopy(&TST,S);
+  MatrixScalarMultiply(&TST, -1, 0);
+  Eigensystem(TST, &EigenSysS, Sval);
+  MatrixScalarMultiply(&TST, 0, 0);
+  MatrixTransform(&TMT, M, EigenSysS);
+  NewDim=1;
+  for(i=0;i<M.Ni;i++)
+  {
+    if(-Sval[i]>DBL_EPSILON)
+    {
+      TST.VRe[i][i]=-Sval[i];
+      NewDim=i+1;
+    }
+    else
+    {
+      TST.VRe[i][i]=1;
+      for(j=0;j<M.Nj;j++)
+      {
+        TMT.VRe[i][j]=0;
+        TMT.VRe[j][i]=0;
+      }
+    }
+  }
+  if(GeneralizedEigensystem(TMT,TST,&Ttemp,Sroot,val)){printf("GeneralizedEigensystem failed in GeneralizedEigensystemSingular\n"); retval=1;}
+  for(i=NewDim;i<M.Ni;i++)
+  {
+    Ttemp.VRe[i][i]=0;
+  }
+  MatrixMultiply(T, Ttemp, EigenSysS);
+  FreeMatrix(&EigenSysS);
+  FreeMatrix(&TMT);
+  FreeMatrix(&TST);
+  FreeMatrix(&Ttemp);
+  return retval;
+}
+
+
+uint32_t RemoveStatesWithNegligibleNorm(MatrixType *const H, MatrixType *const S, MatrixType *const T)
+{
+  MatrixType temp;
+  double val[S->Ni];
+  MatrixScalarMultiply(S, -1, 0);
+  Eigensystem(*S, T, val);
+  MatrixScalarMultiply(S, -1, 0);
+  MatrixCopy(&temp,*H);
+  MatrixTransform(H, temp, *T);
+  FreeMatrix(&temp);
+  MatrixCopy(&temp,*S);
+  MatrixTransform(S, temp, *T);
+  FreeMatrix(&temp);
+  return 0;
 }
 
 
@@ -1887,7 +2081,7 @@ uint32_t ListOfPolesToTridiagonalMatrix(const ListOfPoles A, TriDiagonalMatrixTy
   AM.N=A.N+1;
   if(InitAndersonMatrix(&AM)){printf("InitAndersonMatrix failed in ListOfPolesToTridiagonalMatrix\n;");fflush(stdout);return 1;};
   AM.a[0]=0;
-  AM.a[1]=0;
+  AM.a[1]=A.a0;
   AM.b[0]=1;
   for(i=0;i<A.N;i++)
   {
@@ -1906,3 +2100,4 @@ uint32_t ListOfPolesToTridiagonalMatrix(const ListOfPoles A, TriDiagonalMatrixTy
   FreeMatrix(&T);
   return 0;
 }
+

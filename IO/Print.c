@@ -137,6 +137,20 @@ uint32_t PrintDoubleTriDiagonalMatrix(DoubleTriDiagonalMatrixType M)
   return 0;
 }
 
+uint32_t PrintSecondDoubleTriDiagonalMatrix(SecondDoubleTriDiagonalMatrixType M)
+{
+  M.Name[MAXStrLength-1]='\0';
+  printf("%s =\n",M.Name);
+  printf("SecondDoubleTriDiagonalMatrix Ef    = %22.15E Epsilon    = %22.15E\n",M.Ef,M.Epsilon);
+  printf("                              a0    = %22.15E      b0    = %22.15E\n",M.a0,M.b0);
+  printf("                              Dt.a0 = %22.15E      Dt.b0 = %22.15E\n",M.Dt.a0,M.Dt.b0);
+  printf("Valence part (E<Ef):\n");
+  PrintTriDiagonalMatrix(M.Dt.val);
+  printf("Conduction part (E>Ef):\n");
+  PrintTriDiagonalMatrix(M.Dt.con);
+  return 0;
+}
+
 uint32_t PrintBlokDoubleTriDiagonalMatrix(BlokDoubleTriDiagonalMatrixType M)
 {
   M.Name[MAXStrLength-1]='\0';
@@ -193,9 +207,12 @@ uint32_t PrintBlokAndersonMatrix(BlokAndersonMatrixType M)
 uint32_t PrintListOfPoles(ListOfPoles M)
 {
   uint32_t i;
+  double sum=0;
+  for(i=0;i<M.N;i++) sum+=M.b[i];
   M.Name[MAXStrLength-1]='\0';
   printf("%s =\n",M.Name);
   printf("List of Poles.\n");
+  printf("a0 = %22.15E, sum_i b[i] = %22.15E\n",M.a0,sum);
   printf("i    a[i]                   b[i]\n");
   for(i=0;i<M.N;i++)
   {
