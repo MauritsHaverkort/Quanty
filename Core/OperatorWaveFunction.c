@@ -116,6 +116,42 @@ double OperatorLader(uint8_t *const Determinant, const uint16_t *const o, const 
   return phase;
 }
 
+
+uint32_t PsiAddOperatorPsiConserveBasisCC(const OperatorType O, const WaveFunctionType psi, WaveFunctionType *const Opsi)
+{
+  return 0;
+}
+
+uint32_t PsiAddOperatorPsiConserveBasisCR(const OperatorType O, const WaveFunctionType psi, WaveFunctionType *const Opsi)
+{
+  return 0;
+}
+
+uint32_t PsiAddOperatorPsiConserveBasisRC(const OperatorType O, const WaveFunctionType psi, WaveFunctionType *const Opsi)
+{
+  return 0;
+}
+
+uint32_t PsiAddOperatorPsiConserveBasisRR(const OperatorType O, const WaveFunctionType psi, WaveFunctionType *const Opsi)
+{
+  return 0;
+}
+
+uint32_t PsiAddOperatorPsiConserveBasisRRC(const OperatorType O, const WaveFunctionType psi, WaveFunctionType *const Opsi)
+{
+  return 0;
+}
+
+uint32_t PsiAddOperatorPsiConserveBasisMC(const OperatorType O, const WaveFunctionType psi, WaveFunctionType *const Opsi)
+{
+  return 0;
+}
+
+uint32_t PsiAddOperatorPsiConserveBasisMR(const OperatorType O, const WaveFunctionType psi, WaveFunctionType *const Opsi)
+{
+  return 0;
+}
+
 uint32_t OperatorPsiConserveBasisCC(const OperatorType O, const WaveFunctionType psi, WaveFunctionType *const Opsi)
 {
   uint32_t i,ii,ij,ik,j,k,l;
@@ -616,6 +652,41 @@ uint32_t OperatorPsiConserveBasisMR(const OperatorType O, const WaveFunctionType
   return 0;
 }
 
+uint32_t PsiAddOperatorPsiConserveBasisPreAllocatedCC(const OperatorType O, const WaveFunctionType psi, WaveFunctionType *const Opsi)
+{
+  return 0;
+}
+
+uint32_t PsiAddOperatorPsiConserveBasisPreAllocatedCR(const OperatorType O, const WaveFunctionType psi, WaveFunctionType *const Opsi)
+{
+  return 0;
+}
+
+uint32_t PsiAddOperatorPsiConserveBasisPreAllocatedRC(const OperatorType O, const WaveFunctionType psi, WaveFunctionType *const Opsi)
+{
+  return 0;
+}
+
+uint32_t PsiAddOperatorPsiConserveBasisPreAllocatedRR(const OperatorType O, const WaveFunctionType psi, WaveFunctionType *const Opsi)
+{
+  return 0;
+}
+
+uint32_t PsiAddOperatorPsiConserveBasisPreAllocatedRRC(const OperatorType O, const WaveFunctionType psi, WaveFunctionType *const Opsi)
+{
+  return 0;
+}
+
+uint32_t PsiAddOperatorPsiConserveBasisPreAllocatedMC(const OperatorType O, const WaveFunctionType psi, WaveFunctionType *const Opsi)
+{
+  return 0;
+}
+
+uint32_t PsiAddOperatorPsiConserveBasisPreAllocatedMR(const OperatorType O, const WaveFunctionType psi, WaveFunctionType *const Opsi)
+{
+  return 0;
+}
+
 uint32_t OperatorPsiConserveBasisPreAllocatedCC(const OperatorType O, const WaveFunctionType psi, WaveFunctionType *const Opsi)
 {
   uint32_t i,j,k,l,ii,ij,ik;
@@ -752,7 +823,7 @@ uint32_t OperatorPsiConserveBasisPreAllocatedRR(const OperatorType O, const Wave
   uint8_t  *Det;
   int      iOMP;
   if(Opsi->QComplex) MakeRealWaveFunctionFromComplex(*Opsi,Opsi);
-  #pragma omp parallel for private(i,j)
+#pragma omp parallel for private(i,j)
   for(iOMP=0;iOMP<Opsi->NBlok;iOMP++)
   {
     i=(uint32_t)iOMP;
@@ -761,11 +832,11 @@ uint32_t OperatorPsiConserveBasisPreAllocatedRR(const OperatorType O, const Wave
       Opsi->ValueRe[i][j]=0;
     }
   }
-  #pragma omp parallel private(Det,i,j,k,l,ii,ij,ik,phase,iOMP)
+#pragma omp parallel private(Det,i,j,k,l,ii,ij,ik,phase,iOMP)
   {
     Det=malloc(Opsi->NWord*sizeof(uint8_t));
     if(Det==NULL) AllocFailed();
-    #pragma omp for
+#pragma omp for
     for(iOMP=1;iOMP<=(int)psi.N;iOMP++)
     {
       i=(uint32_t)iOMP;
@@ -894,6 +965,41 @@ uint32_t OperatorPsiConserveBasisPreAllocatedMR(const OperatorType O, const Wave
     }
     free(Det);
   }
+  return 0;
+}
+
+uint32_t PsiAddOperatorPsiCC(const OperatorType O, const WaveFunctionType psi, WaveFunctionType *const Opsi)
+{
+  return 0;
+}
+
+uint32_t PsiAddOperatorPsiCR(const OperatorType O, const WaveFunctionType psi, WaveFunctionType *const Opsi)
+{
+  return 0;
+}
+
+uint32_t PsiAddOperatorPsiRC(const OperatorType O, const WaveFunctionType psi, WaveFunctionType *const Opsi)
+{
+  return 0;
+}
+
+uint32_t PsiAddOperatorPsiRR(const OperatorType O, const WaveFunctionType psi, WaveFunctionType *const Opsi)
+{
+  return 0;
+}
+
+uint32_t PsiAddOperatorPsiRRC(const OperatorType O, const WaveFunctionType psi, WaveFunctionType *const Opsi)
+{
+  return 0;
+}
+
+uint32_t PsiAddOperatorPsiMC(const OperatorType O, const WaveFunctionType psi, WaveFunctionType *const Opsi)
+{
+  return 0;
+}
+
+uint32_t PsiAddOperatorPsiMR(const OperatorType O, const WaveFunctionType psi, WaveFunctionType *const Opsi)
+{
   return 0;
 }
 
@@ -1389,6 +1495,41 @@ uint32_t OperatorPsiMR(const OperatorType O, const WaveFunctionType psi, WaveFun
     RealWaveFunctionFree(Opsi);
     return 1;
   }
+  return 0;
+}
+
+uint32_t PsiAddOperatorPsiSerialCC(const OperatorType O, const WaveFunctionType psi, WaveFunctionType *const Opsi)
+{
+  return 0;
+}
+
+uint32_t PsiAddOperatorPsiSerialCR(const OperatorType O, const WaveFunctionType psi, WaveFunctionType *const Opsi)
+{
+  return 0;
+}
+
+uint32_t PsiAddOperatorPsiSerialRC(const OperatorType O, const WaveFunctionType psi, WaveFunctionType *const Opsi)
+{
+  return 0;
+}
+
+uint32_t PsiAddOperatorPsiSerialRR(const OperatorType O, const WaveFunctionType psi, WaveFunctionType *const Opsi)
+{
+  return 0;
+}
+
+uint32_t PsiAddOperatorPsiSerialRRC(const OperatorType O, const WaveFunctionType psi, WaveFunctionType *const Opsi)
+{
+  return 0;
+}
+
+uint32_t PsiAddOperatorPsiSerialMC(const OperatorType O, const WaveFunctionType psi, WaveFunctionType *const Opsi)
+{
+  return 0;
+}
+
+uint32_t PsiAddOperatorPsiSerialMR(const OperatorType O, const WaveFunctionType psi, WaveFunctionType *const Opsi)
+{
   return 0;
 }
 
@@ -2878,8 +3019,37 @@ uint32_t OperatorPsiConserveBasis(const OperatorType O, const WaveFunctionType p
   return OperatorPsiConserveBasisMR(O, psi, Opsi);
 }
 
+uint32_t PsiAddOperatorPsiConserveBasis(const OperatorType O, const WaveFunctionType psi, WaveFunctionType *const Opsi)
+{
+  if(O.QComplex==0)
+  {
+    if(psi.QComplex)
+    {
+      return PsiAddOperatorPsiConserveBasisRC(O, psi, Opsi);
+    }
+    if(Opsi->QComplex)
+    {
+      return PsiAddOperatorPsiConserveBasisRRC(O, psi, Opsi);
+    }
+    return PsiAddOperatorPsiConserveBasisRR(O, psi, Opsi);
+  }
+  if(O.QComplex==1)
+  {
+    if(psi.QComplex)
+    {
+      return PsiAddOperatorPsiConserveBasisCC(O, psi, Opsi);
+    }
+    return PsiAddOperatorPsiConserveBasisCR(O, psi, Opsi);
+  }
+  if(psi.QComplex)
+  {
+    return PsiAddOperatorPsiConserveBasisMC(O, psi, Opsi);
+  }
+  return PsiAddOperatorPsiConserveBasisMR(O, psi, Opsi);
+}
+
 /*
-*   Calculate O psi whereby the basis set used is not changed and the memory of Opsi is allready allocated
+*   Calculate O psi whereby the basis set used is not changed and the memory of Opsi is allready allocated the values of Opsi will be set to zero on entry
 *   It is assumed that Opsi.Next==psi.Next and Opsi.Determinant=psi.Determinant either in values pointed to or more efficient in pointers
 *   input O psi and Opsi
 *   output Opsi
@@ -2910,6 +3080,35 @@ uint32_t OperatorPsiConserveBasisPreAllocated(const OperatorType O, const WaveFu
     return OperatorPsiConserveBasisPreAllocatedMC(O, psi, Opsi);
   }
   return OperatorPsiConserveBasisPreAllocatedMR(O, psi, Opsi);
+}
+
+uint32_t PsiAddOperatorPsiConserveBasisPreAllocated(const OperatorType O, const WaveFunctionType psi, WaveFunctionType *const Opsi)
+{
+  if(O.QComplex==0)
+  {
+    if(psi.QComplex)
+    {
+      return PsiAddOperatorPsiConserveBasisPreAllocatedRC(O, psi, Opsi);
+    }
+    if(Opsi->QComplex)
+    {
+      return PsiAddOperatorPsiConserveBasisPreAllocatedRRC(O, psi, Opsi);
+    }
+    return PsiAddOperatorPsiConserveBasisPreAllocatedRR(O, psi, Opsi);
+  }
+  if(O.QComplex==1)
+  {
+    if(psi.QComplex)
+    {
+      return PsiAddOperatorPsiConserveBasisPreAllocatedCC(O, psi, Opsi);
+    }
+    return PsiAddOperatorPsiConserveBasisPreAllocatedCR(O, psi, Opsi);
+  }
+  if(psi.QComplex)
+  {
+    return PsiAddOperatorPsiConserveBasisPreAllocatedMC(O, psi, Opsi);
+  }
+  return PsiAddOperatorPsiConserveBasisPreAllocatedMR(O, psi, Opsi);
 }
 
 /*
@@ -2944,6 +3143,34 @@ uint32_t OperatorPsi(const OperatorType O, const WaveFunctionType psi, WaveFunct
   return OperatorPsiMR(O, psi, Opsi);
 }
 
+uint32_t PsiAddOperatorPsi(const OperatorType O, const WaveFunctionType psi, WaveFunctionType *const Opsi)
+{
+  if(O.QComplex==0)
+  {
+    if(psi.QComplex)
+    {
+      return PsiAddOperatorPsiRC(O, psi, Opsi);
+    }
+    if(Opsi->QComplex)
+    {
+      return PsiAddOperatorPsiRRC(O, psi, Opsi);
+    }
+    return PsiAddOperatorPsiRR(O, psi, Opsi);
+  }
+  if(O.QComplex==1)
+  {
+    if(psi.QComplex)
+    {
+      return PsiAddOperatorPsiCC(O, psi, Opsi);
+    }
+    return PsiAddOperatorPsiCR(O, psi, Opsi);
+  }
+  if(psi.QComplex)
+  {
+    return PsiAddOperatorPsiMC(O, psi, Opsi);
+  }
+  return PsiAddOperatorPsiMR(O, psi, Opsi);
+}
 /*  Serial version of previous routine
 *
 *   Calculate O psi whereby the basis set used is expanded
@@ -2975,6 +3202,35 @@ uint32_t OperatorPsiSerial(const OperatorType O, const WaveFunctionType psi, Wav
     return OperatorPsiSerialMC(O, psi, Opsi);
   }
   return OperatorPsiSerialMR(O, psi, Opsi);
+}
+
+uint32_t PsiAddOperatorPsiSerial(const OperatorType O, const WaveFunctionType psi, WaveFunctionType *const Opsi)
+{
+  if(O.QComplex==0)
+  {
+    if(psi.QComplex)
+    {
+      return PsiAddOperatorPsiSerialRC(O, psi, Opsi);
+    }
+    if(Opsi->QComplex)
+    {
+      return PsiAddOperatorPsiSerialRRC(O, psi, Opsi);
+    }
+    return PsiAddOperatorPsiSerialRR(O, psi, Opsi);
+  }
+  if(O.QComplex==1)
+  {
+    if(psi.QComplex)
+    {
+      return PsiAddOperatorPsiSerialCC(O, psi, Opsi);
+    }
+    return PsiAddOperatorPsiSerialCR(O, psi, Opsi);
+  }
+  if(psi.QComplex)
+  {
+    return PsiAddOperatorPsiSerialMC(O, psi, Opsi);
+  }
+  return PsiAddOperatorPsiSerialMR(O, psi, Opsi);
 }
 
 /*  Calcualtes <psi|O|psi>

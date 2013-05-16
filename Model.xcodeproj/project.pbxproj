@@ -112,6 +112,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		4C0877991737CDE600CE9AB4 /* WaveFunctionPerturbationArithmetic.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = WaveFunctionPerturbationArithmetic.c; sourceTree = "<group>"; };
 		4C2AAA191632655300138620 /* Model */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Model; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C2AAA1D1632655300138620 /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
 		4C2AAA1F1632655300138620 /* Model.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = Model.1; sourceTree = "<group>"; };
@@ -188,6 +189,7 @@
 		4C2AAACD163266DD00138620 /* libblas.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libblas.dylib; path = usr/lib/libblas.dylib; sourceTree = SDKROOT; };
 		4C2AAACF163266F900138620 /* liblapack.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = liblapack.dylib; path = usr/lib/liblapack.dylib; sourceTree = SDKROOT; };
 		4C5CA61716D18BBF00BE1C25 /* DMFT */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = DMFT; sourceTree = BUILT_PRODUCTS_DIR; };
+		4C77BA751741188E00AC7E7D /* OperatorWaveFunctionPerturbation.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = OperatorWaveFunctionPerturbation.c; sourceTree = "<group>"; };
 		4CA262D8170787D900B8E76E /* TestGreenFunctions.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = TestGreenFunctions.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -277,6 +279,7 @@
 				4C2AAA41163265DD00138620 /* MatrixOperator.c */,
 				4C2AAA42163265DD00138620 /* OperatorArithmetic.c */,
 				4C2AAA43163265DD00138620 /* OperatorWaveFunction.c */,
+				4C77BA751741188E00AC7E7D /* OperatorWaveFunctionPerturbation.c */,
 				4C2AAA44163265DD00138620 /* Random.c */,
 				4C2AAA45163265DD00138620 /* RealComplexWaveFunctionArithmetic.c */,
 				4C2AAA46163265DD00138620 /* RealWaveFunctionArithmetic.c */,
@@ -284,6 +287,7 @@
 				4C2AAA48163265DD00138620 /* StructDef.c */,
 				4C2AAA49163265DD00138620 /* TimeStamp.c */,
 				4C2AAA4A163265DD00138620 /* WaveFunctionArithmetic.c */,
+				4C0877991737CDE600CE9AB4 /* WaveFunctionPerturbationArithmetic.c */,
 			);
 			path = Core;
 			sourceTree = "<group>";

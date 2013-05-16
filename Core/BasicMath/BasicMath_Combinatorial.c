@@ -30,6 +30,105 @@ uint32_t BinomialCoefficient(uint32_t n, uint32_t k)
   return result;
 }
 
+/*
+ *  Given NV operators labeled V_1 to V_{NV}
+ *  How manny ways are there to create an operator of order "order"
+ */
+uint32_t PerturbationOptions(uint32_t NV, uint32_t order)
+{
+  uint32_t result=1,i;
+  if(NV==0) return 0;
+  for(i=1;i<NV;i++)
+  {
+    result*=i+order;
+    result/=i;
+  }
+  return result;
+}
+
+/*
+ *  Given NV operators labeled V_{1} to V_{NV}
+ *  Given that for a given string I have "order" operators
+ *  Given a list of how many of each operators I have (i.e. NV integers, the sum over this list is "order")
+ *  retrun a unique index position ranging from 0 to PerturbationOptions(NV,order)-1
+ */
+void PerturbationOrderListToIndex(uint32_t *const POList, uint32_t *const POIndex, uint32_t const NV, uint32_t const order)
+{
+  uint32_t i,POIndexSmaller;
+  *POIndex=0;
+  if((POList[0]==order)||(NV<=1))return;
+  for(i=0;i<order-POList[0];i++)
+  {
+    *POIndex+=PerturbationOptions(NV-1, i);
+  }
+  PerturbationOrderListToIndex(&(POList[1]), &POIndexSmaller, NV-1, order-POList[0]);
+  *POIndex+=POIndexSmaller;
+}
+
+/*
+ *  Given NV operators labeled V_{1} to V_{NV}
+ *  Given that for a given string I have order operators
+ *  Given a unique index position ranging from 0 to PerturbationOptions(NV,order)-1
+ *  return list of how many of each operators I have (i.e. NV integers)
+ */
+void PerturbationOrderIndexToList(uint32_t const POIndex, uint32_t *const POList, uint32_t const NV, uint32_t const order)
+{
+  uint32_t i,nl,POIndexnew,deg;
+  if(NV==1)
+  {
+    POList[0]=order;
+    return;
+  }
+  nl=0;
+  POIndexnew=POIndex;
+  for(i=0;i<=order;i++)
+  {
+    deg=PerturbationOptions(NV-1, i);
+    nl+=deg;
+    if(POIndex<nl)break;
+    POIndexnew-=deg;
+  }
+  POList[0]=order-i;
+  PerturbationOrderIndexToList(POIndexnew, &(POList[1]), NV-1, i);
+}
+
+
+
+/*
+ *
+ */
+void AddPerturbationIndex(uint32_t const Vi, uint32_t const IndexOld, uint32_t const NV, uint32_t const order, uint32_t *const IndexNew, int *const phase)
+{
+  uint32_t i,List[NV];
+  PerturbationOrderIndexToList(IndexOld, List, NV, order);
+  *phase=0;
+  for(i=0;i<Vi;i++)
+  {
+    *phase+=List[i];
+  }
+  *phase = *phase&1 ? -1 : 1;
+  List[Vi]+=1;
+  PerturbationOrderListToIndex(List, IndexNew, NV, order+1);
+}
+
+/*
+ *
+ */
+void RemovePerturbationIndex(uint32_t const Vi, uint32_t const IndexOld, uint32_t const NV, uint32_t const order, uint32_t *const IndexNew, int *const phase)
+{
+  uint32_t i,List[NV];
+  PerturbationOrderIndexToList(IndexOld, List, NV, order);
+  *phase=0;
+  if(List[Vi]==0) return;
+  for(i=0;i<Vi;i++)
+  {
+    *phase+=List[i];
+  }
+  *phase = *phase&1 ? -1 : 1;
+  List[Vi]-=1;
+  PerturbationOrderListToIndex(List, IndexNew, NV, order-1);
+}
+
 double ThreeJSymbol(int j1, int m1, int j2, int m2, int j3, int m3)
 {
   double ThreeJ;

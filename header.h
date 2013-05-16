@@ -249,6 +249,20 @@ uint32_t RealVectorBlokDoubleTriDiagonalMatrixVector();
 uint32_t ComplexVectorBlokDoubleTriDiagonalMatrixVector();
 
 
+
+/**********************************************************/
+/***********     BasisMath/Combinatorial.c      ***********/
+/**********************************************************/
+double Factorial(int a);
+uint32_t BinomialCoefficient(uint32_t n, uint32_t k);
+uint32_t PerturbationOptions(uint32_t NV, uint32_t order);
+void PerturbationOrderListToIndex(uint32_t *const POList, uint32_t *const POIndex, uint32_t const NV, uint32_t const order);
+void PerturbationOrderIndexToList(uint32_t const POIndex, uint32_t *const POList, uint32_t const NV, uint32_t const order);
+double ThreeJSymbol(int j1, int m1, int j2, int m2, int j3, int m3);
+double ThreeJSymbolHalf(int j1, int m1, int j2, int m2, int j3, int m3);
+double SlaterCoefficientC(int k, int l1, int m1, int l2, int m2);
+
+
 /**********************************************************/
 /********    BasisMath/MatrixTypeConversion.c      ********/
 /**********************************************************/
@@ -334,6 +348,43 @@ uint32_t WaveFunctionInit(WaveFunctionType *Psi);
 void WaveFunctionFree(WaveFunctionType *const psi);
 uint32_t PsiHermitianOperatorPsi(const OperatorType O, const WaveFunctionType psi, double *VRe);
 uint32_t PsiHermitianOperatorSqrPsi(const OperatorType O, const WaveFunctionType psi, double *VRe);
+
+/**********************************************************/
+/*****  Core/WaveFunctionPerturbationArithmetic.c     *****/
+/**********************************************************/
+
+uint32_t WaveFunctionPerturbationInit(WaveFunctionPerturbationType *Psi);
+uint32_t WaveFunctionPerturbationInitAll(WaveFunctionPerturbationType *Psi, uint32_t NFermion, uint32_t NBoson, uint32_t QComplex, uint32_t NBitsKey);
+uint32_t QWaveFunctionPerturbationMinimumBloksAlocated(WaveFunctionPerturbationType psi);
+uint32_t MakeComplexWaveFunctionPerturbationFromReal(WaveFunctionPerturbationType *Cpsi, WaveFunctionPerturbationType psi);
+uint32_t MakeRealWaveFunctionPerturbationFromComplex(WaveFunctionPerturbationType Cpsi, WaveFunctionPerturbationType *psi);
+void WaveFunctionPerturbationFreeFramework(WaveFunctionPerturbationType *const psi);
+void WaveFunctionPerturbationFree(WaveFunctionPerturbationType *const psi);
+void WaveFunctionPerturbationFreeValues(WaveFunctionPerturbationType *const psi);
+uint32_t WaveFunctionPerturbationAddElement(WaveFunctionPerturbationType *const psi, const uint8_t *const det, const uint32_t order, const uint32_t iV, const double aRe, const double aIm);
+uint32_t WaveFunctionPerturbationAddElementConserveBasis(WaveFunctionPerturbationType *const psi, const uint8_t *const det, const uint32_t order, const uint32_t iV, const double aRe, const double aIm);
+void WaveFunctionPerturbationPrefactorDet(const WaveFunctionPerturbationType psi, const uint8_t *const det, const uint32_t order, const uint32_t iV, double *aRe, double *aIm);
+uint32_t WaveFunctionPerturbationAddSameBasis(WaveFunctionPerturbationType * const a, const WaveFunctionPerturbationType b);
+uint32_t WaveFunctionPerturbationAddMultipliedSameBasis(WaveFunctionPerturbationType * const a, const WaveFunctionPerturbationType b, const double alpha);
+uint32_t WaveFunctionPerturbationAddComplexMultipliedSameBasis(WaveFunctionPerturbationType * const a, const WaveFunctionPerturbationType b, const double alphaRe, const double alphaIm);
+uint32_t WaveFunctionPerturbationAddConserveBasis(WaveFunctionPerturbationType * const a, const WaveFunctionPerturbationType b);
+uint32_t WaveFunctionPerturbationAddMultipliedConserveBasis(WaveFunctionPerturbationType * const a, const WaveFunctionPerturbationType b, const double alpha);
+uint32_t WaveFunctionPerturbationAddComplexMultipliedConserveBasis(WaveFunctionPerturbationType * const a, const WaveFunctionPerturbationType b, const double alphaRe, const double alphaIm);
+uint32_t WaveFunctionPerturbationAddUnionBasis(WaveFunctionPerturbationType *const a, const WaveFunctionPerturbationType b);
+uint32_t WaveFunctionPerturbationAddMultipliedUnionBasis(WaveFunctionPerturbationType *const a, const WaveFunctionPerturbationType b, const double alpha);
+uint32_t WaveFunctionPerturbationAddComplexMultipliedUnionBasis(WaveFunctionPerturbationType *const a, const WaveFunctionPerturbationType b, const double alphaRe, const double alphaIm);
+uint32_t WaveFunctionPerturbationMultiply(WaveFunctionPerturbationType a, const double bRe, const double bIm);
+void WaveFunctionPerturbationCalculateNorm(const WaveFunctionPerturbationType a, double *Norm);
+void WaveFunctionPerturbationNormalize(WaveFunctionPerturbationType *const a);
+void WaveFunctionPerturbationDotProductSameBasis(const WaveFunctionPerturbationType a, const WaveFunctionPerturbationType b, double *DotRe, double *DotIm);
+void WaveFunctionPerturbationDotProduct(const WaveFunctionPerturbationType a, const WaveFunctionPerturbationType b, double *DotRe, double *DotIm);
+void WaveFunctionPerturbationRandomize(WaveFunctionPerturbationType *const a);
+void WaveFunctionPerturbationTruncateBasis(WaveFunctionPerturbationType *const a, const double epsilon);
+void WaveFunctionPerturbationOrthogonalizeConserveBasis(WaveFunctionPerturbationType *const psi, const WaveFunctionPerturbationType *const OtherPsi, const uint32_t Npsi);
+uint32_t WaveFunctionPerturbationOrthogonalize(WaveFunctionPerturbationType *const psi, const WaveFunctionPerturbationType *const OtherPsi, const uint32_t Npsi);
+uint32_t CreateStartWaveFunctionPerturbationOnsiteEnergy(const OperatorPerturbationType O, WaveFunctionPerturbationType *psi, uint32_t order, uint32_t nFermion, uint32_t nBoson, uint32_t NBitsKey);
+uint32_t WaveFunctionPerturbationAddFermion(WaveFunctionPerturbationType const psiIn, WaveFunctionPerturbationType *const psiOut, uint32_t FermionPos, uint32_t occupied);
+uint32_t WaveFunctionPerturbationRemoveFermion(WaveFunctionPerturbationType const psiIn, WaveFunctionPerturbationType *const psiOut, uint32_t FermionPos);
 
 
 /**********************************************************/
@@ -491,6 +542,22 @@ uint32_t OperatorPsiConserveBasisPreAllocated();
 uint32_t OperatorPsi();
 uint32_t OperatorPsiSerial();
 uint32_t PsiOperatorPsi(const OperatorType O, const WaveFunctionType psi, double *VRe, double *VIm);
+
+/**********************************************************/
+/*****    Core/OperatorWaveFunctionPerturbation.c     *****/
+/**********************************************************/
+
+uint32_t OperatorPsiPerturbationConserveBasis(const OperatorPerturbationType O, const WaveFunctionPerturbationType psi, WaveFunctionPerturbationType *const Opsi);
+uint32_t OperatorPsiPerturbationConserveBasisPreAllocated(const OperatorPerturbationType O, const WaveFunctionPerturbationType psi, WaveFunctionPerturbationType *const Opsi);
+uint32_t OperatorPsiPerturbation(const OperatorPerturbationType O, const WaveFunctionPerturbationType psi, WaveFunctionPerturbationType *const Opsi);
+uint32_t PsiOperatorPsiPerturbation(const OperatorPerturbationType O, const WaveFunctionPerturbationType psi, double *VRe, double *VeIm);
+uint32_t PsiHermitianOperatorPsiPerturbation(const OperatorPerturbationType O, const WaveFunctionPerturbationType psi, double *VRe);
+uint32_t PsiOperatorSqrPsiPerturbation(const OperatorPerturbationType O, const WaveFunctionPerturbationType psi, double *VRe, double *VeIm);
+uint32_t PsiHermitianOperatorSqrPsiPerturbation(const OperatorPerturbationType O, const WaveFunctionPerturbationType psi, double *VRe);
+uint32_t PsiPrimeOperatorPsiPerturbationMatrix(const OperatorPerturbationType O, const WaveFunctionPerturbationType *psiPrime, WaveFunctionPerturbationType *const psi, MatrixType *const V);
+uint32_t PsiOperatorPsiPerturbationMatrix(const OperatorPerturbationType O, const WaveFunctionPerturbationType *psi, MatrixType *const V);
+uint32_t PsiPrimeOperatorPsiPerturbation(const OperatorPerturbationType O, const WaveFunctionPerturbationType psiPrime, WaveFunctionPerturbationType const psi, double *VRe, double *VIm);
+
 
 
 /**********************************************************/

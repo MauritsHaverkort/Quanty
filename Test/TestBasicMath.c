@@ -1121,3 +1121,23 @@ void TestGeneralizedEigensystem()
   
   
 }
+
+
+void TestCombinatorial()
+{
+  uint32_t i,j,NV,order,POList[50],index;
+  order=3;
+  NV=4;
+  for(i=0;i<PerturbationOptions(NV,order);i++)
+  {
+    PerturbationOrderIndexToList(i, POList, NV, order);
+    PerturbationOrderListToIndex(POList, &index, NV, order);
+    printf("%i %i || ",i,index);
+    for(j=0;j<NV;j++)
+    {
+      printf("%i ",POList[j]);
+    }
+    printf("\n");
+  }
+  
+}

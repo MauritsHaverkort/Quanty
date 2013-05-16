@@ -26,8 +26,10 @@
 #include "../IO/BitMap.c"
 #include "../Core/Error.c"
 #include "../Core/WaveFunctionArithmetic.c"
+#include "../Core/WaveFunctionPerturbationArithmetic.c"
 #include "../Core/OperatorArithmetic.c"
 #include "../Core/OperatorWaveFunction.c"
+#include "../Core/OperatorWaveFunctionPerturbation.c"
 #include "../Core/Lanczos.c"
 #include "../Core/Spectral.c"
 #include "../Core/DensityMatrix.c"
@@ -824,8 +826,5 @@ uint32_t DMFTSpec(DMFTSettings const HSet, double const Egrd, WaveFunctionType c
   }
   return 0;
 }
-
-
-
 
 

@@ -34,8 +34,10 @@
 #include "../IO/BitMap.c"
 #include "../Core/Error.c"
 #include "../Core/WaveFunctionArithmetic.c"
+#include "../Core/WaveFunctionPerturbationArithmetic.c"
 #include "../Core/OperatorArithmetic.c"
 #include "../Core/OperatorWaveFunction.c"
+#include "../Core/OperatorWaveFunctionPerturbation.c"
 #include "../Core/Lanczos.c"
 #include "../Core/Spectral.c"
 #include "../Core/DensityMatrix.c"
@@ -82,6 +84,7 @@ int main (int argc, const char * argv[])
     if (!strncmp("AllMatrix",argv[argc],strlen(argv[argc]))) TestAllMatrix();
     if (!strncmp("MatrixVector",argv[argc],strlen(argv[argc]))) TestMatrixVector();
     if (!strncmp("ConvertMatrix",argv[argc],strlen(argv[argc]))) TestMatrixTypeConversion();
+    if (!strncmp("Combi",argv[argc],strlen(argv[argc]))) TestCombinatorial();
 
     if (!strncmp("DGESVD",argv[argc],strlen(argv[argc]))) TestDGESVD();
     if (!strncmp("Lanczos",argv[argc],strlen(argv[argc]))) TestLanczos();

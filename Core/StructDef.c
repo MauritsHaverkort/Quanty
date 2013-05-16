@@ -81,7 +81,6 @@ typedef struct WaveFunctionType
 }
 WaveFunctionType;
 
-
 typedef struct OperatorFixedLengthType
 {
   uint32_t       N;                                    /* number of operators of lenght i with i determined by O.l[i] */
@@ -108,6 +107,7 @@ typedef struct OperatorType
   OperatorFixedLengthType  *l;                           /* array of length MaxLength+1 */
 }
 OperatorType;
+
 
 typedef struct TimeType
 {
@@ -376,6 +376,43 @@ typedef struct SecondAndersonMatrixType
 SecondAndersonMatrixType;
 
 
+
+
+/*
+ *
+ */
+typedef struct WaveFunctionPerturbationType
+{
+  uint32_t NV;
+  uint32_t order;
+  WaveFunctionType **psiOrder;
+}
+WaveFunctionPerturbationType;
+
+/*
+ *
+ */
+typedef struct OperatorPerturbationType
+{
+  uint32_t NV;
+  OperatorType O;
+  OperatorType *V;
+  BlokTriDiagonalMatrixType g;
+}
+OperatorPerturbationType;
+
+
+
+
+
+
+
+
+
+
+
+
+
 typedef struct ChebyshevExpansion
 {
   int    N;
@@ -559,8 +596,6 @@ typedef struct DMFTXASSettings
 }
 DMFTXASSettings;
 
-
-
 typedef struct DimerizedSpinChainSettings
 {
   double   JA;                           /* nearest neighbor exchange integral A */
@@ -643,17 +678,6 @@ typedef struct SpinLaderSettings
   double   kVector[100][3];         /* k-points wihtin super cell */
 }
 SpinLaderSettings;
-
-
-
-
-
-
-/*
-*   Several functions need many parameters in order to function
-*   These parameters are grouped in structures in order to keep things readable
-*
-*/
 
 typedef struct HubbardModelSettings
 {

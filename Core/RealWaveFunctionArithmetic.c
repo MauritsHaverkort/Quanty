@@ -496,6 +496,25 @@ uint32_t RealWaveFunctionAddMultipliedUnionBasis(WaveFunctionType *const a, cons
 
 
 /*
+ *   (a) <- a+ b
+ *   This function leaves b in the memory and adds values to a
+ *   if b_i is not in the basis of a it will be ignored
+ *   Therefor values of a might change and a is returned from the function
+ *   If a is an empty function b is copied into a (use of copy is strongly recommanded)
+ */
+void RealWaveFunctionAddConserveBasis(WaveFunctionType *const a, const WaveFunctionType b)
+{
+  uint32_t i;
+  int iOMP;
+#pragma omp parallel for private(i)
+  for(iOMP=1;iOMP<=(int)b.N;iOMP++)
+  {
+    i=(uint32_t)iOMP;
+    RealWaveFunctionAddElementConserveBasis(*a, &b.Determinant[BlokElementDet(i,b.NWord,0)], b.ValueRe[BlokElement(i)]);
+  }
+}
+
+/*
 *   (a) <- a+alpha b
 *   This function leaves b in the memory and adds values to a
 *   if b_i is not in the basis of a it will be ignored

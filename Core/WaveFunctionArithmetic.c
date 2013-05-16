@@ -153,25 +153,141 @@ void WaveFunctionPrefactorDet(const WaveFunctionType psi, const uint8_t *const d
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-void WaveFunctionNormalize(WaveFunctionType *const a)
+uint32_t WaveFunctionAddSameBasis(WaveFunctionType a, const WaveFunctionType b)
 {
-  if(a->QComplex==0)
+  if((b.QComplex)&&(!a.QComplex)) if(MakeComplexWaveFunctionFromReal(&a, a)){printf("MakeComplexWaveFunctionFromReal failed in WaveFunctionAddSameBasis\n");return 1;}
+  if(b.QComplex)
   {
-    RealWaveFunctionNormalize(a);
+    ComplexWaveFunctionAddSameBasis(a, b);
   }
   else
   {
-    ComplexWaveFunctionNormalize(a);
+    RealWaveFunctionAddSameBasis(a, b);
+  }
+  return 0;
+}
+
+uint32_t WaveFunctionAddMultipliedSameBasis(WaveFunctionType a, const WaveFunctionType b, const double alpha)
+{
+  if((b.QComplex)&&(!a.QComplex)) if(MakeComplexWaveFunctionFromReal(&a, a)){printf("MakeComplexWaveFunctionFromReal failed in WaveFunctionAddMultipliedSameBasis\n");return 1;}
+  if(b.QComplex)
+  {
+    ComplexWaveFunctionAddMultipliedSameBasis(a, b, alpha);
+  }
+  else
+  {
+    RealWaveFunctionAddMultipliedSameBasis(a, b, alpha);
+  }
+  return 0;
+}
+
+uint32_t WaveFunctionAddComplexMultipliedSameBasis(WaveFunctionType a, const WaveFunctionType b, const double alphaRe, const double alphaIm)
+{
+  if((b.QComplex)&&(!a.QComplex)) if(MakeComplexWaveFunctionFromReal(&a, a)){printf("MakeComplexWaveFunctionFromReal failed in WaveFunctionAddComplexMultipliedSameBasis\n");return 1;}
+  if((Abs(alphaIm)>(DBL_MIN+Abs(alphaRe)*DBL_EPSILON))&&(!a.QComplex)) if(MakeComplexWaveFunctionFromReal(&a, a)){printf("MakeComplexWaveFunctionFromReal failed in WaveFunctionAddComplexMultipliedSameBasis\n");return 1;}
+  if(b.QComplex)
+  {
+    ComplexWaveFunctionAddComplexMultipliedSameBasis(a, b, alphaRe, alphaIm);
+  }
+  else if(a.QComplex)
+  {
+    ComplexRealWaveFunctionAddComplexMultipliedSameBasis(a, b, alphaRe, alphaIm);
+  }
+  else
+  {
+    RealWaveFunctionAddMultipliedSameBasis(a, b, alphaRe);
+  }
+  return 0;
+}
+
+uint32_t WaveFunctionAddConserveBasis(WaveFunctionType *const a, const WaveFunctionType b)
+{
+  if((b.QComplex)&&(!a->QComplex)) if(MakeComplexWaveFunctionFromReal(a, *a)){printf("MakeComplexWaveFunctionFromReal failed in WaveFunctionAddConserveBasis\n");return 1;}
+  if(b.QComplex)
+  {
+    ComplexWaveFunctionAddConserveBasis(a, b);
+  }
+  else
+  {
+    RealWaveFunctionAddConserveBasis(a, b);
+  }
+  return 0;
+}
+
+uint32_t WaveFunctionAddMultipliedConserveBasis(WaveFunctionType *const a, const WaveFunctionType b, const double alpha)
+{
+  if((b.QComplex)&&(!a->QComplex)) if(MakeComplexWaveFunctionFromReal(a, *a)){printf("MakeComplexWaveFunctionFromReal failed in WaveFunctionAddMultipliedConserveBasis\n");return 1;}
+  if(b.QComplex)
+  {
+    ComplexWaveFunctionAddMultipliedConserveBasis(a, b, alpha);
+  }
+  else
+  {
+    RealWaveFunctionAddMultipliedConserveBasis(a, b, alpha);
+  }
+  return 0;
+}
+
+uint32_t WaveFunctionAddComplexMultipliedConserveBasis(WaveFunctionType *const a, const WaveFunctionType b, const double alphaRe, const double alphaIm)
+{
+  if((b.QComplex)&&(!a->QComplex)) if(MakeComplexWaveFunctionFromReal(a, *a)){printf("MakeComplexWaveFunctionFromReal failed in WaveFunctionAddComplexMultipliedConserveBasis\n");return 1;}
+  if((Abs(alphaIm)>(DBL_MIN+Abs(alphaRe)*DBL_EPSILON))&&(!a->QComplex)) if(MakeComplexWaveFunctionFromReal(a, *a)){printf("MakeComplexWaveFunctionFromReal failed in WaveFunctionAddComplexMultipliedConserveBasis\n");return 1;}
+  if(b.QComplex)
+  {
+    ComplexWaveFunctionAddComplexMultipliedConserveBasis(a, b, alphaRe, alphaIm);
+  }
+  else if(a->QComplex)
+  {
+    ComplexRealWaveFunctionAddComplexMultipliedConserveBasis(a, b, alphaRe, alphaIm);
+  }
+  else
+  {
+    RealWaveFunctionAddMultipliedConserveBasis(a, b, alphaRe);
+  }
+  return 0;
+}
+
+uint32_t WaveFunctionAddUnionBasis(WaveFunctionType *const a, const WaveFunctionType b)
+{
+  if((b.QComplex)&&(!a->QComplex)) if(MakeComplexWaveFunctionFromReal(a, *a)){printf("MakeComplexWaveFunctionFromReal failed in WaveFunctionAddUnionBasis\n");return 1;}
+  if(b.QComplex)
+  {
+    return ComplexWaveFunctionAddUnionBasis(a, b);
+  }
+  else
+  {
+    return RealWaveFunctionAddUnionBasis(a, b);
+  }
+}
+
+uint32_t WaveFunctionAddMultipliedUnionBasis(WaveFunctionType *const a, const WaveFunctionType b, const double alpha)
+{
+  if((b.QComplex)&&(!a->QComplex)) if(MakeComplexWaveFunctionFromReal(a, *a)){printf("MakeComplexWaveFunctionFromReal failed in WaveFunctionAddMultipliedUnionBasis\n");return 1;}
+  if(b.QComplex)
+  {
+    return ComplexWaveFunctionAddMultipliedUnionBasis(a, b, alpha);
+  }
+  else
+  {
+    return RealWaveFunctionAddMultipliedUnionBasis(a, b, alpha);
+  }
+}
+
+uint32_t WaveFunctionAddComplexMultipliedUnionBasis(WaveFunctionType *const a, const WaveFunctionType b, const double alphaRe, const double alphaIm)
+{
+  if((b.QComplex)&&(!a->QComplex)) if(MakeComplexWaveFunctionFromReal(a, *a)){printf("MakeComplexWaveFunctionFromReal failed in WaveFunctionAddComplexMultipliedUnionBasis\n");return 1;}
+  if((Abs(alphaIm)>(DBL_MIN+Abs(alphaRe)*DBL_EPSILON))&&(!a->QComplex)) if(MakeComplexWaveFunctionFromReal(a, *a)){printf("MakeComplexWaveFunctionFromReal failed in WaveFunctionAddComplexMultipliedUnionBasis\n");return 1;}
+  if(b.QComplex)
+  {
+    return ComplexWaveFunctionAddComplexMultipliedUnionBasis(a, b, alphaRe, alphaIm);
+  }
+  else if(a->QComplex)
+  {
+    return ComplexRealWaveFunctionAddComplexMultipliedUnionBasis(a, b, alphaRe, alphaIm);
+  }
+  else
+  {
+    return RealWaveFunctionAddMultipliedUnionBasis(a, b, alphaRe);
   }
 }
 
@@ -202,9 +318,49 @@ void WaveFunctionCalculateNorm(const WaveFunctionType a, double *Norm)
   }
 }
 
+void WaveFunctionNormalize(WaveFunctionType *const a)
+{
+  if(a->QComplex==0)
+  {
+    RealWaveFunctionNormalize(a);
+  }
+  else
+  {
+    ComplexWaveFunctionNormalize(a);
+  }
+}
+
+
+
+
+/*
+ *   calculate <a|b>
+ */
 void WaveFunctionDotProductSameBasis(const WaveFunctionType a, const WaveFunctionType b, double *DotRe, double *DotIm)
 {
-
+  if(a.QComplex)
+  {
+    if(b.QComplex)
+    {
+      ComplexWaveFunctionDotProductSameBasis(a,b,DotRe,DotIm);
+    }
+    else
+    {
+      ComplexRealWaveFunctionDotProductSameBasis(a,b,DotRe,DotIm);
+    }
+  }
+  else
+  {
+    if(b.QComplex)
+    {
+      RealComplexWaveFunctionDotProductSameBasis(a,b,DotRe,DotIm);
+    }
+    else
+    {
+      *DotIm=0;
+      *DotRe=RealWaveFunctionDotProductSameBasis(a,b);
+    }
+  }
 }
 
 /*

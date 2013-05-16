@@ -1163,6 +1163,12 @@ uint32_t GeneralizedEigensystemSingular(MatrixType const M, MatrixType const S, 
   MatrixCopy(&TST,S);
   MatrixScalarMultiply(&TST, -1, 0);
   Eigensystem(TST, &EigenSysS, Sval);
+  printf("Norm of basis: ");
+  for(i=0;i<Min(6,S.Ni);i++)
+  {
+    printf("%E ",-Sval[i]);
+  }
+  printf("\n");
   MatrixScalarMultiply(&TST, 0, 0);
   MatrixTransform(&TMT, M, EigenSysS);
   NewDim=1;

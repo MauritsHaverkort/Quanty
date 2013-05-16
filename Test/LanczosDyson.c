@@ -15,13 +15,13 @@ void TestLanczosDyson2()
   SecondDoubleTriDiagonalMatrixType G0Double;
   OperatorType V[2],O,TPES,TIPES;
   WaveFunctionType psi,Opsi;
-  uint32_t i,NTriDiag=6,NCellV=3,NCellC=3,NKrylov=1000;
+  uint32_t i,NTriDiag=6,NCellV=3,NCellC=3,NKrylov=100;
   uint16_t oadd[2];
   uint8_t *Determinant;
   double PsiEnergy,PsiQuality,PsiHist[20],*PsiRho;
   double epsilon,zero;
   SpectraType Spectra[6];
-  G0.N=1000;
+  G0.N=100;
   InitTriDiagonalMatrix(&G0);
   for(i=1;i<G0.N;i++)
   {

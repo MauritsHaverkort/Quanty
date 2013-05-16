@@ -541,6 +541,7 @@ uint32_t LanczosGroundStateMR(const OperatorType H, WaveFunctionType *const psi,
   return LanczosGroundStateCC(H, psi, epsilon, zero, shiftin, OtherPsi, NOtherPsi);
 }
 
+
 uint32_t LanczosTriDiagonalizeRR(const OperatorType H, WaveFunctionType psi, double epsilon, TriDiagonalMatrixType *const M, double Gamma)
 {
   printf("\nStart of LanczosTriDiagonalizeRR\n\n");
@@ -965,7 +966,6 @@ uint32_t LanczosTriDiagonalizeMC(const OperatorType H, WaveFunctionType psi, dou
   fflush(stdout);
   return 0;
 }
-
 
 
 uint32_t LanczosTriDiagonalizePlusDensityRR(const OperatorType H, WaveFunctionType psi, double epsilon, TriDiagonalMatrixType *const M, MatrixType *const Rho, double Gamma)
@@ -1396,45 +1396,6 @@ uint32_t LanczosTriDiagonalizePlusDensityMC(const OperatorType H, WaveFunctionTy
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 uint32_t LanczosTriDiagonalizeKrylovRRNonOrtho(const OperatorType H, WaveFunctionType psi, double epsilon, TriDiagonalMatrixType *const M, WaveFunctionType *PsiBasis, double Gamma)
 {
   printf("\nStart of LanczosTriDiagonalizeKrylovNonOrthoRR\n\n");
@@ -1535,6 +1496,7 @@ uint32_t LanczosTriDiagonalizeKrylovRRNonOrtho(const OperatorType H, WaveFunctio
   fflush(stdout);
   return 0;
 }
+
 
 uint32_t LanczosTriDiagonalizeKrylovRR(const OperatorType H, WaveFunctionType psi, double epsilon, TriDiagonalMatrixType *const M, WaveFunctionType *const PsiBasis)
 {
@@ -1639,7 +1601,6 @@ uint32_t LanczosTriDiagonalizeKrylovRR(const OperatorType H, WaveFunctionType ps
   return 0;
 }
 
-
 uint32_t LanczosTriDiagonalizeKrylovRC(const OperatorType H, WaveFunctionType psi, double epsilon, TriDiagonalMatrixType *const M, WaveFunctionType *const PsiBasis)
 {
   printf("\nStart of LanczosTriDiagonalizeKrylovRC\n\n");
@@ -1663,12 +1624,6 @@ uint32_t LanczosTriDiagonalizeKrylovMC(const OperatorType H, WaveFunctionType ps
   fflush(stdout);
   return 0;
 }
-
-
-
-
-
-
 
 
 uint32_t ArnoldiTriDiagonalizeKrylovRR(const OperatorType H, WaveFunctionType psi, double epsilon, MatrixType *const M, WaveFunctionType *const PsiBasis)
@@ -2126,12 +2081,6 @@ uint32_t ArnoldiTriDiagonalizeKrylovMC(const OperatorType H, WaveFunctionType ps
 
 
 
-
-
-
-
-
-
 uint32_t LanczosGroundState(const OperatorType H, WaveFunctionType *const psi, double *epsilon, const double zero, double shiftin, WaveFunctionType *OtherPsi, uint32_t NOtherPsi)
 {
   if(psi->QComplex)
@@ -2245,7 +2194,7 @@ uint32_t LanczosTriDiagonalizePlusDensity(const OperatorType H, WaveFunctionType
 }
 
 
-/*   A subroutine to kreate the krylov space for a given Matrix H and starting function psi. 
+/*   A subroutine to create the krylov space for a given Matrix H and starting function psi. 
  *   Used is a Lanczos routine with reorthogonalization
  *
  *   On input are given:
@@ -2317,8 +2266,105 @@ uint32_t LanczosTriDiagonalizeKrylov(const OperatorType H, WaveFunctionType psi,
   }
 }
 
-
-
+/*
+ *   
+ */
+uint32_t LanczosTriDiagonalizeKrylovPerturbation(const OperatorPerturbationType H, WaveFunctionPerturbationType psi, double epsilon, TriDiagonalMatrixType *const M, WaveFunctionPerturbationType *const PsiBasis)
+{
+  printf("\nStart of LanczosTriDiagonalizeKrylovRR\n\n");
+  printf("Still to correct for complex systems\n");
+  fflush(stdout);
+  uint32_t i,j,k,stop;
+  double temp,dotRe,dotIm;
+  double errorestimate=1;
+  /* copy the name of psi to PsiBasis[0] in order to do the loop more cleanely  */
+  PsiBasis[0].NV=psi.NV;
+  PsiBasis[0].order=psi.order;
+  PsiBasis[0].psiOrder=psi.psiOrder;
+  /* calculate a[0] and b[0]  */
+  M->a[0]=0;
+  WaveFunctionPerturbationCalculateNorm(PsiBasis[0],&(M->b[0]));
+  /* Normalize PsiBasis[0] */
+  if(M->b[0]==0)
+  {
+    WaveFunctionPerturbationMultiply(PsiBasis[0],(double)0.0, (double)0.0);
+  }
+  else
+  {
+    WaveFunctionPerturbationMultiply(PsiBasis[0],(double)1.0/M->b[0],(double)0.0);
+  }
+  printf("BasisSetSize: %12i ",PsiBasis[0].psiOrder[0][0].N);
+  WaveFunctionPerturbationTruncateBasis(&(PsiBasis[0]),epsilon/errorestimate);
+  printf("%12i ",PsiBasis[0].psiOrder[0][0].N);
+  printf("| M.a[  0]         : %12.5E\n",M->a[0]);
+  /* Create PsiBasis[1] upto PsiBasis[M-N-1] */
+  for(i=1;i<M->N;i++)
+  {
+    while(OperatorPsiPerturbation(H,PsiBasis[i-1],&(PsiBasis[i])))
+    { /* Allocation of Memory failed */
+      printf("Allocation of new memory failed in LanczosTriDiagonalizeKrylovRR for the function OperatorPsi\n");
+      printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n",epsilon,epsilon*2.0);
+      fflush(stdout);
+      epsilon*=2.0;
+      stop=1;
+      for(j=0;j<i;j++)
+      {
+        /* Only truncate if there are parts of psi that have more than one block allocated */
+        if(!QWaveFunctionPerturbationMinimumBloksAlocated(PsiBasis[j]))
+        {
+          WaveFunctionPerturbationTruncateBasis(&(PsiBasis[j]),epsilon/errorestimate);
+          stop=0;
+        }
+      }
+      if(stop==1)AllocFailed();
+    }
+    for(j=i;j>0;)
+    {
+      j--;
+      WaveFunctionPerturbationDotProduct(PsiBasis[j], PsiBasis[i],&dotRe,&dotIm);
+      if(j==i-1)
+      {
+        M->a[i]=dotRe;
+      }
+      while(WaveFunctionPerturbationAddMultipliedUnionBasis(&(PsiBasis[i]),PsiBasis[j],-dotRe))
+      { /* Allocation of Memory failed */
+        printf("Allocation of new memory failed in LanczosTriDiagonalizeKrylovRR for the function RealWaveFunctionAddMultipliedUnionBasis(&(PsiBasis[i]),PsiBasis[j],-dot)\n");
+        printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n",epsilon,epsilon*2.0);
+        fflush(stdout);
+        epsilon*=2.0;
+        WaveFunctionPerturbationCalculateNorm(PsiBasis[i],&temp);
+        stop=1;
+        if(!QWaveFunctionPerturbationMinimumBloksAlocated(PsiBasis[j]))
+        {
+          WaveFunctionPerturbationTruncateBasis(&(PsiBasis[i]),epsilon*temp/errorestimate);
+          stop=0;
+        }
+        for(k=0;k<i;k++)
+        {
+          if(!QWaveFunctionPerturbationMinimumBloksAlocated(PsiBasis[j]))
+          {
+            WaveFunctionPerturbationTruncateBasis(&(PsiBasis[k]),epsilon/errorestimate);
+            stop=0;
+          }
+        }
+        if(stop==1)AllocFailed();
+      }
+    }
+    WaveFunctionPerturbationCalculateNorm(PsiBasis[i],&dotRe);
+    WaveFunctionPerturbationMultiply(PsiBasis[i], 1/dotRe,0);
+    M->b[i]=dotRe;
+    errorestimate*=Sqr(M->b[i]) / (Sqr(M->b[i]) + DBL_MIN +  DBL_EPSILON * Sqr(M->a[i]));
+    printf("BasisSetSize: %12i ",PsiBasis[i].psiOrder[0][0].N);
+    WaveFunctionPerturbationTruncateBasis(&(PsiBasis[i]),epsilon/errorestimate);
+    printf("%12i ",PsiBasis[i].psiOrder[0][0].N);
+    printf("| M.a[%3i] M.b[%3i]: %12.5E %12.5E | Err: %12.5E\n",i,i-1,M->a[i],M->b[i-1],errorestimate);
+  }
+  PsiHermitianOperatorPsiPerturbation(H, PsiBasis[M->N-1], &(M->a[M->N]));
+  printf("BasisSetSize: %12i ",PsiBasis[M->N-1].psiOrder[0][0].N);
+  printf("             | M.a[%3i] M.b[%3i]: %12.5E %12.5E | Err: %12.5E\n\n",M->N,M->N-1,M->a[M->N],M->b[M->N-1],errorestimate);
+  fflush(stdout);
+  return 0;
+}
 
 
 
@@ -2675,6 +2721,10 @@ uint32_t LanczosTriDiagonalizeDysonLowMem(OperatorType const O, WaveFunctionType
   free(VMat);
   return 0;
 }
+
+/*
+ *   LanczosTriDiagonalizeDysonSecondOrderLowMem does not work in this way !!!!!!!
+ */
 
 /* Given wavefunction psi and operator O a tridiagonal matrix and its Krylov basis is created of length NKrylov
  * For each operator V[i], with i from 0 to NV-1 the following steps are taken
