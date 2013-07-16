@@ -1142,6 +1142,161 @@ uint32_t MatrixToGeneralizedEigensystem(MatrixType const M, MatrixType const S, 
 }
 
 
+/*  Returns the Generalized Eigenvalues of a non-orthnormal matrix.
+ *  Given a basis psi_i
+ *  Matrix M contains the values psi_i^* . H . psi_j
+ *  Matrix S contains the values psi_i^* . psi_j
+ *
+ *  on exit val defines a diagonal matrix H and
+ *  H = T . M . T^{\dag}
+ *  I = T . S . T^{\dag}
+ *  S = Sroot . Sroot^{\dag}
+ *
+ */
+uint32_t GeneralizedEigenvalues(MatrixType const M, MatrixType const S, double *val)
+{
+  int info,itype=1;
+  const char* jobz="N";
+  const char* uplo="U";
+  int lwork=1+6*M.Ni+2*Sqr(M.Ni);
+  int liwork=3+5*M.Ni;
+  int iwork[liwork];
+  double work[lwork];
+  uint32_t i,j;
+  MatrixType Sroot, T;
+  if(M.Ni!=M.Nj)
+  {
+    printf("Generalized Eigenvalues called with non-square matrix\n");
+    printf("ERORR!!!!!!\n");
+    return 1;
+  }
+  if(M.QComplex==0)
+  {/* Real */
+    if(MatrixCopy(&Sroot,S)) {printf("MatrixCopy failed to copy S to Sroot in GeneralizedEigenvalues\n");return 1;}
+    strcpy(Sroot.Name,"Sqrt of ");
+    strncat(Sroot.Name, S.Name, MAX(0,MAXStrLength-8));
+    for(i=0;i<Sroot.Ni;i++)
+    {
+      for(j=i+1;j<Sroot.Nj;j++)
+      {
+        Sroot.VRe[i][j]=0;
+      }
+    }
+    if(MatrixCopy(&T, M)) {printf("MatrixCopy failed to copy M to T in GeneralizedEigenvalues\n");FreeMatrix(&Sroot);return 1;}
+    strcpy(T.Name,"Eigenvectors of ");
+    strncat(T.Name, M.Name, MAX(0,MAXStrLength-16));
+    dsygv( &itype, jobz, uplo, &M.Ni, T.VRe[0], &M.Ni, Sroot.VRe[0], &M.Ni, val, work, &lwork, &info );
+    if(info)
+    {
+      printf("dsygv failed in Generalized Eigenvalues with info value %i\n",info);
+      printf("While working on matrix %s\n",M.Name);
+      printf("continue diagonalization with dsygvd\n");
+      fflush(stdout);
+      FreeMatrix(&T);
+      FreeMatrix(&Sroot);
+      if(MatrixCopy(&Sroot,S)) {printf("MatrixCopy failed to copy S to Sroot in GeneralizedEigenvalues\n");return 1;}
+      strcpy(Sroot.Name,"Sqrt of ");
+      strncat(Sroot.Name, S.Name, MAX(0,MAXStrLength-8));
+      for(i=0;i<Sroot.Ni;i++)
+      {
+        for(j=i+1;j<Sroot.Nj;j++)
+        {
+          Sroot.VRe[i][j]=0;
+        }
+      }
+      if(MatrixCopy(&T, M)) {printf("MatrixCopy failed to copy M to T in GeneralizedEigenvalues\n");FreeMatrix(&Sroot);return 1;}
+      strcpy(T.Name,"Eigenvectors of ");
+      strncat(T.Name, M.Name, MAX(0,MAXStrLength-16));
+      dsygvd( &itype, jobz, uplo, &M.Ni, T.VRe[0], &M.Ni, Sroot.VRe[0], &M.Ni, val, work, &lwork, iwork, &liwork, &info);
+      if(info)
+      {
+        printf("also dsygvd failed in Eigenvalues with info value %i\n",info);
+        printf("ERORR!!!!!!!!!!\n");
+        printf("ERORR!!!!!!!!!!\n");
+        printf("ERORR!!!!!!!!!!\n");
+        printf("ERORR!!!!!!!!!!\n");
+        printf("ERORR!!!!!!!!!!\n");
+        fflush(stdout);
+        return 1;
+      }
+    }
+    FreeMatrix(&Sroot);
+    FreeMatrix(&T);
+    return 0;
+  }
+  else
+  {/* complex */
+    Complex16 MReIm[M.Ni*M.Ni];
+    Complex16 SReIm[M.Ni*M.Ni];
+    int lcwork=2*M.Ni+Sqr(M.Ni);
+    Complex16 cwork[lcwork];
+    T.Ni=M.Ni;
+    T.Nj=M.Nj;
+    T.QComplex=M.QComplex;
+    Sroot.Ni=M.Ni;
+    Sroot.Nj=M.Nj;
+    Sroot.QComplex=M.QComplex;
+    if(InitMatrix(&T)) return 1;
+    if(InitMatrix(&Sroot)) return 1;
+    strcpy(T.Name,"Eigenvectors of ");
+    strncat(T.Name, M.Name, MAX(0,MAXStrLength-16));
+    strcpy(Sroot.Name,"Sqrt of ");
+    strncat(Sroot.Name, S.Name, MAX(0,MAXStrLength-8));
+    for(i=0;i<M.Ni*M.Ni;i++)
+    {
+      MReIm[i].Re=M.VRe[0][i];
+      MReIm[i].Im=M.VIm[0][i];
+      SReIm[i].Re=S.VRe[0][i];
+      SReIm[i].Im=S.VIm[0][i];
+    }
+    zhegv(&itype,jobz,uplo,&M.Ni,MReIm,&M.Ni,SReIm,&M.Ni,val,cwork,&lcwork,work,&info);
+    if(info!=0)
+    {
+      printf("zhegv failed in Generalized Eigenvalues with info value %i\n",info);
+      printf("While working on matrix %s\n",M.Name);
+      printf("continue diagonalization with zhegvd\n");
+      fflush(stdout);
+      for(i=0;i<M.Ni*M.Ni;i++)
+      {
+        MReIm[i].Re=M.VRe[0][i];
+        MReIm[i].Im=M.VIm[0][i];
+        SReIm[i].Re=S.VRe[0][i];
+        SReIm[i].Im=S.VIm[0][i];
+      }
+      zhegvd(&itype,jobz,uplo,&M.Ni,MReIm,&M.Ni,SReIm,&M.Ni,val,cwork,&lcwork,work,&lwork,iwork,&liwork,&info);
+      if(info!=0)
+      {
+        printf("also zhegvd failed in Generalized Eigenvalues with info value %i\n",info);
+        printf("ERORR!!!!!!!!!!\n");
+        printf("ERORR!!!!!!!!!!\n");
+        printf("ERORR!!!!!!!!!!\n");
+        printf("ERORR!!!!!!!!!!\n");
+        printf("ERORR!!!!!!!!!!\n");
+        printf("ERORR!!!!!!!!!!\n");
+        fflush(stdout);
+        return 1;
+      }
+    }
+    for(i=0;i<M.Ni*M.Ni;i++)
+    {
+      T.VRe[0][i]=MReIm[i].Re;
+      T.VIm[0][i]=-MReIm[i].Im;
+      Sroot.VRe[0][i]=SReIm[i].Re;
+      Sroot.VIm[0][i]=-SReIm[i].Im;
+    }
+    for(i=0;i<Sroot.Ni;i++)
+    {
+      for(j=i+1;j<Sroot.Nj;j++)
+      {
+        Sroot.VRe[i][j]=0;
+        Sroot.VIm[i][j]=0;
+      }
+    }
+  }
+  FreeMatrix(&Sroot);
+  FreeMatrix(&T);
+  return 0;
+}
 
 
 /*  Returns the Generalized Eigensystem of a non-orthnormal matrix.
@@ -1158,13 +1313,13 @@ uint32_t MatrixToGeneralizedEigensystem(MatrixType const M, MatrixType const S, 
 uint32_t GeneralizedEigensystemSingular(MatrixType const M, MatrixType const S, MatrixType *const T, MatrixType *const Sroot, double *val)
 {
   uint32_t i,j,NewDim,retval=0;
-  double Sval[S.Ni];
+  double Sval[S.Ni],bound;
   MatrixType EigenSysS,TMT,TST,Ttemp;
   MatrixCopy(&TST,S);
   MatrixScalarMultiply(&TST, -1, 0);
   Eigensystem(TST, &EigenSysS, Sval);
   printf("Norm of basis: ");
-  for(i=0;i<Min(6,S.Ni);i++)
+  for(i=0;i<Min(8,S.Ni);i++)
   {
     printf("%E ",-Sval[i]);
   }
@@ -1172,27 +1327,43 @@ uint32_t GeneralizedEigensystemSingular(MatrixType const M, MatrixType const S, 
   MatrixScalarMultiply(&TST, 0, 0);
   MatrixTransform(&TMT, M, EigenSysS);
   NewDim=1;
+  bound=0;
   for(i=0;i<M.Ni;i++)
   {
-    if(-Sval[i]>DBL_EPSILON)
+    bound-=Sval[i];
+  }
+  bound*=DBL_EPSILON*100;
+  bound+=DBL_MIN*100;
+  for(i=0;i<M.Ni;i++)
+  {
+    if(-Sval[i]>bound)
     {
       TST.VRe[i][i]=-Sval[i];
       NewDim=i+1;
     }
     else
     {
-      TST.VRe[i][i]=1;
       for(j=0;j<M.Nj;j++)
       {
         TMT.VRe[i][j]=0;
         TMT.VRe[j][i]=0;
       }
+      TST.VRe[i][i]=1;
     }
+  }
+  printf("Singularity border = %E : Number of states kept = %i\n",bound,NewDim);
+  if(GeneralizedEigenvalues(TMT,TST,val)){printf("GeneralizedEigenvalues failed in GeneralizedEigensystemSingular\n"); retval=1;}
+  for(i=NewDim;i<M.Ni;i++)
+  {
+    TMT.VRe[i][i]=val[M.Ni-1]+100*DBL_EPSILON*Abs(val[M.Ni-1]);
   }
   if(GeneralizedEigensystem(TMT,TST,&Ttemp,Sroot,val)){printf("GeneralizedEigensystem failed in GeneralizedEigensystemSingular\n"); retval=1;}
   for(i=NewDim;i<M.Ni;i++)
   {
-    Ttemp.VRe[i][i]=0;
+    for(j=0;j<M.Ni;j++)
+    {
+      Ttemp.VRe[j][i]=0;
+    }
   }
   MatrixMultiply(T, Ttemp, EigenSysS);
   FreeMatrix(&EigenSysS);

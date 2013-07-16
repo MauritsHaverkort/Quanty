@@ -23,6 +23,13 @@ double ChebyshevU(const double x, const int n)
   return ((sin((n+1)*acos(x)))/(sin(acos(x))));
 }
 
+/* Gausian
+ *
+ */
+double Gausian(const double w, const double FWHM)
+{
+  return 0.9394372786996513*exp(-2.772588722239781*Sqr(w/FWHM))/FWHM;
+}
 
 
 

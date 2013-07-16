@@ -188,6 +188,7 @@
 		4C2AAABC163265F500138620 /* Test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Test; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C2AAACD163266DD00138620 /* libblas.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libblas.dylib; path = usr/lib/libblas.dylib; sourceTree = SDKROOT; };
 		4C2AAACF163266F900138620 /* liblapack.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = liblapack.dylib; path = usr/lib/liblapack.dylib; sourceTree = SDKROOT; };
+		4C5A6B9B175E6E8700EEA17F /* PrintMathematicaExpression.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = PrintMathematicaExpression.c; sourceTree = "<group>"; };
 		4C5CA61716D18BBF00BE1C25 /* DMFT */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = DMFT; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C77BA751741188E00AC7E7D /* OperatorWaveFunctionPerturbation.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = OperatorWaveFunctionPerturbation.c; sourceTree = "<group>"; };
 		4CA262D8170787D900B8E76E /* TestGreenFunctions.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = TestGreenFunctions.c; sourceTree = "<group>"; };
@@ -344,10 +345,11 @@
 				4C2AAA58163265DD00138620 /* BitMap.c */,
 				4C2AAA59163265DD00138620 /* FilePrint.c */,
 				4C2AAA5A163265DD00138620 /* FileRead.c */,
-				4C2AAA5B163265DD00138620 /* Print.c */,
 				4C2AAA5C163265DD00138620 /* Read.c */,
 				4C2AAA5D163265DD00138620 /* StreamPrint.c */,
 				4C2AAA5E163265DD00138620 /* StreamRead.c */,
+				4C2AAA5B163265DD00138620 /* Print.c */,
+				4C5A6B9B175E6E8700EEA17F /* PrintMathematicaExpression.c */,
 			);
 			path = IO;
 			sourceTree = "<group>";

@@ -64,6 +64,10 @@ uint32_t StreamPrintAndersonMatrix();
 uint32_t StreamPrintBlokAndersonMatrix();
 uint32_t StreamPrintOperatorFullReadable(OperatorType O, FILE *stream);
 
+uint32_t PrintSparseMatrixMathematica();
+uint32_t StreamPrintSparseMatrixMathematica();
+uint32_t FilePrintSparseMatrixMathematica();
+
 /**********************************************************/
 /**********       BasisMath/MatrixVector.c       **********/
 /**********************************************************/

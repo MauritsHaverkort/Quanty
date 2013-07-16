@@ -508,7 +508,7 @@ void TestLanczos()
 {
   uint32_t i;
   uint16_t oadd[6];
-  double NCell=20;
+  double NCell=15;
   OperatorType O;
   double epsilon,zero;
   WaveFunctionType psi;
@@ -533,9 +533,9 @@ void TestLanczos()
   Determinant=calloc(psi.NWord,sizeof(uint8_t));
   for(i=0;i<psi.NWord;i++)
   {
-    Determinant[i]=0;
+    Determinant[i]=15;
   }
-  a=1;Determinant[0]=2;
+  a=1;Determinant[0]=3;
   RealWaveFunctionAddElement(&psi,Determinant,a);
   a=1;Determinant[0]=5;
   RealWaveFunctionAddElement(&psi,Determinant,a);
@@ -551,11 +551,11 @@ void TestLanczos()
   InitOperatorFixedLength(&O,4,8);
   for(i=1;i<NCell;i++)
     {
-      oadd[1]=CrAnMask+i-1;     oadd[0]=i  ;     OperatorAddLaderNormalOrder(&O, oadd, 2, 0.0, 1, &QDetNotOrderedFcFaBcBa);
-      oadd[1]=CrAnMask+i  ;     oadd[0]=i-1;     OperatorAddLaderNormalOrder(&O, oadd, 2, 0.0,-1, &QDetNotOrderedFcFaBcBa);
+      oadd[1]=CrAnMask+i-1;     oadd[0]=i  ;     OperatorAddLaderNormalOrder(&O, oadd, 2, 1.0, 0.0, &QDetNotOrderedFcFaBcBa);
+      oadd[1]=CrAnMask+i  ;     oadd[0]=i-1;     OperatorAddLaderNormalOrder(&O, oadd, 2, 1.0, 0.0, &QDetNotOrderedFcFaBcBa);
       oadd[3]=CrAnMask+i  ;  oadd[2]=i  ;     oadd[1]=CrAnMask+i-1;   oadd[0]=i-1;     OperatorAddLaderNormalOrder(&O, oadd, 4, 1.0, 0, &QDetNotOrderedFcFaBcBa);
     }
-  OperatorAddLader(&O, oadd, 0, -20.0, 0);
+  //OperatorAddLader(&O, oadd, 0, -20.0, 0);
   SetQComplexOperator(&O);
   PrintOperatorFullReadable(O);
   

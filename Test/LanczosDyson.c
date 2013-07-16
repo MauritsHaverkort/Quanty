@@ -8,20 +8,20 @@
 
 void TestLanczosDyson2()
 {
-  printf("Start Test Lanczos Dyson\n");
+  printf("Start Test Lanczos Dyson2\n");
   
   MatrixType T;
-  TriDiagonalMatrixType G0,Gp[2],GPES,GIPES,GPESD1,GIPESD1;
+  TriDiagonalMatrixType G0,Gp[2],GPES,GIPES,GPESD1,GIPESD1,GPESD2,GIPESD2;
   SecondDoubleTriDiagonalMatrixType G0Double;
   OperatorType V[2],O,TPES,TIPES;
   WaveFunctionType psi,Opsi;
-  uint32_t i,NTriDiag=6,NCellV=3,NCellC=3,NKrylov=100;
+  uint32_t i,NTriDiag=10,NCellV=6,NCellC=6,NKrylov=600;
   uint16_t oadd[2];
   uint8_t *Determinant;
   double PsiEnergy,PsiQuality,PsiHist[20],*PsiRho;
   double epsilon,zero;
-  SpectraType Spectra[6];
-  G0.N=100;
+  SpectraType Spectra[7];
+  G0.N=600;
   InitTriDiagonalMatrix(&G0);
   for(i=1;i<G0.N;i++)
   {
@@ -179,6 +179,8 @@ void TestLanczosDyson2()
   GIPES.N=NTriDiag;
   GPESD1.N=NKrylov;
   GIPESD1.N=NKrylov;
+  GPESD2.N=NKrylov;
+  GIPESD2.N=NKrylov;
   InitTriDiagonalMatrix(&GPES);
   InitTriDiagonalMatrix(&GIPES);
   InitTriDiagonalMatrix(&GPESD1);
@@ -196,18 +198,25 @@ void TestLanczosDyson2()
   OperatorPsi(TIPES,psi,&Opsi);
   LanczosTriDiagonalizeDysonLowMem(O, Opsi, epsilon, NTriDiag, V, Gp, 2, &GIPESD1);
   
+  
+ /* OperatorPsi(TPES,psi,&Opsi);
+  LanczosTriDiagonalizeDysonSecondOrderALowMem(O, Opsi, epsilon, NTriDiag, V, Gp, 2, &GPESD2);
+  
+  OperatorPsi(TIPES,psi,&Opsi);
+  LanczosTriDiagonalizeDysonSecondOrderALowMem(O, Opsi, epsilon, NTriDiag, V, Gp, 2, &GIPESD2);
+  */
   printf("End Tridiagonalization\n");
   
   fflush(stdout);
   
-  Spectra[0].N       =5000;
-  Spectra[0].Emin    =-1;
-  Spectra[0].Emax    =4;
+  Spectra[0].N       =6000;
+  Spectra[0].Emin    =-3;
+  Spectra[0].Emax    =3;
   Spectra[0].dE      =(Spectra[0].Emax-Spectra[0].Emin)/Spectra[0].N;
   Spectra[0].EminPole=-1;
   Spectra[0].EmaxPole=1;
-  Spectra[0].Gamma   =0.01;
-  for(i=0;i<6;i++)
+  Spectra[0].Gamma   =0.04;
+  for(i=0;i<7;i++)
   {
     SpectrumAllocate(Spectra[0], &Spectra[i]);
   }
@@ -216,10 +225,16 @@ void TestLanczosDyson2()
   TriDiagonalMatrixToSpectrum(PsiEnergy, GIPES, &Spectra[1]);
   TriDiagonalMatrixToSpectrum(PsiEnergy, GPESD1, &Spectra[2]);
   TriDiagonalMatrixToSpectrum(PsiEnergy, GIPESD1, &Spectra[3]);
-  
-  
-  
-  FilePrintSpectra(Spectra, 4, "/Users/haverkort/ProgramOutput/LancDyson2", "w");
+  ShiftTriDiagonalMatrix(&GPESD1, -PsiEnergy);
+  ShiftTriDiagonalMatrix(&GIPESD1, -PsiEnergy);
+  for(i=1;i<=GIPESD1.N;i++)
+  {
+    GIPESD1.a[i]*=-1;
+  }
+  TriDiagonalMatrixToSpectrum(0, GPESD1, &Spectra[4]);
+  TriDiagonalMatrixToSpectrum(0, GIPESD1, &Spectra[5]);
+  TriDiagonalMatrixToSpectrum(0, G0, &Spectra[6]);
+  FilePrintSpectra(Spectra, 7, "/Users/haverkort/ProgramOutput/LancDyson2", "w");
 }
 
 

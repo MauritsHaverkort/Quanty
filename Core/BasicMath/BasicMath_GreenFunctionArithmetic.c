@@ -1015,18 +1015,35 @@ uint32_t TridiagonalizeImpurityCoupledToBathDyson(TriDiagonalMatrixType const O,
  *
  *  Vi,Vii will be labeled V1 and V2 below.
  */
-uint32_t TridiagonalizeImpurityCoupledToBathDysonSecondOrder(TriDiagonalMatrixType const O, MatrixType const *V1, MatrixType const **V2, MatrixType const H1, MatrixType const H2, TriDiagonalMatrixType const *g, uint32_t N, TriDiagonalMatrixType * const gnew)
+uint32_t TridiagonalizeImpurityCoupledToBathDysonSecondOrderA(TriDiagonalMatrixType const O, MatrixType const *V1, MatrixType const *V2, MatrixType const H1, MatrixType const H2, TriDiagonalMatrixType const *g, uint32_t N, TriDiagonalMatrixType * const gnew)
 {
   SparseMatrixType Htot;
   MatrixType T;
-  uint32_t i,ii,j,k,l;
+  uint32_t i,ii,j,k,l,m,size1,size2,indexi,indexii,indexj;
+  
+  
+  printf("Start of TridiagonalizeImpurityCoupledToBathDysonSecondOrderA\n");
+  for(i=0;i<N;i++)
+  {
+    PrintMatrix(V1[i]);
+  }
+  for(i=0;i<(N*N-N);i++)
+  {
+    PrintMatrix(V2[i]);
+  }
+  PrintMatrix(H1);
+  PrintMatrix(H2);
+  
   Htot.Ni=O.N;
+  /* Determine dimension of Htot */
+  j=0;
   for(i=0;i<N;i++)
   {
     Htot.Ni+=g[i].N * V1[i].Nj;
     for(ii=0;ii<i;ii++)
     {
-      Htot.Ni+=g[i].N*g[ii].N*V2[i][ii].Nj;
+      Htot.Ni+=g[i].N*g[ii].N*V2[2*j].Nj;
+      j++;
     }
   }
   Htot.Nj=Htot.Ni;
@@ -1041,12 +1058,15 @@ uint32_t TridiagonalizeImpurityCoupledToBathDysonSecondOrder(TriDiagonalMatrixTy
   Htot.QComplex = 0;
   Htot.a0=O.a[0];
   Htot.b0=O.b[0];
+  j=0;
   for(i=0;i<N;i++)
   {
     if(V1[i].QComplex)Htot.QComplex=1;
-    for(j=0;j<N;j++)
+    for(ii=0;ii<i;ii++)
     {
-      if(V2[i][j].QComplex)Htot.QComplex=1;
+      if(V2[2*j  ].QComplex)Htot.QComplex=1;
+      if(V2[2*j+1].QComplex)Htot.QComplex=1;
+      j++;
     }
   }
   if(InitSparseMatrix(&Htot)){printf("Could not initiallize sparse matrix in TridiagonalizeImpurityCoupledToBathDyson\n");return 1;}
@@ -1060,18 +1080,7 @@ uint32_t TridiagonalizeImpurityCoupledToBathDysonSecondOrder(TriDiagonalMatrixTy
     SparseMatrixAddMatrix(&Htot, j, 0, V1[i], DBL_EPSILON);
     j+=g[i].N * V1[i].Nj;
   }
-  /* Add matrices V2 to Htot */
-  for(i=0;i<N;i++)
-  {
-    for(ii=0;j<i;ii++)
-    {
-      for(k=0;k<g[i].N;k++)
-      {
-        SparseMatrixAddMatrixTransposed(&Htot, (k+1)*V1[i].Ni, j+k*V1[i].Ni, V2[i][ii], DBL_EPSILON);
-        SparseMatrixAddMatrix(&Htot, j+k*V1[i].Ni, (k+1)*V1[i].Ni, V2[i][ii], DBL_EPSILON);
-      }
-    }
-  }
+  size1=j;
   /* Add matrices H1 and g to Htot */
   l=O.N;
   if(Htot.QComplex)
@@ -1112,15 +1121,76 @@ uint32_t TridiagonalizeImpurityCoupledToBathDysonSecondOrder(TriDiagonalMatrixTy
       }
     }
   }
+  /* Add matrices V2 to Htot */
+  j=0;
+  indexi=O.N;
+  indexj=0;
+  for(i=0;i<N;i++)
+  {
+    indexii=O.N;
+    for(ii=0;ii<i;ii++)
+    {
+      size2=0;
+      for(k=0;k<g[i].N;k++)
+      {
+        SparseMatrixAddMatrixTransposed(&Htot, indexi+k*V2[2*j].Ni, size1+indexj+k*V2[2*j].Nj, V2[2*j], DBL_EPSILON);
+        SparseMatrixAddMatrix(&Htot, size1+indexj+k*V2[2*j].Nj, indexi+k*V2[2*j].Ni, V2[2*j], DBL_EPSILON);
+        size2+=V2[2*j].Ni;
+      }
+      for(k=0;k<g[i].N;k++)
+      {
+        SparseMatrixAddMatrixTransposed(&Htot, indexii+k*V2[2*j+1].Ni, size1+indexj+k*size2, V2[2*j+1], DBL_EPSILON);
+        SparseMatrixAddMatrix (&Htot, size1+indexj+k*size2, indexii+k*V2[2*j+1].Ni, V2[2*j+1], DBL_EPSILON);
+      }
+      indexii+=V1[ii].Nj*g[ii].N;
+      indexj+=V2[2*j].Nj*g[i].N*g[ii].N;
+      j++;
+    }
+    indexi+=V1[i].Nj*g[i].N;
+  }
   /* Add matrices H2 and g to Htot */
+  j=0;
+  indexj=size1;
   if(Htot.QComplex)
   {
     
   }
   else
   {
-    
+    for(i=0;i<N;i++)
+    {
+      for(ii=0;ii<i;ii++)
+      {
+        for(l=0;l<g[ii].N;l++)
+        {
+          for(m=0;m<g[i].N;m++)
+          {
+            for(k=0;k<V2[j].Nj;k++)
+            {
+              RealSparseMatrixAddElement(&Htot, indexj, indexj, H2.VRe[j][k]+g[i].a[m+1]+g[ii].a[l+1]);
+              if(m!=g[i].N-1)
+              {
+                RealSparseMatrixAddElement(&Htot, indexj, indexj+V2[j].Nj, g[i].b[m+1]);
+                RealSparseMatrixAddElement(&Htot, indexj+V2[j].Nj, indexj, g[i].b[m+1]);
+              }
+              if(l!=g[ii].N-1)
+              {
+                RealSparseMatrixAddElement(&Htot, indexj, indexj+V2[j].Nj*g[i].N, g[ii].b[l+1]);
+                RealSparseMatrixAddElement(&Htot, indexj+V2[j].Nj*g[i].N, indexj, g[ii].b[l+1]);
+              }
+              
+              indexj++;
+            }
+          }
+        }
+        j++;
+      }
+    }
   }
+  
+  PrintSparseMatrix(Htot);
+  FilePrintSparseMatrixMathematica(Htot, "Htot", "w");
+  
   /* tridiagonalize Htot */
   SparseMatrixToTriDiagonalMatrix(Htot, &T, gnew, gnew->N);
   FreeMatrix(&T);

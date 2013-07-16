@@ -1,5 +1,6 @@
 #include "StreamPrint.c"
 #include "FilePrint.c"
+#include "PrintMathematicaExpression.c"
 
 /*  Functions come in three variants
 *   StreamPrint***

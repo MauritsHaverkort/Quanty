@@ -431,7 +431,12 @@ int main(int argc, const char * argv[])
     ListOfPolesToTridiagonalMatrix(GclList, &Gcl, GclList.N);
     strcpy(Gcl.Name,"Gcluster");
     Gcl.b[0]=1.0;
-    /* G math - create Self energy From Gcl and GBath */
+    /* make Gcl a physical solution of the full lattice model */
+    /* Create self energy (SDMFT) of G0 and Gcl SDMFT = - Gcl^-1 + G0^-1 */
+    
+    /* Create Gclprime from SDMFT Gcl = (G0^-1 - SDMFT)^-1 */
+    
+    /* G math - create Cluster Self energy From Gcl and GBath */
     BeginTiming("G math Selfenergy",&Time);
     printf("Start SelfEnergyTriDiagonalRepresentation\n");fflush(stdout);
     TriDiagonalMatrixToAndersonMatrix(Gcl, &T, &GclAnd);
@@ -439,6 +444,12 @@ int main(int argc, const char * argv[])
     TriDiagonalMatrixToAndersonMatrix(GBath, &T, &GBathAnd);
     FreeMatrix(&T);
     SelfEnergyListOfPolesFromAndersonRepresentation(GBathAnd, GclAnd, &SigmaPoles);
+    
+    /*
+    GausianBroadenListOfPoles(&SigmaPoles, 0.1, 10);
+    ReduceListOfPolesNumber(&SigmaPoles, SigmaPoles.N/5);
+    */
+    
     printf("Cluster self energy created of size %i\n",SigmaPoles.N);
     strcpy(SigmaPoles.Name,"Sigma");
     /* copy sigma to tridiagonal format */
