@@ -81,146 +81,32 @@ uint32_t PrintDMFTSettings(DMFTSettings O)
 uint32_t PrintSparseMatrix(SparseMatrixType M)
 { return StreamPrintSparseMatrix(M,stdout);}
 
-
-
-
-
-
-/* old */
-
-
 uint32_t PrintTriDiagonalMatrix(TriDiagonalMatrixType M)
-{
-  uint32_t i;
-  M.Name[MAXStrLength-1]='\0';
-  printf("%s =\n",M.Name);
-  printf("TriDiagonalMatrix element a[i-1]=M[i][i] element b[i-1]=M[i,i-1]=M[i-1,i] others are zero.\n");
-  printf("Zero elements are prefactors for continued fraction representation\n");
-  printf("i    a[i]                   b[i]\n");
-  for(i=0;i<M.N;i++)
-  {
-    printf("%4i %22.15E %22.15E\n",i,M.a[i],M.b[i]);
-  }
-  printf("%4i %22.15E                       \n",M.N,M.a[M.N]);
-  return 0;
-}
+{ return StreamPrintTriDiagonalMatrix(M,stdout);}
 
 uint32_t PrintBlokTriDiagonalMatrix(BlokTriDiagonalMatrixType M)
-{
-  uint32_t i;
-  M.Name[MAXStrLength-1]='\0';
-  printf("%s =\n",M.Name);
-  printf("BlokTriDiagonalMatrix element a[i-1]=M[i][i] element b[i-1]=M[i,i+1]=M[i+1,i] others are zero.\n");
-  printf("Zero elements are prefactors for continued fraction representation\n");
-  for(i=0;i<=M.N;i++)
-  {
-    printf("a[%i]\n",i);
-    PrintMatrix(M.a[i]);
-  }
-  for(i=0;i<M.N;i++)
-  {
-    printf("b[%i]\n",i);
-    PrintMatrix(M.b[i]);
-  }
-  return 0;
-}
+{ return StreamPrintBlokTriDiagonalMatrix(M,stdout);}
 
 uint32_t PrintDoubleTriDiagonalMatrix(DoubleTriDiagonalMatrixType M)
-{
-  M.Name[MAXStrLength-1]='\0';
-  printf("%s =\n",M.Name);
-  printf("DoubleTriDiagonalMatrix Ef = %22.15E Epsilon = %22.15E\n",M.Ef,M.Epsilon);
-  printf("                        a0 = %22.15E      b0 = %22.15E\n",M.a0,M.b0);
-  printf("Valence part (E<Ef):\n");
-  PrintTriDiagonalMatrix(M.val);
-  printf("Conduction part (E>Ef):\n");
-  PrintTriDiagonalMatrix(M.con);
-  return 0;
-}
+{ return StreamPrintDoubleTriDiagonalMatrix(M,stdout);}
+
+uint32_t PrintBADoubleTriDiagonalMatrix(BADoubleTriDiagonalMatrixType M)
+{ return StreamPrintBADoubleTriDiagonalMatrix(M,stdout);}
 
 uint32_t PrintSecondDoubleTriDiagonalMatrix(SecondDoubleTriDiagonalMatrixType M)
-{
-  M.Name[MAXStrLength-1]='\0';
-  printf("%s =\n",M.Name);
-  printf("SecondDoubleTriDiagonalMatrix Ef    = %22.15E Epsilon    = %22.15E\n",M.Ef,M.Epsilon);
-  printf("                              a0    = %22.15E      b0    = %22.15E\n",M.a0,M.b0);
-  printf("                              Dt.a0 = %22.15E      Dt.b0 = %22.15E\n",M.Dt.a0,M.Dt.b0);
-  printf("Valence part (E<Ef):\n");
-  PrintTriDiagonalMatrix(M.Dt.val);
-  printf("Conduction part (E>Ef):\n");
-  PrintTriDiagonalMatrix(M.Dt.con);
-  return 0;
-}
+{ return StreamPrintSecondDoubleTriDiagonalMatrix(M,stdout);}
 
 uint32_t PrintBlokDoubleTriDiagonalMatrix(BlokDoubleTriDiagonalMatrixType M)
-{
-  M.Name[MAXStrLength-1]='\0';
-  printf("%s =\n",M.Name);
-  printf("BlokDoubleTriDiagonalMatrix Ef = %22.15E Epsilon = %22.15E\n",M.Ef,M.Epsilon);
-  printf("a[0]\n");
-  PrintMatrix(M.a0);
-  printf("b[0]\n");
-  PrintMatrix(M.b0);
-  printf("Valence part (E<Ef):\n");
-  PrintBlokTriDiagonalMatrix(M.val);
-  printf("Conduction part (E>Ef):\n");
-  PrintBlokTriDiagonalMatrix(M.con);
-  return 0;
-}
+{ return StreamPrintBlokDoubleTriDiagonalMatrix(M,stdout);}
 
 uint32_t PrintAndersonMatrix(AndersonMatrixType M)
-{
-  uint32_t i;
-  M.Name[MAXStrLength-1]='\0';
-  printf("%s =\n",M.Name);
-  printf("AndersonMatrix element a[i-1]=M[i][i] element b[i-1]=M[i,i-1]=M[i-1,i] others are zero.\n");
-  printf("Zero elements are prefactors for continued fraction representation\n");
-  printf("i    a[i]                   b[i]\n");
-  for(i=0;i<M.N;i++)
-  {
-    printf("%4i %22.15E %22.15E\n",i,M.a[i],M.b[i]);
-  }
-  printf("%4i %22.15E                       \n",M.N,M.a[M.N]);
-  return 0;
-}
+{ return StreamPrintAndersonMatrix(M,stdout);}
 
 uint32_t PrintBlokAndersonMatrix(BlokAndersonMatrixType M)
-{
-  uint32_t i;
-  M.Name[MAXStrLength-1]='\0';
-  printf("%s =\n",M.Name);
-  printf("BlokAndersonMatrix element a[i]=M[i][i] element b[i]=M[0,i+1]=M[i+1,0] others are zero.\n");
-  printf("Zero elements are prefactors for continued fraction representation\n");
-  for(i=0;i<=M.N;i++)
-  {
-    printf("a[%i]\n",i);
-    PrintMatrix(M.a[i]);
-  }
-  for(i=0;i<M.N;i++)
-  {
-    printf("b[%i]\n",i);
-    PrintMatrix(M.b[i]);
-  }
-  return 0;
-}
-
+{ return StreamPrintBlokAndersonMatrix(M,stdout);}
 
 uint32_t PrintListOfPoles(ListOfPoles M)
-{
-  uint32_t i;
-  double sum=0;
-  for(i=0;i<M.N;i++) sum+=M.b[i];
-  M.Name[MAXStrLength-1]='\0';
-  printf("%s =\n",M.Name);
-  printf("List of Poles.\n");
-  printf("a0 = %22.15E, sum_i b[i] = %22.15E\n",M.a0,sum);
-  printf("i    a[i]                   b[i]\n");
-  for(i=0;i<M.N;i++)
-  {
-    printf("%4i %22.15E %22.15E\n",i,M.a[i],M.b[i]);
-  }
-  return 0;
-}
+{ return StreamPrintListOfPoles(M,stdout);}
 
 
 

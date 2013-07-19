@@ -838,3 +838,165 @@ uint32_t StreamPrintSparseMatrix(SparseMatrixType M, FILE *stream)
   fprintf(stream,"\n");
   return 0;
 }
+
+
+uint32_t StreamPrintTriDiagonalMatrix(TriDiagonalMatrixType M, FILE *stream)
+{
+  uint32_t i;
+  M.Name[MAXStrLength-1]='\0';
+  fprintf(stream,"%s =\n",M.Name);
+  fprintf(stream,"TriDiagonalMatrix element a[i-1]=M[i][i] element b[i-1]=M[i,i-1]=M[i-1,i] others are zero.\n");
+  fprintf(stream,"Zero elements are prefactors for continued fraction representation\n");
+  fprintf(stream,"i    a[i]                   b[i]\n");
+  for(i=0;i<M.N;i++)
+  {
+    fprintf(stream,"%4i %22.15E %22.15E\n",i,M.a[i],M.b[i]);
+  }
+  fprintf(stream,"%4i %22.15E                       \n",M.N,M.a[M.N]);
+  return 0;
+}
+
+uint32_t StreamPrintBlokTriDiagonalMatrix(BlokTriDiagonalMatrixType M, FILE *stream)
+{
+  uint32_t i;
+  M.Name[MAXStrLength-1]='\0';
+  fprintf(stream,"%s =\n",M.Name);
+  fprintf(stream,"BlokTriDiagonalMatrix element a[i-1]=M[i][i] element b[i-1]=M[i,i+1]=M[i+1,i] others are zero.\n");
+  fprintf(stream,"Zero elements are prefactors for continued fraction representation\n");
+  for(i=0;i<=M.N;i++)
+  {
+    fprintf(stream,"a[%i]\n",i);
+    StreamPrintMatrix(M.a[i],stream);
+  }
+  for(i=0;i<M.N;i++)
+  {
+    fprintf(stream,"b[%i]\n",i);
+    StreamPrintMatrix(M.b[i],stream);
+  }
+  return 0;
+}
+
+uint32_t StreamPrintDoubleTriDiagonalMatrix(DoubleTriDiagonalMatrixType M, FILE *stream)
+{
+  M.Name[MAXStrLength-1]='\0';
+  fprintf(stream,"%s =\n",M.Name);
+  fprintf(stream,"DoubleTriDiagonalMatrix Ef = %22.15E Epsilon = %22.15E\n",M.Ef,M.Epsilon);
+  fprintf(stream,"                        a0 = %22.15E      b0 = %22.15E\n",M.a0,M.b0);
+  fprintf(stream,"Valence part (E<Ef):\n");
+  StreamPrintTriDiagonalMatrix(M.val,stream);
+  fprintf(stream,"Conduction part (E>Ef):\n");
+  StreamPrintTriDiagonalMatrix(M.con,stream);
+  return 0;
+}
+
+
+
+uint32_t StreamPrintBADoubleTriDiagonalMatrix(BADoubleTriDiagonalMatrixType M, FILE *stream)
+{
+  M.Name[MAXStrLength-1]='\0';
+  fprintf(stream,"%s =\n",M.Name);
+  fprintf(stream,"BADoubleTriDiagonalMatrix Ef = %22.15E Epsilon = %22.15E\n",M.Ef,M.Epsilon);
+  fprintf(stream,"                          a0 = %22.15E      b0 = %22.15E\n",M.a0,M.b0);
+  fprintf(stream,"Valence part (E<Ef):\n");
+  StreamPrintTriDiagonalMatrix(M.val,stream);
+  fprintf(stream,"Conduction part (E>Ef):\n");
+  StreamPrintTriDiagonalMatrix(M.con,stream);
+  fprintf(stream,"Transformation matrix T:\n");
+  fprintf(stream,"%22.15E %22.15E\n",M.val.b[0],M.con.b[0]);
+  fprintf(stream,"%22.15E %22.15E\n",M.con.b[0],-M.val.b[0]);
+  fprintf(stream,"Occupation: val.b[0]^2 %22.15E con.b[0]^2 %22.15E Sum %22.15E b0^2 %22.15E\n",Sqr(M.val.b[0]),Sqr(M.con.b[0]),Sqr(M.val.b[0])+Sqr(M.con.b[0]),Sqr(M.b0));
+  fprintf(stream,"Transformed values\n");
+  fprintf(stream,"acvB  :%22.15E  (=val.b[0]^2 * val.a[1] + con.b[0]^2 * con.a[1] %22.15)\n",M.acvB,Sqr(M.val.b[0]) * M.val.a[1] + Sqr(M.con.b[0]) * M.con.a[1]);
+  fprintf(stream,"acvA  :%22.15E  (=val.b[0]^2 * con.a[1] + con.b[0]^2 * val.a[1] %22.15)\n",M.acvA,Sqr(M.val.b[0]) * M.con.a[1] + Sqr(M.con.b[0]) * M.val.a[1]);
+  fprintf(stream,"acvBA :%22.15E  (=val.b[0] * con.b[0] * (val.a[1]-con.a[1])     %22.15)\n",M.acvBA,M.val.b[0] * M.con.b[0] * (M.val.a[1]-M.con.a[1]));
+  fprintf(stream,"bvB0  :%22.15E  (=val.b[0] * val.b[1]                           %22.15)\n",M.bvB0,M.val.b[0]*M.val.b[1]);
+  fprintf(stream,"bcB0  :%22.15E  (=con.b[0] * con.b[1]                           %22.15)\n",M.bcB0,M.con.b[0]*M.con.b[1]);
+  fprintf(stream,"bvA0  :%22.15E  (=con.b[0] * val.b[1]                           %22.15)\n",M.bvA0,M.con.b[0]*M.val.b[1]);
+  fprintf(stream,"bcA0  :%22.15E  (=-val.b[0] * con.b[1]                          %22.15)\n",M.bcA0,-M.val.b[0]*M.con.b[1]);
+  return 0;
+}
+
+uint32_t StreamPrintSecondDoubleTriDiagonalMatrix(SecondDoubleTriDiagonalMatrixType M, FILE *stream)
+{
+  M.Name[MAXStrLength-1]='\0';
+  fprintf(stream,"%s =\n",M.Name);
+  fprintf(stream,"SecondDoubleTriDiagonalMatrix Ef    = %22.15E Epsilon    = %22.15E\n",M.Ef,M.Epsilon);
+  fprintf(stream,"                              a0    = %22.15E      b0    = %22.15E\n",M.a0,M.b0);
+  fprintf(stream,"                              Dt.a0 = %22.15E      Dt.b0 = %22.15E\n",M.Dt.a0,M.Dt.b0);
+  fprintf(stream,"Valence part (E<Ef):\n");
+  StreamPrintTriDiagonalMatrix(M.Dt.val,stream);
+  fprintf(stream,"Conduction part (E>Ef):\n");
+  StreamPrintTriDiagonalMatrix(M.Dt.con,stream);
+  return 0;
+}
+
+uint32_t StreamPrintBlokDoubleTriDiagonalMatrix(BlokDoubleTriDiagonalMatrixType M, FILE *stream)
+{
+  M.Name[MAXStrLength-1]='\0';
+  fprintf(stream,"%s =\n",M.Name);
+  fprintf(stream,"BlokDoubleTriDiagonalMatrix Ef = %22.15E Epsilon = %22.15E\n",M.Ef,M.Epsilon);
+  fprintf(stream,"a[0]\n");
+  StreamPrintMatrix(M.a0,stream);
+  fprintf(stream,"b[0]\n");
+  StreamPrintMatrix(M.b0,stream);
+  fprintf(stream,"Valence part (E<Ef):\n");
+  StreamPrintBlokTriDiagonalMatrix(M.val,stream);
+  fprintf(stream,"Conduction part (E>Ef):\n");
+  StreamPrintBlokTriDiagonalMatrix(M.con,stream);
+  return 0;
+}
+
+uint32_t StreamPrintAndersonMatrix(AndersonMatrixType M, FILE *stream)
+{
+  uint32_t i;
+  M.Name[MAXStrLength-1]='\0';
+  fprintf(stream,"%s =\n",M.Name);
+  fprintf(stream,"AndersonMatrix element a[i-1]=M[i][i] element b[i-1]=M[i,i-1]=M[i-1,i] others are zero.\n");
+  fprintf(stream,"Zero elements are prefactors for continued fraction representation\n");
+  fprintf(stream,"i    a[i]                   b[i]\n");
+  for(i=0;i<M.N;i++)
+  {
+    fprintf(stream,"%4i %22.15E %22.15E\n",i,M.a[i],M.b[i]);
+  }
+  fprintf(stream,"%4i %22.15E                       \n",M.N,M.a[M.N]);
+  return 0;
+}
+
+uint32_t StreamPrintBlokAndersonMatrix(BlokAndersonMatrixType M, FILE *stream)
+{
+  uint32_t i;
+  M.Name[MAXStrLength-1]='\0';
+  fprintf(stream,"%s =\n",M.Name);
+  fprintf(stream,"BlokAndersonMatrix element a[i]=M[i][i] element b[i]=M[0,i+1]=M[i+1,0] others are zero.\n");
+  fprintf(stream,"Zero elements are prefactors for continued fraction representation\n");
+  for(i=0;i<=M.N;i++)
+  {
+    fprintf(stream,"a[%i]\n",i);
+    StreamPrintMatrix(M.a[i],stream);
+  }
+  for(i=0;i<M.N;i++)
+  {
+    fprintf(stream,"b[%i]\n",i);
+    StreamPrintMatrix(M.b[i],stream);
+  }
+  return 0;
+}
+
+uint32_t StreamPrintListOfPoles(ListOfPoles M, FILE *stream)
+{
+  uint32_t i;
+  double sum=0;
+  for(i=0;i<M.N;i++) sum+=M.b[i];
+  M.Name[MAXStrLength-1]='\0';
+  fprintf(stream,"%s =\n",M.Name);
+  fprintf(stream,"List of Poles.\n");
+  fprintf(stream,"a0 = %22.15E, sum_i b[i] = %22.15E\n",M.a0,sum);
+  fprintf(stream,"i    a[i]                   b[i]\n");
+  for(i=0;i<M.N;i++)
+  {
+    fprintf(stream,"%4i %22.15E %22.15E\n",i,M.a[i],M.b[i]);
+  }
+  return 0;
+}
+
+

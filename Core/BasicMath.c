@@ -31,6 +31,7 @@
 #include "BasicMath/BasicMath_SparseMatrixVector.c"
 #include "BasicMath/BasicMath_TriDiagonalMatrixVector.c"
 #include "BasicMath/BasicMath_DoubleTriDiagonalMatrixVector.c"
+#include "BasicMath/BasicMath_BADoubleTriDiagonalMatrixVector.c"
 #include "BasicMath/BasicMath_BlokTriDiagonalMatrixVector.c"
 #include "BasicMath/BasicMath_BlokDoubleTriDiagonalMatrixVector.c"
 #include "BasicMath/BasicMath_AndersonMatrixVector.c"

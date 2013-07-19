@@ -57,6 +57,7 @@
 #include "../Test/TestIO.c"
 #include "../Test/LanczosDyson.c"
 #include "../Test/TestGreenFunctions.c"
+#include "../Test/TestGFBA.c"
 
 int main (int argc, const char * argv[]) 
 {
@@ -109,6 +110,8 @@ int main (int argc, const char * argv[])
     if (!strncmp("GenEig",argv[argc],strlen(argv[argc]))) TestGeneralizedEigensystem();
     
     if (!strncmp("Green",argv[argc],strlen(argv[argc]))) TestGreenFunctionArithmetic();
+    
+    if (!strncmp("GFBA",argv[argc],strlen(argv[argc]))) TestGFBA();
   }
   return 0;
 }

@@ -224,7 +224,7 @@ typedef struct AndersonMatrixType
 AndersonMatrixType;
 
 /*  The structure ListOfPoles can represent a function as a sum of Lorenzians
- *  g(w) = a0 + sum_i b_i^2 / (w - a_i)
+ *  g(w) = a0 + sum_i b_i / (w - a_i)
  */
 typedef struct ListOfPoles
 {
@@ -376,7 +376,59 @@ typedef struct SecondAndersonMatrixType
 SecondAndersonMatrixType;
 
 
-
+/*
+ *     ( A[0][0]=acvB  | A[0][0]=acvBA | A[0][1]=bvB0  | 0             | 0           | A[0][4]=bcB0  | 0             | 0           )
+ *     ( A[0][0]=acvBA | A[0][0]=acvA  | A[0][1]=bvA0  | 0             | 0           | A[0][4]=bcA0  | 0             | 0           )
+ *     ( A[1][0]=bvB0  | A[1][0]=bvA0  | A[1][1]=av2   | A[1][2]=bv2   | 0           | 0             | 0             | 0           )
+ *   A=( 0             | 0             | A[2][1]=bv2   | A[2][2]=av3   | A[2][3]=bv3 | 0             | 0             | 0           )
+ *     ( 0             | 0             | 0             | A[3][2]=bv3   | A[3][3]=av4 | 0             | 0             | 0           )
+ *     ( A[4][0]=bcB0  | A[4][0]=bcA0  | 0             | 0             | 0           | A[4][4]=ac2   | A[4][5]=bc2   | 0           )
+ *     ( 0             | 0             | 0             | 0             | 0           | A[5][4]=bc2   | A[5][5]=ac3   | A[5][6]=bc3 )
+ *     ( 0             | 0             | 0             | 0             | 0           | 0             | A[6][5]=bc3   | A[6][6]=ac4 )
+ *
+ *  A = T Ap T^+
+ *
+ *     ( A[0][0]=av1   | 0             | A[0][1]=bv1   | 0             | 0           | 0             | 0             | 0           )
+ *     ( 0             | A[0][0]=ac1   | 0             | 0             | 0           | A[0][4]=bc1   | 0             | 0           )
+ *     ( A[1][0]=bv1   | 0             | A[1][1]=av2   | A[1][2]=bv2   | 0           | 0             | 0             | 0           )
+ *  Ap=( 0             | 0             | A[2][1]=bv2   | A[2][2]=av3   | A[2][3]=bv3 | 0             | 0             | 0           )
+ *     ( 0             | 0             | 0             | A[3][2]=bv3   | A[3][3]=av4 | 0             | 0             | 0           )
+ *     ( 0             | A[4][0]=bc1   | 0             | 0             | 0           | A[4][4]=ac2   | A[4][5]=bc2   | 0           )
+ *     ( 0             | 0             | 0             | 0             | 0           | A[5][4]=bc2   | A[5][5]=ac3   | A[5][6]=bc3 )
+ *     ( 0             | 0             | 0             | 0             | 0           | 0             | A[6][5]=bc3   | A[6][6]=ac4 )
+ *
+ *
+ *     ( A[0][0]=bv0   | A[0][0]=bc0   | 0             | 0             | 0           | 0             | 0             | 0           )
+ *     ( A[0][0]=bc0   | A[0][0]=-bv0  | 0             | 0             | 0           | 0             | 0             | 0           )
+ *     ( 0             | 0             | 1             | 0             | 0           | 0             | 0             | 0           )
+ *   T=( 0             | 0             | 0             | 1             | 0           | 0             | 0             | 0           )
+ *     ( 0             | 0             | 0             | 0             | 1           | 0             | 0             | 0           )
+ *     ( 0             | 0             | 0             | 0             | 0           | 1             | 0             | 0           )
+ *     ( 0             | 0             | 0             | 0             | 0           | 0             | 1             | 0           )
+ *     ( 0             | 0             | 0             | 0             | 0           | 0             | 0             | 1           )
+ *
+ *   (A B)[i][j] = \sum_k A[i][k] . B[k][j]
+ *
+ *   Note that the block A[2;;4][2;;4] and the block A[5;;7][5;;7] are normal tri-diagonal matrices
+ */
+typedef struct BADoubleTriDiagonalMatrixType
+{
+  char       Name[MAXStrLength]; /* A pointer to a name string that can be used to lable functions, good for printing etc. */
+  double     Ef;       /* border if a number belongs to val or con */
+  double     Epsilon;  /* values in a range of [Ef-1/2 Epsilon , Ef+1/2 Epsilon] contribute half to val and half to con */
+  double     a0;       /* storing a possible real shift if a continued fraction notation is used */
+  double     b0;       /* storing a possilbe over-all scaling if a continued fraction notation is used */
+  double     acvB;     /* val.b[0]^2 * val.a[1] + con.b[0]^2 * con.a[1] */
+  double     acvA;     /* val.b[0]^2 * con.a[1] + con.b[0]^2 * val.a[1] */
+  double     acvBA;    /* val.b[0]*con.b[0] * (val.a[1]-con.a[1]) */
+  double     bvB0;     /* val.b[0] * val.b[1] */
+  double     bcB0;     /* con.b[0] * con.b[1] */
+  double     bvA0;     /* con.b[0] * val.b[1] */
+  double     bcA0;     /*-val.b[0] * con.b[1] */
+  TriDiagonalMatrixType val;
+  TriDiagonalMatrixType con;
+}
+BADoubleTriDiagonalMatrixType;
 
 /*
  *

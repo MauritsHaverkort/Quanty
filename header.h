@@ -319,7 +319,8 @@ uint32_t MatrixToBlokTriDiagonalMatrix();      uint32_t BlokTriDiagonalize();
 uint32_t MatrixToBlokAndersonMatrix();
 uint32_t MatrixToDoubleTriDiagonalMatrix();
 uint32_t MatrixToBlokDoubleTriDiagonalMatrix();
-
+/********    ListOfPolesTo                              ********/
+uint32_t ListOfPolesToBADoubleTridiagonalMatrix();
 
 
 /**********************************************************/

@@ -38,7 +38,6 @@
 		4C2AAA90163265DD00138620 /* RealComplexWaveFunctionArithmetic.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA45163265DD00138620 /* RealComplexWaveFunctionArithmetic.c */; };
 		4C2AAA91163265DD00138620 /* RealWaveFunctionArithmetic.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA46163265DD00138620 /* RealWaveFunctionArithmetic.c */; };
 		4C2AAA92163265DD00138620 /* Spectral.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA47163265DD00138620 /* Spectral.c */; };
-		4C2AAA93163265DD00138620 /* StructDef.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA48163265DD00138620 /* StructDef.c */; };
 		4C2AAA94163265DD00138620 /* TimeStamp.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA49163265DD00138620 /* TimeStamp.c */; };
 		4C2AAA95163265DD00138620 /* WaveFunctionArithmetic.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA4A163265DD00138620 /* WaveFunctionArithmetic.c */; };
 		4C2AAA97163265DD00138620 /* SingleSiteFunctions.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA4D163265DD00138620 /* SingleSiteFunctions.c */; };
@@ -78,6 +77,9 @@
 		4C5CA62016D18C3400BE1C25 /* DMFT.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA4C163265DD00138620 /* DMFT.c */; };
 		4C5CA62316D18CB100BE1C25 /* liblapack.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACF163266F900138620 /* liblapack.dylib */; };
 		4C5CA62416D18CD000BE1C25 /* libblas.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACD163266DD00138620 /* libblas.dylib */; };
+		4CDD1CA81796D15600614F34 /* DMFT_eg_Dyson.c in Sources */ = {isa = PBXBuildFile; fileRef = 4CDD1C7E1796D06400614F34 /* DMFT_eg_Dyson.c */; };
+		4CDD1CA91796D27F00614F34 /* libblas.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACD163266DD00138620 /* libblas.dylib */; };
+		4CDD1CAA1796D28900614F34 /* liblapack.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACF163266F900138620 /* liblapack.dylib */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -101,6 +103,15 @@
 			runOnlyForDeploymentPostprocessing = 1;
 		};
 		4C5CA61516D18BBF00BE1C25 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		4CDD1C9D1796D14100614F34 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = /usr/share/man/man1/;
@@ -192,6 +203,11 @@
 		4C5CA61716D18BBF00BE1C25 /* DMFT */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = DMFT; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C77BA751741188E00AC7E7D /* OperatorWaveFunctionPerturbation.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = OperatorWaveFunctionPerturbation.c; sourceTree = "<group>"; };
 		4CA262D8170787D900B8E76E /* TestGreenFunctions.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = TestGreenFunctions.c; sourceTree = "<group>"; };
+		4CDD1C7E1796D06400614F34 /* DMFT_eg_Dyson.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = DMFT_eg_Dyson.c; sourceTree = "<group>"; };
+		4CDD1C7F1796D06400614F34 /* DMFTFunctions.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = DMFTFunctions.c; sourceTree = "<group>"; };
+		4CDD1C9F1796D14100614F34 /* YiDMFT */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = YiDMFT; sourceTree = BUILT_PRODUCTS_DIR; };
+		4CDD1CAB1799666C00614F34 /* BasicMath_BADoubleTriDiagonalMatrixVector.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = BasicMath_BADoubleTriDiagonalMatrixVector.c; sourceTree = "<group>"; };
+		4CDD1CAC179994DC00614F34 /* TestGFBA.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = TestGFBA.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -220,6 +236,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		4CDD1C9C1796D14100614F34 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4CDD1CAA1796D28900614F34 /* liblapack.dylib in Frameworks */,
+				4CDD1CA91796D27F00614F34 /* libblas.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -230,6 +255,7 @@
 				4C2AAACD163266DD00138620 /* libblas.dylib */,
 				4C2AAA28163265DD00138620 /* Core */,
 				4C2AAA4B163265DD00138620 /* DMFT */,
+				4CDD1C7D1796D06400614F34 /* Yi */,
 				4C2AAA4F163265DD00138620 /* header.h */,
 				4C2AAA50163265DD00138620 /* Hubbard_Model */,
 				4C2AAA57163265DD00138620 /* IO */,
@@ -251,6 +277,7 @@
 				4C2AAA191632655300138620 /* Model */,
 				4C2AAABC163265F500138620 /* Test */,
 				4C5CA61716D18BBF00BE1C25 /* DMFT */,
+				4CDD1C9F1796D14100614F34 /* YiDMFT */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -300,18 +327,19 @@
 				4C2AAA2B163265DD00138620 /* BasicMath_BlokAndersonMatrixVector.c */,
 				4C2AAA2C163265DD00138620 /* BasicMath_BlokDoubleTriDiagonalMatrixVector.c */,
 				4C2AAA2D163265DD00138620 /* BasicMath_BlokTriDiagonalMatrixVector.c */,
-				4C2AAA2E163265DD00138620 /* BasicMath_Combinatorial.c */,
-				4C2AAA2F163265DD00138620 /* BasicMath_Constants.c */,
-				4C2AAA30163265DD00138620 /* BasicMath_DoubleTriDiagonalMatrixVector.c */,
-				4C2AAA31163265DD00138620 /* BasicMath_GreenFunctionArithmetic.c */,
-				4C2AAA32163265DD00138620 /* BasicMath_GreenFunctionMatrixArithmetic.c */,
 				4C2AAA33163265DD00138620 /* BasicMath_ListOfPoles.c */,
-				4C2AAA34163265DD00138620 /* BasicMath_MatrixTypeConversion.c */,
 				4C2AAA35163265DD00138620 /* BasicMath_MatrixVector.c */,
 				4C2AAA36163265DD00138620 /* BasicMath_SparseMatrixVector.c */,
-				4C2AAA37163265DD00138620 /* BasicMath_StandardFunctions.c */,
-				4C2AAA38163265DD00138620 /* BasicMath_TriDiagonalMatrixVector.c */,
 				4C2AAA39163265DD00138620 /* BasicMath_VectorLinearAlgabra.c */,
+				4C2AAA38163265DD00138620 /* BasicMath_TriDiagonalMatrixVector.c */,
+				4C2AAA30163265DD00138620 /* BasicMath_DoubleTriDiagonalMatrixVector.c */,
+				4CDD1CAB1799666C00614F34 /* BasicMath_BADoubleTriDiagonalMatrixVector.c */,
+				4C2AAA34163265DD00138620 /* BasicMath_MatrixTypeConversion.c */,
+				4C2AAA2E163265DD00138620 /* BasicMath_Combinatorial.c */,
+				4C2AAA2F163265DD00138620 /* BasicMath_Constants.c */,
+				4C2AAA31163265DD00138620 /* BasicMath_GreenFunctionArithmetic.c */,
+				4C2AAA32163265DD00138620 /* BasicMath_GreenFunctionMatrixArithmetic.c */,
+				4C2AAA37163265DD00138620 /* BasicMath_StandardFunctions.c */,
 			);
 			path = BasicMath;
 			sourceTree = "<group>";
@@ -377,6 +405,7 @@
 				4C2AAA6C163265DD00138620 /* TestSpectral.c */,
 				4C2AAA6D163265DD00138620 /* TestVectorMatrixParallel.c */,
 				4CA262D8170787D900B8E76E /* TestGreenFunctions.c */,
+				4CDD1CAC179994DC00614F34 /* TestGFBA.c */,
 			);
 			path = Test;
 			sourceTree = "<group>";
@@ -398,6 +427,15 @@
 				4C2AAA74163265DD00138620 /* TemperatureAvverage.c */,
 			);
 			path = Tools;
+			sourceTree = "<group>";
+		};
+		4CDD1C7D1796D06400614F34 /* Yi */ = {
+			isa = PBXGroup;
+			children = (
+				4CDD1C7E1796D06400614F34 /* DMFT_eg_Dyson.c */,
+				4CDD1C7F1796D06400614F34 /* DMFTFunctions.c */,
+			);
+			path = Yi;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -454,6 +492,23 @@
 			productReference = 4C5CA61716D18BBF00BE1C25 /* DMFT */;
 			productType = "com.apple.product-type.tool";
 		};
+		4CDD1C9E1796D14100614F34 /* YiDMFT */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4CDD1CA51796D14100614F34 /* Build configuration list for PBXNativeTarget "YiDMFT" */;
+			buildPhases = (
+				4CDD1C9B1796D14100614F34 /* Sources */,
+				4CDD1C9C1796D14100614F34 /* Frameworks */,
+				4CDD1C9D1796D14100614F34 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = YiDMFT;
+			productName = YiDMFT;
+			productReference = 4CDD1C9F1796D14100614F34 /* YiDMFT */;
+			productType = "com.apple.product-type.tool";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -478,6 +533,7 @@
 				4C2AAA181632655300138620 /* Model */,
 				4C2AAABB163265F500138620 /* Test */,
 				4C5CA61616D18BBF00BE1C25 /* DMFT */,
+				4CDD1C9E1796D14100614F34 /* YiDMFT */,
 			);
 		};
 /* End PBXProject section */
@@ -517,7 +573,6 @@
 				4C2AAA90163265DD00138620 /* RealComplexWaveFunctionArithmetic.c in Sources */,
 				4C2AAA91163265DD00138620 /* RealWaveFunctionArithmetic.c in Sources */,
 				4C2AAA92163265DD00138620 /* Spectral.c in Sources */,
-				4C2AAA93163265DD00138620 /* StructDef.c in Sources */,
 				4C2AAA94163265DD00138620 /* TimeStamp.c in Sources */,
 				4C2AAA95163265DD00138620 /* WaveFunctionArithmetic.c in Sources */,
 				4C2AAA97163265DD00138620 /* SingleSiteFunctions.c in Sources */,
@@ -567,6 +622,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				4C5CA62016D18C3400BE1C25 /* DMFT.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4CDD1C9B1796D14100614F34 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4CDD1CA81796D15600614F34 /* DMFT_eg_Dyson.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -678,6 +741,28 @@
 			};
 			name = Release;
 		};
+		4CDD1CA61796D14100614F34 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				GCC_WARN_TYPECHECK_CALLS_TO_PRINTF = NO;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		4CDD1CA71796D14100614F34 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				GCC_WARN_TYPECHECK_CALLS_TO_PRINTF = NO;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -713,6 +798,15 @@
 			buildConfigurations = (
 				4C5CA61D16D18BBF00BE1C25 /* Debug */,
 				4C5CA61E16D18BBF00BE1C25 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4CDD1CA51796D14100614F34 /* Build configuration list for PBXNativeTarget "YiDMFT" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4CDD1CA61796D14100614F34 /* Debug */,
+				4CDD1CA71796D14100614F34 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

@@ -64,8 +64,12 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "Lanczos"
+            argument = "GFBA"
             isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "Lanczos"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "Comb"

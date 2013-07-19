@@ -362,6 +362,19 @@ uint32_t AndersonMatrixToListOfPoles(AndersonMatrixType const M, ListOfPoles *co
   return 0;
 }
 
+
+/*
+ *
+ */
+uint32_t AndersonMatrixToBADoubleTriDiagonalMatrix(AndersonMatrixType const M, BADoubleTriDiagonalMatrixType * const A, uint32_t NTriDiagVal, uint32_t NTriDiagCon, double Ef, double Epsilon)
+{
+  ListOfPoles LP;
+  if(AndersonMatrixToListOfPoles(M, &LP)){printf("AndersonMatrixToListOfPoles failed in AndersonMatrixToBADoubleTriDiagonalMatrix\n");return 1;};
+  if(ListOfPolesToBADoubleTridiagonalMatrix(LP, A, NTriDiagVal, NTriDiagCon, Ef, Epsilon)){printf("ListOfPolesToBADoubleTridiagonalMatrix failed in AndersonMatrixToBADoubleTriDiagonalMatrix\n");return 1;};
+  FreeListOfPoles(&LP);
+  return 0;
+}
+
 /****************************************************************************/
 /********************         Matrix conversions         ********************/
 /********************         BlokAndersonMatrix To ...  ********************/
@@ -525,7 +538,17 @@ uint32_t TriDiagonalMatrixToMatrix(TriDiagonalMatrixType const M, MatrixType *co
   return 0;
 }
 
-
+/*
+ *
+ */
+uint32_t TriDiagonalMatrixToBADoubleTriDiagonalMatrix(TriDiagonalMatrixType const M, BADoubleTriDiagonalMatrixType * const A, uint32_t NTriDiagVal, uint32_t NTriDiagCon, double Ef, double Epsilon)
+{
+  ListOfPoles LP;
+  if(TriDiagonalMatrixToListOfPoles(M, &LP)){printf("TriDiagonalMatrixToListOfPoles failed in TriDiagonalMatrixToBADoubleTriDiagonalMatrix\n");return 1;};
+  if(ListOfPolesToBADoubleTridiagonalMatrix(LP, A, NTriDiagVal, NTriDiagCon, Ef, Epsilon)){printf("ListOfPolesToBADoubleTridiagonalMatrix failed in TriDiagonalMatrixToBADoubleTriDiagonalMatrix\n");return 1;};
+  FreeListOfPoles(&LP);
+  return 0;
+}
 
 /******************************************************************************/
 /********************         Matrix conversions           ********************/
@@ -1318,12 +1341,6 @@ uint32_t GeneralizedEigensystemSingular(MatrixType const M, MatrixType const S, 
   MatrixCopy(&TST,S);
   MatrixScalarMultiply(&TST, -1, 0);
   Eigensystem(TST, &EigenSysS, Sval);
-  printf("Norm of basis: ");
-  for(i=0;i<Min(8,S.Ni);i++)
-  {
-    printf("%E ",-Sval[i]);
-  }
-  printf("\n");
   MatrixScalarMultiply(&TST, 0, 0);
   MatrixTransform(&TMT, M, EigenSysS);
   NewDim=1;
@@ -1351,7 +1368,13 @@ uint32_t GeneralizedEigensystemSingular(MatrixType const M, MatrixType const S, 
       TST.VRe[i][i]=1;
     }
   }
-  printf("Singularity border = %E : Number of states kept = %i\n",bound,NewDim);
+  printf("Singularity border =%10.3E : Number of states kept = %i\n",bound,NewDim);
+  printf("Norm of basis ( 0...7): ");
+  for(i=0;i<Min(8,S.Ni);i++)
+  {
+    printf("%10.3E ",-Sval[i]);
+  }
+  printf("..........\n");
   if(GeneralizedEigenvalues(TMT,TST,val)){printf("GeneralizedEigenvalues failed in GeneralizedEigensystemSingular\n"); retval=1;}
   for(i=NewDim;i<M.Ni;i++)
   {
@@ -2278,3 +2301,25 @@ uint32_t ListOfPolesToTridiagonalMatrix(const ListOfPoles A, TriDiagonalMatrixTy
   return 0;
 }
 
+uint32_t ListOfPolesToBADoubleTridiagonalMatrix(const ListOfPoles A, BADoubleTriDiagonalMatrixType *const M, uint32_t NTriDiagval, uint32_t NTriDiagcon, double Ef, double Epsilon)
+{
+  ListOfPoles LPcon,LPval;
+  ListOfPolesCopyCon(&LPcon, A, Ef, Epsilon);
+  ListOfPolesCopyVal(&LPval, A, Ef, Epsilon);
+  ReduceListOfPolesNumber(&LPcon, NTriDiagcon);
+  ReduceListOfPolesNumber(&LPval, NTriDiagval);
+  ListOfPolesToTridiagonalMatrix(LPcon, &(M->con), NTriDiagcon);
+  ListOfPolesToTridiagonalMatrix(LPval, &(M->val), NTriDiagval);
+  M->a0=A.a0;
+  M->Ef=Ef;
+  M->Epsilon=Epsilon;
+  SetBADoubleTriDiagonalMatrixConVal(M);
+  FreeListOfPoles(&LPval);
+  FreeListOfPoles(&LPcon);
+  return 0;
+}
+
+/****************************************************************************/
+/********************  Matrix conversions                ********************/
+/********************  BADoubleTridiagonalMatrix To ...  ********************/
+/****************************************************************************/

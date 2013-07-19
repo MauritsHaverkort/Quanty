@@ -501,3 +501,76 @@ uint32_t GausianBroadenListOfPoles(ListOfPoles *const M, double const G, uint32_
   M->N*=(2*Nmul+1);
   return 0;
 }
+
+uint32_t ListOfPolesCopy(ListOfPoles *M, ListOfPoles B)
+{
+  uint32_t i;
+  M->N=B.N;
+  if(InitListOfPoles(M)){printf("InitListOfPoles failed in ListOfPolesCopy\n");return 1;}
+  M->a0=B.a0;
+  for(i=0;i<B.N;i++)
+  {
+    M->a[i]=B.a[i];
+    M->b[i]=B.b[i];
+  }
+  return 0;
+}
+
+
+/* copies all poles with energy smaller than Ef-Epsilon
+ * Removes all poles with energy larger than Ef+Epsilon
+ * Keeps the poles in the interval Ef-Epsilon to Ef+Epsilon, but scales the weight with ( (Ef+Epsilon) - Epole ) / (2 Epsilon)) 
+ */
+uint32_t ListOfPolesCopyVal(ListOfPoles *M, ListOfPoles B, double Ef, double Epsilon)
+{
+  uint32_t i,npoles;
+  if(ListOfPolesCopy(M,B)){printf("ListOfPolesCopy failed in ListOfPolesCopyVal\n");return 1;}
+  npoles=B.N;
+  for(i=0;i<B.N;i++)
+  {
+    if(M->a[i]>= Ef+Epsilon)
+    {
+      M->b[i]=0;
+      npoles--;
+    }
+    else if(M->a[i]>Ef-Epsilon)
+    {
+      M->b[i]*=( (Ef+Epsilon) - M->a[i] ) / (2 * Epsilon);
+    }
+  }
+  ReduceListOfPolesNumber(M, npoles);
+  return 0;
+}
+
+
+/* copies all poles with energy larger than Ef+Epsilon
+ * Removes all poles with energy smaller than Ef-Epsilon
+ * Keeps the poles in the interval Ef-Epsilon to Ef+Epsilon, but scales the weight with ( Epole - (Ef-Epsilon) ) / (2 Epsilon))
+ */
+uint32_t ListOfPolesCopyCon(ListOfPoles *M, ListOfPoles B, double Ef, double Epsilon)
+{
+  uint32_t i,npoles;
+  if(ListOfPolesCopy(M,B)){printf("ListOfPolesCopy failed in ListOfPolesCopyVal\n");return 1;}
+  npoles=B.N;
+  for(i=0;i<B.N;i++)
+  {
+    if(M->a[i]<= Ef-Epsilon)
+    {
+      M->b[i]=0;
+      npoles--;
+    }
+    else if(M->a[i]<Ef+Epsilon)
+    {
+      M->b[i]*=( M->a[i] - (Ef-Epsilon) ) / (2 * Epsilon);
+    }
+  }
+  ReduceListOfPolesNumber(M, npoles);
+  return 0;
+}
+
+
+
+
+
+
+

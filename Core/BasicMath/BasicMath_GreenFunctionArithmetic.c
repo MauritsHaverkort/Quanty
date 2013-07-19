@@ -1023,16 +1023,16 @@ uint32_t TridiagonalizeImpurityCoupledToBathDysonSecondOrderA(TriDiagonalMatrixT
   
   
   printf("Start of TridiagonalizeImpurityCoupledToBathDysonSecondOrderA\n");
-  for(i=0;i<N;i++)
-  {
-    PrintMatrix(V1[i]);
-  }
-  for(i=0;i<(N*N-N);i++)
-  {
-    PrintMatrix(V2[i]);
-  }
-  PrintMatrix(H1);
-  PrintMatrix(H2);
+//  for(i=0;i<N;i++)
+//  {
+//    PrintMatrix(V1[i]);
+//  }
+//  for(i=0;i<(N*N-N);i++)
+//  {
+//    PrintMatrix(V2[i]);
+//  }
+//  PrintMatrix(H1);
+//  PrintMatrix(H2);
   
   Htot.Ni=O.N;
   /* Determine dimension of Htot */
@@ -1188,8 +1188,8 @@ uint32_t TridiagonalizeImpurityCoupledToBathDysonSecondOrderA(TriDiagonalMatrixT
     }
   }
   
-  PrintSparseMatrix(Htot);
-  FilePrintSparseMatrixMathematica(Htot, "Htot", "w");
+//  PrintSparseMatrix(Htot);
+//  FilePrintSparseMatrixMathematica(Htot, "Htot", "w");
   
   /* tridiagonalize Htot */
   SparseMatrixToTriDiagonalMatrix(Htot, &T, gnew, gnew->N);

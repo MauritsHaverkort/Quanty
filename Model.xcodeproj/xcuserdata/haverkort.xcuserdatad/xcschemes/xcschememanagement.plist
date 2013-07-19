@@ -19,6 +19,11 @@
 			<key>orderHint</key>
 			<integer>1</integer>
 		</dict>
+		<key>YiDMFT.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>3</integer>
+		</dict>
 	</dict>
 	<key>SuppressBuildableAutocreation</key>
 	<dict>
@@ -33,6 +38,11 @@
 			<true/>
 		</dict>
 		<key>4C5CA61616D18BBF00BE1C25</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>4CDD1C9E1796D14100614F34</key>
 		<dict>
 			<key>primary</key>
 			<true/>
