@@ -54,7 +54,7 @@ int main(int argc, const char * argv[])
   PrintDMFTSettings(HSet);
   WaveFunctionType Psi,OPsi,PsiTemp;
   TriDiagonalMatrixType G0,GBath,GclPup,GclPdn,GclMup,GclMdn,Gcl,GBathNew,GBathOld,gPerturbation[4],Sigma;
-  SecondDoubleTriDiagonalMatrixType GAnd,GAndTrunk;
+  BADoubleTriDiagonalMatrixType GAnd,GAndTrunk;
   AndersonMatrixType GBathAnd, GclAnd,G0And,GBathNewAnd;
   ListOfPoles SigmaPoles,GclList,GListTemp;
   OperatorType HAnd, OPESdn,OPESup,OIPESdn,OIPESup,VPerturbation[4];
@@ -120,64 +120,67 @@ int main(int argc, const char * argv[])
     printf("Start of loop %i from %i to %i\n",iOuter+1,HSet.iStart,HSet.iStart+HSet.Ni);
     printf("***********************************************************************\n\n\n");
     /* Create splitted anderson matrix */
-    TriDiagonalMatrixToSecondDoubleTriDiagonalMatrix(GBath, &T, &GAnd, Ef, epsilonAnd);
+    TriDiagonalMatrixToBADoubleTriDiagonalMatrix(GBath, &GAnd, 2+GBath.N/2, 2+GBath.N/2, Ef, epsilonAnd);
     /* Create GAnd and GAndTrunk as a copy pointing to the same memory */
     GAndTrunk.Ef=GAnd.Ef;
     GAndTrunk.Epsilon=GAnd.Epsilon;
     GAndTrunk.a0=GAnd.a0;
     GAndTrunk.b0=GAnd.b0;
-    GAndTrunk.Dt.Ef=GAnd.Dt.Ef;
-    GAndTrunk.Dt.Epsilon=GAnd.Dt.Epsilon;
-    GAndTrunk.Dt.a0=GAnd.Dt.a0;
-    GAndTrunk.Dt.b0=GAnd.Dt.b0;
-    GAndTrunk.Dt.val.N=GAnd.Dt.val.N;
-    GAndTrunk.Dt.val.a=GAnd.Dt.val.a;
-    GAndTrunk.Dt.val.b=GAnd.Dt.val.b;
-    GAndTrunk.Dt.con.N=GAnd.Dt.con.N;
-    GAndTrunk.Dt.con.a=GAnd.Dt.con.a;
-    GAndTrunk.Dt.con.b=GAnd.Dt.con.b;
+    GAndTrunk.acvB=GAnd.acvB;
+    GAndTrunk.acvA=GAnd.acvA;
+    GAndTrunk.acvBA=GAnd.acvBA;
+    GAndTrunk.bvB0=GAnd.bvB0;
+    GAndTrunk.bcB0=GAnd.bcB0;
+    GAndTrunk.bvA0=GAnd.bvA0;
+    GAndTrunk.bcA0=GAnd.bcA0;
+    GAndTrunk.val.N=GAnd.val.N;
+    GAndTrunk.val.a=GAnd.val.a;
+    GAndTrunk.val.b=GAnd.val.b;
+    GAndTrunk.con.N=GAnd.con.N;
+    GAndTrunk.con.a=GAnd.con.a;
+    GAndTrunk.con.b=GAnd.con.b;
     if(HSet.Dyson)
     {
       /* Create VPerturbation */
       for(i=0;i<4;i++)
       {
         InitOperator(&(VPerturbation[i]));
-        VPerturbation[i].NFermion=4+2*(Min(GAnd.Dt.val.N,HSet.NBath)+Min(GAnd.Dt.con.N,HSet.NBath));
+        VPerturbation[i].NFermion=4+2*(Min(-1+GAnd.val.N,HSet.NBath)+Min(-1+GAnd.con.N,HSet.NBath));
         VPerturbation[i].NBoson=0;
         VPerturbation[i].NWord=Min(VPerturbation[i].NFermion,1+(VPerturbation[i].NFermion-1)/8);
         VPerturbation[i].QComplex=0;
         InitOperatorFixedLength(&(VPerturbation[i]),1,1);
       }
-      if(GAnd.Dt.val.N>HSet.NBath)
+      if(GAnd.val.N>(HSet.NBath+1))
       {
         oadd[0]=CrAnMask+3+HSet.NBath;
-        RealOperatorAddLader(&(VPerturbation[0]), oadd, 1, GAnd.Dt.val.b[HSet.NBath]);
-        oadd[0]=CrAnMask+3+Min(GAnd.Dt.con.N,HSet.NBath)+2*HSet.NBath;
-        RealOperatorAddLader(&(VPerturbation[1]), oadd, 1, GAnd.Dt.val.b[HSet.NBath]);
+        RealOperatorAddLader(&(VPerturbation[0]), oadd, 1, GAnd.val.b[HSet.NBath+1]);
+        oadd[0]=CrAnMask+3+Min(-1+GAnd.con.N,HSet.NBath)+2*HSet.NBath;
+        RealOperatorAddLader(&(VPerturbation[1]), oadd, 1, GAnd.val.b[HSet.NBath+1]);
       }
-      if(GAnd.Dt.con.N>HSet.NBath)
+      if(GAnd.con.N>HSet.NBath+1)
       {
-        oadd[0]=3+Min(GAnd.Dt.val.N,HSet.NBath)+HSet.NBath;
-        RealOperatorAddLader(&(VPerturbation[2]), oadd, 1, GAnd.Dt.con.b[HSet.NBath]);
-        oadd[0]=3+2*Min(GAnd.Dt.val.N,HSet.NBath)+2*HSet.NBath;
-        RealOperatorAddLader(&(VPerturbation[3]), oadd, 1, GAnd.Dt.con.b[HSet.NBath]);
+        oadd[0]=3+Min(-1+GAnd.val.N,HSet.NBath)+HSet.NBath;
+        RealOperatorAddLader(&(VPerturbation[2]), oadd, 1, GAnd.con.b[HSet.NBath+1]);
+        oadd[0]=3+2*Min(-1+GAnd.val.N,HSet.NBath)+2*HSet.NBath;
+        RealOperatorAddLader(&(VPerturbation[3]), oadd, 1, GAnd.con.b[HSet.NBath+1]);
       }
       /* Create gPerturbation */
-      if(GAnd.Dt.val.N>HSet.NBath)
+      if(GAnd.val.N>HSet.NBath+1)
       {
-        gPerturbation[0].N=GAnd.Dt.val.N-HSet.NBath;
-        gPerturbation[1].N=GAnd.Dt.val.N-HSet.NBath;
+        gPerturbation[0].N=GAnd.val.N-HSet.NBath-1;
+        gPerturbation[1].N=GAnd.val.N-HSet.NBath-1;
         InitTriDiagonalMatrix(&(gPerturbation[0]));
         InitTriDiagonalMatrix(&(gPerturbation[1]));
-        for(i=1;i<GAnd.Dt.val.N-HSet.NBath;i++)
+        for(i=1;i<GAnd.val.N-HSet.NBath-1;i++)
         {
-          gPerturbation[0].a[i]=-GAnd.Dt.val.a[i+HSet.NBath];
-          gPerturbation[0].b[i]=GAnd.Dt.val.b[i+HSet.NBath];
-          gPerturbation[1].a[i]=-GAnd.Dt.val.a[i+HSet.NBath];
-          gPerturbation[1].b[i]=GAnd.Dt.val.b[i+HSet.NBath];
+          gPerturbation[0].a[i]=-GAnd.val.a[i+HSet.NBath+1];
+          gPerturbation[0].b[i]=GAnd.val.b[i+HSet.NBath+1];
+          gPerturbation[1].a[i]=-GAnd.val.a[i+HSet.NBath+1];
+          gPerturbation[1].b[i]=GAnd.val.b[i+HSet.NBath+1];
         }
-        gPerturbation[0].a[GAnd.Dt.val.N-HSet.NBath]=-GAnd.Dt.val.a[GAnd.Dt.val.N];
-        gPerturbation[1].a[GAnd.Dt.val.N-HSet.NBath]=-GAnd.Dt.val.a[GAnd.Dt.val.N];
+        gPerturbation[0].a[GAnd.val.N-HSet.NBath-1]=-GAnd.val.a[GAnd.val.N];
+        gPerturbation[1].a[GAnd.val.N-HSet.NBath-1]=-GAnd.val.a[GAnd.val.N];
       }
       else
       {
@@ -188,21 +191,21 @@ int main(int argc, const char * argv[])
         gPerturbation[0].a[1]=0;
         gPerturbation[1].a[1]=0;
       }
-      if(GAnd.Dt.con.N>HSet.NBath)
+      if(GAnd.con.N>HSet.NBath+1)
       {
-        gPerturbation[2].N=GAnd.Dt.con.N-HSet.NBath;
-        gPerturbation[3].N=GAnd.Dt.con.N-HSet.NBath;
+        gPerturbation[2].N=GAnd.con.N-HSet.NBath-1;
+        gPerturbation[3].N=GAnd.con.N-HSet.NBath-1;
         InitTriDiagonalMatrix(&(gPerturbation[2]));
         InitTriDiagonalMatrix(&(gPerturbation[3]));
-        for(i=1;i<GAnd.Dt.con.N-HSet.NBath;i++)
+        for(i=1;i<GAnd.con.N-HSet.NBath-1;i++)
         {
-          gPerturbation[2].a[i]=GAnd.Dt.con.a[i+HSet.NBath];
-          gPerturbation[2].b[i]=GAnd.Dt.con.b[i+HSet.NBath];
-          gPerturbation[3].a[i]=GAnd.Dt.con.a[i+HSet.NBath];
-          gPerturbation[3].b[i]=GAnd.Dt.con.b[i+HSet.NBath];
+          gPerturbation[2].a[i]=GAnd.con.a[i+HSet.NBath+1];
+          gPerturbation[2].b[i]=GAnd.con.b[i+HSet.NBath+1];
+          gPerturbation[3].a[i]=GAnd.con.a[i+HSet.NBath+1];
+          gPerturbation[3].b[i]=GAnd.con.b[i+HSet.NBath+1];
         }
-        gPerturbation[2].a[GAnd.Dt.con.N-HSet.NBath]=GAnd.Dt.con.a[GAnd.Dt.con.N];
-        gPerturbation[3].a[GAnd.Dt.con.N-HSet.NBath]=GAnd.Dt.con.a[GAnd.Dt.con.N];
+        gPerturbation[2].a[GAnd.con.N-HSet.NBath-1]=GAnd.con.a[GAnd.con.N];
+        gPerturbation[3].a[GAnd.con.N-HSet.NBath-1]=GAnd.con.a[GAnd.con.N];
       }
       else
       {
@@ -215,34 +218,33 @@ int main(int argc, const char * argv[])
       }
     }
     /* Create HAnd */
-    FreeMatrix(&T);
-    if(GAnd.Dt.con.N<HSet.NBath)
+    if(GAnd.con.N<HSet.NBath+1)
     {
-      printf("Warning: GAnd.Dt.con.N(%i)<HSet.NBath(%i)\n",GAnd.Dt.con.N,HSet.NBath);
+      printf("Warning: GAnd.con.N(%i)<HSet.NBath+1(%i+1)\n",GAnd.con.N,HSet.NBath);
     }
     else
     {
-      GAndTrunk.Dt.con.N=HSet.NBath;
+      GAndTrunk.con.N=HSet.NBath+1;
     }
-    if(GAnd.Dt.val.N<HSet.NBath)
+    if(GAnd.val.N<HSet.NBath+1)
     {
-      printf("Warning: GAnd.Dt.val.N(%i)<HSet.NBath(%i)\n",GAnd.Dt.val.N,HSet.NBath);
+      printf("Warning: GAnd.val.N(%i)<HSet.NBath+1(%i+1)\n",GAnd.val.N,HSet.NBath);
     }
     else
     {
-      GAndTrunk.Dt.val.N=HSet.NBath;
+      GAndTrunk.val.N=HSet.NBath+1;
     }
-    mu=-HSet.U/2;
-    SecondDoubleTriDiagonalMatrixToAndersonImpurityOperator(&HAnd, GAndTrunk, GAndTrunk, HSet.U, mu);
+    mu=HSet.U/2;
+    BADoubleTriDiagonalMatrixToAndersonImpurityOperator(&HAnd, GAndTrunk, GAndTrunk, HSet.U, mu);
     /* test if psi has correct dimensions and correct if needed */
     sscanf(Psi.Name,"%s %i %i",Buffer,&PsiNBathC,&PsiNBathV);
-    if(PsiNBathC!=GAndTrunk.Dt.con.N)
+    if(PsiNBathC!=GAndTrunk.con.N-1)
     {
-      printf("\nBefore diagonalizing:\nThe wavefunction has %i conduction bath sites\nThe Anderson Hamiltonian %i\n",PsiNBathC,GAndTrunk.Dt.con.N);
-      if(PsiNBathC>GAndTrunk.Dt.con.N)
+      printf("\nBefore diagonalizing:\nThe wavefunction has %i conduction bath sites\nThe Anderson Hamiltonian %i\n",PsiNBathC,GAndTrunk.con.N-1);
+      if(PsiNBathC>GAndTrunk.con.N-1)
       {
-        printf("Removing %i unoccupied fermions from the wave-function\n",PsiNBathC-GAndTrunk.Dt.con.N);
-        for(i=0;i<PsiNBathC-GAndTrunk.Dt.con.N;i++)
+        printf("Removing %i unoccupied fermions from the wave-function\n",PsiNBathC-GAndTrunk.con.N+1);
+        for(i=0;i<PsiNBathC-GAndTrunk.con.N+1;i++)
         {
           WaveFunctionRemoveFermion(Psi, &PsiTemp, Psi.NFermion-1);
           WaveFunctionFree(&Psi);
@@ -252,8 +254,8 @@ int main(int argc, const char * argv[])
       }
       else
       {
-        printf("Adding %i unoccupied fermions to the wave-function\n",GAndTrunk.Dt.con.N-PsiNBathC);
-        for(i=0;i<GAndTrunk.Dt.con.N-PsiNBathC;i++)
+        printf("Adding %i unoccupied fermions to the wave-function\n",GAndTrunk.con.N-1-PsiNBathC);
+        for(i=0;i<GAndTrunk.con.N-1-PsiNBathC;i++)
         {
           WaveFunctionAddFermion(Psi, &PsiTemp, Psi.NFermion,0);
           WaveFunctionFree(&Psi);
@@ -262,15 +264,15 @@ int main(int argc, const char * argv[])
         }
       }
     }
-    if(PsiNBathV!=GAndTrunk.Dt.val.N)
+    if(PsiNBathV!=GAndTrunk.val.N-1)
     {
-      printf("\nBefore diagonalizing:\nThe wavefunction has %i valence bath sites\nThe Anderson Hamiltonian %i\n",PsiNBathV,GAndTrunk.Dt.val.N);
-      if(PsiNBathV>GAndTrunk.Dt.val.N)
+      printf("\nBefore diagonalizing:\nThe wavefunction has %i valence bath sites\nThe Anderson Hamiltonian %i\n",PsiNBathV,GAndTrunk.val.N-1);
+      if(PsiNBathV>GAndTrunk.val.N-1)
       {
-        printf("Removing %i occupied fermions from the wave-function\n",PsiNBathV-GAndTrunk.Dt.val.N);
-        for(i=0;i<PsiNBathV-GAndTrunk.Dt.val.N;i++)
+        printf("Removing %i occupied fermions from the wave-function\n",PsiNBathV-GAndTrunk.val.N+1);
+        for(i=0;i<PsiNBathV-GAndTrunk.val.N+1;i++)
         {
-          WaveFunctionRemoveFermion(Psi, &PsiTemp, Psi.NFermion-GAndTrunk.Dt.con.N-1);
+          WaveFunctionRemoveFermion(Psi, &PsiTemp, Psi.NFermion-GAndTrunk.con.N);
           WaveFunctionFree(&Psi);
           WaveFunctionRemoveFermion(PsiTemp, &Psi, 4+PsiNBathV-i-1);
           WaveFunctionFree(&PsiTemp);
@@ -278,10 +280,10 @@ int main(int argc, const char * argv[])
       }
       else
       {
-        printf("Adding %i occupied fermions to the wave-function\n",GAndTrunk.Dt.val.N-PsiNBathV);
-        for(i=0;i<GAndTrunk.Dt.val.N-PsiNBathV;i++)
+        printf("Adding %i occupied fermions to the wave-function\n",GAndTrunk.val.N-1-PsiNBathV);
+        for(i=0;i<GAndTrunk.val.N-1-PsiNBathV;i++)
         {
-          WaveFunctionAddFermion(Psi, &PsiTemp, Psi.NFermion-GAndTrunk.Dt.val.N,1);
+          WaveFunctionAddFermion(Psi, &PsiTemp, Psi.NFermion-GAndTrunk.val.N+1,1);
           WaveFunctionFree(&Psi);
           WaveFunctionAddFermion(PsiTemp, &Psi, 4+PsiNBathV+i,1);
           WaveFunctionFree(&PsiTemp);
@@ -290,7 +292,15 @@ int main(int argc, const char * argv[])
       printf("Corrected basis\n");
       PrintWaveFunctionReadableTruncated(Psi, 0.1);
     }
-    sprintf(Psi.Name,"DMFT %i %i",GAndTrunk.Dt.con.N,GAndTrunk.Dt.val.N);
+    sprintf(Psi.Name,"DMFT %i %i",GAndTrunk.con.N-1,GAndTrunk.val.N-1);
+    /* In debug mode print info */
+    // PrintBADoubleTriDiagonalMatrix(GAnd);
+    // PrintTriDiagonalMatrix(gPerturbation[0]);
+    // PrintTriDiagonalMatrix(gPerturbation[1]);
+    // PrintTriDiagonalMatrix(gPerturbation[2]);
+    // PrintTriDiagonalMatrix(gPerturbation[3]);
+    // PrintBADoubleTriDiagonalMatrix(GAndTrunk);
+    // PrintOperatorReadable(HAnd);
     /* create ground-state wave-function */
     BeginTiming("Lanczos GroundState",&Time);
     LanczosGroundState(HAnd,&Psi,&HSet.zeroLancWavefunction,HSet.zeroLancEnergy,HSet.U,&Psi,0);
@@ -497,7 +507,7 @@ int main(int argc, const char * argv[])
     TriDiagonalMatrixToSpectrum(0,GBath,&(Spectra[0]));              /*  3 */
     TriDiagonalMatrixToSpectrum(0,GBathOld,&(Spectra[1]));           /*  5 */
     TriDiagonalMatrixToSpectrum(0,GBathNew,&(Spectra[2]));           /*  7 */
-    SecondDoubleTriDiagonalMatrixToSpectrum(0,GAnd,&(Spectra[3]));   /*  9 */
+    BADoubleTriDiagonalMatrixToSpectrum(0,GAnd,&(Spectra[3]));       /*  9 */
     TriDiagonalMatrixToSpectrum(0,G0,&(Spectra[4]));                 /* 11 */
     TriDiagonalMatrixToSpectrum(0,Sigma,&(Spectra[5]));              /* 13 */
     AndersonImpurityMatrixToSpectrum(0,GBathNewAnd,&(Spectra[6]));   /* 15 */
@@ -554,7 +564,7 @@ int main(int argc, const char * argv[])
     FreeTriDiagonalMatrix(&Sigma);
     FreeTriDiagonalMatrix(&GBathNew);
     FreeTriDiagonalMatrix(&GBathOld);
-    FreeDoubleTriDiagonalMatrix(&(GAnd.Dt));
+    FreeBADoubleTriDiagonalMatrix(&GAnd);
     FreeAndersonMatrix(&GBathNewAnd);
     FreeAndersonMatrix(&GBathAnd);
     EndTiming("DMFTLoop",&Time);

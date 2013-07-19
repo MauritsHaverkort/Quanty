@@ -1202,6 +1202,16 @@ void SecondDoubleTriDiagonalMatrixToSpectrum(const double Energy, const SecondDo
   SpectrumFree(&GSec);
 }
 
+void BADoubleTriDiagonalMatrixToSpectrum(const double Energy, const BADoubleTriDiagonalMatrixType M, SpectraType * const G)
+{
+  SpectraType GSec;
+  TriDiagonalMatrixToSpectrum(Energy, M.con, G);
+  if(SpectrumAllocate(*G,&GSec)){printf("SpectrumAllocate failed in BADoubleTriDiagonalMatrixToSpectrum;");return;}
+  TriDiagonalMatrixToSpectrum(Energy, M.val, &GSec);
+  AddMultipliedSpectra(G, GSec, 1, 0);
+  SpectrumFree(&GSec);
+}
+
 void DoubleTriDiagonalMatrixToSpectrumOld(const double Energy, const TriDiagonalMatrixType V, const TriDiagonalMatrixType C, SpectraType *const G)
 {
   double hnu,valReC,valImC,valReV,valImV,denom;
