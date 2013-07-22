@@ -912,13 +912,13 @@ uint32_t StreamPrintBADoubleTriDiagonalMatrix(BADoubleTriDiagonalMatrixType M, F
   fprintf(stream,"%22.15E %22.15E\n",M.con.b[0],-M.val.b[0]);
   fprintf(stream,"Occupation: val.b[0]^2 %22.15E con.b[0]^2 %22.15E Sum %22.15E b0^2 %22.15E\n",Sqr(M.val.b[0]),Sqr(M.con.b[0]),Sqr(M.val.b[0])+Sqr(M.con.b[0]),Sqr(M.b0));
   fprintf(stream,"Transformed values\n");
-  fprintf(stream,"acvB  :%22.15E  (=val.b[0]^2 * val.a[1] + con.b[0]^2 * con.a[1] %22.15)\n",M.acvB,Sqr(M.val.b[0]) * M.val.a[1] + Sqr(M.con.b[0]) * M.con.a[1]);
-  fprintf(stream,"acvA  :%22.15E  (=val.b[0]^2 * con.a[1] + con.b[0]^2 * val.a[1] %22.15)\n",M.acvA,Sqr(M.val.b[0]) * M.con.a[1] + Sqr(M.con.b[0]) * M.val.a[1]);
-  fprintf(stream,"acvBA :%22.15E  (=val.b[0] * con.b[0] * (val.a[1]-con.a[1])     %22.15)\n",M.acvBA,M.val.b[0] * M.con.b[0] * (M.val.a[1]-M.con.a[1]));
-  fprintf(stream,"bvB0  :%22.15E  (=val.b[0] * val.b[1]                           %22.15)\n",M.bvB0,M.val.b[0]*M.val.b[1]);
-  fprintf(stream,"bcB0  :%22.15E  (=con.b[0] * con.b[1]                           %22.15)\n",M.bcB0,M.con.b[0]*M.con.b[1]);
-  fprintf(stream,"bvA0  :%22.15E  (=con.b[0] * val.b[1]                           %22.15)\n",M.bvA0,M.con.b[0]*M.val.b[1]);
-  fprintf(stream,"bcA0  :%22.15E  (=-val.b[0] * con.b[1]                          %22.15)\n",M.bcA0,-M.val.b[0]*M.con.b[1]);
+  fprintf(stream,"acvB  :%22.15E  (=val.b[0]^2 * val.a[1] + con.b[0]^2 * con.a[1] %22.15E)\n",M.acvB,Sqr(M.val.b[0]) * M.val.a[1] + Sqr(M.con.b[0]) * M.con.a[1]);
+  fprintf(stream,"acvA  :%22.15E  (=val.b[0]^2 * con.a[1] + con.b[0]^2 * val.a[1] %22.15E)\n",M.acvA,Sqr(M.val.b[0]) * M.con.a[1] + Sqr(M.con.b[0]) * M.val.a[1]);
+  fprintf(stream,"acvBA :%22.15E  (=val.b[0] * con.b[0] * (val.a[1]-con.a[1])     %22.15E)\n",M.acvBA,M.val.b[0] * M.con.b[0] * (M.val.a[1]-M.con.a[1]));
+  fprintf(stream,"bvB0  :%22.15E  (=val.b[0] * val.b[1]                           %22.15E)\n",M.bvB0,M.val.b[0]*M.val.b[1]);
+  fprintf(stream,"bcB0  :%22.15E  (=con.b[0] * con.b[1]                           %22.15E)\n",M.bcB0,M.con.b[0]*M.con.b[1]);
+  fprintf(stream,"bvA0  :%22.15E  (=con.b[0] * val.b[1]                           %22.15E)\n",M.bvA0,M.con.b[0]*M.val.b[1]);
+  fprintf(stream,"bcA0  :%22.15E  (=-val.b[0] * con.b[1]                          %22.15E)\n",M.bcA0,-M.val.b[0]*M.con.b[1]);
   return 0;
 }
 

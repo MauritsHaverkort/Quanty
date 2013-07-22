@@ -157,7 +157,7 @@ uint32_t StreamReadSpinLaderSettings(SpinLaderSettings * O, FILE *stream)
  */
 uint32_t StreamReadWaveFunctionPlain(WaveFunctionType * psi, FILE *stream)
 {
-  uint32_t i,j,psiN;
+  uint32_t i,j,psiN,temp;
   double valRe,valIm;
   uint8_t *det;
   char buffer[1024+MAXStrLength],WaveName[MAXStrLength+1];
@@ -181,7 +181,8 @@ uint32_t StreamReadWaveFunctionPlain(WaveFunctionType * psi, FILE *stream)
       for(j=0;j<psi->NWord;j++)
       {
         fgets(buffer,3,stream);
-        sscanf(buffer,"%X",&(det[j]));
+        sscanf(buffer,"%X",&temp);
+        det[j]=(uint8_t)temp;
       }
       fgets(buffer,1023,stream);
       ComplexWaveFunctionAddElement(psi, det, valRe,valIm);
@@ -196,7 +197,8 @@ uint32_t StreamReadWaveFunctionPlain(WaveFunctionType * psi, FILE *stream)
       for(j=0;j<psi->NWord;j++)
       {
         fgets(buffer,3,stream);
-        sscanf(buffer,"%X",&(det[j]));
+        sscanf(buffer,"%X",&temp);
+        det[j]=(uint8_t)temp;
       }
       fgets(buffer,1023,stream);
       RealWaveFunctionAddElement(psi, det, valRe);

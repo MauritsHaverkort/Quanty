@@ -598,7 +598,7 @@ int main(int argc, const char * argv[])
       SymmetrizeListOfPoles(&GclList);
     }
     printf("Cluster Green function created of size %i ",GclList.N);
-    ReduceListOfPolesNumber(&GclList, HSet.NGCluster);
+    ReduceListOfPolesNumberFermi(&GclList, HSet.NGCluster,Ef);
     printf("reduced to %i\n",GclList.N);
     ListOfPolesToTridiagonalMatrix(GclList, &Gcl, GclList.N);
     strcpy(Gcl.Name,"Gcluster");

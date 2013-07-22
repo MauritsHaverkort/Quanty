@@ -111,6 +111,110 @@ void ReduceListOfPolesWeigth(ListOfPoles *M, double bmin)
 /*  Create a new set of poles, which has lenght N, by removing the M->N-N poles with the smallest weight
  *  This algorithm combines the pole with the smallest weight with its nearest two neighbors
  *  and repeats this untill the number of nonzero poles is N
+ *
+ *  There is no spectral weight transfered through the Fermi energy.
+ */
+void ReduceListOfPolesNumberFermi(ListOfPoles *M, uint32_t N, double Ef)
+{
+  if(M->N<N) return;
+  uint32_t i,imin;
+  double biminLeft,biminRight,temp;
+  OrderListOfPoles(M);
+  while(M->N>N)
+  {
+    imin=0;
+    for(i=1;i<M->N;i++)
+    {
+      if(M->b[i]<M->b[imin])
+      {
+        imin=i;
+      }
+    }
+    if(M->b[imin]>DBL_MIN)
+    {
+      if(imin==0)
+      {
+        M->a[imin+1]=((M->b[imin]/M->b[imin+1])*M->a[imin]+M->a[imin+1])/((M->b[imin]/M->b[imin+1])+1);
+        M->b[imin+1]=M->b[imin]+M->b[imin+1];
+      }
+      else if(imin==M->N-1)
+      {
+        M->a[imin-1]=((M->b[imin]/M->b[imin-1])*M->a[imin]+M->a[imin-1])/((M->b[imin]/M->b[imin-1])+1);
+        M->b[imin-1]=M->b[imin]+M->b[imin-1];
+      }
+      else if((M->a[imin]>Ef)&&(M->a[imin-1]<Ef))
+      {
+        M->a[imin+1]=((M->b[imin]/M->b[imin+1])*M->a[imin]+M->a[imin+1])/((M->b[imin]/M->b[imin+1])+1);
+        M->b[imin+1]=M->b[imin]+M->b[imin+1];
+      }
+      else if((M->a[imin]<Ef)&&(M->a[imin+1]>Ef))
+      {
+        M->a[imin-1]=((M->b[imin]/M->b[imin-1])*M->a[imin]+M->a[imin-1])/((M->b[imin]/M->b[imin-1])+1);
+        M->b[imin-1]=M->b[imin]+M->b[imin-1];
+      }
+      else
+      {
+        if(fabs((M->a[imin+1]-M->a[imin-1]))<fabs(10*(DBL_MIN+DBL_EPSILON*M->a[imin])))
+        {
+          biminLeft=M->b[imin]*(0.5);
+          biminRight=M->b[imin]*(0.5);
+        }
+        else if(fabs((M->a[imin+1]-M->a[imin]))<fabs(10*(DBL_MIN+DBL_EPSILON*M->a[imin])))
+        {
+          biminLeft=M->b[imin];
+          biminRight=0;
+        }
+        else if(fabs((M->a[imin]-M->a[imin-1]))<fabs(10*(DBL_MIN+DBL_EPSILON*M->a[imin])))
+        {
+          biminLeft=0;
+          biminRight=M->b[imin];
+        }
+        else
+        {
+          biminLeft =M->b[imin]*((M->a[imin+1]-M->a[imin  ])/(M->a[imin+1]-M->a[imin-1]));
+          biminRight=M->b[imin]*((M->a[imin  ]-M->a[imin-1])/(M->a[imin+1]-M->a[imin-1]));
+        }
+        M->a[imin+1]=((biminRight/M->b[imin+1])*M->a[imin]+M->a[imin+1])/((biminRight/M->b[imin+1])+1);
+        M->b[imin+1]=biminRight+M->b[imin+1];
+        M->a[imin-1]=((biminLeft /M->b[imin-1])*M->a[imin]+M->a[imin-1])/((biminLeft /M->b[imin-1])+1);
+        M->b[imin-1]=biminLeft + M->b[imin-1];
+      }
+    }
+    for(i=imin;i<M->N-1;i++)
+    {
+      M->a[i]=M->a[i+1];
+      M->b[i]=M->b[i+1];
+    }
+    M->N--;
+    i=imin;
+    while((i>1)&&(M->a[i-1]<M->a[i-2]))
+    {
+      temp=M->a[i-1];
+      M->a[i-1]=M->a[i-2];
+      M->a[i-2]=temp;
+      temp=M->b[i-1];
+      M->b[i-1]=M->b[i-2];
+      M->b[i-2]=temp;
+      i--;
+    }
+    i=imin;
+    while((i<M->N-1)&&(M->a[i]>M->a[i+1]))
+    {
+      temp=M->a[i];
+      M->a[i]=M->a[i+1];
+      M->a[i+1]=temp;
+      temp=M->b[i];
+      M->b[i]=M->b[i+1];
+      M->b[i+1]=temp;
+      i++;
+    }
+  }
+}
+
+
+/*  Create a new set of poles, which has lenght N, by removing the M->N-N poles with the smallest weight
+ *  This algorithm combines the pole with the smallest weight with its nearest two neighbors
+ *  and repeats this untill the number of nonzero poles is N
  */
 void ReduceListOfPolesNumber(ListOfPoles * M, uint32_t N)
 {
