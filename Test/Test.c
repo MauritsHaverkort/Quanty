@@ -58,6 +58,7 @@
 #include "../Test/LanczosDyson.c"
 #include "../Test/TestGreenFunctions.c"
 #include "../Test/TestGFBA.c"
+#include "../Test/TestStandardOperators.c"
 
 int main (int argc, const char * argv[]) 
 {
@@ -112,6 +113,8 @@ int main (int argc, const char * argv[])
     if (!strncmp("Green",argv[argc],strlen(argv[argc]))) TestGreenFunctionArithmetic();
     
     if (!strncmp("GFBA",argv[argc],strlen(argv[argc]))) TestGFBA();
+    
+    if(!strncmp("StdOppS",argv[argc],strlen(argv[argc]))) TestS();
   }
   return 0;
 }

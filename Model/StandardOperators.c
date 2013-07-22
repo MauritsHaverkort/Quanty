@@ -58,8 +58,8 @@ uint32_t CreateSpinOperators(uint32_t NFermion, uint32_t NSpin, uint16_t *SpinUp
     oadd[1]=CrAnMask+SpinDn[i]; oadd[0]=SpinDn[i]; RealOperatorAddLaderNormalOrder(Sz,oadd,2,-0.5,&QDetNotOrderedFcFaBcBa);
     oadd[1]=CrAnMask+SpinDn[i]; oadd[0]=SpinUp[i]; RealOperatorAddLaderNormalOrder(Sx,oadd,2, 0.5,&QDetNotOrderedFcFaBcBa);
     oadd[1]=CrAnMask+SpinUp[i]; oadd[0]=SpinDn[i]; RealOperatorAddLaderNormalOrder(Sx,oadd,2, 0.5,&QDetNotOrderedFcFaBcBa);
-    oadd[1]=CrAnMask+SpinDn[i]; oadd[0]=SpinUp[i]; ComplexOperatorAddLaderNormalOrder(Sy,oadd,2, 0.0, 0.5,&QDetNotOrderedFcFaBcBa);
-    oadd[1]=CrAnMask+SpinUp[i]; oadd[0]=SpinDn[i]; ComplexOperatorAddLaderNormalOrder(Sy,oadd,2, 0.0,-0.5,&QDetNotOrderedFcFaBcBa);
+    oadd[1]=CrAnMask+SpinDn[i]; oadd[0]=SpinUp[i]; ComplexOperatorAddLaderNormalOrder(Sy,oadd,2, 0.0,-0.5,&QDetNotOrderedFcFaBcBa);
+    oadd[1]=CrAnMask+SpinUp[i]; oadd[0]=SpinDn[i]; ComplexOperatorAddLaderNormalOrder(Sy,oadd,2, 0.0, 0.5,&QDetNotOrderedFcFaBcBa);
   }
   OperatorMultiplyNormalOrder(S2, *Sy, *Sy,&QDetNotOrderedFcFaBcBa);
   OperatorMultiplyNormalOrder(S2, *Sx, *Sx,&QDetNotOrderedFcFaBcBa);

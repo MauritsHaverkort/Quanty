@@ -208,6 +208,7 @@
 		4CDD1C9F1796D14100614F34 /* YiDMFT */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = YiDMFT; sourceTree = BUILT_PRODUCTS_DIR; };
 		4CDD1CAB1799666C00614F34 /* BasicMath_BADoubleTriDiagonalMatrixVector.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = BasicMath_BADoubleTriDiagonalMatrixVector.c; sourceTree = "<group>"; };
 		4CDD1CAC179994DC00614F34 /* TestGFBA.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = TestGFBA.c; sourceTree = "<group>"; };
+		4CDD1CAD179D2F0900614F34 /* TestStandardOperators.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = TestStandardOperators.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -406,6 +407,7 @@
 				4C2AAA6D163265DD00138620 /* TestVectorMatrixParallel.c */,
 				4CA262D8170787D900B8E76E /* TestGreenFunctions.c */,
 				4CDD1CAC179994DC00614F34 /* TestGFBA.c */,
+				4CDD1CAD179D2F0900614F34 /* TestStandardOperators.c */,
 			);
 			path = Test;
 			sourceTree = "<group>";

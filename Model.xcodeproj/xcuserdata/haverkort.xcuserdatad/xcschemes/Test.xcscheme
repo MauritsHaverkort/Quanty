@@ -65,6 +65,10 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "GFBA"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "StdOppS"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
