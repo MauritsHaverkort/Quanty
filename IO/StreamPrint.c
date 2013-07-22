@@ -775,6 +775,12 @@ uint32_t StreamPrintDMFTSettings(DMFTSettings O, FILE *stream)
   fprintf(stream,"iStart                   : %i\n",O.iStart);
   fprintf(stream,"Ni                       : %i\n",O.Ni);
   fprintf(stream,"Dyson perturbation       : %i\n",O.Dyson);
+  fprintf(stream,"Symmetrizaton options    : %i\n",O.SymOpt);
+  if((O.SymOpt)&1 )fprintf(stream,"                         ( 1) HAnd_grd += (U+1)S^2;\n");
+  if((O.SymOpt)&2 )fprintf(stream,"                         ( 2) G(w) +=-G(-w)^*; G(w)/=2;\n");
+  if((O.SymOpt)&4 )fprintf(stream,"                         ( 4) psi_cluster lives on 2 sites per orbital\n");
+  if((O.SymOpt)&8 )fprintf(stream,"                         ( 8) mu = U/2\n");
+  if((O.SymOpt)&16)fprintf(stream,"                         (16) Hybridization sumrules enforced on G_bath and G_cluster\n");
   fprintf(stream,"NGCluster                : %i\n",O.NGCluster);
   fprintf(stream,"NGBath                   : %i\n",O.NGBath);
   fprintf(stream,"Mix                      : %24.17E\n",O.Mix);

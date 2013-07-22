@@ -20,15 +20,20 @@ uint32_t LanczosGroundStateRR(const OperatorType H, WaveFunctionType *const psi,
   double val[NKrylovMax];
   M.N=NKrylovMax;
   InitTriDiagonalMatrix(&M);
-  // Calculate the initial shift as the energy of the starting function plus the standard deviation (sqrt of the variance = its fluctuation) of the energy for the starting function
-  // set the starting energy to the energy of the starting function plus its standard deviation. (if the variance is zero one started from an eigen-state)
-  //  so test this energy agains the energy without the standard deviation. If that is small you don't have to do anything.
+  // Shift H down to twice the energy of the starting wave-function
+  // for the case that this is zero, add an aditional shift of 1
+  // Make sure at least 2 loops are done
   PsiOperatorPsiRR(H, *psi, &energy1);
-  PsiOperatorSqrPsiRR(H, *psi, &shift);
-  shift-=Sqr(energy1);
-  shift=sqrt(shift);
-  energy=energy1+shift;
-  shift-=energy1+4*(zero*(1.0+fabs(energy1)));
+  if(energy1<0)
+  {
+    shift=-Abs(energy)-1;
+  }
+  else
+  {
+    shift=-2*energy-1;
+  }
+  energy1=0;
+  energy=1;
   // loop until the relative energy gain is smaller than zero.
   while((energy-energy1)>(zero*(1.0+fabs(energy))))
   {

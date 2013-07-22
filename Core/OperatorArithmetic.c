@@ -589,7 +589,9 @@ uint32_t ComplexOperatorAddLader(OperatorType *const O, const uint16_t *const oa
       {
         O->l[length].V=malloc(O->l[length].NAloc*sizeof(Complex16));
         O->l[length].QComplex=1;
+        O->l[length].N=1;
         SetQComplexOperator(O);
+        O->l[length].N=0;
       }
       else
       {
@@ -3954,7 +3956,7 @@ uint32_t OperatorMultiply(OperatorType *const AB, OperatorType const A, Operator
   {
     for(ilB=0;ilB<=B.MaxLength;ilB++)
     {
-      if((AB->l[ilA+ilB].QComplex)&&(A.l[ilA].QComplex)&&(B.l[ilB].QComplex))
+      if((AB->l[ilA+ilB].QComplex)||(A.l[ilA].QComplex)||(B.l[ilB].QComplex))
       {/* at least one complex */
         if(!(AB->l[ilA+ilB].QComplex)) if(MakeRealOperatorFixedLengthComplex(AB,ilA+ilB)) {printf("MakeRealOperatorFixedLengthComplex at length=%i failed in OperatorMultiply\n",ilA+ilB);fflush(stdout);return 1;}
         if(A.l[ilA].QComplex)
@@ -4075,7 +4077,7 @@ uint32_t OperatorMultiplyNormalOrder(OperatorType *const AB, OperatorType const 
   {
     for(ilB=0;ilB<=B.MaxLength;ilB++)
     {
-      if((AB->l[ilA+ilB].QComplex)&&(A.l[ilA].QComplex)&&(B.l[ilB].QComplex))
+      if((AB->l[ilA+ilB].QComplex)||(A.l[ilA].QComplex)||(B.l[ilB].QComplex))
       {/* at least one complex */
         if(!(AB->l[ilA+ilB].QComplex)) if(MakeRealOperatorFixedLengthComplex(AB,ilA+ilB)) {printf("MakeRealOperatorFixedLengthComplex failed in OperatorMultiplyNormalOrder\n");fflush(stdout);return 1;}
         if(A.l[ilA].QComplex)

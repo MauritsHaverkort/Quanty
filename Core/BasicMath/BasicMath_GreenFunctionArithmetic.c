@@ -167,6 +167,53 @@ uint32_t SumGreensfunctionsTriDiagonalRepresentation(TriDiagonalMatrixType const
   return 0;
 }
 
+uint32_t SymmetrizeAndersonMatrix(AndersonMatrixType *const M)
+{
+  uint32_t i;
+  double *tmp;
+  tmp=realloc(M->a, (2*M->N)*sizeof(double));
+  if(tmp==NULL){printf("realloc failed in SymmetrizeAndersonMatrix\n");return 1;}
+  M->a=tmp;
+  tmp=realloc(M->b, (Max(0,2*M->N-1))*sizeof(double));
+  if(tmp==NULL){printf("realloc failed in SymmetrizeAndersonMatrix\n");return 1;}
+  M->b=tmp;
+  for(i=1;i<M->N;i++)
+  {
+    M->b[i]*=Sqrtp5;
+    M->b[i+M->N-1]=M->b[i];
+    M->a[i+M->N]=-M->a[i+1];
+  }
+  M->N*=2;
+  if(M->N!=0)M->N--;
+  return 0;
+}
+
+uint32_t SymmetrizeBADoubleTriDiagonalMatrix(BADoubleTriDiagonalMatrixType *const M)
+{
+  uint32_t i;
+  TriDiagonalMatrixType val,con;
+  TriDiagonalMatrixCopy(&val, M->val);
+  TriDiagonalMatrixCopy(&con, M->con);
+  FreeTriDiagonalMatrix(&(M->con));
+  FreeTriDiagonalMatrix(&(M->val));
+  val.b[0]*=Sqrtp5;
+  con.b[0]*=Sqrtp5;
+  for(i=0;i<=con.N;i++)
+  {
+    con.a[i]*=-1;
+  }
+  SumGreensfunctionsTriDiagonalRepresentation(val, con, &(M->val));
+  TriDiagonalMatrixCopy(&(M->con), M->val);
+  for(i=0;i<=M->con.N;i++)
+  {
+    M->con.a[i]*=-1;
+  }
+  SetBADoubleTriDiagonalMatrixConVal(M);
+  M->acvB=0;
+  M->acvA=0;
+  return 0;
+}
+
 uint32_t SymmetrizeTridiagonalMatrix(TriDiagonalMatrixType *const M)
 {
   TriDiagonalMatrixType Mplus,Mmin;

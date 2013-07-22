@@ -547,6 +547,7 @@ uint32_t TriDiagonalMatrixToBADoubleTriDiagonalMatrix(TriDiagonalMatrixType cons
   if(TriDiagonalMatrixToListOfPoles(M, &LP)){printf("TriDiagonalMatrixToListOfPoles failed in TriDiagonalMatrixToBADoubleTriDiagonalMatrix\n");return 1;};
   if(ListOfPolesToBADoubleTridiagonalMatrix(LP, A, NTriDiagVal, NTriDiagCon, Ef, Epsilon)){printf("ListOfPolesToBADoubleTridiagonalMatrix failed in TriDiagonalMatrixToBADoubleTriDiagonalMatrix\n");return 1;};
   FreeListOfPoles(&LP);
+  strcpy(A->Name,M.Name);
   return 0;
 }
 

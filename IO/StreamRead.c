@@ -460,6 +460,7 @@ uint32_t StreamReadDMFTSettings(DMFTSettings * O, FILE *stream)
   fscanf(stream,"%i",&(O->iStart));                  fgets(comments,1000,stream);
   fscanf(stream,"%i",&(O->Ni));                      fgets(comments,1000,stream);
   fscanf(stream,"%i",&(O->Dyson));                   fgets(comments,1000,stream);
+  fscanf(stream,"%i",&(O->SymOpt));                  fgets(comments,1000,stream);
   fscanf(stream,"%i",&(O->NGCluster));               fgets(comments,1000,stream);
   fscanf(stream,"%i",&(O->NGBath));                  fgets(comments,1000,stream);
   fscanf(stream,"%lf",&(O->Mix));                    fgets(comments,1000,stream);

@@ -605,16 +605,22 @@ typedef struct DMFTSettings
   uint32_t iStart;                           /* start value of loop number */
   uint32_t Ni;                               /* number of loops to do */
   uint32_t Dyson;                            /* 0 no Dyson like perturbation - 1 full perturbation - 2 ... */
-  uint32_t NGBath;                           /* Number of poles in the resulting bath green function */
+  uint32_t SymOpt;                           /* 0000 0000 no aditional symmetrization */
+                                             /* 0000 0001 An additional Operator of (U+1) * S^2 is added to the Hamiltonian to stabilize the singlet state */
+                                             /* 0000 0010 The Greenfunction is averaged such that G(w) = - G(-w)^* */
+                                             /* 0000 0100 The Ground-state wavefunction is taken to have a fully occupied / unoccupied bath */
+                                             /* 0000 1000 mu is forced to be <n> U/2 */
+                                             /* 0001 0000 Enforce Hybridization sumrules on GCluster */
   uint32_t NGCluster;                        /* Number of poles in the resulting cluster green function */
+  uint32_t NGBath;                           /* Number of poles in the resulting bath green function */
   double   Mix;                              /* mixing of old into new function */
   double   U;                                /* valence - valence Coulomb repulsion */
-  double   Nelectron;                        /* number of electrons per spin per site */
   uint32_t NBath;                            /* Number of Bath states to include */
   uint32_t Spectra;                          /* 0000 no spectra will be calculated at the end of the DMFT loop */
                                              /* 0001 Magnetic susceptibility will be calculated (nup-ndn) */
                                              /* 0010 occupation will be calculated (nup+ndn) */
                                              /* 0100 XAS will be calculated with NQ values for core - valence interaction */
+                                             /* 1000 core PES will be calculated with NQ values for core - valence interaction */
   uint32_t NQ;                               /* number of XAS spectra */
   double   *Q;                               /* NQ values of core - valence interaction strengths */
   uint32_t NE;                               /* number of points in the spectrum */

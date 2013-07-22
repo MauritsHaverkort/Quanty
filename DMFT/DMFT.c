@@ -43,6 +43,7 @@
 
 int main(int argc, const char * argv[])
 {
+  const uint32_t imuMax=20, iHistMax=20, StringLengthMax=255;
   TimeType Time;
   DMFTSettings HSet;
   InitializeTiming(&Time);
@@ -54,20 +55,42 @@ int main(int argc, const char * argv[])
   PrintDMFTSettings(HSet);
   WaveFunctionType Psi,OPsi,PsiTemp;
   TriDiagonalMatrixType G0,GBath,GclPup,GclPdn,GclMup,GclMdn,Gcl,GBathNew,GBathOld,gPerturbation[4],Sigma;
-  BADoubleTriDiagonalMatrixType GAnd,GAndTrunk;
+  BADoubleTriDiagonalMatrixType GAnd,GAndTrunk,BAG0;
   AndersonMatrixType GBathAnd, GclAnd,G0And,GBathNewAnd;
   ListOfPoles SigmaPoles,GclList,GListTemp;
-  OperatorType HAnd, OPESdn,OPESup,OIPESdn,OIPESup,VPerturbation[4];
+  OperatorType HAnd, HAndGrd, OPESdn,OPESup,OIPESdn,OIPESup,VPerturbation[4],Sx,Sy,Sz,S2;
   MatrixType T;
   SpectraType Spectra[10];
-  char GBathFileName[255],GClFileName[255],GSigmaFileName[255],PsiFileName[255],SpecFileName[255],Buffer[255];
-  uint32_t iOuter,i,PsiNBathV,PsiNBathC;
-  uint16_t oadd[1];
-  double Ef=0.0,epsilonAnd=0.00001,mu;
-  double PsiEnergy,PsiQuality,PsiHist[20],*PsiRho;
+  char GBathFileName[StringLengthMax],GClFileName[StringLengthMax],GSigmaFileName[StringLengthMax],PsiFileName[StringLengthMax],SpecFileName[StringLengthMax],Buffer[StringLengthMax];
+  uint32_t iOuter,i,PsiNBathV,PsiNBathC,imu;
+  uint16_t oadd[1],*SpinUp,*SpinDn;
+  double Ef=0.0,epsilonAnd=0.00001,mu[imuMax+1],G0Occupation,GClOccupation[imuMax];
+  double PsiEnergy,PsiQuality,PsiHist[iHistMax],*PsiRho;
   /* read G0 */
   if(FileReadPlainTriDiagonalMatrixType(&G0,HSet.G0FileName)){printf("Fatal Error in main\n Failed to read G0 from file %s\n",HSet.G0FileName);return 1;};
   strcpy(G0.Name,"G0");
+  if((HSet.SymOpt)&2)
+  {
+    printf("Symmetrize G0(w) -= G0(-w)^*\n");
+    SymmetrizeTridiagonalMatrix(&G0);
+  }
+  TriDiagonalMatrixToBADoubleTriDiagonalMatrix(G0, &BAG0, G0.N, G0.N, Ef, epsilonAnd);
+  if((HSet.SymOpt)&2)
+  {
+    printf("Symmetrize G0(w) -= G0(-w)^*\n");
+    SymmetrizeBADoubleTriDiagonalMatrix(&BAG0);
+  }
+  TriDiagonalMatrixToAndersonMatrix(G0, &T, &G0And);
+  if((HSet.SymOpt)&2)
+  {
+    printf("Symmetrize G0(w) -= G0(-w)^*\n");
+    SymmetrizeAndersonMatrix(&G0And);
+  }
+  FreeMatrix(&T);
+  G0Occupation=2*Sqr(BAG0.val.b[0]);
+  printf("\nRead G0 from file \"%s\"\n",HSet.G0FileName);
+  printf("The occupation of the cluster is %22.15E electrons\n",G0Occupation);
+  printf("If you don't like this, change G0\n\n");
   /* read G_Bath_iStart and psi_iStart*/
   if(HSet.iStart==0)
   {
@@ -110,8 +133,6 @@ int main(int argc, const char * argv[])
     CreateWaveFunctionDMFTSecond(&Psi, HSet.NBath, HSet.NBath, HSet.NBitsKey);
   }
   strcpy(GBath.Name,"Gbath");
-  TriDiagonalMatrixToAndersonMatrix(G0, &T, &G0And);
-  FreeMatrix(&T);
   /* do the DMFT loops */
   for(iOuter=HSet.iStart;iOuter<HSet.iStart+HSet.Ni;iOuter++)
   {
@@ -120,7 +141,22 @@ int main(int argc, const char * argv[])
     printf("Start of loop %i from %i to %i\n",iOuter+1,HSet.iStart,HSet.iStart+HSet.Ni);
     printf("***********************************************************************\n\n\n");
     /* Create splitted anderson matrix */
-    TriDiagonalMatrixToBADoubleTriDiagonalMatrix(GBath, &GAnd, 2+GBath.N/2, 2+GBath.N/2, Ef, epsilonAnd);
+    TriDiagonalMatrixToBADoubleTriDiagonalMatrix(GBath, &GAnd, GBath.N, GBath.N, Ef, epsilonAnd);
+    if((HSet.SymOpt)&2)
+    {
+      printf("Symmetrize GAnd(w) -= GAnd(-w)^*\n");
+      printf("Size of GAnd went from %i + %i ",GAnd.val.N,GAnd.con.N);
+      SymmetrizeBADoubleTriDiagonalMatrix(&GAnd);
+      printf("to %i + %i ",GAnd.val.N,GAnd.con.N);
+      GAnd.val.N=Min(GAnd.val.N,HSet.NGBath);
+      GAnd.con.N=Min(GAnd.con.N,HSet.NGBath);
+      printf("to %i + %i\n",GAnd.val.N,GAnd.con.N);
+    }
+    if((HSet.SymOpt)&16)
+    {
+      printf("Enforce GAnd to fullfill the knonw sumrules\n");
+      printf("Not yet implemented\n");
+    }
     /* Create GAnd and GAndTrunk as a copy pointing to the same memory */
     GAndTrunk.Ef=GAnd.Ef;
     GAndTrunk.Epsilon=GAnd.Epsilon;
@@ -217,7 +253,7 @@ int main(int argc, const char * argv[])
         gPerturbation[3].a[1]=0;
       }
     }
-    /* Create HAnd */
+    /* Create GAndTrunk */
     if(GAnd.con.N<HSet.NBath+1)
     {
       printf("Warning: GAnd.con.N(%i)<HSet.NBath+1(%i+1)\n",GAnd.con.N,HSet.NBath);
@@ -234,8 +270,6 @@ int main(int argc, const char * argv[])
     {
       GAndTrunk.val.N=HSet.NBath+1;
     }
-    mu=HSet.U/2;
-    BADoubleTriDiagonalMatrixToAndersonImpurityOperator(&HAnd, GAndTrunk, GAndTrunk, HSet.U, mu);
     /* test if psi has correct dimensions and correct if needed */
     sscanf(Psi.Name,"%s %i %i",Buffer,&PsiNBathC,&PsiNBathV);
     if(PsiNBathC!=GAndTrunk.con.N-1)
@@ -293,23 +327,148 @@ int main(int argc, const char * argv[])
       PrintWaveFunctionReadableTruncated(Psi, 0.1);
     }
     sprintf(Psi.Name,"DMFT %i %i",GAndTrunk.con.N-1,GAndTrunk.val.N-1);
-    /* In debug mode print info */
-    // PrintBADoubleTriDiagonalMatrix(GAnd);
-    // PrintTriDiagonalMatrix(gPerturbation[0]);
-    // PrintTriDiagonalMatrix(gPerturbation[1]);
-    // PrintTriDiagonalMatrix(gPerturbation[2]);
-    // PrintTriDiagonalMatrix(gPerturbation[3]);
-    // PrintBADoubleTriDiagonalMatrix(GAndTrunk);
-    // PrintOperatorReadable(HAnd);
-    /* create ground-state wave-function */
-    BeginTiming("Lanczos GroundState",&Time);
-    LanczosGroundState(HAnd,&Psi,&HSet.zeroLancWavefunction,HSet.zeroLancEnergy,HSet.U,&Psi,0);
-    LanczosGroundState(HAnd,&Psi,&HSet.zeroLancWavefunction,HSet.zeroLancEnergy,HSet.U,&Psi,0);
-    EndTiming("Lanczos GroundState",&Time);
+    /* Print some info on G0 and GAnd */
+    printf("                               G0v                    G0c                    GAndv                  Gandc\n");
+    printf("b0                          %22.15E %22.15E %22.15E %22.15E\n",BAG0.val.b[0],BAG0.con.b[0],GAnd.val.b[0],GAnd.con.b[0]);
+    printf("b1                          %22.15E %22.15E %22.15E %22.15E\n",BAG0.val.b[1],BAG0.con.b[1],GAnd.val.b[1],GAnd.con.b[1]);
+    printf("b2                          %22.15E %22.15E %22.15E %22.15E\n",BAG0.val.b[2],BAG0.con.b[2],GAnd.val.b[2],GAnd.con.b[2]);
+    printf("a1                          %22.15E %22.15E %22.15E %22.15E\n",BAG0.val.a[1],BAG0.con.a[1],GAnd.val.a[1],GAnd.con.a[1]);
+    printf("a2                          %22.15E %22.15E %22.15E %22.15E\n",BAG0.val.a[2],BAG0.con.a[2],GAnd.val.a[2],GAnd.con.a[2]);
+    printf("e_i                         %22.15E                        %22.15E\n",BAG0.acvB,GAnd.acvB);
+    printf("e_i^p                       %22.15E                        %22.15E\n",BAG0.acvA,GAnd.acvA);
+    printf("t_b                         %22.15E                        %22.15E\n",BAG0.acvBA,GAnd.acvBA);
+    printf("t_c                         %22.15E                        %22.15E\n",BAG0.bcB0,GAnd.bcB0);
+    printf("t_c^p                       %22.15E                        %22.15E\n",BAG0.bcA0,GAnd.bcA0);
+    printf("t_v                         %22.15E                        %22.15E\n",BAG0.bvB0,GAnd.bvA0);
+    printf("t_v^p                       %22.15E                        %22.15E\n",BAG0.bvA0,GAnd.bvA0);
+    printf("(t_c)^2+(t_c^p)^2           %22.15E                        %22.15E\n",Sqr(BAG0.bcB0)+Sqr(BAG0.bcA0),Sqr(GAnd.bcB0)+Sqr(GAnd.bcA0));
+    printf("(t_v)^2+(t_v^p)^2           %22.15E                        %22.15E\n",Sqr(BAG0.bvB0)+Sqr(BAG0.bvA0),Sqr(GAnd.bvB0)+Sqr(GAnd.bvA0));
+    printf("(t_c)^2+(t_v)^2+(t_b)^2     %22.15E                        %22.15E\n",Sqr(BAG0.bcB0)+Sqr(BAG0.bvB0)+Sqr(BAG0.acvBA),Sqr(GAnd.bcB0)+Sqr(GAnd.bvB0)+Sqr(GAnd.acvBA));
+    printf("(t_c^p)^2+(t_v^p)^2+(t_b)^2 %22.15E                        %22.15E\n",Sqr(BAG0.bcA0)+Sqr(BAG0.bvA0)+Sqr(BAG0.acvBA),Sqr(GAnd.bcA0)+Sqr(GAnd.bvA0)+Sqr(GAnd.acvBA));
+    /* find ground-state with correct occupation by adjusting mu */
+    BeginTiming("Adjust mu",&Time);
+    imu=0;
+    if((iOuter==0)||((HSet.SymOpt)&8))
+    {
+      mu[0]=Sqr(G0Occupation) * HSet.U/2;
+    }
+    while(imu<imuMax)
+    {
+      /* Create HAnd */
+      BADoubleTriDiagonalMatrixToAndersonImpurityOperator(&HAnd, GAndTrunk, GAndTrunk, HSet.U, mu[imu]);
+      /* Set HAndGrd to HAnd */
+      OperatorCopy(&HAndGrd,HAnd);
+      /* if SymOpt (4) is set keep only H on the impurity and first bath site */
+      if((HSet.SymOpt)&4)
+      {
+        printf("Restricted HAnd for the ground-state to the first bath site\n");
+        HAndGrd.l[2].N=8;
+      }
+      /* if singlet set is true add the (U+1) * S^2 to the operator HAndGrd */
+      if((HSet.SymOpt)&1)
+      {
+        printf("Add %22.15E * S^2 to HAnd for the calculation of the ground-state wave-function\n",1+HSet.U);
+        printf("This stabilizes the ground-state by enlarging the singlet triplet energy\n");
+        SpinUp=calloc(HAnd.NFermion/2, sizeof(uint16_t));
+        SpinDn=calloc(HAnd.NFermion/2, sizeof(uint16_t));
+        SpinUp[0]=0;
+        SpinUp[1]=2;
+        SpinDn[0]=1;
+        SpinDn[1]=3;
+        for(i=4;i<2+HAnd.NFermion/2;i++)
+        {
+          SpinUp[i-2]=i;
+          SpinDn[i-2]=i+HAnd.NFermion/2-2;
+        }
+        CreateSpinOperators(HAnd.NFermion, HAnd.NFermion/2, SpinUp, SpinDn, &Sx, &Sy, &Sz, &S2);
+        FreeOperator(&Sx);
+        FreeOperator(&Sy);
+        FreeOperator(&Sz);
+        OperatorAddNormalOrder(&HAndGrd, S2, fabs(HSet.U)+1, 0, &QDetNotOrderedFcFaBcBa);
+        FreeOperator(&S2);
+      }
+      /* create ground-state wave-function */
+      BeginTiming("Lanczos GroundState",&Time);
+      LanczosGroundState(HAndGrd,&Psi,&HSet.zeroLancWavefunction,HSet.zeroLancEnergy,HSet.U,&Psi,0);
+      FreeOperator(&HAndGrd);
+      EndTiming("Lanczos GroundState",&Time);
+      PsiHermitianOperatorPsi(HAnd, Psi, &PsiEnergy);
+      PsiHermitianOperatorSqrPsi(HAnd,Psi,&PsiQuality);
+      PsiQuality/=Sqr(PsiEnergy);
+      printf("Energy                  <psi|H^2|psi>/(<psi|H|psi>^2)\n");
+      printf("%22.15E  %22.15E\n",PsiEnergy,PsiQuality);
+      /* Start adjusting mu */
+      if((HSet.SymOpt)&8)
+      {
+        imu=imuMax;
+      }
+      else
+      {
+        /* calculate cluster occupation */
+        PsiRho=calloc(Psi.NFermion,sizeof(double));
+        if(PsiRho==NULL){printf("calloc failed in main for PsiRho\n Fatal Error\n");fflush(stdout);return 1;}
+        CalculateDensity(PsiRho,Psi);
+        GClOccupation[imu]=PsiRho[0]+PsiRho[1];
+        free(PsiRho);
+        /* Stop if occupation is close enough to occupation of G0 or if imu==imuMax-1 */
+        if((imu==imuMax-1)||(Abs(GClOccupation[imu]-G0Occupation)<(1000*DBL_EPSILON))||(imu==0?0:(Abs(GClOccupation[imu]-GClOccupation[imu-1])<(1000*DBL_EPSILON))))
+        { /* Stop */
+          /* Warning if mu not converged when imu reached imuMax */
+          if(Abs(GClOccupation[imu]-G0Occupation)>(1000*DBL_EPSILON))
+          {
+            printf("WARNING! stop changing imu without converging\n");
+          }
+          /* print occupation v.s. mu */
+          printf("occupation v.s. mu\n");
+          printf("  i    mu[i]                  Occupation             Difference\n");
+          for(i=0;i<=imu;i++)
+          {
+            printf("%3i %22.15E %22.15E %22.15E\n",i,mu[i],GClOccupation[i],GClOccupation[i]-G0Occupation);
+          }
+          mu[0]=mu[imu];
+          imu=imuMax;
+        }
+        else
+        { /* make another loop */
+          FreeOperator(&HAnd);
+          /* interpolate mu[imu+1] */
+          if(imu==0)
+          {
+            if(GClOccupation[0]>G0Occupation)
+            {
+              mu[1]=mu[0]-0.1*Abs(HSet.U);
+            }
+            else
+            {
+              mu[1]=mu[0]+0.1*Abs(HSet.U);
+            }
+          }
+          else
+          {
+            if(Abs(GClOccupation[imu]-GClOccupation[imu-1])<(100*DBL_EPSILON))
+            {
+              printf("Convergence creterium for occupation not reached, two mu's give the same occupation\n");
+              mu[imu+1]=mu[imu];
+              imu=imuMax;
+            }
+            else
+            {
+              mu[imu+1]=mu[imu]+(G0Occupation-GClOccupation[imu])*(mu[imu]-mu[imu-1])/(GClOccupation[imu]-GClOccupation[imu-1]);
+            }
+          }
+          printf("\nFilling should be        : %22.15E.\nThe current occupation is: %22.15E.\n", G0Occupation, GClOccupation[imu]);
+          printf("mu adjusted from %22.15E to %22.15E\n", mu[imu], mu[imu+1]);
+          printf("Restarting Lanczos Loop %i for the %i-th time\n", iOuter,imu+1);
+          fflush(stdout);
+        }
+      }
+      imu++;
+    }
+    EndTiming("Adjust mu", &Time);
     PsiHermitianOperatorPsi(HAnd, Psi, &PsiEnergy);
     PsiHermitianOperatorSqrPsi(HAnd,Psi,&PsiQuality);
     PsiQuality/=Sqr(PsiEnergy);
-    PrintWaveFunctionReadableTruncated(Psi, 0.1);
+    PrintWaveFunctionReadableTruncated(Psi, 0.01);
     CalculatePrefactorHistogram(PsiHist, Psi, 10.0, 20);
     printf("\nHistogram of prefactors in Wave-function\n");
     for(i=0;i<19;i++)
@@ -434,7 +593,10 @@ int main(int argc, const char * argv[])
     FreeListOfPoles(&GListTemp);
     ScaleListOfPoles(&GclList,0.5);
     /* symmetrize */
-    SymmetrizeListOfPoles(&GclList);
+    if((HSet.SymOpt)&2)
+    {
+      SymmetrizeListOfPoles(&GclList);
+    }
     printf("Cluster Green function created of size %i ",GclList.N);
     ReduceListOfPolesNumber(&GclList, HSet.NGCluster);
     printf("reduced to %i\n",GclList.N);
@@ -442,10 +604,8 @@ int main(int argc, const char * argv[])
     strcpy(Gcl.Name,"Gcluster");
     Gcl.b[0]=1.0;
     /* make Gcl a physical solution of the full lattice model */
-    /* Create self energy (SDMFT) of G0 and Gcl SDMFT = - Gcl^-1 + G0^-1 */
-    
-    /* Create Gclprime from SDMFT Gcl = (G0^-1 - SDMFT)^-1 */
-    
+      /* Create self energy (SDMFT) of G0 and Gcl SDMFT = - Gcl^-1 + G0^-1 */
+      /* Create Gclprime from SDMFT Gcl = (G0^-1 - SDMFT)^-1 */
     /* G math - create Cluster Self energy From Gcl and GBath */
     BeginTiming("G math Selfenergy",&Time);
     printf("Start SelfEnergyTriDiagonalRepresentation\n");fflush(stdout);
@@ -454,12 +614,10 @@ int main(int argc, const char * argv[])
     TriDiagonalMatrixToAndersonMatrix(GBath, &T, &GBathAnd);
     FreeMatrix(&T);
     SelfEnergyListOfPolesFromAndersonRepresentation(GBathAnd, GclAnd, &SigmaPoles);
-    
     /*
     GausianBroadenListOfPoles(&SigmaPoles, 0.1, 10);
     ReduceListOfPolesNumber(&SigmaPoles, SigmaPoles.N/5);
     */
-    
     printf("Cluster self energy created of size %i\n",SigmaPoles.N);
     strcpy(SigmaPoles.Name,"Sigma");
     /* copy sigma to tridiagonal format */
@@ -475,6 +633,11 @@ int main(int argc, const char * argv[])
     printf("reduced to %i\n",GBathNewAnd.N);
     AndersonMatrixToTriDiagonalMatrix(GBathNewAnd, &T, &GBathNew, GBathNewAnd.N);
     FreeMatrix(&T);
+    /* symmetrize */
+    if((HSet.SymOpt)&2)
+    {
+      SymmetrizeTridiagonalMatrix(&GBathNew);
+    }
     EndTiming("G math GBath",&Time);
     /* calculate GBath for the next loop by mixing GBath with GBathNew */
     printf("Start mixing GBath with GBathNew\n");
@@ -488,8 +651,11 @@ int main(int argc, const char * argv[])
     strcpy(GBath.Name,"Gbath");
     GBathOld.b[0]=1;
     GBathNew.b[0]=1;
-    /* symmetrize */
-    SymmetrizeTridiagonalMatrix(&GBath);
+    if((HSet.SymOpt)&16)
+    {
+      printf("Enforce GBath to fullfill the knonw sumrules\n");
+      printf("Not yet implemented\n");
+    }
     EndTiming("G math",&Time);
     /* create spectra */
     printf("Start create spectra\n");fflush(stdout);
