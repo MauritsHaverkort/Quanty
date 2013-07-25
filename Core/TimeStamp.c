@@ -42,7 +42,6 @@ uint32_t InitializeTiming(TimeType *T)
   return 0;
 }
 
-
 uint32_t EnlargeTimingStructure(TimeType *T)
 {
   uint32_t i;
@@ -58,6 +57,20 @@ uint32_t EnlargeTimingStructure(TimeType *T)
   if((T->NumberOfRuns=realloc(T->NumberOfRuns,T->NAloc*sizeof(uint32_t)))==NULL){printf("EnlargeTimingStructure failed\n");fflush(stdout);return 1;}
   if((T->NowRunning=realloc(T->NowRunning,T->NAloc*sizeof(uint32_t)))==NULL){printf("EnlargeTimingStructure failed\n");fflush(stdout);return 1;}
   return 0;
+}
+
+void FreeTiming(TimeType *T)
+{
+  if(T->NAloc!=0)
+  {
+    free(T->Name);
+    free(T->TotalTime);
+    free(T->BeginTime);
+    free(T->NumberOfRuns);
+    free(T->NowRunning);
+  }
+  T->N=0;
+  T->NAloc=0;
 }
 
 uint32_t BeginTiming(const char *s, TimeType *T)

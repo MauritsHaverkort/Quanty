@@ -625,14 +625,20 @@ int main(int argc, const char * argv[])
     EndTiming("G math Selfenergy",&Time);
     /* G math - create GBath */
     BeginTiming("G math GBath",&Time);
+    BeginTiming("G math GBath AndListAndRepresentation",&Time);
     printf("Start GBathAndListAndRepresentation\n");fflush(stdout);    
     GBathAndTriAndRepresentation(G0And, Sigma, &GBathNewAnd);
+    EndTiming("G math GBath AndListAndRepresentation",&Time);
     printf("New bath Green function created of size %i ",GBathNewAnd.N);
     strcpy(GBathNewAnd.Name,"Gbath-New");
+    BeginTiming("G math GBath ReducePolesAndersonMatrixNumber",&Time);
     ReducePolesAndersonMatrixNumber(&GBathNewAnd, HSet.NGBath);
+    EndTiming("G math GBath ReducePolesAndersonMatrixNumber",&Time);
     printf("reduced to %i\n",GBathNewAnd.N);
+    BeginTiming("G math GBath AndersonMatrixToTriDiagonalMatrix",&Time);
     AndersonMatrixToTriDiagonalMatrix(GBathNewAnd, &T, &GBathNew, GBathNewAnd.N);
     FreeMatrix(&T);
+    EndTiming("G math GBath AndersonMatrixToTriDiagonalMatrix",&Time);
     /* symmetrize */
     if((HSet.SymOpt)&2)
     {

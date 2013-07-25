@@ -2949,6 +2949,9 @@ uint32_t LanczosTriDiagonalizeDysonLowMem(OperatorType const O, WaveFunctionType
   MatrixType Hval, *VMat;
   WaveFunctionType *PsiKrylov;
   OperatorType Otemp;
+  TimeType Time;
+  InitializeTiming(&Time);
+  BeginTiming("Total",&Time);
   printf("\nStart of LanczosTriDiagonalizeDysonLowMem\n\n");
   /* Initiallize matrices */
   Htemp.Ni=NKrylov;
@@ -2972,8 +2975,11 @@ uint32_t LanczosTriDiagonalizeDysonLowMem(OperatorType const O, WaveFunctionType
   OKrylov.N=NKrylov;
   InitTriDiagonalMatrix(&OKrylov);
   if((PsiKrylov=calloc(NKrylov,sizeof(WaveFunctionType)))==NULL)                   {printf("calloc failed in LanczosTriDiagonalizeDyson\n");fflush(stdout);return 1;};
+  BeginTiming("Krylov",&Time);
   LanczosTriDiagonalizeKrylov(O,psi, epsilon, &OKrylov, PsiKrylov);
+  EndTiming("Krylov",&Time);
   /* loop over all V[i] */
+  BeginTiming("Creation of matrix elements",&Time);
   for(i=0;i<NV;i++)
   {
     printf("Create perturbation %i from %i\n",i+1,NV);
@@ -3020,7 +3026,9 @@ uint32_t LanczosTriDiagonalizeDysonLowMem(OperatorType const O, WaveFunctionType
   free(PsiKrylov);
   FreeMatrix(&Htemp);
   FreeMatrix(&Stemp);
+  EndTiming("Creation of matrix elements",&Time);
   /* create Gout */
+  BeginTiming("Final Tridiagonalize",&Time);
   if(TridiagonalizeImpurityCoupledToBathDyson(OKrylov, VMat, Hval, g, NV, Gout))
   {
     printf("TridiagonalizeImpurityCoupledToBathDyson failed in LanczosTriDiagonalizeDyson\n");
@@ -3033,6 +3041,7 @@ uint32_t LanczosTriDiagonalizeDysonLowMem(OperatorType const O, WaveFunctionType
     free(VMat);
     return 1;
   }
+  EndTiming("Final Tridiagonalize",&Time);
   /* Free things allocated */
   FreeTriDiagonalMatrix(&OKrylov);
   FreeMatrix(&Hval);
@@ -3041,6 +3050,9 @@ uint32_t LanczosTriDiagonalizeDysonLowMem(OperatorType const O, WaveFunctionType
     FreeMatrix(&(VMat[i]));
   }
   free(VMat);
+  EndTiming("Total",&Time);
+  PrintTiming(Time);
+  FreeTiming(&Time);
   return 0;
 }
 

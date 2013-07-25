@@ -45,6 +45,8 @@
 #define CrAnMask ((uint16_t)1<<15)
 #define NotCrAnMask (((uint16_t)1<<15)-1)
 
+typedef int (*compfn)(const void*, const void*);
+
 typedef struct Complex16
 {
   double Re;

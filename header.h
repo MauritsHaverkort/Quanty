@@ -32,6 +32,7 @@ uint32_t PrintDoubleTriDiagonalMatrix();
 uint32_t PrintBlokDoubleTriDiagonalMatrix();
 uint32_t PrintAndersonMatrix();
 uint32_t PrintBlokAndersonMatrix();
+uint32_t PrintListOfPoles();
 uint32_t PrintOperatorFullReadable(OperatorType O);
 
 uint32_t FilePrintSpectra();
@@ -47,6 +48,7 @@ uint32_t FilePrintDoubleTriDiagonalMatrix();
 uint32_t FilePrintBlokDoubleTriDiagonalMatrix();
 uint32_t FilePrintAndersonMatrix();
 uint32_t FilePrintBlokAndersonMatrix();
+uint32_t FilePrintListOfPoles();
 uint32_t FilePrintOperatorFullReadable(OperatorType O, const char *const flname, const char *const mode);
 
 uint32_t StreamPrintSpectra();
@@ -62,6 +64,7 @@ uint32_t StreamPrintDoubleTriDiagonalMatrix();
 uint32_t StreamPrintBlokDoubleTriDiagonalMatrix();
 uint32_t StreamPrintAndersonMatrix();
 uint32_t StreamPrintBlokAndersonMatrix();
+uint32_t StreamListOfPoles();
 uint32_t StreamPrintOperatorFullReadable(OperatorType O, FILE *stream);
 
 uint32_t PrintSparseMatrixMathematica();

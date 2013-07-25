@@ -244,10 +244,15 @@ uint32_t SymmetrizeTridiagonalMatrix(TriDiagonalMatrixType *const M)
  */
 void ReduceSqrtListOfPolesNumber(ListOfPoles * M, uint32_t N)
 {
+  //TimeType Time;
   if(M->N<N) return;
+  //InitializeTiming(&Time);
+  //BeginTiming("Total ReduceSqrtListOfPolesNumber",&Time);
   uint32_t i,imin;
   double biminLeft,biminRight,temp;
+  //BeginTiming("OrderListOfPoles",&Time);
   OrderListOfPoles(M);
+  //EndTiming("OrderListOfPoles",&Time);
   while(M->N>N)
   {
     imin=0;
@@ -327,6 +332,9 @@ void ReduceSqrtListOfPolesNumber(ListOfPoles * M, uint32_t N)
       i++;
     }
   }
+  //EndTiming("Total ReduceSqrtListOfPolesNumber",&Time);
+  //PrintTiming(Time);
+  //FreeTiming(&Time);
 }
 
 
@@ -709,6 +717,70 @@ uint32_t GBathAndListAndRepresentation(AndersonMatrixType const G0, ListOfPoles 
  */
 uint32_t GBathAndTriAndRepresentation(AndersonMatrixType const G0, TriDiagonalMatrixType const Sigma, AndersonMatrixType *const G)
 {
+  int i,j,failed=0;
+  G->N=(G0.N-1)*(Sigma.N+1)+1;
+  if(InitAndersonMatrix(G)){printf("InitAndersonMatrix failed in GBathAndListAndRepresentation\n");return 1;}
+  G->a[0]=G0.a[0];
+  G->b[0]=G0.b[0];
+  G->a[1]=G0.a[1];
+  #pragma omp parallel private(i,j)
+  {
+    ListOfPoles bSigmaPole;
+    TriDiagonalMatrixType bSigma;
+    bSigma.N=Sigma.N+1;
+    if(InitTriDiagonalMatrix(&bSigma))
+    {
+      printf("InitTriDiagonalMatrix failed in GBathAndListAndRepresentation in parallel region\n");
+      failed=1;
+    }
+    if(!failed)
+    {
+      bSigma.a[0]=0;
+      for(j=0;j<Sigma.N;j++)
+      {
+        bSigma.a[j+2]=Sigma.a[j+1];
+        bSigma.b[j+1]=Sigma.b[j];
+      }
+      #pragma omp for
+      for(i=1;i<G0.N;i++)
+      {
+        bSigma.b[0]=G0.b[i];
+        bSigma.a[1]=G0.a[i+1]+Sigma.a[0];
+        if(TriDiagonalMatrixToListOfPoles(bSigma, &bSigmaPole))
+        {
+          printf("TriDiagonalMatrixToListOfPoles failed in GBathAndListAndRepresentation in parallel region\n");
+          failed=1;
+        }
+        if(!failed)
+        {
+          for(j=0;j<bSigmaPole.N;j++)
+          {
+            G->a[j+(i-1)*(Sigma.N+1)+2]=bSigmaPole.a[j];
+            G->b[j+(i-1)*(Sigma.N+1)+1]=sqrt(bSigmaPole.b[j]);
+          }
+          for(j=bSigmaPole.N;j<bSigma.N;j++)
+          {
+            G->a[j+(i-1)*(Sigma.N+1)+2]=0;
+            G->b[j+(i-1)*(Sigma.N+1)+1]=0;
+          }
+          FreeListOfPoles(&bSigmaPole);
+        }
+      }
+      FreeTriDiagonalMatrix(&bSigma);
+    }
+  }
+  if(failed) return 1;
+  return 0;
+}
+
+/*  GBath(w) = 1 / ( G_0(w-Sigma(w))^{-1} + Sigma(w) )
+ *    G_0(w-Sigma(w))                     = 1 / (w - S - a1 - sum_i b_i^2 / (w - a_{i+1} - S)
+ *    G_0(w-Sigma(w))^{-1}                =     (w - S - a1 - sum_i b_i^2 / (w - a_{i+1} - S)
+ *    G_0(w-Sigma(w))^{-1} + Sigma        =     (w     - a1 - sum_i b_i^2 / (w - a_{i+1} - S)
+ *  ( G_0(w-Sigma(w))^{-1} + Sigma )^{-1} = 1 / (w     - a1 - sum_i b_i^2 / (w - a_{i+1} - S)
+ */
+uint32_t GBathAndTriAndRepresentationSerial(AndersonMatrixType const G0, TriDiagonalMatrixType const Sigma, AndersonMatrixType *const G)
+{
   uint32_t i,j;
   ListOfPoles bSigmaPole;
   TriDiagonalMatrixType bSigma;
@@ -745,7 +817,6 @@ uint32_t GBathAndTriAndRepresentation(AndersonMatrixType const G0, TriDiagonalMa
   FreeTriDiagonalMatrix(&bSigma);
   return 0;
 }
-
 
 /*  GbathNew = (Gcl^{-1}-Sigma^{-1}) ^{-1}
  *
@@ -915,10 +986,13 @@ uint32_t TriDiagonalMatrixDysonScalar(TriDiagonalMatrixType const G, TriDiagonal
  *
  *  gnew  - resulting tridiagonal matrix of length gnew.N (set on entry)
  *
- *  N counts teh number of perturbing Operators V
+ *  N counts the number of perturbing Operators V
  *
  *  H.Ni Equal to N
  *  H.Nj is Max[V[i].Nj] for all i or larger
+ *
+ */
+/*  This routine needs to be replaced by a standard lanczos from a library!!!!
  *
  */
 uint32_t TridiagonalizeImpurityCoupledToBathDyson(TriDiagonalMatrixType const O, MatrixType const *V, MatrixType const H, TriDiagonalMatrixType const *g, uint32_t N, TriDiagonalMatrixType * const gnew)

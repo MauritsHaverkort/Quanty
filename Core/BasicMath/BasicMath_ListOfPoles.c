@@ -75,7 +75,31 @@ uint32_t SymmetrizeListOfPoles(ListOfPoles *const A)
   return 0;
 }
 
+int OrderListOfPolesCompare(double * elem1, double * elem2)
+{
+  if(elem1[0]<elem2[0]) return -1;
+  else if (elem1[0]>elem2[0]) return 1;
+  return 0;
+}
+
 void OrderListOfPoles(ListOfPoles *const M)
+{
+  double Mab[2*M->N];
+  uint32_t i;
+  for(i=0;i<M->N;i++)
+  {
+    Mab[2*i]  =M->a[i];
+    Mab[2*i+1]=M->b[i];
+  }
+  qsort((void *) Mab, M->N, 2*sizeof(double), (compfn)OrderListOfPolesCompare);
+  for(i=0;i<M->N;i++)
+  {
+    M->a[i]=Mab[2*i];
+    M->b[i]=Mab[2*i+1];
+  }
+}
+
+void OrderListOfPolesOld(ListOfPoles *const M)
 {
   uint32_t i,j;
   double temp;
