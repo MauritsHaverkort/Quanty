@@ -719,7 +719,7 @@ uint32_t GBathAndTriAndRepresentation(AndersonMatrixType const G0, TriDiagonalMa
 {
   int i,j,failed=0;
   G->N=(G0.N-1)*(Sigma.N+1)+1;
-  if(InitAndersonMatrix(G)){printf("InitAndersonMatrix failed in GBathAndListAndRepresentation\n");return 1;}
+  if(InitAndersonMatrix(G)){printf("InitAndersonMatrix (G->N=%i) failed in GBathAndListAndRepresentation\n",G->N);fflush(stdout);return 1;}
   G->a[0]=G0.a[0];
   G->b[0]=G0.b[0];
   G->a[1]=G0.a[1];
@@ -730,7 +730,8 @@ uint32_t GBathAndTriAndRepresentation(AndersonMatrixType const G0, TriDiagonalMa
     bSigma.N=Sigma.N+1;
     if(InitTriDiagonalMatrix(&bSigma))
     {
-      printf("InitTriDiagonalMatrix failed in GBathAndListAndRepresentation in parallel region\n");
+      printf("InitTriDiagonalMatrix (bSigma.N=%i) failed in GBathAndListAndRepresentation in parallel region\n",bSigma.N);
+      fflush(stdout);
       failed=1;
     }
     if(!failed)
@@ -748,7 +749,8 @@ uint32_t GBathAndTriAndRepresentation(AndersonMatrixType const G0, TriDiagonalMa
         bSigma.a[1]=G0.a[i+1]+Sigma.a[0];
         if(TriDiagonalMatrixToListOfPoles(bSigma, &bSigmaPole))
         {
-          printf("TriDiagonalMatrixToListOfPoles failed in GBathAndListAndRepresentation in parallel region\n");
+          printf("TriDiagonalMatrixToListOfPoles (bSigma.N=%i) failed in GBathAndListAndRepresentation in parallel region\n",bSigma.N);
+          fflush(stdout);
           failed=1;
         }
         if(!failed)

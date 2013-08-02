@@ -898,7 +898,9 @@ uint32_t DMFTSpec(DMFTSettings const HSet, double const Egrd, WaveFunctionType c
     Spectra[0].EmaxPole=HSet.Emax;
     Spectra[0].Gamma   =HSet.Gamma;
     for(iQ=0;iQ<HSet.NQ;iQ++)
-    { /* init spectraTri */
+    {
+      printf("Start of XAS itteration for Q=%22.15E (%i/%i)\n",HSet.Q[iQ],iQ,HSet.NQ);fflush(stdout);
+      /* init spectraTri */
       SpectraTri.N=Max(HSet.NTriDiag,HSet.NGCluster);
       InitTriDiagonalMatrix(&SpectraTri);
       /* shift Onsite energy of Anderson operator */
@@ -959,13 +961,18 @@ uint32_t DMFTSpec(DMFTSettings const HSet, double const Egrd, WaveFunctionType c
     printf("\nStart of DMFT Spec core PES\n\n");
     fflush(stdout);
     /* create Identity Operator */
+printf("A\n");fflush(stdout);
     InitOperator(&T);
+    printf("B\n");fflush(stdout);
     T.QComplex=0;
     T.NFermion=HAnd.NFermion;
     T.NBoson=HAnd.NBoson;
     T.NWord=HAnd.NWord;
+    printf("C\n");fflush(stdout);
     InitOperatorFixedLength(&T, 0, 0);
+    printf("D\n");fflush(stdout);
     RealOperatorAddLaderNormalOrder(&T,oadd,0,1,&QDetNotOrderedFcFaBcBa);
+    printf("E\n");fflush(stdout);
     /* set settings for spectra */
     Spectra[0].N       =HSet.NE;
     Spectra[0].Emin    =HSet.Emin;
@@ -975,7 +982,9 @@ uint32_t DMFTSpec(DMFTSettings const HSet, double const Egrd, WaveFunctionType c
     Spectra[0].EmaxPole=HSet.Emax;
     Spectra[0].Gamma   =HSet.Gamma;
     for(iQ=0;iQ<HSet.NQ;iQ++)
-    { /* init spectraTri */
+    {
+      printf("Start of core PES itteration for Q=%22.15E (%i/%i)\n",HSet.Q[iQ],iQ,HSet.NQ);fflush(stdout);
+      /* init spectraTri */
       SpectraTri.N=Max(HSet.NTriDiag,HSet.NGCluster);
       InitTriDiagonalMatrix(&SpectraTri);
       /* shift Onsite energy of Anderson operator */

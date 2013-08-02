@@ -160,6 +160,7 @@ uint32_t MakeRealOperatorFixedLengthComplex(OperatorType *const O, const uint32_
 uint32_t InitOperatorFixedLength(OperatorType *const O, const uint32_t length, const uint32_t NBitsKey)
 {
   uint32_t l;
+  if (length==0) return 1;
   if(length>O->MaxLength)
   { /* allongate the vector O->l */
     if((O->l=realloc(O->l,(length+1)*sizeof(OperatorFixedLengthType)))==NULL) {printf("could not allocate memory for OperatorFixedLengthType of length %i in InitOperatorFixedLength\n",length);return 1;}
