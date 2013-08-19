@@ -242,6 +242,29 @@ uint32_t SymmetrizeTridiagonalMatrix(TriDiagonalMatrixType *const M)
  *  This algorithm combines the pole with the smallest weight with its nearest two neighbors
  *  and repeats this untill the number of nonzero poles is N
  */
+void ReduceSqrtListOfPolesNumberFermi(ListOfPoles * M, uint32_t N, double const Ef)
+{
+  uint32_t i;
+  for(i=0;i<M->N;i++)
+  {
+    M->b[i]*=M->b[i];
+  }
+  ReduceListOfPolesNumberFermi(M, N, Ef);
+  for(i=0;i<M->N;i++)
+  {
+    M->b[i]=sqrt(M->b[i]);
+  }
+}
+
+
+
+
+
+
+/*  Create a new set of poles, which has lenght N, by removing the M->N-N poles with the smallest weight
+ *  This algorithm combines the pole with the smallest weight with its nearest two neighbors
+ *  and repeats this untill the number of nonzero poles is N
+ */
 void ReduceSqrtListOfPolesNumber(ListOfPoles * M, uint32_t N)
 {
   //TimeType Time;
@@ -438,7 +461,18 @@ void ReduceSqrtListOfPolesMoment(ListOfPoles * M, uint32_t N)
   }
 }
 
-
+uint32_t ReducePolesAndersonMatrixNumberFermi(AndersonMatrixType *const A, uint32_t N, double const Ef)
+{
+  ListOfPoles Alp;
+  if(A->N<=N) {printf("warning in ReducePolesAndersonMatrixNumber, A->N=%i and N is %i\n",A->N,N);return 0;}
+  if(N<=1) {printf("Error in ReducePolesAndersonMatrixNumber N=%i\n",N);return 1;}
+  Alp.a=&(A->a[2]);
+  Alp.b=&(A->b[1]);
+  Alp.N=A->N-1;
+  ReduceSqrtListOfPolesNumberFermi(&Alp, N-1, Ef);
+  A->N=Alp.N+1;
+  return 0;
+}
 
 uint32_t ReducePolesAndersonMatrixNumber(AndersonMatrixType *const A, uint32_t N)
 {
@@ -715,7 +749,7 @@ uint32_t GBathAndListAndRepresentation(AndersonMatrixType const G0, ListOfPoles 
  *    G_0(w-Sigma(w))^{-1} + Sigma        =     (w     - a1 - sum_i b_i^2 / (w - a_{i+1} - S)
  *  ( G_0(w-Sigma(w))^{-1} + Sigma )^{-1} = 1 / (w     - a1 - sum_i b_i^2 / (w - a_{i+1} - S)
  */
-uint32_t GBathAndTriAndRepresentation(AndersonMatrixType const G0, TriDiagonalMatrixType const Sigma, AndersonMatrixType *const G)
+uint32_t GBathAndTriAndRepresentationParallel(AndersonMatrixType const G0, TriDiagonalMatrixType const Sigma, AndersonMatrixType *const G)
 {
   int i,j,failed=0;
   G->N=(G0.N-1)*(Sigma.N+1)+1;
@@ -781,7 +815,7 @@ uint32_t GBathAndTriAndRepresentation(AndersonMatrixType const G0, TriDiagonalMa
  *    G_0(w-Sigma(w))^{-1} + Sigma        =     (w     - a1 - sum_i b_i^2 / (w - a_{i+1} - S)
  *  ( G_0(w-Sigma(w))^{-1} + Sigma )^{-1} = 1 / (w     - a1 - sum_i b_i^2 / (w - a_{i+1} - S)
  */
-uint32_t GBathAndTriAndRepresentationSerial(AndersonMatrixType const G0, TriDiagonalMatrixType const Sigma, AndersonMatrixType *const G)
+uint32_t GBathAndTriAndRepresentation(AndersonMatrixType const G0, TriDiagonalMatrixType const Sigma, AndersonMatrixType *const G)
 {
   uint32_t i,j;
   ListOfPoles bSigmaPole;
@@ -799,7 +833,7 @@ uint32_t GBathAndTriAndRepresentationSerial(AndersonMatrixType const G0, TriDiag
   for(i=1;i<G0.N;i++)
   {
     bSigma.b[0]=G0.b[i];
-    bSigma.a[1]=G0.a[i+1]+Sigma.a[0];
+    bSigma.a[1]=G0.a[i+1]+Sigma.a[0]; 
     if(TriDiagonalMatrixToListOfPoles(bSigma, &bSigmaPole)){printf("TriDiagonalMatrixToListOfPoles failed in GBathAndListAndRepresentation\n");return 1;}
     for(j=0;j<bSigmaPole.N;j++)
     {

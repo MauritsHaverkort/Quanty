@@ -470,7 +470,7 @@ uint32_t StreamReadDMFTSettings(DMFTSettings * O, FILE *stream)
   fscanf(stream,"%i",&(O->NBath));                   fgets(comments,1000,stream);
   fscanf(stream,"%i",&(O->Spectra));
   O->NQ=1;
-  if((O->Spectra)&12)
+  if((O->Spectra)&240)
   {
     fscanf(stream,"%i",&(O->NQ));
     O->Q=malloc(O->NQ*sizeof(double));

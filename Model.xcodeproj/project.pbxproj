@@ -45,7 +45,6 @@
 		4C2AAA99163265DD00138620 /* CellFunctions.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA51163265DD00138620 /* CellFunctions.c */; };
 		4C2AAA9A163265DD00138620 /* DimerizedSpinChain.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA52163265DD00138620 /* DimerizedSpinChain.c */; };
 		4C2AAA9B163265DD00138620 /* HeisenbergModel.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA53163265DD00138620 /* HeisenbergModel.c */; };
-		4C2AAA9C163265DD00138620 /* HubbardModel.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA54163265DD00138620 /* HubbardModel.c */; };
 		4C2AAA9D163265DD00138620 /* SpinLader.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA55163265DD00138620 /* SpinLader.c */; };
 		4C2AAA9E163265DD00138620 /* tjModel.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA56163265DD00138620 /* tjModel.c */; };
 		4C2AAA9F163265DD00138620 /* BitMap.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA58163265DD00138620 /* BitMap.c */; };
@@ -77,6 +76,9 @@
 		4C5CA62016D18C3400BE1C25 /* DMFT.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA4C163265DD00138620 /* DMFT.c */; };
 		4C5CA62316D18CB100BE1C25 /* liblapack.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACF163266F900138620 /* liblapack.dylib */; };
 		4C5CA62416D18CD000BE1C25 /* libblas.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACD163266DD00138620 /* libblas.dylib */; };
+		4C79F5E117B53D4100189682 /* HubbardModel.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA54163265DD00138620 /* HubbardModel.c */; };
+		4C79F5E217B53E4F00189682 /* liblapack.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACF163266F900138620 /* liblapack.dylib */; };
+		4C79F5E317B53E5800189682 /* libblas.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACD163266DD00138620 /* libblas.dylib */; };
 		4CDD1CA81796D15600614F34 /* DMFT_eg_Dyson.c in Sources */ = {isa = PBXBuildFile; fileRef = 4CDD1C7E1796D06400614F34 /* DMFT_eg_Dyson.c */; };
 		4CDD1CA91796D27F00614F34 /* libblas.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACD163266DD00138620 /* libblas.dylib */; };
 		4CDD1CAA1796D28900614F34 /* liblapack.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACF163266F900138620 /* liblapack.dylib */; };
@@ -103,6 +105,15 @@
 			runOnlyForDeploymentPostprocessing = 1;
 		};
 		4C5CA61516D18BBF00BE1C25 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		4C79F5D617B53C8000189682 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = /usr/share/man/man1/;
@@ -202,6 +213,7 @@
 		4C5A6B9B175E6E8700EEA17F /* PrintMathematicaExpression.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = PrintMathematicaExpression.c; sourceTree = "<group>"; };
 		4C5CA61716D18BBF00BE1C25 /* DMFT */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = DMFT; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C77BA751741188E00AC7E7D /* OperatorWaveFunctionPerturbation.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = OperatorWaveFunctionPerturbation.c; sourceTree = "<group>"; };
+		4C79F5D817B53C8000189682 /* Hubart */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Hubart; sourceTree = BUILT_PRODUCTS_DIR; };
 		4CA262D8170787D900B8E76E /* TestGreenFunctions.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = TestGreenFunctions.c; sourceTree = "<group>"; };
 		4CDD1C7E1796D06400614F34 /* DMFT_eg_Dyson.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = DMFT_eg_Dyson.c; sourceTree = "<group>"; };
 		4CDD1C7F1796D06400614F34 /* DMFTFunctions.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = DMFTFunctions.c; sourceTree = "<group>"; };
@@ -234,6 +246,15 @@
 			files = (
 				4C5CA62416D18CD000BE1C25 /* libblas.dylib in Frameworks */,
 				4C5CA62316D18CB100BE1C25 /* liblapack.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4C79F5D517B53C8000189682 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4C79F5E317B53E5800189682 /* libblas.dylib in Frameworks */,
+				4C79F5E217B53E4F00189682 /* liblapack.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -279,6 +300,7 @@
 				4C2AAABC163265F500138620 /* Test */,
 				4C5CA61716D18BBF00BE1C25 /* DMFT */,
 				4CDD1C9F1796D14100614F34 /* YiDMFT */,
+				4C79F5D817B53C8000189682 /* Hubart */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -494,6 +516,23 @@
 			productReference = 4C5CA61716D18BBF00BE1C25 /* DMFT */;
 			productType = "com.apple.product-type.tool";
 		};
+		4C79F5D717B53C8000189682 /* Hubart */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4C79F5E017B53C8000189682 /* Build configuration list for PBXNativeTarget "Hubart" */;
+			buildPhases = (
+				4C79F5D417B53C8000189682 /* Sources */,
+				4C79F5D517B53C8000189682 /* Frameworks */,
+				4C79F5D617B53C8000189682 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Hubart;
+			productName = Hubart;
+			productReference = 4C79F5D817B53C8000189682 /* Hubart */;
+			productType = "com.apple.product-type.tool";
+		};
 		4CDD1C9E1796D14100614F34 /* YiDMFT */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 4CDD1CA51796D14100614F34 /* Build configuration list for PBXNativeTarget "YiDMFT" */;
@@ -536,6 +575,7 @@
 				4C2AAABB163265F500138620 /* Test */,
 				4C5CA61616D18BBF00BE1C25 /* DMFT */,
 				4CDD1C9E1796D14100614F34 /* YiDMFT */,
+				4C79F5D717B53C8000189682 /* Hubart */,
 			);
 		};
 /* End PBXProject section */
@@ -582,7 +622,6 @@
 				4C2AAA99163265DD00138620 /* CellFunctions.c in Sources */,
 				4C2AAA9A163265DD00138620 /* DimerizedSpinChain.c in Sources */,
 				4C2AAA9B163265DD00138620 /* HeisenbergModel.c in Sources */,
-				4C2AAA9C163265DD00138620 /* HubbardModel.c in Sources */,
 				4C2AAA9D163265DD00138620 /* SpinLader.c in Sources */,
 				4C2AAA9E163265DD00138620 /* tjModel.c in Sources */,
 				4C2AAA9F163265DD00138620 /* BitMap.c in Sources */,
@@ -624,6 +663,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				4C5CA62016D18C3400BE1C25 /* DMFT.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4C79F5D417B53C8000189682 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4C79F5E117B53D4100189682 /* HubbardModel.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -754,6 +801,26 @@
 			};
 			name = Release;
 		};
+		4C79F5DE17B53C8000189682 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		4C79F5DF17B53C8000189682 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 		4CDD1CA61796D14100614F34 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -820,6 +887,14 @@
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
+		};
+		4C79F5E017B53C8000189682 /* Build configuration list for PBXNativeTarget "Hubart" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4C79F5DE17B53C8000189682 /* Debug */,
+				4C79F5DF17B53C8000189682 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
 		};
 		4CDD1CA51796D14100614F34 /* Build configuration list for PBXNativeTarget "YiDMFT" */ = {
 			isa = XCConfigurationList;

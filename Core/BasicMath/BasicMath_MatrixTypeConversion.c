@@ -315,8 +315,8 @@ uint32_t AndersonMatrixInverseToListOfPoles(AndersonMatrixType const M, ListOfPo
 {
   uint32_t i;
   H->N=M.N-1;
-  H->a0=M.a[1];
   if(InitListOfPoles(H)){printf("InitListOfPoles failed in AndersonMatrixInverseToListOfPoles\n");return 1;}
+  H->a0=M.a[1];
   for(i=0;i<H->N;i++)
   {
     H->b[i]=Sqr(M.b[i+1]);
