@@ -551,6 +551,20 @@ uint32_t TriDiagonalMatrixToBADoubleTriDiagonalMatrix(TriDiagonalMatrixType cons
   return 0;
 }
 
+
+/*
+ *
+ */
+uint32_t TriDiagonalMatrixToBADoubleTriDiagonalMatrixOccupation(TriDiagonalMatrixType const M, BADoubleTriDiagonalMatrixType * const A, uint32_t NTriDiagVal, uint32_t NTriDiagCon, double Ef, double Occupation)
+{
+  ListOfPoles LP;
+  if(TriDiagonalMatrixToListOfPoles(M, &LP)){printf("TriDiagonalMatrixToListOfPoles failed in TriDiagonalMatrixToBADoubleTriDiagonalMatrix\n");return 1;};
+  if(ListOfPolesToBADoubleTridiagonalMatrixOccupation(LP, A, NTriDiagVal, NTriDiagCon, Ef, Occupation)){printf("ListOfPolesToBADoubleTridiagonalMatrix failed in TriDiagonalMatrixToBADoubleTriDiagonalMatrix\n");return 1;};
+  FreeListOfPoles(&LP);
+  strcpy(A->Name,M.Name);
+  return 0;
+}
+
 /******************************************************************************/
 /********************         Matrix conversions           ********************/
 /********************         BlokTriDiagonalMatrix To ... ********************/
@@ -2314,6 +2328,28 @@ uint32_t ListOfPolesToBADoubleTridiagonalMatrix(const ListOfPoles A, BADoubleTri
   M->a0=A.a0;
   M->Ef=Ef;
   M->Epsilon=Epsilon;
+  SetBADoubleTriDiagonalMatrixConVal(M);
+  FreeListOfPoles(&LPval);
+  FreeListOfPoles(&LPcon);
+  return 0;
+}
+
+
+uint32_t ListOfPolesToBADoubleTridiagonalMatrixOccupation(const ListOfPoles A, BADoubleTriDiagonalMatrixType *const M, uint32_t NTriDiagval, uint32_t NTriDiagcon, double Ef, double occupation)
+{
+  double EfOccupation;
+  ListOfPoles LPcon,LPval;
+  ListOfPolesCopyConOccupation(&LPcon, A, &EfOccupation, occupation);
+  ListOfPolesCopyValOccupation(&LPval, A, &EfOccupation, occupation);
+  printf("\nIn ListOfPolesToBADoubleTridiagonalMatrixOccupation Ef input is: %22.15E,\n",Ef);
+  printf("for an occupation of %22.15E      Ef needs to be: %22.15E\n\n",occupation,EfOccupation);
+  ReduceListOfPolesNumber(&LPcon, NTriDiagcon);
+  ReduceListOfPolesNumber(&LPval, NTriDiagval);
+  ListOfPolesToTridiagonalMatrix(LPcon, &(M->con), NTriDiagcon);
+  ListOfPolesToTridiagonalMatrix(LPval, &(M->val), NTriDiagval);
+  M->a0=A.a0;
+  M->Ef=Ef;
+  M->Epsilon=Abs(Ef-EfOccupation);
   SetBADoubleTriDiagonalMatrixConVal(M);
   FreeListOfPoles(&LPval);
   FreeListOfPoles(&LPcon);

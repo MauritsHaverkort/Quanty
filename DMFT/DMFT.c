@@ -141,7 +141,7 @@ int main(int argc, const char * argv[])
     printf("Start of loop %i from %i to %i\n",iOuter+1,HSet.iStart,HSet.iStart+HSet.Ni);
     printf("***********************************************************************\n\n\n");
     /* Create splitted anderson matrix */
-    TriDiagonalMatrixToBADoubleTriDiagonalMatrix(GBath, &GAnd, GBath.N, GBath.N, Ef, epsilonAnd);
+    TriDiagonalMatrixToBADoubleTriDiagonalMatrixOccupation(GBath, &GAnd, GBath.N, GBath.N, Ef, G0Occupation/2);
     if((HSet.SymOpt)&2)
     {
       printf("Symmetrize GAnd(w) -= GAnd(-w)^*\n");

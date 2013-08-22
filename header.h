@@ -324,7 +324,7 @@ uint32_t MatrixToDoubleTriDiagonalMatrix();
 uint32_t MatrixToBlokDoubleTriDiagonalMatrix();
 /********    ListOfPolesTo                              ********/
 uint32_t ListOfPolesToBADoubleTridiagonalMatrix();
-
+uint32_t ListOfPolesToBADoubleTridiagonalMatrixOccupation();
 
 /**********************************************************/
 /********    BasisMath/MatrixTypeConversion.c      ********/

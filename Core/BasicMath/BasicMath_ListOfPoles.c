@@ -696,8 +696,74 @@ uint32_t ListOfPolesCopyCon(ListOfPoles *M, ListOfPoles B, double Ef, double Eps
   return 0;
 }
 
+/*  Keeps the N poles with the smallest energy such that the sum of the
+ *  weight of these poles is exxactly equal to occupation.
+ *  The weight of the N'th pole with the largest energy is reduced to
+ *  exactly match the occupation needed.
+ *  Ef is set to the energy of the last pole (partiall) included
+ */
+uint32_t ListOfPolesCopyValOccupation(ListOfPoles *M, ListOfPoles B, double *Ef, double occupation)
+{
+  double occupationSum;
+  uint32_t i;
+  if(ListOfPolesCopy(M,B)){printf("ListOfPolesCopy failed in ListOfPolesCopyValOccupation\n");return 1;}
+  OrderListOfPoles(M);
+  occupationSum=M->b[0];
+  i=0;
+  while((occupationSum<occupation)&&(i<M->N-1))
+  {
+    i++;
+    occupationSum+=M->b[i];
+  }
+  if(i==M->N-1)
+  {
+    if(occupationSum<occupation)
+    {
+      printf("In ListOfPolesCopyValOccupation occupation (%22.15E) is larger than the total integral of the list of poles (%22.15E)\n",occupation,occupationSum);
+      printf("The entire list is returned\n");
+      return 0;
+    }
+  }
+  M->b[i]+=occupation-occupationSum;
+  *Ef=M->a[i];
+  M->N=i+1;
+  return 0;
+}
 
-
+uint32_t ListOfPolesCopyConOccupation(ListOfPoles *M, ListOfPoles B, double *Ef, double occupation)
+{
+  double occupationSum;
+  uint32_t i,j;
+  if(ListOfPolesCopy(M,B)){printf("ListOfPolesCopy failed in ListOfPolesCopyConOccupation\n");return 1;}
+  OrderListOfPoles(M);
+  occupationSum=M->b[0];
+  i=0;
+  while((occupationSum<occupation)&&(i<M->N-1))
+  {
+    i++;
+    occupationSum+=M->b[i];
+  }
+  if(i==M->N-1)
+  {
+    if(occupationSum<occupation)
+    {
+      printf("In ListOfPolesCopyConOccupation occupation (%22.15E) is larger than the total integral of the list of poles (%22.15E)\n",occupation,occupationSum);
+      printf("A zero list is returned\n");
+      M->N=0;
+      return 0;
+    }
+  }
+  M->b[0]=occupationSum-occupation;
+  M->a[0]=M->a[i];
+  *Ef=M->a[i];
+  for(j=i+1;j<M->N;j++)
+  {
+    M->b[j-i]=M->b[j];
+    M->a[j-i]=M->a[j];
+  }
+  M->N-=i;
+  return 0;
+}
 
 
 
