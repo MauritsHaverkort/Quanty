@@ -79,10 +79,10 @@ uint32_t AndersonMatrixToTriDiagonalMatrixNonOrthogonal(AndersonMatrixType const
 }
 
 /*
-*  M=T.H.T^{\dag}
-*  input M defined, H and T not initiallized
-*/
-uint32_t AndersonMatrixToTriDiagonalMatrix(AndersonMatrixType const M, MatrixType *const T, TriDiagonalMatrixType *const H, uint32_t NTriDiag)
+ *  M=T.H.T^{\dag}
+ *  input M defined, H and T not initiallized
+ */
+uint32_t AndersonMatrixToTriDiagonalMatrixPlusT(AndersonMatrixType const M, MatrixType *const T, TriDiagonalMatrixType *const H, uint32_t NTriDiag)
 {
   uint32_t i,j;
   double tempRe;
@@ -158,6 +158,13 @@ uint32_t AndersonMatrixToTriDiagonalMatrix(AndersonMatrixType const M, MatrixTyp
   RealVectorAndersonMatrixVector(M,T->VRe[NTriDiag-1],&(H->a[NTriDiag]));
   return 0;
 }
+uint32_t AndersonMatrixToTriDiagonalMatrix(AndersonMatrixType const M, TriDiagonalMatrixType *const H, uint32_t NTriDiag)
+{
+  MatrixType T;
+  if(AndersonMatrixToTriDiagonalMatrixPlusT(M, &T, H, NTriDiag)){printf("AndersonMatrixToTriDiagonalMatrixPlusT failed in AndersonMatrixToTriDiagonalMatrix\n");};
+  FreeMatrix(&T);
+  return 0;
+}
 
 uint32_t AndersonMatrixToDoubleTriDiagonalMatrixNonOrthogonal(AndersonMatrixType const M, DoubleTriDiagonalMatrixType *const H, double const Ef, double const epsilon)
 {
@@ -179,7 +186,7 @@ uint32_t AndersonMatrixToDoubleTriDiagonalMatrixNonOrthogonal(AndersonMatrixType
 *  diagonal energies in the AndersonMatrix smaller then Ef-epsilon belong to the valence    part of the double tri diagonal matrix
 *  diagonal energies in the AndersonMatrix in the interval Ef-epsilon to Ef+epsilon contribute partly to the valence, partly to the conductin part, weighted according to distance with Ef
 */
-uint32_t AndersonMatrixToDoubleTriDiagonalMatrix(AndersonMatrixType const M, MatrixType *const T, DoubleTriDiagonalMatrixType *const H, double const Ef, double const epsilon)
+uint32_t AndersonMatrixToDoubleTriDiagonalMatrixPlusT(AndersonMatrixType const M, MatrixType *const T, DoubleTriDiagonalMatrixType *const H, double const mu, double const epsilon)
 {
   AndersonMatrixType MV,MC;
   TriDiagonalMatrixType MVTri,MCTri;
@@ -211,14 +218,14 @@ uint32_t AndersonMatrixToDoubleTriDiagonalMatrix(AndersonMatrixType const M, Mat
   {
     if(fabs(M.b[i-1])>100*DBL_MIN)
     {
-      if(M.a[i]<Ef-epsilon)
+      if(M.a[i]<mu-epsilon)
       {
         MV.N++;
         MV.a[MV.N]=M.a[i];
         MV.b[MV.N-1]=M.b[i-1];
         mapV[MV.N-1]=i-1;
       }
-      else if(M.a[i]>Ef+epsilon)
+      else if(M.a[i]>mu+epsilon)
       {
         MC.N++;
         MC.a[MC.N]=M.a[i];
@@ -229,11 +236,11 @@ uint32_t AndersonMatrixToDoubleTriDiagonalMatrix(AndersonMatrixType const M, Mat
       {
         MV.N++;
         MV.a[MV.N]=M.a[i];
-        MV.b[MV.N-1]=M.b[i-1]*sqrt(0.5-(M.a[i]-Ef)/(DBL_MIN+2*epsilon));
+        MV.b[MV.N-1]=M.b[i-1]*sqrt(0.5-(M.a[i]-mu)/(DBL_MIN+2*epsilon));
         mapV[MV.N-1]=i-1;
         MC.N++;
         MC.a[MC.N]=M.a[i];
-        MC.b[MC.N-1]=M.b[i-1]*sqrt(0.5+(M.a[i]-Ef)/(DBL_MIN+2*epsilon));
+        MC.b[MC.N-1]=M.b[i-1]*sqrt(0.5+(M.a[i]-mu)/(DBL_MIN+2*epsilon));
         mapC[MC.N-1]=i-1;
       }
     }
@@ -241,19 +248,19 @@ uint32_t AndersonMatrixToDoubleTriDiagonalMatrix(AndersonMatrixType const M, Mat
   if(MV.N==1)
   {
     MV.N++;
-    MV.a[MV.N]=Ef-epsilon-(10*fabs(Ef)*DBL_EPSILON);
+    MV.a[MV.N]=mu-epsilon-(10*fabs(mu)*DBL_EPSILON);
     MV.b[MV.N-1]=0;
     mapV[MV.N-1]=0;
   }
   if(MC.N==1)
   {
     MC.N++;
-    MC.a[MC.N]=Ef+epsilon+(10*fabs(Ef)*DBL_EPSILON);
+    MC.a[MC.N]=mu+epsilon+(10*fabs(mu)*DBL_EPSILON);
     MC.b[MC.N-1]=0;
     mapC[MC.N-1]=0;
   }
-  AndersonMatrixToTriDiagonalMatrix(MV,&AtoTV,&MVTri,MV.N);
-  AndersonMatrixToTriDiagonalMatrix(MC,&AtoTC,&MCTri,MC.N);
+  AndersonMatrixToTriDiagonalMatrixPlusT(MV,&AtoTV,&MVTri,MV.N);
+  AndersonMatrixToTriDiagonalMatrixPlusT(MC,&AtoTC,&MCTri,MC.N);
   T->Ni=MV.N+MC.N-1;
   T->Nj=M.N;
   T->QComplex=0;
@@ -280,7 +287,7 @@ uint32_t AndersonMatrixToDoubleTriDiagonalMatrix(AndersonMatrixType const M, Mat
   H->val.N=MVTri.N-1;
   H->con.N=MCTri.N-1;
   InitDoubleTriDiagonalMatrix(H);
-  H->Ef=Ef;
+  H->mu=mu;
   H->Epsilon=epsilon;
   H->a0=M.a[0];
   H->b0=M.b[0];
@@ -304,6 +311,15 @@ uint32_t AndersonMatrixToDoubleTriDiagonalMatrix(AndersonMatrixType const M, Mat
   FreeTriDiagonalMatrix(&MCTri);
   return 0;
 }
+
+uint32_t AndersonMatrixToDoubleTriDiagonalMatrix(AndersonMatrixType const M, DoubleTriDiagonalMatrixType *const H, double const Ef, double const epsilon)
+{
+  MatrixType T;
+  if(AndersonMatrixToDoubleTriDiagonalMatrixPlusT(M, &T, H, Ef, epsilon)){printf("AndersonMatrixToDoubleTriDiagonalMatrixPlusT failed in AndersonMatrixToDoubleTriDiagonalMatrix\n");return 1;};
+  FreeMatrix(&T);
+  return 0;
+}
+
 
 /*  This algorithm assumes M.a[0]=0 and M.b[0]=1
  *  Gand = a0 + b0^2 1 / (w - a1 - \sum_i b_i^2 / ( w - a_i+1 ))
@@ -333,7 +349,7 @@ uint32_t AndersonMatrixToEigensystem(AndersonMatrixType const M, MatrixType *con
 {
   MatrixType Tone,Ttwo;
   TriDiagonalMatrixType Mtri;
-  if(AndersonMatrixToTriDiagonalMatrix(M, &Tone, &Mtri, M.N)){printf("AndersonMatrixToTriDiagonalMatrix failed in AndersonMatrixToEigensystem\n");return 1;}
+  if(AndersonMatrixToTriDiagonalMatrixPlusT(M, &Tone, &Mtri, M.N)){printf("AndersonMatrixToTriDiagonalMatrix failed in AndersonMatrixToEigensystem\n");return 1;}
   if(TriDiagonalMatrixToEigensystem(Mtri, &Ttwo, val)){printf("TriDiagonalMatrixToEigensystem failed in AndersonMatrixToEigensystem\n");return 1;};
   if(MatrixMultiply(T, Ttwo, Tone)){printf("MatrixMultiply failed in AndersonMatrixToEigensystem\n");return 1;};
   
@@ -352,7 +368,7 @@ uint32_t AndersonMatrixToListOfPoles(AndersonMatrixType const M, ListOfPoles *co
   uint32_t i;
   A->N=M.N+1;
   if(InitListOfPoles(A)){printf("InitListOfPoles failed in TriDiagonalMatrixToListOfPoles\n");fflush(stdout);return 1;};
-  if(AndersonMatrixToEigensystem(M, &T, A->a)){printf("TriDiagonalMatrixToEigensystem failed in TriDiagonalMatrixToListOfPoles\n");fflush(stdout);return 1;};
+  if(AndersonMatrixToEigensystem(M, &T, A->a)){printf("AndersonMatrixToEigensystem failed in TriDiagonalMatrixToListOfPoles\n");fflush(stdout);return 1;};
   A->N=T.Ni;
   for(i=0;i<A->N;i++)
   {
@@ -372,6 +388,7 @@ uint32_t AndersonMatrixToBADoubleTriDiagonalMatrix(AndersonMatrixType const M, B
   if(AndersonMatrixToListOfPoles(M, &LP)){printf("AndersonMatrixToListOfPoles failed in AndersonMatrixToBADoubleTriDiagonalMatrix\n");return 1;};
   if(ListOfPolesToBADoubleTridiagonalMatrix(LP, A, NTriDiagVal, NTriDiagCon, Ef, Epsilon)){printf("ListOfPolesToBADoubleTridiagonalMatrix failed in AndersonMatrixToBADoubleTriDiagonalMatrix\n");return 1;};
   FreeListOfPoles(&LP);
+  strcpy(A->Name,"GBath");
   return 0;
 }
 
@@ -444,10 +461,43 @@ uint32_t TriDiagonalMatrixToListOfPoles(TriDiagonalMatrixType const M, ListOfPol
   }
   FreeMatrix(&T);
   A->a0=M.a[0];
+  A->mu=M.mu;
   return 0;
 }
 
-uint32_t TriDiagonalMatrixToAndersonMatrix(TriDiagonalMatrixType const M, MatrixType *const T, AndersonMatrixType *const A)
+uint32_t TriDiagonalMatrixToAndersonMatrix(TriDiagonalMatrixType const M, AndersonMatrixType *const A)
+{
+  TriDiagonalMatrixType Mminor;
+  MatrixType Tminor;
+  uint32_t i;
+  A->N=M.N;
+  InitAndersonMatrix(A);
+  if(M.N<=2)
+  {
+    for(i=0;i<M.N;i++)
+    {
+      A->a[i]=M.a[i];
+      A->b[i]=M.b[i];
+    }
+    A->a[M.N]=M.a[M.N];
+    return 0;
+  }
+  A->a[0]=M.a[0];
+  A->b[0]=M.b[0];
+  A->a[1]=M.a[1];
+  TriDiagonalMatrixPart(&Mminor, M, 2, M.N);
+  TriDiagonalMatrixToEigensystem(Mminor,&Tminor,&(A->a[2]));
+  for(i=1;i<M.N;i++)
+  {
+    A->b[i]=fabs(M.b[1]*Tminor.VRe[i-1][0]);
+  }
+  FreeMatrix(&Tminor);
+  FreeTriDiagonalMatrix(&Mminor);
+  return 0;
+}
+
+
+uint32_t TriDiagonalMatrixToAndersonMatrixPlusT(TriDiagonalMatrixType const M, MatrixType *const T, AndersonMatrixType *const A)
 {
   TriDiagonalMatrixType Mminor;
   MatrixType Tminor;
@@ -492,16 +542,12 @@ uint32_t TriDiagonalMatrixToAndersonMatrix(TriDiagonalMatrixType const M, Matrix
   return 0;
 }
 
-uint32_t TriDiagonalMatrixToDoubleTriDiagonalMatrix(TriDiagonalMatrixType const M, MatrixType *const T, DoubleTriDiagonalMatrixType *const A, double Ef, double epsilon)
+uint32_t TriDiagonalMatrixToDoubleTriDiagonalMatrix(TriDiagonalMatrixType const M, DoubleTriDiagonalMatrixType *const A, double Ef, double epsilon)
 {
   AndersonMatrixType An;
-  MatrixType Tone,Ttwo;
-  if(TriDiagonalMatrixToAndersonMatrix(M,&Tone,&An)){printf("TriDiagonalMatrixToAndersonMatrix failed in TriDiagonalMatrixToDoubleTriDiagonalMatrix\n");fflush(stdout);return 1;};
-  if(AndersonMatrixToDoubleTriDiagonalMatrix(An,&Ttwo,A,Ef,epsilon)){printf("AndersonMatrixToDoubleTriDiagonalMatrix failed in TriDiagonalMatrixToDoubleTriDiagonalMatrix\n");fflush(stdout);return 1;};
+  if(TriDiagonalMatrixToAndersonMatrix(M,&An)){printf("TriDiagonalMatrixToAndersonMatrix failed in TriDiagonalMatrixToDoubleTriDiagonalMatrix\n");fflush(stdout);return 1;};
+  if(AndersonMatrixToDoubleTriDiagonalMatrix(An,A,Ef,epsilon)){printf("AndersonMatrixToDoubleTriDiagonalMatrix failed in TriDiagonalMatrixToDoubleTriDiagonalMatrix\n");fflush(stdout);return 1;};
   FreeAndersonMatrix(&An);
-  if(MatrixMultiply(T,Ttwo,Tone)){printf("MatrixMultiply failed in TriDiagonalMatrixToDoubleTriDiagonalMatrix\n");fflush(stdout);return 1;};
-  FreeMatrix(&Tone);
-  FreeMatrix(&Ttwo);
   return 0;
 }
 
@@ -515,7 +561,33 @@ uint32_t TriDiagonalMatrixToSecondDoubleTriDiagonalMatrix(TriDiagonalMatrixType 
   SecTri.N=M.N-1;
   SecTri.a=&(M.a[1]);
   SecTri.b=&(M.b[1]);
-  return TriDiagonalMatrixToDoubleTriDiagonalMatrix(SecTri, T, &(A->Dt), Ef, epsilon);
+  return TriDiagonalMatrixToDoubleTriDiagonalMatrix(SecTri, &(A->Dt), Ef, epsilon);
+}
+
+uint32_t TriDiagonalMatrixToDoubleTriDiagonalMatrixPlusT(TriDiagonalMatrixType const M, MatrixType *const T, DoubleTriDiagonalMatrixType *const A, double Ef, double epsilon)
+{
+  AndersonMatrixType An;
+  MatrixType Tone,Ttwo;
+  if(TriDiagonalMatrixToAndersonMatrixPlusT(M,&Tone,&An)){printf("TriDiagonalMatrixToAndersonMatrix failed in TriDiagonalMatrixToDoubleTriDiagonalMatrix\n");fflush(stdout);return 1;};
+  if(AndersonMatrixToDoubleTriDiagonalMatrixPlusT(An,&Ttwo,A,Ef,epsilon)){printf("AndersonMatrixToDoubleTriDiagonalMatrix failed in TriDiagonalMatrixToDoubleTriDiagonalMatrix\n");fflush(stdout);return 1;};
+  FreeAndersonMatrix(&An);
+  if(MatrixMultiply(T,Ttwo,Tone)){printf("MatrixMultiply failed in TriDiagonalMatrixToDoubleTriDiagonalMatrix\n");fflush(stdout);return 1;};
+  FreeMatrix(&Tone);
+  FreeMatrix(&Ttwo);
+  return 0;
+}
+
+
+uint32_t TriDiagonalMatrixToSecondDoubleTriDiagonalMatrixPlusT(TriDiagonalMatrixType const M, MatrixType *const T, SecondDoubleTriDiagonalMatrixType *const A, double Ef, double epsilon)
+{
+  TriDiagonalMatrixType SecTri;
+  if(M.N<2){printf("Help error in TriDiagonalMatrixToSecondDoubleTriDiagonalMatrix catch not programmed yet\n");};
+  A->a0=M.a[0];
+  A->b0=M.b[0];
+  SecTri.N=M.N-1;
+  SecTri.a=&(M.a[1]);
+  SecTri.b=&(M.b[1]);
+  return TriDiagonalMatrixToDoubleTriDiagonalMatrixPlusT(SecTri, T, &(A->Dt), Ef, epsilon);
 }
 
 
@@ -2291,7 +2363,6 @@ uint32_t ListOfPolesToTridiagonalMatrixNonOrthogonal(const ListOfPoles A, TriDia
 uint32_t ListOfPolesToTridiagonalMatrix(const ListOfPoles A, TriDiagonalMatrixType *const M, uint32_t NTriDiag)
 {
   uint32_t i;
-  MatrixType T;
   AndersonMatrixType AM;
   AM.N=A.N+1;
   if(InitAndersonMatrix(&AM)){printf("InitAndersonMatrix failed in ListOfPolesToTridiagonalMatrix\n;");fflush(stdout);return 1;};
@@ -2303,7 +2374,7 @@ uint32_t ListOfPolesToTridiagonalMatrix(const ListOfPoles A, TriDiagonalMatrixTy
     AM.b[i+1]=sqrt(fabs(A.b[i]));
     AM.a[i+2]=A.a[i];
   }
-  AndersonMatrixToTriDiagonalMatrix(AM,&T,M, NTriDiag+1);
+  AndersonMatrixToTriDiagonalMatrix(AM, M, NTriDiag+1);
   for(i=0;i<M->N-1;i++)
   {
     M->a[i]=M->a[i+1];
@@ -2312,21 +2383,30 @@ uint32_t ListOfPolesToTridiagonalMatrix(const ListOfPoles A, TriDiagonalMatrixTy
   M->a[M->N-1]=M->a[M->N];
   M->N--;
   FreeAndersonMatrix(&AM);
-  FreeMatrix(&T);
   return 0;
 }
 
-uint32_t ListOfPolesToBADoubleTridiagonalMatrix(const ListOfPoles A, BADoubleTriDiagonalMatrixType *const M, uint32_t NTriDiagval, uint32_t NTriDiagcon, double Ef, double Epsilon)
+uint32_t ListOfPolesToAndersonMatrix(const ListOfPoles A, AndersonMatrixType *const M)
+{
+  TriDiagonalMatrixType Atri;
+  ListOfPolesToTridiagonalMatrix(A, &Atri, A.N);
+  TriDiagonalMatrixToAndersonMatrix(Atri, M);
+  FreeTriDiagonalMatrix(&Atri);
+  M->mu=A.mu;
+  return 0;
+}
+
+uint32_t ListOfPolesToBADoubleTridiagonalMatrix(const ListOfPoles A, BADoubleTriDiagonalMatrixType *const M, uint32_t NTriDiagval, uint32_t NTriDiagcon, double mu, double Epsilon)
 {
   ListOfPoles LPcon,LPval;
-  ListOfPolesCopyCon(&LPcon, A, Ef, Epsilon);
-  ListOfPolesCopyVal(&LPval, A, Ef, Epsilon);
+  ListOfPolesCopyCon(&LPcon, A, mu, Epsilon);
+  ListOfPolesCopyVal(&LPval, A, mu, Epsilon);
   ReduceListOfPolesNumber(&LPcon, NTriDiagcon);
   ReduceListOfPolesNumber(&LPval, NTriDiagval);
   ListOfPolesToTridiagonalMatrix(LPcon, &(M->con), NTriDiagcon);
   ListOfPolesToTridiagonalMatrix(LPval, &(M->val), NTriDiagval);
   M->a0=A.a0;
-  M->Ef=Ef;
+  M->mu=mu;
   M->Epsilon=Epsilon;
   SetBADoubleTriDiagonalMatrixConVal(M);
   FreeListOfPoles(&LPval);
@@ -2335,21 +2415,29 @@ uint32_t ListOfPolesToBADoubleTridiagonalMatrix(const ListOfPoles A, BADoubleTri
 }
 
 
-uint32_t ListOfPolesToBADoubleTridiagonalMatrixOccupation(const ListOfPoles A, BADoubleTriDiagonalMatrixType *const M, uint32_t NTriDiagval, uint32_t NTriDiagcon, double Ef, double occupation)
+uint32_t ListOfPolesToBADoubleTridiagonalMatrixOccupation(const ListOfPoles A, BADoubleTriDiagonalMatrixType *const M, uint32_t NTriDiagval, uint32_t NTriDiagcon, double mu, double occupation)
 {
-  double EfOccupation;
+  double muOccupation;
+  ListOfPoles Achop;
   ListOfPoles LPcon,LPval;
-  ListOfPolesCopyConOccupation(&LPcon, A, &EfOccupation, occupation);
-  ListOfPolesCopyValOccupation(&LPval, A, &EfOccupation, occupation);
-  printf("\nIn ListOfPolesToBADoubleTridiagonalMatrixOccupation Ef input is: %22.15E,\n",Ef);
-  printf("for an occupation of %22.15E      Ef needs to be: %22.15E\n\n",occupation,EfOccupation);
+  ListOfPolesCopyConOccupation(&LPcon, A, &muOccupation, occupation);
+  ListOfPolesCopyValOccupation(&LPval, A, &muOccupation, occupation);
+  printf("\nIn ListOfPolesToBADoubleTridiagonalMatrixOccupation mu input is: %22.15E,\n",mu);
+  printf("for an occupation of %22.15E      mu needs to be: %22.15E\n",occupation,muOccupation);
+  ListOfPolesDetermineOccupation(A, mu, &muOccupation);
+  printf("An occupation of     %22.15E is found at mu=      %22.15E\n\n",muOccupation,mu);
+  
+  ListOfPoleCopyChoped(A, &Achop, 0.01);
+  PrintListOfPoles(Achop);
+  FreeListOfPoles(&Achop);
+  
   ReduceListOfPolesNumber(&LPcon, NTriDiagcon);
   ReduceListOfPolesNumber(&LPval, NTriDiagval);
   ListOfPolesToTridiagonalMatrix(LPcon, &(M->con), NTriDiagcon);
   ListOfPolesToTridiagonalMatrix(LPval, &(M->val), NTriDiagval);
   M->a0=A.a0;
-  M->Ef=Ef;
-  M->Epsilon=Abs(Ef-EfOccupation);
+  M->mu=mu;
+  M->Epsilon=Abs(mu-muOccupation);
   SetBADoubleTriDiagonalMatrixConVal(M);
   FreeListOfPoles(&LPval);
   FreeListOfPoles(&LPcon);

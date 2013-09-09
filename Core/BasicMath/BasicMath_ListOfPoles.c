@@ -55,6 +55,34 @@ uint32_t AddListOfPoles(ListOfPoles *const A, ListOfPoles B)
   return 0;
 }
 
+
+/*   A <- alpha A + (1-alpha) B;
+ *
+ */
+uint32_t MixListOfPoles(ListOfPoles *const A, ListOfPoles const B, double const alpha)
+{
+  double *temp;
+  uint32_t i;
+  temp=realloc(A->a,(A->N+B.N)*sizeof(double));
+  if(temp==NULL){printf("realloc of A->a failed in AddListOfPoles\n");fflush(stdout);return 1;}
+  A->a=temp;
+  temp=realloc(A->b,(A->N+B.N)*sizeof(double));
+  if(temp==NULL){printf("realloc of A->b failed in AddListOfPoles\n");fflush(stdout);return 1;}
+  A->b=temp;
+  for(i=0;i<A->N;i++)
+  {
+    A->b[i]*=alpha;
+  }
+  for(i=0;i<B.N;i++)
+  {
+    A->a[i+A->N]=B.a[i];
+    A->b[i+A->N]=B.b[i]*(1-alpha);
+  }
+  A->a0=alpha*A->a0 + (1-alpha)*B.a0;
+  A->N+=B.N;
+  return 0;
+}
+
 uint32_t SymmetrizeListOfPoles(ListOfPoles *const A)
 {
   double *temp;
@@ -124,12 +152,89 @@ void OrderListOfPolesOld(ListOfPoles *const M)
   }
 }
 
+
+/*  reduces a list of length Ntot to a list of length Ntot-1 by setting the n-th element to zero
+ *  keeps the first Ntot-1 moments conserved, does not shift the poles
+ *  
+ *  Input
+ *    a energy of the poles
+ *    b weight of the poles
+ *
+ *  Output
+ *    b weight of the poles
+ */
+void MergeOnePoleWithNothers(double const * a, double *const b, uint32_t Ntot, uint32_t n)
+{
+  
+}
+
+
+
 /*  Create a new set of poles, wich all have a minimal weight of bmin
  *
  */
-void ReduceListOfPolesWeigth(ListOfPoles *M, double bmin)
+void ReduceListOfPolesWeigth(ListOfPoles *M, double const bmin, double const Ef)
 {
-  printf("ReduceListOfPolesWeigth Still to do/n");
+  uint32_t i,j;
+  OrderListOfPoles(M);
+  if((M->N==1)&&(M->b[0]<bmin))
+  {
+    M->b[0]=0;
+    M->a[0]=0;
+    M->N=0;
+  }
+  else
+  {
+    for(i=0;i<M->N;i++)
+    {
+      if(M->b[i]<bmin)
+      {
+        if(i==0)
+        {
+          if((M->a[0]<Ef)&&(M->a[1]>Ef))
+          {
+            printf("only one pole with weight %22.15E below Ef, removed pole and shifted weight true Ef\n",M->a[0]);
+          }
+          M->a[1]=(M->b[0]*M->a[0]+M->b[1]*M->a[1])/(M->b[0]+M->b[1]+DBL_MIN);
+          M->b[1]+=M->b[0];
+        }
+        else if(i==M->N-1)
+        {
+          if((M->a[i-1]<Ef)&&(M->a[i]>Ef))
+          {
+            printf("only one pole with weight %22.15E above Ef, removed pole and shifted weight true Ef\n",M->a[i]);
+          }
+          M->a[i-1]=(M->b[i-1]*M->a[i-1]+M->b[i]*M->a[i])/(M->b[i]+M->b[i-1]+DBL_MIN);
+          M->b[i-1]+=M->b[i];
+        }
+        else
+        {
+          if((M->a[i-1]<Ef)&&(M->a[i]>Ef))
+          {
+            M->a[i+1]=(M->b[i+1]*M->a[i+1]+M->b[i]*M->a[i])/(M->b[i]+M->b[i+1]+DBL_MIN);
+            M->b[i+1]+=M->b[i];
+          }
+          else if ((M->a[i]<Ef)&&(M->a[i+1]>Ef))
+          {
+            M->a[i-1]=(M->b[i-1]*M->a[i-1]+M->b[i]*M->a[i])/(M->b[i]+M->b[i-1]+DBL_MIN);
+            M->b[i-1]+=M->b[i];
+          }
+          else
+          {
+            M->b[i-1]+=M->b[i]*(DBL_MIN+M->a[i+1]-M->a[i])/(M->a[i+1]-M->a[i-1]+2*DBL_MIN);
+            M->b[i+1]+=M->b[i]*(DBL_MIN+M->a[i]-M->a[i-1])/(M->a[i+1]-M->a[i-1]+2*DBL_MIN);
+          }
+        }
+        for(j=i;j<M->N-1;j++)
+        {
+          M->a[j]=M->a[j+1];
+          M->b[j]=M->b[j+1];
+        }
+        M->N--;
+        if(i!=0)i--;
+      }
+    }
+  }
 }
 
 /*  Create a new set of poles, which has lenght N, by removing the M->N-N poles with the smallest weight
@@ -765,6 +870,179 @@ uint32_t ListOfPolesCopyConOccupation(ListOfPoles *M, ListOfPoles B, double *Ef,
   return 0;
 }
 
+uint32_t ListOfPolesDetermineOccupation(ListOfPoles M, double const Ef, double *const occupation)
+{
+  uint32_t i;
+  *occupation=0;
+  for(i=0;i<M.N;i++)
+  {
+    if(M.a[i]<Ef) *occupation+=M.b[i];
+  }
+  return 0;
+}
 
+uint32_t ListOfPoleCopyChoped(ListOfPoles M, ListOfPoles *A, double Epsilon)
+{
+  uint32_t i,shift;
+  ListOfPolesCopy(A,M);
+  shift=0;
+  for(i=0;i<A->N;i++)
+  {
+    if(A->b[i]<Epsilon)
+    {
+      shift++;
+    }
+    else
+    {
+      if(shift<=i)
+      {
+        A->b[i-shift]=A->b[i];
+        A->a[i-shift]=A->a[i];
+      }
+    }
+  }
+  A->N-=shift;
+  return 0;
+}
+
+/*  Shifts the list of poles such that the chemical potential (Ef at T=0) is zero
+ *  There is one pole that sits exactly at Ef. This pole is split in two
+ *  one part is shifted down one part up with a total splitting of 1000 DBL_EPSILON
+ *  The weight is devided such that Ef sits in the middle
+ */
+uint32_t ShiftListOfPolesToMakeChemPotZeroMetal(ListOfPoles *const M, double const occupation)
+{
+  uint32_t i;
+  double occSum,occSumextra;
+  double Ef;
+  OrderListOfPoles(M);
+  occSum=0;
+  i=0;
+  while ((occSum<=occupation)&&(i<M->N))
+  {
+    occSum+=M->b[i];
+    i++;
+  }
+  if(occSum<occupation){printf("occupation larger than available in ShiftListOfPolesToMakeChemPotZeroMetal (occupation %22.15E, sum %22.15E)\n",occupation,occSum);return 1;};
+  if(i==0){printf("occupation negative in ShiftListOfPolesToMakeEfZero (%22.15E)\n",occupation);return 1;};
+  i--;
+  occSumextra=occSum-occupation;
+  Ef=M->a[i];
+  M->a=realloc(M->a, (M->N+1)*sizeof(double));
+  M->b=realloc(M->b, (M->N+1)*sizeof(double));
+  M->a[M->N]=M->a[i]+1000*DBL_EPSILON*(M->b[i]-occSumextra)/(M->b[i]+DBL_MIN);
+  M->a[i]-=1000*DBL_EPSILON*(occSumextra/(M->b[i]+DBL_MIN));
+  M->b[M->N]=occSumextra;
+  M->b[i]-=occSumextra;
+  M->N+=1;
+  OrderListOfPoles(M);
+  for(i=0;i<M->N;i++)
+  {
+    M->a[i]-=Ef;
+  }
+  return 0;
+}
+
+/*  Shifts the list of poles such that the chemical potential (EF at T=0) is zero
+ *  Finds the pole at Ef, splits it in two such that the weights are ok below and above Ef
+ *  Then looks for the largest distance to the neighbor pool and merges the spectral weight on this side of the pole
+ */
+uint32_t ShiftListOfPolesToMakeChemPotZeroInsulator(ListOfPoles *const M, double const occupation)
+{
+  uint32_t i;
+  double occSum,occSumextra,occShift;
+  double Ef;
+  OrderListOfPoles(M);
+  occSum=0;
+  i=0;
+  while ((occSum<=occupation)&&(i<M->N))
+  {
+    occSum+=M->b[i];
+    i++;
+  }
+  if(occSum<occupation){printf("occupation larger than available in ShiftListOfPolesToMakeChemPotZeroInsulator (occupation %22.15E, sum %22.15E)\n",occupation,occSum);return 1;};
+  if(i==0){printf("occupation negative in ShiftListOfPolesToMakeEfZero (%22.15E)\n",occupation);return 1;};
+  i--;
+  occSumextra=occSum-occupation;
+  occShift=M->b[i]-occSumextra;
+  M->a[i-1]=(M->a[i-1]*M->b[i-1]+M->a[i]*occShift)/(M->b[i-1]+occShift+1000*DBL_MIN);
+  M->b[i-1]+=occShift;
+  M->b[i]=occSumextra;  
+  Ef=(M->a[i]+M->a[i-1])/2;
+  for(i=0;i<M->N;i++)
+  {
+    M->a[i]-=Ef;
+  }
+  return 0;
+}
+
+/*  Shifts the energy of the list of poles such that the chemical potential (Ef at T=0) is zero
+ *  and removes all poles smaler than weight epsilon (set to 1000*DBL_EPSILON or so)
+ *  first assumes a mettal and shifts
+ *  then removes small poles keeping Chemical potential fixed
+ *  thirdly shifts again assuming an insulator (Ef is now between two poles also for a metal)
+ */
+uint32_t ShiftListOfPolesToMakeChemPotZero(ListOfPoles *const M, double const occupation, double const epsilon)
+{
+  ShiftListOfPolesToMakeChemPotZeroMetal(M, occupation);
+  ReduceListOfPolesWeigth(M, epsilon, 0);
+  ShiftListOfPolesToMakeChemPotZeroInsulator(M, occupation);
+  return 0;
+}
+
+/*
+ *
+ */
+uint32_t ShiftListOfPoles(ListOfPoles *const M, double const munew)
+{
+  uint32_t i;
+  M->mu+=munew;
+  for(i=0;i<M->N;i++)
+  {
+    M->a[i]-=munew;
+  }
+  return 0;
+}
+
+
+/*  Shift list of poles to make first moment zero
+ *
+ */
+uint32_t ShiftListOfPolesToMakeFirstMomentZero(ListOfPoles *const M)
+{
+  uint32_t i;
+  double moment;
+  moment=0;
+  for(i=0;i<M->N;i++)
+  {
+    moment+=M->b[i]*M->a[i];
+  }
+  for(i=0;i<M->N;i++)
+  {
+    M->a[i]-=moment;
+  }
+  printf("List of poles %s shifted by the first moment %22.15E\n",M->Name,moment);
+  return 0;
+}
+
+uint32_t ListOfPolesCalculateChemicalPotential(ListOfPoles const M, double const occupation, double *const mu)
+{
+  uint32_t i;
+  double occsum=0;
+  for(i=0;i<M.N;i++)
+  {
+    occsum+=M.b[i];
+    if(occsum>=occupation)
+    {
+      *mu=M.a[i];
+      return 0;
+    }
+  }
+  *mu=M.a[M.N-1];
+  printf("Total occupation of %s is %22.15E\n",M.Name,occsum);
+  printf("Searched for chemical potential of filling of %22.15E\n",occupation);
+  printf("that aint working. Returned %22.15E as chemical potential\n",*mu);
+  return 1;
+}
 
 

@@ -117,6 +117,49 @@ uint32_t FilePrintWaveFunctionFullReadable(WaveFunctionType psi, const char *con
 }
 
 
+uint32_t FilePrintWaveFunctionDensity(WaveFunctionType psi, const char *const flname, const char *const mode)
+{
+  FILE *stream;
+  uint32_t retval;
+  if((strcmp(mode,"w")&&strcmp(mode,"a"))!=0)
+  {
+    printf("ERROR in FilePrintWaveFunctionDensity.\nmode must be either \"w\" for overwrite or \"a\" for append\n %s as input is not excepted\n",mode);
+    return 1;
+  }
+  if((stream=fopen(flname,mode))==NULL)
+  {
+    printf("ERROR\nCan't open %s for writing with mode %s.\n",flname,mode);
+    return 1;
+  }
+  retval=StreamPrintWaveFunctionDensity(psi,stream);
+  fclose(stream);
+  return retval;
+}
+
+uint32_t FilePrintWaveFunctionPrefactorHistogram(WaveFunctionType psi, const double exp, const uint32_t N, const char *const flname, const char *const mode)
+{
+  FILE *stream;
+  uint32_t retval;
+  if((strcmp(mode,"w")&&strcmp(mode,"a"))!=0)
+  {
+    printf("ERROR in FilePrintWaveFunctionPrefactorHistogram.\nmode must be either \"w\" for overwrite or \"a\" for append\n %s as input is not excepted\n",mode);
+    return 1;
+  }
+  if((stream=fopen(flname,mode))==NULL)
+  {
+    printf("ERROR\nCan't open %s for writing with mode %s.\n",flname,mode);
+    return 1;
+  }
+  retval=StreamPrintWaveFunctionPrefactorHistogram(psi,exp,N,stream);
+  fclose(stream);
+  return retval;
+}
+
+
+
+
+
+
 uint32_t FilePrintOperatorReadable(OperatorType O, const char *const flname, const char *const mode)
 {
   FILE *stream;
@@ -443,6 +486,66 @@ uint32_t FilePrintAndersonMatrix(AndersonMatrixType M, const char *const flname,
     return 1;
   }
   retval=StreamPrintAndersonMatrix(M,stream);
+  fclose(stream);
+  return retval;
+}
+
+
+uint32_t FilePrintAndersonMatrixEssentials(AndersonMatrixType M, const char *const flname, const char *const mode)
+{
+  FILE *stream;
+  uint32_t retval;
+  if((strcmp(mode,"w")&&strcmp(mode,"a"))!=0)
+  {
+    printf("ERROR in FilePrintAndersonMatrixEssentials.\nmode must be either \"w\" for overwrite or \"a\" for append\n %s as input is not excepted\n",mode);
+    return 1;
+  }
+  if((stream=fopen(flname,mode))==NULL)
+  {
+    printf("ERROR\nCan't open %s for writing with mode %s.\n",flname,mode);
+    return 1;
+  }
+  retval=StreamPrintAndersonMatrixEssentials(M,stream);
+  fclose(stream);
+  return retval;
+}
+
+
+uint32_t FilePrintListOfPoles(ListOfPoles M, const char *const flname, const char *const mode)
+{
+  FILE *stream;
+  uint32_t retval;
+  if((strcmp(mode,"w")&&strcmp(mode,"a"))!=0)
+  {
+    printf("ERROR in FilePrintListOfPoles.\nmode must be either \"w\" for overwrite or \"a\" for append\n %s as input is not excepted\n",mode);
+    return 1;
+  }
+  if((stream=fopen(flname,mode))==NULL)
+  {
+    printf("ERROR\nCan't open %s for writing with mode %s.\n",flname,mode);
+    return 1;
+  }
+  retval=StreamPrintListOfPoles(M,stream);
+  fclose(stream);
+  return retval;
+}
+
+
+uint32_t FilePrintListOfPolesEssentials(ListOfPoles M, const char *const flname, const char *const mode)
+{
+  FILE *stream;
+  uint32_t retval;
+  if((strcmp(mode,"w")&&strcmp(mode,"a"))!=0)
+  {
+    printf("ERROR in FilePrintListOfPolesEssentials.\nmode must be either \"w\" for overwrite or \"a\" for append\n %s as input is not excepted\n",mode);
+    return 1;
+  }
+  if((stream=fopen(flname,mode))==NULL)
+  {
+    printf("ERROR\nCan't open %s for writing with mode %s.\n",flname,mode);
+    return 1;
+  }
+  retval=StreamPrintListOfPolesEssentials(M,stream);
   fclose(stream);
   return retval;
 }

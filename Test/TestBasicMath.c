@@ -970,7 +970,7 @@ void TestTriDiagonalMatrix()
   PrintTriDiagonalMatrix(B);
   FreeTriDiagonalMatrix(&B);
   printf("\n\n\n\n\n");
-  TriDiagonalMatrixToAndersonMatrix(A,&T,&C);
+  TriDiagonalMatrixToAndersonMatrixPlusT(A,&T,&C);
   
   PrintAndersonMatrix(C);
   
@@ -979,7 +979,7 @@ void TestTriDiagonalMatrix()
   
   printf("\n\n\n\n\n");
   
-  AndersonMatrixToDoubleTriDiagonalMatrix(C,&T2,&D,0.0,0.0001);
+  AndersonMatrixToDoubleTriDiagonalMatrixPlusT(C,&T2,&D,0.0,0.0001);
   PrintDoubleTriDiagonalMatrix(D);
   PrintMatrix(T2);  
   

@@ -563,16 +563,13 @@ uint32_t ReducePolesTriDiagonalMatrix(TriDiagonalMatrixType *const A, uint32_t c
 {
   double tMin;
   AndersonMatrixType An;
-  MatrixType(Tone);
-  if(TriDiagonalMatrixToAndersonMatrix(*A,&Tone,&An)){printf("TriDiagonalMatrixToAndersonMatrix failed in ReducePolesTriDiagonalMatrix\n");fflush(stdout);return 1;};
-  FreeMatrix(&Tone);
+  if(TriDiagonalMatrixToAndersonMatrix(*A,&An)){printf("TriDiagonalMatrixToAndersonMatrix failed in ReducePolesTriDiagonalMatrix\n");fflush(stdout);return 1;};
   tMin=A->b[1]/sqrt((double)NpolesMax)+100*DBL_MIN;
   printf("For %s,\nReduce Poles around %lf, from %i ",A->Name,Ef,A->N);
   ReducePolesAndersonMatrix(&An, tMin, Ef);
   FreeTriDiagonalMatrix(A);
-  AndersonMatrixToTriDiagonalMatrix(An, &Tone, A, An.N);
+  AndersonMatrixToTriDiagonalMatrix(An, A, An.N);
   printf(" to %i by makeing all hybridizations larger than %lf\n",A->N,tMin);
-  FreeMatrix(&Tone);
   return 0;
 }
 
@@ -629,10 +626,22 @@ uint32_t SelfEnergyTriDiagonalRepresentation(TriDiagonalMatrixType const G0, Tri
 
 uint32_t SelfEnergyListOfPolesFromAndersonRepresentation(AndersonMatrixType const G0, AndersonMatrixType const G, ListOfPoles *const Sigma)
 {
+  uint32_t i;
   ListOfPoles IG0;
   if(AndersonMatrixInverseToListOfPoles(G,Sigma)){printf("AndersonMatrixInverseToListOfPoles failed in SelfEnergyListOfPolesFromAndersonRepresentation\n");return 1;}
   if(AndersonMatrixInverseToListOfPoles(G0, &IG0)){printf("AndersonMatrixInverseToListOfPoles failed in SelfEnergyListOfPolesFromAndersonRepresentation\n");return 1;}
-  if(SubtractListOfPoles(Sigma, IG0)){printf("SubtractListOfPoles failed in SelfEnergyListOfPolesFromAndersonRepresentation\n");return 1;};
+  if(SubtractListOfPoles(Sigma, IG0))
+  {
+    printf("SubtractListOfPoles failed in SelfEnergyListOfPolesFromAndersonRepresentation\n");
+    for(i=0;i<Sigma->N;i++)
+    {
+      Sigma->a[i]=0;
+      Sigma->b[i]=0;
+    }
+  }
+  strcpy(Sigma->Name,"Self energy");
+  printf("Self energy moments\n");
+  PrintListOfPolesEssentials(*Sigma);
   FreeListOfPoles(&IG0);
   return 0;
 }
@@ -641,17 +650,60 @@ uint32_t SelfEnergyListOfPolesFromTriDiagonalRepresentation(TriDiagonalMatrixTyp
 {
   ListOfPoles IG0;
   AndersonMatrixType G0And, GAnd;
-  MatrixType T;
-  if(TriDiagonalMatrixToAndersonMatrix(G0, &T, &G0And)){printf("TriDiagonalMatrixToAndersonMatrix failed in SelfEnergyListOfPolesFromTriDiagonalRepresentation\n");return 1;}
-  FreeMatrix(&T);
-  if(TriDiagonalMatrixToAndersonMatrix(G, &T, &GAnd)){printf("TriDiagonalMatrixToAndersonMatrix failed in SelfEnergyListOfPolesFromTriDiagonalRepresentation\n");return 1;}
-  FreeMatrix(&T);
+  if(TriDiagonalMatrixToAndersonMatrix(G0, &G0And)){printf("TriDiagonalMatrixToAndersonMatrix failed in SelfEnergyListOfPolesFromTriDiagonalRepresentation\n");return 1;}
+  if(TriDiagonalMatrixToAndersonMatrix(G, &GAnd)){printf("TriDiagonalMatrixToAndersonMatrix failed in SelfEnergyListOfPolesFromTriDiagonalRepresentation\n");return 1;}
   if(AndersonMatrixInverseToListOfPoles(GAnd,Sigma)){printf("AndersonMatrixInverseToListOfPoles failed in SelfEnergyListOfPolesFromAndersonRepresentation\n");return 1;}
   FreeAndersonMatrix(&GAnd);
   if(AndersonMatrixInverseToListOfPoles(G0And, &IG0)){printf("AndersonMatrixInverseToListOfPoles failed in SelfEnergyListOfPolesFromAndersonRepresentation\n");return 1;}
   FreeAndersonMatrix(&G0And);
   if(SubtractListOfPoles(Sigma, IG0)){printf("SubtractListOfPoles failed in SelfEnergyListOfPolesFromAndersonRepresentation\n");return 1;};
   FreeListOfPoles(&IG0);
+  return 0;
+}
+
+
+/*  GBath(w) = 1 / ( G_0(w+mu-Sigma(w))^{-1} + Sigma(w) )
+ *    G_0(w+mu-Sigma(w))                     = 1 / (w + mu - S - a1 - sum_i b_i^2 / (w + mu - a_{i+1} - S)
+ *    G_0(w+mu-Sigma(w))^{-1}                =     (w + mu - S - a1 - sum_i b_i^2 / (w + mu - a_{i+1} - S)
+ *    G_0(w+mu-Sigma(w))^{-1} + Sigma        =     (w + mu     - a1 - sum_i b_i^2 / (w + mu - a_{i+1} - S)
+ *  ( G_0(w+mu-Sigma(w))^{-1} + Sigma )^{-1} = 1 / (w + mu     - a1 - sum_i b_i^2 / (w + mu - a_{i+1} - S)
+ */
+uint32_t GBathAndTriAndRepresentation(AndersonMatrixType const G0, double const mu, TriDiagonalMatrixType const Sigma, AndersonMatrixType *const G)
+{
+  uint32_t i,j;
+  ListOfPoles bSigmaPole;
+  TriDiagonalMatrixType bSigma;
+  G->N=(G0.N-1)*(Sigma.N+1)+1;
+  if(InitAndersonMatrix(G)){printf("InitAndersonMatrix failed in GBathAndListAndRepresentation\n");return 1;}
+  bSigma.N=Sigma.N+1;
+  if(InitTriDiagonalMatrix(&bSigma)){printf("InitTriDiagonalMatrix failed in GBathAndListAndRepresentation\n");return 1;}
+  bSigma.a[0]=0;
+  for(j=0;j<Sigma.N;j++)
+  {
+    bSigma.a[j+2]=Sigma.a[j+1];
+    bSigma.b[j+1]=Sigma.b[j];
+  }
+  for(i=1;i<G0.N;i++)
+  {
+    bSigma.b[0]=G0.b[i];
+    bSigma.a[1]=G0.a[i+1]+Sigma.a[0];
+    if(TriDiagonalMatrixToListOfPoles(bSigma, &bSigmaPole)){printf("TriDiagonalMatrixToListOfPoles failed in GBathAndListAndRepresentation\n");return 1;}
+    for(j=0;j<bSigmaPole.N;j++)
+    {
+      G->a[j+(i-1)*(Sigma.N+1)+2]=bSigmaPole.a[j];
+      G->b[j+(i-1)*(Sigma.N+1)+1]=sqrt(bSigmaPole.b[j]);
+    }
+    for(j=bSigmaPole.N;j<bSigma.N;j++)
+    {
+      G->a[j+(i-1)*(Sigma.N+1)+2]=0;
+      G->b[j+(i-1)*(Sigma.N+1)+1]=0;
+    }
+    FreeListOfPoles(&bSigmaPole);
+  }
+  G->a[0]=G0.a[0];
+  G->b[0]=G0.b[0];
+  G->a[1]=G0.a[1]-mu;
+  FreeTriDiagonalMatrix(&bSigma);
   return 0;
 }
 
@@ -698,25 +750,26 @@ uint32_t GBathTriDiagonalRepresentation(TriDiagonalMatrixType const G0, TriDiago
 }
 
 /*  GBath(w) = 1 / ( G_0(w-Sigma(w))^{-1} + Sigma(w) )
- *    G_0(w-Sigma(w))                     = 1 / (w - S - a1 - sum_i b_i^2 / (w - a_{i+1} - S)
- *    G_0(w-Sigma(w))^{-1}                =     (w - S - a1 - sum_i b_i^2 / (w - a_{i+1} - S)
- *    G_0(w-Sigma(w))^{-1} + Sigma        =     (w     - a1 - sum_i b_i^2 / (w - a_{i+1} - S)
- *  ( G_0(w-Sigma(w))^{-1} + Sigma )^{-1} = 1 / (w     - a1 - sum_i b_i^2 / (w - a_{i+1} - S)
+ *    G_0(w-Sigma(w))                     = 1 / (w + mu - S - a1 - sum_i b_i^2 / (w + mu - a_{i+1} - S)
+ *    G_0(w-Sigma(w))^{-1}                =     (w + mu - S - a1 - sum_i b_i^2 / (w + mu - a_{i+1} - S)
+ *    G_0(w-Sigma(w))^{-1} + Sigma        =     (w + mu     - a1 - sum_i b_i^2 / (w + mu - a_{i+1} - S)
+ *  ( G_0(w-Sigma(w))^{-1} + Sigma )^{-1} = 1 / (w + mu     - a1 - sum_i b_i^2 / (w + mu - a_{i+1} - S)
  */
-uint32_t GBathAndListAndRepresentation(AndersonMatrixType const G0, ListOfPoles const Sigma, AndersonMatrixType *const G)
+uint32_t GBathAndListAndRepresentation(AndersonMatrixType const G0, double const mu, ListOfPoles const Sigma, AndersonMatrixType *const G)
 {
   uint32_t i,j;
   ListOfPoles bSigmaPole;
   AndersonMatrixType bSigma;
   G->N=(G0.N-1)*(Sigma.N+1)+1;
   if(InitAndersonMatrix(G)){printf("InitAndersonMatrix failed in GBathAndListAndRepresentation\n");return 1;}
+  strcpy(G->Name,"GBath");
   bSigma.N=Sigma.N+1;
   if(InitAndersonMatrix(&bSigma)){printf("InitAndersonMatrix failed in GBathAndListAndRepresentation\n");return 1;}
   bSigma.a[0]=0;
   for(i=1;i<G0.N;i++)
   {
     bSigma.b[0]=G0.b[i];
-    bSigma.a[1]=G0.a[i+1]+Sigma.a0;
+    bSigma.a[1]=G0.a[i+1]-mu+Sigma.a0;
     for(j=0;j<Sigma.N;j++)
     {
       bSigma.a[j+2]=Sigma.a[j];
@@ -737,8 +790,10 @@ uint32_t GBathAndListAndRepresentation(AndersonMatrixType const G0, ListOfPoles 
   }
   G->a[0]=G0.a[0];
   G->b[0]=G0.b[0];
-  G->a[1]=G0.a[1];
+  G->a[1]=G0.a[1]-mu;
+  G->mu=mu;
   FreeAndersonMatrix(&bSigma);
+  PrintAndersonMatrixEssentials(*G);
   return 0;
 }
 
@@ -815,7 +870,7 @@ uint32_t GBathAndTriAndRepresentationParallel(AndersonMatrixType const G0, TriDi
  *    G_0(w-Sigma(w))^{-1} + Sigma        =     (w     - a1 - sum_i b_i^2 / (w - a_{i+1} - S)
  *  ( G_0(w-Sigma(w))^{-1} + Sigma )^{-1} = 1 / (w     - a1 - sum_i b_i^2 / (w - a_{i+1} - S)
  */
-uint32_t GBathAndTriAndRepresentation(AndersonMatrixType const G0, TriDiagonalMatrixType const Sigma, AndersonMatrixType *const G)
+uint32_t OldGBathAndTriAndRepresentation(AndersonMatrixType const G0, TriDiagonalMatrixType const Sigma, AndersonMatrixType *const G)
 {
   uint32_t i,j;
   ListOfPoles bSigmaPole;

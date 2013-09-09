@@ -331,3 +331,23 @@ void ComplexVectorAndersonMatrixVector(AndersonMatrixType const M, const double 
     *yRe+=2*(xRe[i]*M.b[i]*xRe[0]+xIm[i]*M.b[i]*xIm[0]);
   }
 }
+
+
+
+
+/*
+ *
+ */
+uint32_t AndersonMatrixCalculateChemicalPotential(AndersonMatrixType const M, double const occupation, double *const mu)
+{
+  ListOfPoles MLP;
+  AndersonMatrixToListOfPoles(M, &MLP);
+  if(ListOfPolesCalculateChemicalPotential(MLP, occupation, mu))
+  {
+    printf("ListOfPolesCalculateChemicalPotential failed in AndersonMatrixCalculateChemicalPotential\n");
+    FreeListOfPoles(&MLP);
+    return 1;
+  }
+  FreeListOfPoles(&MLP);
+  return 0;
+}

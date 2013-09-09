@@ -309,9 +309,45 @@ uint32_t StreamPrintWaveFunctionFullReadable(WaveFunctionType psi, FILE *stream)
   return 0;
 }
 
+/*
+ *   prints the onsite density of a wave-function.
+ *   These results depend on the basis choosen, which can be quite arbetrary
+ */
+uint32_t StreamPrintWaveFunctionDensity(WaveFunctionType const psi, FILE *stream)
+{
+  uint32_t i;
+  double Rho[psi.NBoson+psi.NFermion];
+  CalculateDensity(Rho, psi);
+  printf("Onsite Density (-only the diagonal of the density matrix-)\n");
+  for(i=0;i<psi.NBoson+psi.NFermion;i++)
+  {
+    printf("%5i %22.15E\n",i,Rho[i]);
+  }
+  printf("\n");
+  return 0;
+}
 
 /*
-*   Prints the values of the operator.
+ *   prints a Histogram lisitng the prefactors of a wave-funciton
+ */
+uint32_t StreamPrintWaveFunctionPrefactorHistogram(WaveFunctionType const psi, const double exp, const uint32_t N, FILE *stream)
+{
+  uint32_t i;
+  double Hist[N];
+  CalculatePrefactorHistogram(Hist, psi, exp, N);
+  printf("\nHistogram of prefactors in Wave-function\n");
+  for(i=0;i<N-1;i++)
+  {
+    printf("(%f)^(-%2i) to (%f)^(-%2i) | %22.15E\n",exp,i,exp,i+1,Hist[i]);
+  }
+  printf("(%f)^(-%2i) to (%f)       | %22.15E\n",exp,i,0.0,Hist[N-1]);
+  printf("\n");
+  return 0;
+}
+
+
+/*
+ *   Prints the values of the operator.
  */
 uint32_t StreamPrintOperatorReadable(OperatorType O, FILE *stream)
 {
@@ -769,9 +805,16 @@ uint32_t StreamPrintDMFTSettings(DMFTSettings O, FILE *stream)
   uint32_t i;
   fprintf(stream,"\nSettigns of self-consistent DMFT calculation\n");
   fprintf(stream,"G0FileName               : %s\n",O.G0FileName);  
-  fprintf(stream,"GRootFileName            : %s\n",O.GRootFileName);  
+  fprintf(stream,"RootFileName             : %s\n",O.RootFileName);  
   fprintf(stream,"SpecRootFileName         : %s\n",O.SpecRootFileName);  
-  fprintf(stream,"WaveFunctionRootFileName : %s\n",O.WaveFunctionRootFileName);  
+  fprintf(stream,"WaveFunctionRootFileName : %s\n",O.WaveFunctionRootFileName);
+  fprintf(stream,"number of electrons      : %22.15E\n",O.Nelectron);
+  fprintf(stream,"Chemical potential of G0 : %22.15E\n",O.mu0);
+  fprintf(stream,"Chemical potential of G  : %22.15E\n",O.mu);
+  fprintf(stream,"Options for Chemical pot : %i\n",O.NmuSym);
+  if((O.NmuSym)&1 )fprintf(stream,"                         ( 1) mu and mu0 are read from G0 and Sigma, values in imput ignored;\n");
+  if((O.NmuSym)&2 )fprintf(stream,"                         ( 2) Calculations done at fixed mu, Nelectron ignored;\n");
+  fprintf(stream,"# of spin-orbitals-sites : %i\n",O.NSite);
   fprintf(stream,"iStart                   : %i\n",O.iStart);
   fprintf(stream,"Ni                       : %i\n",O.Ni);
   fprintf(stream,"Dyson perturbation       : %i\n",O.Dyson);
@@ -780,7 +823,6 @@ uint32_t StreamPrintDMFTSettings(DMFTSettings O, FILE *stream)
   if((O.SymOpt)&2 )fprintf(stream,"                         ( 2) G(w) +=-G(-w)^*; G(w)/=2;\n");
   if((O.SymOpt)&4 )fprintf(stream,"                         ( 4) psi_cluster lives on 2 sites per orbital\n");
   if((O.SymOpt)&8 )fprintf(stream,"                         ( 8) mu = U/2\n");
-  if((O.SymOpt)&16)fprintf(stream,"                         (16) Hybridization sumrules enforced on G_bath and G_cluster\n");
   fprintf(stream,"NGCluster                : %i\n",O.NGCluster);
   fprintf(stream,"NGBath                   : %i\n",O.NGBath);
   fprintf(stream,"Mix                      : %24.17E\n",O.Mix);
@@ -894,7 +936,7 @@ uint32_t StreamPrintDoubleTriDiagonalMatrix(DoubleTriDiagonalMatrixType M, FILE 
 {
   M.Name[MAXStrLength-1]='\0';
   fprintf(stream,"%s =\n",M.Name);
-  fprintf(stream,"DoubleTriDiagonalMatrix Ef = %22.15E Epsilon = %22.15E\n",M.Ef,M.Epsilon);
+  fprintf(stream,"DoubleTriDiagonalMatrix mu = %22.15E Epsilon = %22.15E\n",M.mu,M.Epsilon);
   fprintf(stream,"                        a0 = %22.15E      b0 = %22.15E\n",M.a0,M.b0);
   fprintf(stream,"Valence part (E<Ef):\n");
   StreamPrintTriDiagonalMatrix(M.val,stream);
@@ -909,7 +951,7 @@ uint32_t StreamPrintBADoubleTriDiagonalMatrix(BADoubleTriDiagonalMatrixType M, F
 {
   M.Name[MAXStrLength-1]='\0';
   fprintf(stream,"%s =\n",M.Name);
-  fprintf(stream,"BADoubleTriDiagonalMatrix Ef = %22.15E Epsilon = %22.15E\n",M.Ef,M.Epsilon);
+  fprintf(stream,"BADoubleTriDiagonalMatrix mu = %22.15E Epsilon = %22.15E\n",M.mu,M.Epsilon);
   fprintf(stream,"                          a0 = %22.15E      b0 = %22.15E\n",M.a0,M.b0);
   fprintf(stream,"Valence part (E<Ef):\n");
   StreamPrintTriDiagonalMatrix(M.val,stream);
@@ -934,7 +976,7 @@ uint32_t StreamPrintSecondDoubleTriDiagonalMatrix(SecondDoubleTriDiagonalMatrixT
 {
   M.Name[MAXStrLength-1]='\0';
   fprintf(stream,"%s =\n",M.Name);
-  fprintf(stream,"SecondDoubleTriDiagonalMatrix Ef    = %22.15E Epsilon    = %22.15E\n",M.Ef,M.Epsilon);
+  fprintf(stream,"SecondDoubleTriDiagonalMatrix Ef    = %22.15E Epsilon    = %22.15E\n",M.mu,M.Epsilon);
   fprintf(stream,"                              a0    = %22.15E      b0    = %22.15E\n",M.a0,M.b0);
   fprintf(stream,"                              Dt.a0 = %22.15E      Dt.b0 = %22.15E\n",M.Dt.a0,M.Dt.b0);
   fprintf(stream,"Valence part (E<Ef):\n");
@@ -948,7 +990,7 @@ uint32_t StreamPrintBlokDoubleTriDiagonalMatrix(BlokDoubleTriDiagonalMatrixType 
 {
   M.Name[MAXStrLength-1]='\0';
   fprintf(stream,"%s =\n",M.Name);
-  fprintf(stream,"BlokDoubleTriDiagonalMatrix Ef = %22.15E Epsilon = %22.15E\n",M.Ef,M.Epsilon);
+  fprintf(stream,"BlokDoubleTriDiagonalMatrix Ef = %22.15E Epsilon = %22.15E\n",M.mu,M.Epsilon);
   fprintf(stream,"a[0]\n");
   StreamPrintMatrix(M.a0,stream);
   fprintf(stream,"b[0]\n");
@@ -967,6 +1009,7 @@ uint32_t StreamPrintAndersonMatrix(AndersonMatrixType M, FILE *stream)
   fprintf(stream,"%s =\n",M.Name);
   fprintf(stream,"AndersonMatrix element a[i-1]=M[i][i] element b[i-1]=M[i,i-1]=M[i-1,i] others are zero.\n");
   fprintf(stream,"Zero elements are prefactors for continued fraction representation\n");
+  fprintf(stream,"Chemical potential is %22.15E\n",M.mu);
   fprintf(stream,"i    a[i]                   b[i]\n");
   for(i=0;i<M.N;i++)
   {
@@ -1004,6 +1047,7 @@ uint32_t StreamPrintListOfPoles(ListOfPoles M, FILE *stream)
   M.Name[MAXStrLength-1]='\0';
   fprintf(stream,"%s =\n",M.Name);
   fprintf(stream,"List of Poles.\n");
+  fprintf(stream,"Chemical potential is %22.15E\n",M.mu);
   fprintf(stream,"a0 = %22.15E, sum_i b[i] = %22.15E\n",M.a0,sum);
   fprintf(stream,"i    a[i]                   b[i]\n");
   for(i=0;i<M.N;i++)
@@ -1013,4 +1057,57 @@ uint32_t StreamPrintListOfPoles(ListOfPoles M, FILE *stream)
   return 0;
 }
 
+uint32_t StreamPrintListOfPolesEssentials(ListOfPoles M, FILE *stream)
+{
+  uint32_t i;
+  double sum=0,wsum=0,wwsum=0,wwwsum=0;
+  double Osum=0,Owsum=0,Owwsum=0,Owwwsum=0;
+  for(i=0;i<M.N;i++)
+  {
+    sum+=M.b[i];
+    wsum+=M.b[i]*M.a[i];
+    wwsum+=M.b[i]*M.a[i]*M.a[i];
+    wwwsum+=M.b[i]*M.a[i]*M.a[i]*M.a[i];
+    if(M.a[i]<0)
+    {
+      Osum+=M.b[i];
+      Owsum+=M.b[i]*M.a[i];
+      Owwsum+=M.b[i]*M.a[i]*M.a[i];
+      Owwwsum+=M.b[i]*M.a[i]*M.a[i]*M.a[i];
+    }
+  }
+  M.Name[MAXStrLength-1]='\0';
+  fprintf(stream,"%s : (Moments of List of poles of size (%i))\n",M.Name,M.N);
+  fprintf(stream,"Chemical potential is %22.15E\n",M.mu);
+  fprintf(stream,"a0  = %22.15E\n",M.a0);
+  fprintf(stream,"w0  = %22.15E, w1  = %22.15E, w2  = %22.15E, w3  = %22.15E\n",sum,wsum,wwsum,wwwsum);
+  fprintf(stream,"w0+ = %22.15E, w1+ = %22.15E, w2+ = %22.15E, w3+ = %22.15E\n",Osum,Owsum,Owwsum,Owwwsum);
+  fprintf(stream,"  Energy                  Weight\n");
+  for(i=0;i<Min(M.N,2);i++)
+  {
+    fprintf(stream,"%22.15E %22.15E\n",M.a[i],M.b[i]);
+  }
+  for(i=Max(2,M.N-2);i<M.N;i++)
+  {
+    fprintf(stream,"%22.15E %22.15E\n",M.a[i],M.b[i]);
+  }
+  fprintf(stream,"\n");
+  return 0;
+}
 
+uint32_t StreamPrintAndersonMatrixEssentials(AndersonMatrixType M, FILE *stream)
+{
+  uint32_t i;
+  double tothyb=0;
+  M.Name[MAXStrLength-1]='\0';
+  fprintf(stream,"%s : (Moments of Anderson Matrix of size (%i))\n",M.Name,M.N);
+  fprintf(stream,"Chemical potential is %22.15E\n",M.mu);
+  fprintf(stream,"a0  = %22.15E, a1  = %22.15E, b0  = %22.15E\n",M.a[0],M.a[1],M.b[0]);
+  for(i=1;i<M.N;i++)
+  {
+    tothyb+=Sqr(M.b[i]);
+  }
+  fprintf(stream,"total hybridization (sum b^2) is: %22.15E\n",tothyb);
+  fprintf(stream,"\n");
+  return 0;
+}

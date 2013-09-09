@@ -23,7 +23,7 @@ void FreeBlokDoubleTriDiagonalMatrix(BlokDoubleTriDiagonalMatrixType *const M)
 {
   FreeBlokTriDiagonalMatrix(&M->val);
   FreeBlokTriDiagonalMatrix(&M->con);
-  M->Ef=0;
+  M->mu=0;
   M->Epsilon=0;
   strcpy(M->Name,"free");
 }
@@ -35,7 +35,7 @@ void FreeFrameBlokDoubleTriDiagonalMatrix(BlokDoubleTriDiagonalMatrixType *const
 {
   FreeFrameBlokTriDiagonalMatrix(&M->val);
   FreeFrameBlokTriDiagonalMatrix(&M->con);
-  M->Ef=0;
+  M->mu=0;
   M->Epsilon=0;
   strcpy(M->Name,"free");
 }
@@ -123,7 +123,7 @@ uint32_t BlokDoubleTriDiagonalMatrixScalarMultiply(BlokDoubleTriDiagonalMatrixTy
  */
 uint32_t BlokDoubleTriDiagonalMatrixPart(BlokDoubleTriDiagonalMatrixType * const M, BlokDoubleTriDiagonalMatrixType A,uint32_t iEndval, uint32_t iEndcon)
 {
-  M->Ef=A.Ef;
+  M->mu=A.mu;
   M->Epsilon=A.Epsilon;
   strcpy(M->Name,A.Name);
   if((iEndval>=A.val.N)||(iEndcon>=A.con.N)) return 1;
@@ -141,7 +141,7 @@ uint32_t BlokDoubleTriDiagonalMatrixPart(BlokDoubleTriDiagonalMatrixType * const
 */
 uint32_t BlokDoubleTriDiagonalMatrixCopy(BlokDoubleTriDiagonalMatrixType * const M, BlokDoubleTriDiagonalMatrixType A)
 {
-  M->Ef=A.Ef;
+  M->mu=A.mu;
   M->Epsilon=A.Epsilon;
   strcpy(M->Name,A.Name);
   if(BlokTriDiagonalMatrixCopy(&M->val,A.val)) return 1;

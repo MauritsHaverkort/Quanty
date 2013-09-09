@@ -40,7 +40,7 @@ void FreeBADoubleTriDiagonalMatrix(BADoubleTriDiagonalMatrixType *const M)
 {
   FreeTriDiagonalMatrix(&M->val);
   FreeTriDiagonalMatrix(&M->con);
-  M->Ef=0;
+  M->mu=0;
   M->Epsilon=0;
   M->a0=0;
   M->b0=0;
@@ -236,7 +236,7 @@ uint32_t BADoubleTriDiagonalMatrixPart(BADoubleTriDiagonalMatrixType * const M, 
 {
   TriDiagonalMatrixPart(&(M->val), A.val, 0, iEndval);
   TriDiagonalMatrixPart(&(M->con), A.val, 0, iEndcon);
-  M->Ef=A.Ef;
+  M->mu=A.mu;
   M->Epsilon=A.Epsilon;
   M->a0=A.a0;
   M->b0=A.b0;

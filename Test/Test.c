@@ -25,7 +25,7 @@
 #endif
 
 #include "../Core/StructDef.c"
-#include "../header.h"
+#include "../Headers/header.h"
 #include "../Core/TimeStamp.c"
 #include "../Core/Hash.c"
 #include "../Core/BasicMath.c"
@@ -59,6 +59,7 @@
 #include "../Test/TestGreenFunctions.c"
 #include "../Test/TestGFBA.c"
 #include "../Test/TestStandardOperators.c"
+#include "../Test/TestAtomicPhysics.c"
 
 int main (int argc, const char * argv[]) 
 {
@@ -115,6 +116,8 @@ int main (int argc, const char * argv[])
     if (!strncmp("GFBA",argv[argc],strlen(argv[argc]))) TestGFBA();
     
     if(!strncmp("StdOppS",argv[argc],strlen(argv[argc]))) TestS();
+    
+    if(!strncmp("AtomicPhysics",argv[argc],strlen(argv[argc]))) TestAtomicPhysics();
   }
   return 0;
 }

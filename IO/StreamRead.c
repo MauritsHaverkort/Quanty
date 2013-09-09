@@ -311,6 +311,111 @@ uint32_t StreamReadPlainTriDiagonalMatrixType(TriDiagonalMatrixType * O, FILE *s
   return 0;
 }
 
+uint32_t StreamReadListOfPoles(ListOfPoles * O, FILE *stream)
+{
+  char comments[1000];
+  int i;
+  fscanf(stream,"%i",&(O->N)); fgets(comments,1000,stream);
+  if(InitListOfPoles(O)){printf("InitListOfPoles failed in StreamReadPoleList\n");fflush(stdout);return 1;};
+  for(i=0;i<O->N;i++)
+  {
+    fscanf(stream,"%lf %lf",&(O->a[i]),&(O->b[i])); fgets(comments,1000,stream);
+  }
+  return 0;
+}
+
+uint32_t StreamReadListOfPolesUndetermined(ListOfPoles * O, FILE *stream)
+{
+  char InputType[255];
+  char comments[1000];
+  fscanf(stream,"%s",InputType);                   fgets(comments,1000,stream);
+  if(strncmp(InputType,"tri",3) == 0)
+  {
+    TriDiagonalMatrixType OTri;
+    StreamReadPlainTriDiagonalMatrixType(&OTri, stream);
+    TriDiagonalMatrixToListOfPoles(OTri, O);
+    FreeTriDiagonalMatrix(&OTri);
+  }
+  else if(strncmp(InputType,"and",3) == 0)
+  {
+    AndersonMatrixType    OAnd;
+    StreamReadAndersonMatrixType(&OAnd, stream);
+    AndersonMatrixToListOfPoles(OAnd, O);
+    FreeAndersonMatrix(&OAnd);
+  }
+  else if(strncmp(InputType,"lp",2) == 0)
+  {
+    StreamReadListOfPoles(O, stream);
+  }
+  else
+  {
+    printf("Expect the first line of the file to contain the format \"tri\", \"and\", or \"lp\".\n");
+    return 1;
+  }
+  return 0;
+}
+
+uint32_t StreamReadAndersonMatrixTypeUndetermined(AndersonMatrixType * O, FILE *stream)
+{
+  char InputType[255];
+  char comments[1000];
+  fscanf(stream,"%s",InputType);                   fgets(comments,1000,stream);
+  if(strncmp(InputType,"tri",3) == 0)
+  {
+    TriDiagonalMatrixType OTri;
+    StreamReadPlainTriDiagonalMatrixType(&OTri, stream);
+    TriDiagonalMatrixToAndersonMatrix(OTri, O);
+    FreeTriDiagonalMatrix(&OTri);
+  }
+  else if(strncmp(InputType,"and",3) == 0)
+  {
+    StreamReadAndersonMatrixType(O, stream);
+  }
+  else if(strncmp(InputType,"lp",2) == 0)
+  {
+    ListOfPoles OLP;
+    StreamReadListOfPoles(&OLP, stream);
+    ListOfPolesToAndersonMatrix(OLP, O);
+    FreeListOfPoles(&OLP);
+  }
+  else
+  {
+    printf("Expect the first line of the file to contain the format \"tri\", \"and\", or \"lp\".\n");
+    return 1;
+  }
+  return 0;
+}
+
+uint32_t StreamReadAndersonMatrixTypeUndeterminedPlusMu(AndersonMatrixType * O, FILE *stream, double * const mu)
+{
+  char InputType[255];
+  char comments[1000];
+  fscanf(stream,"%s %lf",InputType,mu);                   fgets(comments,1000,stream);
+  if(strncmp(InputType,"tri",3) == 0)
+  {
+    TriDiagonalMatrixType OTri;
+    StreamReadPlainTriDiagonalMatrixType(&OTri, stream);
+    TriDiagonalMatrixToAndersonMatrix(OTri, O);
+    FreeTriDiagonalMatrix(&OTri);
+  }
+  else if(strncmp(InputType,"and",3) == 0)
+  {
+    StreamReadAndersonMatrixType(O, stream);
+  }
+  else if(strncmp(InputType,"lp",2) == 0)
+  {
+    ListOfPoles OLP;
+    StreamReadListOfPoles(&OLP, stream);
+    ListOfPolesToAndersonMatrix(OLP, O);
+    FreeListOfPoles(&OLP);
+  }
+  else
+  {
+    printf("Expect the first line of the file to contain the format \"tri\", \"and\", or \"lp\".\n");
+    return 1;
+  }
+  return 0;
+}
 
 uint32_t StreamReadTightBindingDefHopping(TightBindingDefHopping * O, FILE *stream)
 {
@@ -456,13 +561,19 @@ uint32_t StreamReadDMFTSettings(DMFTSettings * O, FILE *stream)
   char comments[1000];
   uint32_t i;
   fscanf(stream,"%s",(O->G0FileName));               fgets(comments,1000,stream);
-  fscanf(stream,"%s",(O->GRootFileName));            fgets(comments,1000,stream);
+  fscanf(stream,"%s",(O->RootFileName));             fgets(comments,1000,stream);
   fscanf(stream,"%s",(O->SpecRootFileName));         fgets(comments,1000,stream);
   fscanf(stream,"%s",(O->WaveFunctionRootFileName)); fgets(comments,1000,stream);
+  fscanf(stream,"%lf",&(O->Nelectron));              fgets(comments,1000,stream);
+  fscanf(stream,"%lf",&(O->mu0));                    fgets(comments,1000,stream);
+  fscanf(stream,"%lf",&(O->mu));                     fgets(comments,1000,stream);
+  fscanf(stream,"%i",&(O->NmuSym));                  fgets(comments,1000,stream);
+  fscanf(stream,"%i",&(O->NSite));                   fgets(comments,1000,stream);
   fscanf(stream,"%i",&(O->iStart));                  fgets(comments,1000,stream);
   fscanf(stream,"%i",&(O->Ni));                      fgets(comments,1000,stream);
   fscanf(stream,"%i",&(O->Dyson));                   fgets(comments,1000,stream);
   fscanf(stream,"%i",&(O->SymOpt));                  fgets(comments,1000,stream);
+  if((O->SymOpt)&8)O->NmuSym&=2;
   fscanf(stream,"%i",&(O->NGCluster));               fgets(comments,1000,stream);
   fscanf(stream,"%i",&(O->NGBath));                  fgets(comments,1000,stream);
   fscanf(stream,"%lf",&(O->Mix));                    fgets(comments,1000,stream);

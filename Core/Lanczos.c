@@ -141,6 +141,7 @@ uint32_t LanczosGroundStateRR(const OperatorType H, WaveFunctionType *const psi,
       }
       // Set the shift such that the largest eigenvalue found becomes zero
       shift-=val[M.N-1];
+      shift-=0.0001*Abs(shift);
       // Orthogonalize to previously found functions
       RealWaveFunctionOrthogonalizeConserveBasis(psi, OtherPsi, NOtherPsi);
       RealWaveFunctionNormalize(psi);
@@ -2270,6 +2271,21 @@ uint32_t LanczosGroundState(const OperatorType H, WaveFunctionType *const psi, d
     }
   }
 }
+
+uint32_t LanczosEigenSystem(const OperatorType H, WaveFunctionType const psiStart, WaveFunctionType *const psiList, double *epsilon, const double zero, uint32_t Npsi)
+{
+  uint32_t i;
+  for(i=0;i<Npsi;i++)
+  {
+    WaveFunctionCopy(psiStart,&(psiList[i]));
+    WaveFunctionOrthogonalize(&(psiList[i]), psiList, i);
+    WaveFunctionNormalize(&(psiList[i]));
+    LanczosGroundState(H, &(psiList[i]), epsilon, zero, 0, psiList, i);
+  }
+  return 0;
+}
+
+
 
 
 uint32_t LanczosTriDiagonalize(const OperatorType H, WaveFunctionType psi, double epsilon, TriDiagonalMatrixType *const M, double Gamma)

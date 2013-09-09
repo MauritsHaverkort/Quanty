@@ -657,3 +657,15 @@ uint32_t WaveFunctionRemoveFermion(WaveFunctionType const psiIn, WaveFunctionTyp
   }
   return 0;
 }
+
+
+uint32_t WaveFunctionCopy(WaveFunctionType const A, WaveFunctionType *const B)
+{
+  B->NFermion=A.NFermion;
+  B->NBoson=A.NBoson;
+  B->QComplex=A.QComplex;
+  B->NBitsKey=A.NBitsKey;
+  if(WaveFunctionInit(B)){printf("WaveFunctionInit failed in WaveFunctionCopy\n");return 1;};
+  if(WaveFunctionAddUnionBasis(B, A)){printf("WaveFunctionAddUnionBasis failed in WaveFunctionCopy\n");return 1;};
+  return 0;
+}

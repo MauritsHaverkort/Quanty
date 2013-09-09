@@ -844,3 +844,60 @@ uint32_t RealWaveFunctionOrthogonalize(WaveFunctionType *const psi, const WaveFu
   }
   return 0;
 }
+
+
+uint32_t CreateRealRandomWaveFunction(WaveFunctionType *const psi, uint32_t const NFermions, uint32_t const nelectrons)
+{
+  if(nelectrons>NFermions)
+  {
+    printf("Error in CreateRealRandomWaveFunction\n");
+    printf("You tried to make a funciton with %i electrons in %i places\n",nelectrons,NFermions);
+    return 1;
+  };
+  uint32_t idet,ielec,iferm,iofset;
+  uint8_t *Determinant;
+  psi->NBitsKey=16;
+  psi->QComplex=0;
+  psi->NBoson=0;
+  psi->NFermion=NFermions;
+  if(WaveFunctionInit(psi)){printf("WaveFunctionInit failed in CreateRealRandomWaveFunction\n");fflush(stdout);return 1;};
+  sprintf(psi->Name,"WaveFunction");
+  for(idet=0;idet<50;idet++)
+  {
+    Determinant=calloc(psi->NWord,sizeof(uint8_t));
+    iofset=0;
+    for(ielec=0;ielec<nelectrons;ielec++)
+    {
+      if(rand()&1)
+      {
+        if(NFermions-nelectrons>iofset)iofset++;
+        if(rand()&1)
+        {
+          if(NFermions-nelectrons>iofset)iofset++;
+          if(rand()&1)
+          {
+            if(NFermions-nelectrons>iofset)iofset++;
+            if(rand()&1)
+            {
+              if(NFermions-nelectrons>iofset)iofset++;
+              if(rand()&1)
+              {
+                if(NFermions-nelectrons>iofset)iofset++;
+                if(rand()&1)
+                {
+                  if(NFermions-nelectrons>iofset)iofset++;
+                }
+              }
+            }
+          }
+        }
+      }
+      iferm=ielec+iofset;
+      OperatorCr(Determinant,iferm,psi->NFermion);
+    }
+    RealWaveFunctionAddElement(psi, Determinant, 1.0);
+    free(Determinant);
+  }
+  RealWaveFunctionRandomize(psi);
+  return 0;
+}

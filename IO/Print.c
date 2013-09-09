@@ -33,6 +33,12 @@ uint32_t PrintWaveFunctionReadableTruncated(WaveFunctionType psi, double epsilon
 uint32_t PrintWaveFunctionFullReadable(WaveFunctionType psi)
 { return StreamPrintWaveFunctionFullReadable(psi,stdout);}
 
+uint32_t PrintWaveFunctionDensity(WaveFunctionType psi)
+{ return StreamPrintWaveFunctionDensity(psi,stdout);}
+
+uint32_t PrintWaveFunctionPrefactorHistogram(WaveFunctionType psi, const double exp, const uint32_t N)
+{ return StreamPrintWaveFunctionPrefactorHistogram(psi,exp,N,stdout);}
+
 uint32_t PrintOperatorReadable(OperatorType O)
 { return StreamPrintOperatorReadable(O,stdout);}
 
@@ -102,11 +108,17 @@ uint32_t PrintBlokDoubleTriDiagonalMatrix(BlokDoubleTriDiagonalMatrixType M)
 uint32_t PrintAndersonMatrix(AndersonMatrixType M)
 { return StreamPrintAndersonMatrix(M,stdout);}
 
+uint32_t PrintAndersonMatrixEssentials(AndersonMatrixType M)
+{ return StreamPrintAndersonMatrixEssentials(M,stdout);}
+
 uint32_t PrintBlokAndersonMatrix(BlokAndersonMatrixType M)
 { return StreamPrintBlokAndersonMatrix(M,stdout);}
 
 uint32_t PrintListOfPoles(ListOfPoles M)
 { return StreamPrintListOfPoles(M,stdout);}
+
+uint32_t PrintListOfPolesEssentials(ListOfPoles M)
+{ return StreamPrintListOfPolesEssentials(M,stdout);}
 
 
 

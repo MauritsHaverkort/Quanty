@@ -7,69 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		4C2AAA1E1632655300138620 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA1D1632655300138620 /* main.c */; };
-		4C2AAA201632655300138620 /* Model.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = 4C2AAA1F1632655300138620 /* Model.1 */; };
-		4C2AAA75163265DD00138620 /* BasicMath_AndersonMatrixVector.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA2A163265DD00138620 /* BasicMath_AndersonMatrixVector.c */; };
-		4C2AAA76163265DD00138620 /* BasicMath_BlokAndersonMatrixVector.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA2B163265DD00138620 /* BasicMath_BlokAndersonMatrixVector.c */; };
-		4C2AAA77163265DD00138620 /* BasicMath_BlokDoubleTriDiagonalMatrixVector.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA2C163265DD00138620 /* BasicMath_BlokDoubleTriDiagonalMatrixVector.c */; };
-		4C2AAA78163265DD00138620 /* BasicMath_BlokTriDiagonalMatrixVector.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA2D163265DD00138620 /* BasicMath_BlokTriDiagonalMatrixVector.c */; };
-		4C2AAA79163265DD00138620 /* BasicMath_Combinatorial.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA2E163265DD00138620 /* BasicMath_Combinatorial.c */; };
-		4C2AAA7A163265DD00138620 /* BasicMath_Constants.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA2F163265DD00138620 /* BasicMath_Constants.c */; };
-		4C2AAA7B163265DD00138620 /* BasicMath_DoubleTriDiagonalMatrixVector.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA30163265DD00138620 /* BasicMath_DoubleTriDiagonalMatrixVector.c */; };
-		4C2AAA7C163265DD00138620 /* BasicMath_GreenFunctionArithmetic.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA31163265DD00138620 /* BasicMath_GreenFunctionArithmetic.c */; };
-		4C2AAA7D163265DD00138620 /* BasicMath_GreenFunctionMatrixArithmetic.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA32163265DD00138620 /* BasicMath_GreenFunctionMatrixArithmetic.c */; };
-		4C2AAA7E163265DD00138620 /* BasicMath_ListOfPoles.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA33163265DD00138620 /* BasicMath_ListOfPoles.c */; };
-		4C2AAA7F163265DD00138620 /* BasicMath_MatrixTypeConversion.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA34163265DD00138620 /* BasicMath_MatrixTypeConversion.c */; };
-		4C2AAA80163265DD00138620 /* BasicMath_MatrixVector.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA35163265DD00138620 /* BasicMath_MatrixVector.c */; };
-		4C2AAA81163265DD00138620 /* BasicMath_SparseMatrixVector.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA36163265DD00138620 /* BasicMath_SparseMatrixVector.c */; };
-		4C2AAA82163265DD00138620 /* BasicMath_StandardFunctions.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA37163265DD00138620 /* BasicMath_StandardFunctions.c */; };
-		4C2AAA83163265DD00138620 /* BasicMath_TriDiagonalMatrixVector.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA38163265DD00138620 /* BasicMath_TriDiagonalMatrixVector.c */; };
-		4C2AAA84163265DD00138620 /* BasicMath_VectorLinearAlgabra.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA39163265DD00138620 /* BasicMath_VectorLinearAlgabra.c */; };
-		4C2AAA86163265DD00138620 /* ComplexRealWaveFunctionArithmetic.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA3B163265DD00138620 /* ComplexRealWaveFunctionArithmetic.c */; };
-		4C2AAA87163265DD00138620 /* ComplexWaveFunctionArithmetic.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA3C163265DD00138620 /* ComplexWaveFunctionArithmetic.c */; };
-		4C2AAA88163265DD00138620 /* DensityMatrix.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA3D163265DD00138620 /* DensityMatrix.c */; };
-		4C2AAA89163265DD00138620 /* Error.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA3E163265DD00138620 /* Error.c */; };
-		4C2AAA8A163265DD00138620 /* Hash.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA3F163265DD00138620 /* Hash.c */; };
-		4C2AAA8B163265DD00138620 /* Lanczos.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA40163265DD00138620 /* Lanczos.c */; };
-		4C2AAA8C163265DD00138620 /* MatrixOperator.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA41163265DD00138620 /* MatrixOperator.c */; };
-		4C2AAA8D163265DD00138620 /* OperatorArithmetic.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA42163265DD00138620 /* OperatorArithmetic.c */; };
-		4C2AAA8E163265DD00138620 /* OperatorWaveFunction.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA43163265DD00138620 /* OperatorWaveFunction.c */; };
-		4C2AAA8F163265DD00138620 /* Random.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA44163265DD00138620 /* Random.c */; };
-		4C2AAA90163265DD00138620 /* RealComplexWaveFunctionArithmetic.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA45163265DD00138620 /* RealComplexWaveFunctionArithmetic.c */; };
-		4C2AAA91163265DD00138620 /* RealWaveFunctionArithmetic.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA46163265DD00138620 /* RealWaveFunctionArithmetic.c */; };
-		4C2AAA92163265DD00138620 /* Spectral.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA47163265DD00138620 /* Spectral.c */; };
-		4C2AAA94163265DD00138620 /* TimeStamp.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA49163265DD00138620 /* TimeStamp.c */; };
-		4C2AAA95163265DD00138620 /* WaveFunctionArithmetic.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA4A163265DD00138620 /* WaveFunctionArithmetic.c */; };
-		4C2AAA97163265DD00138620 /* SingleSiteFunctions.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA4D163265DD00138620 /* SingleSiteFunctions.c */; };
-		4C2AAA98163265DD00138620 /* SingleSiteXAS.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA4E163265DD00138620 /* SingleSiteXAS.c */; };
-		4C2AAA99163265DD00138620 /* CellFunctions.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA51163265DD00138620 /* CellFunctions.c */; };
-		4C2AAA9A163265DD00138620 /* DimerizedSpinChain.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA52163265DD00138620 /* DimerizedSpinChain.c */; };
-		4C2AAA9B163265DD00138620 /* HeisenbergModel.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA53163265DD00138620 /* HeisenbergModel.c */; };
-		4C2AAA9D163265DD00138620 /* SpinLader.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA55163265DD00138620 /* SpinLader.c */; };
-		4C2AAA9E163265DD00138620 /* tjModel.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA56163265DD00138620 /* tjModel.c */; };
-		4C2AAA9F163265DD00138620 /* BitMap.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA58163265DD00138620 /* BitMap.c */; };
-		4C2AAAA0163265DD00138620 /* FilePrint.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA59163265DD00138620 /* FilePrint.c */; };
-		4C2AAAA1163265DD00138620 /* FileRead.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA5A163265DD00138620 /* FileRead.c */; };
-		4C2AAAA2163265DD00138620 /* Print.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA5B163265DD00138620 /* Print.c */; };
-		4C2AAAA3163265DD00138620 /* Read.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA5C163265DD00138620 /* Read.c */; };
-		4C2AAAA4163265DD00138620 /* StreamPrint.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA5D163265DD00138620 /* StreamPrint.c */; };
-		4C2AAAA5163265DD00138620 /* StreamRead.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA5E163265DD00138620 /* StreamRead.c */; };
-		4C2AAAA6163265DD00138620 /* OperatorDeffinitions.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA60163265DD00138620 /* OperatorDeffinitions.c */; };
-		4C2AAAA7163265DD00138620 /* LanczosDyson.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA62163265DD00138620 /* LanczosDyson.c */; };
-		4C2AAAA8163265DD00138620 /* MiniTest.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA63163265DD00138620 /* MiniTest.c */; };
-		4C2AAAA9163265DD00138620 /* Old_Functions.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA64163265DD00138620 /* Old_Functions.c */; };
-		4C2AAAAA163265DD00138620 /* PointerAritmethic.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA65163265DD00138620 /* PointerAritmethic.c */; };
-		4C2AAAAC163265DD00138620 /* TestBasicMath.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA67163265DD00138620 /* TestBasicMath.c */; };
-		4C2AAAAE163265DD00138620 /* TestCore.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA69163265DD00138620 /* TestCore.c */; };
-		4C2AAAAF163265DD00138620 /* TestFinitsizeClusterModels.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA6A163265DD00138620 /* TestFinitsizeClusterModels.c */; };
-		4C2AAAB0163265DD00138620 /* TestIO.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA6B163265DD00138620 /* TestIO.c */; };
-		4C2AAAB1163265DD00138620 /* TestSpectral.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA6C163265DD00138620 /* TestSpectral.c */; };
-		4C2AAAB2163265DD00138620 /* TestVectorMatrixParallel.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA6D163265DD00138620 /* TestVectorMatrixParallel.c */; };
-		4C2AAAB3163265DD00138620 /* ImpurityUnfolding.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA6F163265DD00138620 /* ImpurityUnfolding.c */; };
-		4C2AAAB4163265DD00138620 /* Tight_Binding.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA70163265DD00138620 /* Tight_Binding.c */; };
-		4C2AAAB5163265DD00138620 /* Tight_Binding_lib.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA71163265DD00138620 /* Tight_Binding_lib.c */; };
-		4C2AAAB6163265DD00138620 /* TightBindingToG.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA72163265DD00138620 /* TightBindingToG.c */; };
-		4C2AAAB7163265DD00138620 /* TemperatureAvverage.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA74163265DD00138620 /* TemperatureAvverage.c */; };
 		4C2AAACC1632662000138620 /* Test.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA66163265DD00138620 /* Test.c */; };
 		4C2AAACE163266DD00138620 /* libblas.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACD163266DD00138620 /* libblas.dylib */; };
 		4C2AAAD0163266F900138620 /* liblapack.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACF163266F900138620 /* liblapack.dylib */; };
@@ -79,6 +16,9 @@
 		4C79F5E117B53D4100189682 /* HubbardModel.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA54163265DD00138620 /* HubbardModel.c */; };
 		4C79F5E217B53E4F00189682 /* liblapack.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACF163266F900138620 /* liblapack.dylib */; };
 		4C79F5E317B53E5800189682 /* libblas.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACD163266DD00138620 /* libblas.dylib */; };
+		4C8274DD17DCF3AD00A5F555 /* Model.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA261632659D00138620 /* Model.c */; };
+		4C8274DE17DCF57200A5F555 /* libblas.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACD163266DD00138620 /* libblas.dylib */; };
+		4C8274DF17DCF59300A5F555 /* liblapack.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACF163266F900138620 /* liblapack.dylib */; };
 		4CDD1CA81796D15600614F34 /* DMFT_eg_Dyson.c in Sources */ = {isa = PBXBuildFile; fileRef = 4CDD1C7E1796D06400614F34 /* DMFT_eg_Dyson.c */; };
 		4CDD1CA91796D27F00614F34 /* libblas.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACD163266DD00138620 /* libblas.dylib */; };
 		4CDD1CAA1796D28900614F34 /* liblapack.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACF163266F900138620 /* liblapack.dylib */; };
@@ -91,7 +31,6 @@
 			dstPath = /usr/share/man/man1/;
 			dstSubfolderSpec = 0;
 			files = (
-				4C2AAA201632655300138620 /* Model.1 in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 1;
 		};
@@ -136,8 +75,6 @@
 /* Begin PBXFileReference section */
 		4C0877991737CDE600CE9AB4 /* WaveFunctionPerturbationArithmetic.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = WaveFunctionPerturbationArithmetic.c; sourceTree = "<group>"; };
 		4C2AAA191632655300138620 /* Model */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Model; sourceTree = BUILT_PRODUCTS_DIR; };
-		4C2AAA1D1632655300138620 /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
-		4C2AAA1F1632655300138620 /* Model.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = Model.1; sourceTree = "<group>"; };
 		4C2AAA261632659D00138620 /* Model.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = Model.c; sourceTree = "<group>"; };
 		4C2AAA271632659D00138620 /* StandardOperators.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = StandardOperators.c; sourceTree = "<group>"; };
 		4C2AAA2A163265DD00138620 /* BasicMath_AndersonMatrixVector.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = BasicMath_AndersonMatrixVector.c; sourceTree = "<group>"; };
@@ -148,7 +85,6 @@
 		4C2AAA2F163265DD00138620 /* BasicMath_Constants.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = BasicMath_Constants.c; sourceTree = "<group>"; };
 		4C2AAA30163265DD00138620 /* BasicMath_DoubleTriDiagonalMatrixVector.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = BasicMath_DoubleTriDiagonalMatrixVector.c; sourceTree = "<group>"; };
 		4C2AAA31163265DD00138620 /* BasicMath_GreenFunctionArithmetic.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = BasicMath_GreenFunctionArithmetic.c; sourceTree = "<group>"; };
-		4C2AAA32163265DD00138620 /* BasicMath_GreenFunctionMatrixArithmetic.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = BasicMath_GreenFunctionMatrixArithmetic.c; sourceTree = "<group>"; };
 		4C2AAA33163265DD00138620 /* BasicMath_ListOfPoles.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = BasicMath_ListOfPoles.c; sourceTree = "<group>"; };
 		4C2AAA34163265DD00138620 /* BasicMath_MatrixTypeConversion.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = BasicMath_MatrixTypeConversion.c; sourceTree = "<group>"; };
 		4C2AAA35163265DD00138620 /* BasicMath_MatrixVector.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = BasicMath_MatrixVector.c; sourceTree = "<group>"; };
@@ -176,7 +112,6 @@
 		4C2AAA4C163265DD00138620 /* DMFT.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = DMFT.c; sourceTree = "<group>"; };
 		4C2AAA4D163265DD00138620 /* SingleSiteFunctions.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = SingleSiteFunctions.c; sourceTree = "<group>"; };
 		4C2AAA4E163265DD00138620 /* SingleSiteXAS.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = SingleSiteXAS.c; sourceTree = "<group>"; };
-		4C2AAA4F163265DD00138620 /* header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = header.h; sourceTree = "<group>"; };
 		4C2AAA51163265DD00138620 /* CellFunctions.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = CellFunctions.c; sourceTree = "<group>"; };
 		4C2AAA52163265DD00138620 /* DimerizedSpinChain.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = DimerizedSpinChain.c; sourceTree = "<group>"; };
 		4C2AAA53163265DD00138620 /* HeisenbergModel.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = HeisenbergModel.c; sourceTree = "<group>"; };
@@ -214,6 +149,11 @@
 		4C5CA61716D18BBF00BE1C25 /* DMFT */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = DMFT; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C77BA751741188E00AC7E7D /* OperatorWaveFunctionPerturbation.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = OperatorWaveFunctionPerturbation.c; sourceTree = "<group>"; };
 		4C79F5D817B53C8000189682 /* Hubart */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Hubart; sourceTree = BUILT_PRODUCTS_DIR; };
+		4C8274D917DC49B000A5F555 /* header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = header.h; sourceTree = "<group>"; };
+		4C8274DA17DC49CA00A5F555 /* core.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = core.h; sourceTree = "<group>"; };
+		4C8274DB17DC49F700A5F555 /* io.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = io.h; sourceTree = "<group>"; };
+		4C8274DC17DC4A8400A5F555 /* core_basic_math.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = core_basic_math.h; sourceTree = "<group>"; };
+		4C8274E017DCF6D000A5F555 /* TestAtomicPhysics.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = TestAtomicPhysics.c; sourceTree = "<group>"; };
 		4CA262D8170787D900B8E76E /* TestGreenFunctions.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = TestGreenFunctions.c; sourceTree = "<group>"; };
 		4CDD1C7E1796D06400614F34 /* DMFT_eg_Dyson.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = DMFT_eg_Dyson.c; sourceTree = "<group>"; };
 		4CDD1C7F1796D06400614F34 /* DMFTFunctions.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = DMFTFunctions.c; sourceTree = "<group>"; };
@@ -228,6 +168,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4C8274DF17DCF59300A5F555 /* liblapack.dylib in Frameworks */,
+				4C8274DE17DCF57200A5F555 /* libblas.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -275,10 +217,10 @@
 			children = (
 				4C2AAACF163266F900138620 /* liblapack.dylib */,
 				4C2AAACD163266DD00138620 /* libblas.dylib */,
+				4C8274D817DC491500A5F555 /* Headers */,
 				4C2AAA28163265DD00138620 /* Core */,
 				4C2AAA4B163265DD00138620 /* DMFT */,
 				4CDD1C7D1796D06400614F34 /* Yi */,
-				4C2AAA4F163265DD00138620 /* header.h */,
 				4C2AAA50163265DD00138620 /* Hubbard_Model */,
 				4C2AAA57163265DD00138620 /* IO */,
 				4C2AAA5F163265DD00138620 /* Ligand_Field_Theory */,
@@ -310,8 +252,6 @@
 			children = (
 				4C2AAA261632659D00138620 /* Model.c */,
 				4C2AAA271632659D00138620 /* StandardOperators.c */,
-				4C2AAA1D1632655300138620 /* main.c */,
-				4C2AAA1F1632655300138620 /* Model.1 */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -347,21 +287,20 @@
 			isa = PBXGroup;
 			children = (
 				4C2AAA2A163265DD00138620 /* BasicMath_AndersonMatrixVector.c */,
+				4C2AAA38163265DD00138620 /* BasicMath_TriDiagonalMatrixVector.c */,
+				4C2AAA33163265DD00138620 /* BasicMath_ListOfPoles.c */,
+				4C2AAA35163265DD00138620 /* BasicMath_MatrixVector.c */,
 				4C2AAA2B163265DD00138620 /* BasicMath_BlokAndersonMatrixVector.c */,
 				4C2AAA2C163265DD00138620 /* BasicMath_BlokDoubleTriDiagonalMatrixVector.c */,
 				4C2AAA2D163265DD00138620 /* BasicMath_BlokTriDiagonalMatrixVector.c */,
-				4C2AAA33163265DD00138620 /* BasicMath_ListOfPoles.c */,
-				4C2AAA35163265DD00138620 /* BasicMath_MatrixVector.c */,
 				4C2AAA36163265DD00138620 /* BasicMath_SparseMatrixVector.c */,
-				4C2AAA39163265DD00138620 /* BasicMath_VectorLinearAlgabra.c */,
-				4C2AAA38163265DD00138620 /* BasicMath_TriDiagonalMatrixVector.c */,
 				4C2AAA30163265DD00138620 /* BasicMath_DoubleTriDiagonalMatrixVector.c */,
 				4CDD1CAB1799666C00614F34 /* BasicMath_BADoubleTriDiagonalMatrixVector.c */,
 				4C2AAA34163265DD00138620 /* BasicMath_MatrixTypeConversion.c */,
+				4C2AAA39163265DD00138620 /* BasicMath_VectorLinearAlgabra.c */,
 				4C2AAA2E163265DD00138620 /* BasicMath_Combinatorial.c */,
 				4C2AAA2F163265DD00138620 /* BasicMath_Constants.c */,
 				4C2AAA31163265DD00138620 /* BasicMath_GreenFunctionArithmetic.c */,
-				4C2AAA32163265DD00138620 /* BasicMath_GreenFunctionMatrixArithmetic.c */,
 				4C2AAA37163265DD00138620 /* BasicMath_StandardFunctions.c */,
 			);
 			path = BasicMath;
@@ -430,6 +369,7 @@
 				4CA262D8170787D900B8E76E /* TestGreenFunctions.c */,
 				4CDD1CAC179994DC00614F34 /* TestGFBA.c */,
 				4CDD1CAD179D2F0900614F34 /* TestStandardOperators.c */,
+				4C8274E017DCF6D000A5F555 /* TestAtomicPhysics.c */,
 			);
 			path = Test;
 			sourceTree = "<group>";
@@ -451,6 +391,17 @@
 				4C2AAA74163265DD00138620 /* TemperatureAvverage.c */,
 			);
 			path = Tools;
+			sourceTree = "<group>";
+		};
+		4C8274D817DC491500A5F555 /* Headers */ = {
+			isa = PBXGroup;
+			children = (
+				4C8274D917DC49B000A5F555 /* header.h */,
+				4C8274DA17DC49CA00A5F555 /* core.h */,
+				4C8274DB17DC49F700A5F555 /* io.h */,
+				4C8274DC17DC4A8400A5F555 /* core_basic_math.h */,
+			);
+			path = Headers;
 			sourceTree = "<group>";
 		};
 		4CDD1C7D1796D06400614F34 /* Yi */ = {
@@ -585,68 +536,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4C2AAA1E1632655300138620 /* main.c in Sources */,
-				4C2AAA75163265DD00138620 /* BasicMath_AndersonMatrixVector.c in Sources */,
-				4C2AAA76163265DD00138620 /* BasicMath_BlokAndersonMatrixVector.c in Sources */,
-				4C2AAA77163265DD00138620 /* BasicMath_BlokDoubleTriDiagonalMatrixVector.c in Sources */,
-				4C2AAA78163265DD00138620 /* BasicMath_BlokTriDiagonalMatrixVector.c in Sources */,
-				4C2AAA79163265DD00138620 /* BasicMath_Combinatorial.c in Sources */,
-				4C2AAA7A163265DD00138620 /* BasicMath_Constants.c in Sources */,
-				4C2AAA7B163265DD00138620 /* BasicMath_DoubleTriDiagonalMatrixVector.c in Sources */,
-				4C2AAA7C163265DD00138620 /* BasicMath_GreenFunctionArithmetic.c in Sources */,
-				4C2AAA7D163265DD00138620 /* BasicMath_GreenFunctionMatrixArithmetic.c in Sources */,
-				4C2AAA7E163265DD00138620 /* BasicMath_ListOfPoles.c in Sources */,
-				4C2AAA7F163265DD00138620 /* BasicMath_MatrixTypeConversion.c in Sources */,
-				4C2AAA80163265DD00138620 /* BasicMath_MatrixVector.c in Sources */,
-				4C2AAA81163265DD00138620 /* BasicMath_SparseMatrixVector.c in Sources */,
-				4C2AAA82163265DD00138620 /* BasicMath_StandardFunctions.c in Sources */,
-				4C2AAA83163265DD00138620 /* BasicMath_TriDiagonalMatrixVector.c in Sources */,
-				4C2AAA84163265DD00138620 /* BasicMath_VectorLinearAlgabra.c in Sources */,
-				4C2AAA86163265DD00138620 /* ComplexRealWaveFunctionArithmetic.c in Sources */,
-				4C2AAA87163265DD00138620 /* ComplexWaveFunctionArithmetic.c in Sources */,
-				4C2AAA88163265DD00138620 /* DensityMatrix.c in Sources */,
-				4C2AAA89163265DD00138620 /* Error.c in Sources */,
-				4C2AAA8A163265DD00138620 /* Hash.c in Sources */,
-				4C2AAA8B163265DD00138620 /* Lanczos.c in Sources */,
-				4C2AAA8C163265DD00138620 /* MatrixOperator.c in Sources */,
-				4C2AAA8D163265DD00138620 /* OperatorArithmetic.c in Sources */,
-				4C2AAA8E163265DD00138620 /* OperatorWaveFunction.c in Sources */,
-				4C2AAA8F163265DD00138620 /* Random.c in Sources */,
-				4C2AAA90163265DD00138620 /* RealComplexWaveFunctionArithmetic.c in Sources */,
-				4C2AAA91163265DD00138620 /* RealWaveFunctionArithmetic.c in Sources */,
-				4C2AAA92163265DD00138620 /* Spectral.c in Sources */,
-				4C2AAA94163265DD00138620 /* TimeStamp.c in Sources */,
-				4C2AAA95163265DD00138620 /* WaveFunctionArithmetic.c in Sources */,
-				4C2AAA97163265DD00138620 /* SingleSiteFunctions.c in Sources */,
-				4C2AAA98163265DD00138620 /* SingleSiteXAS.c in Sources */,
-				4C2AAA99163265DD00138620 /* CellFunctions.c in Sources */,
-				4C2AAA9A163265DD00138620 /* DimerizedSpinChain.c in Sources */,
-				4C2AAA9B163265DD00138620 /* HeisenbergModel.c in Sources */,
-				4C2AAA9D163265DD00138620 /* SpinLader.c in Sources */,
-				4C2AAA9E163265DD00138620 /* tjModel.c in Sources */,
-				4C2AAA9F163265DD00138620 /* BitMap.c in Sources */,
-				4C2AAAA0163265DD00138620 /* FilePrint.c in Sources */,
-				4C2AAAA1163265DD00138620 /* FileRead.c in Sources */,
-				4C2AAAA2163265DD00138620 /* Print.c in Sources */,
-				4C2AAAA3163265DD00138620 /* Read.c in Sources */,
-				4C2AAAA4163265DD00138620 /* StreamPrint.c in Sources */,
-				4C2AAAA5163265DD00138620 /* StreamRead.c in Sources */,
-				4C2AAAA6163265DD00138620 /* OperatorDeffinitions.c in Sources */,
-				4C2AAAA7163265DD00138620 /* LanczosDyson.c in Sources */,
-				4C2AAAA8163265DD00138620 /* MiniTest.c in Sources */,
-				4C2AAAA9163265DD00138620 /* Old_Functions.c in Sources */,
-				4C2AAAAA163265DD00138620 /* PointerAritmethic.c in Sources */,
-				4C2AAAAC163265DD00138620 /* TestBasicMath.c in Sources */,
-				4C2AAAAE163265DD00138620 /* TestCore.c in Sources */,
-				4C2AAAAF163265DD00138620 /* TestFinitsizeClusterModels.c in Sources */,
-				4C2AAAB0163265DD00138620 /* TestIO.c in Sources */,
-				4C2AAAB1163265DD00138620 /* TestSpectral.c in Sources */,
-				4C2AAAB2163265DD00138620 /* TestVectorMatrixParallel.c in Sources */,
-				4C2AAAB3163265DD00138620 /* ImpurityUnfolding.c in Sources */,
-				4C2AAAB4163265DD00138620 /* Tight_Binding.c in Sources */,
-				4C2AAAB5163265DD00138620 /* Tight_Binding_lib.c in Sources */,
-				4C2AAAB6163265DD00138620 /* TightBindingToG.c in Sources */,
-				4C2AAAB7163265DD00138620 /* TemperatureAvverage.c in Sources */,
+				4C8274DD17DCF3AD00A5F555 /* Model.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -741,6 +631,7 @@
 		4C2AAA241632655300138620 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				GCC_WARN_TYPECHECK_CALLS_TO_PRINTF = NO;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -748,6 +639,7 @@
 		4C2AAA251632655300138620 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				GCC_WARN_TYPECHECK_CALLS_TO_PRINTF = NO;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
@@ -895,6 +787,7 @@
 				4C79F5DF17B53C8000189682 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		4CDD1CA51796D14100614F34 /* Build configuration list for PBXNativeTarget "YiDMFT" */ = {
 			isa = XCConfigurationList;

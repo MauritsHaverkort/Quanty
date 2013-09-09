@@ -195,6 +195,7 @@ typedef struct TriDiagonalMatrixType
   uint32_t N;     /* dimension of matrix */
   double   *a;    /* diagonal elements of matrix (length N+1)   element a[i+1]=M[i,i]            of the full matrix */
   double   *b;    /* off diagonal elements of matrix (length N) element b[i+1]=M[i,i+1]=M[i+1,i] of the full matrix */
+  double   mu;    /* chemical potential if transformed to Greens function */
 }
 TriDiagonalMatrixType;
 
@@ -222,6 +223,7 @@ typedef struct AndersonMatrixType
   uint32_t N;                  /* dimension of matrix */
   double   *a;                 /* diagonal elements of matrix (length N+1)   elements a[i+1]=M[i,i] of the full matrix */
   double   *b;                 /* off diagonal elements of matrix (length N) elements b[i]=M[0,i]=M[i,0] of the full matrix */
+  double   mu;                 /* chemical potential if transformed to Greens function */
 }
 AndersonMatrixType;
 
@@ -235,6 +237,7 @@ typedef struct ListOfPoles
   double   *a;                 /* energy of pole */
   double   *b;                 /* weight of pole */
   double   a0;                 /* a possible real ofset */
+  double   mu;                 /* chemical potential if transformed to Greens function */
 }
 ListOfPoles;
 
@@ -256,6 +259,7 @@ typedef struct BlokTriDiagonalMatrixType
   uint32_t   N;     /* number of diagonal blocks */
   MatrixType *a;    /* diagonal elements of matrix (length N)       elements a[i]=M[i,i]                  of the full matrix */
   MatrixType *b;    /* off diagonal elements of matrix (length N-1) elements b[i]=M[i,i+1]=M[i+1,i]^{dag} of the full matrix */
+  double     mu;    /* chemical potential if transformed to Greens function */
 }
 BlokTriDiagonalMatrixType;
 
@@ -276,6 +280,7 @@ typedef struct BlokAndersonMatrixType
   uint32_t    N;    /* number of diagonal blocks */
   MatrixType *a;    /* diagonal elements of matrix (length N)       elements a[i]=M[i,i]                  of the full matrix */
   MatrixType *b;    /* off diagonal elements of matrix (length N-1) elements b[i]=M[0,i+1]=M[i+1,0]^{dag} of the full matrix */
+  double     mu;    /* chemical potential if transformed to Greens function */
 }
 BlokAndersonMatrixType;
 
@@ -297,7 +302,7 @@ BlokAndersonMatrixType;
 typedef struct DoubleTriDiagonalMatrixType
 {
   char       Name[MAXStrLength]; /* A pointer to a name string that can be used to lable functions, good for printing etc. */
-  double     Ef;       /* border if a number belongs to val or con */
+  double     mu;       /* border if a number belongs to val or con */
   double     Epsilon;  /* values in a range of [Ef-1/2 Epsilon , Ef+1/2 Epsilon] contribute half to val and half to con */
   double     a0;       /* storing a possible real shift if a continued fraction notation is used */
   double     b0;       /* storing a possilbe over-all scaling if a continued fraction notation is used */
@@ -324,7 +329,7 @@ DoubleTriDiagonalMatrixType;
 typedef struct BlokDoubleTriDiagonalMatrixType
 {
   char       Name[MAXStrLength]; /* A pointer to a name string that can be used to lable functions, good for printing etc. */
-  double     Ef;       /* border if a number belongs to val or con */
+  double     mu;       /* border if a number belongs to val or con */
   double     Epsilon;  /* values in a range of [Ef-1/2 Epsilon , Ef+1/2 Epsilon] contribute half to val and half to con */
   MatrixType a0;       /* storing a possible real shift if a continued fraction notation is used */
   MatrixType b0;       /* storing a possilbe over-all scaling if a continued fraction notation is used */
@@ -352,7 +357,7 @@ BlokDoubleTriDiagonalMatrixType;
 typedef struct SecondDoubleTriDiagonalMatrixType
 {
   char       Name[MAXStrLength]; /* A pointer to a name string that can be used to lable functions, good for printing etc. */
-  double     Ef;       /* border if a number belongs to val or con */
+  double     mu;       /* border if a number belongs to val or con */
   double     Epsilon;  /* values in a range of [Ef-1/2 Epsilon , Ef+1/2 Epsilon] contribute half to val and half to con */
   double     a0;       /* storing a possible real shift if a continued fraction notation is used */
   double     b0;       /* storing a possilbe over-all scaling if a continued fraction notation is used */
@@ -369,7 +374,7 @@ SecondDoubleTriDiagonalMatrixType;
 typedef struct SecondAndersonMatrixType
 {
   char       Name[MAXStrLength]; /* A pointer to a name string that can be used to lable functions, good for printing etc. */
-  double     Ef;       /* border if a number belongs to val or con */
+  double     mu;       /* border if a number belongs to val or con */
   double     Epsilon;  /* values in a range of [Ef-1/2 Epsilon , Ef+1/2 Epsilon] contribute half to val and half to con */
   double     a0;       /* storing a possible real shift if a continued fraction notation is used */
   double     b0;       /* storing a possilbe over-all scaling if a continued fraction notation is used */
@@ -416,7 +421,7 @@ SecondAndersonMatrixType;
 typedef struct BADoubleTriDiagonalMatrixType
 {
   char       Name[MAXStrLength]; /* A pointer to a name string that can be used to lable functions, good for printing etc. */
-  double     Ef;       /* border if a number belongs to val or con */
+  double     mu;       /* border if a number belongs to val or con */
   double     Epsilon;  /* values in a range of [Ef-1/2 Epsilon , Ef+1/2 Epsilon] contribute half to val and half to con */
   double     a0;       /* storing a possible real shift if a continued fraction notation is used */
   double     b0;       /* storing a possilbe over-all scaling if a continued fraction notation is used */
@@ -478,9 +483,10 @@ ChebyshevExpansion;
 
 typedef struct HarmonicsExpansion
 {
+   uint32_t     QComplex;           /* complex or real? */
    uint32_t N;
-   uint32_t *l;
-   uint32_t *m;
+   int *l;
+   int *m;
    double   *Re;
    double   *Im;
 }
@@ -600,10 +606,22 @@ BandstructurePathType;
 
 typedef struct DMFTSettings
 {
-  char     G0FileName[256];                  /* filename of G0 in tridiagonal representation */
-  char     GRootFileName[256];               /* filename of GBath in tridiagonal representation */
+  char     G0FileName[256];                  /* filename of G0 */
+  char     RootFileName[256];                /* root of GBath, GCluster and Sigma */
   char     SpecRootFileName[256];            /* filename of spectral functions in spectral representation */
   char     WaveFunctionRootFileName[256];    /* filename of wave-function  */
+  char     LocalHamiltonianFilename[256];    /* Input file for the local Hamiltonian */
+  char     GSymFilename[256];                /* File specifying the symmetry of G */
+  uint32_t NSite;                            /* Number of cluster sites and or times spin orbitals */
+  double   Nelectron;                        /* Filling of the impurity */
+  double   mu;                               /* Chemical potential of the lattice Greensfunction */
+  double   mu0;                              /* Chemical potential of G0 */
+  uint32_t NmuSym;                           /* 0000 0000 mu0 and mu from input file are used as starting values */
+                                             /*           mu is optimized during the loops in order to fix the occupation to Nelectron */
+                                             /* 0000 0001 Before start chemical potential mu and mu0 are read from G0 and Sigma input files */
+                                             /*           These override the values in the input file. (Otherwise values in input file are used */
+                                             /* 0000 0010 Nelectron is ignored and the calculation is preformed at fixed mu */
+                                             /*           otherwise mu is optimized every loop */
   uint32_t iStart;                           /* start value of loop number */
   uint32_t Ni;                               /* number of loops to do */
   uint32_t Dyson;                            /* 0 no Dyson like perturbation - 1 full perturbation - 2 ... */
@@ -611,8 +629,7 @@ typedef struct DMFTSettings
                                              /* 0000 0001 An additional Operator of (U+1) * S^2 is added to the Hamiltonian to stabilize the singlet state */
                                              /* 0000 0010 The Greenfunction is averaged such that G(w) = - G(-w)^* */
                                              /* 0000 0100 The Ground-state wavefunction is taken to have a fully occupied / unoccupied bath */
-                                             /* 0000 1000 mu is forced to be <n> U/2 */
-                                             /* 0001 0000 Enforce Hybridization sumrules on GCluster */
+                                             /* 0000 1000 mu is forced to be <n> U/2 - this also sets NmuSym to NmuSym & 10 */
   uint32_t NGCluster;                        /* Number of poles in the resulting cluster green function */
   uint32_t NGBath;                           /* Number of poles in the resulting bath green function */
   double   Mix;                              /* mixing of old into new function */
@@ -632,7 +649,7 @@ typedef struct DMFTSettings
   double   zeroLancEnergy;                   /* minimum energy difference for convergence of total energy to be different from zero */
   double   zeroLancWavefunction;             /* minnimum pre-factor in wave-function to be different from zero */
   uint32_t NTriDiag;                         /* number of tri-diagonalization steps in Lanczos */
-  uint32_t NBitsKey;                         /* 2^NBitsKey == lenght of hash key */  
+  uint32_t NBitsKey;                         /* 2^NBitsKey == lenght of hash key */
 }
 DMFTSettings;
 

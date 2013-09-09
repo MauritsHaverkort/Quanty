@@ -1092,6 +1092,17 @@ uint32_t MatrixToSpectrum(const MatrixType M, const double E0, const double Gamm
   return 0;
 }
 
+/*
+ *
+ */
+uint32_t ListOfPolesToSpectrum(const double Energy, const ListOfPoles P, SpectraType * const G)
+{
+  TriDiagonalMatrixType PTri;
+  ListOfPolesToTridiagonalMatrix(P, &PTri, P.N);
+  TriDiagonalMatrixToSpectrum(Energy, PTri, G);
+  FreeTriDiagonalMatrix(&PTri);
+  return 0;
+}
 
 /*
  *

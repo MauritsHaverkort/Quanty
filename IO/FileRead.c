@@ -66,7 +66,6 @@ uint32_t FileReadAndersonMatrixType(AndersonMatrixType * O, const char *const fl
   return retval;
 }
 
-
 uint32_t FileReadPlainTriDiagonalMatrixType(TriDiagonalMatrixType * O, const char *const flname)
 {
   FILE *stream;
@@ -80,6 +79,63 @@ uint32_t FileReadPlainTriDiagonalMatrixType(TriDiagonalMatrixType * O, const cha
   fclose(stream);
   return retval;
 }
+
+uint32_t FileReadListOfPoles(ListOfPoles * O, const char *const flname)
+{
+  FILE *stream;
+  uint32_t retval;
+  if((stream=fopen(flname,"r"))==NULL)
+  {
+    printf("ERROR\nCan't open %s for reading.\n",flname);
+    return 1;
+  }
+  retval=StreamReadListOfPoles(O,stream);
+  fclose(stream);
+  return retval;
+}
+
+uint32_t FileReadListOfPolesUndetermined(ListOfPoles * O, const char *const flname)
+{
+  FILE *stream;
+  uint32_t retval;
+  if((stream=fopen(flname,"r"))==NULL)
+  {
+    printf("ERROR\nCan't open %s for reading.\n",flname);
+    return 1;
+  }
+  retval=StreamReadListOfPolesUndetermined(O,stream);
+  fclose(stream);
+  return retval;
+}
+
+uint32_t FileReadAndersonMatrixTypeUndetermined(AndersonMatrixType * O, const char *const flname)
+{
+  FILE *stream;
+  uint32_t retval;
+  if((stream=fopen(flname,"r"))==NULL)
+  {
+    printf("ERROR\nCan't open %s for reading.\n",flname);
+    return 1;
+  }
+  retval=StreamReadAndersonMatrixTypeUndetermined(O,stream);
+  fclose(stream);
+  return retval;
+}
+
+uint32_t FileReadAndersonMatrixTypeUndeterminedPlusMu(AndersonMatrixType * O, const char *const flname, double *const mu)
+{
+  FILE *stream;
+  uint32_t retval;
+  if((stream=fopen(flname,"r"))==NULL)
+  {
+    printf("ERROR\nCan't open %s for reading.\n",flname);
+    return 1;
+  }
+  retval=StreamReadAndersonMatrixTypeUndeterminedPlusMu(O,stream,mu);
+  fclose(stream);
+  return retval;
+}
+
 
 
 uint32_t FileReadAtom(AtomType * O, const char *const flname)

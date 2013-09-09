@@ -45,22 +45,22 @@ void TestGBath()
     G0And.b[i]=GAnd.b[i]/(1+GAnd.b[i+1]);
   }
   G0And.a[G0And.N]=GAnd.a[G0And.N];
-  AndersonMatrixToTriDiagonalMatrix(G0And, &T, &G0Tri, G0And.N);
+  AndersonMatrixToTriDiagonalMatrixPlusT(G0And, &T, &G0Tri, G0And.N);
   FreeMatrix(&T);
-  AndersonMatrixToTriDiagonalMatrix(GAnd, &T, &GTri, GAnd.N);
+  AndersonMatrixToTriDiagonalMatrixPlusT(GAnd, &T, &GTri, GAnd.N);
   FreeMatrix(&T);
   SelfEnergyTriDiagonalRepresentation(G0Tri, GTri, &SigmaTri);
   TriDiagonalMatrixToListOfPoles(SigmaTri, &SigmaList);
   
   GBathTriDiagonalRepresentation(G0Tri, SigmaTri, &GBathTri, 30);
   
-  GBathAndTriAndRepresentation(G0And, SigmaTri, &GBathAnd);
-  AndersonMatrixToTriDiagonalMatrix(GBathAnd, &T, &GBathTriFromAnd, GBathAnd.N);
+  GBathAndTriAndRepresentation(G0And, 0, SigmaTri, &GBathAnd);
+  AndersonMatrixToTriDiagonalMatrixPlusT(GBathAnd, &T, &GBathTriFromAnd, GBathAnd.N);
   FreeMatrix(&T);
   FreeAndersonMatrix(&GBathAnd);
   
-  GBathAndListAndRepresentation(G0And, SigmaList, &GBathAnd);
-  AndersonMatrixToTriDiagonalMatrix(GBathAnd, &T, &GBathTriFromALA, GBathAnd.N);
+  GBathAndListAndRepresentation(G0And, 0, SigmaList, &GBathAnd);
+  AndersonMatrixToTriDiagonalMatrixPlusT(GBathAnd, &T, &GBathTriFromALA, GBathAnd.N);
   FreeMatrix(&T);
   
   
@@ -99,9 +99,9 @@ void TestSelfenergy()
     G0And.b[i]=GAnd.b[i]/(1+GAnd.b[i+1]);
   }
   G0And.a[G0And.N]=GAnd.a[G0And.N];
-  AndersonMatrixToTriDiagonalMatrix(G0And, &T, &G0Tri, G0And.N);
+  AndersonMatrixToTriDiagonalMatrixPlusT(G0And, &T, &G0Tri, G0And.N);
   FreeMatrix(&T);
-  AndersonMatrixToTriDiagonalMatrix(GAnd, &T, &GTri, GAnd.N);
+  AndersonMatrixToTriDiagonalMatrixPlusT(GAnd, &T, &GTri, GAnd.N);
   FreeMatrix(&T);
   
   
@@ -144,11 +144,11 @@ void GreenTransforms()
     MTri.b[i]=(i+1.)/(2i+2);
   }
   MTri.a[MTri.N]=MTri.N-1;
-  TriDiagonalMatrixToAndersonMatrix(MTri, &T, &MAnd);
+  TriDiagonalMatrixToAndersonMatrixPlusT(MTri, &T, &MAnd);
   FreeMatrix(&T);
   TriDiagonalMatrixToListOfPoles(MTri, &MList);
 
-  TriDiagonalMatrixToDoubleTriDiagonalMatrix(MTri, &T, &MDoubleTri, 0.0, 0.0);
+  TriDiagonalMatrixToDoubleTriDiagonalMatrixPlusT(MTri, &T, &MDoubleTri, 0.0, 0.0);
   FreeMatrix(&T);
   TriDiagonalMatrixToSecondDoubleTriDiagonalMatrix(MTri, &T, &MSecDoubleTri, 0.0, 0.0);
   FreeMatrix(&T);
@@ -165,7 +165,7 @@ void GreenTransforms()
   PrintSecondDoubleTriDiagonalMatrix(MSecDoubleTri);
   printf("===============\n");
   
-  AndersonMatrixToTriDiagonalMatrix(MAnd, &T, &MTriBack, MAnd.N);
+  AndersonMatrixToTriDiagonalMatrixPlusT(MAnd, &T, &MTriBack, MAnd.N);
   printf("=============== Back from And ============\n");
   PrintTriDiagonalMatrix(MTriBack);
   FreeMatrix(&T);

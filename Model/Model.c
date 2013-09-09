@@ -1,31 +1,49 @@
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
-#include <stdint.h> 
+#include <stdint.h>
 #include <string.h>
 #include <math.h>
+#include <float.h>
+#include <limits.h>
 #include <unistd.h>
 
+#ifdef _OPENMP
+#include <omp.h>
+#else
+#define omp_get_thread_num() 0
+#define omp_get_num_procs() 0
+#define omp_get_max_threads() 0
+#endif
+
 #include "../Core/StructDef.c"
-#include "../Core/BasicMath.c"
-#include "../Core/Error.c"
+#include "../Headers/header.h"
+#include "../Core/TimeStamp.c"
 #include "../Core/Hash.c"
+#include "../Core/BasicMath.c"
 #include "../IO/Print.c"
 #include "../IO/Read.c"
-#include "../Core/VectorMatrix.c"
-#include "../Core/ComplexVectorMatrix.c"
-#include "../Core/Spectral.c"
+#include "../IO/BitMap.c"
+#include "../Core/Error.c"
+#include "../Core/WaveFunctionArithmetic.c"
+#include "../Core/WaveFunctionPerturbationArithmetic.c"
+#include "../Core/OperatorArithmetic.c"
+#include "../Core/OperatorWaveFunction.c"
+#include "../Core/OperatorWaveFunctionPerturbation.c"
 #include "../Core/Lanczos.c"
-#include "../Tools/TemperatureAvverage.c"
+#include "../Core/Spectral.c"
+#include "../Core/DensityMatrix.c"
+#include "../Core/Random.c"
+#include "../Core/MatrixOperator.c"
+#include "../Model/StandardOperators.c"
+#include "../Hubbard_Model/CellFunctions.c"
+#include "../Tight_Binding/Tight_Binding_lib.c"
+#include "../Tight_Binding/ImpurityUnfolding.c"
+#include "../DMFT/SingleSiteFunctions.c"
 
 int main (int argc, const char * argv[]) 
 {
-  if (argc<=2)
-  {
-    printf("Need at least two arguments in order to do something\n");
-    return 1;
-  };
-  if (!strncmp("Temperature",argv[1],strlen(argv[1]))) TemperatureAvverage(argv[2]);
+  printf("Hello world\n");
   return 0;
 
 }

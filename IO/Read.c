@@ -29,6 +29,15 @@ uint32_t ReadAndersonMatrixType(AndersonMatrixType * O)
 uint32_t ReadPlainTriDiagonalMatrix(TriDiagonalMatrixType * M)
 { return StreamReadPlainTriDiagonalMatrixType(M,stdout);}
 
+uint32_t ReadAndersonMatrix(AndersonMatrixType * M)
+{ return StreamReadAndersonMatrixType(M,stdout);}
+
+uint32_t ReadListOfPoles(ListOfPoles * M)
+{ return StreamReadListOfPoles(M,stdout);}
+
+uint32_t ReadListOfPolesUndetermined(ListOfPoles * M)
+{ return StreamReadListOfPolesUndetermined(M,stdout);}
+
 uint32_t ReadAtom(AtomType * O)
 { return StreamReadAtom(O,stdin);}
 
