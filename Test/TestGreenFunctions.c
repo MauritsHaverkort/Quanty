@@ -141,7 +141,7 @@ void GreenTransforms()
   for(i=0;i<MTri.N;i++)
   {
     MTri.a[i]=(i+1.)/2-i*i/4.;
-    MTri.b[i]=(i+1.)/(2i+2);
+    MTri.b[i]=(i+1.)/(2*i+2);
   }
   MTri.a[MTri.N]=MTri.N-1;
   TriDiagonalMatrixToAndersonMatrixPlusT(MTri, &T, &MAnd);

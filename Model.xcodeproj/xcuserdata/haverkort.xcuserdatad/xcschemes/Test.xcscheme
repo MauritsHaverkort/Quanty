@@ -64,6 +64,10 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "3J"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "AtomicPhysics"
             isEnabled = "YES">
          </CommandLineArgument>

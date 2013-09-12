@@ -1141,3 +1141,31 @@ void TestCombinatorial()
   }
   
 }
+
+void TestThreeJSymbol()
+{
+  int l1,m1,l2,m2,l3,m3,lmax=2;
+  double tj;
+  
+  for(l1=0;l1<=lmax;l1++)
+  {
+    for(m1=-l1;m1<=l1;m1++)
+    {
+      for(l2=0;l2<=lmax;l2++)
+      {
+        for(m2=-l2;m2<=l2;m2++)
+        {
+          for(l3=0;l3<=lmax;l3++)
+          {
+            for(m3=-l3;m3<=l3;m3++)
+            {
+              tj=ThreeJSymbol(l1, m1, l2, m2, l3, m3);
+              printf("%i %2i %i %2i %i %2i %22.15E\n",l1,m1,l2,m2,l3,m3,tj);
+            }
+          }
+        }
+      }
+    }
+  }
+  
+}

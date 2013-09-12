@@ -88,6 +88,7 @@ int main (int argc, const char * argv[])
     if (!strncmp("MatrixVector",argv[argc],strlen(argv[argc]))) TestMatrixVector();
     if (!strncmp("ConvertMatrix",argv[argc],strlen(argv[argc]))) TestMatrixTypeConversion();
     if (!strncmp("Combi",argv[argc],strlen(argv[argc]))) TestCombinatorial();
+    if (!strncmp("3J",argv[argc],strlen(argv[argc]))) TestThreeJSymbol();
 
     if (!strncmp("DGESVD",argv[argc],strlen(argv[argc]))) TestDGESVD();
     if (!strncmp("Lanczos",argv[argc],strlen(argv[argc]))) TestLanczos();

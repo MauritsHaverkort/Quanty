@@ -68,7 +68,7 @@ uint32_t CreateOperatorCoulombSingleShell(uint32_t const NFermion, uint32_t cons
   U->NWord=Min(U->NFermion,1+(U->NFermion-1)/8);
   InitOperatorFixedLength(U, 2, 8);
   InitOperatorFixedLength(U, 4, 8);
-  for(k=0;k<=2*(l+1);k+=2)
+  for(k=0;k<2*(l+1);k+=2)
   {
     for(m1=-l;m1<=l;m1++)
     {
@@ -80,13 +80,6 @@ uint32_t CreateOperatorCoulombSingleShell(uint32_t const NFermion, uint32_t cons
            *  thus m3-l >= m1 + m2 >= m3+l
            */
           m4=m1+m2-m3;
-          
-          
-          
-          printf("%i %i %i %i %i\n",k,m1,m2,m3,m4);
-          
-          
-          
           val=-0.5*SlaterCoefficientC(k, l, m1, l, m3)*SlaterCoefficientC(k, l, m4, l, m2);
           if(Abs(val)>DBL_EPSILON)
           {
@@ -106,6 +99,7 @@ uint32_t CreateOperatorCoulombSingleShell(uint32_t const NFermion, uint32_t cons
       }
     }
   }
+  OperatorChop(U, 100*DBL_EPSILON);
   return 0;
 }
 
@@ -187,6 +181,7 @@ uint32_t CreateOperatorCoulombTwoShellsConstantOccupation(uint32_t const NFermio
       }
     }
   }
+  OperatorChop(U, 100*DBL_EPSILON);
   return 0;
 }
 
@@ -265,6 +260,7 @@ uint32_t CreateOperatorSsqr(uint32_t NFermion, uint32_t NSpin, uint16_t *SpinUp,
   for(i=0;i<NSpin;i++)
   {
     oadd[1]=CrAnMask+SpinUp[i]; oadd[0]=SpinUp[i]; RealOperatorAddLaderNormalOrder(Ssqr,oadd,2, 0.75,&QDetNotOrderedFcFaBcBa);
+    oadd[1]=CrAnMask+SpinDn[i]; oadd[0]=SpinDn[i]; RealOperatorAddLaderNormalOrder(Ssqr,oadd,2, 0.75,&QDetNotOrderedFcFaBcBa);
     for(j=0;j<NSpin;j++)
     {
       oadd[3]=CrAnMask+SpinUp[i]; oadd[2]=CrAnMask+SpinUp[j]; oadd[1]=SpinUp[i]; oadd[0]=SpinUp[j]; RealOperatorAddLaderNormalOrder(Ssqr,oadd,4,-0.25,&QDetNotOrderedFcFaBcBa);
@@ -524,10 +520,10 @@ uint32_t CreateOperatorLy(uint32_t NFermion, uint32_t L, uint16_t *LindexUp, uin
   for(i=0;i<2*L;i++)
   {
     m=(double)i-l;
-    oadd[1]=CrAnMask+LindexUp[i+1]; oadd[0]=LindexUp[i];   ComplexOperatorAddLaderNormalOrder(Ly,oadd,2, 0,-0.5*sqrt(l+m+1)*sqrt(l-m),&QDetNotOrderedFcFaBcBa);
-    oadd[1]=CrAnMask+LindexUp[i];   oadd[0]=LindexUp[i+1]; ComplexOperatorAddLaderNormalOrder(Ly,oadd,2, 0, 0.5*sqrt(l+m+1)*sqrt(l-m),&QDetNotOrderedFcFaBcBa);
-    oadd[1]=CrAnMask+LindexDn[i+1]; oadd[0]=LindexDn[i];   ComplexOperatorAddLaderNormalOrder(Ly,oadd,2, 0,-0.5*sqrt(l+m+1)*sqrt(l-m),&QDetNotOrderedFcFaBcBa);
-    oadd[1]=CrAnMask+LindexDn[i];   oadd[0]=LindexDn[i+1]; ComplexOperatorAddLaderNormalOrder(Ly,oadd,2, 0, 0.5*sqrt(l+m+1)*sqrt(l-m),&QDetNotOrderedFcFaBcBa);
+    oadd[1]=CrAnMask+LindexUp[i+1]; oadd[0]=LindexUp[i];   ComplexOperatorAddLaderNormalOrder(Ly,oadd,2, 0, 0.5*sqrt(l+m+1)*sqrt(l-m),&QDetNotOrderedFcFaBcBa);
+    oadd[1]=CrAnMask+LindexUp[i];   oadd[0]=LindexUp[i+1]; ComplexOperatorAddLaderNormalOrder(Ly,oadd,2, 0,-0.5*sqrt(l+m+1)*sqrt(l-m),&QDetNotOrderedFcFaBcBa);
+    oadd[1]=CrAnMask+LindexDn[i+1]; oadd[0]=LindexDn[i];   ComplexOperatorAddLaderNormalOrder(Ly,oadd,2, 0, 0.5*sqrt(l+m+1)*sqrt(l-m),&QDetNotOrderedFcFaBcBa);
+    oadd[1]=CrAnMask+LindexDn[i];   oadd[0]=LindexDn[i+1]; ComplexOperatorAddLaderNormalOrder(Ly,oadd,2, 0,-0.5*sqrt(l+m+1)*sqrt(l-m),&QDetNotOrderedFcFaBcBa);
   }
   OperatorChop(Ly,0.001);
   return 0;
@@ -569,10 +565,10 @@ uint32_t CreateOperatorLsqr(uint32_t NFermion, uint32_t L, uint16_t *LindexUp, u
     for(j=0;j<2*L+1;j++)
     {
       mj=(double)j-l;
-      oadd[3]=CrAnMask+LindexUp[i]; oadd[2]=CrAnMask+LindexUp[j]; oadd[1]=LindexUp[i]; oadd[0]=LindexUp[j]; RealOperatorAddLaderNormalOrder(Lsqr,oadd,4, (double)-mi*mj,&QDetNotOrderedFcFaBcBa);
-      oadd[3]=CrAnMask+LindexDn[i]; oadd[2]=CrAnMask+LindexDn[j]; oadd[1]=LindexDn[i]; oadd[0]=LindexDn[j]; RealOperatorAddLaderNormalOrder(Lsqr,oadd,4, (double)-mi*mj,&QDetNotOrderedFcFaBcBa);
-      oadd[3]=CrAnMask+LindexUp[i]; oadd[2]=CrAnMask+LindexDn[j]; oadd[1]=LindexUp[i]; oadd[0]=LindexDn[j]; RealOperatorAddLaderNormalOrder(Lsqr,oadd,4, (double)-mi*mj,&QDetNotOrderedFcFaBcBa);
-      oadd[3]=CrAnMask+LindexDn[i]; oadd[2]=CrAnMask+LindexUp[j]; oadd[1]=LindexDn[i]; oadd[0]=LindexUp[j]; RealOperatorAddLaderNormalOrder(Lsqr,oadd,4, (double)-mi*mj,&QDetNotOrderedFcFaBcBa);
+      oadd[3]=CrAnMask+LindexUp[i]; oadd[2]=CrAnMask+LindexUp[j]; oadd[1]=LindexUp[i]; oadd[0]=LindexUp[j]; RealOperatorAddLaderNormalOrder(Lsqr,oadd,4, -mi*mj,&QDetNotOrderedFcFaBcBa);
+      oadd[3]=CrAnMask+LindexDn[i]; oadd[2]=CrAnMask+LindexDn[j]; oadd[1]=LindexDn[i]; oadd[0]=LindexDn[j]; RealOperatorAddLaderNormalOrder(Lsqr,oadd,4, -mi*mj,&QDetNotOrderedFcFaBcBa);
+      oadd[3]=CrAnMask+LindexUp[i]; oadd[2]=CrAnMask+LindexDn[j]; oadd[1]=LindexUp[i]; oadd[0]=LindexDn[j]; RealOperatorAddLaderNormalOrder(Lsqr,oadd,4, -mi*mj,&QDetNotOrderedFcFaBcBa);
+      oadd[3]=CrAnMask+LindexDn[i]; oadd[2]=CrAnMask+LindexUp[j]; oadd[1]=LindexDn[i]; oadd[0]=LindexUp[j]; RealOperatorAddLaderNormalOrder(Lsqr,oadd,4, -mi*mj,&QDetNotOrderedFcFaBcBa);
     }
   }
   for(i=0;i<2*L;i++)
@@ -581,10 +577,10 @@ uint32_t CreateOperatorLsqr(uint32_t NFermion, uint32_t L, uint16_t *LindexUp, u
     for(j=0;j<2*L;j++)
     {
       mj=(double)j-l;
-      oadd[3]=CrAnMask+LindexUp[i+1]; oadd[2]=CrAnMask+LindexUp[j]; oadd[1]=LindexUp[i]; oadd[0]=LindexUp[j+1]; RealOperatorAddLaderNormalOrder(Lsqr,oadd,4, sqrt(l+mi+1)*sqrt(l-mi)*sqrt(l-mj)*sqrt(l+mj+1),&QDetNotOrderedFcFaBcBa);
-      oadd[3]=CrAnMask+LindexDn[i+1]; oadd[2]=CrAnMask+LindexDn[j]; oadd[1]=LindexDn[i]; oadd[0]=LindexDn[j+1]; RealOperatorAddLaderNormalOrder(Lsqr,oadd,4, sqrt(l+mi+1)*sqrt(l-mi)*sqrt(l-mj)*sqrt(l+mj+1),&QDetNotOrderedFcFaBcBa);
-      oadd[3]=CrAnMask+LindexUp[i+1]; oadd[2]=CrAnMask+LindexDn[j]; oadd[1]=LindexUp[i]; oadd[0]=LindexDn[j+1]; RealOperatorAddLaderNormalOrder(Lsqr,oadd,4, sqrt(l+mi+1)*sqrt(l-mi)*sqrt(l-mj)*sqrt(l+mj+1),&QDetNotOrderedFcFaBcBa);
-      oadd[3]=CrAnMask+LindexDn[i+1]; oadd[2]=CrAnMask+LindexUp[j]; oadd[1]=LindexDn[i]; oadd[0]=LindexUp[j+1]; RealOperatorAddLaderNormalOrder(Lsqr,oadd,4, sqrt(l+mi+1)*sqrt(l-mi)*sqrt(l-mj)*sqrt(l+mj+1),&QDetNotOrderedFcFaBcBa);
+      oadd[3]=CrAnMask+LindexUp[i+1]; oadd[2]=CrAnMask+LindexUp[j]; oadd[1]=LindexUp[i]; oadd[0]=LindexUp[j+1]; RealOperatorAddLaderNormalOrder(Lsqr,oadd,4,-sqrt(l+mi+1)*sqrt(l-mi)*sqrt(l-mj)*sqrt(l+mj+1),&QDetNotOrderedFcFaBcBa);
+      oadd[3]=CrAnMask+LindexDn[i+1]; oadd[2]=CrAnMask+LindexDn[j]; oadd[1]=LindexDn[i]; oadd[0]=LindexDn[j+1]; RealOperatorAddLaderNormalOrder(Lsqr,oadd,4,-sqrt(l+mi+1)*sqrt(l-mi)*sqrt(l-mj)*sqrt(l+mj+1),&QDetNotOrderedFcFaBcBa);
+      oadd[3]=CrAnMask+LindexUp[i+1]; oadd[2]=CrAnMask+LindexDn[j]; oadd[1]=LindexUp[i]; oadd[0]=LindexDn[j+1]; RealOperatorAddLaderNormalOrder(Lsqr,oadd,4,-sqrt(l+mi+1)*sqrt(l-mi)*sqrt(l-mj)*sqrt(l+mj+1),&QDetNotOrderedFcFaBcBa);
+      oadd[3]=CrAnMask+LindexDn[i+1]; oadd[2]=CrAnMask+LindexUp[j]; oadd[1]=LindexDn[i]; oadd[0]=LindexUp[j+1]; RealOperatorAddLaderNormalOrder(Lsqr,oadd,4,-sqrt(l+mi+1)*sqrt(l-mi)*sqrt(l-mj)*sqrt(l+mj+1),&QDetNotOrderedFcFaBcBa);
     }
   }
   OperatorChop(Lsqr,0.001);
@@ -678,12 +674,12 @@ uint32_t CreateOperatorJy(uint32_t NFermion, uint32_t L, uint16_t *LindexUp, uin
   for(i=0;i<2*L;i++)
   {
     m=(double)i-l;
-    oadd[1]=CrAnMask+LindexUp[i+1]; oadd[0]=LindexUp[i];   ComplexOperatorAddLaderNormalOrder(Jy,oadd,2, 0,-0.5*sqrt(l+m+1)*sqrt(l-m),&QDetNotOrderedFcFaBcBa);
-    oadd[1]=CrAnMask+LindexUp[i];   oadd[0]=LindexUp[i+1]; ComplexOperatorAddLaderNormalOrder(Jy,oadd,2, 0, 0.5*sqrt(l+m+1)*sqrt(l-m),&QDetNotOrderedFcFaBcBa);
-    oadd[1]=CrAnMask+LindexDn[i+1]; oadd[0]=LindexDn[i];   ComplexOperatorAddLaderNormalOrder(Jy,oadd,2, 0,-0.5*sqrt(l+m+1)*sqrt(l-m),&QDetNotOrderedFcFaBcBa);
-    oadd[1]=CrAnMask+LindexDn[i];   oadd[0]=LindexDn[i+1]; ComplexOperatorAddLaderNormalOrder(Jy,oadd,2, 0, 0.5*sqrt(l+m+1)*sqrt(l-m),&QDetNotOrderedFcFaBcBa);
+    oadd[1]=CrAnMask+LindexUp[i+1]; oadd[0]=LindexUp[i];   ComplexOperatorAddLaderNormalOrder(Jy,oadd,2, 0, 0.5*sqrt(l+m+1)*sqrt(l-m),&QDetNotOrderedFcFaBcBa);
+    oadd[1]=CrAnMask+LindexUp[i];   oadd[0]=LindexUp[i+1]; ComplexOperatorAddLaderNormalOrder(Jy,oadd,2, 0,-0.5*sqrt(l+m+1)*sqrt(l-m),&QDetNotOrderedFcFaBcBa);
+    oadd[1]=CrAnMask+LindexDn[i+1]; oadd[0]=LindexDn[i];   ComplexOperatorAddLaderNormalOrder(Jy,oadd,2, 0, 0.5*sqrt(l+m+1)*sqrt(l-m),&QDetNotOrderedFcFaBcBa);
+    oadd[1]=CrAnMask+LindexDn[i];   oadd[0]=LindexDn[i+1]; ComplexOperatorAddLaderNormalOrder(Jy,oadd,2, 0,-0.5*sqrt(l+m+1)*sqrt(l-m),&QDetNotOrderedFcFaBcBa);
   }
-  for(i=0;i<2*L;i++)
+  for(i=0;i<2*L+1;i++)
   {
     oadd[1]=CrAnMask+LindexDn[i]; oadd[0]=LindexUp[i]; ComplexOperatorAddLaderNormalOrder(Jy,oadd,2, 0.0,-0.5,&QDetNotOrderedFcFaBcBa);
     oadd[1]=CrAnMask+LindexUp[i]; oadd[0]=LindexDn[i]; ComplexOperatorAddLaderNormalOrder(Jy,oadd,2, 0.0, 0.5,&QDetNotOrderedFcFaBcBa);
@@ -733,10 +729,12 @@ uint32_t CreateOperatorJsqr(uint32_t NFermion, uint32_t L, uint16_t *LindexUp, u
     for(j=0;j<2*L+1;j++)
     {
       mj=(double)j-l;
-      oadd[3]=CrAnMask+LindexUp[i]; oadd[2]=CrAnMask+LindexUp[j]; oadd[1]=LindexUp[i]; oadd[0]=LindexUp[j]; RealOperatorAddLaderNormalOrder(Jsqr,oadd,4, -mi*mj-0.25-mi*0.5,&QDetNotOrderedFcFaBcBa);
-      oadd[3]=CrAnMask+LindexDn[i]; oadd[2]=CrAnMask+LindexDn[j]; oadd[1]=LindexDn[i]; oadd[0]=LindexDn[j]; RealOperatorAddLaderNormalOrder(Jsqr,oadd,4, -mi*mj-0.25+mi*0.5,&QDetNotOrderedFcFaBcBa);
-      oadd[3]=CrAnMask+LindexUp[i]; oadd[2]=CrAnMask+LindexDn[j]; oadd[1]=LindexUp[i]; oadd[0]=LindexDn[j]; RealOperatorAddLaderNormalOrder(Jsqr,oadd,4, -mi*mj+0.25+mi*0.5,&QDetNotOrderedFcFaBcBa);
-      oadd[3]=CrAnMask+LindexDn[i]; oadd[2]=CrAnMask+LindexUp[j]; oadd[1]=LindexDn[i]; oadd[0]=LindexUp[j]; RealOperatorAddLaderNormalOrder(Jsqr,oadd,4, -mi*mj+0.25-mi*0.5,&QDetNotOrderedFcFaBcBa);
+      oadd[3]=CrAnMask+LindexUp[i]; oadd[2]=CrAnMask+LindexUp[j]; oadd[1]=LindexUp[i]; oadd[0]=LindexUp[j]; RealOperatorAddLaderNormalOrder(Jsqr,oadd,4, -mi*mj-0.25-mi,&QDetNotOrderedFcFaBcBa);
+      oadd[3]=CrAnMask+LindexDn[i]; oadd[2]=CrAnMask+LindexDn[j]; oadd[1]=LindexDn[i]; oadd[0]=LindexDn[j]; RealOperatorAddLaderNormalOrder(Jsqr,oadd,4, -mi*mj-0.25+mi,&QDetNotOrderedFcFaBcBa);
+      oadd[3]=CrAnMask+LindexUp[i]; oadd[2]=CrAnMask+LindexDn[j]; oadd[1]=LindexUp[i]; oadd[0]=LindexDn[j]; RealOperatorAddLaderNormalOrder(Jsqr,oadd,4, -mi*mj+0.25+mi,&QDetNotOrderedFcFaBcBa);
+      oadd[3]=CrAnMask+LindexDn[i]; oadd[2]=CrAnMask+LindexUp[j]; oadd[1]=LindexDn[i]; oadd[0]=LindexUp[j]; RealOperatorAddLaderNormalOrder(Jsqr,oadd,4, -mi*mj+0.25-mi,&QDetNotOrderedFcFaBcBa);
+      
+      oadd[3]=CrAnMask+LindexUp[i]; oadd[2]=CrAnMask+LindexDn[j]; oadd[1]=LindexDn[i]; oadd[0]=LindexUp[j]; RealOperatorAddLaderNormalOrder(Jsqr,oadd,4, -1,&QDetNotOrderedFcFaBcBa);
     }
   }
   for(i=0;i<2*L;i++)
@@ -755,10 +753,10 @@ uint32_t CreateOperatorJsqr(uint32_t NFermion, uint32_t L, uint16_t *LindexUp, u
     for(j=0;j<2*L+1;j++)
     {
       mj=(double)j-l;
-      oadd[3]=CrAnMask+LindexUp[i+1]; oadd[2]=CrAnMask+LindexDn[j]; oadd[1]=LindexUp[i]; oadd[0]=LindexUp[j]; RealOperatorAddLaderNormalOrder(Jsqr,oadd,4,-sqrt(l+mi+1)*sqrt(l-mi),&QDetNotOrderedFcFaBcBa);
-      oadd[3]=CrAnMask+LindexDn[i+1]; oadd[2]=CrAnMask+LindexDn[j]; oadd[1]=LindexDn[i]; oadd[0]=LindexUp[j]; RealOperatorAddLaderNormalOrder(Jsqr,oadd,4,-sqrt(l+mi+1)*sqrt(l-mi),&QDetNotOrderedFcFaBcBa);
-      oadd[3]=CrAnMask+LindexUp[i+1]; oadd[2]=CrAnMask+LindexUp[j]; oadd[1]=LindexUp[i]; oadd[0]=LindexDn[j]; RealOperatorAddLaderNormalOrder(Jsqr,oadd,4,-sqrt(l+mi+1)*sqrt(l-mi),&QDetNotOrderedFcFaBcBa);
-      oadd[3]=CrAnMask+LindexDn[i+1]; oadd[2]=CrAnMask+LindexUp[j]; oadd[1]=LindexDn[i]; oadd[0]=LindexDn[j]; RealOperatorAddLaderNormalOrder(Jsqr,oadd,4,-sqrt(l+mi+1)*sqrt(l-mi),&QDetNotOrderedFcFaBcBa);
+      oadd[3]=CrAnMask+LindexUp[i+1]; oadd[2]=CrAnMask+LindexDn[j]; oadd[1]=LindexUp[i];   oadd[0]=LindexUp[j]; RealOperatorAddLaderNormalOrder(Jsqr,oadd,4,-sqrt(l+mi+1)*sqrt(l-mi),&QDetNotOrderedFcFaBcBa);
+      oadd[3]=CrAnMask+LindexDn[i+1]; oadd[2]=CrAnMask+LindexDn[j]; oadd[1]=LindexDn[i];   oadd[0]=LindexUp[j]; RealOperatorAddLaderNormalOrder(Jsqr,oadd,4,-sqrt(l+mi+1)*sqrt(l-mi),&QDetNotOrderedFcFaBcBa);
+      oadd[3]=CrAnMask+LindexUp[i];   oadd[2]=CrAnMask+LindexUp[j]; oadd[1]=LindexUp[i+1]; oadd[0]=LindexDn[j]; RealOperatorAddLaderNormalOrder(Jsqr,oadd,4,-sqrt(l+mi+1)*sqrt(l-mi),&QDetNotOrderedFcFaBcBa);
+      oadd[3]=CrAnMask+LindexDn[i];   oadd[2]=CrAnMask+LindexUp[j]; oadd[1]=LindexDn[i+1]; oadd[0]=LindexDn[j]; RealOperatorAddLaderNormalOrder(Jsqr,oadd,4,-sqrt(l+mi+1)*sqrt(l-mi),&QDetNotOrderedFcFaBcBa);
     }
   }
   OperatorChop(Jsqr,0.001);
@@ -885,5 +883,37 @@ uint32_t CreateOperatorCF(uint32_t const NFermion, uint32_t LCr, uint32_t LAn, u
       }
     }
   }
+  return 0;
+}
+
+uint32_t CreateOperatorCreate(uint32_t const NFermion, uint16_t const Crindex, OperatorType *const OppCr)
+{
+  uint16_t oadd[1];
+  sprintf(OppCr->Name,"Creation operator on site %i",Crindex);
+  OppCr->NWord=Min(OppCr->NFermion,1+(OppCr->NFermion-1)/8);
+  InitOperatorFixedLength(OppCr, 1, 8);
+  oadd[0]=CrAnMask+Crindex;
+  RealOperatorAddLader(OppCr, oadd, 1, 1);
+  return 0;
+}
+
+uint32_t CreateOperatorAnnihilate(uint32_t const NFermion, uint16_t const Anindex, OperatorType *const OppAn)
+{
+  uint16_t oadd[1];
+  sprintf(OppAn->Name,"Annihilation operator on site %i",Anindex);
+  OppAn->NWord=Min(OppAn->NFermion,1+(OppAn->NFermion-1)/8);
+  InitOperatorFixedLength(OppAn, 1, 8);
+  oadd[0]=Anindex;
+  RealOperatorAddLader(OppAn, oadd, 1, 1);
+  return 0;
+}
+
+uint32_t CreateOperatorNumber(uint32_t const NFermion, uint16_t const Crindex, uint16_t const Anindex, OperatorType *const OppN)
+{
+  uint16_t oadd[2];
+  sprintf(OppN->Name,"Number operator a^{+}_(%i) a_(%i)",Crindex,Anindex);
+  OppN->NWord=Min(OppN->NFermion,1+(OppN->NFermion-1)/8);
+  InitOperatorFixedLength(OppN, 2, 8);
+  oadd[1]=CrAnMask+Crindex; oadd[0]=Anindex;   RealOperatorAddLader(OppN, oadd, 2, 1);
   return 0;
 }

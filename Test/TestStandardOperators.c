@@ -35,4 +35,13 @@ void TestS()
   strcpy(Stest.Name, "i Sy = Sz.Sx - Sx.Sz");
   PrintOperatorReadable(Stest);
   FreeOperator(&Stest);
+  
+  printf("Test mult\n");
+  
+  InitOperatorCopySettings(&Stest, S2);
+  OperatorMultiplyNormalOrder(&Stest, Sx, Sz, &QDetNotOrderedFcFaBcBa);
+  PrintOperatorReadable(Stest);
+  OperatorScale(&Stest, 0.0, 1.0);
+  PrintOperatorReadable(Stest);
+  
 }

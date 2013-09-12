@@ -5,7 +5,7 @@ uint32_t TestCommutationRelations()
 
 uint32_t TestAtomicPhysics()
 {
-  uint32_t lshell,nelectron,NFermion,NExpMax=6;
+  uint32_t lshell,nelectron,NFermion,NExpMax=15;
   uint16_t LindexUp[7],LindexDn[7];
   int ml,i;
   TimeType Time;
@@ -25,7 +25,7 @@ uint32_t TestAtomicPhysics()
   F0[2]=0.0; F2[2]=0.0; F4[2]=1.0; F6[2]=0.0;
   F0[3]=0.0; F2[3]=0.0; F4[3]=0.0; F6[3]=1.0;
   
-  OperatorType Sx,Sy,Sz,Ssqr,Lx,Ly,Lz,Lsqr,Jx,Jy,Jz,Jsqr,ldots,U,U0,U2,U4,U6,H;
+  OperatorType Sx,Sy,Sz,Ssqr,Lx,Ly,Lz,Lsqr,Jx,Jy,Jz,Jsqr,ldots,U,U0,U2,U4,U6,H,test;
   WaveFunctionType psi, psiEigen[NExpMax];
   
   printf("This subroutine creates the L, S, J, ldots, and coulomb operator for a single atomic shell\n");
@@ -34,7 +34,7 @@ uint32_t TestAtomicPhysics()
   
   InitializeTiming(&Time);
   BeginTiming("Total",&Time);
-  for(lshell=1;lshell<=1;lshell++)
+  for(lshell=2;lshell<=2;lshell++)
   {
     BeginTiming("Shell",&Time);
     printf("************************************************************\n");
@@ -68,7 +68,7 @@ uint32_t TestAtomicPhysics()
     OperatorCopy(&H, U);
     OperatorAdd(&H, Sz, 0.000002, 0);
     OperatorAdd(&H, Lz, 0.000001, 0);
-    OperatorAdd(&H, ldots, 0.01, 0);
+    OperatorAdd(&H, ldots, 0.001, 0);
     EndTiming("Create Operators",&Time);
     
     PrintOperatorReadable(Sx);
@@ -90,10 +90,201 @@ uint32_t TestAtomicPhysics()
     PrintOperatorReadable(U4);
     PrintOperatorReadable(U6);
     
+    printf("************************************************************\n");
+    printf("**********           Commutation relatons          *********\n");
+    printf("************************************************************\n");
+    
+    InitOperatorCopySettings(&test, U);
+    InitOperatorFixedLength(&test, 6, 8);
+    InitOperatorFixedLength(&test, 8, 8);
+    strcpy(test.Name, "[S^2,U]");
+    OperatorMultiplyNormalOrder(&test, Ssqr, U, &QDetNotOrderedFcFaBcBa);
+    OperatorScale(&test, -1, 0);
+    OperatorMultiplyNormalOrder(&test, U, Ssqr, &QDetNotOrderedFcFaBcBa);
+    OperatorChop(&test, 100*DBL_EPSILON);
+    PrintOperatorReadable(test);
+    FreeOperator(&test);
+    
+    InitOperatorCopySettings(&test, U);
+    InitOperatorFixedLength(&test, 6, 8);
+    InitOperatorFixedLength(&test, 8, 8);
+    strcpy(test.Name, "[L^2,U]");
+    OperatorMultiplyNormalOrder(&test, Lsqr, U, &QDetNotOrderedFcFaBcBa);
+    OperatorScale(&test, -1, 0);
+    OperatorMultiplyNormalOrder(&test, U, Lsqr, &QDetNotOrderedFcFaBcBa);
+    OperatorChop(&test, 100*DBL_EPSILON);
+    PrintOperatorReadable(test);
+    FreeOperator(&test);
+    
+    InitOperatorCopySettings(&test, U);
+    InitOperatorFixedLength(&test, 6, 8);
+    InitOperatorFixedLength(&test, 8, 8);
+    strcpy(test.Name, "[J^2,U]");
+    OperatorMultiplyNormalOrder(&test, Jsqr, U, &QDetNotOrderedFcFaBcBa);
+    OperatorScale(&test, -1, 0);
+    OperatorMultiplyNormalOrder(&test, U, Jsqr, &QDetNotOrderedFcFaBcBa);
+    OperatorChop(&test, 100*DBL_EPSILON);
+    PrintOperatorReadable(test);
+    FreeOperator(&test);
+    
+    InitOperatorCopySettings(&test, U);
+    InitOperatorFixedLength(&test, 6, 8);
+    InitOperatorFixedLength(&test, 8, 8);
+    strcpy(test.Name, "[L^2,S^2]");
+    OperatorMultiplyNormalOrder(&test, Lsqr, Ssqr, &QDetNotOrderedFcFaBcBa);
+    OperatorScale(&test, -1, 0);
+    OperatorMultiplyNormalOrder(&test, Ssqr, Lsqr, &QDetNotOrderedFcFaBcBa);
+    OperatorChop(&test, 100*DBL_EPSILON);
+    PrintOperatorReadable(test);
+    FreeOperator(&test);
+    
+    OperatorCopy(&test, Lsqr);
+    OperatorScale(&test, -1, 0);
+    strcpy(test.Name, "[Lx.Lx+Ly.Ly+Lz.Lz-L^2]");
+    OperatorMultiplyNormalOrder(&test, Lx, Lx, &QDetNotOrderedFcFaBcBa);
+    OperatorMultiplyNormalOrder(&test, Ly, Ly, &QDetNotOrderedFcFaBcBa);
+    OperatorMultiplyNormalOrder(&test, Lz, Lz, &QDetNotOrderedFcFaBcBa);
+    OperatorChop(&test, 100*DBL_EPSILON);
+    PrintOperatorReadable(test);
+    FreeOperator(&test);
+    
+    OperatorCopy(&test, Ssqr);
+    OperatorScale(&test, -1, 0);
+    strcpy(test.Name, "[Sx.Sx+Sy.Sy+Sz.Sz-S^2]");
+    OperatorMultiplyNormalOrder(&test, Sx, Sx, &QDetNotOrderedFcFaBcBa);
+    OperatorMultiplyNormalOrder(&test, Sy, Sy, &QDetNotOrderedFcFaBcBa);
+    OperatorMultiplyNormalOrder(&test, Sz, Sz, &QDetNotOrderedFcFaBcBa);
+    OperatorChop(&test, 100*DBL_EPSILON);
+    PrintOperatorReadable(test);
+    FreeOperator(&test);
+    
+    OperatorCopy(&test, Jsqr);
+    OperatorScale(&test, -1, 0);
+    strcpy(test.Name, "[Jx.Jx+Jy.Jy+Jz.Jz-J^2]");
+    OperatorMultiplyNormalOrder(&test, Jx, Jx, &QDetNotOrderedFcFaBcBa);
+    OperatorMultiplyNormalOrder(&test, Jy, Jy, &QDetNotOrderedFcFaBcBa);
+    OperatorMultiplyNormalOrder(&test, Jz, Jz, &QDetNotOrderedFcFaBcBa);
+    OperatorChop(&test, 100*DBL_EPSILON);
+    PrintOperatorReadable(test);
+    FreeOperator(&test);
+    
+    InitOperatorCopySettings(&test, Ssqr);
+    OperatorMultiplyNormalOrder(&test, Sy, Sx,&QDetNotOrderedFcFaBcBa);
+    OperatorScale(&test, -1.0, 0.0);
+    OperatorMultiplyNormalOrder(&test, Sx, Sy,&QDetNotOrderedFcFaBcBa);
+    OperatorAdd(&test, Sz, 0, -1);
+    strcpy(test.Name, "(Sx.Sy - Sy.Sx) - i Sz");
+    OperatorChop(&test, 100*DBL_EPSILON);
+    PrintOperatorReadable(test);
+    FreeOperator(&test);
+    
+    InitOperatorCopySettings(&test, Ssqr);
+    OperatorMultiplyNormalOrder(&test, Sz, Sy,&QDetNotOrderedFcFaBcBa);
+    OperatorScale(&test, -1.0, 0.0);
+    OperatorMultiplyNormalOrder(&test, Sy, Sz,&QDetNotOrderedFcFaBcBa);
+    OperatorAdd(&test, Sx, 0, -1);
+    strcpy(test.Name, "(Sy.Sz - Sz.Sy) - i Sx");
+    OperatorChop(&test, 100*DBL_EPSILON);
+    PrintOperatorReadable(test);
+    FreeOperator(&test);
+    
+    InitOperatorCopySettings(&test, Ssqr);
+    OperatorMultiplyNormalOrder(&test, Sx, Sz,&QDetNotOrderedFcFaBcBa);
+    OperatorScale(&test, -1.0, 0.0);
+    OperatorMultiplyNormalOrder(&test, Sz, Sx,&QDetNotOrderedFcFaBcBa);
+    OperatorAdd(&test, Sy, 0, -1);
+    strcpy(test.Name, "(Sz.Sx - Sx.Sz) - i Sy");
+    OperatorChop(&test, 100*DBL_EPSILON);
+    PrintOperatorReadable(test);
+    FreeOperator(&test);
+    
+    InitOperatorCopySettings(&test, Lsqr);
+    OperatorMultiplyNormalOrder(&test, Ly, Lx,&QDetNotOrderedFcFaBcBa);
+    OperatorScale(&test, -1.0, 0.0);
+    OperatorMultiplyNormalOrder(&test, Lx, Ly,&QDetNotOrderedFcFaBcBa);
+    OperatorAdd(&test, Lz, 0, -1);
+    strcpy(test.Name, "(Lx.Ly - Ly.Lx) - i Lz");
+    OperatorChop(&test, 100*DBL_EPSILON);
+    PrintOperatorReadable(test);
+    FreeOperator(&test);
+    
+    InitOperatorCopySettings(&test, Lsqr);
+    OperatorMultiplyNormalOrder(&test, Lz, Ly,&QDetNotOrderedFcFaBcBa);
+    OperatorScale(&test, -1.0, 0.0);
+    OperatorMultiplyNormalOrder(&test, Ly, Lz,&QDetNotOrderedFcFaBcBa);
+    OperatorAdd(&test, Lx, 0, -1);
+    strcpy(test.Name, "(Ly.Lz - Lz.Ly) - i Lx");
+    OperatorChop(&test, 100*DBL_EPSILON);
+    PrintOperatorReadable(test);
+    FreeOperator(&test);
+    
+    InitOperatorCopySettings(&test, Lsqr);
+    OperatorMultiplyNormalOrder(&test, Lx, Lz,&QDetNotOrderedFcFaBcBa);
+    OperatorScale(&test, -1.0, 0.0);
+    OperatorMultiplyNormalOrder(&test, Lz, Lx,&QDetNotOrderedFcFaBcBa);
+    OperatorAdd(&test, Ly, 0, -1);
+    strcpy(test.Name, "(Lz.Lx - Lx.Lz) - i Ly");
+    OperatorChop(&test, 100*DBL_EPSILON);
+    PrintOperatorReadable(test);
+    FreeOperator(&test);
+    
+    InitOperatorCopySettings(&test, Jsqr);
+    OperatorMultiplyNormalOrder(&test, Jy, Jx,&QDetNotOrderedFcFaBcBa);
+    OperatorScale(&test, -1.0, 0.0);
+    OperatorMultiplyNormalOrder(&test, Jx, Jy,&QDetNotOrderedFcFaBcBa);
+    OperatorAdd(&test, Jz, 0, -1);
+    strcpy(test.Name, "(Jx.Jy - Jy.Jx) - i Jz");
+    OperatorChop(&test, 100*DBL_EPSILON);
+    PrintOperatorReadable(test);
+    FreeOperator(&test);
+    
+    InitOperatorCopySettings(&test, Jsqr);
+    OperatorMultiplyNormalOrder(&test, Jz, Jy,&QDetNotOrderedFcFaBcBa);
+    OperatorScale(&test, -1.0, 0.0);
+    OperatorMultiplyNormalOrder(&test, Jy, Jz,&QDetNotOrderedFcFaBcBa);
+    OperatorAdd(&test, Jx, 0, -1);
+    strcpy(test.Name, "(Jy.Jz - Jz.Jy) - i Jx");
+    OperatorChop(&test, 100*DBL_EPSILON);
+    PrintOperatorReadable(test);
+    FreeOperator(&test);
+    
+    InitOperatorCopySettings(&test, Jsqr);
+    OperatorMultiplyNormalOrder(&test, Jx, Jz,&QDetNotOrderedFcFaBcBa);
+    OperatorScale(&test, -1.0, 0.0);
+    OperatorMultiplyNormalOrder(&test, Jz, Jx,&QDetNotOrderedFcFaBcBa);
+    OperatorAdd(&test, Jy, 0, -1);
+    strcpy(test.Name, "(Jz.Jx - Jx.Jz) - i Jy");
+    OperatorChop(&test, 100*DBL_EPSILON);
+    PrintOperatorReadable(test);
+    FreeOperator(&test);
+    
+    OperatorCopy(&test, Jx);
+    OperatorAdd(&test, Lx, -1, 0);
+    OperatorAdd(&test, Sx, -1, 0);
+    strcpy(test.Name, "Jx - (Lx+Sx)");
+    OperatorChop(&test, 100*DBL_EPSILON);
+    PrintOperatorReadable(test);
+    FreeOperator(&test);
+    
+    OperatorCopy(&test, Jy);
+    OperatorAdd(&test, Ly, -1, 0);
+    OperatorAdd(&test, Sy, -1, 0);
+    strcpy(test.Name, "Jy - (Ly+Sy)");
+    OperatorChop(&test, 100*DBL_EPSILON);
+    PrintOperatorReadable(test);
+    FreeOperator(&test);
+    
+    OperatorCopy(&test, Jz);
+    OperatorAdd(&test, Lz, -1, 0);
+    OperatorAdd(&test, Sz, -1, 0);
+    strcpy(test.Name, "Jz - (Lz+Sz)");
+    OperatorChop(&test, 100*DBL_EPSILON);
+    PrintOperatorReadable(test);
+    FreeOperator(&test);
     
     
     
-    for(nelectron=0;nelectron<=4*lshell+2;nelectron++)
+    for(nelectron=0;nelectron<=(4*lshell+2);nelectron++)
     {
       BeginTiming("nelectrons",&Time);
       printf("************************************************************\n");

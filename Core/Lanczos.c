@@ -7,7 +7,7 @@
 */
 uint32_t LanczosGroundStateRR(const OperatorType H, WaveFunctionType *const psi, double *epsilon, const double zero, double shiftin, WaveFunctionType *OtherPsi, uint32_t NOtherPsi)
 {
-  printf("\nStart of LanczosGroundStateRR shiftin is obsolete \n\n");
+  printf("\nStart of LanczosGroundStateRR\n\n");
   fflush(stdout);
   const uint32_t NKrylovMax=100;
   uint32_t NKrylov;
@@ -141,7 +141,7 @@ uint32_t LanczosGroundStateRR(const OperatorType H, WaveFunctionType *const psi,
       }
       // Set the shift such that the largest eigenvalue found becomes zero
       shift-=val[M.N-1];
-      shift-=0.0001*Abs(shift);
+      shift-=shiftin;
       // Orthogonalize to previously found functions
       RealWaveFunctionOrthogonalizeConserveBasis(psi, OtherPsi, NOtherPsi);
       RealWaveFunctionNormalize(psi);

@@ -4340,8 +4340,8 @@ uint32_t OperatorScale(OperatorType *const O, const double alphaRe, const double
         if(MakeRealOperatorFixedLengthComplex(O,i)) {printf("MakeRealOperatorFixedLengthComplex failed in OperatorScale\n");fflush(stdout);return 1;}
         for(j=0;j<O->l[i].N;j++)
         {
-          O->l[i].V[j].Re=O->l[i].V[j].Re*alphaRe;
           O->l[i].V[j].Im=O->l[i].V[j].Re*alphaIm;
+          O->l[i].V[j].Re=O->l[i].V[j].Re*alphaRe;
         }
       }
     }
