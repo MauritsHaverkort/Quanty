@@ -843,6 +843,7 @@ uint32_t CreateOperatorCF(uint32_t const NFermion, uint32_t LCr, uint32_t LAn, u
   int mCr,mAn,lCr,lAn;
   double val;
   InitNamedOperator(CF,"CF");
+  CF->NFermion=NFermion;
   CF->NWord=Min(CF->NFermion,1+(CF->NFermion-1)/8);
   InitOperatorFixedLength(CF, 2, 8);
   if(Akm.QComplex)
@@ -856,29 +857,29 @@ uint32_t CreateOperatorCF(uint32_t const NFermion, uint32_t LCr, uint32_t LAn, u
   {
     for(mCr=-lCr;mCr<=lCr;mCr++)
     {
-      mAn=(int)mCr-Akm.m[i];
+      mAn=mCr-Akm.m[i];
       val=(double)SlaterCoefficientC(Akm.l[i], lCr, mCr, lAn, mAn);
       if(Abs(val)>DBL_EPSILON)
       {
         oadd[1]=CrAnMask+LCrindexDn[mCr+lCr];
-        oadd[0]=CrAnMask+LAnindexDn[mAn+lAn];
+        oadd[0]=         LAnindexDn[mAn+lAn];
         if(Akm.QComplex)
         {
-          ComplexOperatorAddLaderNormalOrder(CF,oadd,2,Akm.Re[i],Akm.Im[i],&QDetNotOrderedFcFaBcBa);
+          ComplexOperatorAddLaderNormalOrder(CF,oadd,2,val*Akm.Re[i],val*Akm.Im[i],&QDetNotOrderedFcFaBcBa);
         }
         else
         {
-          RealOperatorAddLaderNormalOrder(CF, oadd, 2, Akm.Re[i], &QDetNotOrderedFcFaBcBa);
+          RealOperatorAddLaderNormalOrder(CF, oadd, 2, val*Akm.Re[i], &QDetNotOrderedFcFaBcBa);
         }
         oadd[1]=CrAnMask+LCrindexUp[mCr+lCr];
-        oadd[0]=CrAnMask+LAnindexUp[mAn+lAn];
+        oadd[0]=         LAnindexUp[mAn+lAn];
         if(Akm.QComplex)
         {
-          ComplexOperatorAddLaderNormalOrder(CF,oadd,2,Akm.Re[i],Akm.Im[i],&QDetNotOrderedFcFaBcBa);
+          ComplexOperatorAddLaderNormalOrder(CF,oadd,2,val*Akm.Re[i],val*Akm.Im[i],&QDetNotOrderedFcFaBcBa);
         }
         else
         {
-          RealOperatorAddLaderNormalOrder(CF, oadd, 2, Akm.Re[i], &QDetNotOrderedFcFaBcBa);
+          RealOperatorAddLaderNormalOrder(CF, oadd, 2, val*Akm.Re[i], &QDetNotOrderedFcFaBcBa);
         }
       }
     }
@@ -889,7 +890,9 @@ uint32_t CreateOperatorCF(uint32_t const NFermion, uint32_t LCr, uint32_t LAn, u
 uint32_t CreateOperatorCreate(uint32_t const NFermion, uint16_t const Crindex, OperatorType *const OppCr)
 {
   uint16_t oadd[1];
+  InitNamedOperator(OppCr,"Cr");
   sprintf(OppCr->Name,"Creation operator on site %i",Crindex);
+  OppCr->NFermion=NFermion;
   OppCr->NWord=Min(OppCr->NFermion,1+(OppCr->NFermion-1)/8);
   InitOperatorFixedLength(OppCr, 1, 8);
   oadd[0]=CrAnMask+Crindex;
@@ -900,7 +903,9 @@ uint32_t CreateOperatorCreate(uint32_t const NFermion, uint16_t const Crindex, O
 uint32_t CreateOperatorAnnihilate(uint32_t const NFermion, uint16_t const Anindex, OperatorType *const OppAn)
 {
   uint16_t oadd[1];
+  InitNamedOperator(OppAn,"An");
   sprintf(OppAn->Name,"Annihilation operator on site %i",Anindex);
+  OppAn->NFermion=NFermion;
   OppAn->NWord=Min(OppAn->NFermion,1+(OppAn->NFermion-1)/8);
   InitOperatorFixedLength(OppAn, 1, 8);
   oadd[0]=Anindex;
@@ -911,7 +916,9 @@ uint32_t CreateOperatorAnnihilate(uint32_t const NFermion, uint16_t const Aninde
 uint32_t CreateOperatorNumber(uint32_t const NFermion, uint16_t const Crindex, uint16_t const Anindex, OperatorType *const OppN)
 {
   uint16_t oadd[2];
+  InitNamedOperator(OppN,"N");
   sprintf(OppN->Name,"Number operator a^{+}_(%i) a_(%i)",Crindex,Anindex);
+  OppN->NFermion=NFermion;
   OppN->NWord=Min(OppN->NFermion,1+(OppN->NFermion-1)/8);
   InitOperatorFixedLength(OppN, 2, 8);
   oadd[1]=CrAnMask+Crindex; oadd[0]=Anindex;   RealOperatorAddLader(OppN, oadd, 2, 1);

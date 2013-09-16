@@ -831,3 +831,2052 @@ double CubicHarmonicK(const int k, const int m, const double t, const double p)
   return 0;
 }
 
+
+/*  Returns a potential expanded on spherical harmonics
+ *  Such that the potential belongs to the a1 irrep of a given pointgroup
+ *  The imput parameters are the eigen-energies of a shell with certain angular momentum
+ *
+ *  C1 - l == *    - {a}
+ *  Cs - l == 0    - {ap}
+ *       l >= 0    - {ap,app}
+ *  Ci - l == even - {ag}
+ *       l == odd  - {au}
+ *  Td   l == 0    - {a1}
+ *       l == 1    - {t1}
+ *       l == 2    - {e, t2}
+ *       l == 3    - {a1, t1, t2}
+ *  Oh   l == 0    - {a1g}
+ *       l == 1    - {t1u}
+ *       l == 2    - {eg, t2g}
+ *       l == 3    - {a1u, t1u, t2u}
+ *  Ih   l == 0    - {ag}
+ *       l == 1    - {t1u}
+ *       l == 2    - {hg}
+ */
+uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEnergies, HarmonicsExpansion *const Akm)
+{
+  if (strcmp(s, "C1")== 0)
+  {
+    Akm->QComplex=0;
+    Akm->N=1;
+    if((Akm->l =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for l failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->m =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for m failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->Re=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if(Akm->QComplex)
+    {
+      if((Akm->Im=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    }
+    Akm->l[0]  = 0;
+    Akm->m[0]  = 0;
+    Akm->Re[0] = EigenEnergies[0];
+  }
+  else if (strcmp(s, "Cs")== 0)
+  {
+    printf("Potential for %s not yet implemented\n",s);
+    return 1;
+    Akm->QComplex=0;
+    Akm->N=1;
+    if((Akm->l =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for l failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->m =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for m failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->Re=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if(Akm->QComplex)
+    {
+      if((Akm->Im=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    }
+    Akm->l[0]  = 0;
+    Akm->m[0]  = 0;
+    Akm->Re[0] = EigenEnergies[0];
+  }
+  else if (strcmp(s, "Ci")== 0)
+  {
+    Akm->QComplex=0;
+    Akm->N=1;
+    if((Akm->l =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for l failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->m =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for m failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->Re=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if(Akm->QComplex)
+    {
+      if((Akm->Im=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    }
+    Akm->l[0]  = 0;
+    Akm->m[0]  = 0;
+    Akm->Re[0] = EigenEnergies[0];
+  }
+  
+  else if (strcmp(s, "C2")== 0)
+  {
+    printf("Potential for %s not yet implemented\n",s);
+    return 1;
+    Akm->QComplex=0;
+    switch (l)
+    {
+      case 0 : Akm->N=1; break;
+      case 1 : Akm->N=1; break;
+      case 2 : Akm->N=2; break;
+      case 3 : Akm->N=3; break;
+      default: printf("Potential for point group %s and angular momentum %i not implemented\n",s,l); return 1; break;
+    }
+    if((Akm->l =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for l failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->m =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for m failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->Re=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if(Akm->QComplex)
+    {
+      if((Akm->Im=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    }
+    switch (l)
+    {
+      case 0 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 1 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 2 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 3 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+    }
+  }
+  else if (strcmp(s, "C3")== 0)
+  {
+    printf("Potential for %s not yet implemented\n",s);
+    return 1;
+    Akm->QComplex=0;
+    switch (l)
+    {
+      case 0 : Akm->N=1; break;
+      case 1 : Akm->N=1; break;
+      case 2 : Akm->N=2; break;
+      case 3 : Akm->N=3; break;
+      default: printf("Potential for point group %s and angular momentum %i not implemented\n",s,l); return 1; break;
+    }
+    if((Akm->l =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for l failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->m =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for m failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->Re=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if(Akm->QComplex)
+    {
+      if((Akm->Im=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    }
+    switch (l)
+    {
+      case 0 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 1 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 2 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 3 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+    }
+  }
+  else if (strcmp(s, "C4")== 0)
+  {
+    printf("Potential for %s not yet implemented\n",s);
+    return 1;
+    Akm->QComplex=0;
+    switch (l)
+    {
+      case 0 : Akm->N=1; break;
+      case 1 : Akm->N=1; break;
+      case 2 : Akm->N=2; break;
+      case 3 : Akm->N=3; break;
+      default: printf("Potential for point group %s and angular momentum %i not implemented\n",s,l); return 1; break;
+    }
+    if((Akm->l =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for l failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->m =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for m failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->Re=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if(Akm->QComplex)
+    {
+      if((Akm->Im=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    }
+    switch (l)
+    {
+      case 0 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 1 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 2 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 3 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+    }
+  }
+  else if (strcmp(s, "C5")== 0)
+  {
+    printf("Potential for %s not yet implemented\n",s);
+    return 1;
+    Akm->QComplex=0;
+    switch (l)
+    {
+      case 0 : Akm->N=1; break;
+      case 1 : Akm->N=1; break;
+      case 2 : Akm->N=2; break;
+      case 3 : Akm->N=3; break;
+      default: printf("Potential for point group %s and angular momentum %i not implemented\n",s,l); return 1; break;
+    }
+    if((Akm->l =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for l failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->m =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for m failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->Re=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if(Akm->QComplex)
+    {
+      if((Akm->Im=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    }
+    switch (l)
+    {
+      case 0 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 1 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 2 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 3 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+    }
+  }
+  else if (strcmp(s, "C6")== 0)
+  {
+    printf("Potential for %s not yet implemented\n",s);
+    return 1;
+    Akm->QComplex=0;
+    switch (l)
+    {
+      case 0 : Akm->N=1; break;
+      case 1 : Akm->N=1; break;
+      case 2 : Akm->N=2; break;
+      case 3 : Akm->N=3; break;
+      default: printf("Potential for point group %s and angular momentum %i not implemented\n",s,l); return 1; break;
+    }
+    if((Akm->l =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for l failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->m =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for m failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->Re=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if(Akm->QComplex)
+    {
+      if((Akm->Im=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    }
+    switch (l)
+    {
+      case 0 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 1 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 2 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 3 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+    }
+  }
+  
+  else if (strcmp(s, "C2v")== 0)
+  {
+    printf("Potential for %s not yet implemented\n",s);
+    return 1;
+    Akm->QComplex=0;
+    switch (l)
+    {
+      case 0 : Akm->N=1; break;
+      case 1 : Akm->N=1; break;
+      case 2 : Akm->N=2; break;
+      case 3 : Akm->N=3; break;
+      default: printf("Potential for point group %s and angular momentum %i not implemented\n",s,l); return 1; break;
+    }
+    if((Akm->l =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for l failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->m =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for m failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->Re=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if(Akm->QComplex)
+    {
+      if((Akm->Im=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    }
+    switch (l)
+    {
+      case 0 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 1 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 2 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 3 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+    }
+  }
+  else if (strcmp(s, "C3v")== 0)
+  {
+    printf("Potential for %s not yet implemented\n",s);
+    return 1;
+    Akm->QComplex=0;
+    switch (l)
+    {
+      case 0 : Akm->N=1; break;
+      case 1 : Akm->N=1; break;
+      case 2 : Akm->N=2; break;
+      case 3 : Akm->N=3; break;
+      default: printf("Potential for point group %s and angular momentum %i not implemented\n",s,l); return 1; break;
+    }
+    if((Akm->l =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for l failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->m =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for m failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->Re=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if(Akm->QComplex)
+    {
+      if((Akm->Im=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    }
+    switch (l)
+    {
+      case 0 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 1 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 2 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 3 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+    }
+  }
+  else if (strcmp(s, "C4v")== 0)
+  {
+    printf("Potential for %s not yet implemented\n",s);
+    return 1;
+    Akm->QComplex=0;
+    switch (l)
+    {
+      case 0 : Akm->N=1; break;
+      case 1 : Akm->N=1; break;
+      case 2 : Akm->N=2; break;
+      case 3 : Akm->N=3; break;
+      default: printf("Potential for point group %s and angular momentum %i not implemented\n",s,l); return 1; break;
+    }
+    if((Akm->l =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for l failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->m =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for m failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->Re=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if(Akm->QComplex)
+    {
+      if((Akm->Im=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    }
+    switch (l)
+    {
+      case 0 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 1 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 2 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 3 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+    }
+  }
+  else if (strcmp(s, "C5v")== 0)
+  {
+    printf("Potential for %s not yet implemented\n",s);
+    return 1;
+    Akm->QComplex=0;
+    switch (l)
+    {
+      case 0 : Akm->N=1; break;
+      case 1 : Akm->N=1; break;
+      case 2 : Akm->N=2; break;
+      case 3 : Akm->N=3; break;
+      default: printf("Potential for point group %s and angular momentum %i not implemented\n",s,l); return 1; break;
+    }
+    if((Akm->l =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for l failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->m =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for m failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->Re=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if(Akm->QComplex)
+    {
+      if((Akm->Im=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    }
+    switch (l)
+    {
+      case 0 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 1 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 2 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 3 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+    }
+  }
+  else if (strcmp(s, "C6v")== 0)
+  {
+    printf("Potential for %s not yet implemented\n",s);
+    return 1;
+    Akm->QComplex=0;
+    switch (l)
+    {
+      case 0 : Akm->N=1; break;
+      case 1 : Akm->N=1; break;
+      case 2 : Akm->N=2; break;
+      case 3 : Akm->N=3; break;
+      default: printf("Potential for point group %s and angular momentum %i not implemented\n",s,l); return 1; break;
+    }
+    if((Akm->l =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for l failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->m =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for m failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->Re=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if(Akm->QComplex)
+    {
+      if((Akm->Im=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    }
+    switch (l)
+    {
+      case 0 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 1 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 2 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 3 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+    }
+  }
+  
+  else if (strcmp(s, "C2h")== 0)
+  {
+    printf("Potential for %s not yet implemented\n",s);
+    return 1;
+    Akm->QComplex=0;
+    switch (l)
+    {
+      case 0 : Akm->N=1; break;
+      case 1 : Akm->N=1; break;
+      case 2 : Akm->N=2; break;
+      case 3 : Akm->N=3; break;
+      default: printf("Potential for point group %s and angular momentum %i not implemented\n",s,l); return 1; break;
+    }
+    if((Akm->l =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for l failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->m =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for m failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->Re=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if(Akm->QComplex)
+    {
+      if((Akm->Im=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    }
+    switch (l)
+    {
+      case 0 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 1 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 2 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 3 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+    }
+  }
+  else if (strcmp(s, "C3h")== 0)
+  {
+    printf("Potential for %s not yet implemented\n",s);
+    return 1;
+    Akm->QComplex=0;
+    switch (l)
+    {
+      case 0 : Akm->N=1; break;
+      case 1 : Akm->N=1; break;
+      case 2 : Akm->N=2; break;
+      case 3 : Akm->N=3; break;
+      default: printf("Potential for point group %s and angular momentum %i not implemented\n",s,l); return 1; break;
+    }
+    if((Akm->l =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for l failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->m =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for m failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->Re=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if(Akm->QComplex)
+    {
+      if((Akm->Im=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    }
+    switch (l)
+    {
+      case 0 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 1 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 2 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 3 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+    }
+  }
+  else if (strcmp(s, "C4h")== 0)
+  {
+    printf("Potential for %s not yet implemented\n",s);
+    return 1;
+    Akm->QComplex=0;
+    switch (l)
+    {
+      case 0 : Akm->N=1; break;
+      case 1 : Akm->N=1; break;
+      case 2 : Akm->N=2; break;
+      case 3 : Akm->N=3; break;
+      default: printf("Potential for point group %s and angular momentum %i not implemented\n",s,l); return 1; break;
+    }
+    if((Akm->l =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for l failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->m =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for m failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->Re=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if(Akm->QComplex)
+    {
+      if((Akm->Im=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    }
+    switch (l)
+    {
+      case 0 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 1 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 2 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 3 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+    }
+  }
+  else if (strcmp(s, "C5h")== 0)
+  {
+    printf("Potential for %s not yet implemented\n",s);
+    return 1;
+    Akm->QComplex=0;
+    switch (l)
+    {
+      case 0 : Akm->N=1; break;
+      case 1 : Akm->N=1; break;
+      case 2 : Akm->N=2; break;
+      case 3 : Akm->N=3; break;
+      default: printf("Potential for point group %s and angular momentum %i not implemented\n",s,l); return 1; break;
+    }
+    if((Akm->l =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for l failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->m =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for m failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->Re=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if(Akm->QComplex)
+    {
+      if((Akm->Im=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    }
+    switch (l)
+    {
+      case 0 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 1 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 2 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 3 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+    }
+  }
+  else if (strcmp(s, "C6h")== 0)
+  {
+    printf("Potential for %s not yet implemented\n",s);
+    return 1;
+    Akm->QComplex=0;
+    switch (l)
+    {
+      case 0 : Akm->N=1; break;
+      case 1 : Akm->N=1; break;
+      case 2 : Akm->N=2; break;
+      case 3 : Akm->N=3; break;
+      default: printf("Potential for point group %s and angular momentum %i not implemented\n",s,l); return 1; break;
+    }
+    if((Akm->l =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for l failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->m =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for m failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->Re=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if(Akm->QComplex)
+    {
+      if((Akm->Im=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    }
+    switch (l)
+    {
+      case 0 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 1 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 2 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 3 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+    }
+  }
+  
+  else if (strcmp(s, "D2")== 0)
+  {
+    printf("Potential for %s not yet implemented\n",s);
+    return 1;
+    Akm->QComplex=0;
+    switch (l)
+    {
+      case 0 : Akm->N=1; break;
+      case 1 : Akm->N=1; break;
+      case 2 : Akm->N=2; break;
+      case 3 : Akm->N=3; break;
+      default: printf("Potential for point group %s and angular momentum %i not implemented\n",s,l); return 1; break;
+    }
+    if((Akm->l =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for l failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->m =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for m failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->Re=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if(Akm->QComplex)
+    {
+      if((Akm->Im=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    }
+    switch (l)
+    {
+      case 0 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 1 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 2 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 3 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+    }
+  }
+  else if (strcmp(s, "D3")== 0)
+  {
+    printf("Potential for %s not yet implemented\n",s);
+    return 1;
+    Akm->QComplex=0;
+    switch (l)
+    {
+      case 0 : Akm->N=1; break;
+      case 1 : Akm->N=1; break;
+      case 2 : Akm->N=2; break;
+      case 3 : Akm->N=3; break;
+      default: printf("Potential for point group %s and angular momentum %i not implemented\n",s,l); return 1; break;
+    }
+    if((Akm->l =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for l failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->m =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for m failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->Re=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if(Akm->QComplex)
+    {
+      if((Akm->Im=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    }
+    switch (l)
+    {
+      case 0 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 1 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 2 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 3 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+    }
+  }
+  else if (strcmp(s, "D4")== 0)
+  {
+    printf("Potential for %s not yet implemented\n",s);
+    return 1;
+    Akm->QComplex=0;
+    switch (l)
+    {
+      case 0 : Akm->N=1; break;
+      case 1 : Akm->N=1; break;
+      case 2 : Akm->N=2; break;
+      case 3 : Akm->N=3; break;
+      default: printf("Potential for point group %s and angular momentum %i not implemented\n",s,l); return 1; break;
+    }
+    if((Akm->l =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for l failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->m =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for m failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->Re=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if(Akm->QComplex)
+    {
+      if((Akm->Im=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    }
+    switch (l)
+    {
+      case 0 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 1 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 2 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 3 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+    }
+  }
+  else if (strcmp(s, "D5")== 0)
+  {
+    printf("Potential for %s not yet implemented\n",s);
+    return 1;
+    Akm->QComplex=0;
+    switch (l)
+    {
+      case 0 : Akm->N=1; break;
+      case 1 : Akm->N=1; break;
+      case 2 : Akm->N=2; break;
+      case 3 : Akm->N=3; break;
+      default: printf("Potential for point group %s and angular momentum %i not implemented\n",s,l); return 1; break;
+    }
+    if((Akm->l =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for l failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->m =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for m failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->Re=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if(Akm->QComplex)
+    {
+      if((Akm->Im=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    }
+    switch (l)
+    {
+      case 0 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 1 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 2 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 3 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+    }
+  }
+  else if (strcmp(s, "D6")== 0)
+  {
+    printf("Potential for %s not yet implemented\n",s);
+    return 1;
+    Akm->QComplex=0;
+    switch (l)
+    {
+      case 0 : Akm->N=1; break;
+      case 1 : Akm->N=1; break;
+      case 2 : Akm->N=2; break;
+      case 3 : Akm->N=3; break;
+      default: printf("Potential for point group %s and angular momentum %i not implemented\n",s,l); return 1; break;
+    }
+    if((Akm->l =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for l failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->m =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for m failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->Re=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if(Akm->QComplex)
+    {
+      if((Akm->Im=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    }
+    switch (l)
+    {
+      case 0 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 1 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 2 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 3 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+    }
+  }
+  
+  else if (strcmp(s, "D2h")== 0)
+  {
+    printf("Potential for %s not yet implemented\n",s);
+    return 1;
+    Akm->QComplex=0;
+    switch (l)
+    {
+      case 0 : Akm->N=1; break;
+      case 1 : Akm->N=1; break;
+      case 2 : Akm->N=2; break;
+      case 3 : Akm->N=3; break;
+      default: printf("Potential for point group %s and angular momentum %i not implemented\n",s,l); return 1; break;
+    }
+    if((Akm->l =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for l failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->m =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for m failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->Re=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if(Akm->QComplex)
+    {
+      if((Akm->Im=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    }
+    switch (l)
+    {
+      case 0 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 1 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 2 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 3 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+    }
+  }
+  else if (strcmp(s, "D3h")== 0)
+  {
+    printf("Potential for %s not yet implemented\n",s);
+    return 1;
+    Akm->QComplex=0;
+    switch (l)
+    {
+      case 0 : Akm->N=1; break;
+      case 1 : Akm->N=1; break;
+      case 2 : Akm->N=2; break;
+      case 3 : Akm->N=3; break;
+      default: printf("Potential for point group %s and angular momentum %i not implemented\n",s,l); return 1; break;
+    }
+    if((Akm->l =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for l failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->m =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for m failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->Re=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if(Akm->QComplex)
+    {
+      if((Akm->Im=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    }
+    switch (l)
+    {
+      case 0 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 1 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 2 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 3 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+    }
+  }
+  else if (strcmp(s, "D4h")== 0)
+  {
+    printf("Potential for %s not yet implemented\n",s);
+    return 1;
+    Akm->QComplex=0;
+    switch (l)
+    {
+      case 0 : Akm->N=1; break;
+      case 1 : Akm->N=1; break;
+      case 2 : Akm->N=2; break;
+      case 3 : Akm->N=3; break;
+      default: printf("Potential for point group %s and angular momentum %i not implemented\n",s,l); return 1; break;
+    }
+    if((Akm->l =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for l failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->m =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for m failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->Re=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if(Akm->QComplex)
+    {
+      if((Akm->Im=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    }
+    switch (l)
+    {
+      case 0 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 1 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 2 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 3 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+    }
+  }
+  else if (strcmp(s, "D5h")== 0)
+  {
+    printf("Potential for %s not yet implemented\n",s);
+    return 1;
+    Akm->QComplex=0;
+    switch (l)
+    {
+      case 0 : Akm->N=1; break;
+      case 1 : Akm->N=1; break;
+      case 2 : Akm->N=2; break;
+      case 3 : Akm->N=3; break;
+      default: printf("Potential for point group %s and angular momentum %i not implemented\n",s,l); return 1; break;
+    }
+    if((Akm->l =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for l failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->m =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for m failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->Re=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if(Akm->QComplex)
+    {
+      if((Akm->Im=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    }
+    switch (l)
+    {
+      case 0 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 1 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 2 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 3 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+    }
+  }
+  else if (strcmp(s, "D6h")== 0)
+  {
+    printf("Potential for %s not yet implemented\n",s);
+    return 1;
+    Akm->QComplex=0;
+    switch (l)
+    {
+      case 0 : Akm->N=1; break;
+      case 1 : Akm->N=1; break;
+      case 2 : Akm->N=2; break;
+      case 3 : Akm->N=3; break;
+      default: printf("Potential for point group %s and angular momentum %i not implemented\n",s,l); return 1; break;
+    }
+    if((Akm->l =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for l failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->m =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for m failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->Re=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if(Akm->QComplex)
+    {
+      if((Akm->Im=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    }
+    switch (l)
+    {
+      case 0 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 1 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 2 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 3 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+    }
+  }
+  
+  else if (strcmp(s, "D2d")== 0)
+  {
+    printf("Potential for %s not yet implemented\n",s);
+    return 1;
+    Akm->QComplex=0;
+    switch (l)
+    {
+      case 0 : Akm->N=1; break;
+      case 1 : Akm->N=1; break;
+      case 2 : Akm->N=2; break;
+      case 3 : Akm->N=3; break;
+      default: printf("Potential for point group %s and angular momentum %i not implemented\n",s,l); return 1; break;
+    }
+    if((Akm->l =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for l failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->m =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for m failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->Re=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if(Akm->QComplex)
+    {
+      if((Akm->Im=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    }
+    switch (l)
+    {
+      case 0 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 1 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 2 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 3 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+    }
+  }
+  else if (strcmp(s, "D3d")== 0)
+  {
+    printf("Potential for %s not yet implemented\n",s);
+    return 1;
+    Akm->QComplex=0;
+    switch (l)
+    {
+      case 0 : Akm->N=1; break;
+      case 1 : Akm->N=1; break;
+      case 2 : Akm->N=2; break;
+      case 3 : Akm->N=3; break;
+      default: printf("Potential for point group %s and angular momentum %i not implemented\n",s,l); return 1; break;
+    }
+    if((Akm->l =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for l failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->m =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for m failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->Re=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if(Akm->QComplex)
+    {
+      if((Akm->Im=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    }
+    switch (l)
+    {
+      case 0 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 1 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 2 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 3 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+    }
+  }
+  else if (strcmp(s, "D4d")== 0)
+  {
+    printf("Potential for %s not yet implemented\n",s);
+    return 1;
+    Akm->QComplex=0;
+    switch (l)
+    {
+      case 0 : Akm->N=1; break;
+      case 1 : Akm->N=1; break;
+      case 2 : Akm->N=2; break;
+      case 3 : Akm->N=3; break;
+      default: printf("Potential for point group %s and angular momentum %i not implemented\n",s,l); return 1; break;
+    }
+    if((Akm->l =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for l failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->m =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for m failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->Re=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if(Akm->QComplex)
+    {
+      if((Akm->Im=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    }
+    switch (l)
+    {
+      case 0 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 1 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 2 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 3 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+    }
+  }
+  else if (strcmp(s, "D5d")== 0)
+  {
+    printf("Potential for %s not yet implemented\n",s);
+    return 1;
+    Akm->QComplex=0;
+    switch (l)
+    {
+      case 0 : Akm->N=1; break;
+      case 1 : Akm->N=1; break;
+      case 2 : Akm->N=2; break;
+      case 3 : Akm->N=3; break;
+      default: printf("Potential for point group %s and angular momentum %i not implemented\n",s,l); return 1; break;
+    }
+    if((Akm->l =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for l failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->m =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for m failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->Re=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if(Akm->QComplex)
+    {
+      if((Akm->Im=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    }
+    switch (l)
+    {
+      case 0 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 1 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 2 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 3 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+    }
+  }
+  else if (strcmp(s, "D6d")== 0)
+  {
+    printf("Potential for %s not yet implemented\n",s);
+    return 1;
+    Akm->QComplex=0;
+    switch (l)
+    {
+      case 0 : Akm->N=1; break;
+      case 1 : Akm->N=1; break;
+      case 2 : Akm->N=2; break;
+      case 3 : Akm->N=3; break;
+      default: printf("Potential for point group %s and angular momentum %i not implemented\n",s,l); return 1; break;
+    }
+    if((Akm->l =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for l failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->m =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for m failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->Re=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if(Akm->QComplex)
+    {
+      if((Akm->Im=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    }
+    switch (l)
+    {
+      case 0 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 1 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 2 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 3 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+    }
+  }
+  
+  else if (strcmp(s, "T")== 0)
+  {
+    printf("Potential for %s not yet implemented\n",s);
+    return 1;
+    Akm->QComplex=0;
+    switch (l)
+    {
+      case 0 : Akm->N=1; break;
+      case 1 : Akm->N=1; break;
+      case 2 : Akm->N=2; break;
+      case 3 : Akm->N=3; break;
+      default: printf("Potential for point group %s and angular momentum %i not implemented\n",s,l); return 1; break;
+    }
+    if((Akm->l =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for l failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->m =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for m failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->Re=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if(Akm->QComplex)
+    {
+      if((Akm->Im=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    }
+    switch (l)
+    {
+      case 0 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 1 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 2 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 3 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+    }
+  }
+  else if (strcmp(s, "Td")== 0)
+  {
+    Akm->QComplex=0;
+    switch (l)
+    {
+      case 0 : Akm->N=1; break;
+      case 1 : Akm->N=1; break;
+      case 2 : Akm->N=4; break;
+      case 3 : Akm->N=7; break;
+      default: printf("Potential for point group %s and angular momentum %i not implemented\n",s,l); return 1; break;
+    }
+    if((Akm->l =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for l failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->m =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for m failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->Re=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if(Akm->QComplex)
+    {
+      if((Akm->Im=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    }
+    switch (l)
+    {
+      case 0 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 1 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 2 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = 0.4*EigenEnergies[0]+0.6*EigenEnergies[1];
+        Akm->l[1]  = 4;
+        Akm->m[1]  = 0;
+        Akm->Re[1] = 2.1*(EigenEnergies[0]-EigenEnergies[1]);
+        Akm->l[2]  = 4;
+        Akm->m[2]  =-4;
+        Akm->Re[2] = 1.5*sqrt(0.7)*(EigenEnergies[0]-EigenEnergies[1]);
+        Akm->l[3]  = 4;
+        Akm->m[3]  = 4;
+        Akm->Re[3] = 1.5*sqrt(0.7)*(EigenEnergies[0]-EigenEnergies[1]);
+      }
+        break;
+      case 3 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = (1.0/7.0)*(EigenEnergies[0]+3*EigenEnergies[1]+3*EigenEnergies[2]);
+        Akm->l[1]  = 4;
+        Akm->m[1]  = 0;
+        Akm->Re[1] = (3.0/4.0)*(-2*EigenEnergies[0]+3*EigenEnergies[1]+EigenEnergies[2]);
+        Akm->l[2]  = 4;
+        Akm->m[2]  =-4;
+        Akm->Re[2] = (3.0/4.0)*sqrt(5.0/14.0)*(-2*EigenEnergies[0]+3*EigenEnergies[1]+EigenEnergies[2]);
+        Akm->l[3]  = 4;
+        Akm->m[3]  = 4;
+        Akm->Re[3] = (3.0/4.0)*sqrt(5.0/14.0)*(-2*EigenEnergies[0]+3*EigenEnergies[1]+EigenEnergies[2]);
+        Akm->l[4]  = 6;
+        Akm->m[4]  = 0;
+        Akm->Re[4] = (39.0/280.0)*(4*EigenEnergies[0]+5*EigenEnergies[1]-9*EigenEnergies[2]);
+        Akm->l[5]  = 6;
+        Akm->m[5]  =-4;
+        Akm->Re[5] =-(39.0/(40.0*sqrt(14.0)))*(4*EigenEnergies[0]+5*EigenEnergies[1]-9*EigenEnergies[2]);
+        Akm->l[6]  = 6;
+        Akm->m[6]  = 4;
+        Akm->Re[6] =-(39.0/(40.0*sqrt(14.0)))*(4*EigenEnergies[0]+5*EigenEnergies[1]-9*EigenEnergies[2]);
+      }
+        break;
+    }
+  }
+  else if (strcmp(s, "O")== 0)
+  {
+    Akm->QComplex=0;
+    switch (l)
+    {
+      case 0 : Akm->N=1; break;
+      case 1 : Akm->N=1; break;
+      case 2 : Akm->N=4; break;
+      case 3 : Akm->N=7; break;
+      default: printf("Potential for point group %s and angular momentum %i not implemented\n",s,l); return 1; break;
+    }
+    if((Akm->l =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for l failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->m =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for m failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->Re=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if(Akm->QComplex)
+    {
+      if((Akm->Im=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    }
+    switch (l)
+    {
+      case 0 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 1 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 2 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = 0.4*EigenEnergies[0]+0.6*EigenEnergies[1];
+        Akm->l[1]  = 4;
+        Akm->m[1]  = 0;
+        Akm->Re[1] = 2.1*(EigenEnergies[0]-EigenEnergies[1]);
+        Akm->l[2]  = 4;
+        Akm->m[2]  =-4;
+        Akm->Re[2] = 1.5*sqrt(0.7)*(EigenEnergies[0]-EigenEnergies[1]);
+        Akm->l[3]  = 4;
+        Akm->m[3]  = 4;
+        Akm->Re[3] = 1.5*sqrt(0.7)*(EigenEnergies[0]-EigenEnergies[1]);
+      }
+        break;
+      case 3 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = (1.0/7.0)*(EigenEnergies[0]+3*EigenEnergies[1]+3*EigenEnergies[2]);
+        Akm->l[1]  = 4;
+        Akm->m[1]  = 0;
+        Akm->Re[1] = (3.0/4.0)*(-2*EigenEnergies[0]+3*EigenEnergies[1]+EigenEnergies[2]);
+        Akm->l[2]  = 4;
+        Akm->m[2]  =-4;
+        Akm->Re[2] = (3.0/4.0)*sqrt(5.0/14.0)*(-2*EigenEnergies[0]+3*EigenEnergies[1]+EigenEnergies[2]);
+        Akm->l[3]  = 4;
+        Akm->m[3]  = 4;
+        Akm->Re[3] = (3.0/4.0)*sqrt(5.0/14.0)*(-2*EigenEnergies[0]+3*EigenEnergies[1]+EigenEnergies[2]);
+        Akm->l[4]  = 6;
+        Akm->m[4]  = 0;
+        Akm->Re[4] = (39.0/280.0)*(4*EigenEnergies[0]+5*EigenEnergies[1]-9*EigenEnergies[2]);
+        Akm->l[5]  = 6;
+        Akm->m[5]  =-4;
+        Akm->Re[5] =-(39.0/(40.0*sqrt(14.0)))*(4*EigenEnergies[0]+5*EigenEnergies[1]-9*EigenEnergies[2]);
+        Akm->l[6]  = 6;
+        Akm->m[6]  = 4;
+        Akm->Re[6] =-(39.0/(40.0*sqrt(14.0)))*(4*EigenEnergies[0]+5*EigenEnergies[1]-9*EigenEnergies[2]);
+      }
+        break;
+    }
+  }
+  else if (strcmp(s, "Oh")== 0)
+  {
+    Akm->QComplex=0;
+    switch (l)
+    {
+      case 0 : Akm->N=1; break;
+      case 1 : Akm->N=1; break;
+      case 2 : Akm->N=4; break;
+      case 3 : Akm->N=7; break;
+      default: printf("Potential for point group %s and angular momentum %i not implemented\n",s,l); return 1; break;
+    }
+    if((Akm->l =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for l failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->m =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for m failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->Re=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if(Akm->QComplex)
+    {
+      if((Akm->Im=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    }
+    switch (l)
+    {
+      case 0 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 1 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 2 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = 0.4*EigenEnergies[0]+0.6*EigenEnergies[1];
+        Akm->l[1]  = 4;
+        Akm->m[1]  = 0;
+        Akm->Re[1] = 2.1*(EigenEnergies[0]-EigenEnergies[1]);
+        Akm->l[2]  = 4;
+        Akm->m[2]  =-4;
+        Akm->Re[2] = 1.5*sqrt(0.7)*(EigenEnergies[0]-EigenEnergies[1]);
+        Akm->l[3]  = 4;
+        Akm->m[3]  = 4;
+        Akm->Re[3] = 1.5*sqrt(0.7)*(EigenEnergies[0]-EigenEnergies[1]);
+      }
+        break;
+      case 3 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = (1.0/7.0)*(EigenEnergies[0]+3*EigenEnergies[1]+3*EigenEnergies[2]);
+        Akm->l[1]  = 4;
+        Akm->m[1]  = 0;
+        Akm->Re[1] = (3.0/4.0)*(-2*EigenEnergies[0]+3*EigenEnergies[1]+EigenEnergies[2]);
+        Akm->l[2]  = 4;
+        Akm->m[2]  =-4;
+        Akm->Re[2] = (3.0/4.0)*sqrt(5.0/14.0)*(-2*EigenEnergies[0]+3*EigenEnergies[1]+EigenEnergies[2]);
+        Akm->l[3]  = 4;
+        Akm->m[3]  = 4;
+        Akm->Re[3] = (3.0/4.0)*sqrt(5.0/14.0)*(-2*EigenEnergies[0]+3*EigenEnergies[1]+EigenEnergies[2]);
+        Akm->l[4]  = 6;
+        Akm->m[4]  = 0;
+        Akm->Re[4] = (39.0/280.0)*(4*EigenEnergies[0]+5*EigenEnergies[1]-9*EigenEnergies[2]);
+        Akm->l[5]  = 6;
+        Akm->m[5]  =-4;
+        Akm->Re[5] =-(39.0/(40.0*sqrt(14.0)))*(4*EigenEnergies[0]+5*EigenEnergies[1]-9*EigenEnergies[2]);
+        Akm->l[6]  = 6;
+        Akm->m[6]  = 4;
+        Akm->Re[6] =-(39.0/(40.0*sqrt(14.0)))*(4*EigenEnergies[0]+5*EigenEnergies[1]-9*EigenEnergies[2]);
+      }
+        break;
+    }
+  }
+  else if (strcmp(s, "I")== 0)
+  {
+    printf("Potential for %s not yet implemented\n",s);
+    return 1;
+    Akm->QComplex=0;
+    switch (l)
+    {
+      case 0 : Akm->N=1; break;
+      case 1 : Akm->N=1; break;
+      case 2 : Akm->N=2; break;
+      case 3 : Akm->N=3; break;
+      default: printf("Potential for point group %s and angular momentum %i not implemented\n",s,l); return 1; break;
+    }
+    if((Akm->l =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for l failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->m =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for m failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->Re=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if(Akm->QComplex)
+    {
+      if((Akm->Im=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    }
+    switch (l)
+    {
+      case 0 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 1 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 2 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 3 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+    }
+  }
+  else if (strcmp(s, "Ih")== 0)
+  {
+    printf("Potential for %s not yet implemented\n",s);
+    return 1;
+    Akm->QComplex=0;
+    switch (l)
+    {
+      case 0 : Akm->N=1; break;
+      case 1 : Akm->N=1; break;
+      case 2 : Akm->N=2; break;
+      case 3 : Akm->N=3; break;
+      default: printf("Potential for point group %s and angular momentum %i not implemented\n",s,l); return 1; break;
+    }
+    if((Akm->l =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for l failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->m =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for m failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->Re=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if(Akm->QComplex)
+    {
+      if((Akm->Im=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    }
+    switch (l)
+    {
+      case 0 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 1 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 2 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 3 :
+      {
+        Akm->l[0]  = 0;
+        Akm->m[0]  = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+    }
+  }
+  
+  else if (strcmp(s, "R3")== 0)
+  {
+    Akm->QComplex=0;
+    Akm->N=1;
+    if((Akm->l =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for l failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->m =malloc(Akm->N*sizeof(int)   ))==NULL){printf("malloc for m failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if((Akm->Re=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    if(Akm->QComplex)
+    {
+      if((Akm->Im=malloc(Akm->N*sizeof(double)))==NULL){printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n",s);return 1;};
+    }
+    Akm->l[0]  = 0;
+    Akm->m[0]  = 0;
+    Akm->Re[0] = EigenEnergies[0];
+  }
+  
+  else
+  {
+    printf("Potential for point group %s not implemented\n",s);
+    return 1;
+  }
+  return 0;
+}

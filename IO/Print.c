@@ -120,6 +120,9 @@ uint32_t PrintListOfPoles(ListOfPoles M)
 uint32_t PrintListOfPolesEssentials(ListOfPoles M)
 { return StreamPrintListOfPolesEssentials(M,stdout);}
 
+uint32_t PrintHarmonicsExpansion(HarmonicsExpansion M)
+{ return StreamPrintHarmonicsExpansion(M,stdout);}
+
 
 
 

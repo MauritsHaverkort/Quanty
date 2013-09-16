@@ -1111,3 +1111,27 @@ uint32_t StreamPrintAndersonMatrixEssentials(AndersonMatrixType M, FILE *stream)
   fprintf(stream,"\n");
   return 0;
 }
+
+uint32_t StreamPrintHarmonicsExpansion(HarmonicsExpansion M, FILE *stream)
+{
+  uint32_t i;
+  fprintf(stream,"Expansion on spherical harmonics\n");
+  if(M.QComplex)
+  {
+    printf("  i   l    m    Value\n");
+    for(i=0;i<M.N;i++)
+    {
+      fprintf(stream,"%3i %3i %4i %22.15E\n",i,M.l[i],M.m[i],M.Re[i]);
+    }
+  }
+  else
+  {
+    printf("  i   l    m    Value\n");
+    for(i=0;i<M.N;i++)
+    {
+      fprintf(stream,"%3i %3i %4i %22.15E\n",i,M.l[i],M.m[i],M.Re[i]);
+    }
+  }
+  fprintf(stream,"\n");
+  return 0;
+}
