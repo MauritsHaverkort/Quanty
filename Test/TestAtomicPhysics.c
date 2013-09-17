@@ -16,6 +16,11 @@ uint32_t TestAtomicPhysics()
   double ExpEnergyIm[NExpMax],ExpldotsIm[NExpMax],ExpFIm[NExpMax],ExpF0Im[NExpMax],ExpF2Im[NExpMax],ExpF4Im[NExpMax],ExpF6Im[NExpMax];
   double EigenEnergies[3];
   
+  double Gamma=0.001;
+  TriDiagonalMatrixType SpecTri;
+  SpectraType Spectra;
+  char filename[256];
+  
   FSlater[0]=0;
   FSlater[1]=10.0;
   FSlater[2]=6.25;
@@ -27,13 +32,21 @@ uint32_t TestAtomicPhysics()
   F0[3]=0.0; F2[3]=0.0; F4[3]=0.0; F6[3]=1.0;
   
   OperatorType Sx,Sy,Sz,Ssqr,Lx,Ly,Lz,Lsqr,Jx,Jy,Jz,Jsqr,ldots,U,U0,U2,U4,U6,H,a,adag,num,CF,test;
-  WaveFunctionType psi, psiEigen[NExpMax];
+  WaveFunctionType psi, psiEigen[NExpMax], Opsi;
   
   HarmonicsExpansion Akm;
   
   printf("This subroutine creates the L, S, J, ldots, and coulomb operator for a single atomic shell\n");
   printf("It then tests the eigen-states and the commutation relations for\n");
   printf("this is done succesively for the s, p, d and f shell, whith a filling of 0 to 4l+2\n");
+  
+  Spectra.N       = 5000;
+  Spectra.Emin    = -5;
+  Spectra.Emax    =  5;
+  Spectra.dE      = (Spectra.Emax-Spectra.Emin)/Spectra.N;
+  Spectra.Gamma   = Gamma;
+  SpectrumAllocate(Spectra, &Spectra);
+  
   
   InitializeTiming(&Time);
   BeginTiming("Total",&Time);
@@ -363,6 +376,18 @@ uint32_t TestAtomicPhysics()
       
       
       
+      printf("**********    Start with PES    *********\n");
+      
+      OperatorPsi(a, psiEigen[0], &Opsi);
+      SpecTri.N=100;
+      InitTriDiagonalMatrix(&SpecTri);
+      LanczosTriDiagonalize(H, Opsi, epsilon, &SpecTri, Gamma);
+
+      TriDiagonalMatrixToSpectrum(ExpEnergyRe[0], SpecTri, &Spectra);
+      sprintf(filename,"Spectra_l%i_N%i",lshell,nelectron);
+      FilePrintSpectra(&Spectra, 1, filename, "w");
+      FreeTriDiagonalMatrix(&SpecTri);
+    
       EndTiming("nelectrons",&Time);
       PrintTiming(Time);
     }
