@@ -305,7 +305,7 @@ uint32_t BADoubleTriDiagonalMatrixToAndersonImpurityOperator(OperatorType *O, BA
   oadd[1]=CrAnMask+3;                                 oadd[0]=4+Mup.val.N+Mup.con.N+Mdn.val.N-3; RealOperatorAddLaderNormalOrder(O,oadd,2,Mdn.bcA0,&QDetNotOrderedFcFaBcBa);
   oadd[1]=CrAnMask+4+Mup.val.N+Mup.con.N+Mdn.val.N-3; oadd[0]=3;                                 RealOperatorAddLaderNormalOrder(O,oadd,2,Mdn.bcA0,&QDetNotOrderedFcFaBcBa);
   oadd[1]=CrAnMask+4+Mup.val.N+Mup.con.N+Mdn.val.N-3; oadd[0]=4+Mup.val.N+Mup.con.N+Mdn.val.N-3; RealOperatorAddLaderNormalOrder(O,oadd,2,Mdn.con.a[2],&QDetNotOrderedFcFaBcBa);
-  for(i=2;i<Mdn.val.N;i++)
+  for(i=2;i<Mdn.con.N;i++)
   {
     oadd[1]=CrAnMask+i+2+Mup.val.N+Mup.con.N+Mdn.val.N-3; oadd[0]=i+3+Mup.val.N+Mup.con.N+Mdn.val.N-3; RealOperatorAddLaderNormalOrder(O,oadd,2,Mdn.con.b[i]  ,&QDetNotOrderedFcFaBcBa);
     oadd[1]=CrAnMask+i+3+Mup.val.N+Mup.con.N+Mdn.val.N-3; oadd[0]=i+2+Mup.val.N+Mup.con.N+Mdn.val.N-3; RealOperatorAddLaderNormalOrder(O,oadd,2,Mdn.con.b[i]  ,&QDetNotOrderedFcFaBcBa);

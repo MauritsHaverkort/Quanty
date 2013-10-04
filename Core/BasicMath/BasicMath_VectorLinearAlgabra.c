@@ -47,6 +47,9 @@ void ComplexVectorMultiply(double *const uRe, double *const uIm, const uint32_t 
   }
 }
 
+/*
+ *
+ */
 void RealVectorDotVector(const double *const u, const double *const v, uint32_t N, double *const a)
 {
   uint32_t i;

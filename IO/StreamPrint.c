@@ -1068,7 +1068,7 @@ uint32_t StreamPrintListOfPolesEssentials(ListOfPoles M, FILE *stream)
     wsum+=M.b[i]*M.a[i];
     wwsum+=M.b[i]*M.a[i]*M.a[i];
     wwwsum+=M.b[i]*M.a[i]*M.a[i]*M.a[i];
-    if(M.a[i]<0)
+    if(M.a[i]<M.mu)
     {
       Osum+=M.b[i];
       Owsum+=M.b[i]*M.a[i];
@@ -1082,14 +1082,14 @@ uint32_t StreamPrintListOfPolesEssentials(ListOfPoles M, FILE *stream)
   fprintf(stream,"a0  = %22.15E\n",M.a0);
   fprintf(stream,"w0  = %22.15E, w1  = %22.15E, w2  = %22.15E, w3  = %22.15E\n",sum,wsum,wwsum,wwwsum);
   fprintf(stream,"w0+ = %22.15E, w1+ = %22.15E, w2+ = %22.15E, w3+ = %22.15E\n",Osum,Owsum,Owwsum,Owwwsum);
-  fprintf(stream,"  Energy                  Weight\n");
+  fprintf(stream,"  Energy-mu               Weight\n");
   for(i=0;i<Min(M.N,2);i++)
   {
-    fprintf(stream,"%22.15E %22.15E\n",M.a[i],M.b[i]);
+    fprintf(stream,"%22.15E %22.15E\n",M.a[i]-M.mu,M.b[i]);
   }
   for(i=Max(2,M.N-2);i<M.N;i++)
   {
-    fprintf(stream,"%22.15E %22.15E\n",M.a[i],M.b[i]);
+    fprintf(stream,"%22.15E %22.15E\n",M.a[i]-M.mu,M.b[i]);
   }
   fprintf(stream,"\n");
   return 0;

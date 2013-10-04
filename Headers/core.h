@@ -235,3 +235,8 @@ void CalculateMoment(SpectraType *const G);
 uint32_t CalculateDensity();
 uint32_t CalculatePrefactorHistogram();
 
+
+
+
+double InterpolateRootOfset();
+double InterpolateRoot();

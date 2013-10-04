@@ -187,6 +187,91 @@ void QuadraticInterpolate(double x[], double y[], int N, double *a, double *b, d
   }
 }
 
+/*
+ *
+ */
+double InterpolateRoot(double const *x, double const *y, uint32_t N)
+{
+  double xsort[N],ysort[N],xret;
+  uint32_t i,j,k,firstpos;
+  if(N==1) return x[0]+y[0];
+  xsort[0]=x[0];
+  ysort[0]=y[0];
+  for(i=1;i<N;i++)
+  {
+    ysort[i]=y[i];
+    xsort[i]=x[i];
+    for(j=0;j<i;j++)
+    {
+      if(y[i]<ysort[j])
+      {
+        for(k=i;k>j;k--)
+        {
+          ysort[k]=ysort[k-1];
+          xsort[k]=xsort[k-1];
+        }
+        ysort[j]=y[i];
+        xsort[j]=x[i];
+        j=i;
+      }
+    }
+  }
+  firstpos=0;
+  for(i=0;i<N;i++)
+  {
+    if(y[i]<0) firstpos++;
+  }
+  if(firstpos==0)
+  {
+    return (xsort[0] - ysort[0]*(xsort[1]-xsort[0])/(ysort[1]-ysort[0]));
+  }
+  else if(firstpos==N)
+  {
+    return (xsort[N-1] - ysort[N-1] * (xsort[N-1] - xsort[N-2])/(ysort[N-1] - ysort[N-2]));
+  }
+  else
+  {
+    xret = (xsort[firstpos-1] * ysort[firstpos] - xsort[firstpos] * ysort[firstpos-1]) / (ysort[firstpos]-ysort[firstpos-1]);
+    if((xret<xsort[firstpos-1])||(xret>xsort[firstpos]))
+    {
+      xret = (xsort[firstpos]+xsort[firstpos-1])/2.0;
+    }
+    if(xret==x[N-1])
+    {
+      xret = (xsort[firstpos]+xsort[firstpos-1])/2.0;
+    }
+    return xret;
+  }
+}
+
+double InterpolateRootOfset(double const *x, double const *y, uint32_t N, double const ofset)
+{
+  double yoff[N];
+  uint32_t i;
+  for(i=0;i<N;i++)
+  {
+    yoff[i]=y[i]-ofset;
+  }
+  return InterpolateRoot(x,yoff,N);
+}
+
+
+/*
+ *
+ */
+double FindSelfconsistentnumber(double const *valin, double const *valout, uint32_t N)
+{
+  double valdif[N];
+  uint32_t i;
+  for(i=0;i<N;i++)
+  {
+    valdif[i]=valin[i]-valout[i];
+  }
+  return InterpolateRoot(valin, valdif, N);
+}
+
+
+
 void ResiprocalLatticeVector(double r[3][3], double g[3][3])
 {
   double V;

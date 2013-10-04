@@ -103,6 +103,7 @@ uint32_t AndersonMatrixToTriDiagonalMatrixPlusT(AndersonMatrixType const M, Matr
   strncat(H->Name, M.Name, MAX(0,MAXStrLength-22));
   H->a[0]=M.a[0];
   H->b[0]=M.b[0];
+  H->mu=M.mu;
   for(i=0;i<M.N;i++)
   {
     T->VRe[0][i]=0;
@@ -344,7 +345,26 @@ uint32_t AndersonMatrixInverseToListOfPoles(AndersonMatrixType const M, ListOfPo
 /*
  *
  */
+uint32_t AndersonMatrixToEigensystemOnsiteShift(AndersonMatrixType const M, double const shift, MatrixType *const T, double *val)
+{
+  MatrixType Tone,Ttwo;
+  TriDiagonalMatrixType Mtri;
+  if(AndersonMatrixToTriDiagonalMatrixPlusT(M, &Tone, &Mtri, M.N)){printf("AndersonMatrixToTriDiagonalMatrix failed in AndersonMatrixToEigensystem\n");return 1;};
+  if(M.N>0)
+  {
+    Mtri.a[1]+=shift;
+  }
+  if(TriDiagonalMatrixToEigensystem(Mtri, &Ttwo, val)){printf("TriDiagonalMatrixToEigensystem failed in AndersonMatrixToEigensystem\n");return 1;};
+  if(MatrixMultiply(T, Ttwo, Tone)){printf("MatrixMultiply failed in AndersonMatrixToEigensystem\n");return 1;};
+  FreeMatrix(&Tone);
+  FreeMatrix(&Ttwo);
+  FreeTriDiagonalMatrix(&Mtri);
+  return 0;
+}
 
+/*
+ *
+ */
 uint32_t AndersonMatrixToEigensystem(AndersonMatrixType const M, MatrixType *const T, double *val)
 {
   MatrixType Tone,Ttwo;
@@ -352,7 +372,6 @@ uint32_t AndersonMatrixToEigensystem(AndersonMatrixType const M, MatrixType *con
   if(AndersonMatrixToTriDiagonalMatrixPlusT(M, &Tone, &Mtri, M.N)){printf("AndersonMatrixToTriDiagonalMatrix failed in AndersonMatrixToEigensystem\n");return 1;}
   if(TriDiagonalMatrixToEigensystem(Mtri, &Ttwo, val)){printf("TriDiagonalMatrixToEigensystem failed in AndersonMatrixToEigensystem\n");return 1;};
   if(MatrixMultiply(T, Ttwo, Tone)){printf("MatrixMultiply failed in AndersonMatrixToEigensystem\n");return 1;};
-  
   FreeMatrix(&Tone);
   FreeMatrix(&Ttwo);
   FreeTriDiagonalMatrix(&Mtri);
@@ -378,11 +397,465 @@ uint32_t AndersonMatrixToListOfPoles(AndersonMatrixType const M, ListOfPoles *co
   return 0;
 }
 
+uint32_t TriDiagonalMatrixFindOnsiteOccupation(TriDiagonalMatrixType const M, double * occupation)
+{
+  uint32_t i;
+  MatrixType Eigenfun;
+  double Eigenval[M.N];
+  TriDiagonalMatrixToEigensystem(M, &Eigenfun, Eigenval);
+  *occupation=0;
+  for(i=0;i<M.N;i++)
+  {
+    if(Eigenval[i]<=M.mu)
+    {
+      *occupation+=Sqr(Eigenfun.VRe[i][0]);
+    }
+  }
+  FreeMatrix(&Eigenfun);
+  return 0;
+}
+
+
+/*   input:
+ *     AndersonMatrix M           : the matrix for which an onsite shift is found such that the eigensystem has an occupation of "occupation"
+ *     double         occupation  : the wanted occupation
+ *     double *       onsiteshift : the starting value for the shift
+ *
+ *   output:
+ *     double *       onsiteshift : the shift that brings the eigensystem of M to have an occupation of "occupation" on the impurity
+ */
+uint32_t AndersonMatrixFindOnsiteEnergyShift(AndersonMatrixType const M, double const occupation, double * const onsiteshift)
+{
+  uint32_t const maxit=30;
+  uint32_t i;
+  double shifti[maxit], occi[maxit];
+  shifti[0]=*onsiteshift;
+  TriDiagonalMatrixType MTri;
+  AndersonMatrixToTriDiagonalMatrix(M, &MTri, M.N);
+  MTri.a[1]=M.a[1] + shifti[0];
+  TriDiagonalMatrixFindOnsiteOccupation(MTri, &(occi[0]));
+  shifti[1]=shifti[0]-(occupation-occi[0])*Abs(MTri.b[1]);
+  i=0;
+  while((Abs(occupation-occi[i])>100*DBL_EPSILON)&&(i<maxit-1))
+  {
+    i++;
+    if(i!=1)
+    {
+      shifti[i]=shifti[i-1]+(occupation-occi[i-1])*(shifti[i-2]-shifti[i-1])/(occi[i-2]-occi[i-1]);
+      shifti[i]=InterpolateRootOfset(shifti, occi, i, occupation);
+    }
+    MTri.a[1]=M.a[1] + shifti[i];
+    TriDiagonalMatrixFindOnsiteOccupation(MTri, &(occi[i]));
+  }
+  *onsiteshift=shifti[i];
+  if(i>=maxit-1)
+  {
+    printf("In AndersonMatrixFindOnsiteEnergyShift onsite shift did not converge in %i itterations\n",maxit);
+    printf("loop    shift                  occupation            difference\n");
+    i++;
+    while(i>0)
+    {
+      i--;
+      printf("%4i %22.15E %22.15E %22.15E\n",i,shifti[i],occi[i],occupation-occi[i]);
+    }
+  }
+  return 0;
+}
+
+uint32_t EigenstateToTridiagonalMatrix(double const *psi0, double const *val, uint32_t const N, TriDiagonalMatrixType *const H)
+{
+  uint32_t i,j;
+  MatrixType T;
+  double tempRe;
+  T.QComplex=0;
+  T.Ni=N;
+  T.Nj=N;
+  if(InitMatrix(&T)) return 1;
+  for(i=0;i<N;i++)
+  {
+    T.VRe[0][i]=psi0[i];
+  }
+  H->N=N;
+  if(InitTriDiagonalMatrix(H))
+  {
+    FreeMatrix(&T);
+    return 1;
+  }
+  for(i=1;i<H->N;i++)
+  {
+    for(j=0;j<N;j++)
+    {
+      T.VRe[i][j]=val[j]*T.VRe[i-1][j];
+    }
+    for(j=0;j<i-1;j++)
+    {
+      RealVectorDotVector(T.VRe[j],T.VRe[i],T.Nj,&tempRe);
+      RealVectorAdd(T.VRe[i],T.VRe[j],T.Nj,-tempRe);
+    }
+    RealVectorDotVector(T.VRe[i-1],T.VRe[i],T.Nj,&(H->a[i]));
+    RealVectorAdd(T.VRe[i],T.VRe[i-1],T.Nj,-H->a[i]);
+    RealVectorDotVector(T.VRe[i],T.VRe[i],T.Ni,&(H->b[i]));
+    H->b[i]=sqrt(H->b[i]);
+    if(H->b[i]<1000*DBL_EPSILON)
+    {
+      RealVectorMultiply(T.VRe[i],T.Ni,0);
+      H->N=i;
+    }
+    else
+    {
+      RealVectorMultiply(T.VRe[i],T.Ni,1.0/H->b[i]);
+    }
+    for(j=0;j<i;j++)
+    {
+      RealVectorDotVector(T.VRe[j],T.VRe[i],T.Nj,&tempRe);
+      RealVectorAdd(T.VRe[i],T.VRe[j],T.Nj,-tempRe);
+    }
+    RealVectorDotVector(T.VRe[i],T.VRe[i],T.Ni,&tempRe);
+    tempRe=sqrt(tempRe);
+    H->b[i]*=tempRe;
+    if(tempRe<1000*DBL_EPSILON)
+    {
+      RealVectorMultiply(T.VRe[i],T.Ni,0);
+      H->N=i;
+    }
+    else
+    {
+      RealVectorMultiply(T.VRe[i],T.Ni,1.0/tempRe);
+    }
+  }
+  H->a[N]=0;
+  for(i=0;i<N;i++)
+  {
+    H->a[N]+=T.VRe[N-1][i]*val[i]*T.VRe[N-1][i];
+  }
+  FreeMatrix(&T);
+  return 0;
+}
+
 
 /*
  *
  */
-uint32_t AndersonMatrixToBADoubleTriDiagonalMatrix(AndersonMatrixType const M, BADoubleTriDiagonalMatrixType * const A, uint32_t NTriDiagVal, uint32_t NTriDiagCon, double Ef, double Epsilon)
+uint32_t AndersonMatrixToBADoubleTriDiagonalMatrix(AndersonMatrixType const M, double const onsiteshift, BADoubleTriDiagonalMatrixType * const A, double * const occupation)
+{
+  uint32_t i,j,nVal;
+  MatrixType Eigenfun;
+  double Eigenval[M.N], psival[M.N], psicon[M.N];
+  if(M.N==0)
+  {
+    printf("AndersonMatrixToBADoubleTriDiagonalMatrix called with a matrix of size 0\n");
+    *occupation=0;
+    A->val.N=0;
+    A->con.N=0;
+    InitBADoubleTriDiagonalMatrix(A);
+    strcpy(A->Name,M.Name);
+    A->a0=M.a[0];
+    A->b0=0;
+    return 0;
+  }
+  /* find eigenbasis of the Anderson matrix */
+  AndersonMatrixToEigensystemOnsiteShift(M, onsiteshift, &Eigenfun, Eigenval);
+  for(i=0;i<Eigenfun.Ni;i++)
+  {
+    if(Eigenfun.VRe[i][0]<0)
+    {
+      for(j=0;j<Eigenfun.Nj;j++)
+      {
+        Eigenfun.VRe[i][j]*=-1;
+      }
+    }
+  }
+  nVal=0;
+  *occupation=0;
+  while((nVal<Eigenfun.Ni)&&(Eigenval[nVal]<=M.mu))
+  {
+    *occupation+=Sqr(Eigenfun.VRe[nVal][0]);
+    nVal++;
+  }
+  if(*occupation<=DBL_EPSILON)
+  {
+    AndersonMatrixToTriDiagonalMatrix(M, &(A->con), M.N);
+    A->val.N=2;
+    InitTriDiagonalMatrix(&(A->val));
+    A->val.a[0]=0;
+    A->val.b[0]=0;
+    A->val.a[1]=-Abs(A->con.a[1])-2*Abs(A->con.b[1])-100*DBL_EPSILON;
+    A->val.b[1]=0;
+    A->val.a[2]=-Abs(A->con.a[1])-2*Abs(A->con.b[1])-100*DBL_EPSILON;
+    A->a0=M.a[0];
+    A->b0=M.b[0];
+    A->mu=M.mu;
+    strcpy(A->Name,M.Name);
+    SetBADoubleTriDiagonalMatrixConVal(A);
+  }
+  else if(*occupation>=(1-DBL_EPSILON))
+  {
+    AndersonMatrixToTriDiagonalMatrix(M, &(A->val), M.N);
+    A->con.N=2;
+    InitTriDiagonalMatrix(&(A->con));
+    A->con.a[0]=0;
+    A->con.b[0]=0;
+    A->con.a[1]=-Abs(A->val.a[1])-2*Abs(A->val.b[1])-100*DBL_EPSILON;
+    A->con.b[1]=0;
+    A->con.a[2]=-Abs(A->val.a[1])-2*Abs(A->val.b[1])-100*DBL_EPSILON;
+    A->a0=M.a[0];
+    A->b0=M.b[0];
+    A->mu=M.mu;
+    strcpy(A->Name,M.Name);
+    SetBADoubleTriDiagonalMatrixConVal(A);
+  }
+  else
+  {
+    printf("In AndersonMatrixToBADoubleTriDiagonalMatrix:\n Impurity occupation is %22.15E for shift %22.15E at chemical potential %22.15E\n",*occupation,onsiteshift,M.mu);
+    if(nVal==0)
+    {
+      printf("no states found in valence band; lowest eigen-state has energy %22.15E\n",Eigenval[0]);
+    }
+    if(nVal==Eigenfun.Ni)
+    {
+      printf("no states found in conduction band; highest eigen-state has energy %22.15E\n",Eigenval[Eigenfun.Ni-1]);
+    }
+    /* create psival and psicon */
+    for(i=0;i<nVal;i++)
+    {
+      psival[i]=sqrt(1.0 / *occupation) * Eigenfun.VRe[i][0];
+      psicon[i]=0;
+    }
+    for(i=nVal;i<Eigenfun.Ni;i++)
+    {
+      psival[i]=0;
+      psicon[i]=sqrt(1.0 / (1.0 - *occupation)) * Eigenfun.VRe[i][0];
+    }
+    /* create A->val and A->con */
+    EigenstateToTridiagonalMatrix(psival, &(Eigenval[0]), Eigenfun.Ni, &(A->val));
+    A->val.b[0]=sqrt(*occupation);
+    EigenstateToTridiagonalMatrix(psicon, &(Eigenval[0]), Eigenfun.Ni, &(A->con));
+    A->con.b[0]=sqrt(1.0-*occupation);
+    A->a0=M.a[0];
+    A->b0=M.b[0];
+    A->mu=M.mu;
+    strcpy(A->Name,M.Name);
+    SetBADoubleTriDiagonalMatrixConVal(A);
+    A->acvB-=onsiteshift;
+  }
+  FreeMatrix(&Eigenfun);
+  return 0;
+}
+
+/*
+ *
+ */
+uint32_t AndersonMatrixToBADoubleTriDiagonalMatrixOld(AndersonMatrixType const M, double const onsiteshift, BADoubleTriDiagonalMatrixType * const A, double * const occupation)
+{
+  uint32_t i,j,nVal;
+  MatrixType Eigenfun;
+  double Eigenval[M.N], psival[M.N], psicon[M.N], psib[M.N];
+  if(M.N==0)
+  {
+    printf("AndersonMatrixToBADoubleTriDiagonalMatrix called with a matrix of size 0\n");
+    *occupation=0;
+    A->val.N=0;
+    A->con.N=0;
+    InitBADoubleTriDiagonalMatrix(A);
+    strcpy(A->Name,M.Name);
+    A->a0=M.a[0];
+    A->b0=0;
+    return 0;
+  }
+  /* find eigenbasis of the Anderson matrix */
+  AndersonMatrixToEigensystemOnsiteShift(M, onsiteshift, &Eigenfun, Eigenval);
+  for(i=0;i<Eigenfun.Ni;i++)
+  {
+    if(Eigenfun.VRe[i][0]<0)
+    {
+      for(j=0;j<Eigenfun.Nj;j++)
+      {
+        Eigenfun.VRe[i][j]*=-1;
+      }
+    }
+  }
+  nVal=0;
+  *occupation=0;
+  while((nVal<Eigenfun.Ni)&&(Eigenval[nVal]<=M.mu))
+  {
+    *occupation+=Sqr(Eigenfun.VRe[nVal][0]);
+    nVal++;
+  }
+  if(*occupation<=DBL_EPSILON)
+  {
+    AndersonMatrixToTriDiagonalMatrix(M, &(A->con), M.N);
+    A->val.N=2;
+    InitTriDiagonalMatrix(&(A->val));
+    A->val.a[0]=0;
+    A->val.b[0]=0;
+    A->val.a[1]=-Abs(A->con.a[1])-2*Abs(A->con.b[1])-100*DBL_EPSILON;
+    A->val.b[1]=0;
+    A->val.a[2]=-Abs(A->con.a[1])-2*Abs(A->con.b[1])-100*DBL_EPSILON;
+    A->a0=M.a[0];
+    A->b0=M.b[0];
+    A->mu=M.mu;
+    strcpy(A->Name,M.Name);
+    SetBADoubleTriDiagonalMatrixConVal(A);
+  }
+  else if(*occupation>=(1-DBL_EPSILON))
+  {
+    AndersonMatrixToTriDiagonalMatrix(M, &(A->val), M.N);
+    A->con.N=2;
+    InitTriDiagonalMatrix(&(A->con));
+    A->con.a[0]=0;
+    A->con.b[0]=0;
+    A->con.a[1]=-Abs(A->val.a[1])-2*Abs(A->val.b[1])-100*DBL_EPSILON;
+    A->con.b[1]=0;
+    A->con.a[2]=-Abs(A->val.a[1])-2*Abs(A->val.b[1])-100*DBL_EPSILON;
+    A->a0=M.a[0];
+    A->b0=M.b[0];
+    A->mu=M.mu;
+    strcpy(A->Name,M.Name);
+    SetBADoubleTriDiagonalMatrixConVal(A);
+  }
+  else
+  {
+    printf("In AndersonMatrixToBADoubleTriDiagonalMatrix:\n Impurity occupation is %22.15E for shift %22.15E at chemical potential %22.15E\n",*occupation,onsiteshift,M.mu);
+    if(nVal==0)
+    {
+      printf("no states found in valence band; lowest eigen-state has energy %22.15E\n",Eigenval[0]);
+    }
+    if(nVal==Eigenfun.Ni)
+    {
+      printf("no states found in conduction band; highest eigen-state has energy %22.15E\n",Eigenval[Eigenfun.Ni-1]);
+    }
+    /* create psib */
+    for(i=0;i<nVal;i++)
+    {
+      psib[i]=sqrt((1.0 - *occupation) / *occupation) * Eigenfun.VRe[i][0];
+    }
+    for(i=nVal;i<Eigenfun.Ni;i++)
+    {
+      psib[i]=-sqrt(*occupation / (1.0 - *occupation)) * Eigenfun.VRe[i][0];
+    }
+    /* create psival and psicon */
+    for(i=0;i<Eigenfun.Ni;i++)
+    {
+      psival[i]=sqrt(*occupation)    *Eigenfun.VRe[i][0] + sqrt(1.0-*occupation)*psib[i];
+      psicon[i]=sqrt(1.0-*occupation)*Eigenfun.VRe[i][0] - sqrt(*occupation)    *psib[i];
+    }
+    /* create A->val and A->con */
+    EigenstateToTridiagonalMatrix(psival, &(Eigenval[0]), Eigenfun.Ni, &(A->val));
+    A->val.b[0]=sqrt(*occupation);
+    EigenstateToTridiagonalMatrix(psicon, &(Eigenval[0]), Eigenfun.Ni, &(A->con));
+    A->con.b[0]=sqrt(1.0-*occupation);
+    A->a0=M.a[0];
+    A->b0=M.b[0];
+    A->mu=M.mu;
+    strcpy(A->Name,M.Name);
+    SetBADoubleTriDiagonalMatrixConVal(A);
+    A->acvB-=onsiteshift;
+  }
+  FreeMatrix(&Eigenfun);
+  return 0;
+}
+
+
+
+/*
+ * ====>>> contains a fundamental ERRROR!!!!!
+ */
+uint32_t AndersonMatrixToBADoubleTriDiagonalMatrixTemperature(AndersonMatrixType const M, double const onsiteshift, double const kbT, BADoubleTriDiagonalMatrixType * const A, double * const occupation)
+{
+  uint32_t i,j;
+  MatrixType Eigenfun;
+  double Eigenval[M.N], psival[M.N], psicon[M.N];
+  if(M.N==0)
+  {
+    printf("AndersonMatrixToBADoubleTriDiagonalMatrix called with a matrix of size 0\n");
+    *occupation=0;
+    A->val.N=0;
+    A->con.N=0;
+    InitBADoubleTriDiagonalMatrix(A);
+    strcpy(A->Name,M.Name);
+    A->a0=M.a[0];
+    A->b0=0;
+    return 0;
+  }
+  /* find eigenbasis of the Anderson matrix */
+  AndersonMatrixToEigensystemOnsiteShift(M, onsiteshift, &Eigenfun, Eigenval);
+  for(i=0;i<Eigenfun.Ni;i++)
+  {
+    if(Eigenfun.VRe[i][0]<0)
+    {
+      for(j=0;j<Eigenfun.Nj;j++)
+      {
+        Eigenfun.VRe[i][j]*=-1;
+      }
+    }
+  }
+  *occupation=0;
+  for(i=0;i<Eigenfun.Ni;i++)
+  {
+    *occupation+=Sqr(Eigenfun.VRe[i][0])*FermiFunction(Eigenval[i], M.mu, kbT);
+  }
+  if(*occupation<=10*DBL_EPSILON)
+  {
+    AndersonMatrixToTriDiagonalMatrix(M, &(A->con), M.N);
+    A->val.N=2;
+    InitTriDiagonalMatrix(&(A->val));
+    A->val.a[0]=0;
+    A->val.b[0]=0;
+    A->val.a[1]=-Abs(A->con.a[1])-2*Abs(A->con.b[1])-100*DBL_EPSILON;
+    A->val.b[1]=0;
+    A->val.a[2]=-Abs(A->con.a[1])-2*Abs(A->con.b[1])-100*DBL_EPSILON;
+    A->a0=M.a[0];
+    A->b0=M.b[0];
+    A->mu=M.mu;
+    strcpy(A->Name,M.Name);
+    SetBADoubleTriDiagonalMatrixConVal(A);
+  }
+  else if(*occupation>=(1-10*DBL_EPSILON))
+  {
+    AndersonMatrixToTriDiagonalMatrix(M, &(A->val), M.N);
+    A->con.N=2;
+    InitTriDiagonalMatrix(&(A->con));
+    A->con.a[0]=0;
+    A->con.b[0]=0;
+    A->con.a[1]=-Abs(A->val.a[1])-2*Abs(A->val.b[1])-100*DBL_EPSILON;
+    A->con.b[1]=0;
+    A->con.a[2]=-Abs(A->val.a[1])-2*Abs(A->val.b[1])-100*DBL_EPSILON;
+    A->a0=M.a[0];
+    A->b0=M.b[0];
+    A->mu=M.mu;
+    strcpy(A->Name,M.Name);
+    SetBADoubleTriDiagonalMatrixConVal(A);
+  }
+  else
+  {
+    printf("In AndersonMatrixToBADoubleTriDiagonalMatrix:\n Impurity occupation is %22.15E for shift %22.15E at chemical potential %22.15E\n",*occupation,onsiteshift,M.mu);
+    /* create psival and psicon */
+    for(i=0;i<Eigenfun.Ni;i++)
+    {
+      psival[i]=sqrt(   FermiFunction(Eigenval[i], M.mu, kbT)  /    *occupation)  * Eigenfun.VRe[i][0];
+      psicon[i]=sqrt((1-FermiFunction(Eigenval[i], M.mu, kbT)) / (1-*occupation)) * Eigenfun.VRe[i][0];
+    }
+    /* create A->val and A->con */
+    EigenstateToTridiagonalMatrix(psival, &(Eigenval[0]), Eigenfun.Ni, &(A->val));
+    A->val.b[0]=sqrt(*occupation);
+    EigenstateToTridiagonalMatrix(psicon, &(Eigenval[0]), Eigenfun.Ni, &(A->con));
+    A->con.b[0]=sqrt(1.0-*occupation);
+    A->a0=M.a[0];
+    A->b0=M.b[0];
+    A->mu=M.mu;
+    strcpy(A->Name,M.Name);
+    SetBADoubleTriDiagonalMatrixConVal(A);
+    A->acvB-=onsiteshift;
+  }
+  FreeMatrix(&Eigenfun);
+  return 0;
+}
+
+
+/*
+ *
+ */
+uint32_t AndersonMatrixToBADoubleTriDiagonalMatrixWrong(AndersonMatrixType const M, BADoubleTriDiagonalMatrixType * const A, uint32_t NTriDiagVal, uint32_t NTriDiagCon, double Ef, double Epsilon)
 {
   ListOfPoles LP;
   if(AndersonMatrixToListOfPoles(M, &LP)){printf("AndersonMatrixToListOfPoles failed in AndersonMatrixToBADoubleTriDiagonalMatrix\n");return 1;};
@@ -391,7 +864,6 @@ uint32_t AndersonMatrixToBADoubleTriDiagonalMatrix(AndersonMatrixType const M, B
   strcpy(A->Name,"GBath");
   return 0;
 }
-
 /****************************************************************************/
 /********************         Matrix conversions         ********************/
 /********************         BlokAndersonMatrix To ...  ********************/

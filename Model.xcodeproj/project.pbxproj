@@ -507,7 +507,7 @@
 		4C2AAA101632655300138620 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0450;
+				LastUpgradeCheck = 0500;
 				ORGANIZATIONNAME = "Maurits Haverkort";
 			};
 			buildConfigurationList = 4C2AAA131632655300138620 /* Build configuration list for PBXProject "Model" */;
@@ -579,7 +579,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_OBJC_ARC = YES;
@@ -609,7 +608,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_OBJC_ARC = YES;
@@ -751,7 +749,7 @@
 				4C2AAA221632655300138620 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		4C2AAA231632655300138620 /* Build configuration list for PBXNativeTarget "Model" */ = {
 			isa = XCConfigurationList;
@@ -760,7 +758,7 @@
 				4C2AAA251632655300138620 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		4C2AAAC3163265F500138620 /* Build configuration list for PBXNativeTarget "Test" */ = {
 			isa = XCConfigurationList;
@@ -769,7 +767,7 @@
 				4C2AAAC5163265F500138620 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		4C5CA61F16D18BBF00BE1C25 /* Build configuration list for PBXNativeTarget "DMFT" */ = {
 			isa = XCConfigurationList;
@@ -778,7 +776,7 @@
 				4C5CA61E16D18BBF00BE1C25 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		4C79F5E017B53C8000189682 /* Build configuration list for PBXNativeTarget "Hubart" */ = {
 			isa = XCConfigurationList;
@@ -787,7 +785,7 @@
 				4C79F5DF17B53C8000189682 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		4CDD1CA51796D14100614F34 /* Build configuration list for PBXNativeTarget "YiDMFT" */ = {
 			isa = XCConfigurationList;
@@ -796,7 +794,7 @@
 				4CDD1CA71796D14100614F34 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
 	};

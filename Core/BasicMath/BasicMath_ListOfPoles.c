@@ -597,6 +597,156 @@ void ReduceListOfPolesSpacing(ListOfPoles * M, double da)
   M->N=iRed+1;
 }
 
+uint32_t ListOfPolesMoveNegativeEnergyToMu(ListOfPoles *const A, double const mu)
+{
+  uint32_t i,npoleshift=0;
+  double weightpoleshift=0,totw=0;
+  for(i=0;i<A->N;i++)
+  {
+    totw+=A->b[i];
+    if(A->a[i]<mu)
+    {
+      A->a[i]=mu;
+      npoleshift++;
+      weightpoleshift+=A->b[i];
+    }
+  }
+  if(npoleshift)
+  {
+    printf("List of poles %s, has %i poles of which %i are incorrectly at negative energies.\n",A->Name,A->N,npoleshift);
+    printf("These have a total weight of %22.15E, (outof %22.15E) which has been shifted to mu=%22.15E\n",weightpoleshift,totw,mu);
+  }
+  else
+  {
+    printf("List of poles %s, has all poles at positive energy.\n",A->Name);
+  }
+  return 0;
+}
+
+uint32_t ListOfPolesMovePositiveEnergyToMu(ListOfPoles *const A, double const mu)
+{
+  uint32_t i,npoleshift=0;
+  double weightpoleshift=0,totw=0;
+  for(i=0;i<A->N;i++)
+  {
+    totw+=A->b[i];
+    if(A->a[i]>mu)
+    {
+      A->a[i]=mu;
+      npoleshift++;
+      weightpoleshift+=A->b[i];
+    }
+  }
+  if(npoleshift)
+  {
+    printf("List of poles %s, has %i poles of which %i are incorrectly at positive energies.\n",A->Name,A->N,npoleshift);
+    printf("These have a total weight of %22.15E, (outof %22.15E) which has been shifted to mu=%22.15E\n",weightpoleshift,totw,mu);
+  }
+  else
+  {
+    printf("List of poles %s, has all poles at negative energy.\n",A->Name);
+  }
+  return 0;
+}
+
+
+/*  Given a list of poles, all poles with energy smaller than mu will be removed, the other poles will be rescaled such that the total weight is conserved
+ *
+ */
+uint32_t ListOfPolesRemoveNegativeEnergy(ListOfPoles *const A, double const mu)
+{
+  uint32_t i,NPos=0,NNeg=0;
+  double totalweight=0,totalweightPos=0,totalweightNeg=0,scale;
+  for(i=0;i<A->N;i++)
+  {
+    totalweight+=A->b[i];
+    if(A->a[i]>=mu)
+    {
+      totalweightPos+=A->b[i];
+      NPos++;
+    }
+    else
+    {
+      totalweightNeg+=A->b[i];
+      A->b[i]=0;
+      NNeg++;
+    }
+  }
+  if(totalweight<10*DBL_EPSILON)
+  {
+    /* happy situation where the function is zero or almost zero */
+  }
+  else if(totalweightPos<10*DBL_EPSILON)
+  {
+    /* The spectrum is there, but most probably has no meaning, i.e. is totally given by numerical noice */
+    A->a[0]=2*mu;
+    A->b[0]+=totalweightNeg;
+    printf("List of poles %s, has %i poles of which %i are at negative energies.\n",A->Name,A->N,NNeg);
+    printf("Total weight %22.15E, Weight at negative energy %22.15E Weigth at positive energy %22.15E\n",totalweight,totalweightNeg,totalweightPos);
+    printf("Based on this there is most probably no meaning other than numerical noice in this spectrum\n");
+  }
+  else
+  {
+    scale = totalweight / totalweightPos;
+    for(i=0;i<A->N;i++)
+    {
+      A->b[i]*=scale;
+    }
+    printf("List of poles %s, has %i poles of which %i are incorrectly at negative energies.\n",A->Name,A->N,NNeg);
+    printf("Total weight %22.15E, Weight at negative energy %22.15E\n",totalweight,totalweightNeg);
+  }
+  return 0;
+}
+
+/*  Given a list of poles, all poles with energy larger than mu will be removed, the other poles will be rescaled such that the total weight is conserved
+ *
+ */
+uint32_t ListOfPolesRemovePositiveEnergy(ListOfPoles *const A, double const mu)
+{
+  uint32_t i,NPos=0,NNeg=0;
+  double totalweight=0,totalweightPos=0,totalweightNeg=0,scale;
+  for(i=0;i<A->N;i++)
+  {
+    totalweight+=A->b[i];
+    if(A->a[i]>mu)
+    {
+      totalweightPos+=A->b[i];
+      NPos++;
+      A->b[i]=0;
+    }
+    else
+    {
+      totalweightNeg+=A->b[i];
+      NNeg++;
+    }
+  }
+  if(totalweight<10*DBL_EPSILON)
+  {
+    /* happy situation where the function is zero or almost zero */
+  }
+  else if(totalweightNeg<10*DBL_EPSILON)
+  {
+    /* The spectrum is there, but most probably has no meaning, i.e. is totally given by numerical noice */
+    A->a[0]=-2*mu;
+    A->b[0]+=totalweightPos;
+    printf("List of poles %s, has %i poles of which %i are at negative energies.\n",A->Name,A->N,NNeg);
+    printf("Total weight %22.15E, Weight at negative energy %22.15E Weigth at positive energy %22.15E\n",totalweight,totalweightNeg,totalweightPos);
+    printf("Based on this there is most probably no meaning other than numerical noice in this spectrum\n");
+  }
+  else
+  {
+    scale = totalweight / totalweightNeg;
+    for(i=0;i<A->N;i++)
+    {
+      A->b[i]*=scale;
+    }
+    printf("List of poles %s, has %i poles of which %i are incorrectly at positive energies.\n",A->Name,A->N,NPos);
+    printf("Total weight %22.15E, Weigth at positive energy %22.15E\n",totalweight,totalweightPos);
+  }
+  return 0;
+}
+
+
 /*   A <- A-B
  *   The energy of the poles in B is adjusted to be on the same "grid" as the poles in A
  *   If A pole in A becomes negative weight it is substracted from the remainder of A

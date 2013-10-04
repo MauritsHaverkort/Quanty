@@ -9,7 +9,7 @@ double OperatorCr(uint8_t *const Determinant, const uint16_t i, const uint32_t N
 {
   if(i>=NFermion)
   {
-    uint32_t j=i-NFermion+(NFermion+7)>>3;
+    uint32_t j=i-NFermion+((NFermion+7)>>3);
     if(Determinant[j]==255)
     {
       return 0;
@@ -55,7 +55,7 @@ double OperatorAn(uint8_t *const Determinant, const uint16_t i, const uint32_t N
 {
   if(i>=NFermion)
   {
-    uint32_t j=i-NFermion+(NFermion+7)>>3;
+    uint32_t j=i-NFermion+((NFermion+7)>>3);
     if(Determinant[j]==0)
     {
       return 0;

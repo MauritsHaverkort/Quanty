@@ -122,11 +122,11 @@ uint32_t CreateOperatorCoulombTwoShellsConstantOccupation(uint32_t const NFermio
     {
       for(m2=-l2;m2<=l2;m2++)
       {
-        for(m3=Max(-l1,m1+m2+l2);m3<=Min(l1,m1+m2-l2);m3++)
+        for(m3=Max(-l1,m1+m2-l2);m3<=Min(l1,m1+m2+l2);m3++)
         {
-          /* -l2 >= m4 >= l2
-           * -l2 >= m1+m2-m3 >= l2
-           *  thus m3-l >= m1 + m2 >= m3+l
+          /* -l2 <= m4 <= l2
+           * -l2 <= m1+m2-m3 <= l2
+           *  thus m3-l2 <= m1 + m2 <= m3+l2
            */
           m4=m1+m2-m3;
           val=-0.5*SlaterCoefficientC(k, l1, m1, l1, m3)*SlaterCoefficientC(k, l2, m4, l2, m2);

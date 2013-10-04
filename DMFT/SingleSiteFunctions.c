@@ -186,7 +186,7 @@ uint32_t initializeDMFTReadSigma(DMFTSettings const O, ListOfPoles *const Sigma)
   else
   {
     printf("File for the selfenergy %s does not excist\n",FileName);
-    printf("Start from the situation where Sigma=0\n");
+    printf("Start from the situation where Sigma=mu + 1/2 U / (w-mu)\n");
     Sigma->N=1;
     InitListOfPoles(Sigma);
     Sigma->a0=0;
@@ -548,16 +548,23 @@ uint32_t PrintInfoOnGBathAndG0InDMFTLoop(ListOfPoles const G0LP, BADoubleTriDiag
 
 uint32_t PrintInfoOnGBathAndG0InDMFTFindGroundstate(AndersonMatrixType const G0And, BADoubleTriDiagonalMatrixType const GBathBA)
 {
+  double occupation;
   BADoubleTriDiagonalMatrixType G0BA;
-  AndersonMatrixToBADoubleTriDiagonalMatrix(G0And, &G0BA, G0And.N, G0And.N, G0And.mu, G0And.mu*1000*DBL_EPSILON);
+  AndersonMatrixToBADoubleTriDiagonalMatrix(G0And, 0, &G0BA, &occupation);
   printf("                               G0v                    G0c                    GBathv                 GBathc\n");
   printf("N           %22i %22i %22i %22i\n",G0BA.val.N,G0BA.con.N,GBathBA.val.N,GBathBA.con.N);
   printf("b0^2                        %22.15E %22.15E %22.15E %22.15E\n",Sqr(G0BA.val.b[0]),Sqr(G0BA.con.b[0]),Sqr(GBathBA.val.b[0]),Sqr(GBathBA.con.b[0]));
   printf("b0                          %22.15E %22.15E %22.15E %22.15E\n",G0BA.val.b[0],G0BA.con.b[0],GBathBA.val.b[0],GBathBA.con.b[0]);
   printf("b1                          %22.15E %22.15E %22.15E %22.15E\n",G0BA.val.b[1],G0BA.con.b[1],GBathBA.val.b[1],GBathBA.con.b[1]);
-  printf("b2                          %22.15E %22.15E %22.15E %22.15E\n",G0BA.val.b[2],G0BA.con.b[2],GBathBA.val.b[2],GBathBA.con.b[2]);
+  if((GBathBA.con.N>2)&&(GBathBA.val.N>2))
+  {
+    printf("b2                          %22.15E %22.15E %22.15E %22.15E\n",G0BA.val.b[2],G0BA.con.b[2],GBathBA.val.b[2],GBathBA.con.b[2]);
+  }
   printf("a1                          %22.15E %22.15E %22.15E %22.15E\n",G0BA.val.a[1],G0BA.con.a[1],GBathBA.val.a[1],GBathBA.con.a[1]);
-  printf("a2                          %22.15E %22.15E %22.15E %22.15E\n",G0BA.val.a[2],G0BA.con.a[2],GBathBA.val.a[2],GBathBA.con.a[2]);
+  if((GBathBA.con.N>2)&&(GBathBA.val.N>2))
+  {
+    printf("a2                          %22.15E %22.15E %22.15E %22.15E\n",G0BA.val.a[2],G0BA.con.a[2],GBathBA.val.a[2],GBathBA.con.a[2]);
+  }
   printf("e_i                         %22.15E                        %22.15E\n",G0BA.acvB,GBathBA.acvB);
   printf("e_i^p                       %22.15E                        %22.15E\n",G0BA.acvA,GBathBA.acvA);
   printf("t_b                         %22.15E                        %22.15E\n",G0BA.acvBA,GBathBA.acvBA);
@@ -576,64 +583,118 @@ uint32_t PrintInfoOnGBathAndG0InDMFTFindGroundstate(AndersonMatrixType const G0A
 /*
  *
  */
-uint32_t FindGroundStateGBathandMuFromG0andSigma(DMFTSettings const O, AndersonMatrixType const G0, ListOfPoles const Sigma, double *const mu, WaveFunctionType *const Psi, BADoubleTriDiagonalMatrixType *const GBathBARet, AndersonMatrixType *const GBathAndRet, TimeType *const Time)
+uint32_t FindGroundStateFromG0andSigma(DMFTSettings const O, AndersonMatrixType const G0, ListOfPoles const Sigma, double *const mu, double *const Nelectron, WaveFunctionType *const Psi, BADoubleTriDiagonalMatrixType *const GBathBARet, AndersonMatrixType *const GBathAndRet, TimeType *const Time)
 {
-  uint32_t i;
+  uint32_t i, j, converged=0, iiter;
+  uint32_t const nitermax=30, nitermem=40;
   AndersonMatrixType GBathAnd;
   BADoubleTriDiagonalMatrixType GBathBA, GBathBATrunc;
-  double WaveFunctionAccuracy, PsiEnergy, PsiQuality;
+  double WaveFunctionAccuracy, PsiEnergy, PsiQuality,onsiteshift[nitermax+1],occupation, Rho[4+4*O.NBath], occlist[nitermax+1], ABocclist[nitermax+1], mulist[nitermax+1];
   OperatorType HAnd,Sx,Sy,Sz,S2;
   uint16_t *SpinUp,*SpinDn;
   WaveFunctionAccuracy=O.zeroLancWavefunction;
-  
-  if(!(O.NmuSym&2)){printf("Only implemented for constant mu at the moment\n");};
+  onsiteshift[0]=*mu;
+  mulist[0]=*mu;
+  iiter=0;
   GBathAndListAndRepresentation(G0, *mu, Sigma, &GBathAnd);
-  ReducePolesAndersonMatrixNumberFermi(&GBathAnd, 10*O.NGBath, 0.0);
-  
-  AndersonMatrixToBADoubleTriDiagonalMatrix(GBathAnd, &GBathBA, O.NGBath, O.NGBath, 0, 100*DBL_EPSILON);
-  
-  PrintInfoOnGBathAndG0InDMFTFindGroundstate(G0, GBathBA);
-  
-
-  GBathBATrunc=GBathBA;
-  GBathBATrunc.con.N=Min(GBathBA.con.N,O.NBath+1);
-  GBathBATrunc.val.N=Min(GBathBA.val.N,O.NBath+1);
-  
-  TestIfPsiHasCorrectDimensions(GBathBATrunc, Psi);
-  BADoubleTriDiagonalMatrixToAndersonImpurityOperator(&HAnd, GBathBATrunc, GBathBATrunc, O.U, 0);
-  if((O.SymOpt)&4)
+  ReducePolesAndersonMatrixNumberFermi(&GBathAnd, O.NGBath, *mu);
+  while(!converged)
   {
-    printf("Restricted HAnd for the ground-state to the first bath site\n");
-    HAnd.l[2].N=8;
-  }
-  /* if singlet set is true add the (U+1) * S^2 to the operator HAndGrd */
-  if((O.SymOpt)&1)
-  {
-    printf("Add %22.15E * S^2 to HAnd for the calculation of the ground-state wave-function\n",1+O.U);
-    printf("This stabilizes the ground-state by enlarging the singlet triplet energy\n");
-    SpinUp=calloc(HAnd.NFermion/2, sizeof(uint16_t));
-    SpinDn=calloc(HAnd.NFermion/2, sizeof(uint16_t));
-    SpinUp[0]=0;
-    SpinUp[1]=2;
-    SpinDn[0]=1;
-    SpinDn[1]=3;
-    for(i=4;i<2+HAnd.NFermion/2;i++)
+    AndersonMatrixToBADoubleTriDiagonalMatrix(GBathAnd, onsiteshift[iiter], &GBathBA, &occupation);
+    GBathBATrunc=GBathBA;
+    GBathBATrunc.con.N=Min(GBathBA.con.N,O.NBath+1);
+    GBathBATrunc.val.N=Min(GBathBA.val.N,O.NBath+1);
+    TestIfPsiHasCorrectDimensions(GBathBATrunc, Psi);
+    BADoubleTriDiagonalMatrixToAndersonImpurityOperator(&HAnd, GBathBATrunc, GBathBATrunc, O.U, 0);
+    if((O.SymOpt)&4)
     {
-      SpinUp[i-2]=i;
-      SpinDn[i-2]=i+HAnd.NFermion/2-2;
+      printf("Restricted HAnd for the ground-state to the first bath site\n");
+      HAnd.l[2].N=8;
     }
-    CreateSpinOperators(HAnd.NFermion, HAnd.NFermion/2, SpinUp, SpinDn, &Sx, &Sy, &Sz, &S2);
-    FreeOperator(&Sx);
-    FreeOperator(&Sy);
-    FreeOperator(&Sz);
-    OperatorAddNormalOrder(&HAnd, S2, fabs(O.U)+1, 0, &QDetNotOrderedFcFaBcBa);
-    FreeOperator(&S2);
+    /* if singlet set is true add the (U+1) * S^2 to the operator HAndGrd */
+    if((O.SymOpt)&1)
+    {
+      printf("Add %22.15E * S^2 to HAnd for the calculation of the ground-state wave-function\n",1+O.U);
+      printf("This stabilizes the ground-state by enlarging the singlet triplet energy\n");
+      SpinUp=calloc(HAnd.NFermion/2, sizeof(uint16_t));
+      SpinDn=calloc(HAnd.NFermion/2, sizeof(uint16_t));
+      SpinUp[0]=0;
+      SpinUp[1]=2;
+      SpinDn[0]=1;
+      SpinDn[1]=3;
+      for(i=4;i<2+HAnd.NFermion/2;i++)
+      {
+        SpinUp[i-2]=i;
+        SpinDn[i-2]=i+HAnd.NFermion/2-2;
+      }
+      CreateSpinOperators(HAnd.NFermion, HAnd.NFermion/2, SpinUp, SpinDn, &Sx, &Sy, &Sz, &S2);
+      FreeOperator(&Sx);
+      FreeOperator(&Sy);
+      FreeOperator(&Sz);
+      OperatorAddNormalOrder(&HAnd, S2, fabs(O.U)+1, 0, &QDetNotOrderedFcFaBcBa);
+      FreeOperator(&S2);
+    }
+    /* create ground-state wave-function */
+    BeginTiming("Lanczos GroundState",Time);
+    LanczosGroundState(HAnd,Psi,&WaveFunctionAccuracy,O.zeroLancEnergy,O.U+*mu,Psi,0);
+    EndTiming("Lanczos GroundState",Time);
+    /* calculate NelectronNew */
+    CalculateDensity(Rho,*Psi);
+    ABocclist[iiter]=Rho[0]+Rho[1]+Rho[2]+Rho[3];
+    occlist[iiter]=Rho[0]+Rho[1];
+    /* determine if ground-state calculation has to be restarted */
+    if(O.NmuSym&2)
+    {
+      /* calculations at constant mu, but still need to make sure the bath Greens function is calculated at the same filling as the impurity greens function */
+      /* this is done by optimizing NelectronNew such that the occupation of the impurity and the selected bath site is integer */
+      if(Abs(ABocclist[iiter]-O.NSite)>100*DBL_EPSILON)
+      {
+        mulist[iiter+1]=*mu;
+        if( iiter == 0)
+        {
+          onsiteshift[iiter+1]=onsiteshift[iiter]-(ABocclist[iiter]-O.NSite)*(Abs(G0.b[1])+Abs(O.U/2));
+        }
+        else if (iiter == nitermax)
+        {
+          printf("occupation of bath and impurity green function did not converge in %i itterations\n",iiter);
+          printf("loop   onsiteshift            total occupation       mu                     impurity occupation\n");
+          for(j=0;j<iiter;j++)
+          {
+            printf("%3i %22.15E %22.15E %22.15E %22.15E\n",j,onsiteshift[j],ABocclist[j],mulist[j],occlist[j]);
+          }
+          converged=1;
+        }
+        else
+        {
+          onsiteshift[iiter+1]=InterpolateRootOfset(&(onsiteshift[Max(iiter,nitermem)-nitermem]), ABocclist, iiter+1, O.NSite);
+        }
+        iiter++;
+      }
+      else
+      {
+        converged=1;
+      }
+    }
+    else
+    {
+      /* calculations at constant occupation, find the correct mu */
+      printf("Not jet implemented\n");
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+    }
+    if(!converged) FreeOperator(&HAnd);
   }
-  /* create ground-state wave-function */
-  BeginTiming("Lanczos GroundState",Time);
-  LanczosGroundState(HAnd,Psi,&WaveFunctionAccuracy,O.zeroLancEnergy,O.U,Psi,0);
-  EndTiming("Lanczos GroundState",Time);
   /* print info on groundstate */
+  PrintInfoOnGBathAndG0InDMFTFindGroundstate(G0, GBathBA);
   PsiHermitianOperatorPsi(HAnd, *Psi, &PsiEnergy);
   PsiHermitianOperatorSqrPsi(HAnd, *Psi, &PsiQuality);
   PsiQuality/=Sqr(PsiEnergy);
@@ -647,6 +708,122 @@ uint32_t FindGroundStateGBathandMuFromG0andSigma(DMFTSettings const O, AndersonM
 }
 
 
+/*
+ *
+ */
+uint32_t FindGroundStateFromG0andSigmaDoubleLoop(DMFTSettings const O, AndersonMatrixType const G0, ListOfPoles const Sigma, double *const mu, double *const Nelectron, WaveFunctionType *const Psi, BADoubleTriDiagonalMatrixType *const GBathBARet, AndersonMatrixType *const GBathAndRet, TimeType *const Time)
+{
+  uint32_t i, converged=0, nitermax=30, iiter;
+  AndersonMatrixType GBathAnd;
+  BADoubleTriDiagonalMatrixType GBathBA, GBathBATrunc;
+  double WaveFunctionAccuracy, PsiEnergy, PsiQuality,onsiteshift,occupation, NelectronNew, Rho[4+4*O.NBath], occlist[nitermax+1], mulist[nitermax+1];
+  double const *occin=&(occlist[0]), *occout=&(occlist[1]);
+  OperatorType HAnd,Sx,Sy,Sz,S2;
+  uint16_t *SpinUp,*SpinDn;
+  WaveFunctionAccuracy=O.zeroLancWavefunction;
+  
+  onsiteshift=*mu;
+  occlist[0]=*Nelectron;
+  mulist[0]=*mu;
+  iiter=0;
+  while(!converged)
+  {
+    GBathAndListAndRepresentation(G0, *mu, Sigma, &GBathAnd);
+    ReducePolesAndersonMatrixNumberFermi(&GBathAnd, O.NGBath, *mu);
+    AndersonMatrixFindOnsiteEnergyShift(GBathAnd, *Nelectron/2.0, &onsiteshift);
+    AndersonMatrixToBADoubleTriDiagonalMatrix(GBathAnd, onsiteshift, &GBathBA, &occupation);
+    GBathBATrunc=GBathBA;
+    GBathBATrunc.con.N=Min(GBathBA.con.N,O.NBath+1);
+    GBathBATrunc.val.N=Min(GBathBA.val.N,O.NBath+1);
+    TestIfPsiHasCorrectDimensions(GBathBATrunc, Psi);
+    BADoubleTriDiagonalMatrixToAndersonImpurityOperator(&HAnd, GBathBATrunc, GBathBATrunc, O.U, 0);
+    if((O.SymOpt)&4)
+    {
+      printf("Restricted HAnd for the ground-state to the first bath site\n");
+      HAnd.l[2].N=8;
+    }
+    /* if singlet set is true add the (U+1) * S^2 to the operator HAndGrd */
+    if((O.SymOpt)&1)
+    {
+      printf("Add %22.15E * S^2 to HAnd for the calculation of the ground-state wave-function\n",1+O.U);
+      printf("This stabilizes the ground-state by enlarging the singlet triplet energy\n");
+      SpinUp=calloc(HAnd.NFermion/2, sizeof(uint16_t));
+      SpinDn=calloc(HAnd.NFermion/2, sizeof(uint16_t));
+      SpinUp[0]=0;
+      SpinUp[1]=2;
+      SpinDn[0]=1;
+      SpinDn[1]=3;
+      for(i=4;i<2+HAnd.NFermion/2;i++)
+      {
+        SpinUp[i-2]=i;
+        SpinDn[i-2]=i+HAnd.NFermion/2-2;
+      }
+      CreateSpinOperators(HAnd.NFermion, HAnd.NFermion/2, SpinUp, SpinDn, &Sx, &Sy, &Sz, &S2);
+      FreeOperator(&Sx);
+      FreeOperator(&Sy);
+      FreeOperator(&Sz);
+      OperatorAddNormalOrder(&HAnd, S2, fabs(O.U)+1, 0, &QDetNotOrderedFcFaBcBa);
+      FreeOperator(&S2);
+    }
+    /* create ground-state wave-function */
+    BeginTiming("Lanczos GroundState",Time);
+    LanczosGroundState(HAnd,Psi,&WaveFunctionAccuracy,O.zeroLancEnergy,O.U,Psi,0);
+    EndTiming("Lanczos GroundState",Time);
+    /* calculate NelectronNew */
+    CalculateDensity(Rho,*Psi);
+    NelectronNew=Rho[0]+Rho[1];
+    /* determine if ground-state calculation has to be restarted */
+    if(O.NmuSym&2)
+    {
+      /* calculations at constant mu, but still need to make sure the bath Greens function is calculated at the same filling as the impurity greens function */
+      if(Abs(NelectronNew-*Nelectron)>100*DBL_EPSILON)
+      {
+        iiter++;
+        occlist[iiter]=NelectronNew;
+        if( iiter == 1)
+        {
+          *Nelectron=NelectronNew;
+        }
+        else if (iiter == nitermax)
+        {
+          printf("occupation of bath and impurity green function did not converge in %i itterations\n",iiter);
+          printf("Nbath = %22.15E and Nimp = %22.15E\n",*Nelectron,NelectronNew);
+          converged=1;
+        }
+        else
+        {
+          *Nelectron=FindSelfconsistentnumber(occin, occout, iiter-1);
+        }
+      }
+      else
+      {
+        converged=1;
+      }
+    }
+    else
+    {
+      /* calculations at constant occupation, find the correct mu */
+      printf("Not jet implemented\n");
+      
+    }
+    if(!converged) FreeOperator(&HAnd);
+  }
+  
+  /* print info on groundstate */
+  
+  PrintInfoOnGBathAndG0InDMFTFindGroundstate(G0, GBathBA);
+  
+  PsiHermitianOperatorPsi(HAnd, *Psi, &PsiEnergy);
+  PsiHermitianOperatorSqrPsi(HAnd, *Psi, &PsiQuality);
+  PsiQuality/=Sqr(PsiEnergy);
+  printf("Energy                  <psi|H^2|psi>/(<psi|H|psi>^2)\n");
+  printf("%22.15E  %22.15E\n",PsiEnergy,PsiQuality);
+  PrintWaveFunctionDensity(*Psi);
+  PrintWaveFunctionPrefactorHistogram(*Psi,2.0,20);
+  *GBathBARet=GBathBA;
+  *GBathAndRet=GBathAnd;
+  return 0;
+}
 
 /*
  *
@@ -801,9 +978,9 @@ uint32_t FindGroundStateandMu(DMFTSettings const O, BADoubleTriDiagonalMatrixTyp
 }
 
 
-
-
-
+/*
+ *
+ */
 uint32_t CreateGclDMFT(DMFTSettings const O, OperatorType const HAnd, WaveFunctionType const Psi, OperatorType const *VPerturbation, TriDiagonalMatrixType const * gPerturbation, double const mu, AndersonMatrixType *const GclAnd, TimeType *const Time)
 {
   uint32_t i;
@@ -812,14 +989,14 @@ uint32_t CreateGclDMFT(DMFTSettings const O, OperatorType const HAnd, WaveFuncti
   WaveFunctionType OPsi;
   TriDiagonalMatrixType GclMup,GclMdn,GclPup,GclPdn;
   ListOfPoles GclMupLP, GclMdnLP, GclPupLP, GclPdnLP, GclLP;
-  
+  /* Get ground-state energy needed for shift */
   PsiHermitianOperatorPsi(HAnd, Psi, &Egrd);
-  
-  
+  /* create operators */
   CreatePESdnOperatorDMFT(&OPESdn, HAnd.NFermion);
   CreatePESupOperatorDMFT(&OPESup, HAnd.NFermion);
   CreateIPESdnOperatorDMFT(&OIPESdn, HAnd.NFermion);
   CreateIPESupOperatorDMFT(&OIPESup, HAnd.NFermion);
+  /* do the rest - see timing for comments */
   BeginTiming("Lanczos Tri Diagonalization",Time);
   OperatorPsi(OPESup,Psi,&OPsi);
   switch (O.Dyson) {
@@ -884,10 +1061,10 @@ uint32_t CreateGclDMFT(DMFTSettings const O, OperatorType const HAnd, WaveFuncti
   ShiftTriDiagonalMatrix(&GclMup, -Egrd);
   ShiftTriDiagonalMatrix(&GclPdn, -Egrd);
   ShiftTriDiagonalMatrix(&GclPup, -Egrd);
-  GclMdn.mu=0;
-  GclMup.mu=0;
-  GclPdn.mu=0;
-  GclPup.mu=0;
+  GclMdn.mu=mu;
+  GclMup.mu=mu;
+  GclPdn.mu=mu;
+  GclPup.mu=mu;
   for(i=1;i<=GclMdn.N;i++)
   {
     GclMdn.a[i]*=-1;
@@ -905,10 +1082,18 @@ uint32_t CreateGclDMFT(DMFTSettings const O, OperatorType const HAnd, WaveFuncti
   TriDiagonalMatrixToListOfPoles(GclMdn, &GclMdnLP);
   TriDiagonalMatrixToListOfPoles(GclPup, &GclPupLP);
   TriDiagonalMatrixToListOfPoles(GclPdn, &GclPdnLP);
-  strcpy(GclPupLP.Name,"Gcluster-Plus-Up");
-  strcpy(GclPdnLP.Name,"Gcluster-Plus-Dn");
-  strcpy(GclMupLP.Name,"Gcluster-Min-Up");
-  strcpy(GclMdnLP.Name,"Gcluster-Min-Dn");
+  
+  
+  if(O.NmuSym&2)
+  {
+    /* calculations at constant mu, move spectra at negative energy to zero in order to excellerate converges */
+    ListOfPolesMoveNegativeEnergyToMu(&GclPupLP, mu);
+    ListOfPolesMoveNegativeEnergyToMu(&GclPdnLP, mu);
+    ListOfPolesMovePositiveEnergyToMu(&GclMupLP, mu);
+    ListOfPolesMovePositiveEnergyToMu(&GclMdnLP, mu);
+  }
+  
+  
   ListOfPolesCopy(&GclLP, GclMupLP);
   AddListOfPoles (&GclLP, GclMdnLP);
   AddListOfPoles (&GclLP, GclPupLP);
@@ -921,14 +1106,9 @@ uint32_t CreateGclDMFT(DMFTSettings const O, OperatorType const HAnd, WaveFuncti
     SymmetrizeListOfPoles(&GclLP);
   }
   printf("Cluster Green function created of size %i ",GclLP.N);
-  ReduceListOfPolesNumberFermi(&GclLP, O.NGCluster,0.0);
+  ReduceListOfPolesNumberFermi(&GclLP, O.NGCluster,mu);
   printf("reduced to %i\n",GclLP.N);
-  
-  
-  ShiftListOfPoles(&GclLP, 0);
-  GclLP.mu=0;
-  
-  
+  GclLP.mu=mu;
   ListOfPolesToAndersonMatrix(GclLP, GclAnd);
   strcpy(GclAnd->Name,"Gcluster");
   GclAnd->b[0]=1.0;
@@ -937,10 +1117,8 @@ uint32_t CreateGclDMFT(DMFTSettings const O, OperatorType const HAnd, WaveFuncti
   PrintListOfPolesEssentials(GclPdnLP);
   PrintListOfPolesEssentials(GclMupLP);
   PrintListOfPolesEssentials(GclPupLP);
-  
   PrintListOfPolesEssentials(GclLP);
   PrintAndersonMatrixEssentials(*GclAnd);
-  
   /* free operators and spectra */
   FreeListOfPoles(&GclLP);
   FreeListOfPoles(&GclMupLP);

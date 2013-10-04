@@ -55,7 +55,7 @@ int main(int argc, const char *argv[])
   OperatorType *VPerturbation,HAnd;
   TriDiagonalMatrixType *gPerturbation;
   uint32_t iOuter,i;
-  double mu;
+  double mu, Nelectron;
   SpectraType Spectra[10];
   char GBathFileName[MAXStrLength],GClFileName[MAXStrLength],GSigmaFileName[MAXStrLength],PsiFileName[MAXStrLength],SpecFileName[MAXStrLength];
   
@@ -67,6 +67,7 @@ int main(int argc, const char *argv[])
     VPerturbation=malloc(2*DMFTSet.NSite*sizeof(OperatorType));
     gPerturbation=malloc(2*DMFTSet.NSite*sizeof(TriDiagonalMatrixType));
     mu = DMFTSet.mu;
+    Nelectron = DMFTSet.Nelectron;
   EndTiming("Init", &Time);
   for(iOuter=DMFTSet.iStart;iOuter<DMFTSet.iStart+DMFTSet.Ni;iOuter++)
   {
@@ -77,7 +78,7 @@ int main(int argc, const char *argv[])
       printf("***********************************************************************\n\n\n");
       
       BeginTiming("Find Groundstate and mu",&Time);
-      FindGroundStateGBathandMuFromG0andSigma(DMFTSet, G0And, SigmaLP, &mu, &Psi, &GBathBA, &GBathAnd, &Time);
+      FindGroundStateFromG0andSigma(DMFTSet, G0And, SigmaLP, &mu, &Nelectron, &Psi, &GBathBA, &GBathAnd, &Time);
       EndTiming("Find Groundstate and mu",&Time);
       BeginTiming("Set up the V and g",&Time);
       createGBathBATruncandVPerturbation(DMFTSet, GBathBA, &GBathBATrunc, VPerturbation, gPerturbation);

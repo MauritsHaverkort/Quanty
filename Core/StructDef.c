@@ -145,6 +145,7 @@ typedef struct MatrixType
   double      **VRe, **VIm;       /* ellments are found at M.VRe[i][j] */
   double      a0;                 /* storing a possible real shift if a continued fraction notation is used */
   double      b0;                 /* storing a possilbe over-all scaling if a continued fraction notation is used */
+  double      mu;
 }
 MatrixType;
 
@@ -168,6 +169,7 @@ typedef struct SparseMatrixType
   uint32_t     NBitsKey;           /* number of bits in the hash key */
   double       a0;                 /* storing a possible real shift if a continued fraction notation is used */
   double       b0;                 /* storing a possilbe over-all scaling if a continued fraction notation is used */
+  double       mu;
 }
 SparseMatrixType;
 
@@ -417,6 +419,8 @@ SecondAndersonMatrixType;
  *   (A B)[i][j] = \sum_k A[i][k] . B[k][j]
  *
  *   Note that the block A[2;;4][2;;4] and the block A[5;;7][5;;7] are normal tri-diagonal matrices
+ *   The states av1 and ac1 in Ap are linear combinations of the impurity site and a special linear combination of the other sites
+ *   such that the impurity has an occupation n, the other site an occupation 1-n, av1 an occupation 1 and ac1 an occupaiton of 0.
  */
 typedef struct BADoubleTriDiagonalMatrixType
 {

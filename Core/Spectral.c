@@ -1017,7 +1017,7 @@ void TriDiagonalMatrixToSpectrum(const double Energy, const TriDiagonalMatrixTyp
     denom=(Sqr(G->Gamma*0.5)+Sqr(hnu-M.a[M.N]));
     valRe=(hnu-M.a[M.N])/denom;
     valIm=(-G->Gamma*0.5)/denom;
-    for(j=M.N-1;j>=1;j--)
+    for(j=Max(1,M.N)-1;j>=1;j--)
     {
       denom=Sqr(G->Gamma/2.0-valIm*Sqr(M.b[j]))+Sqr(hnu-M.a[j]-valRe*Sqr(M.b[j]));
       valRe=(hnu-M.a[j]-valRe*Sqr(M.b[j]))/denom;

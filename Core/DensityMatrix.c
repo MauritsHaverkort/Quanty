@@ -275,11 +275,11 @@ uint32_t CalculateDensity(double *const Rho, const WaveFunctionType psi)
     {
       if(psi.QComplex)
       {
-        Rho[ipart+psi.NFermion]+=psi.Determinant[BlokElementDet(idet,psi.NWord,ipart+(psi.NFermion+7)>>3)]*(Sqr(psi.ValueRe[BlokElement(idet)])+Sqr(psi.ValueIm[BlokElement(idet)]));
+        Rho[ipart+psi.NFermion]+=psi.Determinant[BlokElementDet(idet,psi.NWord,ipart+((psi.NFermion+7)>>3))]*(Sqr(psi.ValueRe[BlokElement(idet)])+Sqr(psi.ValueIm[BlokElement(idet)]));
       }
       else
       {
-        Rho[ipart+psi.NFermion]+=psi.Determinant[BlokElementDet(idet,psi.NWord,ipart+(psi.NFermion+7)>>3)]*Sqr(psi.ValueRe[BlokElement(idet)]);
+        Rho[ipart+psi.NFermion]+=psi.Determinant[BlokElementDet(idet,psi.NWord,ipart+((psi.NFermion+7)>>3))]*Sqr(psi.ValueRe[BlokElement(idet)]);
       }
     }
   }

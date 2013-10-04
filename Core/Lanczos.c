@@ -9,12 +9,12 @@ uint32_t LanczosGroundStateRR(const OperatorType H, WaveFunctionType *const psi,
 {
   printf("\nStart of LanczosGroundStateRR\n\n");
   fflush(stdout);
-  const uint32_t NKrylovMax=100;
+  const uint32_t NKrylovMax=100, NKrylovStart=25;
   uint32_t NKrylov;
   WaveFunctionType v[3];
   double energy=4*zero,energy1=2*zero,energy2;
   double shift;
-  uint32_t cycles,i,vi,vip,vim;
+  uint32_t cycles,i,vi,vip,vim,minloop=3;
   MatrixType Eigen;
   TriDiagonalMatrixType M;
   double val[NKrylovMax];
@@ -32,11 +32,13 @@ uint32_t LanczosGroundStateRR(const OperatorType H, WaveFunctionType *const psi,
   {
     shift=-2*energy-1;
   }
+  shift-=shiftin;
   energy1=0;
   energy=1;
   // loop until the relative energy gain is smaller than zero.
-  while((energy-energy1)>(zero*(1.0+fabs(energy))))
+  while(((energy-energy1)>(zero*(1.0+fabs(energy))))||minloop)
   {
+    if(minloop)minloop--;
     cycles=0;
     energy=energy1;
     // Calculate psi_new = H^3 psi_old whereby the first time H acts on psi_old the basis size is enlarged
@@ -88,7 +90,7 @@ uint32_t LanczosGroundStateRR(const OperatorType H, WaveFunctionType *const psi,
     while((cycles<3)||((energy2-energy1)>(zero*(1.0+fabs(energy1)))))
     {
       // Calculate the Krylov basis of size NKrylov, starting from the sofar best approximation to the ground-state
-      NKrylov=5+cycles%(NKrylovMax-5);
+      NKrylov=NKrylovStart+cycles%(NKrylovMax-NKrylovStart);
       M.N=NKrylov;
       cycles++;
       if((cycles&15)==15)

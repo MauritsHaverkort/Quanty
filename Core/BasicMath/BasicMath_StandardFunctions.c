@@ -31,7 +31,16 @@ double Gausian(const double w, const double FWHM)
   return 0.9394372786996513*exp(-2.772588722239781*Sqr(w/FWHM))/FWHM;
 }
 
-
+/* Fermi function
+ *
+ */
+double FermiFunction(const double En, const double mu, const double kbT)
+{
+  if((En-mu)==0)         return 0.5;
+  if((En-mu) <= -37*kbT) return 1.0;
+  if((En-mu) >=  37*kbT) return 0.0;
+  return 1.0 / (1+exp((En-mu)/kbT));
+}
 
 /*  TesseralHarmonicZ defines the normalized tesseral harmonic function 
 *   The Tesseral Harmonics are defined as

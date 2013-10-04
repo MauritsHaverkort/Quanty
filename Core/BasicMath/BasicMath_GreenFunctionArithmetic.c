@@ -663,10 +663,10 @@ uint32_t SelfEnergyListOfPolesFromTriDiagonalRepresentation(TriDiagonalMatrixTyp
 
 
 /*  GBath(w) = 1 / ( G_0(w+mu-Sigma(w))^{-1} + Sigma(w) )
- *    G_0(w+mu-Sigma(w))                     = 1 / (w + mu - S - a1 - sum_i b_i^2 / (w + mu - a_{i+1} - S)
- *    G_0(w+mu-Sigma(w))^{-1}                =     (w + mu - S - a1 - sum_i b_i^2 / (w + mu - a_{i+1} - S)
- *    G_0(w+mu-Sigma(w))^{-1} + Sigma        =     (w + mu     - a1 - sum_i b_i^2 / (w + mu - a_{i+1} - S)
- *  ( G_0(w+mu-Sigma(w))^{-1} + Sigma )^{-1} = 1 / (w + mu     - a1 - sum_i b_i^2 / (w + mu - a_{i+1} - S)
+ *    G_0(w+mu-Sigma(w))                     = 1 / (w - S - a1 - sum_i b_i^2 / (w - a_{i+1} - S)
+ *    G_0(w+mu-Sigma(w))^{-1}                =     (w - S - a1 - sum_i b_i^2 / (w - a_{i+1} - S)
+ *    G_0(w+mu-Sigma(w))^{-1} + Sigma        =     (w     - a1 - sum_i b_i^2 / (w - a_{i+1} - S)
+ *  ( G_0(w+mu-Sigma(w))^{-1} + Sigma )^{-1} = 1 / (w     - a1 - sum_i b_i^2 / (w - a_{i+1} - S)
  */
 uint32_t GBathAndTriAndRepresentation(AndersonMatrixType const G0, double const mu, TriDiagonalMatrixType const Sigma, AndersonMatrixType *const G)
 {
@@ -702,7 +702,7 @@ uint32_t GBathAndTriAndRepresentation(AndersonMatrixType const G0, double const 
   }
   G->a[0]=G0.a[0];
   G->b[0]=G0.b[0];
-  G->a[1]=G0.a[1]-mu;
+  G->a[1]=G0.a[1];
   FreeTriDiagonalMatrix(&bSigma);
   return 0;
 }
@@ -750,10 +750,10 @@ uint32_t GBathTriDiagonalRepresentation(TriDiagonalMatrixType const G0, TriDiago
 }
 
 /*  GBath(w) = 1 / ( G_0(w-Sigma(w))^{-1} + Sigma(w) )
- *    G_0(w-Sigma(w))                     = 1 / (w + mu - S - a1 - sum_i b_i^2 / (w + mu - a_{i+1} - S)
- *    G_0(w-Sigma(w))^{-1}                =     (w + mu - S - a1 - sum_i b_i^2 / (w + mu - a_{i+1} - S)
- *    G_0(w-Sigma(w))^{-1} + Sigma        =     (w + mu     - a1 - sum_i b_i^2 / (w + mu - a_{i+1} - S)
- *  ( G_0(w-Sigma(w))^{-1} + Sigma )^{-1} = 1 / (w + mu     - a1 - sum_i b_i^2 / (w + mu - a_{i+1} - S)
+ *    G_0(w-Sigma(w))                     = 1 / (w - S - a1 - sum_i b_i^2 / (w - a_{i+1} - S)
+ *    G_0(w-Sigma(w))^{-1}                =     (w - S - a1 - sum_i b_i^2 / (w - a_{i+1} - S)
+ *    G_0(w-Sigma(w))^{-1} + Sigma        =     (w     - a1 - sum_i b_i^2 / (w - a_{i+1} - S)
+ *  ( G_0(w-Sigma(w))^{-1} + Sigma )^{-1} = 1 / (w     - a1 - sum_i b_i^2 / (w - a_{i+1} - S)
  */
 uint32_t GBathAndListAndRepresentation(AndersonMatrixType const G0, double const mu, ListOfPoles const Sigma, AndersonMatrixType *const G)
 {
@@ -769,7 +769,7 @@ uint32_t GBathAndListAndRepresentation(AndersonMatrixType const G0, double const
   for(i=1;i<G0.N;i++)
   {
     bSigma.b[0]=G0.b[i];
-    bSigma.a[1]=G0.a[i+1]-mu+Sigma.a0;
+    bSigma.a[1]=G0.a[i+1]+Sigma.a0;
     for(j=0;j<Sigma.N;j++)
     {
       bSigma.a[j+2]=Sigma.a[j];
@@ -790,7 +790,7 @@ uint32_t GBathAndListAndRepresentation(AndersonMatrixType const G0, double const
   }
   G->a[0]=G0.a[0];
   G->b[0]=G0.b[0];
-  G->a[1]=G0.a[1]-mu;
+  G->a[1]=G0.a[1];
   G->mu=mu;
   FreeAndersonMatrix(&bSigma);
   PrintAndersonMatrixEssentials(*G);
