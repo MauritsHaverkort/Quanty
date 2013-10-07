@@ -181,7 +181,7 @@ uint32_t SymmetrizeAndersonMatrix(AndersonMatrixType *const M)
   {
     M->b[i]*=Sqrtp5;
     M->b[i+M->N-1]=M->b[i];
-    M->a[i+M->N]=-M->a[i+1];
+    M->a[i+M->N]=2*M->mu-M->a[i+1];
   }
   M->N*=2;
   if(M->N!=0)M->N--;
@@ -190,27 +190,42 @@ uint32_t SymmetrizeAndersonMatrix(AndersonMatrixType *const M)
 
 uint32_t SymmetrizeBADoubleTriDiagonalMatrix(BADoubleTriDiagonalMatrixType *const M)
 {
-  uint32_t i;
-  TriDiagonalMatrixType val,con;
-  TriDiagonalMatrixCopy(&val, M->val);
-  TriDiagonalMatrixCopy(&con, M->con);
-  FreeTriDiagonalMatrix(&(M->con));
-  FreeTriDiagonalMatrix(&(M->val));
-  val.b[0]*=Sqrtp5;
-  con.b[0]*=Sqrtp5;
-  for(i=0;i<=con.N;i++)
+  printf("SymmetrizeBADoubleTriDiagonalMatrix not jet fully implemented\n");
+  double tmp;
+  tmp=sqrt(Sqr(M->bvB0)+Sqr(M->bcB0))*Sqrtp5;
+  if(M->bvB0>=0)
   {
-    con.a[i]*=-1;
+    M->bvB0=tmp;
   }
-  SumGreensfunctionsTriDiagonalRepresentation(val, con, &(M->val));
-  TriDiagonalMatrixCopy(&(M->con), M->val);
-  for(i=0;i<=M->con.N;i++)
+  else
   {
-    M->con.a[i]*=-1;
+    M->bvB0=-tmp;
   }
-  SetBADoubleTriDiagonalMatrixConVal(M);
-  M->acvB=0;
-  M->acvA=0;
+  if(M->bcB0>=0)
+  {
+    M->bcB0=tmp;
+  }
+  else
+  {
+    M->bcB0=-tmp;
+  }
+  tmp=sqrt(Sqr(M->bvA0)+Sqr(M->bcA0))*Sqrtp5;
+  if(M->bvA0>=0)
+  {
+    M->bvA0=tmp;
+  }
+  else
+  {
+    M->bvA0=-tmp;
+  }
+  if(M->bcA0>=0)
+  {
+    M->bcA0=tmp;
+  }
+  else
+  {
+    M->bcA0=-tmp;
+  }
   return 0;
 }
 

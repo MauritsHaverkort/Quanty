@@ -35,6 +35,7 @@ void     RealTriDiagonalMatrixVector();
 void     ComplexTriDiagonalMatrixVector();
 void     RealVectorTriDiagonalMatrixVector();
 void     ComplexVectorTriDiagonalMatrixVector();
+uint32_t SumGreensfunctionsTriDiagonalRepresentation();
 
 /**********************************************************/
 /********         BasisMath/ListOfPoles.c          ********/
@@ -297,7 +298,8 @@ uint32_t MatrixToBlokTriDiagonalMatrix();
 uint32_t MatrixToBlokAndersonMatrix();
 uint32_t MatrixToDoubleTriDiagonalMatrixNoOverlap();
 uint32_t MatrixToBlokDoubleTriDiagonalMatrixNoOverlap();
-
+uint32_t TriDiagonalMatrixToSecondDoubleTriDiagonalMatrix();
+uint32_t MapSecondoubleTridiagonalMatrixToBA();
 
 
 /**********************************************************/

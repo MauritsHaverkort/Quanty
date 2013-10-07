@@ -81,7 +81,9 @@ uint32_t InitBADoubleTriDiagonalMatrix(BADoubleTriDiagonalMatrixType *const M)
   return 0;
 }
 
-
+/*
+ *
+ */
 void SetBADoubleTriDiagonalMatrixConVal(BADoubleTriDiagonalMatrixType *const M)
 {
   M->b0=sqrt(Sqr(M->con.b[0])+Sqr(M->val.b[0]));
@@ -94,6 +96,41 @@ void SetBADoubleTriDiagonalMatrixConVal(BADoubleTriDiagonalMatrixType *const M)
   M->bcB0 = M->con.b[0] * M->con.b[1];
   M->bvA0 = M->con.b[0] * M->val.b[1];
   M->bcA0 =-M->val.b[0] * M->con.b[1];
+}
+
+/*
+ *
+ */
+uint32_t MapSecondoubleTridiagonalMatrixToBA(SecondDoubleTriDiagonalMatrixType const A, BADoubleTriDiagonalMatrixType *const M)
+{
+  uint32_t i;
+  M->b0=A.b0;
+  M->a0=A.a0;
+  M->mu=A.mu;
+  M->acvB =  A.Dt.a0;
+  M->acvA = (A.Dt.con.a[0]+A.Dt.val.a[0])/2.0 ;
+  M->acvBA= A.Dt.b0;
+  M->bvB0 = 0;
+  M->bcB0 = 0;
+  M->bvA0 = A.Dt.val.b[0];
+  M->bcA0 = A.Dt.con.b[0];
+  M->con.N=A.Dt.con.N+1;
+  M->val.N=A.Dt.val.N+1;
+  InitTriDiagonalMatrix(&(M->con));
+  InitTriDiagonalMatrix(&(M->val));
+  for(i=1;i<M->con.N;i++)
+  {
+    M->con.a[i]=A.Dt.con.a[i-1];
+    M->con.b[i]=A.Dt.con.b[i-1];
+  }
+  M->con.a[M->con.N]=A.Dt.con.a[M->con.N-1];
+  for(i=1;i<M->val.N;i++)
+  {
+    M->val.a[i]=A.Dt.val.a[i-1];
+    M->val.b[i]=A.Dt.val.b[i-1];
+  }
+  M->val.a[M->val.N]=A.Dt.val.a[M->val.N-1];
+  return 0;
 }
 
 
@@ -257,9 +294,6 @@ uint32_t BADoubleTriDiagonalMatrixCopy(BADoubleTriDiagonalMatrixType * const M, 
   BADoubleTriDiagonalMatrixPart(M, A, A.val.N, A.val.N);
   return 0;
 }
-
-
-
 
 
 

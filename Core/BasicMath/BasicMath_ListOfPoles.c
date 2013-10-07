@@ -95,7 +95,7 @@ uint32_t SymmetrizeListOfPoles(ListOfPoles *const A)
   A->b=temp;
   for(i=0;i<A->N;i++)
   {
-    A->a[i+A->N]=-A->a[i];
+    A->a[i+A->N]=2*A->mu-A->a[i];
     A->b[i+A->N]=A->b[i];
   }
   A->N*=2;
@@ -606,13 +606,14 @@ uint32_t ListOfPolesMoveNegativeEnergyToMu(ListOfPoles *const A, double const mu
     totw+=A->b[i];
     if(A->a[i]<mu)
     {
-      A->a[i]=mu;
+      A->a[i]=mu*(1+10*DBL_EPSILON)+10*DBL_MIN;
       npoleshift++;
       weightpoleshift+=A->b[i];
     }
   }
   if(npoleshift)
   {
+    printf("******************** WARNING - NOT CONVERGED ********************\n");
     printf("List of poles %s, has %i poles of which %i are incorrectly at negative energies.\n",A->Name,A->N,npoleshift);
     printf("These have a total weight of %22.15E, (outof %22.15E) which has been shifted to mu=%22.15E\n",weightpoleshift,totw,mu);
   }
@@ -632,13 +633,14 @@ uint32_t ListOfPolesMovePositiveEnergyToMu(ListOfPoles *const A, double const mu
     totw+=A->b[i];
     if(A->a[i]>mu)
     {
-      A->a[i]=mu;
+      A->a[i]=mu*(1-10*DBL_EPSILON)-10*DBL_MIN;
       npoleshift++;
       weightpoleshift+=A->b[i];
     }
   }
   if(npoleshift)
   {
+    printf("******************** WARNING - NOT CONVERGED ********************\n");
     printf("List of poles %s, has %i poles of which %i are incorrectly at positive energies.\n",A->Name,A->N,npoleshift);
     printf("These have a total weight of %22.15E, (outof %22.15E) which has been shifted to mu=%22.15E\n",weightpoleshift,totw,mu);
   }
@@ -891,6 +893,8 @@ uint32_t ListOfPolesCopy(ListOfPoles *M, ListOfPoles B)
   M->N=B.N;
   if(InitListOfPoles(M)){printf("InitListOfPoles failed in ListOfPolesCopy\n");return 1;}
   M->a0=B.a0;
+  M->mu=B.mu;
+  strcpy(M->Name,B.Name);
   for(i=0;i<B.N;i++)
   {
     M->a[i]=B.a[i];

@@ -323,7 +323,7 @@ int mainOld2(int argc, const char * argv[])
       printf("t_b                         %22.15E                        %22.15E\n",BAG0.acvBA,GAnd.acvBA);
       printf("t_c                         %22.15E                        %22.15E\n",BAG0.bcB0,GAnd.bcB0);
       printf("t_c^p                       %22.15E                        %22.15E\n",BAG0.bcA0,GAnd.bcA0);
-      printf("t_v                         %22.15E                        %22.15E\n",BAG0.bvB0,GAnd.bvA0);
+      printf("t_v                         %22.15E                        %22.15E\n",BAG0.bvB0,GAnd.bvB0);
       printf("t_v^p                       %22.15E                        %22.15E\n",BAG0.bvA0,GAnd.bvA0);
       printf("(t_c)^2+(t_c^p)^2           %22.15E                        %22.15E\n",Sqr(BAG0.bcB0)+Sqr(BAG0.bcA0),Sqr(GAnd.bcB0)+Sqr(GAnd.bcA0));
       printf("(t_v)^2+(t_v^p)^2           %22.15E                        %22.15E\n",Sqr(BAG0.bvB0)+Sqr(BAG0.bvA0),Sqr(GAnd.bvB0)+Sqr(GAnd.bvA0));

@@ -532,6 +532,22 @@ uint32_t EigenstateToTridiagonalMatrix(double const *psi0, double const *val, ui
   return 0;
 }
 
+/*
+ *
+ */
+uint32_t AndersonMatrixToBADoubleTriDiagonalMatrixSimple(AndersonMatrixType const M, BADoubleTriDiagonalMatrixType * const A)
+{
+  TriDiagonalMatrixType MTri;
+  SecondDoubleTriDiagonalMatrixType MSecTri;
+  AndersonMatrixToTriDiagonalMatrix(M, &MTri, M.N);
+  TriDiagonalMatrixToSecondDoubleTriDiagonalMatrix(MTri,  &MSecTri, M.mu, 0.0000001);
+  MapSecondoubleTridiagonalMatrixToBA(MSecTri, A);
+  FreeTriDiagonalMatrix(&MTri);
+  FreeDoubleTriDiagonalMatrix(&(MSecTri.Dt));
+  return 0;
+}
+
+
 
 /*
  *
@@ -758,13 +774,13 @@ uint32_t AndersonMatrixToBADoubleTriDiagonalMatrixOld(AndersonMatrixType const M
 
 
 /*
- * ====>>> contains a fundamental ERRROR!!!!!
+ * 
  */
 uint32_t AndersonMatrixToBADoubleTriDiagonalMatrixTemperature(AndersonMatrixType const M, double const onsiteshift, double const kbT, BADoubleTriDiagonalMatrixType * const A, double * const occupation)
 {
   uint32_t i,j;
-  MatrixType Eigenfun;
-  double Eigenval[M.N], psival[M.N], psicon[M.N];
+  MatrixType Eigenfun,Eigenfundbl;
+  double Eigenval[2*M.N], psival[2*M.N], psicon[2*M.N];
   if(M.N==0)
   {
     printf("AndersonMatrixToBADoubleTriDiagonalMatrix called with a matrix of size 0\n");
@@ -829,16 +845,37 @@ uint32_t AndersonMatrixToBADoubleTriDiagonalMatrixTemperature(AndersonMatrixType
   else
   {
     printf("In AndersonMatrixToBADoubleTriDiagonalMatrix:\n Impurity occupation is %22.15E for shift %22.15E at chemical potential %22.15E\n",*occupation,onsiteshift,M.mu);
+    /* double Eigenfun and Eigenval */
+    Eigenfundbl.Ni=2*Eigenfun.Ni;
+    Eigenfundbl.Nj=2*Eigenfun.Nj;
+    InitMatrix(&Eigenfundbl);
+    for(i=0;i<Eigenfun.Ni;i++)
+    {
+      Eigenval[i+Eigenfun.Ni]=Eigenval[i];
+      for(j=0;j<Eigenfun.Nj;j++)
+      {
+        Eigenfundbl.VRe[i            ][j]            = Eigenfun.VRe[i][j]*sqrt(   FermiFunction(Eigenval[i], M.mu, kbT) );
+        Eigenfundbl.VRe[i            ][j+Eigenfun.Nj]= 0;
+        Eigenfundbl.VRe[i+Eigenfun.Ni][j]            = Eigenfun.VRe[i][j]*sqrt( 1-FermiFunction(Eigenval[i], M.mu, kbT) );
+        Eigenfundbl.VRe[i+Eigenfun.Ni][j+Eigenfun.Nj]= 0;
+      }
+      Eigenfundbl.VRe[i            ][i+Eigenfun.Nj]= sqrt( 1-FermiFunction(Eigenval[i], M.mu, kbT) );
+      Eigenfundbl.VRe[i+Eigenfun.Ni][i+Eigenfun.Nj]=-sqrt(   FermiFunction(Eigenval[i], M.mu, kbT) );
+    }
+    
+    
     /* create psival and psicon */
     for(i=0;i<Eigenfun.Ni;i++)
     {
-      psival[i]=sqrt(   FermiFunction(Eigenval[i], M.mu, kbT)  /    *occupation)  * Eigenfun.VRe[i][0];
-      psicon[i]=sqrt((1-FermiFunction(Eigenval[i], M.mu, kbT)) / (1-*occupation)) * Eigenfun.VRe[i][0];
+      psival[i            ]=sqrt( 1.0 /    *occupation)  * Eigenfundbl.VRe[i            ][0];
+      psival[i+Eigenfun.Ni]=0;
+      psicon[i+Eigenfun.Ni]=sqrt( 1.0 / (1-*occupation)) * Eigenfundbl.VRe[i+Eigenfun.Ni][0];
+      psicon[i            ]=0;
     }
     /* create A->val and A->con */
-    EigenstateToTridiagonalMatrix(psival, &(Eigenval[0]), Eigenfun.Ni, &(A->val));
+    EigenstateToTridiagonalMatrix(psival, &(Eigenval[0]), Eigenfundbl.Ni, &(A->val));
     A->val.b[0]=sqrt(*occupation);
-    EigenstateToTridiagonalMatrix(psicon, &(Eigenval[0]), Eigenfun.Ni, &(A->con));
+    EigenstateToTridiagonalMatrix(psicon, &(Eigenval[0]), Eigenfundbl.Ni, &(A->con));
     A->con.b[0]=sqrt(1.0-*occupation);
     A->a0=M.a[0];
     A->b0=M.b[0];
@@ -934,6 +971,7 @@ uint32_t TriDiagonalMatrixToListOfPoles(TriDiagonalMatrixType const M, ListOfPol
   FreeMatrix(&T);
   A->a0=M.a[0];
   A->mu=M.mu;
+  strcpy(A->Name,M.Name);
   return 0;
 }
 
@@ -1024,12 +1062,13 @@ uint32_t TriDiagonalMatrixToDoubleTriDiagonalMatrix(TriDiagonalMatrixType const 
 }
 
 
-uint32_t TriDiagonalMatrixToSecondDoubleTriDiagonalMatrix(TriDiagonalMatrixType const M, MatrixType *const T, SecondDoubleTriDiagonalMatrixType *const A, double Ef, double epsilon)
+uint32_t TriDiagonalMatrixToSecondDoubleTriDiagonalMatrix(TriDiagonalMatrixType const M, SecondDoubleTriDiagonalMatrixType *const A, double Ef, double epsilon)
 {
   TriDiagonalMatrixType SecTri;
   if(M.N<2){printf("Help error in TriDiagonalMatrixToSecondDoubleTriDiagonalMatrix catch not programmed yet\n");};
   A->a0=M.a[0];
   A->b0=M.b[0];
+  A->mu=M.mu;
   SecTri.N=M.N-1;
   SecTri.a=&(M.a[1]);
   SecTri.b=&(M.b[1]);

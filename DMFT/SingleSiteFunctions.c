@@ -536,7 +536,7 @@ uint32_t PrintInfoOnGBathAndG0InDMFTLoop(ListOfPoles const G0LP, BADoubleTriDiag
   printf("t_b                         %22.15E                        %22.15E\n",G0BA.acvBA,GBathBA.acvBA);
   printf("t_c                         %22.15E                        %22.15E\n",G0BA.bcB0,GBathBA.bcB0);
   printf("t_c^p                       %22.15E                        %22.15E\n",G0BA.bcA0,GBathBA.bcA0);
-  printf("t_v                         %22.15E                        %22.15E\n",G0BA.bvB0,GBathBA.bvA0);
+  printf("t_v                         %22.15E                        %22.15E\n",G0BA.bvB0,GBathBA.bvB0);
   printf("t_v^p                       %22.15E                        %22.15E\n",G0BA.bvA0,GBathBA.bvA0);
   printf("(t_c)^2+(t_c^p)^2           %22.15E                        %22.15E\n",Sqr(G0BA.bcB0)+Sqr(G0BA.bcA0),Sqr(GBathBA.bcB0)+Sqr(GBathBA.bcA0));
   printf("(t_v)^2+(t_v^p)^2           %22.15E                        %22.15E\n",Sqr(G0BA.bvB0)+Sqr(G0BA.bvA0),Sqr(GBathBA.bvB0)+Sqr(GBathBA.bvA0));
@@ -570,7 +570,7 @@ uint32_t PrintInfoOnGBathAndG0InDMFTFindGroundstate(AndersonMatrixType const G0A
   printf("t_b                         %22.15E                        %22.15E\n",G0BA.acvBA,GBathBA.acvBA);
   printf("t_c                         %22.15E                        %22.15E\n",G0BA.bcB0,GBathBA.bcB0);
   printf("t_c^p                       %22.15E                        %22.15E\n",G0BA.bcA0,GBathBA.bcA0);
-  printf("t_v                         %22.15E                        %22.15E\n",G0BA.bvB0,GBathBA.bvA0);
+  printf("t_v                         %22.15E                        %22.15E\n",G0BA.bvB0,GBathBA.bvB0);
   printf("t_v^p                       %22.15E                        %22.15E\n",G0BA.bvA0,GBathBA.bvA0);
   printf("(t_c)^2+(t_c^p)^2           %22.15E                        %22.15E\n",Sqr(G0BA.bcB0)+Sqr(G0BA.bcA0),Sqr(GBathBA.bcB0)+Sqr(GBathBA.bcA0));
   printf("(t_v)^2+(t_v^p)^2           %22.15E                        %22.15E\n",Sqr(G0BA.bvB0)+Sqr(G0BA.bvA0),Sqr(GBathBA.bvB0)+Sqr(GBathBA.bvA0));
@@ -597,10 +597,16 @@ uint32_t FindGroundStateFromG0andSigma(DMFTSettings const O, AndersonMatrixType 
   mulist[0]=*mu;
   iiter=0;
   GBathAndListAndRepresentation(G0, *mu, Sigma, &GBathAnd);
+  if((O.SymOpt)&2)
+  {
+    printf("Symmetrize the bath greens function around mu=%22.15E\n",GBathAnd.mu);
+    SymmetrizeAndersonMatrix(&GBathAnd);
+  }
   ReducePolesAndersonMatrixNumberFermi(&GBathAnd, O.NGBath, *mu);
   while(!converged)
   {
-    AndersonMatrixToBADoubleTriDiagonalMatrix(GBathAnd, onsiteshift[iiter], &GBathBA, &occupation);
+    // AndersonMatrixToBADoubleTriDiagonalMatrix(GBathAnd, onsiteshift[iiter], &GBathBA, &occupation);
+    AndersonMatrixToBADoubleTriDiagonalMatrixTemperature(GBathAnd, onsiteshift[iiter], 0.01, &GBathBA, &occupation);
     GBathBATrunc=GBathBA;
     GBathBATrunc.con.N=Min(GBathBA.con.N,O.NBath+1);
     GBathBATrunc.val.N=Min(GBathBA.val.N,O.NBath+1);
@@ -610,6 +616,11 @@ uint32_t FindGroundStateFromG0andSigma(DMFTSettings const O, AndersonMatrixType 
     {
       printf("Restricted HAnd for the ground-state to the first bath site\n");
       HAnd.l[2].N=8;
+    }
+    if((O.SymOpt)&2)
+    {
+      printf("Symmetrize the bath greens function around mu=%22.15E\n",GBathBA.mu);
+      SymmetrizeBADoubleTriDiagonalMatrix(&GBathBA);
     }
     /* if singlet set is true add the (U+1) * S^2 to the operator HAndGrd */
     if((O.SymOpt)&1)
@@ -1100,9 +1111,11 @@ uint32_t CreateGclDMFT(DMFTSettings const O, OperatorType const HAnd, WaveFuncti
   AddListOfPoles (&GclLP, GclPdnLP);
   ScaleListOfPoles(&GclLP,0.5);
   strcpy(GclLP.Name,"Gcluster");
+  GclLP.mu=mu;
   /* symmetrize */
   if((O.SymOpt)&2)
   {
+    printf("Symmetryze %s around mu = %22.15E\n",GclLP.Name,GclLP.mu);
     SymmetrizeListOfPoles(&GclLP);
   }
   printf("Cluster Green function created of size %i ",GclLP.N);
