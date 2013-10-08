@@ -164,29 +164,31 @@ uint32_t initializeDMFTReadSigma(DMFTSettings const O, ListOfPoles *const Sigma)
   char FileName[MAXStrLength];
   if(O.iStart==0)
   {
-    sprintf(FileName,"%s000",O.RootFileName);
+    sprintf(FileName,"%sSigma000",O.RootFileName);
   }
   else if(O.iStart<10)
   {
-    sprintf(FileName,"%s00%1i",O.RootFileName,O.iStart);
+    sprintf(FileName,"%sSigma00%1i",O.RootFileName,O.iStart);
   }
   else if(O.iStart<100)
   {
-    sprintf(FileName,"%s0%2i",O.RootFileName,O.iStart);
+    sprintf(FileName,"%sSigma0%2i",O.RootFileName,O.iStart);
   }
   else
   {
-    sprintf(FileName,"%s%i",O.RootFileName,O.iStart);
+    sprintf(FileName,"%sSigma%i",O.RootFileName,O.iStart);
   }
   if(file_exists(FileName))
   {
     if(FileReadListOfPolesUndetermined(Sigma,FileName)){printf("Fatal Error in main\n Failed to read G0 from file %s\n",FileName);return 1;};
     strcpy(Sigma->Name,"Sigma");
+    printf("\nRead Sigma from file \"%s\"\n",FileName);
+    PrintListOfPolesEssentials(*Sigma);
   }
   else
   {
     printf("File for the selfenergy %s does not excist\n",FileName);
-    printf("Start from the situation where Sigma=mu + 1/2 U / (w-mu)\n");
+    printf("Start from the situation where Sigma=0\n");
     Sigma->N=1;
     InitListOfPoles(Sigma);
     Sigma->a0=0;
@@ -605,8 +607,7 @@ uint32_t FindGroundStateFromG0andSigma(DMFTSettings const O, AndersonMatrixType 
   ReducePolesAndersonMatrixNumberFermi(&GBathAnd, O.NGBath, *mu);
   while(!converged)
   {
-    // AndersonMatrixToBADoubleTriDiagonalMatrix(GBathAnd, onsiteshift[iiter], &GBathBA, &occupation);
-    AndersonMatrixToBADoubleTriDiagonalMatrixTemperature(GBathAnd, onsiteshift[iiter], 0.01, &GBathBA, &occupation);
+    AndersonMatrixToBADoubleTriDiagonalMatrixTemperature(GBathAnd, onsiteshift[iiter], O.Teff, &GBathBA, &occupation);
     GBathBATrunc=GBathBA;
     GBathBATrunc.con.N=Min(GBathBA.con.N,O.NBath+1);
     GBathBATrunc.val.N=Min(GBathBA.val.N,O.NBath+1);

@@ -96,7 +96,7 @@ int main(int argc, const char *argv[])
       ListOfPolesCopy(&SigmaLPOld, SigmaLP);
       MixListOfPoles(&SigmaLP, SigmaLPNew, DMFTSet.Mix);
       
-      ReduceListOfPolesNumberFermi(&SigmaLP, DMFTSet.NGBath, 0.0);
+      ReduceListOfPolesNumberFermi(&SigmaLP, DMFTSet.NGBath, SigmaLP.mu);
       
       EndTiming("Calculate Selfenergy",&Time);
       
@@ -146,9 +146,9 @@ int main(int argc, const char *argv[])
       sprintf(SpecFileName,"%s%3i",DMFTSet.SpecRootFileName,iOuter+1);
     }
     FilePrintSpectra(Spectra, 7, SpecFileName, "w");
-    FilePrintAndersonMatrix(GBathAnd,GBathFileName,"w");
-    FilePrintAndersonMatrix(GClAnd,GClFileName,"w");
-    FilePrintListOfPoles(SigmaLP,GSigmaFileName,"w");
+    FilePrintPlainAndersonMatrix(GBathAnd,GBathFileName,"w");
+    FilePrintPlainAndersonMatrix(GClAnd,GClFileName,"w");
+    FilePrintPlainListOfPoles(SigmaLP,GSigmaFileName,"w");
     FilePrintWaveFunctionPlainBinary(Psi, PsiFileName, "w");
     
     FreeAndersonMatrix(&GBathAnd);

@@ -278,17 +278,23 @@ uint32_t StreamReadMatrixType(MatrixType * O, FILE *stream)
   return 0;
 }
 
-uint32_t StreamReadAndersonMatrixType(AndersonMatrixType * O, FILE *stream)
+uint32_t StreamReadPlainAndersonMatrixType(AndersonMatrixType * O, FILE *stream)
 {
-  char comments[1000];
+  double atemp,btemp;
   int i;
-  fscanf(stream,"%i",&(O->N)); fgets(comments,1000,stream);
-  if(InitAndersonMatrix(O)){printf("InitAndersonMatrix failed in StreamReadAndersonMatrixType\n");fflush(stdout);return 1;};
-  for(i=0;i<O->N;i++)
+  fscanf(stream,"%lf %lf %i",&atemp, &btemp, &(O->N));
+  if(ferror(stream)){printf("Error in StreamReadPlainAndersonMatrixType error nr: %i\n",ferror(stream));perror("");fflush(stdout);return 1;};
+  if(InitAndersonMatrix(O)){printf("InitAndersonMatrix failed in StreamReadPlainAndersonMatrixType with O->N=%i\n",O->N);fflush(stdout);return 1;};
+  O->a[0]=atemp;
+  O->b[0]=btemp;
+  for(i=1;i<O->N;i++)
   {
-    fscanf(stream,"%lf %lf",&(O->a[i]),&(O->b[i])); fgets(comments,1000,stream);
+    fscanf(stream,"%lf %lf", &(O->a[i]), &(O->b[i]));
+    if(ferror(stream)){printf("Error in StreamReadPlainAndersonMatrixType error nr: %i\n",ferror(stream));perror("");return 1;};
+    if(feof(stream)){printf("Error in StreamReadPlainAndersonMatrixType eof reached at line %i of %i\n",i,O->N);return 1;};
   }
-  fscanf(stream,"%lf",&(O->a[O->N]));
+  fscanf(stream,"%lf", &(O->a[O->N]));
+  if(ferror(stream)){printf("Error in StreamReadPlainAndersonMatrixType error nr: %i\n",ferror(stream));perror("");return 1;};
   return 0;
 }
 
@@ -308,18 +314,23 @@ uint32_t StreamReadPlainTriDiagonalMatrixType(TriDiagonalMatrixType * O, FILE *s
     if(feof(stream)){printf("Error in StreamReadPlainTriDiagonalMatrixType eof reached at line %i of %i\n",i,O->N);return 1;};
   }
   fscanf(stream,"%lf", &(O->a[O->N]));
+  if(ferror(stream)){printf("Error in StreamReadPlainTriDiagonalMatrixType error nr: %i\n",ferror(stream));perror("");return 1;};
   return 0;
 }
 
-uint32_t StreamReadListOfPoles(ListOfPoles * O, FILE *stream)
+uint32_t StreamReadPlainListOfPoles(ListOfPoles * O, FILE *stream)
 {
-  char comments[1000];
+  double atemp;
   int i;
-  fscanf(stream,"%i",&(O->N)); fgets(comments,1000,stream);
-  if(InitListOfPoles(O)){printf("InitListOfPoles failed in StreamReadPoleList\n");fflush(stdout);return 1;};
+  fscanf(stream,"%lf %i",&atemp, &(O->N));
+  if(ferror(stream)){printf("Error in StreamReadPlainListOfPoles error nr: %i\n",ferror(stream));perror("");fflush(stdout);return 1;};
+  if(InitListOfPoles(O)){printf("InitListOfPoles failed in StreamReadPlainListOfPoles with O->N=%i\n",O->N);fflush(stdout);return 1;};
+  O->a0=atemp;
   for(i=0;i<O->N;i++)
   {
-    fscanf(stream,"%lf %lf",&(O->a[i]),&(O->b[i])); fgets(comments,1000,stream);
+    if(feof(stream)){printf("Error in StreamReadPlainListOfPoles eof reached at line %i of %i\n",i,O->N);return 1;};
+    fscanf(stream,"%lf %lf", &(O->a[i]), &(O->b[i]));
+    if(ferror(stream)){printf("Error in StreamReadPlainListOfPoles error nr: %i\n",ferror(stream));perror("");return 1;};
   }
   return 0;
 }
@@ -339,13 +350,13 @@ uint32_t StreamReadListOfPolesUndetermined(ListOfPoles * O, FILE *stream)
   else if(strncmp(InputType,"and",3) == 0)
   {
     AndersonMatrixType    OAnd;
-    StreamReadAndersonMatrixType(&OAnd, stream);
+    StreamReadPlainAndersonMatrixType(&OAnd, stream);
     AndersonMatrixToListOfPoles(OAnd, O);
     FreeAndersonMatrix(&OAnd);
   }
   else if(strncmp(InputType,"lp",2) == 0)
   {
-    StreamReadListOfPoles(O, stream);
+    StreamReadPlainListOfPoles(O, stream);
   }
   else
   {
@@ -369,12 +380,12 @@ uint32_t StreamReadAndersonMatrixTypeUndetermined(AndersonMatrixType * O, FILE *
   }
   else if(strncmp(InputType,"and",3) == 0)
   {
-    StreamReadAndersonMatrixType(O, stream);
+    StreamReadPlainAndersonMatrixType(O, stream);
   }
   else if(strncmp(InputType,"lp",2) == 0)
   {
     ListOfPoles OLP;
-    StreamReadListOfPoles(&OLP, stream);
+    StreamReadPlainListOfPoles(&OLP, stream);
     ListOfPolesToAndersonMatrix(OLP, O);
     FreeListOfPoles(&OLP);
   }
@@ -400,12 +411,12 @@ uint32_t StreamReadAndersonMatrixTypeUndeterminedPlusMu(AndersonMatrixType * O, 
   }
   else if(strncmp(InputType,"and",3) == 0)
   {
-    StreamReadAndersonMatrixType(O, stream);
+    StreamReadPlainAndersonMatrixType(O, stream);
   }
   else if(strncmp(InputType,"lp",2) == 0)
   {
     ListOfPoles OLP;
-    StreamReadListOfPoles(&OLP, stream);
+    StreamReadPlainListOfPoles(&OLP, stream);
     ListOfPolesToAndersonMatrix(OLP, O);
     FreeListOfPoles(&OLP);
   }
@@ -567,6 +578,7 @@ uint32_t StreamReadDMFTSettings(DMFTSettings * O, FILE *stream)
   fscanf(stream,"%lf",&(O->Nelectron));              fgets(comments,1000,stream);
   fscanf(stream,"%lf",&(O->mu0));                    fgets(comments,1000,stream);
   fscanf(stream,"%lf",&(O->mu));                     fgets(comments,1000,stream);
+  fscanf(stream,"%lf",&(O->Teff));                   fgets(comments,1000,stream);
   fscanf(stream,"%i",&(O->NmuSym));                  fgets(comments,1000,stream);
   fscanf(stream,"%i",&(O->NSite));                   fgets(comments,1000,stream);
   fscanf(stream,"%i",&(O->iStart));                  fgets(comments,1000,stream);

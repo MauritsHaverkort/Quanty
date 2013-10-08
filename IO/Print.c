@@ -60,6 +60,12 @@ uint32_t PrintPlainMatrix(MatrixType M)
 uint32_t PrintPlainTriDiagonalMatrix(TriDiagonalMatrixType M)
 { return StreamPrintPlainTriDiagonalMatrix(M,stdout);}
 
+uint32_t PrintPlainAndersonMatrix(AndersonMatrixType M)
+{ return StreamPrintPlainAndersonMatrix(M,stdout);}
+
+uint32_t PrintPlainListOfPoles(ListOfPoles M)
+{ return StreamPrintPlainListOfPoles(M,stdout);}
+
 uint32_t PrintTightBindingDef(TightBindingDef O)
 { return StreamPrintTightBindingDef(O,stdout);}
 

@@ -654,6 +654,7 @@ uint32_t SelfEnergyListOfPolesFromAndersonRepresentation(AndersonMatrixType cons
       Sigma->b[i]=0;
     }
   }
+  Sigma->mu=G.mu;
   strcpy(Sigma->Name,"Self energy");
   printf("Self energy moments\n");
   PrintListOfPolesEssentials(*Sigma);

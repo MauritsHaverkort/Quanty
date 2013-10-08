@@ -52,7 +52,7 @@ uint32_t FileReadMatrixType(MatrixType * O, const char *const flname)
   return retval;
 }
 
-uint32_t FileReadAndersonMatrixType(AndersonMatrixType * O, const char *const flname)
+uint32_t FileReadPlainAndersonMatrixType(AndersonMatrixType * O, const char *const flname)
 {
   FILE *stream;
   uint32_t retval;
@@ -61,7 +61,7 @@ uint32_t FileReadAndersonMatrixType(AndersonMatrixType * O, const char *const fl
     printf("ERROR\nCan't open %s for reading.\n",flname);
     return 1;
   }
-  retval=StreamReadAndersonMatrixType(O,stream);
+  retval=StreamReadPlainAndersonMatrixType(O,stream);
   fclose(stream);
   return retval;
 }
@@ -80,7 +80,7 @@ uint32_t FileReadPlainTriDiagonalMatrixType(TriDiagonalMatrixType * O, const cha
   return retval;
 }
 
-uint32_t FileReadListOfPoles(ListOfPoles * O, const char *const flname)
+uint32_t FileReadPlainListOfPoles(ListOfPoles * O, const char *const flname)
 {
   FILE *stream;
   uint32_t retval;
@@ -89,7 +89,7 @@ uint32_t FileReadListOfPoles(ListOfPoles * O, const char *const flname)
     printf("ERROR\nCan't open %s for reading.\n",flname);
     return 1;
   }
-  retval=StreamReadListOfPoles(O,stream);
+  retval=StreamReadPlainListOfPoles(O,stream);
   fclose(stream);
   return retval;
 }

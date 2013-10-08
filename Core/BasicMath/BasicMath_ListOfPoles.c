@@ -79,6 +79,7 @@ uint32_t MixListOfPoles(ListOfPoles *const A, ListOfPoles const B, double const 
     A->b[i+A->N]=B.b[i]*(1-alpha);
   }
   A->a0=alpha*A->a0 + (1-alpha)*B.a0;
+  A->mu=alpha*A->mu + (1-alpha)*B.mu;
   A->N+=B.N;
   return 0;
 }

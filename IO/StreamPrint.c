@@ -577,20 +577,6 @@ uint32_t StreamPrintPlainMatrix(MatrixType M, FILE *stream)
 }
 
 
-/*  Prints a matrix
- */
-uint32_t StreamPrintPlainTriDiagonalMatrix(TriDiagonalMatrixType M, FILE *stream)
-{
-  uint32_t i;
-  fprintf(stream,"%22.15E %22.15E %i\n",M.a[0],M.b[0],M.N);
-  for(i=1;i<M.N;i++)
-  {
-    fprintf(stream,"%22.15E %22.15E\n",M.a[i],M.b[i]);
-  }
-  fprintf(stream,"%22.15E\n",M.a[M.N]);
-  return 0;
-}
-
 /*  Prints the structure TightBindingDef
  *
  */
@@ -811,6 +797,8 @@ uint32_t StreamPrintDMFTSettings(DMFTSettings O, FILE *stream)
   fprintf(stream,"number of electrons      : %22.15E\n",O.Nelectron);
   fprintf(stream,"Chemical potential of G0 : %22.15E\n",O.mu0);
   fprintf(stream,"Chemical potential of G  : %22.15E\n",O.mu);
+  fprintf(stream,"Effective temperature    : %22.15E\n",O.Teff);
+  fprintf(stream,"                         converged results do not depent on Teff, convergence speed and stability do\n");
   fprintf(stream,"Options for Chemical pot : %i\n",O.NmuSym);
   if((O.NmuSym)&1 )fprintf(stream,"                         ( 1) mu and mu0 are read from G0 and Sigma, values in imput ignored;\n");
   if((O.NmuSym)&2 )fprintf(stream,"                         ( 2) Calculations done at fixed mu, Nelectron ignored;\n");
@@ -1111,6 +1099,59 @@ uint32_t StreamPrintAndersonMatrixEssentials(AndersonMatrixType M, FILE *stream)
   fprintf(stream,"\n");
   return 0;
 }
+
+
+/*
+ * Prints a matrix in plaim format suitable for rereading
+ */
+uint32_t StreamPrintPlainTriDiagonalMatrix(TriDiagonalMatrixType M, FILE *stream)
+{
+  uint32_t i;
+  fprintf(stream,"tri %22.15E\n",M.mu);
+  fprintf(stream,"%22.15E %22.15E %i\n",M.a[0],M.b[0],M.N);
+  for(i=1;i<M.N;i++)
+  {
+    fprintf(stream,"%22.15E %22.15E\n",M.a[i],M.b[i]);
+  }
+  fprintf(stream,"%22.15E\n",M.a[M.N]);
+  return 0;
+}
+
+uint32_t StreamPrintPlainAndersonMatrix(AndersonMatrixType M, FILE *stream)
+{
+  uint32_t i;
+  fprintf(stream,"and %22.15E\n",M.mu);
+  fprintf(stream,"%22.15E %22.15E %i\n",M.a[0],M.b[0],M.N);
+  for(i=1;i<M.N;i++)
+  {
+    fprintf(stream,"%22.15E %22.15E\n",M.a[i],M.b[i]);
+  }
+  fprintf(stream,"%22.15E\n",M.a[M.N]);
+  return 0;
+}
+
+uint32_t StreamPrintPlainListOfPoles(ListOfPoles M, FILE *stream)
+{
+  uint32_t i;
+  fprintf(stream,"lp %22.15E\n",M.mu);
+  fprintf(stream,"%22.15E %i\n",M.a0,M.N);
+  for(i=0;i<M.N;i++)
+  {
+    fprintf(stream,"%22.15E %22.15E\n",M.a[i],M.b[i]);
+  }
+  return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
 
 uint32_t StreamPrintHarmonicsExpansion(HarmonicsExpansion M, FILE *stream)
 {

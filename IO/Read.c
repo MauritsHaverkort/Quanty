@@ -23,17 +23,17 @@ uint32_t ReadWaveFunctionPlainBinary(WaveFunctionType * O)
 uint32_t ReadMatrixType(MatrixType * O)
 { return StreamReadMatrixType(O,stdin);}
 
-uint32_t ReadAndersonMatrixType(AndersonMatrixType * O)
-{ return StreamReadAndersonMatrixType(O,stdin);}
+uint32_t ReadPlainAndersonMatrixType(AndersonMatrixType * O)
+{ return StreamReadPlainAndersonMatrixType(O,stdin);}
 
 uint32_t ReadPlainTriDiagonalMatrix(TriDiagonalMatrixType * M)
 { return StreamReadPlainTriDiagonalMatrixType(M,stdout);}
 
-uint32_t ReadAndersonMatrix(AndersonMatrixType * M)
-{ return StreamReadAndersonMatrixType(M,stdout);}
+uint32_t ReadPlainAndersonMatrix(AndersonMatrixType * M)
+{ return StreamReadPlainAndersonMatrixType(M,stdout);}
 
 uint32_t ReadListOfPoles(ListOfPoles * M)
-{ return StreamReadListOfPoles(M,stdout);}
+{ return StreamReadPlainListOfPoles(M,stdout);}
 
 uint32_t ReadListOfPolesUndetermined(ListOfPoles * M)
 { return StreamReadListOfPolesUndetermined(M,stdout);}

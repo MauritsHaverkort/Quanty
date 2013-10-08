@@ -620,6 +620,8 @@ typedef struct DMFTSettings
   double   Nelectron;                        /* Filling of the impurity */
   double   mu;                               /* Chemical potential of the lattice Greensfunction */
   double   mu0;                              /* Chemical potential of G0 */
+  double   Teff;                             /* effective temperature when determening the relation between chemical potential and filling for the bath */
+  double   T;                                /* real temperature in the cluster not jet implemented */
   uint32_t NmuSym;                           /* 0000 0000 mu0 and mu from input file are used as starting values */
                                              /*           mu is optimized during the loops in order to fix the occupation to Nelectron */
                                              /* 0000 0001 Before start chemical potential mu and mu0 are read from G0 and Sigma input files */

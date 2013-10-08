@@ -294,6 +294,44 @@ uint32_t FilePrintPlainTriDiagonalMatrix(TriDiagonalMatrixType M, const char *co
   return retval;
 }
 
+uint32_t FilePrintPlainAndersonMatrix(AndersonMatrixType M, const char *const flname, const char *const mode)
+{
+  FILE *stream;
+  uint32_t retval;
+  if((strcmp(mode,"w")&&strcmp(mode,"a"))!=0)
+  {
+    printf("ERROR in FilePrintPlainAndersonMatrix.\nmode must be either \"w\" for overwrite or \"a\" for append\n %s as input is not excepted\n",mode);
+    return 1;
+  }
+  if((stream=fopen(flname,mode))==NULL)
+  {
+    printf("ERROR\nCan't open %s for writing with mode %s.\n",flname,mode);
+    return 1;
+  }
+  retval=StreamPrintPlainAndersonMatrix(M,stream);
+  fclose(stream);
+  return retval;
+}
+
+uint32_t FilePrintPlainListOfPoles(ListOfPoles M, const char *const flname, const char *const mode)
+{
+  FILE *stream;
+  uint32_t retval;
+  if((strcmp(mode,"w")&&strcmp(mode,"a"))!=0)
+  {
+    printf("ERROR in FilePrintPlainListOfPoles.\nmode must be either \"w\" for overwrite or \"a\" for append\n %s as input is not excepted\n",mode);
+    return 1;
+  }
+  if((stream=fopen(flname,mode))==NULL)
+  {
+    printf("ERROR\nCan't open %s for writing with mode %s.\n",flname,mode);
+    return 1;
+  }
+  retval=StreamPrintPlainListOfPoles(M,stream);
+  fclose(stream);
+  return retval;
+}
+
 uint32_t FilePrintTightBindingDef(TightBindingDef O, const char *const flname, const char *const mode)
 {
   FILE *stream;
