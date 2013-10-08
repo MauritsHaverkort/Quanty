@@ -588,7 +588,7 @@ uint32_t PrintInfoOnGBathAndG0InDMFTFindGroundstate(AndersonMatrixType const G0A
 uint32_t FindGroundStateFromG0andSigma(DMFTSettings const O, AndersonMatrixType const G0, ListOfPoles const Sigma, double *const mu, double *const Nelectron, WaveFunctionType *const Psi, BADoubleTriDiagonalMatrixType *const GBathBARet, AndersonMatrixType *const GBathAndRet, TimeType *const Time)
 {
   uint32_t i, j, converged=0, iiter;
-  uint32_t const nitermax=30, nitermem=40;
+  uint32_t const nitermax=50, nitermem=60;
   AndersonMatrixType GBathAnd;
   BADoubleTriDiagonalMatrixType GBathBA, GBathBATrunc;
   double WaveFunctionAccuracy, PsiEnergy, PsiQuality,onsiteshift[nitermax+1],occupation, Rho[4+4*O.NBath], occlist[nitermax+1], ABocclist[nitermax+1], mulist[nitermax+1];
@@ -607,6 +607,7 @@ uint32_t FindGroundStateFromG0andSigma(DMFTSettings const O, AndersonMatrixType 
   ReducePolesAndersonMatrixNumberFermi(&GBathAnd, O.NGBath, *mu);
   while(!converged)
   {
+    GBathAnd.mu=mulist[iiter];
     AndersonMatrixToBADoubleTriDiagonalMatrixTemperature(GBathAnd, onsiteshift[iiter], O.Teff, &GBathBA, &occupation);
     GBathBATrunc=GBathBA;
     GBathBATrunc.con.N=Min(GBathBA.con.N,O.NBath+1);
@@ -678,7 +679,7 @@ uint32_t FindGroundStateFromG0andSigma(DMFTSettings const O, AndersonMatrixType 
         }
         else
         {
-          onsiteshift[iiter+1]=InterpolateRootOfset(&(onsiteshift[Max(iiter,nitermem)-nitermem]), ABocclist, iiter+1, O.NSite);
+          onsiteshift[iiter+1]=InterpolateRootOfset(&(onsiteshift[Max(iiter,nitermem)-nitermem]), &(ABocclist[Max(iiter,nitermem)-nitermem]), Min(iiter+1,nitermem), O.NSite);
         }
         iiter++;
       }
@@ -689,19 +690,36 @@ uint32_t FindGroundStateFromG0andSigma(DMFTSettings const O, AndersonMatrixType 
     }
     else
     {
-      /* calculations at constant occupation, find the correct mu */
-      printf("Not jet implemented\n");
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
+      /* calculations at constant occupation, find the correct mu and onsiteshift */
+      if((Abs(ABocclist[iiter]-O.NSite)>100*DBL_EPSILON)||(Abs(occlist[iiter]-*Nelectron)>100*DBL_EPSILON))
+      {
+        if( iiter == 0)
+        {
+          onsiteshift[iiter+1]=onsiteshift[iiter]-(ABocclist[iiter]-O.NSite)*(Abs(G0.b[1])+Abs(O.U/2));
+          mulist[iiter+1]=mulist[iiter];
+        }
+        else if (iiter == nitermax)
+        {
+          printf("occupation of bath and impurity green function did not converge in %i itterations\n",iiter);
+          printf("loop   onsiteshift            total occupation       mu                     impurity occupation\n");
+          for(j=0;j<iiter;j++)
+          {
+            printf("%3i %22.15E %22.15E %22.15E %22.15E\n",j,onsiteshift[j],ABocclist[j],mulist[j],occlist[j]);
+          }
+          converged=1;
+          *mu=mulist[nitermax];
+        }
+        else
+        {
+          InterpolateRoot2DOfset(&(onsiteshift[Max(iiter,nitermem)-nitermem]),&(mulist[Max(iiter,nitermem)-nitermem]), &(ABocclist[Max(iiter,nitermem)-nitermem]), &(occlist[Max(iiter,nitermem)-nitermem]), Min(iiter+1,nitermem), O.NSite, *Nelectron, &(onsiteshift[iiter+1]), &(mulist[iiter+1]));
+        }
+        iiter++;
+      }
+      else
+      {
+        converged=1;
+        *mu=mulist[iiter];
+      }
     }
     if(!converged) FreeOperator(&HAnd);
   }

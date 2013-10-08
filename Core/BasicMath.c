@@ -223,10 +223,12 @@ double InterpolateRoot(double const *x, double const *y, uint32_t N)
   }
   if(firstpos==0)
   {
+    if(ysort[1]==ysort[0]) return xsort[0];
     return (xsort[0] - ysort[0]*(xsort[1]-xsort[0])/(ysort[1]-ysort[0]));
   }
   else if(firstpos==N)
   {
+    if(ysort[N-1]==ysort[N-2]) return xsort[N-1];
     return (xsort[N-1] - ysort[N-1] * (xsort[N-1] - xsort[N-2])/(ysort[N-1] - ysort[N-2]));
   }
   else
@@ -253,6 +255,53 @@ double InterpolateRootOfset(double const *x, double const *y, uint32_t N, double
     yoff[i]=y[i]-ofset;
   }
   return InterpolateRoot(x,yoff,N);
+}
+
+void InterpolateRoot2D(double const *x1, double const *x2, double const *y1, double const *y2, uint32_t N, double * const x1next, double * const x2next)
+{
+  uint32_t const maxit1=10;
+  uint32_t i;
+  double x2step[N],y2step[N];
+  if(N==1)
+  {
+    *x1next = x1[0]+y1[0];
+    *x2next = x2[0];
+    return;
+  }
+  if((N%maxit1)==0)
+  {
+    /* step in second direction */
+    printf("\n\n\nNew loop\n\n\n");
+    for(i=maxit1-1;i<N;i+=maxit1)
+    {
+      x2step[((i+1)/maxit1)-1]=x2[i];
+      y2step[((i+1)/maxit1)-1]=y2[i];
+      printf("%22.15E %22.15E %i\n",x2[i],y2[i],((i+1)/maxit1)-1);
+    }
+    *x1next = x1[N-1];
+    *x2next = InterpolateRoot(x2step, y2step, (N/maxit1));
+    printf("%22.15E \n\n\n\n",*x2next);
+  }
+  else
+  {
+    *x2next = x2[N-1];
+    *x1next = InterpolateRoot(&(x1[N-(N%maxit1)]), &(y1[N-(N%maxit1)]), N%maxit1);
+  }
+  return;
+}
+
+
+void InterpolateRoot2DOfset(double const *x1, double const *x2, double const *y1, double const *y2, uint32_t N, double const ofsety1, double const ofsety2, double * const x1next, double * const x2next)
+{
+  double y1off[N],y2off[N];
+  uint32_t i;
+  for(i=0;i<N;i++)
+  {
+    y1off[i]=y1[i]-ofsety1;
+    y2off[i]=y2[i]-ofsety2;
+  }
+  InterpolateRoot2D(x1,x2,y1off,y2off,N,x1next,x2next);
+  return;
 }
 
 

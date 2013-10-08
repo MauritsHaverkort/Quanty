@@ -774,7 +774,14 @@ uint32_t AndersonMatrixToBADoubleTriDiagonalMatrixOld(AndersonMatrixType const M
 
 
 /*
- * 
+ *  Given GBath in anderson form, return GBath in BA form.
+ *
+ *  an onsite energy (onsiteshift) is added to the impurity site
+ *  the one particle Hamiltonian is diagonalized
+ *  using the chemical potential M.mu and temperature kbT the occupation is determined
+ *  a valence and conduction function is defined such that the impurity function is a linear combinaiton of the two.
+ *  a tridiagonal form of the valence and conduction states is created starting from the valence and conduction functions.
+ *  The valence and conduction functions are linear combined to the impurity and extra site in the BA form.
  */
 uint32_t AndersonMatrixToBADoubleTriDiagonalMatrixTemperature(AndersonMatrixType const M, double const onsiteshift, double const kbT, BADoubleTriDiagonalMatrixType * const A, double * const occupation)
 {
@@ -863,7 +870,6 @@ uint32_t AndersonMatrixToBADoubleTriDiagonalMatrixTemperature(AndersonMatrixType
       Eigenfundbl.VRe[i+Eigenfun.Ni][i+Eigenfun.Nj]=-sqrt(   FermiFunction(Eigenval[i], M.mu, kbT) );
     }
     
-    
     /* create psival and psicon */
     for(i=0;i<Eigenfun.Ni;i++)
     {
@@ -888,6 +894,51 @@ uint32_t AndersonMatrixToBADoubleTriDiagonalMatrixTemperature(AndersonMatrixType
   return 0;
 }
 
+/*
+ *  Determine mu such that the occupation of the first state in Eigenfun is equal to Nelec
+ */
+uint32_t DetermineMuFromEigensystem(MatrixType const Eigenfun, double const * Eigenval, double const Nelec, double const kbT, double * const mu)
+{
+  uint32_t const maxitter=30;
+  uint32_t i,converged=0,itter=0;
+  double occupation[maxitter+1], mulist[maxitter+1];
+  occupation[0]=0;
+  if((Nelec<=0)||(Nelec>=1))
+  {
+    return 0;
+  }
+  mulist[0]=*mu;
+  while(!converged)
+  {
+    for(i=0;i<Eigenfun.Ni;i++)
+    {
+      occupation[itter]+=Sqr(Eigenfun.VRe[i][0])*FermiFunction(Eigenval[i], mulist[itter], kbT);
+    }
+    if(Abs(occupation[itter]-Nelec)<100*DBL_EPSILON)
+    {
+      converged=1;
+    }
+    if(itter==0)
+    {
+      mulist[1]=*mu+0.1;
+    }
+    else
+    {
+      mulist[itter+1]=InterpolateRootOfset(mulist,occupation,itter+1,Nelec);
+    }
+    if(itter==maxitter)
+    {
+      printf("in DetermineMuFromEigensystem reached maximum itterations\n");
+      
+      converged=1;
+    }
+    else if(!converged)
+    {
+      itter++;
+    }
+  }
+  return 0;
+}
 
 /*
  *

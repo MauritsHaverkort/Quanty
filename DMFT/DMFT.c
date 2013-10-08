@@ -83,7 +83,7 @@ int main(int argc, const char *argv[])
       BeginTiming("Set up the V and g",&Time);
       createGBathBATruncandVPerturbation(DMFTSet, GBathBA, &GBathBATrunc, VPerturbation, gPerturbation);
       EndTiming("Set up the V and g",&Time);
-          
+      
       BeginTiming("Calculate G cluster",&Time);
       {
         TestIfPsiHasCorrectDimensions(GBathBATrunc, &Psi);
