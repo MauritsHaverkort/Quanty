@@ -585,7 +585,7 @@ uint32_t PrintInfoOnGBathAndG0InDMFTFindGroundstate(AndersonMatrixType const G0A
 /*
  *
  */
-uint32_t FindGroundStateFromG0andSigma(DMFTSettings const O, AndersonMatrixType const G0, ListOfPoles const Sigma, double *const mu, double *const Nelectron, WaveFunctionType *const Psi, BADoubleTriDiagonalMatrixType *const GBathBARet, AndersonMatrixType *const GBathAndRet, TimeType *const Time)
+uint32_t FindGroundStateFromG0andSigma(DMFTSettings const O, AndersonMatrixType const G0, ListOfPoles const Sigma, double *const mu, double *const Nelectron, WaveFunctionType *const Psi, BADoubleTriDiagonalMatrixType *const GBathBARet, AndersonMatrixType *const GBathAndRet, TimeType *const Time, double *const onsiteshiftstart)
 {
   uint32_t i, j, converged=0, iiter;
   uint32_t const nitermax=50, nitermem=60;
@@ -595,7 +595,7 @@ uint32_t FindGroundStateFromG0andSigma(DMFTSettings const O, AndersonMatrixType 
   OperatorType HAnd,Sx,Sy,Sz,S2;
   uint16_t *SpinUp,*SpinDn;
   WaveFunctionAccuracy=O.zeroLancWavefunction;
-  onsiteshift[0]=*mu;
+  onsiteshift[0]=*onsiteshiftstart;
   mulist[0]=*mu;
   iiter=0;
   GBathAndListAndRepresentation(G0, *mu, Sigma, &GBathAnd);
@@ -676,6 +676,8 @@ uint32_t FindGroundStateFromG0andSigma(DMFTSettings const O, AndersonMatrixType 
             printf("%3i %22.15E %22.15E %22.15E %22.15E\n",j,onsiteshift[j],ABocclist[j],mulist[j],occlist[j]);
           }
           converged=1;
+          /* pass the converged onsite shift back to onsiteshift start as the next starting point */
+          *onsiteshiftstart = onsiteshift[iiter];
         }
         else
         {
@@ -686,6 +688,8 @@ uint32_t FindGroundStateFromG0andSigma(DMFTSettings const O, AndersonMatrixType 
       else
       {
         converged=1;
+        /* pass the converged onsite shift back to onsiteshift start as the next starting point */
+        *onsiteshiftstart = onsiteshift[iiter];
       }
     }
     else
