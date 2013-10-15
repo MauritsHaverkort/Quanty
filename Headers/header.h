@@ -7,6 +7,22 @@
 /**********************************************************/
 /*****************       blas/lapack      *****************/
 /**********************************************************/
+#ifdef BLASunderscore
+  #define dcopy dcopy_
+  #define dstev dstev_;
+  #define dstevd dstevd_;
+  #define dsyev dsyev_;
+  #define dsyevd dsyevd_;
+  #define zheev zheev_;
+  #define zheevd zheevd_;
+  #define dgesvd dgesvd_;
+  #define zgesvd zgesvd_;
+  #define dsygv dsygv_;
+  #define zhegv zhegv_;
+  #define dsygvd dsygvd_;
+  #define zhegvd zhegvd_;
+#endif
+
 int dstev();
 int dstevd();
 int dsyev();
