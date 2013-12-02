@@ -102,7 +102,7 @@ uint32_t initializeDMFTReadG0(DMFTSettings *const O, AndersonMatrixType *const G
   strcpy(G0And->Name,"G0");
   if((O->SymOpt)&2)
   {
-    printf("Symmetrize G0(w) -= G0(-w)^*\n");
+    printf("Symmetrize G0(w-mu0) -= G0(mu0-w)^*\n");
     SymmetrizeAndersonMatrix(G0And);
   }
   printf("\nRead G0 from file \"%s\"\n",O->G0FileName);
@@ -599,11 +599,14 @@ uint32_t FindGroundStateFromG0andSigma(DMFTSettings const O, AndersonMatrixType 
   mulist[0]=*mu;
   iiter=0;
   GBathAndListAndRepresentation(G0, *mu, Sigma, &GBathAnd);
+  /*
+  The bath Greens function is not symmetric around mu
   if((O.SymOpt)&2)
   {
     printf("Symmetrize the bath greens function around mu=%22.15E\n",GBathAnd.mu);
     SymmetrizeAndersonMatrix(&GBathAnd);
   }
+  */
   ReducePolesAndersonMatrixNumberFermi(&GBathAnd, O.NGBath, *mu);
   while(!converged)
   {
@@ -619,11 +622,14 @@ uint32_t FindGroundStateFromG0andSigma(DMFTSettings const O, AndersonMatrixType 
       printf("Restricted HAnd for the ground-state to the first bath site\n");
       HAnd.l[2].N=8;
     }
+    /*
+    The bath Greens function is not symmetric around mu
     if((O.SymOpt)&2)
     {
       printf("Symmetrize the bath greens function around mu=%22.15E\n",GBathBA.mu);
       SymmetrizeBADoubleTriDiagonalMatrix(&GBathBA);
     }
+    */
     /* if singlet set is true add the (U+1) * S^2 to the operator HAndGrd */
     if((O.SymOpt)&1)
     {

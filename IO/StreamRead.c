@@ -585,7 +585,6 @@ uint32_t StreamReadDMFTSettings(DMFTSettings * O, FILE *stream)
   fscanf(stream,"%i",&(O->Ni));                      fgets(comments,1000,stream);
   fscanf(stream,"%i",&(O->Dyson));                   fgets(comments,1000,stream);
   fscanf(stream,"%i",&(O->SymOpt));                  fgets(comments,1000,stream);
-  if((O->SymOpt)&8)O->NmuSym&=2;
   fscanf(stream,"%i",&(O->NGCluster));               fgets(comments,1000,stream);
   fscanf(stream,"%i",&(O->NGBath));                  fgets(comments,1000,stream);
   fscanf(stream,"%lf",&(O->Mix));                    fgets(comments,1000,stream);
@@ -614,6 +613,11 @@ uint32_t StreamReadDMFTSettings(DMFTSettings * O, FILE *stream)
   fscanf(stream,"%lf",&(O->zeroLancWavefunction));   fgets(comments,1000,stream);
   fscanf(stream,"%i",&(O->NTriDiag));                fgets(comments,1000,stream);
   fscanf(stream,"%i",&(O->NBitsKey));                fgets(comments,1000,stream);
+  if((O->SymOpt)&8)
+  {
+    O->NmuSym&=2;
+    O->mu=O->U/2.0;
+  }
   return 0;
 }
 

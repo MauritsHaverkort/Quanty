@@ -129,7 +129,7 @@ uint32_t CreateOperatorCoulombTwoShellsConstantOccupation(uint32_t const NFermio
            *  thus m3-l2 <= m1 + m2 <= m3+l2
            */
           m4=m1+m2-m3;
-          val=-0.5*SlaterCoefficientC(k, l1, m1, l1, m3)*SlaterCoefficientC(k, l2, m4, l2, m2);
+          val=-SlaterCoefficientC(k, l1, m1, l1, m3)*SlaterCoefficientC(k, l2, m4, l2, m2);
           if(Abs(val)>DBL_EPSILON)
           {
             for(s1=0;s1<=1;s1++)
@@ -155,14 +155,14 @@ uint32_t CreateOperatorCoulombTwoShellsConstantOccupation(uint32_t const NFermio
     {
       for(m2=-l2;m2<=l2;m2++)
       {
-        for(m3=Max(-l2,m1+m2+l1);m3<=Min(l2,m1+m2-l1);m3++)
+        for(m3=Max(-l2,m1+m2-l1);m3<=Min(l2,m1+m2+l1);m3++)
         {
           /* -l1 >= m4 >= l1
            * -l1 >= m1+m2-m3 >= l1
            *  thus m3-l1 >= m1 + m2 >= m3+l1
            */
           m4=m1+m2-m3;
-          val=-0.5*SlaterCoefficientC(k, l1, m1, l2, m3)*SlaterCoefficientC(k, l1, m4, l2, m2);
+          val=-SlaterCoefficientC(k, l1, m1, l2, m3)*SlaterCoefficientC(k, l1, m4, l2, m2);
           if(Abs(val)>DBL_EPSILON)
           {
             for(s1=0;s1<=1;s1++)

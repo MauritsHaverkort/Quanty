@@ -620,7 +620,7 @@ uint32_t DifferenceGreensFunctionTriDiagonalRepresentation(TriDiagonalMatrixType
 }
 
 
-/* S = G0^{-1} - G^{-1}
+/* S = Gbath^{-1} - Gcluster^{-1}
  *
  */
 uint32_t SelfEnergyTriDiagonalRepresentation(TriDiagonalMatrixType const G0, TriDiagonalMatrixType const G, TriDiagonalMatrixType *const Sigma)
