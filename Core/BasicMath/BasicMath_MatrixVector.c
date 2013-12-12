@@ -134,7 +134,6 @@ uint32_t InitIdentityMatrix(MatrixType *const M)
   M->VRe=MatrixCalloc(M->Ni,M->Nj);
   if(M->VRe==NULL)
   {
-    free(M->Name);
     return 1;
   }
   if(M->QComplex)

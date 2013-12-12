@@ -21,6 +21,7 @@
   #define zhegv zhegv_
   #define dsygvd dsygvd_
   #define zhegvd zhegvd_
+  #define zdotc zdotc_
 #endif
 
 int dstev();
