@@ -974,8 +974,12 @@ uint32_t TriDiagonalMatrixToEigensystem(TriDiagonalMatrixType const M, MatrixTyp
   double e[M.N];
   int lwork=(1+4*M.N+Sqr(M.N));
   int liwork=3+5*M.N;
-  double work[lwork];
-  int iwork[liwork];
+  double *work;
+  int *iwork;
+  work=malloc(lwork*sizeof(double));
+  if(work==NULL){printf("malloc of work failed in TriDiagonalMatrixToEigensystem\n");return 1;};
+  iwork=malloc(liwork*sizeof(int));
+  if(iwork==NULL){printf("malloc of iwork failed in TriDiagonalMatrixToEigensystem\n");return 1;};
   
   for(i=0;i<M.N-1;i++)e[i]=M.b[i+1];
   e[M.N-1]=0.0;
