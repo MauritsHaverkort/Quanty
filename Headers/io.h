@@ -60,7 +60,7 @@ uint32_t StreamPrintBlokDoubleTriDiagonalMatrix();
 uint32_t StreamPrintAndersonMatrix();
 uint32_t StreamPrintBlokAndersonMatrix();
 uint32_t StreamListOfPoles();
-uint32_t StreamPrintOperatorFullReadable(OperatorType O, FILE *stream);
+uint32_t StreamPrintOperatorFullReadable(OperatorType O, FILE * stream);
 uint32_t StreamPrintListOfPolesEssentials();
 uint32_t StreamPrintAndersonMatrixEssentials();
 

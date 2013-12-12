@@ -1,7 +1,7 @@
-uint32_t file_exists(const char * filename)
+uint32_t file_exists(const char *filename)
 {
-  FILE *stream;
-  if((stream=fopen(filename, "r")))
+  FILE  *stream;
+  if ((stream = fopen(filename, "r")))
   {
     fclose(stream);
     return 1;
@@ -12,126 +12,127 @@ uint32_t file_exists(const char * filename)
 
 uint32_t FileReadWaveFunctionPlain(WaveFunctionType * O, const char *const flname)
 {
-  FILE *stream;
+  FILE  *stream;
   uint32_t retval;
-  if((stream=fopen(flname,"r"))==NULL)
+  if ((stream = fopen(flname, "r")) == NULL)
   {
-    printf("ERROR\nCan't open %s for reading.\n",flname);
+    printf("ERROR\nCan't open %s for reading.\n", flname);
     return 1;
   }
-  retval=StreamReadWaveFunctionPlain(O,stream);
+  retval = StreamReadWaveFunctionPlain(O, stream);
   fclose(stream);
   return retval;
 }
 
 uint32_t FileReadWaveFunctionPlainBinary(WaveFunctionType * O, const char *const flname)
 {
-  FILE *stream;
+  FILE  *stream;
   uint32_t retval;
-  if((stream=fopen(flname,"r"))==NULL)
+  if ((stream = fopen(flname, "r")) == NULL)
   {
-    printf("ERROR\nCan't open %s for reading.\n",flname);
+    printf("ERROR\nCan't open %s for reading.\n", flname);
     return 1;
   }
-  retval=StreamReadWaveFunctionPlainBinary(O,stream);
+  retval = StreamReadWaveFunctionPlainBinary(O, stream);
   fclose(stream);
   return retval;
 }
 
 uint32_t FileReadMatrixType(MatrixType * O, const char *const flname)
 {
-  FILE *stream;
+  FILE  *stream;
   uint32_t retval;
-  if((stream=fopen(flname,"r"))==NULL)
+  if ((stream = fopen(flname, "r")) == NULL)
   {
-    printf("ERROR\nCan't open %s for reading.\n",flname);
+    printf("ERROR\nCan't open %s for reading.\n", flname);
     return 1;
   }
-  retval=StreamReadMatrixType(O,stream);
+  retval = StreamReadMatrixType(O, stream);
   fclose(stream);
   return retval;
 }
 
 uint32_t FileReadPlainAndersonMatrixType(AndersonMatrixType * O, const char *const flname)
 {
-  FILE *stream;
+  FILE  *stream;
   uint32_t retval;
-  if((stream=fopen(flname,"r"))==NULL)
+  if ((stream = fopen(flname, "r")) == NULL)
   {
-    printf("ERROR\nCan't open %s for reading.\n",flname);
+    printf("ERROR\nCan't open %s for reading.\n", flname);
     return 1;
   }
-  retval=StreamReadPlainAndersonMatrixType(O,stream);
+  retval = StreamReadPlainAndersonMatrixType(O, stream);
   fclose(stream);
   return retval;
 }
 
 uint32_t FileReadPlainTriDiagonalMatrixType(TriDiagonalMatrixType * O, const char *const flname)
 {
-  FILE *stream;
+  FILE  *stream;
   uint32_t retval;
-  if((stream=fopen(flname,"r"))==NULL)
+  if ((stream = fopen(flname, "r")) == NULL)
   {
-    printf("ERROR\nCan't open %s for reading.\n",flname);
+    printf("ERROR\nCan't open %s for reading.\n", flname);
     return 1;
   }
-  retval=StreamReadPlainTriDiagonalMatrixType(O,stream);
+  retval = StreamReadPlainTriDiagonalMatrixType(O, stream);
   fclose(stream);
   return retval;
 }
 
 uint32_t FileReadPlainListOfPoles(ListOfPoles * O, const char *const flname)
 {
-  FILE *stream;
+  FILE  *stream;
   uint32_t retval;
-  if((stream=fopen(flname,"r"))==NULL)
+  if ((stream = fopen(flname, "r")) == NULL)
   {
-    printf("ERROR\nCan't open %s for reading.\n",flname);
+    printf("ERROR\nCan't open %s for reading.\n", flname);
     return 1;
   }
-  retval=StreamReadPlainListOfPoles(O,stream);
+  retval = StreamReadPlainListOfPoles(O, stream);
   fclose(stream);
   return retval;
 }
 
 uint32_t FileReadListOfPolesUndetermined(ListOfPoles * O, const char *const flname)
 {
-  FILE *stream;
+  FILE  *stream;
   uint32_t retval;
-  if((stream=fopen(flname,"r"))==NULL)
+  if ((stream = fopen(flname, "r")) == NULL)
   {
-    printf("ERROR\nCan't open %s for reading.\n",flname);
+    printf("ERROR\nCan't open %s for reading.\n", flname);
     return 1;
   }
-  retval=StreamReadListOfPolesUndetermined(O,stream);
+  retval = StreamReadListOfPolesUndetermined(O, stream);
   fclose(stream);
   return retval;
 }
 
 uint32_t FileReadAndersonMatrixTypeUndetermined(AndersonMatrixType * O, const char *const flname)
 {
-  FILE *stream;
+  FILE  *stream;
   uint32_t retval;
-  if((stream=fopen(flname,"r"))==NULL)
+  if ((stream = fopen(flname, "r")) == NULL)
   {
-    printf("ERROR\nCan't open %s for reading.\n",flname);
+    printf("ERROR\nCan't open %s for reading.\n", flname);
     return 1;
   }
-  retval=StreamReadAndersonMatrixTypeUndetermined(O,stream);
+  retval = StreamReadAndersonMatrixTypeUndetermined(O, stream);
   fclose(stream);
   return retval;
 }
 
-uint32_t FileReadAndersonMatrixTypeUndeterminedPlusMu(AndersonMatrixType * O, const char *const flname, double *const mu)
+uint32_t FileReadAndersonMatrixTypeUndeterminedPlusMu(AndersonMatrixType * O, const char *const flname,
+                                                      double *const mu)
 {
-  FILE *stream;
+  FILE  *stream;
   uint32_t retval;
-  if((stream=fopen(flname,"r"))==NULL)
+  if ((stream = fopen(flname, "r")) == NULL)
   {
-    printf("ERROR\nCan't open %s for reading.\n",flname);
+    printf("ERROR\nCan't open %s for reading.\n", flname);
     return 1;
   }
-  retval=StreamReadAndersonMatrixTypeUndeterminedPlusMu(O,stream,mu);
+  retval = StreamReadAndersonMatrixTypeUndeterminedPlusMu(O, stream, mu);
   fclose(stream);
   return retval;
 }
@@ -140,142 +141,140 @@ uint32_t FileReadAndersonMatrixTypeUndeterminedPlusMu(AndersonMatrixType * O, co
 
 uint32_t FileReadAtom(AtomType * O, const char *const flname)
 {
-  FILE *stream;
+  FILE  *stream;
   uint32_t retval;
-  if((stream=fopen(flname,"r"))==NULL)
+  if ((stream = fopen(flname, "r")) == NULL)
   {
-    printf("ERROR\nCan't open %s for reading.\n",flname);
+    printf("ERROR\nCan't open %s for reading.\n", flname);
     return 1;
   }
-  retval=StreamReadAtom(O,stream);
+  retval = StreamReadAtom(O, stream);
   fclose(stream);
   return retval;
 }
 
 uint32_t FileReadCrystalStructure(CrystalStructureType * O, const char *const flname)
 {
-  FILE *stream;
+  FILE  *stream;
   uint32_t retval;
-  if((stream=fopen(flname,"r"))==NULL)
+  if ((stream = fopen(flname, "r")) == NULL)
   {
-    printf("ERROR\nCan't open %s for reading.\n",flname);
+    printf("ERROR\nCan't open %s for reading.\n", flname);
     return 1;
   }
-  retval=StreamReadCrystalStructure(O,stream);
+  retval = StreamReadCrystalStructure(O, stream);
   fclose(stream);
   return retval;
 }
 
 uint32_t FileReadCrystalStructureSuperCell(CrystalStructureSuperCellType * O, const char *const flname)
 {
-  FILE *stream;
+  FILE  *stream;
   uint32_t retval;
-  if((stream=fopen(flname,"r"))==NULL)
+  if ((stream = fopen(flname, "r")) == NULL)
   {
-    printf("ERROR\nCan't open %s for reading.\n",flname);
+    printf("ERROR\nCan't open %s for reading.\n", flname);
     return 1;
   }
-  retval=StreamReadCrystalStructureSuperCell(O,stream);
+  retval = StreamReadCrystalStructureSuperCell(O, stream);
   fclose(stream);
   return retval;
 }
 
 uint32_t FileReadHeisenbergModelSettings(HeisenbergModelSettings * O, const char *const flname)
 {
-  FILE *stream;
+  FILE  *stream;
   uint32_t retval;
-  if((stream=fopen(flname,"r"))==NULL)
+  if ((stream = fopen(flname, "r")) == NULL)
   {
-    printf("ERROR\nCan't open %s for reading.\n",flname);
+    printf("ERROR\nCan't open %s for reading.\n", flname);
     return 1;
   }
-  retval=StreamReadHeisenbergModelSettings(O,stream);
+  retval = StreamReadHeisenbergModelSettings(O, stream);
   fclose(stream);
   return retval;
 }
 
 uint32_t FileReadDimerizedSpinChainSettings(DimerizedSpinChainSettings * O, const char *const flname)
 {
-  FILE *stream;
+  FILE  *stream;
   uint32_t retval;
-  if((stream=fopen(flname,"r"))==NULL)
+  if ((stream = fopen(flname, "r")) == NULL)
   {
-    printf("ERROR\nCan't open %s for reading.\n",flname);
+    printf("ERROR\nCan't open %s for reading.\n", flname);
     return 1;
   }
-  retval=StreamReadDimerizedSpinChainSettings(O,stream);
+  retval = StreamReadDimerizedSpinChainSettings(O, stream);
   fclose(stream);
   return retval;
 }
 
 uint32_t FileReadtJModelSettings(tJModelSettings * O, const char *const flname)
 {
-  FILE *stream;
+  FILE  *stream;
   uint32_t retval;
-  if((stream=fopen(flname,"r"))==NULL)
+  if ((stream = fopen(flname, "r")) == NULL)
   {
-    printf("ERROR\nCan't open %s for reading.\n",flname);
+    printf("ERROR\nCan't open %s for reading.\n", flname);
     return 1;
   }
-  retval=StreamReadtJModelSettings(O,stream);
+  retval = StreamReadtJModelSettings(O, stream);
   fclose(stream);
   return retval;
 }
 
 uint32_t FileReadSpinLaderSettings(SpinLaderSettings * O, const char *const flname)
 {
-  FILE *stream;
+  FILE  *stream;
   uint32_t retval;
-  if((stream=fopen(flname,"r"))==NULL)
+  if ((stream = fopen(flname, "r")) == NULL)
   {
-    printf("ERROR\nCan't open %s for reading.\n",flname);
+    printf("ERROR\nCan't open %s for reading.\n", flname);
     return 1;
   }
-  retval=StreamReadSpinLaderSettings(O,stream);
+  retval = StreamReadSpinLaderSettings(O, stream);
   fclose(stream);
   return retval;
 }
 
 uint32_t FileReadHubbardModelSettings(HubbardModelSettings * O, const char *const flname)
 {
-  FILE *stream;
+  FILE  *stream;
   uint32_t retval;
-  if((stream=fopen(flname,"r"))==NULL)
+  if ((stream = fopen(flname, "r")) == NULL)
   {
-    printf("ERROR\nCan't open %s for reading.\n",flname);
+    printf("ERROR\nCan't open %s for reading.\n", flname);
     return 1;
   }
-  retval=StreamReadHubbardModelSettings(O,stream);
+  retval = StreamReadHubbardModelSettings(O, stream);
   fclose(stream);
   return retval;
 }
 
 uint32_t FileReadDMFTXASSettings(DMFTXASSettings * O, const char *const flname)
 {
-  FILE *stream;
+  FILE  *stream;
   uint32_t retval;
-  if((stream=fopen(flname,"r"))==NULL)
+  if ((stream = fopen(flname, "r")) == NULL)
   {
-    printf("ERROR\nCan't open %s for reading.\n",flname);
+    printf("ERROR\nCan't open %s for reading.\n", flname);
     return 1;
   }
-  retval=StreamReadDMFTXASSettings(O,stream);
+  retval = StreamReadDMFTXASSettings(O, stream);
   fclose(stream);
   return retval;
 }
 
 uint32_t FileReadDMFTSettings(DMFTSettings * O, const char *const flname)
 {
-  FILE *stream;
+  FILE  *stream;
   uint32_t retval;
-  if((stream=fopen(flname,"r"))==NULL)
+  if ((stream = fopen(flname, "r")) == NULL)
   {
-    printf("ERROR\nCan't open %s for reading.\n",flname);
+    printf("ERROR\nCan't open %s for reading.\n", flname);
     return 1;
   }
-  retval=StreamReadDMFTSettings(O,stream);
+  retval = StreamReadDMFTSettings(O, stream);
   fclose(stream);
   return retval;
 }
-
-

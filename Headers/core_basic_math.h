@@ -2,56 +2,56 @@
 /**********************************************************/
 /******       BasisMath/AndersonMatrixVector.c       ******/
 /**********************************************************/
-void     FreeAndersonMatrix();
+void   FreeAndersonMatrix();
 uint32_t InitAndersonMatrix();
 uint32_t InitIdentityAndersonMatrix();
-void     AndersonMatrixChop();
-double   AndersonMatrixInverse();
-void     AndersonMatrixAdd();
-void     AndersonMatrixScalarMultiply();
+void   AndersonMatrixChop();
+double AndersonMatrixInverse();
+void   AndersonMatrixAdd();
+void   AndersonMatrixScalarMultiply();
 uint32_t AndersonmatrixPart();
 uint32_t AndersonmatrixCopy();
 uint32_t AndersonMatrixOrder();
 uint32_t AndersonMatrixOrderAndAbs();
-void     RealAndersonMatrixVector();
-void     ComplexAndersonMatrixVector();
-void     RealVectorAndersonMatrixVector();
-void     ComplexVectorAndersonMatrixVector();
+void   RealAndersonMatrixVector();
+void   ComplexAndersonMatrixVector();
+void   RealVectorAndersonMatrixVector();
+void   ComplexVectorAndersonMatrixVector();
 uint32_t AndersonMatrixCalculateChemicalPotential();
 
 /**********************************************************/
 /****       BasisMath/TriDiagonalMatrixVector.c        ****/
 /**********************************************************/
-void     FreeTriDiagonalMatrix();
+void   FreeTriDiagonalMatrix();
 uint32_t InitTriDiagonalMatrix();
 uint32_t InitIdentityTriDiagonalMatrix();
-void     TriDiagonalMatrixChop();
-double   TriDiagonalMatrixInverse();
-void     TriDiagonalMatrixAdd();
-void     TriDiagonalMatrixScalarMultiply();
+void   TriDiagonalMatrixChop();
+double TriDiagonalMatrixInverse();
+void   TriDiagonalMatrixAdd();
+void   TriDiagonalMatrixScalarMultiply();
 uint32_t TriDiagonalMatrixPart();
 uint32_t TriDiagonalMatrixCopy();
-void     RealTriDiagonalMatrixVector();
-void     ComplexTriDiagonalMatrixVector();
-void     RealVectorTriDiagonalMatrixVector();
-void     ComplexVectorTriDiagonalMatrixVector();
+void   RealTriDiagonalMatrixVector();
+void   ComplexTriDiagonalMatrixVector();
+void   RealVectorTriDiagonalMatrixVector();
+void   ComplexVectorTriDiagonalMatrixVector();
 uint32_t SumGreensfunctionsTriDiagonalRepresentation();
 
 /**********************************************************/
 /********         BasisMath/ListOfPoles.c          ********/
 /**********************************************************/
 uint32_t InitListOfPoles();
-void FreeListOfPoles();
-void ScaleListOfPoles();
+void   FreeListOfPoles();
+void   ScaleListOfPoles();
 uint32_t AddListOfPoles();
 uint32_t MixListOfPoles();
 uint32_t SymmetrizeListOfPoles();
-void OrderListOfPoles();
-void ReduceListOfPolesWeigth();
-void ReduceListOfPolesNumberFermi();
-void ReduceListOfPolesNumber();
-void ReduceListOfPolesMoment();
-void ReduceListOfPolesSpacing();
+void   OrderListOfPoles();
+void   ReduceListOfPolesWeigth();
+void   ReduceListOfPolesNumberFermi();
+void   ReduceListOfPolesNumber();
+void   ReduceListOfPolesMoment();
+void   ReduceListOfPolesSpacing();
 uint32_t SubtractListOfPoles();
 uint32_t GausianBroadenListOfPoles();
 uint32_t ListOfPolesCopy();
@@ -70,15 +70,15 @@ uint32_t ListOfPolesCalculateChemicalPotential();
 /**********************************************************/
 /**********       BasisMath/MatrixVector.c       **********/
 /**********************************************************/
-void     FreeMatrix();
+void   FreeMatrix();
 uint32_t InitMatrix();
 uint32_t InitIdentityMatrix();
 uint32_t MakeRealMatrixComplex();
-void     MatrixChop();
+void   MatrixChop();
 uint32_t MatrixTranspose();
-void     MatrixComplexConjugate();
+void   MatrixComplexConjugate();
 uint32_t MatrixConjugateTranspose();
-double   MatrixInverse();
+double MatrixInverse();
 uint32_t MatrixAdd();
 uint32_t MatrixScalarMultiply();
 uint32_t MatrixTransform();
@@ -92,24 +92,24 @@ uint32_t ComplexMatrixVector();
 uint32_t ComplexConjugateTransposeMatrixVector();
 uint32_t RealVectorMatrixVector();
 uint32_t ComplexVectorMatrixVector();
-void     MatrixOrthonormalize();
+void   MatrixOrthonormalize();
 
 /**********************************************************/
 /*******       BasisMath/SparseMatrixVector.c       *******/
 /**********************************************************/
-void     FreeSparseMatrix();
+void   FreeSparseMatrix();
 uint32_t InitSparseMatrix();
 uint32_t InitSparseIdentityMatrix();
 uint32_t MakeRealSparseMatrixComplex();
 uint32_t SparseMatrixAddElement();
-void     SparseMatrixExtractElement();
-void     MinimalAlocSpareseMatrix();
-void     RemoveZeroSpareseMatrix();
-void     SparseMatrixChop();
-void     SparseMatrixTranspose();
-void     SparseMatrixComplexConjugate();
-void     SparseMatrixConjugateTranspose();
-double   SparseMatrixInverse();
+void   SparseMatrixExtractElement();
+void   MinimalAlocSpareseMatrix();
+void   RemoveZeroSpareseMatrix();
+void   SparseMatrixChop();
+void   SparseMatrixTranspose();
+void   SparseMatrixComplexConjugate();
+void   SparseMatrixConjugateTranspose();
+double SparseMatrixInverse();
 uint32_t SparseMatrixAdd();
 uint32_t SparseMatrixScalarMultiply();
 uint32_t SparseMatrixTransform();
@@ -125,11 +125,11 @@ uint32_t SparseMatrixPart();
 uint32_t SparseMatrixCopy();
 uint32_t RealSparseMatrixVector();
 uint32_t RealTransposeSparseMatrixVector();
-void     ComplexSparseMatrixVector();
-void     ComplexConjugateTransposeSparseMatrixVector();
+void   ComplexSparseMatrixVector();
+void   ComplexConjugateTransposeSparseMatrixVector();
 uint32_t RealVectorSparseMatrixVector();
-void     ComplexVectorSparseMatrixVector();
-void     SparseMatrixOrthonormalize();
+void   ComplexVectorSparseMatrixVector();
+void   SparseMatrixOrthonormalize();
 
 
 
@@ -137,13 +137,13 @@ void     SparseMatrixOrthonormalize();
 /**********************************************************/
 /**      BasisMath/DoubleTriDiagonalMatrixVector.c       **/
 /**********************************************************/
-void     FreeDoubleTriDiagonalMatrix();
+void   FreeDoubleTriDiagonalMatrix();
 uint32_t InitDoubleTriDiagonalMatrix();
 uint32_t InitIdentityDoubleTriDiagonalMatrix();
-void     DoubleTriDiagonalMatrixChop();
-double   DoubleTriDiagonalMatrixInverse();
-void     DoubleTriDiagonalMatrixAdd();
-void     DoubleTriDiagonalMatrixScalarMultiply();
+void   DoubleTriDiagonalMatrixChop();
+double DoubleTriDiagonalMatrixInverse();
+void   DoubleTriDiagonalMatrixAdd();
+void   DoubleTriDiagonalMatrixScalarMultiply();
 uint32_t DoubleTriDiagonalMatrixPart();
 uint32_t DoubleTriDiagonalMatrixCopy();
 uint32_t RealDoubleTriDiagonalMatrixVector();
@@ -156,19 +156,19 @@ uint32_t ComplexVectorDoubleTriDiagonalMatrixVector();
 /**********************************************************/
 /**       BasisMath/BlokTriDiagonalMatrixVector.c        **/
 /**********************************************************/
-void     FreeBlokTriDiagonalMatrix();
-void     FreeFrameBlokTriDiagonalMatrix();
+void   FreeBlokTriDiagonalMatrix();
+void   FreeFrameBlokTriDiagonalMatrix();
 uint32_t InitBlokTriDiagonalMatrix();
 uint32_t InitFrameBlokTriDiagonalMatrix();
 uint32_t InitIdentityBlokTriDiagonalMatrix();
-void     BlokTriDiagonalMatrixChop();
-void     BlokTriDiagonalMatrixAdd();
-void     BlokTriDiagonalMatrixScalarMultiply();
+void   BlokTriDiagonalMatrixChop();
+void   BlokTriDiagonalMatrixAdd();
+void   BlokTriDiagonalMatrixScalarMultiply();
 uint32_t BlokTriDiagonalMatrixPart();
 uint32_t BlokTriDiagonalMatrixCopy();
-void     BlokTriDiagonalMatrixTranspose();
-void     BlokTriDiagonalMatrixComplexConjugate();
-void     BlokTriDiagonalMatrixConjugateTranspose();
+void   BlokTriDiagonalMatrixTranspose();
+void   BlokTriDiagonalMatrixComplexConjugate();
+void   BlokTriDiagonalMatrixConjugateTranspose();
 uint32_t RealBlokTriDiagonalMatrixVector();
 uint32_t ComplexBlokTriDiagonalMatrixVector();
 uint32_t RealVectorBlokTriDiagonalMatrixVector();
@@ -178,19 +178,19 @@ uint32_t ComplexVectorBlokTriDiagonalMatrixVector();
 /**********************************************************/
 /****      BasisMath/BlokAndersonMatrixVector.c        ****/
 /**********************************************************/
-void     FreeBlokAndersonMatrix();
-void     FreeFrameBlokAndersonMatrix();
+void   FreeBlokAndersonMatrix();
+void   FreeFrameBlokAndersonMatrix();
 uint32_t InitBlokAndersonMatrix();
 uint32_t InitFrameBlokAndersonMatrix();
 uint32_t InitIdentityBlokAndersonMatrix();
-void     BlokAndersonMatrixChop();
-void     BlokAndersonMatrixAdd();
-void     BlokAndersonMatrixScalarMultiply();
+void   BlokAndersonMatrixChop();
+void   BlokAndersonMatrixAdd();
+void   BlokAndersonMatrixScalarMultiply();
 uint32_t BlokAndersonMatrixPart();
 uint32_t BlokAndersonMatrixCopy();
-void     BlokAndersonMatrixTranspose();
-void     BlokAndersonMatrixComplexConjugate();
-void     BlokAndersonMatrixConjugateTranspose();
+void   BlokAndersonMatrixTranspose();
+void   BlokAndersonMatrixComplexConjugate();
+void   BlokAndersonMatrixConjugateTranspose();
 uint32_t RealBlokAndersonMatrixVector();
 uint32_t ComplexBlokAndersonMatrixVector();
 uint32_t RealVectorBlokAndersonMatrixVector();
@@ -200,8 +200,8 @@ uint32_t ComplexVectorBlokAndersonMatrixVector();
 /**********************************************************/
 /**    BasisMath/BlokDoubleTriDiagonalMatrixVector.c     **/
 /**********************************************************/
-void     FreeBlokDoubleTriDiagonalMatrix();
-void     FreeFrameBlokDoubleTriDiagonalMatrix();
+void   FreeBlokDoubleTriDiagonalMatrix();
+void   FreeFrameBlokDoubleTriDiagonalMatrix();
 uint32_t InitBlokDoubleTriDiagonalMatrix();
 uint32_t InitFrameBlokDoubleTriDiagonalMatrix();
 uint32_t InitIdentityBlokDoubleTriDiagonalMatrix();
@@ -270,11 +270,15 @@ uint32_t SparseMatrixToDoubleTriDiagonalMatrix();
 uint32_t SparseMatrixToBlokDoubleTriDiagonalMatrix();
 /********    MatrixTo                              ********/
 uint32_t MatrixToSparseMatrix();
-uint32_t MatrixToTriDiagonalMatrix();          uint32_t TriDiagonalize();
-uint32_t MatrixToEigensystem();                uint32_t Eigensystem();
-uint32_t MatrixToGeneralizedEigensystem();     uint32_t GeneralizedEigensystem();
+uint32_t MatrixToTriDiagonalMatrix();
+uint32_t TriDiagonalize();
+uint32_t MatrixToEigensystem();
+uint32_t Eigensystem();
+uint32_t MatrixToGeneralizedEigensystem();
+uint32_t GeneralizedEigensystem();
 uint32_t MatrixToAndersonMatrix();
-uint32_t MatrixToBlokTriDiagonalMatrix();      uint32_t BlokTriDiagonalize();
+uint32_t MatrixToBlokTriDiagonalMatrix();
+uint32_t BlokTriDiagonalize();
 uint32_t MatrixToBlokAndersonMatrix();
 uint32_t MatrixToDoubleTriDiagonalMatrix();
 uint32_t MatrixToBlokDoubleTriDiagonalMatrix();
@@ -308,11 +312,10 @@ uint32_t MapSecondoubleTridiagonalMatrixToBA();
 double Factorial(int a);
 uint32_t BinomialCoefficient(uint32_t n, uint32_t k);
 uint32_t PerturbationOptions(uint32_t NV, uint32_t order);
-void PerturbationOrderListToIndex(uint32_t *const POList, uint32_t *const POIndex, uint32_t const NV, uint32_t const order);
-void PerturbationOrderIndexToList(uint32_t const POIndex, uint32_t *const POList, uint32_t const NV, uint32_t const order);
+void   PerturbationOrderListToIndex(uint32_t * const POList, uint32_t * const POIndex, uint32_t const NV,
+                                    uint32_t const order);
+void   PerturbationOrderIndexToList(uint32_t const POIndex, uint32_t * const POList, uint32_t const NV,
+                                    uint32_t const order);
 double ThreeJSymbol(int j1, int m1, int j2, int m2, int j3, int m3);
 double ThreeJSymbolHalf(int j1, int m1, int j2, int m2, int j3, int m3);
 double SlaterCoefficientC(int k, int l1, int m1, int l2, int m2);
-
-
-

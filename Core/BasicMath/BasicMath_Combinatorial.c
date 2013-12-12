@@ -1,13 +1,14 @@
 
 double Factorial(int a)
 {
-  int i;
+  int    i;
   double result;
-  result=1;
-  if(a<0)printf("Error\n");
-  for(i=a;i>0;i--)
+  result = 1;
+  if (a < 0)
+    printf("Error\n");
+  for (i = a; i > 0; i--)
   {
-    result*=i;
+    result *= i;
   }
   return result;
 }
@@ -18,14 +19,14 @@ double Factorial(int a)
  */
 uint32_t BinomialCoefficient(uint32_t n, uint32_t k)
 {
-  uint32_t result=1,i;
-  for(i=1+Max(k,n-k);i<=n;i++)
+  uint32_t result = 1, i;
+  for (i = 1 + Max(k, n - k); i <= n; i++)
   {
-    result*=i;
+    result *= i;
   }
-  for(i=1;i<=Min(k,n-k);i++)
+  for (i = 1; i <= Min(k, n - k); i++)
   {
-    result/=i;
+    result /= i;
   }
   return result;
 }
@@ -36,12 +37,13 @@ uint32_t BinomialCoefficient(uint32_t n, uint32_t k)
  */
 uint32_t PerturbationOptions(uint32_t NV, uint32_t order)
 {
-  uint32_t result=1,i;
-  if(NV==0) return 0;
-  for(i=1;i<NV;i++)
+  uint32_t result = 1, i;
+  if (NV == 0)
+    return 0;
+  for (i = 1; i < NV; i++)
   {
-    result*=i+order;
-    result/=i;
+    result *= i + order;
+    result /= i;
   }
   return result;
 }
@@ -52,17 +54,19 @@ uint32_t PerturbationOptions(uint32_t NV, uint32_t order)
  *  Given a list of how many of each operators I have (i.e. NV integers, the sum over this list is "order")
  *  retrun a unique index position ranging from 0 to PerturbationOptions(NV,order)-1
  */
-void PerturbationOrderListToIndex(uint32_t *const POList, uint32_t *const POIndex, uint32_t const NV, uint32_t const order)
+void PerturbationOrderListToIndex(uint32_t * const POList, uint32_t * const POIndex, uint32_t const NV,
+                                  uint32_t const order)
 {
-  uint32_t i,POIndexSmaller;
-  *POIndex=0;
-  if((POList[0]==order)||(NV<=1))return;
-  for(i=0;i<order-POList[0];i++)
+  uint32_t i, POIndexSmaller;
+  *POIndex = 0;
+  if ((POList[0] == order) || (NV <= 1))
+    return;
+  for (i = 0; i < order - POList[0]; i++)
   {
-    *POIndex+=PerturbationOptions(NV-1, i);
+    *POIndex += PerturbationOptions(NV - 1, i);
   }
-  PerturbationOrderListToIndex(&(POList[1]), &POIndexSmaller, NV-1, order-POList[0]);
-  *POIndex+=POIndexSmaller;
+  PerturbationOrderListToIndex(&(POList[1]), &POIndexSmaller, NV - 1, order - POList[0]);
+  *POIndex += POIndexSmaller;
 }
 
 /*
@@ -71,25 +75,27 @@ void PerturbationOrderListToIndex(uint32_t *const POList, uint32_t *const POInde
  *  Given a unique index position ranging from 0 to PerturbationOptions(NV,order)-1
  *  return list of how many of each operators I have (i.e. NV integers)
  */
-void PerturbationOrderIndexToList(uint32_t const POIndex, uint32_t *const POList, uint32_t const NV, uint32_t const order)
+void PerturbationOrderIndexToList(uint32_t const POIndex, uint32_t * const POList, uint32_t const NV,
+                                  uint32_t const order)
 {
-  uint32_t i,nl,POIndexnew,deg;
-  if(NV==1)
+  uint32_t i, nl, POIndexnew, deg;
+  if (NV == 1)
   {
-    POList[0]=order;
+    POList[0] = order;
     return;
   }
-  nl=0;
-  POIndexnew=POIndex;
-  for(i=0;i<=order;i++)
+  nl = 0;
+  POIndexnew = POIndex;
+  for (i = 0; i <= order; i++)
   {
-    deg=PerturbationOptions(NV-1, i);
-    nl+=deg;
-    if(POIndex<nl)break;
-    POIndexnew-=deg;
+    deg = PerturbationOptions(NV - 1, i);
+    nl += deg;
+    if (POIndex < nl)
+      break;
+    POIndexnew -= deg;
   }
-  POList[0]=order-i;
-  PerturbationOrderIndexToList(POIndexnew, &(POList[1]), NV-1, i);
+  POList[0] = order - i;
+  PerturbationOrderIndexToList(POIndexnew, &(POList[1]), NV - 1, i);
 }
 
 
@@ -97,82 +103,138 @@ void PerturbationOrderIndexToList(uint32_t const POIndex, uint32_t *const POList
 /*
  *
  */
-void AddPerturbationIndex(uint32_t const Vi, uint32_t const IndexOld, uint32_t const NV, uint32_t const order, uint32_t *const IndexNew, int *const phase)
+void AddPerturbationIndex(uint32_t const Vi, uint32_t const IndexOld, uint32_t const NV, uint32_t const order,
+                          uint32_t * const IndexNew, int *const phase)
 {
-  uint32_t i,List[NV];
+  uint32_t i, List[NV];
   PerturbationOrderIndexToList(IndexOld, List, NV, order);
-  *phase=0;
-  for(i=0;i<Vi;i++)
+  *phase = 0;
+  for (i = 0; i < Vi; i++)
   {
-    *phase+=List[i];
+    *phase += List[i];
   }
-  *phase = *phase&1 ? -1 : 1;
-  List[Vi]+=1;
-  PerturbationOrderListToIndex(List, IndexNew, NV, order+1);
+  *phase = *phase & 1 ? -1 : 1;
+  List[Vi] += 1;
+  PerturbationOrderListToIndex(List, IndexNew, NV, order + 1);
 }
 
 /*
  *
  */
-void RemovePerturbationIndex(uint32_t const Vi, uint32_t const IndexOld, uint32_t const NV, uint32_t const order, uint32_t *const IndexNew, int *const phase)
+void RemovePerturbationIndex(uint32_t const Vi, uint32_t const IndexOld, uint32_t const NV, uint32_t const order,
+                             uint32_t * const IndexNew, int *const phase)
 {
-  uint32_t i,List[NV];
+  uint32_t i, List[NV];
   PerturbationOrderIndexToList(IndexOld, List, NV, order);
-  *phase=0;
-  if(List[Vi]==0) return;
-  for(i=0;i<Vi;i++)
+  *phase = 0;
+  if (List[Vi] == 0)
+    return;
+  for (i = 0; i < Vi; i++)
   {
-    *phase+=List[i];
+    *phase += List[i];
   }
-  *phase = *phase&1 ? -1 : 1;
-  List[Vi]-=1;
-  PerturbationOrderListToIndex(List, IndexNew, NV, order-1);
+  *phase = *phase & 1 ? -1 : 1;
+  List[Vi] -= 1;
+  PerturbationOrderListToIndex(List, IndexNew, NV, order - 1);
 }
 
 double ThreeJSymbol(int j1, int m1, int j2, int m2, int j3, int m3)
 {
   double ThreeJ;
-  int k;
-  ThreeJ=0;
-  if(m1+m2+m3!=0) return 0;
-  if(j1+j2<j3) return 0;
-  if(j2+j3<j1) return 0;
-  if(j3+j1<j2) return 0;
-  if(abs(m1)>j1) return 0;
-  if(abs(m2)>j2) return 0;
-  if(abs(m3)>j3) return 0;
-  for(k=Max(j1-j3+m2,Max(j2-j3-m1,0));k<=Min(j1-m1,Min(j2+m2,j1+j2-j3));k++)
+  int    k;
+  ThreeJ = 0;
+  if (m1 + m2 + m3 != 0)
+    return 0;
+  if (j1 + j2 < j3)
+    return 0;
+  if (j2 + j3 < j1)
+    return 0;
+  if (j3 + j1 < j2)
+    return 0;
+  if (abs(m1) > j1)
+    return 0;
+  if (abs(m2) > j2)
+    return 0;
+  if (abs(m3) > j3)
+    return 0;
+  for (k = Max(j1 - j3 + m2, Max(j2 - j3 - m1, 0)); k <= Min(j1 - m1, Min(j2 + m2, j1 + j2 - j3)); k++)
   {
-    ThreeJ+=(double)(1-2*(k&1))/(Factorial(k)*Factorial(j1+j2-j3-k)*Factorial(j1-m1-k)*Factorial(j2+m2-k)*Factorial(j3-j2+m1+k)*Factorial(j3-j1-m2+k));
+    ThreeJ +=
+      (double)(1 -
+               2 * (k & 1)) / (Factorial(k) * Factorial(j1 + j2 - j3 - k) * Factorial(j1 - m1 - k) * Factorial(j2 + m2 -
+                                                                                                               k) *
+                               Factorial(j3 - j2 + m1 + k) * Factorial(j3 - j1 - m2 + k));
   }
-  ThreeJ*=(double)(1-2*(Abs((j2-j1+m3))&1))*sqrt(Factorial(j1+j2-j3)*Factorial(j1-j2+j3)*Factorial(-j1+j2+j3)*Factorial(j1+m1)*Factorial(j1-m1)*Factorial(j2+m2)*Factorial(j2-m2)*Factorial(j3+m3)*Factorial(j3-m3)/Factorial(j1+j2+j3+1));
+  ThreeJ *=
+    (double)(1 -
+             2 * (Abs((j2 - j1 + m3)) & 1)) * sqrt(Factorial(j1 + j2 - j3) * Factorial(j1 - j2 + j3) * Factorial(-j1 +
+                                                                                                                 j2 +
+                                                                                                                 j3) *
+                                                   Factorial(j1 + m1) * Factorial(j1 - m1) * Factorial(j2 +
+                                                                                                       m2) *
+                                                   Factorial(j2 - m2) * Factorial(j3 + m3) * Factorial(j3 -
+                                                                                                       m3) /
+                                                   Factorial(j1 + j2 + j3 + 1));
   return ThreeJ;
 }
 
 double ThreeJSymbolHalf(int j1, int m1, int j2, int m2, int j3, int m3)
 {
   double ThreeJ;
-  int k;
-  ThreeJ=0;
-  if(m1+m2+m3!=0) return 0;
-  if(j1+j2<j3) return 0;
-  if(j2+j3<j1) return 0;
-  if(j3+j1<j2) return 0;
-  if(abs(m1)>j1) return 0;
-  if(abs(m2)>j2) return 0;
-  if(abs(m3)>j3) return 0;
-  for(k=Max(j1-j3+m2,Max(j2-j3-m1,0))/2;k<=Min(j1-m1,Min(j2+m2,j1+j2-j3))/2;k++)
+  int    k;
+  ThreeJ = 0;
+  if (m1 + m2 + m3 != 0)
+    return 0;
+  if (j1 + j2 < j3)
+    return 0;
+  if (j2 + j3 < j1)
+    return 0;
+  if (j3 + j1 < j2)
+    return 0;
+  if (abs(m1) > j1)
+    return 0;
+  if (abs(m2) > j2)
+    return 0;
+  if (abs(m3) > j3)
+    return 0;
+  for (k = Max(j1 - j3 + m2, Max(j2 - j3 - m1, 0)) / 2; k <= Min(j1 - m1, Min(j2 + m2, j1 + j2 - j3)) / 2; k++)
   {
-    ThreeJ+=(double)(1-2*(k&1))/(Factorial(k)*Factorial((j1+j2-j3)/2-k)*Factorial((j1-m1)/2-k)*Factorial((j2+m2)/2-k)*Factorial((j3-j2+m1)/2+k)*Factorial((j3-j1-m2)/2+k));
+    ThreeJ +=
+      (double)(1 -
+               2 * (k & 1)) / (Factorial(k) * Factorial((j1 + j2 - j3) / 2 - k) * Factorial((j1 - m1) / 2 -
+                                                                                            k) * Factorial((j2 +
+                                                                                                            m2) / 2 -
+                                                                                                           k) *
+                               Factorial((j3 - j2 + m1) / 2 + k) * Factorial((j3 - j1 - m2) / 2 + k));
   }
-  ThreeJ*=(double)(1-2*(((j2-j1+m3)/2)&1))*sqrt(Factorial((j1+j2-j3)/2)*Factorial((j1-j2+j3)/2)*Factorial((-j1+j2+j3)/2)*Factorial((j1+m1)/2)*Factorial((j1-m1)/2)*Factorial((j2+m2)/2)*Factorial((j2-m2)/2)*Factorial((j3+m3)/2)*Factorial((j3-m3)/2)/Factorial((j1+j2+j3)/2+1));
+  ThreeJ *=
+    (double)(1 - 2 * (((j2 - j1 + m3) / 2) & 1)) * sqrt(Factorial((j1 + j2 - j3) / 2) * Factorial((j1 - j2 + j3) / 2) *
+                                                        Factorial((-j1 + j2 + j3) / 2) * Factorial((j1 +
+                                                                                                    m1) / 2) *
+                                                        Factorial((j1 - m1) / 2) * Factorial((j2 +
+                                                                                              m2) / 2) * Factorial((j2 -
+                                                                                                                    m2)
+                                                                                                                   /
+                                                                                                                   2) *
+                                                        Factorial((j3 + m3) / 2) * Factorial((j3 -
+                                                                                              m3) / 2) / Factorial((j1 +
+                                                                                                                    j2 +
+                                                                                                                    j3)
+                                                                                                                   / 2 +
+                                                                                                                   1));
   return ThreeJ;
 }
 
 double SlaterCoefficientC(int k, int l1, int m1, int l2, int m2)
 {
-  if(m1-m2>k) return 0;
-  return (double)(1-2*(m1&1))*sqrt((double)((2*l1+1)*(2*l2+1)))*ThreeJSymbol(l1,0,k,0,l2,0)*ThreeJSymbol(l1,-m1,k,m1-m2,l2,m2);
+  if (m1 - m2 > k)
+    return 0;
+  return (double)(1 - 2 * (m1 & 1)) * sqrt((double)((2 * l1 + 1) * (2 * l2 + 1))) * ThreeJSymbol(l1, 0, k, 0, l2,
+                                                                                                 0) * ThreeJSymbol(l1,
+                                                                                                                   -m1,
+                                                                                                                   k,
+                                                                                                                   m1 -
+                                                                                                                   m2,
+                                                                                                                   l2,
+                                                                                                                   m2);
 }
-
-
