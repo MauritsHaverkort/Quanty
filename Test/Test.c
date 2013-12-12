@@ -60,6 +60,7 @@
 #include "../Test/TestGFBA.c"
 #include "../Test/TestStandardOperators.c"
 #include "../Test/TestAtomicPhysics.c"
+#include "../Test/OperatorArithmetic.c"
 
 int main (int argc, const char * argv[]) 
 {
@@ -117,6 +118,8 @@ int main (int argc, const char * argv[])
     if (!strncmp("GFBA",argv[argc],strlen(argv[argc]))) TestGFBA();
     
     if(!strncmp("StdOppS",argv[argc],strlen(argv[argc]))) TestS();
+    
+    if(!strncmp("OppMult",argv[argc],strlen(argv[argc]))) TestOppMult();
     
     if(!strncmp("AtomicPhysics",argv[argc],strlen(argv[argc]))) TestAtomicPhysics();
   }

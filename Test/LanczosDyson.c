@@ -29,7 +29,7 @@ void TestLanczosDyson2()
     G0.b[i]=1.0;
   }
   G0.a[G0.N]=0.0;
-  TriDiagonalMatrixToSecondDoubleTriDiagonalMatrix(G0, &T, &G0Double, 0.0, 0.00000001);
+  TriDiagonalMatrixToSecondDoubleTriDiagonalMatrixPlusT(G0, &T, &G0Double, 0.0, 0.00000001);
   FreeMatrix(&T);
   PrintTriDiagonalMatrix(G0);
   PrintSecondDoubleTriDiagonalMatrix(G0Double);

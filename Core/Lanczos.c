@@ -4,8 +4,8 @@
 *     LanczosGroundState returns the lowest eigenvector of a given hamiltonian
 *     LanczosTriDiagonalize returns a list containing a and b of a tridiagonal matrix given an hamiltonian and initial wave function
 *
-*/
-uint32_t LanczosGroundStateRR(const OperatorType H, WaveFunctionType *const psi, double *epsilon, const double zero, double shiftin, WaveFunctionType *OtherPsi, uint32_t NOtherPsi)
+*/uint32_t LanczosGroundStateRR(const OperatorType H, WaveFunctionType *const psi, double *epsilon, const double zero, double shiftin, WaveFunctionType *OtherPsi, uint32_t NOtherPsi)
+
 {
   printf("\nStart of LanczosGroundStateRR\n\n");
   fflush(stdout);

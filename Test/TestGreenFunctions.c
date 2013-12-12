@@ -150,7 +150,7 @@ void GreenTransforms()
 
   TriDiagonalMatrixToDoubleTriDiagonalMatrixPlusT(MTri, &T, &MDoubleTri, 0.0, 0.0);
   FreeMatrix(&T);
-  TriDiagonalMatrixToSecondDoubleTriDiagonalMatrix(MTri, &T, &MSecDoubleTri, 0.0, 0.0);
+  TriDiagonalMatrixToSecondDoubleTriDiagonalMatrixPlusT(MTri, &T, &MSecDoubleTri, 0.0, 0.0);
   FreeMatrix(&T);
   
   printf("===============\n");

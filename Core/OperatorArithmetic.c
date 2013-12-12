@@ -1225,7 +1225,7 @@ uint32_t OperatorMultiply2(OperatorType *const O, OperatorType const A, Operator
     {
       for(ilB=0;ilB<=B.MaxLength;ilB++)
       {
-        if((O->l[ilA+ilB].QComplex)&&(A.l[ilA].QComplex)&&(B.l[ilB].QComplex))
+        if((O->l[ilA+ilB].QComplex)||(A.l[ilA].QComplex)||(B.l[ilB].QComplex))
         {/* at least one complex */
           if(!(O->l[ilA+ilB].QComplex)) if(MakeRealOperatorFixedLengthComplex(O,ilA+ilB)) {printf("MakeRealOperatorFixedLengthComplex at length=%i failed in OperatorMultiply2\n",ilA+ilB);fflush(stdout);return 1;}
           if(A.l[ilA].QComplex)
@@ -1335,7 +1335,7 @@ uint32_t OperatorMultiply2(OperatorType *const O, OperatorType const A, Operator
     {
       for(ilB=0;ilB<=B.MaxLength;ilB++)
       {
-        if((O->l[ilA+ilB].QComplex)&&(A.l[ilA].QComplex)&&(B.l[ilB].QComplex))
+        if((O->l[ilA+ilB].QComplex)||(A.l[ilA].QComplex)||(B.l[ilB].QComplex))
         {/* at least one complex */
           if(!(O->l[ilA+ilB].QComplex)) if(MakeRealOperatorFixedLengthComplex(O,ilA+ilB)) {printf("MakeRealOperatorFixedLengthComplex at length=%i failed in OperatorMultiply2\n",ilA+ilB);fflush(stdout);return 1;}
           if(A.l[ilA].QComplex)
@@ -1445,7 +1445,7 @@ uint32_t OperatorMultiply2(OperatorType *const O, OperatorType const A, Operator
     {
       for(ilB=0;ilB<=B.MaxLength;ilB++)
       {
-        if((O->l[ilA+ilB].QComplex)&&(A.l[ilA].QComplex)&&(B.l[ilB].QComplex))
+        if((O->l[ilA+ilB].QComplex)||(A.l[ilA].QComplex)||(B.l[ilB].QComplex))
         {/* at least one complex */
           if(!(O->l[ilA+ilB].QComplex)) if(MakeRealOperatorFixedLengthComplex(O,ilA+ilB)) {printf("MakeRealOperatorFixedLengthComplex at length=%i failed in OperatorMultiply2\n",ilA+ilB);fflush(stdout);return 1;}
           if(A.l[ilA].QComplex)
@@ -1555,7 +1555,7 @@ uint32_t OperatorMultiply2(OperatorType *const O, OperatorType const A, Operator
     {
       for(ilB=0;ilB<=B.MaxLength;ilB++)
       {
-        if((O->l[ilA+ilB].QComplex)&&(A.l[ilA].QComplex)&&(B.l[ilB].QComplex))
+        if((O->l[ilA+ilB].QComplex)||(A.l[ilA].QComplex)||(B.l[ilB].QComplex))
         {/* at least one complex */
           if(!(O->l[ilA+ilB].QComplex)) if(MakeRealOperatorFixedLengthComplex(O,ilA+ilB)) {printf("MakeRealOperatorFixedLengthComplex at length=%i failed in OperatorMultiply2\n",ilA+ilB);fflush(stdout);return 1;}
           if(A.l[ilA].QComplex)
@@ -1691,7 +1691,7 @@ uint32_t OperatorMultiply2NormalOrder(OperatorType *const O, OperatorType const 
     {
       for(ilB=0;ilB<=B.MaxLength;ilB++)
       {
-        if((O->l[ilA+ilB].QComplex)&&(A.l[ilA].QComplex)&&(B.l[ilB].QComplex))
+        if((O->l[ilA+ilB].QComplex)||(A.l[ilA].QComplex)||(B.l[ilB].QComplex))
         {/* at least one complex */
           if(!(O->l[ilA+ilB].QComplex)) if(MakeRealOperatorFixedLengthComplex(O,ilA+ilB)) {printf("MakeRealOperatorFixedLengthComplex at length=%i failed in OperatorMultiply2\n",ilA+ilB);fflush(stdout);return 1;}
           if(A.l[ilA].QComplex)
@@ -1801,7 +1801,7 @@ uint32_t OperatorMultiply2NormalOrder(OperatorType *const O, OperatorType const 
     {
       for(ilB=0;ilB<=B.MaxLength;ilB++)
       {
-        if((O->l[ilA+ilB].QComplex)&&(A.l[ilA].QComplex)&&(B.l[ilB].QComplex))
+        if((O->l[ilA+ilB].QComplex)||(A.l[ilA].QComplex)||(B.l[ilB].QComplex))
         {/* at least one complex */
           if(!(O->l[ilA+ilB].QComplex)) if(MakeRealOperatorFixedLengthComplex(O,ilA+ilB)) {printf("MakeRealOperatorFixedLengthComplex at length=%i failed in OperatorMultiply2\n",ilA+ilB);fflush(stdout);return 1;}
           if(A.l[ilA].QComplex)
@@ -1911,7 +1911,7 @@ uint32_t OperatorMultiply2NormalOrder(OperatorType *const O, OperatorType const 
     {
       for(ilB=0;ilB<=B.MaxLength;ilB++)
       {
-        if((O->l[ilA+ilB].QComplex)&&(A.l[ilA].QComplex)&&(B.l[ilB].QComplex))
+        if((O->l[ilA+ilB].QComplex)||(A.l[ilA].QComplex)||(B.l[ilB].QComplex))
         {/* at least one complex */
           if(!(O->l[ilA+ilB].QComplex)) if(MakeRealOperatorFixedLengthComplex(O,ilA+ilB)) {printf("MakeRealOperatorFixedLengthComplex at length=%i failed in OperatorMultiply2\n",ilA+ilB);fflush(stdout);return 1;}
           if(A.l[ilA].QComplex)
@@ -2021,7 +2021,7 @@ uint32_t OperatorMultiply2NormalOrder(OperatorType *const O, OperatorType const 
     {
       for(ilB=0;ilB<=B.MaxLength;ilB++)
       {
-        if((O->l[ilA+ilB].QComplex)&&(A.l[ilA].QComplex)&&(B.l[ilB].QComplex))
+        if((O->l[ilA+ilB].QComplex)||(A.l[ilA].QComplex)||(B.l[ilB].QComplex))
         {/* at least one complex */
           if(!(O->l[ilA+ilB].QComplex)) if(MakeRealOperatorFixedLengthComplex(O,ilA+ilB)) {printf("MakeRealOperatorFixedLengthComplex at length=%i failed in OperatorMultiply2\n",ilA+ilB);fflush(stdout);return 1;}
           if(A.l[ilA].QComplex)
@@ -2155,7 +2155,7 @@ uint32_t OperatorMultiply3(OperatorType *const O, OperatorType const A, Operator
       {
         for(ilC=0;ilC<=C.MaxLength;ilC++)
         {
-          if((O->l[ilA+ilB].QComplex)&&(A.l[ilA].QComplex)&&(B.l[ilB].QComplex)&&(C.l[ilC].QComplex))
+          if((O->l[ilA+ilB].QComplex)||(A.l[ilA].QComplex)||(B.l[ilB].QComplex)||(C.l[ilC].QComplex))
           {/* at least one complex */
             if(!(O->l[ilA+ilB+ilC].QComplex)) if(MakeRealOperatorFixedLengthComplex(O,ilA+ilB+ilC)) {printf("MakeRealOperatorFixedLengthComplex at length=%i failed in OperatorMultiply3\n",ilA+ilB+ilC);fflush(stdout);return 1;}
             if(A.l[ilA].QComplex)
@@ -2420,7 +2420,7 @@ uint32_t OperatorMultiply3(OperatorType *const O, OperatorType const A, Operator
       {
         for(ilC=0;ilC<=C.MaxLength;ilC++)
         {
-          if((O->l[ilA+ilB].QComplex)&&(A.l[ilA].QComplex)&&(B.l[ilB].QComplex)&&(C.l[ilC].QComplex))
+          if((O->l[ilA+ilB].QComplex)||(A.l[ilA].QComplex)||(B.l[ilB].QComplex)||(C.l[ilC].QComplex))
           {/* at least one complex */
             if(!(O->l[ilA+ilB+ilC].QComplex)) if(MakeRealOperatorFixedLengthComplex(O,ilA+ilB+ilC)) {printf("MakeRealOperatorFixedLengthComplex at length=%i failed in OperatorMultiply3\n",ilA+ilB+ilC);fflush(stdout);return 1;}
             if(A.l[ilA].QComplex)
@@ -2685,7 +2685,7 @@ uint32_t OperatorMultiply3(OperatorType *const O, OperatorType const A, Operator
       {
         for(ilC=0;ilC<=C.MaxLength;ilC++)
         {
-          if((O->l[ilA+ilB].QComplex)&&(A.l[ilA].QComplex)&&(B.l[ilB].QComplex)&&(C.l[ilC].QComplex))
+          if((O->l[ilA+ilB].QComplex)||(A.l[ilA].QComplex)||(B.l[ilB].QComplex)||(C.l[ilC].QComplex))
           {/* at least one complex */
             if(!(O->l[ilA+ilB+ilC].QComplex)) if(MakeRealOperatorFixedLengthComplex(O,ilA+ilB+ilC)) {printf("MakeRealOperatorFixedLengthComplex at length=%i failed in OperatorMultiply3\n",ilA+ilB+ilC);fflush(stdout);return 1;}
             if(A.l[ilA].QComplex)
@@ -2983,7 +2983,7 @@ uint32_t OperatorMultiply3NormalOrder(OperatorType *const O, OperatorType const 
       {
         for(ilC=0;ilC<=C.MaxLength;ilC++)
         {
-          if((O->l[ilA+ilB].QComplex)&&(A.l[ilA].QComplex)&&(B.l[ilB].QComplex)&&(C.l[ilC].QComplex))
+          if((O->l[ilA+ilB].QComplex)||(A.l[ilA].QComplex)||(B.l[ilB].QComplex)||(C.l[ilC].QComplex))
           {/* at least one complex */
             if(!(O->l[ilA+ilB+ilC].QComplex)) if(MakeRealOperatorFixedLengthComplex(O,ilA+ilB+ilC)) {printf("MakeRealOperatorFixedLengthComplex at length=%i failed in OperatorMultiply3\n",ilA+ilB+ilC);fflush(stdout);return 1;}
             if(A.l[ilA].QComplex)
@@ -3248,7 +3248,7 @@ uint32_t OperatorMultiply3NormalOrder(OperatorType *const O, OperatorType const 
       {
         for(ilC=0;ilC<=C.MaxLength;ilC++)
         {
-          if((O->l[ilA+ilB].QComplex)&&(A.l[ilA].QComplex)&&(B.l[ilB].QComplex)&&(C.l[ilC].QComplex))
+          if((O->l[ilA+ilB].QComplex)||(A.l[ilA].QComplex)||(B.l[ilB].QComplex)||(C.l[ilC].QComplex))
           {/* at least one complex */
             if(!(O->l[ilA+ilB+ilC].QComplex)) if(MakeRealOperatorFixedLengthComplex(O,ilA+ilB+ilC)) {printf("MakeRealOperatorFixedLengthComplex at length=%i failed in OperatorMultiply3\n",ilA+ilB+ilC);fflush(stdout);return 1;}
             if(A.l[ilA].QComplex)
@@ -3513,7 +3513,7 @@ uint32_t OperatorMultiply3NormalOrder(OperatorType *const O, OperatorType const 
       {
         for(ilC=0;ilC<=C.MaxLength;ilC++)
         {
-          if((O->l[ilA+ilB].QComplex)&&(A.l[ilA].QComplex)&&(B.l[ilB].QComplex)&&(C.l[ilC].QComplex))
+          if((O->l[ilA+ilB].QComplex)||(A.l[ilA].QComplex)||(B.l[ilB].QComplex)||(C.l[ilC].QComplex))
           {/* at least one complex */
             if(!(O->l[ilA+ilB+ilC].QComplex)) if(MakeRealOperatorFixedLengthComplex(O,ilA+ilB+ilC)) {printf("MakeRealOperatorFixedLengthComplex at length=%i failed in OperatorMultiply3\n",ilA+ilB+ilC);fflush(stdout);return 1;}
             if(A.l[ilA].QComplex)

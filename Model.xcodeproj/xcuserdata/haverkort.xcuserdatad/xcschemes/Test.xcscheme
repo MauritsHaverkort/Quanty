@@ -64,12 +64,16 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "OppMult"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "3J"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "AtomicPhysics"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "GFBA"
