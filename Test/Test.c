@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
-#include <stdint.h> 
+#include <stdint.h>
 #include <string.h>
 #include <math.h>
 #include <float.h>
@@ -62,67 +62,103 @@
 #include "../Test/TestAtomicPhysics.c"
 #include "../Test/OperatorArithmetic.c"
 
-int main (int argc, const char * argv[]) 
+int main(int argc, const char *argv[])
 {
   TimeStampAll();
-  argc-=1;
-  for (;argc!=0;argc--)
+  argc -= 1;
+  for (; argc != 0; argc--)
   {
-  /* functions in TestCore */
-    if (!strncmp("Struct",argv[argc],strlen(argv[argc]))) TestStruct();  
-    if (!strncmp("Hash",argv[argc],strlen(argv[argc])))   TestHash();
-    if (!strncmp("Wave",argv[argc],strlen(argv[argc])))   TestWaveFunctionArithmetic();
-    if (!strncmp("WaveAdd",argv[argc],strlen(argv[argc]))) TestAddFermion();
-    if (!strncmp("Opar",argv[argc],strlen(argv[argc])))   TestOperatorArithmetic();
-    if (!strncmp("OOpar",argv[argc],strlen(argv[argc])))  TestOperatorArithmeticNormalOrder();
-    if (!strncmp("Cell",argv[argc],strlen(argv[argc])))   TestCellFunctions();
-    
-    
-    
-    if (!strncmp("Cr",argv[argc],strlen(argv[argc]))) TestCreate();
-    if (!strncmp("VMP",argv[argc],strlen(argv[argc]))) TestVectorMatrixParallel();
-    if (!strncmp("point",argv[argc],strlen(argv[argc]))) TestPointerArithmetic();
-    if (!strncmp("math",argv[argc],strlen(argv[argc]))) TestBasicMath();
-    if (!strncmp("Complex",argv[argc],strlen(argv[argc]))) TestComplex();
+    /* functions in TestCore */
+    if (!strncmp("Struct", argv[argc], strlen(argv[argc])))
+      TestStruct();
+    if (!strncmp("Hash", argv[argc], strlen(argv[argc])))
+      TestHash();
+    if (!strncmp("Wave", argv[argc], strlen(argv[argc])))
+      TestWaveFunctionArithmetic();
+    if (!strncmp("WaveAdd", argv[argc], strlen(argv[argc])))
+      TestAddFermion();
+    if (!strncmp("Opar", argv[argc], strlen(argv[argc])))
+      TestOperatorArithmetic();
+    if (!strncmp("OOpar", argv[argc], strlen(argv[argc])))
+      TestOperatorArithmeticNormalOrder();
+    if (!strncmp("Cell", argv[argc], strlen(argv[argc])))
+      TestCellFunctions();
 
-    if (!strncmp("AllMatrix",argv[argc],strlen(argv[argc]))) TestAllMatrix();
-    if (!strncmp("MatrixVector",argv[argc],strlen(argv[argc]))) TestMatrixVector();
-    if (!strncmp("ConvertMatrix",argv[argc],strlen(argv[argc]))) TestMatrixTypeConversion();
-    if (!strncmp("Combi",argv[argc],strlen(argv[argc]))) TestCombinatorial();
-    if (!strncmp("3J",argv[argc],strlen(argv[argc]))) TestThreeJSymbol();
 
-    if (!strncmp("DGESVD",argv[argc],strlen(argv[argc]))) TestDGESVD();
-    if (!strncmp("Lanczos",argv[argc],strlen(argv[argc]))) TestLanczos();
 
-    if (!strncmp("GFSpec",argv[argc],strlen(argv[argc]))) TestGreenFunctionArithmetic();
-    if (!strncmp("GFCSpec",argv[argc],strlen(argv[argc]))) TestGreenFunctionCreation();
-    if (!strncmp("Spec",argv[argc],strlen(argv[argc]))) TestSpec();
-    if (!strncmp("SpecSelf",argv[argc],strlen(argv[argc]))) TestSpecSelf();
-    if (!strncmp("KKTrans",argv[argc],strlen(argv[argc]))) TestKKTrans();
-    if (!strncmp("interpolate",argv[argc],strlen(argv[argc]))) TestInterpolate();
+    if (!strncmp("Cr", argv[argc], strlen(argv[argc])))
+      TestCreate();
+    if (!strncmp("VMP", argv[argc], strlen(argv[argc])))
+      TestVectorMatrixParallel();
+    if (!strncmp("point", argv[argc], strlen(argv[argc])))
+      TestPointerArithmetic();
+    if (!strncmp("math", argv[argc], strlen(argv[argc])))
+      TestBasicMath();
+    if (!strncmp("Complex", argv[argc], strlen(argv[argc])))
+      TestComplex();
 
-    if (!strncmp("Inverse",argv[argc],strlen(argv[argc]))) TestMatrixInverse();
-    
-    if (!strncmp("bmp",argv[argc],strlen(argv[argc]))) TestBMP();
-    if (!strncmp("waveIO",argv[argc],strlen(argv[argc]))) TestWaveIO();
+    if (!strncmp("AllMatrix", argv[argc], strlen(argv[argc])))
+      TestAllMatrix();
+    if (!strncmp("MatrixVector", argv[argc], strlen(argv[argc])))
+      TestMatrixVector();
+    if (!strncmp("ConvertMatrix", argv[argc], strlen(argv[argc])))
+      TestMatrixTypeConversion();
+    if (!strncmp("Combi", argv[argc], strlen(argv[argc])))
+      TestCombinatorial();
+    if (!strncmp("3J", argv[argc], strlen(argv[argc])))
+      TestThreeJSymbol();
 
-    if (!strncmp("TriMatrix",argv[argc],strlen(argv[argc]))) TestTriDiagonalMatrix();
-    
-    if (!strncmp("LancDy",argv[argc],strlen(argv[argc]))) TestLanczosDyson();
-    if (!strncmp("LancDy2",argv[argc],strlen(argv[argc]))) TestLanczosDyson2();
-    
-    if (!strncmp("GenEig",argv[argc],strlen(argv[argc]))) TestGeneralizedEigensystem();
-    
-    if (!strncmp("Green",argv[argc],strlen(argv[argc]))) TestGreenFunctionArithmetic();
-    
-    if (!strncmp("GFBA",argv[argc],strlen(argv[argc]))) TestGFBA();
-    
-    if(!strncmp("StdOppS",argv[argc],strlen(argv[argc]))) TestS();
-    
-    if(!strncmp("OppMult",argv[argc],strlen(argv[argc]))) TestOppMult();
-    
-    if(!strncmp("AtomicPhysics",argv[argc],strlen(argv[argc]))) TestAtomicPhysics();
+    if (!strncmp("DGESVD", argv[argc], strlen(argv[argc])))
+      TestDGESVD();
+    if (!strncmp("Lanczos", argv[argc], strlen(argv[argc])))
+      TestLanczos();
+
+    if (!strncmp("GFSpec", argv[argc], strlen(argv[argc])))
+      TestGreenFunctionArithmetic();
+    if (!strncmp("GFCSpec", argv[argc], strlen(argv[argc])))
+      TestGreenFunctionCreation();
+    if (!strncmp("Spec", argv[argc], strlen(argv[argc])))
+      TestSpec();
+    if (!strncmp("SpecSelf", argv[argc], strlen(argv[argc])))
+      TestSpecSelf();
+    if (!strncmp("KKTrans", argv[argc], strlen(argv[argc])))
+      TestKKTrans();
+    if (!strncmp("interpolate", argv[argc], strlen(argv[argc])))
+      TestInterpolate();
+
+    if (!strncmp("Inverse", argv[argc], strlen(argv[argc])))
+      TestMatrixInverse();
+
+    if (!strncmp("bmp", argv[argc], strlen(argv[argc])))
+      TestBMP();
+    if (!strncmp("waveIO", argv[argc], strlen(argv[argc])))
+      TestWaveIO();
+
+    if (!strncmp("TriMatrix", argv[argc], strlen(argv[argc])))
+      TestTriDiagonalMatrix();
+
+    if (!strncmp("LancDy", argv[argc], strlen(argv[argc])))
+      TestLanczosDyson();
+    if (!strncmp("LancDy2", argv[argc], strlen(argv[argc])))
+      TestLanczosDyson2();
+
+    if (!strncmp("GenEig", argv[argc], strlen(argv[argc])))
+      TestGeneralizedEigensystem();
+
+    if (!strncmp("Green", argv[argc], strlen(argv[argc])))
+      TestGreenFunctionArithmetic();
+
+    if (!strncmp("GFBA", argv[argc], strlen(argv[argc])))
+      TestGFBA();
+
+    if (!strncmp("StdOppS", argv[argc], strlen(argv[argc])))
+      TestS();
+
+    if (!strncmp("OppMult", argv[argc], strlen(argv[argc])))
+      TestOppMult();
+
+    if (!strncmp("AtomicPhysics", argv[argc], strlen(argv[argc])))
+      TestAtomicPhysics();
   }
   return 0;
 }
-

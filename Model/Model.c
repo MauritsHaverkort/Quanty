@@ -41,7 +41,7 @@
 #include "../Tight_Binding/ImpurityUnfolding.c"
 #include "../DMFT/SingleSiteFunctions.c"
 
-int main (int argc, const char * argv[]) 
+int main(int argc, const char *argv[])
 {
   printf("Hello world\n");
   return 0;

@@ -18,104 +18,136 @@
 
 /* Free a DoubleTriDiagonalMatrix M (the structure is not freed)
  */
-void FreeDoubleTriDiagonalMatrix(DoubleTriDiagonalMatrixType *const M)
+void FreeDoubleTriDiagonalMatrix(DoubleTriDiagonalMatrixType * const M)
 {
   FreeTriDiagonalMatrix(&M->val);
   FreeTriDiagonalMatrix(&M->con);
-  M->mu=0;
-  M->Epsilon=0;
-  M->a0=0;
-  M->b0=0;
-  strcpy(M->Name,"free");
+  M->mu = 0;
+  M->Epsilon = 0;
+  M->a0 = 0;
+  M->b0 = 0;
+  strcpy(M->Name, "free");
 }
 
 /*  Init Tri diagonal matrix
  *  M.val.N M.con.N must be set
  */
-uint32_t InitDoubleTriDiagonalMatrix(DoubleTriDiagonalMatrixType *const M)
+uint32_t InitDoubleTriDiagonalMatrix(DoubleTriDiagonalMatrixType * const M)
 {
-  strcpy(M->Name,"Matrix");
-  if((M->val.N==0)||(M->con.N==0)) {printf("Error in InitDoubleTriDiagonalMatrix M->val.N=%i M->con.N=%i\n",M->val.N,M->con.N);return 2;};
-  if(InitTriDiagonalMatrix(&M->val)){printf("InitTriDiagonalMatrix failed in InitDoubleTriDiagonalMatrix\n");fflush(stdout);return 1;};
-  if(InitTriDiagonalMatrix(&M->con))
+  strcpy(M->Name, "Matrix");
+  if ((M->val.N == 0) || (M->con.N == 0))
+  {
+    printf("Error in InitDoubleTriDiagonalMatrix M->val.N=%i M->con.N=%i\n", M->val.N, M->con.N);
+    return 2;
+  };
+  if (InitTriDiagonalMatrix(&M->val))
+  {
+    printf("InitTriDiagonalMatrix failed in InitDoubleTriDiagonalMatrix\n");
+    fflush(stdout);
+    return 1;
+  };
+  if (InitTriDiagonalMatrix(&M->con))
   {
     FreeTriDiagonalMatrix(&M->val);
     printf("InitTriDiagonalMatrix failed in InitDoubleTriDiagonalMatrix\n");
     fflush(stdout);
     return 1;
   }
-  M->a0=0;
-  M->b0=1;
+  M->a0 = 0;
+  M->b0 = 1;
   return 0;
 }
 
 /*  Init double tri-diagonal matrix and set diagonal (a) equal to one
  *  M.val.N M.con.N must be set
  */
-uint32_t InitIdentityDoubleTriDiagonalMatrix(DoubleTriDiagonalMatrixType *const M)
+uint32_t InitIdentityDoubleTriDiagonalMatrix(DoubleTriDiagonalMatrixType * const M)
 {
-  strcpy(M->Name,"I_Matrix");
-  if((M->val.N==0)||(M->con.N==0)) {printf("Error in InitIdentityDoubleTriDiagonalMatrix M->val.N=%i M->con.N=%i\n",M->val.N,M->con.N);fflush(stdout);return 2;};
-  if(InitIdentityTriDiagonalMatrix(&M->val)){printf("InitIdentityTriDiagonalMatrix failed in InitIdentityDoubleTriDiagonalMatrix\n");fflush(stdout);return 1;};
-  if(InitIdentityTriDiagonalMatrix(&M->con))
+  strcpy(M->Name, "I_Matrix");
+  if ((M->val.N == 0) || (M->con.N == 0))
+  {
+    printf("Error in InitIdentityDoubleTriDiagonalMatrix M->val.N=%i M->con.N=%i\n", M->val.N, M->con.N);
+    fflush(stdout);
+    return 2;
+  };
+  if (InitIdentityTriDiagonalMatrix(&M->val))
+  {
+    printf("InitIdentityTriDiagonalMatrix failed in InitIdentityDoubleTriDiagonalMatrix\n");
+    fflush(stdout);
+    return 1;
+  };
+  if (InitIdentityTriDiagonalMatrix(&M->con))
   {
     FreeTriDiagonalMatrix(&M->val);
     printf("InitIdentityTriDiagonalMatrix failed in InitIdentityDoubleTriDiagonalMatrix\n");
     fflush(stdout);
     return 1;
   }
-  M->a0=0;
-  M->b0=1;
+  M->a0 = 0;
+  M->b0 = 1;
   return 0;
 }
 
 /* set elements with an absolute value smaller then epsilon to zero
  */
-void DoubleTriDiagonalMatrixChop(DoubleTriDiagonalMatrixType *const M, double const epsilon)
+void DoubleTriDiagonalMatrixChop(DoubleTriDiagonalMatrixType * const M, double const epsilon)
 {
   uint32_t i;
-  for(i=0;i<M->val.N;i++)
+  for (i = 0; i < M->val.N; i++)
   {
-    if((fabs(M->val.a[i])<epsilon)) M->val.a[i]=0;
-    if((fabs(M->val.b[i])<epsilon)) M->val.b[i]=0;
+    if ((fabs(M->val.a[i]) < epsilon))
+      M->val.a[i] = 0;
+    if ((fabs(M->val.b[i]) < epsilon))
+      M->val.b[i] = 0;
   }
-  if((fabs(M->val.a[M->val.N])<epsilon)) M->val.a[M->val.N]=0;
-  for(i=0;i<M->con.N;i++)
+  if ((fabs(M->val.a[M->val.N]) < epsilon))
+    M->val.a[M->val.N] = 0;
+  for (i = 0; i < M->con.N; i++)
   {
-    if((fabs(M->con.a[i])<epsilon)) M->con.a[i]=0;
-    if((fabs(M->con.b[i])<epsilon)) M->con.b[i]=0;
+    if ((fabs(M->con.a[i]) < epsilon))
+      M->con.a[i] = 0;
+    if ((fabs(M->con.b[i]) < epsilon))
+      M->con.b[i] = 0;
   }
-  if((fabs(M->con.a[M->con.N])<epsilon)) M->con.a[M->con.N]=0;
-  if((fabs(M->a0)<epsilon)) M->a0=0;
-  if((fabs(M->b0)<epsilon)) M->b0=0;
+  if ((fabs(M->con.a[M->con.N]) < epsilon))
+    M->con.a[M->con.N] = 0;
+  if ((fabs(M->a0) < epsilon))
+    M->a0 = 0;
+  if ((fabs(M->b0) < epsilon))
+    M->b0 = 0;
 }
 
 /*  MI=M^-1
  *  MI not initiallized on call
  */
-double DoubleTriDiagonalMatrixInverse(DoubleTriDiagonalMatrixType const M, MatrixType *const MI)
+double DoubleTriDiagonalMatrixInverse(DoubleTriDiagonalMatrixType const M, MatrixType * const MI)
 {
   uint32_t i;
-  MI->Ni=M.val.N+M.con.N+1;
-  MI->Nj=M.val.N+M.con.N+1;
-  MI->QComplex=0;
-  if(InitMatrix(MI)) {printf("InitMatrix failed in DoubleTriDiagonalMatrixInverse\n");fflush(stdout);return -1;}
-  MI->VRe[0][0]=(M.con.a[0]+M.val.a[0])/2.0;
-  for(i=1;i<=M.val.N;i++)
+  MI->Ni = M.val.N + M.con.N + 1;
+  MI->Nj = M.val.N + M.con.N + 1;
+  MI->QComplex = 0;
+  if (InitMatrix(MI))
   {
-    MI->VRe[i-1][i]=M.val.b[i-1];
-    MI->VRe[i][i-1]=M.val.b[i-1];
-    MI->VRe[i][i]=M.val.a[i];
+    printf("InitMatrix failed in DoubleTriDiagonalMatrixInverse\n");
+    fflush(stdout);
+    return -1;
   }
-  i=M.val.N+1;
-  MI->VRe[0][i]=M.val.b[0];
-  MI->VRe[i][0]=M.val.b[0];
-  MI->VRe[i][i]=M.val.a[1];
-  for(i=M.val.N+2;i<=M.val.N+M.con.N;i++)
+  MI->VRe[0][0] = (M.con.a[0] + M.val.a[0]) / 2.0;
+  for (i = 1; i <= M.val.N; i++)
   {
-    MI->VRe[i-1][i]=M.val.b[i-M.val.N-1];
-    MI->VRe[i][i-1]=M.val.b[i-M.val.N-1];
-    MI->VRe[i][i]=M.val.a[i-M.val.N];
+    MI->VRe[i - 1][i] = M.val.b[i - 1];
+    MI->VRe[i][i - 1] = M.val.b[i - 1];
+    MI->VRe[i][i] = M.val.a[i];
+  }
+  i = M.val.N + 1;
+  MI->VRe[0][i] = M.val.b[0];
+  MI->VRe[i][0] = M.val.b[0];
+  MI->VRe[i][i] = M.val.a[1];
+  for (i = M.val.N + 2; i <= M.val.N + M.con.N; i++)
+  {
+    MI->VRe[i - 1][i] = M.val.b[i - M.val.N - 1];
+    MI->VRe[i][i - 1] = M.val.b[i - M.val.N - 1];
+    MI->VRe[i][i] = M.val.a[i - M.val.N];
   }
   return MatrixInverse(MI);
 }
@@ -125,18 +157,18 @@ double DoubleTriDiagonalMatrixInverse(DoubleTriDiagonalMatrixType const M, Matri
 void DoubleTriDiagonalMatrixAdd(DoubleTriDiagonalMatrixType * const M, DoubleTriDiagonalMatrixType B, double alphaRe)
 {
   uint32_t i;
-  for(i=0;i<M->val.N-1;i++)
+  for (i = 0; i < M->val.N - 1; i++)
   {
-    M->val.a[i]+=alphaRe * B.val.a[i];
-    M->val.b[i]+=alphaRe * B.val.b[i];
+    M->val.a[i] += alphaRe * B.val.a[i];
+    M->val.b[i] += alphaRe * B.val.b[i];
   }
-  M->val.a[M->val.N]+= alphaRe * B.val.a[M->val.N];
-  for(i=0;i<M->con.N-1;i++)
+  M->val.a[M->val.N] += alphaRe * B.val.a[M->val.N];
+  for (i = 0; i < M->con.N - 1; i++)
   {
-    M->con.a[i]+=alphaRe * B.con.a[i];
-    M->con.b[i]+=alphaRe * B.con.b[i];
+    M->con.a[i] += alphaRe * B.con.a[i];
+    M->con.b[i] += alphaRe * B.con.b[i];
   }
-  M->con.a[M->con.N]+= alphaRe * B.con.a[M->con.N];
+  M->con.a[M->con.N] += alphaRe * B.con.a[M->con.N];
 }
 
 /*  M<- alpha M
@@ -144,20 +176,20 @@ void DoubleTriDiagonalMatrixAdd(DoubleTriDiagonalMatrixType * const M, DoubleTri
 void DoubleTriDiagonalMatrixScalarMultiply(DoubleTriDiagonalMatrixType * const M, double alphaRe)
 {
   uint32_t i;
-  for(i=0;i<M->val.N;i++)
+  for (i = 0; i < M->val.N; i++)
   {
-    M->val.a[i]*=alphaRe ;
-    M->val.b[i]*=alphaRe ;
+    M->val.a[i] *= alphaRe;
+    M->val.b[i] *= alphaRe;
   }
-  M->val.a[M->val.N]*= alphaRe ;
-  for(i=0;i<M->con.N;i++)
+  M->val.a[M->val.N] *= alphaRe;
+  for (i = 0; i < M->con.N; i++)
   {
-    M->con.a[i]*=alphaRe ;
-    M->con.b[i]*=alphaRe ;
+    M->con.a[i] *= alphaRe;
+    M->con.b[i] *= alphaRe;
   }
-  M->con.a[M->con.N]*= alphaRe ;
-  M->a0=0;
-  M->b0=1;
+  M->con.a[M->con.N] *= alphaRe;
+  M->a0 = 0;
+  M->b0 = 1;
 }
 
 /* Create a new matrix that has dimensions
@@ -166,29 +198,31 @@ void DoubleTriDiagonalMatrixScalarMultiply(DoubleTriDiagonalMatrixType * const M
  * and is a copy of a part of A
  * M not allocated on call of the subroutine
  */
-uint32_t DoubleTriDiagonalMatrixPart(DoubleTriDiagonalMatrixType * const M, DoubleTriDiagonalMatrixType A, const uint32_t iEndval, const uint32_t iEndcon)
+uint32_t DoubleTriDiagonalMatrixPart(DoubleTriDiagonalMatrixType * const M, DoubleTriDiagonalMatrixType A,
+                                     const uint32_t iEndval, const uint32_t iEndcon)
 {
   uint32_t i;
-  if((iEndval>A.val.N)||(iEndcon>A.con.N)) return 1;
-  M->val.N=iEndval;
-  M->con.N=iEndcon;
+  if ((iEndval > A.val.N) || (iEndcon > A.con.N))
+    return 1;
+  M->val.N = iEndval;
+  M->con.N = iEndcon;
   InitDoubleTriDiagonalMatrix(M);
-  M->mu=A.mu;
-  M->Epsilon=A.Epsilon;
-  M->a0=A.a0;
-  M->b0=A.b0;
-  for(i=0;i<M->val.N;i++)
+  M->mu = A.mu;
+  M->Epsilon = A.Epsilon;
+  M->a0 = A.a0;
+  M->b0 = A.b0;
+  for (i = 0; i < M->val.N; i++)
   {
-    M->val.a[i]=A.val.a[i];
-    M->val.b[i]=A.val.b[i];
+    M->val.a[i] = A.val.a[i];
+    M->val.b[i] = A.val.b[i];
   }
-  M->val.a[M->val.N]=A.val.a[M->val.N];
-  for(i=0;i<M->con.N;i++)
+  M->val.a[M->val.N] = A.val.a[M->val.N];
+  for (i = 0; i < M->con.N; i++)
   {
-    M->con.a[i]=A.con.a[i];
-    M->con.b[i]=A.con.b[i];
+    M->con.a[i] = A.con.a[i];
+    M->con.b[i] = A.con.b[i];
   }
-  M->con.a[M->con.N]=A.con.a[M->con.N];
+  M->con.a[M->con.N] = A.con.a[M->con.N];
   return 0;
 }
 
@@ -197,25 +231,25 @@ uint32_t DoubleTriDiagonalMatrixPart(DoubleTriDiagonalMatrixType * const M, Doub
 uint32_t DoubleTriDiagonalMatrixCopy(DoubleTriDiagonalMatrixType * const M, DoubleTriDiagonalMatrixType A)
 {
   uint32_t i;
-  M->val.N=A.val.N;
-  M->con.N=A.con.N;
+  M->val.N = A.val.N;
+  M->con.N = A.con.N;
   InitDoubleTriDiagonalMatrix(M);
-  M->mu=A.mu;
-  M->Epsilon=A.Epsilon;
-  M->a0=A.a0;
-  M->b0=A.b0;
-  for(i=0;i<M->val.N;i++)
+  M->mu = A.mu;
+  M->Epsilon = A.Epsilon;
+  M->a0 = A.a0;
+  M->b0 = A.b0;
+  for (i = 0; i < M->val.N; i++)
   {
-    M->val.a[i]=A.val.a[i];
-    M->val.b[i]=A.val.b[i];
+    M->val.a[i] = A.val.a[i];
+    M->val.b[i] = A.val.b[i];
   }
-  M->val.a[M->val.N]=A.val.a[M->val.N];
-  for(i=0;i<M->con.N;i++)
+  M->val.a[M->val.N] = A.val.a[M->val.N];
+  for (i = 0; i < M->con.N; i++)
   {
-    M->con.a[i]=A.con.a[i];
-    M->con.b[i]=A.con.b[i];
+    M->con.a[i] = A.con.a[i];
+    M->con.b[i] = A.con.b[i];
   }
-  M->con.a[M->con.N]=A.con.a[M->con.N];
+  M->con.a[M->con.N] = A.con.a[M->con.N];
   return 0;
 }
 
@@ -225,29 +259,29 @@ uint32_t DoubleTriDiagonalMatrixCopy(DoubleTriDiagonalMatrixType * const M, Doub
  * y already allocated
  * y[i]=sum_j M[i][j] x[j]
  */
-uint32_t RealDoubleTriDiagonalMatrixVector(DoubleTriDiagonalMatrixType const M, const double * const x, double * const y)
+uint32_t RealDoubleTriDiagonalMatrixVector(DoubleTriDiagonalMatrixType const M, const double *const x, double *const y)
 {
   uint32_t i;
-  y[0]=(M.val.a[0]+M.con.a[0])*x[0]/2.0;
-  for(i=1;i<=M.val.N;i++)
+  y[0] = (M.val.a[0] + M.con.a[0]) * x[0] / 2.0;
+  for (i = 1; i <= M.val.N; i++)
   {
-    y[i]=M.val.a[i]*x[i];
+    y[i] = M.val.a[i] * x[i];
   }
-  for(i=M.val.N+1;i<=M.val.N+M.con.N;i++)
+  for (i = M.val.N + 1; i <= M.val.N + M.con.N; i++)
   {
-    y[i]=M.con.a[i-M.val.N]*x[i];
+    y[i] = M.con.a[i - M.val.N] * x[i];
   }
-  for(i=0;i<M.val.N;i++)
+  for (i = 0; i < M.val.N; i++)
   {
-    y[i+1]+=M.val.b[i]*x[i];
-    y[i]  +=M.val.b[i]*x[i+1];
+    y[i + 1] += M.val.b[i] * x[i];
+    y[i] += M.val.b[i] * x[i + 1];
   }
-  y[0]        +=M.con.b[0]*x[M.val.N+1];
-  y[M.val.N+1]+=M.con.b[0]*x[0];
-  for(i=M.val.N+1;i<M.val.N+M.con.N;i++)
+  y[0] += M.con.b[0] * x[M.val.N + 1];
+  y[M.val.N + 1] += M.con.b[0] * x[0];
+  for (i = M.val.N + 1; i < M.val.N + M.con.N; i++)
   {
-    y[i+1]+=M.con.b[i-M.val.N]*x[i];
-    y[i]  +=M.con.b[i-M.val.N]*x[i+1];
+    y[i + 1] += M.con.b[i - M.val.N] * x[i];
+    y[i] += M.con.b[i - M.val.N] * x[i + 1];
   }
   return 0;
 }
@@ -257,38 +291,39 @@ uint32_t RealDoubleTriDiagonalMatrixVector(DoubleTriDiagonalMatrixType const M, 
  * y already allocated
  * y[i]=sum_j M[i][j] x[j]
  */
-uint32_t ComplexDoubleTriDiagonalMatrixVector(DoubleTriDiagonalMatrixType const M, const double * const xRe, const double * const xIm, double * const yRe, double * const yIm)
+uint32_t ComplexDoubleTriDiagonalMatrixVector(DoubleTriDiagonalMatrixType const M, const double *const xRe,
+                                              const double *const xIm, double *const yRe, double *const yIm)
 {
   uint32_t i;
-  yRe[0]=(M.val.a[0]+M.con.a[0])*xRe[0]/2.0;
-  yIm[0]=(M.val.a[0]+M.con.a[0])*xIm[0]/2.0;
-  for(i=1;i<=M.val.N;i++)
+  yRe[0] = (M.val.a[0] + M.con.a[0]) * xRe[0] / 2.0;
+  yIm[0] = (M.val.a[0] + M.con.a[0]) * xIm[0] / 2.0;
+  for (i = 1; i <= M.val.N; i++)
   {
-    yRe[i]=M.val.a[i]*xRe[i];
-    yIm[i]=M.val.a[i]*xIm[i];
+    yRe[i] = M.val.a[i] * xRe[i];
+    yIm[i] = M.val.a[i] * xIm[i];
   }
-  for(i=M.val.N+1;i<=M.val.N+M.con.N;i++)
+  for (i = M.val.N + 1; i <= M.val.N + M.con.N; i++)
   {
-    yRe[i]=M.con.a[i-M.val.N]*xRe[i];
-    yIm[i]=M.con.a[i-M.val.N]*xIm[i];
+    yRe[i] = M.con.a[i - M.val.N] * xRe[i];
+    yIm[i] = M.con.a[i - M.val.N] * xIm[i];
   }
-  for(i=0;i<M.val.N;i++)
+  for (i = 0; i < M.val.N; i++)
   {
-    yRe[i+1]+=M.val.b[i]*xRe[i];
-    yIm[i+1]+=M.val.b[i]*xIm[i];
-    yRe[i]+=M.val.b[i]*xRe[i+1];
-    yIm[i]+=M.val.b[i]*xIm[i+1];
+    yRe[i + 1] += M.val.b[i] * xRe[i];
+    yIm[i + 1] += M.val.b[i] * xIm[i];
+    yRe[i] += M.val.b[i] * xRe[i + 1];
+    yIm[i] += M.val.b[i] * xIm[i + 1];
   }
-  yRe[0]+=M.val.b[0]*xRe[M.val.N+1];
-  yIm[0]+=M.val.b[0]*xIm[M.val.N+1];
-  yRe[M.val.N+1]+=M.val.b[0]*xRe[0];
-  yIm[M.val.N+1]+=M.val.b[0]*xIm[0];
-  for(i=M.val.N+1;i<M.val.N+M.con.N;i++)
+  yRe[0] += M.val.b[0] * xRe[M.val.N + 1];
+  yIm[0] += M.val.b[0] * xIm[M.val.N + 1];
+  yRe[M.val.N + 1] += M.val.b[0] * xRe[0];
+  yIm[M.val.N + 1] += M.val.b[0] * xIm[0];
+  for (i = M.val.N + 1; i < M.val.N + M.con.N; i++)
   {
-    yRe[i+1]+=M.val.b[i-M.val.N]*xRe[i];
-    yIm[i+1]+=M.val.b[i-M.val.N]*xIm[i];
-    yRe[i]+=M.val.b[i-M.val.N]*xRe[i+1];
-    yIm[i]+=M.val.b[i-M.val.N]*xIm[i+1];
+    yRe[i + 1] += M.val.b[i - M.val.N] * xRe[i];
+    yIm[i + 1] += M.val.b[i - M.val.N] * xIm[i];
+    yRe[i] += M.val.b[i - M.val.N] * xRe[i + 1];
+    yIm[i] += M.val.b[i - M.val.N] * xIm[i + 1];
   }
   return 0;
 }
@@ -298,26 +333,27 @@ uint32_t ComplexDoubleTriDiagonalMatrixVector(DoubleTriDiagonalMatrixType const 
  * y already allocated
  * y=sum_ij x[i] M[i][j] x[j]
  */
-uint32_t RealVectorDoubleTriDiagonalMatrixVector(DoubleTriDiagonalMatrixType const M, const double * const x, double *const y)
+uint32_t RealVectorDoubleTriDiagonalMatrixVector(DoubleTriDiagonalMatrixType const M, const double *const x,
+                                                 double *const y)
 {
   uint32_t i;
-  *y=x[0]*(M.val.a[0]+M.con.a[0])*x[0]/2.0;
-  for(i=1;i<=M.val.N;i++)
+  *y = x[0] * (M.val.a[0] + M.con.a[0]) * x[0] / 2.0;
+  for (i = 1; i <= M.val.N; i++)
   {
-    *y+=x[i]*M.val.a[i]*x[i];
+    *y += x[i] * M.val.a[i] * x[i];
   }
-  for(i=M.val.N+1;i<=M.val.N+M.con.N;i++)
+  for (i = M.val.N + 1; i <= M.val.N + M.con.N; i++)
   {
-    *y+=x[i]*M.con.a[i-M.val.N]*x[i];
+    *y += x[i] * M.con.a[i - M.val.N] * x[i];
   }
-  for(i=0;i<M.val.N;i++)
+  for (i = 0; i < M.val.N; i++)
   {
-    *y+=2*x[i]*M.val.b[i]*x[i+1];
+    *y += 2 * x[i] * M.val.b[i] * x[i + 1];
   }
-  *y+=2*x[M.val.N+1]*M.con.b[0]*x[0];
-  for(i=M.val.N+1;i<M.con.N+M.val.N;i++)
+  *y += 2 * x[M.val.N + 1] * M.con.b[0] * x[0];
+  for (i = M.val.N + 1; i < M.con.N + M.val.N; i++)
   {
-    *y+=2*x[i]*M.con.b[i-M.val.N]*x[i+1];
+    *y += 2 * x[i] * M.con.b[i - M.val.N] * x[i + 1];
   }
   return 0;
 }
@@ -326,28 +362,28 @@ uint32_t RealVectorDoubleTriDiagonalMatrixVector(DoubleTriDiagonalMatrixType con
  * y already allocated
  * y=sum_ij x[i]^* M[i][j] x[j]
  */
-uint32_t ComplexVectorDoubleTriDiagonalMatrixVector(DoubleTriDiagonalMatrixType const M, const double * const xRe, const double * const xIm, double * const yRe, double * const yIm)
+uint32_t ComplexVectorDoubleTriDiagonalMatrixVector(DoubleTriDiagonalMatrixType const M, const double *const xRe,
+                                                    const double *const xIm, double *const yRe, double *const yIm)
 {
   uint32_t i;
-  *yRe=xRe[0]*(M.val.a[0]+M.con.a[0])*xRe[0]/2.0+xIm[0]*(M.val.a[0]+M.con.a[0])*xIm[0]/2.0;
-  *yIm=0;
-  for(i=1;i<=M.val.N;i++)
+  *yRe = xRe[0] * (M.val.a[0] + M.con.a[0]) * xRe[0] / 2.0 + xIm[0] * (M.val.a[0] + M.con.a[0]) * xIm[0] / 2.0;
+  *yIm = 0;
+  for (i = 1; i <= M.val.N; i++)
   {
-    *yRe+=xRe[i]*M.val.a[i]*xRe[i]+xIm[i]*M.val.a[i]*xIm[i];
+    *yRe += xRe[i] * M.val.a[i] * xRe[i] + xIm[i] * M.val.a[i] * xIm[i];
   }
-  for(i=M.val.N+1;i<M.val.N+M.con.N;i++)
+  for (i = M.val.N + 1; i < M.val.N + M.con.N; i++)
   {
-    *yRe+=xRe[i]*M.con.a[i-M.val.N]*xRe[i]+xIm[i]*M.con.a[i-M.val.N]*xIm[i];
+    *yRe += xRe[i] * M.con.a[i - M.val.N] * xRe[i] + xIm[i] * M.con.a[i - M.val.N] * xIm[i];
   }
-  for(i=0;i<M.val.N;i++)
+  for (i = 0; i < M.val.N; i++)
   {
-    *yRe+=2*(xRe[i]*M.val.b[i]*xRe[i+1]+xIm[i]*M.val.b[i]*xIm[i+1]);
+    *yRe += 2 * (xRe[i] * M.val.b[i] * xRe[i + 1] + xIm[i] * M.val.b[i] * xIm[i + 1]);
   }
-  *yRe+=2*(xRe[M.val.N+1]*M.val.b[0]*xRe[0]+xIm[M.val.N+1]*M.val.b[0]*xIm[0]);
-  for(i=1+M.val.N;i<M.con.N+M.val.N;i++)
+  *yRe += 2 * (xRe[M.val.N + 1] * M.val.b[0] * xRe[0] + xIm[M.val.N + 1] * M.val.b[0] * xIm[0]);
+  for (i = 1 + M.val.N; i < M.con.N + M.val.N; i++)
   {
-    *yRe+=2*(xRe[i]*M.val.b[i-M.val.N]*xRe[i+1]+xIm[i]*M.val.b[i-M.val.N]*xIm[i+1]);
+    *yRe += 2 * (xRe[i] * M.val.b[i - M.val.N] * xRe[i + 1] + xIm[i] * M.val.b[i - M.val.N] * xIm[i + 1]);
   }
   return 0;
 }
-

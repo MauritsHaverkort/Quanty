@@ -15,130 +15,192 @@
 *   The functions FilePrint*** and Print*** make calls to the function StreamPrint
 */
 
-uint32_t PrintSpectra(SpectraType *const Spec, const uint32_t NSpec)
-{ return StreamPrintSpectra(Spec,NSpec,stdout);}
+uint32_t PrintSpectra(SpectraType * const Spec, const uint32_t NSpec)
+{
+  return StreamPrintSpectra(Spec, NSpec, stdout);
+}
 
 uint32_t PrintWaveFunctionPlain(WaveFunctionType psi)
-{ return StreamPrintWaveFunctionPlain(psi,stdout);}
+{
+  return StreamPrintWaveFunctionPlain(psi, stdout);
+}
 
 uint32_t PrintWaveFunctionPlainBinary(WaveFunctionType psi)
-{ return StreamPrintWaveFunctionPlainBinary(psi,stdout);}
+{
+  return StreamPrintWaveFunctionPlainBinary(psi, stdout);
+}
 
 uint32_t PrintWaveFunctionReadable(WaveFunctionType psi)
-{ return StreamPrintWaveFunctionReadable(psi,stdout);}
+{
+  return StreamPrintWaveFunctionReadable(psi, stdout);
+}
 
 uint32_t PrintWaveFunctionReadableTruncated(WaveFunctionType psi, double epsilon)
-{ return StreamPrintWaveFunctionReadableTruncated(psi, epsilon, stdout);}
+{
+  return StreamPrintWaveFunctionReadableTruncated(psi, epsilon, stdout);
+}
 
 uint32_t PrintWaveFunctionFullReadable(WaveFunctionType psi)
-{ return StreamPrintWaveFunctionFullReadable(psi,stdout);}
+{
+  return StreamPrintWaveFunctionFullReadable(psi, stdout);
+}
 
 uint32_t PrintWaveFunctionDensity(WaveFunctionType psi)
-{ return StreamPrintWaveFunctionDensity(psi,stdout);}
+{
+  return StreamPrintWaveFunctionDensity(psi, stdout);
+}
 
 uint32_t PrintWaveFunctionPrefactorHistogram(WaveFunctionType psi, const double exp, const uint32_t N)
-{ return StreamPrintWaveFunctionPrefactorHistogram(psi,exp,N,stdout);}
+{
+  return StreamPrintWaveFunctionPrefactorHistogram(psi, exp, N, stdout);
+}
 
 uint32_t PrintOperatorReadable(OperatorType O)
-{ return StreamPrintOperatorReadable(O,stdout);}
+{
+  return StreamPrintOperatorReadable(O, stdout);
+}
 
 uint32_t PrintOperatorFullReadable(OperatorType O)
-{ return StreamPrintOperatorFullReadable(O,stdout);}
+{
+  return StreamPrintOperatorFullReadable(O, stdout);
+}
 
 uint32_t PrintCrystalStructure(CrystalStructureType O)
-{ return StreamPrintCrystalStructure(O,stdout);}
+{
+  return StreamPrintCrystalStructure(O, stdout);
+}
 
 uint32_t PrintCrystalStructureSuperCell(CrystalStructureSuperCellType O)
-{ return StreamPrintCrystalStructureSuperCell(O,stdout);}
+{
+  return StreamPrintCrystalStructureSuperCell(O, stdout);
+}
 
 uint32_t PrintMatrix(MatrixType M)
-{ return StreamPrintMatrix(M,stdout);}
+{
+  return StreamPrintMatrix(M, stdout);
+}
 
 uint32_t PrintPlainMatrix(MatrixType M)
-{ return StreamPrintPlainMatrix(M,stdout);}
+{
+  return StreamPrintPlainMatrix(M, stdout);
+}
 
 uint32_t PrintPlainTriDiagonalMatrix(TriDiagonalMatrixType M)
-{ return StreamPrintPlainTriDiagonalMatrix(M,stdout);}
+{
+  return StreamPrintPlainTriDiagonalMatrix(M, stdout);
+}
 
 uint32_t PrintPlainAndersonMatrix(AndersonMatrixType M)
-{ return StreamPrintPlainAndersonMatrix(M,stdout);}
+{
+  return StreamPrintPlainAndersonMatrix(M, stdout);
+}
 
 uint32_t PrintPlainListOfPoles(ListOfPoles M)
-{ return StreamPrintPlainListOfPoles(M,stdout);}
+{
+  return StreamPrintPlainListOfPoles(M, stdout);
+}
 
 uint32_t PrintTightBindingDef(TightBindingDef O)
-{ return StreamPrintTightBindingDef(O,stdout);}
+{
+  return StreamPrintTightBindingDef(O, stdout);
+}
 
 uint32_t PrintDimerizedSpinChainSettings(DimerizedSpinChainSettings O)
-{ return StreamPrintDimerizedSpinChainSettings(O,stdout);}
+{
+  return StreamPrintDimerizedSpinChainSettings(O, stdout);
+}
 
 uint32_t PrintHeisenbergModelSettings(HeisenbergModelSettings O)
-{ return StreamPrintHeisenbergModelSettings(O,stdout);}
+{
+  return StreamPrintHeisenbergModelSettings(O, stdout);
+}
 
 uint32_t PrinttJModelSettings(tJModelSettings O)
-{ return StreamPrinttJModelSettings(O,stdout);}
+{
+  return StreamPrinttJModelSettings(O, stdout);
+}
 
 uint32_t PrintSpinLaderSettings(SpinLaderSettings O)
-{ return StreamPrintSpinLaderSettings(O,stdout);}
+{
+  return StreamPrintSpinLaderSettings(O, stdout);
+}
 
 uint32_t PrintHubbardModelSettings(HubbardModelSettings O)
-{ return StreamPrintHubbardModelSettings(O,stdout);}
+{
+  return StreamPrintHubbardModelSettings(O, stdout);
+}
 
 uint32_t PrintDMFTXASSettings(DMFTXASSettings O)
-{ return StreamPrintDMFTXASSettings(O,stdout);}
+{
+  return StreamPrintDMFTXASSettings(O, stdout);
+}
 
 uint32_t PrintDMFTSettings(DMFTSettings O)
-{ return StreamPrintDMFTSettings(O,stdout);}
+{
+  return StreamPrintDMFTSettings(O, stdout);
+}
 
 uint32_t PrintSparseMatrix(SparseMatrixType M)
-{ return StreamPrintSparseMatrix(M,stdout);}
+{
+  return StreamPrintSparseMatrix(M, stdout);
+}
 
 uint32_t PrintTriDiagonalMatrix(TriDiagonalMatrixType M)
-{ return StreamPrintTriDiagonalMatrix(M,stdout);}
+{
+  return StreamPrintTriDiagonalMatrix(M, stdout);
+}
 
 uint32_t PrintBlokTriDiagonalMatrix(BlokTriDiagonalMatrixType M)
-{ return StreamPrintBlokTriDiagonalMatrix(M,stdout);}
+{
+  return StreamPrintBlokTriDiagonalMatrix(M, stdout);
+}
 
 uint32_t PrintDoubleTriDiagonalMatrix(DoubleTriDiagonalMatrixType M)
-{ return StreamPrintDoubleTriDiagonalMatrix(M,stdout);}
+{
+  return StreamPrintDoubleTriDiagonalMatrix(M, stdout);
+}
 
 uint32_t PrintBADoubleTriDiagonalMatrix(BADoubleTriDiagonalMatrixType M)
-{ return StreamPrintBADoubleTriDiagonalMatrix(M,stdout);}
+{
+  return StreamPrintBADoubleTriDiagonalMatrix(M, stdout);
+}
 
 uint32_t PrintSecondDoubleTriDiagonalMatrix(SecondDoubleTriDiagonalMatrixType M)
-{ return StreamPrintSecondDoubleTriDiagonalMatrix(M,stdout);}
+{
+  return StreamPrintSecondDoubleTriDiagonalMatrix(M, stdout);
+}
 
 uint32_t PrintBlokDoubleTriDiagonalMatrix(BlokDoubleTriDiagonalMatrixType M)
-{ return StreamPrintBlokDoubleTriDiagonalMatrix(M,stdout);}
+{
+  return StreamPrintBlokDoubleTriDiagonalMatrix(M, stdout);
+}
 
 uint32_t PrintAndersonMatrix(AndersonMatrixType M)
-{ return StreamPrintAndersonMatrix(M,stdout);}
+{
+  return StreamPrintAndersonMatrix(M, stdout);
+}
 
 uint32_t PrintAndersonMatrixEssentials(AndersonMatrixType M)
-{ return StreamPrintAndersonMatrixEssentials(M,stdout);}
+{
+  return StreamPrintAndersonMatrixEssentials(M, stdout);
+}
 
 uint32_t PrintBlokAndersonMatrix(BlokAndersonMatrixType M)
-{ return StreamPrintBlokAndersonMatrix(M,stdout);}
+{
+  return StreamPrintBlokAndersonMatrix(M, stdout);
+}
 
 uint32_t PrintListOfPoles(ListOfPoles M)
-{ return StreamPrintListOfPoles(M,stdout);}
+{
+  return StreamPrintListOfPoles(M, stdout);
+}
 
 uint32_t PrintListOfPolesEssentials(ListOfPoles M)
-{ return StreamPrintListOfPolesEssentials(M,stdout);}
+{
+  return StreamPrintListOfPolesEssentials(M, stdout);
+}
 
 uint32_t PrintHarmonicsExpansion(HarmonicsExpansion M)
-{ return StreamPrintHarmonicsExpansion(M,stdout);}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+{
+  return StreamPrintHarmonicsExpansion(M, stdout);
+}

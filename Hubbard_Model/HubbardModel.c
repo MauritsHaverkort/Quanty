@@ -1540,94 +1540,107 @@ void mainTwistedHubbardModel (HubbardModelSettings HSet)
 */
 
 
-uint32_t HubbardModelCreateStartWaveFunction(HubbardModelSettings Set, WaveFunctionType *psi)
+uint32_t HubbardModelCreateStartWaveFunction(HubbardModelSettings Set, WaveFunctionType * psi)
 {
   uint8_t *Determinant;
-  uint32_t iatom,ishell,ifermion,icell,ielectron,i;
-  psi->QComplex=0;
-  psi->NBitsKey=Set.NBitsKey;
-  psi->NFermion=Set.USuperCell.NFermion;
-  psi->NBoson=Set.USuperCell.NBoson;
-  psi->NWord=Set.USuperCell.NWord;
-  psi->N=0;
-  psi->NBlok=1;
-  psi->KeyList=calloc((uint32_t)1<<(psi->NBitsKey),sizeof(uint32_t));
-  psi->ValueRe=malloc(psi->NBlok*sizeof(double *));
-  psi->Next=malloc(psi->NBlok*sizeof(uint32_t *));
-  psi->Determinant=malloc(psi->NBlok*sizeof(uint8_t *));
-  if((psi->ValueRe==NULL)||(psi->Next==NULL)||(psi->Determinant==NULL)) AllocFailed();
-  psi->ValueRe[psi->NBlok-1]=malloc(BlokSize*sizeof(double));
-  psi->Next[psi->NBlok-1]=malloc(BlokSize*sizeof(uint32_t));
-  psi->Determinant[psi->NBlok-1]=malloc(BlokSize*psi->NWord*sizeof(uint8_t));
-  if((psi->ValueRe[psi->NBlok-1]==NULL)||(psi->Next[psi->NBlok-1]==NULL)||(psi->Determinant[psi->NBlok-1]==NULL)) AllocFailed();
-  Determinant=calloc(psi->NWord,sizeof(uint8_t));
-  for(iatom=0;iatom<Set.SuperCell.Crystal.NAtoms;iatom++)
+  uint32_t iatom, ishell, ifermion, icell, ielectron, i;
+  psi->QComplex = 0;
+  psi->NBitsKey = Set.NBitsKey;
+  psi->NFermion = Set.USuperCell.NFermion;
+  psi->NBoson = Set.USuperCell.NBoson;
+  psi->NWord = Set.USuperCell.NWord;
+  psi->N = 0;
+  psi->NBlok = 1;
+  psi->KeyList = calloc((uint32_t) 1 << (psi->NBitsKey), sizeof(uint32_t));
+  psi->ValueRe = malloc(psi->NBlok * sizeof(double *));
+  psi->Next = malloc(psi->NBlok * sizeof(uint32_t *));
+  psi->Determinant = malloc(psi->NBlok * sizeof(uint8_t *));
+  if ((psi->ValueRe == NULL) || (psi->Next == NULL) || (psi->Determinant == NULL))
+    AllocFailed();
+  psi->ValueRe[psi->NBlok - 1] = malloc(BlokSize * sizeof(double));
+  psi->Next[psi->NBlok - 1] = malloc(BlokSize * sizeof(uint32_t));
+  psi->Determinant[psi->NBlok - 1] = malloc(BlokSize * psi->NWord * sizeof(uint8_t));
+  if ((psi->ValueRe[psi->NBlok - 1] == NULL) || (psi->Next[psi->NBlok - 1] == NULL)
+      || (psi->Determinant[psi->NBlok - 1] == NULL))
+    AllocFailed();
+  Determinant = calloc(psi->NWord, sizeof(uint8_t));
+  for (iatom = 0; iatom < Set.SuperCell.Crystal.NAtoms; iatom++)
   {
-    for(ishell=0;ishell<Set.SuperCell.Crystal.Atom[iatom].Nshell;ishell++)
+    for (ishell = 0; ishell < Set.SuperCell.Crystal.Atom[iatom].Nshell; ishell++)
     {
-      for(ifermion=0;ifermion<Set.SuperCell.Crystal.Atom[iatom].shelldegeneracy[ishell];ifermion++)
+      for (ifermion = 0; ifermion < Set.SuperCell.Crystal.Atom[iatom].shelldegeneracy[ishell]; ifermion++)
       {
-        for(ielectron=0;ielectron<Set.NElectron[iatom][ishell][ifermion];ielectron++)
+        for (ielectron = 0; ielectron < Set.NElectron[iatom][ishell][ifermion]; ielectron++)
         {
-          icell=ielectron; /* needs to be changed */
-          i=ifermion+Set.TightBinding.FermionIndex[iatom][ishell]+icell*Set.TightBinding.NFermion;
-          OperatorCr(Determinant,i,psi->NFermion);
+          icell = ielectron;    /* needs to be changed */
+          i = ifermion + Set.TightBinding.FermionIndex[iatom][ishell] + icell * Set.TightBinding.NFermion;
+          OperatorCr(Determinant, i, psi->NFermion);
         }
       }
     }
   }
   RealWaveFunctionAddElement(psi, Determinant, 1.0);
-  sprintf(psi->Name,"Start Wavefunction");
+  sprintf(psi->Name, "Start Wavefunction");
   return 0;
 }
 
-uint32_t HubbardModelEnlargeStartWaveFunction(OperatorType H, WaveFunctionType *psi)
+uint32_t HubbardModelEnlargeStartWaveFunction(OperatorType H, WaveFunctionType * psi)
 {
   WaveFunctionType OPsi;
-  OperatorPsi(H,*psi,&OPsi);
+  OperatorPsi(H, *psi, &OPsi);
   RealWaveFunctionFree(psi);
   RealWaveFunctionRandomize(&OPsi);
   RealWaveFunctionNormalize(&OPsi);
-  OperatorPsi(H,OPsi,psi);
+  OperatorPsi(H, OPsi, psi);
   RealWaveFunctionRandomize(psi);
   RealWaveFunctionNormalize(psi);
   return 0;
 }
 
 
-int main(int argc, const char * argv[])
+int main(int argc, const char *argv[])
 {
-  uint32_t iq[3],jpsi,i,j,Npsi;
-  double   q[3], Hist[20], TotEmax, *EnergyList,*WaveFunctionQuality,tempRe,tempIm;
+  uint32_t iq[3], jpsi, i, j, Npsi;
+  double q[3], Hist[20], TotEmax, *EnergyList, *WaveFunctionQuality, tempRe, tempIm;
   OperatorType H;
   WaveFunctionType *PsiList;
   MatrixType Rho, RhoTot, RhoCorr, RhoCorrTot;
   TimeType Time;
   InitializeTiming(&Time);
-  BeginTiming("Total",&Time);
+  BeginTiming("Total", &Time);
   TimeStampAll();
-  argc-=1;
+  argc -= 1;
   HubbardModelSettings HSet;
-  FileReadHubbardModelSettings(&HSet,argv[argc]);
+  FileReadHubbardModelSettings(&HSet, argv[argc]);
   PrintHubbardModelSettings(HSet);
-  PsiList=malloc(HSet.NPsi*sizeof(WaveFunctionType));
-  EnergyList=malloc(HSet.NPsi*sizeof(double));
-  WaveFunctionQuality=malloc(HSet.NPsi*sizeof(double));
-  for(iq[0]=0;iq[0]<HSet.Nq[0];iq[0]++)
+  PsiList = malloc(HSet.NPsi * sizeof(WaveFunctionType));
+  EnergyList = malloc(HSet.NPsi * sizeof(double));
+  WaveFunctionQuality = malloc(HSet.NPsi * sizeof(double));
+  for (iq[0] = 0; iq[0] < HSet.Nq[0]; iq[0]++)
   {
-    for(iq[1]=0;iq[1]<HSet.Nq[1];iq[1]++)
+    for (iq[1] = 0; iq[1] < HSet.Nq[1]; iq[1]++)
     {
-      for(iq[2]=0;iq[2]<HSet.Nq[2];iq[2]++)
+      for (iq[2] = 0; iq[2] < HSet.Nq[2]; iq[2]++)
       {
-        BeginTiming("Total_new_q",&Time);
-        q[0]=((double)iq[0])/((double)HSet.Nq[0])*HSet.SuperCell.gSuperCell[0][0]+((double)iq[1])/((double)HSet.Nq[1])*HSet.SuperCell.gSuperCell[1][0]+((double)iq[2])/((double)HSet.Nq[2])*HSet.SuperCell.gSuperCell[2][0];
-        q[1]=((double)iq[0])/((double)HSet.Nq[0])*HSet.SuperCell.gSuperCell[0][1]+((double)iq[1])/((double)HSet.Nq[1])*HSet.SuperCell.gSuperCell[1][1]+((double)iq[2])/((double)HSet.Nq[2])*HSet.SuperCell.gSuperCell[2][1];
-        q[2]=((double)iq[0])/((double)HSet.Nq[0])*HSet.SuperCell.gSuperCell[0][2]+((double)iq[1])/((double)HSet.Nq[1])*HSet.SuperCell.gSuperCell[1][2]+((double)iq[2])/((double)HSet.Nq[2])*HSet.SuperCell.gSuperCell[2][2];
-        printf("\n\nStarted with q vector %i %i %i is %22.15lf %22.15lf %22.15lf\n",iq[0],iq[1],iq[2],q[0],q[1],q[2]);
+        BeginTiming("Total_new_q", &Time);
+        q[0] =
+          ((double)iq[0]) / ((double)HSet.Nq[0]) * HSet.SuperCell.gSuperCell[0][0] +
+          ((double)iq[1]) / ((double)HSet.Nq[1]) * HSet.SuperCell.gSuperCell[1][0] +
+          ((double)iq[2]) / ((double)HSet.Nq[2]) * HSet.SuperCell.gSuperCell[2][0];
+        q[1] =
+          ((double)iq[0]) / ((double)HSet.Nq[0]) * HSet.SuperCell.gSuperCell[0][1] +
+          ((double)iq[1]) / ((double)HSet.Nq[1]) * HSet.SuperCell.gSuperCell[1][1] +
+          ((double)iq[2]) / ((double)HSet.Nq[2]) * HSet.SuperCell.gSuperCell[2][1];
+        q[2] =
+          ((double)iq[0]) / ((double)HSet.Nq[0]) * HSet.SuperCell.gSuperCell[0][2] +
+          ((double)iq[1]) / ((double)HSet.Nq[1]) * HSet.SuperCell.gSuperCell[1][2] +
+          ((double)iq[2]) / ((double)HSet.Nq[2]) * HSet.SuperCell.gSuperCell[2][2];
+        printf("\n\nStarted with q vector %i %i %i is %22.15lf %22.15lf %22.15lf\n", iq[0], iq[1], iq[2], q[0], q[1],
+               q[2]);
         CreateHamiltonianOperatorFromTightBindingDef(HSet.TightBindingSuperCell, q, &H);
-        OperatorAdd(&H,HSet.USuperCell,1,0);
+        OperatorAdd(&H, HSet.USuperCell, 1, 0);
         PrintOperatorReadable(H);
-        if(QOperatorHermitian(H, DBL_EPSILON))
+        if (QOperatorHermitian(H, DBL_EPSILON))
         {
           printf("Operator is Hermitian\n");
         }
@@ -1635,82 +1648,87 @@ int main(int argc, const char * argv[])
         {
           printf("Operator is NOT Hermitian\n");
         }
-        Npsi=0;
-        for(jpsi=0;jpsi<HSet.NPsi;jpsi++)
+        Npsi = 0;
+        for (jpsi = 0; jpsi < HSet.NPsi; jpsi++)
         {
           Npsi++;
           HubbardModelCreateStartWaveFunction(HSet, &PsiList[jpsi]);
           HubbardModelEnlargeStartWaveFunction(H, &PsiList[jpsi]);
-          if(PsiList[jpsi].QComplex==0)
+          if (PsiList[jpsi].QComplex == 0)
           {
-            if(jpsi!=0) RealWaveFunctionOrthogonalize(&PsiList[jpsi], PsiList, jpsi);
+            if (jpsi != 0)
+              RealWaveFunctionOrthogonalize(&PsiList[jpsi], PsiList, jpsi);
             RealWaveFunctionRandomize(&PsiList[jpsi]);
           }
           else
           {
-            if(jpsi!=0) ComplexWaveFunctionOrthogonalize(&PsiList[jpsi], PsiList, jpsi);
+            if (jpsi != 0)
+              ComplexWaveFunctionOrthogonalize(&PsiList[jpsi], PsiList, jpsi);
             ComplexWaveFunctionRandomize(&PsiList[jpsi]);
           }
-          TotEmax=10.0;  /* Have to change this */
-          BeginTiming("LanczosGroundState",&Time);
-          LanczosGroundState(H,&PsiList[jpsi],&HSet.zeroLancWavefunction,HSet.zeroLancEnergy,TotEmax,PsiList,jpsi);
-          EndTiming("LanczosGroundState",&Time);
-          TotEmax*=2;
-          BeginTiming("LanczosGroundState",&Time);
-          LanczosGroundState(H,&PsiList[jpsi],&HSet.zeroLancWavefunction,HSet.zeroLancEnergy,TotEmax,PsiList,jpsi);
-          EndTiming("LanczosGroundState",&Time);
-          sprintf(PsiList[jpsi].Name,"Eigenstate #%i",jpsi);
+          TotEmax = 10.0;       /* Have to change this */
+          BeginTiming("LanczosGroundState", &Time);
+          LanczosGroundState(H, &PsiList[jpsi], &HSet.zeroLancWavefunction, HSet.zeroLancEnergy, TotEmax, PsiList,
+                             jpsi);
+          EndTiming("LanczosGroundState", &Time);
+          TotEmax *= 2;
+          BeginTiming("LanczosGroundState", &Time);
+          LanczosGroundState(H, &PsiList[jpsi], &HSet.zeroLancWavefunction, HSet.zeroLancEnergy, TotEmax, PsiList,
+                             jpsi);
+          EndTiming("LanczosGroundState", &Time);
+          sprintf(PsiList[jpsi].Name, "Eigenstate #%i", jpsi);
           PsiHermitianOperatorPsi(H, PsiList[jpsi], &EnergyList[jpsi]);
-          PsiHermitianOperatorSqrPsi(H,PsiList[jpsi],&WaveFunctionQuality[jpsi]);
-          WaveFunctionQuality[jpsi]/=Sqr(EnergyList[jpsi]);
+          PsiHermitianOperatorSqrPsi(H, PsiList[jpsi], &WaveFunctionQuality[jpsi]);
+          WaveFunctionQuality[jpsi] /= Sqr(EnergyList[jpsi]);
           PrintWaveFunctionReadableTruncated(PsiList[jpsi], 0.1);
           CalculatePrefactorHistogram(Hist, PsiList[jpsi], 10.0, 20);
           printf("\nHistogram of prefactors in Wave-function\n");
-          for(i=0;i<19;i++)
+          for (i = 0; i < 19; i++)
           {
-            printf("10^(-%2i) to 10^(-%2i) | %22.15E\n",i,i+1,Hist[i]);
+            printf("10^(-%2i) to 10^(-%2i) | %22.15E\n", i, i + 1, Hist[i]);
           }
-          printf("10^(-%2i) to 0        | %22.15E\n",i,Hist[19]);
+          printf("10^(-%2i) to 0        | %22.15E\n", i, Hist[19]);
           printf("\nOrthonormality test of wave-functions\n");
-          for(i=0;i<=jpsi;i++)
+          for (i = 0; i <= jpsi; i++)
           {
-            for(j=0;j<=jpsi;j++)
+            for (j = 0; j <= jpsi; j++)
             {
-              
-              WaveFunctionDotProduct(PsiList[i],PsiList[j],&tempRe,&tempIm);
-              if(fabs(tempRe)<DBL_EPSILON)tempRe=0;
-              printf(" %22.15E",tempRe);
+
+              WaveFunctionDotProduct(PsiList[i], PsiList[j], &tempRe, &tempIm);
+              if (fabs(tempRe) < DBL_EPSILON)
+                tempRe = 0;
+              printf(" %22.15E", tempRe);
             }
             printf("\n");
           }
           printf("\n");
           printf("State#   Energy                  <psi|H^2|psi>/(<psi|H|psi>^2)\n");
-          for(i=0;i<=jpsi;i++)
+          for (i = 0; i <= jpsi; i++)
           {
-            printf("%2i      %22.15E  %22.15E\n",i,EnergyList[i],WaveFunctionQuality[i]);
+            printf("%2i      %22.15E  %22.15E\n", i, EnergyList[i], WaveFunctionQuality[i]);
           }
           CalculateDensityMatrix(&Rho, PsiList[jpsi]);
           PrintMatrix(Rho);
           CalculateDensityCorrelationMatrix(&RhoCorr, PsiList[jpsi]);
           PrintMatrix(RhoCorr);
-          if((EnergyList[jpsi]-EnergyList[0])>HSet.DeltaEMax)
+          if ((EnergyList[jpsi] - EnergyList[0]) > HSet.DeltaEMax)
           {
-            printf("Average of Density matrices for state 0 to %i\n",jpsi-1);
-            MatrixScalarMultiply(&RhoTot, 1.0/((double)(jpsi)), 0);
-            MatrixScalarMultiply(&RhoCorrTot, 1.0/((double)(jpsi)), 0);
+            printf("Average of Density matrices for state 0 to %i\n", jpsi - 1);
+            MatrixScalarMultiply(&RhoTot, 1.0 / ((double)(jpsi)), 0);
+            MatrixScalarMultiply(&RhoCorrTot, 1.0 / ((double)(jpsi)), 0);
             PrintMatrix(RhoTot);
             PrintMatrix(RhoCorrTot);
             goto SkipExcitedStateCalculation;
           }
-          if(jpsi==0)
+          if (jpsi == 0)
           {
-            MatrixCopy(&RhoTot    ,Rho    );
-            MatrixCopy(&RhoCorrTot,RhoCorr);
+            MatrixCopy(&RhoTot, Rho);
+            MatrixCopy(&RhoCorrTot, RhoCorr);
           }
           else
           {
-            MatrixAdd(&RhoTot,    Rho,    1,0);
-            MatrixAdd(&RhoCorrTot,RhoCorr,1,0);
+            MatrixAdd(&RhoTot, Rho, 1, 0);
+            MatrixAdd(&RhoCorrTot, RhoCorr, 1, 0);
           }
           FreeMatrix(&Rho);
           FreeMatrix(&RhoCorr);
@@ -1729,24 +1747,24 @@ int main(int argc, const char * argv[])
 //          FilePrintSpectra(Spec, 4*Set.NSite,SpecFileName,"w");
 
         }
-        
-        SkipExcitedStateCalculation:
+
+      SkipExcitedStateCalculation:
         FreeOperator(&H);
-        for(jpsi=0;jpsi<Npsi;jpsi++)
+        for (jpsi = 0; jpsi < Npsi; jpsi++)
         {
           RealWaveFunctionFree(&PsiList[jpsi]);
         }
         FreeMatrix(&RhoTot);
         FreeMatrix(&RhoCorrTot);
-        
-        EndTiming("Total_new_q",&Time);
+
+        EndTiming("Total_new_q", &Time);
         PrintTiming(Time);
       }
     }
   }
-  
 
-  EndTiming("Total",&Time);
+
+  EndTiming("Total", &Time);
   PrintTiming(Time);
   return 0;
 };
