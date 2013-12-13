@@ -3,10 +3,10 @@
 *   On entry psi contains a wave function with psi.NBlok alocations
 *   On excit all allocate memory is freed
 */
-void ComplexWaveFunctionFree(WaveFunctionType *const psi)
+void ComplexWaveFunctionFree(WaveFunctionType * const psi)
 {
   uint32_t i;
-  for(i=0;i<psi->NBlok;i++)
+  for (i = 0; i < psi->NBlok; i++)
   {
     free(psi->ValueRe[i]);
     free(psi->ValueIm[i]);
@@ -25,10 +25,10 @@ void ComplexWaveFunctionFree(WaveFunctionType *const psi)
 *   On entry psi contains a wave function with psi.NBlok alocations
 *   On excit all allocate memory for psi.ValueRe is freed
 */
-void ComplexWaveFunctionFreeValues(WaveFunctionType *const psi)
+void ComplexWaveFunctionFreeValues(WaveFunctionType * const psi)
 {
   uint32_t i;
-  for(i=0;i<psi->NBlok;i++)
+  for (i = 0; i < psi->NBlok; i++)
   {
     free(psi->ValueRe[i]);
     free(psi->ValueIm[i]);
@@ -44,288 +44,290 @@ void ComplexWaveFunctionFreeValues(WaveFunctionType *const psi)
 *   If succeded psi -> psi+det
 *   If not succeded psi -> psi
 */
-uint32_t ComplexWaveFunctionAddElement(WaveFunctionType *const psi, const uint8_t *const det, const double aRe, const double aIm)
+uint32_t ComplexWaveFunctionAddElement(WaveFunctionType * const psi, const uint8_t * const det, const double aRe,
+                                       const double aIm)
 {
-  uint32_t i,NextIndex,ThereIsANext,PsiAIsPsiB;
-  void *temp;
+  uint32_t i, NextIndex, ThereIsANext, PsiAIsPsiB;
+  void  *temp;
   /* test if the key that belongs to psi already excists */
-  if(psi->KeyList[hash(det,psi->NWord,psi->NBitsKey)]==0)
-  {/* add a new element to psi with unique new key */
+  if (psi->KeyList[hash(det, psi->NWord, psi->NBitsKey)] == 0)
+  {                             /* add a new element to psi with unique new key */
     psi->N++;
-    /* test if one has to add a new block to psi in order to store the new element of psi */ 
-    if (psi->N>=BlokSize*psi->NBlok)
-    {/* add a new block to psi */
+    /* test if one has to add a new block to psi in order to store the new element of psi */
+    if (psi->N >= BlokSize * psi->NBlok)
+    {                           /* add a new block to psi */
       psi->NBlok++;
-      temp=psi->ValueRe;
-      psi->ValueRe=realloc(psi->ValueRe,psi->NBlok*sizeof(double *));
-      if(psi->ValueRe==NULL)
-      { /* Allocation failed */
+      temp = psi->ValueRe;
+      psi->ValueRe = realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
+      if (psi->ValueRe == NULL)
+      {                         /* Allocation failed */
         printf("alloc failed RealWaveFunctionAddElement 01 Re\n");
         fflush(stdout);
-        /* restore psi and return 0*/
-        psi->ValueRe=temp;
+        /* restore psi and return 0 */
+        psi->ValueRe = temp;
         psi->NBlok--;
-        return(1);
+        return (1);
       }
-      temp=psi->ValueIm;
-      psi->ValueIm=realloc(psi->ValueIm,psi->NBlok*sizeof(double *));
-      if(psi->ValueIm==NULL)
-      { /* Allocation failed */
+      temp = psi->ValueIm;
+      psi->ValueIm = realloc(psi->ValueIm, psi->NBlok * sizeof(double *));
+      if (psi->ValueIm == NULL)
+      {                         /* Allocation failed */
         printf("alloc failed RealWaveFunctionAddElement 01 Im\n");
         fflush(stdout);
-        /* restore psi and return 0*/
-        psi->ValueIm=temp;
+        /* restore psi and return 0 */
+        psi->ValueIm = temp;
         psi->NBlok--;
-        psi->ValueRe=realloc(psi->ValueRe,psi->NBlok*sizeof(double *));
-        return(1);
+        psi->ValueRe = realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
+        return (1);
       }
-      temp=psi->Next;
-      psi->Next=realloc(psi->Next,psi->NBlok*sizeof(uint32_t *));
-      if(psi->Next==NULL)
-      { /* Allocation failed */
+      temp = psi->Next;
+      psi->Next = realloc(psi->Next, psi->NBlok * sizeof(uint32_t *));
+      if (psi->Next == NULL)
+      {                         /* Allocation failed */
         printf("alloc failed RealWaveFunctionAddElement 02\n");
         fflush(stdout);
-        /* restore psi and return 0*/
-        psi->Next=temp;
+        /* restore psi and return 0 */
+        psi->Next = temp;
         psi->NBlok--;
-        psi->ValueRe=realloc(psi->ValueRe,psi->NBlok*sizeof(double *));
-        psi->ValueIm=realloc(psi->ValueIm,psi->NBlok*sizeof(double *));
-        return(1);
+        psi->ValueRe = realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
+        psi->ValueIm = realloc(psi->ValueIm, psi->NBlok * sizeof(double *));
+        return (1);
       }
-      temp=psi->Determinant;
-      psi->Determinant=realloc(psi->Determinant,psi->NBlok*sizeof(uint8_t *));
-      if(psi->Determinant==NULL)
-      { /* Allocation failed */
+      temp = psi->Determinant;
+      psi->Determinant = realloc(psi->Determinant, psi->NBlok * sizeof(uint8_t *));
+      if (psi->Determinant == NULL)
+      {                         /* Allocation failed */
         printf("alloc failed RealWaveFunctionAddElement 03\n");
         fflush(stdout);
-        /* restore psi and return 0*/
-        psi->Determinant=temp;
+        /* restore psi and return 0 */
+        psi->Determinant = temp;
         psi->NBlok--;
-        psi->ValueRe=realloc(psi->ValueRe,psi->NBlok*sizeof(double *));
-        psi->ValueIm=realloc(psi->ValueIm,psi->NBlok*sizeof(double *));
-        psi->Next=realloc(psi->Next,psi->NBlok*sizeof(uint32_t *));
-        return(1);
+        psi->ValueRe = realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
+        psi->ValueIm = realloc(psi->ValueIm, psi->NBlok * sizeof(double *));
+        psi->Next = realloc(psi->Next, psi->NBlok * sizeof(uint32_t *));
+        return (1);
       }
-      psi->ValueRe[psi->NBlok-1]=malloc(BlokSize*sizeof(double));
-      if(psi->ValueRe[psi->NBlok-1]==NULL)
-      { /* Allocation failed */
+      psi->ValueRe[psi->NBlok - 1] = malloc(BlokSize * sizeof(double));
+      if (psi->ValueRe[psi->NBlok - 1] == NULL)
+      {                         /* Allocation failed */
         printf("alloc failed RealWaveFunctionAddElement 04 Re\n");
         fflush(stdout);
-        /* restore psi and return 0*/
+        /* restore psi and return 0 */
         psi->NBlok--;
-        psi->ValueRe=realloc(psi->ValueRe,psi->NBlok*sizeof(double *));
-        psi->ValueIm=realloc(psi->ValueIm,psi->NBlok*sizeof(double *));
-        psi->Next=realloc(psi->Next,psi->NBlok*sizeof(uint32_t *));
-        psi->Determinant=realloc(psi->Determinant,psi->NBlok*sizeof(uint8_t *));
-        return(1);
+        psi->ValueRe = realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
+        psi->ValueIm = realloc(psi->ValueIm, psi->NBlok * sizeof(double *));
+        psi->Next = realloc(psi->Next, psi->NBlok * sizeof(uint32_t *));
+        psi->Determinant = realloc(psi->Determinant, psi->NBlok * sizeof(uint8_t *));
+        return (1);
       }
-      psi->ValueIm[psi->NBlok-1]=malloc(BlokSize*sizeof(double));
-      if(psi->ValueIm[psi->NBlok-1]==NULL)
-      { /* Allocation failed */
+      psi->ValueIm[psi->NBlok - 1] = malloc(BlokSize * sizeof(double));
+      if (psi->ValueIm[psi->NBlok - 1] == NULL)
+      {                         /* Allocation failed */
         printf("alloc failed RealWaveFunctionAddElement 04 Re\n");
         fflush(stdout);
-        /* restore psi and return 0*/
-        free(psi->ValueRe[psi->NBlok-1]);
+        /* restore psi and return 0 */
+        free(psi->ValueRe[psi->NBlok - 1]);
         psi->NBlok--;
-        psi->ValueRe=realloc(psi->ValueRe,psi->NBlok*sizeof(double *));
-        psi->ValueIm=realloc(psi->ValueIm,psi->NBlok*sizeof(double *));
-        psi->Next=realloc(psi->Next,psi->NBlok*sizeof(uint32_t *));
-        psi->Determinant=realloc(psi->Determinant,psi->NBlok*sizeof(uint8_t *));
-        return(1);
+        psi->ValueRe = realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
+        psi->ValueIm = realloc(psi->ValueIm, psi->NBlok * sizeof(double *));
+        psi->Next = realloc(psi->Next, psi->NBlok * sizeof(uint32_t *));
+        psi->Determinant = realloc(psi->Determinant, psi->NBlok * sizeof(uint8_t *));
+        return (1);
       }
-      psi->Next[psi->NBlok-1]=malloc(BlokSize*sizeof(uint32_t));
-      if(psi->Next[psi->NBlok-1]==NULL)
-      { /* Allocation failed */
+      psi->Next[psi->NBlok - 1] = malloc(BlokSize * sizeof(uint32_t));
+      if (psi->Next[psi->NBlok - 1] == NULL)
+      {                         /* Allocation failed */
         printf("alloc failed RealWaveFunctionAddElement 05\n");
         fflush(stdout);
-        /* restore psi and return 0*/
-        free(psi->ValueRe[psi->NBlok-1]);
-        free(psi->ValueIm[psi->NBlok-1]);
+        /* restore psi and return 0 */
+        free(psi->ValueRe[psi->NBlok - 1]);
+        free(psi->ValueIm[psi->NBlok - 1]);
         psi->NBlok--;
-        psi->ValueRe=realloc(psi->ValueRe,psi->NBlok*sizeof(double *));
-        psi->ValueIm=realloc(psi->ValueIm,psi->NBlok*sizeof(double *));
-        psi->Next=realloc(psi->Next,psi->NBlok*sizeof(uint32_t *));
-        psi->Determinant=realloc(psi->Determinant,psi->NBlok*sizeof(uint8_t *));
-        return(1);
+        psi->ValueRe = realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
+        psi->ValueIm = realloc(psi->ValueIm, psi->NBlok * sizeof(double *));
+        psi->Next = realloc(psi->Next, psi->NBlok * sizeof(uint32_t *));
+        psi->Determinant = realloc(psi->Determinant, psi->NBlok * sizeof(uint8_t *));
+        return (1);
       }
-      psi->Determinant[psi->NBlok-1]=malloc(BlokSize*psi->NWord*sizeof(uint8_t));
-      if(psi->Determinant[psi->NBlok-1]==NULL)
-      { /* Allocation failed */
+      psi->Determinant[psi->NBlok - 1] = malloc(BlokSize * psi->NWord * sizeof(uint8_t));
+      if (psi->Determinant[psi->NBlok - 1] == NULL)
+      {                         /* Allocation failed */
         printf("alloc failed RealWaveFunctionAddElement 06\n");
         fflush(stdout);
-        /* restore psi and return 0*/
-        free(psi->ValueRe[psi->NBlok-1]);
-        free(psi->ValueIm[psi->NBlok-1]);
-        free(psi->Next[psi->NBlok-1]);
+        /* restore psi and return 0 */
+        free(psi->ValueRe[psi->NBlok - 1]);
+        free(psi->ValueIm[psi->NBlok - 1]);
+        free(psi->Next[psi->NBlok - 1]);
         psi->NBlok--;
-        psi->ValueRe=realloc(psi->ValueRe,psi->NBlok*sizeof(double *));
-        psi->ValueIm=realloc(psi->ValueIm,psi->NBlok*sizeof(double *));
-        psi->Next=realloc(psi->Next,psi->NBlok*sizeof(uint32_t *));
-        psi->Determinant=realloc(psi->Determinant,psi->NBlok*sizeof(uint8_t *));
-        return(1);
+        psi->ValueRe = realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
+        psi->ValueIm = realloc(psi->ValueIm, psi->NBlok * sizeof(double *));
+        psi->Next = realloc(psi->Next, psi->NBlok * sizeof(uint32_t *));
+        psi->Determinant = realloc(psi->Determinant, psi->NBlok * sizeof(uint8_t *));
+        return (1);
       }
-    } /* Added a new block to psi */
-    psi->ValueRe[BlokElement(psi->N)]=aRe;
-    psi->ValueIm[BlokElement(psi->N)]=aIm;
-    psi->Next[BlokElement(psi->N)]=0;
-    for(i=0;i<psi->NWord;i++)
+    }                           /* Added a new block to psi */
+    psi->ValueRe[BlokElement(psi->N)] = aRe;
+    psi->ValueIm[BlokElement(psi->N)] = aIm;
+    psi->Next[BlokElement(psi->N)] = 0;
+    for (i = 0; i < psi->NWord; i++)
     {
-      psi->Determinant[BlokElementDet(psi->N,psi->NWord,i)]=det[i];
+      psi->Determinant[BlokElementDet(psi->N, psi->NWord, i)] = det[i];
     }
-    psi->KeyList[hash(det,psi->NWord,psi->NBitsKey)]=psi->N;
+    psi->KeyList[hash(det, psi->NWord, psi->NBitsKey)] = psi->N;
   }
   else
-  {/* The key is already taken, test if this is due to a collision, or if psi is already in the basis set */
-    ThereIsANext=1;
-    NextIndex=psi->KeyList[hash(det,psi->NWord,psi->NBitsKey)];
-    while(ThereIsANext)
+  {                             /* The key is already taken, test if this is due to a collision, or if psi is already in the basis set */
+    ThereIsANext = 1;
+    NextIndex = psi->KeyList[hash(det, psi->NWord, psi->NBitsKey)];
+    while (ThereIsANext)
     {
-      PsiAIsPsiB=1;
-      for(i=0;i<psi->NWord;i++)
+      PsiAIsPsiB = 1;
+      for (i = 0; i < psi->NWord; i++)
       {
-        if(psi->Determinant[BlokElementDet(NextIndex,psi->NWord,i)]!=det[i]) PsiAIsPsiB=0;
+        if (psi->Determinant[BlokElementDet(NextIndex, psi->NWord, i)] != det[i])
+          PsiAIsPsiB = 0;
       }
-      if(PsiAIsPsiB)
-      {/* psi already in basis set add and leave loop  */
-        ThereIsANext=0;
-        psi->ValueRe[BlokElement(NextIndex)]+=aRe;
-        psi->ValueIm[BlokElement(NextIndex)]+=aIm;
+      if (PsiAIsPsiB)
+      {                         /* psi already in basis set add and leave loop  */
+        ThereIsANext = 0;
+        psi->ValueRe[BlokElement(NextIndex)] += aRe;
+        psi->ValueIm[BlokElement(NextIndex)] += aIm;
       }
       else
-      {/* psi not equal to this one, if there is a next continue, otherwise add*/
-        if(!psi->Next[BlokElement(NextIndex)])
-        {/* add a new element to psi with already used key */
+      {                         /* psi not equal to this one, if there is a next continue, otherwise add */
+        if (!psi->Next[BlokElement(NextIndex)])
+        {                       /* add a new element to psi with already used key */
           psi->N++;
-          /* test if one has to add a new block to psi in order to store the new element of psi */ 
-          if (psi->N>=BlokSize*psi->NBlok)
-          {/* add a new block to psi */
+          /* test if one has to add a new block to psi in order to store the new element of psi */
+          if (psi->N >= BlokSize * psi->NBlok)
+          {                     /* add a new block to psi */
             psi->NBlok++;
-            temp=psi->ValueRe;
-            psi->ValueRe=realloc(psi->ValueRe,psi->NBlok*sizeof(double *));
-            if(psi->ValueRe==NULL)
-            { /* Allocation failed */
+            temp = psi->ValueRe;
+            psi->ValueRe = realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
+            if (psi->ValueRe == NULL)
+            {                   /* Allocation failed */
               printf("alloc failed RealWaveFunctionAddElement 11 Re\n");
               fflush(stdout);
-              /* restore psi and return 1*/
-              psi->ValueRe=temp;
+              /* restore psi and return 1 */
+              psi->ValueRe = temp;
               psi->NBlok--;
-              return(1);
+              return (1);
             }
-            temp=psi->ValueIm;
-            psi->ValueIm=realloc(psi->ValueIm,psi->NBlok*sizeof(double *));
-            if(psi->ValueIm==NULL)
-            { /* Allocation failed */
+            temp = psi->ValueIm;
+            psi->ValueIm = realloc(psi->ValueIm, psi->NBlok * sizeof(double *));
+            if (psi->ValueIm == NULL)
+            {                   /* Allocation failed */
               printf("alloc failed RealWaveFunctionAddElement 11 Im\n");
               fflush(stdout);
-              /* restore psi and return 1*/
-              psi->ValueIm=temp;
+              /* restore psi and return 1 */
+              psi->ValueIm = temp;
               psi->NBlok--;
-              psi->ValueRe=realloc(psi->ValueRe,psi->NBlok*sizeof(double *));
-              return(1);
+              psi->ValueRe = realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
+              return (1);
             }
-            temp=psi->Next;
-            psi->Next=realloc(psi->Next,psi->NBlok*sizeof(uint32_t *));
-            if(psi->Next==NULL)
-            { /* Allocation failed */
+            temp = psi->Next;
+            psi->Next = realloc(psi->Next, psi->NBlok * sizeof(uint32_t *));
+            if (psi->Next == NULL)
+            {                   /* Allocation failed */
               printf("alloc failed RealWaveFunctionAddElement 12\n");
               fflush(stdout);
-              /* restore psi and return 1*/
-              psi->Next=temp;
+              /* restore psi and return 1 */
+              psi->Next = temp;
               psi->NBlok--;
-              psi->ValueRe=realloc(psi->ValueRe,psi->NBlok*sizeof(double *));
-              psi->ValueIm=realloc(psi->ValueIm,psi->NBlok*sizeof(double *));
-              return(1);
+              psi->ValueRe = realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
+              psi->ValueIm = realloc(psi->ValueIm, psi->NBlok * sizeof(double *));
+              return (1);
             }
-            temp=psi->Determinant;
-            psi->Determinant=realloc(psi->Determinant,psi->NBlok*sizeof(uint8_t *));
-            if(psi->Determinant==NULL)
-            { /* Allocation failed */
+            temp = psi->Determinant;
+            psi->Determinant = realloc(psi->Determinant, psi->NBlok * sizeof(uint8_t *));
+            if (psi->Determinant == NULL)
+            {                   /* Allocation failed */
               printf("alloc failed RealWaveFunctionAddElement 13\n");
               fflush(stdout);
-              /* restore psi and return 1*/
-              psi->Determinant=temp;
+              /* restore psi and return 1 */
+              psi->Determinant = temp;
               psi->NBlok--;
-              psi->ValueRe=realloc(psi->ValueRe,psi->NBlok*sizeof(double *));
-              psi->ValueIm=realloc(psi->ValueIm,psi->NBlok*sizeof(double *));
-              psi->Next=realloc(psi->Next,psi->NBlok*sizeof(uint32_t *));
-              return(1);
+              psi->ValueRe = realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
+              psi->ValueIm = realloc(psi->ValueIm, psi->NBlok * sizeof(double *));
+              psi->Next = realloc(psi->Next, psi->NBlok * sizeof(uint32_t *));
+              return (1);
             }
-            psi->ValueRe[psi->NBlok-1]=malloc(BlokSize*sizeof(double));
-            if(psi->ValueRe[psi->NBlok-1]==NULL)
-            { /* Allocation failed */
+            psi->ValueRe[psi->NBlok - 1] = malloc(BlokSize * sizeof(double));
+            if (psi->ValueRe[psi->NBlok - 1] == NULL)
+            {                   /* Allocation failed */
               printf("alloc failed RealWaveFunctionAddElement 14 Re\n");
               fflush(stdout);
-              /* restore psi and return 1*/
+              /* restore psi and return 1 */
               psi->NBlok--;
-              psi->ValueRe=realloc(psi->ValueRe,psi->NBlok*sizeof(double *));
-              psi->Next=realloc(psi->Next,psi->NBlok*sizeof(uint32_t *));
-              psi->Determinant=realloc(psi->Determinant,psi->NBlok*sizeof(uint8_t *));
-              return(1);
+              psi->ValueRe = realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
+              psi->Next = realloc(psi->Next, psi->NBlok * sizeof(uint32_t *));
+              psi->Determinant = realloc(psi->Determinant, psi->NBlok * sizeof(uint8_t *));
+              return (1);
             }
-            psi->ValueIm[psi->NBlok-1]=malloc(BlokSize*sizeof(double));
-            if(psi->ValueIm[psi->NBlok-1]==NULL)
-            { /* Allocation failed */
+            psi->ValueIm[psi->NBlok - 1] = malloc(BlokSize * sizeof(double));
+            if (psi->ValueIm[psi->NBlok - 1] == NULL)
+            {                   /* Allocation failed */
               printf("alloc failed RealWaveFunctionAddElement 14 Re\n");
               fflush(stdout);
-              /* restore psi and return 1*/
-              free(psi->ValueRe[psi->NBlok-1]);
+              /* restore psi and return 1 */
+              free(psi->ValueRe[psi->NBlok - 1]);
               psi->NBlok--;
-              psi->ValueIm=realloc(psi->ValueIm,psi->NBlok*sizeof(double *));
-              psi->Next=realloc(psi->Next,psi->NBlok*sizeof(uint32_t *));
-              psi->Determinant=realloc(psi->Determinant,psi->NBlok*sizeof(uint8_t *));
-              return(1);
+              psi->ValueIm = realloc(psi->ValueIm, psi->NBlok * sizeof(double *));
+              psi->Next = realloc(psi->Next, psi->NBlok * sizeof(uint32_t *));
+              psi->Determinant = realloc(psi->Determinant, psi->NBlok * sizeof(uint8_t *));
+              return (1);
             }
-            psi->Next[psi->NBlok-1]=malloc(BlokSize*sizeof(uint32_t));
-            if(psi->Next[psi->NBlok-1]==NULL)
-            { /* Allocation failed */
+            psi->Next[psi->NBlok - 1] = malloc(BlokSize * sizeof(uint32_t));
+            if (psi->Next[psi->NBlok - 1] == NULL)
+            {                   /* Allocation failed */
               printf("alloc failed RealWaveFunctionAddElement 15\n");
               fflush(stdout);
-              /* restore psi and return 1*/
-              free(psi->ValueRe[psi->NBlok-1]);
-              free(psi->ValueIm[psi->NBlok-1]);
+              /* restore psi and return 1 */
+              free(psi->ValueRe[psi->NBlok - 1]);
+              free(psi->ValueIm[psi->NBlok - 1]);
               psi->NBlok--;
-              psi->ValueRe=realloc(psi->ValueRe,psi->NBlok*sizeof(double *));
-              psi->ValueIm=realloc(psi->ValueIm,psi->NBlok*sizeof(double *));
-              psi->Next=realloc(psi->Next,psi->NBlok*sizeof(uint32_t *));
-              psi->Determinant=realloc(psi->Determinant,psi->NBlok*sizeof(uint8_t *));
-              return(1);
+              psi->ValueRe = realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
+              psi->ValueIm = realloc(psi->ValueIm, psi->NBlok * sizeof(double *));
+              psi->Next = realloc(psi->Next, psi->NBlok * sizeof(uint32_t *));
+              psi->Determinant = realloc(psi->Determinant, psi->NBlok * sizeof(uint8_t *));
+              return (1);
             }
-            psi->Determinant[psi->NBlok-1]=malloc(BlokSize*psi->NWord*sizeof(uint8_t));
-            if(psi->Determinant[psi->NBlok-1]==NULL)
-            { /* Allocation failed */
+            psi->Determinant[psi->NBlok - 1] = malloc(BlokSize * psi->NWord * sizeof(uint8_t));
+            if (psi->Determinant[psi->NBlok - 1] == NULL)
+            {                   /* Allocation failed */
               printf("alloc failed RealWaveFunctionAddElement 16\n");
               fflush(stdout);
-              /* restore psi and return 1*/
-              free(psi->ValueRe[psi->NBlok-1]);
-              free(psi->ValueIm[psi->NBlok-1]);
-              free(psi->Next[psi->NBlok-1]);
+              /* restore psi and return 1 */
+              free(psi->ValueRe[psi->NBlok - 1]);
+              free(psi->ValueIm[psi->NBlok - 1]);
+              free(psi->Next[psi->NBlok - 1]);
               psi->NBlok--;
-              psi->ValueRe=realloc(psi->ValueRe,psi->NBlok*sizeof(double *));
-              psi->ValueIm=realloc(psi->ValueIm,psi->NBlok*sizeof(double *));
-              psi->Next=realloc(psi->Next,psi->NBlok*sizeof(uint32_t *));
-              psi->Determinant=realloc(psi->Determinant,psi->NBlok*sizeof(uint8_t *));
-              return(1);
+              psi->ValueRe = realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
+              psi->ValueIm = realloc(psi->ValueIm, psi->NBlok * sizeof(double *));
+              psi->Next = realloc(psi->Next, psi->NBlok * sizeof(uint32_t *));
+              psi->Determinant = realloc(psi->Determinant, psi->NBlok * sizeof(uint8_t *));
+              return (1);
             }
-          } /* Added a new block to psi */
+          }                     /* Added a new block to psi */
           /* add the element */
-          psi->ValueRe[BlokElement(psi->N)]=aRe;
-          psi->ValueIm[BlokElement(psi->N)]=aIm;
-          psi->Next[BlokElement(psi->N)]=0;
-          for(i=0;i<psi->NWord;i++)
+          psi->ValueRe[BlokElement(psi->N)] = aRe;
+          psi->ValueIm[BlokElement(psi->N)] = aIm;
+          psi->Next[BlokElement(psi->N)] = 0;
+          for (i = 0; i < psi->NWord; i++)
           {
-            psi->Determinant[BlokElementDet(psi->N,psi->NWord,i)]=det[i];
+            psi->Determinant[BlokElementDet(psi->N, psi->NWord, i)] = det[i];
           }
-          psi->Next[BlokElement(NextIndex)]=psi->N;
-          ThereIsANext=0;
+          psi->Next[BlokElement(NextIndex)] = psi->N;
+          ThereIsANext = 0;
         }
         else
-        { /* the key is in use and there still is at least one more element with the same key, continu checking */
-          NextIndex=psi->Next[BlokElement(NextIndex)];
+        {                       /* the key is in use and there still is at least one more element with the same key, continu checking */
+          NextIndex = psi->Next[BlokElement(NextIndex)];
         }
       }
     }
   }
-  return(0);
+  return (0);
 }
 
 /*
@@ -334,40 +336,42 @@ uint32_t ComplexWaveFunctionAddElement(WaveFunctionType *const psi, const uint8_
 *   As psi only stores the number of non zero elements and pointers to the real values the value of psi is not changed.
 *   The values psi points to are natturally changed
 */
-void ComplexWaveFunctionAddElementConserveBasis(WaveFunctionType psi, const uint8_t *const det, const double aRe, const double aIm)
+void ComplexWaveFunctionAddElementConserveBasis(WaveFunctionType psi, const uint8_t * const det, const double aRe,
+                                                const double aIm)
 {
-  uint32_t i,NextIndex,PsiAIsPsiB;
+  uint32_t i, NextIndex, PsiAIsPsiB;
   /* test if the key that belongs to psi already excists */
-  if(psi.KeyList[hash(det,psi.NWord,psi.NBitsKey)]==0)
-  {/* det not in key, do nothing */
+  if (psi.KeyList[hash(det, psi.NWord, psi.NBitsKey)] == 0)
+  {                             /* det not in key, do nothing */
     return;
   }
   else
-  {/* The key is already taken, test if this is due to a collision, or if psi is already in the basis set */
-    NextIndex=psi.KeyList[hash(det,psi.NWord,psi.NBitsKey)];
-    while(1)
+  {                             /* The key is already taken, test if this is due to a collision, or if psi is already in the basis set */
+    NextIndex = psi.KeyList[hash(det, psi.NWord, psi.NBitsKey)];
+    while (1)
     {
-      PsiAIsPsiB=1;
-      for(i=0;i<psi.NWord;i++)
+      PsiAIsPsiB = 1;
+      for (i = 0; i < psi.NWord; i++)
       {
-        if(psi.Determinant[BlokElementDet(NextIndex,psi.NWord,i)]!=det[i]) PsiAIsPsiB=0;
+        if (psi.Determinant[BlokElementDet(NextIndex, psi.NWord, i)] != det[i])
+          PsiAIsPsiB = 0;
       }
-      if(PsiAIsPsiB)
-      {/* psi already in basis set add and leave loop  */
-        #pragma omp atomic
-        psi.ValueRe[BlokElement(NextIndex)]+=aRe;
-        psi.ValueIm[BlokElement(NextIndex)]+=aIm;
+      if (PsiAIsPsiB)
+      {                         /* psi already in basis set add and leave loop  */
+#pragma omp atomic
+        psi.ValueRe[BlokElement(NextIndex)] += aRe;
+        psi.ValueIm[BlokElement(NextIndex)] += aIm;
         return;
       }
       else
-      {/* psi not equal to this one, if there is a next continue, otherwise leave*/
-        if(!psi.Next[BlokElement(NextIndex)])
-        {/* hash(psi) had a collision, but det is different. There are no other psi's with the same hash, so det not in basis lets leave */
+      {                         /* psi not equal to this one, if there is a next continue, otherwise leave */
+        if (!psi.Next[BlokElement(NextIndex)])
+        {                       /* hash(psi) had a collision, but det is different. There are no other psi's with the same hash, so det not in basis lets leave */
           return;
         }
         else
-        { /* the key is in use and there still is at least one more element with the same key, continu checking */
-          NextIndex=psi.Next[BlokElement(NextIndex)];
+        {                       /* the key is in use and there still is at least one more element with the same key, continu checking */
+          NextIndex = psi.Next[BlokElement(NextIndex)];
         }
       }
     }
@@ -377,43 +381,44 @@ void ComplexWaveFunctionAddElementConserveBasis(WaveFunctionType psi, const uint
 /*
 *   return the prefactor of det in wave function psi
 */
-void ComplexWaveFunctionPrefactorDet(const WaveFunctionType psi, const uint8_t *const det, double *aRe, double *aIm)
+void ComplexWaveFunctionPrefactorDet(const WaveFunctionType psi, const uint8_t * const det, double *aRe, double *aIm)
 {
-  uint32_t i,NextIndex,PsiAIsPsiB;
+  uint32_t i, NextIndex, PsiAIsPsiB;
   /* test if the key that belongs to psi already excists */
-  if(psi.KeyList[hash(det,psi.NWord,psi.NBitsKey)]==0)
-  {/* det not in key retrun 0.0 */
-    *aRe=0.0;
-    *aIm=0.0;
+  if (psi.KeyList[hash(det, psi.NWord, psi.NBitsKey)] == 0)
+  {                             /* det not in key retrun 0.0 */
+    *aRe = 0.0;
+    *aIm = 0.0;
     return;
   }
   else
-  {/* The key is already taken, test if this is due to a collision, or if psi is already in the basis set */
-    NextIndex=psi.KeyList[hash(det,psi.NWord,psi.NBitsKey)];
-    while(1)
+  {                             /* The key is already taken, test if this is due to a collision, or if psi is already in the basis set */
+    NextIndex = psi.KeyList[hash(det, psi.NWord, psi.NBitsKey)];
+    while (1)
     {
-      PsiAIsPsiB=1;
-      for(i=0;i<psi.NWord;i++)
+      PsiAIsPsiB = 1;
+      for (i = 0; i < psi.NWord; i++)
       {
-        if(psi.Determinant[BlokElementDet(NextIndex,psi.NWord,i)]!=det[i]) PsiAIsPsiB=0;
+        if (psi.Determinant[BlokElementDet(NextIndex, psi.NWord, i)] != det[i])
+          PsiAIsPsiB = 0;
       }
-      if(PsiAIsPsiB)
-      {/* psi already in basis set retunr prefactor and leave loop  */
-        *aRe=psi.ValueRe[BlokElement(NextIndex)];
-        *aIm=psi.ValueIm[BlokElement(NextIndex)];
+      if (PsiAIsPsiB)
+      {                         /* psi already in basis set retunr prefactor and leave loop  */
+        *aRe = psi.ValueRe[BlokElement(NextIndex)];
+        *aIm = psi.ValueIm[BlokElement(NextIndex)];
         return;
       }
       else
-      {/* psi not equal to this one, if there is a next continue, otherwise leave*/
-        if(!psi.Next[BlokElement(NextIndex)])
-        {/* hash(psi) had a collision, but det is different. There are no other psi's with the same hash, so det not in basis lets leave */
-          *aRe=0.0;
-          *aIm=0.0;
+      {                         /* psi not equal to this one, if there is a next continue, otherwise leave */
+        if (!psi.Next[BlokElement(NextIndex)])
+        {                       /* hash(psi) had a collision, but det is different. There are no other psi's with the same hash, so det not in basis lets leave */
+          *aRe = 0.0;
+          *aIm = 0.0;
           return;
         }
         else
-        { /* the key is in use and there still is at least one more element with the same key, continu checking */
-          NextIndex=psi.Next[BlokElement(NextIndex)];
+        {                       /* the key is in use and there still is at least one more element with the same key, continu checking */
+          NextIndex = psi.Next[BlokElement(NextIndex)];
         }
       }
     }
@@ -426,25 +431,27 @@ void ComplexWaveFunctionPrefactorDet(const WaveFunctionType psi, const uint8_t *
 *   return 0 if everything worked
 *   return 1 if out off memory
 */
-uint32_t ComplexWaveFunctionAddElementOMPMiniFlush(WaveFunctionType *const psi, uint32_t *NMini, const uint8_t *const MiniDet, const double *const MiniValueRe, const double *const MiniValueIm)
+uint32_t ComplexWaveFunctionAddElementOMPMiniFlush(WaveFunctionType * const psi, uint32_t * NMini,
+                                                   const uint8_t * const MiniDet, const double *const MiniValueRe,
+                                                   const double *const MiniValueIm)
 {
-  uint32_t i,NoMoreMem=0;
-  #pragma omp critical (AddToPsi)
+  uint32_t i, NoMoreMem = 0;
+#pragma omp critical (AddToPsi)
   {
-    for(i=0;i<*NMini;i++)
+    for (i = 0; i < *NMini; i++)
     {
-      if(ComplexWaveFunctionAddElement(psi,&MiniDet[i*psi->NWord],MiniValueRe[i],MiniValueIm[i])) 
+      if (ComplexWaveFunctionAddElement(psi, &MiniDet[i * psi->NWord], MiniValueRe[i], MiniValueIm[i]))
       {
         printf("ComplexWaveFunctionAddElement failed in ComplexWaveFunctionAddElementOMPMiniFlush\n");
         fflush(stdout);
-        NoMoreMem=1;
-        i=*NMini;
-        *NMini=0;
+        NoMoreMem = 1;
+        i = *NMini;
+        *NMini = 0;
       }
     }
-    #pragma omp flush 
+#pragma omp flush
   }
-  *NMini=0;
+  *NMini = 0;
   return NoMoreMem;
 }
 
@@ -456,24 +463,24 @@ uint32_t ComplexWaveFunctionAddElementOMPMiniFlush(WaveFunctionType *const psi, 
 */
 void ComplexWaveFunctionAddSameBasis(WaveFunctionType a, const WaveFunctionType b)
 {
-  uint32_t iBlok,iElement;
-  int iOMP;
-  iBlok=a.NBlok-1;
-  #pragma omp parallel for private(iElement)
-  for(iOMP=0;iOMP<=(int)(a.N-iBlok*BlokSize);++iOMP)
+  uint32_t iBlok, iElement;
+  int    iOMP;
+  iBlok = a.NBlok - 1;
+#pragma omp parallel for private(iElement)
+  for (iOMP = 0; iOMP <= (int)(a.N - iBlok * BlokSize); ++iOMP)
   {
-    iElement=(uint32_t)iOMP;
-    a.ValueRe[iBlok][iElement]+=b.ValueRe[iBlok][iElement];
-    a.ValueIm[iBlok][iElement]+=b.ValueIm[iBlok][iElement];
+    iElement = (uint32_t) iOMP;
+    a.ValueRe[iBlok][iElement] += b.ValueRe[iBlok][iElement];
+    a.ValueIm[iBlok][iElement] += b.ValueIm[iBlok][iElement];
   }
-  #pragma omp parallel for private(iElement,iBlok)
-  for(iOMP=0;iOMP<(int)(a.NBlok-1);iOMP++)
+#pragma omp parallel for private(iElement,iBlok)
+  for (iOMP = 0; iOMP < (int)(a.NBlok - 1); iOMP++)
   {
-    iBlok=(uint32_t)iOMP;
-    for(iElement=0;iElement<BlokSize;++iElement)
+    iBlok = (uint32_t) iOMP;
+    for (iElement = 0; iElement < BlokSize; ++iElement)
     {
-      a.ValueRe[iBlok][iElement]+=b.ValueRe[iBlok][iElement];
-      a.ValueIm[iBlok][iElement]+=b.ValueIm[iBlok][iElement];
+      a.ValueRe[iBlok][iElement] += b.ValueRe[iBlok][iElement];
+      a.ValueIm[iBlok][iElement] += b.ValueIm[iBlok][iElement];
     }
   }
 }
@@ -486,24 +493,24 @@ void ComplexWaveFunctionAddSameBasis(WaveFunctionType a, const WaveFunctionType 
 */
 void ComplexWaveFunctionAddMultipliedSameBasis(WaveFunctionType a, const WaveFunctionType b, const double alpha)
 {
-  uint32_t iBlok,iElement;
-  int iOMP;
-  iBlok=a.NBlok-1;
-  #pragma omp parallel for private(iElement)
-  for(iOMP=0;iOMP<=(int)(a.N-iBlok*BlokSize);++iOMP)
+  uint32_t iBlok, iElement;
+  int    iOMP;
+  iBlok = a.NBlok - 1;
+#pragma omp parallel for private(iElement)
+  for (iOMP = 0; iOMP <= (int)(a.N - iBlok * BlokSize); ++iOMP)
   {
-    iElement=(uint32_t)iOMP;
-    a.ValueRe[iBlok][iElement]+=alpha*b.ValueRe[iBlok][iElement];
-    a.ValueIm[iBlok][iElement]+=alpha*b.ValueIm[iBlok][iElement];
+    iElement = (uint32_t) iOMP;
+    a.ValueRe[iBlok][iElement] += alpha * b.ValueRe[iBlok][iElement];
+    a.ValueIm[iBlok][iElement] += alpha * b.ValueIm[iBlok][iElement];
   }
-  #pragma omp parallel for private(iElement,iBlok)
-  for(iOMP=0;iOMP<(int)(a.NBlok-1);iOMP++)
+#pragma omp parallel for private(iElement,iBlok)
+  for (iOMP = 0; iOMP < (int)(a.NBlok - 1); iOMP++)
   {
-    iBlok=(uint32_t)iOMP;
-    for(iElement=0;iElement<BlokSize;++iElement)
+    iBlok = (uint32_t) iOMP;
+    for (iElement = 0; iElement < BlokSize; ++iElement)
     {
-      a.ValueRe[iBlok][iElement]+=alpha*b.ValueRe[iBlok][iElement];
-      a.ValueIm[iBlok][iElement]+=alpha*b.ValueIm[iBlok][iElement];
+      a.ValueRe[iBlok][iElement] += alpha * b.ValueRe[iBlok][iElement];
+      a.ValueIm[iBlok][iElement] += alpha * b.ValueIm[iBlok][iElement];
     }
   }
 }
@@ -514,26 +521,27 @@ void ComplexWaveFunctionAddMultipliedSameBasis(WaveFunctionType a, const WaveFun
 *   As a and b only store pointers
 *   This function does alter the values a points to
 */
-void ComplexWaveFunctionAddComplexMultipliedSameBasis(WaveFunctionType a, const WaveFunctionType b, const double alphaRe, const double alphaIm)
+void ComplexWaveFunctionAddComplexMultipliedSameBasis(WaveFunctionType a, const WaveFunctionType b,
+                                                      const double alphaRe, const double alphaIm)
 {
-  uint32_t iBlok,iElement;
-  int iOMP;
-  iBlok=a.NBlok-1;
-  #pragma omp parallel for private(iElement)
-  for(iOMP=0;iOMP<=(int)(a.N-iBlok*BlokSize);++iOMP)
+  uint32_t iBlok, iElement;
+  int    iOMP;
+  iBlok = a.NBlok - 1;
+#pragma omp parallel for private(iElement)
+  for (iOMP = 0; iOMP <= (int)(a.N - iBlok * BlokSize); ++iOMP)
   {
-    iElement=(uint32_t)iOMP;
-    a.ValueRe[iBlok][iElement]+=alphaRe*b.ValueRe[iBlok][iElement]-alphaIm*b.ValueIm[iBlok][iElement];
-    a.ValueIm[iBlok][iElement]+=alphaRe*b.ValueIm[iBlok][iElement]+alphaIm*b.ValueRe[iBlok][iElement];
+    iElement = (uint32_t) iOMP;
+    a.ValueRe[iBlok][iElement] += alphaRe * b.ValueRe[iBlok][iElement] - alphaIm * b.ValueIm[iBlok][iElement];
+    a.ValueIm[iBlok][iElement] += alphaRe * b.ValueIm[iBlok][iElement] + alphaIm * b.ValueRe[iBlok][iElement];
   }
-  #pragma omp parallel for private(iElement,iBlok)
-  for(iOMP=0;iOMP<(int)(a.NBlok-1);iOMP++)
+#pragma omp parallel for private(iElement,iBlok)
+  for (iOMP = 0; iOMP < (int)(a.NBlok - 1); iOMP++)
   {
-    iBlok=(uint32_t)iOMP;
-    for(iElement=0;iElement<BlokSize;++iElement)
+    iBlok = (uint32_t) iOMP;
+    for (iElement = 0; iElement < BlokSize; ++iElement)
     {
-      a.ValueRe[iBlok][iElement]+=alphaRe*b.ValueRe[iBlok][iElement]-alphaIm*b.ValueIm[iBlok][iElement];
-      a.ValueIm[iBlok][iElement]+=alphaRe*b.ValueIm[iBlok][iElement]+alphaIm*b.ValueRe[iBlok][iElement];
+      a.ValueRe[iBlok][iElement] += alphaRe * b.ValueRe[iBlok][iElement] - alphaIm * b.ValueIm[iBlok][iElement];
+      a.ValueIm[iBlok][iElement] += alphaRe * b.ValueIm[iBlok][iElement] + alphaIm * b.ValueRe[iBlok][iElement];
     }
   }
 }
@@ -548,16 +556,18 @@ void ComplexWaveFunctionAddComplexMultipliedSameBasis(WaveFunctionType a, const 
 *   return 1 if not enough memory in order to allocate a
 *   If not enough memory a is not changed, but might have a larger basis
 */
-uint32_t ComplexWaveFunctionAddUnionBasis(WaveFunctionType *const a, const WaveFunctionType b)
+uint32_t ComplexWaveFunctionAddUnionBasis(WaveFunctionType * const a, const WaveFunctionType b)
 {
-  uint32_t i,j;
-  for(i=b.N;i!=0;--i)
+  uint32_t i, j;
+  for (i = b.N; i != 0; --i)
   {
-    if(ComplexWaveFunctionAddElement(a, &b.Determinant[BlokElementDet(i,b.NWord,0)], b.ValueRe[BlokElement(i)], b.ValueIm[BlokElement(i)])!=0)
-    {/* Allocation of new memory for a failed Remove all elements added so far and return 1 */
-      for(j=b.N;j!=i;--j)
+    if (ComplexWaveFunctionAddElement
+        (a, &b.Determinant[BlokElementDet(i, b.NWord, 0)], b.ValueRe[BlokElement(i)], b.ValueIm[BlokElement(i)]) != 0)
+    {                           /* Allocation of new memory for a failed Remove all elements added so far and return 1 */
+      for (j = b.N; j != i; --j)
       {
-        ComplexWaveFunctionAddElementConserveBasis(*a, &b.Determinant[BlokElementDet(i,b.NWord,0)],-b.ValueRe[BlokElement(i)],-b.ValueIm[BlokElement(i)]);
+        ComplexWaveFunctionAddElementConserveBasis(*a, &b.Determinant[BlokElementDet(i, b.NWord, 0)],
+                                                   -b.ValueRe[BlokElement(i)], -b.ValueIm[BlokElement(i)]);
       }
       return 1;
     }
@@ -572,16 +582,21 @@ uint32_t ComplexWaveFunctionAddUnionBasis(WaveFunctionType *const a, const WaveF
 *   Therefor values of a might change and a is returned from the function
 *   If a is an empty function b is copied into a (use of copy is strongly recommanded)
 */
-uint32_t ComplexWaveFunctionAddMultipliedUnionBasis(WaveFunctionType *const a, const WaveFunctionType b, const double alphaRe)
+uint32_t ComplexWaveFunctionAddMultipliedUnionBasis(WaveFunctionType * const a, const WaveFunctionType b,
+                                                    const double alphaRe)
 {
-  uint32_t i,j;
-  for(i=b.N;i!=0;--i)
+  uint32_t i, j;
+  for (i = b.N; i != 0; --i)
   {
-    if(ComplexWaveFunctionAddElement(a, &b.Determinant[BlokElementDet(i,b.NWord,0)], alphaRe*b.ValueRe[BlokElement(i)], alphaRe*b.ValueIm[BlokElement(i)])!=0)
-    {/* Allocation of new memory for a failed Remove all elements added so far and return 1 */
-      for(j=b.N;j!=i;--j)
+    if (ComplexWaveFunctionAddElement
+        (a, &b.Determinant[BlokElementDet(i, b.NWord, 0)], alphaRe * b.ValueRe[BlokElement(i)],
+         alphaRe * b.ValueIm[BlokElement(i)]) != 0)
+    {                           /* Allocation of new memory for a failed Remove all elements added so far and return 1 */
+      for (j = b.N; j != i; --j)
       {
-        ComplexWaveFunctionAddElementConserveBasis(*a, &b.Determinant[BlokElementDet(i,b.NWord,0)],-alphaRe*b.ValueRe[BlokElement(i)],-alphaRe*b.ValueIm[BlokElement(i)]);
+        ComplexWaveFunctionAddElementConserveBasis(*a, &b.Determinant[BlokElementDet(i, b.NWord, 0)],
+                                                   -alphaRe * b.ValueRe[BlokElement(i)],
+                                                   -alphaRe * b.ValueIm[BlokElement(i)]);
       }
       return 1;
     }
@@ -589,16 +604,24 @@ uint32_t ComplexWaveFunctionAddMultipliedUnionBasis(WaveFunctionType *const a, c
   return 0;
 }
 
-uint32_t ComplexWaveFunctionAddComplexMultipliedUnionBasis(WaveFunctionType *const a, const WaveFunctionType b, const double alphaRe, const double alphaIm)
+uint32_t ComplexWaveFunctionAddComplexMultipliedUnionBasis(WaveFunctionType * const a, const WaveFunctionType b,
+                                                           const double alphaRe, const double alphaIm)
 {
-  uint32_t i,j;
-  for(i=b.N;i!=0;--i)
+  uint32_t i, j;
+  for (i = b.N; i != 0; --i)
   {
-    if(ComplexWaveFunctionAddElement(a, &b.Determinant[BlokElementDet(i,b.NWord,0)], alphaRe*b.ValueRe[BlokElement(i)]-alphaIm*b.ValueIm[BlokElement(i)], alphaRe*b.ValueIm[BlokElement(i)]+alphaIm*b.ValueRe[BlokElement(i)])!=0)
-    {/* Allocation of new memory for a failed Remove all elements added so far and return 1 */
-      for(j=b.N;j!=i;--j)
+    if (ComplexWaveFunctionAddElement
+        (a, &b.Determinant[BlokElementDet(i, b.NWord, 0)],
+         alphaRe * b.ValueRe[BlokElement(i)] - alphaIm * b.ValueIm[BlokElement(i)],
+         alphaRe * b.ValueIm[BlokElement(i)] + alphaIm * b.ValueRe[BlokElement(i)]) != 0)
+    {                           /* Allocation of new memory for a failed Remove all elements added so far and return 1 */
+      for (j = b.N; j != i; --j)
       {
-        ComplexWaveFunctionAddElementConserveBasis(*a, &b.Determinant[BlokElementDet(i,b.NWord,0)],-alphaRe*b.ValueRe[BlokElement(i)]+alphaIm*b.ValueIm[BlokElement(i)],-alphaRe*b.ValueIm[BlokElement(i)]-alphaIm*b.ValueRe[BlokElement(i)]);
+        ComplexWaveFunctionAddElementConserveBasis(*a, &b.Determinant[BlokElementDet(i, b.NWord, 0)],
+                                                   -alphaRe * b.ValueRe[BlokElement(i)] +
+                                                   alphaIm * b.ValueIm[BlokElement(i)],
+                                                   -alphaRe * b.ValueIm[BlokElement(i)] -
+                                                   alphaIm * b.ValueRe[BlokElement(i)]);
       }
       return 1;
     }
@@ -614,15 +637,16 @@ uint32_t ComplexWaveFunctionAddComplexMultipliedUnionBasis(WaveFunctionType *con
  *   Therefor values of a might change and a is returned from the function
  *   If a is an empty function b is copied into a (use of copy is strongly recommanded)
  */
-void ComplexWaveFunctionAddConserveBasis(WaveFunctionType *const a, const WaveFunctionType b)
+void ComplexWaveFunctionAddConserveBasis(WaveFunctionType * const a, const WaveFunctionType b)
 {
   uint32_t i;
-  int iOMP;
+  int    iOMP;
 #pragma omp parallel for private(i)
-  for(iOMP=1;iOMP<=(int)b.N;iOMP++)
+  for (iOMP = 1; iOMP <= (int)b.N; iOMP++)
   {
-    i=(uint32_t)iOMP;
-    ComplexWaveFunctionAddElementConserveBasis(*a, &b.Determinant[BlokElementDet(i,b.NWord,0)], b.ValueRe[BlokElement(i)],b.ValueIm[BlokElement(i)]);
+    i = (uint32_t) iOMP;
+    ComplexWaveFunctionAddElementConserveBasis(*a, &b.Determinant[BlokElementDet(i, b.NWord, 0)],
+                                               b.ValueRe[BlokElement(i)], b.ValueIm[BlokElement(i)]);
   }
 }
 
@@ -633,27 +657,35 @@ void ComplexWaveFunctionAddConserveBasis(WaveFunctionType *const a, const WaveFu
 *   Therefor values of a might change and a is returned from the function
 *   If a is an empty function b is copied into a (use of copy is strongly recommanded)
 */
-void ComplexWaveFunctionAddMultipliedConserveBasis(WaveFunctionType *const a, const WaveFunctionType b,const double alphaRe)
+void ComplexWaveFunctionAddMultipliedConserveBasis(WaveFunctionType * const a, const WaveFunctionType b,
+                                                   const double alphaRe)
 {
   uint32_t i;
-  int iOMP;
-  #pragma omp parallel for private(i)
-  for(iOMP=1;iOMP<=(int)b.N;iOMP++)
+  int    iOMP;
+#pragma omp parallel for private(i)
+  for (iOMP = 1; iOMP <= (int)b.N; iOMP++)
   {
-    i=(uint32_t)iOMP;
-    ComplexWaveFunctionAddElementConserveBasis(*a, &b.Determinant[BlokElementDet(i,b.NWord,0)], alphaRe*b.ValueRe[BlokElement(i)],alphaRe*b.ValueIm[BlokElement(i)]);
+    i = (uint32_t) iOMP;
+    ComplexWaveFunctionAddElementConserveBasis(*a, &b.Determinant[BlokElementDet(i, b.NWord, 0)],
+                                               alphaRe * b.ValueRe[BlokElement(i)],
+                                               alphaRe * b.ValueIm[BlokElement(i)]);
   }
 }
 
-void ComplexWaveFunctionAddComplexMultipliedConserveBasis(WaveFunctionType *const a, const WaveFunctionType b,const double alphaRe,const double alphaIm)
+void ComplexWaveFunctionAddComplexMultipliedConserveBasis(WaveFunctionType * const a, const WaveFunctionType b,
+                                                          const double alphaRe, const double alphaIm)
 {
   uint32_t i;
-  int iOMP;
-  #pragma omp parallel for private(i)
-  for(iOMP=1;iOMP<=(int)b.N;iOMP++)
+  int    iOMP;
+#pragma omp parallel for private(i)
+  for (iOMP = 1; iOMP <= (int)b.N; iOMP++)
   {
-    i=(uint32_t)iOMP;
-    ComplexWaveFunctionAddElementConserveBasis(*a, &b.Determinant[BlokElementDet(i,b.NWord,0)], alphaRe*b.ValueRe[BlokElement(i)]-alphaIm*b.ValueIm[BlokElement(i)],alphaRe*b.ValueIm[BlokElement(i)]+alphaIm*b.ValueRe[BlokElement(i)]);
+    i = (uint32_t) iOMP;
+    ComplexWaveFunctionAddElementConserveBasis(*a, &b.Determinant[BlokElementDet(i, b.NWord, 0)],
+                                               alphaRe * b.ValueRe[BlokElement(i)] -
+                                               alphaIm * b.ValueIm[BlokElement(i)],
+                                               alphaRe * b.ValueIm[BlokElement(i)] +
+                                               alphaIm * b.ValueRe[BlokElement(i)]);
   }
 }
 
@@ -663,46 +695,50 @@ void ComplexWaveFunctionAddComplexMultipliedConserveBasis(WaveFunctionType *cons
 *   As a only stores pointers
 *   This function does alter the values a points to
 */
-void ComplexWaveFunctionNormalize(WaveFunctionType *const a)
+void ComplexWaveFunctionNormalize(WaveFunctionType * const a)
 {
-  uint32_t iBlok,iElement;
-  int iOMP;
-  double Norm=0,NormA=0,NormB=0;
-  a->ValueRe[0][0]=0;
-  a->ValueIm[0][0]=0;
-  iBlok=a->NBlok-1;
-  #pragma omp parallel for private(iElement) reduction(+ : NormA)
-  for(iOMP=0;iOMP<=(int)(a->N-iBlok*BlokSize);iOMP++)
+  uint32_t iBlok, iElement;
+  int    iOMP;
+  double Norm = 0, NormA = 0, NormB = 0;
+  a->ValueRe[0][0] = 0;
+  a->ValueIm[0][0] = 0;
+  iBlok = a->NBlok - 1;
+#pragma omp parallel for private(iElement) reduction(+ : NormA)
+  for (iOMP = 0; iOMP <= (int)(a->N - iBlok * BlokSize); iOMP++)
   {
-    iElement=(uint32_t)iOMP;
-    NormA+=a->ValueRe[iBlok][iElement]*a->ValueRe[iBlok][iElement]+a->ValueIm[iBlok][iElement]*a->ValueIm[iBlok][iElement];
+    iElement = (uint32_t) iOMP;
+    NormA +=
+      a->ValueRe[iBlok][iElement] * a->ValueRe[iBlok][iElement] +
+      a->ValueIm[iBlok][iElement] * a->ValueIm[iBlok][iElement];
   }
-  #pragma omp parallel for private(iElement,iBlok) reduction(+ : NormB)
-  for(iOMP=0;iOMP<(int)(a->NBlok-1);iOMP++)
+#pragma omp parallel for private(iElement,iBlok) reduction(+ : NormB)
+  for (iOMP = 0; iOMP < (int)(a->NBlok - 1); iOMP++)
   {
-    iBlok=(uint32_t)iOMP;
-    for(iElement=0;iElement<BlokSize;++iElement)
+    iBlok = (uint32_t) iOMP;
+    for (iElement = 0; iElement < BlokSize; ++iElement)
     {
-      NormB+=a->ValueRe[iBlok][iElement]*a->ValueRe[iBlok][iElement]+a->ValueIm[iBlok][iElement]*a->ValueIm[iBlok][iElement];
+      NormB +=
+        a->ValueRe[iBlok][iElement] * a->ValueRe[iBlok][iElement] +
+        a->ValueIm[iBlok][iElement] * a->ValueIm[iBlok][iElement];
     }
   }
-  Norm=sqrt(NormA+NormB);
-  iBlok=a->NBlok-1;
-  #pragma omp parallel for private(iElement)
-  for(iOMP=0;iOMP<=(int)(a->N-iBlok*BlokSize);iOMP++)
+  Norm = sqrt(NormA + NormB);
+  iBlok = a->NBlok - 1;
+#pragma omp parallel for private(iElement)
+  for (iOMP = 0; iOMP <= (int)(a->N - iBlok * BlokSize); iOMP++)
   {
-    iElement=(uint32_t)iOMP;
-    a->ValueRe[iBlok][iElement]/=Norm;
-    a->ValueIm[iBlok][iElement]/=Norm;
+    iElement = (uint32_t) iOMP;
+    a->ValueRe[iBlok][iElement] /= Norm;
+    a->ValueIm[iBlok][iElement] /= Norm;
   }
-  #pragma omp parallel for private(iElement,iBlok)
-  for(iOMP=0;iOMP<(int)(a->NBlok-1);iOMP++)
+#pragma omp parallel for private(iElement,iBlok)
+  for (iOMP = 0; iOMP < (int)(a->NBlok - 1); iOMP++)
   {
-    iBlok=(uint32_t)iOMP;
-    for(iElement=0;iElement<BlokSize;++iElement)
+    iBlok = (uint32_t) iOMP;
+    for (iElement = 0; iElement < BlokSize; ++iElement)
     {
-      a->ValueRe[iBlok][iElement]/=Norm;
-      a->ValueIm[iBlok][iElement]/=Norm;
+      a->ValueRe[iBlok][iElement] /= Norm;
+      a->ValueIm[iBlok][iElement] /= Norm;
     }
   }
 }
@@ -715,24 +751,24 @@ void ComplexWaveFunctionNormalize(WaveFunctionType *const a)
 */
 void ComplexWaveFunctionMultiply(WaveFunctionType a, const double b)
 {
-  uint32_t iBlok,iElement;
-  int iOMP;
-  iBlok=a.NBlok-1;
-  #pragma omp parallel for private(iElement)
-  for(iOMP=0;iOMP<=(int)(a.N-iBlok*BlokSize);++iOMP)
+  uint32_t iBlok, iElement;
+  int    iOMP;
+  iBlok = a.NBlok - 1;
+#pragma omp parallel for private(iElement)
+  for (iOMP = 0; iOMP <= (int)(a.N - iBlok * BlokSize); ++iOMP)
   {
-    iElement=(uint32_t)iOMP;
-    a.ValueRe[iBlok][iElement]*=b;
-    a.ValueIm[iBlok][iElement]*=b;
+    iElement = (uint32_t) iOMP;
+    a.ValueRe[iBlok][iElement] *= b;
+    a.ValueIm[iBlok][iElement] *= b;
   }
-  #pragma omp parallel for private(iElement,iBlok)
-  for(iOMP=0;iOMP<(int)(a.NBlok-1);iOMP++)
+#pragma omp parallel for private(iElement,iBlok)
+  for (iOMP = 0; iOMP < (int)(a.NBlok - 1); iOMP++)
   {
-    iBlok=(uint32_t)iOMP;
-    for(iElement=0;iElement<BlokSize;++iElement)
+    iBlok = (uint32_t) iOMP;
+    for (iElement = 0; iElement < BlokSize; ++iElement)
     {
-      a.ValueRe[iBlok][iElement]*=b;
-      a.ValueIm[iBlok][iElement]*=b;
+      a.ValueRe[iBlok][iElement] *= b;
+      a.ValueIm[iBlok][iElement] *= b;
     }
   }
 }
@@ -745,24 +781,24 @@ void ComplexWaveFunctionMultiply(WaveFunctionType a, const double b)
 */
 void ComplexWaveFunctionComplexMultiply(WaveFunctionType a, const double bRe, const double bIm)
 {
-  uint32_t iBlok,iElement;
-  int iOMP;
-  iBlok=a.NBlok-1;
-  #pragma omp parallel for private(iElement)
-  for(iOMP=0;iOMP<=(int)(a.N-iBlok*BlokSize);++iOMP)
+  uint32_t iBlok, iElement;
+  int    iOMP;
+  iBlok = a.NBlok - 1;
+#pragma omp parallel for private(iElement)
+  for (iOMP = 0; iOMP <= (int)(a.N - iBlok * BlokSize); ++iOMP)
   {
-    iElement=(uint32_t)iOMP;
-    a.ValueRe[iBlok][iElement]=bRe*a.ValueRe[iBlok][iElement]-bIm*a.ValueIm[iBlok][iElement];
-    a.ValueIm[iBlok][iElement]=bIm*a.ValueRe[iBlok][iElement]+bRe*a.ValueIm[iBlok][iElement];
+    iElement = (uint32_t) iOMP;
+    a.ValueRe[iBlok][iElement] = bRe * a.ValueRe[iBlok][iElement] - bIm * a.ValueIm[iBlok][iElement];
+    a.ValueIm[iBlok][iElement] = bIm * a.ValueRe[iBlok][iElement] + bRe * a.ValueIm[iBlok][iElement];
   }
-  #pragma omp parallel for private(iElement,iBlok)
-  for(iOMP=0;iOMP<(int)(a.NBlok-1);iOMP++)
+#pragma omp parallel for private(iElement,iBlok)
+  for (iOMP = 0; iOMP < (int)(a.NBlok - 1); iOMP++)
   {
-    iBlok=(uint32_t)iOMP;
-    for(iElement=0;iElement<BlokSize;++iElement)
+    iBlok = (uint32_t) iOMP;
+    for (iElement = 0; iElement < BlokSize; ++iElement)
     {
-      a.ValueRe[iBlok][iElement]=bRe*a.ValueRe[iBlok][iElement]-bIm*a.ValueIm[iBlok][iElement];
-      a.ValueIm[iBlok][iElement]=bIm*a.ValueRe[iBlok][iElement]+bRe*a.ValueIm[iBlok][iElement];
+      a.ValueRe[iBlok][iElement] = bRe * a.ValueRe[iBlok][iElement] - bIm * a.ValueIm[iBlok][iElement];
+      a.ValueIm[iBlok][iElement] = bIm * a.ValueRe[iBlok][iElement] + bRe * a.ValueIm[iBlok][iElement];
     }
   }
 }
@@ -772,58 +808,68 @@ void ComplexWaveFunctionComplexMultiply(WaveFunctionType a, const double bRe, co
 */
 double ComplexWaveFunctionCalculateNorm(const WaveFunctionType a)
 {
-  uint32_t iBlok,iElement;
-  int iOMP;
-  double NormA=0,NormB=0,Norm=0;
-  iBlok=a.NBlok-1;
-  #pragma omp parallel for private(iElement) reduction(+ : NormA)
-  for(iOMP=0;iOMP<=(int)(a.N-iBlok*BlokSize);++iOMP)
+  uint32_t iBlok, iElement;
+  int    iOMP;
+  double NormA = 0, NormB = 0, Norm = 0;
+  iBlok = a.NBlok - 1;
+#pragma omp parallel for private(iElement) reduction(+ : NormA)
+  for (iOMP = 0; iOMP <= (int)(a.N - iBlok * BlokSize); ++iOMP)
   {
-    iElement=(uint32_t)iOMP;
-    NormA+=a.ValueRe[iBlok][iElement]*a.ValueRe[iBlok][iElement]+a.ValueIm[iBlok][iElement]*a.ValueIm[iBlok][iElement];
+    iElement = (uint32_t) iOMP;
+    NormA +=
+      a.ValueRe[iBlok][iElement] * a.ValueRe[iBlok][iElement] + a.ValueIm[iBlok][iElement] * a.ValueIm[iBlok][iElement];
   }
-  #pragma omp parallel for private(iElement,iBlok) reduction(+ : NormB)
-  for(iOMP=0;iOMP<(int)(a.NBlok-1);iOMP++)
+#pragma omp parallel for private(iElement,iBlok) reduction(+ : NormB)
+  for (iOMP = 0; iOMP < (int)(a.NBlok - 1); iOMP++)
   {
-    iBlok=(uint32_t)iOMP;
-    for(iElement=0;iElement<BlokSize;++iElement)
+    iBlok = (uint32_t) iOMP;
+    for (iElement = 0; iElement < BlokSize; ++iElement)
     {
-      NormB+=a.ValueRe[iBlok][iElement]*a.ValueRe[iBlok][iElement]+a.ValueIm[iBlok][iElement]*a.ValueIm[iBlok][iElement];
+      NormB +=
+        a.ValueRe[iBlok][iElement] * a.ValueRe[iBlok][iElement] +
+        a.ValueIm[iBlok][iElement] * a.ValueIm[iBlok][iElement];
     }
   }
-  Norm=sqrt(NormA+NormB);
-  return Norm;  
+  Norm = sqrt(NormA + NormB);
+  return Norm;
 }
 
 /*
 *   calculate <a|b>
 *   The first entry is complex conjugated
 */
-void ComplexWaveFunctionDotProductSameBasis(const WaveFunctionType a, const WaveFunctionType b, double *DotRe, double *DotIm)
+void ComplexWaveFunctionDotProductSameBasis(const WaveFunctionType a, const WaveFunctionType b, double *DotRe,
+                                            double *DotIm)
 {
-  uint32_t iBlok,iElement;
-  int iOMP;
-  double DotReOMPA=0,DotImOMPA=0,DotReOMPB=0,DotImOMPB=0;
-  iBlok=a.NBlok-1;
-  #pragma omp parallel for private(iElement) reduction(+ : DotReOMPA,DotImOMPA)
-  for(iOMP=0;iOMP<=(int)(a.N-iBlok*BlokSize);++iOMP)
+  uint32_t iBlok, iElement;
+  int    iOMP;
+  double DotReOMPA = 0, DotImOMPA = 0, DotReOMPB = 0, DotImOMPB = 0;
+  iBlok = a.NBlok - 1;
+#pragma omp parallel for private(iElement) reduction(+ : DotReOMPA,DotImOMPA)
+  for (iOMP = 0; iOMP <= (int)(a.N - iBlok * BlokSize); ++iOMP)
   {
-    iElement=(uint32_t)iOMP;
-    DotReOMPA+=a.ValueRe[iBlok][iElement]*b.ValueRe[iBlok][iElement]+a.ValueIm[iBlok][iElement]*b.ValueIm[iBlok][iElement];
-    DotImOMPA+=a.ValueRe[iBlok][iElement]*b.ValueIm[iBlok][iElement]-a.ValueIm[iBlok][iElement]*b.ValueRe[iBlok][iElement];
+    iElement = (uint32_t) iOMP;
+    DotReOMPA +=
+      a.ValueRe[iBlok][iElement] * b.ValueRe[iBlok][iElement] + a.ValueIm[iBlok][iElement] * b.ValueIm[iBlok][iElement];
+    DotImOMPA +=
+      a.ValueRe[iBlok][iElement] * b.ValueIm[iBlok][iElement] - a.ValueIm[iBlok][iElement] * b.ValueRe[iBlok][iElement];
   }
-  #pragma omp parallel for private(iElement,iBlok) reduction(+ : DotReOMPB, DotImOMPB)
-  for(iOMP=0;iOMP<(int)(a.NBlok-1);iOMP++)
+#pragma omp parallel for private(iElement,iBlok) reduction(+ : DotReOMPB, DotImOMPB)
+  for (iOMP = 0; iOMP < (int)(a.NBlok - 1); iOMP++)
   {
-    iBlok=(uint32_t)iOMP;
-    for(iElement=0;iElement<BlokSize;++iElement)
+    iBlok = (uint32_t) iOMP;
+    for (iElement = 0; iElement < BlokSize; ++iElement)
     {
-      DotReOMPB+=a.ValueRe[iBlok][iElement]*b.ValueRe[iBlok][iElement]+a.ValueIm[iBlok][iElement]*b.ValueIm[iBlok][iElement];
-      DotImOMPB+=a.ValueRe[iBlok][iElement]*b.ValueIm[iBlok][iElement]-a.ValueIm[iBlok][iElement]*b.ValueRe[iBlok][iElement];
+      DotReOMPB +=
+        a.ValueRe[iBlok][iElement] * b.ValueRe[iBlok][iElement] +
+        a.ValueIm[iBlok][iElement] * b.ValueIm[iBlok][iElement];
+      DotImOMPB +=
+        a.ValueRe[iBlok][iElement] * b.ValueIm[iBlok][iElement] -
+        a.ValueIm[iBlok][iElement] * b.ValueRe[iBlok][iElement];
     }
   }
-  *DotRe=DotReOMPA+DotReOMPB;
-  *DotIm=DotImOMPA+DotImOMPB;
+  *DotRe = DotReOMPA + DotReOMPB;
+  *DotIm = DotImOMPA + DotImOMPB;
 }
 
 /*
@@ -831,59 +877,64 @@ void ComplexWaveFunctionDotProductSameBasis(const WaveFunctionType a, const Wave
 */
 void ComplexWaveFunctionDotProduct(const WaveFunctionType a, const WaveFunctionType b, double *DotRe, double *DotIm)
 {
-  uint32_t i,j,NextIndex,PsiAIsPsiB;
-  int iOMP;
-  double DotReOMP=0,DotImOMP=0;
-  #pragma omp parallel for private(i,j,NextIndex,PsiAIsPsiB) reduction(+ : DotReOMP,DotImOMP)
-  for(iOMP=1;iOMP<=(int)(a.N);++iOMP)
+  uint32_t i, j, NextIndex, PsiAIsPsiB;
+  int    iOMP;
+  double DotReOMP = 0, DotImOMP = 0;
+#pragma omp parallel for private(i,j,NextIndex,PsiAIsPsiB) reduction(+ : DotReOMP,DotImOMP)
+  for (iOMP = 1; iOMP <= (int)(a.N); ++iOMP)
   {
-    i=(uint32_t)iOMP;
-    NextIndex=b.KeyList[hash(&a.Determinant[BlokElementDet(i,a.NWord,0)],a.NWord,a.NBitsKey)];
-    while(NextIndex)
+    i = (uint32_t) iOMP;
+    NextIndex = b.KeyList[hash(&a.Determinant[BlokElementDet(i, a.NWord, 0)], a.NWord, a.NBitsKey)];
+    while (NextIndex)
     {
-      PsiAIsPsiB=1;
-      for(j=0;j<b.NWord;j++)
+      PsiAIsPsiB = 1;
+      for (j = 0; j < b.NWord; j++)
       {
-        if(b.Determinant[BlokElementDet(NextIndex,b.NWord,j)]!=a.Determinant[BlokElementDet(i,a.NWord,j)]) PsiAIsPsiB=0;
+        if (b.Determinant[BlokElementDet(NextIndex, b.NWord, j)] != a.Determinant[BlokElementDet(i, a.NWord, j)])
+          PsiAIsPsiB = 0;
       }
-      if(PsiAIsPsiB)
-      {/* a=b found add the product to Dot and leave loop  */
-        DotReOMP+=a.ValueRe[BlokElement(i)]*b.ValueRe[BlokElement(NextIndex)]+a.ValueIm[BlokElement(i)]*b.ValueIm[BlokElement(NextIndex)];
-        DotImOMP+=a.ValueRe[BlokElement(i)]*b.ValueIm[BlokElement(NextIndex)]-a.ValueIm[BlokElement(i)]*b.ValueRe[BlokElement(NextIndex)];
-        NextIndex=0;
+      if (PsiAIsPsiB)
+      {                         /* a=b found add the product to Dot and leave loop  */
+        DotReOMP +=
+          a.ValueRe[BlokElement(i)] * b.ValueRe[BlokElement(NextIndex)] +
+          a.ValueIm[BlokElement(i)] * b.ValueIm[BlokElement(NextIndex)];
+        DotImOMP +=
+          a.ValueRe[BlokElement(i)] * b.ValueIm[BlokElement(NextIndex)] -
+          a.ValueIm[BlokElement(i)] * b.ValueRe[BlokElement(NextIndex)];
+        NextIndex = 0;
       }
       else
       {
-        NextIndex=b.Next[BlokElement(NextIndex)];
+        NextIndex = b.Next[BlokElement(NextIndex)];
       }
     }
   }
-  *DotRe=DotReOMP;
-  *DotIm=DotImOMP;
+  *DotRe = DotReOMP;
+  *DotIm = DotImOMP;
 }
 
 /* Set the pre-factors of a to a random value
 */
-void ComplexWaveFunctionRandomize(WaveFunctionType *const a)
+void ComplexWaveFunctionRandomize(WaveFunctionType * const a)
 {
-  uint32_t iBlok,iElement;
-  int iOMP;
-  iBlok=a->NBlok-1;
-  #pragma omp parallel for private(iElement)
-  for(iOMP=0;iOMP<=(int)(a->N-iBlok*BlokSize);++iOMP)
+  uint32_t iBlok, iElement;
+  int    iOMP;
+  iBlok = a->NBlok - 1;
+#pragma omp parallel for private(iElement)
+  for (iOMP = 0; iOMP <= (int)(a->N - iBlok * BlokSize); ++iOMP)
   {
-    iElement=(uint32_t)iOMP;
-    a->ValueRe[iBlok][iElement]=rand()-RAND_MAX/2;
-    a->ValueIm[iBlok][iElement]=rand()-RAND_MAX/2;
+    iElement = (uint32_t) iOMP;
+    a->ValueRe[iBlok][iElement] = rand() - RAND_MAX / 2;
+    a->ValueIm[iBlok][iElement] = rand() - RAND_MAX / 2;
   }
-  #pragma omp parallel for private(iElement,iBlok)
-  for(iOMP=0;iOMP<(int)(a->NBlok-1);iOMP++)
+#pragma omp parallel for private(iElement,iBlok)
+  for (iOMP = 0; iOMP < (int)(a->NBlok - 1); iOMP++)
   {
-    iBlok=(uint32_t)iOMP;
-    for(iElement=0;iElement<BlokSize;++iElement)
+    iBlok = (uint32_t) iOMP;
+    for (iElement = 0; iElement < BlokSize; ++iElement)
     {
-      a->ValueRe[iBlok][iElement]=rand()-RAND_MAX/2;
-      a->ValueIm[iBlok][iElement]=rand()-RAND_MAX/2;
+      a->ValueRe[iBlok][iElement] = rand() - RAND_MAX / 2;
+      a->ValueIm[iBlok][iElement] = rand() - RAND_MAX / 2;
     }
   }
   ComplexWaveFunctionNormalize(a);
@@ -892,74 +943,83 @@ void ComplexWaveFunctionRandomize(WaveFunctionType *const a)
 /*
 *   remove determinants from the basis that have a prefactor smaller then epsilon  
 */
-void ComplexWaveFunctionTruncateBasis(WaveFunctionType *const a, const double epsilon)
+void ComplexWaveFunctionTruncateBasis(WaveFunctionType * const a, const double epsilon)
 {
-  uint32_t startN,iBlok,iElement;
-  a->ValueRe[0][0]=0;
-  a->ValueIm[0][0]=0;
-  startN=a->N;
-  a->N=0;
-  for(iElement=0;iElement<((uint32_t)1<<(a->NBitsKey));++iElement)
-  { /* Whipe out the entire KeyList */
-    a->KeyList[iElement]=0;
+  uint32_t startN, iBlok, iElement;
+  a->ValueRe[0][0] = 0;
+  a->ValueIm[0][0] = 0;
+  startN = a->N;
+  a->N = 0;
+  for (iElement = 0; iElement < ((uint32_t) 1 << (a->NBitsKey)); ++iElement)
+  {                             /* Whipe out the entire KeyList */
+    a->KeyList[iElement] = 0;
   }
-  for(iBlok=0;iBlok<a->NBlok-1;iBlok++)
+  for (iBlok = 0; iBlok < a->NBlok - 1; iBlok++)
   {
-    for(iElement=0;iElement<BlokSize;iElement++)
+    for (iElement = 0; iElement < BlokSize; iElement++)
     {
-      a->Next[iBlok][iElement]=0;
-      if(Sqr(a->ValueRe[iBlok][iElement])+Sqr(a->ValueIm[iBlok][iElement])>Sqr(epsilon)) if(ComplexWaveFunctionAddElement(a,&a->Determinant[iBlok][iElement*a->NWord],a->ValueRe[iBlok][iElement],a->ValueIm[iBlok][iElement])!=0) AllocFailed();
+      a->Next[iBlok][iElement] = 0;
+      if (Sqr(a->ValueRe[iBlok][iElement]) + Sqr(a->ValueIm[iBlok][iElement]) > Sqr(epsilon))
+        if (ComplexWaveFunctionAddElement
+            (a, &a->Determinant[iBlok][iElement * a->NWord], a->ValueRe[iBlok][iElement],
+             a->ValueIm[iBlok][iElement]) != 0)
+          AllocFailed();
     }
   }
-  iBlok=a->NBlok-1;
-  for(iElement=0;iElement<1+startN-iBlok*BlokSize;++iElement)
+  iBlok = a->NBlok - 1;
+  for (iElement = 0; iElement < 1 + startN - iBlok * BlokSize; ++iElement)
   {
-    a->Next[iBlok][iElement]=0;
-    if(Sqr(a->ValueRe[iBlok][iElement])+Sqr(a->ValueIm[iBlok][iElement])>Sqr(epsilon)) if(ComplexWaveFunctionAddElement(a,&a->Determinant[iBlok][iElement*a->NWord],a->ValueRe[iBlok][iElement],a->ValueIm[iBlok][iElement])!=0) AllocFailed();
+    a->Next[iBlok][iElement] = 0;
+    if (Sqr(a->ValueRe[iBlok][iElement]) + Sqr(a->ValueIm[iBlok][iElement]) > Sqr(epsilon))
+      if (ComplexWaveFunctionAddElement
+          (a, &a->Determinant[iBlok][iElement * a->NWord], a->ValueRe[iBlok][iElement],
+           a->ValueIm[iBlok][iElement]) != 0)
+        AllocFailed();
   }
-  for(iBlok=1+(a->N>>NBitsBlok);iBlok<a->NBlok;iBlok++)
+  for (iBlok = 1 + (a->N >> NBitsBlok); iBlok < a->NBlok; iBlok++)
   {
     free(a->ValueRe[iBlok]);
     free(a->ValueIm[iBlok]);
     free(a->Next[iBlok]);
     free(a->Determinant[iBlok]);
   }
-  a->NBlok=1+(a->N>>NBitsBlok);
-  a->ValueRe=realloc(a->ValueRe,a->NBlok*sizeof(double *));
-  a->ValueIm=realloc(a->ValueIm,a->NBlok*sizeof(double *));
-  a->Next=realloc(a->Next,a->NBlok*sizeof(uint32_t *));
-  a->Determinant=realloc(a->Determinant,a->NBlok*sizeof(uint8_t *));
+  a->NBlok = 1 + (a->N >> NBitsBlok);
+  a->ValueRe = realloc(a->ValueRe, a->NBlok * sizeof(double *));
+  a->ValueIm = realloc(a->ValueIm, a->NBlok * sizeof(double *));
+  a->Next = realloc(a->Next, a->NBlok * sizeof(uint32_t *));
+  a->Determinant = realloc(a->Determinant, a->NBlok * sizeof(uint8_t *));
 }
 
 /*  
 *   Make psi orthogonal to OtherPsi, but conserve the basis set of psi
 */
-void ComplexWaveFunctionOrthogonalizeConserveBasis(WaveFunctionType *const psi, const WaveFunctionType *const OtherPsi, const uint32_t Npsi)
+void ComplexWaveFunctionOrthogonalizeConserveBasis(WaveFunctionType * const psi,
+                                                   const WaveFunctionType * const OtherPsi, const uint32_t Npsi)
 {
   uint32_t i;
-  double aRe,aIm;
-  for (i=0;i<Npsi;i++)
+  double aRe, aIm;
+  for (i = 0; i < Npsi; i++)
   {
-    ComplexWaveFunctionDotProduct(OtherPsi[i],*psi, &aRe,&aIm);
-    ComplexWaveFunctionAddComplexMultipliedConserveBasis(psi, OtherPsi[i],-aRe,-aIm);
+    ComplexWaveFunctionDotProduct(OtherPsi[i], *psi, &aRe, &aIm);
+    ComplexWaveFunctionAddComplexMultipliedConserveBasis(psi, OtherPsi[i], -aRe, -aIm);
   }
-} 
-     
+}
+
 /*  
 *   Make psi orthogonal to OtherPsi, if needed enlarge the basis set of psi
-*/      
-uint32_t ComplexWaveFunctionOrthogonalize(WaveFunctionType *const psi, const WaveFunctionType *const OtherPsi, const uint32_t Npsi)
+*/
+uint32_t ComplexWaveFunctionOrthogonalize(WaveFunctionType * const psi, const WaveFunctionType * const OtherPsi,
+                                          const uint32_t Npsi)
 {
   uint32_t i;
-  double aRe,aIm;
-  for (i=0;i<Npsi;i++)
+  double aRe, aIm;
+  for (i = 0; i < Npsi; i++)
   {
-    ComplexWaveFunctionDotProduct(OtherPsi[i],*psi, &aRe,&aIm);
-    if(ComplexWaveFunctionAddComplexMultipliedUnionBasis(psi, OtherPsi[i],-aRe,-aIm))
+    ComplexWaveFunctionDotProduct(OtherPsi[i], *psi, &aRe, &aIm);
+    if (ComplexWaveFunctionAddComplexMultipliedUnionBasis(psi, OtherPsi[i], -aRe, -aIm))
     {
       return 1;
     }
   }
   return 0;
 }
-

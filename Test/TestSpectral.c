@@ -1,41 +1,41 @@
 void TestGreenFunctionCreation()
 {
-  uint32_t i,Dim,Nk,NTriDiag;
-  char filename[255];
+  uint32_t i, Dim, Nk, NTriDiag;
+  char   filename[255];
   TriDiagonalMatrixType G;
   SpectraType Spec[4];
-  Nk=16;
-  NTriDiag=1000;
-  Spec[0].N=22000;
-  Spec[0].Emin=-1.1;
-  Spec[0].Emax= 1.1;
-  Spec[0].EminPole=-1.1;
-  Spec[0].EmaxPole= 1.1;
-  Spec[0].dE=(Spec[0].Emax-Spec[0].Emin)/Spec[0].N;
-  Spec[0].Gamma=0.0005;
-  Spec[0].phase=0.0;
-  for(i=0;i<4;i++)
+  Nk = 16;
+  NTriDiag = 1000;
+  Spec[0].N = 22000;
+  Spec[0].Emin = -1.1;
+  Spec[0].Emax = 1.1;
+  Spec[0].EminPole = -1.1;
+  Spec[0].EmaxPole = 1.1;
+  Spec[0].dE = (Spec[0].Emax - Spec[0].Emin) / Spec[0].N;
+  Spec[0].Gamma = 0.0005;
+  Spec[0].phase = 0.0;
+  for (i = 0; i < 4; i++)
   {
     SpectrumAllocate(Spec[0], &(Spec[i]));
   }
   NearestNeighborTriangularTBToGSpectraRepresentation(&Spec[0], Nk);
-  /*TriDiagonalMatrixToSpectrum(0.0, G, &Spec[0]);*/
-  
-  for(Dim=1;Dim<=4;Dim++)
+  /*TriDiagonalMatrixToSpectrum(0.0, G, &Spec[0]); */
+
+  for (Dim = 1; Dim <= 4; Dim++)
   {
-    printf("%i\n",Dim);
+    printf("%i\n", Dim);
     NearestNeighborHyperCubicTBToGTriDiagonalRepresentationNonOrthogonal(Dim, NTriDiag, &G, Nk);
     NearestNeighborHyperCubicTBToGTriDiagonalRepresentation(Dim, NTriDiag, &G, Nk);
-    TriDiagonalMatrixToSpectrum(0.0, G, &Spec[Dim-1]);
-    TriDiagonalMatrixToSpectrumGausian(0.0, G, &Spec[Dim-0],Spec[Dim-0].Gamma);
-    sprintf(filename,"G0CubicD%i",Dim);
+    TriDiagonalMatrixToSpectrum(0.0, G, &Spec[Dim - 1]);
+    TriDiagonalMatrixToSpectrumGausian(0.0, G, &Spec[Dim - 0], Spec[Dim - 0].Gamma);
+    sprintf(filename, "G0CubicD%i", Dim);
     PrintPlainTriDiagonalMatrix(G);
-    FilePrintPlainTriDiagonalMatrix(G,filename,"w");
+    FilePrintPlainTriDiagonalMatrix(G, filename, "w");
     FreeTriDiagonalMatrix(&G);
-    Nk/=4;
+    Nk /= 4;
   }
-  
-  FilePrintSpectra(Spec,4,"G0_test","w");
+
+  FilePrintSpectra(Spec, 4, "G0_test", "w");
 }
 
 

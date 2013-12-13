@@ -15,66 +15,91 @@
 */
 
 uint32_t ReadWaveFunctionPlain(WaveFunctionType * O)
-{ return StreamReadWaveFunctionPlain(O,stdin);}
+{
+  return StreamReadWaveFunctionPlain(O, stdin);
+}
 
 uint32_t ReadWaveFunctionPlainBinary(WaveFunctionType * O)
-{ return StreamReadWaveFunctionPlainBinary(O,stdin);}
+{
+  return StreamReadWaveFunctionPlainBinary(O, stdin);
+}
 
 uint32_t ReadMatrixType(MatrixType * O)
-{ return StreamReadMatrixType(O,stdin);}
+{
+  return StreamReadMatrixType(O, stdin);
+}
 
 uint32_t ReadPlainAndersonMatrixType(AndersonMatrixType * O)
-{ return StreamReadPlainAndersonMatrixType(O,stdin);}
+{
+  return StreamReadPlainAndersonMatrixType(O, stdin);
+}
 
 uint32_t ReadPlainTriDiagonalMatrix(TriDiagonalMatrixType * M)
-{ return StreamReadPlainTriDiagonalMatrixType(M,stdout);}
+{
+  return StreamReadPlainTriDiagonalMatrixType(M, stdout);
+}
 
 uint32_t ReadPlainAndersonMatrix(AndersonMatrixType * M)
-{ return StreamReadPlainAndersonMatrixType(M,stdout);}
+{
+  return StreamReadPlainAndersonMatrixType(M, stdout);
+}
 
 uint32_t ReadListOfPoles(ListOfPoles * M)
-{ return StreamReadPlainListOfPoles(M,stdout);}
+{
+  return StreamReadPlainListOfPoles(M, stdout);
+}
 
 uint32_t ReadListOfPolesUndetermined(ListOfPoles * M)
-{ return StreamReadListOfPolesUndetermined(M,stdout);}
+{
+  return StreamReadListOfPolesUndetermined(M, stdout);
+}
 
 uint32_t ReadAtom(AtomType * O)
-{ return StreamReadAtom(O,stdin);}
+{
+  return StreamReadAtom(O, stdin);
+}
 
 uint32_t ReadCrystalStructure(CrystalStructureType * O)
-{ return StreamReadCrystalStructure(O,stdin);}
+{
+  return StreamReadCrystalStructure(O, stdin);
+}
 
 uint32_t ReadCrystalStructureSuperCell(CrystalStructureSuperCellType * O)
-{ return StreamReadCrystalStructureSuperCell(O,stdin);}
+{
+  return StreamReadCrystalStructureSuperCell(O, stdin);
+}
 
 uint32_t ReadHeisenbergModelSettings(HeisenbergModelSettings * O)
-{ return StreamReadHeisenbergModelSettings(O,stdin);}
+{
+  return StreamReadHeisenbergModelSettings(O, stdin);
+}
 
 uint32_t ReadDimerizedSpinChainSettings(DimerizedSpinChainSettings * O)
-{ return StreamReadDimerizedSpinChainSettings(O,stdin);}
+{
+  return StreamReadDimerizedSpinChainSettings(O, stdin);
+}
 
 uint32_t ReadtJModelSettings(tJModelSettings * O)
-{ return StreamReadtJModelSettings(O,stdin);}
+{
+  return StreamReadtJModelSettings(O, stdin);
+}
 
 uint32_t ReadSpinLaderSettings(SpinLaderSettings * O)
-{ return StreamReadSpinLaderSettings(O,stdin);}
+{
+  return StreamReadSpinLaderSettings(O, stdin);
+}
 
 uint32_t ReadHubbardModelSettings(HubbardModelSettings * O)
-{ return StreamReadHubbardModelSettings(O,stdin);}
+{
+  return StreamReadHubbardModelSettings(O, stdin);
+}
 
 uint32_t ReadDMFTXASSettings(DMFTXASSettings * O)
-{ return StreamReadDMFTXASSettings(O,stdin);}
+{
+  return StreamReadDMFTXASSettings(O, stdin);
+}
 
 uint32_t ReadDMFTSettings(DMFTSettings * O)
-{ return StreamReadDMFTSettings(O,stdin);}
-
-
-
-
-
-
-
-
-
-
-
+{
+  return StreamReadDMFTSettings(O, stdin);
+}

@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
-#include <stdint.h> 
+#include <stdint.h>
 #include <string.h>
 #include <math.h>
 #include <float.h>
@@ -26,41 +26,49 @@
 #include "../Tight_Binding/Tight_Binding_lib.c"
 #include "../Tight_Binding/ImpurityUnfolding.c"
 
-int main (int argc, const char * argv[]) 
+int main(int argc, const char *argv[])
 {
   TimeStampAll();
-  argc-=1;
-  char comments[1000];
-  char filenamepre[255];
-  FILE *stream;
-  int Dimension,ClusterSize,Nrepetitions;
-  double Rho,Vpot;
-  if((stream=fopen(argv[argc],"r"))==NULL)
+  argc -= 1;
+  char   comments[1000];
+  char   filenamepre[255];
+  FILE  *stream;
+  int    Dimension, ClusterSize, Nrepetitions;
+  double Rho, Vpot;
+  if ((stream = fopen(argv[argc], "r")) == NULL)
   {
-    printf("ERROR\nCan't open %s for reading.\n",argv[argc]);
+    printf("ERROR\nCan't open %s for reading.\n", argv[argc]);
     return 1;
   }
-  fscanf(stream,"%i" ,&(Dimension));               fgets(comments,1000,stream);
-  fscanf(stream,"%i" ,&(ClusterSize));             fgets(comments,1000,stream);
-  fscanf(stream,"%lf",&(Rho));                     fgets(comments,1000,stream);
-  fscanf(stream,"%lf",&(Vpot));                    fgets(comments,1000,stream);
-  fscanf(stream,"%i" ,&(Nrepetitions));            fgets(comments,1000,stream);
+  fscanf(stream, "%i", &(Dimension));
+  fgets(comments, 1000, stream);
+  fscanf(stream, "%i", &(ClusterSize));
+  fgets(comments, 1000, stream);
+  fscanf(stream, "%lf", &(Rho));
+  fgets(comments, 1000, stream);
+  fscanf(stream, "%lf", &(Vpot));
+  fgets(comments, 1000, stream);
+  fscanf(stream, "%i", &(Nrepetitions));
+  fgets(comments, 1000, stream);
   fclose(stream);
-  if(Rho<0)
+  if (Rho < 0)
   {
     printf("Negative impurity denisty in input file\n");
     printf("Use single impurity calculation\n");
-    sprintf(filenamepre,"D%i_N%i_V%5.3f_SingleImpurity",Dimension,ClusterSize,Vpot);
-    if(Dimension==1) TightBindingImpurityUnfolding1Impurity1D(ClusterSize, Vpot, filenamepre);
-    if(Dimension==2) TightBindingImpurityUnfolding1Impurity2D(ClusterSize, Vpot, filenamepre);
-    if(Dimension==3) TightBindingImpurityUnfolding1Impurity3D(ClusterSize, Vpot, filenamepre);
+    sprintf(filenamepre, "D%i_N%i_V%5.3f_SingleImpurity", Dimension, ClusterSize, Vpot);
+    if (Dimension == 1)
+      TightBindingImpurityUnfolding1Impurity1D(ClusterSize, Vpot, filenamepre);
+    if (Dimension == 2)
+      TightBindingImpurityUnfolding1Impurity2D(ClusterSize, Vpot, filenamepre);
+    if (Dimension == 3)
+      TightBindingImpurityUnfolding1Impurity3D(ClusterSize, Vpot, filenamepre);
   }
   else
   {
-    sprintf(filenamepre,"D%i_N%i_Rho%5.3f_V%5.3f_Avv%i",Dimension,ClusterSize,Rho,Vpot,Nrepetitions);
+    sprintf(filenamepre, "D%i_N%i_Rho%5.3f_V%5.3f_Avv%i", Dimension, ClusterSize, Rho, Vpot, Nrepetitions);
     TightBindingImpurityUnfoldingRandomImpuritySeries(Dimension, ClusterSize, Rho, Vpot, Nrepetitions, filenamepre);
   }
-  
+
 //  TightBindingImpurityUnfolding1Impurity1D(3, 0.5, "1D_N02_V3.0");
 
 
