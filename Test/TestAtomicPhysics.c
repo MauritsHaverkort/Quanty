@@ -25,6 +25,10 @@ uint32_t TestAtomicPhysics()
   SpectraType Spectra;
   char   filename[256];
 
+  EigenEnergies[0] = 0.0;
+  EigenEnergies[1] = 0.0;
+  EigenEnergies[2] = 0.0;
+
   FSlater[0] = 0;
   FSlater[1] = 10.0;
   FSlater[2] = 6.25;
