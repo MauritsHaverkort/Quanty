@@ -155,7 +155,13 @@ int OrderListOfPolesCompare(double *elem1, double *elem2)
 
 void OrderListOfPoles(ListOfPoles * const M)
 {
-  double Mab[2 * M->N];
+  double *Mab = malloc(2 * M->N * sizeof(double));
+  if (Mab == NULL)
+  {
+    printf("malloc for Mab failed in ListOfPoles\n");
+    fflush(stdout);
+    exit(1);
+  }  
   uint32_t i;
   for (i = 0; i < M->N; i++)
   {
@@ -168,6 +174,7 @@ void OrderListOfPoles(ListOfPoles * const M)
     M->a[i] = Mab[2 * i];
     M->b[i] = Mab[2 * i + 1];
   }
+  free(Mab);
 }
 
 void OrderListOfPolesOld(ListOfPoles * const M)

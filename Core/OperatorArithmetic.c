@@ -86,22 +86,9 @@ uint32_t InitOperator(OperatorType * const O)
  */
 uint32_t InitNamedOperator(OperatorType * const O, char *name)
 {
+  int ret = InitOperator(O);
   strcpy(O->Name, name);
-  O->QComplex = 0;
-  O->NFermion = 0;
-  O->NBoson = 0;
-  O->NWord = 0;
-  O->MaxLength = 0;
-  if ((O->l = malloc(sizeof(OperatorFixedLengthType))) == NULL)
-  {
-    printf("Could not allocate OperatorFixedLengthType in InitOperator\n");
-    return 1;
-  }
-  O->l[0].N = 0;
-  O->l[0].NBitsKey = 0;
-  O->l[0].NAloc = 0;
-  O->l[0].QComplex = 0;
-  return 0;
+  return ret;
 }
 
 /* each operator of fixed length can be either complex or real
@@ -1555,6 +1542,14 @@ uint32_t OperatorMultiply2(OperatorType * const O, OperatorType const A, Operato
 {
   uint32_t ilA, ilB, iNA, iNB, k;
   uint16_t det[A.MaxLength + B.MaxLength];
+  
+  if (O->MaxLength != A.MaxLength + B.MaxLength)
+  {
+      printf("Length of output operator does not match in OperatorMultiply2\n");
+      fflush(stdout);
+      return 1;
+  }
+  
   if ((Aset == 'N') && (Bset == 'N'))
   {
     for (ilA = 0; ilA <= A.MaxLength; ilA++)
@@ -2175,6 +2170,14 @@ uint32_t OperatorMultiply2NormalOrder(OperatorType * const O, OperatorType const
 {
   uint32_t ilA, ilB, iNA, iNB, k;
   uint16_t det[A.MaxLength + B.MaxLength];
+  
+  if (O->MaxLength != A.MaxLength + B.MaxLength)
+  {
+      printf("Length of output operator does not match in OperatorMultiply2NormalOrder\n");
+      fflush(stdout);
+      return 1;
+  }
+
   if ((Aset == 'N') && (Bset == 'N'))
   {
     for (ilA = 0; ilA <= A.MaxLength; ilA++)
@@ -2802,6 +2805,14 @@ uint32_t OperatorMultiply3(OperatorType * const O, OperatorType const A, Operato
 {
   uint32_t ilA, ilB, ilC, iNA, iNB, iNC, k;
   uint16_t det[A.MaxLength + B.MaxLength + C.MaxLength];
+
+  if (O->MaxLength != A.MaxLength + B.MaxLength + C.MaxLength)
+  {
+      printf("Length of output operator does not match in OperatorMultiply3\n");
+      fflush(stdout);
+      return 1;
+  }
+
   if ((Aset == 'N') && (Bset == 'N') && (Cset == 'N'))
   {
     for (ilA = 0; ilA <= A.MaxLength; ilA++)
@@ -3884,6 +3895,14 @@ uint32_t OperatorMultiply3NormalOrder(OperatorType * const O, OperatorType const
 {
   uint32_t ilA, ilB, ilC, iNA, iNB, iNC, k;
   uint16_t det[A.MaxLength + B.MaxLength + C.MaxLength];
+
+  if (O->MaxLength != A.MaxLength + B.MaxLength + C.MaxLength)
+  {
+      printf("Length of output operator does not match in OperatorMultiply3NormalOrder\n");
+      fflush(stdout);
+      return 1;
+  }
+
   if ((Aset == 'N') && (Bset == 'N') && (Cset == 'N'))
   {
     for (ilA = 0; ilA <= A.MaxLength; ilA++)
@@ -5177,6 +5196,14 @@ uint32_t OperatorMultiply(OperatorType * const AB, OperatorType const A, Operato
 {
   uint32_t ilA, ilB, iNA, iNB, k;
   uint16_t det[A.MaxLength + B.MaxLength];
+  
+  if (AB->MaxLength != A.MaxLength + B.MaxLength)
+  {
+      printf("Length of output operator does not match in OperatorMultiply\n");
+      fflush(stdout);
+      return 1;
+  }
+  
   for (ilA = 0; ilA <= A.MaxLength; ilA++)
   {
     for (ilB = 0; ilB <= B.MaxLength; ilB++)
@@ -5337,6 +5364,13 @@ uint32_t OperatorMultiplyNormalOrder(OperatorType * const AB, OperatorType const
   fflush(stdout);
   uint32_t ilA, ilB, iNA, iNB, k;
   uint16_t det[A.MaxLength + B.MaxLength];
+  if (AB->MaxLength != A.MaxLength + B.MaxLength)
+  {
+      printf("Length of output operator does not match in OperatorMultiplyNormalOrder\n");
+      fflush(stdout);
+      return 1;
+  }
+
   for (ilA = 0; ilA <= A.MaxLength; ilA++)
   {
     for (ilB = 0; ilB <= B.MaxLength; ilB++)
@@ -5500,6 +5534,14 @@ uint32_t OperatorMultiplyScaledNormalOrder(OperatorType * const AB, OperatorType
   fflush(stdout);
   uint32_t ilA, ilB, iNA, iNB, k;
   uint16_t det[A.MaxLength + B.MaxLength];
+
+  if (AB->MaxLength != A.MaxLength + B.MaxLength)
+  {
+      printf("Length of output operator does not match in OperatorMultiplyScaledNormalOrder\n");
+      fflush(stdout);
+      return 1;
+  }
+
   for (ilA = 0; ilA <= A.MaxLength; ilA++)
   {
     for (ilB = 0; ilB <= B.MaxLength; ilB++)
