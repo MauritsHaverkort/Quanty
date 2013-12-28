@@ -7,6 +7,7 @@
 #include <float.h>
 #include <limits.h>
 #include <unistd.h>
+#include <stdarg.h>
 
 #ifdef _OPENMP
 #include <omp.h>

@@ -29,9 +29,9 @@
 
 
 
-/*  Remove the values of an opperator from memory
-*   On entry H contains the definitions and alocation of memeory
-*   On excit all values are freed
+/*  Remove the values of an operator from memory
+*   On entry H contains the definitions and allocation of memory
+*   On exit all values are freed
 */
 uint32_t FreeOperator(OperatorType * const H)
 {
@@ -58,7 +58,7 @@ uint32_t FreeOperator(OperatorType * const H)
   return 0;
 }
 
-/*  Initiallize the Operator structure
+/*  Initialize the Operator structure
  *  Allocate space for O.l
  */
 uint32_t InitOperator(OperatorType * const O)
@@ -81,7 +81,7 @@ uint32_t InitOperator(OperatorType * const O)
   return 0;
 }
 
-/*  Initiallize the Operator structure
+/*  Initialize the Operator structure
  *  Allocate space for O.l
  */
 uint32_t InitNamedOperator(OperatorType * const O, char *name)
@@ -91,20 +91,36 @@ uint32_t InitNamedOperator(OperatorType * const O, char *name)
   return ret;
 }
 
-void InitOperatorForMult(OperatorType *AB, const OperatorType *A, const OperatorType *B)
-{
-  int j;
-  AB->QComplex = A->QComplex || B->QComplex;
-  AB->NFermion = A->NFermion;
-  AB->NBoson = A->NBoson;
-  AB->NWord = A->NWord;
-  InitOperator(AB);
-  for (j = 1; j <= A->MaxLength + B->MaxLength; j++)
-  {
-    InitOperatorFixedLength(AB, j, 8);
-  }
-}
+/*  Initialize the Operator structure
+ *  to apply a Operator product with 
+ *  an arbitrary number of operators
+ */
 
+void InitOperatorForMult(OperatorType *prod, int count, const OperatorType *l, ...)
+{
+  va_list ap;
+  OperatorType *r;
+  int j;    
+  InitOperator(prod);
+  int MaxLength = l->MaxLength;
+  prod->QComplex = l->QComplex;
+  prod->NFermion = l->NFermion;
+  prod->NBoson = l->NBoson;
+  prod->NWord = l->NWord;
+  
+  va_start(ap, l);
+  for(j=1; j<count; j++)
+  {
+    r = va_arg(ap, OperatorType*);
+    prod->QComplex = prod->QComplex || r->QComplex;
+    MaxLength += r->MaxLength;
+  }
+  for (j = 1; j <= MaxLength; j++)
+  {
+    InitOperatorFixedLength(prod, j, 8);
+  }
+  va_end(ap);
+}
 
 /* each operator of fixed length can be either complex or real
  * this is stored in O.l[ilenght].QComplex
@@ -5004,8 +5020,8 @@ uint32_t OperatorMultiply4(OperatorType * const O, OperatorType const A, Operato
 {
   uint32_t j;
   OperatorType AB, CD;
-  InitOperatorForMult(&AB, &A, &B);
-  InitOperatorForMult(&CD, &C, &D);
+  InitOperatorForMult(&AB, 2, &A, &B);
+  InitOperatorForMult(&CD, 2, &C, &D);
 
   if (OperatorMultiply2(&AB, A, B, Aset, Bset))
   {
@@ -5043,8 +5059,8 @@ uint32_t OperatorMultiply4NormalOrder(OperatorType * const O, OperatorType const
 {
   uint32_t j;
   OperatorType AB, CD;
-  InitOperatorForMult(&AB, &A, &B);
-  InitOperatorForMult(&CD, &C, &D);
+  InitOperatorForMult(&AB, 2, &A, &B);
+  InitOperatorForMult(&CD, 2, &C, &D);
 
   if (OperatorMultiply2NormalOrder(&AB, A, B, Aset, Bset, QDetNotOrdered))
   {
@@ -5080,8 +5096,8 @@ uint32_t OperatorMultiply5(OperatorType * const O, OperatorType const A, Operato
 {
   uint32_t j;
   OperatorType AB, DE;
-  InitOperatorForMult(&AB, &A, &B);
-  InitOperatorForMult(&DE, &D, &E);
+  InitOperatorForMult(&AB, 2, &A, &B);
+  InitOperatorForMult(&DE, 2, &D, &E);
 
   if (OperatorMultiply2(&AB, A, B, Aset, Bset))
   {
@@ -5119,8 +5135,8 @@ uint32_t OperatorMultiply5NormalOrder(OperatorType * const O, OperatorType const
 {
   uint32_t j;
   OperatorType AB, DE;
-  InitOperatorForMult(&AB, &A, &B);
-  InitOperatorForMult(&DE, &D, &E);
+  InitOperatorForMult(&AB, 2, &A, &B);
+  InitOperatorForMult(&DE, 2, &D, &E);
 
   if (OperatorMultiply2NormalOrder(&AB, A, B, Aset, Bset, QDetNotOrdered))
   {
