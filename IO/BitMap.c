@@ -41,8 +41,7 @@ typedef struct                       /**** Bitmap information structure ****/
 /*
  * 'read_word()' - Read a 16-bit unsigned integer.
  */
-static unsigned short           /* O - 16-bit unsigned integer */
-read_word(FILE * fp)            /* I - File to read from */
+static unsigned short read_word(FILE * fp)
 {
   unsigned char b0, b1;         /* Bytes from file */
   b0 = getc(fp);
@@ -54,8 +53,7 @@ read_word(FILE * fp)            /* I - File to read from */
 /*
  * 'read_dword()' - Read a 32-bit unsigned integer.
  */
-static unsigned int             /* O - 32-bit unsigned integer */
-read_dword(FILE * fp)           /* I - File to read from */
+static unsigned int read_dword(FILE * fp)
 {
   unsigned char b0, b1, b2, b3; /* Bytes from file */
   b0 = getc(fp);
@@ -69,8 +67,7 @@ read_dword(FILE * fp)           /* I - File to read from */
 /*
  * 'read_long()' - Read a 32-bit signed integer.
  */
-static int                      /* O - 32-bit signed integer */
-read_long(FILE * fp)            /* I - File to read from */
+static int read_long(FILE * fp)
 {
   unsigned char b0, b1, b2, b3; /* Bytes from file */
   b0 = getc(fp);

@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4C03B02E186E37B0004C2B7B /* Tight_Binding.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA70163265DD00138620 /* Tight_Binding.c */; };
+		4C03B02F18703637004C2B7B /* liblapack.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACF163266F900138620 /* liblapack.dylib */; };
+		4C03B0301870363B004C2B7B /* libblas.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACD163266DD00138620 /* libblas.dylib */; };
 		4C2AAACC1632662000138620 /* Test.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA66163265DD00138620 /* Test.c */; };
 		4C2AAACE163266DD00138620 /* libblas.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACD163266DD00138620 /* libblas.dylib */; };
 		4C2AAAD0163266F900138620 /* liblapack.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACF163266F900138620 /* liblapack.dylib */; };
@@ -25,6 +28,15 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		4C03B023186E376A004C2B7B /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
 		4C2AAA171632655300138620 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -73,6 +85,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		4C03B020186E321D004C2B7B /* StuttgartNMTO.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = StuttgartNMTO.c; sourceTree = "<group>"; };
+		4C03B025186E376A004C2B7B /* TightBinding */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = TightBinding; sourceTree = BUILT_PRODUCTS_DIR; };
+		4C03B03118706F30004C2B7B /* StuttgartNMTO.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = StuttgartNMTO.c; sourceTree = "<group>"; };
 		4C0877991737CDE600CE9AB4 /* WaveFunctionPerturbationArithmetic.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = WaveFunctionPerturbationArithmetic.c; sourceTree = "<group>"; };
 		4C2AAA191632655300138620 /* Model */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Model; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C2AAA261632659D00138620 /* Model.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = Model.c; sourceTree = "<group>"; };
@@ -165,6 +180,15 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		4C03B022186E376A004C2B7B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4C03B0301870363B004C2B7B /* libblas.dylib in Frameworks */,
+				4C03B02F18703637004C2B7B /* liblapack.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		4C2AAA161632655300138620 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -244,6 +268,7 @@
 				4C5CA61716D18BBF00BE1C25 /* DMFT */,
 				4CDD1C9F1796D14100614F34 /* YiDMFT */,
 				4C79F5D817B53C8000189682 /* Hubart */,
+				4C03B025186E376A004C2B7B /* TightBinding */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -341,6 +366,7 @@
 				4C2AAA5E163265DD00138620 /* StreamRead.c */,
 				4C2AAA5B163265DD00138620 /* Print.c */,
 				4C5A6B9B175E6E8700EEA17F /* PrintMathematicaExpression.c */,
+				4C03B020186E321D004C2B7B /* StuttgartNMTO.c */,
 			);
 			path = IO;
 			sourceTree = "<group>";
@@ -372,6 +398,7 @@
 				4CDD1CAD179D2F0900614F34 /* TestStandardOperators.c */,
 				4C8274E017DCF6D000A5F555 /* TestAtomicPhysics.c */,
 				4C3261581850DF9300CEECC4 /* OperatorArithmetic.c */,
+				4C03B03118706F30004C2B7B /* StuttgartNMTO.c */,
 			);
 			path = Test;
 			sourceTree = "<group>";
@@ -418,6 +445,23 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		4C03B024186E376A004C2B7B /* TightBinding */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4C03B02B186E376A004C2B7B /* Build configuration list for PBXNativeTarget "TightBinding" */;
+			buildPhases = (
+				4C03B021186E376A004C2B7B /* Sources */,
+				4C03B022186E376A004C2B7B /* Frameworks */,
+				4C03B023186E376A004C2B7B /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TightBinding;
+			productName = TightBinding;
+			productReference = 4C03B025186E376A004C2B7B /* TightBinding */;
+			productType = "com.apple.product-type.tool";
+		};
 		4C2AAA181632655300138620 /* Model */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 4C2AAA231632655300138620 /* Build configuration list for PBXNativeTarget "Model" */;
@@ -529,11 +573,20 @@
 				4C5CA61616D18BBF00BE1C25 /* DMFT */,
 				4CDD1C9E1796D14100614F34 /* YiDMFT */,
 				4C79F5D717B53C8000189682 /* Hubart */,
+				4C03B024186E376A004C2B7B /* TightBinding */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXSourcesBuildPhase section */
+		4C03B021186E376A004C2B7B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4C03B02E186E37B0004C2B7B /* Tight_Binding.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		4C2AAA151632655300138620 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -577,6 +630,45 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
+		4C03B02C186E376A004C2B7B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.9;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		4C03B02D186E376A004C2B7B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				ENABLE_NS_ASSERTIONS = NO;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.9;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 		4C2AAA211632655300138620 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -647,7 +739,16 @@
 		4C2AAAC4163265F500138620 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				GCC_WARN_TYPECHECK_CALLS_TO_PRINTF = NO;
+				CLANG_ANALYZER_SECURITY_FLOATLOOPCOUNTER = YES;
+				CLANG_ANALYZER_SECURITY_INSECUREAPI_RAND = YES;
+				CLANG_ANALYZER_SECURITY_INSECUREAPI_STRCPY = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_IMPLICIT_SIGN_CONVERSION = NO;
+				CLANG_WARN_INT_CONVERSION = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_WARN_TYPECHECK_CALLS_TO_PRINTF = YES;
+				GCC_WARN_UNKNOWN_PRAGMAS = NO;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -655,7 +756,15 @@
 		4C2AAAC5163265F500138620 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				GCC_WARN_TYPECHECK_CALLS_TO_PRINTF = NO;
+				CLANG_ANALYZER_SECURITY_FLOATLOOPCOUNTER = YES;
+				CLANG_ANALYZER_SECURITY_INSECUREAPI_RAND = YES;
+				CLANG_ANALYZER_SECURITY_INSECUREAPI_STRCPY = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_IMPLICIT_SIGN_CONVERSION = NO;
+				CLANG_WARN_INT_CONVERSION = YES;
+				GCC_WARN_TYPECHECK_CALLS_TO_PRINTF = YES;
+				GCC_WARN_UNKNOWN_PRAGMAS = NO;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
@@ -744,6 +853,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		4C03B02B186E376A004C2B7B /* Build configuration list for PBXNativeTarget "TightBinding" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4C03B02C186E376A004C2B7B /* Debug */,
+				4C03B02D186E376A004C2B7B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 		4C2AAA131632655300138620 /* Build configuration list for PBXProject "Model" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

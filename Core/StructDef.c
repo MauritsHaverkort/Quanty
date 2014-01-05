@@ -54,6 +54,7 @@ typedef struct Complex16
 }
 Complex16;
 
+typedef enum { False, True } Bool;
 
 /* Bosons are distinguished from fermions by the index number
  * Fermions are labled from 0 to NFermion-1
@@ -520,11 +521,13 @@ SpectraType;
 
 typedef struct AtomType
 {
-  char   Name[32];              /* Atom name */
-  uint32_t AtomNumber;          /* atomic number of the atom */
-  double Position[3];           /* position of the atom */
-  int    Nshell;                /* number of orbital shells in the atom */
-  int   *shelldegeneracy;       /* degeneracy of the shell */
+  char   Name[MAXStrLength];         /* Atom name */
+  uint32_t AtomNumber;               /* atomic number of the atom */
+  double Position[3];                /* position of the atom */
+  int    Nshell;                     /* number of orbital shells in the atom */
+  char  *ShellName[MAXStrLength];    /* Name of the orbital shells in the atom */
+  int   *shelldegeneracy;            /* degeneracy of the shell */
+  char  **OrbitalName[MAXStrLength]; /* Name of the orbitals in the different shells */
 }
 AtomType;
 
@@ -784,3 +787,246 @@ typedef struct HubbardModelSettings
   char   SpecFile[256];         /* file name where the spectra are written */
 }
 HubbardModelSettings;
+
+/* Defines a structure that can store the Stuttgart CTRL file for LMTO and NMTO calculations 
+ * The controle file is structured into categories 
+ *
+ * The StuttgartCTRL file defines a struct for each category in the CTRL file.
+ *   Categories defined:
+ *    HEADER VERS IO DIM STRUC OPTIONS CLASS SITE SYMGRP SCALE STR BZ EWALD DOS SYML START HARTREE PLOT CHARGE FINDES SCELL RHOFIT NMTO LOCALS
+ */
+
+typedef struct StuttgartCTRL
+{
+  char HEADER[1024];
+  char VERS[64];
+  struct
+  {
+    Bool HELP;
+    Bool WKP;
+    Bool IACTIV;
+    int VERBOS;
+    int ERRTOL;
+    char OUTPUT[MAXStrLength];
+    char ERR[MAXStrLength];
+  }
+  IO;
+  struct
+  {
+    int NBAS;
+    int NCLASS;
+    int NL;
+    int LDIM;
+    int IDIM;
+    int NSYMOP;
+    int NKP;
+  }
+  DIM;
+  struct
+  {
+    double ALAT;
+    double PLAT[3][3];
+    Bool FIXLAT;
+  }
+  STRUC;
+  struct
+  {
+    Bool REL;
+    Bool CCOR;
+    Bool NONLOC;
+    Bool CORDRD;
+    Bool CARTESIAN;
+    Bool CHARGE;
+    Bool FATBAND;
+    Bool AFM;
+    Bool FS;
+    Bool OVLCOR;
+    Bool WRIBAS;
+    Bool SEWALD;
+    Bool LOCALCS;
+    int NRXC;
+    int NITATOM;
+    int NSPIN;
+    int NRMIX;
+    char Q[16];
+  }
+  OPTIONS;
+  struct
+  {
+    int N;           /* not in control file - number of clases */
+    Bool *NEWNAM;
+    char **ATOM;
+    int *Z;
+    double *R;
+    int *LMX;
+    int **IDXDN;
+    int **CONF;
+    int **IDMOD;
+  }
+  CLASS;
+  struct
+  {
+    int N;            /* not in control file - number of sites */
+    char **ATOM;
+    double **POS;
+    double **X;
+  }
+  SITE;
+  struct
+  {
+    Bool USESYM;
+    int NGEN;
+    int IORIGIN;
+    char SPCGRP[64];
+    char GENGRP[64][32];
+  }
+  SYMGRP;
+  struct
+  {
+    Bool SCLWSR;
+    double FACVOL;
+    double OMMAX1[3];
+    double OMMAX2[3];
+    double GAMMA;
+  }
+  SCALE;
+  struct
+  {
+    Bool DOWATS;
+    Bool DONALP;
+    Bool NOCALC;
+    int IALPHA;
+    int LMAXW;
+    int NDIMIN;
+    int NTRANS;
+    int LDN;
+    int MDN;
+    int JBASDN;
+    double KAPPA2;
+    double KWxx2;
+    double ADOT;
+    double DELTR;
+    double RMAXS;
+    double EPS;
+    double *SIGMA[4]; /* dimension according to CLASS.N */
+  }
+  STR;
+  struct
+  {
+    Bool TETRA;
+    Bool METAL;
+    int NKABC[3];
+    int MAXKP;
+    int N;
+    int RANGE;
+    int NPTS;
+    double W;
+    double TOL;
+  }
+  BZ;
+  struct
+  {
+    int NKDMX;
+    double AS;
+    double TOL;
+  }
+  EWALD;
+  struct
+  {
+    int NOPTS;
+    double EMIN;
+    double EMAX;
+  }
+  DOS;
+  struct
+  {
+    int N;         /* not in control file - number of linesegments */
+    int *NQ;
+    double **Q1;
+    double **Q2;
+    char **LAB1;
+    char **LAB2;
+  }
+  SYML;
+  struct
+  {
+    int NIT;
+  }
+  START;
+  struct
+  {
+    Bool BEGATOM;
+    int LT1;
+    int LT2;
+    int LT3;
+  }
+  HARTREE;
+  struct
+  {
+    int NDELR1;
+    int NDELR2;
+    int NDELR3;
+    int FORMAT;
+    double ORIGIN[3];
+    double R1[3];
+    double R2[3];
+    double R3[3];
+    double RMIN;
+    double RMAX;
+    double TMIN;
+    double TMAX;
+  }
+  PLOT;
+  struct
+  {
+    Bool LMTODAT;
+    Bool CHARWIN;
+    Bool ELF;
+    Bool ADDCOR;
+    Bool SPINDENS;
+    double EMIN;
+    double EMAX;
+  }
+  CHARGE;
+  struct
+  {
+    int MAXPT;
+    int NRXYZ[3];
+    double RMINES;
+    double RMAXES;
+  }
+  FINDES;
+  struct
+  {
+    Bool EQUIV;
+    double PLAT[3][3];
+  }
+  SCELL;
+  struct
+  {
+    Bool FIT;
+    double KAPPA2;
+    double KWxx2;
+    double RMAXS;
+    double *SIGMA[4]; /* dimension according to CLASS.N */
+    double *LMXRHO;   /* dimension according to CLASS.N */
+  }
+  RHOFIT;
+  struct
+  {
+    int NENU;
+    double *ENU;
+  }
+  NMTO;
+  struct
+  {
+    int Number_of_rotated_atoms;
+    char Data_as[32];
+    int *ATOM;
+    int *L;
+    double **LOCAL_Z;
+    double **LOCAL_X;
+  }
+  LOCALCS;
+}
+StuttgartCTRL;

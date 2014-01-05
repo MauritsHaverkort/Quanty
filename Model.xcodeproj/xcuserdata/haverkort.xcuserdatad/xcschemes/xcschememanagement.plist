@@ -24,6 +24,11 @@
 			<key>orderHint</key>
 			<integer>1</integer>
 		</dict>
+		<key>TightBinding.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>5</integer>
+		</dict>
 		<key>YiDMFT.xcscheme</key>
 		<dict>
 			<key>orderHint</key>
@@ -32,6 +37,11 @@
 	</dict>
 	<key>SuppressBuildableAutocreation</key>
 	<dict>
+		<key>4C03B024186E376A004C2B7B</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
 		<key>4C2AAA181632655300138620</key>
 		<dict>
 			<key>primary</key>
