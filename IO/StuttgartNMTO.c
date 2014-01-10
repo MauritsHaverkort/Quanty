@@ -101,11 +101,81 @@ uint32_t InitializeStuttgartCTRL(StuttgartCTRL * O)
   O->SYMGRP.NGEN=-1;
   O->CLASS.N=-1;
   O->SITE.N=-1;
+  O->STR.N=-1;
+  O->START.N=-1;
+  O->RHOFIT.N=-1;
   O->SYML.N=-1;
   O->LOCALCS.Number_of_rotated_atoms=-1;
   O->NMTO.NENU=-1;
   O->HEADER[0]='\0';
   O->VERS[0]='\0';
+  return 0;
+}
+
+/*
+ *  Check consistency of CTRL structure
+ *  order atoms in STR, START and RHOFIT the same as in CLASS
+ *  set the values of ICLASS
+ *  set the values of IDXDN_M for all elements of SITE according to the definition in CLASS
+ *    if SITE IDXDN_M = 0 it will be set to CLASS IDXDN
+ */
+uint32_t OrderAndCheckStuttgartCTRL(StuttgartCTRL * O)
+{
+  uint32_t i,j,l,m;
+  /* check consistency of number of ATOMS */
+  if(O->SITE.N<O->CLASS.N)
+  {
+    printf("Erorr in CTRL file, number of sites smaller then number of classes\n");
+    return 1;
+  }
+  if(!((O->START.N==-1)||(O->START.N==O->CLASS.N)))
+  {
+    printf("Erorr in CTRL file, number of ATOMS in START (%i) different from number of ATOMS in CLASS (%i)\n",O->START.N,O->CLASS.N);
+    return 1;
+  }
+  if(!((O->STR.N==-1)||(O->STR.N==O->CLASS.N)))
+  {
+    printf("Erorr in CTRL file, number of ATOMS in STR (%i) different from number of ATOMS in CLASS (%i)\n",O->STR.N,O->CLASS.N);
+    return 1;
+  }
+  if(!((O->RHOFIT.N==-1)||(O->RHOFIT.N==O->CLASS.N)))
+  {
+    printf("Erorr in CTRL file, number of ATOMS in RHOFIT (%i) different from number of ATOMS in CLASS (%i)\n",O->RHOFIT.N,O->CLASS.N);
+    return 1;
+  }
+  /* place atoms in order of CLASS in STR, START and RHOFIT */
+  
+  /* TO DO */
+  
+  /* set values of ICLASS */
+  O->SITE.ICLASS=malloc(O->SITE.N*sizeof(int));
+  for(i=0;i<O->SITE.N;i++)
+  {
+    O->SITE.ICLASS[i]=-1;
+    for(j=0;j<O->CLASS.N;j++)
+    {
+      if(strcmp(O->SITE.ATOM[i], O->CLASS.ATOM[j])==0)
+      {
+        O->SITE.ICLASS[i]=j;
+        break;
+      }
+    }
+    if(O->SITE.ICLASS[i]==-1)
+    {
+      printf("ERROR in CTRL file ATOM %s has no CLASS\n",O->SITE.ATOM[i]);
+    }
+  }
+  /* set values to IXDN_M */
+  for(i=0;i<O->SITE.N;i++)
+  {
+    for(l=0;l<O->CLASS.LMX[O->SITE.ICLASS[i]];l++)
+    {
+      for(m=l*l;m<l*l+2*l+1;m++)
+      {
+        if(O->SITE.IDXDN_M[i][m]==0)O->SITE.IDXDN_M[i][m]=O->CLASS.IDXDN[O->SITE.ICLASS[i]][l];
+      }
+    }
+  }
   
   return 0;
 }
@@ -174,13 +244,13 @@ uint32_t StreamReadStuttgartCTRLchar(FILE * stream, char * out)
 }
 
 /*
- *   Reads a unit cell definition from a CTRL file of the stuttgart NMTO/LMTO code
+ *   Reads A CTRL file of the stuttgart NMTO/LMTO code into the StuttgartCTRL struct
  */
 uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
 {
   const char * const Categories[] = StuttgartCTRLCategories;
   char str[128];
-  int Continue=1, ContinueCategory, iCategory, i;
+  int Continue=1, ContinueCategory, iCategory, i,LMXnow;
   Bool ForSureAToken;
   int Nlocalcs=-1;
   InitializeStuttgartCTRL(O);
@@ -196,7 +266,12 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
     ContinueCategory=1;
     while(ContinueCategory)
     {
-      if(fscanfCTRL(stream, str, &ForSureAToken)!=1) return 0;
+      if(fscanfCTRL(stream, str, &ForSureAToken)!=1)
+      {
+        ContinueCategory=0;
+        Continue=0;
+        break;
+      }
       if((ForSureAToken==False)&&(QStuttgartCategory(str)))
       {
         ContinueCategory=0;
@@ -393,9 +468,9 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
               {
                 O->CLASS.LMX[i]=-1;
                 O->CLASS.ATOM[i]=malloc(16*sizeof(char));
-                O->CLASS.IDXDN[i]=malloc(4*sizeof(int));
-                O->CLASS.CONF[i]=malloc(4*sizeof(int));
-                O->CLASS.IDMOD[i]=malloc(4*sizeof(int));
+                O->CLASS.IDXDN[i]=calloc(4,sizeof(int));
+                O->CLASS.CONF[i]=calloc(4,sizeof(int));
+                O->CLASS.IDMOD[i]=calloc(4,sizeof(int));
               }
               O->CLASS.N=0;
             }
@@ -414,9 +489,9 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
               {
                 O->CLASS.LMX[i]=-1;
                 O->CLASS.ATOM[i]=malloc(16*sizeof(char));
-                O->CLASS.IDXDN[i]=malloc(4*sizeof(int));
-                O->CLASS.CONF[i]=malloc(4*sizeof(int));
-                O->CLASS.IDMOD[i]=malloc(4*sizeof(int));
+                O->CLASS.IDXDN[i]=calloc(4,sizeof(int));
+                O->CLASS.CONF[i]=calloc(4,sizeof(int));
+                O->CLASS.IDMOD[i]=calloc(4,sizeof(int));
               }
             }
             StreamReadStuttgartCTRLchar(stream, O->CLASS.ATOM[O->CLASS.N-1]);
@@ -447,7 +522,7 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
           }
           else if(strcmp(str, "IDXDN")==0)
           {
-            if(O->CLASS.LMX[O->SYML.N-1]==-1)
+            if(O->CLASS.LMX[O->CLASS.N-1]==-1)
             {
               printf("In Category CLASS encoutered token IDXDN for atom %s (%i) before token LMX was found\n",O->CLASS.ATOM[O->CLASS.N-1],O->CLASS.N);
             }
@@ -458,7 +533,7 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
           }
           else if(strcmp(str, "IDMOD")==0)
           {
-            if(O->CLASS.LMX[O->SYML.N-1]==-1)
+            if(O->CLASS.LMX[O->CLASS.N-1]==-1)
             {
               printf("In Category CLASS encoutered token IDMOD for atom %s (%i) before token LMX was found\n",O->CLASS.ATOM[O->CLASS.N-1],O->CLASS.N);
             }
@@ -480,11 +555,13 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
               O->SITE.ATOM=malloc(64*sizeof(char*));
               O->SITE.POS=malloc(64*sizeof(double*));
               O->SITE.X=malloc(64*sizeof(double*));
+              O->SITE.IDXDN_M=malloc(64*sizeof(int*));
               for(i=0;i<64;i++)
               {
                 O->SITE.ATOM[i]=malloc(16*sizeof(char));
                 O->SITE.POS[i]=malloc(3*sizeof(double));
                 O->SITE.X[i]=malloc(3*sizeof(double));
+                O->SITE.IDXDN_M[i]=calloc(16,sizeof(double));
               }
               O->SITE.N=0;
             }
@@ -494,11 +571,13 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
               O->SITE.ATOM=realloc(O->SITE.ATOM,(O->SITE.N+64)*sizeof(char*));
               O->SITE.POS=realloc(O->SITE.POS,(O->SITE.N+64)*sizeof(double*));
               O->SITE.X=realloc(O->SITE.X,(O->SITE.N+64)*sizeof(double*));
+              O->SITE.IDXDN_M=realloc(O->SITE.IDXDN_M,(O->SITE.N+64)*sizeof(int*));
               for(i=O->SITE.N;i<O->SITE.N+64;i++)
               {
                 O->SITE.ATOM[i]=malloc(16*sizeof(char));
                 O->SITE.POS[i]=malloc(3*sizeof(double));
                 O->SITE.X[i]=malloc(3*sizeof(double));
+                O->SITE.IDXDN_M[i]=calloc(16,sizeof(double));
               }
             }
             StreamReadStuttgartCTRLchar(stream, O->SITE.ATOM[O->SITE.N-1]);
@@ -514,6 +593,38 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
           else if(strcmp(str, "X")==0)
           {
             StreamReadStuttgartCTRLdouble(stream, 3, O->SITE.X[O->SITE.N-1]);
+          }
+          else if(strcmp(str, "IDXDN_M")==0)
+          {
+            LMXnow=-1;
+            for(i=0;i<O->CLASS.N;i++)
+            {
+              if(strcmp(O->CLASS.ATOM[i],O->SITE.ATOM[O->SITE.N-1])==0)
+              {
+                LMXnow=O->CLASS.LMX[i];
+              }
+            }
+            switch (LMXnow)
+            {
+              case -1:
+                printf("Found token IDXDN_M in Category SITE for ATOM %s, but have not found the token LMX in the CLASS of this ATOM\n",O->SITE.ATOM[O->SITE.N-1]);
+                break;
+              case  0:
+                StreamReadStuttgartCTRLint(stream, 1, O->SITE.IDXDN_M[O->SITE.N-1]);
+                break;
+              case  1:
+                StreamReadStuttgartCTRLint(stream, 4, O->SITE.IDXDN_M[O->SITE.N-1]);
+                break;
+              case  2:
+                StreamReadStuttgartCTRLint(stream, 9, O->SITE.IDXDN_M[O->SITE.N-1]);
+                break;
+              case  3:
+                StreamReadStuttgartCTRLint(stream, 16, O->SITE.IDXDN_M[O->SITE.N-1]);
+                break;
+              default:
+                printf("No clue how I got here LMXnow=%i\n",LMXnow);
+                break;
+            }
           }
           else
           {
@@ -647,9 +758,55 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
           {
             StreamReadStuttgartCTRLdouble(stream, 1, &(O->STR.EPS));
           }
-          
-          
-          
+          else if(strcmp(str, "ATOM")==0)
+          {
+            if(O->STR.N==-1)
+            {
+              O->STR.ATOM=malloc(64*sizeof(char*));
+              O->STR.SIGMA=malloc(64*sizeof(double*));
+              for(i=0;i<64;i++)
+              {
+                O->STR.ATOM[i]=malloc(16*sizeof(char));
+                O->STR.SIGMA[i]=malloc(4*sizeof(double));
+              }
+              O->STR.N=0;
+            }
+            O->STR.N++;
+            if((O->STR.N%64)==0)
+            {
+              O->STR.ATOM=realloc(O->STR.ATOM, (O->STR.N+64)*sizeof(char*));
+              O->STR.SIGMA=realloc(O->STR.SIGMA, (O->STR.N+64)*sizeof(double*));
+              for(i=O->STR.N;i<O->STR.N+64;i++)
+              {
+                O->STR.ATOM[i]=malloc(16*sizeof(char));
+                O->STR.SIGMA[i]=malloc(4*sizeof(double));
+              }
+            }
+            StreamReadStuttgartCTRLchar(stream, O->STR.ATOM[O->STR.N-1]);
+          }
+          else if(O->STR.N==-1)
+          {
+            printf("In Category STR encoutered token %s before token ATOM\n",str);
+          }
+          else if(strcmp(str, "SIGMA")==0)
+          {
+            LMXnow=-1;
+            for(i=0;i<O->CLASS.N;i++)
+            {
+              if(strcmp(O->CLASS.ATOM[i],O->STR.ATOM[O->STR.N-1])==0)
+              {
+                LMXnow=O->CLASS.LMX[i];
+              }
+            }
+            if(LMXnow==-1)
+            {
+              printf("Found token SIGMA in Category STR for ATOM %s, but have not found the token LMX in the CLASS of this ATOM\n",O->STR.ATOM[O->STR.N-1]);
+            }
+            else
+            {
+              StreamReadStuttgartCTRLdouble(stream, LMXnow+1, O->STR.SIGMA[O->STR.N-1]);
+            }
+          }
           else
           {
             printf("In Category %s undefined token %s\n",Categories[iCategory-1],str);
@@ -792,24 +949,156 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
           }
         break;
         case 16: /* START */
-          if(strcmp(str, "NIT")==0)
+          if(strcmp(str, "BROY")==0)
+          {
+            StreamReadStuttgartCTRLBool(stream, 1, &(O->START.BROY));
+          }
+          else if(strcmp(str, "FREE")==0)
+          {
+            StreamReadStuttgartCTRLBool(stream, 1, &(O->START.FREE));
+          }
+          else if(strcmp(str, "BEGMOM")==0)
+          {
+            StreamReadStuttgartCTRLBool(stream, 1, &(O->START.BEGMOM));
+          }
+          else if(strcmp(str, "CNTROL")==0)
+          {
+            StreamReadStuttgartCTRLBool(stream, 1, &(O->START.CNTROL));
+          }
+          else if(strcmp(str, "NIT")==0)
           {
             StreamReadStuttgartCTRLint(stream, 1, &(O->START.NIT));
           }
+          else if(strcmp(str, "NMIX")==0)
+          {
+            StreamReadStuttgartCTRLint(stream, 1, &(O->START.NMIX));
+          }
+          else if(strcmp(str, "WC")==0)
+          {
+            StreamReadStuttgartCTRLdouble(stream, 1, &(O->START.WC));
+          }
+          else if(strcmp(str, "BETA")==0)
+          {
+            StreamReadStuttgartCTRLdouble(stream, 1, &(O->START.BETA));
+          }
+          else if(strcmp(str, "CNVG")==0)
+          {
+            StreamReadStuttgartCTRLdouble(stream, 1, &(O->START.CNVG));
+          }
+          else if(strcmp(str, "CNVGET")==0)
+          {
+            StreamReadStuttgartCTRLdouble(stream, 1, &(O->START.CNVGET));
+          }
+          else if(strcmp(str, "EFERMI")==0)
+          {
+            StreamReadStuttgartCTRLdouble(stream, 1, &(O->START.EFERMI));
+          }
+          else if(strcmp(str, "VMTZ")==0)
+          {
+            StreamReadStuttgartCTRLdouble(stream, 1, &(O->START.VMTZ));
+          }
           
           
-          
-          
-          
-          
-          
-          
-          
-          
-          
+          else if(strcmp(str, "ATOM")==0)
+          {
+            if(O->START.N==-1)
+            {
+              O->START.ATOM=malloc(64*sizeof(char*));
+              O->START.P=malloc(64*sizeof(double*));
+              O->START.Q=malloc(64*sizeof(double*));
+              O->START.enu=malloc(64*sizeof(double*));
+              O->START.c=malloc(64*sizeof(double*));
+              O->START.sqrdel=malloc(64*sizeof(double*));
+              O->START.p=malloc(64*sizeof(double*));
+              O->START.gamma=malloc(64*sizeof(double*));
+              for(i=0;i<64;i++)
+              {
+                O->START.ATOM[i]=malloc(16*sizeof(char));
+                O->START.P[i]=malloc(4*sizeof(double));
+                O->START.Q[i]=malloc(12*sizeof(double));
+                O->START.enu[i]=malloc(4*sizeof(double));
+                O->START.c[i]=malloc(4*sizeof(double));
+                O->START.sqrdel[i]=malloc(4*sizeof(double));
+                O->START.p[i]=malloc(4*sizeof(double));
+                O->START.gamma[i]=malloc(4*sizeof(double));
+              }
+              O->START.N=0;
+            }
+            O->START.N++;
+            if((O->START.N%64)==0)
+            {
+              O->START.ATOM=realloc(O->START.ATOM, (O->START.N+64)*sizeof(char*));
+              O->START.P=realloc(O->START.P, (O->START.N+64)*sizeof(double*));
+              O->START.Q=realloc(O->START.Q, (O->START.N+64)*sizeof(double*));
+              O->START.enu=realloc(O->START.enu, (O->START.N+64)*sizeof(double*));
+              O->START.c=realloc(O->START.c, (O->START.N+64)*sizeof(double*));
+              O->START.sqrdel=realloc(O->START.sqrdel, (O->START.N+64)*sizeof(double*));
+              O->START.p=realloc(O->START.p, (O->START.N+64)*sizeof(double*));
+              O->START.gamma=realloc(O->START.gamma, (O->START.N+64)*sizeof(double*));
+              for(i=O->START.N;i<O->START.N+64;i++)
+              {
+                O->START.ATOM[i]=malloc(16*sizeof(char));
+                O->START.P[i]=malloc(4*sizeof(double));
+                O->START.Q[i]=malloc(12*sizeof(double));
+                O->START.enu[i]=malloc(4*sizeof(double));
+                O->START.c[i]=malloc(4*sizeof(double));
+                O->START.sqrdel[i]=malloc(4*sizeof(double));
+                O->START.p[i]=malloc(4*sizeof(double));
+                O->START.gamma[i]=malloc(4*sizeof(double));
+              }
+            }
+            StreamReadStuttgartCTRLchar(stream, O->START.ATOM[O->START.N-1]);
+          }
+          else if(O->START.N==-1)
+          {
+            printf("In Category START encoutered token %s before token ATOM\n",str);
+          }
           else
           {
-            printf("In Category %s undefined token %s\n",Categories[iCategory-1],str);
+            LMXnow=-1;
+            for(i=0;i<O->CLASS.N;i++)
+            {
+              if(strcmp(O->CLASS.ATOM[i],O->START.ATOM[O->START.N-1])==0)
+              {
+                LMXnow=O->CLASS.LMX[i];
+              }
+            }
+            if(LMXnow==-1)
+            {
+              printf("In Category %s undefined token %s or\n",Categories[iCategory-1],str);
+              printf("Found token %s in Category START for ATOM %s, but have not found the token LMX in the CLASS of this ATOM\n",str,O->START.ATOM[O->START.N-1]);
+            }
+            else
+            {
+              if(strcmp(str, "P")==0)
+              {
+                StreamReadStuttgartCTRLdouble(stream, LMXnow+1, O->START.P[O->START.N-1]);
+              }
+              else if(strcmp(str, "Q")==0)
+              {
+                StreamReadStuttgartCTRLdouble(stream, 3*(LMXnow+1), O->START.Q[O->START.N-1]);
+              }
+              else if(strcmp(str, "enu")==0)
+              {
+                StreamReadStuttgartCTRLdouble(stream, LMXnow+1, O->START.enu[O->START.N-1]);
+              }
+              else if(strcmp(str, "c")==0)
+              {
+                StreamReadStuttgartCTRLdouble(stream, LMXnow+1, O->START.c[O->START.N-1]);
+              }
+              else if(strcmp(str, "sqrdel")==0)
+              {
+                StreamReadStuttgartCTRLdouble(stream, LMXnow+1, O->START.sqrdel[O->START.N-1]);
+              }
+              else if(strcmp(str, "p")==0)
+              {
+                StreamReadStuttgartCTRLdouble(stream, LMXnow+1, O->START.p[O->START.N-1]);
+              }
+              else if(strcmp(str, "gamma")==0)
+              {
+                StreamReadStuttgartCTRLdouble(stream, LMXnow+1, O->START.gamma[O->START.N-1]);
+              }
+            }
           }
         break;
         case 17: /* HARTREE */
@@ -975,14 +1264,55 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
           {
             StreamReadStuttgartCTRLdouble(stream, 1, &(O->RHOFIT.RMAXS));
           }
-          
-          
-          
-          
-          
-          
-          
-          
+          else if(strcmp(str, "ATOM")==0)
+          {
+            if(O->RHOFIT.N==-1)
+            {
+              O->RHOFIT.ATOM=malloc(64*sizeof(char*));
+              O->RHOFIT.LMXRHO=malloc(64*sizeof(int));
+              O->RHOFIT.SIGMA=malloc(64*sizeof(double*));
+              for(i=0;i<64;i++)
+              {
+                O->RHOFIT.LMXRHO[i]=-1;
+                O->RHOFIT.ATOM[i]=malloc(16*sizeof(char));
+                O->RHOFIT.SIGMA[i]=malloc(4*sizeof(double));
+              }
+              O->RHOFIT.N=0;
+            }
+            O->RHOFIT.N++;
+            if((O->RHOFIT.N%64)==0)
+            {
+              O->RHOFIT.ATOM=realloc(O->RHOFIT.ATOM, (O->RHOFIT.N+64)*sizeof(char*));
+              O->RHOFIT.LMXRHO=realloc(O->RHOFIT.LMXRHO, (O->RHOFIT.N+64)*sizeof(int));
+              O->RHOFIT.SIGMA=realloc(O->RHOFIT.SIGMA, (O->RHOFIT.N+64)*sizeof(double*));
+              for(i=O->RHOFIT.N;i<O->RHOFIT.N+64;i++)
+              {
+                O->RHOFIT.LMXRHO[i]=-1;
+                O->RHOFIT.ATOM[i]=malloc(16*sizeof(char));
+                O->RHOFIT.SIGMA[i]=malloc(4*sizeof(double));
+              }
+            }
+            StreamReadStuttgartCTRLchar(stream, O->RHOFIT.ATOM[O->RHOFIT.N-1]);
+          }
+          else if(O->RHOFIT.N==-1)
+          {
+            printf("In Category RHOFIT encoutered token %s before token ATOM\n",str);
+          }
+          else if(strcmp(str, "LMXRHO")==0)
+          {
+            StreamReadStuttgartCTRLint(stream, 1, &(O->RHOFIT.LMXRHO[O->RHOFIT.N-1]));
+          }
+          else if(strcmp(str, "SIGMA")==0)
+          {
+            if(O->RHOFIT.LMXRHO[O->RHOFIT.N-1]==-1)
+            {
+              printf("In Category RHOFIT encoutered token SIGMA for atom %s (%i) before token LMXRHO was found\n",O->RHOFIT.ATOM[O->RHOFIT.N-1],O->CLASS.N);
+            }
+            else
+            {
+              StreamReadStuttgartCTRLdouble(stream, O->RHOFIT.LMXRHO[O->RHOFIT.N-1]+1, O->RHOFIT.SIGMA[O->RHOFIT.N-1]);
+            }
+          }
           else
           {
             printf("In Category %s undefined token %s\n",Categories[iCategory-1],str);
@@ -1004,6 +1334,26 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
             {
               StreamReadStuttgartCTRLdouble(stream, O->NMTO.NENU, O->NMTO.ENU);
             }
+          }
+          else if(strcmp(str, "PLOTATO")==0)
+          {
+            StreamReadStuttgartCTRLint(stream, 1, &(O->NMTO.PLOTATO));
+          }
+          else if(strcmp(str, "ORBITAL")==0)
+          {
+            StreamReadStuttgartCTRLint(stream, 1, &(O->NMTO.ORBITAL));
+          }
+          else if(strcmp(str, "RMAXHR")==0)
+          {
+            StreamReadStuttgartCTRLdouble(stream, 1, &(O->NMTO.RMAXHR));
+          }
+          else if(strcmp(str, "eV")==0)
+          {
+            StreamReadStuttgartCTRLBool(stream, 1, &(O->NMTO.eV));
+          }
+          else if(strcmp(str, "ORTHO")==0)
+          {
+            StreamReadStuttgartCTRLBool(stream, 1, &(O->NMTO.ORTHO));
           }
           else
           {
@@ -1073,7 +1423,7 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
       }
     }
   }
-  return 0;
+  return OrderAndCheckStuttgartCTRL(O);
 }
 uint32_t ReadStuttgartCTRL(StuttgartCTRL * O)
 {
@@ -1089,6 +1439,153 @@ uint32_t FileReadStuttgartCTRL(StuttgartCTRL * O, const char *const flname)
     return 1;
   }
   retval = StreamReadStuttgartCTRL(O, stream);
+  fclose(stream);
+  return retval;
+}
+
+
+/*
+ *  Reads a Stuttgart NMTO HAMR file into a StuttgartHAMR struct
+ */
+uint32_t StreamReadStuttgartHAMR(StuttgartHAMR * O, FILE * stream)
+{
+  char ReadLine[1024];
+  char buffer[128];
+  int ContinueLine=1;
+  int ContinueLabel;
+  ReadLine[1023]='\0';
+  O->Nelement=-1;
+  if(fgets(ReadLine, 1023, stream)==NULL)
+  {
+    printf("In function StreamReadStuttgartHAMR intial reading of file failed\n");
+    return 1;
+  }
+  O->eV=False;
+  while (ContinueLine)
+  {
+    if(!(strstr(ReadLine, "eV")==NULL))O->eV=True;
+    if(strncmp(ReadLine,"INT",3)==0)
+    {
+      /* start of new element in HAMR make sure enough space allocated */
+      if(O->Nelement==-1)
+      {
+        O->element=malloc(64*sizeof(StuttgartHAMRelement));
+        O->Nelement=0;
+      }
+      O->Nelement++;
+      if((O->Nelement%64)==0)
+      {
+        O->element=realloc(O->element, (O->Nelement+64)*sizeof(StuttgartHAMRelement));
+      }
+      if(fgets(ReadLine, 1023, stream)==NULL){printf("ERROR 1 in reading HAMR file\n");return 1;}
+      if(sscanf(ReadLine, "%s %s %i %s %s %i",buffer,O->element[O->Nelement-1].Atom1,&(O->element[O->Nelement-1].IndexAtom1),buffer,O->element[O->Nelement-1].Atom2,&(O->element[O->Nelement-1].IndexAtom2))!=6)
+      {
+        printf("ERROR in reading Atom names and index from HAMR file in Line:\n");
+        printf("%s\n",ReadLine);
+        return 1;
+      }
+      if(fgets(ReadLine, 1023, stream)==NULL){printf("ERROR 2 in reading HAMR file\n");return 1;}
+      if(sscanf(ReadLine, "%s %lE %s %s %s %i %i %i",buffer,&(O->element[O->Nelement-1].Dist),buffer,buffer,buffer,&(O->element[O->Nelement-1].TransVecs[0]),&(O->element[O->Nelement-1].TransVecs[1]),&(O->element[O->Nelement-1].TransVecs[2]))!=8)
+      {
+        printf("ERROR in reading Dist and TransVecs from HAMR file in Line:\n");
+        printf("%s\n",ReadLine);
+        return 1;
+      }
+      if(fgets(ReadLine, 1023, stream)==NULL){printf("ERROR 3 in reading HAMR file\n");return 1;}
+      if(sscanf(ReadLine, "%s %s %lE %lE %lE",buffer,buffer, &(O->element[O->Nelement-1].ConnectingVector[0]),&(O->element[O->Nelement-1].ConnectingVector[1]),&(O->element[O->Nelement-1].ConnectingVector[2]))!=5)
+      {
+        printf("ERROR in reading ConnectingVector from HAMR file in Line:\n");
+        printf("%s\n",ReadLine);
+        return 1;
+      }
+      if(fgets(ReadLine, 1023, stream)==NULL){printf("ERROR 4 in reading HAMR file\n");return 1;}
+      if(fgets(ReadLine, 1023, stream)==NULL){printf("ERROR 5 in reading HAMR file\n");return 1;}
+      O->element[O->Nelement-1].NlabelAtom1=sscanf(ReadLine, "%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s",
+                                                   O->element[O->Nelement-1].LabelAtom1[0],
+                                                   O->element[O->Nelement-1].LabelAtom1[1],
+                                                   O->element[O->Nelement-1].LabelAtom1[2],
+                                                   O->element[O->Nelement-1].LabelAtom1[3],
+                                                   O->element[O->Nelement-1].LabelAtom1[4],
+                                                   O->element[O->Nelement-1].LabelAtom1[5],
+                                                   O->element[O->Nelement-1].LabelAtom1[6],
+                                                   O->element[O->Nelement-1].LabelAtom1[7],
+                                                   O->element[O->Nelement-1].LabelAtom1[8],
+                                                   O->element[O->Nelement-1].LabelAtom1[9],
+                                                   O->element[O->Nelement-1].LabelAtom1[10],
+                                                   O->element[O->Nelement-1].LabelAtom1[11],
+                                                   O->element[O->Nelement-1].LabelAtom1[12],
+                                                   O->element[O->Nelement-1].LabelAtom1[13],
+                                                   O->element[O->Nelement-1].LabelAtom1[14],
+                                                   O->element[O->Nelement-1].LabelAtom1[15]
+                                                   );
+      if(O->element[O->Nelement-1].NlabelAtom1==-1)
+      {
+        printf("ERROR in reading lables for atom1 from HAMR file in Line:\n");
+        printf("%s\n",ReadLine);
+        return 1;
+      }
+      ContinueLabel=1;
+      O->element[O->Nelement-1].NlabelAtom2=0;
+      while(ContinueLabel)
+      {
+        if(fgets(ReadLine, 1023, stream)==NULL){printf("ERROR 6 in reading HAMR file\n");return 1;}
+        if(sscanf(ReadLine, "%c %lE %lE %lE %lE %lE %lE %lE %lE %lE %lE %lE %lE %lE %lE %lE %lE",
+                  O->element[O->Nelement-1].LabelAtom2[O->element[O->Nelement-1].NlabelAtom2],
+                  &(O->element[O->Nelement-1].H[0][O->element[O->Nelement-1].NlabelAtom2]),
+                  &(O->element[O->Nelement-1].H[1][O->element[O->Nelement-1].NlabelAtom2]),
+                  &(O->element[O->Nelement-1].H[2][O->element[O->Nelement-1].NlabelAtom2]),
+                  &(O->element[O->Nelement-1].H[3][O->element[O->Nelement-1].NlabelAtom2]),
+                  &(O->element[O->Nelement-1].H[4][O->element[O->Nelement-1].NlabelAtom2]),
+                  &(O->element[O->Nelement-1].H[5][O->element[O->Nelement-1].NlabelAtom2]),
+                  &(O->element[O->Nelement-1].H[6][O->element[O->Nelement-1].NlabelAtom2]),
+                  &(O->element[O->Nelement-1].H[7][O->element[O->Nelement-1].NlabelAtom2]),
+                  &(O->element[O->Nelement-1].H[8][O->element[O->Nelement-1].NlabelAtom2]),
+                  &(O->element[O->Nelement-1].H[9][O->element[O->Nelement-1].NlabelAtom2]),
+                  &(O->element[O->Nelement-1].H[10][O->element[O->Nelement-1].NlabelAtom2]),
+                  &(O->element[O->Nelement-1].H[11][O->element[O->Nelement-1].NlabelAtom2]),
+                  &(O->element[O->Nelement-1].H[12][O->element[O->Nelement-1].NlabelAtom2]),
+                  &(O->element[O->Nelement-1].H[13][O->element[O->Nelement-1].NlabelAtom2]),
+                  &(O->element[O->Nelement-1].H[14][O->element[O->Nelement-1].NlabelAtom2]),
+                  &(O->element[O->Nelement-1].H[15][O->element[O->Nelement-1].NlabelAtom2])
+                  )
+           ==O->element[O->Nelement-1].NlabelAtom1+1)
+        {
+          O->element[O->Nelement-1].NlabelAtom2++;
+          if(O->element[O->Nelement-1].NlabelAtom2==16)ContinueLabel=0;
+        }
+        else
+        {
+          strcpy(O->element[O->Nelement-1].LabelAtom2[O->element[O->Nelement-1].NlabelAtom2], "");
+          ContinueLabel=0;
+        }
+      }
+      
+      
+      
+    }
+    if(fgets(ReadLine, 1023, stream)==NULL)
+    {
+      ContinueLine=0;
+    }
+  }
+  
+  
+  return 0;
+}
+uint32_t ReadStuttgartHAMR(StuttgartHAMR * O)
+{
+  return StreamReadStuttgartHAMR(O, stdin);
+}
+uint32_t FileReadStuttgartHAMR(StuttgartHAMR * O, const char *const flname)
+{
+  FILE  *stream;
+  uint32_t retval;
+  if ((stream = fopen(flname, "r")) == NULL)
+  {
+    printf("ERROR\nCan't open %s for reading.\n", flname);
+    return 1;
+  }
+  retval = StreamReadStuttgartHAMR(O, stream);
   fclose(stream);
   return retval;
 }

@@ -524,10 +524,10 @@ typedef struct AtomType
   char   Name[MAXStrLength];         /* Atom name */
   uint32_t AtomNumber;               /* atomic number of the atom */
   double Position[3];                /* position of the atom */
-  int    Nshell;                     /* number of orbital shells in the atom */
-  char  *ShellName[MAXStrLength];    /* Name of the orbital shells in the atom */
+  int    Nshell;                     /* number of shells in the atom */
+  char  **ShellName;                 /* Name of the shells in the atom */
   int   *shelldegeneracy;            /* degeneracy of the shell */
-  char  **OrbitalName[MAXStrLength]; /* Name of the orbitals in the different shells */
+  char  ***OrbitalName;              /* Name of the orbitals in the different shells */
 }
 AtomType;
 
@@ -541,6 +541,10 @@ typedef struct CrystalStructureType
   double gUnitCell[3][3];       /* Unit cell vectors */
   uint32_t NAtoms;              /* Number of atoms wihtin the unit cell */
   AtomType *Atom;               /* Array of length NAtoms specifying the atoms with the unit cell */
+  uint32_t Units;               /* **** ***x 0 r.g = 1 | 1 r.g = 2 Pi
+                                 * **** *xx* 00 Angstrom | 01 a0 | 10 nm | 11 ??
+                                 * **** x*** 0 Positions in units described above | 1 Postions in terms of r[0] ,r[1] and r[2]
+                                 */
 }
 CrystalStructureType;
 
@@ -593,6 +597,10 @@ typedef struct BandstructurePathType
 {
   int    NQ;
   BandstructurePointType *Q;
+  uint32_t Units;               /* **** ***x 0 r.g = 1 | 1 r.g = 2 Pi
+                                 * **** *xx* 00 Angstrom | 01 a0 | 10 nm | 11 ??
+                                 * **** x*** 0 Positions in units described above | 1 Postions in terms of r[0] ,r[1] and r[2]
+                                 */
 }
 BandstructurePathType;
 
@@ -870,6 +878,8 @@ typedef struct StuttgartCTRL
     char **ATOM;
     double **POS;
     double **X;
+    int **IDXDN_M;
+    int *ICLASS;      /* not in control file - atom belongs to CLASS ICLASS */
   }
   SITE;
   struct
@@ -895,6 +905,7 @@ typedef struct StuttgartCTRL
     Bool DOWATS;
     Bool DONALP;
     Bool NOCALC;
+    int N;            /* not in control file - number of ATOMS for wich SIGMA is defined */
     int IALPHA;
     int LMAXW;
     int NDIMIN;
@@ -908,7 +919,8 @@ typedef struct StuttgartCTRL
     double DELTR;
     double RMAXS;
     double EPS;
-    double *SIGMA[4]; /* dimension according to CLASS.N */
+    double **SIGMA;
+    char **ATOM;
   }
   STR;
   struct
@@ -950,7 +962,27 @@ typedef struct StuttgartCTRL
   SYML;
   struct
   {
+    Bool BROY;
+    Bool FREE;
+    Bool BEGMOM;
+    Bool CNTROL;
+    int N;            /* not in control file - number of ATOMS for settings are defined */
     int NIT;
+    int NMIX;
+    double WC;
+    double BETA;
+    double CNVG;
+    double CNVGET;
+    double EFERMI;
+    double VMTZ;
+    char **ATOM;
+    double **P;
+    double **Q;
+    double **enu;
+    double **c;
+    double **sqrdel;
+    double **p;
+    double **gamma;
   }
   START;
   struct
@@ -1005,23 +1037,30 @@ typedef struct StuttgartCTRL
   struct
   {
     Bool FIT;
+    int N;         /* not in control file - number of ATOMS - should be the same as in CLASS */
     double KAPPA2;
     double KWxx2;
     double RMAXS;
-    double *SIGMA[4]; /* dimension according to CLASS.N */
-    double *LMXRHO;   /* dimension according to CLASS.N */
+    char **ATOM;
+    double **SIGMA;
+    int *LMXRHO;
   }
   RHOFIT;
   struct
   {
     int NENU;
+    int PLOTATO;
+    int ORBITAL;
+    double RMAXHR;
     double *ENU;
+    Bool eV;
+    Bool ORTHO;
   }
   NMTO;
   struct
   {
-    int Number_of_rotated_atoms;
     char Data_as[32];
+    int Number_of_rotated_atoms;
     int *ATOM;
     int *L;
     double **LOCAL_Z;
@@ -1030,3 +1069,28 @@ typedef struct StuttgartCTRL
   LOCALCS;
 }
 StuttgartCTRL;
+
+typedef struct StuttgartHAMRelement
+{
+  int IndexAtom2;
+  int IndexAtom1;
+  int TransVecs[3];
+  int NlabelAtom1;
+  int NlabelAtom2;
+  double Dist;
+  double ConnectingVector[3];
+  char LabelAtom1[16][16];
+  char LabelAtom2[16][16];
+  char Atom1[16];
+  char Atom2[16];
+  double H[16][16];
+}
+StuttgartHAMRelement;
+
+typedef struct StuttgartHAMR
+{
+  Bool eV;
+  int Nelement;
+  StuttgartHAMRelement *element;
+}
+StuttgartHAMR;

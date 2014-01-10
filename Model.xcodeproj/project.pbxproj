@@ -170,6 +170,7 @@
 		4C8274DB17DC49F700A5F555 /* io.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = io.h; sourceTree = "<group>"; };
 		4C8274DC17DC4A8400A5F555 /* core_basic_math.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = core_basic_math.h; sourceTree = "<group>"; };
 		4C8274E017DCF6D000A5F555 /* TestAtomicPhysics.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = TestAtomicPhysics.c; sourceTree = "<group>"; };
+		4C944CD8187AEDE500FE9B7B /* StuttgartNMTO.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = StuttgartNMTO.c; sourceTree = "<group>"; };
 		4CA262D8170787D900B8E76E /* TestGreenFunctions.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = TestGreenFunctions.c; sourceTree = "<group>"; };
 		4CDD1C7E1796D06400614F34 /* DMFT_eg_Dyson.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = DMFT_eg_Dyson.c; sourceTree = "<group>"; };
 		4CDD1C7F1796D06400614F34 /* DMFTFunctions.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = DMFTFunctions.c; sourceTree = "<group>"; };
@@ -410,6 +411,7 @@
 				4C2AAA70163265DD00138620 /* Tight_Binding.c */,
 				4C2AAA71163265DD00138620 /* Tight_Binding_lib.c */,
 				4C2AAA72163265DD00138620 /* TightBindingToG.c */,
+				4C944CD8187AEDE500FE9B7B /* StuttgartNMTO.c */,
 			);
 			path = Tight_Binding;
 			sourceTree = "<group>";

@@ -23,6 +23,7 @@ uint32_t PrintListOfPoles();
 uint32_t PrintOperatorFullReadable(OperatorType O);
 uint32_t PrintListOfPolesEssentials();
 uint32_t PrintAndersonMatrixEssentials();
+uint32_t PrintBandstructurePath();
 
 uint32_t FilePrintSpectra();
 uint32_t FilePrintWaveFunctionReadable();
@@ -43,6 +44,7 @@ uint32_t FilePrintListOfPoles();
 uint32_t FilePrintOperatorFullReadable(OperatorType O, const char *const flname, const char *const mode);
 uint32_t FilePrintListOfPolesEssentials();
 uint32_t FilePrintAndersonMatrixEssentials();
+uint32_t FilePrintBandstructurePath();
 
 uint32_t StreamPrintSpectra();
 uint32_t StreamPrintWaveFunctionReadable();
@@ -63,6 +65,7 @@ uint32_t StreamListOfPoles();
 uint32_t StreamPrintOperatorFullReadable(OperatorType O, FILE * stream);
 uint32_t StreamPrintListOfPolesEssentials();
 uint32_t StreamPrintAndersonMatrixEssentials();
+uint32_t StreamPrintBandstructurePath();
 
 
 uint32_t PrintSparseMatrixMathematica();

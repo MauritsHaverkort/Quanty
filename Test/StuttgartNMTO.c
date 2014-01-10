@@ -10,6 +10,9 @@ void TestStuttgartNMTO()
   
   
   StuttgartCTRL CTRLin;
+  StuttgartHAMR HAMRin;
+  BandstructurePathType Path;
+  CrystalStructureType Cell;
   
   uint32_t i;
   char str[128];
@@ -20,7 +23,34 @@ void TestStuttgartNMTO()
   }
   
   
-  FileReadStuttgartCTRL(&CTRLin, "CTRL");
+  if(FileReadStuttgartCTRL(&CTRLin, "CTRL"))printf("EROR somewhere\n");
+  
+  FileReadStuttgartHAMR(&HAMRin, "HAMR");
+  
+  BandstructurePathFromStuttgartCTRL(CTRLin, &Path);
+  PrintBandstructurePath(Path);
+  
+  CrystalStructureFromStuttgartCTRL(CTRLin, &Cell);
+  
+  PrintCrystalStructure(Cell);
+  
+  /* next
+     TightBindingDefFromStuttgartCTRLHAMR
+   
+     Transform to bandstructure
+   
+     Transform to G0
+   
+     Transform to Gbath (plus sigma)
+   
+     Transoform to G (plus sigma)
+   
+     Transform to bandstructure + sigma
+   
+     Bandstructure + DOS
+   
+   */
+  
   
   printf("a\n");
 }

@@ -47,6 +47,8 @@
 #include "../Hubbard_Model/CellFunctions.c"
 #include "../Tight_Binding/Tight_Binding_lib.c"
 #include "../Tight_Binding/TightBindingToG.c"
+#include "../Tight_Binding/ImpurityUnfolding.c"
+#include "../Tight_Binding/StuttgartNMTO.c"
 #include "../DMFT/SingleSiteFunctions.c"
 #include "../IO/StuttgartNMTO.c"
 
