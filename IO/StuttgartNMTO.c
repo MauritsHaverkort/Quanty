@@ -118,6 +118,7 @@ uint32_t InitializeStuttgartCTRL(StuttgartCTRL * O)
  *  set the values of ICLASS
  *  set the values of IDXDN_M for all elements of SITE according to the definition in CLASS
  *    if SITE IDXDN_M = 0 it will be set to CLASS IDXDN
+ *  set SITE.Nactive and Site.ActiveAtomMap
  */
 uint32_t OrderAndCheckStuttgartCTRL(StuttgartCTRL * O)
 {
@@ -165,7 +166,7 @@ uint32_t OrderAndCheckStuttgartCTRL(StuttgartCTRL * O)
       printf("ERROR in CTRL file ATOM %s has no CLASS\n",O->SITE.ATOM[i]);
     }
   }
-  /* set values to IXDN_M */
+  /* set values to IDXDN_M */
   for(i=0;i<O->SITE.N;i++)
   {
     for(l=0;l<O->CLASS.LMX[O->SITE.ICLASS[i]];l++)
@@ -176,6 +177,28 @@ uint32_t OrderAndCheckStuttgartCTRL(StuttgartCTRL * O)
       }
     }
   }
+  /* set SITE.Nactive and SITE.ActiveAtomMap */
+  O->SITE.ActiveAtomMap=malloc(O->SITE.N*sizeof(int));
+  O->SITE.Nactive=0;
+  for(i=0;i<O->SITE.N;i++)
+  {
+    O->SITE.ActiveAtomMap[i]=-1;
+    for(l=0;l<O->CLASS.LMX[O->SITE.ICLASS[i]];l++)
+    {
+      for(m=l*l;m<l*l+2*l+1;m++)
+      {
+        if(O->SITE.IDXDN_M[i][m]==1)
+        {
+          l++;
+          O->SITE.ActiveAtomMap[i]=O->SITE.Nactive;
+          O->SITE.Nactive++;
+          break;
+        }
+      }
+    }
+  }
+  
+  
   
   return 0;
 }
@@ -1252,6 +1275,10 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
           {
             StreamReadStuttgartCTRLBool(stream, 1, &(O->RHOFIT.FIT));
           }
+          else if(strcmp(str, "OUPTUP")==0)
+          {
+            StreamReadStuttgartCTRLint(stream, 1, &(O->RHOFIT.OUTPUT));
+          }
           else if(strcmp(str, "KAPPA2")==0)
           {
             StreamReadStuttgartCTRLdouble(stream, 1, &(O->RHOFIT.KAPPA2));
@@ -1529,7 +1556,7 @@ uint32_t StreamReadStuttgartHAMR(StuttgartHAMR * O, FILE * stream)
       while(ContinueLabel)
       {
         if(fgets(ReadLine, 1023, stream)==NULL){printf("ERROR 6 in reading HAMR file\n");return 1;}
-        if(sscanf(ReadLine, "%c %lE %lE %lE %lE %lE %lE %lE %lE %lE %lE %lE %lE %lE %lE %lE %lE",
+        if(sscanf(ReadLine, "%s %lE %lE %lE %lE %lE %lE %lE %lE %lE %lE %lE %lE %lE %lE %lE %lE",
                   O->element[O->Nelement-1].LabelAtom2[O->element[O->Nelement-1].NlabelAtom2],
                   &(O->element[O->Nelement-1].H[0][O->element[O->Nelement-1].NlabelAtom2]),
                   &(O->element[O->Nelement-1].H[1][O->element[O->Nelement-1].NlabelAtom2]),

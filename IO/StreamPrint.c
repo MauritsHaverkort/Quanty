@@ -640,9 +640,9 @@ uint32_t StreamPrintTightBindingDef(TightBindingDef O, FILE * stream)
   fprintf(stream, "Hopping definitions ( %4i )\n", O.nH);
   for (i = 0; i < O.nH; i++)
   {
-    fprintf(stream, "Hopping from %4i - %4i to %4i - %4i with connecting vector in unit cells: %4i %4i %4i\n",
-            O.H[i].Atompos1, O.H[i].Shellpos1, O.H[i].Atompos2, O.H[i].Shellpos2, O.H[i].ConnectingVector[0],
-            O.H[i].ConnectingVector[1], O.H[i].ConnectingVector[2]);
+    fprintf(stream, "Hopping from %4i - %4i to %4i - %4i with translation vector in unit cells: %4i %4i %4i\n",
+            O.H[i].Atompos1, O.H[i].Shellpos1, O.H[i].Atompos2, O.H[i].Shellpos2, O.H[i].TransVecs[0],
+            O.H[i].TransVecs[1], O.H[i].TransVecs[2]);
     StreamPrintMatrix(O.H[i].Hop, stream);
   }
   fprintf(stream, "\n");

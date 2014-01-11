@@ -56,21 +56,10 @@ uint32_t CrystalStructureFromStuttgartCTRL(StuttgartCTRL CTRL, CrystalStructureT
   }
   ResiprocalLatticeVector(Cell->rUnitCell, Cell->gUnitCell);
   /* determine number of atoms */
-  Cell->NAtoms=0;
-  for(i=0;i<CTRL.SITE.N;i++)
-  {
-    for(j=0;j<16;j++)
-    {
-      if(CTRL.SITE.IDXDN_M[i][j]==1)
-      {
-        Cell->NAtoms++;
-        break;
-      }
-    }
-  }
+  Cell->NAtoms=CTRL.SITE.Nactive;
   Cell->Atom=malloc(Cell->NAtoms*sizeof(AtomType));
   iatom=0;
-  for(i=0;i<CTRL.SITE.N;i++)
+  for(i=0;i<CTRL.SITE.N;i++) /**** Rewrite using CTRL.SITE.ActiveAtomMap ****/
   {
     if(iatom==Cell->NAtoms) break; /* all atoms found */
     /* Determine number of active shells */
@@ -251,9 +240,63 @@ uint32_t CrystalStructureFromStuttgartCTRL(StuttgartCTRL CTRL, CrystalStructureT
 uint32_t TightBindingDefFromStuttgartCTRLHAMR(StuttgartCTRL CTRL, StuttgartHAMR HAMR, TightBindingDef *HTB)
 {
   
-  
-  
-  
-  
+  int iHAMRelement,iHTBelement,iShell1,iShell2,StartShell1,StartShell2,i1,i2;
+  strncpy(HTB->Name, CTRL.HEADER, 31);
+  HTB->Name[31]='\0';
+  CrystalStructureFromStuttgartCTRL(CTRL, &(HTB->Cell));
+  SetNFermionIndexTightBindingDef(HTB);
+  /* determine number of elements (sites can have multiple shells) */
+  HTB->nH=0;
+  for(iHAMRelement=0;iHAMRelement<HAMR.Nelement;iHAMRelement++)
+  {
+    HTB->nH+=HTB->Cell.Atom[ CTRL.SITE.ActiveAtomMap[ HAMR.element[iHAMRelement].IndexAtom1-1]].Nshell * HTB->Cell.Atom[ CTRL.SITE.ActiveAtomMap[ HAMR.element[iHAMRelement].IndexAtom2-1]].Nshell;
+  }
+  HTB->H=malloc(HTB->nH*sizeof(TightBindingDefHopping));
+  /* set ConnectingVectors, TransVecs and elements of HTB */
+  iHTBelement=0;
+  for(iHAMRelement=0;iHAMRelement<HAMR.Nelement;iHAMRelement++)
+  {
+    StartShell1=0;
+    for(iShell1=0;iShell1<HTB->Cell.Atom[ CTRL.SITE.ActiveAtomMap[ HAMR.element[iHAMRelement].IndexAtom1-1 ]].Nshell;iShell1++)
+    {
+      StartShell2=0;
+      for(iShell2=0;iShell2<HTB->Cell.Atom[ CTRL.SITE.ActiveAtomMap[ HAMR.element[iHAMRelement].IndexAtom2-1 ]].Nshell;iShell2++)
+      {
+        HTB->H[iHTBelement].Atompos1=CTRL.SITE.ActiveAtomMap[ HAMR.element[iHAMRelement].IndexAtom1-1];
+        HTB->H[iHTBelement].Shellpos1=iShell1;
+        HTB->H[iHTBelement].Atompos2=CTRL.SITE.ActiveAtomMap[ HAMR.element[iHAMRelement].IndexAtom2-1];
+        HTB->H[iHTBelement].Shellpos2=iShell2;
+        HTB->H[iHTBelement].TransVecs[0]=HAMR.element[iHAMRelement].TransVecs[0];
+        HTB->H[iHTBelement].TransVecs[1]=HAMR.element[iHAMRelement].TransVecs[1];
+        HTB->H[iHTBelement].TransVecs[2]=HAMR.element[iHAMRelement].TransVecs[2];
+        HTB->H[iHTBelement].ConnectingVector[0]=HAMR.element[iHAMRelement].ConnectingVector[0];
+        HTB->H[iHTBelement].ConnectingVector[1]=HAMR.element[iHAMRelement].ConnectingVector[1];
+        HTB->H[iHTBelement].ConnectingVector[2]=HAMR.element[iHAMRelement].ConnectingVector[2];
+        HTB->H[iHTBelement].Hop.QComplex=0;
+        HTB->H[iHTBelement].Hop.Ni=HTB->Cell.Atom[HTB->H[iHTBelement].Atompos1].shelldegeneracy[iShell1];
+        HTB->H[iHTBelement].Hop.Nj=HTB->Cell.Atom[HTB->H[iHTBelement].Atompos2].shelldegeneracy[iShell2];
+        InitMatrix(&(HTB->H[iHTBelement].Hop));
+        sprintf(HTB->H[iHTBelement].Hop.Name, "%4s %4s %4i / %4s %4s %4i",
+                HTB->Cell.Atom[HTB->H[iHTBelement].Atompos1].Name,
+                HTB->Cell.Atom[HTB->H[iHTBelement].Atompos1].ShellName[iShell1],
+                HTB->H[iHTBelement].Atompos1,
+                HTB->Cell.Atom[HTB->H[iHTBelement].Atompos2].Name,
+                HTB->Cell.Atom[HTB->H[iHTBelement].Atompos2].ShellName[iShell2],
+                HTB->H[iHTBelement].Atompos2
+                );
+        for(i1=0;i1< HTB->H[iHTBelement].Hop.Ni;i1++)
+        {
+          for(i2=0;i2< HTB->H[iHTBelement].Hop.Nj;i2++)
+          {
+            HTB->H[iHTBelement].Hop.VRe[i1][i2]=HAMR.element[iHAMRelement].H[StartShell1+i1][StartShell2+i2];
+          }
+        }
+        StartShell2+=HTB->Cell.Atom[HTB->H[iHTBelement].Atompos2].shelldegeneracy[iShell2];
+        iHTBelement++;
+      }
+      StartShell1+=HTB->Cell.Atom[HTB->H[iHTBelement-1].Atompos1].shelldegeneracy[iShell1];
+    }
+  }
   return 0;
 }
+

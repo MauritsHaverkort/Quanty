@@ -569,7 +569,8 @@ typedef struct TightBindingDefHopping
   int    Shellpos1;
   int    Atompos2;
   int    Shellpos2;
-  int    ConnectingVector[3];
+  int    TransVecs[3];        /* translation between unit cells */
+  double ConnectingVector[3]; /* translation in units according to Units including atom positions insite the cell */
   MatrixType Hop;
 }
 TightBindingDefHopping;
@@ -874,12 +875,14 @@ typedef struct StuttgartCTRL
   CLASS;
   struct
   {
-    int N;            /* not in control file - number of sites */
+    int N;              /* not in control file - number of sites */
+    int Nactive;        /* not in control file - number of active sites */
+    int *ActiveAtomMap; /* not in control file - maping of site to active site index */
+    int *ICLASS;        /* not in control file - atom belongs to CLASS ICLASS */
     char **ATOM;
     double **POS;
     double **X;
     int **IDXDN_M;
-    int *ICLASS;      /* not in control file - atom belongs to CLASS ICLASS */
   }
   SITE;
   struct
@@ -1038,6 +1041,7 @@ typedef struct StuttgartCTRL
   {
     Bool FIT;
     int N;         /* not in control file - number of ATOMS - should be the same as in CLASS */
+    int OUTPUT;
     double KAPPA2;
     double KWxx2;
     double RMAXS;

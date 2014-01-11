@@ -609,7 +609,7 @@ uint32_t StreamReadTightBindingDefHopping(TightBindingDefHopping * O, FILE * str
   char   comments[1000];
   fscanf(stream, "%i %i %i %i", &(O->Atompos1), &(O->Shellpos1), &(O->Atompos2), &(O->Shellpos2));
   fgets(comments, 1000, stream);
-  fscanf(stream, "%i %i %i", &(O->ConnectingVector[0]), &(O->ConnectingVector[1]), &(O->ConnectingVector[2]));
+  fscanf(stream, "%i %i %i", &(O->TransVecs[0]), &(O->TransVecs[1]), &(O->TransVecs[2]));
   fgets(comments, 1000, stream);
   StreamReadMatrixType(&(O->Hop), stream);
   return 0;

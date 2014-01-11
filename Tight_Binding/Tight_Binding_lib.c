@@ -21,7 +21,7 @@ int FreeTightBindingDef(TightBindingDef * A)
 /*  The tight-binding structure defines a unit cell (CrystalStructureType) including a basis
  *  This basis is given by atoms (AtomType) at certain positions
  *  An atom has certain shells which have a degeneracy
- *  One often needs to know the total number of fermions in the cell
+ *  One often needs to know the total number of fermions in the shell
  *  The list FermionIndex[AtomNumber][ShellNumber] stores the number of the first fermion within this shell. 
  */
 int SetNFermionIndexTightBindingDef(TightBindingDef * A)
@@ -72,11 +72,11 @@ int CreateOneBandCubicLaticeTightBindingDef(TightBindingDef * A)
     A->H[i].Shellpos1 = 0;
     A->H[i].Atompos2 = 0;
     A->H[i].Shellpos2 = 0;
-    A->H[i].ConnectingVector[0] = 0;
-    A->H[i].ConnectingVector[1] = 0;
-    A->H[i].ConnectingVector[2] = 0;
+    A->H[i].TransVecs[0] = 0;
+    A->H[i].TransVecs[1] = 0;
+    A->H[i].TransVecs[2] = 0;
     if (i > 0)
-      A->H[i].ConnectingVector[(i - 1) / 2] = 1 - 2 * (i & 1);
+      A->H[i].TransVecs[(i - 1) / 2] = 1 - 2 * (i & 1);
     A->H[i].Hop.Ni = A->Cell.Atom[A->H[i].Atompos1].shelldegeneracy[A->H[i].Shellpos1];
     A->H[i].Hop.Nj = A->Cell.Atom[A->H[i].Atompos2].shelldegeneracy[A->H[i].Shellpos2];
     A->H[i].Hop.QComplex = 0;
@@ -120,11 +120,11 @@ int CreateOneBandSquareLaticeTightBindingDef(TightBindingDef * A)
     A->H[i].Shellpos1 = 0;
     A->H[i].Atompos2 = 0;
     A->H[i].Shellpos2 = 0;
-    A->H[i].ConnectingVector[0] = 0;
-    A->H[i].ConnectingVector[1] = 0;
-    A->H[i].ConnectingVector[2] = 0;
+    A->H[i].TransVecs[0] = 0;
+    A->H[i].TransVecs[1] = 0;
+    A->H[i].TransVecs[2] = 0;
     if (i > 0)
-      A->H[i].ConnectingVector[(i - 1) / 2] = 1 - 2 * (i & 1);
+      A->H[i].TransVecs[(i - 1) / 2] = 1 - 2 * (i & 1);
     A->H[i].Hop.Ni = A->Cell.Atom[A->H[i].Atompos1].shelldegeneracy[A->H[i].Shellpos1];
     A->H[i].Hop.Nj = A->Cell.Atom[A->H[i].Atompos2].shelldegeneracy[A->H[i].Shellpos2];
     A->H[i].Hop.QComplex = 0;
@@ -169,11 +169,11 @@ int CreateOneBandChainLaticeTightBindingDef(TightBindingDef * A)
     A->H[i].Shellpos1 = 0;
     A->H[i].Atompos2 = 0;
     A->H[i].Shellpos2 = 0;
-    A->H[i].ConnectingVector[0] = 0;
-    A->H[i].ConnectingVector[1] = 0;
-    A->H[i].ConnectingVector[2] = 0;
+    A->H[i].TransVecs[0] = 0;
+    A->H[i].TransVecs[1] = 0;
+    A->H[i].TransVecs[2] = 0;
     if (i > 0)
-      A->H[i].ConnectingVector[(i - 1) / 2] = 1 - 2 * (i & 1);
+      A->H[i].TransVecs[(i - 1) / 2] = 1 - 2 * (i & 1);
     A->H[i].Hop.Ni = A->Cell.Atom[A->H[i].Atompos1].shelldegeneracy[A->H[i].Shellpos1];
     A->H[i].Hop.Nj = A->Cell.Atom[A->H[i].Atompos2].shelldegeneracy[A->H[i].Shellpos2];
     A->H[i].Hop.QComplex = 0;
@@ -206,14 +206,14 @@ int CreateHamiltonianFromTightBindingDef(TightBindingDef A, double k[3], MatrixT
     vector[1] = A.Cell.Atom[A.H[iH].Atompos2].Position[1] - A.Cell.Atom[A.H[iH].Atompos1].Position[1];
     vector[2] = A.Cell.Atom[A.H[iH].Atompos2].Position[2] - A.Cell.Atom[A.H[iH].Atompos1].Position[2];
     vector[0] +=
-      A.Cell.rUnitCell[0][0] * A.H[iH].ConnectingVector[0] + A.Cell.rUnitCell[1][0] * A.H[iH].ConnectingVector[1] +
-      A.Cell.rUnitCell[2][0] * A.H[iH].ConnectingVector[2];
+      A.Cell.rUnitCell[0][0] * A.H[iH].TransVecs[0] + A.Cell.rUnitCell[1][0] * A.H[iH].TransVecs[1] +
+      A.Cell.rUnitCell[2][0] * A.H[iH].TransVecs[2];
     vector[1] +=
-      A.Cell.rUnitCell[0][1] * A.H[iH].ConnectingVector[0] + A.Cell.rUnitCell[1][1] * A.H[iH].ConnectingVector[1] +
-      A.Cell.rUnitCell[2][1] * A.H[iH].ConnectingVector[2];
+      A.Cell.rUnitCell[0][1] * A.H[iH].TransVecs[0] + A.Cell.rUnitCell[1][1] * A.H[iH].TransVecs[1] +
+      A.Cell.rUnitCell[2][1] * A.H[iH].TransVecs[2];
     vector[2] +=
-      A.Cell.rUnitCell[0][2] * A.H[iH].ConnectingVector[0] + A.Cell.rUnitCell[1][2] * A.H[iH].ConnectingVector[1] +
-      A.Cell.rUnitCell[2][2] * A.H[iH].ConnectingVector[2];
+      A.Cell.rUnitCell[0][2] * A.H[iH].TransVecs[0] + A.Cell.rUnitCell[1][2] * A.H[iH].TransVecs[1] +
+      A.Cell.rUnitCell[2][2] * A.H[iH].TransVecs[2];
     alphaRe = cos(Dot(k, vector));
     alphaIm = sin(Dot(k, vector));
     if (Sqr(alphaIm) < Sqr(alphaRe) * DBL_EPSILON * 100)
@@ -245,14 +245,14 @@ int CreateHamiltonianOperatorFromTightBindingDef(TightBindingDef A, double k[3],
     vector[1] = A.Cell.Atom[A.H[iH].Atompos2].Position[1] - A.Cell.Atom[A.H[iH].Atompos1].Position[1];
     vector[2] = A.Cell.Atom[A.H[iH].Atompos2].Position[2] - A.Cell.Atom[A.H[iH].Atompos1].Position[2];
     vector[0] +=
-      A.Cell.rUnitCell[0][0] * A.H[iH].ConnectingVector[0] + A.Cell.rUnitCell[1][0] * A.H[iH].ConnectingVector[1] +
-      A.Cell.rUnitCell[2][0] * A.H[iH].ConnectingVector[2];
+      A.Cell.rUnitCell[0][0] * A.H[iH].TransVecs[0] + A.Cell.rUnitCell[1][0] * A.H[iH].TransVecs[1] +
+      A.Cell.rUnitCell[2][0] * A.H[iH].TransVecs[2];
     vector[1] +=
-      A.Cell.rUnitCell[0][1] * A.H[iH].ConnectingVector[0] + A.Cell.rUnitCell[1][1] * A.H[iH].ConnectingVector[1] +
-      A.Cell.rUnitCell[2][1] * A.H[iH].ConnectingVector[2];
+      A.Cell.rUnitCell[0][1] * A.H[iH].TransVecs[0] + A.Cell.rUnitCell[1][1] * A.H[iH].TransVecs[1] +
+      A.Cell.rUnitCell[2][1] * A.H[iH].TransVecs[2];
     vector[2] +=
-      A.Cell.rUnitCell[0][2] * A.H[iH].ConnectingVector[0] + A.Cell.rUnitCell[1][2] * A.H[iH].ConnectingVector[1] +
-      A.Cell.rUnitCell[2][2] * A.H[iH].ConnectingVector[2];
+      A.Cell.rUnitCell[0][2] * A.H[iH].TransVecs[0] + A.Cell.rUnitCell[1][2] * A.H[iH].TransVecs[1] +
+      A.Cell.rUnitCell[2][2] * A.H[iH].TransVecs[2];
     alphaRe = cos(Dot(k, vector));
     alphaIm = sin(Dot(k, vector));
     if (Sqr(alphaIm) < Sqr(alphaRe) * DBL_EPSILON * 100)
@@ -365,9 +365,9 @@ int TightBindingDOS(TightBindingDef A, int Nk[3], SpectraType * DOS)
     {
       for (iq[2] = 0; iq[2] < Nk[2]; iq[2]++)
       {
-        diq[0] = 0.5 * (iq[0] + 0.5) / ((double)(Nk[0]));
-        diq[1] = 0.5 * (iq[1] + 0.5) / ((double)(Nk[1]));
-        diq[2] = 0.5 * (iq[2] + 0.5) / ((double)(Nk[2]));
+        diq[0] = 1.0 * (iq[0] + 0.0) / ((double)(Nk[0]));
+        diq[1] = 1.0 * (iq[1] + 0.0) / ((double)(Nk[1]));
+        diq[2] = 1.0 * (iq[2] + 0.0) / ((double)(Nk[2]));
         q[0] = diq[0] * A.Cell.gUnitCell[0][0] + diq[1] * A.Cell.gUnitCell[1][0] + diq[2] * A.Cell.gUnitCell[2][0];
         q[1] = diq[0] * A.Cell.gUnitCell[0][1] + diq[1] * A.Cell.gUnitCell[1][1] + diq[2] * A.Cell.gUnitCell[2][1];
         q[2] = diq[0] * A.Cell.gUnitCell[0][2] + diq[1] * A.Cell.gUnitCell[1][2] + diq[2] * A.Cell.gUnitCell[2][2];
@@ -402,6 +402,9 @@ int TightBindingDOS(TightBindingDef A, int Nk[3], SpectraType * DOS)
   return 0;
 }
 
+/*
+ *
+ */
 int TightBindingBANDS(TightBindingDef A, BandstructurePathType kList, MatrixType * BANDS)
 {
   int    iq, iqpath, Nqtot, iqtot, ival;
@@ -421,7 +424,7 @@ int TightBindingBANDS(TightBindingDef A, BandstructurePathType kList, MatrixType
   {
     for (iq = 0; iq < kList.Q[iqpath].Nq; iq++)
     {
-      if (iqpath == kList.NQ)
+      if (iqpath == kList.NQ-1)
       {
         q[0] = kList.Q[iqpath].q[0];
         q[1] = kList.Q[iqpath].q[1];
@@ -1071,7 +1074,7 @@ int TightBindingBANDSCharacter(TightBindingDef A, BandstructurePathType kList, M
   {
     for (iq = 0; iq < kList.Q[iqpath].Nq; iq++)
     {
-      if (iqpath == kList.NQ)
+      if (iqpath == kList.NQ-1)
       {
         q[0] = kList.Q[iqpath].q[0];
         q[1] = kList.Q[iqpath].q[1];
@@ -1233,45 +1236,45 @@ int CreateTightBindingSuperCell(TightBindingDef A, TightBindingDef * ASuper, Cry
     }
     for (iH = 0; iH < A.nH; iH++)
     {
-      atomvec[0] = ia + A.H[iH].ConnectingVector[0];
-      atomvec[1] = ib + A.H[iH].ConnectingVector[1];
-      atomvec[2] = ic + A.H[iH].ConnectingVector[2];
+      atomvec[0] = ia + A.H[iH].TransVecs[0];
+      atomvec[1] = ib + A.H[iH].TransVecs[1];
+      atomvec[2] = ic + A.H[iH].TransVecs[2];
       if (Dot(atomvec, SuperCell.gSuperCell[0]) >= -0.000000001)
       {
-        ASuper->H[iHsuper].ConnectingVector[0] = (int)(Dot(atomvec, SuperCell.gSuperCell[0]) / (1.999999999 * Pi));
+        ASuper->H[iHsuper].TransVecs[0] = (int)(Dot(atomvec, SuperCell.gSuperCell[0]) / (1.999999999 * Pi));
       }
       else
       {
-        ASuper->H[iHsuper].ConnectingVector[0] = (int)(Dot(atomvec, SuperCell.gSuperCell[0]) / (2.000000001 * Pi)) - 1;
+        ASuper->H[iHsuper].TransVecs[0] = (int)(Dot(atomvec, SuperCell.gSuperCell[0]) / (2.000000001 * Pi)) - 1;
       }
       if (Dot(atomvec, SuperCell.gSuperCell[1]) >= -0.000000001)
       {
-        ASuper->H[iHsuper].ConnectingVector[1] = (int)(Dot(atomvec, SuperCell.gSuperCell[1]) / (1.999999999 * Pi));
+        ASuper->H[iHsuper].TransVecs[1] = (int)(Dot(atomvec, SuperCell.gSuperCell[1]) / (1.999999999 * Pi));
       }
       else
       {
-        ASuper->H[iHsuper].ConnectingVector[1] = (int)(Dot(atomvec, SuperCell.gSuperCell[1]) / (2.000000001 * Pi)) - 1;
+        ASuper->H[iHsuper].TransVecs[1] = (int)(Dot(atomvec, SuperCell.gSuperCell[1]) / (2.000000001 * Pi)) - 1;
       }
       if (Dot(atomvec, SuperCell.gSuperCell[2]) >= -0.000000001)
       {
-        ASuper->H[iHsuper].ConnectingVector[2] = (int)(Dot(atomvec, SuperCell.gSuperCell[2]) / (1.999999999 * Pi));
+        ASuper->H[iHsuper].TransVecs[2] = (int)(Dot(atomvec, SuperCell.gSuperCell[2]) / (1.999999999 * Pi));
       }
       else
       {
-        ASuper->H[iHsuper].ConnectingVector[2] = (int)(Dot(atomvec, SuperCell.gSuperCell[2]) / (2.000000001 * Pi)) - 1;
+        ASuper->H[iHsuper].TransVecs[2] = (int)(Dot(atomvec, SuperCell.gSuperCell[2]) / (2.000000001 * Pi)) - 1;
       }
       atomvec[0] -=
-        ASuper->H[iHsuper].ConnectingVector[0] * SuperCell.rSuperCell[0][0] +
-        ASuper->H[iHsuper].ConnectingVector[1] * SuperCell.rSuperCell[1][0] +
-        ASuper->H[iHsuper].ConnectingVector[2] * SuperCell.rSuperCell[2][0];
+        ASuper->H[iHsuper].TransVecs[0] * SuperCell.rSuperCell[0][0] +
+        ASuper->H[iHsuper].TransVecs[1] * SuperCell.rSuperCell[1][0] +
+        ASuper->H[iHsuper].TransVecs[2] * SuperCell.rSuperCell[2][0];
       atomvec[1] -=
-        ASuper->H[iHsuper].ConnectingVector[0] * SuperCell.rSuperCell[0][1] +
-        ASuper->H[iHsuper].ConnectingVector[1] * SuperCell.rSuperCell[1][1] +
-        ASuper->H[iHsuper].ConnectingVector[2] * SuperCell.rSuperCell[2][1];
+        ASuper->H[iHsuper].TransVecs[0] * SuperCell.rSuperCell[0][1] +
+        ASuper->H[iHsuper].TransVecs[1] * SuperCell.rSuperCell[1][1] +
+        ASuper->H[iHsuper].TransVecs[2] * SuperCell.rSuperCell[2][1];
       atomvec[2] -=
-        ASuper->H[iHsuper].ConnectingVector[0] * SuperCell.rSuperCell[0][2] +
-        ASuper->H[iHsuper].ConnectingVector[1] * SuperCell.rSuperCell[1][2] +
-        ASuper->H[iHsuper].ConnectingVector[2] * SuperCell.rSuperCell[2][2];
+        ASuper->H[iHsuper].TransVecs[0] * SuperCell.rSuperCell[0][2] +
+        ASuper->H[iHsuper].TransVecs[1] * SuperCell.rSuperCell[1][2] +
+        ASuper->H[iHsuper].TransVecs[2] * SuperCell.rSuperCell[2][2];
       FindCellPosInCrystalStructureSuperCellType(SuperCell, atomvec, &(ASuper->H[iHsuper].Atompos2));
       ASuper->H[iHsuper].Atompos2 *= A.Cell.NAtoms;
       ASuper->H[iHsuper].Atompos2 += A.H[iH].Atompos2;
@@ -1333,35 +1336,35 @@ int CreateTightBindingSquareSuperCell(TightBindingDef A, TightBindingDef * ASupe
         }
         for (iH = 0; iH < A.nH; iH++)
         {
-          if ((A.H[iH].ConnectingVector[0] + ia) >= 0)
+          if ((A.H[iH].TransVecs[0] + ia) >= 0)
           {
-            ASuper->H[iHsuper].ConnectingVector[0] = (A.H[iH].ConnectingVector[0] + ia) / N[0];
-            ia2 = (A.H[iH].ConnectingVector[0] + ia) % N[0];
+            ASuper->H[iHsuper].TransVecs[0] = (A.H[iH].TransVecs[0] + ia) / N[0];
+            ia2 = (A.H[iH].TransVecs[0] + ia) % N[0];
           }
           else
           {
-            ASuper->H[iHsuper].ConnectingVector[0] = ((A.H[iH].ConnectingVector[0] + 1 + ia) / N[0]) - 1;
-            ia2 = A.H[iH].ConnectingVector[0] + ia - ASuper->H[iHsuper].ConnectingVector[0] * N[0];
+            ASuper->H[iHsuper].TransVecs[0] = ((A.H[iH].TransVecs[0] + 1 + ia) / N[0]) - 1;
+            ia2 = A.H[iH].TransVecs[0] + ia - ASuper->H[iHsuper].TransVecs[0] * N[0];
           }
-          if ((A.H[iH].ConnectingVector[1] + ib) >= 0)
+          if ((A.H[iH].TransVecs[1] + ib) >= 0)
           {
-            ASuper->H[iHsuper].ConnectingVector[1] = (A.H[iH].ConnectingVector[1] + ib) / N[1];
-            ib2 = (A.H[iH].ConnectingVector[1] + ib) % N[1];
-          }
-          else
-          {
-            ASuper->H[iHsuper].ConnectingVector[1] = ((A.H[iH].ConnectingVector[1] + 1 + ib) / N[1]) - 1;
-            ib2 = A.H[iH].ConnectingVector[1] + ib - ASuper->H[iHsuper].ConnectingVector[1] * N[1];
-          }
-          if ((A.H[iH].ConnectingVector[2] + ic) >= 0)
-          {
-            ASuper->H[iHsuper].ConnectingVector[2] = (A.H[iH].ConnectingVector[2] + ic) / N[2];
-            ic2 = (A.H[iH].ConnectingVector[2] + ic) % N[2];
+            ASuper->H[iHsuper].TransVecs[1] = (A.H[iH].TransVecs[1] + ib) / N[1];
+            ib2 = (A.H[iH].TransVecs[1] + ib) % N[1];
           }
           else
           {
-            ASuper->H[iHsuper].ConnectingVector[2] = ((A.H[iH].ConnectingVector[2] + 1 + ic) / N[2]) - 1;
-            ic2 = A.H[iH].ConnectingVector[2] + ic - ASuper->H[iHsuper].ConnectingVector[2] * N[2];
+            ASuper->H[iHsuper].TransVecs[1] = ((A.H[iH].TransVecs[1] + 1 + ib) / N[1]) - 1;
+            ib2 = A.H[iH].TransVecs[1] + ib - ASuper->H[iHsuper].TransVecs[1] * N[1];
+          }
+          if ((A.H[iH].TransVecs[2] + ic) >= 0)
+          {
+            ASuper->H[iHsuper].TransVecs[2] = (A.H[iH].TransVecs[2] + ic) / N[2];
+            ic2 = (A.H[iH].TransVecs[2] + ic) % N[2];
+          }
+          else
+          {
+            ASuper->H[iHsuper].TransVecs[2] = ((A.H[iH].TransVecs[2] + 1 + ic) / N[2]) - 1;
+            ic2 = A.H[iH].TransVecs[2] + ic - ASuper->H[iHsuper].TransVecs[2] * N[2];
           }
           ASuper->H[iHsuper].Shellpos1 = A.H[iH].Shellpos1;
           ASuper->H[iHsuper].Shellpos2 = A.H[iH].Shellpos2;
