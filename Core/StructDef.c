@@ -245,6 +245,39 @@ typedef struct ListOfPoles
 ListOfPoles;
 
 
+/*  V is an array of length N+1
+ *  The first N elements store 1+BlockSize*BlockSize numbers
+ *  The first number is a
+ *  The last BlockSize*BlockSize is the matrix b
+ *  The last element stores a0
+ *
+ *  The Green's function represented is:
+ *    a0 + sum_i b_i^{dag} 1/(w-a_i) b_i
+ *
+ *  a0 is an aditional pointer to V[N*(1+BlockSize*BlockSize)]
+ */
+typedef struct BlockListOfPoles
+{
+  char Name[MAXStrLength];   /* A pointer to a name string that can be used to lable functions, good for printing etc. */
+  uint32_t N;                /* dimension of list */
+  uint32_t BlockSize;        /* dimension of square matrices */
+  uint32_t QComplex;         /* matrices are complex or real */
+  union                      /* list of (N+1)*(1+BlockSize*BlockSize)-1 with the values */
+  {
+    double *VRe;
+    Complex16 *V;
+  };
+  union                      /* matrix of size BlockSize*BlockSize with possible ofset */
+  {
+    double *a0Re;
+    Complex16 *a0;
+  };
+  double mu;                 /* chemical potential */
+}
+BlockListOfPoles;
+
+
+
 /*
  *     ( A[0][0]=a1   | A[0][1]=b1   | 0            | 0          )
  *   A=( A[1][0]=b1^+ | A[1][1]=a2   | A[1][2]=b2   | 0          )

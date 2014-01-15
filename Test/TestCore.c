@@ -677,3 +677,37 @@ void TestLanczos()
 
 
 }
+
+
+/*
+ *
+ */
+void TestBlockListOfPoles()
+{
+  
+  BlockListOfPoles variable;
+  variable.QComplex=0;
+  variable.N=10;
+  variable.BlockSize=3;
+  
+  
+  variable.VRe=malloc(variable.BlockSize*variable.BlockSize*variable.N*sizeof(double*));
+  
+  
+  
+  
+  int iBlock,i,j;
+  for(iBlock=0;iBlock<variable.N;iBlock++)
+  {
+    for(i=0;i<variable.BlockSize;i++)
+    {
+      for(j=0;j<variable.BlockSize;j++)
+      {
+        variable.VRe[iBlock * variable.BlockSize * variable.BlockSize + i * variable.BlockSize + j]= i + 100 * j + 10000 * iBlock;
+        
+        
+        
+      }
+    }
+  }
+}

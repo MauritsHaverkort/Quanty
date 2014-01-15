@@ -161,6 +161,9 @@
 		4C2AAACD163266DD00138620 /* libblas.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libblas.dylib; path = usr/lib/libblas.dylib; sourceTree = SDKROOT; };
 		4C2AAACF163266F900138620 /* liblapack.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = liblapack.dylib; path = usr/lib/liblapack.dylib; sourceTree = SDKROOT; };
 		4C3261581850DF9300CEECC4 /* OperatorArithmetic.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = OperatorArithmetic.c; sourceTree = "<group>"; };
+		4C3FCCFC188419B6000B9DB8 /* BasicMathBlock.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = BasicMathBlock.c; path = BasicMathBlock/BasicMathBlock.c; sourceTree = "<group>"; };
+		4C3FCCFD188419E4000B9DB8 /* BasicMath_BlockListOfPoles.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = BasicMath_BlockListOfPoles.c; path = BasicMathBlock/BasicMath_BlockListOfPoles.c; sourceTree = "<group>"; };
+		4C3FCCFE18841A19000B9DB8 /* BasicMath_BlockTypeConversion.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = BasicMath_BlockTypeConversion.c; path = BasicMathBlock/BasicMath_BlockTypeConversion.c; sourceTree = "<group>"; };
 		4C5A6B9B175E6E8700EEA17F /* PrintMathematicaExpression.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = PrintMathematicaExpression.c; sourceTree = "<group>"; };
 		4C5CA61716D18BBF00BE1C25 /* DMFT */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = DMFT; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C77BA751741188E00AC7E7D /* OperatorWaveFunctionPerturbation.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = OperatorWaveFunctionPerturbation.c; sourceTree = "<group>"; };
@@ -286,6 +289,7 @@
 		4C2AAA28163265DD00138620 /* Core */ = {
 			isa = PBXGroup;
 			children = (
+				4C3FCCFB1884196D000B9DB8 /* BasicMathBlock */,
 				4C2AAA29163265DD00138620 /* BasicMath */,
 				4C2AAA3A163265DD00138620 /* BasicMath.c */,
 				4C2AAA3B163265DD00138620 /* ComplexRealWaveFunctionArithmetic.c */,
@@ -422,6 +426,16 @@
 				4C2AAA74163265DD00138620 /* TemperatureAvverage.c */,
 			);
 			path = Tools;
+			sourceTree = "<group>";
+		};
+		4C3FCCFB1884196D000B9DB8 /* BasicMathBlock */ = {
+			isa = PBXGroup;
+			children = (
+				4C3FCCFC188419B6000B9DB8 /* BasicMathBlock.c */,
+				4C3FCCFD188419E4000B9DB8 /* BasicMath_BlockListOfPoles.c */,
+				4C3FCCFE18841A19000B9DB8 /* BasicMath_BlockTypeConversion.c */,
+			);
+			name = BasicMathBlock;
 			sourceTree = "<group>";
 		};
 		4C8274D817DC491500A5F555 /* Headers */ = {

@@ -188,10 +188,10 @@ uint32_t InitOperatorFixedLength(OperatorType * const O, const uint32_t length, 
       O->l[l].NBitsKey = 0;
       O->l[l].NAloc = 0;
       O->l[l].QComplex = 0;
-      if ((O->l[l].KeyList = calloc(1, sizeof(uint32_t *))) == NULL)
+      if ((O->l[l].KeyList = calloc(1, sizeof(uint32_t))) == NULL)
         return 1;
     }
-    if ((O->l[length].KeyList = calloc((uint32_t) 1 << NBitsKey, sizeof(uint32_t *))) == NULL)
+    if ((O->l[length].KeyList = calloc((uint32_t) 1 << NBitsKey, sizeof(uint32_t))) == NULL)
     {
       printf("could not allocate memory for O->[length=%i].Keylist in InitOperatorFixedLength\n", length);
       return 1;
@@ -215,7 +215,7 @@ uint32_t InitOperatorFixedLength(OperatorType * const O, const uint32_t length, 
     }
   }
   free(O->l[length].KeyList);
-  if ((O->l[length].KeyList = calloc((uint32_t) 1 << NBitsKey, sizeof(uint32_t *))) == NULL)
+  if ((O->l[length].KeyList = calloc((uint32_t) 1 << NBitsKey, sizeof(uint32_t))) == NULL)
   {
     printf("could not allocate memory for O->[length=%i].Keylist in InitOperatorFixedLength\n", length);
     return 1;

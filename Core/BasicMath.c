@@ -39,6 +39,7 @@
 #include "BasicMath/BasicMath_ListOfPoles.c"
 #include "BasicMath/BasicMath_MatrixTypeConversion.c"
 #include "BasicMath/BasicMath_GreenFunctionArithmetic.c"
+#include "BasicMathBlock/BasicMathBlock.c"
 
 /*
  *   x^a with both x and a integers
