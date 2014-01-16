@@ -1,6 +1,6 @@
 /*
  *   Initialize a struct of BlockListOfPoles type
- *   malloc the space for storing N matrices of length BlockSize * BlockSize
+ *   malloc the space for storing N matrices of dimension BlockSize * BlockSize
  *   malloc the space for storing N doubles
  */
 uint32_t InitBlockListOfPoles(BlockListOfPoles *A)
