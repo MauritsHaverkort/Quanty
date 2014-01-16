@@ -5018,7 +5018,6 @@ uint32_t OperatorMultiply3NormalOrder(OperatorType * const O, OperatorType const
 uint32_t OperatorMultiply4(OperatorType * const O, OperatorType const A, OperatorType const B, OperatorType const C,
                            OperatorType const D, char const Aset, char const Bset, char const Cset, char const Dset)
 {
-  uint32_t j;
   OperatorType AB, CD;
   InitOperatorForMult(&AB, 2, &A, &B);
   InitOperatorForMult(&CD, 2, &C, &D);
@@ -5057,7 +5056,6 @@ uint32_t OperatorMultiply4NormalOrder(OperatorType * const O, OperatorType const
                                       char const Cset, char const Dset, uint32_t(*QDetNotOrdered) (uint16_t, uint16_t,
                                                                                                    uint32_t))
 {
-  uint32_t j;
   OperatorType AB, CD;
   InitOperatorForMult(&AB, 2, &A, &B);
   InitOperatorForMult(&CD, 2, &C, &D);
@@ -5094,7 +5092,6 @@ uint32_t OperatorMultiply5(OperatorType * const O, OperatorType const A, Operato
                            OperatorType const D, OperatorType const E, char const Aset, char const Bset,
                            char const Cset, char const Dset, char const Eset)
 {
-  uint32_t j;
   OperatorType AB, DE;
   InitOperatorForMult(&AB, 2, &A, &B);
   InitOperatorForMult(&DE, 2, &D, &E);
@@ -5133,7 +5130,6 @@ uint32_t OperatorMultiply5NormalOrder(OperatorType * const O, OperatorType const
                                       char const Bset, char const Cset, char const Dset, char const Eset,
                                       uint32_t(*QDetNotOrdered) (uint16_t, uint16_t, uint32_t))
 {
-  uint32_t j;
   OperatorType AB, DE;
   InitOperatorForMult(&AB, 2, &A, &B);
   InitOperatorForMult(&DE, 2, &D, &E);

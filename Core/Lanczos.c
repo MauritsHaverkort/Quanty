@@ -3451,7 +3451,7 @@ uint32_t LanczosTriDiagonalizeDysonSecondOrderALowMem(OperatorType const O, Wave
                                                       TriDiagonalMatrixType const *g, uint32_t const NV,
                                                       TriDiagonalMatrixType * Gout)
 {
-  uint32_t i, ii, j, k;
+  uint32_t i, ii, j;
   TriDiagonalMatrixType OKrylov;
   MatrixType Stemp, Htemp, StempRoot, HtempEigenFun, VMat2Temp;
   MatrixType Hval, *VMat, *TMat, Hval2, *VMat2;
