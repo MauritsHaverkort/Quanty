@@ -668,7 +668,7 @@ void ReduceListOfPolesSpacing(ListOfPoles * M, double da)
 uint32_t ListOfPolesMoveNegativeEnergyToMu(ListOfPoles * const A, double const mu)
 {
   uint32_t i, npoleshift = 0;
-  double weightpoleshift = 0, totw = 0;
+  double weightpoleshift = 0, momentshift = 0, totw = 0;
   for (i = 0; i < A->N; i++)
   {
     totw += A->b[i];
@@ -677,19 +677,24 @@ uint32_t ListOfPolesMoveNegativeEnergyToMu(ListOfPoles * const A, double const m
       A->a[i] = mu * (1 + 10 * DBL_EPSILON) + 10 * DBL_MIN;
       npoleshift++;
       weightpoleshift += A->b[i];
+      momentshift += A->b[i]*(mu-A->a[i]);
     }
   }
   if (npoleshift)
   {
     printf("******************** WARNING - NOT CONVERGED ********************\n");
-    printf("List of poles %s, has %i poles of which %i are incorrectly at negative energies.\n", A->Name, A->N,
-           npoleshift);
-    printf("These have a total weight of %22.15E, (outof %22.15E) which has been shifted to mu=%22.15E\n",
-           weightpoleshift, totw, mu);
+    printf("List of poles %s, has %i poles of which %i are incorrectly"
+           " at negative energies.\n",
+           A->Name, A->N, npoleshift);
+    printf("These have a total weight of %22.15E, (outof %22.15E)"
+           "with moment %22.15E which has been shifted to mu=%22.15E\n",
+           weightpoleshift, totw, momentshift, mu);
   }
   else
   {
-    printf("List of poles %s, has all poles at positive energy.\n", A->Name);
+    printf("List of poles %s, has all poles at positive energy"
+           " with weight %22.15E.\n",
+           A->Name, totw);
   }
   return 0;
 }
@@ -697,7 +702,7 @@ uint32_t ListOfPolesMoveNegativeEnergyToMu(ListOfPoles * const A, double const m
 uint32_t ListOfPolesMovePositiveEnergyToMu(ListOfPoles * const A, double const mu)
 {
   uint32_t i, npoleshift = 0;
-  double weightpoleshift = 0, totw = 0;
+  double weightpoleshift = 0, momentshift = 0, totw = 0;
   for (i = 0; i < A->N; i++)
   {
     totw += A->b[i];
@@ -706,19 +711,24 @@ uint32_t ListOfPolesMovePositiveEnergyToMu(ListOfPoles * const A, double const m
       A->a[i] = mu * (1 - 10 * DBL_EPSILON) - 10 * DBL_MIN;
       npoleshift++;
       weightpoleshift += A->b[i];
+      momentshift += A->b[i]*(A->a[i]-mu);
     }
   }
   if (npoleshift)
   {
     printf("******************** WARNING - NOT CONVERGED ********************\n");
-    printf("List of poles %s, has %i poles of which %i are incorrectly at positive energies.\n", A->Name, A->N,
-           npoleshift);
-    printf("These have a total weight of %22.15E, (outof %22.15E) which has been shifted to mu=%22.15E\n",
-           weightpoleshift, totw, mu);
+    printf("List of poles %s, has %i poles of which %i are incorrectly"
+           " at positive energies.\n",
+           A->Name, A->N, npoleshift);
+    printf("These have a total weight of %22.15E, (outof %22.15E)"
+           " with moment %22.15E which has been shifted to mu=%22.15E\n",
+           weightpoleshift, totw, momentshift, mu);
   }
   else
   {
-    printf("List of poles %s, has all poles at negative energy.\n", A->Name);
+    printf("List of poles %s, has all poles at negative energy"
+           " with weight %22.15E.\n",
+           A->Name, totw);
   }
   return 0;
 }

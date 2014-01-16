@@ -203,7 +203,7 @@ uint32_t StreamPrintWaveFunctionReadableTruncated(WaveFunctionType psi, double e
   double epssqr = Sqr(epsilon);
   psi.Name[MAXStrLength - 1] = '\0';
   fprintf(stream, "\nprintout of WaveFunction: %s\n", psi.Name);
-  fprintf(stream, "Onle determinants with a norm of the prefactor larger then %22.15E will be printed\n", epsilon);
+  fprintf(stream, "Only determinants with a norm of the prefactor larger than %22.15E will be printed\n", epsilon);
   fprintf(stream, "\nGenneral settings\n");
   fprintf(stream, "QComplex      = %10i (Real==0 or Complex==1)\n", psi.QComplex);
   fprintf(stream, "N             = %10i (Number of basis functions used to discribe psi)\n", psi.N);
