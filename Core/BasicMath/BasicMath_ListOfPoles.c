@@ -668,16 +668,17 @@ void ReduceListOfPolesSpacing(ListOfPoles * M, double da)
 uint32_t ListOfPolesMoveNegativeEnergyToMu(ListOfPoles * const A, double const mu)
 {
   uint32_t i, npoleshift = 0;
-  double weightpoleshift = 0, momentshift = 0, totw = 0;
+  double weightpoleshift = 0, delta = 0, momentshift = 0, totw = 0;
   for (i = 0; i < A->N; i++)
   {
     totw += A->b[i];
     if (A->a[i] < mu)
     {
+      delta = mu - A->a[i];
       A->a[i] = mu * (1 + 10 * DBL_EPSILON) + 10 * DBL_MIN;
       npoleshift++;
       weightpoleshift += A->b[i];
-      momentshift += A->b[i]*(mu-A->a[i]);
+      momentshift += A->b[i]*delta;
     }
   }
   if (npoleshift)
@@ -708,10 +709,11 @@ uint32_t ListOfPolesMovePositiveEnergyToMu(ListOfPoles * const A, double const m
     totw += A->b[i];
     if (A->a[i] > mu)
     {
+      delta = A->a[i] - mu;
       A->a[i] = mu * (1 - 10 * DBL_EPSILON) - 10 * DBL_MIN;
       npoleshift++;
       weightpoleshift += A->b[i];
-      momentshift += A->b[i]*(A->a[i]-mu);
+      momentshift += A->b[i]*delta;
     }
   }
   if (npoleshift)
