@@ -29,9 +29,9 @@
 
 
 
-/*  Remove the values of an opperator from memory
-*   On entry H contains the definitions and alocation of memeory
-*   On excit all values are freed
+/*  Remove the values of an operator from memory
+*   On entry H contains the definitions and allocation of memory
+*   On exit all values are freed
 */
 uint32_t FreeOperator(OperatorType * const H)
 {
@@ -58,7 +58,7 @@ uint32_t FreeOperator(OperatorType * const H)
   return 0;
 }
 
-/*  Initiallize the Operator structure
+/*  Initialize the Operator structure
  *  Allocate space for O.l
  */
 uint32_t InitOperator(OperatorType * const O)
@@ -81,7 +81,7 @@ uint32_t InitOperator(OperatorType * const O)
   return 0;
 }
 
-/*  Initiallize the Operator structure
+/*  Initialize the Operator structure
  *  Allocate space for O.l
  */
 uint32_t InitNamedOperator(OperatorType * const O, char *name)
@@ -89,6 +89,37 @@ uint32_t InitNamedOperator(OperatorType * const O, char *name)
   int ret = InitOperator(O);
   strcpy(O->Name, name);
   return ret;
+}
+
+/*  Initialize the Operator structure
+ *  to apply a Operator product with 
+ *  an arbitrary number of operators
+ */
+
+void InitOperatorForMult(OperatorType *prod, int count, const OperatorType *l, ...)
+{
+  va_list ap;
+  OperatorType *r;
+  int j;    
+  InitOperator(prod);
+  int MaxLength = l->MaxLength;
+  prod->QComplex = l->QComplex;
+  prod->NFermion = l->NFermion;
+  prod->NBoson = l->NBoson;
+  prod->NWord = l->NWord;
+  
+  va_start(ap, l);
+  for(j=1; j<count; j++)
+  {
+    r = va_arg(ap, OperatorType*);
+    prod->QComplex = prod->QComplex || r->QComplex;
+    MaxLength += r->MaxLength;
+  }
+  for (j = 1; j <= MaxLength; j++)
+  {
+    InitOperatorFixedLength(prod, j, 8);
+  }
+  va_end(ap);
 }
 
 /* each operator of fixed length can be either complex or real
@@ -4989,24 +5020,9 @@ uint32_t OperatorMultiply4(OperatorType * const O, OperatorType const A, Operato
 {
   uint32_t j;
   OperatorType AB, CD;
-  AB.QComplex = A.QComplex || B.QComplex;
-  AB.NFermion = A.NFermion;
-  AB.NBoson = A.NBoson;
-  AB.NWord = A.NWord;
-  InitOperator(&AB);
-  InitOperator(&CD);
-  for (j = 1; j <= A.MaxLength + B.MaxLength; j++)
-  {
-    InitOperatorFixedLength(&AB, j, 8);
-  }
-  CD.QComplex = C.QComplex || D.QComplex;
-  CD.NFermion = C.NFermion;
-  CD.NBoson = C.NBoson;
-  CD.NWord = C.NWord;
-  for (j = 1; j <= C.MaxLength + D.MaxLength; j++)
-  {
-    InitOperatorFixedLength(&CD, j, 8);
-  }
+  InitOperatorForMult(&AB, 2, &A, &B);
+  InitOperatorForMult(&CD, 2, &C, &D);
+
   if (OperatorMultiply2(&AB, A, B, Aset, Bset))
   {
     printf("OperatorMultiply2 failed in OperatorMultiply4\n");
@@ -5043,24 +5059,9 @@ uint32_t OperatorMultiply4NormalOrder(OperatorType * const O, OperatorType const
 {
   uint32_t j;
   OperatorType AB, CD;
-  AB.QComplex = A.QComplex || B.QComplex;
-  AB.NFermion = A.NFermion;
-  AB.NBoson = A.NBoson;
-  AB.NWord = A.NWord;
-  InitOperator(&AB);
-  InitOperator(&CD);
-  for (j = 1; j <= A.MaxLength + B.MaxLength; j++)
-  {
-    InitOperatorFixedLength(&AB, j, 8);
-  }
-  CD.QComplex = C.QComplex || D.QComplex;
-  CD.NFermion = C.NFermion;
-  CD.NBoson = C.NBoson;
-  CD.NWord = C.NWord;
-  for (j = 1; j <= C.MaxLength + D.MaxLength; j++)
-  {
-    InitOperatorFixedLength(&CD, j, 8);
-  }
+  InitOperatorForMult(&AB, 2, &A, &B);
+  InitOperatorForMult(&CD, 2, &C, &D);
+
   if (OperatorMultiply2NormalOrder(&AB, A, B, Aset, Bset, QDetNotOrdered))
   {
     printf("OperatorMultiply2 failed in OperatorMultiply4\n");
@@ -5095,24 +5096,9 @@ uint32_t OperatorMultiply5(OperatorType * const O, OperatorType const A, Operato
 {
   uint32_t j;
   OperatorType AB, DE;
-  AB.QComplex = A.QComplex || B.QComplex;
-  AB.NFermion = A.NFermion;
-  AB.NBoson = A.NBoson;
-  AB.NWord = A.NWord;
-  InitOperator(&AB);
-  InitOperator(&DE);
-  for (j = 1; j <= A.MaxLength + B.MaxLength; j++)
-  {
-    InitOperatorFixedLength(&AB, j, 8);
-  }
-  DE.QComplex = D.QComplex || E.QComplex;
-  DE.NFermion = D.NFermion;
-  DE.NBoson = D.NBoson;
-  DE.NWord = D.NWord;
-  for (j = 1; j <= D.MaxLength + E.MaxLength; j++)
-  {
-    InitOperatorFixedLength(&DE, j, 8);
-  }
+  InitOperatorForMult(&AB, 2, &A, &B);
+  InitOperatorForMult(&DE, 2, &D, &E);
+
   if (OperatorMultiply2(&AB, A, B, Aset, Bset))
   {
     printf("OperatorMultiply2 failed in OperatorMultiply5\n");
@@ -5149,24 +5135,9 @@ uint32_t OperatorMultiply5NormalOrder(OperatorType * const O, OperatorType const
 {
   uint32_t j;
   OperatorType AB, DE;
-  InitOperator(&AB);
-  InitOperator(&DE);
-  AB.QComplex = A.QComplex || B.QComplex;
-  AB.NFermion = A.NFermion;
-  AB.NBoson = A.NBoson;
-  AB.NWord = A.NWord;
-  for (j = 1; j <= A.MaxLength + B.MaxLength; j++)
-  {
-    InitOperatorFixedLength(&AB, j, 8);
-  }
-  DE.QComplex = D.QComplex || E.QComplex;
-  DE.NFermion = D.NFermion;
-  DE.NBoson = D.NBoson;
-  DE.NWord = D.NWord;
-  for (j = 1; j <= D.MaxLength + E.MaxLength; j++)
-  {
-    InitOperatorFixedLength(&DE, j, 8);
-  }
+  InitOperatorForMult(&AB, 2, &A, &B);
+  InitOperatorForMult(&DE, 2, &D, &E);
+
   if (OperatorMultiply2NormalOrder(&AB, A, B, Aset, Bset, QDetNotOrdered))
   {
     printf("OperatorMultiply2 failed in OperatorMultiply5\n");

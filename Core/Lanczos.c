@@ -3200,15 +3200,7 @@ uint32_t LanczosTriDiagonalizeDysonFullLowMem(OperatorType const O, uint32_t nma
     printf("Create perturbation %i from %i\n", i + 1, NV);
     /* create matrices VOV[n] */
     /* initiallize VOVtemp for V^{\dag} V */
-    InitOperator(&VOVtemp);
-    VOVtemp.QComplex = 0;
-    VOVtemp.NFermion = V[i].NFermion;
-    VOVtemp.NBoson = V[i].NBoson;
-    VOVtemp.NWord = V[i].NWord;
-    for (j = 1; j <= 2 * V[i].MaxLength; j++)
-    {
-      InitOperatorFixedLength(&VOVtemp, j, 8);
-    }
+    InitOperatorForMult(&VOVtemp, 2, &V[i], &V[i]);
     /* create VOV[0] */
     OperatorMultiply2NormalOrder(&VOVtemp, V[i], V[i], 'N', 'D', &QDetNotOrderedFcFaBcBa);
     PsiOperatorPsiMatrix(VOVtemp, PsiKrylov, &VOV[0]);
@@ -3223,27 +3215,11 @@ uint32_t LanczosTriDiagonalizeDysonFullLowMem(OperatorType const O, uint32_t nma
       {
         OperatorCopy(&Otempold, Otemp);
         FreeOperator(&Otemp);
-        InitOperator(&Otemp);
-        Otemp.QComplex = 0;
-        Otemp.NFermion = V[i].NFermion;
-        Otemp.NBoson = V[i].NBoson;
-        Otemp.NWord = V[i].NWord;
-        for (j = 1; j <= n * O.MaxLength; j++)
-        {
-          InitOperatorFixedLength(&Otemp, j, 8);
-        }
+        InitOperatorForMult(&Otemp, 2, &Otempold, &O);
         OperatorMultiplyNormalOrder(&Otemp, Otempold, O, &QDetNotOrderedFcFaBcBa);
         FreeOperator(&Otempold);
       }
-      InitOperator(&VOVtemp);
-      VOVtemp.QComplex = 0;
-      VOVtemp.NFermion = V[i].NFermion;
-      VOVtemp.NBoson = V[i].NBoson;
-      VOVtemp.NWord = V[i].NWord;
-      for (j = 1; j <= 2 * V[i].MaxLength + Otemp.MaxLength; j++)
-      {
-        InitOperatorFixedLength(&VOVtemp, j, 8);
-      }
+      InitOperatorForMult(&VOVtemp, 3, &V[i], &Otemp, &V[i]);
       OperatorMultiply3NormalOrder(&VOVtemp, V[i], Otemp, V[i], 'N', 'N', 'D', &QDetNotOrderedFcFaBcBa);
       PsiOperatorPsiMatrix(VOVtemp, PsiKrylov, &VOV[i]);
       FreeOperator(&VOVtemp);
@@ -3390,29 +3366,13 @@ uint32_t LanczosTriDiagonalizeDysonLowMem(OperatorType const O, WaveFunctionType
     printf("Create perturbation %i from %i\n", i + 1, NV);
     /* create extended non orthonormal matrices on original basis */
     /* initiallize Otemp for V^{\dag} V */
-    InitOperator(&Otemp);
-    Otemp.QComplex = 0;
-    Otemp.NFermion = V[i].NFermion;
-    Otemp.NBoson = V[i].NBoson;
-    Otemp.NWord = V[i].NWord;
-    for (j = 1; j <= 2 * V[i].MaxLength; j++)
-    {
-      InitOperatorFixedLength(&Otemp, j, 8);
-    }
+    InitOperatorForMult(&Otemp, 2, &V[i], &V[i]);
     /* create Stemp */
     OperatorMultiply2NormalOrder(&Otemp, V[i], V[i], 'N', 'D', &QDetNotOrderedFcFaBcBa);
     PsiOperatorPsiMatrix(Otemp, PsiKrylov, &Stemp);
     FreeOperator(&Otemp);
     /* initiallize Otemp for V^{\dag} O V */
-    InitOperator(&Otemp);
-    Otemp.QComplex = 0;
-    Otemp.NFermion = V[i].NFermion;
-    Otemp.NBoson = V[i].NBoson;
-    Otemp.NWord = V[i].NWord;
-    for (j = 1; j <= 2 * V[i].MaxLength + O.MaxLength; j++)
-    {
-      InitOperatorFixedLength(&Otemp, j, 8);
-    }
+    InitOperatorForMult(&Otemp, 3, &V[i], &O, &V[i]);
     /* create Htemp */
     OperatorMultiply3NormalOrder(&Otemp, V[i], O, V[i], 'N', 'N', 'D', &QDetNotOrderedFcFaBcBa);
     PsiOperatorPsiMatrix(Otemp, PsiKrylov, &Htemp);
@@ -3573,29 +3533,13 @@ uint32_t LanczosTriDiagonalizeDysonSecondOrderALowMem(OperatorType const O, Wave
     printf("Create perturbation %i from %i\n", i + 1, NV);
     /* create extended non orthonormal matrices on original basis */
     /* initiallize Otemp for V^{\dag} V */
-    InitOperator(&Otemp);
-    Otemp.QComplex = 0;
-    Otemp.NFermion = V[i].NFermion;
-    Otemp.NBoson = V[i].NBoson;
-    Otemp.NWord = V[i].NWord;
-    for (j = 1; j <= 2 * V[i].MaxLength; j++)
-    {
-      InitOperatorFixedLength(&Otemp, j, 8);
-    }
+    InitOperatorForMult(&Otemp, 2, &V[i], &V[i]);
     /* create Stemp */
     OperatorMultiply2NormalOrder(&Otemp, V[i], V[i], 'N', 'D', &QDetNotOrderedFcFaBcBa);
     PsiOperatorPsiMatrix(Otemp, PsiKrylov, &Stemp);
     FreeOperator(&Otemp);
     /* initiallize Otemp for V^{\dag} O V */
-    InitOperator(&Otemp);
-    Otemp.QComplex = 0;
-    Otemp.NFermion = V[i].NFermion;
-    Otemp.NBoson = V[i].NBoson;
-    Otemp.NWord = V[i].NWord;
-    for (j = 1; j <= 2 * V[i].MaxLength + O.MaxLength; j++)
-    {
-      InitOperatorFixedLength(&Otemp, j, 8);
-    }
+    InitOperatorForMult(&Otemp, 3, &V[i], &O, &V[i]);
     /* create Htemp */
     OperatorMultiply3NormalOrder(&Otemp, V[i], O, V[i], 'N', 'N', 'D', &QDetNotOrderedFcFaBcBa);
     PsiOperatorPsiMatrix(Otemp, PsiKrylov, &Htemp);
@@ -3614,28 +3558,12 @@ uint32_t LanczosTriDiagonalizeDysonSecondOrderALowMem(OperatorType const O, Wave
       printf("Create 2nd order perturbation %i %i from %i\n", i + 1, ii + 1, (NV * NV - NV) / 2);
       /* create extended non orthonormal matrices on original basis */
       /* initiallize Otemp for V^{\dag} V^{\dag} V V */
-      InitOperator(&Otemp);
-      Otemp.QComplex = 0;
-      Otemp.NFermion = V[i].NFermion;
-      Otemp.NBoson = V[i].NBoson;
-      Otemp.NWord = V[i].NWord;
-      for (k = 1; k <= 2 * V[i].MaxLength + 2 * V[ii].MaxLength; k++)
-      {
-        InitOperatorFixedLength(&Otemp, k, 8);
-      }
+      InitOperatorForMult(&Otemp, 4, &V[i], &V[ii], &V[ii], &V[i]);
       OperatorMultiply4NormalOrder(&Otemp, V[i], V[ii], V[ii], V[i], 'N', 'N', 'D', 'D', &QDetNotOrderedFcFaBcBa);
       PsiOperatorPsiMatrix(Otemp, PsiKrylov, &Stemp);
       FreeOperator(&Otemp);
       /* initiallize Otemp for V^{\dag} V^{\dag} O V V */
-      InitOperator(&Otemp);
-      Otemp.QComplex = 0;
-      Otemp.NFermion = V[i].NFermion;
-      Otemp.NBoson = V[i].NBoson;
-      Otemp.NWord = V[i].NWord;
-      for (k = 1; k <= 2 * V[i].MaxLength + 2 * V[ii].MaxLength + O.MaxLength; k++)
-      {
-        InitOperatorFixedLength(&Otemp, k, 8);
-      }
+      InitOperatorForMult(&Otemp, 5, &V[i], &V[ii], &O, &V[ii], &V[i]);
       /* create Htemp */
       OperatorMultiply5NormalOrder(&Otemp, V[i], V[ii], O, V[ii], V[i], 'N', 'N', 'N', 'D', 'D',
                                    &QDetNotOrderedFcFaBcBa);
