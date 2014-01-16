@@ -652,3 +652,25 @@ uint32_t FilePrintListOfPolesEssentials(ListOfPoles M, const char *const flname,
   fclose(stream);
   return retval;
 }
+
+
+uint32_t FilePrintBandstructurePath(BandstructurePathType M, const char *const flname, const char *const mode)
+{
+  FILE  *stream;
+  uint32_t retval;
+  if ((strcmp(mode, "w") && strcmp(mode, "a")) != 0)
+  {
+    printf
+    ("ERROR in FilePrintBandstructurePath.\nmode must be either \"w\" for overwrite or \"a\" for append\n %s as input is not excepted\n",
+     mode);
+    return 1;
+  }
+  if ((stream = fopen(flname, mode)) == NULL)
+  {
+    printf("ERROR\nCan't open %s for writing with mode %s.\n", flname, mode);
+    return 1;
+  }
+  retval = StreamPrintBandstructurePath(M, stream);
+  fclose(stream);
+  return retval;
+}

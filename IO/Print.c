@@ -204,3 +204,8 @@ uint32_t PrintHarmonicsExpansion(HarmonicsExpansion M)
 {
   return StreamPrintHarmonicsExpansion(M, stdout);
 }
+
+uint32_t PrintBandstructurePath(BandstructurePathType M)
+{
+  return StreamPrintBandstructurePath(M, stdout);
+}

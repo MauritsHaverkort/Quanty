@@ -48,7 +48,10 @@
 #include "../Hubbard_Model/CellFunctions.c"
 #include "../Tight_Binding/Tight_Binding_lib.c"
 #include "../Tight_Binding/TightBindingToG.c"
+#include "../Tight_Binding/ImpurityUnfolding.c"
+#include "../Tight_Binding/StuttgartNMTO.c"
 #include "../DMFT/SingleSiteFunctions.c"
+#include "../IO/StuttgartNMTO.c"
 
 #include "../Test/TestSpectral.c"
 #include "../Test/TestBasicMath.c"
@@ -62,6 +65,7 @@
 #include "../Test/TestStandardOperators.c"
 #include "../Test/TestAtomicPhysics.c"
 #include "../Test/OperatorArithmetic.c"
+#include "../Test/StuttgartNMTO.c"
 
 int main(int argc, const char *argv[])
 {
@@ -157,9 +161,14 @@ int main(int argc, const char *argv[])
 
     if (!strncmp("OppMult", argv[argc], strlen(argv[argc])))
       TestOppMult();
-
+    
     if (!strncmp("AtomicPhysics", argv[argc], strlen(argv[argc])))
       TestAtomicPhysics();
+    
+    if (!strncmp("NMTO", argv[argc], strlen(argv[argc])))
+      TestStuttgartNMTO();
   }
+  
+  
   return 0;
 }

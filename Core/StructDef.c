@@ -54,6 +54,7 @@ typedef struct Complex16
 }
 Complex16;
 
+typedef enum { False, True } Bool;
 
 /* Bosons are distinguished from fermions by the index number
  * Fermions are labled from 0 to NFermion-1
@@ -242,6 +243,39 @@ typedef struct ListOfPoles
   double mu;                    /* chemical potential if transformed to Greens function */
 }
 ListOfPoles;
+
+
+/*  V is an array of length N+1
+ *  The first N elements store 1+BlockSize*BlockSize numbers
+ *  The first number is a
+ *  The last BlockSize*BlockSize is the matrix b
+ *  The last element stores a0
+ *
+ *  The Green's function represented is:
+ *    a0 + sum_i b_i^{dag} 1/(w-a_i) b_i
+ *
+ *  a0 is an aditional pointer to V[N*(1+BlockSize*BlockSize)]
+ */
+typedef struct BlockListOfPoles
+{
+  char Name[MAXStrLength];   /* A pointer to a name string that can be used to lable functions, good for printing etc. */
+  uint32_t N;                /* dimension of list */
+  uint32_t BlockSize;        /* dimension of square matrices */
+  uint32_t QComplex;         /* matrices are complex or real */
+  union                      /* list of (N+1)*(1+BlockSize*BlockSize)-1 with the values */
+  {
+    double *VRe;
+    Complex16 *V;
+  };
+  union                      /* matrix of size BlockSize*BlockSize with possible ofset */
+  {
+    double *a0Re;
+    Complex16 *a0;
+  };
+  double mu;                 /* chemical potential */
+}
+BlockListOfPoles;
+
 
 
 /*
@@ -520,11 +554,13 @@ SpectraType;
 
 typedef struct AtomType
 {
-  char   Name[32];              /* Atom name */
-  uint32_t AtomNumber;          /* atomic number of the atom */
-  double Position[3];           /* position of the atom */
-  int    Nshell;                /* number of orbital shells in the atom */
-  int   *shelldegeneracy;       /* degeneracy of the shell */
+  char   Name[MAXStrLength];         /* Atom name */
+  uint32_t AtomNumber;               /* atomic number of the atom */
+  double Position[3];                /* position of the atom */
+  int    Nshell;                     /* number of shells in the atom */
+  char  **ShellName;                 /* Name of the shells in the atom */
+  int   *shelldegeneracy;            /* degeneracy of the shell */
+  char  ***OrbitalName;              /* Name of the orbitals in the different shells */
 }
 AtomType;
 
@@ -538,6 +574,10 @@ typedef struct CrystalStructureType
   double gUnitCell[3][3];       /* Unit cell vectors */
   uint32_t NAtoms;              /* Number of atoms wihtin the unit cell */
   AtomType *Atom;               /* Array of length NAtoms specifying the atoms with the unit cell */
+  uint32_t Units;               /* **** ***x 0 r.g = 1 | 1 r.g = 2 Pi
+                                 * **** *xx* 00 Angstrom | 01 a0 | 10 nm | 11 ??
+                                 * **** x*** 0 Positions in units described above | 1 Postions in terms of r[0] ,r[1] and r[2]
+                                 */
 }
 CrystalStructureType;
 
@@ -562,7 +602,8 @@ typedef struct TightBindingDefHopping
   int    Shellpos1;
   int    Atompos2;
   int    Shellpos2;
-  int    ConnectingVector[3];
+  int    TransVecs[3];        /* translation between unit cells */
+  double ConnectingVector[3]; /* translation in units according to Units including atom positions insite the cell */
   MatrixType Hop;
 }
 TightBindingDefHopping;
@@ -590,6 +631,10 @@ typedef struct BandstructurePathType
 {
   int    NQ;
   BandstructurePointType *Q;
+  uint32_t Units;               /* **** ***x 0 r.g = 1 | 1 r.g = 2 Pi
+                                 * **** *xx* 00 Angstrom | 01 a0 | 10 nm | 11 ??
+                                 * **** x*** 0 Positions in units described above | 1 Postions in terms of r[0] ,r[1] and r[2]
+                                 */
 }
 BandstructurePathType;
 
@@ -784,3 +829,305 @@ typedef struct HubbardModelSettings
   char   SpecFile[256];         /* file name where the spectra are written */
 }
 HubbardModelSettings;
+
+/* Defines a structure that can store the Stuttgart CTRL file for LMTO and NMTO calculations 
+ * The controle file is structured into categories 
+ *
+ * The StuttgartCTRL file defines a struct for each category in the CTRL file.
+ *   Categories defined:
+ *    HEADER VERS IO DIM STRUC OPTIONS CLASS SITE SYMGRP SCALE STR BZ EWALD DOS SYML START HARTREE PLOT CHARGE FINDES SCELL RHOFIT NMTO LOCALS
+ */
+
+typedef struct StuttgartCTRL
+{
+  char HEADER[1024];
+  char VERS[64];
+  struct
+  {
+    Bool HELP;
+    Bool WKP;
+    Bool IACTIV;
+    int VERBOS;
+    int ERRTOL;
+    char OUTPUT[MAXStrLength];
+    char ERR[MAXStrLength];
+  }
+  IO;
+  struct
+  {
+    int NBAS;
+    int NCLASS;
+    int NL;
+    int LDIM;
+    int IDIM;
+    int NSYMOP;
+    int NKP;
+  }
+  DIM;
+  struct
+  {
+    double ALAT;
+    double PLAT[3][3];
+    Bool FIXLAT;
+  }
+  STRUC;
+  struct
+  {
+    Bool REL;
+    Bool CCOR;
+    Bool NONLOC;
+    Bool CORDRD;
+    Bool CARTESIAN;
+    Bool CHARGE;
+    Bool FATBAND;
+    Bool AFM;
+    Bool FS;
+    Bool OVLCOR;
+    Bool WRIBAS;
+    Bool SEWALD;
+    Bool LOCALCS;
+    int NRXC;
+    int NITATOM;
+    int NSPIN;
+    int NRMIX;
+    char Q[16];
+  }
+  OPTIONS;
+  struct
+  {
+    int N;           /* not in control file - number of clases */
+    Bool *NEWNAM;
+    char **ATOM;
+    int *Z;
+    double *R;
+    int *LMX;
+    int **IDXDN;
+    int **CONF;
+    int **IDMOD;
+  }
+  CLASS;
+  struct
+  {
+    int N;              /* not in control file - number of sites */
+    int Nactive;        /* not in control file - number of active sites */
+    int *ActiveAtomMap; /* not in control file - maping of site to active site index */
+    int *ICLASS;        /* not in control file - atom belongs to CLASS ICLASS */
+    char **ATOM;
+    double **POS;
+    double **X;
+    int **IDXDN_M;
+  }
+  SITE;
+  struct
+  {
+    Bool USESYM;
+    int NGEN;
+    int IORIGIN;
+    char SPCGRP[64];
+    char GENGRP[64][32];
+  }
+  SYMGRP;
+  struct
+  {
+    Bool SCLWSR;
+    double FACVOL;
+    double OMMAX1[3];
+    double OMMAX2[3];
+    double GAMMA;
+  }
+  SCALE;
+  struct
+  {
+    Bool DOWATS;
+    Bool DONALP;
+    Bool NOCALC;
+    int N;            /* not in control file - number of ATOMS for wich SIGMA is defined */
+    int IALPHA;
+    int LMAXW;
+    int NDIMIN;
+    int NTRANS;
+    int LDN;
+    int MDN;
+    int JBASDN;
+    double KAPPA2;
+    double KWxx2;
+    double ADOT;
+    double DELTR;
+    double RMAXS;
+    double EPS;
+    double **SIGMA;
+    char **ATOM;
+  }
+  STR;
+  struct
+  {
+    Bool TETRA;
+    Bool METAL;
+    int NKABC[3];
+    int MAXKP;
+    int N;
+    int RANGE;
+    int NPTS;
+    double W;
+    double TOL;
+  }
+  BZ;
+  struct
+  {
+    int NKDMX;
+    double AS;
+    double TOL;
+  }
+  EWALD;
+  struct
+  {
+    int NOPTS;
+    double EMIN;
+    double EMAX;
+  }
+  DOS;
+  struct
+  {
+    int N;         /* not in control file - number of linesegments */
+    int *NQ;
+    double **Q1;
+    double **Q2;
+    char **LAB1;
+    char **LAB2;
+  }
+  SYML;
+  struct
+  {
+    Bool BROY;
+    Bool FREE;
+    Bool BEGMOM;
+    Bool CNTROL;
+    int N;            /* not in control file - number of ATOMS for settings are defined */
+    int NIT;
+    int NMIX;
+    double WC;
+    double BETA;
+    double CNVG;
+    double CNVGET;
+    double EFERMI;
+    double VMTZ;
+    char **ATOM;
+    double **P;
+    double **Q;
+    double **enu;
+    double **c;
+    double **sqrdel;
+    double **p;
+    double **gamma;
+  }
+  START;
+  struct
+  {
+    Bool BEGATOM;
+    int LT1;
+    int LT2;
+    int LT3;
+  }
+  HARTREE;
+  struct
+  {
+    int NDELR1;
+    int NDELR2;
+    int NDELR3;
+    int FORMAT;
+    double ORIGIN[3];
+    double R1[3];
+    double R2[3];
+    double R3[3];
+    double RMIN;
+    double RMAX;
+    double TMIN;
+    double TMAX;
+  }
+  PLOT;
+  struct
+  {
+    Bool LMTODAT;
+    Bool CHARWIN;
+    Bool ELF;
+    Bool ADDCOR;
+    Bool SPINDENS;
+    double EMIN;
+    double EMAX;
+  }
+  CHARGE;
+  struct
+  {
+    int MAXPT;
+    int NRXYZ[3];
+    double RMINES;
+    double RMAXES;
+  }
+  FINDES;
+  struct
+  {
+    Bool EQUIV;
+    double PLAT[3][3];
+  }
+  SCELL;
+  struct
+  {
+    Bool FIT;
+    int N;         /* not in control file - number of ATOMS - should be the same as in CLASS */
+    int OUTPUT;
+    double KAPPA2;
+    double KWxx2;
+    double RMAXS;
+    char **ATOM;
+    double **SIGMA;
+    int *LMXRHO;
+  }
+  RHOFIT;
+  struct
+  {
+    int NENU;
+    int PLOTATO;
+    int ORBITAL;
+    double RMAXHR;
+    double *ENU;
+    Bool eV;
+    Bool ORTHO;
+  }
+  NMTO;
+  struct
+  {
+    char Data_as[32];
+    int Number_of_rotated_atoms;
+    int *ATOM;
+    int *L;
+    double **LOCAL_Z;
+    double **LOCAL_X;
+  }
+  LOCALCS;
+}
+StuttgartCTRL;
+
+typedef struct StuttgartHAMRelement
+{
+  int IndexAtom2;
+  int IndexAtom1;
+  int TransVecs[3];
+  int NlabelAtom1;
+  int NlabelAtom2;
+  double Dist;
+  double ConnectingVector[3];
+  char LabelAtom1[16][16];
+  char LabelAtom2[16][16];
+  char Atom1[16];
+  char Atom2[16];
+  double H[16][16];
+}
+StuttgartHAMRelement;
+
+typedef struct StuttgartHAMR
+{
+  Bool eV;
+  int Nelement;
+  StuttgartHAMRelement *element;
+}
+StuttgartHAMR;

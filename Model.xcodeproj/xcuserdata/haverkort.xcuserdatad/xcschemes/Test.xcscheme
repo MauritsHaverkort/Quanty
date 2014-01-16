@@ -64,8 +64,12 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "OppMult"
+            argument = "NMTO"
             isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "OppMult"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "3J"

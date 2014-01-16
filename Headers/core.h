@@ -295,6 +295,8 @@ uint32_t PsiPrimeOperatorPsiPerturbation(const OperatorPerturbationType O, const
 /**************        Core/Spectra.c        **************/
 /**********************************************************/
 void   CalculateMoment(SpectraType * const G);
+int SpectrumAllocate(const SpectraType Settings, SpectraType * const G);
+
 
 
 /**********************************************************/

@@ -146,11 +146,11 @@ uint32_t RealSparseMatrixAddElement(SparseMatrixType * const M, uint32_t i, uint
       temp = M->j;
       if (FirstAlloc)
       {
-        M->j = malloc(M->NAloc * sizeof(double));
+        M->j = malloc(M->NAloc * sizeof(uint32_t));
       }
       else
       {
-        M->j = realloc(M->j, M->NAloc * sizeof(double));
+        M->j = realloc(M->j, M->NAloc * sizeof(uint32_t));
       }
       if (M->j == NULL)
       {                         /* realloc failed */
@@ -242,7 +242,7 @@ uint32_t RealSparseMatrixAddElement(SparseMatrixType * const M, uint32_t i, uint
               return (1);
             }
             temp = M->j;
-            M->j = realloc(M->j, M->NAloc * sizeof(double));
+            M->j = realloc(M->j, M->NAloc * sizeof(uint32_t));
             if (M->j == NULL)
             {                   /* realloc failed */
               printf("alloc failed OperatorAdd 11j\n");
@@ -341,11 +341,11 @@ uint32_t ComplexSparseMatrixAddElement(SparseMatrixType * const M, uint32_t i, u
       temp = M->j;
       if (FirstAlloc)
       {
-        M->j = malloc(M->NAloc * sizeof(double));
+        M->j = malloc(M->NAloc * sizeof(uint32_t));
       }
       else
       {
-        M->j = realloc(M->j, M->NAloc * sizeof(double));
+        M->j = realloc(M->j, M->NAloc * sizeof(uint32_t));
       }
       if (M->j == NULL)
       {                         /* realloc failed */
@@ -460,7 +460,7 @@ uint32_t ComplexSparseMatrixAddElement(SparseMatrixType * const M, uint32_t i, u
               return (1);
             }
             temp = M->j;
-            M->j = realloc(M->j, M->NAloc * sizeof(double));
+            M->j = realloc(M->j, M->NAloc * sizeof(uint32_t));
             if (M->j == NULL)
             {                   /* realloc failed */
               printf("alloc failed OperatorAdd 11j\n");

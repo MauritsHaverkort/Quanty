@@ -462,11 +462,11 @@ uint32_t StreamPrintOperatorFullReadable(OperatorType O, FILE * stream)
 
 
 /*
-*   Prints a crystal structure
+ *   Prints a crystal structure
  */
 uint32_t StreamPrintCrystalStructure(CrystalStructureType O, FILE * stream)
 {
-  uint32_t i;
+  uint32_t i,j,k;
   fprintf(stream, "\nprintout of Crystal Structure\n");
   fprintf(stream, "Unit cell parameters:\n");
   fprintf(stream, "a: %15.7F %15.7F %15.7F\n", O.rUnitCell[0][0], O.rUnitCell[0][1], O.rUnitCell[0][2]);
@@ -481,6 +481,15 @@ uint32_t StreamPrintCrystalStructure(CrystalStructureType O, FILE * stream)
   {
     fprintf(stream, "#%4i | %2s | %2i |  %15.7F %15.7F %15.7F\n", i, O.Atom[i].Name, O.Atom[i].AtomNumber,
             O.Atom[i].Position[0], O.Atom[i].Position[1], O.Atom[i].Position[2]);
+    for(j=0;j<O.Atom[i].Nshell;j++)
+    {
+      fprintf(stream, "      | %2s |",O.Atom[i].ShellName[j]);
+      for(k=0;k<O.Atom[i].shelldegeneracy[j];k++)
+      {
+        fprintf(stream, " %8s |",O.Atom[i].OrbitalName[j][k]);
+      }
+      fprintf(stream, "\n");
+    }
   }
   return 0;
 }
@@ -631,9 +640,9 @@ uint32_t StreamPrintTightBindingDef(TightBindingDef O, FILE * stream)
   fprintf(stream, "Hopping definitions ( %4i )\n", O.nH);
   for (i = 0; i < O.nH; i++)
   {
-    fprintf(stream, "Hopping from %4i - %4i to %4i - %4i with connecting vector in unit cells: %4i %4i %4i\n",
-            O.H[i].Atompos1, O.H[i].Shellpos1, O.H[i].Atompos2, O.H[i].Shellpos2, O.H[i].ConnectingVector[0],
-            O.H[i].ConnectingVector[1], O.H[i].ConnectingVector[2]);
+    fprintf(stream, "Hopping from %4i - %4i to %4i - %4i with translation vector in unit cells: %4i %4i %4i\n",
+            O.H[i].Atompos1, O.H[i].Shellpos1, O.H[i].Atompos2, O.H[i].Shellpos2, O.H[i].TransVecs[0],
+            O.H[i].TransVecs[1], O.H[i].TransVecs[2]);
     StreamPrintMatrix(O.H[i].Hop, stream);
   }
   fprintf(stream, "\n");
@@ -1206,7 +1215,6 @@ uint32_t StreamPrintPlainListOfPoles(ListOfPoles M, FILE * stream)
 
 
 
-
 uint32_t StreamPrintHarmonicsExpansion(HarmonicsExpansion M, FILE * stream)
 {
   uint32_t i;
@@ -1228,5 +1236,17 @@ uint32_t StreamPrintHarmonicsExpansion(HarmonicsExpansion M, FILE * stream)
     }
   }
   fprintf(stream, "\n");
+  return 0;
+}
+
+uint32_t StreamPrintBandstructurePath(BandstructurePathType M, FILE * stream)
+{
+  uint32_t i;
+  fprintf(stream, "Band-structure path through k-space\n");
+  fprintf(stream, "Label N-kpoints Qx          Qy          Qz\n");
+  for(i=0;i<M.NQ;i++)
+  {
+    fprintf(stream, "%c     %4i     %11.8lf %11.8lf %11.8lf\n",M.Q[i].label,M.Q[i].Nq,M.Q[i].q[0],M.Q[i].q[1],M.Q[i].q[2]);
+  }
   return 0;
 }
