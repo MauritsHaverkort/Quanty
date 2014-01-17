@@ -687,7 +687,7 @@ uint32_t ListOfPolesMoveNegativeEnergyToMu(ListOfPoles * const A, double const m
     printf("List of poles %s, has %i poles of which %i are incorrectly"
            " at negative energies.\n",
            A->Name, A->N, npoleshift);
-    printf("These have a total weight of %22.15E, (outof %22.15E)"
+    printf("These have a total weight of %22.15E, (outof %22.15E)\n"
            "with moment %22.15E which has been shifted to mu=%22.15E\n",
            weightpoleshift, totw, momentshift, mu);
   }
@@ -703,7 +703,7 @@ uint32_t ListOfPolesMoveNegativeEnergyToMu(ListOfPoles * const A, double const m
 uint32_t ListOfPolesMovePositiveEnergyToMu(ListOfPoles * const A, double const mu)
 {
   uint32_t i, npoleshift = 0;
-  double weightpoleshift = 0, momentshift = 0, totw = 0;
+  double delta, weightpoleshift = 0, momentshift = 0, totw = 0;
   for (i = 0; i < A->N; i++)
   {
     totw += A->b[i];
@@ -722,7 +722,7 @@ uint32_t ListOfPolesMovePositiveEnergyToMu(ListOfPoles * const A, double const m
     printf("List of poles %s, has %i poles of which %i are incorrectly"
            " at positive energies.\n",
            A->Name, A->N, npoleshift);
-    printf("These have a total weight of %22.15E, (outof %22.15E)"
+    printf("These have a total weight of %22.15E, (outof %22.15E)\n"
            " with moment %22.15E which has been shifted to mu=%22.15E\n",
            weightpoleshift, totw, momentshift, mu);
   }
