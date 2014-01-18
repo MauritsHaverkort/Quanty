@@ -53,7 +53,7 @@ void   ReduceListOfPolesNumber();
 void   ReduceListOfPolesMoment();
 void   ReduceListOfPolesSpacing();
 uint32_t SubtractListOfPoles();
-uint32_t GausianBroadenListOfPoles();
+uint32_t GaussianBroadenListOfPoles();
 uint32_t ListOfPolesCopy();
 uint32_t ListOfPolesCopyVal();
 uint32_t ListOfPolesCopyCon();
