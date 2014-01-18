@@ -15,12 +15,37 @@ uint32_t BlockListOfPolesToSpectra(BlockListOfPoles const A, SpectraType *G, dou
   }
   
   
+  /* TO DO */
+  
   return 0;
 }
 
 uint32_t TightBindingHamiltonianToBlockListOfPoles(TightBindingDef const HTB, double *Nk, BlockListOfPoles const * A)
 {
+  /* TO DO */
   
   return 0;
 }
 
+
+
+
+
+uint32_t BlockListOfPolesToBlockAndersonMatrix(BlockListOfPoles const A)
+{
+  
+  /* TO DO */
+  
+  return 0;
+}
+
+
+
+
+uint32_t BlockListOfPolesToBlockTridiagonalMatrix(BlockListOfPoles const A)
+{
+  
+  /* TO DO */
+  
+  return 0;
+}

@@ -111,7 +111,7 @@ uint32_t MakeRealBlockListOfPolesComplex(BlockListOfPoles *A)
   temp=calloc((A->N+1)*(1+A->BlockSize*A->BlockSize)-1,sizeof(Complex16));
   if(temp==NULL)
   {
-    printf("malloc failed in InitBlockListOfPoles\n");
+    printf("malloc failed in MakeRealBlockListOfPolesComplex\n");
     return 1;
   }
   for(i=0;i<(A->N+1)*(1+A->BlockSize*A->BlockSize)-1;i++)
@@ -124,6 +124,64 @@ uint32_t MakeRealBlockListOfPolesComplex(BlockListOfPoles *A)
   return 0;
 }
 
+/*  QComplex changes from 1 to 0
+ *  The memory allcoated for doubles is changed to double
+ *  The real part is set, the complex part is neglected
+ */
+uint32_t MakeComplexBlockListOfPolesReal(BlockListOfPoles *A)
+{
+  double *temp;
+  uint32_t i;
+  temp=calloc((A->N+1)*(1+A->BlockSize*A->BlockSize)-1,sizeof(double));
+  if(temp==NULL)
+  {
+    printf("malloc failed in MakeComplexBlockListOfPolesReal\n");
+    return 1;
+  }
+  for(i=0;i<(A->N+1)*(1+A->BlockSize*A->BlockSize)-1;i++)
+  {
+    temp[i]=A->V[i].Re;
+  }
+  free(A->V);
+  A->VRe=temp;
+  A->QComplex=0;
+  return 0;
+}
+
+/*  removes (set to zero) all values smaller then epsilon
+ *  If there are no complex entries left the memory allocated is changed and a real BlockListOfPoles is returned
+ */
+uint32_t ChopBlockListOfPoles(BlockListOfPoles *A, double const epsilon)
+{
+  uint32_t i,StayComplex=0;
+  if(A->QComplex)
+  {
+    for(i=0;i<((A->N+1)*(1+A->BlockSize*A->BlockSize)-1);i++)
+    {
+      if(fabs(A->V[i].Re)<epsilon)A->V[i].Re=0;
+      if(fabs(A->V[i].Im)<epsilon)
+      {
+        A->V[i].Im=0;
+      }
+      else
+      {
+        StayComplex=1;
+      }
+    }
+    if(StayComplex==0)
+    {
+      return MakeComplexBlockListOfPolesReal(A);
+    }
+  }
+  else
+  {
+    for(i=0;i<((A->N+1)*(1+A->BlockSize*A->BlockSize)-1);i++)
+    {
+      if(fabs(A->VRe[i])<epsilon)A->VRe[i]=0;
+    }
+  }
+  return 0;
+}
 
 /*
  *  A <- A + B
@@ -134,7 +192,7 @@ uint32_t AddBlockListOfPoles(BlockListOfPoles * const A, BlockListOfPoles const 
   uint32_t i;
   if(A->BlockSize!=B.BlockSize)
   {
-    printf("Tried to add two list of poles with different matrix sizes %i and %i\n",A->BlockSize,B.BlockSize);
+    printf("Tried to add two block list of poles with different matrix sizes %i and %i\n",A->BlockSize,B.BlockSize);
     printf("Error in AddBlockListOfPoles\n");
     return 1;
   }
@@ -647,12 +705,13 @@ uint32_t ReduceBlockListOfPoles(BlockListOfPoles * const A, uint32_t N, double c
 
 uint32_t BlockListOfPolesMoveNegativeEnergyToMu(BlockListOfPoles * const A)
 {
-  
+  /* TO DO */
   return 0;
 }
 
 uint32_t BlockListOfPolesMovePositiveEnergyToMu(BlockListOfPoles * const A)
 {
+  /* TO DO */
   
   return 0;
 }
@@ -665,6 +724,7 @@ uint32_t BlockListOfPolesMovePositiveEnergyToMu(BlockListOfPoles * const A)
  */
 uint32_t SubtractBlockListOfPoles(BlockListOfPoles * const A, BlockListOfPoles const B)
 {
+  /* TO DO */
   
   return 0;
 }

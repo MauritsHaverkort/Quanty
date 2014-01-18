@@ -175,6 +175,8 @@
 		4C8274E017DCF6D000A5F555 /* TestAtomicPhysics.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = TestAtomicPhysics.c; sourceTree = "<group>"; };
 		4C944CD8187AEDE500FE9B7B /* StuttgartNMTO.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = StuttgartNMTO.c; sourceTree = "<group>"; };
 		4CA262D8170787D900B8E76E /* TestGreenFunctions.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = TestGreenFunctions.c; sourceTree = "<group>"; };
+		4CA5D6B6188AE32500A7F1DE /* BasicMath_BlockAndersonMatrix.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = BasicMath_BlockAndersonMatrix.c; path = BasicMathBlock/BasicMath_BlockAndersonMatrix.c; sourceTree = "<group>"; };
+		4CA5D6B7188AE35400A7F1DE /* BasicMath_BlockTridiagonalMatrix.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = BasicMath_BlockTridiagonalMatrix.c; path = BasicMathBlock/BasicMath_BlockTridiagonalMatrix.c; sourceTree = "<group>"; };
 		4CDD1C7E1796D06400614F34 /* DMFT_eg_Dyson.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = DMFT_eg_Dyson.c; sourceTree = "<group>"; };
 		4CDD1C7F1796D06400614F34 /* DMFTFunctions.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = DMFTFunctions.c; sourceTree = "<group>"; };
 		4CDD1C9F1796D14100614F34 /* YiDMFT */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = YiDMFT; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -434,6 +436,8 @@
 				4C3FCCFC188419B6000B9DB8 /* BasicMathBlock.c */,
 				4C3FCCFD188419E4000B9DB8 /* BasicMath_BlockListOfPoles.c */,
 				4C3FCCFE18841A19000B9DB8 /* BasicMath_BlockTypeConversion.c */,
+				4CA5D6B6188AE32500A7F1DE /* BasicMath_BlockAndersonMatrix.c */,
+				4CA5D6B7188AE35400A7F1DE /* BasicMath_BlockTridiagonalMatrix.c */,
 			);
 			name = BasicMathBlock;
 			sourceTree = "<group>";
