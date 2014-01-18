@@ -922,11 +922,11 @@ uint32_t SubtractListOfPoles(ListOfPoles * const A, const ListOfPoles B)
   return 0;
 }
 
-/*  a list of poles will be Gausian broadened
+/*  a list of poles will be Gaussian broadened
  *  returned is a new list of length 2Nmul+1
  *  
  */
-uint32_t GausianBroadenListOfPoles(ListOfPoles * const M, double const G, uint32_t const Nmul)
+uint32_t GaussianBroadenListOfPoles(ListOfPoles * const M, double const G, uint32_t const Nmul)
 {
   uint32_t i, j, k;
   double Weight[Nmul + 1], sumWeight, dw = 3 * G / ((double)(2 * Nmul));
@@ -934,21 +934,21 @@ uint32_t GausianBroadenListOfPoles(ListOfPoles * const M, double const G, uint32
   temp = realloc(M->a, (2 * Nmul + 1) * M->N * sizeof(double));
   if (temp == NULL)
   {
-    printf("realloc failed in GausianBroadenListOfPoles\n");
+    printf("realloc failed in GaussianBroadenListOfPoles\n");
     return 1;
   }
   M->a = temp;
   temp = realloc(M->b, (2 * Nmul + 1) * M->N * sizeof(double));
   if (temp == NULL)
   {
-    printf("realloc failed in GausianBroadenListOfPoles\n");
+    printf("realloc failed in GaussianBroadenListOfPoles\n");
     return 1;
   }
   M->b = temp;
   sumWeight = 0;
   for (i = 0; i <= Nmul; i++)
   {
-    Weight[i] = Gausian(i * dw, G);
+    Weight[i] = Gaussian(i * dw, G);
     sumWeight += Weight[i];
   }
   for (i = 1; i <= Nmul; i++)
