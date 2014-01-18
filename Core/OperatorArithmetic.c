@@ -1568,7 +1568,7 @@ uint32_t NormalOrderOperator(const OperatorType O, OperatorType * const Oo,
  *  O must be initiallized, i.e O.Maxlength must be A.Maxlength+B.Maxlength
  *  it is advised to set O.l[il].NBitsKey to sensible values
  */
-#define HASH(A, B, QC1, QC2, QC3) (((A)<<16) | ((B)<<8) | ((QC1!=0)<<4) | ((QC2!=0)<<2) | ((QC3!=0)<<0)   )
+#define HASH_QCOMPLEX(A, B, QC1, QC2, QC3) (((A)<<16) | ((B)<<8) | ((QC1!=0)<<4) | ((QC2!=0)<<2) | ((QC3!=0)<<0)   )
 
 uint32_t OperatorMultiply2(OperatorType * const O, OperatorType const A, OperatorType const B, char const Aset,
                            char const Bset)
@@ -1595,9 +1595,9 @@ uint32_t OperatorMultiply2(OperatorType * const O, OperatorType const A, Operato
             return 1;
           }
 
-      switch (HASH(Aset, Bset, O->l[ilA + ilB].QComplex, A.l[ilA].QComplex, B.l[ilB].QComplex))
+      switch (HASH_QCOMPLEX(Aset, Bset, O->l[ilA + ilB].QComplex, A.l[ilA].QComplex, B.l[ilB].QComplex))
       {
-      case HASH('N', 'N', 0, 0, 0):  // All Real
+      case HASH_QCOMPLEX('N', 'N', 0, 0, 0):  // All Real
         for (iNA = 0; iNA < A.l[ilA].N; iNA++)
         {
           for (k = 0; k < ilA; k++)
@@ -1617,8 +1617,8 @@ uint32_t OperatorMultiply2(OperatorType * const O, OperatorType const A, Operato
         }
         break;
 
-      case HASH('N', 'N', 0, 1, 1): // A and B complex
-      case HASH('N', 'N', 1, 1, 1):
+      case HASH_QCOMPLEX('N', 'N', 0, 1, 1): // A and B complex
+      case HASH_QCOMPLEX('N', 'N', 1, 1, 1):
         for (iNA = 0; iNA < A.l[ilA].N; iNA++)
         {
           for (k = 0; k < ilA; k++)
@@ -1640,8 +1640,8 @@ uint32_t OperatorMultiply2(OperatorType * const O, OperatorType const A, Operato
         }
         break;
 
-      case HASH('N', 'N', 0, 1, 0): // A complex
-      case HASH('N', 'N', 1, 1, 0):
+      case HASH_QCOMPLEX('N', 'N', 0, 1, 0): // A complex
+      case HASH_QCOMPLEX('N', 'N', 1, 1, 0):
         for (iNA = 0; iNA < A.l[ilA].N; iNA++)
         {
           for (k = 0; k < ilA; k++)
@@ -1662,8 +1662,8 @@ uint32_t OperatorMultiply2(OperatorType * const O, OperatorType const A, Operato
         break;
 
 
-      case HASH('N', 'N', 0, 0, 1): // B complex
-      case HASH('N', 'N', 1, 0, 1):
+      case HASH_QCOMPLEX('N', 'N', 0, 0, 1): // B complex
+      case HASH_QCOMPLEX('N', 'N', 1, 0, 1):
         for (iNA = 0; iNA < A.l[ilA].N; iNA++)
         {
           for (k = 0; k < ilA; k++)
@@ -1683,7 +1683,7 @@ uint32_t OperatorMultiply2(OperatorType * const O, OperatorType const A, Operato
         }
         break;
 
-      case HASH('N', 'N', 1, 0, 0): // A and B real
+      case HASH_QCOMPLEX('N', 'N', 1, 0, 0): // A and B real
         for (iNA = 0; iNA < A.l[ilA].N; iNA++)
         {
           for (k = 0; k < ilA; k++)
@@ -1702,7 +1702,7 @@ uint32_t OperatorMultiply2(OperatorType * const O, OperatorType const A, Operato
         }
         break;
 
-      case HASH('N', 'D', 0, 0, 0):
+      case HASH_QCOMPLEX('N', 'D', 0, 0, 0):
         for (iNA = 0; iNA < A.l[ilA].N; iNA++)
         {
           for (k = 0; k < ilA; k++)
@@ -1721,8 +1721,8 @@ uint32_t OperatorMultiply2(OperatorType * const O, OperatorType const A, Operato
         }
 
         break;
-      case HASH('N', 'D', 1, 1, 1):
-      case HASH('N', 'D', 0, 1, 1):
+      case HASH_QCOMPLEX('N', 'D', 1, 1, 1):
+      case HASH_QCOMPLEX('N', 'D', 0, 1, 1):
         for (iNA = 0; iNA < A.l[ilA].N; iNA++)
         {
           for (k = 0; k < ilA; k++)
@@ -1744,8 +1744,8 @@ uint32_t OperatorMultiply2(OperatorType * const O, OperatorType const A, Operato
         }
         break;
 
-      case HASH('N', 'D', 0, 1, 0):
-      case HASH('N', 'D', 1, 1, 0):
+      case HASH_QCOMPLEX('N', 'D', 0, 1, 0):
+      case HASH_QCOMPLEX('N', 'D', 1, 1, 0):
         for (iNA = 0; iNA < A.l[ilA].N; iNA++)
         {
           for (k = 0; k < ilA; k++)
@@ -1765,8 +1765,8 @@ uint32_t OperatorMultiply2(OperatorType * const O, OperatorType const A, Operato
         }
         break;
 
-      case HASH('N', 'D', 0, 0, 1):
-      case HASH('N', 'D', 1, 0, 1):
+      case HASH_QCOMPLEX('N', 'D', 0, 0, 1):
+      case HASH_QCOMPLEX('N', 'D', 1, 0, 1):
         for (iNA = 0; iNA < A.l[ilA].N; iNA++)
         {
           for (k = 0; k < ilA; k++)
@@ -1786,7 +1786,7 @@ uint32_t OperatorMultiply2(OperatorType * const O, OperatorType const A, Operato
         }
         break;
 
-      case HASH('N', 'D', 1, 0, 0):
+      case HASH_QCOMPLEX('N', 'D', 1, 0, 0):
         for (iNA = 0; iNA < A.l[ilA].N; iNA++)
         {
           for (k = 0; k < ilA; k++)
@@ -1805,7 +1805,7 @@ uint32_t OperatorMultiply2(OperatorType * const O, OperatorType const A, Operato
         }
         break;
 
-      case HASH('D', 'N', 0, 0, 0):
+      case HASH_QCOMPLEX('D', 'N', 0, 0, 0):
         for (iNA = 0; iNA < A.l[ilA].N; iNA++)
         {
           for (k = 0; k < ilA; k++)
@@ -1824,8 +1824,8 @@ uint32_t OperatorMultiply2(OperatorType * const O, OperatorType const A, Operato
         }
         break;
 
-      case HASH('D', 'N', 1, 1, 1):
-      case HASH('D', 'N', 0, 1, 1):
+      case HASH_QCOMPLEX('D', 'N', 1, 1, 1):
+      case HASH_QCOMPLEX('D', 'N', 0, 1, 1):
         for (iNA = 0; iNA < A.l[ilA].N; iNA++)
         {
           for (k = 0; k < ilA; k++)
@@ -1847,8 +1847,8 @@ uint32_t OperatorMultiply2(OperatorType * const O, OperatorType const A, Operato
         }
         break;
 
-      case HASH('D', 'N', 1, 1, 0):
-      case HASH('D', 'N', 0, 1, 0):
+      case HASH_QCOMPLEX('D', 'N', 1, 1, 0):
+      case HASH_QCOMPLEX('D', 'N', 0, 1, 0):
         for (iNA = 0; iNA < A.l[ilA].N; iNA++)
         {
           for (k = 0; k < ilA; k++)
@@ -1868,8 +1868,8 @@ uint32_t OperatorMultiply2(OperatorType * const O, OperatorType const A, Operato
         }
         break;
 
-      case HASH('D', 'N', 0, 0, 1):
-      case HASH('D', 'N', 1, 0, 1):
+      case HASH_QCOMPLEX('D', 'N', 0, 0, 1):
+      case HASH_QCOMPLEX('D', 'N', 1, 0, 1):
         for (iNA = 0; iNA < A.l[ilA].N; iNA++)
         {
           for (k = 0; k < ilA; k++)
@@ -1889,7 +1889,7 @@ uint32_t OperatorMultiply2(OperatorType * const O, OperatorType const A, Operato
         }
         break;
 
-      case HASH('D', 'N', 1, 0, 0):
+      case HASH_QCOMPLEX('D', 'N', 1, 0, 0):
         for (iNA = 0; iNA < A.l[ilA].N; iNA++)
         {
           for (k = 0; k < ilA; k++)
@@ -1908,7 +1908,7 @@ uint32_t OperatorMultiply2(OperatorType * const O, OperatorType const A, Operato
         }
         break;
 
-      case HASH('D', 'D', 0, 0, 0):
+      case HASH_QCOMPLEX('D', 'D', 0, 0, 0):
         for (iNA = 0; iNA < A.l[ilA].N; iNA++)
         {
           for (k = 0; k < ilA; k++)
@@ -1927,8 +1927,8 @@ uint32_t OperatorMultiply2(OperatorType * const O, OperatorType const A, Operato
         }
         break;
 
-      case HASH('D', 'D', 1, 1, 1):
-      case HASH('D', 'D', 0, 1, 1):
+      case HASH_QCOMPLEX('D', 'D', 1, 1, 1):
+      case HASH_QCOMPLEX('D', 'D', 0, 1, 1):
         for (iNA = 0; iNA < A.l[ilA].N; iNA++)
         {
           for (k = 0; k < ilA; k++)
@@ -1950,8 +1950,8 @@ uint32_t OperatorMultiply2(OperatorType * const O, OperatorType const A, Operato
         }
         break;
 
-      case HASH('D', 'D', 1, 1, 0):
-      case HASH('D', 'D', 0, 1, 0):
+      case HASH_QCOMPLEX('D', 'D', 1, 1, 0):
+      case HASH_QCOMPLEX('D', 'D', 0, 1, 0):
         for (iNA = 0; iNA < A.l[ilA].N; iNA++)
         {
           for (k = 0; k < ilA; k++)
@@ -1971,8 +1971,8 @@ uint32_t OperatorMultiply2(OperatorType * const O, OperatorType const A, Operato
         }
         break;
 
-      case HASH('D', 'D', 0, 0, 1):
-      case HASH('D', 'D', 1, 0, 1):
+      case HASH_QCOMPLEX('D', 'D', 0, 0, 1):
+      case HASH_QCOMPLEX('D', 'D', 1, 0, 1):
         for (iNA = 0; iNA < A.l[ilA].N; iNA++)
         {
           for (k = 0; k < ilA; k++)
@@ -1992,7 +1992,7 @@ uint32_t OperatorMultiply2(OperatorType * const O, OperatorType const A, Operato
         }
         break;
 
-      case HASH('D', 'D', 1, 0, 0):
+      case HASH_QCOMPLEX('D', 'D', 1, 0, 0):
         for (iNA = 0; iNA < A.l[ilA].N; iNA++)
         {
           for (k = 0; k < ilA; k++)
