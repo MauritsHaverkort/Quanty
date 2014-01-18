@@ -240,7 +240,7 @@ uint32_t NearestNeighborTriangularTBToGSpectraRepresentation(SpectraType * const
     ky = i / Nk;
     P.a[i] = (1.0 / 6.0) - (2.0 / 9.0) * (cos(kx * dk) + 2 * cos(kx * dk / 2.0) * cos(ky));
   }
-  ListOfPolesToSpectrumGausian(0, P, G, G->Gamma);
+  ListOfPolesToSpectrumGaussian(0, P, G, G->Gamma);
 
   FreeListOfPoles(&P);
   return 0;

@@ -628,8 +628,8 @@ void RemoveNegativePart(double *const G, const uint32_t N)
 *   For DMFT it becomes ever very troublesum as each time the Bath Hamiltonian is fitted to the Greens
 *   function an additional broadening is added. This leads to incorrect tails of the spectrum and even worse
 *   1/G-w-iGamma/2 does not go to zero, but infinite.
-*   Most of the problems are solved if the Lorenzian broadening is replaced by a Gausian broadening
-*   tails become short lived and the small deviation (now a Gausian Broadening) is not so important
+*   Most of the problems are solved if the Lorenzian broadening is replaced by a Gaussian broadening
+*   tails become short lived and the small deviation (now a Gaussian Broadening) is not so important
 *   and can be made as small as desired (not really as one needs more and more accuracy if Gamma becomes smaller and smaller)
 *
 *   This function works on the Im part of a spectral function only. The real part should (if needed) be reconstructed by a KK transform
@@ -646,7 +646,7 @@ void RemoveNegativePart(double *const G, const uint32_t N)
 *   output:
 *     spec      : spectral function with N+1 elements (Only real or Im part)
 */
-void ReplaceLorentzianByGausian(const double Emin, const double Emax, const uint32_t N, const double Gamma,
+void ReplaceLorentzianByGaussian(const double Emin, const double Emax, const uint32_t N, const double Gamma,
                                 const double *const f, double *const spec)
 {
   double DE, kmin, kmax, Dk, *FspecRe, *FspecIm, k, w;
@@ -1196,7 +1196,7 @@ uint32_t ListOfPolesToSpectrum(const double Energy, const ListOfPoles P, Spectra
 /*
  *
  */
-uint32_t ListOfPolesToSpectrumGausian(const double Energy, const ListOfPoles P, SpectraType * const G, double FWHM)
+uint32_t ListOfPolesToSpectrumGaussian(const double Energy, const ListOfPoles P, SpectraType * const G, double FWHM)
 {
   int    iOut, iIn, i;
   const double sa = 2.0 * Sqr(FWHM / (2.0 * sqrt(2.0 * log(2.0))));
@@ -1221,12 +1221,12 @@ uint32_t ListOfPolesToSpectrumGausian(const double Energy, const ListOfPoles P, 
 }
 
 
-uint32_t TriDiagonalMatrixToSpectrumGausian(const double Energy, const TriDiagonalMatrixType M, SpectraType * const G,
+uint32_t TriDiagonalMatrixToSpectrumGaussian(const double Energy, const TriDiagonalMatrixType M, SpectraType * const G,
                                             double FWHM)
 {
   ListOfPoles P;
   TriDiagonalMatrixToListOfPoles(M, &P);
-  ListOfPolesToSpectrumGausian(Energy, P, G, FWHM);
+  ListOfPolesToSpectrumGaussian(Energy, P, G, FWHM);
   FreeListOfPoles(&P);
   return 0;
 }

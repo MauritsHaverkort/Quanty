@@ -677,7 +677,7 @@ int mainOld2(int argc, const char *argv[])
       FreeMatrix(&T);
       SelfEnergyListOfPolesFromAndersonRepresentation(GBathAnd, GclAnd, &SigmaPoles);
       /*
-         GausianBroadenListOfPoles(&SigmaPoles, 0.1, 10);
+         GaussianBroadenListOfPoles(&SigmaPoles, 0.1, 10);
          ReduceListOfPolesNumber(&SigmaPoles, SigmaPoles.N/5);
        */
       printf("Cluster self energy created of size %i with shift %22.15E\n", SigmaPoles.N, SigmaPoles.a0);
@@ -1482,7 +1482,7 @@ int mainOld(int argc, const char *argv[])
     FreeMatrix(&T);
     SelfEnergyListOfPolesFromAndersonRepresentation(GBathAnd, GclAnd, &SigmaPoles);
     /*
-       GausianBroadenListOfPoles(&SigmaPoles, 0.1, 10);
+       GaussianBroadenListOfPoles(&SigmaPoles, 0.1, 10);
        ReduceListOfPolesNumber(&SigmaPoles, SigmaPoles.N/5);
      */
     printf("Cluster self energy created of size %i with shift %22.15E\n", SigmaPoles.N, SigmaPoles.a0);
@@ -6606,7 +6606,7 @@ int oldmainWorkingOnDoubleTriDiagonalBathFormat(int argc, const char *argv[])
     SelfEnergyListOfPolesFromAndersonRepresentation(GBathAnd, GclAnd, &SigmaPoles);
 
     /*
-       GausianBroadenListOfPoles(&SigmaPoles, 0.1, 10);
+       GaussianBroadenListOfPoles(&SigmaPoles, 0.1, 10);
        ReduceListOfPolesNumber(&SigmaPoles, SigmaPoles.N/5);
      */
 

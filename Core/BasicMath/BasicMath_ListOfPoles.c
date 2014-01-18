@@ -668,28 +668,34 @@ void ReduceListOfPolesSpacing(ListOfPoles * M, double da)
 uint32_t ListOfPolesMoveNegativeEnergyToMu(ListOfPoles * const A, double const mu)
 {
   uint32_t i, npoleshift = 0;
-  double weightpoleshift = 0, totw = 0;
+  double weightpoleshift = 0, delta = 0, momentshift = 0, totw = 0;
   for (i = 0; i < A->N; i++)
   {
     totw += A->b[i];
     if (A->a[i] < mu)
     {
+      delta = mu - A->a[i];
       A->a[i] = mu * (1 + 10 * DBL_EPSILON) + 10 * DBL_MIN;
       npoleshift++;
       weightpoleshift += A->b[i];
+      momentshift += A->b[i]*delta;
     }
   }
   if (npoleshift)
   {
     printf("******************** WARNING - NOT CONVERGED ********************\n");
-    printf("List of poles %s, has %i poles of which %i are incorrectly at negative energies.\n", A->Name, A->N,
-           npoleshift);
-    printf("These have a total weight of %22.15E, (outof %22.15E) which has been shifted to mu=%22.15E\n",
-           weightpoleshift, totw, mu);
+    printf("List of poles %s, has %i poles of which %i are incorrectly"
+           " at negative energies.\n",
+           A->Name, A->N, npoleshift);
+    printf("These have a total weight of %22.15E, (outof %22.15E)\n"
+           "with moment %22.15E which has been shifted to mu=%22.15E\n",
+           weightpoleshift, totw, momentshift, mu);
   }
   else
   {
-    printf("List of poles %s, has all poles at positive energy.\n", A->Name);
+    printf("List of poles %s, has all poles at positive energy"
+           " with weight %22.15E.\n",
+           A->Name, totw);
   }
   return 0;
 }
@@ -697,28 +703,34 @@ uint32_t ListOfPolesMoveNegativeEnergyToMu(ListOfPoles * const A, double const m
 uint32_t ListOfPolesMovePositiveEnergyToMu(ListOfPoles * const A, double const mu)
 {
   uint32_t i, npoleshift = 0;
-  double weightpoleshift = 0, totw = 0;
+  double delta, weightpoleshift = 0, momentshift = 0, totw = 0;
   for (i = 0; i < A->N; i++)
   {
     totw += A->b[i];
     if (A->a[i] > mu)
     {
+      delta = A->a[i] - mu;
       A->a[i] = mu * (1 - 10 * DBL_EPSILON) - 10 * DBL_MIN;
       npoleshift++;
       weightpoleshift += A->b[i];
+      momentshift += A->b[i]*delta;
     }
   }
   if (npoleshift)
   {
     printf("******************** WARNING - NOT CONVERGED ********************\n");
-    printf("List of poles %s, has %i poles of which %i are incorrectly at positive energies.\n", A->Name, A->N,
-           npoleshift);
-    printf("These have a total weight of %22.15E, (outof %22.15E) which has been shifted to mu=%22.15E\n",
-           weightpoleshift, totw, mu);
+    printf("List of poles %s, has %i poles of which %i are incorrectly"
+           " at positive energies.\n",
+           A->Name, A->N, npoleshift);
+    printf("These have a total weight of %22.15E, (outof %22.15E)\n"
+           " with moment %22.15E which has been shifted to mu=%22.15E\n",
+           weightpoleshift, totw, momentshift, mu);
   }
   else
   {
-    printf("List of poles %s, has all poles at negative energy.\n", A->Name);
+    printf("List of poles %s, has all poles at negative energy"
+           " with weight %22.15E.\n",
+           A->Name, totw);
   }
   return 0;
 }
@@ -922,11 +934,11 @@ uint32_t SubtractListOfPoles(ListOfPoles * const A, const ListOfPoles B)
   return 0;
 }
 
-/*  a list of poles will be Gausian broadened
+/*  a list of poles will be Gaussian broadened
  *  returned is a new list of length 2Nmul+1
  *  
  */
-uint32_t GausianBroadenListOfPoles(ListOfPoles * const M, double const G, uint32_t const Nmul)
+uint32_t GaussianBroadenListOfPoles(ListOfPoles * const M, double const G, uint32_t const Nmul)
 {
   uint32_t i, j, k;
   double Weight[Nmul + 1], sumWeight, dw = 3 * G / ((double)(2 * Nmul));
@@ -934,21 +946,21 @@ uint32_t GausianBroadenListOfPoles(ListOfPoles * const M, double const G, uint32
   temp = realloc(M->a, (2 * Nmul + 1) * M->N * sizeof(double));
   if (temp == NULL)
   {
-    printf("realloc failed in GausianBroadenListOfPoles\n");
+    printf("realloc failed in GaussianBroadenListOfPoles\n");
     return 1;
   }
   M->a = temp;
   temp = realloc(M->b, (2 * Nmul + 1) * M->N * sizeof(double));
   if (temp == NULL)
   {
-    printf("realloc failed in GausianBroadenListOfPoles\n");
+    printf("realloc failed in GaussianBroadenListOfPoles\n");
     return 1;
   }
   M->b = temp;
   sumWeight = 0;
   for (i = 0; i <= Nmul; i++)
   {
-    Weight[i] = Gausian(i * dw, G);
+    Weight[i] = Gaussian(i * dw, G);
     sumWeight += Weight[i];
   }
   for (i = 1; i <= Nmul; i++)
