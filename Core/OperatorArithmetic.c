@@ -2020,8 +2020,6 @@ uint32_t OperatorMultiply2(OperatorType * const O, OperatorType const A, Operato
   return 0;
 }
 
-
-
 /*  Depending on Aset and Bset
  *    O <- O + A^'Aset' B^'Bset'
  *    whereby set can be
@@ -2033,9 +2031,8 @@ uint32_t OperatorMultiply2(OperatorType * const O, OperatorType const A, Operato
  *  O must be initiallized, i.e O.Maxlength must be A.Maxlength+B.Maxlength
  *  it is advised to set O.l[il].NBitsKey to sensible values
  */
-uint32_t OperatorMultiply2NormalOrder(OperatorType * const O, OperatorType const A, OperatorType const B,
-                                      char const Aset, char const Bset, uint32_t(*QDetNotOrdered) (uint16_t, uint16_t,
-                                                                                                   uint32_t))
+uint32_t OperatorMultiply2NormalOrder(OperatorType * const O, OperatorType const A, OperatorType const B, char const Aset,
+                           char const Bset, uint32_t(*QDetNotOrdered) (uint16_t, uint16_t, uint32_t))
 {
   uint32_t ilA, ilB, iNA, iNB, k;
   uint16_t det[A.MaxLength + B.MaxLength];
@@ -2047,618 +2044,443 @@ uint32_t OperatorMultiply2NormalOrder(OperatorType * const O, OperatorType const
     return 1;
   }
 
-  if ((Aset == 'N') && (Bset == 'N'))
-  {
-    for (ilA = 0; ilA <= A.MaxLength; ilA++)
+  for (ilA = 0; ilA <= A.MaxLength; ilA++)
+    for (ilB = 0; ilB <= B.MaxLength; ilB++)
     {
-      for (ilB = 0; ilB <= B.MaxLength; ilB++)
+      if (!(O->l[ilA + ilB].QComplex))
+        if (A.l[ilA].QComplex || B.l[ilB].QComplex)
+          if (MakeRealOperatorFixedLengthComplex(O, ilA + ilB))
+          {
+            printf("MakeRealOperatorFixedLengthComplex at length=%i failed in OperatorMultiply2\n", ilA + ilB);
+            fflush(stdout);
+            return 1;
+          }
+
+      switch (HASH_QCOMPLEX(Aset, Bset, O->l[ilA + ilB].QComplex, A.l[ilA].QComplex, B.l[ilB].QComplex))
       {
-        if ((O->l[ilA + ilB].QComplex) || (A.l[ilA].QComplex) || (B.l[ilB].QComplex))
-        {                       /* at least one complex */
-          if (!(O->l[ilA + ilB].QComplex))
-            if (MakeRealOperatorFixedLengthComplex(O, ilA + ilB))
+      case HASH_QCOMPLEX('N', 'N', 0, 0, 0):  // All Real
+        for (iNA = 0; iNA < A.l[ilA].N; iNA++)
+        {
+          for (k = 0; k < ilA; k++)
+            det[k] = A.l[ilA].o[iNA * ilA + k];
+          for (iNB = 0; iNB < B.l[ilB].N; iNB++)
+          {
+            for (k = 0; k < ilB; k++)
+              det[k + ilA] = B.l[ilB].o[iNB * ilB + k];
+
+            if (RealOperatorAddLaderNormalOrder(O, det, ilA + ilB, A.l[ilA].VRe[iNA] * B.l[ilB].VRe[iNB], QDetNotOrdered))
             {
-              printf("MakeRealOperatorFixedLengthComplex at length=%i failed in OperatorMultiply2\n", ilA + ilB);
+              printf("RealOperatorAddLader failed in OperatorMultiply2\n");
               fflush(stdout);
               return 1;
             }
-          if (A.l[ilA].QComplex)
-          {                     /* A complex */
-            if (B.l[ilB].QComplex)
-            {                   /* A and B complex */
-              for (iNA = 0; iNA < A.l[ilA].N; iNA++)
-              {
-                for (k = 0; k < ilA; k++)
-                {
-                  det[k] = A.l[ilA].o[iNA * ilA + k];
-                }
-                for (iNB = 0; iNB < B.l[ilB].N; iNB++)
-                {
-                  for (k = 0; k < ilB; k++)
-                  {
-                    det[k + ilA] = B.l[ilB].o[iNB * ilB + k];
-                  }
-                  if (ComplexOperatorAddLaderNormalOrder
-                      (O, det, ilA + ilB,
-                       A.l[ilA].V[iNA].Re * B.l[ilB].V[iNB].Re - A.l[ilA].V[iNA].Im * B.l[ilB].V[iNB].Im,
-                       A.l[ilA].V[iNA].Re * B.l[ilB].V[iNB].Im + A.l[ilA].V[iNA].Im * B.l[ilB].V[iNB].Re,
-                       QDetNotOrdered))
-                  {
-                    printf("ComplexOperatorAddLader failed in OperatorMultiply\n");
-                    fflush(stdout);
-                    return 1;
-                  }
-                }
-              }
-            }
-            else
-            {                   /* A complex B real */
-              for (iNA = 0; iNA < A.l[ilA].N; iNA++)
-              {
-                for (k = 0; k < ilA; k++)
-                {
-                  det[k] = A.l[ilA].o[iNA * ilA + k];
-                }
-                for (iNB = 0; iNB < B.l[ilB].N; iNB++)
-                {
-                  for (k = 0; k < ilB; k++)
-                  {
-                    det[k + ilA] = B.l[ilB].o[iNB * ilB + k];
-                  }
-                  if (ComplexOperatorAddLaderNormalOrder
-                      (O, det, ilA + ilB, A.l[ilA].V[iNA].Re * B.l[ilB].VRe[iNB],
-                       A.l[ilA].V[iNA].Im * B.l[ilB].VRe[iNB], QDetNotOrdered))
-                  {
-                    printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");
-                    fflush(stdout);
-                    return 1;
-                  }
-                }
-              }
-            }
-          }
-          else
-          {                     /* A real */
-            if (B.l[ilB].QComplex)
-            {                   /* A real and B complex */
-              for (iNA = 0; iNA < A.l[ilA].N; iNA++)
-              {
-                for (k = 0; k < ilA; k++)
-                {
-                  det[k] = A.l[ilA].o[iNA * ilA + k];
-                }
-                for (iNB = 0; iNB < B.l[ilB].N; iNB++)
-                {
-                  for (k = 0; k < ilB; k++)
-                  {
-                    det[k + ilA] = B.l[ilB].o[iNB * ilB + k];
-                  }
-                  if (ComplexOperatorAddLaderNormalOrder
-                      (O, det, ilA + ilB, A.l[ilA].VRe[iNA] * B.l[ilB].V[iNB].Re,
-                       A.l[ilA].VRe[iNA] * B.l[ilB].V[iNB].Im, QDetNotOrdered))
-                  {
-                    printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");
-                    fflush(stdout);
-                    return 1;
-                  }
-                }
-              }
-            }
-            else
-            {                   /* A and B real */
-              for (iNA = 0; iNA < A.l[ilA].N; iNA++)
-              {
-                for (k = 0; k < ilA; k++)
-                {
-                  det[k] = A.l[ilA].o[iNA * ilA + k];
-                }
-                for (iNB = 0; iNB < B.l[ilB].N; iNB++)
-                {
-                  for (k = 0; k < ilB; k++)
-                  {
-                    det[k + ilA] = B.l[ilB].o[iNB * ilB + k];
-                  }
-                  if (ComplexOperatorAddLaderNormalOrder
-                      (O, det, ilA + ilB, A.l[ilA].VRe[iNA] * B.l[ilB].VRe[iNB], 0, QDetNotOrdered))
-                  {
-                    printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");
-                    fflush(stdout);
-                    return 1;
-                  }
-                }
-              }
-            }
           }
         }
-        else
-        {                       /* All real */
-          for (iNA = 0; iNA < A.l[ilA].N; iNA++)
+        break;
+
+      case HASH_QCOMPLEX('N', 'N', 0, 1, 1): // A and B complex
+      case HASH_QCOMPLEX('N', 'N', 1, 1, 1):
+        for (iNA = 0; iNA < A.l[ilA].N; iNA++)
+        {
+          for (k = 0; k < ilA; k++)
+            det[k] = A.l[ilA].o[iNA * ilA + k];
+          for (iNB = 0; iNB < B.l[ilB].N; iNB++)
           {
-            for (k = 0; k < ilA; k++)
+            for (k = 0; k < ilB; k++)
+              det[k + ilA] = B.l[ilB].o[iNB * ilB + k];
+            if (ComplexOperatorAddLaderNormalOrder
+                (O, det, ilA + ilB,
+                 A.l[ilA].V[iNA].Re * B.l[ilB].V[iNB].Re - A.l[ilA].V[iNA].Im * B.l[ilB].V[iNB].Im,
+                 A.l[ilA].V[iNA].Re * B.l[ilB].V[iNB].Im + A.l[ilA].V[iNA].Im * B.l[ilB].V[iNB].Re, QDetNotOrdered))
             {
-              det[k] = A.l[ilA].o[iNA * ilA + k];
-            }
-            for (iNB = 0; iNB < B.l[ilB].N; iNB++)
-            {
-              for (k = 0; k < ilB; k++)
-              {
-                det[k + ilA] = B.l[ilB].o[iNB * ilB + k];
-              }
-              if (RealOperatorAddLaderNormalOrder
-                  (O, det, ilA + ilB, A.l[ilA].VRe[iNA] * B.l[ilB].VRe[iNB], QDetNotOrdered))
-              {
-                printf("RealOperatorAddLader failed in OperatorMultiply2\n");
-                fflush(stdout);
-                return 1;
-              }
-            }
-          }
-        }
-      }
-    }
-    /* End of NN */
-  }
-  else if ((Aset == 'N') && (Bset == 'D'))
-  {
-    for (ilA = 0; ilA <= A.MaxLength; ilA++)
-    {
-      for (ilB = 0; ilB <= B.MaxLength; ilB++)
-      {
-        if ((O->l[ilA + ilB].QComplex) || (A.l[ilA].QComplex) || (B.l[ilB].QComplex))
-        {                       /* at least one complex */
-          if (!(O->l[ilA + ilB].QComplex))
-            if (MakeRealOperatorFixedLengthComplex(O, ilA + ilB))
-            {
-              printf("MakeRealOperatorFixedLengthComplex at length=%i failed in OperatorMultiply2\n", ilA + ilB);
+              printf("ComplexOperatorAddLader failed in OperatorMultiply\n");
               fflush(stdout);
               return 1;
             }
-          if (A.l[ilA].QComplex)
-          {                     /* A complex */
-            if (B.l[ilB].QComplex)
-            {                   /* A and B complex */
-              for (iNA = 0; iNA < A.l[ilA].N; iNA++)
-              {
-                for (k = 0; k < ilA; k++)
-                {
-                  det[k] = A.l[ilA].o[iNA * ilA + k];
-                }
-                for (iNB = 0; iNB < B.l[ilB].N; iNB++)
-                {
-                  for (k = 0; k < ilB; k++)
-                  {
-                    det[ilB - 1 - k + ilA] = B.l[ilB].o[iNB * ilB + k] ^ CrAnMask;
-                  }
-                  if (ComplexOperatorAddLaderNormalOrder
-                      (O, det, ilA + ilB,
-                       A.l[ilA].V[iNA].Re * B.l[ilB].V[iNB].Re + A.l[ilA].V[iNA].Im * B.l[ilB].V[iNB].Im,
-                       -A.l[ilA].V[iNA].Re * B.l[ilB].V[iNB].Im + A.l[ilA].V[iNA].Im * B.l[ilB].V[iNB].Re,
-                       QDetNotOrdered))
-                  {
-                    printf("ComplexOperatorAddLader failed in OperatorMultiply\n");
-                    fflush(stdout);
-                    return 1;
-                  }
-                }
-              }
-            }
-            else
-            {                   /* A complex B real */
-              for (iNA = 0; iNA < A.l[ilA].N; iNA++)
-              {
-                for (k = 0; k < ilA; k++)
-                {
-                  det[k] = A.l[ilA].o[iNA * ilA + k];
-                }
-                for (iNB = 0; iNB < B.l[ilB].N; iNB++)
-                {
-                  for (k = 0; k < ilB; k++)
-                  {
-                    det[ilB - 1 - k + ilA] = B.l[ilB].o[iNB * ilB + k] ^ CrAnMask;
-                  }
-                  if (ComplexOperatorAddLaderNormalOrder
-                      (O, det, ilA + ilB, A.l[ilA].V[iNA].Re * B.l[ilB].VRe[iNB],
-                       A.l[ilA].V[iNA].Im * B.l[ilB].VRe[iNB], QDetNotOrdered))
-                  {
-                    printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");
-                    fflush(stdout);
-                    return 1;
-                  }
-                }
-              }
-            }
-          }
-          else
-          {                     /* A real */
-            if (B.l[ilB].QComplex)
-            {                   /* A real and B complex */
-              for (iNA = 0; iNA < A.l[ilA].N; iNA++)
-              {
-                for (k = 0; k < ilA; k++)
-                {
-                  det[k] = A.l[ilA].o[iNA * ilA + k];
-                }
-                for (iNB = 0; iNB < B.l[ilB].N; iNB++)
-                {
-                  for (k = 0; k < ilB; k++)
-                  {
-                    det[ilB - 1 - k + ilA] = B.l[ilB].o[iNB * ilB + k] ^ CrAnMask;
-                  }
-                  if (ComplexOperatorAddLaderNormalOrder
-                      (O, det, ilA + ilB, A.l[ilA].VRe[iNA] * B.l[ilB].V[iNB].Re,
-                       -A.l[ilA].VRe[iNA] * B.l[ilB].V[iNB].Im, QDetNotOrdered))
-                  {
-                    printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");
-                    fflush(stdout);
-                    return 1;
-                  }
-                }
-              }
-            }
-            else
-            {                   /* A and B real */
-              for (iNA = 0; iNA < A.l[ilA].N; iNA++)
-              {
-                for (k = 0; k < ilA; k++)
-                {
-                  det[k] = A.l[ilA].o[iNA * ilA + k];
-                }
-                for (iNB = 0; iNB < B.l[ilB].N; iNB++)
-                {
-                  for (k = 0; k < ilB; k++)
-                  {
-                    det[ilB - 1 - k + ilA] = B.l[ilB].o[iNB * ilB + k] ^ CrAnMask;
-                  }
-                  if (ComplexOperatorAddLaderNormalOrder
-                      (O, det, ilA + ilB, A.l[ilA].VRe[iNA] * B.l[ilB].VRe[iNB], 0, QDetNotOrdered))
-                  {
-                    printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");
-                    fflush(stdout);
-                    return 1;
-                  }
-                }
-              }
-            }
           }
         }
-        else
-        {                       /* All real */
-          for (iNA = 0; iNA < A.l[ilA].N; iNA++)
+        break;
+
+      case HASH_QCOMPLEX('N', 'N', 0, 1, 0): // A complex
+      case HASH_QCOMPLEX('N', 'N', 1, 1, 0):
+        for (iNA = 0; iNA < A.l[ilA].N; iNA++)
+        {
+          for (k = 0; k < ilA; k++)
+            det[k] = A.l[ilA].o[iNA * ilA + k];
+          for (iNB = 0; iNB < B.l[ilB].N; iNB++)
           {
-            for (k = 0; k < ilA; k++)
+            for (k = 0; k < ilB; k++)
+              det[k + ilA] = B.l[ilB].o[iNB * ilB + k];
+            if (ComplexOperatorAddLaderNormalOrder
+                (O, det, ilA + ilB, A.l[ilA].V[iNA].Re * B.l[ilB].VRe[iNB], A.l[ilA].V[iNA].Im * B.l[ilB].VRe[iNB], QDetNotOrdered))
             {
-              det[k] = A.l[ilA].o[iNA * ilA + k];
-            }
-            for (iNB = 0; iNB < B.l[ilB].N; iNB++)
-            {
-              for (k = 0; k < ilB; k++)
-              {
-                det[ilB - 1 - k + ilA] = B.l[ilB].o[iNB * ilB + k] ^ CrAnMask;
-              }
-              if (RealOperatorAddLaderNormalOrder
-                  (O, det, ilA + ilB, A.l[ilA].VRe[iNA] * B.l[ilB].VRe[iNB], QDetNotOrdered))
-              {
-                printf("RealOperatorAddLader failed in OperatorMultiply2\n");
-                fflush(stdout);
-                return 1;
-              }
-            }
-          }
-        }
-      }
-    }
-    /* End of ND */
-  }
-  else if ((Aset == 'D') && (Bset == 'N'))
-  {
-    for (ilA = 0; ilA <= A.MaxLength; ilA++)
-    {
-      for (ilB = 0; ilB <= B.MaxLength; ilB++)
-      {
-        if ((O->l[ilA + ilB].QComplex) || (A.l[ilA].QComplex) || (B.l[ilB].QComplex))
-        {                       /* at least one complex */
-          if (!(O->l[ilA + ilB].QComplex))
-            if (MakeRealOperatorFixedLengthComplex(O, ilA + ilB))
-            {
-              printf("MakeRealOperatorFixedLengthComplex at length=%i failed in OperatorMultiply2\n", ilA + ilB);
+              printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");
               fflush(stdout);
               return 1;
             }
-          if (A.l[ilA].QComplex)
-          {                     /* A complex */
-            if (B.l[ilB].QComplex)
-            {                   /* A and B complex */
-              for (iNA = 0; iNA < A.l[ilA].N; iNA++)
-              {
-                for (k = 0; k < ilA; k++)
-                {
-                  det[ilA - 1 - k] = A.l[ilA].o[iNA * ilA + k] ^ CrAnMask;
-                }
-                for (iNB = 0; iNB < B.l[ilB].N; iNB++)
-                {
-                  for (k = 0; k < ilB; k++)
-                  {
-                    det[k + ilA] = B.l[ilB].o[iNB * ilB + k];
-                  }
-                  if (ComplexOperatorAddLaderNormalOrder
-                      (O, det, ilA + ilB,
-                       A.l[ilA].V[iNA].Re * B.l[ilB].V[iNB].Re + A.l[ilA].V[iNA].Im * B.l[ilB].V[iNB].Im,
-                       A.l[ilA].V[iNA].Re * B.l[ilB].V[iNB].Im - A.l[ilA].V[iNA].Im * B.l[ilB].V[iNB].Re,
-                       QDetNotOrdered))
-                  {
-                    printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");
-                    fflush(stdout);
-                    return 1;
-                  }
-                }
-              }
-            }
-            else
-            {                   /* A complex B real */
-              for (iNA = 0; iNA < A.l[ilA].N; iNA++)
-              {
-                for (k = 0; k < ilA; k++)
-                {
-                  det[ilA - 1 - k] = A.l[ilA].o[iNA * ilA + k] ^ CrAnMask;
-                }
-                for (iNB = 0; iNB < B.l[ilB].N; iNB++)
-                {
-                  for (k = 0; k < ilB; k++)
-                  {
-                    det[k + ilA] = B.l[ilB].o[iNB * ilB + k];
-                  }
-                  if (ComplexOperatorAddLaderNormalOrder
-                      (O, det, ilA + ilB, A.l[ilA].V[iNA].Re * B.l[ilB].VRe[iNB],
-                       -A.l[ilA].V[iNA].Im * B.l[ilB].VRe[iNB], QDetNotOrdered))
-                  {
-                    printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");
-                    fflush(stdout);
-                    return 1;
-                  }
-                }
-              }
-            }
-          }
-          else
-          {                     /* A real */
-            if (B.l[ilB].QComplex)
-            {                   /* A real and B complex */
-              for (iNA = 0; iNA < A.l[ilA].N; iNA++)
-              {
-                for (k = 0; k < ilA; k++)
-                {
-                  det[ilA - 1 - k] = A.l[ilA].o[iNA * ilA + k] ^ CrAnMask;
-                }
-                for (iNB = 0; iNB < B.l[ilB].N; iNB++)
-                {
-                  for (k = 0; k < ilB; k++)
-                  {
-                    det[k + ilA] = B.l[ilB].o[iNB * ilB + k];
-                  }
-                  if (ComplexOperatorAddLaderNormalOrder
-                      (O, det, ilA + ilB, A.l[ilA].VRe[iNA] * B.l[ilB].V[iNB].Re,
-                       A.l[ilA].VRe[iNA] * B.l[ilB].V[iNB].Im, QDetNotOrdered))
-                  {
-                    printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");
-                    fflush(stdout);
-                    return 1;
-                  }
-                }
-              }
-            }
-            else
-            {                   /* A and B real */
-              for (iNA = 0; iNA < A.l[ilA].N; iNA++)
-              {
-                for (k = 0; k < ilA; k++)
-                {
-                  det[ilA - 1 - k] = A.l[ilA].o[iNA * ilA + k] ^ CrAnMask;
-                }
-                for (iNB = 0; iNB < B.l[ilB].N; iNB++)
-                {
-                  for (k = 0; k < ilB; k++)
-                  {
-                    det[k + ilA] = B.l[ilB].o[iNB * ilB + k];
-                  }
-                  if (ComplexOperatorAddLaderNormalOrder
-                      (O, det, ilA + ilB, A.l[ilA].VRe[iNA] * B.l[ilB].VRe[iNB], 0, QDetNotOrdered))
-                  {
-                    printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");
-                    fflush(stdout);
-                    return 1;
-                  }
-                }
-              }
-            }
           }
         }
-        else
-        {                       /* All real */
-          for (iNA = 0; iNA < A.l[ilA].N; iNA++)
+        break;
+
+
+      case HASH_QCOMPLEX('N', 'N', 0, 0, 1): // B complex
+      case HASH_QCOMPLEX('N', 'N', 1, 0, 1):
+        for (iNA = 0; iNA < A.l[ilA].N; iNA++)
+        {
+          for (k = 0; k < ilA; k++)
+            det[k] = A.l[ilA].o[iNA * ilA + k];
+          for (iNB = 0; iNB < B.l[ilB].N; iNB++)
           {
-            for (k = 0; k < ilA; k++)
+            for (k = 0; k < ilB; k++)
+              det[k + ilA] = B.l[ilB].o[iNB * ilB + k];
+            if (ComplexOperatorAddLaderNormalOrder
+                (O, det, ilA + ilB, A.l[ilA].VRe[iNA] * B.l[ilB].V[iNB].Re, A.l[ilA].VRe[iNA] * B.l[ilB].V[iNB].Im, QDetNotOrdered))
             {
-              det[ilA - 1 - k] = A.l[ilA].o[iNA * ilA + k] ^ CrAnMask;
-            }
-            for (iNB = 0; iNB < B.l[ilB].N; iNB++)
-            {
-              for (k = 0; k < ilB; k++)
-              {
-                det[k + ilA] = B.l[ilB].o[iNB * ilB + k];
-              }
-              if (RealOperatorAddLaderNormalOrder
-                  (O, det, ilA + ilB, A.l[ilA].VRe[iNA] * B.l[ilB].VRe[iNB], QDetNotOrdered))
-              {
-                printf("RealOperatorAddLader failed in OperatorMultiply2\n");
-                fflush(stdout);
-                return 1;
-              }
-            }
-          }
-        }
-      }
-    }
-    /* End of DN */
-  }
-  else if ((Aset == 'D') && (Bset == 'D'))
-  {
-    for (ilA = 0; ilA <= A.MaxLength; ilA++)
-    {
-      for (ilB = 0; ilB <= B.MaxLength; ilB++)
-      {
-        if ((O->l[ilA + ilB].QComplex) || (A.l[ilA].QComplex) || (B.l[ilB].QComplex))
-        {                       /* at least one complex */
-          if (!(O->l[ilA + ilB].QComplex))
-            if (MakeRealOperatorFixedLengthComplex(O, ilA + ilB))
-            {
-              printf("MakeRealOperatorFixedLengthComplex at length=%i failed in OperatorMultiply2\n", ilA + ilB);
+              printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");
               fflush(stdout);
               return 1;
             }
-          if (A.l[ilA].QComplex)
-          {                     /* A complex */
-            if (B.l[ilB].QComplex)
-            {                   /* A and B complex */
-              for (iNA = 0; iNA < A.l[ilA].N; iNA++)
-              {
-                for (k = 0; k < ilA; k++)
-                {
-                  det[ilA - 1 - k] = A.l[ilA].o[iNA * ilA + k] ^ CrAnMask;
-                }
-                for (iNB = 0; iNB < B.l[ilB].N; iNB++)
-                {
-                  for (k = 0; k < ilB; k++)
-                  {
-                    det[ilB - 1 - k + ilA] = B.l[ilB].o[iNB * ilB + k] ^ CrAnMask;
-                  }
-                  if (ComplexOperatorAddLaderNormalOrder
-                      (O, det, ilA + ilB,
-                       A.l[ilA].V[iNA].Re * B.l[ilB].V[iNB].Re - A.l[ilA].V[iNA].Im * B.l[ilB].V[iNB].Im,
-                       -A.l[ilA].V[iNA].Re * B.l[ilB].V[iNB].Im - A.l[ilA].V[iNA].Im * B.l[ilB].V[iNB].Re,
-                       QDetNotOrdered))
-                  {
-                    printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");
-                    fflush(stdout);
-                    return 1;
-                  }
-                }
-              }
-            }
-            else
-            {                   /* A complex B real */
-              for (iNA = 0; iNA < A.l[ilA].N; iNA++)
-              {
-                for (k = 0; k < ilA; k++)
-                {
-                  det[ilA - 1 - k] = A.l[ilA].o[iNA * ilA + k] ^ CrAnMask;
-                }
-                for (iNB = 0; iNB < B.l[ilB].N; iNB++)
-                {
-                  for (k = 0; k < ilB; k++)
-                  {
-                    det[ilB - 1 - k + ilA] = B.l[ilB].o[iNB * ilB + k] ^ CrAnMask;
-                  }
-                  if (ComplexOperatorAddLaderNormalOrder
-                      (O, det, ilA + ilB, A.l[ilA].V[iNA].Re * B.l[ilB].VRe[iNB],
-                       -A.l[ilA].V[iNA].Im * B.l[ilB].VRe[iNB], QDetNotOrdered))
-                  {
-                    printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");
-                    fflush(stdout);
-                    return 1;
-                  }
-                }
-              }
-            }
-          }
-          else
-          {                     /* A real */
-            if (B.l[ilB].QComplex)
-            {                   /* A real and B complex */
-              for (iNA = 0; iNA < A.l[ilA].N; iNA++)
-              {
-                for (k = 0; k < ilA; k++)
-                {
-                  det[ilA - 1 - k] = A.l[ilA].o[iNA * ilA + k] ^ CrAnMask;
-                }
-                for (iNB = 0; iNB < B.l[ilB].N; iNB++)
-                {
-                  for (k = 0; k < ilB; k++)
-                  {
-                    det[ilB - 1 - k + ilA] = B.l[ilB].o[iNB * ilB + k] ^ CrAnMask;
-                  }
-                  if (ComplexOperatorAddLaderNormalOrder
-                      (O, det, ilA + ilB, A.l[ilA].VRe[iNA] * B.l[ilB].V[iNB].Re,
-                       -A.l[ilA].VRe[iNA] * B.l[ilB].V[iNB].Im, QDetNotOrdered))
-                  {
-                    printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");
-                    fflush(stdout);
-                    return 1;
-                  }
-                }
-              }
-            }
-            else
-            {                   /* A and B real */
-              for (iNA = 0; iNA < A.l[ilA].N; iNA++)
-              {
-                for (k = 0; k < ilA; k++)
-                {
-                  det[ilA - 1 - k] = A.l[ilA].o[iNA * ilA + k] ^ CrAnMask;
-                }
-                for (iNB = 0; iNB < B.l[ilB].N; iNB++)
-                {
-                  for (k = 0; k < ilB; k++)
-                  {
-                    det[ilB - 1 - k + ilA] = B.l[ilB].o[iNB * ilB + k] ^ CrAnMask;
-                  }
-                  if (ComplexOperatorAddLaderNormalOrder
-                      (O, det, ilA + ilB, A.l[ilA].VRe[iNA] * B.l[ilB].VRe[iNB], 0, QDetNotOrdered))
-                  {
-                    printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");
-                    fflush(stdout);
-                    return 1;
-                  }
-                }
-              }
-            }
           }
         }
-        else
-        {                       /* All real */
-          for (iNA = 0; iNA < A.l[ilA].N; iNA++)
+        break;
+
+      case HASH_QCOMPLEX('N', 'N', 1, 0, 0): // A and B real
+        for (iNA = 0; iNA < A.l[ilA].N; iNA++)
+        {
+          for (k = 0; k < ilA; k++)
+            det[k] = A.l[ilA].o[iNA * ilA + k];
+          for (iNB = 0; iNB < B.l[ilB].N; iNB++)
           {
-            for (k = 0; k < ilA; k++)
+            for (k = 0; k < ilB; k++)
+              det[k + ilA] = B.l[ilB].o[iNB * ilB + k];
+            if (ComplexOperatorAddLaderNormalOrder(O, det, ilA + ilB, A.l[ilA].VRe[iNA] * B.l[ilB].VRe[iNB], 0, QDetNotOrdered))
             {
-              det[ilA - 1 - k] = A.l[ilA].o[iNA * ilA + k] ^ CrAnMask;
-            }
-            for (iNB = 0; iNB < B.l[ilB].N; iNB++)
-            {
-              for (k = 0; k < ilB; k++)
-              {
-                det[ilB - 1 - k + ilA] = B.l[ilB].o[iNB * ilB + k] ^ CrAnMask;
-              }
-              if (RealOperatorAddLaderNormalOrder
-                  (O, det, ilA + ilB, A.l[ilA].VRe[iNA] * B.l[ilB].VRe[iNB], QDetNotOrdered))
-              {
-                printf("RealOperatorAddLader failed in OperatorMultiply2\n");
-                fflush(stdout);
-                return 1;
-              }
+              printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");
+              fflush(stdout);
+              return 1;
             }
           }
         }
-      }
-    }
-    /* End of DD */
-  }
-  else
-  {
-    printf("in OperatorMultiply2 unrecognized input for Aset and or Bset\n");
-    return 1;
-  }
+        break;
+
+      case HASH_QCOMPLEX('N', 'D', 0, 0, 0):
+        for (iNA = 0; iNA < A.l[ilA].N; iNA++)
+        {
+          for (k = 0; k < ilA; k++)
+            det[k] = A.l[ilA].o[iNA * ilA + k];
+          for (iNB = 0; iNB < B.l[ilB].N; iNB++)
+          {
+            for (k = 0; k < ilB; k++)
+              det[ilB - 1 - k + ilA] = B.l[ilB].o[iNB * ilB + k] ^ CrAnMask;
+            if (RealOperatorAddLaderNormalOrder(O, det, ilA + ilB, A.l[ilA].VRe[iNA] * B.l[ilB].VRe[iNB], QDetNotOrdered))
+            {
+              printf("RealOperatorAddLader failed in OperatorMultiply2\n");
+              fflush(stdout);
+              return 1;
+            }
+          }
+        }
+
+        break;
+      case HASH_QCOMPLEX('N', 'D', 1, 1, 1):
+      case HASH_QCOMPLEX('N', 'D', 0, 1, 1):
+        for (iNA = 0; iNA < A.l[ilA].N; iNA++)
+        {
+          for (k = 0; k < ilA; k++)
+            det[k] = A.l[ilA].o[iNA * ilA + k];
+          for (iNB = 0; iNB < B.l[ilB].N; iNB++)
+          {
+            for (k = 0; k < ilB; k++)
+              det[ilB - 1 - k + ilA] = B.l[ilB].o[iNB * ilB + k] ^ CrAnMask;
+            if (ComplexOperatorAddLaderNormalOrder
+                (O, det, ilA + ilB,
+                 A.l[ilA].V[iNA].Re * B.l[ilB].V[iNB].Re + A.l[ilA].V[iNA].Im * B.l[ilB].V[iNB].Im,
+                 -A.l[ilA].V[iNA].Re * B.l[ilB].V[iNB].Im + A.l[ilA].V[iNA].Im * B.l[ilB].V[iNB].Re, QDetNotOrdered))
+            {
+              printf("ComplexOperatorAddLader failed in OperatorMultiply\n");
+              fflush(stdout);
+              return 1;
+            }
+          }
+        }
+        break;
+
+      case HASH_QCOMPLEX('N', 'D', 0, 1, 0):
+      case HASH_QCOMPLEX('N', 'D', 1, 1, 0):
+        for (iNA = 0; iNA < A.l[ilA].N; iNA++)
+        {
+          for (k = 0; k < ilA; k++)
+            det[k] = A.l[ilA].o[iNA * ilA + k];
+          for (iNB = 0; iNB < B.l[ilB].N; iNB++)
+          {
+            for (k = 0; k < ilB; k++)
+              det[ilB - 1 - k + ilA] = B.l[ilB].o[iNB * ilB + k] ^ CrAnMask;
+            if (ComplexOperatorAddLaderNormalOrder
+                (O, det, ilA + ilB, A.l[ilA].V[iNA].Re * B.l[ilB].VRe[iNB], A.l[ilA].V[iNA].Im * B.l[ilB].VRe[iNB], QDetNotOrdered))
+            {
+              printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");
+              fflush(stdout);
+              return 1;
+            }
+          }
+        }
+        break;
+
+      case HASH_QCOMPLEX('N', 'D', 0, 0, 1):
+      case HASH_QCOMPLEX('N', 'D', 1, 0, 1):
+        for (iNA = 0; iNA < A.l[ilA].N; iNA++)
+        {
+          for (k = 0; k < ilA; k++)
+            det[k] = A.l[ilA].o[iNA * ilA + k];
+          for (iNB = 0; iNB < B.l[ilB].N; iNB++)
+          {
+            for (k = 0; k < ilB; k++)
+              det[ilB - 1 - k + ilA] = B.l[ilB].o[iNB * ilB + k] ^ CrAnMask;
+            if (ComplexOperatorAddLaderNormalOrder
+                (O, det, ilA + ilB, A.l[ilA].VRe[iNA] * B.l[ilB].V[iNB].Re, -A.l[ilA].VRe[iNA] * B.l[ilB].V[iNB].Im, QDetNotOrdered))
+            {
+              printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");
+              fflush(stdout);
+              return 1;
+            }
+          }
+        }
+        break;
+
+      case HASH_QCOMPLEX('N', 'D', 1, 0, 0):
+        for (iNA = 0; iNA < A.l[ilA].N; iNA++)
+        {
+          for (k = 0; k < ilA; k++)
+            det[k] = A.l[ilA].o[iNA * ilA + k];
+          for (iNB = 0; iNB < B.l[ilB].N; iNB++)
+          {
+            for (k = 0; k < ilB; k++)
+              det[ilB - 1 - k + ilA] = B.l[ilB].o[iNB * ilB + k] ^ CrAnMask;
+            if (ComplexOperatorAddLaderNormalOrder(O, det, ilA + ilB, A.l[ilA].VRe[iNA] * B.l[ilB].VRe[iNB], 0, QDetNotOrdered))
+            {
+              printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");
+              fflush(stdout);
+              return 1;
+            }
+          }
+        }
+        break;
+
+      case HASH_QCOMPLEX('D', 'N', 0, 0, 0):
+        for (iNA = 0; iNA < A.l[ilA].N; iNA++)
+        {
+          for (k = 0; k < ilA; k++)
+            det[ilA - 1 - k] = A.l[ilA].o[iNA * ilA + k] ^ CrAnMask;
+          for (iNB = 0; iNB < B.l[ilB].N; iNB++)
+          {
+            for (k = 0; k < ilB; k++)
+              det[k + ilA] = B.l[ilB].o[iNB * ilB + k];
+            if (RealOperatorAddLaderNormalOrder(O, det, ilA + ilB, A.l[ilA].VRe[iNA] * B.l[ilB].VRe[iNB], QDetNotOrdered))
+            {
+              printf("RealOperatorAddLader failed in OperatorMultiply2\n");
+              fflush(stdout);
+              return 1;
+            }
+          }
+        }
+        break;
+
+      case HASH_QCOMPLEX('D', 'N', 1, 1, 1):
+      case HASH_QCOMPLEX('D', 'N', 0, 1, 1):
+        for (iNA = 0; iNA < A.l[ilA].N; iNA++)
+        {
+          for (k = 0; k < ilA; k++)
+            det[ilA - 1 - k] = A.l[ilA].o[iNA * ilA + k] ^ CrAnMask;
+          for (iNB = 0; iNB < B.l[ilB].N; iNB++)
+          {
+            for (k = 0; k < ilB; k++)
+              det[k + ilA] = B.l[ilB].o[iNB * ilB + k];
+            if (ComplexOperatorAddLaderNormalOrder
+                (O, det, ilA + ilB,
+                 A.l[ilA].V[iNA].Re * B.l[ilB].V[iNB].Re + A.l[ilA].V[iNA].Im * B.l[ilB].V[iNB].Im,
+                 A.l[ilA].V[iNA].Re * B.l[ilB].V[iNB].Im - A.l[ilA].V[iNA].Im * B.l[ilB].V[iNB].Re, QDetNotOrdered))
+            {
+              printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");
+              fflush(stdout);
+              return 1;
+            }
+          }
+        }
+        break;
+
+      case HASH_QCOMPLEX('D', 'N', 1, 1, 0):
+      case HASH_QCOMPLEX('D', 'N', 0, 1, 0):
+        for (iNA = 0; iNA < A.l[ilA].N; iNA++)
+        {
+          for (k = 0; k < ilA; k++)
+            det[ilA - 1 - k] = A.l[ilA].o[iNA * ilA + k] ^ CrAnMask;
+          for (iNB = 0; iNB < B.l[ilB].N; iNB++)
+          {
+            for (k = 0; k < ilB; k++)
+              det[k + ilA] = B.l[ilB].o[iNB * ilB + k];
+            if (ComplexOperatorAddLaderNormalOrder
+                (O, det, ilA + ilB, A.l[ilA].V[iNA].Re * B.l[ilB].VRe[iNB], -A.l[ilA].V[iNA].Im * B.l[ilB].VRe[iNB], QDetNotOrdered))
+            {
+              printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");
+              fflush(stdout);
+              return 1;
+            }
+          }
+        }
+        break;
+
+      case HASH_QCOMPLEX('D', 'N', 0, 0, 1):
+      case HASH_QCOMPLEX('D', 'N', 1, 0, 1):
+        for (iNA = 0; iNA < A.l[ilA].N; iNA++)
+        {
+          for (k = 0; k < ilA; k++)
+            det[ilA - 1 - k] = A.l[ilA].o[iNA * ilA + k] ^ CrAnMask;
+          for (iNB = 0; iNB < B.l[ilB].N; iNB++)
+          {
+            for (k = 0; k < ilB; k++)
+              det[k + ilA] = B.l[ilB].o[iNB * ilB + k];
+            if (ComplexOperatorAddLaderNormalOrder
+                (O, det, ilA + ilB, A.l[ilA].VRe[iNA] * B.l[ilB].V[iNB].Re, A.l[ilA].VRe[iNA] * B.l[ilB].V[iNB].Im, QDetNotOrdered))
+            {
+              printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");
+              fflush(stdout);
+              return 1;
+            }
+          }
+        }
+        break;
+
+      case HASH_QCOMPLEX('D', 'N', 1, 0, 0):
+        for (iNA = 0; iNA < A.l[ilA].N; iNA++)
+        {
+          for (k = 0; k < ilA; k++)
+            det[ilA - 1 - k] = A.l[ilA].o[iNA * ilA + k] ^ CrAnMask;
+          for (iNB = 0; iNB < B.l[ilB].N; iNB++)
+          {
+            for (k = 0; k < ilB; k++)
+              det[k + ilA] = B.l[ilB].o[iNB * ilB + k];
+            if (ComplexOperatorAddLaderNormalOrder(O, det, ilA + ilB, A.l[ilA].VRe[iNA] * B.l[ilB].VRe[iNB], 0, QDetNotOrdered))
+            {
+              printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");
+              fflush(stdout);
+              return 1;
+            }
+          }
+        }
+        break;
+
+      case HASH_QCOMPLEX('D', 'D', 0, 0, 0):
+        for (iNA = 0; iNA < A.l[ilA].N; iNA++)
+        {
+          for (k = 0; k < ilA; k++)
+            det[ilA - 1 - k] = A.l[ilA].o[iNA * ilA + k] ^ CrAnMask;
+          for (iNB = 0; iNB < B.l[ilB].N; iNB++)
+          {
+            for (k = 0; k < ilB; k++)
+              det[ilB - 1 - k + ilA] = B.l[ilB].o[iNB * ilB + k] ^ CrAnMask;
+            if (RealOperatorAddLaderNormalOrder(O, det, ilA + ilB, A.l[ilA].VRe[iNA] * B.l[ilB].VRe[iNB], QDetNotOrdered))
+            {
+              printf("RealOperatorAddLader failed in OperatorMultiply2\n");
+              fflush(stdout);
+              return 1;
+            }
+          }
+        }
+        break;
+
+      case HASH_QCOMPLEX('D', 'D', 1, 1, 1):
+      case HASH_QCOMPLEX('D', 'D', 0, 1, 1):
+        for (iNA = 0; iNA < A.l[ilA].N; iNA++)
+        {
+          for (k = 0; k < ilA; k++)
+            det[ilA - 1 - k] = A.l[ilA].o[iNA * ilA + k] ^ CrAnMask;
+          for (iNB = 0; iNB < B.l[ilB].N; iNB++)
+          {
+            for (k = 0; k < ilB; k++)
+              det[ilB - 1 - k + ilA] = B.l[ilB].o[iNB * ilB + k] ^ CrAnMask;
+            if (ComplexOperatorAddLaderNormalOrder
+                (O, det, ilA + ilB,
+                 A.l[ilA].V[iNA].Re * B.l[ilB].V[iNB].Re - A.l[ilA].V[iNA].Im * B.l[ilB].V[iNB].Im,
+                 -A.l[ilA].V[iNA].Re * B.l[ilB].V[iNB].Im - A.l[ilA].V[iNA].Im * B.l[ilB].V[iNB].Re, QDetNotOrdered))
+            {
+              printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");
+              fflush(stdout);
+              return 1;
+            }
+          }
+        }
+        break;
+
+      case HASH_QCOMPLEX('D', 'D', 1, 1, 0):
+      case HASH_QCOMPLEX('D', 'D', 0, 1, 0):
+        for (iNA = 0; iNA < A.l[ilA].N; iNA++)
+        {
+          for (k = 0; k < ilA; k++)
+            det[ilA - 1 - k] = A.l[ilA].o[iNA * ilA + k] ^ CrAnMask;
+          for (iNB = 0; iNB < B.l[ilB].N; iNB++)
+          {
+            for (k = 0; k < ilB; k++)
+              det[ilB - 1 - k + ilA] = B.l[ilB].o[iNB * ilB + k] ^ CrAnMask;
+            if (ComplexOperatorAddLaderNormalOrder
+                (O, det, ilA + ilB, A.l[ilA].V[iNA].Re * B.l[ilB].VRe[iNB], -A.l[ilA].V[iNA].Im * B.l[ilB].VRe[iNB], QDetNotOrdered))
+            {
+              printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");
+              fflush(stdout);
+              return 1;
+            }
+          }
+        }
+        break;
+
+      case HASH_QCOMPLEX('D', 'D', 0, 0, 1):
+      case HASH_QCOMPLEX('D', 'D', 1, 0, 1):
+        for (iNA = 0; iNA < A.l[ilA].N; iNA++)
+        {
+          for (k = 0; k < ilA; k++)
+            det[ilA - 1 - k] = A.l[ilA].o[iNA * ilA + k] ^ CrAnMask;
+          for (iNB = 0; iNB < B.l[ilB].N; iNB++)
+          {
+            for (k = 0; k < ilB; k++)
+              det[ilB - 1 - k + ilA] = B.l[ilB].o[iNB * ilB + k] ^ CrAnMask;
+            if (ComplexOperatorAddLaderNormalOrder
+                (O, det, ilA + ilB, A.l[ilA].VRe[iNA] * B.l[ilB].V[iNB].Re, -A.l[ilA].VRe[iNA] * B.l[ilB].V[iNB].Im, QDetNotOrdered))
+            {
+              printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");
+              fflush(stdout);
+              return 1;
+            }
+          }
+        }
+        break;
+
+      case HASH_QCOMPLEX('D', 'D', 1, 0, 0):
+        for (iNA = 0; iNA < A.l[ilA].N; iNA++)
+        {
+          for (k = 0; k < ilA; k++)
+            det[ilA - 1 - k] = A.l[ilA].o[iNA * ilA + k] ^ CrAnMask;
+          for (iNB = 0; iNB < B.l[ilB].N; iNB++)
+          {
+            for (k = 0; k < ilB; k++)
+              det[ilB - 1 - k + ilA] = B.l[ilB].o[iNB * ilB + k] ^ CrAnMask;
+            if (ComplexOperatorAddLaderNormalOrder(O, det, ilA + ilB, A.l[ilA].VRe[iNA] * B.l[ilB].VRe[iNB], 0, QDetNotOrdered))
+            {
+              printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");
+              fflush(stdout);
+              return 1;
+            }
+          }
+        }
+        break;
+
+      default:
+        printf("in OperatorMultiply2 unrecognized input for Aset and or Bset\n");
+        return 1;
+      }                         // switch  
+    }                          // for loop
   SetQComplexOperator(O);
   return 0;
 }
+
 
 
 /*  Depending on Aset, Bset and Cset
