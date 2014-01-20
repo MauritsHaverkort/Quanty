@@ -22,7 +22,9 @@
 #define dsygvd dsygvd_
 #define zhegvd zhegvd_
 #define zdotc zdotc_
+#define ddot ddot_
 #endif
+
 
 int    dstev();
 int    dstevd();
@@ -36,6 +38,7 @@ int    dsygv();
 int    zhegv();
 int    dsygvd();
 int    zhegvd();
+double ddot();
 /**********************************************************/
 /********      Hubbard Model/CellFunctions.c      *********/
 /**********************************************************/
