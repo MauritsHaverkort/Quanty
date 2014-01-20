@@ -2481,6 +2481,7 @@ uint32_t OperatorMultiply2NormalOrder(OperatorType * const O, OperatorType const
   return 0;
 }
 
+#undef HASH_QCOMPLEX
 
 
 /*  Depending on Aset, Bset and Cset
