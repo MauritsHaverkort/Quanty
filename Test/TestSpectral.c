@@ -27,7 +27,7 @@ void TestGreenFunctionCreation()
     NearestNeighborHyperCubicTBToGTriDiagonalRepresentationNonOrthogonal(Dim, NTriDiag, &G, Nk);
     NearestNeighborHyperCubicTBToGTriDiagonalRepresentation(Dim, NTriDiag, &G, Nk);
     TriDiagonalMatrixToSpectrum(0.0, G, &Spec[Dim - 1]);
-    TriDiagonalMatrixToSpectrumGausian(0.0, G, &Spec[Dim - 0], Spec[Dim - 0].Gamma);
+    TriDiagonalMatrixToSpectrumGaussian(0.0, G, &Spec[Dim - 0], Spec[Dim - 0].Gamma);
     sprintf(filename, "G0CubicD%i", Dim);
     PrintPlainTriDiagonalMatrix(G);
     FilePrintPlainTriDiagonalMatrix(G, filename, "w");
@@ -87,7 +87,7 @@ void TestSpec()
     VectorAdd(specOrig,specTmp,2*N+2);
   }
   VectorMultiply(specOrig,2*N+2,1.0/101.0);
-  ReplaceLorentzianByGausian(Emin,Emax,N,Gamma,&specOrig[N+1],specGaus);
+  ReplaceLorentzianByGaussian(Emin,Emax,N,Gamma,&specOrig[N+1],specGaus);
   
   ProjectGOntoAndersonImpurityModel(Emin, Emax, N, Gamma, specOrig, hc,&M);
   AndersonImpurityMatrixToSpectrum(0.0, Emin, Emax, N, Gamma, M, spec01);
