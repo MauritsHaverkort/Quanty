@@ -2051,7 +2051,7 @@ uint32_t OperatorMultiply2NormalOrder(OperatorType * const O, OperatorType const
         if (A.l[ilA].QComplex || B.l[ilB].QComplex)
           if (MakeRealOperatorFixedLengthComplex(O, ilA + ilB))
           {
-            printf("MakeRealOperatorFixedLengthComplex at length=%i failed in OperatorMultiply2\n", ilA + ilB);
+            printf("MakeRealOperatorFixedLengthComplex at length=%i failed in OperatorMultiply2NormalOrder\n", ilA + ilB);
             fflush(stdout);
             return 1;
           }
@@ -2070,7 +2070,7 @@ uint32_t OperatorMultiply2NormalOrder(OperatorType * const O, OperatorType const
 
             if (RealOperatorAddLaderNormalOrder(O, det, ilA + ilB, A.l[ilA].VRe[iNA] * B.l[ilB].VRe[iNB], QDetNotOrdered))
             {
-              printf("RealOperatorAddLader failed in OperatorMultiply2\n");
+              printf("RealOperatorAddLaderNormalOrder failed in OperatorMultiply2NormalOrder\n");
               fflush(stdout);
               return 1;
             }
@@ -2093,7 +2093,7 @@ uint32_t OperatorMultiply2NormalOrder(OperatorType * const O, OperatorType const
                  A.l[ilA].V[iNA].Re * B.l[ilB].V[iNB].Re - A.l[ilA].V[iNA].Im * B.l[ilB].V[iNB].Im,
                  A.l[ilA].V[iNA].Re * B.l[ilB].V[iNB].Im + A.l[ilA].V[iNA].Im * B.l[ilB].V[iNB].Re, QDetNotOrdered))
             {
-              printf("ComplexOperatorAddLader failed in OperatorMultiply\n");
+              printf("ComplexOperatorAddLaderNormalOrder failed in OperatorMultiplyNormalOrder\n");
               fflush(stdout);
               return 1;
             }
@@ -2114,7 +2114,7 @@ uint32_t OperatorMultiply2NormalOrder(OperatorType * const O, OperatorType const
             if (ComplexOperatorAddLaderNormalOrder
                 (O, det, ilA + ilB, A.l[ilA].V[iNA].Re * B.l[ilB].VRe[iNB], A.l[ilA].V[iNA].Im * B.l[ilB].VRe[iNB], QDetNotOrdered))
             {
-              printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");
+              printf("ComplexOperatorAddLaderNormalOrder failed in OperatorMultiply2NormalOrder\n");
               fflush(stdout);
               return 1;
             }
@@ -2136,7 +2136,7 @@ uint32_t OperatorMultiply2NormalOrder(OperatorType * const O, OperatorType const
             if (ComplexOperatorAddLaderNormalOrder
                 (O, det, ilA + ilB, A.l[ilA].VRe[iNA] * B.l[ilB].V[iNB].Re, A.l[ilA].VRe[iNA] * B.l[ilB].V[iNB].Im, QDetNotOrdered))
             {
-              printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");
+              printf("ComplexOperatorAddLaderNormalOrder failed in OperatorMultiply2NormalOrder\n");
               fflush(stdout);
               return 1;
             }
@@ -2155,7 +2155,7 @@ uint32_t OperatorMultiply2NormalOrder(OperatorType * const O, OperatorType const
               det[k + ilA] = B.l[ilB].o[iNB * ilB + k];
             if (ComplexOperatorAddLaderNormalOrder(O, det, ilA + ilB, A.l[ilA].VRe[iNA] * B.l[ilB].VRe[iNB], 0, QDetNotOrdered))
             {
-              printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");
+              printf("ComplexOperatorAddLaderNormalOrder failed in OperatorMultiply2NormalOrder\n");
               fflush(stdout);
               return 1;
             }
@@ -2174,7 +2174,7 @@ uint32_t OperatorMultiply2NormalOrder(OperatorType * const O, OperatorType const
               det[ilB - 1 - k + ilA] = B.l[ilB].o[iNB * ilB + k] ^ CrAnMask;
             if (RealOperatorAddLaderNormalOrder(O, det, ilA + ilB, A.l[ilA].VRe[iNA] * B.l[ilB].VRe[iNB], QDetNotOrdered))
             {
-              printf("RealOperatorAddLader failed in OperatorMultiply2\n");
+              printf("RealOperatorAddLaderNormalOrder failed in OperatorMultiply2NormalOrder\n");
               fflush(stdout);
               return 1;
             }
@@ -2197,7 +2197,7 @@ uint32_t OperatorMultiply2NormalOrder(OperatorType * const O, OperatorType const
                  A.l[ilA].V[iNA].Re * B.l[ilB].V[iNB].Re + A.l[ilA].V[iNA].Im * B.l[ilB].V[iNB].Im,
                  -A.l[ilA].V[iNA].Re * B.l[ilB].V[iNB].Im + A.l[ilA].V[iNA].Im * B.l[ilB].V[iNB].Re, QDetNotOrdered))
             {
-              printf("ComplexOperatorAddLader failed in OperatorMultiply\n");
+              printf("ComplexOperatorAddLaderNormalOrder failed in OperatorMultiplyNormalOrder\n");
               fflush(stdout);
               return 1;
             }
@@ -2218,7 +2218,7 @@ uint32_t OperatorMultiply2NormalOrder(OperatorType * const O, OperatorType const
             if (ComplexOperatorAddLaderNormalOrder
                 (O, det, ilA + ilB, A.l[ilA].V[iNA].Re * B.l[ilB].VRe[iNB], A.l[ilA].V[iNA].Im * B.l[ilB].VRe[iNB], QDetNotOrdered))
             {
-              printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");
+              printf("ComplexOperatorAddLaderNormalOrder failed in OperatorMultiply2NormalOrder\n");
               fflush(stdout);
               return 1;
             }
@@ -2239,7 +2239,7 @@ uint32_t OperatorMultiply2NormalOrder(OperatorType * const O, OperatorType const
             if (ComplexOperatorAddLaderNormalOrder
                 (O, det, ilA + ilB, A.l[ilA].VRe[iNA] * B.l[ilB].V[iNB].Re, -A.l[ilA].VRe[iNA] * B.l[ilB].V[iNB].Im, QDetNotOrdered))
             {
-              printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");
+              printf("ComplexOperatorAddLaderNormalOrder failed in OperatorMultiply2NormalOrder\n");
               fflush(stdout);
               return 1;
             }
@@ -2258,7 +2258,7 @@ uint32_t OperatorMultiply2NormalOrder(OperatorType * const O, OperatorType const
               det[ilB - 1 - k + ilA] = B.l[ilB].o[iNB * ilB + k] ^ CrAnMask;
             if (ComplexOperatorAddLaderNormalOrder(O, det, ilA + ilB, A.l[ilA].VRe[iNA] * B.l[ilB].VRe[iNB], 0, QDetNotOrdered))
             {
-              printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");
+              printf("ComplexOperatorAddLaderNormalOrder failed in OperatorMultiply2NormalOrder\n");
               fflush(stdout);
               return 1;
             }
@@ -2277,7 +2277,7 @@ uint32_t OperatorMultiply2NormalOrder(OperatorType * const O, OperatorType const
               det[k + ilA] = B.l[ilB].o[iNB * ilB + k];
             if (RealOperatorAddLaderNormalOrder(O, det, ilA + ilB, A.l[ilA].VRe[iNA] * B.l[ilB].VRe[iNB], QDetNotOrdered))
             {
-              printf("RealOperatorAddLader failed in OperatorMultiply2\n");
+              printf("RealOperatorAddLaderNormalOrder failed in OperatorMultiply2NormalOrder\n");
               fflush(stdout);
               return 1;
             }
@@ -2300,7 +2300,7 @@ uint32_t OperatorMultiply2NormalOrder(OperatorType * const O, OperatorType const
                  A.l[ilA].V[iNA].Re * B.l[ilB].V[iNB].Re + A.l[ilA].V[iNA].Im * B.l[ilB].V[iNB].Im,
                  A.l[ilA].V[iNA].Re * B.l[ilB].V[iNB].Im - A.l[ilA].V[iNA].Im * B.l[ilB].V[iNB].Re, QDetNotOrdered))
             {
-              printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");
+              printf("ComplexOperatorAddLaderNormalOrder failed in OperatorMultiply2NormalOrder\n");
               fflush(stdout);
               return 1;
             }
@@ -2321,7 +2321,7 @@ uint32_t OperatorMultiply2NormalOrder(OperatorType * const O, OperatorType const
             if (ComplexOperatorAddLaderNormalOrder
                 (O, det, ilA + ilB, A.l[ilA].V[iNA].Re * B.l[ilB].VRe[iNB], -A.l[ilA].V[iNA].Im * B.l[ilB].VRe[iNB], QDetNotOrdered))
             {
-              printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");
+              printf("ComplexOperatorAddLaderNormalOrder failed in OperatorMultiply2NormalOrder\n");
               fflush(stdout);
               return 1;
             }
@@ -2342,7 +2342,7 @@ uint32_t OperatorMultiply2NormalOrder(OperatorType * const O, OperatorType const
             if (ComplexOperatorAddLaderNormalOrder
                 (O, det, ilA + ilB, A.l[ilA].VRe[iNA] * B.l[ilB].V[iNB].Re, A.l[ilA].VRe[iNA] * B.l[ilB].V[iNB].Im, QDetNotOrdered))
             {
-              printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");
+              printf("ComplexOperatorAddLader failedNormalOrder in OperatorMultiply2NormalOrder\n");
               fflush(stdout);
               return 1;
             }
@@ -2361,7 +2361,7 @@ uint32_t OperatorMultiply2NormalOrder(OperatorType * const O, OperatorType const
               det[k + ilA] = B.l[ilB].o[iNB * ilB + k];
             if (ComplexOperatorAddLaderNormalOrder(O, det, ilA + ilB, A.l[ilA].VRe[iNA] * B.l[ilB].VRe[iNB], 0, QDetNotOrdered))
             {
-              printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");
+              printf("ComplexOperatorAddLaderNormalOrder failed in OperatorMultiply2NormalOrder\n");
               fflush(stdout);
               return 1;
             }
@@ -2380,7 +2380,7 @@ uint32_t OperatorMultiply2NormalOrder(OperatorType * const O, OperatorType const
               det[ilB - 1 - k + ilA] = B.l[ilB].o[iNB * ilB + k] ^ CrAnMask;
             if (RealOperatorAddLaderNormalOrder(O, det, ilA + ilB, A.l[ilA].VRe[iNA] * B.l[ilB].VRe[iNB], QDetNotOrdered))
             {
-              printf("RealOperatorAddLader failed in OperatorMultiply2\n");
+              printf("RealOperatorAddLaderNormalOrder failed in OperatorMultiply2NormalOrder\n");
               fflush(stdout);
               return 1;
             }
@@ -2403,7 +2403,7 @@ uint32_t OperatorMultiply2NormalOrder(OperatorType * const O, OperatorType const
                  A.l[ilA].V[iNA].Re * B.l[ilB].V[iNB].Re - A.l[ilA].V[iNA].Im * B.l[ilB].V[iNB].Im,
                  -A.l[ilA].V[iNA].Re * B.l[ilB].V[iNB].Im - A.l[ilA].V[iNA].Im * B.l[ilB].V[iNB].Re, QDetNotOrdered))
             {
-              printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");
+              printf("ComplexOperatorAddLaderNormalOrder failed in OperatorMultiply2NormalOrder\n");
               fflush(stdout);
               return 1;
             }
@@ -2424,7 +2424,7 @@ uint32_t OperatorMultiply2NormalOrder(OperatorType * const O, OperatorType const
             if (ComplexOperatorAddLaderNormalOrder
                 (O, det, ilA + ilB, A.l[ilA].V[iNA].Re * B.l[ilB].VRe[iNB], -A.l[ilA].V[iNA].Im * B.l[ilB].VRe[iNB], QDetNotOrdered))
             {
-              printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");
+              printf("ComplexOperatorAddLaderNormalOrder failed in OperatorMultiply2NormalOrder\n");
               fflush(stdout);
               return 1;
             }
@@ -2445,7 +2445,7 @@ uint32_t OperatorMultiply2NormalOrder(OperatorType * const O, OperatorType const
             if (ComplexOperatorAddLaderNormalOrder
                 (O, det, ilA + ilB, A.l[ilA].VRe[iNA] * B.l[ilB].V[iNB].Re, -A.l[ilA].VRe[iNA] * B.l[ilB].V[iNB].Im, QDetNotOrdered))
             {
-              printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");
+              printf("ComplexOperatorAddLaderNormalOrder failed in OperatorMultiply2NormalOrder\n");
               fflush(stdout);
               return 1;
             }
@@ -2464,7 +2464,7 @@ uint32_t OperatorMultiply2NormalOrder(OperatorType * const O, OperatorType const
               det[ilB - 1 - k + ilA] = B.l[ilB].o[iNB * ilB + k] ^ CrAnMask;
             if (ComplexOperatorAddLaderNormalOrder(O, det, ilA + ilB, A.l[ilA].VRe[iNA] * B.l[ilB].VRe[iNB], 0, QDetNotOrdered))
             {
-              printf("ComplexOperatorAddLader failed in OperatorMultiply2\n");
+              printf("ComplexOperatorAddLaderNormalOrder failed in OperatorMultiply2NormalOrder\n");
               fflush(stdout);
               return 1;
             }
