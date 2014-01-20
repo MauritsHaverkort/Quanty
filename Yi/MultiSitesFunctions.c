@@ -668,15 +668,15 @@ uint32_t MultiSitesTestPsiDimensions(MultiSitesDMFTSettings *const O,
 
       if(PsiNBathC[i] > GBathupBATrunc[i].con.N-1)
       {
-        printf("Removing %i occupied fermions from the wave-function\n",
+        printf("Removing %i unoccupied fermions from the wave-function\n",
                PsiNBathC[i]-GBathupBATrunc[i].con.N+1);
         for(k=0; k<PsiNBathC[i]-GBathupBATrunc[i].con.N+1; k++)
         {
           WaveFunctionRemoveFermion(*Psi, &PsiTemp,
-                                    StartIndex+2*PsiNBathV[i]+2*PsiNBathC[i]-k-1);
+                                    StartIndex+2*PsiNBathV[i]+2*(PsiNBathC[i]-k)-1);
           WaveFunctionFree(Psi);
           WaveFunctionRemoveFermion(PsiTemp, Psi,
-                                    StartIndex+2*PsiNBathV[i]+  PsiNBathC[i]-k-1);
+                                    StartIndex+2*PsiNBathV[i]+  (PsiNBathC[i]-k)-1);
           WaveFunctionFree(&PsiTemp);
         }
       }
@@ -687,10 +687,10 @@ uint32_t MultiSitesTestPsiDimensions(MultiSitesDMFTSettings *const O,
         for(k=0; k<GBathupBATrunc[i].con.N-1-PsiNBathC[i]; k++)
         {
           WaveFunctionAddFermion(*Psi, &PsiTemp,
-                                 StartIndex+2*PsiNBathV[i]+2*PsiNBathC[i]+k, 0);
+                                 StartIndex+2*PsiNBathV[i]+2*(PsiNBathC[i]+k), 0);
           WaveFunctionFree(Psi);
           WaveFunctionAddFermion(PsiTemp, Psi,
-                                 StartIndex+2*PsiNBathV[i]+  PsiNBathC[i]+k, 0);
+                                 StartIndex+2*PsiNBathV[i]+  (PsiNBathC[i]+k), 0);
           WaveFunctionFree(&PsiTemp);
         }
       }
@@ -713,24 +713,24 @@ uint32_t MultiSitesTestPsiDimensions(MultiSitesDMFTSettings *const O,
         for(k=0; k<PsiNBathV[i]-GBathupBATrunc[i].val.N+1; k++)
         {
           WaveFunctionRemoveFermion(*Psi, &PsiTemp,
-                                    StartIndex+2*PsiNBathV[i]-k-1);
+                                    StartIndex+2*(PsiNBathV[i]-k)-1);
           WaveFunctionFree(Psi);
           WaveFunctionRemoveFermion(PsiTemp, Psi,
-                                    StartIndex+  PsiNBathV[i]-k-1);
+                                    StartIndex+  (PsiNBathV[i]-k)-1);
           WaveFunctionFree(&PsiTemp);
         }
       }
       else
       {
-        printf("Adding %i unoccupied fermions to the wave-function\n",
+        printf("Adding %i occupied fermions to the wave-function\n",
                GBathupBATrunc[i].val.N-1-PsiNBathV[i]);
         for(k=0; k<GBathupBATrunc[i].val.N-1-PsiNBathV[i]; k++)
         {
           WaveFunctionAddFermion(*Psi, &PsiTemp,
-                                 StartIndex+2*PsiNBathV[i]+k, 0);
+                                 StartIndex+2*(PsiNBathV[i]+k), 1);
           WaveFunctionFree(Psi);
           WaveFunctionAddFermion(PsiTemp, Psi,
-                                 StartIndex+  PsiNBathV[i]+k, 0);
+                                 StartIndex+  (PsiNBathV[i]+k), 1);
           WaveFunctionFree(&PsiTemp);
         }
       }
@@ -948,9 +948,8 @@ uint32_t DCAHamiltonian(OperatorType *O,
       }
     }
   }
-
   printf("There are %i interaction terms in the Hamiltonian\n", NPair);
-    
+
   for (i=0; i<NSite; i++)
   {
     /* onsite mu */
@@ -960,7 +959,7 @@ uint32_t DCAHamiltonian(OperatorType *O,
     oadd[1] = CrAnMask+2*i+1;
     oadd[0] = 2*i+1;
     RealOperatorAddLaderNormalOrder(O, oadd, 2, -mu, &QDetNotOrderedFcFaBcBa);
-   }
+  }
 
   return 0;
 }
@@ -1044,13 +1043,13 @@ uint32_t MultiSitesBADoubleTriDiagonalMatrixToAndersonImpurityOperator(OperatorT
     {
       oadd[1] = CrAnMask+StartIndex+j;
       oadd[0] = StartIndex+j+1;
-      RealOperatorAddLaderNormalOrder(O, oadd, 2, Mup[i].val.b[j], &QDetNotOrderedFcFaBcBa);
+      RealOperatorAddLaderNormalOrder(O, oadd, 2, Mup[i].val.b[j+2], &QDetNotOrderedFcFaBcBa);
       oadd[1] = CrAnMask+StartIndex+j+1;
       oadd[0] = StartIndex+j;
-      RealOperatorAddLaderNormalOrder(O, oadd, 2, Mup[i].val.b[j], &QDetNotOrderedFcFaBcBa);
+      RealOperatorAddLaderNormalOrder(O, oadd, 2, Mup[i].val.b[j+2], &QDetNotOrderedFcFaBcBa);
       oadd[1] = CrAnMask+StartIndex+j+1;
       oadd[0] = StartIndex+j+1;
-      RealOperatorAddLaderNormalOrder(O, oadd, 2, Mup[i].val.a[j+1], &QDetNotOrderedFcFaBcBa);
+      RealOperatorAddLaderNormalOrder(O, oadd, 2, Mup[i].val.a[j+3], &QDetNotOrderedFcFaBcBa);
     }
 
     // val dn
@@ -1076,13 +1075,13 @@ uint32_t MultiSitesBADoubleTriDiagonalMatrixToAndersonImpurityOperator(OperatorT
     {
       oadd[1] = CrAnMask+StartIndex+j;
       oadd[0] = StartIndex+j+1;
-      RealOperatorAddLaderNormalOrder(O, oadd, 2, Mdn[i].val.b[j], &QDetNotOrderedFcFaBcBa);
+      RealOperatorAddLaderNormalOrder(O, oadd, 2, Mdn[i].val.b[j+2], &QDetNotOrderedFcFaBcBa);
       oadd[1] = CrAnMask+StartIndex+j+1;
       oadd[0] = StartIndex+j;
-      RealOperatorAddLaderNormalOrder(O, oadd, 2, Mdn[i].val.b[j], &QDetNotOrderedFcFaBcBa);
+      RealOperatorAddLaderNormalOrder(O, oadd, 2, Mdn[i].val.b[j+2], &QDetNotOrderedFcFaBcBa);
       oadd[1] = CrAnMask+StartIndex+j+1;
       oadd[0] = StartIndex+j+1;
-      RealOperatorAddLaderNormalOrder(O, oadd, 2, Mdn[i].val.a[j+1], &QDetNotOrderedFcFaBcBa);
+      RealOperatorAddLaderNormalOrder(O, oadd, 2, Mdn[i].val.a[j+3], &QDetNotOrderedFcFaBcBa);
     }
 
     //con up
@@ -1108,13 +1107,13 @@ uint32_t MultiSitesBADoubleTriDiagonalMatrixToAndersonImpurityOperator(OperatorT
     {
       oadd[1] = CrAnMask+StartIndex+j;
       oadd[0] = StartIndex+j+1;
-      RealOperatorAddLaderNormalOrder(O, oadd, 2, Mup[i].con.b[j], &QDetNotOrderedFcFaBcBa);
+      RealOperatorAddLaderNormalOrder(O, oadd, 2, Mup[i].con.b[j+2], &QDetNotOrderedFcFaBcBa);
       oadd[1] = CrAnMask+StartIndex+j+1;
       oadd[0] = StartIndex+j;
-      RealOperatorAddLaderNormalOrder(O, oadd, 2, Mup[i].con.b[j], &QDetNotOrderedFcFaBcBa);
+      RealOperatorAddLaderNormalOrder(O, oadd, 2, Mup[i].con.b[j+2], &QDetNotOrderedFcFaBcBa);
       oadd[1] = CrAnMask+StartIndex+j+1;
       oadd[0] = StartIndex+j+1;
-      RealOperatorAddLaderNormalOrder(O, oadd, 2, Mup[i].con.a[j+1], &QDetNotOrderedFcFaBcBa);
+      RealOperatorAddLaderNormalOrder(O, oadd, 2, Mup[i].con.a[j+3], &QDetNotOrderedFcFaBcBa);
     }
 
     // con dn
@@ -1140,13 +1139,13 @@ uint32_t MultiSitesBADoubleTriDiagonalMatrixToAndersonImpurityOperator(OperatorT
     {
       oadd[1] = CrAnMask+StartIndex+j;
       oadd[0] = StartIndex+j+1;
-      RealOperatorAddLaderNormalOrder(O, oadd, 2, Mdn[i].con.b[j], &QDetNotOrderedFcFaBcBa);
+      RealOperatorAddLaderNormalOrder(O, oadd, 2, Mdn[i].con.b[j+2], &QDetNotOrderedFcFaBcBa);
       oadd[1] = CrAnMask+StartIndex+j+1;
       oadd[0] = StartIndex+j;
-      RealOperatorAddLaderNormalOrder(O, oadd, 2, Mdn[i].con.b[j], &QDetNotOrderedFcFaBcBa);
+      RealOperatorAddLaderNormalOrder(O, oadd, 2, Mdn[i].con.b[j+2], &QDetNotOrderedFcFaBcBa);
       oadd[1] = CrAnMask+StartIndex+j+1;
       oadd[0] = StartIndex+j+1;
-      RealOperatorAddLaderNormalOrder(O, oadd, 2, Mdn[i].con.a[j+1], &QDetNotOrderedFcFaBcBa);
+      RealOperatorAddLaderNormalOrder(O, oadd, 2, Mdn[i].con.a[j+3], &QDetNotOrderedFcFaBcBa);
     }
   }
   OperatorAdd(O, *Oloc, 1.0, 0.0);
