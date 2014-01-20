@@ -949,7 +949,19 @@ uint32_t DCAHamiltonian(OperatorType *O,
     }
   }
 
-  printf("There are %i interaction terms in the Hamiltonian", NPair);
+  printf("There are %i interaction terms in the Hamiltonian\n", NPair);
+    
+  for (i=0; i<NSite; i++)
+  {
+    /* onsite mu */
+    oadd[1] = CrAnMask+2*i;
+    oadd[0] = 2*i;
+    RealOperatorAddLaderNormalOrder(O, oadd, 2, -mu, &QDetNotOrderedFcFaBcBa);
+    oadd[1] = CrAnMask+2*i+1;
+    oadd[0] = 2*i+1;
+    RealOperatorAddLaderNormalOrder(O, oadd, 2, -mu, &QDetNotOrderedFcFaBcBa);
+   }
+
   return 0;
 }
 
