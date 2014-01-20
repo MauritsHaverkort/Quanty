@@ -74,7 +74,8 @@ void RealVectorDotVectorMahan(const double *const u, const double *const v, uint
 
 void RealVectorDotVector(const double *const u, const double *const v, uint32_t N, double *const a)
 {
-  *a = cblas_ddot(N, u, 1, v, 1);
+  int const one=1;
+  *a = ddot(&N, u, &one, v, &one);
 }
 
 

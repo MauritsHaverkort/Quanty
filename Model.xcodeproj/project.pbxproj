@@ -22,7 +22,6 @@
 		4C8274DD17DCF3AD00A5F555 /* Model.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA261632659D00138620 /* Model.c */; };
 		4C8274DE17DCF57200A5F555 /* libblas.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACD163266DD00138620 /* libblas.dylib */; };
 		4C8274DF17DCF59300A5F555 /* liblapack.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACF163266F900138620 /* liblapack.dylib */; };
-		4CDD1CA81796D15600614F34 /* DMFT_eg_Dyson.c in Sources */ = {isa = PBXBuildFile; fileRef = 4CDD1C7E1796D06400614F34 /* DMFT_eg_Dyson.c */; };
 		4CDD1CA91796D27F00614F34 /* libblas.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACD163266DD00138620 /* libblas.dylib */; };
 		4CDD1CAA1796D28900614F34 /* liblapack.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACF163266F900138620 /* liblapack.dylib */; };
 /* End PBXBuildFile section */
@@ -160,6 +159,8 @@
 		4C2AAABC163265F500138620 /* Test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Test; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C2AAACD163266DD00138620 /* libblas.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libblas.dylib; path = usr/lib/libblas.dylib; sourceTree = SDKROOT; };
 		4C2AAACF163266F900138620 /* liblapack.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = liblapack.dylib; path = usr/lib/liblapack.dylib; sourceTree = SDKROOT; };
+		4C2DFCB6188D80170023CA96 /* MultiSitesDMFT.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = MultiSitesDMFT.c; sourceTree = "<group>"; };
+		4C2DFCB7188D80170023CA96 /* MultiSitesFunctions.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = MultiSitesFunctions.c; sourceTree = "<group>"; };
 		4C3261581850DF9300CEECC4 /* OperatorArithmetic.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = OperatorArithmetic.c; sourceTree = "<group>"; };
 		4C3FCCFC188419B6000B9DB8 /* BasicMathBlock.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = BasicMathBlock.c; path = BasicMathBlock/BasicMathBlock.c; sourceTree = "<group>"; };
 		4C3FCCFD188419E4000B9DB8 /* BasicMath_BlockListOfPoles.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = BasicMath_BlockListOfPoles.c; path = BasicMathBlock/BasicMath_BlockListOfPoles.c; sourceTree = "<group>"; };
@@ -177,8 +178,6 @@
 		4CA262D8170787D900B8E76E /* TestGreenFunctions.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = TestGreenFunctions.c; sourceTree = "<group>"; };
 		4CA5D6B6188AE32500A7F1DE /* BasicMath_BlockAndersonMatrix.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = BasicMath_BlockAndersonMatrix.c; path = BasicMathBlock/BasicMath_BlockAndersonMatrix.c; sourceTree = "<group>"; };
 		4CA5D6B7188AE35400A7F1DE /* BasicMath_BlockTridiagonalMatrix.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = BasicMath_BlockTridiagonalMatrix.c; path = BasicMathBlock/BasicMath_BlockTridiagonalMatrix.c; sourceTree = "<group>"; };
-		4CDD1C7E1796D06400614F34 /* DMFT_eg_Dyson.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = DMFT_eg_Dyson.c; sourceTree = "<group>"; };
-		4CDD1C7F1796D06400614F34 /* DMFTFunctions.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = DMFTFunctions.c; sourceTree = "<group>"; };
 		4CDD1C9F1796D14100614F34 /* YiDMFT */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = YiDMFT; sourceTree = BUILT_PRODUCTS_DIR; };
 		4CDD1CAB1799666C00614F34 /* BasicMath_BADoubleTriDiagonalMatrixVector.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = BasicMath_BADoubleTriDiagonalMatrixVector.c; sourceTree = "<group>"; };
 		4CDD1CAC179994DC00614F34 /* TestGFBA.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = TestGFBA.c; sourceTree = "<group>"; };
@@ -456,8 +455,8 @@
 		4CDD1C7D1796D06400614F34 /* Yi */ = {
 			isa = PBXGroup;
 			children = (
-				4CDD1C7E1796D06400614F34 /* DMFT_eg_Dyson.c */,
-				4CDD1C7F1796D06400614F34 /* DMFTFunctions.c */,
+				4C2DFCB6188D80170023CA96 /* MultiSitesDMFT.c */,
+				4C2DFCB7188D80170023CA96 /* MultiSitesFunctions.c */,
 			);
 			path = Yi;
 			sourceTree = "<group>";
@@ -643,7 +642,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4CDD1CA81796D15600614F34 /* DMFT_eg_Dyson.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
