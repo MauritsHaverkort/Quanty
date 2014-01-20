@@ -26,6 +26,7 @@
 #endif
 
 
+int    dcopy();
 int    dstev();
 int    dstevd();
 int    dsyev();
@@ -38,7 +39,9 @@ int    dsygv();
 int    zhegv();
 int    dsygvd();
 int    zhegvd();
+void   zdotc();
 double ddot();
+
 /**********************************************************/
 /********      Hubbard Model/CellFunctions.c      *********/
 /**********************************************************/

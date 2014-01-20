@@ -974,7 +974,7 @@ void TestComplex()
 
   int    n, inca = 1, incb = 1, i, N = 5;
   Complex16 a[N], b[N], c;
-  void   zdotc();
+  double aRe[N],aIm[N],bRe[N],bIm[N],cRe,cIm,cReIm,cImRe;
   n = N;
   for (i = 0; i < n; i++)
   {
@@ -982,9 +982,19 @@ void TestComplex()
     a[i].Im = (double)i *2.0;
     b[i].Re = (double)(n - i);
     b[i].Im = (double)i *2.0;
+    
+    aRe[i] = (double)i;
+    aIm[i] = (double)i *2.0;
+    bRe[i] = (double)(n - i);
+    bIm[i] = (double)i *2.0;
   }
   zdotc(&c, &n, a, &inca, b, &incb);
+  cRe=ddot(&n, aRe, &inca, bRe, &incb);
+  cIm=ddot(&n, aIm, &inca, bIm, &incb);
+  cImRe=ddot(&n, aIm, &inca, bRe, &incb);
+  cReIm=ddot(&n, aRe, &inca, bIm, &incb);
   printf("The complex dot product is: ( %6.2f, %6.2f) \n", c.Re, c.Im);
+  printf("The complex dot product is: ( %6.2f, %6.2f) \n", cRe+cIm, cReIm-cImRe);
 
 }
 
