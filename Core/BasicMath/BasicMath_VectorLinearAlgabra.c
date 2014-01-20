@@ -53,7 +53,7 @@ void ComplexVectorMultiply(double *const uRe, double *const uIm, const uint32_t 
 /*
  *
  */
-void RealVectorDotVector(const double *const u, const double *const v, uint32_t N, double *const a)
+void RealVectorDotVectorMahan(const double *const u, const double *const v, uint32_t N, double *const a)
 {
   uint32_t i;
   volatile double c, y, t;
@@ -72,6 +72,11 @@ void RealVectorDotVector(const double *const u, const double *const v, uint32_t 
 }
 
 
+void RealVectorDotVector(const double *const u, const double *const v, uint32_t N, double *const a)
+{
+  int const one=1;
+  *a = ddot(&N, u, &one, v, &one);
+}
 
 
 void ComplexVectorDotVector(const double *const uRe, const double *const uIm, const double *const vRe,
