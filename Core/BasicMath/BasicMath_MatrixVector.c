@@ -1159,6 +1159,35 @@ uint32_t MatrixCopy(MatrixType * const M, MatrixType const A)
   return 0;
 }
 
+/*
+ * M<-A
+ */
+uint32_t MatrixCopyToCompact(CompactMatrixType * const M, MatrixType const A)
+{
+  uint32_t i;
+  M->Ni = A.Ni;
+  M->Nj = A.Nj;
+  M->QComplex = A.QComplex;
+  if (InitCompactMatrix(M)) return 1;
+  strcpy(M->Name, A.Name);
+  if (M->QComplex)
+  {
+    for (i = 0; i < M->Ni*M->Nj; i++)
+    {
+      M->V[i].Re = A.VRe[0][i];
+      M->V[i].Im = A.VIm[0][i];
+    }
+  }
+  else
+  {
+    for (i = 0; i < M->Ni*M->Nj; i++)
+    {
+      M->VRe[i] = A.VRe[0][i];
+    }
+  }
+  return 0;
+}
+
 /* b <- M a
  * b already allocated
  * b[i]=sum_j M[i][j] a[j]
