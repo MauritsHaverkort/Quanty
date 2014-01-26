@@ -1906,6 +1906,86 @@ uint32_t MatrixToEigensystem(MatrixType const M, MatrixType * const T, double *v
 }
 
 
+/*
+ *  M=T.H.T^{\dag} with H a diagonal matrix with the values val on the diagonal
+ *  input M defined, H and T not initiallized
+ */
+uint32_t EigensystemToCompact(MatrixType const M, CompactMatrixType * const T, double *val)
+{
+  int    info;
+  const char *jobz = "V";
+  const char *uplo = "U";
+  int    lwork = 1 + 6 * M.Ni + 2 * Sqr(M.Ni);
+  int    liwork = 3 + 5 * M.Ni;
+  int    iwork[liwork];
+  double work[lwork];
+  if (M.Ni != M.Nj)
+  {
+    printf("Eigensystem called with non-square matrix\n");
+    printf("ERORR!!!!!!\n");
+    return 1;
+  }
+  if (M.QComplex == 0)
+  {                             /* Real */
+    if (MatrixCopyToCompact(T, M)) return 1;
+    strcpy(T->Name, "Eigenvectors of ");
+    strncat(T->Name, M.Name, MAX(0, MAXStrLength - 16));
+    dsyev(jobz, uplo, &M.Ni, T->VRe, &M.Ni, val, work, &lwork, &info);
+    if (info)
+    {
+      printf("dsyv failed in Eigensystem with info value %i\n", info);
+      printf("While working on matrix %s\n", M.Name);
+      printf("continue diagonalization with dsyvd\n");
+      fflush(stdout);
+      FreeCompactMatrix(T);
+      if (MatrixCopyToCompact(T, M)) return 1;
+      strcpy(T->Name, "Eigenvectors of ");
+      strncat(T->Name, M.Name, MAX(0, MAXStrLength - 16));
+      dsyevd(jobz, uplo, &M.Ni, T->VRe, &M.Ni, val, work, &lwork, iwork, &liwork, &info);
+      if (info)
+      {
+        printf("also dsyvd failed in Eigensystem with info value %i\n", info);
+        printf("ERORR!!!!!!!!!!\n");
+        fflush(stdout);
+        return 1;
+      }
+      return 0;
+    }
+    return 0;
+  }
+  else
+  {                             /* complex */
+    int    lcwork = 2 * M.Ni + Sqr(M.Ni);
+    Complex16 cwork[lcwork];
+    int    i;
+    if (MatrixCopyToCompact(T, M)) return 1;
+    zheev(jobz, uplo, &M.Ni, T->V, &M.Ni, val, cwork, &lcwork, work, &info);
+    if (info != 0)
+    {
+      printf("zheev failed in Eigensystem with info value %i\n", info);
+      printf("While working on matrix %s\n", M.Name);
+      printf("continue diagonalization with zheevd\n");
+      fflush(stdout);
+      FreeCompactMatrix(T);
+      if (MatrixCopyToCompact(T, M)) return 1;
+      zheevd(jobz, uplo, &M.Ni, T->V, &M.Ni, val, cwork, &lcwork, work, &lwork, iwork, &liwork, &info);
+      if (info != 0)
+      {
+        printf("also zheevd failed in Eigensystem with info value %i\n", info);
+        printf("ERORR!!!!!!!!!!\n");
+        fflush(stdout);
+        return 1;
+      }
+    }
+    for (i = 0; i < M.Ni * M.Ni; i++)
+    {
+      T->V[i].Im *= -1;
+    }
+    return 0;
+  }
+  return 0;
+}
+
 /*  Returns the Generalized Eigensystem of a non-orthnormal matrix.
  *  Given a basis psi_i
  *  Matrix M contains the values psi_i^* . H . psi_j

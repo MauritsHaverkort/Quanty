@@ -28,6 +28,7 @@
 #include "BasicMath/BasicMath_Combinatorial.c"
 #include "BasicMath/BasicMath_VectorLinearAlgabra.c"
 #include "BasicMath/BasicMath_MatrixVector.c"
+#include "BasicMath/BasicMath_CompactMatrixVector.c"
 #include "BasicMath/BasicMath_SparseMatrixVector.c"
 #include "BasicMath/BasicMath_TriDiagonalMatrixVector.c"
 #include "BasicMath/BasicMath_DoubleTriDiagonalMatrixVector.c"

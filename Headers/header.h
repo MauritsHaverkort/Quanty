@@ -55,6 +55,7 @@ uint32_t CopyCrystalStructure(CrystalStructureType A, CrystalStructureType * B);
 int    SetNFermionIndexTightBindingDef(TightBindingDef * A);
 uint32_t CreateUSperCell(OperatorType U, OperatorType * USuperCell, CrystalStructureSuperCellType SuperCell);
 int    CreateTightBindingSuperCell();
+int CreateHamiltonianFromTightBindingDef();
 
 
 
