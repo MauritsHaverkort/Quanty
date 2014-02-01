@@ -23,6 +23,7 @@ uint32_t InitListOfPoles(ListOfPoles * M)
     return 1;
   }
   M->a0 = 0;
+  M->mu = 0;
   return 0;
 }
 

@@ -53,6 +53,7 @@ uint32_t InitTriDiagonalMatrix(TriDiagonalMatrixType * const M)
   }
   M->a[0] = 0;
   M->b[0] = 1;
+  M->mu = 0;
   return 0;
 }
 
@@ -90,6 +91,7 @@ uint32_t InitIdentityTriDiagonalMatrix(TriDiagonalMatrixType * const M)
   }
   M->a[0] = 0;
   M->b[0] = 1;
+  M->mu = 0;
   return 0;
 }
 

@@ -50,6 +50,7 @@ uint32_t InitAndersonMatrix(AndersonMatrixType * const M)
   }
   M->a[0] = 0;
   M->b[0] = 1;
+  M->mu = 0;
   return 0;
 }
 
@@ -87,6 +88,7 @@ uint32_t InitIdentityAndersonMatrix(AndersonMatrixType * const M)
   }
   M->a[0] = 0;
   M->b[0] = 1;
+  M->mu = 0;
   return 0;
 }
 

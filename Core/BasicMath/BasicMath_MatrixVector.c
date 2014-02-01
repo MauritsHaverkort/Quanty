@@ -101,6 +101,7 @@ void FreeMatrix(MatrixType * const M)
 uint32_t InitMatrix(MatrixType * const M)
 {
   strcpy(M->Name, "Matrix");
+  M->mu = 0.;
   M->VRe = MatrixCalloc(M->Ni, M->Nj);
   if (M->VRe == NULL)
   {
@@ -131,6 +132,7 @@ uint32_t InitIdentityMatrix(MatrixType * const M)
 {
   uint32_t i;
   strcpy(M->Name, "I_Matrix");
+  M->mu = 0.;
   M->VRe = MatrixCalloc(M->Ni, M->Nj);
   if (M->VRe == NULL)
   {
