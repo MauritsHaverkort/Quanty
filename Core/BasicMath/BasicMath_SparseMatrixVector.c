@@ -43,13 +43,13 @@ uint32_t InitSparseMatrix(SparseMatrixType * const M)
   strcpy(M->Name, "Matrix");
   M->N = 0;
   M->NAloc = 1;
-  M->Next = malloc(M->NAloc * sizeof(uint32_t));
-  M->VRe = malloc(M->NAloc * sizeof(double));
+  M->Next = (uint32_t*)malloc(M->NAloc * sizeof(uint32_t));
+  M->VRe = (double*)malloc(M->NAloc * sizeof(double));
   if (M->QComplex)
-    M->VIm = malloc(M->NAloc * sizeof(double));
-  M->i = malloc(M->NAloc * sizeof(uint32_t));
-  M->j = malloc(M->NAloc * sizeof(uint32_t));
-  M->KeyList = calloc((uint32_t) 1 << (M->NBitsKey), sizeof(uint32_t));
+    M->VIm = (double*)malloc(M->NAloc * sizeof(double));
+  M->i = (uint32_t*)malloc(M->NAloc * sizeof(uint32_t));
+  M->j = (uint32_t*)malloc(M->NAloc * sizeof(uint32_t));
+  M->KeyList = (uint32_t*)calloc((uint32_t) 1 << (M->NBitsKey), sizeof(uint32_t));
   return 0;
 }
 
@@ -66,13 +66,13 @@ uint32_t InitSparseIdentityMatrix(SparseMatrixType * const M)
   strcpy(M->Name, "I_Matrix");
   M->N = Min(M->Ni, M->Nj);
   M->NAloc = M->N;
-  M->Next = malloc(M->NAloc * sizeof(uint32_t));
-  M->VRe = malloc(M->NAloc * sizeof(double));
+  M->Next = (uint32_t*)malloc(M->NAloc * sizeof(uint32_t));
+  M->VRe = (double*)malloc(M->NAloc * sizeof(double));
   if (M->QComplex)
-    M->VIm = calloc(M->NAloc, sizeof(double));
-  M->i = malloc(M->NAloc * sizeof(uint32_t));
-  M->j = malloc(M->NAloc * sizeof(uint32_t));
-  M->KeyList = calloc((uint32_t) 1 << (M->NBitsKey), sizeof(uint32_t));
+    M->VIm = (double*)calloc(M->NAloc, sizeof(double));
+  M->i = (uint32_t*)malloc(M->NAloc * sizeof(uint32_t));
+  M->j = (uint32_t*)malloc(M->NAloc * sizeof(uint32_t));
+  M->KeyList = (uint32_t*)calloc((uint32_t) 1 << (M->NBitsKey), sizeof(uint32_t));
   if ((M->KeyList == NULL) && (M->j))
   {
     free(M->Next);
@@ -97,7 +97,7 @@ uint32_t MakeRealSparseMatrixComplex(SparseMatrixType * const M)
 {
   if (M->QComplex)
     return 0;
-  M->VIm = calloc(M->NAloc, sizeof(double));
+  M->VIm = (double*)calloc(M->NAloc, sizeof(double));
   if (M->VIm == NULL)
     return 1;
   M->QComplex = 1;
@@ -128,79 +128,79 @@ uint32_t RealSparseMatrixAddElement(SparseMatrixType * const M, uint32_t i, uint
       temp = M->i;
       if (FirstAlloc)
       {
-        M->i = malloc(M->NAloc * sizeof(uint32_t));
+        M->i = (uint32_t*)malloc(M->NAloc * sizeof(uint32_t));
       }
       else
       {
-        M->i = realloc(M->i, M->NAloc * sizeof(uint32_t));
+        M->i = (uint32_t*)realloc(M->i, M->NAloc * sizeof(uint32_t));
       }
       if (M->i == NULL)
       {                         /* realloc failed */
         printf("alloc failed OperatorAdd 01i\n");
         fflush(stdout);
         /* restore O and return 0 */
-        M->i = temp;
+        M->i = (uint32_t*)temp;
         M->NAloc -= M->Ni + M->Nj;
         return (1);
       }
       temp = M->j;
       if (FirstAlloc)
       {
-        M->j = malloc(M->NAloc * sizeof(uint32_t));
+        M->j = (uint32_t*)malloc(M->NAloc * sizeof(uint32_t));
       }
       else
       {
-        M->j = realloc(M->j, M->NAloc * sizeof(uint32_t));
+        M->j = (uint32_t*)realloc(M->j, M->NAloc * sizeof(uint32_t));
       }
       if (M->j == NULL)
       {                         /* realloc failed */
         printf("alloc failed OperatorAdd 01j\n");
         fflush(stdout);
         /* restore O and return 0 */
-        M->j = temp;
+        M->j = (uint32_t*)temp;
         M->NAloc -= M->Ni + M->Nj;
-        M->i = realloc(M->i, M->NAloc * sizeof(uint32_t));
+        M->i = (uint32_t*)realloc(M->i, M->NAloc * sizeof(uint32_t));
         return (1);
       }
       temp = M->VRe;
       if (FirstAlloc)
       {
-        M->VRe = malloc(M->NAloc * sizeof(double));
+        M->VRe = (double*)malloc(M->NAloc * sizeof(double));
       }
       else
       {
-        M->VRe = realloc(M->VRe, M->NAloc * sizeof(double));
+        M->VRe = (double*)realloc(M->VRe, M->NAloc * sizeof(double));
       }
       if (M->VRe == NULL)
       {                         /* realloc failed */
         printf("alloc failed OperatorAdd 02\n");
         fflush(stdout);
         /* restore O and return 0 */
-        M->VRe = temp;
+        M->VRe = (double*)temp;
         M->NAloc -= M->Ni + M->Nj;
-        M->i = realloc(M->i, M->NAloc * sizeof(uint32_t));
-        M->j = realloc(M->j, M->NAloc * sizeof(uint32_t));
+        M->i = (uint32_t*)realloc(M->i, M->NAloc * sizeof(uint32_t));
+        M->j = (uint32_t*)realloc(M->j, M->NAloc * sizeof(uint32_t));
         return (1);
       }
       temp = M->Next;
       if (FirstAlloc)
       {
-        M->Next = malloc(M->NAloc * sizeof(uint32_t));
+        M->Next = (uint32_t*)malloc(M->NAloc * sizeof(uint32_t));
       }
       else
       {
-        M->Next = realloc(M->Next, M->NAloc * sizeof(uint32_t));
+        M->Next = (uint32_t*)realloc(M->Next, M->NAloc * sizeof(uint32_t));
       }
       if (M->Next == NULL)
       {                         /* realloc failed */
         printf("alloc failed OperatorAdd 03\n");
         fflush(stdout);
         /* restore O and return 0 */
-        M->Next = temp;
+        M->Next = (uint32_t*)temp;
         M->NAloc -= M->Ni + M->Nj;
-        M->i = realloc(M->i, M->NAloc * sizeof(uint32_t));
-        M->j = realloc(M->j, M->NAloc * sizeof(uint32_t));
-        M->VRe = realloc(M->VRe, M->NAloc * sizeof(double));
+        M->i = (uint32_t*)realloc(M->i, M->NAloc * sizeof(uint32_t));
+        M->j = (uint32_t*)realloc(M->j, M->NAloc * sizeof(uint32_t));
+        M->VRe = (double*)realloc(M->VRe, M->NAloc * sizeof(double));
         return (1);
       }
     }
@@ -231,53 +231,53 @@ uint32_t RealSparseMatrixAddElement(SparseMatrixType * const M, uint32_t i, uint
           {
             M->NAloc += M->Ni + M->Nj;
             temp = M->i;
-            M->i = realloc(M->i, M->NAloc * sizeof(uint32_t));
+            M->i = (uint32_t*)realloc(M->i, M->NAloc * sizeof(uint32_t));
             if (M->i == NULL)
             {                   /* realloc failed */
               printf("alloc failed OperatorAdd 11i\n");
               fflush(stdout);
               /* restore O and return 0 */
-              M->i = temp;
+              M->i = (uint32_t*)temp;
               M->NAloc -= M->Ni + M->Nj;
               return (1);
             }
             temp = M->j;
-            M->j = realloc(M->j, M->NAloc * sizeof(uint32_t));
+            M->j = (uint32_t*)realloc(M->j, M->NAloc * sizeof(uint32_t));
             if (M->j == NULL)
             {                   /* realloc failed */
               printf("alloc failed OperatorAdd 11j\n");
               fflush(stdout);
               /* restore O and return 0 */
-              M->j = temp;
+              M->j = (uint32_t*)temp;
               M->NAloc -= M->Ni + M->Nj;
-              M->i = realloc(M->i, M->NAloc * sizeof(uint32_t));
+              M->i = (uint32_t*)realloc(M->i, M->NAloc * sizeof(uint32_t));
               return (1);
             }
             temp = M->VRe;
-            M->VRe = realloc(M->VRe, M->NAloc * sizeof(double));
+            M->VRe = (double*)realloc(M->VRe, M->NAloc * sizeof(double));
             if (M->VRe == NULL)
             {                   /* realloc failed */
               printf("alloc failed OperatorAdd 12\n");
               fflush(stdout);
               /* restore O and return 0 */
-              M->VRe = temp;
+              M->VRe = (double*)temp;
               M->NAloc -= M->Ni + M->Nj;
-              M->i = realloc(M->i, M->NAloc * sizeof(uint32_t));
-              M->j = realloc(M->i, M->NAloc * sizeof(uint32_t));
+              M->i = (uint32_t*)realloc(M->i, M->NAloc * sizeof(uint32_t));
+              M->j = (uint32_t*)realloc(M->i, M->NAloc * sizeof(uint32_t));
               return (1);
             }
             temp = M->Next;
-            M->Next = realloc(M->Next, M->NAloc * sizeof(uint32_t));
+            M->Next = (uint32_t*)realloc(M->Next, M->NAloc * sizeof(uint32_t));
             if (M->Next == NULL)
             {                   /* realloc failed */
               printf("alloc failed OperatorAdd 13\n");
               fflush(stdout);
               /* restore O and return 0 */
-              M->Next = temp;
+              M->Next = (uint32_t*)temp;
               M->NAloc -= M->Ni + M->Nj;
-              M->i = realloc(M->i, M->NAloc * sizeof(uint32_t));
-              M->j = realloc(M->j, M->NAloc * sizeof(uint32_t));
-              M->VRe = realloc(M->VRe, M->NAloc * sizeof(double));
+              M->i = (uint32_t*)realloc(M->i, M->NAloc * sizeof(uint32_t));
+              M->j = (uint32_t*)realloc(M->j, M->NAloc * sizeof(uint32_t));
+              M->VRe = (double*)realloc(M->VRe, M->NAloc * sizeof(double));
               return (1);
             }
           }
@@ -323,79 +323,79 @@ uint32_t ComplexSparseMatrixAddElement(SparseMatrixType * const M, uint32_t i, u
       temp = M->i;
       if (FirstAlloc)
       {
-        M->i = malloc(M->NAloc * sizeof(uint32_t));
+        M->i = (uint32_t*)malloc(M->NAloc * sizeof(uint32_t));
       }
       else
       {
-        M->i = realloc(M->i, M->NAloc * sizeof(uint32_t));
+        M->i = (uint32_t*)realloc(M->i, M->NAloc * sizeof(uint32_t));
       }
       if (M->i == NULL)
       {                         /* realloc failed */
         printf("alloc failed OperatorAdd 01i\n");
         fflush(stdout);
         /* restore O and return 0 */
-        M->i = temp;
+        M->i = (uint32_t*)temp;
         M->NAloc -= M->Ni + M->Nj;
         return (1);
       }
       temp = M->j;
       if (FirstAlloc)
       {
-        M->j = malloc(M->NAloc * sizeof(uint32_t));
+        M->j = (uint32_t*)malloc(M->NAloc * sizeof(uint32_t));
       }
       else
       {
-        M->j = realloc(M->j, M->NAloc * sizeof(uint32_t));
+        M->j = (uint32_t*)realloc(M->j, M->NAloc * sizeof(uint32_t));
       }
       if (M->j == NULL)
       {                         /* realloc failed */
         printf("alloc failed OperatorAdd 01j\n");
         fflush(stdout);
         /* restore O and return 0 */
-        M->j = temp;
+        M->j = (uint32_t*)temp;
         M->NAloc -= M->Ni + M->Nj;
-        M->i = realloc(M->i, M->NAloc * sizeof(uint32_t));
+        M->i = (uint32_t*)realloc(M->i, M->NAloc * sizeof(uint32_t));
         return (1);
       }
       temp = M->VRe;
       if (FirstAlloc)
       {
-        M->VRe = malloc(M->NAloc * sizeof(double));
+        M->VRe = (double*)malloc(M->NAloc * sizeof(double));
       }
       else
       {
-        M->VRe = realloc(M->VRe, M->NAloc * sizeof(double));
+        M->VRe = (double*)realloc(M->VRe, M->NAloc * sizeof(double));
       }
       if (M->VRe == NULL)
       {                         /* realloc failed */
         printf("alloc failed OperatorAdd 02\n");
         fflush(stdout);
         /* restore O and return 0 */
-        M->VRe = temp;
+        M->VRe = (double*)temp;
         M->NAloc -= M->Ni + M->Nj;
-        M->i = realloc(M->i, M->NAloc * sizeof(uint32_t));
-        M->j = realloc(M->j, M->NAloc * sizeof(uint32_t));
+        M->i = (uint32_t*)realloc(M->i, M->NAloc * sizeof(uint32_t));
+        M->j = (uint32_t*)realloc(M->j, M->NAloc * sizeof(uint32_t));
         return (1);
       }
       temp = M->VIm;
       if (FirstAlloc)
       {
-        M->VIm = malloc(M->NAloc * sizeof(double));
+        M->VIm = (double*)malloc(M->NAloc * sizeof(double));
       }
       else
       {
-        M->VIm = realloc(M->VIm, M->NAloc * sizeof(double));
+        M->VIm = (double*)realloc(M->VIm, M->NAloc * sizeof(double));
       }
       if (M->VIm == NULL)
       {                         /* realloc failed */
         printf("alloc failed OperatorAdd 02\n");
         fflush(stdout);
         /* restore O and return 0 */
-        M->VIm = temp;
+        M->VIm = (double*)temp;
         M->NAloc -= M->Ni + M->Nj;
-        M->i = realloc(M->i, M->NAloc * sizeof(uint32_t));
-        M->j = realloc(M->j, M->NAloc * sizeof(uint32_t));
-        M->VRe = realloc(M->VRe, M->NAloc * sizeof(double));
+        M->i = (uint32_t*)realloc(M->i, M->NAloc * sizeof(uint32_t));
+        M->j = (uint32_t*)realloc(M->j, M->NAloc * sizeof(uint32_t));
+        M->VRe = (double*)realloc(M->VRe, M->NAloc * sizeof(double));
         return (1);
       }
       temp = M->Next;

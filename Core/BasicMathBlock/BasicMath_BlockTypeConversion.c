@@ -155,33 +155,60 @@ uint32_t BlockListOfPolesToSpectra(BlockListOfPoles const A, SpectraType *G, dou
   return 0;
 }
 
-uint32_t TightBindingHamiltonianToBlockListOfPoles(TightBindingDef const A, int Nk[3], BlockListOfPoles const * G)
+
+/*  Given an tight binding Hamiltonian and a k-mesh defined by the number of divisions of a, b and c (Nk)
+ *  Calculates the eigen values and functions for each k
+ *  adds for each k
+ *    ????
+ *    ????
+ *  to the list of poles
+ *  the total number of poles returned is ???
+ */
+uint32_t TightBindingHamiltonianToBlockListOfPoles(TightBindingDef const A, int Nk[3], BlockListOfPoles * const G)
 {
   MatrixType H;
   CompactMatrixType T;
   double q[3], val[A.NFermion];
-  int    iq[3];
+  int    iq[3],ival,ipole=0,i,j;
   double diq[3];
+  G->BlockSize=A.NFermion;
+  G->N=A.NFermion*Nk[0]*Nk[1]*Nk[2];
+  G->QComplex=1;
+  if(InitBlockListOfPoles(G))
+  {
+    printf("InitBlockListOfPoles failed in TightBindingHamiltonianToBlockListOfPoles\n");
+    return 1;
+  }
   for (iq[0] = 0; iq[0] < Nk[0]; iq[0]++)
   {
     for (iq[1] = 0; iq[1] < Nk[1]; iq[1]++)
     {
       for (iq[2] = 0; iq[2] < Nk[2]; iq[2]++)
       {
-        diq[0] = 1.0 * (iq[0] + 0.0) / ((double)(Nk[0]));
-        diq[1] = 1.0 * (iq[1] + 0.0) / ((double)(Nk[1]));
-        diq[2] = 1.0 * (iq[2] + 0.0) / ((double)(Nk[2]));
+        diq[0] = iq[0] / ((double)(Nk[0]));
+        diq[1] = iq[1] / ((double)(Nk[1]));
+        diq[2] = iq[2] / ((double)(Nk[2]));
         q[0] = diq[0] * A.Cell.gUnitCell[0][0] + diq[1] * A.Cell.gUnitCell[1][0] + diq[2] * A.Cell.gUnitCell[2][0];
         q[1] = diq[0] * A.Cell.gUnitCell[0][1] + diq[1] * A.Cell.gUnitCell[1][1] + diq[2] * A.Cell.gUnitCell[2][1];
         q[2] = diq[0] * A.Cell.gUnitCell[0][2] + diq[1] * A.Cell.gUnitCell[1][2] + diq[2] * A.Cell.gUnitCell[2][2];
         CreateHamiltonianFromTightBindingDef(A, q, &H);
         EigensystemToCompact(H, &T, val);
         FreeMatrix(&H);
-        
-        
-        /* to do */
-        
-        
+        for(ival=0;ival<A.NFermion;ival++)
+        {
+          G->V[ipole].Re=val[ival];
+          G->V[ipole].Im=0;
+          ipole++;
+          for(i=0;i<G->BlockSize;i++)
+          {
+            for(j=0;j<G->BlockSize;i++)
+            {
+              G->V[ipole].Re=T.V[ival*A.NFermion+i].Re*T.V[ival*A.NFermion+j].Re+T.V[ival*A.NFermion+i].Im*T.V[ival*A.NFermion+j].Im;
+              G->V[ipole].Im=T.V[ival*A.NFermion+i].Im*T.V[ival*A.NFermion+j].Re-T.V[ival*A.NFermion+i].Re*T.V[ival*A.NFermion+j].Im;
+              ipole++;
+            }
+          }
+        }
         FreeCompactMatrix(&T);
       }
     }

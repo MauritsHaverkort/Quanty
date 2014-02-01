@@ -18,12 +18,12 @@ void FreeCompactMatrix(CompactMatrixType * const M)
  */
 uint32_t InitCompactMatrix(CompactMatrixType * const M)
 {
-  M->Name=malloc(MAXStrLength*sizeof(char));
+  M->Name=(char*)malloc(MAXStrLength*sizeof(char));
   if(M->Name==NULL){printf("malloc for name failed in InitCompactMatrix\n");return 1;};
   strcpy(M->Name, "Matrix");
   if(M->QComplex)
   {
-    M->V=calloc(M->Ni*M->Nj,sizeof(Complex16));
+    M->V=(Complex16*)calloc(M->Ni*M->Nj,sizeof(Complex16));
     if(M->V==NULL)
     {
       printf("Malloc failed in InitCompactMatrix for complex allocation\n");
@@ -33,7 +33,7 @@ uint32_t InitCompactMatrix(CompactMatrixType * const M)
   }
   else
   {
-    M->VRe=calloc(M->Ni*M->Nj,sizeof(double));
+    M->VRe=(double*)calloc(M->Ni*M->Nj,sizeof(double));
     if(M->V==NULL)
     {
       printf("Malloc failed in InitCompactMatrix for real allocation\n");
@@ -50,12 +50,12 @@ uint32_t InitCompactMatrix(CompactMatrixType * const M)
 uint32_t InitCompactIdentityMatrix(CompactMatrixType * const M)
 {
   uint32_t i;
-  M->Name=malloc(MAXStrLength*sizeof(char));
+  M->Name=(char*)malloc(MAXStrLength*sizeof(char));
   if(M->Name==NULL){printf("malloc for name failed in InitCompactMatrix\n");return 1;};
   strcpy(M->Name, "I_Matrix");
   if(M->QComplex)
   {
-    M->V=calloc(M->Ni*M->Nj,sizeof(Complex16));
+    M->V=(Complex16*)calloc(M->Ni*M->Nj,sizeof(Complex16));
     if(M->V==NULL)
     {
       printf("Calloc failed in InitCompactMatrix for complex allocation\n");
@@ -69,7 +69,7 @@ uint32_t InitCompactIdentityMatrix(CompactMatrixType * const M)
   }
   else
   {
-    M->VRe=calloc(M->Ni*M->Nj,sizeof(double));
+    M->VRe=(double*)calloc(M->Ni*M->Nj,sizeof(double));
     if(M->V==NULL)
     {
       printf("Calloc failed in InitCompactMatrix for real allocation\n");
@@ -91,7 +91,7 @@ uint32_t MakeCompactRealMatrixComplex(CompactMatrixType * const M)
   Complex16 *temp;
   uint32_t i;
   if (M->QComplex) return 0;
-  temp=calloc(M->Ni*M->Nj,sizeof(Complex16));
+  temp=(Complex16*)calloc(M->Ni*M->Nj,sizeof(Complex16));
   if(temp==NULL)
   {
     printf("calloc failed in MakeCompactRealMatrixComplex\n");
@@ -115,7 +115,7 @@ uint32_t MakeCompactComplexMatrixReal(CompactMatrixType * const M)
   double *temp;
   uint32_t i;
   if (!(M->QComplex)) return 0;
-  temp=calloc(M->Ni*M->Nj,sizeof(double));
+  temp=(double*)calloc(M->Ni*M->Nj,sizeof(double));
   if(temp==NULL)
   {
     printf("calloc failed in MakeCompactComplexMatrixReal\n");

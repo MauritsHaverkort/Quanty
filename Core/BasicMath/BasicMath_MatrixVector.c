@@ -18,7 +18,7 @@ double **MatrixMalloc(const int Ni, const int Nj)
 {
   double **M;
   int    i;
-  M = malloc(Ni * sizeof(double *));
+  M = (double**)malloc(Ni * sizeof(double *));
   if (M == NULL)
   {
     printf("MatrixMalloc Failed for pointers of matrix of size %i by %i\n", Ni, Nj);
@@ -27,7 +27,7 @@ double **MatrixMalloc(const int Ni, const int Nj)
   }
   else
   {
-    M[0] = malloc(Ni * Nj * sizeof(double));
+    M[0] = (double*)malloc(Ni * Nj * sizeof(double));
     if (M[0] == NULL)
     {
       printf("MatrixMalloc Failed for matrix of size %i by %i\n", Ni, Nj);
@@ -52,7 +52,7 @@ double **MatrixCalloc(const int Ni, const int Nj)
 {
   double **M;
   int    i;
-  M = malloc(Ni * sizeof(double *));
+  M = (double**)malloc(Ni * sizeof(double *));
   if (M == NULL)
   {
     printf("MatrixCalloc Failed for pointers of matrix of size %i by %i\n", Ni, Nj);
@@ -61,7 +61,7 @@ double **MatrixCalloc(const int Ni, const int Nj)
   }
   else
   {
-    M[0] = calloc(Ni * Nj, sizeof(double));
+    M[0] = (double*)calloc(Ni * Nj, sizeof(double));
     if (M[0] == NULL)
     {
       printf("MatrixCalloc Failed for matrix of size %i by %i\n", Ni, Nj);
