@@ -971,6 +971,7 @@ uint32_t AndersonMatrixToBADoubleTriDiagonalMatrixTemperature(AndersonMatrixType
     /* double Eigenfun and Eigenval */
     Eigenfundbl.Ni = 2 * Eigenfun.Ni;
     Eigenfundbl.Nj = 2 * Eigenfun.Nj;
+    Eigenfundbl.QComplex = 0; // real
     InitMatrix(&Eigenfundbl);
     for (i = 0; i < Eigenfun.Ni; i++)
     {

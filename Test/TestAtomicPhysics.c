@@ -64,6 +64,9 @@ uint32_t TestAtomicPhysics()
   Spectra.N = 5000;
   Spectra.Emin = -5;
   Spectra.Emax = 5;
+  Spectra.EminPole = 0;
+  Spectra.EmaxPole = 0;
+  Spectra.phase = 0;
   Spectra.dE = (Spectra.Emax - Spectra.Emin) / Spectra.N;
   Spectra.Gamma = Gamma;
   SpectrumAllocate(Spectra, &Spectra);

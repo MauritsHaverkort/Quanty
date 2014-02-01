@@ -55,6 +55,7 @@ uint32_t InitDoubleTriDiagonalMatrix(DoubleTriDiagonalMatrixType * const M)
   }
   M->a0 = 0;
   M->b0 = 1;
+  M->mu = 0.;
   return 0;
 }
 
@@ -85,6 +86,7 @@ uint32_t InitIdentityDoubleTriDiagonalMatrix(DoubleTriDiagonalMatrixType * const
   }
   M->a0 = 0;
   M->b0 = 1;
+  M->mu = 0.;
   return 0;
 }
 
