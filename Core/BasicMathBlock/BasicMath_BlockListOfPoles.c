@@ -3,7 +3,7 @@
  *   malloc the space for storing N matrices of dimension BlockSize * BlockSize
  *   malloc the space for storing N doubles
  */
-uint32_t InitBlockListOfPoles(BlockListOfPoles *A)
+uint32_t InitBlockListOfPoles(BlockListOfPoles *const A)
 {
   if(A->QComplex)
   {
@@ -363,6 +363,7 @@ int OrderBlockListOfPolesCompareComplex(Complex16 *elem1, Complex16 *elem2)
 }
 
 /*  order the list such that a_{i} <= a_{i+1}
+ *
  *
  */
 uint32_t OrderBlockListOfPoles(BlockListOfPoles * const A)

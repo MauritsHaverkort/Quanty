@@ -256,7 +256,7 @@ uint32_t InitOperatorFixedLength(OperatorType * const O, const uint32_t length, 
   return 0;
 }
 
-/*  Initialize operator O with the setettings for NBitsKey and Maxlength of Oset
+/*  Initialize operator O with the settings for NBitsKey and Maxlength of Oset
  *  NAloc, N, and QComplex are set to zero
  */
 uint32_t InitOperatorCopySettings(OperatorType * const O, const OperatorType Oset)
@@ -1172,7 +1172,7 @@ uint32_t OperatorFixedLengthCopy(OperatorFixedLengthType * const Ocopy, Operator
         return 1;
       }
       memcpy(Ocopy->Next, O.Next, Ocopy->NAloc * sizeof(uint32_t));
-      memcpy(Ocopy->KeyList, O.KeyList, ((uint32_t) 1 << Ocopy->NBitsKey) * sizeof(uint32_t *));
+      memcpy(Ocopy->KeyList, O.KeyList, ((uint32_t) 1 << Ocopy->NBitsKey) * sizeof(uint32_t));
     }
   }
   return 0;
