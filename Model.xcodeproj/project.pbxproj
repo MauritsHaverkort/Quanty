@@ -165,6 +165,7 @@
 		4C3FCCFC188419B6000B9DB8 /* BasicMathBlock.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = BasicMathBlock.c; path = BasicMathBlock/BasicMathBlock.c; sourceTree = "<group>"; };
 		4C3FCCFD188419E4000B9DB8 /* BasicMath_BlockListOfPoles.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = BasicMath_BlockListOfPoles.c; path = BasicMathBlock/BasicMath_BlockListOfPoles.c; sourceTree = "<group>"; };
 		4C3FCCFE18841A19000B9DB8 /* BasicMath_BlockTypeConversion.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = BasicMath_BlockTypeConversion.c; path = BasicMathBlock/BasicMath_BlockTypeConversion.c; sourceTree = "<group>"; };
+		4C45453F189269F600E16DC6 /* BasicMath_CompactMatrixVector.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = BasicMath_CompactMatrixVector.c; sourceTree = "<group>"; };
 		4C5A6B9B175E6E8700EEA17F /* PrintMathematicaExpression.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = PrintMathematicaExpression.c; sourceTree = "<group>"; };
 		4C5CA61716D18BBF00BE1C25 /* DMFT */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = DMFT; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C77BA751741188E00AC7E7D /* OperatorWaveFunctionPerturbation.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = OperatorWaveFunctionPerturbation.c; sourceTree = "<group>"; };
@@ -322,6 +323,7 @@
 				4C2AAA38163265DD00138620 /* BasicMath_TriDiagonalMatrixVector.c */,
 				4C2AAA33163265DD00138620 /* BasicMath_ListOfPoles.c */,
 				4C2AAA35163265DD00138620 /* BasicMath_MatrixVector.c */,
+				4C45453F189269F600E16DC6 /* BasicMath_CompactMatrixVector.c */,
 				4C2AAA2B163265DD00138620 /* BasicMath_BlokAndersonMatrixVector.c */,
 				4C2AAA2C163265DD00138620 /* BasicMath_BlokDoubleTriDiagonalMatrixVector.c */,
 				4C2AAA2D163265DD00138620 /* BasicMath_BlokTriDiagonalMatrixVector.c */,
@@ -797,6 +799,7 @@
 				CLANG_WARN_ENUM_CONVERSION = YES;
 				CLANG_WARN_IMPLICIT_SIGN_CONVERSION = NO;
 				CLANG_WARN_INT_CONVERSION = YES;
+				GCC_INPUT_FILETYPE = sourcecode.c.c;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_WARN_TYPECHECK_CALLS_TO_PRINTF = YES;
 				GCC_WARN_UNKNOWN_PRAGMAS = NO;
@@ -814,6 +817,7 @@
 				CLANG_WARN_ENUM_CONVERSION = YES;
 				CLANG_WARN_IMPLICIT_SIGN_CONVERSION = NO;
 				CLANG_WARN_INT_CONVERSION = YES;
+				GCC_INPUT_FILETYPE = sourcecode.c.c;
 				GCC_WARN_TYPECHECK_CALLS_TO_PRINTF = YES;
 				GCC_WARN_UNKNOWN_PRAGMAS = NO;
 				PRODUCT_NAME = "$(TARGET_NAME)";

@@ -18,7 +18,7 @@ double **MatrixMalloc(const int Ni, const int Nj)
 {
   double **M;
   int    i;
-  M = malloc(Ni * sizeof(double *));
+  M = (double**)malloc(Ni * sizeof(double *));
   if (M == NULL)
   {
     printf("MatrixMalloc Failed for pointers of matrix of size %i by %i\n", Ni, Nj);
@@ -27,7 +27,7 @@ double **MatrixMalloc(const int Ni, const int Nj)
   }
   else
   {
-    M[0] = malloc(Ni * Nj * sizeof(double));
+    M[0] = (double*)malloc(Ni * Nj * sizeof(double));
     if (M[0] == NULL)
     {
       printf("MatrixMalloc Failed for matrix of size %i by %i\n", Ni, Nj);
@@ -52,7 +52,7 @@ double **MatrixCalloc(const int Ni, const int Nj)
 {
   double **M;
   int    i;
-  M = malloc(Ni * sizeof(double *));
+  M = (double**)malloc(Ni * sizeof(double *));
   if (M == NULL)
   {
     printf("MatrixCalloc Failed for pointers of matrix of size %i by %i\n", Ni, Nj);
@@ -61,7 +61,7 @@ double **MatrixCalloc(const int Ni, const int Nj)
   }
   else
   {
-    M[0] = calloc(Ni * Nj, sizeof(double));
+    M[0] = (double*)calloc(Ni * Nj, sizeof(double));
     if (M[0] == NULL)
     {
       printf("MatrixCalloc Failed for matrix of size %i by %i\n", Ni, Nj);
@@ -101,6 +101,7 @@ void FreeMatrix(MatrixType * const M)
 uint32_t InitMatrix(MatrixType * const M)
 {
   strcpy(M->Name, "Matrix");
+  M->mu = 0.;
   M->VRe = MatrixCalloc(M->Ni, M->Nj);
   if (M->VRe == NULL)
   {
@@ -131,6 +132,7 @@ uint32_t InitIdentityMatrix(MatrixType * const M)
 {
   uint32_t i;
   strcpy(M->Name, "I_Matrix");
+  M->mu = 0.;
   M->VRe = MatrixCalloc(M->Ni, M->Nj);
   if (M->VRe == NULL)
   {
@@ -1154,6 +1156,35 @@ uint32_t MatrixCopy(MatrixType * const M, MatrixType const A)
       {
         M->VRe[i][j] = A.VRe[i][j];
       }
+    }
+  }
+  return 0;
+}
+
+/*
+ * M<-A
+ */
+uint32_t MatrixCopyToCompact(CompactMatrixType * const M, MatrixType const A)
+{
+  uint32_t i;
+  M->Ni = A.Ni;
+  M->Nj = A.Nj;
+  M->QComplex = A.QComplex;
+  if (InitCompactMatrix(M)) return 1;
+  strcpy(M->Name, A.Name);
+  if (M->QComplex)
+  {
+    for (i = 0; i < M->Ni*M->Nj; i++)
+    {
+      M->V[i].Re = A.VRe[0][i];
+      M->V[i].Im = A.VIm[0][i];
+    }
+  }
+  else
+  {
+    for (i = 0; i < M->Ni*M->Nj; i++)
+    {
+      M->VRe[i] = A.VRe[0][i];
     }
   }
   return 0;

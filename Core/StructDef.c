@@ -150,6 +150,22 @@ typedef struct MatrixType
 }
 MatrixType;
 
+typedef struct CompactMatrixType
+{
+  char *Name;                   /* A pointer to a name string that can be used to lable functions, good for printing etc. */
+  uint32_t Ni, Nj;              /* dimmensions of the matrix */
+  uint32_t QComplex;            /* complex or real */
+  union
+  {
+    double *VRe;
+    Complex16 *V;
+  };
+  double a0;                    /* storing a possible real shift if a continued fraction notation is used */
+  double b0;                    /* storing a possilbe over-all scaling if a continued fraction notation is used */
+  double mu;
+}
+CompactMatrixType;
+
 /*  A sparse matrix indexed with the use of a hash function.
  *  KeyList and Next elements that are zero point to nowhere
  *  Other values point to elments 1 to the first element found at [0] etc.

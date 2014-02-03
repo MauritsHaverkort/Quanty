@@ -29,7 +29,7 @@ uint32_t InitializeTiming(TimeType * T)
   uint32_t i;
   T->N = 0;
   T->NAloc = 16;
-  if ((T->Name = malloc(T->NAloc * sizeof(char *))) == NULL)
+  if ((T->Name = (char**)malloc(T->NAloc * sizeof(char *))) == NULL)
   {
     printf("InitializeTiming failed\n");
     fflush(stdout);
@@ -37,7 +37,7 @@ uint32_t InitializeTiming(TimeType * T)
   }
   for (i = 0; i < T->NAloc; i++)
   {
-    if ((T->Name[i] = malloc(MAXStrLength * sizeof(char))) == NULL)
+    if ((T->Name[i] = (char*)malloc(MAXStrLength * sizeof(char))) == NULL)
     {
       printf("InitializeTiming failed\n");
       fflush(stdout);
@@ -45,25 +45,25 @@ uint32_t InitializeTiming(TimeType * T)
     }
     strcpy(T->Name[i], "\n");
   }
-  if ((T->TotalTime = malloc(T->NAloc * sizeof(uint32_t))) == NULL)
+  if ((T->TotalTime = (uint32_t*)malloc(T->NAloc * sizeof(uint32_t))) == NULL)
   {
     printf("InitializeTiming failed\n");
     fflush(stdout);
     return 1;
   }
-  if ((T->BeginTime = malloc(T->NAloc * sizeof(time_t))) == NULL)
+  if ((T->BeginTime = (time_t*)malloc(T->NAloc * sizeof(time_t))) == NULL)
   {
     printf("InitializeTiming failed\n");
     fflush(stdout);
     return 1;
   }
-  if ((T->NumberOfRuns = malloc(T->NAloc * sizeof(uint32_t))) == NULL)
+  if ((T->NumberOfRuns = (uint32_t*)malloc(T->NAloc * sizeof(uint32_t))) == NULL)
   {
     printf("InitializeTiming failed\n");
     fflush(stdout);
     return 1;
   }
-  if ((T->NowRunning = malloc(T->NAloc * sizeof(uint32_t))) == NULL)
+  if ((T->NowRunning = (uint32_t*)malloc(T->NAloc * sizeof(uint32_t))) == NULL)
   {
     printf("InitializeTiming failed\n");
     fflush(stdout);
@@ -76,7 +76,7 @@ uint32_t EnlargeTimingStructure(TimeType * T)
 {
   uint32_t i;
   T->NAloc += 16;
-  if ((T->Name = realloc(T->Name, T->NAloc * sizeof(char *))) == NULL)
+  if ((T->Name = (char**)realloc(T->Name, T->NAloc * sizeof(char *))) == NULL)
   {
     printf("EnlargeTimingStructure failed\n");
     fflush(stdout);
@@ -84,7 +84,7 @@ uint32_t EnlargeTimingStructure(TimeType * T)
   }
   for (i = T->NAloc - 16; i < T->NAloc; i++)
   {
-    if ((T->Name[i] = malloc(MAXStrLength * sizeof(char))) == NULL)
+    if ((T->Name[i] = (char*)malloc(MAXStrLength * sizeof(char))) == NULL)
     {
       printf("EnlargeTimingStructure failed\n");
       fflush(stdout);
@@ -92,25 +92,25 @@ uint32_t EnlargeTimingStructure(TimeType * T)
     }
     strcpy(T->Name[i], "\n");
   }
-  if ((T->TotalTime = realloc(T->TotalTime, T->NAloc * sizeof(uint32_t))) == NULL)
+  if ((T->TotalTime = (uint32_t*)realloc(T->TotalTime, T->NAloc * sizeof(uint32_t))) == NULL)
   {
     printf("EnlargeTimingStructure failed\n");
     fflush(stdout);
     return 1;
   }
-  if ((T->BeginTime = realloc(T->BeginTime, T->NAloc * sizeof(time_t))) == NULL)
+  if ((T->BeginTime = (time_t*)realloc(T->BeginTime, T->NAloc * sizeof(time_t))) == NULL)
   {
     printf("EnlargeTimingStructure failed\n");
     fflush(stdout);
     return 1;
   }
-  if ((T->NumberOfRuns = realloc(T->NumberOfRuns, T->NAloc * sizeof(uint32_t))) == NULL)
+  if ((T->NumberOfRuns = (uint32_t*)realloc(T->NumberOfRuns, T->NAloc * sizeof(uint32_t))) == NULL)
   {
     printf("EnlargeTimingStructure failed\n");
     fflush(stdout);
     return 1;
   }
-  if ((T->NowRunning = realloc(T->NowRunning, T->NAloc * sizeof(uint32_t))) == NULL)
+  if ((T->NowRunning = (uint32_t*)realloc(T->NowRunning, T->NAloc * sizeof(uint32_t))) == NULL)
   {
     printf("EnlargeTimingStructure failed\n");
     fflush(stdout);

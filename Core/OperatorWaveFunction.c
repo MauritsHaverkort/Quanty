@@ -7,9 +7,11 @@
 */
 double OperatorCr(uint8_t * const Determinant, const uint16_t i, const uint32_t NFermion)
 {
+  uint8_t detblok;
+  uint32_t j;
   if (i >= NFermion)
   {
-    uint32_t j = i - NFermion + ((NFermion + 7) >> 3);
+    j = i - NFermion + ((NFermion + 7) >> 3);
     if (Determinant[j] == 255)
     {
       return 0;
@@ -23,8 +25,6 @@ double OperatorCr(uint8_t * const Determinant, const uint16_t i, const uint32_t 
   {
     return 0;
   }
-  uint8_t detblok;
-  uint32_t j;
   Determinant[i >> 3] += (128 >> (i & 7));
   detblok = Determinant[i >> 3] >> (8 - (i & 7));
   for (j = i >> 3; j != 0;)
@@ -53,9 +53,11 @@ double OperatorCr(uint8_t * const Determinant, const uint16_t i, const uint32_t 
 */
 double OperatorAn(uint8_t * const Determinant, const uint16_t i, const uint32_t NFermion)
 {
+  uint8_t detblok;
+  uint32_t j;
   if (i >= NFermion)
   {
-    uint32_t j = i - NFermion + ((NFermion + 7) >> 3);
+    j = i - NFermion + ((NFermion + 7) >> 3);
     if (Determinant[j] == 0)
     {
       return 0;
@@ -69,8 +71,6 @@ double OperatorAn(uint8_t * const Determinant, const uint16_t i, const uint32_t 
   {
     return 0;
   }
-  uint8_t detblok;
-  uint32_t j;
   Determinant[i >> 3] -= (128 >> (i & 7));
   detblok = Determinant[i >> 3] >> (8 - (i & 7));
   for (j = i >> 3; j != 0;)
