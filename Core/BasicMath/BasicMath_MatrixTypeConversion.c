@@ -1598,7 +1598,7 @@ uint32_t SparseMatrixToTriDiagonalMatrix(SparseMatrixType M, MatrixType * const 
   strncat(H->Name, M.Name, MAX(0, MAXStrLength - 22));
   H->a[0] = M.a0;
   H->b[0] = M.b0;
-  for (i = 0; i < M.N; i++)
+  for (i = 0; i < T->Nj; i++)
   {
     T->VRe[0][i] = 0;
   }
