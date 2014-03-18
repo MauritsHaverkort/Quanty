@@ -13,9 +13,12 @@
 		4C2AAACC1632662000138620 /* Test.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA66163265DD00138620 /* Test.c */; };
 		4C2AAACE163266DD00138620 /* libblas.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACD163266DD00138620 /* libblas.dylib */; };
 		4C2AAAD0163266F900138620 /* liblapack.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACF163266F900138620 /* liblapack.dylib */; };
+		4C56E02818D877A1001B50A8 /* libblas.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACD163266DD00138620 /* libblas.dylib */; };
+		4C56E02918D877B7001B50A8 /* liblapack.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACF163266F900138620 /* liblapack.dylib */; };
 		4C5CA62016D18C3400BE1C25 /* DMFT.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA4C163265DD00138620 /* DMFT.c */; };
 		4C5CA62316D18CB100BE1C25 /* liblapack.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACF163266F900138620 /* liblapack.dylib */; };
 		4C5CA62416D18CD000BE1C25 /* libblas.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACD163266DD00138620 /* libblas.dylib */; };
+		4C6925CD18D86A1100E6FA6F /* CodeMartin.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C6925BF18D8683700E6FA6F /* CodeMartin.c */; };
 		4C79F5E117B53D4100189682 /* HubbardModel.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA54163265DD00138620 /* HubbardModel.c */; };
 		4C79F5E217B53E4F00189682 /* liblapack.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACF163266F900138620 /* liblapack.dylib */; };
 		4C79F5E317B53E5800189682 /* libblas.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACD163266DD00138620 /* libblas.dylib */; };
@@ -55,6 +58,15 @@
 			runOnlyForDeploymentPostprocessing = 1;
 		};
 		4C5CA61516D18BBF00BE1C25 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		4C6925C218D869FE00E6FA6F /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = /usr/share/man/man1/;
@@ -168,6 +180,8 @@
 		4C45453F189269F600E16DC6 /* BasicMath_CompactMatrixVector.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = BasicMath_CompactMatrixVector.c; sourceTree = "<group>"; };
 		4C5A6B9B175E6E8700EEA17F /* PrintMathematicaExpression.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = PrintMathematicaExpression.c; sourceTree = "<group>"; };
 		4C5CA61716D18BBF00BE1C25 /* DMFT */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = DMFT; sourceTree = BUILT_PRODUCTS_DIR; };
+		4C6925BF18D8683700E6FA6F /* CodeMartin.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = CodeMartin.c; path = Martin/CodeMartin.c; sourceTree = "<group>"; };
+		4C6925C418D869FE00E6FA6F /* MartinPESXAS */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = MartinPESXAS; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C77BA751741188E00AC7E7D /* OperatorWaveFunctionPerturbation.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = OperatorWaveFunctionPerturbation.c; sourceTree = "<group>"; };
 		4C79F5D817B53C8000189682 /* Hubart */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Hubart; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C8274D917DC49B000A5F555 /* header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = header.h; sourceTree = "<group>"; };
@@ -222,6 +236,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		4C6925C118D869FE00E6FA6F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4C56E02818D877A1001B50A8 /* libblas.dylib in Frameworks */,
+				4C56E02918D877B7001B50A8 /* liblapack.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		4C79F5D517B53C8000189682 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -251,6 +274,7 @@
 				4C8274D817DC491500A5F555 /* Headers */,
 				4C2AAA28163265DD00138620 /* Core */,
 				4C2AAA4B163265DD00138620 /* DMFT */,
+				4C6925BE18D867CD00E6FA6F /* Martin */,
 				4CDD1C7D1796D06400614F34 /* Yi */,
 				4C2AAA50163265DD00138620 /* Hubbard_Model */,
 				4C2AAA57163265DD00138620 /* IO */,
@@ -275,6 +299,7 @@
 				4CDD1C9F1796D14100614F34 /* YiDMFT */,
 				4C79F5D817B53C8000189682 /* Hubart */,
 				4C03B025186E376A004C2B7B /* TightBinding */,
+				4C6925C418D869FE00E6FA6F /* MartinPESXAS */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -443,6 +468,14 @@
 			name = BasicMathBlock;
 			sourceTree = "<group>";
 		};
+		4C6925BE18D867CD00E6FA6F /* Martin */ = {
+			isa = PBXGroup;
+			children = (
+				4C6925BF18D8683700E6FA6F /* CodeMartin.c */,
+			);
+			name = Martin;
+			sourceTree = "<group>";
+		};
 		4C8274D817DC491500A5F555 /* Headers */ = {
 			isa = PBXGroup;
 			children = (
@@ -534,6 +567,23 @@
 			productReference = 4C5CA61716D18BBF00BE1C25 /* DMFT */;
 			productType = "com.apple.product-type.tool";
 		};
+		4C6925C318D869FE00E6FA6F /* MartinPESXAS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4C6925CA18D869FE00E6FA6F /* Build configuration list for PBXNativeTarget "MartinPESXAS" */;
+			buildPhases = (
+				4C6925C018D869FE00E6FA6F /* Sources */,
+				4C6925C118D869FE00E6FA6F /* Frameworks */,
+				4C6925C218D869FE00E6FA6F /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MartinPESXAS;
+			productName = MartinPESXAS;
+			productReference = 4C6925C418D869FE00E6FA6F /* MartinPESXAS */;
+			productType = "com.apple.product-type.tool";
+		};
 		4C79F5D717B53C8000189682 /* Hubart */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 4C79F5E017B53C8000189682 /* Build configuration list for PBXNativeTarget "Hubart" */;
@@ -595,6 +645,7 @@
 				4CDD1C9E1796D14100614F34 /* YiDMFT */,
 				4C79F5D717B53C8000189682 /* Hubart */,
 				4C03B024186E376A004C2B7B /* TightBinding */,
+				4C6925C318D869FE00E6FA6F /* MartinPESXAS */,
 			);
 		};
 /* End PBXProject section */
@@ -629,6 +680,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				4C5CA62016D18C3400BE1C25 /* DMFT.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4C6925C018D869FE00E6FA6F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4C6925CD18D86A1100E6FA6F /* CodeMartin.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -824,6 +883,49 @@
 			};
 			name = Release;
 		};
+		4C6925CB18D869FE00E6FA6F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = NO;
+				MACOSX_DEPLOYMENT_TARGET = 10.9;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		4C6925CC18D869FE00E6FA6F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				ENABLE_NS_ASSERTIONS = NO;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = NO;
+				MACOSX_DEPLOYMENT_TARGET = 10.9;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 		4C79F5DE17B53C8000189682 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -916,6 +1018,15 @@
 			buildConfigurations = (
 				4C5CA61D16D18BBF00BE1C25 /* Debug */,
 				4C5CA61E16D18BBF00BE1C25 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		4C6925CA18D869FE00E6FA6F /* Build configuration list for PBXNativeTarget "MartinPESXAS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4C6925CB18D869FE00E6FA6F /* Debug */,
+				4C6925CC18D869FE00E6FA6F /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
