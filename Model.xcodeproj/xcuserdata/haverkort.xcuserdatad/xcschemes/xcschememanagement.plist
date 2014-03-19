@@ -12,7 +12,12 @@
 		<key>Hubart.xcscheme</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>4</integer>
+			<integer>5</integer>
+		</dict>
+		<key>MartinPESXAS.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>7</integer>
 		</dict>
 		<key>Model.xcscheme</key>
 		<dict>
@@ -27,12 +32,12 @@
 		<key>TightBinding.xcscheme</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>5</integer>
+			<integer>6</integer>
 		</dict>
 		<key>YiDMFT.xcscheme</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>3</integer>
+			<integer>4</integer>
 		</dict>
 	</dict>
 	<key>SuppressBuildableAutocreation</key>
@@ -53,6 +58,11 @@
 			<true/>
 		</dict>
 		<key>4C5CA61616D18BBF00BE1C25</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>4C6925C318D869FE00E6FA6F</key>
 		<dict>
 			<key>primary</key>
 			<true/>

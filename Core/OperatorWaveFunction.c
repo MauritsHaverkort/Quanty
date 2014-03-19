@@ -3722,7 +3722,7 @@ uint32_t PsiPrimeOperatorPsiMatrix(const OperatorType O, const WaveFunctionType 
   {
     if (OperatorPsi(O, psi[j], &Opsi))
     {
-      printf("OperatorPsi failed in PsiPrimeOperatorPsiMatrix at level i=%5i j=%5i", i, j);
+      printf("OperatorPsi failed in PsiPrimeOperatorPsiMatrix at level j=%5i", j);
       return 1;
     }
     for (i = 0; i < V->Ni; i++)

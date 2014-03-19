@@ -793,7 +793,7 @@ uint32_t LanczosTriDiagonalizeRR(const OperatorType H, WaveFunctionType psi, dou
   printf("\nStart of LanczosTriDiagonalizeRR\n\n");
   fflush(stdout);
   WaveFunctionType v[3];
-  uint32_t i, vi, vip, vim;
+  uint32_t i, vi=0, vip=0, vim=0;
   double temp, errorestimate = 1.0;
   double QRe[3], QIm[3], PRe[3], PIm[3], ValEst[3];
   QRe[0] = 1;
@@ -968,7 +968,7 @@ uint32_t LanczosTriDiagonalizeRC(const OperatorType H, WaveFunctionType psi, dou
   printf("\nStart of LanczosTriDiagonalizeRC\n\n");
   fflush(stdout);
   WaveFunctionType v[3];
-  uint32_t i, vi, vip, vim;
+  uint32_t i, vi=0, vip=0, vim=0;
   double temp, errorestimate = 1.0, junk;
   /* copy the name of psi to v[0] in order to do the loop more cleanely  */
   v[0].N = psi.N;
@@ -1072,7 +1072,7 @@ uint32_t LanczosTriDiagonalizeCC(const OperatorType H, WaveFunctionType psi, dou
   printf("\nStart of LanczosTriDiagonalizeCC\n\n");
   fflush(stdout);
   WaveFunctionType v[3];
-  uint32_t i, vi, vip, vim;
+  uint32_t i, vi=0, vip=0, vim=0;
   double temp, errorestimate = 1.0, junk;
   /* copy the name of psi to v[0] in order to do the loop more cleanely  */
   v[0].N = psi.N;
@@ -1176,7 +1176,7 @@ uint32_t LanczosTriDiagonalizeMC(const OperatorType H, WaveFunctionType psi, dou
   printf("\nStart of LanczosTriDiagonalizeMC\n\n");
   fflush(stdout);
   WaveFunctionType v[3];
-  uint32_t i, vi, vip, vim;
+  uint32_t i, vi=0, vip=0, vim=0;
   double temp, errorestimate = 1.0, junk;
   /* copy the name of psi to v[0] in order to do the loop more cleanely  */
   v[0].N = psi.N;
@@ -1281,7 +1281,7 @@ uint32_t LanczosTriDiagonalizePlusDensityRR(const OperatorType H, WaveFunctionTy
   printf("\nStart of LanczosTriDiagonalizePlusDensityRR\n\n");
   fflush(stdout);
   WaveFunctionType v[3];
-  uint32_t i, vi, vip, vim;
+  uint32_t i, vi=0, vip=0, vim=0;
   double temp, errorestimate = 1.0;
   double QRe[3], QIm[3], PRe[3], PIm[3], ValEst[3];
   QRe[0] = 1;
@@ -1456,7 +1456,7 @@ uint32_t LanczosTriDiagonalizePlusDensityRC(const OperatorType H, WaveFunctionTy
   printf("\nStart of LanczosTriDiagonalizePlusDensityRC\n\n");
   fflush(stdout);
   WaveFunctionType v[3];
-  uint32_t i, vi, vip, vim;
+  uint32_t i, vi=0, vip=0, vim=0;
   double temp, errorestimate = 1.0, junk;
   /* copy the name of psi to v[0] in order to do the loop more cleanely  */
   v[0].N = psi.N;
@@ -1560,7 +1560,7 @@ uint32_t LanczosTriDiagonalizePlusDensityCC(const OperatorType H, WaveFunctionTy
   printf("\nStart of LanczosTriDiagonalizePlusDensityCC\n\n");
   fflush(stdout);
   WaveFunctionType v[3];
-  uint32_t i, vi, vip, vim;
+  uint32_t i, vi=0, vip=0, vim=0;
   double temp, errorestimate = 1.0, junk;
   /* copy the name of psi to v[0] in order to do the loop more cleanely  */
   v[0].N = psi.N;
@@ -1664,7 +1664,7 @@ uint32_t LanczosTriDiagonalizePlusDensityMC(const OperatorType H, WaveFunctionTy
   printf("\nStart of LanczosTriDiagonalizePlusDensityMC\n\n");
   fflush(stdout);
   WaveFunctionType v[3];
-  uint32_t i, vi, vip, vim;
+  uint32_t i, vi=0, vip=0, vim=0;
   double temp, errorestimate = 1.0, junk;
   /* copy the name of psi to v[0] in order to do the loop more cleanely  */
   v[0].N = psi.N;
