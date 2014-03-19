@@ -401,11 +401,10 @@ void PEStest()
   int const ninitials=1, nbands=1, NStates=24+14*nbands;
   double Bext, Rydberg, red3D4F, red4F4F, redZta3D, redZta4F, Zta3D, Zta4F, Delta4FLFbottom, Bandwidth, Delta4FLF[nbands], U3D4F, U4F4F, FK3D4F[3], GK3D4F[3], FK4F4F[4], epsilon, ExpEnergyRe, ExpValRe, ExpValIm, ExpValReSum, ExpValImSum;
   uint16_t Index3Dup[5], Index3Ddn[5], Index4Fup[7], Index4Fdn[7], IndexLFup[nbands][7], IndexLFdn[nbands][7];
-  OperatorType OppSz3D, OppSz4F, OppSzLF, OppLz3D, OppLz4F, OppLzLF, Oppls3D, Oppls4F, OppCF4Fforw, OppCF4Fback, OppCF4F, OppU3D4F, OppU4F4F, OppN3D, Oppct, Oppct2, OppN4F, OppN3D4F, OppN4F4F, OppNLF[nbands], OppH, OppXAS, OppPES[10];
+  OperatorType OppSz3D, OppSz4F, OppLz3D, OppLz4F, Oppls3D, Oppls4F, OppCF4Fforw, OppCF4Fback, OppCF4F, OppU3D4F, OppU4F4F, OppN3D, Oppct, Oppct2, OppN4F, OppN3D4F, OppN4F4F, OppNLF[nbands], OppH, OppXAS, OppPES[10];
   HarmonicsExpansion Voh, VXAS;
   WaveFunctionType Opsi, psi, psiEigen[ninitials];
   TriDiagonalMatrixType SpecTri;
-  char *Filename, *CharToAdd;
   SpectraType Spectra, SpectraSum, SpectraPlasmon;
   
   // #pragma omp parallel for private(dynamic)
