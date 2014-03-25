@@ -2,7 +2,7 @@
 /*
  *  Calculate the density matrix of a wave-function
  *  On input psi contains a wave-function and Rho points to a not allocated matrix
- *  On excite Rho contains an psi.N by psi.N matrix
+ *  On excite Rho contains an psi.NFermion + psi.NBoson by psi.NFermion + psi.NBoson matrix
  */
 uint32_t CalculateDensityMatrix(MatrixType * const Rho, const WaveFunctionType psi)
 {

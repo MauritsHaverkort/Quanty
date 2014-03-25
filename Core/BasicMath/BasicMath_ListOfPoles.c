@@ -881,6 +881,7 @@ uint32_t SubtractListOfPoles(ListOfPoles * const A, const ListOfPoles B)
       }
       else
       {
+        iMin = A->N - 2;
         for (i = 1; i < A->N; i++)
         {
           if (VRes[NRes - 1] < A->a[i])
@@ -913,7 +914,7 @@ uint32_t SubtractListOfPoles(ListOfPoles * const A, const ListOfPoles B)
         }
         A->N--;
       }
-      if (A->b[iMin] < 0)
+      if ((A->b[iMin] < 0) && !(A->N==1))
       {
         WRes[NRes] = -A->b[iMin];
         VRes[NRes] = A->a[iMin];

@@ -814,33 +814,33 @@ uint32_t StreamReadDMFTSettings(DMFTSettings * O, FILE * stream)
   fgets(comments, 1000, stream);
   fscanf(stream, "%lf", &(O->Teff));
   fgets(comments, 1000, stream);
-  fscanf(stream, "%i", &(O->NmuSym));
+  fscanf(stream, "%d", &(O->NmuSym));
   fgets(comments, 1000, stream);
-  fscanf(stream, "%i", &(O->NSite));
+  fscanf(stream, "%d", &(O->NSite));
   fgets(comments, 1000, stream);
-  fscanf(stream, "%i", &(O->iStart));
+  fscanf(stream, "%d", &(O->iStart));
   fgets(comments, 1000, stream);
-  fscanf(stream, "%i", &(O->Ni));
+  fscanf(stream, "%d", &(O->Ni));
   fgets(comments, 1000, stream);
-  fscanf(stream, "%i", &(O->Dyson));
+  fscanf(stream, "%d", &(O->Dyson));
   fgets(comments, 1000, stream);
-  fscanf(stream, "%i", &(O->SymOpt));
+  fscanf(stream, "%d", &(O->SymOpt));
   fgets(comments, 1000, stream);
-  fscanf(stream, "%i", &(O->NGCluster));
+  fscanf(stream, "%d", &(O->NGCluster));
   fgets(comments, 1000, stream);
-  fscanf(stream, "%i", &(O->NGBath));
+  fscanf(stream, "%d", &(O->NGBath));
   fgets(comments, 1000, stream);
   fscanf(stream, "%lf", &(O->Mix));
   fgets(comments, 1000, stream);
   fscanf(stream, "%lf", &(O->U));
   fgets(comments, 1000, stream);
-  fscanf(stream, "%i", &(O->NBath));
+  fscanf(stream, "%d", &(O->NBath));
   fgets(comments, 1000, stream);
-  fscanf(stream, "%i", &(O->Spectra));
+  fscanf(stream, "%d", &(O->Spectra));
   O->NQ = 1;
   if ((O->Spectra) & 240)
   {
-    fscanf(stream, "%i", &(O->NQ));
+    fscanf(stream, "%d", &(O->NQ));
     O->Q = malloc(O->NQ * sizeof(double));
     for (i = 0; i < O->NQ; i++)
     {
@@ -852,7 +852,7 @@ uint32_t StreamReadDMFTSettings(DMFTSettings * O, FILE * stream)
     }
   }
   fgets(comments, 1000, stream);
-  fscanf(stream, "%i", &(O->NE));
+  fscanf(stream, "%d", &(O->NE));
   fgets(comments, 1000, stream);
   fscanf(stream, "%lf", &(O->Emin));
   fgets(comments, 1000, stream);
@@ -864,9 +864,9 @@ uint32_t StreamReadDMFTSettings(DMFTSettings * O, FILE * stream)
   fgets(comments, 1000, stream);
   fscanf(stream, "%lf", &(O->zeroLancWavefunction));
   fgets(comments, 1000, stream);
-  fscanf(stream, "%i", &(O->NTriDiag));
+  fscanf(stream, "%d", &(O->NTriDiag));
   fgets(comments, 1000, stream);
-  fscanf(stream, "%i", &(O->NBitsKey));
+  fscanf(stream, "%d", &(O->NBitsKey));
   fgets(comments, 1000, stream);
   if ((O->SymOpt) & 8)
   {
