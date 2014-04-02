@@ -145,22 +145,7 @@ uint32_t initializeDMFTReadGBath(DMFTSettings * const O, AndersonMatrixType * co
                                  ListOfPoles * const GBathLP)
 {
   char   FileName[MAXStrLength];
-  if (O->iStart == 0)
-  {
-    sprintf(FileName, "%s000", O->RootFileName);
-  }
-  else if (O->iStart < 10)
-  {
-    sprintf(FileName, "%s00%1i", O->RootFileName, O->iStart);
-  }
-  else if (O->iStart < 100)
-  {
-    sprintf(FileName, "%s0%2i", O->RootFileName, O->iStart);
-  }
-  else
-  {
-    sprintf(FileName, "%s%i", O->RootFileName, O->iStart);
-  }
+  sprintf(FileName, "%s%03i", O->RootFileName, O->iStart);
   if (file_exists(FileName))
   {
     if (FileReadListOfPolesUndetermined(GBathLP, FileName))
@@ -196,22 +181,7 @@ uint32_t initializeDMFTReadGBath(DMFTSettings * const O, AndersonMatrixType * co
 uint32_t initializeDMFTReadSigma(DMFTSettings const O, ListOfPoles * const Sigma)
 {
   char   FileName[MAXStrLength];
-  if (O.iStart == 0)
-  {
-    sprintf(FileName, "%sSigma000", O.RootFileName);
-  }
-  else if (O.iStart < 10)
-  {
-    sprintf(FileName, "%sSigma00%1i", O.RootFileName, O.iStart);
-  }
-  else if (O.iStart < 100)
-  {
-    sprintf(FileName, "%sSigma0%2i", O.RootFileName, O.iStart);
-  }
-  else
-  {
-    sprintf(FileName, "%sSigma%i", O.RootFileName, O.iStart);
-  }
+  sprintf(FileName, "%sSigma%03i", O.RootFileName, O.iStart);
   if (file_exists(FileName))
   {
     if (FileReadListOfPolesUndetermined(Sigma, FileName))
@@ -249,22 +219,7 @@ uint32_t initializeDMFTReadPsi(DMFTSettings const O, WaveFunctionType * const Ps
 {
   char   FileName[MAXStrLength], Buffer[MAXStrLength];
   uint32_t PsiNBathV, PsiNBathC;
-  if (O.iStart == 0)
-  {
-    sprintf(FileName, "%s000", O.WaveFunctionRootFileName);
-  }
-  else if (O.iStart < 10)
-  {
-    sprintf(FileName, "%s00%1i", O.WaveFunctionRootFileName, O.iStart);
-  }
-  else if (O.iStart < 100)
-  {
-    sprintf(FileName, "%s0%2i", O.WaveFunctionRootFileName, O.iStart);
-  }
-  else
-  {
-    sprintf(FileName, "%s%i", O.WaveFunctionRootFileName, O.iStart);
-  }
+  sprintf(FileName, "%s%03i", O.WaveFunctionRootFileName, O.iStart);
   if (file_exists(FileName))
   {
     Psi->NBitsKey = O.NBitsKey;
