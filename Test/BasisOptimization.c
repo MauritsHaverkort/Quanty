@@ -108,7 +108,7 @@ void BasisOptimizationSmallD4h()
   printf("There are 3 holes in the system\n");
   printf("The interactions are:");
   printf("U       : %lf\n",U);
-  printf("Fpp2    : %lf\n",Fpp0);
+  printf("Fpp0    : %lf\n",Fpp0);
   printf("Fpp2    : %lf\n",Fpp2);
   printf("tmax    : %lf\n",tmax);
   printf("delta1  : %lf\n",delta1);
@@ -187,6 +187,9 @@ void BasisOptimizationSmallD4h()
     CreateRealRandomWaveFunction(&psiGrd[i], NFermion, NElectron);
     /* Find groundstate */
     LanczosGroundState(H, &(psiGrd[i]), &accuracy, 0.000000000000001, 0, &(psiGrd[i]), 0);
+    
+    PrintWaveFunctionReadable(psiGrd[i]);
+    
     PsiHermitianOperatorPsi(H, psiGrd[i], &EGrd[i]);
     PsiHermitianOperatorPsi(Coulomb, psiGrd[i], &ECoulomb[i]);
     PsiHermitianOperatorPsi(OppH1, psiGrd[i], &EKinetic[i]);

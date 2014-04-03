@@ -687,6 +687,7 @@ uint32_t FindGroundStateFromG0andSigma(DMFTSettings const O, AndersonMatrixType 
 {
   uint32_t i, j, converged = 0, iiter;
   uint32_t const nitermax = 50, nitermem = 60;
+  uint16_t FermionIncluded[2];
   AndersonMatrixType GBathAnd;
   BADoubleTriDiagonalMatrixType GBathBA, GBathBATrunc;
   double WaveFunctionAccuracy, PsiEnergy, PsiQuality, onsiteshift[nitermax + 1], occupation, Rho[4 + 4 * O.NBath],
@@ -849,6 +850,9 @@ uint32_t FindGroundStateFromG0andSigma(DMFTSettings const O, AndersonMatrixType 
   printf("%22.15E  %22.15E\n", PsiEnergy, PsiQuality);
   PrintWaveFunctionDensity(*Psi);
   PrintWaveFunctionPrefactorHistogram(*Psi, 2.0, 20);
+  FermionIncluded[0]=0;
+  FermionIncluded[0]=1;
+  PrintWaveFunctionPartialCorrelationTensor(*Psi, 2, FermionIncluded);
   *GBathBARet = GBathBA;
   *GBathAndRet = GBathAnd;
   return 0;
