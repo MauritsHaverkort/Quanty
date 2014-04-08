@@ -133,30 +133,11 @@ int main(int argc, const char *argv[])
 
       printf("Start write to disk\n");
       fflush(stdout);
-      if (iOuter < 9)
-      {
-        sprintf(GBathFileName, "%sBath00%1i", DMFTSet.RootFileName, iOuter + 1);
-        sprintf(GClFileName, "%sCluster00%1i", DMFTSet.RootFileName, iOuter + 1);
-        sprintf(GSigmaFileName, "%sSigma00%1i", DMFTSet.RootFileName, iOuter + 1);
-        sprintf(PsiFileName, "%s00%1i", DMFTSet.WaveFunctionRootFileName, iOuter + 1);
-        sprintf(SpecFileName, "%s00%1i", DMFTSet.SpecRootFileName, iOuter + 1);
-      }
-      else if (iOuter < 99)
-      {
-        sprintf(GBathFileName, "%sBath0%2i", DMFTSet.RootFileName, iOuter + 1);
-        sprintf(GClFileName, "%sCluster0%2i", DMFTSet.RootFileName, iOuter + 1);
-        sprintf(GSigmaFileName, "%sSigma0%2i", DMFTSet.RootFileName, iOuter + 1);
-        sprintf(PsiFileName, "%s0%2i", DMFTSet.WaveFunctionRootFileName, iOuter + 1);
-        sprintf(SpecFileName, "%s0%2i", DMFTSet.SpecRootFileName, iOuter + 1);
-      }
-      else if (iOuter < 999)
-      {
-        sprintf(GBathFileName, "%sBath%3i", DMFTSet.RootFileName, iOuter + 1);
-        sprintf(GClFileName, "%sCluster%3i", DMFTSet.RootFileName, iOuter + 1);
-        sprintf(GSigmaFileName, "%sSigma%3i", DMFTSet.RootFileName, iOuter + 1);
-        sprintf(PsiFileName, "%s%3i", DMFTSet.WaveFunctionRootFileName, iOuter + 1);
-        sprintf(SpecFileName, "%s%3i", DMFTSet.SpecRootFileName, iOuter + 1);
-      }
+      sprintf(GBathFileName, "%sBath%03i", DMFTSet.RootFileName, iOuter + 1);
+      sprintf(GClFileName, "%sCluster%03i", DMFTSet.RootFileName, iOuter + 1);
+      sprintf(GSigmaFileName, "%sSigma%03i", DMFTSet.RootFileName, iOuter + 1);
+      sprintf(PsiFileName, "%s%03i", DMFTSet.WaveFunctionRootFileName, iOuter + 1);
+      sprintf(SpecFileName, "%s%03i", DMFTSet.SpecRootFileName, iOuter + 1);
       FilePrintSpectra(Spectra, 7, SpecFileName, "w");
       FilePrintPlainAndersonMatrix(GBathAnd, GBathFileName, "w");
       FilePrintPlainAndersonMatrix(GClAnd, GClFileName, "w");
@@ -280,22 +261,7 @@ uint32_t DMFTSpec(DMFTSettings const HSet, uint32_t const iOuter, double const E
     Spectra[0].Gamma = HSet.Gamma;
     SpectrumAllocate(Spectra[0], &Spectra[0]);
     TriDiagonalMatrixToSpectrum(Egrd, SpectraTri, &Spectra[0]);
-    if (iOuter == 0)
-    {
-      sprintf(SpecFileName, "%s001_Spin", HSet.SpecRootFileName);
-    }
-    else if (iOuter < 9)
-    {
-      sprintf(SpecFileName, "%s00%1i_Spin", HSet.SpecRootFileName, iOuter + 1);
-    }
-    else if (iOuter < 99)
-    {
-      sprintf(SpecFileName, "%s0%2i_Spin", HSet.SpecRootFileName, iOuter + 1);
-    }
-    else if (iOuter < 999)
-    {
-      sprintf(SpecFileName, "%s%3i_Spin", HSet.SpecRootFileName, iOuter + 1);
-    }
+    sprintf(SpecFileName, "%s%03i_Spin", HSet.SpecRootFileName, iOuter + 1);
     FilePrintSpectra(Spectra, 1, SpecFileName, "w");
     FreeTriDiagonalMatrix(&SpectraTri);
     SpectrumFree(&Spectra[0]);
@@ -332,22 +298,7 @@ uint32_t DMFTSpec(DMFTSettings const HSet, uint32_t const iOuter, double const E
     Spectra[0].Gamma = HSet.Gamma;
     SpectrumAllocate(Spectra[0], &Spectra[0]);
     TriDiagonalMatrixToSpectrum(Egrd, SpectraTri, &Spectra[0]);
-    if (iOuter == 0)
-    {
-      sprintf(SpecFileName, "%s001_Charge", HSet.SpecRootFileName);
-    }
-    else if (iOuter < 9)
-    {
-      sprintf(SpecFileName, "%s00%1i_Charge", HSet.SpecRootFileName, iOuter + 1);
-    }
-    else if (iOuter < 99)
-    {
-      sprintf(SpecFileName, "%s0%2i_Charge", HSet.SpecRootFileName, iOuter + 1);
-    }
-    else if (iOuter < 999)
-    {
-      sprintf(SpecFileName, "%s%3i_Charge", HSet.SpecRootFileName, iOuter + 1);
-    }
+    sprintf(SpecFileName, "%s%03i_Charge", HSet.SpecRootFileName, iOuter + 1);
     FilePrintSpectra(Spectra, 1, SpecFileName, "w");
     FreeTriDiagonalMatrix(&SpectraTri);
     SpectrumFree(&Spectra[0]);
@@ -385,22 +336,7 @@ uint32_t DMFTSpec(DMFTSettings const HSet, uint32_t const iOuter, double const E
     Spectra[0].Gamma = HSet.Gamma;
     SpectrumAllocate(Spectra[0], &Spectra[0]);
     TriDiagonalMatrixToSpectrum(Egrd, SpectraTri, &Spectra[0]);
-    if (iOuter == 0)
-    {
-      sprintf(SpecFileName, "%s001_Inelastic_Charge", HSet.SpecRootFileName);
-    }
-    else if (iOuter < 9)
-    {
-      sprintf(SpecFileName, "%s00%1i_Inelastic_Charge", HSet.SpecRootFileName, iOuter + 1);
-    }
-    else if (iOuter < 99)
-    {
-      sprintf(SpecFileName, "%s0%2i_Inelastic_Charge", HSet.SpecRootFileName, iOuter + 1);
-    }
-    else if (iOuter < 999)
-    {
-      sprintf(SpecFileName, "%s%3i_Inelastic_Charge", HSet.SpecRootFileName, iOuter + 1);
-    }
+    sprintf(SpecFileName, "%s%03i_Inelastic_Charge", HSet.SpecRootFileName, iOuter + 1);
     FilePrintSpectra(Spectra, 1, SpecFileName, "w");
     FreeTriDiagonalMatrix(&SpectraTri);
     SpectrumFree(&Spectra[0]);
@@ -442,22 +378,7 @@ uint32_t DMFTSpec(DMFTSettings const HSet, uint32_t const iOuter, double const E
     Spectra[0].Gamma = HSet.Gamma;
     SpectrumAllocate(Spectra[0], &Spectra[0]);
     TriDiagonalMatrixToSpectrum(Egrd, SpectraTri, &Spectra[0]);
-    if (iOuter == 0)
-    {
-      sprintf(SpecFileName, "%s001_NupNdn", HSet.SpecRootFileName);
-    }
-    else if (iOuter < 9)
-    {
-      sprintf(SpecFileName, "%s00%1i_NupNdn", HSet.SpecRootFileName, iOuter + 1);
-    }
-    else if (iOuter < 99)
-    {
-      sprintf(SpecFileName, "%s0%2i_NupNdn", HSet.SpecRootFileName, iOuter + 1);
-    }
-    else if (iOuter < 999)
-    {
-      sprintf(SpecFileName, "%s%3i_NupNdn", HSet.SpecRootFileName, iOuter + 1);
-    }
+    sprintf(SpecFileName, "%s%03i_NupNdn", HSet.SpecRootFileName, iOuter + 1);
     FilePrintSpectra(Spectra, 1, SpecFileName, "w");
     FreeTriDiagonalMatrix(&SpectraTri);
     SpectrumFree(&Spectra[0]);
@@ -521,22 +442,7 @@ uint32_t DMFTSpec(DMFTSettings const HSet, uint32_t const iOuter, double const E
       FreeTriDiagonalMatrix(&SpectraTri);
     }
     /* write spectra to disk */
-    if (iOuter == 0)
-    {
-      sprintf(SpecFileName, "%s001_XAS", HSet.SpecRootFileName);
-    }
-    else if (iOuter < 9)
-    {
-      sprintf(SpecFileName, "%s00%1i_XAS", HSet.SpecRootFileName, iOuter + 1);
-    }
-    else if (iOuter < 99)
-    {
-      sprintf(SpecFileName, "%s0%2i_XAS", HSet.SpecRootFileName, iOuter + 1);
-    }
-    else if (iOuter < 999)
-    {
-      sprintf(SpecFileName, "%s%3i_XAS", HSet.SpecRootFileName, iOuter + 1);
-    }
+    sprintf(SpecFileName, "%s%03i_XAS", HSet.SpecRootFileName, iOuter + 1);
     FilePrintSpectra(Spectra, HSet.NQ, SpecFileName, "w");
     /* free variables */
     for (iQ = 0; iQ < HSet.NQ; iQ++)
@@ -597,22 +503,7 @@ uint32_t DMFTSpec(DMFTSettings const HSet, uint32_t const iOuter, double const E
       FreeTriDiagonalMatrix(&SpectraTri);
     }
     /* write spectra to disk */
-    if (iOuter == 0)
-    {
-      sprintf(SpecFileName, "%s001_cPES", HSet.SpecRootFileName);
-    }
-    else if (iOuter < 9)
-    {
-      sprintf(SpecFileName, "%s00%1i_cPES", HSet.SpecRootFileName, iOuter + 1);
-    }
-    else if (iOuter < 99)
-    {
-      sprintf(SpecFileName, "%s0%2i_cPES", HSet.SpecRootFileName, iOuter + 1);
-    }
-    else if (iOuter < 999)
-    {
-      sprintf(SpecFileName, "%s%3i_cPES", HSet.SpecRootFileName, iOuter + 1);
-    }
+    sprintf(SpecFileName, "%s%03i_cPES", HSet.SpecRootFileName, iOuter + 1);
     FilePrintSpectra(Spectra, HSet.NQ, SpecFileName, "w");
     /* free variables */
     for (iQ = 0; iQ < HSet.NQ; iQ++)
@@ -698,22 +589,7 @@ uint32_t DMFTSpec(DMFTSettings const HSet, uint32_t const iOuter, double const E
       FreeTriDiagonalMatrix(&SpectraTri);
     }
     /* write spectra to disk */
-    if (iOuter == 0)
-    {
-      sprintf(SpecFileName, "%s001_XAS_d0", HSet.SpecRootFileName);
-    }
-    else if (iOuter < 9)
-    {
-      sprintf(SpecFileName, "%s00%1i_XAS_d0", HSet.SpecRootFileName, iOuter + 1);
-    }
-    else if (iOuter < 99)
-    {
-      sprintf(SpecFileName, "%s0%2i_XAS_d0", HSet.SpecRootFileName, iOuter + 1);
-    }
-    else if (iOuter < 999)
-    {
-      sprintf(SpecFileName, "%s%3i_XAS_d0", HSet.SpecRootFileName, iOuter + 1);
-    }
+    sprintf(SpecFileName, "%s%03i_XAS_d0", HSet.SpecRootFileName, iOuter + 1);
     FilePrintSpectra(Spectra, HSet.NQ, SpecFileName, "w");
     /* free variables */
     for (iQ = 0; iQ < HSet.NQ; iQ++)
@@ -799,22 +675,7 @@ uint32_t DMFTSpec(DMFTSettings const HSet, uint32_t const iOuter, double const E
       FreeTriDiagonalMatrix(&SpectraTri);
     }
     /* write spectra to disk */
-    if (iOuter == 0)
-    {
-      sprintf(SpecFileName, "%s001_XAS_d1", HSet.SpecRootFileName);
-    }
-    else if (iOuter < 9)
-    {
-      sprintf(SpecFileName, "%s00%1i_XAS_d1", HSet.SpecRootFileName, iOuter + 1);
-    }
-    else if (iOuter < 99)
-    {
-      sprintf(SpecFileName, "%s0%2i_XAS_d1", HSet.SpecRootFileName, iOuter + 1);
-    }
-    else if (iOuter < 999)
-    {
-      sprintf(SpecFileName, "%s%3i_XAS_d1", HSet.SpecRootFileName, iOuter + 1);
-    }
+    sprintf(SpecFileName, "%s%03i_XAS_d1", HSet.SpecRootFileName, iOuter + 1);
     FilePrintSpectra(Spectra, HSet.NQ, SpecFileName, "w");
     /* free variables */
     for (iQ = 0; iQ < HSet.NQ; iQ++)
