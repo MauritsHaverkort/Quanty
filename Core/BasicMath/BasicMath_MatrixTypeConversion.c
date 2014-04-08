@@ -1133,6 +1133,8 @@ uint32_t TriDiagonalMatrixToEigensystem(TriDiagonalMatrixType const M, MatrixTyp
   {
     printf("InitMatrix(T) failed in TriDiagonalMatrixToEigensystem\n");
     fflush(stdout);
+    free(work);
+    free(iwork);
     return 1;
   }
 
@@ -1153,6 +1155,8 @@ uint32_t TriDiagonalMatrixToEigensystem(TriDiagonalMatrixType const M, MatrixTyp
       return 1;
     }
   }
+  free(work);
+  free(iwork);
   return 0;
 }
 
