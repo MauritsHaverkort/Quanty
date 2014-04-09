@@ -111,7 +111,7 @@
       energy2 = energy1;
       RealWaveFunctionMultiply(v[0], 0);
       RealWaveFunctionAddSameBasis(v[0], *psi);
-      OperatorPsiConserveBasisPreAllocatedRR(H, v[0], &(v[1]));
+      OperatorPsiConserveBasisPreAllocatedRR(&H, &(v[0]), &(v[1]));
       RealWaveFunctionAddMultipliedSameBasis(v[1], v[0], shift);
       M.a[1] = RealWaveFunctionDotProduct(v[1], v[0]);
       for (i = 1; i < M.N; i++)
@@ -126,7 +126,7 @@
         else
           RealWaveFunctionMultiply(v[vi], 0.0);
         RealWaveFunctionOrthogonalizeConserveBasis(&v[vi], OtherPsi, NOtherPsi);
-        OperatorPsiConserveBasisPreAllocatedRR(H, v[vi], &(v[vip]));
+        OperatorPsiConserveBasisPreAllocatedRR(&H, &(v[vi]), &(v[vip]));
         RealWaveFunctionAddMultipliedSameBasis(v[vip], v[vi], shift);
         M.a[i + 1] = RealWaveFunctionDotProduct(v[vip], v[vi]);
         RealWaveFunctionAddMultipliedConserveBasis(&(v[vip]), v[vim], -M.b[i]);
@@ -137,7 +137,7 @@
       RealWaveFunctionMultiply(v[0], 0);
       RealWaveFunctionAddSameBasis(v[0], *psi);
       RealWaveFunctionMultiply(*psi, Eigen.VRe[0][0]);
-      OperatorPsiConserveBasisPreAllocatedRR(H, v[0], &(v[1]));
+      OperatorPsiConserveBasisPreAllocatedRR(&H, &(v[0]), &(v[1]));
       RealWaveFunctionAddMultipliedSameBasis(v[1], v[0], shift);
       for (i = 1; i < M.N; i++)
       {
@@ -150,7 +150,7 @@
         else
           RealWaveFunctionMultiply(v[vi], 0.0);
         RealWaveFunctionOrthogonalizeConserveBasis(&v[vi], OtherPsi, NOtherPsi);
-        OperatorPsiConserveBasisPreAllocatedRR(H, v[vi], &(v[vip]));
+        OperatorPsiConserveBasisPreAllocatedRR(&H, &(v[vi]), &(v[vip]));
         RealWaveFunctionAddMultipliedSameBasis(v[vip], v[vi], shift);
         RealWaveFunctionAddMultipliedSameBasis(v[vip], v[vim], -M.b[i]);
         RealWaveFunctionAddMultipliedSameBasis(*psi, v[vi], Eigen.VRe[0][i]);
@@ -269,7 +269,7 @@ uint32_t LanczosGroundStateRRold(const OperatorType H, WaveFunctionType * const 
       energy2 = energy1;
       RealWaveFunctionMultiply(v[0], 0);
       RealWaveFunctionAddSameBasis(v[0], *psi);
-      OperatorPsiConserveBasisPreAllocatedRR(H, v[0], &(v[1]));
+      OperatorPsiConserveBasisPreAllocatedRR(&H, &(v[0]), &(v[1]));
       M.a[1] = RealWaveFunctionDotProduct(v[1], v[0]);
       for (i = 1; i < M.N; i++)
       {
@@ -283,7 +283,7 @@ uint32_t LanczosGroundStateRRold(const OperatorType H, WaveFunctionType * const 
         else
           RealWaveFunctionMultiply(v[vi], 0.0);
         RealWaveFunctionOrthogonalizeConserveBasis(&v[vi], OtherPsi, NOtherPsi);
-        OperatorPsiConserveBasisPreAllocatedRR(H, v[vi], &(v[vip]));
+        OperatorPsiConserveBasisPreAllocatedRR(&H, &(v[vi]), &(v[vip]));
         M.a[i + 1] = RealWaveFunctionDotProduct(v[vip], v[vi]);
         RealWaveFunctionAddMultipliedConserveBasis(&(v[vip]), v[vim], -M.b[i]);
       }
@@ -291,7 +291,7 @@ uint32_t LanczosGroundStateRRold(const OperatorType H, WaveFunctionType * const 
       RealWaveFunctionMultiply(v[0], 0);
       RealWaveFunctionAddSameBasis(v[0], *psi);
       RealWaveFunctionMultiply(*psi, Eigen.VRe[0][0]);
-      OperatorPsiConserveBasisPreAllocatedRR(H, v[0], &(v[1]));
+      OperatorPsiConserveBasisPreAllocatedRR(&H, &(v[0]), &(v[1]));
       for (i = 1; i < M.N; i++)
       {
         vip = (i + 1) % 3;
@@ -303,7 +303,7 @@ uint32_t LanczosGroundStateRRold(const OperatorType H, WaveFunctionType * const 
         else
           RealWaveFunctionMultiply(v[vi], 0.0);
         RealWaveFunctionOrthogonalizeConserveBasis(&v[vi], OtherPsi, NOtherPsi);
-        OperatorPsiConserveBasisPreAllocatedRR(H, v[vi], &(v[vip]));
+        OperatorPsiConserveBasisPreAllocatedRR(&H, &(v[vi]), &(v[vip]));
         RealWaveFunctionAddMultipliedSameBasis(v[vip], v[vim], -M.b[i]);
         RealWaveFunctionAddMultipliedSameBasis(*psi, v[vi], Eigen.VRe[0][i]);
       }
@@ -415,7 +415,7 @@ uint32_t LanczosGroundStateRC(const OperatorType H, WaveFunctionType * const psi
       energy2 = energy1;
       ComplexWaveFunctionMultiply(v[0], 0);
       ComplexWaveFunctionAddSameBasis(v[0], *psi);
-      OperatorPsiConserveBasisPreAllocatedRC(H, v[0], &(v[1]));
+      OperatorPsiConserveBasisPreAllocatedRC(&H, &(v[0]), &(v[1]));
       ComplexWaveFunctionDotProduct(v[1], v[0], &(M.a[1]), &Imzero);
       for (i = 1; i < M.N; i++)
       {
@@ -429,7 +429,7 @@ uint32_t LanczosGroundStateRC(const OperatorType H, WaveFunctionType * const psi
         else
           ComplexWaveFunctionMultiply(v[vi], 0.0);
         ComplexWaveFunctionOrthogonalizeConserveBasis(&v[vi], OtherPsi, NOtherPsi);
-        OperatorPsiConserveBasisPreAllocatedRC(H, v[vi], &(v[vip]));
+        OperatorPsiConserveBasisPreAllocatedRC(&H, &(v[vi]), &(v[vip]));
         ComplexWaveFunctionDotProduct(v[vip], v[vi], &(M.a[i + 1]), &Imzero);
         ComplexWaveFunctionAddMultipliedConserveBasis(&(v[vip]), v[vim], -M.b[i]);
       }
@@ -437,7 +437,7 @@ uint32_t LanczosGroundStateRC(const OperatorType H, WaveFunctionType * const psi
       ComplexWaveFunctionMultiply(v[0], 0);
       ComplexWaveFunctionAddSameBasis(v[0], *psi);
       ComplexWaveFunctionMultiply(*psi, Eigen.VRe[0][0]);
-      OperatorPsiConserveBasisPreAllocatedRC(H, v[0], &(v[1]));
+      OperatorPsiConserveBasisPreAllocatedRC(&H, &(v[0]), &(v[1]));
       for (i = 1; i < M.N; i++)
       {
         vip = (i + 1) % 3;
@@ -449,7 +449,7 @@ uint32_t LanczosGroundStateRC(const OperatorType H, WaveFunctionType * const psi
         else
           ComplexWaveFunctionMultiply(v[vi], 0.0);
         ComplexWaveFunctionOrthogonalizeConserveBasis(&v[vi], OtherPsi, NOtherPsi);
-        OperatorPsiConserveBasisPreAllocated(H, v[vi], &(v[vip]));
+        OperatorPsiConserveBasisPreAllocated(&H, &(v[vi]), &(v[vip]));
         ComplexWaveFunctionAddMultipliedSameBasis(v[vip], v[vim], -M.b[i]);
         ComplexWaveFunctionAddMultipliedSameBasis(*psi, v[vi], Eigen.VRe[0][i]);
       }
@@ -561,7 +561,7 @@ uint32_t LanczosGroundStateMC(const OperatorType H, WaveFunctionType * const psi
       energy2 = energy1;
       ComplexWaveFunctionMultiply(v[0], 0);
       ComplexWaveFunctionAddSameBasis(v[0], *psi);
-      OperatorPsiConserveBasisPreAllocatedMC(H, v[0], &(v[1]));
+      OperatorPsiConserveBasisPreAllocatedMC(&H, &(v[0]), &(v[1]));
       ComplexWaveFunctionDotProduct(v[1], v[0], &(M.a[1]), &Imzero);
       for (i = 1; i < M.N; i++)
       {
@@ -575,7 +575,7 @@ uint32_t LanczosGroundStateMC(const OperatorType H, WaveFunctionType * const psi
         else
           ComplexWaveFunctionMultiply(v[vi], 0.0);
         ComplexWaveFunctionOrthogonalizeConserveBasis(&v[vi], OtherPsi, NOtherPsi);
-        OperatorPsiConserveBasisPreAllocatedMC(H, v[vi], &(v[vip]));
+        OperatorPsiConserveBasisPreAllocatedMC(&H, &(v[vi]), &(v[vip]));
         ComplexWaveFunctionDotProduct(v[vip], v[vi], &(M.a[i + 1]), &Imzero);
         ComplexWaveFunctionAddMultipliedConserveBasis(&(v[vip]), v[vim], -M.b[i]);
       }
@@ -583,7 +583,7 @@ uint32_t LanczosGroundStateMC(const OperatorType H, WaveFunctionType * const psi
       ComplexWaveFunctionMultiply(v[0], 0);
       ComplexWaveFunctionAddSameBasis(v[0], *psi);
       ComplexWaveFunctionMultiply(*psi, Eigen.VRe[0][0]);
-      OperatorPsiConserveBasisPreAllocatedMC(H, v[0], &(v[1]));
+      OperatorPsiConserveBasisPreAllocatedMC(&H, &(v[0]), &(v[1]));
       for (i = 1; i < M.N; i++)
       {
         vip = (i + 1) % 3;
@@ -595,7 +595,7 @@ uint32_t LanczosGroundStateMC(const OperatorType H, WaveFunctionType * const psi
         else
           ComplexWaveFunctionMultiply(v[vi], 0.0);
         ComplexWaveFunctionOrthogonalizeConserveBasis(&v[vi], OtherPsi, NOtherPsi);
-        OperatorPsiConserveBasisPreAllocatedMC(H, v[vi], &(v[vip]));
+        OperatorPsiConserveBasisPreAllocatedMC(&H, &(v[vi]), &(v[vip]));
         ComplexWaveFunctionAddMultipliedSameBasis(v[vip], v[vim], -M.b[i]);
         ComplexWaveFunctionAddMultipliedSameBasis(*psi, v[vi], Eigen.VRe[0][i]);
       }
@@ -707,7 +707,7 @@ uint32_t LanczosGroundStateCC(const OperatorType H, WaveFunctionType * const psi
       energy2 = energy1;
       ComplexWaveFunctionMultiply(v[0], 0);
       ComplexWaveFunctionAddSameBasis(v[0], *psi);
-      OperatorPsiConserveBasisPreAllocatedCC(H, v[0], &(v[1]));
+      OperatorPsiConserveBasisPreAllocatedCC(&H, &(v[0]), &(v[1]));
       ComplexWaveFunctionDotProduct(v[1], v[0], &(M.a[0]), &Imzero);
       for (i = 1; i < M.N; i++)
       {
@@ -721,7 +721,7 @@ uint32_t LanczosGroundStateCC(const OperatorType H, WaveFunctionType * const psi
         else
           ComplexWaveFunctionMultiply(v[vi], 0.0);
         ComplexWaveFunctionOrthogonalizeConserveBasis(&v[vi], OtherPsi, NOtherPsi);
-        OperatorPsiConserveBasisPreAllocatedCC(H, v[vi], &(v[vip]));
+        OperatorPsiConserveBasisPreAllocatedCC(&H, &(v[vi]), &(v[vip]));
         ComplexWaveFunctionDotProduct(v[vip], v[vi], &(M.a[i + 1]), &Imzero);
         ComplexWaveFunctionAddMultipliedConserveBasis(&(v[vip]), v[vim], -M.b[i]);
       }
@@ -729,7 +729,7 @@ uint32_t LanczosGroundStateCC(const OperatorType H, WaveFunctionType * const psi
       ComplexWaveFunctionMultiply(v[0], 0);
       ComplexWaveFunctionAddSameBasis(v[0], *psi);
       ComplexWaveFunctionMultiply(*psi, Eigen.VRe[0][0]);
-      OperatorPsiConserveBasisPreAllocatedCC(H, v[0], &(v[1]));
+      OperatorPsiConserveBasisPreAllocatedCC(&H, &(v[0]), &(v[1]));
       for (i = 1; i < M.N; i++)
       {
         vip = (i + 1) % 3;
@@ -741,7 +741,7 @@ uint32_t LanczosGroundStateCC(const OperatorType H, WaveFunctionType * const psi
         else
           ComplexWaveFunctionMultiply(v[vi], 0.0);
         ComplexWaveFunctionOrthogonalizeConserveBasis(&v[vi], OtherPsi, NOtherPsi);
-        OperatorPsiConserveBasisPreAllocatedCC(H, v[vi], &(v[vip]));
+        OperatorPsiConserveBasisPreAllocatedCC(&H, &(v[vi]), &(v[vip]));
         ComplexWaveFunctionAddMultipliedSameBasis(v[vip], v[vim], -M.b[i]);
         ComplexWaveFunctionAddMultipliedSameBasis(*psi, v[vi], Eigen.VRe[0][i]);
       }

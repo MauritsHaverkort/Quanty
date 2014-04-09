@@ -252,7 +252,7 @@ uint32_t WaveFunctionAddElementConserveBasis(WaveFunctionType * const psi, const
   {
     if (fabs(aIm) < DBL_MIN * 10)
     {
-      RealWaveFunctionAddElementConserveBasis(*psi, det, aRe);
+      RealWaveFunctionAddElementConserveBasis(psi, det, aRe);
       return 0;
     }
     if (MakeComplexWaveFunctionFromReal(psi, *psi))
