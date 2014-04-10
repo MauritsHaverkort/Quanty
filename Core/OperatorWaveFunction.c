@@ -113,6 +113,7 @@ double inline OperatorLader(uint8_t * const Determinant, const uint16_t * const 
     {
       phase *= OperatorAn(Determinant, o[i], NFermion);
     }
+    if (phase == 0) break;
   }
   return phase;
 }
