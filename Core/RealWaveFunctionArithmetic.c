@@ -282,6 +282,7 @@ void RealWaveFunctionAddElementConserveBasis(WaveFunctionType const *psi, const 
 {
   uint32_t i, NextIndex, PsiAIsPsiB;
   /* test if the key that belongs to psi already excists */
+  if (a == 0) return;
   NextIndex=psi->KeyList[hash(det, psi->NWord, psi->NBitsKey)];
   if (!NextIndex)
   {                             /* det not in key, do nothing */
