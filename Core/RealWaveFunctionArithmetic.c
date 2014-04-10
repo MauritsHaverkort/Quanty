@@ -273,45 +273,48 @@ uint32_t RealWaveFunctionAddElement(WaveFunctionType * const psi, const uint8_t 
 
 
 /*
-*   add ellement with single slater determinant det and prefactor a to wave function psi
+*   add element with single slater determinant det and prefactor a to wave function psi
 *   But only add it iff det is already present in the basis
 *   As psi only stores the number of non zero elements and pointers to the real values the value of psi is not changed.
-*   The values psi points to are natturally changed
+*   The values psi points to are naturaly changed
 */
-void RealWaveFunctionAddElementConserveBasis(WaveFunctionType psi, const uint8_t * const det, const double a)
+void RealWaveFunctionAddElementConserveBasis(WaveFunctionType const *psi, const uint8_t * const det, const double a)
 {
   uint32_t i, NextIndex, PsiAIsPsiB;
   /* test if the key that belongs to psi already excists */
-  if (psi.KeyList[hash(det, psi.NWord, psi.NBitsKey)] == 0)
+  NextIndex=psi->KeyList[hash(det, psi->NWord, psi->NBitsKey)];
+  if (!NextIndex)
   {                             /* det not in key, do nothing */
     return;
   }
   else
   {                             /* The key is already taken, test if this is due to a collision, or if psi is already in the basis set */
-    NextIndex = psi.KeyList[hash(det, psi.NWord, psi.NBitsKey)];
     while (1)
     {
       PsiAIsPsiB = 1;
-      for (i = 0; i < psi.NWord; i++)
+      for (i = 0; i < psi->NWord; i++)
       {
-        if (psi.Determinant[BlokElementDet(NextIndex, psi.NWord, i)] != det[i])
+        if (psi->Determinant[BlokElementDet(NextIndex, psi->NWord, i)] != det[i])
+        {
           PsiAIsPsiB = 0;
+          break;
+        }
       }
       if (PsiAIsPsiB)
       {                         /* psi already in basis set add and leave loop  */
 #pragma omp atomic
-        psi.ValueRe[BlokElement(NextIndex)] += a;
+        psi->ValueRe[BlokElement(NextIndex)] += a;
         return;
       }
       else
       {                         /* psi not equal to this one, if there is a next continue, otherwise leave */
-        if (!psi.Next[BlokElement(NextIndex)])
+        if (!psi->Next[BlokElement(NextIndex)])
         {                       /* hash(psi) had a collision, but det is different. There are no other psi's with the same hash, so det not in basis lets leave */
           return;
         }
         else
         {                       /* the key is in use and there still is at least one more element with the same key, continu checking */
-          NextIndex = psi.Next[BlokElement(NextIndex)];
+          NextIndex = psi->Next[BlokElement(NextIndex)];
         }
       }
     }
@@ -466,7 +469,7 @@ uint32_t RealWaveFunctionAddUnionBasis(WaveFunctionType * const a, const WaveFun
     {                           /* Allocation of new memory for a failed Remove all elements added so far and return 1 */
       for (j = b.N; j != i; --j)
       {
-        RealWaveFunctionAddElementConserveBasis(*a, &b.Determinant[BlokElementDet(i, b.NWord, 0)],
+        RealWaveFunctionAddElementConserveBasis(a, &b.Determinant[BlokElementDet(i, b.NWord, 0)],
                                                 -b.ValueRe[BlokElement(i)]);
       }
       return 1;
@@ -493,7 +496,7 @@ uint32_t RealWaveFunctionAddMultipliedUnionBasis(WaveFunctionType * const a, con
     {                           /* Allocation of new memory for a failed Remove all elements added so far and return 1 */
       for (j = b.N; j != i; --j)
       {
-        RealWaveFunctionAddElementConserveBasis(*a, &b.Determinant[BlokElementDet(i, b.NWord, 0)],
+        RealWaveFunctionAddElementConserveBasis(a, &b.Determinant[BlokElementDet(i, b.NWord, 0)],
                                                 -alpha * b.ValueRe[BlokElement(i)]);
       }
       return 1;
@@ -518,7 +521,7 @@ void RealWaveFunctionAddConserveBasis(WaveFunctionType * const a, const WaveFunc
   for (iOMP = 1; iOMP <= (int)b.N; iOMP++)
   {
     i = (uint32_t) iOMP;
-    RealWaveFunctionAddElementConserveBasis(*a, &b.Determinant[BlokElementDet(i, b.NWord, 0)],
+    RealWaveFunctionAddElementConserveBasis(a, &b.Determinant[BlokElementDet(i, b.NWord, 0)],
                                             b.ValueRe[BlokElement(i)]);
   }
 }
@@ -539,7 +542,7 @@ void RealWaveFunctionAddMultipliedConserveBasis(WaveFunctionType * const a, cons
   for (iOMP = 1; iOMP <= (int)b.N; iOMP++)
   {
     i = (uint32_t) iOMP;
-    RealWaveFunctionAddElementConserveBasis(*a, &b.Determinant[BlokElementDet(i, b.NWord, 0)],
+    RealWaveFunctionAddElementConserveBasis(a, &b.Determinant[BlokElementDet(i, b.NWord, 0)],
                                             alpha * b.ValueRe[BlokElement(i)]);
   }
 }
