@@ -340,21 +340,28 @@ void ComplexWaveFunctionAddElementConserveBasis(WaveFunctionType psi, const uint
                                                 const double aIm)
 {
   uint32_t i, NextIndex, PsiAIsPsiB;
+
+  if (aRe == 0) return;
+  if (aIm == 0) return;
+
   /* test if the key that belongs to psi already excists */
-  if (psi.KeyList[hash(det, psi.NWord, psi.NBitsKey)] == 0)
+  NextIndex = psi.KeyList[hash(det, psi.NWord, psi.NBitsKey)];
+  if (NextIndex == 0)
   {                             /* det not in key, do nothing */
     return;
   }
   else
   {                             /* The key is already taken, test if this is due to a collision, or if psi is already in the basis set */
-    NextIndex = psi.KeyList[hash(det, psi.NWord, psi.NBitsKey)];
     while (1)
     {
       PsiAIsPsiB = 1;
       for (i = 0; i < psi.NWord; i++)
       {
         if (psi.Determinant[BlokElementDet(NextIndex, psi.NWord, i)] != det[i])
+        {
           PsiAIsPsiB = 0;
+          break;
+        }
       }
       if (PsiAIsPsiB)
       {                         /* psi already in basis set add and leave loop  */
