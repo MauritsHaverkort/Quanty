@@ -341,8 +341,7 @@ void ComplexWaveFunctionAddElementConserveBasis(WaveFunctionType psi, const uint
 {
   uint32_t i, NextIndex, PsiAIsPsiB;
 
-  if (aRe == 0) return;
-  if (aIm == 0) return;
+  if ((aRe == 0) && (aIm == 0)) return;
 
   /* test if the key that belongs to psi already excists */
   NextIndex = psi.KeyList[hash(det, psi.NWord, psi.NBitsKey)];
