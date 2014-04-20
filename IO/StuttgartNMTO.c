@@ -679,7 +679,7 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
             }
             else
             {
-              for(int i=0;i<O->SYMGRP.NGEN;i++)
+              for(i=0;i<O->SYMGRP.NGEN;i++)
               {
                 StreamReadStuttgartCTRLchar(stream, O->SYMGRP.GENGRP[i]);
               }
