@@ -735,7 +735,10 @@ double RealWaveFunctionDotProduct(const WaveFunctionType a, const WaveFunctionTy
       for (j = 0; j < b.NWord; j++)
       {
         if (b.Determinant[BlokElementDet(NextIndex, b.NWord, j)] != a.Determinant[BlokElementDet(i, a.NWord, j)])
+        {
           PsiAIsPsiB = 0;
+          break;
+        }
       }
       if (PsiAIsPsiB)
       {                         /* a=b found add the product to Dot and leave loop  */
