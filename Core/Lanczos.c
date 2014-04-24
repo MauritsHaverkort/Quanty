@@ -3204,7 +3204,6 @@ uint32_t LanczosTriDiagonalizeDysonFullLowMem(OperatorType const O, uint32_t nma
     /* create VOV[0] */
     OperatorMultiply2NormalOrder(&VOVtemp, V[i], V[i], 'N', 'D', &QDetNotOrderedFcFaBcBa);
     PsiOperatorPsiMatrix(VOVtemp, PsiKrylov, &VOV[0]);
-    exit(0);
     FreeOperator(&VOVtemp);
     for (n = 1; n <= 2 * nmax + 1; n++)
     {
