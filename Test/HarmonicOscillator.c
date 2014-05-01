@@ -2,8 +2,8 @@
 // by using plane waves as basis functions
 // The harmonic oscillator 
 
-#define N 70
-#define M (2*N+1)
+#define NOSCI 70
+#define MOSCI (2*NOSCI+1)
 const double a = 10.;
 const double dxint = 0.01;
 
@@ -44,19 +44,19 @@ void SolveBLAS()
 {
   int    i, j;
 
-  double matrix[M * M];
-  double e[M];
-  double wrk[3 * M];
+  double matrix[MOSCI * MOSCI];
+  double e[MOSCI];
+  double wrk[3 * MOSCI];
 
-  for (j = -N; j <= N; j++)
-    for (i = -N; i <= N; i++)
-      matrix[(j + N) * M + (i + N)] = IntegrateKinetic(i, j) + IntegratePotential(i, j);
+  for (j = -NOSCI; j <= NOSCI; j++)
+    for (i = -NOSCI; i <= NOSCI; i++)
+      matrix[(j + NOSCI) * MOSCI + (i + NOSCI)] = IntegrateKinetic(i, j) + IntegratePotential(i, j);
 
   const char *V = "V";
   const char *U = "U";
-  int    npw = M;
+  int    npw = MOSCI;
   int    info;
-  int    wrksize = 3 * M;
+  int    wrksize = 3 * MOSCI;
   printf("Solution based on dsyev (BLAS):\n");
   dsyev_(V, U, &npw, matrix, &npw, e, wrk, &wrksize, &info);
   printf("e0 = %f\n", e[0]);
@@ -71,21 +71,21 @@ void SolveLanczos()
   int    NBitsKey = 8;
   OperatorType H;
   InitOperator(&H);
-  H.NFermion = M;
+  H.NFermion = MOSCI;
   InitOperatorFixedLength(&H, 2, NBitsKey);
-  for (j = -N; j <= N; j++)
+  for (j = -NOSCI; j <= NOSCI; j++)
   {
-    for (i = -N; i <= N; i++)
+    for (i = -NOSCI; i <= NOSCI; i++)
     {
       uint16_t oadd[2];
-      oadd[0] = (i + N);
-      oadd[1] = (j + N) | CrAnMask;
+      oadd[0] = (i + NOSCI);
+      oadd[1] = (j + NOSCI) | CrAnMask;
       RealOperatorAddLader(&H, oadd, 2, IntegrateKinetic(i, j) + IntegratePotential(i, j));
     }
   }
 
   WaveFunctionType psi;
-  CreateRealRandomWaveFunction(&psi, M, 1);
+  CreateRealRandomWaveFunction(&psi, MOSCI, 1);
   WaveFunctionRandomize(&psi);
   //PrintWaveFunctionReadable(psi);
 
