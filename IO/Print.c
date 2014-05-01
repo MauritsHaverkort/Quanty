@@ -50,6 +50,11 @@ uint32_t PrintWaveFunctionDensity(WaveFunctionType psi)
   return StreamPrintWaveFunctionDensity(psi, stdout);
 }
 
+uint32_t PrintWaveFunctionPartialCorrelationTensor(WaveFunctionType psi, uint32_t const NFermionIncluded, uint16_t * const FermionIncluded)
+{
+  return StreamPrintWaveFunctionPartialCorrelationTensor(psi, stdout, NFermionIncluded, FermionIncluded);
+}
+
 uint32_t PrintWaveFunctionPrefactorHistogram(WaveFunctionType psi, const double exp, const uint32_t N)
 {
   return StreamPrintWaveFunctionPrefactorHistogram(psi, exp, N, stdout);

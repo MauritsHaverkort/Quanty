@@ -119,43 +119,43 @@ double inline OperatorLader(uint8_t * const Determinant, const uint16_t * const 
 }
 
 
-uint32_t inline PsiAddOperatorPsiConserveBasisCC(const OperatorType *O, const WaveFunctionType *psi,
+uint32_t PsiAddOperatorPsiConserveBasisCC(const OperatorType *O, const WaveFunctionType *psi,
                                           WaveFunctionType * const Opsi)
 {
   return 0;
 }
 
-uint32_t inline PsiAddOperatorPsiConserveBasisCR(const OperatorType *O, const WaveFunctionType * psi,
+uint32_t PsiAddOperatorPsiConserveBasisCR(const OperatorType *O, const WaveFunctionType * psi,
                                           WaveFunctionType * const Opsi)
 {
   return 0;
 }
 
-uint32_t inline PsiAddOperatorPsiConserveBasisRC(const OperatorType *O, const WaveFunctionType *psi,
+uint32_t PsiAddOperatorPsiConserveBasisRC(const OperatorType *O, const WaveFunctionType *psi,
                                           WaveFunctionType * const Opsi)
 {
   return 0;
 }
 
-uint32_t inline PsiAddOperatorPsiConserveBasisRR(const OperatorType *O, const WaveFunctionType *psi,
+uint32_t PsiAddOperatorPsiConserveBasisRR(const OperatorType *O, const WaveFunctionType *psi,
                                           WaveFunctionType * const Opsi)
 {
   return 0;
 }
 
-uint32_t inline PsiAddOperatorPsiConserveBasisRRC(const OperatorType *O, const WaveFunctionType *psi,
+uint32_t PsiAddOperatorPsiConserveBasisRRC(const OperatorType *O, const WaveFunctionType *psi,
                                            WaveFunctionType * const Opsi)
 {
   return 0;
 }
 
-uint32_t inline PsiAddOperatorPsiConserveBasisMC(const OperatorType *O, const WaveFunctionType *psi,
+uint32_t PsiAddOperatorPsiConserveBasisMC(const OperatorType *O, const WaveFunctionType *psi,
                                           WaveFunctionType * const Opsi)
 {
   return 0;
 }
 
-uint32_t inline PsiAddOperatorPsiConserveBasisMR(const OperatorType *O, const WaveFunctionType *psi,
+uint32_t PsiAddOperatorPsiConserveBasisMR(const OperatorType *O, const WaveFunctionType *psi,
                                           WaveFunctionType * const Opsi)
 {
   return 0;
