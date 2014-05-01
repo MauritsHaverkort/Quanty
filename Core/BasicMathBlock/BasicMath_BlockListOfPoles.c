@@ -3,7 +3,7 @@
  *   malloc the space for storing N matrices of dimension BlockSize * BlockSize
  *   malloc the space for storing N doubles
  */
-uint32_t InitBlockListOfPoles(BlockListOfPoles *A)
+uint32_t InitBlockListOfPoles(BlockListOfPoles *const A)
 {
   if(A->QComplex)
   {
@@ -364,6 +364,7 @@ int OrderBlockListOfPolesCompareComplex(Complex16 *elem1, Complex16 *elem2)
 
 /*  order the list such that a_{i} <= a_{i+1}
  *
+ *
  */
 uint32_t OrderBlockListOfPoles(BlockListOfPoles * const A)
 {
@@ -516,6 +517,7 @@ uint32_t ReduceBlockListOfPoles(BlockListOfPoles * const A, uint32_t N, double c
         {
           Normi=ListOfPolesNormFlatWeightComplex(A->V+1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm), A->BlockSize, 0, 0, 0);
           Normimin=ListOfPolesNormFlatWeightComplex(A->V+1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm-1), A->BlockSize, 0, 0, 0);
+          Normiplus=1-Normimin;
           if(Normi+Normimin<DBL_MIN*1000)
           {
             a=0.5;
@@ -535,6 +537,7 @@ uint32_t ReduceBlockListOfPoles(BlockListOfPoles * const A, uint32_t N, double c
         {
           Normi=ListOfPolesNormFlatWeightComplex(A->V+1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm), A->BlockSize, 0, 0, 0);
           Normiplus=ListOfPolesNormFlatWeightComplex(A->V+1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm+1), A->BlockSize, 0, 0, 0);
+          Normimin = 1-Normiplus;
           if(Normi+Normiplus<DBL_MIN*1000)
           {
             a=0.5;
@@ -559,7 +562,7 @@ uint32_t ReduceBlockListOfPoles(BlockListOfPoles * const A, uint32_t N, double c
         else
         {
           Normiplus = (a-amin)/(aplus-amin);
-          Normimin = 1-Normimin;
+          Normimin = 1-Normiplus;
         }
         for(i=1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm);i<1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm+1);i++)
         {
@@ -574,7 +577,7 @@ uint32_t ReduceBlockListOfPoles(BlockListOfPoles * const A, uint32_t N, double c
     }
     A->V=realloc(A->V, ((A->N+1)*(1+A->BlockSize*A->BlockSize)-1)*sizeof(Complex16));
   }
-  else
+  else /* Real */
   {
     double *iBlock;
     while(A->N>N)
@@ -646,6 +649,7 @@ uint32_t ReduceBlockListOfPoles(BlockListOfPoles * const A, uint32_t N, double c
         {
           Normi=ListOfPolesNormFlatWeightReal(A->VRe+1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm), A->BlockSize, 0, 0, 0);
           Normimin=ListOfPolesNormFlatWeightReal(A->VRe+1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm-1), A->BlockSize, 0, 0, 0);
+          Normiplus=1-Normimin;
           if(Normi+Normimin<DBL_MIN*1000)
           {
             a=0.5;
@@ -664,6 +668,7 @@ uint32_t ReduceBlockListOfPoles(BlockListOfPoles * const A, uint32_t N, double c
         {
           Normi=ListOfPolesNormFlatWeightReal(A->VRe+1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm), A->BlockSize, 0, 0, 0);
           Normiplus=ListOfPolesNormFlatWeightReal(A->VRe+1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm+1), A->BlockSize, 0, 0, 0);
+          Normimin=1-Normiplus;
           if(Normi+Normiplus<DBL_MIN*1000)
           {
             a=0.5;
@@ -678,17 +683,16 @@ uint32_t ReduceBlockListOfPoles(BlockListOfPoles * const A, uint32_t N, double c
             A->VRe[1+A->BlockSize*A->BlockSize+i]+=A->VRe[i];
           }
         }
+        else if((aplus-amin)<DBL_MIN*1000)
+        {
+          Normiplus=0.5;
+          Normimin=0.5;
+        }
         else
-          if((aplus-amin)<DBL_MIN*1000)
-          {
-            Normiplus=0.5;
-            Normimin=0.5;
-          }
-          else
-          {
-            Normiplus = (a-amin)/(aplus-amin);
-            Normimin = 1-Normimin;
-          }
+        {
+          Normiplus = (a-amin)/(aplus-amin);
+          Normimin = 1-Normiplus;
+        }
         for(i=1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm);i<1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm+1);i++)
         {
           A->VRe[i-1-A->BlockSize*A->BlockSize]+=Normimin*A->VRe[i];

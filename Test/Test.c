@@ -68,7 +68,7 @@
 #include "../Test/OperatorArithmetic.c"
 #include "../Test/StuttgartNMTO.c"
 #include "../Test/HarmonicOscillator.c"
-
+#include "../Test/BasisOptimization.c"
 
 int main(int argc, const char *argv[])
 {
@@ -173,7 +173,9 @@ int main(int argc, const char *argv[])
     
     if (!strncmp("NMTO", argv[argc], strlen(argv[argc])))
       TestStuttgartNMTO();
-
+    
+    if (!strncmp("BasisOpt", argv[argc], strlen(argv[argc])))
+      BasisOptimization();
   }
   
   

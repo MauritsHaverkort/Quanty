@@ -94,6 +94,21 @@ uint32_t RealVectorMatrixVector();
 uint32_t ComplexVectorMatrixVector();
 void   MatrixOrthonormalize();
 
+
+
+/**********************************************************/
+/**********    BasisMath/CompactMatrixVector.c   **********/
+/**********************************************************/
+void   FreeCompactMatrix();
+uint32_t InitCompactMatrix();
+uint32_t InitCompactIdentityMatrix();
+uint32_t MakeCompactRealMatrixComplex();
+uint32_t CompactMatrixChop();
+uint32_t CompactMatrixTranspose();
+void   CompactMatrixComplexConjugate();
+uint32_t CompactMatrixConjugateTranspose();
+double CompactMatrixInverse();
+
 /**********************************************************/
 /*******       BasisMath/SparseMatrixVector.c       *******/
 /**********************************************************/

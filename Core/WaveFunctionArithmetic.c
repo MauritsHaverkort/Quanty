@@ -643,7 +643,7 @@ uint32_t WaveFunctionOrthogonalize(WaveFunctionType * const psi, const WaveFunct
 uint32_t CreateStartWaveFunctionOnsiteEnergy(const OperatorType O, WaveFunctionType * psi, uint32_t nFermion,
                                              uint32_t nBoson, uint32_t NBitsKey)
 {
-  uint16_t i, j, jpick;
+  uint16_t i, j, jpick=0;
   double MinEnergy, Energy, EnergySqr;
   uint8_t Determinant[O.NWord];
   psi->NFermion = O.NFermion;
@@ -653,13 +653,13 @@ uint32_t CreateStartWaveFunctionOnsiteEnergy(const OperatorType O, WaveFunctionT
   WaveFunctionInit(psi);
   if (nFermion > O.NFermion)
   {
-    printf("Can't create a strating wave-function with %i Fermions, when there are only %i basis fermions\n", nFermion,
+    printf("Can't create a starting wave-function with %i Fermions, when there are only %i basis fermions\n", nFermion,
            O.NFermion);
     return 1;
   };
   if (nBoson > 256 * O.NBoson)
   {
-    printf("Can't create a strating wave-function with %i Bosons, when there are only %i basis bosons\n", nBoson,
+    printf("Can't create a starting wave-function with %i Bosons, when there are only %i basis bosons\n", nBoson,
            O.NBoson);
     return 1;
   };

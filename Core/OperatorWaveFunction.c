@@ -7,9 +7,11 @@
 */
 double inline OperatorCr(uint8_t * const Determinant, const uint16_t i, const uint32_t NFermion)
 {
+  uint8_t detblok;
+  uint32_t j;
   if (i >= NFermion)
   {
-    uint32_t j = i - NFermion + ((NFermion + 7) >> 3);
+    j = i - NFermion + ((NFermion + 7) >> 3);
     if (Determinant[j] == 255)
     {
       return 0;
@@ -23,8 +25,6 @@ double inline OperatorCr(uint8_t * const Determinant, const uint16_t i, const ui
   {
     return 0;
   }
-  uint8_t detblok;
-  uint32_t j;
   Determinant[i >> 3] += (128 >> (i & 7));
   detblok = Determinant[i >> 3] >> (8 - (i & 7));
   for (j = i >> 3; j != 0;)
@@ -53,9 +53,11 @@ double inline OperatorCr(uint8_t * const Determinant, const uint16_t i, const ui
 */
 double inline OperatorAn(uint8_t * const Determinant, const uint16_t i, const uint32_t NFermion)
 {
+  uint8_t detblok;
+  uint32_t j;
   if (i >= NFermion)
   {
-    uint32_t j = i - NFermion + ((NFermion + 7) >> 3);
+    j = i - NFermion + ((NFermion + 7) >> 3);
     if (Determinant[j] == 0)
     {
       return 0;
@@ -69,8 +71,6 @@ double inline OperatorAn(uint8_t * const Determinant, const uint16_t i, const ui
   {
     return 0;
   }
-  uint8_t detblok;
-  uint32_t j;
   Determinant[i >> 3] -= (128 >> (i & 7));
   detblok = Determinant[i >> 3] >> (8 - (i & 7));
   for (j = i >> 3; j != 0;)
@@ -3737,7 +3737,7 @@ uint32_t PsiPrimeOperatorPsiMatrix(const OperatorType O, const WaveFunctionType 
   {
     if (OperatorPsi(O, psi[j], &Opsi))
     {
-      printf("OperatorPsi failed in PsiPrimeOperatorPsiMatrix at level i=%5i j=%5i", i, j);
+      printf("OperatorPsi failed in PsiPrimeOperatorPsiMatrix at level j=%5i", j);
       return 1;
     }
     for (i = 0; i < V->Ni; i++)

@@ -60,6 +60,8 @@ int main(int argc, const char *argv[])
   SpectraType Spectra[10];
   char   GBathFileName[MAXStrLength], GClFileName[MAXStrLength], GSigmaFileName[MAXStrLength],
     PsiFileName[MAXStrLength], SpecFileName[MAXStrLength];
+  double PsiEnergy;
+  OperatorType OPESdn, OPESup,OIPESdn,OIPESup;
 
   InitializeTiming(&Time);
   BeginTiming("Total", &Time);
@@ -146,14 +148,37 @@ int main(int argc, const char *argv[])
       FreeAndersonMatrix(&GClAnd);
       FreeListOfPoles(&SigmaLPNew);
       FreeListOfPoles(&SigmaLPOld);
-      FreeBADoubleTriDiagonalMatrix(&GBathBA);
-      for (i = 0; i < 2 * DMFTSet.NSite; i++)
-      {
-        FreeTriDiagonalMatrix(&gPerturbation[i]);
-        FreeOperator(&VPerturbation[i]);
-      }
     }
     EndTiming("DMFTLoop", &Time);
+    if((DMFTSet.Spectra&1)||(DMFTSet.Spectra&&(iOuter == DMFTSet.iStart + DMFTSet.Ni -1)))
+    {
+      printf("\n\nCalculate extra spectra after the DMFT loops\n\n");
+      BeginTiming("ExtraSpectra", &Time);
+      /* Get ground-state energy needed for shift */
+      PsiHermitianOperatorPsi(HAnd, Psi, &PsiEnergy);
+      /* create operators */
+      CreatePESdnOperatorDMFT(&OPESdn, HAnd.NFermion);
+      CreatePESupOperatorDMFT(&OPESup, HAnd.NFermion);
+      CreateIPESdnOperatorDMFT(&OIPESdn, HAnd.NFermion);
+      CreateIPESupOperatorDMFT(&OIPESup, HAnd.NFermion);
+      if (DMFTSpec(DMFTSet, iOuter, PsiEnergy, Psi, HAnd, VPerturbation, gPerturbation, OPESdn, OPESup, OIPESdn, OIPESup))
+      {
+        printf("DMFTSpec failed\n");
+        return 1;
+      }
+      FreeOperator(&OPESdn);
+      FreeOperator(&OPESup);
+      FreeOperator(&OIPESdn);
+      FreeOperator(&OIPESup);
+      EndTiming("ExtraSpectra", &Time);
+    }
+    FreeOperator(&HAnd);
+    FreeBADoubleTriDiagonalMatrix(&GBathBA);
+    for (i = 0; i < 2 * DMFTSet.NSite; i++)
+    {
+      FreeTriDiagonalMatrix(&gPerturbation[i]);
+      FreeOperator(&VPerturbation[i]);
+    }
   }
   EndTiming("Total", &Time);
   printf("\n\n***********************************************************************\n\n\n");
@@ -163,13 +188,13 @@ int main(int argc, const char *argv[])
 
 
 
-uint32_t DMFTSpec(DMFTSettings const HSet, double const Egrd, WaveFunctionType const psiGrd, OperatorType HAnd,
+uint32_t DMFTSpec(DMFTSettings const HSet, uint32_t const iOuter, double const Egrd, WaveFunctionType const psiGrd, OperatorType HAnd,
                   OperatorType const *VPerturbation, TriDiagonalMatrixType const *gPerturbation,
                   OperatorType const OAndn, OperatorType const OAnup, OperatorType const OCrdn,
                   OperatorType const OCrup)
 {
   uint16_t oadd[4];
-  uint32_t i, iQ, iOuter = HSet.Ni + HSet.iStart - 1;
+  uint32_t i, iQ;
   char   SpecFileName[255];
   OperatorType T, Nup, Ndn, Projectd0, Projectd1, Projectd2;
   WaveFunctionType Tpsi;
@@ -204,8 +229,8 @@ uint32_t DMFTSpec(DMFTSettings const HSet, double const Egrd, WaveFunctionType c
   OperatorAddLader(&Projectd0, oadd, 0, 1, 0);
   OperatorAdd(&Projectd0, Projectd1, -1, 0);
   OperatorAdd(&Projectd0, Projectd2, -1, 0);
-  /* 1 - spin susceptibility */
-  if (HSet.Spectra & 1)
+  /* 2 - spin susceptibility */
+  if (HSet.Spectra & 2)
   {
     printf("\nStart of DMFT Spec spin susceptibility\n\n");
     fflush(stdout);
@@ -242,8 +267,8 @@ uint32_t DMFTSpec(DMFTSettings const HSet, double const Egrd, WaveFunctionType c
     SpectrumFree(&Spectra[0]);
     FreeOperator(&T);
   }
-  /* 2 - charge susceptibility */
-  if (HSet.Spectra & 2)
+  /* 4 - charge susceptibility */
+  if (HSet.Spectra & 4)
   {
     printf("\nStart of DMFT Spec charge susceptibility\n\n");
     fflush(stdout);
@@ -279,8 +304,8 @@ uint32_t DMFTSpec(DMFTSettings const HSet, double const Egrd, WaveFunctionType c
     SpectrumFree(&Spectra[0]);
     FreeOperator(&T);
   }
-  /* 4 - charge susceptibility minus Identity */
-  if (HSet.Spectra & 4)
+  /* 8 - charge susceptibility minus Identity */
+  if (HSet.Spectra & 8)
   {
     printf("\nStart of DMFT Spec charge susceptibility minus Identity Operator \n\n");
     fflush(stdout);
@@ -317,8 +342,8 @@ uint32_t DMFTSpec(DMFTSettings const HSet, double const Egrd, WaveFunctionType c
     SpectrumFree(&Spectra[0]);
     FreeOperator(&T);
   }
-  /* 8 - charge susceptibility squared */
-  if (HSet.Spectra & 8)
+  /* 16 - charge susceptibility squared */
+  if (HSet.Spectra & 16)
   {
     printf("\nStart of DMFT Spec NupNdn \n\n");
     fflush(stdout);
@@ -359,8 +384,8 @@ uint32_t DMFTSpec(DMFTSettings const HSet, double const Egrd, WaveFunctionType c
     SpectrumFree(&Spectra[0]);
     FreeOperator(&T);
   }
-  /* 16 - XAS */
-  if (HSet.Spectra & 16)
+  /* 32 - XAS */
+  if (HSet.Spectra & 32)
   {
     printf("\nStart of DMFT Spec XAS\n\n");
     fflush(stdout);
@@ -425,8 +450,8 @@ uint32_t DMFTSpec(DMFTSettings const HSet, double const Egrd, WaveFunctionType c
       SpectrumFree(&(Spectra[iQ]));
     }
   }
-  /* 32 - core PES */
-  if (HSet.Spectra & 32)
+  /* 64 - core PES */
+  if (HSet.Spectra & 64)
   {
     printf("\nStart of DMFT Spec core PES\n\n");
     fflush(stdout);
@@ -486,11 +511,8 @@ uint32_t DMFTSpec(DMFTSettings const HSet, double const Egrd, WaveFunctionType c
       SpectrumFree(&(Spectra[iQ]));
     }
   }
-
-
-
-  /* 64 - XAS - d0 */
-  if (HSet.Spectra & 64)
+  /* 128 - XAS - d0 */
+  if (HSet.Spectra & 128)
   {
     printf("\nStart of DMFT Spec XAS d0\n\n");
     fflush(stdout);
@@ -575,11 +597,8 @@ uint32_t DMFTSpec(DMFTSettings const HSet, double const Egrd, WaveFunctionType c
       SpectrumFree(&(Spectra[iQ]));
     }
   }
-
-
-
-  /* 128 - XAS - d1 */
-  if (HSet.Spectra & 128)
+  /* 256 - XAS - d1 */
+  if (HSet.Spectra & 256)
   {
     printf("\nStart of DMFT Spec XAS d1\n\n");
     fflush(stdout);
@@ -657,6 +676,210 @@ uint32_t DMFTSpec(DMFTSettings const HSet, double const Egrd, WaveFunctionType c
     }
     /* write spectra to disk */
     sprintf(SpecFileName, "%s%03i_XAS_d1", HSet.SpecRootFileName, iOuter + 1);
+    FilePrintSpectra(Spectra, HSet.NQ, SpecFileName, "w");
+    /* free variables */
+    for (iQ = 0; iQ < HSet.NQ; iQ++)
+    {
+      SpectrumFree(&(Spectra[iQ]));
+    }
+  }
+  /* 512 - core PES - d0 */
+  if (HSet.Spectra & 512)
+  {
+    printf("\nStart of DMFT Spec core PES\n\n");
+    fflush(stdout);
+    /* set settings for spectra */
+    Spectra[0].N = HSet.NE;
+    Spectra[0].Emin = HSet.Emin;
+    Spectra[0].Emax = HSet.Emax;
+    Spectra[0].dE = (HSet.Emax - HSet.Emin) / HSet.NE;
+    Spectra[0].EminPole = HSet.Emin;
+    Spectra[0].EmaxPole = HSet.Emax;
+    Spectra[0].Gamma = HSet.Gamma;
+    for (iQ = 0; iQ < HSet.NQ; iQ++)
+    {
+      printf("Start of core PES itteration for Q=%22.15E (%i/%i)\n", HSet.Q[iQ], iQ, HSet.NQ);
+      fflush(stdout);
+      /* init spectraTri */
+      SpectraTri.N = Max(HSet.NTriDiag, HSet.NGCluster);
+      InitTriDiagonalMatrix(&SpectraTri);
+      /* shift Onsite energy of Anderson operator */
+      oadd[1] = CrAnMask + 0;
+      oadd[0] = 0;
+      RealOperatorAddLaderNormalOrder(&HAnd, oadd, 2, -HSet.Q[iQ], &QDetNotOrderedFcFaBcBa);
+      oadd[1] = CrAnMask + 1;
+      oadd[0] = 1;
+      RealOperatorAddLaderNormalOrder(&HAnd, oadd, 2, -HSet.Q[iQ], &QDetNotOrderedFcFaBcBa);
+      /* calculate cPES */
+      OperatorPsi(Projectd0, psiGrd, &Tpsi);
+      LanczosTriDiagonalizeDysonLowMem(HAnd, Tpsi, HSet.zeroLancWavefunction, HSet.NTriDiag, VPerturbation,
+                                       gPerturbation, 4, &SpectraTri);
+      /* transform tridiagonal to spectra */
+      SpectrumAllocate(Spectra[0], &Spectra[iQ]);
+      TriDiagonalMatrixToSpectrum(Egrd, SpectraTri, &Spectra[iQ]);
+      /* shift Onsite energy of Anderson operator back */
+      oadd[1] = CrAnMask + 0;
+      oadd[0] = 0;
+      RealOperatorAddLaderNormalOrder(&HAnd, oadd, 2, HSet.Q[iQ], &QDetNotOrderedFcFaBcBa);
+      oadd[1] = CrAnMask + 1;
+      oadd[0] = 1;
+      RealOperatorAddLaderNormalOrder(&HAnd, oadd, 2, HSet.Q[iQ], &QDetNotOrderedFcFaBcBa);
+      /* free variables */
+      FreeTriDiagonalMatrix(&SpectraTri);
+    }
+    /* write spectra to disk */
+    if (iOuter == 0)
+    {
+      sprintf(SpecFileName, "%s001_cPES_d0", HSet.SpecRootFileName);
+    }
+    else if (iOuter < 9)
+    {
+      sprintf(SpecFileName, "%s00%1i_cPES_d0", HSet.SpecRootFileName, iOuter + 1);
+    }
+    else if (iOuter < 99)
+    {
+      sprintf(SpecFileName, "%s0%2i_cPES_d0", HSet.SpecRootFileName, iOuter + 1);
+    }
+    else if (iOuter < 999)
+    {
+      sprintf(SpecFileName, "%s%3i_cPES_d0", HSet.SpecRootFileName, iOuter + 1);
+    }
+    FilePrintSpectra(Spectra, HSet.NQ, SpecFileName, "w");
+    /* free variables */
+    for (iQ = 0; iQ < HSet.NQ; iQ++)
+    {
+      SpectrumFree(&(Spectra[iQ]));
+    }
+  }
+  /* 1024 - core PES - d1 */
+  if (HSet.Spectra & 1024)
+  {
+    printf("\nStart of DMFT Spec core PES\n\n");
+    fflush(stdout);
+    /* set settings for spectra */
+    Spectra[0].N = HSet.NE;
+    Spectra[0].Emin = HSet.Emin;
+    Spectra[0].Emax = HSet.Emax;
+    Spectra[0].dE = (HSet.Emax - HSet.Emin) / HSet.NE;
+    Spectra[0].EminPole = HSet.Emin;
+    Spectra[0].EmaxPole = HSet.Emax;
+    Spectra[0].Gamma = HSet.Gamma;
+    for (iQ = 0; iQ < HSet.NQ; iQ++)
+    {
+      printf("Start of core PES itteration for Q=%22.15E (%i/%i)\n", HSet.Q[iQ], iQ, HSet.NQ);
+      fflush(stdout);
+      /* init spectraTri */
+      SpectraTri.N = Max(HSet.NTriDiag, HSet.NGCluster);
+      InitTriDiagonalMatrix(&SpectraTri);
+      /* shift Onsite energy of Anderson operator */
+      oadd[1] = CrAnMask + 0;
+      oadd[0] = 0;
+      RealOperatorAddLaderNormalOrder(&HAnd, oadd, 2, -HSet.Q[iQ], &QDetNotOrderedFcFaBcBa);
+      oadd[1] = CrAnMask + 1;
+      oadd[0] = 1;
+      RealOperatorAddLaderNormalOrder(&HAnd, oadd, 2, -HSet.Q[iQ], &QDetNotOrderedFcFaBcBa);
+      /* calculate cPES */
+      OperatorPsi(Projectd1, psiGrd, &Tpsi);
+      LanczosTriDiagonalizeDysonLowMem(HAnd, Tpsi, HSet.zeroLancWavefunction, HSet.NTriDiag, VPerturbation,
+                                       gPerturbation, 4, &SpectraTri);
+      /* transform tridiagonal to spectra */
+      SpectrumAllocate(Spectra[0], &Spectra[iQ]);
+      TriDiagonalMatrixToSpectrum(Egrd, SpectraTri, &Spectra[iQ]);
+      /* shift Onsite energy of Anderson operator back */
+      oadd[1] = CrAnMask + 0;
+      oadd[0] = 0;
+      RealOperatorAddLaderNormalOrder(&HAnd, oadd, 2, HSet.Q[iQ], &QDetNotOrderedFcFaBcBa);
+      oadd[1] = CrAnMask + 1;
+      oadd[0] = 1;
+      RealOperatorAddLaderNormalOrder(&HAnd, oadd, 2, HSet.Q[iQ], &QDetNotOrderedFcFaBcBa);
+      /* free variables */
+      FreeTriDiagonalMatrix(&SpectraTri);
+    }
+    /* write spectra to disk */
+    if (iOuter == 0)
+    {
+      sprintf(SpecFileName, "%s001_cPES_d1", HSet.SpecRootFileName);
+    }
+    else if (iOuter < 9)
+    {
+      sprintf(SpecFileName, "%s00%1i_cPES_d1", HSet.SpecRootFileName, iOuter + 1);
+    }
+    else if (iOuter < 99)
+    {
+      sprintf(SpecFileName, "%s0%2i_cPES_d1", HSet.SpecRootFileName, iOuter + 1);
+    }
+    else if (iOuter < 999)
+    {
+      sprintf(SpecFileName, "%s%3i_cPES_d1", HSet.SpecRootFileName, iOuter + 1);
+    }
+    FilePrintSpectra(Spectra, HSet.NQ, SpecFileName, "w");
+    /* free variables */
+    for (iQ = 0; iQ < HSet.NQ; iQ++)
+    {
+      SpectrumFree(&(Spectra[iQ]));
+    }
+  }
+  /* 2048 - core PES - d2 */
+  if (HSet.Spectra & 2048)
+  {
+    printf("\nStart of DMFT Spec core PES\n\n");
+    fflush(stdout);
+    /* set settings for spectra */
+    Spectra[0].N = HSet.NE;
+    Spectra[0].Emin = HSet.Emin;
+    Spectra[0].Emax = HSet.Emax;
+    Spectra[0].dE = (HSet.Emax - HSet.Emin) / HSet.NE;
+    Spectra[0].EminPole = HSet.Emin;
+    Spectra[0].EmaxPole = HSet.Emax;
+    Spectra[0].Gamma = HSet.Gamma;
+    for (iQ = 0; iQ < HSet.NQ; iQ++)
+    {
+      printf("Start of core PES itteration for Q=%22.15E (%i/%i)\n", HSet.Q[iQ], iQ, HSet.NQ);
+      fflush(stdout);
+      /* init spectraTri */
+      SpectraTri.N = Max(HSet.NTriDiag, HSet.NGCluster);
+      InitTriDiagonalMatrix(&SpectraTri);
+      /* shift Onsite energy of Anderson operator */
+      oadd[1] = CrAnMask + 0;
+      oadd[0] = 0;
+      RealOperatorAddLaderNormalOrder(&HAnd, oadd, 2, -HSet.Q[iQ], &QDetNotOrderedFcFaBcBa);
+      oadd[1] = CrAnMask + 1;
+      oadd[0] = 1;
+      RealOperatorAddLaderNormalOrder(&HAnd, oadd, 2, -HSet.Q[iQ], &QDetNotOrderedFcFaBcBa);
+      /* calculate cPES */
+      OperatorPsi(Projectd2, psiGrd, &Tpsi);
+      LanczosTriDiagonalizeDysonLowMem(HAnd, Tpsi, HSet.zeroLancWavefunction, HSet.NTriDiag, VPerturbation,
+                                       gPerturbation, 4, &SpectraTri);
+      /* transform tridiagonal to spectra */
+      SpectrumAllocate(Spectra[0], &Spectra[iQ]);
+      TriDiagonalMatrixToSpectrum(Egrd, SpectraTri, &Spectra[iQ]);
+      /* shift Onsite energy of Anderson operator back */
+      oadd[1] = CrAnMask + 0;
+      oadd[0] = 0;
+      RealOperatorAddLaderNormalOrder(&HAnd, oadd, 2, HSet.Q[iQ], &QDetNotOrderedFcFaBcBa);
+      oadd[1] = CrAnMask + 1;
+      oadd[0] = 1;
+      RealOperatorAddLaderNormalOrder(&HAnd, oadd, 2, HSet.Q[iQ], &QDetNotOrderedFcFaBcBa);
+      /* free variables */
+      FreeTriDiagonalMatrix(&SpectraTri);
+    }
+    /* write spectra to disk */
+    if (iOuter == 0)
+    {
+      sprintf(SpecFileName, "%s001_cPES_d2", HSet.SpecRootFileName);
+    }
+    else if (iOuter < 9)
+    {
+      sprintf(SpecFileName, "%s00%1i_cPES_d2", HSet.SpecRootFileName, iOuter + 1);
+    }
+    else if (iOuter < 99)
+    {
+      sprintf(SpecFileName, "%s0%2i_cPES_d2", HSet.SpecRootFileName, iOuter + 1);
+    }
+    else if (iOuter < 999)
+    {
+      sprintf(SpecFileName, "%s%3i_cPES_d2", HSet.SpecRootFileName, iOuter + 1);
+    }
     FilePrintSpectra(Spectra, HSet.NQ, SpecFileName, "w");
     /* free variables */
     for (iQ = 0; iQ < HSet.NQ; iQ++)

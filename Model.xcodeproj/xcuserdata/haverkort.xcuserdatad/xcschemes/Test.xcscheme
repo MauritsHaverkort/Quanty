@@ -69,6 +69,10 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "Complex"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "BasisOpt"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument

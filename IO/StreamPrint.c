@@ -864,22 +864,32 @@ uint32_t StreamPrintDMFTSettings(DMFTSettings O, FILE * stream)
   fprintf(stream, "NBath                    : %i\n", O.NBath);
   fprintf(stream, "Spectra                  : %i\n", O.Spectra);
   if ((O.Spectra) & 1)
-    fprintf(stream, "                        (  1) Sz;\n");
+    fprintf(stream, "                        (   1) Calculate spectra each loop;\n");
+  else
+    fprintf(stream, "                        (   0) Calculate spectra in the end;\n");
   if ((O.Spectra) & 2)
-    fprintf(stream, "                        (  2) N;\n");
+    fprintf(stream, "                        (   2) Sz;\n");
   if ((O.Spectra) & 4)
-    fprintf(stream, "                        (  4) N-1;\n");
+    fprintf(stream, "                        (   4) N;\n");
   if ((O.Spectra) & 8)
-    fprintf(stream, "                        (  8) N_up N_dn;\n");
+    fprintf(stream, "                        (   8) N-1;\n");
   if ((O.Spectra) & 16)
-    fprintf(stream, "                        ( 16) XAS;\n");
+    fprintf(stream, "                        (  16) N_up N_dn;\n");
   if ((O.Spectra) & 32)
-    fprintf(stream, "                        ( 32) core PES;\n");
+    fprintf(stream, "                        (  32) XAS;\n");
   if ((O.Spectra) & 64)
-    fprintf(stream, "                        ( 64) XAS - d0;\n");
+    fprintf(stream, "                        (  64) core PES;\n");
   if ((O.Spectra) & 128)
-    fprintf(stream, "                        (128) XAS - d1;\n");
-  if ((O.Spectra) & 240)
+    fprintf(stream, "                        ( 128) XAS - d0;\n");
+  if ((O.Spectra) & 256)
+    fprintf(stream, "                        ( 256) XAS - d1;\n");
+  if ((O.Spectra) & 512)
+    fprintf(stream, "                        ( 512) cPES - d0;\n");
+  if ((O.Spectra) & 1024)
+    fprintf(stream, "                        (1024) cPES - d1;\n");
+  if ((O.Spectra) & 2048)
+    fprintf(stream, "                        (2048) cPES - d2;\n");
+  if ((O.Spectra) & 4064)
   {
     fprintf(stream, "  NQ                     : %i\n", O.NQ);
     for (i = 0; i < O.NQ; i++)
