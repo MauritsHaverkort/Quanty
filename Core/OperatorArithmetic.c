@@ -6128,21 +6128,21 @@ uint32_t QOperatorHermitian(OperatorType O, double epsilon)
     printf("OperatorConjugateTransposeNormalOrder failed in QOperatorHermitian\n");
     FreeOperator(&OT);
     fflush(stdout);
-    return 1;
+    return 2;
   };
   if (OperatorAddNormalOrder(&OT, O, -1, 0, QDetNotOrderedFcFaBaBc))
   {
     printf("OperatorAddNormalOrder failed in QOperatorHermitian\n");
     FreeOperator(&OT);
     fflush(stdout);
-    return 1;
+    return 2;
   };
   if (OperatorChop(&OT, epsilon))
   {
     printf("OperatorChop failed in QOperatorHermitian\n");
     FreeOperator(&OT);
     fflush(stdout);
-    return 1;
+    return 2;
   };
   for (il = 0; il <= OT.MaxLength; il++)
   {

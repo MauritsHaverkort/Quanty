@@ -340,6 +340,47 @@ uint32_t StreamPrintWaveFunctionDensity(WaveFunctionType const psi, FILE * strea
   return 0;
 }
 
+
+/*
+ *   prints the correlation tensor of a wavefunction for a given set of fermions
+ */
+uint32_t StreamPrintWaveFunctionPartialCorrelationTensor(WaveFunctionType const psi, FILE * stream, uint32_t const NFermionIncluded, uint16_t * const FermionIncluded)
+{
+  uint32_t i,j,k,l,m=0;
+  Complex16 * Rho ;
+  Rho=calloc(NFermionIncluded*NFermionIncluded*NFermionIncluded*NFermionIncluded,sizeof(Complex16));
+  if (Rho==NULL)
+  {
+    printf("Faild to allocate memory for Rho in StreamPrintWaveFunctionPartialCorrelationTensor\n");
+    fflush(stdout);
+    return 1;
+  }
+  if(CalculatePartialDensityCorrelationTensor(Rho, psi, NFermionIncluded, FermionIncluded))
+  {
+    printf("CalculatePartialDensityCorrelationTensor failed in StreamPrintWaveFunctionPartialCorrelationTensor\n");
+    return 1;
+  }
+  printf("Correlation function for %i Fermions\n",NFermionIncluded);
+  for (l = 0; l < NFermionIncluded; l++)
+  {
+    for (k = 0; k < NFermionIncluded; k++)
+    {
+      for (j = 0; j < NFermionIncluded; j++)
+      {
+        for (i = 0; i < NFermionIncluded; i++)
+        {
+          printf("< C%3i C%3i A%3i A%3i > = %22.15E + I %22.15E\n",i,j,k,l,Rho[m].Re,Rho[m].Im);
+          m++;
+        }
+      }
+    }
+  }
+  printf("\n");
+  free(Rho);
+  return 0;
+}
+
+
 /*
  *   prints a Histogram lisitng the prefactors of a wave-funciton
  */
@@ -387,10 +428,7 @@ uint32_t StreamPrintOperatorReadable(OperatorType O, FILE * stream)
           ((O.l[i].o[j * i + k]) & CrAnMask) ? fprintf(stream, "C") : fprintf(stream, "A");
           fprintf(stream, "%3i ", (O.l[i].o[j * i + k]) & NotCrAnMask);
         }
-        (O.l[i].QComplex) ? fprintf(stream, "| %22.15E %22.15E\n", O.l[i].V[j].Re, O.l[i].V[j].Im) : fprintf(stream,
-                                                                                                             "| %22.15E\n",
-                                                                                                             O.l[i].
-                                                                                                             VRe[j]);
+        (O.l[i].QComplex) ? fprintf(stream, "| %22.15E %22.15E\n", O.l[i].V[j].Re, O.l[i].V[j].Im) : fprintf(stream, "| %22.15E\n", O.l[i].VRe[j]);
       }
     }
   }

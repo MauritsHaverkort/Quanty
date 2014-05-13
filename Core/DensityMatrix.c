@@ -185,9 +185,135 @@ uint32_t CalculateDensityCorrelationMatrix(MatrixType * const Rho, const WaveFun
   return 0;
 }
 
+/*
+ *  Calculate the density correlation tensor of a wave-function
+ *  On input psi contains a wave-function and Rho points to a not allocated matrix
+ *  as the density correlation tensor scales to the 4-th power of the number of basis orbitals one can select a subset
+ *  NFermionIncluded set the number included in the basis
+ *  FermionIncluded is a list of length NFermionIncluded listing the included Fermions
+ *  On excite Rho contains an NFerionInlcuded by NFerionInlcuded by NFerionInlcuded by NFerionInlcuded tensor
+ *  the index of Rho is [i + NFermionIncluded j + NFermionIncluded^2 k + NFermionIncluded^3 l
+ *  a^{\dag}_i a^{\dag}_j a_k a_l
+ */
+uint32_t CalculatePartialDensityCorrelationTensor(Complex16 * Rho, const WaveFunctionType psi, uint32_t const NFermionIncluded, uint16_t const * FermionIncluded)
+{
+  uint32_t i, j,k,l,m=0;
+  OperatorType O;
+  if(NFermionIncluded>psi.NFermion+psi.NBoson)
+  {
+    printf("Error in CalculatePartialDensityCorrelationTensor, NFermionIncluded=%i but psi.NFermion (psi.NBoson) is only %i (%i)\n\n",NFermionIncluded,psi.NFermion,psi.NBoson);
+    fflush(stdout);
+    return 1;
+  }
+  for(i=0;i<NFermionIncluded;i++)
+  {
+    if(FermionIncluded[i]>psi.NFermion+psi.NBoson)
+    {
+      printf("Error in CalculatePartialDensityCorrelationTensor, NFermionIncluded=%i but psi.NFermion (psi.NBoson) is only %i (%i)\n\n",FermionIncluded[i],psi.NFermion,psi.NBoson);
+      fflush(stdout);
+      return 1;
+    }
+  }
+  strcpy(O.Name, "Calc. Den. Corr. Mat. Int. Opp. ");
+  O.QComplex = 0;
+  O.NFermion = psi.NFermion;
+  O.NBoson = psi.NBoson;
+  O.NWord = psi.NWord;
+  O.MaxLength = 4;
+  O.l = malloc(5 * sizeof(OperatorFixedLengthType));
+  if (O.l == NULL)
+  {
+    printf("alloc of O.l failed in CalculatePartialDensityCorrelationTensor\n");
+    fflush(stdout);
+    return 1;
+  }
+  O.l[0].N = 0;
+  O.l[0].NBitsKey = 0;
+  O.l[0].NAloc = 0;
+  O.l[0].QComplex = 0;
+  O.l[1].N = 0;
+  O.l[1].NBitsKey = 0;
+  O.l[1].NAloc = 0;
+  O.l[1].QComplex = 0;
+  O.l[2].N = 0;
+  O.l[2].NBitsKey = 0;
+  O.l[2].NAloc = 0;
+  O.l[2].QComplex = 0;
+  O.l[3].N = 0;
+  O.l[3].NBitsKey = 0;
+  O.l[3].NAloc = 0;
+  O.l[3].QComplex = 0;
+  O.l[4].N = 1;
+  O.l[4].NBitsKey = 0;
+  O.l[4].NAloc = 1;
+  O.l[4].QComplex = 0;
+  O.l[4].VRe = malloc(sizeof(double));
+  O.l[4].VRe[0] = 1;
+  if (O.l[4].VRe == NULL)
+  {
+    printf("alloc of O.l[4].VRe failed in CalculatePartialDensityCorrelationTensor\n");
+    fflush(stdout);
+    return 1;
+  }
+  O.l[4].o = malloc(4 * sizeof(uint16_t));
+  if (O.l[4].o == NULL)
+  {
+    printf("alloc of O.l[4].o failed in CalculatePartialDensityCorrelationTensor\n");
+    fflush(stdout);
+    return 1;
+  }
+  if (psi.QComplex)
+  {
+    for (l = 0; l < NFermionIncluded; l++)
+    {
+      O.l[4].o[0] = (FermionIncluded[l]);
+      for (k = 0; k < NFermionIncluded; k++)
+      {
+        O.l[4].o[1] = (FermionIncluded[k]);
+        for (j = 0; j < NFermionIncluded; j++)
+        {
+          O.l[4].o[2] = (FermionIncluded[j] | CrAnMask);
+          for (i = 0; i < NFermionIncluded; i++)
+          {
+            O.l[4].o[3] = (FermionIncluded[i] | CrAnMask);
+            PsiOperatorPsiRC(O, psi, &(Rho[m].Re), &(Rho[m].Im));
+            m++;
+          }
+        }
+      }
+    }
+  }
+  else
+  {
+    for (l = 0; l < NFermionIncluded; l++)
+    {
+      O.l[4].o[0] = (FermionIncluded[l]);
+      for (k = 0; k < NFermionIncluded; k++)
+      {
+        O.l[4].o[1] = (FermionIncluded[k]);
+        for (j = 0; j < NFermionIncluded; j++)
+        {
+          O.l[4].o[2] = (FermionIncluded[j] | CrAnMask);
+          for (i = 0; i < NFermionIncluded; i++)
+          {
+            O.l[4].o[3] = (FermionIncluded[i] | CrAnMask);
+            PsiOperatorPsiRR(O, psi, &(Rho[m].Re));
+            m++;
+          }
+        }
+      }
+    }
+  }
+  
+  FreeOperator(&O);
+  return 0;
+}
 
 /*
- *
+ *  Calculate the Spin correlation matrix
+ *  On input psi contains a wave-function and Rho points to a not allocated matrix
+ *  On excite Rho contains an psi.N/2 by psi.N/2 matrix
+ *  needs testing TODO
  */
 uint32_t CalculateSpinCorrelationMatrix(MatrixType * const Rho, const WaveFunctionType psi)
 {
@@ -331,26 +457,6 @@ uint32_t CalculateSpinCorrelationMatrix(MatrixType * const Rho, const WaveFuncti
   return 0;
 }
 
-
-/*
- *  Calculate the density matrix of a wave-function
- *  On input psi contains a wave-function and Rho points to a not allocated matrix
- *  On excite Rho contains an psi.N by psi.N matrix
- */
-uint32_t CalculateTriDiagonalDensityMatrix(TriDiagonalMatrixType * const Rho, const WaveFunctionType psi)
-{
-  return 0;
-}
-
-/*
- *  Calculate the density matrix of a wave-function
- *  On input psi contains a wave-function and Rho points to a not allocated matrix
- *  On excite Rho contains an psi.N by psi.N matrix
- */
-uint32_t CalculateBlokTriDiagonalDensityMatrix(BlokTriDiagonalMatrixType * const Rho, const WaveFunctionType psi)
-{
-  return 0;
-}
 
 /*
  *  Calculate the density matrix of a wave-function for a selected number of particles

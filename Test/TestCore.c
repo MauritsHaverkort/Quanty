@@ -215,7 +215,7 @@ void TestWaveFunctionArithmetic()
     Determinant[0] = 255;
     Determinant[1] = i;
     Determinant[2] = 0;
-    RealWaveFunctionAddElementConserveBasis(psi, Determinant, i);
+    RealWaveFunctionAddElementConserveBasis(&psi, Determinant, i);
   }
   PrintWaveFunctionFullReadable(psi);
 
@@ -594,7 +594,7 @@ void TestVectorMatrixParallel()
     Determinant[0] = 255;
     Determinant[1] = i;
     Determinant[2] = 0;
-    RealWaveFunctionAddElementConserveBasis(psi, Determinant, i);
+    RealWaveFunctionAddElementConserveBasis(&psi, Determinant, i);
   }
   PrintWaveFunctionFullReadable(psi);
 

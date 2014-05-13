@@ -293,7 +293,7 @@ void SpectrumFree();
 /**********************************************************/
 uint32_t CalculateDensity();
 uint32_t CalculatePrefactorHistogram();
-
+uint32_t CalculatePartialDensityCorrelationTensor();
 
 
 
