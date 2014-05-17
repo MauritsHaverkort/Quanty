@@ -583,23 +583,23 @@ void WaveFunctionDotProduct(const WaveFunctionType a, const WaveFunctionType b, 
   {
     if (b.QComplex)
     {
-      ComplexWaveFunctionDotProduct(a, b, DotRe, DotIm);
+      ComplexWaveFunctionDotProduct(&a, &b, DotRe, DotIm);
     }
     else
     {
-      ComplexRealWaveFunctionDotProduct(a, b, DotRe, DotIm);
+      ComplexRealWaveFunctionDotProduct(&a, &b, DotRe, DotIm);
     }
   }
   else
   {
     if (b.QComplex)
     {
-      RealComplexWaveFunctionDotProduct(a, b, DotRe, DotIm);
+      RealComplexWaveFunctionDotProduct(&a, &b, DotRe, DotIm);
     }
     else
     {
       *DotIm = 0;
-      *DotRe = RealWaveFunctionDotProduct(a, b);
+      *DotRe = RealWaveFunctionDotProduct(&a, &b);
     }
   }
 }

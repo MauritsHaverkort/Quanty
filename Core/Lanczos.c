@@ -362,7 +362,7 @@ uint32_t LanczosGroundStateRR(const OperatorType H, WaveFunctionType * const psi
       RealWaveFunctionAddSameBasis(v[0], *psi);
       OperatorPsiConserveBasisPreAllocatedRR(&H, &(v[0]), &(v[1]));
       RealWaveFunctionAddMultipliedSameBasis(v[1], v[0], shift);
-      M.a[1] = RealWaveFunctionDotProduct(v[1], v[0]);
+      M.a[1] = RealWaveFunctionDotProduct(&v[1], &v[0]);
       for (i = 1; i < M.N; i++)
       {
         vip = (i + 1) % 3;
@@ -377,7 +377,7 @@ uint32_t LanczosGroundStateRR(const OperatorType H, WaveFunctionType * const psi
         RealWaveFunctionOrthogonalizeConserveBasis(&v[vi], OtherPsi, NOtherPsi);
         OperatorPsiConserveBasisPreAllocatedRR(&H, &(v[vi]), &(v[vip]));
         RealWaveFunctionAddMultipliedSameBasis(v[vip], v[vi], shift);
-        M.a[i + 1] = RealWaveFunctionDotProduct(v[vip], v[vi]);
+        M.a[i + 1] = RealWaveFunctionDotProduct(&v[vip], &v[vi]);
         RealWaveFunctionAddMultipliedConserveBasis(&(v[vip]), v[vim], -M.b[i]);
       }
       // Calculate the eigen-states in the Krylov basis
@@ -519,7 +519,7 @@ uint32_t LanczosGroundStateRRold(const OperatorType H, WaveFunctionType * const 
       RealWaveFunctionMultiply(v[0], 0);
       RealWaveFunctionAddSameBasis(v[0], *psi);
       OperatorPsiConserveBasisPreAllocatedRR(&H, &(v[0]), &(v[1]));
-      M.a[1] = RealWaveFunctionDotProduct(v[1], v[0]);
+      M.a[1] = RealWaveFunctionDotProduct(&v[1], &v[0]);
       for (i = 1; i < M.N; i++)
       {
         vip = (i + 1) % 3;
@@ -533,7 +533,7 @@ uint32_t LanczosGroundStateRRold(const OperatorType H, WaveFunctionType * const 
           RealWaveFunctionMultiply(v[vi], 0.0);
         RealWaveFunctionOrthogonalizeConserveBasis(&v[vi], OtherPsi, NOtherPsi);
         OperatorPsiConserveBasisPreAllocatedRR(&H, &(v[vi]), &(v[vip]));
-        M.a[i + 1] = RealWaveFunctionDotProduct(v[vip], v[vi]);
+        M.a[i + 1] = RealWaveFunctionDotProduct(&v[vip], &v[vi]);
         RealWaveFunctionAddMultipliedConserveBasis(&(v[vip]), v[vim], -M.b[i]);
       }
       TriDiagonalMatrixToEigensystem(M, &Eigen, val);
@@ -665,7 +665,7 @@ uint32_t LanczosGroundStateRC(const OperatorType H, WaveFunctionType * const psi
       ComplexWaveFunctionMultiply(v[0], 0);
       ComplexWaveFunctionAddSameBasis(v[0], *psi);
       OperatorPsiConserveBasisPreAllocatedRC(&H, &(v[0]), &(v[1]));
-      ComplexWaveFunctionDotProduct(v[1], v[0], &(M.a[1]), &Imzero);
+      ComplexWaveFunctionDotProduct(&v[1], &v[0], &(M.a[1]), &Imzero);
       for (i = 1; i < M.N; i++)
       {
         vip = (i + 1) % 3;
@@ -679,7 +679,7 @@ uint32_t LanczosGroundStateRC(const OperatorType H, WaveFunctionType * const psi
           ComplexWaveFunctionMultiply(v[vi], 0.0);
         ComplexWaveFunctionOrthogonalizeConserveBasis(&v[vi], OtherPsi, NOtherPsi);
         OperatorPsiConserveBasisPreAllocatedRC(&H, &(v[vi]), &(v[vip]));
-        ComplexWaveFunctionDotProduct(v[vip], v[vi], &(M.a[i + 1]), &Imzero);
+        ComplexWaveFunctionDotProduct(&v[vip], &v[vi], &(M.a[i + 1]), &Imzero);
         ComplexWaveFunctionAddMultipliedConserveBasis(&(v[vip]), v[vim], -M.b[i]);
       }
       TriDiagonalMatrixToEigensystem(M, &Eigen, val);
@@ -811,7 +811,7 @@ uint32_t LanczosGroundStateMC(const OperatorType H, WaveFunctionType * const psi
       ComplexWaveFunctionMultiply(v[0], 0);
       ComplexWaveFunctionAddSameBasis(v[0], *psi);
       OperatorPsiConserveBasisPreAllocatedMC(&H, &(v[0]), &(v[1]));
-      ComplexWaveFunctionDotProduct(v[1], v[0], &(M.a[1]), &Imzero);
+      ComplexWaveFunctionDotProduct(&v[1], &v[0], &(M.a[1]), &Imzero);
       for (i = 1; i < M.N; i++)
       {
         vip = (i + 1) % 3;
@@ -825,7 +825,7 @@ uint32_t LanczosGroundStateMC(const OperatorType H, WaveFunctionType * const psi
           ComplexWaveFunctionMultiply(v[vi], 0.0);
         ComplexWaveFunctionOrthogonalizeConserveBasis(&v[vi], OtherPsi, NOtherPsi);
         OperatorPsiConserveBasisPreAllocatedMC(&H, &(v[vi]), &(v[vip]));
-        ComplexWaveFunctionDotProduct(v[vip], v[vi], &(M.a[i + 1]), &Imzero);
+        ComplexWaveFunctionDotProduct(&v[vip], &v[vi], &(M.a[i + 1]), &Imzero);
         ComplexWaveFunctionAddMultipliedConserveBasis(&(v[vip]), v[vim], -M.b[i]);
       }
       TriDiagonalMatrixToEigensystem(M, &Eigen, val);
@@ -957,7 +957,7 @@ uint32_t LanczosGroundStateCC(const OperatorType H, WaveFunctionType * const psi
       ComplexWaveFunctionMultiply(v[0], 0);
       ComplexWaveFunctionAddSameBasis(v[0], *psi);
       OperatorPsiConserveBasisPreAllocatedCC(&H, &(v[0]), &(v[1]));
-      ComplexWaveFunctionDotProduct(v[1], v[0], &(M.a[0]), &Imzero);
+      ComplexWaveFunctionDotProduct(&v[1], &v[0], &(M.a[0]), &Imzero);
       for (i = 1; i < M.N; i++)
       {
         vip = (i + 1) % 3;
@@ -971,7 +971,7 @@ uint32_t LanczosGroundStateCC(const OperatorType H, WaveFunctionType * const psi
           ComplexWaveFunctionMultiply(v[vi], 0.0);
         ComplexWaveFunctionOrthogonalizeConserveBasis(&v[vi], OtherPsi, NOtherPsi);
         OperatorPsiConserveBasisPreAllocatedCC(&H, &(v[vi]), &(v[vip]));
-        ComplexWaveFunctionDotProduct(v[vip], v[vi], &(M.a[i + 1]), &Imzero);
+        ComplexWaveFunctionDotProduct(&v[vip], &v[vi], &(M.a[i + 1]), &Imzero);
         ComplexWaveFunctionAddMultipliedConserveBasis(&(v[vip]), v[vim], -M.b[i]);
       }
       TriDiagonalMatrixToEigensystem(M, &Eigen, val);
@@ -1097,7 +1097,7 @@ uint32_t LanczosTriDiagonalizeRR(const OperatorType H, WaveFunctionType psi, dou
       AllocFailed();
     RealWaveFunctionTruncateBasis(&(v[0]), epsilon);
   }
-  M->a[1] = RealWaveFunctionDotProduct(v[1], v[0]);
+  M->a[1] = RealWaveFunctionDotProduct(&v[1], &v[0]);
   printf("BasisSetSize: %12i ", v[1].N);
   for (i = 1; i < M->N; i++)
   {
@@ -1150,7 +1150,7 @@ uint32_t LanczosTriDiagonalizeRR(const OperatorType H, WaveFunctionType psi, dou
       RealWaveFunctionTruncateBasis(&(v[vi]), epsilon / errorestimate);
     }
     printf("BasisSetSize: %12i ", v[vip].N);
-    M->a[i + 1] = RealWaveFunctionDotProduct(v[vip], v[vi]);
+    M->a[i + 1] = RealWaveFunctionDotProduct(&v[vip], &v[vi]);
     while (RealWaveFunctionAddMultipliedUnionBasis(&(v[vip]), v[vim], -M->b[i]))
     {                           /*Allocation of Memory failed */
       printf
@@ -1250,7 +1250,7 @@ uint32_t LanczosTriDiagonalizeRC(const OperatorType H, WaveFunctionType psi, dou
       AllocFailed();
     ComplexWaveFunctionTruncateBasis(&(v[0]), epsilon);
   }
-  ComplexWaveFunctionDotProduct(v[1], v[0], &M->a[1], &junk);
+  ComplexWaveFunctionDotProduct(&v[1], &v[0], &M->a[1], &junk);
   printf("BasisSetSize: %12i ", v[1].N);
   for (i = 1; i < M->N; i++)
   {
@@ -1288,7 +1288,7 @@ uint32_t LanczosTriDiagonalizeRC(const OperatorType H, WaveFunctionType psi, dou
       ComplexWaveFunctionTruncateBasis(&(v[vi]), epsilon / errorestimate);
     }
     printf("BasisSetSize: %12i ", v[vip].N);
-    ComplexWaveFunctionDotProduct(v[vip], v[vi], &M->a[i + 1], &junk);
+    ComplexWaveFunctionDotProduct(&v[vip], &v[vi], &M->a[i + 1], &junk);
     while (ComplexWaveFunctionAddMultipliedUnionBasis(&(v[vip]), v[vim], -M->b[i]))
     {                           /*Allocation of Memory failed */
       printf
@@ -1354,7 +1354,7 @@ uint32_t LanczosTriDiagonalizeCC(const OperatorType H, WaveFunctionType psi, dou
       AllocFailed();
     ComplexWaveFunctionTruncateBasis(&(v[0]), epsilon);
   }
-  ComplexWaveFunctionDotProduct(v[1], v[0], &M->a[1], &junk);
+  ComplexWaveFunctionDotProduct(&v[1], &v[0], &M->a[1], &junk);
   printf("BasisSetSize: %12i ", v[1].N);
   for (i = 1; i < M->N; i++)
   {
@@ -1392,7 +1392,7 @@ uint32_t LanczosTriDiagonalizeCC(const OperatorType H, WaveFunctionType psi, dou
       ComplexWaveFunctionTruncateBasis(&(v[vi]), epsilon / errorestimate);
     }
     printf("BasisSetSize: %12i ", v[vip].N);
-    ComplexWaveFunctionDotProduct(v[vip], v[vi], &M->a[i + 1], &junk);
+    ComplexWaveFunctionDotProduct(&v[vip], &v[vi], &M->a[i + 1], &junk);
     while (ComplexWaveFunctionAddMultipliedUnionBasis(&(v[vip]), v[vim], -M->b[i]))
     {                           /*Allocation of Memory failed */
       printf
@@ -1458,7 +1458,7 @@ uint32_t LanczosTriDiagonalizeMC(const OperatorType H, WaveFunctionType psi, dou
       AllocFailed();
     ComplexWaveFunctionTruncateBasis(&(v[0]), epsilon);
   }
-  ComplexWaveFunctionDotProduct(v[1], v[0], &M->a[1], &junk);
+  ComplexWaveFunctionDotProduct(&v[1], &v[0], &M->a[1], &junk);
   printf("BasisSetSize: %12i ", v[1].N);
   for (i = 1; i < M->N; i++)
   {
@@ -1496,7 +1496,7 @@ uint32_t LanczosTriDiagonalizeMC(const OperatorType H, WaveFunctionType psi, dou
       ComplexWaveFunctionTruncateBasis(&(v[vi]), epsilon / errorestimate);
     }
     printf("BasisSetSize: %12i ", v[vip].N);
-    ComplexWaveFunctionDotProduct(v[vip], v[vi], &M->a[i + 1], &junk);
+    ComplexWaveFunctionDotProduct(&v[vip], &v[vi], &M->a[i + 1], &junk);
     while (ComplexWaveFunctionAddMultipliedUnionBasis(&(v[vip]), v[vim], -M->b[i]))
     {                           /*Allocation of Memory failed */
       printf
@@ -1586,7 +1586,7 @@ uint32_t LanczosTriDiagonalizePlusDensityRR(const OperatorType H, WaveFunctionTy
       AllocFailed();
     RealWaveFunctionTruncateBasis(&(v[0]), epsilon);
   }
-  M->a[1] = RealWaveFunctionDotProduct(v[1], v[0]);
+  M->a[1] = RealWaveFunctionDotProduct(&v[1], &v[0]);
   printf("BasisSetSize: %12i ", v[1].N);
   for (i = 1; i < M->N; i++)
   {
@@ -1640,7 +1640,7 @@ uint32_t LanczosTriDiagonalizePlusDensityRR(const OperatorType H, WaveFunctionTy
       RealWaveFunctionTruncateBasis(&(v[vi]), epsilon / errorestimate);
     }
     printf("BasisSetSize: %12i ", v[vip].N);
-    M->a[i + 1] = RealWaveFunctionDotProduct(v[vip], v[vi]);
+    M->a[i + 1] = RealWaveFunctionDotProduct(&v[vip], &v[vi]);
     while (RealWaveFunctionAddMultipliedUnionBasis(&(v[vip]), v[vim], -M->b[i]))
     {                           /*Allocation of Memory failed */
       printf
@@ -1738,7 +1738,7 @@ uint32_t LanczosTriDiagonalizePlusDensityRC(const OperatorType H, WaveFunctionTy
       AllocFailed();
     ComplexWaveFunctionTruncateBasis(&(v[0]), epsilon);
   }
-  ComplexWaveFunctionDotProduct(v[1], v[0], &M->a[1], &junk);
+  ComplexWaveFunctionDotProduct(&v[1], &v[0], &M->a[1], &junk);
   printf("BasisSetSize: %12i ", v[1].N);
   for (i = 1; i < M->N; i++)
   {
@@ -1776,7 +1776,7 @@ uint32_t LanczosTriDiagonalizePlusDensityRC(const OperatorType H, WaveFunctionTy
       ComplexWaveFunctionTruncateBasis(&(v[vi]), epsilon / errorestimate);
     }
     printf("BasisSetSize: %12i ", v[vip].N);
-    ComplexWaveFunctionDotProduct(v[vip], v[vi], &M->a[i + 1], &junk);
+    ComplexWaveFunctionDotProduct(&v[vip], &v[vi], &M->a[i + 1], &junk);
     while (ComplexWaveFunctionAddMultipliedUnionBasis(&(v[vip]), v[vim], -M->b[i]))
     {                           /*Allocation of Memory failed */
       printf
@@ -1842,7 +1842,7 @@ uint32_t LanczosTriDiagonalizePlusDensityCC(const OperatorType H, WaveFunctionTy
       AllocFailed();
     ComplexWaveFunctionTruncateBasis(&(v[0]), epsilon);
   }
-  ComplexWaveFunctionDotProduct(v[1], v[0], &M->a[1], &junk);
+  ComplexWaveFunctionDotProduct(&v[1], &v[0], &M->a[1], &junk);
   printf("BasisSetSize: %12i ", v[1].N);
   for (i = 1; i < M->N; i++)
   {
@@ -1880,7 +1880,7 @@ uint32_t LanczosTriDiagonalizePlusDensityCC(const OperatorType H, WaveFunctionTy
       ComplexWaveFunctionTruncateBasis(&(v[vi]), epsilon / errorestimate);
     }
     printf("BasisSetSize: %12i ", v[vip].N);
-    ComplexWaveFunctionDotProduct(v[vip], v[vi], &M->a[i + 1], &junk);
+    ComplexWaveFunctionDotProduct(&v[vip], &v[vi], &M->a[i + 1], &junk);
     while (ComplexWaveFunctionAddMultipliedUnionBasis(&(v[vip]), v[vim], -M->b[i]))
     {                           /*Allocation of Memory failed */
       printf
@@ -1946,7 +1946,7 @@ uint32_t LanczosTriDiagonalizePlusDensityMC(const OperatorType H, WaveFunctionTy
       AllocFailed();
     ComplexWaveFunctionTruncateBasis(&(v[0]), epsilon);
   }
-  ComplexWaveFunctionDotProduct(v[1], v[0], &M->a[1], &junk);
+  ComplexWaveFunctionDotProduct(&v[1], &v[0], &M->a[1], &junk);
   printf("BasisSetSize: %12i ", v[1].N);
   for (i = 1; i < M->N; i++)
   {
@@ -1984,7 +1984,7 @@ uint32_t LanczosTriDiagonalizePlusDensityMC(const OperatorType H, WaveFunctionTy
       ComplexWaveFunctionTruncateBasis(&(v[vi]), epsilon / errorestimate);
     }
     printf("BasisSetSize: %12i ", v[vip].N);
-    ComplexWaveFunctionDotProduct(v[vip], v[vi], &M->a[i + 1], &junk);
+    ComplexWaveFunctionDotProduct(&v[vip], &v[vi], &M->a[i + 1], &junk);
     while (ComplexWaveFunctionAddMultipliedUnionBasis(&(v[vip]), v[vim], -M->b[i]))
     {                           /*Allocation of Memory failed */
       printf
@@ -2066,7 +2066,7 @@ uint32_t LanczosTriDiagonalizeKrylovRRNonOrtho(const OperatorType H, WaveFunctio
       AllocFailed();
     RealWaveFunctionTruncateBasis(&(PsiBasis[0]), epsilon);
   }
-  M->a[1] = RealWaveFunctionDotProduct(PsiBasis[1], PsiBasis[0]);
+  M->a[1] = RealWaveFunctionDotProduct(&PsiBasis[1], &PsiBasis[0]);
   printf("BasisSetSize: %12i ", PsiBasis[1].N);
   /* Create PsiBasis[2] upto PsiBasis[M->N-1] */
   for (i = 1; i < M->N; i++)
@@ -2109,7 +2109,7 @@ uint32_t LanczosTriDiagonalizeKrylovRRNonOrtho(const OperatorType H, WaveFunctio
       RealWaveFunctionTruncateBasis(&(PsiBasis[i]), epsilon / errorestimate);
     }
     printf("BasisSetSize: %12i ", PsiBasis[i + 1].N);
-    M->a[i + 1] = RealWaveFunctionDotProduct(PsiBasis[i + 1], PsiBasis[i]);
+    M->a[i + 1] = RealWaveFunctionDotProduct(&PsiBasis[i + 1], &PsiBasis[i]);
     while (RealWaveFunctionAddMultipliedUnionBasis(&(PsiBasis[i + 1]), PsiBasis[i - 1], -M->b[i]))
     {                           /*Allocation of Memory failed */
       printf
@@ -2193,7 +2193,7 @@ uint32_t LanczosTriDiagonalizeKrylovRR(const OperatorType H, WaveFunctionType ps
     for (j = i; j > 0;)
     {
       j--;
-      dot = RealWaveFunctionDotProduct(PsiBasis[j], PsiBasis[i]);
+      dot = RealWaveFunctionDotProduct(&PsiBasis[j], &PsiBasis[i]);
       if (j == i - 1)
       {
         M->a[i] = dot;
@@ -2332,7 +2332,7 @@ uint32_t ArnoldiTriDiagonalizeKrylovRR(const OperatorType H, WaveFunctionType ps
     for (j = i; j > 0;)
     {
       j--;
-      M->VRe[j][i - 1] = RealWaveFunctionDotProduct(PsiBasis[j], PsiBasis[i]);
+      M->VRe[j][i - 1] = RealWaveFunctionDotProduct(&PsiBasis[j], &PsiBasis[i]);
       while (RealWaveFunctionAddMultipliedUnionBasis(&(PsiBasis[i]), PsiBasis[j], -M->VRe[j][i - 1]))
       {                         /* Allocation of Memory failed */
         printf
@@ -2453,7 +2453,7 @@ uint32_t ArnoldiTriDiagonalizeKrylovRC(const OperatorType H, WaveFunctionType ps
     for (j = i; j > 0;)
     {
       j--;
-      ComplexWaveFunctionDotProduct(PsiBasis[j], PsiBasis[i], &(M->VRe[j][i - 1]), &(M->VIm[j][i - 1]));
+      ComplexWaveFunctionDotProduct(&PsiBasis[j], &PsiBasis[i], &(M->VRe[j][i - 1]), &(M->VIm[j][i - 1]));
       while (ComplexWaveFunctionAddComplexMultipliedUnionBasis
              (&(PsiBasis[i]), PsiBasis[j], -M->VRe[j][i - 1], -M->VIm[j][i - 1]))
       {                         /* Allocation of Memory failed */
@@ -2577,7 +2577,7 @@ uint32_t ArnoldiTriDiagonalizeKrylovCC(const OperatorType H, WaveFunctionType ps
     for (j = i; j > 0;)
     {
       j--;
-      ComplexWaveFunctionDotProduct(PsiBasis[j], PsiBasis[i], &(M->VRe[j][i - 1]), &(M->VIm[j][i - 1]));
+      ComplexWaveFunctionDotProduct(&PsiBasis[j], &PsiBasis[i], &(M->VRe[j][i - 1]), &(M->VIm[j][i - 1]));
       while (ComplexWaveFunctionAddComplexMultipliedUnionBasis
              (&(PsiBasis[i]), PsiBasis[j], -M->VRe[j][i - 1], -M->VIm[j][i - 1]))
       {                         /* Allocation of Memory failed */
@@ -2701,7 +2701,7 @@ uint32_t ArnoldiTriDiagonalizeKrylovMC(const OperatorType H, WaveFunctionType ps
     for (j = i; j > 0;)
     {
       j--;
-      ComplexWaveFunctionDotProduct(PsiBasis[j], PsiBasis[i], &(M->VRe[j][i - 1]), &(M->VIm[j][i - 1]));
+      ComplexWaveFunctionDotProduct(&PsiBasis[j], &PsiBasis[i], &(M->VRe[j][i - 1]), &(M->VIm[j][i - 1]));
       while (ComplexWaveFunctionAddComplexMultipliedUnionBasis
              (&(PsiBasis[i]), PsiBasis[j], -M->VRe[j][i - 1], -M->VIm[j][i - 1]))
       {                         /* Allocation of Memory failed */

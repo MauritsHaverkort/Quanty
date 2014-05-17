@@ -358,21 +358,27 @@ void ComplexWaveFunctionAddElementConserveBasis(WaveFunctionType psi, const uint
                                                 const double aIm)
 {
   uint32_t i, NextIndex, PsiAIsPsiB;
+
+  if ((aRe == 0) && (aIm == 0)) return;
+
   /* test if the key that belongs to psi already excists */
-  if (psi.KeyList[hash(det, psi.NWord, psi.NBitsKey)] == 0)
+  NextIndex = psi.KeyList[hash(det, psi.NWord, psi.NBitsKey)];
+  if (NextIndex == 0)
   {                             /* det not in key, do nothing */
     return;
   }
   else
   {                             /* The key is already taken, test if this is due to a collision, or if psi is already in the basis set */
-    NextIndex = psi.KeyList[hash(det, psi.NWord, psi.NBitsKey)];
     while (1)
     {
       PsiAIsPsiB = 1;
       for (i = 0; i < psi.NWord; i++)
       {
         if (psi.Determinant[BlokElementDet(NextIndex, psi.NWord, i)] != det[i])
+        {
           PsiAIsPsiB = 0;
+          break;
+        }
       }
       if (PsiAIsPsiB)
       {                         /* psi already in basis set add and leave loop  */
@@ -913,42 +919,57 @@ void ComplexWaveFunctionDotProductSameBasis(const WaveFunctionType a, const Wave
 /*
 *   calculate <a|b>
 */
-void ComplexWaveFunctionDotProduct(const WaveFunctionType a, const WaveFunctionType b, double *DotRe, double *DotIm)
+void ComplexWaveFunctionDotProduct(const WaveFunctionType *a, const WaveFunctionType *b, double *DotRe, double *DotIm)
 {
   uint32_t i, j, NextIndex, PsiAIsPsiB;
   int    iOMP;
-  double DotReOMP = 0, DotImOMP = 0;
+  double DotReOMP = 0, DotImOMP = 0;  
+  int exchanged = 0;
+
+  /* switch coefficients to reduce number of hash lookups */
+  if (a->N > b->N)
+  {
+    const WaveFunctionType *temp = a;
+    a = b;
+    b = temp;
+    exchanged = 1;
+  }
+
+
 #pragma omp parallel for private(i,j,NextIndex,PsiAIsPsiB) reduction(+ : DotReOMP,DotImOMP)
-  for (iOMP = 1; iOMP <= (int)(a.N); ++iOMP)
+  for (iOMP = 1; iOMP <= (int)(a->N); ++iOMP)
   {
     i = (uint32_t) iOMP;
-    NextIndex = b.KeyList[hash(&a.Determinant[BlokElementDet(i, a.NWord, 0)], a.NWord, a.NBitsKey)];
+    NextIndex = b->KeyList[hash(&a->Determinant[BlokElementDet(i, a->NWord, 0)], a->NWord, a->NBitsKey)];
     while (NextIndex)
     {
       PsiAIsPsiB = 1;
-      for (j = 0; j < b.NWord; j++)
+      for (j = 0; j < b->NWord; j++)
       {
-        if (b.Determinant[BlokElementDet(NextIndex, b.NWord, j)] != a.Determinant[BlokElementDet(i, a.NWord, j)])
+        if (b->Determinant[BlokElementDet(NextIndex, b->NWord, j)] != a->Determinant[BlokElementDet(i, a->NWord, j)])
+        {
           PsiAIsPsiB = 0;
+          break;
+        }
       }
       if (PsiAIsPsiB)
       {                         /* a=b found add the product to Dot and leave loop  */
         DotReOMP +=
-          a.ValueRe[BlokElement(i)] * b.ValueRe[BlokElement(NextIndex)] +
-          a.ValueIm[BlokElement(i)] * b.ValueIm[BlokElement(NextIndex)];
+          a->ValueRe[BlokElement(i)] * b->ValueRe[BlokElement(NextIndex)] +
+          a->ValueIm[BlokElement(i)] * b->ValueIm[BlokElement(NextIndex)];
         DotImOMP +=
-          a.ValueRe[BlokElement(i)] * b.ValueIm[BlokElement(NextIndex)] -
-          a.ValueIm[BlokElement(i)] * b.ValueRe[BlokElement(NextIndex)];
+          a->ValueRe[BlokElement(i)] * b->ValueIm[BlokElement(NextIndex)] -
+          a->ValueIm[BlokElement(i)] * b->ValueRe[BlokElement(NextIndex)];
         NextIndex = 0;
       }
       else
       {
-        NextIndex = b.Next[BlokElement(NextIndex)];
+        NextIndex = b->Next[BlokElement(NextIndex)];
       }
     }
   }
   *DotRe = DotReOMP;
-  *DotIm = DotImOMP;
+  *DotIm = DotImOMP*(exchanged?-1:1);
 }
 
 /* Set the pre-factors of a to a random value
@@ -1038,7 +1059,7 @@ void ComplexWaveFunctionOrthogonalizeConserveBasis(WaveFunctionType * const psi,
   double aRe, aIm;
   for (i = 0; i < Npsi; i++)
   {
-    ComplexWaveFunctionDotProduct(OtherPsi[i], *psi, &aRe, &aIm);
+    ComplexWaveFunctionDotProduct(&OtherPsi[i], psi, &aRe, &aIm);
     ComplexWaveFunctionAddComplexMultipliedConserveBasis(psi, OtherPsi[i], -aRe, -aIm);
   }
 }
@@ -1053,7 +1074,7 @@ uint32_t ComplexWaveFunctionOrthogonalize(WaveFunctionType * const psi, const Wa
   double aRe, aIm;
   for (i = 0; i < Npsi; i++)
   {
-    ComplexWaveFunctionDotProduct(OtherPsi[i], *psi, &aRe, &aIm);
+    ComplexWaveFunctionDotProduct(&OtherPsi[i], psi, &aRe, &aIm);
     if (ComplexWaveFunctionAddComplexMultipliedUnionBasis(psi, OtherPsi[i], -aRe, -aIm))
     {
       return 1;

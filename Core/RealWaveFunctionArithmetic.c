@@ -298,6 +298,7 @@ void RealWaveFunctionAddElementConserveBasis(WaveFunctionType const *psi, const 
 {
   uint32_t i, NextIndex, PsiAIsPsiB;
   /* test if the key that belongs to psi already excists */
+  if (a == 0) return;
   NextIndex=psi->KeyList[hash(det, psi->NWord, psi->NBitsKey)];
   if (!NextIndex)
   {                             /* det not in key, do nothing */
@@ -732,29 +733,41 @@ double RealWaveFunctionDotProductSameBasis(const WaveFunctionType a, const WaveF
 /*
 *   calculate <a|b>
 */
-double RealWaveFunctionDotProduct(const WaveFunctionType a, const WaveFunctionType b)
+double RealWaveFunctionDotProduct(const WaveFunctionType *a, const WaveFunctionType *b)
 {
   uint32_t i, j, NextIndex, PsiAIsPsiB;
   int    iOMP;
   double Dot = 0;
   volatile double c, t, y;
   c = 0;
+
+  /* switch coefficients to reduce number of hash lookups */
+  if (a->N > b->N)
+  {
+    const WaveFunctionType *temp = a;
+    a = b;
+    b = temp;
+  }
+
 #pragma omp parallel for firstprivate(c) private(i,j,NextIndex,PsiAIsPsiB,t,y) reduction(+ : Dot)
-  for (iOMP = 1; iOMP <= (int)(a.N); ++iOMP)
+  for (iOMP = 1; iOMP <= (int)(a->N); ++iOMP)
   {
     i = (uint32_t) iOMP;
-    NextIndex = b.KeyList[hash(&a.Determinant[BlokElementDet(i, a.NWord, 0)], a.NWord, a.NBitsKey)];
+    NextIndex = b->KeyList[hash(&a->Determinant[BlokElementDet(i, a->NWord, 0)], a->NWord, a->NBitsKey)];
     while (NextIndex)
     {
       PsiAIsPsiB = 1;
-      for (j = 0; j < b.NWord; j++)
+      for (j = 0; j < b->NWord; j++)
       {
-        if (b.Determinant[BlokElementDet(NextIndex, b.NWord, j)] != a.Determinant[BlokElementDet(i, a.NWord, j)])
+        if (b->Determinant[BlokElementDet(NextIndex, b->NWord, j)] != a->Determinant[BlokElementDet(i, a->NWord, j)])
+        {
           PsiAIsPsiB = 0;
+          break;
+        }
       }
       if (PsiAIsPsiB)
       {                         /* a=b found add the product to Dot and leave loop  */
-        y = a.ValueRe[BlokElement(i)] * b.ValueRe[BlokElement(NextIndex)] - c;
+        y = a->ValueRe[BlokElement(i)] * b->ValueRe[BlokElement(NextIndex)] - c;
         t = Dot + y;
         c = t - Dot;
         c -= y;
@@ -763,7 +776,7 @@ double RealWaveFunctionDotProduct(const WaveFunctionType a, const WaveFunctionTy
       }
       else
       {
-        NextIndex = b.Next[BlokElement(NextIndex)];
+        NextIndex = b->Next[BlokElement(NextIndex)];
       }
     }
   }
@@ -858,7 +871,7 @@ void RealWaveFunctionOrthogonalizeConserveBasis(WaveFunctionType * const psi, co
   double a;
   for (i = 0; i < Npsi; i++)
   {
-    a = RealWaveFunctionDotProduct(*psi, OtherPsi[i]);
+    a = RealWaveFunctionDotProduct(psi, &OtherPsi[i]);
     RealWaveFunctionAddMultipliedConserveBasis(psi, OtherPsi[i], -a);
   }
 }
@@ -873,7 +886,7 @@ uint32_t RealWaveFunctionOrthogonalize(WaveFunctionType * const psi, const WaveF
   double a;
   for (i = 0; i < Npsi; i++)
   {
-    a = RealWaveFunctionDotProduct(*psi, OtherPsi[i]);
+    a = RealWaveFunctionDotProduct(psi, &OtherPsi[i]);
     if (RealWaveFunctionAddMultipliedUnionBasis(psi, OtherPsi[i], -a))
     {
       printf("RealWaveFunctionAddMultipliedUnionBasis failed in RealWaveFunctionOrthogonalize\n");

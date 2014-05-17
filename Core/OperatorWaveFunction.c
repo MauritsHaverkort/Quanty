@@ -113,6 +113,7 @@ double inline OperatorLader(uint8_t * const Determinant, const uint16_t * const 
     {
       phase *= OperatorAn(Determinant, o[i], NFermion);
     }
+    if (phase == 0) break;
   }
   return phase;
 }
@@ -236,6 +237,7 @@ uint32_t OperatorPsiConserveBasisCC(const OperatorType O, const WaveFunctionType
           for (k = 0; k < Opsi->NWord; k++)
             Det[k] = psi.Determinant[ii][ij + k];
           phase = OperatorLader(Det, &(O.l[l].o[j * l]), l, O.NFermion);
+          if (phase == 0) continue;
           ComplexWaveFunctionAddElementConserveBasis(*Opsi, Det,
                                                      phase * (O.l[l].V[j].Re * psi.ValueRe[ii][ik] -
                                                               O.l[l].V[j].Im * psi.ValueIm[ii][ik]),
@@ -324,6 +326,7 @@ uint32_t OperatorPsiConserveBasisCR(const OperatorType O, const WaveFunctionType
           for (k = 0; k < Opsi->NWord; k++)
             Det[k] = psi.Determinant[ii][ij + k];
           phase = OperatorLader(Det, &(O.l[l].o[j * l]), l, O.NFermion);
+          if (phase == 0) continue;
           ComplexWaveFunctionAddElementConserveBasis(*Opsi, Det, phase * (O.l[l].V[j].Re * psi.ValueRe[ii][ik]),
                                                      phase * (O.l[l].V[j].Im * psi.ValueRe[ii][ik]));
         }
@@ -409,6 +412,7 @@ uint32_t OperatorPsiConserveBasisRC(const OperatorType O, const WaveFunctionType
           for (k = 0; k < Opsi->NWord; k++)
             Det[k] = psi.Determinant[ii][ij + k];
           phase = OperatorLader(Det, &(O.l[l].o[j * l]), l, O.NFermion);
+          if (phase == 0) continue;
           ComplexWaveFunctionAddElementConserveBasis(*Opsi, Det, phase * O.l[l].VRe[j] * psi.ValueRe[ii][ik],
                                                      phase * O.l[l].VRe[j] * psi.ValueIm[ii][ik]);
         }
@@ -479,6 +483,7 @@ uint32_t OperatorPsiConserveBasisRR(const OperatorType O, const WaveFunctionType
           for (k = 0; k < Opsi->NWord; k++)
             Det[k] = psi.Determinant[ii][ij + k];
           phase = OperatorLader(Det, &(O.l[l].o[j * l]), l, O.NFermion);
+          if (phase == 0) continue;
           RealWaveFunctionAddElementConserveBasis(Opsi, Det, phase * O.l[l].VRe[j] * psi.ValueRe[ii][ik]);
         }
       }
@@ -567,6 +572,7 @@ uint32_t OperatorPsiConserveBasisMC(const OperatorType O, const WaveFunctionType
               for (k = 0; k < Opsi->NWord; k++)
                 Det[k] = psi.Determinant[ii][ij + k];
               phase = OperatorLader(Det, &(O.l[l].o[j * l]), l, O.NFermion);
+              if (phase == 0) continue;
               ComplexWaveFunctionAddElementConserveBasis(*Opsi, Det,
                                                          phase * (O.l[l].V[j].Re * psi.ValueRe[ii][ik] -
                                                                   O.l[l].V[j].Im * psi.ValueIm[ii][ik]),
@@ -581,6 +587,7 @@ uint32_t OperatorPsiConserveBasisMC(const OperatorType O, const WaveFunctionType
               for (k = 0; k < Opsi->NWord; k++)
                 Det[k] = psi.Determinant[ii][ij + k];
               phase = OperatorLader(Det, &(O.l[l].o[j * l]), l, O.NFermion);
+              if (phase == 0) continue;
               ComplexWaveFunctionAddElementConserveBasis(*Opsi, Det, phase * O.l[l].VRe[j] * psi.ValueRe[ii][ik],
                                                          phase * O.l[l].VRe[j] * psi.ValueIm[ii][ik]);
             }
@@ -670,6 +677,7 @@ uint32_t OperatorPsiConserveBasisMR(const OperatorType O, const WaveFunctionType
               for (k = 0; k < Opsi->NWord; k++)
                 Det[k] = psi.Determinant[ii][ij + k];
               phase = OperatorLader(Det, &(O.l[l].o[j * l]), l, O.NFermion);
+              if (phase == 0) continue;
               ComplexWaveFunctionAddElementConserveBasis(*Opsi, Det, phase * (O.l[l].V[j].Re * psi.ValueRe[ii][ik]),
                                                          phase * (O.l[l].V[j].Im * psi.ValueRe[ii][ik]));
             }
@@ -681,6 +689,7 @@ uint32_t OperatorPsiConserveBasisMR(const OperatorType O, const WaveFunctionType
               for (k = 0; k < Opsi->NWord; k++)
                 Det[k] = psi.Determinant[ii][ij + k];
               phase = OperatorLader(Det, &(O.l[l].o[j * l]), l, O.NFermion);
+              if (phase == 0) continue;
               ComplexWaveFunctionAddElementConserveBasis(*Opsi, Det, phase * O.l[l].VRe[j] * psi.ValueRe[ii][ik], 0.0);
             }
           }
@@ -776,6 +785,7 @@ uint32_t OperatorPsiConserveBasisPreAllocatedCC(const OperatorType *O, const Wav
           for (k = 0; k < Opsi->NWord; k++)
             Det[k] = psi->Determinant[ii][ij + k];
           phase = OperatorLader(Det, &(O->l[l].o[j * l]), l, O->NFermion);
+          if (phase == 0) continue;
           ComplexWaveFunctionAddElementConserveBasis(*Opsi, Det,
                                                      phase * (O->l[l].V[j].Re * psi->ValueRe[ii][ik] -
                                                               O->l[l].V[j].Im * psi->ValueIm[ii][ik]),
@@ -832,6 +842,7 @@ uint32_t OperatorPsiConserveBasisPreAllocatedCR(const OperatorType *O, const Wav
           for (k = 0; k < Opsi->NWord; k++)
             Det[k] = psi->Determinant[ii][ij + k];
           phase = OperatorLader(Det, &(O->l[l].o[j * l]), l, O->NFermion);
+          if (phase == 0) continue;
           ComplexWaveFunctionAddElementConserveBasis(*Opsi, Det, phase * (O->l[l].V[j].Re * psi->ValueRe[ii][ik]),
                                                      phase * (O->l[l].V[j].Im * psi->ValueRe[ii][ik]));
         }
@@ -885,6 +896,7 @@ uint32_t OperatorPsiConserveBasisPreAllocatedRC(const OperatorType *O, const Wav
           for (k = 0; k < Opsi->NWord; k++)
             Det[k] = psi->Determinant[ii][ij + k];
           phase = OperatorLader(Det, &(O->l[l].o[j * l]), l, O->NFermion);
+          if (phase == 0) continue;
           ComplexWaveFunctionAddElementConserveBasis(*Opsi, Det, phase * O->l[l].VRe[j] * psi->ValueRe[ii][ik],
                                                      phase * O->l[l].VRe[j] * psi->ValueIm[ii][ik]);
         }
@@ -932,6 +944,7 @@ uint32_t OperatorPsiConserveBasisPreAllocatedRR(const OperatorType *O, const Wav
           for (k = 0; k < Opsi->NWord; k++)
             Det[k] = psi->Determinant[ii][ij + k];
           phase = OperatorLader(Det, &(O->l[l].o[j * l]), l, O->NFermion);
+          if (phase == 0) continue;
           RealWaveFunctionAddElementConserveBasis(Opsi, Det, phase * O->l[l].VRe[j] * psi->ValueRe[ii][ik]);
         }
       }
@@ -985,6 +998,7 @@ uint32_t OperatorPsiConserveBasisPreAllocatedMC(const OperatorType *O, const Wav
             for (k = 0; k < Opsi->NWord; k++)
               Det[k] = psi->Determinant[ii][ij + k];
             phase = OperatorLader(Det, &(O->l[l].o[j * l]), l, O->NFermion);
+            if (phase == 0) continue;
             ComplexWaveFunctionAddElementConserveBasis(*Opsi, Det,
                                                        phase * (O->l[l].V[j].Re * psi->ValueRe[ii][ik] -
                                                                 O->l[l].V[j].Im * psi->ValueIm[ii][ik]),
@@ -999,6 +1013,7 @@ uint32_t OperatorPsiConserveBasisPreAllocatedMC(const OperatorType *O, const Wav
             for (k = 0; k < Opsi->NWord; k++)
               Det[k] = psi->Determinant[ii][ij + k];
             phase = OperatorLader(Det, &(O->l[l].o[j * l]), l, O->NFermion);
+            if (phase == 0) continue;
             ComplexWaveFunctionAddElementConserveBasis(*Opsi, Det, phase * O->l[l].VRe[j] * psi->ValueRe[ii][ik],
                                                        phase * O->l[l].VRe[j] * psi->ValueIm[ii][ik]);
           }
@@ -1054,6 +1069,7 @@ uint32_t OperatorPsiConserveBasisPreAllocatedMR(const OperatorType *O, const Wav
             for (k = 0; k < Opsi->NWord; k++)
               Det[k] = psi->Determinant[ii][ij + k];
             phase = OperatorLader(Det, &(O->l[l].o[j * l]), l, O->NFermion);
+            if (phase == 0) continue;
             ComplexWaveFunctionAddElementConserveBasis(*Opsi, Det, phase * (O->l[l].V[j].Re * psi->ValueRe[ii][ik]),
                                                        phase * (O->l[l].V[j].Im * psi->ValueRe[ii][ik]));
           }
@@ -1065,6 +1081,7 @@ uint32_t OperatorPsiConserveBasisPreAllocatedMR(const OperatorType *O, const Wav
             for (k = 0; k < Opsi->NWord; k++)
               Det[k] = psi->Determinant[ii][ij + k];
             phase = OperatorLader(Det, &(O->l[l].o[j * l]), l, O->NFermion);
+            if (phase == 0) continue;
             ComplexWaveFunctionAddElementConserveBasis(*Opsi, Det, phase * O->l[l].VRe[j] * psi->ValueRe[ii][ik], 0.0);
           }
         }

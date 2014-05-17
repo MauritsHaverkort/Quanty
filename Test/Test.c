@@ -16,6 +16,7 @@
 #include <limits.h>
 #include <unistd.h>
 #include <stdarg.h>
+#include <complex.h>
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -66,6 +67,7 @@
 #include "../Test/TestAtomicPhysics.c"
 #include "../Test/OperatorArithmetic.c"
 #include "../Test/StuttgartNMTO.c"
+#include "../Test/HarmonicOscillator.c"
 #include "../Test/BasisOptimization.c"
 
 int main(int argc, const char *argv[])
@@ -167,6 +169,9 @@ int main(int argc, const char *argv[])
     
     if (!strncmp("AtomicPhysics", argv[argc], strlen(argv[argc])))
       TestAtomicPhysics();
+
+    if (!strncmp("HarmOsc", argv[argc], strlen(argv[argc])))
+      TestHarmonicOscillator();
     
     if (!strncmp("NMTO", argv[argc], strlen(argv[argc])))
       TestStuttgartNMTO();
