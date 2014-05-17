@@ -1809,7 +1809,7 @@ uint32_t MatrixToTriDiagonalMatrixNonOrthogonal(MatrixType const M, TriDiagonalM
 
 /*
 *  M=T.H.T^{\dag} with H a diagonal matrix with the values val on the diagonal
-*  input M defined, H and T not initiallized
+*  input M defined, T not initiallized
 */
 uint32_t Eigensystem(MatrixType const M, MatrixType * const T, double *val)
 {

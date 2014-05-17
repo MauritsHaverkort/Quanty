@@ -137,6 +137,22 @@ uint32_t WaveFunctionInit(WaveFunctionType * Psi)
   return 0;
 }
 
+/*
+ *
+ */
+void WaveFunctionReset(WaveFunctionType * psi)
+{
+  if (psi->QComplex)
+  {
+    ComplexWaveFunctionReset(psi);
+  }
+  else
+  {
+    RealWaveFunctionReset(psi);
+  }
+}
+
+
 /* Add the complex values (and allocs)
  *  
  */
@@ -912,4 +928,55 @@ uint32_t WaveFunctionCopy(WaveFunctionType const A, WaveFunctionType * const B)
     return 1;
   };
   return 0;
+}
+                          
+
+/* psiA <- psiA + U psiB
+ *  U is a (NFermionB+NBosonB)*(NFermionA+NBosonA) demensional matrix that defines the transformation
+ *  a_j        = \sum_i U_{i,j}   a_i
+ *  a_j^{\dag} = \sum_i U_{i,j}^* a_i^{dag}
+ *
+ * assume A B and U are real (version RRR)
+ */
+uint32_t MappedWaveFunctionAdd(WaveFunctionType * const A, WaveFunctionType const B, MatrixType const U)
+{
+  if(A->QComplex==0)
+  {
+    if((B.QComplex==0)&&(U.QComplex==0))
+    {
+      return MappedWaveFunctionAddRRR(A, B, U);
+    }
+  }
+  if(MakeComplexWaveFunctionFromReal(A, *A))
+  {
+    printf("MakeComplexWaveFunctionFromReal failed in MappedWaveFunctionAdd\n");
+    return 1;
+  }
+  if(B.QComplex==0)
+  {
+    return MappedWaveFunctionAddCRC(A, B, U);
+  }
+  if(U.QComplex==0)
+  {
+    return MappedWaveFunctionAddCCR(A, B, U);
+  }
+  return MappedWaveFunctionAddCCC(A, B, U);
+}
+
+/* psiA <-  U psiB
+ * A not initiallized on input
+ *  U is a (NFermionB+NBosonB)*(NFermionA+NBosonA) demensional matrix that defines the transformation
+ *  a_j        = \sum_i U_{i,j}   a_i
+ *  a_j^{\dag} = \sum_i U_{i,j}^* a_i^{dag}
+ *
+ * assume A B and U are real (version RRR)
+ */
+uint32_t RotateWaveFunction(WaveFunctionType * const A, WaveFunctionType const B, MatrixType const U)
+{
+  A->NFermion=B.NFermion;
+  A->NBoson=B.NBoson;
+  A->QComplex=B.QComplex;
+  A->NBitsKey=B.NBitsKey;
+  WaveFunctionInit(A);
+  return MappedWaveFunctionAdd(A, B, U);
 }

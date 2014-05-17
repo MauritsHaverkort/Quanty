@@ -1237,3 +1237,52 @@ uint32_t CreateOperatorNumber(uint32_t const NFermion, uint16_t const Crindex, u
   RealOperatorAddLader(OppN, oadd, 2, 1);
   return 0;
 }
+
+uint32_t CreateRandomTwoParticleOperator(uint32_t const NFermion, uint32_t const QComplex, OperatorType * const Opp)
+{
+  double ReRand,ImRand;
+  uint32_t i,j;
+  uint16_t oadd[2];
+  InitOperator(Opp);
+  Opp->NFermion = NFermion;
+  Opp->NWord = Min(Opp->NFermion, 1 + (Opp->NFermion - 1) / 8);
+  InitOperatorFixedLength(Opp, 2, 8);
+  if(QComplex)
+  {
+    MakeRealOperatorFixedLengthComplex(Opp, 2);
+    Opp->QComplex = 1;
+    for(i=0;i<NFermion;i++)
+    {
+      for(j=0;j<NFermion;j++)
+      {
+        ReRand=0.5-rand()/(double)RAND_MAX;
+        ImRand=0.5-rand()/(double)RAND_MAX;
+        oadd[1] = CrAnMask + i;
+        oadd[0] = j;
+        ComplexOperatorAddLader(Opp, oadd, 2, ReRand, ImRand);
+        oadd[1] = CrAnMask + j;
+        oadd[0] = i;
+        ComplexOperatorAddLader(Opp, oadd, 2, ReRand,-ImRand);
+      }
+    }
+  }
+  else
+  {
+    for(i=0;i<NFermion;i++)
+    {
+      for(j=0;j<NFermion;j++)
+      {
+        ReRand=0.5-rand()/(double)RAND_MAX;
+        oadd[1] = CrAnMask + i;
+        oadd[0] = j;
+        RealOperatorAddLader(Opp, oadd, 2, ReRand);
+        oadd[1] = CrAnMask + j;
+        oadd[0] = i;
+        RealOperatorAddLader(Opp, oadd, 2, ReRand);
+      }
+    }
+  }
+  RealOperatorAddLader(Opp, oadd, 0, -(double)NFermion);
+  return 0;
+}
+

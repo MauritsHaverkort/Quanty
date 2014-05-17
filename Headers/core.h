@@ -292,6 +292,7 @@ void SpectrumFree();
 /**************     Core/DensityMatrix.c     **************/
 /**********************************************************/
 uint32_t CalculateDensity();
+uint32_t CalculateDensityMatrix();
 uint32_t CalculatePrefactorHistogram();
 uint32_t CalculatePartialDensityCorrelationTensor();
 

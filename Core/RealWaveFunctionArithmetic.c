@@ -19,6 +19,22 @@ void RealWaveFunctionFree(WaveFunctionType * const psi)
   free(psi->KeyList);
 }
 
+void RealWaveFunctionReset(WaveFunctionType * const psi)
+{
+  uint32_t i;
+  for (i = 1; i < psi->NBlok; i++)
+  {
+    free(psi->ValueRe[i]);
+    free(psi->Next[i]);
+    free(psi->Determinant[i]);
+  }
+  psi->N = 0;
+  psi->NBlok=1;
+  memset(psi->KeyList, 0, ( 1 << (psi->NBitsKey)) * sizeof(uint32_t));
+  psi->ValueRe[0][0] = 0.0;
+}
+
+
 /*  Remove The values of a wave function from memory, but keep the determiants and the pointers to next determinants with the same Hash value
 *   Usefull for more then one wave function defined on the same basis where psi.Next and psi.Determinant point to the same location as used by an other wave function
 *   On entry psi contains a wave function with psi.NBlok alocations
@@ -934,3 +950,105 @@ uint32_t CreateRealRandomWaveFunction(WaveFunctionType * const psi, uint32_t con
   RealWaveFunctionRandomize(psi);
   return 0;
 }
+
+
+
+/* on entry 
+ *  A is an empty wave function with allocated memory (init A is done)
+ *  Det contains the determinant to add
+ *  U the rotation matrix
+ *  Elements mixing bosons and fermions in U are neglected
+ *  U is assumed to be square and unitary
+ *  Det is assumed to have A->NFermion fermions and A->NBoson bosons
+ *
+ */
+uint32_t RealMappedDetToWaveFunction(WaveFunctionType * const A, uint8_t *Det, MatrixType const U)
+{
+  WaveFunctionType Temp;
+  uint8_t DetZero[A->NWord];
+  uint16_t oadd[1];
+  uint32_t i,j;
+  OperatorType O;
+  InitOperator(&O);
+  O.NFermion=A->NFermion;
+  O.NBoson=A->NBoson;
+  O.NWord=A->NWord;
+  
+  InitOperatorFixedLength(&O, 1, 8);
+  
+  
+  for(i=0;i<A->NWord;i++)
+  {
+    DetZero[i]=0;
+  }
+  
+  RealWaveFunctionAddElement(A, DetZero, 1.0);
+  
+  for(i=0;i<A->NFermion;i++)
+  {
+    oadd[0]=CrAnMask | (uint16_t)i;
+    RealOperatorAddLader(&O, oadd, 1, 0.0);
+  }
+  
+  for(i=0;i<A->NFermion;i++)
+  {
+    /* test if Fermion i is occupied */
+    if(Det[i >> 3] & (128 >> (i & 7)))
+    {
+      for(j=0;j<A->NFermion;j++)
+      {
+        O.l[1].VRe[j]=U.VRe[i][j];
+      }
+      OperatorPsiRR(O, *A, &Temp);
+      RealWaveFunctionTruncateBasis(&Temp, 10*DBL_EPSILON);
+      WaveFunctionFree(A);
+      *A=Temp;
+    }
+    
+  }
+  for(i=A->NFermion;i<A->NFermion+A->NBoson;i++)
+  {
+    printf("Boson rotation not yet implemted\n");
+    return 1;
+  }
+  
+  FreeOperator(&O);
+  return 0;
+}
+
+
+/* psiA <- psiA + U psiB
+ *  U is a (NFermionB+NBosonB)*(NFermionA+NBosonA) demensional matrix that defines the transformation
+ *  a_j        = \sum_i U_{i,j}   a_i
+ *  a_j^{\dag} = \sum_i U_{i,j}^* a_i^{dag}
+ *
+ * assume A B and U are real (version RRR)
+ */
+uint32_t MappedWaveFunctionAddRRR(WaveFunctionType * const A, WaveFunctionType const B, MatrixType const U)
+{
+  uint8_t *Det;
+  uint32_t idetB;
+  WaveFunctionType Udet;
+  
+  
+  Udet.NFermion=A->NFermion;
+  Udet.NBoson=A->NBoson;
+  Udet.QComplex=0;
+  Udet.NBitsKey=A->NBitsKey;
+  WaveFunctionInit(&Udet);
+  
+  /* loop over all determinants in B */
+  for(idetB=1;idetB<=B.N;idetB++)
+  {
+    Det=&(B.Determinant[BlokElementDet(idetB, B.NWord, 0)]);
+    RealWaveFunctionReset(&Udet);
+    RealMappedDetToWaveFunction(&Udet, Det, U);
+    RealWaveFunctionAddMultipliedUnionBasis(A, Udet, B.ValueRe[BlokElement(idetB)]);
+  }
+  RealWaveFunctionTruncateBasis(A, 10*DBL_EPSILON);
+  RealWaveFunctionNormalize(A);
+  WaveFunctionFree(&Udet);
+  
+  return 0;
+}
+

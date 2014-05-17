@@ -162,6 +162,8 @@ int main(int argc, const char *argv[])
 
     if (!strncmp("OppMult", argv[argc], strlen(argv[argc])))
       TestOppMult();
+    if (!strncmp("Rotate", argv[argc], strlen(argv[argc])))
+      TestRotate();
     
     if (!strncmp("AtomicPhysics", argv[argc], strlen(argv[argc])))
       TestAtomicPhysics();

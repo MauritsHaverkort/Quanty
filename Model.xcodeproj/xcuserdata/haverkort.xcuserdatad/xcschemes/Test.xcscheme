@@ -64,6 +64,10 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "Rotate"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "NMTO"
             isEnabled = "NO">
          </CommandLineArgument>
@@ -73,7 +77,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "BasisOpt"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "OppMult"
