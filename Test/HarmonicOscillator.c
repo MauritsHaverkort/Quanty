@@ -2,13 +2,13 @@
 // by using plane waves as basis functions
 // The harmonic oscillator 
 
-#define NOSCI 70
+#define NOSCI 20
 #define MOSCI (2*NOSCI+1)
 const double a = 10.;
 const double dxint = 0.01;
 
 // normalized basis function
-double complex inline PsiFun(double x, int i)
+double complex PsiFun(double x, int i)
 {
   double k = 2. * M_PI / a * (double)i;
   return (cos(k * x) + sin(k * x) * I) / sqrt(a);
@@ -69,6 +69,7 @@ void SolveLanczos()
 {
   int    i, j;
   int    NBitsKey = 8;
+  uint16_t oadd[2];
   OperatorType H;
   InitOperator(&H);
   H.NFermion = MOSCI;
@@ -77,24 +78,22 @@ void SolveLanczos()
   {
     for (i = -NOSCI; i <= NOSCI; i++)
     {
-      uint16_t oadd[2];
       oadd[0] = (i + NOSCI);
       oadd[1] = (j + NOSCI) | CrAnMask;
       RealOperatorAddLader(&H, oadd, 2, IntegrateKinetic(i, j) + IntegratePotential(i, j));
     }
   }
-
   WaveFunctionType psi;
   CreateRealRandomWaveFunction(&psi, MOSCI, 1);
   WaveFunctionRandomize(&psi);
   //PrintWaveFunctionReadable(psi);
 
   int    n = 3;
-  double epsilon = 100 * DBL_EPSILON;
+  double epsilon = 10 * DBL_EPSILON;
   WaveFunctionType psiEigen[n];
   printf("\nSolution based on Lanczos: \n");
 
-  LanczosEigenSystem(H, psi, psiEigen, &epsilon, 1000 * DBL_EPSILON, n);
+  LanczosEigenSystem(H, psi, psiEigen, &epsilon, 10 * DBL_EPSILON, n);
 
   for (i = 0; i < n; i++)
   {
