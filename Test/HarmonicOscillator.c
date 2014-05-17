@@ -8,7 +8,7 @@ const double a = 10.;
 const double dxint = 0.01;
 
 // normalized basis function
-double complex inline Psi(double x, int i)
+double complex inline PsiFun(double x, int i)
 {
   double k = 2. * M_PI / a * (double)i;
   return (cos(k * x) + sin(k * x) * I) / sqrt(a);
@@ -22,7 +22,7 @@ double complex IntegrateKinetic(int i, int j)
   double x;
   for (x = -a / 2.; x <= a / 2.; x += dxint)
   {
-    sum += conj(Psi(x, i)) * (-k2 * k2) * Psi(x, j) * dxint;  // f1*f2*dxint;
+    sum += conj(PsiFun(x, i)) * (-k2 * k2) * PsiFun(x, j) * dxint;  // f1*f2*dxint;
   }
   return -sum * 0.5;
 }
@@ -35,7 +35,7 @@ double complex IntegratePotential(int i, int j)
   for (x = -a / 2.; x <= a / 2.; x += dxint)
   {
     double V = 0.5 * x * x;
-    sum += conj(Psi(x, i)) * V * Psi(x, j) * dxint;
+    sum += conj(PsiFun(x, i)) * V * PsiFun(x, j) * dxint;
   }
   return sum;
 }
@@ -58,7 +58,7 @@ void SolveBLAS()
   int    info;
   int    wrksize = 3 * MOSCI;
   printf("Solution based on dsyev (BLAS):\n");
-  dsyev_(V, U, &npw, matrix, &npw, e, wrk, &wrksize, &info);
+  dsyev(V, U, &npw, matrix, &npw, e, wrk, &wrksize, &info);
   printf("e0 = %f\n", e[0]);
   printf("e1 = %f\n", e[1]);
   printf("e2 = %f\n", e[2]);

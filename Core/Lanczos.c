@@ -189,7 +189,7 @@ uint32_t LaconzosGroundStateFullRotateRR(const OperatorType H, WaveFunctionType 
       RealWaveFunctionAddSameBasis(v[0], *psi);
       OperatorPsiConserveBasisPreAllocatedRR(&H, &(v[0]), &(v[1]));
       RealWaveFunctionAddMultipliedSameBasis(v[1], v[0], shift);
-      M.a[1] = RealWaveFunctionDotProduct(v[1], v[0]);
+      M.a[1] = RealWaveFunctionDotProduct(&v[1], &v[0]);
       for (i = 1; i < M.N; i++)
       {
         vip = (i + 1) % 3;
@@ -204,7 +204,7 @@ uint32_t LaconzosGroundStateFullRotateRR(const OperatorType H, WaveFunctionType 
         RealWaveFunctionOrthogonalizeConserveBasis(&v[vi], OtherPsi, NOtherPsi);
         OperatorPsiConserveBasisPreAllocatedRR(&H, &(v[vi]), &(v[vip]));
         RealWaveFunctionAddMultipliedSameBasis(v[vip], v[vi], shift);
-        M.a[i + 1] = RealWaveFunctionDotProduct(v[vip], v[vi]);
+        M.a[i + 1] = RealWaveFunctionDotProduct(&v[vip], &v[vi]);
         RealWaveFunctionAddMultipliedConserveBasis(&(v[vip]), v[vim], -M.b[i]);
       }
       // Calculate the eigen-states in the Krylov basis
