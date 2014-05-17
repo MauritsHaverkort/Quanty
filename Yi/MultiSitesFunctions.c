@@ -888,6 +888,9 @@ uint32_t DCAHamiltonian(OperatorType *O,
 
   switch (NSite)
   {
+    case 1:
+      kxs[0] =   0; kys[0] =   0;
+      
     case 2:
       kxs[0] =   0; kys[0] =   0;
       kxs[1] = 1.0; kys[1] = 1.0;
@@ -935,8 +938,8 @@ uint32_t DCAHamiltonian(OperatorType *O,
         {
           oadd[3] = CrAnMask+2*i;
           oadd[2] = CrAnMask+2*j+1;
-          oadd[1] = 2*k;
-          oadd[0] = 2*l+1;
+          oadd[1] = 2*k+1;
+          oadd[0] = 2*l;
           RealOperatorAddLaderNormalOrder(O, oadd, 4, U/NSite, &QDetNotOrderedFcFaBcBa);
           NPair +=1;
         }

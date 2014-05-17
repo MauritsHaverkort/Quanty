@@ -340,20 +340,22 @@ void ReduceListOfPolesNumberFermi(ListOfPoles * M, uint32_t N, double Ef)
       }
       else
       {
-        if (fabs((M->a[imin + 1] - M->a[imin - 1])) < fabs(10 * (DBL_MIN + DBL_EPSILON * M->a[imin])))
+        if (fabs(M->a[imin + 1] - M->a[imin - 1]) < fabs(10 * (DBL_MIN + DBL_EPSILON * M->a[imin])) ||
+            (fabs(M->a[imin + 1] - M->a[imin]) < fabs(10 * (DBL_MIN + DBL_EPSILON * M->a[imin])) &&
+             fabs(M->a[imin] - M->a[imin-1]) < fabs(10 * (DBL_MIN + DBL_EPSILON * M->a[imin]))))
         {
           biminLeft = M->b[imin] * (0.5);
           biminRight = M->b[imin] * (0.5);
         }
-        else if (fabs((M->a[imin + 1] - M->a[imin])) < fabs(10 * (DBL_MIN + DBL_EPSILON * M->a[imin])))
-        {
-          biminLeft = M->b[imin];
-          biminRight = 0;
-        }
-        else if (fabs((M->a[imin] - M->a[imin - 1])) < fabs(10 * (DBL_MIN + DBL_EPSILON * M->a[imin])))
+        else if (fabs(M->a[imin + 1] - M->a[imin]) < fabs(10 * (DBL_MIN + DBL_EPSILON * M->a[imin])))
         {
           biminLeft = 0;
           biminRight = M->b[imin];
+        }
+        else if (fabs(M->a[imin] - M->a[imin - 1]) < fabs(10 * (DBL_MIN + DBL_EPSILON * M->a[imin])))
+        {
+          biminLeft = M->b[imin];
+          biminRight = 0;
         }
         else
         {
