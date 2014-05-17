@@ -148,7 +148,7 @@ void TestRotateAtomic()
   WaveFunctionType psi, Rotpsi, Rpsi;
   double epsilon=0.00000001, zero=100*DBL_EPSILON, RhoDiag[14];
   MatrixType Rho, EigenRho;
-  OperatorType RH,RU,RSx,RSy,RSz,RSsqr,RLx,RLy,RLz,RLsqr,RJx,RJy,RJz,RJsqr,Rldots;
+  OperatorType RH;
   uint32_t NFermion=14,L=3,Nelectron=3;
   uint16_t LindexUp[]={1,3,5,7,9,11,13};
   uint16_t LindexDn[]={0,2,4,6,8,10,12};
@@ -208,9 +208,10 @@ void TestRotateAtomic()
   
   
   printf("\n================\n Eigensystem of RH \n================\n ");
-  LanczosGroundState(RH, &Rotpsi, &epsilon, zero, 0, &Rotpsi, 0);
+  WaveFunctionCopy(Rotpsi, &Rpsi);
+  LanczosGroundState(RH, &Rpsi, &epsilon, zero, 0, &Rotpsi, 0);
   
-  PrintWaveFunctionReadable(Rotpsi);
+  PrintWaveFunctionReadable(Rpsi);
   
 }
 

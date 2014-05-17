@@ -711,3 +711,162 @@ void TestBlockListOfPoles()
     }
   }
 }
+
+
+void TestMeanField()
+{
+  OperatorType RH, H,U,Sx,Sy,Sz,Ssqr,Lx,Ly,Lz,Lsqr,Jx,Jy,Jz,Jsqr,ldots;
+  double VSx,VSy,VSz,VLx,VLy,VLz,VSsqr,VLsqr;
+  OperatorType HMF, RHMF;
+  MatrixType MatHMF, MatRHMF, EigenFunMatHMF, EigenFunMatRHMF;
+  WaveFunctionType psitemp, psi, Rpsi, Rotpsi;
+  double epsilon=0.00000001, zero=100*DBL_EPSILON, RhoDiag[14], EigenvalMatHMF[14], EigenvalMatRHMF[14];
+  double energy, MFenergy, Renergy, RMFenergy;
+  MatrixType Rho, EigenRho, RRho;
+  uint32_t i,NFermion=6,L=1,Nelectron=2;
+  uint16_t LindexUp[]={1,3,5,7,9,11,13};
+  uint16_t LindexDn[]={0,2,4,6,8,10,12};
+  double F[]={0,10.0,6.0,4.0};
+  CreateOperatorCoulombSingleShell(NFermion, L, LindexUp, LindexDn, F, &U);
+  CreateOperatorSx(NFermion, 2*L+1, LindexUp, LindexDn, &Sx);
+  CreateOperatorSy(NFermion, 2*L+1, LindexUp, LindexDn, &Sy);
+  CreateOperatorSz(NFermion, 2*L+1, LindexUp, LindexDn, &Sz);
+  CreateOperatorSsqr(NFermion, 2*L+1, LindexUp, LindexDn, &Ssqr);
+  CreateOperatorLx(NFermion, L, LindexUp, LindexDn, &Lx);
+  CreateOperatorLy(NFermion, L, LindexUp, LindexDn, &Ly);
+  CreateOperatorLz(NFermion, L, LindexUp, LindexDn, &Lz);
+  CreateOperatorLsqr(NFermion, L, LindexUp, LindexDn, &Lsqr);
+  CreateOperatorJx(NFermion, L, LindexUp, LindexDn, &Jx);
+  CreateOperatorJy(NFermion, L, LindexUp, LindexDn, &Jy);
+  CreateOperatorJz(NFermion, L, LindexUp, LindexDn, &Jz);
+  CreateOperatorJsqr(NFermion, L, LindexUp, LindexDn, &Jsqr);
+  CreateOperatorldots(NFermion, L, LindexUp, LindexDn, &ldots);
+  OperatorCopy(&H, U);
+  //OperatorAdd(&H, ldots, 0.01, 0.0);
+  OperatorAdd(&H, Sz, 0.002, 0.0);
+  OperatorAdd(&H, Lz, 0.001, 0.0);
+  CreateStartWaveFunctionOnsiteEnergy(H, &psi, Nelectron, 0, 16);
+  OperatorPsi(H, psi, &psitemp);
+  WaveFunctionRandomize(&psitemp);
+  WaveFunctionFree(&psi);
+  OperatorPsi(H, psitemp, &psi);
+  WaveFunctionRandomize(&psi);
+  
+  
+  
+  
+  LanczosGroundState(H, &psi, &epsilon, zero, 0, &psi, 0);
+  printf("\n================\n Operator \n================\n ");
+  PrintOperatorReadable(H);
+  printf("\n================\n Groundstate \n================\n ");
+  PrintWaveFunctionReadable(psi);
+  
+  PsiHermitianOperatorPsi(Sx, psi, &VSx);
+  PsiHermitianOperatorPsi(Sy, psi, &VSy);
+  PsiHermitianOperatorPsi(Sz, psi, &VSz);
+  PsiHermitianOperatorPsi(Ssqr, psi, &VSsqr);
+  PsiHermitianOperatorPsi(Lx, psi, &VLx);
+  PsiHermitianOperatorPsi(Ly, psi, &VLy);
+  PsiHermitianOperatorPsi(Lz, psi, &VLz);
+  PsiHermitianOperatorPsi(Lsqr, psi, &VLsqr);
+  
+  printf("Sx %22.15E\n",VSx);
+  printf("Sy %22.15E\n",VSy);
+  printf("Sz %22.15E\n",VSz);
+  printf("Ssqr %22.15E\n",VSsqr);
+  printf("Lx %22.15E\n",VLx);
+  printf("Ly %22.15E\n",VLy);
+  printf("Lz %22.15E\n",VLz);
+  printf("Lsqr %22.15E\n",VLsqr);
+  
+  printf("\n================\n Density Matrix \n================\n ");
+  CalculateDensityMatrix(&Rho, psi);
+  Eigensystem(Rho, &EigenRho, RhoDiag);
+  PrintMatrix(EigenRho);
+  if(EigenRho.QComplex==0)
+  {
+    MatrixTranspose(&EigenRho);
+  }
+  else
+  {
+    MatrixConjugateTranspose(&EigenRho);
+  }
+
+  PrintMatrix(Rho);
+  PrintMatrix(EigenRho);
+  
+  for(i=0;i<NFermion;i++)
+  {
+    printf("Density of orbital %i: %lf\n",i,RhoDiag[i]);
+  }
+  
+  printf("\n================\n Mean field operator \n================\n ");
+  
+  MeanFieldOperator(&H, &HMF, Rho);
+  PrintOperatorReadable(HMF);
+  
+  PsiHermitianOperatorPsi(H, psi, &energy);
+  PsiHermitianOperatorPsi(HMF, psi, &MFenergy);
+  
+  printf("Energy    %22.15E\nMF Energy %22.15E\n",energy,MFenergy);
+  
+  
+  printf("\n================\n Rotate psi \n================\n ");
+  RotateWaveFunction(&Rotpsi, psi, EigenRho);
+  PrintWaveFunctionReadable(Rotpsi);
+  
+  
+  printf("\n================\n Rotate Operator \n================\n ");
+  RotateOperatorNormalOrder(&RH, H, EigenRho, &QDetNotOrderedFcFaBcBa);
+  OperatorChop(&RH, 0.000000001);
+  PrintOperatorReadable(RH);
+  
+  
+  printf("\n================\n Eigensystem of RH \n================\n ");
+  WaveFunctionCopy(Rotpsi, &Rpsi);
+  LanczosGroundState(RH, &Rpsi, &epsilon, zero, 0, &Rotpsi, 0);
+  
+  PrintWaveFunctionReadable(Rpsi);
+  
+  
+  printf("\n================\n Density Matrix Rotated \n================\n ");
+  CalculateDensityMatrix(&RRho, Rpsi);
+  
+  PrintMatrix(RRho);
+  
+  
+  printf("\n================\n Mean field operator \n================\n ");
+  
+  MeanFieldOperator(&RH, &RHMF, RRho);
+  PrintOperatorReadable(RHMF);
+  
+  PsiHermitianOperatorPsi(RH, Rpsi, &Renergy);
+  PsiHermitianOperatorPsi(RHMF, Rpsi, &RMFenergy);
+  
+  printf("Energy    %22.15E\nMF Energy %22.15E\n",energy,MFenergy);
+  printf("Energy    %22.15E\nMF Energy %22.15E\n",Renergy,RMFenergy);
+  
+  
+  printf("\n================\n Mean field operator to one electron operator matrix \n================\n ");
+  
+  OperatorToOneElectronMatrix(&HMF, &MatHMF);
+  PrintMatrix(MatHMF);
+  OperatorToOneElectronMatrix(&RHMF, &MatRHMF);
+  PrintMatrix(MatRHMF);
+  
+  
+  printf("\n================\n Hartree Fock orbitals \n================\n ");
+  
+  Eigensystem(MatHMF, &EigenFunMatHMF, EigenvalMatHMF);
+  PrintMatrix(EigenFunMatHMF);
+  Eigensystem(MatRHMF, &EigenFunMatRHMF, EigenvalMatRHMF);
+  PrintMatrix(EigenFunMatRHMF);
+  
+  for(i=0;i<MatHMF.Ni;i++)
+  {
+    printf("%22.15E %22.15E\n",EigenvalMatHMF[i],EigenvalMatRHMF[i]);
+  }
+  
+  
+  
+}

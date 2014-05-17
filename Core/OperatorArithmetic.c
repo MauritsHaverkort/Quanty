@@ -1498,7 +1498,7 @@ uint32_t NormalOrderOperator(const OperatorType O, OperatorType * const Oo,
                              uint32_t(*QDetNotOrdered) (uint16_t, uint16_t, uint32_t))
 {
   uint32_t il, iN;
-  for (il = 0; il < O.MaxLength; il++)
+  for (il = 0; il <= O.MaxLength; il++)
   {
     if (O.l[il].QComplex)
     {                           /* O complex at level il */
@@ -1511,7 +1511,7 @@ uint32_t NormalOrderOperator(const OperatorType O, OperatorType * const Oo,
           return 1;
         }
       }
-      for (iN = 0; iN < O.l[il].N; il++)
+      for (iN = 0; iN < O.l[il].N; iN++)
       {
         if (ComplexOperatorAddLaderNormalOrder
             (Oo, &(O.l[il].o[il * iN]), il, O.l[il].V[iN].Re, O.l[il].V[iN].Im, QDetNotOrdered))
@@ -1526,7 +1526,7 @@ uint32_t NormalOrderOperator(const OperatorType O, OperatorType * const Oo,
     {                           /* O real at level il */
       if (Oo->l[il].QComplex)
       {
-        for (iN = 0; iN < O.l[il].N; il++)
+        for (iN = 0; iN < O.l[il].N; iN++)
         {
           if (ComplexOperatorAddLaderNormalOrder(Oo, &(O.l[il].o[il * iN]), il, O.l[il].V[iN].Re, 0, QDetNotOrdered))
           {
@@ -1538,7 +1538,7 @@ uint32_t NormalOrderOperator(const OperatorType O, OperatorType * const Oo,
       }
       else
       {
-        for (iN = 0; iN < O.l[il].N; il++)
+        for (iN = 0; iN < O.l[il].N; iN++)
         {
           if (RealOperatorAddLaderNormalOrder(Oo, &(O.l[il].o[il * iN]), il, O.l[il].VRe[iN], QDetNotOrdered))
           {

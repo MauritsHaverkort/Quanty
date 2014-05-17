@@ -64,8 +64,12 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "HarmOsc"
+            argument = "MF"
             isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "HarmOsc"
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "Rotate"

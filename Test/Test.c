@@ -41,6 +41,7 @@
 #include "../Core/OperatorWaveFunction.c"
 #include "../Core/OperatorWaveFunctionPerturbation.c"
 #include "../Core/Lanczos.c"
+#include "../Core/MeanField.c"
 #include "../Core/Spectral.c"
 #include "../Core/DensityMatrix.c"
 #include "../Core/Random.c"
@@ -178,6 +179,9 @@ int main(int argc, const char *argv[])
     
     if (!strncmp("BasisOpt", argv[argc], strlen(argv[argc])))
       BasisOptimization();
+    
+    if (!strncmp("MF", argv[argc], strlen(argv[argc])))
+      TestMeanField();
   }
   
   
