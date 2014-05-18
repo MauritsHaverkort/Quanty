@@ -654,7 +654,30 @@ uint32_t WaveFunctionOrthogonalize(WaveFunctionType * const psi, const WaveFunct
   }
 }
 
-
+uint32_t CreateWaveFunctionFromString(WaveFunctionType * psi, uint16_t * createString, uint32_t const NParticle, uint32_t const NFermion, uint32_t const NBoson, uint32_t const NBitsKey)
+{
+  uint32_t i;
+  psi->NFermion = NFermion;
+  psi->NBoson = NBoson;
+  psi->QComplex = 0;
+  psi->NBitsKey = NBitsKey;
+  WaveFunctionInit(psi);
+  uint8_t Determinant[psi->NWord];
+  for(i=0;i<psi->NWord;i++)
+  {
+    Determinant[i]=0;
+  }
+  for(i=0;i<NParticle;i++)
+  {
+    if (OperatorCr(Determinant, createString[i], psi->NFermion) == 0)
+    {
+      printf("Error in CreateStartWaveFunctionOnsiteEnergy Fermionic part\n");
+      return 1;
+    };
+  }
+  WaveFunctionAddElement(psi, Determinant, 1.0, 0.0);
+  return 0;
+}
 
 uint32_t CreateStartWaveFunctionOnsiteEnergy(const OperatorType O, WaveFunctionType * psi, uint32_t nFermion,
                                              uint32_t nBoson, uint32_t NBitsKey)

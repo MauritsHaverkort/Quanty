@@ -4078,6 +4078,10 @@ double CubicHarmonicK(const int k, const int m, const double t, const double p)
  *       l == 1    - {t1u}
  *       l == 2    - {eg, t2g}
  *       l == 3    - {a1u, t1u, t2u}
+ *  D4h  l == 0    - {ag}
+ *       l == 1    - {b1u, b2u, b3u} {z y x}
+ *       l == 2    - {agx2y2, agz2, Mag, b1g, b2g, b3g} {x2y2 z2 mx2y2-z2 xy xz yz}
+ *       l == 3    - .........
  *  Ih   l == 0    - {ag}
  *       l == 1    - {t1u}
  *       l == 2    - {hg}
@@ -4179,7 +4183,6 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
     Akm->m[0] = 0;
     Akm->Re[0] = EigenEnergies[0];
   }
-
   else if (strcmp(s, "C2") == 0)
   {
     printf("Potential for %s not yet implemented\n", s);
@@ -4575,7 +4578,6 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
       break;
     }
   }
-
   else if (strcmp(s, "C2v") == 0)
   {
     printf("Potential for %s not yet implemented\n", s);
@@ -4971,7 +4973,6 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
       break;
     }
   }
-
   else if (strcmp(s, "C2h") == 0)
   {
     printf("Potential for %s not yet implemented\n", s);
@@ -5367,7 +5368,6 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
       break;
     }
   }
-
   else if (strcmp(s, "D2") == 0)
   {
     printf("Potential for %s not yet implemented\n", s);
@@ -5763,11 +5763,8 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
       break;
     }
   }
-
   else if (strcmp(s, "D2h") == 0)
   {
-    printf("Potential for %s not yet implemented\n", s);
-    return 1;
     Akm->QComplex = 0;
     switch (l)
     {
@@ -5775,13 +5772,17 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
       Akm->N = 1;
       break;
     case 1:
-      Akm->N = 1;
+      Akm->N = 4;
       break;
     case 2:
-      Akm->N = 2;
+      Akm->N = 9;
+      printf("Potential for point group %s and angular momentum %i not implemented\n", s, l);
+      return 1;
       break;
     case 3:
-      Akm->N = 3;
+      Akm->N = 16;
+      printf("Potential for point group %s and angular momentum %i not implemented\n", s, l);
+      return 1;
       break;
     default:
       printf("Potential for point group %s and angular momentum %i not implemented\n", s, l);
@@ -5824,7 +5825,16 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
       {
         Akm->l[0] = 0;
         Akm->m[0] = 0;
-        Akm->Re[0] = EigenEnergies[0];
+        Akm->Re[0] = (EigenEnergies[0]+EigenEnergies[1]+EigenEnergies[2])/3.0;
+        Akm->l[1] = 2;
+        Akm->m[1] = 0;
+        Akm->Re[1] = (2*EigenEnergies[0]-EigenEnergies[1]-EigenEnergies[2])*5.0/6.0;
+        Akm->l[2] = 2;
+        Akm->m[2] = 2;
+        Akm->Re[2] = (EigenEnergies[2]-EigenEnergies[1])*5.0/(2.0*sqrt(6.0));
+        Akm->l[3] = 2;
+        Akm->m[3] =-2;
+        Akm->Re[3] = (EigenEnergies[2]-EigenEnergies[1])*5.0/(2.0*sqrt(6.0));
       }
       break;
     case 2:
@@ -6159,7 +6169,6 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
       break;
     }
   }
-
   else if (strcmp(s, "D2d") == 0)
   {
     printf("Potential for %s not yet implemented\n", s);
@@ -6555,7 +6564,6 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
       break;
     }
   }
-
   else if (strcmp(s, "T") == 0)
   {
     printf("Potential for %s not yet implemented\n", s);

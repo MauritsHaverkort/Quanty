@@ -13,6 +13,7 @@
 		4C2AAACC1632662000138620 /* Test.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA66163265DD00138620 /* Test.c */; };
 		4C2AAACE163266DD00138620 /* libblas.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACD163266DD00138620 /* libblas.dylib */; };
 		4C2AAAD0163266F900138620 /* liblapack.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACF163266F900138620 /* liblapack.dylib */; };
+		4C2F88BA19290AFF009AED78 /* Model.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA261632659D00138620 /* Model.c */; };
 		4C56E02818D877A1001B50A8 /* libblas.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACD163266DD00138620 /* libblas.dylib */; };
 		4C56E02918D877B7001B50A8 /* liblapack.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACF163266F900138620 /* liblapack.dylib */; };
 		4C5CA62016D18C3400BE1C25 /* DMFT.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA4C163265DD00138620 /* DMFT.c */; };
@@ -22,7 +23,6 @@
 		4C79F5E117B53D4100189682 /* HubbardModel.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA54163265DD00138620 /* HubbardModel.c */; };
 		4C79F5E217B53E4F00189682 /* liblapack.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACF163266F900138620 /* liblapack.dylib */; };
 		4C79F5E317B53E5800189682 /* libblas.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACD163266DD00138620 /* libblas.dylib */; };
-		4C8274DD17DCF3AD00A5F555 /* Model.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA261632659D00138620 /* Model.c */; };
 		4C8274DE17DCF57200A5F555 /* libblas.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACD163266DD00138620 /* libblas.dylib */; };
 		4C8274DF17DCF59300A5F555 /* liblapack.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACF163266F900138620 /* liblapack.dylib */; };
 		4CDD1CA91796D27F00614F34 /* libblas.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACD163266DD00138620 /* libblas.dylib */; };
@@ -173,6 +173,9 @@
 		4C2AAACF163266F900138620 /* liblapack.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = liblapack.dylib; path = usr/lib/liblapack.dylib; sourceTree = SDKROOT; };
 		4C2DFCB6188D80170023CA96 /* MultiSitesDMFT.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = MultiSitesDMFT.c; sourceTree = "<group>"; };
 		4C2DFCB7188D80170023CA96 /* MultiSitesFunctions.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = MultiSitesFunctions.c; sourceTree = "<group>"; };
+		4C2F88B51928CF95009AED78 /* AndersonImpurity.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = AndersonImpurity.c; sourceTree = "<group>"; };
+		4C2F88B71928CFA5009AED78 /* CrystalField.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = CrystalField.c; sourceTree = "<group>"; };
+		4C2F88B91928CFC8009AED78 /* LigandField.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = LigandField.c; sourceTree = "<group>"; };
 		4C3261581850DF9300CEECC4 /* OperatorArithmetic.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = OperatorArithmetic.c; sourceTree = "<group>"; };
 		4C3FCCFC188419B6000B9DB8 /* BasicMathBlock.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = BasicMathBlock.c; path = BasicMathBlock/BasicMathBlock.c; sourceTree = "<group>"; };
 		4C3FCCFD188419E4000B9DB8 /* BasicMath_BlockListOfPoles.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = BasicMath_BlockListOfPoles.c; path = BasicMathBlock/BasicMath_BlockListOfPoles.c; sourceTree = "<group>"; };
@@ -312,6 +315,9 @@
 			children = (
 				4C2AAA261632659D00138620 /* Model.c */,
 				4C2AAA271632659D00138620 /* StandardOperators.c */,
+				4C2F88B51928CF95009AED78 /* AndersonImpurity.c */,
+				4C2F88B71928CFA5009AED78 /* CrystalField.c */,
+				4C2F88B91928CFC8009AED78 /* LigandField.c */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -669,7 +675,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4C8274DD17DCF3AD00A5F555 /* Model.c in Sources */,
+				4C2F88BA19290AFF009AED78 /* Model.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
