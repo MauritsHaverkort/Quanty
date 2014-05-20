@@ -55,9 +55,9 @@
 int main(int argc, const char *argv[])
 {
   TimeStampAll();
-  printf("----------\n start crystal field theory\n -----------\n");
   
-  CeLigandField();
+  
+  CeImpurity();
   
   return 0;
 
