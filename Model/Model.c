@@ -56,8 +56,8 @@ int main(int argc, const char *argv[])
 {
   TimeStampAll();
   
-  
-  CeImpurity();
+  CeLigandField();
+  //CeImpurity();
   
   return 0;
 

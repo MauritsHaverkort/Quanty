@@ -791,8 +791,190 @@ uint32_t LanczosGroundStateMR(const OperatorType H, WaveFunctionType * const psi
 }
 
 
-uint32_t LanczosTriDiagonalizeRR(const OperatorType H, WaveFunctionType psi, double epsilon,
-                                 TriDiagonalMatrixType * const M, double Gamma)
+
+
+
+
+
+uint32_t LanczosGroundStateRestrictedRR(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType const Restrictions, double *epsilon, const double zero, double shiftin, WaveFunctionType * OtherPsi, uint32_t NOtherPsi)
+{
+  printf("\nStart of LanczosGroundStateRR\n\n");
+  fflush(stdout);
+  const uint32_t NKrylovMax = 100, NKrylovStart = 25;
+  uint32_t NKrylov;
+  WaveFunctionType v[3];
+  double energy = 4 * zero, energy1 = 2 * zero, energy2;
+  double shift;
+  uint32_t cycles, i, vi, vip, vim, minloop = 3;
+  MatrixType Eigen;
+  TriDiagonalMatrixType M;
+  double val[NKrylovMax];
+  M.N = NKrylovMax;
+  InitTriDiagonalMatrix(&M);
+  // Shift H down to twice the energy of the starting wave-function
+  // for the case that this is zero, add an aditional shift of 1
+  // Make sure at least 2 loops are done
+  PsiOperatorPsiRR(H, *psi, &energy1);
+  if (energy1 < 0)
+  {
+    shift = -Abs(energy) - 1;
+  }
+  else
+  {
+    shift = -2 * energy - 1;
+  }
+  shift -= shiftin;
+  energy1 = 0;
+  energy = 1;
+  // loop until the relative energy gain is smaller than zero.
+  while (((energy - energy1) > (zero * (1.0 + fabs(energy)))) || minloop)
+  {
+    if (minloop)
+      minloop--;
+    cycles = 0;
+    energy = energy1;
+    // Calculate psi_new = H^3 psi_old whereby the first time H acts on psi_old the basis size is enlarged
+    //  This leaves three functions allocated which can be used in the next part
+  Repeat:
+    if (OperatorPsiRestrictedRR(H, *psi, &v[0], Restrictions))
+      goto OutOffMemv0;
+    if (RealWaveFunctionAddMultipliedUnionBasis(&v[0], *psi, shift))
+      goto OutOffMemv0add;
+    if (RealWaveFunctionOrthogonalize(&v[0], OtherPsi, NOtherPsi))
+      goto OutOffMemv0Ortho;
+    RealWaveFunctionNormalize(&v[0]);
+    printf("BasisSetSize After Expansion: %12i Truncation: ", v[0].N);
+    RealWaveFunctionTruncateBasis(&v[0], *epsilon);
+    printf("%12i\n", v[0].N);
+    fflush(stdout);
+    if (OperatorPsiConserveBasisRR(H, v[0], &v[1]))
+      goto OutOffMemv1;
+    RealWaveFunctionAddMultipliedSameBasis(v[1], v[0], shift);
+    RealWaveFunctionNormalize(&v[1]);
+    if (OperatorPsiConserveBasisRR(H, v[1], &v[2]))
+      goto OutOffMemv2;
+    RealWaveFunctionAddMultipliedSameBasis(v[2], v[1], shift);
+    RealWaveFunctionNormalize(&v[2]);
+    RealWaveFunctionFree(psi);
+    if (OperatorPsiConserveBasisRR(H, v[2], psi))
+      goto OutOffMempsi;
+    RealWaveFunctionAddMultipliedSameBasis(*psi, v[2], shift);
+    RealWaveFunctionOrthogonalizeConserveBasis(psi, OtherPsi, NOtherPsi);
+    RealWaveFunctionNormalize(psi);
+    goto EnoughMem;
+  OutOffMempsi:
+    RealWaveFunctionFreeValues(&v[2]);
+  OutOffMemv2:
+    RealWaveFunctionFreeValues(&v[1]);
+  OutOffMemv1:
+  OutOffMemv0Ortho:
+  OutOffMemv0add:
+    RealWaveFunctionFreeValues(&v[0]);
+  OutOffMemv0:
+    printf("Out off memory increase epsilon from %22.15E to %22.15E\n", *epsilon, *epsilon * 2);
+    *epsilon *= 2.0;
+    if (psi->NBlok == 1)
+    {
+      printf("Outof memory in LanczosGroundStateRR,\npsi->NBLok=1 so no way to recover.\n");
+      AllocFailed();
+    }
+    printf("BasisSetSize Before Truncation: %12i ", psi->N);
+    RealWaveFunctionTruncateBasis(psi, *epsilon);
+    printf("After Truncation: %12i\n", psi->N);
+    fflush(stdout);
+    goto Repeat;
+  EnoughMem:
+    // For a given basis set determine the lowest state
+    //  In the previous part the memory for 3 functions v[0], v[1] and v[2] is allocated on this basis set.
+    energy1 = 2 * zero;
+    energy2 = 4 * zero;
+    // loop until the relative energy gain is smaller than zero, loop a minimum of 3 times
+    while ((cycles < 3) || ((energy2 - energy1) > (zero * (1.0 + fabs(energy1)))))
+    {
+      // Calculate the Krylov basis of size NKrylov, starting from the sofar best approximation to the ground-state
+      NKrylov = NKrylovStart + cycles % (NKrylovMax - NKrylovStart);
+      M.N = NKrylov;
+      cycles++;
+      if ((cycles & 15) == 15)
+      {
+        printf("Reached %i-th cycle with energy %22.15E\n", cycles, energy1);
+        fflush(stdout);
+      }
+      energy2 = energy1;
+      RealWaveFunctionMultiply(v[0], 0);
+      RealWaveFunctionAddSameBasis(v[0], *psi);
+      OperatorPsiConserveBasisPreAllocatedRR(&H, &(v[0]), &(v[1]));
+      RealWaveFunctionAddMultipliedSameBasis(v[1], v[0], shift);
+      M.a[1] = RealWaveFunctionDotProduct(&v[1], &v[0]);
+      for (i = 1; i < M.N; i++)
+      {
+        vip = (i + 1) % 3;
+        vi = (i) % 3;
+        vim = (i - 1) % 3;
+        RealWaveFunctionAddMultipliedConserveBasis(&(v[vi]), v[vim], -M.a[i]);
+        M.b[i] = RealWaveFunctionCalculateNorm(v[vi]);
+        if (M.b[i] > DBL_MIN * 10)
+          RealWaveFunctionMultiply(v[vi], (double)1.0 / M.b[i]);
+        else
+          RealWaveFunctionMultiply(v[vi], 0.0);
+        RealWaveFunctionOrthogonalizeConserveBasis(&v[vi], OtherPsi, NOtherPsi);
+        OperatorPsiConserveBasisPreAllocatedRR(&H, &(v[vi]), &(v[vip]));
+        RealWaveFunctionAddMultipliedSameBasis(v[vip], v[vi], shift);
+        M.a[i + 1] = RealWaveFunctionDotProduct(&v[vip], &v[vi]);
+        RealWaveFunctionAddMultipliedConserveBasis(&(v[vip]), v[vim], -M.b[i]);
+      }
+      // Calculate the eigen-states in the Krylov basis
+      TriDiagonalMatrixToEigensystem(M, &Eigen, val);
+      // Given the eigen-states in the Krylov basis reconstruct the ground-state in the original basis
+      RealWaveFunctionMultiply(v[0], 0);
+      RealWaveFunctionAddSameBasis(v[0], *psi);
+      RealWaveFunctionMultiply(*psi, Eigen.VRe[0][0]);
+      OperatorPsiConserveBasisPreAllocatedRR(&H, &(v[0]), &(v[1]));
+      RealWaveFunctionAddMultipliedSameBasis(v[1], v[0], shift);
+      for (i = 1; i < M.N; i++)
+      {
+        vip = (i + 1) % 3;
+        vi = (i) % 3;
+        vim = (i - 1) % 3;
+        RealWaveFunctionAddMultipliedSameBasis(v[vi], v[vim], -M.a[i]);
+        if (M.b[i] > DBL_MIN * 10)
+          RealWaveFunctionMultiply(v[vi], (double)1.0 / M.b[i]);
+        else
+          RealWaveFunctionMultiply(v[vi], 0.0);
+        RealWaveFunctionOrthogonalizeConserveBasis(&v[vi], OtherPsi, NOtherPsi);
+        OperatorPsiConserveBasisPreAllocatedRR(&H, &(v[vi]), &(v[vip]));
+        RealWaveFunctionAddMultipliedSameBasis(v[vip], v[vi], shift);
+        RealWaveFunctionAddMultipliedSameBasis(v[vip], v[vim], -M.b[i]);
+        RealWaveFunctionAddMultipliedSameBasis(*psi, v[vi], Eigen.VRe[0][i]);
+      }
+      // Set the shift such that the largest eigenvalue found becomes zero
+      shift -= val[M.N - 1];
+      shift -= shiftin;
+      // Orthogonalize to previously found functions
+      RealWaveFunctionOrthogonalizeConserveBasis(psi, OtherPsi, NOtherPsi);
+      RealWaveFunctionNormalize(psi);
+      PsiOperatorPsiRR(H, *psi, &energy1);
+    }
+    RealWaveFunctionFreeValues(&v[0]);
+    RealWaveFunctionFreeValues(&v[1]);
+    RealWaveFunctionFreeValues(&v[2]);
+    RealWaveFunctionTruncateBasis(psi, DBL_EPSILON);
+    printf("                                           Eigenstate: %12i\n", psi->N);
+    RealWaveFunctionNormalize(psi);
+    FreeMatrix(&Eigen);
+    printf("Energy: %22.15E  ", energy1);
+    printf("NumberOfLaczosCycles: %i\n", cycles);
+    fflush(stdout);
+  }
+  return 0;
+}
+
+
+
+
+
+
+uint32_t LanczosTriDiagonalizeRR(const OperatorType H, WaveFunctionType psi, double epsilon, TriDiagonalMatrixType * const M, double Gamma)
 {
   printf("\nStart of LanczosTriDiagonalizeRR\n\n");
   fflush(stdout);
@@ -1277,6 +1459,150 @@ uint32_t LanczosTriDiagonalizeMC(const OperatorType H, WaveFunctionType psi, dou
   fflush(stdout);
   return 0;
 }
+
+
+
+uint32_t LanczosTriDiagonalizeRestrictedRR(const OperatorType H, WaveFunctionType psi, DeterminantRestrictionType const Restrictions, double epsilon, TriDiagonalMatrixType * const M, double Gamma)
+{
+  printf("\nStart of LanczosTriDiagonalizeRR\n\n");
+  fflush(stdout);
+  WaveFunctionType v[3];
+  uint32_t i, vi=0, vip=0, vim=0;
+  double temp, errorestimate = 1.0;
+  double QRe[3], QIm[3], PRe[3], PIm[3], ValEst[3];
+  QRe[0] = 1;
+  QRe[1] = 0;
+  QRe[2] = 0;
+  QIm[0] = 0;
+  QIm[1] = 0;
+  QIm[2] = 0;
+  PRe[0] = 0;
+  PRe[1] = 0;
+  PRe[2] = 1;
+  PIm[0] = 0;
+  PIm[1] = 0;
+  PIm[2] = 0;
+  ValEst[0] = 0.0;
+  ValEst[1] = 0.0;
+  ValEst[2] = 0.0;
+  /* copy the name of psi to v[0] in order to do the loop more cleanely  */
+  v[0].N = psi.N;
+  v[0].NBlok = psi.NBlok;
+  v[0].NFermion = psi.NFermion;
+  v[0].NBoson = psi.NBoson;
+  v[0].NWord = psi.NWord;
+  v[0].NBitsKey = psi.NBitsKey;
+  v[0].ValueRe = psi.ValueRe;
+  v[0].Determinant = psi.Determinant;
+  v[0].Next = psi.Next;
+  v[0].KeyList = psi.KeyList;
+  v[0].QComplex = psi.QComplex;
+  /* finished copying */
+  M->a[0] = 0;
+  M->b[0] = RealWaveFunctionCalculateNorm(v[0]);
+  if (M->b[0] == 0)
+  {
+    RealWaveFunctionMultiply(v[0], (double)0.0);
+  }
+  else
+  {
+    RealWaveFunctionMultiply(v[0], (double)1.0 / M->b[0]);
+  }
+  printf("BasisSetSize: %12i ", v[0].N);
+  RealWaveFunctionTruncateBasis(&(v[0]), epsilon);
+  printf("%12i\n", v[0].N);
+  while (OperatorPsiRestrictedRR(H, v[0], &(v[1]), Restrictions))
+  {                             /* Allocation of Memory failed */
+    printf("Allocation of new memory failed in LanczosTriDiagonalize for the function OperatorPsi\n");
+    printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon,
+           epsilon * 2.0);
+    fflush(stdout);
+    epsilon *= 2.0;
+    if (v[0].NBlok == 1)
+      AllocFailed();
+    RealWaveFunctionTruncateBasis(&(v[0]), epsilon);
+  }
+  M->a[1] = RealWaveFunctionDotProduct(&v[1], &v[0]);
+  printf("BasisSetSize: %12i ", v[1].N);
+  for (i = 1; i < M->N; i++)
+  {
+    vip = (i + 1) % 3;
+    vi = (i) % 3;
+    vim = (i - 1) % 3;
+    while (RealWaveFunctionAddMultipliedUnionBasis(&(v[vi]), v[vim], -M->a[i]))
+    {                           /*Allocation of Memory failed */
+      printf
+      ("Allocation of new memory failed in LanczosTriDiagonalize for the function RealWaveFunctionAddMultipliedUnionBasis(&(v[vi]),v[vim],-M->a[i])\n");
+      printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon,
+             epsilon * 2.0);
+      fflush(stdout);
+      epsilon *= 2.0;
+      temp = RealWaveFunctionCalculateNorm(v[vi]);
+      if (v[vi].NBlok == 1)
+        AllocFailed();
+      RealWaveFunctionTruncateBasis(&(v[vi]), epsilon * temp / errorestimate);
+    }
+    M->b[i] = RealWaveFunctionCalculateNorm(v[vi]);
+    if (M->b[i] == 0)
+    {
+      RealWaveFunctionMultiply(v[vi], (double)0.0);
+    }
+    else
+    {
+      RealWaveFunctionMultiply(v[vi], (double)1.0 / M->b[i]);
+    }
+    RealWaveFunctionTruncateBasis(&(v[vi]), epsilon / errorestimate);
+    printf("%12i ", v[vi].N);
+    printf("| M.a[%3i] M.b[%3i]: %12.5E %12.5E | Err: %12.5E\n", i, i - 1, M->a[i], M->b[i - 1], errorestimate);
+    /*
+     QRe[vi]=M->b[i-1]*QRe[vip]-0.5*Gamma*QIm[vim];
+     QIm[vi]=M->b[i-1]*QIm[vip]+0.5*Gamma*QRe[vim];
+     PRe[vi]=M->b[i-1]*PRe[vip]-0.5*Gamma*PIm[vim];
+     PIm[vi]=M->b[i-1]*PIm[vip]+0.5*Gamma*PRe[vim];
+     ValEst[vi]=fabs((PIm[vi]*QRe[vi]-PRe[vi]*QIm[vi])/(QIm[vi]*QIm[vi]+QRe[vi]*QRe[vi]));
+     if(i>5)errorestimate=fabs(2*(ValEst[vi]-ValEst[vim])/(Gamma));
+     */
+    errorestimate *= M->b[i] * M->b[i] / (M->b[i] * M->b[i] + 4 * Gamma * Gamma);
+    while (OperatorPsiRestrictedRR(H, v[vi], &(v[vip]),Restrictions))
+    {                           /*Allocation of Memory failed */
+      printf("Allocation of new memory failed in LanczosTriDiagonalize for the function OperatorPsi\n");
+      printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon,
+             epsilon * 2.0);
+      fflush(stdout);
+      epsilon *= 2.0;
+      if (v[vi].NBlok == 1)
+        AllocFailed();
+      RealWaveFunctionTruncateBasis(&(v[vi]), epsilon / errorestimate);
+    }
+    printf("BasisSetSize: %12i ", v[vip].N);
+    M->a[i + 1] = RealWaveFunctionDotProduct(&v[vip], &v[vi]);
+    while (RealWaveFunctionAddMultipliedUnionBasis(&(v[vip]), v[vim], -M->b[i]))
+    {                           /*Allocation of Memory failed */
+      printf
+      ("Allocation of new memory failed in LanczosTriDiagonalize for the function RealWaveFunctionAddMultipliedUnionBasis(&(v[vip]),v[vim],-M->b[i])\n");
+      printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon,
+             epsilon * 2.0);
+      fflush(stdout);
+      epsilon *= 2.0;
+      temp = RealWaveFunctionCalculateNorm(v[vip]);
+      if (v[vip].NBlok == 1)
+        AllocFailed();
+      RealWaveFunctionTruncateBasis(&(v[vip]), epsilon * temp / errorestimate);
+    }
+    RealWaveFunctionFree(&v[vim]);
+  }
+  printf("             | M.a[%3i] M.b[%3i]: %12.5E %12.5E | Err: %12.5E\n\n", i, i - 1, M->a[i], M->b[i - 1],
+         errorestimate);
+  if (M->N > 1)
+  {
+    RealWaveFunctionFree(&v[vi]);
+    RealWaveFunctionFree(&v[vip]);
+  }
+  fflush(stdout);
+  return 0;
+}
+
+
 
 
 uint32_t LanczosTriDiagonalizePlusDensityRR(const OperatorType H, WaveFunctionType psi, double epsilon,
@@ -2559,6 +2885,51 @@ uint32_t LanczosGroundState(const OperatorType H, WaveFunctionType * const psi, 
   }
 }
 
+
+uint32_t LanczosGroundStateRestricted(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double *epsilon, const double zero, double shiftin, WaveFunctionType * OtherPsi, uint32_t NOtherPsi)
+{
+  if (psi->QComplex)
+  {
+    if (H.QComplex == 0)
+    {
+      return LanczosGroundStateRC(H, psi, epsilon, zero, shiftin, OtherPsi, NOtherPsi);
+    }
+    else if (H.QComplex == 1)
+    {
+      return LanczosGroundStateCC(H, psi, epsilon, zero, shiftin, OtherPsi, NOtherPsi);
+    }
+    else
+    {
+      return LanczosGroundStateMC(H, psi, epsilon, zero, shiftin, OtherPsi, NOtherPsi);
+    }
+  }
+  else
+  {
+    if (H.QComplex == 0)
+    {
+      return LanczosGroundStateRestrictedRR(H, psi, Restrictions, epsilon, zero, shiftin, OtherPsi, NOtherPsi);
+    }
+    else if (H.QComplex == 1)
+    {
+      if (MakeComplexWaveFunctionFromReal(psi, *psi))
+      {
+        printf("MakeComplexWaveFunctionFromReal in LanczosGroundState failed\n");
+        return 1;
+      }
+      return LanczosGroundStateCC(H, psi, epsilon, zero, shiftin, OtherPsi, NOtherPsi);
+    }
+    else
+    {
+      if (MakeComplexWaveFunctionFromReal(psi, *psi))
+      {
+        printf("MakeComplexWaveFunctionFromReal in LanczosGroundState failed\n");
+        return 1;
+      }
+      return LanczosGroundStateMC(H, psi, epsilon, zero, shiftin, OtherPsi, NOtherPsi);
+    }
+  }
+}
+
 uint32_t LanczosEigenSystem(const OperatorType H, WaveFunctionType const psiStart, WaveFunctionType * const psiList,
                             double *epsilon, const double zero, uint32_t Npsi)
 {
@@ -2576,8 +2947,7 @@ uint32_t LanczosEigenSystem(const OperatorType H, WaveFunctionType const psiStar
 
 
 
-uint32_t LanczosTriDiagonalize(const OperatorType H, WaveFunctionType psi, double epsilon,
-                               TriDiagonalMatrixType * const M, double Gamma)
+uint32_t LanczosTriDiagonalize(const OperatorType H, WaveFunctionType psi, double epsilon, TriDiagonalMatrixType * const M, double Gamma)
 {
   WaveFunctionType Cpsi;
   if (psi.QComplex)
@@ -2622,6 +2992,51 @@ uint32_t LanczosTriDiagonalize(const OperatorType H, WaveFunctionType psi, doubl
   }
 }
 
+
+uint32_t LanczosTriDiagonalizeRestricted(const OperatorType H, WaveFunctionType psi, DeterminantRestrictionType Restrictions, double epsilon, TriDiagonalMatrixType * const M, double Gamma)
+{
+  WaveFunctionType Cpsi;
+  if (psi.QComplex)
+  {
+    if (H.QComplex == 0)
+    {
+      return LanczosTriDiagonalizeRC(H, psi, epsilon, M, Gamma);
+    }
+    else if (H.QComplex == 1)
+    {
+      return LanczosTriDiagonalizeCC(H, psi, epsilon, M, Gamma);
+    }
+    else
+    {
+      return LanczosTriDiagonalizeMC(H, psi, epsilon, M, Gamma);
+    }
+  }
+  else
+  {
+    if (H.QComplex == 0)
+    {
+      return LanczosTriDiagonalizeRestrictedRR(H, psi, Restrictions, epsilon, M, Gamma);
+    }
+    else if (H.QComplex == 1)
+    {
+      if (MakeComplexWaveFunctionFromReal(&Cpsi, psi))
+      {
+        printf("MakeComplexWaveFunctionFromReal failed in LanczosTriDiagonalize\n");
+        return 1;
+      }
+      return LanczosTriDiagonalizeCC(H, Cpsi, epsilon, M, Gamma);
+    }
+    else
+    {
+      if (MakeComplexWaveFunctionFromReal(&Cpsi, psi))
+      {
+        printf("MakeComplexWaveFunctionFromReal failed in LanczosTriDiagonalize\n");
+        return 1;
+      }
+      return LanczosTriDiagonalizeMC(H, Cpsi, epsilon, M, Gamma);
+    }
+  }
+}
 
 uint32_t LanczosTriDiagonalizePlusDensity(const OperatorType H, WaveFunctionType psi, double epsilon,
                                           TriDiagonalMatrixType * const M, MatrixType * const Rho, double Gamma)
