@@ -74,17 +74,17 @@ void CeLigandField()
   Hex[1]= 0.000000; /* exchange field in the y direction (units of eV) */
   Hex[2]= 0.000000; /* exchange field in the z direction (units of eV) */
   
-  t=0.6;            /* hopping between f shel and ligand shell */
+  t=0.27;            /* hopping between f shel and ligand shell */
   
   zeta3d=0.54721 * Rydberg;       /* spin orbit of the d core shell */
   zeta4f=0.00789 * Rydberg;       /* spin orbit of the f shell */
   
-  red3D4F=0.797;    /* reduction of 3d-4f slater integrals from atomic HF values */
-  red4F4F=0.75;     /* reduction of 4f-4f slater integrals from atomic HF values */
+  red3D4F=0.76;     /* reduction of 3d-4f slater integrals from atomic HF values */
+  red4F4F=0.57;     /* reduction of 4f-4f slater integrals from atomic HF values */
   
-  Uff=8.6;          /* Uff - shperical part of the Coulmb interactin */
-  Udf=11.1;         /* Udf - shperical part of the Coulmb interactin */
-  Delta=-2.3;       /* energy differnece between f0 and f1 ligand hole */
+  Uff=8.0;          /* Uff - shperical part of the Coulmb interactin */
+  Udf=10.3;         /* Udf - shperical part of the Coulmb interactin */
+  Delta=-1.9;       /* energy differnece between f0 and f1 ligand hole */
   
   Fff[1] = 0.9277208 * Rydberg * red4F4F;  /* F2 */
   Fff[2] = 0.5832808 * Rydberg * red4F4F;  /* F4 */
@@ -102,9 +102,9 @@ void CeLigandField()
   
   epsilonf = Delta - 10 * Udf;
   
-  epsilon = 0.000001;           /* smallest value stored as prefactor in wavefunction <== enlarge to speed up calculation !!!                       */
+  epsilon = 0.00001;           /* smallest value stored as prefactor in wavefunction <== enlarge to speed up calculation !!!                       */
   zero = 10 * DBL_EPSILON;        /* smallest value to be considered different from zero in convergnece tests <== enlarge to speed up calculation !!! */
-  SpecTri.N=20;                  /* number of poles in spectra  <== reduce here to speed up calculation of spectra !!!!                              */
+  SpecTri.N=50;                  /* number of poles in spectra  <== reduce here to speed up calculation of spectra !!!!                              */
   InitTriDiagonalMatrix(&SpecTri);
   
   PotentialExpandedOnY("C1",3,&t,&SphericalAkm); /* the hybridization is taken to be spherical */
@@ -136,7 +136,7 @@ void CeLigandField()
   Vright.Re=VrRe;
   
   Restrictions.Min[0]=0;
-  Restrictions.Max[0]=2;
+  Restrictions.Max[0]=3;
   Restrictions.Determinant[0][0] = 0x00; /* bit 1 to 8 are set to zero (d states) */
   Restrictions.Determinant[0][1] = 0x3F; /* bit 9 and 10 are set to zero, (d states) bit 11 to 16 are set to one (f states) */
   Restrictions.Determinant[0][2] = 0xFF; /* bit 17 to 24 are set to one (f states) */
@@ -410,7 +410,7 @@ void CeLigandField()
       Spectra[i].Emin=-10.0;
       Spectra[i].Emax= 50.0;
       Spectra[i].dE = (Spectra[i].Emax - Spectra[i].Emin) / Spectra[i].N;
-      Spectra[i].Gamma = 0.1;
+      Spectra[i].Gamma = 0.08;
       SpectrumAllocate(Spectra[i], &Spectra[i]);
     }
     
@@ -441,7 +441,7 @@ void CeLigandField()
       Spectra[i].Emin=-10.0;
       Spectra[i].Emax= 50.0;
       Spectra[i].dE = (Spectra[i].Emax - Spectra[i].Emin) / Spectra[i].N;
-      Spectra[i].Gamma = 0.1;
+      Spectra[i].Gamma = 0.08;
       SpectrumAllocate(Spectra[i], &Spectra[i]);
     }
     
@@ -472,7 +472,7 @@ void CeLigandField()
       Spectra[i].Emin=-40.0;
       Spectra[i].Emax= 30.0;
       Spectra[i].dE = (Spectra[i].Emax - Spectra[i].Emin) / Spectra[i].N;
-      Spectra[i].Gamma = 0.1;
+      Spectra[i].Gamma = 0.08;
       SpectrumAllocate(Spectra[i], &Spectra[i]);
     }
     
@@ -503,7 +503,7 @@ void CeLigandField()
       Spectra[i].Emin=-40.0;
       Spectra[i].Emax= 30.0;
       Spectra[i].dE = (Spectra[i].Emax - Spectra[i].Emin) / Spectra[i].N;
-      Spectra[i].Gamma = 0.1;
+      Spectra[i].Gamma = 0.08;
       SpectrumAllocate(Spectra[i], &Spectra[i]);
     }
     

@@ -1741,7 +1741,7 @@ uint32_t OperatorPsiRestrictedCC(const OperatorType O, const WaveFunctionType ps
             for (k = 0; k < Opsi->NWord; k++)
               Det[k] = psi.Determinant[ii][ij + k];
             phase = OperatorLader(Det, &(O.l[l].o[j * l]), l, O.NFermion);
-            if (fabs(phase) > (10 * DBL_MIN))
+            if ((QDetNotRestricted(Det, O.NFermion, O.NBoson, O.NWord, Restrictions))&&(fabs(phase) > (10 * DBL_MIN)))
             {
               MiniValueRe[NMini] =
               phase * (O.l[l].V[j].Re * psi.ValueRe[ii][ik] - O.l[l].V[j].Im * psi.ValueIm[ii][ik]);
@@ -1822,7 +1822,7 @@ uint32_t OperatorPsiRestrictedCR(const OperatorType O, const WaveFunctionType ps
             for (k = 0; k < Opsi->NWord; k++)
               Det[k] = psi.Determinant[ii][ij + k];
             phase = OperatorLader(Det, &(O.l[l].o[j * l]), l, O.NFermion);
-            if (fabs(phase) > (10 * DBL_MIN))
+            if ((QDetNotRestricted(Det, O.NFermion, O.NBoson, O.NWord, Restrictions))&&(fabs(phase) > (10 * DBL_MIN)))
             {
               MiniValueRe[NMini] = phase * O.l[l].V[j].Re * psi.ValueRe[ii][ik];
               MiniValueIm[NMini] = phase * O.l[l].V[j].Im * psi.ValueRe[ii][ik];
@@ -1901,7 +1901,7 @@ uint32_t OperatorPsiRestrictedRC(const OperatorType O, const WaveFunctionType ps
             for (k = 0; k < Opsi->NWord; k++)
               Det[k] = psi.Determinant[ii][ij + k];
             phase = OperatorLader(Det, &(O.l[l].o[j * l]), l, O.NFermion);
-            if (fabs(phase) > (10 * DBL_MIN))
+            if ((QDetNotRestricted(Det, O.NFermion, O.NBoson, O.NWord, Restrictions))&&(fabs(phase) > (10 * DBL_MIN)))
             {
               MiniValueRe[NMini] = phase * O.l[l].VRe[j] * psi.ValueRe[ii][ik];
               MiniValueIm[NMini] = phase * O.l[l].VRe[j] * psi.ValueIm[ii][ik];
@@ -2059,7 +2059,7 @@ uint32_t OperatorPsiRestrictedMC(const OperatorType O, const WaveFunctionType ps
               for (k = 0; k < Opsi->NWord; k++)
                 Det[k] = psi.Determinant[ii][ij + k];
               phase = OperatorLader(Det, &(O.l[l].o[j * l]), l, O.NFermion);
-              if (fabs(phase) > (10 * DBL_MIN))
+              if ((QDetNotRestricted(Det, O.NFermion, O.NBoson, O.NWord, Restrictions))&&(fabs(phase) > (10 * DBL_MIN)))
               {
                 MiniValueRe[NMini] = phase * O.l[l].VRe[j] * psi.ValueRe[ii][ik];
                 MiniValueIm[NMini] = phase * O.l[l].VRe[j] * psi.ValueIm[ii][ik];
@@ -2172,7 +2172,7 @@ uint32_t OperatorPsiRestrictedMR(const OperatorType O, const WaveFunctionType ps
               for (k = 0; k < Opsi->NWord; k++)
                 Det[k] = psi.Determinant[ii][ij + k];
               phase = OperatorLader(Det, &(O.l[l].o[j * l]), l, O.NFermion);
-              if (fabs(phase) > (10 * DBL_MIN))
+              if ((QDetNotRestricted(Det, O.NFermion, O.NBoson, O.NWord, Restrictions))&&(fabs(phase) > (10 * DBL_MIN)))
               {
                 MiniValueRe[NMini] = phase * O.l[l].VRe[j] * psi.ValueRe[ii][ik];
                 for (k = 0; k < Opsi->NWord; k++)
@@ -2240,21 +2240,6 @@ uint32_t OperatorPsiRestrictedMR(const OperatorType O, const WaveFunctionType ps
   }
   return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 uint32_t PsiAddOperatorPsiSerialCC(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi)
 {

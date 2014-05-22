@@ -46,9 +46,20 @@ void CeImpurity()
   AndersonMatrixType GBath;
   BADoubleTriDiagonalMatrixType GBathBA;
   uint32_t NBathv, NBathc, NFermion;
-  double NfStart, t=1.0;
-  
+  double NfStart, MaxNf, t=1.0;
   double occupation, onsiteshift, kbTeff;
+  DeterminantRestrictionType Restrictions;
+  uint32_t doPES, doIPES, doCPES, doCPESShort, doXAS, doXiSpin, doXiCharge;
+  
+  /* allocate space for restrictions */
+  Restrictions.N=1;
+  Restrictions.Min=malloc(Restrictions.N*sizeof(uint32_t));
+  Restrictions.Max=malloc(Restrictions.N*sizeof(uint32_t));
+  Restrictions.Determinant=malloc(Restrictions.N*sizeof(uint8_t*));
+  for(i=0;i<Restrictions.N;i++)
+  {
+    Restrictions.Determinant[i]=malloc(16*sizeof(uint8_t)); /* we have 38+? fermions in the basis, Determinants are coded per byte i.e. blocks of 8 fermions. 8*16=128 and can store the fermions (note that after transformation the number of sites is less than Nbath) */
+  }
   
   
   printf("\n========================================================");
@@ -60,6 +71,14 @@ void CeImpurity()
   printf("\n========================================================");
   printf("\n==========          set parameters           ===========");
   printf("\n========================================================\n");
+  
+  doPES=0;
+  doIPES=0;
+  doCPES=0;
+  doCPESShort=1;
+  doXAS=0;
+  doXiSpin=0;
+  doXiCharge=0;
   
   Rydberg=13.6057; /* calculations are done in eV this alows one to imput in mixed eV and Rydberg */
   
@@ -73,12 +92,12 @@ void CeImpurity()
   zeta3d=0.54721 * Rydberg;       /* spin orbit of the d core shell */
   zeta4f=0.00789 * Rydberg;       /* spin orbit of the f shell */
   
-  red3D4F=0.797;    /* reduction of 3d-4f slater integrals from atomic HF values */
-  red4F4F=0.75;     /* reduction of 4f-4f slater integrals from atomic HF values */
+  red3D4F=0.76;    /* reduction of 3d-4f slater integrals from atomic HF values */
+  red4F4F=0.57;     /* reduction of 4f-4f slater integrals from atomic HF values */
   
-  Uff=8.6;          /* Uff - shperical part of the Coulmb interactin */
-  Udf=11.1;         /* Udf - shperical part of the Coulmb interactin */
-  Delta=-2.3;       /* energy differnece between f0 and f1 ligand hole ???? */
+  Uff=8.0;          /* Uff - shperical part of the Coulmb interactin */
+  Udf=10.3;         /* Udf - shperical part of the Coulmb interactin */
+  Delta=-1.9;       /* energy differnece between f0 and f1 ligand hole ???? */
   epsilonf = Delta - 10 * Udf; /* onsite energy of f orbital. Onsite energy of ligand orbitals given by GBath */
   
   Fff[1] = 0.9277208 * Rydberg * red4F4F;  /* F2 */
@@ -97,6 +116,7 @@ void CeImpurity()
   
   NBathv = 1;
   NBathc = 0;
+  MaxNf = 1;
   
   NfStart = 1.0;
   
@@ -104,7 +124,7 @@ void CeImpurity()
   
   epsilon = 0.0001;           /* smallest value stored as prefactor in wavefunction <== enlarge to speed up calculation !!!                       */
   zero = 10 * DBL_EPSILON;        /* smallest value to be considered different from zero in convergnece tests <== enlarge to speed up calculation !!! */
-  SpecTri.N=2;                  /* number of poles in spectra  <== reduce here to speed up calculation of spectra !!!!                              */
+  SpecTri.N=50;                  /* number of poles in spectra  <== reduce here to speed up calculation of spectra !!!!                              */
   InitTriDiagonalMatrix(&SpecTri);
   
   
@@ -160,6 +180,28 @@ void CeImpurity()
   Vright.l=Vl;
   Vright.m=Vm;
   Vright.Re=VrRe;
+  
+  
+  
+  Restrictions.Min[0]=0;
+  Restrictions.Max[0]=MaxNf;
+  Restrictions.Determinant[0][0] = 0x00; /* bit 1 to 8 are set to zero (d states) */
+  Restrictions.Determinant[0][1] = 0x3F; /* bit 9 and 10 are set to zero, (d states) bit 11 to 16 are set to one (f states) */
+  Restrictions.Determinant[0][2] = 0xFF; /* bit 17 to 24 are set to one (f states) */
+  Restrictions.Determinant[0][3] = 0x00; /* bit 25 to 32 are set to zero (Lf states) */
+  Restrictions.Determinant[0][4] = 0x00;
+  Restrictions.Determinant[0][5] = 0x00;
+  Restrictions.Determinant[0][6] = 0x00;
+  Restrictions.Determinant[0][7] = 0x00;
+  Restrictions.Determinant[0][8] = 0x00;
+  Restrictions.Determinant[0][9] = 0x00;
+  Restrictions.Determinant[0][10] = 0x00;
+  Restrictions.Determinant[0][11] = 0x00;
+  Restrictions.Determinant[0][12] = 0x00;
+  Restrictions.Determinant[0][13] = 0x00;
+  Restrictions.Determinant[0][14] = 0x00;
+  Restrictions.Determinant[0][15] = 0x00;
+  
   
   printf("\n========================================================");
   printf("\n==========         define operators          ===========");
@@ -396,7 +438,7 @@ void CeImpurity()
   printf("\n========================================================\n");
   
   occupation=0.0;
-  onsiteshift=2.3;
+  onsiteshift=-Delta;
   kbTeff=0.0001;
   AndersonMatrixToBADoubleTriDiagonalMatrixTemperature(GBath, onsiteshift, kbTeff, &GBathBA, &occupation);
   
@@ -440,10 +482,7 @@ void CeImpurity()
    
   
   BeginTiming("LanczosGroundState", &Time);
-  LanczosGroundState(OppH, &psi, &epsilon, zero, 0, &psi, 0);
-  EndTiming("LanczosGroundState", &Time);
-  BeginTiming("LanczosGroundState", &Time);
-  LanczosGroundState(OppH, &psi, &epsilon, zero, 0, &psi, 0);
+  LanczosGroundStateRestricted(OppH, &psi, Restrictions, &epsilon, zero, 0, &psi, 0);
   EndTiming("LanczosGroundState", &Time);
   
   CalculatePrefactorHistogram(Hist, psi, 2.0, 30);
@@ -514,202 +553,253 @@ void CeImpurity()
   printf("\n");
   PrintMatrix(Density);
   
-  printf("\n========================================================");
-  printf("\n==========                PES                ===========");
-  printf("\n========================================================\n");
-  BeginTiming("PES", &Time);
   
-  for(i=0;i<14;i++)
+  if(doPES)
   {
-    Spectra[i].N=6000;
-    Spectra[i].Emin=-10.0;
-    Spectra[i].Emax= 50.0;
-    Spectra[i].dE = (Spectra[i].Emax - Spectra[i].Emin) / Spectra[i].N;
-    Spectra[i].Gamma = 0.1;
-    SpectrumAllocate(Spectra[i], &Spectra[i]);
+    printf("\n========================================================");
+    printf("\n==========                PES                ===========");
+    printf("\n========================================================\n");
+    BeginTiming("PES", &Time);
+    
+    for(i=0;i<14;i++)
+    {
+      Spectra[i].N=6000;
+      Spectra[i].Emin=-10.0;
+      Spectra[i].Emax= 50.0;
+      Spectra[i].dE = (Spectra[i].Emax - Spectra[i].Emin) / Spectra[i].N;
+      Spectra[i].Gamma = 0.08;
+      SpectrumAllocate(Spectra[i], &Spectra[i]);
+    }
+    
+    for(i=0;i<14;i++)
+    {
+      BeginTiming("spectrum", &Time);
+      OperatorPsi(TPES[i], psi, &Opsi);
+      LanczosTriDiagonalize(OppH, Opsi, epsilon, &SpecTri,  Spectra[i].Gamma);
+      TriDiagonalMatrixToSpectrum(energy, SpecTri, &Spectra[i]);
+      EndTiming("spectrum", &Time);
+    }
+    
+    FilePrintSpectra(&Spectra[0], 14, "CeLigandField_PES","w");
+    EndTiming("PES", &Time);
+    PrintTiming(Time);
   }
   
-  for(i=0;i<14;i++)
+  if(doIPES)
   {
+    printf("\n========================================================");
+    printf("\n==========               IPES                ===========");
+    printf("\n========================================================\n");
+    BeginTiming("IPES", &Time);
+    
+    for(i=14;i<28;i++)
+    {
+      Spectra[i].N=6000;
+      Spectra[i].Emin=-10.0;
+      Spectra[i].Emax= 50.0;
+      Spectra[i].dE = (Spectra[i].Emax - Spectra[i].Emin) / Spectra[i].N;
+      Spectra[i].Gamma = 0.08;
+      SpectrumAllocate(Spectra[i], &Spectra[i]);
+    }
+    
+    for(i=0;i<14;i++)
+    {
+      BeginTiming("spectrum", &Time);
+      OperatorPsi(TIPES[i], psi, &Opsi);
+      LanczosTriDiagonalize(OppH, Opsi, epsilon, &SpecTri,  Spectra[14+i].Gamma);
+      TriDiagonalMatrixToSpectrum(energy, SpecTri, &Spectra[14+i]);
+      EndTiming("spectrum", &Time);
+    }
+    
+    FilePrintSpectra(&Spectra[14], 14, "CeLigandField_IPES","w");
+    EndTiming("IPES", &Time);
+    PrintTiming(Time);
+  }
+  
+  if(doCPESShort)
+  {
+    printf("\n========================================================");
+    printf("\n==========            CPES Short             ===========");
+    printf("\n========================================================\n");
+    BeginTiming("CPESShort", &Time);
+    
+    for(i=28;i<30;i++)
+    {
+      Spectra[i].N=7000;
+      Spectra[i].Emin=-40.0;
+      Spectra[i].Emax= 30.0;
+      Spectra[i].dE = (Spectra[i].Emax - Spectra[i].Emin) / Spectra[i].N;
+      Spectra[i].Gamma = 0.08;
+      SpectrumAllocate(Spectra[i], &Spectra[i]);
+    }
+    
+    for(i=0;i<2;i++)
+    {
+      BeginTiming("spectrum", &Time);
+      OperatorPsi(TCPES[4*i], psi, &Opsi);
+      LanczosTriDiagonalizeRestricted(OppH, Opsi, Restrictions, epsilon, &SpecTri,  Spectra[28+i].Gamma);
+      TriDiagonalMatrixToSpectrum(energy, SpecTri, &Spectra[28+i]);
+      EndTiming("spectrum", &Time);
+    }
+    
+    FilePrintSpectra(&Spectra[28], 2, "CeLigandField_CPESShort","w");
+    EndTiming("CPESShort", &Time);
+    PrintTiming(Time);
+  }
+  
+  if(doCPES)
+  {
+    printf("\n========================================================");
+    printf("\n==========               CPES                ===========");
+    printf("\n========================================================\n");
+    BeginTiming("CPES", &Time);
+    
+    for(i=28;i<38;i++)
+    {
+      Spectra[i].N=7000;
+      Spectra[i].Emin=-40.0;
+      Spectra[i].Emax= 30.0;
+      Spectra[i].dE = (Spectra[i].Emax - Spectra[i].Emin) / Spectra[i].N;
+      Spectra[i].Gamma = 0.08;
+      SpectrumAllocate(Spectra[i], &Spectra[i]);
+    }
+    
+    for(i=0;i<10;i++)
+    {
+      BeginTiming("spectrum", &Time);
+      OperatorPsi(TCPES[i], psi, &Opsi);
+      LanczosTriDiagonalizeRestricted(OppH, Opsi, Restrictions, epsilon, &SpecTri,  Spectra[28+i].Gamma);
+      TriDiagonalMatrixToSpectrum(energy, SpecTri, &Spectra[28+i]);
+      EndTiming("spectrum", &Time);
+    }
+    
+    FilePrintSpectra(&Spectra[28], 10, "CeLigandField_CPES","w");
+    EndTiming("CPES", &Time);
+    PrintTiming(Time);
+  }
+  
+  if(doXAS)
+  {
+    printf("\n========================================================");
+    printf("\n==========                XAS                ===========");
+    printf("\n========================================================\n");
+    BeginTiming("XAS", &Time);
+    
+    for(i=38;i<43;i++)
+    {
+      Spectra[i].N=7000;
+      Spectra[i].Emin=-40.0;
+      Spectra[i].Emax= 30.0;
+      Spectra[i].dE = (Spectra[i].Emax - Spectra[i].Emin) / Spectra[i].N;
+      Spectra[i].Gamma = 0.08;
+      SpectrumAllocate(Spectra[i], &Spectra[i]);
+    }
+    
     BeginTiming("spectrum", &Time);
-    OperatorPsi(TPES[i], psi, &Opsi);
-    LanczosTriDiagonalize(OppH, Opsi, epsilon, &SpecTri,  Spectra[i].Gamma);
-    TriDiagonalMatrixToSpectrum(energy, SpecTri, &Spectra[i]);
+    OperatorPsi(TXASx, psi, &Opsi);
+    LanczosTriDiagonalize(OppH, Opsi, epsilon, &SpecTri,  Spectra[38].Gamma);
+    TriDiagonalMatrixToSpectrum(energy, SpecTri, &Spectra[38]);
     EndTiming("spectrum", &Time);
-  }
-  
-  FilePrintSpectra(&Spectra[0], 14, "CeLigandField_PES","w");
-  EndTiming("PES", &Time);
-  PrintTiming(Time);
-  
-  printf("\n========================================================");
-  printf("\n==========               IPES                ===========");
-  printf("\n========================================================\n");
-  BeginTiming("IPES", &Time);
-  
-  for(i=14;i<28;i++)
-  {
-    Spectra[i].N=6000;
-    Spectra[i].Emin=-10.0;
-    Spectra[i].Emax= 50.0;
-    Spectra[i].dE = (Spectra[i].Emax - Spectra[i].Emin) / Spectra[i].N;
-    Spectra[i].Gamma = 0.1;
-    SpectrumAllocate(Spectra[i], &Spectra[i]);
-  }
-  
-  for(i=0;i<14;i++)
-  {
+    
     BeginTiming("spectrum", &Time);
-    OperatorPsi(TIPES[i], psi, &Opsi);
-    LanczosTriDiagonalize(OppH, Opsi, epsilon, &SpecTri,  Spectra[14+i].Gamma);
-    TriDiagonalMatrixToSpectrum(energy, SpecTri, &Spectra[14+i]);
+    OperatorPsi(TXASy, psi, &Opsi);
+    LanczosTriDiagonalize(OppH, Opsi, epsilon, &SpecTri,  Spectra[39].Gamma);
+    TriDiagonalMatrixToSpectrum(energy, SpecTri, &Spectra[39]);
     EndTiming("spectrum", &Time);
-  }
-  
-  FilePrintSpectra(&Spectra[14], 14, "CeLigandField_IPES","w");
-  EndTiming("IPES", &Time);
-  PrintTiming(Time);
-  
-  printf("\n========================================================");
-  printf("\n==========               cPES                ===========");
-  printf("\n========================================================\n");
-  BeginTiming("CPES", &Time);
-  
-  for(i=28;i<38;i++)
-  {
-    Spectra[i].N=7000;
-    Spectra[i].Emin=-40.0;
-    Spectra[i].Emax= 30.0;
-    Spectra[i].dE = (Spectra[i].Emax - Spectra[i].Emin) / Spectra[i].N;
-    Spectra[i].Gamma = 0.1;
-    SpectrumAllocate(Spectra[i], &Spectra[i]);
-  }
-  
-  for(i=0;i<10;i++)
-  {
+    
     BeginTiming("spectrum", &Time);
-    OperatorPsi(TCPES[i], psi, &Opsi);
-    LanczosTriDiagonalize(OppH, Opsi, epsilon, &SpecTri,  Spectra[28+i].Gamma);
-    TriDiagonalMatrixToSpectrum(energy, SpecTri, &Spectra[28+i]);
+    OperatorPsi(TXASz, psi, &Opsi);
+    LanczosTriDiagonalize(OppH, Opsi, epsilon, &SpecTri,  Spectra[40].Gamma);
+    TriDiagonalMatrixToSpectrum(energy, SpecTri, &Spectra[40]);
     EndTiming("spectrum", &Time);
+    
+    BeginTiming("spectrum", &Time);
+    OperatorPsi(TXASl, psi, &Opsi);
+    LanczosTriDiagonalize(OppH, Opsi, epsilon, &SpecTri,  Spectra[41].Gamma);
+    TriDiagonalMatrixToSpectrum(energy, SpecTri, &Spectra[41]);
+    EndTiming("spectrum", &Time);
+    
+    BeginTiming("spectrum", &Time);
+    OperatorPsi(TXASr, psi, &Opsi);
+    LanczosTriDiagonalize(OppH, Opsi, epsilon, &SpecTri,  Spectra[42].Gamma);
+    TriDiagonalMatrixToSpectrum(energy, SpecTri, &Spectra[42]);
+    EndTiming("spectrum", &Time);
+    
+    FilePrintSpectra(&Spectra[38], 5, "CeLigandField_XAS","w");
+    EndTiming("XAS", &Time);
+    PrintTiming(Time);
   }
   
-  FilePrintSpectra(&Spectra[28], 10, "CeLigandField_CPES","w");
-  EndTiming("CPES", &Time);
-  PrintTiming(Time);
-  
-  printf("\n========================================================");
-  printf("\n==========                XAS                ===========");
-  printf("\n========================================================\n");
-  BeginTiming("XAS", &Time);
-  
-  for(i=38;i<43;i++)
+  if(doXiSpin)
   {
-    Spectra[i].N=7000;
-    Spectra[i].Emin=-40.0;
-    Spectra[i].Emax= 30.0;
-    Spectra[i].dE = (Spectra[i].Emax - Spectra[i].Emin) / Spectra[i].N;
-    Spectra[i].Gamma = 0.1;
-    SpectrumAllocate(Spectra[i], &Spectra[i]);
+    printf("\n========================================================");
+    printf("\n==========               Spin                ===========");
+    printf("\n========================================================\n");
+    BeginTiming("Spin", &Time);
+    
+    for(i=43;i<46;i++)
+    {
+      Spectra[i].N=6000;
+      Spectra[i].Emin=-1.0;
+      Spectra[i].Emax= 11.0;
+      Spectra[i].dE = (Spectra[i].Emax - Spectra[i].Emin) / Spectra[i].N;
+      Spectra[i].Gamma = 0.01;
+      SpectrumAllocate(Spectra[i], &Spectra[i]);
+    }
+    
+    BeginTiming("spectrum", &Time);
+    OperatorPsi(OppSx, psi, &Opsi);
+    LanczosTriDiagonalize(OppH, Opsi, epsilon, &SpecTri,  Spectra[43].Gamma);
+    TriDiagonalMatrixToSpectrum(energy, SpecTri, &Spectra[43]);
+    EndTiming("spectrum", &Time);
+    
+    BeginTiming("spectrum", &Time);
+    OperatorPsi(OppSy, psi, &Opsi);
+    LanczosTriDiagonalize(OppH, Opsi, epsilon, &SpecTri,  Spectra[44].Gamma);
+    TriDiagonalMatrixToSpectrum(energy, SpecTri, &Spectra[44]);
+    EndTiming("spectrum", &Time);
+    
+    BeginTiming("spectrum", &Time);
+    OperatorPsi(OppSz, psi, &Opsi);
+    LanczosTriDiagonalize(OppH, Opsi, epsilon, &SpecTri,  Spectra[45].Gamma);
+    TriDiagonalMatrixToSpectrum(energy, SpecTri, &Spectra[45]);
+    EndTiming("spectrum", &Time);
+    
+    FilePrintSpectra(&Spectra[43], 3, "CeLigandField_Spin","w");
+    
+    EndTiming("Spin", &Time);
+    PrintTiming(Time);
   }
   
-  BeginTiming("spectrum", &Time);
-  OperatorPsi(TXASx, psi, &Opsi);
-  LanczosTriDiagonalize(OppH, Opsi, epsilon, &SpecTri,  Spectra[38].Gamma);
-  TriDiagonalMatrixToSpectrum(energy, SpecTri, &Spectra[38]);
-  EndTiming("spectrum", &Time);
-  
-  BeginTiming("spectrum", &Time);
-  OperatorPsi(TXASy, psi, &Opsi);
-  LanczosTriDiagonalize(OppH, Opsi, epsilon, &SpecTri,  Spectra[39].Gamma);
-  TriDiagonalMatrixToSpectrum(energy, SpecTri, &Spectra[39]);
-  EndTiming("spectrum", &Time);
-  
-  BeginTiming("spectrum", &Time);
-  OperatorPsi(TXASz, psi, &Opsi);
-  LanczosTriDiagonalize(OppH, Opsi, epsilon, &SpecTri,  Spectra[40].Gamma);
-  TriDiagonalMatrixToSpectrum(energy, SpecTri, &Spectra[40]);
-  EndTiming("spectrum", &Time);
-  
-  BeginTiming("spectrum", &Time);
-  OperatorPsi(TXASl, psi, &Opsi);
-  LanczosTriDiagonalize(OppH, Opsi, epsilon, &SpecTri,  Spectra[41].Gamma);
-  TriDiagonalMatrixToSpectrum(energy, SpecTri, &Spectra[41]);
-  EndTiming("spectrum", &Time);
-  
-  BeginTiming("spectrum", &Time);
-  OperatorPsi(TXASr, psi, &Opsi);
-  LanczosTriDiagonalize(OppH, Opsi, epsilon, &SpecTri,  Spectra[42].Gamma);
-  TriDiagonalMatrixToSpectrum(energy, SpecTri, &Spectra[42]);
-  EndTiming("spectrum", &Time);
-  
-  FilePrintSpectra(&Spectra[38], 5, "CeLigandField_XAS","w");
-  EndTiming("XAS", &Time);
-  PrintTiming(Time);
-  
-  printf("\n========================================================");
-  printf("\n==========               Spin                ===========");
-  printf("\n========================================================\n");
-  BeginTiming("Spin", &Time);
-  
-  for(i=43;i<46;i++)
+  if(doXiCharge)
   {
-    Spectra[i].N=6000;
-    Spectra[i].Emin=-1.0;
-    Spectra[i].Emax= 11.0;
-    Spectra[i].dE = (Spectra[i].Emax - Spectra[i].Emin) / Spectra[i].N;
-    Spectra[i].Gamma = 0.01;
-    SpectrumAllocate(Spectra[i], &Spectra[i]);
+    printf("\n========================================================");
+    printf("\n==========              charge               ===========");
+    printf("\n========================================================\n");
+    BeginTiming("Charge", &Time);
+    
+    Spectra[46].N=6000;
+    Spectra[46].Emin=-1.0;
+    Spectra[46].Emax= 11.0;
+    Spectra[46].dE = (Spectra[46].Emax - Spectra[46].Emin) / Spectra[46].N;
+    Spectra[46].Gamma = 0.01;
+    SpectrumAllocate(Spectra[46], &Spectra[46]);
+    
+    OperatorCopy(&TCharge, OppNf);
+    OperatorAddLader(&TCharge, &oadd, 0, -1, 0);
+    
+    BeginTiming("spectrum", &Time);
+    OperatorPsi(TCharge, psi, &Opsi);
+    LanczosTriDiagonalize(OppH, Opsi, epsilon, &SpecTri,  Spectra[46].Gamma);
+    TriDiagonalMatrixToSpectrum(energy, SpecTri, &Spectra[46]);
+    EndTiming("spectrum", &Time);
+    
+    FilePrintSpectra(&Spectra[46], 1, "CeLigandField_Charge","w");
+    
+    EndTiming("Charge", &Time);
+    PrintTiming(Time);
   }
   
-  BeginTiming("spectrum", &Time);
-  OperatorPsi(OppSx, psi, &Opsi);
-  LanczosTriDiagonalize(OppH, Opsi, epsilon, &SpecTri,  Spectra[43].Gamma);
-  TriDiagonalMatrixToSpectrum(energy, SpecTri, &Spectra[43]);
-  EndTiming("spectrum", &Time);
-  
-  BeginTiming("spectrum", &Time);
-  OperatorPsi(OppSy, psi, &Opsi);
-  LanczosTriDiagonalize(OppH, Opsi, epsilon, &SpecTri,  Spectra[44].Gamma);
-  TriDiagonalMatrixToSpectrum(energy, SpecTri, &Spectra[44]);
-  EndTiming("spectrum", &Time);
-  
-  BeginTiming("spectrum", &Time);
-  OperatorPsi(OppSz, psi, &Opsi);
-  LanczosTriDiagonalize(OppH, Opsi, epsilon, &SpecTri,  Spectra[45].Gamma);
-  TriDiagonalMatrixToSpectrum(energy, SpecTri, &Spectra[45]);
-  EndTiming("spectrum", &Time);
-  
-  FilePrintSpectra(&Spectra[43], 3, "CeLigandField_Spin","w");
-  
-  EndTiming("Spin", &Time);
-  PrintTiming(Time);
-  
-  printf("\n========================================================");
-  printf("\n==========              charge               ===========");
-  printf("\n========================================================\n");
-  BeginTiming("Charge", &Time);
-  
-  Spectra[46].N=6000;
-  Spectra[46].Emin=-1.0;
-  Spectra[46].Emax= 11.0;
-  Spectra[46].dE = (Spectra[46].Emax - Spectra[46].Emin) / Spectra[46].N;
-  Spectra[46].Gamma = 0.01;
-  SpectrumAllocate(Spectra[46], &Spectra[46]);
-  
-  OperatorCopy(&TCharge, OppNf);
-  OperatorAddLader(&TCharge, &oadd, 0, -1, 0);
-  
-  BeginTiming("spectrum", &Time);
-  OperatorPsi(TCharge, psi, &Opsi);
-  LanczosTriDiagonalize(OppH, Opsi, epsilon, &SpecTri,  Spectra[46].Gamma);
-  TriDiagonalMatrixToSpectrum(energy, SpecTri, &Spectra[46]);
-  EndTiming("spectrum", &Time);
-  
-  FilePrintSpectra(&Spectra[46], 1, "CeLigandField_Charge","w");
-  
-  EndTiming("Charge", &Time);
-  PrintTiming(Time);
   
   EndTiming("Total", &Time);
   PrintTiming(Time);
