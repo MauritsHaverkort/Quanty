@@ -394,3 +394,82 @@ uint32_t AndersonMatrixCalculateChemicalPotential(AndersonMatrixType const M, do
   FreeListOfPoles(&MLP);
   return 0;
 }
+
+/* Given an anderson impurity Hammiltonian represented as an one particle matrix and a chemical potential
+ * the impurity occupation is calculated
+ */
+uint32_t CalculateImpurityOccupationAndersonMatrix(AndersonMatrixType const M, double * const occupation)
+{
+  uint32_t i;
+  ListOfPoles MLP;
+  if(AndersonMatrixToListOfPoles(M, &MLP))
+  {
+    printf("AndersonMatrixToListOfPoles failed in CalculateImpurityOccupationAndersonMatrix\n");
+  }
+  *occupation=0;
+  for(i=0;i<MLP.N;i++)
+  {
+    if(MLP.a[i]==MLP.mu)
+    {
+      *occupation+=MLP.b[i]/2.0;
+    }
+    else if(MLP.a[i]<MLP.mu)
+    {
+      *occupation+=MLP.b[i];
+    }
+  }
+  FreeListOfPoles(&MLP);
+  return 0;
+}
+
+/*
+ *
+ */
+uint32_t DetermineImpurityShiftFromOccupationAndersonMatrix(AndersonMatrixType M, double const occupation, double *const shift)
+{
+  uint32_t const MaxIt=30, History=10;
+  uint32_t i;
+  double Shifti[MaxIt+1], occupationi[MaxIt+1], totalb=0;
+  Shifti[0]=*shift;
+  M.a[1]+=Shifti[0];
+  CalculateImpurityOccupationAndersonMatrix(M, &occupationi[0]);
+  M.a[1]-=Shifti[0];
+  for(i=0;i<M.N;i++)
+  {
+    totalb+=Sqr(M.b[i]);
+  }
+  totalb=sqrt(totalb);
+  i=0;
+  while((i<MaxIt)&&(Abs(occupationi[i]-occupation)>(10*(DBL_MIN+DBL_EPSILON*occupation))))
+  {
+    i++;
+    if(i==1)
+    {
+      if(occupationi[0]>occupation)
+      {
+        Shifti[i]=Shifti[i-1]+totalb;
+      }
+      else
+      {
+        Shifti[i]=Shifti[i-1]-totalb;
+      }
+    }
+    else
+    {
+      Shifti[i]=InterpolateRootOfset(&Shifti[Max(History,i)-History], &occupationi[Max(History,i)-History], Min(i-1,History), occupation);
+    }
+    M.a[1]+=Shifti[i];
+    CalculateImpurityOccupationAndersonMatrix(M, &occupationi[i]);
+    M.a[1]-=Shifti[i];
+  }
+  *shift=Shifti[i];
+  
+  
+  
+  for(i=0;i<MaxIt+1;i++)
+  {
+    printf("shift %22.15E occupation %22.15E deviation %22.15E\n",Shifti[i], occupationi[i], occupationi[i]-occupation);
+  }
+  
+  return 0;
+}

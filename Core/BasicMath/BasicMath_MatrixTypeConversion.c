@@ -495,6 +495,7 @@ uint32_t AndersonMatrixToListOfPoles(AndersonMatrixType const M, ListOfPoles * c
     A->b[i] = Sqr(M.b[0] * T.VRe[i][0]);
   }
   FreeMatrix(&T);
+  A->mu=M.mu;
   return 0;
 }
 

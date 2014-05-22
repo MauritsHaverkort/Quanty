@@ -75,7 +75,7 @@ void CeImpurity()
   doPES=0;
   doIPES=0;
   doCPES=0;
-  doCPESShort=1;
+  doCPESShort=0;
   doXAS=0;
   doXiSpin=0;
   doXiCharge=0;
@@ -114,15 +114,15 @@ void CeImpurity()
   Fff[0] = Uff + (572.0 * Fff[1] + 390.0 * Fff[2] + 500.0 * Fff[3])/27885.0;  /* F0 and U are not defined in the same manner here the correction */
   Fdf[0] = Udf + (99.0 * Gdf[0] + 44.0 * Gdf[1] + 50.0 * Gdf[2])/2310.0;      /* F0 and U are not defined in the same manner here the correction */
   
-  NBathv = 1;
+  NBathv = 2;
   NBathc = 0;
-  MaxNf = 1;
+  MaxNf = 3;
   
   NfStart = 1.0;
   
   NBitsKey=16;
   
-  epsilon = 0.0001;           /* smallest value stored as prefactor in wavefunction <== enlarge to speed up calculation !!!                       */
+  epsilon = 0.00001;           /* smallest value stored as prefactor in wavefunction <== enlarge to speed up calculation !!!                       */
   zero = 10 * DBL_EPSILON;        /* smallest value to be considered different from zero in convergnece tests <== enlarge to speed up calculation !!! */
   SpecTri.N=50;                  /* number of poles in spectra  <== reduce here to speed up calculation of spectra !!!!                              */
   InitTriDiagonalMatrix(&SpecTri);
@@ -437,12 +437,21 @@ void CeImpurity()
   printf("\n========== occupation dependent Hamiltonian  ===========");
   printf("\n========================================================\n");
   
-  occupation=0.0;
+  printf("guess the rotation of the bath by assuming an occupation of 1/14.\n");
+  
+  occupation=1.0/14.0;
   onsiteshift=-Delta;
+  
+  DetermineImpurityShiftFromOccupationAndersonMatrix(GBath, occupation, &onsiteshift);
+  
+  printf("Onsite shift is %22.15E\n",onsiteshift);
+  
   kbTeff=0.0001;
   AndersonMatrixToBADoubleTriDiagonalMatrixTemperature(GBath, onsiteshift, kbTeff, &GBathBA, &occupation);
   
   
+  printf("The new impurity Hamiltonian looks like:\n");
+  PrintBADoubleTriDiagonalMatrix(GBathBA);
   
   OperatorCopy(&OppHyb, OppHybIL);
   OperatorScale(&OppHyb, GBathBA.acvBA, 0.0);
@@ -474,12 +483,11 @@ void CeImpurity()
   OperatorAdd(&OppH, OppHyb, 1.0, 0.0);
   
   printf("\n========================================================");
-  printf("\n==========         find groundstate          ===========");
+  printf("\n==========    find groundstate 1-st time     ===========");
   printf("\n========================================================\n");
   BeginTiming("find groundstate", &Time);
   
   CreateWaveFunctionFromString(&psi, CreateString, 10+14*(1+NBathv), NFermion, 0, NBitsKey);
-   
   
   BeginTiming("LanczosGroundState", &Time);
   LanczosGroundStateRestricted(OppH, &psi, Restrictions, &epsilon, zero, 0, &psi, 0);
@@ -551,7 +559,153 @@ void CeImpurity()
     printf("%i %22.15E\n",i,Density.VRe[i][i]);
   }
   printf("\n");
+  
+  
+  
+  
+  
+  
+  
+  printf("\n========================================================");
+  printf("\n========== occupation dependent Hamiltonian  ===========");
+  printf("\n==========    with previous gs occupation    ===========");
+  printf("\n========================================================\n");
+  
+  printf("use the f occupation of the previous many body calculation\n");
+  
+  occupation=Nf/14.0;
+  
+  DetermineImpurityShiftFromOccupationAndersonMatrix(GBath, occupation, &onsiteshift);
+  
+  printf("Onsite shift is %22.15E\n",onsiteshift);
+  
+  kbTeff=0.0001;
+  FreeBADoubleTriDiagonalMatrix(&GBathBA);
+  AndersonMatrixToBADoubleTriDiagonalMatrixTemperature(GBath, onsiteshift, kbTeff, &GBathBA, &occupation);
+  
+  printf("The second new impurity Hamiltonian looks like:\n");
+  PrintBADoubleTriDiagonalMatrix(GBathBA);
+  
+  FreeOperator(&OppHyb);
+  OperatorCopy(&OppHyb, OppHybIL);
+  OperatorScale(&OppHyb, GBathBA.acvBA, 0.0);
+  OperatorAdd(&OppHyb, OppNL, GBathBA.acvB, 0.0);
+  if((NBathv!=0)&&(GBathBA.val.N>1))
+  {
+    OperatorAdd(&OppHyb, OppHybIv, GBathBA.bvA0, 0.0);
+    OperatorAdd(&OppHyb, OppHybLv, GBathBA.bvB0, 0.0);
+    OperatorAdd(&OppHyb, OppNv[0], GBathBA.val.a[2], 0.0);
+  }
+  if((NBathc!=0)&&(GBathBA.con.N>1))
+  {
+    OperatorAdd(&OppHyb, OppHybIc, GBathBA.bcA0, 0.0);
+    OperatorAdd(&OppHyb, OppHybLc, GBathBA.bcB0, 0.0);
+    OperatorAdd(&OppHyb, OppNc[0], GBathBA.con.a[2], 0.0);
+  }
+  for(j=1;j<Min(NBathv,GBathBA.val.N-1);j++)
+  {
+    OperatorAdd(&OppHyb, OppHybv[j-1], GBathBA.val.b[j+1], 0.0);
+    OperatorAdd(&OppHyb, OppNv[j],     GBathBA.val.a[j+2], 0.0);
+  }
+  for(j=1;j<Min(NBathc,GBathBA.con.N-1);j++)
+  {
+    OperatorAdd(&OppHyb, OppHybc[j-1], GBathBA.con.b[j+1], 0.0);
+    OperatorAdd(&OppHyb, OppNc[j],     GBathBA.con.a[j+2], 0.0);
+  }
+  
+  FreeOperator(&OppH);
+  OperatorCopy(&OppH, OppHpart);
+  OperatorAdd(&OppH, OppHyb, 1.0, 0.0);
+  
+  printf("\n========================================================");
+  printf("\n==========    find groundstate 2-nd time     ===========");
+  printf("\n========================================================\n");
+  BeginTiming("find groundstate", &Time);
+  
+  BeginTiming("LanczosGroundState", &Time);
+  LanczosGroundStateRestricted(OppH, &psi, Restrictions, &epsilon, zero, 0, &psi, 0);
+  EndTiming("LanczosGroundState", &Time);
+  
+  CalculatePrefactorHistogram(Hist, psi, 2.0, 30);
+  printf("\nPrefactor Histogram of groundstate\n");
+  printf("Interval                                 | percentage of states   | alpha^2 * number of states \n");
+  for(i=0;i<30;i++)
+  {
+    printf("2^-%2i (%10.3E) to 2^-%2i (%10.3E) | %22.15E | %22.15E \n",i,pow(0.5,(double)i),i+1,pow(0.5,(double)(i+1)),Hist[i],Hist[i]*pow(0.5,(double)(2*i)));
+  }
+  
+  CalculateOccupationHistogram(OccHist, psi, Index4F, 14);
+  
+  PsiHermitianOperatorPsi(OppH, psi, &energy);
+  PsiHermitianOperatorSqrPsi(OppH, psi, &energysqr);
+  PsiHermitianOperatorPsi(Oppldots4f, psi, &Esoc);
+  Esoc*=zeta4f;
+  PsiHermitianOperatorPsi(OppUff, psi, &ECoulomb);
+  PsiHermitianOperatorPsi(OppHyb, psi, &EKin);
+  PsiHermitianOperatorPsi(OppSx, psi, &Sx);
+  PsiHermitianOperatorPsi(OppSy, psi, &Sy);
+  PsiHermitianOperatorPsi(OppSz, psi, &Sz);
+  PsiHermitianOperatorPsi(OppSsqr, psi, &Ssqr);
+  PsiHermitianOperatorPsi(OppLx, psi, &Lx);
+  PsiHermitianOperatorPsi(OppLy, psi, &Ly);
+  PsiHermitianOperatorPsi(OppLz, psi, &Lz);
+  PsiHermitianOperatorPsi(OppLsqr, psi, &Lsqr);
+  PsiHermitianOperatorPsi(OppJx, psi, &Jx);
+  PsiHermitianOperatorPsi(OppJy, psi, &Jy);
+  PsiHermitianOperatorPsi(OppJz, psi, &Jz);
+  PsiHermitianOperatorPsi(OppJsqr, psi, &Jsqr);
+  PsiHermitianOperatorPsi(OppNf, psi, &Nf);
+  PsiHermitianOperatorPsi(OppNfivehalf, psi, &Nfivehalf);
+  PsiHermitianOperatorPsi(OppNsevenhalf, psi, &Nsevenhalf);
+  PsiHermitianOperatorSqrPsi(OppNf, psi, &Nfsqr);
+  PsiHermitianOperatorSqrPsi(OppNfivehalf, psi, &Nfivehalfsqr);
+  PsiHermitianOperatorSqrPsi(OppNsevenhalf, psi, &Nsevenhalfsqr);
+  EndTiming("find groundstate", &Time);
+  PrintTiming(Time);
+  
+  printf("\n========================================================");
+  printf("\n==========   Groundstte expectation values   ===========");
+  printf("\n========================================================\n");
+  printf("Energy              %22.15E  (variance %22.15E)\n",energy,energysqr-energy*energy);
+  printf("Kinetic energy      %22.15E\n",EKin);
+  printf("Relativistic energy %22.15E\n",Esoc);
+  printf("Coulomb energy (4f) %22.15E\n",ECoulomb);
+  printf("Sx %22.15E Sy %22.15E Sz %22.15E Ssqr %22.15E\n",Sx,Sy,Sz,Ssqr);
+  printf("Lx %22.15E Ly %22.15E Lz %22.15E Lsqr %22.15E\n",Lx,Ly,Lz,Lsqr);
+  printf("Jx %22.15E Jy %22.15E Jz %22.15E Jsqr %22.15E\n",Jx,Jy,Jz,Jsqr);
+  printf("Nf   %22.15E <Nf^2>   %22.15E\n",Nf,Nfsqr);
+  printf("N5/2 %22.15E <N5/2^2> %22.15E\n",Nfivehalf,Nfivehalfsqr);
+  printf("N7/2 %22.15E <N7/2^2> %22.15E\n",Nsevenhalf,Nsevenhalfsqr);
+  printf("\n");
+  
+  printf("Occupation of f-shell\n");
+  for(i=0;i<=14;i++)
+  {
+    printf("f^%2i | %22.15E\n",i,OccHist[i]);
+  }
+  printf("\n");
+  
+  printf("diagonal part of density matrix\n");
+  FreeMatrix(&Density);
+  CalculateDensityMatrix(&Density, psi);
+  for(i=0;i<Density.Ni;i++)
+  {
+    printf("%i %22.15E\n",i,Density.VRe[i][i]);
+  }
+  printf("\n");
   PrintMatrix(Density);
+  
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   if(doPES)
