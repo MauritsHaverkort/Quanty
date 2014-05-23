@@ -4078,10 +4078,14 @@ double CubicHarmonicK(const int k, const int m, const double t, const double p)
  *       l == 1    - {t1u}
  *       l == 2    - {eg, t2g}
  *       l == 3    - {a1u, t1u, t2u}
- *  D4h  l == 0    - {ag}
+ *  D2h  l == 0    - {ag}
  *       l == 1    - {b1u, b2u, b3u} {z y x}
  *       l == 2    - {agx2y2, agz2, Mag, b1g, b2g, b3g} {x2y2 z2 mx2y2-z2 xy xz yz}
  *       l == 3    - .........
+ *  D4h  l == 0    - {a1g}
+ *       l == 1    - {a2u eu} {z (x y)}
+ *       l == 2    - {a1g b1g b2g eg} {z2 x2y2 xy (xz yz)}
+ *       l == 3    - {a2u b1u b2u eu1 eu2 meu} {z^3 xyz (x^2-y^2)z (x^3 y^3) ( (y^x-z^2)x (z^2-x^2)y ) meu}
  *  Ih   l == 0    - {ag}
  *       l == 1    - {t1u}
  *       l == 2    - {hg}
@@ -5943,13 +5947,13 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
       Akm->N = 1;
       break;
     case 1:
-      Akm->N = 1;
-      break;
-    case 2:
       Akm->N = 2;
       break;
+    case 2:
+      Akm->N = 5;
+      break;
     case 3:
-      Akm->N = 3;
+      Akm->N = 8;
       break;
     default:
       printf("Potential for point group %s and angular momentum %i not implemented\n", s, l);
@@ -5992,21 +5996,57 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
       {
         Akm->l[0] = 0;
         Akm->m[0] = 0;
-        Akm->Re[0] = EigenEnergies[0];
+        Akm->Re[0] = (EigenEnergies[0] + 2 * EigenEnergies[1])/3.0;
+        Akm->l[1] = 2;
+        Akm->m[1] = 0;
+        Akm->Re[1] = 5.0*(EigenEnergies[0] - EigenEnergies[1])/3.0;
       }
       break;
     case 2:
       {
         Akm->l[0] = 0;
         Akm->m[0] = 0;
-        Akm->Re[0] = EigenEnergies[0];
+        Akm->Re[0] = (EigenEnergies[0] + EigenEnergies[1] + EigenEnergies[2] + 2 * EigenEnergies[3])/5.0;
+        Akm->l[1] = 2;
+        Akm->m[1] = 0;
+        Akm->Re[1] = (EigenEnergies[0] - EigenEnergies[1] - EigenEnergies[2] + EigenEnergies[3]);
+        Akm->l[2] = 4;
+        Akm->m[2] = 0;
+        Akm->Re[2] = 0.3*(6*EigenEnergies[0] + EigenEnergies[1] + EigenEnergies[2] - 8*EigenEnergies[3]);
+        Akm->l[3] = 4;
+        Akm->m[3] =-4;
+        Akm->Re[3] = 0.3*sqrt(70.0)*(EigenEnergies[1] - EigenEnergies[2]);
+        Akm->l[4] = 4;
+        Akm->m[4] = 4;
+        Akm->Re[4] = 0.3*sqrt(70.0)*(EigenEnergies[1] - EigenEnergies[2]);
       }
       break;
     case 3:
       {
         Akm->l[0] = 0;
         Akm->m[0] = 0;
-        Akm->Re[0] = EigenEnergies[0];
+        Akm->Re[0] = (EigenEnergies[0]+EigenEnergies[1]+EigenEnergies[2]+2*EigenEnergies[3]+2*EigenEnergies[4])/7.0;
+        Akm->l[1] = 2;
+        Akm->m[1] = 0;
+        Akm->Re[1] = 5.0*(EigenEnergies[0]-EigenEnergies[3]+sqrt(15.0)*EigenEnergies[5])/7.0;
+        Akm->l[2] = 4;
+        Akm->m[2] = 0;
+        Akm->Re[2] = 3.0*(12*EigenEnergies[0]-14*EigenEnergies[1]-14*EigenEnergies[2]+9*EigenEnergies[3]+7*EigenEnergies[4]-2*sqrt(15.0)*EigenEnergies[5])/28.0;
+        Akm->l[3] = 6;
+        Akm->m[3] = 0;
+        Akm->Re[3] = 13.0*(40*EigenEnergies[0]+12*EigenEnergies[1]+12*EigenEnergies[2]-25*EigenEnergies[3]-39*EigenEnergies[4]-14*sqrt(15.0)*EigenEnergies[5])/280.0;
+        Akm->l[4] = 4;
+        Akm->m[4] = 4;
+        Akm->Re[4] = -3.0*(2*sqrt(70.0)*EigenEnergies[1]-2*sqrt(70.0)*EigenEnergies[2]-3*sqrt(70.0)*EigenEnergies[3]+3*sqrt(70.0)*EigenEnergies[4]-2*sqrt(42.0)*EigenEnergies[5])/56.0;
+        Akm->l[5] = 4;
+        Akm->m[5] =-4;
+        Akm->Re[5] = -3.0*(2*sqrt(70.0)*EigenEnergies[1]-2*sqrt(70.0)*EigenEnergies[2]-3*sqrt(70.0)*EigenEnergies[3]+3*sqrt(70.0)*EigenEnergies[4]-2*sqrt(42.0)*EigenEnergies[5])/56.0;
+        Akm->l[6] = 6;
+        Akm->m[6] = 4;
+        Akm->Re[6] = -13.0*(4*sqrt(126.0)*EigenEnergies[1]-4*sqrt(126.0)*EigenEnergies[2]+5*sqrt(126.0)*EigenEnergies[3]-5*sqrt(126.0)*EigenEnergies[4]+2*sqrt(70.0)*EigenEnergies[5])/560.0;
+        Akm->l[7] = 6;
+        Akm->m[7] =-4;
+        Akm->Re[7] = -13.0*(4*sqrt(126.0)*EigenEnergies[1]-4*sqrt(126.0)*EigenEnergies[2]+5*sqrt(126.0)*EigenEnergies[3]-5*sqrt(126.0)*EigenEnergies[4]+2*sqrt(70.0)*EigenEnergies[5])/560.0;
       }
       break;
     }
