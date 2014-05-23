@@ -19,6 +19,22 @@ void RealWaveFunctionFree(WaveFunctionType * const psi)
   free(psi->KeyList);
 }
 
+void RealWaveFunctionReset(WaveFunctionType * const psi)
+{
+  uint32_t i;
+  for (i = 1; i < psi->NBlok; i++)
+  {
+    free(psi->ValueRe[i]);
+    free(psi->Next[i]);
+    free(psi->Determinant[i]);
+  }
+  psi->N = 0;
+  psi->NBlok=1;
+  memset(psi->KeyList, 0, ( 1 << (psi->NBitsKey)) * sizeof(uint32_t));
+  psi->ValueRe[0][0] = 0.0;
+}
+
+
 /*  Remove The values of a wave function from memory, but keep the determiants and the pointers to next determinants with the same Hash value
 *   Usefull for more then one wave function defined on the same basis where psi.Next and psi.Determinant point to the same location as used by an other wave function
 *   On entry psi contains a wave function with psi.NBlok alocations
@@ -282,6 +298,7 @@ void RealWaveFunctionAddElementConserveBasis(WaveFunctionType const *psi, const 
 {
   uint32_t i, NextIndex, PsiAIsPsiB;
   /* test if the key that belongs to psi already excists */
+  if (a == 0) return;
   NextIndex=psi->KeyList[hash(det, psi->NWord, psi->NBitsKey)];
   if (!NextIndex)
   {                             /* det not in key, do nothing */
@@ -716,29 +733,41 @@ double RealWaveFunctionDotProductSameBasis(const WaveFunctionType a, const WaveF
 /*
 *   calculate <a|b>
 */
-double RealWaveFunctionDotProduct(const WaveFunctionType a, const WaveFunctionType b)
+double RealWaveFunctionDotProduct(const WaveFunctionType *a, const WaveFunctionType *b)
 {
   uint32_t i, j, NextIndex, PsiAIsPsiB;
   int    iOMP;
   double Dot = 0;
   volatile double c, t, y;
   c = 0;
+
+  /* switch coefficients to reduce number of hash lookups */
+  if (a->N > b->N)
+  {
+    const WaveFunctionType *temp = a;
+    a = b;
+    b = temp;
+  }
+
 #pragma omp parallel for firstprivate(c) private(i,j,NextIndex,PsiAIsPsiB,t,y) reduction(+ : Dot)
-  for (iOMP = 1; iOMP <= (int)(a.N); ++iOMP)
+  for (iOMP = 1; iOMP <= (int)(a->N); ++iOMP)
   {
     i = (uint32_t) iOMP;
-    NextIndex = b.KeyList[hash(&a.Determinant[BlokElementDet(i, a.NWord, 0)], a.NWord, a.NBitsKey)];
+    NextIndex = b->KeyList[hash(&a->Determinant[BlokElementDet(i, a->NWord, 0)], a->NWord, a->NBitsKey)];
     while (NextIndex)
     {
       PsiAIsPsiB = 1;
-      for (j = 0; j < b.NWord; j++)
+      for (j = 0; j < b->NWord; j++)
       {
-        if (b.Determinant[BlokElementDet(NextIndex, b.NWord, j)] != a.Determinant[BlokElementDet(i, a.NWord, j)])
+        if (b->Determinant[BlokElementDet(NextIndex, b->NWord, j)] != a->Determinant[BlokElementDet(i, a->NWord, j)])
+        {
           PsiAIsPsiB = 0;
+          break;
+        }
       }
       if (PsiAIsPsiB)
       {                         /* a=b found add the product to Dot and leave loop  */
-        y = a.ValueRe[BlokElement(i)] * b.ValueRe[BlokElement(NextIndex)] - c;
+        y = a->ValueRe[BlokElement(i)] * b->ValueRe[BlokElement(NextIndex)] - c;
         t = Dot + y;
         c = t - Dot;
         c -= y;
@@ -747,7 +776,7 @@ double RealWaveFunctionDotProduct(const WaveFunctionType a, const WaveFunctionTy
       }
       else
       {
-        NextIndex = b.Next[BlokElement(NextIndex)];
+        NextIndex = b->Next[BlokElement(NextIndex)];
       }
     }
   }
@@ -842,7 +871,7 @@ void RealWaveFunctionOrthogonalizeConserveBasis(WaveFunctionType * const psi, co
   double a;
   for (i = 0; i < Npsi; i++)
   {
-    a = RealWaveFunctionDotProduct(*psi, OtherPsi[i]);
+    a = RealWaveFunctionDotProduct(psi, &OtherPsi[i]);
     RealWaveFunctionAddMultipliedConserveBasis(psi, OtherPsi[i], -a);
   }
 }
@@ -857,7 +886,7 @@ uint32_t RealWaveFunctionOrthogonalize(WaveFunctionType * const psi, const WaveF
   double a;
   for (i = 0; i < Npsi; i++)
   {
-    a = RealWaveFunctionDotProduct(*psi, OtherPsi[i]);
+    a = RealWaveFunctionDotProduct(psi, &OtherPsi[i]);
     if (RealWaveFunctionAddMultipliedUnionBasis(psi, OtherPsi[i], -a))
     {
       printf("RealWaveFunctionAddMultipliedUnionBasis failed in RealWaveFunctionOrthogonalize\n");
@@ -934,3 +963,105 @@ uint32_t CreateRealRandomWaveFunction(WaveFunctionType * const psi, uint32_t con
   RealWaveFunctionRandomize(psi);
   return 0;
 }
+
+
+
+/* on entry 
+ *  A is an empty wave function with allocated memory (init A is done)
+ *  Det contains the determinant to add
+ *  U the rotation matrix
+ *  Elements mixing bosons and fermions in U are neglected
+ *  U is assumed to be square and unitary
+ *  Det is assumed to have A->NFermion fermions and A->NBoson bosons
+ *
+ */
+uint32_t RealMappedDetToWaveFunction(WaveFunctionType * const A, uint8_t *Det, MatrixType const U)
+{
+  WaveFunctionType Temp;
+  uint8_t DetZero[A->NWord];
+  uint16_t oadd[1];
+  uint32_t i,j;
+  OperatorType O;
+  InitOperator(&O);
+  O.NFermion=A->NFermion;
+  O.NBoson=A->NBoson;
+  O.NWord=A->NWord;
+  
+  InitOperatorFixedLength(&O, 1, 8);
+  
+  
+  for(i=0;i<A->NWord;i++)
+  {
+    DetZero[i]=0;
+  }
+  
+  RealWaveFunctionAddElement(A, DetZero, 1.0);
+  
+  for(i=0;i<A->NFermion;i++)
+  {
+    oadd[0]=CrAnMask | (uint16_t)i;
+    RealOperatorAddLader(&O, oadd, 1, 0.0);
+  }
+  
+  for(i=0;i<A->NFermion;i++)
+  {
+    /* test if Fermion i is occupied */
+    if(Det[i >> 3] & (128 >> (i & 7)))
+    {
+      for(j=0;j<A->NFermion;j++)
+      {
+        O.l[1].VRe[j]=U.VRe[i][j];
+      }
+      OperatorPsiRR(O, *A, &Temp);
+      RealWaveFunctionTruncateBasis(&Temp, 10*DBL_EPSILON);
+      WaveFunctionFree(A);
+      *A=Temp;
+    }
+    
+  }
+  for(i=A->NFermion;i<A->NFermion+A->NBoson;i++)
+  {
+    printf("Boson rotation not yet implemted\n");
+    return 1;
+  }
+  
+  FreeOperator(&O);
+  return 0;
+}
+
+
+/* psiA <- psiA + U psiB
+ *  U is a (NFermionB+NBosonB)*(NFermionA+NBosonA) demensional matrix that defines the transformation
+ *  a_j        = \sum_i U_{i,j}   a_i
+ *  a_j^{\dag} = \sum_i U_{i,j}^* a_i^{dag}
+ *
+ * assume A B and U are real (version RRR)
+ */
+uint32_t MappedWaveFunctionAddRRR(WaveFunctionType * const A, WaveFunctionType const B, MatrixType const U)
+{
+  uint8_t *Det;
+  uint32_t idetB;
+  WaveFunctionType Udet;
+  
+  
+  Udet.NFermion=A->NFermion;
+  Udet.NBoson=A->NBoson;
+  Udet.QComplex=0;
+  Udet.NBitsKey=A->NBitsKey;
+  WaveFunctionInit(&Udet);
+  
+  /* loop over all determinants in B */
+  for(idetB=1;idetB<=B.N;idetB++)
+  {
+    Det=&(B.Determinant[BlokElementDet(idetB, B.NWord, 0)]);
+    RealWaveFunctionReset(&Udet);
+    RealMappedDetToWaveFunction(&Udet, Det, U);
+    RealWaveFunctionAddMultipliedUnionBasis(A, Udet, B.ValueRe[BlokElement(idetB)]);
+  }
+  RealWaveFunctionTruncateBasis(A, 10*DBL_EPSILON);
+  RealWaveFunctionNormalize(A);
+  WaveFunctionFree(&Udet);
+  
+  return 0;
+}
+

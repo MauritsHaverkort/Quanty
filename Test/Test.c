@@ -16,6 +16,7 @@
 #include <limits.h>
 #include <unistd.h>
 #include <stdarg.h>
+#include <complex.h>
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -40,6 +41,7 @@
 #include "../Core/OperatorWaveFunction.c"
 #include "../Core/OperatorWaveFunctionPerturbation.c"
 #include "../Core/Lanczos.c"
+#include "../Core/MeanField.c"
 #include "../Core/Spectral.c"
 #include "../Core/DensityMatrix.c"
 #include "../Core/Random.c"
@@ -66,6 +68,7 @@
 #include "../Test/TestAtomicPhysics.c"
 #include "../Test/OperatorArithmetic.c"
 #include "../Test/StuttgartNMTO.c"
+#include "../Test/HarmonicOscillator.c"
 #include "../Test/BasisOptimization.c"
 
 int main(int argc, const char *argv[])
@@ -162,15 +165,23 @@ int main(int argc, const char *argv[])
 
     if (!strncmp("OppMult", argv[argc], strlen(argv[argc])))
       TestOppMult();
+    if (!strncmp("Rotate", argv[argc], strlen(argv[argc])))
+      TestRotate();
     
     if (!strncmp("AtomicPhysics", argv[argc], strlen(argv[argc])))
       TestAtomicPhysics();
+
+    if (!strncmp("HarmOsc", argv[argc], strlen(argv[argc])))
+      TestHarmonicOscillator();
     
     if (!strncmp("NMTO", argv[argc], strlen(argv[argc])))
       TestStuttgartNMTO();
     
     if (!strncmp("BasisOpt", argv[argc], strlen(argv[argc])))
       BasisOptimization();
+    
+    if (!strncmp("MF", argv[argc], strlen(argv[argc])))
+      TestMeanField();
   }
   
   

@@ -1197,6 +1197,8 @@ uint32_t CreateOperatorCF(uint32_t const NFermion, uint32_t LCr, uint32_t LAn, u
   return 0;
 }
 
+
+
 uint32_t CreateOperatorCreate(uint32_t const NFermion, uint16_t const Crindex, OperatorType * const OppCr)
 {
   uint16_t oadd[1];
@@ -1223,6 +1225,39 @@ uint32_t CreateOperatorAnnihilate(uint32_t const NFermion, uint16_t const Aninde
   return 0;
 }
 
+
+uint32_t CreateOperatorCreateList(uint32_t const NFermion, uint16_t const * Crindex, double const * VRe, double const * VIm, const uint32_t N, OperatorType * const OppCr)
+{
+  uint32_t i;
+  uint16_t oadd[1];
+  InitNamedOperator(OppCr, "Cr");
+  OppCr->NFermion = NFermion;
+  OppCr->NWord = Min(OppCr->NFermion, 1 + (OppCr->NFermion - 1) / 8);
+  InitOperatorFixedLength(OppCr, 1, 8);
+  for(i=0;i<N;i++)
+  {
+    oadd[0] = CrAnMask + Crindex[i];
+    OperatorAddLader(OppCr, oadd, 1, VRe[i], VIm[i]);
+  }
+  return 0;
+}
+
+uint32_t CreateOperatorAnnihilateList(uint32_t const NFermion, uint16_t const * Anindex, double const * VRe, double const * VIm, const uint32_t N, OperatorType * const OppAn)
+{
+  uint32_t i;
+  uint16_t oadd[1];
+  InitNamedOperator(OppAn, "An");
+  OppAn->NFermion = NFermion;
+  OppAn->NWord = Min(OppAn->NFermion, 1 + (OppAn->NFermion - 1) / 8);
+  InitOperatorFixedLength(OppAn, 1, 8);
+  for(i=0;i<N;i++)
+  {
+    oadd[0] = Anindex[i];
+    OperatorAddLader(OppAn, oadd, 1, VRe[i], VIm[i]);
+  }
+  return 0;
+}
+
 uint32_t CreateOperatorNumber(uint32_t const NFermion, uint16_t const Crindex, uint16_t const Anindex,
                               OperatorType * const OppN)
 {
@@ -1237,3 +1272,84 @@ uint32_t CreateOperatorNumber(uint32_t const NFermion, uint16_t const Crindex, u
   RealOperatorAddLader(OppN, oadd, 2, 1);
   return 0;
 }
+
+
+uint32_t CreateOperatorNumberShell(uint32_t const NFermion, uint32_t const Nelectron, const uint16_t * const index, OperatorType * const OppN)
+{
+  uint32_t i;
+  uint16_t oadd[2];
+  InitNamedOperator(OppN, "Number operator");
+  OppN->NFermion = NFermion;
+  OppN->NWord = Min(OppN->NFermion, 1 + (OppN->NFermion - 1) / 8);
+  InitOperatorFixedLength(OppN, 2, 8);
+  for(i=0;i<Nelectron;i++)
+  {
+    oadd[1] = CrAnMask + index[i];
+    oadd[0] = index[i];
+    RealOperatorAddLader(OppN, oadd, 2, 1);
+  }
+  return 0;
+}
+
+uint32_t CreateOperatorNumberShellSqr(uint32_t const NFermion, uint32_t const Nelectron, const uint16_t * const index, OperatorType * const OppNSqr)
+{
+  OperatorType temp;
+  CreateOperatorNumberShell(NFermion, Nelectron, index, &temp);
+  InitNamedOperator(OppNSqr, "Number operator squared");
+  OppNSqr->NFermion = NFermion;
+  OppNSqr->NWord = Min(OppNSqr->NFermion, 1 + (OppNSqr->NFermion - 1) / 8);
+  InitOperatorFixedLength(OppNSqr, 2, 8);
+  InitOperatorFixedLength(OppNSqr, 4, 8);
+  OperatorMultiplyNormalOrder(OppNSqr, temp, temp,  &QDetNotOrderedFcFaBcBa);
+  FreeOperator(&temp);
+  return 0;
+}
+
+uint32_t CreateRandomTwoParticleOperator(uint32_t const NFermion, uint32_t const QComplex, OperatorType * const Opp)
+{
+  double ReRand,ImRand;
+  uint32_t i,j;
+  uint16_t oadd[2];
+  InitOperator(Opp);
+  Opp->NFermion = NFermion;
+  Opp->NWord = Min(Opp->NFermion, 1 + (Opp->NFermion - 1) / 8);
+  InitOperatorFixedLength(Opp, 2, 8);
+  if(QComplex)
+  {
+    MakeRealOperatorFixedLengthComplex(Opp, 2);
+    Opp->QComplex = 1;
+    for(i=0;i<NFermion;i++)
+    {
+      for(j=0;j<NFermion;j++)
+      {
+        ReRand=0.5-rand()/(double)RAND_MAX;
+        ImRand=0.5-rand()/(double)RAND_MAX;
+        oadd[1] = CrAnMask + i;
+        oadd[0] = j;
+        ComplexOperatorAddLader(Opp, oadd, 2, ReRand, ImRand);
+        oadd[1] = CrAnMask + j;
+        oadd[0] = i;
+        ComplexOperatorAddLader(Opp, oadd, 2, ReRand,-ImRand);
+      }
+    }
+  }
+  else
+  {
+    for(i=0;i<NFermion;i++)
+    {
+      for(j=0;j<NFermion;j++)
+      {
+        ReRand=0.5-rand()/(double)RAND_MAX;
+        oadd[1] = CrAnMask + i;
+        oadd[0] = j;
+        RealOperatorAddLader(Opp, oadd, 2, ReRand);
+        oadd[1] = CrAnMask + j;
+        oadd[0] = i;
+        RealOperatorAddLader(Opp, oadd, 2, ReRand);
+      }
+    }
+  }
+  RealOperatorAddLader(Opp, oadd, 0, -(double)NFermion);
+  return 0;
+}
+

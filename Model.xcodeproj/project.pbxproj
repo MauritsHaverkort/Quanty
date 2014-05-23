@@ -13,6 +13,7 @@
 		4C2AAACC1632662000138620 /* Test.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA66163265DD00138620 /* Test.c */; };
 		4C2AAACE163266DD00138620 /* libblas.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACD163266DD00138620 /* libblas.dylib */; };
 		4C2AAAD0163266F900138620 /* liblapack.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACF163266F900138620 /* liblapack.dylib */; };
+		4C2F88BA19290AFF009AED78 /* Model.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA261632659D00138620 /* Model.c */; };
 		4C56E02818D877A1001B50A8 /* libblas.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACD163266DD00138620 /* libblas.dylib */; };
 		4C56E02918D877B7001B50A8 /* liblapack.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACF163266F900138620 /* liblapack.dylib */; };
 		4C5CA62016D18C3400BE1C25 /* DMFT.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA4C163265DD00138620 /* DMFT.c */; };
@@ -22,7 +23,6 @@
 		4C79F5E117B53D4100189682 /* HubbardModel.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA54163265DD00138620 /* HubbardModel.c */; };
 		4C79F5E217B53E4F00189682 /* liblapack.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACF163266F900138620 /* liblapack.dylib */; };
 		4C79F5E317B53E5800189682 /* libblas.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACD163266DD00138620 /* libblas.dylib */; };
-		4C8274DD17DCF3AD00A5F555 /* Model.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C2AAA261632659D00138620 /* Model.c */; };
 		4C8274DE17DCF57200A5F555 /* libblas.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACD163266DD00138620 /* libblas.dylib */; };
 		4C8274DF17DCF59300A5F555 /* liblapack.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACF163266F900138620 /* liblapack.dylib */; };
 		4CDD1CA91796D27F00614F34 /* libblas.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C2AAACD163266DD00138620 /* libblas.dylib */; };
@@ -173,6 +173,9 @@
 		4C2AAACF163266F900138620 /* liblapack.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = liblapack.dylib; path = usr/lib/liblapack.dylib; sourceTree = SDKROOT; };
 		4C2DFCB6188D80170023CA96 /* MultiSitesDMFT.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = MultiSitesDMFT.c; sourceTree = "<group>"; };
 		4C2DFCB7188D80170023CA96 /* MultiSitesFunctions.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = MultiSitesFunctions.c; sourceTree = "<group>"; };
+		4C2F88B51928CF95009AED78 /* AndersonImpurity.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = AndersonImpurity.c; sourceTree = "<group>"; };
+		4C2F88B71928CFA5009AED78 /* CrystalField.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = CrystalField.c; sourceTree = "<group>"; };
+		4C2F88B91928CFC8009AED78 /* LigandField.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = LigandField.c; sourceTree = "<group>"; };
 		4C3261581850DF9300CEECC4 /* OperatorArithmetic.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = OperatorArithmetic.c; sourceTree = "<group>"; };
 		4C3FCCFC188419B6000B9DB8 /* BasicMathBlock.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = BasicMathBlock.c; path = BasicMathBlock/BasicMathBlock.c; sourceTree = "<group>"; };
 		4C3FCCFD188419E4000B9DB8 /* BasicMath_BlockListOfPoles.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = BasicMath_BlockListOfPoles.c; path = BasicMathBlock/BasicMath_BlockListOfPoles.c; sourceTree = "<group>"; };
@@ -180,6 +183,7 @@
 		4C45453F189269F600E16DC6 /* BasicMath_CompactMatrixVector.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = BasicMath_CompactMatrixVector.c; sourceTree = "<group>"; };
 		4C5A6B9B175E6E8700EEA17F /* PrintMathematicaExpression.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = PrintMathematicaExpression.c; sourceTree = "<group>"; };
 		4C5CA61716D18BBF00BE1C25 /* DMFT */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = DMFT; sourceTree = BUILT_PRODUCTS_DIR; };
+		4C6534801927B39400D00679 /* MeanField.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = MeanField.c; sourceTree = "<group>"; };
 		4C6925BF18D8683700E6FA6F /* CodeMartin.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = CodeMartin.c; path = Martin/CodeMartin.c; sourceTree = "<group>"; };
 		4C6925C418D869FE00E6FA6F /* MartinPESXAS */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = MartinPESXAS; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C77BA751741188E00AC7E7D /* OperatorWaveFunctionPerturbation.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = OperatorWaveFunctionPerturbation.c; sourceTree = "<group>"; };
@@ -192,6 +196,7 @@
 		4C8B605818D924E40017AC8C /* BasisOptimization.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = BasisOptimization.c; sourceTree = "<group>"; };
 		4C944CD8187AEDE500FE9B7B /* StuttgartNMTO.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = StuttgartNMTO.c; sourceTree = "<group>"; };
 		4CA262D8170787D900B8E76E /* TestGreenFunctions.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = TestGreenFunctions.c; sourceTree = "<group>"; };
+		4CA4BA43192740820057A26C /* HarmonicOscillator.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = HarmonicOscillator.c; sourceTree = "<group>"; };
 		4CA5D6B6188AE32500A7F1DE /* BasicMath_BlockAndersonMatrix.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = BasicMath_BlockAndersonMatrix.c; path = BasicMathBlock/BasicMath_BlockAndersonMatrix.c; sourceTree = "<group>"; };
 		4CA5D6B7188AE35400A7F1DE /* BasicMath_BlockTridiagonalMatrix.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = BasicMath_BlockTridiagonalMatrix.c; path = BasicMathBlock/BasicMath_BlockTridiagonalMatrix.c; sourceTree = "<group>"; };
 		4CDD1C9F1796D14100614F34 /* YiDMFT */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = YiDMFT; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -310,6 +315,9 @@
 			children = (
 				4C2AAA261632659D00138620 /* Model.c */,
 				4C2AAA271632659D00138620 /* StandardOperators.c */,
+				4C2F88B51928CF95009AED78 /* AndersonImpurity.c */,
+				4C2F88B71928CFA5009AED78 /* CrystalField.c */,
+				4C2F88B91928CFC8009AED78 /* LigandField.c */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -338,6 +346,7 @@
 				4C2AAA49163265DD00138620 /* TimeStamp.c */,
 				4C2AAA4A163265DD00138620 /* WaveFunctionArithmetic.c */,
 				4C0877991737CDE600CE9AB4 /* WaveFunctionPerturbationArithmetic.c */,
+				4C6534801927B39400D00679 /* MeanField.c */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -416,6 +425,7 @@
 		4C2AAA61163265DD00138620 /* Test */ = {
 			isa = PBXGroup;
 			children = (
+				4CA4BA43192740820057A26C /* HarmonicOscillator.c */,
 				4C2AAA62163265DD00138620 /* LanczosDyson.c */,
 				4C2AAA63163265DD00138620 /* MiniTest.c */,
 				4C2AAA64163265DD00138620 /* Old_Functions.c */,
@@ -665,7 +675,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4C8274DD17DCF3AD00A5F555 /* Model.c in Sources */,
+				4C2F88BA19290AFF009AED78 /* Model.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

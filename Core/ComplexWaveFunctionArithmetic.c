@@ -20,6 +20,24 @@ void ComplexWaveFunctionFree(WaveFunctionType * const psi)
   free(psi->KeyList);
 }
 
+void ComplexWaveFunctionReset(WaveFunctionType * const psi)
+{
+  uint32_t i;
+  for (i = 1; i < psi->NBlok; i++)
+  {
+    free(psi->ValueRe[i]);
+    free(psi->ValueIm[i]);
+    free(psi->Next[i]);
+    free(psi->Determinant[i]);
+  }
+  psi->N = 0;
+  psi->NBlok=1;
+  memset(psi->KeyList, 0, ( 1 << (psi->NBitsKey)) * sizeof(uint32_t));
+  psi->ValueRe[0][0] = 0.0;
+  psi->ValueIm[0][0] = 0.0;
+}
+
+
 /*  Remove The values of a wave function from memory, but keep the determiants and the pointers to next determinants with the same Hash value
 *   Usefull for more then one wave function defined on the same basis where psi.Next and psi.Determinant point to the same location as used by an other wave function
 *   On entry psi contains a wave function with psi.NBlok alocations
@@ -340,21 +358,27 @@ void ComplexWaveFunctionAddElementConserveBasis(WaveFunctionType psi, const uint
                                                 const double aIm)
 {
   uint32_t i, NextIndex, PsiAIsPsiB;
+
+  if ((aRe == 0) && (aIm == 0)) return;
+
   /* test if the key that belongs to psi already excists */
-  if (psi.KeyList[hash(det, psi.NWord, psi.NBitsKey)] == 0)
+  NextIndex = psi.KeyList[hash(det, psi.NWord, psi.NBitsKey)];
+  if (NextIndex == 0)
   {                             /* det not in key, do nothing */
     return;
   }
   else
   {                             /* The key is already taken, test if this is due to a collision, or if psi is already in the basis set */
-    NextIndex = psi.KeyList[hash(det, psi.NWord, psi.NBitsKey)];
     while (1)
     {
       PsiAIsPsiB = 1;
       for (i = 0; i < psi.NWord; i++)
       {
         if (psi.Determinant[BlokElementDet(NextIndex, psi.NWord, i)] != det[i])
+        {
           PsiAIsPsiB = 0;
+          break;
+        }
       }
       if (PsiAIsPsiB)
       {                         /* psi already in basis set add and leave loop  */
@@ -629,6 +653,26 @@ uint32_t ComplexWaveFunctionAddComplexMultipliedUnionBasis(WaveFunctionType * co
   return 0;
 }
 
+uint32_t RealWaveFunctionAddComplexMultipliedUnionBasis(WaveFunctionType * const a, const WaveFunctionType b,
+                                                           const double alphaRe, const double alphaIm)
+{
+  uint32_t i, j;
+  for (i = b.N; i != 0; --i)
+  {
+    if (ComplexWaveFunctionAddElement
+        (a, &b.Determinant[BlokElementDet(i, b.NWord, 0)],
+         alphaRe * b.ValueRe[BlokElement(i)],alphaIm * b.ValueRe[BlokElement(i)]) != 0)
+    {                           /* Allocation of new memory for a failed Remove all elements added so far and return 1 */
+      for (j = b.N; j != i; --j)
+      {
+        ComplexWaveFunctionAddElementConserveBasis(*a, &b.Determinant[BlokElementDet(i, b.NWord, 0)],
+                                                   -alphaRe * b.ValueRe[BlokElement(i)] , -alphaIm * b.ValueRe[BlokElement(i)]);
+      }
+      return 1;
+    }
+  }
+  return 0;
+}
 
 /*
  *   (a) <- a b
@@ -875,42 +919,57 @@ void ComplexWaveFunctionDotProductSameBasis(const WaveFunctionType a, const Wave
 /*
 *   calculate <a|b>
 */
-void ComplexWaveFunctionDotProduct(const WaveFunctionType a, const WaveFunctionType b, double *DotRe, double *DotIm)
+void ComplexWaveFunctionDotProduct(const WaveFunctionType *a, const WaveFunctionType *b, double *DotRe, double *DotIm)
 {
   uint32_t i, j, NextIndex, PsiAIsPsiB;
   int    iOMP;
-  double DotReOMP = 0, DotImOMP = 0;
+  double DotReOMP = 0, DotImOMP = 0;  
+  int exchanged = 0;
+
+  /* switch coefficients to reduce number of hash lookups */
+  if (a->N > b->N)
+  {
+    const WaveFunctionType *temp = a;
+    a = b;
+    b = temp;
+    exchanged = 1;
+  }
+
+
 #pragma omp parallel for private(i,j,NextIndex,PsiAIsPsiB) reduction(+ : DotReOMP,DotImOMP)
-  for (iOMP = 1; iOMP <= (int)(a.N); ++iOMP)
+  for (iOMP = 1; iOMP <= (int)(a->N); ++iOMP)
   {
     i = (uint32_t) iOMP;
-    NextIndex = b.KeyList[hash(&a.Determinant[BlokElementDet(i, a.NWord, 0)], a.NWord, a.NBitsKey)];
+    NextIndex = b->KeyList[hash(&a->Determinant[BlokElementDet(i, a->NWord, 0)], a->NWord, a->NBitsKey)];
     while (NextIndex)
     {
       PsiAIsPsiB = 1;
-      for (j = 0; j < b.NWord; j++)
+      for (j = 0; j < b->NWord; j++)
       {
-        if (b.Determinant[BlokElementDet(NextIndex, b.NWord, j)] != a.Determinant[BlokElementDet(i, a.NWord, j)])
+        if (b->Determinant[BlokElementDet(NextIndex, b->NWord, j)] != a->Determinant[BlokElementDet(i, a->NWord, j)])
+        {
           PsiAIsPsiB = 0;
+          break;
+        }
       }
       if (PsiAIsPsiB)
       {                         /* a=b found add the product to Dot and leave loop  */
         DotReOMP +=
-          a.ValueRe[BlokElement(i)] * b.ValueRe[BlokElement(NextIndex)] +
-          a.ValueIm[BlokElement(i)] * b.ValueIm[BlokElement(NextIndex)];
+          a->ValueRe[BlokElement(i)] * b->ValueRe[BlokElement(NextIndex)] +
+          a->ValueIm[BlokElement(i)] * b->ValueIm[BlokElement(NextIndex)];
         DotImOMP +=
-          a.ValueRe[BlokElement(i)] * b.ValueIm[BlokElement(NextIndex)] -
-          a.ValueIm[BlokElement(i)] * b.ValueRe[BlokElement(NextIndex)];
+          a->ValueRe[BlokElement(i)] * b->ValueIm[BlokElement(NextIndex)] -
+          a->ValueIm[BlokElement(i)] * b->ValueRe[BlokElement(NextIndex)];
         NextIndex = 0;
       }
       else
       {
-        NextIndex = b.Next[BlokElement(NextIndex)];
+        NextIndex = b->Next[BlokElement(NextIndex)];
       }
     }
   }
   *DotRe = DotReOMP;
-  *DotIm = DotImOMP;
+  *DotIm = DotImOMP*(exchanged?-1:1);
 }
 
 /* Set the pre-factors of a to a random value
@@ -1000,7 +1059,7 @@ void ComplexWaveFunctionOrthogonalizeConserveBasis(WaveFunctionType * const psi,
   double aRe, aIm;
   for (i = 0; i < Npsi; i++)
   {
-    ComplexWaveFunctionDotProduct(OtherPsi[i], *psi, &aRe, &aIm);
+    ComplexWaveFunctionDotProduct(&OtherPsi[i], psi, &aRe, &aIm);
     ComplexWaveFunctionAddComplexMultipliedConserveBasis(psi, OtherPsi[i], -aRe, -aIm);
   }
 }
@@ -1015,11 +1074,156 @@ uint32_t ComplexWaveFunctionOrthogonalize(WaveFunctionType * const psi, const Wa
   double aRe, aIm;
   for (i = 0; i < Npsi; i++)
   {
-    ComplexWaveFunctionDotProduct(OtherPsi[i], *psi, &aRe, &aIm);
+    ComplexWaveFunctionDotProduct(&OtherPsi[i], psi, &aRe, &aIm);
     if (ComplexWaveFunctionAddComplexMultipliedUnionBasis(psi, OtherPsi[i], -aRe, -aIm))
     {
       return 1;
     }
   }
+  return 0;
+}
+
+
+
+
+/* on entry
+ *  A is an empty wave function with allocated memory (init A is done)
+ *  Det contains the determinant to add
+ *  U the rotation matrix
+ *  Elements mixing bosons and fermions in U are neglected
+ *  U is assumed to be square and unitary
+ *  Det is assumed to have A->NFermion fermions and A->NBoson bosons
+ *
+ */
+uint32_t ComplexMappedDetToWaveFunction(WaveFunctionType * const A, uint8_t *Det, MatrixType const U)
+{
+  WaveFunctionType Temp;
+  uint8_t DetZero[A->NWord];
+  uint16_t oadd[1];
+  uint32_t i,j;
+  OperatorType O;
+  InitOperator(&O);
+  O.NFermion=A->NFermion;
+  O.NBoson=A->NBoson;
+  O.NWord=A->NWord;
+  
+  InitOperatorFixedLength(&O, 1, 8);
+  
+  
+  for(i=0;i<A->NWord;i++)
+  {
+    DetZero[i]=0;
+  }
+  
+  ComplexWaveFunctionAddElement(A, DetZero, 1.0, 0.0);
+  
+  for(i=0;i<A->NFermion;i++)
+  {
+    oadd[0]=CrAnMask | (uint16_t)i;
+    ComplexOperatorAddLader(&O, oadd, 1, 0.0);
+  }
+  
+  for(i=0;i<A->NFermion;i++)
+  {
+    /* test if Fermion i is occupied */
+    if(Det[i >> 3] & (128 >> (i & 7)))
+    {
+      for(j=0;j<A->NFermion;j++)
+      {
+        O.l[1].V[j].Re=U.VRe[i][j];
+        O.l[1].V[j].Im=-U.VIm[i][j];
+      }
+      OperatorPsiCC(O, *A, &Temp);
+      ComplexWaveFunctionTruncateBasis(&Temp, 10*DBL_EPSILON);
+      WaveFunctionFree(A);
+      *A=Temp;
+    }
+    
+  }
+  for(i=A->NFermion;i<A->NFermion+A->NBoson;i++)
+  {
+    printf("Boson rotation not yet implemted\n");
+    return 1;
+  }
+  
+  FreeOperator(&O);
+  return 0;
+}
+
+
+/* psiA <- psiA + U psiB
+ *  U is a (NFermionB+NBosonB)*(NFermionA+NBosonA) demensional matrix that defines the transformation
+ *  a_j        = \sum_i U_{i,j}   a_i
+ *  a_j^{\dag} = \sum_i U_{i,j}^* a_i^{dag}
+ *
+ * assume A B and U are complex (version CCC)
+ */
+uint32_t MappedWaveFunctionAddCCC(WaveFunctionType * const A, WaveFunctionType const B, MatrixType const U)
+{
+  uint8_t *Det;
+  uint32_t idetB;
+  WaveFunctionType Udet;
+  Udet.NFermion=A->NFermion;
+  Udet.NBoson=A->NBoson;
+  Udet.QComplex=1;
+  Udet.NBitsKey=A->NBitsKey;
+  WaveFunctionInit(&Udet);
+  /* loop over all determinants in B */
+  for(idetB=1;idetB<=B.N;idetB++)
+  {
+    Det=&(B.Determinant[BlokElementDet(idetB, B.NWord, 0)]);
+    ComplexWaveFunctionReset(&Udet);
+    ComplexMappedDetToWaveFunction(&Udet, Det, U);
+    ComplexWaveFunctionAddComplexMultipliedUnionBasis(A, Udet, B.ValueRe[BlokElement(idetB)], B.ValueIm[BlokElement(idetB)]);
+  }
+  ComplexWaveFunctionTruncateBasis(A, 10*DBL_EPSILON);
+  ComplexWaveFunctionNormalize(A);
+  WaveFunctionFree(&Udet);
+  return 0;
+}
+uint32_t MappedWaveFunctionAddCCR(WaveFunctionType * const A, WaveFunctionType const B, MatrixType const U)
+{
+  uint8_t *Det;
+  uint32_t idetB;
+  WaveFunctionType Udet;
+  Udet.NFermion=A->NFermion;
+  Udet.NBoson=A->NBoson;
+  Udet.QComplex=0;
+  Udet.NBitsKey=A->NBitsKey;
+  WaveFunctionInit(&Udet);
+  /* loop over all determinants in B */
+  for(idetB=1;idetB<=B.N;idetB++)
+  {
+    Det=&(B.Determinant[BlokElementDet(idetB, B.NWord, 0)]);
+    RealWaveFunctionReset(&Udet);
+    RealMappedDetToWaveFunction(&Udet, Det, U);
+    RealWaveFunctionAddComplexMultipliedUnionBasis(A, Udet, B.ValueRe[BlokElement(idetB)], B.ValueIm[BlokElement(idetB)]);
+  }
+  ComplexWaveFunctionTruncateBasis(A, 10*DBL_EPSILON);
+  ComplexWaveFunctionNormalize(A);
+  WaveFunctionFree(&Udet);
+  return 0;
+}
+uint32_t MappedWaveFunctionAddCRC(WaveFunctionType * const A, WaveFunctionType const B, MatrixType const U)
+{
+  uint8_t *Det;
+  uint32_t idetB;
+  WaveFunctionType Udet;
+  Udet.NFermion=A->NFermion;
+  Udet.NBoson=A->NBoson;
+  Udet.QComplex=1;
+  Udet.NBitsKey=A->NBitsKey;
+  WaveFunctionInit(&Udet);
+  /* loop over all determinants in B */
+  for(idetB=1;idetB<=B.N;idetB++)
+  {
+    Det=&(B.Determinant[BlokElementDet(idetB, B.NWord, 0)]);
+    ComplexWaveFunctionReset(&Udet);
+    ComplexMappedDetToWaveFunction(&Udet, Det, U);
+    ComplexWaveFunctionAddMultipliedUnionBasis(A, Udet, B.ValueRe[BlokElement(idetB)]);
+  }
+  ComplexWaveFunctionTruncateBasis(A, 10*DBL_EPSILON);
+  ComplexWaveFunctionNormalize(A);
+  WaveFunctionFree(&Udet);
   return 0;
 }

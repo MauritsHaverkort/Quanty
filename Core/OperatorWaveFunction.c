@@ -113,6 +113,7 @@ double inline OperatorLader(uint8_t * const Determinant, const uint16_t * const 
     {
       phase *= OperatorAn(Determinant, o[i], NFermion);
     }
+    if (phase == 0) break;
   }
   return phase;
 }
@@ -236,6 +237,7 @@ uint32_t OperatorPsiConserveBasisCC(const OperatorType O, const WaveFunctionType
           for (k = 0; k < Opsi->NWord; k++)
             Det[k] = psi.Determinant[ii][ij + k];
           phase = OperatorLader(Det, &(O.l[l].o[j * l]), l, O.NFermion);
+          if (phase == 0) continue;
           ComplexWaveFunctionAddElementConserveBasis(*Opsi, Det,
                                                      phase * (O.l[l].V[j].Re * psi.ValueRe[ii][ik] -
                                                               O.l[l].V[j].Im * psi.ValueIm[ii][ik]),
@@ -324,6 +326,7 @@ uint32_t OperatorPsiConserveBasisCR(const OperatorType O, const WaveFunctionType
           for (k = 0; k < Opsi->NWord; k++)
             Det[k] = psi.Determinant[ii][ij + k];
           phase = OperatorLader(Det, &(O.l[l].o[j * l]), l, O.NFermion);
+          if (phase == 0) continue;
           ComplexWaveFunctionAddElementConserveBasis(*Opsi, Det, phase * (O.l[l].V[j].Re * psi.ValueRe[ii][ik]),
                                                      phase * (O.l[l].V[j].Im * psi.ValueRe[ii][ik]));
         }
@@ -409,6 +412,7 @@ uint32_t OperatorPsiConserveBasisRC(const OperatorType O, const WaveFunctionType
           for (k = 0; k < Opsi->NWord; k++)
             Det[k] = psi.Determinant[ii][ij + k];
           phase = OperatorLader(Det, &(O.l[l].o[j * l]), l, O.NFermion);
+          if (phase == 0) continue;
           ComplexWaveFunctionAddElementConserveBasis(*Opsi, Det, phase * O.l[l].VRe[j] * psi.ValueRe[ii][ik],
                                                      phase * O.l[l].VRe[j] * psi.ValueIm[ii][ik]);
         }
@@ -479,6 +483,7 @@ uint32_t OperatorPsiConserveBasisRR(const OperatorType O, const WaveFunctionType
           for (k = 0; k < Opsi->NWord; k++)
             Det[k] = psi.Determinant[ii][ij + k];
           phase = OperatorLader(Det, &(O.l[l].o[j * l]), l, O.NFermion);
+          if (phase == 0) continue;
           RealWaveFunctionAddElementConserveBasis(Opsi, Det, phase * O.l[l].VRe[j] * psi.ValueRe[ii][ik]);
         }
       }
@@ -567,6 +572,7 @@ uint32_t OperatorPsiConserveBasisMC(const OperatorType O, const WaveFunctionType
               for (k = 0; k < Opsi->NWord; k++)
                 Det[k] = psi.Determinant[ii][ij + k];
               phase = OperatorLader(Det, &(O.l[l].o[j * l]), l, O.NFermion);
+              if (phase == 0) continue;
               ComplexWaveFunctionAddElementConserveBasis(*Opsi, Det,
                                                          phase * (O.l[l].V[j].Re * psi.ValueRe[ii][ik] -
                                                                   O.l[l].V[j].Im * psi.ValueIm[ii][ik]),
@@ -581,6 +587,7 @@ uint32_t OperatorPsiConserveBasisMC(const OperatorType O, const WaveFunctionType
               for (k = 0; k < Opsi->NWord; k++)
                 Det[k] = psi.Determinant[ii][ij + k];
               phase = OperatorLader(Det, &(O.l[l].o[j * l]), l, O.NFermion);
+              if (phase == 0) continue;
               ComplexWaveFunctionAddElementConserveBasis(*Opsi, Det, phase * O.l[l].VRe[j] * psi.ValueRe[ii][ik],
                                                          phase * O.l[l].VRe[j] * psi.ValueIm[ii][ik]);
             }
@@ -670,6 +677,7 @@ uint32_t OperatorPsiConserveBasisMR(const OperatorType O, const WaveFunctionType
               for (k = 0; k < Opsi->NWord; k++)
                 Det[k] = psi.Determinant[ii][ij + k];
               phase = OperatorLader(Det, &(O.l[l].o[j * l]), l, O.NFermion);
+              if (phase == 0) continue;
               ComplexWaveFunctionAddElementConserveBasis(*Opsi, Det, phase * (O.l[l].V[j].Re * psi.ValueRe[ii][ik]),
                                                          phase * (O.l[l].V[j].Im * psi.ValueRe[ii][ik]));
             }
@@ -681,6 +689,7 @@ uint32_t OperatorPsiConserveBasisMR(const OperatorType O, const WaveFunctionType
               for (k = 0; k < Opsi->NWord; k++)
                 Det[k] = psi.Determinant[ii][ij + k];
               phase = OperatorLader(Det, &(O.l[l].o[j * l]), l, O.NFermion);
+              if (phase == 0) continue;
               ComplexWaveFunctionAddElementConserveBasis(*Opsi, Det, phase * O.l[l].VRe[j] * psi.ValueRe[ii][ik], 0.0);
             }
           }
@@ -776,6 +785,7 @@ uint32_t OperatorPsiConserveBasisPreAllocatedCC(const OperatorType *O, const Wav
           for (k = 0; k < Opsi->NWord; k++)
             Det[k] = psi->Determinant[ii][ij + k];
           phase = OperatorLader(Det, &(O->l[l].o[j * l]), l, O->NFermion);
+          if (phase == 0) continue;
           ComplexWaveFunctionAddElementConserveBasis(*Opsi, Det,
                                                      phase * (O->l[l].V[j].Re * psi->ValueRe[ii][ik] -
                                                               O->l[l].V[j].Im * psi->ValueIm[ii][ik]),
@@ -832,6 +842,7 @@ uint32_t OperatorPsiConserveBasisPreAllocatedCR(const OperatorType *O, const Wav
           for (k = 0; k < Opsi->NWord; k++)
             Det[k] = psi->Determinant[ii][ij + k];
           phase = OperatorLader(Det, &(O->l[l].o[j * l]), l, O->NFermion);
+          if (phase == 0) continue;
           ComplexWaveFunctionAddElementConserveBasis(*Opsi, Det, phase * (O->l[l].V[j].Re * psi->ValueRe[ii][ik]),
                                                      phase * (O->l[l].V[j].Im * psi->ValueRe[ii][ik]));
         }
@@ -885,6 +896,7 @@ uint32_t OperatorPsiConserveBasisPreAllocatedRC(const OperatorType *O, const Wav
           for (k = 0; k < Opsi->NWord; k++)
             Det[k] = psi->Determinant[ii][ij + k];
           phase = OperatorLader(Det, &(O->l[l].o[j * l]), l, O->NFermion);
+          if (phase == 0) continue;
           ComplexWaveFunctionAddElementConserveBasis(*Opsi, Det, phase * O->l[l].VRe[j] * psi->ValueRe[ii][ik],
                                                      phase * O->l[l].VRe[j] * psi->ValueIm[ii][ik]);
         }
@@ -932,6 +944,7 @@ uint32_t OperatorPsiConserveBasisPreAllocatedRR(const OperatorType *O, const Wav
           for (k = 0; k < Opsi->NWord; k++)
             Det[k] = psi->Determinant[ii][ij + k];
           phase = OperatorLader(Det, &(O->l[l].o[j * l]), l, O->NFermion);
+          if (phase == 0) continue;
           RealWaveFunctionAddElementConserveBasis(Opsi, Det, phase * O->l[l].VRe[j] * psi->ValueRe[ii][ik]);
         }
       }
@@ -985,6 +998,7 @@ uint32_t OperatorPsiConserveBasisPreAllocatedMC(const OperatorType *O, const Wav
             for (k = 0; k < Opsi->NWord; k++)
               Det[k] = psi->Determinant[ii][ij + k];
             phase = OperatorLader(Det, &(O->l[l].o[j * l]), l, O->NFermion);
+            if (phase == 0) continue;
             ComplexWaveFunctionAddElementConserveBasis(*Opsi, Det,
                                                        phase * (O->l[l].V[j].Re * psi->ValueRe[ii][ik] -
                                                                 O->l[l].V[j].Im * psi->ValueIm[ii][ik]),
@@ -999,6 +1013,7 @@ uint32_t OperatorPsiConserveBasisPreAllocatedMC(const OperatorType *O, const Wav
             for (k = 0; k < Opsi->NWord; k++)
               Det[k] = psi->Determinant[ii][ij + k];
             phase = OperatorLader(Det, &(O->l[l].o[j * l]), l, O->NFermion);
+            if (phase == 0) continue;
             ComplexWaveFunctionAddElementConserveBasis(*Opsi, Det, phase * O->l[l].VRe[j] * psi->ValueRe[ii][ik],
                                                        phase * O->l[l].VRe[j] * psi->ValueIm[ii][ik]);
           }
@@ -1054,6 +1069,7 @@ uint32_t OperatorPsiConserveBasisPreAllocatedMR(const OperatorType *O, const Wav
             for (k = 0; k < Opsi->NWord; k++)
               Det[k] = psi->Determinant[ii][ij + k];
             phase = OperatorLader(Det, &(O->l[l].o[j * l]), l, O->NFermion);
+            if (phase == 0) continue;
             ComplexWaveFunctionAddElementConserveBasis(*Opsi, Det, phase * (O->l[l].V[j].Re * psi->ValueRe[ii][ik]),
                                                        phase * (O->l[l].V[j].Im * psi->ValueRe[ii][ik]));
           }
@@ -1065,6 +1081,7 @@ uint32_t OperatorPsiConserveBasisPreAllocatedMR(const OperatorType *O, const Wav
             for (k = 0; k < Opsi->NWord; k++)
               Det[k] = psi->Determinant[ii][ij + k];
             phase = OperatorLader(Det, &(O->l[l].o[j * l]), l, O->NFermion);
+            if (phase == 0) continue;
             ComplexWaveFunctionAddElementConserveBasis(*Opsi, Det, phase * O->l[l].VRe[j] * psi->ValueRe[ii][ik], 0.0);
           }
         }
@@ -1581,6 +1598,581 @@ uint32_t OperatorPsiMR(const OperatorType O, const WaveFunctionType psi, WaveFun
                 Det[k] = psi.Determinant[ii][ij + k];
               phase = OperatorLader(Det, &(O.l[l].o[j * l]), l, O.NFermion);
               if (fabs(phase) > (10 * DBL_MIN))
+              {
+                MiniValueRe[NMini] = phase * O.l[l].VRe[j] * psi.ValueRe[ii][ik];
+                for (k = 0; k < Opsi->NWord; k++)
+                  MiniDet[NMini * Opsi->NWord + k] = Det[k];
+                NMini++;
+                if (NMini == MiniBlokSize)
+                {               /* flush Mini buffer */
+                  if (RealWaveFunctionAddElementOMPMiniFlush(Opsi, &NMini, MiniDet, MiniValueRe))
+                  {             /* Allocation failed */
+                    printf("RealWaveFunctionAddElementOMPMiniFlush failed in OperatorPsiRR\n 01");
+                    fflush(stdout);
+                    OutOffMem = 1;
+#pragma omp flush(OutOffMem)
+                    j = O.l[l].N;
+                    l = O.MaxLength;
+                  }
+                }
+              }
+            }                   /* end of loop over different operators of lenght l */
+          }
+          else
+          {                     /* Operator complex at this length */
+            for (j = 0; j < O.l[l].N; j++)
+            {
+              for (k = 0; k < Opsi->NWord; k++)
+                Det[k] = psi.Determinant[ii][ij + k];
+              phase = OperatorLader(Det, &(O.l[l].o[j * l]), l, O.NFermion);
+              if (fabs(phase) > (10 * DBL_MIN))
+              {
+                MiniValueRe[NMini] = phase * O.l[l].V[j].Re * psi.ValueRe[ii][ik];
+                MiniValueIm[NMini] = phase * O.l[l].V[j].Im * psi.ValueRe[ii][ik];
+                for (k = 0; k < Opsi->NWord; k++)
+                  MiniDet[NMini * Opsi->NWord + k] = Det[k];
+                NMini++;
+                if (NMini == MiniBlokSize)
+                {               /* flush Mini buffer */
+                  if (ComplexWaveFunctionAddElementOMPMiniFlush(Opsi, &NMini, MiniDet, MiniValueRe, MiniValueIm))
+                  {             /* Allocation failed */
+                    printf("ComplexWaveFunctionAddElementOMPMiniFlush failed in OperatorPsiCR\n 01");
+                    fflush(stdout);
+                    OutOffMem = 1;
+#pragma omp flush(OutOffMem)
+                    j = O.l[l].N;
+                    l = O.MaxLength;
+                  }             /* end of allocation failed */
+                }               /* end of flush Mini buffer */
+              }                 /* end of adding a new element */
+            }                   /* end of choice between real or complex at this length */
+          }                     /* end of loop over different operators of lenght l */
+        }                       /* end of loop over operators of different length */
+      }                         /* Out Off Mem test */
+    }                           /* end of loop over elements of psi this loop runs parallel */
+    if (ComplexWaveFunctionAddElementOMPMiniFlush(Opsi, &NMini, MiniDet, MiniValueRe, MiniValueIm))
+    {                           /* Allocation failed */
+      printf("ComplexWaveFunctionAddElementOMPMiniFlush failed in OperatorPsiCR 02\n");
+      fflush(stdout);
+      OutOffMem = 1;
+#pragma omp flush(OutOffMem)
+    }
+  }                             /* end of parallel region */
+  if (OutOffMem)
+  {
+    RealWaveFunctionFree(Opsi);
+    return 1;
+  }
+  return 0;
+}
+
+
+/*  returns 0 if the determinant is restricted 1 if the determinant is not restircted
+ *    a determinant is restricted if it has more than Restrictions.Max or less than Restrictions.Min particles in the fileted states
+ *    the states filtered are determined by Restrictions.Determinant
+ */
+uint32_t QDetNotRestricted(uint8_t const *det, uint32_t const NFermion, uint32_t const NBoson, uint32_t const NWord, DeterminantRestrictionType const Restrictions)
+{
+  uint32_t i,j,k,sum;
+  uint8_t detfiltered;
+  for(i=0;i<Restrictions.N;i++)
+  {
+    sum=0;
+    for(j=0;j<NWord-NBoson;j++)
+    {
+      detfiltered=Restrictions.Determinant[i][j]&det[j];
+      for(k=0;k<=7;k++)
+      {
+        sum+=(detfiltered>>k)&1;
+      }
+    }
+    for(j=NWord-NBoson;j<NWord;j++)
+    {
+      detfiltered=Restrictions.Determinant[i][j]&det[j];
+      sum+=(uint32_t)detfiltered;
+    }
+    if((sum>Restrictions.Max[i])||(sum<Restrictions.Min[i]))
+    {
+      return 0;
+    }
+  }
+  return 1;
+}
+
+
+
+
+uint32_t OperatorPsiRestrictedCC(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi, DeterminantRestrictionType const Restrictions)
+{
+  uint32_t i, j, k, l, ii, ij, ik, OutOffMem;
+  int    iOMP;
+  double phase;
+  Opsi->QComplex = 1;
+  Opsi->NFermion = psi.NFermion;
+  Opsi->NBoson = psi.NBoson;
+  Opsi->NBitsKey = psi.NBitsKey;
+  if (WaveFunctionInit(Opsi))
+  {
+    printf("Could not initialize Opsi in OperatorPsiCC\n");
+    return 1;
+  };
+  OutOffMem = 0;
+#pragma omp parallel private(i,j,k,l,ii,ij,ik,phase)
+  {
+    uint8_t Det[Opsi->NWord];
+    uint8_t MiniDet[MiniBlokSize * Opsi->NWord];
+    double MiniValueRe[MiniBlokSize];
+    double MiniValueIm[MiniBlokSize];
+    uint32_t NMini;
+    NMini = 0;
+#pragma omp for
+    for (iOMP = 1; iOMP <= psi.N; iOMP++)
+    {
+      if (!OutOffMem)
+      {
+        i = (uint32_t) iOMP;
+        ii = i >> NBitsBlok;
+        ik = i & BlokMask;
+        ij = psi.NWord * ik;
+        for (l = 0; l <= O.MaxLength; l++)
+        {
+          for (j = 0; j < O.l[l].N; j++)
+          {
+            for (k = 0; k < Opsi->NWord; k++)
+              Det[k] = psi.Determinant[ii][ij + k];
+            phase = OperatorLader(Det, &(O.l[l].o[j * l]), l, O.NFermion);
+            if ((QDetNotRestricted(Det, O.NFermion, O.NBoson, O.NWord, Restrictions))&&(fabs(phase) > (10 * DBL_MIN)))
+            {
+              MiniValueRe[NMini] =
+              phase * (O.l[l].V[j].Re * psi.ValueRe[ii][ik] - O.l[l].V[j].Im * psi.ValueIm[ii][ik]);
+              MiniValueIm[NMini] =
+              phase * (O.l[l].V[j].Re * psi.ValueIm[ii][ik] + O.l[l].V[j].Im * psi.ValueRe[ii][ik]);
+              for (k = 0; k < Opsi->NWord; k++)
+                MiniDet[NMini * Opsi->NWord + k] = Det[k];
+              NMini++;
+              if (NMini == MiniBlokSize)
+              {                 /* flush Mini buffer */
+                if (ComplexWaveFunctionAddElementOMPMiniFlush(Opsi, &NMini, MiniDet, MiniValueRe, MiniValueIm))
+                {               /* Allocation failed */
+                  printf("ComplexWaveFunctionAddElementOMPMiniFlush failed in OperatorPsiCC\n 01");
+                  fflush(stdout);
+                  OutOffMem = 1;
+#pragma omp flush(OutOffMem)
+                  j = O.l[l].N;
+                  l = O.MaxLength;
+                }
+              }
+            }
+          }                     /* end of loop over different operators of lenght l */
+        }                       /* end of loop over operators of different length */
+      }                         /* Out Off Mem test */
+    }                           /* end of loop over elements of psi this loop runs parallel */
+    if (ComplexWaveFunctionAddElementOMPMiniFlush(Opsi, &NMini, MiniDet, MiniValueRe, MiniValueIm))
+    {                           /* Allocation failed */
+      printf("ComplexWaveFunctionAddElementOMPMiniFlush failed in OperatorPsiCC 02\n");
+      fflush(stdout);
+      OutOffMem = 1;
+#pragma omp flush(OutOffMem)
+    }
+  }                             /* end of parallel region */
+  if (OutOffMem)
+  {
+    RealWaveFunctionFree(Opsi);
+    return 1;
+  }
+  return 0;
+}
+
+uint32_t OperatorPsiRestrictedCR(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi, DeterminantRestrictionType const Restrictions)
+{
+  uint32_t i, j, k, l, ii, ij, ik, OutOffMem;
+  int    iOMP;
+  double phase;
+  Opsi->QComplex = 1;
+  Opsi->NFermion = psi.NFermion;
+  Opsi->NBoson = psi.NBoson;
+  Opsi->NBitsKey = psi.NBitsKey;
+  if (WaveFunctionInit(Opsi))
+  {
+    printf("Could not initialize Opsi in OperatorPsiCR\n");
+    return 1;
+  };
+  OutOffMem = 0;
+#pragma omp parallel private(i,j,k,l,ii,ij,ik,phase)
+  {
+    uint8_t Det[Opsi->NWord];
+    uint8_t MiniDet[MiniBlokSize * Opsi->NWord];
+    double MiniValueRe[MiniBlokSize];
+    double MiniValueIm[MiniBlokSize];
+    uint32_t NMini;
+    NMini = 0;
+#pragma omp for
+    for (iOMP = 1; iOMP <= psi.N; iOMP++)
+    {
+      if (!OutOffMem)
+      {
+        i = (uint32_t) iOMP;
+        ii = i >> NBitsBlok;
+        ik = i & BlokMask;
+        ij = psi.NWord * ik;
+        for (l = 0; l <= O.MaxLength; l++)
+        {
+          for (j = 0; j < O.l[l].N; j++)
+          {
+            for (k = 0; k < Opsi->NWord; k++)
+              Det[k] = psi.Determinant[ii][ij + k];
+            phase = OperatorLader(Det, &(O.l[l].o[j * l]), l, O.NFermion);
+            if ((QDetNotRestricted(Det, O.NFermion, O.NBoson, O.NWord, Restrictions))&&(fabs(phase) > (10 * DBL_MIN)))
+            {
+              MiniValueRe[NMini] = phase * O.l[l].V[j].Re * psi.ValueRe[ii][ik];
+              MiniValueIm[NMini] = phase * O.l[l].V[j].Im * psi.ValueRe[ii][ik];
+              for (k = 0; k < Opsi->NWord; k++)
+                MiniDet[NMini * Opsi->NWord + k] = Det[k];
+              NMini++;
+              if (NMini == MiniBlokSize)
+              {                 /* flush Mini buffer */
+                if (ComplexWaveFunctionAddElementOMPMiniFlush(Opsi, &NMini, MiniDet, MiniValueRe, MiniValueIm))
+                {               /* Allocation failed */
+                  printf("ComplexWaveFunctionAddElementOMPMiniFlush failed in OperatorPsiCR\n 01");
+                  fflush(stdout);
+                  OutOffMem = 1;
+#pragma omp flush(OutOffMem)
+                  j = O.l[l].N;
+                  l = O.MaxLength;
+                }               /* end of allocation failed */
+              }                 /* end of flush Mini buffer */
+            }                   /* end of adding a new element */
+          }                     /* end of loop over different operators of lenght l */
+        }                       /* end of loop over operators of different length */
+      }                         /* Out Off Mem test */
+    }                           /* end of loop over elements of psi this loop runs parallel */
+    if (ComplexWaveFunctionAddElementOMPMiniFlush(Opsi, &NMini, MiniDet, MiniValueRe, MiniValueIm))
+    {                           /* Allocation failed */
+      printf("ComplexWaveFunctionAddElementOMPMiniFlush failed in OperatorPsiCR 02\n");
+      fflush(stdout);
+      OutOffMem = 1;
+#pragma omp flush(OutOffMem)
+    }
+  }                             /* end of parallel region */
+  if (OutOffMem)
+  {
+    RealWaveFunctionFree(Opsi);
+    return 1;
+  }
+  return 0;
+}
+
+uint32_t OperatorPsiRestrictedRC(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi, DeterminantRestrictionType const Restrictions)
+{
+  uint32_t i, j, k, l, ii, ij, ik, OutOffMem;
+  int    iOMP;
+  double phase;
+  Opsi->QComplex = 1;
+  Opsi->NFermion = psi.NFermion;
+  Opsi->NBoson = psi.NBoson;
+  Opsi->NBitsKey = psi.NBitsKey;
+  if (WaveFunctionInit(Opsi))
+  {
+    printf("Could not initialize Opsi in OperatorPsiRC\n");
+    return 1;
+  };
+  OutOffMem = 0;
+#pragma omp parallel private(i,j,k,l,ii,ij,ik,phase)
+  {
+    uint8_t Det[Opsi->NWord];
+    uint8_t MiniDet[MiniBlokSize * Opsi->NWord];
+    double MiniValueRe[MiniBlokSize];
+    double MiniValueIm[MiniBlokSize];
+    uint32_t NMini;
+    NMini = 0;
+#pragma omp for
+    for (iOMP = 1; iOMP <= psi.N; iOMP++)
+    {
+      if (!OutOffMem)
+      {
+        i = (uint32_t) iOMP;
+        ii = i >> NBitsBlok;
+        ik = i & BlokMask;
+        ij = psi.NWord * ik;
+        for (l = 0; l <= O.MaxLength; l++)
+        {
+          for (j = 0; j < O.l[l].N; j++)
+          {
+            for (k = 0; k < Opsi->NWord; k++)
+              Det[k] = psi.Determinant[ii][ij + k];
+            phase = OperatorLader(Det, &(O.l[l].o[j * l]), l, O.NFermion);
+            if ((QDetNotRestricted(Det, O.NFermion, O.NBoson, O.NWord, Restrictions))&&(fabs(phase) > (10 * DBL_MIN)))
+            {
+              MiniValueRe[NMini] = phase * O.l[l].VRe[j] * psi.ValueRe[ii][ik];
+              MiniValueIm[NMini] = phase * O.l[l].VRe[j] * psi.ValueIm[ii][ik];
+              for (k = 0; k < Opsi->NWord; k++)
+                MiniDet[NMini * Opsi->NWord + k] = Det[k];
+              NMini++;
+              if (NMini == MiniBlokSize)
+              {                 /* flush Mini buffer */
+                if (ComplexWaveFunctionAddElementOMPMiniFlush(Opsi, &NMini, MiniDet, MiniValueRe, MiniValueIm))
+                {               /* Allocation failed */
+                  printf("ComplexWaveFunctionAddElementOMPMiniFlush failed in OperatorPsiRC\n 01");
+                  fflush(stdout);
+                  OutOffMem = 1;
+#pragma omp flush(OutOffMem)
+                  j = O.l[l].N;
+                  l = O.MaxLength;
+                }
+              }
+            }
+          }                     /* end of loop over different operators of lenght l */
+        }                       /* end of loop over operators of different length */
+      }                         /* Out Off Mem test */
+    }                           /* end of loop over elements of psi this loop runs parallel */
+    if (ComplexWaveFunctionAddElementOMPMiniFlush(Opsi, &NMini, MiniDet, MiniValueRe, MiniValueIm))
+    {                           /* Allocation failed */
+      printf("ComplexWaveFunctionAddElementOMPMiniFlush failed in OperatorPsiRC 02\n");
+      fflush(stdout);
+      OutOffMem = 1;
+#pragma omp flush(OutOffMem)
+    }
+  }                             /* end of parallel region */
+  if (OutOffMem)
+  {
+    RealWaveFunctionFree(Opsi);
+    return 1;
+  }
+  return 0;
+}
+
+uint32_t OperatorPsiRestrictedRR(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi, DeterminantRestrictionType const Restrictions)
+{
+  uint32_t i, j, k, l, ii, ij, ik, OutOffMem;
+  int    iOMP;
+  double phase;
+  Opsi->QComplex = 0;
+  Opsi->NFermion = psi.NFermion;
+  Opsi->NBoson = psi.NBoson;
+  Opsi->NBitsKey = psi.NBitsKey;
+  if (WaveFunctionInit(Opsi))
+  {
+    printf("Could not initialize Opsi in OperatorPsiRR\n");
+    return 1;
+  };
+  OutOffMem = 0;
+#pragma omp parallel private(i,j,k,l,ii,ij,ik,phase)
+  {
+    uint8_t Det[Opsi->NWord];
+    uint8_t MiniDet[MiniBlokSize * Opsi->NWord];
+    double MiniValue[MiniBlokSize];
+    uint32_t NMini;
+    NMini = 0;
+#pragma omp for
+    for (iOMP = 1; iOMP <= psi.N; iOMP++)
+    {
+      if (!OutOffMem)
+      {
+        i = (uint32_t) iOMP;
+        ii = i >> NBitsBlok;
+        ik = i & BlokMask;
+        ij = psi.NWord * ik;
+        for (l = 0; l <= O.MaxLength; l++)
+        {
+          for (j = 0; j < O.l[l].N; j++)
+          {
+            for (k = 0; k < Opsi->NWord; k++)
+              Det[k] = psi.Determinant[ii][ij + k];
+            phase = OperatorLader(Det, &(O.l[l].o[j * l]), l, O.NFermion);
+            if ((QDetNotRestricted(Det, O.NFermion, O.NBoson, O.NWord, Restrictions))&&(fabs(phase) > (10 * DBL_MIN)))
+            {
+              MiniValue[NMini] = phase * O.l[l].VRe[j] * psi.ValueRe[ii][ik];
+              for (k = 0; k < Opsi->NWord; k++)
+                MiniDet[NMini * Opsi->NWord + k] = Det[k];
+              NMini++;
+              if (NMini == MiniBlokSize)
+              {                 /* flush Mini buffer */
+                if (RealWaveFunctionAddElementOMPMiniFlush(Opsi, &NMini, MiniDet, MiniValue))
+                {               /* Allocation failed */
+                  printf("RealWaveFunctionAddElementOMPMiniFlush failed in OperatorPsiRR\n 01");
+                  fflush(stdout);
+                  OutOffMem = 1;
+#pragma omp flush(OutOffMem)
+                  j = O.l[l].N;
+                  l = O.MaxLength;
+                }
+              }
+            }
+          }                     /* end of loop over different operators of lenght l */
+        }                       /* end of loop over operators of different length */
+      }                         /* Out Off Mem test */
+    }                           /* end of loop over elements of psi this loop runs parallel */
+    if (RealWaveFunctionAddElementOMPMiniFlush(Opsi, &NMini, MiniDet, MiniValue))
+    {                           /* Allocation failed */
+      printf("RealWaveFunctionAddElementOMPMiniFlush failed in OperatorPsiRR 02\n");
+      fflush(stdout);
+      OutOffMem = 1;
+#pragma omp flush(OutOffMem)
+    }
+  }                             /* end of parallel region */
+  if (OutOffMem)
+  {
+    RealWaveFunctionFree(Opsi);
+    return 1;
+  }
+  return 0;
+}
+
+uint32_t OperatorPsiRestrictedMC(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi, DeterminantRestrictionType const Restrictions)
+{
+  uint32_t i, j, k, l, ii, ij, ik, OutOffMem;
+  int    iOMP;
+  double phase;
+  Opsi->QComplex = 1;
+  Opsi->NFermion = psi.NFermion;
+  Opsi->NBoson = psi.NBoson;
+  Opsi->NBitsKey = psi.NBitsKey;
+  if (WaveFunctionInit(Opsi))
+  {
+    printf("Could not initialize Opsi in OperatorPsiCC\n");
+    return 1;
+  };
+  OutOffMem = 0;
+#pragma omp parallel private(i,j,k,l,ii,ij,ik,phase)
+  {
+    uint8_t Det[Opsi->NWord];
+    uint8_t MiniDet[MiniBlokSize * Opsi->NWord];
+    double MiniValueRe[MiniBlokSize];
+    double MiniValueIm[MiniBlokSize];
+    uint32_t NMini;
+    NMini = 0;
+#pragma omp for
+    for (iOMP = 1; iOMP <= psi.N; iOMP++)
+    {
+      if (!OutOffMem)
+      {
+        i = (uint32_t) iOMP;
+        ii = i >> NBitsBlok;
+        ik = i & BlokMask;
+        ij = psi.NWord * ik;
+        for (l = 0; l <= O.MaxLength; l++)
+        {
+          if (O.l[l].QComplex == 0)
+          {                     /* Operator is real at this length */
+            for (j = 0; j < O.l[l].N; j++)
+            {
+              for (k = 0; k < Opsi->NWord; k++)
+                Det[k] = psi.Determinant[ii][ij + k];
+              phase = OperatorLader(Det, &(O.l[l].o[j * l]), l, O.NFermion);
+              if ((QDetNotRestricted(Det, O.NFermion, O.NBoson, O.NWord, Restrictions))&&(fabs(phase) > (10 * DBL_MIN)))
+              {
+                MiniValueRe[NMini] = phase * O.l[l].VRe[j] * psi.ValueRe[ii][ik];
+                MiniValueIm[NMini] = phase * O.l[l].VRe[j] * psi.ValueIm[ii][ik];
+                for (k = 0; k < Opsi->NWord; k++)
+                  MiniDet[NMini * Opsi->NWord + k] = Det[k];
+                NMini++;
+                if (NMini == MiniBlokSize)
+                {               /* flush Mini buffer */
+                  if (ComplexWaveFunctionAddElementOMPMiniFlush(Opsi, &NMini, MiniDet, MiniValueRe, MiniValueIm))
+                  {             /* Allocation failed */
+                    printf("ComplexWaveFunctionAddElementOMPMiniFlush failed in OperatorPsiRC\n 01");
+                    fflush(stdout);
+                    OutOffMem = 1;
+#pragma omp flush(OutOffMem)
+                    j = O.l[l].N;
+                    l = O.MaxLength;
+                  }
+                }               /* end of condition that Mini buffer is full and needs to be flushed */
+              }                 /* end of coditional that phase is above numerical zero */
+            }                   /* end of loop over operators of length l (counter j) */
+          }
+          else
+          {                     /* Operator is complex at this length */
+            for (j = 0; j < O.l[l].N; j++)
+            {
+              for (k = 0; k < Opsi->NWord; k++)
+                Det[k] = psi.Determinant[ii][ij + k];
+              phase = OperatorLader(Det, &(O.l[l].o[j * l]), l, O.NFermion);
+              if (fabs(phase) > (10 * DBL_MIN))
+              {
+                MiniValueRe[NMini] =
+                phase * (O.l[l].V[j].Re * psi.ValueRe[ii][ik] - O.l[l].V[j].Im * psi.ValueIm[ii][ik]);
+                MiniValueIm[NMini] =
+                phase * (O.l[l].V[j].Re * psi.ValueIm[ii][ik] + O.l[l].V[j].Im * psi.ValueRe[ii][ik]);
+                for (k = 0; k < Opsi->NWord; k++)
+                  MiniDet[NMini * Opsi->NWord + k] = Det[k];
+                NMini++;
+                if (NMini == MiniBlokSize)
+                {               /* flush Mini buffer */
+                  if (ComplexWaveFunctionAddElementOMPMiniFlush(Opsi, &NMini, MiniDet, MiniValueRe, MiniValueIm))
+                  {             /* Allocation failed */
+                    printf("ComplexWaveFunctionAddElementOMPMiniFlush failed in OperatorPsiCC\n 01");
+                    fflush(stdout);
+                    OutOffMem = 1;
+#pragma omp flush(OutOffMem)
+                    j = O.l[l].N;
+                    l = O.MaxLength;
+                  }
+                }
+              }
+            }
+          }                     /* end of loop over different operators of lenght l */
+        }                       /* end of loop over operators of different length */
+      }                         /* Out Off Mem test */
+    }                           /* end of loop over elements of psi this loop runs parallel */
+    if (ComplexWaveFunctionAddElementOMPMiniFlush(Opsi, &NMini, MiniDet, MiniValueRe, MiniValueIm))
+    {                           /* Allocation failed */
+      printf("ComplexWaveFunctionAddElementOMPMiniFlush failed in OperatorPsiCC 02\n");
+      fflush(stdout);
+      OutOffMem = 1;
+#pragma omp flush(OutOffMem)
+    }
+  }                             /* end of parallel region */
+  if (OutOffMem)
+  {
+    RealWaveFunctionFree(Opsi);
+    return 1;
+  }
+  return 0;
+}
+
+uint32_t OperatorPsiRestrictedMR(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi, DeterminantRestrictionType const Restrictions)
+{
+  uint32_t i, j, k, l, ii, ij, ik, OutOffMem;
+  int    iOMP;
+  double phase;
+  Opsi->QComplex = 1;
+  Opsi->NFermion = psi.NFermion;
+  Opsi->NBoson = psi.NBoson;
+  Opsi->NBitsKey = psi.NBitsKey;
+  if (WaveFunctionInit(Opsi))
+  {
+    printf("Could not initialize Opsi in OperatorPsiCR\n");
+    return 1;
+  };
+  OutOffMem = 0;
+#pragma omp parallel private(i,j,k,l,ii,ij,ik,phase)
+  {
+    uint8_t Det[Opsi->NWord];
+    uint8_t MiniDet[MiniBlokSize * Opsi->NWord];
+    double MiniValueRe[MiniBlokSize];
+    double MiniValueIm[MiniBlokSize];
+    uint32_t NMini;
+    NMini = 0;
+#pragma omp for
+    for (iOMP = 1; iOMP <= psi.N; iOMP++)
+    {
+      if (!OutOffMem)
+      {
+        i = (uint32_t) iOMP;
+        ii = i >> NBitsBlok;
+        ik = i & BlokMask;
+        ij = psi.NWord * ik;
+        for (l = 0; l <= O.MaxLength; l++)
+        {
+          if (O.l[l].QComplex == 0)
+          {                     /* Operator real at this length */
+            for (j = 0; j < O.l[l].N; j++)
+            {
+              for (k = 0; k < Opsi->NWord; k++)
+                Det[k] = psi.Determinant[ii][ij + k];
+              phase = OperatorLader(Det, &(O.l[l].o[j * l]), l, O.NFermion);
+              if ((QDetNotRestricted(Det, O.NFermion, O.NBoson, O.NWord, Restrictions))&&(fabs(phase) > (10 * DBL_MIN)))
               {
                 MiniValueRe[NMini] = phase * O.l[l].VRe[j] * psi.ValueRe[ii][ik];
                 for (k = 0; k < Opsi->NWord; k++)

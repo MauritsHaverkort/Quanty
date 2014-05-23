@@ -137,6 +137,22 @@ uint32_t WaveFunctionInit(WaveFunctionType * Psi)
   return 0;
 }
 
+/*
+ *
+ */
+void WaveFunctionReset(WaveFunctionType * psi)
+{
+  if (psi->QComplex)
+  {
+    ComplexWaveFunctionReset(psi);
+  }
+  else
+  {
+    RealWaveFunctionReset(psi);
+  }
+}
+
+
 /* Add the complex values (and allocs)
  *  
  */
@@ -567,23 +583,23 @@ void WaveFunctionDotProduct(const WaveFunctionType a, const WaveFunctionType b, 
   {
     if (b.QComplex)
     {
-      ComplexWaveFunctionDotProduct(a, b, DotRe, DotIm);
+      ComplexWaveFunctionDotProduct(&a, &b, DotRe, DotIm);
     }
     else
     {
-      ComplexRealWaveFunctionDotProduct(a, b, DotRe, DotIm);
+      ComplexRealWaveFunctionDotProduct(&a, &b, DotRe, DotIm);
     }
   }
   else
   {
     if (b.QComplex)
     {
-      RealComplexWaveFunctionDotProduct(a, b, DotRe, DotIm);
+      RealComplexWaveFunctionDotProduct(&a, &b, DotRe, DotIm);
     }
     else
     {
       *DotIm = 0;
-      *DotRe = RealWaveFunctionDotProduct(a, b);
+      *DotRe = RealWaveFunctionDotProduct(&a, &b);
     }
   }
 }
@@ -638,7 +654,30 @@ uint32_t WaveFunctionOrthogonalize(WaveFunctionType * const psi, const WaveFunct
   }
 }
 
-
+uint32_t CreateWaveFunctionFromString(WaveFunctionType * psi, uint16_t * createString, uint32_t const NParticle, uint32_t const NFermion, uint32_t const NBoson, uint32_t const NBitsKey)
+{
+  uint32_t i;
+  psi->NFermion = NFermion;
+  psi->NBoson = NBoson;
+  psi->QComplex = 0;
+  psi->NBitsKey = NBitsKey;
+  WaveFunctionInit(psi);
+  uint8_t Determinant[psi->NWord];
+  for(i=0;i<psi->NWord;i++)
+  {
+    Determinant[i]=0;
+  }
+  for(i=0;i<NParticle;i++)
+  {
+    if (OperatorCr(Determinant, createString[i], psi->NFermion) == 0)
+    {
+      printf("Error in CreateStartWaveFunctionOnsiteEnergy Fermionic part\n");
+      return 1;
+    };
+  }
+  WaveFunctionAddElement(psi, Determinant, 1.0, 0.0);
+  return 0;
+}
 
 uint32_t CreateStartWaveFunctionOnsiteEnergy(const OperatorType O, WaveFunctionType * psi, uint32_t nFermion,
                                              uint32_t nBoson, uint32_t NBitsKey)
@@ -912,4 +951,55 @@ uint32_t WaveFunctionCopy(WaveFunctionType const A, WaveFunctionType * const B)
     return 1;
   };
   return 0;
+}
+                          
+
+/* psiA <- psiA + U psiB
+ *  U is a (NFermionB+NBosonB)*(NFermionA+NBosonA) demensional matrix that defines the transformation
+ *  a_j        = \sum_i U_{i,j}   a_i
+ *  a_j^{\dag} = \sum_i U_{i,j}^* a_i^{dag}
+ *
+ * assume A B and U are real (version RRR)
+ */
+uint32_t MappedWaveFunctionAdd(WaveFunctionType * const A, WaveFunctionType const B, MatrixType const U)
+{
+  if(A->QComplex==0)
+  {
+    if((B.QComplex==0)&&(U.QComplex==0))
+    {
+      return MappedWaveFunctionAddRRR(A, B, U);
+    }
+  }
+  if(MakeComplexWaveFunctionFromReal(A, *A))
+  {
+    printf("MakeComplexWaveFunctionFromReal failed in MappedWaveFunctionAdd\n");
+    return 1;
+  }
+  if(B.QComplex==0)
+  {
+    return MappedWaveFunctionAddCRC(A, B, U);
+  }
+  if(U.QComplex==0)
+  {
+    return MappedWaveFunctionAddCCR(A, B, U);
+  }
+  return MappedWaveFunctionAddCCC(A, B, U);
+}
+
+/* psiA <-  U psiB
+ * A not initiallized on input
+ *  U is a (NFermionB+NBosonB)*(NFermionA+NBosonA) demensional matrix that defines the transformation
+ *  a_j        = \sum_i U_{i,j}   a_i
+ *  a_j^{\dag} = \sum_i U_{i,j}^* a_i^{dag}
+ *
+ * assume A B and U are real (version RRR)
+ */
+uint32_t RotateWaveFunction(WaveFunctionType * const A, WaveFunctionType const B, MatrixType const U)
+{
+  A->NFermion=B.NFermion;
+  A->NBoson=B.NBoson;
+  A->QComplex=B.QComplex;
+  A->NBitsKey=B.NBitsKey;
+  WaveFunctionInit(A);
+  return MappedWaveFunctionAdd(A, B, U);
 }

@@ -64,6 +64,18 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "MF"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "HarmOsc"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "Rotate"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "NMTO"
             isEnabled = "NO">
          </CommandLineArgument>
@@ -73,7 +85,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "BasisOpt"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "OppMult"

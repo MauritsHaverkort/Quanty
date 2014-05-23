@@ -7,7 +7,12 @@
 #ifndef DBL_EPSILON
 #define DBL_EPSILON 2.3E-16
 #endif
-#define TimeStampAll() time_t MWHrawtime;\
+#define TimeStampAll() printf("=============================================================\n");\
+                       printf("====    Model library written by Maurits W. Haverkort    ====\n");\
+                       printf("====    (C) www.solstatphys.org                          ====\n");\
+                       printf("====    Only use in collaboration with author            ====\n");\
+                       printf("=============================================================\n");\
+                       time_t MWHrawtime;\
                        struct tm * MWHtimeinfo;\
                        time ( &MWHrawtime );\
                        MWHtimeinfo = localtime ( &MWHrawtime );\

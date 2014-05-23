@@ -291,8 +291,7 @@ uint32_t InitOperatorCopySettings(OperatorType * const O, const OperatorType Ose
 /*  add a single lader operator string to the operator O
  *  O at the given length must be real
  */
-uint32_t RealOperatorAddLader(OperatorType * const O, const uint16_t * const oadd, const uint32_t length,
-                              const double VRe)
+uint32_t RealOperatorAddLader(OperatorType * const O, const uint16_t * const oadd, const uint32_t length, const double VRe)
 {
   void *temp;
   uint32_t NextIndex, ThereIsANext, FirstAlloc = 0, i, j;
@@ -852,9 +851,7 @@ uint32_t ComplexOperatorAddLader(OperatorType * const O, const uint16_t * const 
  *  O at the given length must be complex
  */
 uint32_t ComplexOperatorAddLaderNormalOrder(OperatorType * const O, const uint16_t * const oadd, const uint32_t length,
-                                            const double VRe, const double VIm, uint32_t(*QDetNotOrdered) (uint16_t,
-                                                                                                           uint16_t,
-                                                                                                           uint32_t))
+                                            const double VRe, const double VIm, uint32_t(*QDetNotOrdered) (uint16_t,uint16_t,uint32_t))
 {
   uint16_t oaddordered[length + 1];
   uint16_t oaddnew[length + 1];
@@ -1501,7 +1498,7 @@ uint32_t NormalOrderOperator(const OperatorType O, OperatorType * const Oo,
                              uint32_t(*QDetNotOrdered) (uint16_t, uint16_t, uint32_t))
 {
   uint32_t il, iN;
-  for (il = 0; il < O.MaxLength; il++)
+  for (il = 0; il <= O.MaxLength; il++)
   {
     if (O.l[il].QComplex)
     {                           /* O complex at level il */
@@ -1514,7 +1511,7 @@ uint32_t NormalOrderOperator(const OperatorType O, OperatorType * const Oo,
           return 1;
         }
       }
-      for (iN = 0; iN < O.l[il].N; il++)
+      for (iN = 0; iN < O.l[il].N; iN++)
       {
         if (ComplexOperatorAddLaderNormalOrder
             (Oo, &(O.l[il].o[il * iN]), il, O.l[il].V[iN].Re, O.l[il].V[iN].Im, QDetNotOrdered))
@@ -1529,7 +1526,7 @@ uint32_t NormalOrderOperator(const OperatorType O, OperatorType * const Oo,
     {                           /* O real at level il */
       if (Oo->l[il].QComplex)
       {
-        for (iN = 0; iN < O.l[il].N; il++)
+        for (iN = 0; iN < O.l[il].N; iN++)
         {
           if (ComplexOperatorAddLaderNormalOrder(Oo, &(O.l[il].o[il * iN]), il, O.l[il].V[iN].Re, 0, QDetNotOrdered))
           {
@@ -1541,7 +1538,7 @@ uint32_t NormalOrderOperator(const OperatorType O, OperatorType * const Oo,
       }
       else
       {
-        for (iN = 0; iN < O.l[il].N; il++)
+        for (iN = 0; iN < O.l[il].N; iN++)
         {
           if (RealOperatorAddLaderNormalOrder(Oo, &(O.l[il].o[il * iN]), il, O.l[il].VRe[iN], QDetNotOrdered))
           {
@@ -5767,7 +5764,7 @@ uint32_t MappedOperatorAdd(OperatorType * const OA, const OperatorType OB, const
     {
       FA.N = 1;
       FA.NAloc = 1;
-      FA.QComplex = OB.l[i].QComplex;
+      FA.QComplex = OB.l[length].QComplex;
       FA.o = malloc((length + 1) * sizeof(uint16_t));
       if (FA.QComplex)
       {
@@ -5793,7 +5790,7 @@ uint32_t MappedOperatorAdd(OperatorType * const OA, const OperatorType OB, const
           return 1;
         }
         free(FA.o);
-        free(FA.V);
+        (FA.QComplex) ? free(FA.V) : free(FA.VRe);
         FA.NAloc = FB.NAloc;
         FA.N = FB.N;
         FA.QComplex = FB.QComplex;
@@ -5854,7 +5851,7 @@ uint32_t MappedOperatorAdd(OperatorType * const OA, const OperatorType OB, const
         }
       }
       free(FA.o);
-      free(FA.V);
+      (FA.QComplex) ? free(FA.V) : free(FA.VRe);
       FA.N = 0;
       FA.NAloc = 0;
       FA.QComplex = 0;
@@ -5862,6 +5859,7 @@ uint32_t MappedOperatorAdd(OperatorType * const OA, const OperatorType OB, const
   }
   return OperatorRemoveSmallValues(OA, DBL_MIN * 10);
 }
+
 
 /* OA <- OA + U OB
  *  U is a (NFermionB+NBosonB)*(NFermionA+NBosonA) demensional matrix that defines the transformation
@@ -5879,7 +5877,7 @@ uint32_t MappedOperatorAddNormalOrder(OperatorType * const OA, const OperatorTyp
     {
       FA.N = 1;
       FA.NAloc = 1;
-      FA.QComplex = OB.l[i].QComplex;
+      FA.QComplex = OB.l[length].QComplex;
       FA.o = malloc((length + 1) * sizeof(uint16_t));
       if (FA.QComplex)
       {
@@ -5905,7 +5903,7 @@ uint32_t MappedOperatorAddNormalOrder(OperatorType * const OA, const OperatorTyp
           return 1;
         }
         free(FA.o);
-        free(FA.V);
+        (FA.QComplex) ? free(FA.V) : free(FA.VRe);
         FA.NAloc = FB.NAloc;
         FA.N = FB.N;
         FA.QComplex = FB.QComplex;
@@ -5966,13 +5964,39 @@ uint32_t MappedOperatorAddNormalOrder(OperatorType * const OA, const OperatorTyp
         }
       }
       free(FA.o);
-      free(FA.V);
+      (FA.QComplex) ? free(FA.V) : free(FA.VRe);
       FA.N = 0;
       FA.NAloc = 0;
       FA.QComplex = 0;
     }
   }
   return OperatorRemoveSmallValues(OA, DBL_MIN * 10);
+}
+
+/* OA <-  U OB
+ * OA not initiallized on input
+ *  U is a (NFermionB+NBosonB)*(NFermionA+NBosonA) demensional matrix that defines the transformation
+ *  a_j        = \sum_i U_{i,j}   a_i
+ *  a_j^{\dag} = \sum_i U_{i,j}^* a_i^{dag}
+ */
+uint32_t RotateOperator(OperatorType * const OA, const OperatorType OB, const MatrixType U)
+{
+  if(InitOperatorCopySettings(OA, OB))
+  {
+    printf("InitOperatorCopySettings failed in RotateOperator\n");
+    return 1;
+  }
+  return MappedOperatorAdd(OA, OB, U);
+}
+uint32_t RotateOperatorNormalOrder(OperatorType * const OA, const OperatorType OB, const MatrixType U,
+                                   uint32_t(*QDetNotOrdered) (uint16_t, uint16_t, uint32_t))
+{
+  if(InitOperatorCopySettings(OA, OB))
+  {
+    printf("InitOperatorCopySettings failed in RotateOperator\n");
+    return 1;
+  }
+  return MappedOperatorAddNormalOrder(OA, OB, U, QDetNotOrdered);
 }
 
 

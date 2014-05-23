@@ -84,6 +84,16 @@ typedef struct WaveFunctionType
 }
 WaveFunctionType;
 
+
+typedef struct DeterminantRestrictionType
+{
+  uint32_t  N;                  /* number of restrictions */
+  uint32_t  *Min;               /* minimum number of particles required */
+  uint32_t  *Max;               /* maximum number of particles allowed */
+  uint8_t   **Determinant;      /* an array of N vecotors of length NWord of the wave-function applied to. Containing a bitfield wich filters the particles included in the sum */
+}
+DeterminantRestrictionType;
+
 typedef struct OperatorFixedLengthType
 {
   uint32_t N;                   /* number of operators of lenght i with i determined by O.l[i] */

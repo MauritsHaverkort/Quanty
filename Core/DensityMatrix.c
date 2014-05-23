@@ -523,6 +523,61 @@ uint32_t CalculateDensity(double *const Rho, const WaveFunctionType psi)
 /*
  *
  */
+uint32_t CalculateOccupationHistogram(double *const Hist, const WaveFunctionType psi, const uint16_t *fermionlist, const uint32_t N)
+{
+  uint8_t detFilter[psi.NWord], det;
+  uint32_t i,j,k,sum;
+  for (i = 0; i <= N; i++)
+  {
+    Hist[i] = 0;
+  }
+  for(i=0;i<psi.NWord;i++)
+  {
+    detFilter[i]=0;
+  }
+  for(i=0;i<N;i++)
+  {
+    detFilter[fermionlist[i]>>3] +=  (128 >> (fermionlist[i] & 7));
+  }  
+  if(psi.QComplex==0)
+  {
+    for(i=1;i<=psi.N;i++)
+    {
+      sum=0;
+      for(j=0;j<psi.NWord;j++)
+      {
+        det=psi.Determinant[BlokElementDet(i, psi.NWord, j)]&detFilter[j];
+        for(k=0;k<=7;k++)
+        {
+          sum+=(det>>k)&1;
+        }
+      }
+      Hist[sum]+=Sqr(psi.ValueRe[BlokElement(i)]);
+    }
+  }
+  else
+  {
+    for(i=1;i<=psi.N;i++)
+    {
+      sum=0;
+      for(j=0;j<psi.NWord;j++)
+      {
+        det=psi.Determinant[BlokElementDet(i, psi.NWord, j)]&detFilter[j];
+        for(k=0;k<=7;k++)
+        {
+          sum+=(det>>i)&1;
+        }
+      }
+      Hist[sum]+=Sqr(psi.ValueRe[BlokElement(i)])+Sqr(psi.ValueIm[BlokElement(i)]);
+    }
+  }
+  return 0;
+}
+
+
+/*
+ *
+ */
 uint32_t CalculatePrefactorHistogram(double *const Hist, const WaveFunctionType psi, const double exp, const uint32_t N)
 {
   uint32_t i, iBlok, iElement;

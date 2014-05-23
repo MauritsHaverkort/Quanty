@@ -576,7 +576,8 @@ uint32_t StreamReadAndersonMatrixTypeUndeterminedPlusMu(AndersonMatrixType * O, 
 {
   char   InputType[255];
   char   comments[1000];
-  fscanf(stream, "%s %lf", InputType, mu);
+  double mutemp;
+  fscanf(stream, "%s %lf", InputType, &mutemp);
   fgets(comments, 1000, stream);
   if (strncmp(InputType, "tri", 3) == 0)
   {
@@ -601,6 +602,7 @@ uint32_t StreamReadAndersonMatrixTypeUndeterminedPlusMu(AndersonMatrixType * O, 
     printf("Expect the first line of the file to contain the format \"tri\", \"and\", or \"lp\".\n");
     return 1;
   }
+  *mu=mutemp;
   return 0;
 }
 
