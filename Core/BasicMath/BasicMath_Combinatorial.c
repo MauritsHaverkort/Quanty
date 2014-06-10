@@ -3,7 +3,7 @@ double Factorial(int a)
 {
   int    i;
   double result;
-  result = 1;
+  result = 1.0;
   if (a < 0)
     printf("Error\n");
   for (i = a; i > 0; i--)
@@ -13,6 +13,19 @@ double Factorial(int a)
   return result;
 }
 
+double Factorial2(int a)
+{
+  int    i;
+  double result;
+  result = 1.0;
+  if (a < 0)
+    printf("Error\n");
+  for (i = a; i > 0; i-=2)
+  {
+    result *= i;
+  }
+  return result;
+}
 
 /*  computes n over k (the number of ways k elements can be placed in n spaces)
  *
@@ -195,27 +208,14 @@ double ThreeJSymbolHalf(int j1, int m1, int j2, int m2, int j3, int m3)
   {
     ThreeJ +=
       (double)(1 -
-               2 * (k & 1)) / (Factorial(k) * Factorial((j1 + j2 - j3) / 2 - k) * Factorial((j1 - m1) / 2 -
-                                                                                            k) * Factorial((j2 +
-                                                                                                            m2) / 2 -
-                                                                                                           k) *
+               2 * (k & 1)) / (Factorial(k) * Factorial((j1 + j2 - j3) / 2 - k) * Factorial((j1 - m1) / 2 - k) * Factorial((j2 + m2) / 2 - k) *
                                Factorial((j3 - j2 + m1) / 2 + k) * Factorial((j3 - j1 - m2) / 2 + k));
   }
   ThreeJ *=
     (double)(1 - 2 * (((j2 - j1 + m3) / 2) & 1)) * sqrt(Factorial((j1 + j2 - j3) / 2) * Factorial((j1 - j2 + j3) / 2) *
-                                                        Factorial((-j1 + j2 + j3) / 2) * Factorial((j1 +
-                                                                                                    m1) / 2) *
-                                                        Factorial((j1 - m1) / 2) * Factorial((j2 +
-                                                                                              m2) / 2) * Factorial((j2 -
-                                                                                                                    m2)
-                                                                                                                   /
-                                                                                                                   2) *
-                                                        Factorial((j3 + m3) / 2) * Factorial((j3 -
-                                                                                              m3) / 2) / Factorial((j1 +
-                                                                                                                    j2 +
-                                                                                                                    j3)
-                                                                                                                   / 2 +
-                                                                                                                   1));
+                                                        Factorial((-j1 + j2 + j3) / 2) * Factorial((j1 + m1) / 2) *
+                                                        Factorial((j1 - m1) / 2) * Factorial((j2 + m2) / 2) * Factorial((j2 - m2) / 2) *
+                                                        Factorial((j3 + m3) / 2) * Factorial((j3 - m3) / 2) / Factorial((j1 + j2 + j3) / 2 + 1));
   return ThreeJ;
 }
 

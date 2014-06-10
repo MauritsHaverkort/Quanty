@@ -21,6 +21,9 @@ void CeImpurity()
   uint16_t IndexLF[14]={24,25,26,27,28,29,30,31,32,33,34,35,36,37};
   uint16_t IndexF[14];
   uint16_t jlist[14];
+  uint16_t IndexCrTemp[16],IndexAnTemp[16];
+  double OneList[]= {1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0};
+  double ZeroList[]={0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
   double jRe[14],jIm[14];
   HarmonicsExpansion SphericalAkm,Vx,Vy,Vz,Vleft,Vright;
   int Vl[]={1,1,1};
@@ -30,9 +33,13 @@ void CeImpurity()
   double VzRe[]={0.0,1.0,0.0};
   double VlRe[]={1.0,0.0,0.0};
   double VrRe[]={0.0,0.0,1.0};
-  OperatorType OppH, OppHpart, OppSx, OppSy, OppSz, OppSsqr, OppLx, OppLy, OppLz, OppLsqr, OppJx, OppJy, OppJz, OppJsqr, Oppldots4f, Oppldots3d, OppUff, OppUdf, OppDelta, OppHyb, OppNf, OppNL, *OppNc, *OppNv, OppNfivehalf, OppNsevenhalf;
+  OperatorType Opptemp;
+  OperatorType OppH, OppHpart, OppSx, OppSy, OppSz, OppSsqr, OppLx, OppLy, OppLz, OppLsqr, OppJx, OppJy, OppJz, OppJsqr, Oppldots4f, Oppldots3d, OppUff, OppUdf, OppDelta, OppHyb, OppHyb52, OppHyb72, OppNf, OppNL, *OppNc, *OppNv, OppNfivehalf, OppNsevenhalf;
   OperatorType TPES[14], TIPES[14], TCPES[10], TXASx, TXASy, TXASz, TXASl, TXASr, TCharge;
-  OperatorType OppHybIL,OppHybIv,OppHybIc,OppHybLv,OppHybLc,*OppHybc,*OppHybv,Opptemp;
+  OperatorType OppHybIL,OppHybIv,OppHybIc,OppHybLv,OppHybLc,*OppHybc,*OppHybv;
+  OperatorType OppHybIL52,OppHybIv52,OppHybIc52,OppHybLv52,OppHybLc52,*OppHybc52,*OppHybv52;
+  OperatorType OppHybIL72,OppHybIv72,OppHybIc72,OppHybLv72,OppHybLc72,*OppHybc72,*OppHybv72;
+  OperatorType OppNL52, OppNL72, *OppNc52, *OppNv52, *OppNc72, *OppNv72;
   double epsilon, zero;
   double energy, EKin, Esoc, ECoulomb, Sx, Sy, Sz, Ssqr, Lx, Ly, Lz, Lsqr, Jx, Jy, Jz, Jsqr, Nf, Nfivehalf, Nsevenhalf, energysqr, Nfsqr, Nfivehalfsqr, Nsevenhalfsqr;
   uint32_t NBitsKey;
@@ -44,12 +51,13 @@ void CeImpurity()
   double Hist[40],OccHist[15];
   uint16_t oadd=0;
   AndersonMatrixType GBath;
-  BADoubleTriDiagonalMatrixType GBathBA;
+  BADoubleTriDiagonalMatrixType GBathBA, GBathBA52, GBathBA72;
   uint32_t NBathv, NBathc, NFermion;
-  double NfStart, MaxNf, t=1.0;
-  double occupation, onsiteshift, kbTeff;
+  double NfStart, Nf52Start, Nf72Start, MaxNf, t=1.0;
+  double occupation, occupation52, occupation72, onsiteshift, onsiteshift52, onsiteshift72, kbTeff;
   DeterminantRestrictionType Restrictions;
-  uint32_t doPES, doIPES, doCPES, doCPESShort, doXAS, doXiSpin, doXiCharge;
+  uint32_t doPES, doIPES, doCPES, doCPESShort, doXAS, doXiSpin, doXiCharge, NGroundStateLoops, iGroundStateLoops;
+  MatrixType jjzRotationMatrix;
   
   /* allocate space for restrictions */
   Restrictions.N=1;
@@ -67,7 +75,7 @@ void CeImpurity()
   printf("\n========================================================\n");
   
   FileReadAndersonMatrixTypeUndeterminedPlusMu(&GBath, "CeGBath", &GBath.mu);
-
+  
   printf("\n========================================================");
   printf("\n==========          set parameters           ===========");
   printf("\n========================================================\n");
@@ -79,6 +87,7 @@ void CeImpurity()
   doXAS=0;
   doXiSpin=0;
   doXiCharge=0;
+  NGroundStateLoops=3;
   
   Rydberg=13.6057; /* calculations are done in eV this alows one to imput in mixed eV and Rydberg */
   
@@ -116,13 +125,24 @@ void CeImpurity()
   
   NBathv = 2;
   NBathc = 0;
-  MaxNf = 3;
+  MaxNf = 2;
   
-  NfStart = 1.0;
+  NfStart = 0.8344785458087937;     /* numbers obtained with MaxMf = 1 */
+  Nf52Start = 0.6029731957814112;
+  Nf72Start = 0.2315053500273825;
+  
+  /*
+    Nf52Start = NfStart * (6.0/14.0);
+    Nf72Start = NfStart * (8.0/14.0);
+  */
+  /*
+   Nf52Start = NfStart;
+   Nf72Start = 0.000001;
+  */
   
   NBitsKey=16;
   
-  epsilon = 0.00001;           /* smallest value stored as prefactor in wavefunction <== enlarge to speed up calculation !!!                       */
+  epsilon = 0.0001;           /* smallest value stored as prefactor in wavefunction <== enlarge to speed up calculation !!!                       */
   zero = 10 * DBL_EPSILON;        /* smallest value to be considered different from zero in convergnece tests <== enlarge to speed up calculation !!! */
   SpecTri.N=50;                  /* number of poles in spectra  <== reduce here to speed up calculation of spectra !!!!                              */
   InitTriDiagonalMatrix(&SpecTri);
@@ -145,12 +165,20 @@ void CeImpurity()
   if(NBathc!=0)
   {
     OppHybc=malloc(NBathc*sizeof(OperatorType));
+    OppHybc52=malloc(NBathc*sizeof(OperatorType));
+    OppHybc72=malloc(NBathc*sizeof(OperatorType));
     OppNc=malloc(NBathc*sizeof(OperatorType));
+    OppNc52=malloc(NBathc*sizeof(OperatorType));
+    OppNc72=malloc(NBathc*sizeof(OperatorType));
   }
   if(NBathv!=0)
   {
     OppHybv=malloc(NBathv*sizeof(OperatorType));
+    OppHybv52=malloc(NBathv*sizeof(OperatorType));
+    OppHybv72=malloc(NBathv*sizeof(OperatorType));
     OppNv=malloc(NBathv*sizeof(OperatorType));
+    OppNv52=malloc(NBathv*sizeof(OperatorType));
+    OppNv72=malloc(NBathv*sizeof(OperatorType));
   }
   
   PotentialExpandedOnY("C1",3,&t,&SphericalAkm); /* the hybridization is taken to be spherical */
@@ -333,6 +361,197 @@ void CeImpurity()
     FreeOperator(&Opptemp);
   }
   
+   /* define hopping operators for 5/2 on jjz basis */
+  
+  for(i=0;i<6;i++)
+  {
+    IndexCrTemp[i]=(uint16_t)(10+14+i);
+    IndexAnTemp[i]=(uint16_t)(10+14+i);
+  }
+  CreateOperatorCreateAnnihilateList(NFermion, IndexCrTemp, IndexAnTemp, OneList, ZeroList, 6, &OppNL52);
+  for(i=0;i<6;i++)
+  {
+    IndexCrTemp[i]=(uint16_t)(10+i);
+    IndexAnTemp[i]=(uint16_t)(10+14+i);
+    IndexCrTemp[i+6]=(uint16_t)(10+14+i);
+    IndexAnTemp[i+6]=(uint16_t)(10+i);
+  }
+  CreateOperatorCreateAnnihilateList(NFermion, IndexCrTemp, IndexAnTemp, OneList, ZeroList, 12, &OppHybIL52);
+  if(NBathv!=0)
+  {
+    for(i=0;i<6;i++)
+    {
+      IndexCrTemp[i]=(uint16_t)(10+i);
+      IndexAnTemp[i]=(uint16_t)(10+14+14+i);
+      IndexCrTemp[i+6]=(uint16_t)(10+14+14+i);
+      IndexAnTemp[i+6]=(uint16_t)(10+i);
+    }
+    CreateOperatorCreateAnnihilateList(NFermion, IndexCrTemp, IndexAnTemp, OneList, ZeroList, 12, &OppHybIv52);
+    for(i=0;i<6;i++)
+    {
+      IndexCrTemp[i]=(uint16_t)(10+14+i);
+      IndexAnTemp[i]=(uint16_t)(10+14+14+i);
+      IndexCrTemp[i+6]=(uint16_t)(10+14+14+i);
+      IndexAnTemp[i+6]=(uint16_t)(10+14+i);
+    }
+    CreateOperatorCreateAnnihilateList(NFermion, IndexCrTemp, IndexAnTemp, OneList, ZeroList, 12, &OppHybLv52);
+  }
+  for(j=1;j<NBathv;j++)
+  {
+    for(i=0;i<6;i++)
+    {
+      IndexCrTemp[i]=(uint16_t)(10+14+14+14*(j-1)+i);
+      IndexAnTemp[i]=(uint16_t)(10+14+14+14*(j-0)+i);
+      IndexCrTemp[i+6]=(uint16_t)(10+14+14+14*(j-0)+i);
+      IndexAnTemp[i+6]=(uint16_t)(10+14+14+14*(j-1)+i);
+    }
+    CreateOperatorCreateAnnihilateList(NFermion, IndexCrTemp, IndexAnTemp, OneList, ZeroList, 12, &OppHybv52[j-1]);
+  }
+  for(j=0;j<NBathv;j++)
+  {
+    for(i=0;i<6;i++)
+    {
+      IndexCrTemp[i]=(uint16_t)(10+14+14+14*j+i);
+      IndexAnTemp[i]=(uint16_t)(10+14+14+14*j+i);
+    }
+    CreateOperatorCreateAnnihilateList(NFermion, IndexCrTemp, IndexAnTemp, OneList, ZeroList, 6, &OppNv52[j]);
+  }
+  if(NBathc!=0)
+  {
+    for(i=0;i<6;i++)
+    {
+      IndexCrTemp[i]=(uint16_t)(10+i);
+      IndexAnTemp[i]=(uint16_t)(10+14+14+14*NBathv+i);
+      IndexCrTemp[i+6]=(uint16_t)(10+14+14+14*NBathv+i);
+      IndexAnTemp[i+6]=(uint16_t)(10+i);
+    }
+    CreateOperatorCreateAnnihilateList(NFermion, IndexCrTemp, IndexAnTemp, OneList, ZeroList, 12, &OppHybIc52);
+    for(i=0;i<6;i++)
+    {
+      IndexCrTemp[i]=(uint16_t)(10+14+14*NBathv+i);
+      IndexAnTemp[i]=(uint16_t)(10+14+14+14*NBathv+i);
+      IndexCrTemp[i+6]=(uint16_t)(10+14+14+14*NBathv+i);
+      IndexAnTemp[i+6]=(uint16_t)(10+14+14*NBathv+i);
+    }
+    CreateOperatorCreateAnnihilateList(NFermion, IndexCrTemp, IndexAnTemp, OneList, ZeroList, 12, &OppHybLc52);
+  }
+  for(j=1;j<NBathc;j++)
+  {
+    for(i=0;i<6;i++)
+    {
+      IndexCrTemp[i]=(uint16_t)(10+14+14+14+14*NBathv*(j-1)+i);
+      IndexAnTemp[i]=(uint16_t)(10+14+14+14+14*NBathv*(j-0)+i);
+      IndexCrTemp[i+6]=(uint16_t)(10+14+14+14+14*NBathv*(j-0)+i);
+      IndexAnTemp[i+6]=(uint16_t)(10+14+14+14+14*NBathv*(j-1)+i);
+    }
+    CreateOperatorCreateAnnihilateList(NFermion, IndexCrTemp, IndexAnTemp, OneList, ZeroList, 12, &OppHybc52[j-1]);
+  }
+  for(j=0;j<NBathc;j++)
+  {
+    for(i=0;i<6;i++)
+    {
+      IndexCrTemp[i]=(uint16_t)(10+14+14+14*NBathv+14*j+i);
+      IndexAnTemp[i]=(uint16_t)(10+14+14+14*NBathv+14*j+i);
+    }
+    CreateOperatorCreateAnnihilateList(NFermion, IndexCrTemp, IndexAnTemp, OneList, ZeroList, 6, &OppNc52[j]);
+  }
+  
+  
+  /* define hopping operators for 7/2 on jjz basis */
+  
+  for(i=0;i<8;i++)
+  {
+    IndexCrTemp[i]=(uint16_t)(16+14+i);
+    IndexAnTemp[i]=(uint16_t)(16+14+i);
+  }
+  CreateOperatorCreateAnnihilateList(NFermion, IndexCrTemp, IndexAnTemp, OneList, ZeroList, 8, &OppNL72);
+  for(i=0;i<8;i++)
+  {
+    IndexCrTemp[i]=(uint16_t)(16+i);
+    IndexAnTemp[i]=(uint16_t)(16+14+i);
+    IndexCrTemp[i+8]=(uint16_t)(16+14+i);
+    IndexAnTemp[i+8]=(uint16_t)(16+i);
+  }
+  CreateOperatorCreateAnnihilateList(NFermion, IndexCrTemp, IndexAnTemp, OneList, ZeroList, 16, &OppHybIL72);
+  if(NBathv!=0)
+  {
+    for(i=0;i<8;i++)
+    {
+      IndexCrTemp[i]=(uint16_t)(16+i);
+      IndexAnTemp[i]=(uint16_t)(16+14+14+i);
+      IndexCrTemp[i+8]=(uint16_t)(16+14+14+i);
+      IndexAnTemp[i+8]=(uint16_t)(16+i);
+    }
+    CreateOperatorCreateAnnihilateList(NFermion, IndexCrTemp, IndexAnTemp, OneList, ZeroList, 16, &OppHybIv72);
+    for(i=0;i<8;i++)
+    {
+      IndexCrTemp[i]=(uint16_t)(16+14+i);
+      IndexAnTemp[i]=(uint16_t)(16+14+14+i);
+      IndexCrTemp[i+8]=(uint16_t)(16+14+14+i);
+      IndexAnTemp[i+8]=(uint16_t)(16+14+i);
+    }
+    CreateOperatorCreateAnnihilateList(NFermion, IndexCrTemp, IndexAnTemp, OneList, ZeroList, 16, &OppHybLv72);
+  }
+  for(j=1;j<NBathv;j++)
+  {
+    for(i=0;i<8;i++)
+    {
+      IndexCrTemp[i]=(uint16_t)(16+14+14+14*(j-1)+i);
+      IndexAnTemp[i]=(uint16_t)(16+14+14+14*(j-0)+i);
+      IndexCrTemp[i+8]=(uint16_t)(16+14+14+14*(j-0)+i);
+      IndexAnTemp[i+8]=(uint16_t)(16+14+14+14*(j-1)+i);
+    }
+    CreateOperatorCreateAnnihilateList(NFermion, IndexCrTemp, IndexAnTemp, OneList, ZeroList, 16, &OppHybv72[j-1]);
+  }
+  for(j=0;j<NBathv;j++)
+  {
+    for(i=0;i<8;i++)
+    {
+      IndexCrTemp[i]=(uint16_t)(16+14+14+14*j+i);
+      IndexAnTemp[i]=(uint16_t)(16+14+14+14*j+i);
+    }
+    CreateOperatorCreateAnnihilateList(NFermion, IndexCrTemp, IndexAnTemp, OneList, ZeroList, 8, &OppNv72[j]);
+  }
+  if(NBathc!=0)
+  {
+    for(i=0;i<8;i++)
+    {
+      IndexCrTemp[i]=(uint16_t)(16+i);
+      IndexAnTemp[i]=(uint16_t)(16+14+14+14*NBathv+i);
+      IndexCrTemp[i+8]=(uint16_t)(16+14+14+14*NBathv+i);
+      IndexAnTemp[i+8]=(uint16_t)(16+i);
+    }
+    CreateOperatorCreateAnnihilateList(NFermion, IndexCrTemp, IndexAnTemp, OneList, ZeroList, 16, &OppHybIc72);
+    for(i=0;i<8;i++)
+    {
+      IndexCrTemp[i]=(uint16_t)(16+14+14*NBathv+i);
+      IndexAnTemp[i]=(uint16_t)(16+14+14+14*NBathv+i);
+      IndexCrTemp[i+8]=(uint16_t)(16+14+14+14*NBathv+i);
+      IndexAnTemp[i+8]=(uint16_t)(16+14+14*NBathv+i);
+    }
+    CreateOperatorCreateAnnihilateList(NFermion, IndexCrTemp, IndexAnTemp, OneList, ZeroList, 16, &OppHybLc72);
+  }
+  for(j=1;j<NBathc;j++)
+  {
+    for(i=0;i<8;i++)
+    {
+      IndexCrTemp[i]=(uint16_t)(16+14+14+14+14*NBathv*(j-1)+i);
+      IndexAnTemp[i]=(uint16_t)(16+14+14+14+14*NBathv*(j-0)+i);
+      IndexCrTemp[i+8]=(uint16_t)(16+14+14+14+14*NBathv*(j-0)+i);
+      IndexAnTemp[i+8]=(uint16_t)(16+14+14+14+14*NBathv*(j-1)+i);
+    }
+    CreateOperatorCreateAnnihilateList(NFermion, IndexCrTemp, IndexAnTemp, OneList, ZeroList, 16, &OppHybc72[j-1]);
+  }
+  for(j=0;j<NBathc;j++)
+  {
+    for(i=0;i<8;i++)
+    {
+      IndexCrTemp[i]=(uint16_t)(16+14+14+14*NBathv+14*j+i);
+      IndexAnTemp[i]=(uint16_t)(16+14+14+14*NBathv+14*j+i);
+    }
+    CreateOperatorCreateAnnihilateList(NFermion, IndexCrTemp, IndexAnTemp, OneList, ZeroList, 8, &OppNc72[j]);
+  }
+
   
   
   /* create the transition operator for pes */
@@ -434,277 +653,365 @@ void CeImpurity()
   
   
   printf("\n========================================================");
+  printf("\n==== Rotate the operators from lmssz to jjz basis ======");
+  printf("\n========================================================\n");
+  
+  jjzRotationMatrix.QComplex=0;
+  jjzRotationMatrix.Ni=10+14+14+NBathc*14+NBathv*14;
+  jjzRotationMatrix.Nj=10+14+14+NBathc*14+NBathv*14;
+  InitIdentityMatrix(&jjzRotationMatrix);
+  for(i=10;i<24;i++)
+  {
+    jjzRotationMatrix.VRe[i][i]=0;
+  }
+  jjzRotationMatrix.VRe[10][11]=-sqrt(6.0/7.0); jjzRotationMatrix.VRe[10][12]= sqrt(1.0/7.0);
+  jjzRotationMatrix.VRe[11][13]=-sqrt(5.0/7.0); jjzRotationMatrix.VRe[11][14]= sqrt(2.0/7.0);
+  jjzRotationMatrix.VRe[12][15]=-sqrt(4.0/7.0); jjzRotationMatrix.VRe[12][16]= sqrt(3.0/7.0);
+  jjzRotationMatrix.VRe[13][17]=-sqrt(3.0/7.0); jjzRotationMatrix.VRe[13][18]= sqrt(4.0/7.0);
+  jjzRotationMatrix.VRe[14][19]=-sqrt(2.0/7.0); jjzRotationMatrix.VRe[14][20]= sqrt(5.0/7.0);
+  jjzRotationMatrix.VRe[15][21]=-sqrt(1.0/7.0); jjzRotationMatrix.VRe[15][22]= sqrt(6.0/7.0);
+  
+  jjzRotationMatrix.VRe[16][10]=1.0;
+  jjzRotationMatrix.VRe[17][11]= sqrt(1.0/7.0); jjzRotationMatrix.VRe[17][12]= sqrt(6.0/7.0);
+  jjzRotationMatrix.VRe[18][13]= sqrt(2.0/7.0); jjzRotationMatrix.VRe[18][14]= sqrt(5.0/7.0);
+  jjzRotationMatrix.VRe[19][15]= sqrt(3.0/7.0); jjzRotationMatrix.VRe[19][16]= sqrt(4.0/7.0);
+  jjzRotationMatrix.VRe[20][17]= sqrt(4.0/7.0); jjzRotationMatrix.VRe[20][18]= sqrt(3.0/7.0);
+  jjzRotationMatrix.VRe[21][19]= sqrt(5.0/7.0); jjzRotationMatrix.VRe[21][20]= sqrt(2.0/7.0);
+  jjzRotationMatrix.VRe[22][21]= sqrt(6.0/7.0); jjzRotationMatrix.VRe[22][22]= sqrt(1.0/7.0);
+  jjzRotationMatrix.VRe[23][23]=1.0;
+  
+  MatrixTranspose(&jjzRotationMatrix);
+  
+  
+  /* rotate some operators */
+  
+  RotateOperatorNormalOrder(&Opptemp, OppSx, jjzRotationMatrix, &QDetNotOrderedFcFaBcBa); OperatorChop(&Opptemp, 100*DBL_EPSILON);
+  FreeOperator(&OppSx); OperatorCopy(&OppSx, Opptemp); FreeOperator(&Opptemp);
+  RotateOperatorNormalOrder(&Opptemp, OppSy, jjzRotationMatrix, &QDetNotOrderedFcFaBcBa); OperatorChop(&Opptemp, 100*DBL_EPSILON);
+  FreeOperator(&OppSy); OperatorCopy(&OppSy, Opptemp); FreeOperator(&Opptemp);
+  RotateOperatorNormalOrder(&Opptemp, OppSz, jjzRotationMatrix, &QDetNotOrderedFcFaBcBa); OperatorChop(&Opptemp, 100*DBL_EPSILON);
+  FreeOperator(&OppSz); OperatorCopy(&OppSz, Opptemp); FreeOperator(&Opptemp);
+  RotateOperatorNormalOrder(&Opptemp, OppSsqr, jjzRotationMatrix, &QDetNotOrderedFcFaBcBa); OperatorChop(&Opptemp, 100*DBL_EPSILON);
+  FreeOperator(&OppSsqr); OperatorCopy(&OppSsqr, Opptemp); FreeOperator(&Opptemp);
+  RotateOperatorNormalOrder(&Opptemp, OppLx, jjzRotationMatrix, &QDetNotOrderedFcFaBcBa); OperatorChop(&Opptemp, 100*DBL_EPSILON);
+  FreeOperator(&OppLx); OperatorCopy(&OppLx, Opptemp); FreeOperator(&Opptemp);
+  RotateOperatorNormalOrder(&Opptemp, OppLy, jjzRotationMatrix, &QDetNotOrderedFcFaBcBa); OperatorChop(&Opptemp, 100*DBL_EPSILON);
+  FreeOperator(&OppLy); OperatorCopy(&OppLy, Opptemp); FreeOperator(&Opptemp);
+  RotateOperatorNormalOrder(&Opptemp, OppLz, jjzRotationMatrix, &QDetNotOrderedFcFaBcBa); OperatorChop(&Opptemp, 100*DBL_EPSILON);
+  FreeOperator(&OppLz); OperatorCopy(&OppLz, Opptemp); FreeOperator(&Opptemp);
+  RotateOperatorNormalOrder(&Opptemp, OppLsqr, jjzRotationMatrix, &QDetNotOrderedFcFaBcBa); OperatorChop(&Opptemp, 100*DBL_EPSILON);
+  FreeOperator(&OppLsqr); OperatorCopy(&OppLsqr, Opptemp); FreeOperator(&Opptemp);
+  RotateOperatorNormalOrder(&Opptemp, OppJx, jjzRotationMatrix, &QDetNotOrderedFcFaBcBa); OperatorChop(&Opptemp, 100*DBL_EPSILON);
+  FreeOperator(&OppJx); OperatorCopy(&OppJx, Opptemp); FreeOperator(&Opptemp);
+  RotateOperatorNormalOrder(&Opptemp, OppJy, jjzRotationMatrix, &QDetNotOrderedFcFaBcBa); OperatorChop(&Opptemp, 100*DBL_EPSILON);
+  FreeOperator(&OppJy); OperatorCopy(&OppJy, Opptemp); FreeOperator(&Opptemp);
+  RotateOperatorNormalOrder(&Opptemp, OppJz, jjzRotationMatrix, &QDetNotOrderedFcFaBcBa); OperatorChop(&Opptemp, 100*DBL_EPSILON);
+  FreeOperator(&OppJz); OperatorCopy(&OppJz, Opptemp); FreeOperator(&Opptemp);
+  RotateOperatorNormalOrder(&Opptemp, OppJsqr, jjzRotationMatrix, &QDetNotOrderedFcFaBcBa); OperatorChop(&Opptemp, 100*DBL_EPSILON);
+  FreeOperator(&OppJsqr); OperatorCopy(&OppJsqr, Opptemp); FreeOperator(&Opptemp);
+  RotateOperatorNormalOrder(&Opptemp, Oppldots3d, jjzRotationMatrix, &QDetNotOrderedFcFaBcBa); OperatorChop(&Opptemp, 100*DBL_EPSILON);
+  FreeOperator(&Oppldots3d); OperatorCopy(&Oppldots3d, Opptemp); FreeOperator(&Opptemp);
+  RotateOperatorNormalOrder(&Opptemp, Oppldots4f, jjzRotationMatrix, &QDetNotOrderedFcFaBcBa); OperatorChop(&Opptemp, 100*DBL_EPSILON);
+  FreeOperator(&Oppldots4f); OperatorCopy(&Oppldots4f, Opptemp); FreeOperator(&Opptemp);
+  RotateOperatorNormalOrder(&Opptemp, OppUdf, jjzRotationMatrix, &QDetNotOrderedFcFaBcBa); OperatorChop(&Opptemp, 100*DBL_EPSILON);
+  FreeOperator(&OppUdf); OperatorCopy(&OppUdf, Opptemp); FreeOperator(&Opptemp);
+  RotateOperatorNormalOrder(&Opptemp, OppUff, jjzRotationMatrix, &QDetNotOrderedFcFaBcBa); OperatorChop(&Opptemp, 100*DBL_EPSILON);
+  FreeOperator(&OppUff); OperatorCopy(&OppUff, Opptemp); FreeOperator(&Opptemp);
+  RotateOperatorNormalOrder(&Opptemp, OppNf, jjzRotationMatrix, &QDetNotOrderedFcFaBcBa); OperatorChop(&Opptemp, 100*DBL_EPSILON);
+  FreeOperator(&OppNf); OperatorCopy(&OppNf, Opptemp); FreeOperator(&Opptemp);
+  RotateOperatorNormalOrder(&Opptemp, OppNL, jjzRotationMatrix, &QDetNotOrderedFcFaBcBa); OperatorChop(&Opptemp, 100*DBL_EPSILON);
+  FreeOperator(&OppNL); OperatorCopy(&OppNL, Opptemp); FreeOperator(&Opptemp);
+  RotateOperatorNormalOrder(&Opptemp, OppNfivehalf, jjzRotationMatrix, &QDetNotOrderedFcFaBcBa); OperatorChop(&Opptemp, 100*DBL_EPSILON);
+  FreeOperator(&OppNfivehalf); OperatorCopy(&OppNfivehalf, Opptemp); FreeOperator(&Opptemp);
+  RotateOperatorNormalOrder(&Opptemp, OppNsevenhalf, jjzRotationMatrix, &QDetNotOrderedFcFaBcBa); OperatorChop(&Opptemp, 100*DBL_EPSILON);
+  FreeOperator(&OppNsevenhalf); OperatorCopy(&OppNsevenhalf, Opptemp); FreeOperator(&Opptemp);
+  RotateOperatorNormalOrder(&Opptemp, OppDelta, jjzRotationMatrix, &QDetNotOrderedFcFaBcBa); OperatorChop(&Opptemp, 100*DBL_EPSILON);
+  FreeOperator(&OppDelta); OperatorCopy(&OppDelta, Opptemp); FreeOperator(&Opptemp);
+  
+  RotateOperatorNormalOrder(&Opptemp, OppHpart, jjzRotationMatrix, &QDetNotOrderedFcFaBcBa); OperatorChop(&Opptemp, 100*DBL_EPSILON);
+  FreeOperator(&OppHpart); OperatorCopy(&OppHpart, Opptemp); FreeOperator(&Opptemp);
+  
+  
+  
+  
+  /* rotate hopping operators */
+    /* nothing to do */
+  
+  /* rotate pes */
+  
+  for(i=0;i<14;i++)
+  {
+    RotateOperatorNormalOrder(&Opptemp, TPES[i], jjzRotationMatrix, &QDetNotOrderedFcFaBcBa); OperatorChop(&Opptemp, 100*DBL_EPSILON);
+    FreeOperator(&TPES[i]); OperatorCopy(&TPES[i], Opptemp); FreeOperator(&Opptemp);
+  }
+  
+  /* rotate ipes */
+  
+  for(i=0;i<14;i++)
+  {
+    RotateOperatorNormalOrder(&Opptemp, TIPES[i], jjzRotationMatrix, &QDetNotOrderedFcFaBcBa); OperatorChop(&Opptemp, 100*DBL_EPSILON);
+    FreeOperator(&TIPES[i]); OperatorCopy(&TIPES[i], Opptemp); FreeOperator(&Opptemp);
+  }
+  
+  /* rotate core level PES */
+  
+    /* nothing to do */
+  
+  /* rotate TXAS */
+  
+  RotateOperatorNormalOrder(&Opptemp, TXASx, jjzRotationMatrix, &QDetNotOrderedFcFaBcBa); OperatorChop(&Opptemp, 100*DBL_EPSILON);
+  FreeOperator(&TXASx); OperatorCopy(&TXASx, Opptemp); FreeOperator(&Opptemp);
+  RotateOperatorNormalOrder(&Opptemp, TXASy, jjzRotationMatrix, &QDetNotOrderedFcFaBcBa); OperatorChop(&Opptemp, 100*DBL_EPSILON);
+  FreeOperator(&TXASy); OperatorCopy(&TXASy, Opptemp); FreeOperator(&Opptemp);
+  RotateOperatorNormalOrder(&Opptemp, TXASz, jjzRotationMatrix, &QDetNotOrderedFcFaBcBa); OperatorChop(&Opptemp, 100*DBL_EPSILON);
+  FreeOperator(&TXASz); OperatorCopy(&TXASz, Opptemp); FreeOperator(&Opptemp);
+  RotateOperatorNormalOrder(&Opptemp, TXASl, jjzRotationMatrix, &QDetNotOrderedFcFaBcBa); OperatorChop(&Opptemp, 100*DBL_EPSILON);
+  FreeOperator(&TXASl); OperatorCopy(&TXASl, Opptemp); FreeOperator(&Opptemp);
+  RotateOperatorNormalOrder(&Opptemp, TXASr, jjzRotationMatrix, &QDetNotOrderedFcFaBcBa); OperatorChop(&Opptemp, 100*DBL_EPSILON);
+  FreeOperator(&TXASr); OperatorCopy(&TXASr, Opptemp); FreeOperator(&Opptemp);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  printf("\n========================================================");
   printf("\n========== occupation dependent Hamiltonian  ===========");
   printf("\n========================================================\n");
   
-  printf("guess the rotation of the bath by assuming an occupation of 1/14.\n");
+ 
+
+  occupation=NfStart/14.0;
+  occupation52=Nf52Start/6.0;
+  occupation72=Nf72Start/8.0;
   
-  occupation=1.0/14.0;
-  onsiteshift=-Delta;
-  
-  DetermineImpurityShiftFromOccupationAndersonMatrix(GBath, occupation, &onsiteshift);
-  
-  printf("Onsite shift is %22.15E\n",onsiteshift);
-  
-  kbTeff=0.0001;
-  AndersonMatrixToBADoubleTriDiagonalMatrixTemperature(GBath, onsiteshift, kbTeff, &GBathBA, &occupation);
-  
-  
-  printf("The new impurity Hamiltonian looks like:\n");
-  PrintBADoubleTriDiagonalMatrix(GBathBA);
-  
-  OperatorCopy(&OppHyb, OppHybIL);
-  OperatorScale(&OppHyb, GBathBA.acvBA, 0.0);
-  OperatorAdd(&OppHyb, OppNL, GBathBA.acvB, 0.0);
-  if((NBathv!=0)&&(GBathBA.val.N>1))
-  {
-    OperatorAdd(&OppHyb, OppHybIv, GBathBA.bvA0, 0.0);
-    OperatorAdd(&OppHyb, OppHybLv, GBathBA.bvB0, 0.0);
-    OperatorAdd(&OppHyb, OppNv[0], GBathBA.val.a[2], 0.0);
-  }
-  if((NBathc!=0)&&(GBathBA.con.N>1))
-  {
-    OperatorAdd(&OppHyb, OppHybIc, GBathBA.bcA0, 0.0);
-    OperatorAdd(&OppHyb, OppHybLc, GBathBA.bcB0, 0.0);
-    OperatorAdd(&OppHyb, OppNc[0], GBathBA.con.a[2], 0.0);
-  }
-  for(j=1;j<Min(NBathv,GBathBA.val.N-1);j++)
-  {
-    OperatorAdd(&OppHyb, OppHybv[j-1], GBathBA.val.b[j+1], 0.0);
-    OperatorAdd(&OppHyb, OppNv[j],     GBathBA.val.a[j+2], 0.0);
-  }
-  for(j=1;j<Min(NBathc,GBathBA.con.N-1);j++)
-  {
-    OperatorAdd(&OppHyb, OppHybc[j-1], GBathBA.con.b[j+1], 0.0);
-    OperatorAdd(&OppHyb, OppNc[j],     GBathBA.con.a[j+2], 0.0);
-  }
-  
-  OperatorCopy(&OppH, OppHpart);
-  OperatorAdd(&OppH, OppHyb, 1.0, 0.0);
-  
-  printf("\n========================================================");
-  printf("\n==========    find groundstate 1-st time     ===========");
-  printf("\n========================================================\n");
-  BeginTiming("find groundstate", &Time);
   
   CreateWaveFunctionFromString(&psi, CreateString, 10+14*(1+NBathv), NFermion, 0, NBitsKey);
   
-  BeginTiming("LanczosGroundState", &Time);
-  LanczosGroundStateRestricted(OppH, &psi, Restrictions, &epsilon, zero, 0, &psi, 0);
-  EndTiming("LanczosGroundState", &Time);
   
-  CalculatePrefactorHistogram(Hist, psi, 2.0, 30);
-  printf("\nPrefactor Histogram of groundstate\n");
-  printf("Interval                                 | percentage of states   | alpha^2 * number of states \n");
-  for(i=0;i<30;i++)
+  for(iGroundStateLoops=0;iGroundStateLoops<NGroundStateLoops;iGroundStateLoops++)
   {
-    printf("2^-%2i (%10.3E) to 2^-%2i (%10.3E) | %22.15E | %22.15E \n",i,pow(0.5,(double)i),i+1,pow(0.5,(double)(i+1)),Hist[i],Hist[i]*pow(0.5,(double)(2*i)));
+    printf("\n========================================================");
+    printf("\n==========       Start of loop %3i / %3i     ===========",iGroundStateLoops,NGroundStateLoops);
+    printf("\n========================================================\n");
+    
+    
+    onsiteshift=Uff/2.0+Delta;
+    onsiteshift52=onsiteshift;
+    onsiteshift72=onsiteshift;
+    
+    
+    printf("guess the rotation of the bath by assuming an occupation of (total) %lf/14.\n",occupation*14.0);
+    DetermineImpurityShiftFromOccupationAndersonMatrix(GBath, occupation, &onsiteshift);
+    printf("guess the rotation of the bath by assuming an occupation of (5/2)   %lf/6.\n",occupation52*6.0);
+    DetermineImpurityShiftFromOccupationAndersonMatrix(GBath, occupation52, &onsiteshift52);
+    printf("guess the rotation of the bath by assuming an occupation of (7/2)   %lf/8.\n",occupation72*8.0);
+    DetermineImpurityShiftFromOccupationAndersonMatrix(GBath, occupation72, &onsiteshift72);
+    
+    printf("Onsite shift is %22.15E\n",onsiteshift);
+    printf("Onsite shift for 5/2 is %22.15E\n",onsiteshift52);
+    printf("Onsite shift for 7/2 is %22.15E\n",onsiteshift72);
+    
+    kbTeff=0.0001;
+    AndersonMatrixToBADoubleTriDiagonalMatrixTemperature(GBath, onsiteshift, kbTeff, &GBathBA, &occupation);
+    AndersonMatrixToBADoubleTriDiagonalMatrixTemperature(GBath, onsiteshift52, kbTeff, &GBathBA52, &occupation52);
+    AndersonMatrixToBADoubleTriDiagonalMatrixTemperature(GBath, onsiteshift72, kbTeff, &GBathBA72, &occupation72);
+    
+    /* create OppHyb based on GBathBA */
+    
+    OperatorCopy(&OppHyb, OppHybIL);
+    OperatorScale(&OppHyb, GBathBA.acvBA, 0.0);
+    OperatorAdd(&OppHyb, OppNL, GBathBA.acvB, 0.0);
+    if((NBathv!=0)&&(GBathBA.val.N>1))
+    {
+      OperatorAdd(&OppHyb, OppHybIv, GBathBA.bvA0, 0.0);
+      OperatorAdd(&OppHyb, OppHybLv, GBathBA.bvB0, 0.0);
+      OperatorAdd(&OppHyb, OppNv[0], GBathBA.val.a[2], 0.0);
+    }
+    if((NBathc!=0)&&(GBathBA.con.N>1))
+    {
+      OperatorAdd(&OppHyb, OppHybIc, GBathBA.bcA0, 0.0);
+      OperatorAdd(&OppHyb, OppHybLc, GBathBA.bcB0, 0.0);
+      OperatorAdd(&OppHyb, OppNc[0], GBathBA.con.a[2], 0.0);
+    }
+    for(j=1;j<Min(NBathv,GBathBA.val.N-1);j++)
+    {
+      OperatorAdd(&OppHyb, OppHybv[j-1], GBathBA.val.b[j+1], 0.0);
+      OperatorAdd(&OppHyb, OppNv[j],     GBathBA.val.a[j+2], 0.0);
+    }
+    for(j=1;j<Min(NBathc,GBathBA.con.N-1);j++)
+    {
+      OperatorAdd(&OppHyb, OppHybc[j-1], GBathBA.con.b[j+1], 0.0);
+      OperatorAdd(&OppHyb, OppNc[j],     GBathBA.con.a[j+2], 0.0);
+    }
+    
+    /* create OppHyb52 based on GBathBA52 */
+    
+    OperatorCopy(&OppHyb52, OppHybIL52);
+    OperatorScale(&OppHyb52, GBathBA52.acvBA, 0.0);
+    OperatorAdd(&OppHyb52, OppNL52, GBathBA52.acvB, 0.0);
+    if((NBathv!=0)&&(GBathBA52.val.N>1))
+    {
+      OperatorAdd(&OppHyb52, OppHybIv52, GBathBA52.bvA0, 0.0);
+      OperatorAdd(&OppHyb52, OppHybLv52, GBathBA52.bvB0, 0.0);
+      OperatorAdd(&OppHyb52, OppNv52[0], GBathBA52.val.a[2], 0.0);
+    }
+    if((NBathc!=0)&&(GBathBA52.con.N>1))
+    {
+      OperatorAdd(&OppHyb52, OppHybIc52, GBathBA52.bcA0, 0.0);
+      OperatorAdd(&OppHyb52, OppHybLc52, GBathBA52.bcB0, 0.0);
+      OperatorAdd(&OppHyb52, OppNc52[0], GBathBA52.con.a[2], 0.0);
+    }
+    for(j=1;j<Min(NBathv,GBathBA52.val.N-1);j++)
+    {
+      OperatorAdd(&OppHyb52, OppHybv52[j-1], GBathBA52.val.b[j+1], 0.0);
+      OperatorAdd(&OppHyb52, OppNv52[j],     GBathBA52.val.a[j+2], 0.0);
+    }
+    for(j=1;j<Min(NBathc,GBathBA52.con.N-1);j++)
+    {
+      OperatorAdd(&OppHyb52, OppHybc52[j-1], GBathBA.con.b[j+1], 0.0);
+      OperatorAdd(&OppHyb52, OppNc52[j],     GBathBA.con.a[j+2], 0.0);
+    }
+    
+    /* create OppHyb72 based on GBathBA */
+    
+    OperatorCopy(&OppHyb72, OppHybIL72);
+    OperatorScale(&OppHyb72, GBathBA72.acvBA, 0.0);
+    OperatorAdd(&OppHyb72, OppNL72, GBathBA72.acvB, 0.0);
+    if((NBathv!=0)&&(GBathBA72.val.N>1))
+    {
+      OperatorAdd(&OppHyb72, OppHybIv72, GBathBA72.bvA0, 0.0);
+      OperatorAdd(&OppHyb72, OppHybLv72, GBathBA72.bvB0, 0.0);
+      OperatorAdd(&OppHyb72, OppNv72[0], GBathBA72.val.a[2], 0.0);
+    }
+    if((NBathc!=0)&&(GBathBA72.con.N>1))
+    {
+      OperatorAdd(&OppHyb72, OppHybIc72, GBathBA72.bcA0, 0.0);
+      OperatorAdd(&OppHyb72, OppHybLc72, GBathBA72.bcB0, 0.0);
+      OperatorAdd(&OppHyb72, OppNc72[0], GBathBA72.con.a[2], 0.0);
+    }
+    for(j=1;j<Min(NBathv,GBathBA72.val.N-1);j++)
+    {
+      OperatorAdd(&OppHyb72, OppHybv72[j-1], GBathBA72.val.b[j+1], 0.0);
+      OperatorAdd(&OppHyb72, OppNv72[j],     GBathBA72.val.a[j+2], 0.0);
+    }
+    for(j=1;j<Min(NBathc,GBathBA72.con.N-1);j++)
+    {
+      OperatorAdd(&OppHyb72, OppHybc72[j-1], GBathBA72.con.b[j+1], 0.0);
+      OperatorAdd(&OppHyb72, OppNc72[j],     GBathBA72.con.a[j+2], 0.0);
+    }
+    
+    /* add OppHyb to Hamiltonian */
+    
+    OperatorCopy(&OppH, OppHpart);
+    OperatorAdd(&OppH, OppHyb52, 1.0, 0.0);
+    OperatorAdd(&OppH, OppHyb72, 1.0, 0.0);
+    
+    printf("\n========================================================");
+    printf("\n==========   find groundstate %3i-st time    ===========",iGroundStateLoops);
+    printf("\n========================================================\n");
+    BeginTiming("find groundstate", &Time);
+    
+    BeginTiming("LanczosGroundState", &Time);
+    LanczosGroundStateRestricted(OppH, &psi, Restrictions, &epsilon, zero, 0, &psi, 0);
+    EndTiming("LanczosGroundState", &Time);
+    
+    CalculatePrefactorHistogram(Hist, psi, 2.0, 30);
+    printf("\nPrefactor Histogram of groundstate\n");
+    printf("Interval                                 | percentage of states   | alpha^2 * number of states \n");
+    for(i=0;i<30;i++)
+    {
+      printf("2^-%2i (%10.3E) to 2^-%2i (%10.3E) | %22.15E | %22.15E \n",i,pow(0.5,(double)i),i+1,pow(0.5,(double)(i+1)),Hist[i],Hist[i]*pow(0.5,(double)(2*i)));
+    }
+    
+    CalculateOccupationHistogram(OccHist, psi, Index4F, 14);
+    
+    PsiHermitianOperatorPsi(OppH, psi, &energy);
+    PsiHermitianOperatorSqrPsi(OppH, psi, &energysqr);
+    PsiHermitianOperatorPsi(Oppldots4f, psi, &Esoc);
+    Esoc*=zeta4f;
+    PsiHermitianOperatorPsi(OppUff, psi, &ECoulomb);
+    PsiHermitianOperatorPsi(OppHyb, psi, &EKin);
+    PsiHermitianOperatorPsi(OppSx, psi, &Sx);
+    PsiHermitianOperatorPsi(OppSy, psi, &Sy);
+    PsiHermitianOperatorPsi(OppSz, psi, &Sz);
+    PsiHermitianOperatorPsi(OppSsqr, psi, &Ssqr);
+    PsiHermitianOperatorPsi(OppLx, psi, &Lx);
+    PsiHermitianOperatorPsi(OppLy, psi, &Ly);
+    PsiHermitianOperatorPsi(OppLz, psi, &Lz);
+    PsiHermitianOperatorPsi(OppLsqr, psi, &Lsqr);
+    PsiHermitianOperatorPsi(OppJx, psi, &Jx);
+    PsiHermitianOperatorPsi(OppJy, psi, &Jy);
+    PsiHermitianOperatorPsi(OppJz, psi, &Jz);
+    PsiHermitianOperatorPsi(OppJsqr, psi, &Jsqr);
+    PsiHermitianOperatorPsi(OppNf, psi, &Nf);
+    PsiHermitianOperatorPsi(OppNfivehalf, psi, &Nfivehalf);
+    PsiHermitianOperatorPsi(OppNsevenhalf, psi, &Nsevenhalf);
+    PsiHermitianOperatorSqrPsi(OppNf, psi, &Nfsqr);
+    PsiHermitianOperatorSqrPsi(OppNfivehalf, psi, &Nfivehalfsqr);
+    PsiHermitianOperatorSqrPsi(OppNsevenhalf, psi, &Nsevenhalfsqr);
+    EndTiming("find groundstate", &Time);
+    PrintTiming(Time);
+    
+    printf("\n========================================================");
+    printf("\n==========   Groundstte expectation values   ===========");
+    printf("\n========================================================\n");
+    printf("Energy              %22.15E  (variance %22.15E)\n",energy,energysqr-energy*energy);
+    printf("Kinetic energy      %22.15E\n",EKin);
+    printf("Relativistic energy %22.15E\n",Esoc);
+    printf("Coulomb energy (4f) %22.15E\n",ECoulomb);
+    printf("Sx %22.15E Sy %22.15E Sz %22.15E Ssqr %22.15E\n",Sx,Sy,Sz,Ssqr);
+    printf("Lx %22.15E Ly %22.15E Lz %22.15E Lsqr %22.15E\n",Lx,Ly,Lz,Lsqr);
+    printf("Jx %22.15E Jy %22.15E Jz %22.15E Jsqr %22.15E\n",Jx,Jy,Jz,Jsqr);
+    printf("Nf   %22.15E <Nf^2>   %22.15E\n",Nf,Nfsqr);
+    printf("N5/2 %22.15E <N5/2^2> %22.15E\n",Nfivehalf,Nfivehalfsqr);
+    printf("N7/2 %22.15E <N7/2^2> %22.15E\n",Nsevenhalf,Nsevenhalfsqr);
+    printf("\n");
+    
+    printf("Occupation of f-shell\n");
+    for(i=0;i<=14;i++)
+    {
+      printf("f^%2i | %22.15E\n",i,OccHist[i]);
+    }
+    printf("\n");
+    
+    printf("diagonal part of density matrix\n");
+    CalculateDensityMatrix(&Density, psi);
+    for(i=0;i<Density.Ni;i++)
+    {
+      printf("%i %22.15E\n",i,Density.VRe[i][i]);
+    }
+    printf("\n");
+    
+    
+    if(iGroundStateLoops!=NGroundStateLoops-1)
+    {
+      FreeOperator(&OppHyb);
+      FreeOperator(&OppHyb52);
+      FreeOperator(&OppHyb72);
+      FreeOperator(&OppH);
+      FreeBADoubleTriDiagonalMatrix(&GBathBA);
+      FreeBADoubleTriDiagonalMatrix(&GBathBA52);
+      FreeBADoubleTriDiagonalMatrix(&GBathBA72);
+      
+      occupation=Nf/14.0;
+      occupation52=Nfivehalf/6.0;
+      occupation72=Nsevenhalf/8.0;
+      
+      
+      
+    }
+    
+    
   }
-  
-  CalculateOccupationHistogram(OccHist, psi, Index4F, 14);
-  
-  PsiHermitianOperatorPsi(OppH, psi, &energy);
-  PsiHermitianOperatorSqrPsi(OppH, psi, &energysqr);
-  PsiHermitianOperatorPsi(Oppldots4f, psi, &Esoc);
-  Esoc*=zeta4f;
-  PsiHermitianOperatorPsi(OppUff, psi, &ECoulomb);
-  PsiHermitianOperatorPsi(OppHyb, psi, &EKin);
-  PsiHermitianOperatorPsi(OppSx, psi, &Sx);
-  PsiHermitianOperatorPsi(OppSy, psi, &Sy);
-  PsiHermitianOperatorPsi(OppSz, psi, &Sz);
-  PsiHermitianOperatorPsi(OppSsqr, psi, &Ssqr);
-  PsiHermitianOperatorPsi(OppLx, psi, &Lx);
-  PsiHermitianOperatorPsi(OppLy, psi, &Ly);
-  PsiHermitianOperatorPsi(OppLz, psi, &Lz);
-  PsiHermitianOperatorPsi(OppLsqr, psi, &Lsqr);
-  PsiHermitianOperatorPsi(OppJx, psi, &Jx);
-  PsiHermitianOperatorPsi(OppJy, psi, &Jy);
-  PsiHermitianOperatorPsi(OppJz, psi, &Jz);
-  PsiHermitianOperatorPsi(OppJsqr, psi, &Jsqr);
-  PsiHermitianOperatorPsi(OppNf, psi, &Nf);
-  PsiHermitianOperatorPsi(OppNfivehalf, psi, &Nfivehalf);
-  PsiHermitianOperatorPsi(OppNsevenhalf, psi, &Nsevenhalf);
-  PsiHermitianOperatorSqrPsi(OppNf, psi, &Nfsqr);
-  PsiHermitianOperatorSqrPsi(OppNfivehalf, psi, &Nfivehalfsqr);
-  PsiHermitianOperatorSqrPsi(OppNsevenhalf, psi, &Nsevenhalfsqr);
-  EndTiming("find groundstate", &Time);
-  PrintTiming(Time);
-  
-  printf("\n========================================================");
-  printf("\n==========   Groundstte expectation values   ===========");
-  printf("\n========================================================\n");
-  printf("Energy              %22.15E  (variance %22.15E)\n",energy,energysqr-energy*energy);
-  printf("Kinetic energy      %22.15E\n",EKin);
-  printf("Relativistic energy %22.15E\n",Esoc);
-  printf("Coulomb energy (4f) %22.15E\n",ECoulomb);
-  printf("Sx %22.15E Sy %22.15E Sz %22.15E Ssqr %22.15E\n",Sx,Sy,Sz,Ssqr);
-  printf("Lx %22.15E Ly %22.15E Lz %22.15E Lsqr %22.15E\n",Lx,Ly,Lz,Lsqr);
-  printf("Jx %22.15E Jy %22.15E Jz %22.15E Jsqr %22.15E\n",Jx,Jy,Jz,Jsqr);
-  printf("Nf   %22.15E <Nf^2>   %22.15E\n",Nf,Nfsqr);
-  printf("N5/2 %22.15E <N5/2^2> %22.15E\n",Nfivehalf,Nfivehalfsqr);
-  printf("N7/2 %22.15E <N7/2^2> %22.15E\n",Nsevenhalf,Nsevenhalfsqr);
-  printf("\n");
-  
-  printf("Occupation of f-shell\n");
-  for(i=0;i<=14;i++)
-  {
-    printf("f^%2i | %22.15E\n",i,OccHist[i]);
-  }
-  printf("\n");
-  
-  printf("diagonal part of density matrix\n");
-  CalculateDensityMatrix(&Density, psi);
-  for(i=0;i<Density.Ni;i++)
-  {
-    printf("%i %22.15E\n",i,Density.VRe[i][i]);
-  }
-  printf("\n");
-  
-  
-  
-  
-  
-  
-  
-  printf("\n========================================================");
-  printf("\n========== occupation dependent Hamiltonian  ===========");
-  printf("\n==========    with previous gs occupation    ===========");
-  printf("\n========================================================\n");
-  
-  printf("use the f occupation of the previous many body calculation\n");
-  
-  occupation=Nf/14.0;
-  
-  DetermineImpurityShiftFromOccupationAndersonMatrix(GBath, occupation, &onsiteshift);
-  
-  printf("Onsite shift is %22.15E\n",onsiteshift);
-  
-  kbTeff=0.0001;
-  FreeBADoubleTriDiagonalMatrix(&GBathBA);
-  AndersonMatrixToBADoubleTriDiagonalMatrixTemperature(GBath, onsiteshift, kbTeff, &GBathBA, &occupation);
-  
-  printf("The second new impurity Hamiltonian looks like:\n");
-  PrintBADoubleTriDiagonalMatrix(GBathBA);
-  
-  FreeOperator(&OppHyb);
-  OperatorCopy(&OppHyb, OppHybIL);
-  OperatorScale(&OppHyb, GBathBA.acvBA, 0.0);
-  OperatorAdd(&OppHyb, OppNL, GBathBA.acvB, 0.0);
-  if((NBathv!=0)&&(GBathBA.val.N>1))
-  {
-    OperatorAdd(&OppHyb, OppHybIv, GBathBA.bvA0, 0.0);
-    OperatorAdd(&OppHyb, OppHybLv, GBathBA.bvB0, 0.0);
-    OperatorAdd(&OppHyb, OppNv[0], GBathBA.val.a[2], 0.0);
-  }
-  if((NBathc!=0)&&(GBathBA.con.N>1))
-  {
-    OperatorAdd(&OppHyb, OppHybIc, GBathBA.bcA0, 0.0);
-    OperatorAdd(&OppHyb, OppHybLc, GBathBA.bcB0, 0.0);
-    OperatorAdd(&OppHyb, OppNc[0], GBathBA.con.a[2], 0.0);
-  }
-  for(j=1;j<Min(NBathv,GBathBA.val.N-1);j++)
-  {
-    OperatorAdd(&OppHyb, OppHybv[j-1], GBathBA.val.b[j+1], 0.0);
-    OperatorAdd(&OppHyb, OppNv[j],     GBathBA.val.a[j+2], 0.0);
-  }
-  for(j=1;j<Min(NBathc,GBathBA.con.N-1);j++)
-  {
-    OperatorAdd(&OppHyb, OppHybc[j-1], GBathBA.con.b[j+1], 0.0);
-    OperatorAdd(&OppHyb, OppNc[j],     GBathBA.con.a[j+2], 0.0);
-  }
-  
-  FreeOperator(&OppH);
-  OperatorCopy(&OppH, OppHpart);
-  OperatorAdd(&OppH, OppHyb, 1.0, 0.0);
-  
-  printf("\n========================================================");
-  printf("\n==========    find groundstate 2-nd time     ===========");
-  printf("\n========================================================\n");
-  BeginTiming("find groundstate", &Time);
-  
-  BeginTiming("LanczosGroundState", &Time);
-  LanczosGroundStateRestricted(OppH, &psi, Restrictions, &epsilon, zero, 0, &psi, 0);
-  EndTiming("LanczosGroundState", &Time);
-  
-  CalculatePrefactorHistogram(Hist, psi, 2.0, 30);
-  printf("\nPrefactor Histogram of groundstate\n");
-  printf("Interval                                 | percentage of states   | alpha^2 * number of states \n");
-  for(i=0;i<30;i++)
-  {
-    printf("2^-%2i (%10.3E) to 2^-%2i (%10.3E) | %22.15E | %22.15E \n",i,pow(0.5,(double)i),i+1,pow(0.5,(double)(i+1)),Hist[i],Hist[i]*pow(0.5,(double)(2*i)));
-  }
-  
-  CalculateOccupationHistogram(OccHist, psi, Index4F, 14);
-  
-  PsiHermitianOperatorPsi(OppH, psi, &energy);
-  PsiHermitianOperatorSqrPsi(OppH, psi, &energysqr);
-  PsiHermitianOperatorPsi(Oppldots4f, psi, &Esoc);
-  Esoc*=zeta4f;
-  PsiHermitianOperatorPsi(OppUff, psi, &ECoulomb);
-  PsiHermitianOperatorPsi(OppHyb, psi, &EKin);
-  PsiHermitianOperatorPsi(OppSx, psi, &Sx);
-  PsiHermitianOperatorPsi(OppSy, psi, &Sy);
-  PsiHermitianOperatorPsi(OppSz, psi, &Sz);
-  PsiHermitianOperatorPsi(OppSsqr, psi, &Ssqr);
-  PsiHermitianOperatorPsi(OppLx, psi, &Lx);
-  PsiHermitianOperatorPsi(OppLy, psi, &Ly);
-  PsiHermitianOperatorPsi(OppLz, psi, &Lz);
-  PsiHermitianOperatorPsi(OppLsqr, psi, &Lsqr);
-  PsiHermitianOperatorPsi(OppJx, psi, &Jx);
-  PsiHermitianOperatorPsi(OppJy, psi, &Jy);
-  PsiHermitianOperatorPsi(OppJz, psi, &Jz);
-  PsiHermitianOperatorPsi(OppJsqr, psi, &Jsqr);
-  PsiHermitianOperatorPsi(OppNf, psi, &Nf);
-  PsiHermitianOperatorPsi(OppNfivehalf, psi, &Nfivehalf);
-  PsiHermitianOperatorPsi(OppNsevenhalf, psi, &Nsevenhalf);
-  PsiHermitianOperatorSqrPsi(OppNf, psi, &Nfsqr);
-  PsiHermitianOperatorSqrPsi(OppNfivehalf, psi, &Nfivehalfsqr);
-  PsiHermitianOperatorSqrPsi(OppNsevenhalf, psi, &Nsevenhalfsqr);
-  EndTiming("find groundstate", &Time);
-  PrintTiming(Time);
-  
-  printf("\n========================================================");
-  printf("\n==========   Groundstte expectation values   ===========");
-  printf("\n========================================================\n");
-  printf("Energy              %22.15E  (variance %22.15E)\n",energy,energysqr-energy*energy);
-  printf("Kinetic energy      %22.15E\n",EKin);
-  printf("Relativistic energy %22.15E\n",Esoc);
-  printf("Coulomb energy (4f) %22.15E\n",ECoulomb);
-  printf("Sx %22.15E Sy %22.15E Sz %22.15E Ssqr %22.15E\n",Sx,Sy,Sz,Ssqr);
-  printf("Lx %22.15E Ly %22.15E Lz %22.15E Lsqr %22.15E\n",Lx,Ly,Lz,Lsqr);
-  printf("Jx %22.15E Jy %22.15E Jz %22.15E Jsqr %22.15E\n",Jx,Jy,Jz,Jsqr);
-  printf("Nf   %22.15E <Nf^2>   %22.15E\n",Nf,Nfsqr);
-  printf("N5/2 %22.15E <N5/2^2> %22.15E\n",Nfivehalf,Nfivehalfsqr);
-  printf("N7/2 %22.15E <N7/2^2> %22.15E\n",Nsevenhalf,Nsevenhalfsqr);
-  printf("\n");
-  
-  printf("Occupation of f-shell\n");
-  for(i=0;i<=14;i++)
-  {
-    printf("f^%2i | %22.15E\n",i,OccHist[i]);
-  }
-  printf("\n");
-  
-  printf("diagonal part of density matrix\n");
-  FreeMatrix(&Density);
-  CalculateDensityMatrix(&Density, psi);
-  for(i=0;i<Density.Ni;i++)
-  {
-    printf("%i %22.15E\n",i,Density.VRe[i][i]);
-  }
-  printf("\n");
-  PrintMatrix(Density);
-  
-  
-
-  
-  
-  
-  
-  
-  
-  
-  
   
   
   

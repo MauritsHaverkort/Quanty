@@ -5938,8 +5938,6 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
   }
   else if (strcmp(s, "D4h") == 0)
   {
-    printf("Potential for %s not yet implemented\n", s);
-    return 1;
     Akm->QComplex = 0;
     switch (l)
     {
@@ -6015,10 +6013,10 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
         Akm->Re[2] = 0.3*(6*EigenEnergies[0] + EigenEnergies[1] + EigenEnergies[2] - 8*EigenEnergies[3]);
         Akm->l[3] = 4;
         Akm->m[3] =-4;
-        Akm->Re[3] = 0.3*sqrt(70.0)*(EigenEnergies[1] - EigenEnergies[2]);
+        Akm->Re[3] = 0.15*sqrt(70.0)*(EigenEnergies[1] - EigenEnergies[2]);
         Akm->l[4] = 4;
         Akm->m[4] = 4;
-        Akm->Re[4] = 0.3*sqrt(70.0)*(EigenEnergies[1] - EigenEnergies[2]);
+        Akm->Re[4] = 0.15*sqrt(70.0)*(EigenEnergies[1] - EigenEnergies[2]);
       }
       break;
     case 3:

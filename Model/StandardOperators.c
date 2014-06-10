@@ -1258,6 +1258,24 @@ uint32_t CreateOperatorAnnihilateList(uint32_t const NFermion, uint16_t const * 
   return 0;
 }
 
+
+uint32_t CreateOperatorCreateAnnihilateList(uint32_t const NFermion, uint16_t const * Crindex, uint16_t const * Anindex, double const * VRe, double const * VIm, const uint32_t N, OperatorType * const OppCrAn)
+{
+  uint32_t i;
+  uint16_t oadd[2];
+  InitNamedOperator(OppCrAn, "CrAn");
+  OppCrAn->NFermion = NFermion;
+  OppCrAn->NWord = Min(OppCrAn->NFermion, 1 + (OppCrAn->NFermion - 1) / 8);
+  InitOperatorFixedLength(OppCrAn, 2, 8);
+  for(i=0;i<N;i++)
+  {
+    oadd[1] = CrAnMask +Crindex[i];
+    oadd[0] = Anindex[i];
+    OperatorAddLader(OppCrAn, oadd, 2, VRe[i], VIm[i]);
+  }
+  return 0;
+}
+
 uint32_t CreateOperatorNumber(uint32_t const NFermion, uint16_t const Crindex, uint16_t const Anindex,
                               OperatorType * const OppN)
 {
