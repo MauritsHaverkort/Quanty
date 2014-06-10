@@ -427,7 +427,7 @@ uint32_t CalculateImpurityOccupationAndersonMatrix(AndersonMatrixType const M, d
  */
 uint32_t DetermineImpurityShiftFromOccupationAndersonMatrix(AndersonMatrixType M, double const occupation, double *const shift)
 {
-  uint32_t const MaxIt=30, History=10;
+  uint32_t MaxIt=30, History=10;
   uint32_t i;
   double Shifti[MaxIt+1], occupationi[MaxIt+1], totalb=0;
   Shifti[0]=*shift;
@@ -440,7 +440,7 @@ uint32_t DetermineImpurityShiftFromOccupationAndersonMatrix(AndersonMatrixType M
   }
   totalb=sqrt(totalb);
   i=0;
-  while((i<MaxIt)&&(Abs(occupationi[i]-occupation)>(10*(DBL_MIN+DBL_EPSILON*occupation))))
+  while((i<MaxIt)&&(Abs(occupationi[i]-occupation)>(100*(DBL_MIN+DBL_EPSILON*Abs(occupation)))))
   {
     i++;
     if(i==1)
@@ -464,6 +464,7 @@ uint32_t DetermineImpurityShiftFromOccupationAndersonMatrix(AndersonMatrixType M
   }
   *shift=Shifti[i];
   
+  MaxIt=i;
   
   
   for(i=0;i<MaxIt+1;i++)
