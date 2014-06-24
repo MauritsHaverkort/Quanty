@@ -315,8 +315,8 @@ void BADoubleTriDiagonalMatrixScalarMultiply(BADoubleTriDiagonalMatrixType * con
 uint32_t BADoubleTriDiagonalMatrixPart(BADoubleTriDiagonalMatrixType * const M, BADoubleTriDiagonalMatrixType A,
                                        const uint32_t iEndval, const uint32_t iEndcon)
 {
-  TriDiagonalMatrixPart(&(M->val), A.val, 0, iEndval);
-  TriDiagonalMatrixPart(&(M->con), A.val, 0, iEndcon);
+  TriDiagonalMatrixPart(&(M->val), A.val, 1, iEndval);
+  TriDiagonalMatrixPart(&(M->con), A.con, 1, iEndcon);
   M->mu = A.mu;
   M->Epsilon = A.Epsilon;
   M->a0 = A.a0;
@@ -335,7 +335,7 @@ uint32_t BADoubleTriDiagonalMatrixPart(BADoubleTriDiagonalMatrixType * const M, 
  */
 uint32_t BADoubleTriDiagonalMatrixCopy(BADoubleTriDiagonalMatrixType * const M, BADoubleTriDiagonalMatrixType A)
 {
-  BADoubleTriDiagonalMatrixPart(M, A, A.val.N, A.val.N);
+  BADoubleTriDiagonalMatrixPart(M, A, A.val.N, A.con.N);
   return 0;
 }
 
