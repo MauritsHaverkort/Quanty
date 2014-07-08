@@ -49,6 +49,8 @@
 
 #include "lua/includeLua.h"
 static void *currentudata = NULL;
+#include "lua_extensions/TableToArray.c"
+#include "lua_extensions/tools.c"
 #include "Complex.c"
 #include "Operator.c"
 #include "Wavefunction.c"
@@ -69,18 +71,18 @@ int main(int argc, char *argv[])
   luaopen_Operator(L);
   luaopen_Wavefunction(L);
   result = luaL_loadfile(L, argv[1]);
-  
   if (result)
   {
-    printf("Error while loading the script: %s\n", lua_tostring(L, -1));
+    printf("Error while loading the script: %s\n\n", lua_tostring(L, -1));
+    luaL_stackDump(L);
     lua_close(L);
     return 1;
   }
-  
   result = lua_pcall(L, 0, 0, 0);
   if (result)
   {
     fprintf(stderr, "Error while executing the script: %s\n", lua_tostring(L, -1));
+    luaL_stackDump(L);
     lua_close(L);
     return 1;
   }

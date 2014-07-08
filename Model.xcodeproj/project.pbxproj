@@ -175,6 +175,8 @@
 		4C0B558319675D0D000B8E97 /* Complex.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = Complex.c; sourceTree = "<group>"; };
 		4C0B558519675D4D000B8E97 /* Operator.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = Operator.c; sourceTree = "<group>"; };
 		4C0B558619675D79000B8E97 /* Wavefunction.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = Wavefunction.c; sourceTree = "<group>"; };
+		4C0B5589196AB837000B8E97 /* TableToArray.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = TableToArray.c; path = lua_extensions/TableToArray.c; sourceTree = "<group>"; };
+		4C0B558A196C6A9D000B8E97 /* tools.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = tools.c; path = lua_extensions/tools.c; sourceTree = "<group>"; };
 		4C2AAA191632655300138620 /* Model */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Model; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C2AAA261632659D00138620 /* Model.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = Model.c; sourceTree = "<group>"; };
 		4C2AAA271632659D00138620 /* StandardOperators.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = StandardOperators.c; sourceTree = "<group>"; };
@@ -359,6 +361,7 @@
 		4C0B553E196752C3000B8E97 /* LuaInterface */ = {
 			isa = PBXGroup;
 			children = (
+				4C0B5588196AB7FE000B8E97 /* lua_extensions */,
 				4C0B554619675377000B8E97 /* lua */,
 				4C0B553F196752C3000B8E97 /* main.c */,
 				4C0B558319675D0D000B8E97 /* Complex.c */,
@@ -431,6 +434,15 @@
 				4C0B558019675377000B8E97 /* lzio.h */,
 			);
 			path = lua;
+			sourceTree = "<group>";
+		};
+		4C0B5588196AB7FE000B8E97 /* lua_extensions */ = {
+			isa = PBXGroup;
+			children = (
+				4C0B5589196AB837000B8E97 /* TableToArray.c */,
+				4C0B558A196C6A9D000B8E97 /* tools.c */,
+			);
+			name = lua_extensions;
 			sourceTree = "<group>";
 		};
 		4C2AAA0E1632655300138620 = {
@@ -967,7 +979,7 @@
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
-				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_FUNCTION = NO;
 				MACOSX_DEPLOYMENT_TARGET = 10.9;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -988,7 +1000,7 @@
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
-				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_FUNCTION = NO;
 				MACOSX_DEPLOYMENT_TARGET = 10.9;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -1239,6 +1251,7 @@
 				4C0B5545196752C3000B8E97 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
 		};
 		4C2AAA131632655300138620 /* Build configuration list for PBXProject "Model" */ = {
 			isa = XCConfigurationList;

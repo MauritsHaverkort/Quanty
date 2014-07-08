@@ -1,5 +1,6 @@
 #define LUA_LIB
 #define LUA_CORE
+#define LUA_COMPAT_ALL
 #define lobject_c
 
 #include "lua.h"

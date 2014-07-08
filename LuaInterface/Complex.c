@@ -102,7 +102,6 @@ static int LuaComplexExp(lua_State * L)
   Complex16 *res;
   Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Lua.complex");
   res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
-  double r = sqrt(a->Re * a->Re + a->Im * a->Im);
   res->Re = exp(a->Re) * cos(a->Im);
   res->Im = exp(a->Re) * sin(a->Im);
   luaL_setmetatable(L, "Lua.complex");

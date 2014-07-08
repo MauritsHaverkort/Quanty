@@ -1,59 +1,146 @@
 static int LuaOperatorNewSx(lua_State * L)
 {
   OperatorType *op;
-  int ml;
-  int NFermion = luaL_checknumber(L, 1);
-  int NShell = luaL_checknumber(L, 2);
-  uint16_t LindexUp[7], LindexDn[7];
-  for (ml = 0; ml < NFermion / 2; ml++)
+  uint32_t Ntemp;
+  uint32_t NFermion = (uint32_t)luaL_checkunsigned(L, 1);
+  uint32_t NShell;
+  uint16_t *LindexUp, *LindexDn;
+  LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
+  LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
+  if(NShell!=Ntemp)
   {
-    LindexDn[ml] = 2 * ml;
-    LindexUp[ml] = 2 * ml + 1;
+    lua_pushfstring (L, "Error in LuaOperatorNewSx, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    lua_error(L);
+    return 1;
   }
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   CreateOperatorSx(NFermion, NShell, LindexUp, LindexDn, op);
   luaL_setmetatable(L, "Lua.operator");
+  free(LindexUp);
+  free(LindexDn);
   return 1;
 }
 
 static int LuaOperatorNewSy(lua_State * L)
 {
   OperatorType *op;
-  int ml;
-  int NFermion = luaL_checknumber(L, 1);
-  int NShell = luaL_checknumber(L, 2);
-  
-  uint16_t LindexUp[7], LindexDn[7];
-  for (ml = 0; ml < NFermion / 2; ml++)
+  uint32_t Ntemp;
+  uint32_t NFermion = (uint32_t)luaL_checkunsigned(L, 1);
+  uint32_t NShell;
+  uint16_t *LindexUp, *LindexDn;
+  LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
+  LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
+  if(NShell!=Ntemp)
   {
-    LindexDn[ml] = 2 * ml;
-    LindexUp[ml] = 2 * ml + 1;
+    lua_pushfstring (L, "Error in LuaOperatorNewSy, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    lua_error(L);
+    return 1;
   }
-  
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   CreateOperatorSy(NFermion, NShell, LindexUp, LindexDn, op);
   luaL_setmetatable(L, "Lua.operator");
+  free(LindexUp);
+  free(LindexDn);
   return 1;
 }
 
 static int LuaOperatorNewSz(lua_State * L)
 {
   OperatorType *op;
-  int NFermion = luaL_checknumber(L, 1);
-  int NShell = luaL_checknumber(L, 2);
-  int ml;
-  uint16_t LindexUp[7], LindexDn[7];
-  for (ml = 0; ml < NFermion / 2; ml++)
+  uint32_t Ntemp;
+  uint32_t NFermion = (uint32_t)luaL_checkunsigned(L, 1);
+  uint32_t NShell;
+  uint16_t *LindexUp, *LindexDn;
+  LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
+  LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
+  if(NShell!=Ntemp)
   {
-    LindexDn[ml] = 2 * ml;
-    LindexUp[ml] = 2 * ml + 1;
+    lua_pushfstring (L, "Error in LuaOperatorNewSz, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    lua_error(L);
+    return 1;
   }
-  
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   CreateOperatorSz(NFermion, NShell, LindexUp, LindexDn, op);
   luaL_setmetatable(L, "Lua.operator");
+  free(LindexUp);
+  free(LindexDn);
   return 1;
 }
+
+static int LuaOperatorNewSsqr(lua_State * L)
+{
+  OperatorType *op;
+  uint32_t Ntemp;
+  uint32_t NFermion = (uint32_t)luaL_checkunsigned(L, 1);
+  uint32_t NShell;
+  uint16_t *LindexUp, *LindexDn;
+  LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
+  LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
+  if(NShell!=Ntemp)
+  {
+    lua_pushfstring (L, "Error in LuaOperatorNewSsqr, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    lua_error(L);
+    return 1;
+  }
+  op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+  CreateOperatorSsqr(NFermion, NShell, LindexUp, LindexDn, op);
+  luaL_setmetatable(L, "Lua.operator");
+  free(LindexUp);
+  free(LindexDn);
+  return 1;
+}
+
+static int LuaOperatorNewSplus(lua_State * L)
+{
+  OperatorType *op;
+  uint32_t Ntemp;
+  uint32_t NFermion = (uint32_t)luaL_checkunsigned(L, 1);
+  uint32_t NShell;
+  uint16_t *LindexUp, *LindexDn;
+  LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
+  LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
+  if(NShell!=Ntemp)
+  {
+    lua_pushfstring (L, "Error in LuaOperatorNewSplus, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    lua_error(L);
+    return 1;
+  }
+  op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+  CreateOperatorSplus(NFermion, NShell, LindexUp, LindexDn, op);
+  luaL_setmetatable(L, "Lua.operator");
+  free(LindexUp);
+  free(LindexDn);
+  return 1;
+}
+
+static int LuaOperatorNewSmin(lua_State * L)
+{
+  OperatorType *op;
+  uint32_t Ntemp;
+  uint32_t NFermion = (uint32_t)luaL_checkunsigned(L, 1);
+  uint32_t NShell;
+  uint16_t *LindexUp, *LindexDn;
+  LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
+  LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
+  if(NShell!=Ntemp)
+  {
+    lua_pushfstring (L, "Error in LuaOperatorNewSmin, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    lua_error(L);
+    return 1;
+  }
+  op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+  CreateOperatorSmin(NFermion, NShell, LindexUp, LindexDn, op);
+  luaL_setmetatable(L, "Lua.operator");
+  free(LindexUp);
+  free(LindexDn);
+  return 1;
+}
+
+
+
+/***********************/
+/* operator arithmetic */
+/***********************/
 
 static int LuaOperatorMul(lua_State * L)
 {
@@ -122,10 +209,17 @@ static int LuaOperatorPrintReadable(lua_State * L)
 
 static int LuaOperatorChop(lua_State * L)
 {
-  //int chop = luaL_checknumber(L, 1);
   OperatorChop((OperatorType *) currentudata, 10.*DBL_MIN);
   return 0;
 }
+
+
+
+
+/***********************/
+/*   lua interfacing   */
+/***********************/
+
 
 static int LuaOperatorIndex(lua_State * L)
 {
@@ -169,6 +263,9 @@ static const struct luaL_Reg Operator_func[] = {
   {"NewSx", LuaOperatorNewSx},
   {"NewSy", LuaOperatorNewSy},
   {"NewSz", LuaOperatorNewSz},
+  {"NewSsqr", LuaOperatorNewSsqr},
+  {"NewSplus", LuaOperatorNewSsqr},
+  {"NewSmin", LuaOperatorNewSsqr},
   {NULL, NULL}
 };
 
