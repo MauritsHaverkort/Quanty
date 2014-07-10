@@ -60,6 +60,7 @@ static int LuaWavefunctionNew(lua_State *L)
         temp=*(Complex16 *)luaL_checkudata(L, -1, "Lua.complex");
       }
       lua_pop(L, 1);
+      CheckDetPhysical(det, psi->NFermion, psi->NBoson);
       ComplexWaveFunctionAddElement(psi, det, temp.Re, temp.Im);
       free(det);
     }

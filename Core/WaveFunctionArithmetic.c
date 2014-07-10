@@ -4,6 +4,29 @@
 #include "ComplexRealWaveFunctionArithmetic.c"
 
 
+
+/*
+ *
+ */
+uint32_t CheckDetPhysical(uint8_t *det, uint32_t const NFermion, uint32_t const NBoson)
+{
+  uint8_t detcheck,detfilter;
+  uint32_t NWord=NBoson + Min(NFermion, 1 + (NFermion - 1) / 8);
+  if(NFermion==0) return 0;
+  uint32_t iLastFermion=NWord-NBoson-1;
+  uint32_t ExtraFermionsInBasis=8*(iLastFermion+1)-NFermion;
+  detcheck = (uint8_t)((1<<ExtraFermionsInBasis)-1);
+  detfilter = ~detcheck;
+  if(det[iLastFermion]&detcheck)
+  {
+    printf("Warning: Determinant has electrons in states larger than NFermion (det=%02x allowed=%02x)\n",det[iLastFermion],detfilter);
+    det[iLastFermion]&=detfilter;
+    return 1;
+  }
+  return 0;
+}
+
+
 /*  NFermion, NBoson, QComplex, NBitsKey need to be set
  *
  */

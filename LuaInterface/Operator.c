@@ -927,29 +927,39 @@ static int LuaOperatorNewNumber(lua_State * L)
 
 static int LuaOperatorMul(lua_State * L)
 {
-  OperatorType *res = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-  luaL_setmetatable(L, "Lua.operator");
   if (luaL_testudata(L, 1, "Lua.operator") != NULL)
   {
     OperatorType *l = (OperatorType *) luaL_checkudata(L, 1, "Lua.operator");
     if (lua_isnumber(L, 2))
     {
+      OperatorType *res = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+      luaL_setmetatable(L, "Lua.operator");
       double r = luaL_checknumber(L, 2);
       OperatorCopy(res, *l);
       OperatorScale(res, r, 0);
     }
     else if (luaL_testudata(L, 2, "Lua.complex") != NULL)
     {
+      OperatorType *res = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+      luaL_setmetatable(L, "Lua.operator");
       Complex16 *r = (Complex16 *)luaL_checkudata(L, 2, "Lua.complex");
       OperatorCopy(res, *l);
       OperatorScale(res, r->Re, r->Im);
     }
+    else if (luaL_testudata(L, 2, "Lua.wavefunction") != NULL)
+    {
+      WaveFunctionType *res = (WaveFunctionType *) lua_newuserdata(L, sizeof(WaveFunctionType));
+      luaL_setmetatable(L, "Lua.wavefunction");
+      WaveFunctionType *r = (WaveFunctionType *)luaL_checkudata(L,2,"Lua.wavefunction");
+      OperatorPsi(*l, *r, res);
+    }
     else
     {
+      OperatorType *res = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+      luaL_setmetatable(L, "Lua.operator");
       OperatorType *r = (OperatorType *) luaL_checkudata(L, 2, "Lua.operator");
       InitOperatorForMult(res, 2, l, r);
       OperatorMultiply2NormalOrder(res, *l, *r, 'N', 'N', &QDetNotOrderedFcFaBcBa);
-      //OperatorMultiplyNormalOrder(res, *l, *r, &QDetNotOrderedFcFaBcBa);
     }
   }
   else
@@ -957,13 +967,15 @@ static int LuaOperatorMul(lua_State * L)
     OperatorType *l = (OperatorType *) luaL_checkudata(L, 2, "Lua.operator");
     if (lua_isnumber(L, 1))
     {
+      OperatorType *res = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+      luaL_setmetatable(L, "Lua.operator");
       double r = luaL_checknumber(L, 1);
       OperatorCopy(res, *l);
       OperatorScale(res, r, 0);
     }
     else
     {
-      lua_pushfstring (L, "Error in multiplication of operators with ???\n");
+      lua_pushfstring (L, "Error in multiplication of operators probably a c error and not an error in the input script\n");
       lua_error(L);
     }
   }
