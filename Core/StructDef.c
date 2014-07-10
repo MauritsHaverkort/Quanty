@@ -85,6 +85,8 @@ typedef struct WaveFunctionType
 WaveFunctionType;
 
 
+
+
 typedef struct DeterminantRestrictionType
 {
   uint32_t  N;                  /* number of restrictions */

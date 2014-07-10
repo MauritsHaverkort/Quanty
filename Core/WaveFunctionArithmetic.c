@@ -671,7 +671,7 @@ uint32_t CreateWaveFunctionFromString(WaveFunctionType * psi, uint16_t * createS
   {
     if (OperatorCr(Determinant, createString[i], psi->NFermion) == 0)
     {
-      printf("Error in CreateStartWaveFunctionOnsiteEnergy Fermionic part\n");
+      printf("Error in CreateWaveFunctionFromString Fermionic part\n");
       return 1;
     };
   }

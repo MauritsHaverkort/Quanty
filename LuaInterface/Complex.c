@@ -69,28 +69,104 @@ static int LuaComplexNewIndex(lua_State * L)
 static int LuaComplexAdd(lua_State * L)
 {
   Complex16 *res;
-  Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Lua.complex");
-  Complex16 *b = (Complex16 *) luaL_checkudata(L, 2, "Lua.complex");
-  
   res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
-  res->Re = a->Re + b->Re;
-  res->Im = a->Im + b->Im;
+  if(lua_isnumber(L, 1))
+  {
+    double a = luaL_checknumber(L, 1);
+    Complex16 *b = (Complex16 *) luaL_checkudata(L, 2, "Lua.complex");
+    res->Re = a + b->Re;
+    res->Im = b->Im;
+  }
+  else if(lua_isnumber(L,2))
+  {
+    Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Lua.complex");
+    double b = luaL_checknumber(L, 2);
+    res->Re = a->Re + b;
+    res->Im = a->Im ;
+  }
+  else
+  {
+    Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Lua.complex");
+    Complex16 *b = (Complex16 *) luaL_checkudata(L, 2, "Lua.complex");
+    res->Re = a->Re + b->Re;
+    res->Im = a->Im + b->Im;
+  }
+  luaL_setmetatable(L, "Lua.complex");
+  return 1;
+}
+
+
+static int LuaComplexMul(lua_State * L)
+{
+  if(lua_isnumber(L, 1))
+  {
+    Complex16 *res;
+    res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
+    double a = luaL_checknumber(L, 1);
+    Complex16 *b = (Complex16 *) luaL_checkudata(L, 2, "Lua.complex");
+    res->Re = a * b->Re;
+    res->Im = a * b->Im;
+  }
+  else if(lua_isnumber(L,2))
+  {
+    Complex16 *res;
+    res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
+    Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Lua.complex");
+    double b = luaL_checknumber(L, 2);
+    res->Re = a->Re * b;
+    res->Im = a->Im * b;
+  }
+  else if(luaL_testudata(L, 2,"Lua.operator")!=NULL)
+  {
+    OperatorType *res = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+    OperatorType *l = (OperatorType *) luaL_checkudata(L, 2, "Lua.operator");
+    Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Lua.complex");
+    OperatorCopy(res, *l);
+    OperatorScale(res, a->Re, a->Im);
+    luaL_setmetatable(L, "Lua.operator");
+    return 1;
+  }
+  else
+  {
+    Complex16 *res;
+    res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
+    Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Lua.complex");
+    Complex16 *b = (Complex16 *) luaL_checkudata(L, 2, "Lua.complex");
+    res->Re = a->Re * b->Re - a->Im * b->Im;
+    res->Im = a->Im * b->Re + a->Re * b->Im;
+  }
   luaL_setmetatable(L, "Lua.complex");
   return 1;
 }
 
 
 
+
 static int LuaComplexSub(lua_State * L)
 {
   Complex16 *res;
-  Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Lua.complex");
-  Complex16 *b = (Complex16 *) luaL_checkudata(L, 2, "Lua.complex");
-  
   res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
-  res->Re = a->Re - b->Re;
-  res->Im = a->Im - b->Im;
-  
+  if(lua_isnumber(L, 1))
+  {
+    double a = luaL_checknumber(L, 1);
+    Complex16 *b = (Complex16 *) luaL_checkudata(L, 2, "Lua.complex");
+    res->Re = a - b->Re;
+    res->Im = -b->Im;
+  }
+  else if(lua_isnumber(L,2))
+  {
+    Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Lua.complex");
+    double b = luaL_checknumber(L, 2);
+    res->Re = a->Re - b;
+    res->Im = a->Im ;
+  }
+  else
+  {
+    Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Lua.complex");
+    Complex16 *b = (Complex16 *) luaL_checkudata(L, 2, "Lua.complex");
+    res->Re = a->Re - b->Re;
+    res->Im = a->Im - b->Im;
+  }
   luaL_setmetatable(L, "Lua.complex");
   return 1;
 }
@@ -121,6 +197,7 @@ static const struct luaL_Reg Complex_meta[] = {
   {"__index", LuaComplexIndex},
   {"__add", LuaComplexAdd},
   {"__sub", LuaComplexSub},
+  {"__mul", LuaComplexMul},
   {"__newindex", LuaComplexNewIndex},
   {"__tostring", LuaComplexToString},
   {NULL, NULL}

@@ -1272,7 +1272,7 @@ uint32_t StreamPrintHarmonicsExpansion(HarmonicsExpansion M, FILE * stream)
     printf("  i   l    m    Value\n");
     for (i = 0; i < M.N; i++)
     {
-      fprintf(stream, "%3i %3i %4i %22.15E\n", i, M.l[i], M.m[i], M.Re[i]);
+      fprintf(stream, "%3i %3i %4i %22.15E + %22.15E I\n", i, M.l[i], M.m[i], M.Re[i], M.Im[i]);
     }
   }
   else

@@ -58,6 +58,8 @@ static void *currentudata = NULL;
 
 int main(int argc, char *argv[])
 {
+  TimeStampAll();
+  
   int result;
   if (argc != 2)
   {
@@ -70,19 +72,18 @@ int main(int argc, char *argv[])
   luaopen_Complex(L);
   luaopen_Operator(L);
   luaopen_Wavefunction(L);
+  
   result = luaL_loadfile(L, argv[1]);
   if (result)
   {
-    printf("Error while loading the script: %s\n\n", lua_tostring(L, -1));
-    luaL_stackDump(L);
+    printf("Error while loading the script:\n%s\n\n", lua_tostring(L, -1));
     lua_close(L);
     return 1;
   }
   result = lua_pcall(L, 0, 0, 0);
   if (result)
   {
-    fprintf(stderr, "Error while executing the script: %s\n", lua_tostring(L, -1));
-    luaL_stackDump(L);
+    fprintf(stderr, "Error while executing the script:\n%s\n\n", lua_tostring(L, -1));
     lua_close(L);
     return 1;
   }

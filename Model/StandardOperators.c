@@ -1276,8 +1276,7 @@ uint32_t CreateOperatorCreateAnnihilateList(uint32_t const NFermion, uint16_t co
   return 0;
 }
 
-uint32_t CreateOperatorNumber(uint32_t const NFermion, uint16_t const Crindex, uint16_t const Anindex,
-                              OperatorType * const OppN)
+uint32_t CreateOperatorNumber(uint32_t const NFermion, uint16_t const Crindex, uint16_t const Anindex, OperatorType * const OppN)
 {
   uint16_t oadd[2];
   InitNamedOperator(OppN, "N");
@@ -1290,7 +1289,6 @@ uint32_t CreateOperatorNumber(uint32_t const NFermion, uint16_t const Crindex, u
   RealOperatorAddLader(OppN, oadd, 2, 1);
   return 0;
 }
-
 
 uint32_t CreateOperatorNumberShell(uint32_t const NFermion, uint32_t const Nelectron, const uint16_t * const index, OperatorType * const OppN)
 {
