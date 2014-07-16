@@ -280,6 +280,9 @@
 		4CDD1CAB1799666C00614F34 /* BasicMath_BADoubleTriDiagonalMatrixVector.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = BasicMath_BADoubleTriDiagonalMatrixVector.c; sourceTree = "<group>"; };
 		4CDD1CAC179994DC00614F34 /* TestGFBA.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = TestGFBA.c; sourceTree = "<group>"; };
 		4CDD1CAD179D2F0900614F34 /* TestStandardOperators.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = TestStandardOperators.c; sourceTree = "<group>"; };
+		4CE50BC319754E6F00091F1C /* ssp.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ssp.c; sourceTree = "<group>"; };
+		4CE50BC51975556500091F1C /* BraKet.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = BraKet.c; sourceTree = "<group>"; };
+		4CE50BC6197555E100091F1C /* eval.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = eval.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -367,6 +370,9 @@
 				4C0B558319675D0D000B8E97 /* Complex.c */,
 				4C0B558519675D4D000B8E97 /* Operator.c */,
 				4C0B558619675D79000B8E97 /* Wavefunction.c */,
+				4CE50BC319754E6F00091F1C /* ssp.c */,
+				4CE50BC51975556500091F1C /* BraKet.c */,
+				4CE50BC6197555E100091F1C /* eval.c */,
 			);
 			path = LuaInterface;
 			sourceTree = "<group>";

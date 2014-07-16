@@ -153,3 +153,16 @@ HarmonicsExpansion* luaL_checkarray_HarmonicsExpansion(lua_State *L, int narg, u
   }
   return buff;
 }
+
+
+void shallowtablecopy(lua_State* L, int index)
+{
+  lua_newtable(L);
+  lua_pushnil(L);
+  while(lua_next(L, index) != 0)
+  {
+    lua_pushvalue(L, -2);
+    lua_insert(L, -2);
+    lua_settable(L, -4);
+  }
+}

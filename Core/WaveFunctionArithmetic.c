@@ -540,6 +540,16 @@ uint32_t WaveFunctionMultiply(WaveFunctionType a, const double bRe, const double
   return 0;
 }
 
+uint32_t WaveFunctionConjugate(WaveFunctionType a)
+{
+  if (a.QComplex == 0)
+  {
+    return 0;
+  }
+  ComplexWaveFunctionConjugate(a);
+  return 0;
+}
+
 void WaveFunctionCalculateNorm(const WaveFunctionType a, double *Norm)
 {
   if (a.QComplex == 0)

@@ -116,14 +116,14 @@ static int LuaComplexMul(lua_State * L)
     res->Re = a->Re * b;
     res->Im = a->Im * b;
   }
-  else if(luaL_testudata(L, 2,"Lua.operator")!=NULL)
+  else if(luaL_testudata(L, 2,"ssp.operator")!=NULL)
   {
     OperatorType *res = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-    OperatorType *l = (OperatorType *) luaL_checkudata(L, 2, "Lua.operator");
+    OperatorType *l = (OperatorType *) luaL_checkudata(L, 2, "ssp.operator");
     Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Lua.complex");
     OperatorCopy(res, *l);
     OperatorScale(res, a->Re, a->Im);
-    luaL_setmetatable(L, "Lua.operator");
+    luaL_setmetatable(L, "ssp.operator");
     return 1;
   }
   else
@@ -188,7 +188,7 @@ static int LuaComplexExp(lua_State * L)
 static int LuaComplexToString(lua_State * L)
 {
   Complex16 *v = (Complex16 *) luaL_checkudata(L, 1, "Lua.complex");
-  lua_pushfstring(L, "(%f + i * %f)", v->Re, v->Im);
+  lua_pushfstring(L, "(%f + %f I)", v->Re, v->Im);
   return 1;
 }
 

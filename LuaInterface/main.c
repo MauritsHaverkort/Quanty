@@ -54,7 +54,9 @@ static void *currentudata = NULL;
 #include "Complex.c"
 #include "Operator.c"
 #include "Wavefunction.c"
-
+#include "BraKet.c"
+#include "eval.c"
+#include "ssp.c"
 
 int main(int argc, char *argv[])
 {
@@ -70,8 +72,7 @@ int main(int argc, char *argv[])
   lua_State *L = luaL_newstate();
   luaL_openlibs(L);
   luaopen_Complex(L);
-  luaopen_Operator(L);
-  luaopen_Wavefunction(L);
+  luaopen_ssp(L);
   
   result = luaL_loadfile(L, argv[1]);
   if (result)

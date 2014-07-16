@@ -1,5 +1,5 @@
 static void luaL_stackDump (lua_State *L) {
-  int i;
+  int i,len;
   int top = lua_gettop(L);
   for (i = 1; i <= top; i++) {  /* repeat for each level */
     int t = lua_type(L, i);
@@ -17,12 +17,18 @@ static void luaL_stackDump (lua_State *L) {
         printf("%g", lua_tonumber(L, i));
         break;
         
+      case LUA_TTABLE:  /* table */
+        len = (int)lua_objlen(L, i);
+        printf("%s with %d entries", lua_typename(L, t),len);
+        
+        break;
+        
       default:  /* other values */
         printf("%s", lua_typename(L, t));
         break;
         
     }
-    printf("  ");  /* put a separator */
+    printf(" , ");  /* put a separator */
   }
   printf("\n");  /* end the listing */
 }
