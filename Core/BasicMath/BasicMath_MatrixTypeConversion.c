@@ -1104,7 +1104,7 @@ uint32_t TriDiagonalMatrixToEigenvalues(TriDiagonalMatrixType const M, double *v
   double e[M.N];
   int    lwork = (1 + 4 * M.N + Sqr(M.N));
   int    liwork = 3 + 5 * M.N;
-  double *work,*Z;
+  double *work,*Z=NULL;
   int   *iwork;
   work = malloc(lwork * sizeof(double));
   if (work == NULL)

@@ -4446,7 +4446,7 @@ uint32_t LanczosTriDiagonalizeDysonFullLowMem(OperatorType const O, uint32_t nma
     /* initiallize VOVtemp for V^{\dag} V */
     InitOperatorForMult(&VOVtemp, 2, &V[i], &V[i]);
     /* create VOV[0] */
-    OperatorMultiply2NormalOrder(&VOVtemp, V[i], V[i], 'N', 'D', &QDetNotOrderedFcFaBcBa);
+    OperatorMultiply2NormalOrder(&VOVtemp, V[i], V[i], 'D', 'N', &QDetNotOrderedFcFaBcBa);
     PsiOperatorPsiMatrix(VOVtemp, PsiKrylov, &VOV[0]);
     FreeOperator(&VOVtemp);
     for (n = 1; n <= 2 * nmax + 1; n++)
@@ -4460,11 +4460,11 @@ uint32_t LanczosTriDiagonalizeDysonFullLowMem(OperatorType const O, uint32_t nma
         OperatorCopy(&Otempold, Otemp);
         FreeOperator(&Otemp);
         InitOperatorForMult(&Otemp, 2, &Otempold, &O);
-        OperatorMultiplyNormalOrder(&Otemp, Otempold, O, &QDetNotOrderedFcFaBcBa);
+        OperatorMultiplyNormalOrder(&Otemp, O, Otempold, &QDetNotOrderedFcFaBcBa);
         FreeOperator(&Otempold);
       }
       InitOperatorForMult(&VOVtemp, 3, &V[i], &Otemp, &V[i]);
-      OperatorMultiply3NormalOrder(&VOVtemp, V[i], Otemp, V[i], 'N', 'N', 'D', &QDetNotOrderedFcFaBcBa);
+      OperatorMultiply3NormalOrder(&VOVtemp, V[i], Otemp, V[i], 'D', 'N', 'N', &QDetNotOrderedFcFaBcBa);
       PsiOperatorPsiMatrix(VOVtemp, PsiKrylov, &VOV[i]);
       FreeOperator(&VOVtemp);
     }
@@ -4612,13 +4612,13 @@ uint32_t LanczosTriDiagonalizeDysonLowMem(OperatorType const O, WaveFunctionType
     /* initiallize Otemp for V^{\dag} V */
     InitOperatorForMult(&Otemp, 2, &V[i], &V[i]);
     /* create Stemp */
-    OperatorMultiply2NormalOrder(&Otemp, V[i], V[i], 'N', 'D', &QDetNotOrderedFcFaBcBa);
+    OperatorMultiply2NormalOrder(&Otemp, V[i], V[i], 'D', 'N', &QDetNotOrderedFcFaBcBa);
     PsiOperatorPsiMatrix(Otemp, PsiKrylov, &Stemp);
     FreeOperator(&Otemp);
     /* initiallize Otemp for V^{\dag} O V */
     InitOperatorForMult(&Otemp, 3, &V[i], &O, &V[i]);
     /* create Htemp */
-    OperatorMultiply3NormalOrder(&Otemp, V[i], O, V[i], 'N', 'N', 'D', &QDetNotOrderedFcFaBcBa);
+    OperatorMultiply3NormalOrder(&Otemp, V[i], O, V[i], 'D', 'N', 'N', &QDetNotOrderedFcFaBcBa);
     PsiOperatorPsiMatrix(Otemp, PsiKrylov, &Htemp);
     FreeOperator(&Otemp);
     /* diagonalize Htemp with repsect to Stemp */
@@ -4779,13 +4779,13 @@ uint32_t LanczosTriDiagonalizeDysonSecondOrderALowMem(OperatorType const O, Wave
     /* initiallize Otemp for V^{\dag} V */
     InitOperatorForMult(&Otemp, 2, &V[i], &V[i]);
     /* create Stemp */
-    OperatorMultiply2NormalOrder(&Otemp, V[i], V[i], 'N', 'D', &QDetNotOrderedFcFaBcBa);
+    OperatorMultiply2NormalOrder(&Otemp, V[i], V[i], 'D', 'N', &QDetNotOrderedFcFaBcBa);
     PsiOperatorPsiMatrix(Otemp, PsiKrylov, &Stemp);
     FreeOperator(&Otemp);
     /* initiallize Otemp for V^{\dag} O V */
     InitOperatorForMult(&Otemp, 3, &V[i], &O, &V[i]);
     /* create Htemp */
-    OperatorMultiply3NormalOrder(&Otemp, V[i], O, V[i], 'N', 'N', 'D', &QDetNotOrderedFcFaBcBa);
+    OperatorMultiply3NormalOrder(&Otemp, V[i], O, V[i], 'D', 'N', 'N', &QDetNotOrderedFcFaBcBa);
     PsiOperatorPsiMatrix(Otemp, PsiKrylov, &Htemp);
     FreeOperator(&Otemp);
     GeneralizedEigensystemSingular(Htemp, Stemp, &TMat[i], &StempRoot, Hval.VRe[i]);
@@ -4803,14 +4803,13 @@ uint32_t LanczosTriDiagonalizeDysonSecondOrderALowMem(OperatorType const O, Wave
       /* create extended non orthonormal matrices on original basis */
       /* initiallize Otemp for V^{\dag} V^{\dag} V V */
       InitOperatorForMult(&Otemp, 4, &V[i], &V[ii], &V[ii], &V[i]);
-      OperatorMultiply4NormalOrder(&Otemp, V[i], V[ii], V[ii], V[i], 'N', 'N', 'D', 'D', &QDetNotOrderedFcFaBcBa);
+      OperatorMultiply4NormalOrder(&Otemp, V[i], V[ii], V[ii], V[i], 'D', 'D', 'N', 'N', &QDetNotOrderedFcFaBcBa);
       PsiOperatorPsiMatrix(Otemp, PsiKrylov, &Stemp);
       FreeOperator(&Otemp);
       /* initiallize Otemp for V^{\dag} V^{\dag} O V V */
       InitOperatorForMult(&Otemp, 5, &V[i], &V[ii], &O, &V[ii], &V[i]);
       /* create Htemp */
-      OperatorMultiply5NormalOrder(&Otemp, V[i], V[ii], O, V[ii], V[i], 'N', 'N', 'N', 'D', 'D',
-                                   &QDetNotOrderedFcFaBcBa);
+      OperatorMultiply5NormalOrder(&Otemp, V[i], V[ii], O, V[ii], V[i], 'D', 'D', 'N', 'N', 'N', &QDetNotOrderedFcFaBcBa);
       PsiOperatorPsiMatrix(Otemp, PsiKrylov, &Htemp);
       FreeOperator(&Otemp);
       /* diagonalize Htemp with repsect to Stemp */
