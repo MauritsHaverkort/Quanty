@@ -919,63 +919,6 @@ static int LuaOperatorNewNumber(lua_State * L)
 /* Operator meta actions */
 /***********************/
 
-static int LuaOperatorMul(lua_State * L)
-{
-  if (luaL_testudata(L, 1, "ssp.operator") != NULL)
-  {
-    OperatorType *l = (OperatorType *) luaL_checkudata(L, 1, "ssp.operator");
-    if (lua_isnumber(L, 2))
-    {
-      OperatorType *res = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-      luaL_setmetatable(L, "ssp.operator");
-      double r = luaL_checknumber(L, 2);
-      OperatorCopy(res, *l);
-      OperatorScale(res, r, 0);
-    }
-    else if (luaL_testudata(L, 2, "ssp.operator") != NULL)
-    {
-      OperatorType *res = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-      luaL_setmetatable(L, "ssp.operator");
-      Complex16 *r = (Complex16 *)luaL_checkudata(L, 2, "ssp.operator");
-      OperatorCopy(res, *l);
-      OperatorScale(res, r->Re, r->Im);
-    }
-    else if (luaL_testudata(L, 2, "ssp.wavefunction") != NULL)
-    {
-      WaveFunctionType *res = (WaveFunctionType *) lua_newuserdata(L, sizeof(WaveFunctionType));
-      luaL_setmetatable(L, "ssp.wavefunction");
-      WaveFunctionType *r = (WaveFunctionType *)luaL_checkudata(L,2,"ssp.wavefunction");
-      OperatorPsi(*l, *r, res);
-    }
-    else
-    {
-      OperatorType *res = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-      luaL_setmetatable(L, "ssp.operator");
-      OperatorType *r = (OperatorType *) luaL_checkudata(L, 2, "ssp.operator");
-      InitOperatorForMult(res, 2, l, r);
-      OperatorMultiply2NormalOrder(res, *l, *r, 'N', 'N', &QDetNotOrderedFcFaBcBa);
-    }
-  }
-  else
-  {
-    OperatorType *l = (OperatorType *) luaL_checkudata(L, 2, "ssp.operator");
-    if (lua_isnumber(L, 1))
-    {
-      OperatorType *res = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-      luaL_setmetatable(L, "ssp.operator");
-      double r = luaL_checknumber(L, 1);
-      OperatorCopy(res, *l);
-      OperatorScale(res, r, 0);
-    }
-    else
-    {
-      lua_pushfstring (L, "Error in multiplication of operators probably a c error and not an error in the input script\n");
-      lua_error(L);
-    }
-  }
-  return 1;
-}
-
 static int LuaOperatorAdd(lua_State * L)
 {
   OperatorType *l = (OperatorType *) luaL_checkudata(L, 1, "ssp.operator");
@@ -999,6 +942,134 @@ static int LuaOperatorSub(lua_State * L)
   return 1;
 }
 
+
+/*  multiplies two objects, whereby one is an operator
+ *  a (complex) number times operator scales the operator - multiplication commutes
+ *  a operator times operator is implemented as: A * B - multiplication does not commute
+ *  a operator times wavefunction is implemented as O * psi and returns a wavefunction
+ *  a wavefunction times operator is implemented as psi * O == ConjugateTranspose(O) * psi
+ *  a table times operator is implemented as: {a,b,c} * O == {a * O, b * O, c * O}
+ *  a operator times table is implemented as: O * {a,b,c} == {O * a, O * b, O * c}
+ */
+static int LuaOperatorMul(lua_State * L)
+{
+  uint32_t len = (uint32_t)lua_gettop(L);
+  if(lua_type(L,len)==LUA_TTABLE)
+  {
+    /* psi * table */
+    lua_newtable(L);
+    lua_pushnil(L);                /* push a nil to the stack - needed for lua_next */
+    while(lua_next(L, len) != 0)   /* push the next index and value to the end of the stack +1 on stack (last element replaced)*/
+    {
+      LuaOperatorMul(L);           /* multimply the value with the operator (first times last of the stack) +1 on stack*/
+      lua_pushvalue(L, -3);        /* push the index to the end of the stack +1 on stack*/
+      lua_insert(L, -2);           /* swap index and value */
+      lua_settable(L, -5);         /* set new table value -2 on stack */
+      lua_pop(L, 1);               /* remove one element from the stack -1 on stack */
+    }
+    return 1;
+  }
+  if(lua_type(L,1)==LUA_TTABLE)
+  {
+    /* psi * table */
+    lua_newtable(L);
+    lua_pushnil(L);                /* push a nil to the stack - needed for lua_next */
+    while(lua_next(L, 1) != 0)     /* push the next index and value to the end of the stack +1 on stack (last element replaced)*/
+    {
+      lua_insert(L, 1);            /* set value from table to first element on stack */
+      lua_pushvalue(L, len+1);     /* push the operator to the end of the stack +1 on stack*/
+      LuaOperatorMul(L);           /* multimply the value with the operator (first times last of the stack) +1 on stack*/
+      lua_pushvalue(L, -3);        /* push the index to the end of the stack +1 on stack*/
+      lua_insert(L, -2);           /* swap index and value */
+      lua_settable(L, -5);         /* set new table value -2 on stack */
+      lua_pop(L, 1);               /* remove one element from the stack -1 on stack */
+      lua_remove(L, 1);            /* remove first element from the stack -1 on stack */
+    }
+    return 1;
+  }
+  if (lua_isnumber(L, 1))
+  {
+    double b = (double) luaL_checknumber(L, 1);
+    OperatorType *O = (OperatorType*) luaL_checkudata(L, len, "ssp.operator");
+    OperatorType *ONew;
+    ONew = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+    OperatorCopy(ONew, *O);
+    OperatorScale(ONew, b, 0);
+    luaL_setmetatable(L, "ssp.operator");
+    return 1;
+  }
+  if (lua_isnumber(L, len))
+  {
+    double b = (double) luaL_checknumber(L, len);
+    OperatorType *O = (OperatorType*) luaL_checkudata(L, 1, "ssp.operator");
+    OperatorType *ONew;
+    ONew = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+    OperatorCopy(ONew, *O);
+    OperatorScale(ONew, b, 0);
+    luaL_setmetatable(L, "ssp.operator");
+    return 1;
+  }
+  if (luaL_testudata(L, 1, "Lua.complex") != NULL)
+  {
+    Complex16 *b = (Complex16 *) luaL_checkudata(L, 1, "Lua.complex");
+    OperatorType *O = (OperatorType*) luaL_checkudata(L, len, "ssp.operator");
+    OperatorType *ONew;
+    ONew = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+    OperatorCopy(ONew, *O);
+    OperatorScale(ONew, b->Re, b->Im);
+    luaL_setmetatable(L, "ssp.operator");
+    return 1;
+  }
+  if (luaL_testudata(L, len, "Lua.complex") != NULL)
+  {
+    Complex16 *b = (Complex16 *) luaL_checkudata(L, len, "Lua.complex");
+    OperatorType *O = (OperatorType*) luaL_checkudata(L, 1, "ssp.operator");
+    OperatorType *ONew;
+    ONew = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+    OperatorCopy(ONew, *O);
+    OperatorScale(ONew, b->Re, b->Im);
+    luaL_setmetatable(L, "ssp.operator");
+    return 1;
+  }
+  if (luaL_testudata(L, len, "ssp.wavefunction") != NULL)
+  {
+    /* O | psi> */
+    WaveFunctionType *psi = (WaveFunctionType*) luaL_checkudata(L, len, "ssp.wavefunction");
+    OperatorType *O = (OperatorType *) luaL_checkudata(L,1,"ssp.operator");
+    WaveFunctionType *Opsi;
+    Opsi = (WaveFunctionType *) lua_newuserdata(L, sizeof(WaveFunctionType));
+    OperatorPsi(*O, *psi, Opsi);
+    luaL_setmetatable(L, "ssp.wavefunction");
+    return 1;
+  }
+  if (luaL_testudata(L, 1, "ssp.wavefunction") != NULL)
+  {
+    /* <psi | O */
+    WaveFunctionType *psi = (WaveFunctionType*) luaL_checkudata(L, 1, "ssp.wavefunction");
+    OperatorType *O = (OperatorType *) luaL_checkudata(L,len,"ssp.operator");
+    OperatorType OT;
+    OperatorConjugateTransposeNormalOrder(*O, &OT, &QDetNotOrderedFcFaBaBc);
+    WaveFunctionType *Opsi;
+    Opsi = (WaveFunctionType *) lua_newuserdata(L, sizeof(WaveFunctionType));
+    OperatorPsi(OT, *psi, Opsi);
+    FreeOperator(&OT);
+    luaL_setmetatable(L, "ssp.wavefunction");
+    return 1;
+  }
+  {
+    /* O * O */
+    OperatorType *l = (OperatorType *) luaL_checkudata(L, 1, "ssp.operator");
+    OperatorType *r = (OperatorType *) luaL_checkudata(L, len, "ssp.operator");
+    OperatorType *res = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+    luaL_setmetatable(L, "ssp.operator");
+    InitOperatorForMult(res, 2, l, r);
+    OperatorMultiply2NormalOrder(res, *l, *r, 'N', 'N', &QDetNotOrderedFcFaBcBa);
+  }
+  return 1;
+}
+
+
+
 static int LuaOperatorPrint(lua_State * L)
 {
   uint32_t len = (uint32_t)lua_gettop(L);
@@ -1006,12 +1077,14 @@ static int LuaOperatorPrint(lua_State * L)
   {
     PrintOperatorReadable(*((OperatorType *) currentudata));
   }
+  else if(lua_istable(L,-1))
+  {
+    printf("Options for print recognized but not implemented\n");
+    PrintOperatorReadable(*((OperatorType *) currentudata));
+  }
   else
   {
-    if(lua_istable(L,-1))
-    {
-      PrintOperatorFullReadable(*((OperatorType *) currentudata));
-    }
+    return luaL_error(L, "Error in .Print(arg) unrecognized arguments in Print()\n");
   }
   return 0;
 }
@@ -1038,6 +1111,57 @@ static int LuaOperatorChop(lua_State * L)
   return 0;
 }
 
+
+static int LuaOperatorConjugate(lua_State * L)
+{
+  uint32_t len = (uint32_t)lua_gettop(L);
+  if(len==0)
+  {
+    OperatorComplexConjugate((OperatorType *)currentudata);
+  }
+  else
+  {
+    return luaL_error(L, "Error in .Conjugate(arg) unrecognized arguments in Conjugate()\n");
+  }
+  return 0;
+}
+
+static int LuaOperatorConjugateTranspose(lua_State * L)
+{
+  uint32_t len = (uint32_t)lua_gettop(L);
+  if(len==0)
+  {
+    OperatorType OppTemp;
+    OperatorCopy(&OppTemp, *(OperatorType *)currentudata);
+    FreeOperator((OperatorType *)currentudata);
+    OperatorConjugateTransposeNormalOrder(OppTemp, (OperatorType *)currentudata, &QDetNotOrderedFcFaBaBc);
+    FreeOperator(&OppTemp);
+  }
+  else
+  {
+    return luaL_error(L, "Error in .ConjugateTranspose(arg) unrecognized arguments in ConjugateTranspose()\n");
+  }
+  return 0;
+}
+
+static int LuaOperatorTranspose(lua_State * L)
+{
+  uint32_t len = (uint32_t)lua_gettop(L);
+  if(len==0)
+  {
+    OperatorType OppTemp;
+    OperatorCopy(&OppTemp, *(OperatorType *)currentudata);
+    FreeOperator((OperatorType *)currentudata);
+    OperatorTransposeNormalOrder(OppTemp, (OperatorType *)currentudata, &QDetNotOrderedFcFaBaBc);
+    FreeOperator(&OppTemp);
+  }
+  else
+  {
+    return luaL_error(L, "Error in .ConjugateTranspose(arg) unrecognized arguments in ConjugateTranspose()\n");
+  }
+  return 0;
+}
+
 static int LuaOperatorIndex(lua_State * L)
 {
   OperatorType *a = (OperatorType *) luaL_checkudata(L, 1, "ssp.operator");
@@ -1052,6 +1176,21 @@ static int LuaOperatorIndex(lua_State * L)
   else if (strcmp(str, "Chop") == 0)
   {
     lua_pushcfunction(L, LuaOperatorChop);
+    return 1;
+  }
+  if ((strcmp(str, "Conjugate") == 0)||(strcmp(str, "C") == 0)||(strcmp(str, "Dag") == 0))
+  {
+    lua_pushcfunction(L, LuaOperatorConjugate);
+    return 1;
+  }
+  if ((strcmp(str, "ConjugateTranspose") == 0)||(strcmp(str, "CT")==0))
+  {
+    lua_pushcfunction(L, LuaOperatorConjugateTranspose);
+    return 1;
+  }
+  if ((strcmp(str, "Transpose") == 0)||(strcmp(str, "T")==0))
+  {
+    lua_pushcfunction(L, LuaOperatorTranspose);
     return 1;
   }
   return luaL_error(L, "Error operator variable not found");;

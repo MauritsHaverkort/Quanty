@@ -97,6 +97,38 @@ Complex16* luaL_checkarray_complex16(lua_State *L, int narg, uint32_t *len_out)
   return buff;
 }
 
+WaveFunctionType* luaL_checkarray_WaveFunctionType(lua_State *L, int narg, uint32_t *len_out)
+{
+  int i;
+  luaL_checktype(L, narg, LUA_TTABLE);
+  uint32_t len = (uint32_t)lua_objlen(L, narg);
+  *len_out = len;
+  WaveFunctionType *buff = (WaveFunctionType*)malloc(len*sizeof(WaveFunctionType));
+  for(i=0;i<len;i++)
+  {
+    lua_rawgeti(L, narg, i+1);
+    buff[i] = *(WaveFunctionType *)luaL_checkudata(L, -1, "ssp.wavefunction");
+    lua_pop(L, 1);
+  }
+  return buff;
+}
+
+OperatorType* luaL_checkarray_OperatorType(lua_State *L, int narg, uint32_t *len_out)
+{
+  int i;
+  luaL_checktype(L, narg, LUA_TTABLE);
+  uint32_t len = (uint32_t)lua_objlen(L, narg);
+  *len_out = len;
+  OperatorType *buff = (OperatorType*)malloc(len*sizeof(OperatorType));
+  for(i=0;i<len;i++)
+  {
+    lua_rawgeti(L, narg, i+1);
+    buff[i] = *(OperatorType *)luaL_checkudata(L, -1, "ssp.operator");
+    lua_pop(L, 1);
+  }
+  return buff;
+}
+
 HarmonicsExpansion* luaL_checkarray_HarmonicsExpansion(lua_State *L, int narg, uint32_t *len_out)
 {
   int i,lencheck;
@@ -131,8 +163,7 @@ HarmonicsExpansion* luaL_checkarray_HarmonicsExpansion(lua_State *L, int narg, u
       lua_pop(L, 1);
       if(Abs(buff->m[i])>buff->l[i])
       {
-        lua_pushfstring (L, "Error Harmonics Expansion, |m| (%d) > l (%d) at level %d\n",buff->m[i],buff->l[i],i+1);
-        lua_error(L);
+        luaL_error (L, "Error Harmonics Expansion, |m| (%d) > l (%d) at level %d\n",buff->m[i],buff->l[i],i+1);
       }
       lua_rawgeti(L, -1, 3);
       if(lua_isnumber(L, -1))
@@ -165,4 +196,61 @@ void shallowtablecopy(lua_State* L, int index)
     lua_insert(L, -2);
     lua_settable(L, -4);
   }
+}
+
+void * LuaReturnVariableType(lua_State * L, int narg, char * type)
+{
+  int *buffint;
+  double *buffdouble;
+  void *buff;
+  if (strcmp(type, "char*") == 0)
+  {
+    buff = (void*) luaL_checkstring(L, narg);
+    return  buff;
+  }
+  if (strcmp(type, "int") == 0)
+  {
+    buffint = malloc(sizeof(int));
+    *buffint = luaL_checkint(L, narg);
+    return (void*) buffint;
+  }
+  if (strcmp(type, "double") == 0)
+  {
+    buffdouble = malloc(sizeof(double));
+    *buffdouble = (double)luaL_checknumber(L, narg);
+    return (void*) buffdouble;
+  }
+  
+  
+  
+  luaL_error (L, "Error while reading variable type from stack. Type \"%s\" not recognized\n",type);
+  return buff;
+}
+
+
+void * LuaFindOptionsInTable(lua_State * L, int narg, char* token, char* type)
+{
+  void * buff;
+  char * tokenread;
+  buff=NULL;
+  luaL_checktype(L, narg, LUA_TTABLE);
+  uint32_t len,lenelement;
+  len = (uint32_t)lua_objlen(L, narg);
+  uint32_t i;
+  for(i=1;i<=len;i++)
+  {
+    lua_rawgeti(L, narg, i);
+    luaL_checktype(L, -1, LUA_TTABLE);
+    lenelement = (int)lua_objlen(L, -1);
+    if(lenelement!=2) luaL_error (L, "Error in options, found %d indices (expected 2 {name,value} at level %d\n",lenelement,i);
+    lua_rawgeti(L, -1, 1);
+    tokenread = (char*) luaL_checkstring(L, -1);
+    if (strcmp(tokenread, token) == 0)
+    {
+      lua_rawgeti(L, -2, 2);
+      return LuaReturnVariableType(L, -1, type);
+    }
+    lua_pop(L,2);
+  }
+  return buff;
 }

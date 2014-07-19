@@ -4332,11 +4332,11 @@ uint32_t ExtendKrylovBasis(const OperatorType h12, WaveFunctionType * const PsiB
       WaveFunctionCalculateNorm(PsiBasisExtended[i], &norm);
       if (norm < 0.99)
       {
-        WaveFunctionMultiply(PsiBasisExtended[i], 0, 0);
+        WaveFunctionMultiply(&PsiBasisExtended[i], 0, 0);
       }
       else
       {
-        WaveFunctionMultiply(PsiBasisExtended[i], 1.0 / norm, 0);
+        WaveFunctionMultiply(&PsiBasisExtended[i], 1.0 / norm, 0);
       }
     }
     WaveFunctionTruncateBasis(&(PsiBasisExtended[i]), epsilon);

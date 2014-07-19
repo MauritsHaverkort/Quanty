@@ -6039,6 +6039,45 @@ uint32_t OperatorTranspose(OperatorType O, OperatorType * OT)
   return 0;
 }
 
+/*  OT == O^{T}
+ */
+uint32_t OperatorTransposeNormalOrder(OperatorType O, OperatorType * OT, uint32_t(*QDetNotOrdered) (uint16_t, uint16_t, uint32_t))
+{
+  uint32_t il, i, j;
+  uint16_t oadd[O.MaxLength];
+  if (InitOperatorCopySettings(OT, O))
+    return 1;
+  for (il = 0; il <= O.MaxLength; il++)
+  {
+    if (O.l[il].QComplex)
+    {
+      for (i = 0; i < O.l[il].N; i++)
+      {
+        for (j = 0; j < il; j++)
+        {
+          oadd[il - j - 1] = O.l[il].o[j + i * il] ^ CrAnMask;
+        }
+        if (ComplexOperatorAddLaderNormalOrder(OT, oadd, il, O.l[il].V[i].Re, O.l[il].V[i].Im,QDetNotOrdered))
+          return 1;
+      }
+    }
+    else
+    {
+      for (i = 0; i < O.l[il].N; i++)
+      {
+        for (j = 0; j < il; j++)
+        {
+          oadd[il - j - 1] = O.l[il].o[j + i * il] ^ CrAnMask;
+        }
+        if (RealOperatorAddLaderNormalOrder(OT, oadd, il, O.l[il].VRe[i],QDetNotOrdered))
+          return 1;
+      }
+    }
+  }
+  SetQComplexOperator(OT);
+  return 0;
+}
+
 /*  O -> O^{*}
  */
 uint32_t OperatorComplexConjugate(OperatorType * O)
@@ -6134,7 +6173,6 @@ uint32_t OperatorConjugateTransposeNormalOrder(OperatorType O, OperatorType * OT
       }
     }
   }
-  PrintOperatorReadable(*OT);
   return 0;
 }
 

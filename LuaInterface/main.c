@@ -49,11 +49,12 @@
 
 #include "lua/includeLua.h"
 static void *currentudata = NULL;
-#include "lua_extensions/TableToArray.c"
 #include "lua_extensions/tools.c"
+#include "lua_extensions/TableToArray.c"
 #include "Complex.c"
 #include "Operator.c"
 #include "Wavefunction.c"
+#include "Spectra.c"
 #include "BraKet.c"
 #include "eval.c"
 #include "ssp.c"
@@ -73,6 +74,8 @@ int main(int argc, char *argv[])
   luaL_openlibs(L);
   luaopen_Complex(L);
   luaopen_ssp(L);
+  
+  luaconstants(L);
   
   result = luaL_loadfile(L, argv[1]);
   if (result)

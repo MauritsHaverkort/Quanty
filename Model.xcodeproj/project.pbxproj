@@ -260,6 +260,7 @@
 		4C45453F189269F600E16DC6 /* BasicMath_CompactMatrixVector.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = BasicMath_CompactMatrixVector.c; sourceTree = "<group>"; };
 		4C5A6B9B175E6E8700EEA17F /* PrintMathematicaExpression.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = PrintMathematicaExpression.c; sourceTree = "<group>"; };
 		4C5CA61716D18BBF00BE1C25 /* DMFT */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = DMFT; sourceTree = BUILT_PRODUCTS_DIR; };
+		4C639499197968E4009C7F12 /* Spectra.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = Spectra.c; sourceTree = "<group>"; };
 		4C6534801927B39400D00679 /* MeanField.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = MeanField.c; sourceTree = "<group>"; };
 		4C6925BF18D8683700E6FA6F /* CodeMartin.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = CodeMartin.c; path = Martin/CodeMartin.c; sourceTree = "<group>"; };
 		4C6925C418D869FE00E6FA6F /* MartinPESXAS */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = MartinPESXAS; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -373,6 +374,7 @@
 				4CE50BC319754E6F00091F1C /* ssp.c */,
 				4CE50BC51975556500091F1C /* BraKet.c */,
 				4CE50BC6197555E100091F1C /* eval.c */,
+				4C639499197968E4009C7F12 /* Spectra.c */,
 			);
 			path = LuaInterface;
 			sourceTree = "<group>";

@@ -520,16 +520,16 @@ uint32_t WaveFunctionAddComplexMultipliedUnionBasis(WaveFunctionType * const a, 
   }
 }
 
-uint32_t WaveFunctionMultiply(WaveFunctionType a, const double bRe, const double bIm)
+uint32_t WaveFunctionMultiply(WaveFunctionType * a, const double bRe, const double bIm)
 {
-  if (a.QComplex == 0)
+  if (a->QComplex == 0)
   {
-    if (fabs(bIm) < DBL_MIN * 10)
+    if (Abs(bIm) < (DBL_EPSILON * Abs(bRe) + DBL_MIN) * 10)
     {
-      RealWaveFunctionMultiply(a, bRe);
+      RealWaveFunctionMultiply(*a, bRe);
       return 0;
     }
-    if (MakeComplexWaveFunctionFromReal(&a, a))
+    if (MakeComplexWaveFunctionFromReal(a, *a))
     {
       printf("MakeComplexWaveFunctionFromReal failed in WaveFunctionMultiply\n");
       fflush(stdout);
