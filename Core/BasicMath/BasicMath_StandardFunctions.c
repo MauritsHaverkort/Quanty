@@ -7197,3 +7197,16 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
   }
   return 0;
 }
+
+
+void FreeHarmonicsExpansion(HarmonicsExpansion * Akm)
+{
+  if(Akm->N!=0)
+  {
+    free(Akm->l);
+    free(Akm->m);
+    free(Akm->Re);
+    if(Akm->QComplex) free(Akm->Im);
+  }
+  Akm->N=0;
+}

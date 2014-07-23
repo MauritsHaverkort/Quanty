@@ -340,6 +340,31 @@ static int LuaNewOperator(lua_State * L)
   return luaL_error(L, "ERROR: first argument in ssp.NewOperator (%s) is not recognized as a known operatortype\n See ssp.Help(\"ssp.NewOperator\") for more information\n",OT);
 }
 
+/*  on stack: string describing the symmetry
+ *  integer describing the angular momentum
+ *  table with eigen energies of type double
+ *
+ *  output table of Harmonics Expansion
+ */
+static int LuaPotentialExpandedOnYlm(lua_State *L)
+{
+  char *s;
+  double * eigenvalues;
+  HarmonicsExpansion Akm;
+  uint32_t l,len;
+  s=(char*)luaL_checkstring(L, 1);
+  l=luaL_checkint(L,2);
+  eigenvalues=luaL_checkarray_double(L, 3, &len);
+  if(PotentialExpandedOnY(s, l, eigenvalues, &Akm))
+  {
+    luaL_error(L, "Potential of \"%s\" symmetry for angular momentum %d not found\n",s,l);
+  }
+  LuaPushTable_HarmonicsExpansion(L, &Akm);
+  FreeHarmonicsExpansion(&Akm);free(eigenvalues);
+  return 1;
+}
+
+
 static int LuaNewWaveFunction(lua_State * L)
 {
   Complex16 temp;
@@ -716,6 +741,44 @@ static int Luatranspose(lua_State * L)
 }
 
 
+static int Luarotate(lua_State *L)
+{
+  MatrixType *U;
+  uint32_t len = (uint32_t)lua_gettop(L);
+  if(len<2)
+  {
+    return luaL_error(L, "ssp.Rotate called with %d arguments, 2 expected\n",len);
+  }
+  if (luaL_testudata(L, len-1, "ssp.wavefunction") != NULL)
+  {
+    
+    return 0;
+  }
+  if (luaL_testudata(L, len-1, "ssp.operator") != NULL)
+  {
+    U = luaL_checkMatrix(L, len);
+    OperatorType *O = (OperatorType*) luaL_checkudata(L, len-1, "ssp.operator");
+    if(U->Ni!=U->Nj) luaL_error(L, "Error while rotating operator. Rotation matrix should be square (Ni=%d Nj=%d)",U->Ni,U->Nj);
+    if(U->Ni!=O->NFermion+O->NBoson) luaL_error(L, "Error while rotating operator. Rotation matrix should have dimension (%d) of number of fermions (%d) + bosons (%d) of operator",U->Ni,O->NFermion,O->NBoson);
+    OperatorType *ONew;
+    ONew = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+    RotateOperatorNormalOrder(ONew, *O, *U,&QDetNotOrderedFcFaBaBc);
+    luaL_setmetatable(L, "ssp.operator");
+    return 1;
+  }
+  if(lua_type(L,len-1)==LUA_TTABLE)
+  {
+    
+    
+    return 0;
+  }
+  
+  
+  
+  return luaL_error(L, "ssp.Rotate called unrecognized type. Can only rotate wavefunctions operators and tables of these\n");
+}
+
+
 
 static int LuaCreateSpectra(lua_State *L)
 {
@@ -862,7 +925,7 @@ static int LuaEvolveToGroundstate(lua_State * L)
     bool restrictions;
     DeterminantRestrictionType DeterminantRestrictions;
   } Options;
-  Options.zero=10*DBL_EPSILON;
+  Options.zero=100*DBL_EPSILON;
   Options.epsilon=10000*DBL_EPSILON;
   Options.restrictions=false;
   OperatorType *Opp;
@@ -918,6 +981,7 @@ static int LuaEvolveToGroundstate(lua_State * L)
 static const struct luaL_Reg ssp_functions[] = {
   {"Help", LuaHelp},
   {"NewOperator", LuaNewOperator},
+  {"PotentialExpandedOnYlm", LuaPotentialExpandedOnYlm},
   {"NewWavefunction", LuaNewWaveFunction},
   {"Copy", Luacopy},
   {"Clone", Luacopy},
@@ -927,6 +991,7 @@ static const struct luaL_Reg ssp_functions[] = {
   {"CT", Luaconjugatetranspose},
   {"Transpose", Luatranspose},
   {"T", Luatranspose},
+  {"Rotate", Luarotate},
   {"EvolveToGroundstate", LuaEvolveToGroundstate},
   {"CreateSpectra", LuaCreateSpectra},
   {"BraKet", LuaBraKet},           /* function in file BraKet.c */

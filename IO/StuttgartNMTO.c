@@ -169,7 +169,7 @@ uint32_t OrderAndCheckStuttgartCTRL(StuttgartCTRL * O)
   /* set values to IDXDN_M */
   for(i=0;i<O->SITE.N;i++)
   {
-    for(l=0;l<O->CLASS.LMX[O->SITE.ICLASS[i]];l++)
+    for(l=0;l<=O->CLASS.LMX[O->SITE.ICLASS[i]];l++)
     {
       for(m=l*l;m<l*l+2*l+1;m++)
       {
@@ -183,7 +183,7 @@ uint32_t OrderAndCheckStuttgartCTRL(StuttgartCTRL * O)
   for(i=0;i<O->SITE.N;i++)
   {
     O->SITE.ActiveAtomMap[i]=-1;
-    for(l=0;l<O->CLASS.LMX[O->SITE.ICLASS[i]];l++)
+    for(l=0;l<=O->CLASS.LMX[O->SITE.ICLASS[i]];l++)
     {
       for(m=l*l;m<l*l+2*l+1;m++)
       {

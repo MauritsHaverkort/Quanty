@@ -10,6 +10,7 @@
 /*  Different versions of LanczosGroundState depending on QComplex of H and psi
  *
  */
+
 uint32_t LanczosGroundStateRR(const OperatorType H, WaveFunctionType * const psi, double *epsilon, const double zero, double shiftin, WaveFunctionType * OtherPsi, uint32_t NOtherPsi)
 {
   printf("\nStart of LanczosGroundStateRR\n\n");
@@ -17,18 +18,22 @@ uint32_t LanczosGroundStateRR(const OperatorType H, WaveFunctionType * const psi
   const uint32_t NKrylovMax = 100, NKrylovStart = 25;
   uint32_t NKrylov;
   WaveFunctionType v[3];
-  double energy = 4 * zero, energy1 = 2 * zero, energy2;
+  double energy = 4 * zero, energy1 = 2 * zero, energy2, energysqr;
   double shift;
-  uint32_t cycles, i, vi, vip, vim, minloop = 3;
+  uint32_t cycles, i, vi, vip, vim, minloop = 3, statetopick;
   MatrixType Eigen;
   TriDiagonalMatrixType M;
   double val[NKrylovMax];
   M.N = NKrylovMax;
   InitTriDiagonalMatrix(&M);
+  // Orthogonalize to previously found functions
+  RealWaveFunctionOrthogonalizeConserveBasis(psi, OtherPsi, NOtherPsi);
+  RealWaveFunctionNormalize(psi);
   // Shift H down to twice the energy of the starting wave-function
   // for the case that this is zero, add an aditional shift of 1
   // Make sure at least 2 loops are done
   PsiOperatorPsiRR(H, *psi, &energy1);
+  PsiOperatorSqrPsiRR(H, *psi, &energysqr);
   if (energy1 < 0)
   {
     shift = -Abs(energy) - 1;
@@ -37,11 +42,10 @@ uint32_t LanczosGroundStateRR(const OperatorType H, WaveFunctionType * const psi
   {
     shift = -2 * energy - 1;
   }
-  shift -= shiftin;
-  energy1 = 0;
-  energy = 1;
+
   // loop until the relative energy gain is smaller than zero.
-  while (((energy - energy1) > (zero * (1.0 + fabs(energy)))) || minloop)
+  printf("Energy: %22.15E variance %22.15E Number of determinants %d\n", energy1,energysqr-Sqr(energy1),psi->N);
+  while ((((energy - energy1) > (zero * (1.0 + fabs(energy)))) || minloop)&&((energysqr-Sqr(energy1))>zero*(fabs(energy1)+DBL_EPSILON)))
   {
     if (minloop)
       minloop--;
@@ -98,12 +102,18 @@ uint32_t LanczosGroundStateRR(const OperatorType H, WaveFunctionType * const psi
     fflush(stdout);
     goto Repeat;
   EnoughMem:
+    
+    // Orthogonalize to previously found functions
+    RealWaveFunctionOrthogonalizeConserveBasis(psi, OtherPsi, NOtherPsi);
+    RealWaveFunctionNormalize(psi);
+    
     // For a given basis set determine the lowest state
     //  In the previous part the memory for 3 functions v[0], v[1] and v[2] is allocated on this basis set.
     energy1 = 2 * zero;
     energy2 = 4 * zero;
     // loop until the relative energy gain is smaller than zero, loop a minimum of 3 times
-    while ((cycles < 3) || ((energy2 - energy1) > (zero * (1.0 + fabs(energy1)))))
+    
+    while ((energy2 - energy1) > (zero * (1.0 + fabs(energy1))))
     {
       // Calculate the Krylov basis of size NKrylov, starting from the sofar best approximation to the ground-state
       NKrylov = NKrylovStart + cycles % (NKrylovMax - NKrylovStart);
@@ -139,10 +149,28 @@ uint32_t LanczosGroundStateRR(const OperatorType H, WaveFunctionType * const psi
       }
       // Calculate the eigen-states in the Krylov basis
       TriDiagonalMatrixToEigensystem(M, &Eigen, val);
+      
+      // test
+      //PrintMatrix(Eigen);
+      
+      
       // Given the eigen-states in the Krylov basis reconstruct the ground-state in the original basis
+      // pick the lowest state which has an overlap larger than sqrt(DBL_EPSILON) with the previous state
+      statetopick=0;
+      for(i=0;i<M.N;i++)
+      {
+        if(Sqr(Eigen.VRe[i][0])>DBL_EPSILON)
+        {
+          statetopick=i;
+          break;
+        }
+      }
+      
+      
+      
       RealWaveFunctionMultiply(v[0], 0);
       RealWaveFunctionAddSameBasis(v[0], *psi);
-      RealWaveFunctionMultiply(*psi, Eigen.VRe[0][0]);
+      RealWaveFunctionMultiply(*psi, Eigen.VRe[statetopick][0]);
       OperatorPsiConserveBasisPreAllocatedRR(&H, &(v[0]), &(v[1]));
       RealWaveFunctionAddMultipliedSameBasis(v[1], v[0], shift);
       for (i = 1; i < M.N; i++)
@@ -159,31 +187,32 @@ uint32_t LanczosGroundStateRR(const OperatorType H, WaveFunctionType * const psi
         OperatorPsiConserveBasisPreAllocatedRR(&H, &(v[vi]), &(v[vip]));
         RealWaveFunctionAddMultipliedSameBasis(v[vip], v[vi], shift);
         RealWaveFunctionAddMultipliedSameBasis(v[vip], v[vim], -M.b[i]);
-        RealWaveFunctionAddMultipliedSameBasis(*psi, v[vi], Eigen.VRe[0][i]);
+        RealWaveFunctionAddMultipliedSameBasis(*psi, v[vi], Eigen.VRe[statetopick][i]);
       }
       // Set the shift such that the largest eigenvalue found becomes zero
       shift -= val[M.N - 1];
       shift -= shiftin;
       // Orthogonalize to previously found functions
+      
       RealWaveFunctionOrthogonalizeConserveBasis(psi, OtherPsi, NOtherPsi);
       RealWaveFunctionNormalize(psi);
       PsiOperatorPsiRR(H, *psi, &energy1);
+      PsiOperatorSqrPsiRR(H, *psi, &energysqr);
     }
     RealWaveFunctionFreeValues(&v[0]);
     RealWaveFunctionFreeValues(&v[1]);
     RealWaveFunctionFreeValues(&v[2]);
     RealWaveFunctionTruncateBasis(psi, DBL_EPSILON);
-    printf("                                           Eigenstate: %12i\n", psi->N);
     RealWaveFunctionNormalize(psi);
     FreeMatrix(&Eigen);
-    printf("Energy: %22.15E  ", energy1);
+    printf("Energy: %22.15E variance %22.15E ", energy1,energysqr-Sqr(energy1));
     printf("NumberOfLaczosCycles: %i\n", cycles);
     fflush(stdout);
   }
   return 0;
 }
 
-uint32_t LanczosGroundStateRRold(const OperatorType H, WaveFunctionType * const psi, double *epsilon, const double zero, double shiftin, WaveFunctionType * OtherPsi, uint32_t NOtherPsi)
+uint32_t LanczosGroundStateRRold2(const OperatorType H, WaveFunctionType * const psi, double *epsilon, const double zero, double shiftin, WaveFunctionType * OtherPsi, uint32_t NOtherPsi)
 {
   printf("\nStart of LanczosGroundStateRR\n\n");
   fflush(stdout);

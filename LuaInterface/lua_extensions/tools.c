@@ -1,6 +1,10 @@
 static void luaL_stackDump (lua_State *L) {
   int i,len;
   int top = lua_gettop(L);
+  if(top<=0)
+  {
+    printf("empty stack (top=%d) at location %p\n",top,L);
+  }
   for (i = 1; i <= top; i++) {  /* repeat for each level */
     int t = lua_type(L, i);
     switch (t) {
@@ -31,4 +35,5 @@ static void luaL_stackDump (lua_State *L) {
     printf(" , ");  /* put a separator */
   }
   printf("\n");  /* end the listing */
+  fflush(stdout);
 }

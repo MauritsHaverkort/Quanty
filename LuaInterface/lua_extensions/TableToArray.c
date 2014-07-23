@@ -67,6 +67,7 @@ double* luaL_checkarray_double(lua_State *L, int narg, uint32_t *len_out)
   return buff;
 }
 
+
 Complex16* luaL_checkarray_complex16(lua_State *L, int narg, uint32_t *len_out)
 {
   int i;
@@ -96,6 +97,44 @@ Complex16* luaL_checkarray_complex16(lua_State *L, int narg, uint32_t *len_out)
   }
   return buff;
 }
+
+
+MatrixType* luaL_checkMatrix(lua_State *L, int narg)
+{
+  uint32_t len_row;
+  int i,j;
+  MatrixType *buff;
+  Complex16 * row;
+  luaL_checktype(L, narg, LUA_TTABLE);
+  uint32_t len = (uint32_t)lua_objlen(L, narg);
+  buff=malloc(sizeof(MatrixType));
+  buff->QComplex=1;
+  buff->Nj=len;
+  for(i=0;i<len;i++)
+  {
+    lua_rawgeti(L, narg, i+1);
+    row = luaL_checkarray_complex16(L, -1, &len_row);
+    if(i==0)
+    {
+      buff->Ni=len_row;
+      InitMatrix(buff);
+    }
+    lua_pop(L, 1);
+    if(len_row!=buff->Ni)
+    {
+      luaL_error(L, "Error while reading matrix. Dimensions of rows not constant. %d at first row %d at row %d",buff->Ni,len_row,i);
+    }
+    for(j=0;j<buff->Ni;j++)
+    {
+      buff->VRe[j][i]=row[j].Re;
+      buff->VIm[j][i]=row[j].Im;
+    }
+    free(row);
+  }
+  MatrixChop(buff, 100*DBL_MIN);
+  return buff;
+}
+
 
 WaveFunctionType* luaL_checkarray_WaveFunctionType(lua_State *L, int narg, uint32_t *len_out)
 {
@@ -185,6 +224,35 @@ HarmonicsExpansion* luaL_checkarray_HarmonicsExpansion(lua_State *L, int narg, u
   return buff;
 }
 
+void LuaPushTable_HarmonicsExpansion(lua_State *L, HarmonicsExpansion *Akm)
+{
+  uint32_t i;
+  Complex16 *res;
+  lua_createtable(L, Akm->N, 0);
+  for(i=0;i<Akm->N;i++)
+  {
+    lua_createtable(L, 3, 0);
+    {
+      lua_pushinteger(L, Akm->l[i]);
+      lua_rawseti(L, -2, 1);
+      lua_pushinteger(L, Akm->m[i]);
+      lua_rawseti(L, -2, 2);
+      if(Akm->QComplex)
+      {
+        res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
+        res->Re=Akm->Re[i];
+        res->Im=Akm->Im[i];
+        luaL_setmetatable(L, "Lua.complex");
+      }
+      else
+      {
+        lua_pushnumber(L, Akm->Re[i]);
+      }
+      lua_rawseti(L, -2, 3);
+    }
+    lua_rawseti(L, -2, i+1);
+  }
+}
 
 void shallowtablecopy(lua_State* L, int index)
 {
