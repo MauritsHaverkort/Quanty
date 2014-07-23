@@ -786,7 +786,7 @@ static int LuaCreateSpectra(lua_State *L)
   {
     uint32_t NTri;
     double epsilon;
-    bool restrictions;
+    Bool restrictions;
     DeterminantRestrictionType DeterminantRestrictions;
     double Emin;
     double Emax;
@@ -797,7 +797,7 @@ static int LuaCreateSpectra(lua_State *L)
   } Options;
   Options.NTri=200;
   Options.epsilon=10000*DBL_EPSILON;
-  Options.restrictions=false;
+  Options.restrictions=False;
   Options.Emin=DBL_MAX;
   Options.Emax=-DBL_MAX;
   Options.NE=1000;
@@ -922,12 +922,12 @@ static int LuaEvolveToGroundstate(lua_State * L)
     uint32_t Npsi;
     double zero;
     double epsilon;
-    bool restrictions;
+    Bool restrictions;
     DeterminantRestrictionType DeterminantRestrictions;
   } Options;
   Options.zero=100*DBL_EPSILON;
   Options.epsilon=10000*DBL_EPSILON;
-  Options.restrictions=false;
+  Options.restrictions=False;
   OperatorType *Opp;
   WaveFunctionType *psi,*temp;
   uint32_t i,len;

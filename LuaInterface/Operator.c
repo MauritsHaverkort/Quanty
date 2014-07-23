@@ -768,6 +768,7 @@ static int LuaOperatorNewCF(lua_State * L)
 
 static int LuaOperatorNewCreate(lua_State * L)
 {
+  int i;
   OperatorType *op;
   uint32_t len = (uint32_t)lua_gettop(L);
   if(len==2)
@@ -791,7 +792,7 @@ static int LuaOperatorNewCreate(lua_State * L)
       return 1;
     }
     double PrefactorsRe[NOpp],PrefactorsIm[NOpp];
-    for(int i=0;i<NOpp;i++)
+    for(i=0;i<NOpp;i++)
     {
       PrefactorsRe[i]=Prefactors[i].Re;
       PrefactorsIm[i]=Prefactors[i].Im;
@@ -813,6 +814,7 @@ static int LuaOperatorNewCreate(lua_State * L)
 
 static int LuaOperatorNewAnnihilate(lua_State * L)
 {
+  int i;
   OperatorType *op;
   uint32_t len = (uint32_t)lua_gettop(L);
   if(len==2)
@@ -836,7 +838,7 @@ static int LuaOperatorNewAnnihilate(lua_State * L)
       return 1;
     }
     double PrefactorsRe[NOpp],PrefactorsIm[NOpp];
-    for(int i=0;i<NOpp;i++)
+    for(i=0;i<NOpp;i++)
     {
       PrefactorsRe[i]=Prefactors[i].Re;
       PrefactorsIm[i]=Prefactors[i].Im;
@@ -859,6 +861,7 @@ static int LuaOperatorNewAnnihilate(lua_State * L)
 
 static int LuaOperatorNewNumber(lua_State * L)
 {
+  int i;
   OperatorType *op;
   uint32_t len = (uint32_t)lua_gettop(L);
   if(len==3)
@@ -892,7 +895,7 @@ static int LuaOperatorNewNumber(lua_State * L)
       return 1;
     }
     double PrefactorsRe[NOppCr],PrefactorsIm[NOppCr];
-    for(int i=0;i<NOppCr;i++)
+    for(i=0;i<NOppCr;i++)
     {
       PrefactorsRe[i]=Prefactors[i].Re;
       PrefactorsIm[i]=Prefactors[i].Im;
