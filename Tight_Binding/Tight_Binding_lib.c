@@ -202,9 +202,9 @@ int CreateHamiltonianFromTightBindingDef(TightBindingDef A, double k[3], MatrixT
   {
     i = A.FermionIndex[A.H[iH].Atompos1][A.H[iH].Shellpos1];
     j = A.FermionIndex[A.H[iH].Atompos2][A.H[iH].Shellpos2];
-    vector[0] = A.Cell.Atom[A.H[iH].Atompos2].Position[0] - A.Cell.Atom[A.H[iH].Atompos1].Position[0];
-    vector[1] = A.Cell.Atom[A.H[iH].Atompos2].Position[1] - A.Cell.Atom[A.H[iH].Atompos1].Position[1];
-    vector[2] = A.Cell.Atom[A.H[iH].Atompos2].Position[2] - A.Cell.Atom[A.H[iH].Atompos1].Position[2];
+    vector[0] = A.Cell.Atom[A.H[iH].Atompos1].Position[0] - A.Cell.Atom[A.H[iH].Atompos2].Position[0];
+    vector[1] = A.Cell.Atom[A.H[iH].Atompos1].Position[1] - A.Cell.Atom[A.H[iH].Atompos2].Position[1];
+    vector[2] = A.Cell.Atom[A.H[iH].Atompos1].Position[2] - A.Cell.Atom[A.H[iH].Atompos2].Position[2];
     vector[0] +=
       A.Cell.rUnitCell[0][0] * A.H[iH].TransVecs[0] + A.Cell.rUnitCell[1][0] * A.H[iH].TransVecs[1] +
       A.Cell.rUnitCell[2][0] * A.H[iH].TransVecs[2];
@@ -241,9 +241,9 @@ int CreateHamiltonianOperatorFromTightBindingDef(TightBindingDef A, double k[3],
   {
     i = A.FermionIndex[A.H[iH].Atompos1][A.H[iH].Shellpos1];
     j = A.FermionIndex[A.H[iH].Atompos2][A.H[iH].Shellpos2];
-    vector[0] = A.Cell.Atom[A.H[iH].Atompos2].Position[0] - A.Cell.Atom[A.H[iH].Atompos1].Position[0];
-    vector[1] = A.Cell.Atom[A.H[iH].Atompos2].Position[1] - A.Cell.Atom[A.H[iH].Atompos1].Position[1];
-    vector[2] = A.Cell.Atom[A.H[iH].Atompos2].Position[2] - A.Cell.Atom[A.H[iH].Atompos1].Position[2];
+    vector[0] = A.Cell.Atom[A.H[iH].Atompos1].Position[0] - A.Cell.Atom[A.H[iH].Atompos2].Position[0];
+    vector[1] = A.Cell.Atom[A.H[iH].Atompos1].Position[1] - A.Cell.Atom[A.H[iH].Atompos2].Position[1];
+    vector[2] = A.Cell.Atom[A.H[iH].Atompos1].Position[2] - A.Cell.Atom[A.H[iH].Atompos2].Position[2];
     vector[0] +=
       A.Cell.rUnitCell[0][0] * A.H[iH].TransVecs[0] + A.Cell.rUnitCell[1][0] * A.H[iH].TransVecs[1] +
       A.Cell.rUnitCell[2][0] * A.H[iH].TransVecs[2];

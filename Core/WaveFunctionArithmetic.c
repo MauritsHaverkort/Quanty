@@ -6,7 +6,7 @@
 
 
 /*
- *
+ *  checks if det has occupation in states larger then NFermion
  */
 uint32_t CheckDetPhysical(uint8_t *det, uint32_t const NFermion, uint32_t const NBoson)
 {
@@ -26,6 +26,54 @@ uint32_t CheckDetPhysical(uint8_t *det, uint32_t const NFermion, uint32_t const 
   return 0;
 }
 
+/*
+ *
+ */
+uint8_t *StringToDet(uint32_t const NFermion, uint32_t const NBoson, char *s)
+{
+  char **endptr;
+  char Boson[3];
+  uint32_t i, nspaces=0;
+  uint8_t *det;
+  uint32_t NWord=NBoson + Min(NFermion, 1 + (NFermion - 1) / 8);
+  det = calloc(NWord,sizeof(uint8_t));
+  if(strlen(s)<NFermion+2*NBoson)
+  {
+    printf("Error in StringToDet, length of string(%lu) different from NFermion(%d)+2*NBoson(%d)\n",strlen(s),NFermion,NBoson);
+  }
+  for(i=0;i<NFermion;i++)
+  {
+    if(s[i+nspaces]=='1')
+    {
+      det[i>>3]+=(1<<(7-i%8));
+    }
+    else if(s[i+nspaces]==' ')
+    {
+      nspaces++;
+      i--;
+    }
+    else if(s[i+nspaces]=='0')
+    {
+      
+    }
+    else
+    {
+      printf("Error in StringToDet, expected \"1\", \"0\" or \" \" on position %d of the string, got %c\n",i+nspaces,s[i+nspaces]);
+    }
+  }
+  Boson[2]='\0';
+  for(i=0;i<NBoson;i++)
+  {
+    while (s[NFermion+nspaces+2*i]==' ')
+    {
+      nspaces++;
+    }
+    Boson[0]=s[NFermion+nspaces+2*i  ];
+    Boson[1]=s[NFermion+nspaces+2*i+1];
+    det[NWord-NBoson+i]=(uint8_t)strtol(Boson, endptr, 16);
+  }
+  return det;
+}
 
 /*  NFermion, NBoson, QComplex, NBitsKey need to be set
  *

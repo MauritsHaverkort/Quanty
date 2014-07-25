@@ -358,8 +358,7 @@ double RealWaveFunctionPrefactorDet(const WaveFunctionType psi, const uint8_t * 
       PsiAIsPsiB = 1;
       for (i = 0; i < psi.NWord; i++)
       {
-        if (psi.Determinant[BlokElementDet(NextIndex, psi.NWord, i)] != det[i])
-          PsiAIsPsiB = 0;
+        if (psi.Determinant[BlokElementDet(NextIndex, psi.NWord, i)] != det[i]) PsiAIsPsiB = 0;
       }
       if (PsiAIsPsiB)
       {                         /* psi already in basis set return prefactor and leave loop  */

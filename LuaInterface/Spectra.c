@@ -17,7 +17,6 @@ static int LuaSpectrumPrint(lua_State * L)
     
     if(Options.stream==NULL)
     {
-      
       PrintSpectra(((SpectraTypeArray *)currentudata)->Spec, ((SpectraTypeArray *)currentudata)->NSpectra);
     }
     else

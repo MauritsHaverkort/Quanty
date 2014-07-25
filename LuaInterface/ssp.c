@@ -367,6 +367,7 @@ static int LuaPotentialExpandedOnYlm(lua_State *L)
 
 static int LuaNewWaveFunction(lua_State * L)
 {
+  char *detchar;
   Complex16 temp;
   uint32_t QComplex=0,NDet,i,detleng;
   uint8_t *det;
@@ -407,7 +408,16 @@ static int LuaNewWaveFunction(lua_State * L)
     else
     {
       lua_rawgeti(L, -1, 1);
-      det=luaL_checkarray_unit8_t(L, -1, &detleng);
+      if(lua_isstring(L, -1))
+      {
+        detchar = (char *) luaL_checkstring(L, -1);
+        det = StringToDet(psi->NFermion, psi->NBoson, detchar);
+        detleng = psi->NBoson + Min(psi->NFermion, 1 + (psi->NFermion - 1) / 8);
+      }
+      else
+      {
+        det=luaL_checkarray_unit8_t(L, -1, &detleng);
+      }
       if(detleng!=psi->NWord)
       {
         lua_pushfstring (L, "Error in LuaWavefunctionNew, determinant number %d should be a table of %d words\n",i,psi->NWord);
@@ -743,6 +753,11 @@ static int Luatranspose(lua_State * L)
 
 static int Luarotate(lua_State *L)
 {
+  struct
+  {
+    double zero;
+  } Options;
+  Options.zero=100*DBL_EPSILON;
   MatrixType *U;
   uint32_t len = (uint32_t)lua_gettop(L);
   if(len<2)
@@ -764,6 +779,7 @@ static int Luarotate(lua_State *L)
     ONew = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
     RotateOperatorNormalOrder(ONew, *O, *U,&QDetNotOrderedFcFaBaBc);
     luaL_setmetatable(L, "ssp.operator");
+    OperatorChop(ONew, Options.zero);
     return 1;
   }
   if(lua_type(L,len-1)==LUA_TTABLE)
@@ -820,7 +836,7 @@ static int LuaCreateSpectra(lua_State *L)
   H = (OperatorType *) luaL_checkudata(L, 1, "ssp.operator");
   if(lua_type(L,2)==LUA_TTABLE)
   {
-    T=luaL_checkarray_OperatorType(L, 3, &Options.NT);
+    T=luaL_checkarray_OperatorType(L, 2, &Options.NT);
   }
   else
   {
@@ -956,8 +972,7 @@ static int LuaEvolveToGroundstate(lua_State * L)
   
   for (i = 0; i < Options.Npsi; i++)
   {
-    WaveFunctionOrthogonalize(&(psi[i]), psi, i);
-    WaveFunctionNormalize(&(psi[i]));
+    printf("start of state #%d/%d",i+1,Options.Npsi);
     LanczosGroundState(*Opp, &(psi[i]), &Options.epsilon, Options.zero, 0, psi, i);
   }
   

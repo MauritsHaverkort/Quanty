@@ -138,7 +138,7 @@ MatrixType* luaL_checkMatrix(lua_State *L, int narg)
 
 WaveFunctionType* luaL_checkarray_WaveFunctionType(lua_State *L, int narg, uint32_t *len_out)
 {
-  int i;
+  int i,j;
   luaL_checktype(L, narg, LUA_TTABLE);
   uint32_t len = (uint32_t)lua_objlen(L, narg);
   *len_out = len;
@@ -148,13 +148,20 @@ WaveFunctionType* luaL_checkarray_WaveFunctionType(lua_State *L, int narg, uint3
     lua_rawgeti(L, narg, i+1);
     buff[i] = *(WaveFunctionType *)luaL_checkudata(L, -1, "ssp.wavefunction");
     lua_pop(L, 1);
+    for(j=0;j<i;j++)
+    {
+      if(buff[i].ValueRe==buff[j].ValueRe)
+      {
+        WaveFunctionCopy(buff[j], &buff[i]);
+      }
+    }
   }
   return buff;
 }
 
 OperatorType* luaL_checkarray_OperatorType(lua_State *L, int narg, uint32_t *len_out)
 {
-  int i;
+  int i,j;
   luaL_checktype(L, narg, LUA_TTABLE);
   uint32_t len = (uint32_t)lua_objlen(L, narg);
   *len_out = len;
@@ -164,6 +171,13 @@ OperatorType* luaL_checkarray_OperatorType(lua_State *L, int narg, uint32_t *len
     lua_rawgeti(L, narg, i+1);
     buff[i] = *(OperatorType *)luaL_checkudata(L, -1, "ssp.operator");
     lua_pop(L, 1);
+    for(j=0;j<i;j++)
+    {
+      if(buff[i].l==buff[j].l)
+      {
+        OperatorCopy(&buff[i], buff[j]);
+      }
+    }
   }
   return buff;
 }

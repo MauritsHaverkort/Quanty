@@ -27,13 +27,21 @@ uint32_t LanczosGroundStateRR(const OperatorType H, WaveFunctionType * const psi
   M.N = NKrylovMax;
   InitTriDiagonalMatrix(&M);
   // Orthogonalize to previously found functions
+  for(i=0;i<NOtherPsi;i++)
+  {
+    if(OtherPsi[i].QComplex)
+    {
+      MakeComplexWaveFunctionFromReal(psi, *psi);
+      return LanczosGroundStateRC(H, psi, epsilon, zero, shiftin, OtherPsi, NOtherPsi);
+    }
+  }
   RealWaveFunctionOrthogonalizeConserveBasis(psi, OtherPsi, NOtherPsi);
   RealWaveFunctionNormalize(psi);
   // Shift H down to twice the energy of the starting wave-function
   // for the case that this is zero, add an aditional shift of 1
   // Make sure at least 2 loops are done
-  PsiOperatorPsiRR(H, *psi, &energy1);
-  PsiOperatorSqrPsiRR(H, *psi, &energysqr);
+  PsiOperatorPsiRHR(H, *psi, &energy1);
+  PsiOperatorSqrPsiRHR(H, *psi, &energysqr);
   if (energy1 < 0)
   {
     shift = -Abs(energy) - 1;
@@ -47,8 +55,7 @@ uint32_t LanczosGroundStateRR(const OperatorType H, WaveFunctionType * const psi
   printf("Energy: %22.15E variance %22.15E Number of determinants %d\n", energy1,energysqr-Sqr(energy1),psi->N);
   while ((((energy - energy1) > (zero * (1.0 + fabs(energy)))) || minloop)&&((energysqr-Sqr(energy1))>zero*(fabs(energy1)+DBL_EPSILON)))
   {
-    if (minloop)
-      minloop--;
+    if (minloop) minloop--;
     cycles = 0;
     energy = energy1;
     // Calculate psi_new = H^3 psi_old whereby the first time H acts on psi_old the basis size is enlarged
@@ -149,11 +156,6 @@ uint32_t LanczosGroundStateRR(const OperatorType H, WaveFunctionType * const psi
       }
       // Calculate the eigen-states in the Krylov basis
       TriDiagonalMatrixToEigensystem(M, &Eigen, val);
-      
-      // test
-      //PrintMatrix(Eigen);
-      
-      
       // Given the eigen-states in the Krylov basis reconstruct the ground-state in the original basis
       // pick the lowest state which has an overlap larger than sqrt(DBL_EPSILON) with the previous state
       statetopick=0;
@@ -165,9 +167,6 @@ uint32_t LanczosGroundStateRR(const OperatorType H, WaveFunctionType * const psi
           break;
         }
       }
-      
-      
-      
       RealWaveFunctionMultiply(v[0], 0);
       RealWaveFunctionAddSameBasis(v[0], *psi);
       RealWaveFunctionMultiply(*psi, Eigen.VRe[statetopick][0]);
@@ -196,8 +195,8 @@ uint32_t LanczosGroundStateRR(const OperatorType H, WaveFunctionType * const psi
       
       RealWaveFunctionOrthogonalizeConserveBasis(psi, OtherPsi, NOtherPsi);
       RealWaveFunctionNormalize(psi);
-      PsiOperatorPsiRR(H, *psi, &energy1);
-      PsiOperatorSqrPsiRR(H, *psi, &energysqr);
+      PsiOperatorPsiRHR(H, *psi, &energy1);
+      PsiOperatorSqrPsiRHR(H, *psi, &energysqr);
     }
     RealWaveFunctionFreeValues(&v[0]);
     RealWaveFunctionFreeValues(&v[1]);
@@ -360,23 +359,52 @@ uint32_t LanczosGroundStateRC(const OperatorType H, WaveFunctionType * const psi
 {
   printf("\nStart of LanczosGroundStateRC\n\n");
   fflush(stdout);
-  const uint32_t NKrylovMax = 100;
+  const uint32_t NKrylovMax = 100, NKrylovStart = 25;
   uint32_t NKrylov;
   WaveFunctionType v[3];
-  double energy = 4 * zero, energy1 = 2 * zero, energy2;
+  double energy = 4 * zero, energy1 = 2 * zero, energy2, energysqr;
   double Imzero;
   double shift;
-  uint32_t cycles, i, vi, vip, vim;
+  uint32_t cycles, i, vi, vip, vim, minloop = 3, statetopick;;
   MatrixType Eigen;
   TriDiagonalMatrixType M;
   double val[NKrylovMax];
   M.N = NKrylovMax;
   InitTriDiagonalMatrix(&M);
-  while ((energy - energy1) > (zero * (1.0 + fabs(energy))))
+  // Orthogonalize to previously found functions
+  for(i=0;i<NOtherPsi;i++)
   {
+    if(!(OtherPsi[i].QComplex))
+    {
+      MakeComplexWaveFunctionFromReal(&OtherPsi[i], OtherPsi[i]);
+    }
+  }
+  ComplexWaveFunctionOrthogonalizeConserveBasis(psi, OtherPsi, NOtherPsi);
+  ComplexWaveFunctionNormalize(psi);
+  // Shift H down to twice the energy of the starting wave-function
+  // for the case that this is zero, add an aditional shift of 1
+  // Make sure at least 2 loops are done
+  PsiOperatorPsiRHC(H, *psi, &energy1);
+  PsiOperatorSqrPsiRHC(H, *psi, &energysqr);
+  if (energy1 < 0)
+  {
+    shift = -Abs(energy) - 1;
+  }
+  else
+  {
+    shift = -2 * energy - 1;
+  }
+  
+  // loop until the relative energy gain is smaller than zero.
+  printf("Energy: %22.15E variance %22.15E Number of determinants %d\n", energy1,energysqr-Sqr(energy1),psi->N);
+  
+  while ((((energy - energy1) > (zero * (1.0 + fabs(energy)))) || minloop)&&((energysqr-Sqr(energy1))>zero*(fabs(energy1)+DBL_EPSILON)))
+  {
+    if (minloop) minloop--;
     cycles = 0;
     energy = energy1;
-    shift = -shiftin - energy * 0.49;
+    // Calculate psi_new = H^3 psi_old whereby the first time H acts on psi_old the basis size is enlarged
+    //  This leaves three functions allocated which can be used in the next part
   Repeat:
     if (OperatorPsiRC(H, *psi, &v[0]))
       goto OutOffMemv0;
@@ -392,19 +420,16 @@ uint32_t LanczosGroundStateRC(const OperatorType H, WaveFunctionType * const psi
     fflush(stdout);
     if (OperatorPsiConserveBasisRC(H, v[0], &v[1]))
       goto OutOffMemv1;
-    ComplexWaveFunctionMultiply(v[0], shift);
-    ComplexWaveFunctionAddSameBasis(v[1], v[0]);
+    ComplexWaveFunctionAddMultipliedSameBasis(v[1], v[0], shift);
     ComplexWaveFunctionNormalize(&v[1]);
     if (OperatorPsiConserveBasisRC(H, v[1], &v[2]))
       goto OutOffMemv2;
-    ComplexWaveFunctionMultiply(v[1], shift);
-    ComplexWaveFunctionAddSameBasis(v[2], v[1]);
+    ComplexWaveFunctionAddMultipliedSameBasis(v[2], v[1], shift);
     ComplexWaveFunctionNormalize(&v[2]);
     ComplexWaveFunctionFree(psi);
     if (OperatorPsiConserveBasisRC(H, v[2], psi))
       goto OutOffMempsi;
-    ComplexWaveFunctionMultiply(v[2], shift);
-    ComplexWaveFunctionAddSameBasis(*psi, v[2]);
+    ComplexWaveFunctionAddMultipliedSameBasis(*psi, v[2], shift);
     ComplexWaveFunctionOrthogonalizeConserveBasis(psi, OtherPsi, NOtherPsi);
     ComplexWaveFunctionNormalize(psi);
     goto EnoughMem;
@@ -416,7 +441,6 @@ uint32_t LanczosGroundStateRC(const OperatorType H, WaveFunctionType * const psi
   OutOffMemv0Ortho:
   OutOffMemv0add:
     ComplexWaveFunctionFreeValues(&v[0]);
-    ComplexWaveFunctionMultiply(*psi, 1.0 / shift);
   OutOffMemv0:
     printf("Out off memory increase epsilon from %22.15E to %22.15E\n", *epsilon, *epsilon * 2);
     *epsilon *= 2.0;
@@ -431,14 +455,21 @@ uint32_t LanczosGroundStateRC(const OperatorType H, WaveFunctionType * const psi
     fflush(stdout);
     goto Repeat;
   EnoughMem:
-
+    
+    // Orthogonalize to previously found functions
+    ComplexWaveFunctionOrthogonalizeConserveBasis(psi, OtherPsi, NOtherPsi);
+    ComplexWaveFunctionNormalize(psi);
+    
+    // For a given basis set determine the lowest state
+    //  In the previous part the memory for 3 functions v[0], v[1] and v[2] is allocated on this basis set.
     energy1 = 2 * zero;
     energy2 = 4 * zero;
-    while ((cycles < 3) || ((energy2 - energy1) > (zero * (1.0 + fabs(energy1)))))
+    // loop until the relative energy gain is smaller than zero, loop a minimum of 3 times
+    
+    while ((energy2 - energy1) > (zero * (1.0 + fabs(energy1))))
     {
-      NKrylov = 5 + cycles % (NKrylovMax - 5);
+      NKrylov = NKrylovStart + cycles % (NKrylovMax - NKrylovStart);
       M.N = NKrylov;
-
       cycles++;
       if ((cycles & 15) == 15)
       {
@@ -449,6 +480,7 @@ uint32_t LanczosGroundStateRC(const OperatorType H, WaveFunctionType * const psi
       ComplexWaveFunctionMultiply(v[0], 0);
       ComplexWaveFunctionAddSameBasis(v[0], *psi);
       OperatorPsiConserveBasisPreAllocatedRC(&H, &(v[0]), &(v[1]));
+      ComplexWaveFunctionAddMultipliedSameBasis(v[1], v[0], shift);
       ComplexWaveFunctionDotProduct(&v[1], &v[0], &(M.a[1]), &Imzero);
       for (i = 1; i < M.N; i++)
       {
@@ -466,11 +498,24 @@ uint32_t LanczosGroundStateRC(const OperatorType H, WaveFunctionType * const psi
         ComplexWaveFunctionDotProduct(&v[vip], &v[vi], &(M.a[i + 1]), &Imzero);
         ComplexWaveFunctionAddMultipliedConserveBasis(&(v[vip]), v[vim], -M.b[i]);
       }
+      // Calculate the eigen-states in the Krylov basis
       TriDiagonalMatrixToEigensystem(M, &Eigen, val);
+      // Given the eigen-states in the Krylov basis reconstruct the ground-state in the original basis
+      // pick the lowest state which has an overlap larger than sqrt(DBL_EPSILON) with the previous state
+      statetopick=0;
+      for(i=0;i<M.N;i++)
+      {
+        if(Sqr(Eigen.VRe[i][0])>DBL_EPSILON)
+        {
+          statetopick=i;
+          break;
+        }
+      }
       ComplexWaveFunctionMultiply(v[0], 0);
       ComplexWaveFunctionAddSameBasis(v[0], *psi);
-      ComplexWaveFunctionMultiply(*psi, Eigen.VRe[0][0]);
+      ComplexWaveFunctionMultiply(*psi, Eigen.VRe[statetopick][0]);
       OperatorPsiConserveBasisPreAllocatedRC(&H, &(v[0]), &(v[1]));
+      ComplexWaveFunctionAddMultipliedSameBasis(v[1], v[0], shift);
       for (i = 1; i < M.N; i++)
       {
         vip = (i + 1) % 3;
@@ -478,23 +523,32 @@ uint32_t LanczosGroundStateRC(const OperatorType H, WaveFunctionType * const psi
         vim = (i - 1) % 3;
         ComplexWaveFunctionAddMultipliedSameBasis(v[vi], v[vim], -M.a[i]);
         if (M.b[i] > DBL_MIN * 10)
-          RealWaveFunctionMultiply(v[vi], (double)1.0 / M.b[i]);
+          ComplexWaveFunctionMultiply(v[vi], (double)1.0 / M.b[i]);
         else
           ComplexWaveFunctionMultiply(v[vi], 0.0);
         ComplexWaveFunctionOrthogonalizeConserveBasis(&v[vi], OtherPsi, NOtherPsi);
         OperatorPsiConserveBasisPreAllocated(&H, &(v[vi]), &(v[vip]));
+        ComplexWaveFunctionAddMultipliedSameBasis(v[vip], v[vi], shift);
         ComplexWaveFunctionAddMultipliedSameBasis(v[vip], v[vim], -M.b[i]);
         ComplexWaveFunctionAddMultipliedSameBasis(*psi, v[vi], Eigen.VRe[0][i]);
       }
+      // Set the shift such that the largest eigenvalue found becomes zero
+      shift -= val[M.N - 1];
+      shift -= shiftin;
+      // Orthogonalize to previously found functions
+      
       ComplexWaveFunctionOrthogonalizeConserveBasis(psi, OtherPsi, NOtherPsi);
       ComplexWaveFunctionNormalize(psi);
       PsiOperatorPsiRHC(H, *psi, &energy1);
+      PsiOperatorSqrPsiRHC(H, *psi, &energysqr);
     }
     ComplexWaveFunctionFreeValues(&v[0]);
     ComplexWaveFunctionFreeValues(&v[1]);
     ComplexWaveFunctionFreeValues(&v[2]);
+    ComplexWaveFunctionTruncateBasis(psi, DBL_EPSILON);
+    ComplexWaveFunctionNormalize(psi);
     FreeMatrix(&Eigen);
-    printf("Energy: %22.15E  ", energy1);
+    printf("Energy: %22.15E variance %22.15E ", energy1,energysqr-Sqr(energy1));
     printf("NumberOfLaczosCycles: %i\n", cycles);
     fflush(stdout);
   }
@@ -505,28 +559,56 @@ uint32_t LanczosGroundStateMC(const OperatorType H, WaveFunctionType * const psi
 {
   printf("\nStart of LanczosGroundStateMC\n\n");
   fflush(stdout);
-  const uint32_t NKrylovMax = 100;
+  const uint32_t NKrylovMax = 100, NKrylovStart = 25;
   uint32_t NKrylov;
   WaveFunctionType v[3];
-  double energy = 4 * zero, energy1 = 2 * zero, energy2;
+  double energy = 4 * zero, energy1 = 2 * zero, energy2, energysqr;
   double Imzero;
   double shift;
-  uint32_t cycles, i, vi, vip, vim;
+  uint32_t cycles, i, vi, vip, vim, minloop = 3, statetopick;
   MatrixType Eigen;
   TriDiagonalMatrixType M;
   double val[NKrylovMax];
   M.N = NKrylovMax;
   InitTriDiagonalMatrix(&M);
-  while ((energy - energy1) > (zero * (1.0 + fabs(energy))))
+  // Orthogonalize to previously found functions
+  for(i=0;i<NOtherPsi;i++)
   {
+    if(!(OtherPsi[i].QComplex))
+    {
+      MakeComplexWaveFunctionFromReal(&OtherPsi[i], OtherPsi[i]);
+    }
+  }
+  ComplexWaveFunctionOrthogonalizeConserveBasis(psi, OtherPsi, NOtherPsi);
+  ComplexWaveFunctionNormalize(psi);
+  // Shift H down to twice the energy of the starting wave-function
+  // for the case that this is zero, add an aditional shift of 1
+  // Make sure at least 2 loops are done
+  PsiOperatorPsiMHC(H, *psi, &energy1);
+  PsiOperatorSqrPsiMHC(H, *psi, &energysqr);
+  if (energy1 < 0)
+  {
+    shift = -Abs(energy) - 1;
+  }
+  else
+  {
+    shift = -2 * energy - 1;
+  }
+  
+  // loop until the relative energy gain is smaller than zero.
+  printf("Energy: %22.15E variance %22.15E Number of determinants %d\n", energy1,energysqr-Sqr(energy1),psi->N);
+  
+  while ((((energy - energy1) > (zero * (1.0 + fabs(energy)))) || minloop)&&((energysqr-Sqr(energy1))>zero*(fabs(energy1)+DBL_EPSILON)))
+  {
+    if (minloop) minloop--;
     cycles = 0;
     energy = energy1;
-    shift = -shiftin - energy * 0.49;
+    // Calculate psi_new = H^3 psi_old whereby the first time H acts on psi_old the basis size is enlarged
+    //  This leaves three functions allocated which can be used in the next part
   Repeat:
     if (OperatorPsiMC(H, *psi, &v[0]))
       goto OutOffMemv0;
-    ComplexWaveFunctionMultiply(*psi, shift);
-    if (ComplexWaveFunctionAddUnionBasis(&v[0], *psi))
+    if (ComplexWaveFunctionAddMultipliedUnionBasis(&v[0], *psi, shift))
       goto OutOffMemv0add;
     if (ComplexWaveFunctionOrthogonalize(&v[0], OtherPsi, NOtherPsi))
       goto OutOffMemv0Ortho;
@@ -537,19 +619,16 @@ uint32_t LanczosGroundStateMC(const OperatorType H, WaveFunctionType * const psi
     fflush(stdout);
     if (OperatorPsiConserveBasisMC(H, v[0], &v[1]))
       goto OutOffMemv1;
-    ComplexWaveFunctionMultiply(v[0], shift);
-    ComplexWaveFunctionAddSameBasis(v[1], v[0]);
+    ComplexWaveFunctionAddMultipliedSameBasis(v[1], v[0], shift);
     ComplexWaveFunctionNormalize(&v[1]);
     if (OperatorPsiConserveBasisMC(H, v[1], &v[2]))
       goto OutOffMemv2;
-    ComplexWaveFunctionMultiply(v[1], shift);
-    ComplexWaveFunctionAddSameBasis(v[2], v[1]);
+    ComplexWaveFunctionAddMultipliedSameBasis(v[2], v[1], shift);
     ComplexWaveFunctionNormalize(&v[2]);
     ComplexWaveFunctionFree(psi);
     if (OperatorPsiConserveBasisMC(H, v[2], psi))
       goto OutOffMempsi;
-    ComplexWaveFunctionMultiply(v[2], shift);
-    ComplexWaveFunctionAddSameBasis(*psi, v[2]);
+    ComplexWaveFunctionAddMultipliedSameBasis(*psi, v[2], shift);
     ComplexWaveFunctionOrthogonalizeConserveBasis(psi, OtherPsi, NOtherPsi);
     ComplexWaveFunctionNormalize(psi);
     goto EnoughMem;
@@ -561,7 +640,6 @@ uint32_t LanczosGroundStateMC(const OperatorType H, WaveFunctionType * const psi
   OutOffMemv0Ortho:
   OutOffMemv0add:
     ComplexWaveFunctionFreeValues(&v[0]);
-    ComplexWaveFunctionMultiply(*psi, 1.0 / shift);
   OutOffMemv0:
     printf("Out off memory increase epsilon from %22.15E to %22.15E\n", *epsilon, *epsilon * 2);
     *epsilon *= 2.0;
@@ -576,14 +654,21 @@ uint32_t LanczosGroundStateMC(const OperatorType H, WaveFunctionType * const psi
     fflush(stdout);
     goto Repeat;
   EnoughMem:
+    
+    // Orthogonalize to previously found functions
+    ComplexWaveFunctionOrthogonalizeConserveBasis(psi, OtherPsi, NOtherPsi);
+    ComplexWaveFunctionNormalize(psi);
+    
+    // For a given basis set determine the lowest state
+    //  In the previous part the memory for 3 functions v[0], v[1] and v[2] is allocated on this basis set.
 
     energy1 = 2 * zero;
     energy2 = 4 * zero;
-    while ((cycles < 3) || ((energy2 - energy1) > (zero * (1.0 + fabs(energy1)))))
+    while ((energy2 - energy1) > (zero * (1.0 + fabs(energy1))))
     {
-      NKrylov = 5 + cycles % (NKrylovMax - 5);
+      // Calculate the Krylov basis of size NKrylov, starting from the sofar best approximation to the ground-state
+      NKrylov = NKrylovStart + cycles % (NKrylovMax - NKrylovStart);
       M.N = NKrylov;
-
       cycles++;
       if ((cycles & 15) == 15)
       {
@@ -594,6 +679,7 @@ uint32_t LanczosGroundStateMC(const OperatorType H, WaveFunctionType * const psi
       ComplexWaveFunctionMultiply(v[0], 0);
       ComplexWaveFunctionAddSameBasis(v[0], *psi);
       OperatorPsiConserveBasisPreAllocatedMC(&H, &(v[0]), &(v[1]));
+      ComplexWaveFunctionAddMultipliedSameBasis(v[1], v[0], shift);
       ComplexWaveFunctionDotProduct(&v[1], &v[0], &(M.a[1]), &Imzero);
       for (i = 1; i < M.N; i++)
       {
@@ -608,14 +694,28 @@ uint32_t LanczosGroundStateMC(const OperatorType H, WaveFunctionType * const psi
           ComplexWaveFunctionMultiply(v[vi], 0.0);
         ComplexWaveFunctionOrthogonalizeConserveBasis(&v[vi], OtherPsi, NOtherPsi);
         OperatorPsiConserveBasisPreAllocatedMC(&H, &(v[vi]), &(v[vip]));
+        ComplexWaveFunctionAddMultipliedSameBasis(v[vip], v[vi], shift);
         ComplexWaveFunctionDotProduct(&v[vip], &v[vi], &(M.a[i + 1]), &Imzero);
         ComplexWaveFunctionAddMultipliedConserveBasis(&(v[vip]), v[vim], -M.b[i]);
       }
+      // Calculate the eigen-states in the Krylov basis
       TriDiagonalMatrixToEigensystem(M, &Eigen, val);
+      // Given the eigen-states in the Krylov basis reconstruct the ground-state in the original basis
+      // pick the lowest state which has an overlap larger than sqrt(DBL_EPSILON) with the previous state
+      statetopick=0;
+      for(i=0;i<M.N;i++)
+      {
+        if(Sqr(Eigen.VRe[i][0])>DBL_EPSILON)
+        {
+          statetopick=i;
+          break;
+        }
+      }
       ComplexWaveFunctionMultiply(v[0], 0);
       ComplexWaveFunctionAddSameBasis(v[0], *psi);
-      ComplexWaveFunctionMultiply(*psi, Eigen.VRe[0][0]);
+      ComplexWaveFunctionMultiply(*psi, Eigen.VRe[statetopick][0]);
       OperatorPsiConserveBasisPreAllocatedMC(&H, &(v[0]), &(v[1]));
+      ComplexWaveFunctionAddMultipliedSameBasis(v[1], v[0], shift);
       for (i = 1; i < M.N; i++)
       {
         vip = (i + 1) % 3;
@@ -629,17 +729,25 @@ uint32_t LanczosGroundStateMC(const OperatorType H, WaveFunctionType * const psi
         ComplexWaveFunctionOrthogonalizeConserveBasis(&v[vi], OtherPsi, NOtherPsi);
         OperatorPsiConserveBasisPreAllocatedMC(&H, &(v[vi]), &(v[vip]));
         ComplexWaveFunctionAddMultipliedSameBasis(v[vip], v[vim], -M.b[i]);
-        ComplexWaveFunctionAddMultipliedSameBasis(*psi, v[vi], Eigen.VRe[0][i]);
+        ComplexWaveFunctionAddMultipliedSameBasis(*psi, v[vi], Eigen.VRe[statetopick][i]);
       }
+      // Set the shift such that the largest eigenvalue found becomes zero
+      shift -= val[M.N - 1];
+      shift -= shiftin;
+      // Orthogonalize to previously found functions
+      
       ComplexWaveFunctionOrthogonalizeConserveBasis(psi, OtherPsi, NOtherPsi);
       ComplexWaveFunctionNormalize(psi);
       PsiOperatorPsiMHC(H, *psi, &energy1);
+      PsiOperatorSqrPsiMHR(H, *psi, &energysqr);
     }
     ComplexWaveFunctionFreeValues(&v[0]);
     ComplexWaveFunctionFreeValues(&v[1]);
     ComplexWaveFunctionFreeValues(&v[2]);
+    ComplexWaveFunctionTruncateBasis(psi, DBL_EPSILON);
+    RealWaveFunctionNormalize(psi);
     FreeMatrix(&Eigen);
-    printf("Energy: %22.15E  ", energy1);
+    printf("Energy: %22.15E variance %22.15E ", energy1,energysqr-Sqr(energy1));
     printf("NumberOfLaczosCycles: %i\n", cycles);
     fflush(stdout);
   }
@@ -650,20 +758,47 @@ uint32_t LanczosGroundStateCC(const OperatorType H, WaveFunctionType * const psi
 {
   printf("\nStart of LanczosGroundStateCC\n\n");
   fflush(stdout);
-  const uint32_t NKrylovMax = 100;
+  const uint32_t NKrylovMax = 100, NKrylovStart = 25;
   uint32_t NKrylov;
   WaveFunctionType v[3];
-  double energy = 4 * zero, energy1 = 2 * zero, energy2;
+  double energy = 4 * zero, energy1 = 2 * zero, energy2, energysqr;
   double Imzero;
   double shift;
-  uint32_t cycles, i, vi, vip, vim;
+  uint32_t cycles, i, vi, vip, vim, minloop = 3, statetopick;
   MatrixType Eigen;
   TriDiagonalMatrixType M;
   double val[NKrylovMax];
   M.N = NKrylovMax;
   InitTriDiagonalMatrix(&M);
-  while ((energy - energy1) > (zero * (1.0 + fabs(energy))))
+  // Orthogonalize to previously found functions
+  for(i=0;i<NOtherPsi;i++)
   {
+    if(!(OtherPsi[i].QComplex))
+    {
+      MakeComplexWaveFunctionFromReal(&OtherPsi[i], OtherPsi[i]);
+    }
+  }
+  ComplexWaveFunctionOrthogonalizeConserveBasis(psi, OtherPsi, NOtherPsi);
+  ComplexWaveFunctionNormalize(psi);
+  // Shift H down to twice the energy of the starting wave-function
+  // for the case that this is zero, add an aditional shift of 1
+  // Make sure at least 2 loops are done
+  PsiOperatorPsiCHC(H, *psi, &energy1);
+  PsiOperatorSqrPsiCHC(H, *psi, &energysqr);
+  if (energy1 < 0)
+  {
+    shift = -Abs(energy) - 1;
+  }
+  else
+  {
+    shift = -2 * energy - 1;
+  }
+  
+  // loop until the relative energy gain is smaller than zero.
+  printf("Energy: %22.15E variance %22.15E Number of determinants %d\n", energy1,energysqr-Sqr(energy1),psi->N);
+  while ((((energy - energy1) > (zero * (1.0 + fabs(energy)))) || minloop)&&((energysqr-Sqr(energy1))>zero*(fabs(energy1)+DBL_EPSILON)))
+  {
+    if (minloop) minloop--;
     cycles = 0;
     energy = energy1;
     shift = -shiftin - energy * 0.49;
@@ -682,19 +817,16 @@ uint32_t LanczosGroundStateCC(const OperatorType H, WaveFunctionType * const psi
     fflush(stdout);
     if (OperatorPsiConserveBasisCC(H, v[0], &v[1]))
       goto OutOffMemv1;
-    ComplexWaveFunctionMultiply(v[0], shift);
-    ComplexWaveFunctionAddSameBasis(v[1], v[0]);
+    ComplexWaveFunctionAddMultipliedSameBasis(v[1], v[0], shift);
     ComplexWaveFunctionNormalize(&v[1]);
     if (OperatorPsiConserveBasisCC(H, v[1], &v[2]))
       goto OutOffMemv2;
-    ComplexWaveFunctionMultiply(v[1], shift);
-    ComplexWaveFunctionAddSameBasis(v[2], v[1]);
+    ComplexWaveFunctionAddMultipliedSameBasis(v[2], v[1], shift);
     ComplexWaveFunctionNormalize(&v[2]);
     ComplexWaveFunctionFree(psi);
     if (OperatorPsiConserveBasisCC(H, v[2], psi))
       goto OutOffMempsi;
-    ComplexWaveFunctionMultiply(v[2], shift);
-    ComplexWaveFunctionAddSameBasis(*psi, v[2]);
+    ComplexWaveFunctionAddMultipliedSameBasis(*psi, v[2], shift);
     ComplexWaveFunctionOrthogonalizeConserveBasis(psi, OtherPsi, NOtherPsi);
     ComplexWaveFunctionNormalize(psi);
     goto EnoughMem;
@@ -706,7 +838,6 @@ uint32_t LanczosGroundStateCC(const OperatorType H, WaveFunctionType * const psi
   OutOffMemv0Ortho:
   OutOffMemv0add:
     ComplexWaveFunctionFreeValues(&v[0]);
-    ComplexWaveFunctionMultiply(*psi, 1.0 / shift);
   OutOffMemv0:
     printf("Out off memory increase epsilon from %22.15E to %22.15E\n", *epsilon, *epsilon * 2);
     *epsilon *= 2.0;
@@ -721,14 +852,22 @@ uint32_t LanczosGroundStateCC(const OperatorType H, WaveFunctionType * const psi
     fflush(stdout);
     goto Repeat;
   EnoughMem:
-
+    
+    // Orthogonalize to previously found functions
+    RealWaveFunctionOrthogonalizeConserveBasis(psi, OtherPsi, NOtherPsi);
+    RealWaveFunctionNormalize(psi);
+    
+    // For a given basis set determine the lowest state
+    //  In the previous part the memory for 3 functions v[0], v[1] and v[2] is allocated on this basis set.
     energy1 = 2 * zero;
     energy2 = 4 * zero;
-    while ((cycles < 3) || ((energy2 - energy1) > (zero * (1.0 + fabs(energy1)))))
+    // loop until the relative energy gain is smaller than zero, loop a minimum of 3 times
+    
+    while ((energy2 - energy1) > (zero * (1.0 + fabs(energy1))))
     {
-      NKrylov = 5 + cycles % (NKrylovMax - 5);
+      // Calculate the Krylov basis of size NKrylov, starting from the sofar best approximation to the ground-state
+      NKrylov = NKrylovStart + cycles % (NKrylovMax - NKrylovStart);
       M.N = NKrylov;
-
       cycles++;
       if ((cycles & 15) == 15)
       {
@@ -739,6 +878,7 @@ uint32_t LanczosGroundStateCC(const OperatorType H, WaveFunctionType * const psi
       ComplexWaveFunctionMultiply(v[0], 0);
       ComplexWaveFunctionAddSameBasis(v[0], *psi);
       OperatorPsiConserveBasisPreAllocatedCC(&H, &(v[0]), &(v[1]));
+      ComplexWaveFunctionAddMultipliedSameBasis(v[1], v[0], shift);
       ComplexWaveFunctionDotProduct(&v[1], &v[0], &(M.a[0]), &Imzero);
       for (i = 1; i < M.N; i++)
       {
@@ -753,14 +893,28 @@ uint32_t LanczosGroundStateCC(const OperatorType H, WaveFunctionType * const psi
           ComplexWaveFunctionMultiply(v[vi], 0.0);
         ComplexWaveFunctionOrthogonalizeConserveBasis(&v[vi], OtherPsi, NOtherPsi);
         OperatorPsiConserveBasisPreAllocatedCC(&H, &(v[vi]), &(v[vip]));
+        ComplexWaveFunctionAddMultipliedSameBasis(v[vip], v[vi], shift);
         ComplexWaveFunctionDotProduct(&v[vip], &v[vi], &(M.a[i + 1]), &Imzero);
         ComplexWaveFunctionAddMultipliedConserveBasis(&(v[vip]), v[vim], -M.b[i]);
       }
+      // Calculate the eigen-states in the Krylov basis
       TriDiagonalMatrixToEigensystem(M, &Eigen, val);
+      // Given the eigen-states in the Krylov basis reconstruct the ground-state in the original basis
+      // pick the lowest state which has an overlap larger than sqrt(DBL_EPSILON) with the previous state
+      statetopick=0;
+      for(i=0;i<M.N;i++)
+      {
+        if(Sqr(Eigen.VRe[i][0])>DBL_EPSILON)
+        {
+          statetopick=i;
+          break;
+        }
+      }
       ComplexWaveFunctionMultiply(v[0], 0);
       ComplexWaveFunctionAddSameBasis(v[0], *psi);
       ComplexWaveFunctionMultiply(*psi, Eigen.VRe[0][0]);
       OperatorPsiConserveBasisPreAllocatedCC(&H, &(v[0]), &(v[1]));
+      ComplexWaveFunctionAddMultipliedSameBasis(v[1], v[0], shift);
       for (i = 1; i < M.N; i++)
       {
         vip = (i + 1) % 3;
@@ -773,18 +927,27 @@ uint32_t LanczosGroundStateCC(const OperatorType H, WaveFunctionType * const psi
           ComplexWaveFunctionMultiply(v[vi], 0.0);
         ComplexWaveFunctionOrthogonalizeConserveBasis(&v[vi], OtherPsi, NOtherPsi);
         OperatorPsiConserveBasisPreAllocatedCC(&H, &(v[vi]), &(v[vip]));
+        ComplexWaveFunctionAddMultipliedSameBasis(v[vip], v[vi], shift);
         ComplexWaveFunctionAddMultipliedSameBasis(v[vip], v[vim], -M.b[i]);
         ComplexWaveFunctionAddMultipliedSameBasis(*psi, v[vi], Eigen.VRe[0][i]);
       }
+      // Set the shift such that the largest eigenvalue found becomes zero
+      shift -= val[M.N - 1];
+      shift -= shiftin;
+      // Orthogonalize to previously found functions
+      
       ComplexWaveFunctionOrthogonalizeConserveBasis(psi, OtherPsi, NOtherPsi);
       ComplexWaveFunctionNormalize(psi);
       PsiOperatorPsiCHC(H, *psi, &energy1);
+      PsiOperatorSqrPsiCHC(H, *psi, &energysqr);
     }
     ComplexWaveFunctionFreeValues(&v[0]);
     ComplexWaveFunctionFreeValues(&v[1]);
     ComplexWaveFunctionFreeValues(&v[2]);
+    ComplexWaveFunctionTruncateBasis(psi, DBL_EPSILON);
+    ComplexWaveFunctionNormalize(psi);
     FreeMatrix(&Eigen);
-    printf("Energy: %22.15E  ", energy1);
+    printf("Energy: %22.15E variance %22.15E ", energy1,energysqr-Sqr(energy1));
     printf("NumberOfLaczosCycles: %i\n", cycles);
     fflush(stdout);
   }
