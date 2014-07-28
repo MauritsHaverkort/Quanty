@@ -380,30 +380,50 @@ void * LuaReturnVariableType(lua_State * L, int narg, char * type)
   return buff;
 }
 
-
+/*  if state narg in L  is a table
+ *  and if this table has an element that is a table
+ *  and if this table has two elements
+ *  and if element one of that table is a string
+ *  and if that string matches token
+ *
+ *  then read a variable of type type from the second position
+ *
+ *  if one of the conditions fails continue without error
+ *  if the type of the variable at the second position is not of type type through an error.
+ */
 void * LuaFindOptionsInTable(lua_State * L, int narg, char* token, char* type)
 {
   void * buff;
   char * tokenread;
-  buff=NULL;
-  luaL_checktype(L, narg, LUA_TTABLE);
-  uint32_t len,lenelement;
-  len = (uint32_t)lua_objlen(L, narg);
   uint32_t i;
-  for(i=1;i<=len;i++)
+  uint32_t len,lenelement;
+  buff=NULL;
+  if(lua_istable(L, narg))
   {
-    lua_rawgeti(L, narg, i);
-    luaL_checktype(L, -1, LUA_TTABLE);
-    lenelement = (int)lua_objlen(L, -1);
-    if(lenelement!=2) luaL_error (L, "Error in options, found %d indices (expected 2 {\"name\",value} at level %d\n",lenelement,i);
-    lua_rawgeti(L, -1, 1);
-    tokenread = (char*) luaL_checkstring(L, -1);
-    if (strcmp(tokenread, token) == 0)
+    len = (uint32_t)lua_objlen(L, narg);
+    for(i=1;i<=len;i++)
     {
-      lua_rawgeti(L, -2, 2);
-      return LuaReturnVariableType(L, -1, type);
+      lua_rawgeti(L, narg, i);
+      if(lua_istable(L, -1))
+      {
+        lenelement = (int)lua_objlen(L, -1);
+        if(lenelement==2)
+        {
+          lua_rawgeti(L, -1, 1);
+          if(lua_isstring(L, -1))
+          {
+            tokenread = (char*) luaL_checkstring(L, -1);
+            if (strcmp(tokenread, token) == 0)
+            {
+              lua_rawgeti(L, -2, 2);
+              return LuaReturnVariableType(L, -1, type);
+            }
+            lua_pop(L,1);
+          }
+        }
+      }
+      lua_pop(L,1);
     }
-    lua_pop(L,2);
   }
   return buff;
 }
