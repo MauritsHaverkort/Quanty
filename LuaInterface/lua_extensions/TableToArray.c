@@ -182,13 +182,83 @@ OperatorType* luaL_checkarray_OperatorType(lua_State *L, int narg, uint32_t *len
   return buff;
 }
 
-HarmonicsExpansion* luaL_checkarray_HarmonicsExpansion(lua_State *L, int narg, uint32_t *len_out)
+
+DeterminantRestrictionType* luaL_checkarray_DeterminantRestrictionType(lua_State *L, int narg)
+{
+  uint32_t NFermion,NBoson,i;
+  uint32_t len,len2,detleng,NWord;
+  DeterminantRestrictionType *buff;
+  char * detchar;
+  
+  buff = malloc(sizeof(DeterminantRestrictionType));
+  
+  luaL_checktype(L, narg, LUA_TTABLE);
+  len = (uint32_t)lua_objlen(L, narg);
+  
+  if(len<3) luaL_error(L, "Restrictions should be given in the format {NFermion,NBoson,{\"determinant1\",minocc,maxocc},{\"determinant2\",minocc,maxocc},...}");
+  buff->N=len-2;
+  buff->Min=malloc(buff->N*sizeof(uint32_t));
+  buff->Max=malloc(buff->N*sizeof(uint32_t));
+  buff->Determinant=malloc(buff->N*sizeof(uint8_t*));
+  
+  lua_rawgeti(L, narg, 1);
+  NFermion=(uint32_t)luaL_checkunsigned(L, -1);
+  lua_pop(L, 1);
+  lua_rawgeti(L, narg, 2);
+  NBoson=(uint32_t)luaL_checkunsigned(L, -1);
+  lua_pop(L, 1);
+  
+  NWord=NBoson + Min(NFermion, 1 + (NFermion - 1) / 8);
+  
+  
+  for(i=0;i<buff->N;i++)
+  {
+    lua_rawgeti(L, narg, i+3);
+    {
+      luaL_checktype(L, -1, LUA_TTABLE);
+      len2 = (uint32_t)lua_objlen(L, -1);
+      if(len2!=3) luaL_error(L, "Restrictions should be given in the format {NFermion,NBoson,{\"determinant1\",minocc,maxocc},{\"determinant2\",minocc,maxocc},...}");
+      lua_rawgeti(L, -1, 1);
+      {
+        if(lua_isstring(L, -1))
+        {
+          detchar = (char *) luaL_checkstring(L, -1);
+          buff->Determinant[i] = StringToDet(NFermion, NBoson, detchar);
+          detleng = NWord;
+        }
+        else
+        {
+          buff->Determinant[i]=luaL_checkarray_unit8_t(L, -1, &detleng);
+        }
+        if(detleng!=NWord)
+        {
+          luaL_error(L, "Error in Restrictions, determinant number %d should be a table of %d words\n",i,NBoson + Min(NFermion, 1 + (NFermion - 1) / 8));
+        }
+      }
+      lua_pop(L, 1);
+      lua_rawgeti(L, -1, 2);
+      {
+        buff->Min[i]=luaL_checkunsigned(L, -1);
+      }
+      lua_pop(L, 1);
+      lua_rawgeti(L, -1, 3);
+      {
+        buff->Max[i]=luaL_checkunsigned(L, -1);
+      }
+      lua_pop(L, 1);
+    }
+    lua_pop(L, 1);
+  }
+  return buff;
+}
+
+
+HarmonicsExpansion* luaL_checkarray_HarmonicsExpansion(lua_State *L, int narg)
 {
   int i,lencheck;
   Complex16 temp;
   luaL_checktype(L, narg, LUA_TTABLE);
   uint32_t len = (uint32_t)lua_objlen(L, narg);
-  *len_out = len;
   HarmonicsExpansion *buff = malloc(sizeof(HarmonicsExpansion));
   buff->N=len;
   buff->QComplex=0;
@@ -284,6 +354,7 @@ void * LuaReturnVariableType(lua_State * L, int narg, char * type)
 {
   int *buffint;
   double *buffdouble;
+  DeterminantRestrictionType *buffDeterimantRestrictionType;
   void *buff;
   if (strcmp(type, "char*") == 0)
   {
@@ -302,9 +373,11 @@ void * LuaReturnVariableType(lua_State * L, int narg, char * type)
     *buffdouble = (double)luaL_checknumber(L, narg);
     return (void*) buffdouble;
   }
-  
-  
-  
+  if (strcmp(type, "DeterminantRestrictionType") == 0)
+  {
+    buffDeterimantRestrictionType = (DeterminantRestrictionType*)luaL_checkarray_DeterminantRestrictionType(L, narg);
+    return (void*) buffDeterimantRestrictionType;
+  }
   luaL_error (L, "Error while reading variable type from stack. Type \"%s\" not recognized\n",type);
   return buff;
 }
@@ -324,7 +397,7 @@ void * LuaFindOptionsInTable(lua_State * L, int narg, char* token, char* type)
     lua_rawgeti(L, narg, i);
     luaL_checktype(L, -1, LUA_TTABLE);
     lenelement = (int)lua_objlen(L, -1);
-    if(lenelement!=2) luaL_error (L, "Error in options, found %d indices (expected 2 {name,value} at level %d\n",lenelement,i);
+    if(lenelement!=2) luaL_error (L, "Error in options, found %d indices (expected 2 {\"name\",value} at level %d\n",lenelement,i);
     lua_rawgeti(L, -1, 1);
     tokenread = (char*) luaL_checkstring(L, -1);
     if (strcmp(tokenread, token) == 0)

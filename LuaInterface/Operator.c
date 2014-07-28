@@ -726,7 +726,7 @@ static int LuaOperatorNewCF(lua_State * L)
     lua_error(L);
     return 1;
   }
-  Akm=luaL_checkarray_HarmonicsExpansion(L, -1, &i);
+  Akm=luaL_checkarray_HarmonicsExpansion(L, -1);
   if(len==3)
   {
     for(i=0;i<Akm->N;i++)

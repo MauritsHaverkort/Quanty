@@ -766,6 +766,7 @@ static int Luarotate(lua_State *L)
   }
   if (luaL_testudata(L, len-1, "ssp.wavefunction") != NULL)
   {
+    return luaL_error(L, "ssp.Rotate called with a wave function, not yet implemented\n");
     
     return 0;
   }
@@ -784,13 +785,10 @@ static int Luarotate(lua_State *L)
   }
   if(lua_type(L,len-1)==LUA_TTABLE)
   {
-    
+    return luaL_error(L, "ssp.Rotate called with a table, not yet implemented\n");
     
     return 0;
   }
-  
-  
-  
   return luaL_error(L, "ssp.Rotate called unrecognized type. Can only rotate wavefunctions operators and tables of these\n");
 }
 
@@ -798,6 +796,7 @@ static int Luarotate(lua_State *L)
 
 static int LuaCreateSpectra(lua_State *L)
 {
+  void *buff;
   struct
   {
     uint32_t NTri;
@@ -854,8 +853,43 @@ static int LuaCreateSpectra(lua_State *L)
   }
   /* read options */
   
-  
-  
+  buff=LuaFindOptionsInTable(L, -1, "epsilon", "double");
+  if(buff!=NULL)
+  {
+    Options.epsilon = *(double*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, -1, "restrictions", "DeterminantRestrictionType");
+  if(buff!=NULL)
+  {
+    Options.restrictions=True;
+    Options.DeterminantRestrictions = *(DeterminantRestrictionType*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, -1, "Emin", "double");
+  if(buff!=NULL)
+  {
+    Options.Emin = *(double*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, -1, "Emax", "double");
+  if(buff!=NULL)
+  {
+    Options.Emax = *(double*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, -1, "NE", "int");
+  if(buff!=NULL)
+  {
+    Options.NE = *(uint32_t*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, -1, "Gamma", "double");
+  if(buff!=NULL)
+  {
+    Options.Gamma = *(double*)buff;
+    free(buff);
+  }
   /* calculate spectra in Tridiagonal form */
   GTri = malloc(Options.NT*Options.Npsi*sizeof(TriDiagonalMatrixType));
   for(i=0;i<Options.NT*Options.Npsi;i++)
@@ -879,8 +913,16 @@ static int LuaCreateSpectra(lua_State *L)
     /* loop over all wavefunctions */
     for(ipsi=0;ipsi<Options.Npsi;ipsi++)
     {
-      OperatorPsi(T[iT], psi[ipsi], &Tpsi);
-      LanczosTriDiagonalize(*H, Tpsi, Options.epsilon, &GTri[iT*Options.Npsi+ipsi], Max(Options.Gamma,Options.epsilon));
+      if(Options.restrictions)
+      {
+        OperatorPsiRestricted(T[iT], psi[ipsi], &Tpsi, Options.DeterminantRestrictions);
+        LanczosTriDiagonalizeRestricted(*H, Tpsi, Options.DeterminantRestrictions, Options.epsilon, &GTri[iT*Options.Npsi+ipsi], Max(Options.Gamma,Options.epsilon));
+      }
+      else
+      {
+        OperatorPsi(T[iT], psi[ipsi], &Tpsi);
+        LanczosTriDiagonalize(*H, Tpsi, Options.epsilon, &GTri[iT*Options.Npsi+ipsi], Max(Options.Gamma,Options.epsilon));
+      }
     }
   }
   /* if Emin=DBL_MAX or Emax=DBL_MAX or Gamma==0 determine these */
@@ -933,6 +975,7 @@ static int LuaCreateSpectra(lua_State *L)
  */
 static int LuaEvolveToGroundstate(lua_State * L)
 {
+  void *buff;
   struct
   {
     uint32_t Npsi;
@@ -965,15 +1008,39 @@ static int LuaEvolveToGroundstate(lua_State * L)
     psi = (WaveFunctionType *) luaL_checkudata(L, 2, "ssp.wavefunction");
   }
   /* read options */
-  
-  
+  buff=LuaFindOptionsInTable(L, -1, "epsilon", "double");
+  if(buff!=NULL)
+  {
+    Options.epsilon = *(double*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, -1, "zero", "double");
+  if(buff!=NULL)
+  {
+    Options.zero = *(double*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, -1, "restrictions", "DeterminantRestrictionType");
+  if(buff!=NULL)
+  {
+    Options.restrictions=True;
+    Options.DeterminantRestrictions = *(DeterminantRestrictionType*)buff;
+    free(buff);
+  }
   
   /* calculate groundstate */
   
   for (i = 0; i < Options.Npsi; i++)
   {
-    printf("start of state #%d/%d",i+1,Options.Npsi);
-    LanczosGroundState(*Opp, &(psi[i]), &Options.epsilon, Options.zero, 0, psi, i);
+    printf("\nstart of state #%d/%d",i+1,Options.Npsi);
+    if(Options.restrictions)
+    {
+      LanczosGroundStateRestricted(*Opp, &(psi[i]), Options.DeterminantRestrictions, &Options.epsilon, Options.zero, 0, psi, i);
+    }
+    else
+    {
+      LanczosGroundState(*Opp, &(psi[i]), &Options.epsilon, Options.zero, 0, psi, i);
+    }
   }
   
   

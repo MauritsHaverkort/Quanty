@@ -4091,6 +4091,32 @@ uint32_t OperatorPsi(const OperatorType O, const WaveFunctionType psi, WaveFunct
   return OperatorPsiMR(O, psi, Opsi);
 }
 
+
+uint32_t OperatorPsiRestricted(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi, DeterminantRestrictionType const restrictions)
+{
+  if (O.QComplex == 0)
+  {
+    if (psi.QComplex)
+    {
+      return OperatorPsiRestrictedRC(O, psi, Opsi, restrictions);
+    }
+    return OperatorPsiRestrictedRR(O, psi, Opsi, restrictions);
+  }
+  if (O.QComplex == 1)
+  {
+    if (psi.QComplex)
+    {
+      return OperatorPsiRestrictedCC(O, psi, Opsi, restrictions);
+    }
+    return OperatorPsiRestrictedCR(O, psi, Opsi, restrictions);
+  }
+  if (psi.QComplex)
+  {
+    return OperatorPsiRestrictedMC(O, psi, Opsi, restrictions);
+  }
+  return OperatorPsiRestrictedMR(O, psi, Opsi, restrictions);
+}
+
 uint32_t PsiAddOperatorPsi(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi)
 {
   if (O.QComplex == 0)

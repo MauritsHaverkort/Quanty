@@ -99,6 +99,7 @@ static int LuaWavefunctionSub(lua_State * L)
  */
 static int LuaWavefunctionMul(lua_State * L)
 {
+  
   uint32_t len = (uint32_t)lua_gettop(L);
   if(lua_type(L,len)==LUA_TTABLE)
   {
