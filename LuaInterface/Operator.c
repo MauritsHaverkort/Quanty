@@ -16,23 +16,17 @@ static int LuaOperatorNewCoulomb(lua_State * L)
     LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
     if(NShell!=Ntemp)
     {
-      lua_pushfstring (L, "Error in LuaOperatorNewCoulomb, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
-      lua_error(L);
-      return 1;
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
     }
     l=(NShell-1)/2;
     if(2*l+1!=NShell)
     {
-      lua_pushfstring (L, "Error in LuaOperatorNewCoulomb, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
-      lua_error(L);
-      return 1;
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
     }
     F = luaL_checkarray_double(L, 4, &Ntemp);
     if(Ntemp!=l+1)
     {
-      lua_pushfstring (L, "Error in LuaOperatorNewCoulomb, Lenght of F (%d) is not equal to l+1\n",Ntemp);
-      lua_error(L);
-      return 1;
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of F (%d) is not equal to l+1\n",Ntemp);
     }
     op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
     CreateOperatorCoulombSingleShell(NFermion, l, LindexUp, LindexDn, F, op);
@@ -50,45 +44,33 @@ static int LuaOperatorNewCoulomb(lua_State * L)
     LindexDnA = luaL_checkarray_unit16_t(L, 3, &Ntemp);
     if(NShell!=Ntemp)
     {
-      lua_pushfstring (L, "Error in LuaOperatorNewCoulomb, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
-      lua_error(L);
-      return 1;
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
     }
     lA=(NShell-1)/2;
     if(2*lA+1!=NShell)
     {
-      lua_pushfstring (L, "Error in LuaOperatorNewCoulomb, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
-      lua_error(L);
-      return 1;
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
     }
     LindexUpB = luaL_checkarray_unit16_t(L, 4, &NShell);
     LindexDnB = luaL_checkarray_unit16_t(L, 5, &Ntemp);
     if(NShell!=Ntemp)
     {
-      lua_pushfstring (L, "Error in LuaOperatorNewCoulomb, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
-      lua_error(L);
-      return 1;
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
     }
     lB=(NShell-1)/2;
     if(2*lB+1!=NShell)
     {
-      lua_pushfstring (L, "Error in LuaOperatorNewCoulomb, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
-      lua_error(L);
-      return 1;
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
     }
     F = luaL_checkarray_double(L, 6, &Ntemp);
     if(Ntemp!=(Min(lA,lB)+1))
     {
-      lua_pushfstring (L, "Error in LuaOperatorNewCoulomb, Lenght of F (%d) is not equal to (Min(lA,lB)+1)1\n",Ntemp);
-      lua_error(L);
-      return 1;
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of F (%d) is not equal to (Min(lA,lB)+1)1\n",Ntemp);
     }
     G = luaL_checkarray_double(L, 7, &Ntemp);
     if(Ntemp!=(Min(lA,lB)+1))
     {
-      lua_pushfstring (L, "Error in LuaOperatorNewCoulomb, Lenght of G (%d) is not equal to (Min(lA,lB)+1)1\n",Ntemp);
-      lua_error(L);
-      return 1;
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of G (%d) is not equal to (Min(lA,lB)+1)1\n",Ntemp);
     }
     op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
     CreateOperatorCoulombTwoShellsConstantOccupation(NFermion, lA, lB, LindexUpA, LindexDnA, LindexUpB, LindexDnB, F, G, op);
@@ -103,9 +85,7 @@ static int LuaOperatorNewCoulomb(lua_State * L)
   }
   else
   {
-    lua_pushfstring (L, "Error in LuaOperatorNewCoulomb, expected 4 or 7 arguments not %d",len);
-    lua_error(L);
-    return 1;
+    return luaL_error(L, "Error in LuaOperatorNewCoulomb, expected 4 or 7 arguments not %d",len);
   }
   return 1;
 }
@@ -122,9 +102,7 @@ static int LuaOperatorNewSx(lua_State * L)
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
   if(NShell!=Ntemp)
   {
-    lua_pushfstring (L, "Error in LuaOperatorNewSx, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
-    lua_error(L);
-    return 1;
+    return luaL_error(L, "Error in LuaOperatorNewSx, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
   }
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   CreateOperatorSx(NFermion, NShell, LindexUp, LindexDn, op);
@@ -145,9 +123,7 @@ static int LuaOperatorNewSy(lua_State * L)
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
   if(NShell!=Ntemp)
   {
-    lua_pushfstring (L, "Error in LuaOperatorNewSy, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
-    lua_error(L);
-    return 1;
+    return luaL_error(L, "Error in LuaOperatorNewSy, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
   }
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   CreateOperatorSy(NFermion, NShell, LindexUp, LindexDn, op);
@@ -168,9 +144,7 @@ static int LuaOperatorNewSz(lua_State * L)
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
   if(NShell!=Ntemp)
   {
-    lua_pushfstring (L, "Error in LuaOperatorNewSz, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
-    lua_error(L);
-    return 1;
+    return luaL_error(L, "Error in LuaOperatorNewSz, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
   }
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   CreateOperatorSz(NFermion, NShell, LindexUp, LindexDn, op);
@@ -191,9 +165,7 @@ static int LuaOperatorNewSsqr(lua_State * L)
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
   if(NShell!=Ntemp)
   {
-    lua_pushfstring (L, "Error in LuaOperatorNewSsqr, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
-    lua_error(L);
-    return 1;
+    return luaL_error(L, "Error in LuaOperatorNewSsqr, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
   }
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   CreateOperatorSsqr(NFermion, NShell, LindexUp, LindexDn, op);
@@ -214,9 +186,7 @@ static int LuaOperatorNewSplus(lua_State * L)
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
   if(NShell!=Ntemp)
   {
-    lua_pushfstring (L, "Error in LuaOperatorNewSplus, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
-    lua_error(L);
-    return 1;
+    return luaL_error(L, "Error in LuaOperatorNewSplus, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
   }
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   CreateOperatorSplus(NFermion, NShell, LindexUp, LindexDn, op);
@@ -237,9 +207,7 @@ static int LuaOperatorNewSmin(lua_State * L)
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
   if(NShell!=Ntemp)
   {
-    lua_pushfstring (L, "Error in LuaOperatorNewSmin, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
-    lua_error(L);
-    return 1;
+    return luaL_error(L, "Error in LuaOperatorNewSmin, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
   }
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   CreateOperatorSmin(NFermion, NShell, LindexUp, LindexDn, op);
@@ -262,16 +230,12 @@ static int LuaOperatorNewLx(lua_State * L)
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
   if(NShell!=Ntemp)
   {
-    lua_pushfstring (L, "Error in LuaOperatorNewLx, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
-    lua_error(L);
-    return 1;
+    return luaL_error(L, "Error in LuaOperatorNewLx, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
   }
   l=(NShell-1)/2;
   if(2*l+1!=NShell)
   {
-    lua_pushfstring (L, "Error in LuaOperatorNewLx, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
-    lua_error(L);
-    return 1;
+    return luaL_error(L, "Error in LuaOperatorNewLx, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
   }
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   CreateOperatorLx(NFermion, l, LindexUp, LindexDn, op);
@@ -292,16 +256,12 @@ static int LuaOperatorNewLy(lua_State * L)
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
   if(NShell!=Ntemp)
   {
-    lua_pushfstring (L, "Error in LuaOperatorNewLy, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
-    lua_error(L);
-    return 1;
+    return luaL_error(L, "Error in LuaOperatorNewLy, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
   }
   l=(NShell-1)/2;
   if(2*l+1!=NShell)
   {
-    lua_pushfstring (L, "Error in LuaOperatorNewLy, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
-    lua_error(L);
-    return 1;
+    return luaL_error(L, "Error in LuaOperatorNewLy, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
   }
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   CreateOperatorLy(NFermion, l, LindexUp, LindexDn, op);
@@ -322,16 +282,12 @@ static int LuaOperatorNewLz(lua_State * L)
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
   if(NShell!=Ntemp)
   {
-    lua_pushfstring (L, "Error in LuaOperatorNewLz, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
-    lua_error(L);
-    return 1;
+    return luaL_error(L, "Error in LuaOperatorNewLz, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
   }
   l=(NShell-1)/2;
   if(2*l+1!=NShell)
   {
-    lua_pushfstring (L, "Error in LuaOperatorNewLz, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
-    lua_error(L);
-    return 1;
+    return luaL_error(L, "Error in LuaOperatorNewLz, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
   }
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   CreateOperatorLz(NFermion, l, LindexUp, LindexDn, op);
@@ -352,16 +308,12 @@ static int LuaOperatorNewLplus(lua_State * L)
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
   if(NShell!=Ntemp)
   {
-    lua_pushfstring (L, "Error in LuaOperatorNewLplus, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
-    lua_error(L);
-    return 1;
+    return luaL_error(L, "Error in LuaOperatorNewLplus, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
   }
   l=(NShell-1)/2;
   if(2*l+1!=NShell)
   {
-    lua_pushfstring (L, "Error in LuaOperatorNewLplus, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
-    lua_error(L);
-    return 1;
+    return luaL_error(L, "Error in LuaOperatorNewLplus, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
   }
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   CreateOperatorLplus(NFermion, l, LindexUp, LindexDn, op);
@@ -382,16 +334,12 @@ static int LuaOperatorNewLmin(lua_State * L)
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
   if(NShell!=Ntemp)
   {
-    lua_pushfstring (L, "Error in LuaOperatorNewLmin, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
-    lua_error(L);
-    return 1;
+    return luaL_error(L, "Error in LuaOperatorNewLmin, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
   }
   l=(NShell-1)/2;
   if(2*l+1!=NShell)
   {
-    lua_pushfstring (L, "Error in LuaOperatorNewLmin, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
-    lua_error(L);
-    return 1;
+    return luaL_error(L, "Error in LuaOperatorNewLmin, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
   }
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   CreateOperatorLmin(NFermion, l, LindexUp, LindexDn, op);
@@ -412,16 +360,12 @@ static int LuaOperatorNewLsqr(lua_State * L)
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
   if(NShell!=Ntemp)
   {
-    lua_pushfstring (L, "Error in LuaOperatorNewLsqr, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
-    lua_error(L);
-    return 1;
+    return luaL_error(L, "Error in LuaOperatorNewLsqr, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
   }
   l=(NShell-1)/2;
   if(2*l+1!=NShell)
   {
-    lua_pushfstring (L, "Error in LuaOperatorNewLsqr, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
-    lua_error(L);
-    return 1;
+    return luaL_error(L, "Error in LuaOperatorNewLsqr, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
   }
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   CreateOperatorLsqr(NFermion, l, LindexUp, LindexDn, op);
@@ -442,16 +386,12 @@ static int LuaOperatorNewJx(lua_State * L)
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
   if(NShell!=Ntemp)
   {
-    lua_pushfstring (L, "Error in LuaOperatorNewJx, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
-    lua_error(L);
-    return 1;
+    return luaL_error(L, "Error in LuaOperatorNewJx, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
   }
   l=(NShell-1)/2;
   if(2*l+1!=NShell)
   {
-    lua_pushfstring (L, "Error in LuaOperatorNewJx, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
-    lua_error(L);
-    return 1;
+    return luaL_error(L, "Error in LuaOperatorNewJx, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
   }
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   CreateOperatorJx(NFermion, l, LindexUp, LindexDn, op);
@@ -472,16 +412,12 @@ static int LuaOperatorNewJy(lua_State * L)
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
   if(NShell!=Ntemp)
   {
-    lua_pushfstring (L, "Error in LuaOperatorNewJy, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
-    lua_error(L);
-    return 1;
+    return luaL_error(L, "Error in LuaOperatorNewJy, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
   }
   l=(NShell-1)/2;
   if(2*l+1!=NShell)
   {
-    lua_pushfstring (L, "Error in LuaOperatorNewJy, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
-    lua_error(L);
-    return 1;
+    return luaL_error(L, "Error in LuaOperatorNewJy, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
   }
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   CreateOperatorJy(NFermion, l, LindexUp, LindexDn, op);
@@ -502,16 +438,12 @@ static int LuaOperatorNewJz(lua_State * L)
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
   if(NShell!=Ntemp)
   {
-    lua_pushfstring (L, "Error in LuaOperatorNewJz, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
-    lua_error(L);
-    return 1;
+    return luaL_error(L, "Error in LuaOperatorNewJz, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
   }
   l=(NShell-1)/2;
   if(2*l+1!=NShell)
   {
-    lua_pushfstring (L, "Error in LuaOperatorNewJz, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
-    lua_error(L);
-    return 1;
+    return luaL_error(L, "Error in LuaOperatorNewJz, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
   }
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   CreateOperatorJz(NFermion, l, LindexUp, LindexDn, op);
@@ -532,16 +464,12 @@ static int LuaOperatorNewJplus(lua_State * L)
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
   if(NShell!=Ntemp)
   {
-    lua_pushfstring (L, "Error in LuaOperatorNewJplus, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
-    lua_error(L);
-    return 1;
+    return luaL_error(L, "Error in LuaOperatorNewJplus, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
   }
   l=(NShell-1)/2;
   if(2*l+1!=NShell)
   {
-    lua_pushfstring (L, "Error in LuaOperatorNewJplus, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
-    lua_error(L);
-    return 1;
+    return luaL_error(L, "Error in LuaOperatorNewJplus, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
   }
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   CreateOperatorJplus(NFermion, l, LindexUp, LindexDn, op);
@@ -562,16 +490,12 @@ static int LuaOperatorNewJmin(lua_State * L)
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
   if(NShell!=Ntemp)
   {
-    lua_pushfstring (L, "Error in LuaOperatorNewJmin, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
-    lua_error(L);
-    return 1;
+    return luaL_error(L, "Error in LuaOperatorNewJmin, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
   }
   l=(NShell-1)/2;
   if(2*l+1!=NShell)
   {
-    lua_pushfstring (L, "Error in LuaOperatorNewJmin, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
-    lua_error(L);
-    return 1;
+    return luaL_error(L, "Error in LuaOperatorNewJmin, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
   }
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   CreateOperatorJmin(NFermion, l, LindexUp, LindexDn, op);
@@ -592,16 +516,12 @@ static int LuaOperatorNewJsqr(lua_State * L)
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
   if(NShell!=Ntemp)
   {
-    lua_pushfstring (L, "Error in LuaOperatorNewJsqr, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
-    lua_error(L);
-    return 1;
+    return luaL_error(L, "Error in LuaOperatorNewJsqr, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
   }
   l=(NShell-1)/2;
   if(2*l+1!=NShell)
   {
-    lua_pushfstring (L, "Error in LuaOperatorNewJsqr, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
-    lua_error(L);
-    return 0;
+    return luaL_error(L, "Error in LuaOperatorNewJsqr, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
   }
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   CreateOperatorJsqr(NFermion, l, LindexUp, LindexDn, op);
@@ -622,16 +542,12 @@ static int LuaOperatorNewldots(lua_State * L)
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
   if(NShell!=Ntemp)
   {
-    lua_pushfstring (L, "Error in LuaOperatorNewldots, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
-    lua_error(L);
-    return 1;
+    return luaL_error(L, "Error in LuaOperatorNewldots, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
   }
   l=(NShell-1)/2;
   if(2*l+1!=NShell)
   {
-    lua_pushfstring (L, "Error in LuaOperatorNewldots, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
-    lua_error(L);
-    return 0;
+    return luaL_error(L, "Error in LuaOperatorNewldots, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
   }
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   CreateOperatorldots(NFermion, l, LindexUp, LindexDn, op);
@@ -661,9 +577,7 @@ static int LuaOperatorNewCF(lua_State * L)
     lAn=lCr;
     if(2*lCr+1!=NShell)
     {
-      lua_pushfstring (L, "Error in LuaOperatorNewCF, Lenght of Index (%d) is not equal to 2l+1 (%d)\n",NShell,lCr);
-      lua_error(L);
-      return 1;
+      return luaL_error(L, "Error in LuaOperatorNewCF, Lenght of Index (%d) is not equal to 2l+1 (%d)\n",NShell,lCr);
     }
   }
   else if(len==4)
@@ -676,15 +590,11 @@ static int LuaOperatorNewCF(lua_State * L)
     lAn=lCr;
     if(NShell!=Ntemp)
     {
-      lua_pushfstring (L, "Error in LuaOperatorNewCF, Index of spin up and spin down should relate to the same angular momentum (%d != %d)\n",NShell,Ntemp);
-      lua_error(L);
-      return 1;
+      return luaL_error(L, "Error in LuaOperatorNewCF, Index of spin up and spin down should relate to the same angular momentum (%d != %d)\n",NShell,Ntemp);
     }
     if(2*lCr+1!=NShell)
     {
-      lua_pushfstring (L, "Error in LuaOperatorNewCF, Lenght of Index (%d) is not equal to 2l+1 (%d)\n",NShell,lCr);
-      lua_error(L);
-      return 1;
+      return luaL_error(L, "Error in LuaOperatorNewCF, Lenght of Index (%d) is not equal to 2l+1 (%d)\n",NShell,lCr);
     }
   }
   else if(len==6)
@@ -694,37 +604,27 @@ static int LuaOperatorNewCF(lua_State * L)
     lCr=(NShell-1)/2;
     if(NShell!=Ntemp)
     {
-      lua_pushfstring (L, "Error in LuaOperatorNewCF, Index of spin up and spin down should relate to the same angular momentum (%d != %d)\n",NShell,Ntemp);
-      lua_error(L);
-      return 1;
+      return luaL_error(L, "Error in LuaOperatorNewCF, Index of spin up and spin down should relate to the same angular momentum (%d != %d)\n",NShell,Ntemp);
     }
     if(2*lCr+1!=NShell)
     {
-      lua_pushfstring (L, "Error in LuaOperatorNewCF, Lenght of Index (%d) is not equal to 2l+1 (%d)\n",NShell,lCr);
-      lua_error(L);
-      return 1;
+      return luaL_error(L, "Error in LuaOperatorNewCF, Lenght of Index (%d) is not equal to 2l+1 (%d)\n",NShell,lCr);
     }
     LindexUpAn = luaL_checkarray_unit16_t(L, 4, &NShell);
     LindexDnAn = luaL_checkarray_unit16_t(L, 5, &Ntemp);
     lAn=(NShell-1)/2;
     if(NShell!=Ntemp)
     {
-      lua_pushfstring (L, "Error in LuaOperatorNewCF, Index of spin up and spin down should relate to the same angular momentum (%d != %d)\n",NShell,Ntemp);
-      lua_error(L);
-      return 1;
+      return luaL_error(L, "Error in LuaOperatorNewCF, Index of spin up and spin down should relate to the same angular momentum (%d != %d)\n",NShell,Ntemp);
     }
     if(2*lAn+1!=NShell)
     {
-      lua_pushfstring (L, "Error in LuaOperatorNewCF, Lenght of Index (%d) is not equal to 2l+1 (%d)\n",NShell,lAn);
-      lua_error(L);
-      return 1;
+      return luaL_error(L, "Error in LuaOperatorNewCF, Lenght of Index (%d) is not equal to 2l+1 (%d)\n",NShell,lAn);
     }
   }
   else
   {
-    lua_pushfstring (L, "Error in LuaOperatorNewCF, called with %d arguments, 3,4 or 6 expected\n",len);
-    lua_error(L);
-    return 1;
+    return luaL_error(L, "Error in LuaOperatorNewCF, called with %d arguments, 3,4 or 6 expected\n",len);
   }
   Akm=luaL_checkarray_HarmonicsExpansion(L, -1);
   if(len==3)
@@ -762,7 +662,6 @@ static int LuaOperatorNewCF(lua_State * L)
     free(LindexUpAn);
     free(LindexDnAn);
   }
-  
   return 1;
 }
 
@@ -787,9 +686,7 @@ static int LuaOperatorNewCreate(lua_State * L)
     Complex16 *Prefactors = luaL_checkarray_complex16(L, 3, &NNum);
     if(NOpp!=NNum)
     {
-      lua_pushfstring (L, "Error in LuaOperatorNewCreate, Lenght of Index (%d) is not equal to lenght of prefactors (%d)\n",NOpp,NNum);
-      lua_error(L);
-      return 1;
+      return luaL_error(L, "Error in LuaOperatorNewCreate, Lenght of Index (%d) is not equal to lenght of prefactors (%d)\n",NOpp,NNum);
     }
     double PrefactorsRe[NOpp],PrefactorsIm[NOpp];
     for(i=0;i<NOpp;i++)
@@ -805,9 +702,7 @@ static int LuaOperatorNewCreate(lua_State * L)
   }
   else
   {
-    lua_pushfstring (L, "Error in LuaOperatorNewCreate, expected 2 or 3 arguments, not %d\n",len);
-    lua_error(L);
-    return 0;
+    return luaL_error(L, "Error in LuaOperatorNewCreate, expected 2 or 3 arguments, not %d\n",len);
   }
   return 1;
 }
@@ -833,9 +728,7 @@ static int LuaOperatorNewAnnihilate(lua_State * L)
     Complex16 *Prefactors = luaL_checkarray_complex16(L, 3, &NNum);
     if(NOpp!=NNum)
     {
-      lua_pushfstring (L, "Error in LuaOperatorNewAnnihilate, Lenght of Index (%d) is not equal to lenght of prefactors (%d)\n",NOpp,NNum);
-      lua_error(L);
-      return 1;
+      return luaL_error(L, "Error in LuaOperatorNewAnnihilate, Lenght of Index (%d) is not equal to lenght of prefactors (%d)\n",NOpp,NNum);
     }
     double PrefactorsRe[NOpp],PrefactorsIm[NOpp];
     for(i=0;i<NOpp;i++)
@@ -851,9 +744,7 @@ static int LuaOperatorNewAnnihilate(lua_State * L)
   }
   else
   {
-    lua_pushfstring (L, "Error in LuaOperatorNewAnnihilate, expected 2 or 3 arguments, not %d\n",len);
-    lua_error(L);
-    return 0;
+    return luaL_error(L, "Error in LuaOperatorNewAnnihilate, expected 2 or 3 arguments, not %d\n",len);
   }
   return 1;
 }
@@ -884,15 +775,11 @@ static int LuaOperatorNewNumber(lua_State * L)
     Complex16 *Prefactors = luaL_checkarray_complex16(L, 4, &NNum);
     if(NOppCr!=NOppAn)
     {
-      lua_pushfstring (L, "Error in LuaOperatorNewNumber, Lenght of Index for Createion (%d) is not equal to lenght of index for Annihilation (%d)\n",NOppCr,NOppAn);
-      lua_error(L);
-      return 1;
+      return luaL_error(L, "Error in LuaOperatorNewNumber, Lenght of Index for Createion (%d) is not equal to lenght of index for Annihilation (%d)\n",NOppCr,NOppAn);
     }
     if(NOppCr!=NNum)
     {
-      lua_pushfstring (L, "Error in LuaOperatorNewNumber, Lenght of Index (%d) is not equal to lenght of prefactors (%d)\n",NOppCr,NNum);
-      lua_error(L);
-      return 1;
+      return luaL_error(L, "Error in LuaOperatorNewNumber, Lenght of Index (%d) is not equal to lenght of prefactors (%d)\n",NOppCr,NNum);
     }
     double PrefactorsRe[NOppCr],PrefactorsIm[NOppCr];
     for(i=0;i<NOppCr;i++)
@@ -909,9 +796,7 @@ static int LuaOperatorNewNumber(lua_State * L)
   }
   else
   {
-    lua_pushfstring (L, "Error in LuaOperatorNewAnnihilate, expected 3 or 4 arguments, not %d\n",len);
-    lua_error(L);
-    return 1;
+    return luaL_error(L, "Error in LuaOperatorNewAnnihilate, expected 3 or 4 arguments, not %d\n",len);
   }
   return 1;
 }
@@ -1105,9 +990,7 @@ static int LuaOperatorChop(lua_State * L)
       border=luaL_checknumber(L, 1);
     break;
     default:
-      lua_pushfstring (L, "Errorr, call to chop with %d arguments, expected 0 or 1\n",len);
-      lua_error(L);
-      return 1;
+      return luaL_error(L, "Errorr, call to chop with %d arguments, expected 0 or 1\n",len);
     break;
   }
   OperatorChop((OperatorType *) currentudata, border);

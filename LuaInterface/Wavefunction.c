@@ -259,10 +259,7 @@ static int LuaWavefunctionChop(lua_State * L)
       border=luaL_checknumber(L, 1);
       break;
     default:
-      lua_pushfstring (L, "Errorr, call to chop with %d arguments, expected 0 or 1\n",len);
-      lua_error(L);
-      return 1;
-      break;
+      return luaL_error(L, "Errorr, call to chop with %d arguments, expected 0 or 1\n",len);
   }
   WaveFunctionTruncateBasis((WaveFunctionType *) currentudata, border);
   return 0;

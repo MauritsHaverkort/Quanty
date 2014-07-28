@@ -206,15 +206,11 @@ static int LuaNewOperator(lua_State * L)
 {
   if(lua_gettop(L)==0)
   {
-    lua_pushfstring (L, "ERROR: LuaNewOperator called with 0 arguments, expect at least one\n");
-    lua_error(L);
-    return 1;
+    return luaL_error(L, "ERROR: LuaNewOperator called with 0 arguments, expect at least one\n");
   }
   if(lua_type(L, 1)!=LUA_TSTRING)
   {
-    lua_pushfstring (L, "ERROR: first argument in LuaNewOperator should be a string (use \"Oppname\" as first argument)\n");
-    lua_error(L);
-    return 1;
+    return luaL_error(L, "ERROR: first argument in LuaNewOperator should be a string (use \"Oppname\" as first argument)\n");
   }
   char const *OT =lua_tostring(L, 1);
   if ((strcmp(OT, "Coulomb") == 0)||(strcmp(OT, "U") == 0))
@@ -388,9 +384,7 @@ static int LuaNewWaveFunction(lua_State * L)
   }
   else
   {
-    lua_pushfstring (L, "Error in LuaWavefunctionNew, expected 3 or 4 arguments, not %d\n",len);
-    lua_error(L);
-    return 1;
+    return luaL_error(L, "Error in LuaWavefunctionNew, expected 3 or 4 arguments, not %d\n",len);
   }
   WaveFunctionInit(psi);
   luaL_checktype(L, 3, LUA_TTABLE);
@@ -401,9 +395,7 @@ static int LuaNewWaveFunction(lua_State * L)
     luaL_checktype(L, -1, LUA_TTABLE);
     if(lua_objlen(L, -1)!=2)
     {
-      lua_pushfstring (L, "Error in LuaWavefunctionNew, determinant number %d is not of the form {Determinant,prefactor}\n",i);
-      lua_error(L);
-      return 1;
+      return luaL_error(L, "Error in LuaWavefunctionNew, determinant number %d is not of the form {Determinant,prefactor}\n",i);
     }
     else
     {
@@ -420,9 +412,7 @@ static int LuaNewWaveFunction(lua_State * L)
       }
       if(detleng!=psi->NWord)
       {
-        lua_pushfstring (L, "Error in LuaWavefunctionNew, determinant number %d should be a table of %d words\n",i,psi->NWord);
-        lua_error(L);
-        return 1;
+        return luaL_error(L, "Error in LuaWavefunctionNew, determinant number %d should be a table of %d words\n",i,psi->NWord);
       }
       lua_pop(L, 1);
       lua_rawgeti(L, -1, 2);
@@ -501,9 +491,7 @@ static int Luacopy(lua_State * L)
         luaL_setmetatable(L, "ssp.operator");
         return 1;
       }
-      lua_pushfstring (L, "Error: copying or cloning an object of unrecognised type\n");
-      lua_error(L);
-      break;
+      return luaL_error(L, "Error: copying or cloning an object of unrecognised type\n");
     case LUA_TTABLE:
       lua_newtable(L);
       lua_pushnil(L);
@@ -517,9 +505,7 @@ static int Luacopy(lua_State * L)
       }
       break;
     default:
-      lua_pushfstring (L, "Error: copying or cloning an object of unrecognised type\n");
-      lua_error(L);
-      break;
+      return luaL_error(L, "Error: copying or cloning an object of unrecognised type\n");
   }
   return 1;
 }
@@ -581,9 +567,7 @@ static int Luaconjugate(lua_State * L)
         luaL_setmetatable(L, "ssp.operator");
         return 1;
       }
-      lua_pushfstring (L, "Error: copying or cloning an object of unrecognised type\n");
-      lua_error(L);
-      break;
+      return luaL_error(L, "Error: copying or cloning an object of unrecognised type\n");
     case LUA_TTABLE:
       lua_newtable(L);
       lua_pushnil(L);
@@ -597,9 +581,7 @@ static int Luaconjugate(lua_State * L)
       }
       break;
     default:
-      lua_pushfstring (L, "Error: copying or cloning an object of unrecognised type\n");
-      lua_error(L);
-      break;
+      return luaL_error(L, "Error: copying or cloning an object of unrecognised type\n");
   }
   return 1;
 }
@@ -655,9 +637,7 @@ static int Luaconjugatetranspose(lua_State * L)
         luaL_setmetatable(L, "ssp.operator");
         return 1;
       }
-      lua_pushfstring (L, "Error: copying or cloning an object of unrecognised type\n");
-      lua_error(L);
-      break;
+      return luaL_error(L, "Error: copying or cloning an object of unrecognised type\n");
     case LUA_TTABLE:
       lua_newtable(L);
       lua_pushnil(L);
@@ -671,9 +651,7 @@ static int Luaconjugatetranspose(lua_State * L)
       }
       break;
     default:
-      lua_pushfstring (L, "Error: copying or cloning an object of unrecognised type\n");
-      lua_error(L);
-      break;
+      return luaL_error(L, "Error: copying or cloning an object of unrecognised type\n");
   }
   return 1;
 }
@@ -728,9 +706,7 @@ static int Luatranspose(lua_State * L)
         luaL_setmetatable(L, "ssp.operator");
         return 1;
       }
-      lua_pushfstring (L, "Error: copying or cloning an object of unrecognised type\n");
-      lua_error(L);
-      break;
+      return luaL_error(L, "Error: copying or cloning an object of unrecognised type\n");
     case LUA_TTABLE:
       lua_newtable(L);
       lua_pushnil(L);

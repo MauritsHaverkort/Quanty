@@ -91,8 +91,7 @@ Complex16* luaL_checkarray_complex16(lua_State *L, int narg, uint32_t *len_out)
     }
     else
     {
-      lua_pushfstring (L, "Error in reading complex table\n");
-      lua_error(L);
+      luaL_error(L, "Error in reading complex table\n");
     }
   }
   return buff;
@@ -273,8 +272,7 @@ HarmonicsExpansion* luaL_checkarray_HarmonicsExpansion(lua_State *L, int narg)
     lencheck = (int)lua_objlen(L, -1);
     if(lencheck!=3)
     {
-      lua_pushfstring (L, "Error Harmonics Expansion, found %d indices (expected 3 {l,m,val}) at level %d\n",lencheck,i+1);
-      lua_error(L);
+      luaL_error(L, "Error Harmonics Expansion, found %d indices (expected 3 {l,m,val}) at level %d\n",lencheck,i+1);
     }
     else
     {
