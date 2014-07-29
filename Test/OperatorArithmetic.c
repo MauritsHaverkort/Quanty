@@ -1,6 +1,41 @@
 void TestOppMult()
 {
   printf("Test multiplication of operators\n");
+  
+  OperatorType Cr0,Cr1,Cr2,An0,An1,An2,Ap,A,B,C,D;
+  
+  CreateOperatorAnnihilate(10, 0, &An0);
+  CreateOperatorAnnihilate(10, 1, &An1);
+  CreateOperatorAnnihilate(10, 2, &An2);
+  CreateOperatorCreate(10, 0, &Cr0);
+  CreateOperatorCreate(10, 1, &Cr1);
+  CreateOperatorCreate(10, 2, &Cr2);
+  
+  InitOperatorForMult(&Ap, 2, &Cr0, &An0);
+  InitOperatorForMult(&A, 2, &Cr0, &An0);
+  InitOperatorForMult(&B, 3, &Cr2, &Cr1, &Cr0);
+  InitOperatorForMult(&C, 4, &Cr2, &Cr1, &Cr0, &An2);
+  InitOperatorForMult(&D, 5, &Cr2, &Cr1, &Cr0, &An2, &An1);
+  OperatorMultiply(&Ap, Cr0, An0);
+  OperatorMultiply2(&A, Cr0, An0, 'N', 'N');
+  OperatorMultiply3(&B, Cr2, Cr1, Cr0, 'N', 'N', 'N');
+  OperatorMultiply4(&C, Cr2, Cr1, Cr0, An2, 'N', 'N', 'N', 'N');
+  OperatorMultiply5(&D, Cr2, Cr1, Cr0, An2, An1, 'N', 'N', 'N', 'N', 'N');
+  PrintOperatorReadable(Ap);
+  PrintOperatorReadable(A);
+  PrintOperatorReadable(B);
+  PrintOperatorReadable(C);
+  PrintOperatorReadable(D);
+  
+  
+  
+  printf("\n");
+}
+
+
+void TestOppMultold()
+{
+  printf("Test multiplication of operators\n");
   OperatorType A, B, AB, BA;
   WaveFunctionType psi, Apsi, Bpsi, ABpsi, BApsi;
   uint8_t *Determinant;

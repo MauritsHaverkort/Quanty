@@ -141,50 +141,36 @@ uint32_t MakeRealWaveFunctionFromComplex();
 /*************       Core/Lanczos.c          **************/
 /**********************************************************/
 
-uint32_t LanczosGroundStateRR(const OperatorType H, WaveFunctionType * const psi, double *epsilon, const double zero,
-                              double shiftin, WaveFunctionType * OtherPsi, uint32_t NOtherPsi);
-uint32_t LanczosGroundStateRC(const OperatorType H, WaveFunctionType * const psi, double *epsilon, const double zero,
-                              double shiftin, WaveFunctionType * OtherPsi, uint32_t NOtherPsi);
-uint32_t LanczosGroundStateCR(const OperatorType H, WaveFunctionType * const psi, double *epsilon, const double zero,
-                              double shiftin, WaveFunctionType * OtherPsi, uint32_t NOtherPsi);
-uint32_t LanczosGroundStateCC(const OperatorType H, WaveFunctionType * const psi, double *epsilon, const double zero,
-                              double shiftin, WaveFunctionType * OtherPsi, uint32_t NOtherPsi);
-uint32_t LanczosGroundStateMR(const OperatorType H, WaveFunctionType * const psi, double *epsilon, const double zero,
-                              double shiftin, WaveFunctionType * OtherPsi, uint32_t NOtherPsi);
-uint32_t LanczosGroundStateMC(const OperatorType H, WaveFunctionType * const psi, double *epsilon, const double zero,
-                              double shiftin, WaveFunctionType * OtherPsi, uint32_t NOtherPsi);
-uint32_t LanczosTriDiagonalizeRR(const OperatorType H, WaveFunctionType psi, double epsilon,
-                                 TriDiagonalMatrixType * const M, double Gamma);
-uint32_t LanczosTriDiagonalizeCR(const OperatorType H, WaveFunctionType psi, double epsilon,
-                                 TriDiagonalMatrixType * const M, double Gamma);
-uint32_t LanczosTriDiagonalizeMR(const OperatorType H, WaveFunctionType psi, double epsilon,
-                                 TriDiagonalMatrixType * const M, double Gamma);
-uint32_t LanczosTriDiagonalizeRC(const OperatorType H, WaveFunctionType psi, double epsilon,
-                                 TriDiagonalMatrixType * const M, double Gamma);
-uint32_t LanczosTriDiagonalizeCC(const OperatorType H, WaveFunctionType psi, double epsilon,
-                                 TriDiagonalMatrixType * const M, double Gamma);
-uint32_t LanczosTriDiagonalizeMC(const OperatorType H, WaveFunctionType psi, double epsilon,
-                                 TriDiagonalMatrixType * const M, double Gamma);
-uint32_t LanczosTriDiagonalizePlusDensityRR(const OperatorType H, WaveFunctionType psi, double epsilon,
-                                            TriDiagonalMatrixType * const M, MatrixType * const Rho, double Gamma);
-uint32_t LanczosTriDiagonalizePlusDensityCR(const OperatorType H, WaveFunctionType psi, double epsilon,
-                                            TriDiagonalMatrixType * const M, MatrixType * const Rho, double Gamma);
-uint32_t LanczosTriDiagonalizePlusDensityMR(const OperatorType H, WaveFunctionType psi, double epsilon,
-                                            TriDiagonalMatrixType * const M, MatrixType * const Rho, double Gamma);
-uint32_t LanczosTriDiagonalizePlusDensityRC(const OperatorType H, WaveFunctionType psi, double epsilon,
-                                            TriDiagonalMatrixType * const M, MatrixType * const Rho, double Gamma);
-uint32_t LanczosTriDiagonalizePlusDensityCC(const OperatorType H, WaveFunctionType psi, double epsilon,
-                                            TriDiagonalMatrixType * const M, MatrixType * const Rho, double Gamma);
-uint32_t LanczosTriDiagonalizePlusDensityMC(const OperatorType H, WaveFunctionType psi, double epsilon,
-                                            TriDiagonalMatrixType * const M, MatrixType * const Rho, double Gamma);
+uint32_t LanczosGroundStateRR();
+uint32_t LanczosGroundStateRC();
+uint32_t LanczosGroundStateCR();
+uint32_t LanczosGroundStateCC();
+uint32_t LanczosGroundStateMR();
+uint32_t LanczosGroundStateMC();
+uint32_t LanczosGroundStateRestrictedRR();
+uint32_t LanczosGroundStateRestrictedRC();
+uint32_t LanczosGroundStateRestrictedCR();
+uint32_t LanczosGroundStateRestrictedCC();
+uint32_t LanczosGroundStateRestrictedMR();
+uint32_t LanczosGroundStateRestrictedMC();
+uint32_t LanczosTriDiagonalizeRR();
+uint32_t LanczosTriDiagonalizeCR();
+uint32_t LanczosTriDiagonalizeMR();
+uint32_t LanczosTriDiagonalizeRC();
+uint32_t LanczosTriDiagonalizeCC();
+uint32_t LanczosTriDiagonalizeMC();
+uint32_t LanczosTriDiagonalizePlusDensityRR();
+uint32_t LanczosTriDiagonalizePlusDensityCR();
+uint32_t LanczosTriDiagonalizePlusDensityMR();
+uint32_t LanczosTriDiagonalizePlusDensityRC();
+uint32_t LanczosTriDiagonalizePlusDensityCC();
+uint32_t LanczosTriDiagonalizePlusDensityMC();
 
 
-uint32_t LanczosGroundState(const OperatorType H, WaveFunctionType * const psi, double *epsilon, const double zero,
-                            double shiftin, WaveFunctionType * OtherPsi, uint32_t NOtherPsi);
-uint32_t LanczosTriDiagonalize(const OperatorType H, WaveFunctionType psi, double epsilon,
-                               TriDiagonalMatrixType * const M, double Gamma);
-uint32_t LanczosTriDiagonalizePlusDensity(const OperatorType H, WaveFunctionType psi, double epsilon,
-                                          TriDiagonalMatrixType * const M, MatrixType * const Rho, double Gamma);
+uint32_t LanczosGroundState();
+uint32_t LanczosGroundStateRestricted();
+uint32_t LanczosTriDiagonalize();
+uint32_t LanczosTriDiagonalizePlusDensity();
 
 
 

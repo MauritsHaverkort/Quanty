@@ -85,6 +85,8 @@ typedef struct WaveFunctionType
 WaveFunctionType;
 
 
+
+
 typedef struct DeterminantRestrictionType
 {
   uint32_t  N;                  /* number of restrictions */
@@ -556,6 +558,7 @@ typedef struct HarmonicsExpansion
 }
 HarmonicsExpansion;
 
+
 typedef struct SpectraType
 {
   char   Name[MAXStrLength];    /* A pointer to a name string that can be used to lable functions, good for printing etc. */
@@ -575,6 +578,13 @@ typedef struct SpectraType
   double b[5];                  /* First five values of tri-diagonal representation of the spectrum given by (e^{-i phase}) G */
 }
 SpectraType;
+
+typedef struct SpectraTypeArray
+{
+  uint32_t NSpectra;
+  SpectraType *Spec;
+}
+SpectraTypeArray;
 
 /* Orbitals per atom have to be defined later */
 

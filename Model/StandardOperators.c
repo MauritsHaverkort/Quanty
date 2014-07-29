@@ -240,10 +240,10 @@ uint32_t CreateOperatorSy(uint32_t NFermion, uint32_t NSpin, uint16_t * SpinUp, 
   {
     oadd[1] = CrAnMask + SpinDn[i];
     oadd[0] = SpinUp[i];
-    ComplexOperatorAddLaderNormalOrder(Sy, oadd, 2, 0.0, -0.5, &QDetNotOrderedFcFaBcBa);
+    ComplexOperatorAddLaderNormalOrder(Sy, oadd, 2, 0.0, 0.5, &QDetNotOrderedFcFaBcBa);
     oadd[1] = CrAnMask + SpinUp[i];
     oadd[0] = SpinDn[i];
-    ComplexOperatorAddLaderNormalOrder(Sy, oadd, 2, 0.0, 0.5, &QDetNotOrderedFcFaBcBa);
+    ComplexOperatorAddLaderNormalOrder(Sy, oadd, 2, 0.0, -0.5, &QDetNotOrderedFcFaBcBa);
   }
   OperatorChop(Sy, 0.001);
   return 0;
@@ -634,16 +634,16 @@ uint32_t CreateOperatorLy(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, ui
     m = (double)i - l;
     oadd[1] = CrAnMask + LindexUp[i + 1];
     oadd[0] = LindexUp[i];
-    ComplexOperatorAddLaderNormalOrder(Ly, oadd, 2, 0, 0.5 * sqrt(l + m + 1) * sqrt(l - m), &QDetNotOrderedFcFaBcBa);
+    ComplexOperatorAddLaderNormalOrder(Ly, oadd, 2, 0,-0.5 * sqrt(l + m + 1) * sqrt(l - m), &QDetNotOrderedFcFaBcBa);
     oadd[1] = CrAnMask + LindexUp[i];
     oadd[0] = LindexUp[i + 1];
-    ComplexOperatorAddLaderNormalOrder(Ly, oadd, 2, 0, -0.5 * sqrt(l + m + 1) * sqrt(l - m), &QDetNotOrderedFcFaBcBa);
+    ComplexOperatorAddLaderNormalOrder(Ly, oadd, 2, 0, 0.5 * sqrt(l + m + 1) * sqrt(l - m), &QDetNotOrderedFcFaBcBa);
     oadd[1] = CrAnMask + LindexDn[i + 1];
     oadd[0] = LindexDn[i];
-    ComplexOperatorAddLaderNormalOrder(Ly, oadd, 2, 0, 0.5 * sqrt(l + m + 1) * sqrt(l - m), &QDetNotOrderedFcFaBcBa);
+    ComplexOperatorAddLaderNormalOrder(Ly, oadd, 2, 0,-0.5 * sqrt(l + m + 1) * sqrt(l - m), &QDetNotOrderedFcFaBcBa);
     oadd[1] = CrAnMask + LindexDn[i];
     oadd[0] = LindexDn[i + 1];
-    ComplexOperatorAddLaderNormalOrder(Ly, oadd, 2, 0, -0.5 * sqrt(l + m + 1) * sqrt(l - m), &QDetNotOrderedFcFaBcBa);
+    ComplexOperatorAddLaderNormalOrder(Ly, oadd, 2, 0, 0.5 * sqrt(l + m + 1) * sqrt(l - m), &QDetNotOrderedFcFaBcBa);
   }
   OperatorChop(Ly, 0.001);
   return 0;
@@ -871,25 +871,25 @@ uint32_t CreateOperatorJy(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, ui
     m = (double)i - l;
     oadd[1] = CrAnMask + LindexUp[i + 1];
     oadd[0] = LindexUp[i];
-    ComplexOperatorAddLaderNormalOrder(Jy, oadd, 2, 0, 0.5 * sqrt(l + m + 1) * sqrt(l - m), &QDetNotOrderedFcFaBcBa);
+    ComplexOperatorAddLaderNormalOrder(Jy, oadd, 2, 0,-0.5 * sqrt(l + m + 1) * sqrt(l - m), &QDetNotOrderedFcFaBcBa);
     oadd[1] = CrAnMask + LindexUp[i];
     oadd[0] = LindexUp[i + 1];
-    ComplexOperatorAddLaderNormalOrder(Jy, oadd, 2, 0, -0.5 * sqrt(l + m + 1) * sqrt(l - m), &QDetNotOrderedFcFaBcBa);
+    ComplexOperatorAddLaderNormalOrder(Jy, oadd, 2, 0, 0.5 * sqrt(l + m + 1) * sqrt(l - m), &QDetNotOrderedFcFaBcBa);
     oadd[1] = CrAnMask + LindexDn[i + 1];
     oadd[0] = LindexDn[i];
-    ComplexOperatorAddLaderNormalOrder(Jy, oadd, 2, 0, 0.5 * sqrt(l + m + 1) * sqrt(l - m), &QDetNotOrderedFcFaBcBa);
+    ComplexOperatorAddLaderNormalOrder(Jy, oadd, 2, 0,-0.5 * sqrt(l + m + 1) * sqrt(l - m), &QDetNotOrderedFcFaBcBa);
     oadd[1] = CrAnMask + LindexDn[i];
     oadd[0] = LindexDn[i + 1];
-    ComplexOperatorAddLaderNormalOrder(Jy, oadd, 2, 0, -0.5 * sqrt(l + m + 1) * sqrt(l - m), &QDetNotOrderedFcFaBcBa);
+    ComplexOperatorAddLaderNormalOrder(Jy, oadd, 2, 0, 0.5 * sqrt(l + m + 1) * sqrt(l - m), &QDetNotOrderedFcFaBcBa);
   }
   for (i = 0; i < 2 * L + 1; i++)
   {
     oadd[1] = CrAnMask + LindexDn[i];
     oadd[0] = LindexUp[i];
-    ComplexOperatorAddLaderNormalOrder(Jy, oadd, 2, 0.0, -0.5, &QDetNotOrderedFcFaBcBa);
+    ComplexOperatorAddLaderNormalOrder(Jy, oadd, 2, 0.0, 0.5, &QDetNotOrderedFcFaBcBa);
     oadd[1] = CrAnMask + LindexUp[i];
     oadd[0] = LindexDn[i];
-    ComplexOperatorAddLaderNormalOrder(Jy, oadd, 2, 0.0, 0.5, &QDetNotOrderedFcFaBcBa);
+    ComplexOperatorAddLaderNormalOrder(Jy, oadd, 2, 0.0, -0.5, &QDetNotOrderedFcFaBcBa);
   }
   OperatorChop(Jy, 0.001);
   return 0;
@@ -1276,8 +1276,7 @@ uint32_t CreateOperatorCreateAnnihilateList(uint32_t const NFermion, uint16_t co
   return 0;
 }
 
-uint32_t CreateOperatorNumber(uint32_t const NFermion, uint16_t const Crindex, uint16_t const Anindex,
-                              OperatorType * const OppN)
+uint32_t CreateOperatorNumber(uint32_t const NFermion, uint16_t const Crindex, uint16_t const Anindex, OperatorType * const OppN)
 {
   uint16_t oadd[2];
   InitNamedOperator(OppN, "N");
@@ -1290,7 +1289,6 @@ uint32_t CreateOperatorNumber(uint32_t const NFermion, uint16_t const Crindex, u
   RealOperatorAddLader(OppN, oadd, 2, 1);
   return 0;
 }
-
 
 uint32_t CreateOperatorNumberShell(uint32_t const NFermion, uint32_t const Nelectron, const uint16_t * const index, OperatorType * const OppN)
 {

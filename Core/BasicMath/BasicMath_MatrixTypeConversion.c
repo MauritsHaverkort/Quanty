@@ -1097,6 +1097,56 @@ uint32_t AndersonMatrixToBADoubleTriDiagonalMatrixWrong(AndersonMatrixType const
 /********************         TriDiagonalMatrix To ...   ********************/
 /****************************************************************************/
 
+uint32_t TriDiagonalMatrixToEigenvalues(TriDiagonalMatrixType const M, double *val)
+{
+  int    i, info;
+  const char *jobz = "N";
+  double e[M.N];
+  int    lwork = (1 + 4 * M.N + Sqr(M.N));
+  int    liwork = 3 + 5 * M.N;
+  double *work,*Z=NULL;
+  int   *iwork;
+  work = malloc(lwork * sizeof(double));
+  if (work == NULL)
+  {
+    printf("malloc of work failed in TriDiagonalMatrixToEigensystem\n");
+    return 1;
+  };
+  iwork = malloc(liwork * sizeof(int));
+  if (iwork == NULL)
+  {
+    printf("malloc of iwork failed in TriDiagonalMatrixToEigensystem\n");
+    return 1;
+  };
+  
+  for (i = 0; i < M.N - 1; i++) e[i] = M.b[i + 1];
+  e[M.N - 1] = 0.0;
+  for (i = 0; i < M.N; i++) val[i] = M.a[i + 1];
+  
+  dstevd(jobz, &M.N, val, e, Z, &M.N, work, &lwork, iwork, &liwork, &info);
+  if (info != 0)
+  {
+    printf("dstevd failed in TriDiagonalMatrixToEigensystem with info value %i\n", info);
+    printf("While working on matrix %s\n", M.Name);
+    printf("continue diagonalization with dstev\n");
+    fflush(stdout);
+    dstev(jobz, &M.N, val, e, Z, &M.N, work, &info);
+    if (info != 0)
+    {
+      printf("Also dstev failed with info value %i\n", info);
+      printf("I don't know what to do\n");
+      printf("ERROR!!!!!!!!!!!\n");
+      fflush(stdout);
+      return 1;
+    }
+  }
+  free(work);
+  free(iwork);
+  return 0;
+  
+}
+
+
 uint32_t TriDiagonalMatrixToEigensystem(TriDiagonalMatrixType const M, MatrixType * const T, double *val)
 {
   int    i, info;

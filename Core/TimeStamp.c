@@ -26,7 +26,8 @@
                        printf("Compiled on %s at %s\n",__DATE__,__TIME__);\
                        printf("File last modified on %s \n",__TIMESTAMP__);\
                        printf("Smallest possitive float:  %E \n",DBL_MIN);\
-                       printf("Smallest deviation from 1: %E \n",DBL_EPSILON);
+                       printf("Smallest deviation from 1: %E \n",DBL_EPSILON);\
+                       printf("\n");
 
 
 uint32_t InitializeTiming(TimeType * T)
