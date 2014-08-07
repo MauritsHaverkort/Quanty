@@ -4,6 +4,77 @@
 #include "ComplexRealWaveFunctionArithmetic.c"
 
 
+
+/*
+ *  checks if det has occupation in states larger then NFermion
+ */
+uint32_t CheckDetPhysical(uint8_t *det, uint32_t const NFermion, uint32_t const NBoson)
+{
+  uint8_t detcheck,detfilter;
+  uint32_t NWord=NBoson + Min(NFermion, 1 + (NFermion - 1) / 8);
+  if(NFermion==0) return 0;
+  uint32_t iLastFermion=NWord-NBoson-1;
+  uint32_t ExtraFermionsInBasis=8*(iLastFermion+1)-NFermion;
+  detcheck = (uint8_t)((1<<ExtraFermionsInBasis)-1);
+  detfilter = ~detcheck;
+  if(det[iLastFermion]&detcheck)
+  {
+    printf("Warning: Determinant has electrons in states larger than NFermion (det=%02x allowed=%02x)\n",det[iLastFermion],detfilter);
+    det[iLastFermion]&=detfilter;
+    return 1;
+  }
+  return 0;
+}
+
+/*
+ *
+ */
+uint8_t *StringToDet(uint32_t const NFermion, uint32_t const NBoson, char *s)
+{
+  char **endptr;
+  char Boson[3];
+  uint32_t i, nspaces=0;
+  uint8_t *det;
+  uint32_t NWord=NBoson + Min(NFermion, 1 + (NFermion - 1) / 8);
+  det = calloc(NWord,sizeof(uint8_t));
+  if(strlen(s)<NFermion+2*NBoson)
+  {
+    printf("Error in StringToDet, length of string(%lu) different from NFermion(%d)+2*NBoson(%d)\n",strlen(s),NFermion,NBoson);
+  }
+  for(i=0;i<NFermion;i++)
+  {
+    if(s[i+nspaces]=='1')
+    {
+      det[i>>3]+=(1<<(7-i%8));
+    }
+    else if(s[i+nspaces]==' ')
+    {
+      nspaces++;
+      i--;
+    }
+    else if(s[i+nspaces]=='0')
+    {
+      
+    }
+    else
+    {
+      printf("Error in StringToDet, expected \"1\", \"0\" or \" \" on position %d of the string, got %c\n",i+nspaces,s[i+nspaces]);
+    }
+  }
+  Boson[2]='\0';
+  for(i=0;i<NBoson;i++)
+  {
+    while (s[NFermion+nspaces+2*i]==' ')
+    {
+      nspaces++;
+    }
+    Boson[0]=s[NFermion+nspaces+2*i  ];
+    Boson[1]=s[NFermion+nspaces+2*i+1];
+    det[NWord-NBoson+i]=(uint8_t)strtol(Boson, endptr, 16);
+  }
+  return det;
+}
+
 /*  NFermion, NBoson, QComplex, NBitsKey need to be set
  *
  */
@@ -497,16 +568,16 @@ uint32_t WaveFunctionAddComplexMultipliedUnionBasis(WaveFunctionType * const a, 
   }
 }
 
-uint32_t WaveFunctionMultiply(WaveFunctionType a, const double bRe, const double bIm)
+uint32_t WaveFunctionMultiply(WaveFunctionType * a, const double bRe, const double bIm)
 {
-  if (a.QComplex == 0)
+  if (a->QComplex == 0)
   {
-    if (fabs(bIm) < DBL_MIN * 10)
+    if (Abs(bIm) < (DBL_EPSILON * Abs(bRe) + DBL_MIN) * 10)
     {
-      RealWaveFunctionMultiply(a, bRe);
+      RealWaveFunctionMultiply(*a, bRe);
       return 0;
     }
-    if (MakeComplexWaveFunctionFromReal(&a, a))
+    if (MakeComplexWaveFunctionFromReal(a, *a))
     {
       printf("MakeComplexWaveFunctionFromReal failed in WaveFunctionMultiply\n");
       fflush(stdout);
@@ -514,6 +585,16 @@ uint32_t WaveFunctionMultiply(WaveFunctionType a, const double bRe, const double
     };
   }
   ComplexWaveFunctionComplexMultiply(a, bRe, bIm);
+  return 0;
+}
+
+uint32_t WaveFunctionConjugate(WaveFunctionType a)
+{
+  if (a.QComplex == 0)
+  {
+    return 0;
+  }
+  ComplexWaveFunctionConjugate(a);
   return 0;
 }
 
@@ -671,7 +752,7 @@ uint32_t CreateWaveFunctionFromString(WaveFunctionType * psi, uint16_t * createS
   {
     if (OperatorCr(Determinant, createString[i], psi->NFermion) == 0)
     {
-      printf("Error in CreateStartWaveFunctionOnsiteEnergy Fermionic part\n");
+      printf("Error in CreateWaveFunctionFromString Fermionic part\n");
       return 1;
     };
   }

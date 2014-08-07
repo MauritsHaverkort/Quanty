@@ -272,7 +272,7 @@ uint32_t WaveFunctionPerturbationMultiply(WaveFunctionPerturbationType a, const 
   {
     for (j = 0; j < PerturbationOptions(a.NV, i); j++)
     {
-      if (WaveFunctionMultiply(a.psiOrder[i][j], bRe, bIm))
+      if (WaveFunctionMultiply(&a.psiOrder[i][j], bRe, bIm))
       {
         printf("WaveFunctionMultiply failed in WaveFunctionPerturbationMultiply\n");
         return 1;

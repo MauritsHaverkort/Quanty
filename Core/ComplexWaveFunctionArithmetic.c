@@ -817,13 +817,14 @@ void ComplexWaveFunctionMultiply(WaveFunctionType a, const double b)
   }
 }
 
+
 /*
-*   a->a*b
-*   Look out this function does not alter the values stored in a
-*   As a only stores pointers
-*   This function does alter the values a points to
-*/
-void ComplexWaveFunctionComplexMultiply(WaveFunctionType a, const double bRe, const double bIm)
+ *   a->a^*
+ *   Look out this function does not alter the values stored in a
+ *   As a only stores pointers
+ *   This function does alter the values a points to
+ */
+void ComplexWaveFunctionConjugate(WaveFunctionType a)
 {
   uint32_t iBlok, iElement;
   int    iOMP;
@@ -832,8 +833,7 @@ void ComplexWaveFunctionComplexMultiply(WaveFunctionType a, const double bRe, co
   for (iOMP = 0; iOMP <= (int)(a.N - iBlok * BlokSize); ++iOMP)
   {
     iElement = (uint32_t) iOMP;
-    a.ValueRe[iBlok][iElement] = bRe * a.ValueRe[iBlok][iElement] - bIm * a.ValueIm[iBlok][iElement];
-    a.ValueIm[iBlok][iElement] = bIm * a.ValueRe[iBlok][iElement] + bRe * a.ValueIm[iBlok][iElement];
+    a.ValueIm[iBlok][iElement] *= -1;
   }
 #pragma omp parallel for private(iElement,iBlok)
   for (iOMP = 0; iOMP < (int)(a.NBlok - 1); iOMP++)
@@ -841,8 +841,41 @@ void ComplexWaveFunctionComplexMultiply(WaveFunctionType a, const double bRe, co
     iBlok = (uint32_t) iOMP;
     for (iElement = 0; iElement < BlokSize; ++iElement)
     {
-      a.ValueRe[iBlok][iElement] = bRe * a.ValueRe[iBlok][iElement] - bIm * a.ValueIm[iBlok][iElement];
-      a.ValueIm[iBlok][iElement] = bIm * a.ValueRe[iBlok][iElement] + bRe * a.ValueIm[iBlok][iElement];
+      a.ValueIm[iBlok][iElement] *= -1;
+    }
+  }
+}
+
+
+/*
+*   a->a*b
+*   Look out this function does not alter the values stored in a
+*   As a only stores pointers
+*   This function does alter the values a points to
+*/
+void ComplexWaveFunctionComplexMultiply(WaveFunctionType * a, const double bRe, const double bIm)
+{
+  uint32_t iBlok, iElement;
+  double temp;
+  int    iOMP;
+  iBlok = a->NBlok - 1;
+#pragma omp parallel for private(iElement,temp)
+  for (iOMP = 0; iOMP <= (int)(a->N - iBlok * BlokSize); ++iOMP)
+  {
+    iElement = (uint32_t) iOMP;
+    temp = bRe * a->ValueRe[iBlok][iElement] - bIm * a->ValueIm[iBlok][iElement];
+    a->ValueIm[iBlok][iElement] = bIm * a->ValueRe[iBlok][iElement] + bRe * a->ValueIm[iBlok][iElement];
+    a->ValueRe[iBlok][iElement] = temp;
+  }
+#pragma omp parallel for private(iElement,iBlok,temp)
+  for (iOMP = 0; iOMP < (int)(a->NBlok - 1); iOMP++)
+  {
+    iBlok = (uint32_t) iOMP;
+    for (iElement = 0; iElement < BlokSize; ++iElement)
+    {
+      temp = bRe * a->ValueRe[iBlok][iElement] - bIm * a->ValueIm[iBlok][iElement];
+      a->ValueIm[iBlok][iElement] = bIm * a->ValueRe[iBlok][iElement] + bRe * a->ValueIm[iBlok][iElement];
+      a->ValueRe[iBlok][iElement] = temp;
     }
   }
 }

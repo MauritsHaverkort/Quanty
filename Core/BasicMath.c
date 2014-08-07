@@ -249,10 +249,8 @@ double InterpolateRoot(double const *x, double const *y, uint32_t N)
   }
   else
   {
-    xret =
-      (xsort[firstpos - 1] * ysort[firstpos] - xsort[firstpos] * ysort[firstpos - 1]) / (ysort[firstpos] -
-                                                                                         ysort[firstpos - 1]);
-    if ((xret < xsort[firstpos - 1]) || (xret > xsort[firstpos]))
+    xret = (xsort[firstpos - 1]*ysort[firstpos] - xsort[firstpos]*ysort[firstpos-1]) / (ysort[firstpos] - ysort[firstpos - 1]);
+    if ((xret > (1-100*DBL_EPSILON)*xsort[firstpos - 1]) || (xret < (1-100*DBL_EPSILON)*xsort[firstpos]))
     {
       xret = (xsort[firstpos] + xsort[firstpos - 1]) / 2.0;
     }
