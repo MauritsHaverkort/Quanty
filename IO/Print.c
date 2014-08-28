@@ -105,6 +105,11 @@ uint32_t PrintPlainListOfPoles(ListOfPoles M)
   return StreamPrintPlainListOfPoles(M, stdout);
 }
 
+uint32_t PrintBlockListOfPoles(BlockListOfPoles M)
+{
+  return StreamPrintBlockListOfPoles(M, stdout);
+}
+
 uint32_t PrintTightBindingDef(TightBindingDef O)
 {
   return StreamPrintTightBindingDef(O, stdout);

@@ -181,6 +181,22 @@ uint32_t FileReadCrystalStructureSuperCell(CrystalStructureSuperCellType * O, co
   return retval;
 }
 
+uint32_t FileReadTightBindingDef(TightBindingDef * O, const char *const flname)
+{
+  FILE  *stream;
+  uint32_t retval;
+  if ((stream = fopen(flname, "r")) == NULL)
+  {
+    printf("ERROR\nCan't open %s for reading.\n", flname);
+    return 1;
+  }
+  retval = StreamReadTightBindingDef(O, stream);
+  fclose(stream);
+  return retval;
+}
+
+
+
 uint32_t FileReadHeisenbergModelSettings(HeisenbergModelSettings * O, const char *const flname)
 {
   FILE  *stream;

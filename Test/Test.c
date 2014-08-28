@@ -150,6 +150,8 @@ int main(int argc, const char *argv[])
       TestLanczosDyson();
     if (!strncmp("LancDy2", argv[argc], strlen(argv[argc])))
       TestLanczosDyson2();
+    if (!strncmp("LancDy3", argv[argc], strlen(argv[argc])))
+      TestLanczosDyson3();
 
     if (!strncmp("GenEig", argv[argc], strlen(argv[argc])))
       TestGeneralizedEigensystem();

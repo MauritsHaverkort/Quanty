@@ -1194,6 +1194,82 @@ uint32_t StreamPrintListOfPolesEssentials(ListOfPoles M, FILE * stream)
   return 0;
 }
 
+uint32_t StreamPrintCompactMatrixMinimal(CompactMatrixType const M, FILE * stream)
+{
+  uint32_t i,j;
+  if(M.QComplex)
+  {
+    for(i=0;i<M.Ni;i++)
+    {
+      for(j=0;j<M.Nj;j++)
+      {
+        fprintf(stream,"(%22.15E ",M.V[j+M.Nj*i].Re);
+        if(M.V[j+M.Nj*i].Im>=0)
+        {
+          fprintf(stream,"+");
+        }
+        else
+        {
+          fprintf(stream," ");
+        }
+        fprintf(stream,"%22.15E I) ",M.V[j+M.Nj*i].Im);
+      }
+      fprintf(stream,"\n");
+    }
+    fprintf(stream,"\n");
+  }
+  else
+  {
+    for(i=0;i<M.Ni;i++)
+    {
+      for(j=0;j<M.Nj;j++)
+      {
+        fprintf(stream,"%22.15E ",M.VRe[j+M.Nj*i]);
+      }
+      fprintf(stream,"\n");
+    }
+    fprintf(stream,"\n");
+  }
+  return 0;
+}
+
+uint32_t StreamPrintBlockListOfPoles(BlockListOfPoles const M, FILE * stream)
+{
+  uint32_t i;
+  CompactMatrixType b;
+  b.QComplex=M.QComplex;
+  b.Ni=M.BlockSize;
+  b.Nj=M.BlockSize;
+  fprintf(stream, "block list of poles: %s\n",M.Name);
+  fprintf(stream, "Chemical potential is %22.15E\n",M.mu);
+  fprintf(stream, "a0:\n");
+  if(M.QComplex)
+  {
+    b.V = M.a0;
+  }
+  else
+  {
+    b.VRe = M.a0Re;
+  }
+  StreamPrintCompactMatrixMinimal(b, stream);
+  for(i=0;i<M.N;i++)
+  {
+    if(M.QComplex)
+    {
+      fprintf(stream,"block %i a_i=%22.15E B_i:\n",i,M.V[i*(M.BlockSize*M.BlockSize+1)].Re);
+      b.V=&(M.V[i*(M.BlockSize*M.BlockSize+1)+1]);
+    }
+    else
+    {
+      fprintf(stream,"block %i a_i=%22.15E B_i:\n",i,M.VRe[i*(M.BlockSize*M.BlockSize+1)]);
+      b.VRe=&(M.VRe[i*(M.BlockSize*M.BlockSize+1)+1]);
+    }
+    StreamPrintCompactMatrixMinimal(b, stream);
+  }
+  fprintf(stream,"\n");
+  return 0;
+}
+
 uint32_t StreamPrintAndersonMatrixEssentials(AndersonMatrixType M, FILE * stream)
 {
   uint32_t i;

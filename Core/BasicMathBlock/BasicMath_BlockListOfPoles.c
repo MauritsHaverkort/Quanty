@@ -125,7 +125,7 @@ uint32_t MakeRealBlockListOfPolesComplex(BlockListOfPoles *A)
 }
 
 /*  QComplex changes from 1 to 0
- *  The memory allcoated for doubles is changed to double
+ *  The memory allcoated for Complex is changed to double
  *  The real part is set, the complex part is neglected
  */
 uint32_t MakeComplexBlockListOfPolesReal(BlockListOfPoles *A)
@@ -145,6 +145,7 @@ uint32_t MakeComplexBlockListOfPolesReal(BlockListOfPoles *A)
   free(A->V);
   A->VRe=temp;
   A->QComplex=0;
+  A->a0Re=&(A->VRe[(A->N)*(1+A->BlockSize*A->BlockSize)]);
   return 0;
 }
 

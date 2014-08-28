@@ -31,7 +31,7 @@ uint32_t CheckDetPhysical(uint8_t *det, uint32_t const NFermion, uint32_t const 
  */
 uint8_t *StringToDet(uint32_t const NFermion, uint32_t const NBoson, char *s)
 {
-  char **endptr;
+  char **endptr=NULL;
   char Boson[3];
   uint32_t i, nspaces=0;
   uint8_t *det;

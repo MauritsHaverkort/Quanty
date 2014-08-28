@@ -6,6 +6,42 @@
  *
  */
 
+void TestLanczosDyson3()
+{
+  TightBindingDef TB;
+  SpectraType DOS,Gspec[1];
+  BlockListOfPoles G;
+  int Nk[]={200,200,1};
+  // create G0
+  FileReadTightBindingDef(&TB, "two_band_TB");
+  PrintTightBindingDef(TB);
+  DOS.N=100;
+  DOS.Emin=-4;
+  DOS.Emax=6;
+  DOS.dE=(DOS.Emax-DOS.Emin)/DOS.N;
+  SpectrumAllocate(DOS, &DOS);
+  TightBindingDOS(TB, Nk, &DOS);
+  
+  FilePrintSpectra(&DOS, 1, "TBDOS", "w");
+  
+  TightBindingHamiltonianToBlockListOfPoles(TB, Nk, &G, -3, 5.5, 1000);
+  
+  BlockListOfPolesToSpectra(G, Gspec, -4, 6, 100);
+  
+  PrintBlockListOfPoles(G);
+  
+  FilePrintSpectra(Gspec, TB.NFermion*TB.NFermion, "TBDOS2", "w");
+  
+  
+  // turn G0 into impurity natural orbitals
+  
+  // no spin PES and IPES
+  
+  // with spin PES and IPES
+  
+}
+
+
 void TestLanczosDyson2()
 {
   printf("Start Test Lanczos Dyson2\n");
@@ -296,39 +332,6 @@ void TestLanczosDyson2()
   TriDiagonalMatrixToSpectrum(0, G0, &Spectra[10]);
   FilePrintSpectra(Spectra, 11, "/Users/haverkort/ProgramOutput/LancDyson2", "w");
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 void TestLanczosDyson()

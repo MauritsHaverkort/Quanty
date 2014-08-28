@@ -273,14 +273,24 @@ typedef struct ListOfPoles
 ListOfPoles;
 
 
-/*  V is an array of length N+1
- *  The first N elements store 1+BlockSize*BlockSize numbers
+/*  V is an array of length (N+1)*(1+BlockSize*BlockSize)-1
+ *  (capitals for matrices, small cap for numbers)
+ *  in the array V one can find N blocks of size 1+BlockSize*BlockSize in these blocks
  *  The first number is a
- *  The last BlockSize*BlockSize is the matrix b
- *  The last element stores a0
+ *    a_i can be found at position (i-1)*(1+BlockSize*BlockSize)
+ *  The last BlockSize*BlockSize is the matrix B
+ *    B_i can be found at position (i-1)*(1+BlockSize*BlockSize)+1 to i*(1+BlockSize*BlockSize)-1
+ *  The last BlockSize*BlockSize elements store the matrix A0
+ *    A0 can be found at position N*(1+BlockSize*BlockSize) to (N+1)*(1+BlockSize*BlockSize)-2
  *
  *  The Green's function represented is:
- *    a0 + sum_i b_i^{dag} 1/(w-a_i) b_i
+ *    G = A0 + sum_i B'_i^{dag} 1/(w-a_i I) B'_i
+ *    with I the identity matrix of size BlockSize
+ *  this is equivalent to
+ *    G = A0 + sum_i B'_i^dag . B'_i * 1/(w-a_i)
+ *  use
+ *    B_i = B'_i^dag B'_i to get to
+ *    G = A0 + sum_i B_i * 1/(w-a_i)
  *
  *  a0 is an aditional pointer to V[N*(1+BlockSize*BlockSize)]
  */
@@ -303,6 +313,51 @@ typedef struct BlockListOfPoles
   double mu;                 /* chemical potential */
 }
 BlockListOfPoles;
+
+/*
+ *     ( A[0][0]=a1   | A[0][1]=b1   | 0            | 0          )
+ *   A=( A[1][0]=b1^+ | A[1][1]=a2   | A[1][2]=b2   | 0          )
+ *     ( 0            | A[2][1]=b2^+ | A[2][2]=a3   | A[2][3]=b3 )
+ *     ( 0            | 0            | A[3][2]=b3^+ | A[3][3]=a4 )
+ *
+ *   with ai and bi matrices
+ *
+ *   (A B)[i][j] = \sum_k A[i][k] . B[k][j]
+ *
+ *   matrix a0 and b0 are used as a possible ofset and scaling when transformed to Green's functions
+ *
+ *   matrix k can be found at position [k*BlockSize*BlockSize]
+ *   element [i,j] of matrix k can be found at position [k*BlockSize*BlockSize+j*BlockSize+i]
+ */
+typedef struct BlockTriDiagonalMatrixType
+{
+  char   Name[MAXStrLength];   /* A pointer to a name string that can be used to lable functions, good for printing etc. */
+  uint32_t N;                  /* number of diagonal blocks */
+  uint32_t BlockSize;          /* dimension of square matrices */
+  uint32_t QComplex;           /* matrices are complex or real */
+  union                        /* List of (N+1) * BlockSize*BlockSize values */
+  {
+    double *aRe;
+    Complex16 *a;
+  };
+  union                        /* List of (N) * BlockSize*BlockSize values */
+  {
+    double *bRe;
+    Complex16 *b;
+  };
+  double mu;                    /* chemical potential if transformed to Green's function */
+}
+BlockTriDiagonalMatrixType;
+
+
+
+
+
+
+
+
+
+
 
 
 
