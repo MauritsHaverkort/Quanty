@@ -2669,8 +2669,7 @@ uint32_t MatrixToAndersonMatrix(MatrixType const M, MatrixType * const T, Anders
 *  b[i] is random
 *  one could make b[i] such that sum_j b[i][k][j] is real and positive
 */
-uint32_t BlokTriDiagonalize(MatrixType const M, MatrixType * const T, BlokTriDiagonalMatrixType * const H,
-                            const uint32_t BlokDim)
+uint32_t BlokTriDiagonalize(MatrixType const M, MatrixType * const T, BlokTriDiagonalMatrixType * const H, const uint32_t BlokDim)
 {
   int    i, j, k, l, CurrentDim, NBlok;
   const char *jobu = "N";
@@ -2740,8 +2739,7 @@ uint32_t BlokTriDiagonalize(MatrixType const M, MatrixType * const T, BlokTriDia
         FreeBlokTriDiagonalMatrix(H);
         return 1;
       }
-      dgesvd(jobu, jobvt, &(THT.Nj), &(THT.Ni), THT.VRe[0], &(THT.Nj), SingularVal, U, &(THT.Ni), U, &(THT.Ni), work,
-             &lwork, &info);
+      dgesvd(jobu, jobvt, &(THT.Nj), &(THT.Ni), THT.VRe[0], &(THT.Nj), SingularVal, U, &(THT.Ni), U, &(THT.Ni), work,&lwork, &info);
       FreeMatrix(&THT);
       if (info)
       {

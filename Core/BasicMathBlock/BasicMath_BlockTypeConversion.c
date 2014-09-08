@@ -99,7 +99,6 @@ uint32_t BlockListOfPolesToSpectra(BlockListOfPoles const A, SpectraType *G, dou
         iEplus=iEmin+1;
         wplus=((A.VRe[j]-Emin)/G[0].dE)-iEmin;
         wmin=1-wplus;
-        printf("%17.10E %17.10E | Ei %17.10E Ei+1 %17.10E A %17.10E\n",wmin,wplus,Emin+G[0].dE*iEmin,Emin+G[0].dE*(iEmin+1),A.VRe[j]);
       }
       /* add the real part of the lorenzian to energy iEmin and iEplus */
       for(i=0;i<A.BlockSize*A.BlockSize;i++)
@@ -311,12 +310,402 @@ uint32_t TightBindingHamiltonianToBlockListOfPoles(TightBindingDef const A, int 
   return 0;
 }
 
-
-
-uint32_t BlockListOfPolesToBlockTridiagonalMatrix(BlockListOfPoles const A, BlockTriDiagonalMatrixType *B)
+/*  On input 
+ *    matrix A is diagonal and real and of dimension psi->Nj. Values are stored as a vector of doubles
+ *    matrix psi is of dimension psi->Ni * psi->Nj
+ *  on output matrix T is of dimension psi->Ni*NBlock by psi->Nj such that T^{dag} A T is block tridiagonal of dimension Ni*NBlock with psi on element 1 to psi->Ni
+ *    ABlock = T^dag A T
+ */
+uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType const *psi, CompactMatrixType *const T, BlockTriDiagonalMatrixType *ABlock, double NBlock, double SingularValue)
 {
+  int i,ii,j,k,oldindex,newindex,ipos,iipos,ia,ib,jcol,icol,allzero;
+  double norm,dot,dotRe,dotIm;
+  CompactMatrixType Tnow;
+  ABlock->N=NBlock;
+  ABlock->BlockSize=psi->Ni;
+  ABlock->QComplex=psi->QComplex;
+  InitBlockTridiagonalMatrix(ABlock);
+  T->Ni=psi->Ni*NBlock;
+  T->Nj=psi->Nj;
+  T->QComplex=psi->QComplex;
+  if(InitCompactMatrix(T))
+  {
+    printf("InitCompactMatrix failed in DiagonalMatrixBlockTridiagonalize\n");
+    return 1;
+  }
+  Tnow.Name=T->Name;
+  Tnow.QComplex=T->QComplex;
+  if(T->QComplex)
+  {
+    memcpy(T->V, psi->V, psi->Nj*psi->Ni*sizeof(Complex16));
+    Tnow.V=T->V;
+    Tnow.Ni=psi->Ni;
+    Tnow.Nj=psi->Nj;
+    oldindex=0;
+    newindex=psi->Ni*psi->Nj;
+    for(k=1;k<ABlock->N;k++)
+    {
+      Tnow.Ni+=psi->Ni;
+      for(i=0;i<psi->Ni;i++)
+      {
+        for(j=0;j<psi->Nj;j++)
+        {
+          Tnow.V[newindex].Re = A[j] * Tnow.V[oldindex].Re;
+          Tnow.V[newindex].Im = A[j] * Tnow.V[oldindex].Im;
+          oldindex++;
+          newindex++;
+        }
+      }
+      for(i=Tnow.Ni-psi->Ni;i<Tnow.Ni;i++)
+      {
+        ipos=i*Tnow.Nj;
+        /* orthogonalize i to ii=0 to i */
+        for(ii=0;ii<i;ii++)
+        {
+          iipos=ii*Tnow.Nj;
+          dotRe=0;
+          dotIm=0;
+          for(j=ipos;j<ipos+Tnow.Nj;j++)
+          {
+            dotRe+=Tnow.V[iipos].Re*Tnow.V[j].Re + Tnow.V[iipos].Im*Tnow.V[j].Im;
+            dotIm+=Tnow.V[iipos].Re*Tnow.V[j].Im - Tnow.V[iipos].Im*Tnow.V[j].Re;
+            iipos++;
+          }
+          iipos=ii*Tnow.Nj;
+          for(j=ipos;j<ipos+Tnow.Nj;j++)
+          {
+            Tnow.V[j].Re -=dotRe*Tnow.V[iipos].Re - dotIm*Tnow.V[iipos].Im;
+            Tnow.V[j].Im -=dotRe*Tnow.V[iipos].Im + dotIm*Tnow.V[iipos].Re;
+            iipos++;
+          }
+        }
+        /* normalize vector i */
+        norm=0;
+        for(j=ipos;j<ipos+Tnow.Nj;j++)
+        {
+          norm+=Sqr(Tnow.V[j].Re)+Sqr(Tnow.V[j].Im);
+        }
+        if(norm<SingularValue)
+        {
+          norm=0;
+        }
+        else
+        {
+          norm=1.0/sqrt(norm);
+        }
+        for(j=ipos;j<ipos+Tnow.Nj;j++)
+        {
+          Tnow.V[j].Re*=norm;
+          Tnow.V[j].Im*=norm;
+        }
+      }
+    }
+    iipos=ABlock->BlockSize*ABlock->BlockSize; /* position in tridiagonal matrix */
+    for(ia=0;ia<ABlock->N;ia++)
+    {
+      for(i=0;i<ABlock->BlockSize;i++)
+      {
+        for(j=0;j<ABlock->BlockSize;j++)
+        {
+          icol=(i+ia*ABlock->BlockSize)*T->Nj;
+          jcol=(j+ia*ABlock->BlockSize)*T->Nj;
+          ABlock->aRe[iipos]=0;
+          for(k=0;k<T->Nj;k++)
+          {
+            ABlock->a[iipos].Re+=T->V[jcol].Re*A[k]*T->V[icol].Re + T->V[jcol].Im*A[k]*T->V[icol].Im;
+            ABlock->a[iipos].Im+=T->V[jcol].Re*A[k]*T->V[icol].Im - T->V[jcol].Im*A[k]*T->V[icol].Re;
+            icol++;
+            jcol++;
+          }
+          iipos++;
+        }
+      }
+    }
+    iipos=ABlock->BlockSize*ABlock->BlockSize; /* position in tridiagonal matrix */
+    for(ib=0;ib<(ABlock->N-1);ib++)
+    {
+      for(i=0;i<ABlock->BlockSize;i++)
+      {
+        for(j=0;j<ABlock->BlockSize;j++)
+        {
+          icol=(i+(ib+1)*ABlock->BlockSize)*T->Nj;
+          jcol=(j+ib*ABlock->BlockSize)*T->Nj;
+          ABlock->bRe[iipos]=0;
+          for(k=0;k<T->Nj;k++)
+          {
+            ABlock->b[iipos].Re+=T->V[jcol].Re*A[k]*T->V[icol].Re + T->V[jcol].Im*A[k]*T->V[icol].Im;
+            ABlock->b[iipos].Im+=T->V[jcol].Re*A[k]*T->V[icol].Im - T->V[jcol].Im*A[k]*T->V[icol].Re;
+            icol++;
+            jcol++;
+          }
+          iipos++;
+        }
+      }
+    }
+  }
+  else
+  {
+    memcpy(T->VRe, psi->VRe, psi->Nj*psi->Ni*sizeof(double));
+    Tnow.VRe=T->VRe;
+    Tnow.Ni=psi->Ni;
+    Tnow.Nj=psi->Nj;
+    oldindex=0;
+    newindex=psi->Ni*psi->Nj;
+    for(k=1;k<ABlock->N;k++)
+    {
+      Tnow.Ni+=psi->Ni;
+      for(i=0;i<psi->Ni;i++)
+      {
+        for(j=0;j<psi->Nj;j++)
+        {
+          Tnow.VRe[newindex] = A[j] * Tnow.VRe[oldindex];
+          oldindex++;
+          newindex++;
+        }
+      }
+      allzero=1;
+      for(i=Tnow.Ni-psi->Ni;i<Tnow.Ni;i++)
+      {
+        ipos=i*Tnow.Nj;
+        /* orthogonalize i to j=0 to i */
+        for(ii=0;ii<i;ii++)
+        {
+          iipos=ii*Tnow.Nj;
+          dot=0;
+          for(j=ipos;j<ipos+Tnow.Nj;j++)
+          {
+            dot+=Tnow.VRe[j]*Tnow.VRe[iipos];
+            iipos++;
+          }
+          iipos=ii*Tnow.Nj;
+          for(j=ipos;j<ipos+Tnow.Nj;j++)
+          {
+            Tnow.VRe[j] -=dot*Tnow.VRe[iipos];
+            iipos++;
+          }
+        }
+        /* normalize vector i */
+        norm=0;
+        for(j=ipos;j<ipos+Tnow.Nj;j++)
+        {
+          norm+=Sqr(Tnow.VRe[j]);
+        }
+        if(norm<SingularValue)
+        {
+          norm=0;
+        }
+        else
+        {
+          allzero=0;
+          norm=1.0/sqrt(norm);
+        }
+        for(j=ipos;j<ipos+Tnow.Nj;j++)
+        {
+          Tnow.VRe[j]*=norm;
+        }
+      }
+      if(allzero)
+      {
+        ABlock->N=k;
+      }
+    }
+    iipos=ABlock->BlockSize*ABlock->BlockSize; /* position in tridiagonal matrix */
+    for(ia=0;ia<ABlock->N;ia++)
+    {
+      for(i=0;i<ABlock->BlockSize;i++)
+      {
+        for(j=0;j<ABlock->BlockSize;j++)
+        {
+          icol=(i+ia*ABlock->BlockSize)*T->Nj;
+          jcol=(j+ia*ABlock->BlockSize)*T->Nj;
+          ABlock->aRe[iipos]=0;
+          for(k=0;k<T->Nj;k++)
+          {
+            ABlock->aRe[iipos]+=T->VRe[jcol]*A[k]*T->VRe[icol];
+            icol++;
+            jcol++;
+          }
+          iipos++;
+        }
+      }
+    }
+    iipos=ABlock->BlockSize*ABlock->BlockSize; /* position in tridiagonal matrix */
+    for(ib=0;ib<(ABlock->N-1);ib++)
+    {
+      for(i=0;i<ABlock->BlockSize;i++)
+      {
+        for(j=0;j<ABlock->BlockSize;j++)
+        {
+          icol=(i+(ib+1)*ABlock->BlockSize)*T->Nj;
+          jcol=(j+ib*ABlock->BlockSize)*T->Nj;
+          ABlock->bRe[iipos]=0;
+          for(k=0;k<T->Nj;k++)
+          {
+            ABlock->bRe[iipos]+=T->VRe[jcol]*A[k]*T->VRe[icol];
+            icol++;
+            jcol++;
+          }
+          iipos++;
+        }
+      }
+    }
+  }
+  return 0;
+}
+
+/*  on entry A contains the Green's function in a BlockListOfPoles format.
+ *  on excit B contains the Green's function in a BlockTridiagonal format. (note that a0 and b0 are aditional prefactors)
+ *  The returned matrix is always of the dimension NBLockMax by A.BlockSize, if couplings are small (SingularValue) they are set to zero.
+ */
+uint32_t BlockListOfPolesToBlockTridiagonalMatrix(BlockListOfPoles const A, BlockTriDiagonalMatrixType *B, int const NBlockMax, double const SingularValue)
+{
+  double *alpha;
+  int k,i,ialpha,iN;
+  char name[]="temp";
+  CompactMatrixType betaisqr,betai,beta,T;
   
-  /* TO DO */
+  betaisqr.QComplex=A.QComplex;
+  betaisqr.Ni=A.BlockSize;
+  betaisqr.Nj=A.BlockSize;
+  betaisqr.Name=name;
   
+  beta.QComplex=A.QComplex;
+  beta.Ni=A.BlockSize*A.N;
+  beta.Nj=A.BlockSize;
+  InitCompactMatrix(&beta);
+  
+  alpha=malloc(A.N*A.BlockSize*sizeof(double));
+  ialpha=0;
+  iN=0;
+  if(A.QComplex)
+  {
+    for(k=0;k<A.N;k++)
+    {
+      betaisqr.V = &(A.V[iN+1]);
+      CompactMatrixSqrt(&betaisqr, &betai);
+      memcpy(&(beta.V[iN-k]), betai.V, sizeof(Complex16)*A.BlockSize*A.BlockSize);
+      FreeCompactMatrix(&betai);
+      for(i=0;i<A.BlockSize;i++)
+      {
+        alpha[ialpha]=A.VRe[iN];
+        ialpha++;
+      }
+      iN+=1+A.BlockSize*A.BlockSize;
+    }
+  }
+  else /* A is real */
+  {
+    for(k=0;k<A.N;k++)
+    {
+      betaisqr.VRe = &(A.VRe[iN+1]);
+      CompactMatrixSqrt(&betaisqr, &betai);
+      memcpy(&(beta.VRe[iN-k]), betai.VRe, sizeof(double)*A.BlockSize*A.BlockSize);
+      FreeCompactMatrix(&betai);
+      for(i=0;i<A.BlockSize;i++)
+      {
+        alpha[ialpha]=A.VRe[iN];
+        ialpha++;
+      }
+      iN+=1+A.BlockSize*A.BlockSize;
+    }
+  }
+  CompactMatrixTranspose(&beta);
+  DiagonalMatrixBlockTridiagonalize(alpha, &beta, &T, B, NBlockMax, SingularValue);
+  B->mu=A.mu;
+  free(alpha);
+  FreeCompactMatrix(&beta);
+  return 0;
+}
+
+
+
+/*  Transform a BlockTriDiagonalMatrix representation of G to a spectral representation of G.
+ *
+ *  On entry:
+ *    A contains the BlockTriDiagonal matrix to transform
+ *    G is a pointer to SpectraType wich allocats A->BlockSize^2 spectra
+ *    Emin and Emax set the min and max energy in the spectrum
+ *    N the number of energies.
+ *    Gamma sets the lorenzian broadening Gamma > 3*(Emax-Emin)/N
+ *
+ *    G = a0 + b0^+ (1/( w + i Gamma/2 - a1 - b1^+  ( w + i Gamma/2 - a2 - b2^+ ( ... ) b2 ) b1 )) b0
+ *
+ */
+uint32_t BlockTriDiagonalMatrixToSpectra(BlockTriDiagonalMatrixType const * A, SpectraType *const G, double const Emin, double const Emax, uint32_t const N, double const Gamma)
+{
+  int i,iw,iblock;
+  double omega;
+  CompactMatrixType Gw,a,b;
+  G[0].N=N;
+  G[0].Emin=Emin;
+  G[0].Emax=Emax;
+  G[0].EminPole=Emin;
+  G[0].EmaxPole=Emax;
+  G[0].dE=(Emax-Emin)/((double)N);
+  G[0].Gamma=Gamma;
+  for(i=0;i<A->BlockSize*A->BlockSize;i++)
+  {
+    SpectrumAllocate(G[0], &(G[i]));
+  }
+  a.Ni=A->BlockSize;
+  a.Nj=A->BlockSize;
+  b.Ni=A->BlockSize;
+  b.Nj=A->BlockSize;
+  a.QComplex=A->QComplex;
+  b.QComplex=A->QComplex;
+  Gw.QComplex=1;
+  Gw.Ni=A->BlockSize;
+  Gw.Nj=A->BlockSize;
+  InitCompactMatrix(&Gw);
+  for(iw=0;iw<=N;iw++)
+  {
+    omega = Emin + iw * G[0].dE;
+    for(i=0;i<A->BlockSize*A->BlockSize;i++)
+    {
+      Gw.V[i].Re=0;
+      Gw.V[i].Im=0;
+    }
+    for(iblock=A->N;iblock>0;iblock--)
+    {
+      /* set a and b to point to right matrices */
+      if(A->QComplex)
+      {
+        a.V=&(A->a[iblock    *A->BlockSize*A->BlockSize]);
+        b.V=&(A->b[(iblock-1)*A->BlockSize*A->BlockSize]);
+      }
+      else
+      {
+        a.VRe=&(A->aRe[iblock    *A->BlockSize*A->BlockSize]);
+        b.VRe=&(A->bRe[(iblock-1)*A->BlockSize*A->BlockSize]);
+      }
+      CompactMatrixAdd(&Gw, &a);
+      for(i=0;i<A->BlockSize*A->BlockSize;i++)
+      {
+        Gw.V[i].Re*=-1;
+        Gw.V[i].Im*=-1;
+      }
+      for(i=0;i<A->BlockSize*A->BlockSize;i+=A->BlockSize+1)
+      {
+        Gw.V[i].Re+=omega;
+        Gw.V[i].Im+=Gamma/2.0;
+      }
+      CompactMatrixInverse(&Gw);
+      TransformCompactMatrixInline(&Gw, &b); /* Gw <- b^dag Gw b */
+    }
+    if(A->QComplex)
+    {
+      a.V=A->a;
+    }
+    else
+    {
+      a.VRe=A->aRe;
+    }
+    CompactMatrixAdd(&Gw, &a);
+    for(i=0;i<A->BlockSize*A->BlockSize;i++)
+    {
+      G[i].Re[iw]=Gw.V[i].Re;
+      G[i].Im[iw]=Gw.V[i].Im;
+    }
+  }
   return 0;
 }

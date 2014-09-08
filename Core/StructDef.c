@@ -146,7 +146,7 @@ TimeType;
  *
  *   (A B)[i][j] = \sum_k A[i][k] B[k][j]
  *
- *   y[j] = \sum_i A[i][j] x[i]
+ *   y[j] = \sum_i A[i][j] x[i]  <== Really ???
  *
  *   A[i][j]=A[0][i*A.Nj+j]
  */
@@ -162,6 +162,22 @@ typedef struct MatrixType
 }
 MatrixType;
 
+
+
+/*  CompactMatrixType defines a 2-dimensional tensor (matrix) with Nj rows and Ni columns
+ *  The left top element is A(00), the right bottom element is A(Ni-1,Nj-1)
+ *  The label QComplex sets a real (0) or complex (1) matrix.
+ *
+ *     ( A(0,0) | A(1,0) | A(2,0) )
+ *   A=( A(0,1) | A(1,1) | A(2,1) )
+ *     ( A(0,2) | A(1,2) | A(2,2) )
+ *
+ *   (A B)(i,j) = \sum_k A(k,j) B(i,k)
+ *
+ *   y[j] = \sum_i A(i,j) x[i]
+ *
+ *   element (i,j) is found at position [i*Nj + j]
+ */
 typedef struct CompactMatrixType
 {
   char *Name;                   /* A pointer to a name string that can be used to lable functions, good for printing etc. */
@@ -371,6 +387,7 @@ BlockTriDiagonalMatrixType;
  *
  *   (A B)[i][j] = \sum_k A[i][k] . B[k][j]
  *
+ *   !!!! warning, part of the routines include a0 and b0 as ofsets, but not all routines do !!!!!!
  */
 typedef struct BlokTriDiagonalMatrixType
 {
@@ -392,6 +409,7 @@ BlokTriDiagonalMatrixType;
  *
  *   (A B)[i][j] = \sum_k A[i][k] . B[k][j]
  *
+ *   !!!! warning, part of the routines include a0 and b0 as ofsets, but not all routines do !!!!!!
  */
 typedef struct BlokAndersonMatrixType
 {

@@ -90,6 +90,11 @@ uint32_t PrintPlainMatrix(MatrixType M)
   return StreamPrintPlainMatrix(M, stdout);
 }
 
+uint32_t PrintCompactMatrixMinimal(CompactMatrixType M)
+{
+  return StreamPrintCompactMatrixMinimal(M, stdout);
+}
+
 uint32_t PrintPlainTriDiagonalMatrix(TriDiagonalMatrixType M)
 {
   return StreamPrintPlainTriDiagonalMatrix(M, stdout);
@@ -163,6 +168,11 @@ uint32_t PrintTriDiagonalMatrix(TriDiagonalMatrixType M)
 uint32_t PrintBlokTriDiagonalMatrix(BlokTriDiagonalMatrixType M)
 {
   return StreamPrintBlokTriDiagonalMatrix(M, stdout);
+}
+
+uint32_t PrintBlockTriDiagonalMatrix(BlockTriDiagonalMatrixType M)
+{
+  return StreamPrintBlockTriDiagonalMatrix(M, stdout);
 }
 
 uint32_t PrintDoubleTriDiagonalMatrix(DoubleTriDiagonalMatrixType M)

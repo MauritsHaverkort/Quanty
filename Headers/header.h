@@ -8,38 +8,64 @@
 /**********************************************************/
 #ifdef BLASunderscore
 #define dcopy dcopy_
+#define ddot ddot_
+#defien dgemm dgemm_
+#define dgemv dgemv_
+#define dgeqrf dgeqrf_
+#define dgesvd dgesvd_
+#define dgetrf dgetrf_
+#define dgetri dgetri_
+#define dsyrk dsyrk_
+#define dpotrf dpotrf_
 #define dstev dstev_
 #define dstevd dstevd_
 #define dsyev dsyev_
 #define dsyevd dsyevd_
+#define dsygv dsygv_
+#define dsygvd dsygvd_
+#define dtrsm dtrsm_
+#define zgemm zgemm_
+#define zgemv zgemv_
+#define zgetrf zgetrf_
+#define zgetri zgetri_
+#define zherk zherk_
 #define zheev zheev_
 #define zheevd zheevd_
-#define dgesvd dgesvd_
 #define zgesvd zgesvd_
-#define dsygv dsygv_
 #define zhegv zhegv_
-#define dsygvd dsygvd_
 #define zhegvd zhegvd_
 #define zdotc zdotc_
-#define ddot ddot_
 #endif
 
 
 int    dcopy();
+double ddot();
+int    dgemm();
+int    dgemv();
+int    dgeqrf();
+int    dgesvd();
+void   dgetrf();
+void   dgetri();
+int    dpotrf();
+int    dsyrk();
 int    dstev();
 int    dstevd();
 int    dsyev();
 int    dsyevd();
+int    dsygv();
+int    dsygvd();
+int    dtrsm();
+int    zgemm();
+int    zgemv();
+void   zgetrf();
+void   zgetri();
+int    zherk();
 int    zheev();
 int    zheevd();
-int    dgesvd();
 int    zgesvd();
-int    dsygv();
 int    zhegv();
-int    dsygvd();
 int    zhegvd();
 void   zdotc();
-double ddot();
 
 /**********************************************************/
 /********      Hubbard Model/CellFunctions.c      *********/

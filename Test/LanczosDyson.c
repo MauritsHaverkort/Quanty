@@ -9,28 +9,37 @@
 void TestLanczosDyson3()
 {
   TightBindingDef TB;
-  SpectraType DOS,Gspec[1];
+  SpectraType DOS,Gspec[4], GTriSpec[4];
   BlockListOfPoles G;
-  int Nk[]={200,200,1};
+  BlockTriDiagonalMatrixType Gtri;
+  int Nk[]={1000,1000,1};
   // create G0
-  FileReadTightBindingDef(&TB, "two_band_TB");
+  FileReadTightBindingDef(&TB, "two_band_TB_real");
   PrintTightBindingDef(TB);
-  DOS.N=100;
+  DOS.N=500;
   DOS.Emin=-4;
   DOS.Emax=6;
   DOS.dE=(DOS.Emax-DOS.Emin)/DOS.N;
   SpectrumAllocate(DOS, &DOS);
   TightBindingDOS(TB, Nk, &DOS);
   
-  FilePrintSpectra(&DOS, 1, "TBDOS", "w");
+  FilePrintSpectra(&DOS, 1, "TBDOS1", "w");
   
   TightBindingHamiltonianToBlockListOfPoles(TB, Nk, &G, -3, 5.5, 1000);
   
-  BlockListOfPolesToSpectra(G, Gspec, -4, 6, 100);
+  BlockListOfPolesToSpectra(G, Gspec, -4, 6, 500);
   
   PrintBlockListOfPoles(G);
   
   FilePrintSpectra(Gspec, TB.NFermion*TB.NFermion, "TBDOS2", "w");
+  
+  BlockListOfPolesToBlockTridiagonalMatrix(G, &Gtri, 1000, DBL_EPSILON);
+  
+  PrintBlockTriDiagonalMatrix(Gtri);
+  
+  BlockTriDiagonalMatrixToSpectra(&Gtri, GTriSpec, -4.0, 6.0, 1000, 0.1);
+  
+  FilePrintSpectra(GTriSpec, TB.NFermion*TB.NFermion, "TBDOS3", "w");
   
   
   // turn G0 into impurity natural orbitals

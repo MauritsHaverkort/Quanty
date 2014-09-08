@@ -110,6 +110,8 @@ int main(int argc, const char *argv[])
       TestAllMatrix();
     if (!strncmp("MatrixVector", argv[argc], strlen(argv[argc])))
       TestMatrixVector();
+    if (!strncmp("CompactMatrixVector", argv[argc], strlen(argv[argc])))
+      TestCompactMatrixVector();
     if (!strncmp("ConvertMatrix", argv[argc], strlen(argv[argc])))
       TestMatrixTypeConversion();
     if (!strncmp("Combi", argv[argc], strlen(argv[argc])))

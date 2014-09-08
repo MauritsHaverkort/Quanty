@@ -382,6 +382,270 @@ void TestMatrixVector()
 }
 
 
+void TestCompactMatrixVector()
+{
+  double vec[10]={0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,1.1};
+  double vecout[10]={1,1,1,1,1,1,1,1,1,1};
+  int i,j,k;
+  CompactMatrixType IM,AM,BM,CM,DM,q,r;
+  BlockTriDiagonalMatrixType AMTri;
+  
+  printf("\n====== test matrix vector =========\n");
+  
+  IM.Ni=2;
+  IM.Nj=3;
+  IM.QComplex=0;
+  InitCompactIdentityMatrix(&IM);
+  printf("vector x\n");
+  for(i=0;i<2;i++)
+  {
+    printf("%17.10E \n",vec[i]);
+  }
+  printf("\nMatrix I\n");
+  PrintCompactMatrixMinimal(IM);
+  CompactMatrixVector('N',&IM, vec, vecout);
+  printf("vector I x\n");
+  for(i=0;i<3;i++)
+  {
+    printf("%17.10E ",vecout[i]);
+  }
+  printf("\n\n");
+  
+  printf("\n====== test matrix matrix =========\n");
+  
+  BM.Ni=2;
+  BM.Nj=3;
+  BM.QComplex=0;
+  AM.Ni=3;
+  AM.Nj=4;
+  AM.QComplex=0;
+  InitCompactMatrix(&AM);
+  InitCompactMatrix(&BM);
+  for(i=0;i<AM.Ni*AM.Nj;i++)
+  {
+    AM.VRe[i]=i;
+  }
+  for(i=0;i<BM.Ni*BM.Nj;i++)
+  {
+    BM.VRe[i]=1.0/((double)i+1);
+  }
+  printf("matrix A (with values j + i*Nj), Ni=%i Nj=%i\n",AM.Ni,AM.Nj);
+  PrintCompactMatrixMinimal(AM);
+  printf("matrix B (with values 1/(1 + j + i*Nj)), Ni=%i Nj=%i\n",BM.Ni,BM.Nj);
+  PrintCompactMatrixMinimal(BM);
+  
+  CompactMatrixMultiply('N', 'N', &AM, &BM, &CM);
+  
+  printf("matrix C = A B, Ni=%i Nj=%i\n",CM.Ni,CM.Nj);
+  PrintCompactMatrixMinimal(CM);
+  
+  
+  
+  CompactMatrixMultiply('C', 'C', &BM, &AM, &DM);
+  
+  printf("matrix D = B^T A^T, Ni=%i Nj=%i\n",DM.Ni,DM.Nj);
+  PrintCompactMatrixMinimal(DM);
+  FreeCompactMatrix(&DM);
+  
+  printf("\n====== test matrix inverse =========\n");
+  
+  AM.Nj=3;
+  AM.VRe[0]+=2;
+  
+  FreeCompactMatrix(&BM);
+  CompactMatrixCopy(AM,&BM);
+  
+  printf("matrix A, Ni=%i Nj=%i\n",AM.Ni,AM.Nj);
+  PrintCompactMatrixMinimal(AM);
+  CompactMatrixInverse(&BM);
+  printf("matrix B=A^{-1}, Ni=%i Nj=%i\n",BM.Ni,BM.Nj);
+  PrintCompactMatrixMinimal(BM);
+  
+  CompactMatrixMultiply('N', 'N', &BM, &AM, &CM);
+  CompactMatrixChop(&CM, 1000*DBL_EPSILON);
+  
+  printf("matrix C=B A, Ni=%i Nj=%i\n",CM.Ni,CM.Nj);
+  PrintCompactMatrixMinimal(CM);
+  
+  
+  printf("\n====== test matrix eigensystem =========\n");
+  
+  FreeCompactMatrix(&CM);
+  FreeCompactMatrix(&BM);
+  CompactMatrixCopy(AM, &BM);
+  CompactMatrixConjugateTranspose(&BM);
+  
+  
+  CompactMatrixAdd(&AM, &BM);
+  double val[3];
+  CompactMatrixEigensystem(&AM, &BM, val);
+  
+  printf("matrix A, Ni=%i Nj=%i\n",AM.Ni,AM.Nj);
+  PrintCompactMatrixMinimal(AM);
+  
+  printf("matrix B=Eigenfunctions(A), Ni=%i Nj=%i\n",BM.Ni,BM.Nj);
+  PrintCompactMatrixMinimal(BM);
+  
+  for(i=0;i<3;i++)
+  {
+    printf("val %i = %22.15E\n",i,val[i]);
+  }
+  
+  for(i=0;i<3;i++)
+  {
+    vec[i]=BM.VRe[i];
+  }
+  
+  CompactMatrixVector('N',&AM, vec, vecout);
+  
+  printf("\nmatrix A * vec = val * vec\n");
+  printf(" vec               A*vec             A*vec/val\n");
+  for(i=0;i<3;i++)
+  {
+    printf("%17.10E %17.10E %17.10E \n",vec[i],vecout[i],vecout[i]/val[0]);
+  }
+  printf("\n");
+  
+  
+  for(i=0;i<3;i++)
+  {
+    vec[i]=BM.VRe[i+BM.Nj];
+  }
+  
+  CompactMatrixVector('N',&AM, vec, vecout);
+  
+  printf("\nmatrix A * vec = val * vec\n");
+  printf(" vec               A*vec             A*vec/val\n");
+  for(i=0;i<3;i++)
+  {
+    printf("%17.10E %17.10E %17.10E \n",vec[i],vecout[i],vecout[i]/val[1]);
+  }
+  printf("\n");
+  
+  CompactMatrixMultiply3('T', 'N', 'N', &BM, &AM, &BM, &CM);
+  CompactMatrixChop(&CM, 1000*DBL_EPSILON);
+  
+  printf("matrix C = vec^T . A . vec, Ni=%i Nj=%i\n",CM.Ni,CM.Nj);
+  PrintCompactMatrixMinimal(CM);
+  
+  printf("\n\nQR decomposition\n\n");
+  
+  CompactMatrixQRDecompositionEigenHermitian(&AM, 100*DBL_EPSILON, &q, &r);
+  
+  printf("Matrix A\n");
+  PrintCompactMatrixMinimal(AM);
+  
+  printf("Matrix q\n");
+  PrintCompactMatrixMinimal(q);
+  
+  printf("Matrix r\n");
+  PrintCompactMatrixMinimal(r);
+
+  FreeCompactMatrix(&BM);
+  CompactMatrixMultiply('N', 'N', &q, &r, &BM);
+  
+  printf("Matrix q r\n");
+  PrintCompactMatrixMinimal(BM);
+  
+  
+  FreeCompactMatrix(&CM);
+  CompactMatrixMultiply('T', 'N', &q, &q, &CM);
+  
+  
+  printf("Matrix q^T q\n");
+  PrintCompactMatrixMinimal(CM);
+  
+  
+  
+  
+  
+  printf("\n\nQR decomposition with singular matrix\n\n");
+  
+  
+  FreeCompactMatrix(&q);
+  FreeCompactMatrix(&r);
+  
+  AM.VRe[0]= 1;  AM.VRe[3]= 1;  AM.VRe[6]= 1;
+  AM.VRe[1]= 1;  AM.VRe[4]= 1;  AM.VRe[7]= 1;
+  AM.VRe[2]= 1;  AM.VRe[5]= 1;  AM.VRe[8]= 2;
+  
+  
+  CompactMatrixQRDecompositionEigenHermitian(&AM, 100*DBL_EPSILON, &q, &r);
+  
+  printf("Matrix A\n");
+  PrintCompactMatrixMinimal(AM);
+  
+  printf("Matrix q\n");
+  PrintCompactMatrixMinimal(q);
+  
+  printf("Matrix r\n");
+  PrintCompactMatrixMinimal(r);
+  
+  FreeCompactMatrix(&BM);
+  CompactMatrixMultiply('N', 'N', &q, &r, &BM);
+  
+  printf("Matrix q r\n");
+  PrintCompactMatrixMinimal(BM);
+  
+  
+  FreeCompactMatrix(&CM);
+  CompactMatrixMultiply('T', 'N', &q, &q, &CM);
+  
+  
+  printf("Matrix q^T q\n");
+  PrintCompactMatrixMinimal(CM);
+  
+  
+  printf("\n\nsqrt of a matrix\n\n");
+  
+  
+  AM.VRe[0]= 1;  AM.VRe[3]= 2;  AM.VRe[6]= 5;
+  AM.VRe[1]= 2;  AM.VRe[4]= 1;  AM.VRe[7]= -1;
+  AM.VRe[2]= 5;  AM.VRe[5]= -1;  AM.VRe[8]= 2;
+  
+  FreeCompactMatrix(&BM);
+  CompactMatrixMultiply('N', 'C', &AM, &AM, &BM);
+  
+  FreeCompactMatrix(&CM);
+  
+  CompactMatrixSqrt(&BM, &CM);
+  
+  CompactMatrixMultiply('N', 'C', &CM, &CM, &DM);
+  
+  PrintCompactMatrixMinimal(AM);
+  PrintCompactMatrixMinimal(BM);
+  PrintCompactMatrixMinimal(CM);
+  PrintCompactMatrixMinimal(DM);
+  
+  
+  FreeCompactMatrix(&AM);
+  FreeCompactMatrix(&BM);
+  FreeCompactMatrix(&CM);
+  FreeCompactMatrix(&DM);
+  
+  
+  AM.Ni=20;
+  AM.Nj=20;
+  AM.QComplex=0;
+  InitCompactMatrix(&AM);
+  k=0;
+  for(i=0;i<AM.Ni;i++)
+  {
+    for(j=0;j<AM.Nj;j++)
+    {
+      AM.VRe[k]=(i+j) / (3.0+i+j);
+      k++;
+    }
+  }
+  CompactMatrixBlockBandTridiagonalizeHermitianNoReorthogonalization(&AM, &AMTri, DBL_EPSILON, 7, 3);
+  
+  PrintCompactMatrixMinimal(AM);
+  PrintBlockTriDiagonalMatrix(AMTri);
+  
+  
+}
+
+
 void TestAllMatrix()
 {
   printf("Testing the matrix library and the different matrix representations\n");
@@ -593,7 +857,16 @@ void TestAllMatrix()
   printf("\n\n\n  Start Blok Tri-Diagonalize a matrix \n\n\n");
 
   BlokTriDiagonalize(A, &T, &MBlokTri, 4);
-
+  
+  MatrixTransform(&ATri, A, T);
+  MatrixChop(&ATri, 1000*DBL_EPSILON);
+  
+  
+  PrintMatrix(A);
+  PrintMatrix(T);
+  PrintMatrix(ATri);
+  PrintBlokTriDiagonalMatrix(MBlokTri);
+  
   printf("End of Test All Matrix \n");
 
 }

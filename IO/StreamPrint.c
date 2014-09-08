@@ -648,6 +648,46 @@ uint32_t StreamPrintPlainMatrix(MatrixType M, FILE * stream)
 }
 
 
+uint32_t StreamPrintCompactMatrixMinimal(CompactMatrixType const M, FILE * stream)
+{
+  uint32_t i,j;
+  if(M.QComplex)
+  {
+    for(j=0;j<M.Nj;j++)
+    {
+      for(i=0;i<M.Ni;i++)
+      {
+        fprintf(stream,"(%22.15E ",M.V[j+M.Nj*i].Re);
+        if(M.V[j+M.Nj*i].Im>=0)
+        {
+          fprintf(stream,"+");
+        }
+        else
+        {
+          fprintf(stream," ");
+        }
+        fprintf(stream,"%22.15E I) ",M.V[j+M.Nj*i].Im);
+      }
+      fprintf(stream,"\n");
+    }
+    fprintf(stream,"\n");
+  }
+  else
+  {
+    for(j=0;j<M.Nj;j++)
+    {
+      for(i=0;i<M.Ni;i++)
+      {
+        fprintf(stream,"%22.15E ",M.VRe[j+M.Nj*i]);
+      }
+      fprintf(stream,"\n");
+    }
+    fprintf(stream,"\n");
+  }
+  return 0;
+}
+
+
 /*  Prints the structure TightBindingDef
  *
  */
@@ -1022,6 +1062,48 @@ uint32_t StreamPrintBlokTriDiagonalMatrix(BlokTriDiagonalMatrixType M, FILE * st
   return 0;
 }
 
+
+uint32_t StreamPrintBlockTriDiagonalMatrix(BlockTriDiagonalMatrixType M, FILE * stream)
+{
+  uint32_t i;
+  CompactMatrixType alpha;
+  alpha.Ni=M.BlockSize;
+  alpha.Nj=M.BlockSize;
+  alpha.QComplex=M.QComplex;
+  M.Name[MAXStrLength - 1] = '\0';
+  fprintf(stream, "%s :\n", M.Name);
+  fprintf(stream, "BlockTriDiagonalMatrix element a[i-1]=M[i][i] element b[i-1]=M[i,i+1]=M[i+1,i] others are zero.\n");
+  fprintf(stream, "Zero elements are prefactors for continued fraction representation\n");
+  fprintf(stream, "BlockSize %i number of Blocks %i\n",M.BlockSize, M.N);
+  for (i = 0; i <= M.N; i++)
+  {
+    if(M.QComplex)
+    {
+      alpha.V=&(M.a[i*M.BlockSize*M.BlockSize]);
+    }
+    else
+    {
+      alpha.VRe=&(M.aRe[i*M.BlockSize*M.BlockSize]);
+    }
+    fprintf(stream, "a[%i]\n", i);
+    StreamPrintCompactMatrixMinimal(alpha, stream);
+  }
+  for (i = 0; i < M.N; i++)
+  {
+    if(M.QComplex)
+    {
+      alpha.V=&(M.b[i*M.BlockSize*M.BlockSize]);
+    }
+    else
+    {
+      alpha.VRe=&(M.bRe[i*M.BlockSize*M.BlockSize]);
+    }
+    fprintf(stream, "b[%i]\n", i);
+    StreamPrintCompactMatrixMinimal(alpha, stream);
+  }
+  return 0;
+}
+
 uint32_t StreamPrintDoubleTriDiagonalMatrix(DoubleTriDiagonalMatrixType M, FILE * stream)
 {
   M.Name[MAXStrLength - 1] = '\0';
@@ -1191,45 +1273,6 @@ uint32_t StreamPrintListOfPolesEssentials(ListOfPoles M, FILE * stream)
     fprintf(stream, "%22.15E %22.15E\n", M.a[i] - M.mu, M.b[i]);
   }
   fprintf(stream, "\n");
-  return 0;
-}
-
-uint32_t StreamPrintCompactMatrixMinimal(CompactMatrixType const M, FILE * stream)
-{
-  uint32_t i,j;
-  if(M.QComplex)
-  {
-    for(i=0;i<M.Ni;i++)
-    {
-      for(j=0;j<M.Nj;j++)
-      {
-        fprintf(stream,"(%22.15E ",M.V[j+M.Nj*i].Re);
-        if(M.V[j+M.Nj*i].Im>=0)
-        {
-          fprintf(stream,"+");
-        }
-        else
-        {
-          fprintf(stream," ");
-        }
-        fprintf(stream,"%22.15E I) ",M.V[j+M.Nj*i].Im);
-      }
-      fprintf(stream,"\n");
-    }
-    fprintf(stream,"\n");
-  }
-  else
-  {
-    for(i=0;i<M.Ni;i++)
-    {
-      for(j=0;j<M.Nj;j++)
-      {
-        fprintf(stream,"%22.15E ",M.VRe[j+M.Nj*i]);
-      }
-      fprintf(stream,"\n");
-    }
-    fprintf(stream,"\n");
-  }
   return 0;
 }
 

@@ -322,8 +322,8 @@ uint32_t FilePrintPlainMatrix(MatrixType M, const char *const flname, const char
   if ((strcmp(mode, "w") && strcmp(mode, "a")) != 0)
   {
     printf
-      ("ERROR in FilePrintPlainMatrix.\nmode must be either \"w\" for overwrite or \"a\" for append\n %s as input is not excepted\n",
-       mode);
+    ("ERROR in FilePrintPlainMatrix.\nmode must be either \"w\" for overwrite or \"a\" for append\n %s as input is not excepted\n",
+     mode);
     return 1;
   }
   if ((stream = fopen(flname, mode)) == NULL)
@@ -332,6 +332,27 @@ uint32_t FilePrintPlainMatrix(MatrixType M, const char *const flname, const char
     return 1;
   }
   retval = StreamPrintPlainMatrix(M, stream);
+  fclose(stream);
+  return retval;
+}
+
+uint32_t FilePrintCompactMatrixMinimal(CompactMatrixType M, const char *const flname, const char *const mode)
+{
+  FILE  *stream;
+  uint32_t retval;
+  if ((strcmp(mode, "w") && strcmp(mode, "a")) != 0)
+  {
+    printf
+    ("ERROR in FilePrintCompactMatrixMinimal.\nmode must be either \"w\" for overwrite or \"a\" for append\n %s as input is not excepted\n",
+     mode);
+    return 1;
+  }
+  if ((stream = fopen(flname, mode)) == NULL)
+  {
+    printf("ERROR\nCan't open %s for writing with mode %s.\n", flname, mode);
+    return 1;
+  }
+  retval = StreamPrintCompactMatrixMinimal(M, stream);
   fclose(stream);
   return retval;
 }
