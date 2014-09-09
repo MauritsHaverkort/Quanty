@@ -338,12 +338,16 @@ BlockListOfPoles;
  *
  *   with ai and bi matrices
  *
- *   (A B)[i][j] = \sum_k A[i][k] . B[k][j]
+ *   (A B)(i,j) = \sum_k A(k,j) B(i,k)
+ *
+ *   y[j] = \sum_i A(i,j) x[i]
+ *
+ *   element (i,j) is found at position [i*Nj + j]
  *
  *   matrix a0 and b0 are used as a possible ofset and scaling when transformed to Green's functions
  *
  *   matrix k can be found at position [k*BlockSize*BlockSize]
- *   element [i,j] of matrix k can be found at position [k*BlockSize*BlockSize+j*BlockSize+i]
+ *   element [i,j] of matrix k can be found at position [k*BlockSize*BlockSize+i*BlockSize+j]
  */
 typedef struct BlockTriDiagonalMatrixType
 {
@@ -365,10 +369,104 @@ typedef struct BlockTriDiagonalMatrixType
 }
 BlockTriDiagonalMatrixType;
 
+/*
+ *     ( A[0][0]=a1   | A[0][1]=b1   | A[1][2]=b2   | A[2][3]=b3 )
+ *   A=( A[1][0]=b1^+ | A[1][1]=a2   | 0            | 0          )
+ *     ( A[2][1]=b2^+ | 0            | A[2][2]=a3   | 0          )
+ *     ( A[3][2]=b3^+ | 0            | 0            | A[3][3]=a4 )
+ *
+ *   (A B)(i,j) = \sum_k A(k,j) B(i,k)
+ *
+ *   y[j] = \sum_i A(i,j) x[i]
+ *
+ *   element (i,j) is found at position [i*Nj + j]
+ *
+ *   matrix a0 and b0 are used as a possible ofset and scaling when transformed to Green's functions
+ *
+ *   matrix k can be found at position [k*BlockSize*BlockSize]
+ *   element [i,j] of matrix k can be found at position [k*BlockSize*BlockSize+i*BlockSize+j]
+ */
+
+typedef struct BlockAndersonMatrixType
+{
+  char   Name[MAXStrLength];   /* A pointer to a name string that can be used to lable functions, good for printing etc. */
+  uint32_t N;                  /* number of diagonal blocks */
+  uint32_t BlockSize;          /* dimension of square matrices */
+  uint32_t QComplex;           /* matrices are complex or real */
+  union                        /* List of (N+1) * BlockSize*BlockSize values */
+  {
+    double *aRe;
+    Complex16 *a;
+  };
+  union                        /* List of (N) * BlockSize*BlockSize values */
+  {
+    double *bRe;
+    Complex16 *b;
+  };
+  double mu;                    /* chemical potential if transformed to Green's function */
+}
+BlockAndersonMatrixType;
 
 
 
-
+/*
+ *     ( A[0][0]=Ai    | A[0][0]=Bib   | A[0][1]=Biv   | 0             | 0           | A[0][4]=Bic   | 0             | 0           )
+ *     ( A[0][0]=Bib^+ | A[0][0]=Ab    | A[0][1]=Bbv   | 0             | 0           | A[0][4]=Bbc   | 0             | 0           )
+ *     ( A[1][0]=Biv^+ | A[1][0]=Bbv^+ | A[1][1]=av2   | A[1][2]=bv2   | 0           | 0             | 0             | 0           )
+ *   A=( 0             | 0             | A[2][1]=bv2^+ | A[2][2]=av3   | A[2][3]=bv3 | 0             | 0             | 0           )
+ *     ( 0             | 0             | 0             | A[3][2]=bv3^+ | A[3][3]=av4 | 0             | 0             | 0           )
+ *     ( A[4][0]=Bic^+ | A[4][0]=Bbc^+ | 0             | 0             | 0           | A[4][4]=ac2   | A[4][5]=bc2   | 0           )
+ *     ( 0             | 0             | 0             | 0             | 0           | A[5][4]=bc2^+ | A[5][5]=ac3   | A[5][6]=bc3 )
+ *     ( 0             | 0             | 0             | 0             | 0           | 0             | A[6][5]=bc3^+ | A[6][6]=ac4 )
+ *
+ *  A = T Ap T^+
+ *
+ *     ( A[0][0]=av1   | 0             | A[0][1]=bv1   | 0             | 0           | 0             | 0             | 0           )
+ *     ( 0             | A[0][0]=ac1   | 0             | 0             | 0           | A[0][4]=bc1   | 0             | 0           )
+ *     ( A[1][0]=bv1^+ | 0             | A[1][1]=av2   | A[1][2]=bv2   | 0           | 0             | 0             | 0           )
+ *  Ap=( 0             | 0             | A[2][1]=bv2^+ | A[2][2]=av3   | A[2][3]=bv3 | 0             | 0             | 0           )
+ *     ( 0             | 0             | 0             | A[3][2]=bv3^+ | A[3][3]=av4 | 0             | 0             | 0           )
+ *     ( 0             | A[4][0]=bc1^+ | 0             | 0             | 0           | A[4][4]=ac2   | A[4][5]=bc2   | 0           )
+ *     ( 0             | 0             | 0             | 0             | 0           | A[5][4]=bc2^+ | A[5][5]=ac3   | A[5][6]=bc3 )
+ *     ( 0             | 0             | 0             | 0             | 0           | 0             | A[6][5]=bc3^+ | A[6][6]=ac4 )
+ *
+ *
+ *     ( A[0][0]=bv0   | A[0][0]=bc0   | 0             | 0             | 0           | 0             | 0             | 0           )
+ *     ( A[0][0]=bc0^+ | A[0][0]=-bv0  | 0             | 0             | 0           | 0             | 0             | 0           )
+ *     ( 0             | 0             | 1             | 0             | 0           | 0             | 0             | 0           )
+ *   T=( 0             | 0             | 0             | 1             | 0           | 0             | 0             | 0           )
+ *     ( 0             | 0             | 0             | 0             | 1           | 0             | 0             | 0           )
+ *     ( 0             | 0             | 0             | 0             | 0           | 1             | 0             | 0           )
+ *     ( 0             | 0             | 0             | 0             | 0           | 0             | 1             | 0           )
+ *     ( 0             | 0             | 0             | 0             | 0           | 0             | 0             | 1           )
+ *
+ *   (A B)(i,j) = \sum_k A(k,j) B(i,k)
+ *
+ *   y[j] = \sum_i A(i,j) x[i]
+ *
+ *   element (i,j) is found at position [i*Nj + j]
+ *
+ *   Note that the block A[2;;4][2;;4] and the block A[5;;7][5;;7] are normal tri-diagonal matrices
+ *   The states av1 and ac1 in Ap are linear combinations of the impurity site and a special linear combination of the other sites
+ *   such that the impurity has an occupation n, the other site an occupation 1-n, av1 an occupation 1 and ac1 an occupaiton of 0.
+ */
+typedef struct BlockNaturalImpurityOrbitalMatrixType
+{
+  char   Name[MAXStrLength];   /* A pointer to a name string that can be used to lable functions, good for printing etc. */
+  uint32_t BlockSize;          /* dimension of square matrices */
+  uint32_t QComplex;           /* matrices are complex or real */
+  
+  BlockTriDiagonalMatrixType val;
+  BlockTriDiagonalMatrixType con;
+  CompactMatrixType Ai;
+  CompactMatrixType Ab;
+  CompactMatrixType Bib;
+  CompactMatrixType Biv;
+  CompactMatrixType Bic;
+  CompactMatrixType Bbv;
+  CompactMatrixType Bbc;
+}
+BlockNaturalImpurityOrbitalMatrixType;
 
 
 

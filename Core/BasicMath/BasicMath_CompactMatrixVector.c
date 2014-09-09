@@ -68,7 +68,7 @@ uint32_t SetCompactMatrixToZero(CompactMatrixType * const M)
   return 0;
 }
 
-uint32_t CompactMatrixCopy(CompactMatrixType const A, CompactMatrixType * B)
+uint32_t CompactMatrixCopy(CompactMatrixType const A, CompactMatrixType * const B)
 {
   B->Ni=A.Ni;
   B->Nj=A.Nj;
@@ -666,11 +666,23 @@ uint32_t TransformCompactMatrixInline(CompactMatrixType * const A, CompactMatrix
   CompactMatrixType temp;
   if(CompactMatrixMultiply('N', 'N', A, T, &temp)){printf("Error in TransformCompactMatrixInline\n"); return 1;}
   FreeCompactMatrix(A);
-  if(CompactMatrixMultiply('T', 'N', T, &temp, A)){printf("Error in TransformCompactMatrixInline\n"); return 1;}
+  if(CompactMatrixMultiply('C', 'N', T, &temp, A)){printf("Error in TransformCompactMatrixInline\n"); return 1;}
   FreeCompactMatrix(&temp);
   return 0;
 }
 
+/*  Calculates A <= T A T^dag
+ *
+ */
+uint32_t TransformCompactMatrixInlineNNC(CompactMatrixType * const A, CompactMatrixType const *T)
+{
+  CompactMatrixType temp;
+  if(CompactMatrixMultiply('N', 'C', A, T, &temp)){printf("Error in TransformCompactMatrixInlineNNC\n"); return 1;}
+  FreeCompactMatrix(A);
+  if(CompactMatrixMultiply('N', 'N', T, &temp, A)){printf("Error in TransformCompactMatrixInlineNNC\n"); return 1;}
+  FreeCompactMatrix(&temp);
+  return 0;
+}
 
 /* M=M^{T}
  */
@@ -1097,8 +1109,23 @@ uint32_t CompactMatrixEigensystem(CompactMatrixType const *A, CompactMatrixType 
   const char *uplo = "U";
   int    lwork = 1 + 6 * A->Ni + 2 * Sqr(A->Ni);
   int    liwork = 3 + 5 * A->Ni;
-  int    iwork[liwork];
-  double work[lwork];
+  int    *iwork;
+  double *work;
+  
+  iwork = malloc(liwork*sizeof(int));
+  if(iwork==NULL)
+  {
+    printf("malloc for iwork failed in CompactMatrixEigensystem\n");
+    return 1;
+  }
+  work = malloc(lwork*sizeof(double));
+  if(work==NULL)
+  {
+    printf("malloc for work failed in CompactMatrixEigensystem\n");
+    return 1;
+  }
+  
+  
   if (A->Ni != A->Nj)
   {
     printf("CompactMatrixEigensystem called with non-square matrix\n");
@@ -1108,7 +1135,10 @@ uint32_t CompactMatrixEigensystem(CompactMatrixType const *A, CompactMatrixType 
   if (A->QComplex == 0)
   {                             /* Real */
     if (CompactMatrixCopy(*A, fun))
+    {
+      printf("Error in CompactMatrixCopy in CompactMatrixEigensystem\n");
       return 1;
+    }
     strcpy(fun->Name, "Eigenvectors of ");
     strncat(fun->Name, A->Name, MAX(0, MAXStrLength - 16));
     dsyev(jobz, uplo, &A->Ni, fun->VRe, &A->Ni, val, work, &lwork, &info);
@@ -1276,6 +1306,61 @@ uint32_t CompactMatrixSqrt(CompactMatrixType const *A, CompactMatrixType *SqrtA)
   
   return 0;
 }
+
+/*
+ *
+ */
+uint32_t BlockTriDiagonalMatrixToCompactMatrix(BlockTriDiagonalMatrixType const * A, CompactMatrixType * const B)
+{
+  int i,j,k,apos,bpos,bposL,bposR;
+  B->QComplex=A->QComplex;
+  B->Ni=A->N * A->BlockSize;
+  B->Nj=A->N * A->BlockSize;
+  if(InitCompactMatrix(B))
+  {
+    printf("InitCompactMatrix failed in BlockTriDiagonalMatrixToCompactMatrix\n");
+    return 1;
+  }
+  bpos=0;
+  apos=A->BlockSize*A->BlockSize;
+  for(k=1;k<=A->N;k++)
+  {
+    for(i=0;i<A->BlockSize;i++)
+    {
+      for(j=0;j<A->BlockSize;j++)
+      {
+        B->VRe[bpos]=A->aRe[apos];
+        bpos++;
+        apos++;
+      }
+      bpos+=B->Nj-A->BlockSize;
+    }
+    bpos+=A->BlockSize;
+  }
+  apos=A->BlockSize*A->BlockSize;
+  bposL=A->BlockSize;
+  bposR=A->BlockSize*B->Nj;
+  for(k=1;k<A->N;k++)
+  {
+    for(i=0;i<A->BlockSize;i++)
+    {
+      for(j=0;j<A->BlockSize;j++)
+      {
+        B->VRe[bposL]=A->bRe[apos];
+        B->VRe[bposR]=A->bRe[apos];
+        bposR++;
+        bposL+=B->Nj;
+        apos++;
+      }
+      bposR+=B->Nj-A->BlockSize;
+      bposL+=(1-A->BlockSize*B->Nj);
+    }
+    bposR+=A->BlockSize;
+    bposL+=(A->BlockSize*B->Nj);
+  }
+  return 0;
+}
+
 
 /* on input A is a Hermitian matrix, Singular Value is the smallest number larger than 0 that has numerical relavance, BlockSize is the size of the blocks and NBlockMax the maximal number of Blocks
  *  onoutput Matrix B has NBlockMax blocks (a_{0} to a_{NBlockMax+1}. b_{0} to b_{NBlockMax}

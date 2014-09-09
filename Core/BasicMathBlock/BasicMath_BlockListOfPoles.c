@@ -65,6 +65,72 @@ uint32_t CopyBlockListOfPoles(BlockListOfPoles A, BlockListOfPoles *B)
   return 0;
 }
 
+uint32_t CopyBlockListOfPolesCon(BlockListOfPoles A, BlockListOfPoles *B, double const mu, double const T)
+{
+  uint32_t k,i,kindex=0;
+  double occ;
+  CopyBlockListOfPoles(A, B);
+  if(B->QComplex)
+  {
+    for(k=0;k<B->N;k++)
+    {
+      occ=1-FermiFunction(B->V[kindex].Re, mu, T);
+      for(i=kindex+1;i<kindex+1+B->BlockSize*B->BlockSize;i++)
+      {
+        B->V[i].Re*=occ;
+        B->V[i].Im*=occ;
+      }
+      kindex+=1+B->BlockSize*B->BlockSize;
+    }
+  }
+  else
+  {
+    for(k=0;k<B->N;k++)
+    {
+      occ=1-FermiFunction(B->VRe[kindex], mu, T);
+      for(i=kindex+1;i<kindex+1+B->BlockSize*B->BlockSize;i++)
+      {
+        B->VRe[i]*=occ;
+      }
+      kindex+=1+B->BlockSize*B->BlockSize;
+    }
+  }
+  return 0;
+}
+
+uint32_t CopyBlockListOfPolesVal(BlockListOfPoles A, BlockListOfPoles *B, double mu, double T)
+{
+  uint32_t k,i,kindex=0;
+  double occ;
+  CopyBlockListOfPoles(A, B);
+  if(B->QComplex)
+  {
+    for(k=0;k<B->N;k++)
+    {
+      occ=FermiFunction(B->V[kindex].Re, mu, T);
+      for(i=kindex+1;i<kindex+1+B->BlockSize*B->BlockSize;i++)
+      {
+        B->V[i].Re*=occ;
+        B->V[i].Im*=occ;
+      }
+      kindex+=1+B->BlockSize*B->BlockSize;
+    }
+  }
+  else
+  {
+    for(k=0;k<B->N;k++)
+    {
+      occ=FermiFunction(B->VRe[kindex], mu, T);
+      for(i=kindex+1;i<kindex+1+B->BlockSize*B->BlockSize;i++)
+      {
+        B->VRe[i]*=occ;
+      }
+      kindex+=1+B->BlockSize*B->BlockSize;
+    }
+  }
+  return 0;
+}
+
 /*
  *   A <- scale * A
  */

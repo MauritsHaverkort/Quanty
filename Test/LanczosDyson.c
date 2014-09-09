@@ -8,46 +8,80 @@
 
 void TestLanczosDyson3()
 {
+  TimeType Time;
+  InitializeTiming(&Time);
+  BeginTiming("Total", &Time);
   TightBindingDef TB;
-  SpectraType DOS,Gspec[4], GTriSpec[4];
-  BlockListOfPoles G;
+  SpectraType DOS,Gspec[4], GTriSpec[4], Gspec2[4];
+  BlockListOfPoles G,GLP2;
   BlockTriDiagonalMatrixType Gtri;
-  int Nk[]={1000,1000,1};
+  int Nk[]={2000,2000,1};
   // create G0
   FileReadTightBindingDef(&TB, "two_band_TB_real");
   PrintTightBindingDef(TB);
-  DOS.N=500;
+  DOS.N=1000;
   DOS.Emin=-4;
   DOS.Emax=6;
   DOS.dE=(DOS.Emax-DOS.Emin)/DOS.N;
   SpectrumAllocate(DOS, &DOS);
+  BeginTiming("TightBindingDOS", &Time);
   TightBindingDOS(TB, Nk, &DOS);
+  EndTiming("TightBindingDOS", &Time);
   
   FilePrintSpectra(&DOS, 1, "TBDOS1", "w");
   
-  TightBindingHamiltonianToBlockListOfPoles(TB, Nk, &G, -3, 5.5, 1000);
+  BeginTiming("TightBindingHamiltonianToBlockListOfPoles", &Time);
+  TightBindingHamiltonianToBlockListOfPoles(TB, Nk, &G, -3, 5.5, 2000);
+  EndTiming("TightBindingHamiltonianToBlockListOfPoles", &Time);
   
-  BlockListOfPolesToSpectra(G, Gspec, -4, 6, 500);
+  
+  BeginTiming("BlockListOfPolesToSpectra", &Time);
+  BlockListOfPolesToSpectra(G, Gspec, -4, 6, 1000);
+  EndTiming("BlockListOfPolesToSpectra", &Time);
   
   PrintBlockListOfPoles(G);
   
   FilePrintSpectra(Gspec, TB.NFermion*TB.NFermion, "TBDOS2", "w");
   
-  BlockListOfPolesToBlockTridiagonalMatrix(G, &Gtri, 1000, DBL_EPSILON);
+  
+  BeginTiming("BlockListOfPolesToBlockTridiagonalMatrix", &Time);
+  BlockListOfPolesToBlockTridiagonalMatrix(G, &Gtri, 500, DBL_EPSILON);
+  EndTiming("BlockListOfPolesToBlockTridiagonalMatrix", &Time);
+  
   
   PrintBlockTriDiagonalMatrix(Gtri);
   
-  BlockTriDiagonalMatrixToSpectra(&Gtri, GTriSpec, -4.0, 6.0, 1000, 0.1);
+  
+  BeginTiming("BlockTriDiagonalMatrixToSpectra", &Time);
+  BlockTriDiagonalMatrixToSpectra(&Gtri, GTriSpec, -4.0, 6.0, 1000, 0.05);
+  EndTiming("BlockTriDiagonalMatrixToSpectra", &Time);
+  
   
   FilePrintSpectra(GTriSpec, TB.NFermion*TB.NFermion, "TBDOS3", "w");
   
   
+  BeginTiming("BlockTriDiagonalMatrixToBlockListOfPoles", &Time);
+  BlockTriDiagonalMatrixToBlockListOfPoles(&Gtri, &GLP2, -3, 5.5, 2000);
+  EndTiming("BlockTriDiagonalMatrixToBlockListOfPoles", &Time);
+  
+  BeginTiming("BlockListOfPolesToSpectra", &Time);
+  BlockListOfPolesToSpectra(GLP2, Gspec2, -4, 6, 1000);
+  EndTiming("BlockListOfPolesToSpectra", &Time);
+  
+  FilePrintSpectra(Gspec2, TB.NFermion*TB.NFermion, "TBDOS4", "w");
+  
+  
   // turn G0 into impurity natural orbitals
+  
+  
   
   // no spin PES and IPES
   
   // with spin PES and IPES
   
+  EndTiming("Total", &Time);
+  printf("\n\n***********************************************************************\n\n\n");
+  PrintTiming(Time);
 }
 
 

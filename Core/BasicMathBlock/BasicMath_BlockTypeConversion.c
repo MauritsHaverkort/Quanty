@@ -445,6 +445,7 @@ uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType co
   }
   else
   {
+    /* calculate T */
     memcpy(T->VRe, psi->VRe, psi->Nj*psi->Ni*sizeof(double));
     Tnow.VRe=T->VRe;
     Tnow.Ni=psi->Ni;
@@ -509,6 +510,7 @@ uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType co
         ABlock->N=k;
       }
     }
+    /* calculate T^+ A T */
     iipos=ABlock->BlockSize*ABlock->BlockSize; /* position in tridiagonal matrix */
     for(ia=0;ia<ABlock->N;ia++)
     {
@@ -618,6 +620,161 @@ uint32_t BlockListOfPolesToBlockTridiagonalMatrix(BlockListOfPoles const A, Bloc
 }
 
 
+/*
+ *
+ */
+uint32_t BlockTriDiagonalMatrixToBlockListOfPoles(BlockTriDiagonalMatrixType const * A, BlockListOfPoles * const G, double const Emin, double const Emax, uint32_t const NE)
+{
+  int i,j,k,irho,kfun,iE;
+  CompactMatrixType Afull, Afun, Rho;
+  double energy, dE=(Emax-Emin)/((double)NE), rest, totmin=0, totmax=0, totnow;
+  double *Aval;
+  if(BlockTriDiagonalMatrixToCompactMatrix(A,&Afull))
+  {
+    printf("BlockTriDiagonalMatrixToCompactMatrix failed in BlockTriDiagonalMatrixToBlockListOfPoles\n");
+    return 1;
+  }
+  Aval=malloc(A->BlockSize*A->N*sizeof(double));
+  CompactMatrixEigensystem(&Afull, &Afun, Aval);
+  
+  G->BlockSize=A->BlockSize;
+  G->N=NE+3;
+  G->QComplex=1;
+  strcpy(G->Name, A->Name);
+  if(InitBlockListOfPoles(G))
+  {
+    printf("InitBlockListOfPoles failed in BlockTriDiagonalMatrixToBlockListOfPoles\n");
+    return 1;
+  }
+  energy=Emin-dE;
+  for(i=0;i<G->N*(1+G->BlockSize*G->BlockSize);i+=(1+G->BlockSize*G->BlockSize))
+  {
+    G->V[i].Re=energy;
+    energy+=dE;
+  }
+  Rho.QComplex=Afun.QComplex;
+  Rho.Ni=A->BlockSize;
+  Rho.Nj=A->BlockSize;
+  InitCompactMatrix(&Rho);
+  kfun=0;
+  for(k=0;k<Afun.Ni;k++)
+  {
+    /* create beta^2 */
+    irho=0;
+    for(i=0;i<A->BlockSize;i++)
+    {
+      for(j=0;j<A->BlockSize;j++)
+      {
+        Rho.VRe[irho] = Afun.VRe[kfun+i]*Afun.VRe[kfun+j];
+        irho++;
+      }
+    }
+    kfun+=Afun.Nj;
+    /* add beta^2 to the correct position on the list of poles */
+    
+    
+    /* determine the position of the pole in the list of poles */
+    rest = (Aval[k] - Emin) / dE;
+    iE = (int)(floor(rest));
+    if (iE >= NE)
+    {
+      totnow=0;
+      for(i=0;i<A->BlockSize;i++)
+      {
+        totnow+=Rho.VRe[i+i*A->BlockSize];
+      }
+      if(totmax+totnow<10*DBL_MIN)
+      {
+        totmax+=10*DBL_MIN;
+        totnow+=10*DBL_MIN;
+      }
+      G->V[(NE+2)*(1+G->BlockSize*G->BlockSize)].Re = (totmax * G->V[(NE+2)*(1+G->BlockSize*G->BlockSize)].Re + totnow * Aval[k]) / (totmax + totnow);
+      irho=0;
+      for(i=0;i<A->BlockSize;i++)
+      {
+        for(j=0;j<A->BlockSize;j++)
+        {
+          if(Rho.QComplex)
+          {
+            G->V[(NE+2)*(1+G->BlockSize*G->BlockSize)+1+j+i*A->BlockSize].Re+=Rho.V[irho].Re;
+            G->V[(NE+2)*(1+G->BlockSize*G->BlockSize)+1+j+i*A->BlockSize].Im+=Rho.V[irho].Im;
+          }
+          else
+          {
+            G->V[(NE+2)*(1+G->BlockSize*G->BlockSize)+1+j+i*A->BlockSize].Re+=Rho.VRe[irho];
+          }
+          irho++;
+        }
+      }
+      totmax+=totnow;
+    }
+    else if (iE < 0)
+    {
+      totnow=0;
+      irho=0;
+      for(i=0;i<A->BlockSize;i++)
+      {
+        totnow+=Rho.VRe[irho];
+        irho+=A->BlockSize+1;
+      }
+      if(totmin+totnow<10*DBL_MIN)
+      {
+        totmin+=10*DBL_MIN;
+        totnow+=10*DBL_MIN;
+      }
+      G->V[0].Re = (totmin * G->V[0].Re + totnow * Aval[k]) / (totmin + totnow);
+      irho=0;
+      for(i=0;i<A->BlockSize;i++)
+      {
+        for(j=0;j<A->BlockSize;j++)
+        {
+          if(Rho.QComplex)
+          {
+            G->V[1+j+i*A->BlockSize].Re+=Rho.V[irho].Re;
+            G->V[1+j+i*A->BlockSize].Im+=Rho.V[irho].Im;
+          }
+          else
+          {
+            G->V[1+j+i*A->BlockSize].Re+=Rho.VRe[irho];
+          }
+        }
+      }
+      totmin+=totnow;
+    }
+    else
+    {
+      rest -= iE;  /* rest is a number between 0 and 1 pole at iE+1 gets 1-rest pole at iE+2 gest rest */
+      irho=0;
+      for(i=0;i<A->BlockSize;i++)
+      {
+        for(j=0;j<A->BlockSize;j++)
+        {
+          if(Rho.QComplex)
+          {
+            G->V[(iE+1)*(1+G->BlockSize*G->BlockSize)+1+j+i*A->BlockSize].Re+=(1-rest)*Rho.V[irho].Re;
+            G->V[(iE+2)*(1+G->BlockSize*G->BlockSize)+1+j+i*A->BlockSize].Re+=(  rest)*Rho.V[irho].Re;
+            G->V[(iE+1)*(1+G->BlockSize*G->BlockSize)+1+j+i*A->BlockSize].Im+=(1-rest)*Rho.V[irho].Im;
+            G->V[(iE+2)*(1+G->BlockSize*G->BlockSize)+1+j+i*A->BlockSize].Im+=(  rest)*Rho.V[irho].Im;
+          }
+          else
+          {
+            G->V[(iE+1)*(1+G->BlockSize*G->BlockSize)+1+j+i*A->BlockSize].Re+=(1-rest)*Rho.VRe[irho];
+            G->V[(iE+2)*(1+G->BlockSize*G->BlockSize)+1+j+i*A->BlockSize].Re+=(  rest)*Rho.VRe[irho];
+          }
+          irho++;
+        }
+      }
+    }
+  }
+  ChopBlockListOfPoles(G, DBL_EPSILON);
+  FreeCompactMatrix(&Rho);
+  FreeCompactMatrix(&Afull);
+  FreeCompactMatrix(&Afun);
+  return 0;
+}
+
+
+
 
 /*  Transform a BlockTriDiagonalMatrix representation of G to a spectral representation of G.
  *
@@ -690,7 +847,7 @@ uint32_t BlockTriDiagonalMatrixToSpectra(BlockTriDiagonalMatrixType const * A, S
         Gw.V[i].Im+=Gamma/2.0;
       }
       CompactMatrixInverse(&Gw);
-      TransformCompactMatrixInline(&Gw, &b); /* Gw <- b^dag Gw b */
+      TransformCompactMatrixInlineNNC(&Gw, &b); /* Gw <- b^dag Gw b */
     }
     if(A->QComplex)
     {
