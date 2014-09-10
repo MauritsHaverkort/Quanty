@@ -8,6 +8,7 @@
 
 void TestLanczosDyson3()
 {
+  OperatorType Himp;
   CompactMatrixType AT;
   TimeType Time;
   InitializeTiming(&Time);
@@ -16,7 +17,7 @@ void TestLanczosDyson3()
   SpectraType DOS,Gspec[4], GTriSpec[4], Gspec2[4], GTriSpecreduced[1];
   BlockListOfPoles G,GLP2;
   BlockTriDiagonalMatrixType Gtri, Gtrireduced;
-  int Nk[]={2000,2000,1};
+  int Nk[]={200,200,1};
   // create G0
   FileReadTightBindingDef(&TB, "two_band_TB_real");
   PrintTightBindingDef(TB);
@@ -46,11 +47,16 @@ void TestLanczosDyson3()
   
   
   BeginTiming("BlockListOfPolesToBlockTridiagonalMatrix", &Time);
-  BlockListOfPolesToBlockTridiagonalMatrix(G, &Gtri, 1000, DBL_EPSILON);
+  BlockListOfPolesToBlockTridiagonalMatrix(G, &Gtri, 3, DBL_EPSILON);
   EndTiming("BlockListOfPolesToBlockTridiagonalMatrix", &Time);
   
-  
   PrintBlockTriDiagonalMatrix(Gtri);
+  
+  BlockTridiagonalMatrixToImpurityHamiltonian(&Himp, &Gtri, 2, 1, 6, 0);
+  
+  PrintOperatorReadable(Himp);
+  
+  
   
   
   BeginTiming("BlockTriDiagonalMatrixToSpectra", &Time);
