@@ -8,13 +8,14 @@
 
 void TestLanczosDyson3()
 {
+  CompactMatrixType AT;
   TimeType Time;
   InitializeTiming(&Time);
   BeginTiming("Total", &Time);
   TightBindingDef TB;
-  SpectraType DOS,Gspec[4], GTriSpec[4], Gspec2[4];
+  SpectraType DOS,Gspec[4], GTriSpec[4], Gspec2[4], GTriSpecreduced[1];
   BlockListOfPoles G,GLP2;
-  BlockTriDiagonalMatrixType Gtri;
+  BlockTriDiagonalMatrixType Gtri, Gtrireduced;
   int Nk[]={2000,2000,1};
   // create G0
   FileReadTightBindingDef(&TB, "two_band_TB_real");
@@ -70,6 +71,24 @@ void TestLanczosDyson3()
   
   FilePrintSpectra(Gspec2, TB.NFermion*TB.NFermion, "TBDOS4", "w");
   
+  AT.Ni=2;
+  AT.Nj=1;
+  AT.QComplex=0;
+  InitCompactMatrix(&AT);
+  AT.VRe[0]=sqrt(0.5);
+  AT.VRe[1]=sqrt(0.5);
+  
+  
+  BeginTiming("BlockListOfPolesToBlockTridiagonalMatrixReduced", &Time);
+  BlockListOfPolesToBlockTridiagonalMatrixReduceDimension(G, &Gtrireduced, &AT, 500, DBL_EPSILON);
+  EndTiming("BlockListOfPolesToBlockTridiagonalMatrixReduced", &Time);
+  
+  BeginTiming("BlockTriDiagonalMatrixToSpectra", &Time);
+  BlockTriDiagonalMatrixToSpectra(&Gtrireduced, GTriSpecreduced, -4.0, 6.0, 1000, 0.05);
+  EndTiming("BlockTriDiagonalMatrixToSpectra", &Time);
+  
+  
+  FilePrintSpectra(GTriSpecreduced, TB.NFermion*TB.NFermion, "TBDOS3reduced", "w");
   
   // turn G0 into impurity natural orbitals
   

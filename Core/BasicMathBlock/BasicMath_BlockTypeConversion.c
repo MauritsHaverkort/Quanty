@@ -315,6 +315,8 @@ uint32_t TightBindingHamiltonianToBlockListOfPoles(TightBindingDef const A, int 
  *    matrix psi is of dimension psi->Ni * psi->Nj
  *  on output matrix T is of dimension psi->Ni*NBlock by psi->Nj such that T^{dag} A T is block tridiagonal of dimension Ni*NBlock with psi on element 1 to psi->Ni
  *    ABlock = T^dag A T
+ *
+ *  if psi is non-orthogonal 
  */
 uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType const *psi, CompactMatrixType *const T, BlockTriDiagonalMatrixType *ABlock, double NBlock, double SingularValue)
 {
@@ -618,6 +620,80 @@ uint32_t BlockListOfPolesToBlockTridiagonalMatrix(BlockListOfPoles const A, Bloc
   FreeCompactMatrix(&beta);
   return 0;
 }
+
+/*  on entry A contains the Green's function in a BlockListOfPoles format.
+ *  on excit B contains the Green's function in a BlockTridiagonal format. (note that a0 and b0 are aditional prefactors)
+ *  The returned matrix is always of the dimension NBLockMax by A.BlockSize, if couplings are small (SingularValue) they are set to zero.
+ *
+ *  AT is a matrix of dimension Ni times Nj=A.BlockSize. 
+ *  The actual tridiagonalization is done for the starting vectors AT * beta
+ *
+ */
+uint32_t BlockListOfPolesToBlockTridiagonalMatrixReduceDimension(BlockListOfPoles const A, BlockTriDiagonalMatrixType *B, CompactMatrixType const *AT,  int const NBlockMax, double const SingularValue)
+{
+  double *alpha;
+  int k,i,ialpha,iN;
+  char name[]="temp";
+  CompactMatrixType betaisqr,betai,beta,T,ATbeta;
+  
+  betaisqr.QComplex=A.QComplex;
+  betaisqr.Ni=A.BlockSize;
+  betaisqr.Nj=A.BlockSize;
+  betaisqr.Name=name;
+  
+  beta.QComplex=A.QComplex;
+  beta.Ni=A.BlockSize*A.N;
+  beta.Nj=A.BlockSize;
+  InitCompactMatrix(&beta);
+  
+  alpha=malloc(A.N*A.BlockSize*sizeof(double));
+  ialpha=0;
+  iN=0;
+  if(A.QComplex)
+  {
+    for(k=0;k<A.N;k++)
+    {
+      betaisqr.V = &(A.V[iN+1]);
+      CompactMatrixSqrt(&betaisqr, &betai);
+      memcpy(&(beta.V[iN-k]), betai.V, sizeof(Complex16)*A.BlockSize*A.BlockSize);
+      FreeCompactMatrix(&betai);
+      for(i=0;i<A.BlockSize;i++)
+      {
+        alpha[ialpha]=A.VRe[iN];
+        ialpha++;
+      }
+      iN+=1+A.BlockSize*A.BlockSize;
+    }
+  }
+  else /* A is real */
+  {
+    for(k=0;k<A.N;k++)
+    {
+      betaisqr.VRe = &(A.VRe[iN+1]);
+      CompactMatrixSqrt(&betaisqr, &betai);
+      memcpy(&(beta.VRe[iN-k]), betai.VRe, sizeof(double)*A.BlockSize*A.BlockSize);
+      FreeCompactMatrix(&betai);
+      for(i=0;i<A.BlockSize;i++)
+      {
+        alpha[ialpha]=A.VRe[iN];
+        ialpha++;
+      }
+      iN+=1+A.BlockSize*A.BlockSize;
+    }
+  }
+  
+  CompactMatrixMultiply('N', 'C', AT, &beta, &ATbeta);
+  
+  FreeCompactMatrix(&beta);
+  
+  DiagonalMatrixBlockTridiagonalize(alpha, &ATbeta, &T, B, NBlockMax, SingularValue);
+  B->mu=A.mu;
+  free(alpha);
+  FreeCompactMatrix(&ATbeta);
+  return 0;
+}
+
+
 
 
 /*
