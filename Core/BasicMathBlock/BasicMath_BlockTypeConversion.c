@@ -682,7 +682,7 @@ uint32_t BlockListOfPolesToBlockTridiagonalMatrixReduceDimension(BlockListOfPole
     }
   }
   
-  CompactMatrixMultiply('N', 'C', AT, &beta, &ATbeta);
+  CompactMatrixMultiply('C', 'N', &beta, AT, &ATbeta);
   
   FreeCompactMatrix(&beta);
   

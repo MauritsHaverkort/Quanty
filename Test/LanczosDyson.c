@@ -46,7 +46,7 @@ void TestLanczosDyson3()
   
   
   BeginTiming("BlockListOfPolesToBlockTridiagonalMatrix", &Time);
-  BlockListOfPolesToBlockTridiagonalMatrix(G, &Gtri, 500, DBL_EPSILON);
+  BlockListOfPolesToBlockTridiagonalMatrix(G, &Gtri, 1000, DBL_EPSILON);
   EndTiming("BlockListOfPolesToBlockTridiagonalMatrix", &Time);
   
   
@@ -71,8 +71,8 @@ void TestLanczosDyson3()
   
   FilePrintSpectra(Gspec2, TB.NFermion*TB.NFermion, "TBDOS4", "w");
   
-  AT.Ni=2;
-  AT.Nj=1;
+  AT.Ni=1;
+  AT.Nj=2;
   AT.QComplex=0;
   InitCompactMatrix(&AT);
   AT.VRe[0]=sqrt(0.5);
