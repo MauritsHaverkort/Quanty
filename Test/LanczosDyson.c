@@ -47,7 +47,7 @@ void TestLanczosDyson3()
   
   
   BeginTiming("BlockListOfPolesToBlockTridiagonalMatrix", &Time);
-  BlockListOfPolesToBlockTridiagonalMatrix(G, &Gtri, 3, DBL_EPSILON);
+  BlockListOfPolesToBlockTridiagonalMatrix(G, &Gtri, 6, DBL_EPSILON);
   EndTiming("BlockListOfPolesToBlockTridiagonalMatrix", &Time);
   
   PrintBlockTriDiagonalMatrix(Gtri);
