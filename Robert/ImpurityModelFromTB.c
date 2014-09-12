@@ -12,7 +12,7 @@ uint32_t ImpurityModelFromTB()
   SpectraType DOS,Gspec[64], GTriSpec[64], Gspec2[64], GTriSpecreduced[25];
   BlockListOfPoles G,GLP2;
   BlockTriDiagonalMatrixType Gtri, Gtrireduced;
-  int Nk[]={200,200,1};
+  int Nk[]={20,20,20};
 
 
 
@@ -71,7 +71,7 @@ printf("Point 6\n"); fflush(stdout);
 
 printf("Point 7\n"); fflush(stdout);  
   BeginTiming("BlockListOfPolesToBlockTridiagonalMatrix", &Time);
-  BlockListOfPolesToBlockTridiagonalMatrix(G, &Gtri, 4, DBL_EPSILON);
+  BlockListOfPolesToBlockTridiagonalMatrix(G, &Gtri, 100, DBL_EPSILON);
   EndTiming("BlockListOfPolesToBlockTridiagonalMatrix", &Time);
 printf("Point 8\n"); fflush(stdout);
 
