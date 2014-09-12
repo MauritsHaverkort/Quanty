@@ -48,55 +48,21 @@
 #include "../IO/StuttgartNMTO.c"
 
 #include "./ResonantSpectra.c"
-#include "./NiO_Calcs.c"
-#include "./MnO_Calcs.c"
+#include "./Spectra2p3d.c"
+#include "./ImpurityModelFromTB.c"
+#include "../Test/LanczosDyson.c"
+
 
 int main(int argc, const char *argv[])
 {
-/*  TriDiagonalMatrixType SpecTri;
-  double wRes, energy, gamma;
-  MatrixType invMat;
-  int i, j;
+  printf("Starting RobertTest.c ...\n"); fflush(stdout);
 
-  SpecTri.N = 5;
-  InitTriDiagonalMatrix(&SpecTri);
-  for(i = 1; i <= 5; i++)
-  {
-    SpecTri.a[i] = i;
-    if(i <= 4)
-      SpecTri.b[i] = 1;
-  }
-
-  wRes = 10.0;
-  energy = 20.0;
-  gamma = 1.0;
-  printf("Original matrix:\n");
-  PrintPlainTriDiagonalMatrix(SpecTri);
-
-  if(TriDiagonalMatrixToGreensFunction(&SpecTri, wRes, energy, gamma, &invMat))
-  {
-    printf("Problem with tridiagonalmatrixtogreensfunction\n");
-
-  }
-  else
-  {
-    printf("Successful run of tridiagonalmatrixtogreensfunction\n");
-    printf("Greens function matrix is:\n");
-    
-    for(i = 0; i < invMat.Ni; i++)
-    {    
-      for(j = 0; j < invMat.Nj; j++)
-      {
-        printf("%f   %f    ", invMat.VRe[i][j], invMat.VIm[i][j]);
-
-      }
-      printf("\n");
-    }
-
-  }  
-  */
-//  NiOLigandField();
-  MnOLigandField();
+  //NiOLigandField();
+//  MnOLigandField();
+//  ImpurityModelFromTB();
+//  LigandField(27,7);
+  ImpurityModel3d(28,8);
+ // TestLanczosDyson3();
   return 0;
 
 }
