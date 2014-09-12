@@ -47,7 +47,7 @@ void TestLanczosDyson3()
   
   
   BeginTiming("BlockListOfPolesToBlockTridiagonalMatrix", &Time);
-  BlockListOfPolesToBlockTridiagonalMatrix(G, &Gtri, 6, DBL_EPSILON);
+  BlockListOfPolesToBlockTridiagonalMatrix(G, &Gtri, 8, DBL_EPSILON);
   EndTiming("BlockListOfPolesToBlockTridiagonalMatrix", &Time);
   
   PrintBlockTriDiagonalMatrix(Gtri);
@@ -75,7 +75,7 @@ void TestLanczosDyson3()
   
   
   BeginTiming("BlockListOfPolesToSpectra", &Time);
-  BlockListOfPolesToSpectra(GLP2, Gspec2, -4, 6, 1000);
+  BlockListOfPolesToSpectra(GLP2, Gspec2, -4, 6, 100);
   EndTiming("BlockListOfPolesToSpectra", &Time);
   
   FilePrintSpectra(Gspec2, TB.NFermion*TB.NFermion, "TBDOS4", "w");

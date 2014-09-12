@@ -1509,40 +1509,84 @@ uint32_t BlockTriDiagonalMatrixToCompactMatrix(BlockTriDiagonalMatrixType const 
   }
   bpos=0;
   apos=A->BlockSize*A->BlockSize;
-  for(k=1;k<=A->N;k++)
+  if(A->QComplex)
   {
-    for(i=0;i<A->BlockSize;i++)
+    for(k=1;k<=A->N;k++)
     {
-      for(j=0;j<A->BlockSize;j++)
+      for(i=0;i<A->BlockSize;i++)
       {
-        B->VRe[bpos]=A->aRe[apos];
-        bpos++;
-        apos++;
+        for(j=0;j<A->BlockSize;j++)
+        {
+          B->V[bpos].Re=A->a[apos].Re;
+          B->V[bpos].Im=A->a[apos].Im;
+          bpos++;
+          apos++;
+        }
+        bpos+=B->Nj-A->BlockSize;
       }
-      bpos+=B->Nj-A->BlockSize;
+      bpos+=A->BlockSize;
     }
-    bpos+=A->BlockSize;
+    apos=A->BlockSize*A->BlockSize;
+    bposL=A->BlockSize;
+    bposR=A->BlockSize*B->Nj;
+    for(k=1;k<A->N;k++)
+    {
+      for(i=0;i<A->BlockSize;i++)
+      {
+        for(j=0;j<A->BlockSize;j++)
+        {
+          B->V[bposL].Re= A->b[apos].Re;
+          B->V[bposR].Re= A->b[apos].Re;
+          B->V[bposL].Im=-A->b[apos].Im;
+          B->V[bposR].Im= A->b[apos].Im;
+          bposR++;
+          bposL+=B->Nj;
+          apos++;
+        }
+        bposR+=B->Nj-A->BlockSize;
+        bposL+=(1-A->BlockSize*B->Nj);
+      }
+      bposR+=A->BlockSize;
+      bposL+=(A->BlockSize*B->Nj);
+    }
   }
-  apos=A->BlockSize*A->BlockSize;
-  bposL=A->BlockSize;
-  bposR=A->BlockSize*B->Nj;
-  for(k=1;k<A->N;k++)
+  else
   {
-    for(i=0;i<A->BlockSize;i++)
+    for(k=1;k<=A->N;k++)
     {
-      for(j=0;j<A->BlockSize;j++)
+      for(i=0;i<A->BlockSize;i++)
       {
-        B->VRe[bposL]=A->bRe[apos];
-        B->VRe[bposR]=A->bRe[apos];
-        bposR++;
-        bposL+=B->Nj;
-        apos++;
+        for(j=0;j<A->BlockSize;j++)
+        {
+          B->VRe[bpos]=A->aRe[apos];
+          bpos++;
+          apos++;
+        }
+        bpos+=B->Nj-A->BlockSize;
       }
-      bposR+=B->Nj-A->BlockSize;
-      bposL+=(1-A->BlockSize*B->Nj);
+      bpos+=A->BlockSize;
     }
-    bposR+=A->BlockSize;
-    bposL+=(A->BlockSize*B->Nj);
+    apos=A->BlockSize*A->BlockSize;
+    bposL=A->BlockSize;
+    bposR=A->BlockSize*B->Nj;
+    for(k=1;k<A->N;k++)
+    {
+      for(i=0;i<A->BlockSize;i++)
+      {
+        for(j=0;j<A->BlockSize;j++)
+        {
+          B->VRe[bposL]=A->bRe[apos];
+          B->VRe[bposR]=A->bRe[apos];
+          bposR++;
+          bposL+=B->Nj;
+          apos++;
+        }
+        bposR+=B->Nj-A->BlockSize;
+        bposL+=(1-A->BlockSize*B->Nj);
+      }
+      bposR+=A->BlockSize;
+      bposL+=(A->BlockSize*B->Nj);
+    }
   }
   return 0;
 }
