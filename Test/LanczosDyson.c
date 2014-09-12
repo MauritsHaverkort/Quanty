@@ -68,8 +68,11 @@ void TestLanczosDyson3()
   
   
   BeginTiming("BlockTriDiagonalMatrixToBlockListOfPoles", &Time);
-  BlockTriDiagonalMatrixToBlockListOfPoles(&Gtri, &GLP2, -3, 5.5, 2000);
+  BlockTriDiagonalMatrixToBlockListOfPoles(&Gtri, &GLP2, -3, 5.5, 4);
   EndTiming("BlockTriDiagonalMatrixToBlockListOfPoles", &Time);
+  
+  PrintBlockListOfPoles(GLP2);
+  
   
   BeginTiming("BlockListOfPolesToSpectra", &Time);
   BlockListOfPolesToSpectra(GLP2, Gspec2, -4, 6, 1000);
