@@ -322,6 +322,16 @@ uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType co
   int i,ii,j,k,oldindex,newindex,ipos,iipos,ia,ib,jcol,icol,allzero;
   double norm,dot,dotRe,dotIm;
   CompactMatrixType Tnow,Tb0,Tb0inv;
+  
+  /*
+  printf("In DiagonalMatrixBlockTridiagonalize\n");
+  PrintCompactMatrixMinimal(psi);
+  for(i=0;i<psi->Nj;i++)
+  {
+    printf("A[%2i] = %22.15E\n",i,A[i]);
+  }
+  printf("\n\n\n");
+  */
   ABlock->N=NBlock;
   ABlock->BlockSize=psi->Ni;
   ABlock->QComplex=psi->QComplex;
@@ -357,6 +367,7 @@ uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType co
           newindex++;
         }
       }
+      allzero=1;
       for(i=Tnow.Ni-psi->Ni;i<Tnow.Ni;i++)
       {
         ipos=i*Tnow.Nj;
@@ -392,6 +403,7 @@ uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType co
         }
         else
         {
+          allzero=0;
           norm=1.0/sqrt(norm);
         }
         for(j=ipos;j<ipos+Tnow.Nj;j++)
@@ -400,8 +412,28 @@ uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType co
           Tnow.V[j].Im*=norm;
         }
       }
+      if(allzero)
+      {
+        ABlock->N=k;
+      }
     }
-    iipos=ABlock->BlockSize*ABlock->BlockSize; /* position in tridiagonal matrix */
+    /*
+    printf("transformation matrix T\n");
+    PrintCompactMatrixMinimal(T);
+    CompactMatrixType test1, test2;
+    CompactMatrixMultiply('C', 'N', T, T, &test1);
+    CompactMatrixChop(&test1, 1000*DBL_EPSILON);
+    PrintCompactMatrixMinimal(test1);
+    TransformDiagonalMatrixByCompactMatrixTdagAT(A, T, &test2);
+    CompactMatrixChop(&test2, 1000*DBL_EPSILON);
+    PrintCompactMatrixMinimal(test2);
+    */
+    /*  calculate ABlock = T^dag A T
+     *  ABlock(i,j) = sum_k     T(j,k)^* AT(i,k)
+     *              = sum_k,k'  T(j,k)^* A(k',k) T(i,k')
+     *              = sum_k     T(j,k)^* A(k,k)  T(i,k)
+     */
+    iipos=ABlock->BlockSize*ABlock->BlockSize; /* block position in tridiagonal matrix */
     for(ia=0;ia<ABlock->N;ia++)
     {
       for(i=0;i<ABlock->BlockSize;i++)
@@ -410,7 +442,8 @@ uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType co
         {
           icol=(i+ia*ABlock->BlockSize)*T->Nj;
           jcol=(j+ia*ABlock->BlockSize)*T->Nj;
-          ABlock->aRe[iipos]=0;
+          ABlock->a[iipos].Re=0;
+          ABlock->a[iipos].Im=0;
           for(k=0;k<T->Nj;k++)
           {
             ABlock->a[iipos].Re+=T->V[jcol].Re*A[k]*T->V[icol].Re + T->V[jcol].Im*A[k]*T->V[icol].Im;
@@ -431,7 +464,8 @@ uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType co
         {
           icol=(i+(ib+1)*ABlock->BlockSize)*T->Nj;
           jcol=(j+ib*ABlock->BlockSize)*T->Nj;
-          ABlock->bRe[iipos]=0;
+          ABlock->b[iipos].Re=0;
+          ABlock->b[iipos].Im=0;
           for(k=0;k<T->Nj;k++)
           {
             ABlock->b[iipos].Re+=T->V[jcol].Re*A[k]*T->V[icol].Re + T->V[jcol].Im*A[k]*T->V[icol].Im;
@@ -444,7 +478,7 @@ uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType co
       }
     }
   }
-  else
+  else /* real */
   {
     /* calculate T */
     memcpy(T->VRe, psi->VRe, psi->Nj*psi->Ni*sizeof(double));
@@ -452,9 +486,22 @@ uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType co
     Tnow.Ni=psi->Ni;
     Tnow.Nj=psi->Nj;
     /* orthonormalize psi and set b0 */
-    CompactMatrixSVDOrthogonalizeRow(&Tnow, SingularValue, &Tb0, &Tb0inv);
-    memcpy(ABlock->bRe,Tb0inv.VRe,ABlock->BlockSize*ABlock->BlockSize*sizeof(double));
+    /*
+    printf("\n\n\ntest orthogonalization \n\n\n\n");
     
+    PrintCompactMatrixMinimal(Tnow);
+    CompactMatrixType temp;
+    CompactMatrixMultiply('C', 'N', &Tnow, &Tnow, &temp);
+    
+    printf("Overlap matrix\n");
+    PrintCompactMatrixMinimal(temp);
+    
+    CompactMatrixSVDOrthogonalizeRow(&Tnow, SingularValue, &Tb0, &Tb0inv);
+    
+    PrintCompactMatrixMinimal(Tnow);
+    
+    memcpy(ABlock->bRe,Tb0inv.VRe,ABlock->BlockSize*ABlock->BlockSize*sizeof(double));
+    */
     
     /* loop over psi_{n+1} = A psi_{n} and orthonormalization */
     oldindex=0;
@@ -620,14 +667,6 @@ uint32_t BlockListOfPolesToBlockTridiagonalMatrix(BlockListOfPoles const A, Bloc
     }
   }
   CompactMatrixConjugateTranspose(&beta);
-  
-  PrintCompactMatrixMinimal(beta);
-  for(k=0;k<beta.Nj;k++)
-  {
-    printf("alpha[%3i] = %22.15E\n",k,alpha[k]);
-  }
-  
-  
   DiagonalMatrixBlockTridiagonalize(alpha, &beta, &T, B, NBlockMax, SingularValue);
   B->mu=A.mu;
   free(alpha);
@@ -726,8 +765,11 @@ uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(BlockListOfPoles co
 }
 
 
-/*
+/*  On entry A represents a Green's function in a block tridiagonal form
+ *  On excit G represents the same Green's function by a list of poles (energy weigth)
+ *  The energy mesh of G is given by Emin to Emax in steps of NE
  *
+ *  This routine goes via a dense representation of the matrix and should be avoided, or replaced
  */
 uint32_t BlockTriDiagonalMatrixToBlockListOfPoles(BlockTriDiagonalMatrixType const * A, BlockListOfPoles * const G, double const Emin, double const Emax, uint32_t const NE)
 {
@@ -735,17 +777,23 @@ uint32_t BlockTriDiagonalMatrixToBlockListOfPoles(BlockTriDiagonalMatrixType con
   CompactMatrixType Afull, Afun, Rho;
   double energy, dE=(Emax-Emin)/((double)NE), rest, totmin=0, totmax=0, totnow;
   double *Aval;
+  /* first turn the matrix into compact form */
   if(BlockTriDiagonalMatrixToCompactMatrix(A,&Afull))
   {
     printf("BlockTriDiagonalMatrixToCompactMatrix failed in BlockTriDiagonalMatrixToBlockListOfPoles\n");
     return 1;
   }
+  /* calcualte the eigen vectors and eigen values */
   Aval=malloc(A->BlockSize*A->N*sizeof(double));
-  CompactMatrixEigensystem(&Afull, &Afun, Aval);
-  
+  if(CompactMatrixEigensystem(&Afull, &Afun, Aval))
+  {
+    printf("CompactMatrixEigensystem failed in BlockTriDiagonalMatrixToBlockListOfPoles\n");
+    return 1;
+  }
+  /* initiallize the memory for the block list of poles */
   G->BlockSize=A->BlockSize;
   G->N=NE+3;
-  G->QComplex=1;
+  G->QComplex=A->QComplex;
   strcpy(G->Name, A->Name);
   if(InitBlockListOfPoles(G))
   {
@@ -753,15 +801,31 @@ uint32_t BlockTriDiagonalMatrixToBlockListOfPoles(BlockTriDiagonalMatrixType con
     return 1;
   }
   energy=Emin-dE;
+  /* initiallize the memory for rho of a specific eigen vector */
+  Rho.QComplex=Afun.QComplex;
+  Rho.Ni=A->BlockSize;
+  Rho.Nj=A->BlockSize;
+  if(InitCompactMatrix(&Rho))
+  {
+    printf("InitCompactMatrix failed in BlockTriDiagonalMatrixToBlockListOfPoles\n");
+    return 1;
+  }
+  if(A->QComplex)
+  {
+    
+  }
+  else /*real */
+  {
+    
+  }
+  
+  
+  
   for(i=0;i<G->N*(1+G->BlockSize*G->BlockSize);i+=(1+G->BlockSize*G->BlockSize))
   {
     G->V[i].Re=energy;
     energy+=dE;
   }
-  Rho.QComplex=Afun.QComplex;
-  Rho.Ni=A->BlockSize;
-  Rho.Nj=A->BlockSize;
-  InitCompactMatrix(&Rho);
   kfun=0;
   for(k=0;k<Afun.Ni;k++)
   {
