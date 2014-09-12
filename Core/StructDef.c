@@ -465,6 +465,7 @@ typedef struct BlockNaturalImpurityOrbitalMatrixType
   CompactMatrixType Bic;
   CompactMatrixType Bbv;
   CompactMatrixType Bbc;
+  CompactMatrixType a0;
 }
 BlockNaturalImpurityOrbitalMatrixType;
 

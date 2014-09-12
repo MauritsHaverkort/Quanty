@@ -38,7 +38,7 @@ uint32_t BlockTridiagonalMatrixToImpurityHamiltonian(OperatorType *const H, Bloc
   InitOperatorFixedLength(H, 2, 8);
   if(A->QComplex)
   {
-    MakeRealOperatorFixedLengthComplex(&H, 2);
+    MakeRealOperatorFixedLengthComplex(H, 2);
     if(Spin==0)
     {
       ia=A->BlockSize*A->BlockSize;

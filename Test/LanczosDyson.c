@@ -19,7 +19,7 @@ void TestLanczosDyson3()
   BlockTriDiagonalMatrixType Gtri, Gtrireduced;
   int Nk[]={200,200,1};
   // create G0
-  FileReadTightBindingDef(&TB, "two_band_TB_real");
+  FileReadTightBindingDef(&TB, "two_band_TB");
   PrintTightBindingDef(TB);
   DOS.N=1000;
   DOS.Emin=-4;
@@ -33,12 +33,12 @@ void TestLanczosDyson3()
   FilePrintSpectra(&DOS, 1, "TBDOS1", "w");
   
   BeginTiming("TightBindingHamiltonianToBlockListOfPoles", &Time);
-  TightBindingHamiltonianToBlockListOfPoles(TB, Nk, &G, -3, 5.5, 2000);
+  TightBindingHamiltonianToBlockListOfPoles(TB, Nk, &G, -3, 5.5, 4);
   EndTiming("TightBindingHamiltonianToBlockListOfPoles", &Time);
   
   
   BeginTiming("BlockListOfPolesToSpectra", &Time);
-  BlockListOfPolesToSpectra(G, Gspec, -4, 6, 1000);
+  BlockListOfPolesToSpectra(G, Gspec, -4, 6, 100);
   EndTiming("BlockListOfPolesToSpectra", &Time);
   
   PrintBlockListOfPoles(G);

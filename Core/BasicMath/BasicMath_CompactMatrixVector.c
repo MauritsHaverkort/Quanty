@@ -314,7 +314,7 @@ uint32_t MultiplyCompactMatrixDiagonalMatrix(CompactMatrixType * const B, double
  *                      A : T.Nj by T.Nj
  *  dimensions of output: T.Ni by T.Ni
  */
-uint32_t TransformDiagonalMatrixByCompactMatrix(double const *A, CompactMatrixType const *T, CompactMatrixType * const TdagAT)
+uint32_t TransformDiagonalMatrixByCompactMatrixTdagAT(double const *A, CompactMatrixType const *T, CompactMatrixType * const TdagAT)
 {
   uint32_t i,j,k,TATindex,icol,jcol;
   TdagAT->Ni=T->Ni;
@@ -357,6 +357,63 @@ uint32_t TransformDiagonalMatrixByCompactMatrix(double const *A, CompactMatrixTy
           TdagAT->VRe[TATindex]+=T->VRe[jcol]*A[k]*T->VRe[icol];
           icol++;
           jcol++;
+        }
+        TATindex++;
+      }
+    }
+  }
+  return 0;
+}
+
+
+/*  Calculates T A T^dag
+ *  dimensions of input T : T.Ni by T.Nj
+ *                      A : T.Ni by T.Ni
+ *  dimensions of output: T.Nj by T.Nj
+ */
+uint32_t TransformDiagonalMatrixByCompactMatrixTATdag(double const *A, CompactMatrixType const *T, CompactMatrixType * const TATdag)
+{
+  uint32_t i,j,k,TATindex,irow,jrow;
+  TATdag->Ni=T->Nj;
+  TATdag->Nj=T->Nj;
+  TATdag->QComplex = T->QComplex;
+  InitCompactMatrix(TATdag);
+  TATindex=0;
+  if(T->QComplex)
+  {
+    for(i=0;i<TATdag->Ni;i++)
+    {
+      for(j=0;j<TATdag->Nj;j++)
+      {
+        irow=i;
+        jrow=j;
+        TATdag->V[TATindex].Re=0;
+        TATdag->V[TATindex].Im=0;
+        for(k=0;k<T->Ni;k++)
+        {
+          TATdag->V[TATindex].Re+=T->V[jrow].Re*A[k]*T->V[irow].Re + T->V[jrow].Im*A[k]*T->V[irow].Im;
+          TATdag->V[TATindex].Im+=T->V[jrow].Im*A[k]*T->V[irow].Re - T->V[jrow].Re*A[k]*T->V[irow].Im;
+          irow+=T->Nj;
+          jrow+=T->Nj;
+        }
+        TATindex++;
+      }
+    }
+  }
+  else
+  {
+    for(i=0;i<TATdag->Ni;i++)
+    {
+      for(j=0;j<TATdag->Nj;j++)
+      {
+        irow=i;
+        jrow=j;
+        TATdag->VRe[TATindex]=0;
+        for(k=0;k<T->Nj;k++)
+        {
+          TATdag->VRe[TATindex]+=T->VRe[jrow]*A[k]*T->VRe[irow];
+          irow+=T->Nj;
+          jrow+=T->Nj;
         }
         TATindex++;
       }
@@ -1000,8 +1057,110 @@ uint32_t CompactMatrixQRDecomposition(CompactMatrixType *A, CompactMatrixType *Q
   return 0;
 }
 
-/*
- *
+/*  A is replaced by an orthonormal form of A using Singular value decomposition (eigen value decomposition)
+ *  If a SingularValue is smaller than SingularValue this vector is removed from the basis
+ *  Aortho = T A
+ *  A = Tinv Aortho
+ *  if A has no singular values Tinv . T is the identity matrix
+ *  the trance of Tinv . T is equal to the dimension of A minus the number of singular vectors in A.
+ */
+uint32_t CompactMatrixSVDOrthogonalizeRow(CompactMatrixType * A, double const SingularValue, CompactMatrixType *T, CompactMatrixType *Tinv)
+{
+  uint32_t i;
+  char *JOBU ="A";  /* in SVD A = U S V^T return full array U */
+  char *JOBVT="O";  /* in SVD A = U S V^T return the first min(Ni,Nj) rows of V^T in matrix A, which is over written */
+  int LWORK, INFO;
+  LWORK = Max(5,A->Ni)*Max(5,A->Nj);
+  double *WORK;
+  Complex16 *WORKIM;
+  double *VT=NULL;
+  double *S;
+  Tinv->Ni=A->Nj;
+  Tinv->Nj=A->Nj;
+  S=calloc(A->Nj,sizeof(double));
+  Tinv->QComplex=A->QComplex;
+  InitCompactMatrix(Tinv);
+  if(A->QComplex)
+  {
+    WORK = malloc(5*Min(A->Ni,A->Nj)*sizeof(double));
+    if(WORK==NULL)
+    {
+      printf("malloc failed in CompactMatrixSVDOrthogonalize\n");
+      return 1;
+    }
+    WORKIM = malloc(LWORK*sizeof(Complex16));
+    if(WORKIM==NULL)
+    {
+      free(WORK);
+      printf("malloc failed in CompactMatrixSVDOrthogonalize\n");
+      return 1;
+    }
+    zgesvd(JOBU, JOBVT, &A->Nj, &A->Ni, A->V, &A->Nj,S,Tinv->V, &A->Nj,VT, &A->Nj, WORKIM, &LWORK,WORK, &INFO);
+    if(INFO)
+    {
+      printf("zgesvd failed in CompactMatrixSVDOrthogonalize with INFO %i\n",INFO);
+      return 1;
+    }
+    free(WORKIM);
+    free(WORK);
+  }
+  else
+  {
+    WORK = malloc(LWORK*sizeof(double));
+    if(WORK==NULL)
+    {
+      printf("malloc failed in CompactMatrixSVDOrthogonalize\n");
+      return 1;
+    }
+    dgesvd(JOBU, JOBVT, &A->Nj, &A->Ni, A->VRe, &A->Nj,S,Tinv->VRe, &A->Nj,VT, &A->Nj, WORK, &LWORK, &INFO);
+    if(INFO)
+    {
+      printf("dgesvd failed in CompactMatrixSVDOrthogonalize with INFO %i\n",INFO);
+      return 1;
+    }
+    free(WORK);
+  }
+  CompactMatrixCopy(*Tinv, T);
+  CompactMatrixConjugateTranspose(T);
+  for(i=0;i<A->Nj;i++)
+  {
+    if(S[i]<SingularValue)
+    {
+      S[i]=0;
+    }
+  }
+  MultiplyCompactMatrixDiagonalMatrix(Tinv, S);
+  for(i=0;i<A->Nj;i++)
+  {
+    if(S[i]<SingularValue)
+    {
+      S[i]=0;
+    }
+    else
+    {
+      S[i]=1.0/S[i];
+    }
+  }
+  MultiplyDiagonalMatrixCompactMatrix(S,T);
+  for(i=0;i<A->Nj;i++)
+  {
+    if(S[i]<100*DBL_MIN)
+    {
+      S[i]=0;
+    }
+    else
+    {
+      S[i]=1;
+    }
+  }
+  MultiplyDiagonalMatrixCompactMatrix(S,A);
+  free(S);
+  return 0;
+}
+
+
+/*  A is replaced by an orthonormal form of A using Gram Schmidt
+ *  If the norm of a vector A_{i} is smaller than SingularValue this vector is set to zero
  */
 uint32_t CompactMatrixGramSchmidtOrthogonalize(CompactMatrixType * A, double const SingularValue)
 {
@@ -1173,7 +1332,7 @@ uint32_t CompactMatrixEigensystem(CompactMatrixType const *A, CompactMatrixType 
       return 1;
     strcpy(fun->Name, "Eigenvectors of ");
     strncat(fun->Name, A->Name, MAX(0, MAXStrLength - 16));
-    zheev(jobz, uplo, &A->Ni, A->V, &A->Ni, val, cwork, &lcwork, work, &info);
+    zheev(jobz, uplo, &A->Ni, fun->V, &A->Ni, val, cwork, &lcwork, work, &info);
     if (info != 0)
     {
       printf("zheev failed in CompactMatrixEigensystem with info value %i\n", info);
@@ -1185,7 +1344,7 @@ uint32_t CompactMatrixEigensystem(CompactMatrixType const *A, CompactMatrixType 
         return 1;
       strcpy(fun->Name, "Eigenvectors of ");
       strncat(fun->Name, A->Name, MAX(0, MAXStrLength - 16));
-      zheevd(jobz, uplo, &A->Ni, A->V, &A->Ni, val, cwork, &lcwork, work, &lwork, iwork, &liwork, &info);
+      zheevd(jobz, uplo, &A->Ni, fun->V, &A->Ni, val, cwork, &lcwork, work, &lwork, iwork, &liwork, &info);
       if (info != 0)
       {
         printf("also zheevd failed in CompactMatrixEigensystem with info value %i\n", info);
@@ -1248,11 +1407,38 @@ uint32_t CompactMatrixQRDecompositionEigenHermitian(CompactMatrixType const *A, 
   return NSingular;
 }
 
+
 /*  Given an semi definite hermitian matrix, CompactMatrixSqrt calculates its sqrt, such that
  *   B * B^{dag} = A
  *
  */
 uint32_t CompactMatrixSqrt(CompactMatrixType const *A, CompactMatrixType *SqrtA)
+{
+  int i;
+  double val[A->Ni];
+  CompactMatrixType fun;
+  
+  CompactMatrixEigensystem(A, &fun, val);
+  for(i=0;i<fun.Ni;i++)
+  {
+    if(val[i]<0)
+    {
+      printf("Negative value in CompactMatrixSqrt, eigen value is %22.15E at pos %i\n",val[i],i);
+      val[i]=0;
+    }
+    val[i]=sqrt(val[i]);
+  }
+  TransformDiagonalMatrixByCompactMatrixTATdag(val, &fun, SqrtA);
+  FreeCompactMatrix(&fun);
+  return 0;
+}
+
+
+/*  Given an semi definite hermitian matrix, CompactMatrixSqrt calculates its sqrt, such that
+ *   B * B^{dag} = A
+ *
+ */
+uint32_t CompactMatrixSqrtold(CompactMatrixType const *A, CompactMatrixType *SqrtA)
 {
   int i,j;
   double val[A->Ni],sqrtval;

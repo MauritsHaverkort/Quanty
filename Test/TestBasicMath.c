@@ -387,7 +387,7 @@ void TestCompactMatrixVector()
   double vec[10]={0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,1.1};
   double vecout[10]={1,1,1,1,1,1,1,1,1,1};
   int i,j,k;
-  CompactMatrixType IM,AM,BM,CM,DM,q,r;
+  CompactMatrixType IM,AM,BM,CM,DM,EM,FM,GM,q,r;
   BlockTriDiagonalMatrixType AMTri;
   
   printf("\n====== test matrix vector =========\n");
@@ -641,6 +641,55 @@ void TestCompactMatrixVector()
   
   PrintCompactMatrixMinimal(AM);
   PrintBlockTriDiagonalMatrix(AMTri);
+  
+  printf("\n\n Test orthonormalization \n\n");
+  
+  FreeCompactMatrix(&AM);
+  AM.Ni=4;
+  AM.Nj=5;
+  AM.QComplex=1;
+  InitCompactMatrix(&AM);
+  k=0;
+  for(i=0;i<AM.Ni;i++)
+  {
+    for(j=0;j<AM.Nj;j++)
+    {
+      AM.V[k].Re=i + 20 * j ;
+      AM.V[k].Im=i + 20 * j ;
+      k++;
+    }
+  }
+  AM.VRe[0]+=12;
+  
+  CompactMatrixCopy(AM, &EM);
+  
+  printf("original matrix\n");
+  PrintCompactMatrixMinimal(AM);
+  CompactMatrixSVDOrthogonalizeRow(&AM, 10000*DBL_EPSILON, &BM, &CM);
+  
+  
+  printf("Orthogonalized\n");
+  PrintCompactMatrixMinimal(AM);
+  
+  printf("T\n");
+  PrintCompactMatrixMinimal(BM);
+  
+  printf("Tinv\n");
+  PrintCompactMatrixMinimal(CM);
+  
+  printf("T * original matrix = orthogonalized matrix\n");
+  CompactMatrixMultiply('N', 'N', &BM, &EM, &DM);
+  PrintCompactMatrixMinimal(DM);
+  
+  printf("Tinv * orthogonal matrix = original matrix\n");
+  CompactMatrixMultiply('N', 'N', &CM, &AM, &FM);
+  PrintCompactMatrixMinimal(FM);
+  
+  printf("orthogonal matrix * orthogonal matrix^C =identity matrix\n");
+  CompactMatrixMultiply('N', 'C', &AM, &AM, &GM);
+  CompactMatrixChop(&GM, 1000*DBL_EPSILON);
+  PrintCompactMatrixMinimal(GM);
+
   
   
 }

@@ -111,7 +111,6 @@ uint32_t BlockListOfPolesToSpectra(BlockListOfPoles const A, SpectraType *G, dou
   /* the im part of the lorenzians is there, we now need to add the real part */
   /* note that in the complex case some lorenzians have a complex pre-factor */
   /* weight w_i at energy E_i contributes w_i / (w - E_i) to all energies w, except at w=E_i */
-  #pragma omp parallel for
   for(i=0;i<A.BlockSize*A.BlockSize;i++)
   {
     for(j=0;j<=N;j++)
@@ -128,7 +127,6 @@ uint32_t BlockListOfPolesToSpectra(BlockListOfPoles const A, SpectraType *G, dou
   }
   if(A.QComplex)
   {
-    #pragma omp parallel for
     for(i=0;i<A.BlockSize*A.BlockSize;i++)
     {
       for(j=0;j<=N;j++)
@@ -151,7 +149,6 @@ uint32_t BlockListOfPolesToSpectra(BlockListOfPoles const A, SpectraType *G, dou
     }
     free(Gtemp);
   }
-  #pragma omp parallel for
   for(i=0;i<A.BlockSize*A.BlockSize;i++)
   {
     for(j=0;j<=N;j++)
@@ -316,13 +313,15 @@ uint32_t TightBindingHamiltonianToBlockListOfPoles(TightBindingDef const A, int 
  *  on output matrix T is of dimension psi->Ni*NBlock by psi->Nj such that T^{dag} A T is block tridiagonal of dimension Ni*NBlock with psi on element 1 to psi->Ni
  *    ABlock = T^dag A T
  *
- *  if psi is non-orthogonal 
+ *  if psi is non-orthonormal, orthonormalize psi such that psinew = Tb psi and psi = Tbi psinew with Tbi . Tb equal to the identity matrix if psi has no singular values
+ *    but not equal to the identiy matrix if psi had interdependent vectors. 
+ *    b0 stores Tbi
  */
 uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType const *psi, CompactMatrixType *const T, BlockTriDiagonalMatrixType *ABlock, double NBlock, double SingularValue)
 {
   int i,ii,j,k,oldindex,newindex,ipos,iipos,ia,ib,jcol,icol,allzero;
   double norm,dot,dotRe,dotIm;
-  CompactMatrixType Tnow;
+  CompactMatrixType Tnow,Tb0,Tb0inv;
   ABlock->N=NBlock;
   ABlock->BlockSize=psi->Ni;
   ABlock->QComplex=psi->QComplex;
@@ -452,6 +451,12 @@ uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType co
     Tnow.VRe=T->VRe;
     Tnow.Ni=psi->Ni;
     Tnow.Nj=psi->Nj;
+    /* orthonormalize psi and set b0 */
+    CompactMatrixSVDOrthogonalizeRow(&Tnow, SingularValue, &Tb0, &Tb0inv);
+    memcpy(ABlock->bRe,Tb0inv.VRe,ABlock->BlockSize*ABlock->BlockSize*sizeof(double));
+    
+    
+    /* loop over psi_{n+1} = A psi_{n} and orthonormalization */
     oldindex=0;
     newindex=psi->Ni*psi->Nj;
     for(k=1;k<ABlock->N;k++)
@@ -581,6 +586,7 @@ uint32_t BlockListOfPolesToBlockTridiagonalMatrix(BlockListOfPoles const A, Bloc
   alpha=malloc(A.N*A.BlockSize*sizeof(double));
   ialpha=0;
   iN=0;
+  /* create the starting vectors beta as the square root of the spectral weight (DOS) in list of poles */
   if(A.QComplex)
   {
     for(k=0;k<A.N;k++)
@@ -591,7 +597,7 @@ uint32_t BlockListOfPolesToBlockTridiagonalMatrix(BlockListOfPoles const A, Bloc
       FreeCompactMatrix(&betai);
       for(i=0;i<A.BlockSize;i++)
       {
-        alpha[ialpha]=A.VRe[iN];
+        alpha[ialpha]=A.V[iN].Re;
         ialpha++;
       }
       iN+=1+A.BlockSize*A.BlockSize;
@@ -613,7 +619,15 @@ uint32_t BlockListOfPolesToBlockTridiagonalMatrix(BlockListOfPoles const A, Bloc
       iN+=1+A.BlockSize*A.BlockSize;
     }
   }
-  CompactMatrixTranspose(&beta);
+  CompactMatrixConjugateTranspose(&beta);
+  
+  PrintCompactMatrixMinimal(beta);
+  for(k=0;k<beta.Nj;k++)
+  {
+    printf("alpha[%3i] = %22.15E\n",k,alpha[k]);
+  }
+  
+  
   DiagonalMatrixBlockTridiagonalize(alpha, &beta, &T, B, NBlockMax, SingularValue);
   B->mu=A.mu;
   free(alpha);
@@ -693,7 +707,23 @@ uint32_t BlockListOfPolesToBlockTridiagonalMatrixReduceDimension(BlockListOfPole
   return 0;
 }
 
-
+uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(BlockListOfPoles const *A, BlockNaturalImpurityOrbitalMatrixType * const B, double const mu, double const kbT, uint32_t const NBlockMaxVal, uint32_t const NBlockMaxCon)
+{
+  BlockListOfPoles Acon, Aval;
+  
+  B->QComplex=A->QComplex;
+  B->BlockSize = A->BlockSize;
+  strcpy(B->Name, A->Name);
+  
+  CopyBlockListOfPolesCon(*A, &Acon, mu, kbT);
+  CopyBlockListOfPolesVal(*A, &Aval, mu, kbT);
+  BlockListOfPolesToBlockTridiagonalMatrix(Acon, &(B->con), NBlockMaxCon, 1000*DBL_EPSILON);
+  BlockListOfPolesToBlockTridiagonalMatrix(Aval, &(B->val), NBlockMaxVal, 1000*DBL_EPSILON);
+  
+  printf("To Do\n");
+  
+  return 0;
+}
 
 
 /*
