@@ -64,6 +64,10 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "CI"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "AllMatrix"
             isEnabled = "NO">
          </CommandLineArgument>
@@ -137,7 +141,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "LancDy3"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "Opar"

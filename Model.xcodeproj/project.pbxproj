@@ -279,6 +279,7 @@
 		4C4637DC19C0726B00EB0DB0 /* Robert.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = Robert.1; sourceTree = "<group>"; };
 		4C4637E419C312EE00EB0DB0 /* ImpurityModelFromTB.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ImpurityModelFromTB.c; sourceTree = "<group>"; };
 		4C4637E519C312EE00EB0DB0 /* Spectra2p3d.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = Spectra2p3d.c; sourceTree = "<group>"; };
+		4C4637E619C3844500EB0DB0 /* CI.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = CI.c; sourceTree = "<group>"; };
 		4C5A6B9B175E6E8700EEA17F /* PrintMathematicaExpression.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = PrintMathematicaExpression.c; sourceTree = "<group>"; };
 		4C5CA61716D18BBF00BE1C25 /* DMFT */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = DMFT; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C639499197968E4009C7F12 /* Spectra.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = Spectra.c; sourceTree = "<group>"; };
@@ -661,6 +662,7 @@
 				4C3261581850DF9300CEECC4 /* OperatorArithmetic.c */,
 				4C03B03118706F30004C2B7B /* StuttgartNMTO.c */,
 				4C8B605818D924E40017AC8C /* BasisOptimization.c */,
+				4C4637E619C3844500EB0DB0 /* CI.c */,
 			);
 			path = Test;
 			sourceTree = "<group>";
@@ -1419,6 +1421,7 @@
 				4C4637E019C0726B00EB0DB0 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
 		};
 		4C5CA61F16D18BBF00BE1C25 /* Build configuration list for PBXNativeTarget "DMFT" */ = {
 			isa = XCConfigurationList;

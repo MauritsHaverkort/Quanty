@@ -672,6 +672,16 @@ uint32_t get2p3dAtomicInfo(uint32_t Z, uint32_t dCount, double *Fdd, double *Fpd
         default:
           break;
       }
+    case 29:
+      switch(dCount)
+    {
+      case 9:
+        Fdd[1] = 0.000; Fdd[2] = 0.000; Fpd[1] = 0.000;
+        Gpd[0] = 0.000; Gpd[1] = 0.000; *zeta2p = 10.000; *zeta3d = 0.100; /* not set */
+        return 0;
+      default:
+        break;
+    }
     default:
       break;
   }
@@ -1506,7 +1516,7 @@ int ImpurityModel3d(uint32_t Z, uint32_t dCount)
   Bmag[2]= 0.000000; /* magnetic field in the z direction (units of eV) */
   Hex[0] = 0.000000; /* exchange field in the x direction (units of eV) */
   Hex[1] = 0.000000; /* exchange field in the y direction (units of eV) */
-  Hex[2] = 0.000000; /* exchange field in the z direction (units of eV) */
+  Hex[2] = 0.001; /* exchange field in the z direction (units of eV) */
   
   if(get2p3dAtomicInfo(Z,dCount,Fdd,Fpd,Gpd,&zeta2p,&zeta3d))
   {
@@ -1766,6 +1776,21 @@ int ImpurityModel3d(uint32_t Z, uint32_t dCount)
   EndTiming("define operators", &Time);
   
   
+  /* mwh test if operators are hermitian */
+  /* still don't knw the error, but operators qre hermitian */
+  /*
+  OperatorType mwhTemp, mwhQZero;
+  OperatorConjugateTranspose(OppH, &mwhTemp);
+  OperatorAdd(&mwhTemp, OppH, -1.0, 0.0);
+  InitOperatorCopySettings(&mwhQZero, mwhTemp);
+  NormalOrderOperator(mwhTemp, &mwhQZero, &QDetNotOrderedFcFaBaBc); // different orderings possible, all need to be the same to get annihilation
+  OperatorChop(&mwhQZero, 1000*DBL_EPSILON);
+  PrintOperatorReadable(mwhQZero);
+  
+  exit(1);
+  */
+  
+  
   printf("\n========================================================");
   printf("\n==========         find groundstate          ===========");
   printf("\n========================================================\n");
@@ -1791,6 +1816,7 @@ int ImpurityModel3d(uint32_t Z, uint32_t dCount)
 
   LanczosGroundState(OppH, &psi, &epsilon, zero, 0, &psi, 0);
   
+/*
   WaveFunctionRandomize(&psi);
   
   LanczosGroundState(OppH, &psi, &epsilon, zero, 0, &psi, 0);
@@ -1799,6 +1825,7 @@ int ImpurityModel3d(uint32_t Z, uint32_t dCount)
   LanczosGroundState(OppH, &psi, &epsilon, zero, 0, &psi, 0);
   LanczosGroundState(OppH, &psi, &epsilon, zero, 0, &psi, 0);
   LanczosGroundState(OppH, &psi, &epsilon, zero, 0, &psi, 0);
+*/
   EndTiming("LanczosGroundState", &Time);
   
   CalculatePrefactorHistogram(Hist, psi, 2.0, 30);

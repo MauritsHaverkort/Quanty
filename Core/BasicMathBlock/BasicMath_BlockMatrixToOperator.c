@@ -81,7 +81,7 @@ uint32_t BlockTridiagonalMatrixToImpurityHamiltonian(OperatorType *const H, Bloc
         }
       }
     }
-    else /* real with spin */
+    else /* Complex with spin */
     {
       ia=A->BlockSize*A->BlockSize;
       for(k=0;k<Min(NBlockMax,A->N);k++)
