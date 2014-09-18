@@ -313,8 +313,7 @@ void WaveFunctionFreeValues(WaveFunctionType * const psi)
   }
 }
 
-uint32_t WaveFunctionAddElement(WaveFunctionType * const psi, const uint8_t * const det, const double aRe,
-                                const double aIm)
+uint32_t WaveFunctionAddElement(WaveFunctionType * const psi, const uint8_t * const det, const double aRe, const double aIm)
 {
   if (psi->QComplex == 0)
   {

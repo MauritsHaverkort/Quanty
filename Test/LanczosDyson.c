@@ -8,7 +8,10 @@
 
 void TestLanczosDyson3()
 {
-  OperatorType Himp;
+  double epsilon;
+  uint8_t *det;
+  WaveFunctionType psi0;
+  OperatorType Himp, Hnat;
   CompactMatrixType AT;
   TimeType Time;
   InitializeTiming(&Time);
@@ -17,9 +20,10 @@ void TestLanczosDyson3()
   SpectraType DOS,Gspec[4], GTriSpec[4], Gspec2[4], GTriSpecreduced[1];
   BlockListOfPoles G,GLP2;
   BlockTriDiagonalMatrixType Gtri, Gtrireduced;
+  BlockNaturalImpurityOrbitalMatrixType Gnat;
   int Nk[]={200,200,1};
   // create G0
-  FileReadTightBindingDef(&TB, "two_band_TB");
+  FileReadTightBindingDef(&TB, "two_band_TB_real");
   PrintTightBindingDef(TB);
   DOS.N=1000;
   DOS.Emin=-4;
@@ -100,6 +104,40 @@ void TestLanczosDyson3()
   FilePrintSpectra(GTriSpecreduced, TB.NFermion*TB.NFermion, "TBDOS3reduced", "w");
   
   // turn G0 into impurity natural orbitals
+  
+  G.mu=1.0;
+  BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(&G, &Gnat, DBL_EPSILON, 4, 4);
+  PrintBlockNaturalImpurityOrbitalMatrix(Gnat);
+  
+  // create Hamiltonian no spin
+  
+  BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(&Hnat, &Gnat, 3, 3, 0, 0, 0);
+  OperatorChop(&Hnat, 1000*DBL_EPSILON);
+  PrintOperatorReadable(Hnat);
+  
+  // no spin groundstate
+  
+  psi0.NFermion=2+2+2*3+2*3;
+  psi0.NBoson=0;
+  psi0.QComplex=0;
+  psi0.NBitsKey=16;
+  
+  WaveFunctionInit(&psi0);
+  det=StringToDet(psi0.NFermion, 0, "11 00 11 11 11 00 00 00");
+  WaveFunctionAddElement(&psi0, det, 1.0, 0.0);
+  
+  PrintWaveFunctionReadable(psi0);
+  
+  PrintWaveFunctionDensity(psi0);
+  
+  epsilon= 10000*DBL_EPSILON;
+  
+  LanczosGroundState(Hnat, &psi0, &epsilon, DBL_EPSILON, 0, &psi0, 0);
+  LanczosGroundState(Hnat, &psi0, &epsilon, DBL_EPSILON, 0, &psi0, 0);
+  
+  
+  PrintWaveFunctionReadable(psi0);
+  PrintWaveFunctionDensity(psi0);
   
   
   

@@ -642,7 +642,7 @@ void TestCompactMatrixVector()
   PrintCompactMatrixMinimal(AM);
   PrintBlockTriDiagonalMatrix(AMTri);
   
-  printf("\n\n Test orthonormalization \n\n");
+  printf("\n\n Test orthonormalization ROW \n\n");
   
   FreeCompactMatrix(&AM);
   AM.Ni=4;
@@ -690,6 +690,118 @@ void TestCompactMatrixVector()
   CompactMatrixChop(&GM, 1000*DBL_EPSILON);
   PrintCompactMatrixMinimal(GM);
 
+  
+  
+  printf("\n\n Test orthonormalization COL \n\n");
+  
+  FreeCompactMatrix(&AM);
+  FreeCompactMatrix(&BM);
+  FreeCompactMatrix(&CM);
+  FreeCompactMatrix(&DM);
+  FreeCompactMatrix(&EM);
+  FreeCompactMatrix(&FM);
+  FreeCompactMatrix(&GM);
+  AM.Ni=4;
+  AM.Nj=6;
+  AM.QComplex=1;
+  InitCompactMatrix(&AM);
+  k=0;
+  for(i=0;i<AM.Ni;i++)
+  {
+    for(j=0;j<AM.Nj;j++)
+    {
+      //AM.VRe[k] =i + 20 * j ;
+      AM.V[k].Re=0.0000000000001 * (i + 20 * j );
+      AM.V[k].Im=0.0000000000001 * (i + 20 * j );
+      if((i==j)&&(i!=AM.Ni-1)) AM.V[k].Re+=1;
+      k++;
+    }
+  }
+  //AM.VRe[0]+=12;
+  
+  CompactMatrixCopy(AM, &EM);
+  
+  printf("original matrix\n");
+  PrintCompactMatrixMinimal(AM);
+  CompactMatrixSVDOrthogonalizeCol(&AM, 1000000*DBL_EPSILON, &BM, &CM);
+  
+  
+  printf("Orthogonalized\n");
+  PrintCompactMatrixMinimal(AM);
+  
+  printf("T\n");
+  PrintCompactMatrixMinimal(BM);
+  
+  printf("Tinv\n");
+  PrintCompactMatrixMinimal(CM);
+  
+  printf("original matrix * T = orthogonalized matrix\n");
+  CompactMatrixMultiply('N', 'N', &EM, &BM, &DM);
+  PrintCompactMatrixMinimal(DM);
+  
+  printf("orthogonal matrix * Tinv = original matrix\n");
+  CompactMatrixMultiply('N', 'N', &AM, &CM, &FM);
+  PrintCompactMatrixMinimal(FM);
+  
+  printf("orthogonal matrix^C * orthogonal matrix =identity matrix\n");
+  CompactMatrixMultiply('C', 'N', &AM, &AM, &GM);
+  CompactMatrixChop(&GM, 1000*DBL_EPSILON);
+  PrintCompactMatrixMinimal(GM);
+  
+  
+  
+  printf("\n\n Test orthonormalization  GS COL \n\n");
+  
+  FreeCompactMatrix(&AM);
+  FreeCompactMatrix(&BM);
+  FreeCompactMatrix(&CM);
+  FreeCompactMatrix(&DM);
+  FreeCompactMatrix(&EM);
+  FreeCompactMatrix(&FM);
+  FreeCompactMatrix(&GM);
+  AM.Ni=4;
+  AM.Nj=6;
+  AM.QComplex=0;
+  InitCompactMatrix(&AM);
+  k=0;
+  for(i=0;i<AM.Ni;i++)
+  {
+    for(j=0;j<AM.Nj;j++)
+    {
+      //AM.VRe[k] =i + 20 * j ;
+      //AM.V[k].Re=0.0000000000001 * (i + 20 * j );
+      //AM.V[k].Im=0.0000000000001 * (i + 20 * j );
+      //if((i==j)&&(i!=AM.Ni-1)) AM.V[k].Re+=1;
+      AM.VRe[k]=0.0000000000001 * (i + 20 * j );
+      if((i==j)&&(i!=AM.Ni-2)) AM.VRe[k]+=2;
+      k++;
+    }
+  }
+  AM.VRe[1]+=0.1;
+  //AM.VRe[0]+=12;
+
+  
+  CompactMatrixGramSchmidtOrthogonalizeColplusT(&AM, &BM, &CM, &DM, DBL_EPSILON);
+  
+  printf("Original\n");
+  PrintCompactMatrixMinimal(AM);
+  
+  printf("Orthogonalized\n");
+  PrintCompactMatrixMinimal(BM);
+  
+  printf("T\n");
+  PrintCompactMatrixMinimal(CM);
+  
+  printf("Tinv\n");
+  PrintCompactMatrixMinimal(DM);
+  
+  CompactMatrixMultiply('N', 'N', &AM, &CM, &EM);
+  printf("Original * T\n");
+  PrintCompactMatrixMinimal(EM);
+  
+  CompactMatrixMultiply('N', 'N', &BM, &DM, &FM);
+  printf("Orthogonalized * Tinv\n");
+  PrintCompactMatrixMinimal(FM);
   
   
 }

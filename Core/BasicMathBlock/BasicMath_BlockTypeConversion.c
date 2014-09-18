@@ -313,15 +313,15 @@ uint32_t TightBindingHamiltonianToBlockListOfPoles(TightBindingDef const A, int 
  *  on output matrix T is of dimension psi->Ni*NBlock by psi->Nj such that T^{dag} A T is block tridiagonal of dimension Ni*NBlock with psi on element 1 to psi->Ni
  *    ABlock = T^dag A T
  *
- *  if psi is non-orthonormal, orthonormalize psi such that psinew = Tb psi and psi = Tbi psinew with Tbi . Tb equal to the identity matrix if psi has no singular values
- *    but not equal to the identiy matrix if psi had interdependent vectors. 
- *    b0 stores Tbi
+ *  if psi is non orthogonal then an orthogonal form of psi is stored as the first block in T. b0 is psi^+ psi_{ortho}
  */
-uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType const *psi, CompactMatrixType *const T, BlockTriDiagonalMatrixType *ABlock, double NBlock, double SingularValue)
+uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType const *psi, CompactMatrixType *const T, BlockTriDiagonalMatrixType *const ABlock, double NBlock, double SingularValue)
 {
+  char *charC="C";
+  char *charN="N";
   int i,ii,j,k,oldindex,newindex,ipos,iipos,ia,ib,jcol,icol,allzero;
   double norm,dot,dotRe,dotIm;
-  CompactMatrixType Tnow,Tb0,Tb0inv;
+  CompactMatrixType Tnow;
   
   /*
   printf("In DiagonalMatrixBlockTridiagonalize\n");
@@ -347,11 +347,19 @@ uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType co
   Tnow.Name=T->Name;
   Tnow.QComplex=T->QComplex;
   if(T->QComplex)
-  {
+  {/* calculate T */
+    Complex16 one, zero;
+    one.Re=1.0;  one.Im=0.0;
+    zero.Re=0.0; zero.Im=0.0;
+    /* set first vector block */
     memcpy(T->V, psi->V, psi->Nj*psi->Ni*sizeof(Complex16));
     Tnow.V=T->V;
     Tnow.Ni=psi->Ni;
     Tnow.Nj=psi->Nj;
+    /* orthonormalize Tnow */
+    CompactMatrixGramSchmidtOrthogonalizeCol(&Tnow, SingularValue);
+    zgemm(charC,charN,&ABlock->BlockSize,&ABlock->BlockSize,&psi->Nj,&one,psi->VRe,&psi->Nj,Tnow.VRe,&psi->Nj,&zero,ABlock->bRe,&ABlock->BlockSize);
+    /* loop over psi_{n+1} = A psi_{n} and orthonormalization */
     oldindex=0;
     newindex=psi->Ni*psi->Nj;
     for(k=1;k<ABlock->N;k++)
@@ -479,30 +487,16 @@ uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType co
     }
   }
   else /* real */
-  {
-    /* calculate T */
+  {/* calculate T */
+    double one=1.0, zero=0.0;
+    /* set first vector block */
     memcpy(T->VRe, psi->VRe, psi->Nj*psi->Ni*sizeof(double));
     Tnow.VRe=T->VRe;
     Tnow.Ni=psi->Ni;
     Tnow.Nj=psi->Nj;
-    /* orthonormalize psi and set b0 */
-    /*
-    printf("\n\n\ntest orthogonalization \n\n\n\n");
-    
-    PrintCompactMatrixMinimal(Tnow);
-    CompactMatrixType temp;
-    CompactMatrixMultiply('C', 'N', &Tnow, &Tnow, &temp);
-    
-    printf("Overlap matrix\n");
-    PrintCompactMatrixMinimal(temp);
-    
-    CompactMatrixSVDOrthogonalizeRow(&Tnow, SingularValue, &Tb0, &Tb0inv);
-    
-    PrintCompactMatrixMinimal(Tnow);
-    
-    memcpy(ABlock->bRe,Tb0inv.VRe,ABlock->BlockSize*ABlock->BlockSize*sizeof(double));
-    */
-    
+    /* orthonormalize Tnow */
+    CompactMatrixGramSchmidtOrthogonalizeCol(&Tnow, SingularValue);
+    dgemm(charC,charN,&ABlock->BlockSize,&ABlock->BlockSize,&psi->Nj,&one,psi->VRe,&psi->Nj,Tnow.VRe,&psi->Nj,&zero,ABlock->bRe,&ABlock->BlockSize);
     /* loop over psi_{n+1} = A psi_{n} and orthonormalization */
     oldindex=0;
     newindex=psi->Ni*psi->Nj;
@@ -613,7 +607,7 @@ uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType co
  *  on excit B contains the Green's function in a BlockTridiagonal format. (note that a0 and b0 are aditional prefactors)
  *  The returned matrix is always of the dimension NBLockMax by A.BlockSize, if couplings are small (SingularValue) they are set to zero.
  */
-uint32_t BlockListOfPolesToBlockTridiagonalMatrix(BlockListOfPoles const A, BlockTriDiagonalMatrixType *B, int const NBlockMax, double const SingularValue)
+uint32_t BlockListOfPolesToBlockTridiagonalMatrix(BlockListOfPoles const A, BlockTriDiagonalMatrixType *const B, int const NBlockMax, double const SingularValue)
 {
   double *alpha;
   int k,i,ialpha,iN;
@@ -746,20 +740,112 @@ uint32_t BlockListOfPolesToBlockTridiagonalMatrixReduceDimension(BlockListOfPole
   return 0;
 }
 
-uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(BlockListOfPoles const *A, BlockNaturalImpurityOrbitalMatrixType * const B, double const mu, double const kbT, uint32_t const NBlockMaxVal, uint32_t const NBlockMaxCon)
+uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(BlockListOfPoles const *A, BlockNaturalImpurityOrbitalMatrixType * const B, double const kbT, uint32_t const NBlockMaxVal, uint32_t const NBlockMaxCon)
 {
+  int i,j;
+  CompactMatrixType T,M;
   BlockListOfPoles Acon, Aval;
-  
+  B->mu=A->mu;
   B->QComplex=A->QComplex;
   B->BlockSize = A->BlockSize;
   strcpy(B->Name, A->Name);
   
-  CopyBlockListOfPolesCon(*A, &Acon, mu, kbT);
-  CopyBlockListOfPolesVal(*A, &Aval, mu, kbT);
+  CopyBlockListOfPolesCon(*A, &Acon, A->mu, kbT);
+  CopyBlockListOfPolesVal(*A, &Aval, A->mu, kbT);
   BlockListOfPolesToBlockTridiagonalMatrix(Acon, &(B->con), NBlockMaxCon, 1000*DBL_EPSILON);
   BlockListOfPolesToBlockTridiagonalMatrix(Aval, &(B->val), NBlockMaxVal, 1000*DBL_EPSILON);
   
-  printf("To Do\n");
+  T.QComplex=A->QComplex;
+  T.Ni=4*A->BlockSize;
+  T.Nj=4*A->BlockSize;
+  InitCompactIdentityMatrix(&T);
+  M.QComplex=A->QComplex;
+  M.Ni=4*A->BlockSize;
+  M.Nj=4*A->BlockSize;
+  InitCompactMatrix(&M);
+  if(A->QComplex)
+  {
+    for(i=0;i<A->BlockSize;i++)
+    {
+      for(j=0;j<A->BlockSize;j++)
+      {
+        // copy bv_0
+        T.V[i*T.Nj+j].Re = B->val.b[i*A->BlockSize+j].Re;
+        T.V[i*T.Nj+j].Im = B->val.b[i*A->BlockSize+j].Im;
+        // copy bv_0
+        T.V[(i+A->BlockSize)*T.Nj+j+A->BlockSize].Re = -B->val.b[i*A->BlockSize+j].Re;
+        T.V[(i+A->BlockSize)*T.Nj+j+A->BlockSize].Im = -B->val.b[i*A->BlockSize+j].Im;
+        // copy bc_0
+        T.V[(i+A->BlockSize)*T.Nj+j].Re = B->con.b[i*A->BlockSize+j].Re;
+        T.V[(i+A->BlockSize)*T.Nj+j].Im = B->con.b[i*A->BlockSize+j].Im;
+        // copy bc_0^+
+        T.V[i*T.Nj+j+A->BlockSize].Re = B->con.b[j*A->BlockSize+i].Re;
+        T.V[i*T.Nj+j+A->BlockSize].Im = -B->con.b[j*A->BlockSize+i].Im;
+        
+        // copy av_1
+        M.V[i*M.Nj+j].Re = B->val.a[i*A->BlockSize+j+A->BlockSize*A->BlockSize].Re;
+        M.V[i*M.Nj+j].Im = B->val.a[i*A->BlockSize+j+A->BlockSize*A->BlockSize].Im;
+        // copy ac_1
+        M.V[(i+A->BlockSize)*M.Nj+j+A->BlockSize].Re = B->con.a[i*A->BlockSize+j+A->BlockSize*A->BlockSize].Re;
+        M.V[(i+A->BlockSize)*M.Nj+j+A->BlockSize].Im = B->con.a[i*A->BlockSize+j+A->BlockSize*A->BlockSize].Im;
+        // copy av_2
+        M.V[(i+2*A->BlockSize)*M.Nj+j+2*A->BlockSize].Re = B->val.a[i*A->BlockSize+j+2*A->BlockSize*A->BlockSize].Re;
+        M.V[(i+2*A->BlockSize)*M.Nj+j+2*A->BlockSize].Im = B->val.a[i*A->BlockSize+j+2*A->BlockSize*A->BlockSize].Im;
+        // copy ac_2
+        M.V[(i+3*A->BlockSize)*M.Nj+j+3*A->BlockSize].Re = B->con.a[i*A->BlockSize+j+2*A->BlockSize*A->BlockSize].Re;
+        M.V[(i+3*A->BlockSize)*M.Nj+j+3*A->BlockSize].Im = B->con.a[i*A->BlockSize+j+2*A->BlockSize*A->BlockSize].Im;
+        // copy bv_1
+        M.V[(i+2*A->BlockSize)*T.Nj+j].Re = B->val.b[i*A->BlockSize+j+A->BlockSize*A->BlockSize].Re;
+        M.V[(i+2*A->BlockSize)*T.Nj+j].Im = B->val.b[i*A->BlockSize+j+A->BlockSize*A->BlockSize].Im;
+        // copy bv_1^+
+        M.V[i*T.Nj+j+2*A->BlockSize].Re = B->val.b[j*A->BlockSize+i+A->BlockSize*A->BlockSize].Re;
+        M.V[i*T.Nj+j+2*A->BlockSize].Im = -B->val.b[j*A->BlockSize+i+A->BlockSize*A->BlockSize].Im;
+        // copy bc_1
+        M.V[(i+3*A->BlockSize)*T.Nj+j+A->BlockSize].Re = B->con.b[i*A->BlockSize+j+A->BlockSize*A->BlockSize].Re;
+        M.V[(i+3*A->BlockSize)*T.Nj+j+A->BlockSize].Im = B->con.b[i*A->BlockSize+j+A->BlockSize*A->BlockSize].Im;
+        // copy bc_1^+
+        M.V[(i+A->BlockSize)*T.Nj+j+3*A->BlockSize].Re = B->con.b[j*A->BlockSize+i+A->BlockSize*A->BlockSize].Re;
+        M.V[(i+A->BlockSize)*T.Nj+j+3*A->BlockSize].Im = -B->con.b[j*A->BlockSize+i+A->BlockSize*A->BlockSize].Im;
+      }
+    }
+  }
+  else
+  {
+    for(i=0;i<A->BlockSize;i++)
+    {
+      for(j=0;j<A->BlockSize;j++)
+      {
+        // copy bv_0
+        T.VRe[i*T.Nj+j] = B->val.bRe[i*A->BlockSize+j];
+        // copy bv_0
+        T.VRe[(i+A->BlockSize)*T.Nj+j+A->BlockSize] = -B->val.bRe[i*A->BlockSize+j];
+        // copy bc_0
+        T.VRe[(i+A->BlockSize)*T.Nj+j] = B->con.bRe[i*A->BlockSize+j];
+        // copy bc_0^+
+        T.VRe[i*T.Nj+j+A->BlockSize] = B->con.bRe[j*A->BlockSize+i];
+        
+        // copy av_1
+        M.VRe[i*M.Nj+j] = B->val.aRe[i*A->BlockSize+j+A->BlockSize*A->BlockSize];
+        // copy ac_1
+        M.VRe[(i+A->BlockSize)*M.Nj+j+A->BlockSize] = B->con.aRe[i*A->BlockSize+j+A->BlockSize*A->BlockSize];
+        // copy av_2
+        M.VRe[(i+2*A->BlockSize)*M.Nj+j+2*A->BlockSize] = B->val.aRe[i*A->BlockSize+j+2*A->BlockSize*A->BlockSize];
+        // copy ac_2
+        M.VRe[(i+3*A->BlockSize)*M.Nj+j+3*A->BlockSize] = B->con.aRe[i*A->BlockSize+j+2*A->BlockSize*A->BlockSize];
+        // copy bv_1
+        M.VRe[(i+2*A->BlockSize)*T.Nj+j] = B->val.bRe[i*A->BlockSize+j+A->BlockSize*A->BlockSize];
+        // copy bv_1^+
+        M.VRe[i*T.Nj+j+2*A->BlockSize] = B->val.bRe[j*A->BlockSize+i+A->BlockSize*A->BlockSize];
+        // copy bc_1
+        M.VRe[(i+3*A->BlockSize)*T.Nj+j+A->BlockSize] = B->con.bRe[i*A->BlockSize+j+A->BlockSize*A->BlockSize];
+        // copy bc_1^+
+        M.VRe[(i+A->BlockSize)*T.Nj+j+3*A->BlockSize] = B->con.bRe[j*A->BlockSize+i+A->BlockSize*A->BlockSize];
+      }
+    }
+  }
+  CompactMatrixMultiply3('N', 'N', 'C', &T, &M, &T, &(B->TMT));
+  FreeCompactMatrix(&T);
+  FreeCompactMatrix(&M);
   
   return 0;
 }

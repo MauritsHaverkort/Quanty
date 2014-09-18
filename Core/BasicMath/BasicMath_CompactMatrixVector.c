@@ -1062,7 +1062,7 @@ uint32_t CompactMatrixQRDecomposition(CompactMatrixType *A, CompactMatrixType *Q
  *  Aortho = T A
  *  A = Tinv Aortho
  *  if A has no singular values Tinv . T is the identity matrix
- *  the trance of Tinv . T is equal to the dimension of A minus the number of singular vectors in A.
+ *  the trance of Tinv . T is equal to the dimension (number of rows) of A minus the number of singular vectors in A.
  */
 uint32_t CompactMatrixSVDOrthogonalizeRow(CompactMatrixType * A, double const SingularValue, CompactMatrixType *T, CompactMatrixType *Tinv)
 {
@@ -1159,10 +1159,114 @@ uint32_t CompactMatrixSVDOrthogonalizeRow(CompactMatrixType * A, double const Si
 }
 
 
+/*  A is replaced by an orthonormal form of A using Singular value decomposition (eigen value decomposition)
+ *  If a SingularValue is smaller than SingularValue this vector is removed from the basis
+ *  Aortho = A T
+ *  A = Aortho Tinv
+ *  if A has no singular values Tinv . T is the identity matrix
+ *  the trace of Tinv . T is equal to the dimension (number of columns) of A minus the number of singular vectors in A.
+ */
+uint32_t CompactMatrixSVDOrthogonalizeCol(CompactMatrixType * A, double const SingularValue, CompactMatrixType *T, CompactMatrixType *Tinv)
+{
+  uint32_t i;
+  char *JOBU ="O";  /* in SVD A = U S V^T return the first min(Ni,Nj) collumns of U in matrix A, which is over written */
+  char *JOBVT="A";  /* in SVD A = U S V^T return full array VT */
+  int LWORK, INFO;
+  LWORK = Max(5,A->Ni)*Max(5,A->Nj);
+  double *WORK;
+  Complex16 *WORKIM;
+  double *U=NULL;
+  double *S;
+  Tinv->Ni=A->Ni;
+  Tinv->Nj=A->Ni;
+  S=calloc(A->Ni,sizeof(double));
+  Tinv->QComplex=A->QComplex;
+  InitCompactMatrix(Tinv);
+  if(A->QComplex)
+  {
+    WORK = malloc(5*Min(A->Ni,A->Nj)*sizeof(double));
+    if(WORK==NULL)
+    {
+      printf("malloc failed in CompactMatrixSVDOrthogonalize\n");
+      return 1;
+    }
+    WORKIM = malloc(LWORK*sizeof(Complex16));
+    if(WORKIM==NULL)
+    {
+      free(WORK);
+      printf("malloc failed in CompactMatrixSVDOrthogonalize\n");
+      return 1;
+    }
+    zgesvd(JOBU, JOBVT, &A->Nj, &A->Ni, A->V, &A->Nj,S,U, &A->Ni,Tinv->V, &A->Ni, WORKIM, &LWORK, WORK, &INFO);
+    if(INFO)
+    {
+      printf("zgesvd failed in CompactMatrixSVDOrthogonalize with INFO %i\n",INFO);
+      return 1;
+    }
+    free(WORKIM);
+    free(WORK);
+  }
+  else
+  {
+    WORK = malloc(LWORK*sizeof(double));
+    if(WORK==NULL)
+    {
+      printf("malloc failed in CompactMatrixSVDOrthogonalize\n");
+      return 1;
+    }
+    dgesvd(JOBU, JOBVT, &A->Nj, &A->Ni, A->VRe, &A->Nj,S,U, &A->Ni,Tinv->VRe, &A->Ni, WORK, &LWORK, &INFO);
+    if(INFO)
+    {
+      printf("dgesvd failed in CompactMatrixSVDOrthogonalize with INFO %i\n",INFO);
+      return 1;
+    }
+    free(WORK);
+  }
+  CompactMatrixCopy(*Tinv, T);
+  CompactMatrixConjugateTranspose(T);
+  for(i=0;i<A->Ni;i++)
+  {
+    if(S[i]<SingularValue)
+    {
+      S[i]=0;
+    }
+  }
+  MultiplyDiagonalMatrixCompactMatrix(S,Tinv);
+  for(i=0;i<A->Ni;i++)
+  {
+    if(S[i]<SingularValue)
+    {
+      S[i]=0;
+    }
+    else
+    {
+      S[i]=1.0/S[i];
+    }
+  }
+  MultiplyCompactMatrixDiagonalMatrix(T,S);
+  for(i=0;i<A->Ni;i++)
+  {
+    if(S[i]<100*DBL_MIN)
+    {
+      S[i]=0;
+    }
+    else
+    {
+      S[i]=1;
+    }
+  }
+  MultiplyCompactMatrixDiagonalMatrix(A,S);
+  
+  
+  
+  free(S);
+  return 0;
+}
+
 /*  A is replaced by an orthonormal form of A using Gram Schmidt
  *  If the norm of a vector A_{i} is smaller than SingularValue this vector is set to zero
  */
-uint32_t CompactMatrixGramSchmidtOrthogonalize(CompactMatrixType * A, double const SingularValue)
+uint32_t CompactMatrixGramSchmidtOrthogonalizeCol(CompactMatrixType * A, double const SingularValue)
 {
   int i,j,ii,ipos,iipos;
   double dot,norm,dotRe,dotIm;
@@ -1250,6 +1354,55 @@ uint32_t CompactMatrixGramSchmidtOrthogonalize(CompactMatrixType * A, double con
   }
   return 0;
 }
+
+/*  Anew = A T
+ *  A = Anew Tinv
+ *  with Anew^+ Anew an identity matrix
+ */
+uint32_t CompactMatrixGramSchmidtOrthogonalizeColplusT(CompactMatrixType const * A, CompactMatrixType *const Anew, CompactMatrixType *const T, CompactMatrixType *const Tinv, double const SingularValue)
+{
+  int i,ii,ipos,iipos, one=1;
+  CompactMatrixCopy(*A, Anew);
+  T->Ni=A->Ni;
+  T->Nj=A->Ni;
+  T->QComplex=A->QComplex;
+  InitCompactIdentityMatrix(T);
+  if(A->QComplex)
+  {
+    
+  }
+  else /* real */
+  {
+    double dot,norm;
+    /* loop over all vectors */
+    for(i=0;i<A->Ni;i++)
+    {
+      ipos=i*A->Nj;
+      /* subtract all vectors Anew[ii]<i */
+      for(ii=0;ii<i;ii++)
+      {
+        iipos=ii*A->Nj;
+        dot = -ddot(&(A->Nj), &(Anew->VRe[iipos]), &one,  &(Anew->VRe[ipos]), &one);
+        daxpy(&(A->Ni),&dot,&(T->VRe[ii*A->Ni]),&one,&(T->VRe[i*A->Ni]) ,&one);
+        daxpy(&(A->Nj),&dot,&(Anew->VRe[iipos]),&one,&(Anew->VRe[ipos]),&one);
+      }
+      /* normalize vector i */
+      norm=ddot(&(A->Nj), &(Anew->VRe[ipos]), &one,  &(Anew->VRe[ipos]), &one);
+      if(norm<SingularValue)
+      {
+        norm=0;
+      }
+      else
+      {
+        norm=sqrt(1.0/norm);
+      }
+      dscal(&(A->Nj),&norm,&(Anew->VRe[ipos]),&one);
+      dscal(&(A->Ni),&norm,&(T->VRe[i*A->Ni]),&one);
+    }
+  }
+  CompactMatrixMultiply('C', 'N', Anew, A, Tinv);return 0;
+}
+
 
 uint32_t CompactMatrixLowdinOrthogonalize(CompactMatrixType * A)
 {

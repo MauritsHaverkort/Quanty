@@ -229,3 +229,9 @@ uint32_t PrintBandstructurePath(BandstructurePathType M)
 {
   return StreamPrintBandstructurePath(M, stdout);
 }
+
+uint32_t PrintBlockNaturalImpurityOrbitalMatrix(BlockNaturalImpurityOrbitalMatrixType M)
+{
+  return StreamPrintBlockNaturalImpurityOrbitalMatrix(M, stdout);
+}
+
