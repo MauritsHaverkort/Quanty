@@ -70,6 +70,7 @@
 #include "../Test/StuttgartNMTO.c"
 #include "../Test/HarmonicOscillator.c"
 #include "../Test/BasisOptimization.c"
+#include "../Test/CI.c"
 
 int main(int argc, const char *argv[])
 {
@@ -93,7 +94,9 @@ int main(int argc, const char *argv[])
     if (!strncmp("Cell", argv[argc], strlen(argv[argc])))
       TestCellFunctions();
 
-
+    
+    if (!strncmp("CI", argv[argc], strlen(argv[argc])))
+      CItest();
 
     if (!strncmp("Cr", argv[argc], strlen(argv[argc])))
       TestCreate();

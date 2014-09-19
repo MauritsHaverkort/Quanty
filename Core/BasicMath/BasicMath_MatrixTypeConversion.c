@@ -3453,8 +3453,7 @@ uint32_t ListOfPolesToAndersonMatrix(const ListOfPoles A, AndersonMatrixType * c
   return 0;
 }
 
-uint32_t ListOfPolesToBADoubleTridiagonalMatrix(const ListOfPoles A, BADoubleTriDiagonalMatrixType * const M,
-                                                uint32_t NTriDiagval, uint32_t NTriDiagcon, double mu, double Epsilon)
+uint32_t ListOfPolesToBADoubleTridiagonalMatrix(const ListOfPoles A, BADoubleTriDiagonalMatrixType * const M, uint32_t NTriDiagval, uint32_t NTriDiagcon, double mu, double Epsilon)
 {
   ListOfPoles LPcon, LPval;
   ListOfPolesCopyCon(&LPcon, A, mu, Epsilon);

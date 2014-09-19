@@ -455,16 +455,11 @@ typedef struct BlockNaturalImpurityOrbitalMatrixType
   char   Name[MAXStrLength];   /* A pointer to a name string that can be used to lable functions, good for printing etc. */
   uint32_t BlockSize;          /* dimension of square matrices */
   uint32_t QComplex;           /* matrices are complex or real */
+  double   mu;
   
   BlockTriDiagonalMatrixType val;
   BlockTriDiagonalMatrixType con;
-  CompactMatrixType Ai;
-  CompactMatrixType Ab;
-  CompactMatrixType Bib;
-  CompactMatrixType Biv;
-  CompactMatrixType Bic;
-  CompactMatrixType Bbv;
-  CompactMatrixType Bbc;
+  CompactMatrixType TMT;
   CompactMatrixType a0;
 }
 BlockNaturalImpurityOrbitalMatrixType;

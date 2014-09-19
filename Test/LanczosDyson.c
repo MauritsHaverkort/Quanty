@@ -8,18 +8,22 @@
 
 void TestLanczosDyson3()
 {
-  OperatorType Himp;
-  CompactMatrixType AT;
+  double epsilon;
+  uint8_t *det;
+  WaveFunctionType psi0;
+  OperatorType Himp, Hnat;
+  CompactMatrixType AT, GnatComp;
   TimeType Time;
   InitializeTiming(&Time);
   BeginTiming("Total", &Time);
   TightBindingDef TB;
-  SpectraType DOS,Gspec[4], GTriSpec[4], Gspec2[4], GTriSpecreduced[1];
+  SpectraType DOS,Gspec[4], GTriSpec[4], Gspec2[4], GTriSpecreduced[1], GnatCompSpec[4];
   BlockListOfPoles G,GLP2;
   BlockTriDiagonalMatrixType Gtri, Gtrireduced;
+  BlockNaturalImpurityOrbitalMatrixType Gnat;
   int Nk[]={200,200,1};
   // create G0
-  FileReadTightBindingDef(&TB, "two_band_TB");
+  FileReadTightBindingDef(&TB, "two_band_TB_real");
   PrintTightBindingDef(TB);
   DOS.N=1000;
   DOS.Emin=-4;
@@ -33,7 +37,7 @@ void TestLanczosDyson3()
   FilePrintSpectra(&DOS, 1, "TBDOS1", "w");
   
   BeginTiming("TightBindingHamiltonianToBlockListOfPoles", &Time);
-  TightBindingHamiltonianToBlockListOfPoles(TB, Nk, &G, -3, 5.5, 4);
+  TightBindingHamiltonianToBlockListOfPoles(TB, Nk, &G, -3, 5.5, 2000);
   EndTiming("TightBindingHamiltonianToBlockListOfPoles", &Time);
   
   
@@ -47,7 +51,7 @@ void TestLanczosDyson3()
   
   
   BeginTiming("BlockListOfPolesToBlockTridiagonalMatrix", &Time);
-  BlockListOfPolesToBlockTridiagonalMatrix(G, &Gtri, 6, DBL_EPSILON);
+  BlockListOfPolesToBlockTridiagonalMatrix(G, &Gtri, 500, DBL_EPSILON);
   EndTiming("BlockListOfPolesToBlockTridiagonalMatrix", &Time);
   
   PrintBlockTriDiagonalMatrix(Gtri);
@@ -68,14 +72,14 @@ void TestLanczosDyson3()
   
   
   BeginTiming("BlockTriDiagonalMatrixToBlockListOfPoles", &Time);
-  BlockTriDiagonalMatrixToBlockListOfPoles(&Gtri, &GLP2, -3, 5.5, 4);
+  BlockTriDiagonalMatrixToBlockListOfPoles(&Gtri, &GLP2, -3, 5.5, 500);
   EndTiming("BlockTriDiagonalMatrixToBlockListOfPoles", &Time);
   
   PrintBlockListOfPoles(GLP2);
   
   
   BeginTiming("BlockListOfPolesToSpectra", &Time);
-  BlockListOfPolesToSpectra(GLP2, Gspec2, -4, 6, 1000);
+  BlockListOfPolesToSpectra(GLP2, Gspec2, -4, 6, 100);
   EndTiming("BlockListOfPolesToSpectra", &Time);
   
   FilePrintSpectra(Gspec2, TB.NFermion*TB.NFermion, "TBDOS4", "w");
@@ -100,6 +104,55 @@ void TestLanczosDyson3()
   FilePrintSpectra(GTriSpecreduced, TB.NFermion*TB.NFermion, "TBDOS3reduced", "w");
   
   // turn G0 into impurity natural orbitals
+  
+  G.mu=0.0;
+  BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(&G, &Gnat, DBL_EPSILON, 500, 500);
+  PrintBlockNaturalImpurityOrbitalMatrix(Gnat);
+  
+  
+  // imp nat orb to compact
+  printf("Matrix in compact form\n");
+  BlockNaturalImpurityOrbitalMatrixToCompactMatrix(&Gnat, &GnatComp);
+  
+  //PrintCompactMatrixMinimal(GnatComp);
+  
+  
+  // compact matrix to spectrum
+  
+  CompactMatrixToSpectra(&GnatComp, GnatCompSpec, 2, -4.0, 6.0, 100);
+  FilePrintSpectra(GnatCompSpec, TB.NFermion*TB.NFermion, "TBDOS5", "w");
+  
+  
+  // create Hamiltonian no spin
+  
+  BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(&Hnat, &Gnat, 3, 3, 0, 0, 0);
+  OperatorChop(&Hnat, 1000*DBL_EPSILON);
+  PrintOperatorReadable(Hnat);
+  
+  // no spin groundstate
+  
+  psi0.NFermion=2+2+2*3+2*3;
+  psi0.NBoson=0;
+  psi0.QComplex=0;
+  psi0.NBitsKey=16;
+  
+  WaveFunctionInit(&psi0);
+  det=StringToDet(psi0.NFermion, 0, "11 00 11 11 11 00 00 00");
+  WaveFunctionAddElement(&psi0, det, 1.0, 0.0);
+  
+  PrintWaveFunctionReadable(psi0);
+  
+  PrintWaveFunctionDensity(psi0);
+  
+  epsilon= 10000*DBL_EPSILON;
+  
+  LanczosGroundState(Hnat, &psi0, &epsilon, DBL_EPSILON, 0, &psi0, 0);
+  LanczosGroundState(Hnat, &psi0, &epsilon, DBL_EPSILON, 0, &psi0, 0);
+  
+  WaveFunctionTruncateBasis(&psi0, epsilon);
+  
+  PrintWaveFunctionReadable(psi0);
+  PrintWaveFunctionDensity(psi0);
   
   
   

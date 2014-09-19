@@ -64,6 +64,10 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "CI"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "AllMatrix"
             isEnabled = "NO">
          </CommandLineArgument>

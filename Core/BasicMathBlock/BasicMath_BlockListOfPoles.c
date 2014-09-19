@@ -422,9 +422,9 @@ int OrderBlockListOfPolesCompareReal(double *elem1, double *elem2)
 
 int OrderBlockListOfPolesCompareComplex(Complex16 *elem1, Complex16 *elem2)
 {
-  if (Sqr(elem1[0].Re) + Sqr(elem1[0].Im) < Sqr(elem2[0].Re) + Sqr(elem2[0].Im))
+  if (elem1[0].Re < elem2[0].Re)
     return -1;
-  else if (Sqr(elem1[0].Re) + Sqr(elem1[0].Im) > Sqr(elem2[0].Re) + Sqr(elem2[0].Im))
+  else if (elem1[0].Re > elem2[0].Re)
     return 1;
   return 0;
 }

@@ -7,6 +7,7 @@
 /*****************       blas/lapack      *****************/
 /**********************************************************/
 #ifdef BLASunderscore
+#define daxpb daxpb_
 #define dcopy dcopy_
 #define ddot ddot_
 #defien dgemm dgemm_
@@ -18,12 +19,14 @@
 #define dsyrk dsyrk_
 #define dpotrf dpotrf_
 #define dstev dstev_
+#define dscal dscal_
 #define dstevd dstevd_
 #define dsyev dsyev_
 #define dsyevd dsyevd_
 #define dsygv dsygv_
 #define dsygvd dsygvd_
 #define dtrsm dtrsm_
+#define zaxpb zaxpb_
 #define zgemm zgemm_
 #define zgemv zgemv_
 #define zgetrf zgetrf_
@@ -35,9 +38,11 @@
 #define zhegv zhegv_
 #define zhegvd zhegvd_
 #define zdotc zdotc_
+#define zscal zscal_
 #endif
 
 
+int    daxpy();
 int    dcopy();
 double ddot();
 int    dgemm();
@@ -47,6 +52,7 @@ int    dgesvd();
 void   dgetrf();
 void   dgetri();
 int    dpotrf();
+int    dscal();
 int    dsyrk();
 int    dstev();
 int    dstevd();
@@ -55,6 +61,8 @@ int    dsyevd();
 int    dsygv();
 int    dsygvd();
 int    dtrsm();
+int    zscal();
+int    zaxpy();
 int    zgemm();
 int    zgemv();
 void   zgetrf();

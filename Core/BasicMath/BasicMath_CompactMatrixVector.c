@@ -1062,7 +1062,7 @@ uint32_t CompactMatrixQRDecomposition(CompactMatrixType *A, CompactMatrixType *Q
  *  Aortho = T A
  *  A = Tinv Aortho
  *  if A has no singular values Tinv . T is the identity matrix
- *  the trance of Tinv . T is equal to the dimension of A minus the number of singular vectors in A.
+ *  the trance of Tinv . T is equal to the dimension (number of rows) of A minus the number of singular vectors in A.
  */
 uint32_t CompactMatrixSVDOrthogonalizeRow(CompactMatrixType * A, double const SingularValue, CompactMatrixType *T, CompactMatrixType *Tinv)
 {
@@ -1159,10 +1159,114 @@ uint32_t CompactMatrixSVDOrthogonalizeRow(CompactMatrixType * A, double const Si
 }
 
 
+/*  A is replaced by an orthonormal form of A using Singular value decomposition (eigen value decomposition)
+ *  If a SingularValue is smaller than SingularValue this vector is removed from the basis
+ *  Aortho = A T
+ *  A = Aortho Tinv
+ *  if A has no singular values Tinv . T is the identity matrix
+ *  the trace of Tinv . T is equal to the dimension (number of columns) of A minus the number of singular vectors in A.
+ */
+uint32_t CompactMatrixSVDOrthogonalizeCol(CompactMatrixType * A, double const SingularValue, CompactMatrixType *T, CompactMatrixType *Tinv)
+{
+  uint32_t i;
+  char *JOBU ="O";  /* in SVD A = U S V^T return the first min(Ni,Nj) collumns of U in matrix A, which is over written */
+  char *JOBVT="A";  /* in SVD A = U S V^T return full array VT */
+  int LWORK, INFO;
+  LWORK = Max(5,A->Ni)*Max(5,A->Nj);
+  double *WORK;
+  Complex16 *WORKIM;
+  double *U=NULL;
+  double *S;
+  Tinv->Ni=A->Ni;
+  Tinv->Nj=A->Ni;
+  S=calloc(A->Ni,sizeof(double));
+  Tinv->QComplex=A->QComplex;
+  InitCompactMatrix(Tinv);
+  if(A->QComplex)
+  {
+    WORK = malloc(5*Min(A->Ni,A->Nj)*sizeof(double));
+    if(WORK==NULL)
+    {
+      printf("malloc failed in CompactMatrixSVDOrthogonalize\n");
+      return 1;
+    }
+    WORKIM = malloc(LWORK*sizeof(Complex16));
+    if(WORKIM==NULL)
+    {
+      free(WORK);
+      printf("malloc failed in CompactMatrixSVDOrthogonalize\n");
+      return 1;
+    }
+    zgesvd(JOBU, JOBVT, &A->Nj, &A->Ni, A->V, &A->Nj,S,U, &A->Ni,Tinv->V, &A->Ni, WORKIM, &LWORK, WORK, &INFO);
+    if(INFO)
+    {
+      printf("zgesvd failed in CompactMatrixSVDOrthogonalize with INFO %i\n",INFO);
+      return 1;
+    }
+    free(WORKIM);
+    free(WORK);
+  }
+  else
+  {
+    WORK = malloc(LWORK*sizeof(double));
+    if(WORK==NULL)
+    {
+      printf("malloc failed in CompactMatrixSVDOrthogonalize\n");
+      return 1;
+    }
+    dgesvd(JOBU, JOBVT, &A->Nj, &A->Ni, A->VRe, &A->Nj,S,U, &A->Ni,Tinv->VRe, &A->Ni, WORK, &LWORK, &INFO);
+    if(INFO)
+    {
+      printf("dgesvd failed in CompactMatrixSVDOrthogonalize with INFO %i\n",INFO);
+      return 1;
+    }
+    free(WORK);
+  }
+  CompactMatrixCopy(*Tinv, T);
+  CompactMatrixConjugateTranspose(T);
+  for(i=0;i<A->Ni;i++)
+  {
+    if(S[i]<SingularValue)
+    {
+      S[i]=0;
+    }
+  }
+  MultiplyDiagonalMatrixCompactMatrix(S,Tinv);
+  for(i=0;i<A->Ni;i++)
+  {
+    if(S[i]<SingularValue)
+    {
+      S[i]=0;
+    }
+    else
+    {
+      S[i]=1.0/S[i];
+    }
+  }
+  MultiplyCompactMatrixDiagonalMatrix(T,S);
+  for(i=0;i<A->Ni;i++)
+  {
+    if(S[i]<100*DBL_MIN)
+    {
+      S[i]=0;
+    }
+    else
+    {
+      S[i]=1;
+    }
+  }
+  MultiplyCompactMatrixDiagonalMatrix(A,S);
+  
+  
+  
+  free(S);
+  return 0;
+}
+
 /*  A is replaced by an orthonormal form of A using Gram Schmidt
  *  If the norm of a vector A_{i} is smaller than SingularValue this vector is set to zero
  */
-uint32_t CompactMatrixGramSchmidtOrthogonalize(CompactMatrixType * A, double const SingularValue)
+uint32_t CompactMatrixGramSchmidtOrthogonalizeCol(CompactMatrixType * A, double const SingularValue)
 {
   int i,j,ii,ipos,iipos;
   double dot,norm,dotRe,dotIm;
@@ -1250,6 +1354,55 @@ uint32_t CompactMatrixGramSchmidtOrthogonalize(CompactMatrixType * A, double con
   }
   return 0;
 }
+
+/*  Anew = A T
+ *  A = Anew Tinv
+ *  with Anew^+ Anew an identity matrix
+ */
+uint32_t CompactMatrixGramSchmidtOrthogonalizeColplusT(CompactMatrixType const * A, CompactMatrixType *const Anew, CompactMatrixType *const T, CompactMatrixType *const Tinv, double const SingularValue)
+{
+  int i,ii,ipos,iipos, one=1;
+  CompactMatrixCopy(*A, Anew);
+  T->Ni=A->Ni;
+  T->Nj=A->Ni;
+  T->QComplex=A->QComplex;
+  InitCompactIdentityMatrix(T);
+  if(A->QComplex)
+  {
+    
+  }
+  else /* real */
+  {
+    double dot,norm;
+    /* loop over all vectors */
+    for(i=0;i<A->Ni;i++)
+    {
+      ipos=i*A->Nj;
+      /* subtract all vectors Anew[ii]<i */
+      for(ii=0;ii<i;ii++)
+      {
+        iipos=ii*A->Nj;
+        dot = -ddot(&(A->Nj), &(Anew->VRe[iipos]), &one,  &(Anew->VRe[ipos]), &one);
+        daxpy(&(A->Ni),&dot,&(T->VRe[ii*A->Ni]),&one,&(T->VRe[i*A->Ni]) ,&one);
+        daxpy(&(A->Nj),&dot,&(Anew->VRe[iipos]),&one,&(Anew->VRe[ipos]),&one);
+      }
+      /* normalize vector i */
+      norm=ddot(&(A->Nj), &(Anew->VRe[ipos]), &one,  &(Anew->VRe[ipos]), &one);
+      if(norm<SingularValue)
+      {
+        norm=0;
+      }
+      else
+      {
+        norm=sqrt(1.0/norm);
+      }
+      dscal(&(A->Nj),&norm,&(Anew->VRe[ipos]),&one);
+      dscal(&(A->Ni),&norm,&(T->VRe[i*A->Ni]),&one);
+    }
+  }
+  CompactMatrixMultiply('C', 'N', Anew, A, Tinv);return 0;
+}
+
 
 uint32_t CompactMatrixLowdinOrthogonalize(CompactMatrixType * A)
 {
@@ -1496,6 +1649,103 @@ uint32_t CompactMatrixSqrtold(CompactMatrixType const *A, CompactMatrixType *Sqr
 /*
  *
  */
+uint32_t BlockNaturalImpurityOrbitalMatrixToCompactMatrix(BlockNaturalImpurityOrbitalMatrixType const * A, CompactMatrixType * const B)
+{
+  int i,j,k,apos,bposL,bposR;
+  B->QComplex=A->QComplex;
+  B->Ni=(Max(1,A->val.N)+Max(1,A->con.N))*A->BlockSize;
+  B->Nj=(A->val.N+A->con.N)*A->BlockSize;
+  if(InitCompactMatrix(B))
+  {
+    printf("InitCompactMatrix failed in BlockNaturalImpurityOrbitalMatrixToCompactMatrix\n");
+    return 1;
+  }
+  if(A->QComplex)
+  {
+    
+  }
+  else //real
+  {
+    for(i=0;i<3*A->BlockSize;i++)
+    {
+      memcpy(&(B->VRe[i*B->Nj]), &(A->TMT.VRe[i*A->TMT.Nj]), 3*A->BlockSize*sizeof(double));
+    }
+    for(i=0;i<A->BlockSize;i++)
+    {
+      memcpy(&(B->VRe[(i+A->BlockSize*Max(2,A->val.N+1))*B->Nj]), &(A->TMT.VRe[(i+3*A->BlockSize)*A->TMT.Nj]), 2*A->BlockSize*sizeof(double));
+    }
+    for(i=0;i<2*A->BlockSize;i++)
+    {
+      memcpy(&(B->VRe[(i*B->Nj+A->BlockSize*Max(2,A->val.N+1))]), &(A->TMT.VRe[(i)*A->TMT.Nj+3*A->BlockSize]), A->BlockSize*sizeof(double));
+    }
+    for(k=2;k<=A->val.N;k++)
+    {
+      for(i=0;i<A->BlockSize;i++)
+      {
+        memcpy(&(B->VRe[k*A->BlockSize*B->Nj+k*A->BlockSize+i*B->Nj]), &(A->val.aRe[k*A->BlockSize*A->BlockSize+i*A->BlockSize]), A->BlockSize*sizeof(double));
+      }
+    }
+    for(k=2;k<=A->con.N;k++)
+    {
+      for(i=0;i<A->BlockSize;i++)
+      {
+        memcpy(&(B->VRe[(k+Max(1,A->val.N)-1)*A->BlockSize*B->Nj+(k+Max(1,A->val.N)-1)*A->BlockSize+i*B->Nj]), &(A->con.aRe[k*A->BlockSize*A->BlockSize+i*A->BlockSize]), A->BlockSize*sizeof(double));
+      }
+    }
+    
+    apos=2*A->BlockSize*A->BlockSize;
+    bposL=2*A->BlockSize*B->Nj+3*A->BlockSize;
+    bposR=3*A->BlockSize*B->Nj+2*A->BlockSize;
+    for(k=2;k<A->val.N;k++)
+    {
+      for(i=0;i<A->BlockSize;i++)
+      {
+        for(j=0;j<A->BlockSize;j++)
+        {
+          B->VRe[bposL]=A->val.bRe[apos];
+          B->VRe[bposR]=A->val.bRe[apos];
+          bposR++;
+          bposL+=B->Nj;
+          apos++;
+        }
+        bposR+=B->Nj-A->BlockSize;
+        bposL+=(1-A->BlockSize*B->Nj);
+      }
+      bposR+=A->BlockSize;
+      bposL+=(A->BlockSize*B->Nj);
+    }
+    
+    apos=2*A->BlockSize*A->BlockSize;
+    k=1+Max(1,A->val.N);
+    bposL=k*A->BlockSize*B->Nj+(k+1)*A->BlockSize;
+    bposR=(k+1)*A->BlockSize*B->Nj+k*A->BlockSize;
+    for(k=2;k<A->con.N;k++)
+    {
+      for(i=0;i<A->BlockSize;i++)
+      {
+        for(j=0;j<A->BlockSize;j++)
+        {
+          B->VRe[bposL]=A->con.bRe[apos];
+          B->VRe[bposR]=A->con.bRe[apos];
+          bposR++;
+          bposL+=B->Nj;
+          apos++;
+        }
+        bposR+=B->Nj-A->BlockSize;
+        bposL+=(1-A->BlockSize*B->Nj);
+      }
+      bposR+=A->BlockSize;
+      bposL+=(A->BlockSize*B->Nj);
+    }
+    
+  }
+  return 0;
+}
+
+
+/*
+ *
+ */
 uint32_t BlockTriDiagonalMatrixToCompactMatrix(BlockTriDiagonalMatrixType const * A, CompactMatrixType * const B)
 {
   int i,j,k,apos,bpos,bposL,bposR;
@@ -1509,44 +1759,222 @@ uint32_t BlockTriDiagonalMatrixToCompactMatrix(BlockTriDiagonalMatrixType const 
   }
   bpos=0;
   apos=A->BlockSize*A->BlockSize;
-  for(k=1;k<=A->N;k++)
+  if(A->QComplex)
   {
-    for(i=0;i<A->BlockSize;i++)
+    for(k=1;k<=A->N;k++)
     {
-      for(j=0;j<A->BlockSize;j++)
+      for(i=0;i<A->BlockSize;i++)
       {
-        B->VRe[bpos]=A->aRe[apos];
-        bpos++;
-        apos++;
+        for(j=0;j<A->BlockSize;j++)
+        {
+          B->V[bpos].Re=A->a[apos].Re;
+          B->V[bpos].Im=A->a[apos].Im;
+          bpos++;
+          apos++;
+        }
+        bpos+=B->Nj-A->BlockSize;
       }
-      bpos+=B->Nj-A->BlockSize;
+      bpos+=A->BlockSize;
     }
-    bpos+=A->BlockSize;
+    apos=A->BlockSize*A->BlockSize;
+    bposL=A->BlockSize;
+    bposR=A->BlockSize*B->Nj;
+    for(k=1;k<A->N;k++)
+    {
+      for(i=0;i<A->BlockSize;i++)
+      {
+        for(j=0;j<A->BlockSize;j++)
+        {
+          B->V[bposL].Re= A->b[apos].Re;
+          B->V[bposR].Re= A->b[apos].Re;
+          B->V[bposL].Im=-A->b[apos].Im;
+          B->V[bposR].Im= A->b[apos].Im;
+          bposR++;
+          bposL+=B->Nj;
+          apos++;
+        }
+        bposR+=B->Nj-A->BlockSize;
+        bposL+=(1-A->BlockSize*B->Nj);
+      }
+      bposR+=A->BlockSize;
+      bposL+=(A->BlockSize*B->Nj);
+    }
   }
-  apos=A->BlockSize*A->BlockSize;
-  bposL=A->BlockSize;
-  bposR=A->BlockSize*B->Nj;
-  for(k=1;k<A->N;k++)
+  else
   {
-    for(i=0;i<A->BlockSize;i++)
+    for(k=1;k<=A->N;k++)
     {
-      for(j=0;j<A->BlockSize;j++)
+      for(i=0;i<A->BlockSize;i++)
       {
-        B->VRe[bposL]=A->bRe[apos];
-        B->VRe[bposR]=A->bRe[apos];
-        bposR++;
-        bposL+=B->Nj;
-        apos++;
+        for(j=0;j<A->BlockSize;j++)
+        {
+          B->VRe[bpos]=A->aRe[apos];
+          bpos++;
+          apos++;
+        }
+        bpos+=B->Nj-A->BlockSize;
       }
-      bposR+=B->Nj-A->BlockSize;
-      bposL+=(1-A->BlockSize*B->Nj);
+      bpos+=A->BlockSize;
     }
-    bposR+=A->BlockSize;
-    bposL+=(A->BlockSize*B->Nj);
+    apos=A->BlockSize*A->BlockSize;
+    bposL=A->BlockSize;
+    bposR=A->BlockSize*B->Nj;
+    for(k=1;k<A->N;k++)
+    {
+      for(i=0;i<A->BlockSize;i++)
+      {
+        for(j=0;j<A->BlockSize;j++)
+        {
+          B->VRe[bposL]=A->bRe[apos];
+          B->VRe[bposR]=A->bRe[apos];
+          bposR++;
+          bposL+=B->Nj;
+          apos++;
+        }
+        bposR+=B->Nj-A->BlockSize;
+        bposL+=(1-A->BlockSize*B->Nj);
+      }
+      bposR+=A->BlockSize;
+      bposL+=(A->BlockSize*B->Nj);
+    }
   }
   return 0;
 }
 
+/*
+ *
+ */
+uint32_t CompactMatrixToSpectra(CompactMatrixType const *A, SpectraType * const G, uint32_t const BlockSize, double Emin, double Emax, uint32_t N)
+{
+  SpectraType *Gtemp;
+  CompactMatrixType fun;
+  int i,j,k,iEmin,iEplus;
+  double *val,wmin,wplus;
+  if(A->Ni!=A->Nj)
+  {
+    printf("CompactMatrixToSpectra expects square matrix as imput Ni=%i Nj=%i\n",A->Ni,A->Nj);
+    return 1;
+  }
+  if(BlockSize>A->Ni)
+  {
+    printf("CompactMatrixToSpectra want more spectra (%i) then elements in matrix Ni=Nj=%i\n",BlockSize,A->Nj);
+    return 1;
+  }
+  val=malloc(A->Ni*sizeof(double));
+  if(val==NULL)
+  {
+    printf("malloc failed in CompactMatrixToSpectra\n");
+    return 1;
+  }
+  G[0].N=N;
+  G[0].Emin=Emin;
+  G[0].Emax=Emax;
+  G[0].EminPole=Emin;
+  G[0].EmaxPole=Emax;
+  G[0].dE=(Emax-Emin)/((double)N);
+  G[0].Gamma=0;
+  for(i=0;i<BlockSize*BlockSize;i++)
+  {
+    SpectrumAllocate(G[0], &(G[i]));
+  }
+  if(CompactMatrixEigensystem(A, &fun, val))
+  {
+    printf("CompactMatrixEigensystem failed in CompactMatrixToSpectra\n");
+    return 1;
+  }
+  if(A->QComplex)
+  {
+    
+  }
+  else
+  {
+    Gtemp=G;
+    for(k=0;k<fun.Ni;k++)
+    {
+      if(val[k]<=Emin)
+      {
+        iEmin=0;
+        iEplus=0;
+        wmin=1;
+        wplus=0;
+      }
+      else if(val[k]>=Emax)
+      {
+        iEmin=N;
+        iEplus=N;
+        wmin=1;
+        wplus=0;
+      }
+      else
+      {
+        iEmin=(uint32_t)((val[k]-Emin)/G[0].dE);
+        iEplus=iEmin+1;
+        wplus=((val[k]-Emin)/G[0].dE)-iEmin;
+        wmin=1-wplus;
+      }
+      /* add the im part of the lorenzian to energy iEmin and iEplus */
+      for(i=0;i<BlockSize;i++)
+      {
+        for(j=0;j<BlockSize;j++)
+        {
+          G[i*BlockSize+j].Im[iEmin] -= wmin *fun.VRe[k*fun.Nj+i]*fun.VRe[k*fun.Nj+j];
+          G[i*BlockSize+j].Im[iEplus]-= wplus*fun.VRe[k*fun.Nj+i]*fun.VRe[k*fun.Nj+j];
+        }
+      }
+    }
+  }
+  /* the im part of the lorenzians is there, we now need to add the real part */
+  /* note that in the complex case some lorenzians have a complex pre-factor */
+  /* weight w_i at energy E_i contributes w_i / (w - E_i) to all energies w, except at w=E_i */
+  for(i=0;i<BlockSize*BlockSize;i++)
+  {
+    for(j=0;j<=N;j++)
+    {
+      for(k=0;k<j;k++)
+      {
+        G[i].Re[k]-=Gtemp[i].Im[j]/(Pi*(k-j));
+      }
+      for(k=j+1;k<=N;k++)
+      {
+        G[i].Re[k]-=Gtemp[i].Im[j]/(Pi*(k-j));
+      }
+    }
+  }
+  if(A->QComplex)
+  {
+    for(i=0;i<BlockSize*BlockSize;i++)
+    {
+      for(j=0;j<=N;j++)
+      {
+        for(k=0;k<j;k++)
+        {
+          G[i].Im[k]+=Gtemp[i].Re[j]/(Pi*(k-j));
+        }
+        for(k=j+1;k<=N;k++)
+        {
+          G[i].Im[k]+=Gtemp[i].Re[j]/(Pi*(k-j));
+        }
+      }
+      for(j=0;j<=N;j++)
+      {
+        G[i].Re[j]+=Gtemp[i].Re[j];
+        G[i].Im[j]+=Gtemp[i].Im[j];
+      }
+      SpectrumFree(&(Gtemp[i]));
+    }
+    free(Gtemp);
+  }
+  for(i=0;i<BlockSize*BlockSize;i++)
+  {
+    for(j=0;j<=N;j++)
+    {
+      G[i].Im[j]*=Pi/G[i].dE;
+      G[i].Re[j]*=Pi/G[i].dE;
+    }
+  }
+  
+  return 0;
+}
 
 /* on input A is a Hermitian matrix, Singular Value is the smallest number larger than 0 that has numerical relavance, BlockSize is the size of the blocks and NBlockMax the maximal number of Blocks
  *  onoutput Matrix B has NBlockMax blocks (a_{0} to a_{NBlockMax+1}. b_{0} to b_{NBlockMax}
