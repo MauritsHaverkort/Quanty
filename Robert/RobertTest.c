@@ -59,9 +59,9 @@ int main(int argc, const char *argv[])
 
   //NiOLigandField();
 //  MnOLigandField();
-//  ImpurityModelFromTB();
+  ImpurityModelFromTB(28,8);
 //  LigandField(27,7);
-  ImpurityModel3d(28,8);
+ // ImpurityModel3d(28,8);
  // TestLanczosDyson3();
   return 0;
 

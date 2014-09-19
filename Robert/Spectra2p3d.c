@@ -1606,7 +1606,8 @@ int ImpurityModel3d(uint32_t Z, uint32_t dCount)
       CreateString[i] = i + (10-dCount);
     }
   }
-    
+ 
+  
   Ea1g = 0.3; Eb1g = 0.3; Eb2g = -0.2; Eeg  = -0.2;
   CFEnergies[0] = Ea1g; CFEnergies[1] = Eb1g; CFEnergies[2] = Eb2g; CFEnergies[3] = Eeg;
   
@@ -1798,6 +1799,20 @@ int ImpurityModel3d(uint32_t Z, uint32_t dCount)
   
   NBitsKey=16;
  
+  
+  
+  CreateString[6] = 6;
+  CreateString[7] = 7;
+  CreateString[8] = 8;
+  CreateString[9] = 9;
+  CreateString[10] = 10;
+  CreateString[11] = 11;
+  CreateString[12] = 12;
+  CreateString[13] = 14;
+  CreateString[14] = 15;
+  CreateString[15] = 17;
+  
+  
   printf("\n\n\n\n");
   printf("Wavefunction string: ");
   for(i = 0; i < Nelectrons; i++)
@@ -1806,9 +1821,12 @@ int ImpurityModel3d(uint32_t Z, uint32_t dCount)
   }
   printf("\n\n\n\n");
 
+  
 
   CreateWaveFunctionFromString(&psi, CreateString, Nelectrons, NFermion, 0, NBitsKey);
-   epsilon = 1.0e-10; zero = 1.0e-10;
+  //  WaveFunctionRandomize(&psi);
+
+   epsilon = 1.0e-4; zero = 1.0e-4;
   BeginTiming("LanczosGroundState", &Time);
   LanczosGroundState(OppH, &psi, &epsilon, zero, 0, &psi, 0);
 
