@@ -606,8 +606,7 @@ uint32_t ComplexWaveFunctionAddUnionBasis(WaveFunctionType * const a, const Wave
 *   Therefor values of a might change and a is returned from the function
 *   If a is an empty function b is copied into a (use of copy is strongly recommanded)
 */
-uint32_t ComplexWaveFunctionAddMultipliedUnionBasis(WaveFunctionType * const a, const WaveFunctionType b,
-                                                    const double alphaRe)
+uint32_t ComplexWaveFunctionAddMultipliedUnionBasis(WaveFunctionType * const a, const WaveFunctionType b, const double alphaRe)
 {
   uint32_t i, j;
   for (i = b.N; i != 0; --i)

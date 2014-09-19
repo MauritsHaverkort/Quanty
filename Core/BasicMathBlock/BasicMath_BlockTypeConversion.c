@@ -770,15 +770,15 @@ uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(BlockListOfPoles co
       for(j=0;j<A->BlockSize;j++)
       {
         // copy bv_0
-        T.V[i*T.Nj+j].Re = B->val.b[i*A->BlockSize+j].Re;
-        T.V[i*T.Nj+j].Im = B->val.b[i*A->BlockSize+j].Im;
+        T.V[i*T.Nj+j].Re = B->val.b[j*A->BlockSize+i].Re;
+        T.V[i*T.Nj+j].Im = -B->val.b[j*A->BlockSize+i].Im;
         // copy bv_0
-        T.V[(i+A->BlockSize)*T.Nj+j+A->BlockSize].Re = -B->val.b[i*A->BlockSize+j].Re;
-        T.V[(i+A->BlockSize)*T.Nj+j+A->BlockSize].Im = -B->val.b[i*A->BlockSize+j].Im;
+        T.V[(i+A->BlockSize)*T.Nj+j+A->BlockSize].Re = -B->val.b[j*A->BlockSize+i].Re;
+        T.V[(i+A->BlockSize)*T.Nj+j+A->BlockSize].Im =  B->val.b[j*A->BlockSize+i].Im;
         // copy bc_0
-        T.V[(i+A->BlockSize)*T.Nj+j].Re = B->con.b[i*A->BlockSize+j].Re;
-        T.V[(i+A->BlockSize)*T.Nj+j].Im = B->con.b[i*A->BlockSize+j].Im;
-        // copy bc_0^+
+        T.V[(i+A->BlockSize)*T.Nj+j].Re = B->con.b[j*A->BlockSize+i].Re;
+        T.V[(i+A->BlockSize)*T.Nj+j].Im = -B->con.b[j*A->BlockSize+i].Im;
+        // copy bc_0
         T.V[i*T.Nj+j+A->BlockSize].Re = B->con.b[j*A->BlockSize+i].Re;
         T.V[i*T.Nj+j+A->BlockSize].Im = -B->con.b[j*A->BlockSize+i].Im;
         

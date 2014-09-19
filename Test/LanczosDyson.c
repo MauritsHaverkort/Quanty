@@ -12,6 +12,7 @@ void TestLanczosDyson3()
   uint8_t *det;
   WaveFunctionType psi0;
   OperatorType Himp, Hnat;
+  OperatorType HTemp, HQZero;
   CompactMatrixType AT, GnatComp;
   TimeType Time;
   InitializeTiming(&Time);
@@ -23,7 +24,7 @@ void TestLanczosDyson3()
   BlockNaturalImpurityOrbitalMatrixType Gnat;
   int Nk[]={200,200,1};
   // create G0
-  FileReadTightBindingDef(&TB, "two_band_TB_real");
+  FileReadTightBindingDef(&TB, "two_band_TB");
   PrintTightBindingDef(TB);
   DOS.N=1000;
   DOS.Emin=-4;
@@ -37,7 +38,7 @@ void TestLanczosDyson3()
   FilePrintSpectra(&DOS, 1, "TBDOS1", "w");
   
   BeginTiming("TightBindingHamiltonianToBlockListOfPoles", &Time);
-  TightBindingHamiltonianToBlockListOfPoles(TB, Nk, &G, -3, 5.5, 2000);
+  TightBindingHamiltonianToBlockListOfPoles(TB, Nk, &G, -3, 5.5, 4);
   EndTiming("TightBindingHamiltonianToBlockListOfPoles", &Time);
   
   
@@ -59,6 +60,16 @@ void TestLanczosDyson3()
   BlockTridiagonalMatrixToImpurityHamiltonian(&Himp, &Gtri, 2, 1, 6, 0);
   
   PrintOperatorReadable(Himp);
+  
+  
+  OperatorConjugateTranspose(Himp, &HTemp);
+  OperatorAdd(&HTemp, Himp, -1.0, 0.0);
+  InitOperatorCopySettings(&HQZero, HTemp);
+  NormalOrderOperator(HTemp, &HQZero, &QDetNotOrderedFcFaBaBc); // different orderings possible, all need to be the same to get annihilation
+  OperatorChop(&HQZero, 1000*DBL_EPSILON);
+  PrintOperatorReadable(HQZero);
+  
+
   
   
   
@@ -129,20 +140,35 @@ void TestLanczosDyson3()
   OperatorChop(&Hnat, 1000*DBL_EPSILON);
   PrintOperatorReadable(Hnat);
   
+  FreeOperator(&HTemp);
+  FreeOperator(&HQZero);
+  OperatorConjugateTranspose(Hnat, &HTemp);
+  OperatorAdd(&HTemp, Hnat, -1.0, 0.0);
+  InitOperatorCopySettings(&HQZero, HTemp);
+  NormalOrderOperator(HTemp, &HQZero, &QDetNotOrderedFcFaBaBc); // different orderings possible, all need to be the same to get annihilation
+  OperatorChop(&HQZero, 1000*DBL_EPSILON);
+  PrintOperatorReadable(HQZero);
+  
+  
   // no spin groundstate
   
-  psi0.NFermion=2+2+2*3+2*3;
+  psi0.NFermion=(2+2+2*3+2*3);
   psi0.NBoson=0;
   psi0.QComplex=0;
   psi0.NBitsKey=16;
   
   WaveFunctionInit(&psi0);
   det=StringToDet(psi0.NFermion, 0, "11 00 11 11 11 00 00 00");
-  WaveFunctionAddElement(&psi0, det, 1.0, 0.0);
+  WaveFunctionAddElement(&psi0, det, 1, 0);
   
   PrintWaveFunctionReadable(psi0);
   
   PrintWaveFunctionDensity(psi0);
+  
+  
+  
+  
+  
   
   epsilon= 10000*DBL_EPSILON;
   

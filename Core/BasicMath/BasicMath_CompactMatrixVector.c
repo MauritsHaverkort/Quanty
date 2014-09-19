@@ -1480,7 +1480,13 @@ uint32_t CompactMatrixEigensystem(CompactMatrixType const *A, CompactMatrixType 
   else
   {                             /* complex */
     int    lcwork = 2 * A->Ni + Sqr(A->Ni);
-    Complex16 cwork[lcwork];
+    Complex16 *cwork;
+    cwork =malloc(lcwork*sizeof(Complex16));
+    if(cwork==NULL)
+    {
+      printf("malloc for cwork failed in CompactMatrixEigensystem\n");
+      return 1;
+    }
     if (CompactMatrixCopy(*A, fun))
       return 1;
     strcpy(fun->Name, "Eigenvectors of ");
@@ -1662,7 +1668,79 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToCompactMatrix(BlockNaturalImpurityOr
   }
   if(A->QComplex)
   {
-    
+    for(i=0;i<3*A->BlockSize;i++)
+    {
+      memcpy(&(B->V[i*B->Nj]), &(A->TMT.V[i*A->TMT.Nj]), 3*A->BlockSize*sizeof(Complex16));
+    }
+    for(i=0;i<A->BlockSize;i++)
+    {
+      memcpy(&(B->V[(i+A->BlockSize*Max(2,A->val.N+1))*B->Nj]), &(A->TMT.V[(i+3*A->BlockSize)*A->TMT.Nj]), 2*A->BlockSize*sizeof(Complex16));
+    }
+    for(i=0;i<2*A->BlockSize;i++)
+    {
+      memcpy(&(B->V[(i*B->Nj+A->BlockSize*Max(2,A->val.N+1))]), &(A->TMT.V[(i)*A->TMT.Nj+3*A->BlockSize]), A->BlockSize*sizeof(Complex16));
+    }
+    for(k=2;k<=A->val.N;k++)
+    {
+      for(i=0;i<A->BlockSize;i++)
+      {
+        memcpy(&(B->V[k*A->BlockSize*B->Nj+k*A->BlockSize+i*B->Nj]), &(A->val.a[k*A->BlockSize*A->BlockSize+i*A->BlockSize]), A->BlockSize*sizeof(Complex16));
+      }
+    }
+    for(k=2;k<=A->con.N;k++)
+    {
+      for(i=0;i<A->BlockSize;i++)
+      {
+        memcpy(&(B->V[(k+Max(1,A->val.N)-1)*A->BlockSize*B->Nj+(k+Max(1,A->val.N)-1)*A->BlockSize+i*B->Nj]), &(A->con.a[k*A->BlockSize*A->BlockSize+i*A->BlockSize]), A->BlockSize*sizeof(Complex16));
+      }
+    }
+    apos=2*A->BlockSize*A->BlockSize;
+    bposL=2*A->BlockSize*B->Nj+3*A->BlockSize;
+    bposR=3*A->BlockSize*B->Nj+2*A->BlockSize;
+    for(k=2;k<A->val.N;k++)
+    {
+      for(i=0;i<A->BlockSize;i++)
+      {
+        for(j=0;j<A->BlockSize;j++)
+        {
+          B->V[bposL].Re= A->val.b[apos].Re;
+          B->V[bposR].Re= A->val.b[apos].Re;
+          B->V[bposL].Im=-A->val.b[apos].Im;
+          B->V[bposR].Im= A->val.b[apos].Im;
+          bposR++;
+          bposL+=B->Nj;
+          apos++;
+        }
+        bposR+=B->Nj-A->BlockSize;
+        bposL+=(1-A->BlockSize*B->Nj);
+      }
+      bposR+=A->BlockSize;
+      bposL+=(A->BlockSize*B->Nj);
+    }
+    apos=2*A->BlockSize*A->BlockSize;
+    k=1+Max(1,A->val.N);
+    bposL=k*A->BlockSize*B->Nj+(k+1)*A->BlockSize;
+    bposR=(k+1)*A->BlockSize*B->Nj+k*A->BlockSize;
+    for(k=2;k<A->con.N;k++)
+    {
+      for(i=0;i<A->BlockSize;i++)
+      {
+        for(j=0;j<A->BlockSize;j++)
+        {
+          B->V[bposL].Re= A->con.b[apos].Re;
+          B->V[bposR].Re= A->con.b[apos].Re;
+          B->V[bposL].Im=-A->con.b[apos].Im;
+          B->V[bposR].Im= A->con.b[apos].Im;
+          bposR++;
+          bposL+=B->Nj;
+          apos++;
+        }
+        bposR+=B->Nj-A->BlockSize;
+        bposL+=(1-A->BlockSize*B->Nj);
+      }
+      bposR+=A->BlockSize;
+      bposL+=(A->BlockSize*B->Nj);
+    }
   }
   else //real
   {
@@ -1692,7 +1770,6 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToCompactMatrix(BlockNaturalImpurityOr
         memcpy(&(B->VRe[(k+Max(1,A->val.N)-1)*A->BlockSize*B->Nj+(k+Max(1,A->val.N)-1)*A->BlockSize+i*B->Nj]), &(A->con.aRe[k*A->BlockSize*A->BlockSize+i*A->BlockSize]), A->BlockSize*sizeof(double));
       }
     }
-    
     apos=2*A->BlockSize*A->BlockSize;
     bposL=2*A->BlockSize*B->Nj+3*A->BlockSize;
     bposR=3*A->BlockSize*B->Nj+2*A->BlockSize;
@@ -1714,7 +1791,6 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToCompactMatrix(BlockNaturalImpurityOr
       bposR+=A->BlockSize;
       bposL+=(A->BlockSize*B->Nj);
     }
-    
     apos=2*A->BlockSize*A->BlockSize;
     k=1+Max(1,A->val.N);
     bposL=k*A->BlockSize*B->Nj+(k+1)*A->BlockSize;
@@ -1737,7 +1813,6 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToCompactMatrix(BlockNaturalImpurityOr
       bposR+=A->BlockSize;
       bposL+=(A->BlockSize*B->Nj);
     }
-    
   }
   return 0;
 }
@@ -1884,7 +1959,46 @@ uint32_t CompactMatrixToSpectra(CompactMatrixType const *A, SpectraType * const 
   }
   if(A->QComplex)
   {
-    
+    Gtemp=malloc(BlockSize*BlockSize*sizeof(SpectraType));
+    for(i=0;i<BlockSize*BlockSize;i++)
+    {
+      SpectrumAllocate(G[0], &(Gtemp[i]));
+    }
+    for(k=0;k<fun.Ni;k++)
+    {
+      if(val[k]<=Emin)
+      {
+        iEmin=0;
+        iEplus=0;
+        wmin=1;
+        wplus=0;
+      }
+      else if(val[k]>=Emax)
+      {
+        iEmin=N;
+        iEplus=N;
+        wmin=1;
+        wplus=0;
+      }
+      else
+      {
+        iEmin=(uint32_t)((val[k]-Emin)/G[0].dE);
+        iEplus=iEmin+1;
+        wplus=((val[k]-Emin)/G[0].dE)-iEmin;
+        wmin=1-wplus;
+      }
+      /* add the im part of the lorenzian to energy iEmin and iEplus */
+      for(i=0;i<BlockSize;i++)
+      {
+        for(j=0;j<BlockSize;j++)
+        {
+          Gtemp[i*BlockSize+j].Im[iEmin] -= wmin *(fun.V[k*fun.Nj+i].Re*fun.V[k*fun.Nj+j].Re + fun.V[k*fun.Nj+i].Im*fun.V[k*fun.Nj+j].Im);
+          Gtemp[i*BlockSize+j].Im[iEplus]-= wplus*(fun.V[k*fun.Nj+i].Re*fun.V[k*fun.Nj+j].Re + fun.V[k*fun.Nj+i].Im*fun.V[k*fun.Nj+j].Im);
+          Gtemp[i*BlockSize+j].Re[iEmin] += wmin *(fun.V[k*fun.Nj+i].Re*fun.V[k*fun.Nj+j].Im - fun.V[k*fun.Nj+i].Im*fun.V[k*fun.Nj+j].Re);
+          Gtemp[i*BlockSize+j].Re[iEplus]+= wplus*(fun.V[k*fun.Nj+i].Re*fun.V[k*fun.Nj+j].Im - fun.V[k*fun.Nj+i].Im*fun.V[k*fun.Nj+j].Re);
+        }
+      }
+    }
   }
   else
   {
@@ -1972,7 +2086,6 @@ uint32_t CompactMatrixToSpectra(CompactMatrixType const *A, SpectraType * const 
       G[i].Re[j]*=Pi/G[i].dE;
     }
   }
-  
   return 0;
 }
 

@@ -275,8 +275,6 @@
 		4C4637D219C071C500EB0DB0 /* ResonantSpectra.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ResonantSpectra.c; sourceTree = "<group>"; };
 		4C4637D319C071C500EB0DB0 /* RobertTest.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = RobertTest.c; sourceTree = "<group>"; };
 		4C4637D819C0726B00EB0DB0 /* Robert */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Robert; sourceTree = BUILT_PRODUCTS_DIR; };
-		4C4637DA19C0726B00EB0DB0 /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
-		4C4637DC19C0726B00EB0DB0 /* Robert.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = Robert.1; sourceTree = "<group>"; };
 		4C4637E419C312EE00EB0DB0 /* ImpurityModelFromTB.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ImpurityModelFromTB.c; sourceTree = "<group>"; };
 		4C4637E519C312EE00EB0DB0 /* Spectra2p3d.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = Spectra2p3d.c; sourceTree = "<group>"; };
 		4C4637E619C3844500EB0DB0 /* CI.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = CI.c; sourceTree = "<group>"; };
@@ -503,7 +501,6 @@
 				4C2AAA73163265DD00138620 /* Tools */,
 				4C2AAA1C1632655300138620 /* Model */,
 				4C0B553E196752C3000B8E97 /* LuaInterface */,
-				4C4637D919C0726B00EB0DB0 /* Robert */,
 				4C2AAA1A1632655300138620 /* Products */,
 			);
 			indentWidth = 2;
@@ -707,15 +704,6 @@
 				4C4637E519C312EE00EB0DB0 /* Spectra2p3d.c */,
 				4C4637D219C071C500EB0DB0 /* ResonantSpectra.c */,
 				4C4637D319C071C500EB0DB0 /* RobertTest.c */,
-			);
-			path = Robert;
-			sourceTree = "<group>";
-		};
-		4C4637D919C0726B00EB0DB0 /* Robert */ = {
-			isa = PBXGroup;
-			children = (
-				4C4637DA19C0726B00EB0DB0 /* main.c */,
-				4C4637DC19C0726B00EB0DB0 /* Robert.1 */,
 			);
 			path = Robert;
 			sourceTree = "<group>";

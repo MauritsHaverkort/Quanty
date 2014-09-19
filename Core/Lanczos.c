@@ -868,12 +868,12 @@ uint32_t LanczosGroundStateCC(const OperatorType H, WaveFunctionType * const psi
     if (minloop) minloop--;
     cycles = 0;
     energy = energy1;
-    shift = -shiftin - energy * 0.49;
+    // Calculate psi_new = H^3 psi_old whereby the first time H acts on psi_old the basis size is enlarged
+    //  This leaves three functions allocated which can be used in the next part
   Repeat:
     if (OperatorPsiCC(H, *psi, &v[0]))
       goto OutOffMemv0;
-    ComplexWaveFunctionMultiply(*psi, shift);
-    if (ComplexWaveFunctionAddUnionBasis(&v[0], *psi))
+    if (ComplexWaveFunctionAddMultipliedUnionBasis(&v[0], *psi, shift))
       goto OutOffMemv0add;
     if (ComplexWaveFunctionOrthogonalize(&v[0], OtherPsi, NOtherPsi))
       goto OutOffMemv0Ortho;
@@ -921,8 +921,8 @@ uint32_t LanczosGroundStateCC(const OperatorType H, WaveFunctionType * const psi
   EnoughMem:
     
     // Orthogonalize to previously found functions
-    RealWaveFunctionOrthogonalizeConserveBasis(psi, OtherPsi, NOtherPsi);
-    RealWaveFunctionNormalize(psi);
+    ComplexWaveFunctionOrthogonalizeConserveBasis(psi, OtherPsi, NOtherPsi);
+    ComplexWaveFunctionNormalize(psi);
     
     // For a given basis set determine the lowest state
     //  In the previous part the memory for 3 functions v[0], v[1] and v[2] is allocated on this basis set.
@@ -979,7 +979,7 @@ uint32_t LanczosGroundStateCC(const OperatorType H, WaveFunctionType * const psi
       }
       ComplexWaveFunctionMultiply(v[0], 0);
       ComplexWaveFunctionAddSameBasis(v[0], *psi);
-      ComplexWaveFunctionMultiply(*psi, Eigen.VRe[0][0]);
+      ComplexWaveFunctionMultiply(*psi, Eigen.VRe[statetopick][0]);
       OperatorPsiConserveBasisPreAllocatedCC(&H, &(v[0]), &(v[1]));
       ComplexWaveFunctionAddMultipliedSameBasis(v[1], v[0], shift);
       for (i = 1; i < M.N; i++)
@@ -996,7 +996,7 @@ uint32_t LanczosGroundStateCC(const OperatorType H, WaveFunctionType * const psi
         OperatorPsiConserveBasisPreAllocatedCC(&H, &(v[vi]), &(v[vip]));
         ComplexWaveFunctionAddMultipliedSameBasis(v[vip], v[vi], shift);
         ComplexWaveFunctionAddMultipliedSameBasis(v[vip], v[vim], -M.b[i]);
-        ComplexWaveFunctionAddMultipliedSameBasis(*psi, v[vi], Eigen.VRe[0][i]);
+        ComplexWaveFunctionAddMultipliedSameBasis(*psi, v[vi], Eigen.VRe[statetopick][i]);
       }
       // Set the shift such that the largest eigenvalue found becomes zero
       shift -= val[M.N - 1];
@@ -1700,7 +1700,6 @@ uint32_t LanczosGroundStateRestrictedCC(const OperatorType H, WaveFunctionType *
     if (minloop) minloop--;
     cycles = 0;
     energy = energy1;
-    shift = -shiftin - energy * 0.49;
   Repeat:
     if (OperatorPsiRestrictedCC(H, *psi, &v[0], Restrictions))
       goto OutOffMemv0;
@@ -4431,8 +4430,7 @@ uint32_t ArnoldiTriDiagonalizeKrylovMC(const OperatorType H, WaveFunctionType ps
 
 
 
-uint32_t LanczosGroundState(const OperatorType H, WaveFunctionType * const psi, double *epsilon, const double zero,
-                            double shiftin, WaveFunctionType * OtherPsi, uint32_t NOtherPsi)
+uint32_t LanczosGroundState(const OperatorType H, WaveFunctionType * const psi, double *epsilon, const double zero, double shiftin, WaveFunctionType * OtherPsi, uint32_t NOtherPsi)
 {
   if (psi->QComplex)
   {

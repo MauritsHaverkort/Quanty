@@ -73,7 +73,7 @@ uint32_t BlockTridiagonalMatrixToImpurityHamiltonian(OperatorType *const H, Bloc
             ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->b[ib].Re, A->b[ib].Im, &QDetNotOrderedFcFaBcBa);
             oadd[1]=CrAnMask+jfer;
             oadd[0]=ifer;
-            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->b[ib].Re, A->b[ib].Im, &QDetNotOrderedFcFaBcBa);
+            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->b[ib].Re,-A->b[ib].Im, &QDetNotOrderedFcFaBcBa);
             ib++;
             jfer++;
           }
@@ -118,13 +118,13 @@ uint32_t BlockTridiagonalMatrixToImpurityHamiltonian(OperatorType *const H, Bloc
             ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->b[ib].Re, A->b[ib].Im, &QDetNotOrderedFcFaBcBa);
             oadd[1]=CrAnMask+jfer;
             oadd[0]=ifer;
-            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->b[ib].Re, A->b[ib].Im, &QDetNotOrderedFcFaBcBa);
+            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->b[ib].Re,-A->b[ib].Im, &QDetNotOrderedFcFaBcBa);
             oadd[1]=CrAnMask+ifer+A->BlockSize;
             oadd[0]=jfer+A->BlockSize;
             ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->b[ib].Re, A->b[ib].Im, &QDetNotOrderedFcFaBcBa);
             oadd[1]=CrAnMask+jfer+A->BlockSize;
             oadd[0]=ifer+A->BlockSize;
-            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->b[ib].Re, A->b[ib].Im, &QDetNotOrderedFcFaBcBa);
+            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->b[ib].Re,-A->b[ib].Im, &QDetNotOrderedFcFaBcBa);
             ib++;
             jfer++;
           }
@@ -282,13 +282,406 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(OperatorType *co
   InitOperatorFixedLength(H, 2, 8);
   if(A->QComplex)
   {
-  
+    MakeRealOperatorFixedLengthComplex(H, 2);
+    if(Spin==0)
+    {
+      /* transform matrix TMT to Operator */
+      for(i=0;i<A->BlockSize;i++)
+      {
+        for(j=0;j<A->BlockSize;j++)
+        {
+          oadd[1]=CrAnMask+NFermionShift+i;
+          oadd[0]=NFermionShift+j;
+          ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.V[i*A->TMT.Nj+j].Re, A->TMT.V[i*A->TMT.Nj+j].Im, &QDetNotOrderedFcFaBcBa);
+          oadd[1]=CrAnMask+NFermionShift+i+A->BlockSize;
+          oadd[0]=NFermionShift+j;
+          ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.V[(i+A->BlockSize)*A->TMT.Nj+j].Re, A->TMT.V[(i+A->BlockSize)*A->TMT.Nj+j].Im, &QDetNotOrderedFcFaBcBa);
+          oadd[1]=CrAnMask+NFermionShift+i;
+          oadd[0]=NFermionShift+j+A->BlockSize;
+          ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.V[i*A->TMT.Nj+j+A->BlockSize].Re, A->TMT.V[i*A->TMT.Nj+j+A->BlockSize].Im, &QDetNotOrderedFcFaBcBa);
+          oadd[1]=CrAnMask+NFermionShift+i+A->BlockSize;
+          oadd[0]=NFermionShift+j+A->BlockSize;
+          ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.V[(i+A->BlockSize)*A->TMT.Nj+j+A->BlockSize].Re, A->TMT.V[(i+A->BlockSize)*A->TMT.Nj+j+A->BlockSize].Im, &QDetNotOrderedFcFaBcBa);
+          if(NBlockMaxVal!=0)
+          {
+            oadd[1]=CrAnMask+NFermionShift+i+2*A->BlockSize;
+            oadd[0]=NFermionShift+j;
+            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.V[(i+2*A->BlockSize)*A->TMT.Nj+j].Re, A->TMT.V[(i+2*A->BlockSize)*A->TMT.Nj+j].Im, &QDetNotOrderedFcFaBcBa);
+            oadd[1]=CrAnMask+NFermionShift+i+2*A->BlockSize;
+            oadd[0]=NFermionShift+j+A->BlockSize;
+            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.V[(i+2*A->BlockSize)*A->TMT.Nj+j+A->BlockSize].Re, A->TMT.V[(i+2*A->BlockSize)*A->TMT.Nj+j+A->BlockSize].Im, &QDetNotOrderedFcFaBcBa);
+            oadd[1]=CrAnMask+NFermionShift+i;
+            oadd[0]=NFermionShift+j+2*A->BlockSize;
+            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.V[i*A->TMT.Nj+j+2*A->BlockSize].Re, A->TMT.V[i*A->TMT.Nj+j+2*A->BlockSize].Im, &QDetNotOrderedFcFaBcBa);
+            oadd[1]=CrAnMask+NFermionShift+i+A->BlockSize;
+            oadd[0]=NFermionShift+j+2*A->BlockSize;
+            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.V[(i+A->BlockSize)*A->TMT.Nj+j+2*A->BlockSize].Re, A->TMT.V[(i+A->BlockSize)*A->TMT.Nj+j+2*A->BlockSize].Im, &QDetNotOrderedFcFaBcBa);
+          }
+          if(NBlockMaxCon!=0)
+          {
+            oadd[1]=CrAnMask+NFermionShift+i+(2+NBlockMaxVal)*A->BlockSize;
+            oadd[0]=NFermionShift+j;
+            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.V[(i+3*A->BlockSize)*A->TMT.Nj+j].Re, A->TMT.V[(i+3*A->BlockSize)*A->TMT.Nj+j].Im, &QDetNotOrderedFcFaBcBa);
+            oadd[1]=CrAnMask+NFermionShift+i+(2+NBlockMaxVal)*A->BlockSize;
+            oadd[0]=NFermionShift+j+A->BlockSize;
+            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.V[(i+3*A->BlockSize)*A->TMT.Nj+j+A->BlockSize].Re, A->TMT.V[(i+3*A->BlockSize)*A->TMT.Nj+j+A->BlockSize].Im, &QDetNotOrderedFcFaBcBa);
+            oadd[1]=CrAnMask+NFermionShift+i;
+            oadd[0]=NFermionShift+j+(2+NBlockMaxVal)*A->BlockSize;
+            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.V[i*A->TMT.Nj+j+3*A->BlockSize].Re, A->TMT.V[i*A->TMT.Nj+j+3*A->BlockSize].Im, &QDetNotOrderedFcFaBcBa);
+            oadd[1]=CrAnMask+NFermionShift+i+A->BlockSize;
+            oadd[0]=NFermionShift+j+(2+NBlockMaxVal)*A->BlockSize;
+            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.V[(i+A->BlockSize)*A->TMT.Nj+j+3*A->BlockSize].Re, A->TMT.V[(i+A->BlockSize)*A->TMT.Nj+j+3*A->BlockSize].Im, &QDetNotOrderedFcFaBcBa);
+          }
+        }
+      }
+      /* tridiagonal matrix val to operator */
+      ia=2*A->BlockSize*A->BlockSize;
+      for(k=2;k<=Min(NBlockMaxVal,A->val.N);k++)
+      {
+        ifer=NFermionShift+k*A->BlockSize;
+        for(i=0;i<A->BlockSize;i++)
+        {
+          jfer=NFermionShift+k*A->BlockSize;
+          for(j=0;j<A->BlockSize;j++)
+          {
+            oadd[1]=CrAnMask+ifer;
+            oadd[0]=jfer;
+            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->val.a[ia].Re, A->val.a[ia].Im, &QDetNotOrderedFcFaBcBa);
+            ia++;
+            jfer++;
+          }
+          ifer++;
+        }
+      }
+      ib=2*A->BlockSize*A->BlockSize;
+      for(k=2;k<Min(NBlockMaxVal,A->val.N);k++)
+      {
+        ifer=NFermionShift+(k+1)*A->BlockSize;
+        for(i=0;i<A->BlockSize;i++)
+        {
+          jfer=NFermionShift+k*A->BlockSize;
+          for(j=0;j<A->BlockSize;j++)
+          {
+            oadd[1]=CrAnMask+ifer;
+            oadd[0]=jfer;
+            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->val.b[ib].Re, A->val.b[ib].Im, &QDetNotOrderedFcFaBcBa);
+            oadd[1]=CrAnMask+jfer;
+            oadd[0]=ifer;
+            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->val.b[ib].Re,-A->val.b[ib].Im, &QDetNotOrderedFcFaBcBa);
+            ib++;
+            jfer++;
+          }
+          ifer++;
+        }
+      }
+      /* tridiagonal matrix con to operator */
+      ia=2*A->BlockSize*A->BlockSize;
+      for(k=2+NBlockMaxVal;k<=Min(NBlockMaxCon+NBlockMaxVal,A->con.N+NBlockMaxVal);k++)
+      {
+        ifer=NFermionShift+k*A->BlockSize;
+        for(i=0;i<A->BlockSize;i++)
+        {
+          jfer=NFermionShift+k*A->BlockSize;
+          for(j=0;j<A->BlockSize;j++)
+          {
+            oadd[1]=CrAnMask+ifer;
+            oadd[0]=jfer;
+            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->con.a[ia].Re, A->con.a[ia].Im, &QDetNotOrderedFcFaBcBa);
+            ia++;
+            jfer++;
+          }
+          ifer++;
+        }
+      }
+      ib=2*A->BlockSize*A->BlockSize;
+      for(k=2+NBlockMaxVal;k<Min(NBlockMaxCon+NBlockMaxVal,A->con.N+NBlockMaxVal);k++)
+      {
+        ifer=NFermionShift+(k+1)*A->BlockSize;
+        for(i=0;i<A->BlockSize;i++)
+        {
+          jfer=NFermionShift+k*A->BlockSize;
+          for(j=0;j<A->BlockSize;j++)
+          {
+            oadd[1]=CrAnMask+ifer;
+            oadd[0]=jfer;
+            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->con.b[ib].Re, A->con.b[ib].Im, &QDetNotOrderedFcFaBcBa);
+            oadd[1]=CrAnMask+jfer;
+            oadd[0]=ifer;
+            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->con.b[ib].Re,-A->con.b[ib].Im, &QDetNotOrderedFcFaBcBa);
+            ib++;
+            jfer++;
+          }
+          ifer++;
+        }
+      }
+    }
+    else /* complex with spin */
+    {
+      /* transform matrix TMT to Operator spin up*/
+      for(i=0;i<A->BlockSize;i++)
+      {
+        for(j=0;j<A->BlockSize;j++)
+        {
+          oadd[1]=CrAnMask+NFermionShift+i;
+          oadd[0]=NFermionShift+j;
+          ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.V[i*A->TMT.Nj+j].Re, A->TMT.V[i*A->TMT.Nj+j].Im, &QDetNotOrderedFcFaBcBa);
+          oadd[1]=CrAnMask+NFermionShift+i+2*A->BlockSize;
+          oadd[0]=NFermionShift+j;
+          ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.V[(i+A->BlockSize)*A->TMT.Nj+j].Re, A->TMT.V[(i+A->BlockSize)*A->TMT.Nj+j].Im, &QDetNotOrderedFcFaBcBa);
+          oadd[1]=CrAnMask+NFermionShift+i;
+          oadd[0]=NFermionShift+j+2*A->BlockSize;
+          ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.V[i*A->TMT.Nj+j+A->BlockSize].Re, A->TMT.V[i*A->TMT.Nj+j+A->BlockSize].Im, &QDetNotOrderedFcFaBcBa);
+          oadd[1]=CrAnMask+NFermionShift+i+2*A->BlockSize;
+          oadd[0]=NFermionShift+j+2*A->BlockSize;
+          ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.V[(i+A->BlockSize)*A->TMT.Nj+j+A->BlockSize].Re, A->TMT.V[(i+A->BlockSize)*A->TMT.Nj+j+A->BlockSize].Im, &QDetNotOrderedFcFaBcBa);
+          if(NBlockMaxVal!=0)
+          {
+            oadd[1]=CrAnMask+NFermionShift+i+4*A->BlockSize;
+            oadd[0]=NFermionShift+j;
+            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.V[(i+2*A->BlockSize)*A->TMT.Nj+j].Re, A->TMT.V[(i+2*A->BlockSize)*A->TMT.Nj+j].Im, &QDetNotOrderedFcFaBcBa);
+            oadd[1]=CrAnMask+NFermionShift+i+4*A->BlockSize;
+            oadd[0]=NFermionShift+j+2*A->BlockSize;
+            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.V[(i+2*A->BlockSize)*A->TMT.Nj+j+A->BlockSize].Re, A->TMT.V[(i+2*A->BlockSize)*A->TMT.Nj+j+A->BlockSize].Im, &QDetNotOrderedFcFaBcBa);
+            oadd[1]=CrAnMask+NFermionShift+i;
+            oadd[0]=NFermionShift+j+4*A->BlockSize;
+            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.V[i*A->TMT.Nj+j+2*A->BlockSize].Re, A->TMT.V[i*A->TMT.Nj+j+2*A->BlockSize].Im, &QDetNotOrderedFcFaBcBa);
+            oadd[1]=CrAnMask+NFermionShift+i+2*A->BlockSize;
+            oadd[0]=NFermionShift+j+4*A->BlockSize;
+            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.V[(i+A->BlockSize)*A->TMT.Nj+j+2*A->BlockSize].Re, A->TMT.V[(i+A->BlockSize)*A->TMT.Nj+j+2*A->BlockSize].Im, &QDetNotOrderedFcFaBcBa);
+          }
+          if(NBlockMaxCon!=0)
+          {
+            oadd[1]=CrAnMask+NFermionShift+i+2*(2+NBlockMaxVal)*A->BlockSize;
+            oadd[0]=NFermionShift+j;
+            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.V[(i+3*A->BlockSize)*A->TMT.Nj+j].Re, A->TMT.V[(i+3*A->BlockSize)*A->TMT.Nj+j].Im, &QDetNotOrderedFcFaBcBa);
+            oadd[1]=CrAnMask+NFermionShift+i+2*(2+NBlockMaxVal)*A->BlockSize;
+            oadd[0]=NFermionShift+j+2*A->BlockSize;
+            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.V[(i+3*A->BlockSize)*A->TMT.Nj+j+A->BlockSize].Re, A->TMT.V[(i+3*A->BlockSize)*A->TMT.Nj+j+A->BlockSize].Im, &QDetNotOrderedFcFaBcBa);
+            oadd[1]=CrAnMask+NFermionShift+i;
+            oadd[0]=NFermionShift+j+2*(2+NBlockMaxVal)*A->BlockSize;
+            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.V[i*A->TMT.Nj+j+3*A->BlockSize].Re, A->TMT.V[i*A->TMT.Nj+j+3*A->BlockSize].Im, &QDetNotOrderedFcFaBcBa);
+            oadd[1]=CrAnMask+NFermionShift+i+2*A->BlockSize;
+            oadd[0]=NFermionShift+j+2*(2+NBlockMaxVal)*A->BlockSize;
+            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.V[(i+A->BlockSize)*A->TMT.Nj+j+3*A->BlockSize].Re, A->TMT.V[(i+A->BlockSize)*A->TMT.Nj+j+3*A->BlockSize].Im, &QDetNotOrderedFcFaBcBa);
+          }
+        }
+      }
+      /* tridiagonal matrix val to operator spin up*/
+      ia=2*A->BlockSize*A->BlockSize;
+      for(k=2;k<=Min(NBlockMaxVal,A->val.N);k++)
+      {
+        ifer=NFermionShift+2*k*A->BlockSize;
+        for(i=0;i<A->BlockSize;i++)
+        {
+          jfer=NFermionShift+2*k*A->BlockSize;
+          for(j=0;j<A->BlockSize;j++)
+          {
+            oadd[1]=CrAnMask+ifer;
+            oadd[0]=jfer;
+            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->val.a[ia].Re, A->val.a[ia].Im, &QDetNotOrderedFcFaBcBa);
+            ia++;
+            jfer++;
+          }
+          ifer++;
+        }
+      }
+      ib=2*A->BlockSize*A->BlockSize;
+      for(k=2;k<Min(NBlockMaxVal,A->val.N);k++)
+      {
+        ifer=NFermionShift+2*(k+1)*A->BlockSize;
+        for(i=0;i<A->BlockSize;i++)
+        {
+          jfer=NFermionShift+2*k*A->BlockSize;
+          for(j=0;j<A->BlockSize;j++)
+          {
+            oadd[1]=CrAnMask+ifer;
+            oadd[0]=jfer;
+            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->val.b[ib].Re, A->val.b[ib].Im, &QDetNotOrderedFcFaBcBa);
+            oadd[1]=CrAnMask+jfer;
+            oadd[0]=ifer;
+            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->val.b[ib].Re,-A->val.b[ib].Im, &QDetNotOrderedFcFaBcBa);
+            ib++;
+            jfer++;
+          }
+          ifer++;
+        }
+      }
+      /* tridiagonal matrix con to operator spin up*/
+      ia=2*A->BlockSize*A->BlockSize;
+      for(k=2+NBlockMaxVal;k<=Min(NBlockMaxCon+NBlockMaxVal,A->con.N+NBlockMaxVal);k++)
+      {
+        ifer=NFermionShift+2*k*A->BlockSize;
+        for(i=0;i<A->BlockSize;i++)
+        {
+          jfer=NFermionShift+2*k*A->BlockSize;
+          for(j=0;j<A->BlockSize;j++)
+          {
+            oadd[1]=CrAnMask+ifer;
+            oadd[0]=jfer;
+            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->con.a[ia].Re, A->con.a[ia].Im, &QDetNotOrderedFcFaBcBa);
+            ia++;
+            jfer++;
+          }
+          ifer++;
+        }
+      }
+      ib=2*A->BlockSize*A->BlockSize;
+      for(k=2+NBlockMaxVal;k<Min(NBlockMaxCon+NBlockMaxVal,A->con.N+NBlockMaxVal);k++)
+      {
+        ifer=NFermionShift+2*(k+1)*A->BlockSize;
+        for(i=0;i<A->BlockSize;i++)
+        {
+          jfer=NFermionShift+2*k*A->BlockSize;
+          for(j=0;j<A->BlockSize;j++)
+          {
+            oadd[1]=CrAnMask+ifer;
+            oadd[0]=jfer;
+            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->con.b[ib].Re, A->con.b[ib].Im, &QDetNotOrderedFcFaBcBa);
+            oadd[1]=CrAnMask+jfer;
+            oadd[0]=ifer;
+            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->con.b[ib].Re, A->con.b[ib].Im, &QDetNotOrderedFcFaBcBa);
+            ib++;
+            jfer++;
+          }
+          ifer++;
+        }
+      }
+      /* transform matrix TMT to Operator spin dn*/
+      for(i=0;i<A->BlockSize;i++)
+      {
+        for(j=0;j<A->BlockSize;j++)
+        {
+          oadd[1]=CrAnMask+NFermionShift+i+A->BlockSize;
+          oadd[0]=NFermionShift+j+A->BlockSize;
+          ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.V[i*A->TMT.Nj+j].Re, A->TMT.V[i*A->TMT.Nj+j].Im, &QDetNotOrderedFcFaBcBa);
+          oadd[1]=CrAnMask+NFermionShift+i+3*A->BlockSize;
+          oadd[0]=NFermionShift+j+A->BlockSize;
+          ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.V[(i+A->BlockSize)*A->TMT.Nj+j].Re, A->TMT.V[(i+A->BlockSize)*A->TMT.Nj+j].Im, &QDetNotOrderedFcFaBcBa);
+          oadd[1]=CrAnMask+NFermionShift+i+A->BlockSize;
+          oadd[0]=NFermionShift+j+3*A->BlockSize;
+          ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.V[i*A->TMT.Nj+j+A->BlockSize].Re, A->TMT.V[i*A->TMT.Nj+j+A->BlockSize].Im, &QDetNotOrderedFcFaBcBa);
+          oadd[1]=CrAnMask+NFermionShift+i+3*A->BlockSize;
+          oadd[0]=NFermionShift+j+3*A->BlockSize;
+          ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.V[(i+A->BlockSize)*A->TMT.Nj+j+A->BlockSize].Re, A->TMT.V[(i+A->BlockSize)*A->TMT.Nj+j+A->BlockSize].Im, &QDetNotOrderedFcFaBcBa);
+          if(NBlockMaxVal!=0)
+          {
+            oadd[1]=CrAnMask+NFermionShift+i+5*A->BlockSize;
+            oadd[0]=NFermionShift+j+A->BlockSize;
+            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.V[(i+2*A->BlockSize)*A->TMT.Nj+j].Re, A->TMT.V[(i+2*A->BlockSize)*A->TMT.Nj+j].Im, &QDetNotOrderedFcFaBcBa);
+            oadd[1]=CrAnMask+NFermionShift+i+5*A->BlockSize;
+            oadd[0]=NFermionShift+j+3*A->BlockSize;
+            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.V[(i+2*A->BlockSize)*A->TMT.Nj+j+A->BlockSize].Re, A->TMT.V[(i+2*A->BlockSize)*A->TMT.Nj+j+A->BlockSize].Im, &QDetNotOrderedFcFaBcBa);
+            oadd[1]=CrAnMask+NFermionShift+i+A->BlockSize;
+            oadd[0]=NFermionShift+j+5*A->BlockSize;
+            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.V[i*A->TMT.Nj+j+2*A->BlockSize].Re, A->TMT.V[i*A->TMT.Nj+j+2*A->BlockSize].Im, &QDetNotOrderedFcFaBcBa);
+            oadd[1]=CrAnMask+NFermionShift+i+3*A->BlockSize;
+            oadd[0]=NFermionShift+j+5*A->BlockSize;
+            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.V[(i+A->BlockSize)*A->TMT.Nj+j+2*A->BlockSize].Re, A->TMT.V[(i+A->BlockSize)*A->TMT.Nj+j+2*A->BlockSize].Im, &QDetNotOrderedFcFaBcBa);
+          }
+          if(NBlockMaxCon!=0)
+          {
+            oadd[1]=CrAnMask+NFermionShift+i+2*(2+NBlockMaxVal)*A->BlockSize+A->BlockSize;
+            oadd[0]=NFermionShift+j+A->BlockSize;
+            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.V[(i+3*A->BlockSize)*A->TMT.Nj+j].Re, A->TMT.V[(i+3*A->BlockSize)*A->TMT.Nj+j].Im, &QDetNotOrderedFcFaBcBa);
+            oadd[1]=CrAnMask+NFermionShift+i+2*(2+NBlockMaxVal)*A->BlockSize+A->BlockSize;
+            oadd[0]=NFermionShift+j+3*A->BlockSize;
+            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.V[(i+3*A->BlockSize)*A->TMT.Nj+j+A->BlockSize].Re, A->TMT.V[(i+3*A->BlockSize)*A->TMT.Nj+j+A->BlockSize].Im, &QDetNotOrderedFcFaBcBa);
+            oadd[1]=CrAnMask+NFermionShift+i+A->BlockSize;
+            oadd[0]=NFermionShift+j+2*(2+NBlockMaxVal)*A->BlockSize+A->BlockSize;
+            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.V[i*A->TMT.Nj+j+3*A->BlockSize].Re, A->TMT.V[i*A->TMT.Nj+j+3*A->BlockSize].Im, &QDetNotOrderedFcFaBcBa);
+            oadd[1]=CrAnMask+NFermionShift+i+3*A->BlockSize;
+            oadd[0]=NFermionShift+j+2*(2+NBlockMaxVal)*A->BlockSize+A->BlockSize;
+            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.V[(i+A->BlockSize)*A->TMT.Nj+j+3*A->BlockSize].Re, A->TMT.V[(i+A->BlockSize)*A->TMT.Nj+j+3*A->BlockSize].Im, &QDetNotOrderedFcFaBcBa);
+          }
+        }
+      }
+      /* tridiagonal matrix val to operator spin dn*/
+      ia=2*A->BlockSize*A->BlockSize;
+      for(k=2;k<=Min(NBlockMaxVal,A->val.N);k++)
+      {
+        ifer=NFermionShift+2*k*A->BlockSize+A->BlockSize;
+        for(i=0;i<A->BlockSize;i++)
+        {
+          jfer=NFermionShift+2*k*A->BlockSize+A->BlockSize;
+          for(j=0;j<A->BlockSize;j++)
+          {
+            oadd[1]=CrAnMask+ifer;
+            oadd[0]=jfer;
+            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->val.a[ia].Re, A->val.a[ia].Im, &QDetNotOrderedFcFaBcBa);
+            ia++;
+            jfer++;
+          }
+          ifer++;
+        }
+      }
+      ib=2*A->BlockSize*A->BlockSize;
+      for(k=2;k<Min(NBlockMaxVal,A->val.N);k++)
+      {
+        ifer=NFermionShift+2*(k+1)*A->BlockSize+A->BlockSize;
+        for(i=0;i<A->BlockSize;i++)
+        {
+          jfer=NFermionShift+2*k*A->BlockSize+A->BlockSize;
+          for(j=0;j<A->BlockSize;j++)
+          {
+            oadd[1]=CrAnMask+ifer;
+            oadd[0]=jfer;
+            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->val.b[ib].Re, A->val.b[ib].Im, &QDetNotOrderedFcFaBcBa);
+            oadd[1]=CrAnMask+jfer;
+            oadd[0]=ifer;
+            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->val.b[ib].Re,-A->val.b[ib].Im, &QDetNotOrderedFcFaBcBa);
+            ib++;
+            jfer++;
+          }
+          ifer++;
+        }
+      }
+      /* tridiagonal matrix con to operator spin dn*/
+      ia=2*A->BlockSize*A->BlockSize;
+      for(k=2+NBlockMaxVal;k<=Min(NBlockMaxCon+NBlockMaxVal,A->con.N+NBlockMaxVal);k++)
+      {
+        ifer=NFermionShift+2*k*A->BlockSize+A->BlockSize;
+        for(i=0;i<A->BlockSize;i++)
+        {
+          jfer=NFermionShift+2*k*A->BlockSize+A->BlockSize;
+          for(j=0;j<A->BlockSize;j++)
+          {
+            oadd[1]=CrAnMask+ifer;
+            oadd[0]=jfer;
+            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->con.a[ia].Re, A->con.a[ia].Im, &QDetNotOrderedFcFaBcBa);
+            ia++;
+            jfer++;
+          }
+          ifer++;
+        }
+      }
+      ib=2*A->BlockSize*A->BlockSize;
+      for(k=2+NBlockMaxVal;k<Min(NBlockMaxCon+NBlockMaxVal,A->con.N+NBlockMaxVal);k++)
+      {
+        ifer=NFermionShift+2*(k+1)*A->BlockSize+A->BlockSize;
+        for(i=0;i<A->BlockSize;i++)
+        {
+          jfer=NFermionShift+2*k*A->BlockSize+A->BlockSize;
+          for(j=0;j<A->BlockSize;j++)
+          {
+            oadd[1]=CrAnMask+ifer;
+            oadd[0]=jfer;
+            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->con.b[ib].Re, A->con.b[ib].Im, &QDetNotOrderedFcFaBcBa);
+            oadd[1]=CrAnMask+jfer;
+            oadd[0]=ifer;
+            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->con.b[ib].Re,-A->con.b[ib].Im, &QDetNotOrderedFcFaBcBa);
+            ib++;
+            jfer++;
+          }
+          ifer++;
+        }
+      }
+    }
   }
   else /* H is real */
   {
     if(Spin==0)
     {
-      /* copy matrix TMT to Operator */
+      /* transform matrix TMT to Operator */
       for(i=0;i<A->BlockSize;i++)
       {
         for(j=0;j<A->BlockSize;j++)
@@ -305,7 +698,6 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(OperatorType *co
           oadd[1]=CrAnMask+NFermionShift+i+A->BlockSize;
           oadd[0]=NFermionShift+j+A->BlockSize;
           RealOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.VRe[(i+A->BlockSize)*A->TMT.Nj+j+A->BlockSize], &QDetNotOrderedFcFaBcBa);
-          
           if(NBlockMaxVal!=0)
           {
             oadd[1]=CrAnMask+NFermionShift+i+2*A->BlockSize;
@@ -321,7 +713,6 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(OperatorType *co
             oadd[0]=NFermionShift+j+2*A->BlockSize;
             RealOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.VRe[(i+A->BlockSize)*A->TMT.Nj+j+2*A->BlockSize], &QDetNotOrderedFcFaBcBa);
           }
-          
           if(NBlockMaxCon!=0)
           {
             oadd[1]=CrAnMask+NFermionShift+i+(2+NBlockMaxVal)*A->BlockSize;
@@ -340,7 +731,7 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(OperatorType *co
           
         }
       }
-      
+      /* tridiagonal matrix val to operator */
       ia=2*A->BlockSize*A->BlockSize;
       for(k=2;k<=Min(NBlockMaxVal,A->val.N);k++)
       {
@@ -359,7 +750,6 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(OperatorType *co
           ifer++;
         }
       }
-      
       ib=2*A->BlockSize*A->BlockSize;
       for(k=2;k<Min(NBlockMaxVal,A->val.N);k++)
       {
@@ -381,7 +771,7 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(OperatorType *co
           ifer++;
         }
       }
-      
+      /* tridiagonal matrix con to operator */
       ia=2*A->BlockSize*A->BlockSize;
       for(k=2+NBlockMaxVal;k<=Min(NBlockMaxCon+NBlockMaxVal,A->con.N+NBlockMaxVal);k++)
       {
@@ -400,7 +790,6 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(OperatorType *co
           ifer++;
         }
       }
-      
       ib=2*A->BlockSize*A->BlockSize;
       for(k=2+NBlockMaxVal;k<Min(NBlockMaxCon+NBlockMaxVal,A->con.N+NBlockMaxVal);k++)
       {
@@ -422,11 +811,267 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(OperatorType *co
           ifer++;
         }
       }
-      
     }
     else /* real with spin */
     {
-    
+      /* transform matrix TMT to Operator spin up*/
+      for(i=0;i<A->BlockSize;i++)
+      {
+        for(j=0;j<A->BlockSize;j++)
+        {
+          oadd[1]=CrAnMask+NFermionShift+i;
+          oadd[0]=NFermionShift+j;
+          RealOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.VRe[i*A->TMT.Nj+j], &QDetNotOrderedFcFaBcBa);
+          oadd[1]=CrAnMask+NFermionShift+i+2*A->BlockSize;
+          oadd[0]=NFermionShift+j;
+          RealOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.VRe[(i+A->BlockSize)*A->TMT.Nj+j], &QDetNotOrderedFcFaBcBa);
+          oadd[1]=CrAnMask+NFermionShift+i;
+          oadd[0]=NFermionShift+j+2*A->BlockSize;
+          RealOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.VRe[i*A->TMT.Nj+j+A->BlockSize], &QDetNotOrderedFcFaBcBa);
+          oadd[1]=CrAnMask+NFermionShift+i+2*A->BlockSize;
+          oadd[0]=NFermionShift+j+2*A->BlockSize;
+          RealOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.VRe[(i+A->BlockSize)*A->TMT.Nj+j+A->BlockSize], &QDetNotOrderedFcFaBcBa);
+          if(NBlockMaxVal!=0)
+          {
+            oadd[1]=CrAnMask+NFermionShift+i+4*A->BlockSize;
+            oadd[0]=NFermionShift+j;
+            RealOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.VRe[(i+2*A->BlockSize)*A->TMT.Nj+j], &QDetNotOrderedFcFaBcBa);
+            oadd[1]=CrAnMask+NFermionShift+i+4*A->BlockSize;
+            oadd[0]=NFermionShift+j+2*A->BlockSize;
+            RealOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.VRe[(i+2*A->BlockSize)*A->TMT.Nj+j+A->BlockSize], &QDetNotOrderedFcFaBcBa);
+            oadd[1]=CrAnMask+NFermionShift+i;
+            oadd[0]=NFermionShift+j+4*A->BlockSize;
+            RealOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.VRe[i*A->TMT.Nj+j+2*A->BlockSize], &QDetNotOrderedFcFaBcBa);
+            oadd[1]=CrAnMask+NFermionShift+i+2*A->BlockSize;
+            oadd[0]=NFermionShift+j+4*A->BlockSize;
+            RealOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.VRe[(i+A->BlockSize)*A->TMT.Nj+j+2*A->BlockSize], &QDetNotOrderedFcFaBcBa);
+          }
+          if(NBlockMaxCon!=0)
+          {
+            oadd[1]=CrAnMask+NFermionShift+i+2*(2+NBlockMaxVal)*A->BlockSize;
+            oadd[0]=NFermionShift+j;
+            RealOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.VRe[(i+3*A->BlockSize)*A->TMT.Nj+j], &QDetNotOrderedFcFaBcBa);
+            oadd[1]=CrAnMask+NFermionShift+i+2*(2+NBlockMaxVal)*A->BlockSize;
+            oadd[0]=NFermionShift+j+2*A->BlockSize;
+            RealOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.VRe[(i+3*A->BlockSize)*A->TMT.Nj+j+A->BlockSize], &QDetNotOrderedFcFaBcBa);
+            oadd[1]=CrAnMask+NFermionShift+i;
+            oadd[0]=NFermionShift+j+2*(2+NBlockMaxVal)*A->BlockSize;
+            RealOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.VRe[i*A->TMT.Nj+j+3*A->BlockSize], &QDetNotOrderedFcFaBcBa);
+            oadd[1]=CrAnMask+NFermionShift+i+2*A->BlockSize;
+            oadd[0]=NFermionShift+j+2*(2+NBlockMaxVal)*A->BlockSize;
+            RealOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.VRe[(i+A->BlockSize)*A->TMT.Nj+j+3*A->BlockSize], &QDetNotOrderedFcFaBcBa);
+          }
+        }
+      }
+      /* tridiagonal matrix val to operator spin up*/
+      ia=2*A->BlockSize*A->BlockSize;
+      for(k=2;k<=Min(NBlockMaxVal,A->val.N);k++)
+      {
+        ifer=NFermionShift+2*k*A->BlockSize;
+        for(i=0;i<A->BlockSize;i++)
+        {
+          jfer=NFermionShift+2*k*A->BlockSize;
+          for(j=0;j<A->BlockSize;j++)
+          {
+            oadd[1]=CrAnMask+ifer;
+            oadd[0]=jfer;
+            RealOperatorAddLaderNormalOrder(H, oadd, 2, A->val.aRe[ia], &QDetNotOrderedFcFaBcBa);
+            ia++;
+            jfer++;
+          }
+          ifer++;
+        }
+      }
+      ib=2*A->BlockSize*A->BlockSize;
+      for(k=2;k<Min(NBlockMaxVal,A->val.N);k++)
+      {
+        ifer=NFermionShift+2*(k+1)*A->BlockSize;
+        for(i=0;i<A->BlockSize;i++)
+        {
+          jfer=NFermionShift+2*k*A->BlockSize;
+          for(j=0;j<A->BlockSize;j++)
+          {
+            oadd[1]=CrAnMask+ifer;
+            oadd[0]=jfer;
+            RealOperatorAddLaderNormalOrder(H, oadd, 2, A->val.bRe[ib], &QDetNotOrderedFcFaBcBa);
+            oadd[1]=CrAnMask+jfer;
+            oadd[0]=ifer;
+            RealOperatorAddLaderNormalOrder(H, oadd, 2, A->val.bRe[ib], &QDetNotOrderedFcFaBcBa);
+            ib++;
+            jfer++;
+          }
+          ifer++;
+        }
+      }
+      /* tridiagonal matrix con to operator spin up*/
+      ia=2*A->BlockSize*A->BlockSize;
+      for(k=2+NBlockMaxVal;k<=Min(NBlockMaxCon+NBlockMaxVal,A->con.N+NBlockMaxVal);k++)
+      {
+        ifer=NFermionShift+2*k*A->BlockSize;
+        for(i=0;i<A->BlockSize;i++)
+        {
+          jfer=NFermionShift+2*k*A->BlockSize;
+          for(j=0;j<A->BlockSize;j++)
+          {
+            oadd[1]=CrAnMask+ifer;
+            oadd[0]=jfer;
+            RealOperatorAddLaderNormalOrder(H, oadd, 2, A->con.aRe[ia], &QDetNotOrderedFcFaBcBa);
+            ia++;
+            jfer++;
+          }
+          ifer++;
+        }
+      }
+      ib=2*A->BlockSize*A->BlockSize;
+      for(k=2+NBlockMaxVal;k<Min(NBlockMaxCon+NBlockMaxVal,A->con.N+NBlockMaxVal);k++)
+      {
+        ifer=NFermionShift+2*(k+1)*A->BlockSize;
+        for(i=0;i<A->BlockSize;i++)
+        {
+          jfer=NFermionShift+2*k*A->BlockSize;
+          for(j=0;j<A->BlockSize;j++)
+          {
+            oadd[1]=CrAnMask+ifer;
+            oadd[0]=jfer;
+            RealOperatorAddLaderNormalOrder(H, oadd, 2, A->con.bRe[ib], &QDetNotOrderedFcFaBcBa);
+            oadd[1]=CrAnMask+jfer;
+            oadd[0]=ifer;
+            RealOperatorAddLaderNormalOrder(H, oadd, 2, A->con.bRe[ib], &QDetNotOrderedFcFaBcBa);
+            ib++;
+            jfer++;
+          }
+          ifer++;
+        }
+      }
+      /* transform matrix TMT to Operator spin dn*/
+      for(i=0;i<A->BlockSize;i++)
+      {
+        for(j=0;j<A->BlockSize;j++)
+        {
+          oadd[1]=CrAnMask+NFermionShift+i+A->BlockSize;
+          oadd[0]=NFermionShift+j+A->BlockSize;
+          RealOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.VRe[i*A->TMT.Nj+j], &QDetNotOrderedFcFaBcBa);
+          oadd[1]=CrAnMask+NFermionShift+i+3*A->BlockSize;
+          oadd[0]=NFermionShift+j+A->BlockSize;
+          RealOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.VRe[(i+A->BlockSize)*A->TMT.Nj+j], &QDetNotOrderedFcFaBcBa);
+          oadd[1]=CrAnMask+NFermionShift+i+A->BlockSize;
+          oadd[0]=NFermionShift+j+3*A->BlockSize;
+          RealOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.VRe[i*A->TMT.Nj+j+A->BlockSize], &QDetNotOrderedFcFaBcBa);
+          oadd[1]=CrAnMask+NFermionShift+i+3*A->BlockSize;
+          oadd[0]=NFermionShift+j+3*A->BlockSize;
+          RealOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.VRe[(i+A->BlockSize)*A->TMT.Nj+j+A->BlockSize], &QDetNotOrderedFcFaBcBa);
+          if(NBlockMaxVal!=0)
+          {
+            oadd[1]=CrAnMask+NFermionShift+i+5*A->BlockSize;
+            oadd[0]=NFermionShift+j+A->BlockSize;
+            RealOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.VRe[(i+2*A->BlockSize)*A->TMT.Nj+j], &QDetNotOrderedFcFaBcBa);
+            oadd[1]=CrAnMask+NFermionShift+i+5*A->BlockSize;
+            oadd[0]=NFermionShift+j+3*A->BlockSize;
+            RealOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.VRe[(i+2*A->BlockSize)*A->TMT.Nj+j+A->BlockSize], &QDetNotOrderedFcFaBcBa);
+            oadd[1]=CrAnMask+NFermionShift+i+A->BlockSize;
+            oadd[0]=NFermionShift+j+5*A->BlockSize;
+            RealOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.VRe[i*A->TMT.Nj+j+2*A->BlockSize], &QDetNotOrderedFcFaBcBa);
+            oadd[1]=CrAnMask+NFermionShift+i+3*A->BlockSize;
+            oadd[0]=NFermionShift+j+5*A->BlockSize;
+            RealOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.VRe[(i+A->BlockSize)*A->TMT.Nj+j+2*A->BlockSize], &QDetNotOrderedFcFaBcBa);
+          }
+          if(NBlockMaxCon!=0)
+          {
+            oadd[1]=CrAnMask+NFermionShift+i+2*(2+NBlockMaxVal)*A->BlockSize+A->BlockSize;
+            oadd[0]=NFermionShift+j+A->BlockSize;
+            RealOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.VRe[(i+3*A->BlockSize)*A->TMT.Nj+j], &QDetNotOrderedFcFaBcBa);
+            oadd[1]=CrAnMask+NFermionShift+i+2*(2+NBlockMaxVal)*A->BlockSize+A->BlockSize;
+            oadd[0]=NFermionShift+j+3*A->BlockSize;
+            RealOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.VRe[(i+3*A->BlockSize)*A->TMT.Nj+j+A->BlockSize], &QDetNotOrderedFcFaBcBa);
+            oadd[1]=CrAnMask+NFermionShift+i+A->BlockSize;
+            oadd[0]=NFermionShift+j+2*(2+NBlockMaxVal)*A->BlockSize+A->BlockSize;
+            RealOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.VRe[i*A->TMT.Nj+j+3*A->BlockSize], &QDetNotOrderedFcFaBcBa);
+            oadd[1]=CrAnMask+NFermionShift+i+3*A->BlockSize;
+            oadd[0]=NFermionShift+j+2*(2+NBlockMaxVal)*A->BlockSize+A->BlockSize;
+            RealOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.VRe[(i+A->BlockSize)*A->TMT.Nj+j+3*A->BlockSize], &QDetNotOrderedFcFaBcBa);
+          }
+        }
+      }
+      /* tridiagonal matrix val to operator spin dn*/
+      ia=2*A->BlockSize*A->BlockSize;
+      for(k=2;k<=Min(NBlockMaxVal,A->val.N);k++)
+      {
+        ifer=NFermionShift+2*k*A->BlockSize+A->BlockSize;
+        for(i=0;i<A->BlockSize;i++)
+        {
+          jfer=NFermionShift+2*k*A->BlockSize+A->BlockSize;
+          for(j=0;j<A->BlockSize;j++)
+          {
+            oadd[1]=CrAnMask+ifer;
+            oadd[0]=jfer;
+            RealOperatorAddLaderNormalOrder(H, oadd, 2, A->val.aRe[ia], &QDetNotOrderedFcFaBcBa);
+            ia++;
+            jfer++;
+          }
+          ifer++;
+        }
+      }
+      ib=2*A->BlockSize*A->BlockSize;
+      for(k=2;k<Min(NBlockMaxVal,A->val.N);k++)
+      {
+        ifer=NFermionShift+2*(k+1)*A->BlockSize+A->BlockSize;
+        for(i=0;i<A->BlockSize;i++)
+        {
+          jfer=NFermionShift+2*k*A->BlockSize+A->BlockSize;
+          for(j=0;j<A->BlockSize;j++)
+          {
+            oadd[1]=CrAnMask+ifer;
+            oadd[0]=jfer;
+            RealOperatorAddLaderNormalOrder(H, oadd, 2, A->val.bRe[ib], &QDetNotOrderedFcFaBcBa);
+            oadd[1]=CrAnMask+jfer;
+            oadd[0]=ifer;
+            RealOperatorAddLaderNormalOrder(H, oadd, 2, A->val.bRe[ib], &QDetNotOrderedFcFaBcBa);
+            ib++;
+            jfer++;
+          }
+          ifer++;
+        }
+      }
+      /* tridiagonal matrix con to operator spin dn*/
+      ia=2*A->BlockSize*A->BlockSize;
+      for(k=2+NBlockMaxVal;k<=Min(NBlockMaxCon+NBlockMaxVal,A->con.N+NBlockMaxVal);k++)
+      {
+        ifer=NFermionShift+2*k*A->BlockSize+A->BlockSize;
+        for(i=0;i<A->BlockSize;i++)
+        {
+          jfer=NFermionShift+2*k*A->BlockSize+A->BlockSize;
+          for(j=0;j<A->BlockSize;j++)
+          {
+            oadd[1]=CrAnMask+ifer;
+            oadd[0]=jfer;
+            RealOperatorAddLaderNormalOrder(H, oadd, 2, A->con.aRe[ia], &QDetNotOrderedFcFaBcBa);
+            ia++;
+            jfer++;
+          }
+          ifer++;
+        }
+      }
+      ib=2*A->BlockSize*A->BlockSize;
+      for(k=2+NBlockMaxVal;k<Min(NBlockMaxCon+NBlockMaxVal,A->con.N+NBlockMaxVal);k++)
+      {
+        ifer=NFermionShift+2*(k+1)*A->BlockSize+A->BlockSize;
+        for(i=0;i<A->BlockSize;i++)
+        {
+          jfer=NFermionShift+2*k*A->BlockSize+A->BlockSize;
+          for(j=0;j<A->BlockSize;j++)
+          {
+            oadd[1]=CrAnMask+ifer;
+            oadd[0]=jfer;
+            RealOperatorAddLaderNormalOrder(H, oadd, 2, A->con.bRe[ib], &QDetNotOrderedFcFaBcBa);
+            oadd[1]=CrAnMask+jfer;
+            oadd[0]=ifer;
+            RealOperatorAddLaderNormalOrder(H, oadd, 2, A->con.bRe[ib], &QDetNotOrderedFcFaBcBa);
+            ib++;
+            jfer++;
+          }
+          ifer++;
+        }
+      }
     }
   }
   return 0;
