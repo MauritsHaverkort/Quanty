@@ -100,7 +100,7 @@ uint32_t BlockListOfPolesToSpectra(BlockListOfPoles const A, SpectraType *G, dou
         wplus=((A.VRe[j]-Emin)/G[0].dE)-iEmin;
         wmin=1-wplus;
       }
-      /* add the real part of the lorenzian to energy iEmin and iEplus */
+      /* add the im part of the lorenzian to energy iEmin and iEplus */
       for(i=0;i<A.BlockSize*A.BlockSize;i++)
       {
         Gtemp[i].Im[iEmin]-=wmin*A.VRe[j+i+1];
@@ -816,12 +816,12 @@ uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(BlockListOfPoles co
       for(j=0;j<A->BlockSize;j++)
       {
         // copy bv_0
-        T.VRe[i*T.Nj+j] = B->val.bRe[i*A->BlockSize+j];
+        T.VRe[i*T.Nj+j] = B->val.bRe[j*A->BlockSize+i];
         // copy bv_0
-        T.VRe[(i+A->BlockSize)*T.Nj+j+A->BlockSize] = -B->val.bRe[i*A->BlockSize+j];
+        T.VRe[(i+A->BlockSize)*T.Nj+j+A->BlockSize] = -B->val.bRe[j*A->BlockSize+i];
         // copy bc_0
-        T.VRe[(i+A->BlockSize)*T.Nj+j] = B->con.bRe[i*A->BlockSize+j];
-        // copy bc_0^+
+        T.VRe[(i+A->BlockSize)*T.Nj+j] = B->con.bRe[j*A->BlockSize+i];
+        // copy bc_0
         T.VRe[i*T.Nj+j+A->BlockSize] = B->con.bRe[j*A->BlockSize+i];
         
         // copy av_1
@@ -843,7 +843,8 @@ uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(BlockListOfPoles co
       }
     }
   }
-  CompactMatrixMultiply3('N', 'N', 'C', &T, &M, &T, &(B->TMT));
+  CompactMatrixGramSchmidtOrthogonalizeCol(&T, DBL_EPSILON);
+  CompactMatrixMultiply3('C', 'N', 'N', &T, &M, &T, &(B->TMT));
   FreeCompactMatrix(&T);
   FreeCompactMatrix(&M);
   

@@ -1649,6 +1649,103 @@ uint32_t CompactMatrixSqrtold(CompactMatrixType const *A, CompactMatrixType *Sqr
 /*
  *
  */
+uint32_t BlockNaturalImpurityOrbitalMatrixToCompactMatrix(BlockNaturalImpurityOrbitalMatrixType const * A, CompactMatrixType * const B)
+{
+  int i,j,k,apos,bposL,bposR;
+  B->QComplex=A->QComplex;
+  B->Ni=(Max(1,A->val.N)+Max(1,A->con.N))*A->BlockSize;
+  B->Nj=(A->val.N+A->con.N)*A->BlockSize;
+  if(InitCompactMatrix(B))
+  {
+    printf("InitCompactMatrix failed in BlockNaturalImpurityOrbitalMatrixToCompactMatrix\n");
+    return 1;
+  }
+  if(A->QComplex)
+  {
+    
+  }
+  else //real
+  {
+    for(i=0;i<3*A->BlockSize;i++)
+    {
+      memcpy(&(B->VRe[i*B->Nj]), &(A->TMT.VRe[i*A->TMT.Nj]), 3*A->BlockSize*sizeof(double));
+    }
+    for(i=0;i<A->BlockSize;i++)
+    {
+      memcpy(&(B->VRe[(i+A->BlockSize*Max(2,A->val.N+1))*B->Nj]), &(A->TMT.VRe[(i+3*A->BlockSize)*A->TMT.Nj]), 2*A->BlockSize*sizeof(double));
+    }
+    for(i=0;i<2*A->BlockSize;i++)
+    {
+      memcpy(&(B->VRe[(i*B->Nj+A->BlockSize*Max(2,A->val.N+1))]), &(A->TMT.VRe[(i)*A->TMT.Nj+3*A->BlockSize]), A->BlockSize*sizeof(double));
+    }
+    for(k=2;k<=A->val.N;k++)
+    {
+      for(i=0;i<A->BlockSize;i++)
+      {
+        memcpy(&(B->VRe[k*A->BlockSize*B->Nj+k*A->BlockSize+i*B->Nj]), &(A->val.aRe[k*A->BlockSize*A->BlockSize+i*A->BlockSize]), A->BlockSize*sizeof(double));
+      }
+    }
+    for(k=2;k<=A->con.N;k++)
+    {
+      for(i=0;i<A->BlockSize;i++)
+      {
+        memcpy(&(B->VRe[(k+Max(1,A->val.N)-1)*A->BlockSize*B->Nj+(k+Max(1,A->val.N)-1)*A->BlockSize+i*B->Nj]), &(A->con.aRe[k*A->BlockSize*A->BlockSize+i*A->BlockSize]), A->BlockSize*sizeof(double));
+      }
+    }
+    
+    apos=2*A->BlockSize*A->BlockSize;
+    bposL=2*A->BlockSize*B->Nj+3*A->BlockSize;
+    bposR=3*A->BlockSize*B->Nj+2*A->BlockSize;
+    for(k=2;k<A->val.N;k++)
+    {
+      for(i=0;i<A->BlockSize;i++)
+      {
+        for(j=0;j<A->BlockSize;j++)
+        {
+          B->VRe[bposL]=A->val.bRe[apos];
+          B->VRe[bposR]=A->val.bRe[apos];
+          bposR++;
+          bposL+=B->Nj;
+          apos++;
+        }
+        bposR+=B->Nj-A->BlockSize;
+        bposL+=(1-A->BlockSize*B->Nj);
+      }
+      bposR+=A->BlockSize;
+      bposL+=(A->BlockSize*B->Nj);
+    }
+    
+    apos=2*A->BlockSize*A->BlockSize;
+    k=1+Max(1,A->val.N);
+    bposL=k*A->BlockSize*B->Nj+(k+1)*A->BlockSize;
+    bposR=(k+1)*A->BlockSize*B->Nj+k*A->BlockSize;
+    for(k=2;k<A->con.N;k++)
+    {
+      for(i=0;i<A->BlockSize;i++)
+      {
+        for(j=0;j<A->BlockSize;j++)
+        {
+          B->VRe[bposL]=A->con.bRe[apos];
+          B->VRe[bposR]=A->con.bRe[apos];
+          bposR++;
+          bposL+=B->Nj;
+          apos++;
+        }
+        bposR+=B->Nj-A->BlockSize;
+        bposL+=(1-A->BlockSize*B->Nj);
+      }
+      bposR+=A->BlockSize;
+      bposL+=(A->BlockSize*B->Nj);
+    }
+    
+  }
+  return 0;
+}
+
+
+/*
+ *
+ */
 uint32_t BlockTriDiagonalMatrixToCompactMatrix(BlockTriDiagonalMatrixType const * A, CompactMatrixType * const B)
 {
   int i,j,k,apos,bpos,bposL,bposR;
@@ -1744,6 +1841,140 @@ uint32_t BlockTriDiagonalMatrixToCompactMatrix(BlockTriDiagonalMatrixType const 
   return 0;
 }
 
+/*
+ *
+ */
+uint32_t CompactMatrixToSpectra(CompactMatrixType const *A, SpectraType * const G, uint32_t const BlockSize, double Emin, double Emax, uint32_t N)
+{
+  SpectraType *Gtemp;
+  CompactMatrixType fun;
+  int i,j,k,iEmin,iEplus;
+  double *val,wmin,wplus;
+  if(A->Ni!=A->Nj)
+  {
+    printf("CompactMatrixToSpectra expects square matrix as imput Ni=%i Nj=%i\n",A->Ni,A->Nj);
+    return 1;
+  }
+  if(BlockSize>A->Ni)
+  {
+    printf("CompactMatrixToSpectra want more spectra (%i) then elements in matrix Ni=Nj=%i\n",BlockSize,A->Nj);
+    return 1;
+  }
+  val=malloc(A->Ni*sizeof(double));
+  if(val==NULL)
+  {
+    printf("malloc failed in CompactMatrixToSpectra\n");
+    return 1;
+  }
+  G[0].N=N;
+  G[0].Emin=Emin;
+  G[0].Emax=Emax;
+  G[0].EminPole=Emin;
+  G[0].EmaxPole=Emax;
+  G[0].dE=(Emax-Emin)/((double)N);
+  G[0].Gamma=0;
+  for(i=0;i<BlockSize*BlockSize;i++)
+  {
+    SpectrumAllocate(G[0], &(G[i]));
+  }
+  if(CompactMatrixEigensystem(A, &fun, val))
+  {
+    printf("CompactMatrixEigensystem failed in CompactMatrixToSpectra\n");
+    return 1;
+  }
+  if(A->QComplex)
+  {
+    
+  }
+  else
+  {
+    Gtemp=G;
+    for(k=0;k<fun.Ni;k++)
+    {
+      if(val[k]<=Emin)
+      {
+        iEmin=0;
+        iEplus=0;
+        wmin=1;
+        wplus=0;
+      }
+      else if(val[k]>=Emax)
+      {
+        iEmin=N;
+        iEplus=N;
+        wmin=1;
+        wplus=0;
+      }
+      else
+      {
+        iEmin=(uint32_t)((val[k]-Emin)/G[0].dE);
+        iEplus=iEmin+1;
+        wplus=((val[k]-Emin)/G[0].dE)-iEmin;
+        wmin=1-wplus;
+      }
+      /* add the im part of the lorenzian to energy iEmin and iEplus */
+      for(i=0;i<BlockSize;i++)
+      {
+        for(j=0;j<BlockSize;j++)
+        {
+          G[i*BlockSize+j].Im[iEmin] -= wmin *fun.VRe[k*fun.Nj+i]*fun.VRe[k*fun.Nj+j];
+          G[i*BlockSize+j].Im[iEplus]-= wplus*fun.VRe[k*fun.Nj+i]*fun.VRe[k*fun.Nj+j];
+        }
+      }
+    }
+  }
+  /* the im part of the lorenzians is there, we now need to add the real part */
+  /* note that in the complex case some lorenzians have a complex pre-factor */
+  /* weight w_i at energy E_i contributes w_i / (w - E_i) to all energies w, except at w=E_i */
+  for(i=0;i<BlockSize*BlockSize;i++)
+  {
+    for(j=0;j<=N;j++)
+    {
+      for(k=0;k<j;k++)
+      {
+        G[i].Re[k]-=Gtemp[i].Im[j]/(Pi*(k-j));
+      }
+      for(k=j+1;k<=N;k++)
+      {
+        G[i].Re[k]-=Gtemp[i].Im[j]/(Pi*(k-j));
+      }
+    }
+  }
+  if(A->QComplex)
+  {
+    for(i=0;i<BlockSize*BlockSize;i++)
+    {
+      for(j=0;j<=N;j++)
+      {
+        for(k=0;k<j;k++)
+        {
+          G[i].Im[k]+=Gtemp[i].Re[j]/(Pi*(k-j));
+        }
+        for(k=j+1;k<=N;k++)
+        {
+          G[i].Im[k]+=Gtemp[i].Re[j]/(Pi*(k-j));
+        }
+      }
+      for(j=0;j<=N;j++)
+      {
+        G[i].Re[j]+=Gtemp[i].Re[j];
+        G[i].Im[j]+=Gtemp[i].Im[j];
+      }
+      SpectrumFree(&(Gtemp[i]));
+    }
+    free(Gtemp);
+  }
+  for(i=0;i<BlockSize*BlockSize;i++)
+  {
+    for(j=0;j<=N;j++)
+    {
+      G[i].Im[j]*=Pi/G[i].dE;
+      G[i].Re[j]*=Pi/G[i].dE;
+    }
+  }
+  
+  return 0;
+}
 
 /* on input A is a Hermitian matrix, Singular Value is the smallest number larger than 0 that has numerical relavance, BlockSize is the size of the blocks and NBlockMax the maximal number of Blocks
  *  onoutput Matrix B has NBlockMax blocks (a_{0} to a_{NBlockMax+1}. b_{0} to b_{NBlockMax}
