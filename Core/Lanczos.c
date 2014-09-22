@@ -825,7 +825,7 @@ uint32_t LanczosGroundStateCC(const OperatorType H, WaveFunctionType * const psi
 {
   printf("\nStart of LanczosGroundStateCC\n\n");
   fflush(stdout);
-  const uint32_t NKrylovMax = 100, NKrylovStart = 25;
+  const uint32_t NKrylovMax = 300, NKrylovStart = 100;
   uint32_t NKrylov;
   WaveFunctionType v[3];
   double energy = 4 * zero, energy1 = 2 * zero, energy2, energysqr;
@@ -865,6 +865,18 @@ uint32_t LanczosGroundStateCC(const OperatorType H, WaveFunctionType * const psi
   printf("Energy: %22.15E variance %22.15E Number of determinants %d\n", energy1,energysqr-Sqr(energy1),psi->N);
   while ((((energy - energy1) > (zero * (1.0 + fabs(energy)))) || minloop)&&((energysqr-Sqr(energy1))>zero*(fabs(energy1)+DBL_EPSILON)))
   {
+    
+    
+    
+    
+    double energy1tempa, energysqrtempa;
+    PsiOperatorPsiCHC(H, *psi, &energy1tempa);
+    PsiOperatorSqrPsiCHC(H, *psi, &energysqrtempa);
+    printf("Extra: E %22.15E var %22.15E before loop\n",energy1tempa,energysqrtempa-Sqr(energy1tempa));
+    
+    
+    
+    
     if (minloop) minloop--;
     cycles = 0;
     energy = energy1;
@@ -924,6 +936,13 @@ uint32_t LanczosGroundStateCC(const OperatorType H, WaveFunctionType * const psi
     ComplexWaveFunctionOrthogonalizeConserveBasis(psi, OtherPsi, NOtherPsi);
     ComplexWaveFunctionNormalize(psi);
     
+    
+    double energy1temp, energysqrtemp;
+    PsiOperatorPsiCHC(H, *psi, &energy1temp);
+    PsiOperatorSqrPsiCHC(H, *psi, &energysqrtemp);
+    printf("Extra: E %22.15E var %22.15E\n",energy1temp,energysqrtemp-Sqr(energy1temp));
+    
+    
     // For a given basis set determine the lowest state
     //  In the previous part the memory for 3 functions v[0], v[1] and v[2] is allocated on this basis set.
     energy1 = 2 * zero;
@@ -936,7 +955,7 @@ uint32_t LanczosGroundStateCC(const OperatorType H, WaveFunctionType * const psi
       NKrylov = NKrylovStart + cycles % (NKrylovMax - NKrylovStart);
       M.N = NKrylov;
       cycles++;
-      if ((cycles & 15) == 15)
+      if ((cycles & 1) == 0)
       {
         printf("Reached %i-th cycle with energy %22.15E\n", cycles, energy1);
         fflush(stdout);

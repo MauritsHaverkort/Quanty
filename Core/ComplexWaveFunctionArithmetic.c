@@ -62,10 +62,10 @@ void ComplexWaveFunctionFreeValues(WaveFunctionType * const psi)
 *   If succeded psi -> psi+det
 *   If not succeded psi -> psi
 */
-uint32_t ComplexWaveFunctionAddElement(WaveFunctionType * const psi, const uint8_t * const det, const double aRe,
-                                       const double aIm)
+uint32_t ComplexWaveFunctionAddElement(WaveFunctionType * const psi, const uint8_t * const det, const double aRe, const double aIm)
 {
   uint32_t i, NextIndex, ThereIsANext, PsiAIsPsiB;
+  if ((Sqr(aRe)+Sqr(aIm))<100*DBL_MIN) return 0;
   void  *temp;
   /* test if the key that belongs to psi already excists */
   if (psi->KeyList[hash(det, psi->NWord, psi->NBitsKey)] == 0)
@@ -354,13 +354,10 @@ uint32_t ComplexWaveFunctionAddElement(WaveFunctionType * const psi, const uint8
 *   As psi only stores the number of non zero elements and pointers to the real values the value of psi is not changed.
 *   The values psi points to are natturally changed
 */
-void ComplexWaveFunctionAddElementConserveBasis(WaveFunctionType psi, const uint8_t * const det, const double aRe,
-                                                const double aIm)
+void ComplexWaveFunctionAddElementConserveBasis(WaveFunctionType psi, const uint8_t * const det, const double aRe, const double aIm)
 {
   uint32_t i, NextIndex, PsiAIsPsiB;
-
-  if ((aRe == 0) && (aIm == 0)) return;
-
+  if ((Sqr(aRe)+Sqr(aIm))<100*DBL_MIN) return;
   /* test if the key that belongs to psi already excists */
   NextIndex = psi.KeyList[hash(det, psi.NWord, psi.NBitsKey)];
   if (NextIndex == 0)
@@ -377,7 +374,6 @@ void ComplexWaveFunctionAddElementConserveBasis(WaveFunctionType psi, const uint
         if (psi.Determinant[BlokElementDet(NextIndex, psi.NWord, i)] != det[i])
         {
           PsiAIsPsiB = 0;
-          break;
         }
       }
       if (PsiAIsPsiB)
@@ -981,7 +977,6 @@ void ComplexWaveFunctionDotProduct(const WaveFunctionType *a, const WaveFunction
         if (b->Determinant[BlokElementDet(NextIndex, b->NWord, j)] != a->Determinant[BlokElementDet(i, a->NWord, j)])
         {
           PsiAIsPsiB = 0;
-          break;
         }
       }
       if (PsiAIsPsiB)

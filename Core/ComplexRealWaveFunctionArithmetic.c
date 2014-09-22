@@ -20,7 +20,6 @@ void ComplexRealWaveFunctionDotProduct(const WaveFunctionType *a, const WaveFunc
         if (b->Determinant[BlokElementDet(NextIndex, b->NWord, j)] != a->Determinant[BlokElementDet(i, a->NWord, j)])
         {
           PsiAIsPsiB = 0;
-          break;
         }
       }
       if (PsiAIsPsiB)

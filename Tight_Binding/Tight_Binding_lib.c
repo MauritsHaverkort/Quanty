@@ -477,7 +477,9 @@ int TightBindingBANDS(TightBindingDef A, BandstructurePathType kList, MatrixType
 }
 
 
-
+/*  given an eigen function the character matrix is calculated as char_{i,j} = psi_i * psi_j
+ *
+ */
 void RealEigenFunctionToCharacter(double const * EigenFun, MatrixType *Char)
 {
   uint32_t i,j;
@@ -490,7 +492,9 @@ void RealEigenFunctionToCharacter(double const * EigenFun, MatrixType *Char)
   }
 }
 
-
+/*  given an eigen function the character matrix is calculated as char_{i,j} = psi_i * psi_j
+ *
+ */
 void ComplexEigenFunctionToCharacter(Complex16 const * EigenFun, MatrixType *Char)
 {
   uint32_t i,j;
@@ -504,7 +508,9 @@ void ComplexEigenFunctionToCharacter(Complex16 const * EigenFun, MatrixType *Cha
   }
 }
 
-
+/*  given an eigen function the character matrix is calculated as char_{i,j} = psi_i * psi_j
+ *
+ */
 void EigenFunctionToCharacter(void const * EigenFun, MatrixType *Char)
 {
   if(Char->QComplex)
@@ -516,6 +522,55 @@ void EigenFunctionToCharacter(void const * EigenFun, MatrixType *Char)
     RealEigenFunctionToCharacter((double*) EigenFun, Char);
   }
 }
+
+
+
+/*  given an eigen function the character matrix is calculated as char_{i,j} = psi_i * psi_j
+ *
+ */
+void RealEigenFunctionToCharacterMultiSite(double const * EigenFun, MatrixType *Char, uint32_t const Nvec, int const *vec)
+{
+  uint32_t i,j;
+  for(i=0;i<Char->Ni;i++)
+  {
+    for(j=0;j<Char->Nj;j++)
+    {
+      Char->VRe[i][j] = EigenFun[i]*EigenFun[j];
+    }
+  }
+}
+
+/*  given an eigen function the character matrix is calculated as char_{i,j} = psi_i * psi_j
+ *
+ */
+void ComplexEigenFunctionToCharacterMultiSite(Complex16 const * EigenFun, MatrixType *Char, uint32_t const Nvec, int const *vec)
+{
+  uint32_t i,j;
+  for(i=0;i<Char->Ni;i++)
+  {
+    for(j=0;j<Char->Nj;j++)
+    {
+      Char->VRe[i][j] = EigenFun[i].Re*EigenFun[j].Re+EigenFun[i].Im*EigenFun[j].Im;
+      Char->VIm[i][j] = EigenFun[i].Im*EigenFun[j].Re-EigenFun[i].Re*EigenFun[j].Im;
+    }
+  }
+}
+
+/*  given an eigen function the character matrix is calculated as char_{i,j} = psi_i * psi_j
+ *
+ */
+void EigenFunctionToCharacterMultiSite(void const * EigenFun, MatrixType *Char, uint32_t const Nvec, int const *vec)
+{
+  if(Char->QComplex)
+  {
+    ComplexEigenFunctionToCharacterMultiSite((Complex16*) EigenFun, Char, Nvec, vec);
+  }
+  else
+  {
+    RealEigenFunctionToCharacterMultiSite((double*) EigenFun, Char, Nvec, vec);
+  }
+}
+
 
 int EigenFunctionToCharactersStandardSetNCharacter(TightBindingDef A, int *NCharacter)
 {

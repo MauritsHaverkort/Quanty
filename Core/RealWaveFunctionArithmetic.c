@@ -314,7 +314,6 @@ void RealWaveFunctionAddElementConserveBasis(WaveFunctionType const *psi, const 
         if (psi->Determinant[BlokElementDet(NextIndex, psi->NWord, i)] != det[i])
         {
           PsiAIsPsiB = 0;
-          break;
         }
       }
       if (PsiAIsPsiB)
@@ -762,7 +761,6 @@ double RealWaveFunctionDotProduct(const WaveFunctionType *a, const WaveFunctionT
         if (b->Determinant[BlokElementDet(NextIndex, b->NWord, j)] != a->Determinant[BlokElementDet(i, a->NWord, j)])
         {
           PsiAIsPsiB = 0;
-          break;
         }
       }
       if (PsiAIsPsiB)

@@ -92,6 +92,9 @@ int CreateHamiltonianFromTightBindingDef();
 void RealEigenFunctionToCharacter();
 void ComplexEigenFunctionToCharacter();
 void EigenFunctionToCharacter();
+void RealEigenFunctionToCharacterMultiSite();
+void ComplexEigenFunctionToCharacterMultiSite();
+void EigenFunctionToCharacterMultiSite();
 
 
 

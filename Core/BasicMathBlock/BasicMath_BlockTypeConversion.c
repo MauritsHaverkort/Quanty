@@ -307,6 +307,208 @@ uint32_t TightBindingHamiltonianToBlockListOfPoles(TightBindingDef const A, int 
   return 0;
 }
 
+
+
+
+/*  Given an tight binding Hamiltonian and a k-mesh defined by the number of divisions of a, b and c (Nk)
+ *  furhtermore given a list of unit cell translations given as vectors in units of a, b and c of length Nvec.
+ *  returns the green function matrix of size Nvec * A.NFermion by Nvec * A.NFermion
+ *          on an energy mesh with N+3 points. N+1 points from Emin to Emax and one point below Emin and one above Emax such that all weight and first moment is ok
+ *  Calculates the eigen values and functions for each k
+ *  for each k and eigen value i
+ *  weight is added to the pole at iE and iE+1 such that Energy[iE] < val < Energy[iE+1]
+ *  The matrix h_{jk} is fun[i,j] * fun[i,k]^* is added
+ *  a Function at a shifted unit cell is multiplied by e^{i kvec . x }
+ */
+uint32_t TightBindingHamiltonianMultiSiteToBlockListOfPoles(TightBindingDef const A, int Nk[3], uint32_t const Nvec, int const *vec, BlockListOfPoles * const G, double const Emin, double const Emax, uint32_t const NE)
+{
+  MatrixType H;
+  CompactMatrixType T;
+  double q[3], val[A.NFermion], rest, totmin=0, totmax=0, totnow, dvec[3];
+  double const piornot = ((A.Cell.Units&1) ? (1) : (Pi));  // if A.Cell.Units last bit is 1 then r.g = pi, otherwise it evaluates to 1, piornot * r.g now eveluates always to pi.
+  int    iq[3],ival,iE,i,j,ivec,jvec;
+  double diq[3],dE=(Emax-Emin)/((double)NE),energy,Nktot;
+  G->BlockSize=A.NFermion * Nvec;
+  G->N=NE+3;
+  G->QComplex=1;
+  Complex16 phase;
+  strcpy(G->Name, A.Name);
+  if(InitBlockListOfPoles(G))
+  {
+    printf("InitBlockListOfPoles failed in TightBindingHamiltonianToBlockListOfPoles\n");
+    return 1;
+  }
+  energy=Emin-dE;
+  for(i=0;i<G->N*(1+G->BlockSize*G->BlockSize);i+=(1+G->BlockSize*G->BlockSize))
+  {
+    G->V[i].Re=energy;
+    energy+=dE;
+  }
+  for (iq[0] = 0; iq[0] < Nk[0]; iq[0]++)
+  {
+    for (iq[1] = 0; iq[1] < Nk[1]; iq[1]++)
+    {
+      for (iq[2] = 0; iq[2] < Nk[2]; iq[2]++)
+      {
+        diq[0] = iq[0] / ((double)(Nk[0]));
+        diq[1] = iq[1] / ((double)(Nk[1]));
+        diq[2] = iq[2] / ((double)(Nk[2]));
+        q[0] = diq[0] * A.Cell.gUnitCell[0][0] + diq[1] * A.Cell.gUnitCell[1][0] + diq[2] * A.Cell.gUnitCell[2][0];
+        q[1] = diq[0] * A.Cell.gUnitCell[0][1] + diq[1] * A.Cell.gUnitCell[1][1] + diq[2] * A.Cell.gUnitCell[2][1];
+        q[2] = diq[0] * A.Cell.gUnitCell[0][2] + diq[1] * A.Cell.gUnitCell[1][2] + diq[2] * A.Cell.gUnitCell[2][2];
+        CreateHamiltonianFromTightBindingDef(A, q, &H);
+        EigensystemToCompact(H, &T, val);
+        for(ival=0;ival<A.NFermion;ival++)
+        {
+          /* calculate character matrix for eigen-value ival - note that H changes meaning from Hamiltonian to Character matrix */
+          if(H.QComplex)
+          {
+            ComplexEigenFunctionToCharacterMultiSite(&(T.V[ival*A.NFermion]), &H, Nvec, vec);
+          }
+          else
+          {
+            RealEigenFunctionToCharacterMultiSite(&(T.VRe[ival*A.NFermion]), &H, Nvec, vec);
+          }
+          /* determine the position of the pole in the list of poles */
+          rest = (val[ival] - Emin) / dE;
+          iE = (int)(floor(rest));
+          if (iE >= NE)
+          {
+            totnow=0;
+            for(i=0;i<A.NFermion;i++)
+            {
+              totnow+=H.VRe[i][i];
+            }
+            if(totmax+totnow<10*DBL_MIN)
+            {
+              totmax+=10*DBL_MIN;
+              totnow+=10*DBL_MIN;
+            }
+            G->V[(NE+2)*(1+G->BlockSize*G->BlockSize)].Re = (totmax * G->V[(NE+2)*(1+G->BlockSize*G->BlockSize)].Re + totnow * val[ival]) / (totmax + totnow);
+            for(i=0;i<A.NFermion;i++)
+            {
+              for(ivec=0;ivec<Nvec;ivec++)
+              {
+                for(j=0;j<A.NFermion;j++)
+                {
+                  for(jvec=0;jvec<Nvec;jvec++)
+                  {
+                    dvec[0] = (vec[3*ivec+0]-vec[3*jvec+0]) * A.Cell.rUnitCell[0][0] + (vec[3*ivec+1]-vec[3*jvec+1]) * A.Cell.rUnitCell[1][0] + (vec[3*ivec+2]-vec[3*jvec+2]) * A.Cell.rUnitCell[2][0];
+                    dvec[1] = (vec[3*ivec+0]-vec[3*jvec+0]) * A.Cell.rUnitCell[0][1] + (vec[3*ivec+1]-vec[3*jvec+1]) * A.Cell.rUnitCell[1][1] + (vec[3*ivec+2]-vec[3*jvec+2]) * A.Cell.rUnitCell[2][1];
+                    dvec[2] = (vec[3*ivec+0]-vec[3*jvec+0]) * A.Cell.rUnitCell[0][2] + (vec[3*ivec+1]-vec[3*jvec+1]) * A.Cell.rUnitCell[1][2] + (vec[3*ivec+2]-vec[3*jvec+2]) * A.Cell.rUnitCell[2][2];
+                    phase.Re=cos(piornot * Dot(dvec,q));
+                    phase.Im=sin(piornot * Dot(dvec,q));
+                    G->V[(NE+2)*(1+G->BlockSize*G->BlockSize)+1 + j+jvec*A.NFermion + (i+ivec*A.NFermion)*G->BlockSize].Re += phase.Re*H.VRe[i][j];
+                    G->V[(NE+2)*(1+G->BlockSize*G->BlockSize)+1 + j+jvec*A.NFermion + (i+ivec*A.NFermion)*G->BlockSize].Im += phase.Im*H.VRe[i][j];
+                    if(H.QComplex)
+                    {
+                      G->V[(NE+2)*(1+G->BlockSize*G->BlockSize)+1 + j+jvec*A.NFermion + (i+ivec*A.NFermion)*G->BlockSize].Re -= phase.Im*H.VIm[i][j];
+                      G->V[(NE+2)*(1+G->BlockSize*G->BlockSize)+1 + j+jvec*A.NFermion + (i+ivec*A.NFermion)*G->BlockSize].Im += phase.Re*H.VIm[i][j];
+                    }
+                  }
+                }
+              }
+            }
+            totmax+=totnow;
+          }
+          else if (iE < 0)
+          {
+            totnow=0;
+            for(i=0;i<A.NFermion;i++)
+            {
+              totnow+=H.VRe[i][i];
+            }
+            if(totmin+totnow<10*DBL_MIN)
+            {
+              totmin+=10*DBL_MIN;
+              totnow+=10*DBL_MIN;
+            }
+            G->V[0].Re = (totmin * G->V[0].Re + totnow * val[ival]) / (totmin + totnow);
+            for(i=0;i<A.NFermion;i++)
+            {
+              for(ivec=0;ivec<Nvec;ivec++)
+              {
+                for(j=0;j<A.NFermion;j++)
+                {
+                  for(jvec=0;jvec<Nvec;jvec++)
+                  {
+                    dvec[0] = (vec[3*ivec+0]-vec[3*jvec+0]) * A.Cell.rUnitCell[0][0] + (vec[3*ivec+1]-vec[3*jvec+1]) * A.Cell.rUnitCell[1][0] + (vec[3*ivec+2]-vec[3*jvec+2]) * A.Cell.rUnitCell[2][0];
+                    dvec[1] = (vec[3*ivec+0]-vec[3*jvec+0]) * A.Cell.rUnitCell[0][1] + (vec[3*ivec+1]-vec[3*jvec+1]) * A.Cell.rUnitCell[1][1] + (vec[3*ivec+2]-vec[3*jvec+2]) * A.Cell.rUnitCell[2][1];
+                    dvec[2] = (vec[3*ivec+0]-vec[3*jvec+0]) * A.Cell.rUnitCell[0][2] + (vec[3*ivec+1]-vec[3*jvec+1]) * A.Cell.rUnitCell[1][2] + (vec[3*ivec+2]-vec[3*jvec+2]) * A.Cell.rUnitCell[2][2];
+                    phase.Re=cos(piornot * Dot(dvec,q));
+                    phase.Im=sin(piornot * Dot(dvec,q));
+                    G->V[1 + j+jvec*A.NFermion + (i+ivec*A.NFermion)*G->BlockSize].Re += phase.Re*H.VRe[i][j];
+                    G->V[1 + j+jvec*A.NFermion + (i+ivec*A.NFermion)*G->BlockSize].Im += phase.Im*H.VRe[i][j];
+                    if(H.QComplex)
+                    {
+                      G->V[1 + j+jvec*A.NFermion + (i+ivec*A.NFermion)*G->BlockSize].Re -= phase.Im*H.VIm[i][j];
+                      G->V[1 + j+jvec*A.NFermion + (i+ivec*A.NFermion)*G->BlockSize].Im += phase.Re*H.VIm[i][j];
+                    }
+                  }
+                }
+              }
+            }
+            totmin+=totnow;
+          }
+          else
+          {
+            rest -= iE;  /* rest is a number between 0 and 1 pole at iE+1 gets 1-rest pole at iE+2 gest rest */
+            for(ivec=0;ivec<Nvec;ivec++)
+            {
+              for(jvec=0;jvec<Nvec;jvec++)
+              {
+                dvec[0] = (vec[3*ivec+0]-vec[3*jvec+0]) * A.Cell.rUnitCell[0][0] + (vec[3*ivec+1]-vec[3*jvec+1]) * A.Cell.rUnitCell[1][0] + (vec[3*ivec+2]-vec[3*jvec+2]) * A.Cell.rUnitCell[2][0];
+                dvec[1] = (vec[3*ivec+0]-vec[3*jvec+0]) * A.Cell.rUnitCell[0][1] + (vec[3*ivec+1]-vec[3*jvec+1]) * A.Cell.rUnitCell[1][1] + (vec[3*ivec+2]-vec[3*jvec+2]) * A.Cell.rUnitCell[2][1];
+                dvec[2] = (vec[3*ivec+0]-vec[3*jvec+0]) * A.Cell.rUnitCell[0][2] + (vec[3*ivec+1]-vec[3*jvec+1]) * A.Cell.rUnitCell[1][2] + (vec[3*ivec+2]-vec[3*jvec+2]) * A.Cell.rUnitCell[2][2];
+                phase.Re=cos(piornot * Dot(dvec,q));
+                phase.Im=sin(piornot * Dot(dvec,q));
+                
+               // printf("phase for ivec %i jvec %i is %12.5E + I %12.5E at q is %12.5E %12.5E %12.5E and vec is  %12.5E %12.5E %12.5E q.dvec = %12.5E\n",ivec, jvec, phase.Re, phase.Im, q[0], q[1], q[2], dvec[0], dvec[1], dvec[2], Dot(dvec,q));
+                
+                for(i=0;i<A.NFermion;i++)
+                {
+                  for(j=0;j<A.NFermion;j++)
+                  {
+                    G->V[(iE+1)*(1+G->BlockSize*G->BlockSize)+1 + j+jvec*A.NFermion + (i+ivec*A.NFermion)*G->BlockSize].Re += phase.Re*(1-rest)*H.VRe[i][j];
+                    G->V[(iE+1)*(1+G->BlockSize*G->BlockSize)+1 + j+jvec*A.NFermion + (i+ivec*A.NFermion)*G->BlockSize].Im += phase.Im*(1-rest)*H.VRe[i][j];
+                    G->V[(iE+2)*(1+G->BlockSize*G->BlockSize)+1 + j+jvec*A.NFermion + (i+ivec*A.NFermion)*G->BlockSize].Re += phase.Re*(  rest)*H.VRe[i][j];
+                    G->V[(iE+2)*(1+G->BlockSize*G->BlockSize)+1 + j+jvec*A.NFermion + (i+ivec*A.NFermion)*G->BlockSize].Im += phase.Im*(  rest)*H.VRe[i][j];
+                    if(H.QComplex)
+                    {
+                      G->V[(iE+1)*(1+G->BlockSize*G->BlockSize)+1 + j+jvec*A.NFermion + (i+ivec*A.NFermion)*G->BlockSize].Re -= phase.Im*(1-rest)*H.VIm[i][j];
+                      G->V[(iE+1)*(1+G->BlockSize*G->BlockSize)+1 + j+jvec*A.NFermion + (i+ivec*A.NFermion)*G->BlockSize].Im += phase.Re*(1-rest)*H.VIm[i][j];
+                      G->V[(iE+2)*(1+G->BlockSize*G->BlockSize)+1 + j+jvec*A.NFermion + (i+ivec*A.NFermion)*G->BlockSize].Re -= phase.Im*(  rest)*H.VIm[i][j];
+                      G->V[(iE+2)*(1+G->BlockSize*G->BlockSize)+1 + j+jvec*A.NFermion + (i+ivec*A.NFermion)*G->BlockSize].Im += phase.Re*(  rest)*H.VIm[i][j];
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      FreeMatrix(&H);
+      FreeCompactMatrix(&T);
+    }
+  }
+  Nktot=Nk[0]*Nk[1]*Nk[2];
+  for(i=0;i<G->N*(1+G->BlockSize*G->BlockSize);i+=(1+G->BlockSize*G->BlockSize))
+  {
+    for(j=1;j<1+G->BlockSize*G->BlockSize;j++)
+    {
+      G->V[i+j].Re/=Nktot;
+      G->V[i+j].Im/=Nktot;
+    }
+  }
+  ChopBlockListOfPoles(G, DBL_EPSILON);
+  return 0;
+}
+
+
+
+
+
+
 /*  On input 
  *    matrix A is diagonal and real and of dimension psi->Nj. Values are stored as a vector of doubles
  *    matrix psi is of dimension psi->Ni * psi->Nj
