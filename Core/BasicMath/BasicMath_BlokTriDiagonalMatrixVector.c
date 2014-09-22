@@ -109,10 +109,10 @@ uint32_t InitFrameBlokTriDiagonalMatrix(BlokTriDiagonalMatrixType * const M)
   strcpy(M->Name, "Matrix");
   if (M->N == 0)
     return 2;
-  M->a = malloc(M->N * sizeof(MatrixType));
+  M->a = malloc((1+M->N) * sizeof(MatrixType));
   if (M->a == NULL)
     return 1;
-  M->b = malloc((M->N - 1) * sizeof(MatrixType));
+  M->b = malloc((M->N) * sizeof(MatrixType));
   if (M->b == NULL)
   {
     free(M->a);
@@ -131,16 +131,16 @@ uint32_t InitIdentityBlokTriDiagonalMatrix(BlokTriDiagonalMatrixType * const M, 
   strcpy(M->Name, "I_Matrix");
   if (M->N == 0)
     return 2;
-  M->a = malloc(M->N * sizeof(MatrixType));
+  M->a = malloc((M->N+1) * sizeof(MatrixType));
   if (M->a == NULL)
     return 1;
-  M->b = malloc((M->N - 1) * sizeof(MatrixType));
+  M->b = malloc((M->N) * sizeof(MatrixType));
   if (M->b == NULL)
   {
     free(M->a);
     return 1;
   }
-  for (i = 0; i < M->N - 1; i++)
+  for (i = 0; i < M->N; i++)
   {
     M->a[i].QComplex = QComplex;
     M->a[i].Ni = bloksize;
@@ -162,12 +162,12 @@ uint32_t InitIdentityBlokTriDiagonalMatrix(BlokTriDiagonalMatrixType * const M, 
   }
   if (!fail)
   {
-    M->a[M->N - 1].QComplex = QComplex;
-    M->a[M->N - 1].Ni = bloksize;
-    M->a[M->N - 1].Nj = bloksize;
-    if (InitIdentityMatrix(&(M->a[M->N - 1])))
+    M->a[M->N ].QComplex = QComplex;
+    M->a[M->N ].Ni = bloksize;
+    M->a[M->N ].Nj = bloksize;
+    if (InitIdentityMatrix(&(M->a[M->N])))
     {
-      fail = M->N - 1;
+      fail = M->N;
     }
   }
   if (fail)

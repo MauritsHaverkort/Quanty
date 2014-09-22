@@ -12,8 +12,7 @@
  *  The spin up bath is from i=2       to i=Mup.N
  *  The spin dn bath is from i=Mup.N+1 to i=Mup.N+Mdn.N-1
  */
-uint32_t TriDiagonalMatrixToAndersonImpurityOperator(OperatorType * O, TriDiagonalMatrixType Mup,
-                                                     TriDiagonalMatrixType Mdn, double U, double mu)
+uint32_t TriDiagonalMatrixToAndersonImpurityOperator(OperatorType * O, TriDiagonalMatrixType Mup, TriDiagonalMatrixType Mdn, double U, double mu)
 {
   uint32_t i;
   uint16_t oadd[4];

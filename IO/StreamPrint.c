@@ -648,6 +648,46 @@ uint32_t StreamPrintPlainMatrix(MatrixType M, FILE * stream)
 }
 
 
+uint32_t StreamPrintCompactMatrixMinimal(CompactMatrixType const M, FILE * stream)
+{
+  uint32_t i,j;
+  if(M.QComplex)
+  {
+    for(j=0;j<M.Nj;j++)
+    {
+      for(i=0;i<M.Ni;i++)
+      {
+        fprintf(stream,"(%22.15E ",M.V[j+M.Nj*i].Re);
+        if(M.V[j+M.Nj*i].Im>=0)
+        {
+          fprintf(stream,"+");
+        }
+        else
+        {
+          fprintf(stream," ");
+        }
+        fprintf(stream,"%22.15E I) ",M.V[j+M.Nj*i].Im);
+      }
+      fprintf(stream,"\n");
+    }
+    fprintf(stream,"\n");
+  }
+  else
+  {
+    for(j=0;j<M.Nj;j++)
+    {
+      for(i=0;i<M.Ni;i++)
+      {
+        fprintf(stream,"%22.15E ",M.VRe[j+M.Nj*i]);
+      }
+      fprintf(stream,"\n");
+    }
+    fprintf(stream,"\n");
+  }
+  return 0;
+}
+
+
 /*  Prints the structure TightBindingDef
  *
  */
@@ -1022,6 +1062,48 @@ uint32_t StreamPrintBlokTriDiagonalMatrix(BlokTriDiagonalMatrixType M, FILE * st
   return 0;
 }
 
+
+uint32_t StreamPrintBlockTriDiagonalMatrix(BlockTriDiagonalMatrixType M, FILE * stream)
+{
+  uint32_t i;
+  CompactMatrixType alpha;
+  alpha.Ni=M.BlockSize;
+  alpha.Nj=M.BlockSize;
+  alpha.QComplex=M.QComplex;
+  M.Name[MAXStrLength - 1] = '\0';
+  fprintf(stream, "%s :\n", M.Name);
+  fprintf(stream, "BlockTriDiagonalMatrix element a[i-1]=M[i][i] element b[i-1]=M[i,i+1]=M[i+1,i] others are zero.\n");
+  fprintf(stream, "Zero elements are prefactors for continued fraction representation\n");
+  fprintf(stream, "BlockSize %i number of Blocks %i\n",M.BlockSize, M.N);
+  for (i = 0; i <= M.N; i++)
+  {
+    if(M.QComplex)
+    {
+      alpha.V=&(M.a[i*M.BlockSize*M.BlockSize]);
+    }
+    else
+    {
+      alpha.VRe=&(M.aRe[i*M.BlockSize*M.BlockSize]);
+    }
+    fprintf(stream, "a[%i]\n", i);
+    StreamPrintCompactMatrixMinimal(alpha, stream);
+  }
+  for (i = 0; i < M.N; i++)
+  {
+    if(M.QComplex)
+    {
+      alpha.V=&(M.b[i*M.BlockSize*M.BlockSize]);
+    }
+    else
+    {
+      alpha.VRe=&(M.bRe[i*M.BlockSize*M.BlockSize]);
+    }
+    fprintf(stream, "b[%i]\n", i);
+    StreamPrintCompactMatrixMinimal(alpha, stream);
+  }
+  return 0;
+}
+
 uint32_t StreamPrintDoubleTriDiagonalMatrix(DoubleTriDiagonalMatrixType M, FILE * stream)
 {
   M.Name[MAXStrLength - 1] = '\0';
@@ -1194,6 +1276,43 @@ uint32_t StreamPrintListOfPolesEssentials(ListOfPoles M, FILE * stream)
   return 0;
 }
 
+uint32_t StreamPrintBlockListOfPoles(BlockListOfPoles const M, FILE * stream)
+{
+  uint32_t i;
+  CompactMatrixType b;
+  b.QComplex=M.QComplex;
+  b.Ni=M.BlockSize;
+  b.Nj=M.BlockSize;
+  fprintf(stream, "block list of poles: %s\n",M.Name);
+  fprintf(stream, "Chemical potential is %22.15E\n",M.mu);
+  fprintf(stream, "a0:\n");
+  if(M.QComplex)
+  {
+    b.V = M.a0;
+  }
+  else
+  {
+    b.VRe = M.a0Re;
+  }
+  StreamPrintCompactMatrixMinimal(b, stream);
+  for(i=0;i<M.N;i++)
+  {
+    if(M.QComplex)
+    {
+      fprintf(stream,"block %i a_i=%22.15E B_i:\n",i,M.V[i*(M.BlockSize*M.BlockSize+1)].Re);
+      b.V=&(M.V[i*(M.BlockSize*M.BlockSize+1)+1]);
+    }
+    else
+    {
+      fprintf(stream,"block %i a_i=%22.15E B_i:\n",i,M.VRe[i*(M.BlockSize*M.BlockSize+1)]);
+      b.VRe=&(M.VRe[i*(M.BlockSize*M.BlockSize+1)+1]);
+    }
+    StreamPrintCompactMatrixMinimal(b, stream);
+  }
+  fprintf(stream,"\n");
+  return 0;
+}
+
 uint32_t StreamPrintAndersonMatrixEssentials(AndersonMatrixType M, FILE * stream)
 {
   uint32_t i;
@@ -1254,7 +1373,19 @@ uint32_t StreamPrintPlainListOfPoles(ListOfPoles M, FILE * stream)
 }
 
 
-
+uint32_t StreamPrintBlockNaturalImpurityOrbitalMatrix(BlockNaturalImpurityOrbitalMatrixType M, FILE * stream)
+{
+  fprintf(stream,"BlockNaturalImpurityOrbitalMatrix: %s\n",M.Name);
+  fprintf(stream,"mu %22.15E\n",M.mu);
+  fprintf(stream,"Valence part\n");
+  StreamPrintBlockTriDiagonalMatrix(M.val, stream);
+  fprintf(stream,"Conduction part\n");
+  StreamPrintBlockTriDiagonalMatrix(M.con, stream);
+  fprintf(stream, "first 4 blocks\n");
+  PrintCompactMatrixMinimal(M.TMT);
+  
+  return 0;
+}
 
 
 

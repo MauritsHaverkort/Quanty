@@ -1,0 +1,67 @@
+/*
+ *   Initialize a struct of BlockTridiagonalMatrix type
+ *   malloc the space for storing N+1 matrices of dimension BlockSize * BlockSize storing a0 to aN
+ *   malloc the space for storing N   matrices of dimension BlockSize * BlockSize storing b0 to bN-1
+ */
+uint32_t InitBlockTridiagonalMatrix(BlockTriDiagonalMatrixType *const A)
+{
+  int i;
+  strcpy(A->Name, "Block Tridiagonal Matrix");
+  if(A->QComplex)
+  {
+    A->a=calloc((A->N+1)*(A->BlockSize*A->BlockSize),sizeof(Complex16));
+    if(A->a==NULL)
+    {
+      printf("malloc failed in InitBlockTridiagonalMatrix\n");
+      return 1;
+    }
+    A->b=calloc((A->N)*(A->BlockSize*A->BlockSize),sizeof(Complex16));
+    if(A->b==NULL)
+    {
+      free(A->a);
+      printf("malloc failed in InitBlockTridiagonalMatrix\n");
+      return 1;
+    }
+    for(i=0;i<A->BlockSize;i++)
+    {
+      A->b[i+i*A->BlockSize].Re=1;
+    }
+  }
+  else
+  {
+    A->aRe=calloc((A->N+1)*(A->BlockSize*A->BlockSize),sizeof(double));
+    if(A->aRe==NULL)
+    {
+      printf("malloc failed in InitBlockTridiagonalMatrix\n");
+      return 1;
+    }
+    A->bRe=calloc((A->N)*(A->BlockSize*A->BlockSize),sizeof(double));
+    if(A->bRe==NULL)
+    {
+      free(A->aRe);
+      printf("malloc failed in InitBlockTridiagonalMatrix\n");
+      return 1;
+    }
+    for(i=0;i<A->BlockSize;i++)
+    {
+      A->bRe[i+i*A->BlockSize]=1;
+    }
+  }
+  A->mu=0;
+  return 0;
+}
+
+uint32_t FreeBlockTridiagonalMatrix(BlockTriDiagonalMatrixType *A)
+{
+  if(A->QComplex)
+  {
+    free(A->a);
+    free(A->b);
+  }
+  else
+  {
+    free(A->aRe);
+    free(A->bRe);
+  }
+  return 0;
+}

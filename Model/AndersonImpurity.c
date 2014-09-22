@@ -83,7 +83,7 @@ void CeImpurity()
   doPES=0;
   doIPES=0;
   doCPES=0;
-  doCPESShort=0;
+  doCPESShort=1;
   doXAS=0;
   doXiSpin=0;
   doXiCharge=0;
@@ -125,7 +125,7 @@ void CeImpurity()
   
   NBathv = 2;
   NBathc = 0;
-  MaxNf = 2;
+  MaxNf = 1;
   
   NfStart = 0.8344785458087937;     /* numbers obtained with MaxMf = 1 */
   Nf52Start = 0.6029731957814112;

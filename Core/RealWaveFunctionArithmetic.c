@@ -314,7 +314,6 @@ void RealWaveFunctionAddElementConserveBasis(WaveFunctionType const *psi, const 
         if (psi->Determinant[BlokElementDet(NextIndex, psi->NWord, i)] != det[i])
         {
           PsiAIsPsiB = 0;
-          break;
         }
       }
       if (PsiAIsPsiB)
@@ -605,6 +604,7 @@ void RealWaveFunctionNormalize(WaveFunctionType * const a)
   }
   Norm = sqrt(NormA + NormB);
   iBlok = a->NBlok - 1;
+  if(Norm<10*DBL_MIN) return;
 #pragma omp parallel for private(iElement)
   for (iOMP = 0; iOMP <= (int)(a->N - iBlok * BlokSize); iOMP++)
   {
@@ -761,7 +761,6 @@ double RealWaveFunctionDotProduct(const WaveFunctionType *a, const WaveFunctionT
         if (b->Determinant[BlokElementDet(NextIndex, b->NWord, j)] != a->Determinant[BlokElementDet(i, a->NWord, j)])
         {
           PsiAIsPsiB = 0;
-          break;
         }
       }
       if (PsiAIsPsiB)

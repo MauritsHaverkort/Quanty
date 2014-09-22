@@ -65,6 +65,72 @@ uint32_t CopyBlockListOfPoles(BlockListOfPoles A, BlockListOfPoles *B)
   return 0;
 }
 
+uint32_t CopyBlockListOfPolesCon(BlockListOfPoles A, BlockListOfPoles *B, double const mu, double const T)
+{
+  uint32_t k,i,kindex=0;
+  double occ;
+  CopyBlockListOfPoles(A, B);
+  if(B->QComplex)
+  {
+    for(k=0;k<B->N;k++)
+    {
+      occ=1-FermiFunction(B->V[kindex].Re, mu, T);
+      for(i=kindex+1;i<kindex+1+B->BlockSize*B->BlockSize;i++)
+      {
+        B->V[i].Re*=occ;
+        B->V[i].Im*=occ;
+      }
+      kindex+=1+B->BlockSize*B->BlockSize;
+    }
+  }
+  else
+  {
+    for(k=0;k<B->N;k++)
+    {
+      occ=1-FermiFunction(B->VRe[kindex], mu, T);
+      for(i=kindex+1;i<kindex+1+B->BlockSize*B->BlockSize;i++)
+      {
+        B->VRe[i]*=occ;
+      }
+      kindex+=1+B->BlockSize*B->BlockSize;
+    }
+  }
+  return 0;
+}
+
+uint32_t CopyBlockListOfPolesVal(BlockListOfPoles A, BlockListOfPoles *B, double mu, double T)
+{
+  uint32_t k,i,kindex=0;
+  double occ;
+  CopyBlockListOfPoles(A, B);
+  if(B->QComplex)
+  {
+    for(k=0;k<B->N;k++)
+    {
+      occ=FermiFunction(B->V[kindex].Re, mu, T);
+      for(i=kindex+1;i<kindex+1+B->BlockSize*B->BlockSize;i++)
+      {
+        B->V[i].Re*=occ;
+        B->V[i].Im*=occ;
+      }
+      kindex+=1+B->BlockSize*B->BlockSize;
+    }
+  }
+  else
+  {
+    for(k=0;k<B->N;k++)
+    {
+      occ=FermiFunction(B->VRe[kindex], mu, T);
+      for(i=kindex+1;i<kindex+1+B->BlockSize*B->BlockSize;i++)
+      {
+        B->VRe[i]*=occ;
+      }
+      kindex+=1+B->BlockSize*B->BlockSize;
+    }
+  }
+  return 0;
+}
+
 /*
  *   A <- scale * A
  */
@@ -125,7 +191,7 @@ uint32_t MakeRealBlockListOfPolesComplex(BlockListOfPoles *A)
 }
 
 /*  QComplex changes from 1 to 0
- *  The memory allcoated for doubles is changed to double
+ *  The memory allcoated for Complex is changed to double
  *  The real part is set, the complex part is neglected
  */
 uint32_t MakeComplexBlockListOfPolesReal(BlockListOfPoles *A)
@@ -145,6 +211,7 @@ uint32_t MakeComplexBlockListOfPolesReal(BlockListOfPoles *A)
   free(A->V);
   A->VRe=temp;
   A->QComplex=0;
+  A->a0Re=&(A->VRe[(A->N)*(1+A->BlockSize*A->BlockSize)]);
   return 0;
 }
 
@@ -355,9 +422,9 @@ int OrderBlockListOfPolesCompareReal(double *elem1, double *elem2)
 
 int OrderBlockListOfPolesCompareComplex(Complex16 *elem1, Complex16 *elem2)
 {
-  if (Sqr(elem1[0].Re) + Sqr(elem1[0].Im) < Sqr(elem2[0].Re) + Sqr(elem2[0].Im))
+  if (elem1[0].Re < elem2[0].Re)
     return -1;
-  else if (Sqr(elem1[0].Re) + Sqr(elem1[0].Im) > Sqr(elem2[0].Re) + Sqr(elem2[0].Im))
+  else if (elem1[0].Re > elem2[0].Re)
     return 1;
   return 0;
 }

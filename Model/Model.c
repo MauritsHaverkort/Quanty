@@ -51,13 +51,16 @@
 #include "../Model/CrystalField.c"
 #include "../Model/LigandField.c"
 #include "../Model/AndersonImpurity.c"
+#include "../Model/OneDBand.c"
 
 int main(int argc, const char *argv[])
 {
   TimeStampAll();
   
   //CeLigandField();
-  CeImpurity();
+  //CeImpurity();
+  ItinerantOneDBand();
+  
   
   return 0;
 

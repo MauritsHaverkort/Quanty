@@ -357,8 +357,13 @@ int TightBindingDOS(TightBindingDef A, int Nk[3], SpectraType * DOS)
 {
   MatrixType H, T;
   double q[3], val[A.NFermion];
-  int    iq[3], ifermion, iE;
-  double diq[3];
+  int    iq[3], ifermion, iE, jE;
+  double diq[3],rest;
+  for (iE = 0; iE <= DOS->N; iE++)
+  {
+    DOS->Im[iE]=0;
+    DOS->Re[iE]=0;
+  }
   for (iq[0] = 0; iq[0] < Nk[0]; iq[0]++)
   {
     for (iq[1] = 0; iq[1] < Nk[1]; iq[1]++)
@@ -377,19 +382,21 @@ int TightBindingDOS(TightBindingDef A, int Nk[3], SpectraType * DOS)
         FreeMatrix(&T);
         for (ifermion = 0; ifermion < A.NFermion; ifermion++)
         {
-          iE = (int)(floor((val[ifermion] - DOS->Emin) / DOS->dE));
+          rest = (val[ifermion] - DOS->Emin) / DOS->dE;
+          iE = (int)(floor(rest));
           if (iE >= DOS->N)
           {
-            DOS->Re[DOS->N] += 1;
+            DOS->Im[DOS->N] -= 1;
           }
           else if (iE < 0)
           {
-            DOS->Re[0] += 1;
+            DOS->Im[0] -= 1;
           }
           else
           {
-            DOS->Re[iE] += 1 + iE - (val[ifermion] - DOS->Emin) / DOS->dE;
-            DOS->Re[iE + 1] -= iE - (val[ifermion] - DOS->Emin) / DOS->dE;
+            rest -= iE;
+            DOS->Im[iE] -= 1 - rest;
+            DOS->Im[iE + 1] -= rest;
           }
         }
       }
@@ -397,10 +404,22 @@ int TightBindingDOS(TightBindingDef A, int Nk[3], SpectraType * DOS)
   }
   for (iE = 0; iE <= DOS->N; iE++)
   {
-    DOS->Re[iE] /= (Nk[0] * Nk[1] * Nk[2]);
+    DOS->Im[iE] /= DOS->dE*(Nk[0] * Nk[1] * Nk[2]);
+  }
+  for (iE = 0; iE <= DOS->N; iE++)
+  {
+    for(jE=0;jE<=DOS->N;jE++)
+    {
+      if(jE!=iE)
+      {
+        DOS->Re[iE]+=DOS->Im[jE]/((double)(jE-iE));
+      }
+    }
+    DOS->Re[iE]/=Pi;
   }
   return 0;
 }
+
 
 /*
  *
@@ -457,6 +476,100 @@ int TightBindingBANDS(TightBindingDef A, BandstructurePathType kList, MatrixType
   return 0;
 }
 
+
+/*  given an eigen function the character matrix is calculated as char_{i,j} = psi_i * psi_j
+ *
+ */
+void RealEigenFunctionToCharacter(double const * EigenFun, MatrixType *Char)
+{
+  uint32_t i,j;
+  for(i=0;i<Char->Ni;i++)
+  {
+    for(j=0;j<Char->Nj;j++)
+    {
+      Char->VRe[i][j] = EigenFun[i]*EigenFun[j];
+    }
+  }
+}
+
+/*  given an eigen function the character matrix is calculated as char_{i,j} = psi_i * psi_j
+ *
+ */
+void ComplexEigenFunctionToCharacter(Complex16 const * EigenFun, MatrixType *Char)
+{
+  uint32_t i,j;
+  for(i=0;i<Char->Ni;i++)
+  {
+    for(j=0;j<Char->Nj;j++)
+    {
+      Char->VRe[i][j] = EigenFun[i].Re*EigenFun[j].Re+EigenFun[i].Im*EigenFun[j].Im;
+      Char->VIm[i][j] = EigenFun[i].Im*EigenFun[j].Re-EigenFun[i].Re*EigenFun[j].Im;
+    }
+  }
+}
+
+/*  given an eigen function the character matrix is calculated as char_{i,j} = psi_i * psi_j
+ *
+ */
+void EigenFunctionToCharacter(void const * EigenFun, MatrixType *Char)
+{
+  if(Char->QComplex)
+  {
+    ComplexEigenFunctionToCharacter((Complex16*) EigenFun, Char);
+  }
+  else
+  {
+    RealEigenFunctionToCharacter((double*) EigenFun, Char);
+  }
+}
+
+
+
+/*  given an eigen function the character matrix is calculated as char_{i,j} = psi_i * psi_j
+ *
+ */
+void RealEigenFunctionToCharacterMultiSite(double const * EigenFun, MatrixType *Char, uint32_t const Nvec, int const *vec)
+{
+  uint32_t i,j;
+  for(i=0;i<Char->Ni;i++)
+  {
+    for(j=0;j<Char->Nj;j++)
+    {
+      Char->VRe[i][j] = EigenFun[i]*EigenFun[j];
+    }
+  }
+}
+
+/*  given an eigen function the character matrix is calculated as char_{i,j} = psi_i * psi_j
+ *
+ */
+void ComplexEigenFunctionToCharacterMultiSite(Complex16 const * EigenFun, MatrixType *Char, uint32_t const Nvec, int const *vec)
+{
+  uint32_t i,j;
+  for(i=0;i<Char->Ni;i++)
+  {
+    for(j=0;j<Char->Nj;j++)
+    {
+      Char->VRe[i][j] = EigenFun[i].Re*EigenFun[j].Re+EigenFun[i].Im*EigenFun[j].Im;
+      Char->VIm[i][j] = EigenFun[i].Im*EigenFun[j].Re-EigenFun[i].Re*EigenFun[j].Im;
+    }
+  }
+}
+
+/*  given an eigen function the character matrix is calculated as char_{i,j} = psi_i * psi_j
+ *
+ */
+void EigenFunctionToCharacterMultiSite(void const * EigenFun, MatrixType *Char, uint32_t const Nvec, int const *vec)
+{
+  if(Char->QComplex)
+  {
+    ComplexEigenFunctionToCharacterMultiSite((Complex16*) EigenFun, Char, Nvec, vec);
+  }
+  else
+  {
+    RealEigenFunctionToCharacterMultiSite((double*) EigenFun, Char, Nvec, vec);
+  }
+}
 
 
 int EigenFunctionToCharactersStandardSetNCharacter(TightBindingDef A, int *NCharacter)

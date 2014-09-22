@@ -2,3 +2,4 @@
 #include "BasicMath_BlockAndersonMatrix.c"
 #include "BasicMath_BlockTridiagonalMatrix.c"
 #include "BasicMath_BlockTypeConversion.c"
+#include "BasicMath_BlockMatrixToOperator.c"

@@ -1275,7 +1275,7 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
           {
             StreamReadStuttgartCTRLBool(stream, 1, &(O->RHOFIT.FIT));
           }
-          else if(strcmp(str, "OUPTUP")==0)
+          else if(strcmp(str, "OUTPUT")==0)
           {
             StreamReadStuttgartCTRLint(stream, 1, &(O->RHOFIT.OUTPUT));
           }

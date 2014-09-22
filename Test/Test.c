@@ -70,6 +70,7 @@
 #include "../Test/StuttgartNMTO.c"
 #include "../Test/HarmonicOscillator.c"
 #include "../Test/BasisOptimization.c"
+#include "../Test/CI.c"
 
 int main(int argc, const char *argv[])
 {
@@ -93,7 +94,9 @@ int main(int argc, const char *argv[])
     if (!strncmp("Cell", argv[argc], strlen(argv[argc])))
       TestCellFunctions();
 
-
+    
+    if (!strncmp("CI", argv[argc], strlen(argv[argc])))
+      CItest();
 
     if (!strncmp("Cr", argv[argc], strlen(argv[argc])))
       TestCreate();
@@ -110,6 +113,8 @@ int main(int argc, const char *argv[])
       TestAllMatrix();
     if (!strncmp("MatrixVector", argv[argc], strlen(argv[argc])))
       TestMatrixVector();
+    if (!strncmp("CompactMatrixVector", argv[argc], strlen(argv[argc])))
+      TestCompactMatrixVector();
     if (!strncmp("ConvertMatrix", argv[argc], strlen(argv[argc])))
       TestMatrixTypeConversion();
     if (!strncmp("Combi", argv[argc], strlen(argv[argc])))
@@ -150,6 +155,8 @@ int main(int argc, const char *argv[])
       TestLanczosDyson();
     if (!strncmp("LancDy2", argv[argc], strlen(argv[argc])))
       TestLanczosDyson2();
+    if (!strncmp("LancDy3", argv[argc], strlen(argv[argc])))
+      TestLanczosDyson3();
 
     if (!strncmp("GenEig", argv[argc], strlen(argv[argc])))
       TestGeneralizedEigensystem();

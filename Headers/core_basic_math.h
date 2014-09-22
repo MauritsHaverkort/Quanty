@@ -191,6 +191,15 @@ uint32_t ComplexVectorBlokTriDiagonalMatrixVector();
 
 
 /**********************************************************/
+/**         BasisMath_BlockTriDiagonalMatrix.c           **/
+/**********************************************************/
+uint32_t InitBlockTridiagonalMatrix();
+uint32_t FreeBlockTridiagonalMatrix();
+
+
+
+
+/**********************************************************/
 /****      BasisMath/BlokAndersonMatrixVector.c        ****/
 /**********************************************************/
 void   FreeBlokAndersonMatrix();

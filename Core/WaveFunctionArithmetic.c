@@ -31,7 +31,7 @@ uint32_t CheckDetPhysical(uint8_t *det, uint32_t const NFermion, uint32_t const 
  */
 uint8_t *StringToDet(uint32_t const NFermion, uint32_t const NBoson, char *s)
 {
-  char **endptr;
+  char **endptr=NULL;
   char Boson[3];
   uint32_t i, nspaces=0;
   uint8_t *det;
@@ -313,8 +313,7 @@ void WaveFunctionFreeValues(WaveFunctionType * const psi)
   }
 }
 
-uint32_t WaveFunctionAddElement(WaveFunctionType * const psi, const uint8_t * const det, const double aRe,
-                                const double aIm)
+uint32_t WaveFunctionAddElement(WaveFunctionType * const psi, const uint8_t * const det, const double aRe, const double aIm)
 {
   if (psi->QComplex == 0)
   {
