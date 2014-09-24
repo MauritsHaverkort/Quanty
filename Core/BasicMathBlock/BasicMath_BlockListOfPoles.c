@@ -2,6 +2,7 @@
  *   Initialize a struct of BlockListOfPoles type
  *   malloc the space for storing N matrices of dimension BlockSize * BlockSize
  *   malloc the space for storing N doubles
+ *   QComplex, N and Blocksize need to be set
  */
 uint32_t InitBlockListOfPoles(BlockListOfPoles *const A)
 {
@@ -799,3 +800,444 @@ uint32_t SubtractBlockListOfPoles(BlockListOfPoles * const A, BlockListOfPoles c
   
   return 0;
 }
+
+
+
+/*
+ *
+ */
+uint32_t BlockListOfPolesReduceDim(BlockListOfPoles const * A, BlockListOfPoles * const B, CompactMatrixType const *T)
+{
+  uint32_t i,iA,iB;
+  CompactMatrixType Bnow, Anow;
+  if(T->Nj != A->BlockSize)
+  {
+    printf("BlockListOfPolesReduceDim failed as T.Nj (%i) != A.BlockSize (%i)\n",T->Nj,A->BlockSize);
+    return 1;
+  }
+  B->QComplex = A->QComplex;
+  B->BlockSize = T->Ni;
+  B->N=A->N;
+  InitBlockListOfPoles(B);
+  Anow.QComplex = A->QComplex;
+  Anow.Ni=A->BlockSize;
+  Anow.Nj=A->BlockSize;
+  Bnow.QComplex = B->QComplex;
+  Bnow.Ni=B->BlockSize;
+  Bnow.Nj=B->BlockSize;
+  iA=0;
+  iB=0;
+  if(B->QComplex)
+  {
+    for(i=0;i<B->N;i++)
+    {
+      B->V[iB].Re = A->V[iA].Re;
+      iA++;
+      iB++;
+      Anow.V=&(A->V[iA]);
+      Bnow.V=&(B->V[iB]);
+      CompactMatrixMultiply3PreAllocated('C', 'N', 'N', T, &Anow, T, &Bnow);
+      iA+=A->BlockSize*A->BlockSize;
+      iB+=B->BlockSize*B->BlockSize;
+    }
+  }
+  else
+  {
+    for(i=0;i<B->N;i++)
+    {
+      B->VRe[iB] = A->VRe[iA];
+      iA++;
+      iB++;
+      Anow.VRe=&(A->VRe[iA]);
+      Bnow.VRe=&(B->VRe[iB]);
+      CompactMatrixMultiply3PreAllocated('C', 'N', 'N', T, &Anow, T, &Bnow);
+      iA+=A->BlockSize*A->BlockSize;
+      iB+=B->BlockSize*B->BlockSize;
+    }
+  }
+  return 0;
+}
+
+
+
+/*  Given G0 and Sigma as Block List of Poles calculate the full Green's function also as a Block List of poles
+ *    The energy points of G are given on a fixed mesh
+ *    G not initiallized on input
+ */
+uint32_t BlockListOfPolesG0plusSigmaToGFixedEGrid(BlockListOfPoles const *G0, BlockListOfPoles const *Sigma, BlockListOfPoles * const G, double const Emin, double const Emax, uint32_t const NE)
+{
+  printf("This function \"BlockListOfPolesG0plusSigmaToGFixedEGrid\"is wrong ???why???\n");
+
+  
+  CompactMatrixType S,fun, beta, Char, betasqrt;
+  double *val, rest, totnow, totmax, totmin, energy;
+  double const dE = (Emax - Emin)/((double)NE);
+  int iE;
+  uint32_t i,j,k, iS, iLS, iRS, iSigma, iG0, ival, ic,jc;
+  if(G0->BlockSize!=Sigma->BlockSize)
+  {
+    printf("Trying to add a self energy of dimensions %i to a bare Green's function of dimensions %i\n",Sigma->BlockSize,G0->BlockSize);
+    return 1;
+  }
+  val=malloc((Sigma->N+1)*Sigma->BlockSize*sizeof(double));
+  Char.Ni=Sigma->BlockSize;
+  Char.Nj=Sigma->BlockSize;
+  Char.QComplex=0;
+  if((Sigma->QComplex)||(G0->QComplex)) Char.QComplex=1;
+  InitCompactMatrix(&Char);
+  beta.Ni=Sigma->BlockSize;
+  beta.Nj=Sigma->BlockSize;
+  beta.QComplex=G0->QComplex;
+  beta.Name=Char.Name;
+  G->BlockSize=G0->BlockSize;
+  G->N=NE+3;
+  G->QComplex=0;
+  if((Sigma->QComplex)||(G0->QComplex)) G->QComplex=1;
+  InitBlockListOfPoles(G);
+  energy=Emin-dE;
+  if(G->QComplex)
+  {
+    for(i=0;i<G->N*(1+G->BlockSize*G->BlockSize);i+=(1+G->BlockSize*G->BlockSize))
+    {
+      G->V[i].Re=energy;
+      energy+=dE;
+    }
+  }
+  else
+  {
+    for(i=0;i<G->N*(1+G->BlockSize*G->BlockSize);i+=(1+G->BlockSize*G->BlockSize))
+    {
+      G->VRe[i]=energy;
+      energy+=dE;
+    }
+  }
+  /* create a compact matrix S from the list of poles Sigma of dimension Sigma->N+1 times BlockSize */
+  S.QComplex=Sigma->QComplex;
+  S.Ni=(Sigma->N+1)*Sigma->BlockSize;
+  S.Nj=(Sigma->N+1)*Sigma->BlockSize;
+  InitCompactMatrix(&S);
+  iS=(S.Nj+1)*Sigma->BlockSize;
+  iLS=Sigma->BlockSize;
+  iRS=S.Nj*Sigma->BlockSize;
+  iSigma=0;
+  if(S.QComplex)
+  {
+    for(i=0;i<Sigma->N;i++)
+    {
+      for(j=0;j<Sigma->BlockSize;j++)
+      {
+        S.V[iS].Re=Sigma->V[iSigma].Re;
+        S.V[iS].Im=Sigma->V[iSigma].Im;
+        iS+=S.Nj+1;
+      }
+      iSigma+=1;
+      for(j=0;j<Sigma->BlockSize;j++)
+      {
+        for(k=0;k<Sigma->BlockSize;k++)
+        {
+          S.V[iRS].Re = Sigma->V[iSigma].Re;
+          S.V[iLS].Re = Sigma->V[iSigma].Re;
+          S.V[iRS].Im = Sigma->V[iSigma].Im;
+          S.V[iLS].Im =-Sigma->V[iSigma].Im;
+          iRS++;
+          iLS+=S.Nj;
+          iSigma++;
+        }
+        iRS+=S.Nj-Sigma->BlockSize;
+        iLS-=(Sigma->BlockSize*S.Nj)-1;
+      }
+    }
+    /* add left top block to S */
+    iS=0;
+    iSigma=0;
+    for(j=0;j<Sigma->BlockSize;j++)
+    {
+      for(k=0;k<Sigma->BlockSize;k++)
+      {
+        S.V[iS].Re=Sigma->a0[iSigma].Re;
+        S.V[iS].Im=Sigma->a0[iSigma].Im;
+        iSigma++;
+        iS++;
+      }
+      iS+=S.Nj-Sigma->BlockSize;
+    }
+  }
+  else
+  {
+    for(i=0;i<Sigma->N;i++)
+    {
+      for(j=0;j<Sigma->BlockSize;j++)
+      {
+        S.VRe[iS]=Sigma->VRe[iSigma];
+        iS+=S.Nj+1;
+      }
+      iSigma+=1;
+      for(j=0;j<Sigma->BlockSize;j++)
+      {
+        for(k=0;k<Sigma->BlockSize;k++)
+        {
+          S.VRe[iRS] = Sigma->VRe[iSigma];
+          S.VRe[iLS] = Sigma->VRe[iSigma];
+          iRS++;
+          iLS+=S.Nj;
+          iSigma++;
+        }
+        iRS+=S.Nj-Sigma->BlockSize;
+        iLS-=(Sigma->BlockSize*S.Nj)-1;
+      }
+    }
+    /* add left top block to S */
+    iS=0;
+    iSigma=0;
+    for(j=0;j<Sigma->BlockSize;j++)
+    {
+      for(k=0;k<Sigma->BlockSize;k++)
+      {
+        S.VRe[iS]=Sigma->a0Re[iSigma];
+        iSigma++;
+        iS++;
+      }
+      iS+=S.Nj-Sigma->BlockSize;
+    }
+  }
+  /* S is set except for the left top BlockSize by BlockSize part, which depends on G0 */
+  /* loop over all poles of G0, set left top of S, diagonalize and add new poles to G  */
+  iG0=0;
+  totmin=0;
+  totmax=0;
+  for(i=0;i<G0->N;i++)
+  {
+    iS=0;
+    iSigma=0;
+    /* add left top block to S */
+    if(Sigma->QComplex)
+    {
+      if(G0->QComplex)
+      {
+        for(j=0;j<Sigma->BlockSize;j++)
+        {
+          S.V[iS].Re=Sigma->a0[iSigma].Re+G0->V[iG0].Re;
+          S.V[iS].Im=0; /* diagonal of Hermitian matrix */
+          iSigma+=Sigma->BlockSize+1;
+          iS+=S.Nj+1;
+        }
+      }
+      else
+      {
+        for(j=0;j<Sigma->BlockSize;j++)
+        {
+          S.V[iS].Re=Sigma->a0[iSigma].Re+G0->VRe[iG0];
+          S.V[iS].Im=0; /* diagonal of Hermitian matrix */
+          iSigma+=Sigma->BlockSize+1;
+          iS+=S.Nj+1;
+        }
+      }
+    }
+    else
+    {
+      if(G0->QComplex)
+      {
+        for(j=0;j<Sigma->BlockSize;j++)
+        {
+          S.VRe[iS]=Sigma->a0Re[iSigma]+G0->V[iG0].Re;
+          iSigma+=Sigma->BlockSize+1;
+          iS+=S.Nj+1;
+        }
+      }
+      else
+      {
+        for(j=0;j<Sigma->BlockSize;j++)
+        {
+          S.VRe[iS]=Sigma->a0Re[iSigma]+G0->VRe[iG0];
+          iSigma+=Sigma->BlockSize+1;
+          iS+=S.Nj+1;
+        }
+      }
+    }
+    if(CompactMatrixEigensystem(&S, &fun, val))
+    {
+      printf("CompactMatrixEigensystem failed in BlockListOfPolesG0plusSigmaToGFixedEGrid\n");
+      return 1;
+    }
+    iG0++;
+    if(G0->QComplex)
+    {
+      beta.V=&(G0->V[iG0]);
+    }
+    else
+    {
+      beta.VRe=&(G0->VRe[iG0]);
+    }
+    CompactMatrixSqrt(&beta, &betasqrt);
+    for(ival=0;ival<Sigma->BlockSize;ival++)
+    {
+      /* calculate character matrix for eigen-value ival */
+      if(fun.QComplex)
+      {
+        for(ic=0;ic<G0->BlockSize;ic++)
+        {
+          for(jc=0;jc<G0->BlockSize;jc++)
+          {
+            Char.V[ic*Char.Nj+jc].Re = fun.V[ic+ival*fun.Nj].Re*fun.V[jc+ival*fun.Nj].Re - fun.V[ic+ival*fun.Nj].Im*fun.V[jc+ival*fun.Nj].Im;
+            Char.V[ic*Char.Nj+jc].Im = fun.V[ic+ival*fun.Nj].Im*fun.V[jc+ival*fun.Nj].Re - fun.V[ic+ival*fun.Nj].Re*fun.V[jc+ival*fun.Nj].Im;
+          }
+        }
+      }
+      else
+      {
+        if(Char.QComplex)
+        {
+          for(ic=0;ic<G0->BlockSize;ic++)
+          {
+            for(jc=0;jc<G0->BlockSize;jc++)
+            {
+              Char.V[ic*Char.Nj+jc].Re = fun.VRe[ic+ival*fun.Nj]*fun.VRe[jc+ival*fun.Nj];
+              Char.V[ic*Char.Nj+jc].Im = 0;
+            }
+          }
+        }
+        else
+        {
+          for(ic=0;ic<G0->BlockSize;ic++)
+          {
+            for(jc=0;jc<G0->BlockSize;jc++)
+            {
+              Char.VRe[ic*Char.Nj+jc]=fun.VRe[ic+ival*fun.Nj]*fun.VRe[jc+ival*fun.Nj];
+            }
+          }
+        }
+      }
+      TransformCompactMatrixInlineNNC(&Char, &betasqrt);
+      /* determine the position of the pole in the list of poles */
+      rest = (val[ival] - Emin) / dE;
+      iE = (int)(floor(rest));
+      if(G->QComplex)
+      {
+        if (iE >= NE)
+        {
+          totnow=0;
+          for(ic=0;ic<G0->BlockSize;ic++)
+          {
+            totnow+=Char.V[ic+ic*Char.Nj].Re;
+          }
+          if(totmax+totnow<10*DBL_MIN)
+          {
+            totmax+=10*DBL_MIN;
+            totnow+=10*DBL_MIN;
+          }
+          G->V[(NE+2)*(1+G->BlockSize*G->BlockSize)].Re = (totmax * G->V[(NE+2)*(1+G->BlockSize*G->BlockSize)].Re + totnow * val[ival]) / (totmax + totnow);
+          for(ic=0;ic<G0->BlockSize;ic++)
+          {
+            for(jc=0;jc<G0->BlockSize;jc++)
+            {
+              G->V[(NE+2)*(1+G->BlockSize*G->BlockSize)+1+jc+ic*G->BlockSize].Re+=Char.V[ic*Char.Nj+jc].Re;
+              G->V[(NE+2)*(1+G->BlockSize*G->BlockSize)+1+jc+ic*G->BlockSize].Im+=Char.V[ic*Char.Nj+jc].Im;
+            }
+          }
+          totmax+=totnow;
+        }
+        else if (iE < 0)
+        {
+          totnow=0;
+          for(ic=0;ic<G0->BlockSize;ic++)
+          {
+            totnow+=Char.V[ic+ic*Char.Nj].Re;
+          }
+          if(totmin+totnow<10*DBL_MIN)
+          {
+            totmin+=10*DBL_MIN;
+            totnow+=10*DBL_MIN;
+          }
+          G->V[0].Re = (totmin * G->V[0].Re + totnow * val[ival]) / (totmin + totnow);
+          for(ic=0;ic<G0->BlockSize;ic++)
+          {
+            for(jc=0;jc<G0->BlockSize;jc++)
+            {
+              G->V[1+jc+ic*G0->BlockSize].Re+=Char.V[ic*Char.Nj+jc].Re;
+              G->V[1+jc+ic*G0->BlockSize].Im+=Char.V[ic*Char.Nj+jc].Im;
+            }
+          }
+          totmin+=totnow;
+        }
+        else
+        {
+          rest -= iE;  /* rest is a number between 0 and 1 pole at iE+1 gets 1-rest pole at iE+2 gest rest */
+          for(ic=0;ic<G0->BlockSize;ic++)
+          {
+            for(jc=0;jc<G0->BlockSize;jc++)
+            {
+              G->V[(iE+1)*(1+G->BlockSize*G->BlockSize)+1+jc+ic*G->BlockSize].Re+=(1-rest)*Char.V[ic*Char.Nj+jc].Re;
+              G->V[(iE+2)*(1+G->BlockSize*G->BlockSize)+1+jc+ic*G->BlockSize].Re+=(  rest)*Char.V[ic*Char.Nj+jc].Re;
+              G->V[(iE+1)*(1+G->BlockSize*G->BlockSize)+1+jc+ic*G->BlockSize].Im+=(1-rest)*Char.V[ic*Char.Nj+jc].Im;
+              G->V[(iE+2)*(1+G->BlockSize*G->BlockSize)+1+jc+ic*G->BlockSize].Im+=(  rest)*Char.V[ic*Char.Nj+jc].Im;
+            }
+          }
+        }
+      }
+      else /* all are real */
+      {
+        if (iE >= NE)
+        {
+          totnow=0;
+          for(ic=0;ic<G0->BlockSize;ic++)
+          {
+            totnow+=Char.VRe[ic+ic*Char.Nj];
+          }
+          if(totmax+totnow<10*DBL_MIN)
+          {
+            totmax+=10*DBL_MIN;
+            totnow+=10*DBL_MIN;
+          }
+          G->VRe[(NE+2)*(1+G->BlockSize*G->BlockSize)] = (totmax * G->VRe[(NE+2)*(1+G->BlockSize*G->BlockSize)] + totnow * val[ival]) / (totmax + totnow);
+          for(ic=0;ic<G0->BlockSize;ic++)
+          {
+            for(jc=0;jc<G0->BlockSize;jc++)
+            {
+              G->VRe[(NE+2)*(1+G->BlockSize*G->BlockSize)+1+jc+ic*G->BlockSize]+=Char.VRe[ic*Char.Nj+jc];
+            }
+          }
+          totmax+=totnow;
+        }
+        else if (iE < 0)
+        {
+          totnow=0;
+          for(ic=0;ic<G0->BlockSize;ic++)
+          {
+            totnow+=Char.VRe[ic+ic*Char.Nj];
+          }
+          if(totmin+totnow<10*DBL_MIN)
+          {
+            totmin+=10*DBL_MIN;
+            totnow+=10*DBL_MIN;
+          }
+          G->VRe[0] = (totmin * G->VRe[0] + totnow * val[ival]) / (totmin + totnow);
+          for(ic=0;ic<G0->BlockSize;ic++)
+          {
+            for(jc=0;jc<G0->BlockSize;jc++)
+            {
+              G->VRe[1+jc+ic*G0->BlockSize]+=Char.VRe[ic*Char.Nj+jc];
+            }
+          }
+          totmin+=totnow;
+        }
+        else
+        {
+          rest -= iE;  /* rest is a number between 0 and 1 pole at iE+1 gets 1-rest pole at iE+2 gest rest */
+          for(ic=0;ic<G0->BlockSize;ic++)
+          {
+            for(jc=0;jc<G0->BlockSize;jc++)
+            {
+              G->VRe[(iE+1)*(1+G->BlockSize*G->BlockSize)+1+jc+ic*G->BlockSize]+=(1.0-rest)*Char.VRe[ic*Char.Nj+jc];
+              G->VRe[(iE+2)*(1+G->BlockSize*G->BlockSize)+1+jc+ic*G->BlockSize]+=(    rest)*Char.VRe[ic*Char.Nj+jc];
+            }
+          }
+        }
+      }
+    }
+    FreeCompactMatrix(&betasqrt);
+    iG0+=G0->BlockSize*G0->BlockSize;
+  }
+  ChopBlockListOfPoles(G, 1000*DBL_EPSILON);
+  return 0;
+}
+

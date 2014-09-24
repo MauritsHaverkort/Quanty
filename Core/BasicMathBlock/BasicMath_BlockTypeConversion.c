@@ -157,6 +157,28 @@ uint32_t BlockListOfPolesToSpectra(BlockListOfPoles const A, SpectraType *G, dou
       G[i].Re[j]*=Pi/G[i].dE;
     }
   }
+  /* add a0 */
+  if(A.QComplex)
+  {
+    for(i=0;i<A.BlockSize*A.BlockSize;i++)
+    {
+      for(j=0;j<=N;j++)
+      {
+        G[i].Re[j]+=A.a0[i].Re;
+        G[i].Im[j]+=A.a0[i].Im;
+      }
+    }
+  }
+  else
+  {
+    for(i=0;i<A.BlockSize*A.BlockSize;i++)
+    {
+      for(j=0;j<=N;j++)
+      {
+        G[i].Re[j]+=A.a0Re[i];
+      }
+    }
+  }
   return 0;
 }
 
@@ -203,7 +225,7 @@ uint32_t TightBindingHamiltonianToBlockListOfPoles(TightBindingDef const A, int 
         q[0] = diq[0] * A.Cell.gUnitCell[0][0] + diq[1] * A.Cell.gUnitCell[1][0] + diq[2] * A.Cell.gUnitCell[2][0];
         q[1] = diq[0] * A.Cell.gUnitCell[0][1] + diq[1] * A.Cell.gUnitCell[1][1] + diq[2] * A.Cell.gUnitCell[2][1];
         q[2] = diq[0] * A.Cell.gUnitCell[0][2] + diq[1] * A.Cell.gUnitCell[1][2] + diq[2] * A.Cell.gUnitCell[2][2];
-        CreateHamiltonianFromTightBindingDef(A, q, &H);
+        CreateHamiltonianFromTightBindingDefConstantPhaseInUnitCell(A, q, &H);
         EigensystemToCompact(H, &T, val);
         for(ival=0;ival<A.NFermion;ival++)
         {
@@ -356,7 +378,7 @@ uint32_t TightBindingHamiltonianMultiSiteToBlockListOfPoles(TightBindingDef cons
         q[0] = diq[0] * A.Cell.gUnitCell[0][0] + diq[1] * A.Cell.gUnitCell[1][0] + diq[2] * A.Cell.gUnitCell[2][0];
         q[1] = diq[0] * A.Cell.gUnitCell[0][1] + diq[1] * A.Cell.gUnitCell[1][1] + diq[2] * A.Cell.gUnitCell[2][1];
         q[2] = diq[0] * A.Cell.gUnitCell[0][2] + diq[1] * A.Cell.gUnitCell[1][2] + diq[2] * A.Cell.gUnitCell[2][2];
-        CreateHamiltonianFromTightBindingDef(A, q, &H);
+        CreateHamiltonianFromTightBindingDefConstantPhaseInUnitCell(A, q, &H);
         EigensystemToCompact(H, &T, val);
         for(ival=0;ival<A.NFermion;ival++)
         {
@@ -504,9 +526,296 @@ uint32_t TightBindingHamiltonianMultiSiteToBlockListOfPoles(TightBindingDef cons
   return 0;
 }
 
+/*  Turn a block list of poles into a matrix
+ *       ( a0   b1  b2  b3  ..  bn  )
+ *   M = ( b1^+ a1  0   0   ..  0   )
+ *       ( b2^+ 0   a2  0   ..  0   )
+ *       ( ..   ..  ..  ..  ..  ..  )
+ *       ( bn^+ 0   0   0   ..  an  )
+ */
+uint32_t BlockListOfPolesToCompactMatrix(BlockListOfPoles const * const A, CompactMatrixType * const B)
+{
+  uint32_t i,j,k,kA,kBa;
+  B->QComplex = A->QComplex;
+  B->Ni = (A->N+1) * A->BlockSize;
+  B->Nj = (A->N+1) * A->BlockSize;
+  InitCompactMatrix(B);
+  CompactMatrixType Anow,Asqrt;
+  Anow.Ni=A->BlockSize;
+  Anow.Nj=A->BlockSize;
+  if(A->QComplex)
+  {
+    Anow.QComplex=1;
+    for(i=0;i<A->BlockSize;i++)
+    {
+      for(j=0;j<A->BlockSize;j++)
+      {
+        B->V[i*B->Nj+j].Re=A->a0[i*A->BlockSize+j].Re;
+        B->V[i*B->Nj+j].Im=A->a0[i*A->BlockSize+j].Im;
+      }
+    }
+    kA=0;
+    kBa=A->BlockSize*(B->Nj+1);
+    for(k=0;k<A->N;k++)
+    {
+      Anow.V=&(A->V[kA]);
+      CompactMatrixSqrt(&Anow, &Asqrt);
+      for(i=0;i<A->BlockSize;i++)
+      {
+        B->V[kBa].Re=A->V[kA].Re;
+        kBa+=B->Nj+1;
+        for(j=0;j<A->BlockSize;j++)
+        {
+          B->V[(i+(k+1)*A->BlockSize)*B->Nj+j].Re = Asqrt.V[i*A->BlockSize+j].Re;
+          B->V[(i+(k+1)*A->BlockSize)+j*B->Nj].Re = Asqrt.V[i*A->BlockSize+j].Re;
+          B->V[(i+(k+1)*A->BlockSize)*B->Nj+j].Im = Asqrt.V[i*A->BlockSize+j].Im;
+          B->V[(i+(k+1)*A->BlockSize)+j*B->Nj].Im =-Asqrt.V[i*A->BlockSize+j].Im;
+        }
+      }
+      FreeCompactMatrix(&Asqrt);
+      kA+=A->BlockSize*A->BlockSize+1;
+    }
+  }
+  else
+  {
+    Anow.QComplex=0;
+    for(i=0;i<A->BlockSize;i++)
+    {
+      for(j=0;j<A->BlockSize;j++)
+      {
+        B->VRe[i*B->Nj+j]=A->a0Re[i*A->BlockSize+j];
+      }
+    }
+    kA=0;
+    kBa=A->BlockSize*(B->Nj+1);
+    for(k=0;k<A->N;k++)
+    {
+      Anow.VRe=&(A->VRe[kA]);
+      CompactMatrixSqrt(&Anow, &Asqrt);
+      for(i=0;i<A->BlockSize;i++)
+      {
+        B->VRe[kBa]=A->VRe[kA];
+        kBa+=B->Nj+1;
+        for(j=0;j<A->BlockSize;j++)
+        {
+          B->VRe[(i+(k+1)*A->BlockSize)*B->Nj+j]=Asqrt.VRe[i*A->BlockSize+j];
+          B->VRe[(i+(k+1)*A->BlockSize)+j*B->Nj]=Asqrt.VRe[i*A->BlockSize+j];
+        }
+      }
+      FreeCompactMatrix(&Asqrt);
+      kA+=A->BlockSize*A->BlockSize+1;
+    }
+  }
+  return 0;
+}
 
 
-
+/*  Given an tight binding Hamiltonian and a k-mesh defined by the number of divisions of a, b and c (Nk)
+ *  returns the green function matrix of size A.NFermion by A.NFermion
+ *          on an energy mesh with N+3 points. N+1 points from Emin to Emax and one point below Emin and one above Emax such that all weight and first moment is ok
+ *  Calculates the eigen values and functions for each k including a self energy input as a Block List of poles
+ *  for each k and eigen value i
+ *  weight is added to the pole at iE and iE+1 such that Energy[iE] < val < Energy[iE+1]
+ *  The matrix h_{jk} is fun[i,j] * fun[i,k]^* is added
+ */
+uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles(TightBindingDef const A, int Nk[3], BlockListOfPoles const Sigma, BlockListOfPoles * const G, double const Emin, double const Emax, uint32_t const NE)
+{
+  MatrixType H;
+  CompactMatrixType T, HSigma, HSigmaComplex;
+  double q[3], val[A.NFermion], rest, totmin=0, totmax=0, totnow;
+  int    iq[3],ival,iE,i,j;
+  double diq[3],dE=(Emax-Emin)/((double)NE),energy,Nktot;
+  // init G
+  G->BlockSize=A.NFermion;
+  G->N=NE+3;
+  G->QComplex=1;
+  strcpy(G->Name, A.Name);
+  if(InitBlockListOfPoles(G))
+  {
+    printf("InitBlockListOfPoles failed in TightBindingHamiltonianToBlockListOfPoles\n");
+    return 1;
+  }
+  // set energy of G
+  energy=Emin-dE;
+  for(i=0;i<G->N*(1+G->BlockSize*G->BlockSize);i+=(1+G->BlockSize*G->BlockSize))
+  {
+    G->V[i].Re=energy;
+    energy+=dE;
+  }
+  // create HSigma
+  BlockListOfPolesToCompactMatrix(&Sigma, &HSigma);
+  if(Sigma.QComplex==0)
+  {
+    CompactMatrixCopy(HSigma, &HSigmaComplex);
+    MakeCompactRealMatrixComplex(&HSigmaComplex);
+  }
+  for (iq[0] = 0; iq[0] < Nk[0]; iq[0]++)
+  {
+    for (iq[1] = 0; iq[1] < Nk[1]; iq[1]++)
+    {
+      for (iq[2] = 0; iq[2] < Nk[2]; iq[2]++)
+      {
+        diq[0] = iq[0] / ((double)(Nk[0]));
+        diq[1] = iq[1] / ((double)(Nk[1]));
+        diq[2] = iq[2] / ((double)(Nk[2]));
+        q[0] = diq[0] * A.Cell.gUnitCell[0][0] + diq[1] * A.Cell.gUnitCell[1][0] + diq[2] * A.Cell.gUnitCell[2][0];
+        q[1] = diq[0] * A.Cell.gUnitCell[0][1] + diq[1] * A.Cell.gUnitCell[1][1] + diq[2] * A.Cell.gUnitCell[2][1];
+        q[2] = diq[0] * A.Cell.gUnitCell[0][2] + diq[1] * A.Cell.gUnitCell[1][2] + diq[2] * A.Cell.gUnitCell[2][2];
+        CreateHamiltonianFromTightBindingDefConstantPhaseInUnitCell(A, q, &H);
+        if(H.QComplex)
+        {
+          if(Sigma.QComplex)
+          {
+            for(i=0;i<A.NFermion;i++)
+            {
+              for(j=0;j<A.NFermion;j++)
+              {
+                HSigma.V[i*HSigma.Nj+j].Re=Sigma.a0[i*Sigma.BlockSize+j].Re + H.VRe[i][j];
+                HSigma.V[i*HSigma.Nj+j].Im=Sigma.a0[i*Sigma.BlockSize+j].Im + H.VIm[i][j];
+              }
+            }
+            CompactMatrixEigensystem(&HSigma, &T, val);
+          }
+          else
+          {
+            for(i=0;i<A.NFermion;i++)
+            {
+              for(j=0;j<A.NFermion;j++)
+              {
+                HSigmaComplex.V[i*HSigma.Nj+j].Re=Sigma.a0Re[i*Sigma.BlockSize+j] + H.VRe[i][j];
+                HSigmaComplex.V[i*HSigma.Nj+j].Im=                                  H.VIm[i][j];
+              }
+            }
+            CompactMatrixEigensystem(&HSigmaComplex, &T, val);
+          }
+        }
+        else
+        {
+          if(Sigma.QComplex)
+          {
+            for(i=0;i<A.NFermion;i++)
+            {
+              for(j=0;j<A.NFermion;j++)
+              {
+                HSigma.V[i*HSigma.Nj+j].Re=Sigma.a0[i*Sigma.BlockSize+j].Re + H.VRe[i][j];
+                HSigma.V[i*HSigma.Nj+j].Im=Sigma.a0[i*Sigma.BlockSize+j].Im;
+              }
+            }
+            CompactMatrixEigensystem(&HSigma, &T, val);
+          }
+          else
+          {
+            for(i=0;i<A.NFermion;i++)
+            {
+              for(j=0;j<A.NFermion;j++)
+              {
+                HSigma.VRe[i*HSigma.Nj+j]=Sigma.a0Re[i*Sigma.BlockSize+j] + H.VRe[i][j];
+              }
+            }
+            CompactMatrixEigensystem(&HSigma, &T, val);
+          }
+        }
+        for(ival=0;ival<T.Nj;ival++)
+        {
+          /* calculate matrix B for eigen-value ival */
+          if(H.QComplex)
+          {
+            ComplexEigenFunctionToCharacter(&(T.V[ival*T.Nj]), &H);
+          }
+          else
+          {
+            RealEigenFunctionToCharacter(&(T.VRe[ival*T.Nj]), &H);
+          }
+          /* determine the position of the pole in the list of poles */
+          rest = (val[ival] - Emin) / dE;
+          iE = (int)(floor(rest));
+          if (iE >= NE)
+          {
+            totnow=0;
+            for(i=0;i<A.NFermion;i++)
+            {
+              totnow+=H.VRe[i][i];
+            }
+            if(totmax+totnow<10*DBL_MIN)
+            {
+              totmax+=10*DBL_MIN;
+              totnow+=10*DBL_MIN;
+            }
+            G->V[(NE+2)*(1+G->BlockSize*G->BlockSize)].Re = (totmax * G->V[(NE+2)*(1+G->BlockSize*G->BlockSize)].Re + totnow * val[ival]) / (totmax + totnow);
+            for(i=0;i<A.NFermion;i++)
+            {
+              for(j=0;j<A.NFermion;j++)
+              {
+                G->V[(NE+2)*(1+G->BlockSize*G->BlockSize)+1+j+i*A.NFermion].Re+=H.VRe[i][j];
+                if(H.QComplex)
+                {
+                  G->V[(NE+2)*(1+G->BlockSize*G->BlockSize)+1+j+i*A.NFermion].Im+=H.VIm[i][j];
+                }
+              }
+            }
+            totmax+=totnow;
+          }
+          else if (iE < 0)
+          {
+            totnow=0;
+            for(i=0;i<A.NFermion;i++)
+            {
+              totnow+=H.VRe[i][i];
+            }
+            if(totmin+totnow<10*DBL_MIN)
+            {
+              totmin+=10*DBL_MIN;
+              totnow+=10*DBL_MIN;
+            }
+            G->V[0].Re = (totmin * G->V[0].Re + totnow * val[ival]) / (totmin + totnow);
+            for(i=0;i<A.NFermion;i++)
+            {
+              for(j=0;j<A.NFermion;j++)
+              {
+                G->V[1+j+i*A.NFermion].Re+=H.VRe[i][j];
+                if(H.QComplex)
+                {
+                  G->V[1+j+i*A.NFermion].Im+=H.VIm[i][j];
+                }
+              }
+            }
+            totmin+=totnow;
+          }
+          else
+          {
+            rest -= iE;  /* rest is a number between 0 and 1 pole at iE+1 gets 1-rest pole at iE+2 gest rest */
+            for(i=0;i<A.NFermion;i++)
+            {
+              for(j=0;j<A.NFermion;j++)
+              {
+                G->V[(iE+1)*(1+G->BlockSize*G->BlockSize)+1+j+i*A.NFermion].Re+=(1-rest)*H.VRe[i][j];
+                G->V[(iE+2)*(1+G->BlockSize*G->BlockSize)+1+j+i*A.NFermion].Re+=(  rest)*H.VRe[i][j];
+                if(H.QComplex)
+                {
+                  G->V[(iE+1)*(1+G->BlockSize*G->BlockSize)+1+j+i*A.NFermion].Im+=(1-rest)*H.VIm[i][j];
+                  G->V[(iE+2)*(1+G->BlockSize*G->BlockSize)+1+j+i*A.NFermion].Im+=(  rest)*H.VIm[i][j];
+                }
+              }
+            }
+          }
+        }
+      }
+      FreeMatrix(&H);
+      FreeCompactMatrix(&T);
+    }
+  }
+  Nktot=Nk[0]*Nk[1]*Nk[2];
+  for(i=0;i<G->N*(1+G->BlockSize*G->BlockSize);i+=(1+G->BlockSize*G->BlockSize))
+  {
+    for(j=1;j<1+G->BlockSize*G->BlockSize;j++)
+    {
+      G->V[i+j].Re/=Nktot;
+      G->V[i+j].Im/=Nktot;
+    }
+  }
+  ChopBlockListOfPoles(G, DBL_EPSILON);
+  return 0;
+}
 
 
 /*  On input 
@@ -1045,7 +1354,7 @@ uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(BlockListOfPoles co
       }
     }
   }
-  CompactMatrixGramSchmidtOrthogonalizeCol(&T, DBL_EPSILON);
+  CompactMatrixGramSchmidtOrthogonalizeCol(&T, 1000*DBL_EPSILON);
   CompactMatrixMultiply3('C', 'N', 'N', &T, &M, &T, &(B->TMT));
   FreeCompactMatrix(&T);
   FreeCompactMatrix(&M);
@@ -1053,6 +1362,116 @@ uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(BlockListOfPoles co
   return 0;
 }
 
+uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrixReduceDimension(BlockListOfPoles const *A, BlockNaturalImpurityOrbitalMatrixType * const B, CompactMatrixType const *AT, double const kbT, uint32_t const NBlockMaxVal, uint32_t const NBlockMaxCon)
+{
+  int i,j;
+  CompactMatrixType T,M;
+  BlockListOfPoles Acon, Aval;
+  B->mu=A->mu;
+  B->QComplex=A->QComplex;
+  B->BlockSize = AT->Ni;
+  strcpy(B->Name, A->Name);
+  
+  CopyBlockListOfPolesCon(*A, &Acon, A->mu, kbT);
+  CopyBlockListOfPolesVal(*A, &Aval, A->mu, kbT);
+  BlockListOfPolesToBlockTridiagonalMatrixReduceDimension(Acon, &(B->con), AT, NBlockMaxCon, 1000*DBL_EPSILON);
+  BlockListOfPolesToBlockTridiagonalMatrixReduceDimension(Aval, &(B->val), AT, NBlockMaxVal, 1000*DBL_EPSILON);
+  
+  T.QComplex=B->QComplex;
+  T.Ni=4*B->BlockSize;
+  T.Nj=4*B->BlockSize;
+  InitCompactIdentityMatrix(&T);
+  M.QComplex=B->QComplex;
+  M.Ni=4*B->BlockSize;
+  M.Nj=4*B->BlockSize;
+  InitCompactMatrix(&M);
+  if(B->QComplex)
+  {
+    for(i=0;i<B->BlockSize;i++)
+    {
+      for(j=0;j<B->BlockSize;j++)
+      {
+        // copy bv_0
+        T.V[i*T.Nj+j].Re = B->val.b[j*B->BlockSize+i].Re;
+        T.V[i*T.Nj+j].Im = -B->val.b[j*B->BlockSize+i].Im;
+        // copy bv_0
+        T.V[(i+B->BlockSize)*T.Nj+j+B->BlockSize].Re = -B->val.b[j*B->BlockSize+i].Re;
+        T.V[(i+B->BlockSize)*T.Nj+j+B->BlockSize].Im =  B->val.b[j*B->BlockSize+i].Im;
+        // copy bc_0
+        T.V[(i+B->BlockSize)*T.Nj+j].Re = B->con.b[j*B->BlockSize+i].Re;
+        T.V[(i+B->BlockSize)*T.Nj+j].Im = -B->con.b[j*B->BlockSize+i].Im;
+        // copy bc_0
+        T.V[i*T.Nj+j+B->BlockSize].Re = B->con.b[j*B->BlockSize+i].Re;
+        T.V[i*T.Nj+j+B->BlockSize].Im = -B->con.b[j*B->BlockSize+i].Im;
+        
+        // copy av_1
+        M.V[i*M.Nj+j].Re = B->val.a[i*B->BlockSize+j+B->BlockSize*B->BlockSize].Re;
+        M.V[i*M.Nj+j].Im = B->val.a[i*B->BlockSize+j+B->BlockSize*B->BlockSize].Im;
+        // copy ac_1
+        M.V[(i+B->BlockSize)*M.Nj+j+B->BlockSize].Re = B->con.a[i*B->BlockSize+j+A->BlockSize*B->BlockSize].Re;
+        M.V[(i+B->BlockSize)*M.Nj+j+B->BlockSize].Im = B->con.a[i*B->BlockSize+j+A->BlockSize*B->BlockSize].Im;
+        // copy av_2
+        M.V[(i+2*B->BlockSize)*M.Nj+j+2*B->BlockSize].Re = B->val.a[i*B->BlockSize+j+2*B->BlockSize*B->BlockSize].Re;
+        M.V[(i+2*B->BlockSize)*M.Nj+j+2*B->BlockSize].Im = B->val.a[i*B->BlockSize+j+2*B->BlockSize*B->BlockSize].Im;
+        // copy ac_2
+        M.V[(i+3*B->BlockSize)*M.Nj+j+3*B->BlockSize].Re = B->con.a[i*B->BlockSize+j+2*B->BlockSize*B->BlockSize].Re;
+        M.V[(i+3*B->BlockSize)*M.Nj+j+3*B->BlockSize].Im = B->con.a[i*B->BlockSize+j+2*B->BlockSize*B->BlockSize].Im;
+        // copy bv_1
+        M.V[(i+2*B->BlockSize)*T.Nj+j].Re = B->val.b[i*B->BlockSize+j+B->BlockSize*B->BlockSize].Re;
+        M.V[(i+2*B->BlockSize)*T.Nj+j].Im = B->val.b[i*B->BlockSize+j+B->BlockSize*B->BlockSize].Im;
+        // copy bv_1^+
+        M.V[i*T.Nj+j+2*B->BlockSize].Re = B->val.b[j*B->BlockSize+i+B->BlockSize*B->BlockSize].Re;
+        M.V[i*T.Nj+j+2*B->BlockSize].Im = -B->val.b[j*B->BlockSize+i+B->BlockSize*B->BlockSize].Im;
+        // copy bc_1
+        M.V[(i+3*B->BlockSize)*T.Nj+j+B->BlockSize].Re = B->con.b[i*B->BlockSize+j+B->BlockSize*B->BlockSize].Re;
+        M.V[(i+3*B->BlockSize)*T.Nj+j+B->BlockSize].Im = B->con.b[i*B->BlockSize+j+B->BlockSize*B->BlockSize].Im;
+        // copy bc_1^+
+        M.V[(i+B->BlockSize)*T.Nj+j+3*B->BlockSize].Re = B->con.b[j*B->BlockSize+i+B->BlockSize*B->BlockSize].Re;
+        M.V[(i+B->BlockSize)*T.Nj+j+3*B->BlockSize].Im = -B->con.b[j*B->BlockSize+i+B->BlockSize*B->BlockSize].Im;
+      }
+    }
+  }
+  else
+  {
+    for(i=0;i<B->BlockSize;i++)
+    {
+      for(j=0;j<B->BlockSize;j++)
+      {
+        // copy bv_0
+        T.VRe[i*T.Nj+j] = B->val.bRe[j*B->BlockSize+i];
+        // copy bv_0
+        T.VRe[(i+B->BlockSize)*T.Nj+j+B->BlockSize] = -B->val.bRe[j*B->BlockSize+i];
+        // copy bc_0
+        T.VRe[(i+B->BlockSize)*T.Nj+j] = B->con.bRe[j*B->BlockSize+i];
+        // copy bc_0
+        T.VRe[i*T.Nj+j+B->BlockSize] = B->con.bRe[j*B->BlockSize+i];
+        
+        // copy av_1
+        M.VRe[i*M.Nj+j] = B->val.aRe[i*B->BlockSize+j+B->BlockSize*B->BlockSize];
+        // copy ac_1
+        M.VRe[(i+B->BlockSize)*M.Nj+j+B->BlockSize] = B->con.aRe[i*B->BlockSize+j+B->BlockSize*B->BlockSize];
+        // copy av_2
+        M.VRe[(i+2*B->BlockSize)*M.Nj+j+2*B->BlockSize] = B->val.aRe[i*B->BlockSize+j+2*B->BlockSize*B->BlockSize];
+        // copy ac_2
+        M.VRe[(i+3*B->BlockSize)*M.Nj+j+3*B->BlockSize] = B->con.aRe[i*B->BlockSize+j+2*B->BlockSize*B->BlockSize];
+        // copy bv_1
+        M.VRe[(i+2*B->BlockSize)*T.Nj+j] = B->val.bRe[i*B->BlockSize+j+B->BlockSize*B->BlockSize];
+        // copy bv_1^+
+        M.VRe[i*T.Nj+j+2*B->BlockSize] = B->val.bRe[j*B->BlockSize+i+B->BlockSize*B->BlockSize];
+        // copy bc_1
+        M.VRe[(i+3*B->BlockSize)*T.Nj+j+B->BlockSize] = B->con.bRe[i*B->BlockSize+j+B->BlockSize*B->BlockSize];
+        // copy bc_1^+
+        M.VRe[(i+B->BlockSize)*T.Nj+j+3*B->BlockSize] = B->con.bRe[j*B->BlockSize+i+B->BlockSize*B->BlockSize];
+      }
+    }
+  }
+  CompactMatrixGramSchmidtOrthogonalizeCol(&T, 1000*DBL_EPSILON);
+  CompactMatrixMultiply3('C', 'N', 'N', &T, &M, &T, &(B->TMT));
+  FreeCompactMatrix(&T);
+  FreeCompactMatrix(&M);
+  
+  return 0;
+}
 
 /*  On entry A represents a Green's function in a block tridiagonal form
  *  On excit G represents the same Green's function by a list of poles (energy weigth)
@@ -1370,7 +1789,7 @@ uint32_t BlockTriDiagonalMatrixToSpectra(BlockTriDiagonalMatrixType const * A, S
         Gw.V[i].Im+=Gamma/2.0;
       }
       CompactMatrixInverse(&Gw);
-      TransformCompactMatrixInlineNNC(&Gw, &b); /* Gw <- b^dag Gw b */
+      TransformCompactMatrixInlineNNC(&Gw, &b); /* Gw <- b Gw b^dag */
     }
     if(A->QComplex)
     {
