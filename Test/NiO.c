@@ -1,0 +1,253 @@
+void TestNiO()
+{
+  TimeType Time;
+  StuttgartCTRL CTRLin;
+  StuttgartHAMR HAMRin;
+  BandstructurePathType Path;
+  CrystalStructureType Cell;
+  TightBindingDef HTB, HTBAF;
+  MatrixType BANDS, BWValue;
+  double Elines[20], EFermi=6.57414, NidShift, UMeanField;
+  int Nk[3];
+  SpectraType DOS, G0Spec[64], G0AFSpec[256], GAFSpec[1024];
+  BlockListOfPoles G0, G0AF, GAF, Sigma;
+  CrystalStructureSuperCellType AFSuperCell;
+  
+  uint32_t DoBANDS=0, DoDOS=0, DoG0=0, DoG0AF=0, DoGAF=1;
+  
+  // read the output from the Stuttgart NMTO code
+  if(FileReadStuttgartCTRL(&CTRLin, "NiO/OMTA/CTRL"))printf("ERROR in CTRL file\n");
+  if(FileReadStuttgartHAMR(&HAMRin, "NiO/OMTA/HAMR"))printf("ERROR in HAMR file\n");
+  
+  // create the path in k-space from the CTRL file into the internal format
+  BandstructurePathFromStuttgartCTRL(CTRLin, &Path);
+  PrintBandstructurePath(Path);
+  // create the crystal structure in internal format from the CTRL file
+  CrystalStructureFromStuttgartCTRL(CTRLin, &Cell);
+  PrintCrystalStructure(Cell);
+  // create the TB Hamiltonian from the CTRL and HAMR file in internal format
+  TightBindingDefFromStuttgartCTRLHAMR(CTRLin, HAMRin, &HTB);
+  FilePrintTightBindingDef(HTB, "NiO/HTB", "w");
+  
+  // Create the AF supercell
+  AFSuperCell.rSuperCell[0][0]= 1;
+  AFSuperCell.rSuperCell[0][1]= 0;
+  AFSuperCell.rSuperCell[0][2]= 1;
+  AFSuperCell.rSuperCell[1][0]= 1;
+  AFSuperCell.rSuperCell[1][1]=-1;
+  AFSuperCell.rSuperCell[1][2]= 0;
+  AFSuperCell.rSuperCell[2][0]= 0;
+  AFSuperCell.rSuperCell[2][1]=-1;
+  AFSuperCell.rSuperCell[2][2]= 1;
+  AFSuperCell.Crystal=HTB.Cell;
+  AddAditionalInformationToSuperCell(&AFSuperCell);
+  PrintCrystalStructureSuperCell(AFSuperCell);
+  // Create the corresponding tight-binding Hamiltonian
+  CreateTightBindingSuperCell(HTB, &HTBAF, AFSuperCell);
+  FilePrintTightBindingDef(HTBAF, "NiO/HTBAF", "w");
+  
+  // Define the AF self energy
+  UMeanField = 8;
+  NidShift = 0; // this is related to Delta. Have fun to recrate the relation between Delta, epsilon p, epsilon d, U and OpShift...
+  // Create the LDA+U Self energy
+  Sigma.BlockSize=32;
+  Sigma.QComplex=0;
+  Sigma.N=0;
+  InitBlockListOfPoles(&Sigma);
+  Sigma.a0Re[ 0+32* 0]= -0.5 * UMeanField + NidShift; //t2g down A
+  Sigma.a0Re[ 1+32* 1]= -0.5 * UMeanField + NidShift; //t2g down A
+  Sigma.a0Re[ 2+32* 2]= -0.5 * UMeanField + NidShift; //eg  down A
+  Sigma.a0Re[ 3+32* 3]= -0.5 * UMeanField + NidShift; //t2g down A
+  Sigma.a0Re[ 4+32* 4]= -0.5 * UMeanField + NidShift; //eg  down A
+  Sigma.a0Re[ 5+32* 5]= 0;                            //p   down A
+  Sigma.a0Re[ 6+32* 6]= 0;                            //p   down A
+  Sigma.a0Re[ 7+32* 7]= 0;                            //p   down A
+  Sigma.a0Re[ 8+32* 8]= -0.5 * UMeanField + NidShift; //t2g down B
+  Sigma.a0Re[ 9+32* 9]= -0.5 * UMeanField + NidShift; //t2g down B
+  Sigma.a0Re[10+32*10]=  0.5 * UMeanField + NidShift; //eg  down B
+  Sigma.a0Re[11+32*11]= -0.5 * UMeanField + NidShift; //t2g down B
+  Sigma.a0Re[12+32*12]=  0.5 * UMeanField + NidShift; //eg  down B
+  Sigma.a0Re[13+32*13]= 0;                            //p   down B
+  Sigma.a0Re[14+32*14]= 0;                            //p   down B
+  Sigma.a0Re[15+32*15]= 0;                            //p   down B
+  Sigma.a0Re[16+32*16]= -0.5 * UMeanField + NidShift; //t2g up A
+  Sigma.a0Re[17+32*17]= -0.5 * UMeanField + NidShift; //t2g up A
+  Sigma.a0Re[18+32*18]=  0.5 * UMeanField + NidShift; //eg  up A
+  Sigma.a0Re[19+32*19]= -0.5 * UMeanField + NidShift; //t2g up A
+  Sigma.a0Re[20+32*20]=  0.5 * UMeanField + NidShift; //eg  up A
+  Sigma.a0Re[21+32*21]= 0;                            //p   up A
+  Sigma.a0Re[22+32*22]= 0;                            //p   up A
+  Sigma.a0Re[23+32*23]= 0;                            //p   up A
+  Sigma.a0Re[24+32*24]= -0.5 * UMeanField + NidShift; //t2g up B
+  Sigma.a0Re[25+32*25]= -0.5 * UMeanField + NidShift; //t2g up B
+  Sigma.a0Re[26+32*26]= -0.5 * UMeanField + NidShift; //eg  up B
+  Sigma.a0Re[27+32*27]= -0.5 * UMeanField + NidShift; //t2g up B
+  Sigma.a0Re[28+32*28]= -0.5 * UMeanField + NidShift; //eg  up B
+  Sigma.a0Re[29+32*29]= 0;                            //p   up B
+  Sigma.a0Re[30+32*30]= 0;                            //p   up B
+  Sigma.a0Re[31+32*31]= 0;                            //p   up B
+
+  if(DoBANDS)
+  {
+    // Calculate the band structure -  note that one can also use these functions with character plot
+    BeginTiming("BANDS", &Time);
+    TightBindingBANDS(HTB, Path, &BANDS);
+    // Turn the eigen-values to a matrix one can plot and export the bmp
+    TightBindingBANDSToMatrix(EFermi-10, EFermi+5, 1000, BANDS, &BWValue);
+    Elines[0]= EFermi-10;
+    Elines[1]= EFermi-5;
+    Elines[2]= EFermi+0;
+    Elines[3]= EFermi+5;
+    TightBindingAddAxesToMatrix(EFermi-10, EFermi+5, 4, Elines, Path, &BWValue);
+    FilePrintRealMatrixToBitmap(BWValue, "NiO/Bands.bmp", &RealToRGBColorBWInverse);
+    EndTiming("BANDS", &Time);
+    PrintTiming(Time);
+  }
+  
+  if(DoDOS)
+  {
+    // Calculate the DOS - note again that one can also use these functions to calculate partial DOSes
+    BeginTiming("DOS", &Time);
+    // Define k-mesh
+    Nk[0]=80;
+    Nk[1]=80;
+    Nk[2]=80;
+    // define DOS range
+    DOS.Emin=EFermi-10;
+    DOS.Emax=EFermi+5;
+    DOS.N=1500;
+    DOS.Gamma=0.03;
+    DOS.EminPole=DOS.Emin;
+    DOS.EmaxPole=DOS.Emax;
+    DOS.dE=(DOS.Emax-DOS.Emin)/DOS.N;
+    SpectrumAllocate(DOS, &DOS);
+    // Calculate eigenvalues
+    TightBindingDOS(HTB, Nk, &DOS);
+    // print to file
+    FilePrintSpectra(&DOS, 1, "NiO/DOS", "w");
+    EndTiming("DOS", &Time);
+    PrintTiming(Time);
+  }
+  
+  if(DoG0)
+  {
+    // Create G0 as a 8 by 8 matrix
+    BeginTiming("Create G0", &Time);
+    // Define k-mesh
+    Nk[0]=80;
+    Nk[1]=80;
+    Nk[2]=80;
+    TightBindingHamiltonianToBlockListOfPoles(HTB, Nk, &G0, EFermi-10, EFermi+5, 1500);
+    BlockListOfPolesToSpectra(G0, G0Spec, EFermi-10, EFermi+5, 1500);
+    FilePrintSpectra(G0Spec, HTB.NFermion*HTB.NFermion, "NiO/G0", "w");
+    EndTiming("Create G0", &Time);
+    PrintTiming(Time);
+  }
+  
+  if(DoG0AF)
+  {
+    // Create G0AF as a 16 by 16 matrix
+    BeginTiming("Create G0AF", &Time);
+    // Define k-mesh
+    Nk[0]=80;
+    Nk[1]=80;
+    Nk[2]=80;
+    TightBindingHamiltonianToBlockListOfPoles(HTBAF, Nk, &G0AF, EFermi-10, EFermi+5, 1500);
+    BlockListOfPolesToSpectra(G0AF, G0AFSpec, EFermi-10, EFermi+5, 1500);
+    FilePrintSpectra(G0AFSpec, HTBAF.NFermion*HTBAF.NFermion, "NiO/G0AF", "w");
+    EndTiming("Create G0AF", &Time);
+    PrintTiming(Time);
+  }
+  
+  if(DoGAF)
+  {
+    // Create G0AF as a 32 by 32 matrix
+    BeginTiming("Create GAF", &Time);
+    // Define k-mesh
+    Nk[0]=80;
+    Nk[1]=80;
+    Nk[2]=80;
+    TightBindingHamiltonianToBlockListOfPoles(HTBAF, Nk, &G0AF, EFermi-10, EFermi+5, 1500);
+    BlockListOfPolesToSpectra(GAF, GAFSpec, EFermi-10, EFermi+5, 1500);
+    FilePrintSpectra(GAFSpec, 2*HTBAF.NFermion*HTBAF.NFermion, "NiO/GAF", "w");
+    EndTiming("Create GAF", &Time);
+    PrintTiming(Time);
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  /* below is wrong
+  
+  // Create G as a 32 by 32 matrix
+  // G doubles as I need to include spin
+  // G doubles as I need to include AF order (in principle this is not needed, but I did not menage to implement it correctly otherwise - matrix rotation mess
+  BeginTiming("Create G", &Time);
+  // Define k-mesh
+  Nk[0]=80;
+  Nk[1]=80;
+  Nk[2]=80;
+  // Define Self energy
+  UMeanField = 8;
+  OpShift = 0; // this is related to Delta. Have fun to recrate the relation between Delta, epsilon p, epsilon d, U and OpShift...
+  // Create the LDA+U Self energy
+  Sigma.BlockSize=32;
+  Sigma.QComplex=0;
+  Sigma.N=0;
+  InitBlockListOfPoles(&Sigma);
+  Sigma.a0Re[ 0+32* 0]= -0.5 * UMeanField; //t2g down A
+  Sigma.a0Re[ 1+32* 1]= -0.5 * UMeanField; //t2g down A
+  Sigma.a0Re[ 2+32* 2]= -0.5 * UMeanField; //eg  down A
+  Sigma.a0Re[ 3+32* 3]= -0.5 * UMeanField; //t2g down A
+  Sigma.a0Re[ 4+32* 4]= -0.5 * UMeanField; //eg  down A
+  Sigma.a0Re[ 5+32* 5]= OpShift;           //p   down A
+  Sigma.a0Re[ 6+32* 6]= OpShift;           //p   down A
+  Sigma.a0Re[ 7+32* 7]= OpShift;           //p   down A
+  Sigma.a0Re[ 8+32* 8]= -0.5 * UMeanField; //t2g down B
+  Sigma.a0Re[ 9+32* 9]= -0.5 * UMeanField; //t2g down B
+  Sigma.a0Re[10+32*10]=  0.5 * UMeanField; //eg  down B
+  Sigma.a0Re[11+32*11]= -0.5 * UMeanField; //t2g down B
+  Sigma.a0Re[12+32*12]=  0.5 * UMeanField; //eg  down B
+  Sigma.a0Re[13+32*13]= OpShift;           //p   down B
+  Sigma.a0Re[14+32*14]= OpShift;           //p   down B
+  Sigma.a0Re[15+32*15]= OpShift;           //p   down B
+  Sigma.a0Re[16+32*16]= -0.5 * UMeanField; //t2g up A
+  Sigma.a0Re[17+32*17]= -0.5 * UMeanField; //t2g up A
+  Sigma.a0Re[18+32*18]=  0.5 * UMeanField; //eg  up A
+  Sigma.a0Re[19+32*19]= -0.5 * UMeanField; //t2g up A
+  Sigma.a0Re[20+32*20]=  0.5 * UMeanField; //eg  up A
+  Sigma.a0Re[21+32*21]= OpShift;           //p   up A
+  Sigma.a0Re[22+32*22]= OpShift;           //p   up A
+  Sigma.a0Re[23+32*23]= OpShift;           //p   up A
+  Sigma.a0Re[24+32*24]= -0.5 * UMeanField; //t2g up B
+  Sigma.a0Re[25+32*25]= -0.5 * UMeanField; //t2g up B
+  Sigma.a0Re[26+32*26]= -0.5 * UMeanField; //eg  up B
+  Sigma.a0Re[27+32*27]= -0.5 * UMeanField; //t2g up B
+  Sigma.a0Re[28+32*28]= -0.5 * UMeanField; //eg  up B
+  Sigma.a0Re[29+32*29]= OpShift;           //p   up B
+  Sigma.a0Re[30+32*30]= OpShift;           //p   up B
+  Sigma.a0Re[31+32*31]= OpShift;           //p   up B
+  
+  
+  
+  // Set doubling of unit cell to have one spin up and one spin down AF order
+  vec[0]=0; vec[1]=0; vec[2]=0;
+  vec[3]=1; vec[4]=-1; vec[5]=1;
+  // Create G
+  TightBindingHamiltonianAddSpinPlusSelfEnergyMultiSiteToBlockListOfPoles(HTB, Nk, Nvec, vec, Sigma, &G, EFermi-10, EFermi+5, 1500);
+  BlockListOfPolesToSpectra(G, GSpec, EFermi-10, EFermi+5, 1500);
+  FilePrintSpectra(GSpec, HTB.NFermion*HTB.NFermion, "NiO/G", "w");
+  EndTiming("Create G", &Time);
+  PrintTiming(Time);
+  
+  */
+   
+}

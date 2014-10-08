@@ -540,6 +540,13 @@ uint32_t StreamPrintCrystalStructureSuperCell(CrystalStructureSuperCellType O, F
 {
   uint32_t i;
   fprintf(stream, "\nprintout of Super Cell\n");
+  CrystalStructureType Otemp;
+  CreateCrystalStructureFromCrystalStructureSuperCell(O, &Otemp);
+  StreamPrintCrystalStructure(Otemp, stream);
+  // need to free Otemp
+  
+  fprintf(stream, "\nSuper cell created from\n");
+  
   StreamPrintCrystalStructure(O.Crystal, stream);
   fprintf(stream, "Number of Unit Cells in super cell: %4i\n", O.NCell);
   fprintf(stream, "Super Cell in Cell units:\n");

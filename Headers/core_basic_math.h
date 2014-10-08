@@ -74,6 +74,7 @@ void   FreeMatrix();
 uint32_t InitMatrix();
 uint32_t InitIdentityMatrix();
 uint32_t MakeRealMatrixComplex();
+uint32_t MakeComplexMatrixReal();
 void   MatrixChop();
 uint32_t MatrixTranspose();
 void   MatrixComplexConjugate();

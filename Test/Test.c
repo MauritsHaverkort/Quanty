@@ -71,6 +71,7 @@
 #include "../Test/HarmonicOscillator.c"
 #include "../Test/BasisOptimization.c"
 #include "../Test/CI.c"
+#include "../Test/NiO.c"
 
 int main(int argc, const char *argv[])
 {
@@ -189,6 +190,9 @@ int main(int argc, const char *argv[])
     
     if (!strncmp("MF", argv[argc], strlen(argv[argc])))
       TestMeanField();
+    
+    if (!strncmp("NiO", argv[argc], strlen(argv[argc])))
+      TestNiO();
   }
   
   

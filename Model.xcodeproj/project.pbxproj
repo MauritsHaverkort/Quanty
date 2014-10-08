@@ -267,6 +267,7 @@
 		4C2F88B71928CFA5009AED78 /* CrystalField.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = CrystalField.c; sourceTree = "<group>"; };
 		4C2F88B91928CFC8009AED78 /* LigandField.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = LigandField.c; sourceTree = "<group>"; };
 		4C3261581850DF9300CEECC4 /* OperatorArithmetic.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = OperatorArithmetic.c; sourceTree = "<group>"; };
+		4C363D6F19D464EE00162048 /* NiO.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = NiO.c; sourceTree = "<group>"; };
 		4C3FCCFC188419B6000B9DB8 /* BasicMathBlock.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = BasicMathBlock.c; path = BasicMathBlock/BasicMathBlock.c; sourceTree = "<group>"; };
 		4C3FCCFD188419E4000B9DB8 /* BasicMath_BlockListOfPoles.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = BasicMath_BlockListOfPoles.c; path = BasicMathBlock/BasicMath_BlockListOfPoles.c; sourceTree = "<group>"; };
 		4C3FCCFE18841A19000B9DB8 /* BasicMath_BlockTypeConversion.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = BasicMath_BlockTypeConversion.c; path = BasicMathBlock/BasicMath_BlockTypeConversion.c; sourceTree = "<group>"; };
@@ -660,6 +661,7 @@
 				4C03B03118706F30004C2B7B /* StuttgartNMTO.c */,
 				4C8B605818D924E40017AC8C /* BasisOptimization.c */,
 				4C4637E619C3844500EB0DB0 /* CI.c */,
+				4C363D6F19D464EE00162048 /* NiO.c */,
 			);
 			path = Test;
 			sourceTree = "<group>";

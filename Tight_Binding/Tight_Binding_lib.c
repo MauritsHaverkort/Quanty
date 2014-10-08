@@ -1316,6 +1316,66 @@ uint32_t CreateUSperCell(OperatorType U, OperatorType * USuperCell, CrystalStruc
 }
 
 
+
+int CreateCrystalStructureFromCrystalStructureSuperCell(CrystalStructureSuperCellType SuperCell, CrystalStructureType * Cell)
+{
+  int    iCell, iAtom, iAtomsuper, ishell, iorb, ia, ib, ic;
+  double transvec[3];
+  Cell->Units = SuperCell.Crystal.Units;
+  /* A = N[0][0] a + N[0][1] b + N[0][2] c */
+  Cell->rUnitCell[0][0] = SuperCell.rSuperCell[0][0] * SuperCell.Crystal.rUnitCell[0][0] + SuperCell.rSuperCell[0][1] * SuperCell.Crystal.rUnitCell[1][0] + SuperCell.rSuperCell[0][2] * SuperCell.Crystal.rUnitCell[2][0];
+  Cell->rUnitCell[0][1] = SuperCell.rSuperCell[0][0] * SuperCell.Crystal.rUnitCell[0][1] + SuperCell.rSuperCell[0][1] * SuperCell.Crystal.rUnitCell[1][1] + SuperCell.rSuperCell[0][2] * SuperCell.Crystal.rUnitCell[2][1];
+  Cell->rUnitCell[0][2] = SuperCell.rSuperCell[0][0] * SuperCell.Crystal.rUnitCell[0][2] + SuperCell.rSuperCell[0][1] * SuperCell.Crystal.rUnitCell[1][2] + SuperCell.rSuperCell[0][2] * SuperCell.Crystal.rUnitCell[2][2];
+  /* A = N[1][0] a + N[1][1] b + N[1][2] c */
+  Cell->rUnitCell[1][0] = SuperCell.rSuperCell[1][0] * SuperCell.Crystal.rUnitCell[0][0] + SuperCell.rSuperCell[1][1] * SuperCell.Crystal.rUnitCell[1][0] + SuperCell.rSuperCell[1][2] * SuperCell.Crystal.rUnitCell[2][0];
+  Cell->rUnitCell[1][1] = SuperCell.rSuperCell[1][0] * SuperCell.Crystal.rUnitCell[0][1] + SuperCell.rSuperCell[1][1] * SuperCell.Crystal.rUnitCell[1][1] + SuperCell.rSuperCell[1][2] * SuperCell.Crystal.rUnitCell[2][1];
+  Cell->rUnitCell[1][2] = SuperCell.rSuperCell[1][0] * SuperCell.Crystal.rUnitCell[0][2] + SuperCell.rSuperCell[1][1] * SuperCell.Crystal.rUnitCell[1][2] + SuperCell.rSuperCell[1][2] * SuperCell.Crystal.rUnitCell[2][2];
+  /* A = N[2][0] a + N[2][1] b + N[2][2] c */
+  Cell->rUnitCell[2][0] = SuperCell.rSuperCell[2][0] * SuperCell.Crystal.rUnitCell[0][0] + SuperCell.rSuperCell[2][1] * SuperCell.Crystal.rUnitCell[1][0] + SuperCell.rSuperCell[2][2] * SuperCell.Crystal.rUnitCell[2][0];
+  Cell->rUnitCell[2][1] = SuperCell.rSuperCell[2][0] * SuperCell.Crystal.rUnitCell[0][1] + SuperCell.rSuperCell[2][1] * SuperCell.Crystal.rUnitCell[1][1] + SuperCell.rSuperCell[2][2] * SuperCell.Crystal.rUnitCell[2][1];
+  Cell->rUnitCell[2][2] = SuperCell.rSuperCell[2][0] * SuperCell.Crystal.rUnitCell[0][2] + SuperCell.rSuperCell[2][1] * SuperCell.Crystal.rUnitCell[1][2] + SuperCell.rSuperCell[2][2] * SuperCell.Crystal.rUnitCell[2][2];
+  ResiprocalLatticeVector(Cell->rUnitCell, Cell->gUnitCell);
+  Cell->NAtoms = SuperCell.NCell * SuperCell.Crystal.NAtoms;
+  Cell->Atom = malloc(Cell->NAtoms * sizeof(AtomType));
+  iAtomsuper = 0;
+  for (iCell = 0; iCell < SuperCell.NCell; iCell++)
+  {
+    ia = SuperCell.CellPos[iCell][0];
+    ib = SuperCell.CellPos[iCell][1];
+    ic = SuperCell.CellPos[iCell][2];
+    transvec[0] = ia * SuperCell.Crystal.rUnitCell[0][0] + ib * SuperCell.Crystal.rUnitCell[1][0] + ic * SuperCell.Crystal.rUnitCell[2][0];
+    transvec[1] = ia * SuperCell.Crystal.rUnitCell[0][1] + ib * SuperCell.Crystal.rUnitCell[1][1] + ic * SuperCell.Crystal.rUnitCell[2][1];
+    transvec[2] = ia * SuperCell.Crystal.rUnitCell[0][2] + ib * SuperCell.Crystal.rUnitCell[1][2] + ic * SuperCell.Crystal.rUnitCell[2][2];
+    for (iAtom = 0; iAtom < SuperCell.Crystal.NAtoms; iAtom++)
+    {
+      strncpy(Cell->Atom[iAtomsuper].Name, SuperCell.Crystal.Atom[iAtom].Name, 32);
+      Cell->Atom[iAtomsuper].AtomNumber = SuperCell.Crystal.Atom[iAtom].AtomNumber;
+      Cell->Atom[iAtomsuper].Position[0] = transvec[0] + SuperCell.Crystal.Atom[iAtom].Position[0];
+      Cell->Atom[iAtomsuper].Position[1] = transvec[1] + SuperCell.Crystal.Atom[iAtom].Position[1];
+      Cell->Atom[iAtomsuper].Position[2] = transvec[2] + SuperCell.Crystal.Atom[iAtom].Position[2];
+      Cell->Atom[iAtomsuper].Nshell = SuperCell.Crystal.Atom[iAtom].Nshell;
+      Cell->Atom[iAtomsuper].ShellName = malloc(SuperCell.Crystal.Atom[iAtom].Nshell * sizeof(char*));
+      Cell->Atom[iAtomsuper].shelldegeneracy = malloc(SuperCell.Crystal.Atom[iAtom].Nshell * sizeof(int));
+      Cell->Atom[iAtomsuper].OrbitalName = malloc(SuperCell.Crystal.Atom[iAtom].Nshell * sizeof(char**));
+      for (ishell = 0; ishell < SuperCell.Crystal.Atom[iAtom].Nshell; ishell++)
+      {
+        Cell->Atom[iAtomsuper].ShellName[ishell] = malloc(32 * sizeof(char));
+        strncpy(Cell->Atom[iAtomsuper].ShellName[ishell], SuperCell.Crystal.Atom[iAtom].ShellName[ishell], 32);
+        Cell->Atom[iAtomsuper].shelldegeneracy[ishell] = SuperCell.Crystal.Atom[iAtom].shelldegeneracy[ishell];
+        Cell->Atom[iAtomsuper].OrbitalName[ishell] = malloc(Cell->Atom[iAtomsuper].shelldegeneracy[ishell] * sizeof(char*));
+        for(iorb = 0; iorb < Cell->Atom[iAtomsuper].shelldegeneracy[ishell]; iorb++)
+        {
+          Cell->Atom[iAtomsuper].OrbitalName[ishell][iorb] = malloc(32 * sizeof(char));
+          strncpy(Cell->Atom[iAtomsuper].OrbitalName[ishell][iorb], SuperCell.Crystal.Atom[iAtom].OrbitalName[ishell][iorb], 32);
+        }
+      }
+      iAtomsuper++;
+    }
+  }
+  return 0;
+}
+
+
 int CreateTightBindingSuperCell(TightBindingDef A, TightBindingDef * ASuper, CrystalStructureSuperCellType SuperCell)
 {
   int    iCell, iAtom, iAtomsuper, ishell, iH, iHsuper, ia, ib, ic, atomvec[3];

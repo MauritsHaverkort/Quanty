@@ -90,6 +90,7 @@ uint32_t CreateUSperCell(OperatorType U, OperatorType * USuperCell, CrystalStruc
 int    CreateTightBindingSuperCell();
 int CreateHamiltonianFromTightBindingDef();
 int CreateHamiltonianFromTightBindingDefConstantPhaseInUnitCell();
+int CreateCrystalStructureFromCrystalStructureSuperCell();
 void RealEigenFunctionToCharacter();
 void ComplexEigenFunctionToCharacter();
 void EigenFunctionToCharacter();
