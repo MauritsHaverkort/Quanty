@@ -1120,7 +1120,7 @@ uint32_t TightBindingHamiltonianAddSpinPlusSelfEnergyToBlockListOfPoles(TightBin
 {
   MatrixType H, PsiChar;
   CompactMatrixType T, HSigma, HSigmaComplex;
-  double q[3], val[A.NFermion], rest, totmin=0, totmax=0, totnow;
+  double q[3], val[2*A.NFermion], rest, totmin=0, totmax=0, totnow;
   int    iq[3],ival,iE,i,j;
   double diq[3],dE=(Emax-Emin)/((double)NE),energy,Nktot;
   // initiallize PsiChar, a matrix storing the density of a wave-function
@@ -1263,10 +1263,10 @@ uint32_t TightBindingHamiltonianAddSpinPlusSelfEnergyToBlockListOfPoles(TightBin
             {
               for(j=0;j<2*A.NFermion;j++)
               {
-                G->V[(NE+2)*(1+G->BlockSize*G->BlockSize)+1+j+i*A.NFermion].Re+=PsiChar.VRe[i][j];
+                G->V[(NE+2)*(1+G->BlockSize*G->BlockSize)+1+j+i*2*A.NFermion].Re+=PsiChar.VRe[i][j];
                 if(T.QComplex)
                 {
-                  G->V[(NE+2)*(1+G->BlockSize*G->BlockSize)+1+j+i*A.NFermion].Im+=PsiChar.VIm[i][j];
+                  G->V[(NE+2)*(1+G->BlockSize*G->BlockSize)+1+j+i*2*A.NFermion].Im+=PsiChar.VIm[i][j];
                 }
               }
             }
@@ -1289,10 +1289,10 @@ uint32_t TightBindingHamiltonianAddSpinPlusSelfEnergyToBlockListOfPoles(TightBin
             {
               for(j=0;j<2*A.NFermion;j++)
               {
-                G->V[1+j+i*A.NFermion].Re+=PsiChar.VRe[i][j];
+                G->V[1+j+i*2*A.NFermion].Re+=PsiChar.VRe[i][j];
                 if(T.QComplex)
                 {
-                  G->V[1+j+i*A.NFermion].Im+=PsiChar.VIm[i][j];
+                  G->V[1+j+i*2*A.NFermion].Im+=PsiChar.VIm[i][j];
                 }
               }
             }
@@ -1305,12 +1305,12 @@ uint32_t TightBindingHamiltonianAddSpinPlusSelfEnergyToBlockListOfPoles(TightBin
             {
               for(j=0;j<2*A.NFermion;j++)
               {
-                G->V[(iE+1)*(1+G->BlockSize*G->BlockSize)+1+j+i*A.NFermion].Re+=(1-rest)*PsiChar.VRe[i][j];
-                G->V[(iE+2)*(1+G->BlockSize*G->BlockSize)+1+j+i*A.NFermion].Re+=(  rest)*PsiChar.VRe[i][j];
+                G->V[(iE+1)*(1+G->BlockSize*G->BlockSize)+1+j+i*2*A.NFermion].Re+=(1-rest)*PsiChar.VRe[i][j];
+                G->V[(iE+2)*(1+G->BlockSize*G->BlockSize)+1+j+i*2*A.NFermion].Re+=(  rest)*PsiChar.VRe[i][j];
                 if(T.QComplex)
                 {
-                  G->V[(iE+1)*(1+G->BlockSize*G->BlockSize)+1+j+i*A.NFermion].Im+=(1-rest)*PsiChar.VIm[i][j];
-                  G->V[(iE+2)*(1+G->BlockSize*G->BlockSize)+1+j+i*A.NFermion].Im+=(  rest)*PsiChar.VIm[i][j];
+                  G->V[(iE+1)*(1+G->BlockSize*G->BlockSize)+1+j+i*2*A.NFermion].Im+=(1-rest)*PsiChar.VIm[i][j];
+                  G->V[(iE+2)*(1+G->BlockSize*G->BlockSize)+1+j+i*2*A.NFermion].Im+=(  rest)*PsiChar.VIm[i][j];
                 }
               }
             }
@@ -2154,6 +2154,17 @@ uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(BlockListOfPoles co
   return 0;
 }
 
+/*  Input: 
+ *    A         BlockListOfPoles to converge to Nat. Imp. orbitlals
+ *    AT        Matrix defining the reduction of the impurity size
+ *              AT->Nj original dimension of A
+ *              AT->Ni new dimension
+ *    kBT       Effective artificial temperature used to determine the density matrix
+ *    NBlockVal Lenght of chain in result
+ *    NBlockCon Lenght of chain in result
+ *  Output
+ *    B resutling G on Nat. Imp. Orb. basis
+ */
 uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrixReduceDimension(BlockListOfPoles const *A, BlockNaturalImpurityOrbitalMatrixType * const B, CompactMatrixType const *AT, double const kbT, uint32_t const NBlockMaxVal, uint32_t const NBlockMaxCon)
 {
   int i,j;
@@ -2600,3 +2611,100 @@ uint32_t BlockTriDiagonalMatrixToSpectra(BlockTriDiagonalMatrixType const * A, S
   }
   return 0;
 }
+
+/*  G = (T Gp T^+)[1,1]
+ *
+ *       (Gv 0  )
+ *  Gp = (0  Gc )
+ *
+ *       (bv0    bc0 )
+ *  T  = (bc0^+ -bv0 )
+ *
+ *  G = bc0 gc bc0^+ + bv0 gv bv0^+
+ */
+uint32_t BlockNaturalImpurityOrbitalToSpectra(BlockNaturalImpurityOrbitalMatrixType const * A, SpectraType *const G, double const Emin, double const Emax, uint32_t const N, double const Gamma)
+{
+  SpectraType Gval[A->BlockSize*A->BlockSize], Gcon[A->BlockSize*A->BlockSize];
+  uint32_t i,j,k,ii,jj;
+  
+  BlockTriDiagonalMatrixToSpectra(&(A->val), Gval, Emin, Emax, N, Gamma);
+  BlockTriDiagonalMatrixToSpectra(&(A->con), Gcon, Emin, Emax, N, Gamma);
+  
+  G[0].N=N;
+  G[0].Emin=Emin;
+  G[0].Emax=Emax;
+  G[0].EminPole=Emin;
+  G[0].EmaxPole=Emax;
+  G[0].dE=(Emax-Emin)/((double)N);
+  G[0].Gamma=Gamma;
+  for(i=0;i<A->BlockSize*A->BlockSize;i++)
+  {
+    SpectrumAllocate(G[0], &(G[i]));
+  }
+  
+  if(A->QComplex)
+  {
+    for(i=0;i<A->BlockSize;i++)
+    {
+      for(j=0;j<A->BlockSize;j++)
+      {
+        for(ii=0;ii<A->BlockSize;ii++)
+        {
+          for(jj=0;jj<A->BlockSize;jj++)
+          {
+            for(k=0;k<=N;k++)
+            {
+              G[j+i*A->BlockSize].Re[k] += A->val.b[ii + j * A->BlockSize].Re * Gval[jj + ii * A->BlockSize].Re[k] * A->val.b[jj + i * A->BlockSize].Re;
+              G[j+i*A->BlockSize].Im[k] += A->val.b[ii + j * A->BlockSize].Re * Gval[jj + ii * A->BlockSize].Im[k] * A->val.b[jj + i * A->BlockSize].Re;
+              G[j+i*A->BlockSize].Re[k] += A->con.b[ii + j * A->BlockSize].Re * Gcon[jj + ii * A->BlockSize].Re[k] * A->con.b[jj + i * A->BlockSize].Re;
+              G[j+i*A->BlockSize].Im[k] += A->con.b[ii + j * A->BlockSize].Re * Gcon[jj + ii * A->BlockSize].Im[k] * A->con.b[jj + i * A->BlockSize].Re;
+              G[j+i*A->BlockSize].Re[k] += A->val.b[ii + j * A->BlockSize].Im * Gval[jj + ii * A->BlockSize].Re[k] * A->val.b[jj + i * A->BlockSize].Im;
+              G[j+i*A->BlockSize].Im[k] += A->val.b[ii + j * A->BlockSize].Im * Gval[jj + ii * A->BlockSize].Im[k] * A->val.b[jj + i * A->BlockSize].Im;
+              G[j+i*A->BlockSize].Re[k] += A->con.b[ii + j * A->BlockSize].Im * Gcon[jj + ii * A->BlockSize].Re[k] * A->con.b[jj + i * A->BlockSize].Im;
+              G[j+i*A->BlockSize].Im[k] += A->con.b[ii + j * A->BlockSize].Im * Gcon[jj + ii * A->BlockSize].Im[k] * A->con.b[jj + i * A->BlockSize].Im;
+              G[j+i*A->BlockSize].Re[k] -= A->val.b[ii + j * A->BlockSize].Im * Gval[jj + ii * A->BlockSize].Im[k] * A->val.b[jj + i * A->BlockSize].Re;
+              G[j+i*A->BlockSize].Im[k] += A->val.b[ii + j * A->BlockSize].Im * Gval[jj + ii * A->BlockSize].Re[k] * A->val.b[jj + i * A->BlockSize].Re;
+              G[j+i*A->BlockSize].Re[k] -= A->con.b[ii + j * A->BlockSize].Im * Gcon[jj + ii * A->BlockSize].Im[k] * A->con.b[jj + i * A->BlockSize].Re;
+              G[j+i*A->BlockSize].Im[k] += A->con.b[ii + j * A->BlockSize].Im * Gcon[jj + ii * A->BlockSize].Re[k] * A->con.b[jj + i * A->BlockSize].Re;
+              G[j+i*A->BlockSize].Re[k] += A->val.b[ii + j * A->BlockSize].Re * Gval[jj + ii * A->BlockSize].Im[k] * A->val.b[jj + i * A->BlockSize].Im;
+              G[j+i*A->BlockSize].Im[k] -= A->val.b[ii + j * A->BlockSize].Re * Gval[jj + ii * A->BlockSize].Re[k] * A->val.b[jj + i * A->BlockSize].Im;
+              G[j+i*A->BlockSize].Re[k] += A->con.b[ii + j * A->BlockSize].Re * Gcon[jj + ii * A->BlockSize].Im[k] * A->con.b[jj + i * A->BlockSize].Im;
+              G[j+i*A->BlockSize].Im[k] -= A->con.b[ii + j * A->BlockSize].Re * Gcon[jj + ii * A->BlockSize].Re[k] * A->con.b[jj + i * A->BlockSize].Im;
+            }
+          }
+        }
+      }
+    }
+  }
+  else
+  {
+    for(i=0;i<A->BlockSize;i++)
+    {
+      for(j=0;j<A->BlockSize;j++)
+      {
+        for(ii=0;ii<A->BlockSize;ii++)
+        {
+          for(jj=0;jj<A->BlockSize;jj++)
+          {
+            for(k=0;k<=N;k++)
+            {
+              G[j+i*A->BlockSize].Re[k] += A->val.bRe[ii + j * A->BlockSize] * Gval[jj + ii * A->BlockSize].Re[k] * A->val.bRe[jj + i * A->BlockSize];
+              G[j+i*A->BlockSize].Im[k] += A->val.bRe[ii + j * A->BlockSize] * Gval[jj + ii * A->BlockSize].Im[k] * A->val.bRe[jj + i * A->BlockSize];
+              G[j+i*A->BlockSize].Re[k] += A->con.bRe[ii + j * A->BlockSize] * Gcon[jj + ii * A->BlockSize].Re[k] * A->con.bRe[jj + i * A->BlockSize];
+              G[j+i*A->BlockSize].Im[k] += A->con.bRe[ii + j * A->BlockSize] * Gcon[jj + ii * A->BlockSize].Im[k] * A->con.bRe[jj + i * A->BlockSize];
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  for(i=0;i<A->BlockSize*A->BlockSize;i++)
+  {
+    SpectrumFree(&Gval[i]);
+    SpectrumFree(&Gcon[i]);
+  }
+  return 0;
+}
+
+
