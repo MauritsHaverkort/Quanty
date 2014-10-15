@@ -279,6 +279,7 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(OperatorType *co
       printf("Number of Fermions enlarged\n");
     }
   }
+  H->NWord=Min(H->NFermion,1+(H->NFermion-1)/8);
   InitOperatorFixedLength(H, 2, 8);
   if(A->QComplex)
   {
@@ -336,7 +337,7 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(OperatorType *co
       }
       /* tridiagonal matrix val to operator */
       ia=2*A->BlockSize*A->BlockSize;
-      for(k=2;k<=Min(NBlockMaxVal,A->val.N);k++)
+      for(k=2;k<=Min(NBlockMaxVal+1,A->val.N);k++)
       {
         ifer=NFermionShift+k*A->BlockSize;
         for(i=0;i<A->BlockSize;i++)
@@ -354,7 +355,7 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(OperatorType *co
         }
       }
       ib=2*A->BlockSize*A->BlockSize;
-      for(k=2;k<Min(NBlockMaxVal,A->val.N);k++)
+      for(k=2;k<Min(NBlockMaxVal+1,A->val.N);k++)
       {
         ifer=NFermionShift+(k+1)*A->BlockSize;
         for(i=0;i<A->BlockSize;i++)
@@ -376,7 +377,7 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(OperatorType *co
       }
       /* tridiagonal matrix con to operator */
       ia=2*A->BlockSize*A->BlockSize;
-      for(k=2+NBlockMaxVal;k<=Min(NBlockMaxCon+NBlockMaxVal,A->con.N+NBlockMaxVal);k++)
+      for(k=2+NBlockMaxVal;k<=NBlockMaxVal+Min(NBlockMaxCon+1,A->con.N);k++)
       {
         ifer=NFermionShift+k*A->BlockSize;
         for(i=0;i<A->BlockSize;i++)
@@ -394,7 +395,7 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(OperatorType *co
         }
       }
       ib=2*A->BlockSize*A->BlockSize;
-      for(k=2+NBlockMaxVal;k<Min(NBlockMaxCon+NBlockMaxVal,A->con.N+NBlockMaxVal);k++)
+      for(k=2+NBlockMaxVal;k<NBlockMaxVal+Min(NBlockMaxCon+1,A->con.N);k++)
       {
         ifer=NFermionShift+(k+1)*A->BlockSize;
         for(i=0;i<A->BlockSize;i++)
@@ -468,7 +469,7 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(OperatorType *co
       }
       /* tridiagonal matrix val to operator spin up*/
       ia=2*A->BlockSize*A->BlockSize;
-      for(k=2;k<=Min(NBlockMaxVal,A->val.N);k++)
+      for(k=2;k<=Min(NBlockMaxVal+1,A->val.N);k++)
       {
         ifer=NFermionShift+2*k*A->BlockSize;
         for(i=0;i<A->BlockSize;i++)
@@ -486,7 +487,7 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(OperatorType *co
         }
       }
       ib=2*A->BlockSize*A->BlockSize;
-      for(k=2;k<Min(NBlockMaxVal,A->val.N);k++)
+      for(k=2;k<Min(NBlockMaxVal+1,A->val.N);k++)
       {
         ifer=NFermionShift+2*(k+1)*A->BlockSize;
         for(i=0;i<A->BlockSize;i++)
@@ -508,7 +509,7 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(OperatorType *co
       }
       /* tridiagonal matrix con to operator spin up*/
       ia=2*A->BlockSize*A->BlockSize;
-      for(k=2+NBlockMaxVal;k<=Min(NBlockMaxCon+NBlockMaxVal,A->con.N+NBlockMaxVal);k++)
+      for(k=2+NBlockMaxVal;k<=NBlockMaxVal+Min(NBlockMaxCon+1,A->con.N);k++)
       {
         ifer=NFermionShift+2*k*A->BlockSize;
         for(i=0;i<A->BlockSize;i++)
@@ -526,7 +527,7 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(OperatorType *co
         }
       }
       ib=2*A->BlockSize*A->BlockSize;
-      for(k=2+NBlockMaxVal;k<Min(NBlockMaxCon+NBlockMaxVal,A->con.N+NBlockMaxVal);k++)
+      for(k=2+NBlockMaxVal;k<NBlockMaxVal+Min(NBlockMaxCon+1,A->con.N);k++)
       {
         ifer=NFermionShift+2*(k+1)*A->BlockSize;
         for(i=0;i<A->BlockSize;i++)
@@ -597,7 +598,7 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(OperatorType *co
       }
       /* tridiagonal matrix val to operator spin dn*/
       ia=2*A->BlockSize*A->BlockSize;
-      for(k=2;k<=Min(NBlockMaxVal,A->val.N);k++)
+      for(k=2;k<=Min(NBlockMaxVal+1,A->val.N);k++)
       {
         ifer=NFermionShift+2*k*A->BlockSize+A->BlockSize;
         for(i=0;i<A->BlockSize;i++)
@@ -615,7 +616,7 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(OperatorType *co
         }
       }
       ib=2*A->BlockSize*A->BlockSize;
-      for(k=2;k<Min(NBlockMaxVal,A->val.N);k++)
+      for(k=2;k<Min(NBlockMaxVal+1,A->val.N);k++)
       {
         ifer=NFermionShift+2*(k+1)*A->BlockSize+A->BlockSize;
         for(i=0;i<A->BlockSize;i++)
@@ -637,7 +638,7 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(OperatorType *co
       }
       /* tridiagonal matrix con to operator spin dn*/
       ia=2*A->BlockSize*A->BlockSize;
-      for(k=2+NBlockMaxVal;k<=Min(NBlockMaxCon+NBlockMaxVal,A->con.N+NBlockMaxVal);k++)
+      for(k=2+NBlockMaxVal;k<=NBlockMaxVal+Min(NBlockMaxCon+1,A->con.N);k++)
       {
         ifer=NFermionShift+2*k*A->BlockSize+A->BlockSize;
         for(i=0;i<A->BlockSize;i++)
@@ -655,7 +656,7 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(OperatorType *co
         }
       }
       ib=2*A->BlockSize*A->BlockSize;
-      for(k=2+NBlockMaxVal;k<Min(NBlockMaxCon+NBlockMaxVal,A->con.N+NBlockMaxVal);k++)
+      for(k=2+NBlockMaxVal;k<NBlockMaxVal+Min(NBlockMaxCon+1,A->con.N);k++)
       {
         ifer=NFermionShift+2*(k+1)*A->BlockSize+A->BlockSize;
         for(i=0;i<A->BlockSize;i++)
@@ -733,7 +734,7 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(OperatorType *co
       }
       /* tridiagonal matrix val to operator */
       ia=2*A->BlockSize*A->BlockSize;
-      for(k=2;k<=Min(NBlockMaxVal,A->val.N);k++)
+      for(k=2;k<=Min(NBlockMaxVal+1,A->val.N);k++)
       {
         ifer=NFermionShift+k*A->BlockSize;
         for(i=0;i<A->BlockSize;i++)
@@ -751,7 +752,7 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(OperatorType *co
         }
       }
       ib=2*A->BlockSize*A->BlockSize;
-      for(k=2;k<Min(NBlockMaxVal,A->val.N);k++)
+      for(k=2;k<Min(NBlockMaxVal+1,A->val.N);k++)
       {
         ifer=NFermionShift+(k+1)*A->BlockSize;
         for(i=0;i<A->BlockSize;i++)
@@ -773,7 +774,7 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(OperatorType *co
       }
       /* tridiagonal matrix con to operator */
       ia=2*A->BlockSize*A->BlockSize;
-      for(k=2+NBlockMaxVal;k<=Min(NBlockMaxCon+NBlockMaxVal,A->con.N+NBlockMaxVal);k++)
+      for(k=2+NBlockMaxVal;k<=NBlockMaxVal+Min(NBlockMaxCon+1,A->con.N);k++)
       {
         ifer=NFermionShift+k*A->BlockSize;
         for(i=0;i<A->BlockSize;i++)
@@ -791,7 +792,7 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(OperatorType *co
         }
       }
       ib=2*A->BlockSize*A->BlockSize;
-      for(k=2+NBlockMaxVal;k<Min(NBlockMaxCon+NBlockMaxVal,A->con.N+NBlockMaxVal);k++)
+      for(k=2+NBlockMaxVal;k<NBlockMaxVal+Min(NBlockMaxCon+1,A->con.N);k++)
       {
         ifer=NFermionShift+(k+1)*A->BlockSize;
         for(i=0;i<A->BlockSize;i++)
@@ -865,7 +866,7 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(OperatorType *co
       }
       /* tridiagonal matrix val to operator spin up*/
       ia=2*A->BlockSize*A->BlockSize;
-      for(k=2;k<=Min(NBlockMaxVal,A->val.N);k++)
+      for(k=2;k<=Min(NBlockMaxVal+1,A->val.N);k++)
       {
         ifer=NFermionShift+2*k*A->BlockSize;
         for(i=0;i<A->BlockSize;i++)
@@ -883,7 +884,7 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(OperatorType *co
         }
       }
       ib=2*A->BlockSize*A->BlockSize;
-      for(k=2;k<Min(NBlockMaxVal,A->val.N);k++)
+      for(k=2;k<Min(NBlockMaxVal+1,A->val.N);k++)
       {
         ifer=NFermionShift+2*(k+1)*A->BlockSize;
         for(i=0;i<A->BlockSize;i++)
@@ -905,7 +906,7 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(OperatorType *co
       }
       /* tridiagonal matrix con to operator spin up*/
       ia=2*A->BlockSize*A->BlockSize;
-      for(k=2+NBlockMaxVal;k<=Min(NBlockMaxCon+NBlockMaxVal,A->con.N+NBlockMaxVal);k++)
+      for(k=2+NBlockMaxVal;k<=NBlockMaxVal+Min(NBlockMaxCon+1,A->con.N);k++)
       {
         ifer=NFermionShift+2*k*A->BlockSize;
         for(i=0;i<A->BlockSize;i++)
@@ -923,7 +924,7 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(OperatorType *co
         }
       }
       ib=2*A->BlockSize*A->BlockSize;
-      for(k=2+NBlockMaxVal;k<Min(NBlockMaxCon+NBlockMaxVal,A->con.N+NBlockMaxVal);k++)
+      for(k=2+NBlockMaxVal;k<NBlockMaxVal+Min(NBlockMaxCon+1,A->con.N);k++)
       {
         ifer=NFermionShift+2*(k+1)*A->BlockSize;
         for(i=0;i<A->BlockSize;i++)
@@ -994,7 +995,7 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(OperatorType *co
       }
       /* tridiagonal matrix val to operator spin dn*/
       ia=2*A->BlockSize*A->BlockSize;
-      for(k=2;k<=Min(NBlockMaxVal,A->val.N);k++)
+      for(k=2;k<=Min(NBlockMaxVal+1,A->val.N);k++)
       {
         ifer=NFermionShift+2*k*A->BlockSize+A->BlockSize;
         for(i=0;i<A->BlockSize;i++)
@@ -1012,7 +1013,7 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(OperatorType *co
         }
       }
       ib=2*A->BlockSize*A->BlockSize;
-      for(k=2;k<Min(NBlockMaxVal,A->val.N);k++)
+      for(k=2;k<Min(NBlockMaxVal+1,A->val.N);k++)
       {
         ifer=NFermionShift+2*(k+1)*A->BlockSize+A->BlockSize;
         for(i=0;i<A->BlockSize;i++)
@@ -1034,7 +1035,7 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(OperatorType *co
       }
       /* tridiagonal matrix con to operator spin dn*/
       ia=2*A->BlockSize*A->BlockSize;
-      for(k=2+NBlockMaxVal;k<=Min(NBlockMaxCon+NBlockMaxVal,A->con.N+NBlockMaxVal);k++)
+      for(k=2+NBlockMaxVal;k<=NBlockMaxVal+Min(NBlockMaxCon+1,A->con.N);k++)
       {
         ifer=NFermionShift+2*k*A->BlockSize+A->BlockSize;
         for(i=0;i<A->BlockSize;i++)
@@ -1052,7 +1053,7 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(OperatorType *co
         }
       }
       ib=2*A->BlockSize*A->BlockSize;
-      for(k=2+NBlockMaxVal;k<Min(NBlockMaxCon+NBlockMaxVal,A->con.N+NBlockMaxVal);k++)
+      for(k=2+NBlockMaxVal;k<NBlockMaxVal+Min(NBlockMaxCon+1,A->con.N);k++)
       {
         ifer=NFermionShift+2*(k+1)*A->BlockSize+A->BlockSize;
         for(i=0;i<A->BlockSize;i++)

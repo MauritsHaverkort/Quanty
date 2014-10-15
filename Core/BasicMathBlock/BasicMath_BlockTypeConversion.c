@@ -1661,7 +1661,7 @@ uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType co
     Tnow.Nj=psi->Nj;
     /* orthonormalize Tnow */
     CompactMatrixGramSchmidtOrthogonalizeCol(&Tnow, SingularValue);
-    zgemm(charC,charN,&ABlock->BlockSize,&ABlock->BlockSize,&psi->Nj,&one,psi->VRe,&psi->Nj,Tnow.VRe,&psi->Nj,&zero,ABlock->bRe,&ABlock->BlockSize);
+    zgemm(charC,charN,&ABlock->BlockSize,&ABlock->BlockSize,&psi->Nj,&one,psi->VRe,&psi->Nj,Tnow.VRe,&psi->Nj,&zero,ABlock->b,&ABlock->BlockSize);
     /* loop over psi_{n+1} = A psi_{n} and orthonormalization */
     oldindex=0;
     newindex=psi->Ni*psi->Nj;
@@ -2053,6 +2053,19 @@ uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(BlockListOfPoles co
   B->BlockSize = A->BlockSize;
   strcpy(B->Name, A->Name);
   
+  B->a0.QComplex=A->QComplex;
+  B->a0.Ni=A->BlockSize;
+  B->a0.Nj=A->BlockSize;
+  InitCompactMatrix(&B->a0);
+  if(A->QComplex)
+  {
+    memcpy(B->a0.V, A->a0, A->BlockSize*A->BlockSize*sizeof(Complex16));
+  }
+  else
+  {
+    memcpy(B->a0.VRe, A->a0Re, A->BlockSize*A->BlockSize*sizeof(double));
+  }
+  
   CopyBlockListOfPolesCon(*A, &Acon, A->mu, kbT);
   CopyBlockListOfPolesVal(*A, &Aval, A->mu, kbT);
   BlockListOfPolesToBlockTridiagonalMatrix(Acon, &(B->con), NBlockMaxCon, 1000*DBL_EPSILON);
@@ -2175,10 +2188,16 @@ uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrixReduceDimension(Bloc
   B->BlockSize = AT->Ni;
   strcpy(B->Name, A->Name);
   
+  B->a0.QComplex=A->QComplex;
+  B->a0.Ni=AT->Ni;
+  B->a0.Nj=AT->Ni;
+  InitCompactMatrix(&B->a0);
+  // still to do copy a0
+  
   CopyBlockListOfPolesCon(*A, &Acon, A->mu, kbT);
   CopyBlockListOfPolesVal(*A, &Aval, A->mu, kbT);
-  BlockListOfPolesToBlockTridiagonalMatrixReduceDimension(Acon, &(B->con), AT, NBlockMaxCon, 1000*DBL_EPSILON);
-  BlockListOfPolesToBlockTridiagonalMatrixReduceDimension(Aval, &(B->val), AT, NBlockMaxVal, 1000*DBL_EPSILON);
+  BlockListOfPolesToBlockTridiagonalMatrixReduceDimension(Acon, &(B->con), AT, NBlockMaxCon+1, 1000*DBL_EPSILON);
+  BlockListOfPolesToBlockTridiagonalMatrixReduceDimension(Aval, &(B->val), AT, NBlockMaxVal+1, 1000*DBL_EPSILON);
   
   T.QComplex=B->QComplex;
   T.Ni=4*B->BlockSize;
@@ -2211,8 +2230,8 @@ uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrixReduceDimension(Bloc
         M.V[i*M.Nj+j].Re = B->val.a[i*B->BlockSize+j+B->BlockSize*B->BlockSize].Re;
         M.V[i*M.Nj+j].Im = B->val.a[i*B->BlockSize+j+B->BlockSize*B->BlockSize].Im;
         // copy ac_1
-        M.V[(i+B->BlockSize)*M.Nj+j+B->BlockSize].Re = B->con.a[i*B->BlockSize+j+A->BlockSize*B->BlockSize].Re;
-        M.V[(i+B->BlockSize)*M.Nj+j+B->BlockSize].Im = B->con.a[i*B->BlockSize+j+A->BlockSize*B->BlockSize].Im;
+        M.V[(i+B->BlockSize)*M.Nj+j+B->BlockSize].Re = B->con.a[i*B->BlockSize+j+B->BlockSize*B->BlockSize].Re;
+        M.V[(i+B->BlockSize)*M.Nj+j+B->BlockSize].Im = B->con.a[i*B->BlockSize+j+B->BlockSize*B->BlockSize].Im;
         // copy av_2
         M.V[(i+2*B->BlockSize)*M.Nj+j+2*B->BlockSize].Re = B->val.a[i*B->BlockSize+j+2*B->BlockSize*B->BlockSize].Re;
         M.V[(i+2*B->BlockSize)*M.Nj+j+2*B->BlockSize].Im = B->val.a[i*B->BlockSize+j+2*B->BlockSize*B->BlockSize].Im;

@@ -65,3 +65,54 @@ uint32_t FreeBlockTridiagonalMatrix(BlockTriDiagonalMatrixType *A)
   }
   return 0;
 }
+
+uint32_t ComplexBlockTridiagonalMatrixToReal(BlockTriDiagonalMatrixType *const A)
+{
+  uint32_t i;
+  if(A->QComplex==0) return 0;
+  A->QComplex=0;
+  A->aRe=(double*)(A->a);
+  A->bRe=(double*)(A->b);
+  for(i=0;i<A->BlockSize*A->BlockSize*(A->N+1);i++)
+  {
+    A->aRe[i]=A->a[i].Re;
+  }
+  for(i=0;i<A->BlockSize*A->BlockSize*(A->N);i++)
+  {
+    A->bRe[i]=A->b[i].Re;
+  }
+  A->aRe=realloc(A->aRe, A->BlockSize*A->BlockSize*(1+A->N)*sizeof(double));
+  A->bRe=realloc(A->bRe, A->BlockSize*A->BlockSize*(A->N)*sizeof(double));
+  A->QComplex=0;
+  return 0;
+}
+
+uint32_t BlockTridiagonalMatrixChop(BlockTriDiagonalMatrixType *const A, double const Epsilon)
+{
+  uint32_t i,KeepComplex=0;
+  if(A->QComplex)
+  {
+    for(i=0;i<A->BlockSize*A->BlockSize*(A->N+1);i++)
+    {
+      if(Abs(A->a[i].Re)<Epsilon)A->a[i].Re=0;
+      if(Abs(A->a[i].Im)<Epsilon)
+      {
+        A->a[i].Im=0;
+      }
+      else
+      {
+        KeepComplex=1;
+      }
+    }
+    if(!KeepComplex) ComplexBlockTridiagonalMatrixToReal(A);
+  }
+  else
+  {
+    for(i=0;i<A->BlockSize*A->BlockSize*(A->N+1);i++)
+    {
+      if(Abs(A->aRe[i])<Epsilon)A->aRe[i]=0;
+    }
+  }
+  return 0;
+}
+

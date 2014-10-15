@@ -41,6 +41,7 @@
 #include "../Core/OperatorWaveFunction.c"
 #include "../Core/OperatorWaveFunctionPerturbation.c"
 #include "../Core/Lanczos.c"
+#include "../Core/BlockLanczos.c"
 #include "../Core/MeanField.c"
 #include "../Core/Spectral.c"
 #include "../Core/DensityMatrix.c"

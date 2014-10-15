@@ -4003,8 +4003,7 @@ uint32_t PsiAddOperatorPsiConserveBasis(const OperatorType *O, const WaveFunctio
 *     Opsi.Determinant, Opsi.Next, Opsi.Keylist point to the same location as psi does
 *     This function conservse the values O and psi point to
 */
-uint32_t OperatorPsiConserveBasisPreAllocated(const OperatorType *O, const WaveFunctionType *psi,
-                                              WaveFunctionType * const Opsi)
+uint32_t OperatorPsiConserveBasisPreAllocated(const OperatorType *O, const WaveFunctionType *psi, WaveFunctionType * const Opsi)
 {
   if (O->QComplex == 0)
   {

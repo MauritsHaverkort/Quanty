@@ -298,6 +298,8 @@
 		4CA4BA43192740820057A26C /* HarmonicOscillator.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = HarmonicOscillator.c; sourceTree = "<group>"; };
 		4CA5D6B6188AE32500A7F1DE /* BasicMath_BlockAndersonMatrix.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = BasicMath_BlockAndersonMatrix.c; path = BasicMathBlock/BasicMath_BlockAndersonMatrix.c; sourceTree = "<group>"; };
 		4CA5D6B7188AE35400A7F1DE /* BasicMath_BlockTridiagonalMatrix.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = BasicMath_BlockTridiagonalMatrix.c; path = BasicMathBlock/BasicMath_BlockTridiagonalMatrix.c; sourceTree = "<group>"; };
+		4CB3643519EB8DC0000B721A /* BlockLanczos.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = BlockLanczos.c; sourceTree = "<group>"; };
+		4CD93EC319EA1F9E008DFB54 /* BasicMath_BlockNaturalImpurityOrbital.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = BasicMath_BlockNaturalImpurityOrbital.c; path = BasicMathBlock/BasicMath_BlockNaturalImpurityOrbital.c; sourceTree = "<group>"; };
 		4CDD1C9F1796D14100614F34 /* YiDMFT */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = YiDMFT; sourceTree = BUILT_PRODUCTS_DIR; };
 		4CDD1CAB1799666C00614F34 /* BasicMath_BADoubleTriDiagonalMatrixVector.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = BasicMath_BADoubleTriDiagonalMatrixVector.c; sourceTree = "<group>"; };
 		4CDD1CAC179994DC00614F34 /* TestGFBA.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = TestGFBA.c; sourceTree = "<group>"; };
@@ -550,6 +552,7 @@
 				4C2AAA3E163265DD00138620 /* Error.c */,
 				4C2AAA3F163265DD00138620 /* Hash.c */,
 				4C2AAA40163265DD00138620 /* Lanczos.c */,
+				4CB3643519EB8DC0000B721A /* BlockLanczos.c */,
 				4C2AAA41163265DD00138620 /* MatrixOperator.c */,
 				4C2AAA42163265DD00138620 /* OperatorArithmetic.c */,
 				4C2AAA43163265DD00138620 /* OperatorWaveFunction.c */,
@@ -695,6 +698,7 @@
 				4CA5D6B6188AE32500A7F1DE /* BasicMath_BlockAndersonMatrix.c */,
 				4CA5D6B7188AE35400A7F1DE /* BasicMath_BlockTridiagonalMatrix.c */,
 				4C4637CE19C0407300EB0DB0 /* BasicMath_BlockMatrixToOperator.c */,
+				4CD93EC319EA1F9E008DFB54 /* BasicMath_BlockNaturalImpurityOrbital.c */,
 			);
 			name = BasicMathBlock;
 			sourceTree = "<group>";
