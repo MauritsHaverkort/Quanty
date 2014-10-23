@@ -910,8 +910,7 @@ double ComplexWaveFunctionCalculateNorm(const WaveFunctionType a)
 *   calculate <a|b>
 *   The first entry is complex conjugated
 */
-void ComplexWaveFunctionDotProductSameBasis(const WaveFunctionType a, const WaveFunctionType b, double *DotRe,
-                                            double *DotIm)
+void ComplexWaveFunctionDotProductSameBasis(const WaveFunctionType a, const WaveFunctionType b, double *DotRe, double *DotIm)
 {
   uint32_t iBlok, iElement;
   int    iOMP;
@@ -1076,11 +1075,24 @@ void ComplexWaveFunctionTruncateBasis(WaveFunctionType * const a, const double e
   a->Determinant = realloc(a->Determinant, a->NBlok * sizeof(uint8_t *));
 }
 
-/*  
-*   Make psi orthogonal to OtherPsi, but conserve the basis set of psi
-*/
-void ComplexWaveFunctionOrthogonalizeConserveBasis(WaveFunctionType * const psi,
-                                                   const WaveFunctionType * const OtherPsi, const uint32_t Npsi)
+/*
+ *   Make psi orthogonal to OtherPsi, psi and other psi are on the same basis
+ */
+void ComplexWaveFunctionOrthogonalizeSameBasis(WaveFunctionType * const psi, const WaveFunctionType * const OtherPsi, const uint32_t Npsi)
+{
+  uint32_t i;
+  double aRe, aIm;
+  for (i = 0; i < Npsi; i++)
+  {
+    ComplexWaveFunctionDotProductSameBasis(OtherPsi[i], *psi, &aRe, &aIm);
+    ComplexWaveFunctionAddComplexMultipliedSameBasis(*psi, OtherPsi[i], -aRe, -aIm);
+  }
+}
+
+/*
+ *   Make psi orthogonal to OtherPsi, but conserve the basis set of psi
+ */
+void ComplexWaveFunctionOrthogonalizeConserveBasis(WaveFunctionType * const psi, const WaveFunctionType * const OtherPsi, const uint32_t Npsi)
 {
   uint32_t i;
   double aRe, aIm;
