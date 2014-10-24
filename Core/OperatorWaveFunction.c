@@ -98,8 +98,7 @@ double inline OperatorAn(uint8_t * const Determinant, const uint16_t i, const ui
  *  Slight warning: there is no check on the maximum value of o[i]; if one tries to annihilate a particle that is not in the basis set then a bit somewhere someplace
  *  in memory will be set..... o[i] should be smaller then NFermion+NBoson-1 for all i.
  */
-double inline OperatorLader(uint8_t * const Determinant, const uint16_t * const o, const uint32_t lenght,
-                     const uint32_t NFermion)
+double inline OperatorLader(uint8_t * const Determinant, const uint16_t * const o, const uint32_t lenght, const uint32_t NFermion)
 {
   double phase = 1;
   uint32_t i;
@@ -116,49 +115,6 @@ double inline OperatorLader(uint8_t * const Determinant, const uint16_t * const 
     if (phase == 0) break;
   }
   return phase;
-}
-
-
-uint32_t PsiAddOperatorPsiConserveBasisCC(const OperatorType *O, const WaveFunctionType *psi,
-                                          WaveFunctionType * const Opsi)
-{
-  return 0;
-}
-
-uint32_t PsiAddOperatorPsiConserveBasisCR(const OperatorType *O, const WaveFunctionType * psi,
-                                          WaveFunctionType * const Opsi)
-{
-  return 0;
-}
-
-uint32_t PsiAddOperatorPsiConserveBasisRC(const OperatorType *O, const WaveFunctionType *psi,
-                                          WaveFunctionType * const Opsi)
-{
-  return 0;
-}
-
-uint32_t PsiAddOperatorPsiConserveBasisRR(const OperatorType *O, const WaveFunctionType *psi,
-                                          WaveFunctionType * const Opsi)
-{
-  return 0;
-}
-
-uint32_t PsiAddOperatorPsiConserveBasisRRC(const OperatorType *O, const WaveFunctionType *psi,
-                                           WaveFunctionType * const Opsi)
-{
-  return 0;
-}
-
-uint32_t PsiAddOperatorPsiConserveBasisMC(const OperatorType *O, const WaveFunctionType *psi,
-                                          WaveFunctionType * const Opsi)
-{
-  return 0;
-}
-
-uint32_t PsiAddOperatorPsiConserveBasisMR(const OperatorType *O, const WaveFunctionType *psi,
-                                          WaveFunctionType * const Opsi)
-{
-  return 0;
 }
 
 uint32_t OperatorPsiConserveBasisCC(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi)
@@ -700,50 +656,7 @@ uint32_t OperatorPsiConserveBasisMR(const OperatorType O, const WaveFunctionType
   return 0;
 }
 
-uint32_t PsiAddOperatorPsiConserveBasisPreAllocatedCC(const OperatorType *O, const WaveFunctionType *psi,
-                                                      WaveFunctionType * const Opsi)
-{
-  return 0;
-}
-
-uint32_t PsiAddOperatorPsiConserveBasisPreAllocatedCR(const OperatorType *O, const WaveFunctionType *psi,
-                                                      WaveFunctionType * const Opsi)
-{
-  return 0;
-}
-
-uint32_t PsiAddOperatorPsiConserveBasisPreAllocatedRC(const OperatorType *O, const WaveFunctionType *psi,
-                                                      WaveFunctionType * const Opsi)
-{
-  return 0;
-}
-
-uint32_t PsiAddOperatorPsiConserveBasisPreAllocatedRR(const OperatorType *O, const WaveFunctionType *psi,
-                                                      WaveFunctionType * const Opsi)
-{
-  return 0;
-}
-
-uint32_t PsiAddOperatorPsiConserveBasisPreAllocatedRRC(const OperatorType *O, const WaveFunctionType *psi,
-                                                       WaveFunctionType * const Opsi)
-{
-  return 0;
-}
-
-uint32_t PsiAddOperatorPsiConserveBasisPreAllocatedMC(const OperatorType *O, const WaveFunctionType *psi,
-                                                      WaveFunctionType * const Opsi)
-{
-  return 0;
-}
-
-uint32_t PsiAddOperatorPsiConserveBasisPreAllocatedMR(const OperatorType *O, const WaveFunctionType *psi,
-                                                      WaveFunctionType * const Opsi)
-{
-  return 0;
-}
-
-uint32_t OperatorPsiConserveBasisPreAllocatedCC(const OperatorType *O, const WaveFunctionType *psi,
-                                                WaveFunctionType * const Opsi)
+uint32_t OperatorPsiConserveBasisPreAllocatedCC(const OperatorType *O, const WaveFunctionType *psi, WaveFunctionType * const Opsi)
 {
   uint32_t i, j, k, l, ii, ij, ik;
   double phase;
@@ -799,8 +712,7 @@ uint32_t OperatorPsiConserveBasisPreAllocatedCC(const OperatorType *O, const Wav
   return 0;
 }
 
-uint32_t OperatorPsiConserveBasisPreAllocatedCR(const OperatorType *O, const WaveFunctionType *psi,
-                                                WaveFunctionType * const Opsi)
+uint32_t OperatorPsiConserveBasisPreAllocatedCR(const OperatorType *O, const WaveFunctionType *psi, WaveFunctionType * const Opsi)
 {
   uint32_t i, j, k, l, ii, ij, ik;
   double phase;
@@ -853,8 +765,7 @@ uint32_t OperatorPsiConserveBasisPreAllocatedCR(const OperatorType *O, const Wav
   return 0;
 }
 
-uint32_t OperatorPsiConserveBasisPreAllocatedRC(const OperatorType *O, const WaveFunctionType *psi,
-                                                WaveFunctionType * const Opsi)
+uint32_t OperatorPsiConserveBasisPreAllocatedRC(const OperatorType *O, const WaveFunctionType *psi, WaveFunctionType * const Opsi)
 {
   uint32_t i, j, k, l, ii, ij, ik;
   double phase;
@@ -953,8 +864,7 @@ uint32_t OperatorPsiConserveBasisPreAllocatedRR(const OperatorType *O, const Wav
   return 0;
 }
 
-uint32_t OperatorPsiConserveBasisPreAllocatedMC(const OperatorType *O, const WaveFunctionType *psi,
-                                                WaveFunctionType * const Opsi)
+uint32_t OperatorPsiConserveBasisPreAllocatedMC(const OperatorType *O, const WaveFunctionType *psi, WaveFunctionType * const Opsi)
 {
   uint32_t i, j, k, l, ii, ij, ik;
   double phase;
@@ -1024,8 +934,7 @@ uint32_t OperatorPsiConserveBasisPreAllocatedMC(const OperatorType *O, const Wav
   return 0;
 }
 
-uint32_t OperatorPsiConserveBasisPreAllocatedMR(const OperatorType *O, const WaveFunctionType *psi,
-                                                WaveFunctionType * const Opsi)
+uint32_t OperatorPsiConserveBasisPreAllocatedMR(const OperatorType *O, const WaveFunctionType *psi, WaveFunctionType * const Opsi)
 {
   uint32_t i, j, k, l, ii, ij, ik;
   double phase;
@@ -1088,41 +997,6 @@ uint32_t OperatorPsiConserveBasisPreAllocatedMR(const OperatorType *O, const Wav
     }
     free(Det);
   }
-  return 0;
-}
-
-uint32_t PsiAddOperatorPsiCC(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi)
-{
-  return 0;
-}
-
-uint32_t PsiAddOperatorPsiCR(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi)
-{
-  return 0;
-}
-
-uint32_t PsiAddOperatorPsiRC(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi)
-{
-  return 0;
-}
-
-uint32_t PsiAddOperatorPsiRR(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi)
-{
-  return 0;
-}
-
-uint32_t PsiAddOperatorPsiRRC(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi)
-{
-  return 0;
-}
-
-uint32_t PsiAddOperatorPsiMC(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi)
-{
-  return 0;
-}
-
-uint32_t PsiAddOperatorPsiMR(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi)
-{
   return 0;
 }
 
@@ -1665,7 +1539,6 @@ uint32_t OperatorPsiMR(const OperatorType O, const WaveFunctionType psi, WaveFun
   return 0;
 }
 
-
 /*  returns 0 if the determinant is restricted 1 if the determinant is not restircted
  *    a determinant is restricted if it has more than Restrictions.Max or less than Restrictions.Min particles in the fileted states
  *    the states filtered are determined by Restrictions.Determinant
@@ -1697,9 +1570,6 @@ uint32_t QDetNotRestricted(uint8_t const *det, uint32_t const NFermion, uint32_t
   }
   return 1;
 }
-
-
-
 
 uint32_t OperatorPsiRestrictedCC(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi, DeterminantRestrictionType const Restrictions)
 {
@@ -3866,6 +3736,1054 @@ uint32_t PsiOperatorSqrPsiMHR(const OperatorType O, const WaveFunctionType psi, 
   return 0;
 }
 
+uint32_t PsiOperatorSqrPsiRestrictedCC(const OperatorType O, const WaveFunctionType psi, double *VRe, double *VIm, DeterminantRestrictionType const restrictions)
+{
+  uint32_t i, j, k, l, ii, ij, ik, lS, jS;
+  double phase, phaseS;
+  uint8_t *Det, *DetSqr;
+  int    iOMP;
+  double ExpecValueRe = 0;
+  double ExpecValueIm = 0;
+  double aRe, aIm, temp;
+#pragma omp parallel private(temp,aRe,aIm,Det,DetSqr,i,j,k,l,lS,jS,ii,ij,ik,phase,phaseS,iOMP) reduction(+ : ExpecValueRe, ExpecValueIm)
+  {
+    Det = malloc(psi.NWord * sizeof(uint8_t));
+    if (Det == NULL)
+      AllocFailed();
+    DetSqr = malloc(psi.NWord * sizeof(uint8_t));
+    if (DetSqr == NULL)
+      AllocFailed();
+#pragma omp for
+    for (iOMP = 1; iOMP <= (int)psi.N; iOMP++)
+    {
+      i = (uint32_t) iOMP;
+      ii = i >> NBitsBlok;
+      ik = i & BlokMask;
+      ij = psi.NWord * ik;
+      for (l = 0; l <= O.MaxLength; l++)
+      {
+        for (j = 0; j < O.l[l].N; j++)
+        {
+          for (k = 0; k < psi.NWord; k++)
+            Det[k] = psi.Determinant[ii][ij + k];
+          phase = OperatorLader(Det, &(O.l[l].o[l * j]), l, O.NFermion);
+          if ((QDetNotRestricted(Det, O.NFermion, O.NBoson, O.NWord, restrictions))&&(fabs(phase) > (10 * DBL_MIN)))
+            for (lS = 0; lS <= O.MaxLength; lS++)
+            {
+              for (jS = 0; jS < O.l[lS].N; jS++)
+              {
+                for (k = 0; k < psi.NWord; k++)
+                  DetSqr[k] = Det[k];
+                phaseS = OperatorLader(DetSqr, &(O.l[lS].o[lS * jS]), lS, O.NFermion);
+                if (phaseS)
+                {
+                  ComplexWaveFunctionPrefactorDet(psi, DetSqr, &aRe, &aIm);
+                  aIm *= -1;
+                  temp = aRe;
+                  aRe = temp * O.l[l].V[j].Re - aIm * O.l[l].V[j].Im;
+                  aIm = temp * O.l[l].V[j].Im + aIm * O.l[l].V[j].Re;
+                  temp = aRe;
+                  aRe = temp * O.l[lS].V[jS].Re - aIm * O.l[lS].V[jS].Im;
+                  aIm = temp * O.l[lS].V[jS].Im + aIm * O.l[lS].V[jS].Re;
+                  temp = aRe;
+                  aRe = temp * psi.ValueRe[ii][ik] - aIm * psi.ValueIm[ii][ik];
+                  aIm = temp * psi.ValueIm[ii][ik] + aIm * psi.ValueRe[ii][ik];
+                  ExpecValueRe += phase * phaseS * aRe;
+                  ExpecValueIm += phase * phaseS * aIm;
+                }
+              }
+            }
+        }
+      }
+    }
+    free(Det);
+    free(DetSqr);
+  }
+  *VRe = ExpecValueRe;
+  *VIm = ExpecValueIm;
+  return 0;
+}
+
+uint32_t PsiOperatorSqrPsiRestrictedCR(const OperatorType O, const WaveFunctionType psi, double *VRe, double *VIm, DeterminantRestrictionType const restrictions)
+{
+  uint32_t i, j, k, l, ii, ij, ik, lS, jS;
+  double phase, phaseS;
+  uint8_t *Det, *DetSqr;
+  int    iOMP;
+  double ExpecValueRe = 0;
+  double ExpecValueIm = 0;
+#pragma omp parallel private(Det,DetSqr,i,j,k,l,lS,jS,ii,ij,ik,phase,phaseS,iOMP) reduction(+ : ExpecValueRe, ExpecValueIm)
+  {
+    Det = malloc(psi.NWord * sizeof(uint8_t));
+    if (Det == NULL)
+      AllocFailed();
+    DetSqr = malloc(psi.NWord * sizeof(uint8_t));
+    if (DetSqr == NULL)
+      AllocFailed();
+#pragma omp for
+    for (iOMP = 1; iOMP <= (int)psi.N; iOMP++)
+    {
+      i = (uint32_t) iOMP;
+      ii = i >> NBitsBlok;
+      ik = i & BlokMask;
+      ij = psi.NWord * ik;
+      for (l = 0; l <= O.MaxLength; l++)
+      {
+        for (j = 0; j < O.l[l].N; j++)
+        {
+          for (k = 0; k < psi.NWord; k++)
+            Det[k] = psi.Determinant[ii][ij + k];
+          phase = OperatorLader(Det, &(O.l[l].o[l * j]), l, O.NFermion);
+          if ((QDetNotRestricted(Det, O.NFermion, O.NBoson, O.NWord, restrictions))&&(fabs(phase) > (10 * DBL_MIN)))
+            for (lS = 0; lS <= O.MaxLength; lS++)
+            {
+              for (jS = 0; jS < O.l[lS].N; jS++)
+              {
+                for (k = 0; k < psi.NWord; k++)
+                  DetSqr[k] = Det[k];
+                phaseS = OperatorLader(DetSqr, &(O.l[lS].o[lS * jS]), lS, O.NFermion);
+                if (phaseS)
+                {
+                  ExpecValueRe +=
+                  phase * phaseS * RealWaveFunctionPrefactorDet(psi,
+                                                                Det) * psi.ValueRe[ii][ik] * (O.l[l].V[j].Re *
+                                                                                              O.l[lS].V[jS].Re -
+                                                                                              O.l[l].V[j].Im *
+                                                                                              O.l[lS].V[jS].Im);
+                  ExpecValueIm +=
+                  phase * phaseS * RealWaveFunctionPrefactorDet(psi,
+                                                                Det) * psi.ValueRe[ii][ik] * (O.l[l].V[j].Re *
+                                                                                              O.l[lS].V[jS].Im +
+                                                                                              O.l[l].V[j].Im *
+                                                                                              O.l[lS].V[jS].Re);
+                }
+              }
+            }
+        }
+      }
+    }
+    free(Det);
+    free(DetSqr);
+  }
+  *VRe = ExpecValueRe;
+  *VIm = ExpecValueIm;
+  return 0;
+}
+
+uint32_t PsiOperatorSqrPsiRestrictedRC(const OperatorType O, const WaveFunctionType psi, double *VRe, double *VIm, DeterminantRestrictionType const restrictions)
+{
+  uint32_t i, j, k, l, ii, ij, ik, lS, jS;
+  double phase, phaseS;
+  uint8_t *Det, *DetSqr;
+  int    iOMP;
+  double ExpecValueRe = 0;
+  double ExpecValueIm = 0;
+  double aRe, aIm;
+#pragma omp parallel private(aRe,aIm,Det,DetSqr,i,j,k,l,lS,jS,ii,ij,ik,phase,phaseS,iOMP) reduction(+ : ExpecValueRe, ExpecValueIm)
+  {
+    Det = malloc(psi.NWord * sizeof(uint8_t));
+    if (Det == NULL)
+      AllocFailed();
+    DetSqr = malloc(psi.NWord * sizeof(uint8_t));
+    if (DetSqr == NULL)
+      AllocFailed();
+#pragma omp for
+    for (iOMP = 1; iOMP <= (int)psi.N; iOMP++)
+    {
+      i = (uint32_t) iOMP;
+      ii = i >> NBitsBlok;
+      ik = i & BlokMask;
+      ij = psi.NWord * ik;
+      for (l = 0; l <= O.MaxLength; l++)
+      {
+        for (j = 0; j < O.l[l].N; j++)
+        {
+          for (k = 0; k < psi.NWord; k++)
+            Det[k] = psi.Determinant[ii][ij + k];
+          phase = OperatorLader(Det, &(O.l[l].o[l * j]), l, O.NFermion);
+          if ((QDetNotRestricted(Det, O.NFermion, O.NBoson, O.NWord, restrictions))&&(fabs(phase) > (10 * DBL_MIN)))
+            for (lS = 0; lS <= O.MaxLength; lS++)
+            {
+              for (jS = 0; jS < O.l[lS].N; jS++)
+              {
+                for (k = 0; k < psi.NWord; k++)
+                  DetSqr[k] = Det[k];
+                phaseS = OperatorLader(DetSqr, &(O.l[lS].o[lS * jS]), lS, O.NFermion);
+                if (phaseS)
+                {
+                  ComplexWaveFunctionPrefactorDet(psi, DetSqr, &aRe, &aIm);
+                  ExpecValueRe +=
+                  phase * phaseS * (aRe * O.l[l].VRe[j] * O.l[lS].VRe[jS] * psi.ValueRe[ii][ik] +
+                                    aIm * O.l[l].VRe[j] * O.l[lS].VRe[jS] * psi.ValueIm[ii][ik]);
+                  ExpecValueIm +=
+                  phase * phaseS * (-aIm * O.l[l].VRe[j] * O.l[lS].VRe[jS] * psi.ValueRe[ii][ik] +
+                                    aRe * O.l[l].VRe[j] * O.l[lS].VRe[jS] * psi.ValueIm[ii][ik]);
+                }
+              }
+            }
+        }
+      }
+    }
+    free(Det);
+    free(DetSqr);
+  }
+  *VRe = ExpecValueRe;
+  *VIm = ExpecValueIm;
+  return 0;
+}
+
+uint32_t PsiOperatorSqrPsiRestrictedRR(const OperatorType O, const WaveFunctionType psi, double *VRe, DeterminantRestrictionType const restrictions)
+{
+  uint32_t i, j, k, l, ii, ij, ik, lS, jS;
+  double phase, phaseS;
+  uint8_t *Det, *DetSqr;
+  int    iOMP;
+  double ExpecValue = 0;
+#pragma omp parallel private(Det,DetSqr,i,j,k,l,lS,jS,ii,ij,ik,phase,phaseS,iOMP) reduction(+ : ExpecValue)
+  {
+    Det = malloc(psi.NWord * sizeof(uint8_t));
+    if (Det == NULL)
+      AllocFailed();
+    DetSqr = malloc(psi.NWord * sizeof(uint8_t));
+    if (DetSqr == NULL)
+      AllocFailed();
+#pragma omp for
+    for (iOMP = 1; iOMP <= (int)psi.N; iOMP++)
+    {
+      i = (uint32_t) iOMP;
+      ii = i >> NBitsBlok;
+      ik = i & BlokMask;
+      ij = psi.NWord * ik;
+      for (l = 0; l <= O.MaxLength; l++)
+      {
+        for (j = 0; j < O.l[l].N; j++)
+        {
+          for (k = 0; k < psi.NWord; k++)
+            Det[k] = psi.Determinant[ii][ij + k];
+          phase = OperatorLader(Det, &(O.l[l].o[l * j]), l, O.NFermion);
+          if ((QDetNotRestricted(Det, O.NFermion, O.NBoson, O.NWord, restrictions))&&(fabs(phase) > (10 * DBL_MIN)))
+            for (lS = 0; lS <= O.MaxLength; lS++)
+            {
+              for (jS = 0; jS < O.l[lS].N; jS++)
+              {
+                for (k = 0; k < psi.NWord; k++)
+                  DetSqr[k] = Det[k];
+                phaseS = OperatorLader(DetSqr, &(O.l[lS].o[lS * jS]), lS, O.NFermion);
+                if (phaseS)
+                  ExpecValue +=
+                  phase * phaseS * RealWaveFunctionPrefactorDet(psi,
+                                                                DetSqr) * O.l[l].VRe[j] * O.l[lS].VRe[jS] *
+                  psi.ValueRe[ii][ik];
+              }
+            }
+        }
+      }
+    }
+    free(Det);
+    free(DetSqr);
+  }
+  *VRe = ExpecValue;
+  return 0;
+}
+
+uint32_t PsiOperatorSqrPsiRestrictedMC(const OperatorType O, const WaveFunctionType psi, double *VRe, double *VIm, DeterminantRestrictionType const restrictions)
+{
+  uint32_t i, j, k, l, ii, ij, ik, lS, jS;
+  double phase, phaseS;
+  uint8_t *Det, *DetSqr;
+  int    iOMP;
+  double ExpecValueRe = 0;
+  double ExpecValueIm = 0;
+  double aRe, aIm, temp;
+#pragma omp parallel private(temp,aRe,aIm,Det,DetSqr,i,j,k,l,lS,jS,ii,ij,ik,phase,phaseS,iOMP) reduction(+ : ExpecValueRe, ExpecValueIm)
+  {
+    Det = malloc(psi.NWord * sizeof(uint8_t));
+    if (Det == NULL)
+      AllocFailed();
+    DetSqr = malloc(psi.NWord * sizeof(uint8_t));
+    if (DetSqr == NULL)
+      AllocFailed();
+#pragma omp for
+    for (iOMP = 1; iOMP <= (int)psi.N; iOMP++)
+    {
+      i = (uint32_t) iOMP;
+      ii = i >> NBitsBlok;
+      ik = i & BlokMask;
+      ij = psi.NWord * ik;
+      for (l = 0; l <= O.MaxLength; l++)
+      {
+        if (O.l[l].QComplex == 0)
+        {                       /* Operator for length l is real */
+          for (j = 0; j < O.l[l].N; j++)
+          {
+            for (k = 0; k < psi.NWord; k++)
+              Det[k] = psi.Determinant[ii][ij + k];
+            phase = OperatorLader(Det, &(O.l[l].o[l * j]), l, O.NFermion);
+            if ((QDetNotRestricted(Det, O.NFermion, O.NBoson, O.NWord, restrictions))&&(fabs(phase) > (10 * DBL_MIN)))
+              for (lS = 0; lS <= O.MaxLength; lS++)
+              {
+                if (O.l[l].QComplex == 0)
+                {               /* Operator for length lS is real */
+                  for (jS = 0; jS < O.l[lS].N; jS++)
+                  {
+                    for (k = 0; k < psi.NWord; k++)
+                      DetSqr[k] = Det[k];
+                    phaseS = OperatorLader(DetSqr, &(O.l[lS].o[lS * jS]), lS, O.NFermion);
+                    if (phaseS)
+                    {
+                      ComplexWaveFunctionPrefactorDet(psi, DetSqr, &aRe, &aIm);
+                      ExpecValueRe +=
+                      phase * phaseS * (aRe * O.l[l].VRe[j] * O.l[lS].VRe[jS] * psi.ValueRe[ii][ik] +
+                                        aIm * O.l[l].VRe[j] * O.l[lS].VRe[jS] * psi.ValueIm[ii][ik]);
+                      ExpecValueIm +=
+                      phase * phaseS * (-aIm * O.l[l].VRe[j] * O.l[lS].VRe[jS] * psi.ValueRe[ii][ik] +
+                                        aRe * O.l[l].VRe[j] * O.l[lS].VRe[jS] * psi.ValueIm[ii][ik]);
+                    }
+                  }
+                }
+                else
+                {               /* Operator for length lS is complex */
+                  for (jS = 0; jS < O.l[lS].N; jS++)
+                  {
+                    for (k = 0; k < psi.NWord; k++)
+                      DetSqr[k] = Det[k];
+                    phaseS = OperatorLader(DetSqr, &(O.l[lS].o[lS * jS]), lS, O.NFermion);
+                    if (phaseS)
+                    {
+                      ComplexWaveFunctionPrefactorDet(psi, DetSqr, &aRe, &aIm);
+                      aIm *= -1;
+                      aRe = aRe * O.l[l].VRe[j];
+                      aIm = aIm * O.l[l].VRe[j];
+                      temp = aRe;
+                      aRe = temp * O.l[lS].V[jS].Re - aIm * O.l[lS].V[jS].Im;
+                      aIm = temp * O.l[lS].V[jS].Im + aIm * O.l[lS].V[jS].Re;
+                      temp = aRe;
+                      aRe = temp * psi.ValueRe[ii][ik] - aIm * psi.ValueIm[ii][ik];
+                      aIm = temp * psi.ValueIm[ii][ik] + aIm * psi.ValueRe[ii][ik];
+                      ExpecValueRe += phase * phaseS * aRe;
+                      ExpecValueIm += phase * phaseS * aIm;
+                    }
+                  }
+                }
+              }
+          }
+        }
+        else
+        {                       /* Operator for length l is complex */
+          for (j = 0; j < O.l[l].N; j++)
+          {
+            for (k = 0; k < psi.NWord; k++)
+              Det[k] = psi.Determinant[ii][ij + k];
+            phase = OperatorLader(Det, &(O.l[l].o[l * j]), l, O.NFermion);
+            if ((QDetNotRestricted(Det, O.NFermion, O.NBoson, O.NWord, restrictions))&&(fabs(phase) > (10 * DBL_MIN)))
+              for (lS = 0; lS <= O.MaxLength; lS++)
+              {
+                if (O.l[l].QComplex == 0)
+                {               /* Operator for length lS is real */
+                  for (jS = 0; jS < O.l[lS].N; jS++)
+                  {
+                    for (k = 0; k < psi.NWord; k++)
+                      DetSqr[k] = Det[k];
+                    phaseS = OperatorLader(DetSqr, &(O.l[lS].o[lS * jS]), lS, O.NFermion);
+                    if (phaseS)
+                    {
+                      ComplexWaveFunctionPrefactorDet(psi, DetSqr, &aRe, &aIm);
+                      aIm *= -1;
+                      temp = aRe;
+                      aRe = temp * O.l[l].V[j].Re - aIm * O.l[l].V[j].Im;
+                      aIm = temp * O.l[l].V[j].Im + aIm * O.l[l].V[j].Re;
+                      aRe = aRe * O.l[lS].VRe[jS];
+                      aIm = aIm * O.l[lS].VRe[jS];
+                      temp = aRe;
+                      aRe = temp * psi.ValueRe[ii][ik] - aIm * psi.ValueIm[ii][ik];
+                      aIm = temp * psi.ValueIm[ii][ik] + aIm * psi.ValueRe[ii][ik];
+                      ExpecValueRe += phase * phaseS * aRe;
+                      ExpecValueIm += phase * phaseS * aIm;
+                    }
+                  }
+                }
+                else
+                {               /* Operator for length lS is complex */
+                  for (jS = 0; jS < O.l[lS].N; jS++)
+                  {
+                    for (k = 0; k < psi.NWord; k++)
+                      DetSqr[k] = Det[k];
+                    phaseS = OperatorLader(DetSqr, &(O.l[lS].o[lS * jS]), lS, O.NFermion);
+                    if (phaseS)
+                    {
+                      ComplexWaveFunctionPrefactorDet(psi, DetSqr, &aRe, &aIm);
+                      aIm *= -1;
+                      temp = aRe;
+                      aRe = temp * O.l[l].V[j].Re - aIm * O.l[l].V[j].Im;
+                      aIm = temp * O.l[l].V[j].Im + aIm * O.l[l].V[j].Re;
+                      temp = aRe;
+                      aRe = temp * O.l[lS].V[jS].Re - aIm * O.l[lS].V[jS].Im;
+                      aIm = temp * O.l[lS].V[jS].Im + aIm * O.l[lS].V[jS].Re;
+                      temp = aRe;
+                      aRe = temp * psi.ValueRe[ii][ik] - aIm * psi.ValueIm[ii][ik];
+                      aIm = temp * psi.ValueIm[ii][ik] + aIm * psi.ValueRe[ii][ik];
+                      ExpecValueRe += phase * phaseS * aRe;
+                      ExpecValueIm += phase * phaseS * aIm;
+                    }
+                  }
+                }
+              }
+          }
+        }
+      }
+    }
+    free(Det);
+    free(DetSqr);
+  }
+  *VRe = ExpecValueRe;
+  *VIm = ExpecValueIm;
+  return 0;
+}
+
+uint32_t PsiOperatorSqrPsiRestrictedMR(const OperatorType O, const WaveFunctionType psi, double *VRe, double *VIm, DeterminantRestrictionType const restrictions)
+{
+  uint32_t i, j, k, l, ii, ij, ik, lS, jS;
+  double phase, phaseS;
+  uint8_t *Det, *DetSqr;
+  int    iOMP;
+  double ExpecValueRe = 0;
+  double ExpecValueIm = 0;
+#pragma omp parallel private(Det,DetSqr,i,j,k,l,lS,jS,ii,ij,ik,phase,phaseS,iOMP) reduction(+ : ExpecValueRe, ExpecValueIm)
+  {
+    Det = malloc(psi.NWord * sizeof(uint8_t));
+    if (Det == NULL)
+      AllocFailed();
+    DetSqr = malloc(psi.NWord * sizeof(uint8_t));
+    if (DetSqr == NULL)
+      AllocFailed();
+#pragma omp for
+    for (iOMP = 1; iOMP <= (int)psi.N; iOMP++)
+    {
+      i = (uint32_t) iOMP;
+      ii = i >> NBitsBlok;
+      ik = i & BlokMask;
+      ij = psi.NWord * ik;
+      for (l = 0; l <= O.MaxLength; l++)
+      {
+        if (O.l[l].QComplex == 0)
+        {                       /* Operator at length l real */
+          for (j = 0; j < O.l[l].N; j++)
+          {
+            for (k = 0; k < psi.NWord; k++)
+              Det[k] = psi.Determinant[ii][ij + k];
+            phase = OperatorLader(Det, &(O.l[l].o[l * j]), l, O.NFermion);
+            if ((QDetNotRestricted(Det, O.NFermion, O.NBoson, O.NWord, restrictions))&&(fabs(phase) > (10 * DBL_MIN)))
+              for (lS = 0; lS <= O.MaxLength; lS++)
+              {
+                if (O.l[lS].QComplex == 0)
+                {               /* Operator at length lS real */
+                  for (jS = 0; jS < O.l[lS].N; jS++)
+                  {
+                    for (k = 0; k < psi.NWord; k++)
+                      DetSqr[k] = Det[k];
+                    phaseS = OperatorLader(DetSqr, &(O.l[lS].o[lS * jS]), lS, O.NFermion);
+                    if (phaseS)
+                    {
+                      ExpecValueRe +=
+                      phase * phaseS * RealWaveFunctionPrefactorDet(psi,
+                                                                    Det) * psi.ValueRe[ii][ik] * (O.l[l].VRe[j] *
+                                                                                                  O.l[lS].VRe[jS]);
+                    }
+                  }
+                }
+                else
+                {               /* Operator at length lS complex */
+                  for (jS = 0; jS < O.l[lS].N; jS++)
+                  {
+                    for (k = 0; k < psi.NWord; k++)
+                      DetSqr[k] = Det[k];
+                    phaseS = OperatorLader(DetSqr, &(O.l[lS].o[lS * jS]), lS, O.NFermion);
+                    if (phaseS)
+                    {
+                      ExpecValueRe +=
+                      phase * phaseS * RealWaveFunctionPrefactorDet(psi,
+                                                                    Det) * psi.ValueRe[ii][ik] * (O.l[l].VRe[j] *
+                                                                                                  O.l[lS].V[jS].Re);
+                      ExpecValueIm +=
+                      phase * phaseS * RealWaveFunctionPrefactorDet(psi,
+                                                                    Det) * psi.ValueRe[ii][ik] * (O.l[l].VRe[j] *
+                                                                                                  O.l[lS].V[jS].Im);
+                    }
+                  }
+                }
+              }
+          }
+        }
+        else
+        {                       /* Operator at length l complex */
+          for (j = 0; j < O.l[l].N; j++)
+          {
+            for (k = 0; k < psi.NWord; k++)
+              Det[k] = psi.Determinant[ii][ij + k];
+            phase = OperatorLader(Det, &(O.l[l].o[l * j]), l, O.NFermion);
+            if ((QDetNotRestricted(Det, O.NFermion, O.NBoson, O.NWord, restrictions))&&(fabs(phase) > (10 * DBL_MIN)))
+              for (lS = 0; lS <= O.MaxLength; lS++)
+              {
+                if (O.l[lS].QComplex == 0)
+                {               /* Operator at length lS real */
+                  for (jS = 0; jS < O.l[lS].N; jS++)
+                  {
+                    for (k = 0; k < psi.NWord; k++)
+                      DetSqr[k] = Det[k];
+                    phaseS = OperatorLader(DetSqr, &(O.l[lS].o[lS * jS]), lS, O.NFermion);
+                    if (phaseS)
+                    {
+                      ExpecValueRe +=
+                      phase * phaseS * RealWaveFunctionPrefactorDet(psi,
+                                                                    Det) * psi.ValueRe[ii][ik] * (O.l[l].V[j].Re *
+                                                                                                  O.l[lS].VRe[jS]);
+                      ExpecValueIm +=
+                      phase * phaseS * RealWaveFunctionPrefactorDet(psi,
+                                                                    Det) * psi.ValueRe[ii][ik] * (O.l[l].V[j].Im *
+                                                                                                  O.l[lS].VRe[jS]);
+                    }
+                  }
+                }
+                else
+                {               /* Operator at length lS complex */
+                  for (jS = 0; jS < O.l[lS].N; jS++)
+                  {
+                    for (k = 0; k < psi.NWord; k++)
+                      DetSqr[k] = Det[k];
+                    phaseS = OperatorLader(DetSqr, &(O.l[lS].o[lS * jS]), lS, O.NFermion);
+                    if (phaseS)
+                    {
+                      ExpecValueRe +=
+                      phase * phaseS * RealWaveFunctionPrefactorDet(psi,
+                                                                    Det) * psi.ValueRe[ii][ik] * (O.l[l].V[j].Re *
+                                                                                                  O.l[lS].V[jS].Re -
+                                                                                                  O.l[l].V[j].Im *
+                                                                                                  O.l[lS].V[jS].Im);
+                      ExpecValueIm +=
+                      phase * phaseS * RealWaveFunctionPrefactorDet(psi,
+                                                                    Det) * psi.ValueRe[ii][ik] * (O.l[l].V[j].Re *
+                                                                                                  O.l[lS].V[jS].Im +
+                                                                                                  O.l[l].V[j].Im *
+                                                                                                  O.l[lS].V[jS].Re);
+                    }
+                  }
+                }
+              }
+          }
+        }
+      }
+    }
+    free(Det);
+    free(DetSqr);
+  }
+  *VRe = ExpecValueRe;
+  *VIm = ExpecValueIm;
+  return 0;
+}
+
+uint32_t PsiOperatorSqrPsiRestrictedCHC(const OperatorType O, const WaveFunctionType psi, double *VRe, DeterminantRestrictionType const restrictions)
+{
+  uint32_t i, j, k, l, ii, ij, ik, lS, jS;
+  double phase, phaseS;
+  uint8_t *Det, *DetSqr;
+  int    iOMP;
+  double ExpecValueRe = 0;
+  double aRe, aIm, temp;
+#pragma omp parallel private(temp,aRe,aIm,Det,DetSqr,i,j,k,l,lS,jS,ii,ij,ik,phase,phaseS,iOMP) reduction(+ : ExpecValueRe)
+  {
+    Det = malloc(psi.NWord * sizeof(uint8_t));
+    if (Det == NULL)
+      AllocFailed();
+    DetSqr = malloc(psi.NWord * sizeof(uint8_t));
+    if (DetSqr == NULL)
+      AllocFailed();
+#pragma omp for
+    for (iOMP = 1; iOMP <= (int)psi.N; iOMP++)
+    {
+      i = (uint32_t) iOMP;
+      ii = i >> NBitsBlok;
+      ik = i & BlokMask;
+      ij = psi.NWord * ik;
+      for (l = 0; l <= O.MaxLength; l++)
+      {
+        for (j = 0; j < O.l[l].N; j++)
+        {
+          for (k = 0; k < psi.NWord; k++)
+            Det[k] = psi.Determinant[ii][ij + k];
+          phase = OperatorLader(Det, &(O.l[l].o[l * j]), l, O.NFermion);
+          if ((QDetNotRestricted(Det, O.NFermion, O.NBoson, O.NWord, restrictions))&&(fabs(phase) > (10 * DBL_MIN)))
+            for (lS = 0; lS <= O.MaxLength; lS++)
+            {
+              for (jS = 0; jS < O.l[lS].N; jS++)
+              {
+                for (k = 0; k < psi.NWord; k++)
+                  DetSqr[k] = Det[k];
+                phaseS = OperatorLader(DetSqr, &(O.l[lS].o[lS * jS]), lS, O.NFermion);
+                if (phaseS)
+                {
+                  ComplexWaveFunctionPrefactorDet(psi, DetSqr, &aRe, &aIm);
+                  aIm *= -1;
+                  temp = aRe;
+                  aRe = temp * O.l[l].V[j].Re - aIm * O.l[l].V[j].Im;
+                  aIm = temp * O.l[l].V[j].Im + aIm * O.l[l].V[j].Re;
+                  temp = aRe;
+                  aRe = temp * O.l[lS].V[jS].Re - aIm * O.l[lS].V[jS].Im;
+                  aIm = temp * O.l[lS].V[jS].Im + aIm * O.l[lS].V[jS].Re;
+                  temp = aRe;
+                  aRe = temp * psi.ValueRe[ii][ik] - aIm * psi.ValueIm[ii][ik];
+                  ExpecValueRe += phase * phaseS * aRe;
+                }
+              }
+            }
+        }
+      }
+    }
+    free(Det);
+    free(DetSqr);
+  }
+  *VRe = ExpecValueRe;
+  return 0;
+}
+
+uint32_t PsiOperatorSqrPsiRestrictedCHR(const OperatorType O, const WaveFunctionType psi, double *VRe, DeterminantRestrictionType const restrictions)
+{
+  uint32_t i, j, k, l, ii, ij, ik, lS, jS;
+  double phase, phaseS;
+  uint8_t *Det, *DetSqr;
+  int    iOMP;
+  double ExpecValueRe = 0;
+#pragma omp parallel private(Det,DetSqr,i,j,k,l,lS,jS,ii,ij,ik,phase,phaseS,iOMP) reduction(+ : ExpecValueRe)
+  {
+    Det = malloc(psi.NWord * sizeof(uint8_t));
+    if (Det == NULL)
+      AllocFailed();
+    DetSqr = malloc(psi.NWord * sizeof(uint8_t));
+    if (DetSqr == NULL)
+      AllocFailed();
+#pragma omp for
+    for (iOMP = 1; iOMP <= (int)psi.N; iOMP++)
+    {
+      i = (uint32_t) iOMP;
+      ii = i >> NBitsBlok;
+      ik = i & BlokMask;
+      ij = psi.NWord * ik;
+      for (l = 0; l <= O.MaxLength; l++)
+      {
+        for (j = 0; j < O.l[l].N; j++)
+        {
+          for (k = 0; k < psi.NWord; k++)
+            Det[k] = psi.Determinant[ii][ij + k];
+          phase = OperatorLader(Det, &(O.l[l].o[l * j]), l, O.NFermion);
+          if ((QDetNotRestricted(Det, O.NFermion, O.NBoson, O.NWord, restrictions))&&(fabs(phase) > (10 * DBL_MIN)))
+            for (lS = 0; lS <= O.MaxLength; lS++)
+            {
+              for (jS = 0; jS < O.l[lS].N; jS++)
+              {
+                for (k = 0; k < psi.NWord; k++)
+                  DetSqr[k] = Det[k];
+                phaseS = OperatorLader(DetSqr, &(O.l[lS].o[lS * jS]), lS, O.NFermion);
+                if (phaseS)
+                {
+                  ExpecValueRe +=
+                  phase * phaseS * RealWaveFunctionPrefactorDet(psi,
+                                                                Det) * psi.ValueRe[ii][ik] * (O.l[l].V[j].Re *
+                                                                                              O.l[lS].V[jS].Re -
+                                                                                              O.l[l].V[j].Im *
+                                                                                              O.l[lS].V[jS].Im);
+                }
+              }
+            }
+        }
+      }
+    }
+    free(Det);
+    free(DetSqr);
+  }
+  *VRe = ExpecValueRe;
+  return 0;
+}
+
+uint32_t PsiOperatorSqrPsiRestrictedRHC(const OperatorType O, const WaveFunctionType psi, double *VRe, DeterminantRestrictionType const restrictions)
+{
+  uint32_t i, j, k, l, ii, ij, ik, lS, jS;
+  double phase, phaseS;
+  uint8_t *Det, *DetSqr;
+  int    iOMP;
+  double ExpecValueRe = 0;
+  double aRe, aIm;
+#pragma omp parallel private(aRe,aIm,Det,DetSqr,i,j,k,l,lS,jS,ii,ij,ik,phase,phaseS,iOMP) reduction(+ : ExpecValueRe)
+  {
+    Det = malloc(psi.NWord * sizeof(uint8_t));
+    if (Det == NULL)
+      AllocFailed();
+    DetSqr = malloc(psi.NWord * sizeof(uint8_t));
+    if (DetSqr == NULL)
+      AllocFailed();
+#pragma omp for
+    for (iOMP = 1; iOMP <= (int)psi.N; iOMP++)
+    {
+      i = (uint32_t) iOMP;
+      ii = i >> NBitsBlok;
+      ik = i & BlokMask;
+      ij = psi.NWord * ik;
+      for (l = 0; l <= O.MaxLength; l++)
+      {
+        for (j = 0; j < O.l[l].N; j++)
+        {
+          for (k = 0; k < psi.NWord; k++)
+            Det[k] = psi.Determinant[ii][ij + k];
+          phase = OperatorLader(Det, &(O.l[l].o[l * j]), l, O.NFermion);
+          if ((QDetNotRestricted(Det, O.NFermion, O.NBoson, O.NWord, restrictions))&&(fabs(phase) > (10 * DBL_MIN)))
+            for (lS = 0; lS <= O.MaxLength; lS++)
+            {
+              for (jS = 0; jS < O.l[lS].N; jS++)
+              {
+                for (k = 0; k < psi.NWord; k++)
+                  DetSqr[k] = Det[k];
+                phaseS = OperatorLader(DetSqr, &(O.l[lS].o[lS * jS]), lS, O.NFermion);
+                if (phaseS)
+                {
+                  ComplexWaveFunctionPrefactorDet(psi, DetSqr, &aRe, &aIm);
+                  ExpecValueRe +=
+                  phase * phaseS * (aRe * O.l[l].VRe[j] * O.l[lS].VRe[jS] * psi.ValueRe[ii][ik] +
+                                    aIm * O.l[l].VRe[j] * O.l[lS].VRe[jS] * psi.ValueIm[ii][ik]);
+                }
+              }
+            }
+        }
+      }
+    }
+    free(Det);
+    free(DetSqr);
+  }
+  *VRe = ExpecValueRe;
+  return 0;
+}
+
+uint32_t PsiOperatorSqrPsiRestrictedRHR(const OperatorType O, const WaveFunctionType psi, double *VRe, DeterminantRestrictionType const restrictions)
+{
+  uint32_t i, j, k, l, ii, ij, ik, lS, jS;
+  double phase, phaseS;
+  uint8_t *Det, *DetSqr;
+  int    iOMP;
+  double ExpecValue = 0;
+#pragma omp parallel private(Det,DetSqr,i,j,k,l,lS,jS,ii,ij,ik,phase,phaseS,iOMP) reduction(+ : ExpecValue)
+  {
+    Det = malloc(psi.NWord * sizeof(uint8_t));
+    if (Det == NULL)
+      AllocFailed();
+    DetSqr = malloc(psi.NWord * sizeof(uint8_t));
+    if (DetSqr == NULL)
+      AllocFailed();
+#pragma omp for
+    for (iOMP = 1; iOMP <= (int)psi.N; iOMP++)
+    {
+      i = (uint32_t) iOMP;
+      ii = i >> NBitsBlok;
+      ik = i & BlokMask;
+      ij = psi.NWord * ik;
+      for (l = 0; l <= O.MaxLength; l++)
+      {
+        for (j = 0; j < O.l[l].N; j++)
+        {
+          for (k = 0; k < psi.NWord; k++)
+            Det[k] = psi.Determinant[ii][ij + k];
+          phase = OperatorLader(Det, &(O.l[l].o[l * j]), l, O.NFermion);
+          if ((QDetNotRestricted(Det, O.NFermion, O.NBoson, O.NWord, restrictions))&&(fabs(phase) > (10 * DBL_MIN)))
+            for (lS = 0; lS <= O.MaxLength; lS++)
+            {
+              for (jS = 0; jS < O.l[lS].N; jS++)
+              {
+                for (k = 0; k < psi.NWord; k++)
+                  DetSqr[k] = Det[k];
+                phaseS = OperatorLader(DetSqr, &(O.l[lS].o[lS * jS]), lS, O.NFermion);
+                if (phaseS)
+                  ExpecValue +=
+                  phase * phaseS * RealWaveFunctionPrefactorDet(psi,
+                                                                DetSqr) * O.l[l].VRe[j] * O.l[lS].VRe[jS] *
+                  psi.ValueRe[ii][ik];
+              }
+            }
+        }
+      }
+    }
+    free(Det);
+    free(DetSqr);
+  }
+  *VRe = ExpecValue;
+  return 0;
+}
+
+uint32_t PsiOperatorSqrPsiRestrictedMHC(const OperatorType O, const WaveFunctionType psi, double *VRe, DeterminantRestrictionType const restrictions)
+{
+  uint32_t i, j, k, l, ii, ij, ik, lS, jS;
+  double phase, phaseS;
+  uint8_t *Det, *DetSqr;
+  int    iOMP;
+  double ExpecValueRe = 0;
+  double aRe, aIm, temp;
+#pragma omp parallel private(temp,aRe,aIm,Det,DetSqr,i,j,k,l,lS,jS,ii,ij,ik,phase,phaseS,iOMP) reduction(+ : ExpecValueRe)
+  {
+    Det = malloc(psi.NWord * sizeof(uint8_t));
+    if (Det == NULL)
+      AllocFailed();
+    DetSqr = malloc(psi.NWord * sizeof(uint8_t));
+    if (DetSqr == NULL)
+      AllocFailed();
+#pragma omp for
+    for (iOMP = 1; iOMP <= (int)psi.N; iOMP++)
+    {
+      i = (uint32_t) iOMP;
+      ii = i >> NBitsBlok;
+      ik = i & BlokMask;
+      ij = psi.NWord * ik;
+      for (l = 0; l <= O.MaxLength; l++)
+      {
+        if (O.l[l].QComplex == 0)
+        {                       /* Operator with length l real */
+          for (j = 0; j < O.l[l].N; j++)
+          {
+            for (k = 0; k < psi.NWord; k++)
+              Det[k] = psi.Determinant[ii][ij + k];
+            phase = OperatorLader(Det, &(O.l[l].o[l * j]), l, O.NFermion);
+            if ((QDetNotRestricted(Det, O.NFermion, O.NBoson, O.NWord, restrictions))&&(fabs(phase) > (10 * DBL_MIN)))
+              for (lS = 0; lS <= O.MaxLength; lS++)
+              {
+                if (O.l[lS].QComplex == 0)
+                {               /* Operator with length lS real */
+                  for (jS = 0; jS < O.l[lS].N; jS++)
+                  {
+                    for (k = 0; k < psi.NWord; k++)
+                      DetSqr[k] = Det[k];
+                    phaseS = OperatorLader(DetSqr, &(O.l[lS].o[lS * jS]), lS, O.NFermion);
+                    if (phaseS)
+                    {
+                      ComplexWaveFunctionPrefactorDet(psi, DetSqr, &aRe, &aIm);
+                      ExpecValueRe +=
+                      phase * phaseS * (aRe * O.l[l].VRe[j] * O.l[lS].VRe[jS] * psi.ValueRe[ii][ik] +
+                                        aIm * O.l[l].VRe[j] * O.l[lS].VRe[jS] * psi.ValueIm[ii][ik]);
+                    }
+                  }
+                }
+                else
+                {               /* Operator with length lS complex */
+                  for (jS = 0; jS < O.l[lS].N; jS++)
+                  {
+                    for (k = 0; k < psi.NWord; k++)
+                      DetSqr[k] = Det[k];
+                    phaseS = OperatorLader(DetSqr, &(O.l[lS].o[lS * jS]), lS, O.NFermion);
+                    if (phaseS)
+                    {
+                      ComplexWaveFunctionPrefactorDet(psi, DetSqr, &aRe, &aIm);
+                      aIm *= -1;
+                      aRe = aRe * O.l[l].VRe[j];
+                      aIm = aIm * O.l[l].VRe[j];
+                      temp = aRe;
+                      aRe = temp * O.l[lS].V[jS].Re - aIm * O.l[lS].V[jS].Im;
+                      aIm = temp * O.l[lS].V[jS].Im + aIm * O.l[lS].V[jS].Re;
+                      temp = aRe;
+                      aRe = temp * psi.ValueRe[ii][ik] - aIm * psi.ValueIm[ii][ik];
+                      ExpecValueRe += phase * phaseS * aRe;
+                    }
+                  }
+                }
+              }
+          }
+        }
+        else
+        {                       /* Operator with length l complex */
+          for (j = 0; j < O.l[l].N; j++)
+          {
+            for (k = 0; k < psi.NWord; k++)
+              Det[k] = psi.Determinant[ii][ij + k];
+            phase = OperatorLader(Det, &(O.l[l].o[l * j]), l, O.NFermion);
+            if ((QDetNotRestricted(Det, O.NFermion, O.NBoson, O.NWord, restrictions))&&(fabs(phase) > (10 * DBL_MIN)))
+              for (lS = 0; lS <= O.MaxLength; lS++)
+              {
+                if (O.l[lS].QComplex == 0)
+                {               /* Operator with length lS real */
+                  for (jS = 0; jS < O.l[lS].N; jS++)
+                  {
+                    for (k = 0; k < psi.NWord; k++)
+                      DetSqr[k] = Det[k];
+                    phaseS = OperatorLader(DetSqr, &(O.l[lS].o[lS * jS]), lS, O.NFermion);
+                    if (phaseS)
+                    {
+                      ComplexWaveFunctionPrefactorDet(psi, DetSqr, &aRe, &aIm);
+                      aIm *= -1;
+                      temp = aRe;
+                      aRe = temp * O.l[l].V[j].Re - aIm * O.l[l].V[j].Im;
+                      aIm = temp * O.l[l].V[j].Im + aIm * O.l[l].V[j].Re;
+                      aRe = aRe * O.l[lS].VRe[jS];
+                      aIm = aIm * O.l[lS].VRe[jS];
+                      temp = aRe;
+                      aRe = temp * psi.ValueRe[ii][ik] - aIm * psi.ValueIm[ii][ik];
+                      ExpecValueRe += phase * phaseS * aRe;
+                    }
+                  }
+                }
+                else
+                {               /* Operator with length lS complex */
+                  for (jS = 0; jS < O.l[lS].N; jS++)
+                  {
+                    for (k = 0; k < psi.NWord; k++)
+                      DetSqr[k] = Det[k];
+                    phaseS = OperatorLader(DetSqr, &(O.l[lS].o[lS * jS]), lS, O.NFermion);
+                    if (phaseS)
+                    {
+                      ComplexWaveFunctionPrefactorDet(psi, DetSqr, &aRe, &aIm);
+                      aIm *= -1;
+                      temp = aRe;
+                      aRe = temp * O.l[l].V[j].Re - aIm * O.l[l].V[j].Im;
+                      aIm = temp * O.l[l].V[j].Im + aIm * O.l[l].V[j].Re;
+                      temp = aRe;
+                      aRe = temp * O.l[lS].V[jS].Re - aIm * O.l[lS].V[jS].Im;
+                      aIm = temp * O.l[lS].V[jS].Im + aIm * O.l[lS].V[jS].Re;
+                      temp = aRe;
+                      aRe = temp * psi.ValueRe[ii][ik] - aIm * psi.ValueIm[ii][ik];
+                      ExpecValueRe += phase * phaseS * aRe;
+                    }
+                  }
+                }
+              }
+          }
+        }
+      }
+    }
+    free(Det);
+    free(DetSqr);
+  }
+  *VRe = ExpecValueRe;
+  return 0;
+}
+
+uint32_t PsiOperatorSqrPsiRestrictedMHR(const OperatorType O, const WaveFunctionType psi, double *VRe, DeterminantRestrictionType const restrictions)
+{
+  uint32_t i, j, k, l, ii, ij, ik, lS, jS;
+  double phase, phaseS;
+  uint8_t *Det, *DetSqr;
+  int    iOMP;
+  double ExpecValueRe = 0;
+#pragma omp parallel private(Det,DetSqr,i,j,k,l,lS,jS,ii,ij,ik,phase,phaseS,iOMP) reduction(+ : ExpecValueRe)
+  {
+    Det = malloc(psi.NWord * sizeof(uint8_t));
+    if (Det == NULL)
+      AllocFailed();
+    DetSqr = malloc(psi.NWord * sizeof(uint8_t));
+    if (DetSqr == NULL)
+      AllocFailed();
+#pragma omp for
+    for (iOMP = 1; iOMP <= (int)psi.N; iOMP++)
+    {
+      i = (uint32_t) iOMP;
+      ii = i >> NBitsBlok;
+      ik = i & BlokMask;
+      ij = psi.NWord * ik;
+      for (l = 0; l <= O.MaxLength; l++)
+      {
+        if (O.l[l].QComplex == 0)
+        {
+          for (j = 0; j < O.l[l].N; j++)
+          {
+            for (k = 0; k < psi.NWord; k++)
+              Det[k] = psi.Determinant[ii][ij + k];
+            phase = OperatorLader(Det, &(O.l[l].o[l * j]), l, O.NFermion);
+            if ((QDetNotRestricted(Det, O.NFermion, O.NBoson, O.NWord, restrictions))&&(fabs(phase) > (10 * DBL_MIN)))
+              for (lS = 0; lS <= O.MaxLength; lS++)
+              {
+                if (O.l[lS].QComplex == 0)
+                {
+                  for (jS = 0; jS < O.l[lS].N; jS++)
+                  {
+                    for (k = 0; k < psi.NWord; k++)
+                      DetSqr[k] = Det[k];
+                    phaseS = OperatorLader(DetSqr, &(O.l[lS].o[lS * jS]), lS, O.NFermion);
+                    if (phaseS)
+                    {
+                      ExpecValueRe +=
+                      phase * phaseS * RealWaveFunctionPrefactorDet(psi,
+                                                                    Det) * psi.ValueRe[ii][ik] * (O.l[l].VRe[j] *
+                                                                                                  O.l[lS].VRe[jS]);
+                    }
+                  }
+                }
+                else
+                {
+                  for (jS = 0; jS < O.l[lS].N; jS++)
+                  {
+                    for (k = 0; k < psi.NWord; k++)
+                      DetSqr[k] = Det[k];
+                    phaseS = OperatorLader(DetSqr, &(O.l[lS].o[lS * jS]), lS, O.NFermion);
+                    if (phaseS)
+                    {
+                      ExpecValueRe +=
+                      phase * phaseS * RealWaveFunctionPrefactorDet(psi,
+                                                                    Det) * psi.ValueRe[ii][ik] * (O.l[l].VRe[j] *
+                                                                                                  O.l[lS].V[jS].Re);
+                    }
+                  }
+                }
+              }
+          }
+        }
+        else
+        {
+          for (j = 0; j < O.l[l].N; j++)
+          {
+            for (k = 0; k < psi.NWord; k++)
+              Det[k] = psi.Determinant[ii][ij + k];
+            phase = OperatorLader(Det, &(O.l[l].o[l * j]), l, O.NFermion);
+            if ((QDetNotRestricted(Det, O.NFermion, O.NBoson, O.NWord, restrictions))&&(fabs(phase) > (10 * DBL_MIN)))
+              for (lS = 0; lS <= O.MaxLength; lS++)
+              {
+                if (O.l[lS].QComplex == 0)
+                {
+                  for (jS = 0; jS < O.l[lS].N; jS++)
+                  {
+                    for (k = 0; k < psi.NWord; k++)
+                      DetSqr[k] = Det[k];
+                    phaseS = OperatorLader(DetSqr, &(O.l[lS].o[lS * jS]), lS, O.NFermion);
+                    if (phaseS)
+                    {
+                      ExpecValueRe +=
+                      phase * phaseS * RealWaveFunctionPrefactorDet(psi,
+                                                                    Det) * psi.ValueRe[ii][ik] * (O.l[l].V[j].Re *
+                                                                                                  O.l[lS].VRe[jS]);
+                    }
+                  }
+                }
+                else
+                {
+                  for (jS = 0; jS < O.l[lS].N; jS++)
+                  {
+                    for (k = 0; k < psi.NWord; k++)
+                      DetSqr[k] = Det[k];
+                    phaseS = OperatorLader(DetSqr, &(O.l[lS].o[lS * jS]), lS, O.NFermion);
+                    if (phaseS)
+                    {
+                      ExpecValueRe +=
+                      phase * phaseS * RealWaveFunctionPrefactorDet(psi,
+                                                                    Det) * psi.ValueRe[ii][ik] * (O.l[l].V[j].Re *
+                                                                                                  O.l[lS].V[jS].Re -
+                                                                                                  O.l[l].V[j].Im *
+                                                                                                  O.l[lS].V[jS].Im);
+                    }
+                  }
+                }
+              }
+          }
+        }
+      }
+    }
+    free(Det);
+    free(DetSqr);
+  }
+  *VRe = ExpecValueRe;
+  return 0;
+}
+
+
+
 /*
 *   Calculate O psi whereby the basis set used is not changed
 *   input O psi and Opsi
@@ -3897,35 +4815,6 @@ uint32_t OperatorPsiConserveBasis(const OperatorType O, const WaveFunctionType p
     return OperatorPsiConserveBasisMC(O, psi, Opsi);
   }
   return OperatorPsiConserveBasisMR(O, psi, Opsi);
-}
-
-uint32_t PsiAddOperatorPsiConserveBasis(const OperatorType *O, const WaveFunctionType *psi, WaveFunctionType * const Opsi)
-{
-  if (O->QComplex == 0)
-  {
-    if (psi->QComplex)
-    {
-      return PsiAddOperatorPsiConserveBasisRC(O, psi, Opsi);
-    }
-    if (Opsi->QComplex)
-    {
-      return PsiAddOperatorPsiConserveBasisRRC(O, psi, Opsi);
-    }
-    return PsiAddOperatorPsiConserveBasisRR(O, psi, Opsi);
-  }
-  if (O->QComplex == 1)
-  {
-    if (psi->QComplex)
-    {
-      return PsiAddOperatorPsiConserveBasisCC(O, psi, Opsi);
-    }
-    return PsiAddOperatorPsiConserveBasisCR(O, psi, Opsi);
-  }
-  if (psi->QComplex)
-  {
-    return PsiAddOperatorPsiConserveBasisMC(O, psi, Opsi);
-  }
-  return PsiAddOperatorPsiConserveBasisMR(O, psi, Opsi);
 }
 
 /*
@@ -3960,36 +4849,6 @@ uint32_t OperatorPsiConserveBasisPreAllocated(const OperatorType *O, const WaveF
     return OperatorPsiConserveBasisPreAllocatedMC(O, psi, Opsi);
   }
   return OperatorPsiConserveBasisPreAllocatedMR(O, psi, Opsi);
-}
-
-uint32_t PsiAddOperatorPsiConserveBasisPreAllocated(const OperatorType *O, const WaveFunctionType *psi,
-                                                    WaveFunctionType * const Opsi)
-{
-  if (O->QComplex == 0)
-  {
-    if (psi->QComplex)
-    {
-      return PsiAddOperatorPsiConserveBasisPreAllocatedRC(O, psi, Opsi);
-    }
-    if (Opsi->QComplex)
-    {
-      return PsiAddOperatorPsiConserveBasisPreAllocatedRRC(O, psi, Opsi);
-    }
-    return PsiAddOperatorPsiConserveBasisPreAllocatedRR(O, psi, Opsi);
-  }
-  if (O->QComplex == 1)
-  {
-    if (psi->QComplex)
-    {
-      return PsiAddOperatorPsiConserveBasisPreAllocatedCC(O, psi, Opsi);
-    }
-    return PsiAddOperatorPsiConserveBasisPreAllocatedCR(O, psi, Opsi);
-  }
-  if (psi->QComplex)
-  {
-    return PsiAddOperatorPsiConserveBasisPreAllocatedMC(O, psi, Opsi);
-  }
-  return PsiAddOperatorPsiConserveBasisPreAllocatedMR(O, psi, Opsi);
 }
 
 /*
@@ -4050,35 +4909,6 @@ uint32_t OperatorPsiRestricted(const OperatorType O, const WaveFunctionType psi,
   return OperatorPsiRestrictedMR(O, psi, Opsi, restrictions);
 }
 
-uint32_t PsiAddOperatorPsi(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi)
-{
-  if (O.QComplex == 0)
-  {
-    if (psi.QComplex)
-    {
-      return PsiAddOperatorPsiRC(O, psi, Opsi);
-    }
-    if (Opsi->QComplex)
-    {
-      return PsiAddOperatorPsiRRC(O, psi, Opsi);
-    }
-    return PsiAddOperatorPsiRR(O, psi, Opsi);
-  }
-  if (O.QComplex == 1)
-  {
-    if (psi.QComplex)
-    {
-      return PsiAddOperatorPsiCC(O, psi, Opsi);
-    }
-    return PsiAddOperatorPsiCR(O, psi, Opsi);
-  }
-  if (psi.QComplex)
-  {
-    return PsiAddOperatorPsiMC(O, psi, Opsi);
-  }
-  return PsiAddOperatorPsiMR(O, psi, Opsi);
-}
-
 /*  Calcualtes <psi|O|psi>
 *
 */
@@ -4135,7 +4965,6 @@ uint32_t PsiHermitianOperatorPsi(const OperatorType O, const WaveFunctionType ps
   }
   return PsiOperatorPsiMHR(O, psi, VRe);
 }
-
 
 /*  Calcualtes <psi|OO|psi>
 *
@@ -4194,34 +5023,32 @@ uint32_t PsiHermitianOperatorSqrPsi(const OperatorType O, const WaveFunctionType
   return PsiOperatorSqrPsiMHR(O, psi, VRe);
 }
 
-
 /*  Calcualtes <psi|OO|psi>
  *  using restrictions on O|psi>
  */
 uint32_t PsiOperatorSqrPsiRestricted(const OperatorType O, const WaveFunctionType psi, double *VRe, double *VIm, DeterminantRestrictionType const Restrictions)
 {
-  printf("To do implement restrictions on det in Opsi\n");
   if (O.QComplex == 0)
   {
     if (psi.QComplex)
     {
-      return PsiOperatorSqrPsiRC(O, psi, VRe, VIm);
+      return PsiOperatorSqrPsiRestrictedRC(O, psi, VRe, VIm, Restrictions);
     }
-    return PsiOperatorSqrPsiRR(O, psi, VRe);
+    return PsiOperatorSqrPsiRestrictedRR(O, psi, VRe, Restrictions);
   }
   if (O.QComplex == 1)
   {
     if (psi.QComplex)
     {
-      return PsiOperatorSqrPsiCC(O, psi, VRe, VIm);
+      return PsiOperatorSqrPsiRestrictedCC(O, psi, VRe, VIm, Restrictions);
     }
-    return PsiOperatorSqrPsiCR(O, psi, VRe, VIm);
+    return PsiOperatorSqrPsiRestrictedCR(O, psi, VRe, VIm, Restrictions);
   }
   if (psi.QComplex)
   {
-    return PsiOperatorSqrPsiMC(O, psi, VRe, VIm);
+    return PsiOperatorSqrPsiRestrictedMC(O, psi, VRe, VIm, Restrictions);
   }
-  return PsiOperatorSqrPsiMR(O, psi, VRe, VIm);
+  return PsiOperatorSqrPsiRestrictedMR(O, psi, VRe, VIm, Restrictions);
 }
 
 /*  Calcualtes <psi|OO|psi>
@@ -4231,36 +5058,34 @@ uint32_t PsiOperatorSqrPsiRestricted(const OperatorType O, const WaveFunctionTyp
  */
 uint32_t PsiHermitianOperatorSqrPsiRestricted(const OperatorType O, const WaveFunctionType psi, double *VRe, DeterminantRestrictionType const Restrictions)
 {
-  printf("To do implement restrictions on det in Opsi\n");
   if (O.QComplex == 0)
   {
     if (psi.QComplex)
     {
-      return PsiOperatorSqrPsiRHC(O, psi, VRe);
+      return PsiOperatorSqrPsiRestrictedRHC(O, psi, VRe, Restrictions);
     }
-    return PsiOperatorSqrPsiRHR(O, psi, VRe);
+    return PsiOperatorSqrPsiRestrictedRHR(O, psi, VRe, Restrictions);
   }
   if (O.QComplex == 1)
   {
     if (psi.QComplex)
     {
-      return PsiOperatorSqrPsiCHC(O, psi, VRe);
+      return PsiOperatorSqrPsiRestrictedCHC(O, psi, VRe, Restrictions);
     }
-    return PsiOperatorSqrPsiCHR(O, psi, VRe);
+    return PsiOperatorSqrPsiRestrictedCHR(O, psi, VRe, Restrictions);
   }
   if (psi.QComplex)
   {
-    return PsiOperatorSqrPsiMHC(O, psi, VRe);
+    return PsiOperatorSqrPsiRestrictedMHC(O, psi, VRe, Restrictions);
   }
-  return PsiOperatorSqrPsiMHR(O, psi, VRe);
+  return PsiOperatorSqrPsiRestrictedMHR(O, psi, VRe, Restrictions);
 }
 
 /*  Calcualtes the matrix of dimensions [i,j] <psiPrime_i|O|psi_j>
  *  On entry V.Ni contains the length of psiPrime
  *  On entry V.Nj contains the length of psi
  */
-uint32_t PsiPrimeOperatorPsiMatrix(const OperatorType O, const WaveFunctionType * psiPrime,
-                                   const WaveFunctionType * psi, MatrixType * const V)
+uint32_t PsiPrimeOperatorPsiMatrix(const OperatorType O, const WaveFunctionType * psiPrime, const WaveFunctionType * psi, MatrixType * const V)
 {
   uint32_t i, j;
   WaveFunctionType Opsi;

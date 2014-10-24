@@ -396,7 +396,23 @@ void BlockWaveFunctionTruncateBasis(WaveFunctionType *const psi, uint32_t const 
  */
 uint32_t BlockLanczosGroundStateConserveBasisDense(const OperatorType H, WaveFunctionType * const psi, uint32_t const Npsi)
 {
-  printf("to do\n");
+  uint32_t i;
+  CompactMatrixType Hdens;
+  Hdens.QComplex = ((H.QComplex)||(psi[0].QComplex));
+  Hdens.Ni=psi[0].N;
+  Hdens.Nj=psi[0].N;
+  InitCompactMatrix(&Hdens);
+  // fill the matrix Hdens
+  
+  WaveFunctionType Hpsi;
+  WaveFunctionInitCopyBasis(&Hpsi, *psi);
+  for(i=0;i<psi[0].N;i++)
+  {
+    
+  }
+  WaveFunctionFreeValues(&Hpsi);
+  
+  
   return 0;
 }
 
