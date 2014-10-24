@@ -74,6 +74,7 @@ void   FreeMatrix();
 uint32_t InitMatrix();
 uint32_t InitIdentityMatrix();
 uint32_t MakeRealMatrixComplex();
+uint32_t MakeComplexMatrixReal();
 void   MatrixChop();
 uint32_t MatrixTranspose();
 void   MatrixComplexConjugate();
@@ -188,6 +189,15 @@ uint32_t RealBlokTriDiagonalMatrixVector();
 uint32_t ComplexBlokTriDiagonalMatrixVector();
 uint32_t RealVectorBlokTriDiagonalMatrixVector();
 uint32_t ComplexVectorBlokTriDiagonalMatrixVector();
+
+
+/**********************************************************/
+/**         BasisMath_BlockTriDiagonalMatrix.c           **/
+/**********************************************************/
+uint32_t InitBlockTridiagonalMatrix();
+uint32_t FreeBlockTridiagonalMatrix();
+
+
 
 
 /**********************************************************/

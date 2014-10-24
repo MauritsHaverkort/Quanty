@@ -31,7 +31,7 @@ uint32_t CheckDetPhysical(uint8_t *det, uint32_t const NFermion, uint32_t const 
  */
 uint8_t *StringToDet(uint32_t const NFermion, uint32_t const NBoson, char *s)
 {
-  char **endptr;
+  char **endptr=NULL;
   char Boson[3];
   uint32_t i, nspaces=0;
   uint8_t *det;
@@ -208,6 +208,85 @@ uint32_t WaveFunctionInit(WaveFunctionType * Psi)
   return 0;
 }
 
+/*  For Two functions on the same basis only the values need to be stored seperately
+ *  All other elements point to the same location
+ */
+uint32_t WaveFunctionInitCopyBasis(WaveFunctionType * Psi, WaveFunctionType const PsiOrig)
+{
+  uint32_t i,j;
+  
+  Psi->N = PsiOrig.N;
+  Psi->NBlok = PsiOrig.NBlok;
+  Psi->NFermion = PsiOrig.NFermion;
+  Psi->NBoson = PsiOrig.NBoson;
+  Psi->NWord = PsiOrig.NWord;
+  Psi->Next = PsiOrig.Next;
+  Psi->Determinant = PsiOrig.Determinant;
+  Psi->NBitsKey = PsiOrig.NBitsKey;
+  Psi->KeyList = PsiOrig.KeyList;
+  Psi->QComplex = PsiOrig.QComplex;
+  
+  Psi->ValueRe = malloc(Psi->NBlok * sizeof(double *));
+  if (Psi->ValueRe == NULL)
+  {                             /* Allocation Failed */
+    printf("alloc failed WaveFunctionInitCopyBasis 01 Re\n");
+    Psi->N = 0;
+    Psi->NBlok = 0;
+    return 1;
+  }
+  for (i = 0; i < Psi->NBlok; i++)
+  {
+    Psi->ValueRe[i] = calloc(BlokSize, sizeof(double));
+    if (Psi->ValueRe[i] == NULL)
+    {                           /* Allocation Failed */
+      printf("alloc failed WaveFunctionInitCopyBasis 02 Re\n");
+      fflush(stdout);
+      for (j = 0; j < i; j++)
+      {
+        free(Psi->ValueRe[j]);
+      }
+      Psi->N = 0;
+      Psi->NBlok = 0;
+      return 1;
+    }
+  }
+  if(Psi->QComplex)
+  {
+    Psi->ValueIm = malloc(Psi->NBlok * sizeof(double *));
+    if (Psi->ValueIm == NULL)
+    {                             /* Allocation Failed */
+      for (j = 0; j < Psi->NBlok; j++)
+      {
+        free(Psi->ValueRe[j]);
+      }
+      free(Psi->ValueRe);
+      printf("alloc failed WaveFunctionInitCopyBasis 01 Im\n");
+      return 1;
+    }
+    for (i = 0; i < Psi->NBlok; i++)
+    {
+      Psi->ValueIm[i] = calloc(BlokSize, sizeof(double));
+      if (Psi->ValueIm[i] == NULL)
+      {                           /* Allocation Failed */
+        printf("alloc failed WaveFunctionInitCopyBasis 02 Im\n");
+        fflush(stdout);
+        for (j = 0; j < Psi->NBlok; j++)
+        {
+          free(Psi->ValueRe[j]);
+        }
+        for (j = 0; j < i; j++)
+        {
+          free(Psi->ValueIm[j]);
+        }
+        Psi->N = 0;
+        Psi->NBlok = 0;
+        return 1;
+      }
+    }
+  }
+  return 0;
+}
+
 /*
  *
  */
@@ -313,8 +392,7 @@ void WaveFunctionFreeValues(WaveFunctionType * const psi)
   }
 }
 
-uint32_t WaveFunctionAddElement(WaveFunctionType * const psi, const uint8_t * const det, const double aRe,
-                                const double aIm)
+uint32_t WaveFunctionAddElement(WaveFunctionType * const psi, const uint8_t * const det, const double aRe, const double aIm)
 {
   if (psi->QComplex == 0)
   {
@@ -706,6 +784,18 @@ void WaveFunctionTruncateBasis(WaveFunctionType * const a, const double epsilon)
   else
   {
     ComplexWaveFunctionTruncateBasis(a, epsilon);
+  }
+}
+
+void WaveFunctionOrthogonalizeSameBasis(WaveFunctionType * const psi, const WaveFunctionType * const OtherPsi, const uint32_t Npsi)
+{
+  if (psi->QComplex == 0)
+  {
+    RealWaveFunctionOrthogonalizeSameBasis(psi, OtherPsi, Npsi);
+  }
+  else
+  {
+    ComplexWaveFunctionOrthogonalizeSameBasis(psi, OtherPsi, Npsi);
   }
 }
 

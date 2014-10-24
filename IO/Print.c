@@ -90,6 +90,11 @@ uint32_t PrintPlainMatrix(MatrixType M)
   return StreamPrintPlainMatrix(M, stdout);
 }
 
+uint32_t PrintCompactMatrixMinimal(CompactMatrixType M)
+{
+  return StreamPrintCompactMatrixMinimal(M, stdout);
+}
+
 uint32_t PrintPlainTriDiagonalMatrix(TriDiagonalMatrixType M)
 {
   return StreamPrintPlainTriDiagonalMatrix(M, stdout);
@@ -103,6 +108,11 @@ uint32_t PrintPlainAndersonMatrix(AndersonMatrixType M)
 uint32_t PrintPlainListOfPoles(ListOfPoles M)
 {
   return StreamPrintPlainListOfPoles(M, stdout);
+}
+
+uint32_t PrintBlockListOfPoles(BlockListOfPoles M)
+{
+  return StreamPrintBlockListOfPoles(M, stdout);
 }
 
 uint32_t PrintTightBindingDef(TightBindingDef O)
@@ -160,6 +170,11 @@ uint32_t PrintBlokTriDiagonalMatrix(BlokTriDiagonalMatrixType M)
   return StreamPrintBlokTriDiagonalMatrix(M, stdout);
 }
 
+uint32_t PrintBlockTriDiagonalMatrix(BlockTriDiagonalMatrixType M)
+{
+  return StreamPrintBlockTriDiagonalMatrix(M, stdout);
+}
+
 uint32_t PrintDoubleTriDiagonalMatrix(DoubleTriDiagonalMatrixType M)
 {
   return StreamPrintDoubleTriDiagonalMatrix(M, stdout);
@@ -214,3 +229,9 @@ uint32_t PrintBandstructurePath(BandstructurePathType M)
 {
   return StreamPrintBandstructurePath(M, stdout);
 }
+
+uint32_t PrintBlockNaturalImpurityOrbitalMatrix(BlockNaturalImpurityOrbitalMatrixType M)
+{
+  return StreamPrintBlockNaturalImpurityOrbitalMatrix(M, stdout);
+}
+

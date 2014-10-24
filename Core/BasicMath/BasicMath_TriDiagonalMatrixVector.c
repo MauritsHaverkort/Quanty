@@ -148,6 +148,9 @@ double TriDiagonalMatrixInverse(TriDiagonalMatrixType const M, MatrixType * cons
   return MatrixInverse(MI);
 }
 
+
+
+
 /*  M<- M + alpha B
  */
 void TriDiagonalMatrixAdd(TriDiagonalMatrixType * const M, TriDiagonalMatrixType B, double alphaRe)

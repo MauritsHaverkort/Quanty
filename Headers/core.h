@@ -180,6 +180,7 @@ uint32_t LanczosTriDiagonalizePlusDensity();
 
 uint32_t FreeOperator();
 uint32_t InitOperator();
+uint32_t InitNamedOperator();
 uint32_t MakeRealOperatorFixedLengthComplex();
 uint32_t InitOperatorFixedLength();
 uint32_t InitOperatorCopySettings();
@@ -187,11 +188,8 @@ uint32_t RealOperatorAddLader();
 uint32_t ComplexOperatorAddLader();
 uint32_t RealOperatorAddLaderNormalOrder();
 uint32_t ComplexOperatorAddLaderNormalOrder();
-uint32_t OperatorAddLader(OperatorType * const O, const uint16_t * const oadd, const uint32_t length, const double VRe,
-                          const double VIm);
-uint32_t OperatorAddLaderNormalOrder(OperatorType * const O, const uint16_t * const oadd, const uint32_t length,
-                                     const double VRe, const double VIm, uint32_t(*QDetNotOrdered) (uint16_t, uint16_t,
-                                                                                                    uint32_t));
+uint32_t OperatorAddLader(OperatorType * const O, const uint16_t * const oadd, const uint32_t length, const double VRe,const double VIm);
+uint32_t OperatorAddLaderNormalOrder(OperatorType * const O, const uint16_t * const oadd, const uint32_t length,const double VRe, const double VIm, uint32_t(*QDetNotOrdered) (uint16_t, uint16_t, uint32_t));
 uint32_t OperatorRemoveSmallValues();
 uint32_t QDetNotOrderedFaFcBaBc(const uint16_t A, const uint16_t B, const uint32_t NFermion);
 uint32_t QDetNotOrderedFcFaBcBa(const uint16_t A, const uint16_t B, const uint32_t NFermion);
@@ -262,6 +260,7 @@ uint32_t PsiHermitianOperatorSqrPsiPerturbation();
 uint32_t PsiPrimeOperatorPsiPerturbationMatrix();
 uint32_t PsiOperatorPsiPerturbationMatrix();
 uint32_t PsiPrimeOperatorPsiPerturbation();
+
 
 
 

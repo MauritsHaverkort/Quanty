@@ -907,8 +907,7 @@ uint32_t OperatorPsiConserveBasisPreAllocatedRC(const OperatorType *O, const Wav
   return 0;
 }
 
-uint32_t OperatorPsiConserveBasisPreAllocatedRR(const OperatorType *O, const WaveFunctionType *psi,
-                                                WaveFunctionType * const Opsi)
+uint32_t OperatorPsiConserveBasisPreAllocatedRR(const OperatorType *O, const WaveFunctionType *psi,WaveFunctionType * const Opsi)
 {
   uint32_t i, j, k, l, ii, ij, ik;
   double phase;
@@ -2238,71 +2237,6 @@ uint32_t OperatorPsiRestrictedMR(const OperatorType O, const WaveFunctionType ps
     RealWaveFunctionFree(Opsi);
     return 1;
   }
-  return 0;
-}
-
-uint32_t PsiAddOperatorPsiSerialCC(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi)
-{
-  return 0;
-}
-
-uint32_t PsiAddOperatorPsiSerialCR(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi)
-{
-  return 0;
-}
-
-uint32_t PsiAddOperatorPsiSerialRC(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi)
-{
-  return 0;
-}
-
-uint32_t PsiAddOperatorPsiSerialRR(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi)
-{
-  return 0;
-}
-
-uint32_t PsiAddOperatorPsiSerialRRC(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi)
-{
-  return 0;
-}
-
-uint32_t PsiAddOperatorPsiSerialMC(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi)
-{
-  return 0;
-}
-
-uint32_t PsiAddOperatorPsiSerialMR(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi)
-{
-  return 0;
-}
-
-uint32_t OperatorPsiSerialCC(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi)
-{
-  return 0;
-}
-
-uint32_t OperatorPsiSerialCR(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi)
-{
-  return 0;
-}
-
-uint32_t OperatorPsiSerialRC(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi)
-{
-  return 0;
-}
-
-uint32_t OperatorPsiSerialRR(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi)
-{
-  return 0;
-}
-
-uint32_t OperatorPsiSerialMC(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi)
-{
-  return 0;
-}
-
-uint32_t OperatorPsiSerialMR(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi)
-{
   return 0;
 }
 
@@ -4003,8 +3937,7 @@ uint32_t PsiAddOperatorPsiConserveBasis(const OperatorType *O, const WaveFunctio
 *     Opsi.Determinant, Opsi.Next, Opsi.Keylist point to the same location as psi does
 *     This function conservse the values O and psi point to
 */
-uint32_t OperatorPsiConserveBasisPreAllocated(const OperatorType *O, const WaveFunctionType *psi,
-                                              WaveFunctionType * const Opsi)
+uint32_t OperatorPsiConserveBasisPreAllocated(const OperatorType *O, const WaveFunctionType *psi, WaveFunctionType * const Opsi)
 {
   if (O->QComplex == 0)
   {
@@ -4146,68 +4079,6 @@ uint32_t PsiAddOperatorPsi(const OperatorType O, const WaveFunctionType psi, Wav
   return PsiAddOperatorPsiMR(O, psi, Opsi);
 }
 
-/*  Serial version of previous routine
-*
-*   Calculate O psi whereby the basis set used is expanded
-*   input O and psi
-*   output Opsi
-*     Opsi points to completely newly assigned memory
-*     This function conservse the values O and psi point to
-*/
-uint32_t OperatorPsiSerial(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi)
-{
-  if (O.QComplex == 0)
-  {
-    if (psi.QComplex)
-    {
-      return OperatorPsiSerialRC(O, psi, Opsi);
-    }
-    return OperatorPsiSerialRR(O, psi, Opsi);
-  }
-  if (O.QComplex == 1)
-  {
-    if (psi.QComplex)
-    {
-      return OperatorPsiSerialCC(O, psi, Opsi);
-    }
-    return OperatorPsiSerialCR(O, psi, Opsi);
-  }
-  if (psi.QComplex)
-  {
-    return OperatorPsiSerialMC(O, psi, Opsi);
-  }
-  return OperatorPsiSerialMR(O, psi, Opsi);
-}
-
-uint32_t PsiAddOperatorPsiSerial(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi)
-{
-  if (O.QComplex == 0)
-  {
-    if (psi.QComplex)
-    {
-      return PsiAddOperatorPsiSerialRC(O, psi, Opsi);
-    }
-    if (Opsi->QComplex)
-    {
-      return PsiAddOperatorPsiSerialRRC(O, psi, Opsi);
-    }
-    return PsiAddOperatorPsiSerialRR(O, psi, Opsi);
-  }
-  if (O.QComplex == 1)
-  {
-    if (psi.QComplex)
-    {
-      return PsiAddOperatorPsiSerialCC(O, psi, Opsi);
-    }
-    return PsiAddOperatorPsiSerialCR(O, psi, Opsi);
-  }
-  if (psi.QComplex)
-  {
-    return PsiAddOperatorPsiSerialMC(O, psi, Opsi);
-  }
-  return PsiAddOperatorPsiSerialMR(O, psi, Opsi);
-}
-
 /*  Calcualtes <psi|O|psi>
 *
 */
@@ -4324,6 +4195,66 @@ uint32_t PsiHermitianOperatorSqrPsi(const OperatorType O, const WaveFunctionType
 }
 
 
+/*  Calcualtes <psi|OO|psi>
+ *  using restrictions on O|psi>
+ */
+uint32_t PsiOperatorSqrPsiRestricted(const OperatorType O, const WaveFunctionType psi, double *VRe, double *VIm, DeterminantRestrictionType const Restrictions)
+{
+  printf("To do implement restrictions on det in Opsi\n");
+  if (O.QComplex == 0)
+  {
+    if (psi.QComplex)
+    {
+      return PsiOperatorSqrPsiRC(O, psi, VRe, VIm);
+    }
+    return PsiOperatorSqrPsiRR(O, psi, VRe);
+  }
+  if (O.QComplex == 1)
+  {
+    if (psi.QComplex)
+    {
+      return PsiOperatorSqrPsiCC(O, psi, VRe, VIm);
+    }
+    return PsiOperatorSqrPsiCR(O, psi, VRe, VIm);
+  }
+  if (psi.QComplex)
+  {
+    return PsiOperatorSqrPsiMC(O, psi, VRe, VIm);
+  }
+  return PsiOperatorSqrPsiMR(O, psi, VRe, VIm);
+}
+
+/*  Calcualtes <psi|OO|psi>
+ *  Under the assumption that O^{\dag} = O
+ *  O is Hermitian
+ *  using restrictions on O|psi>
+ */
+uint32_t PsiHermitianOperatorSqrPsiRestricted(const OperatorType O, const WaveFunctionType psi, double *VRe, DeterminantRestrictionType const Restrictions)
+{
+  printf("To do implement restrictions on det in Opsi\n");
+  if (O.QComplex == 0)
+  {
+    if (psi.QComplex)
+    {
+      return PsiOperatorSqrPsiRHC(O, psi, VRe);
+    }
+    return PsiOperatorSqrPsiRHR(O, psi, VRe);
+  }
+  if (O.QComplex == 1)
+  {
+    if (psi.QComplex)
+    {
+      return PsiOperatorSqrPsiCHC(O, psi, VRe);
+    }
+    return PsiOperatorSqrPsiCHR(O, psi, VRe);
+  }
+  if (psi.QComplex)
+  {
+    return PsiOperatorSqrPsiMHC(O, psi, VRe);
+  }
+  return PsiOperatorSqrPsiMHR(O, psi, VRe);
+}
+
 /*  Calcualtes the matrix of dimensions [i,j] <psiPrime_i|O|psi_j>
  *  On entry V.Ni contains the length of psiPrime
  *  On entry V.Nj contains the length of psi
@@ -4365,8 +4296,7 @@ uint32_t PsiOperatorPsiMatrix(const OperatorType O, const WaveFunctionType * psi
 /*  Calcualtes <psiPrime|O|psi>
  *
  */
-uint32_t PsiPrimeOperatorPsi(const OperatorType O, const WaveFunctionType psiPrime, const WaveFunctionType psi,
-                             double *VRe, double *VIm)
+uint32_t PsiPrimeOperatorPsi(const OperatorType O, const WaveFunctionType psiPrime, const WaveFunctionType psi, double *VRe, double *VIm)
 {
   MatrixType V;
   uint32_t returnVal;

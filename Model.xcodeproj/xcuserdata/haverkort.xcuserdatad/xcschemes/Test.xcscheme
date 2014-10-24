@@ -64,6 +64,18 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "CI"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "AllMatrix"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "CompactMatrixVector"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "MF"
             isEnabled = "NO">
          </CommandLineArgument>
@@ -77,7 +89,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "NMTO"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "Complex"
@@ -124,6 +136,18 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "LancDy"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "LancDy3"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "NiO"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "Opar"
             isEnabled = "NO">
          </CommandLineArgument>
@@ -131,12 +155,13 @@
             argument = "GenEig"
             isEnabled = "NO">
          </CommandLineArgument>
-         <CommandLineArgument
-            argument = "LancDy"
-            isEnabled = "NO">
-         </CommandLineArgument>
       </CommandLineArguments>
       <AdditionalOptions>
+         <AdditionalOption
+            key = "MallocStackLogging"
+            value = ""
+            isEnabled = "YES">
+         </AdditionalOption>
          <AdditionalOption
             key = "DYLD_INSERT_LIBRARIES"
             value = "/usr/lib/libgmalloc.dylib"
@@ -144,11 +169,6 @@
          </AdditionalOption>
          <AdditionalOption
             key = "AUTO_LOG_ALL"
-            value = ""
-            isEnabled = "YES">
-         </AdditionalOption>
-         <AdditionalOption
-            key = "MallocStackLogging"
             value = ""
             isEnabled = "YES">
          </AdditionalOption>

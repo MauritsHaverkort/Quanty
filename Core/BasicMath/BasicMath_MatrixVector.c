@@ -169,6 +169,17 @@ uint32_t MakeRealMatrixComplex(MatrixType * const M)
   return 0;
 }
 
+/* turn a complex matrix into a real matrix i.e. free memory
+ */
+uint32_t MakeComplexMatrixReal(MatrixType * const M)
+{
+  if (M->QComplex==0)
+    return 0;
+  free(M->VIm);
+  M->QComplex = 0;
+  return 0;
+}
+
 /* set elements with an absolute value smaller then epsilon to zero
  */
 void MatrixChop(MatrixType * const M, double const epsilon)

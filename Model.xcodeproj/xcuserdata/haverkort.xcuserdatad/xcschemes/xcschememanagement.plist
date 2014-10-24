@@ -29,6 +29,11 @@
 			<key>orderHint</key>
 			<integer>0</integer>
 		</dict>
+		<key>Robert.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>8</integer>
+		</dict>
 		<key>Test.xcscheme</key>
 		<dict>
 			<key>orderHint</key>
@@ -63,6 +68,11 @@
 			<true/>
 		</dict>
 		<key>4C2AAABB163265F500138620</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>4C4637D719C0726B00EB0DB0</key>
 		<dict>
 			<key>primary</key>
 			<true/>

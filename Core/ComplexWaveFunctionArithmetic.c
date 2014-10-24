@@ -62,10 +62,10 @@ void ComplexWaveFunctionFreeValues(WaveFunctionType * const psi)
 *   If succeded psi -> psi+det
 *   If not succeded psi -> psi
 */
-uint32_t ComplexWaveFunctionAddElement(WaveFunctionType * const psi, const uint8_t * const det, const double aRe,
-                                       const double aIm)
+uint32_t ComplexWaveFunctionAddElement(WaveFunctionType * const psi, const uint8_t * const det, const double aRe, const double aIm)
 {
   uint32_t i, NextIndex, ThereIsANext, PsiAIsPsiB;
+  if ((Sqr(aRe)+Sqr(aIm))<100*DBL_MIN) return 0;
   void  *temp;
   /* test if the key that belongs to psi already excists */
   if (psi->KeyList[hash(det, psi->NWord, psi->NBitsKey)] == 0)
@@ -354,13 +354,10 @@ uint32_t ComplexWaveFunctionAddElement(WaveFunctionType * const psi, const uint8
 *   As psi only stores the number of non zero elements and pointers to the real values the value of psi is not changed.
 *   The values psi points to are natturally changed
 */
-void ComplexWaveFunctionAddElementConserveBasis(WaveFunctionType psi, const uint8_t * const det, const double aRe,
-                                                const double aIm)
+void ComplexWaveFunctionAddElementConserveBasis(WaveFunctionType psi, const uint8_t * const det, const double aRe, const double aIm)
 {
   uint32_t i, NextIndex, PsiAIsPsiB;
-
-  if ((aRe == 0) && (aIm == 0)) return;
-
+  if ((Sqr(aRe)+Sqr(aIm))<100*DBL_MIN) return;
   /* test if the key that belongs to psi already excists */
   NextIndex = psi.KeyList[hash(det, psi.NWord, psi.NBitsKey)];
   if (NextIndex == 0)
@@ -377,7 +374,6 @@ void ComplexWaveFunctionAddElementConserveBasis(WaveFunctionType psi, const uint
         if (psi.Determinant[BlokElementDet(NextIndex, psi.NWord, i)] != det[i])
         {
           PsiAIsPsiB = 0;
-          break;
         }
       }
       if (PsiAIsPsiB)
@@ -606,8 +602,7 @@ uint32_t ComplexWaveFunctionAddUnionBasis(WaveFunctionType * const a, const Wave
 *   Therefor values of a might change and a is returned from the function
 *   If a is an empty function b is copied into a (use of copy is strongly recommanded)
 */
-uint32_t ComplexWaveFunctionAddMultipliedUnionBasis(WaveFunctionType * const a, const WaveFunctionType b,
-                                                    const double alphaRe)
+uint32_t ComplexWaveFunctionAddMultipliedUnionBasis(WaveFunctionType * const a, const WaveFunctionType b, const double alphaRe)
 {
   uint32_t i, j;
   for (i = b.N; i != 0; --i)
@@ -915,8 +910,7 @@ double ComplexWaveFunctionCalculateNorm(const WaveFunctionType a)
 *   calculate <a|b>
 *   The first entry is complex conjugated
 */
-void ComplexWaveFunctionDotProductSameBasis(const WaveFunctionType a, const WaveFunctionType b, double *DotRe,
-                                            double *DotIm)
+void ComplexWaveFunctionDotProductSameBasis(const WaveFunctionType a, const WaveFunctionType b, double *DotRe, double *DotIm)
 {
   uint32_t iBlok, iElement;
   int    iOMP;
@@ -982,7 +976,6 @@ void ComplexWaveFunctionDotProduct(const WaveFunctionType *a, const WaveFunction
         if (b->Determinant[BlokElementDet(NextIndex, b->NWord, j)] != a->Determinant[BlokElementDet(i, a->NWord, j)])
         {
           PsiAIsPsiB = 0;
-          break;
         }
       }
       if (PsiAIsPsiB)
@@ -1082,11 +1075,24 @@ void ComplexWaveFunctionTruncateBasis(WaveFunctionType * const a, const double e
   a->Determinant = realloc(a->Determinant, a->NBlok * sizeof(uint8_t *));
 }
 
-/*  
-*   Make psi orthogonal to OtherPsi, but conserve the basis set of psi
-*/
-void ComplexWaveFunctionOrthogonalizeConserveBasis(WaveFunctionType * const psi,
-                                                   const WaveFunctionType * const OtherPsi, const uint32_t Npsi)
+/*
+ *   Make psi orthogonal to OtherPsi, psi and other psi are on the same basis
+ */
+void ComplexWaveFunctionOrthogonalizeSameBasis(WaveFunctionType * const psi, const WaveFunctionType * const OtherPsi, const uint32_t Npsi)
+{
+  uint32_t i;
+  double aRe, aIm;
+  for (i = 0; i < Npsi; i++)
+  {
+    ComplexWaveFunctionDotProductSameBasis(OtherPsi[i], *psi, &aRe, &aIm);
+    ComplexWaveFunctionAddComplexMultipliedSameBasis(*psi, OtherPsi[i], -aRe, -aIm);
+  }
+}
+
+/*
+ *   Make psi orthogonal to OtherPsi, but conserve the basis set of psi
+ */
+void ComplexWaveFunctionOrthogonalizeConserveBasis(WaveFunctionType * const psi, const WaveFunctionType * const OtherPsi, const uint32_t Npsi)
 {
   uint32_t i;
   double aRe, aIm;
