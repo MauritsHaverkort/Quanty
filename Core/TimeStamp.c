@@ -30,6 +30,19 @@
                        printf("\n");
 
 
+TimeType GlobalTime;
+uint32_t GlobalTimeOn=0;
+/*      1111 1111 1111 1111 - 0xFFFF - print all timings
+ *      0000 0000 0000 0001 - 0x0001 - main specific
+ *      0000 0000 0000 0010 - 0x0002 - main specific
+ *      0000 0000 0000 0100 - 0x0004 - main specific
+ *      0000 0000 0000 1000 - 0x0008 - main specific
+ *      0000 0000 0001 0000 - 0x0010 - 
+ *      0000 0000 0010 0000 - 0x0020 -
+ *      0000 0000 0100 0000 - 0x0040 -
+ *      0000 0000 1000 0000 - 0x0080 -
+ */
+
 uint32_t InitializeTiming(TimeType * T)
 {
   uint32_t i;
@@ -188,7 +201,7 @@ uint32_t EndTiming(const char *s, TimeType * T)
       else
       {
         time(&now);
-        T->TotalTime[i] += (uint32_t) difftime(now, T->BeginTime[i]);
+        T->TotalTime[i] += (uint32_t) (difftime(now, T->BeginTime[i]));
         T->NumberOfRuns[i]++;
         T->NowRunning[i] = 0;
       }
@@ -225,22 +238,8 @@ uint32_t StreamPrintTiming(TimeType T, FILE * stream)
       fprintf(stream, "     ");
     }
     fprintf(stream, "%2i:", (T.TotalTime[i] / 3600) % 24);
-    if (((T.TotalTime[i] / 60) % 60) < 10)
-    {
-      fprintf(stream, "0%1i:", (T.TotalTime[i] / 60) % 60);
-    }
-    else
-    {
-      fprintf(stream, "%2i:", (T.TotalTime[i] / 60) % 60);
-    }
-    if ((T.TotalTime[i] % 60) < 10)
-    {
-      fprintf(stream, "0%1i ", T.TotalTime[i] % 60);
-    }
-    else
-    {
-      fprintf(stream, "%2i ", T.TotalTime[i] % 60);
-    }
+    fprintf(stream, "%02i:", (T.TotalTime[i] / 60) % 60);
+    fprintf(stream, "%02i ", (T.TotalTime[i]) % 60);
     fprintf(stream, "| %12i | %7i | %s\n", T.NumberOfRuns[i], T.NowRunning[i], T.Name[i]);
   }
   return 0;

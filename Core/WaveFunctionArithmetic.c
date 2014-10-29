@@ -225,6 +225,7 @@ uint32_t WaveFunctionInitCopyBasis(WaveFunctionType * Psi, WaveFunctionType cons
   Psi->NBitsKey = PsiOrig.NBitsKey;
   Psi->KeyList = PsiOrig.KeyList;
   Psi->QComplex = PsiOrig.QComplex;
+  strcpy(Psi->Name, PsiOrig.Name);
   
   Psi->ValueRe = malloc(Psi->NBlok * sizeof(double *));
   if (Psi->ValueRe == NULL)
@@ -551,8 +552,7 @@ uint32_t WaveFunctionAddMultipliedConserveBasis(WaveFunctionType * const a, cons
   return 0;
 }
 
-uint32_t WaveFunctionAddComplexMultipliedConserveBasis(WaveFunctionType * const a, const WaveFunctionType b,
-                                                       const double alphaRe, const double alphaIm)
+uint32_t WaveFunctionAddComplexMultipliedConserveBasis(WaveFunctionType * const a, const WaveFunctionType b, const double alphaRe, const double alphaIm)
 {
   if ((b.QComplex) && (!a->QComplex))
     if (MakeComplexWaveFunctionFromReal(a, *a))

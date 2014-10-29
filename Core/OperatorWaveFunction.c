@@ -117,6 +117,134 @@ double inline OperatorLader(uint8_t * const Determinant, const uint16_t * const 
   return phase;
 }
 
+
+/*
+ *  psi = O det
+ */
+uint32_t OperatorDeterminantPreAllocatedRR(const OperatorType *O, uint8_t *DetIn, WaveFunctionType * const Opsi)
+{
+  uint32_t i, j, l;
+  double phase;
+  uint8_t *Det;
+  for (i = 0; i < Opsi->NBlok; i++)
+  {
+    for (j = 0; j < BlokSize; j++)
+    {
+      Opsi->ValueRe[i][j] = 0;
+    }
+  }
+  Det = malloc(Opsi->NWord * sizeof(uint8_t));
+  if (Det == NULL) AllocFailed();
+  for (l = 0; l <= O->MaxLength; l++)
+  {                         /* act with a lader operator of length l on Determinant */
+    for (j = 0; j < O->l[l].N; j++)
+    {                       /* take opperator number k of length l and act on Determinant */
+      memcpy(Det,DetIn,Opsi->NWord);
+      phase = OperatorLader(Det, &(O->l[l].o[j * l]), l, O->NFermion);
+      if (phase) RealWaveFunctionAddElementConserveBasis(Opsi, Det, phase * O->l[l].VRe[j]);
+    }
+  }
+  free(Det);
+  return 0;
+}
+
+uint32_t OperatorDeterminantPreAllocatedRC(const OperatorType *O, uint8_t *DetIn, WaveFunctionType * const Opsi)
+{
+  uint32_t i, j, l;
+  double phase;
+  uint8_t *Det;
+  for (i = 0; i < Opsi->NBlok; i++)
+  {
+    for (j = 0; j < BlokSize; j++)
+    {
+      Opsi->ValueRe[i][j] = 0;
+      Opsi->ValueIm[i][j] = 0;
+    }
+  }
+  Det = malloc(Opsi->NWord * sizeof(uint8_t));
+  if (Det == NULL) AllocFailed();
+  for (l = 0; l <= O->MaxLength; l++)
+  {                         /* act with a lader operator of length l on Determinant */
+    for (j = 0; j < O->l[l].N; j++)
+    {                       /* take opperator number k of length l and act on Determinant */
+      memcpy(Det,DetIn,Opsi->NWord);
+      phase = OperatorLader(Det, &(O->l[l].o[j * l]), l, O->NFermion);
+      if (phase) ComplexWaveFunctionAddElementConserveBasis(*Opsi, Det, phase * O->l[l].VRe[j], 0);
+    }
+  }
+  free(Det);
+  return 0;
+}
+
+uint32_t OperatorDeterminantPreAllocatedMC(const OperatorType *O, uint8_t *DetIn, WaveFunctionType * const Opsi)
+{
+  uint32_t i, j, l;
+  double phase;
+  uint8_t *Det;
+  for (i = 0; i < Opsi->NBlok; i++)
+  {
+    for (j = 0; j < BlokSize; j++)
+    {
+      Opsi->ValueRe[i][j] = 0;
+      Opsi->ValueIm[i][j] = 0;
+    }
+  }
+  Det = malloc(Opsi->NWord * sizeof(uint8_t));
+  if (Det == NULL) AllocFailed();
+  for (l = 0; l <= O->MaxLength; l++)
+  {                         /* act with a lader operator of length l on Determinant */
+    if(O->l[l].QComplex)
+    {
+      for (j = 0; j < O->l[l].N; j++)
+      {                       /* take opperator number k of length l and act on Determinant */
+        memcpy(Det,DetIn,Opsi->NWord);
+        phase = OperatorLader(Det, &(O->l[l].o[j * l]), l, O->NFermion);
+        if (phase) ComplexWaveFunctionAddElementConserveBasis(*Opsi, Det, phase * O->l[l].V[j].Re, phase * O->l[l].V[j].Im);
+      }
+    }
+    else
+    {
+      for (j = 0; j < O->l[l].N; j++)
+      {                       /* take opperator number k of length l and act on Determinant */
+        memcpy(Det,DetIn,Opsi->NWord);
+        phase = OperatorLader(Det, &(O->l[l].o[j * l]), l, O->NFermion);
+        if (phase) ComplexWaveFunctionAddElementConserveBasis(*Opsi, Det, phase * O->l[l].VRe[j], 0);
+      }
+    }
+  }
+  free(Det);
+  return 0;
+}
+
+uint32_t OperatorDeterminantPreAllocatedCC(const OperatorType *O, uint8_t *DetIn, WaveFunctionType * const Opsi)
+{
+  uint32_t i, j, l;
+  double phase;
+  uint8_t *Det;
+  for (i = 0; i < Opsi->NBlok; i++)
+  {
+    for (j = 0; j < BlokSize; j++)
+    {
+      Opsi->ValueRe[i][j] = 0;
+      Opsi->ValueIm[i][j] = 0;
+    }
+  }
+  Det = malloc(Opsi->NWord * sizeof(uint8_t));
+  if (Det == NULL) AllocFailed();
+  for (l = 0; l <= O->MaxLength; l++)
+  {                         /* act with a lader operator of length l on Determinant */
+    for (j = 0; j < O->l[l].N; j++)
+    {                       /* take opperator number k of length l and act on Determinant */
+      memcpy(Det,DetIn,Opsi->NWord);
+      phase = OperatorLader(Det, &(O->l[l].o[j * l]), l, O->NFermion);
+      if (phase) ComplexWaveFunctionAddElementConserveBasis(*Opsi, Det, phase * O->l[l].V[j].Re, phase * O->l[l].V[j].Im);
+    }
+  }
+  free(Det);
+  return 0;
+}
+
+
 uint32_t OperatorPsiConserveBasisCC(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi)
 {
   uint32_t i, ii, ij, ik, j, k, l;
@@ -824,8 +952,7 @@ uint32_t OperatorPsiConserveBasisPreAllocatedRR(const OperatorType *O, const Wav
   double phase;
   uint8_t *Det;
   int    iOMP;
-  if (Opsi->QComplex)
-    MakeRealWaveFunctionFromComplex(*Opsi, Opsi);
+  if (Opsi->QComplex) MakeRealWaveFunctionFromComplex(*Opsi, Opsi);
 #pragma omp parallel for private(i,j)
   for (iOMP = 0; iOMP < Opsi->NBlok; iOMP++)
   {
@@ -4783,6 +4910,36 @@ uint32_t PsiOperatorSqrPsiRestrictedMHR(const OperatorType O, const WaveFunction
 }
 
 
+
+/*
+ *
+ */
+uint32_t OperatorDeterminantPreAllocated(const OperatorType *O, uint8_t *DetIn, WaveFunctionType * const Opsi)
+{
+  if (O->QComplex == 0)
+  {
+    if (Opsi->QComplex)
+    {
+      return OperatorDeterminantPreAllocatedRC(O, DetIn, Opsi);
+    }
+    return OperatorDeterminantPreAllocatedRR(O, DetIn, Opsi);
+  }
+  if (O->QComplex == 1)
+  {
+    if (Opsi->QComplex)
+    {
+      return OperatorDeterminantPreAllocatedCC(O, DetIn, Opsi);
+    }
+    printf("Can't store result of complex operator times determinant in real function\n");
+    return 1;
+  }
+  if (Opsi->QComplex)
+  {
+    return OperatorDeterminantPreAllocatedMC(O, DetIn, Opsi);
+  }
+  printf("Can't store result of mixed complex/real operator times determinant in real function\n");
+  return 1;
+}
 
 /*
 *   Calculate O psi whereby the basis set used is not changed

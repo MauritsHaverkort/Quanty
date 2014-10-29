@@ -870,3 +870,83 @@ void TestMeanField()
   
   
 }
+
+void TestBlockLanczos()
+{
+  InitializeTiming(&GlobalTime);
+  GlobalTimeOn=0xFFFFFFFF;
+  BeginTiming("Total", &GlobalTime);
+  uint32_t i,j;
+  uint32_t Npsi=5;
+  uint32_t NFermion=100;
+  uint32_t N=NFermion*NFermion;
+  OperatorType H;
+  WaveFunctionType psi[Npsi];
+  uint16_t CrIndex[N];
+  uint16_t AnIndex[N];
+  uint8_t *det;
+  double tRe[N];
+  double tIm[N];
+  double Energy[Npsi];
+  double EnergySqr[Npsi];
+  
+  for(i=0;i<NFermion;i++)
+  {
+    for(j=0;j<NFermion;j++)
+    {
+      tIm[i+NFermion*j]=((double)i-(double)j);
+      tRe[i+NFermion*j]=1/(1.+i+j);
+      CrIndex[i+NFermion*j]=i;
+      AnIndex[i+NFermion*j]=j;
+    }
+  }
+  CreateOperatorCreateAnnihilateList(NFermion, CrIndex, AnIndex, tRe, tIm, N, &H);
+  
+  //PrintOperatorReadable(H);
+  
+  psi[0].NFermion=NFermion;
+  psi[0].NBoson=0;
+  psi[0].QComplex=0;
+  psi[0].NBitsKey=16;
+  WaveFunctionInit(&(psi[0]));
+  det=calloc(psi[0].NWord,sizeof(uint8_t));
+  for(i=0;i<NFermion;i++)
+  {
+    det[i>>3]=128>>(i&7);
+    WaveFunctionAddElement(&(psi[0]), det, 1, 0);
+    det[i>>3]=0;
+  }
+  for(i=1;i<Npsi;i++)
+  {
+    WaveFunctionInitCopyBasis(&(psi[i]), psi[0]);
+  }
+  
+  BeginTiming("BlockLanczosGroundStateConserveBasisDense", &GlobalTime);
+  BlockLanczosGroundStateConserveBasisDense(H, psi, Npsi);
+  EndTiming("BlockLanczosGroundStateConserveBasisDense", &GlobalTime);
+  
+  
+  BeginTiming("Energy", &GlobalTime);
+  for(i=0;i<Npsi;i++)
+  {
+    PsiHermitianOperatorPsi(H, psi[i], &Energy[i]);
+  }
+  EndTiming("Energy", &GlobalTime);
+  BeginTiming("Energy Sqr", &GlobalTime);
+  for(i=0;i<Npsi;i++)
+  {
+    PsiHermitianOperatorSqrPsi(H, psi[i], &EnergySqr[i]);
+  }
+  EndTiming("Energy Sqr", &GlobalTime);
+  
+  for(i=0;i<Npsi;i++)
+  {
+    //PrintWaveFunctionReadable(psi[i]);
+    printf("Energy %22.15E, Variance %22.15E\n",Energy[i],EnergySqr[i]-Sqr(Energy[i]));
+  }
+  
+  
+  
+  EndTiming("Total", &GlobalTime);
+  PrintTiming(GlobalTime);
+}

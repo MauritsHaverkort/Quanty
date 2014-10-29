@@ -1,3 +1,11 @@
+/*
+ *  Define some constants that determine the behaviour of the convergence
+ */
+#define DenseBoarder 500
+#define NKrylovStart  15
+#define NKrylovMax   100
+#define NKrylovStep    5
+
 /*  given an Determinant and a set of Restrictions
  *  If I leave iFermion empty in the Determinant and I will be allowed to make changes to all fermions at higher index positions will I
  *  A) still be able to fullfill the restrictions - return 0
@@ -112,6 +120,20 @@ uint32_t CreateStartingFunctions(const OperatorType H, uint32_t const Npsi, Dete
   return 0;
 }
 
+/*  Calculate Opsi[i] = H psi[i] for i=0 to Npsi
+ *  on input all psi[i]'s are on the same basis
+ *  on excit all Opsi[i]'s are on the same basis as psi[i]'s
+ *  memory for values of Opsi is already allocated.
+ */
+uint32_t BlockOperatorPsiConserveBasisPreAllocated(const OperatorType H, WaveFunctionType const * const psi, WaveFunctionType * const Opsi, uint32_t const Npsi)
+{
+  uint32_t i;
+  for(i=0;i<Npsi;i++)
+  {
+    OperatorPsiConserveBasisPreAllocated(&H, &(psi[i]), &(Opsi[i]));
+  }
+  return 0;
+}
 
 /*  Calculate Opsi[i] = H psi[i] for i=0 to Npsi
  *  on input all psi[i]'s are on the same basis
@@ -396,29 +418,229 @@ void BlockWaveFunctionTruncateBasis(WaveFunctionType *const psi, uint32_t const 
  */
 uint32_t BlockLanczosGroundStateConserveBasisDense(const OperatorType H, WaveFunctionType * const psi, uint32_t const Npsi)
 {
-  uint32_t i;
-  CompactMatrixType Hdens;
-  Hdens.QComplex = ((H.QComplex)||(psi[0].QComplex));
+  int iOMP;
+  uint32_t i,j,k;
+  CompactMatrixType Hdens,fun;
+  double val[psi[0].N];
+  // test if psi is complex when H is complex, if not turn it into a complex function
+  if((H.QComplex)&&(psi[0].QComplex==0))
+  {
+    for(i=0;i<Npsi;i++)
+    {
+      if(MakeComplexWaveFunctionFromReal(&(psi[i]), psi[i]))
+      {
+        for(j=0;j<i;j++)
+        {
+          psi[j].QComplex=0;
+          for(k=0;k<psi[j].NBlok;k++)
+          {
+            free(psi[j].ValueIm[k]);
+          }
+          free(psi[j].ValueIm);
+        }
+        printf("MakeComplexWaveFunctionFromReal failed in BlockLanczosGroundStateConserveBasisDense\n");
+        return 1;
+      }
+    }
+  }
+  // create Hdens
+  if(GlobalTimeOn&0x40) BeginTiming("Create Hdens", &GlobalTime);
+  Hdens.QComplex = psi[0].QComplex;
   Hdens.Ni=psi[0].N;
   Hdens.Nj=psi[0].N;
-  InitCompactMatrix(&Hdens);
-  // fill the matrix Hdens
-  
-  WaveFunctionType Hpsi;
-  WaveFunctionInitCopyBasis(&Hpsi, *psi);
-  for(i=0;i<psi[0].N;i++)
+  if(InitCompactMatrix(&Hdens))
   {
-    
+    printf("InitCompactMatrix failed in BlockLanczosGroundStateConserveBasisDense\n");
+    return 1;
   }
-  WaveFunctionFreeValues(&Hpsi);
-  
-  
+  // fill the matrix Hdens
+#pragma omp parallel private(i,j)
+  {
+    WaveFunctionType Hpsi;
+    if(WaveFunctionInitCopyBasis(&Hpsi, psi[0]))
+    {
+      printf("WaveFunctionInitCopyBasis failed in BlockLanczosGroundStateConserveBasisDense\n");
+      
+    }
+    if(Hdens.QComplex)
+    {
+#pragma omp for
+      for(iOMP=0;iOMP<psi[0].N;iOMP++)
+      {
+        i=(uint32_t)iOMP;
+        OperatorDeterminantPreAllocated(&H, &(psi[0].Determinant[BlokElementDet(i+1,psi[0].NWord,0)]), &Hpsi);
+        for(j=0;j<psi[0].N;j++)
+        {
+          Hdens.V[j+i*Hdens.Nj].Re=Hpsi.ValueRe[BlokElement(j+1)];
+          Hdens.V[j+i*Hdens.Nj].Im=Hpsi.ValueIm[BlokElement(j+1)];
+        }
+      }
+    }
+    else
+    {
+#pragma omp for
+      for(iOMP=0;iOMP<psi[0].N;iOMP++)
+      {
+        i=(uint32_t)iOMP;
+        OperatorDeterminantPreAllocated(&H, &(psi[0].Determinant[BlokElementDet(i+1,psi[0].NWord,0)]), &Hpsi);
+        for(j=0;j<psi[0].N;j++)
+        {
+          Hdens.VRe[j+i*Hdens.Nj]=Hpsi.ValueRe[BlokElement(j+1)];
+        }
+      }
+    }
+    WaveFunctionFreeValues(&Hpsi);
+  }
+  if(GlobalTimeOn&0x40) EndTiming("Create Hdens", &GlobalTime);
+  if(GlobalTimeOn&0x40) BeginTiming("Diagonalize Hdens", &GlobalTime);
+  // diagonalize dense matrix
+  CompactMatrixEigensystem(&Hdens, &fun, val);
+  FreeCompactMatrix(&Hdens);
+  if(fun.QComplex)
+  {
+    for(i=0;i<Min(Npsi,psi[0].N);i++)
+    {
+      for(j=0;j<fun.Nj;j++)
+      {
+        psi[i].ValueRe[BlokElement(j+1)]=fun.V[j+i*Hdens.Nj].Re;
+        psi[i].ValueIm[BlokElement(j+1)]=fun.V[j+i*Hdens.Nj].Im;
+      }
+    }
+    for(i=psi[0].N;i<Npsi;i++)
+    {
+      for(j=0;j<fun.Nj;j++)
+      {
+        psi[i].ValueRe[BlokElement(j+1)]=0;
+        psi[i].ValueIm[BlokElement(j+1)]=0;
+      }
+    }
+  }
+  else
+  {
+    for(i=0;i<Min(Npsi,psi[0].N);i++)
+    {
+      for(j=0;j<fun.Nj;j++)
+      {
+        psi[i].ValueRe[BlokElement(j+1)]=fun.VRe[j+i*Hdens.Nj];
+      }
+    }
+    for(i=psi[0].N;i<Npsi;i++)
+    {
+      for(j=0;j<fun.Nj;j++)
+      {
+        psi[i].ValueRe[BlokElement(j+1)]=0;
+      }
+    }
+  }
+  FreeCompactMatrix(&fun);
+  if(GlobalTimeOn&0x40) EndTiming("Diagonalize Hdens", &GlobalTime);
+  return 0;
+}
+
+/*  orthonormalize a set of Block Wave functions
+ *
+ */
+uint32_t ListOfBlockWaveFunctionsOrthonormalizeSameBasis(WaveFunctionType **const v, uint32_t const Npsi, uint32_t const NBlock)
+{
+  uint32_t iBlock, ipsi, jBlock, jpsi;
+  double Norm;
+  double DotRe, DotIm;
+  const double MinNorm=sqrt(DBL_EPSILON);
+  for(iBlock=0;iBlock<NBlock;iBlock++)
+  {
+    for(ipsi=0;ipsi<Npsi;ipsi++)
+    {
+      for(jBlock=0;jBlock<iBlock;jBlock++)
+      {
+        for(jpsi=0;jpsi<Npsi;jpsi++)
+        {
+          WaveFunctionDotProductSameBasis(v[jBlock][jpsi], v[iBlock][ipsi], &DotRe, &DotIm);
+          WaveFunctionAddComplexMultipliedConserveBasis(&(v[iBlock][ipsi]), v[jBlock][jpsi], -DotRe, -DotIm);
+        }
+      }
+      for(jpsi=0;jpsi<ipsi;jpsi++)
+      {
+        WaveFunctionDotProductSameBasis(v[iBlock][jpsi], v[iBlock][ipsi], &DotRe, &DotIm);
+        WaveFunctionAddComplexMultipliedConserveBasis(&(v[iBlock][ipsi]), v[iBlock][jpsi], -DotRe, -DotIm);
+      }
+      WaveFunctionCalculateNorm(v[iBlock][ipsi], &Norm);
+      if(Norm<MinNorm)
+      {
+        Norm=0;
+      }
+      else
+      {
+        Norm=1.0/Norm;
+      }
+      WaveFunctionMultiply(&(v[iBlock][ipsi]), Norm, 0);
+    }
+  }
+  return 0;
+}
+uint32_t ListOfBlockWaveFunctionsOrthonormalizeLastBlockSameBasis(WaveFunctionType **const v, uint32_t const Npsi, uint32_t const NBlock)
+{
+  uint32_t iBlock=NBlock-1, ipsi, jBlock, jpsi;
+  double Norm;
+  double DotRe, DotIm;
+  const double MinNorm=sqrt(DBL_EPSILON);
+  for(ipsi=0;ipsi<Npsi;ipsi++)
+  {
+    for(jBlock=0;jBlock<iBlock;jBlock++)
+    {
+      for(jpsi=0;jpsi<Npsi;jpsi++)
+      {
+        WaveFunctionDotProductSameBasis(v[jBlock][jpsi], v[iBlock][ipsi], &DotRe, &DotIm);
+        WaveFunctionAddComplexMultipliedConserveBasis(&(v[iBlock][ipsi]), v[jBlock][jpsi], -DotRe, -DotIm);
+      }
+    }
+    for(jpsi=0;jpsi<ipsi;jpsi++)
+    {
+      WaveFunctionDotProductSameBasis(v[iBlock][jpsi], v[iBlock][ipsi], &DotRe, &DotIm);
+      WaveFunctionAddComplexMultipliedConserveBasis(&(v[iBlock][ipsi]), v[iBlock][jpsi], -DotRe, -DotIm);
+    }
+    WaveFunctionCalculateNorm(v[iBlock][ipsi], &Norm);
+    if(Norm<MinNorm)
+    {
+      Norm=0;
+    }
+    else
+    {
+      Norm=1.0/Norm;
+    }
+    WaveFunctionMultiply(&(v[iBlock][ipsi]), Norm, 0);
+  }
+  return 0;
+}
+uint32_t BlockWaveFunctionOrthonormalizeSameBasis(WaveFunctionType *const v, uint32_t const Npsi)
+{
+  uint32_t ipsi, jpsi;
+  double Norm;
+  double DotRe, DotIm;
+  const double MinNorm=sqrt(DBL_EPSILON);
+  for(ipsi=0;ipsi<Npsi;ipsi++)
+  {
+    for(jpsi=0;jpsi<ipsi;jpsi++)
+    {
+      WaveFunctionDotProductSameBasis(v[jpsi], v[ipsi], &DotRe, &DotIm);
+      WaveFunctionAddComplexMultipliedConserveBasis(&(v[ipsi]), v[jpsi], -DotRe, -DotIm);
+    }
+    WaveFunctionCalculateNorm(v[ipsi], &Norm);
+    if(Norm<MinNorm)
+    {
+      Norm=0;
+    }
+    else
+    {
+      Norm=1.0/Norm;
+    }
+    WaveFunctionMultiply(&(v[ipsi]), Norm, 0);
+  }
   return 0;
 }
 
 /*  Use Krylov Lanczos method to find lowest Npsi eigenstates of H
  *  Starting vectors are in v[0]
- *  v[1] to v[NKrylovStart] are allocated
+ *  v[1] to v[NKrylovStart-1] are allocated
  *  after a restart increase KrylovBasis by NKrylovStep if one is able to allocate the needed v's for this.
  *  all states on same basis
  *
@@ -426,7 +648,60 @@ uint32_t BlockLanczosGroundStateConserveBasisDense(const OperatorType H, WaveFun
  */
 uint32_t BlockLanczosGroundStateConserveBasisKrylov(const OperatorType H, WaveFunctionType ** const v, uint32_t const Npsi, const double zero)
 {
-  printf("to do\n");
+  uint32_t NKrylovNow=NKrylovStart;
+  uint32_t i;
+  BlockTriDiagonalMatrixType HKrylov;
+  uint32_t QConverged=0;
+  double Energy[2][Npsi];
+  double EnergySqr[2][Npsi];
+  // init HKrylov
+  HKrylov.BlockSize=Npsi;
+  HKrylov.N=NKrylovMax;
+  HKrylov.QComplex=H.QComplex;
+  InitBlockTridiagonalMatrix(&HKrylov);
+  for(i=0;i<Npsi;i++)
+  {
+    Energy[0][i]=DBL_MAX/10.;
+    EnergySqr[0][i]=DBL_MAX/10.;
+  }
+  // Calculate b0
+    // b0 is of no interest, when converged it will be the identity matrix
+  // Orhtonormalize v[0]
+  BlockWaveFunctionOrthonormalizeSameBasis(v[0], Npsi);
+  while(!QConverged)
+  {
+    // calculate v[1] = H v[0] and use these to calculate E and its variance. Determine if converged or not.
+    BlockOperatorPsiConserveBasisPreAllocated(H, v[0], v[1], Npsi); // v[1] = H v[0]
+    // Energy = <v[0] | H | v[0]> = <v[0] | v[1]>
+    // EnergySqr = <v[0] | H^2 | v[0]> = <v[1] | v[1]>
+    
+    if(QConverged) break;
+    ListOfBlockWaveFunctionsOrthonormalizeLastBlockSameBasis(v, Npsi, 0); // v[1] orthonormal to v[0] and inside v[1] block
+    //
+    
+    //Calculate new Krylov basis and HKrylov
+    for(i=2;i<NKrylovNow;i++)
+    {
+      BlockOperatorPsiConserveBasisPreAllocated(H, v[i-1], v[i], Npsi);       // v[i] = H v[i-1]
+      // <v[i-1] | H | v[i-1] > = <v[i-1] | v[i]>
+      
+      ListOfBlockWaveFunctionsOrthonormalizeLastBlockSameBasis(v, Npsi, i); // v[i] orthonormal to all other v[i]'s
+      // v[i] | H | v[i+1]>
+      
+    }
+    //Calculate Eigen system of HKrylov
+    
+    //Calculate new v[0]
+    
+    // Expand Krylov basis if possible by memory constraints
+    
+    
+  }
+  FreeBlockTridiagonalMatrix(&HKrylov);
+  for(i=1;i<NKrylovNow;i++)
+  {
+    BlockWaveFunctionFree(v[i], Npsi);
+  }
   return 0;
 }
 
@@ -439,7 +714,7 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylov(const OperatorType H, WaveFu
  */
 uint32_t BlockLanczosGroundStateConserveBasisKrylov3(const OperatorType H, WaveFunctionType ** const v, uint32_t const Npsi, const double zero)
 {
-  printf("to do\n");
+  printf("to do BlockLanczosGroundStateConserveBasisKrylov3\n");
   return 0;
 }
 
@@ -460,10 +735,6 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylov3(const OperatorType H, WaveF
  */
 uint32_t BlockLanczosGroundStateConserveBasis(const OperatorType H, WaveFunctionType * const psi, uint32_t const Npsi, const double zero)
 {
-  uint32_t DenseBoarder=100;
-  uint32_t NKrylovStart=15;
-  uint32_t NKrylovMax=100;
-  
   uint32_t i,j,k,l;
   WaveFunctionType *v[NKrylovMax];
   // for small basises do a dense calculation
@@ -709,3 +980,8 @@ uint32_t BlockGroundState(const OperatorType H, uint32_t const Npsi, const doubl
   }
   return 0;
 }
+
+#undef DenseBoarder
+#undef NKrylovStart
+#undef NKrylovMax
+#undef NKrylovStep
