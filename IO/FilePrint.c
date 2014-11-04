@@ -21,6 +21,50 @@ uint32_t FilePrintSpectra(SpectraType * const Spec, const uint32_t NSpec, const 
   return retval;
 }
 
+/* by Robert */
+uint32_t FilePrintRIXSSpectra(const uint32_t numwRes, SpectraType (*Spec)[numwRes], double *wRes, const uint32_t NSpec, const char *const flname, const char *const mode)
+{
+  FILE  *stream;
+  uint32_t retval;
+  if ((strcmp(mode, "w") && strcmp(mode, "a")) != 0)
+  {
+    printf
+    ("ERROR in FilePrintRIXSSpectra.\nmode must be either \"w\" for overwrite or \"a\" for append\n %s as input is not excepted\n",
+     mode);
+    return 1;
+  }
+  if ((stream = fopen(flname, mode)) == NULL)
+  {
+    printf("ERROR\nCan't open %s for writing with mode %s.\n", flname, mode);
+    return 1;
+  }
+  retval = StreamPrintRIXSSpectra(numwRes, Spec, wRes, NSpec, stream);
+  fclose(stream);
+  return retval;
+}
+
+uint32_t FilePrintRIXSSpectrum(const uint32_t numwRes, SpectraType (*Spec)[numwRes], double *wRes, int printReal, const uint32_t iSpec, const char *const flname, const char *const mode)
+{
+  //iSpec is index of the spectrum you want to print (e.g xx might 0, xy 1, xz 2, etc)
+  FILE  *stream;
+  uint32_t retval;
+  
+  if ((strcmp(mode, "w") && strcmp(mode, "a")) != 0)
+  {
+    printf
+    ("ERROR in FilePrintRIXSSpectra.\nmode must be either \"w\" for overwrite or \"a\" for append\n %s as input is not excepted\n",
+     mode);
+    return 1;
+  }
+  if ((stream = fopen(flname, mode)) == NULL)
+  {
+    printf("ERROR\nCan't open %s for writing with mode %s.\n", flname, mode);
+    return 1;
+  }
+  retval = StreamPrintRIXSSpectrum(numwRes, Spec, wRes, printReal, iSpec, stream);
+  fclose(stream);
+  return retval;
+}
 
 uint32_t FilePrintWaveFunctionPlain(WaveFunctionType psi, const char *const flname, const char *const mode)
 {
