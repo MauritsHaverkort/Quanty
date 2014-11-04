@@ -8,9 +8,11 @@
 #define DBL_EPSILON 2.3E-16
 #endif
 #define TimeStampAll() printf("=============================================================\n");\
-                       printf("====    Model library written by Maurits W. Haverkort    ====\n");\
+                       printf("====    written by Maurits W. Haverkort,                 ====\n");\
+                       printf("====    Yi Lu, Robert Green and Sebastian Macke          ====\n");\
                        printf("====    (C) www.solstatphys.org                          ====\n");\
-                       printf("====    Only use in collaboration with author            ====\n");\
+                       printf("====    Only use in collaboration with authors           ====\n");\
+                       printf("====    Beta version, be critical and report errors!!!   ====\n");\
                        printf("=============================================================\n");\
                        time_t MWHrawtime;\
                        struct tm * MWHtimeinfo;\

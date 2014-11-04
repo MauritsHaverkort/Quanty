@@ -1,8 +1,9 @@
 //  Functions by Robert Green
 //
-
-
-uint32_t ResonantSpectra(const OperatorType OppH, const OperatorType Texc, const OperatorType *TDec, uint32_t NDec,  const WaveFunctionType psi, double energy, double epsilon, uint32_t numwRes, SpectraType (*spectra)[numwRes], double *wRes, double gammaRes, double gamma, double Gfwhm, uint32_t NKrylov1, uint32_t NKrylov2)
+/*  Calculate < psi | Texc^+ G TDec[i] G2 TDec[i]^+ G Texc | psi >
+ *  Input expects TDec^+
+ */
+uint32_t ResonantSpectra(const OperatorType OppH, const OperatorType OppH2, const OperatorType Texc, const OperatorType *TDec, uint32_t NDec,  const WaveFunctionType psi, double energy, double epsilon, uint32_t numwRes, SpectraType (*spectra)[numwRes], double *wRes, double gammaRes, double gamma, double Gfwhm, uint32_t NKrylov1, uint32_t NKrylov2)
 {
   /*Given wavefunction psi (usually ground state, but could be excited)*/
   
@@ -16,14 +17,14 @@ uint32_t ResonantSpectra(const OperatorType OppH, const OperatorType Texc, const
    6. Use the vector from step 5 to calculate RIXS spectrum using Lanczos
    */
   
-  OperatorType OppHRot;
+  OperatorType OppH2Rot;
   WaveFunctionType Tpsi,GTpsi,TGTpsi, TGTpsiRot, PsiBasis[NKrylov1];
   TriDiagonalMatrixType SpecTri1, SpecTri2;
   MatrixType tempMat,EFun,Density,DensityPart,TRot;
   double DensityValues[psi.NFermion];
   double EVal[NKrylov1], EValInvRe[NKrylov1], EValInvIm[NKrylov1],tempDoubleRe,tempDoubleIm;
   int i,p,j,k;
-  int rotate = 0;
+  int const rotate = 0;
   
   /* Calculate T|i> */
   OperatorPsi(Texc,psi,&Tpsi);
@@ -155,9 +156,9 @@ uint32_t ResonantSpectra(const OperatorType OppH, const OperatorType Texc, const
         RotateWaveFunction(&TGTpsiRot, TGTpsi, TRot);
         printf("\nWavefunction size after rotation, before truncation: %d\n", TGTpsi.N); fflush(stdout);
         
-        RotateOperatorNormalOrder(&OppHRot, OppH, TRot, &QDetNotOrderedFcFaBaBc);//&QDetNotOrderedFcFaBcBa);
+        RotateOperatorNormalOrder(&OppH2Rot, OppH2, TRot, &QDetNotOrderedFcFaBaBc);//&QDetNotOrderedFcFaBcBa);
         
-        OperatorChop(&OppHRot, epsilon);
+        OperatorChop(&OppH2Rot, epsilon);
         WaveFunctionFree(&TGTpsi);
         
         WaveFunctionTruncateBasis(&TGTpsiRot, epsilon);
@@ -179,9 +180,9 @@ uint32_t ResonantSpectra(const OperatorType OppH, const OperatorType Texc, const
       InitTriDiagonalMatrix(&SpecTri2);
       
       if(rotate)
-        LanczosTriDiagonalize(OppHRot, TGTpsiRot, epsilon, &SpecTri2, gamma);
+        LanczosTriDiagonalize(OppH2Rot, TGTpsiRot, epsilon, &SpecTri2, gamma);
       else
-        LanczosTriDiagonalize(OppH, TGTpsi, epsilon, &SpecTri2, gamma);
+        LanczosTriDiagonalize(OppH2, TGTpsi, epsilon, &SpecTri2, gamma);
       
       TriDiagonalMatrixToSpectrum(energy, SpecTri2, &spectra[i][p]);
       BroadenG(&spectra[i][p], Gfwhm);
@@ -192,7 +193,30 @@ uint32_t ResonantSpectra(const OperatorType OppH, const OperatorType Texc, const
   return 0;
 }
 
-uint32_t FluorescenceYield(const OperatorType OppH, const OperatorType Texc, const OperatorType *TDec, uint32_t NDec,  const WaveFunctionType psi, double energy, double epsilon, uint32_t numwRes, SpectraType spectra[NDec], double *wRes, double gammaRes, double Gfwhm, uint32_t NKrylov1)
+/*  Calculates <i|T_1^dag G^dag T_2 T_2^dag G T_1 |i>
+ *  T2 is allowed to be a vector of NDec different operators
+ *  input:
+ *    OppH opperator defining G
+ *    Texc Operator T1
+ *    TDec pointer to a list of operators T2
+ *    NDec number of elements in TDec
+ *    energy of type double, ofset energy of ground-state
+ *    epsilon of type double, smallest number kept in determinant
+ *    NKrylov1 of type uint32_t number of states in Krylov basis
+ *    spectra pointer to NDec spectra (must be allocated, not initialized)
+ *      spectra[0].N number of points in spectrum [minus one such that dE = (Emax-Emin)/N]
+ *      spectra[0].Emin minimal energy
+ *      spectra[0].Emax maximal energy
+ *      spectra[0].Gamma lifetime of final state excitation
+ *        if spectra[0].N is 0 it is set to 1000
+ *        if Emin = - DBL_MAX it is set to Eminpole - 0.125 (Emaxpole-Eminpole)
+ *        if Emax =   DBL_MAX it is set to Emaxpole + 0.125 (Emaxpole-Eminpole)
+ *        if spectra[0].Gamma is 0 it is set to 10*(Emax-Emin)/N
+ *
+ *  output:
+ *    spectra[0] to spectra[NDec-1] allocated spectra with the FY spectra for TDec[0] to TDec[NDec-1]
+ */
+uint32_t FluorescenceYieldRestricted(const OperatorType OppH, DeterminantRestrictionType const Restrictions, const OperatorType Texc, const OperatorType *TDec, uint32_t NDec,  const WaveFunctionType psi, double energy, double epsilon, uint32_t NKrylov1, SpectraType *spectra)
 {
   /*Given wavefunction psi (usually ground state, but could be excited)*/
   
@@ -209,7 +233,7 @@ uint32_t FluorescenceYield(const OperatorType OppH, const OperatorType Texc, con
   WaveFunctionType Tpsi,GTpsi,TGTpsi, PsiBasis[NKrylov1];
   TriDiagonalMatrixType SpecTri1;
   MatrixType EFun;
-  double EVal[NKrylov1], EValInvRe[NKrylov1], EValInvIm[NKrylov1],tempDoubleRe,tempDoubleIm;
+  double EVal[NKrylov1], EValInvRe[NKrylov1], EValInvIm[NKrylov1],tempDoubleRe,tempDoubleIm,wRes;
   int i,p,k;
   
   /* Calculate T|i> */
@@ -219,8 +243,14 @@ uint32_t FluorescenceYield(const OperatorType OppH, const OperatorType Texc, con
   /* Using the version which gives back the Krylov basis vectors */
   SpecTri1.N = NKrylov1;
   InitTriDiagonalMatrix(&SpecTri1);
-  LanczosTriDiagonalizeKrylov(OppH,Tpsi,epsilon,&SpecTri1,PsiBasis);
-  
+  if(Restrictions.N==0)
+  {
+    LanczosTriDiagonalizeKrylov(OppH,Tpsi,epsilon,&SpecTri1,PsiBasis);
+  }
+  else
+  {
+    LanczosTriDiagonalizeKrylovRestricted(OppH, Tpsi, Restrictions, epsilon, &SpecTri1, PsiBasis);
+  }
   /*Compute eigenvalues and eigenvectors, then S^-1 = QAQ^T where
    Q are the eigenvectors and A is a matrix with the eigenvalue
    inverses on the diagonal. */
@@ -228,20 +258,22 @@ uint32_t FluorescenceYield(const OperatorType OppH, const OperatorType Texc, con
   {
     printf("Problem with TridiagonalMatrixToEigenSystem\n");
   }
-  
+  /* set spectra values when auto initialization is wanted */
+  if(spectra[0].N==0) spectra[0].N=1000;
+  spectra[0].EminPole=EVal[0];
+  spectra[0].EmaxPole=EVal[NKrylov1-1];
+  if(spectra[0].Emin== DBL_MAX) spectra[0].Emin = spectra[0].EminPole - 0.125 * (spectra[0].EmaxPole-spectra[0].EminPole);
+  if(spectra[0].Emax==-DBL_MAX) spectra[0].Emax = spectra[0].EmaxPole + 0.125 * (spectra[0].EmaxPole-spectra[0].EminPole);
+  if(spectra[0].Gamma==0) spectra[0].Gamma=10*(spectra[0].Emax-spectra[0].Emin)/((double)spectra[0].N);
   /* Initialize Spectra */
+  spectra[0].dE=(spectra[0].Emax-spectra[0].Emin)/((double)spectra[0].N);
   for(i = 0; i < NDec; i++)
   {
     sprintf(spectra[i].Name, "%d",i);
-    spectra[i].N = numwRes;
-    spectra[i].Emin = wRes[0];
-    spectra[i].Emax = wRes[numwRes-1];
-    spectra[i].dE = (wRes[1] - wRes[0]);
-    spectra[i].Gamma = gammaRes;
-    SpectrumAllocate(spectra[i], &spectra[i]);
+    SpectrumAllocate(spectra[0], &spectra[i]);
   }
   
-  for(p = 0; p < numwRes; p++)
+  for(p = 0; p <= spectra[0].N; p++)
   {
     /* New method for GT|i>:
      1. Tridiagonalize H using T|i> (outside wres loop)
@@ -252,10 +284,11 @@ uint32_t FluorescenceYield(const OperatorType OppH, const OperatorType Texc, con
      */
     
     /* Calculate 1/(E_0 + wres - EVal[i] + iGammaRes), split into real and imaginary */
+    wRes=spectra[0].Emin+p*spectra[0].dE;
     for(i = 0; i < NKrylov1; i++)
     {
-      EValInvRe[i] = (wRes[p] + energy - EVal[i]) / ((wRes[p] + energy - EVal[i])*(wRes[p] + energy - EVal[i])+(gammaRes/2.0)*(gammaRes/2.0));
-      EValInvIm[i] = -(gammaRes/2.0) / ((wRes[p] + energy - EVal[i])*(wRes[p] + energy - EVal[i])+(gammaRes/2.0)*(gammaRes/2.0));
+      EValInvRe[i] =  (wRes + energy - EVal[i]) / (Sqr(wRes + energy - EVal[i])+Sqr(spectra[0].Gamma/2.0));
+      EValInvIm[i] = -(spectra[0].Gamma/2.0)    / (Sqr(wRes + energy - EVal[i])+Sqr(spectra[0].Gamma/2.0));
     }
     
     /* Calculate Q*A^(-1)*Q^(-1)[:,0] */
@@ -299,21 +332,22 @@ uint32_t FluorescenceYield(const OperatorType OppH, const OperatorType Texc, con
       OperatorPsi(TDec[i],GTpsi,&TGTpsi);
       
       /* Calculate Spectrum */
-      WaveFunctionCalculateNorm(TGTpsi, &spectra[i].Im[p]);
+      WaveFunctionCalculateNorm(TGTpsi, &spectra[i].Re[p]);
       WaveFunctionFree(&TGTpsi);
-      /* Want norm squared, set negative for convention */
-      spectra[i].Im[p] = - spectra[i].Im[p] * spectra[i].Im[p];
+      /* Want norm squared, only real part is returned, im part is zero. FY is NOT a response function, but actually the spectra correspond to the expectation value of an Hermitian operator */
+      spectra[i].Re[p] = Sqr(spectra[i].Re[p]);
+      spectra[i].Im[p]=0;
     }
     WaveFunctionFree(&GTpsi);
-  }
-  for(i = 0; i < NDec; i++)
-  {
-    /* Construct real part and broaden */
-    KramersKronigImToRe(&spectra[i]);
-    BroadenG(&spectra[i], Gfwhm);
   }
   return 0;
 }
 
+uint32_t FluorescenceYield(const OperatorType OppH, const OperatorType Texc, const OperatorType *TDec, uint32_t NDec,  const WaveFunctionType psi, double energy, double epsilon, uint32_t NKrylov1, SpectraType *spectra)
+{
+  DeterminantRestrictionType Restrictions;
+  Restrictions.N=0;
+  return FluorescenceYieldRestricted(OppH, Restrictions, Texc, TDec, NDec, psi, energy, epsilon, NKrylov1, spectra);
+}
 
 
