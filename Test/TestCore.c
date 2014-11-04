@@ -889,13 +889,15 @@ void TestBlockLanczos()
   double tIm[N];
   double Energy[Npsi];
   double EnergySqr[Npsi];
+  double zero,epsilon;
+  DeterminantRestrictionType DetRet;
   
   for(i=0;i<NFermion;i++)
   {
     for(j=0;j<NFermion;j++)
     {
       tIm[i+NFermion*j]=((double)i-(double)j);
-      tRe[i+NFermion*j]=1/(1.+i+j);
+      tRe[i+NFermion*j]=sqrt((i+j+1.0)/10.0)-(1.0/(1.+i+j));
       CrIndex[i+NFermion*j]=i;
       AnIndex[i+NFermion*j]=j;
     }
@@ -935,7 +937,7 @@ void TestBlockLanczos()
   BeginTiming("Energy Sqr", &GlobalTime);
   for(i=0;i<Npsi;i++)
   {
-    PsiHermitianOperatorSqrPsi(H, psi[i], &EnergySqr[i]);
+    //PsiHermitianOperatorSqrPsi(H, psi[i], &EnergySqr[i]);
   }
   EndTiming("Energy Sqr", &GlobalTime);
   
@@ -946,6 +948,39 @@ void TestBlockLanczos()
   }
   
   
+  
+  printf("\n\n\n\n\n================= Band Lanczos ================\n\n\n");
+  
+  WaveFunctionType *v;
+  v=malloc((2*Npsi+100)*sizeof(WaveFunctionType));
+  
+  
+  for(i=0;i<Npsi;i++)
+  {
+   WaveFunctionRandomize(&psi[i]);
+    v[i]=psi[i];
+  }
+  for(i=Npsi;i<2*Npsi+100;i++)
+  {
+    WaveFunctionInitCopyBasis(&v[i], v[0]);
+  }
+  
+  BlockLanczosGroundStateConserveBasisKrylov(H, v, Npsi, DBL_EPSILON);
+  
+  
+  printf("\n\n\n\n\n================= BlockGroundState ================\n\n\n");
+  
+  for(i=0;i<Npsi;i++)
+  {
+    WaveFunctionRandomize(&v[i]);
+    psi[i]=v[i];
+  }
+  
+  
+  zero=100*DBL_EPSILON;
+  epsilon=DBL_EPSILON;
+  DetRet.N=0;
+  BlockGroundState(H, Npsi, zero, &epsilon, DetRet, DetRet, psi, 0);
   
   EndTiming("Total", &GlobalTime);
   PrintTiming(GlobalTime);

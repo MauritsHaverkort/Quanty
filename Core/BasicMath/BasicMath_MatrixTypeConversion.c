@@ -137,9 +137,9 @@ uint32_t AndersonMatrixToTriDiagonalMatrixPlusT(AndersonMatrixType const M, Matr
     return 1;
   }
   strcpy(T->Name, "TriDiagonalizer of ");
-  strncat(T->Name, M.Name, MAX(0, MAXStrLength - 20));
+  strncat(T->Name, M.Name, Max(0, MAXStrLength - 20));
   strcpy(H->Name, "TriDiagonal form of ");
-  strncat(H->Name, M.Name, MAX(0, MAXStrLength - 22));
+  strncat(H->Name, M.Name, Max(0, MAXStrLength - 22));
   H->a[0] = M.a[0];
   H->b[0] = M.b[0];
   H->mu = M.mu;
@@ -1179,7 +1179,7 @@ uint32_t TriDiagonalMatrixToEigensystem(TriDiagonalMatrixType const M, MatrixTyp
   T->Nj = M.N;
   T->QComplex = 0;
   strcpy(T->Name, "Eigenvectors of ");
-  strncat(T->Name, M.Name, MAX(0, MAXStrLength - 18));
+  strncat(T->Name, M.Name, Max(0, MAXStrLength - 18));
   if (InitMatrix(T))
   {
     printf("InitMatrix(T) failed in TriDiagonalMatrixToEigensystem\n");
@@ -1509,9 +1509,9 @@ uint32_t DoubleTriDiagonalMatrixToTriDiagonalMatrix(DoubleTriDiagonalMatrixType 
     return 1;
   }
   strcpy(T.Name, "TriDiagonalizer of ");
-  strncat(T.Name, M.Name, MAX(0, MAXStrLength - 20));
+  strncat(T.Name, M.Name, Max(0, MAXStrLength - 20));
   strcpy(H->Name, "TriDiagonal form of ");
-  strncat(H->Name, M.Name, MAX(0, MAXStrLength - 22));
+  strncat(H->Name, M.Name, Max(0, MAXStrLength - 22));
   H->a[0] = M.a0;
   H->b[0] = M.b0;
   for (i = 0; i < M.val.N + M.con.N + 1; i++)
@@ -1648,9 +1648,9 @@ uint32_t SparseMatrixToTriDiagonalMatrix(SparseMatrixType M, MatrixType * const 
     return 1;
   }
   strcpy(T->Name, "TriDiagonalizer of ");
-  strncat(T->Name, M.Name, MAX(0, MAXStrLength - 20));
+  strncat(T->Name, M.Name, Max(0, MAXStrLength - 20));
   strcpy(H->Name, "TriDiagonal form of ");
-  strncat(H->Name, M.Name, MAX(0, MAXStrLength - 22));
+  strncat(H->Name, M.Name, Max(0, MAXStrLength - 22));
   H->a[0] = M.a0;
   H->b[0] = M.b0;
   for (i = 0; i < T->Nj; i++)
@@ -1775,9 +1775,9 @@ uint32_t TriDiagonalize(MatrixType const M, MatrixType * const T, TriDiagonalMat
     return 1;
   }
   strcpy(T->Name, "TriDiagonalizer of ");
-  strncat(T->Name, M.Name, MAX(0, MAXStrLength - 20));
+  strncat(T->Name, M.Name, Max(0, MAXStrLength - 20));
   strcpy(H->Name, "TriDiagonal form of ");
-  strncat(H->Name, M.Name, MAX(0, MAXStrLength - 22));
+  strncat(H->Name, M.Name, Max(0, MAXStrLength - 22));
   H->a[0] = 0;
   H->b[0] = 1;
   if (M.QComplex)
@@ -1882,7 +1882,7 @@ uint32_t Eigensystem(MatrixType const M, MatrixType * const T, double *val)
     if (MatrixCopy(T, M))
       return 1;
     strcpy(T->Name, "Eigenvectors of ");
-    strncat(T->Name, M.Name, MAX(0, MAXStrLength - 16));
+    strncat(T->Name, M.Name, Max(0, MAXStrLength - 16));
     dsyev(jobz, uplo, &M.Ni, T->VRe[0], &M.Ni, val, work, &lwork, &info);
     if (info)
     {
@@ -1894,7 +1894,7 @@ uint32_t Eigensystem(MatrixType const M, MatrixType * const T, double *val)
       if (MatrixCopy(T, M))
         return 1;
       strcpy(T->Name, "Eigenvectors of ");
-      strncat(T->Name, M.Name, MAX(0, MAXStrLength - 16));
+      strncat(T->Name, M.Name, Max(0, MAXStrLength - 16));
       dsyevd(jobz, uplo, &M.Ni, T->VRe[0], &M.Ni, val, work, &lwork, iwork, &liwork, &info);
       if (info)
       {
@@ -1919,7 +1919,7 @@ uint32_t Eigensystem(MatrixType const M, MatrixType * const T, double *val)
     if (InitMatrix(T))
       return 1;
     strcpy(T->Name, "Eigenvectors of ");
-    strncat(T->Name, M.Name, MAX(0, MAXStrLength - 16));
+    strncat(T->Name, M.Name, Max(0, MAXStrLength - 16));
     for (i = 0; i < M.Ni * M.Ni; i++)
     {
       MReIm[i].Re = M.VRe[0][i];
@@ -1985,7 +1985,7 @@ uint32_t EigensystemToCompact(MatrixType const M, CompactMatrixType * const T, d
   {                             /* Real */
     if (MatrixCopyToCompact(T, M)) return 1;
     strcpy(T->Name, "Eigenvectors of ");
-    strncat(T->Name, M.Name, MAX(0, MAXStrLength - 16));
+    strncat(T->Name, M.Name, Max(0, MAXStrLength - 16));
     dsyev(jobz, uplo, &M.Ni, T->VRe, &M.Ni, val, work, &lwork, &info);
     if (info)
     {
@@ -1996,7 +1996,7 @@ uint32_t EigensystemToCompact(MatrixType const M, CompactMatrixType * const T, d
       FreeCompactMatrix(T);
       if (MatrixCopyToCompact(T, M)) return 1;
       strcpy(T->Name, "Eigenvectors of ");
-      strncat(T->Name, M.Name, MAX(0, MAXStrLength - 16));
+      strncat(T->Name, M.Name, Max(0, MAXStrLength - 16));
       dsyevd(jobz, uplo, &M.Ni, T->VRe, &M.Ni, val, work, &lwork, iwork, &liwork, &info);
       if (info)
       {
@@ -2078,7 +2078,7 @@ uint32_t GeneralizedEigensystem(MatrixType const M, MatrixType const S, MatrixTy
       return 1;
     }
     strcpy(Sroot->Name, "Sqrt of ");
-    strncat(Sroot->Name, S.Name, MAX(0, MAXStrLength - 8));
+    strncat(Sroot->Name, S.Name, Max(0, MAXStrLength - 8));
     for (i = 0; i < Sroot->Ni; i++)
     {
       for (j = i + 1; j < Sroot->Nj; j++)
@@ -2093,7 +2093,7 @@ uint32_t GeneralizedEigensystem(MatrixType const M, MatrixType const S, MatrixTy
       return 1;
     }
     strcpy(T->Name, "Eigenvectors of ");
-    strncat(T->Name, M.Name, MAX(0, MAXStrLength - 16));
+    strncat(T->Name, M.Name, Max(0, MAXStrLength - 16));
     dsygv(&itype, jobz, uplo, &M.Ni, T->VRe[0], &M.Ni, Sroot->VRe[0], &M.Ni, val, work, &lwork, &info);
     if (info)
     {
@@ -2109,7 +2109,7 @@ uint32_t GeneralizedEigensystem(MatrixType const M, MatrixType const S, MatrixTy
         return 1;
       }
       strcpy(Sroot->Name, "Sqrt of ");
-      strncat(Sroot->Name, S.Name, MAX(0, MAXStrLength - 8));
+      strncat(Sroot->Name, S.Name, Max(0, MAXStrLength - 8));
       for (i = 0; i < Sroot->Ni; i++)
       {
         for (j = i + 1; j < Sroot->Nj; j++)
@@ -2124,7 +2124,7 @@ uint32_t GeneralizedEigensystem(MatrixType const M, MatrixType const S, MatrixTy
         return 1;
       }
       strcpy(T->Name, "Eigenvectors of ");
-      strncat(T->Name, M.Name, MAX(0, MAXStrLength - 16));
+      strncat(T->Name, M.Name, Max(0, MAXStrLength - 16));
       dsygvd(&itype, jobz, uplo, &M.Ni, T->VRe[0], &M.Ni, Sroot->VRe[0], &M.Ni, val, work, &lwork, iwork, &liwork,
              &info);
       if (info)
@@ -2158,9 +2158,9 @@ uint32_t GeneralizedEigensystem(MatrixType const M, MatrixType const S, MatrixTy
     if (InitMatrix(Sroot))
       return 1;
     strcpy(T->Name, "Eigenvectors of ");
-    strncat(T->Name, M.Name, MAX(0, MAXStrLength - 16));
+    strncat(T->Name, M.Name, Max(0, MAXStrLength - 16));
     strcpy(Sroot->Name, "Sqrt of ");
-    strncat(Sroot->Name, S.Name, MAX(0, MAXStrLength - 8));
+    strncat(Sroot->Name, S.Name, Max(0, MAXStrLength - 8));
     for (i = 0; i < M.Ni * M.Ni; i++)
     {
       MReIm[i].Re = M.VRe[0][i];
@@ -2259,7 +2259,7 @@ uint32_t GeneralizedEigenvalues(MatrixType const M, MatrixType const S, double *
       return 1;
     }
     strcpy(Sroot.Name, "Sqrt of ");
-    strncat(Sroot.Name, S.Name, MAX(0, MAXStrLength - 8));
+    strncat(Sroot.Name, S.Name, Max(0, MAXStrLength - 8));
     for (i = 0; i < Sroot.Ni; i++)
     {
       for (j = i + 1; j < Sroot.Nj; j++)
@@ -2274,7 +2274,7 @@ uint32_t GeneralizedEigenvalues(MatrixType const M, MatrixType const S, double *
       return 1;
     }
     strcpy(T.Name, "Eigenvectors of ");
-    strncat(T.Name, M.Name, MAX(0, MAXStrLength - 16));
+    strncat(T.Name, M.Name, Max(0, MAXStrLength - 16));
     dsygv(&itype, jobz, uplo, &M.Ni, T.VRe[0], &M.Ni, Sroot.VRe[0], &M.Ni, val, work, &lwork, &info);
     if (info)
     {
@@ -2290,7 +2290,7 @@ uint32_t GeneralizedEigenvalues(MatrixType const M, MatrixType const S, double *
         return 1;
       }
       strcpy(Sroot.Name, "Sqrt of ");
-      strncat(Sroot.Name, S.Name, MAX(0, MAXStrLength - 8));
+      strncat(Sroot.Name, S.Name, Max(0, MAXStrLength - 8));
       for (i = 0; i < Sroot.Ni; i++)
       {
         for (j = i + 1; j < Sroot.Nj; j++)
@@ -2305,7 +2305,7 @@ uint32_t GeneralizedEigenvalues(MatrixType const M, MatrixType const S, double *
         return 1;
       }
       strcpy(T.Name, "Eigenvectors of ");
-      strncat(T.Name, M.Name, MAX(0, MAXStrLength - 16));
+      strncat(T.Name, M.Name, Max(0, MAXStrLength - 16));
       dsygvd(&itype, jobz, uplo, &M.Ni, T.VRe[0], &M.Ni, Sroot.VRe[0], &M.Ni, val, work, &lwork, iwork, &liwork, &info);
       if (info)
       {
@@ -2340,9 +2340,9 @@ uint32_t GeneralizedEigenvalues(MatrixType const M, MatrixType const S, double *
     if (InitMatrix(&Sroot))
       return 1;
     strcpy(T.Name, "Eigenvectors of ");
-    strncat(T.Name, M.Name, MAX(0, MAXStrLength - 16));
+    strncat(T.Name, M.Name, Max(0, MAXStrLength - 16));
     strcpy(Sroot.Name, "Sqrt of ");
-    strncat(Sroot.Name, S.Name, MAX(0, MAXStrLength - 8));
+    strncat(Sroot.Name, S.Name, Max(0, MAXStrLength - 8));
     for (i = 0; i < M.Ni * M.Ni; i++)
     {
       MReIm[i].Re = M.VRe[0][i];
@@ -2539,7 +2539,7 @@ uint32_t MatrixToAndersonMatrix(MatrixType const M, MatrixType * const T, Anders
     H->a[1] = M.VRe[0][0];
     T->VRe[0][0] = 1;
     strcpy(T->Name, "Eigenvectors of Minor of ");
-    strncat(T->Name, M.Name, MAX(0, MAXStrLength - 30));
+    strncat(T->Name, M.Name, Max(0, MAXStrLength - 30));
     i = T->Ni - 1;
     dsyev(jobz, uplo, &i, &(T->VRe[1][1]), &M.Ni, &(H->a[2]), work, &lwork, &info);
     if (info)
@@ -2586,7 +2586,7 @@ uint32_t MatrixToAndersonMatrix(MatrixType const M, MatrixType * const T, Anders
     T->Nj = M.Nj;
     T->QComplex = M.QComplex;
     strcpy(T->Name, "Eigenvectors of Minor of ");
-    strncat(T->Name, M.Name, MAX(0, MAXStrLength - 30));
+    strncat(T->Name, M.Name, Max(0, MAXStrLength - 30));
     if (InitMatrix(T))
       return 1;
     for (i = 0; i < M.Ni * M.Ni; i++)
@@ -2698,7 +2698,7 @@ uint32_t BlokTriDiagonalize(MatrixType const M, MatrixType * const T, BlokTriDia
   if (InitIdentityMatrix(T))
     return 1;
   strcpy(T->Name, "BlokTridiagonalizer of ");
-  strncat(T->Name, M.Name, MAX(0, MAXStrLength - 28));
+  strncat(T->Name, M.Name, Max(0, MAXStrLength - 28));
   NBlok = ceil(((double)M.Ni) / ((double)BlokDim));
   H->N = NBlok;
   if (InitFrameBlokTriDiagonalMatrix(H))
@@ -3179,7 +3179,7 @@ uint32_t MatrixToBlokAndersonMatrix(MatrixType const M, MatrixType * const T, Bl
       T->VRe[i][i] = 1;
     }
     strcpy(T->Name, "Eigenvectors of Minor of ");
-    strncat(T->Name, M.Name, MAX(0, MAXStrLength - 30));
+    strncat(T->Name, M.Name, Max(0, MAXStrLength - 30));
     i = T->Ni - BlokDim;
     dsyev(jobz, uplo, &i, &(T->VRe[BlokDim][BlokDim]), &M.Ni, val, work, &lwork, &info);
     if (info)
@@ -3224,7 +3224,7 @@ uint32_t MatrixToBlokAndersonMatrix(MatrixType const M, MatrixType * const T, Bl
     T->Nj = M.Nj;
     T->QComplex = M.QComplex;
     strcpy(T->Name, "Eigenvectors of Minor of ");
-    strncat(T->Name, M.Name, MAX(0, MAXStrLength - 30));
+    strncat(T->Name, M.Name, Max(0, MAXStrLength - 30));
     if (InitMatrix(T))
     {
       FreeFrameBlokAndersonMatrix(H);

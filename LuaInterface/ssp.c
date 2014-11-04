@@ -152,6 +152,22 @@ static int LuaHelp(lua_State *L)
       printf("\n");
       printf("\n");
     }
+    if (strcmp(Help, "ssp.Eigensystem") == 0)
+    {
+      printf("ssp.Eigensystem()\n");
+      printf("  - calculates the lowest eigen functions of a given Hamiltonian. The number of states to calculate is given as an input\n");
+      printf("  - expects as input an operator and either\n");
+      printf("    - a (list of) wavefunction(s) that specify a starting point. (filling)\n");
+      printf("    - note that the final state found might be of different symmetry than the starting point\n");
+      printf("    - look at ssp.EvolveToGroundstate if one wants to track a specific state\n");
+      printf("  - or\n");
+      printf("    - a set of restrictions defining the starting point (number of electrons, filled core shells)\n");
+      printf("    - the number of lowest eigen states to calculate");
+      printf("  - aditional options can be given\n");
+      printf("\n");
+      printf("\n");
+      printf("\n");
+    }
     
     
     
@@ -1003,9 +1019,7 @@ static int LuaEvolveToGroundstate(lua_State * L)
     Options.DeterminantRestrictions = *(DeterminantRestrictionType*)buff;
     free(buff);
   }
-  
   /* calculate groundstate */
-  
   for (i = 0; i < Options.Npsi; i++)
   {
     printf("\nstart of state #%d/%d",i+1,Options.Npsi);
@@ -1018,8 +1032,6 @@ static int LuaEvolveToGroundstate(lua_State * L)
       LanczosGroundState(*Opp, &(psi[i]), &Options.epsilon, Options.zero, 0, psi, i);
     }
   }
-  
-  
   /* copy changed wavefunctions back to lua stack */
   if(lua_type(L,2)==LUA_TTABLE)
   {
@@ -1030,10 +1042,148 @@ static int LuaEvolveToGroundstate(lua_State * L)
       *temp = psi[i];
       lua_pop(L, 1);
     }
-
   }
   return 0;
 }
+
+/*  calculate the Npsi lowest eigen-states of operator Opp, using the Block routines
+ *
+ */
+static int LuaEigensystem(lua_State * L)
+{
+  void *buff;
+  struct
+  {
+    double zero;
+    double epsilon;
+    Bool restrictions;
+    uint32_t NBitsKey;
+    DeterminantRestrictionType DeterminantRestrictions;
+  } Options;
+  Options.zero=100*DBL_EPSILON;
+  Options.epsilon=10000*DBL_EPSILON;
+  Options.restrictions=False;
+  Options.DeterminantRestrictions.N=0;
+  Options.NBitsKey=16;
+  OperatorType *Opp;
+  DeterminantRestrictionType StartRestrictions;
+  StartRestrictions.N=0;
+  WaveFunctionType *psi=NULL,*temp;
+  uint32_t i,len, Npsi=0,QStartRestrictions=0;
+  /* check number of input parameters */
+  len = (uint32_t)lua_gettop(L);
+  if(!((len==2)||(len==3)||(len==4)))
+  {
+    return luaL_error(L, "Error Eigensystem called with %d arguments, 2, 3 or 4 expected\n",len);
+  }
+  /* read operator, (StartRestrictions or StartPsi) and Number of eigen-states */
+  Opp = (OperatorType *) luaL_checkudata(L, 1, "ssp.operator");
+  if(lua_type(L,2)==LUA_TTABLE)
+  {
+    lua_rawgeti(L, 2, 1);
+    if(lua_type(L,-1)==LUA_TNUMBER) QStartRestrictions=1;
+    lua_pop(L, 1);
+    if(QStartRestrictions)
+    {
+      buff=luaL_checkarray_DeterminantRestrictionType(L, 2);
+      StartRestrictions = *(DeterminantRestrictionType*)buff;
+      free(buff);
+    }
+    else
+    {
+      psi=luaL_checkarray_WaveFunctionType(L, 2, &Npsi);
+      if(WaveFunctionArrayToSameBasis(psi, Npsi))
+      {
+        printf("WaveFunctionArrayToSameBasis failed in LuaEigensystem\n");
+        return 1;
+      }
+    }
+  }
+  else
+  {
+    Npsi = 1;
+    psi = (WaveFunctionType *) luaL_checkudata(L, 2, "ssp.wavefunction");
+  }
+  if((len==2)&&(QStartRestrictions))
+  {
+    return luaL_error(L, "Error Eigensystem called with 2 arguments, whereby the first is the operator and the second a set of restrictions\n Need a thrid argument how many eigenstates should be calculated\n");
+  }
+  if(QStartRestrictions)
+  {
+    Npsi=(uint32_t)luaL_checkunsigned(L, 3);
+    // allocate psi
+    if(Npsi==1)
+    {
+      psi = (WaveFunctionType*) lua_newuserdata(L, sizeof(WaveFunctionType));
+      luaL_setmetatable(L, "ssp.wavefunction");
+    }
+    else
+    {
+      psi=malloc(Npsi*sizeof(WaveFunctionType));
+    }
+  }
+  /* read options */
+  buff=LuaFindOptionsInTable(L, -1, "NBitsKey", "int");
+  if(buff!=NULL)
+  {
+    Options.NBitsKey = *(uint32_t*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, -1, "epsilon", "double");
+  if(buff!=NULL)
+  {
+    Options.epsilon = *(double*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, -1, "zero", "double");
+  if(buff!=NULL)
+  {
+    Options.zero = *(double*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, -1, "restrictions", "DeterminantRestrictionType");
+  if(buff!=NULL)
+  {
+    Options.restrictions=True;
+    Options.DeterminantRestrictions = *(DeterminantRestrictionType*)buff;
+    free(buff);
+  }
+  /* calculate groundstate */
+  BlockGroundState(*Opp, Npsi, Options.zero, &Options.epsilon , StartRestrictions, Options.DeterminantRestrictions, psi, Options.NBitsKey);
+  /* seperate basis */
+  WaveFunctionArraySeperateBasis(psi, Npsi);
+  /* copy changed wavefunctions back to lua stack */
+  if(QStartRestrictions) // need to return a list of wavefunctions
+  {
+    if(Npsi==1)
+    {
+      // return a single wave function
+      // already done when allocating
+    }
+    else
+    {
+      LuaPushTable_WaveFunctionType(L,psi,Npsi);
+      free(psi);
+    }
+    return 1;
+  }
+  else
+  { // the list of functions is copied into an array, now need to set the pointers in the structure back to what they should be
+    // this is not needed for a single value as there the pointer psi just points to the original
+    if(lua_type(L,2)==LUA_TTABLE)
+    {
+      for(i=0;i<Npsi;i++)
+      {
+        lua_rawgeti(L, 2, i+1);
+        temp = (WaveFunctionType *)luaL_checkudata(L, -1, "ssp.wavefunction");
+        *temp = psi[i];
+        lua_pop(L, 1);
+      }
+    }
+    return 0;
+  }
+}
+
 
 
 static const struct luaL_Reg ssp_functions[] = {
@@ -1051,6 +1201,7 @@ static const struct luaL_Reg ssp_functions[] = {
   {"T", Luatranspose},
   {"Rotate", Luarotate},
   {"EvolveToGroundstate", LuaEvolveToGroundstate},
+  {"Eigensystem", LuaEigensystem},
   {"CreateSpectra", LuaCreateSpectra},
   {"BraKet", LuaBraKet},           /* function in file BraKet.c */
   {"Eval", LuaEval},               /* function in file eval.c */

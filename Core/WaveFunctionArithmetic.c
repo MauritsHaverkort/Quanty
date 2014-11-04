@@ -1174,3 +1174,51 @@ uint32_t RotateWaveFunction(WaveFunctionType * const A, WaveFunctionType const B
   WaveFunctionInit(A);
   return MappedWaveFunctionAdd(A, B, U);
 }
+
+
+/*
+ *
+ */
+uint32_t WaveFunctionArrayToSameBasis(WaveFunctionType * const psi, uint32_t const Npsi)
+{
+  uint32_t i;
+  WaveFunctionType psicopy;
+  // enlarge the basis of psi[0] to include psi[1] to psi[Npsi-1]
+  for(i=0;i<Npsi;i++)
+  {
+    WaveFunctionAddMultipliedUnionBasis(&psi[0], psi[i], 0);
+  }
+  //
+  for(i=1;i<Npsi;i++)
+  {
+    if(WaveFunctionInitCopyBasis(&psicopy, psi[0]))
+    {
+      printf("WaveFunctionInitCopyBasis failed in WaveFunctionArrayToSameBasis at %i from %i",i,Npsi);
+      return 1;
+    }
+    WaveFunctionAddConserveBasis(&psicopy, psi[i]);
+    WaveFunctionFree(&psi[i]);
+    psi[i]=psicopy;
+  }
+  return 0;
+}
+
+/*
+ *
+ */
+uint32_t WaveFunctionArraySeperateBasis(WaveFunctionType * const psi, uint32_t const Npsi)
+{
+  uint32_t i;
+  WaveFunctionType psicopy;
+  for(i=1;i<Npsi;i++)
+  {
+    if(WaveFunctionCopy(psi[i], &psicopy))
+    {
+      printf("WaveFunctionCopy failed in WaveFunctionArraySeperateBasis at length %i of %i\n",i,Npsi);
+      return 1;
+    }
+    WaveFunctionFreeValues(&psi[i]);
+    psi[i]=psicopy;
+  }
+  return 0;
+}

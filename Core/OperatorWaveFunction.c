@@ -1667,7 +1667,7 @@ uint32_t OperatorPsiMR(const OperatorType O, const WaveFunctionType psi, WaveFun
 }
 
 /*  returns 0 if the determinant is restricted 1 if the determinant is not restircted
- *    a determinant is restricted if it has more than Restrictions.Max or less than Restrictions.Min particles in the fileted states
+ *    a determinant is restricted if it has more than Restrictions.Max or less than Restrictions.Min particles in the filetered states
  *    the states filtered are determined by Restrictions.Determinant
  */
 uint32_t QDetNotRestricted(uint8_t const *det, uint32_t const NFermion, uint32_t const NBoson, uint32_t const NWord, DeterminantRestrictionType const Restrictions)

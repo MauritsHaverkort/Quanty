@@ -1196,7 +1196,7 @@ uint32_t CompactMatrixQRDecomposition(CompactMatrixType *A, CompactMatrixType *Q
   else
   {
     double *TAU,*WORK;
-    TAU=malloc(MIN(A->Ni,A->Nj*sizeof(double)));
+    TAU=malloc(Min(A->Ni,A->Nj*sizeof(double)));
     WORK=malloc(A->Ni*A->Nj*sizeof(double));
     dgeqrf(&(A->Ni),&(A->Nj),A->VRe,&(A->Ni),TAU,WORK,&LWORK,&INFO);
     
@@ -1602,7 +1602,7 @@ uint32_t CompactMatrixEigensystem(CompactMatrixType const *A, CompactMatrixType 
       return 1;
     }
     strcpy(fun->Name, "Eigenvectors of ");
-    strncat(fun->Name, A->Name, MAX(0, MAXStrLength - 16));
+    strncat(fun->Name, A->Name, Max(0, MAXStrLength - 16));
     dsyev(jobz, uplo, &A->Ni, fun->VRe, &A->Ni, val, work, &lwork, &info);
     if (info)
     {
@@ -1614,7 +1614,7 @@ uint32_t CompactMatrixEigensystem(CompactMatrixType const *A, CompactMatrixType 
       if (CompactMatrixCopy(*A,fun))
         return 1;
       strcpy(fun->Name, "Eigenvectors of ");
-      strncat(fun->Name, A->Name, MAX(0, MAXStrLength - 16));
+      strncat(fun->Name, A->Name, Max(0, MAXStrLength - 16));
       dsyevd(jobz, uplo, &A->Ni, fun->VRe, &A->Ni, val, work, &lwork, iwork, &liwork, &info);
       if (info)
       {
@@ -1640,7 +1640,7 @@ uint32_t CompactMatrixEigensystem(CompactMatrixType const *A, CompactMatrixType 
     if (CompactMatrixCopy(*A, fun))
       return 1;
     strcpy(fun->Name, "Eigenvectors of ");
-    strncat(fun->Name, A->Name, MAX(0, MAXStrLength - 16));
+    strncat(fun->Name, A->Name, Max(0, MAXStrLength - 16));
     zheev(jobz, uplo, &A->Ni, fun->V, &A->Ni, val, cwork, &lcwork, work, &info);
     if (info != 0)
     {
@@ -1652,7 +1652,7 @@ uint32_t CompactMatrixEigensystem(CompactMatrixType const *A, CompactMatrixType 
       if (CompactMatrixCopy(*A,fun))
         return 1;
       strcpy(fun->Name, "Eigenvectors of ");
-      strncat(fun->Name, A->Name, MAX(0, MAXStrLength - 16));
+      strncat(fun->Name, A->Name, Max(0, MAXStrLength - 16));
       zheevd(jobz, uplo, &A->Ni, fun->V, &A->Ni, val, cwork, &lcwork, work, &lwork, iwork, &liwork, &info);
       if (info != 0)
       {

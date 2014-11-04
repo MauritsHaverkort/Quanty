@@ -336,6 +336,21 @@ void LuaPushTable_HarmonicsExpansion(lua_State *L, HarmonicsExpansion *Akm)
   }
 }
 
+void LuaPushTable_WaveFunctionType(lua_State* L, WaveFunctionType const * const psi, uint32_t const Npsi )
+{
+  uint32_t i;
+  WaveFunctionType *buff;
+  lua_createtable(L, Npsi, 0);
+  for(i=0;i<Npsi;i++)
+  {
+    buff = (WaveFunctionType*) lua_newuserdata(L, sizeof(WaveFunctionType));
+    luaL_setmetatable(L, "ssp.wavefunction");
+    *buff = psi[i];
+    lua_rawseti(L, -2, i+1);
+  }
+}
+
+
 void shallowtablecopy(lua_State* L, int index)
 {
   lua_newtable(L);

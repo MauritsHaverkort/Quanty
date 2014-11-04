@@ -936,7 +936,7 @@ static int LuaOperatorMul(lua_State * L)
     WaveFunctionType *psi = (WaveFunctionType*) luaL_checkudata(L, 1, "ssp.wavefunction");
     OperatorType *O = (OperatorType *) luaL_checkudata(L,len,"ssp.operator");
     OperatorType OT;
-    OperatorConjugateTransposeNormalOrder(*O, &OT, &QDetNotOrderedFcFaBaBc);
+    OperatorConjugateTransposeNormalOrder(*O, &OT, &QDetNotOrderedFcFaBcBa);
     WaveFunctionType *Opsi;
     Opsi = (WaveFunctionType *) lua_newuserdata(L, sizeof(WaveFunctionType));
     OperatorPsi(OT, *psi, Opsi);

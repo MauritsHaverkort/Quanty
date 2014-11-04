@@ -5,8 +5,10 @@ static void luaL_stackDump (lua_State *L) {
   {
     printf("empty stack (top=%d) at location %p\n",top,L);
   }
+  printf("\nLua Stackdump");
   for (i = 1; i <= top; i++) {  /* repeat for each level */
     int t = lua_type(L, i);
+    printf("\n%s - ",lua_typename(L, t));
     switch (t) {
         
       case LUA_TSTRING:  /* strings */
@@ -23,8 +25,15 @@ static void luaL_stackDump (lua_State *L) {
         
       case LUA_TTABLE:  /* table */
         len = (int)lua_objlen(L, i);
-        printf("%s with %d entries", lua_typename(L, t),len);
+        printf("%d entries", len);
+        break;
         
+      case LUA_TUSERDATA:  /* userdata */
+        if (luaL_testudata(L, i, "Lua.complex") != NULL) printf("complex");
+        else if (luaL_testudata(L, i, "ssp.operator") != NULL) printf("operator");
+        else if (luaL_testudata(L, i, "ssp.wavefunction") != NULL) printf("wavefunction");
+        else if (luaL_testudata(L, i, "ssp.spectra") != NULL) printf("spectra");
+        else printf("unrecognized");
         break;
         
       default:  /* other values */
@@ -32,7 +41,6 @@ static void luaL_stackDump (lua_State *L) {
         break;
         
     }
-    printf(" , ");  /* put a separator */
   }
   printf("\n");  /* end the listing */
   fflush(stdout);
