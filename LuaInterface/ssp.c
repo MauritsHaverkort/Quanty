@@ -1138,23 +1138,25 @@ static int LuaCreateSpectra(lua_State *L)
       }
     }
   }
-  /* if Emin=DBL_MAX or Emax=DBL_MAX or Gamma==0 determine these */
-  Eminpole=Options.Emin;
-  Emaxpole=Options.Emax;
-  if((Options.Emin==DBL_MAX)||(Options.Emax==-DBL_MAX))
+  /* determine Eminpole and Emaxpole */
+  /* get eigenvalues of all Tri diagonal matrices and set smallest and largest eigenvalue */
+  Eminpole=DBL_MAX;
+  Emaxpole=-DBL_MAX;
+  val=malloc((Options.NTri)*sizeof(double));
+  for(i=0;i<Options.NT*Options.Npsi;i++)
   {
-    /* get eigenvalues of all Tri diagonal matrices and set smallest and largest eigenvalue */
-    /* range is 20% larger */
-    val=malloc((Options.NTri)*sizeof(double));
-    for(i=0;i<Options.NT*Options.Npsi;i++)
-    {
-      TriDiagonalMatrixToEigenvalues(GTri[i], val);
-      if((val[0]-psiEn[i])<Eminpole)Eminpole=val[0]-psiEn[i];
-      if((val[Options.NTri-1]-psiEn[i])>Emaxpole)Emaxpole=val[Options.NTri-1]-psiEn[i];
-    }
-    if(Options.Emin== DBL_MAX) Options.Emin = Eminpole - 0.125 * (Emaxpole-Eminpole);
-    if(Options.Emax==-DBL_MAX) Options.Emax = Emaxpole + 0.125 * (Emaxpole-Eminpole);
+    TriDiagonalMatrixToEigenvalues(GTri[i], val);
+    if((val[0]-psiEn[i])<Eminpole)Eminpole=val[0]-psiEn[i];
+    if((val[Options.NTri-1]-psiEn[i])>Emaxpole)Emaxpole=val[Options.NTri-1]-psiEn[i];
   }
+  
+  
+  /* if Emin=DBL_MAX or Emax=-DBL_MAX or Gamma==0 determine these */
+
+  
+  if(Options.Emin== DBL_MAX) Options.Emin = Eminpole - 0.125 * (Emaxpole-Eminpole);
+  if(Options.Emax==-DBL_MAX) Options.Emax = Emaxpole + 0.125 * (Emaxpole-Eminpole);
+  
   if(Options.Gamma==0) Options.Gamma = 10*(Options.Emax-Options.Emin)/((double)Options.NE);
   /* transform tridiagonal form to spectral form */
   Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
@@ -1165,8 +1167,8 @@ static int LuaCreateSpectra(lua_State *L)
   Spec->Spec[0].Emin=Options.Emin;
   Spec->Spec[0].Emax=Options.Emax;
   Spec->Spec[0].dE=(Options.Emax-Options.Emin)/((double)Options.NE);
-  Spec->Spec[0].EminPole=Options.Emin;
-  Spec->Spec[0].EmaxPole=Options.Emax;
+  Spec->Spec[0].EminPole=Eminpole;
+  Spec->Spec[0].EmaxPole=Emaxpole;
   Spec->Spec[0].Gamma=Options.Gamma;
   for(i=0;i<Spec->NSpectra;i++)
   {

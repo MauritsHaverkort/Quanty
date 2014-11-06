@@ -997,6 +997,23 @@ static int LuaOperatorChop(lua_State * L)
   return 0;
 }
 
+static int LuaOperatorSetName(lua_State * L)
+{
+  uint32_t len = (uint32_t)lua_gettop(L);
+  switch (len)
+  {
+    case 0:
+      OperatorSetName((OperatorType *) currentudata, "");
+    break;
+    case 1:
+      OperatorSetName((OperatorType *) currentudata, luaL_checkstring(L,1));
+    break;
+    default:
+      return luaL_error(L, "Errorr, call to SetName with %d arguments, expected 0 or 1\n",len);
+    break;
+  }
+  return 0;
+}
 
 static int LuaOperatorConjugate(lua_State * L)
 {
@@ -1059,6 +1076,11 @@ static int LuaOperatorIndex(lua_State * L)
     lua_pushcfunction(L, LuaOperatorPrint);
     return 1;
   }
+  if (strcmp(str, "Name") == 0)
+  {
+    lua_pushstring(L, a->Name);
+    return 1;
+  }
   else if (strcmp(str, "Chop") == 0)
   {
     lua_pushcfunction(L, LuaOperatorChop);
@@ -1082,6 +1104,22 @@ static int LuaOperatorIndex(lua_State * L)
   return luaL_error(L, "Error operator variable not found");;
 }
 
+static int LuaOperatorNewIndex(lua_State * L)
+{
+  OperatorType *a = (OperatorType *) luaL_checkudata(L, 1, "ssp.operator");
+  const char *str = lua_tostring(L, 2);
+  
+  if(strcmp(str, "Name")==0)
+  {
+    OperatorSetName(a, lua_tostring(L, 3));
+  }
+  else
+  {
+    return luaL_error(L, "Error index %s not found in Operator Object\n",str);
+  }
+  return 0;
+}
+
 static int LuaOperatorToString(lua_State * L)
 {
   OperatorType *res = (OperatorType *) luaL_checkudata(L, 1, "ssp.operator");
@@ -1101,6 +1139,7 @@ static const struct luaL_Reg Operator_meta[] = {
   {"__sub", LuaOperatorSub},
   {"__mul", LuaOperatorMul},
   {"__index", LuaOperatorIndex},
+  {"__newindex", LuaOperatorNewIndex},
   {"__tostring", LuaOperatorToString},
   {"__gc", LuaOperatorDestroy},
   {NULL, NULL}

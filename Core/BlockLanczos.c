@@ -21,63 +21,50 @@ uint32_t QMustOccupy(uint32_t const iFermion, uint32_t const NFermion, uint8_t *
   // singles - test each restriction seperately. If one restriction tells you the orbital must be occupied return 1
   for(i=0;i<Restrictions.N;i++)
   {
-    // if this restriction does not apply to iFermion break
-    
-    printf("i=%i iWord=%i iFermion=%i iFermion&7=%i 128>>(iFermion&7)=%02X\n",i,iWord,iFermion,iFermion&7,128>>(iFermion&7));
-    
-    if(!(Restrictions.Determinant[i][iWord]&(128>>(iFermion&7)))) break;
-    // Nelectron - calculate how many electrons are in the orbitals (0 to iFermion-1) the restrictions apply to
-    Nelectron=0;
-    for(j=0;j<iWord;j++)
+    // if this restriction does not apply to iFermion do nothing for this restriction
+    if(Restrictions.Determinant[i][iWord]&(128>>(iFermion&7)))
     {
-      detfiltered=Restrictions.Determinant[i][j]&det[j];
-      for(k=0;k<=7;k++)
+      // Nelectron - calculate how many electrons are in the orbitals (0 to iFermion-1) the restrictions apply to
+      Nelectron=0;
+      for(j=0;j<iWord;j++)
       {
-        Nelectron+=(detfiltered>>k)&1;
+        detfiltered=Restrictions.Determinant[i][j]&det[j];
+        for(k=0;k<=7;k++)
+        {
+          Nelectron+=(detfiltered>>k)&1;
+        }
       }
-    }
-    detfiltered=Restrictions.Determinant[i][iWord]&det[iWord];
-    for(k=0;k<(iFermion&7);k++)
-    {
-      Nelectron+=(detfiltered>>(7-k))&1;
-    }
-    // NextraOrbitals - calculate how many orbitals there are left the restrictions apply to (iFermion to NFermion-1)
-    NextraOrbitals=0;
-    detfiltered=Restrictions.Determinant[i][iWord];
-    for(k=1+(iFermion&7);k<=7;k++)
-    {
-      NextraOrbitals+=(detfiltered>>(7-k))&1;
-    }
-    printf("NextraOrbitals = %i",NextraOrbitals);
-    for(j=iWord+1;j+1<NWord;j++)
-    {
-      detfiltered=Restrictions.Determinant[i][j];
-      for(k=0;k<=7;k++)
+      detfiltered=Restrictions.Determinant[i][iWord]&det[iWord];
+      for(k=0;k<(iFermion&7);k++)
       {
-        NextraOrbitals+=(detfiltered>>k)&1;
+        Nelectron+=(detfiltered>>(7-k))&1;
       }
-    }
-    
-    printf("  %i",NextraOrbitals);
-    if(iWord!=NWord-1)
-    {
-      detfiltered=Restrictions.Determinant[i][NWord-1];
-      for(k=0;k<=((NFermion-1)&7);k++)
+      // NextraOrbitals - calculate how many orbitals there are left the restrictions apply to (iFermion to NFermion-1)
+      NextraOrbitals=0;
+      detfiltered=Restrictions.Determinant[i][iWord];
+      for(k=1+(iFermion&7);k<=7;k++)
       {
         NextraOrbitals+=(detfiltered>>(7-k))&1;
       }
+      for(j=iWord+1;j+1<NWord;j++)
+      {
+        detfiltered=Restrictions.Determinant[i][j];
+        for(k=0;k<=7;k++)
+        {
+          NextraOrbitals+=(detfiltered>>k)&1;
+        }
+      }
+      if(iWord!=NWord-1)
+      {
+        detfiltered=Restrictions.Determinant[i][NWord-1];
+        for(k=0;k<=((NFermion-1)&7);k++)
+        {
+          NextraOrbitals+=(detfiltered>>(7-k))&1;
+        }
+      }
+      // test restrictions
+      if((NextraOrbitals+Nelectron)<Restrictions.Min[i]) return 1;
     }
-    
-    
-    printf("  %i\n",NextraOrbitals);
-    // test restrictions
-    
-    
-    
-    
-    printf("Nelec = %i NextraOribtlas = %i Nmin = %i\n",Nelectron,NextraOrbitals,Restrictions.Min[i]);
-    
-    if((NextraOrbitals+Nelectron)<Restrictions.Min[i]) return 1;
   }
   return 0;
 }
@@ -89,39 +76,33 @@ uint32_t QMustOccupy(uint32_t const iFermion, uint32_t const NFermion, uint8_t *
  */
 uint32_t QCanNotOccupy(uint32_t const iFermion, uint32_t const NFermion, uint8_t *det, DeterminantRestrictionType const Restrictions)
 {
-  
-  
-  
   uint32_t i, j, k, Nelectron;
   uint32_t iWord=(iFermion/8);
   uint8_t detfiltered;
   // singles - test each restriction seperately. If one restriction tells you the orbital must be occupied return 1
   for(i=0;i<Restrictions.N;i++)
   {
-    // if this restriction does not apply to iFermion break
-    if(!(Restrictions.Determinant[i][iWord]&(128>>(iFermion&7)))) break;
-    // Nelectron - calculate how many electrons are in the orbitals (0 to iFermion-1) the restrictions apply to
-    Nelectron=0;
-    for(j=0;j<iWord;j++)
+    // if this restriction does not apply to iFermion do nothing for this Restriction
+    if(Restrictions.Determinant[i][iWord]&(128>>(iFermion&7)))
     {
-      detfiltered=Restrictions.Determinant[i][j]&det[j];
-      for(k=0;k<=7;k++)
+      // Nelectron - calculate how many electrons are in the orbitals (0 to iFermion-1) the restrictions apply to
+      Nelectron=0;
+      for(j=0;j<iWord;j++)
       {
-        Nelectron+=(detfiltered>>k)&1;
+        detfiltered=Restrictions.Determinant[i][j]&det[j];
+        for(k=0;k<=7;k++)
+        {
+          Nelectron+=(detfiltered>>k)&1;
+        }
       }
+      detfiltered=Restrictions.Determinant[i][iWord]&det[iWord];
+      for(k=0;k<(iFermion&7);k++)
+      {
+        Nelectron+=(detfiltered>>(7-k))&1;
+      }
+      // test restrictions
+      if((Nelectron)>=Restrictions.Max[i]) return 1;
     }
-    detfiltered=Restrictions.Determinant[i][iWord]&det[iWord];
-    for(k=0;k<(iFermion&7);k++)
-    {
-      Nelectron+=(detfiltered>>(7-k))&1;
-    }
-    
-    
-    printf("Nelec = %i Nmax = %i\n",Nelectron,Restrictions.Max[i]);
-   
-    
-    // test restrictions
-    if((Nelectron)>=Restrictions.Max[i]) return 1;
   }
   return 0;
 }
@@ -189,6 +170,7 @@ uint32_t CreateStartingFunctions(const OperatorType H, uint32_t const Npsi, Dete
     printf("OperatorPsiRestricted failed in CreateStartingFunctions\n");
     return 1;
   }
+  WaveFunctionFree(&psi0);
   // init other functions
   for(i=1;i<Npsi;i++)
   {

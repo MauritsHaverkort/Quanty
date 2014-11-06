@@ -91,6 +91,11 @@ uint32_t InitNamedOperator(OperatorType * const O, char *name)
   return ret;
 }
 
+void OperatorSetName(OperatorType * const O, const char * const name)
+{
+  strncpy(O->Name, name, MAXStrLength-1);
+}
+
 /*  Initialize the Operator structure
  *  to apply a Operator product with 
  *  an arbitrary number of operators

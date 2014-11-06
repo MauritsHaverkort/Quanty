@@ -194,7 +194,7 @@ DeterminantRestrictionType* luaL_checkarray_DeterminantRestrictionType(lua_State
   luaL_checktype(L, narg, LUA_TTABLE);
   len = (uint32_t)lua_objlen(L, narg);
   
-  if(len<3) luaL_error(L, "Restrictions should be given in the format {NFermion,NBoson,{\"determinant1\",minocc,maxocc},{\"determinant2\",minocc,maxocc},...}");
+  if(len<3) luaL_error(L, "Restrictions should be given in the format {NFermion,NBoson,{{\"determinant1\",minocc,maxocc},{\"determinant2\",minocc,maxocc},...}}");
   buff->N=len-2;
   buff->Min=malloc(buff->N*sizeof(uint32_t));
   buff->Max=malloc(buff->N*sizeof(uint32_t));
@@ -431,10 +431,11 @@ void * LuaFindOptionsInTable(lua_State * L, int narg, char* token, char* type)
             if (strcmp(tokenread, token) == 0)
             {
               lua_rawgeti(L, -2, 2);
-              return LuaReturnVariableType(L, -1, type);
+              buff = LuaReturnVariableType(L, -1, type);
+              lua_pop(L,1);
             }
-            lua_pop(L,1);
           }
+          lua_pop(L,1);
         }
       }
       lua_pop(L,1);

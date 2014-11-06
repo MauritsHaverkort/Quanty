@@ -208,6 +208,12 @@ uint32_t WaveFunctionInit(WaveFunctionType * Psi)
   return 0;
 }
 
+
+void WavefunctionSetName(WaveFunctionType * const Psi, const char * const name)
+{
+  strncpy(Psi->Name, name, MAXStrLength-1);
+}
+
 /*  For Two functions on the same basis only the values need to be stored seperately
  *  All other elements point to the same location
  */
