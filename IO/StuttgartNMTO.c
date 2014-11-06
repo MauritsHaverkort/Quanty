@@ -197,9 +197,6 @@ uint32_t OrderAndCheckStuttgartCTRL(StuttgartCTRL * O)
       }
     }
   }
-  
-  
-  
   return 0;
 }
 

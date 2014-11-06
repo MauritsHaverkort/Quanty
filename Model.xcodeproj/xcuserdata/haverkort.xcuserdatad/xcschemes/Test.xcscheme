@@ -145,6 +145,10 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "NiO"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "BlockLanczos"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument

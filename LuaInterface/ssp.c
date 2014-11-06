@@ -23,10 +23,20 @@ static int LuaHelp(lua_State *L)
     printf("  - other parameters depend on the type of operator defined in the first string\n");
     printf("  - example: ssp.NewOperator(\"Sz\", NFermion, IndexUp, IndexDn);\n");
     printf("\n");
+    printf("ssp.PotentialExpandedOnYlm(\"Oh\",2,{0.6,-0.4})\n");
+    printf("  - creates a list representing a potential expanded on spherical Harmonics for a given symmetry and eigen energy of the irreducible representations\n");
+    printf("  - The potential V(theta, phi) is given as:\n");
+    printf("  - V(theta, phi) = sum_k,m A_{k,m} Y_km(theta,phi)\n");
+    printf("  - the list saved is {{k1,m1,Ak1m1},{k2,m2,Ak2m2},...}\n");
+    printf("  - input is the point-group symmetry, the angular momentum and the eigen energies of the irreducible representations\n");
+    printf("  - ssp.PotentialExpandedOnYlm(\"Oh\",2,{0.6,-0.4});\n");
+    printf("  - for a potential in cubic symmetry acting on the d-shell with the energy of the eg's as 0.6 and t2g's at -0.4 (10Dq=1.0)\n");
+    printf("\n");
     printf("ssp.NewWavefunction()\n");
     printf("  - creates a new wavefunction\n");
     printf("  - expects as input the number of fermions, number of bosons, a table of determinants with the prefactor\n");
     printf("  - example: ssp.NewWavefunction(10,0,{{{0x80,0x00},1},{{0x04,0x00},1}});\n");
+    printf("  - example: ssp.NewWavefunction(10,0,{{\"1010101010\",1},{\"0101010101\",1}});\n");
     printf("\n");
     printf("ssp.Copy() or ssp.Clone()\n");
     printf("  - creats a copy of a wavefunction or operator\n");
@@ -47,16 +57,32 @@ static int LuaHelp(lua_State *L)
     printf("  - creats a copy of a wavefunction or operator and transposes this copy\n");
     printf("  - expects as input an object, returns a copy of that object\n");
     printf("  - example: ssp.Transpose(psi);\n");
+    printf("ssp.Rotate()\n");
+    printf("  - Given an operator on a basis of N fermions + M Bosons\n");
+    printf("  - and a matrix of size N+M\n");
+    printf("  - creates a new operator on a rotated basis\n");
+    printf("  - example: ssp.Rotate(Operator,RotationMatrix);\n");
     printf("\n");
     printf("ssp.EvolveToGroundstate()\n");
     printf("  - calculates eigenfunctions of the Hamiltonian, starting from the specified state\n");
     printf("  - expects as input an operator and a (list of) wavefunction(s), a list of options on the last position is allowed\n");
     printf("  - example ssp.EvolveToGroundstate(OppSy,{psi1,psi2});\n");
+    printf("ssp.Eigensystem()\n");
+    printf("  - calculates the lowest N eigenfunctions of a given operator\n");
+    printf("  - expects as input an operator and either a list of starting functions or a set of restrictions specifying the starting point\n");
+    printf("  - example ssp.Eigensystem(OppSy,{psi1,psi2});\n");
+    printf("  - example ssp.Eigensystem(OppSy,Restrictions,Nspi);\n");
     printf("\n");
     printf("ssp.CreateSpectra()\n");
     printf("  - calculates spectra of a giving Hamiltonian, starting from the specified state and using a specific transition operator\n");
     printf("  - expects as input an operator a (list of) transition operator(s) and a (list of) wavefunction(s), a list of options on the last position is allowed\n");
     printf("  - example ssp.CreateSpectra(OppH,{T1,T2},{psi1,psi2});\n");
+    printf("\n");
+    printf("ssp.CreateFluorescenceYield()\n");
+    printf("  - calculates the fluorescence yield spectra\n");
+    printf("  - calculated is < i | T1^+ G^+ T2 T2^+ G T1 | i>\n");
+    printf("  - expects as input an operator a (list of) transition operator(s) T1 a (list of) transition operator(s) T2^+ and a (list of) wavefunction(s), a list of options on the last position is allowed\n");
+    printf("  - example ssp.CreateFluorescenceYield(OppH,{T1a,T1b},{T2a,T2b},{psi1,psi2});\n");
     printf("\n");
     
     printf("\n\n");
@@ -85,6 +111,108 @@ static int LuaHelp(lua_State *L)
       printf("  - creates a new operator\n");
       printf("  - expects as input on the first position a string describing the type of operator\n");
       printf("  - other parameters depend on the type of operator defined in the first string\n");
+      printf("  - possible operators and aditional parameters are:\n");
+      printf("     - \"Coulomb\" or \"U\"\n");
+      printf("       - Lindex Up : array of length 2l+1 of integers defining the position of ml=-l to ml=l with spin up\n");
+      printf("       - Lindex Dn : array of length 2l+1 of integers defining the position of ml=-l to ml=l with spin down\n");
+      printf("       - F : Slater integrals\n");
+      printf("     - \"Coulomb\" or \"U\"\n");
+      printf("       - Lindex Up : array of length 2lA+1 of integers defining the position of mlA=-lA to mlA=lA with spin up\n");
+      printf("       - Lindex Dn : array of length 2lA+1 of integers defining the position of mlA=-lA to mlA=lA with spin down\n");
+      printf("       - Lindex Up : array of length 2lB+1 of integers defining the position of mlB=-lB to mlB=lB with spin up\n");
+      printf("       - Lindex Dn : array of length 2lB+1 of integers defining the position of mlB=-lB to mlB=lB with spin down\n");
+      printf("       - F : Slater integrals\n");
+      printf("       - G : Slater integrals\n");
+      printf("     - \"Sx\"\n");
+      printf("       - Lindex Up : array of length 2l+1 of integers defining the position of ml=-l to ml=l with spin up\n");
+      printf("       - Lindex Dn : array of length 2l+1 of integers defining the position of ml=-l to ml=l with spin down\n");
+      printf("     - \"Sy\"\n");
+      printf("       - Lindex Up : array of length 2l+1 of integers defining the position of ml=-l to ml=l with spin up\n");
+      printf("       - Lindex Dn : array of length 2l+1 of integers defining the position of ml=-l to ml=l with spin down\n");
+      printf("     - \"Sz\"\n");
+      printf("       - Lindex Up : array of length 2l+1 of integers defining the position of ml=-l to ml=l with spin up\n");
+      printf("       - Lindex Dn : array of length 2l+1 of integers defining the position of ml=-l to ml=l with spin down\n");
+      printf("     - \"Splus\"\n");
+      printf("       - Lindex Up : array of length 2l+1 of integers defining the position of ml=-l to ml=l with spin up\n");
+      printf("       - Lindex Dn : array of length 2l+1 of integers defining the position of ml=-l to ml=l with spin down\n");
+      printf("     - \"Smin\"\n");
+      printf("       - Lindex Up : array of length 2l+1 of integers defining the position of ml=-l to ml=l with spin up\n");
+      printf("       - Lindex Dn : array of length 2l+1 of integers defining the position of ml=-l to ml=l with spin down\n");
+      printf("     - \"Ssqr\"\n");
+      printf("       - Lindex Up : array of length 2l+1 of integers defining the position of ml=-l to ml=l with spin up\n");
+      printf("       - Lindex Dn : array of length 2l+1 of integers defining the position of ml=-l to ml=l with spin down\n");
+      printf("     - \"Lx\"\n");
+      printf("       - Lindex Up : array of length 2l+1 of integers defining the position of ml=-l to ml=l with spin up\n");
+      printf("       - Lindex Dn : array of length 2l+1 of integers defining the position of ml=-l to ml=l with spin down\n");
+      printf("     - \"Ly\"\n");
+      printf("       - Lindex Up : array of length 2l+1 of integers defining the position of ml=-l to ml=l with spin up\n");
+      printf("       - Lindex Dn : array of length 2l+1 of integers defining the position of ml=-l to ml=l with spin down\n");
+      printf("     - \"Lz\"\n");
+      printf("       - Lindex Up : array of length 2l+1 of integers defining the position of ml=-l to ml=l with spin up\n");
+      printf("       - Lindex Dn : array of length 2l+1 of integers defining the position of ml=-l to ml=l with spin down\n");
+      printf("     - \"Lplus\"\n");
+      printf("       - Lindex Up : array of length 2l+1 of integers defining the position of ml=-l to ml=l with spin up\n");
+      printf("       - Lindex Dn : array of length 2l+1 of integers defining the position of ml=-l to ml=l with spin down\n");
+      printf("     - \"Lmin\"\n");
+      printf("       - Lindex Up : array of length 2l+1 of integers defining the position of ml=-l to ml=l with spin up\n");
+      printf("       - Lindex Dn : array of length 2l+1 of integers defining the position of ml=-l to ml=l with spin down\n");
+      printf("     - \"Lsqr\"\n");
+      printf("       - Lindex Up : array of length 2l+1 of integers defining the position of ml=-l to ml=l with spin up\n");
+      printf("       - Lindex Dn : array of length 2l+1 of integers defining the position of ml=-l to ml=l with spin down\n");
+      printf("     - \"Jx\"\n");
+      printf("       - Lindex Up : array of length 2l+1 of integers defining the position of ml=-l to ml=l with spin up\n");
+      printf("       - Lindex Dn : array of length 2l+1 of integers defining the position of ml=-l to ml=l with spin down\n");
+      printf("     - \"Jy\"\n");
+      printf("       - Lindex Up : array of length 2l+1 of integers defining the position of ml=-l to ml=l with spin up\n");
+      printf("       - Lindex Dn : array of length 2l+1 of integers defining the position of ml=-l to ml=l with spin down\n");
+      printf("     - \"Jz\"\n");
+      printf("       - Lindex Up : array of length 2l+1 of integers defining the position of ml=-l to ml=l with spin up\n");
+      printf("       - Lindex Dn : array of length 2l+1 of integers defining the position of ml=-l to ml=l with spin down\n");
+      printf("     - \"Jplus\"\n");
+      printf("       - Lindex Up : array of length 2l+1 of integers defining the position of ml=-l to ml=l with spin up\n");
+      printf("       - Lindex Dn : array of length 2l+1 of integers defining the position of ml=-l to ml=l with spin down\n");
+      printf("     - \"Jmin\"\n");
+      printf("       - Lindex Up : array of length 2l+1 of integers defining the position of ml=-l to ml=l with spin up\n");
+      printf("       - Lindex Dn : array of length 2l+1 of integers defining the position of ml=-l to ml=l with spin down\n");
+      printf("     - \"Jsqr\"\n");
+      printf("       - Lindex Up : array of length 2l+1 of integers defining the position of ml=-l to ml=l with spin up\n");
+      printf("       - Lindex Dn : array of length 2l+1 of integers defining the position of ml=-l to ml=l with spin down\n");
+      printf("     - \"ldots\"\n");
+      printf("       - Lindex Up : array of length 2l+1 of integers defining the position of ml=-l to ml=l with spin up\n");
+      printf("       - Lindex Dn : array of length 2l+1 of integers defining the position of ml=-l to ml=l with spin down\n");
+      printf("     - \"CF\"\n");
+      printf("       - Lindex : array of length 2l+1 of integers defining the position of ml=-l to ml=l\n");
+      printf("       - {{k1,k2,Ak1m1}, {k2,m2,Ak2m2}, ...} : crystal field expanded on spherical harmonics\n");
+      printf("     - \"CF\"\n");
+      printf("       - Lindex Up: array of length 2l+1 of integers defining the position of ml=-l to ml=l with spin up\n");
+      printf("       - Lindex Dn: array of length 2l+1 of integers defining the position of ml=-l to ml=l with spin down\n");
+      printf("       - {{k1,k2,Ak1m1}, {k2,m2,Ak2m2}, ...} : crystal field expanded on spherical harmonics\n");
+      printf("     - \"CF\"\n");
+      printf("       - Lindex Up A: array of length 2lA+1 of integers defining the position of mlA=-lA to mlA=lA with spin up\n");
+      printf("       - Lindex Dn A: array of length 2lA+1 of integers defining the position of mlA=-lA to mlA=lA with spin down\n");
+      printf("       - Lindex Up B: array of length 2lB+1 of integers defining the position of mlB=-lB to mlB=lB with spin up\n");
+      printf("       - Lindex Dn B: array of length 2lB+1 of integers defining the position of mlB=-lB to mlB=lB with spin down\n");
+      printf("       - {{k1,k2,Ak1m1}, {k2,m2,Ak2m2}, ...} : crystal field expanded on spherical harmonics\n");
+      printf("     - \"Create\" or \"Cr\"\n");
+      printf("       - NFermion\n");
+      printf("       - index (if index smaller than NFermion creates a Fermion, otherwise a boson\n");
+      printf("     - \"Annihilate\" or \"An\"\n");
+      printf("       - NFermion\n");
+      printf("       - index (if index smaller than NFermion annihilates a Fermion, otherwise a boson\n");
+      printf("     - \"Number\" or \"CrAn\"\n");
+      printf("       - NFermion\n");
+      printf("       - index (if index smaller than NFermion creates a Fermion, otherwise a boson\n");
+      printf("       - index (if index smaller than NFermion annihilates a Fermion, otherwise a boson\n");
+      printf("       - \n");
+      printf("\n");
+      printf("  - example for a d state:\n");
+      printf("  - NFermion=10;\n");
+      printf("  - IndexUp={0,1,2,3,4};\n");
+      printf("  - IndexDn={5,6,7,8,9};\n");
+      printf("  - F0=20; F2=10; F4=6.25;\n");
+      printf("  - F={F0,F2,F4}");
+      printf("  - OppSz = ssp.NewOperator(\"Sz\", IndexUp, IndexDn);\n");
+      printf("  - OppU  = ssp.NewOperator(\"U\", IndexUp, IndexDn, F);\n");
       printf("\n");
       printf("\n");
       printf("\n");
@@ -94,7 +222,17 @@ static int LuaHelp(lua_State *L)
       printf("ssp.NewWavefunction()\n");
       printf("  - creates a new wavefunction\n");
       printf("  - expects as input the number of fermions, number of bosons, a table of determinants with the prefactor\n");
+      printf("  - an optional 4-th input number is NBitsKey\n");
+      printf("    - number of elements in the Hash lookup table. (2^NBitsKey)\n");
+      printf("    - This number should be larger than the number of Determinants in the basis for optimal preformance\n");
+      printf("    - Standard value is 16 (65 536) which works good for small calculations upto basis sets of 25 000\n");
+      printf("    - If more determinants are needed it is recommanded to enlarge\n");
+      printf("    - 20 (  1 048 576) for basis sets upto    500 000\n");
+      printf("    - 24 ( 16 777 216) for basis sets upto 10 000 000\n");
+      printf("    - for even larger basis sets argitecture depenent tests are advised.\n");
+      printf("    - note that results are independent of this value, only calculation time and memory requirement changes.\n");
       printf("\n");
+      printf("  - example: A ssp.NewWavefunction(10,0,{{\"1010101010\",1}});\n");
       printf("\n");
       printf("\n");
     }
@@ -103,7 +241,11 @@ static int LuaHelp(lua_State *L)
       printf("ssp.Copy() or ssp.Clone()\n");
       printf("  - creats a copy of a wavefunction or operator\n");
       printf("  - expects as input an object, returns a copy of that object\n");
+      printf("  - note that \"=\" often does not what you want.\n");
+      printf("  - A=B for operators and wave-functions copies a pointer to the object.\n");
+      printf("  - A change in A thus automatically changes B\n");
       printf("\n");
+      printf("  - example: A=ssp.Copy(B);\n");
       printf("\n");
       printf("\n");
     }
@@ -113,6 +255,7 @@ static int LuaHelp(lua_State *L)
       printf("  - creats a copy of a wavefunction or operator and conjugates this copy\n");
       printf("  - expects as input an object, returns a copy of that object\n");
       printf("\n");
+      printf("  - example: A=ssp.Conjugate(B);\n");
       printf("\n");
       printf("\n");
     }
@@ -122,6 +265,7 @@ static int LuaHelp(lua_State *L)
       printf("  - creats a copy of a wavefunction or operator and conjugates transposes this copy\n");
       printf("  - expects as input an object, returns a copy of that object\n");
       printf("\n");
+      printf("  - example: A=ssp.ConjugateTranspose(B);\n");
       printf("\n");
       printf("\n");
     }
@@ -131,6 +275,13 @@ static int LuaHelp(lua_State *L)
       printf("  - creats a copy of a wavefunction or operator and transposes this copy\n");
       printf("  - expects as input an object, returns a copy of that object\n");
       printf("\n");
+      printf("  - example: A=ssp.Transpose(B);\n");
+      printf("\n");
+      printf("\n");
+    }
+    if (strcmp(Help, "ssp.Rotate") == 0)
+    {
+      printf("ssp.Rotate()\n");
       printf("\n");
       printf("\n");
     }
@@ -139,6 +290,56 @@ static int LuaHelp(lua_State *L)
       printf("ssp.EvolveToGroundstate()\n");
       printf("  - calculates eigenfunctions of the Hamiltonian, starting from the specified state\n");
       printf("  - expects as input an operator and a (list of) wavefunction(s), a list of options on the last position is allowed\n");
+      printf("  - The function is intended to return the eigenstate of the Hamiltonian that has the largest overlap with the starting functions\n");
+      printf("  - the returned function will for sure be of the same irreducible representation, but it favoirs low lying states with smaller overlaps to high lying states\n");
+      printf("\n");
+      printf("  - options are:\n");
+      printf("    - \"zero\"\n");
+      printf("      - Determins how far and good the states are converged. Standard setting 100*DBL_EPSILON, should not be smaller than DBL_EPSILON\n");
+      printf("    - \"epsilon\"\n");
+      printf("      - Determins the smallest prefactor of a determinant that is kept in the wave-function. Standard setting 10000*DBL_EPSILON\n");
+      printf("    - \"restrictions\"\n");
+      printf("      - restricts the basis by excluding certain occupations\n");
+      printf("      - Example for a ligand field calculation one can require to have no more than 1 hole in the Ligand shell (between 9 and 10 electrons)\n");
+      printf("      - {\"restrictions\",{20,0,{{\"0000000000 1111111111\",9,10}}}}\n");
+      printf("\n");
+      printf("  - example: ssp.EvolveToGroundstate(H,{psi1,psi2},{{\"epsilon\",0.000001},{\"restrictions\",{10,0,{{\"11111 00000\",5,5}}}});\n");
+      printf("\n");
+      printf("\n");
+    }
+    if (strcmp(Help, "ssp.Eigensystem") == 0)
+    {
+      printf("ssp.Eigensystem()\n");
+      printf("  - calculates the lowest eigen functions of a given Hamiltonian. The number of states to calculate is given as an input\n");
+      printf("  - expects as input an operator and either\n");
+      printf("    - a (list of) wavefunction(s) that specify a starting point. (filling)\n");
+      printf("    - note that the final state found might be of different symmetry than the starting point\n");
+      printf("    - note also that the lowest state might not be found if the starting point excludes certain symmetries\n");
+      printf("    - look at ssp.EvolveToGroundstate if one wants to track a specific state\n");
+      printf("  - or\n");
+      printf("    - a set of restrictions defining the starting point (number of electrons, filled core shells)\n");
+      printf("    - the number of lowest eigen states to calculate");
+      printf("  - aditional options can be given\n");
+      printf("\n");
+      printf("  - options are:\n");
+      printf("    - \"zero\"\n");
+      printf("      - Determins how far and good the states are converged. Standard setting 100*DBL_EPSILON, should not be smaller than DBL_EPSILON\n");
+      printf("    - \"epsilon\"\n");
+      printf("      - Determins the smallest prefactor of a determinant that is kept in the wave-function. Standard setting 10000*DBL_EPSILON\n");
+      printf("    - \"restrictions\"\n");
+      printf("      - restricts the basis by excluding certain occupations\n");
+      printf("      - Example for a ligand field calculation one can require to have no more than 1 hole in the Ligand shell (between 9 and 10 electrons)\n");
+      printf("      - {\"restrictions\",{20,0,{{\"0000000000 1111111111\",9,10}}}}\n");
+      printf("    - \"NBitsKey\"\n");
+      printf("      + only when a set of restricitons and Npsi is given as an input, otherwise NBitsKey is taken from the wave function\n");
+      printf("      - number of elements in the Hash lookup table. (2^NBitsKey)\n");
+      printf("      - This number should be larger than the number of Determinants in the basis for optimal preformance\n");
+      printf("      - Standard value is 16 (65 536) which works good for small calculations upto basis sets of 25 000\n");
+      printf("      - If more determinants are needed it is recommanded to enlarge\n");
+      printf("      - 20 (  1 048 576) for basis sets upto    500 000\n");
+      printf("      - 24 ( 16 777 216) for basis sets upto 10 000 000\n");
+      printf("      - for even larger basis sets argitecture depenent tests are advised.\n");
+      printf("      - note that results are independent of this value, only calculation time and memory requirement changes.\n");
       printf("\n");
       printf("\n");
       printf("\n");
@@ -149,13 +350,49 @@ static int LuaHelp(lua_State *L)
       printf("  - calculates spectra of a giving Hamiltonian, starting from the specified state and using a specific transition operator\n");
       printf("  - expects as input an operator a (list of) transition operator(s) and a (list of) wavefunction(s), a list of options on the last position is allowed\n");
       printf("\n");
+      printf("  - options are:\n");
+      printf("    - \"epsilon\"\n");
+      printf("      - Determins the smallest prefactor of a determinant that is kept in the wave-function. Standard setting 10000*DBL_EPSILON\n");
+      printf("    - \"restrictions\"\n");
+      printf("      - restricts the basis by excluding certain occupations\n");
+      printf("      - Example for a ligand field calculation one can require to have no more than 1 hole in the Ligand shell (between 9 and 10 electrons)\n");
+      printf("      - {\"restrictions\",{20,0,{{\"0000000000 1111111111\",9,10}}}}\n");
+      printf("    - \"NE\"\n");
+      printf("      - number of energy points in the spectrum\n");
+      printf("    - \"Emin\"\n");
+      printf("      - smallest energy in the spectrum\n");
+      printf("    - \"Emax\"\n");
+      printf("      - largest energy in the spectrum\n");
+      printf("    - \"Gamma\"\n");
+      printf("      - Lorenzian broadening of the spectra (full with half maximum FWHM)\n");
       printf("\n");
       printf("\n");
     }
-    
-    
-    
-    
+    if (strcmp(Help, "ssp.CreateFluorescenceYield") == 0)
+    {
+      printf("ssp.CreateFluorescenceYield()\n");
+      printf("  - calculates fluorescence yield spectra of a giving Hamiltonian, starting from the specified state and using a specific transition operator\n");
+      printf("  - < i | T1^+ G^+ T2 T2^+ G T1 | i >\n");
+      printf("  - expects as input an operator a (list of) transition operator(s) T1 a (list of) transition operator(s) T2^+ and a (list of) wavefunction(s), a list of options on the last position is allowed\n");
+      printf("\n");
+      printf("  - options are:\n");
+      printf("    - \"epsilon\"\n");
+      printf("      - Determins the smallest prefactor of a determinant that is kept in the wave-function. Standard setting 10000*DBL_EPSILON\n");
+      printf("    - \"restrictions\"\n");
+      printf("      - restricts the basis by excluding certain occupations\n");
+      printf("      - Example for a ligand field calculation one can require to have no more than 1 hole in the Ligand shell (between 9 and 10 electrons)\n");
+      printf("      - {\"restrictions\",{20,0,{{\"0000000000 1111111111\",9,10}}}}\n");
+      printf("    - \"NE\"\n");
+      printf("      - number of energy points in the spectrum\n");
+      printf("    - \"Emin\"\n");
+      printf("      - smallest energy in the spectrum\n");
+      printf("    - \"Emax\"\n");
+      printf("      - largest energy in the spectrum\n");
+      printf("    - \"Gamma\"\n");
+      printf("      - Lorenzian broadening of the spectra (full with half maximum FWHM)\n");
+      printf("\n");
+      printf("\n");
+    }
     if (strcmp(Help, "operator") == 0)
     {
       printf("operator\n");
@@ -901,23 +1138,25 @@ static int LuaCreateSpectra(lua_State *L)
       }
     }
   }
-  /* if Emin=DBL_MAX or Emax=DBL_MAX or Gamma==0 determine these */
-  Eminpole=Options.Emin;
-  Emaxpole=Options.Emax;
-  if((Options.Emin==DBL_MAX)||(Options.Emax==-DBL_MAX))
+  /* determine Eminpole and Emaxpole */
+  /* get eigenvalues of all Tri diagonal matrices and set smallest and largest eigenvalue */
+  Eminpole=DBL_MAX;
+  Emaxpole=-DBL_MAX;
+  val=malloc((Options.NTri)*sizeof(double));
+  for(i=0;i<Options.NT*Options.Npsi;i++)
   {
-    /* get eigenvalues of all Tri diagonal matrices and set smallest and largest eigenvalue */
-    /* range is 20% larger */
-    val=malloc((Options.NTri)*sizeof(double));
-    for(i=0;i<Options.NT*Options.Npsi;i++)
-    {
-      TriDiagonalMatrixToEigenvalues(GTri[i], val);
-      if((val[0]-psiEn[i])<Eminpole)Eminpole=val[0]-psiEn[i];
-      if((val[Options.NTri-1]-psiEn[i])>Emaxpole)Emaxpole=val[Options.NTri-1]-psiEn[i];
-    }
-    if(Options.Emin== DBL_MAX) Options.Emin = Eminpole - 0.25 * (Emaxpole-Eminpole);
-    if(Options.Emax==-DBL_MAX) Options.Emax = Emaxpole + 0.25 * (Emaxpole-Eminpole);
+    TriDiagonalMatrixToEigenvalues(GTri[i], val);
+    if((val[0]-psiEn[i])<Eminpole)Eminpole=val[0]-psiEn[i];
+    if((val[Options.NTri-1]-psiEn[i])>Emaxpole)Emaxpole=val[Options.NTri-1]-psiEn[i];
   }
+  
+  
+  /* if Emin=DBL_MAX or Emax=-DBL_MAX or Gamma==0 determine these */
+
+  
+  if(Options.Emin== DBL_MAX) Options.Emin = Eminpole - 0.125 * (Emaxpole-Eminpole);
+  if(Options.Emax==-DBL_MAX) Options.Emax = Emaxpole + 0.125 * (Emaxpole-Eminpole);
+  
   if(Options.Gamma==0) Options.Gamma = 10*(Options.Emax-Options.Emin)/((double)Options.NE);
   /* transform tridiagonal form to spectral form */
   Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
@@ -928,8 +1167,8 @@ static int LuaCreateSpectra(lua_State *L)
   Spec->Spec[0].Emin=Options.Emin;
   Spec->Spec[0].Emax=Options.Emax;
   Spec->Spec[0].dE=(Options.Emax-Options.Emin)/((double)Options.NE);
-  Spec->Spec[0].EminPole=Options.Emin;
-  Spec->Spec[0].EmaxPole=Options.Emax;
+  Spec->Spec[0].EminPole=Eminpole;
+  Spec->Spec[0].EmaxPole=Emaxpole;
   Spec->Spec[0].Gamma=Options.Gamma;
   for(i=0;i<Spec->NSpectra;i++)
   {
@@ -944,6 +1183,147 @@ static int LuaCreateSpectra(lua_State *L)
   free(psiEn);
   return 1;
 }
+
+
+
+
+
+static int LuaCreateFluorescenceYield(lua_State *L)
+{
+  void *buff;
+  struct
+  {
+    uint32_t NTri;
+    double epsilon;
+    Bool restrictions;
+    DeterminantRestrictionType DeterminantRestrictions;
+    double Emin;
+    double Emax;
+    uint32_t NE;
+    double Gamma;
+    uint32_t Npsi;
+    uint32_t NT1;
+    uint32_t NT2;
+  } Options;
+  Options.NTri=200;
+  Options.epsilon=10000*DBL_EPSILON;
+  Options.restrictions=False;
+  Options.Emin=DBL_MAX;
+  Options.Emax=-DBL_MAX;
+  Options.NE=1000;
+  Options.Gamma=0;
+  SpectraTypeArray *Spec;
+  OperatorType *H,*T1, *T2;
+  WaveFunctionType *psi;
+  uint32_t iT,ipsi,len;
+  double *psiEn;
+  
+  /* check number of input parameters */
+  len = (uint32_t)lua_gettop(L);
+  if(!((len==4)||(len==5)))
+  {
+    return luaL_error(L, "Error CreateFluorescenceYield called with %d arguments, 4 or 5 expected\n",len);
+  }
+  
+  /* read operator and wavefunctions */
+  H = (OperatorType *) luaL_checkudata(L, 1, "ssp.operator");
+  if(lua_type(L,2)==LUA_TTABLE)
+  {
+    T1=luaL_checkarray_OperatorType(L, 2, &Options.NT1);
+  }
+  else
+  {
+    Options.NT1 = 1;
+    T1 = (OperatorType *) luaL_checkudata(L, 2, "ssp.operator");
+  }
+  if(lua_type(L,3)==LUA_TTABLE)
+  {
+    T2=luaL_checkarray_OperatorType(L, 3, &Options.NT2);
+  }
+  else
+  {
+    Options.NT2 = 1;
+    T2 = (OperatorType *) luaL_checkudata(L, 3, "ssp.operator");
+  }
+  if(lua_type(L,4)==LUA_TTABLE)
+  {
+    psi=luaL_checkarray_WaveFunctionType(L, 4, &Options.Npsi);
+  }
+  else
+  {
+    Options.Npsi = 1;
+    psi = (WaveFunctionType *) luaL_checkudata(L, 4, "ssp.wavefunction");
+  }
+  /* read options */
+  buff=LuaFindOptionsInTable(L, -1, "epsilon", "double");
+  if(buff!=NULL)
+  {
+    Options.epsilon = *(double*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, -1, "restrictions", "DeterminantRestrictionType");
+  if(buff!=NULL)
+  {
+    Options.restrictions=True;
+    Options.DeterminantRestrictions = *(DeterminantRestrictionType*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, -1, "Emin", "double");
+  if(buff!=NULL)
+  {
+    Options.Emin = *(double*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, -1, "Emax", "double");
+  if(buff!=NULL)
+  {
+    Options.Emax = *(double*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, -1, "NE", "int");
+  if(buff!=NULL)
+  {
+    Options.NE = *(uint32_t*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, -1, "Gamma", "double");
+  if(buff!=NULL)
+  {
+    Options.Gamma = *(double*)buff;
+    free(buff);
+  }
+  /* allocate spectra and and pointer to return matrix on lua stack */
+  Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+  luaL_setmetatable(L, "ssp.spectra");
+  Spec->NSpectra=Options.NT1*Options.NT2*Options.Npsi;
+  Spec->Spec=malloc(Spec->NSpectra*sizeof(SpectraType));
+  /* calculate groundstate energy */
+  psiEn=malloc(Options.Npsi*sizeof(double));
+  for(ipsi=0;ipsi<Options.Npsi;ipsi++)
+  {
+    PsiHermitianOperatorPsi(*H, psi[ipsi], &psiEn[ipsi]);
+  }
+  /* loop over all Transition operators */
+  for(iT=0;iT<Options.NT1;iT++)
+  {
+    /* loop over all wavefunctions */
+    for(ipsi=0;ipsi<Options.Npsi;ipsi++)
+    {
+      if(Options.restrictions)
+      {
+        FluorescenceYieldRestricted(*H, Options.DeterminantRestrictions, T1[iT], T2, Options.NT2, psi[ipsi], psiEn[ipsi], Options.epsilon, Options.NTri, &(Spec->Spec[Options.NT2*(Options.NT1*Options.Npsi+ipsi)]));
+      }
+      else
+      {
+        FluorescenceYield(*H, T1[iT], T2, Options.NT2, psi[ipsi], psiEn[ipsi], Options.epsilon, Options.NTri, &(Spec->Spec[Options.NT2*(Options.NT1*Options.Npsi+ipsi)]));
+      }
+    }
+  }
+  free(psiEn);
+  return 1;
+}
+
+
 
 
 /* given one operator and a (table of) wavefunctions calculate the ground-state (and excited states) starting from those wavefunctions.
@@ -1003,9 +1383,7 @@ static int LuaEvolveToGroundstate(lua_State * L)
     Options.DeterminantRestrictions = *(DeterminantRestrictionType*)buff;
     free(buff);
   }
-  
   /* calculate groundstate */
-  
   for (i = 0; i < Options.Npsi; i++)
   {
     printf("\nstart of state #%d/%d",i+1,Options.Npsi);
@@ -1018,8 +1396,6 @@ static int LuaEvolveToGroundstate(lua_State * L)
       LanczosGroundState(*Opp, &(psi[i]), &Options.epsilon, Options.zero, 0, psi, i);
     }
   }
-  
-  
   /* copy changed wavefunctions back to lua stack */
   if(lua_type(L,2)==LUA_TTABLE)
   {
@@ -1030,10 +1406,148 @@ static int LuaEvolveToGroundstate(lua_State * L)
       *temp = psi[i];
       lua_pop(L, 1);
     }
-
   }
   return 0;
 }
+
+/*  calculate the Npsi lowest eigen-states of operator Opp, using the Block routines
+ *
+ */
+static int LuaEigensystem(lua_State * L)
+{
+  void *buff;
+  struct
+  {
+    double zero;
+    double epsilon;
+    Bool restrictions;
+    uint32_t NBitsKey;
+    DeterminantRestrictionType DeterminantRestrictions;
+  } Options;
+  Options.zero=100*DBL_EPSILON;
+  Options.epsilon=10000*DBL_EPSILON;
+  Options.restrictions=False;
+  Options.DeterminantRestrictions.N=0;
+  Options.NBitsKey=16;
+  OperatorType *Opp;
+  DeterminantRestrictionType StartRestrictions;
+  StartRestrictions.N=0;
+  WaveFunctionType *psi=NULL,*temp;
+  uint32_t i,len, Npsi=0,QStartRestrictions=0;
+  /* check number of input parameters */
+  len = (uint32_t)lua_gettop(L);
+  if(!((len==2)||(len==3)||(len==4)))
+  {
+    return luaL_error(L, "Error Eigensystem called with %d arguments, 2, 3 or 4 expected\n",len);
+  }
+  /* read operator, (StartRestrictions or StartPsi) and Number of eigen-states */
+  Opp = (OperatorType *) luaL_checkudata(L, 1, "ssp.operator");
+  if(lua_type(L,2)==LUA_TTABLE)
+  {
+    lua_rawgeti(L, 2, 1);
+    if(lua_type(L,-1)==LUA_TNUMBER) QStartRestrictions=1;
+    lua_pop(L, 1);
+    if(QStartRestrictions)
+    {
+      buff=luaL_checkarray_DeterminantRestrictionType(L, 2);
+      StartRestrictions = *(DeterminantRestrictionType*)buff;
+      free(buff);
+    }
+    else
+    {
+      psi=luaL_checkarray_WaveFunctionType(L, 2, &Npsi);
+      if(WaveFunctionArrayToSameBasis(psi, Npsi))
+      {
+        printf("WaveFunctionArrayToSameBasis failed in LuaEigensystem\n");
+        return 1;
+      }
+    }
+  }
+  else
+  {
+    Npsi = 1;
+    psi = (WaveFunctionType *) luaL_checkudata(L, 2, "ssp.wavefunction");
+  }
+  if((len==2)&&(QStartRestrictions))
+  {
+    return luaL_error(L, "Error Eigensystem called with 2 arguments, whereby the first is the operator and the second a set of restrictions\n Need a thrid argument how many eigenstates should be calculated\n");
+  }
+  if(QStartRestrictions)
+  {
+    Npsi=(uint32_t)luaL_checkunsigned(L, 3);
+    // allocate psi
+    if(Npsi==1)
+    {
+      psi = (WaveFunctionType*) lua_newuserdata(L, sizeof(WaveFunctionType));
+      luaL_setmetatable(L, "ssp.wavefunction");
+    }
+    else
+    {
+      psi=malloc(Npsi*sizeof(WaveFunctionType));
+    }
+  }
+  /* read options */
+  buff=LuaFindOptionsInTable(L, -1, "NBitsKey", "int");
+  if(buff!=NULL)
+  {
+    Options.NBitsKey = *(uint32_t*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, -1, "epsilon", "double");
+  if(buff!=NULL)
+  {
+    Options.epsilon = *(double*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, -1, "zero", "double");
+  if(buff!=NULL)
+  {
+    Options.zero = *(double*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, -1, "restrictions", "DeterminantRestrictionType");
+  if(buff!=NULL)
+  {
+    Options.restrictions=True;
+    Options.DeterminantRestrictions = *(DeterminantRestrictionType*)buff;
+    free(buff);
+  }
+  /* calculate groundstate */
+  BlockGroundState(*Opp, Npsi, Options.zero, &Options.epsilon , StartRestrictions, Options.DeterminantRestrictions, psi, Options.NBitsKey);
+  /* seperate basis */
+  WaveFunctionArraySeperateBasis(psi, Npsi);
+  /* copy changed wavefunctions back to lua stack */
+  if(QStartRestrictions) // need to return a list of wavefunctions
+  {
+    if(Npsi==1)
+    {
+      // return a single wave function
+      // already done when allocating
+    }
+    else
+    {
+      LuaPushTable_WaveFunctionType(L,psi,Npsi);
+      free(psi);
+    }
+    return 1;
+  }
+  else
+  { // the list of functions is copied into an array, now need to set the pointers in the structure back to what they should be
+    // this is not needed for a single value as there the pointer psi just points to the original
+    if(lua_type(L,2)==LUA_TTABLE)
+    {
+      for(i=0;i<Npsi;i++)
+      {
+        lua_rawgeti(L, 2, i+1);
+        temp = (WaveFunctionType *)luaL_checkudata(L, -1, "ssp.wavefunction");
+        *temp = psi[i];
+        lua_pop(L, 1);
+      }
+    }
+    return 0;
+  }
+}
+
 
 
 static const struct luaL_Reg ssp_functions[] = {
@@ -1051,7 +1565,9 @@ static const struct luaL_Reg ssp_functions[] = {
   {"T", Luatranspose},
   {"Rotate", Luarotate},
   {"EvolveToGroundstate", LuaEvolveToGroundstate},
+  {"Eigensystem", LuaEigensystem},
   {"CreateSpectra", LuaCreateSpectra},
+  {"CreateFluorescenceYield", LuaCreateFluorescenceYield},
   {"BraKet", LuaBraKet},           /* function in file BraKet.c */
   {"Eval", LuaEval},               /* function in file eval.c */
   {NULL, NULL}

@@ -38,7 +38,7 @@ static int LuaComplexIndex(lua_State * L)
       lua_pushnumber(L, a->Im);
       return 1;
   }
-  return luaL_error(L, "Error vec2 variable not found");;
+  return luaL_error(L, "Error Complex variable not found");;
 }
 
 
@@ -61,7 +61,7 @@ static int LuaComplexNewIndex(lua_State * L)
       a->Im = v;
       return 0;
   }
-  return luaL_error(L, "Error variable not found in Complex Object");;
+  return luaL_error(L, "Error index %s not found in Complex Object\n",str);
 }
 
 
@@ -185,6 +185,45 @@ static int LuaComplexExp(lua_State * L)
 }
 
 
+
+static int LuaComplexRe(lua_State * L)
+{
+  if(lua_isnumber(L, 1))
+  {
+    double a = luaL_checknumber(L, 1);
+    lua_pushnumber(L, a);
+  }
+  else if (luaL_testudata(L, 1, "Lua.complex") != NULL)
+  {
+    Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Lua.complex");
+    lua_pushnumber(L, a->Re);
+  }
+  else
+  {
+    return luaL_error(L, "Can only take complex part of (complex) numbers");
+  }
+  return 1;
+}
+
+static int LuaComplexIm(lua_State * L)
+{
+  if(lua_isnumber(L, 1))
+  {
+    lua_pushnumber(L, 0);
+  }
+  else if (luaL_testudata(L, 1, "Lua.complex") != NULL)
+  {
+    Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Lua.complex");
+    lua_pushnumber(L, a->Im);
+  }
+  else
+  {
+    return luaL_error(L, "Can only take complex part of (complex) numbers");
+  }
+  return 1;
+}
+
+
 static int LuaComplexToString(lua_State * L)
 {
   Complex16 *v = (Complex16 *) luaL_checkudata(L, 1, "Lua.complex");
@@ -208,6 +247,10 @@ static const struct luaL_Reg Complex_func[] = {
   {"new", LuaComplexNew},
   {"I", LuaComplexI},
   {"exp", LuaComplexExp},
+  {"Re", LuaComplexRe},
+  {"re", LuaComplexRe},
+  {"Im", LuaComplexIm},
+  {"im", LuaComplexIm},
   {NULL, NULL}
 };
 

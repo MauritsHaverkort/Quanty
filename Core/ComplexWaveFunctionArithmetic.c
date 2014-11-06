@@ -711,8 +711,7 @@ void ComplexWaveFunctionAddMultipliedConserveBasis(WaveFunctionType * const a, c
   }
 }
 
-void ComplexWaveFunctionAddComplexMultipliedConserveBasis(WaveFunctionType * const a, const WaveFunctionType b,
-                                                          const double alphaRe, const double alphaIm)
+void ComplexWaveFunctionAddComplexMultipliedConserveBasis(WaveFunctionType * const a, const WaveFunctionType b, const double alphaRe, const double alphaIm)
 {
   uint32_t i;
   int    iOMP;
