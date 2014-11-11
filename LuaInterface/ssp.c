@@ -1685,9 +1685,36 @@ static int LuaEigensystem(lua_State * L)
 
 
 
+static int LuaTimeEnd(lua_State * L)
+{
+  char *string;
+  string=(char*)luaL_checkstring(L, -1);
+  EndTiming(string, &GlobalTime);
+  return 0;
+}
+
+
+static int LuaTimeStart(lua_State * L)
+{
+  char *string;
+  string=(char*)luaL_checkstring(L, -1);
+  BeginTiming(string, &GlobalTime);
+  return 0;
+}
+
+
+static int LuaTimePrint(lua_State * L)
+{
+  PrintTiming(GlobalTime);
+  return 0;
+}
+
 static const struct luaL_Reg ssp_functions[] = {
   {"Help", LuaHelp},
   {"Verbosity",LuaVerbosity},
+  {"TimeStart",LuaTimeStart},
+  {"TimeEnd",LuaTimeEnd},
+  {"TimePrint",LuaTimePrint},
   {"NewOperator", LuaNewOperator},
   {"PotentialExpandedOnYlm", LuaPotentialExpandedOnYlm},
   {"NewWavefunction", LuaNewWaveFunction},
