@@ -33,17 +33,6 @@
 
 
 TimeType GlobalTime;
-uint32_t GlobalTimeOn=0;
-/*      1111 1111 1111 1111 - 0xFFFF - print all timings
- *      0000 0000 0000 0001 - 0x0001 - main specific
- *      0000 0000 0000 0010 - 0x0002 - main specific
- *      0000 0000 0000 0100 - 0x0004 - main specific
- *      0000 0000 0000 1000 - 0x0008 - main specific
- *      0000 0000 0001 0000 - 0x0010 - 
- *      0000 0000 0010 0000 - 0x0020 -
- *      0000 0000 0100 0000 - 0x0040 -
- *      0000 0000 1000 0000 - 0x0080 -
- */
 
 uint32_t InitializeTiming(TimeType * T)
 {

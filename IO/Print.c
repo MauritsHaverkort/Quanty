@@ -2,6 +2,16 @@
 #include "FilePrint.c"
 #include "PrintMathematicaExpression.c"
 
+
+void VerbosityPrintf(const uint32_t verbosity, char *fmt, ...)
+{
+  va_list args;
+  va_start ( args, fmt );
+  if(verbosity&GlobalVerbosity) vprintf(fmt,args);
+  va_end(args);
+}
+
+
 /*  Functions come in three variants
 *   StreamPrint***
 *   FilePrint***

@@ -1,10 +1,10 @@
 /*
  *  Define some constants that determine the behaviour of the convergence
  */
-#define DenseBoarder 50
-#define NKrylovStart  15
-#define NKrylovMax   100
-#define NKrylovStep    5
+#define DenseBoarder 500
+#define NKrylovStart 100
+#define NKrylovMax   200
+#define NKrylovStep   10
 
 /*  given an Determinant and a set of Restrictions
  *  If I leave iFermion empty in the Determinant and I will be allowed to make changes to all fermions at higher index positions will I
@@ -112,10 +112,10 @@ uint32_t QCanNotOccupy(uint32_t const iFermion, uint32_t const NFermion, uint8_t
  */
 uint32_t CreateStartingFunctions(const OperatorType H, uint32_t const Npsi, DeterminantRestrictionType const StartingPoint, WaveFunctionType * psi, uint32_t const NBitsKey)
 {
-  double Norm;
+  double Norm, occiFermion, avvOcc, totOcc, dice;
   WaveFunctionType psi0;
   uint8_t *Determinant;
-  uint32_t i,j,iFermion,MustOccupy,CannotOccupy;
+  uint32_t i,j,iFermion,MustOccupy,CannotOccupy, idet;
   // if nothing has to be done return
   if(Npsi==0) return 0;
   // allocate psi0
@@ -131,8 +131,10 @@ uint32_t CreateStartingFunctions(const OperatorType H, uint32_t const Npsi, Dete
   // create some determinants fullfilling the StartingPoint conditions
   // "some" is equal to 10+3*Npsi
   Determinant = calloc(psi0.NWord, sizeof(uint8_t));
-  for(i=0;i<10+3*Npsi;i++)
+  avvOcc = 0.5;
+  for(i=0;i<200+3*Npsi;i++)
   {
+    totOcc=0;
     for(iFermion=0;iFermion<H.NFermion;iFermion++)
     {
       MustOccupy=QMustOccupy(iFermion, H.NFermion, Determinant, StartingPoint);
@@ -146,6 +148,7 @@ uint32_t CreateStartingFunctions(const OperatorType H, uint32_t const Npsi, Dete
       if(MustOccupy)
       {
         OperatorCr(Determinant, (uint16_t)iFermion, psi0.NFermion);
+        totOcc++;
       }
       else if(CannotOccupy)
       {
@@ -153,7 +156,28 @@ uint32_t CreateStartingFunctions(const OperatorType H, uint32_t const Npsi, Dete
       }
       else
       {
-        if(rand()&1) OperatorCr(Determinant, (uint16_t)iFermion, psi0.NFermion);
+        // if current spinorbital should be filled or not is random
+        // in order to make sure all states get equal changes the change if an orbital gets filled depends on the
+        // occupation of that orbital in psi0
+        // calculate occupation of orbital iFermion in psi0
+        occiFermion = 0;
+        for (idet = 1; idet <= psi0.N; idet++)
+        {
+          if (psi0.Determinant[BlokElementDet(idet, psi0.NWord, (iFermion >> 3))] & (128 >> (iFermion & 7)))
+          {
+            occiFermion += Abs(psi0.ValueRe[BlokElement(idet)]);
+          }
+        }
+        // create random value between 0 and 1
+        dice=rand()/(double)RAND_MAX;
+        // if occupation < average occupation times number of electrons in the system, add an electron, otherwise not
+        // add randomness in this by multiplying with (2*dice)^2
+        // due to restrictions the avverage occupation might be off we thus run the avverage occupation from 0 to 200%
+        if(occiFermion < Sqr(2 * dice) * avvOcc * Sqr(i+1)/200.)
+        {
+          OperatorCr(Determinant, (uint16_t)iFermion, psi0.NFermion);
+          totOcc++;
+        }
       }
     }
     WaveFunctionAddElement(&psi0, Determinant, 1, 0);
@@ -161,7 +185,17 @@ uint32_t CreateStartingFunctions(const OperatorType H, uint32_t const Npsi, Dete
     {
       Determinant[j]=0;
     }
+    avvOcc*=i;
+    avvOcc+=(totOcc/(double)H.NFermion);
+    avvOcc/=(i+1.0);
   }
+#ifdef PrintDebugInfo
+  VerbosityPrintf(0x20000,"Random state psi0 created in CreateStartingFunctions\n");
+  if(GlobalVerbosity&0x20000)
+  {
+    PrintWaveFunctionReadable(psi0);
+  }
+#endif
   // randomize psi0
   WaveFunctionRandomize(&(psi0));
   // add states by making psi = O psi0
@@ -756,7 +790,7 @@ uint32_t BlockWaveFunctionOrthonormalizeSameBasis(WaveFunctionType *const v, uin
  */
 uint32_t BlockLanczosGroundStateConserveBasisKrylovReal(const OperatorType H, WaveFunctionType * const v, uint32_t const Npsi, const double zero)
 {
-  printf("In BlockLanczosGroundStateConserveBasisKrylovReal\n");
+  VerbosityPrintf(0x0100,"In BlockLanczosGroundStateConserveBasisKrylovReal\n");
   //CompactMatrixType tempS; // needed for testing of norm during convergence loops
   int    info;
   const char *jobz = "V";
@@ -806,7 +840,6 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylovReal(const OperatorType H, Wa
   while(!QConverged)
   {
     irestart++;
-    printf("  We're in restart loop %i with a Krylov basis of %i and a full basis of %i\n",irestart,NKrylovNow,v[0].N);
     // initialize variables
     NpsiDeflated=Npsi;
     NorthoExtra=0;
@@ -814,12 +847,13 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylovReal(const OperatorType H, Wa
     // loop over NKrylovNow states
     for(i=0;i<NKrylovNow;i++)
     {
+      if(i==Npsi+1)VerbosityPrintf(0x0002,"  Restart loop %i with a Krylov basis of %i and a full basis of %i\n",irestart,NKrylovNow,v[0].N);
       // normalize v[i] and set <v[i] | H | v[i-NpsiDeflated]>
       Norm=RealWaveFunctionCalculateNorm(v[i]);
       //printf("i=%i Norm is %22.15E\n",i,Norm);
       while(Sqr(Norm)<(DBL_EPSILON+Abs(zero))*((i<NpsiDeflated)?1:(Sqr(DBL_EPSILON)+Sqr(HKrylov.VRe[0])+Sqr(HKrylov.VRe[i-NpsiDeflated+(i-NpsiDeflated)*HKrylov.Nj]))))
       {
-        printf("      Deflating from %i to %i at level %i\n",NpsiDeflated,NpsiDeflated-1,i);
+        VerbosityPrintf(0x0100,"      Deflating from %i to %i at level %i\n",NpsiDeflated,NpsiDeflated-1,i);
         // Need to deflate
         if(i>=NpsiDeflated)
         {
@@ -897,10 +931,10 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylovReal(const OperatorType H, Wa
       printf("dsyevd failed with info %i in BlockLanczosGroundStateConserveBasisKrylovReal\n",info);
       printf("Hopefully the next restart is better\n\n\n");
     }
-    printf("  The eigen-values of the current lowest %i states are:\n",Npsi);
+    VerbosityPrintf(0x0100,"  The eigen-values of the current lowest %i states are:\n",Npsi);
     for(i=0;i<Npsi;i++)
     {
-      printf("    Eigenvalue %3i = %22.15E\n",i,val[i]);
+      VerbosityPrintf(0x0100,"    Eigenvalue %3i = %22.15E\n",i,val[i]);
     }
     fflush(stdout);
     //Calculate new v[0] to v[Npsi-1]
@@ -938,7 +972,7 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylovReal(const OperatorType H, Wa
       NKrylovNow+=NKrylovStep;
     OutOfMemNoKrylovIncrease:;
     }
-    printf("\n");
+    VerbosityPrintf(0x0100,"\n");
   }
   if(GlobalTimeOn&0x40) EndTiming("Restarted Block Lanczos Conserve Basis", &GlobalTime);
   free(val);
@@ -951,9 +985,10 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylovReal(const OperatorType H, Wa
   }
   return 0;
 }
+
 uint32_t BlockLanczosGroundStateConserveBasisKrylovComplex(const OperatorType H, WaveFunctionType * const v, uint32_t const Npsi, const double zero)
 {
-  printf("In BlockLanczosGroundStateConserveBasisKrylovComplex\n");
+  VerbosityPrintf(0x0100,"In BlockLanczosGroundStateConserveBasisKrylovComplex\n");
   //CompactMatrixType tempS; // needed for testing of norm during convergence loops
   int    info;
   const char *jobz = "V";
@@ -1014,7 +1049,6 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylovComplex(const OperatorType H,
   while(!QConverged)
   {
     irestart++;
-    printf("  We're in restart loop %i with a Krylov basis of %i and a full basis of %i\n",irestart,NKrylovNow,v[0].N);
     // initialize variables
     NpsiDeflated=Npsi;
     NorthoExtra=0;
@@ -1022,12 +1056,13 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylovComplex(const OperatorType H,
     // loop over NKrylovNow states
     for(i=0;i<NKrylovNow;i++)
     {
+      if(i==Npsi+1)VerbosityPrintf(0x0002,"  Restart loop %i with a Krylov basis of %i and a full basis of %i\n",irestart,NKrylovNow,v[0].N);
       // normalize v[i] and set <v[i] | H | v[i-NpsiDeflated]>
       Norm=ComplexWaveFunctionCalculateNorm(v[i]);
       //printf("i=%i Norm is %22.15E\n",i,Norm);
       while(Sqr(Norm)<(DBL_EPSILON+Abs(zero))*((i<NpsiDeflated)?1:(Sqr(DBL_EPSILON)+Sqr(HKrylov.V[0].Re)+Sqr(HKrylov.V[i-NpsiDeflated+(i-NpsiDeflated)*HKrylov.Nj].Re))))
       {
-        printf("      Deflating from %i to %i at level %i\n",NpsiDeflated,NpsiDeflated-1,i);
+        VerbosityPrintf(0x0100,"      Deflating from %i to %i at level %i\n",NpsiDeflated,NpsiDeflated-1,i);
         // Need to deflate
         if(i>=NpsiDeflated)
         {
@@ -1121,10 +1156,10 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylovComplex(const OperatorType H,
       printf("zheevd failed with info %i in BlockLanczosGroundStateConserveBasisKrylovComplex\n",info);
       printf("Hopefully the next restart is better\n\n\n");
     }
-    printf("  The eigen-values of the current lowest %i states are:\n",Npsi);
+    VerbosityPrintf(0x0100,"  The eigen-values of the current lowest %i states are:\n",Npsi);
     for(i=0;i<Npsi;i++)
     {
-      printf("    Eigenvalue %3i = %22.15E\n",i,val[i]);
+      VerbosityPrintf(0x0100,"    Eigenvalue %3i = %22.15E\n",i,val[i]);
     }
     fflush(stdout);
     //Calculate new v[0] to v[Npsi-1]
@@ -1165,7 +1200,7 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylovComplex(const OperatorType H,
       NKrylovNow+=NKrylovStep;
     OutOfMemNoKrylovIncrease:;
     }
-    printf("\n");
+    VerbosityPrintf(0x0100,"\n");
   }
   if(GlobalTimeOn&0x40) EndTiming("Restarted Block Lanczos Conserve Basis Complex", &GlobalTime);
   free(val);
@@ -1316,6 +1351,13 @@ uint32_t BlockGroundState(const OperatorType H, uint32_t const Npsi, const doubl
     }
     BlockGroundState(H, Npsi, zero, epsilon, StartingPoint, StartingPoint, psi, 0);
   }
+#ifdef PrintDebugInfo
+  VerbosityPrintf(0x20000,"\nStarting function 1 to Npsi=%i in BlockGroundState\n\n",Npsi);
+  if(GlobalVerbosity&0x20000)
+  {
+      for(i=0;i<Npsi;i++) PrintWaveFunctionReadable(psi[i]);
+  }
+#endif
   // set energy[0]
   for(i=0;i<Npsi;i++)
   {
@@ -1340,17 +1382,17 @@ uint32_t BlockGroundState(const OperatorType H, uint32_t const Npsi, const doubl
     }
     // calculate Energy and variance of Energy - test for convergence
     Qconverged=1;
-    printf("State # |   Energy               |  Variance of Energy    |  Energy change\n");
+    VerbosityPrintf(0x0100,"State # |   Energy               |  Variance of Energy    |  Energy change\n");
     for(i=0;i<Npsi;i++)
     {
       Energy[1][i]=Energy[0][i];
       EnergySqr[1][i]=EnergySqr[0][i];
       WaveFunctionDotProduct(psi[i], Opsi[i], &Energy[0][i], &temp);
       WaveFunctionDotProductSameBasis(Opsi[i], Opsi[i], &EnergySqr[0][i], &temp);
-      printf("%7i | %22.15E | %22.15E | %22.15E\n",i,Energy[0][i],EnergySqr[0][i]-Sqr(Energy[0][i]),Energy[0][i]-Energy[1][i]);
+      VerbosityPrintf(0x0100,"%7i | %22.15E | %22.15E | %22.15E\n",i,Energy[0][i],EnergySqr[0][i]-Sqr(Energy[0][i]),Energy[0][i]-Energy[1][i]);
       if((EnergySqr[0][i]-Sqr(Energy[0][i])>zero)&&((Energy[1][i]-Energy[0][i])>DBL_EPSILON)) Qconverged=0;
     }
-    printf("\n");
+    VerbosityPrintf(0x0100,"\n");
     if(AtLeastAnOtherLoop)
     {
       Qconverged=0;
@@ -1363,7 +1405,7 @@ uint32_t BlockGroundState(const OperatorType H, uint32_t const Npsi, const doubl
     }
     else
     {
-      printf("Lanczos loop %3i, Number of Determinants: %9i %9i\n",iloop,psi[0].N,Opsi[0].N);
+      VerbosityPrintf(0x0002,"Lanczos loop %3i, Number of Determinants: %9i %9i\n",iloop,psi[0].N,Opsi[0].N);
       // free psi and set psi=Opsi
       BlockWaveFunctionFree(psi,Npsi);
       for(i=0;i<Npsi;i++)

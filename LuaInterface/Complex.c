@@ -126,6 +126,16 @@ static int LuaComplexMul(lua_State * L)
     luaL_setmetatable(L, "ssp.operator");
     return 1;
   }
+  else if(luaL_testudata(L, 2,"ssp.wavefunction")!=NULL)
+  {
+    WaveFunctionType *res = (WaveFunctionType *) lua_newuserdata(L, sizeof(WaveFunctionType));
+    WaveFunctionType *l = (WaveFunctionType *) luaL_checkudata(L, 2, "ssp.wavefunction");
+    Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Lua.complex");
+    WaveFunctionCopy(*l, res);
+    WaveFunctionMultiply(res, a->Re, a->Im);
+    luaL_setmetatable(L, "ssp.wavefunction");
+    return 1;
+  }
   else
   {
     Complex16 *res;

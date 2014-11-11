@@ -438,6 +438,13 @@ static int LuaHelp(lua_State *L)
 }
 
 
+static int LuaVerbosity(lua_State * L)
+{
+  GlobalVerbosity=(uint32_t)luaL_checkunsigned(L, -1);
+  return 0;
+}
+
+
 
 static int LuaNewOperator(lua_State * L)
 {
@@ -1186,31 +1193,47 @@ static int LuaCreateSpectra(lua_State *L)
 
 
 
-
+/*  calculates <psi_i | T_1^+ G_1 T_2 G_2 T_2^+ G_1 T_1 | psi_i >
+ *  On stack:
+ *     H1
+ *     H2
+ *     T1
+ *     T2^+
+ *     psi
+ *     {E1min, E1max, N1, Gamma1}
+ *     {E2min, E2max, N2, Gamma2}
+ *     options
+ *        NTri1
+ *        NTri2
+ *        epsilon
+ *        restrictions1
+ */
 static int LuaCreateRIXS(lua_State *L)
 {
   void *buff;
   struct
   {
-    uint32_t NTri;
+    uint32_t NTri1;
+    uint32_t NTri2;
     double epsilon;
     Bool restrictions;
     DeterminantRestrictionType DeterminantRestrictions;
-    double Emin;
-    double Emax;
-    uint32_t NE;
-    double Gamma;
+    double Emin1;
+    double Emax1;
+    uint32_t NE1;
+    double Gamma1;
+    double Emin2;
+    double Emax2;
+    uint32_t NE2;
+    double Gamma2;
     uint32_t Npsi;
     uint32_t NT1;
     uint32_t NT2;
   } Options;
-  Options.NTri=200;
+  Options.NTri1=200;
+  Options.NTri2=200;
   Options.epsilon=10000*DBL_EPSILON;
   Options.restrictions=False;
-  Options.Emin=DBL_MAX;
-  Options.Emax=-DBL_MAX;
-  Options.NE=1000;
-  Options.Gamma=0;
   SpectraTypeArray *Spec;
   OperatorType *H,*T1, *T2;
   WaveFunctionType *psi;
@@ -1267,30 +1290,6 @@ static int LuaCreateRIXS(lua_State *L)
     Options.DeterminantRestrictions = *(DeterminantRestrictionType*)buff;
     free(buff);
   }
-  buff=LuaFindOptionsInTable(L, -1, "Emin", "double");
-  if(buff!=NULL)
-  {
-    Options.Emin = *(double*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, -1, "Emax", "double");
-  if(buff!=NULL)
-  {
-    Options.Emax = *(double*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, -1, "NE", "int");
-  if(buff!=NULL)
-  {
-    Options.NE = *(uint32_t*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, -1, "Gamma", "double");
-  if(buff!=NULL)
-  {
-    Options.Gamma = *(double*)buff;
-    free(buff);
-  }
   /* allocate spectra and and pointer to return matrix on lua stack */
   Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
   luaL_setmetatable(L, "ssp.spectra");
@@ -1303,25 +1302,7 @@ static int LuaCreateRIXS(lua_State *L)
     PsiHermitianOperatorPsi(*H, psi[ipsi], &psiEn[ipsi]);
   }
   /* loop over all Transition operators */
-  for(iT=0;iT<Options.NT1;iT++)
-  {
-    /* loop over all wavefunctions */
-    for(ipsi=0;ipsi<Options.Npsi;ipsi++)
-    {
-      Spec->Spec[Options.NT2*(iT*Options.Npsi+ipsi)].N=Options.NE;
-      Spec->Spec[Options.NT2*(iT*Options.Npsi+ipsi)].Emin=Options.Emin;
-      Spec->Spec[Options.NT2*(iT*Options.Npsi+ipsi)].Emax=Options.Emax;
-      Spec->Spec[Options.NT2*(iT*Options.Npsi+ipsi)].Gamma=Options.Gamma;
-      if(Options.restrictions)
-      {
-        FluorescenceYieldRestricted(*H, Options.DeterminantRestrictions, T1[iT], T2, Options.NT2, psi[ipsi], psiEn[ipsi], Options.epsilon, Options.NTri, &(Spec->Spec[Options.NT2*(iT*Options.Npsi+ipsi)]));
-      }
-      else
-      {
-        FluorescenceYield(*H, T1[iT], T2, Options.NT2, psi[ipsi], psiEn[ipsi], Options.epsilon, Options.NTri, &(Spec->Spec[Options.NT2*(iT*Options.Npsi+ipsi)]));
-      }
-    }
-  }
+
   free(psiEn);
   return 1;
 }
@@ -1578,8 +1559,8 @@ static int LuaEigensystem(lua_State * L)
     uint32_t NBitsKey;
     DeterminantRestrictionType DeterminantRestrictions;
   } Options;
-  Options.zero=100*DBL_EPSILON;
-  Options.epsilon=10000*DBL_EPSILON;
+  Options.zero=100*sqrt(DBL_EPSILON);
+  Options.epsilon=sqrt(DBL_EPSILON);
   Options.restrictions=False;
   Options.DeterminantRestrictions.N=0;
   Options.NBitsKey=16;
@@ -1706,6 +1687,7 @@ static int LuaEigensystem(lua_State * L)
 
 static const struct luaL_Reg ssp_functions[] = {
   {"Help", LuaHelp},
+  {"Verbosity",LuaVerbosity},
   {"NewOperator", LuaNewOperator},
   {"PotentialExpandedOnYlm", LuaPotentialExpandedOnYlm},
   {"NewWavefunction", LuaNewWaveFunction},

@@ -63,7 +63,18 @@ static void *currentudata = NULL;
 
 int main(int argc, char *argv[])
 {
+  // PrintDebugInfo prints additional information to the standard output
+  // information printed depends on settings of GlobalVerbosity
+  // undef in release version
+  #define PrintDebugInfo
+  // #undef PrintDebugInfo
+  #ifdef PrintDebugInfo
+    printf("\n\nCompiled with Debug info on\n\n\n");
+  #endif
+
   TimeStampAll();
+  
+  GlobalVerbosity=0xFFFFFFFF;
   
   int result;
   if (argc != 2)
