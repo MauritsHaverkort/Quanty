@@ -1,3 +1,7 @@
+// These functions have been merged into the main core
+// changes to RobertTest have been made accordingly - easy to undo
+
+
 uint32_t TriDiagonalMatrixBProduct(TriDiagonalMatrixType *SpecTri, uint32_t blow, uint32_t bhigh, double *bProduct)
 {
   int i;

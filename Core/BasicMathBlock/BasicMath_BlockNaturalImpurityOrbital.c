@@ -1,0 +1,160 @@
+
+
+/*
+ *     ( A[0][0]=Ai    | A[0][0]=Bib   | A[0][1]=Biv   | 0             | 0           | A[0][4]=Bic   | 0             | 0           )
+ *     ( A[0][0]=Bib^+ | A[0][0]=Ab    | A[0][1]=Bbv   | 0             | 0           | A[0][4]=Bbc   | 0             | 0           )
+ *     ( A[1][0]=Biv^+ | A[1][0]=Bbv^+ | A[1][1]=av2   | A[1][2]=bv2   | 0           | 0             | 0             | 0           )
+ *   A=( 0             | 0             | A[2][1]=bv2^+ | A[2][2]=av3   | A[2][3]=bv3 | 0             | 0             | 0           )
+ *     ( 0             | 0             | 0             | A[3][2]=bv3^+ | A[3][3]=av4 | 0             | 0             | 0           )
+ *     ( A[4][0]=Bic^+ | A[4][0]=Bbc^+ | 0             | 0             | 0           | A[4][4]=ac2   | A[4][5]=bc2   | 0           )
+ *     ( 0             | 0             | 0             | 0             | 0           | A[5][4]=bc2^+ | A[5][5]=ac3   | A[5][6]=bc3 )
+ *     ( 0             | 0             | 0             | 0             | 0           | 0             | A[6][5]=bc3^+ | A[6][6]=ac4 )
+ *
+ *  A = T Ap T^+
+ *
+ *     ( A[0][0]=av1   | 0             | A[0][1]=bv1   | 0             | 0           | 0             | 0             | 0           )
+ *     ( 0             | A[0][0]=ac1   | 0             | 0             | 0           | A[0][4]=bc1   | 0             | 0           )
+ *     ( A[1][0]=bv1^+ | 0             | A[1][1]=av2   | A[1][2]=bv2   | 0           | 0             | 0             | 0           )
+ *  Ap=( 0             | 0             | A[2][1]=bv2^+ | A[2][2]=av3   | A[2][3]=bv3 | 0             | 0             | 0           )
+ *     ( 0             | 0             | 0             | A[3][2]=bv3^+ | A[3][3]=av4 | 0             | 0             | 0           )
+ *     ( 0             | A[4][0]=bc1^+ | 0             | 0             | 0           | A[4][4]=ac2   | A[4][5]=bc2   | 0           )
+ *     ( 0             | 0             | 0             | 0             | 0           | A[5][4]=bc2^+ | A[5][5]=ac3   | A[5][6]=bc3 )
+ *     ( 0             | 0             | 0             | 0             | 0           | 0             | A[6][5]=bc3^+ | A[6][6]=ac4 )
+ *
+ *
+ *     ( A[0][0]=bv0   | A[0][0]=bc0   | 0             | 0             | 0           | 0             | 0             | 0           )
+ *     ( A[0][0]=bc0^+ | A[0][0]=-bv0  | 0             | 0             | 0           | 0             | 0             | 0           )
+ *     ( 0             | 0             | 1             | 0             | 0           | 0             | 0             | 0           )
+ *   T=( 0             | 0             | 0             | 1             | 0           | 0             | 0             | 0           )
+ *     ( 0             | 0             | 0             | 0             | 1           | 0             | 0             | 0           )
+ *     ( 0             | 0             | 0             | 0             | 0           | 1             | 0             | 0           )
+ *     ( 0             | 0             | 0             | 0             | 0           | 0             | 1             | 0           )
+ *     ( 0             | 0             | 0             | 0             | 0           | 0             | 0             | 1           )
+ *
+ *   (A B)(i,j) = \sum_k A(k,j) B(i,k)
+ *
+ *   y[j] = \sum_i A(i,j) x[i]
+ *
+ *   element (i,j) is found at position [i*Nj + j]
+ *
+ *   Note that the block A[2;;4][2;;4] and the block A[5;;7][5;;7] are normal tri-diagonal matrices
+ *   The states av1 and ac1 in Ap are linear combinations of the impurity site and a special linear combination of the other sites
+ *   such that the impurity has an occupation n, the other site an occupation 1-n, av1 an occupation 1 and ac1 an occupaiton of 0.
+ */
+
+
+uint32_t BlockNaturalImpurityOrbitalMatrixChop(BlockNaturalImpurityOrbitalMatrixType *const A, double const Epsilon)
+{
+  uint32_t i, KeepComplex=0;
+  if(A->QComplex)
+  {
+    for(i=0;i<A->BlockSize*A->BlockSize*(A->val.N+1);i++)
+    {
+      if(Abs(A->val.a[i].Re)<Epsilon)A->val.a[i].Re=0;
+      if(Abs(A->val.a[i].Im)<Epsilon)
+      {
+        A->val.a[i].Im=0;
+      }
+      else
+      {
+        KeepComplex=1;
+      }
+    }
+    for(i=0;i<A->BlockSize*A->BlockSize*(A->val.N);i++)
+    {
+      if(Abs(A->val.b[i].Re)<Epsilon)A->val.b[i].Re=0;
+      if(Abs(A->val.b[i].Im)<Epsilon)
+      {
+        A->val.b[i].Im=0;
+      }
+      else
+      {
+        KeepComplex=1;
+      }
+    }
+    for(i=0;i<A->BlockSize*A->BlockSize*(A->con.N+1);i++)
+    {
+      if(Abs(A->con.a[i].Re)<Epsilon)A->con.a[i].Re=0;
+      if(Abs(A->con.a[i].Im)<Epsilon)
+      {
+        A->con.a[i].Im=0;
+      }
+      else
+      {
+        KeepComplex=1;
+      }
+    }
+    for(i=0;i<A->BlockSize*A->BlockSize*(A->con.N);i++)
+    {
+      if(Abs(A->con.b[i].Re)<Epsilon)A->con.b[i].Re=0;
+      if(Abs(A->con.b[i].Im)<Epsilon)
+      {
+        A->con.b[i].Im=0;
+      }
+      else
+      {
+        KeepComplex=1;
+      }
+    }
+    for(i=0;i<A->BlockSize*A->BlockSize;i++)
+    {
+      if(Abs(A->a0.V[i].Re)<Epsilon)A->a0.V[i].Re=0;
+      if(Abs(A->a0.V[i].Im)<Epsilon)
+      {
+        A->a0.V[i].Im=0;
+      }
+      else
+      {
+        KeepComplex=1;
+      }
+    }
+    for(i=0;i<4*A->BlockSize*A->BlockSize;i++)
+    {
+      if(Abs(A->TMT.V[i].Re)<Epsilon)A->TMT.V[i].Re=0;
+      if(Abs(A->TMT.V[i].Im)<Epsilon)
+      {
+        A->TMT.V[i].Im=0;
+      }
+      else
+      {
+        KeepComplex=1;
+      }
+    }
+    if(!KeepComplex)
+    {
+      ComplexBlockTridiagonalMatrixToReal(&A->val);
+      ComplexBlockTridiagonalMatrixToReal(&A->con);
+      MakeCompactComplexMatrixReal(&A->a0);
+      MakeCompactComplexMatrixReal(&A->TMT);
+      A->QComplex=0;
+    }
+  }
+  else
+  {
+    for(i=0;i<A->BlockSize*A->BlockSize*(A->val.N+1);i++)
+    {
+      if(Abs(A->val.aRe[i])<Epsilon)A->val.aRe[i]=0;
+    }
+    for(i=0;i<A->BlockSize*A->BlockSize*(A->val.N);i++)
+    {
+      if(Abs(A->val.bRe[i])<Epsilon)A->val.bRe[i]=0;
+    }
+    for(i=0;i<A->BlockSize*A->BlockSize*(A->con.N+1);i++)
+    {
+      if(Abs(A->con.aRe[i])<Epsilon)A->con.aRe[i]=0;
+    }
+    for(i=0;i<A->BlockSize*A->BlockSize*(A->con.N);i++)
+    {
+      if(Abs(A->con.bRe[i])<Epsilon)A->con.bRe[i]=0;
+    }
+    for(i=0;i<A->BlockSize*A->BlockSize;i++)
+    {
+      if(Abs(A->a0.VRe[i])<Epsilon)A->a0.VRe[i]=0;
+    }
+    for(i=0;i<4*A->BlockSize*A->BlockSize;i++)
+    {
+      if(Abs(A->TMT.VRe[i])<Epsilon)A->TMT.VRe[i]=0;
+    }
+  }
+  return 0;
+}

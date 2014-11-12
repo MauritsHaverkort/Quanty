@@ -194,7 +194,7 @@ DeterminantRestrictionType* luaL_checkarray_DeterminantRestrictionType(lua_State
   luaL_checktype(L, narg, LUA_TTABLE);
   len = (uint32_t)lua_objlen(L, narg);
   
-  if(len<3) luaL_error(L, "Restrictions should be given in the format {NFermion,NBoson,{\"determinant1\",minocc,maxocc},{\"determinant2\",minocc,maxocc},...}");
+  if(len<3) luaL_error(L, "Restrictions should be given in the format {NFermion,NBoson,{{\"determinant1\",minocc,maxocc},{\"determinant2\",minocc,maxocc},...}}");
   buff->N=len-2;
   buff->Min=malloc(buff->N*sizeof(uint32_t));
   buff->Max=malloc(buff->N*sizeof(uint32_t));
@@ -336,6 +336,21 @@ void LuaPushTable_HarmonicsExpansion(lua_State *L, HarmonicsExpansion *Akm)
   }
 }
 
+void LuaPushTable_WaveFunctionType(lua_State* L, WaveFunctionType const * const psi, uint32_t const Npsi )
+{
+  uint32_t i;
+  WaveFunctionType *buff;
+  lua_createtable(L, Npsi, 0);
+  for(i=0;i<Npsi;i++)
+  {
+    buff = (WaveFunctionType*) lua_newuserdata(L, sizeof(WaveFunctionType));
+    luaL_setmetatable(L, "ssp.wavefunction");
+    *buff = psi[i];
+    lua_rawseti(L, -2, i+1);
+  }
+}
+
+
 void shallowtablecopy(lua_State* L, int index)
 {
   lua_newtable(L);
@@ -416,10 +431,11 @@ void * LuaFindOptionsInTable(lua_State * L, int narg, char* token, char* type)
             if (strcmp(tokenread, token) == 0)
             {
               lua_rawgeti(L, -2, 2);
-              return LuaReturnVariableType(L, -1, type);
+              buff = LuaReturnVariableType(L, -1, type);
+              lua_pop(L,1);
             }
-            lua_pop(L,1);
           }
+          lua_pop(L,1);
         }
       }
       lua_pop(L,1);

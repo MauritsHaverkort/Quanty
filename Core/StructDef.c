@@ -355,17 +355,11 @@ typedef struct BlockTriDiagonalMatrixType
   uint32_t N;                  /* number of diagonal blocks */
   uint32_t BlockSize;          /* dimension of square matrices */
   uint32_t QComplex;           /* matrices are complex or real */
-  union                        /* List of (N+1) * BlockSize*BlockSize values */
-  {
-    double *aRe;
-    Complex16 *a;
-  };
-  union                        /* List of (N) * BlockSize*BlockSize values */
-  {
-    double *bRe;
-    Complex16 *b;
-  };
-  double mu;                    /* chemical potential if transformed to Green's function */
+  double *aRe;                 /* List of (N+1) * BlockSize*BlockSize values */
+  Complex16 *a;
+  double *bRe;                 /* List of (N) * BlockSize*BlockSize values */
+  Complex16 *b;
+  double mu;                   /* chemical potential if transformed to Green's function */
 }
 BlockTriDiagonalMatrixType;
 

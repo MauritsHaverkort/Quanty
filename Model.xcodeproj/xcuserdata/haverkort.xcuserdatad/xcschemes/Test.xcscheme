@@ -141,6 +141,14 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "LancDy3"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "NiO"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "BlockLanczos"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -154,17 +162,17 @@
       </CommandLineArguments>
       <AdditionalOptions>
          <AdditionalOption
+            key = "MallocStackLogging"
+            value = ""
+            isEnabled = "YES">
+         </AdditionalOption>
+         <AdditionalOption
             key = "DYLD_INSERT_LIBRARIES"
             value = "/usr/lib/libgmalloc.dylib"
             isEnabled = "YES">
          </AdditionalOption>
          <AdditionalOption
             key = "AUTO_LOG_ALL"
-            value = ""
-            isEnabled = "YES">
-         </AdditionalOption>
-         <AdditionalOption
-            key = "MallocStackLogging"
             value = ""
             isEnabled = "YES">
          </AdditionalOption>

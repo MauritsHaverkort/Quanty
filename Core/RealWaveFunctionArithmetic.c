@@ -827,8 +827,7 @@ void RealWaveFunctionTruncateBasis(WaveFunctionType * const a, const double epsi
     {
       a->Next[iBlok][iElement] = 0;
       if ((a->ValueRe[iBlok][iElement] > epsilon) || (-a->ValueRe[iBlok][iElement] > epsilon))
-        if (RealWaveFunctionAddElement(a, &a->Determinant[iBlok][iElement * a->NWord], a->ValueRe[iBlok][iElement]) !=
-            0)
+        if (RealWaveFunctionAddElement(a, &a->Determinant[iBlok][iElement * a->NWord], a->ValueRe[iBlok][iElement]) != 0)
           AllocFailed();
     }
   }
@@ -840,13 +839,6 @@ void RealWaveFunctionTruncateBasis(WaveFunctionType * const a, const double epsi
       if (RealWaveFunctionAddElement(a, &a->Determinant[iBlok][iElement * a->NWord], a->ValueRe[iBlok][iElement]) != 0)
         AllocFailed();
   }
-//  if(a->N==0)
-//  {
-//    printf("Warning\nTruncation of basis at epsilon=%22.15E wiped out the entire function\n",epsilon);
-//    a->N=Min(1000,startN);
-//    PrintWaveFunctionReadable(*a);
-//    a->N=0;
-//  }
   for (iBlok = 1 + (a->N >> NBitsBlok); iBlok < a->NBlok; iBlok++)
   {
     free(a->ValueRe[iBlok]);
@@ -859,11 +851,24 @@ void RealWaveFunctionTruncateBasis(WaveFunctionType * const a, const double epsi
   a->Determinant = realloc(a->Determinant, a->NBlok * sizeof(uint8_t *));
 }
 
+/*
+ *   Make psi orthogonal to OtherPsi, psi and other psi are on the same basis
+ */
+void RealWaveFunctionOrthogonalizeSameBasis(WaveFunctionType * const psi, const WaveFunctionType * const OtherPsi, const uint32_t Npsi)
+{
+  uint32_t i;
+  double a;
+  for (i = 0; i < Npsi; i++)
+  {
+    a = RealWaveFunctionDotProductSameBasis(*psi, OtherPsi[i]);
+    RealWaveFunctionAddMultipliedSameBasis(*psi, OtherPsi[i], -a);
+  }
+}
+
 /*  
 *   Make psi orthogonal to OtherPsi, but conserve the basis set of psi
 */
-void RealWaveFunctionOrthogonalizeConserveBasis(WaveFunctionType * const psi, const WaveFunctionType * const OtherPsi,
-                                                const uint32_t Npsi)
+void RealWaveFunctionOrthogonalizeConserveBasis(WaveFunctionType * const psi, const WaveFunctionType * const OtherPsi, const uint32_t Npsi)
 {
   uint32_t i;
   double a;
@@ -877,8 +882,7 @@ void RealWaveFunctionOrthogonalizeConserveBasis(WaveFunctionType * const psi, co
 /*  
 *   Make psi orthogonal to OtherPsi, if needed enlarge the basis set of psi
 */
-uint32_t RealWaveFunctionOrthogonalize(WaveFunctionType * const psi, const WaveFunctionType * const OtherPsi,
-                                       const uint32_t Npsi)
+uint32_t RealWaveFunctionOrthogonalize(WaveFunctionType * const psi, const WaveFunctionType * const OtherPsi, const uint32_t Npsi)
 {
   uint32_t i;
   double a;

@@ -208,6 +208,92 @@ uint32_t WaveFunctionInit(WaveFunctionType * Psi)
   return 0;
 }
 
+
+void WavefunctionSetName(WaveFunctionType * const Psi, const char * const name)
+{
+  strncpy(Psi->Name, name, MAXStrLength-1);
+}
+
+/*  For Two functions on the same basis only the values need to be stored seperately
+ *  All other elements point to the same location
+ */
+uint32_t WaveFunctionInitCopyBasis(WaveFunctionType * Psi, WaveFunctionType const PsiOrig)
+{
+  uint32_t i,j;
+  
+  Psi->N = PsiOrig.N;
+  Psi->NBlok = PsiOrig.NBlok;
+  Psi->NFermion = PsiOrig.NFermion;
+  Psi->NBoson = PsiOrig.NBoson;
+  Psi->NWord = PsiOrig.NWord;
+  Psi->Next = PsiOrig.Next;
+  Psi->Determinant = PsiOrig.Determinant;
+  Psi->NBitsKey = PsiOrig.NBitsKey;
+  Psi->KeyList = PsiOrig.KeyList;
+  Psi->QComplex = PsiOrig.QComplex;
+  strcpy(Psi->Name, PsiOrig.Name);
+  
+  Psi->ValueRe = malloc(Psi->NBlok * sizeof(double *));
+  if (Psi->ValueRe == NULL)
+  {                             /* Allocation Failed */
+    printf("alloc failed WaveFunctionInitCopyBasis 01 Re\n");
+    Psi->N = 0;
+    Psi->NBlok = 0;
+    return 1;
+  }
+  for (i = 0; i < Psi->NBlok; i++)
+  {
+    Psi->ValueRe[i] = calloc(BlokSize, sizeof(double));
+    if (Psi->ValueRe[i] == NULL)
+    {                           /* Allocation Failed */
+      printf("alloc failed WaveFunctionInitCopyBasis 02 Re\n");
+      fflush(stdout);
+      for (j = 0; j < i; j++)
+      {
+        free(Psi->ValueRe[j]);
+      }
+      Psi->N = 0;
+      Psi->NBlok = 0;
+      return 1;
+    }
+  }
+  if(Psi->QComplex)
+  {
+    Psi->ValueIm = malloc(Psi->NBlok * sizeof(double *));
+    if (Psi->ValueIm == NULL)
+    {                             /* Allocation Failed */
+      for (j = 0; j < Psi->NBlok; j++)
+      {
+        free(Psi->ValueRe[j]);
+      }
+      free(Psi->ValueRe);
+      printf("alloc failed WaveFunctionInitCopyBasis 01 Im\n");
+      return 1;
+    }
+    for (i = 0; i < Psi->NBlok; i++)
+    {
+      Psi->ValueIm[i] = calloc(BlokSize, sizeof(double));
+      if (Psi->ValueIm[i] == NULL)
+      {                           /* Allocation Failed */
+        printf("alloc failed WaveFunctionInitCopyBasis 02 Im\n");
+        fflush(stdout);
+        for (j = 0; j < Psi->NBlok; j++)
+        {
+          free(Psi->ValueRe[j]);
+        }
+        for (j = 0; j < i; j++)
+        {
+          free(Psi->ValueIm[j]);
+        }
+        Psi->N = 0;
+        Psi->NBlok = 0;
+        return 1;
+      }
+    }
+  }
+  return 0;
+}
+
 /*
  *
  */
@@ -472,8 +558,7 @@ uint32_t WaveFunctionAddMultipliedConserveBasis(WaveFunctionType * const a, cons
   return 0;
 }
 
-uint32_t WaveFunctionAddComplexMultipliedConserveBasis(WaveFunctionType * const a, const WaveFunctionType b,
-                                                       const double alphaRe, const double alphaIm)
+uint32_t WaveFunctionAddComplexMultipliedConserveBasis(WaveFunctionType * const a, const WaveFunctionType b, const double alphaRe, const double alphaIm)
 {
   if ((b.QComplex) && (!a->QComplex))
     if (MakeComplexWaveFunctionFromReal(a, *a))
@@ -705,6 +790,18 @@ void WaveFunctionTruncateBasis(WaveFunctionType * const a, const double epsilon)
   else
   {
     ComplexWaveFunctionTruncateBasis(a, epsilon);
+  }
+}
+
+void WaveFunctionOrthogonalizeSameBasis(WaveFunctionType * const psi, const WaveFunctionType * const OtherPsi, const uint32_t Npsi)
+{
+  if (psi->QComplex == 0)
+  {
+    RealWaveFunctionOrthogonalizeSameBasis(psi, OtherPsi, Npsi);
+  }
+  else
+  {
+    ComplexWaveFunctionOrthogonalizeSameBasis(psi, OtherPsi, Npsi);
   }
 }
 
@@ -1082,4 +1179,52 @@ uint32_t RotateWaveFunction(WaveFunctionType * const A, WaveFunctionType const B
   A->NBitsKey=B.NBitsKey;
   WaveFunctionInit(A);
   return MappedWaveFunctionAdd(A, B, U);
+}
+
+
+/*
+ *
+ */
+uint32_t WaveFunctionArrayToSameBasis(WaveFunctionType * const psi, uint32_t const Npsi)
+{
+  uint32_t i;
+  WaveFunctionType psicopy;
+  // enlarge the basis of psi[0] to include psi[1] to psi[Npsi-1]
+  for(i=0;i<Npsi;i++)
+  {
+    WaveFunctionAddMultipliedUnionBasis(&psi[0], psi[i], 0);
+  }
+  //
+  for(i=1;i<Npsi;i++)
+  {
+    if(WaveFunctionInitCopyBasis(&psicopy, psi[0]))
+    {
+      printf("WaveFunctionInitCopyBasis failed in WaveFunctionArrayToSameBasis at %i from %i",i,Npsi);
+      return 1;
+    }
+    WaveFunctionAddConserveBasis(&psicopy, psi[i]);
+    WaveFunctionFree(&psi[i]);
+    psi[i]=psicopy;
+  }
+  return 0;
+}
+
+/*
+ *
+ */
+uint32_t WaveFunctionArraySeperateBasis(WaveFunctionType * const psi, uint32_t const Npsi)
+{
+  uint32_t i;
+  WaveFunctionType psicopy;
+  for(i=1;i<Npsi;i++)
+  {
+    if(WaveFunctionCopy(psi[i], &psicopy))
+    {
+      printf("WaveFunctionCopy failed in WaveFunctionArraySeperateBasis at length %i of %i\n",i,Npsi);
+      return 1;
+    }
+    WaveFunctionFreeValues(&psi[i]);
+    psi[i]=psicopy;
+  }
+  return 0;
 }

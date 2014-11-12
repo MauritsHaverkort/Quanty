@@ -18,19 +18,19 @@ void TestLanczosDyson3()
   InitializeTiming(&Time);
   BeginTiming("Total", &Time);
   TightBindingDef TB;
-  SpectraType DOS,Gspec[4], GTriSpec[4], Gspec2[4], GTriSpecreduced[1], GnatCompSpec[4], Gdoublespec[16];
-  BlockListOfPoles G,GLP2, Gdouble;
+  SpectraType DOS,Gspec[4], GTriSpec[4], Gspec2[4], GTriSpecreduced[1], GnatCompSpec[4], Gdoublespec[16], GdoubleFullspec[16], Gspecfull[4];
+  BlockListOfPoles G,GLP2, Gdouble, Sigma, GdoubleFull, Gfull;
   BlockTriDiagonalMatrixType Gtri, Gtrireduced;
   BlockNaturalImpurityOrbitalMatrixType Gnat;
-  int Nk[]={200,200,1};
-  int vec[]={0,0,0, 1,0,0};
+  int Nk[]={5000,1,1};
+  int vec[]={0,0,0, 1,1,0};
   uint32_t Nvec=2;
   // create G0
-  FileReadTightBindingDef(&TB, "two_band_TB_real");
+  FileReadTightBindingDef(&TB, "two_band_TB_1D_real");
   PrintTightBindingDef(TB);
   DOS.N=1000;
-  DOS.Emin=-4;
-  DOS.Emax=6;
+  DOS.Emin=-5;
+  DOS.Emax=15;
   DOS.dE=(DOS.Emax-DOS.Emin)/DOS.N;
   SpectrumAllocate(DOS, &DOS);
   BeginTiming("TightBindingDOS", &Time);
@@ -40,12 +40,55 @@ void TestLanczosDyson3()
   FilePrintSpectra(&DOS, 1, "TBDOS1", "w");
   
   
+  BeginTiming("TightBindingHamiltonianToBlockListOfPoles", &Time);
+  TightBindingHamiltonianToBlockListOfPoles(TB, Nk, &G, -3, 5.5, 1000);
+  EndTiming("TightBindingHamiltonianToBlockListOfPoles", &Time);
   
   
+  BeginTiming("BlockListOfPolesToSpectra", &Time);
+  BlockListOfPolesToSpectra(G, Gspec, -4, 6, 500);
+  EndTiming("BlockListOfPolesToSpectra", &Time);
   
-  TightBindingHamiltonianMultiSiteToBlockListOfPoles(TB, Nk, Nvec, vec, &Gdouble, -3, 5.5, 100);
+  FilePrintSpectra(Gspec, TB.NFermion*TB.NFermion, "TBDOS2", "w");
+  
+  Sigma.BlockSize=2;
+  Sigma.QComplex=0;
+  Sigma.N=0;
+  InitBlockListOfPoles(&Sigma);
+  Sigma.a0Re[0+2*0]= -0.3;
+  Sigma.a0Re[1+2*1]=  0.3;
+  
+  
+  TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles(TB, Nk, Sigma, &Gfull, -3, 5.5, 1000);
+  BlockListOfPolesToSpectra(Gfull, Gspecfull, -4, 6, 500);
+  
+  FilePrintSpectra(Gspecfull, TB.NFermion*TB.NFermion, "TBDOS2full", "w");
+  
+  exit(0);
+  
+  TightBindingHamiltonianMultiSiteToBlockListOfPoles(TB, Nk, Nvec, vec, &Gdouble, -5, 15, 500);
   BlockListOfPolesToSpectra(Gdouble, Gdoublespec, -4, 6, 100);
   FilePrintSpectra(Gdoublespec, TB.NFermion*TB.NFermion*Nvec*Nvec, "TBDOSdouble", "w");
+  
+  
+  Sigma.BlockSize=4;
+  Sigma.QComplex=0;
+  Sigma.N=0;
+  InitBlockListOfPoles(&Sigma);
+  Sigma.a0Re[0+4*0]= 0.0;
+  Sigma.a0Re[1+4*1]= -1.0;
+  Sigma.a0Re[2+4*2]= 10.0;
+  Sigma.a0Re[3+4*3]= 2.0;
+  
+  
+  
+  
+  
+  
+  BlockListOfPolesG0plusSigmaToGFixedEGrid(&Gdouble, &Sigma, &GdoubleFull, -5, 15, 500);
+  BlockListOfPolesToSpectra(GdoubleFull, GdoubleFullspec, -5, 15, 500);
+  FilePrintSpectra(GdoubleFullspec, TB.NFermion*TB.NFermion*Nvec*Nvec, "TBDOSdoubleFull", "w");
+  
   
   
   exit(0);
@@ -62,18 +105,10 @@ void TestLanczosDyson3()
   
   
   
-  BeginTiming("TightBindingHamiltonianToBlockListOfPoles", &Time);
-  TightBindingHamiltonianToBlockListOfPoles(TB, Nk, &G, -3, 5.5, 4);
-  EndTiming("TightBindingHamiltonianToBlockListOfPoles", &Time);
   
-  
-  BeginTiming("BlockListOfPolesToSpectra", &Time);
-  BlockListOfPolesToSpectra(G, Gspec, -4, 6, 100);
-  EndTiming("BlockListOfPolesToSpectra", &Time);
   
   PrintBlockListOfPoles(G);
   
-  FilePrintSpectra(Gspec, TB.NFermion*TB.NFermion, "TBDOS2", "w");
   
   
   BeginTiming("BlockListOfPolesToBlockTridiagonalMatrix", &Time);

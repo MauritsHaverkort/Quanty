@@ -267,6 +267,7 @@
 		4C2F88B71928CFA5009AED78 /* CrystalField.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = CrystalField.c; sourceTree = "<group>"; };
 		4C2F88B91928CFC8009AED78 /* LigandField.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = LigandField.c; sourceTree = "<group>"; };
 		4C3261581850DF9300CEECC4 /* OperatorArithmetic.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = OperatorArithmetic.c; sourceTree = "<group>"; };
+		4C363D6F19D464EE00162048 /* NiO.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = NiO.c; sourceTree = "<group>"; };
 		4C3FCCFC188419B6000B9DB8 /* BasicMathBlock.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = BasicMathBlock.c; path = BasicMathBlock/BasicMathBlock.c; sourceTree = "<group>"; };
 		4C3FCCFD188419E4000B9DB8 /* BasicMath_BlockListOfPoles.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = BasicMath_BlockListOfPoles.c; path = BasicMathBlock/BasicMath_BlockListOfPoles.c; sourceTree = "<group>"; };
 		4C3FCCFE18841A19000B9DB8 /* BasicMath_BlockTypeConversion.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = BasicMath_BlockTypeConversion.c; path = BasicMathBlock/BasicMath_BlockTypeConversion.c; sourceTree = "<group>"; };
@@ -297,6 +298,9 @@
 		4CA4BA43192740820057A26C /* HarmonicOscillator.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = HarmonicOscillator.c; sourceTree = "<group>"; };
 		4CA5D6B6188AE32500A7F1DE /* BasicMath_BlockAndersonMatrix.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = BasicMath_BlockAndersonMatrix.c; path = BasicMathBlock/BasicMath_BlockAndersonMatrix.c; sourceTree = "<group>"; };
 		4CA5D6B7188AE35400A7F1DE /* BasicMath_BlockTridiagonalMatrix.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = BasicMath_BlockTridiagonalMatrix.c; path = BasicMathBlock/BasicMath_BlockTridiagonalMatrix.c; sourceTree = "<group>"; };
+		4CB3643519EB8DC0000B721A /* BlockLanczos.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = BlockLanczos.c; sourceTree = "<group>"; };
+		4CC07E7B1A08D9D10053B938 /* ResonantSpectra.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ResonantSpectra.c; sourceTree = "<group>"; };
+		4CD93EC319EA1F9E008DFB54 /* BasicMath_BlockNaturalImpurityOrbital.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = BasicMath_BlockNaturalImpurityOrbital.c; path = BasicMathBlock/BasicMath_BlockNaturalImpurityOrbital.c; sourceTree = "<group>"; };
 		4CDD1C9F1796D14100614F34 /* YiDMFT */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = YiDMFT; sourceTree = BUILT_PRODUCTS_DIR; };
 		4CDD1CAB1799666C00614F34 /* BasicMath_BADoubleTriDiagonalMatrixVector.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = BasicMath_BADoubleTriDiagonalMatrixVector.c; sourceTree = "<group>"; };
 		4CDD1CAC179994DC00614F34 /* TestGFBA.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = TestGFBA.c; sourceTree = "<group>"; };
@@ -549,6 +553,7 @@
 				4C2AAA3E163265DD00138620 /* Error.c */,
 				4C2AAA3F163265DD00138620 /* Hash.c */,
 				4C2AAA40163265DD00138620 /* Lanczos.c */,
+				4CB3643519EB8DC0000B721A /* BlockLanczos.c */,
 				4C2AAA41163265DD00138620 /* MatrixOperator.c */,
 				4C2AAA42163265DD00138620 /* OperatorArithmetic.c */,
 				4C2AAA43163265DD00138620 /* OperatorWaveFunction.c */,
@@ -557,6 +562,7 @@
 				4C2AAA45163265DD00138620 /* RealComplexWaveFunctionArithmetic.c */,
 				4C2AAA46163265DD00138620 /* RealWaveFunctionArithmetic.c */,
 				4C2AAA47163265DD00138620 /* Spectral.c */,
+				4CC07E7B1A08D9D10053B938 /* ResonantSpectra.c */,
 				4C2AAA48163265DD00138620 /* StructDef.c */,
 				4C2AAA49163265DD00138620 /* TimeStamp.c */,
 				4C2AAA4A163265DD00138620 /* WaveFunctionArithmetic.c */,
@@ -660,6 +666,7 @@
 				4C03B03118706F30004C2B7B /* StuttgartNMTO.c */,
 				4C8B605818D924E40017AC8C /* BasisOptimization.c */,
 				4C4637E619C3844500EB0DB0 /* CI.c */,
+				4C363D6F19D464EE00162048 /* NiO.c */,
 			);
 			path = Test;
 			sourceTree = "<group>";
@@ -693,6 +700,7 @@
 				4CA5D6B6188AE32500A7F1DE /* BasicMath_BlockAndersonMatrix.c */,
 				4CA5D6B7188AE35400A7F1DE /* BasicMath_BlockTridiagonalMatrix.c */,
 				4C4637CE19C0407300EB0DB0 /* BasicMath_BlockMatrixToOperator.c */,
+				4CD93EC319EA1F9E008DFB54 /* BasicMath_BlockNaturalImpurityOrbital.c */,
 			);
 			name = BasicMathBlock;
 			sourceTree = "<group>";

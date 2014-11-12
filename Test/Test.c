@@ -41,8 +41,10 @@
 #include "../Core/OperatorWaveFunction.c"
 #include "../Core/OperatorWaveFunctionPerturbation.c"
 #include "../Core/Lanczos.c"
+#include "../Core/BlockLanczos.c"
 #include "../Core/MeanField.c"
 #include "../Core/Spectral.c"
+#include "../Core/ResonantSpectra.c"
 #include "../Core/DensityMatrix.c"
 #include "../Core/Random.c"
 #include "../Core/MatrixOperator.c"
@@ -71,6 +73,7 @@
 #include "../Test/HarmonicOscillator.c"
 #include "../Test/BasisOptimization.c"
 #include "../Test/CI.c"
+#include "../Test/NiO.c"
 
 int main(int argc, const char *argv[])
 {
@@ -93,6 +96,8 @@ int main(int argc, const char *argv[])
       TestOperatorArithmeticNormalOrder();
     if (!strncmp("Cell", argv[argc], strlen(argv[argc])))
       TestCellFunctions();
+    if (!strncmp("BlockLanczos", argv[argc], strlen(argv[argc])))
+      TestBlockLanczos();
 
     
     if (!strncmp("CI", argv[argc], strlen(argv[argc])))
@@ -189,6 +194,9 @@ int main(int argc, const char *argv[])
     
     if (!strncmp("MF", argv[argc], strlen(argv[argc])))
       TestMeanField();
+    
+    if (!strncmp("NiO", argv[argc], strlen(argv[argc])))
+      TestNiO();
   }
   
   

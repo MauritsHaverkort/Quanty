@@ -35,6 +35,7 @@
 #include "../Core/Lanczos.c"
 #include "../Core/MeanField.c"
 #include "../Core/Spectral.c"
+#include "../Core/ResonantSpectra.c" // added by Maurits - replaces your file, content pretty much un altered. (some functions moved to other files)
 #include "../Core/DensityMatrix.c"
 #include "../Core/Random.c"
 #include "../Core/MatrixOperator.c"
@@ -47,7 +48,7 @@
 #include "../DMFT/SingleSiteFunctions.c"
 #include "../IO/StuttgartNMTO.c"
 
-#include "./ResonantSpectra.c"
+// #include "./ResonantSpectra.c" <= integrated in the core
 #include "./Spectra2p3d.c"
 #include "./ImpurityModelFromTB.c"
 #include "../Test/LanczosDyson.c"
@@ -59,9 +60,9 @@ int main(int argc, const char *argv[])
 
   //NiOLigandField();
 //  MnOLigandField();
-  ImpurityModelFromTB(28,8);
-//  LigandField(27,7);
- // ImpurityModel3d(28,8);
+//  ImpurityModelFromTB(28,8);
+    LigandField(28,8);
+//  ImpurityModel3d(28,8);
  // TestLanczosDyson3();
   return 0;
 

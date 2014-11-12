@@ -4,6 +4,7 @@
 /*****************       IO/Print.c       *****************/
 /**********************************************************/
 
+//void     VerbosityPrintf();
 uint32_t PrintSpectra();
 uint32_t PrintWaveFunctionReadable();
 uint32_t PrintWaveFunctionFullReadable();
@@ -27,6 +28,7 @@ uint32_t PrintListOfPolesEssentials();
 uint32_t PrintAndersonMatrixEssentials();
 uint32_t PrintBandstructurePath();
 uint32_t PrintBlockNaturalImpurityOrbitalMatrix();
+uint32_t PrintBlockListOfPoles();
 
 uint32_t FilePrintSpectra();
 uint32_t FilePrintWaveFunctionReadable();
@@ -51,6 +53,7 @@ uint32_t FilePrintListOfPolesEssentials();
 uint32_t FilePrintAndersonMatrixEssentials();
 uint32_t FilePrintBandstructurePath();
 uint32_t FilePrintBlockNaturalImpurityOrbitalMatrix();
+uint32_t FilePrintBlockListOfPoles();
 
 uint32_t StreamPrintSpectra();
 uint32_t StreamPrintWaveFunctionReadable();
@@ -75,6 +78,7 @@ uint32_t StreamPrintListOfPolesEssentials();
 uint32_t StreamPrintAndersonMatrixEssentials();
 uint32_t StreamPrintBandstructurePath();
 uint32_t StreamPrintBlockNaturalImpurityOrbitalMatrix();
+uint32_t StreamPrintBlockListOfPoles();
 
 
 uint32_t PrintSparseMatrixMathematica();

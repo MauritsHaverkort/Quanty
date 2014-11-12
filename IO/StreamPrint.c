@@ -72,6 +72,105 @@ uint32_t StreamPrintSpectra(SpectraType * const Spec, const uint32_t NSpec, FILE
   return 0;
 }
 
+/*  by Robert
+ *
+ */
+uint32_t StreamPrintRIXSSpectra(const uint32_t numwRes, SpectraType (*Spec)[numwRes], double *wRes, const uint32_t NSpec, FILE * stream)
+{
+  uint32_t i, j, p, NE;
+  fprintf(stream, "Energy           ");
+  for(i = 0; i < NSpec; i++)
+  {
+    /*Header for real part*/
+    for(j = 0; j < numwRes; j++)
+    {
+      fprintf(stream, "%f          ", wRes[j]);
+    }
+    /*Header for imag part*/
+    for(j = 0; j < numwRes; j++)
+    {
+      fprintf(stream, "%f          ", wRes[j]);
+    }
+    
+  }
+  fprintf(stream, "\n");
+  
+  NE = Spec[0][0].N;
+  for (i = 1; i < NSpec; i++)
+  {
+    for(j = 0; j < numwRes; j++)
+      NE = Max(NE, Spec[i][j].N);
+  }
+  for (j = 0; j <= NE; j++)
+  {
+    fprintf(stream, "%19.12E", (double)(Spec[0][0].dE * j + Spec[0][0].Emin));
+    for (i = 0; i < NSpec; i++)
+    {
+      
+      for(p = 0; p < numwRes; p++)
+      {
+        if(j <= Spec[i][p].N)
+          fprintf(stream, " %22.15E ", Spec[i][p].Re[j]);
+        else
+          fprintf(stream, " %22.15E ", 0.0);
+      }
+      for(p = 0; p < numwRes; p++)
+      {
+        if(j <= Spec[i][p].N)
+          fprintf(stream, " %22.15E ", Spec[i][p].Im[j]);
+        else
+          fprintf(stream, " %22.15E ", 0.0);
+      }
+      
+    }
+    fprintf(stream, "\n");
+  }
+  return 0;
+}
+
+/*  by Robert
+ *
+ */
+uint32_t StreamPrintRIXSSpectrum(const uint32_t numwRes, SpectraType (*Spec)[numwRes], double *wRes, int printReal, const uint32_t iSpec, FILE * stream)
+{
+  //printReal == 1 : print the real part to the file
+  //printReal == other : print the imaginary part
+  
+  uint32_t j, p, NE;
+  fprintf(stream, "Energy           ");
+  /*Header */
+  for(j = 0; j < numwRes; j++)
+  {
+    fprintf(stream, "%f          ", wRes[j]);
+  }
+  
+  fprintf(stream, "\n");
+  
+  NE = Spec[iSpec][0].N;
+  
+  for (j = 0; j <= NE; j++)
+  {
+    fprintf(stream, "%19.12E", (double)(Spec[iSpec][0].dE * j + Spec[iSpec][0].Emin));
+    if(printReal == 1)
+    {
+      for(p = 0; p < numwRes; p++)
+      {
+        fprintf(stream, " %22.15E ", Spec[iSpec][p].Re[j]);
+      }
+    }
+    else
+    {
+      for(p = 0; p < numwRes; p++)
+      {
+        fprintf(stream, " %22.15E ", -Spec[iSpec][p].Im[j]);
+      }
+    }
+    fprintf(stream, "\n");
+  }
+  return 0;
+}
+
+
 
 /*
 *   Prints the values of the wave function.
@@ -540,6 +639,13 @@ uint32_t StreamPrintCrystalStructureSuperCell(CrystalStructureSuperCellType O, F
 {
   uint32_t i;
   fprintf(stream, "\nprintout of Super Cell\n");
+  CrystalStructureType Otemp;
+  CreateCrystalStructureFromCrystalStructureSuperCell(O, &Otemp);
+  StreamPrintCrystalStructure(Otemp, stream);
+  // need to free Otemp
+  
+  fprintf(stream, "\nSuper cell created from\n");
+  
   StreamPrintCrystalStructure(O.Crystal, stream);
   fprintf(stream, "Number of Unit Cells in super cell: %4i\n", O.NCell);
   fprintf(stream, "Super Cell in Cell units:\n");
