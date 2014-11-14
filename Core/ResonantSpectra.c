@@ -235,7 +235,6 @@ uint32_t FluorescenceYieldRestricted(const OperatorType OppH, DeterminantRestric
   MatrixType EFun;
   double EVal[NKrylov1], EValInvRe[NKrylov1], EValInvIm[NKrylov1],tempDoubleRe,tempDoubleIm,wRes;
   int i,p,k;
-  
   /* Calculate T|i> */
   OperatorPsi(Texc,psi,&Tpsi);
   
@@ -256,12 +255,12 @@ uint32_t FluorescenceYieldRestricted(const OperatorType OppH, DeterminantRestric
    inverses on the diagonal. */
   if(TriDiagonalMatrixToEigensystem(SpecTri1, &EFun, EVal))
   {
-    printf("Problem with TridiagonalMatrixToEigenSystem\n");
+    printf("Problem with TridiagonalMatrixToEigenSystem in FluorescenceYieldRestricted\n");
   }
   /* set spectra values when auto initialization is wanted */
   if(spectra[0].N==0) spectra[0].N=1000;
-  spectra[0].EminPole=EVal[0];
-  spectra[0].EmaxPole=EVal[NKrylov1-1];
+  spectra[0].EminPole=EVal[0]-energy;
+  spectra[0].EmaxPole=EVal[NKrylov1-1]-energy;
   if(spectra[0].Emin== DBL_MAX) spectra[0].Emin = spectra[0].EminPole - 0.125 * (spectra[0].EmaxPole-spectra[0].EminPole);
   if(spectra[0].Emax==-DBL_MAX) spectra[0].Emax = spectra[0].EmaxPole + 0.125 * (spectra[0].EmaxPole-spectra[0].EminPole);
   if(spectra[0].Gamma==0) spectra[0].Gamma=10*(spectra[0].Emax-spectra[0].Emin)/((double)spectra[0].N);

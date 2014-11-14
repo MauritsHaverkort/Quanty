@@ -438,6 +438,13 @@ static int LuaHelp(lua_State *L)
 }
 
 
+static int LuaVerbosity(lua_State * L)
+{
+  GlobalVerbosity=(uint32_t)luaL_checkunsigned(L, -1);
+  return 0;
+}
+
+
 
 static int LuaNewOperator(lua_State * L)
 {
@@ -1186,6 +1193,122 @@ static int LuaCreateSpectra(lua_State *L)
 
 
 
+/*  calculates <psi_i | T_1^+ G_1 T_2 G_2 T_2^+ G_1 T_1 | psi_i >
+ *  On stack:
+ *     H1
+ *     H2
+ *     T1
+ *     T2^+
+ *     psi
+ *     {E1min, E1max, N1, Gamma1}
+ *     {E2min, E2max, N2, Gamma2}
+ *     options
+ *        NTri1
+ *        NTri2
+ *        epsilon
+ *        restrictions1
+ */
+static int LuaCreateRIXS(lua_State *L)
+{
+  void *buff;
+  struct
+  {
+    uint32_t NTri1;
+    uint32_t NTri2;
+    double epsilon;
+    Bool restrictions;
+    DeterminantRestrictionType DeterminantRestrictions;
+    double Emin1;
+    double Emax1;
+    uint32_t NE1;
+    double Gamma1;
+    double Emin2;
+    double Emax2;
+    uint32_t NE2;
+    double Gamma2;
+    uint32_t Npsi;
+    uint32_t NT1;
+    uint32_t NT2;
+  } Options;
+  Options.NTri1=200;
+  Options.NTri2=200;
+  Options.epsilon=10000*DBL_EPSILON;
+  Options.restrictions=False;
+  SpectraTypeArray *Spec;
+  OperatorType *H,*T1, *T2;
+  WaveFunctionType *psi;
+  uint32_t iT,ipsi,len;
+  double *psiEn;
+  
+  /* check number of input parameters */
+  len = (uint32_t)lua_gettop(L);
+  if(!((len==4)||(len==5)))
+  {
+    return luaL_error(L, "Error CreateFluorescenceYield called with %d arguments, 4 or 5 expected\n",len);
+  }
+  
+  /* read operator and wavefunctions */
+  H = (OperatorType *) luaL_checkudata(L, 1, "ssp.operator");
+  if(lua_type(L,2)==LUA_TTABLE)
+  {
+    T1=luaL_checkarray_OperatorType(L, 2, &Options.NT1);
+  }
+  else
+  {
+    Options.NT1 = 1;
+    T1 = (OperatorType *) luaL_checkudata(L, 2, "ssp.operator");
+  }
+  if(lua_type(L,3)==LUA_TTABLE)
+  {
+    T2=luaL_checkarray_OperatorType(L, 3, &Options.NT2);
+  }
+  else
+  {
+    Options.NT2 = 1;
+    T2 = (OperatorType *) luaL_checkudata(L, 3, "ssp.operator");
+  }
+  if(lua_type(L,4)==LUA_TTABLE)
+  {
+    psi=luaL_checkarray_WaveFunctionType(L, 4, &Options.Npsi);
+  }
+  else
+  {
+    Options.Npsi = 1;
+    psi = (WaveFunctionType *) luaL_checkudata(L, 4, "ssp.wavefunction");
+  }
+  /* read options */
+  buff=LuaFindOptionsInTable(L, -1, "epsilon", "double");
+  if(buff!=NULL)
+  {
+    Options.epsilon = *(double*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, -1, "restrictions", "DeterminantRestrictionType");
+  if(buff!=NULL)
+  {
+    Options.restrictions=True;
+    Options.DeterminantRestrictions = *(DeterminantRestrictionType*)buff;
+    free(buff);
+  }
+  /* allocate spectra and and pointer to return matrix on lua stack */
+  Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+  luaL_setmetatable(L, "ssp.spectra");
+  Spec->NSpectra=Options.NT1*Options.NT2*Options.Npsi;
+  Spec->Spec=malloc(Spec->NSpectra*sizeof(SpectraType));
+  /* calculate groundstate energy */
+  psiEn=malloc(Options.Npsi*sizeof(double));
+  for(ipsi=0;ipsi<Options.Npsi;ipsi++)
+  {
+    PsiHermitianOperatorPsi(*H, psi[ipsi], &psiEn[ipsi]);
+  }
+  /* loop over all Transition operators */
+
+  free(psiEn);
+  return 1;
+}
+
+
+
 
 
 static int LuaCreateFluorescenceYield(lua_State *L)
@@ -1309,13 +1432,25 @@ static int LuaCreateFluorescenceYield(lua_State *L)
     /* loop over all wavefunctions */
     for(ipsi=0;ipsi<Options.Npsi;ipsi++)
     {
-      if(Options.restrictions)
+      Spec->Spec[Options.NT2*(iT*Options.Npsi+ipsi)].N=Options.NE;
+      if(ipsi==0)
       {
-        FluorescenceYieldRestricted(*H, Options.DeterminantRestrictions, T1[iT], T2, Options.NT2, psi[ipsi], psiEn[ipsi], Options.epsilon, Options.NTri, &(Spec->Spec[Options.NT2*(Options.NT1*Options.Npsi+ipsi)]));
+        Spec->Spec[Options.NT2*(iT*Options.Npsi+ipsi)].Emin=Options.Emin;
+        Spec->Spec[Options.NT2*(iT*Options.Npsi+ipsi)].Emax=Options.Emax;
       }
       else
       {
-        FluorescenceYield(*H, T1[iT], T2, Options.NT2, psi[ipsi], psiEn[ipsi], Options.epsilon, Options.NTri, &(Spec->Spec[Options.NT2*(Options.NT1*Options.Npsi+ipsi)]));
+        Spec->Spec[Options.NT2*(iT*Options.Npsi+ipsi)].Emin=Spec->Spec[Options.NT2*(iT*Options.Npsi)].Emin;
+        Spec->Spec[Options.NT2*(iT*Options.Npsi+ipsi)].Emax=Spec->Spec[Options.NT2*(iT*Options.Npsi)].Emax;
+      }
+      Spec->Spec[Options.NT2*(iT*Options.Npsi+ipsi)].Gamma=Options.Gamma;
+      if(Options.restrictions)
+      {
+        FluorescenceYieldRestricted(*H, Options.DeterminantRestrictions, T1[iT], T2, Options.NT2, psi[ipsi], psiEn[ipsi], Options.epsilon, Options.NTri, &(Spec->Spec[Options.NT2*(iT*Options.Npsi+ipsi)]));
+      }
+      else
+      {
+        FluorescenceYield(*H, T1[iT], T2, Options.NT2, psi[ipsi], psiEn[ipsi], Options.epsilon, Options.NTri, &(Spec->Spec[Options.NT2*(iT*Options.Npsi+ipsi)]));
       }
     }
   }
@@ -1424,8 +1559,8 @@ static int LuaEigensystem(lua_State * L)
     uint32_t NBitsKey;
     DeterminantRestrictionType DeterminantRestrictions;
   } Options;
-  Options.zero=100*DBL_EPSILON;
-  Options.epsilon=10000*DBL_EPSILON;
+  Options.zero=100*sqrt(DBL_EPSILON);
+  Options.epsilon=sqrt(DBL_EPSILON);
   Options.restrictions=False;
   Options.DeterminantRestrictions.N=0;
   Options.NBitsKey=16;
@@ -1550,8 +1685,36 @@ static int LuaEigensystem(lua_State * L)
 
 
 
+static int LuaTimeEnd(lua_State * L)
+{
+  char *string;
+  string=(char*)luaL_checkstring(L, -1);
+  EndTiming(string, &GlobalTime);
+  return 0;
+}
+
+
+static int LuaTimeStart(lua_State * L)
+{
+  char *string;
+  string=(char*)luaL_checkstring(L, -1);
+  BeginTiming(string, &GlobalTime);
+  return 0;
+}
+
+
+static int LuaTimePrint(lua_State * L)
+{
+  PrintTiming(GlobalTime);
+  return 0;
+}
+
 static const struct luaL_Reg ssp_functions[] = {
   {"Help", LuaHelp},
+  {"Verbosity",LuaVerbosity},
+  {"TimeStart",LuaTimeStart},
+  {"TimeEnd",LuaTimeEnd},
+  {"TimePrint",LuaTimePrint},
   {"NewOperator", LuaNewOperator},
   {"PotentialExpandedOnYlm", LuaPotentialExpandedOnYlm},
   {"NewWavefunction", LuaNewWaveFunction},

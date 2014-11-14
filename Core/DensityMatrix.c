@@ -465,8 +465,7 @@ uint32_t CalculateSpinCorrelationMatrix(MatrixType * const Rho, const WaveFuncti
  *  On input psi contains a wave-function and Rho points to a not allocated matrix
  *  On excite Rho contains an Nparticles by Nparticles matrix
  */
-uint32_t CalculatePartialDensityMatrix(MatrixType * const Rho, const WaveFunctionType psi, const uint32_t Nparticles,
-                                       const uint32_t * const j)
+uint32_t CalculatePartialDensityMatrix(MatrixType * const Rho, const WaveFunctionType psi, const uint32_t Nparticles, const uint32_t * const j)
 {
   return 0;
 }
