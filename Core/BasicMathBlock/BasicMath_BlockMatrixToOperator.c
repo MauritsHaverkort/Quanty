@@ -281,6 +281,7 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(OperatorType *co
   }
   H->NWord=Min(H->NFermion,1+(H->NFermion-1)/8);
   InitOperatorFixedLength(H, 2, 8);
+  InitOperatorFixedLength(H, 4, 8);
   if(A->QComplex)
   {
     MakeRealOperatorFixedLengthComplex(H, 2);

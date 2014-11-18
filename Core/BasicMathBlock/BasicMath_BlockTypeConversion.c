@@ -197,6 +197,7 @@ uint32_t BlockListOfPolesToCompactMatrix(BlockListOfPoles const * const A, Compa
   B->QComplex = A->QComplex;
   B->Ni = (A->N+1) * A->BlockSize;
   B->Nj = (A->N+1) * A->BlockSize;
+  B->mu = A->mu;
   InitCompactMatrix(B);
   CompactMatrixType Anow,Asqrt;
   Anow.Ni=A->BlockSize;
@@ -216,7 +217,7 @@ uint32_t BlockListOfPolesToCompactMatrix(BlockListOfPoles const * const A, Compa
     kBa=A->BlockSize*(B->Nj+1);
     for(k=0;k<A->N;k++)
     {
-      Anow.V=&(A->V[kA]);
+      Anow.V=&(A->V[kA+1]);
       CompactMatrixSqrt(&Anow, &Asqrt);
       for(i=0;i<A->BlockSize;i++)
       {
@@ -248,7 +249,7 @@ uint32_t BlockListOfPolesToCompactMatrix(BlockListOfPoles const * const A, Compa
     kBa=A->BlockSize*(B->Nj+1);
     for(k=0;k<A->N;k++)
     {
-      Anow.VRe=&(A->VRe[kA]);
+      Anow.VRe=&(A->VRe[kA+1]);
       CompactMatrixSqrt(&Anow, &Asqrt);
       for(i=0;i<A->BlockSize;i++)
       {
@@ -626,7 +627,7 @@ uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles(TightBindingDef
 {
   MatrixType H;
   CompactMatrixType T, HSigma, HSigmaComplex;
-  double q[3], val[A.NFermion], rest, totmin=0, totmax=0, totnow;
+  double q[3], val[A.NFermion*(Sigma.N+1)], rest, totmin=0, totmax=0, totnow;
   int    iq[3],ival,iE,i,j;
   double diq[3],dE=(Emax-Emin)/((double)NE),energy,Nktot;
   // test if sigma size is ok
@@ -851,7 +852,7 @@ uint32_t TightBindingHamiltonianPlusSelfEnergyMultiSiteToBlockListOfPoles(TightB
 {
   MatrixType H;
   CompactMatrixType T, HSigma, HSigmaComplex;
-  double q[3], val[A.NFermion], rest, totmin=0, totmax=0, totnow, dvec[3];
+  double q[3], val[A.NFermion*(Sigma.N+1)], rest, totmin=0, totmax=0, totnow, dvec[3];
   double const piornot = ((A.Cell.Units&1) ? (1) : (Pi));  // if A.Cell.Units last bit is 1 then r.g = pi, otherwise it evaluates to 1, piornot * r.g now eveluates always to pi.
   int    iq[3],ival,iE,i,j,ivec,jvec;
   double diq[3],dE=(Emax-Emin)/((double)NE),energy,Nktot;
@@ -1120,7 +1121,7 @@ uint32_t TightBindingHamiltonianAddSpinPlusSelfEnergyToBlockListOfPoles(TightBin
 {
   MatrixType H, PsiChar;
   CompactMatrixType T, HSigma, HSigmaComplex;
-  double q[3], val[2*A.NFermion], rest, totmin=0, totmax=0, totnow;
+  double q[3], val[2*A.NFermion*(Sigma.N+1)], rest, totmin=0, totmax=0, totnow;
   int    iq[3],ival,iE,i,j;
   double diq[3],dE=(Emax-Emin)/((double)NE),energy,Nktot;
   // initiallize PsiChar, a matrix storing the density of a wave-function
@@ -1349,7 +1350,7 @@ uint32_t TightBindingHamiltonianAddSpinPlusSelfEnergyMultiSiteToBlockListOfPoles
 {
   MatrixType H, PsiChar;
   CompactMatrixType T, HSigma, HSigmaComplex;
-  double q[3], val[A.NFermion], rest, totmin=0, totmax=0, totnow, dvec[3];
+  double q[3], val[A.NFermion*(Sigma.N+1)], rest, totmin=0, totmax=0, totnow, dvec[3];
   double const piornot = ((A.Cell.Units&1) ? (1) : (Pi));  // if A.Cell.Units last bit is 1 then r.g = pi, otherwise it evaluates to 1, piornot * r.g now eveluates always to pi.
   int    iq[3],ival,iE,i,j,ivec,jvec;
   double diq[3],dE=(Emax-Emin)/((double)NE),energy,Nktot;
