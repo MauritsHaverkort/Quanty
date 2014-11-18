@@ -73,6 +73,9 @@ uint32_t CompactMatrixCopy(CompactMatrixType const A, CompactMatrixType * const 
   B->Ni=A.Ni;
   B->Nj=A.Nj;
   B->QComplex=A.QComplex;
+  B->a0=A.a0;
+  B->b0=A.b0;
+  B->mu=A.mu;
   if(InitCompactMatrix(B))
   {
     printf("InitCompactMatrix failed in CompactMatrixCopy\n");
