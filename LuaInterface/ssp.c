@@ -1177,9 +1177,11 @@ static int LuaCreateSpectra(lua_State *L)
   Spec->Spec[0].EminPole=Eminpole;
   Spec->Spec[0].EmaxPole=Emaxpole;
   Spec->Spec[0].Gamma=Options.Gamma;
+  strcpy(Spec->Spec[0].Name, "Spec");
   for(i=0;i<Spec->NSpectra;i++)
   {
     SpectrumAllocate(Spec->Spec[0], &(Spec->Spec[i]));
+    sprintf(Spec->Spec[i].Name, "Spectrum %i",i);
     TriDiagonalMatrixToSpectrum(psiEn[i], GTri[i], &(Spec->Spec[i]));
   }
   for(i=0;i<Spec->NSpectra;i++)
@@ -1553,14 +1555,12 @@ static int LuaEigensystem(lua_State * L)
   void *buff;
   struct
   {
-    double zero;
-    double epsilon;
+    ConvergenceSettingsType Settings;
     Bool restrictions;
     uint32_t NBitsKey;
     DeterminantRestrictionType DeterminantRestrictions;
   } Options;
-  Options.zero=100*sqrt(DBL_EPSILON);
-  Options.epsilon=sqrt(DBL_EPSILON);
+  Options.Settings=InitConvergenceSettings();
   Options.restrictions=False;
   Options.DeterminantRestrictions.N=0;
   Options.NBitsKey=16;
@@ -1622,6 +1622,36 @@ static int LuaEigensystem(lua_State * L)
     }
   }
   /* read options */
+  buff=LuaFindOptionsInTable(L, -1, "DenseBoarder", "int");
+  if(buff!=NULL)
+  {
+    Options.Settings.DenseBoarder = *(uint32_t*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, -1, "NKrylovStart", "int");
+  if(buff!=NULL)
+  {
+    Options.Settings.NKrylovStart = *(uint32_t*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, -1, "NKrylovMax", "int");
+  if(buff!=NULL)
+  {
+    Options.Settings.NKrylovMax = *(uint32_t*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, -1, "NKrylovStep", "int");
+  if(buff!=NULL)
+  {
+    Options.Settings.NKrylovStep = *(uint32_t*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, -1, "NKrylovMin", "int");
+  if(buff!=NULL)
+  {
+    Options.Settings.NKrylovMin = *(uint32_t*)buff;
+    free(buff);
+  }
   buff=LuaFindOptionsInTable(L, -1, "NBitsKey", "int");
   if(buff!=NULL)
   {
@@ -1631,13 +1661,13 @@ static int LuaEigensystem(lua_State * L)
   buff=LuaFindOptionsInTable(L, -1, "epsilon", "double");
   if(buff!=NULL)
   {
-    Options.epsilon = *(double*)buff;
+    Options.Settings.epsilon = *(double*)buff;
     free(buff);
   }
   buff=LuaFindOptionsInTable(L, -1, "zero", "double");
   if(buff!=NULL)
   {
-    Options.zero = *(double*)buff;
+    Options.Settings.zero = *(double*)buff;
     free(buff);
   }
   buff=LuaFindOptionsInTable(L, -1, "restrictions", "DeterminantRestrictionType");
@@ -1648,7 +1678,7 @@ static int LuaEigensystem(lua_State * L)
     free(buff);
   }
   /* calculate groundstate */
-  BlockGroundState(*Opp, Npsi, Options.zero, &Options.epsilon , StartRestrictions, Options.DeterminantRestrictions, psi, Options.NBitsKey);
+  BlockGroundState(*Opp, Npsi, &(Options.Settings) , StartRestrictions, Options.DeterminantRestrictions, psi, Options.NBitsKey);
   /* seperate basis */
   WaveFunctionArraySeperateBasis(psi, Npsi);
   /* copy changed wavefunctions back to lua stack */

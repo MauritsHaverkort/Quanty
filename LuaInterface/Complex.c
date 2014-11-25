@@ -64,38 +64,6 @@ static int LuaComplexNewIndex(lua_State * L)
   return luaL_error(L, "Error index %s not found in Complex Object\n",str);
 }
 
-
-
-static int LuaComplexAddOld(lua_State * L)
-{
-  Complex16 *res;
-  res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
-  if(lua_isnumber(L, 1))
-  {
-    double a = luaL_checknumber(L, 1);
-    Complex16 *b = (Complex16 *) luaL_checkudata(L, 2, "Lua.complex");
-    res->Re = a + b->Re;
-    res->Im = b->Im;
-  }
-  else if(lua_isnumber(L,2))
-  {
-    Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Lua.complex");
-    double b = luaL_checknumber(L, 2);
-    res->Re = a->Re + b;
-    res->Im = a->Im ;
-  }
-  else
-  {
-    Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Lua.complex");
-    Complex16 *b = (Complex16 *) luaL_checkudata(L, 2, "Lua.complex");
-    res->Re = a->Re + b->Re;
-    res->Im = a->Im + b->Im;
-  }
-  luaL_setmetatable(L, "Lua.complex");
-  return 1;
-}
-
-
 static int LuaComplexAdd(lua_State * L)
 {
   uint32_t len = (uint32_t)lua_gettop(L);
@@ -132,7 +100,7 @@ static int LuaComplexAdd(lua_State * L)
     case LUA_TSTRING:
     {
       // (string) operator (original variable)
-      return luaL_error(L, "Error: character string minus complex number\n");
+      return luaL_error(L, "Error: character string plus complex number\n");
     }
     case LUA_TTABLE:
     {
@@ -216,7 +184,26 @@ static int LuaComplexAdd(lua_State * L)
           if (luaL_testudata(L, len, "ssp.spectra") != NULL)
           {
             // (original variable) operator (user data - spectra)
-            return luaL_error(L, "Still to do: complex number plus spectra\n");
+            uint32_t i,j;
+            SpectraTypeArray *res, *b;
+            b = (SpectraTypeArray *) luaL_checkudata(L, len, "ssp.spectra");
+            res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
+            res->NSpectra = b->NSpectra;
+            res->Spec=malloc(res->NSpectra*sizeof(SpectraType));
+            for(i=0;i<res->NSpectra;i++)
+            {
+              if(SpectrumAllocate(b->Spec[i], &(res->Spec[i])))
+              {
+                return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
+              }
+              for(j=0;j<=res->Spec[i].N;j++)
+              {
+                res->Spec[i].Re[j]= b->Spec[i].Re[j]+a->Re;
+                res->Spec[i].Im[j]= b->Spec[i].Im[j]+a->Im;
+              }
+            }
+            luaL_setmetatable(L, "ssp.spectra");
+            return 1;
           }
           return luaL_error(L, "Error: complex number plus unrecognized userdata\n");
         }
@@ -242,39 +229,6 @@ static int LuaComplexAdd(lua_State * L)
     }
   }
 }
-
-
-
-
-static int LuaComplexSubOld(lua_State * L)
-{
-  Complex16 *res;
-  res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
-  if(lua_isnumber(L, 1))
-  {
-    double a = luaL_checknumber(L, 1);
-    Complex16 *b = (Complex16 *) luaL_checkudata(L, 2, "Lua.complex");
-    res->Re = a - b->Re;
-    res->Im = -b->Im;
-  }
-  else if(lua_isnumber(L,2))
-  {
-    Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Lua.complex");
-    double b = luaL_checknumber(L, 2);
-    res->Re = a->Re - b;
-    res->Im = a->Im ;
-  }
-  else
-  {
-    Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Lua.complex");
-    Complex16 *b = (Complex16 *) luaL_checkudata(L, 2, "Lua.complex");
-    res->Re = a->Re - b->Re;
-    res->Im = a->Im - b->Im;
-  }
-  luaL_setmetatable(L, "Lua.complex");
-  return 1;
-}
-
 
 static int LuaComplexSub(lua_State * L)
 {
@@ -396,7 +350,26 @@ static int LuaComplexSub(lua_State * L)
           if (luaL_testudata(L, len, "ssp.spectra") != NULL)
           {
             // (original variable) operator (user data - spectra)
-            return luaL_error(L, "Still to do: complex number minus spectra\n");
+            uint32_t i,j;
+            SpectraTypeArray *res, *b;
+            b = (SpectraTypeArray *) luaL_checkudata(L, len, "ssp.spectra");
+            res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
+            res->NSpectra = b->NSpectra;
+            res->Spec=malloc(res->NSpectra*sizeof(SpectraType));
+            for(i=0;i<res->NSpectra;i++)
+            {
+              if(SpectrumAllocate(b->Spec[i], &(res->Spec[i])))
+              {
+                return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
+              }
+              for(j=0;j<=res->Spec[i].N;j++)
+              {
+                res->Spec[i].Re[j]= b->Spec[i].Re[j]-a->Re;
+                res->Spec[i].Im[j]= b->Spec[i].Im[j]-a->Im;
+              }
+            }
+            luaL_setmetatable(L, "ssp.spectra");
+            return 1;
           }
           return luaL_error(L, "Error: complex number minus unrecognized userdata\n");
         }
@@ -422,61 +395,6 @@ static int LuaComplexSub(lua_State * L)
     }
   }
 }
-
-
-static int LuaComplexMulOld(lua_State * L)
-{
-  if(lua_isnumber(L, 1))
-  {
-    Complex16 *res;
-    res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
-    double a = luaL_checknumber(L, 1);
-    Complex16 *b = (Complex16 *) luaL_checkudata(L, 2, "Lua.complex");
-    res->Re = a * b->Re;
-    res->Im = a * b->Im;
-  }
-  else if(lua_isnumber(L,2))
-  {
-    Complex16 *res;
-    res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
-    Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Lua.complex");
-    double b = luaL_checknumber(L, 2);
-    res->Re = a->Re * b;
-    res->Im = a->Im * b;
-  }
-  else if(luaL_testudata(L, 2,"ssp.operator")!=NULL)
-  {
-    OperatorType *res = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-    OperatorType *l = (OperatorType *) luaL_checkudata(L, 2, "ssp.operator");
-    Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Lua.complex");
-    OperatorCopy(res, *l);
-    OperatorScale(res, a->Re, a->Im);
-    luaL_setmetatable(L, "ssp.operator");
-    return 1;
-  }
-  else if(luaL_testudata(L, 2,"ssp.wavefunction")!=NULL)
-  {
-    WaveFunctionType *res = (WaveFunctionType *) lua_newuserdata(L, sizeof(WaveFunctionType));
-    WaveFunctionType *l = (WaveFunctionType *) luaL_checkudata(L, 2, "ssp.wavefunction");
-    Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Lua.complex");
-    WaveFunctionCopy(*l, res);
-    WaveFunctionMultiply(res, a->Re, a->Im);
-    luaL_setmetatable(L, "ssp.wavefunction");
-    return 1;
-  }
-  else
-  {
-    Complex16 *res;
-    res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
-    Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Lua.complex");
-    Complex16 *b = (Complex16 *) luaL_checkudata(L, 2, "Lua.complex");
-    res->Re = a->Re * b->Re - a->Im * b->Im;
-    res->Im = a->Im * b->Re + a->Re * b->Im;
-  }
-  luaL_setmetatable(L, "Lua.complex");
-  return 1;
-}
-
 
 static int LuaComplexMul(lua_State * L)
 {
@@ -610,7 +528,26 @@ static int LuaComplexMul(lua_State * L)
           if (luaL_testudata(L, len, "ssp.spectra") != NULL)
           {
             // (original variable) operator (user data - spectra)
-            return luaL_error(L, "Still to do: complex number multiplied with spectra\n");
+            uint32_t i,j;
+            SpectraTypeArray *res, *b;
+            b = (SpectraTypeArray *) luaL_checkudata(L, len, "ssp.spectra");
+            res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
+            res->NSpectra = b->NSpectra;
+            res->Spec=malloc(res->NSpectra*sizeof(SpectraType));
+            for(i=0;i<res->NSpectra;i++)
+            {
+              if(SpectrumAllocate(b->Spec[i], &(res->Spec[i])))
+              {
+                return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
+              }
+              for(j=0;j<=res->Spec[i].N;j++)
+              {
+                res->Spec[i].Re[j]= b->Spec[i].Re[j]*a->Re - b->Spec[i].Im[j]*a->Im;
+                res->Spec[i].Im[j]= b->Spec[i].Re[j]*a->Im + b->Spec[i].Im[j]*a->Re;
+              }
+            }
+            luaL_setmetatable(L, "ssp.spectra");
+            return 1;
           }
           return luaL_error(L, "Error: complex number multiplied with unrecognized userdata\n");
         }
@@ -760,7 +697,26 @@ static int LuaComplexDiv(lua_State * L)
           if (luaL_testudata(L, len, "ssp.spectra") != NULL)
           {
             // (original variable) operator (user data - spectra)
-            return luaL_error(L, "Still to do: complex number divided by spectra\n");
+            uint32_t i,j;
+            SpectraTypeArray *res, *b;
+            b = (SpectraTypeArray *) luaL_checkudata(L, len, "ssp.spectra");
+            res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
+            res->NSpectra = b->NSpectra;
+            res->Spec = malloc(res->NSpectra * sizeof(SpectraType));
+            for(i=0;i<res->NSpectra;i++)
+            {
+              if(SpectrumAllocate(b->Spec[i], &(res->Spec[i])))
+              {
+                return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
+              }
+              for(j=0;j<=res->Spec[i].N;j++)
+              {
+                res->Spec[i].Re[j]= (a->Re*b->Spec[i].Re[j] + a->Im*b->Spec[i].Im[j])/(Sqr(b->Spec[i].Re[j])+Sqr(b->Spec[i].Im[j]));
+                res->Spec[i].Im[j]= (a->Im*b->Spec[i].Re[j] - a->Re*b->Spec[i].Im[j])/(Sqr(b->Spec[i].Re[j])+Sqr(b->Spec[i].Im[j]));
+              }
+            }
+            luaL_setmetatable(L, "ssp.spectra");
+            return 1;
           }
           return luaL_error(L, "Error: complex number divided by unrecognized userdata\n");
         }
