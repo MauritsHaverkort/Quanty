@@ -1949,9 +1949,9 @@ uint32_t LanczosTriDiagonalizeRR(const OperatorType H, WaveFunctionType psi, dou
   {
     RealWaveFunctionMultiply(v[0], (double)1.0 / M->b[0]);
   }
-  printf("BasisSetSize: %12i ", v[0].N);
+  VerbosityPrintf(0x0100,"BasisSetSize: %12i ", v[0].N);
   RealWaveFunctionTruncateBasis(&(v[0]), epsilon);
-  printf("%12i\n", v[0].N);
+  VerbosityPrintf(0x0100,"%12i\n", v[0].N);
   while (OperatorPsiRR(H, v[0], &(v[1])))
   {                             /* Allocation of Memory failed */
     printf("Allocation of new memory failed in LanczosTriDiagonalize for the function OperatorPsi\n");
@@ -1964,7 +1964,7 @@ uint32_t LanczosTriDiagonalizeRR(const OperatorType H, WaveFunctionType psi, dou
     RealWaveFunctionTruncateBasis(&(v[0]), epsilon);
   }
   M->a[1] = RealWaveFunctionDotProduct(&v[1], &v[0]);
-  printf("BasisSetSize: %12i ", v[1].N);
+  VerbosityPrintf(0x0100,"BasisSetSize: %12i ", v[1].N);
   for (i = 1; i < M->N; i++)
   {
     vip = (i + 1) % 3;
@@ -1993,8 +1993,8 @@ uint32_t LanczosTriDiagonalizeRR(const OperatorType H, WaveFunctionType psi, dou
       RealWaveFunctionMultiply(v[vi], (double)1.0 / M->b[i]);
     }
     RealWaveFunctionTruncateBasis(&(v[vi]), epsilon / errorestimate);
-    printf("%12i ", v[vi].N);
-    printf("| M.a[%3i] M.b[%3i]: %12.5E %12.5E | Err: %12.5E\n", i, i - 1, M->a[i], M->b[i - 1], errorestimate);
+    VerbosityPrintf(0x0100,"%12i ", v[vi].N);
+    VerbosityPrintf(0x0100,"| M.a[%3i] M.b[%3i]: %12.5E %12.5E | Err: %12.5E\n", i, i - 1, M->a[i], M->b[i - 1], errorestimate);
     /*
        QRe[vi]=M->b[i-1]*QRe[vip]-0.5*Gamma*QIm[vim];
        QIm[vi]=M->b[i-1]*QIm[vip]+0.5*Gamma*QRe[vim];
@@ -2015,7 +2015,7 @@ uint32_t LanczosTriDiagonalizeRR(const OperatorType H, WaveFunctionType psi, dou
         AllocFailed();
       RealWaveFunctionTruncateBasis(&(v[vi]), epsilon / errorestimate);
     }
-    printf("BasisSetSize: %12i ", v[vip].N);
+    VerbosityPrintf(0x0100,"BasisSetSize: %12i ", v[vip].N);
     M->a[i + 1] = RealWaveFunctionDotProduct(&v[vip], &v[vi]);
     while (RealWaveFunctionAddMultipliedUnionBasis(&(v[vip]), v[vim], -M->b[i]))
     {                           /*Allocation of Memory failed */
@@ -2032,7 +2032,7 @@ uint32_t LanczosTriDiagonalizeRR(const OperatorType H, WaveFunctionType psi, dou
     }
     RealWaveFunctionFree(&v[vim]);
   }
-  printf("             | M.a[%3i] M.b[%3i]: %12.5E %12.5E | Err: %12.5E\n\n", i, i - 1, M->a[i], M->b[i - 1],
+  VerbosityPrintf(0x0100,"             | M.a[%3i] M.b[%3i]: %12.5E %12.5E | Err: %12.5E\n\n", i, i - 1, M->a[i], M->b[i - 1],
          errorestimate);
   if (M->N > 1)
   {
@@ -2102,9 +2102,9 @@ uint32_t LanczosTriDiagonalizeRC(const OperatorType H, WaveFunctionType psi, dou
   M->a[0] = 0;
   M->b[0] = ComplexWaveFunctionCalculateNorm(v[0]);
   ComplexWaveFunctionMultiply(v[0], (double)1.0 / M->b[0]);
-  printf("BasisSetSize: %12i ", v[0].N);
+  VerbosityPrintf(0x0100,"BasisSetSize: %12i ", v[0].N);
   ComplexWaveFunctionTruncateBasis(&(v[0]), epsilon);
-  printf("%12i\n", v[0].N);
+  VerbosityPrintf(0x0100,"%12i\n", v[0].N);
   while (OperatorPsiRC(H, v[0], &(v[1])))
   {                             /* Allocation of Memory failed */
     printf("Allocation of new memory failed in LanczosTriDiagonalize for the function OperatorPsi\n");
@@ -2117,7 +2117,7 @@ uint32_t LanczosTriDiagonalizeRC(const OperatorType H, WaveFunctionType psi, dou
     ComplexWaveFunctionTruncateBasis(&(v[0]), epsilon);
   }
   ComplexWaveFunctionDotProduct(&v[1], &v[0], &M->a[1], &junk);
-  printf("BasisSetSize: %12i ", v[1].N);
+  VerbosityPrintf(0x0100,"BasisSetSize: %12i ", v[1].N);
   for (i = 1; i < M->N; i++)
   {
     vip = (i + 1) % 3;
@@ -2139,8 +2139,8 @@ uint32_t LanczosTriDiagonalizeRC(const OperatorType H, WaveFunctionType psi, dou
     M->b[i] = ComplexWaveFunctionCalculateNorm(v[vi]);
     ComplexWaveFunctionMultiply(v[vi], (double)1.0 / M->b[i]);
     ComplexWaveFunctionTruncateBasis(&(v[vi]), epsilon / errorestimate);
-    printf("%12i ", v[vi].N);
-    printf("| M.a[%3i] M.b[%3i]: %12.5E %12.5E | Err: %12.5E\n", i, i - 1, M->a[i], M->b[i - 1], errorestimate);
+    VerbosityPrintf(0x0100,"%12i ", v[vi].N);
+    VerbosityPrintf(0x0100,"| M.a[%3i] M.b[%3i]: %12.5E %12.5E | Err: %12.5E\n", i, i - 1, M->a[i], M->b[i - 1], errorestimate);
     errorestimate *= M->b[i] * M->b[i] / (M->b[i] * M->b[i] + 4 * Gamma * Gamma);
     while (OperatorPsiRC(H, v[vi], &(v[vip])))
     {                           /*Allocation of Memory failed */
@@ -2153,7 +2153,7 @@ uint32_t LanczosTriDiagonalizeRC(const OperatorType H, WaveFunctionType psi, dou
         AllocFailed();
       ComplexWaveFunctionTruncateBasis(&(v[vi]), epsilon / errorestimate);
     }
-    printf("BasisSetSize: %12i ", v[vip].N);
+    VerbosityPrintf(0x0100,"BasisSetSize: %12i ", v[vip].N);
     ComplexWaveFunctionDotProduct(&v[vip], &v[vi], &M->a[i + 1], &junk);
     while (ComplexWaveFunctionAddMultipliedUnionBasis(&(v[vip]), v[vim], -M->b[i]))
     {                           /*Allocation of Memory failed */
@@ -2170,7 +2170,7 @@ uint32_t LanczosTriDiagonalizeRC(const OperatorType H, WaveFunctionType psi, dou
     }
     ComplexWaveFunctionFree(&v[vim]);
   }
-  printf("             | M.a[%3i] M.b[%3i]: %12.5E %12.5E | Err: %12.5E\n\n", i, i - 1, M->a[i], M->b[i - 1],
+  VerbosityPrintf(0x0100,"             | M.a[%3i] M.b[%3i]: %12.5E %12.5E | Err: %12.5E\n\n", i, i - 1, M->a[i], M->b[i - 1],
          errorestimate);
   if (M->N > 1)
   {

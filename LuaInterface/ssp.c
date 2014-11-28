@@ -1739,6 +1739,59 @@ static int LuaTimePrint(lua_State * L)
   return 0;
 }
 
+static int LuaDensityMatrix(lua_State *L)
+{
+  uint32_t len, Nparticles, *jindex;
+  WaveFunctionType *psi;
+  MatrixType Rho;
+  len = (uint32_t)lua_gettop(L);
+  // first argument is a wave-function or a list of functions
+  switch (lua_type(L,1))
+  {
+    case LUA_TTABLE:
+    {
+      lua_newtable(L);
+      lua_pushnil(L);
+      while(lua_next(L, 1) != 0)
+      {
+        lua_insert(L, 1);
+        lua_pushvalue(L, -3);
+        LuaDensityMatrix(L);
+        lua_pushvalue(L, -3);
+        lua_replace(L, -3);
+        lua_settable(L, -4);
+        lua_remove(L, 1);
+      }
+      return 1;
+    }
+    case LUA_TUSERDATA:
+    {
+      if (luaL_testudata(L, 1, "ssp.wavefunction") != NULL)
+      {
+        psi = (WaveFunctionType *) luaL_checkudata(L, 1, "ssp.wavefunction");
+      }
+      else
+      {
+        return luaL_error(L, "Error: DensityMatrix expects a function or a list of functions on the first position\n");
+      }
+      break;
+    }
+    default:
+    {
+      return luaL_error(L, "Error: DensityMatrix expects a function or a list of functions on the first position\n");
+    }
+  }
+  // the argument at position len is a list of integers
+  jindex = luaL_checkarray_unit32_t(L,len,&Nparticles);
+  // calculate the density matrix
+  CalculatePartialDensityMatrix(&Rho, *psi, Nparticles, jindex);
+  // return a lua table of tables of dimension Nparticles by Nparticles
+  LuaPushTable_MatrixType(L, &Rho);
+  FreeMatrix(&Rho);
+  return 1;
+}
+
+
 static const struct luaL_Reg ssp_functions[] = {
   {"Help", LuaHelp},
   {"Verbosity",LuaVerbosity},
@@ -1748,6 +1801,7 @@ static const struct luaL_Reg ssp_functions[] = {
   {"NewOperator", LuaNewOperator},
   {"PotentialExpandedOnYlm", LuaPotentialExpandedOnYlm},
   {"NewWavefunction", LuaNewWaveFunction},
+  {"DensityMatrix",LuaDensityMatrix},
   {"Copy", Luacopy},
   {"Clone", Luacopy},
   {"Conjugate", Luaconjugate},
@@ -1776,8 +1830,12 @@ void luaconstants(lua_State *L)
   lua_setglobal(L, "I");
   lua_pushnumber(L, 3.14159265358979323846264338328);
   lua_setglobal(L, "Pi");
+  lua_pushnumber(L, 3.14159265358979323846264338328);
+  lua_setglobal(L, "pi");
   lua_pushnumber(L, 2.71828182845904523536028747135);
   lua_setglobal(L, "E");
+  lua_pushnumber(L, 2.71828182845904523536028747135);
+  lua_setglobal(L, "e");
 }
 
 int luaopen_ssp(lua_State * L)
@@ -1790,9 +1848,10 @@ int luaopen_ssp(lua_State * L)
   
   luaL_newmetatable(L, "ssp.spectra");
   luaL_setfuncs(L, Spectra_meta, 0);
-  
+    
   luaL_newlib(L, ssp_functions);
   lua_setglobal(L, "ssp");
+  
   
   
   return 1;
