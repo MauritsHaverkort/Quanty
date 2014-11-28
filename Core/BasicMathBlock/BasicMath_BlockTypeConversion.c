@@ -202,6 +202,8 @@ uint32_t BlockListOfPolesToCompactMatrix(BlockListOfPoles const * const A, Compa
   CompactMatrixType Anow,Asqrt;
   Anow.Ni=A->BlockSize;
   Anow.Nj=A->BlockSize;
+  Anow.Name=(char*)malloc(MAXStrLength*sizeof(char));
+  strcpy(Anow.Name, "CompactMatrix");
   if(A->QComplex)
   {
     Anow.QComplex=1;
