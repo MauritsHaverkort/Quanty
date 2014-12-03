@@ -2534,6 +2534,7 @@ uint32_t BlockTriDiagonalMatrixToBlockListOfPoles(BlockTriDiagonalMatrixType con
     }
   }
   ChopBlockListOfPoles(G, DBL_EPSILON);
+  G->mu = A->mu;
   FreeCompactMatrix(&Rho);
   FreeCompactMatrix(&Afull);
   FreeCompactMatrix(&Afun);

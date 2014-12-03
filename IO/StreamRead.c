@@ -512,7 +512,8 @@ uint32_t StreamReadListOfPolesUndetermined(ListOfPoles * O, FILE * stream)
 {
   char   InputType[255];
   char   comments[1000];
-  fscanf(stream, "%s", InputType);
+  double mu;
+  fscanf(stream, "%s %lf", InputType, &mu);
   fgets(comments, 1000, stream);
   if (strncmp(InputType, "tri", 3) == 0)
   {
@@ -537,6 +538,7 @@ uint32_t StreamReadListOfPolesUndetermined(ListOfPoles * O, FILE * stream)
     printf("Expect the first line of the file to contain the format \"tri\", \"and\", or \"lp\".\n");
     return 1;
   }
+  O->mu = mu;
   return 0;
 }
 
