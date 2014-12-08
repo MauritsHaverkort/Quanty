@@ -210,6 +210,11 @@ uint32_t PrintBlokAndersonMatrix(BlokAndersonMatrixType M)
   return StreamPrintBlokAndersonMatrix(M, stdout);
 }
 
+uint32_t PrintBlockAndersonMatrix(BlockAndersonMatrixType M)
+{
+  return StreamPrintBlockAndersonMatrix(M, stdout);
+}
+
 uint32_t PrintListOfPoles(ListOfPoles M)
 {
   return StreamPrintListOfPoles(M, stdout);
