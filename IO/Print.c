@@ -2,6 +2,16 @@
 #include "FilePrint.c"
 #include "PrintMathematicaExpression.c"
 
+
+void VerbosityPrintf(const uint32_t verbosity, char *fmt, ...)
+{
+  va_list args;
+  va_start ( args, fmt );
+  if(verbosity&GlobalVerbosity) vprintf(fmt,args);
+  va_end(args);
+}
+
+
 /*  Functions come in three variants
 *   StreamPrint***
 *   FilePrint***
@@ -18,6 +28,16 @@
 uint32_t PrintSpectra(SpectraType * const Spec, const uint32_t NSpec)
 {
   return StreamPrintSpectra(Spec, NSpec, stdout);
+}
+
+uint32_t PrintRIXSSpectrum(const uint32_t numwRes, SpectraType (*Spec)[numwRes], double *wRes, int printReal, const uint32_t iSpec)
+{
+  return StreamPrintRIXSSpectrum(numwRes, Spec, wRes, printReal, iSpec, stdout);
+}
+
+uint32_t PrintRIXSSpectra(const uint32_t numwRes, SpectraType (*Spec)[numwRes], double *wRes, const uint32_t NSpec)
+{
+  return StreamPrintRIXSSpectra(numwRes, Spec, wRes, NSpec, stdout);
 }
 
 uint32_t PrintWaveFunctionPlain(WaveFunctionType psi)

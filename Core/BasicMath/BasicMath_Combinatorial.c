@@ -4,8 +4,7 @@ double Factorial(int a)
   int    i;
   double result;
   result = 1.0;
-  if (a < 0)
-    printf("Error\n");
+  if (a < 0) return NAN;
   for (i = a; i > 0; i--)
   {
     result *= i;
@@ -18,8 +17,7 @@ double Factorial2(int a)
   int    i;
   double result;
   result = 1.0;
-  if (a < 0)
-    printf("Error\n");
+  if (a < 0) return NAN;
   for (i = a; i > 0; i-=2)
   {
     result *= i;

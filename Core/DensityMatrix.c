@@ -461,13 +461,88 @@ uint32_t CalculateSpinCorrelationMatrix(MatrixType * const Rho, const WaveFuncti
 /*
  *  Calculate the density matrix of a wave-function for a selected number of particles
  *  The total number of particles is given by Nparticles
- *  The index of these particles is given by the vector j
+ *  The index of these particles is given by the vector jindex
  *  On input psi contains a wave-function and Rho points to a not allocated matrix
  *  On excite Rho contains an Nparticles by Nparticles matrix
  */
-uint32_t CalculatePartialDensityMatrix(MatrixType * const Rho, const WaveFunctionType psi, const uint32_t Nparticles,
-                                       const uint32_t * const j)
+uint32_t CalculatePartialDensityMatrix(MatrixType * const Rho, const WaveFunctionType psi, const uint32_t Nparticles, const uint32_t * const jindex)
 {
+  uint32_t i, j;
+  OperatorType O;
+  Rho->QComplex = psi.QComplex;
+  Rho->Ni = Nparticles;
+  Rho->Nj = Nparticles;
+  if (InitMatrix(Rho))
+  {
+    printf("InitMatrix failed in CalculateDensityMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
+  strcpy(O.Name, "Calc. Den. Mat. Int. Opp. ");
+  strcpy(Rho->Name, "Density Matrix.");
+  O.QComplex = 0;
+  O.NFermion = psi.NFermion;
+  O.NBoson = psi.NBoson;
+  O.NWord = psi.NWord;
+  O.MaxLength = 2;
+  O.l = malloc(3 * sizeof(OperatorFixedLengthType));
+  if (O.l == NULL)
+  {
+    printf("alloc of O.l failed in CalculateDensityMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
+  O.l[0].N = 0;
+  O.l[0].NBitsKey = 0;
+  O.l[0].NAloc = 0;
+  O.l[0].QComplex = 0;
+  O.l[1].N = 0;
+  O.l[1].NBitsKey = 0;
+  O.l[1].NAloc = 0;
+  O.l[1].QComplex = 0;
+  O.l[2].N = 1;
+  O.l[2].NBitsKey = 0;
+  O.l[2].NAloc = 1;
+  O.l[2].QComplex = 0;
+  O.l[2].VRe = malloc(sizeof(double));
+  O.l[2].VRe[0] = 1;
+  if (O.l[2].VRe == NULL)
+  {
+    printf("alloc of O.l[2].VRe failed in CalculateDensityMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
+  O.l[2].o = malloc(2 * sizeof(uint16_t));
+  if (O.l[2].o == NULL)
+  {
+    printf("alloc of O.l[2].o failed in CalculateDensityMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
+  if (psi.QComplex)
+  {
+    for (i = 0; i < Nparticles; i++)
+    {
+      O.l[2].o[1] = (jindex[i] | CrAnMask);
+      for (j = 0; j < Nparticles; j++)
+      {
+        O.l[2].o[0] = jindex[j];
+        PsiOperatorPsiRC(O, psi, &(Rho->VRe[i][j]), &(Rho->VIm[i][j]));
+      }
+    }
+  }
+  else
+  {
+    for (i = 0; i < Nparticles; i++)
+    {
+      O.l[2].o[1] = (jindex[i] | CrAnMask);
+      for (j = 0; j < Nparticles; j++)
+      {
+        O.l[2].o[0] = jindex[j];
+        PsiOperatorPsiRR(O, psi, &(Rho->VRe[i][j]));
+      }
+    }
+  }
   return 0;
 }
 

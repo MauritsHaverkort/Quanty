@@ -8,9 +8,11 @@
 #define DBL_EPSILON 2.3E-16
 #endif
 #define TimeStampAll() printf("=============================================================\n");\
-                       printf("====    Model library written by Maurits W. Haverkort    ====\n");\
+                       printf("====    written by Maurits W. Haverkort,                 ====\n");\
+                       printf("====    Yi Lu, Robert Green and Sebastian Macke          ====\n");\
                        printf("====    (C) www.solstatphys.org                          ====\n");\
-                       printf("====    Only use in collaboration with author            ====\n");\
+                       printf("====    Only use in collaboration with authors           ====\n");\
+                       printf("====    Beta version, be critical and report errors!!!   ====\n");\
                        printf("=============================================================\n");\
                        time_t MWHrawtime;\
                        struct tm * MWHtimeinfo;\
@@ -29,6 +31,8 @@
                        printf("Smallest deviation from 1: %E \n",DBL_EPSILON);\
                        printf("\n");
 
+
+TimeType GlobalTime;
 
 uint32_t InitializeTiming(TimeType * T)
 {
@@ -188,7 +192,7 @@ uint32_t EndTiming(const char *s, TimeType * T)
       else
       {
         time(&now);
-        T->TotalTime[i] += (uint32_t) difftime(now, T->BeginTime[i]);
+        T->TotalTime[i] += (uint32_t) (difftime(now, T->BeginTime[i]));
         T->NumberOfRuns[i]++;
         T->NowRunning[i] = 0;
       }
@@ -225,22 +229,8 @@ uint32_t StreamPrintTiming(TimeType T, FILE * stream)
       fprintf(stream, "     ");
     }
     fprintf(stream, "%2i:", (T.TotalTime[i] / 3600) % 24);
-    if (((T.TotalTime[i] / 60) % 60) < 10)
-    {
-      fprintf(stream, "0%1i:", (T.TotalTime[i] / 60) % 60);
-    }
-    else
-    {
-      fprintf(stream, "%2i:", (T.TotalTime[i] / 60) % 60);
-    }
-    if ((T.TotalTime[i] % 60) < 10)
-    {
-      fprintf(stream, "0%1i ", T.TotalTime[i] % 60);
-    }
-    else
-    {
-      fprintf(stream, "%2i ", T.TotalTime[i] % 60);
-    }
+    fprintf(stream, "%02i:", (T.TotalTime[i] / 60) % 60);
+    fprintf(stream, "%02i ", (T.TotalTime[i]) % 60);
     fprintf(stream, "| %12i | %7i | %s\n", T.NumberOfRuns[i], T.NowRunning[i], T.Name[i]);
   }
   return 0;

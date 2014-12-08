@@ -1171,9 +1171,9 @@ uint32_t SparseMatrixTransform(SparseMatrixType * const M, SparseMatrixType cons
   if (InitSparseMatrix(M))
     return 1;
   strcpy(M->Name, "U^* A U^T U=(");
-  strncat(M->Name, T.Name, MAX(0, MAXStrLength - 24) / 2);
+  strncat(M->Name, T.Name, Max(0, MAXStrLength - 24) / 2);
   strcat(M->Name, ") A=(");
-  strncat(M->Name, A.Name, MAX(0, MAXStrLength - 24) / 2);
+  strncat(M->Name, A.Name, Max(0, MAXStrLength - 24) / 2);
   strcat(M->Name, ")");
   if ((A.QComplex) && (T.QComplex))
   {                             /* all complex */
@@ -1566,7 +1566,7 @@ uint32_t SparseMatrixPart(SparseMatrixType * const M, SparseMatrixType const A, 
   if (InitSparseMatrix(M))
     return 1;
   strcpy(M->Name, "Part of ");
-  strncat(M->Name, A.Name, MAX(0, MAXStrLength - 10));
+  strncat(M->Name, A.Name, Max(0, MAXStrLength - 10));
   if (M->QComplex)
   {                             /* Complex */
     for (l = 0; l < A.N; l++)

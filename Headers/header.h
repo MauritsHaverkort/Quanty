@@ -1,3 +1,43 @@
+
+uint32_t GlobalTimeOn=0xF;
+/*      1111 1111 1111 1111 - 0xFFFF - print all timings
+ *      0000 0000 0000 0001 - 0x0001 - main specific
+ *      0000 0000 0000 0010 - 0x0002 - main specific
+ *      0000 0000 0000 0100 - 0x0004 - main specific
+ *      0000 0000 0000 1000 - 0x0008 - main specific
+ *      0000 0000 0001 0000 - 0x0010 -
+ *      0000 0000 0010 0000 - 0x0020 -
+ *      0000 0000 0100 0000 - 0x0040 -
+ *      0000 0000 1000 0000 - 0x0080 -
+ */
+
+uint32_t GlobalVerbosity=0xF;
+/*      1111 1111 1111 1111 - 0xFFFF - print all statments on what the code does
+ *      0000 0000 0000 0001 - 0x0001 - main specific
+ *      0000 0000 0000 0010 - 0x0002 - main specific
+ *      0000 0000 0000 0100 - 0x0004 - main specific
+ *      0000 0000 0000 1000 - 0x0008 - main specific
+ *      0000 0000 0001 0000 - 0x0010 - Lanczos function start
+ *      0000 0000 0010 0000 - 0x0020 - Lanczos function converge info
+ *      0000 0000 0100 0000 - 0x0040 - 
+ *      0000 0000 1000 0000 - 0x0080 -
+ *
+ *      1111 1111 1111 1111 - 0xFFFF0000 - print all debug statements
+ *      0000 0000 0000 0001 - 0x00010000 - print start of each subroutine
+ *      0000 0000 0000 0010 - 0x00020000 -
+ *      0000 0000 0000 0100 - 0x00040000 -
+ *      0000 0000 0000 1000 - 0x00080000 -
+ *      0000 0000 0001 0000 - 0x00100000 -
+ *      0000 0000 0010 0000 - 0x00200000 -
+ *      0000 0000 0100 0000 - 0x00400000 -
+ *      0000 0000 1000 0000 - 0x00800000 -
+ *
+ *      0000 0001 0000 0000 - 0x01000000 - used for debuging of functions during development
+ */
+
+#define PrintDebugInfo
+
+
 #include "core.h"
 #include "io.h"
 #include "core_basic_math.h"

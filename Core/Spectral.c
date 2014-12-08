@@ -28,6 +28,7 @@ int SpectrumAllocate(const SpectraType Settings, SpectraType * const G)
   G->b[2] = 0;
   G->b[3] = 0;
   G->b[4] = 0;
+  strcpy(G->Name, Settings.Name);
   G->Re = calloc(G->N + 1, sizeof(double));
   if (G->Re == NULL)
   {
@@ -252,6 +253,28 @@ int AddMultipliedSpectra(SpectraType * const A, const SpectraType B, const doubl
   return 0;
 }
 
+
+
+/*
+ *   A <- A + (alpha) B
+ *   A.N A.Emin and E.Emax are allowed to be fully different from B.N, B.Emin and B.Emax
+ *
+ */
+int SafeAddMultipliedSpectra(SpectraType * const A, const SpectraType B, const double alphaRe, const double alphaIm)
+{
+  if((A->N==B.N)&&(fabs(A->Emin-B.Emin)<1000*DBL_MIN+DBL_EPSILON*fabs(A->Emax-A->Emin))&&(fabs(A->Emax-B.Emax)<1000*DBL_MIN+DBL_EPSILON*fabs(A->Emax-A->Emin)))
+  {
+    return AddMultipliedSpectra(A, B, alphaRe, alphaIm);
+  }
+  else
+  {
+    printf("Still to do: SafeAddMultipliedSpectra\n");
+    printf("A.N=%i B.N=%i\n",A->N,B.N);
+    printf("A.Emin=%22.15E B.Emin=%22.15E\n",A->Emin,B.Emin);
+    printf("A.Emax=%22.15E B.Emax=%22.15E\n",A->Emin,B.Emax);
+    return 1;
+  }
+}
 
 /*
 *   A <- A - B

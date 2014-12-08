@@ -55,6 +55,7 @@ int CreateOneBandCubicLaticeTightBindingDef(TightBindingDef * A)
   A->Cell.rUnitCell[2][1] = 0.00000;
   A->Cell.rUnitCell[2][2] = 1.00000;
   ResiprocalLatticeVector(A->Cell.rUnitCell, A->Cell.gUnitCell);
+  A->Cell.Units = 1;
   A->Cell.NAtoms = 1;
   A->Cell.Atom = malloc(1 * sizeof(AtomType));
   strncpy(A->Cell.Atom[0].Name, "s", 3);
@@ -64,6 +65,13 @@ int CreateOneBandCubicLaticeTightBindingDef(TightBindingDef * A)
   A->Cell.Atom[0].Nshell = 1;
   A->Cell.Atom[0].shelldegeneracy = malloc(1 * sizeof(int));
   A->Cell.Atom[0].shelldegeneracy[0] = 1;
+  A->Cell.Atom[0].ShellName = malloc(1*sizeof(char*));
+  A->Cell.Atom[0].ShellName[0] = malloc(1*sizeof(char));
+  strncpy(A->Cell.Atom[0].ShellName[0], "s", 3);
+  A->Cell.Atom[0].OrbitalName=malloc(1*sizeof(char**));
+  A->Cell.Atom[0].OrbitalName[0]=malloc(1*sizeof(char*));
+  A->Cell.Atom[0].OrbitalName[0][0]=malloc(1*sizeof(char));
+  strncpy(A->Cell.Atom[0].OrbitalName[0][0], "s", 3);
   A->nH = 7;
   A->H = malloc(A->nH * sizeof(TightBindingDefHopping));
   for (i = 0; i < 7; i++)
@@ -103,6 +111,7 @@ int CreateOneBandSquareLaticeTightBindingDef(TightBindingDef * A)
   A->Cell.rUnitCell[2][1] = 0.00000;
   A->Cell.rUnitCell[2][2] = 4.00000;
   ResiprocalLatticeVector(A->Cell.rUnitCell, A->Cell.gUnitCell);
+  A->Cell.Units = 1;
   A->Cell.NAtoms = 1;
   A->Cell.Atom = malloc(1 * sizeof(AtomType));
   strncpy(A->Cell.Atom[0].Name, "s", 3);
@@ -112,6 +121,13 @@ int CreateOneBandSquareLaticeTightBindingDef(TightBindingDef * A)
   A->Cell.Atom[0].Nshell = 1;
   A->Cell.Atom[0].shelldegeneracy = malloc(1 * sizeof(int));
   A->Cell.Atom[0].shelldegeneracy[0] = 1;
+  A->Cell.Atom[0].ShellName = malloc(1*sizeof(char*));
+  A->Cell.Atom[0].ShellName[0] = malloc(1*sizeof(char));
+  strncpy(A->Cell.Atom[0].ShellName[0], "s", 3);
+  A->Cell.Atom[0].OrbitalName=malloc(1*sizeof(char**));
+  A->Cell.Atom[0].OrbitalName[0]=malloc(1*sizeof(char*));
+  A->Cell.Atom[0].OrbitalName[0][0]=malloc(1*sizeof(char));
+  strncpy(A->Cell.Atom[0].OrbitalName[0][0], "s", 3);
   A->nH = 5;
   A->H = malloc(A->nH * sizeof(TightBindingDefHopping));
   for (i = 0; i < 5; i++)
@@ -152,6 +168,7 @@ int CreateOneBandChainLaticeTightBindingDef(TightBindingDef * A)
   A->Cell.rUnitCell[2][1] = 0.00000;
   A->Cell.rUnitCell[2][2] = 4.00000;
   ResiprocalLatticeVector(A->Cell.rUnitCell, A->Cell.gUnitCell);
+  A->Cell.Units = 1;
   A->Cell.NAtoms = 1;
   A->Cell.Atom = malloc(1 * sizeof(AtomType));
   strncpy(A->Cell.Atom[0].Name, "s", 3);
@@ -161,6 +178,13 @@ int CreateOneBandChainLaticeTightBindingDef(TightBindingDef * A)
   A->Cell.Atom[0].Nshell = 1;
   A->Cell.Atom[0].shelldegeneracy = malloc(1 * sizeof(int));
   A->Cell.Atom[0].shelldegeneracy[0] = 1;
+  A->Cell.Atom[0].ShellName = malloc(1*sizeof(char*));
+  A->Cell.Atom[0].ShellName[0] = malloc(1*sizeof(char));
+  strncpy(A->Cell.Atom[0].ShellName[0], "s", 3);
+  A->Cell.Atom[0].OrbitalName=malloc(1*sizeof(char**));
+  A->Cell.Atom[0].OrbitalName[0]=malloc(1*sizeof(char*));
+  A->Cell.Atom[0].OrbitalName[0][0]=malloc(1*sizeof(char));
+  strncpy(A->Cell.Atom[0].OrbitalName[0][0], "s", 3);
   A->nH = 3;
   A->H = malloc(A->nH * sizeof(TightBindingDefHopping));
   for (i = 0; i < 3; i++)

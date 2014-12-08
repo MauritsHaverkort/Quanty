@@ -35,6 +35,7 @@
 #include "../Core/Lanczos.c"
 #include "../Core/MeanField.c"
 #include "../Core/Spectral.c"
+#include "../Core/ResonantSpectra.c" // added by Maurits - replaces your file, content pretty much un altered. (some functions moved to other files)
 #include "../Core/DensityMatrix.c"
 #include "../Core/Random.c"
 #include "../Core/MatrixOperator.c"

@@ -23,6 +23,57 @@ double ChebyshevU(const double x, const int n)
   return ((sin((n + 1) * acos(x))) / (sin(acos(x))));
 }
 
+/*  The spherical bessel functions are implemented as two series expansions, one for small x, one for large x
+ *  The small x works great for x< Pi (2 here)
+ *  The large x works great for x> 2+n
+ *
+ *  The gap is filled by taking the limmit to be 2+n/2, where number loss in both series is not so bad that the function is useless.
+ */
+double SphericalBesselJ(const double x, const uint32_t n)
+{
+  double res=0;
+  if(x<((double)(n+4))/((double)2))
+  {
+    uint32_t i,imax=30;
+    for(i=0;i<imax;i++)
+    {
+      res+=((i&1)?-1.0:1.0)*PowerInt(2,n+i)*PowerDoubleInt(x/2.0, 2*i+n)/(Factorial(i)*Factorial2(2*n+2*i+1));
+    }
+  }
+  else
+  {
+    uint32_t i,imax;
+    imax=((n&1)?(n+1)/2:(n/2));
+    for(i=0;i<imax;i++)
+    {
+      res+=cos(x-(n+1)*Pi/2.0)*((i&1)?-1:1)*Factorial(n+2*i  )/(Factorial(2*i  )*Factorial(n-2*i  )*PowerDoubleInt(2*x, 2*i  ))
+          -sin(x-(n+1)*Pi/2.0)*((i&1)?-1:1)*Factorial(n+2*i+1)/(Factorial(2*i+1)*Factorial(n-2*i-1)*PowerDoubleInt(2*x, 2*i+1));
+    }
+    if(!(n&1))
+    {
+      i=n/2;
+      res+=cos(x-(n+1)*Pi/2.0)*((i&1)?-1:1)*Factorial(n+2*i)/(Factorial(2*i)*Factorial(n-2*i)*PowerDoubleInt(2*x, 2*i));
+    }
+    res/=x;
+  }
+  return res;
+}
+
+/*  AssociatedLaguerre Polynomial
+ *
+ */
+double LaguerrePolynomial(const int n, const int l, const double x)
+{
+  int m;
+  double res=0;
+  for(m=0;m<=n;m++)
+  {
+    res+=((m&1)?-1:1) * Factorial(n+l) * PowerDoubleInt(x, m) / (Factorial(n-m)*Factorial(l+m)*Factorial(m));
+  }
+  return res;
+}
+
+
 /* Gaussian
  *
  */

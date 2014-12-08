@@ -340,6 +340,24 @@ static int LuaWavefunctionIndex(lua_State * L)
   return luaL_error(L, "Error operation \".%s()\" not defined on wavefunction\n",str);
 }
 
+
+static int LuaWavefunctionNewIndex(lua_State * L)
+{
+  WaveFunctionType *a = (WaveFunctionType *) luaL_checkudata(L, 1, "ssp.wavefunction");
+  const char *str = lua_tostring(L, 2);
+  
+  if(strcmp(str, "Name")==0)
+  {
+    WavefunctionSetName(a, lua_tostring(L, 3));
+  }
+  else
+  {
+    return luaL_error(L, "Error index %s not found in Wavefunction Object\n",str);
+  }
+  return 0;
+}
+
+
 static int LuaWavefunctionToString(lua_State * L)
 {
   WaveFunctionType *res = (WaveFunctionType *) luaL_checkudata(L, 1, "ssp.wavefunction");
@@ -359,6 +377,7 @@ static const struct luaL_Reg Wavefunction_meta[] = {
   {"__sub", LuaWavefunctionSub},
   {"__mul", LuaWavefunctionMul},
   {"__index", LuaWavefunctionIndex},
+  {"__newindex", LuaWavefunctionNewIndex},
   {"__tostring", LuaWavefunctionToString},
   {"__gc", LuaWavefunctionDestroy},
   {NULL, NULL}

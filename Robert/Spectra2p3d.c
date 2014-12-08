@@ -1442,6 +1442,10 @@ int LigandField(uint32_t Z, uint32_t dCount)
     EndTiming("spectrum", &Time);
 printf("\nPoint1:\n"); fflush(stdout);
     FilePrintRIXSSpectra(numwRes,RIXSSpectra,wRes, 3, "LigandField_RIXS","w");
+    
+    FilePrintRIXSSpectrum(numwRes,RIXSSpectra,wRes, 1,0, "LigandField_RIXS_xx_Real","w");
+    FilePrintRIXSSpectrum(numwRes,RIXSSpectra,wRes, 0,0, "LigandField_RIXS_xx_Imag","w");
+    
 printf("\nPoint2:\n"); fflush(stdout);
     EndTiming("RIXS", &Time);
     PrintTiming(Time);

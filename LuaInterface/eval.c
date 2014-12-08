@@ -1,5 +1,5 @@
 static int LuaEval(lua_State * L)
 {
-  printf("LuaEval, Sebastian, be my guest to show your magic\n");
+  printf("LuaEval\n");
   return 0;
 }

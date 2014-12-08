@@ -725,9 +725,9 @@ uint32_t SelfEnergyTriDiagonalRepresentation(TriDiagonalMatrixType const G0, Tri
   IG.a = &(G.a[1]);
   IG.b = &(G.b[1]);
   strcpy(IG0.Name, G0.Name);
-  strncat(IG0.Name, "^-1 (-1)", MAX(0, (int)((int)MAXStrLength - (int)strlen(IG0.Name))));
+  strncat(IG0.Name, "^-1 (-1)", Max(0, (int)((int)MAXStrLength - (int)strlen(IG0.Name))));
   strcpy(IG.Name, G.Name);
-  strncat(IG.Name, "^-1 (-1)", MAX(0, (int)((int)MAXStrLength - (int)strlen(IG.Name))));
+  strncat(IG.Name, "^-1 (-1)", Max(0, (int)((int)MAXStrLength - (int)strlen(IG.Name))));
   return DifferenceGreensFunctionTriDiagonalRepresentation(IG, IG0, Sigma);
 }
 
@@ -1121,7 +1121,7 @@ uint32_t OldGBathNewTriDiagonalRepresentation(TriDiagonalMatrixType const Gcl, T
   GclInv.a = &(Gcl.a[1]);
   GclInv.b = &(Gcl.b[1]);
   strcpy(GclInv.Name, Gcl.Name);
-  strncat(GclInv.Name, "^-1 (-1)", MAX(0, (int)((int)MAXStrLength - (int)strlen(Gcl.Name))));
+  strncat(GclInv.Name, "^-1 (-1)", Max(0, (int)((int)MAXStrLength - (int)strlen(Gcl.Name))));
   SigmaInv.N = Sigma.N + 1;
   InitTriDiagonalMatrix(&SigmaInv);
   SigmaInv.a[0] = 0;
@@ -1164,7 +1164,7 @@ uint32_t VeryOldGBathNewTriDiagonalRepresentation(TriDiagonalMatrixType const Gl
   GlocInv.a = &(Glocal.a[1]);
   GlocInv.b = &(Glocal.b[1]);
   strcpy(GlocInv.Name, Glocal.Name);
-  strncat(GlocInv.Name, "^-1 (-1)", MAX(0, (int)((int)MAXStrLength - (int)strlen(Glocal.Name))));
+  strncat(GlocInv.Name, "^-1 (-1)", Max(0, (int)((int)MAXStrLength - (int)strlen(Glocal.Name))));
   DifferenceGreensFunctionTriDiagonalRepresentation(GlocInv, Sigma, &GBathNewInv);
   GBathNew->N = GBathNewInv.N + 1;
   InitTriDiagonalMatrix(GBathNew);

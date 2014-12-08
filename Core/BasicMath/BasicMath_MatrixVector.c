@@ -230,7 +230,7 @@ uint32_t MatrixTranspose(MatrixType * const M)
 {
   int    i, j;
   double temp;
-  strncat(M->Name, "^T", MAX(0, (int)((int)MAXStrLength - (int)strlen(M->Name))));
+  strncat(M->Name, "^T", Max(0, (int)((int)MAXStrLength - (int)strlen(M->Name))));
   if (M->Ni == M->Nj)
   {                             /* Ni==Nj */
     if (M->QComplex)
@@ -305,7 +305,7 @@ uint32_t MatrixTranspose(MatrixType * const M)
  */
 void MatrixComplexConjugate(MatrixType * const M)
 {
-  strncat(M->Name, "^*", MAX(0, (int)((int)MAXStrLength - (int)strlen(M->Name))));
+  strncat(M->Name, "^*", Max(0, (int)((int)MAXStrLength - (int)strlen(M->Name))));
   if (M->QComplex)
   {
     int    i, j;
@@ -325,7 +325,7 @@ uint32_t MatrixConjugateTranspose(MatrixType * M)
 {
   int    i, j;
   double temp;
-  strncat(M->Name, "^+", MAX(0, (int)((int)MAXStrLength - (int)strlen(M->Name))));
+  strncat(M->Name, "^+", Max(0, (int)((int)MAXStrLength - (int)strlen(M->Name))));
   if (M->Ni == M->Nj)
   {                             /* Ni==Nj */
     if (M->QComplex)
@@ -406,7 +406,7 @@ double MatrixInverse(MatrixType * M)
     printf("Tried to invert a non square matrix Ni=%i Nj=%i\n", M->Ni, M->Nj);
     return -1;
   }
-  strncat(M->Name, "^-1", MAX(0, (int)((int)MAXStrLength - (int)strlen(M->Name))));
+  strncat(M->Name, "^-1", Max(0, (int)((int)MAXStrLength - (int)strlen(M->Name))));
   if (M->QComplex)
   {
     int    i, j, k, jmaxcol;
@@ -778,9 +778,9 @@ uint32_t MatrixTransform(MatrixType * const M, MatrixType const A, MatrixType co
   if (InitMatrix(M))
     return 1;
   strcpy(M->Name, "U^* A U^T U=(");
-  strncat(M->Name, T.Name, MAX(0, (int)((int)MAXStrLength - (int)24)) / 2);
+  strncat(M->Name, T.Name, Max(0, (int)((int)MAXStrLength - (int)24)) / 2);
   strcat(M->Name, ") A=(");
-  strncat(M->Name, A.Name, MAX(0, (int)((int)MAXStrLength - (int)24)) / 2);
+  strncat(M->Name, A.Name, Max(0, (int)((int)MAXStrLength - (int)24)) / 2);
   strcat(M->Name, ")");
   if ((A.QComplex) && (T.QComplex))
   {                             /* all complex */
@@ -909,9 +909,9 @@ uint32_t MatrixTransformPart(MatrixType * const M, MatrixType const A, MatrixTyp
   if (InitMatrix(M))
     return 1;
   strcpy(M->Name, "U^* A U^T U=(");
-  strncat(M->Name, T.Name, MAX(0, (int)((int)MAXStrLength - (int)24)) / 2);
+  strncat(M->Name, T.Name, Max(0, (int)((int)MAXStrLength - (int)24)) / 2);
   strcat(M->Name, ") A=(");
-  strncat(M->Name, A.Name, MAX(0, (int)((int)MAXStrLength - (int)24)) / 2);
+  strncat(M->Name, A.Name, Max(0, (int)((int)MAXStrLength - (int)24)) / 2);
   strcat(M->Name, ")");
   if ((A.QComplex) && (T.QComplex))
   {                             /* all complex */
@@ -1013,8 +1013,8 @@ uint32_t MatrixMultiply(MatrixType * const M, MatrixType const A, MatrixType con
   }
   uint32_t i, j, k;
   strcpy(M->Name, A.Name);
-  strncat(M->Name, " * ", MAX(0, (int)((int)MAXStrLength - (int)strlen(A.Name))));
-  strncat(M->Name, B.Name, MAX(0, (int)((int)MAXStrLength - (int)strlen(A.Name) + (int)4)));
+  strncat(M->Name, " * ", Max(0, (int)((int)MAXStrLength - (int)strlen(A.Name))));
+  strncat(M->Name, B.Name, Max(0, (int)((int)MAXStrLength - (int)strlen(A.Name) + (int)4)));
   M->Ni = A.Ni;
   M->Nj = B.Nj;
   if ((A.QComplex) && (B.QComplex))
@@ -1111,7 +1111,7 @@ uint32_t MatrixPart(MatrixType * const M, MatrixType const A, const uint32_t iSt
   if (InitMatrix(M))
     return 1;
   strcpy(M->Name, "Part of ");
-  strncat(M->Name, A.Name, MAX(0, (int)((int)MAXStrLength - (int)10)));
+  strncat(M->Name, A.Name, Max(0, (int)((int)MAXStrLength - (int)10)));
   if (M->QComplex)
   {
     for (i = iStart; i <= iEnd; i++)

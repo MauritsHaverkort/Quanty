@@ -44,6 +44,7 @@
 #include "../Core/BlockLanczos.c"
 #include "../Core/MeanField.c"
 #include "../Core/Spectral.c"
+#include "../Core/ResonantSpectra.c"
 #include "../Core/DensityMatrix.c"
 #include "../Core/Random.c"
 #include "../Core/MatrixOperator.c"
@@ -95,6 +96,8 @@ int main(int argc, const char *argv[])
       TestOperatorArithmeticNormalOrder();
     if (!strncmp("Cell", argv[argc], strlen(argv[argc])))
       TestCellFunctions();
+    if (!strncmp("BlockLanczos", argv[argc], strlen(argv[argc])))
+      TestBlockLanczos();
 
     
     if (!strncmp("CI", argv[argc], strlen(argv[argc])))
