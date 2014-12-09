@@ -48,22 +48,29 @@
 #include "../DMFT/SingleSiteFunctions.c"
 #include "../IO/StuttgartNMTO.c"
 
-// #include "./ResonantSpectra.c" <= integrated in the core
+
+#include "./ForCore.c"
+#include "./ResonantSpectra.c"
 #include "./Spectra2p3d.c"
 #include "./ImpurityModelFromTB.c"
 #include "../Test/LanczosDyson.c"
+
 
 
 int main(int argc, const char *argv[])
 {
   printf("Starting RobertTest.c ...\n"); fflush(stdout);
 
-  //NiOLigandField();
-//  MnOLigandField();
-//  ImpurityModelFromTB(28,8);
-    LigandField(28,8);
-//  ImpurityModel3d(28,8);
- // TestLanczosDyson3();
+  ModelSettings ImSet;
+  if (!FileReadModelSettings(&ImSet, argv[argc-1]))
+  {
+    PrintModelSettings(ImSet,"stdout");
+    RunModelCalculation(ImSet);
+    
+  }
+  
+  
+
   return 0;
 
 }
