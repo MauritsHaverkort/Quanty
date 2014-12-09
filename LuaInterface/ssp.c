@@ -1171,6 +1171,7 @@ static int LuaReadConvergenceSettingsFromOptions(lua_State *L, int len, Converge
     Settings->Gamma2 = *(double*)buff;
     free(buff);
   }
+  return 0;
 }
 
 static int LuaCreateSpectra(lua_State *L)
@@ -1431,14 +1432,7 @@ static int LuaCreateResonantSpectra(lua_State *L)
   luaL_setmetatable(L, "ssp.spectra");
   Spec->NSpectra=Options.NT1*Options.NT2*Options.Npsi;
   Spec->Spec=malloc(Spec->NSpectra*sizeof(SpectraType));
-  /* calculate groundstate energy */
-  psiEn=malloc(Options.Npsi*sizeof(double));
-  for(ipsi=0;ipsi<Options.Npsi;ipsi++)
-  {
-    PsiHermitianOperatorPsi(*H, psi[ipsi], &psiEn[ipsi]);
-  }
-  /* loop over all Transition operators */
-
+  
   
   
   free(psiEn);
