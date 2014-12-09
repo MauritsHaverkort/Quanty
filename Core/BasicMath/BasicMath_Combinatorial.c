@@ -4,7 +4,11 @@ double Factorial(int a)
   int    i;
   double result;
   result = 1.0;
-  if (a < 0) return NAN;
+  if (a < 0)
+  {
+    printf("Error Factorial called with a negative number\n");
+    return 0;
+  }
   for (i = a; i > 0; i--)
   {
     result *= i;
@@ -17,7 +21,11 @@ double Factorial2(int a)
   int    i;
   double result;
   result = 1.0;
-  if (a < 0) return NAN;
+  if (a < 0)
+  {
+    printf("Error Factorial2 called with a negative number\n");
+    return 0;
+  }
   for (i = a; i > 0; i-=2)
   {
     result *= i;

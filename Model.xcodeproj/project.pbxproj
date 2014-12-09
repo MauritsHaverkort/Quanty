@@ -125,7 +125,7 @@
 		4C03B03118706F30004C2B7B /* StuttgartNMTO.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = StuttgartNMTO.c; sourceTree = "<group>"; };
 		4C0877991737CDE600CE9AB4 /* WaveFunctionPerturbationArithmetic.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = WaveFunctionPerturbationArithmetic.c; sourceTree = "<group>"; };
 		4C0B553D196752C2000B8E97 /* LuaInterface */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = LuaInterface; sourceTree = BUILT_PRODUCTS_DIR; };
-		4C0B553F196752C3000B8E97 /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
+		4C0B553F196752C3000B8E97 /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; lineEnding = 0; path = main.c; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
 		4C0B554719675377000B8E97 /* includeLua.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = includeLua.h; sourceTree = "<group>"; };
 		4C0B554819675377000B8E97 /* lapi.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = lapi.c; sourceTree = "<group>"; };
 		4C0B554919675377000B8E97 /* lapi.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = lapi.h; sourceTree = "<group>"; };
@@ -246,7 +246,7 @@
 		4C2AAA63163265DD00138620 /* MiniTest.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = MiniTest.c; sourceTree = "<group>"; };
 		4C2AAA64163265DD00138620 /* Old_Functions.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = Old_Functions.c; sourceTree = "<group>"; };
 		4C2AAA65163265DD00138620 /* PointerAritmethic.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = PointerAritmethic.c; sourceTree = "<group>"; };
-		4C2AAA66163265DD00138620 /* Test.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = Test.c; sourceTree = "<group>"; };
+		4C2AAA66163265DD00138620 /* Test.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; lineEnding = 0; path = Test.c; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
 		4C2AAA67163265DD00138620 /* TestBasicMath.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = TestBasicMath.c; sourceTree = "<group>"; };
 		4C2AAA69163265DD00138620 /* TestCore.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = TestCore.c; sourceTree = "<group>"; };
 		4C2AAA6A163265DD00138620 /* TestFinitsizeClusterModels.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = TestFinitsizeClusterModels.c; sourceTree = "<group>"; };
@@ -273,11 +273,11 @@
 		4C3FCCFE18841A19000B9DB8 /* BasicMath_BlockTypeConversion.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = BasicMath_BlockTypeConversion.c; path = BasicMathBlock/BasicMath_BlockTypeConversion.c; sourceTree = "<group>"; };
 		4C45453F189269F600E16DC6 /* BasicMath_CompactMatrixVector.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = BasicMath_CompactMatrixVector.c; sourceTree = "<group>"; };
 		4C4637CE19C0407300EB0DB0 /* BasicMath_BlockMatrixToOperator.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = BasicMath_BlockMatrixToOperator.c; path = BasicMathBlock/BasicMath_BlockMatrixToOperator.c; sourceTree = "<group>"; };
-		4C4637D219C071C500EB0DB0 /* ResonantSpectra.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ResonantSpectra.c; sourceTree = "<group>"; };
-		4C4637D319C071C500EB0DB0 /* RobertTest.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = RobertTest.c; sourceTree = "<group>"; };
+		4C4637D219C071C500EB0DB0 /* ResonantSpectra.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; lineEnding = 2; path = ResonantSpectra.c; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
+		4C4637D319C071C500EB0DB0 /* RobertTest.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; lineEnding = 2; path = RobertTest.c; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
 		4C4637D819C0726B00EB0DB0 /* Robert */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Robert; sourceTree = BUILT_PRODUCTS_DIR; };
-		4C4637E419C312EE00EB0DB0 /* ImpurityModelFromTB.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ImpurityModelFromTB.c; sourceTree = "<group>"; };
-		4C4637E519C312EE00EB0DB0 /* Spectra2p3d.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = Spectra2p3d.c; sourceTree = "<group>"; };
+		4C4637E419C312EE00EB0DB0 /* ImpurityModelFromTB.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; lineEnding = 2; path = ImpurityModelFromTB.c; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
+		4C4637E519C312EE00EB0DB0 /* Spectra2p3d.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; lineEnding = 2; path = Spectra2p3d.c; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
 		4C4637E619C3844500EB0DB0 /* CI.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = CI.c; sourceTree = "<group>"; };
 		4C5A6B9B175E6E8700EEA17F /* PrintMathematicaExpression.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = PrintMathematicaExpression.c; sourceTree = "<group>"; };
 		4C5CA61716D18BBF00BE1C25 /* DMFT */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = DMFT; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -299,13 +299,13 @@
 		4CA5D6B6188AE32500A7F1DE /* BasicMath_BlockAndersonMatrix.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = BasicMath_BlockAndersonMatrix.c; path = BasicMathBlock/BasicMath_BlockAndersonMatrix.c; sourceTree = "<group>"; };
 		4CA5D6B7188AE35400A7F1DE /* BasicMath_BlockTridiagonalMatrix.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = BasicMath_BlockTridiagonalMatrix.c; path = BasicMathBlock/BasicMath_BlockTridiagonalMatrix.c; sourceTree = "<group>"; };
 		4CB3643519EB8DC0000B721A /* BlockLanczos.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = BlockLanczos.c; sourceTree = "<group>"; };
-		4CC07E7B1A08D9D10053B938 /* ResonantSpectra.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ResonantSpectra.c; sourceTree = "<group>"; };
+		4CC07E7B1A08D9D10053B938 /* ResonantSpectra.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; lineEnding = 0; path = ResonantSpectra.c; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
 		4CD93EC319EA1F9E008DFB54 /* BasicMath_BlockNaturalImpurityOrbital.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = BasicMath_BlockNaturalImpurityOrbital.c; path = BasicMathBlock/BasicMath_BlockNaturalImpurityOrbital.c; sourceTree = "<group>"; };
 		4CDD1C9F1796D14100614F34 /* YiDMFT */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = YiDMFT; sourceTree = BUILT_PRODUCTS_DIR; };
 		4CDD1CAB1799666C00614F34 /* BasicMath_BADoubleTriDiagonalMatrixVector.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = BasicMath_BADoubleTriDiagonalMatrixVector.c; sourceTree = "<group>"; };
 		4CDD1CAC179994DC00614F34 /* TestGFBA.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = TestGFBA.c; sourceTree = "<group>"; };
 		4CDD1CAD179D2F0900614F34 /* TestStandardOperators.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = TestStandardOperators.c; sourceTree = "<group>"; };
-		4CE50BC319754E6F00091F1C /* ssp.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ssp.c; sourceTree = "<group>"; };
+		4CE50BC319754E6F00091F1C /* ssp.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; lineEnding = 0; path = ssp.c; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
 		4CE50BC51975556500091F1C /* BraKet.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = BraKet.c; sourceTree = "<group>"; };
 		4CE50BC6197555E100091F1C /* eval.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = eval.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */

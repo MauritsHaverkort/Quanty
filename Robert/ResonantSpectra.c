@@ -112,7 +112,7 @@ uint32_t TriDiagonalMatrixToGreensFunction(TriDiagonalMatrixType * const SpecTri
 }
 
 
-uint32_t ResonantSpectra(const OperatorType OppH, const OperatorType Texc, const OperatorType *TDec, uint32_t NDec,  const WaveFunctionType psi, double energy, double epsilon, uint32_t numwRes, SpectraType (*spectra)[numwRes], double *wRes, double gammaRes, double gamma, double Gfwhm, uint32_t NKrylov1, uint32_t NKrylov2)
+uint32_t ResonantSpectraOrig(const OperatorType OppH, const OperatorType Texc, const OperatorType *TDec, uint32_t NDec,  const WaveFunctionType psi, double energy, double epsilon, uint32_t numwRes, SpectraType (*spectra)[numwRes], double *wRes, double gammaRes, double gamma, double Gfwhm, uint32_t NKrylov1, uint32_t NKrylov2)
 {
  /*Given wavefunction psi (usually ground state, but could be excited)*/
 

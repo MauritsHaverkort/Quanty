@@ -181,7 +181,7 @@ void CeImpurity()
     OppNv72=malloc(NBathv*sizeof(OperatorType));
   }
   
-  PotentialExpandedOnY("C1",3,&t,&SphericalAkm); /* the hybridization is taken to be spherical */
+  PotentialExpandedOnC("C1",3,&t,&SphericalAkm); /* the hybridization is taken to be spherical */
   
   Vx.N=3;             /* for XAS I need polarization dependent transition operators */
   Vx.QComplex=0;      /* these are created from potentials expanded on spherical harmonics */

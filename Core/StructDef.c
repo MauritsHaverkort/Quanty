@@ -136,6 +136,22 @@ typedef struct ConvergenceSettingsType
   uint32_t NTri2;           /* number of Krylov states in single shot tri-diagonalization routines used for resonant spectra */
   double   zero;            /* smallest number different from one in convergence tests */
   double   epsilon;         /* smallest absolute prefactor of a determinant in wave-functions considered different from 0 */
+  uint32_t NBitsKey;        /* number of bits in key */
+  DeterminantRestrictionType restrictions;  /* restrictions on possible determinatns */
+  DeterminantRestrictionType restrictions1; /* restrictions on possible determinatns in resonant spectra */
+  DeterminantRestrictionType restrictions2; /* restrictions on possible determinatns in resonant spectra */
+  double Emin;
+  double Emax;
+  uint32_t NE;
+  double Gamma;
+  double Emin1;
+  double Emax1;
+  uint32_t NE1;
+  double Gamma1;
+  double Emin2;
+  double Emax2;
+  uint32_t NE2;
+  double Gamma2;
 }
 ConvergenceSettingsType;
 
@@ -152,7 +168,14 @@ ConvergenceSettingsType InitConvergenceSettings()
     100 /*NTri1*/,
     100 /*NTri2*/,
     100*sqrt(DBL_EPSILON) /*zero*/,
-    sqrt(DBL_EPSILON) /*epsilon*/
+    sqrt(DBL_EPSILON)     /*epsilon*/,
+    20                    /*bits in key*/,
+    {0, NULL, NULL, NULL} /*restricitons*/,
+    {0, NULL, NULL, NULL} /*restricitons1*/,
+    {0, NULL, NULL, NULL} /*restricitons2*/,
+    DBL_MAX,-DBL_MAX,0,0 /*Energy range */,
+    DBL_MAX,-DBL_MAX,0,0 /*Energy range 1*/,
+    DBL_MAX,-DBL_MAX,0,0 /*Energy range 2*/
   };
   return ret;
 };

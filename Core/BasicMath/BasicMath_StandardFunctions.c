@@ -4112,7 +4112,7 @@ double CubicHarmonicK(const int k, const int m, const double t, const double p)
 }
 
 
-/*  Returns a potential expanded on spherical harmonics
+/*  Returns a potential expanded on renormalized spherical harmonics
  *  Such that the potential belongs to the a1 irrep of a given pointgroup
  *  The imput parameters are the eigen-energies of a shell with certain angular momentum
  *
@@ -4133,6 +4133,10 @@ double CubicHarmonicK(const int k, const int m, const double t, const double p)
  *       l == 1    - {b1u, b2u, b3u} {z y x}
  *       l == 2    - {agx2y2, agz2, Mag, b1g, b2g, b3g} {x2y2 z2 mx2y2-z2 xy xz yz}
  *       l == 3    - .........
+ *  D3h  l == 0    - {a1p}
+ *       l == 1    - {a2pp, ep} {z, x/y}
+ *       l == 2    - {a1p, ep, epp} {z2, xy/x2-y2, xz/yz}
+ *       l == 3    - {a1p, a2p, ep,a2pp, epp} setting x:{x3-3xy2, y3-3xy2, ml=+-2, 5z3-3z, ml=+-1} setting y:{y3-3xy2, x3-3xy2, ml=+-2, 5z3-3z, ml=+-1}
  *  D4h  l == 0    - {a1g}
  *       l == 1    - {a2u eu} {z (x y)}
  *       l == 2    - {a1g b1g b2g eg} {z2 x2y2 xy (xz yz)}
@@ -4141,7 +4145,7 @@ double CubicHarmonicK(const int k, const int m, const double t, const double p)
  *       l == 1    - {t1u}
  *       l == 2    - {hg}
  */
-uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEnergies, HarmonicsExpansion * const Akm)
+uint32_t PotentialExpandedOnC(char *s, uint32_t const l, double const *EigenEnergies, HarmonicsExpansion * const Akm)
 {
   if (strcmp(s, "C1") == 0)
   {
@@ -4149,24 +4153,24 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
     Akm->N = 1;
     if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for l failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for m failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
     {
-      printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if (Akm->QComplex)
     {
       if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
       {
-        printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n", s);
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
         return 1;
       };
     }
@@ -4182,24 +4186,24 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
     Akm->N = 1;
     if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for l failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for m failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
     {
-      printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if (Akm->QComplex)
     {
       if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
       {
-        printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n", s);
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
         return 1;
       };
     }
@@ -4213,24 +4217,24 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
     Akm->N = 1;
     if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for l failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for m failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
     {
-      printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if (Akm->QComplex)
     {
       if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
       {
-        printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n", s);
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
         return 1;
       };
     }
@@ -4264,24 +4268,24 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
     }
     if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for l failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for m failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
     {
-      printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if (Akm->QComplex)
     {
       if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
       {
-        printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n", s);
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
         return 1;
       };
     }
@@ -4343,24 +4347,24 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
     }
     if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for l failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for m failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
     {
-      printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if (Akm->QComplex)
     {
       if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
       {
-        printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n", s);
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
         return 1;
       };
     }
@@ -4422,24 +4426,24 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
     }
     if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for l failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for m failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
     {
-      printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if (Akm->QComplex)
     {
       if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
       {
-        printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n", s);
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
         return 1;
       };
     }
@@ -4501,24 +4505,24 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
     }
     if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for l failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for m failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
     {
-      printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if (Akm->QComplex)
     {
       if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
       {
-        printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n", s);
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
         return 1;
       };
     }
@@ -4580,24 +4584,24 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
     }
     if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for l failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for m failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
     {
-      printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if (Akm->QComplex)
     {
       if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
       {
-        printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n", s);
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
         return 1;
       };
     }
@@ -4659,24 +4663,24 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
     }
     if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for l failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for m failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
     {
-      printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if (Akm->QComplex)
     {
       if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
       {
-        printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n", s);
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
         return 1;
       };
     }
@@ -4738,24 +4742,24 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
     }
     if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for l failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for m failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
     {
-      printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if (Akm->QComplex)
     {
       if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
       {
-        printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n", s);
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
         return 1;
       };
     }
@@ -4793,8 +4797,6 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
   }
   else if (strcmp(s, "C4v") == 0)
   {
-    printf("Potential for %s not yet implemented\n", s);
-    return 1;
     Akm->QComplex = 0;
     switch (l)
     {
@@ -4802,13 +4804,13 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
       Akm->N = 1;
       break;
     case 1:
-      Akm->N = 1;
-      break;
-    case 2:
       Akm->N = 2;
       break;
+    case 2:
+      Akm->N = 5;
+      break;
     case 3:
-      Akm->N = 3;
+      Akm->N = 8;
       break;
     default:
       printf("Potential for point group %s and angular momentum %i not implemented\n", s, l);
@@ -4817,24 +4819,24 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
     }
     if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for l failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for m failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
     {
-      printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if (Akm->QComplex)
     {
       if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
       {
-        printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n", s);
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
         return 1;
       };
     }
@@ -4851,21 +4853,63 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
       {
         Akm->l[0] = 0;
         Akm->m[0] = 0;
-        Akm->Re[0] = EigenEnergies[0];
+        Akm->Re[0] = (EigenEnergies[0]+2*EigenEnergies[1])/3.0;
+        Akm->l[1] = 2;
+        Akm->m[1] = 0;
+        Akm->Re[1] = (EigenEnergies[0]-EigenEnergies[1])*5/3.0;
       }
       break;
     case 2:
       {
         Akm->l[0] = 0;
         Akm->m[0] = 0;
-        Akm->Re[0] = EigenEnergies[0];
+        Akm->Re[0] = (EigenEnergies[0]+EigenEnergies[1]+EigenEnergies[2]+2*EigenEnergies[3])/5.0;
+        Akm->l[1] = 2;
+        Akm->m[1] = 0;
+        Akm->Re[1] = (EigenEnergies[0]-EigenEnergies[1]-EigenEnergies[2]+EigenEnergies[3]);
+        Akm->l[2] = 4;
+        Akm->m[2] = 0;
+        Akm->Re[2] = (6*EigenEnergies[0]+EigenEnergies[1]+EigenEnergies[2]-8*EigenEnergies[3])*0.3;
+        Akm->l[3] = 4;
+        Akm->m[3] = 4;
+        Akm->Re[3] = (EigenEnergies[1]-EigenEnergies[2])*1.5*sqrt(0.7);
+        Akm->l[4] = 4;
+        Akm->m[4] =-4;
+        Akm->Re[4] =  Akm->Re[3];
       }
       break;
     case 3:
       {
+        const double Ea1 = EigenEnergies[0];
+        const double Eb1 = EigenEnergies[1];
+        const double Eb2 = EigenEnergies[2];
+        const double Ee1 = EigenEnergies[3];
+        const double Ee2 = EigenEnergies[4];
+        const double Me  = EigenEnergies[5];
         Akm->l[0] = 0;
         Akm->m[0] = 0;
-        Akm->Re[0] = EigenEnergies[0];
+        Akm->Re[0] = (Ea1+Eb1+Eb2+2*Ee1+2*Ee2)/7.0;
+        Akm->l[1] = 2;
+        Akm->m[1] = 0;
+        Akm->Re[1] = (Ea1-Ee1+sqrt(15)*Me)*5/7.0;
+        Akm->l[2] = 4;
+        Akm->m[2] = 0;
+        Akm->Re[2] = (12*Ea1-14*Eb1-14*Eb2+9*Ee1+7*Ee2-2*sqrt(15)*Me)*3/28.0;
+        Akm->l[3] = 4;
+        Akm->m[3] = 4;
+        Akm->Re[3] = (10*Eb1-10*Eb2+15*Ee1-15*Ee2+2*sqrt(15)*Me)*3/(4*sqrt(70));
+        Akm->l[4] = 4;
+        Akm->m[4] =-4;
+        Akm->Re[4] = Akm->Re[3];
+        Akm->l[5] = 6;
+        Akm->m[5] = 0;
+        Akm->Re[5] = (40*Ea1+12*Eb1+12*Eb2-25*Ee1-39*Ee2-14*sqrt(15)*Me)*13/280.0;
+        Akm->l[6] = 6;
+        Akm->m[6] = 4;
+        Akm->Re[6] = (12*Eb1-12*Eb2-15*Ee1+15*Ee2-2*sqrt(15)*Me)*13/(40*sqrt(14));
+        Akm->l[7] = 6;
+        Akm->m[7] =-4;
+        Akm->Re[7] = Akm->Re[6];
       }
       break;
     }
@@ -4896,24 +4940,24 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
     }
     if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for l failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for m failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
     {
-      printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if (Akm->QComplex)
     {
       if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
       {
-        printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n", s);
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
         return 1;
       };
     }
@@ -4975,24 +5019,24 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
     }
     if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for l failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for m failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
     {
-      printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if (Akm->QComplex)
     {
       if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
       {
-        printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n", s);
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
         return 1;
       };
     }
@@ -5054,24 +5098,24 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
     }
     if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for l failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for m failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
     {
-      printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if (Akm->QComplex)
     {
       if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
       {
-        printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n", s);
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
         return 1;
       };
     }
@@ -5133,24 +5177,24 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
     }
     if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for l failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for m failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
     {
-      printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if (Akm->QComplex)
     {
       if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
       {
-        printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n", s);
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
         return 1;
       };
     }
@@ -5212,24 +5256,24 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
     }
     if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for l failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for m failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
     {
-      printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if (Akm->QComplex)
     {
       if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
       {
-        printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n", s);
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
         return 1;
       };
     }
@@ -5291,24 +5335,24 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
     }
     if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for l failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for m failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
     {
-      printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if (Akm->QComplex)
     {
       if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
       {
-        printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n", s);
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
         return 1;
       };
     }
@@ -5370,24 +5414,24 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
     }
     if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for l failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for m failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
     {
-      printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if (Akm->QComplex)
     {
       if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
       {
-        printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n", s);
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
         return 1;
       };
     }
@@ -5449,24 +5493,24 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
     }
     if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for l failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for m failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
     {
-      printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if (Akm->QComplex)
     {
       if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
       {
-        printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n", s);
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
         return 1;
       };
     }
@@ -5528,24 +5572,24 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
     }
     if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for l failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for m failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
     {
-      printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if (Akm->QComplex)
     {
       if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
       {
-        printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n", s);
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
         return 1;
       };
     }
@@ -5607,24 +5651,24 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
     }
     if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for l failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for m failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
     {
-      printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if (Akm->QComplex)
     {
       if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
       {
-        printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n", s);
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
         return 1;
       };
     }
@@ -5686,24 +5730,24 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
     }
     if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for l failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for m failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
     {
-      printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if (Akm->QComplex)
     {
       if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
       {
-        printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n", s);
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
         return 1;
       };
     }
@@ -5765,24 +5809,24 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
     }
     if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for l failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for m failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
     {
-      printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if (Akm->QComplex)
     {
       if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
       {
-        printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n", s);
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
         return 1;
       };
     }
@@ -5831,8 +5875,6 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
       break;
     case 2:
       Akm->N = 9;
-      printf("Potential for point group %s and angular momentum %i not implemented\n", s, l);
-      return 1;
       break;
     case 3:
       Akm->N = 16;
@@ -5846,24 +5888,24 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
     }
     if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for l failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for m failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
     {
-      printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if (Akm->QComplex)
     {
       if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
       {
-        printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n", s);
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
         return 1;
       };
     }
@@ -5894,9 +5936,39 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
       break;
     case 2:
       {
+        const double Eagx2y2 = EigenEnergies[0];
+        const double Eagz2   = EigenEnergies[1];
+        const double Eagmix  = EigenEnergies[2];
+        const double Eb1gxy  = EigenEnergies[3];
+        const double Eb2gxz  = EigenEnergies[4];
+        const double Eb3gyz  = EigenEnergies[5];
         Akm->l[0] = 0;
         Akm->m[0] = 0;
-        Akm->Re[0] = EigenEnergies[0];
+        Akm->Re[0] = 0.2*(Eagx2y2+Eagz2+Eb1gxy+Eb2gxz+Eb3gyz);
+        Akm->l[1] = 2;
+        Akm->m[1] = 0;
+        Akm->Re[1] = 0.5*(-2*Eagx2y2+2*Eagz2-2*Eb1gxy+Eb2gxz+Eb3gyz);
+        Akm->l[2] = 4;
+        Akm->m[2] = 0;
+        Akm->Re[2] = 0.3*(Eagx2y2+6*Eagz2+Eb1gxy-4*Eb2gxz-4*Eb3gyz);
+        Akm->l[3] = 2;
+        Akm->m[3] = 2;
+        Akm->Re[3] = 0.25*(sqrt(6)*(Eb2gxz-Eb3gyz)-4*sqrt(2)*Eagmix);
+        Akm->l[4] = 2;
+        Akm->m[4] =-2;
+        Akm->Re[4] = 0.25*(sqrt(6)*(Eb2gxz-Eb3gyz)-4*sqrt(2)*Eagmix);
+        Akm->l[5] = 4;
+        Akm->m[5] = 2;
+        Akm->Re[5] = sqrt(0.9)*(Eb2gxz-Eb3gyz+sqrt(3)*Eagmix);
+        Akm->l[6] = 4;
+        Akm->m[6] =-2;
+        Akm->Re[6] = sqrt(0.9)*(Eb2gxz-Eb3gyz+sqrt(3)*Eagmix);
+        Akm->l[7] = 4;
+        Akm->m[7] = 4;
+        Akm->Re[7] = 1.5*sqrt(0.7)*(Eagx2y2-Eb1gxy);
+        Akm->l[8] = 4;
+        Akm->m[8] =-4;
+        Akm->Re[8] = 1.5*sqrt(0.7)*(Eagx2y2-Eb1gxy);
       }
       break;
     case 3:
@@ -5908,83 +5980,200 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
       break;
     }
   }
-  else if (strcmp(s, "D3h") == 0)
+  else if (strcmp(s, "D3hx") == 0)
   {
-    printf("Potential for %s not yet implemented\n", s);
-    return 1;
     Akm->QComplex = 0;
     switch (l)
     {
-    case 0:
-      Akm->N = 1;
-      break;
-    case 1:
-      Akm->N = 1;
-      break;
-    case 2:
-      Akm->N = 2;
-      break;
-    case 3:
-      Akm->N = 3;
-      break;
-    default:
-      printf("Potential for point group %s and angular momentum %i not implemented\n", s, l);
-      return 1;
-      break;
+      case 0:
+        Akm->N = 1;
+        break;
+      case 1:
+        Akm->N = 2;
+        break;
+      case 2:
+        Akm->N = 3;
+        break;
+      case 3:
+        Akm->N = 6;
+        break;
+      default:
+        printf("Potential for point group %s and angular momentum %i not implemented\n", s, l);
+        return 1;
+        break;
     }
     if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for l failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for m failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
     {
-      printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if (Akm->QComplex)
     {
       if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
       {
-        printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n", s);
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
         return 1;
       };
     }
     switch (l)
     {
-    case 0:
+      case 0:
       {
         Akm->l[0] = 0;
         Akm->m[0] = 0;
         Akm->Re[0] = EigenEnergies[0];
       }
-      break;
-    case 1:
+        break;
+      case 1:
       {
         Akm->l[0] = 0;
         Akm->m[0] = 0;
-        Akm->Re[0] = EigenEnergies[0];
+        Akm->Re[0] = (2*EigenEnergies[0]+EigenEnergies[1])/3.0;
+        Akm->l[1] = 2;
+        Akm->m[1] = 0;
+        Akm->Re[1] = (-EigenEnergies[0]+EigenEnergies[1])*5/3.0;
       }
-      break;
-    case 2:
+        break;
+      case 2:
       {
         Akm->l[0] = 0;
         Akm->m[0] = 0;
-        Akm->Re[0] = EigenEnergies[0];
+        Akm->Re[0] = (EigenEnergies[0]+2*EigenEnergies[1]+2*EigenEnergies[2])/5.0;
+        Akm->l[1] = 2;
+        Akm->m[1] = 0;
+        Akm->Re[1] = (EigenEnergies[0]-2*EigenEnergies[1]+EigenEnergies[2]);
+        Akm->l[2] = 4;
+        Akm->m[2] = 0;
+        Akm->Re[2] = (3*EigenEnergies[0]+EigenEnergies[1]-4*EigenEnergies[2])*3/5.0;
       }
-      break;
-    case 3:
+        break;
+      case 3:
       {
         Akm->l[0] = 0;
         Akm->m[0] = 0;
-        Akm->Re[0] = EigenEnergies[0];
+        Akm->Re[0] = (EigenEnergies[0]+EigenEnergies[1]+2*EigenEnergies[2]+EigenEnergies[3]+2*EigenEnergies[4])/7.0;
+        Akm->l[1] = 2;
+        Akm->m[1] = 0;
+        Akm->Re[1] = (-5*EigenEnergies[0]-5*EigenEnergies[1]+6*EigenEnergies[2]+4*EigenEnergies[3])*5/28.0;
+        Akm->l[2] = 4;
+        Akm->m[2] = 0;
+        Akm->Re[2] = (3*EigenEnergies[0]+3*EigenEnergies[1]+2*EigenEnergies[2]+6*EigenEnergies[3]-14*EigenEnergies[4])*3/14.0;
+        Akm->l[3] = 6;
+        Akm->m[3] = 0;
+        Akm->Re[3] = (-EigenEnergies[0]-EigenEnergies[1]-30*EigenEnergies[2]+20*EigenEnergies[3]+12*EigenEnergies[4])*13/140.0;
+        Akm->l[4] = 6;
+        Akm->m[4] = 6;
+        Akm->Re[4] = (EigenEnergies[0]-EigenEnergies[1])*(13/20.0)*sqrt(33/7.0);
+        Akm->l[5] = 6;
+        Akm->m[5] =-6;
+        Akm->Re[5] = (EigenEnergies[0]-EigenEnergies[1])*(13/20.0)*sqrt(33/7.0);
       }
-      break;
+        break;
+    }
+  }
+  else if (strcmp(s, "D3hy") == 0)
+  {
+    Akm->QComplex = 0;
+    switch (l)
+    {
+      case 0:
+        return PotentialExpandedOnC("D3hx", l, EigenEnergies, Akm);
+        break;
+      case 1:
+        return PotentialExpandedOnC("D3hx", l, EigenEnergies, Akm);
+        break;
+      case 2:
+        return PotentialExpandedOnC("D3hx", l, EigenEnergies, Akm);
+        break;
+      case 3:
+        Akm->N = 6;
+        break;
+      default:
+        printf("Potential for point group %s and angular momentum %i not implemented\n", s, l);
+        return 1;
+        break;
+    }
+    if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
+    {
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
+      return 1;
+    };
+    if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
+    {
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
+      return 1;
+    };
+    if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
+    {
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
+      return 1;
+    };
+    if (Akm->QComplex)
+    {
+      if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
+      {
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
+        return 1;
+      };
+    }
+    switch (l)
+    {
+      case 3:
+      {
+        Akm->l[0] = 0;
+        Akm->m[0] = 0;
+        Akm->Re[0] = (EigenEnergies[0]+EigenEnergies[1]+2*EigenEnergies[2]+EigenEnergies[3]+2*EigenEnergies[4])/7.0;
+        Akm->l[1] = 2;
+        Akm->m[1] = 0;
+        Akm->Re[1] = (-5*EigenEnergies[0]-5*EigenEnergies[1]+6*EigenEnergies[2]+4*EigenEnergies[3])*5/28.0;
+        Akm->l[2] = 4;
+        Akm->m[2] = 0;
+        Akm->Re[2] = (3*EigenEnergies[0]+3*EigenEnergies[1]+2*EigenEnergies[2]+6*EigenEnergies[3]-14*EigenEnergies[4])*3/14.0;
+        Akm->l[3] = 6;
+        Akm->m[3] = 0;
+        Akm->Re[3] = (-EigenEnergies[0]-EigenEnergies[1]-30*EigenEnergies[2]+20*EigenEnergies[3]+12*EigenEnergies[4])*13/140.0;
+        Akm->l[4] = 6;
+        Akm->m[4] = 6;
+        Akm->Re[4] = (EigenEnergies[1]-EigenEnergies[0])*(13/20.0)*sqrt(33/7.0);
+        Akm->l[5] = 6;
+        Akm->m[5] =-6;
+        Akm->Re[5] = (EigenEnergies[1]-EigenEnergies[0])*(13/20.0)*sqrt(33/7.0);
+      }
+        break;
+    }
+  }
+  else if (strcmp(s, "D3h") == 0)
+  {
+    Akm->QComplex = 0;
+    switch (l)
+    {
+      case 0:
+        return PotentialExpandedOnC("D3hx", l, EigenEnergies, Akm);
+        break;
+      case 1:
+        return PotentialExpandedOnC("D3hx", l, EigenEnergies, Akm);
+        break;
+      case 2:
+        return PotentialExpandedOnC("D3hx", l, EigenEnergies, Akm);
+        break;
+      case 3:
+        printf("Potential for point group %s and angular momentum %i depends on settings, use D3hx or D3hy for C2//x or C2//y\n", s, l);
+        return 1;
+        break;
+      default:
+        printf("Potential for point group %s and angular momentum %i not implemented\n", s, l);
+        return 1;
+        break;
     }
   }
   else if (strcmp(s, "D4h") == 0)
@@ -6011,24 +6200,24 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
     }
     if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for l failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for m failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
     {
-      printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if (Akm->QComplex)
     {
       if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
       {
-        printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n", s);
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
         return 1;
       };
     }
@@ -6092,10 +6281,10 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
         Akm->Re[5] = -3.0*(2*sqrt(70.0)*EigenEnergies[1]-2*sqrt(70.0)*EigenEnergies[2]-3*sqrt(70.0)*EigenEnergies[3]+3*sqrt(70.0)*EigenEnergies[4]-2*sqrt(42.0)*EigenEnergies[5])/56.0;
         Akm->l[6] = 6;
         Akm->m[6] = 4;
-        Akm->Re[6] = -13.0*(4*sqrt(126.0)*EigenEnergies[1]-4*sqrt(126.0)*EigenEnergies[2]+5*sqrt(126.0)*EigenEnergies[3]-5*sqrt(126.0)*EigenEnergies[4]+2*sqrt(70.0)*EigenEnergies[5])/560.0;
+        Akm->Re[6] = -13.0*(4*sqrt(126.0)*EigenEnergies[1]-4*sqrt(126.0)*EigenEnergies[2]+5*sqrt(126.0)*EigenEnergies[3]-5*sqrt(126.0)*EigenEnergies[4]+2*sqrt(210.0)*EigenEnergies[5])/560.0;
         Akm->l[7] = 6;
         Akm->m[7] =-4;
-        Akm->Re[7] = -13.0*(4*sqrt(126.0)*EigenEnergies[1]-4*sqrt(126.0)*EigenEnergies[2]+5*sqrt(126.0)*EigenEnergies[3]-5*sqrt(126.0)*EigenEnergies[4]+2*sqrt(70.0)*EigenEnergies[5])/560.0;
+        Akm->Re[7] = -13.0*(4*sqrt(126.0)*EigenEnergies[1]-4*sqrt(126.0)*EigenEnergies[2]+5*sqrt(126.0)*EigenEnergies[3]-5*sqrt(126.0)*EigenEnergies[4]+2*sqrt(210.0)*EigenEnergies[5])/560.0;
       }
       break;
     }
@@ -6126,24 +6315,24 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
     }
     if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for l failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for m failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
     {
-      printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if (Akm->QComplex)
     {
       if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
       {
-        printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n", s);
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
         return 1;
       };
     }
@@ -6205,24 +6394,24 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
     }
     if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for l failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for m failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
     {
-      printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if (Akm->QComplex)
     {
       if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
       {
-        printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n", s);
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
         return 1;
       };
     }
@@ -6284,24 +6473,24 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
     }
     if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for l failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for m failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
     {
-      printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if (Akm->QComplex)
     {
       if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
       {
-        printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n", s);
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
         return 1;
       };
     }
@@ -6339,8 +6528,6 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
   }
   else if (strcmp(s, "D3d") == 0)
   {
-    printf("Potential for %s not yet implemented\n", s);
-    return 1;
     Akm->QComplex = 0;
     switch (l)
     {
@@ -6348,39 +6535,39 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
       Akm->N = 1;
       break;
     case 1:
-      Akm->N = 1;
-      break;
-    case 2:
       Akm->N = 2;
       break;
-    case 3:
-      Akm->N = 3;
-      break;
-    default:
-      printf("Potential for point group %s and angular momentum %i not implemented\n", s, l);
+    case 2:
+      printf("Potential for point group %s and angular momentum %i depends on settings, use D3dA (C3//001, C2//1-10 C4//111), B (C3//001, C2//100 C4//0t-1), C (C3//001, C2//100 C4//0t1), D (C3//001, C2//010 C4//t0-1), E (C3//001, C2//010 C4//t01) or D3dF (C3//111, C2//1-10 C4//100)\n", s, l);
       return 1;
       break;
+    case 3:
+      printf("Potential for point group %s and angular momentum %i not implemented\n", s, l);
+      return 1;
+    default:
+      printf("Potential for point group %s and angular momentum %i not implemented\n", s, l);
+      return 1;      break;
     }
     if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for l failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for m failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
     {
-      printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if (Akm->QComplex)
     {
       if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
       {
-        printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n", s);
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
         return 1;
       };
     }
@@ -6397,23 +6584,352 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
       {
         Akm->l[0] = 0;
         Akm->m[0] = 0;
-        Akm->Re[0] = EigenEnergies[0];
+        Akm->Re[0] = (EigenEnergies[0]+2*EigenEnergies[1])/3.0;
+        Akm->l[1] = 2;
+        Akm->m[1] = 0;
+        Akm->Re[1] = (EigenEnergies[0]-EigenEnergies[1])*5.0/3.0;
       }
       break;
-    case 2:
+    }
+  }
+  else if (strcmp(s, "D3dA") == 0)
+  {
+    switch (l)
+    {
+      case 0:
+        return PotentialExpandedOnC("D3d", l, EigenEnergies, Akm);
+        break;
+      case 1:
+        return PotentialExpandedOnC("D3d", l, EigenEnergies, Akm);
+        break;
+      case 2:
+        Akm->QComplex = 1;
+        Akm->N = 5;
+        break;
+      default:
+        printf("Potential for point group %s and angular momentum %i not implemented\n", s, l);
+        return 1;
+        break;
+    }
+    if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
+    {
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
+      return 1;
+    };
+    if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
+    {
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
+      return 1;
+    };
+    if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
+    {
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
+      return 1;
+    };
+    if (Akm->QComplex)
+    {
+      if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
+      {
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
+        return 1;
+      };
+    }
+    switch (l)
+    {
+      case 2:
       {
         Akm->l[0] = 0;
         Akm->m[0] = 0;
-        Akm->Re[0] = EigenEnergies[0];
+        Akm->Re[0] = (EigenEnergies[0]+2*EigenEnergies[1]+2*EigenEnergies[2])/5.0;
+        Akm->Im[0] = 0;
+        Akm->l[1] = 2;
+        Akm->m[1] = 0;
+        Akm->Re[1] = (EigenEnergies[0]-EigenEnergies[1]-2*sqrt(2.0)*EigenEnergies[3]);
+        Akm->Im[1] = 0;
+        Akm->l[2] = 4;
+        Akm->m[2] = 0;
+        Akm->Re[2] = (9*EigenEnergies[0]-2*EigenEnergies[1]-7*EigenEnergies[2]+10*sqrt(2.0)*EigenEnergies[3])/5.0;
+        Akm->Im[2] = 0;
+        Akm->l[3] = 4;
+        Akm->m[3] =-3;
+        Akm->Re[3] = (2*sqrt(35.0)*EigenEnergies[1]-2*sqrt(35.0)*EigenEnergies[2]-sqrt(70.0)*EigenEnergies[3])/10.0;
+        Akm->Im[3] = -Akm->Re[3];
+        Akm->l[4] = 4;
+        Akm->m[4] = 3;
+        Akm->Re[4] = -Akm->Re[3];
+        Akm->Im[4] =  Akm->Im[3];
       }
       break;
-    case 3:
+    }
+  }
+  else if (strcmp(s, "D3dB") == 0)
+  {
+    switch (l)
+    {
+      case 0:
+        return PotentialExpandedOnC("D3d", l, EigenEnergies, Akm);
+        break;
+      case 1:
+        return PotentialExpandedOnC("D3d", l, EigenEnergies, Akm);
+        break;
+      case 2:
+        Akm->QComplex = 1;
+        Akm->N = 5;
+        break;
+      default:
+        printf("Potential for point group %s and angular momentum %i not implemented\n", s, l);
+        return 1;
+        break;
+    }
+    if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
+    {
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
+      return 1;
+    };
+    if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
+    {
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
+      return 1;
+    };
+    if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
+    {
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
+      return 1;
+    };
+    if (Akm->QComplex)
+    {
+      if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
+      {
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
+        return 1;
+      };
+    }
+    switch (l)
+    {
+      case 2:
       {
         Akm->l[0] = 0;
         Akm->m[0] = 0;
-        Akm->Re[0] = EigenEnergies[0];
+        Akm->Re[0] = (EigenEnergies[0]+2*EigenEnergies[1]+2*EigenEnergies[2])/5.0;
+        Akm->Im[0] = 0;
+        Akm->l[1] = 2;
+        Akm->m[1] = 0;
+        Akm->Re[1] = (EigenEnergies[0]-EigenEnergies[1]-2*sqrt(2.0)*EigenEnergies[3]);
+        Akm->Im[1] = 0;
+        Akm->l[2] = 4;
+        Akm->m[2] = 0;
+        Akm->Re[2] = (9*EigenEnergies[0]-2*EigenEnergies[1]-7*EigenEnergies[2]+10*sqrt(2.0)*EigenEnergies[3])/5.0;
+        Akm->Im[2] = 0;
+        Akm->l[3] = 4;
+        Akm->m[3] =-3;
+        Akm->Re[3] = 0;
+        Akm->Im[3] =(-2*sqrt(35.0)*EigenEnergies[1]+2*sqrt(35.0)*EigenEnergies[2]+sqrt(70.0)*EigenEnergies[3])/sqrt(50.0);
+        Akm->l[4] = 4;
+        Akm->m[4] = 3;
+        Akm->Re[4] =-Akm->Re[3];
+        Akm->Im[4] = Akm->Im[3];
       }
-      break;
+        break;
+    }
+  }
+  else if (strcmp(s, "D3dC") == 0)
+  {
+    switch (l)
+    {
+      case 0:
+        return PotentialExpandedOnC("D3d", l, EigenEnergies, Akm);
+        break;
+      case 1:
+        return PotentialExpandedOnC("D3d", l, EigenEnergies, Akm);
+        break;
+      case 2:
+        Akm->QComplex = 1;
+        Akm->N = 5;
+        break;
+      default:
+        printf("Potential for point group %s and angular momentum %i not implemented\n", s, l);
+        return 1;
+        break;
+    }
+    if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
+    {
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
+      return 1;
+    };
+    if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
+    {
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
+      return 1;
+    };
+    if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
+    {
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
+      return 1;
+    };
+    if (Akm->QComplex)
+    {
+      if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
+      {
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
+        return 1;
+      };
+    }
+    switch (l)
+    {
+      case 2:
+      {
+        Akm->l[0] = 0;
+        Akm->m[0] = 0;
+        Akm->Re[0] = (EigenEnergies[0]+2*EigenEnergies[1]+2*EigenEnergies[2])/5.0;
+        Akm->Im[0] = 0;
+        Akm->l[1] = 2;
+        Akm->m[1] = 0;
+        Akm->Re[1] = (EigenEnergies[0]-EigenEnergies[1]-2*sqrt(2.0)*EigenEnergies[3]);
+        Akm->Im[1] = 0;
+        Akm->l[2] = 4;
+        Akm->m[2] = 0;
+        Akm->Re[2] = (9*EigenEnergies[0]-2*EigenEnergies[1]-7*EigenEnergies[2]+10*sqrt(2.0)*EigenEnergies[3])/5.0;
+        Akm->Im[2] = 0;
+        Akm->l[3] = 4;
+        Akm->m[3] =-3;
+        Akm->Re[3] = 0;
+        Akm->Im[3] =(2*sqrt(35.0)*EigenEnergies[1]-2*sqrt(35.0)*EigenEnergies[2]-sqrt(70.0)*EigenEnergies[3])/sqrt(50.0);
+        Akm->l[4] = 4;
+        Akm->m[4] = 3;
+        Akm->Re[4] =-Akm->Re[3];
+        Akm->Im[4] = Akm->Im[3];
+      }
+        break;
+    }
+  }
+  else if (strcmp(s, "D3dD") == 0)
+  {
+    switch (l)
+    {
+      case 0:
+        return PotentialExpandedOnC("D3d", l, EigenEnergies, Akm);
+        break;
+      case 1:
+        return PotentialExpandedOnC("D3d", l, EigenEnergies, Akm);
+        break;
+      case 2:
+        Akm->QComplex = 0;
+        Akm->N = 5;
+        break;
+      default:
+        printf("Potential for point group %s and angular momentum %i not implemented\n", s, l);
+        return 1;
+        break;
+    }
+    if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
+    {
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
+      return 1;
+    };
+    if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
+    {
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
+      return 1;
+    };
+    if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
+    {
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
+      return 1;
+    };
+    if (Akm->QComplex)
+    {
+      if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
+      {
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
+        return 1;
+      };
+    }
+    switch (l)
+    {
+      case 2:
+      {
+        Akm->l[0] = 0;
+        Akm->m[0] = 0;
+        Akm->Re[0] = (EigenEnergies[0]+2*EigenEnergies[1]+2*EigenEnergies[2])/5.0;
+        Akm->l[1] = 2;
+        Akm->m[1] = 0;
+        Akm->Re[1] = (EigenEnergies[0]-EigenEnergies[1]-2*sqrt(2.0)*EigenEnergies[3]);
+        Akm->l[2] = 4;
+        Akm->m[2] = 0;
+        Akm->Re[2] = (9*EigenEnergies[0]-2*EigenEnergies[1]-7*EigenEnergies[2]+10*sqrt(2.0)*EigenEnergies[3])/5.0;
+        Akm->l[3] = 4;
+        Akm->m[3] =-3;
+        Akm->Re[3] = (2*sqrt(35.0)*EigenEnergies[1]-2*sqrt(35.0)*EigenEnergies[2]-sqrt(70.0)*EigenEnergies[3])/sqrt(50.0);
+        Akm->l[4] = 4;
+        Akm->m[4] = 3;
+        Akm->Re[4] =-Akm->Re[3];
+      }
+        break;
+    }
+  }
+  else if (strcmp(s, "D3dE") == 0)
+  {
+    switch (l)
+    {
+      case 0:
+        return PotentialExpandedOnC("D3d", l, EigenEnergies, Akm);
+        break;
+      case 1:
+        return PotentialExpandedOnC("D3d", l, EigenEnergies, Akm);
+        break;
+      case 2:
+        Akm->QComplex = 0;
+        Akm->N = 5;
+        break;
+      default:
+        printf("Potential for point group %s and angular momentum %i not implemented\n", s, l);
+        return 1;
+        break;
+    }
+    if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
+    {
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
+      return 1;
+    };
+    if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
+    {
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
+      return 1;
+    };
+    if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
+    {
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
+      return 1;
+    };
+    if (Akm->QComplex)
+    {
+      if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
+      {
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
+        return 1;
+      };
+    }
+    switch (l)
+    {
+      case 2:
+      {
+        Akm->l[0] = 0;
+        Akm->m[0] = 0;
+        Akm->Re[0] = (EigenEnergies[0]+2*EigenEnergies[1]+2*EigenEnergies[2])/5.0;
+        Akm->l[1] = 2;
+        Akm->m[1] = 0;
+        Akm->Re[1] = (EigenEnergies[0]-EigenEnergies[1]-2*sqrt(2.0)*EigenEnergies[3]);
+        Akm->l[2] = 4;
+        Akm->m[2] = 0;
+        Akm->Re[2] = (9*EigenEnergies[0]-2*EigenEnergies[1]-7*EigenEnergies[2]+10*sqrt(2.0)*EigenEnergies[3])/5.0;
+        Akm->l[3] = 4;
+        Akm->m[3] =-3;
+        Akm->Re[3] = (-2*sqrt(35.0)*EigenEnergies[1]+2*sqrt(35.0)*EigenEnergies[2]+sqrt(70.0)*EigenEnergies[3])/sqrt(50.0);
+        Akm->l[4] = 4;
+        Akm->m[4] = 3;
+        Akm->Re[4] =-Akm->Re[3];
+      }
+        break;
     }
   }
   else if (strcmp(s, "D4d") == 0)
@@ -6442,24 +6958,24 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
     }
     if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for l failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for m failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
     {
-      printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if (Akm->QComplex)
     {
       if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
       {
-        printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n", s);
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
         return 1;
       };
     }
@@ -6521,24 +7037,24 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
     }
     if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for l failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for m failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
     {
-      printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if (Akm->QComplex)
     {
       if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
       {
-        printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n", s);
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
         return 1;
       };
     }
@@ -6600,24 +7116,24 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
     }
     if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for l failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for m failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
     {
-      printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if (Akm->QComplex)
     {
       if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
       {
-        printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n", s);
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
         return 1;
       };
     }
@@ -6679,24 +7195,24 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
     }
     if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for l failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for m failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
     {
-      printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if (Akm->QComplex)
     {
       if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
       {
-        printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n", s);
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
         return 1;
       };
     }
@@ -6756,24 +7272,24 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
     }
     if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for l failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for m failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
     {
-      printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if (Akm->QComplex)
     {
       if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
       {
-        printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n", s);
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
         return 1;
       };
     }
@@ -6862,24 +7378,24 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
     }
     if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for l failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for m failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
     {
-      printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if (Akm->QComplex)
     {
       if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
       {
-        printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n", s);
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
         return 1;
       };
     }
@@ -6968,24 +7484,24 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
     }
     if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for l failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for m failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
     {
-      printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if (Akm->QComplex)
     {
       if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
       {
-        printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n", s);
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
         return 1;
       };
     }
@@ -7028,13 +7544,13 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
         Akm->Re[0] = (1.0 / 7.0) * (EigenEnergies[0] + 3 * EigenEnergies[1] + 3 * EigenEnergies[2]);
         Akm->l[1] = 4;
         Akm->m[1] = 0;
-        Akm->Re[1] = (3.0 / 4.0) * (-2 * EigenEnergies[0] + 3 * EigenEnergies[1] + EigenEnergies[2]);
+        Akm->Re[1] = (3.0 / 4.0) * (-2 * EigenEnergies[0] + 3 * EigenEnergies[1] - EigenEnergies[2]);
         Akm->l[2] = 4;
         Akm->m[2] = -4;
-        Akm->Re[2] = (3.0 / 4.0) * sqrt(5.0 / 14.0) * (-2 * EigenEnergies[0] + 3 * EigenEnergies[1] + EigenEnergies[2]);
+        Akm->Re[2] = (3.0 / 4.0) * sqrt(5.0 / 14.0) * (-2 * EigenEnergies[0] + 3 * EigenEnergies[1] - EigenEnergies[2]);
         Akm->l[3] = 4;
         Akm->m[3] = 4;
-        Akm->Re[3] = (3.0 / 4.0) * sqrt(5.0 / 14.0) * (-2 * EigenEnergies[0] + 3 * EigenEnergies[1] + EigenEnergies[2]);
+        Akm->Re[3] = (3.0 / 4.0) * sqrt(5.0 / 14.0) * (-2 * EigenEnergies[0] + 3 * EigenEnergies[1] - EigenEnergies[2]);
         Akm->l[4] = 6;
         Akm->m[4] = 0;
         Akm->Re[4] = (39.0 / 280.0) * (4 * EigenEnergies[0] + 5 * EigenEnergies[1] - 9 * EigenEnergies[2]);
@@ -7076,24 +7592,24 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
     }
     if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for l failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for m failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
     {
-      printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if (Akm->QComplex)
     {
       if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
       {
-        printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n", s);
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
         return 1;
       };
     }
@@ -7155,24 +7671,24 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
     }
     if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for l failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for m failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
     {
-      printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if (Akm->QComplex)
     {
       if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
       {
-        printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n", s);
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
         return 1;
       };
     }
@@ -7215,24 +7731,24 @@ uint32_t PotentialExpandedOnY(char *s, uint32_t const l, double const *EigenEner
     Akm->N = 1;
     if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for l failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
     {
-      printf("malloc for m failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
     {
-      printf("malloc for Re failed in PotentialExpandedOnY for sym %s\n", s);
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
       return 1;
     };
     if (Akm->QComplex)
     {
       if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
       {
-        printf("malloc for Im failed in PotentialExpandedOnY for sym %s\n", s);
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
         return 1;
       };
     }

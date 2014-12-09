@@ -901,7 +901,7 @@ int LigandField(uint32_t Z, uint32_t dCount)
   CFEnergies[2] = Eb2g;
   CFEnergies[3] = Eeg;
   
-  PotentialExpandedOnY("D4h", 2, CFEnergies, &D4hAkmCF);
+  PotentialExpandedOnC("D4h", 2, CFEnergies, &D4hAkmCF);
   
   /*
   pds = -1.88;
@@ -922,11 +922,11 @@ int LigandField(uint32_t Z, uint32_t dCount)
   HoppingEnergies[2] = Hopb2g;
   HoppingEnergies[3] = Hopeg;
   
-  PotentialExpandedOnY("D4h", 2, HoppingEnergies, &D4hAkmHop);
-  PotentialExpandedOnY("D4h", 2, HoppingEnergiesa1g, &D4hAkma1g);
-  PotentialExpandedOnY("D4h", 2, HoppingEnergiesb1g, &D4hAkmb1g);
-  PotentialExpandedOnY("D4h", 2, HoppingEnergiesb2g, &D4hAkmb2g);
-  PotentialExpandedOnY("D4h", 2, HoppingEnergieseg,  &D4hAkmeg );
+  PotentialExpandedOnC("D4h", 2, HoppingEnergies, &D4hAkmHop);
+  PotentialExpandedOnC("D4h", 2, HoppingEnergiesa1g, &D4hAkma1g);
+  PotentialExpandedOnC("D4h", 2, HoppingEnergiesb1g, &D4hAkmb1g);
+  PotentialExpandedOnC("D4h", 2, HoppingEnergiesb2g, &D4hAkmb2g);
+  PotentialExpandedOnC("D4h", 2, HoppingEnergieseg,  &D4hAkmeg );
 
   /* Polarization dependent transition operators for XAS and RIXS.
      These are created from potentials expanded on spherical harmonics.
@@ -1412,8 +1412,8 @@ int LigandField(uint32_t Z, uint32_t dCount)
     }
 
     BeginTiming("spectrum", &Time);
-//    ResonantSpectra(OppH,TXASx,TRIXS,3,psi,energy,epsilon,&Spectra[26],-77.4,0.4,0.1,70,50);
-    ResonantSpectra(OppH,TXASx,TRIXS,3,psi,energy,epsilon,numwRes,RIXSSpectra,wRes,gammaRes,gamma,Gfwhm, NKrylovXAS,NKrylovRIXS);
+//    ResonantSpectraOrig(OppH,TXASx,TRIXS,3,psi,energy,epsilon,&Spectra[26],-77.4,0.4,0.1,70,50);
+    ResonantSpectraOrig(OppH,TXASx,TRIXS,3,psi,energy,epsilon,numwRes,RIXSSpectra,wRes,gammaRes,gamma,Gfwhm, NKrylovXAS,NKrylovRIXS);
 
 
 
@@ -1615,7 +1615,7 @@ int ImpurityModel3d(uint32_t Z, uint32_t dCount)
   Ea1g = 0.3; Eb1g = 0.3; Eb2g = -0.2; Eeg  = -0.2;
   CFEnergies[0] = Ea1g; CFEnergies[1] = Eb1g; CFEnergies[2] = Eb2g; CFEnergies[3] = Eeg;
   
-  PotentialExpandedOnY("D4h", 2, CFEnergies, &D4hAkmCF);
+  PotentialExpandedOnC("D4h", 2, CFEnergies, &D4hAkmCF);
 
   Hopa1g = -2.06; Hopb1g = -2.06; Hopb2g = 1.21; Hopeg  = 1.21;
   
@@ -1630,11 +1630,11 @@ int ImpurityModel3d(uint32_t Z, uint32_t dCount)
   HoppingEnergies[0] = Hopa1g; HoppingEnergies[1] = Hopb1g;
   HoppingEnergies[2] = Hopb2g; HoppingEnergies[3] = Hopeg;
   
-  PotentialExpandedOnY("D4h", 2, HoppingEnergies, &D4hAkmHop);
-  PotentialExpandedOnY("D4h", 2, HoppingEnergiesa1g, &D4hAkma1g);
-  PotentialExpandedOnY("D4h", 2, HoppingEnergiesb1g, &D4hAkmb1g);
-  PotentialExpandedOnY("D4h", 2, HoppingEnergiesb2g, &D4hAkmb2g);
-  PotentialExpandedOnY("D4h", 2, HoppingEnergieseg,  &D4hAkmeg );
+  PotentialExpandedOnC("D4h", 2, HoppingEnergies, &D4hAkmHop);
+  PotentialExpandedOnC("D4h", 2, HoppingEnergiesa1g, &D4hAkma1g);
+  PotentialExpandedOnC("D4h", 2, HoppingEnergiesb1g, &D4hAkmb1g);
+  PotentialExpandedOnC("D4h", 2, HoppingEnergiesb2g, &D4hAkmb2g);
+  PotentialExpandedOnC("D4h", 2, HoppingEnergieseg,  &D4hAkmeg );
 
   /* Polarization dependent transition operators for XAS and RIXS.
      These are created from potentials expanded on spherical harmonics.
@@ -2022,8 +2022,8 @@ int ImpurityModel3d(uint32_t Z, uint32_t dCount)
     }
 
     BeginTiming("spectrum", &Time);
-//    ResonantSpectra(OppH,TXASx,TRIXS,3,psi,energy,epsilon,&Spectra[26],-77.4,0.4,0.1,70,50);
-    ResonantSpectra(OppH,TXASx,TRIXS,3,psi,energy,epsilon,numwRes,RIXSSpectra,wRes,gammaRes,gamma,Gfwhm,NKrylovXAS,NKrylovRIXS);
+//    ResonantSpectraOrig(OppH,TXASx,TRIXS,3,psi,energy,epsilon,&Spectra[26],-77.4,0.4,0.1,70,50);
+    ResonantSpectraOrig(OppH,TXASx,TRIXS,3,psi,energy,epsilon,numwRes,RIXSSpectra,wRes,gammaRes,gamma,Gfwhm,NKrylovXAS,NKrylovRIXS);
 
 
 

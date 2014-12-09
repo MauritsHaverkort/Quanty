@@ -247,10 +247,10 @@ uint32_t ImpurityModelFromTB(uint32_t Z, uint32_t dCount)
   }
  
   /* Used for number operators */
-  PotentialExpandedOnY("D4h", 2, HoppingEnergiesa1g, &D4hAkma1g);
-  PotentialExpandedOnY("D4h", 2, HoppingEnergiesb1g, &D4hAkmb1g);
-  PotentialExpandedOnY("D4h", 2, HoppingEnergiesb2g, &D4hAkmb2g);
-  PotentialExpandedOnY("D4h", 2, HoppingEnergieseg,  &D4hAkmeg );
+  PotentialExpandedOnC("D4h", 2, HoppingEnergiesa1g, &D4hAkma1g);
+  PotentialExpandedOnC("D4h", 2, HoppingEnergiesb1g, &D4hAkmb1g);
+  PotentialExpandedOnC("D4h", 2, HoppingEnergiesb2g, &D4hAkmb2g);
+  PotentialExpandedOnC("D4h", 2, HoppingEnergieseg,  &D4hAkmeg );
 
   
   
@@ -789,7 +789,7 @@ uint32_t ImpurityModelFromTB(uint32_t Z, uint32_t dCount)
     /* Just set to do xx for testing.  To do xx, xy, xz, set the parameter to 3 in the call, and
        uncomment the file printing lines*/
     BeginTiming("spectrum", &Time);
-    ResonantSpectra(OppH,TXASx,TRIXS,1,psi,energy,epsilon,numwRes,RIXSSpectra,wRes,gammaRes,gamma,Gfwhm,NKrylovXAS,NKrylovRIXS);
+    ResonantSpectraOrig(OppH,TXASx,TRIXS,1,psi,energy,epsilon,numwRes,RIXSSpectra,wRes,gammaRes,gamma,Gfwhm,NKrylovXAS,NKrylovRIXS);
     EndTiming("spectrum", &Time);
 
     FilePrintRIXSSpectrum(numwRes,RIXSSpectra,wRes, 1,0, "RIXS_xx_Real","w");
