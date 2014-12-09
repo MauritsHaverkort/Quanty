@@ -1,9 +1,195 @@
 //  Functions by Robert Green
 //
+
+/*  Calculate < psi | T1^+ G1^+ T2^+ G2 T2 G1 T1 | psi >
+ */
+uint32_t ResonantSpectra(const OperatorType OppH1, const OperatorType OppH2, const OperatorType T1, const OperatorType *T2, uint32_t NT2, const WaveFunctionType psi, TriDiagonalMatrixType *SpecTri2, SpectraType *Spec, ConvergenceSettingsType *settings)
+{
+  /*Given wavefunction psi (usually ground state, but could be excited)*/
+  
+  /*Calculates resonant spectra using <i|T*GTGT*GT|i> in the following steps:
+   
+   1. Calculate T|i>
+   2. Use T|i> to transform H to tridiagonal form in Krylov basis
+   3. Invert (w - H_tri + iGamma) to get G(w)
+   4. Calculate G(w)T|i>
+   5. Calculate T*G(w)T|i>
+   6. Use the vector from step 5 to calculate RIXS spectrum using Lanczos
+   */
+  
+  /* settigns that need to be set:
+   * NTri1, NTri2
+   * Emin1, Emax1, NE1, Gamma1 - for automatic determination use DBL_MAX, -DBL_MAX, 0, 0
+   * Emin2, Emax2, NE2, Gamma2 - for automatic determination use DBL_MAX, -DBL_MAX, 0, 0
+   * epsilon
+   */
+  
+  WaveFunctionType Tpsi,GTpsi,TGTpsi, PsiBasis[settings->NTri1];
+  TriDiagonalMatrixType SpecTri1;
+  MatrixType EFun;
+  double EVal[settings->NTri1], EValInvRe[settings->NTri1], EValInvIm[settings->NTri1],tempDoubleRe,tempDoubleIm, EVal2[settings->NTri2];
+  int i,p,k;
+  double energy1, energy2, wRes;
+  
+  /* calcualte ground state energy */
+  PsiHermitianOperatorPsi(OppH1, psi, &energy1);
+  PsiHermitianOperatorPsi(OppH2, psi, &energy2);
+  
+  /* Calculate T|i> */
+  OperatorPsi(T1,psi,&Tpsi);
+  
+  /* Use T|i> to transform H to tridiagonal form in Krylov basis */
+  /* Using the version which gives back the Krylov basis vectors */
+  SpecTri1.N = settings->NTri1;
+  InitTriDiagonalMatrix(&SpecTri1);
+  LanczosTriDiagonalizeKrylov(OppH1,Tpsi,settings->epsilon,&SpecTri1,PsiBasis);
+  
+  /*Compute eigenvalues and eigenvectors, then S^-1 = QAQ^T where
+   Q are the eigenvectors and A is a matrix with the eigenvalue inverses on the diagonal.
+   */
+  if(TriDiagonalMatrixToEigensystem(SpecTri1, &EFun, EVal))
+  {
+    printf("Problem with TridiagonalMatrixToEigenSystem\n");
+  }
+  
+  /* determine Emin1, Emax1, NE1 and Gamma1 if not set */
+  if(settings->Emin1>( 0.001*DBL_MAX) && (settings->Emax1<(-0.001*DBL_MAX)))
+  {
+    settings->Emin1=1.1*EVal[0]-0.1*EVal[settings->NTri1-1];
+    settings->Emax1=1.1*EVal[settings->NTri1-1]-0.1*EVal[0];
+  }
+  if(settings->Emin1>( 0.001*DBL_MAX)) settings->Emin1=1.1*EVal[0]-0.1*settings->Emax1;
+  if(settings->Emax1<(-0.001*DBL_MAX)) settings->Emax1=1.1*EVal[settings->NTri1-1]-0.1*settings->Emin1;
+  if((settings->Gamma1==0)&&(settings->NE1==0))
+  {
+    settings->NE1=1000;
+    settings->Gamma1=5*(settings->Emax1-settings->Emin1)/settings->NE1;
+  }
+  if(settings->NE1==0)    settings->NE1    =(uint32_t)(5*(settings->Emax1-settings->Emin1)/settings->Gamma1);
+  if(settings->Gamma1==0) settings->Gamma1 =(uint32_t)(5*(settings->Emax1-settings->Emin1)/settings->NE1);
+  
+  /* allocate SpecTri2 */
+  SpecTri2 = malloc((settings->NE1+1)*NT2);
+  if(SpecTri2==0)
+  {
+    printf("malloc of SpecTri2 failed in ResonantSpectra\n");
+    return 1;
+  }
+  
+  for(p = 0; p <= settings->NE1; p++)
+  {
+    /* New method for GT|i>:
+     1. Tridiagonalize H using T|i> (outside wres loop)
+     2. Calculate eigenvalues (EVal) and eigenfunctions (EFun) of Htri (outside)
+     3. For each wres
+     a. EValInv[i] = 1/(wres - EVal[i] + iGammaRes)
+     b. GT|i> = sum_j EFun[i][j]*EValIn[j]*K[j], where K is Krylov basis vectors
+     */
+    
+    /* Calculate 1/(E_0 + wres - EVal[i] + iGammaRes), split into real and imaginary */
+    
+    wRes = settings->Emin1 + (settings->Emax1-settings->Emin1)*p/((double)settings->NE1) + energy1;
+    for(i = 0; i < settings->NTri1; i++)
+    {
+      EValInvRe[i] =  (wRes - EVal[i])       / ((wRes - EVal[i])*(wRes - EVal[i])+(settings->Gamma1/2.0)*(settings->Gamma1/2.0));
+      EValInvIm[i] = -(settings->Gamma1/2.0) / ((wRes - EVal[i])*(wRes - EVal[i])+(settings->Gamma1/2.0)*(settings->Gamma1/2.0));
+    }
+    
+    /* We are trying to calculate Q[0,:]A^(-1)Q^(-1).  Because A is diagonal, we were
+     able to calculate B = Q[0,:]*I*Q^(-1) outside the loop. Now we calculate diag(A)*B */
+    /* Calculate Q*A^(-1)*Q^(-1)[:,0] */
+    GTpsi.NFermion = psi.NFermion;
+    GTpsi.NBoson   = psi.NBoson;
+    GTpsi.QComplex = psi.QComplex;
+    GTpsi.NBitsKey = psi.NBitsKey;
+    WaveFunctionInit(&GTpsi);
+    for(i = 0; i < settings->NTri1; i++)
+    {
+      tempDoubleRe = 0;
+      tempDoubleIm = 0;
+      
+      if(EFun.QComplex)
+      {
+        for(k = 0; k < settings->NTri1; k++)
+        {
+          tempDoubleRe += EValInvRe[k]*EFun.VRe[k][i]*EFun.VRe[k][0] -
+          EValInvIm[k]*EFun.VIm[k][i]*EFun.VRe[k][0] -
+          EValInvIm[k]*EFun.VRe[k][i]*EFun.VIm[k][0] -
+          EValInvRe[k]*EFun.VIm[k][i]*EFun.VIm[k][0];
+          tempDoubleIm += EValInvIm[k]*EFun.VRe[k][i]*EFun.VRe[k][0] +
+          EValInvRe[k]*EFun.VIm[k][i]*EFun.VRe[k][0] +
+          EValInvRe[k]*EFun.VRe[k][i]*EFun.VIm[k][0] -
+          EValInvIm[k]*EFun.VIm[k][i]*EFun.VIm[k][0];
+        }
+      }
+      else
+      {
+        for(k = 0; k < settings->NTri1; k++)
+        {
+          tempDoubleRe += EValInvRe[k]*EFun.VRe[k][i]*EFun.VRe[k][0];
+          tempDoubleIm += EValInvIm[k]*EFun.VRe[k][i]*EFun.VRe[k][0];
+        }
+      }
+      WaveFunctionAddComplexMultipliedUnionBasis(&GTpsi, PsiBasis[i],SpecTri1.b[0]*tempDoubleRe,SpecTri1.b[0]*tempDoubleIm);
+    }
+    for(i = 0; i < NT2; i++)
+    {
+      /* Calculate T*G(w)T|i> */
+      OperatorPsi(T2[i],GTpsi,&TGTpsi);
+      /* Calculate the RIXS spectrum */
+      SpecTri2[p + i*(settings->NE1+1)].N=settings->NTri2;
+      InitTriDiagonalMatrix(&SpecTri2[p + i*(settings->NE1+1)]);
+      LanczosTriDiagonalize(OppH2, TGTpsi, settings->epsilon, &SpecTri2[p + i*(settings->NE1+1)], (sqrt(DBL_EPSILON)+settings->Gamma2));
+    }
+    WaveFunctionFree(&GTpsi);
+  }
+  /* create spectra from tridiagonal matrices */
+  Spec = malloc(NT2 * (settings->NE1+1) * sizeof(SpectraType));
+  for(i=0; i<NT2 * (settings->NE1+1);i++)
+  {
+    /* determine min and max poles */
+    TriDiagonalMatrixToEigenvalues(SpecTri2[i], EVal2);
+    Spec[i].EminPole = EVal2[0];
+    Spec[i].EmaxPole = EVal2[settings->NTri2-1];
+  }
+  /* determine the energy range of the spectrum if not give */
+  EVal2[0]=Spec[0].EminPole;
+  EVal2[1]=Spec[0].EmaxPole;
+  for(i=1; i<NT2 * (settings->NE1+1);i++)
+  {
+    if(Spec[i].EminPole<EVal2[0]) EVal2[0]=Spec[i].EminPole;
+    if(Spec[i].EmaxPole>EVal2[0]) EVal2[1]=Spec[i].EmaxPole;
+  }
+  if((settings->Emin2>( 0.001*DBL_MAX)) || (settings->Emax2<(-0.001*DBL_MAX)))
+  {
+    settings->Emin2 = 1.1 * EVal2[0] - EVal2[1];
+    settings->Emax2 = 1.1 * EVal2[1] - EVal2[0];
+  }
+  if(settings->Emin2>( 0.001*DBL_MAX)) settings->Emin2=1.1*EVal2[0]-0.1*settings->Emax2;
+  if(settings->Emax2<(-0.001*DBL_MAX)) settings->Emax2=1.1*EVal2[1]-0.1*settings->Emin2;
+  if((settings->Gamma2==0)&&(settings->NE2==0))
+  {
+    settings->NE2=1000;
+    settings->Gamma2=5*(settings->Emax2-settings->Emin2)/settings->NE2;
+  }
+  if(settings->NE2==0)    settings->NE2    =(uint32_t)(5*(settings->Emax2-settings->Emin2)/settings->Gamma2);
+  if(settings->Gamma2==0) settings->Gamma2 =(uint32_t)(5*(settings->Emax2-settings->Emin2)/settings->NE2);
+  for(i=0;i<NT2*(settings->NE1+1);i++)
+  {
+    Spec[i].N    =settings->NE2;
+    Spec[i].Emin =settings->Emin2;
+    Spec[i].Emax =settings->Emax2;
+    Spec[i].Gamma=settings->Gamma2;
+    SpectrumAllocate(Spec[i], &Spec[i]);
+    TriDiagonalMatrixToSpectrum(energy2, SpecTri2[i], &Spec[i]);
+  }
+  return 0;
+}
+
 /*  Calculate < psi | Texc^+ G TDec[i] G2 TDec[i]^+ G Texc | psi >
  *  Input expects TDec^+
  */
-uint32_t ResonantSpectra(const OperatorType OppH, const OperatorType OppH2, const OperatorType Texc, const OperatorType *TDec, uint32_t NDec,  const WaveFunctionType psi, double energy, double epsilon, uint32_t numwRes, SpectraType (*spectra)[numwRes], double *wRes, double gammaRes, double gamma, double Gfwhm, uint32_t NKrylov1, uint32_t NKrylov2)
+uint32_t ResonantSpectraOrig(const OperatorType OppH, const OperatorType OppH2, const OperatorType Texc, const OperatorType *TDec, uint32_t NDec,  const WaveFunctionType psi, double energy, double epsilon, uint32_t numwRes, SpectraType (*spectra)[numwRes], double *wRes, double gammaRes, double gamma, double Gfwhm, uint32_t NKrylov1, uint32_t NKrylov2)
 {
   /*Given wavefunction psi (usually ground state, but could be excited)*/
   

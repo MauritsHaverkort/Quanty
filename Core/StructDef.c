@@ -124,6 +124,62 @@ typedef struct OperatorType
 OperatorType;
 
 
+typedef struct ConvergenceSettingsType
+{
+  uint32_t DenseBoarder;    /* If matrices have dimensions smaller than DenseBoarder dense methods are used - Normally this is determined by psi.N */
+  uint32_t NKrylovStart;    /* In tridiagonalization routines the number of Krylov states created in the first itteration */
+  uint32_t NKrylovMax;      /* In tridiagonalization routines the maximum number of Krylov states created */
+  uint32_t NKrylovStep;     /* the number of Krylov states added when a restart is done */
+  uint32_t NKrylovMin;      /* the minumum number of Krylov states included before schwitsching to an algorithm that recalculates the Krylovs states */
+  uint32_t NTri;            /* number of Krylov states in single shot tri-diagonalization routines used for spectra */
+  uint32_t NTri1;           /* number of Krylov states in single shot tri-diagonalization routines used for resonant spectra */
+  uint32_t NTri2;           /* number of Krylov states in single shot tri-diagonalization routines used for resonant spectra */
+  double   zero;            /* smallest number different from one in convergence tests */
+  double   epsilon;         /* smallest absolute prefactor of a determinant in wave-functions considered different from 0 */
+  uint32_t NBitsKey;        /* number of bits in key */
+  DeterminantRestrictionType restrictions;  /* restrictions on possible determinatns */
+  DeterminantRestrictionType restrictions1; /* restrictions on possible determinatns in resonant spectra */
+  DeterminantRestrictionType restrictions2; /* restrictions on possible determinatns in resonant spectra */
+  double Emin;
+  double Emax;
+  uint32_t NE;
+  double Gamma;
+  double Emin1;
+  double Emax1;
+  uint32_t NE1;
+  double Gamma1;
+  double Emin2;
+  double Emax2;
+  uint32_t NE2;
+  double Gamma2;
+}
+ConvergenceSettingsType;
+
+ConvergenceSettingsType InitConvergenceSettings()
+{
+  ConvergenceSettingsType ret=
+  {
+    500 /*DenseBoarder*/,
+    100 /*NKrylovStart*/,
+    500 /*NKrylovMax*/,
+     10 /*NKrylovStep*/,
+     50 /*NKrylovMin*/,
+    200 /*NTri*/,
+    100 /*NTri1*/,
+    100 /*NTri2*/,
+    100*sqrt(DBL_EPSILON) /*zero*/,
+    sqrt(DBL_EPSILON)     /*epsilon*/,
+    20                    /*bits in key*/,
+    {0, NULL, NULL, NULL} /*restricitons*/,
+    {0, NULL, NULL, NULL} /*restricitons1*/,
+    {0, NULL, NULL, NULL} /*restricitons2*/,
+    DBL_MAX,-DBL_MAX,0,0 /*Energy range */,
+    DBL_MAX,-DBL_MAX,0,0 /*Energy range 1*/,
+    DBL_MAX,-DBL_MAX,0,0 /*Energy range 2*/
+  };
+  return ret;
+};
+
 typedef struct TimeType
 {
   uint32_t N;

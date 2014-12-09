@@ -23,13 +23,13 @@ static int LuaHelp(lua_State *L)
     printf("  - other parameters depend on the type of operator defined in the first string\n");
     printf("  - example: ssp.NewOperator(\"Sz\", NFermion, IndexUp, IndexDn);\n");
     printf("\n");
-    printf("ssp.PotentialExpandedOnYlm(\"Oh\",2,{0.6,-0.4})\n");
+    printf("ssp.PotentialExpandedOnClm(\"Oh\",2,{0.6,-0.4})\n");
     printf("  - creates a list representing a potential expanded on spherical Harmonics for a given symmetry and eigen energy of the irreducible representations\n");
     printf("  - The potential V(theta, phi) is given as:\n");
     printf("  - V(theta, phi) = sum_k,m A_{k,m} Y_km(theta,phi)\n");
     printf("  - the list saved is {{k1,m1,Ak1m1},{k2,m2,Ak2m2},...}\n");
     printf("  - input is the point-group symmetry, the angular momentum and the eigen energies of the irreducible representations\n");
-    printf("  - ssp.PotentialExpandedOnYlm(\"Oh\",2,{0.6,-0.4});\n");
+    printf("  - ssp.PotentialExpandedOnClm(\"Oh\",2,{0.6,-0.4});\n");
     printf("  - for a potential in cubic symmetry acting on the d-shell with the energy of the eg's as 0.6 and t2g's at -0.4 (10Dq=1.0)\n");
     printf("\n");
     printf("ssp.NewWavefunction()\n");
@@ -586,7 +586,7 @@ static int LuaNewOperator(lua_State * L)
  *
  *  output table of Harmonics Expansion
  */
-static int LuaPotentialExpandedOnYlm(lua_State *L)
+static int LuaPotentialExpandedOnClm(lua_State *L)
 {
   char *s;
   double * eigenvalues;
@@ -595,7 +595,7 @@ static int LuaPotentialExpandedOnYlm(lua_State *L)
   s=(char*)luaL_checkstring(L, 1);
   l=luaL_checkint(L,2);
   eigenvalues=luaL_checkarray_double(L, 3, &len);
-  if(PotentialExpandedOnY(s, l, eigenvalues, &Akm))
+  if(PotentialExpandedOnC(s, l, eigenvalues, &Akm))
   {
     luaL_error(L, "Potential of \"%s\" symmetry for angular momentum %d not found\n",s,l);
   }
@@ -1012,7 +1012,167 @@ static int Luarotate(lua_State *L)
   return luaL_error(L, "ssp.Rotate called unrecognized type. Can only rotate wavefunctions operators and tables of these\n");
 }
 
-
+static int LuaReadConvergenceSettingsFromOptions(lua_State *L, int len, ConvergenceSettingsType *Settings)
+{
+  void *buff;
+  buff=LuaFindOptionsInTable(L, len, "DenseBoarder", "int");
+  if(buff!=NULL)
+  {
+    Settings->DenseBoarder = *(uint32_t*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "NKrylovStart", "int");
+  if(buff!=NULL)
+  {
+    Settings->NKrylovStart = *(uint32_t*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "NKrylovMax", "int");
+  if(buff!=NULL)
+  {
+    Settings->NKrylovMax = *(uint32_t*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "NKrylovStep", "int");
+  if(buff!=NULL)
+  {
+    Settings->NKrylovStep = *(uint32_t*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "NKrylovMin", "int");
+  if(buff!=NULL)
+  {
+    Settings->NKrylovMin = *(uint32_t*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "NTri", "int");
+  if(buff!=NULL)
+  {
+    Settings->NTri = *(uint32_t*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "NTri1", "int");
+  if(buff!=NULL)
+  {
+    Settings->NTri1 = *(uint32_t*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "NTri2", "int");
+  if(buff!=NULL)
+  {
+    Settings->NTri2 = *(uint32_t*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "zero", "double");
+  if(buff!=NULL)
+  {
+    Settings->zero = *(double*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "epsilon", "double");
+  if(buff!=NULL)
+  {
+    Settings->epsilon = *(double*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "NBitsKey", "int");
+  if(buff!=NULL)
+  {
+    Settings->NBitsKey = *(uint32_t*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "restrictions", "DeterminantRestrictionType");
+  if(buff!=NULL)
+  {
+    Settings->restrictions = *(DeterminantRestrictionType*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "restrictions1", "DeterminantRestrictionType");
+  if(buff!=NULL)
+  {
+    Settings->restrictions = *(DeterminantRestrictionType*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "restrictions2", "DeterminantRestrictionType");
+  if(buff!=NULL)
+  {
+    Settings->restrictions = *(DeterminantRestrictionType*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "Emin", "double");
+  if(buff!=NULL)
+  {
+    Settings->Emin = *(double*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "Emax", "double");
+  if(buff!=NULL)
+  {
+    Settings->Emax = *(double*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "NE", "int");
+  if(buff!=NULL)
+  {
+    Settings->NE = *(uint32_t*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "Gamma", "double");
+  if(buff!=NULL)
+  {
+    Settings->Gamma = *(double*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "Emin1", "double");
+  if(buff!=NULL)
+  {
+    Settings->Emin1 = *(double*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "Emax1", "double");
+  if(buff!=NULL)
+  {
+    Settings->Emax1 = *(double*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "NE1", "int");
+  if(buff!=NULL)
+  {
+    Settings->NE1 = *(uint32_t*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "Gamma1", "double");
+  if(buff!=NULL)
+  {
+    Settings->Gamma1 = *(double*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "Emin2", "double");
+  if(buff!=NULL)
+  {
+    Settings->Emin2 = *(double*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "Emax2", "double");
+  if(buff!=NULL)
+  {
+    Settings->Emax2 = *(double*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "NE2", "int");
+  if(buff!=NULL)
+  {
+    Settings->NE2 = *(uint32_t*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "Gamma2", "double");
+  if(buff!=NULL)
+  {
+    Settings->Gamma2 = *(double*)buff;
+    free(buff);
+  }
+  return 0;
+}
 
 static int LuaCreateSpectra(lua_State *L)
 {
@@ -1177,9 +1337,11 @@ static int LuaCreateSpectra(lua_State *L)
   Spec->Spec[0].EminPole=Eminpole;
   Spec->Spec[0].EmaxPole=Emaxpole;
   Spec->Spec[0].Gamma=Options.Gamma;
+  strcpy(Spec->Spec[0].Name, "Spec");
   for(i=0;i<Spec->NSpectra;i++)
   {
     SpectrumAllocate(Spec->Spec[0], &(Spec->Spec[i]));
+    sprintf(Spec->Spec[i].Name, "Spectrum %i",i);
     TriDiagonalMatrixToSpectrum(psiEn[i], GTri[i], &(Spec->Spec[i]));
   }
   for(i=0;i<Spec->NSpectra;i++)
@@ -1200,109 +1362,79 @@ static int LuaCreateSpectra(lua_State *L)
  *     T1
  *     T2^+
  *     psi
- *     {E1min, E1max, N1, Gamma1}
- *     {E2min, E2max, N2, Gamma2}
  *     options
+ *        {E1min, E1max, N1, Gamma1}
+ *        {E2min, E2max, N2, Gamma2}
  *        NTri1
  *        NTri2
  *        epsilon
  *        restrictions1
+ *        restrictions2
  */
-static int LuaCreateRIXS(lua_State *L)
+static int LuaCreateResonantSpectra(lua_State *L)
 {
   void *buff;
   struct
   {
-    uint32_t NTri1;
-    uint32_t NTri2;
-    double epsilon;
-    Bool restrictions;
-    DeterminantRestrictionType DeterminantRestrictions;
-    double Emin1;
-    double Emax1;
-    uint32_t NE1;
-    double Gamma1;
-    double Emin2;
-    double Emax2;
-    uint32_t NE2;
-    double Gamma2;
+    ConvergenceSettingsType Settings;
     uint32_t Npsi;
     uint32_t NT1;
     uint32_t NT2;
   } Options;
-  Options.NTri1=200;
-  Options.NTri2=200;
-  Options.epsilon=10000*DBL_EPSILON;
-  Options.restrictions=False;
+  Options.Settings=InitConvergenceSettings();
   SpectraTypeArray *Spec;
-  OperatorType *H,*T1, *T2;
+  OperatorType *H1,*H2,*T1, *T2;
   WaveFunctionType *psi;
   uint32_t iT,ipsi,len;
   double *psiEn;
   
   /* check number of input parameters */
   len = (uint32_t)lua_gettop(L);
-  if(!((len==4)||(len==5)))
+  if(!((len==5)||(len==6)))
   {
-    return luaL_error(L, "Error CreateFluorescenceYield called with %d arguments, 4 or 5 expected\n",len);
+    return luaL_error(L, "Error CreateFluorescenceYield called with %d arguments, 5 or 6 expected (H1, H2, T1, T2^+, psi, {options})\n",len);
   }
-  
   /* read operator and wavefunctions */
-  H = (OperatorType *) luaL_checkudata(L, 1, "ssp.operator");
-  if(lua_type(L,2)==LUA_TTABLE)
+  H1 = (OperatorType *) luaL_checkudata(L, 1, "ssp.operator");
+  H2 = (OperatorType *) luaL_checkudata(L, 2, "ssp.operator");
+  if(lua_type(L,3)==LUA_TTABLE)
   {
-    T1=luaL_checkarray_OperatorType(L, 2, &Options.NT1);
+    T1=luaL_checkarray_OperatorType(L, 3, &Options.NT1);
   }
   else
   {
     Options.NT1 = 1;
-    T1 = (OperatorType *) luaL_checkudata(L, 2, "ssp.operator");
+    T1 = (OperatorType *) luaL_checkudata(L, 3, "ssp.operator");
   }
-  if(lua_type(L,3)==LUA_TTABLE)
+  if(lua_type(L,4)==LUA_TTABLE)
   {
-    T2=luaL_checkarray_OperatorType(L, 3, &Options.NT2);
+    T2=luaL_checkarray_OperatorType(L, 4, &Options.NT2);
   }
   else
   {
     Options.NT2 = 1;
-    T2 = (OperatorType *) luaL_checkudata(L, 3, "ssp.operator");
+    T2 = (OperatorType *) luaL_checkudata(L, 4, "ssp.operator");
   }
-  if(lua_type(L,4)==LUA_TTABLE)
+  if(lua_type(L,5)==LUA_TTABLE)
   {
-    psi=luaL_checkarray_WaveFunctionType(L, 4, &Options.Npsi);
+    psi=luaL_checkarray_WaveFunctionType(L, 5, &Options.Npsi);
   }
   else
   {
     Options.Npsi = 1;
-    psi = (WaveFunctionType *) luaL_checkudata(L, 4, "ssp.wavefunction");
+    psi = (WaveFunctionType *) luaL_checkudata(L, 5, "ssp.wavefunction");
   }
   /* read options */
-  buff=LuaFindOptionsInTable(L, -1, "epsilon", "double");
-  if(buff!=NULL)
-  {
-    Options.epsilon = *(double*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, -1, "restrictions", "DeterminantRestrictionType");
-  if(buff!=NULL)
-  {
-    Options.restrictions=True;
-    Options.DeterminantRestrictions = *(DeterminantRestrictionType*)buff;
-    free(buff);
-  }
+  if (len==6) LuaReadConvergenceSettingsFromOptions(L, 6, &Options.Settings);
+  
   /* allocate spectra and and pointer to return matrix on lua stack */
   Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
   luaL_setmetatable(L, "ssp.spectra");
   Spec->NSpectra=Options.NT1*Options.NT2*Options.Npsi;
   Spec->Spec=malloc(Spec->NSpectra*sizeof(SpectraType));
-  /* calculate groundstate energy */
-  psiEn=malloc(Options.Npsi*sizeof(double));
-  for(ipsi=0;ipsi<Options.Npsi;ipsi++)
-  {
-    PsiHermitianOperatorPsi(*H, psi[ipsi], &psiEn[ipsi]);
-  }
-  /* loop over all Transition operators */
-
+  
+  
+  
   free(psiEn);
   return 1;
 }
@@ -1553,14 +1685,12 @@ static int LuaEigensystem(lua_State * L)
   void *buff;
   struct
   {
-    double zero;
-    double epsilon;
+    ConvergenceSettingsType Settings;
     Bool restrictions;
     uint32_t NBitsKey;
     DeterminantRestrictionType DeterminantRestrictions;
   } Options;
-  Options.zero=100*sqrt(DBL_EPSILON);
-  Options.epsilon=sqrt(DBL_EPSILON);
+  Options.Settings=InitConvergenceSettings();
   Options.restrictions=False;
   Options.DeterminantRestrictions.N=0;
   Options.NBitsKey=16;
@@ -1622,6 +1752,36 @@ static int LuaEigensystem(lua_State * L)
     }
   }
   /* read options */
+  buff=LuaFindOptionsInTable(L, -1, "DenseBoarder", "int");
+  if(buff!=NULL)
+  {
+    Options.Settings.DenseBoarder = *(uint32_t*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, -1, "NKrylovStart", "int");
+  if(buff!=NULL)
+  {
+    Options.Settings.NKrylovStart = *(uint32_t*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, -1, "NKrylovMax", "int");
+  if(buff!=NULL)
+  {
+    Options.Settings.NKrylovMax = *(uint32_t*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, -1, "NKrylovStep", "int");
+  if(buff!=NULL)
+  {
+    Options.Settings.NKrylovStep = *(uint32_t*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, -1, "NKrylovMin", "int");
+  if(buff!=NULL)
+  {
+    Options.Settings.NKrylovMin = *(uint32_t*)buff;
+    free(buff);
+  }
   buff=LuaFindOptionsInTable(L, -1, "NBitsKey", "int");
   if(buff!=NULL)
   {
@@ -1631,13 +1791,13 @@ static int LuaEigensystem(lua_State * L)
   buff=LuaFindOptionsInTable(L, -1, "epsilon", "double");
   if(buff!=NULL)
   {
-    Options.epsilon = *(double*)buff;
+    Options.Settings.epsilon = *(double*)buff;
     free(buff);
   }
   buff=LuaFindOptionsInTable(L, -1, "zero", "double");
   if(buff!=NULL)
   {
-    Options.zero = *(double*)buff;
+    Options.Settings.zero = *(double*)buff;
     free(buff);
   }
   buff=LuaFindOptionsInTable(L, -1, "restrictions", "DeterminantRestrictionType");
@@ -1648,7 +1808,7 @@ static int LuaEigensystem(lua_State * L)
     free(buff);
   }
   /* calculate groundstate */
-  BlockGroundState(*Opp, Npsi, Options.zero, &Options.epsilon , StartRestrictions, Options.DeterminantRestrictions, psi, Options.NBitsKey);
+  BlockGroundState(*Opp, Npsi, &(Options.Settings) , StartRestrictions, Options.DeterminantRestrictions, psi, Options.NBitsKey);
   /* seperate basis */
   WaveFunctionArraySeperateBasis(psi, Npsi);
   /* copy changed wavefunctions back to lua stack */
@@ -1709,6 +1869,59 @@ static int LuaTimePrint(lua_State * L)
   return 0;
 }
 
+static int LuaDensityMatrix(lua_State *L)
+{
+  uint32_t len, Nparticles, *jindex;
+  WaveFunctionType *psi;
+  MatrixType Rho;
+  len = (uint32_t)lua_gettop(L);
+  // first argument is a wave-function or a list of functions
+  switch (lua_type(L,1))
+  {
+    case LUA_TTABLE:
+    {
+      lua_newtable(L);
+      lua_pushnil(L);
+      while(lua_next(L, 1) != 0)
+      {
+        lua_insert(L, 1);
+        lua_pushvalue(L, -3);
+        LuaDensityMatrix(L);
+        lua_pushvalue(L, -3);
+        lua_replace(L, -3);
+        lua_settable(L, -4);
+        lua_remove(L, 1);
+      }
+      return 1;
+    }
+    case LUA_TUSERDATA:
+    {
+      if (luaL_testudata(L, 1, "ssp.wavefunction") != NULL)
+      {
+        psi = (WaveFunctionType *) luaL_checkudata(L, 1, "ssp.wavefunction");
+      }
+      else
+      {
+        return luaL_error(L, "Error: DensityMatrix expects a function or a list of functions on the first position\n");
+      }
+      break;
+    }
+    default:
+    {
+      return luaL_error(L, "Error: DensityMatrix expects a function or a list of functions on the first position\n");
+    }
+  }
+  // the argument at position len is a list of integers
+  jindex = luaL_checkarray_unit32_t(L,len,&Nparticles);
+  // calculate the density matrix
+  CalculatePartialDensityMatrix(&Rho, *psi, Nparticles, jindex);
+  // return a lua table of tables of dimension Nparticles by Nparticles
+  LuaPushTable_MatrixType(L, &Rho);
+  FreeMatrix(&Rho);
+  return 1;
+}
+
+
 static const struct luaL_Reg ssp_functions[] = {
   {"Help", LuaHelp},
   {"Verbosity",LuaVerbosity},
@@ -1716,8 +1929,9 @@ static const struct luaL_Reg ssp_functions[] = {
   {"TimeEnd",LuaTimeEnd},
   {"TimePrint",LuaTimePrint},
   {"NewOperator", LuaNewOperator},
-  {"PotentialExpandedOnYlm", LuaPotentialExpandedOnYlm},
+  {"PotentialExpandedOnClm", LuaPotentialExpandedOnClm},
   {"NewWavefunction", LuaNewWaveFunction},
+  {"DensityMatrix",LuaDensityMatrix},
   {"Copy", Luacopy},
   {"Clone", Luacopy},
   {"Conjugate", Luaconjugate},
@@ -1731,6 +1945,7 @@ static const struct luaL_Reg ssp_functions[] = {
   {"Eigensystem", LuaEigensystem},
   {"CreateSpectra", LuaCreateSpectra},
   {"CreateFluorescenceYield", LuaCreateFluorescenceYield},
+  {"CreateResonantSpectra", LuaCreateResonantSpectra},
   {"BraKet", LuaBraKet},           /* function in file BraKet.c */
   {"Eval", LuaEval},               /* function in file eval.c */
   {NULL, NULL}
@@ -1746,8 +1961,12 @@ void luaconstants(lua_State *L)
   lua_setglobal(L, "I");
   lua_pushnumber(L, 3.14159265358979323846264338328);
   lua_setglobal(L, "Pi");
+  lua_pushnumber(L, 3.14159265358979323846264338328);
+  lua_setglobal(L, "pi");
   lua_pushnumber(L, 2.71828182845904523536028747135);
   lua_setglobal(L, "E");
+  lua_pushnumber(L, 2.71828182845904523536028747135);
+  lua_setglobal(L, "e");
 }
 
 int luaopen_ssp(lua_State * L)
@@ -1760,9 +1979,10 @@ int luaopen_ssp(lua_State * L)
   
   luaL_newmetatable(L, "ssp.spectra");
   luaL_setfuncs(L, Spectra_meta, 0);
-  
+    
   luaL_newlib(L, ssp_functions);
   lua_setglobal(L, "ssp");
+  
   
   
   return 1;

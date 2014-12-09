@@ -55,6 +55,16 @@ uint32_t PowerInt(uint32_t x, uint32_t a)
   }
   return retval;
 }
+double PowerDoubleInt(double x, uint32_t a)
+{
+  uint32_t i;
+  double retval = 1;
+  for (i = 0; i < a; i++)
+  {
+    retval *= x;
+  }
+  return retval;
+}
 
 /*
 *  z = x cross y for vectors of lenght 3

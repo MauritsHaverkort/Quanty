@@ -350,6 +350,34 @@ void LuaPushTable_WaveFunctionType(lua_State* L, WaveFunctionType const * const 
   }
 }
 
+void LuaPushTable_MatrixType(lua_State* L, MatrixType const * const M)
+{
+  uint32_t i,j;
+  Complex16 *res;
+  lua_createtable(L,M->Ni,0);
+  for(i=0;i<M->Ni;i++)
+  {
+    lua_createtable(L,M->Nj,0);
+    for(j=0;j<M->Nj;j++)
+    {
+      if(M->QComplex)
+      {
+        res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
+        res->Re = M->VRe[i][j];
+        res->Im = M->VIm[i][j];
+        luaL_setmetatable(L, "Lua.complex");
+      }
+      else
+      {
+        lua_pushnumber(L, M->VRe[i][j]);
+      }
+      lua_rawseti(L, -2, j+1);
+    }
+    lua_rawseti(L, -2, i+1);
+  }
+}
+
+
 
 void shallowtablecopy(lua_State* L, int index)
 {

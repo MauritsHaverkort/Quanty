@@ -112,7 +112,7 @@ uint32_t TestAtomicPhysics()
       }
       break;
     }
-    PotentialExpandedOnY("Oh", lshell, EigenEnergies, &Akm);
+    PotentialExpandedOnC("Oh", lshell, EigenEnergies, &Akm);
     printf("Eigen Energies for potential are %22.15E %22.15E %22.15E\n", EigenEnergies[0], EigenEnergies[1],
            EigenEnergies[2]);
     PrintHarmonicsExpansion(Akm);
