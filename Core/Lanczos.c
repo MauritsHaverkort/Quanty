@@ -3527,10 +3527,10 @@ uint32_t LanczosTriDiagonalizeKrylovRR(const OperatorType H, WaveFunctionType ps
   {
     RealWaveFunctionMultiply(PsiBasis[0], (double)1.0 / M->b[0]);
   }
-  printf("BasisSetSize: %12i ", PsiBasis[0].N);
+  VerbosityPrintf(0x0100,"BasisSetSize: %12i ", PsiBasis[0].N);
   RealWaveFunctionTruncateBasis(&(PsiBasis[0]), epsilon / errorestimate);
-  printf("%12i ", PsiBasis[0].N);
-  printf("| M.a[  0]         : %12.5E\n", M->a[0]);
+  VerbosityPrintf(0x0100,"%12i ", PsiBasis[0].N);
+  VerbosityPrintf(0x0100,"| M.a[  0]         : %12.5E\n", M->a[0]);
   /* Create PsiBasis[1] upto PsiBasis[M-N-1] */
   for (i = 1; i < M->N; i++)
   {
@@ -3598,14 +3598,14 @@ uint32_t LanczosTriDiagonalizeKrylovRR(const OperatorType H, WaveFunctionType ps
       RealWaveFunctionMultiply(PsiBasis[i], (double)1.0 / M->b[i]);
     }
     errorestimate *= Sqr(M->b[i]) / (Sqr(M->b[i]) + DBL_MIN + DBL_EPSILON * Sqr(M->a[i]));
-    printf("BasisSetSize: %12i ", PsiBasis[i].N);
+    VerbosityPrintf(0x0100,"BasisSetSize: %12i ", PsiBasis[i].N);
     RealWaveFunctionTruncateBasis(&(PsiBasis[i]), epsilon / errorestimate);
-    printf("%12i ", PsiBasis[i].N);
-    printf("| M.a[%3i] M.b[%3i]: %12.5E %12.5E | Err: %12.5E\n", i, i - 1, M->a[i], M->b[i - 1], errorestimate);
+    VerbosityPrintf(0x0100,"%12i ", PsiBasis[i].N);
+    VerbosityPrintf(0x0100,"| M.a[%3i] M.b[%3i]: %12.5E %12.5E | Err: %12.5E\n", i, i - 1, M->a[i], M->b[i - 1], errorestimate);
   }
   PsiOperatorPsiRR(H, PsiBasis[M->N - 1], &(M->a[M->N]));
-  printf("BasisSetSize: %12i ", PsiBasis[M->N - 1].N);
-  printf("             | M.a[%3i] M.b[%3i]: %12.5E %12.5E | Err: %12.5E\n\n", M->N, M->N - 1, M->a[M->N],
+  VerbosityPrintf(0x0100,"BasisSetSize: %12i ", PsiBasis[M->N - 1].N);
+  VerbosityPrintf(0x0100,"             | M.a[%3i] M.b[%3i]: %12.5E %12.5E | Err: %12.5E\n\n", M->N, M->N - 1, M->a[M->N],
          M->b[M->N - 1], errorestimate);
   fflush(stdout);
   return 0;
@@ -3642,10 +3642,10 @@ uint32_t LanczosTriDiagonalizeKrylovRC(const OperatorType H, WaveFunctionType ps
   {
     ComplexWaveFunctionMultiply(PsiBasis[0], (double)1.0 / M->b[0]);
   }
-  printf("BasisSetSize: %12i ", PsiBasis[0].N);
+  VerbosityPrintf(0x0100,"BasisSetSize: %12i ", PsiBasis[0].N);
   ComplexWaveFunctionTruncateBasis(&(PsiBasis[0]), epsilon / errorestimate);
-  printf("%12i ", PsiBasis[0].N);
-  printf("| M.a[  0]         : %12.5E\n", M->a[0]);
+  VerbosityPrintf(0x0100,"%12i ", PsiBasis[0].N);
+  VerbosityPrintf(0x0100,"| M.a[  0]         : %12.5E\n", M->a[0]);
   /* Create PsiBasis[1] upto PsiBasis[M-N-1] */
   for (i = 1; i < M->N; i++)
   {
@@ -3713,14 +3713,14 @@ uint32_t LanczosTriDiagonalizeKrylovRC(const OperatorType H, WaveFunctionType ps
       ComplexWaveFunctionMultiply(PsiBasis[i], (double)1.0 / M->b[i]);
     }
     errorestimate *= Sqr(M->b[i]) / (Sqr(M->b[i]) + DBL_MIN + DBL_EPSILON * Sqr(M->a[i]));
-    printf("BasisSetSize: %12i ", PsiBasis[i].N);
+    VerbosityPrintf(0x0100,"BasisSetSize: %12i ", PsiBasis[i].N);
     ComplexWaveFunctionTruncateBasis(&(PsiBasis[i]), epsilon / errorestimate);
-    printf("%12i ", PsiBasis[i].N);
-    printf("| M.a[%3i] M.b[%3i]: %12.5E %12.5E | Err: %12.5E\n", i, i - 1, M->a[i], M->b[i - 1], errorestimate);
+    VerbosityPrintf(0x0100,"%12i ", PsiBasis[i].N);
+    VerbosityPrintf(0x0100,"| M.a[%3i] M.b[%3i]: %12.5E %12.5E | Err: %12.5E\n", i, i - 1, M->a[i], M->b[i - 1], errorestimate);
   }
   PsiOperatorPsiRHC(H, PsiBasis[M->N - 1], &(M->a[M->N]));
-  printf("BasisSetSize: %12i ", PsiBasis[M->N - 1].N);
-  printf("             | M.a[%3i] M.b[%3i]: %12.5E %12.5E | Err: %12.5E\n\n", M->N, M->N - 1, M->a[M->N],
+  VerbosityPrintf(0x0100,"BasisSetSize: %12i ", PsiBasis[M->N - 1].N);
+  VerbosityPrintf(0x0100,"             | M.a[%3i] M.b[%3i]: %12.5E %12.5E | Err: %12.5E\n\n", M->N, M->N - 1, M->a[M->N],
          M->b[M->N - 1], errorestimate);
   fflush(stdout);
   return 0;
@@ -3757,10 +3757,10 @@ uint32_t LanczosTriDiagonalizeKrylovCC(const OperatorType H, WaveFunctionType ps
   {
     ComplexWaveFunctionMultiply(PsiBasis[0], (double)1.0 / M->b[0]);
   }
-  printf("BasisSetSize: %12i ", PsiBasis[0].N);
+  VerbosityPrintf(0x0100,"BasisSetSize: %12i ", PsiBasis[0].N);
   ComplexWaveFunctionTruncateBasis(&(PsiBasis[0]), epsilon / errorestimate);
-  printf("%12i ", PsiBasis[0].N);
-  printf("| M.a[  0]         : %12.5E\n", M->a[0]);
+  VerbosityPrintf(0x0100,"%12i ", PsiBasis[0].N);
+  VerbosityPrintf(0x0100,"| M.a[  0]         : %12.5E\n", M->a[0]);
   /* Create PsiBasis[1] upto PsiBasis[M-N-1] */
   for (i = 1; i < M->N; i++)
   {
@@ -3828,14 +3828,14 @@ uint32_t LanczosTriDiagonalizeKrylovCC(const OperatorType H, WaveFunctionType ps
       ComplexWaveFunctionMultiply(PsiBasis[i], (double)1.0 / M->b[i]);
     }
     errorestimate *= Sqr(M->b[i]) / (Sqr(M->b[i]) + DBL_MIN + DBL_EPSILON * Sqr(M->a[i]));
-    printf("BasisSetSize: %12i ", PsiBasis[i].N);
+    VerbosityPrintf(0x0100,"BasisSetSize: %12i ", PsiBasis[i].N);
     ComplexWaveFunctionTruncateBasis(&(PsiBasis[i]), epsilon / errorestimate);
-    printf("%12i ", PsiBasis[i].N);
-    printf("| M.a[%3i] M.b[%3i]: %12.5E %12.5E | Err: %12.5E\n", i, i - 1, M->a[i], M->b[i - 1], errorestimate);
+    VerbosityPrintf(0x0100,"%12i ", PsiBasis[i].N);
+    VerbosityPrintf(0x0100,"| M.a[%3i] M.b[%3i]: %12.5E %12.5E | Err: %12.5E\n", i, i - 1, M->a[i], M->b[i - 1], errorestimate);
   }
   PsiOperatorPsiCHC(H, PsiBasis[M->N - 1], &(M->a[M->N]));
-  printf("BasisSetSize: %12i ", PsiBasis[M->N - 1].N);
-  printf("             | M.a[%3i] M.b[%3i]: %12.5E %12.5E | Err: %12.5E\n\n", M->N, M->N - 1, M->a[M->N],
+  VerbosityPrintf(0x0100,"BasisSetSize: %12i ", PsiBasis[M->N - 1].N);
+  VerbosityPrintf(0x0100,"             | M.a[%3i] M.b[%3i]: %12.5E %12.5E | Err: %12.5E\n\n", M->N, M->N - 1, M->a[M->N],
          M->b[M->N - 1], errorestimate);
   fflush(stdout);
   return 0;
@@ -3872,10 +3872,10 @@ uint32_t LanczosTriDiagonalizeKrylovMC(const OperatorType H, WaveFunctionType ps
   {
     ComplexWaveFunctionMultiply(PsiBasis[0], (double)1.0 / M->b[0]);
   }
-  printf("BasisSetSize: %12i ", PsiBasis[0].N);
+  VerbosityPrintf(0x0100,"BasisSetSize: %12i ", PsiBasis[0].N);
   ComplexWaveFunctionTruncateBasis(&(PsiBasis[0]), epsilon / errorestimate);
-  printf("%12i ", PsiBasis[0].N);
-  printf("| M.a[  0]         : %12.5E\n", M->a[0]);
+  VerbosityPrintf(0x0100,"%12i ", PsiBasis[0].N);
+  VerbosityPrintf(0x0100,"| M.a[  0]         : %12.5E\n", M->a[0]);
   /* Create PsiBasis[1] upto PsiBasis[M-N-1] */
   for (i = 1; i < M->N; i++)
   {
@@ -3943,14 +3943,14 @@ uint32_t LanczosTriDiagonalizeKrylovMC(const OperatorType H, WaveFunctionType ps
       ComplexWaveFunctionMultiply(PsiBasis[i], (double)1.0 / M->b[i]);
     }
     errorestimate *= Sqr(M->b[i]) / (Sqr(M->b[i]) + DBL_MIN + DBL_EPSILON * Sqr(M->a[i]));
-    printf("BasisSetSize: %12i ", PsiBasis[i].N);
+    VerbosityPrintf(0x0100,"BasisSetSize: %12i ", PsiBasis[i].N);
     ComplexWaveFunctionTruncateBasis(&(PsiBasis[i]), epsilon / errorestimate);
-    printf("%12i ", PsiBasis[i].N);
-    printf("| M.a[%3i] M.b[%3i]: %12.5E %12.5E | Err: %12.5E\n", i, i - 1, M->a[i], M->b[i - 1], errorestimate);
+    VerbosityPrintf(0x0100,"%12i ", PsiBasis[i].N);
+    VerbosityPrintf(0x0100,"| M.a[%3i] M.b[%3i]: %12.5E %12.5E | Err: %12.5E\n", i, i - 1, M->a[i], M->b[i - 1], errorestimate);
   }
   PsiOperatorPsiMHC(H, PsiBasis[M->N - 1], &(M->a[M->N]));
-  printf("BasisSetSize: %12i ", PsiBasis[M->N - 1].N);
-  printf("             | M.a[%3i] M.b[%3i]: %12.5E %12.5E | Err: %12.5E\n\n", M->N, M->N - 1, M->a[M->N],
+  VerbosityPrintf(0x0100,"BasisSetSize: %12i ", PsiBasis[M->N - 1].N);
+  VerbosityPrintf(0x0100,"             | M.a[%3i] M.b[%3i]: %12.5E %12.5E | Err: %12.5E\n\n", M->N, M->N - 1, M->a[M->N],
          M->b[M->N - 1], errorestimate);
   fflush(stdout);
   return 0;

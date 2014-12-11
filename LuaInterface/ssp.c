@@ -1373,7 +1373,6 @@ static int LuaCreateSpectra(lua_State *L)
  */
 static int LuaCreateResonantSpectra(lua_State *L)
 {
-  void *buff;
   struct
   {
     ConvergenceSettingsType Settings;
@@ -1382,11 +1381,13 @@ static int LuaCreateResonantSpectra(lua_State *L)
     uint32_t NT2;
   } Options;
   Options.Settings=InitConvergenceSettings();
+  ConvergenceSettingsType SettingsNow;
   SpectraTypeArray *Spec;
+  SpectraType *SpecT1psi;
+  TriDiagonalMatrixType *SpecTri;
   OperatorType *H1,*H2,*T1, *T2;
   WaveFunctionType *psi;
-  uint32_t iT,ipsi,len;
-  double *psiEn;
+  uint32_t iT,ipsi,len,i;
   
   /* check number of input parameters */
   len = (uint32_t)lua_gettop(L);
@@ -1430,12 +1431,28 @@ static int LuaCreateResonantSpectra(lua_State *L)
   /* allocate spectra and and pointer to return matrix on lua stack */
   Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
   luaL_setmetatable(L, "ssp.spectra");
-  Spec->NSpectra=Options.NT1*Options.NT2*Options.Npsi;
-  Spec->Spec=malloc(Spec->NSpectra*sizeof(SpectraType));
-  
-  
-  
-  free(psiEn);
+  Spec->NSpectra=0;
+  Spec->Spec=NULL;
+  for(ipsi=0;ipsi<Options.Npsi;ipsi++)
+  {
+    for(iT=0;iT<Options.NT1;iT++)
+    {
+      SettingsNow = Options.Settings;
+      ResonantSpectra(*H1, *H2, T1[iT], T2, Options.NT2, psi[ipsi], &SpecTri, &SpecT1psi, &(SettingsNow));
+      Spec->NSpectra+=(SettingsNow.NE1+1)*Options.NT2;
+      Spec->Spec=realloc(Spec->Spec, Spec->NSpectra*sizeof(SpectraType));
+      for(i=0;i<(SettingsNow.NE1+1)*Options.NT2;i++)
+      {
+        FreeTriDiagonalMatrix(&(SpecTri[i]));
+      }
+      free(SpecTri);
+      for(i=0;i<(SettingsNow.NE1+1)*Options.NT2;i++)
+      {
+        Spec->Spec[i+Spec->NSpectra-(SettingsNow.NE1+1)*Options.NT2] = SpecT1psi[i];
+      }
+      free(SpecT1psi);
+    }
+  }
   return 1;
 }
 
@@ -1693,7 +1710,7 @@ static int LuaEigensystem(lua_State * L)
   Options.Settings=InitConvergenceSettings();
   Options.restrictions=False;
   Options.DeterminantRestrictions.N=0;
-  Options.NBitsKey=16;
+  Options.NBitsKey=20;
   OperatorType *Opp;
   DeterminantRestrictionType StartRestrictions;
   StartRestrictions.N=0;
