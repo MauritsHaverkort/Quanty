@@ -5,7 +5,10 @@ double Factorial(int a)
   double result;
   result = 1.0;
   if (a < 0)
-    printf("Error\n");
+  {
+    printf("Error Factorial called with a negative number\n");
+    return 0;
+  }
   for (i = a; i > 0; i--)
   {
     result *= i;
@@ -19,7 +22,10 @@ double Factorial2(int a)
   double result;
   result = 1.0;
   if (a < 0)
-    printf("Error\n");
+  {
+    printf("Error Factorial2 called with a negative number\n");
+    return 0;
+  }
   for (i = a; i > 0; i-=2)
   {
     result *= i;

@@ -230,6 +230,167 @@ static int math_randomseed (lua_State *L) {
 }
 
 
+
+/* on stack l,m,theta,phi
+ *  returns a complex number
+ */
+static int math_SphericalHarmonicY(lua_State * L)
+{
+  int l,m;
+  double theta,phi;
+  Complex16 *res;
+  if(lua_gettop(L)!=4) return luaL_error(L, "math.SphericalHarmonicsY expects 4 parameters l,m,theta,phi");
+  l = (int) luaL_checknumber(L, 1);
+  if((l<0)||(l>12)) return luaL_error(L, "Spherical Harmonics only implemented for 0<=l<=12 l=%i",l);
+  m = (int) luaL_checknumber(L, 2);
+  if(Abs(m)>l) return luaL_error(L, "Spherical Harmonics only defined for -l<m<l l=%i m=%i",l,m);
+  theta = (double) luaL_checknumber(L,3);
+  phi   = (double) luaL_checknumber(L,4);
+  res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
+  res->Re = ReSphericalHarmonicY(l, m, theta, phi);
+  res->Im = ImSphericalHarmonicY(l, m, theta, phi);
+  luaL_setmetatable(L, "Lua.complex");
+  return 1;
+}
+static int math_SphericalHarmonicC(lua_State * L)
+{
+  int l,m;
+  double theta,phi;
+  Complex16 *res;
+  if(lua_gettop(L)!=4) return luaL_error(L, "math.SphericalHarmonicsC expects 4 parameters l,m,theta,phi");
+  l = (int) luaL_checknumber(L, 1);
+  if((l<0)||(l>12)) return luaL_error(L, "Spherical Harmonics only implemented for 0<=l<=12 l=%i",l);
+  m = (int) luaL_checknumber(L, 2);
+  if(Abs(m)>l) return luaL_error(L, "Spherical Harmonics only defined for -l<m<l l=%i m=%i",l,m);
+  theta = (double) luaL_checknumber(L,3);
+  phi   = (double) luaL_checknumber(L,4);
+  res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
+  res->Re = sqrt(4*Pi/((double)(2*l+1))) * ReSphericalHarmonicY(l, m, theta, phi);
+  res->Im = sqrt(4*Pi/((double)(2*l+1))) * ImSphericalHarmonicY(l, m, theta, phi);
+  luaL_setmetatable(L, "Lua.complex");
+  return 1;
+}
+
+/* on stack l,m,theta,phi
+ *  returns a real number
+ */
+static int math_KubicHarmonicK(lua_State * L)
+{
+  int l,m;
+  double theta,phi;
+  double res;
+  if(lua_gettop(L)!=4) return luaL_error(L, "math.SphericalHarmonicsY expects 4 parameters l,m,theta,phi");
+  l = (int) luaL_checknumber(L, 1);
+  if((l<0)||(l>12)) return luaL_error(L, "Spherical Harmonics only implemented for 0<=l<=6 l=%i",l);
+  m = (int) luaL_checknumber(L, 2);
+  if(Abs(m)>l) return luaL_error(L, "Spherical Harmonics only defined for -l<m<l l=%i m=%i",l,m);
+  theta = (double) luaL_checknumber(L,3);
+  phi   = (double) luaL_checknumber(L,4);
+  res=CubicHarmonicK(l, m, theta, phi);
+  lua_pushnumber(L, res);
+  return 1;
+}
+static int math_KubicHarmonicE(lua_State * L)
+{
+  int l,m;
+  double theta,phi;
+  double res;
+  if(lua_gettop(L)!=4) return luaL_error(L, "math.SphericalHarmonicsY expects 4 parameters l,m,theta,phi");
+  l = (int) luaL_checknumber(L, 1);
+  if((l<0)||(l>12)) return luaL_error(L, "Spherical Harmonics only implemented for 0<=l<=6 l=%i",l);
+  m = (int) luaL_checknumber(L, 2);
+  if(Abs(m)>l) return luaL_error(L, "Spherical Harmonics only defined for -l<m<l l=%i m=%i",l,m);
+  theta = (double) luaL_checknumber(L,3);
+  phi   = (double) luaL_checknumber(L,4);
+  res=sqrt(4*Pi/((double)(2*l+1))) * CubicHarmonicK(l, m, theta, phi);
+  lua_pushnumber(L, res);
+  return 1;
+}
+
+/* on stack l,m,theta,phi
+ *  returns a real number
+ */
+static int math_TesseralHarmonicZ(lua_State * L)
+{
+  int l,m;
+  double theta,phi;
+  double res;
+  if(lua_gettop(L)!=4) return luaL_error(L, "math.SphericalHarmonicsY expects 4 parameters l,m,theta,phi");
+  l = (int) luaL_checknumber(L, 1);
+  if((l<0)||(l>12)) return luaL_error(L, "Spherical Harmonics only implemented for 0<l<12 l=%i",l);
+  m = (int) luaL_checknumber(L, 2);
+  if(Abs(m)>l) return luaL_error(L, "Spherical Harmonics only defined for -l<m<l l=%i m=%i",l,m);
+  theta = (double) luaL_checknumber(L,3);
+  phi   = (double) luaL_checknumber(L,4);
+  res=TesseralHarmonicZ(l, m, theta, phi);
+  lua_pushnumber(L, res);
+  return 1;
+}
+static int math_TesseralHarmonicD(lua_State * L)
+{
+  int l,m;
+  double theta,phi;
+  double res;
+  if(lua_gettop(L)!=4) return luaL_error(L, "math.SphericalHarmonicsY expects 4 parameters l,m,theta,phi");
+  l = (int) luaL_checknumber(L, 1);
+  if((l<0)||(l>12)) return luaL_error(L, "Spherical Harmonics only implemented for 0<l<12 l=%i",l);
+  m = (int) luaL_checknumber(L, 2);
+  if(Abs(m)>l) return luaL_error(L, "Spherical Harmonics only defined for -l<m<l l=%i m=%i",l,m);
+  theta = (double) luaL_checknumber(L,3);
+  phi   = (double) luaL_checknumber(L,4);
+  res=sqrt(4*Pi/((double)(2*l+1))) * TesseralHarmonicZ(l, m, theta, phi);
+  lua_pushnumber(L, res);
+  return 1;
+}
+
+/* on stack l,x
+ *  returns a real number
+ */
+static int math_SphericalBesselJ(lua_State * L)
+{
+  int l;
+  double x;
+  double res;
+  if(lua_gettop(L)!=2) return luaL_error(L, "math.SphericalBesselJ expects 2 parameters l,x");
+  l = (int) luaL_checknumber(L, 1);
+  x = (double) luaL_checknumber(L, 2);
+  res = SphericalBesselJ(x, l);
+  lua_pushnumber(L, res);
+  return 1;
+}
+
+
+/* on stack n,l,x
+ *  returns a real number
+ */
+static int math_LaguerreL(lua_State * L)
+{
+  int n,l;
+  double x;
+  double res;
+  if(lua_gettop(L)!=3) return luaL_error(L, "math.LaguerreL expects 3 parameters n,l,x");
+  n = (int) luaL_checknumber(L, 1);
+  l = (int) luaL_checknumber(L, 2);
+  x = (double) luaL_checknumber(L, 3);
+  res = LaguerrePolynomial(n,l,x);
+  lua_pushnumber(L, res);
+  return 1;
+}
+
+/* on stack n
+ *  returns a real number
+ */
+static int math_fact(lua_State * L)
+{
+  int n;
+  double res;
+  if(lua_gettop(L)!=1) return luaL_error(L, "math.fact expects 1 parameter n");
+  n = (int) luaL_checknumber(L, 1);
+  res = Factorial(n);
+  lua_pushnumber(L, res);
+  return 1;
+}
+
 static const luaL_Reg mathlib[] = {
   {"abs",   math_abs},
   {"acos",  math_acos},
@@ -261,6 +422,15 @@ static const luaL_Reg mathlib[] = {
   {"sqrt",  math_sqrt},
   {"tanh",   math_tanh},
   {"tan",   math_tan},
+  {"fact",   math_fact},
+  {"SphericalHarmonicY", math_SphericalHarmonicY},
+  {"SphericalHarmonicC", math_SphericalHarmonicC},
+  {"TesseralHarmonicZ",  math_TesseralHarmonicZ},
+  {"TesseralHarmonicD",  math_TesseralHarmonicD},
+  {"KubicHarmonicK",     math_KubicHarmonicK},
+  {"KubicHarmonicE",     math_KubicHarmonicE},
+  {"SphericalBesselJ",   math_SphericalBesselJ},
+  {"LaguerreL",          math_LaguerreL},
   {NULL, NULL}
 };
 

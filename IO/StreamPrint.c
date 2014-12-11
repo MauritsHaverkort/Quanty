@@ -1325,6 +1325,46 @@ uint32_t StreamPrintBlokAndersonMatrix(BlokAndersonMatrixType M, FILE * stream)
   return 0;
 }
 
+uint32_t StreamPrintBlockAndersonMatrix(BlockAndersonMatrixType M, FILE * stream)
+{
+  uint32_t i;
+  CompactMatrixType alpha;
+  alpha.Ni=M.BlockSize;
+  alpha.Nj=M.BlockSize;
+  alpha.QComplex=M.QComplex;
+  M.Name[MAXStrLength - 1] = '\0';
+  fprintf(stream, "%s =\n", M.Name);
+  fprintf(stream, "BlockAndersonMatrix element a[i]=M[i][i] element b[i]=M[0,i+1]=M[i+1,0] others are zero.\n");
+  fprintf(stream, "Zero elements are prefactors for continued fraction representation\n");
+  for (i = 0; i <= M.N; i++)
+  {
+    if(M.QComplex)
+    {
+      alpha.V=&(M.a[i*M.BlockSize*M.BlockSize]);
+    }
+    else
+    {
+      alpha.VRe=&(M.aRe[i*M.BlockSize*M.BlockSize]);
+    }
+    fprintf(stream, "a[%i]\n", i);
+    StreamPrintCompactMatrixMinimal(alpha, stream);
+  }
+  for (i = 0; i < M.N; i++)
+  {
+    if(M.QComplex)
+    {
+      alpha.V=&(M.b[i*M.BlockSize*M.BlockSize]);
+    }
+    else
+    {
+      alpha.VRe=&(M.bRe[i*M.BlockSize*M.BlockSize]);
+    }
+    fprintf(stream, "b[%i]\n", i);
+    StreamPrintCompactMatrixMinimal(alpha, stream);
+  }
+  return 0;
+}
+
 uint32_t StreamPrintListOfPoles(ListOfPoles M, FILE * stream)
 {
   uint32_t i;

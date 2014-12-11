@@ -642,6 +642,20 @@ uint32_t get2p3dAtomicInfo(uint32_t Z, uint32_t dCount, double *Fdd, double *Fpd
         default:
           break;
       }
+    case 22:
+      switch (dCount)
+      {
+        case 0:
+          Fdd[1] = 8.245; Fdd[2] = 5.133; Fpd[1] = 6.302; 
+          Gpd[0] = 4.628; Gpd[1] = 2.633; *zeta2p = 3.776; *zeta3d = 0.019; 
+          return 0;
+        case 1:
+          Fdd[1] = 8.245; Fdd[2] = 5.133; Fpd[1] = 5.581; 
+          Gpd[0] = 3.991; Gpd[1] = 2.268; *zeta2p = 3.776; *zeta3d = 0.019; 
+          return 0;
+        default:
+          break;
+      }
     case 25:
       switch(dCount)
       {
@@ -665,6 +679,10 @@ uint32_t get2p3dAtomicInfo(uint32_t Z, uint32_t dCount, double *Fdd, double *Fpd
     case 28:
       switch(dCount)
       {
+        case 7:
+          Fdd[1] = 13.277; Fdd[2] = 8.295; Fpd[1] = 8.350;
+          Gpd[0] = 6.332; Gpd[1] = 3.603; *zeta2p = 11.506; *zeta3d = 0.091;
+          return 0;        
         case 8:
           Fdd[1] = 12.234; Fdd[2] = 7.598; Fpd[1] = 7.721;
           Gpd[0] = 5.787; Gpd[1] = 3.291; *zeta2p = 11.507; *zeta3d = 0.083;
@@ -676,8 +694,8 @@ uint32_t get2p3dAtomicInfo(uint32_t Z, uint32_t dCount, double *Fdd, double *Fpd
       switch(dCount)
     {
       case 9:
-        Fdd[1] = 0.000; Fdd[2] = 0.000; Fpd[1] = 0.000;
-        Gpd[0] = 0.000; Gpd[1] = 0.000; *zeta2p = 10.000; *zeta3d = 0.100; /* not set */
+        Fdd[1] = 13.886; Fdd[2] = 8.670; Fpd[1] = 8.797;
+        Gpd[0] = 6.712; Gpd[1] = 3.820; *zeta2p = 13.498; *zeta3d = 0.102; /*F,G for Cu3+*/
         return 0;
       default:
         break;
@@ -777,7 +795,7 @@ int LigandField(uint32_t Z, uint32_t dCount)
   doXAS=1;
   doXiSpin=0;
   doXiCharge=0;
-  doRIXS=1;
+  doRIXS=0;
   
   Rydberg = 13.6057;
   
@@ -786,7 +804,7 @@ int LigandField(uint32_t Z, uint32_t dCount)
   Bmag[2]= 0.000000; /* magnetic field in the z direction (units of eV) */
   Hex[0] = 0.000000; /* exchange field in the x direction (units of eV) */
   Hex[1] = 0.000000; /* exchange field in the y direction (units of eV) */
-  Hex[2] = 0.000000; /* exchange field in the z direction (units of eV) */
+  Hex[2] = 0.000001; /* exchange field in the z direction (units of eV) */
   
   if(get2p3dAtomicInfo(Z,dCount,Fdd,Fpd,Gpd,&zeta2p,&zeta3d))
   {
@@ -807,9 +825,9 @@ int LigandField(uint32_t Z, uint32_t dCount)
   Gpd[0] *= red2P3D;     /* G1 */
   Gpd[1] *= red2P3D;      /* G3 */
 
-  Udd = 7.0;
-  Upd = 8.5;
-  Delta = -2.0;      /* energy difference between dn and dn+1 ligand hole */
+  Udd = 2.0;
+  Upd = 4.0;
+  Delta = 3.0;      /* energy difference between dn and dn+1 ligand hole */
   
   Fdd[0] = Udd + 2.0/63.0 * (Fdd[1] + Fdd[2]);
   Fpd[0] = Upd + 1.0/15.0 * Gpd[0] + 3.0/70.0 * Gpd[1];
@@ -860,7 +878,9 @@ int LigandField(uint32_t Z, uint32_t dCount)
  * eL = 0
 */
 
-  if(dCount == 1)
+  if(dCount == 0)
+    ed = Delta - 0. * Udd - 6. * Upd;
+  else if(dCount == 1)
     ed = Delta - 1. * Udd - 6. * Upd;
   else if(dCount == 2)
     ed = Delta - 2. * Udd - 6. * Upd;
@@ -891,17 +911,17 @@ int LigandField(uint32_t Z, uint32_t dCount)
 
   
   
-  Ea1g = 0.3;
-  Eb1g = 0.3;
-  Eb2g = -0.2;
-  Eeg  = -0.2;
+  Ea1g = 0.9;
+  Eb1g = 0.9;
+  Eb2g = -0.6;
+  Eeg  = -0.6;
   
   CFEnergies[0] = Ea1g;
   CFEnergies[1] = Eb1g;
   CFEnergies[2] = Eb2g;
   CFEnergies[3] = Eeg;
   
-  PotentialExpandedOnY("D4h", 2, CFEnergies, &D4hAkmCF);
+  PotentialExpandedOnC("D4h", 2, CFEnergies, &D4hAkmCF);
   
   /*
   pds = -1.88;
@@ -911,10 +931,10 @@ int LigandField(uint32_t Z, uint32_t dCount)
   Hopb2g = 2.0 * pdp;
   Hopeg  = 2.0 * pdp;
   */
-  Hopa1g = -2.06;
-  Hopb1g = -2.06;
-  Hopb2g = 1.21;
-  Hopeg  = 1.21;
+  Hopa1g = -3.8;
+  Hopb1g = -3.8;
+  Hopb2g = 1.9;
+  Hopeg  = 1.9;
   
   
   HoppingEnergies[0] = Hopa1g;
@@ -922,11 +942,11 @@ int LigandField(uint32_t Z, uint32_t dCount)
   HoppingEnergies[2] = Hopb2g;
   HoppingEnergies[3] = Hopeg;
   
-  PotentialExpandedOnY("D4h", 2, HoppingEnergies, &D4hAkmHop);
-  PotentialExpandedOnY("D4h", 2, HoppingEnergiesa1g, &D4hAkma1g);
-  PotentialExpandedOnY("D4h", 2, HoppingEnergiesb1g, &D4hAkmb1g);
-  PotentialExpandedOnY("D4h", 2, HoppingEnergiesb2g, &D4hAkmb2g);
-  PotentialExpandedOnY("D4h", 2, HoppingEnergieseg,  &D4hAkmeg );
+  PotentialExpandedOnC("D4h", 2, HoppingEnergies, &D4hAkmHop);
+  PotentialExpandedOnC("D4h", 2, HoppingEnergiesa1g, &D4hAkma1g);
+  PotentialExpandedOnC("D4h", 2, HoppingEnergiesb1g, &D4hAkmb1g);
+  PotentialExpandedOnC("D4h", 2, HoppingEnergiesb2g, &D4hAkmb2g);
+  PotentialExpandedOnC("D4h", 2, HoppingEnergieseg,  &D4hAkmeg );
 
   /* Polarization dependent transition operators for XAS and RIXS.
      These are created from potentials expanded on spherical harmonics.
@@ -1325,16 +1345,18 @@ int LigandField(uint32_t Z, uint32_t dCount)
     printf("\n========================================================\n");
     BeginTiming("XAS", &Time);
 
+    epsilon = 0.001;
+    
     SpecTri.N = 220;
     InitTriDiagonalMatrix(&SpecTri);
      
     for(i=26;i<31;i++)
     {
       Spectra[i].N=7000;
-      Spectra[i].Emin=-85.0;
-      Spectra[i].Emax=-30.0;
+      Spectra[i].Emin=-25.0;
+      Spectra[i].Emax=25.0;
       Spectra[i].dE = (Spectra[i].Emax - Spectra[i].Emin) / Spectra[i].N;
-      Spectra[i].Gamma = 0.4;
+      Spectra[i].Gamma = 0.35;
       SpectrumAllocate(Spectra[i], &Spectra[i]);
     }
     
@@ -1359,7 +1381,7 @@ int LigandField(uint32_t Z, uint32_t dCount)
     FilePrintPlainTriDiagonalMatrix(SpecTri, "LigandField_XASTri_z", "w");
     EndTiming("spectrum", &Time);
     
-    BeginTiming("spectrum", &Time);
+    /*BeginTiming("spectrum", &Time);
     OperatorPsi(TXASl, psi, &Opsi);
     LanczosTriDiagonalize(OppH, Opsi, epsilon, &SpecTri,  Spectra[29].Gamma);
     TriDiagonalMatrixToSpectrum(energy, SpecTri, &Spectra[29]);
@@ -1369,9 +1391,9 @@ int LigandField(uint32_t Z, uint32_t dCount)
     OperatorPsi(TXASr, psi, &Opsi);
     LanczosTriDiagonalize(OppH, Opsi, epsilon, &SpecTri,  Spectra[30].Gamma);
     TriDiagonalMatrixToSpectrum(energy, SpecTri, &Spectra[30]);
-    EndTiming("spectrum", &Time);
+    EndTiming("spectrum", &Time);*/
     
-    FilePrintSpectra(&Spectra[26], 5, "LigandField_XAS","w");
+    FilePrintSpectra(&Spectra[26], 3, "LigandField_XAS","w");
     EndTiming("XAS", &Time);
     PrintTiming(Time);
   }
@@ -1412,8 +1434,8 @@ int LigandField(uint32_t Z, uint32_t dCount)
     }
 
     BeginTiming("spectrum", &Time);
-//    ResonantSpectra(OppH,TXASx,TRIXS,3,psi,energy,epsilon,&Spectra[26],-77.4,0.4,0.1,70,50);
-    ResonantSpectra(OppH,TXASx,TRIXS,3,psi,energy,epsilon,numwRes,RIXSSpectra,wRes,gammaRes,gamma,Gfwhm, NKrylovXAS,NKrylovRIXS);
+//    ResonantSpectraOrig(OppH,TXASx,TRIXS,3,psi,energy,epsilon,&Spectra[26],-77.4,0.4,0.1,70,50);
+    ResonantSpectraOrig(OppH,TXASx,TRIXS,3,psi,energy,epsilon,numwRes,RIXSSpectra,wRes,gammaRes,gamma,Gfwhm, NKrylovXAS,NKrylovRIXS);
 
 
 
@@ -1615,7 +1637,7 @@ int ImpurityModel3d(uint32_t Z, uint32_t dCount)
   Ea1g = 0.3; Eb1g = 0.3; Eb2g = -0.2; Eeg  = -0.2;
   CFEnergies[0] = Ea1g; CFEnergies[1] = Eb1g; CFEnergies[2] = Eb2g; CFEnergies[3] = Eeg;
   
-  PotentialExpandedOnY("D4h", 2, CFEnergies, &D4hAkmCF);
+  PotentialExpandedOnC("D4h", 2, CFEnergies, &D4hAkmCF);
 
   Hopa1g = -2.06; Hopb1g = -2.06; Hopb2g = 1.21; Hopeg  = 1.21;
   
@@ -1630,11 +1652,11 @@ int ImpurityModel3d(uint32_t Z, uint32_t dCount)
   HoppingEnergies[0] = Hopa1g; HoppingEnergies[1] = Hopb1g;
   HoppingEnergies[2] = Hopb2g; HoppingEnergies[3] = Hopeg;
   
-  PotentialExpandedOnY("D4h", 2, HoppingEnergies, &D4hAkmHop);
-  PotentialExpandedOnY("D4h", 2, HoppingEnergiesa1g, &D4hAkma1g);
-  PotentialExpandedOnY("D4h", 2, HoppingEnergiesb1g, &D4hAkmb1g);
-  PotentialExpandedOnY("D4h", 2, HoppingEnergiesb2g, &D4hAkmb2g);
-  PotentialExpandedOnY("D4h", 2, HoppingEnergieseg,  &D4hAkmeg );
+  PotentialExpandedOnC("D4h", 2, HoppingEnergies, &D4hAkmHop);
+  PotentialExpandedOnC("D4h", 2, HoppingEnergiesa1g, &D4hAkma1g);
+  PotentialExpandedOnC("D4h", 2, HoppingEnergiesb1g, &D4hAkmb1g);
+  PotentialExpandedOnC("D4h", 2, HoppingEnergiesb2g, &D4hAkmb2g);
+  PotentialExpandedOnC("D4h", 2, HoppingEnergieseg,  &D4hAkmeg );
 
   /* Polarization dependent transition operators for XAS and RIXS.
      These are created from potentials expanded on spherical harmonics.
@@ -2022,8 +2044,8 @@ int ImpurityModel3d(uint32_t Z, uint32_t dCount)
     }
 
     BeginTiming("spectrum", &Time);
-//    ResonantSpectra(OppH,TXASx,TRIXS,3,psi,energy,epsilon,&Spectra[26],-77.4,0.4,0.1,70,50);
-    ResonantSpectra(OppH,TXASx,TRIXS,3,psi,energy,epsilon,numwRes,RIXSSpectra,wRes,gammaRes,gamma,Gfwhm,NKrylovXAS,NKrylovRIXS);
+//    ResonantSpectraOrig(OppH,TXASx,TRIXS,3,psi,energy,epsilon,&Spectra[26],-77.4,0.4,0.1,70,50);
+    ResonantSpectraOrig(OppH,TXASx,TRIXS,3,psi,energy,epsilon,numwRes,RIXSSpectra,wRes,gammaRes,gamma,Gfwhm,NKrylovXAS,NKrylovRIXS);
 
 
 

@@ -1,3 +1,23 @@
+/**********************************************************/
+/******       BasisMath/BasicMatch.c       ******/
+/**********************************************************/
+uint32_t PowerInt();
+double PowerDoubleInt();
+void Cross();
+double ParallelalPipedVolume();
+void Swap();
+double CoVariance();
+double Variance();
+double Avverage();
+void LinearInterpolate();
+void QuadraticInterpolate();
+double InterpolateRoot();
+double InterpolateRootOfset();
+void InterpolateRoot2D();
+void InterpolateRoot2DOfset();
+double FindSelfconsistentnumber();
+void ResiprocalLatticeVector();
+
 
 /**********************************************************/
 /******       BasisMath/AndersonMatrixVector.c       ******/
@@ -334,13 +354,12 @@ uint32_t MapSecondoubleTridiagonalMatrixToBA();
 /**********************************************************/
 /***********     BasisMath/Combinatorial.c      ***********/
 /**********************************************************/
-double Factorial(int a);
-uint32_t BinomialCoefficient(uint32_t n, uint32_t k);
-uint32_t PerturbationOptions(uint32_t NV, uint32_t order);
-void   PerturbationOrderListToIndex(uint32_t * const POList, uint32_t * const POIndex, uint32_t const NV,
-                                    uint32_t const order);
-void   PerturbationOrderIndexToList(uint32_t const POIndex, uint32_t * const POList, uint32_t const NV,
-                                    uint32_t const order);
-double ThreeJSymbol(int j1, int m1, int j2, int m2, int j3, int m3);
-double ThreeJSymbolHalf(int j1, int m1, int j2, int m2, int j3, int m3);
-double SlaterCoefficientC(int k, int l1, int m1, int l2, int m2);
+double Factorial();
+double Factorial2();
+uint32_t BinomialCoefficient();
+uint32_t PerturbationOptions();
+void   PerturbationOrderListToIndex();
+void   PerturbationOrderIndexToList();
+double ThreeJSymbol();
+double ThreeJSymbolHalf();
+double SlaterCoefficientC();
