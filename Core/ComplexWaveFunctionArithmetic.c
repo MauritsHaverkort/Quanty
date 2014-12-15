@@ -65,7 +65,6 @@ void ComplexWaveFunctionFreeValues(WaveFunctionType * const psi)
 uint32_t ComplexWaveFunctionAddElement(WaveFunctionType * const psi, const uint8_t * const det, const double aRe, const double aIm)
 {
   uint32_t i, NextIndex, ThereIsANext, PsiAIsPsiB;
-  if ((Sqr(aRe)+Sqr(aIm))<100*DBL_MIN) return 0;
   void  *temp;
   /* test if the key that belongs to psi already excists */
   if (psi->KeyList[hash(det, psi->NWord, psi->NBitsKey)] == 0)

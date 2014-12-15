@@ -1107,7 +1107,14 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylovComplex(const OperatorType H,
         }
       }
       // calculate v[i+NpsiDeflated] = H v[i] and onsite term < v[i] | H | v[i] >
-      OperatorPsiConserveBasisPreAllocatedCC(&H, &v[i], &v[i+NpsiDeflated]);
+      if(H.QComplex==1)
+      {
+        OperatorPsiConserveBasisPreAllocatedCC(&H, &v[i], &v[i+NpsiDeflated]);
+      }
+      else
+      {
+        OperatorPsiConserveBasisPreAllocatedMC(&H, &v[i], &v[i+NpsiDeflated]);
+      }
       ComplexWaveFunctionDotProductSameBasis(v[i], v[i+NpsiDeflated], &HKrylov.V[i+i*HKrylov.Nj].Re, &DotIm);
       // orthogonalize v[i+NpsiDeflated] to v[j] (the new candiate agains the latest found states)
       // for j from i-NpsiDeflated to i-1

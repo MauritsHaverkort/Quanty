@@ -7332,13 +7332,13 @@ uint32_t PotentialExpandedOnC(char *s, uint32_t const l, double const *EigenEner
         Akm->Re[0] = (1.0 / 7.0) * (EigenEnergies[0] + 3 * EigenEnergies[1] + 3 * EigenEnergies[2]);
         Akm->l[1] = 4;
         Akm->m[1] = 0;
-        Akm->Re[1] = (3.0 / 4.0) * (-2 * EigenEnergies[0] + 3 * EigenEnergies[1] + EigenEnergies[2]);
+        Akm->Re[1] = (3.0 / 4.0) * (-2 * EigenEnergies[0] + 3 * EigenEnergies[1] - EigenEnergies[2]);
         Akm->l[2] = 4;
         Akm->m[2] = -4;
-        Akm->Re[2] = (3.0 / 4.0) * sqrt(5.0 / 14.0) * (-2 * EigenEnergies[0] + 3 * EigenEnergies[1] + EigenEnergies[2]);
+        Akm->Re[2] = (3.0 / 4.0) * sqrt(5.0 / 14.0) * (-2 * EigenEnergies[0] + 3 * EigenEnergies[1] - EigenEnergies[2]);
         Akm->l[3] = 4;
         Akm->m[3] = 4;
-        Akm->Re[3] = (3.0 / 4.0) * sqrt(5.0 / 14.0) * (-2 * EigenEnergies[0] + 3 * EigenEnergies[1] + EigenEnergies[2]);
+        Akm->Re[3] = (3.0 / 4.0) * sqrt(5.0 / 14.0) * (-2 * EigenEnergies[0] + 3 * EigenEnergies[1] - EigenEnergies[2]);
         Akm->l[4] = 6;
         Akm->m[4] = 0;
         Akm->Re[4] = (39.0 / 280.0) * (4 * EigenEnergies[0] + 5 * EigenEnergies[1] - 9 * EigenEnergies[2]);
