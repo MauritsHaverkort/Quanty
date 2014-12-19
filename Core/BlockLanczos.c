@@ -598,7 +598,7 @@ uint32_t BlockLanczosGroundStateConserveBasisDense(const OperatorType H, WaveFun
     {
       printf("WaveFunctionInitCopyBasis failed in BlockLanczosGroundStateConserveBasisDense\n");
       // need to clean things in parallel session before return - to do
-      return 1;
+      // return 1;
     }
     if(Hdens.QComplex)
     {
