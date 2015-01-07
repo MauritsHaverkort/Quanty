@@ -159,7 +159,7 @@ ConvergenceSettingsType InitConvergenceSettings()
 {
   ConvergenceSettingsType ret=
   {
-    500 /*DenseBoarder*/,
+    1000 /*DenseBoarder*/,
     100 /*NKrylovStart*/,
     500 /*NKrylovMax*/,
      10 /*NKrylovStep*/,

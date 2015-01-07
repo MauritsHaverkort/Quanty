@@ -246,6 +246,7 @@ uint32_t BlockOperatorPsiConserveBasisPreAllocated(const OperatorType H, WaveFun
 uint32_t BlockOperatorPsiRestricted(const OperatorType H, WaveFunctionType const * const psi, WaveFunctionType * const Opsi, uint32_t const Npsi, DeterminantRestrictionType const Restrictions)
 {
   uint32_t i,j;
+  VerbosityPrintf(0x0002,"Start of BlockOperatorPsiRestricted\n");
   if(OperatorPsiRestricted(H, psi[0], &(Opsi[0]), Restrictions))
   {
     printf("OperatorPsi failed in BlockOperatorPsi\n");
@@ -279,6 +280,7 @@ uint32_t BlockOperatorPsiRestricted(const OperatorType H, WaveFunctionType const
 uint32_t BlockOperatorPsi(const OperatorType H, WaveFunctionType const * const psi, WaveFunctionType * const Opsi, uint32_t const Npsi)
 {
   uint32_t i,j;
+  VerbosityPrintf(0x0002,"Start of BlockOperatorPsi\n");
   if(OperatorPsi(H, psi[0], &(Opsi[0])))
   {
     printf("OperatorPsi failed in BlockOperatorPsi\n");
@@ -555,9 +557,11 @@ uint32_t BlockLanczosGroundStateConserveBasisDense(const OperatorType H, WaveFun
   uint32_t i,j,k;
   CompactMatrixType Hdens,fun;
   double val[psi[0].N];
+  VerbosityPrintf(0x0100,"Start of BlockLanczosGroundStateConserveBasisDense\n");
   // test if psi is complex when H is complex, if not turn it into a complex function
   if((H.QComplex)&&(psi[0].QComplex==0))
   {
+    VerbosityPrintf(0x0100,"Complex Hamiltonian on real wave-function, make functions complex\n");
     for(i=0;i<Npsi;i++)
     {
       if(MakeComplexWaveFunctionFromReal(&(psi[i]), psi[i]))
@@ -593,7 +597,8 @@ uint32_t BlockLanczosGroundStateConserveBasisDense(const OperatorType H, WaveFun
     if(WaveFunctionInitCopyBasis(&Hpsi, psi[0]))
     {
       printf("WaveFunctionInitCopyBasis failed in BlockLanczosGroundStateConserveBasisDense\n");
-      
+      // need to clean things in parallel session before return - to do
+      // return 1;
     }
     if(Hdens.QComplex)
     {
@@ -667,6 +672,10 @@ uint32_t BlockLanczosGroundStateConserveBasisDense(const OperatorType H, WaveFun
   }
   FreeCompactMatrix(&fun);
   if(GlobalTimeOn&0x40) EndTiming("Diagonalize Hdens", &GlobalTime);
+  for(i=0;i<psi[0].N;i++)
+  {
+    VerbosityPrintf(0x0100,"val[%3i] = %22.15E\n",i,val[i]);
+  }
   return 0;
 }
 
@@ -1107,7 +1116,14 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylovComplex(const OperatorType H,
         }
       }
       // calculate v[i+NpsiDeflated] = H v[i] and onsite term < v[i] | H | v[i] >
-      OperatorPsiConserveBasisPreAllocatedCC(&H, &v[i], &v[i+NpsiDeflated]);
+      if(H.QComplex==1)
+      {
+        OperatorPsiConserveBasisPreAllocatedCC(&H, &v[i], &v[i+NpsiDeflated]);
+      }
+      else
+      {
+        OperatorPsiConserveBasisPreAllocatedMC(&H, &v[i], &v[i+NpsiDeflated]);
+      }
       ComplexWaveFunctionDotProductSameBasis(v[i], v[i+NpsiDeflated], &HKrylov.V[i+i*HKrylov.Nj].Re, &DotIm);
       // orthogonalize v[i+NpsiDeflated] to v[j] (the new candiate agains the latest found states)
       // for j from i-NpsiDeflated to i-1
@@ -1257,6 +1273,7 @@ uint32_t BlockLanczosGroundStateConserveBasis(const OperatorType H, WaveFunction
 {
   uint32_t i;
   WaveFunctionType *v;
+  VerbosityPrintf(0x0100,"Start of BlockLanczosGroundStateConserveBasis\n");
   // for small basises do a dense calculation
   if(psi[0].N<=Settings->DenseBoarder) return BlockLanczosGroundStateConserveBasisDense(H,psi, Npsi);
   // create the vectors v in memory.
@@ -1355,12 +1372,13 @@ uint32_t BlockGroundState(const OperatorType H, uint32_t const Npsi, Convergence
   {
     Energy[0][i]=1E+99;
   }
-  printf("Start of BlockGroundState. Converge %i states to an energy with variance smaller than %22.15E\n\n",Npsi,Settings->zero);
+  VerbosityPrintf(0x0002,"Start of BlockGroundState. Converge %i states to an energy with variance smaller than %22.15E\n\n",Npsi,Settings->zero);
   // loop until converged
   while((!Qconverged)&&(iloop<100))
   {
     iloop++;
     // expand basis depending on Restrictions.N use either restrictions or don't use them
+
     while( (Restrictions.N) ? BlockOperatorPsiRestricted(H, psi, Opsi, Npsi, Restrictions) : BlockOperatorPsi(H, psi, Opsi, Npsi))
     {
       // was not able to evaluate O psi, need to truncate psi further
@@ -1372,6 +1390,7 @@ uint32_t BlockGroundState(const OperatorType H, uint32_t const Npsi, Convergence
       Settings->epsilon*=2;
       BlockWaveFunctionTruncateBasis(psi,Npsi,Settings->epsilon);
     }
+    
     // calculate Energy and variance of Energy - test for convergence
     Qconverged=1;
     VerbosityPrintf(0x0100,"State # |   Energy               |  Variance of Energy    |  Energy change\n");
