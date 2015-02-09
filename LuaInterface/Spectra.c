@@ -78,7 +78,7 @@ static int LuaSpectrumElement(lua_State * L)
           return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
         }
         CopySpectra(a->Spec[i-1], &(res->Spec[0]));
-        luaL_setmetatable(L, "ssp.spectra");
+        luaL_setmetatable(L, "Spectra_Type");
         return 1;
       }
       case LUA_TSTRING:
@@ -89,22 +89,22 @@ static int LuaSpectrumElement(lua_State * L)
       case LUA_TUSERDATA:
       {
         // (original variable) operator (user data)
-        if (luaL_testudata(L, len, "Lua.complex") != NULL)
+        if (luaL_testudata(L, len, "Complex_Type") != NULL)
         {
           // (original variable) operator (user data - complex)
           return luaL_error(L, "Error: can not find complex valued number element in spectrum, expected a number or list of numbers\n");
         }
-        if (luaL_testudata(L, len, "ssp.wavefunction") != NULL)
+        if (luaL_testudata(L, len, "Wavefunction_Type") != NULL)
         {
           // (original variable) operator (user data - wavefunction)
           return luaL_error(L, "Error: can not find wavefunction element in spectrum, expected a number or list of numbers\n");
         }
-        if (luaL_testudata(L, len, "ssp.operator") != NULL)
+        if (luaL_testudata(L, len, "Operator_Type") != NULL)
         {
           // (original variable) operator (user data - operator)
           return luaL_error(L, "Error: can not find operator element in spectrum, expected a number or list of numbers\n");
         }
-        if (luaL_testudata(L, len, "ssp.spectra") != NULL)
+        if (luaL_testudata(L, len, "Spectra_Type") != NULL)
         {
           // (original variable) operator (user data - spectra)
           return luaL_error(L, "Error: can not find spectrum element in spectrum, expected a number or list of numbers\n");
@@ -133,7 +133,7 @@ static int LuaSpectrumElement(lua_State * L)
           }
           CopySpectra(a->Spec[i-1], &(res->Spec[j]));
         }
-        luaL_setmetatable(L, "ssp.spectra");
+        luaL_setmetatable(L, "Spectra_Type");
         return 1;
       }
       default:
@@ -162,7 +162,7 @@ static int LuaSpectrumSum(lua_State * L)
   SpectraTypeArray *a = (SpectraTypeArray *)currentudata;
   uint32_t len = (uint32_t)lua_gettop(L);
   res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
-  luaL_setmetatable(L, "ssp.spectra");
+  luaL_setmetatable(L, "Spectra_Type");
   res->NSpectra = len;
   res->Spec=malloc(res->NSpectra*sizeof(SpectraType));
   res->Spec[0].Emin    = a->Spec[0].Emin;
@@ -215,9 +215,9 @@ static int LuaSpectrumSum(lua_State * L)
         alpha.Im=0;
         alpha.Re = luaL_checknumber(L, -1);
       }
-      else if((lua_type(L,-1)==LUA_TUSERDATA)&&(luaL_testudata(L, -1, "Lua.complex") != NULL))
+      else if((lua_type(L,-1)==LUA_TUSERDATA)&&(luaL_testudata(L, -1, "Complex_Type") != NULL))
       {
-        alpha = *(Complex16 *) luaL_checkudata(L, -1, "Lua.complex");
+        alpha = *(Complex16 *) luaL_checkudata(L, -1, "Complex_Type");
       }
       else
       {
@@ -257,7 +257,7 @@ static int LuaSpectraAdd(lua_State * L)
       double a;
       SpectraTypeArray *res, *b;
       a = luaL_checknumber(L, 1);
-      b = (SpectraTypeArray *) luaL_checkudata(L, len, "ssp.spectra");
+      b = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
       res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
       res->NSpectra = b->NSpectra;
       res->Spec=malloc(res->NSpectra*sizeof(SpectraType));
@@ -273,7 +273,7 @@ static int LuaSpectraAdd(lua_State * L)
           res->Spec[i].Im[j]= b->Spec[i].Im[j];
         }
       }
-      luaL_setmetatable(L, "ssp.spectra");
+      luaL_setmetatable(L, "Spectra_Type");
       return 1;
     }
     case LUA_TSTRING:
@@ -301,7 +301,7 @@ static int LuaSpectraAdd(lua_State * L)
     {
       // first operator is of type (original variable)
       // read this variable and check what the second variable is
-      SpectraTypeArray *a = (SpectraTypeArray *) luaL_checkudata(L, 1, "ssp.spectra");
+      SpectraTypeArray *a = (SpectraTypeArray *) luaL_checkudata(L, 1, "Spectra_Type");
       switch (lua_type(L,len))
       {
         case LUA_TNIL:
@@ -341,7 +341,7 @@ static int LuaSpectraAdd(lua_State * L)
               res->Spec[i].Im[j]= a->Spec[i].Im[j];
             }
           }
-          luaL_setmetatable(L, "ssp.spectra");
+          luaL_setmetatable(L, "Spectra_Type");
           return 1;
         }
         case LUA_TSTRING:
@@ -352,13 +352,13 @@ static int LuaSpectraAdd(lua_State * L)
         case LUA_TUSERDATA:
         {
           // (original variable) operator (user data)
-          if (luaL_testudata(L, len, "Lua.complex") != NULL)
+          if (luaL_testudata(L, len, "Complex_Type") != NULL)
           {
             // (original variable) operator (user data - complex)
             uint32_t i,j;
             Complex16 *b;
             SpectraTypeArray *res;
-            b = (Complex16 *) luaL_checkudata(L, len, "Lua.complex");
+            b = (Complex16 *) luaL_checkudata(L, len, "Complex_Type");
             res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
             res->NSpectra = a->NSpectra;
             res->Spec = malloc(res->NSpectra * sizeof(SpectraType));
@@ -374,25 +374,25 @@ static int LuaSpectraAdd(lua_State * L)
                 res->Spec[i].Im[j]= a->Spec[i].Im[j]+b->Im;
               }
             }
-            luaL_setmetatable(L, "ssp.spectra");
+            luaL_setmetatable(L, "Spectra_Type");
             return 1;
           }
-          if (luaL_testudata(L, len, "ssp.wavefunction") != NULL)
+          if (luaL_testudata(L, len, "Wavefunction_Type") != NULL)
           {
             // (original variable) operator (user data - wavefunction)
             return luaL_error(L, "Error: spectra plus wavefunction\n");
           }
-          if (luaL_testudata(L, len, "ssp.operator") != NULL)
+          if (luaL_testudata(L, len, "Operator_Type") != NULL)
           {
             // (original variable) operator (user data - operator)
             return luaL_error(L, "Error: spectra plus operator\n");
           }
-          if (luaL_testudata(L, len, "ssp.spectra") != NULL)
+          if (luaL_testudata(L, len, "Spectra_Type") != NULL)
           {
             // (original variable) operator (user data - spectra)
             uint32_t i,j;
             SpectraTypeArray *res, *b;
-            b = (SpectraTypeArray *) luaL_checkudata(L, len, "ssp.spectra");
+            b = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
             if(a->NSpectra!=b->NSpectra) return luaL_error(L, "Error: Adding to sets of spectra with different number of elements (%d) + (%d)\n",a->NSpectra,b->NSpectra);
             res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
             res->NSpectra = a->NSpectra;
@@ -418,7 +418,7 @@ static int LuaSpectraAdd(lua_State * L)
                 return luaL_error(L, "Still to do: add two spectra with different energy ranges, spectra %d\n",i);
               }
             }
-            luaL_setmetatable(L, "ssp.spectra");
+            luaL_setmetatable(L, "Spectra_Type");
             return 1;
           }
           return luaL_error(L, "Error: spectra plus unrecognized userdata\n");
@@ -473,7 +473,7 @@ static int LuaSpectraSub(lua_State * L)
       double a;
       SpectraTypeArray *res, *b;
       a = luaL_checknumber(L, 1);
-      b = (SpectraTypeArray *) luaL_checkudata(L, len, "ssp.spectra");
+      b = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
       res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
       res->NSpectra = b->NSpectra;
       res->Spec = malloc(res->NSpectra * sizeof(SpectraType));
@@ -489,7 +489,7 @@ static int LuaSpectraSub(lua_State * L)
           res->Spec[i].Im[j]= -b->Spec[i].Im[j];
         }
       }
-      luaL_setmetatable(L, "ssp.spectra");
+      luaL_setmetatable(L, "Spectra_Type");
       return 1;
     }
     case LUA_TSTRING:
@@ -517,7 +517,7 @@ static int LuaSpectraSub(lua_State * L)
     {
       // first operator is of type (original variable)
       // read this variable and check what the second variable is
-      SpectraTypeArray *a = (SpectraTypeArray *) luaL_checkudata(L, 1, "ssp.spectra");
+      SpectraTypeArray *a = (SpectraTypeArray *) luaL_checkudata(L, 1, "Spectra_Type");
       switch (lua_type(L,len))
       {
         case LUA_TNIL:
@@ -557,7 +557,7 @@ static int LuaSpectraSub(lua_State * L)
               res->Spec[i].Im[j]= a->Spec[i].Im[j];
             }
           }
-          luaL_setmetatable(L, "ssp.spectra");
+          luaL_setmetatable(L, "Spectra_Type");
           return 1;
         }
         case LUA_TSTRING:
@@ -568,13 +568,13 @@ static int LuaSpectraSub(lua_State * L)
         case LUA_TUSERDATA:
         {
           // (original variable) operator (user data)
-          if (luaL_testudata(L, len, "Lua.complex") != NULL)
+          if (luaL_testudata(L, len, "Complex_Type") != NULL)
           {
             // (original variable) operator (user data - complex)
             uint32_t i,j;
             Complex16 *b;
             SpectraTypeArray *res;
-            b = (Complex16 *) luaL_checkudata(L, len, "Lua.complex");
+            b = (Complex16 *) luaL_checkudata(L, len, "Complex_Type");
             res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
             res->NSpectra = a->NSpectra;
             res->Spec = malloc(res->NSpectra * sizeof(SpectraType));
@@ -590,25 +590,25 @@ static int LuaSpectraSub(lua_State * L)
                 res->Spec[i].Im[j]= a->Spec[i].Im[j]-b->Im;
               }
             }
-            luaL_setmetatable(L, "ssp.spectra");
+            luaL_setmetatable(L, "Spectra_Type");
             return 1;
           }
-          if (luaL_testudata(L, len, "ssp.wavefunction") != NULL)
+          if (luaL_testudata(L, len, "Wavefunction_Type") != NULL)
           {
             // (original variable) operator (user data - wavefunction)
             return luaL_error(L, "Error: spectra minus wavefunction\n");
           }
-          if (luaL_testudata(L, len, "ssp.operator") != NULL)
+          if (luaL_testudata(L, len, "Operator_Type") != NULL)
           {
             // (original variable) operator (user data - operator)
             return luaL_error(L, "Error: spectra minus operator\n");
           }
-          if (luaL_testudata(L, len, "ssp.spectra") != NULL)
+          if (luaL_testudata(L, len, "Spectra_Type") != NULL)
           {
             // (original variable) operator (user data - spectra)
             uint32_t i,j;
             SpectraTypeArray *res, *b;
-            b = (SpectraTypeArray *) luaL_checkudata(L, len, "ssp.spectra");
+            b = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
             if(a->NSpectra!=b->NSpectra) return luaL_error(L, "Error: Subtracting to sets of spectra with different number of elements (%d) + (%d)\n",a->NSpectra,b->NSpectra);
             res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
             res->NSpectra = a->NSpectra;
@@ -634,7 +634,7 @@ static int LuaSpectraSub(lua_State * L)
                 return luaL_error(L, "Still to do: subtract two spectra with different energy ranges, spectra %d\n",i);
               }
             }
-            luaL_setmetatable(L, "ssp.spectra");
+            luaL_setmetatable(L, "Spectra_Type");
             return 1;
           }
           return luaL_error(L, "Error: spectra minus unrecognized userdata\n");
@@ -689,7 +689,7 @@ static int LuaSpectraMul(lua_State * L)
       double a;
       SpectraTypeArray *res, *b;
       a = luaL_checknumber(L, 1);
-      b = (SpectraTypeArray *) luaL_checkudata(L, len, "ssp.spectra");
+      b = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
       res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
       res->NSpectra = b->NSpectra;
       res->Spec = malloc(res->NSpectra*sizeof(SpectraType));
@@ -705,7 +705,7 @@ static int LuaSpectraMul(lua_State * L)
           res->Spec[i].Im[j]= b->Spec[i].Im[j]*a;
         }
       }
-      luaL_setmetatable(L, "ssp.spectra");
+      luaL_setmetatable(L, "Spectra_Type");
       return 1;
     }
     case LUA_TSTRING:
@@ -733,7 +733,7 @@ static int LuaSpectraMul(lua_State * L)
     {
       // first operator is of type (original variable)
       // read this variable and check what the second variable is
-      SpectraTypeArray *a = (SpectraTypeArray *) luaL_checkudata(L, 1, "ssp.spectra");
+      SpectraTypeArray *a = (SpectraTypeArray *) luaL_checkudata(L, 1, "Spectra_Type");
       switch (lua_type(L,len))
       {
         case LUA_TNIL:
@@ -773,7 +773,7 @@ static int LuaSpectraMul(lua_State * L)
               res->Spec[i].Im[j]= a->Spec[i].Im[j]*b;
             }
           }
-          luaL_setmetatable(L, "ssp.spectra");
+          luaL_setmetatable(L, "Spectra_Type");
           return 1;
         }
         case LUA_TSTRING:
@@ -784,13 +784,13 @@ static int LuaSpectraMul(lua_State * L)
         case LUA_TUSERDATA:
         {
           // (original variable) operator (user data)
-          if (luaL_testudata(L, len, "Lua.complex") != NULL)
+          if (luaL_testudata(L, len, "Complex_Type") != NULL)
           {
             // (original variable) operator (user data - complex)
             uint32_t i,j;
             Complex16 *b;
             SpectraTypeArray *res;
-            b = (Complex16 *) luaL_checkudata(L, len, "Lua.complex");
+            b = (Complex16 *) luaL_checkudata(L, len, "Complex_Type");
             res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
             res->NSpectra = a->NSpectra;
             res->Spec = malloc(res->NSpectra * sizeof(SpectraType));
@@ -806,25 +806,25 @@ static int LuaSpectraMul(lua_State * L)
                 res->Spec[i].Im[j]= a->Spec[i].Re[j]*b->Im + a->Spec[i].Im[j]*b->Re;
               }
             }
-            luaL_setmetatable(L, "ssp.spectra");
+            luaL_setmetatable(L, "Spectra_Type");
             return 1;
           }
-          if (luaL_testudata(L, len, "ssp.wavefunction") != NULL)
+          if (luaL_testudata(L, len, "Wavefunction_Type") != NULL)
           {
             // (original variable) operator (user data - wavefunction)
             return luaL_error(L, "Error: spectra times wavefunction\n");
           }
-          if (luaL_testudata(L, len, "ssp.operator") != NULL)
+          if (luaL_testudata(L, len, "Operator_Type") != NULL)
           {
             // (original variable) operator (user data - operator)
             return luaL_error(L, "Error: spectra times operator\n");
           }
-          if (luaL_testudata(L, len, "ssp.spectra") != NULL)
+          if (luaL_testudata(L, len, "Spectra_Type") != NULL)
           {
             // (original variable) operator (user data - spectra)
             uint32_t i,j;
             SpectraTypeArray *res, *b;
-            b = (SpectraTypeArray *) luaL_checkudata(L, len, "ssp.spectra");
+            b = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
             if(a->NSpectra!=b->NSpectra) return luaL_error(L, "Error: Multiplying to sets of spectra with different number of elements (%d) + (%d)\n",a->NSpectra,b->NSpectra);
             res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
             res->NSpectra = a->NSpectra;
@@ -850,7 +850,7 @@ static int LuaSpectraMul(lua_State * L)
                 return luaL_error(L, "Still to do: multiply two spectra with different energy ranges, spectra %d\n",i);
               }
             }
-            luaL_setmetatable(L, "ssp.spectra");
+            luaL_setmetatable(L, "Spectra_Type");
             return 1;
           }
           return luaL_error(L, "Error: spectra times unrecognized userdata\n");
@@ -905,7 +905,7 @@ static int LuaSpectraDiv(lua_State * L)
       double a;
       SpectraTypeArray *res, *b;
       a = luaL_checknumber(L, 1);
-      b = (SpectraTypeArray *) luaL_checkudata(L, len, "ssp.spectra");
+      b = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
       res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
       res->NSpectra = b->NSpectra;
       res->Spec = malloc(res->NSpectra * sizeof(SpectraType));
@@ -921,7 +921,7 @@ static int LuaSpectraDiv(lua_State * L)
           res->Spec[i].Im[j]= -a*b->Spec[i].Im[j]/(Sqr(b->Spec[i].Re[j])+Sqr(b->Spec[i].Im[j]));
         }
       }
-      luaL_setmetatable(L, "ssp.spectra");
+      luaL_setmetatable(L, "Spectra_Type");
       return 1;
     }
     case LUA_TSTRING:
@@ -949,7 +949,7 @@ static int LuaSpectraDiv(lua_State * L)
     {
       // first operator is of type (original variable)
       // read this variable and check what the second variable is
-      SpectraTypeArray *a = (SpectraTypeArray *) luaL_checkudata(L, 1, "ssp.spectra");
+      SpectraTypeArray *a = (SpectraTypeArray *) luaL_checkudata(L, 1, "Spectra_Type");
       switch (lua_type(L,len))
       {
         case LUA_TNIL:
@@ -989,7 +989,7 @@ static int LuaSpectraDiv(lua_State * L)
               res->Spec[i].Im[j]= a->Spec[i].Im[j]/b;
             }
           }
-          luaL_setmetatable(L, "ssp.spectra");
+          luaL_setmetatable(L, "Spectra_Type");
           return 1;
         }
         case LUA_TSTRING:
@@ -1000,13 +1000,13 @@ static int LuaSpectraDiv(lua_State * L)
         case LUA_TUSERDATA:
         {
           // (original variable) operator (user data)
-          if (luaL_testudata(L, len, "Lua.complex") != NULL)
+          if (luaL_testudata(L, len, "Complex_Type") != NULL)
           {
             // (original variable) operator (user data - complex)
             uint32_t i,j;
             Complex16 *b;
             SpectraTypeArray *res;
-            b = (Complex16 *) luaL_checkudata(L, len, "Lua.complex");
+            b = (Complex16 *) luaL_checkudata(L, len, "Complex_Type");
             res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
             res->NSpectra = a->NSpectra;
             res->Spec = malloc(res->NSpectra * sizeof(SpectraType));
@@ -1022,25 +1022,25 @@ static int LuaSpectraDiv(lua_State * L)
                 res->Spec[i].Im[j]= (a->Spec[i].Im[j]*b->Re - a->Spec[i].Re[j]*b->Im)/(Sqr(b->Re) + Sqr(b->Im));
               }
             }
-            luaL_setmetatable(L, "ssp.spectra");
+            luaL_setmetatable(L, "Spectra_Type");
             return 1;
           }
-          if (luaL_testudata(L, len, "ssp.wavefunction") != NULL)
+          if (luaL_testudata(L, len, "Wavefunction_Type") != NULL)
           {
             // (original variable) operator (user data - wavefunction)
             return luaL_error(L, "Error: spectra divided by wavefunction\n");
           }
-          if (luaL_testudata(L, len, "ssp.operator") != NULL)
+          if (luaL_testudata(L, len, "Operator_Type") != NULL)
           {
             // (original variable) operator (user data - operator)
             return luaL_error(L, "Error: spectra divided by operator\n");
           }
-          if (luaL_testudata(L, len, "ssp.spectra") != NULL)
+          if (luaL_testudata(L, len, "Spectra_Type") != NULL)
           {
             // (original variable) operator (user data - spectra)
             uint32_t i,j;
             SpectraTypeArray *res, *b;
-            b = (SpectraTypeArray *) luaL_checkudata(L, len, "ssp.spectra");
+            b = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
             if(a->NSpectra!=b->NSpectra) return luaL_error(L, "Error: Dividing to sets of spectra with different number of elements (%d) + (%d)\n",a->NSpectra,b->NSpectra);
             res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
             res->NSpectra = a->NSpectra;
@@ -1066,7 +1066,7 @@ static int LuaSpectraDiv(lua_State * L)
                 return luaL_error(L, "Still to do: divide two spectra with different energy ranges, spectra %d\n",i);
               }
             }
-            luaL_setmetatable(L, "ssp.spectra");
+            luaL_setmetatable(L, "Spectra_Type");
             return 1;
           }
           return luaL_error(L, "Error: spectra divided by unrecognized userdata\n");
@@ -1144,7 +1144,7 @@ static int LuaSpectraPow(lua_State * L)
     {
       // first operator is of type (original variable)
       // read this variable and check what the second variable is
-      SpectraTypeArray *a = (SpectraTypeArray *) luaL_checkudata(L, 1, "ssp.spectra");
+      SpectraTypeArray *a = (SpectraTypeArray *) luaL_checkudata(L, 1, "Spectra_Type");
       switch (lua_type(L,len))
       {
         case LUA_TNIL:
@@ -1188,7 +1188,7 @@ static int LuaSpectraPow(lua_State * L)
               res->Spec[i].Im[j]= cimag(zr);
             }
           }
-          luaL_setmetatable(L, "ssp.spectra");
+          luaL_setmetatable(L, "Spectra_Type");
           return 1;
         }
         case LUA_TSTRING:
@@ -1199,14 +1199,14 @@ static int LuaSpectraPow(lua_State * L)
         case LUA_TUSERDATA:
         {
           // (original variable) operator (user data)
-          if (luaL_testudata(L, len, "Lua.complex") != NULL)
+          if (luaL_testudata(L, len, "Complex_Type") != NULL)
           {
             // (original variable) operator (user data - complex)
             uint32_t i,j;
             Complex16 *b;
             double complex za, zb, zr;
             SpectraTypeArray *res;
-            b = (Complex16 *) luaL_checkudata(L, len, "Lua.complex");
+            b = (Complex16 *) luaL_checkudata(L, len, "Complex_Type");
             res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
             res->NSpectra = a->NSpectra;
             res->Spec = malloc(res->NSpectra * sizeof(SpectraType));
@@ -1225,20 +1225,20 @@ static int LuaSpectraPow(lua_State * L)
                 res->Spec[i].Im[j]= cimag(zr);
               }
             }
-            luaL_setmetatable(L, "ssp.spectra");
+            luaL_setmetatable(L, "Spectra_Type");
             return 1;
           }
-          if (luaL_testudata(L, len, "ssp.wavefunction") != NULL)
+          if (luaL_testudata(L, len, "Wavefunction_Type") != NULL)
           {
             // (original variable) operator (user data - wavefunction)
             return luaL_error(L, "Error: spectra to the power wavefunction\n");
           }
-          if (luaL_testudata(L, len, "ssp.operator") != NULL)
+          if (luaL_testudata(L, len, "Operator_Type") != NULL)
           {
             // (original variable) operator (user data - operator)
             return luaL_error(L, "Error: spectra to the power operator\n");
           }
-          if (luaL_testudata(L, len, "ssp.spectra") != NULL)
+          if (luaL_testudata(L, len, "Spectra_Type") != NULL)
           {
             // (original variable) operator (user data - spectra)
             return luaL_error(L, "Error: spectra to the power spectra\n");
@@ -1270,7 +1270,7 @@ static int LuaSpectraPow(lua_State * L)
 
 static int LuaSpectraIndex(lua_State * L)
 {
-  SpectraTypeArray *a = (SpectraTypeArray*) luaL_checkudata(L, 1, "ssp.spectra");
+  SpectraTypeArray *a = (SpectraTypeArray*) luaL_checkudata(L, 1, "Spectra_Type");
   const char *str = lua_tostring(L, 2);
   currentudata = a;
   if (strcmp(str, "Print") == 0)
@@ -1293,7 +1293,7 @@ static int LuaSpectraIndex(lua_State * L)
 
 static int LuaSpectraToString(lua_State * L)
 {
-  SpectraTypeArray *spec = (SpectraTypeArray*) luaL_checkudata(L, 1, "ssp.spectra");
+  SpectraTypeArray *spec = (SpectraTypeArray*) luaL_checkudata(L, 1, "Spectra_Type");
   lua_pushstring(L, spec->Spec[0].Name);
   return 1;
 }
@@ -1301,7 +1301,7 @@ static int LuaSpectraToString(lua_State * L)
 static int LuaSpectraDestroy(lua_State * L)
 {
   uint32_t i;
-  SpectraTypeArray *spec = (SpectraTypeArray*) luaL_checkudata(L, 1, "ssp.spectra");
+  SpectraTypeArray *spec = (SpectraTypeArray*) luaL_checkudata(L, 1, "Spectra_Type");
   for(i=0;i<spec->NSpectra;i++)
   {
     SpectrumFree(&spec->Spec[i]);

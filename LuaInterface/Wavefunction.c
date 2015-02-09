@@ -21,10 +21,10 @@ static int LuaWavefunctionAdd(lua_State * L)
     lua_insert(L,1);
     return LuaWavefunctionAdd(L);
   }
-  WaveFunctionType *l = (WaveFunctionType *) luaL_checkudata(L, 1, "ssp.wavefunction");
-  WaveFunctionType *r = (WaveFunctionType *) luaL_checkudata(L, len, "ssp.wavefunction");
+  WaveFunctionType *l = (WaveFunctionType *) luaL_checkudata(L, 1, "Wavefunction_Type");
+  WaveFunctionType *r = (WaveFunctionType *) luaL_checkudata(L, len, "Wavefunction_Type");
   WaveFunctionType *res = (WaveFunctionType *) lua_newuserdata(L, sizeof(WaveFunctionType));
-  luaL_setmetatable(L, "ssp.wavefunction");
+  luaL_setmetatable(L, "Wavefunction_Type");
   WaveFunctionCopy(*l, res);
   WaveFunctionAddUnionBasis(res, *r);
   return 1;
@@ -48,10 +48,10 @@ static int LuaWavefunctionSubMin(lua_State * L)
     }
     return 1;
   }
-  WaveFunctionType *l = (WaveFunctionType *) luaL_checkudata(L, 1, "ssp.wavefunction");
-  WaveFunctionType *r = (WaveFunctionType *) luaL_checkudata(L, len, "ssp.wavefunction");
+  WaveFunctionType *l = (WaveFunctionType *) luaL_checkudata(L, 1, "Wavefunction_Type");
+  WaveFunctionType *r = (WaveFunctionType *) luaL_checkudata(L, len, "Wavefunction_Type");
   WaveFunctionType *res = (WaveFunctionType *) lua_newuserdata(L, sizeof(WaveFunctionType));
-  luaL_setmetatable(L, "ssp.wavefunction");
+  luaL_setmetatable(L, "Wavefunction_Type");
   WaveFunctionCopy(*r, res);
   WaveFunctionAddMultipliedUnionBasis(res, *l, -1.0);
   return 1;
@@ -80,10 +80,10 @@ static int LuaWavefunctionSub(lua_State * L)
     lua_insert(L,1);
     return LuaWavefunctionSubMin(L);
   }
-  WaveFunctionType *l = (WaveFunctionType *) luaL_checkudata(L, 1, "ssp.wavefunction");
-  WaveFunctionType *r = (WaveFunctionType *) luaL_checkudata(L, len, "ssp.wavefunction");
+  WaveFunctionType *l = (WaveFunctionType *) luaL_checkudata(L, 1, "Wavefunction_Type");
+  WaveFunctionType *r = (WaveFunctionType *) luaL_checkudata(L, len, "Wavefunction_Type");
   WaveFunctionType *res = (WaveFunctionType *) lua_newuserdata(L, sizeof(WaveFunctionType));
-  luaL_setmetatable(L, "ssp.wavefunction");
+  luaL_setmetatable(L, "Wavefunction_Type");
   WaveFunctionCopy(*l, res);
   WaveFunctionAddMultipliedUnionBasis(res, *r, -1.0);
   return 1;
@@ -137,76 +137,76 @@ static int LuaWavefunctionMul(lua_State * L)
   if (lua_isnumber(L, 1))
   {
     double b = (double) luaL_checknumber(L, 1);
-    WaveFunctionType *psi = (WaveFunctionType*) luaL_checkudata(L, len, "ssp.wavefunction");
+    WaveFunctionType *psi = (WaveFunctionType*) luaL_checkudata(L, len, "Wavefunction_Type");
     WaveFunctionType *psiNew;
     psiNew = (WaveFunctionType *) lua_newuserdata(L, sizeof(WaveFunctionType));
     WaveFunctionCopy(*psi, psiNew);
     WaveFunctionMultiply(psiNew, b, 0);
-    luaL_setmetatable(L, "ssp.wavefunction");
+    luaL_setmetatable(L, "Wavefunction_Type");
     return 1;
   }
   if (lua_isnumber(L, len))
   {
     double b = (double) luaL_checknumber(L, len);
-    WaveFunctionType *psi = (WaveFunctionType*) luaL_checkudata(L, 1, "ssp.wavefunction");
+    WaveFunctionType *psi = (WaveFunctionType*) luaL_checkudata(L, 1, "Wavefunction_Type");
     WaveFunctionType *psiNew;
     psiNew = (WaveFunctionType *) lua_newuserdata(L, sizeof(WaveFunctionType));
     WaveFunctionCopy(*psi, psiNew);
     WaveFunctionMultiply(psiNew, b, 0);
-    luaL_setmetatable(L, "ssp.wavefunction");
+    luaL_setmetatable(L, "Wavefunction_Type");
     return 1;
   }
-  if (luaL_testudata(L, 1, "Lua.complex") != NULL)
+  if (luaL_testudata(L, 1, "Complex_Type") != NULL)
   {
-    Complex16 *b = (Complex16 *) luaL_checkudata(L, 1, "Lua.complex");
-    WaveFunctionType *psi = (WaveFunctionType*) luaL_checkudata(L, len, "ssp.wavefunction");
+    Complex16 *b = (Complex16 *) luaL_checkudata(L, 1, "Complex_Type");
+    WaveFunctionType *psi = (WaveFunctionType*) luaL_checkudata(L, len, "Wavefunction_Type");
     WaveFunctionType *psiNew;
     psiNew = (WaveFunctionType *) lua_newuserdata(L, sizeof(WaveFunctionType));
     WaveFunctionCopy(*psi, psiNew);
     WaveFunctionMultiply(psiNew, b->Re, b->Im);
-    luaL_setmetatable(L, "ssp.wavefunction");
+    luaL_setmetatable(L, "Wavefunction_Type");
     return 1;
   }
-  if (luaL_testudata(L, len, "Lua.complex") != NULL)
+  if (luaL_testudata(L, len, "Complex_Type") != NULL)
   {
-    Complex16 *b = (Complex16 *) luaL_checkudata(L, len, "Lua.complex");
-    WaveFunctionType *psi = (WaveFunctionType*) luaL_checkudata(L, 1, "ssp.wavefunction");
+    Complex16 *b = (Complex16 *) luaL_checkudata(L, len, "Complex_Type");
+    WaveFunctionType *psi = (WaveFunctionType*) luaL_checkudata(L, 1, "Wavefunction_Type");
     WaveFunctionType *psiNew;
     psiNew = (WaveFunctionType *) lua_newuserdata(L, sizeof(WaveFunctionType));
     WaveFunctionCopy(*psi, psiNew);
     WaveFunctionMultiply(psiNew, b->Re, b->Im);
-    luaL_setmetatable(L, "ssp.wavefunction");
+    luaL_setmetatable(L, "Wavefunction_Type");
     return 1;
   }
-  if (luaL_testudata(L, 1, "ssp.operator") != NULL)
+  if (luaL_testudata(L, 1, "Operator_Type") != NULL)
   {
     /* O | psi> */
-    WaveFunctionType *psi = (WaveFunctionType*) luaL_checkudata(L, len, "ssp.wavefunction");
-    OperatorType *O = (OperatorType *) luaL_checkudata(L,1,"ssp.operator");
+    WaveFunctionType *psi = (WaveFunctionType*) luaL_checkudata(L, len, "Wavefunction_Type");
+    OperatorType *O = (OperatorType *) luaL_checkudata(L,1,"Operator_Type");
     WaveFunctionType *Opsi;
     Opsi = (WaveFunctionType *) lua_newuserdata(L, sizeof(WaveFunctionType));
     OperatorPsi(*O, *psi, Opsi);
-    luaL_setmetatable(L, "ssp.wavefunction");
+    luaL_setmetatable(L, "Wavefunction_Type");
     return 1;
   }
-  if (luaL_testudata(L, len, "ssp.operator") != NULL)
+  if (luaL_testudata(L, len, "Operator_Type") != NULL)
   {
     /* <psi | O */
-    WaveFunctionType *psi = (WaveFunctionType*) luaL_checkudata(L, 1, "ssp.wavefunction");
-    OperatorType *O = (OperatorType *) luaL_checkudata(L,len,"ssp.operator");
+    WaveFunctionType *psi = (WaveFunctionType*) luaL_checkudata(L, 1, "Wavefunction_Type");
+    OperatorType *O = (OperatorType *) luaL_checkudata(L,len,"Operator_Type");
     OperatorType OT;
     OperatorConjugateTransposeNormalOrder(*O, &OT, &QDetNotOrderedFcFaBaBc);
     WaveFunctionType *Opsi;
     Opsi = (WaveFunctionType *) lua_newuserdata(L, sizeof(WaveFunctionType));
     OperatorPsi(OT, *psi, Opsi);
     FreeOperator(&OT);
-    luaL_setmetatable(L, "ssp.wavefunction");
+    luaL_setmetatable(L, "Wavefunction_Type");
     return 1;
   }
   {
     /* <psi | psi> */
-    WaveFunctionType *l = (WaveFunctionType *) luaL_checkudata(L, 1, "ssp.wavefunction");
-    WaveFunctionType *r = (WaveFunctionType *) luaL_checkudata(L, len, "ssp.wavefunction");
+    WaveFunctionType *l = (WaveFunctionType *) luaL_checkudata(L, 1, "Wavefunction_Type");
+    WaveFunctionType *r = (WaveFunctionType *) luaL_checkudata(L, len, "Wavefunction_Type");
     double DotRe, DotIm;
     WaveFunctionDotProduct(*l, *r, &DotRe, &DotIm);
     if(Abs(DotIm)<10*(DBL_EPSILON*Abs(DotRe)+DBL_MIN))
@@ -219,7 +219,7 @@ static int LuaWavefunctionMul(lua_State * L)
       res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
       res->Re = DotRe;
       res->Im = DotIm;
-      luaL_setmetatable(L, "Lua.complex");
+      luaL_setmetatable(L, "Complex_Type");
     }
   }
   return 1;
@@ -309,12 +309,17 @@ static int LuaWavefunctionRandomize(lua_State * L)
 
 static int LuaWavefunctionIndex(lua_State * L)
 {
-  WaveFunctionType *a = (WaveFunctionType *) luaL_checkudata(L, 1, "ssp.wavefunction");
+  WaveFunctionType *a = (WaveFunctionType *) luaL_checkudata(L, 1, "Wavefunction_Type");
   const char *str = lua_tostring(L, 2);
   currentudata = a;
   if (strcmp(str, "Print") == 0)
   {
     lua_pushcfunction(L, LuaWavefunctionPrint);
+    return 1;
+  }
+  if (strcmp(str, "Name") == 0)
+  {
+    lua_pushstring(L, a->Name);
     return 1;
   }
   if (strcmp(str, "Chop") == 0)
@@ -343,7 +348,7 @@ static int LuaWavefunctionIndex(lua_State * L)
 
 static int LuaWavefunctionNewIndex(lua_State * L)
 {
-  WaveFunctionType *a = (WaveFunctionType *) luaL_checkudata(L, 1, "ssp.wavefunction");
+  WaveFunctionType *a = (WaveFunctionType *) luaL_checkudata(L, 1, "Wavefunction_Type");
   const char *str = lua_tostring(L, 2);
   
   if(strcmp(str, "Name")==0)
@@ -357,17 +362,18 @@ static int LuaWavefunctionNewIndex(lua_State * L)
   return 0;
 }
 
-
 static int LuaWavefunctionToString(lua_State * L)
 {
-  WaveFunctionType *res = (WaveFunctionType *) luaL_checkudata(L, 1, "ssp.wavefunction");
-  lua_pushstring(L, res->Name);
+  WaveFunctionType *res = (WaveFunctionType *) luaL_checkudata(L, 1, "Wavefunction_Type");
+  char *Buffer;
+  StringPrintWaveFunctionReadable(*res, &Buffer);
+  lua_pushstring(L, Buffer);
   return 1;
 }
 
 static int LuaWavefunctionDestroy(lua_State * L)
 {
-  WaveFunctionType *psi = (WaveFunctionType*) luaL_checkudata(L, 1, "ssp.wavefunction");
+  WaveFunctionType *psi = (WaveFunctionType*) luaL_checkudata(L, 1, "Wavefunction_Type");
   WaveFunctionFree(psi);
   return 0;
 }

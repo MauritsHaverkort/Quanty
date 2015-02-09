@@ -743,12 +743,16 @@ typedef struct OperatorPerturbationType
 }
 OperatorPerturbationType;
 
-
-
-
-
-
-
+/*
+ *
+ */
+typedef struct LuaOptionsType
+{
+  char * name;
+  char * type;
+  void * variable;
+}
+LuaOptionsType;
 
 
 
@@ -890,9 +894,6 @@ typedef struct BandstructurePathType
                                  */
 }
 BandstructurePathType;
-
-
-
 
 
 
