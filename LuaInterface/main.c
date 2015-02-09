@@ -49,6 +49,7 @@
 #include "../DMFT/SingleSiteFunctions.c"
 #include "../IO/StuttgartNMTO.c"
 
+#include "Documentation.c"
 #include "lua/includeLua.h"
 static void *currentudata = NULL;
 #include "lua_extensions/tools.c"
@@ -61,8 +62,10 @@ static void *currentudata = NULL;
 #include "eval.c"
 #include "ssp.c"
 
+
+
 int main(int argc, char *argv[])
-{
+{  
   // PrintDebugInfo prints additional information to the standard output
   // information printed depends on settings of GlobalVerbosity
   // undef in release version

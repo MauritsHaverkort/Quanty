@@ -99,6 +99,49 @@ uint32_t QCanNotOccupy(uint32_t const iFermion, uint32_t const NFermion, uint8_t
   return 0;
 }
 
+uint32_t ExtendBasisUsingRestrictions(DeterminantRestrictionType const StartingPoint, WaveFunctionType * psi)
+{
+  uint16_t oadd[2];
+  uint32_t iN, iFermion, jFermion;
+  OperatorType O;
+  WaveFunctionType psi0;
+  psi0 = *psi;
+  InitOperator(&O);
+  O.NFermion=psi0.NFermion;
+  O.NBoson=psi0.NBoson;
+  O.NWord=psi0.NWord;
+  InitOperatorFixedLength(&O, 2, 8);
+  RealOperatorAddLader(&O, oadd, 0, 1);
+  for(iN=0;iN<StartingPoint.N;iN++)
+  {
+    for(iFermion=0;iFermion<O.NFermion;iFermion++)
+    {
+      for(jFermion=iFermion+1;jFermion<O.NFermion;jFermion++)
+      {
+        if((StartingPoint.Determinant[iN][(iFermion)>>3]&(128>>(iFermion&7)))&&(StartingPoint.Determinant[iN][(jFermion)>>3]&(128>>(jFermion&7))))
+        {
+          oadd[0]=CrAnMask+(uint16_t)iFermion;
+          oadd[1]=(uint16_t)jFermion;
+          RealOperatorAddLader(&O, oadd, 2, 1);
+          oadd[0]=CrAnMask+(uint16_t)jFermion;
+          oadd[1]=(uint16_t)iFermion;
+          RealOperatorAddLader(&O, oadd, 2, 1);
+        }
+      }
+    }
+  }
+  if(OperatorPsiRestricted(O, psi0, psi, StartingPoint))
+  {
+    printf("Warning: OperatorPsiRestricted failed in ExtendBasisUsingRestrictions\n");
+    *psi = psi0;
+    return 1;
+  }
+  WaveFunctionFree(&psi0);
+  FreeOperator(&O);
+  return 0;
+}
+
+
 /*  given a set of restrictions create Npsi orthonormal functions on a reasonably large basis that can serve as a starting point for
  *  finding the ground-state of H
  */
@@ -121,7 +164,7 @@ uint32_t CreateStartingFunctions(const OperatorType H, uint32_t const Npsi, Dete
     return 1;
   }
   // create some determinants fullfilling the StartingPoint conditions
-  // "some" is equal to 10+3*Npsi
+  // "some" is equal to 200+3*Npsi
   Determinant = calloc(psi0.NWord, sizeof(uint8_t));
   avvOcc = 0.5;
   for(i=0;i<200+3*Npsi;i++)
@@ -196,7 +239,19 @@ uint32_t CreateStartingFunctions(const OperatorType H, uint32_t const Npsi, Dete
     printf("OperatorPsiRestricted failed in CreateStartingFunctions\n");
     return 1;
   }
+  WaveFunctionAddUnionBasis(&(psi[0]), psi0);
   WaveFunctionFree(&psi0);
+  if(psi[0].N<Npsi)
+  {
+    // did not find Npsi independent determinants, extand basis further
+    ExtendBasisUsingRestrictions(StartingPoint, &(psi[0]));
+  }
+  if(psi[0].N<Npsi)
+  {
+    VerbosityPrintf(0x0002, "Warning: Number of states to find smaller than number of determinants in random starting vector\n");
+  }
+  
+  
   // init other functions
   for(i=1;i<Npsi;i++)
   {
@@ -207,7 +262,7 @@ uint32_t CreateStartingFunctions(const OperatorType H, uint32_t const Npsi, Dete
     }
   }
   // randomize and orthonormalize psi
-  for(i=1;i<Npsi;i++)
+  for(i=0;i<Npsi;i++)
   {
     WaveFunctionRandomize(&(psi[i]));
     WaveFunctionOrthogonalizeSameBasis(&(psi[i]), &(psi[0]), i);
@@ -676,6 +731,8 @@ uint32_t BlockLanczosGroundStateConserveBasisDense(const OperatorType H, WaveFun
   {
     VerbosityPrintf(0x0100,"val[%3i] = %22.15E\n",i,val[i]);
   }
+  
+  
   return 0;
 }
 
@@ -1372,7 +1429,7 @@ uint32_t BlockGroundState(const OperatorType H, uint32_t const Npsi, Convergence
   {
     Energy[0][i]=1E+99;
   }
-  VerbosityPrintf(0x0002,"Start of BlockGroundState. Converge %i states to an energy with variance smaller than %22.15E\n\n",Npsi,Settings->zero);
+  VerbosityPrintf(0x0002,"Start of BlockGroundState. Converge %i states to an energy with relative variance smaller than %22.15E\n\n",Npsi,Settings->zero);
   // loop until converged
   while((!Qconverged)&&(iloop<100))
   {
@@ -1401,7 +1458,7 @@ uint32_t BlockGroundState(const OperatorType H, uint32_t const Npsi, Convergence
       WaveFunctionDotProduct(psi[i], Opsi[i], &Energy[0][i], &temp);
       WaveFunctionDotProductSameBasis(Opsi[i], Opsi[i], &EnergySqr[0][i], &temp);
       VerbosityPrintf(0x0100,"%7i | %22.15E | %22.15E | %22.15E\n",i,Energy[0][i],EnergySqr[0][i]-Sqr(Energy[0][i]),Energy[0][i]-Energy[1][i]);
-      if((EnergySqr[0][i]-Sqr(Energy[0][i])>Settings->zero)&&((Energy[1][i]-Energy[0][i])>DBL_EPSILON)) Qconverged=0;
+      if((EnergySqr[0][i]-Sqr(Energy[0][i])>=(EnergySqr[0][i]*Settings->zero))&&((Energy[1][i]-Energy[0][i])>DBL_EPSILON)) Qconverged=0;
     }
     VerbosityPrintf(0x0100,"\n");
     if(AtLeastAnOtherLoop)

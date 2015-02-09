@@ -1,3 +1,10 @@
+/**
+ * Prints the help file to screen
+ * @param L
+ *        Pointer to a lua state
+ * @return 0 
+ *         as it leaves the lua state unaltered
+ */
 static int LuaHelp(lua_State *L)
 {
   uint32_t len = (uint32_t)lua_gettop(L);
@@ -12,77 +19,77 @@ static int LuaHelp(lua_State *L)
     printf("\n\n");
     printf("Available functions\n");
     printf("\n");
-    printf("ssp.Help()\n");
+    printf("Help()\n");
     printf("  - shows this file\n");
     printf("  - excepts as input one of the other functions in order to show help on that function\n");
-    printf("  - example: ssp.Help(\"ssp.NewOperator\");\n");
+    printf("  - example: Help(\"NewOperator\");\n");
     printf("\n");
-    printf("ssp.NewOperator()\n");
+    printf("NewOperator()\n");
     printf("  - creates a new operator\n");
     printf("  - expects as input on the first position a string describing the type of operator\n");
     printf("  - other parameters depend on the type of operator defined in the first string\n");
-    printf("  - example: ssp.NewOperator(\"Sz\", NFermion, IndexUp, IndexDn);\n");
+    printf("  - example: NewOperator(\"Sz\", NFermion, IndexUp, IndexDn);\n");
     printf("\n");
-    printf("ssp.PotentialExpandedOnClm(\"Oh\",2,{0.6,-0.4})\n");
+    printf("PotentialExpandedOnClm(\"Oh\",2,{0.6,-0.4})\n");
     printf("  - creates a list representing a potential expanded on spherical Harmonics for a given symmetry and eigen energy of the irreducible representations\n");
     printf("  - The potential V(theta, phi) is given as:\n");
     printf("  - V(theta, phi) = sum_k,m A_{k,m} Y_km(theta,phi)\n");
     printf("  - the list saved is {{k1,m1,Ak1m1},{k2,m2,Ak2m2},...}\n");
     printf("  - input is the point-group symmetry, the angular momentum and the eigen energies of the irreducible representations\n");
-    printf("  - ssp.PotentialExpandedOnClm(\"Oh\",2,{0.6,-0.4});\n");
+    printf("  - PotentialExpandedOnClm(\"Oh\",2,{0.6,-0.4});\n");
     printf("  - for a potential in cubic symmetry acting on the d-shell with the energy of the eg's as 0.6 and t2g's at -0.4 (10Dq=1.0)\n");
     printf("\n");
-    printf("ssp.NewWavefunction()\n");
+    printf("NewWavefunction()\n");
     printf("  - creates a new wavefunction\n");
     printf("  - expects as input the number of fermions, number of bosons, a table of determinants with the prefactor\n");
-    printf("  - example: ssp.NewWavefunction(10,0,{{{0x80,0x00},1},{{0x04,0x00},1}});\n");
-    printf("  - example: ssp.NewWavefunction(10,0,{{\"1010101010\",1},{\"0101010101\",1}});\n");
+    printf("  - example: NewWavefunction(10,0,{{{0x80,0x00},1},{{0x04,0x00},1}});\n");
+    printf("  - example: NewWavefunction(10,0,{{\"1010101010\",1},{\"0101010101\",1}});\n");
     printf("\n");
-    printf("ssp.Copy() or ssp.Clone()\n");
+    printf("Copy() or Clone()\n");
     printf("  - creats a copy of a wavefunction or operator\n");
     printf("  - expects as input an object, returns a copy of that object\n");
-    printf("  - example: ssp.Copy(psi);\n");
+    printf("  - example: Copy(psi);\n");
     printf("\n");
-    printf("ssp.Conjugate() or ssp.C()\n");
+    printf("Conjugate()\n");
     printf("  - creats a copy of a wavefunction or operator and conjugates this copy\n");
     printf("  - expects as input an object, returns a copy of that object\n");
-    printf("  - example: ssp.Conjugate(psi);\n");
+    printf("  - example: Conjugate(psi);\n");
     printf("\n");
-    printf("ssp.ConjugateTranspose() or ssp.CT()\n");
+    printf("ConjugateTranspose()\n");
     printf("  - creats a copy of a wavefunction or operator and conjugates transposes this copy\n");
     printf("  - expects as input an object, returns a copy of that object\n");
-    printf("  - example: ssp.ConjugateTranspose(psi);\n");
+    printf("  - example: ConjugateTranspose(psi);\n");
     printf("\n");
-    printf("ssp.Transpose() or ssp.T()\n");
+    printf("Transpose()\n");
     printf("  - creats a copy of a wavefunction or operator and transposes this copy\n");
     printf("  - expects as input an object, returns a copy of that object\n");
-    printf("  - example: ssp.Transpose(psi);\n");
-    printf("ssp.Rotate()\n");
+    printf("  - example: Transpose(psi);\n");
+    printf("Rotate()\n");
     printf("  - Given an operator on a basis of N fermions + M Bosons\n");
     printf("  - and a matrix of size N+M\n");
     printf("  - creates a new operator on a rotated basis\n");
-    printf("  - example: ssp.Rotate(Operator,RotationMatrix);\n");
+    printf("  - example: Rotate(Operator,RotationMatrix);\n");
     printf("\n");
-    printf("ssp.EvolveToGroundstate()\n");
+    printf("EvolveToGroundstate()\n");
     printf("  - calculates eigenfunctions of the Hamiltonian, starting from the specified state\n");
     printf("  - expects as input an operator and a (list of) wavefunction(s), a list of options on the last position is allowed\n");
-    printf("  - example ssp.EvolveToGroundstate(OppSy,{psi1,psi2});\n");
-    printf("ssp.Eigensystem()\n");
+    printf("  - example EvolveToGroundstate(OppSy,{psi1,psi2});\n");
+    printf("Eigensystem()\n");
     printf("  - calculates the lowest N eigenfunctions of a given operator\n");
     printf("  - expects as input an operator and either a list of starting functions or a set of restrictions specifying the starting point\n");
-    printf("  - example ssp.Eigensystem(OppSy,{psi1,psi2});\n");
-    printf("  - example ssp.Eigensystem(OppSy,Restrictions,Nspi);\n");
+    printf("  - example Eigensystem(OppSy,{psi1,psi2});\n");
+    printf("  - example Eigensystem(OppSy,Restrictions,Nspi);\n");
     printf("\n");
-    printf("ssp.CreateSpectra()\n");
+    printf("CreateSpectra()\n");
     printf("  - calculates spectra of a giving Hamiltonian, starting from the specified state and using a specific transition operator\n");
     printf("  - expects as input an operator a (list of) transition operator(s) and a (list of) wavefunction(s), a list of options on the last position is allowed\n");
-    printf("  - example ssp.CreateSpectra(OppH,{T1,T2},{psi1,psi2});\n");
+    printf("  - example CreateSpectra(OppH,{T1,T2},{psi1,psi2});\n");
     printf("\n");
-    printf("ssp.CreateFluorescenceYield()\n");
+    printf("CreateFluorescenceYield()\n");
     printf("  - calculates the fluorescence yield spectra\n");
     printf("  - calculated is < i | T1^+ G^+ T2 T2^+ G T1 | i>\n");
     printf("  - expects as input an operator a (list of) transition operator(s) T1 a (list of) transition operator(s) T2^+ and a (list of) wavefunction(s), a list of options on the last position is allowed\n");
-    printf("  - example ssp.CreateFluorescenceYield(OppH,{T1a,T1b},{T2a,T2b},{psi1,psi2});\n");
+    printf("  - example CreateFluorescenceYield(OppH,{T1a,T1b},{T2a,T2b},{psi1,psi2});\n");
     printf("\n");
     
     printf("\n\n");
@@ -105,9 +112,9 @@ static int LuaHelp(lua_State *L)
   if(len==1)
   {
     char const *Help =lua_tostring(L, 1);
-    if (strcmp(Help, "ssp.NewOperator") == 0)
+    if (strcmp(Help, "NewOperator") == 0)
     {
-      printf("ssp.NewOperator()\n");
+      printf("NewOperator()\n");
       printf("  - creates a new operator\n");
       printf("  - expects as input on the first position a string describing the type of operator\n");
       printf("  - other parameters depend on the type of operator defined in the first string\n");
@@ -211,15 +218,15 @@ static int LuaHelp(lua_State *L)
       printf("  - IndexDn={5,6,7,8,9};\n");
       printf("  - F0=20; F2=10; F4=6.25;\n");
       printf("  - F={F0,F2,F4}");
-      printf("  - OppSz = ssp.NewOperator(\"Sz\", IndexUp, IndexDn);\n");
-      printf("  - OppU  = ssp.NewOperator(\"U\", IndexUp, IndexDn, F);\n");
+      printf("  - OppSz = NewOperator(\"Sz\", IndexUp, IndexDn);\n");
+      printf("  - OppU  = NewOperator(\"U\", IndexUp, IndexDn, F);\n");
       printf("\n");
       printf("\n");
       printf("\n");
     }
-    if (strcmp(Help, "ssp.NewWavefunction") == 0)
+    if (strcmp(Help, "NewWavefunction") == 0)
     {
-      printf("ssp.NewWavefunction()\n");
+      printf("NewWavefunction()\n");
       printf("  - creates a new wavefunction\n");
       printf("  - expects as input the number of fermions, number of bosons, a table of determinants with the prefactor\n");
       printf("  - an optional 4-th input number is NBitsKey\n");
@@ -232,62 +239,62 @@ static int LuaHelp(lua_State *L)
       printf("    - for even larger basis sets argitecture depenent tests are advised.\n");
       printf("    - note that results are independent of this value, only calculation time and memory requirement changes.\n");
       printf("\n");
-      printf("  - example: A ssp.NewWavefunction(10,0,{{\"1010101010\",1}});\n");
+      printf("  - example: A = NewWavefunction(10,0,{{\"1010101010\",1}});\n");
       printf("\n");
       printf("\n");
     }
-    if ((strcmp(Help, "ssp.Copy") == 0)||(strcmp(Help, "ssp.Clone") == 0))
+    if ((strcmp(Help, "Copy") == 0)||(strcmp(Help, "Clone") == 0))
     {
-      printf("ssp.Copy() or ssp.Clone()\n");
+      printf("Copy() or Clone()\n");
       printf("  - creats a copy of a wavefunction or operator\n");
       printf("  - expects as input an object, returns a copy of that object\n");
       printf("  - note that \"=\" often does not what you want.\n");
       printf("  - A=B for operators and wave-functions copies a pointer to the object.\n");
       printf("  - A change in A thus automatically changes B\n");
       printf("\n");
-      printf("  - example: A=ssp.Copy(B);\n");
+      printf("  - example: A=Copy(B);\n");
       printf("\n");
       printf("\n");
     }
-    if ((strcmp(Help, "ssp.Conjugate") == 0)||(strcmp(Help, "ssp.C") == 0))
+    if ((strcmp(Help, "Conjugate") == 0))
     {
-      printf("ssp.Conjugate() or ssp.C()\n");
+      printf("Conjugate() or C()\n");
       printf("  - creats a copy of a wavefunction or operator and conjugates this copy\n");
       printf("  - expects as input an object, returns a copy of that object\n");
       printf("\n");
-      printf("  - example: A=ssp.Conjugate(B);\n");
+      printf("  - example: A=Conjugate(B);\n");
       printf("\n");
       printf("\n");
     }
-    if ((strcmp(Help, "ssp.ConjugateTranspose") == 0)||(strcmp(Help, "ssp.CT")==0))
+    if ((strcmp(Help, "ConjugateTranspose") == 0))
     {
-      printf("ssp.ConjugateTranspose() or ssp.CT()\n");
+      printf("ConjugateTranspose()\n");
       printf("  - creats a copy of a wavefunction or operator and conjugates transposes this copy\n");
       printf("  - expects as input an object, returns a copy of that object\n");
       printf("\n");
-      printf("  - example: A=ssp.ConjugateTranspose(B);\n");
+      printf("  - example: A=ConjugateTranspose(B);\n");
       printf("\n");
       printf("\n");
     }
-    if ((strcmp(Help, "ssp.Transpose") == 0)||(strcmp(Help, "ssp.T") == 0))
+    if ((strcmp(Help, "Transpose") == 0))
     {
-      printf("ssp.Transpose() or ssp.T()\n");
+      printf("Transpose()\n");
       printf("  - creats a copy of a wavefunction or operator and transposes this copy\n");
       printf("  - expects as input an object, returns a copy of that object\n");
       printf("\n");
-      printf("  - example: A=ssp.Transpose(B);\n");
+      printf("  - example: A=Transpose(B);\n");
       printf("\n");
       printf("\n");
     }
-    if (strcmp(Help, "ssp.Rotate") == 0)
+    if (strcmp(Help, "Rotate") == 0)
     {
-      printf("ssp.Rotate()\n");
+      printf("Rotate()\n");
       printf("\n");
       printf("\n");
     }
-    if (strcmp(Help, "ssp.EvolveToGroundstate") == 0)
+    if (strcmp(Help, "EvolveToGroundstate") == 0)
     {
-      printf("ssp.EvolveToGroundstate()\n");
+      printf("EvolveToGroundstate()\n");
       printf("  - calculates eigenfunctions of the Hamiltonian, starting from the specified state\n");
       printf("  - expects as input an operator and a (list of) wavefunction(s), a list of options on the last position is allowed\n");
       printf("  - The function is intended to return the eigenstate of the Hamiltonian that has the largest overlap with the starting functions\n");
@@ -303,19 +310,19 @@ static int LuaHelp(lua_State *L)
       printf("      - Example for a ligand field calculation one can require to have no more than 1 hole in the Ligand shell (between 9 and 10 electrons)\n");
       printf("      - {\"restrictions\",{20,0,{{\"0000000000 1111111111\",9,10}}}}\n");
       printf("\n");
-      printf("  - example: ssp.EvolveToGroundstate(H,{psi1,psi2},{{\"epsilon\",0.000001},{\"restrictions\",{10,0,{{\"11111 00000\",5,5}}}});\n");
+      printf("  - example: EvolveToGroundstate(H,{psi1,psi2},{{\"epsilon\",0.000001},{\"restrictions\",{10,0,{{\"11111 00000\",5,5}}}});\n");
       printf("\n");
       printf("\n");
     }
-    if (strcmp(Help, "ssp.Eigensystem") == 0)
+    if (strcmp(Help, "Eigensystem") == 0)
     {
-      printf("ssp.Eigensystem()\n");
+      printf("Eigensystem()\n");
       printf("  - calculates the lowest eigen functions of a given Hamiltonian. The number of states to calculate is given as an input\n");
       printf("  - expects as input an operator and either\n");
       printf("    - a (list of) wavefunction(s) that specify a starting point. (filling)\n");
       printf("    - note that the final state found might be of different symmetry than the starting point\n");
       printf("    - note also that the lowest state might not be found if the starting point excludes certain symmetries\n");
-      printf("    - look at ssp.EvolveToGroundstate if one wants to track a specific state\n");
+      printf("    - look at EvolveToGroundstate if one wants to track a specific state\n");
       printf("  - or\n");
       printf("    - a set of restrictions defining the starting point (number of electrons, filled core shells)\n");
       printf("    - the number of lowest eigen states to calculate");
@@ -344,9 +351,9 @@ static int LuaHelp(lua_State *L)
       printf("\n");
       printf("\n");
     }
-    if (strcmp(Help, "ssp.CreateSpectra") == 0)
+    if (strcmp(Help, "CreateSpectra") == 0)
     {
-      printf("ssp.CreateSpectra()\n");
+      printf("CreateSpectra()\n");
       printf("  - calculates spectra of a giving Hamiltonian, starting from the specified state and using a specific transition operator\n");
       printf("  - expects as input an operator a (list of) transition operator(s) and a (list of) wavefunction(s), a list of options on the last position is allowed\n");
       printf("\n");
@@ -368,9 +375,9 @@ static int LuaHelp(lua_State *L)
       printf("\n");
       printf("\n");
     }
-    if (strcmp(Help, "ssp.CreateFluorescenceYield") == 0)
+    if (strcmp(Help, "CreateFluorescenceYield") == 0)
     {
-      printf("ssp.CreateFluorescenceYield()\n");
+      printf("CreateFluorescenceYield()\n");
       printf("  - calculates fluorescence yield spectra of a giving Hamiltonian, starting from the specified state and using a specific transition operator\n");
       printf("  - < i | T1^+ G^+ T2 T2^+ G T1 | i >\n");
       printf("  - expects as input an operator a (list of) transition operator(s) T1 a (list of) transition operator(s) T2^+ and a (list of) wavefunction(s), a list of options on the last position is allowed\n");
@@ -577,7 +584,7 @@ static int LuaNewOperator(lua_State * L)
     lua_remove(L, 1);
     return LuaOperatorNewNumber(L);
   }
-  return luaL_error(L, "ERROR: first argument in ssp.NewOperator (%s) is not recognized as a known operatortype\n See ssp.Help(\"ssp.NewOperator\") for more information\n",OT);
+  return luaL_error(L, "ERROR: first argument in NewOperator (%s) is not recognized as a known operatortype\n See Help(\"NewOperator\") for more information\n",OT);
 }
 
 /*  on stack: string describing the symmetry
@@ -614,9 +621,15 @@ static int LuaNewWaveFunction(lua_State * L)
 	WaveFunctionType *psi;
   uint32_t len = (uint32_t)lua_gettop(L);
 	psi = (WaveFunctionType*) lua_newuserdata(L, sizeof(WaveFunctionType));
-  luaL_setmetatable(L, "ssp.wavefunction");
+  luaL_setmetatable(L, "Wavefunction_Type");
   psi->NFermion=(uint32_t)luaL_checkunsigned(L, 1);
   psi->NBoson  =(uint32_t)luaL_checkunsigned(L, 2);
+  
+  if(psi->NBoson!=0)
+  {
+    return luaL_error(L, "Bosons not included in this version\n Sorry\n");
+  }
+  
   psi->QComplex=1;
   if(len==3)
   {
@@ -668,7 +681,7 @@ static int LuaNewWaveFunction(lua_State * L)
       else
       {
         QComplex=1;
-        temp=*(Complex16 *)luaL_checkudata(L, -1, "Lua.complex");
+        temp=*(Complex16 *)luaL_checkudata(L, -1, "Complex_Type");
       }
       lua_pop(L, 1);
       CheckDetPhysical(det, psi->NFermion, psi->NBoson);
@@ -707,32 +720,32 @@ static int Luacopy(lua_State * L)
       break;
     case
       LUA_TUSERDATA:
-      if (luaL_testudata(L, len, "Lua.complex") != NULL)
+      if (luaL_testudata(L, len, "Complex_Type") != NULL)
       {
-        Complex16 *a = (Complex16 *) luaL_checkudata(L, len, "Lua.complex");
+        Complex16 *a = (Complex16 *) luaL_checkudata(L, len, "Complex_Type");
         Complex16 *res;
         res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
         res->Re = a->Re;
         res->Im = a->Im;
-        luaL_setmetatable(L, "Lua.complex");
+        luaL_setmetatable(L, "Complex_Type");
         return 1;
       }
-      if (luaL_testudata(L, len, "ssp.wavefunction") != NULL)
+      if (luaL_testudata(L, len, "Wavefunction_Type") != NULL)
       {
-        WaveFunctionType *psi = (WaveFunctionType*) luaL_checkudata(L, len, "ssp.wavefunction");
+        WaveFunctionType *psi = (WaveFunctionType*) luaL_checkudata(L, len, "Wavefunction_Type");
         WaveFunctionType *psiNew;
         psiNew = (WaveFunctionType *) lua_newuserdata(L, sizeof(WaveFunctionType));
         WaveFunctionCopy(*psi, psiNew);
-        luaL_setmetatable(L, "ssp.wavefunction");
+        luaL_setmetatable(L, "Wavefunction_Type");
         return 1;
       }
-      if (luaL_testudata(L, len, "ssp.operator") != NULL)
+      if (luaL_testudata(L, len, "Operator_Type") != NULL)
       {
-        OperatorType *O = (OperatorType*) luaL_checkudata(L, len, "ssp.operator");
+        OperatorType *O = (OperatorType*) luaL_checkudata(L, len, "Operator_Type");
         OperatorType *ONew;
         ONew = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
         OperatorCopy(ONew, *O);
-        luaL_setmetatable(L, "ssp.operator");
+        luaL_setmetatable(L, "Operator_Type");
         return 1;
       }
       return luaL_error(L, "Error: copying or cloning an object of unrecognised type\n");
@@ -753,6 +766,95 @@ static int Luacopy(lua_State * L)
   }
   return 1;
 }
+
+
+/*  copy or clone the element on the lua stack and place it on the stack
+ *  set values smaller then epsilon to zero
+ *  works recursively on tables
+ *  allocates new memory for user types
+ *
+ *  if there is one ellement on the stack clone this element using epsilon=2*DBL_EPSILON
+ *  if there are two ellements on the stack and the last is a number use the last as epsilon
+ *  if there are two ellements on the stack and the last is a list use this list as an option list
+ *  if there are three ellements on the stack and the second is a number and the last a list, use the number as epsilon and the list as options
+ */
+static int LuaChop(lua_State * L)
+{
+  double epsilon=2*DBL_EPSILON;
+  double temp;
+  uint32_t len = (uint32_t)lua_gettop(L);
+  switch (lua_type(L,len))
+  {
+    case LUA_TNIL:
+      lua_pushnil(L);
+      break;
+    case LUA_TBOOLEAN:
+      lua_pushboolean(L,lua_toboolean(L,len));
+      break;
+    case LUA_TNUMBER:
+      temp=lua_tonumber(L,len);
+      if(Abs(temp)<epsilon)temp=0;
+      lua_pushnumber(L,temp);
+      break;
+    case LUA_TSTRING:
+      lua_pushlstring(L,lua_tostring(L,len),lua_strlen(L,len));
+      break;
+    case LUA_TLIGHTUSERDATA:
+      lua_pushlightuserdata(L,(void*)lua_touserdata(L,len));
+      break;
+    case
+    LUA_TUSERDATA:
+      if (luaL_testudata(L, len, "Complex_Type") != NULL)
+      {
+        Complex16 *a = (Complex16 *) luaL_checkudata(L, len, "Complex_Type");
+        Complex16 *res;
+        res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
+        res->Re = ((Abs(a->Re)>epsilon)?a->Re:0);
+        res->Im = ((Abs(a->Im)>epsilon)?a->Im:0);
+        luaL_setmetatable(L, "Complex_Type");
+        return 1;
+      }
+      if (luaL_testudata(L, len, "Wavefunction_Type") != NULL)
+      {
+        WaveFunctionType *psi = (WaveFunctionType*) luaL_checkudata(L, len, "Wavefunction_Type");
+        WaveFunctionType *psiNew;
+        psiNew = (WaveFunctionType *) lua_newuserdata(L, sizeof(WaveFunctionType));
+        WaveFunctionCopy(*psi, psiNew);
+        WaveFunctionTruncateBasis(psiNew, epsilon);
+        luaL_setmetatable(L, "Wavefunction_Type");
+        return 1;
+      }
+      if (luaL_testudata(L, len, "Operator_Type") != NULL)
+      {
+        OperatorType *O = (OperatorType*) luaL_checkudata(L, len, "Operator_Type");
+        OperatorType *ONew;
+        ONew = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+        OperatorCopy(ONew, *O);
+        OperatorChop(ONew, epsilon);
+        luaL_setmetatable(L, "Operator_Type");
+        return 1;
+      }
+      return luaL_error(L, "Error: Chop an object of unrecognised type\n");
+    case LUA_TTABLE:
+      lua_newtable(L);
+      lua_pushnil(L);
+      while(lua_next(L, len) != 0)
+      {
+        Luacopy(L);
+        lua_pushvalue(L, -3);
+        lua_insert(L, -2);
+        lua_settable(L, -5);
+        lua_pop(L, 1);
+      }
+      break;
+    default:
+      return luaL_error(L, "Error: Chop an object of unrecognised type\n");
+  }
+  return 1;
+}
+
+
+
 
 /*  copy or clone the last element on the lua stack and place it on the stack
  *  works recursively on tables
@@ -781,34 +883,34 @@ static int Luaconjugate(lua_State * L)
       break;
     case
     LUA_TUSERDATA:
-      if (luaL_testudata(L, len, "Lua.complex") != NULL)
+      if (luaL_testudata(L, len, "Complex_Type") != NULL)
       {
-        Complex16 *a = (Complex16 *) luaL_checkudata(L, len, "Lua.complex");
+        Complex16 *a = (Complex16 *) luaL_checkudata(L, len, "Complex_Type");
         Complex16 *res;
         res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
         res->Re = a->Re;
         res->Im = -a->Im;
-        luaL_setmetatable(L, "Lua.complex");
+        luaL_setmetatable(L, "Complex_Type");
         return 1;
       }
-      if (luaL_testudata(L, len, "ssp.wavefunction") != NULL)
+      if (luaL_testudata(L, len, "Wavefunction_Type") != NULL)
       {
-        WaveFunctionType *psi = (WaveFunctionType*) luaL_checkudata(L, len, "ssp.wavefunction");
+        WaveFunctionType *psi = (WaveFunctionType*) luaL_checkudata(L, len, "Wavefunction_Type");
         WaveFunctionType *psiNew;
         psiNew = (WaveFunctionType *) lua_newuserdata(L, sizeof(WaveFunctionType));
         WaveFunctionCopy(*psi, psiNew);
         WaveFunctionConjugate(*psiNew);
-        luaL_setmetatable(L, "ssp.wavefunction");
+        luaL_setmetatable(L, "Wavefunction_Type");
         return 1;
       }
-      if (luaL_testudata(L, len, "ssp.operator") != NULL)
+      if (luaL_testudata(L, len, "Operator_Type") != NULL)
       {
-        OperatorType *O = (OperatorType*) luaL_checkudata(L, len, "ssp.operator");
+        OperatorType *O = (OperatorType*) luaL_checkudata(L, len, "Operator_Type");
         OperatorType *ONew;
         ONew = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
         OperatorCopy(ONew, *O);
         OperatorComplexConjugate(ONew);
-        luaL_setmetatable(L, "ssp.operator");
+        luaL_setmetatable(L, "Operator_Type");
         return 1;
       }
       return luaL_error(L, "Error: copying or cloning an object of unrecognised type\n");
@@ -852,33 +954,33 @@ static int Luaconjugatetranspose(lua_State * L)
       break;
     case
     LUA_TUSERDATA:
-      if (luaL_testudata(L, len, "Lua.complex") != NULL)
+      if (luaL_testudata(L, len, "Complex_Type") != NULL)
       {
-        Complex16 *a = (Complex16 *) luaL_checkudata(L, len, "Lua.complex");
+        Complex16 *a = (Complex16 *) luaL_checkudata(L, len, "Complex_Type");
         Complex16 *res;
         res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
         res->Re = a->Re;
         res->Im = -a->Im;
-        luaL_setmetatable(L, "Lua.complex");
+        luaL_setmetatable(L, "Complex_Type");
         return 1;
       }
-      if (luaL_testudata(L, len, "ssp.wavefunction") != NULL)
+      if (luaL_testudata(L, len, "Wavefunction_Type") != NULL)
       {
-        WaveFunctionType *psi = (WaveFunctionType*) luaL_checkudata(L, len, "ssp.wavefunction");
+        WaveFunctionType *psi = (WaveFunctionType*) luaL_checkudata(L, len, "Wavefunction_Type");
         WaveFunctionType *psiNew;
         psiNew = (WaveFunctionType *) lua_newuserdata(L, sizeof(WaveFunctionType));
         WaveFunctionCopy(*psi, psiNew);
         WaveFunctionConjugate(*psiNew);
-        luaL_setmetatable(L, "ssp.wavefunction");
+        luaL_setmetatable(L, "Wavefunction_Type");
         return 1;
       }
-      if (luaL_testudata(L, len, "ssp.operator") != NULL)
+      if (luaL_testudata(L, len, "Operator_Type") != NULL)
       {
-        OperatorType *O = (OperatorType*) luaL_checkudata(L, len, "ssp.operator");
+        OperatorType *O = (OperatorType*) luaL_checkudata(L, len, "Operator_Type");
         OperatorType *ONew;
         ONew = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
         OperatorConjugateTranspose(*O, ONew);
-        luaL_setmetatable(L, "ssp.operator");
+        luaL_setmetatable(L, "Operator_Type");
         return 1;
       }
       return luaL_error(L, "Error: copying or cloning an object of unrecognised type\n");
@@ -922,32 +1024,32 @@ static int Luatranspose(lua_State * L)
       break;
     case
     LUA_TUSERDATA:
-      if (luaL_testudata(L, len, "Lua.complex") != NULL)
+      if (luaL_testudata(L, len, "Complex_Type") != NULL)
       {
-        Complex16 *a = (Complex16 *) luaL_checkudata(L, len, "Lua.complex");
+        Complex16 *a = (Complex16 *) luaL_checkudata(L, len, "Complex_Type");
         Complex16 *res;
         res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
         res->Re = a->Re;
         res->Im = a->Im;
-        luaL_setmetatable(L, "Lua.complex");
+        luaL_setmetatable(L, "Complex_Type");
         return 1;
       }
-      if (luaL_testudata(L, len, "ssp.wavefunction") != NULL)
+      if (luaL_testudata(L, len, "Wavefunction_Type") != NULL)
       {
-        WaveFunctionType *psi = (WaveFunctionType*) luaL_checkudata(L, len, "ssp.wavefunction");
+        WaveFunctionType *psi = (WaveFunctionType*) luaL_checkudata(L, len, "Wavefunction_Type");
         WaveFunctionType *psiNew;
         psiNew = (WaveFunctionType *) lua_newuserdata(L, sizeof(WaveFunctionType));
         WaveFunctionCopy(*psi, psiNew);
-        luaL_setmetatable(L, "ssp.wavefunction");
+        luaL_setmetatable(L, "Wavefunction_Type");
         return 1;
       }
-      if (luaL_testudata(L, len, "ssp.operator") != NULL)
+      if (luaL_testudata(L, len, "Operator_Type") != NULL)
       {
-        OperatorType *O = (OperatorType*) luaL_checkudata(L, len, "ssp.operator");
+        OperatorType *O = (OperatorType*) luaL_checkudata(L, len, "Operator_Type");
         OperatorType *ONew;
         ONew = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
         OperatorTranspose(*O, ONew);
-        luaL_setmetatable(L, "ssp.operator");
+        luaL_setmetatable(L, "Operator_Type");
         return 1;
       }
       return luaL_error(L, "Error: copying or cloning an object of unrecognised type\n");
@@ -982,201 +1084,47 @@ static int Luarotate(lua_State *L)
   uint32_t len = (uint32_t)lua_gettop(L);
   if(len<2)
   {
-    return luaL_error(L, "ssp.Rotate called with %d arguments, 2 expected\n",len);
+    return luaL_error(L, "Rotate called with %d arguments, 2 expected\n",len);
   }
-  if (luaL_testudata(L, len-1, "ssp.wavefunction") != NULL)
-  {
-    return luaL_error(L, "ssp.Rotate called with a wave function, not yet implemented\n");
-    
-    return 0;
-  }
-  if (luaL_testudata(L, len-1, "ssp.operator") != NULL)
+  if (luaL_testudata(L, len-1, "Wavefunction_Type") != NULL)
   {
     U = luaL_checkMatrix(L, len);
-    OperatorType *O = (OperatorType*) luaL_checkudata(L, len-1, "ssp.operator");
+    WaveFunctionType *psi = (WaveFunctionType*) luaL_checkudata(L, len-1, "Wavefunction_Type");
+    if(U->Ni!=U->Nj) luaL_error(L, "Error while rotating wavefunction. Rotation matrix should be square (Ni=%d Nj=%d)",U->Ni,U->Nj);
+    if(U->Ni!=psi->NFermion+psi->NBoson) luaL_error(L, "Error while rotating wavefunction. Rotation matrix should have dimension (%d) of number of fermions (%d) + bosons (%d) of wavefunction",U->Ni,psi->NFermion,psi->NBoson);
+    WaveFunctionType *psiNew;
+    psiNew = (WaveFunctionType *) lua_newuserdata(L, sizeof(WaveFunctionType));
+    RotateWaveFunction(psiNew, *psi, *U);
+    luaL_setmetatable(L, "Wavefunction_Type");
+    WaveFunctionTruncateBasis(psiNew, Options.zero);
+    return 1;
+  }
+  if (luaL_testudata(L, len-1, "Operator_Type") != NULL)
+  {
+    U = luaL_checkMatrix(L, len);
+    OperatorType *O = (OperatorType*) luaL_checkudata(L, len-1, "Operator_Type");
     if(U->Ni!=U->Nj) luaL_error(L, "Error while rotating operator. Rotation matrix should be square (Ni=%d Nj=%d)",U->Ni,U->Nj);
     if(U->Ni!=O->NFermion+O->NBoson) luaL_error(L, "Error while rotating operator. Rotation matrix should have dimension (%d) of number of fermions (%d) + bosons (%d) of operator",U->Ni,O->NFermion,O->NBoson);
     OperatorType *ONew;
     ONew = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
     RotateOperatorNormalOrder(ONew, *O, *U,&QDetNotOrderedFcFaBaBc);
-    luaL_setmetatable(L, "ssp.operator");
+    luaL_setmetatable(L, "Operator_Type");
     OperatorChop(ONew, Options.zero);
     return 1;
   }
   if(lua_type(L,len-1)==LUA_TTABLE)
   {
-    return luaL_error(L, "ssp.Rotate called with a table, not yet implemented\n");
+    return luaL_error(L, "Rotate called with a table, not yet implemented\n");
     
     return 0;
   }
-  return luaL_error(L, "ssp.Rotate called unrecognized type. Can only rotate wavefunctions operators and tables of these\n");
+  return luaL_error(L, "Rotate called unrecognized type. Can only rotate wavefunctions operators and tables of these\n");
 }
 
-static int LuaReadConvergenceSettingsFromOptions(lua_State *L, int len, ConvergenceSettingsType *Settings)
-{
-  void *buff;
-  buff=LuaFindOptionsInTable(L, len, "DenseBoarder", "int");
-  if(buff!=NULL)
-  {
-    Settings->DenseBoarder = *(uint32_t*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, len, "NKrylovStart", "int");
-  if(buff!=NULL)
-  {
-    Settings->NKrylovStart = *(uint32_t*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, len, "NKrylovMax", "int");
-  if(buff!=NULL)
-  {
-    Settings->NKrylovMax = *(uint32_t*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, len, "NKrylovStep", "int");
-  if(buff!=NULL)
-  {
-    Settings->NKrylovStep = *(uint32_t*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, len, "NKrylovMin", "int");
-  if(buff!=NULL)
-  {
-    Settings->NKrylovMin = *(uint32_t*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, len, "NTri", "int");
-  if(buff!=NULL)
-  {
-    Settings->NTri = *(uint32_t*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, len, "NTri1", "int");
-  if(buff!=NULL)
-  {
-    Settings->NTri1 = *(uint32_t*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, len, "NTri2", "int");
-  if(buff!=NULL)
-  {
-    Settings->NTri2 = *(uint32_t*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, len, "zero", "double");
-  if(buff!=NULL)
-  {
-    Settings->zero = *(double*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, len, "epsilon", "double");
-  if(buff!=NULL)
-  {
-    Settings->epsilon = *(double*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, len, "NBitsKey", "int");
-  if(buff!=NULL)
-  {
-    Settings->NBitsKey = *(uint32_t*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, len, "restrictions", "DeterminantRestrictionType");
-  if(buff!=NULL)
-  {
-    Settings->restrictions = *(DeterminantRestrictionType*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, len, "restrictions1", "DeterminantRestrictionType");
-  if(buff!=NULL)
-  {
-    Settings->restrictions = *(DeterminantRestrictionType*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, len, "restrictions2", "DeterminantRestrictionType");
-  if(buff!=NULL)
-  {
-    Settings->restrictions = *(DeterminantRestrictionType*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, len, "Emin", "double");
-  if(buff!=NULL)
-  {
-    Settings->Emin = *(double*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, len, "Emax", "double");
-  if(buff!=NULL)
-  {
-    Settings->Emax = *(double*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, len, "NE", "int");
-  if(buff!=NULL)
-  {
-    Settings->NE = *(uint32_t*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, len, "Gamma", "double");
-  if(buff!=NULL)
-  {
-    Settings->Gamma = *(double*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, len, "Emin1", "double");
-  if(buff!=NULL)
-  {
-    Settings->Emin1 = *(double*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, len, "Emax1", "double");
-  if(buff!=NULL)
-  {
-    Settings->Emax1 = *(double*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, len, "NE1", "int");
-  if(buff!=NULL)
-  {
-    Settings->NE1 = *(uint32_t*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, len, "Gamma1", "double");
-  if(buff!=NULL)
-  {
-    Settings->Gamma1 = *(double*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, len, "Emin2", "double");
-  if(buff!=NULL)
-  {
-    Settings->Emin2 = *(double*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, len, "Emax2", "double");
-  if(buff!=NULL)
-  {
-    Settings->Emax2 = *(double*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, len, "NE2", "int");
-  if(buff!=NULL)
-  {
-    Settings->NE2 = *(uint32_t*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, len, "Gamma2", "double");
-  if(buff!=NULL)
-  {
-    Settings->Gamma2 = *(double*)buff;
-    free(buff);
-  }
-  return 0;
-}
+
 
 static int LuaCreateSpectra(lua_State *L)
 {
-  void *buff;
   struct
   {
     uint32_t NTri;
@@ -1203,16 +1151,23 @@ static int LuaCreateSpectra(lua_State *L)
   WaveFunctionType *psi,Tpsi;
   uint32_t i,iT,ipsi,len;
   double Eminpole,Emaxpole, *val, *psiEn, psiEntemp;
-  
+  LuaOptionsType LuaCreateSpectraOptions[]={
+    {"NTri","uint32_t",&(Options.NTri)},
+    {"epsilon","double",&(Options.epsilon)},
+    {"restrictions", "DeterminantRestrictionType", &(Options.DeterminantRestrictions)},
+    {"Emin","double",&(Options.Emin)},
+    {"Emax","double",&(Options.Emax)},
+    {"NE","uint32_t",&(Options.NE)},
+    {"Gamma","double",&(Options.Gamma)},
+    {NULL, NULL, NULL}};
   /* check number of input parameters */
   len = (uint32_t)lua_gettop(L);
   if(!((len==3)||(len==4)))
   {
     return luaL_error(L, "Error CreateSpectra called with %d arguments, 3 or 4 expected\n",len);
   }
-  
   /* read operator and wavefunctions */
-  H = (OperatorType *) luaL_checkudata(L, 1, "ssp.operator");
+  H = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
   if(lua_type(L,2)==LUA_TTABLE)
   {
     T=luaL_checkarray_OperatorType(L, 2, &Options.NT);
@@ -1220,7 +1175,7 @@ static int LuaCreateSpectra(lua_State *L)
   else
   {
     Options.NT = 1;
-    T = (OperatorType *) luaL_checkudata(L, 2, "ssp.operator");
+    T = (OperatorType *) luaL_checkudata(L, 2, "Operator_Type");
   }
   if(lua_type(L,3)==LUA_TTABLE)
   {
@@ -1229,46 +1184,13 @@ static int LuaCreateSpectra(lua_State *L)
   else
   {
     Options.Npsi = 1;
-    psi = (WaveFunctionType *) luaL_checkudata(L, 3, "ssp.wavefunction");
+    psi = (WaveFunctionType *) luaL_checkudata(L, 3, "Wavefunction_Type");
   }
   /* read options */
-  
-  buff=LuaFindOptionsInTable(L, -1, "epsilon", "double");
-  if(buff!=NULL)
+  if(len==4)
   {
-    Options.epsilon = *(double*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, -1, "restrictions", "DeterminantRestrictionType");
-  if(buff!=NULL)
-  {
-    Options.restrictions=True;
-    Options.DeterminantRestrictions = *(DeterminantRestrictionType*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, -1, "Emin", "double");
-  if(buff!=NULL)
-  {
-    Options.Emin = *(double*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, -1, "Emax", "double");
-  if(buff!=NULL)
-  {
-    Options.Emax = *(double*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, -1, "NE", "int");
-  if(buff!=NULL)
-  {
-    Options.NE = *(uint32_t*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, -1, "Gamma", "double");
-  if(buff!=NULL)
-  {
-    Options.Gamma = *(double*)buff;
-    free(buff);
+    LuaCheckOptions(L, -1, LuaCreateSpectraOptions);
+    if(Options.DeterminantRestrictions.N!=0)Options.restrictions=True;
   }
   /* calculate spectra in Tridiagonal form */
   GTri = malloc(Options.NT*Options.Npsi*sizeof(TriDiagonalMatrixType));
@@ -1316,18 +1238,13 @@ static int LuaCreateSpectra(lua_State *L)
     if((val[0]-psiEn[i])<Eminpole)Eminpole=val[0]-psiEn[i];
     if((val[Options.NTri-1]-psiEn[i])>Emaxpole)Emaxpole=val[Options.NTri-1]-psiEn[i];
   }
-  
-  
   /* if Emin=DBL_MAX or Emax=-DBL_MAX or Gamma==0 determine these */
-
-  
   if(Options.Emin== DBL_MAX) Options.Emin = Eminpole - 0.125 * (Emaxpole-Eminpole);
   if(Options.Emax==-DBL_MAX) Options.Emax = Emaxpole + 0.125 * (Emaxpole-Eminpole);
-  
   if(Options.Gamma==0) Options.Gamma = 10*(Options.Emax-Options.Emin)/((double)Options.NE);
   /* transform tridiagonal form to spectral form */
   Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
-  luaL_setmetatable(L, "ssp.spectra");
+  luaL_setmetatable(L, "Spectra_Type");
   Spec->NSpectra=Options.NT*Options.Npsi;
   Spec->Spec=malloc(Spec->NSpectra*sizeof(SpectraType));
   Spec->Spec[0].N=Options.NE;
@@ -1388,16 +1305,30 @@ static int LuaCreateResonantSpectra(lua_State *L)
   OperatorType *H1,*H2,*T1, *T2;
   WaveFunctionType *psi;
   uint32_t iT,ipsi,len,i;
-  
+  LuaOptionsType LuaCreateResonantSpectraOptions[]={
+    {"NTri1","uint32_t",&(Options.Settings.NTri1)},
+    {"NTri2","uint32_t",&(Options.Settings.NTri2)},
+    {"restrictions1", "DeterminantRestrictionType", &(Options.Settings.restrictions1)},
+    {"restrictions2", "DeterminantRestrictionType", &(Options.Settings.restrictions2)},
+    {"epsilon","double",&(Options.Settings.epsilon)},
+    {"Emin1","double",&(Options.Settings.Emin1)},
+    {"Emax1","double",&(Options.Settings.Emax1)},
+    {"NE1","uint32_t",&(Options.Settings.NE1)},
+    {"Gamma1","double",&(Options.Settings.Gamma1)},
+    {"Emin2","double",&(Options.Settings.Emin2)},
+    {"Emax2","double",&(Options.Settings.Emax2)},
+    {"NE2","uint32_t",&(Options.Settings.NE2)},
+    {"Gamma2","double",&(Options.Settings.Gamma2)},
+    {NULL, NULL, NULL}};
   /* check number of input parameters */
   len = (uint32_t)lua_gettop(L);
   if(!((len==5)||(len==6)))
   {
-    return luaL_error(L, "Error CreateFluorescenceYield called with %d arguments, 5 or 6 expected (H1, H2, T1, T2^+, psi, {options})\n",len);
+    return luaL_error(L, "Error LuaCreateResonantSpectra called with %d arguments, 5 or 6 expected (H1, H2, T1, T2^+, psi, {options})\n",len);
   }
   /* read operator and wavefunctions */
-  H1 = (OperatorType *) luaL_checkudata(L, 1, "ssp.operator");
-  H2 = (OperatorType *) luaL_checkudata(L, 2, "ssp.operator");
+  H1 = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
+  H2 = (OperatorType *) luaL_checkudata(L, 2, "Operator_Type");
   if(lua_type(L,3)==LUA_TTABLE)
   {
     T1=luaL_checkarray_OperatorType(L, 3, &Options.NT1);
@@ -1405,7 +1336,7 @@ static int LuaCreateResonantSpectra(lua_State *L)
   else
   {
     Options.NT1 = 1;
-    T1 = (OperatorType *) luaL_checkudata(L, 3, "ssp.operator");
+    T1 = (OperatorType *) luaL_checkudata(L, 3, "Operator_Type");
   }
   if(lua_type(L,4)==LUA_TTABLE)
   {
@@ -1414,7 +1345,7 @@ static int LuaCreateResonantSpectra(lua_State *L)
   else
   {
     Options.NT2 = 1;
-    T2 = (OperatorType *) luaL_checkudata(L, 4, "ssp.operator");
+    T2 = (OperatorType *) luaL_checkudata(L, 4, "Operator_Type");
   }
   if(lua_type(L,5)==LUA_TTABLE)
   {
@@ -1423,14 +1354,16 @@ static int LuaCreateResonantSpectra(lua_State *L)
   else
   {
     Options.Npsi = 1;
-    psi = (WaveFunctionType *) luaL_checkudata(L, 5, "ssp.wavefunction");
+    psi = (WaveFunctionType *) luaL_checkudata(L, 5, "Wavefunction_Type");
   }
   /* read options */
-  if (len==6) LuaReadConvergenceSettingsFromOptions(L, 6, &Options.Settings);
-  
+  if (len==6)
+  {
+    LuaCheckOptions(L, -1, LuaCreateResonantSpectraOptions);
+  }
   /* allocate spectra and and pointer to return matrix on lua stack */
   Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
-  luaL_setmetatable(L, "ssp.spectra");
+  luaL_setmetatable(L, "Spectra_Type");
   Spec->NSpectra=0;
   Spec->Spec=NULL;
   for(ipsi=0;ipsi<Options.Npsi;ipsi++)
@@ -1462,7 +1395,6 @@ static int LuaCreateResonantSpectra(lua_State *L)
 
 static int LuaCreateFluorescenceYield(lua_State *L)
 {
-  void *buff;
   struct
   {
     uint32_t NTri;
@@ -1489,16 +1421,24 @@ static int LuaCreateFluorescenceYield(lua_State *L)
   WaveFunctionType *psi;
   uint32_t iT,ipsi,len;
   double *psiEn;
-  
+  LuaOptionsType LuaCreateSpectraOptions[]={
+    {"NTri","uint32_t",&(Options.NTri)},
+    {"epsilon","double",&(Options.epsilon)},
+    {"restrictions", "DeterminantRestrictionType", &(Options.DeterminantRestrictions)},
+    {"Emin","double",&(Options.Emin)},
+    {"Emax","double",&(Options.Emax)},
+    {"NE","uint32_t",&(Options.NE)},
+    {"Gamma","double",&(Options.Gamma)},
+    {NULL, NULL, NULL}};
+
   /* check number of input parameters */
   len = (uint32_t)lua_gettop(L);
   if(!((len==4)||(len==5)))
   {
     return luaL_error(L, "Error CreateFluorescenceYield called with %d arguments, 4 or 5 expected\n",len);
   }
-  
   /* read operator and wavefunctions */
-  H = (OperatorType *) luaL_checkudata(L, 1, "ssp.operator");
+  H = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
   if(lua_type(L,2)==LUA_TTABLE)
   {
     T1=luaL_checkarray_OperatorType(L, 2, &Options.NT1);
@@ -1506,7 +1446,7 @@ static int LuaCreateFluorescenceYield(lua_State *L)
   else
   {
     Options.NT1 = 1;
-    T1 = (OperatorType *) luaL_checkudata(L, 2, "ssp.operator");
+    T1 = (OperatorType *) luaL_checkudata(L, 2, "Operator_Type");
   }
   if(lua_type(L,3)==LUA_TTABLE)
   {
@@ -1515,7 +1455,7 @@ static int LuaCreateFluorescenceYield(lua_State *L)
   else
   {
     Options.NT2 = 1;
-    T2 = (OperatorType *) luaL_checkudata(L, 3, "ssp.operator");
+    T2 = (OperatorType *) luaL_checkudata(L, 3, "Operator_Type");
   }
   if(lua_type(L,4)==LUA_TTABLE)
   {
@@ -1524,49 +1464,17 @@ static int LuaCreateFluorescenceYield(lua_State *L)
   else
   {
     Options.Npsi = 1;
-    psi = (WaveFunctionType *) luaL_checkudata(L, 4, "ssp.wavefunction");
+    psi = (WaveFunctionType *) luaL_checkudata(L, 4, "Wavefunction_Type");
   }
   /* read options */
-  buff=LuaFindOptionsInTable(L, -1, "epsilon", "double");
-  if(buff!=NULL)
+  if(len==5)
   {
-    Options.epsilon = *(double*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, -1, "restrictions", "DeterminantRestrictionType");
-  if(buff!=NULL)
-  {
-    Options.restrictions=True;
-    Options.DeterminantRestrictions = *(DeterminantRestrictionType*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, -1, "Emin", "double");
-  if(buff!=NULL)
-  {
-    Options.Emin = *(double*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, -1, "Emax", "double");
-  if(buff!=NULL)
-  {
-    Options.Emax = *(double*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, -1, "NE", "int");
-  if(buff!=NULL)
-  {
-    Options.NE = *(uint32_t*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, -1, "Gamma", "double");
-  if(buff!=NULL)
-  {
-    Options.Gamma = *(double*)buff;
-    free(buff);
+    LuaCheckOptions(L, -1, LuaCreateSpectraOptions);
+    if(Options.DeterminantRestrictions.N!=0)Options.restrictions=True;
   }
   /* allocate spectra and and pointer to return matrix on lua stack */
   Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
-  luaL_setmetatable(L, "ssp.spectra");
+  luaL_setmetatable(L, "Spectra_Type");
   Spec->NSpectra=Options.NT1*Options.NT2*Options.Npsi;
   Spec->Spec=malloc(Spec->NSpectra*sizeof(SpectraType));
   /* calculate groundstate energy */
@@ -1610,9 +1518,7 @@ static int LuaCreateFluorescenceYield(lua_State *L)
 
 
 
-/* given one operator and a (table of) wavefunctions calculate the ground-state (and excited states) starting from those wavefunctions.
- *
- */
+
 static int LuaEvolveToGroundstate(lua_State * L)
 {
   void *buff;
@@ -1630,6 +1536,11 @@ static int LuaEvolveToGroundstate(lua_State * L)
   OperatorType *Opp;
   WaveFunctionType *psi,*temp;
   uint32_t i,len;
+  LuaOptionsType LuaEvolveToGroundStateOptions[]={
+    {"epsilon","double",&(Options.epsilon)},
+    {"zero","double",&(Options.zero)},
+    {"restrictions", "DeterminantRestrictionType", &(Options.DeterminantRestrictions)},
+    {NULL, NULL, NULL}};
   /* check number of input parameters */
   len = (uint32_t)lua_gettop(L);
   if(!((len==2)||(len==3)))
@@ -1637,7 +1548,7 @@ static int LuaEvolveToGroundstate(lua_State * L)
     return luaL_error(L, "Error EvolveToGroundstate called with %d arguments, 2 or 3 expected\n",len);
   }
   /* read operator and wavefunctions */
-  Opp = (OperatorType *) luaL_checkudata(L, 1, "ssp.operator");
+  Opp = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
   if(lua_type(L,2)==LUA_TTABLE)
   {
     psi=luaL_checkarray_WaveFunctionType(L, 2, &Options.Npsi);
@@ -1645,27 +1556,13 @@ static int LuaEvolveToGroundstate(lua_State * L)
   else
   {
     Options.Npsi = 1;
-    psi = (WaveFunctionType *) luaL_checkudata(L, 2, "ssp.wavefunction");
+    psi = (WaveFunctionType *) luaL_checkudata(L, 2, "Wavefunction_Type");
   }
   /* read options */
-  buff=LuaFindOptionsInTable(L, -1, "epsilon", "double");
-  if(buff!=NULL)
+  if(len==3)
   {
-    Options.epsilon = *(double*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, -1, "zero", "double");
-  if(buff!=NULL)
-  {
-    Options.zero = *(double*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, -1, "restrictions", "DeterminantRestrictionType");
-  if(buff!=NULL)
-  {
-    Options.restrictions=True;
-    Options.DeterminantRestrictions = *(DeterminantRestrictionType*)buff;
-    free(buff);
+    LuaCheckOptions(L, -1, LuaEvolveToGroundStateOptions);
+    if(Options.DeterminantRestrictions.N!=0)Options.restrictions=True;
   }
   /* calculate groundstate */
   for (i = 0; i < Options.Npsi; i++)
@@ -1686,7 +1583,7 @@ static int LuaEvolveToGroundstate(lua_State * L)
     for(i=0;i<Options.Npsi;i++)
     {
       lua_rawgeti(L, 2, i+1);
-      temp = (WaveFunctionType *)luaL_checkudata(L, -1, "ssp.wavefunction");
+      temp = (WaveFunctionType *)luaL_checkudata(L, -1, "Wavefunction_Type");
       *temp = psi[i];
       lua_pop(L, 1);
     }
@@ -1694,8 +1591,40 @@ static int LuaEvolveToGroundstate(lua_State * L)
   return 0;
 }
 
-/*  calculate the Npsi lowest eigen-states of operator Opp, using the Block routines
- *
+/**
+ * Calculates all eigen values and functions of a matrix stored as a table of tables on the stack
+ * @param L
+ *        Pointer to a lua state. The last element on the stack needs to be a square table of tables of numbers (real or complex)
+ * @return 2
+ *         The first element added on the stack is a table of the eigenvalues
+ *         The second element added on the stack is a table of the eigen functions
+ */
+static int LuaEigensystemDenseTable(lua_State *L)
+{
+  MatrixType *H,fun;
+  double *val;
+  H=luaL_checkMatrix(L,1);
+  val=malloc(H->Ni*sizeof(double));
+  Eigensystem(*H,&fun,val);
+  FreeMatrix(H);
+  LuaPushArray_double(L, val, fun.Ni);
+  LuaPushTable_MatrixType(L, &fun);
+  return 2;
+}
+
+/**
+ * Calculates the lowest N eigenstates of a given operator
+ * @param L
+ *        Pointer to a lua state
+ *        The Lua state can have:
+ *        - length 1, being a square table of table of real or complex numbers
+ *        - length 2, being an operator and a set of starting functions
+ *        - length 3, being an operator, a set of starting functions and a set of options
+ *        - length 3, being an operator, a set of starting restrictions, and a number defining the number of eigen states wanted
+ *        - length 4, being an operator, a set of starting restrictions, a number defining the number of eigen states wanted and a set of options
+ * @return 0 or 1
+ *         if called with a set of starting wavefunctions returns 0 and alters the functions
+ *         if called with a set of restrictions returns 1 and the newly created wavefunctions
  */
 static int LuaEigensystem(lua_State * L)
 {
@@ -1704,11 +1633,13 @@ static int LuaEigensystem(lua_State * L)
   {
     ConvergenceSettingsType Settings;
     Bool restrictions;
+    Bool ExpandBasis;
     uint32_t NBitsKey;
     DeterminantRestrictionType DeterminantRestrictions;
   } Options;
   Options.Settings=InitConvergenceSettings();
   Options.restrictions=False;
+  Options.ExpandBasis=True;
   Options.DeterminantRestrictions.N=0;
   Options.NBitsKey=20;
   OperatorType *Opp;
@@ -1716,14 +1647,28 @@ static int LuaEigensystem(lua_State * L)
   StartRestrictions.N=0;
   WaveFunctionType *psi=NULL,*temp;
   uint32_t i,len, Npsi=0,QStartRestrictions=0;
+  /* set options */
+  LuaOptionsType LuaEigensystemOptions[]={
+    {"DenseBoarder", "uint32_t", &(Options.Settings.DenseBoarder)},
+    {"NKrylovStart","uint32_t",&(Options.Settings.NKrylovStart)},
+    {"NKrylovMax","uint32_t",&(Options.Settings.NKrylovMax)},
+    {"NKrylovStep","uint32_t",&(Options.Settings.NKrylovStep)},
+    {"NKrylovMin","uint32_t",&(Options.Settings.NKrylovMin)},
+    {"NBitsKey","uint32_t",&(Options.Settings.NBitsKey)},
+    {"epsilon","double",&(Options.Settings.epsilon)},
+    {"zero","double",&(Options.Settings.zero)},
+    {"restrictions", "DeterminantRestrictionType", &(Options.DeterminantRestrictions)},
+    {"ExpandBasis", "bool",&(Options.ExpandBasis)},
+    {NULL, NULL, NULL}};
   /* check number of input parameters */
   len = (uint32_t)lua_gettop(L);
+  if(len==1) return LuaEigensystemDenseTable(L);
   if(!((len==2)||(len==3)||(len==4)))
   {
     return luaL_error(L, "Error Eigensystem called with %d arguments, 2, 3 or 4 expected\n",len);
   }
   /* read operator, (StartRestrictions or StartPsi) and Number of eigen-states */
-  Opp = (OperatorType *) luaL_checkudata(L, 1, "ssp.operator");
+  Opp = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
   if(lua_type(L,2)==LUA_TTABLE)
   {
     lua_rawgeti(L, 2, 1);
@@ -1748,11 +1693,11 @@ static int LuaEigensystem(lua_State * L)
   else
   {
     Npsi = 1;
-    psi = (WaveFunctionType *) luaL_checkudata(L, 2, "ssp.wavefunction");
+    psi = (WaveFunctionType *) luaL_checkudata(L, 2, "Wavefunction_Type");
   }
   if((len==2)&&(QStartRestrictions))
   {
-    return luaL_error(L, "Error Eigensystem called with 2 arguments, whereby the first is the operator and the second a set of restrictions\n Need a thrid argument how many eigenstates should be calculated\n");
+    return luaL_error(L, "Error Eigensystem called with 2 arguments, whereby the first is the operator and the second a set of restrictions\nNeed a thrid argument how many eigenstates should be calculated\n");
   }
   if(QStartRestrictions)
   {
@@ -1761,7 +1706,7 @@ static int LuaEigensystem(lua_State * L)
     if(Npsi==1)
     {
       psi = (WaveFunctionType*) lua_newuserdata(L, sizeof(WaveFunctionType));
-      luaL_setmetatable(L, "ssp.wavefunction");
+      luaL_setmetatable(L, "Wavefunction_Type");
     }
     else
     {
@@ -1769,63 +1714,20 @@ static int LuaEigensystem(lua_State * L)
     }
   }
   /* read options */
-  buff=LuaFindOptionsInTable(L, -1, "DenseBoarder", "int");
-  if(buff!=NULL)
+  if((len==4)||((len==3)&&(!(QStartRestrictions))))
   {
-    Options.Settings.DenseBoarder = *(uint32_t*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, -1, "NKrylovStart", "int");
-  if(buff!=NULL)
-  {
-    Options.Settings.NKrylovStart = *(uint32_t*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, -1, "NKrylovMax", "int");
-  if(buff!=NULL)
-  {
-    Options.Settings.NKrylovMax = *(uint32_t*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, -1, "NKrylovStep", "int");
-  if(buff!=NULL)
-  {
-    Options.Settings.NKrylovStep = *(uint32_t*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, -1, "NKrylovMin", "int");
-  if(buff!=NULL)
-  {
-    Options.Settings.NKrylovMin = *(uint32_t*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, -1, "NBitsKey", "int");
-  if(buff!=NULL)
-  {
-    Options.NBitsKey = *(uint32_t*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, -1, "epsilon", "double");
-  if(buff!=NULL)
-  {
-    Options.Settings.epsilon = *(double*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, -1, "zero", "double");
-  if(buff!=NULL)
-  {
-    Options.Settings.zero = *(double*)buff;
-    free(buff);
-  }
-  buff=LuaFindOptionsInTable(L, -1, "restrictions", "DeterminantRestrictionType");
-  if(buff!=NULL)
-  {
-    Options.restrictions=True;
-    Options.DeterminantRestrictions = *(DeterminantRestrictionType*)buff;
-    free(buff);
+    LuaCheckOptions(L, -1, LuaEigensystemOptions);
+    if(Options.DeterminantRestrictions.N!=0)Options.restrictions=True;
   }
   /* calculate groundstate */
-  BlockGroundState(*Opp, Npsi, &(Options.Settings) , StartRestrictions, Options.DeterminantRestrictions, psi, Options.NBitsKey);
+  if(Options.ExpandBasis==True)
+  {
+    BlockGroundState(*Opp, Npsi, &(Options.Settings) , StartRestrictions, Options.DeterminantRestrictions, psi, Options.NBitsKey);
+  }
+  else
+  {
+    BlockLanczosGroundStateConserveBasis(*Opp, psi, Npsi, &(Options.Settings));
+  }
   /* seperate basis */
   WaveFunctionArraySeperateBasis(psi, Npsi);
   /* copy changed wavefunctions back to lua stack */
@@ -1851,7 +1753,7 @@ static int LuaEigensystem(lua_State * L)
       for(i=0;i<Npsi;i++)
       {
         lua_rawgeti(L, 2, i+1);
-        temp = (WaveFunctionType *)luaL_checkudata(L, -1, "ssp.wavefunction");
+        temp = (WaveFunctionType *)luaL_checkudata(L, -1, "Wavefunction_Type");
         *temp = psi[i];
         lua_pop(L, 1);
       }
@@ -1913,9 +1815,9 @@ static int LuaDensityMatrix(lua_State *L)
     }
     case LUA_TUSERDATA:
     {
-      if (luaL_testudata(L, 1, "ssp.wavefunction") != NULL)
+      if (luaL_testudata(L, 1, "Wavefunction_Type") != NULL)
       {
-        psi = (WaveFunctionType *) luaL_checkudata(L, 1, "ssp.wavefunction");
+        psi = (WaveFunctionType *) luaL_checkudata(L, 1, "Wavefunction_Type");
       }
       else
       {
@@ -1939,32 +1841,28 @@ static int LuaDensityMatrix(lua_State *L)
 }
 
 
-static const struct luaL_Reg ssp_functions[] = {
+static const struct luaL_Reg global_functions[] = {
   {"Help", LuaHelp},
   {"Verbosity",LuaVerbosity},
   {"TimeStart",LuaTimeStart},
   {"TimeEnd",LuaTimeEnd},
   {"TimePrint",LuaTimePrint},
-  {"NewOperator", LuaNewOperator},
   {"PotentialExpandedOnClm", LuaPotentialExpandedOnClm},
+  {"NewOperator", LuaNewOperator},
   {"NewWavefunction", LuaNewWaveFunction},
   {"DensityMatrix",LuaDensityMatrix},
   {"Copy", Luacopy},
   {"Clone", Luacopy},
+  {"Chop", LuaChop},
   {"Conjugate", Luaconjugate},
-  {"C", Luaconjugate},
   {"ConjugateTranspose", Luaconjugatetranspose},
-  {"CT", Luaconjugatetranspose},
   {"Transpose", Luatranspose},
-  {"T", Luatranspose},
   {"Rotate", Luarotate},
   {"EvolveToGroundstate", LuaEvolveToGroundstate},
   {"Eigensystem", LuaEigensystem},
   {"CreateSpectra", LuaCreateSpectra},
   {"CreateFluorescenceYield", LuaCreateFluorescenceYield},
   {"CreateResonantSpectra", LuaCreateResonantSpectra},
-  {"BraKet", LuaBraKet},           /* function in file BraKet.c */
-  {"Eval", LuaEval},               /* function in file eval.c */
   {NULL, NULL}
 };
 
@@ -1974,7 +1872,7 @@ void luaconstants(lua_State *L)
   luaI = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
   luaI->Re = 0.;
   luaI->Im = 1.;
-  luaL_setmetatable(L, "Lua.complex");
+  luaL_setmetatable(L, "Complex_Type");
   lua_setglobal(L, "I");
   lua_pushnumber(L, 3.14159265358979323846264338328);
   lua_setglobal(L, "Pi");
@@ -1988,19 +1886,16 @@ void luaconstants(lua_State *L)
 
 int luaopen_ssp(lua_State * L)
 {
-  luaL_newmetatable(L, "ssp.operator");
+  luaL_newmetatable(L, "Operator_Type");
   luaL_setfuncs(L, Operator_meta, 0);
   
-  luaL_newmetatable(L, "ssp.wavefunction");
+  luaL_newmetatable(L, "Wavefunction_Type");
   luaL_setfuncs(L, Wavefunction_meta, 0);
   
-  luaL_newmetatable(L, "ssp.spectra");
+  luaL_newmetatable(L, "Spectra_Type");
   luaL_setfuncs(L, Spectra_meta, 0);
     
-  luaL_newlib(L, ssp_functions);
-  lua_setglobal(L, "ssp");
+  luaMWH_RegisterGlobalFunctions(L, global_functions);
   
-  
-  
-  return 1;
+  return 0;
 }

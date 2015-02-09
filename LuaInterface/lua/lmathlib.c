@@ -249,7 +249,7 @@ static int math_SphericalHarmonicY(lua_State * L)
   res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
   res->Re = ReSphericalHarmonicY(l, m, theta, phi);
   res->Im = ImSphericalHarmonicY(l, m, theta, phi);
-  luaL_setmetatable(L, "Lua.complex");
+  luaL_setmetatable(L, "Complex_Type");
   return 1;
 }
 static int math_SphericalHarmonicC(lua_State * L)
@@ -267,7 +267,7 @@ static int math_SphericalHarmonicC(lua_State * L)
   res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
   res->Re = sqrt(4*Pi/((double)(2*l+1))) * ReSphericalHarmonicY(l, m, theta, phi);
   res->Im = sqrt(4*Pi/((double)(2*l+1))) * ImSphericalHarmonicY(l, m, theta, phi);
-  luaL_setmetatable(L, "Lua.complex");
+  luaL_setmetatable(L, "Complex_Type");
   return 1;
 }
 
@@ -422,7 +422,7 @@ static const luaL_Reg mathlib[] = {
   {"sqrt",  math_sqrt},
   {"tanh",   math_tanh},
   {"tan",   math_tan},
-  {"fact",   math_fact},
+  {"fact",   math_fact},{"factorial",   math_fact},
   {"SphericalHarmonicY", math_SphericalHarmonicY},
   {"SphericalHarmonicC", math_SphericalHarmonicC},
   {"TesseralHarmonicZ",  math_TesseralHarmonicZ},

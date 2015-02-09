@@ -6,7 +6,7 @@ static int LuaComplexNew(lua_State * L)
   res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
   res->Re = re;
   res->Im = im;
-  luaL_setmetatable(L, "Lua.complex");
+  luaL_setmetatable(L, "Complex_Type");
   return 1;
 }
 
@@ -16,14 +16,13 @@ static int LuaComplexI(lua_State * L)
   res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
   res->Re = 0.;
   res->Im = 1.;
-  luaL_setmetatable(L, "Lua.complex");
+  luaL_setmetatable(L, "Complex_Type");
   return 1;
 }
 
-
 static int LuaComplexIndex(lua_State * L)
 {
-  Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Lua.complex");
+  Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Complex_Type");
   const char *str = lua_tostring(L, 2);
   
   switch (str[0])
@@ -41,11 +40,9 @@ static int LuaComplexIndex(lua_State * L)
   return luaL_error(L, "Error Complex variable not found");;
 }
 
-
-
 static int LuaComplexNewIndex(lua_State * L)
 {
-  Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Lua.complex");
+  Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Complex_Type");
   const char *str = lua_tostring(L, 2);
   double v = lua_tonumber(L, 3);
   
@@ -90,11 +87,11 @@ static int LuaComplexAdd(lua_State * L)
       double a;
       Complex16 *b, *res;
       a = luaL_checknumber(L, 1);
-      b = (Complex16 *) luaL_checkudata(L, len, "Lua.complex");
+      b = (Complex16 *) luaL_checkudata(L, len, "Complex_Type");
       res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
       res->Re =  a + b->Re;
       res->Im =      b->Im;
-      luaL_setmetatable(L, "Lua.complex");
+      luaL_setmetatable(L, "Complex_Type");
       return 1;
     }
     case LUA_TSTRING:
@@ -122,7 +119,7 @@ static int LuaComplexAdd(lua_State * L)
     {
       // first operator is of type (original variable)
       // read this variable and check what the second variable is
-      Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Lua.complex");
+      Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Complex_Type");
       switch (lua_type(L,len))
       {
         case LUA_TNIL:
@@ -149,7 +146,7 @@ static int LuaComplexAdd(lua_State * L)
           res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
           res->Re =  a->Re+b;
           res->Im =  a->Im;
-          luaL_setmetatable(L, "Lua.complex");
+          luaL_setmetatable(L, "Complex_Type");
           return 1;
         }
         case LUA_TSTRING:
@@ -160,33 +157,33 @@ static int LuaComplexAdd(lua_State * L)
         case LUA_TUSERDATA:
         {
           // (original variable) operator (user data)
-          if (luaL_testudata(L, len, "Lua.complex") != NULL)
+          if (luaL_testudata(L, len, "Complex_Type") != NULL)
           {
             // (original variable) operator (user data - complex)
             Complex16 *b, *res;
-            b = (Complex16 *) luaL_checkudata(L, len, "Lua.complex");
+            b = (Complex16 *) luaL_checkudata(L, len, "Complex_Type");
             res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
             res->Re = a->Re + b->Re;
             res->Im = a->Im + b->Im;
-            luaL_setmetatable(L, "Lua.complex");
+            luaL_setmetatable(L, "Complex_Type");
             return 1;
           }
-          if (luaL_testudata(L, len, "ssp.wavefunction") != NULL)
+          if (luaL_testudata(L, len, "Wavefunction_Type") != NULL)
           {
             // (original variable) operator (user data - wavefunction)
             return luaL_error(L, "Error: complex number plus wavefunction\n");
           }
-          if (luaL_testudata(L, len, "ssp.operator") != NULL)
+          if (luaL_testudata(L, len, "Operator_Type") != NULL)
           {
             // (original variable) operator (user data - operator)
             return luaL_error(L, "Still to do: complex number plus operator\n");
           }
-          if (luaL_testudata(L, len, "ssp.spectra") != NULL)
+          if (luaL_testudata(L, len, "Spectra_Type") != NULL)
           {
             // (original variable) operator (user data - spectra)
             uint32_t i,j;
             SpectraTypeArray *res, *b;
-            b = (SpectraTypeArray *) luaL_checkudata(L, len, "ssp.spectra");
+            b = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
             res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
             res->NSpectra = b->NSpectra;
             res->Spec=malloc(res->NSpectra*sizeof(SpectraType));
@@ -202,7 +199,7 @@ static int LuaComplexAdd(lua_State * L)
                 res->Spec[i].Im[j]= b->Spec[i].Im[j]+a->Im;
               }
             }
-            luaL_setmetatable(L, "ssp.spectra");
+            luaL_setmetatable(L, "Spectra_Type");
             return 1;
           }
           return luaL_error(L, "Error: complex number plus unrecognized userdata\n");
@@ -256,11 +253,11 @@ static int LuaComplexSub(lua_State * L)
       double a;
       Complex16 *b, *res;
       a = luaL_checknumber(L, 1);
-      b = (Complex16 *) luaL_checkudata(L, len, "Lua.complex");
+      b = (Complex16 *) luaL_checkudata(L, len, "Complex_Type");
       res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
       res->Re =  a - b->Re;
       res->Im =    - b->Im;
-      luaL_setmetatable(L, "Lua.complex");
+      luaL_setmetatable(L, "Complex_Type");
       return 1;
     }
     case LUA_TSTRING:
@@ -288,7 +285,7 @@ static int LuaComplexSub(lua_State * L)
     {
       // first operator is of type (original variable)
       // read this variable and check what the second variable is
-      Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Lua.complex");
+      Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Complex_Type");
       switch (lua_type(L,len))
       {
         case LUA_TNIL:
@@ -315,7 +312,7 @@ static int LuaComplexSub(lua_State * L)
           res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
           res->Re =  a->Re-b;
           res->Im =  a->Im;
-          luaL_setmetatable(L, "Lua.complex");
+          luaL_setmetatable(L, "Complex_Type");
           return 1;
         }
         case LUA_TSTRING:
@@ -326,33 +323,33 @@ static int LuaComplexSub(lua_State * L)
         case LUA_TUSERDATA:
         {
           // (original variable) operator (user data)
-          if (luaL_testudata(L, len, "Lua.complex") != NULL)
+          if (luaL_testudata(L, len, "Complex_Type") != NULL)
           {
             // (original variable) operator (user data - complex)
             Complex16 *b, *res;
-            b = (Complex16 *) luaL_checkudata(L, len, "Lua.complex");
+            b = (Complex16 *) luaL_checkudata(L, len, "Complex_Type");
             res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
             res->Re = a->Re - b->Re;
             res->Im = a->Im - b->Im;
-            luaL_setmetatable(L, "Lua.complex");
+            luaL_setmetatable(L, "Complex_Type");
             return 1;
           }
-          if (luaL_testudata(L, len, "ssp.wavefunction") != NULL)
+          if (luaL_testudata(L, len, "Wavefunction_Type") != NULL)
           {
             // (original variable) operator (user data - wavefunction)
             return luaL_error(L, "Error: complex number minus wavefunction\n");
           }
-          if (luaL_testudata(L, len, "ssp.operator") != NULL)
+          if (luaL_testudata(L, len, "Operator_Type") != NULL)
           {
             // (original variable) operator (user data - operator)
             return luaL_error(L, "Still to do: complex number minus operator\n");
           }
-          if (luaL_testudata(L, len, "ssp.spectra") != NULL)
+          if (luaL_testudata(L, len, "Spectra_Type") != NULL)
           {
             // (original variable) operator (user data - spectra)
             uint32_t i,j;
             SpectraTypeArray *res, *b;
-            b = (SpectraTypeArray *) luaL_checkudata(L, len, "ssp.spectra");
+            b = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
             res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
             res->NSpectra = b->NSpectra;
             res->Spec=malloc(res->NSpectra*sizeof(SpectraType));
@@ -368,7 +365,7 @@ static int LuaComplexSub(lua_State * L)
                 res->Spec[i].Im[j]= b->Spec[i].Im[j]-a->Im;
               }
             }
-            luaL_setmetatable(L, "ssp.spectra");
+            luaL_setmetatable(L, "Spectra_Type");
             return 1;
           }
           return luaL_error(L, "Error: complex number minus unrecognized userdata\n");
@@ -422,11 +419,11 @@ static int LuaComplexMul(lua_State * L)
       double a;
       Complex16 *b, *res;
       a = luaL_checknumber(L, 1);
-      b = (Complex16 *) luaL_checkudata(L, len, "Lua.complex");
+      b = (Complex16 *) luaL_checkudata(L, len, "Complex_Type");
       res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
       res->Re = a * b->Re;
       res->Im = a * b->Im;
-      luaL_setmetatable(L, "Lua.complex");
+      luaL_setmetatable(L, "Complex_Type");
       return 1;
     }
     case LUA_TSTRING:
@@ -454,7 +451,7 @@ static int LuaComplexMul(lua_State * L)
     {
       // first operator is of type (original variable)
       // read this variable and check what the second variable is
-      Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Lua.complex");
+      Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Complex_Type");
       switch (lua_type(L,len))
       {
         case LUA_TNIL:
@@ -481,7 +478,7 @@ static int LuaComplexMul(lua_State * L)
           res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
           res->Re = a->Re * b;
           res->Im = a->Im * b;
-          luaL_setmetatable(L, "Lua.complex");
+          luaL_setmetatable(L, "Complex_Type");
           return 1;
         }
         case LUA_TSTRING:
@@ -492,45 +489,45 @@ static int LuaComplexMul(lua_State * L)
         case LUA_TUSERDATA:
         {
           // (original variable) operator (user data)
-          if (luaL_testudata(L, len, "Lua.complex") != NULL)
+          if (luaL_testudata(L, len, "Complex_Type") != NULL)
           {
             // (original variable) operator (user data - complex)
             Complex16 *b, *res;
-            b = (Complex16 *) luaL_checkudata(L, len, "Lua.complex");
+            b = (Complex16 *) luaL_checkudata(L, len, "Complex_Type");
             res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
             res->Re = (a->Re * b->Re - a->Im * b->Im);
             res->Im = (a->Im * b->Re + a->Re * b->Im);
-            luaL_setmetatable(L, "Lua.complex");
+            luaL_setmetatable(L, "Complex_Type");
             return 1;
           }
-          if (luaL_testudata(L, len, "ssp.wavefunction") != NULL)
+          if (luaL_testudata(L, len, "Wavefunction_Type") != NULL)
           {
             // (original variable) operator (user data - wavefunction)
             WaveFunctionType *b, *res;
             res = (WaveFunctionType *) lua_newuserdata(L, sizeof(WaveFunctionType));
-            b = (WaveFunctionType *) luaL_checkudata(L, 2, "ssp.wavefunction");
+            b = (WaveFunctionType *) luaL_checkudata(L, 2, "Wavefunction_Type");
             WaveFunctionCopy(*b, res);
             WaveFunctionMultiply(res, a->Re, a->Im);
-            luaL_setmetatable(L, "ssp.wavefunction");
+            luaL_setmetatable(L, "Wavefunction_Type");
             return 1;
           }
-          if (luaL_testudata(L, len, "ssp.operator") != NULL)
+          if (luaL_testudata(L, len, "Operator_Type") != NULL)
           {
             // (original variable) operator (user data - operator)
             OperatorType *b, *res;
             res = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-            b = (OperatorType *) luaL_checkudata(L, 2, "ssp.operator");
+            b = (OperatorType *) luaL_checkudata(L, 2, "Operator_Type");
             OperatorCopy(res, *b);
             OperatorScale(res, a->Re, a->Im);
-            luaL_setmetatable(L, "ssp.operator");
+            luaL_setmetatable(L, "Operator_Type");
             return 1;
           }
-          if (luaL_testudata(L, len, "ssp.spectra") != NULL)
+          if (luaL_testudata(L, len, "Spectra_Type") != NULL)
           {
             // (original variable) operator (user data - spectra)
             uint32_t i,j;
             SpectraTypeArray *res, *b;
-            b = (SpectraTypeArray *) luaL_checkudata(L, len, "ssp.spectra");
+            b = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
             res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
             res->NSpectra = b->NSpectra;
             res->Spec=malloc(res->NSpectra*sizeof(SpectraType));
@@ -546,7 +543,7 @@ static int LuaComplexMul(lua_State * L)
                 res->Spec[i].Im[j]= b->Spec[i].Re[j]*a->Im + b->Spec[i].Im[j]*a->Re;
               }
             }
-            luaL_setmetatable(L, "ssp.spectra");
+            luaL_setmetatable(L, "Spectra_Type");
             return 1;
           }
           return luaL_error(L, "Error: complex number multiplied with unrecognized userdata\n");
@@ -574,9 +571,6 @@ static int LuaComplexMul(lua_State * L)
   }
 }
 
-
-
-
 static int LuaComplexDiv(lua_State * L)
 {
   uint32_t len = (uint32_t)lua_gettop(L);
@@ -603,11 +597,11 @@ static int LuaComplexDiv(lua_State * L)
       double a;
       Complex16 *b, *res;
       a = luaL_checknumber(L, 1);
-      b = (Complex16 *) luaL_checkudata(L, len, "Lua.complex");
+      b = (Complex16 *) luaL_checkudata(L, len, "Complex_Type");
       res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
       res->Re =  a * b->Re / (Sqr(b->Im) + Sqr(b->Re));
       res->Im = -a * b->Im / (Sqr(b->Im) + Sqr(b->Re));
-      luaL_setmetatable(L, "Lua.complex");
+      luaL_setmetatable(L, "Complex_Type");
       return 1;
     }
     case LUA_TSTRING:
@@ -635,7 +629,7 @@ static int LuaComplexDiv(lua_State * L)
     {
       // first operator is of type (original variable)
       // read this variable and check what the second variable is
-      Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Lua.complex");
+      Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Complex_Type");
       switch (lua_type(L,len))
       {
         case LUA_TNIL:
@@ -662,7 +656,7 @@ static int LuaComplexDiv(lua_State * L)
           res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
           res->Re =  a->Re/b;
           res->Im =  a->Im/b;
-          luaL_setmetatable(L, "Lua.complex");
+          luaL_setmetatable(L, "Complex_Type");
           return 1;
         }
         case LUA_TSTRING:
@@ -673,33 +667,33 @@ static int LuaComplexDiv(lua_State * L)
         case LUA_TUSERDATA:
         {
           // (original variable) operator (user data)
-          if (luaL_testudata(L, len, "Lua.complex") != NULL)
+          if (luaL_testudata(L, len, "Complex_Type") != NULL)
           {
             // (original variable) operator (user data - complex)
             Complex16 *b, *res;
-            b = (Complex16 *) luaL_checkudata(L, len, "Lua.complex");
+            b = (Complex16 *) luaL_checkudata(L, len, "Complex_Type");
             res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
             res->Re = (a->Re * b->Re + a->Im * b->Im) / (Sqr(b->Im) + Sqr(b->Re));
             res->Im = (a->Im * b->Re - a->Re * b->Im) / (Sqr(b->Im) + Sqr(b->Re));
-            luaL_setmetatable(L, "Lua.complex");
+            luaL_setmetatable(L, "Complex_Type");
             return 1;
           }
-          if (luaL_testudata(L, len, "ssp.wavefunction") != NULL)
+          if (luaL_testudata(L, len, "Wavefunction_Type") != NULL)
           {
             // (original variable) operator (user data - wavefunction)
             return luaL_error(L, "Error: complex number divided by wavefunction\n");
           }
-          if (luaL_testudata(L, len, "ssp.operator") != NULL)
+          if (luaL_testudata(L, len, "Operator_Type") != NULL)
           {
             // (original variable) operator (user data - operator)
             return luaL_error(L, "Error: complex number divided by operator\n");
           }
-          if (luaL_testudata(L, len, "ssp.spectra") != NULL)
+          if (luaL_testudata(L, len, "Spectra_Type") != NULL)
           {
             // (original variable) operator (user data - spectra)
             uint32_t i,j;
             SpectraTypeArray *res, *b;
-            b = (SpectraTypeArray *) luaL_checkudata(L, len, "ssp.spectra");
+            b = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
             res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
             res->NSpectra = b->NSpectra;
             res->Spec = malloc(res->NSpectra * sizeof(SpectraType));
@@ -715,7 +709,7 @@ static int LuaComplexDiv(lua_State * L)
                 res->Spec[i].Im[j]= (a->Im*b->Spec[i].Re[j] - a->Re*b->Spec[i].Im[j])/(Sqr(b->Spec[i].Re[j])+Sqr(b->Spec[i].Im[j]));
               }
             }
-            luaL_setmetatable(L, "ssp.spectra");
+            luaL_setmetatable(L, "Spectra_Type");
             return 1;
           }
           return luaL_error(L, "Error: complex number divided by unrecognized userdata\n");
@@ -743,7 +737,6 @@ static int LuaComplexDiv(lua_State * L)
   }
 }
 
-
 static int LuaComplexPow(lua_State * L)
 {
   uint32_t len = (uint32_t)lua_gettop(L);
@@ -770,11 +763,11 @@ static int LuaComplexPow(lua_State * L)
       double a;
       Complex16 *b, *res;
       a = luaL_checknumber(L, 1);
-      b = (Complex16 *) luaL_checkudata(L, len, "Lua.complex");
+      b = (Complex16 *) luaL_checkudata(L, len, "Complex_Type");
       res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
       res->Re = exp(log(a) * b->Re) * cos(log(a) * b->Im);
       res->Im = exp(log(a) * b->Re) * sin(log(a) * b->Im);
-      luaL_setmetatable(L, "Lua.complex");
+      luaL_setmetatable(L, "Complex_Type");
       return 1;
     }
     case LUA_TSTRING:
@@ -802,7 +795,7 @@ static int LuaComplexPow(lua_State * L)
     {
       // first operator is of type (original variable)
       // read this variable and check what the second variable is
-      Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Lua.complex");
+      Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Complex_Type");
       switch (lua_type(L,len))
       {
         case LUA_TNIL:
@@ -833,7 +826,7 @@ static int LuaComplexPow(lua_State * L)
           zc = cpow(za,zb);
           res->Re=creal(zc);
           res->Im=cimag(zc);
-          luaL_setmetatable(L, "Lua.complex");
+          luaL_setmetatable(L, "Complex_Type");
           return 1;
         }
         case LUA_TSTRING:
@@ -844,32 +837,32 @@ static int LuaComplexPow(lua_State * L)
         case LUA_TUSERDATA:
         {
           // (original variable) operator (user data)
-          if (luaL_testudata(L, len, "Lua.complex") != NULL)
+          if (luaL_testudata(L, len, "Complex_Type") != NULL)
           {
             // (original variable) operator (user data - complex)
             Complex16 *res, *b;
             double complex za, zb, zc;
-            b = (Complex16 *) luaL_checkudata(L, len, "Lua.complex");
+            b = (Complex16 *) luaL_checkudata(L, len, "Complex_Type");
             res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
             za = a->Re + a->Im * I;
             zb = b->Re + b->Im * I;
             zc = cpow(za,zb);
             res->Re=creal(zc);
             res->Im=cimag(zc);
-            luaL_setmetatable(L, "Lua.complex");
+            luaL_setmetatable(L, "Complex_Type");
             return 1;
           }
-          if (luaL_testudata(L, len, "ssp.wavefunction") != NULL)
+          if (luaL_testudata(L, len, "Wavefunction_Type") != NULL)
           {
             // (original variable) operator (user data - wavefunction)
             return luaL_error(L, "Error: complex number to the power wavefunction\n");
           }
-          if (luaL_testudata(L, len, "ssp.operator") != NULL)
+          if (luaL_testudata(L, len, "Operator_Type") != NULL)
           {
             // (original variable) operator (user data - operator)
             return luaL_error(L, "Error: complex number to the power operator\n");
           }
-          if (luaL_testudata(L, len, "ssp.spectra") != NULL)
+          if (luaL_testudata(L, len, "Spectra_Type") != NULL)
           {
             // (original variable) operator (user data - spectra)
             return luaL_error(L, "Error: complex number to the power spectra\n");
@@ -902,26 +895,24 @@ static int LuaComplexPow(lua_State * L)
 static int LuaComplexUnm(lua_State * L)
 {
   Complex16 *res;
-  Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Lua.complex");
+  Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Complex_Type");
   res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
   res->Re = -a->Re;
   res->Im = -a->Im;
-  luaL_setmetatable(L, "Lua.complex");
+  luaL_setmetatable(L, "Complex_Type");
   return 1;
 }
-
 
 static int LuaComplexExp(lua_State * L)
 {
   Complex16 *res;
-  Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Lua.complex");
+  Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Complex_Type");
   res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
   res->Re = exp(a->Re) * cos(a->Im);
   res->Im = exp(a->Re) * sin(a->Im);
-  luaL_setmetatable(L, "Lua.complex");
+  luaL_setmetatable(L, "Complex_Type");
   return 1;
 }
-
 
 static int LuaComplexRe(lua_State * L)
 {
@@ -930,9 +921,9 @@ static int LuaComplexRe(lua_State * L)
     double a = luaL_checknumber(L, 1);
     lua_pushnumber(L, a);
   }
-  else if (luaL_testudata(L, 1, "Lua.complex") != NULL)
+  else if (luaL_testudata(L, 1, "Complex_Type") != NULL)
   {
-    Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Lua.complex");
+    Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Complex_Type");
     lua_pushnumber(L, a->Re);
   }
   else
@@ -948,9 +939,9 @@ static int LuaComplexIm(lua_State * L)
   {
     lua_pushnumber(L, 0);
   }
-  else if (luaL_testudata(L, 1, "Lua.complex") != NULL)
+  else if (luaL_testudata(L, 1, "Complex_Type") != NULL)
   {
-    Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Lua.complex");
+    Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Complex_Type");
     lua_pushnumber(L, a->Im);
   }
   else
@@ -960,14 +951,12 @@ static int LuaComplexIm(lua_State * L)
   return 1;
 }
 
-
 static int LuaComplexToString(lua_State * L)
 {
-  Complex16 *v = (Complex16 *) luaL_checkudata(L, 1, "Lua.complex");
+  Complex16 *v = (Complex16 *) luaL_checkudata(L, 1, "Complex_Type");
   lua_pushfstring(L, "(%f + %f I)", v->Re, v->Im);
   return 1;
 }
-
 
 static const struct luaL_Reg Complex_meta[] = {
   {"__index", LuaComplexIndex},
@@ -984,9 +973,9 @@ static const struct luaL_Reg Complex_meta[] = {
 
 
 static const struct luaL_Reg Complex_func[] = {
-  {"new", LuaComplexNew},
+  {"New", LuaComplexNew},
   {"I", LuaComplexI},
-  {"exp", LuaComplexExp},
+  {"Exp", LuaComplexExp},
   {"Re", LuaComplexRe},
   {"re", LuaComplexRe},
   {"Im", LuaComplexIm},
@@ -998,7 +987,7 @@ static const struct luaL_Reg Complex_func[] = {
 
 int luaopen_Complex(lua_State * L)
 {
-  luaL_newmetatable(L, "Lua.complex");
+  luaL_newmetatable(L, "Complex_Type");
   luaL_setfuncs(L, Complex_meta, 0);
   luaL_newlib(L, Complex_func);
   lua_setglobal(L, "Complex");
