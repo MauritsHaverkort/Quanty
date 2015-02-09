@@ -582,9 +582,6 @@ int32_t LuaCheckOptions(lua_State *L, int narg, LuaOptionsType *Options)
         {
           printf("ERROR: unrecognized type in LuaCheckOptions [%s]\n",Options[j].type);
         }
-        
-        //Options[j].variable = LuaReturnVariableType(L, -1, Options[j].type);
-        
         lua_pop(L,1);
       }
       j++;

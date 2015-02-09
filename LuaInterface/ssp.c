@@ -1127,24 +1127,11 @@ static int LuaCreateSpectra(lua_State *L)
 {
   struct
   {
-    uint32_t NTri;
-    double epsilon;
-    Bool restrictions;
-    DeterminantRestrictionType DeterminantRestrictions;
-    double Emin;
-    double Emax;
-    uint32_t NE;
-    double Gamma;
+    ConvergenceSettingsType Settings;
     uint32_t Npsi;
     uint32_t NT;
   } Options;
-  Options.NTri=200;
-  Options.epsilon=10000*DBL_EPSILON;
-  Options.restrictions=False;
-  Options.Emin=DBL_MAX;
-  Options.Emax=-DBL_MAX;
-  Options.NE=1000;
-  Options.Gamma=0;
+  Options.Settings=InitConvergenceSettings();
   SpectraTypeArray *Spec;
   TriDiagonalMatrixType *GTri;
   OperatorType *H,*T;
@@ -1152,13 +1139,13 @@ static int LuaCreateSpectra(lua_State *L)
   uint32_t i,iT,ipsi,len;
   double Eminpole,Emaxpole, *val, *psiEn, psiEntemp;
   LuaOptionsType LuaCreateSpectraOptions[]={
-    {"NTri","uint32_t",&(Options.NTri)},
-    {"epsilon","double",&(Options.epsilon)},
-    {"restrictions", "DeterminantRestrictionType", &(Options.DeterminantRestrictions)},
-    {"Emin","double",&(Options.Emin)},
-    {"Emax","double",&(Options.Emax)},
-    {"NE","uint32_t",&(Options.NE)},
-    {"Gamma","double",&(Options.Gamma)},
+    {"NTri","uint32_t",&(Options.Settings.NTri)},
+    {"epsilon","double",&(Options.Settings.epsilon)},
+    {"restrictions", "DeterminantRestrictionType", &(Options.Settings.restrictions)},
+    {"Emin","double",&(Options.Settings.Emin)},
+    {"Emax","double",&(Options.Settings.Emax)},
+    {"NE","uint32_t",&(Options.Settings.NE)},
+    {"Gamma","double",&(Options.Settings.Gamma)},
     {NULL, NULL, NULL}};
   /* check number of input parameters */
   len = (uint32_t)lua_gettop(L);
@@ -1190,13 +1177,12 @@ static int LuaCreateSpectra(lua_State *L)
   if(len==4)
   {
     LuaCheckOptions(L, -1, LuaCreateSpectraOptions);
-    if(Options.DeterminantRestrictions.N!=0)Options.restrictions=True;
   }
   /* calculate spectra in Tridiagonal form */
   GTri = malloc(Options.NT*Options.Npsi*sizeof(TriDiagonalMatrixType));
   for(i=0;i<Options.NT*Options.Npsi;i++)
   {
-    GTri[i].N=Options.NTri;
+    GTri[i].N=Options.Settings.NTri;
     InitTriDiagonalMatrix(&GTri[i]);
   }
   /* calculate groundstate energy */
@@ -1215,15 +1201,15 @@ static int LuaCreateSpectra(lua_State *L)
     /* loop over all wavefunctions */
     for(ipsi=0;ipsi<Options.Npsi;ipsi++)
     {
-      if(Options.restrictions)
+      if(Options.Settings.restrictions.N==0)
       {
-        OperatorPsiRestricted(T[iT], psi[ipsi], &Tpsi, Options.DeterminantRestrictions);
-        LanczosTriDiagonalizeRestricted(*H, Tpsi, Options.DeterminantRestrictions, Options.epsilon, &GTri[iT*Options.Npsi+ipsi], Max(Options.Gamma,Options.epsilon));
+        OperatorPsi(T[iT], psi[ipsi], &Tpsi);
+        LanczosTriDiagonalize(*H, Tpsi, Options.Settings.epsilon, &GTri[iT*Options.Npsi+ipsi], Max(Options.Settings.Gamma,Options.Settings.epsilon));
       }
       else
       {
-        OperatorPsi(T[iT], psi[ipsi], &Tpsi);
-        LanczosTriDiagonalize(*H, Tpsi, Options.epsilon, &GTri[iT*Options.Npsi+ipsi], Max(Options.Gamma,Options.epsilon));
+        OperatorPsiRestricted(T[iT], psi[ipsi], &Tpsi, Options.Settings.restrictions);
+        LanczosTriDiagonalizeRestricted(*H, Tpsi, Options.Settings.restrictions, Options.Settings.epsilon, &GTri[iT*Options.Npsi+ipsi], Max(Options.Settings.Gamma,Options.Settings.epsilon));
       }
     }
   }
@@ -1231,29 +1217,29 @@ static int LuaCreateSpectra(lua_State *L)
   /* get eigenvalues of all Tri diagonal matrices and set smallest and largest eigenvalue */
   Eminpole=DBL_MAX;
   Emaxpole=-DBL_MAX;
-  val=malloc((Options.NTri)*sizeof(double));
+  val=malloc((Options.Settings.NTri)*sizeof(double));
   for(i=0;i<Options.NT*Options.Npsi;i++)
   {
     TriDiagonalMatrixToEigenvalues(GTri[i], val);
     if((val[0]-psiEn[i])<Eminpole)Eminpole=val[0]-psiEn[i];
-    if((val[Options.NTri-1]-psiEn[i])>Emaxpole)Emaxpole=val[Options.NTri-1]-psiEn[i];
+    if((val[Options.Settings.NTri-1]-psiEn[i])>Emaxpole)Emaxpole=val[Options.Settings.NTri-1]-psiEn[i];
   }
   /* if Emin=DBL_MAX or Emax=-DBL_MAX or Gamma==0 determine these */
-  if(Options.Emin== DBL_MAX) Options.Emin = Eminpole - 0.125 * (Emaxpole-Eminpole);
-  if(Options.Emax==-DBL_MAX) Options.Emax = Emaxpole + 0.125 * (Emaxpole-Eminpole);
-  if(Options.Gamma==0) Options.Gamma = 10*(Options.Emax-Options.Emin)/((double)Options.NE);
+  if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin = Eminpole - 0.125 * (Emaxpole-Eminpole);
+  if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax = Emaxpole + 0.125 * (Emaxpole-Eminpole);
+  if(Options.Settings.Gamma==0) Options.Settings.Gamma = 10*(Options.Settings.Emax-Options.Settings.Emin)/((double)Options.Settings.NE);
   /* transform tridiagonal form to spectral form */
   Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
   luaL_setmetatable(L, "Spectra_Type");
   Spec->NSpectra=Options.NT*Options.Npsi;
   Spec->Spec=malloc(Spec->NSpectra*sizeof(SpectraType));
-  Spec->Spec[0].N=Options.NE;
-  Spec->Spec[0].Emin=Options.Emin;
-  Spec->Spec[0].Emax=Options.Emax;
-  Spec->Spec[0].dE=(Options.Emax-Options.Emin)/((double)Options.NE);
+  Spec->Spec[0].N=Options.Settings.NE;
+  Spec->Spec[0].Emin=Options.Settings.Emin;
+  Spec->Spec[0].Emax=Options.Settings.Emax;
+  Spec->Spec[0].dE=(Options.Settings.Emax-Options.Settings.Emin)/((double)Options.Settings.NE);
   Spec->Spec[0].EminPole=Eminpole;
   Spec->Spec[0].EmaxPole=Emaxpole;
-  Spec->Spec[0].Gamma=Options.Gamma;
+  Spec->Spec[0].Gamma=Options.Settings.Gamma;
   strcpy(Spec->Spec[0].Name, "Spec");
   for(i=0;i<Spec->NSpectra;i++)
   {
@@ -1397,38 +1383,25 @@ static int LuaCreateFluorescenceYield(lua_State *L)
 {
   struct
   {
-    uint32_t NTri;
-    double epsilon;
-    Bool restrictions;
-    DeterminantRestrictionType DeterminantRestrictions;
-    double Emin;
-    double Emax;
-    uint32_t NE;
-    double Gamma;
+    ConvergenceSettingsType Settings;
     uint32_t Npsi;
     uint32_t NT1;
     uint32_t NT2;
   } Options;
-  Options.NTri=200;
-  Options.epsilon=10000*DBL_EPSILON;
-  Options.restrictions=False;
-  Options.Emin=DBL_MAX;
-  Options.Emax=-DBL_MAX;
-  Options.NE=1000;
-  Options.Gamma=0;
+  Options.Settings=InitConvergenceSettings();
   SpectraTypeArray *Spec;
   OperatorType *H,*T1, *T2;
   WaveFunctionType *psi;
   uint32_t iT,ipsi,len;
   double *psiEn;
   LuaOptionsType LuaCreateSpectraOptions[]={
-    {"NTri","uint32_t",&(Options.NTri)},
-    {"epsilon","double",&(Options.epsilon)},
-    {"restrictions", "DeterminantRestrictionType", &(Options.DeterminantRestrictions)},
-    {"Emin","double",&(Options.Emin)},
-    {"Emax","double",&(Options.Emax)},
-    {"NE","uint32_t",&(Options.NE)},
-    {"Gamma","double",&(Options.Gamma)},
+    {"NTri","uint32_t",&(Options.Settings.NTri)},
+    {"epsilon","double",&(Options.Settings.epsilon)},
+    {"restrictions", "DeterminantRestrictionType", &(Options.Settings.restrictions)},
+    {"Emin","double",&(Options.Settings.Emin)},
+    {"Emax","double",&(Options.Settings.Emax)},
+    {"NE","uint32_t",&(Options.Settings.NE)},
+    {"Gamma","double",&(Options.Settings.Gamma)},
     {NULL, NULL, NULL}};
 
   /* check number of input parameters */
@@ -1470,7 +1443,6 @@ static int LuaCreateFluorescenceYield(lua_State *L)
   if(len==5)
   {
     LuaCheckOptions(L, -1, LuaCreateSpectraOptions);
-    if(Options.DeterminantRestrictions.N!=0)Options.restrictions=True;
   }
   /* allocate spectra and and pointer to return matrix on lua stack */
   Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
@@ -1489,25 +1461,25 @@ static int LuaCreateFluorescenceYield(lua_State *L)
     /* loop over all wavefunctions */
     for(ipsi=0;ipsi<Options.Npsi;ipsi++)
     {
-      Spec->Spec[Options.NT2*(iT*Options.Npsi+ipsi)].N=Options.NE;
+      Spec->Spec[Options.NT2*(iT*Options.Npsi+ipsi)].N=Options.Settings.NE;
       if(ipsi==0)
       {
-        Spec->Spec[Options.NT2*(iT*Options.Npsi+ipsi)].Emin=Options.Emin;
-        Spec->Spec[Options.NT2*(iT*Options.Npsi+ipsi)].Emax=Options.Emax;
+        Spec->Spec[Options.NT2*(iT*Options.Npsi+ipsi)].Emin=Options.Settings.Emin;
+        Spec->Spec[Options.NT2*(iT*Options.Npsi+ipsi)].Emax=Options.Settings.Emax;
       }
       else
       {
         Spec->Spec[Options.NT2*(iT*Options.Npsi+ipsi)].Emin=Spec->Spec[Options.NT2*(iT*Options.Npsi)].Emin;
         Spec->Spec[Options.NT2*(iT*Options.Npsi+ipsi)].Emax=Spec->Spec[Options.NT2*(iT*Options.Npsi)].Emax;
       }
-      Spec->Spec[Options.NT2*(iT*Options.Npsi+ipsi)].Gamma=Options.Gamma;
-      if(Options.restrictions)
+      Spec->Spec[Options.NT2*(iT*Options.Npsi+ipsi)].Gamma=Options.Settings.Gamma;
+      if(Options.Settings.restrictions.N==0)
       {
-        FluorescenceYieldRestricted(*H, Options.DeterminantRestrictions, T1[iT], T2, Options.NT2, psi[ipsi], psiEn[ipsi], Options.epsilon, Options.NTri, &(Spec->Spec[Options.NT2*(iT*Options.Npsi+ipsi)]));
+        FluorescenceYield(*H, T1[iT], T2, Options.NT2, psi[ipsi], psiEn[ipsi], Options.Settings.epsilon, Options.Settings.NTri, &(Spec->Spec[Options.NT2*(iT*Options.Npsi+ipsi)]));
       }
       else
       {
-        FluorescenceYield(*H, T1[iT], T2, Options.NT2, psi[ipsi], psiEn[ipsi], Options.epsilon, Options.NTri, &(Spec->Spec[Options.NT2*(iT*Options.Npsi+ipsi)]));
+        FluorescenceYieldRestricted(*H, Options.Settings.restrictions, T1[iT], T2, Options.NT2, psi[ipsi], psiEn[ipsi], Options.Settings.epsilon, Options.Settings.NTri, &(Spec->Spec[Options.NT2*(iT*Options.Npsi+ipsi)]));
       }
     }
   }
