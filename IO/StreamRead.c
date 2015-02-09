@@ -23,6 +23,19 @@ uint32_t StreamReadAtom(AtomType * O, FILE * stream)
     fscanf(stream, "%i", &(O->shelldegeneracy[i]));
   }
   fgets(comments, 1000, stream);
+    
+  O->ShellName = malloc(O->Nshell * sizeof(char*));
+  O->OrbitalName = malloc(O->Nshell * sizeof(char**));
+  for (i=0; i < O->Nshell; i++)
+  {
+    O->ShellName[i] = malloc(MAXStrLength*sizeof(char));
+    O->OrbitalName[i] = malloc(O->shelldegeneracy[i]*sizeof(char*));
+    for (j=0; j < O->shelldegeneracy[i]; j++)
+    {
+      O->OrbitalName[i][j] = malloc(MAXStrLength*sizeof(char));
+    }
+  }
+    
   return 0;
 }
 
@@ -512,7 +525,8 @@ uint32_t StreamReadListOfPolesUndetermined(ListOfPoles * O, FILE * stream)
 {
   char   InputType[255];
   char   comments[1000];
-  fscanf(stream, "%s", InputType);
+  double mu;
+  fscanf(stream, "%s %lf", InputType, &mu);
   fgets(comments, 1000, stream);
   if (strncmp(InputType, "tri", 3) == 0)
   {
@@ -537,6 +551,7 @@ uint32_t StreamReadListOfPolesUndetermined(ListOfPoles * O, FILE * stream)
     printf("Expect the first line of the file to contain the format \"tri\", \"and\", or \"lp\".\n");
     return 1;
   }
+  O->mu = mu;
   return 0;
 }
 
