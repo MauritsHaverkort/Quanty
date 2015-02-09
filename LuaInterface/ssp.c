@@ -1521,7 +1521,6 @@ static int LuaCreateFluorescenceYield(lua_State *L)
 
 static int LuaEvolveToGroundstate(lua_State * L)
 {
-  void *buff;
   struct
   {
     uint32_t Npsi;
