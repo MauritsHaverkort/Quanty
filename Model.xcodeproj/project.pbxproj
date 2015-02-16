@@ -124,7 +124,7 @@
 		4C03B025186E376A004C2B7B /* TightBinding */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = TightBinding; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C03B03118706F30004C2B7B /* StuttgartNMTO.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = StuttgartNMTO.c; sourceTree = "<group>"; };
 		4C0877991737CDE600CE9AB4 /* WaveFunctionPerturbationArithmetic.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = WaveFunctionPerturbationArithmetic.c; sourceTree = "<group>"; };
-		4C0B553D196752C2000B8E97 /* LuaInterface */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = LuaInterface; sourceTree = BUILT_PRODUCTS_DIR; };
+		4C0B553D196752C2000B8E97 /* Quanty */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Quanty; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C0B553F196752C3000B8E97 /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; lineEnding = 0; path = main.c; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
 		4C0B554719675377000B8E97 /* includeLua.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = includeLua.h; sourceTree = "<group>"; };
 		4C0B554819675377000B8E97 /* lapi.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = lapi.c; sourceTree = "<group>"; };
@@ -525,7 +525,7 @@
 				4C79F5D817B53C8000189682 /* Hubart */,
 				4C03B025186E376A004C2B7B /* TightBinding */,
 				4C6925C418D869FE00E6FA6F /* MartinPESXAS */,
-				4C0B553D196752C2000B8E97 /* LuaInterface */,
+				4C0B553D196752C2000B8E97 /* Quanty */,
 				4C4637D819C0726B00EB0DB0 /* Robert */,
 			);
 			name = Products;
@@ -768,9 +768,9 @@
 			productReference = 4C03B025186E376A004C2B7B /* TightBinding */;
 			productType = "com.apple.product-type.tool";
 		};
-		4C0B553C196752C2000B8E97 /* LuaInterface */ = {
+		4C0B553C196752C2000B8E97 /* Quanty */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 4C0B5543196752C3000B8E97 /* Build configuration list for PBXNativeTarget "LuaInterface" */;
+			buildConfigurationList = 4C0B5543196752C3000B8E97 /* Build configuration list for PBXNativeTarget "Quanty" */;
 			buildPhases = (
 				4C0B5539196752C2000B8E97 /* Sources */,
 				4C0B553A196752C2000B8E97 /* Frameworks */,
@@ -780,9 +780,9 @@
 			);
 			dependencies = (
 			);
-			name = LuaInterface;
+			name = Quanty;
 			productName = LuaInterface;
-			productReference = 4C0B553D196752C2000B8E97 /* LuaInterface */;
+			productReference = 4C0B553D196752C2000B8E97 /* Quanty */;
 			productType = "com.apple.product-type.tool";
 		};
 		4C2AAA181632655300138620 /* Model */ = {
@@ -932,7 +932,7 @@
 				4C79F5D717B53C8000189682 /* Hubart */,
 				4C03B024186E376A004C2B7B /* TightBinding */,
 				4C6925C318D869FE00E6FA6F /* MartinPESXAS */,
-				4C0B553C196752C2000B8E97 /* LuaInterface */,
+				4C0B553C196752C2000B8E97 /* Quanty */,
 				4C4637D719C0726B00EB0DB0 /* Robert */,
 			);
 		};
@@ -1063,18 +1063,21 @@
 				CLANG_WARN_ENUM_CONVERSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CODE_SIGN_IDENTITY = "";
 				DEAD_CODE_STRIPPING = NO;
+				DEPLOYMENT_POSTPROCESSING = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
 				);
+				GCC_UNROLL_LOOPS = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = NO;
 				MACOSX_DEPLOYMENT_TARGET = 10.9;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				VERSIONING_SYSTEM = "";
+				VERSIONING_SYSTEM = "apple-generic";
 			};
 			name = Debug;
 		};
@@ -1089,15 +1092,19 @@
 				CLANG_WARN_ENUM_CONVERSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CODE_SIGN_IDENTITY = "";
 				DEAD_CODE_STRIPPING = YES;
+				DEPLOYMENT_POSTPROCESSING = YES;
 				ENABLE_NS_ASSERTIONS = NO;
+				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_UNROLL_LOOPS = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = NO;
 				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				VERSIONING_SYSTEM = "";
+				VERSIONING_SYSTEM = "apple-generic";
 			};
 			name = Release;
 		};
@@ -1382,7 +1389,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		4C0B5543196752C3000B8E97 /* Build configuration list for PBXNativeTarget "LuaInterface" */ = {
+		4C0B5543196752C3000B8E97 /* Build configuration list for PBXNativeTarget "Quanty" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				4C0B5544196752C3000B8E97 /* Debug */,
