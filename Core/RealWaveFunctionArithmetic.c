@@ -504,8 +504,7 @@ uint32_t RealWaveFunctionAddMultipliedUnionBasis(WaveFunctionType * const a, con
   uint32_t i, j;
   for (i = b.N; i != 0; --i)
   {
-    if (RealWaveFunctionAddElement(a, &b.Determinant[BlokElementDet(i, b.NWord, 0)], alpha * b.ValueRe[BlokElement(i)])
-        != 0)
+    if (RealWaveFunctionAddElement(a, &b.Determinant[BlokElementDet(i, b.NWord, 0)], alpha * b.ValueRe[BlokElement(i)])!= 0)
     {                           /* Allocation of new memory for a failed Remove all elements added so far and return 1 */
       for (j = b.N; j != i; --j)
       {

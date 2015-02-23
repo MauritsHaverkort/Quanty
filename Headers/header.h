@@ -41,6 +41,7 @@ uint32_t GlobalVerbosity=0xF;
 #include "core.h"
 #include "io.h"
 #include "core_basic_math.h"
+#include "lua.h"
 
 
 /**********************************************************/

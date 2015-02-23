@@ -38,12 +38,27 @@ double Factorial2(int a)
  */
 uint32_t BinomialCoefficient(uint32_t n, uint32_t k)
 {
+  if(n<k) return 0;
   uint32_t result = 1, i;
   for (i = 1 + Max(k, n - k); i <= n; i++)
   {
     result *= i;
   }
   for (i = 1; i <= Min(k, n - k); i++)
+  {
+    result /= i;
+  }
+  return result;
+}
+double BinomialCoefficientDouble(uint32_t n, uint32_t k)
+{
+  if(n<k) return 0;
+  double result = 1, i;
+  for (i = 1 + Max(k, n - k); i < n+0.5; i++)
+  {
+    result *= i;
+  }
+  for (i = 1; i < Min(k, n - k)+0.5; i++)
   {
     result /= i;
   }

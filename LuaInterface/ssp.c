@@ -12,25 +12,32 @@ static int LuaHelp(lua_State *L)
   if(len==0)
   {
     printf("-------------------------------------------------------------------------\n");
-    printf("-          solid state physics model library  - lua interface           -\n");
-    printf("-          (c) Maurits W. Haverkort                                     -\n");
-    printf("-          http://www.solstatphys.org                                   -\n");
+    printf("-          Quanty a script language to solve quantum mechanics          -\n");
+    printf("-          (c) 1995-2015 All rights reserved                            -\n");
+    printf("-          Maurits W. Haverkort                                         -\n");
+    printf("-          http://www.quanty.org                                        -\n");
     printf("-------------------------------------------------------------------------\n");
     printf("\n\n");
-    printf("Available functions\n");
+    printf("The script language is based on Lua (www.lua.org) with several modifications\nThe standard Lua functions and extensions should work.\n");
+    printf("\n\n");
+    printf("Available functions in Quanty are:\n");
     printf("\n");
-    printf("Help()\n");
+    printf("Help() or Help(FunctionName_string)\n");
     printf("  - shows this file\n");
     printf("  - excepts as input one of the other functions in order to show help on that function\n");
     printf("  - example: Help(\"NewOperator\");\n");
     printf("\n");
-    printf("NewOperator()\n");
-    printf("  - creates a new operator\n");
-    printf("  - expects as input on the first position a string describing the type of operator\n");
-    printf("  - other parameters depend on the type of operator defined in the first string\n");
-    printf("  - example: NewOperator(\"Sz\", NFermion, IndexUp, IndexDn);\n");
-    printf("\n");
-    printf("PotentialExpandedOnClm(\"Oh\",2,{0.6,-0.4})\n");
+    printf("Verbosity(_integer)\n");
+    printf("  - Set the amount of output the program produces\n");
+    printf("  - Verbosity(0) suppresses all output, Verbosity(0xFFFF) shows maximum output\n");
+    printf("TimeStart(Name_string)\n");
+    printf("  - Starts a timing sequence with the name \"Name\"\n");
+    printf("TimeEnd(string_)\n");
+    printf("  - Ends a timing sequence with the name \"Name\"\n");
+    printf("  - A timing sequence with the same name should have been started otherwise an error is produced\n");
+    printf("TimePrint()\n");
+    printf("  - Prints an overview of all timings\n");
+    printf("PotentialExpandedOnClm(PointGroupName_string,l_integer,Energy_table_real)\n");
     printf("  - creates a list representing a potential expanded on spherical Harmonics for a given symmetry and eigen energy of the irreducible representations\n");
     printf("  - The potential V(theta, phi) is given as:\n");
     printf("  - V(theta, phi) = sum_k,m A_{k,m} Y_km(theta,phi)\n");
@@ -39,73 +46,127 @@ static int LuaHelp(lua_State *L)
     printf("  - PotentialExpandedOnClm(\"Oh\",2,{0.6,-0.4});\n");
     printf("  - for a potential in cubic symmetry acting on the d-shell with the energy of the eg's as 0.6 and t2g's at -0.4 (10Dq=1.0)\n");
     printf("\n");
-    printf("NewWavefunction()\n");
+    printf("NewOperator(Name_string,OtherSettings___)\n");
+    printf("  - creates a new operator\n");
+    printf("  - expects as input on the first position a string describing the type of operator\n");
+    printf("  - other parameters depend on the type of operator defined in the first string\n");
+    printf("  - example: NewOperator(\"Sz\", NFermionicModes, IndexUp, IndexDn);\n");
+    printf("\n");
+    printf("NewWavefunction(NFermionicModes_integer,NBosonicModes_integer,{{Determinant_string,Prefactor_Complex}, ...})\n");
     printf("  - creates a new wavefunction\n");
-    printf("  - expects as input the number of fermions, number of bosons, a table of determinants with the prefactor\n");
-    printf("  - example: NewWavefunction(10,0,{{{0x80,0x00},1},{{0x04,0x00},1}});\n");
-    printf("  - example: NewWavefunction(10,0,{{\"1010101010\",1},{\"0101010101\",1}});\n");
+    printf("  - expects as input the number of fermionic modes, number of bosonic modes in the one particle basis, and a table of determinants with the prefactor\n");
+    printf("  - example: NewWavefunction(10,0,{{{0x80,0x00},0.7},{{0x04,0x00},0.7}});\n");
+    printf("  - example: NewWavefunction(10,0,{{\"1010101010\",0.7},{\"0101010101\",0.7}});\n");
     printf("\n");
-    printf("Copy() or Clone()\n");
-    printf("  - creats a copy of a wavefunction or operator\n");
-    printf("  - expects as input an object, returns a copy of that object\n");
-    printf("  - example: Copy(psi);\n");
+    printf("DensityMatrix(psi_wavefunction, index_table_integer)\n");
+    printf("  - calculated the density matrix including the spin-orbitals at position given by the index table\n");
+    printf("Copy(A_freetype) or Clone(A_freetype)\n");
+    printf("  - creates a copy of A\n");;
     printf("\n");
-    printf("Conjugate()\n");
-    printf("  - creats a copy of a wavefunction or operator and conjugates this copy\n");
-    printf("  - expects as input an object, returns a copy of that object\n");
-    printf("  - example: Conjugate(psi);\n");
+    printf("Conjugate(A_freetype)\n");
+    printf("  - creats a copy A and conjugates this copy\n");    printf("\n");
+    printf("ConjugateTranspose(A_freetype)\n");
+    printf("  - creates a copy of A and conjugates transposes this copy\n");
     printf("\n");
-    printf("ConjugateTranspose()\n");
-    printf("  - creats a copy of a wavefunction or operator and conjugates transposes this copy\n");
-    printf("  - expects as input an object, returns a copy of that object\n");
-    printf("  - example: ConjugateTranspose(psi);\n");
-    printf("\n");
-    printf("Transpose()\n");
-    printf("  - creats a copy of a wavefunction or operator and transposes this copy\n");
-    printf("  - expects as input an object, returns a copy of that object\n");
-    printf("  - example: Transpose(psi);\n");
-    printf("Rotate()\n");
-    printf("  - Given an operator on a basis of N fermions + M Bosons\n");
-    printf("  - and a matrix of size N+M\n");
+    printf("Transpose(A_freetype)\n");
+    printf("  - creates a copy of A and transposes this copy\n");
+    printf("Rotate(psi_wavefunction, U_table_complex) or Rotate(O_operator, U_table_complex)\n");
+    printf("  - Given an operator or a wave-function on a basis of N fermionic modex + M bosonic modes\n");
+    printf("  - and a matrix U of size N+M\n");
     printf("  - creates a new operator on a rotated basis\n");
     printf("  - example: Rotate(Operator,RotationMatrix);\n");
     printf("\n");
-    printf("EvolveToGroundstate()\n");
-    printf("  - calculates eigenfunctions of the Hamiltonian, starting from the specified state\n");
-    printf("  - expects as input an operator and a (list of) wavefunction(s), a list of options on the last position is allowed\n");
-    printf("  - example EvolveToGroundstate(OppSy,{psi1,psi2});\n");
-    printf("Eigensystem()\n");
+    printf("Eigensystem(H_operator, StartRestrictions_restrictions, N_integer) or Eigensystem(H_operator, psi_wavefunction_table)\n");
     printf("  - calculates the lowest N eigenfunctions of a given operator\n");
-    printf("  - expects as input an operator and either a list of starting functions or a set of restrictions specifying the starting point\n");
     printf("  - example Eigensystem(OppSy,{psi1,psi2});\n");
     printf("  - example Eigensystem(OppSy,Restrictions,Nspi);\n");
     printf("\n");
-    printf("CreateSpectra()\n");
+    printf("CreateSpectra(H_operator, T_operator(_table), psi_wavefunction(_table))\n");
     printf("  - calculates spectra of a giving Hamiltonian, starting from the specified state and using a specific transition operator\n");
-    printf("  - expects as input an operator a (list of) transition operator(s) and a (list of) wavefunction(s), a list of options on the last position is allowed\n");
-    printf("  - example CreateSpectra(OppH,{T1,T2},{psi1,psi2});\n");
+    printf("  - expects as input an operator a (list of) transition operator(s) and a (list of) wavefunction(s)\n");
+    printf("  - The program calculates <psi | T^+ 1/(w-H+i G/2) T | psi>)\n");
     printf("\n");
-    printf("CreateFluorescenceYield()\n");
+    printf("CreateFluorescenceYield(H_operator, T1_operator(_table), T2_operator(_table), psi_wavefunction(_table)))\n");
     printf("  - calculates the fluorescence yield spectra\n");
-    printf("  - calculated is < i | T1^+ G^+ T2 T2^+ G T1 | i>\n");
-    printf("  - expects as input an operator a (list of) transition operator(s) T1 a (list of) transition operator(s) T2^+ and a (list of) wavefunction(s), a list of options on the last position is allowed\n");
-    printf("  - example CreateFluorescenceYield(OppH,{T1a,T1b},{T2a,T2b},{psi1,psi2});\n");
+    printf("  - calculated is <psi | T1^+ 1/(w-H-i G/2) T2 T2^+ 1/(w-H+i G/2) T1 | psi>\n");
+    printf("  - expects as input an operator a (list of) transition operator(s) T1 a (list of) transition operator(s) T2^+ and a (list of) wavefunction(s)\n");
+    printf("\n");
+    printf("CreateResonantSpectra(H1_operator, H2_operator, T1_operator(_table), T2_operator(_table), psi_wavefunction(_table)))\n");
+    printf("  - calculates the fluorescence yield spectra\n");
+    printf("  - calculated is <psi | T1^+ 1/(w-H1-i G/2) T2 1/(w-H2+i G/2) T2^+ 1/(w-H1+i G/2) T1 | psi>\n");
+    printf("  - expects as input two operators a (list of) transition operator(s) T1 a (list of) transition operator(s) T2^+ and a (list of) wavefunction(s)\n");
     printf("\n");
     
     printf("\n\n");
     printf("Available objects\n");
     printf("\n");
-    printf("operator\n");
+    printf("Operator\n");
     printf("  - stores a quantum mechanical operator based on second quantization\n");
+    printf("  - methods:\n");
+    printf("    - O.Name()\n");
+    printf("       - set or return the name of the operator\n");
+    printf("    - O.Print()\n");
+    printf("       - print the operator\n");
+    printf("    - O.Chop()\n");
+    printf("       - remove small numbers from the operator\n");
+    printf("    - O.Conjugate()\n");
+    printf("       - conjugate the operator\n");
+    printf("    - O.ConjugateTranspose()\n");
+    printf("       - conjugate transpose the operator\n");
+    printf("    - O.Transpose()\n");
+    printf("       - transpose the operator\n");
     printf("\n");
-    printf("wavefunction\n");
+    printf("Wavefunction\n");
     printf("  - stores a wavefunction\n");
+    printf("  - methods:\n");
+    printf("    - psi.Name()\n");
+    printf("       - set or return the name of the operator\n");
+    printf("    - psi.Print()\n");
+    printf("       - print the operator\n");
     printf("\n");
-    printf("complex\n");
+    printf("Complex\n");
     printf("  - stores a complex number\n");
+    printf("  - methods:\n");
+    printf("    - z.re\n");
+    printf("       - set or return the real part note that z must be of type complex\n");
+    printf("    - z.im\n");
+    printf("       - set or return the imaginary part note that z must be of type complex\n");
+    printf("  - functions:\n");
+    printf("    - Complex.Re(z_complex)\n");
+    printf("       - return the real part of z\n");
+    printf("    - Complex.Im(z_complex)\n");
+    printf("       - return the imaginary part of z\n");
     printf("\n");
     printf("spectra\n");
     printf("  - stores a spectral function\n");
+    printf("  - methods:\n");
+    printf("    - spec.Print()\n");
+    printf("       - print the spectra\n");
+    printf("    - spec.Element(i_integer_table)\n");
+    printf("       - Return new spectra corresponding to the spectra at position i\n");
+    printf("    - spec.Sum(alpha_double_table)\n");
+    printf("       - Return new spectra corresponding to the sum of the spectra using the pre-factors as given in alpha\n");
+    printf("    - spec.Broaden(FWHMGaus_double, FMHMLorentz_double)\n");
+    printf("       - Broaden the spectra by a Gaussian and Lorentzian\n");
+    printf("    - spec.Shift(x_double)\n");
+    printf("       - add x to the energy\n");
+    printf("    - spec.MultiplyByEnergy()\n");
+    printf("       - multiply the intensity by the energy\n");
+    printf("  - functions:\n");
+    printf("    - Spectra.Copy() or Spectra.Clone()\n");
+    printf("       - copy the spectra\n");
+    printf("    - Spectra.Element(i_integer_table)\n");
+    printf("       - Return new spectra corresponding to the spectra at position i\n");
+    printf("    - Spectra.Sum(alpha_double_table)\n");
+    printf("       - Return new spectra corresponding to the sum of the spectra using the pre-factors as given in alpha\n");
+    printf("    - Spectra.Broaden(FWHMGaus_double, FMHMLorentz_double)\n");
+    printf("       - Return new spectra corresponding to the broadened spectra by a Gaussian and Lorentzian\n");
+    printf("    - Spectra.Shift(x_double)\n");
+    printf("       - add x to the energy\n");
+    printf("    - Spectra.MultiplyByEnergy()\n");
+    printf("       - multiply the intensity by the energy\n");
+    printf("    - Spectra.ToTable()\n");
+    printf("       - return a table representing the spectra\n");
     printf("\n");
     
   }
@@ -118,7 +179,7 @@ static int LuaHelp(lua_State *L)
       printf("  - creates a new operator\n");
       printf("  - expects as input on the first position a string describing the type of operator\n");
       printf("  - other parameters depend on the type of operator defined in the first string\n");
-      printf("  - possible operators and aditional parameters are:\n");
+      printf("  - possible operators and additional parameters are:\n");
       printf("     - \"Coulomb\" or \"U\"\n");
       printf("       - Lindex Up : array of length 2l+1 of integers defining the position of ml=-l to ml=l with spin up\n");
       printf("       - Lindex Dn : array of length 2l+1 of integers defining the position of ml=-l to ml=l with spin down\n");
@@ -217,7 +278,7 @@ static int LuaHelp(lua_State *L)
       printf("  - IndexUp={0,1,2,3,4};\n");
       printf("  - IndexDn={5,6,7,8,9};\n");
       printf("  - F0=20; F2=10; F4=6.25;\n");
-      printf("  - F={F0,F2,F4}");
+      printf("  - F={F0,F2,F4}\n");
       printf("  - OppSz = NewOperator(\"Sz\", IndexUp, IndexDn);\n");
       printf("  - OppU  = NewOperator(\"U\", IndexUp, IndexDn, F);\n");
       printf("\n");
@@ -231,12 +292,12 @@ static int LuaHelp(lua_State *L)
       printf("  - expects as input the number of fermions, number of bosons, a table of determinants with the prefactor\n");
       printf("  - an optional 4-th input number is NBitsKey\n");
       printf("    - number of elements in the Hash lookup table. (2^NBitsKey)\n");
-      printf("    - This number should be larger than the number of Determinants in the basis for optimal preformance\n");
+      printf("    - This number should be larger than the number of Determinants in the basis for optimal performance\n");
       printf("    - Standard value is 16 (65 536) which works good for small calculations upto basis sets of 25 000\n");
-      printf("    - If more determinants are needed it is recommanded to enlarge\n");
+      printf("    - If more determinants are needed it is recommended to enlarge\n");
       printf("    - 20 (  1 048 576) for basis sets upto    500 000\n");
       printf("    - 24 ( 16 777 216) for basis sets upto 10 000 000\n");
-      printf("    - for even larger basis sets argitecture depenent tests are advised.\n");
+      printf("    - for even larger basis sets architecture dependent tests are advised.\n");
       printf("    - note that results are independent of this value, only calculation time and memory requirement changes.\n");
       printf("\n");
       printf("  - example: A = NewWavefunction(10,0,{{\"1010101010\",1}});\n");
@@ -246,7 +307,7 @@ static int LuaHelp(lua_State *L)
     if ((strcmp(Help, "Copy") == 0)||(strcmp(Help, "Clone") == 0))
     {
       printf("Copy() or Clone()\n");
-      printf("  - creats a copy of a wavefunction or operator\n");
+      printf("  - creates a copy of a wavefunction or operator\n");
       printf("  - expects as input an object, returns a copy of that object\n");
       printf("  - note that \"=\" often does not what you want.\n");
       printf("  - A=B for operators and wave-functions copies a pointer to the object.\n");
@@ -259,7 +320,7 @@ static int LuaHelp(lua_State *L)
     if ((strcmp(Help, "Conjugate") == 0))
     {
       printf("Conjugate() or C()\n");
-      printf("  - creats a copy of a wavefunction or operator and conjugates this copy\n");
+      printf("  - creates a copy of a wavefunction or operator and conjugates this copy\n");
       printf("  - expects as input an object, returns a copy of that object\n");
       printf("\n");
       printf("  - example: A=Conjugate(B);\n");
@@ -269,7 +330,7 @@ static int LuaHelp(lua_State *L)
     if ((strcmp(Help, "ConjugateTranspose") == 0))
     {
       printf("ConjugateTranspose()\n");
-      printf("  - creats a copy of a wavefunction or operator and conjugates transposes this copy\n");
+      printf("  - creates a copy of a wavefunction or operator and conjugates transposes this copy\n");
       printf("  - expects as input an object, returns a copy of that object\n");
       printf("\n");
       printf("  - example: A=ConjugateTranspose(B);\n");
@@ -279,7 +340,7 @@ static int LuaHelp(lua_State *L)
     if ((strcmp(Help, "Transpose") == 0))
     {
       printf("Transpose()\n");
-      printf("  - creats a copy of a wavefunction or operator and transposes this copy\n");
+      printf("  - creates a copy of a wavefunction or operator and transposes this copy\n");
       printf("  - expects as input an object, returns a copy of that object\n");
       printf("\n");
       printf("  - example: A=Transpose(B);\n");
@@ -325,27 +386,27 @@ static int LuaHelp(lua_State *L)
       printf("    - look at EvolveToGroundstate if one wants to track a specific state\n");
       printf("  - or\n");
       printf("    - a set of restrictions defining the starting point (number of electrons, filled core shells)\n");
-      printf("    - the number of lowest eigen states to calculate");
-      printf("  - aditional options can be given\n");
+      printf("    - the number of lowest eigen states to calculate\n");
+      printf("  - additional options can be given\n");
       printf("\n");
       printf("  - options are:\n");
       printf("    - \"zero\"\n");
-      printf("      - Determins how far and good the states are converged. Standard setting 100*DBL_EPSILON, should not be smaller than DBL_EPSILON\n");
+      printf("      - Determines how far and good the states are converged. Standard setting 100*DBL_EPSILON, should not be smaller than DBL_EPSILON\n");
       printf("    - \"epsilon\"\n");
-      printf("      - Determins the smallest prefactor of a determinant that is kept in the wave-function. Standard setting 10000*DBL_EPSILON\n");
+      printf("      - Determines the smallest prefactor of a determinant that is kept in the wave-function. Standard setting 10000*DBL_EPSILON\n");
       printf("    - \"restrictions\"\n");
       printf("      - restricts the basis by excluding certain occupations\n");
       printf("      - Example for a ligand field calculation one can require to have no more than 1 hole in the Ligand shell (between 9 and 10 electrons)\n");
       printf("      - {\"restrictions\",{20,0,{{\"0000000000 1111111111\",9,10}}}}\n");
       printf("    - \"NBitsKey\"\n");
-      printf("      + only when a set of restricitons and Npsi is given as an input, otherwise NBitsKey is taken from the wave function\n");
+      printf("      + only when a set of restrictions and Npsi is given as an input, otherwise NBitsKey is taken from the wave function\n");
       printf("      - number of elements in the Hash lookup table. (2^NBitsKey)\n");
-      printf("      - This number should be larger than the number of Determinants in the basis for optimal preformance\n");
+      printf("      - This number should be larger than the number of Determinants in the basis for optimal performance\n");
       printf("      - Standard value is 16 (65 536) which works good for small calculations upto basis sets of 25 000\n");
-      printf("      - If more determinants are needed it is recommanded to enlarge\n");
+      printf("      - If more determinants are needed it is recommended to enlarge\n");
       printf("      - 20 (  1 048 576) for basis sets upto    500 000\n");
       printf("      - 24 ( 16 777 216) for basis sets upto 10 000 000\n");
-      printf("      - for even larger basis sets argitecture depenent tests are advised.\n");
+      printf("      - for even larger basis sets architecture dependent tests are advised.\n");
       printf("      - note that results are independent of this value, only calculation time and memory requirement changes.\n");
       printf("\n");
       printf("\n");
@@ -359,7 +420,9 @@ static int LuaHelp(lua_State *L)
       printf("\n");
       printf("  - options are:\n");
       printf("    - \"epsilon\"\n");
-      printf("      - Determins the smallest prefactor of a determinant that is kept in the wave-function. Standard setting 10000*DBL_EPSILON\n");
+      printf("      - Determines the smallest prefactor of a determinant that is kept in the wave-function.\n");
+      printf("    - \"NTri\"\n");
+      printf("      - sets the maximum number of states in the Krylov basis\n");
       printf("    - \"restrictions\"\n");
       printf("      - restricts the basis by excluding certain occupations\n");
       printf("      - Example for a ligand field calculation one can require to have no more than 1 hole in the Ligand shell (between 9 and 10 electrons)\n");
@@ -375,6 +438,43 @@ static int LuaHelp(lua_State *L)
       printf("\n");
       printf("\n");
     }
+    if (strcmp(Help, "CreateResonantSpectra") == 0)
+    {
+      printf("CreateResonantSpectra()\n");
+      printf("  - calculates resonant spectra of a giving Hamiltonian, starting from the specified state and using a specific transition operator\n");
+      printf("  - < i | T1^+ G1^+ T2 G2 T2^+ G1 T1 | i >\n");
+      printf("  - expects as input two operators a (list of) transition operator(s) T1 a (list of) transition operator(s) T2^+ and a (list of) wavefunction(s), a list of options on the last position is allowed\n");
+      printf("\n");
+      printf("  - options are:\n");
+      printf("    - \"epsilon\"\n");
+      printf("      - Determines the smallest prefactor of a determinant that is kept in the wave-function.\n");
+      printf("    - \"NTri1\"\n");
+      printf("      - sets the maximum number of states in the first Krylov basis\n");
+      printf("    - \"NTri2\"\n");
+      printf("      - sets the maximum number of states in the second Krylov basis\n");
+      printf("    - \"restrictions1\"\n");
+      printf("      - restricts the basis for G1 by excluding certain occupations\n");
+      printf("    - \"restrictions2\"\n");
+      printf("      - restricts the basis for G2 by excluding certain occupations\n");
+      printf("    - \"NE1\"\n");
+      printf("      - number of energy points in the spectrum\n");
+      printf("    - \"Emin1\"\n");
+      printf("      - smallest energy in the spectrum\n");
+      printf("    - \"Emax1\"\n");
+      printf("      - largest energy in the spectrum\n");
+      printf("    - \"Gamma1\"\n");
+      printf("      - Lorenzian broadening of the spectra (full with half maximum FWHM)\n");
+      printf("    - \"NE2\"\n");
+      printf("      - number of energy points in the spectrum\n");
+      printf("    - \"Emin2\"\n");
+      printf("      - smallest energy in the spectrum\n");
+      printf("    - \"Emax2\"\n");
+      printf("      - largest energy in the spectrum\n");
+      printf("    - \"Gamma2\"\n");
+      printf("      - Lorenzian broadening of the spectra (full with half maximum FWHM)\n");
+      printf("\n");
+      printf("\n");
+    }
     if (strcmp(Help, "CreateFluorescenceYield") == 0)
     {
       printf("CreateFluorescenceYield()\n");
@@ -384,7 +484,9 @@ static int LuaHelp(lua_State *L)
       printf("\n");
       printf("  - options are:\n");
       printf("    - \"epsilon\"\n");
-      printf("      - Determins the smallest prefactor of a determinant that is kept in the wave-function. Standard setting 10000*DBL_EPSILON\n");
+      printf("      - Determines the smallest prefactor of a determinant that is kept in the wave-function.\n");
+      printf("    - \"NTri\"\n");
+      printf("      - sets the maximum number of states in the Krylov basis\n");
       printf("    - \"restrictions\"\n");
       printf("      - restricts the basis by excluding certain occupations\n");
       printf("      - Example for a ligand field calculation one can require to have no more than 1 hole in the Ligand shell (between 9 and 10 electrons)\n");
@@ -719,7 +821,7 @@ static int Luacopy(lua_State * L)
       lua_pushlightuserdata(L,(void*)lua_touserdata(L,len));
       break;
     case
-      LUA_TUSERDATA:
+    LUA_TUSERDATA:
       if (luaL_testudata(L, len, "Complex_Type") != NULL)
       {
         Complex16 *a = (Complex16 *) luaL_checkudata(L, len, "Complex_Type");
@@ -728,6 +830,15 @@ static int Luacopy(lua_State * L)
         res->Re = a->Re;
         res->Im = a->Im;
         luaL_setmetatable(L, "Complex_Type");
+        return 1;
+      }
+      if (luaL_testudata(L, len, "Spectra_Type") != NULL)
+      {
+        SpectraTypeArray *a = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
+        SpectraTypeArray *res;
+        res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+        CopySpectraArray(a, res);
+        luaL_setmetatable(L, "Spectra_Type");
         return 1;
       }
       if (luaL_testudata(L, len, "Wavefunction_Type") != NULL)
@@ -1636,7 +1747,7 @@ static int LuaEigensystem(lua_State * L)
   if(len==1) return LuaEigensystemDenseTable(L);
   if(!((len==2)||(len==3)||(len==4)))
   {
-    return luaL_error(L, "Error Eigensystem called with %d arguments, 2, 3 or 4 expected\n",len);
+    return luaL_error(L, "Error Eigensystem called with %d arguments, 1, 2, 3 or 4 expected\n",len);
   }
   /* read operator, (StartRestrictions or StartPsi) and Number of eigen-states */
   Opp = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
@@ -1689,6 +1800,7 @@ static int LuaEigensystem(lua_State * L)
   {
     LuaCheckOptions(L, -1, LuaEigensystemOptions);
     if(Options.DeterminantRestrictions.N!=0)Options.restrictions=True;
+    Options.Settings.DenseBoarder = Max(Options.Settings.DenseBoarder,Npsi);
   }
   /* calculate groundstate */
   if(Options.ExpandBasis==True)
@@ -1865,6 +1977,8 @@ int luaopen_ssp(lua_State * L)
   
   luaL_newmetatable(L, "Spectra_Type");
   luaL_setfuncs(L, Spectra_meta, 0);
+  luaL_newlib(L, Spectra_func);
+  lua_setglobal(L, "Spectra");
     
   luaMWH_RegisterGlobalFunctions(L, global_functions);
   

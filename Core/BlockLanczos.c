@@ -167,7 +167,7 @@ uint32_t CreateStartingFunctions(const OperatorType H, uint32_t const Npsi, Dete
   // "some" is equal to 200+3*Npsi
   Determinant = calloc(psi0.NWord, sizeof(uint8_t));
   avvOcc = 0.5;
-  for(i=0;i<200+3*Npsi;i++)
+  for(i=0;i<Min(300+100*Npsi,5000);i++)
   {
     totOcc=0;
     for(iFermion=0;iFermion<H.NFermion;iFermion++)
@@ -307,6 +307,9 @@ uint32_t BlockOperatorPsiRestricted(const OperatorType H, WaveFunctionType const
     printf("OperatorPsi failed in BlockOperatorPsi\n");
     return 1;
   }
+  
+  WaveFunctionAddMultipliedUnionBasis(&(Opsi[0]), psi[0], 0);
+  
   for(i=1;i<Npsi;i++)
   {
     if(WaveFunctionInitCopyBasis(&(Opsi[i]), (Opsi[0])))
@@ -328,7 +331,7 @@ uint32_t BlockOperatorPsiRestricted(const OperatorType H, WaveFunctionType const
   return 0;
 }
 
-/*  Calculate Opsi[i] = H psi[i] for i=0 to Npsi
+/*  Calculate Opsi[i] = H psi[i] + 0 psi[i] for i=0 to Npsi
  *  on input all psi[i]'s are on the same basis
  *  on excit all Opsi[i]'s are on the same basis
  */
@@ -341,6 +344,9 @@ uint32_t BlockOperatorPsi(const OperatorType H, WaveFunctionType const * const p
     printf("OperatorPsi failed in BlockOperatorPsi\n");
     return 1;
   }
+  
+  WaveFunctionAddMultipliedUnionBasis(&(Opsi[0]), psi[0], 0);
+  
   for(i=1;i<Npsi;i++)
   {
     if(WaveFunctionInitCopyBasis(&(Opsi[i]), (Opsi[0])))
@@ -1447,9 +1453,9 @@ uint32_t BlockGroundState(const OperatorType H, uint32_t const Npsi, Convergence
       Settings->epsilon*=2;
       BlockWaveFunctionTruncateBasis(psi,Npsi,Settings->epsilon);
     }
-    
     // calculate Energy and variance of Energy - test for convergence
     Qconverged=1;
+    VerbosityPrintf(0x0100,"Number of determinants in basis %i\n",psi[0].N);
     VerbosityPrintf(0x0100,"State # |   Energy               |  Variance of Energy    |  Energy change\n");
     for(i=0;i<Npsi;i++)
     {

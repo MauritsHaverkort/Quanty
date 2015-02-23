@@ -299,6 +299,7 @@
 		4CA4BA43192740820057A26C /* HarmonicOscillator.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = HarmonicOscillator.c; sourceTree = "<group>"; };
 		4CA5D6B6188AE32500A7F1DE /* BasicMath_BlockAndersonMatrix.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = BasicMath_BlockAndersonMatrix.c; path = BasicMathBlock/BasicMath_BlockAndersonMatrix.c; sourceTree = "<group>"; };
 		4CA5D6B7188AE35400A7F1DE /* BasicMath_BlockTridiagonalMatrix.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = BasicMath_BlockTridiagonalMatrix.c; path = BasicMathBlock/BasicMath_BlockTridiagonalMatrix.c; sourceTree = "<group>"; };
+		4CAB1A131A929B3A00F3E06B /* lua.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = lua.h; sourceTree = "<group>"; };
 		4CB3643519EB8DC0000B721A /* BlockLanczos.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = BlockLanczos.c; sourceTree = "<group>"; };
 		4CC07E7B1A08D9D10053B938 /* ResonantSpectra.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; lineEnding = 0; path = ResonantSpectra.c; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
 		4CD93EC319EA1F9E008DFB54 /* BasicMath_BlockNaturalImpurityOrbital.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = BasicMath_BlockNaturalImpurityOrbital.c; path = BasicMathBlock/BasicMath_BlockNaturalImpurityOrbital.c; sourceTree = "<group>"; };
@@ -735,6 +736,7 @@
 				4C8274DA17DC49CA00A5F555 /* core.h */,
 				4C8274DB17DC49F700A5F555 /* io.h */,
 				4C8274DC17DC4A8400A5F555 /* core_basic_math.h */,
+				4CAB1A131A929B3A00F3E06B /* lua.h */,
 			);
 			path = Headers;
 			sourceTree = "<group>";
