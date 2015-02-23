@@ -1269,6 +1269,7 @@ static int LuaCreateSpectra(lua_State *L)
   if(lua_type(L,2)==LUA_TTABLE)
   {
     T=luaL_checkarray_OperatorType(L, 2, &Options.NT);
+    if(Options.NT==0) return luaL_error(L, "Errof CreateSpectra called with a table of transition operators of length 0\n");
   }
   else
   {
@@ -1278,6 +1279,7 @@ static int LuaCreateSpectra(lua_State *L)
   if(lua_type(L,3)==LUA_TTABLE)
   {
     psi=luaL_checkarray_WaveFunctionType(L, 3, &Options.Npsi);
+    if(Options.Npsi==0) return luaL_error(L, "Errof CreateSpectra called with a table of wave functions of length 0\n");
   }
   else
   {
@@ -1429,6 +1431,7 @@ static int LuaCreateResonantSpectra(lua_State *L)
   if(lua_type(L,3)==LUA_TTABLE)
   {
     T1=luaL_checkarray_OperatorType(L, 3, &Options.NT1);
+    if(Options.NT1==0) return luaL_error(L, "Errof CreateResonantSpectra called with a table of transition operators (1) of length 0\n");
   }
   else
   {
@@ -1438,6 +1441,7 @@ static int LuaCreateResonantSpectra(lua_State *L)
   if(lua_type(L,4)==LUA_TTABLE)
   {
     T2=luaL_checkarray_OperatorType(L, 4, &Options.NT2);
+    if(Options.NT2==0) return luaL_error(L, "Errof CreateResonantSpectra called with a table of transition operators (2) of length 0\n");
   }
   else
   {
@@ -1447,6 +1451,7 @@ static int LuaCreateResonantSpectra(lua_State *L)
   if(lua_type(L,5)==LUA_TTABLE)
   {
     psi=luaL_checkarray_WaveFunctionType(L, 5, &Options.Npsi);
+    if(Options.Npsi==0) return luaL_error(L, "Errof CreateResonantSpectra called with a table of wave functions of length 0\n");
   }
   else
   {
@@ -1526,6 +1531,7 @@ static int LuaCreateFluorescenceYield(lua_State *L)
   if(lua_type(L,2)==LUA_TTABLE)
   {
     T1=luaL_checkarray_OperatorType(L, 2, &Options.NT1);
+    if(Options.NT1==0) return luaL_error(L, "Errof LuaCreateFluorescenceYield called with a table of transition operators (1) of length 0\n");
   }
   else
   {
@@ -1535,6 +1541,7 @@ static int LuaCreateFluorescenceYield(lua_State *L)
   if(lua_type(L,3)==LUA_TTABLE)
   {
     T2=luaL_checkarray_OperatorType(L, 3, &Options.NT2);
+    if(Options.NT2==0) return luaL_error(L, "Errof LuaCreateFluorescenceYield called with a table of transition operators (2) of length 0\n");
   }
   else
   {
@@ -1544,6 +1551,7 @@ static int LuaCreateFluorescenceYield(lua_State *L)
   if(lua_type(L,4)==LUA_TTABLE)
   {
     psi=luaL_checkarray_WaveFunctionType(L, 4, &Options.Npsi);
+    if(Options.Npsi==0) return luaL_error(L, "Errof LuaCreateFluorescenceYield called with a table of wave functions of length 0\n");
   }
   else
   {

@@ -55,3 +55,18 @@ static void luaMWH_RegisterGlobalFunctions (lua_State *L, const luaL_Reg *l)
     lua_setglobal(L, l->name);
   }
 }
+
+uint32_t luaMWH_fulltablelen(lua_State *L, const int t)
+{
+  uint32_t len=0;
+  lua_pushnil(L);
+  while (lua_next(L, t) != 0)
+  {
+    lua_pop(L, 1);
+    len++;
+  }
+  lua_pop(L, 1);
+  return len;
+}
+
+
