@@ -173,9 +173,9 @@ ConvergenceSettingsType InitConvergenceSettings()
     {0, NULL, NULL, NULL} /*restricitons*/,
     {0, NULL, NULL, NULL} /*restricitons1*/,
     {0, NULL, NULL, NULL} /*restricitons2*/,
-    DBL_MAX,-DBL_MAX,0,0 /*Energy range */,
-    DBL_MAX,-DBL_MAX,0,0 /*Energy range 1*/,
-    DBL_MAX,-DBL_MAX,0,0 /*Energy range 2*/
+    DBL_MAX,-DBL_MAX,1000,0 /*Energy range */,
+    DBL_MAX,-DBL_MAX,1000,0 /*Energy range 1*/,
+    DBL_MAX,-DBL_MAX,1000,0 /*Energy range 2*/
   };
   return ret;
 };

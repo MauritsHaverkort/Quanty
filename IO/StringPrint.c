@@ -114,3 +114,83 @@ uint32_t StringPrintWaveFunctionReadable(WaveFunctionType psi, char **Buffer)
   }
   return 0;
 }
+
+/*
+ *  Prints an array of spectra
+ */
+uint32_t StringPrintSpectra(SpectraType * const Spec, const uint32_t NSpec, char **Buffer)
+{
+  uint32_t i, j, NE;
+  *Buffer = malloc(4048);
+  if(*Buffer==NULL)
+  {
+    printf("ERROR: malloc failed in StringPrintSpectra\n");
+    return 1;
+  }
+  *Buffer[0]='\0';
+  sprintfAdd(Buffer, "#Spectra: %i\n", NSpec);
+  sprintfAdd(Buffer, "Emin______Emax     ");
+  for (i = 0; i < NSpec; i++)
+  {
+    sprintfAdd(Buffer, " %22.15E %22.15E", Spec[i].Emin, Spec[i].Emax);
+  }
+  sprintfAdd(Buffer, "\n");
+  sprintfAdd(Buffer, "EminPole__EmaxPole ");
+  for (i = 0; i < NSpec; i++)
+  {
+    sprintfAdd(Buffer, " %22.15E %22.15E", Spec[i].EminPole, Spec[i].EmaxPole);
+  }
+  sprintfAdd(Buffer, "\n");
+  sprintfAdd(Buffer, "dE________Gamma    ");
+  for (i = 0; i < NSpec; i++)
+  {
+    sprintfAdd(Buffer, " %22.15E %22.15E", Spec[i].dE, Spec[i].Gamma);
+  }
+  sprintfAdd(Buffer, "\n");
+  sprintfAdd(Buffer, "Phase_____0        ");
+  for (i = 0; i < NSpec; i++)
+  {
+    sprintfAdd(Buffer, " %22.15E %22.15E", Spec[i].phase, 0.0);
+  }
+  sprintfAdd(Buffer, "\n");
+  for (j = 0; j < 5; j++)
+  {
+    sprintfAdd(Buffer, "a[%1i]______b[%1i]     ", j, j);
+    for (i = 0; i < NSpec; i++)
+    {
+      sprintfAdd(Buffer, " %22.15E %22.15E", Spec[i].a[j], Spec[i].b[j]);
+    }
+    sprintfAdd(Buffer, "\n");
+  }
+  sprintfAdd(Buffer, "Energy             ");
+  for (i = 0; i < NSpec; i++)
+  {
+    if (i < 10)
+      sprintfAdd(Buffer, "  Re[%1i]                  Im[%1i]                ", i, i);
+    else if (i < 100)
+      sprintfAdd(Buffer, "  Re[%2i]                 Im[%2i]               ", i, i);
+    else if (i < 1000)
+      sprintfAdd(Buffer, "  Re[%3i]                Im[%3i]              ", i, i);
+    else if (i < 10000)
+      sprintfAdd(Buffer, "  Re[%4i]               Im[%4i]             ", i, i);
+  }
+  sprintfAdd(Buffer, "\n");
+  NE = Spec[0].N;
+  for (i = 1; i < NSpec; i++)
+  {
+    NE = Max(NE, Spec[i].N);
+  }
+  for (j = 0; j <= NE; j++)
+  {
+    sprintfAdd(Buffer, "%19.12E", (double)(Spec[0].dE * j + Spec[0].Emin));
+    for (i = 0; i < NSpec; i++)
+    {
+      if (j <= Spec[i].N)
+        sprintfAdd(Buffer, " %22.15E %22.15E", Spec[i].Re[j], Spec[i].Im[j]);
+      else
+        sprintfAdd(Buffer, " %22.15E %22.15E", 0.0, 0.0);
+    }
+    sprintfAdd(Buffer, "\n");
+  }
+  return 0;
+}
