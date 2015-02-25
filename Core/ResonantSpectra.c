@@ -245,6 +245,7 @@ uint32_t ResonantSpectra(const OperatorType OppH1, const OperatorType OppH2, con
     (*Spec)[i].Emax =settings->Emax2;
     (*Spec)[i].dE   =(settings->Emax2-settings->Emin2)/settings->NE2;
     (*Spec)[i].Gamma=settings->Gamma2;
+    sprintf((*Spec)[i].Name, "Spectrum %i/%i",i,NT2);
     SpectrumAllocate((*Spec)[i], &(*Spec)[i]);
     TriDiagonalMatrixToSpectrum(energy2, (*SpecTri2)[i], &(*Spec)[i]);
   }
@@ -519,7 +520,7 @@ uint32_t FluorescenceYieldRestricted(const OperatorType OppH, DeterminantRestric
   spectra[0].dE=(spectra[0].Emax-spectra[0].Emin)/((double)spectra[0].N);
   for(i = 0; i < NDec; i++)
   {
-    sprintf(spectra[i].Name, "%d",i);
+    sprintf(spectra[i].Name, "Spectrum %i/%i",i,NDec);
     SpectrumAllocate(spectra[0], &spectra[i]);
   }
   

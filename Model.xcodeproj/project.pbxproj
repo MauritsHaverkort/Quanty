@@ -124,7 +124,7 @@
 		4C03B025186E376A004C2B7B /* TightBinding */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = TightBinding; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C03B03118706F30004C2B7B /* StuttgartNMTO.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = StuttgartNMTO.c; sourceTree = "<group>"; };
 		4C0877991737CDE600CE9AB4 /* WaveFunctionPerturbationArithmetic.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = WaveFunctionPerturbationArithmetic.c; sourceTree = "<group>"; };
-		4C0B553D196752C2000B8E97 /* LuaInterface */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = LuaInterface; sourceTree = BUILT_PRODUCTS_DIR; };
+		4C0B553D196752C2000B8E97 /* Quanty */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Quanty; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C0B553F196752C3000B8E97 /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; lineEnding = 0; path = main.c; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
 		4C0B554719675377000B8E97 /* includeLua.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = includeLua.h; sourceTree = "<group>"; };
 		4C0B554819675377000B8E97 /* lapi.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = lapi.c; sourceTree = "<group>"; };
@@ -299,6 +299,7 @@
 		4CA4BA43192740820057A26C /* HarmonicOscillator.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = HarmonicOscillator.c; sourceTree = "<group>"; };
 		4CA5D6B6188AE32500A7F1DE /* BasicMath_BlockAndersonMatrix.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = BasicMath_BlockAndersonMatrix.c; path = BasicMathBlock/BasicMath_BlockAndersonMatrix.c; sourceTree = "<group>"; };
 		4CA5D6B7188AE35400A7F1DE /* BasicMath_BlockTridiagonalMatrix.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = BasicMath_BlockTridiagonalMatrix.c; path = BasicMathBlock/BasicMath_BlockTridiagonalMatrix.c; sourceTree = "<group>"; };
+		4CAB1A131A929B3A00F3E06B /* lua.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = lua.h; sourceTree = "<group>"; };
 		4CB3643519EB8DC0000B721A /* BlockLanczos.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = BlockLanczos.c; sourceTree = "<group>"; };
 		4CC07E7B1A08D9D10053B938 /* ResonantSpectra.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; lineEnding = 0; path = ResonantSpectra.c; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
 		4CD93EC319EA1F9E008DFB54 /* BasicMath_BlockNaturalImpurityOrbital.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = BasicMath_BlockNaturalImpurityOrbital.c; path = BasicMathBlock/BasicMath_BlockNaturalImpurityOrbital.c; sourceTree = "<group>"; };
@@ -525,7 +526,7 @@
 				4C79F5D817B53C8000189682 /* Hubart */,
 				4C03B025186E376A004C2B7B /* TightBinding */,
 				4C6925C418D869FE00E6FA6F /* MartinPESXAS */,
-				4C0B553D196752C2000B8E97 /* LuaInterface */,
+				4C0B553D196752C2000B8E97 /* Quanty */,
 				4C4637D819C0726B00EB0DB0 /* Robert */,
 			);
 			name = Products;
@@ -735,6 +736,7 @@
 				4C8274DA17DC49CA00A5F555 /* core.h */,
 				4C8274DB17DC49F700A5F555 /* io.h */,
 				4C8274DC17DC4A8400A5F555 /* core_basic_math.h */,
+				4CAB1A131A929B3A00F3E06B /* lua.h */,
 			);
 			path = Headers;
 			sourceTree = "<group>";
@@ -768,9 +770,9 @@
 			productReference = 4C03B025186E376A004C2B7B /* TightBinding */;
 			productType = "com.apple.product-type.tool";
 		};
-		4C0B553C196752C2000B8E97 /* LuaInterface */ = {
+		4C0B553C196752C2000B8E97 /* Quanty */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 4C0B5543196752C3000B8E97 /* Build configuration list for PBXNativeTarget "LuaInterface" */;
+			buildConfigurationList = 4C0B5543196752C3000B8E97 /* Build configuration list for PBXNativeTarget "Quanty" */;
 			buildPhases = (
 				4C0B5539196752C2000B8E97 /* Sources */,
 				4C0B553A196752C2000B8E97 /* Frameworks */,
@@ -780,9 +782,9 @@
 			);
 			dependencies = (
 			);
-			name = LuaInterface;
+			name = Quanty;
 			productName = LuaInterface;
-			productReference = 4C0B553D196752C2000B8E97 /* LuaInterface */;
+			productReference = 4C0B553D196752C2000B8E97 /* Quanty */;
 			productType = "com.apple.product-type.tool";
 		};
 		4C2AAA181632655300138620 /* Model */ = {
@@ -932,7 +934,7 @@
 				4C79F5D717B53C8000189682 /* Hubart */,
 				4C03B024186E376A004C2B7B /* TightBinding */,
 				4C6925C318D869FE00E6FA6F /* MartinPESXAS */,
-				4C0B553C196752C2000B8E97 /* LuaInterface */,
+				4C0B553C196752C2000B8E97 /* Quanty */,
 				4C4637D719C0726B00EB0DB0 /* Robert */,
 			);
 		};
@@ -1063,18 +1065,21 @@
 				CLANG_WARN_ENUM_CONVERSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CODE_SIGN_IDENTITY = "";
 				DEAD_CODE_STRIPPING = NO;
+				DEPLOYMENT_POSTPROCESSING = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
 				);
+				GCC_UNROLL_LOOPS = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = NO;
 				MACOSX_DEPLOYMENT_TARGET = 10.9;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				VERSIONING_SYSTEM = "";
+				VERSIONING_SYSTEM = "apple-generic";
 			};
 			name = Debug;
 		};
@@ -1089,15 +1094,19 @@
 				CLANG_WARN_ENUM_CONVERSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CODE_SIGN_IDENTITY = "";
 				DEAD_CODE_STRIPPING = YES;
+				DEPLOYMENT_POSTPROCESSING = YES;
 				ENABLE_NS_ASSERTIONS = NO;
+				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_UNROLL_LOOPS = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = NO;
 				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				VERSIONING_SYSTEM = "";
+				VERSIONING_SYSTEM = "apple-generic";
 			};
 			name = Release;
 		};
@@ -1382,7 +1391,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		4C0B5543196752C3000B8E97 /* Build configuration list for PBXNativeTarget "LuaInterface" */ = {
+		4C0B5543196752C3000B8E97 /* Build configuration list for PBXNativeTarget "Quanty" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				4C0B5544196752C3000B8E97 /* Debug */,

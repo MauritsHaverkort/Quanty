@@ -108,25 +108,25 @@ MatrixType* luaL_checkMatrix(lua_State *L, int narg)
   uint32_t len = (uint32_t)lua_objlen(L, narg);
   buff=malloc(sizeof(MatrixType));
   buff->QComplex=1;
-  buff->Nj=len;
+  buff->Ni=len;
   for(i=0;i<len;i++)
   {
     lua_rawgeti(L, narg, i+1);
     row = luaL_checkarray_complex16(L, -1, &len_row);
     if(i==0)
     {
-      buff->Ni=len_row;
+      buff->Nj=len_row;
       InitMatrix(buff);
     }
     lua_pop(L, 1);
-    if(len_row!=buff->Ni)
+    if(len_row!=buff->Nj)
     {
-      luaL_error(L, "Error while reading matrix. Dimensions of rows not constant. %d at first row %d at row %d",buff->Ni,len_row,i);
+      luaL_error(L, "Error while reading matrix. Dimensions of rows not constant. %d at first row %d at row %d",buff->Nj,len_row,i);
     }
-    for(j=0;j<buff->Ni;j++)
+    for(j=0;j<buff->Nj;j++)
     {
-      buff->VRe[j][i]=row[j].Re;
-      buff->VIm[j][i]=row[j].Im;
+      buff->VRe[i][j]=row[j].Re;
+      buff->VIm[i][j]=row[j].Im;
     }
     free(row);
   }
@@ -390,6 +390,30 @@ void LuaPushTable_MatrixType(lua_State* L, MatrixType const * const M)
 }
 
 
+void LuaPushTable_SpectraTypeArray(lua_State* L, SpectraTypeArray const * const M)
+{
+  uint32_t i,j;
+  Complex16 *res;
+  lua_createtable(L,M->NSpectra,0);
+  for(i=0;i<M->NSpectra;i++)
+  {
+    lua_createtable(L,M->Spec[i].N+1,0);
+    for(j=0;j<=M->Spec[i].N;j++)
+    {
+      lua_createtable(L,2,0);
+      lua_pushnumber(L, M->Spec[i].Emin+j*M->Spec[i].dE);
+      lua_rawseti(L, -2, 1);
+      res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
+      res->Re = M->Spec[i].Re[j];
+      res->Im = M->Spec[i].Im[j];
+      luaL_setmetatable(L, "Complex_Type");
+      lua_rawseti(L, -2, 2);
+      lua_rawseti(L, -2, j+1);
+    }
+    lua_rawseti(L, -2, i+1);
+  }
+}
+
 
 void shallowtablecopy(lua_State* L, int index)
 {
@@ -582,9 +606,6 @@ int32_t LuaCheckOptions(lua_State *L, int narg, LuaOptionsType *Options)
         {
           printf("ERROR: unrecognized type in LuaCheckOptions [%s]\n",Options[j].type);
         }
-        
-        //Options[j].variable = LuaReturnVariableType(L, -1, Options[j].type);
-        
         lua_pop(L,1);
       }
       j++;
