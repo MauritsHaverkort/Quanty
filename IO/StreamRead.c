@@ -7,7 +7,7 @@
 uint32_t StreamReadAtom(AtomType * O, FILE * stream)
 {
   char   comments[1000];
-  int    i;
+  int    i, j;
   fscanf(stream, "%s %i %lf %lf %lf", (O->Name), &(O->AtomNumber), &(O->Position[0]), &(O->Position[1]),
          &(O->Position[2]));
   fgets(comments, 1000, stream);
