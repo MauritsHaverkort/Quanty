@@ -220,7 +220,7 @@ typedef struct MatrixType
 }
 MatrixType;
 
-/*  CompactMatrixType defines a 2-dimensional tensor (matrix) with Nj rows and Ni columns
+/*  CompactMatrixTypeOld defines a 2-dimensional tensor (matrix) with Nj rows and Ni columns
  *  The left top element is A(00), the right bottom element is A(Ni-1,Nj-1)
  *  The label QComplex sets a real (0) or complex (1) matrix.
  *
@@ -236,7 +236,7 @@ MatrixType;
  *
  *   element (i,j) is found at position [i*Nj + j]
  */
-typedef struct CompactMatrixType
+typedef struct CompactMatrixTypeOld
 {
   char *Name;                   /* A pointer to a name string that can be used to lable functions, good for printing etc. */
   uint32_t Ni, Nj;              /* dimmensions of the matrix */
@@ -250,7 +250,7 @@ typedef struct CompactMatrixType
   double b0;                    /* storing a possilbe over-all scaling if a continued fraction notation is used */
   double mu;
 }
-CompactMatrixType;
+CompactMatrixTypeOld;
 
 /*  A sparse matrix indexed with the use of a hash function.
  *  KeyList and Next elements that are zero point to nowhere
@@ -511,8 +511,8 @@ typedef struct BlockNaturalImpurityOrbitalMatrixType
   
   BlockTriDiagonalMatrixType val;
   BlockTriDiagonalMatrixType con;
-  CompactMatrixType TMT;
-  CompactMatrixType a0;
+  CompactMatrixTypeOld TMT;
+  CompactMatrixTypeOld a0;
 }
 BlockNaturalImpurityOrbitalMatrixType;
 

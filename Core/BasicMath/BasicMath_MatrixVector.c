@@ -1180,7 +1180,7 @@ uint32_t MatrixCopy(MatrixType * const M, MatrixType const A)
 /*
  * M<-A
  */
-uint32_t MatrixCopyToCompact(CompactMatrixType * const M, MatrixType const A)
+uint32_t MatrixCopyToCompact(CompactMatrixTypeOld * const M, MatrixType const A)
 {
   uint32_t i;
   M->Ni = A.Ni;

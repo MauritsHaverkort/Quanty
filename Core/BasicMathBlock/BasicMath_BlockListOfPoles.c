@@ -808,10 +808,10 @@ uint32_t SubtractBlockListOfPoles(BlockListOfPoles * const A, BlockListOfPoles c
 /*
  *
  */
-uint32_t BlockListOfPolesReduceDim(BlockListOfPoles const * A, BlockListOfPoles * const B, CompactMatrixType const *T)
+uint32_t BlockListOfPolesReduceDim(BlockListOfPoles const * A, BlockListOfPoles * const B, CompactMatrixTypeOld const *T)
 {
   uint32_t i,iA,iB;
-  CompactMatrixType Bnow, Anow;
+  CompactMatrixTypeOld Bnow, Anow;
   if(T->Nj != A->BlockSize)
   {
     printf("BlockListOfPolesReduceDim failed as T.Nj (%i) != A.BlockSize (%i)\n",T->Nj,A->BlockSize);
@@ -871,7 +871,7 @@ uint32_t BlockListOfPolesG0plusSigmaToGFixedEGrid(BlockListOfPoles const *G0, Bl
   printf("This function \"BlockListOfPolesG0plusSigmaToGFixedEGrid\"is wrong ???why???\n");
 
   
-  CompactMatrixType S,fun, beta, Char, betasqrt;
+  CompactMatrixTypeOld S,fun, beta, Char, betasqrt;
   double *val, rest, totnow, totmax, totmin, energy;
   double const dE = (Emax - Emin)/((double)NE);
   int iE;

@@ -13,7 +13,7 @@ void TestLanczosDyson3()
   WaveFunctionType psi0;
   OperatorType Himp, Hnat;
   OperatorType HTemp, HQZero;
-  CompactMatrixType AT, GnatComp;
+  CompactMatrixTypeOld AT, GnatComp;
   TimeType Time;
   InitializeTiming(&Time);
   BeginTiming("Total", &Time);

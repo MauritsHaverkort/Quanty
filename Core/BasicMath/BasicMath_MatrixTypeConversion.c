@@ -1966,7 +1966,7 @@ uint32_t MatrixToEigensystem(MatrixType const M, MatrixType * const T, double *v
  *  M=T.H.T^{\dag} with H a diagonal matrix with the values val on the diagonal
  *  input M defined, H and T not initiallized
  */
-uint32_t EigensystemToCompact(MatrixType const M, CompactMatrixType * const T, double *val)
+uint32_t EigensystemToCompact(MatrixType const M, CompactMatrixTypeOld * const T, double *val)
 {
   int    info;
   const char *jobz = "V";

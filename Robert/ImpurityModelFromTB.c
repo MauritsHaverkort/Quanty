@@ -1098,7 +1098,7 @@ uint32_t ImpurityHFromTB(OperatorType *const Himp, ModelSettings O)
   StuttgartHAMR HAMRin;
   TightBindingDef TB,TBAF;
 
-  CompactMatrixType AT;
+  CompactMatrixTypeOld AT;
   TimeType Time;
 
   SpectraType DOS,*GSpec, *GTriSpec, *GTriSpecReduced,*SpecNat;

@@ -380,7 +380,7 @@ uint32_t FilePrintPlainMatrix(MatrixType M, const char *const flname, const char
   return retval;
 }
 
-uint32_t FilePrintCompactMatrixMinimal(CompactMatrixType M, const char *const flname, const char *const mode)
+uint32_t FilePrintCompactMatrixMinimal(CompactMatrixTypeOld M, const char *const flname, const char *const mode)
 {
   FILE  *stream;
   uint32_t retval;

@@ -387,7 +387,7 @@ void TestCompactMatrixVector()
   double vec[10]={0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,1.1};
   double vecout[10]={1,1,1,1,1,1,1,1,1,1};
   int i,j,k;
-  CompactMatrixType IM,AM,BM,CM,DM,EM,FM,GM,q,r;
+  CompactMatrixTypeOld IM,AM,BM,CM,DM,EM,FM,GM,q,r;
   BlockTriDiagonalMatrixType AMTri;
   
   printf("\n====== test matrix vector =========\n");

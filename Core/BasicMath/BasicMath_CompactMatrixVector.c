@@ -1,6 +1,6 @@
 /* Free a matrix M itselve (i.e. the structure is not freed)
  */
-void FreeCompactMatrix(CompactMatrixType * const M)
+void FreeCompactMatrix(CompactMatrixTypeOld * const M)
 {
   free(M->Name);
   if(M->QComplex)
@@ -16,7 +16,7 @@ void FreeCompactMatrix(CompactMatrixType * const M)
 /* Initiallize a matrix M must already be allocated
  *  M.QComplex, M.Ni, M,Nj must be set
  */
-uint32_t InitCompactMatrix(CompactMatrixType * const M)
+uint32_t InitCompactMatrix(CompactMatrixTypeOld * const M)
 {
   M->Name=(char*)malloc(MAXStrLength*sizeof(char));
   if(M->Name==NULL){printf("malloc for name failed in InitCompactMatrix\n");return 1;};
@@ -47,7 +47,7 @@ uint32_t InitCompactMatrix(CompactMatrixType * const M)
 /*
  *
  */
-uint32_t SetCompactMatrixToZero(CompactMatrixType * const M)
+uint32_t SetCompactMatrixToZero(CompactMatrixTypeOld * const M)
 {
   uint32_t i;
   if(M->QComplex)
@@ -68,7 +68,7 @@ uint32_t SetCompactMatrixToZero(CompactMatrixType * const M)
   return 0;
 }
 
-uint32_t CompactMatrixCopy(CompactMatrixType const A, CompactMatrixType * const B)
+uint32_t CompactMatrixCopy(CompactMatrixTypeOld const A, CompactMatrixTypeOld * const B)
 {
   B->Ni=A.Ni;
   B->Nj=A.Nj;
@@ -96,7 +96,7 @@ uint32_t CompactMatrixCopy(CompactMatrixType const A, CompactMatrixType * const 
 /* Initiallize a matrix M must already be allocated
  *  M.QComplex, M.Ni, M,Nj must be set
  */
-uint32_t InitCompactIdentityMatrix(CompactMatrixType * const M)
+uint32_t InitCompactIdentityMatrix(CompactMatrixTypeOld * const M)
 {
   uint32_t i;
   M->Name=(char*)malloc(MAXStrLength*sizeof(char));
@@ -135,7 +135,7 @@ uint32_t InitCompactIdentityMatrix(CompactMatrixType * const M)
 
 /* turn a real matrix into a complex matrix i.e. allocate more memory and zero this
  */
-uint32_t MakeCompactRealMatrixComplex(CompactMatrixType * const M)
+uint32_t MakeCompactRealMatrixComplex(CompactMatrixTypeOld * const M)
 {
   Complex16 *temp;
   uint32_t i;
@@ -159,7 +159,7 @@ uint32_t MakeCompactRealMatrixComplex(CompactMatrixType * const M)
 
 /* turn a complex matrix into a real matrix i.e. ignore complex part
  */
-uint32_t MakeCompactComplexMatrixReal(CompactMatrixType * const M)
+uint32_t MakeCompactComplexMatrixReal(CompactMatrixTypeOld * const M)
 {
   double *temp;
   uint32_t i;
@@ -182,7 +182,7 @@ uint32_t MakeCompactComplexMatrixReal(CompactMatrixType * const M)
 
 /* set elements with an absolute value smaller then epsilon to zero
  */
-uint32_t CompactMatrixChop(CompactMatrixType * const M, double const epsilon)
+uint32_t CompactMatrixChop(CompactMatrixTypeOld * const M, double const epsilon)
 {
   int    i, QStillComplex;
   QStillComplex = 0;
@@ -230,7 +230,7 @@ uint32_t CompactMatrixChop(CompactMatrixType * const M, double const epsilon)
  *          T for transposed
  *          C for conjugate transposed
  */
-uint32_t CompactMatrixVector(char const TransA, CompactMatrixType const *A, void *vx, void *vy)
+uint32_t CompactMatrixVector(char const TransA, CompactMatrixTypeOld const *A, void *vx, void *vy)
 {
   int INC=1;
   if(A->QComplex)
@@ -251,7 +251,7 @@ uint32_t CompactMatrixVector(char const TransA, CompactMatrixType const *A, void
 /*   B <= A * B
  *   A is diagonal (only A[i,i] is nonzero and stored as a list of doubles
  */
-uint32_t MultiplyDiagonalMatrixCompactMatrix(double const *A, CompactMatrixType * const B)
+uint32_t MultiplyDiagonalMatrixCompactMatrix(double const *A, CompactMatrixTypeOld * const B)
 {
   int i,j,index=0;
   if(B->QComplex)
@@ -283,7 +283,7 @@ uint32_t MultiplyDiagonalMatrixCompactMatrix(double const *A, CompactMatrixType 
 /*   B <= B * A
  *   A is diagonal (only A[i,i] is nonzero and stored as a list of doubles
  */
-uint32_t MultiplyCompactMatrixDiagonalMatrix(CompactMatrixType * const B, double const *A)
+uint32_t MultiplyCompactMatrixDiagonalMatrix(CompactMatrixTypeOld * const B, double const *A)
 {
   int i,j,index=0;
   if(B->QComplex)
@@ -317,7 +317,7 @@ uint32_t MultiplyCompactMatrixDiagonalMatrix(CompactMatrixType * const B, double
  *                      A : T.Nj by T.Nj
  *  dimensions of output: T.Ni by T.Ni
  */
-uint32_t TransformDiagonalMatrixByCompactMatrixTdagAT(double const *A, CompactMatrixType const *T, CompactMatrixType * const TdagAT)
+uint32_t TransformDiagonalMatrixByCompactMatrixTdagAT(double const *A, CompactMatrixTypeOld const *T, CompactMatrixTypeOld * const TdagAT)
 {
   uint32_t i,j,k,TATindex,icol,jcol;
   TdagAT->Ni=T->Ni;
@@ -374,7 +374,7 @@ uint32_t TransformDiagonalMatrixByCompactMatrixTdagAT(double const *A, CompactMa
  *                      A : T.Ni by T.Ni
  *  dimensions of output: T.Nj by T.Nj
  */
-uint32_t TransformDiagonalMatrixByCompactMatrixTATdag(double const *A, CompactMatrixType const *T, CompactMatrixType * const TATdag)
+uint32_t TransformDiagonalMatrixByCompactMatrixTATdag(double const *A, CompactMatrixTypeOld const *T, CompactMatrixTypeOld * const TATdag)
 {
   uint32_t i,j,k,TATindex,irow,jrow;
   TATdag->Ni=T->Nj;
@@ -433,7 +433,7 @@ uint32_t TransformDiagonalMatrixByCompactMatrixTATdag(double const *A, CompactMa
  *          T for transposed
  *          C for conjugate transposed
  */
-uint32_t CompactMatrixMultiply(char const TransA, char const TransB, CompactMatrixType const *A, CompactMatrixType const *B, CompactMatrixType *C)
+uint32_t CompactMatrixMultiply(char const TransA, char const TransB, CompactMatrixTypeOld const *A, CompactMatrixTypeOld const *B, CompactMatrixTypeOld *C)
 {
   int Nk,LDA,LDB,LDC,i;
   Complex16 ALPHA,BETA,*temp;
@@ -554,7 +554,7 @@ uint32_t CompactMatrixMultiply(char const TransA, char const TransB, CompactMatr
  *          T for transposed
  *          C for conjugate transposed
  */
-uint32_t CompactMatrixMultiplyPreAllocated(char const TransA, char const TransB, CompactMatrixType const *A, CompactMatrixType const *B, CompactMatrixType *C)
+uint32_t CompactMatrixMultiplyPreAllocated(char const TransA, char const TransB, CompactMatrixTypeOld const *A, CompactMatrixTypeOld const *B, CompactMatrixTypeOld *C)
 {
   int Nk,LDA,LDB,LDC,i;
   Complex16 ALPHA,BETA,*temp,*tempA,*tempB;
@@ -689,7 +689,7 @@ uint32_t CompactMatrixMultiplyPreAllocated(char const TransA, char const TransB,
  *          T for transposed
  *          C for conjugate transposed
  */
-uint32_t CompactMatrixAddMultiply(char const TransA, char const TransB, CompactMatrixType const *A, CompactMatrixType const *B, CompactMatrixType *C, double alphaRe, double alphaIm)
+uint32_t CompactMatrixAddMultiply(char const TransA, char const TransB, CompactMatrixTypeOld const *A, CompactMatrixTypeOld const *B, CompactMatrixTypeOld *C, double alphaRe, double alphaIm)
 {
   int Nk,LDA,LDB,LDC,i;
   Complex16 ALPHA,BETA,*temp,*tempA,*tempB;
@@ -825,17 +825,17 @@ uint32_t CompactMatrixAddMultiply(char const TransA, char const TransB, CompactM
  *          T for transposed
  *          C for conjugate transposed
  */
-uint32_t CompactMatrixMultiply3(char const TransA, char const TransB, char const TransC, CompactMatrixType const *A, CompactMatrixType const *B, CompactMatrixType const *C, CompactMatrixType *D)
+uint32_t CompactMatrixMultiply3(char const TransA, char const TransB, char const TransC, CompactMatrixTypeOld const *A, CompactMatrixTypeOld const *B, CompactMatrixTypeOld const *C, CompactMatrixTypeOld *D)
 {
-  CompactMatrixType temp;
+  CompactMatrixTypeOld temp;
   if(CompactMatrixMultiply(TransB, TransC, B, C, &temp)){printf("Error in CompactMatrixMultiply3\n"); return 1;}
   if(CompactMatrixMultiply(TransA, 'N', A, &temp, D)){printf("Error in CompactMatrixMultiply3\n"); return 1;}
   FreeCompactMatrix(&temp);
   return 0;
 }
-uint32_t CompactMatrixMultiply4(char const TransA, char const TransB, char const TransC, char const TransD, CompactMatrixType const *A, CompactMatrixType const *B, CompactMatrixType const *C, CompactMatrixType const *D, CompactMatrixType *E)
+uint32_t CompactMatrixMultiply4(char const TransA, char const TransB, char const TransC, char const TransD, CompactMatrixTypeOld const *A, CompactMatrixTypeOld const *B, CompactMatrixTypeOld const *C, CompactMatrixTypeOld const *D, CompactMatrixTypeOld *E)
 {
-  CompactMatrixType temp1,temp2;
+  CompactMatrixTypeOld temp1,temp2;
   if(CompactMatrixMultiply(TransA, TransB, A, B, &temp1)){printf("Error in CompactMatrixMultiply4\n"); return 1;}
   if(CompactMatrixMultiply(TransC, TransD, C, D, &temp2)){printf("Error in CompactMatrixMultiply4\n"); return 1;}
   if(CompactMatrixMultiply('N', 'N', &temp1, &temp2, E)) {printf("Error in CompactMatrixMultiply4\n"); return 1;}
@@ -843,9 +843,9 @@ uint32_t CompactMatrixMultiply4(char const TransA, char const TransB, char const
   FreeCompactMatrix(&temp2);
   return 0;
 }
-uint32_t CompactMatrixMultiply3PreAllocated(char const TransA, char const TransB, char const TransC, CompactMatrixType const *A, CompactMatrixType const *B, CompactMatrixType const *C, CompactMatrixType *D)
+uint32_t CompactMatrixMultiply3PreAllocated(char const TransA, char const TransB, char const TransC, CompactMatrixTypeOld const *A, CompactMatrixTypeOld const *B, CompactMatrixTypeOld const *C, CompactMatrixTypeOld *D)
 {
-  CompactMatrixType temp;
+  CompactMatrixTypeOld temp;
   if(CompactMatrixMultiply(TransB, TransC, B, C, &temp)){printf("Error in CompactMatrixMultiply3\n"); return 1;}
   if(CompactMatrixMultiplyPreAllocated(TransA, 'N', A, &temp, D)){printf("Error in CompactMatrixMultiply3\n"); return 1;}
   FreeCompactMatrix(&temp);
@@ -856,7 +856,7 @@ uint32_t CompactMatrixMultiply3PreAllocated(char const TransA, char const TransB
 /*  Calculates TdagAT = T^dag A T
  *
  */
-uint32_t TransformCompactMatrix(CompactMatrixType const *A, CompactMatrixType const *T, CompactMatrixType * const TdagAT)
+uint32_t TransformCompactMatrix(CompactMatrixTypeOld const *A, CompactMatrixTypeOld const *T, CompactMatrixTypeOld * const TdagAT)
 {
   return CompactMatrixMultiply3('C', 'N', 'N', T, A, T, TdagAT);
 }
@@ -864,7 +864,7 @@ uint32_t TransformCompactMatrix(CompactMatrixType const *A, CompactMatrixType co
 /*  Calculates TdagAT = T^dag A T
  *
  */
-uint32_t TransformCompactMatrixPreAllocated(CompactMatrixType const *A, CompactMatrixType const *T, CompactMatrixType * const TdagAT)
+uint32_t TransformCompactMatrixPreAllocated(CompactMatrixTypeOld const *A, CompactMatrixTypeOld const *T, CompactMatrixTypeOld * const TdagAT)
 {
   return CompactMatrixMultiply3PreAllocated('C', 'N', 'N', T, A, T, TdagAT);
 }
@@ -873,9 +873,9 @@ uint32_t TransformCompactMatrixPreAllocated(CompactMatrixType const *A, CompactM
 /*  Calculates A <= T^dag A T
  *
  */
-uint32_t TransformCompactMatrixInline(CompactMatrixType * const A, CompactMatrixType const *T)
+uint32_t TransformCompactMatrixInline(CompactMatrixTypeOld * const A, CompactMatrixTypeOld const *T)
 {
-  CompactMatrixType temp;
+  CompactMatrixTypeOld temp;
   if(CompactMatrixMultiply('N', 'N', A, T, &temp)){printf("Error in TransformCompactMatrixInline\n"); return 1;}
   if(CompactMatrixMultiplyPreAllocated('C', 'N', T, &temp, A)){printf("Error in TransformCompactMatrixInline\n"); return 1;}
   FreeCompactMatrix(&temp);
@@ -885,9 +885,9 @@ uint32_t TransformCompactMatrixInline(CompactMatrixType * const A, CompactMatrix
 /*  Calculates A <= T A T^dag
  *
  */
-uint32_t TransformCompactMatrixInlineNNC(CompactMatrixType * const A, CompactMatrixType const *T)
+uint32_t TransformCompactMatrixInlineNNC(CompactMatrixTypeOld * const A, CompactMatrixTypeOld const *T)
 {
-  CompactMatrixType temp;
+  CompactMatrixTypeOld temp;
   if(CompactMatrixMultiply('N', 'C', A, T, &temp)){printf("Error in TransformCompactMatrixInlineNNC\n"); return 1;}
   if(CompactMatrixMultiplyPreAllocated('N', 'N', T, &temp, A)){printf("Error in TransformCompactMatrixInlineNNC\n"); return 1;}
   FreeCompactMatrix(&temp);
@@ -896,7 +896,7 @@ uint32_t TransformCompactMatrixInlineNNC(CompactMatrixType * const A, CompactMat
 
 /* M=M^{T}
  */
-uint32_t CompactMatrixTranspose(CompactMatrixType * const M)
+uint32_t CompactMatrixTranspose(CompactMatrixTypeOld * const M)
 {
   uint32_t i,j,iIndex=0,jIndex=0;
   if(M->Ni==M->Nj)
@@ -1002,7 +1002,7 @@ uint32_t CompactMatrixTranspose(CompactMatrixType * const M)
 
 /* M=M^{*}
  */
-uint32_t CompactMatrixConjugate(CompactMatrixType * const M)
+uint32_t CompactMatrixConjugate(CompactMatrixTypeOld * const M)
 {
   uint32_t i;
   if(M->QComplex)
@@ -1017,7 +1017,7 @@ uint32_t CompactMatrixConjugate(CompactMatrixType * const M)
 
 /* M=M^{+}
  */
-uint32_t CompactMatrixConjugateTranspose(CompactMatrixType * const M)
+uint32_t CompactMatrixConjugateTranspose(CompactMatrixTypeOld * const M)
 {
   CompactMatrixConjugate(M);
   CompactMatrixTranspose(M);
@@ -1027,7 +1027,7 @@ uint32_t CompactMatrixConjugateTranspose(CompactMatrixType * const M)
 
 /* M=M^{-1}
  */
-double CompactMatrixInverse(CompactMatrixType * const M)
+double CompactMatrixInverse(CompactMatrixTypeOld * const M)
 {
   int *IPIV;
   int LWORK = M->Ni*M->Nj;
@@ -1083,7 +1083,7 @@ double CompactMatrixInverse(CompactMatrixType * const M)
 /*  A <- A + B
  *
  */
-uint32_t CompactMatrixAdd(CompactMatrixType * const A, CompactMatrixType const * B)
+uint32_t CompactMatrixAdd(CompactMatrixTypeOld * const A, CompactMatrixTypeOld const * B)
 {
   int i;
   if(((A->Ni)!=(B->Ni))||((A->Nj)!=(B->Nj)))
@@ -1134,7 +1134,7 @@ uint32_t CompactMatrixAdd(CompactMatrixType * const A, CompactMatrixType const *
 
 /* M[i ... i+B.Ni][j ... j+B.Nj] = M[i ... i+B.Ni][j ... j+B.Nj] + alpha B
  */
-uint32_t CompactMatrixAddShifted(CompactMatrixType * const M, const CompactMatrixType B, double const alphaRe, double const alphaIm, int ishift, int jshift)
+uint32_t CompactMatrixAddShifted(CompactMatrixTypeOld * const M, const CompactMatrixTypeOld B, double const alphaRe, double const alphaIm, int ishift, int jshift)
 {
   if ((M->Ni < B.Ni + ishift) || (M->Nj < B.Nj + jshift))
   {
@@ -1187,7 +1187,7 @@ uint32_t CompactMatrixAddShifted(CompactMatrixType * const M, const CompactMatri
  *  and A = Q * R
  *  with Q orthogonal and R upper triangular
  */
-uint32_t CompactMatrixQRDecomposition(CompactMatrixType *A, CompactMatrixType *Q, CompactMatrixType *R)
+uint32_t CompactMatrixQRDecomposition(CompactMatrixTypeOld *A, CompactMatrixTypeOld *Q, CompactMatrixTypeOld *R)
 {
   int LWORK=A->Ni*A->Nj,INFO;
   
@@ -1217,7 +1217,7 @@ uint32_t CompactMatrixQRDecomposition(CompactMatrixType *A, CompactMatrixType *Q
  *  if A has no singular values Tinv . T is the identity matrix
  *  the trance of Tinv . T is equal to the dimension (number of rows) of A minus the number of singular vectors in A.
  */
-uint32_t CompactMatrixSVDOrthogonalizeRow(CompactMatrixType * A, double const SingularValue, CompactMatrixType *T, CompactMatrixType *Tinv)
+uint32_t CompactMatrixSVDOrthogonalizeRow(CompactMatrixTypeOld * A, double const SingularValue, CompactMatrixTypeOld *T, CompactMatrixTypeOld *Tinv)
 {
   uint32_t i;
   char *JOBU ="A";  /* in SVD A = U S V^T return full array U */
@@ -1319,7 +1319,7 @@ uint32_t CompactMatrixSVDOrthogonalizeRow(CompactMatrixType * A, double const Si
  *  if A has no singular values Tinv . T is the identity matrix
  *  the trace of Tinv . T is equal to the dimension (number of columns) of A minus the number of singular vectors in A.
  */
-uint32_t CompactMatrixSVDOrthogonalizeCol(CompactMatrixType * A, double const SingularValue, CompactMatrixType *T, CompactMatrixType *Tinv)
+uint32_t CompactMatrixSVDOrthogonalizeCol(CompactMatrixTypeOld * A, double const SingularValue, CompactMatrixTypeOld *T, CompactMatrixTypeOld *Tinv)
 {
   uint32_t i;
   char *JOBU ="O";  /* in SVD A = U S V^T return the first min(Ni,Nj) collumns of U in matrix A, which is over written */
@@ -1419,7 +1419,7 @@ uint32_t CompactMatrixSVDOrthogonalizeCol(CompactMatrixType * A, double const Si
 /*  A is replaced by an orthonormal form of A using Gram Schmidt
  *  If the norm of a vector A_{i} is smaller than SingularValue this vector is set to zero
  */
-uint32_t CompactMatrixGramSchmidtOrthogonalizeCol(CompactMatrixType * A, double const SingularValue)
+uint32_t CompactMatrixGramSchmidtOrthogonalizeCol(CompactMatrixTypeOld * A, double const SingularValue)
 {
   int i,j,ii,ipos,iipos;
   double dot,norm,dotRe,dotIm;
@@ -1512,7 +1512,7 @@ uint32_t CompactMatrixGramSchmidtOrthogonalizeCol(CompactMatrixType * A, double 
  *  A = Anew Tinv
  *  with Anew^+ Anew an identity matrix
  */
-uint32_t CompactMatrixGramSchmidtOrthogonalizeColplusT(CompactMatrixType const * A, CompactMatrixType *const Anew, CompactMatrixType *const T, CompactMatrixType *const Tinv, double const SingularValue)
+uint32_t CompactMatrixGramSchmidtOrthogonalizeColplusT(CompactMatrixTypeOld const * A, CompactMatrixTypeOld *const Anew, CompactMatrixTypeOld *const T, CompactMatrixTypeOld *const Tinv, double const SingularValue)
 {
   int i,ii,ipos,iipos, one=1;
   CompactMatrixCopy(*A, Anew);
@@ -1557,7 +1557,7 @@ uint32_t CompactMatrixGramSchmidtOrthogonalizeColplusT(CompactMatrixType const *
 }
 
 
-uint32_t CompactMatrixLowdinOrthogonalize(CompactMatrixType * A)
+uint32_t CompactMatrixLowdinOrthogonalize(CompactMatrixTypeOld * A)
 {
   printf("To Do\n");
   return 1;
@@ -1567,7 +1567,7 @@ uint32_t CompactMatrixLowdinOrthogonalize(CompactMatrixType * A)
  *  A=fun.H.fun^{\dag} with H a diagonal matrix with the values val on the diagonal
  *  input M defined, T not initiallized, val allocated
  */
-uint32_t CompactMatrixEigensystem(CompactMatrixType const *A, CompactMatrixType * const fun, double *val)
+uint32_t CompactMatrixEigensystem(CompactMatrixTypeOld const *A, CompactMatrixTypeOld * const fun, double *val)
 {
   int    info;
   const char *jobz = "V";
@@ -1677,10 +1677,10 @@ uint32_t CompactMatrixEigensystem(CompactMatrixType const *A, CompactMatrixType 
  *  A = q . r
  *  with q orthnoromal and r hermitian
  */
-uint32_t CompactMatrixQRDecompositionEigenHermitian(CompactMatrixType const *A, double const SingularValue, CompactMatrixType *q, CompactMatrixType *r)
+uint32_t CompactMatrixQRDecompositionEigenHermitian(CompactMatrixTypeOld const *A, double const SingularValue, CompactMatrixTypeOld *q, CompactMatrixTypeOld *r)
 {
   uint32_t i,NSingular=0;
-  CompactMatrixType Asqr,fun;
+  CompactMatrixTypeOld Asqr,fun;
   double val[A->Ni];
   CompactMatrixMultiply('C', 'N', A, A, &Asqr);
   
@@ -1724,11 +1724,11 @@ uint32_t CompactMatrixQRDecompositionEigenHermitian(CompactMatrixType const *A, 
  *   B * B^{dag} = A
  *
  */
-uint32_t CompactMatrixSqrt(CompactMatrixType const *A, CompactMatrixType * const SqrtA)
+uint32_t CompactMatrixSqrt(CompactMatrixTypeOld const *A, CompactMatrixTypeOld * const SqrtA)
 {
   int i;
   double val[A->Ni];
-  CompactMatrixType fun;
+  CompactMatrixTypeOld fun;
   
   CompactMatrixEigensystem(A, &fun, val);
   for(i=0;i<fun.Ni;i++)
@@ -1750,11 +1750,11 @@ uint32_t CompactMatrixSqrt(CompactMatrixType const *A, CompactMatrixType * const
  *   B * B^{dag} = A
  *
  */
-uint32_t CompactMatrixSqrtold(CompactMatrixType const *A, CompactMatrixType *SqrtA)
+uint32_t CompactMatrixSqrtold(CompactMatrixTypeOld const *A, CompactMatrixTypeOld *SqrtA)
 {
   int i,j;
   double val[A->Ni],sqrtval;
-  CompactMatrixType fun,B;
+  CompactMatrixTypeOld fun,B;
   
   CompactMatrixEigensystem(A, &fun, val);
   CompactMatrixCopy(fun, &B);
@@ -1808,7 +1808,7 @@ uint32_t CompactMatrixSqrtold(CompactMatrixType const *A, CompactMatrixType *Sqr
 /*
  *
  */
-uint32_t BlockNaturalImpurityOrbitalMatrixToCompactMatrix(BlockNaturalImpurityOrbitalMatrixType const * A, CompactMatrixType * const B)
+uint32_t BlockNaturalImpurityOrbitalMatrixToCompactMatrix(BlockNaturalImpurityOrbitalMatrixType const * A, CompactMatrixTypeOld * const B)
 {
   int i,j,k,apos,bposL,bposR;
   B->QComplex=A->QComplex;
@@ -1974,7 +1974,7 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToCompactMatrix(BlockNaturalImpurityOr
 /*
  *
  */
-uint32_t BlockTriDiagonalMatrixToCompactMatrix(BlockTriDiagonalMatrixType const * A, CompactMatrixType * const B)
+uint32_t BlockTriDiagonalMatrixToCompactMatrix(BlockTriDiagonalMatrixType const * A, CompactMatrixTypeOld * const B)
 {
   int i,j,k,apos,bpos,bposL,bposR;
   B->QComplex=A->QComplex;
@@ -2072,10 +2072,10 @@ uint32_t BlockTriDiagonalMatrixToCompactMatrix(BlockTriDiagonalMatrixType const 
 /*
  *
  */
-uint32_t CompactMatrixToSpectra(CompactMatrixType const *A, SpectraType * const G, uint32_t const BlockSize, double Emin, double Emax, uint32_t N)
+uint32_t CompactMatrixToSpectra(CompactMatrixTypeOld const *A, SpectraType * const G, uint32_t const BlockSize, double Emin, double Emax, uint32_t N)
 {
   SpectraType *Gtemp;
-  CompactMatrixType fun;
+  CompactMatrixTypeOld fun;
   int i,j,k,iEmin,iEplus;
   double *val,wmin,wplus;
   if(A->Ni!=A->Nj)
@@ -2245,10 +2245,10 @@ uint32_t CompactMatrixToSpectra(CompactMatrixType const *A, SpectraType * const 
 /* on input A is a Hermitian matrix, Singular Value is the smallest number larger than 0 that has numerical relavance, BlockSize is the size of the blocks and NBlockMax the maximal number of Blocks
  *  onoutput Matrix B has NBlockMax blocks (a_{0} to a_{NBlockMax+1}. b_{0} to b_{NBlockMax}
  */
-uint32_t CompactMatrixBlockBandTridiagonalizeHermitianNoReorthogonalization(CompactMatrixType const *A, BlockTriDiagonalMatrixType *const B, double const SingularValue, uint32_t NBlockMax, uint32_t BlockSize)
+uint32_t CompactMatrixBlockBandTridiagonalizeHermitianNoReorthogonalization(CompactMatrixTypeOld const *A, BlockTriDiagonalMatrixType *const B, double const SingularValue, uint32_t NBlockMax, uint32_t BlockSize)
 {
   int i,NSingular;
-  CompactMatrixType V,Vm1,Vm2,alpha,beta,R;
+  CompactMatrixTypeOld V,Vm1,Vm2,alpha,beta,R;
   B->N=NBlockMax;
   B->BlockSize=BlockSize;
   B->QComplex=A->QComplex;

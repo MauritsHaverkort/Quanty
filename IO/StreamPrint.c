@@ -752,7 +752,7 @@ uint32_t StreamPrintPlainMatrix(MatrixType M, FILE * stream)
 }
 
 
-uint32_t StreamPrintCompactMatrixMinimal(CompactMatrixType const M, FILE * stream)
+uint32_t StreamPrintCompactMatrixMinimal(CompactMatrixTypeOld const M, FILE * stream)
 {
   uint32_t i,j;
   if(M.QComplex)
@@ -1170,7 +1170,7 @@ uint32_t StreamPrintBlokTriDiagonalMatrix(BlokTriDiagonalMatrixType M, FILE * st
 uint32_t StreamPrintBlockTriDiagonalMatrix(BlockTriDiagonalMatrixType M, FILE * stream)
 {
   uint32_t i;
-  CompactMatrixType alpha;
+  CompactMatrixTypeOld alpha;
   alpha.Ni=M.BlockSize;
   alpha.Nj=M.BlockSize;
   alpha.QComplex=M.QComplex;
@@ -1326,7 +1326,7 @@ uint32_t StreamPrintBlokAndersonMatrix(BlokAndersonMatrixType M, FILE * stream)
 uint32_t StreamPrintBlockAndersonMatrix(BlockAndersonMatrixType M, FILE * stream)
 {
   uint32_t i;
-  CompactMatrixType alpha;
+  CompactMatrixTypeOld alpha;
   alpha.Ni=M.BlockSize;
   alpha.Nj=M.BlockSize;
   alpha.QComplex=M.QComplex;
@@ -1423,7 +1423,7 @@ uint32_t StreamPrintListOfPolesEssentials(ListOfPoles M, FILE * stream)
 uint32_t StreamPrintBlockListOfPoles(BlockListOfPoles const M, FILE * stream)
 {
   uint32_t i;
-  CompactMatrixType b;
+  CompactMatrixTypeOld b;
   b.QComplex=M.QComplex;
   b.Ni=M.BlockSize;
   b.Nj=M.BlockSize;
