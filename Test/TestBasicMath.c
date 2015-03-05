@@ -810,7 +810,7 @@ void TestCompactMatrixVector()
 void TestAllMatrix()
 {
   printf("Testing the matrix library and the different matrix representations\n");
-  MatrixType M, A, B, BT, MI, IdentM, ATri, T;
+  MatrixType M, A, B, BT, MI, IdentM, ATri, T, Mdiag;
   TriDiagonalMatrixType MTri;
   BlokTriDiagonalMatrixType MBlokTri;
   uint32_t i, j;
@@ -818,8 +818,8 @@ void TestAllMatrix()
   A.Ni = 6;
   A.Nj = 4;
   A.QComplex = 0;
-  strcpy(A.Name, "A");
   InitMatrix(&A);
+  strcpy(A.Name, "A");
   for (i = 0; i < A.Ni; i++)
   {
     for (j = 0; j < A.Nj; j++)
@@ -831,13 +831,21 @@ void TestAllMatrix()
   printf("\nCreated a Real %i by %i matrix with elements value 100+10*i+j\n", A.Ni, A.Nj);
   PrintMatrix(A);
 
+  for(i=0;i<A.Ni;i++)
+  {
+    for(j=0;j<A.Nj;j++)
+    {
+      printf("A[i=%3i][j=%3i]=%22.15E = A[0][i*A.Nj+j=%3i]=%22.15E\n",i,j,A.VRe[i][j],i*A.Nj+j,A.VRe[0][i*A.Nj+j]);
+    }
+  }
+  
 
   printf("\nAdd A to B with B equal to 0.1*j+0.01*i\n");
   B.Ni = 6;
   B.Nj = 4;
   B.QComplex = 0;
-  strcpy(B.Name, "B");
   InitMatrix(&B);
+  strcpy(B.Name, "B");
   for (i = 0; i < B.Ni; i++)
   {
     for (j = 0; j < B.Nj; j++)
@@ -850,32 +858,49 @@ void TestAllMatrix()
   printf("\nTranspose the matrix\n");
   MatrixTranspose(&A);
   PrintMatrix(A);
-  printf("\nM = A B\n");
-  strcpy(M.Name, "M");
+  printf("\nM = A^T * B\n");
   MatrixMultiply(&M, A, B);
+  strcpy(M.Name, "M");
   PrintMatrix(M);
-
+  
+  printf("\nAdd some small numbers to the diagonal of M\n");
   M.VRe[3][3] += 0.00100;
   M.VRe[2][2] += 0.00200;
   M.VRe[1][1] += 0.00300;
   M.VRe[0][0] += 0.00400;
   PrintMatrix(M);
   MatrixCopy(&MI, M);
-  strcpy(MI.Name, "MI");
   singular = MatrixInverse(&MI);
+  strcpy(MI.Name, "MI");
   printf("Matrix inverted with signular=%22.15E\n", singular);
   PrintMatrix(MI);
-  printf("\nIdentM = M MI\n");
-  strcpy(IdentM.Name, "IdentM");
+  printf("\nIdentM = M * MI\n");
   MatrixMultiply(&IdentM, M, MI);
+  strcpy(IdentM.Name, "IdentM");
   PrintMatrix(IdentM);
   FreeMatrix(&IdentM);
-  printf("\nIdentM = MI M\n");
+  printf("\nIdentM = MI * M\n");
   MatrixMultiply(&IdentM, MI, M);
+  strcpy(IdentM.Name, "IdentM");
   PrintMatrix(IdentM);
   FreeMatrix(&IdentM);
   FreeMatrix(&MI);
   MakeRealMatrixComplex(&M);
+  
+  
+  printf("\nMatrix times vector\n");
+  double avec[6]={1,2,3,4,5,6};
+  double bvec[4];
+  RealMatrixVector(A, avec, bvec);
+  PrintMatrix(A);
+  for(i=0;i<4;i++)
+  {
+    printf("%22.15E\n",bvec[i]);
+  }
+  
+  printf("\nelement A[2][1] is %22.15E\n",A.VRe[2][1]);
+  
+  
   printf("\nSame but complex \n\n");
   M.VIm[0][1] = 10.5;
   M.VIm[2][0] = 10.5;
@@ -995,8 +1020,8 @@ void TestAllMatrix()
   A.Ni = 12;
   A.Nj = 12;
   A.QComplex = 0;
-  strcpy(A.Name, "A");
   InitMatrix(&A);
+  strcpy(A.Name, "A");
   for (i = 0; i < A.Ni; i++)
   {
     for (j = 0; j < A.Nj; j++)
@@ -1010,9 +1035,39 @@ void TestAllMatrix()
   Eigensystem(A, &T, val);
   PrintMatrix(A);
   PrintMatrix(T);
+  
+  MatrixTransform(&Mdiag, A, T);
+  PrintMatrix(Mdiag);
+  FreeMatrix(&Mdiag);
+
+  
+  printf("\n\n\n\n\n  Start Eigensystem of a complex matrix  \n\n\n\n\n");
   FreeMatrix(&T);
-
-
+  FreeMatrix(&A);
+  A.Ni = 12;
+  A.Nj = 12;
+  A.QComplex = 1;
+  InitMatrix(&A);
+  strcpy(A.Name, "A");
+  for (i = 0; i < A.Ni; i++)
+  {
+    for (j = 0; j < A.Nj; j++)
+    {
+      A.VRe[i][j] = i + j + (i * j) / (i - j + 0.5) + (i * j) / (i + j + 0.5);
+      A.VRe[j][i] = A.VRe[i][j];
+      A.VIm[i][j] =(double)i-(double)j;
+    }
+  }
+  Eigensystem(A, &T, val);
+  PrintMatrix(A);
+  PrintMatrix(T);
+  
+  
+  
+  MatrixTransform(&Mdiag, A, T);
+  PrintMatrix(Mdiag);
+  FreeMatrix(&Mdiag);
+  FreeMatrix(&T);
 
 
   printf("\n\n\n  Start Blok Tri-Diagonalize a matrix \n\n\n");

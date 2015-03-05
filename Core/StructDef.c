@@ -196,13 +196,15 @@ TimeType;
  *  The left top element is A[0][0], the right bottom element is A[Ni-1][Nj-1]
  *  The label QComplex sets a real (0) or complex (1) matrix.
  *
- *     ( A[0][0] | A[0][1] | A[0][2] )
- *   A=( A[1][0] | A[1][1] | A[1][2] )
- *     ( A[2][0] | A[2][1] | A[2][2] )
+ *     ( A[0][0]    | A[0][1]    | A[0][2]    | ... | A[0][Nj-1]    )
+ *   A=( A[1][0]    | A[1][1]    | A[1][2]    | ... | A[1][Nj-1]    )
+ *     ( A[2][0]    | A[2][1]    | A[2][2]    | ... | A[2][Nj-1]    )
+ *     ( .......    | .......    | .......    | ... | A[2][Nj-1]    )
+ *     ( A[Ni-1][0] | A[Ni-1][1] | A[Ni-1][2] | ... | A[Ni-1][Nj-1] )
  *
  *   (A B)[i][j] = \sum_k A[i][k] B[k][j]
  *
- *   y[j] = \sum_i A[i][j] x[i]  <== Really ???
+ *   y[i] = \sum_j A[i][j] x[j]
  *
  *   A[i][j]=A[0][i*A.Nj+j]
  */
@@ -218,15 +220,15 @@ typedef struct MatrixType
 }
 MatrixType;
 
-
-
 /*  CompactMatrixType defines a 2-dimensional tensor (matrix) with Nj rows and Ni columns
  *  The left top element is A(00), the right bottom element is A(Ni-1,Nj-1)
  *  The label QComplex sets a real (0) or complex (1) matrix.
  *
- *     ( A(0,0) | A(1,0) | A(2,0) )
- *   A=( A(0,1) | A(1,1) | A(2,1) )
- *     ( A(0,2) | A(1,2) | A(2,2) )
+ *     ( A(0,0)    | A(1,0)    | A(2,0)    | ...... | A(Ni-1,0)    )
+ *     ( A(0,1)    | A(1,1)    | A(2,1)    | ...... | A(Ni-1,1)    )
+ *   A=( A(0,2)    | A(1,2)    | A(2,2)    | ...... | A(Ni-1,2)    )
+ *     ( ......    | ......    | ......    | ...... | .........    )
+ *     ( A(0,Nj-1) | A(1,Nj-1) | A(2,Nj-1) | ...... | A(Ni-1,Nj-1) )
  *
  *   (A B)(i,j) = \sum_k A(k,j) B(i,k)
  *

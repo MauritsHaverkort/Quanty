@@ -1392,8 +1392,9 @@ uint32_t BlockLanczosGroundStateConserveBasis(const OperatorType H, WaveFunction
  *  Input:
  *    H:             Operator
  *    Npsi:          number of states to converge
- *    zero:          smallest positive real larger than zero considered to be equal to zero in convergence tests
- *    epsilon:       smallest norm of prefactor of a determinant kept in a wave function
+ *    Settings:      ConvergenceSettingsType* pointer to important values that need to be set:
+ *                   Settings->zero    smallest possitive double that is considered different from zero when comparing convergence creteria
+ *                   Settings->epsilon smallest positive double that is considered different from zero when truncating wavefunctions
  *    StartingPoint: a set of restrictions defining the starting point wave function
  *                   if StartingPoint.N = 0 it is assumed that the functions psi are intialized and one starts from there
  *    Restrictions:  a set of restrictions makeing the basis smaler

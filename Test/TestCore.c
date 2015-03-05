@@ -873,6 +873,7 @@ void TestMeanField()
 
 void TestBlockLanczos()
 {
+  ConvergenceSettingsType Settings;
   InitializeTiming(&GlobalTime);
   GlobalTimeOn=0xFFFFFFFF;
   BeginTiming("Total", &GlobalTime);
@@ -889,9 +890,8 @@ void TestBlockLanczos()
   double tIm[N];
   double Energy[Npsi];
   double EnergySqr[Npsi];
-  double zero,epsilon;
   DeterminantRestrictionType DetRet;
-  
+  Settings = InitConvergenceSettings();
   for(i=0;i<NFermion;i++)
   {
     for(j=0;j<NFermion;j++)
@@ -965,7 +965,7 @@ void TestBlockLanczos()
     WaveFunctionInitCopyBasis(&v[i], v[0]);
   }
   
-  BlockLanczosGroundStateConserveBasisKrylov(H, v, Npsi, DBL_EPSILON);
+  BlockLanczosGroundStateConserveBasisKrylov(H, v, Npsi, &Settings);
   
   
   printf("\n\n\n\n\n================= BlockGroundState ================\n\n\n");
@@ -976,11 +976,8 @@ void TestBlockLanczos()
     psi[i]=v[i];
   }
   
-  
-  zero=100*DBL_EPSILON;
-  epsilon=DBL_EPSILON;
   DetRet.N=0;
-  BlockGroundState(H, Npsi, zero, &epsilon, DetRet, DetRet, psi, 0);
+  BlockGroundState(H, Npsi, &Settings, DetRet, DetRet, psi, 0);
   
   EndTiming("Total", &GlobalTime);
   PrintTiming(GlobalTime);

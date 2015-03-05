@@ -73,7 +73,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "CompactMatrixVector"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "MF"
@@ -149,7 +149,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "BlockLanczos"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "Opar"
