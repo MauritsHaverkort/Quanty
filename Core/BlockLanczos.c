@@ -578,8 +578,9 @@ void BlockWaveFunctionTruncateBasis(WaveFunctionType *const psi, uint32_t const 
   }
 }
 
-uint32_t BlockWaveFunctionCalculatOverlapMatrix(WaveFunctionType *const psi, uint32_t const Npsi, CompactMatrixTypeOld *const S)
+uint32_t BlockWaveFunctionCalculatOverlapMatrix(WaveFunctionType *const psi, uint32_t const Npsi, CompactMatrixType *const S)
 {
+  //TODO: test after converging matrix format
   uint32_t i,j;
   S->Ni=Npsi;
   S->Nj=Npsi;
@@ -616,7 +617,7 @@ uint32_t BlockLanczosGroundStateConserveBasisDense(const OperatorType H, WaveFun
 {
   int iOMP;
   uint32_t i,j,k;
-  CompactMatrixTypeOld Hdens,fun;
+  CompactMatrixType Hdens,fun;
   double val[psi[0].N];
   VerbosityPrintf(0x0100,"Start of BlockLanczosGroundStateConserveBasisDense\n");
   // test if psi is complex when H is complex, if not turn it into a complex function
@@ -666,12 +667,12 @@ uint32_t BlockLanczosGroundStateConserveBasisDense(const OperatorType H, WaveFun
 #pragma omp for
       for(iOMP=0;iOMP<psi[0].N;iOMP++)
       {
-        i=(uint32_t)iOMP;
-        OperatorDeterminantPreAllocated(&H, &(psi[0].Determinant[BlokElementDet(i+1,psi[0].NWord,0)]), &Hpsi);
-        for(j=0;j<psi[0].N;j++)
+        j=(uint32_t)iOMP;
+        OperatorDeterminantPreAllocated(&H, &(psi[0].Determinant[BlokElementDet(j+1,psi[0].NWord,0)]), &Hpsi);
+        for(i=0;i<psi[0].N;i++)
         {
-          Hdens.V[j+i*Hdens.Nj].Re=Hpsi.ValueRe[BlokElement(j+1)];
-          Hdens.V[j+i*Hdens.Nj].Im=Hpsi.ValueIm[BlokElement(j+1)];
+          Hdens.V[j+i*Hdens.Nj].Re=Hpsi.ValueRe[BlokElement(i+1)];
+          Hdens.V[j+i*Hdens.Nj].Im=Hpsi.ValueIm[BlokElement(i+1)];
         }
       }
     }
@@ -680,11 +681,11 @@ uint32_t BlockLanczosGroundStateConserveBasisDense(const OperatorType H, WaveFun
 #pragma omp for
       for(iOMP=0;iOMP<psi[0].N;iOMP++)
       {
-        i=(uint32_t)iOMP;
-        OperatorDeterminantPreAllocated(&H, &(psi[0].Determinant[BlokElementDet(i+1,psi[0].NWord,0)]), &Hpsi);
-        for(j=0;j<psi[0].N;j++)
+        j=(uint32_t)iOMP;
+        OperatorDeterminantPreAllocated(&H, &(psi[0].Determinant[BlokElementDet(j+1,psi[0].NWord,0)]), &Hpsi);
+        for(i=0;i<psi[0].N;i++)
         {
-          Hdens.VRe[j+i*Hdens.Nj]=Hpsi.ValueRe[BlokElement(j+1)];
+          Hdens.VRe[j+i*Hdens.Nj]=Hpsi.ValueRe[BlokElement(i+1)];
         }
       }
     }
@@ -737,8 +738,6 @@ uint32_t BlockLanczosGroundStateConserveBasisDense(const OperatorType H, WaveFun
   {
     VerbosityPrintf(0x0100,"val[%3i] = %22.15E\n",i,val[i]);
   }
-  
-  
   return 0;
 }
 
@@ -855,7 +854,7 @@ uint32_t BlockWaveFunctionOrthonormalizeSameBasis(WaveFunctionType *const v, uin
 uint32_t BlockLanczosGroundStateConserveBasisKrylovReal(const OperatorType H, WaveFunctionType * const v, uint32_t const Npsi, ConvergenceSettingsType * Settings)
 {
   VerbosityPrintf(0x0100,"In BlockLanczosGroundStateConserveBasisKrylovReal\n");
-  //CompactMatrixTypeOld tempS; // needed for testing of norm during convergence loops
+  //CompactMatrixType tempS; // needed for testing of norm during convergence loops
   int    info;
   const char *jobz = "V";
   const char *uplo = "U";
@@ -867,7 +866,7 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylovReal(const OperatorType H, Wa
   double Norm, DotRe;
   uint32_t NKrylovNow=Npsi+Settings->NKrylovStart;
   uint32_t i,j, NpsiDeflated, NorthoExtra, Deflated[Npsi],irestart=0;
-  CompactMatrixTypeOld HKrylov;
+  CompactMatrixType HKrylov;
   uint32_t QConverged=0;
   double **temp;
   // init several matrices
@@ -907,7 +906,7 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylovReal(const OperatorType H, Wa
     // initialize variables
     NpsiDeflated=Npsi;
     NorthoExtra=0;
-    memset(HKrylov.V, 0, HKrylov.Ni*HKrylov.Nj*sizeof(double));
+    memset(HKrylov.VRe, 0, HKrylov.Ni*HKrylov.Nj*sizeof(double));
     // loop over NKrylovNow states
     for(i=0;i<NKrylovNow;i++)
     {
@@ -1053,7 +1052,7 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylovReal(const OperatorType H, Wa
 uint32_t BlockLanczosGroundStateConserveBasisKrylovComplex(const OperatorType H, WaveFunctionType * const v, uint32_t const Npsi, ConvergenceSettingsType * Settings)
 {
   VerbosityPrintf(0x0100,"In BlockLanczosGroundStateConserveBasisKrylovComplex\n");
-  //CompactMatrixTypeOld tempS; // needed for testing of norm during convergence loops
+  //CompactMatrixType tempS; // needed for testing of norm during convergence loops
   int    info;
   const char *jobz = "V";
   const char *uplo = "U";
@@ -1067,7 +1066,7 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylovComplex(const OperatorType H,
   double Norm, DotRe, DotIm;
   uint32_t NKrylovNow=Npsi+Settings->NKrylovStart;
   uint32_t i,j, NpsiDeflated, NorthoExtra, Deflated[Npsi],irestart=0;
-  CompactMatrixTypeOld HKrylov;
+  CompactMatrixType HKrylov;
   uint32_t QConverged=0;
   double **tempRe, **tempIm;
   // init several matrices

@@ -191,7 +191,7 @@ uint32_t BlockListOfPolesToSpectra(BlockListOfPoles const A, SpectraType *G, dou
  *       ( ..   ..  ..  ..  ..  ..  )
  *       ( bn^+ 0   0   0   ..  an  )
  */
-uint32_t BlockListOfPolesToCompactMatrix(BlockListOfPoles const * const A, CompactMatrixTypeOld * const B)
+uint32_t BlockListOfPolesToCompactMatrix(BlockListOfPoles const * const A, CompactMatrixType * const B)
 {
   uint32_t i,j,k,kA,kBa;
   B->QComplex = A->QComplex;
@@ -199,7 +199,7 @@ uint32_t BlockListOfPolesToCompactMatrix(BlockListOfPoles const * const A, Compa
   B->Nj = (A->N+1) * A->BlockSize;
   B->mu = A->mu;
   InitCompactMatrix(B);
-  CompactMatrixTypeOld Anow,Asqrt;
+  CompactMatrixType Anow,Asqrt;
   Anow.Ni=A->BlockSize;
   Anow.Nj=A->BlockSize;
   Anow.Name=(char*)malloc(MAXStrLength*sizeof(char));
@@ -282,7 +282,7 @@ uint32_t BlockListOfPolesToCompactMatrix(BlockListOfPoles const * const A, Compa
 uint32_t TightBindingHamiltonianToBlockListOfPoles(TightBindingDef const A, int Nk[3], BlockListOfPoles * const G, double const Emin, double const Emax, uint32_t const NE)
 {
   MatrixType H;
-  CompactMatrixTypeOld T;
+  CompactMatrixType T;
   double q[3], val[A.NFermion], rest, totmin=0, totmax=0, totnow;
   int    iq[3],ival,iE,i,j;
   double diq[3],dE=(Emax-Emin)/((double)NE),energy,Nktot;
@@ -433,7 +433,7 @@ uint32_t TightBindingHamiltonianToBlockListOfPoles(TightBindingDef const A, int 
 uint32_t TightBindingHamiltonianMultiSiteToBlockListOfPoles(TightBindingDef const A, int Nk[3], uint32_t const Nvec, int const *vec, BlockListOfPoles * const G, double const Emin, double const Emax, uint32_t const NE)
 {
   MatrixType H;
-  CompactMatrixTypeOld T;
+  CompactMatrixType T;
   double q[3], val[A.NFermion], rest, totmin=0, totmax=0, totnow, dvec[3];
   double const piornot = ((A.Cell.Units&1) ? (1) : (Pi));  // if A.Cell.Units last bit is 1 then r.g = pi, otherwise it evaluates to 1, piornot * r.g now eveluates always to pi.
   int    iq[3],ival,iE,i,j,ivec,jvec;
@@ -628,7 +628,7 @@ uint32_t TightBindingHamiltonianMultiSiteToBlockListOfPoles(TightBindingDef cons
 uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles(TightBindingDef const A, int Nk[3], BlockListOfPoles const Sigma, BlockListOfPoles * const G, double const Emin, double const Emax, uint32_t const NE)
 {
   MatrixType H;
-  CompactMatrixTypeOld T, HSigma, HSigmaComplex;
+  CompactMatrixType T, HSigma, HSigmaComplex;
   double q[3], val[A.NFermion*(Sigma.N+1)], rest, totmin=0, totmax=0, totnow;
   int    iq[3],ival,iE,i,j;
   double diq[3],dE=(Emax-Emin)/((double)NE),energy,Nktot;
@@ -853,7 +853,7 @@ uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles(TightBindingDef
 uint32_t TightBindingHamiltonianPlusSelfEnergyMultiSiteToBlockListOfPoles(TightBindingDef const A, int Nk[3], uint32_t const Nvec, int const *vec, BlockListOfPoles const Sigma, BlockListOfPoles * const G, double const Emin, double const Emax, uint32_t const NE)
 {
   MatrixType H;
-  CompactMatrixTypeOld T, HSigma, HSigmaComplex;
+  CompactMatrixType T, HSigma, HSigmaComplex;
   double q[3], val[A.NFermion*(Sigma.N+1)], rest, totmin=0, totmax=0, totnow, dvec[3];
   double const piornot = ((A.Cell.Units&1) ? (1) : (Pi));  // if A.Cell.Units last bit is 1 then r.g = pi, otherwise it evaluates to 1, piornot * r.g now eveluates always to pi.
   int    iq[3],ival,iE,i,j,ivec,jvec;
@@ -1122,7 +1122,7 @@ uint32_t TightBindingHamiltonianPlusSelfEnergyMultiSiteToBlockListOfPoles(TightB
 uint32_t TightBindingHamiltonianAddSpinPlusSelfEnergyToBlockListOfPoles(TightBindingDef const A, int Nk[3], BlockListOfPoles const Sigma, BlockListOfPoles * const G, double const Emin, double const Emax, uint32_t const NE)
 {
   MatrixType H, PsiChar;
-  CompactMatrixTypeOld T, HSigma, HSigmaComplex;
+  CompactMatrixType T, HSigma, HSigmaComplex;
   double q[3], val[2*A.NFermion*(Sigma.N+1)], rest, totmin=0, totmax=0, totnow;
   int    iq[3],ival,iE,i,j;
   double diq[3],dE=(Emax-Emin)/((double)NE),energy,Nktot;
@@ -1351,7 +1351,7 @@ uint32_t TightBindingHamiltonianAddSpinPlusSelfEnergyToBlockListOfPoles(TightBin
 uint32_t TightBindingHamiltonianAddSpinPlusSelfEnergyMultiSiteToBlockListOfPoles(TightBindingDef const A, int Nk[3], uint32_t const Nvec, int const *vec, BlockListOfPoles const Sigma, BlockListOfPoles * const G, double const Emin, double const Emax, uint32_t const NE)
 {
   MatrixType H, PsiChar;
-  CompactMatrixTypeOld T, HSigma, HSigmaComplex;
+  CompactMatrixType T, HSigma, HSigmaComplex;
   double q[3], val[A.NFermion*(Sigma.N+1)], rest, totmin=0, totmax=0, totnow, dvec[3];
   double const piornot = ((A.Cell.Units&1) ? (1) : (Pi));  // if A.Cell.Units last bit is 1 then r.g = pi, otherwise it evaluates to 1, piornot * r.g now eveluates always to pi.
   int    iq[3],ival,iE,i,j,ivec,jvec;
@@ -1621,13 +1621,13 @@ uint32_t TightBindingHamiltonianAddSpinPlusSelfEnergyMultiSiteToBlockListOfPoles
  *
  *  if psi is non orthogonal then an orthogonal form of psi is stored as the first block in T. b0 is psi^+ psi_{ortho}
  */
-uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixTypeOld const *psi, CompactMatrixTypeOld *const T, BlockTriDiagonalMatrixType *const ABlock, double NBlock, double SingularValue)
+uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType const *psi, CompactMatrixType *const T, BlockTriDiagonalMatrixType *const ABlock, double NBlock, double SingularValue)
 {
   char *charC="C";
   char *charN="N";
   int i,ii,j,k,oldindex,newindex,ipos,iipos,ia,ib,jcol,icol,allzero;
   double norm,dot,dotRe,dotIm;
-  CompactMatrixTypeOld Tnow;
+  CompactMatrixType Tnow;
   
   /*
   printf("In DiagonalMatrixBlockTridiagonalize\n");
@@ -1734,7 +1734,7 @@ uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixTypeOld
     /*
     printf("transformation matrix T\n");
     PrintCompactMatrixMinimal(T);
-    CompactMatrixTypeOld test1, test2;
+    CompactMatrixType test1, test2;
     CompactMatrixMultiply('C', 'N', T, T, &test1);
     CompactMatrixChop(&test1, 1000*DBL_EPSILON);
     PrintCompactMatrixMinimal(test1);
@@ -1918,7 +1918,7 @@ uint32_t BlockListOfPolesToBlockTridiagonalMatrix(BlockListOfPoles const A, Bloc
   double *alpha;
   int k,i,ialpha,iN;
   char name[]="temp";
-  CompactMatrixTypeOld betaisqr,betai,beta,T;
+  CompactMatrixType betaisqr,betai,beta,T;
   
   betaisqr.QComplex=A.QComplex;
   betaisqr.Ni=A.BlockSize;
@@ -1982,12 +1982,12 @@ uint32_t BlockListOfPolesToBlockTridiagonalMatrix(BlockListOfPoles const A, Bloc
  *  The actual tridiagonalization is done for the starting vectors AT * beta
  *
  */
-uint32_t BlockListOfPolesToBlockTridiagonalMatrixReduceDimension(BlockListOfPoles const A, BlockTriDiagonalMatrixType *B, CompactMatrixTypeOld const *AT,  int const NBlockMax, double const SingularValue)
+uint32_t BlockListOfPolesToBlockTridiagonalMatrixReduceDimension(BlockListOfPoles const A, BlockTriDiagonalMatrixType *B, CompactMatrixType const *AT,  int const NBlockMax, double const SingularValue)
 {
   double *alpha;
   int k,i,ialpha,iN;
   char name[]="temp";
-  CompactMatrixTypeOld betaisqr,betai,beta,T,ATbeta;
+  CompactMatrixType betaisqr,betai,beta,T,ATbeta;
   
   betaisqr.QComplex=A.QComplex;
   betaisqr.Ni=A.BlockSize;
@@ -2049,7 +2049,7 @@ uint32_t BlockListOfPolesToBlockTridiagonalMatrixReduceDimension(BlockListOfPole
 uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(BlockListOfPoles const *A, BlockNaturalImpurityOrbitalMatrixType * const B, double const kbT, uint32_t const NBlockMaxVal, uint32_t const NBlockMaxCon)
 {
   int i,j;
-  CompactMatrixTypeOld T,M;
+  CompactMatrixType T,M;
   BlockListOfPoles Acon, Aval;
   B->mu=A->mu;
   B->QComplex=A->QComplex;
@@ -2181,10 +2181,10 @@ uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(BlockListOfPoles co
  *  Output
  *    B resutling G on Nat. Imp. Orb. basis
  */
-uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrixReduceDimension(BlockListOfPoles const *A, BlockNaturalImpurityOrbitalMatrixType * const B, CompactMatrixTypeOld const *AT, double const kbT, uint32_t const NBlockMaxVal, uint32_t const NBlockMaxCon)
+uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrixReduceDimension(BlockListOfPoles const *A, BlockNaturalImpurityOrbitalMatrixType * const B, CompactMatrixType const *AT, double const kbT, uint32_t const NBlockMaxVal, uint32_t const NBlockMaxCon)
 {
   int i,j;
-  CompactMatrixTypeOld T,M;
+  CompactMatrixType T,M;
   BlockListOfPoles Acon, Aval;
   B->mu=A->mu;
   B->QComplex=A->QComplex;
@@ -2307,7 +2307,7 @@ uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrixReduceDimension(Bloc
 uint32_t BlockTriDiagonalMatrixToBlockListOfPoles(BlockTriDiagonalMatrixType const * A, BlockListOfPoles * const G, double const Emin, double const Emax, uint32_t const NE)
 {
   int i,j,k,irho,kfun,iE;
-  CompactMatrixTypeOld Afull, Afun, Rho;
+  CompactMatrixType Afull, Afun, Rho;
   double energy, dE=(Emax-Emin)/((double)NE), rest, totmin=0, totmax=0, totnow;
   double *Aval;
   /* first turn the matrix into compact form */
@@ -2560,7 +2560,7 @@ uint32_t BlockTriDiagonalMatrixToSpectra(BlockTriDiagonalMatrixType const * A, S
 {
   int i,iw,iblock;
   double omega;
-  CompactMatrixTypeOld Gw,a,b;
+  CompactMatrixType Gw,a,b;
   G[0].N=N;
   G[0].Emin=Emin;
   G[0].Emax=Emax;
@@ -2615,7 +2615,7 @@ uint32_t BlockTriDiagonalMatrixToSpectra(BlockTriDiagonalMatrixType const * A, S
         Gw.V[i].Im+=Gamma/2.0;
       }
       CompactMatrixInverse(&Gw);
-      TransformCompactMatrixInlineNNC(&Gw, &b); /* Gw <- b Gw b^dag */
+      TransformCompactMatrixInlinecT(&Gw, &b); /* Gw <- b Gw b^dag */ //need to test replaced by b^* Gw b^T
     }
     if(A->QComplex)
     {

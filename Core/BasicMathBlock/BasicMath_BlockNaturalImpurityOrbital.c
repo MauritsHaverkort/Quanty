@@ -31,9 +31,9 @@
  *     ( 0             | 0             | 0             | 0             | 0           | 0             | 1             | 0           )
  *     ( 0             | 0             | 0             | 0             | 0           | 0             | 0             | 1           )
  *
- *   (A B)(i,j) = \sum_k A(k,j) B(i,k)
+ *   (A B)(i,j) = \sum_k A(i,k) B(k,j)
  *
- *   y[j] = \sum_i A(i,j) x[i]
+ *   y[i] = \sum_j A(i,j) x[j]
  *
  *   element (i,j) is found at position [i*Nj + j]
  *

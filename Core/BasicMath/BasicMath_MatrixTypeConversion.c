@@ -1859,7 +1859,7 @@ uint32_t MatrixToTriDiagonalMatrixNonOrthogonal(MatrixType const M, TriDiagonalM
 }
 
 /*
-*  M=T.H.T^{\dag} with H a diagonal matrix with the values val on the diagonal
+*  M=T^{*}.H.T^{T} with H a diagonal matrix with the values val on the diagonal
 *  input M defined, T not initiallized
 */
 uint32_t Eigensystem(MatrixType const M, MatrixType * const T, double *val)
@@ -1916,8 +1916,7 @@ uint32_t Eigensystem(MatrixType const M, MatrixType * const T, double *val)
     T->Ni = M.Ni;
     T->Nj = M.Nj;
     T->QComplex = M.QComplex;
-    if (InitMatrix(T))
-      return 1;
+    if (InitMatrix(T)) return 1;
     strcpy(T->Name, "Eigenvectors of ");
     strncat(T->Name, M.Name, Max(0, MAXStrLength - 16));
     for (i = 0; i < M.Ni * M.Ni; i++)
@@ -1966,8 +1965,9 @@ uint32_t MatrixToEigensystem(MatrixType const M, MatrixType * const T, double *v
  *  M=T.H.T^{\dag} with H a diagonal matrix with the values val on the diagonal
  *  input M defined, H and T not initiallized
  */
-uint32_t EigensystemToCompact(MatrixType const M, CompactMatrixTypeOld * const T, double *val)
+uint32_t EigensystemToCompact(MatrixType const M, CompactMatrixType * const T, double *val)
 {
+  //TODO: H = T . M . T^dag seems wrong should be H = T^* . M . T^T
   int    info;
   const char *jobz = "V";
   const char *uplo = "U";
@@ -2053,9 +2053,9 @@ uint32_t EigensystemToCompact(MatrixType const M, CompactMatrixTypeOld * const T
  *  S = Sroot . Sroot^{\dag}
  *
  */
-uint32_t GeneralizedEigensystem(MatrixType const M, MatrixType const S, MatrixType * const T, MatrixType * const Sroot,
-                                double *val)
+uint32_t GeneralizedEigensystem(MatrixType const M, MatrixType const S, MatrixType * const T, MatrixType * const Sroot,  double *val)
 {
+  //TODO: H = T . M . T^dag seems wrong should be H = T^* . M . T^T
   int    info, itype = 1;
   const char *jobz = "V";
   const char *uplo = "U";
@@ -2216,8 +2216,7 @@ uint32_t GeneralizedEigensystem(MatrixType const M, MatrixType const S, MatrixTy
   return 0;
 }
 
-uint32_t MatrixToGeneralizedEigensystem(MatrixType const M, MatrixType const S, MatrixType * const T,
-                                        MatrixType * const Sroot, double *val)
+uint32_t MatrixToGeneralizedEigensystem(MatrixType const M, MatrixType const S, MatrixType * const T, MatrixType * const Sroot, double *val)
 {
   return GeneralizedEigensystem(M, S, T, Sroot, val);
 }
@@ -2236,6 +2235,7 @@ uint32_t MatrixToGeneralizedEigensystem(MatrixType const M, MatrixType const S, 
  */
 uint32_t GeneralizedEigenvalues(MatrixType const M, MatrixType const S, double *val)
 {
+  //TODO: H = T . M . T^dag seems wrong should be H = T^* . M . T^T
   int    info, itype = 1;
   const char *jobz = "N";
   const char *uplo = "U";
@@ -2412,9 +2412,9 @@ uint32_t GeneralizedEigenvalues(MatrixType const M, MatrixType const S, double *
  *  S = Sroot . Sroot^{\dag}
  *
  */
-uint32_t GeneralizedEigensystemSingular(MatrixType const M, MatrixType const S, MatrixType * const T,
-                                        MatrixType * const Sroot, double *val)
+uint32_t GeneralizedEigensystemSingular(MatrixType const M, MatrixType const S, MatrixType * const T, MatrixType * const Sroot, double *val)
 {
+  //TODO: test H = T . M . T^{\dag} does not seem right, should be H = T^* . M . T^T
   uint32_t i, j, NewDim, retval = 0;
   double Sval[S.Ni], bound;
   MatrixType EigenSysS, TMT, TST, Ttemp;
@@ -2484,7 +2484,9 @@ uint32_t GeneralizedEigensystemSingular(MatrixType const M, MatrixType const S, 
   return retval;
 }
 
-
+/*
+ *
+ */
 uint32_t RemoveStatesWithNegligibleNorm(MatrixType * const H, MatrixType * const S, MatrixType * const T)
 {
   MatrixType temp;
@@ -2508,6 +2510,7 @@ uint32_t RemoveStatesWithNegligibleNorm(MatrixType * const H, MatrixType * const
 */
 uint32_t MatrixToAndersonMatrix(MatrixType const M, MatrixType * const T, AndersonMatrixType * const H)
 {
+  //TODO: M=T.H.T^dag does not seem right, should be M=T^*.H.T^T
   int    i, j, info;
   const char *jobz = "V";
   const char *uplo = "U";
@@ -2671,6 +2674,7 @@ uint32_t MatrixToAndersonMatrix(MatrixType const M, MatrixType * const T, Anders
 */
 uint32_t BlokTriDiagonalize(MatrixType const M, MatrixType * const T, BlokTriDiagonalMatrixType * const H, const uint32_t BlokDim)
 {
+  //TODO: M=T.H.T^Dag does not seem right, should be M=T^*.H.T^T
   int    i, j, k, l, CurrentDim, NBlok;
   const char *jobu = "N";
   const char *jobvt = "A";
@@ -3126,8 +3130,7 @@ uint32_t BlokTriDiagonalize(MatrixType const M, MatrixType * const T, BlokTriDia
   return 0;
 }
 
-uint32_t MatrixToBlokTriDiagonalMatrix(MatrixType const M, MatrixType * const T, BlokTriDiagonalMatrixType * const H,
-                                       const uint32_t NBlok)
+uint32_t MatrixToBlokTriDiagonalMatrix(MatrixType const M, MatrixType * const T, BlokTriDiagonalMatrixType * const H, const uint32_t NBlok)
 {
   return BlokTriDiagonalize(M, T, H, NBlok);
 }
@@ -3136,9 +3139,9 @@ uint32_t MatrixToBlokTriDiagonalMatrix(MatrixType const M, MatrixType * const T,
 *  M=T.H.T^{\dag}
 *  input M defined, H and T not initiallized
 */
-uint32_t MatrixToBlokAndersonMatrix(MatrixType const M, MatrixType * const T, BlokAndersonMatrixType * const H,
-                                    const uint32_t BlokDim)
+uint32_t MatrixToBlokAndersonMatrix(MatrixType const M, MatrixType * const T, BlokAndersonMatrixType * const H, const uint32_t BlokDim)
 {
+  //TODO: M=T.H.T^Dag does not seem right, should be M=T^*.H.T^T
   int    i, j, info, NBlok;
   const char *jobz = "V";
   const char *uplo = "U";
@@ -3337,8 +3340,7 @@ uint32_t MatrixToBlokAndersonMatrix(MatrixType const M, MatrixType * const T, Bl
 /* 
 *
 */
-uint32_t MatrixToDoubleTriDiagonalMatrixNoOverlap(MatrixType const M, MatrixType * const Tval, MatrixType * const Tcon,
-                                                  DoubleTriDiagonalMatrixType * const H, double const Ef)
+uint32_t MatrixToDoubleTriDiagonalMatrixNoOverlap(MatrixType const M, MatrixType * const Tval, MatrixType * const Tcon, DoubleTriDiagonalMatrixType * const H, double const Ef)
 {
   int    i, iEf;
   MatrixType TMtoAnd;
@@ -3358,7 +3360,7 @@ uint32_t MatrixToDoubleTriDiagonalMatrixNoOverlap(MatrixType const M, MatrixType
   }
 
 
-  /* To Do */
+  //TODO: general coding
 
   return 0;
 }
@@ -3369,7 +3371,7 @@ uint32_t MatrixToBlokDoubleTriDiagonalMatrixNoOverlap(MatrixType const M, Matrix
                                                       BlokDoubleTriDiagonalMatrixType * const H, const uint32_t BlokDim,
                                                       double const Ef)
 {
-  /* To Do */
+  //TODO: General coding
   return 0;
 }
 
@@ -3379,7 +3381,9 @@ uint32_t MatrixToBlokDoubleTriDiagonalMatrixNoOverlap(MatrixType const M, Matrix
 /********************         ListOfPoles To ...         ********************/
 /****************************************************************************/
 
-
+/*
+ *
+ */
 uint32_t ListOfPolesToTridiagonalMatrixNonOrthogonal(const ListOfPoles A, TriDiagonalMatrixType * const M,
                                                      uint32_t NTriDiag)
 {
@@ -3412,6 +3416,9 @@ uint32_t ListOfPolesToTridiagonalMatrixNonOrthogonal(const ListOfPoles A, TriDia
   return 0;
 }
 
+/*
+ *
+ */
 uint32_t ListOfPolesToTridiagonalMatrix(const ListOfPoles A, TriDiagonalMatrixType * const M, uint32_t NTriDiag)
 {
   uint32_t i;
@@ -3443,6 +3450,9 @@ uint32_t ListOfPolesToTridiagonalMatrix(const ListOfPoles A, TriDiagonalMatrixTy
   return 0;
 }
 
+/*
+ *
+ */
 uint32_t ListOfPolesToAndersonMatrix(const ListOfPoles A, AndersonMatrixType * const M)
 {
   TriDiagonalMatrixType Atri;
@@ -3453,6 +3463,9 @@ uint32_t ListOfPolesToAndersonMatrix(const ListOfPoles A, AndersonMatrixType * c
   return 0;
 }
 
+/*
+ *
+ */
 uint32_t ListOfPolesToBADoubleTridiagonalMatrix(const ListOfPoles A, BADoubleTriDiagonalMatrixType * const M, uint32_t NTriDiagval, uint32_t NTriDiagcon, double mu, double Epsilon)
 {
   ListOfPoles LPcon, LPval;
@@ -3471,7 +3484,9 @@ uint32_t ListOfPolesToBADoubleTridiagonalMatrix(const ListOfPoles A, BADoubleTri
   return 0;
 }
 
-
+/*
+ *
+ */
 uint32_t ListOfPolesToBADoubleTridiagonalMatrixOccupation(const ListOfPoles A, BADoubleTriDiagonalMatrixType * const M,
                                                           uint32_t NTriDiagval, uint32_t NTriDiagcon, double mu,
                                                           double occupation)

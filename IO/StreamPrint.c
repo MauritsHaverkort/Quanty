@@ -752,25 +752,25 @@ uint32_t StreamPrintPlainMatrix(MatrixType M, FILE * stream)
 }
 
 
-uint32_t StreamPrintCompactMatrixMinimal(CompactMatrixTypeOld const M, FILE * stream)
+uint32_t StreamPrintCompactMatrixMinimal(CompactMatrixType const M, FILE * stream)
 {
   uint32_t i,j;
   if(M.QComplex)
   {
-    for(j=0;j<M.Nj;j++)
+    for(i=0;i<M.Ni;i++)
     {
-      for(i=0;i<M.Ni;i++)
+      for(j=0;j<M.Nj;j++)
       {
-        fprintf(stream,"(%22.15E ",M.V[j+M.Nj*i].Re);
-        if(M.V[j+M.Nj*i].Im>=0)
+        fprintf(stream,"( %17.10E ",M.V[i*M.Nj+j].Re);
+        if(M.V[i*M.Nj+j].Im>=0)
         {
           fprintf(stream,"+");
         }
         else
         {
-          fprintf(stream," ");
+          fprintf(stream,"-");
         }
-        fprintf(stream,"%22.15E I) ",M.V[j+M.Nj*i].Im);
+        fprintf(stream,"%17.10E I) ",fabs(M.V[i*M.Nj+j].Im));
       }
       fprintf(stream,"\n");
     }
@@ -778,11 +778,11 @@ uint32_t StreamPrintCompactMatrixMinimal(CompactMatrixTypeOld const M, FILE * st
   }
   else
   {
-    for(j=0;j<M.Nj;j++)
+    for(i=0;i<M.Ni;i++)
     {
-      for(i=0;i<M.Ni;i++)
+      for(j=0;j<M.Nj;j++)
       {
-        fprintf(stream,"%22.15E ",M.VRe[j+M.Nj*i]);
+        fprintf(stream,"%17.10E ",M.VRe[i*M.Nj+j]);
       }
       fprintf(stream,"\n");
     }
@@ -1170,7 +1170,7 @@ uint32_t StreamPrintBlokTriDiagonalMatrix(BlokTriDiagonalMatrixType M, FILE * st
 uint32_t StreamPrintBlockTriDiagonalMatrix(BlockTriDiagonalMatrixType M, FILE * stream)
 {
   uint32_t i;
-  CompactMatrixTypeOld alpha;
+  CompactMatrixType alpha;
   alpha.Ni=M.BlockSize;
   alpha.Nj=M.BlockSize;
   alpha.QComplex=M.QComplex;
@@ -1326,7 +1326,7 @@ uint32_t StreamPrintBlokAndersonMatrix(BlokAndersonMatrixType M, FILE * stream)
 uint32_t StreamPrintBlockAndersonMatrix(BlockAndersonMatrixType M, FILE * stream)
 {
   uint32_t i;
-  CompactMatrixTypeOld alpha;
+  CompactMatrixType alpha;
   alpha.Ni=M.BlockSize;
   alpha.Nj=M.BlockSize;
   alpha.QComplex=M.QComplex;
@@ -1423,7 +1423,7 @@ uint32_t StreamPrintListOfPolesEssentials(ListOfPoles M, FILE * stream)
 uint32_t StreamPrintBlockListOfPoles(BlockListOfPoles const M, FILE * stream)
 {
   uint32_t i;
-  CompactMatrixTypeOld b;
+  CompactMatrixType b;
   b.QComplex=M.QComplex;
   b.Ni=M.BlockSize;
   b.Nj=M.BlockSize;

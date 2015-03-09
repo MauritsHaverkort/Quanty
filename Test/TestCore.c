@@ -679,38 +679,6 @@ void TestLanczos()
 }
 
 
-/*
- *
- */
-void TestBlockListOfPoles()
-{
-  
-  BlockListOfPoles variable;
-  variable.QComplex=0;
-  variable.N=10;
-  variable.BlockSize=3;
-  
-  
-  variable.VRe=malloc(variable.BlockSize*variable.BlockSize*variable.N*sizeof(double*));
-  
-  
-  
-  
-  int iBlock,i,j;
-  for(iBlock=0;iBlock<variable.N;iBlock++)
-  {
-    for(i=0;i<variable.BlockSize;i++)
-    {
-      for(j=0;j<variable.BlockSize;j++)
-      {
-        variable.VRe[iBlock * variable.BlockSize * variable.BlockSize + i * variable.BlockSize + j]= i + 100 * j + 10000 * iBlock;
-        
-        
-        
-      }
-    }
-  }
-}
 
 
 void TestMeanField()
@@ -879,7 +847,7 @@ void TestBlockLanczos()
   BeginTiming("Total", &GlobalTime);
   uint32_t i,j;
   uint32_t Npsi=5;
-  uint32_t NFermion=100;
+  uint32_t NFermion=6;
   uint32_t N=NFermion*NFermion;
   OperatorType H;
   WaveFunctionType psi[Npsi];
@@ -904,7 +872,7 @@ void TestBlockLanczos()
   }
   CreateOperatorCreateAnnihilateList(NFermion, CrIndex, AnIndex, tRe, tIm, N, &H);
   
-  //PrintOperatorReadable(H);
+  PrintOperatorReadable(H);
   
   psi[0].NFermion=NFermion;
   psi[0].NBoson=0;
@@ -915,13 +883,25 @@ void TestBlockLanczos()
   for(i=0;i<NFermion;i++)
   {
     det[i>>3]=128>>(i&7);
-    WaveFunctionAddElement(&(psi[0]), det, 1, 0);
+    WaveFunctionAddElement(&(psi[0]), det, 0, 0);
     det[i>>3]=0;
   }
+  psi[0].ValueRe[0][1]=1;
   for(i=1;i<Npsi;i++)
   {
     WaveFunctionInitCopyBasis(&(psi[i]), psi[0]);
+    psi[i].ValueRe[0][1+i]=1;
   }
+  
+  PrintWaveFunctionReadable(psi[0]);
+  PrintWaveFunctionReadable(psi[1]);
+  PrintWaveFunctionReadable(psi[2]);
+  PrintWaveFunctionReadable(psi[3]);
+  PrintWaveFunctionReadable(psi[4]);
+  
+  PsiPrimeOperatorPsi(H, psi[1], psi[0], &tRe[0], &tIm[0]);
+  printf("<psi1 | H | psi0> = %22.15E + %22.15E I\n\n",tRe[0],tIm[0]);
+  
   
   BeginTiming("BlockLanczosGroundStateConserveBasisDense", &GlobalTime);
   BlockLanczosGroundStateConserveBasisDense(H, psi, Npsi);
@@ -937,13 +917,13 @@ void TestBlockLanczos()
   BeginTiming("Energy Sqr", &GlobalTime);
   for(i=0;i<Npsi;i++)
   {
-    //PsiHermitianOperatorSqrPsi(H, psi[i], &EnergySqr[i]);
+    PsiHermitianOperatorSqrPsi(H, psi[i], &EnergySqr[i]);
   }
   EndTiming("Energy Sqr", &GlobalTime);
   
   for(i=0;i<Npsi;i++)
   {
-    //PrintWaveFunctionReadable(psi[i]);
+    PrintWaveFunctionReadable(psi[i]);
     printf("Energy %22.15E, Variance %22.15E\n",Energy[i],EnergySqr[i]-Sqr(Energy[i]));
   }
   
@@ -968,17 +948,81 @@ void TestBlockLanczos()
   BlockLanczosGroundStateConserveBasisKrylov(H, v, Npsi, &Settings);
   
   
+  BeginTiming("Energy", &GlobalTime);
+  for(i=0;i<Npsi;i++)
+  {
+    PsiHermitianOperatorPsi(H, v[i], &Energy[i]);
+  }
+  EndTiming("Energy", &GlobalTime);
+  BeginTiming("Energy Sqr", &GlobalTime);
+  for(i=0;i<Npsi;i++)
+  {
+    PsiHermitianOperatorSqrPsi(H, v[i], &EnergySqr[i]);
+  }
+  EndTiming("Energy Sqr", &GlobalTime);
+  
+  for(i=0;i<Npsi;i++)
+  {
+    PrintWaveFunctionReadable(v[i]);
+    printf("Energy %22.15E, Variance %22.15E\n",Energy[i],EnergySqr[i]-Sqr(Energy[i]));
+  }
+
+  
+  
   printf("\n\n\n\n\n================= BlockGroundState ================\n\n\n");
   
   for(i=0;i<Npsi;i++)
   {
-    WaveFunctionRandomize(&v[i]);
-    psi[i]=v[i];
+    WaveFunctionCopy(v[i], &psi[i]);
+    WaveFunctionRandomize(&psi[i]);
   }
   
   DetRet.N=0;
   BlockGroundState(H, Npsi, &Settings, DetRet, DetRet, psi, 0);
   
+  
+  BeginTiming("Energy", &GlobalTime);
+  for(i=0;i<Npsi;i++)
+  {
+    PsiHermitianOperatorPsi(H, psi[i], &Energy[i]);
+  }
+  EndTiming("Energy", &GlobalTime);
+  BeginTiming("Energy Sqr", &GlobalTime);
+  for(i=0;i<Npsi;i++)
+  {
+    PsiHermitianOperatorSqrPsi(H, psi[i], &EnergySqr[i]);
+  }
+  EndTiming("Energy Sqr", &GlobalTime);
+  
+  for(i=0;i<Npsi;i++)
+  {
+    PrintWaveFunctionReadable(psi[i]);
+    printf("Energy %22.15E, Variance %22.15E\n",Energy[i],EnergySqr[i]-Sqr(Energy[i]));
+  }
+  
+  printf("\n\n\n\n\n================= Compare BlockGroundState to Band Lanczos ================\n\n\n");
+  
+  for(i=0;i<Npsi;i++)
+  {
+    for(j=0;j<Npsi;j++)
+    {
+      WaveFunctionDotProduct(v[i], psi[j], &tRe[0], &tIm[0]);
+      printf("%17.10E %17.10E |",tRe[0],tIm[0]);
+    }
+    printf("\n");
+  }
+  for(i=0;i<Npsi;i++)
+  {
+    for(j=0;j<Npsi;j++)
+    {
+      WaveFunctionDotProduct(v[i], psi[j], &tRe[0], &tIm[0]);
+      printf("%17.10E |",Sqr(tRe[0])+Sqr(tIm[0]));
+    }
+    printf("\n");
+  }
+  
+  
+  printf("\n\n\n\n\n================= Timing ================\n\n\n");
   EndTiming("Total", &GlobalTime);
   PrintTiming(GlobalTime);
 }

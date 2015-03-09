@@ -3,88 +3,8 @@
 
 
 
-/* Should go in BasicMath_CompactMatrixVector.c
- * 
- * M<-A
- */
-uint32_t CompactMatrixCopyToMatrix(MatrixType * const M, CompactMatrixTypeOld const A)
-{
-  uint32_t i;
-  M->Ni = A.Ni;
-  M->Nj = A.Nj;
-  M->QComplex = A.QComplex;
-  if (InitMatrix(M)) return 1;
-  strcpy(M->Name, A.Name);
-  if (M->QComplex)
-  {
-    for (i = 0; i < M->Ni*M->Nj; i++)
-    {
-      M->VRe[0][i] = A.V[i].Re;
-      M->VIm[0][i] = A.V[i].Im;
-    }
-  }
-  else
-  {
-    for (i = 0; i < M->Ni*M->Nj; i++)
-    {
-      M->VRe[0][i] = A.VRe[i];
-    }
-  }
-  return 0;
-}
 
 
-/* BasicMath_MatrixVector.c
- * 
- * Issue?:  I've found that I have to calculate T^{trans}AT to get the same results as the non-BLAS version which
- * calculates TAT^{trans}  (I haven't had a complex case to test the conjugation yet)
- * This must be an issue with the conversion between matrix types or something?
- */
-uint32_t MatrixTransformBLAS(MatrixType * const M, MatrixType const A, MatrixType const T)
-{
-  CompactMatrixTypeOld AComp, TComp,TComp2,BComp;
-  if ((A.Ni != A.Nj) || (A.Ni != T.Nj))
-  {
-    printf("Invallid dimensions for matrix transformation A.Ni should be T.Nj and A should be square\n");
-    printf("A.Ni=%i A.Nj=%i T.Ni=%i T.Nj=%i \n", A.Ni, A.Nj, T.Ni, T.Nj);
-    return 1;
-  }
-  
-  printf("MatrixTransormBLAS\nA.Ni=%i A.Nj=%i T.Ni=%i T.Nj=%i \n", A.Ni, A.Nj, T.Ni, T.Nj);fflush(stdout);
-  
-  if(MatrixCopyToCompact(&AComp,A))
-  {
-    printf("Matrix conversion to compact failed in MatrixTransformBLAS\n");
-    return 1;
-  }
-  if(MatrixCopyToCompact(&TComp,T))
-  {
-    printf("Matrix conversion to compact failed in MatrixTransformBLAS\n");
-    return 1;
-  }
-  if(MatrixCopyToCompact(&TComp2,T))
-  {
-    printf("Matrix conversion to compact failed in MatrixTransformBLAS\n");
-    return 1;
-  }
-  if(CompactMatrixMultiply3('C','N','N',&TComp,&AComp,&TComp2,&BComp))
-  {
-    printf("CompactMatrixMultiply3 failed in MatrixTransformBLAS\n");
-    return 1;
-  }
-  if(CompactMatrixCopyToMatrix(M,BComp))
-  {
-    printf("CompactMatrixCopyToMatrix failed in MatrixTransformBLAS\n");
-    return 1;
-  }
-    
-  FreeCompactMatrix(&AComp);
-  FreeCompactMatrix(&TComp);
-  FreeCompactMatrix(&TComp2);
-  FreeCompactMatrix(&BComp);
-  
-  return 0;
-}
 
 
 
@@ -97,7 +17,7 @@ uint32_t MatrixTransformBLAS(MatrixType * const M, MatrixType const A, MatrixTyp
  * Useful for returning the bath part of a block tridiagonal matrix
  *
  */
-uint32_t BlockTriDiagonalMatrixPartToCompactMatrix(BlockTriDiagonalMatrixType const * A, CompactMatrixTypeOld * const B, const uint32_t iStart, const uint32_t iEnd)
+uint32_t BlockTriDiagonalMatrixPartToCompactMatrix(BlockTriDiagonalMatrixType const * A, CompactMatrixType * const B, const uint32_t iStart, const uint32_t iEnd)
 {
   int i,j,k,apos,bpos,bposL,bposR;
   B->QComplex=A->QComplex;
@@ -212,7 +132,7 @@ uint32_t BlockTriDiagonalMatrixPartToCompactMatrix(BlockTriDiagonalMatrixType co
 uint32_t BlockTriDiagonalMatrixToBlockAndersonMatrix(BlockTriDiagonalMatrixType const ATri, BlockAndersonMatrixType * const B)
 {
   int i,j,bpos,cpos,epos,k;
-  CompactMatrixTypeOld Afull, Afun, C,D,E;
+  CompactMatrixType Afull, Afun, C,D,E;
   double *Aval;
   
   /* Convert the portion after the first block to compact matrix */
@@ -414,7 +334,7 @@ uint32_t BlockListOfPolesToBlockAndersonMatrix(BlockListOfPoles const A, BlockAn
  *  AT specifies how to reduce the dimension
  *
  */
-uint32_t BlockListOfPolesToBlockAndersonMatrixReduceDimension(BlockListOfPoles const A, BlockAndersonMatrixType *B, CompactMatrixTypeOld const *AT, int const NBlockMax)
+uint32_t BlockListOfPolesToBlockAndersonMatrixReduceDimension(BlockListOfPoles const A, BlockAndersonMatrixType *B, CompactMatrixType const *AT, int const NBlockMax)
 {
   BlockTriDiagonalMatrixType ATri;
   
@@ -1111,6 +1031,59 @@ uint32_t BlockAndersonMatrixToImpurityHamiltonian(OperatorType *const H, BlockAn
   return 0;
 }
 
+
+
+/* BasicMath_MatrixVector.c
+ *
+ * Issue?:  I've found that I have to calculate T^{trans}AT to get the same results as the non-BLAS version which
+ * calculates TAT^{trans}  (I haven't had a complex case to test the conjugation yet)
+ * This must be an issue with the conversion between matrix types or something?
+ */
+uint32_t MatrixTransformBLAS(MatrixType * const M, MatrixType const A, MatrixType const T)
+{
+  CompactMatrixType AComp, TComp,TComp2,BComp;
+  if ((A.Ni != A.Nj) || (A.Ni != T.Nj))
+  {
+    printf("Invallid dimensions for matrix transformation A.Ni should be T.Nj and A should be square\n");
+    printf("A.Ni=%i A.Nj=%i T.Ni=%i T.Nj=%i \n", A.Ni, A.Nj, T.Ni, T.Nj);
+    return 1;
+  }
+  
+  printf("MatrixTransormBLAS\nA.Ni=%i A.Nj=%i T.Ni=%i T.Nj=%i \n", A.Ni, A.Nj, T.Ni, T.Nj);fflush(stdout);
+  
+  if(MatrixCopyToCompact(&AComp,A))
+  {
+    printf("Matrix conversion to compact failed in MatrixTransformBLAS\n");
+    return 1;
+  }
+  if(MatrixCopyToCompact(&TComp,T))
+  {
+    printf("Matrix conversion to compact failed in MatrixTransformBLAS\n");
+    return 1;
+  }
+  if(MatrixCopyToCompact(&TComp2,T))
+  {
+    printf("Matrix conversion to compact failed in MatrixTransformBLAS\n");
+    return 1;
+  }
+  if(CompactMatrixMultiply3('C','N','N',&TComp,&AComp,&TComp2,&BComp))
+  {
+    printf("CompactMatrixMultiply3 failed in MatrixTransformBLAS\n");
+    return 1;
+  }
+  if(CompactMatrixCopyToMatrix(M,BComp))
+  {
+    printf("CompactMatrixCopyToMatrix failed in MatrixTransformBLAS\n");
+    return 1;
+  }
+  
+  FreeCompactMatrix(&AComp);
+  FreeCompactMatrix(&TComp);
+  FreeCompactMatrix(&TComp2);
+  FreeCompactMatrix(&BComp);
+  
+  return 0;
+}
 
 /*  From BasicMath_MatrixTypeConversion. Only difference is it calls my MatrixTransformBLAS instead of MatrixTransform
  * 

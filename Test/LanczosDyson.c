@@ -1,10 +1,4 @@
-/*
- *  LanczosDyson.c
- *  Model
- *
- *  Created by Maurits Haverkort on 3/23/12.
- *
- */
+
 
 void TestLanczosDyson3()
 {
@@ -13,7 +7,7 @@ void TestLanczosDyson3()
   WaveFunctionType psi0;
   OperatorType Himp, Hnat;
   OperatorType HTemp, HQZero;
-  CompactMatrixTypeOld AT, GnatComp;
+  CompactMatrixType AT, GnatComp;
   TimeType Time;
   InitializeTiming(&Time);
   BeginTiming("Total", &Time);

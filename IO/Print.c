@@ -111,7 +111,7 @@ uint32_t PrintPlainMatrix(MatrixType M)
   return StreamPrintPlainMatrix(M, stdout);
 }
 
-uint32_t PrintCompactMatrixMinimal(CompactMatrixTypeOld M)
+uint32_t PrintCompactMatrixMinimal(CompactMatrixType M)
 {
   return StreamPrintCompactMatrixMinimal(M, stdout);
 }

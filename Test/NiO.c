@@ -15,7 +15,7 @@ void TestNiO()
   BlockListOfPoles G0, G0AF, GAF, Sigma;
   CrystalStructureSuperCellType AFSuperCell;
   BlockNaturalImpurityOrbitalMatrixType GAFNat;
-  CompactMatrixTypeOld AT;
+  CompactMatrixType AT;
   OperatorType HAF;
   uint16_t *CreateString;
   uint32_t NBitsKey=24, NParticle;

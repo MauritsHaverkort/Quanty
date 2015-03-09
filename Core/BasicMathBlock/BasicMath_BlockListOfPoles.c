@@ -805,13 +805,14 @@ uint32_t SubtractBlockListOfPoles(BlockListOfPoles * const A, BlockListOfPoles c
 
 
 
-/*
- *
+/*  Reduce the dimension of the Green's function represented by a block list of poles
+ *  The basis transformation is given by BasisB = T^* BasisA T^T
+ *  B = T^* A T^T
  */
-uint32_t BlockListOfPolesReduceDim(BlockListOfPoles const * A, BlockListOfPoles * const B, CompactMatrixTypeOld const *T)
+uint32_t BlockListOfPolesReduceDim(BlockListOfPoles const * A, BlockListOfPoles * const B, CompactMatrixType const *T)
 {
   uint32_t i,iA,iB;
-  CompactMatrixTypeOld Bnow, Anow;
+  CompactMatrixType Bnow, Anow;
   if(T->Nj != A->BlockSize)
   {
     printf("BlockListOfPolesReduceDim failed as T.Nj (%i) != A.BlockSize (%i)\n",T->Nj,A->BlockSize);
@@ -838,7 +839,7 @@ uint32_t BlockListOfPolesReduceDim(BlockListOfPoles const * A, BlockListOfPoles 
       iB++;
       Anow.V=&(A->V[iA]);
       Bnow.V=&(B->V[iB]);
-      CompactMatrixMultiply3PreAllocated('C', 'N', 'N', T, &Anow, T, &Bnow);
+      CompactMatrixMultiply3PreAllocated('*', 'N', 'T', T, &Anow, T, &Bnow);
       iA+=A->BlockSize*A->BlockSize;
       iB+=B->BlockSize*B->BlockSize;
     }
@@ -852,7 +853,7 @@ uint32_t BlockListOfPolesReduceDim(BlockListOfPoles const * A, BlockListOfPoles 
       iB++;
       Anow.VRe=&(A->VRe[iA]);
       Bnow.VRe=&(B->VRe[iB]);
-      CompactMatrixMultiply3PreAllocated('C', 'N', 'N', T, &Anow, T, &Bnow);
+      CompactMatrixMultiply3PreAllocated('*', 'N', 'T', T, &Anow, T, &Bnow);
       iA+=A->BlockSize*A->BlockSize;
       iB+=B->BlockSize*B->BlockSize;
     }
@@ -871,7 +872,7 @@ uint32_t BlockListOfPolesG0plusSigmaToGFixedEGrid(BlockListOfPoles const *G0, Bl
   printf("This function \"BlockListOfPolesG0plusSigmaToGFixedEGrid\"is wrong ???why???\n");
 
   
-  CompactMatrixTypeOld S,fun, beta, Char, betasqrt;
+  CompactMatrixType S,fun, beta, Char, betasqrt;
   double *val, rest, totnow, totmax, totmin, energy;
   double const dE = (Emax - Emin)/((double)NE);
   int iE;
@@ -1109,7 +1110,7 @@ uint32_t BlockListOfPolesG0plusSigmaToGFixedEGrid(BlockListOfPoles const *G0, Bl
           }
         }
       }
-      TransformCompactMatrixInlineNNC(&Char, &betasqrt);
+      TransformCompactMatrixInlinecT(&Char, &betasqrt); //Need to test
       /* determine the position of the pole in the list of poles */
       rest = (val[ival] - Emin) / dE;
       iE = (int)(floor(rest));

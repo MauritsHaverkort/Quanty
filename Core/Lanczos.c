@@ -13,7 +13,7 @@
 
 uint32_t LanczosGroundStateConserveBasisRR(const OperatorType H, WaveFunctionType * const psi, double *epsilon, const double zero, double shiftin, WaveFunctionType * OtherPsi, uint32_t NOtherPsi)
 {
-  printf("\nStart of LanczosGroundStateConserveBasisRR\n\n");
+  VerbosityPrintf(0x0001,"Start of LanczosGroundStateConserveBasisRR\n");
   fflush(stdout);
   const uint32_t NKrylovMax = 100, NKrylovStart = 25;
   uint32_t NKrylov;
@@ -224,7 +224,7 @@ uint32_t LanczosGroundStateConserveBasisRR(const OperatorType H, WaveFunctionTyp
 
 uint32_t LanczosGroundStateRR(const OperatorType H, WaveFunctionType * const psi, double *epsilon, const double zero, double shiftin, WaveFunctionType * OtherPsi, uint32_t NOtherPsi)
 {
-  printf("\nStart of LanczosGroundStateRR\n\n");
+  VerbosityPrintf(0x0001,"Start of LanczosGroundStateRR\n");
   fflush(stdout);
   const uint32_t NKrylovMax = 100, NKrylovStart = 25;
   uint32_t NKrylov;
@@ -424,7 +424,7 @@ uint32_t LanczosGroundStateRR(const OperatorType H, WaveFunctionType * const psi
 
 uint32_t LanczosGroundStateRC(const OperatorType H, WaveFunctionType * const psi, double *epsilon, const double zero, double shiftin, WaveFunctionType * OtherPsi, uint32_t NOtherPsi)
 {
-  printf("\nStart of LanczosGroundStateRC\n\n");
+  VerbosityPrintf(0x0001,"Start of LanczosGroundStateRC\n");
   fflush(stdout);
   const uint32_t NKrylovMax = 100, NKrylovStart = 25;
   uint32_t NKrylov;
@@ -624,7 +624,7 @@ uint32_t LanczosGroundStateRC(const OperatorType H, WaveFunctionType * const psi
 
 uint32_t LanczosGroundStateMC(const OperatorType H, WaveFunctionType * const psi, double *epsilon, const double zero, double shiftin, WaveFunctionType * OtherPsi, uint32_t NOtherPsi)
 {
-  printf("\nStart of LanczosGroundStateMC\n\n");
+  VerbosityPrintf(0x0001,"Start of LanczosGroundStateMC\n");
   fflush(stdout);
   const uint32_t NKrylovMax = 100, NKrylovStart = 25;
   uint32_t NKrylov;
@@ -823,7 +823,7 @@ uint32_t LanczosGroundStateMC(const OperatorType H, WaveFunctionType * const psi
 
 uint32_t LanczosGroundStateCC(const OperatorType H, WaveFunctionType * const psi, double *epsilon, const double zero, double shiftin, WaveFunctionType * OtherPsi, uint32_t NOtherPsi)
 {
-  printf("\nStart of LanczosGroundStateCC\n\n");
+  VerbosityPrintf(0x0001,"Start of LanczosGroundStateCC\n");
   fflush(stdout);
   const uint32_t NKrylovMax = 300, NKrylovStart = 100;
   uint32_t NKrylov;
@@ -1075,7 +1075,7 @@ uint32_t LanczosGroundStateMR(const OperatorType H, WaveFunctionType * const psi
 
 uint32_t LanczosGroundStateRestrictedRR(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType const Restrictions, double *epsilon, const double zero, double shiftin, WaveFunctionType * OtherPsi, uint32_t NOtherPsi)
 {
-  printf("\nStart of LanczosGroundStateRestrictedRR\n\n");
+  VerbosityPrintf(0x0001,"Start of LanczosGroundStateRestrictedRR\n");
   fflush(stdout);
   const uint32_t NKrylovMax = 100, NKrylovStart = 25;
   uint32_t NKrylov;
@@ -1275,7 +1275,7 @@ uint32_t LanczosGroundStateRestrictedRR(const OperatorType H, WaveFunctionType *
 
 uint32_t LanczosGroundStateRestrictedRC(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType const Restrictions, double *epsilon, const double zero, double shiftin, WaveFunctionType * OtherPsi, uint32_t NOtherPsi)
 {
-  printf("\nStart of LanczosGroundStateRestrictedRC\n\n");
+  VerbosityPrintf(0x0001,"Start of LanczosGroundStateRestrictedRC\n");
   fflush(stdout);
   const uint32_t NKrylovMax = 100, NKrylovStart = 25;
   uint32_t NKrylov;
@@ -1475,7 +1475,7 @@ uint32_t LanczosGroundStateRestrictedRC(const OperatorType H, WaveFunctionType *
 
 uint32_t LanczosGroundStateRestrictedMC(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType const Restrictions, double *epsilon, const double zero, double shiftin, WaveFunctionType * OtherPsi, uint32_t NOtherPsi)
 {
-  printf("\nStart of LanczosGroundStateRestrictedMC\n\n");
+  VerbosityPrintf(0x0001,"Start of LanczosGroundStateRestrictedMC\n");
   fflush(stdout);
   const uint32_t NKrylovMax = 100, NKrylovStart = 25;
   uint32_t NKrylov;
@@ -1674,7 +1674,7 @@ uint32_t LanczosGroundStateRestrictedMC(const OperatorType H, WaveFunctionType *
 
 uint32_t LanczosGroundStateRestrictedCC(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType const Restrictions, double *epsilon, const double zero, double shiftin, WaveFunctionType * OtherPsi, uint32_t NOtherPsi)
 {
-  printf("\nStart of LanczosGroundStateRestrictedCC\n\n");
+  VerbosityPrintf(0x0001,"Start of LanczosGroundStateRestrictedCC\n");
   fflush(stdout);
   const uint32_t NKrylovMax = 100, NKrylovStart = 25;
   uint32_t NKrylov;
@@ -1888,8 +1888,7 @@ uint32_t LanczosGroundStateRestrictedMR(const OperatorType H, WaveFunctionType *
 {
   if (MakeComplexWaveFunctionFromReal(psi, *psi))
   {
-    printf
-    ("LanczosGroundStateRestrictedMR called with a real wave-function and a mixed complex Hamiltonian.\nTurned the wave-function complex in step 1.\nBut failed.\n");
+    printf("LanczosGroundStateRestrictedMR called with a real wave-function and a mixed complex Hamiltonian.\nTurned the wave-function complex in step 1.\nBut failed.\n");
     fflush(stdout);
     return 1;
   }
@@ -1905,7 +1904,7 @@ uint32_t LanczosGroundStateRestrictedMR(const OperatorType H, WaveFunctionType *
  */
 uint32_t LanczosTriDiagonalizeRR(const OperatorType H, WaveFunctionType psi, double epsilon, TriDiagonalMatrixType * const M, double Gamma)
 {
-  printf("\nStart of LanczosTriDiagonalizeRR\n\n");
+  VerbosityPrintf(0x0001,"Start of LanczosTriDiagonalizeRR\n");
   fflush(stdout);
   WaveFunctionType v[3];
   uint32_t i, vi=0, vip=0, vim=0;
@@ -2071,10 +2070,9 @@ uint32_t LanczosTriDiagonalizeMR(const OperatorType H, WaveFunctionType psi, dou
   return retval;
 }
 
-uint32_t LanczosTriDiagonalizeRC(const OperatorType H, WaveFunctionType psi, double epsilon,
-                                 TriDiagonalMatrixType * const M, double Gamma)
+uint32_t LanczosTriDiagonalizeRC(const OperatorType H, WaveFunctionType psi, double epsilon, TriDiagonalMatrixType * const M, double Gamma)
 {
-  printf("\nStart of LanczosTriDiagonalizeRC\n\n");
+  VerbosityPrintf(0x0001,"Start of LanczosTriDiagonalizeRC\n");
   fflush(stdout);
   WaveFunctionType v[3];
   uint32_t i, vi=0, vip=0, vim=0;
@@ -2168,10 +2166,9 @@ uint32_t LanczosTriDiagonalizeRC(const OperatorType H, WaveFunctionType psi, dou
   return 0;
 }
 
-uint32_t LanczosTriDiagonalizeCC(const OperatorType H, WaveFunctionType psi, double epsilon,
-                                 TriDiagonalMatrixType * const M, double Gamma)
+uint32_t LanczosTriDiagonalizeCC(const OperatorType H, WaveFunctionType psi, double epsilon, TriDiagonalMatrixType * const M, double Gamma)
 {
-  printf("\nStart of LanczosTriDiagonalizeCC\n\n");
+  VerbosityPrintf(0x0001,"Start of LanczosTriDiagonalizeCC\n");
   fflush(stdout);
   WaveFunctionType v[3];
   uint32_t i, vi=0, vip=0, vim=0;
@@ -2268,7 +2265,7 @@ uint32_t LanczosTriDiagonalizeCC(const OperatorType H, WaveFunctionType psi, dou
 
 uint32_t LanczosTriDiagonalizeMC(const OperatorType H, WaveFunctionType psi, double epsilon, TriDiagonalMatrixType * const M, double Gamma)
 {
-  printf("\nStart of LanczosTriDiagonalizeMC\n\n");
+  VerbosityPrintf(0x0001,"Start of LanczosTriDiagonalizeMC\n");
   fflush(stdout);
   WaveFunctionType v[3];
   uint32_t i, vi=0, vip=0, vim=0;
@@ -2370,7 +2367,7 @@ uint32_t LanczosTriDiagonalizeMC(const OperatorType H, WaveFunctionType psi, dou
  */
 uint32_t LanczosTriDiagonalizeRestrictedRR(const OperatorType H, WaveFunctionType psi, DeterminantRestrictionType const Restrictions, double epsilon, TriDiagonalMatrixType * const M, double Gamma)
 {
-  printf("\nStart of LanczosTriDiagonalizeRestrictedRR\n\n");
+  VerbosityPrintf(0x0001,"Start of LanczosTriDiagonalizeRestrictedRR\n");
   fflush(stdout);
   WaveFunctionType v[3];
   uint32_t i, vi=0, vip=0, vim=0;
@@ -2503,7 +2500,7 @@ uint32_t LanczosTriDiagonalizeRestrictedRR(const OperatorType H, WaveFunctionTyp
 
 uint32_t LanczosTriDiagonalizeRestrictedCC(const OperatorType H, WaveFunctionType psi, DeterminantRestrictionType const Restrictions, double epsilon, TriDiagonalMatrixType * const M, double Gamma)
 {
-  printf("\nStart of LanczosTriDiagonalizeRestrictedCC\n\n");
+  VerbosityPrintf(0x0001,"Start of LanczosTriDiagonalizeRestrictedCC\n");
   fflush(stdout);
   WaveFunctionType v[3];
   uint32_t i, vi=0, vip=0, vim=0;
@@ -2614,7 +2611,7 @@ uint32_t LanczosTriDiagonalizeRestrictedCR(const OperatorType H, WaveFunctionTyp
 
 uint32_t LanczosTriDiagonalizeRestrictedRC(const OperatorType H, WaveFunctionType psi, DeterminantRestrictionType const Restrictions, double epsilon, TriDiagonalMatrixType * const M, double Gamma)
 {
-  printf("\nStart of LanczosTriDiagonalizeRestrictedRC\n\n");
+  VerbosityPrintf(0x0001,"Start of LanczosTriDiagonalizeRestrictedRC\n");
   fflush(stdout);
   WaveFunctionType v[3];
   uint32_t i, vi=0, vip=0, vim=0;
@@ -2710,7 +2707,7 @@ uint32_t LanczosTriDiagonalizeRestrictedRC(const OperatorType H, WaveFunctionTyp
 
 uint32_t LanczosTriDiagonalizeRestrictedMC(const OperatorType H, WaveFunctionType psi, DeterminantRestrictionType const Restrictions, double epsilon, TriDiagonalMatrixType * const M, double Gamma)
 {
-  printf("\nStart of LanczosTriDiagonalizeRestrictedMC\n\n");
+  VerbosityPrintf(0x0001,"Start of LanczosTriDiagonalizeRestrictedMC\n");
   fflush(stdout);
   WaveFunctionType v[3];
   uint32_t i, vi=0, vip=0, vim=0;
