@@ -10,7 +10,7 @@
  *     ( 0             | 0             | 0             | 0             | 0           | A[5][4]=bc2^+ | A[5][5]=ac3   | A[5][6]=bc3 )
  *     ( 0             | 0             | 0             | 0             | 0           | 0             | A[6][5]=bc3^+ | A[6][6]=ac4 )
  *
- *  A = T Ap T^+
+ *  A = T^* Ap T^T
  *
  *     ( A[0][0]=av1   | 0             | A[0][1]=bv1   | 0             | 0           | 0             | 0             | 0           )
  *     ( 0             | A[0][0]=ac1   | 0             | 0             | 0           | A[0][4]=bc1   | 0             | 0           )
@@ -42,6 +42,31 @@
  *   such that the impurity has an occupation n, the other site an occupation 1-n, av1 an occupation 1 and ac1 an occupaiton of 0.
  */
 
+/*
+ *   Initialize a struct of BlockListOfPoles type
+ *   Init val and con as Tridiagonal matrices
+ *   Init a0 as a   BlockSize by   BlockSize matrix
+ *   Init T  as a 4*BlockSize by 4*BlockSize matrix
+ *   QComplex, Blocksize, val.N and con.N need to be set
+ */
+uint32_t InitBlockNaturalImpurityOrbitalMatrix(BlockNaturalImpurityOrbitalMatrixType *const A)
+{
+  A->val.BlockSize=A->BlockSize;
+  A->val.QComplex=A->QComplex;
+  InitBlockTridiagonalMatrix(&(A->val));
+  A->con.BlockSize=A->BlockSize;
+  A->con.QComplex=A->QComplex;
+  InitBlockTridiagonalMatrix(&(A->con));
+  A->a0.QComplex=A->QComplex;
+  A->a0.Ni=A->BlockSize;
+  A->a0.Nj=A->BlockSize;
+  InitCompactMatrix(&(A->a0));
+  A->TMT.QComplex=A->QComplex;
+  A->TMT.Ni=4*A->BlockSize;
+  A->TMT.Nj=4*A->BlockSize;
+  InitCompactIdentityMatrix(&(A->TMT));
+  return 0;
+}
 
 uint32_t BlockNaturalImpurityOrbitalMatrixChop(BlockNaturalImpurityOrbitalMatrixType *const A, double const Epsilon)
 {

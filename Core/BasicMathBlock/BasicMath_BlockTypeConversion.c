@@ -2195,7 +2195,7 @@ uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrixReduceDimension(Bloc
   B->a0.Ni=AT->Ni;
   B->a0.Nj=AT->Ni;
   InitCompactMatrix(&B->a0);
-  // still to do copy a0
+  //TODO: copy a0
   
   CopyBlockListOfPolesCon(*A, &Acon, A->mu, kbT);
   CopyBlockListOfPolesVal(*A, &Aval, A->mu, kbT);

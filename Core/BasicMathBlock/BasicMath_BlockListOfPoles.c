@@ -440,11 +440,11 @@ uint32_t OrderBlockListOfPoles(BlockListOfPoles * const A)
 {
   if(A->QComplex)
   {
-    qsort((void *)&(A->V), A->N, (A->BlockSize*A->BlockSize+1)*sizeof(Complex16), (compfn) OrderBlockListOfPolesCompareComplex);
+    qsort((void *)(A->V), A->N, (A->BlockSize*A->BlockSize+1)*sizeof(Complex16), (compfn) OrderBlockListOfPolesCompareComplex);
   }
   else
   {
-    qsort((void *)&(A->VRe), A->N, (A->BlockSize*A->BlockSize+1)*sizeof(double), (compfn) OrderBlockListOfPolesCompareReal);
+    qsort((void *)(A->VRe), A->N, (A->BlockSize*A->BlockSize+1)*sizeof(double), (compfn) OrderBlockListOfPolesCompareReal);
   }
   return 0;
 }
@@ -506,7 +506,7 @@ double ListOfPolesNormFlatWeightDistanceComplex(Complex16 * b, uint32_t Ntau, do
 /*  reduce the number of poles to N
  *
  */
-uint32_t ReduceBlockListOfPoles(BlockListOfPoles * const A, uint32_t N, double const Ef, double (*Norm) (void *, uint32_t, double, double, double) )
+uint32_t ReduceBlockListOfPoles(BlockListOfPoles * const A, uint32_t N, double const Ef )
 {
   double SmallestNorm=0,Normi,Normiplus,Normimin,a,amin,aplus;
   uint32_t iSmallestNorm=0,i;
@@ -523,21 +523,21 @@ uint32_t ReduceBlockListOfPoles(BlockListOfPoles * const A, uint32_t N, double c
       a=A->V[0].Re;
       aplus=iBlock[A->BlockSize*A->BlockSize].Re;
       amin=2*a-aplus;
-      SmallestNorm=Norm(iBlock,A->BlockSize,a,amin,aplus);
+      SmallestNorm=ListOfPolesNormFlatWeightComplex(iBlock,A->BlockSize,a,amin,aplus);
       for(i=1;i<A->N-1;i++)
       {
         iBlock+=A->BlockSize*A->BlockSize+1;
         amin=a;
         a=aplus;
         aplus=iBlock[A->BlockSize*A->BlockSize].Re;
-        Normi=Norm(iBlock,A->BlockSize,a,amin,aplus);
+        Normi=ListOfPolesNormFlatWeightComplex(iBlock,A->BlockSize,a,amin,aplus);
         if(Normi<SmallestNorm)iSmallestNorm=i;
       }
       iBlock+=A->BlockSize*A->BlockSize+1;
       amin=a;
       a=aplus;
       aplus=2*a-amin;
-      Normi=Norm(iBlock,A->BlockSize,a,amin,aplus);
+      Normi=ListOfPolesNormFlatWeightComplex(iBlock,A->BlockSize,a,amin,aplus);
       if(Normi<SmallestNorm)iSmallestNorm=A->N-1;
       /* remove smallest Norm */
       if(iSmallestNorm==0)
@@ -642,10 +642,11 @@ uint32_t ReduceBlockListOfPoles(BlockListOfPoles * const A, uint32_t N, double c
           A->V[i+1+A->BlockSize*A->BlockSize].Im+=Normiplus*A->V[i].Im;
         }
       }
-      memmove(&(A->V[i*(A->BlockSize*A->BlockSize+1)]), &(A->V[(i+1)*(A->BlockSize*A->BlockSize+1)]),((A->N-i)*(A->BlockSize*A->BlockSize+1)-1)*sizeof(Complex16));
+      memmove(&(A->V[iSmallestNorm*(A->BlockSize*A->BlockSize+1)]), &(A->V[(iSmallestNorm+1)*(A->BlockSize*A->BlockSize+1)]),((A->N-iSmallestNorm-1)*(A->BlockSize*A->BlockSize+1)-1)*sizeof(Complex16));
       A->N--;
     }
     A->V=realloc(A->V, ((A->N+1)*(1+A->BlockSize*A->BlockSize)-1)*sizeof(Complex16));
+    A->a0=&(A->V[A->N*(1+A->BlockSize*A->BlockSize)]);
   }
   else /* Real */
   {
@@ -657,27 +658,27 @@ uint32_t ReduceBlockListOfPoles(BlockListOfPoles * const A, uint32_t N, double c
       a=A->VRe[0];
       aplus=iBlock[A->BlockSize*A->BlockSize];
       amin=2*a-aplus;
-      SmallestNorm=Norm(iBlock,A->BlockSize,a,amin,aplus);
+      SmallestNorm=ListOfPolesNormFlatWeightReal(iBlock,A->BlockSize,a,amin,aplus);
       for(i=1;i<A->N-1;i++)
       {
         iBlock+=A->BlockSize*A->BlockSize+1;
         amin=a;
         a=aplus;
         aplus=iBlock[A->BlockSize*A->BlockSize];
-        Normi=Norm(iBlock,A->BlockSize,a,amin,aplus);
+        Normi=ListOfPolesNormFlatWeightReal(iBlock,A->BlockSize,a,amin,aplus);
         if(Normi<SmallestNorm)iSmallestNorm=i;
       }
       iBlock+=A->BlockSize*A->BlockSize+1;
       amin=a;
       a=aplus;
       aplus=2*a-amin;
-      Normi=Norm(iBlock,A->BlockSize,a,amin,aplus);
+      Normi=ListOfPolesNormFlatWeightReal(iBlock,A->BlockSize,a,amin,aplus);
       if(Normi<SmallestNorm)iSmallestNorm=A->N-1;
       /* remove smallest Norm */
       if(iSmallestNorm==0)
       {
-        Normi=ListOfPolesNormFlatWeightReal(A->VRe+1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm), A->BlockSize, 0, 0, 0);
-        Normiplus=ListOfPolesNormFlatWeightReal(A->VRe+1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm+1), A->BlockSize, 0, 0, 0);
+        Normi     =ListOfPolesNormFlatWeightReal(A->VRe+1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm)  , A->BlockSize, 0, 0, 0);
+        Normiplus =ListOfPolesNormFlatWeightReal(A->VRe+1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm+1), A->BlockSize, 0, 0, 0);
         if(Normi+Normiplus<DBL_MIN*1000)
         {
           a=0.5;
@@ -694,6 +695,7 @@ uint32_t ReduceBlockListOfPoles(BlockListOfPoles * const A, uint32_t N, double c
       }
       else if(iSmallestNorm==A->N-1)
       {
+        printf("A\n");
         Normi=ListOfPolesNormFlatWeightReal(A->VRe+1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm), A->BlockSize, 0, 0, 0);
         Normimin=ListOfPolesNormFlatWeightReal(A->VRe+1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm-1), A->BlockSize, 0, 0, 0);
         if(Normi+Normimin<DBL_MIN*1000)
@@ -769,23 +771,24 @@ uint32_t ReduceBlockListOfPoles(BlockListOfPoles * const A, uint32_t N, double c
           A->VRe[i+1+A->BlockSize*A->BlockSize]+=Normiplus*A->VRe[i];
         }
       }
-      memmove(&(A->VRe[i*(A->BlockSize*A->BlockSize+1)]), &(A->VRe[(i+1)*(A->BlockSize*A->BlockSize+1)]),((A->N-i)*(A->BlockSize*A->BlockSize+1)-1)*sizeof(double));
+      memmove(&(A->VRe[iSmallestNorm*(A->BlockSize*A->BlockSize+1)]), &(A->VRe[(iSmallestNorm+1)*(A->BlockSize*A->BlockSize+1)]),((A->N-iSmallestNorm)*(A->BlockSize*A->BlockSize+1)-1)*sizeof(double));
       A->N--;
     }
-    A->V=realloc(A->V, ((A->N+1)*(1+A->BlockSize*A->BlockSize)-1)*sizeof(double));
+    A->VRe=realloc(A->VRe, ((A->N+1)*(1+A->BlockSize*A->BlockSize)-1)*sizeof(double));
+    A->a0Re=&(A->VRe[A->N*(1+A->BlockSize*A->BlockSize)]);
   }
   return 0;
 }
 
 uint32_t BlockListOfPolesMoveNegativeEnergyToMu(BlockListOfPoles * const A)
 {
-  /* TO DO */
+  //TODO: full implementation
   return 0;
 }
 
 uint32_t BlockListOfPolesMovePositiveEnergyToMu(BlockListOfPoles * const A)
 {
-  /* TO DO */
+  //TODO: full implementation
   
   return 0;
 }
@@ -798,7 +801,7 @@ uint32_t BlockListOfPolesMovePositiveEnergyToMu(BlockListOfPoles * const A)
  */
 uint32_t SubtractBlockListOfPoles(BlockListOfPoles * const A, BlockListOfPoles const B)
 {
-  /* TO DO */
+  //TODO: full implementation
   
   return 0;
 }
@@ -806,7 +809,8 @@ uint32_t SubtractBlockListOfPoles(BlockListOfPoles * const A, BlockListOfPoles c
 
 
 /*  Reduce the dimension of the Green's function represented by a block list of poles
- *  The basis transformation is given by BasisB = T^* BasisA T^T
+ *  The basis transformation is given by 
+ *  BasisB = T BasisA
  *  B = T^* A T^T
  */
 uint32_t BlockListOfPolesReduceDim(BlockListOfPoles const * A, BlockListOfPoles * const B, CompactMatrixType const *T)
@@ -869,6 +873,7 @@ uint32_t BlockListOfPolesReduceDim(BlockListOfPoles const * A, BlockListOfPoles 
  */
 uint32_t BlockListOfPolesG0plusSigmaToGFixedEGrid(BlockListOfPoles const *G0, BlockListOfPoles const *Sigma, BlockListOfPoles * const G, double const Emin, double const Emax, uint32_t const NE)
 {
+  //TODO: this function is wrong??
   printf("This function \"BlockListOfPolesG0plusSigmaToGFixedEGrid\"is wrong ???why???\n");
 
   

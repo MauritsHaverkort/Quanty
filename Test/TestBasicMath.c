@@ -1340,16 +1340,7 @@ void TestBlockLanczosAfterChange()
   printf("\n============= uint32_t BlockLanczosGroundStateConserveBasisKrylovComplex(const OperatorType H, WaveFunctionType * const v, uint32_t const Npsi, ConvergenceSettingsType * Settings) ============\n");
   TestBlockLanczos();
 }
-void TestBasicMathBlock()
-{
-  printf("\n============= BlockListOfPoles ============\n");
-  printf("\n============= BlockAndersonMatrix ============\n");
-  printf("\n============= BlockTridiagonalMatrix ============\n");
-  printf("\n============= BlockMatrixToOperator ============\n");
-  printf("\n============= BlocknaturalImpurityOrbital ============\n");
-  printf("\n============= BlockTypeConversions ============\n");
 
-}
 void TestCompactMatrixCallers()
 {
   uint32_t i,j,k;
@@ -1365,7 +1356,8 @@ void TestCompactMatrixCallers()
   }
   
   TestBlockLanczosAfterChange();
-  TestBasicMathBlock();
+  
+  //TODO: aditional test the following functions
   
   printf("\n============= uint32_t BlockListOfPolesReduceDim(BlockListOfPoles const * A, BlockListOfPoles * const B, CompactMatrixType const *T) ============\n");
         
