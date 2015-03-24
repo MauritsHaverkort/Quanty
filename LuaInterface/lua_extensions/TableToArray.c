@@ -188,28 +188,21 @@ DeterminantRestrictionType* luaL_checkarray_DeterminantRestrictionType(lua_State
   uint32_t len,len2,detleng,NWord;
   DeterminantRestrictionType *buff;
   char * detchar;
-  
   buff = malloc(sizeof(DeterminantRestrictionType));
-  
   luaL_checktype(L, narg, LUA_TTABLE);
   len = (uint32_t)lua_objlen(L, narg);
-  
-  if(len<3) luaL_error(L, "Restrictions should be given in the format {NFermion,NBoson,{{\"determinant1\",minocc,maxocc},{\"determinant2\",minocc,maxocc},...}}");
+  if(len<3) luaL_error(L, "Restrictions should be given in the format {NFermion,NBoson,{\"determinant1\",minocc,maxocc},{\"determinant2\",minocc,maxocc},...}");
   buff->N=len-2;
   buff->Min=malloc(buff->N*sizeof(uint32_t));
   buff->Max=malloc(buff->N*sizeof(uint32_t));
   buff->Determinant=malloc(buff->N*sizeof(uint8_t*));
-  
   lua_rawgeti(L, narg, 1);
   NFermion=(uint32_t)luaL_checkunsigned(L, -1);
   lua_pop(L, 1);
   lua_rawgeti(L, narg, 2);
   NBoson=(uint32_t)luaL_checkunsigned(L, -1);
   lua_pop(L, 1);
-  
   NWord=NBoson + Min(NFermion, 1 + (NFermion - 1) / 8);
-  
-  
   for(i=0;i<buff->N;i++)
   {
     lua_rawgeti(L, narg, i+3);

@@ -6,6 +6,7 @@
  */
 uint32_t InitBlockListOfPoles(BlockListOfPoles *const A)
 {
+  strcpy(A->Name, "Block List Of Poles");
   if(A->QComplex)
   {
     A->V=calloc((A->N+1)*(1+A->BlockSize*A->BlockSize)-1,sizeof(Complex16));
@@ -175,6 +176,7 @@ uint32_t MakeRealBlockListOfPolesComplex(BlockListOfPoles *A)
 {
   Complex16 *temp;
   uint32_t i;
+  if(A->QComplex) return 0;
   temp=calloc((A->N+1)*(1+A->BlockSize*A->BlockSize)-1,sizeof(Complex16));
   if(temp==NULL)
   {
@@ -188,6 +190,7 @@ uint32_t MakeRealBlockListOfPolesComplex(BlockListOfPoles *A)
   free(A->VRe);
   A->V=temp;
   A->QComplex=1;
+  A->a0=&(A->V[A->N*(1+A->BlockSize*A->BlockSize)]);
   return 0;
 }
 
@@ -199,6 +202,7 @@ uint32_t MakeComplexBlockListOfPolesReal(BlockListOfPoles *A)
 {
   double *temp;
   uint32_t i;
+  if(A->QComplex==0) return 0;
   temp=calloc((A->N+1)*(1+A->BlockSize*A->BlockSize)-1,sizeof(double));
   if(temp==NULL)
   {
@@ -553,7 +557,7 @@ uint32_t ReduceBlockListOfPoles(BlockListOfPoles * const A, uint32_t N, double c
           a=Normi/(Normi+Normiplus);
         }
         A->V[1+A->BlockSize*A->BlockSize].Re=(a*A->V[0].Re+(1-a)*A->V[1+A->BlockSize*A->BlockSize].Re);
-        for(i=1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm);i<1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm+1);i++)
+        for(i=1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm);i<(1+A->BlockSize*A->BlockSize)*(iSmallestNorm+1);i++)
         {
           A->V[1+A->BlockSize*A->BlockSize+i].Re+=A->V[i].Re;
           A->V[1+A->BlockSize*A->BlockSize+i].Im+=A->V[i].Im;
@@ -572,7 +576,7 @@ uint32_t ReduceBlockListOfPoles(BlockListOfPoles * const A, uint32_t N, double c
           a=Normi/(Normi+Normimin);
         }
         A->V[(1+A->BlockSize*A->BlockSize)*(iSmallestNorm-1)].Re=((1-a)*A->V[(1+A->BlockSize*A->BlockSize)*(iSmallestNorm-1)].Re+a*A->V[(1+A->BlockSize*A->BlockSize)*(iSmallestNorm)].Re);
-        for(i=1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm);i<1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm+1);i++)
+        for(i=1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm);i<(1+A->BlockSize*A->BlockSize)*(iSmallestNorm+1);i++)
         {
           A->V[i-1-A->BlockSize*A->BlockSize].Re+=A->V[i].Re;
           A->V[i-1-A->BlockSize*A->BlockSize].Im+=A->V[i].Im;
@@ -597,7 +601,7 @@ uint32_t ReduceBlockListOfPoles(BlockListOfPoles * const A, uint32_t N, double c
             a=Normi/(Normi+Normimin);
           }
           A->V[(1+A->BlockSize*A->BlockSize)*(iSmallestNorm-1)].Re=((1-a)*A->V[(1+A->BlockSize*A->BlockSize)*(iSmallestNorm-1)].Re+a*A->V[(1+A->BlockSize*A->BlockSize)*(iSmallestNorm)].Re);
-          for(i=1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm);i<1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm+1);i++)
+          for(i=1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm);i<(1+A->BlockSize*A->BlockSize)*(iSmallestNorm+1);i++)
           {
             A->V[i-1-A->BlockSize*A->BlockSize].Re+=A->V[i].Re;
             A->V[i-1-A->BlockSize*A->BlockSize].Im+=A->V[i].Im;
@@ -617,7 +621,7 @@ uint32_t ReduceBlockListOfPoles(BlockListOfPoles * const A, uint32_t N, double c
             a=Normi/(Normi+Normiplus);
           }
           A->V[(1+A->BlockSize*A->BlockSize)*(iSmallestNorm+1)].Re=(a*A->V[(1+A->BlockSize*A->BlockSize)*(iSmallestNorm)].Re+(1-a)*A->V[(1+A->BlockSize*A->BlockSize)*(iSmallestNorm+1)].Re);
-          for(i=1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm);i<1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm+1);i++)
+          for(i=1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm);i<(1+A->BlockSize*A->BlockSize)*(iSmallestNorm+1);i++)
           {
             A->V[1+A->BlockSize*A->BlockSize+i].Re+=A->V[i].Re;
             A->V[1+A->BlockSize*A->BlockSize+i].Im+=A->V[i].Im;
@@ -634,7 +638,7 @@ uint32_t ReduceBlockListOfPoles(BlockListOfPoles * const A, uint32_t N, double c
           Normiplus = (a-amin)/(aplus-amin);
           Normimin = 1-Normiplus;
         }
-        for(i=1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm);i<1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm+1);i++)
+        for(i=1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm);i<(1+A->BlockSize*A->BlockSize)*(iSmallestNorm+1);i++)
         {
           A->V[i-1-A->BlockSize*A->BlockSize].Re+=Normimin*A->V[i].Re;
           A->V[i-1-A->BlockSize*A->BlockSize].Im+=Normimin*A->V[i].Im;
@@ -642,7 +646,7 @@ uint32_t ReduceBlockListOfPoles(BlockListOfPoles * const A, uint32_t N, double c
           A->V[i+1+A->BlockSize*A->BlockSize].Im+=Normiplus*A->V[i].Im;
         }
       }
-      memmove(&(A->V[iSmallestNorm*(A->BlockSize*A->BlockSize+1)]), &(A->V[(iSmallestNorm+1)*(A->BlockSize*A->BlockSize+1)]),((A->N-iSmallestNorm-1)*(A->BlockSize*A->BlockSize+1)-1)*sizeof(Complex16));
+      memmove(&(A->V[iSmallestNorm*(A->BlockSize*A->BlockSize+1)]), &(A->V[(iSmallestNorm+1)*(A->BlockSize*A->BlockSize+1)]),((A->N-iSmallestNorm)*(A->BlockSize*A->BlockSize+1)-1)*sizeof(Complex16));
       A->N--;
     }
     A->V=realloc(A->V, ((A->N+1)*(1+A->BlockSize*A->BlockSize)-1)*sizeof(Complex16));
@@ -688,14 +692,13 @@ uint32_t ReduceBlockListOfPoles(BlockListOfPoles * const A, uint32_t N, double c
           a=Normi/(Normi+Normiplus);
         }
         A->VRe[1+A->BlockSize*A->BlockSize]=(a*A->VRe[0]+(1-a)*A->VRe[1+A->BlockSize*A->BlockSize]);
-        for(i=1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm);i<1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm+1);i++)
+        for(i=1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm);i<(1+A->BlockSize*A->BlockSize)*(iSmallestNorm+1);i++)
         {
           A->VRe[1+A->BlockSize*A->BlockSize+i]+=A->VRe[i];
         }
       }
       else if(iSmallestNorm==A->N-1)
       {
-        printf("A\n");
         Normi=ListOfPolesNormFlatWeightReal(A->VRe+1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm), A->BlockSize, 0, 0, 0);
         Normimin=ListOfPolesNormFlatWeightReal(A->VRe+1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm-1), A->BlockSize, 0, 0, 0);
         if(Normi+Normimin<DBL_MIN*1000)
@@ -707,7 +710,7 @@ uint32_t ReduceBlockListOfPoles(BlockListOfPoles * const A, uint32_t N, double c
           a=Normi/(Normi+Normimin);
         }
         A->VRe[(1+A->BlockSize*A->BlockSize)*(iSmallestNorm-1)]=((1-a)*A->VRe[(1+A->BlockSize*A->BlockSize)*(iSmallestNorm-1)]+a*A->VRe[(1+A->BlockSize*A->BlockSize)*(iSmallestNorm)]);
-        for(i=1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm);i<1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm+1);i++)
+        for(i=1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm);i<(1+A->BlockSize*A->BlockSize)*(iSmallestNorm+1);i++)
         {
           A->VRe[i-1-A->BlockSize*A->BlockSize]+=A->VRe[i];
         }
@@ -731,7 +734,7 @@ uint32_t ReduceBlockListOfPoles(BlockListOfPoles * const A, uint32_t N, double c
             a=Normi/(Normi+Normimin);
           }
           A->VRe[(1+A->BlockSize*A->BlockSize)*(iSmallestNorm-1)]=((1-a)*A->VRe[(1+A->BlockSize*A->BlockSize)*(iSmallestNorm-1)]+a*A->VRe[(1+A->BlockSize*A->BlockSize)*(iSmallestNorm)]);
-          for(i=1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm);i<1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm+1);i++)
+          for(i=1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm);i<(1+A->BlockSize*A->BlockSize)*(iSmallestNorm+1);i++)
           {
             A->VRe[i-1-A->BlockSize*A->BlockSize]+=A->VRe[i];
           }
@@ -750,7 +753,7 @@ uint32_t ReduceBlockListOfPoles(BlockListOfPoles * const A, uint32_t N, double c
             a=Normi/(Normi+Normiplus);
           }
           A->VRe[(1+A->BlockSize*A->BlockSize)*(iSmallestNorm+1)]=(a*A->VRe[(1+A->BlockSize*A->BlockSize)*(iSmallestNorm)]+(1-a)*A->VRe[(1+A->BlockSize*A->BlockSize)*(iSmallestNorm+1)]);
-          for(i=1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm);i<1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm+1);i++)
+          for(i=1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm);i<(1+A->BlockSize*A->BlockSize)*(iSmallestNorm+1);i++)
           {
             A->VRe[1+A->BlockSize*A->BlockSize+i]+=A->VRe[i];
           }
@@ -765,7 +768,7 @@ uint32_t ReduceBlockListOfPoles(BlockListOfPoles * const A, uint32_t N, double c
           Normiplus = (a-amin)/(aplus-amin);
           Normimin = 1-Normiplus;
         }
-        for(i=1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm);i<1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm+1);i++)
+        for(i=1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm);i<(1+A->BlockSize*A->BlockSize)*(iSmallestNorm+1);i++)
         {
           A->VRe[i-1-A->BlockSize*A->BlockSize]+=Normimin*A->VRe[i];
           A->VRe[i+1+A->BlockSize*A->BlockSize]+=Normiplus*A->VRe[i];

@@ -1363,7 +1363,7 @@ void TestCompactMatrixCallers()
         
   printf("\n============= uint32_t BlockListOfPolesG0plusSigmaToGFixedEGrid(BlockListOfPoles const *G0, BlockListOfPoles const *Sigma, BlockListOfPoles * const G, double const Emin, double const Emax, uint32_t const NE) ============\n");
   
-  printf("\n============= uint32_t BlockListOfPolesToCompactMatrix(BlockListOfPoles const * const A, CompactMatrixType * const B) ============\n");
+  printf("\n============= uint32_t BlockListOfPolesInversedToCompactMatrix(BlockListOfPoles const * const A, CompactMatrixType * const B) ============\n");
   
   printf("\n============= uint32_t BlockListOfPolesToBlockTridiagonalMatrix(BlockListOfPoles const A, BlockTriDiagonalMatrixType *const B, int const NBlockMax, double const SingularValue) ============\n");
   

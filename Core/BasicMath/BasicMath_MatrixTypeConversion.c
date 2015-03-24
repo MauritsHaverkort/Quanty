@@ -1961,13 +1961,12 @@ uint32_t MatrixToEigensystem(MatrixType const M, MatrixType * const T, double *v
 }
 
 
-/*
- *  M=T.H.T^{\dag} with H a diagonal matrix with the values val on the diagonal
+/*  Calculates the eigen values (val) and eigen functions (T) of matrix M
+ *  H=T^*.M.T^T with H a diagonal matrix with the values val on the diagonal
  *  input M defined, H and T not initiallized
  */
 uint32_t EigensystemToCompact(MatrixType const M, CompactMatrixType * const T, double *val)
 {
-  //TODO: H = T . M . T^dag seems wrong should be H = T^* . M . T^T
   int    info;
   const char *jobz = "V";
   const char *uplo = "U";
@@ -2510,7 +2509,7 @@ uint32_t RemoveStatesWithNegligibleNorm(MatrixType * const H, MatrixType * const
 */
 uint32_t MatrixToAndersonMatrix(MatrixType const M, MatrixType * const T, AndersonMatrixType * const H)
 {
-  //TODO: M=T.H.T^dag does not seem right, should be M=T^*.H.T^T
+  //TODO: M=T.H.T^dag does not seem right, should be H=T^*.M.T^T
   int    i, j, info;
   const char *jobz = "V";
   const char *uplo = "U";
@@ -2674,7 +2673,7 @@ uint32_t MatrixToAndersonMatrix(MatrixType const M, MatrixType * const T, Anders
 */
 uint32_t BlokTriDiagonalize(MatrixType const M, MatrixType * const T, BlokTriDiagonalMatrixType * const H, const uint32_t BlokDim)
 {
-  //TODO: M=T.H.T^Dag does not seem right, should be M=T^*.H.T^T
+  //TODO: M=T.H.T^Dag does not seem right, should be H=T^*.M.T^T
   int    i, j, k, l, CurrentDim, NBlok;
   const char *jobu = "N";
   const char *jobvt = "A";
@@ -3141,7 +3140,7 @@ uint32_t MatrixToBlokTriDiagonalMatrix(MatrixType const M, MatrixType * const T,
 */
 uint32_t MatrixToBlokAndersonMatrix(MatrixType const M, MatrixType * const T, BlokAndersonMatrixType * const H, const uint32_t BlokDim)
 {
-  //TODO: M=T.H.T^Dag does not seem right, should be M=T^*.H.T^T
+  //TODO: M=T.H.T^Dag does not seem right, should be H=T^*.M.T^T
   int    i, j, info, NBlok;
   const char *jobz = "V";
   const char *uplo = "U";

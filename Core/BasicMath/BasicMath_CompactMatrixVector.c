@@ -1887,10 +1887,6 @@ uint32_t CompactMatrixToSpectra(CompactMatrixType const *A, SpectraType * const 
     printf("CompactMatrixEigensystem failed in CompactMatrixToSpectra\n");
     return 1;
   }
-  
-  PrintCompactMatrixMinimal(fun);
-  
-  
   if(A->QComplex)
   {
     Gtemp=malloc(BlockSize*BlockSize*sizeof(SpectraType));
@@ -2289,6 +2285,110 @@ uint32_t BlockTriDiagonalMatrixToCompactMatrix(BlockTriDiagonalMatrixType const 
   return 0;
 }
 
+/* Should go in BasicMath_CompactMatrixVector.c
+ *
+ * !!Not all cases thoroughly tested yet!!
+ *
+ * Converts the square section enclosed by iStart and iEnd to a CompactMatrix
+ *
+ * Useful for returning the bath part of a block tridiagonal matrix
+ *
+ */
+uint32_t BlockTriDiagonalMatrixPartToCompactMatrix(BlockTriDiagonalMatrixType const * A, CompactMatrixType * const B, const uint32_t iStart, const uint32_t iEnd)
+{
+  //TODO: test after changing compat matrix order
+  int i,j,k,apos,bpos,bposL,bposR;
+  B->QComplex=A->QComplex;
+  B->Ni=(iEnd - iStart +1)* A->BlockSize;
+  B->Nj=(iEnd - iStart +1) * A->BlockSize;
+  if(InitCompactMatrix(B))
+  {
+    printf("InitCompactMatrix failed in BlockTriDiagonalMatrixToCompactMatrix\n");
+    return 1;
+  }
+  bpos=0;
+  apos=(1+iStart)*A->BlockSize*A->BlockSize;
+  if(A->QComplex)
+  {
+    for(k=iStart;k<=iEnd;k++)
+    {
+      for(i=0;i<A->BlockSize;i++)
+      {
+        for(j=0;j<A->BlockSize;j++)
+        {
+          B->V[bpos].Re=A->a[apos].Re;
+          B->V[bpos].Im=A->a[apos].Im;
+          bpos++;
+          apos++;
+        }
+        bpos+=B->Nj-A->BlockSize;
+      }
+      bpos+=A->BlockSize;
+    }
+    apos=(1+iStart)*A->BlockSize*A->BlockSize;
+    bposL=A->BlockSize;
+    bposR=A->BlockSize*B->Nj;
+    for(k=iStart;k<iEnd;k++)
+    {
+      for(i=0;i<A->BlockSize;i++)
+      {
+        for(j=0;j<A->BlockSize;j++)
+        {
+          B->V[bposL].Re= A->b[apos].Re;
+          B->V[bposR].Re= A->b[apos].Re;
+          B->V[bposL].Im=-A->b[apos].Im;
+          B->V[bposR].Im= A->b[apos].Im;
+          bposR++;
+          bposL+=B->Nj;
+          apos++;
+        }
+        bposR+=B->Nj-A->BlockSize;
+        bposL+=(1-A->BlockSize*B->Nj);
+      }
+      bposR+=A->BlockSize;
+      bposL+=(A->BlockSize*B->Nj);
+    }
+  }
+  else
+  {
+    for(k=iStart;k<=iEnd;k++)
+    {
+      for(i=0;i<A->BlockSize;i++)
+      {
+        for(j=0;j<A->BlockSize;j++)
+        {
+          B->VRe[bpos]=A->aRe[apos];
+          bpos++;
+          apos++;
+        }
+        bpos+=B->Nj-A->BlockSize;
+      }
+      bpos+=A->BlockSize;
+    }
+    apos=(1+iStart)*A->BlockSize*A->BlockSize;
+    bposL=A->BlockSize;
+    bposR=A->BlockSize*B->Nj;
+    for(k=iStart;k<iEnd;k++)
+    {
+      for(i=0;i<A->BlockSize;i++)
+      {
+        for(j=0;j<A->BlockSize;j++)
+        {
+          B->VRe[bposL]=A->bRe[apos];
+          B->VRe[bposR]=A->bRe[apos];
+          bposR++;
+          bposL+=B->Nj;
+          apos++;
+        }
+        bposR+=B->Nj-A->BlockSize;
+        bposL+=(1-A->BlockSize*B->Nj);
+      }
+      bposR+=A->BlockSize;
+      bposL+=(A->BlockSize*B->Nj);
+    }
+  }
+  return 0;
+}
 
 /* on input A is a Hermitian matrix, Singular Value is the smallest number larger than 0 that has numerical relavance, BlockSize is the size of the blocks and NBlockMax the maximal number of Blocks
  *  onoutput Matrix B has NBlockMax blocks (a_{0} to a_{NBlockMax+1}. b_{0} to b_{NBlockMax}

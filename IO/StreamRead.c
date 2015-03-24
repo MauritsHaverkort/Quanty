@@ -60,6 +60,7 @@ uint32_t StreamReadCrystalStructure(CrystalStructureType * O, FILE * stream)
     StreamReadAtom(&(O->Atom[i]), stream);
   }
   ResiprocalLatticeVector(O->rUnitCell, O->gUnitCell);
+  O->Units=1;
   return 0;
 }
 
