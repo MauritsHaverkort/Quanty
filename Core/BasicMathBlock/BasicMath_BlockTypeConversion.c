@@ -1620,8 +1620,8 @@ uint32_t TightBindingHamiltonianAddSpinPlusSelfEnergyMultiSiteToBlockListOfPoles
  *    matrix A is diagonal and real and of dimension psi->Nj by psi->Nj. Values are stored as a vector of doubles
  *    matrix psi is of dimension psi->Ni * psi->Nj
  *
- *  Calculated is a block tridiagonal matrix ABlock that has the same Green's function as psi^{*} . 1/(w-A) . psi^{T}
- *  aka [1/(w-ABlock)]_[[1;;psi->Ni,1;;psi->Ni]] = psi^{*} . 1/(w-A) . psi^{T}
+ *  Calculated is a block tridiagonal matrix ABlock that has the same Green's function as psi . 1/(w-A) . psi^{C}
+ *  aka [1/(w-ABlock)]_[[1;;psi->Ni,1;;psi->Ni]] = psi . 1/(w-A) . psi^{C}
  *
  *  on output matrix T is of dimension psi->Ni*NBlock by psi->Nj such that T^{dag} A T is block tridiagonal of dimension Ni*NBlock with psi on element 1 to psi->Ni
  *    ABlock = T^dag A T

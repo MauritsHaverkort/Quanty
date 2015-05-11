@@ -370,12 +370,12 @@ ListOfPoles;
  *    A0 can be found at position N*(1+BlockSize*BlockSize) to (N+1)*(1+BlockSize*BlockSize)-2
  *
  *  The Green's function represented is:
- *    G = A0 + sum_i B'_i^{*} 1/(w-a_i I) B'_i^T
+ *    G = A0 + sum_i B'_i 1/(w-a_i I) B'_i^C
  *    with I the identity matrix of size BlockSize
  *  this is equivalent to
- *    G = A0 + sum_i B'_i^* . B'_i^T * 1/(w-a_i)
+ *    G = A0 + sum_i B'_i . B'_i^C * 1/(w-a_i)
  *  use
- *    B_i = B'_i^* B'_i^T to get to
+ *    B_i = B'_i B'_i^C to get to
  *    G = A0 + sum_i B_i * 1/(w-a_i)
  *
  *  a0 is an aditional pointer to V[N*(1+BlockSize*BlockSize)]

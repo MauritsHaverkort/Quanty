@@ -2191,7 +2191,6 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToCompactMatrix(BlockNaturalImpurityOr
  */
 uint32_t BlockTriDiagonalMatrixToCompactMatrix(BlockTriDiagonalMatrixType const * A, CompactMatrixType * const B)
 {
-  //TODO: test after changing compat matrix order
   int i,j,k,apos,bpos,bposL,bposR;
   B->QComplex=A->QComplex;
   B->Ni=A->N * A->BlockSize;
@@ -2231,17 +2230,17 @@ uint32_t BlockTriDiagonalMatrixToCompactMatrix(BlockTriDiagonalMatrixType const 
         {
           B->V[bposL].Re= A->b[apos].Re;
           B->V[bposR].Re= A->b[apos].Re;
-          B->V[bposL].Im=-A->b[apos].Im;
-          B->V[bposR].Im= A->b[apos].Im;
-          bposR++;
-          bposL+=B->Nj;
+          B->V[bposL].Im= A->b[apos].Im;
+          B->V[bposR].Im=-A->b[apos].Im;
+          bposL++;
+          bposR+=B->Nj;
           apos++;
         }
-        bposR+=B->Nj-A->BlockSize;
-        bposL+=(1-A->BlockSize*B->Nj);
+        bposL+=B->Nj-A->BlockSize;
+        bposR+=(1-A->BlockSize*B->Nj);
       }
-      bposR+=A->BlockSize;
-      bposL+=(A->BlockSize*B->Nj);
+      bposL+=A->BlockSize;
+      bposR+=(A->BlockSize*B->Nj);
     }
   }
   else
@@ -2271,15 +2270,15 @@ uint32_t BlockTriDiagonalMatrixToCompactMatrix(BlockTriDiagonalMatrixType const 
         {
           B->VRe[bposL]=A->bRe[apos];
           B->VRe[bposR]=A->bRe[apos];
-          bposR++;
-          bposL+=B->Nj;
+          bposL++;
+          bposR+=B->Nj;
           apos++;
         }
-        bposR+=B->Nj-A->BlockSize;
-        bposL+=(1-A->BlockSize*B->Nj);
+        bposL+=B->Nj-A->BlockSize;
+        bposR+=(1-A->BlockSize*B->Nj);
       }
-      bposR+=A->BlockSize;
-      bposL+=(A->BlockSize*B->Nj);
+      bposL+=A->BlockSize;
+      bposR+=(A->BlockSize*B->Nj);
     }
   }
   return 0;

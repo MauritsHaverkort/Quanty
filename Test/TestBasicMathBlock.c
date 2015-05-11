@@ -1,7 +1,7 @@
 void TestBasicMathBlock()
 {
   int Nk[3];
-  uint32_t i,j;
+  uint32_t i,j,k;
   BlockListOfPoles                      BLP,B2LP,B3LP,Sigma;
   BlockTriDiagonalMatrixType            BTD;
   BlockAndersonMatrixType               BAM;
@@ -9,7 +9,7 @@ void TestBasicMathBlock()
   CompactMatrixType T,psi,M1compact,TMT;
   SpectraType G1[64];
   TightBindingDef TB;
-  double val[8];
+  double val[32];
 
   
   printf("\n============= Structure types ============\n");
@@ -118,8 +118,13 @@ void TestBasicMathBlock()
   FreeCompactMatrix(&T);
   
   printf("\n============= BlockAndersonMatrix ============\n");
+  // nothing to do
   printf("\n============= BlockTridiagonalMatrix ============\n");
+  // nothing to do
   printf("\n============= BlocknaturalImpurityOrbital ============\n");
+  // nothing to do
+  
+  
   printf("\n============= BlockTypeConversions ============\n");
   
   printf("\n============= BlockListOfPolesTo... ============\n");
@@ -364,8 +369,108 @@ void TestBasicMathBlock()
   BlockTridiagonalMatrixChop(&BTD, 1000*DBL_EPSILON);
   PrintCompactMatrixMinimal(T);
   PrintBlockTriDiagonalMatrix(BTD);
+  FreeBlockTridiagonalMatrix(&BTD);
+  
+  
+  
+  
+  exit(1);
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   printf("\n============= BlockListOfPolesToBlockTridiagonalMatrix ============\n");
+  printf("Real\n");
+  BLP.N=3;
+  BLP.BlockSize=4;
+  BLP.QComplex=0;
+  InitBlockListOfPoles(&BLP);
+  BLP.VRe[0 * (1+BLP.BlockSize*BLP.BlockSize)] = -0.2;
+  BLP.VRe[1 * (1+BLP.BlockSize*BLP.BlockSize)] = -0.1;
+  BLP.VRe[2 * (1+BLP.BlockSize*BLP.BlockSize)] =  0.3;
+  
+  for(k=0;k<BLP.N;k++)
+  {
+    for(i=0;i<BLP.BlockSize;i++)
+    {
+      for(j=0;j<BLP.BlockSize;j++)
+      {
+        BLP.VRe[k * (1+BLP.BlockSize*BLP.BlockSize) + 1 + i + j * BLP.BlockSize] = sqrt((double)(k+i+j));
+      }
+      BLP.VRe[k * (1+BLP.BlockSize*BLP.BlockSize) + 1 + i * (BLP.BlockSize+1) ]+=1;
+    }
+  }
+  PrintBlockListOfPoles(BLP);
+  
+  BlockListOfPolesToBlockTridiagonalMatrix(BLP, &BTD, 4, DBL_EPSILON);
+  BlockTridiagonalMatrixChop(&BTD, 100*DBL_EPSILON);
+  
+  PrintBlockTriDiagonalMatrix(BTD);
+  
+  BlockTriDiagonalMatrixToCompactMatrix(&BTD, &M1compact);
+  
+  PrintCompactMatrixMinimal(M1compact);
+  
+  CompactMatrixEigensystem(&M1compact, &T, val);
+  
+  PrintCompactMatrixMinimal(T);
+  for(i=0;i<12;i++)
+  {
+    printf("%22.15E\n",val[i]);
+  }
+  
+  FreeBlockTridiagonalMatrix(&BTD);
+  FreeBlockListOfPoles(&BLP);
+  FreeCompactMatrix(&M1compact);
+  FreeCompactMatrix(&T);
+  
+  printf("Complex\n");
+  
+  BLP.N=3;
+  BLP.BlockSize=4;
+  BLP.QComplex=1;
+  InitBlockListOfPoles(&BLP);
+  BLP.V[0 * (1+BLP.BlockSize*BLP.BlockSize)].Re = -0.2;
+  BLP.V[1 * (1+BLP.BlockSize*BLP.BlockSize)].Re = -0.1;
+  BLP.V[2 * (1+BLP.BlockSize*BLP.BlockSize)].Re =  0.3;
+  
+  for(k=0;k<BLP.N;k++)
+  {
+    for(i=0;i<BLP.BlockSize;i++)
+    {
+      for(j=0;j<BLP.BlockSize;j++)
+      {
+        BLP.V[k * (1+BLP.BlockSize*BLP.BlockSize) + 1 + i + j * BLP.BlockSize].Re = sqrt((double)(k+i+j));
+        BLP.V[k * (1+BLP.BlockSize*BLP.BlockSize) + 1 + i + j * BLP.BlockSize].Im = ((double)i-(double)j)*0.1*sqrt((double)(k+i+j));
+      }
+      BLP.V[k * (1+BLP.BlockSize*BLP.BlockSize) + 1 + i * (BLP.BlockSize+1) ].Re+=2;
+    }
+  }
+  PrintBlockListOfPoles(BLP);
+  
+  BlockListOfPolesToBlockTridiagonalMatrix(BLP, &BTD, 4, DBL_EPSILON);
+  BlockTridiagonalMatrixChop(&BTD, 100*DBL_EPSILON);
+  
+  PrintBlockTriDiagonalMatrix(BTD);
+  
+  BlockTriDiagonalMatrixToCompactMatrix(&BTD, &M1compact);
+  
+  PrintCompactMatrixMinimal(M1compact);
+  
+  CompactMatrixEigensystem(&M1compact, &T, val);
+  
+  PrintCompactMatrixMinimal(T);
+  for(i=0;i<12;i++)
+  {
+    printf("%22.15E\n",val[i]);
+  }
+
   
   printf("\n============= BlockListOfPolesToBlockTridiagonalMatrixReduceDimension ============\n");
   
