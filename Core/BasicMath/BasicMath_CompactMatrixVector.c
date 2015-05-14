@@ -1851,6 +1851,8 @@ uint32_t CompactMatrixSqrt(CompactMatrixType const *A, CompactMatrixType * const
  */
 uint32_t CompactMatrixToSpectra(CompactMatrixType const *A, SpectraType * const G, uint32_t const BlockSize, double Emin, double Emax, uint32_t N)
 {
+  //TODO: test
+  
   SpectraType *Gtemp;
   CompactMatrixType fun;
   int i,j,k,iEmin,iEplus;

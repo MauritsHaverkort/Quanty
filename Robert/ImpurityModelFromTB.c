@@ -906,7 +906,7 @@ uint32_t ImpurityHFromModelBath(OperatorType *const Himp, int geometry, int shap
 
 uint32_t ImpurityHFromModelBathPerturbation(OperatorType *const Himp, OperatorType * const VPert, TriDiagonalMatrixType * const gPert, int NCellV, int geometry, int shape, double width, int NPoles,int NBathSitesAnd, int NBathSitesV, int NBathSitesC, double mu, double kBT, int blocksize, int spin, double *eshiftsImpurity, double *eshifts, double *hopping, int NFermion, int NFermionShift)
 {
-  
+  //TODO: test after matrix chnage
   /* Shape can be rectangular or circular (DOS in Anderson hybridization) (0 or 1)
    * 
    * 

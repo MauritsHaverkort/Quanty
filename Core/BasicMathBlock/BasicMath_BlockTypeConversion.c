@@ -1626,11 +1626,10 @@ uint32_t TightBindingHamiltonianAddSpinPlusSelfEnergyMultiSiteToBlockListOfPoles
  *  on output matrix T is of dimension psi->Ni*NBlock by psi->Nj such that T^{dag} A T is block tridiagonal of dimension Ni*NBlock with psi on element 1 to psi->Ni
  *    ABlock = T^dag A T
  *
- * if psi is non orthogonal then an orthogonal form of psi is stored as the first block in T. b0 is psi^+ psi_{ortho}
+ * if psi is non orthogonal then an orthogonal form of psi is stored as the first block in T. b0 is psi psi_{ortho}^+
  */
 uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType const *psi, CompactMatrixType *const T, BlockTriDiagonalMatrixType *const ABlock, double NBlock, double SingularValue)
 {
-  //TODO: test
   char *charC="C";
   char *charN="N";
   int i,ii,j,k,oldindex,newindex,ipos,iipos,ia,ib,jcol,icol,allzero;
@@ -1811,7 +1810,7 @@ uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType co
     Tnow.Nj=psi->Nj;
     /* orthonormalize Tnow */
     CompactMatrixGramSchmidtOrthogonalizeRow(&Tnow, SingularValue);
-    dgemm(charC,charN,&ABlock->BlockSize,&ABlock->BlockSize,&psi->Nj,&one,psi->VRe,&psi->Nj,Tnow.VRe,&psi->Nj,&zero,ABlock->bRe,&ABlock->BlockSize);
+    dgemm(charC,charN,&ABlock->BlockSize,&ABlock->BlockSize,&psi->Nj,&one,Tnow.VRe,&psi->Nj,psi->VRe,&psi->Nj,&zero,ABlock->bRe,&ABlock->BlockSize);
     /* loop over psi_{n+1} = A psi_{n} and orthonormalization */
     oldindex=0;
     newindex=psi->Ni*psi->Nj;
@@ -2043,11 +2042,9 @@ uint32_t BlockListOfPolesToBlockTridiagonalMatrixReduceDimension(BlockListOfPole
       iN+=1+A.BlockSize*A.BlockSize;
     }
   }
-  
-  CompactMatrixMultiply('C', 'N', &beta, AT, &ATbeta);
-  
+  // note that we need to complex transpose beta to get a set of NBlock row vectors
+  CompactMatrixMultiply('N', 'C', AT, &beta, &ATbeta);
   FreeCompactMatrix(&beta);
-  
   DiagonalMatrixBlockTridiagonalize(alpha, &ATbeta, &T, B, NBlockMax, SingularValue);
   B->mu=A.mu;
   free(alpha);
@@ -2055,8 +2052,14 @@ uint32_t BlockListOfPolesToBlockTridiagonalMatrixReduceDimension(BlockListOfPole
   return 0;
 }
 
+
+/*  on entry A contains the Green's function in a BlockListOfPoles format.
+ *  on excit B contains the Green's function in a NaturalImpurityOrbital format.
+ *
+ */
 uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(BlockListOfPoles const *A, BlockNaturalImpurityOrbitalMatrixType * const B, double const kbT, uint32_t const NBlockMaxVal, uint32_t const NBlockMaxCon)
 {
+  //TODO: test
   int i,j;
   CompactMatrixType T,M;
   BlockListOfPoles Acon, Aval;
@@ -2192,6 +2195,7 @@ uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(BlockListOfPoles co
  */
 uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrixReduceDimension(BlockListOfPoles const *A, BlockNaturalImpurityOrbitalMatrixType * const B, CompactMatrixType const *AT, double const kbT, uint32_t const NBlockMaxVal, uint32_t const NBlockMaxCon)
 {
+  //TODO: test
   int i,j;
   CompactMatrixType T,M;
   BlockListOfPoles Acon, Aval;
@@ -2315,8 +2319,9 @@ uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrixReduceDimension(Bloc
  */
 uint32_t BlockTriDiagonalMatrixToBlockListOfPoles(BlockTriDiagonalMatrixType const * A, BlockListOfPoles * const G, double const Emin, double const Emax, uint32_t const NE)
 {
+  //TODO: test
   int i,j,k,irho,kfun,iE;
-  CompactMatrixType Afull, Afun, Rho;
+  CompactMatrixType Afull, Afun, Rho, b0;
   double energy, dE=(Emax-Emin)/((double)NE), rest, totmin=0, totmax=0, totnow;
   double *Aval;
   /* first turn the matrix into compact form */
@@ -2542,6 +2547,18 @@ uint32_t BlockTriDiagonalMatrixToBlockListOfPoles(BlockTriDiagonalMatrixType con
       }
     }
   }
+  b0.QComplex=A->QComplex;
+  b0.Ni=A->BlockSize;
+  b0.Nj=A->BlockSize;
+  if(b0.QComplex)
+  {
+    b0.V=A->b;
+  }
+  else
+  {
+    b0.VRe=A->bRe;
+  }
+  BlockListOfPolesTransformInlineNC(G, &b0);
   ChopBlockListOfPoles(G, DBL_EPSILON);
   G->mu = A->mu;
   FreeCompactMatrix(&Rho);
@@ -2562,7 +2579,7 @@ uint32_t BlockTriDiagonalMatrixToBlockListOfPoles(BlockTriDiagonalMatrixType con
  *    N the number of energies.
  *    Gamma sets the lorenzian broadening Gamma > 3*(Emax-Emin)/N
  *
- *    G = a0 + b0^+ (1/( w + i Gamma/2 - a1 - b1^+  ( w + i Gamma/2 - a2 - b2^+ ( ... ) b2 ) b1 )) b0
+ *    G = a0 + b0 (1/( w + i Gamma/2 - a1 - b1  ( w + i Gamma/2 - a2 - b2 ( ... ) b2^+ ) b1^+ )) b0^+
  *
  */
 uint32_t BlockTriDiagonalMatrixToSpectra(BlockTriDiagonalMatrixType const * A, SpectraType *const G, double const Emin, double const Emax, uint32_t const N, double const Gamma)
@@ -2624,7 +2641,7 @@ uint32_t BlockTriDiagonalMatrixToSpectra(BlockTriDiagonalMatrixType const * A, S
         Gw.V[i].Im+=Gamma/2.0;
       }
       CompactMatrixInverse(&Gw);
-      TransformCompactMatrixInlinecT(&Gw, &b); /* Gw <- b Gw b^dag */ //need to test replaced by b^* Gw b^T
+      TransformCompactMatrixInlineNC(&Gw, &b); /* Gw <- b Gw b^dag */
     }
     if(A->QComplex)
     {
@@ -2641,6 +2658,7 @@ uint32_t BlockTriDiagonalMatrixToSpectra(BlockTriDiagonalMatrixType const * A, S
       G[i].Im[iw]=Gw.V[i].Im;
     }
   }
+  FreeCompactMatrix(&Gw);
   return 0;
 }
 
@@ -2656,6 +2674,7 @@ uint32_t BlockTriDiagonalMatrixToSpectra(BlockTriDiagonalMatrixType const * A, S
  */
 uint32_t BlockNaturalImpurityOrbitalToSpectra(BlockNaturalImpurityOrbitalMatrixType const * A, SpectraType *const G, double const Emin, double const Emax, uint32_t const N, double const Gamma)
 {
+  //TODO: test
   SpectraType Gval[A->BlockSize*A->BlockSize], Gcon[A->BlockSize*A->BlockSize];
   uint32_t i,j,k,ii,jj;
   
@@ -2760,6 +2779,7 @@ uint32_t BlockNaturalImpurityOrbitalToSpectra(BlockNaturalImpurityOrbitalMatrixT
  */
 uint32_t BlockTriDiagonalMatrixToBlockAndersonMatrix(BlockTriDiagonalMatrixType const ATri, BlockAndersonMatrixType * const B)
 {
+  //TODO: test
   int i,j,bpos,cpos,epos,k;
   CompactMatrixType Afull, Afun, C,D,E;
   double *Aval;
@@ -2935,6 +2955,7 @@ uint32_t BlockTriDiagonalMatrixToBlockAndersonMatrix(BlockTriDiagonalMatrixType 
  */
 uint32_t BlockListOfPolesToBlockAndersonMatrix(BlockListOfPoles const A, BlockAndersonMatrixType *const B, int const NBlockMax)
 {
+  //TODO: test
   BlockTriDiagonalMatrixType ATri;
   
   if(BlockListOfPolesToBlockTridiagonalMatrix(A, &ATri, NBlockMax, DBL_EPSILON))
@@ -2965,6 +2986,7 @@ uint32_t BlockListOfPolesToBlockAndersonMatrix(BlockListOfPoles const A, BlockAn
  */
 uint32_t BlockListOfPolesToBlockAndersonMatrixReduceDimension(BlockListOfPoles const A, BlockAndersonMatrixType *B, CompactMatrixType const *AT, int const NBlockMax)
 {
+  //TODO: test
   BlockTriDiagonalMatrixType ATri;
   
   if(BlockListOfPolesToBlockTridiagonalMatrixReduceDimension(A, &ATri, AT, NBlockMax, DBL_EPSILON))

@@ -76,7 +76,7 @@ void TestBasicMathBlock()
   T.VRe[3]= sqrt(0.5);
   T.VRe[4]=-sqrt(0.5);
   PrintCompactMatrixMinimal(T);
-  BlockListOfPolesReduceDim(&BLP, &B3LP, &T);
+  BlockListOfPolesReduceDimNC(&BLP, &B3LP, &T);
   PrintBlockListOfPoles(B3LP);
   
   FreeBlockListOfPoles(&B2LP);
@@ -110,7 +110,7 @@ void TestBasicMathBlock()
   T.VRe[3]= sqrt(0.5);
   T.VRe[4]=-sqrt(0.5);
   PrintCompactMatrixMinimal(T);
-  BlockListOfPolesReduceDim(&B2LP, &B3LP, &T);
+  BlockListOfPolesReduceDimNC(&B2LP, &B3LP, &T);
   PrintBlockListOfPoles(B3LP);
   
   FreeBlockListOfPoles(&B2LP);
@@ -120,7 +120,31 @@ void TestBasicMathBlock()
   printf("\n============= BlockAndersonMatrix ============\n");
   // nothing to do
   printf("\n============= BlockTridiagonalMatrix ============\n");
-  // nothing to do
+  
+  BTD.QComplex=1;
+  BTD.BlockSize=2;
+  BTD.N=2;
+  InitBlockTridiagonalMatrix(&BTD);
+  BTD.a[ 4+0].Re=1;
+  BTD.a[ 4+3].Re=2;
+  BTD.a[ 8+0].Re=3;
+  BTD.a[ 8+3].Re=4;
+  BTD.b[ 4+0].Re=1;
+  BTD.b[ 4+2].Im=1;
+  BTD.b[ 4+3].Re=-1;
+  
+  PrintBlockTriDiagonalMatrix(BTD);
+  
+  BlockTriDiagonalMatrixToSpectra(&BTD, G1, -1, 5, 6000, 0.1);
+  
+  FilePrintSpectra(G1, 4,"G1","w");
+  for(i=0;i<9;i++)
+  {
+    SpectrumFree(&G1[i]);
+  }
+  
+  FreeBlockTridiagonalMatrix(&BTD);
+  
   printf("\n============= BlocknaturalImpurityOrbital ============\n");
   // nothing to do
   
@@ -328,8 +352,46 @@ void TestBasicMathBlock()
   FreeBlockListOfPoles(&Sigma);
   
   printf("\n============= DiagonalMatrixBlockTridiagonalize ============\n");
+  printf("real\n");
   
+  val[0]=1;
+  val[1]=2;
+  val[2]=3;
+  val[3]=4;
+  val[4]=5;
+  val[5]=6;
+  val[6]=7;
+  val[7]=8;
+  
+  psi.Ni=3;
+  psi.Nj=8;
+  psi.QComplex=0;
+  InitCompactMatrix(&psi);
+  for(j=0;j<psi.Nj;j++)
+  {
+    psi.VRe[0*psi.Nj+j]=1+(1/(double)(j+1));
+  }
+  for(j=0;j<psi.Nj;j++)
+  {
+    psi.VRe[1*psi.Nj+j]=sqrt((double)j);
+  }
+  for(j=0;j<psi.Nj;j++)
+  {
+    psi.VRe[2*psi.Nj+j]=psi.Nj-j;
+  }
+  strcpy(psi.Name,"beta-list");
+  printf("beta-list\n");
+  PrintCompactMatrixMinimal(psi);
+  DiagonalMatrixBlockTridiagonalize(val, &psi, &T, &BTD, 3, DBL_EPSILON);
+  
+  printf("Transformation matrix\n");
+  CompactMatrixChop(&T, 1000*DBL_EPSILON);
+  BlockTridiagonalMatrixChop(&BTD, 1000*DBL_EPSILON);
+  PrintCompactMatrixMinimal(T);
+  PrintBlockTriDiagonalMatrix(BTD);
   FreeBlockTridiagonalMatrix(&BTD);
+  
+  printf("complex\n");
   
   val[0]=1;
   val[1]=2;
@@ -346,18 +408,18 @@ void TestBasicMathBlock()
   InitCompactMatrix(&psi);
   for(j=0;j<psi.Nj;j++)
   {
-    psi.V[0*psi.Nj+j].Re=1;
-    psi.V[0*psi.Nj+j].Im=1;
+    psi.V[0*psi.Nj+j].Re=1+(1/(double)(j+1));;
+    psi.V[0*psi.Nj+j].Im=0.1;
   }
   for(j=0;j<psi.Nj;j++)
   {
     psi.V[1*psi.Nj+j].Re=sqrt((double)j);
-    psi.V[1*psi.Nj+j].Im=1;
+    psi.V[1*psi.Nj+j].Im=0.1;
   }
   for(j=0;j<psi.Nj;j++)
   {
     psi.V[2*psi.Nj+j].Re=psi.Nj-j;
-    psi.V[2*psi.Nj+j].Im=psi.Nj-j;
+    psi.V[2*psi.Nj+j].Im=0.1*(psi.Nj-j);
   }
   strcpy(psi.Name,"beta-list");
   printf("beta-list\n");
@@ -371,21 +433,8 @@ void TestBasicMathBlock()
   PrintBlockTriDiagonalMatrix(BTD);
   FreeBlockTridiagonalMatrix(&BTD);
   
-  
-  
-  
-  exit(1);
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   printf("\n============= BlockListOfPolesToBlockTridiagonalMatrix ============\n");
+  
   printf("Real\n");
   BLP.N=3;
   BLP.BlockSize=4;
@@ -425,6 +474,20 @@ void TestBasicMathBlock()
     printf("%22.15E\n",val[i]);
   }
   
+  BlockListOfPolesToSpectra(BLP, G1, -0.5, 0.5, 100);
+  FilePrintSpectra(G1, 16,"G9","w");
+  for(i=0;i<16;i++)
+  {
+    SpectrumFree(&G1[i]);
+  }
+  BlockTriDiagonalMatrixToSpectra(&BTD, G1, -0.5, 0.5, 1000, 0.01);
+  FilePrintSpectra(G1, 16,"G10","w");
+  for(i=0;i<16;i++)
+  {
+    SpectrumFree(&G1[i]);
+  }
+  
+  
   FreeBlockTridiagonalMatrix(&BTD);
   FreeBlockListOfPoles(&BLP);
   FreeCompactMatrix(&M1compact);
@@ -447,7 +510,7 @@ void TestBasicMathBlock()
       for(j=0;j<BLP.BlockSize;j++)
       {
         BLP.V[k * (1+BLP.BlockSize*BLP.BlockSize) + 1 + i + j * BLP.BlockSize].Re = sqrt((double)(k+i+j));
-        BLP.V[k * (1+BLP.BlockSize*BLP.BlockSize) + 1 + i + j * BLP.BlockSize].Im = ((double)i-(double)j)*0.1*sqrt((double)(k+i+j));
+        BLP.V[k * (1+BLP.BlockSize*BLP.BlockSize) + 1 + i + j * BLP.BlockSize].Im = ((double)i-(double)j)*0.3*sqrt((double)(k+i+j));
       }
       BLP.V[k * (1+BLP.BlockSize*BLP.BlockSize) + 1 + i * (BLP.BlockSize+1) ].Re+=2;
     }
@@ -470,11 +533,235 @@ void TestBasicMathBlock()
   {
     printf("%22.15E\n",val[i]);
   }
-
+  
+  
+  BlockListOfPolesToSpectra(BLP, G1, -0.5, 0.5, 100);
+  FilePrintSpectra(G1, 16,"G11","w");
+  for(i=0;i<16;i++)
+  {
+    SpectrumFree(&G1[i]);
+  }
+  BlockTriDiagonalMatrixToSpectra(&BTD, G1, -0.5, 0.5, 1000, 0.01);
+  FilePrintSpectra(G1, 16,"G12","w");
+  for(i=0;i<16;i++)
+  {
+    SpectrumFree(&G1[i]);
+  }
+  
+  CompactMatrixToSpectra(&M1compact, G1, 4, -0.5, 0.5, 100);
+  FilePrintSpectra(G1, 16,"G13","w");
+  for(i=0;i<16;i++)
+  {
+    SpectrumFree(&G1[i]);
+  }
+  
+  FreeBlockTridiagonalMatrix(&BTD);
+  FreeBlockListOfPoles(&BLP);
+  FreeCompactMatrix(&M1compact);
+  FreeCompactMatrix(&T);
   
   printf("\n============= BlockListOfPolesToBlockTridiagonalMatrixReduceDimension ============\n");
   
+  printf("Real\n");
+  BLP.N=3;
+  BLP.BlockSize=4;
+  BLP.QComplex=0;
+  InitBlockListOfPoles(&BLP);
+  BLP.VRe[0 * (1+BLP.BlockSize*BLP.BlockSize)] = -0.2;
+  BLP.VRe[1 * (1+BLP.BlockSize*BLP.BlockSize)] = -0.1;
+  BLP.VRe[2 * (1+BLP.BlockSize*BLP.BlockSize)] =  0.3;
+  
+  for(k=0;k<BLP.N;k++)
+  {
+    for(i=0;i<BLP.BlockSize;i++)
+    {
+      for(j=0;j<BLP.BlockSize;j++)
+      {
+        BLP.VRe[k * (1+BLP.BlockSize*BLP.BlockSize) + 1 + i + j * BLP.BlockSize] = sqrt((double)(k+i+j));
+      }
+      BLP.VRe[k * (1+BLP.BlockSize*BLP.BlockSize) + 1 + i * (BLP.BlockSize+1) ]+=1;
+    }
+  }
+  PrintBlockListOfPoles(BLP);
+  
+  T.Ni=3;
+  T.Nj=4;
+  T.QComplex=0;
+  InitCompactMatrix(&T);
+  T.VRe[0]=1;
+  T.VRe[5]=1;
+  T.VRe[10]=1;
+  
+  BlockListOfPolesToBlockTridiagonalMatrixReduceDimension(BLP, &BTD, &T, 4, DBL_EPSILON);
+  BlockTridiagonalMatrixChop(&BTD, 100*DBL_EPSILON);
+  
+  FreeCompactMatrix(&T);
+  
+  PrintBlockTriDiagonalMatrix(BTD);
+  
+  BlockTriDiagonalMatrixToCompactMatrix(&BTD, &M1compact);
+  
+  PrintCompactMatrixMinimal(M1compact);
+  
+  CompactMatrixEigensystem(&M1compact, &T, val);
+  
+  PrintCompactMatrixMinimal(T);
+  for(i=0;i<9;i++)
+  {
+    printf("%22.15E\n",val[i]);
+  }
+  
+  BlockListOfPolesToSpectra(BLP, G1, -0.5, 0.5, 100);
+  FilePrintSpectra(G1, 16,"G14","w");
+  for(i=0;i<16;i++)
+  {
+    SpectrumFree(&G1[i]);
+  }
+  BlockTriDiagonalMatrixToSpectra(&BTD, G1, -0.5, 0.5, 1000, 0.01);
+  FilePrintSpectra(G1, 9,"G15","w");
+  for(i=0;i<9;i++)
+  {
+    SpectrumFree(&G1[i]);
+  }
+  
+  
+  FreeBlockTridiagonalMatrix(&BTD);
+  FreeBlockListOfPoles(&BLP);
+  FreeCompactMatrix(&M1compact);
+  FreeCompactMatrix(&T);
+  
+  
+  
+  printf("\n============= BlockListOfPolesReduceDim ============\n");
+  
+  BLP.N=4;
+  BLP.BlockSize=3;
+  BLP.QComplex=0;
+  InitBlockListOfPoles(&BLP);
+  BLP.VRe[0 * (1+BLP.BlockSize*BLP.BlockSize)] = -0.2;
+  BLP.VRe[1 * (1+BLP.BlockSize*BLP.BlockSize)] = -0.1;
+  BLP.VRe[2 * (1+BLP.BlockSize*BLP.BlockSize)] =  0.3;
+  BLP.VRe[3 * (1+BLP.BlockSize*BLP.BlockSize)] =  0.4;
+  
+  for(k=0;k<BLP.N;k++)
+  {
+    for(i=0;i<BLP.BlockSize;i++)
+    {
+      for(j=0;j<BLP.BlockSize;j++)
+      {
+        BLP.VRe[k * (1+BLP.BlockSize*BLP.BlockSize) + 1 + i + j * BLP.BlockSize] = sqrt((double)(k+i+j));
+      }
+      BLP.VRe[k * (1+BLP.BlockSize*BLP.BlockSize) + 1 + i * (BLP.BlockSize+1) ]+=2;
+    }
+  }
+  PrintBlockListOfPoles(BLP);
+  
+  T.Ni=3;
+  T.Nj=3;
+  T.QComplex=0;
+  InitCompactMatrix(&T);
+  T.VRe[0]=1;
+  T.VRe[4]=0;
+  T.VRe[7]=sqrt(0.5);
+  T.VRe[8]=sqrt(0.5);
+  
+  BlockListOfPolesTransformNC(&BLP, &B2LP, &T);
+  
+  PrintBlockListOfPoles(B2LP);
+  
   printf("\n============= BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix ============\n");
+  
+  printf("Real\n");
+  BLP.N=4;
+  BLP.BlockSize=3;
+  BLP.QComplex=0;
+  InitBlockListOfPoles(&BLP);
+  BLP.VRe[0 * (1+BLP.BlockSize*BLP.BlockSize)] = -0.2;
+  BLP.VRe[1 * (1+BLP.BlockSize*BLP.BlockSize)] = -0.1;
+  BLP.VRe[2 * (1+BLP.BlockSize*BLP.BlockSize)] =  0.3;
+  BLP.VRe[3 * (1+BLP.BlockSize*BLP.BlockSize)] =  0.4;
+  
+  for(k=0;k<BLP.N;k++)
+  {
+    for(i=0;i<BLP.BlockSize;i++)
+    {
+      for(j=0;j<BLP.BlockSize;j++)
+      {
+        BLP.VRe[k * (1+BLP.BlockSize*BLP.BlockSize) + 1 + i + j * BLP.BlockSize] = sqrt((double)(k+i+j));
+      }
+      BLP.VRe[k * (1+BLP.BlockSize*BLP.BlockSize) + 1 + i * (BLP.BlockSize+1) ]+=2;
+    }
+  }
+  PrintBlockListOfPoles(BLP);
+
+  // normalize block list of poles
+  BlockListOfPolesToBlockTridiagonalMatrix(BLP, &BTD, 5, 100*DBL_EPSILON);
+  for(i=0;i<BLP.BlockSize*BLP.BlockSize;i++)
+  {
+    //BTD.bRe[i]=0;
+  }
+  //PrintBlockTriDiagonalMatrix(BTD);
+  
+  FreeBlockListOfPoles(&BLP);
+  BlockTriDiagonalMatrixToBlockListOfPoles(&BTD, &BLP, -0.5, 0.5, 10);
+  ReduceBlockListOfPoles(&BLP, 4, 0.0);
+  
+  PrintBlockListOfPoles(BLP);
+  
+  BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(&BLP, &BNA, 0.0001, 4, 4);
+  
+  //PrintBlockNaturalImpurityOrbitalMatrix(BNA);
+  
+  FreeBlockListOfPoles(&BLP);
+  FreeBlockTridiagonalMatrix(&BTD);
+  
+  
+  printf("Complex\n");
+  BLP.N=1;
+  BLP.BlockSize=3;
+  BLP.QComplex=1;
+  InitBlockListOfPoles(&BLP);
+  BLP.V[0 * (1+BLP.BlockSize*BLP.BlockSize)].Re = -0.2;
+//  BLP.V[1 * (1+BLP.BlockSize*BLP.BlockSize)].Re = -0.1;
+//  BLP.V[2 * (1+BLP.BlockSize*BLP.BlockSize)].Re =  0.3;
+//  BLP.V[3 * (1+BLP.BlockSize*BLP.BlockSize)].Re =  0.4;
+  
+  for(k=0;k<BLP.N;k++)
+  {
+    for(i=0;i<BLP.BlockSize;i++)
+    {
+      for(j=0;j<BLP.BlockSize;j++)
+      {
+        BLP.V[k * (1+BLP.BlockSize*BLP.BlockSize) + 1 + i + j * BLP.BlockSize].Re = sqrt((double)(k+i+j));
+        BLP.V[k * (1+BLP.BlockSize*BLP.BlockSize) + 1 + i + j * BLP.BlockSize].Im = 0.2 * ((double)i-(double)j)/sqrt((double)(k+1));
+      }
+      BLP.V[k * (1+BLP.BlockSize*BLP.BlockSize) + 1 + i * (BLP.BlockSize+1) ].Re+=2;
+    }
+  }
+  PrintBlockListOfPoles(BLP);
+  
+  // normalize block list of poles
+  BlockListOfPolesToBlockTridiagonalMatrix(BLP, &BTD, 5, 100*DBL_EPSILON);
+  for(i=0;i<BLP.BlockSize*BLP.BlockSize;i++)
+  {
+    //BTD.bRe[i]=0;
+  }
+  PrintBlockTriDiagonalMatrix(BTD);
+  
+  FreeBlockListOfPoles(&BLP);
+  BlockTriDiagonalMatrixToBlockListOfPoles(&BTD, &BLP, -0.5, 0.5, 10);
+  ReduceBlockListOfPoles(&BLP, 1, 0.0);
+  
+  PrintBlockListOfPoles(BLP);
+  
+  BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(&BLP, &BNA, 0.0001, 4, 4);
+  
+  //PrintBlockNaturalImpurityOrbitalMatrix(BNA);
+  
+  
+  
+
+  
   
   printf("\n============= BlockListOfPolesToBlockNaturalImpurityOrbitalMatrixReduceDimension ============\n");
   

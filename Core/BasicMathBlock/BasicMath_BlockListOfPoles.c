@@ -528,6 +528,7 @@ uint32_t ReduceBlockListOfPoles(BlockListOfPoles * const A, uint32_t N, double c
       aplus=iBlock[A->BlockSize*A->BlockSize].Re;
       amin=2*a-aplus;
       SmallestNorm=ListOfPolesNormFlatWeightComplex(iBlock,A->BlockSize,a,amin,aplus);
+      iSmallestNorm=0;
       for(i=1;i<A->N-1;i++)
       {
         iBlock+=A->BlockSize*A->BlockSize+1;
@@ -663,6 +664,7 @@ uint32_t ReduceBlockListOfPoles(BlockListOfPoles * const A, uint32_t N, double c
       aplus=iBlock[A->BlockSize*A->BlockSize];
       amin=2*a-aplus;
       SmallestNorm=ListOfPolesNormFlatWeightReal(iBlock,A->BlockSize,a,amin,aplus);
+      iSmallestNorm=0;
       for(i=1;i<A->N-1;i++)
       {
         iBlock+=A->BlockSize*A->BlockSize+1;
@@ -816,7 +818,7 @@ uint32_t SubtractBlockListOfPoles(BlockListOfPoles * const A, BlockListOfPoles c
  *  BasisB = T BasisA
  *  B = T^* A T^T
  */
-uint32_t BlockListOfPolesReduceDim(BlockListOfPoles const * A, BlockListOfPoles * const B, CompactMatrixType const *T)
+uint32_t BlockListOfPolesReduceDimcT(BlockListOfPoles const * A, BlockListOfPoles * const B, CompactMatrixType const *T)
 {
   uint32_t i,iA,iB;
   CompactMatrixType Bnow, Anow;
@@ -867,7 +869,83 @@ uint32_t BlockListOfPolesReduceDim(BlockListOfPoles const * A, BlockListOfPoles 
   }
   return 0;
 }
-
+uint32_t BlockListOfPolesTransformcT(BlockListOfPoles const * A, BlockListOfPoles * const B, CompactMatrixType const *T)
+{
+  return(BlockListOfPolesReduceDimcT(A,B,T));
+}
+uint32_t BlockListOfPolesTransformInlinecT(BlockListOfPoles * const A, CompactMatrixType const *T)
+{
+  BlockListOfPoles B;
+  if(BlockListOfPolesReduceDimcT(A,&B,T)){return 1;}
+  FreeBlockListOfPoles(A);
+  *A=B;
+  return 0;
+}
+/*  B = T A T^+
+*/
+uint32_t BlockListOfPolesReduceDimNC(BlockListOfPoles const * A, BlockListOfPoles * const B, CompactMatrixType const *T)
+{
+  uint32_t i,iA,iB;
+  CompactMatrixType Bnow, Anow;
+  if(T->Nj != A->BlockSize)
+  {
+    printf("BlockListOfPolesReduceDim failed as T.Nj (%i) != A.BlockSize (%i)\n",T->Nj,A->BlockSize);
+    return 1;
+  }
+  B->QComplex = A->QComplex;
+  B->BlockSize = T->Ni;
+  B->N=A->N;
+  InitBlockListOfPoles(B);
+  Anow.QComplex = A->QComplex;
+  Anow.Ni=A->BlockSize;
+  Anow.Nj=A->BlockSize;
+  Bnow.QComplex = B->QComplex;
+  Bnow.Ni=B->BlockSize;
+  Bnow.Nj=B->BlockSize;
+  iA=0;
+  iB=0;
+  if(B->QComplex)
+  {
+    for(i=0;i<B->N;i++)
+    {
+      B->V[iB].Re = A->V[iA].Re;
+      iA++;
+      iB++;
+      Anow.V=&(A->V[iA]);
+      Bnow.V=&(B->V[iB]);
+      CompactMatrixMultiply3PreAllocated('N', 'N', 'C', T, &Anow, T, &Bnow);
+      iA+=A->BlockSize*A->BlockSize;
+      iB+=B->BlockSize*B->BlockSize;
+    }
+  }
+  else
+  {
+    for(i=0;i<B->N;i++)
+    {
+      B->VRe[iB] = A->VRe[iA];
+      iA++;
+      iB++;
+      Anow.VRe=&(A->VRe[iA]);
+      Bnow.VRe=&(B->VRe[iB]);
+      CompactMatrixMultiply3PreAllocated('*', 'N', 'T', T, &Anow, T, &Bnow);
+      iA+=A->BlockSize*A->BlockSize;
+      iB+=B->BlockSize*B->BlockSize;
+    }
+  }
+  return 0;
+}
+uint32_t BlockListOfPolesTransformNC(BlockListOfPoles const * A, BlockListOfPoles * const B, CompactMatrixType const *T)
+{
+  return(BlockListOfPolesReduceDimNC(A,B,T));
+}
+uint32_t BlockListOfPolesTransformInlineNC(BlockListOfPoles * const A, CompactMatrixType const *T)
+{
+  BlockListOfPoles B;
+  if(BlockListOfPolesReduceDimNC(A,&B,T)){return 1;}
+  FreeBlockListOfPoles(A);
+  *A=B;
+  return 0;
+}
 
 
 /*  Given G0 and Sigma as Block List of Poles calculate the full Green's function also as a Block List of poles
