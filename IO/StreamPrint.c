@@ -249,18 +249,17 @@ uint32_t StreamPrintWaveFunctionPlainBinary(WaveFunctionType psi, FILE * stream)
 
 
 /*
-*   Prints the values of the wave function.
+ *   Prints the values of the wave function.
  */
 uint32_t StreamPrintWaveFunctionReadable(WaveFunctionType psi, FILE * stream)
 {
   uint32_t i, j;
   psi.Name[MAXStrLength - 1] = '\0';
-  fprintf(stream, "\nprintout of WaveFunction: %s\n", psi.Name);
-  fprintf(stream, "\nGenneral settings\n");
-  fprintf(stream, "QComplex      = %10i (Real==0 or Complex==1)\n", psi.QComplex);
-  fprintf(stream, "N             = %10i (Number of basis functions used to discribe psi)\n", psi.N);
-  fprintf(stream, "NFermion      = %10i (Number of fermions in the one particle basis)\n", psi.NFermion);
-  fprintf(stream, "NBoson        = %10i (Number of bosons in the one particle basis)\n", psi.NBoson);
+  fprintf(stream, "\nWaveFunction: %s\n", psi.Name);
+  fprintf(stream, "QComplex         = %10i (Real==0 or Complex==1)\n", psi.QComplex);
+  fprintf(stream, "N                = %10i (Number of basis functions used to discribe psi)\n", psi.N);
+  fprintf(stream, "NFermionic modes = %10i (Number of fermions in the one particle basis)\n", psi.NFermion);
+  fprintf(stream, "NBosonic modes   = %10i (Number of bosons in the one particle basis)\n", psi.NBoson);
   if (psi.QComplex)
   {
     fprintf(stream, "\n#      pre-factor             +I  pre-factor         Determinant\n");
@@ -507,12 +506,11 @@ uint32_t StreamPrintOperatorReadable(OperatorType O, FILE * stream)
 {
   int32_t i, j, k;
   O.Name[MAXStrLength - 1] = '\0';
-  fprintf(stream, "\nprintout of Operator: %s\n", O.Name);
-  fprintf(stream, "\nGenneral settings\n");
-  fprintf(stream, "QComplex      = %10i (Real==0 or Complex==1 or Mixed==2)\n", O.QComplex);
-  fprintf(stream, "MaxLength     = %10i (largest number of product of lader operators)\n", O.MaxLength);
-  fprintf(stream, "NFermion      = %10i (Number of fermions in the one particle basis)\n", O.NFermion);
-  fprintf(stream, "NBoson        = %10i (Number of bosons in the one particle basis)\n", O.NBoson);
+  fprintf(stream, "\nOperator: %s\n", O.Name);
+  fprintf(stream, "QComplex         = %10i (Real==0 or Complex==1 or Mixed==2)\n", O.QComplex);
+  fprintf(stream, "MaxLength        = %10i (largest number of product of lader operators)\n", O.MaxLength);
+  fprintf(stream, "NFermionic modes = %10i (Number of fermions in the one particle basis)\n", O.NFermion);
+  fprintf(stream, "NBosonic modes   = %10i (Number of bosons in the one particle basis)\n", O.NBoson);
   for (i = 0; i <= O.MaxLength; i++)
   {
     if (O.l[i].N != 0)
@@ -531,7 +529,7 @@ uint32_t StreamPrintOperatorReadable(OperatorType O, FILE * stream)
       }
     }
   }
-  printf("\n");
+  fprintf(stream, "\n");
   return 0;
 }
 
@@ -759,20 +757,20 @@ uint32_t StreamPrintCompactMatrixMinimal(CompactMatrixType const M, FILE * strea
   uint32_t i,j;
   if(M.QComplex)
   {
-    for(j=0;j<M.Nj;j++)
+    for(i=0;i<M.Ni;i++)
     {
-      for(i=0;i<M.Ni;i++)
+      for(j=0;j<M.Nj;j++)
       {
-        fprintf(stream,"(%22.15E ",M.V[j+M.Nj*i].Re);
-        if(M.V[j+M.Nj*i].Im>=0)
+        fprintf(stream,"( %17.10E ",M.V[i*M.Nj+j].Re);
+        if(M.V[i*M.Nj+j].Im>=0)
         {
           fprintf(stream,"+");
         }
         else
         {
-          fprintf(stream," ");
+          fprintf(stream,"-");
         }
-        fprintf(stream,"%22.15E I) ",M.V[j+M.Nj*i].Im);
+        fprintf(stream,"%17.10E I) ",fabs(M.V[i*M.Nj+j].Im));
       }
       fprintf(stream,"\n");
     }
@@ -780,11 +778,11 @@ uint32_t StreamPrintCompactMatrixMinimal(CompactMatrixType const M, FILE * strea
   }
   else
   {
-    for(j=0;j<M.Nj;j++)
+    for(i=0;i<M.Ni;i++)
     {
-      for(i=0;i<M.Ni;i++)
+      for(j=0;j<M.Nj;j++)
       {
-        fprintf(stream,"%22.15E ",M.VRe[j+M.Nj*i]);
+        fprintf(stream,"%17.10E ",M.VRe[i*M.Nj+j]);
       }
       fprintf(stream,"\n");
     }

@@ -23,38 +23,120 @@
 
 
 
-static int math_abs (lua_State *L) {
-  lua_pushnumber(L, l_mathop(fabs)(luaL_checknumber(L, 1)));
+static int math_abs (lua_State *L)
+{
+  if (luaL_testudata(L, 1, "Complex_Type") != NULL)
+  {
+    Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Complex_Type");
+    lua_pushnumber(L, sqrt(Sqr(a->Im)+Sqr(a->Re)));
+  }
+  else
+  {
+    lua_pushnumber(L, l_mathop(fabs)(luaL_checknumber(L, 1)));
+  }
   return 1;
 }
 
-static int math_sin (lua_State *L) {
-  lua_pushnumber(L, l_mathop(sin)(luaL_checknumber(L, 1)));
+static int math_sin (lua_State *L)
+{
+  if (luaL_testudata(L, 1, "Complex_Type") != NULL)
+  {
+    Complex16 *res;
+    Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Complex_Type");
+    res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
+    res->Re = sin(a->Re) * cosh(a->Im);
+    res->Im = cos(a->Re) * sinh(a->Im);
+    luaL_setmetatable(L, "Complex_Type");
+  }
+  else
+  {
+    lua_pushnumber(L, l_mathop(sin)(luaL_checknumber(L, 1)));
+  }
   return 1;
 }
 
 static int math_sinh (lua_State *L) {
-  lua_pushnumber(L, l_mathop(sinh)(luaL_checknumber(L, 1)));
+  if (luaL_testudata(L, 1, "Complex_Type") != NULL)
+  {
+    Complex16 *res;
+    Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Complex_Type");
+    res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
+    res->Re = sinh(a->Re) * cos(a->Im);
+    res->Im = cosh(a->Re) * sin(a->Im);
+    luaL_setmetatable(L, "Complex_Type");
+  }
+  else
+  {
+    lua_pushnumber(L, l_mathop(sinh)(luaL_checknumber(L, 1)));
+  }
   return 1;
 }
 
 static int math_cos (lua_State *L) {
-  lua_pushnumber(L, l_mathop(cos)(luaL_checknumber(L, 1)));
+  if (luaL_testudata(L, 1, "Complex_Type") != NULL)
+  {
+    Complex16 *res;
+    Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Complex_Type");
+    res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
+    res->Re = cos(a->Re) * cosh(a->Im);
+    res->Im =-sin(a->Re) * sinh(a->Im);
+    luaL_setmetatable(L, "Complex_Type");
+  }
+  else
+  {
+    lua_pushnumber(L, l_mathop(cos)(luaL_checknumber(L, 1)));
+  }
   return 1;
 }
 
 static int math_cosh (lua_State *L) {
-  lua_pushnumber(L, l_mathop(cosh)(luaL_checknumber(L, 1)));
+  if (luaL_testudata(L, 1, "Complex_Type") != NULL)
+  {
+    Complex16 *res;
+    Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Complex_Type");
+    res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
+    res->Re = cosh(a->Re) * cos(a->Im);
+    res->Im = sinh(a->Re) * sin(a->Im);
+    luaL_setmetatable(L, "Complex_Type");
+  }
+  else
+  {
+    lua_pushnumber(L, l_mathop(cosh)(luaL_checknumber(L, 1)));
+  }
   return 1;
 }
 
 static int math_tan (lua_State *L) {
-  lua_pushnumber(L, l_mathop(tan)(luaL_checknumber(L, 1)));
+  if (luaL_testudata(L, 1, "Complex_Type") != NULL)
+  {
+    Complex16 *res;
+    Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Complex_Type");
+    res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
+    res->Re = sin(2*a->Re)  / (cos(2*a->Re)+cosh(2*a->Im));
+    res->Im = sinh(2*a->Im) / (cos(2*a->Re)+cosh(2*a->Im));
+    luaL_setmetatable(L, "Complex_Type");
+  }
+  else
+  {
+    lua_pushnumber(L, l_mathop(tan)(luaL_checknumber(L, 1)));
+  }
   return 1;
 }
 
 static int math_tanh (lua_State *L) {
-  lua_pushnumber(L, l_mathop(tanh)(luaL_checknumber(L, 1)));
+  if (luaL_testudata(L, 1, "Complex_Type") != NULL)
+  {
+    Complex16 *res;
+    Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Complex_Type");
+    res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
+    res->Re = sinh(2*a->Re) / (cosh(2*a->Re)+cos(2*a->Im));
+    res->Im = sin(2*a->Im)  / (cosh(2*a->Re)+cos(2*a->Im));
+    luaL_setmetatable(L, "Complex_Type");
+  }
+  else
+  {
+    lua_pushnumber(L, l_mathop(tanh)(luaL_checknumber(L, 1)));
+  }
   return 1;
 }
 
@@ -115,29 +197,75 @@ static int math_pow (lua_State *L) {
   return 1;
 }
 
-static int math_log (lua_State *L) {
-  lua_Number x = luaL_checknumber(L, 1);
-  lua_Number res;
-  if (lua_isnoneornil(L, 2))
-    res = l_mathop(log)(x);
-  else {
-    lua_Number base = luaL_checknumber(L, 2);
-    if (base == (lua_Number)10.0) res = l_mathop(log10)(x);
-    else res = l_mathop(log)(x)/l_mathop(log)(base);
+static int math_log (lua_State *L)
+{
+  if (luaL_testudata(L, 1, "Complex_Type") != NULL)
+  {
+    Complex16 *res;
+    Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Complex_Type");
+    res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
+    luaL_setmetatable(L, "Complex_Type");
+    res->Re = 0.5*log(Sqr(a->Re)+Sqr(a->Im));
+    res->Im = atan2(a->Re, a->Im);
+    if (!lua_isnoneornil(L, 2))
+    {
+      lua_Number base = luaL_checknumber(L, 2);
+      res->Re /= l_mathop(log)(base);
+      res->Im /= l_mathop(log)(base);
+    }
   }
-  lua_pushnumber(L, res);
+  else
+  {
+    lua_Number x = luaL_checknumber(L, 1);
+    lua_Number res;
+    if (lua_isnoneornil(L, 2))
+      res = l_mathop(log)(x);
+    else
+    {
+      lua_Number base = luaL_checknumber(L, 2);
+      if (base == (lua_Number)10.0) res = l_mathop(log10)(x);
+      else res = l_mathop(log)(x)/l_mathop(log)(base);
+    }
+    lua_pushnumber(L, res);
+  }
   return 1;
 }
 
 #if defined(LUA_COMPAT_LOG10)
-static int math_log10 (lua_State *L) {
-  lua_pushnumber(L, l_mathop(log10)(luaL_checknumber(L, 1)));
+static int math_log10 (lua_State *L)
+{
+  if (luaL_testudata(L, 1, "Complex_Type") != NULL)
+  {
+    Complex16 *res;
+    Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Complex_Type");
+    res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
+    luaL_setmetatable(L, "Complex_Type");
+    res->Re = 0.5*log10(Sqr(a->Re)+Sqr(a->Im));
+    res->Im = atan2(a->Re, a->Im)/log(10.0);
+  }
+  else
+  {
+    lua_pushnumber(L, l_mathop(log10)(luaL_checknumber(L, 1)));
+  }
   return 1;
 }
 #endif
 
-static int math_exp (lua_State *L) {
-  lua_pushnumber(L, l_mathop(exp)(luaL_checknumber(L, 1)));
+static int math_exp (lua_State *L)
+{
+  if (luaL_testudata(L, 1, "Complex_Type") != NULL)
+  {
+    Complex16 *res;
+    Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Complex_Type");
+    res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
+    luaL_setmetatable(L, "Complex_Type");
+    res->Re = exp(a->Re)*cos(a->Im);
+    res->Im = exp(a->Re)*sin(a->Im);
+  }
+  else
+  {
+    lua_pushnumber(L, l_mathop(exp)(luaL_checknumber(L, 1)));
+  }
   return 1;
 }
 
@@ -249,7 +377,7 @@ static int math_SphericalHarmonicY(lua_State * L)
   res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
   res->Re = ReSphericalHarmonicY(l, m, theta, phi);
   res->Im = ImSphericalHarmonicY(l, m, theta, phi);
-  luaL_setmetatable(L, "Lua.complex");
+  luaL_setmetatable(L, "Complex_Type");
   return 1;
 }
 static int math_SphericalHarmonicC(lua_State * L)
@@ -267,7 +395,7 @@ static int math_SphericalHarmonicC(lua_State * L)
   res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
   res->Re = sqrt(4*Pi/((double)(2*l+1))) * ReSphericalHarmonicY(l, m, theta, phi);
   res->Im = sqrt(4*Pi/((double)(2*l+1))) * ImSphericalHarmonicY(l, m, theta, phi);
-  luaL_setmetatable(L, "Lua.complex");
+  luaL_setmetatable(L, "Complex_Type");
   return 1;
 }
 
@@ -391,38 +519,54 @@ static int math_fact(lua_State * L)
   return 1;
 }
 
+/* on stack n,k
+ *  returns a real number
+ */
+static int math_binomial(lua_State * L)
+{
+  uint32_t n,k;
+  double res;
+  if(lua_gettop(L)!=2) return luaL_error(L, "math.Binomial expects 2 parameters n and k");
+  n = (uint32_t) luaL_checknumber(L, 1);
+  k = (uint32_t) luaL_checknumber(L, 2);
+  res = BinomialCoefficientDouble(n, k);
+  lua_pushnumber(L, res);
+  return 1;
+}
+
 static const luaL_Reg mathlib[] = {
-  {"abs",   math_abs},
-  {"acos",  math_acos},
-  {"asin",  math_asin},
-  {"atan2", math_atan2},
-  {"atan",  math_atan},
-  {"ceil",  math_ceil},
-  {"cosh",   math_cosh},
-  {"cos",   math_cos},
-  {"deg",   math_deg},
-  {"exp",   math_exp},
-  {"floor", math_floor},
-  {"fmod",   math_fmod},
-  {"frexp", math_frexp},
-  {"ldexp", math_ldexp},
+  {"abs",   math_abs},{"Abs",   math_abs},
+  {"acos",  math_acos},{"Acos",  math_acos},
+  {"asin",  math_asin},{"Asin",  math_asin},
+  {"atan2", math_atan2},{"Atan2", math_atan2},
+  {"atan",  math_atan},{"Atan",  math_atan},
+  {"ceil",  math_ceil},{"Ceil",  math_ceil},
+  {"cosh",   math_cosh},{"Cosh",   math_cosh},
+  {"cos",   math_cos},{"Cos",   math_cos},
+  {"deg",   math_deg},{"Deg",   math_deg},
+  {"exp",   math_exp},{"Exp",   math_exp},
+  {"floor", math_floor},{"Floor", math_floor},
+  {"fmod",   math_fmod},{"Fmod",   math_fmod},
+  {"frexp", math_frexp},{"Frexp", math_frexp},
+  {"ldexp", math_ldexp},{"Ldexp", math_ldexp},
 #if defined(LUA_COMPAT_LOG10)
-  {"log10", math_log10},
+  {"log10", math_log10},{"Log10", math_log10},
 #endif
-  {"log",   math_log},
-  {"max",   math_max},
-  {"min",   math_min},
-  {"modf",   math_modf},
-  {"pow",   math_pow},
-  {"rad",   math_rad},
-  {"random",     math_random},
-  {"randomseed", math_randomseed},
-  {"sinh",   math_sinh},
-  {"sin",   math_sin},
-  {"sqrt",  math_sqrt},
-  {"tanh",   math_tanh},
-  {"tan",   math_tan},
-  {"fact",   math_fact},
+  {"log",   math_log},{"Log",   math_log},
+  {"max",   math_max},{"Max",   math_max},
+  {"min",   math_min},{"Min",   math_min},
+  {"modf",   math_modf},{"Modf",   math_modf},
+  {"pow",   math_pow},{"Pow",   math_pow},
+  {"rad",   math_rad},{"Rad",   math_rad},
+  {"random",     math_random},{"Random",     math_random},
+  {"randomseed", math_randomseed},{"RandomSeed", math_randomseed},
+  {"sinh",   math_sinh},{"Sinh",   math_sinh},
+  {"sin",   math_sin},{"Sin",   math_sin},
+  {"sqrt",  math_sqrt},{"Sqrt",  math_sqrt},
+  {"tanh",   math_tanh},{"Tanh",   math_tanh},
+  {"tan",   math_tan},{"Tan",   math_tan},
+  {"fact",   math_fact},{"Fact",   math_fact},{"factorial",   math_fact},{"Factorial",   math_fact},
+  {"Binomial",   math_binomial},{"BinomialCoefficient",   math_fact},
   {"SphericalHarmonicY", math_SphericalHarmonicY},
   {"SphericalHarmonicC", math_SphericalHarmonicC},
   {"TesseralHarmonicZ",  math_TesseralHarmonicZ},
@@ -442,8 +586,12 @@ LUAMOD_API int luaopen_math (lua_State *L) {
   luaL_newlib(L, mathlib);
   lua_pushnumber(L, PI);
   lua_setfield(L, -2, "pi");
+  lua_pushnumber(L, PI);
+  lua_setfield(L, -2, "Pi");
   lua_pushnumber(L, HUGE_VAL);
   lua_setfield(L, -2, "huge");
+  lua_pushnumber(L, HUGE_VAL);
+  lua_setfield(L, -2, "Huge");
   return 1;
 }
 

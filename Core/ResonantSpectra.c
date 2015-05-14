@@ -3,7 +3,7 @@
 
 /*  Calculate < psi | T1^+ G1^+ T2^+ G2 T2 G1 T1 | psi >
  */
-uint32_t ResonantSpectra(const OperatorType OppH1, const OperatorType OppH2, const OperatorType T1, const OperatorType *T2, uint32_t NT2, const WaveFunctionType psi, TriDiagonalMatrixType *SpecTri2, SpectraType *Spec, ConvergenceSettingsType *settings)
+uint32_t ResonantSpectra(const OperatorType OppH1, const OperatorType OppH2, const OperatorType T1, const OperatorType *T2, uint32_t NT2, const WaveFunctionType psi, TriDiagonalMatrixType **SpecTri2, SpectraType **Spec, ConvergenceSettingsType *settings)
 {
   /*Given wavefunction psi (usually ground state, but could be excited)*/
   
@@ -36,13 +36,27 @@ uint32_t ResonantSpectra(const OperatorType OppH1, const OperatorType OppH2, con
   PsiHermitianOperatorPsi(OppH2, psi, &energy2);
   
   /* Calculate T|i> */
-  OperatorPsi(T1,psi,&Tpsi);
+  if(settings->restrictions1.N==0)
+  {
+    OperatorPsi(T1,psi,&Tpsi);
+  }
+  else
+  {
+    OperatorPsiRestricted(T1, psi, &Tpsi, settings->restrictions1);
+  }
   
   /* Use T|i> to transform H to tridiagonal form in Krylov basis */
   /* Using the version which gives back the Krylov basis vectors */
   SpecTri1.N = settings->NTri1;
   InitTriDiagonalMatrix(&SpecTri1);
-  LanczosTriDiagonalizeKrylov(OppH1,Tpsi,settings->epsilon,&SpecTri1,PsiBasis);
+  if(settings->restrictions1.N==0)
+  {
+    LanczosTriDiagonalizeKrylov(OppH1,Tpsi,settings->epsilon,&SpecTri1,PsiBasis);
+  }
+  else
+  {
+    LanczosTriDiagonalizeKrylovRestricted(OppH1, Tpsi, settings->restrictions1, settings->epsilon, &SpecTri1, PsiBasis);
+  }
   
   /*Compute eigenvalues and eigenvectors, then S^-1 = QAQ^T where
    Q are the eigenvectors and A is a matrix with the eigenvalue inverses on the diagonal.
@@ -57,20 +71,38 @@ uint32_t ResonantSpectra(const OperatorType OppH1, const OperatorType OppH2, con
   {
     settings->Emin1=1.1*EVal[0]-0.1*EVal[settings->NTri1-1];
     settings->Emax1=1.1*EVal[settings->NTri1-1]-0.1*EVal[0];
+    VerbosityPrintf(0x0002, "Automatically set energy range for intermediate states Emin=%22.15E Emax=%22.15E\n",settings->Emin1,settings->Emax1);
   }
-  if(settings->Emin1>( 0.001*DBL_MAX)) settings->Emin1=1.1*EVal[0]-0.1*settings->Emax1;
-  if(settings->Emax1<(-0.001*DBL_MAX)) settings->Emax1=1.1*EVal[settings->NTri1-1]-0.1*settings->Emin1;
+  if(settings->Emin1>( 0.001*DBL_MAX))
+  {
+    settings->Emin1=1.1*EVal[0]-0.1*settings->Emax1;
+    VerbosityPrintf(0x0002, "Automatically set energy range for intermediate states Emin=%22.15E Emax=%22.15E\n",settings->Emin1,settings->Emax1);
+  }
+  if(settings->Emax1<(-0.001*DBL_MAX))
+  {
+    settings->Emax1=1.1*EVal[settings->NTri1-1]-0.1*settings->Emin1;
+    VerbosityPrintf(0x0002, "Automatically set energy range for intermediate states Emin=%22.15E Emax=%22.15E\n",settings->Emin1,settings->Emax1);
+  }
   if((settings->Gamma1==0)&&(settings->NE1==0))
   {
     settings->NE1=1000;
     settings->Gamma1=5*(settings->Emax1-settings->Emin1)/settings->NE1;
+    VerbosityPrintf(0x0002, "Automatically set number of energy points (NE=%d) and lifetime (Gamma=%22.15E) for intermediate state\n",settings->NE1,settings->Gamma1);
   }
-  if(settings->NE1==0)    settings->NE1    =(uint32_t)(5*(settings->Emax1-settings->Emin1)/settings->Gamma1);
-  if(settings->Gamma1==0) settings->Gamma1 =(uint32_t)(5*(settings->Emax1-settings->Emin1)/settings->NE1);
+  if(settings->NE1==0)
+  {
+    settings->NE1    =(uint32_t)(5*(settings->Emax1-settings->Emin1)/settings->Gamma1);
+    VerbosityPrintf(0x0002, "Automatically set number of energy points (NE=%d) and lifetime (Gamma=%22.15E) for intermediate state\n",settings->NE1,settings->Gamma1);
+  }
+  if(settings->Gamma1==0)
+  {
+    settings->Gamma1 =(uint32_t)(5*(settings->Emax1-settings->Emin1)/settings->NE1);
+    VerbosityPrintf(0x0002, "Automatically set number of energy points (NE=%d) and lifetime (Gamma=%22.15E) for intermediate state\n",settings->NE1,settings->Gamma1);
+  }
   
   /* allocate SpecTri2 */
-  SpecTri2 = malloc((settings->NE1+1)*NT2);
-  if(SpecTri2==0)
+  *SpecTri2 = malloc((settings->NE1+1)*NT2*sizeof(TriDiagonalMatrixType));
+  if(*SpecTri2==NULL)
   {
     printf("malloc of SpecTri2 failed in ResonantSpectra\n");
     return 1;
@@ -135,53 +167,87 @@ uint32_t ResonantSpectra(const OperatorType OppH1, const OperatorType OppH2, con
     for(i = 0; i < NT2; i++)
     {
       /* Calculate T*G(w)T|i> */
-      OperatorPsi(T2[i],GTpsi,&TGTpsi);
+      if(settings->restrictions2.N==0)
+      {
+        OperatorPsi(T2[i],GTpsi,&TGTpsi);
+      }
+      else
+      {
+        OperatorPsiRestricted(T2[i], GTpsi, &TGTpsi, settings->restrictions2);
+      }
       /* Calculate the RIXS spectrum */
-      SpecTri2[p + i*(settings->NE1+1)].N=settings->NTri2;
-      InitTriDiagonalMatrix(&SpecTri2[p + i*(settings->NE1+1)]);
-      LanczosTriDiagonalize(OppH2, TGTpsi, settings->epsilon, &SpecTri2[p + i*(settings->NE1+1)], (sqrt(DBL_EPSILON)+settings->Gamma2));
+      (*SpecTri2)[p + i*(settings->NE1+1)].N=settings->NTri2;
+      InitTriDiagonalMatrix(&((*SpecTri2)[p + i*(settings->NE1+1)]));
+      if(settings->restrictions2.N==0)
+      {
+        LanczosTriDiagonalize(OppH2, TGTpsi, settings->epsilon, &((*SpecTri2)[p + i*(settings->NE1+1)]), (sqrt(DBL_EPSILON)+settings->Gamma2));
+      }
+      else
+      {
+        LanczosTriDiagonalizeRestricted(OppH2, TGTpsi, settings->restrictions2, settings->epsilon, &((*SpecTri2)[p + i*(settings->NE1+1)]), (sqrt(DBL_EPSILON)+settings->Gamma2));
+      }
     }
     WaveFunctionFree(&GTpsi);
   }
   /* create spectra from tridiagonal matrices */
-  Spec = malloc(NT2 * (settings->NE1+1) * sizeof(SpectraType));
+  *Spec = malloc(NT2 * (settings->NE1+1) * sizeof(SpectraType));
   for(i=0; i<NT2 * (settings->NE1+1);i++)
   {
     /* determine min and max poles */
-    TriDiagonalMatrixToEigenvalues(SpecTri2[i], EVal2);
-    Spec[i].EminPole = EVal2[0];
-    Spec[i].EmaxPole = EVal2[settings->NTri2-1];
+    TriDiagonalMatrixToEigenvalues((*SpecTri2)[i], EVal2);
+    (*Spec)[i].EminPole = EVal2[0]-energy2;
+    (*Spec)[i].EmaxPole = EVal2[settings->NTri2-1]-energy2;
   }
   /* determine the energy range of the spectrum if not give */
-  EVal2[0]=Spec[0].EminPole;
-  EVal2[1]=Spec[0].EmaxPole;
+  EVal2[0]=(*Spec)[0].EminPole;
+  EVal2[1]=(*Spec)[0].EmaxPole;
   for(i=1; i<NT2 * (settings->NE1+1);i++)
   {
-    if(Spec[i].EminPole<EVal2[0]) EVal2[0]=Spec[i].EminPole;
-    if(Spec[i].EmaxPole>EVal2[0]) EVal2[1]=Spec[i].EmaxPole;
+    if((*Spec)[i].EminPole<EVal2[0]) EVal2[0]=(*Spec)[i].EminPole;
+    if((*Spec)[i].EmaxPole>EVal2[1]) EVal2[1]=(*Spec)[i].EmaxPole;
   }
   if((settings->Emin2>( 0.001*DBL_MAX)) || (settings->Emax2<(-0.001*DBL_MAX)))
   {
-    settings->Emin2 = 1.1 * EVal2[0] - EVal2[1];
-    settings->Emax2 = 1.1 * EVal2[1] - EVal2[0];
+    settings->Emin2 = 1.1 * EVal2[0] - 0.1*EVal2[1];
+    settings->Emax2 = 1.1 * EVal2[1] - 0.1*EVal2[0];
+    VerbosityPrintf(0x0002, "Automatically set energy range for final states Emin=%22.15E Emax=%22.15E\n",settings->Emin2,settings->Emax2);
   }
-  if(settings->Emin2>( 0.001*DBL_MAX)) settings->Emin2=1.1*EVal2[0]-0.1*settings->Emax2;
-  if(settings->Emax2<(-0.001*DBL_MAX)) settings->Emax2=1.1*EVal2[1]-0.1*settings->Emin2;
+  if(settings->Emin2>( 0.001*DBL_MAX))
+  {
+    settings->Emin2=1.1*EVal2[0]-0.1*settings->Emax2;
+    VerbosityPrintf(0x0002, "Automatically set energy range for final states Emin=%22.15E Emax=%22.15E\n",settings->Emin2,settings->Emax2);
+  }
+  if(settings->Emax2<(-0.001*DBL_MAX))
+  {
+    settings->Emax2=1.1*EVal2[1]-0.1*settings->Emin2;
+    VerbosityPrintf(0x0002, "Automatically set energy range for final states Emin=%22.15E Emax=%22.15E\n",settings->Emin2,settings->Emax2);
+  }
   if((settings->Gamma2==0)&&(settings->NE2==0))
   {
     settings->NE2=1000;
     settings->Gamma2=5*(settings->Emax2-settings->Emin2)/settings->NE2;
+    VerbosityPrintf(0x0002, "Automatically set number of energy points (NE=%d) and lifetime (Gamma=%22.15E) for final state\n",settings->NE2,settings->Gamma2);
   }
-  if(settings->NE2==0)    settings->NE2    =(uint32_t)(5*(settings->Emax2-settings->Emin2)/settings->Gamma2);
-  if(settings->Gamma2==0) settings->Gamma2 =(uint32_t)(5*(settings->Emax2-settings->Emin2)/settings->NE2);
+  if(settings->NE2==0)
+  {
+    settings->NE2    =(uint32_t)(5*(settings->Emax2-settings->Emin2)/settings->Gamma2);
+    VerbosityPrintf(0x0002, "Automatically set number of energy points (NE=%d) and lifetime (Gamma=%22.15E) for final state\n",settings->NE2,settings->Gamma2);
+  }
+  if(settings->Gamma2==0)
+  {
+    settings->Gamma2 =(uint32_t)(5*(settings->Emax2-settings->Emin2)/settings->NE2);
+    VerbosityPrintf(0x0002, "Automatically set number of energy points (NE=%d) and lifetime (Gamma=%22.15E) for final state\n",settings->NE2,settings->Gamma2);
+  }
   for(i=0;i<NT2*(settings->NE1+1);i++)
   {
-    Spec[i].N    =settings->NE2;
-    Spec[i].Emin =settings->Emin2;
-    Spec[i].Emax =settings->Emax2;
-    Spec[i].Gamma=settings->Gamma2;
-    SpectrumAllocate(Spec[i], &Spec[i]);
-    TriDiagonalMatrixToSpectrum(energy2, SpecTri2[i], &Spec[i]);
+    (*Spec)[i].N    =settings->NE2;
+    (*Spec)[i].Emin =settings->Emin2;
+    (*Spec)[i].Emax =settings->Emax2;
+    (*Spec)[i].dE   =(settings->Emax2-settings->Emin2)/settings->NE2;
+    (*Spec)[i].Gamma=settings->Gamma2;
+    sprintf((*Spec)[i].Name, "Spectrum %i/%i",i,NT2);
+    SpectrumAllocate((*Spec)[i], &(*Spec)[i]);
+    TriDiagonalMatrixToSpectrum(energy2, (*SpecTri2)[i], &(*Spec)[i]);
   }
   return 0;
 }
@@ -454,7 +520,7 @@ uint32_t FluorescenceYieldRestricted(const OperatorType OppH, DeterminantRestric
   spectra[0].dE=(spectra[0].Emax-spectra[0].Emin)/((double)spectra[0].N);
   for(i = 0; i < NDec; i++)
   {
-    sprintf(spectra[i].Name, "%d",i);
+    sprintf(spectra[i].Name, "Spectrum %i/%i",i,NDec);
     SpectrumAllocate(spectra[0], &spectra[i]);
   }
   

@@ -72,6 +72,7 @@
 #include "../Test/StuttgartNMTO.c"
 #include "../Test/HarmonicOscillator.c"
 #include "../Test/BasisOptimization.c"
+#include "../Test/TestBasicMathBlock.c"
 #include "../Test/CI.c"
 #include "../Test/NiO.c"
 
@@ -98,6 +99,9 @@ int main(int argc, const char *argv[])
       TestCellFunctions();
     if (!strncmp("BlockLanczos", argv[argc], strlen(argv[argc])))
       TestBlockLanczos();
+    
+    if (!strncmp("BlockFunctions", argv[argc], strlen(argv[argc])))
+      TestBasicMathBlock();
 
     
     if (!strncmp("CI", argv[argc], strlen(argv[argc])))

@@ -1,6 +1,7 @@
 #include "StreamPrint.c"
 #include "FilePrint.c"
 #include "PrintMathematicaExpression.c"
+#include "StringPrint.c"
 
 
 void VerbosityPrintf(const uint32_t verbosity, char *fmt, ...)

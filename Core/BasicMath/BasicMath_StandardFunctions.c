@@ -3722,9 +3722,9 @@ double ImSphericalHarmonicY(const int k, const int m, const double t, const doub
 *   5,-3   t1_u^A   sqrt(2k+1/4Pi) (sqrt(1/64)x(15-70x^2+63x^4))
 *   5,-2   t1_u^A   sqrt(2k+1/4Pi) (sqrt(1/64)y(15-70y^2+63y^4))
 *   5,-1   t1_u^A   sqrt(2k+1/4Pi) (sqrt(1/64)z(15-70z^2+63z^4))
-*   5, 0   t1_u^B   sqrt(2k+1/4Pi) (sqrt(315/64)x(y^4-6y^2z^2-z^4))
-*   5, 1   t1_u^B   sqrt(2k+1/4Pi) (sqrt(315/64)y(z^4-6z^2x^2-x^4))
-*   5, 2   t1_u^B   sqrt(2k+1/4Pi) (sqrt(315/64)z(x^4-6x^2y^2-y^4))
+*   5, 0   t1_u^B   sqrt(2k+1/4Pi) (sqrt(315/64)x(y^4-6y^2z^2+z^4))
+*   5, 1   t1_u^B   sqrt(2k+1/4Pi) (sqrt(315/64)y(z^4-6z^2x^2+x^4))
+*   5, 2   t1_u^B   sqrt(2k+1/4Pi) (sqrt(315/64)z(x^4-6x^2y^2+y^4))
 *   5, 3   t2_u     sqrt(2k+1/4Pi) (sqrt(105/4)(x^2-y^2)z(3z^2-1)
 *   5, 4   t2_u     sqrt(2k+1/4Pi) (sqrt(105/4)(y^2-z^2)x(3x^2-1)
 *   5, 5   t2_u     sqrt(2k+1/4Pi) (sqrt(105/4)(z^2-x^2)y(3y^2-1)
@@ -7171,8 +7171,6 @@ uint32_t PotentialExpandedOnC(char *s, uint32_t const l, double const *EigenEner
   }
   else if (strcmp(s, "T") == 0)
   {
-    printf("Potential for %s not yet implemented\n", s);
-    return 1;
     Akm->QComplex = 0;
     switch (l)
     {
@@ -7183,10 +7181,10 @@ uint32_t PotentialExpandedOnC(char *s, uint32_t const l, double const *EigenEner
       Akm->N = 1;
       break;
     case 2:
-      Akm->N = 2;
+      Akm->N = 4;
       break;
     case 3:
-      Akm->N = 3;
+      Akm->N = 11;
       break;
     default:
       printf("Potential for point group %s and angular momentum %i not implemented\n", s, l);
@@ -7236,231 +7234,58 @@ uint32_t PotentialExpandedOnC(char *s, uint32_t const l, double const *EigenEner
       {
         Akm->l[0] = 0;
         Akm->m[0] = 0;
-        Akm->Re[0] = EigenEnergies[0];
+        Akm->Re[0] = 0.4 * EigenEnergies[0] + 0.6 * EigenEnergies[1];
+        Akm->l[1] = 4;
+        Akm->m[1] = 0;
+        Akm->Re[1] = 2.1 * (EigenEnergies[0] - EigenEnergies[1]);
+        Akm->l[2] = 4;
+        Akm->m[2] = -4;
+        Akm->Re[2] = 1.5 * sqrt(0.7) * (EigenEnergies[0] - EigenEnergies[1]);
+        Akm->l[3] = 4;
+        Akm->m[3] = 4;
+        Akm->Re[3] = 1.5 * sqrt(0.7) * (EigenEnergies[0] - EigenEnergies[1]);
       }
       break;
     case 3:
       {
         Akm->l[0] = 0;
         Akm->m[0] = 0;
-        Akm->Re[0] = EigenEnergies[0];
+        Akm->Re[0] = (1.0 / 7.0) * (EigenEnergies[0] + 3 * EigenEnergies[1] + 3 * EigenEnergies[2]);
+        Akm->l[1] = 4;
+        Akm->m[1] = 0;
+        Akm->Re[1] = (3.0 / 4.0) * (-2 * EigenEnergies[0] + 3 * EigenEnergies[1] - EigenEnergies[2]);
+        Akm->l[2] = 4;
+        Akm->m[2] = -4;
+        Akm->Re[2] = (3.0 / 4.0) * sqrt(5.0 / 14.0) * (-2 * EigenEnergies[0] + 3 * EigenEnergies[1] - EigenEnergies[2]);
+        Akm->l[3] = 4;
+        Akm->m[3] = 4;
+        Akm->Re[3] = (3.0 / 4.0) * sqrt(5.0 / 14.0) * (-2 * EigenEnergies[0] + 3 * EigenEnergies[1] - EigenEnergies[2]);
+        Akm->l[4] = 6;
+        Akm->m[4] = 0;
+        Akm->Re[4] = (39.0 / 280.0) * (4 * EigenEnergies[0] + 5 * EigenEnergies[1] - 9 * EigenEnergies[2]);
+        Akm->l[5] = 6;
+        Akm->m[5] = -4;
+        Akm->Re[5] = -(39.0 / (40.0 * sqrt(14.0))) * (4 * EigenEnergies[0] + 5 * EigenEnergies[1] - 9 * EigenEnergies[2]);
+        Akm->l[6] = 6;
+        Akm->m[6] = 4;
+        Akm->Re[6] = -(39.0 / (40.0 * sqrt(14.0))) * (4 * EigenEnergies[0] + 5 * EigenEnergies[1] - 9 * EigenEnergies[2]);
+        Akm->l[7] = 6;
+        Akm->m[7] =-2;
+        Akm->Re[7] = (429.0/(40.0*sqrt(7.0)))*EigenEnergies[3];
+        Akm->l[8] = 6;
+        Akm->m[8] = 2;
+        Akm->Re[8] = (429.0/(40.0*sqrt(7.0)))*EigenEnergies[3];;
+        Akm->l[9] = 6;
+        Akm->m[9] = 6;
+        Akm->Re[9] = -(39.0/8.0)*sqrt(11.0/35.0)*EigenEnergies[3];
+        Akm->l[10] = 6;
+        Akm->m[10] =-6;
+        Akm->Re[10] = -(39.0/8.0)*sqrt(11.0/35.0)*EigenEnergies[3];;
       }
       break;
     }
   }
   else if (strcmp(s, "Td") == 0)
-  {
-    Akm->QComplex = 0;
-    switch (l)
-    {
-    case 0:
-      Akm->N = 1;
-      break;
-    case 1:
-      Akm->N = 1;
-      break;
-    case 2:
-      Akm->N = 4;
-      break;
-    case 3:
-      Akm->N = 7;
-      break;
-    default:
-      printf("Potential for point group %s and angular momentum %i not implemented\n", s, l);
-      return 1;
-      break;
-    }
-    if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
-    {
-      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
-      return 1;
-    };
-    if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
-    {
-      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
-      return 1;
-    };
-    if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
-    {
-      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
-      return 1;
-    };
-    if (Akm->QComplex)
-    {
-      if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
-      {
-        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
-        return 1;
-      };
-    }
-    switch (l)
-    {
-    case 0:
-      {
-        Akm->l[0] = 0;
-        Akm->m[0] = 0;
-        Akm->Re[0] = EigenEnergies[0];
-      }
-      break;
-    case 1:
-      {
-        Akm->l[0] = 0;
-        Akm->m[0] = 0;
-        Akm->Re[0] = EigenEnergies[0];
-      }
-      break;
-    case 2:
-      {
-        Akm->l[0] = 0;
-        Akm->m[0] = 0;
-        Akm->Re[0] = 0.4 * EigenEnergies[0] + 0.6 * EigenEnergies[1];
-        Akm->l[1] = 4;
-        Akm->m[1] = 0;
-        Akm->Re[1] = 2.1 * (EigenEnergies[0] - EigenEnergies[1]);
-        Akm->l[2] = 4;
-        Akm->m[2] = -4;
-        Akm->Re[2] = 1.5 * sqrt(0.7) * (EigenEnergies[0] - EigenEnergies[1]);
-        Akm->l[3] = 4;
-        Akm->m[3] = 4;
-        Akm->Re[3] = 1.5 * sqrt(0.7) * (EigenEnergies[0] - EigenEnergies[1]);
-      }
-      break;
-    case 3:
-      {
-        Akm->l[0] = 0;
-        Akm->m[0] = 0;
-        Akm->Re[0] = (1.0 / 7.0) * (EigenEnergies[0] + 3 * EigenEnergies[1] + 3 * EigenEnergies[2]);
-        Akm->l[1] = 4;
-        Akm->m[1] = 0;
-        Akm->Re[1] = (3.0 / 4.0) * (-2 * EigenEnergies[0] + 3 * EigenEnergies[1] + EigenEnergies[2]);
-        Akm->l[2] = 4;
-        Akm->m[2] = -4;
-        Akm->Re[2] = (3.0 / 4.0) * sqrt(5.0 / 14.0) * (-2 * EigenEnergies[0] + 3 * EigenEnergies[1] + EigenEnergies[2]);
-        Akm->l[3] = 4;
-        Akm->m[3] = 4;
-        Akm->Re[3] = (3.0 / 4.0) * sqrt(5.0 / 14.0) * (-2 * EigenEnergies[0] + 3 * EigenEnergies[1] + EigenEnergies[2]);
-        Akm->l[4] = 6;
-        Akm->m[4] = 0;
-        Akm->Re[4] = (39.0 / 280.0) * (4 * EigenEnergies[0] + 5 * EigenEnergies[1] - 9 * EigenEnergies[2]);
-        Akm->l[5] = 6;
-        Akm->m[5] = -4;
-        Akm->Re[5] =
-          -(39.0 / (40.0 * sqrt(14.0))) * (4 * EigenEnergies[0] + 5 * EigenEnergies[1] - 9 * EigenEnergies[2]);
-        Akm->l[6] = 6;
-        Akm->m[6] = 4;
-        Akm->Re[6] =
-          -(39.0 / (40.0 * sqrt(14.0))) * (4 * EigenEnergies[0] + 5 * EigenEnergies[1] - 9 * EigenEnergies[2]);
-      }
-      break;
-    }
-  }
-  else if (strcmp(s, "O") == 0)
-  {
-    Akm->QComplex = 0;
-    switch (l)
-    {
-    case 0:
-      Akm->N = 1;
-      break;
-    case 1:
-      Akm->N = 1;
-      break;
-    case 2:
-      Akm->N = 4;
-      break;
-    case 3:
-      Akm->N = 7;
-      break;
-    default:
-      printf("Potential for point group %s and angular momentum %i not implemented\n", s, l);
-      return 1;
-      break;
-    }
-    if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
-    {
-      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
-      return 1;
-    };
-    if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
-    {
-      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
-      return 1;
-    };
-    if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
-    {
-      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
-      return 1;
-    };
-    if (Akm->QComplex)
-    {
-      if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
-      {
-        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
-        return 1;
-      };
-    }
-    switch (l)
-    {
-    case 0:
-      {
-        Akm->l[0] = 0;
-        Akm->m[0] = 0;
-        Akm->Re[0] = EigenEnergies[0];
-      }
-      break;
-    case 1:
-      {
-        Akm->l[0] = 0;
-        Akm->m[0] = 0;
-        Akm->Re[0] = EigenEnergies[0];
-      }
-      break;
-    case 2:
-      {
-        Akm->l[0] = 0;
-        Akm->m[0] = 0;
-        Akm->Re[0] = 0.4 * EigenEnergies[0] + 0.6 * EigenEnergies[1];
-        Akm->l[1] = 4;
-        Akm->m[1] = 0;
-        Akm->Re[1] = 2.1 * (EigenEnergies[0] - EigenEnergies[1]);
-        Akm->l[2] = 4;
-        Akm->m[2] = -4;
-        Akm->Re[2] = 1.5 * sqrt(0.7) * (EigenEnergies[0] - EigenEnergies[1]);
-        Akm->l[3] = 4;
-        Akm->m[3] = 4;
-        Akm->Re[3] = 1.5 * sqrt(0.7) * (EigenEnergies[0] - EigenEnergies[1]);
-      }
-      break;
-    case 3:
-      {
-        Akm->l[0] = 0;
-        Akm->m[0] = 0;
-        Akm->Re[0] = (1.0 / 7.0) * (EigenEnergies[0] + 3 * EigenEnergies[1] + 3 * EigenEnergies[2]);
-        Akm->l[1] = 4;
-        Akm->m[1] = 0;
-        Akm->Re[1] = (3.0 / 4.0) * (-2 * EigenEnergies[0] + 3 * EigenEnergies[1] + EigenEnergies[2]);
-        Akm->l[2] = 4;
-        Akm->m[2] = -4;
-        Akm->Re[2] = (3.0 / 4.0) * sqrt(5.0 / 14.0) * (-2 * EigenEnergies[0] + 3 * EigenEnergies[1] + EigenEnergies[2]);
-        Akm->l[3] = 4;
-        Akm->m[3] = 4;
-        Akm->Re[3] = (3.0 / 4.0) * sqrt(5.0 / 14.0) * (-2 * EigenEnergies[0] + 3 * EigenEnergies[1] + EigenEnergies[2]);
-        Akm->l[4] = 6;
-        Akm->m[4] = 0;
-        Akm->Re[4] = (39.0 / 280.0) * (4 * EigenEnergies[0] + 5 * EigenEnergies[1] - 9 * EigenEnergies[2]);
-        Akm->l[5] = 6;
-        Akm->m[5] = -4;
-        Akm->Re[5] =
-          -(39.0 / (40.0 * sqrt(14.0))) * (4 * EigenEnergies[0] + 5 * EigenEnergies[1] - 9 * EigenEnergies[2]);
-        Akm->l[6] = 6;
-        Akm->m[6] = 4;
-        Akm->Re[6] =
-          -(39.0 / (40.0 * sqrt(14.0))) * (4 * EigenEnergies[0] + 5 * EigenEnergies[1] - 9 * EigenEnergies[2]);
-      }
-      break;
-    }
-  }
-  else if (strcmp(s, "Oh") == 0)
   {
     Akm->QComplex = 0;
     switch (l)
@@ -7562,6 +7387,330 @@ uint32_t PotentialExpandedOnC(char *s, uint32_t const l, double const *EigenEner
         Akm->m[6] = 4;
         Akm->Re[6] =
           -(39.0 / (40.0 * sqrt(14.0))) * (4 * EigenEnergies[0] + 5 * EigenEnergies[1] - 9 * EigenEnergies[2]);
+      }
+      break;
+    }
+  }
+  else if (strcmp(s, "Th") == 0)
+  {
+    Akm->QComplex = 0;
+    switch (l)
+    {
+      case 0:
+        Akm->N = 1;
+        break;
+      case 1:
+        Akm->N = 1;
+        break;
+      case 2:
+        Akm->N = 4;
+        break;
+      case 3:
+        Akm->N = 11;
+        break;
+      default:
+        printf("Potential for point group %s and angular momentum %i not implemented\n", s, l);
+        return 1;
+        break;
+    }
+    if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
+    {
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
+      return 1;
+    };
+    if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
+    {
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
+      return 1;
+    };
+    if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
+    {
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
+      return 1;
+    };
+    if (Akm->QComplex)
+    {
+      if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
+      {
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
+        return 1;
+      };
+    }
+    switch (l)
+    {
+      case 0:
+      {
+        Akm->l[0] = 0;
+        Akm->m[0] = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 1:
+      {
+        Akm->l[0] = 0;
+        Akm->m[0] = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+        break;
+      case 2:
+      {
+        Akm->l[0] = 0;
+        Akm->m[0] = 0;
+        Akm->Re[0] = 0.4 * EigenEnergies[0] + 0.6 * EigenEnergies[1];
+        Akm->l[1] = 4;
+        Akm->m[1] = 0;
+        Akm->Re[1] = 2.1 * (EigenEnergies[0] - EigenEnergies[1]);
+        Akm->l[2] = 4;
+        Akm->m[2] = -4;
+        Akm->Re[2] = 1.5 * sqrt(0.7) * (EigenEnergies[0] - EigenEnergies[1]);
+        Akm->l[3] = 4;
+        Akm->m[3] = 4;
+        Akm->Re[3] = 1.5 * sqrt(0.7) * (EigenEnergies[0] - EigenEnergies[1]);
+      }
+        break;
+      case 3:
+      {
+        Akm->l[0] = 0;
+        Akm->m[0] = 0;
+        Akm->Re[0] = (1.0 / 7.0) * (EigenEnergies[0] + 3 * EigenEnergies[1] + 3 * EigenEnergies[2]);
+        Akm->l[1] = 4;
+        Akm->m[1] = 0;
+        Akm->Re[1] = (3.0 / 4.0) * (-2 * EigenEnergies[0] + 3 * EigenEnergies[1] - EigenEnergies[2]);
+        Akm->l[2] = 4;
+        Akm->m[2] = -4;
+        Akm->Re[2] = (3.0 / 4.0) * sqrt(5.0 / 14.0) * (-2 * EigenEnergies[0] + 3 * EigenEnergies[1] - EigenEnergies[2]);
+        Akm->l[3] = 4;
+        Akm->m[3] = 4;
+        Akm->Re[3] = (3.0 / 4.0) * sqrt(5.0 / 14.0) * (-2 * EigenEnergies[0] + 3 * EigenEnergies[1] - EigenEnergies[2]);
+        Akm->l[4] = 6;
+        Akm->m[4] = 0;
+        Akm->Re[4] = (39.0 / 280.0) * (4 * EigenEnergies[0] + 5 * EigenEnergies[1] - 9 * EigenEnergies[2]);
+        Akm->l[5] = 6;
+        Akm->m[5] = -4;
+        Akm->Re[5] = -(39.0 / (40.0 * sqrt(14.0))) * (4 * EigenEnergies[0] + 5 * EigenEnergies[1] - 9 * EigenEnergies[2]);
+        Akm->l[6] = 6;
+        Akm->m[6] = 4;
+        Akm->Re[6] = -(39.0 / (40.0 * sqrt(14.0))) * (4 * EigenEnergies[0] + 5 * EigenEnergies[1] - 9 * EigenEnergies[2]);
+        Akm->l[7] = 6;
+        Akm->m[7] =-2;
+        Akm->Re[7] = (429.0/(40.0*sqrt(7.0)))*EigenEnergies[3];
+        Akm->l[8] = 6;
+        Akm->m[8] = 2;
+        Akm->Re[8] = (429.0/(40.0*sqrt(7.0)))*EigenEnergies[3];;
+        Akm->l[9] = 6;
+        Akm->m[9] = 6;
+        Akm->Re[9] = -(39.0/8.0)*sqrt(11.0/35.0)*EigenEnergies[3];
+        Akm->l[10] = 6;
+        Akm->m[10] =-6;
+        Akm->Re[10] = -(39.0/8.0)*sqrt(11.0/35.0)*EigenEnergies[3];;
+      }
+        break;
+    }
+  }
+  else if (strcmp(s, "O") == 0)
+  {
+    Akm->QComplex = 0;
+    switch (l)
+    {
+    case 0:
+      Akm->N = 1;
+      break;
+    case 1:
+      Akm->N = 1;
+      break;
+    case 2:
+      Akm->N = 4;
+      break;
+    case 3:
+      Akm->N = 7;
+      break;
+    default:
+      printf("Potential for point group %s and angular momentum %i not implemented\n", s, l);
+      return 1;
+      break;
+    }
+    if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
+    {
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
+      return 1;
+    };
+    if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
+    {
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
+      return 1;
+    };
+    if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
+    {
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
+      return 1;
+    };
+    if (Akm->QComplex)
+    {
+      if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
+      {
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
+        return 1;
+      };
+    }
+    switch (l)
+    {
+    case 0:
+      {
+        Akm->l[0] = 0;
+        Akm->m[0] = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+      break;
+    case 1:
+      {
+        Akm->l[0] = 0;
+        Akm->m[0] = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+      break;
+    case 2:
+      {
+        Akm->l[0] = 0;
+        Akm->m[0] = 0;
+        Akm->Re[0] = 0.4 * EigenEnergies[0] + 0.6 * EigenEnergies[1];
+        Akm->l[1] = 4;
+        Akm->m[1] = 0;
+        Akm->Re[1] = 2.1 * (EigenEnergies[0] - EigenEnergies[1]);
+        Akm->l[2] = 4;
+        Akm->m[2] = -4;
+        Akm->Re[2] = 1.5 * sqrt(0.7) * (EigenEnergies[0] - EigenEnergies[1]);
+        Akm->l[3] = 4;
+        Akm->m[3] = 4;
+        Akm->Re[3] = 1.5 * sqrt(0.7) * (EigenEnergies[0] - EigenEnergies[1]);
+      }
+      break;
+    case 3:
+      {
+        Akm->l[0] = 0;
+        Akm->m[0] = 0;
+        Akm->Re[0] = (1.0 / 7.0) * (EigenEnergies[0] + 3 * EigenEnergies[1] + 3 * EigenEnergies[2]);
+        Akm->l[1] = 4;
+        Akm->m[1] = 0;
+        Akm->Re[1] = (3.0 / 4.0) * (-2 * EigenEnergies[0] + 3 * EigenEnergies[1] - EigenEnergies[2]);
+        Akm->l[2] = 4;
+        Akm->m[2] = -4;
+        Akm->Re[2] = (3.0 / 4.0) * sqrt(5.0 / 14.0) * (-2 * EigenEnergies[0] + 3 * EigenEnergies[1] - EigenEnergies[2]);
+        Akm->l[3] = 4;
+        Akm->m[3] = 4;
+        Akm->Re[3] = (3.0 / 4.0) * sqrt(5.0 / 14.0) * (-2 * EigenEnergies[0] + 3 * EigenEnergies[1] - EigenEnergies[2]);
+        Akm->l[4] = 6;
+        Akm->m[4] = 0;
+        Akm->Re[4] = (39.0 / 280.0) * (4 * EigenEnergies[0] + 5 * EigenEnergies[1] - 9 * EigenEnergies[2]);
+        Akm->l[5] = 6;
+        Akm->m[5] = -4;
+        Akm->Re[5] = -(39.0 / (40.0 * sqrt(14.0))) * (4 * EigenEnergies[0] + 5 * EigenEnergies[1] - 9 * EigenEnergies[2]);
+        Akm->l[6] = 6;
+        Akm->m[6] = 4;
+        Akm->Re[6] = -(39.0 / (40.0 * sqrt(14.0))) * (4 * EigenEnergies[0] + 5 * EigenEnergies[1] - 9 * EigenEnergies[2]);
+      }
+      break;
+    }
+  }
+  else if (strcmp(s, "Oh") == 0)
+  {
+    Akm->QComplex = 0;
+    switch (l)
+    {
+    case 0:
+      Akm->N = 1;
+      break;
+    case 1:
+      Akm->N = 1;
+      break;
+    case 2:
+      Akm->N = 4;
+      break;
+    case 3:
+      Akm->N = 7;
+      break;
+    default:
+      printf("Potential for point group %s and angular momentum %i not implemented\n", s, l);
+      return 1;
+      break;
+    }
+    if ((Akm->l = (int*)malloc(Akm->N * sizeof(int))) == NULL)
+    {
+      printf("malloc for l failed in PotentialExpandedOnC for sym %s\n", s);
+      return 1;
+    };
+    if ((Akm->m = (int*)malloc(Akm->N * sizeof(int))) == NULL)
+    {
+      printf("malloc for m failed in PotentialExpandedOnC for sym %s\n", s);
+      return 1;
+    };
+    if ((Akm->Re = (double*)malloc(Akm->N * sizeof(double))) == NULL)
+    {
+      printf("malloc for Re failed in PotentialExpandedOnC for sym %s\n", s);
+      return 1;
+    };
+    if (Akm->QComplex)
+    {
+      if ((Akm->Im = (double*)malloc(Akm->N * sizeof(double))) == NULL)
+      {
+        printf("malloc for Im failed in PotentialExpandedOnC for sym %s\n", s);
+        return 1;
+      };
+    }
+    switch (l)
+    {
+    case 0:
+      {
+        Akm->l[0] = 0;
+        Akm->m[0] = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+      break;
+    case 1:
+      {
+        Akm->l[0] = 0;
+        Akm->m[0] = 0;
+        Akm->Re[0] = EigenEnergies[0];
+      }
+      break;
+    case 2:
+      {
+        Akm->l[0] = 0;
+        Akm->m[0] = 0;
+        Akm->Re[0] = 0.4 * EigenEnergies[0] + 0.6 * EigenEnergies[1];
+        Akm->l[1] = 4;
+        Akm->m[1] = 0;
+        Akm->Re[1] = 2.1 * (EigenEnergies[0] - EigenEnergies[1]);
+        Akm->l[2] = 4;
+        Akm->m[2] = -4;
+        Akm->Re[2] = 1.5 * sqrt(0.7) * (EigenEnergies[0] - EigenEnergies[1]);
+        Akm->l[3] = 4;
+        Akm->m[3] = 4;
+        Akm->Re[3] = 1.5 * sqrt(0.7) * (EigenEnergies[0] - EigenEnergies[1]);
+      }
+      break;
+    case 3:
+      {
+        Akm->l[0] = 0;
+        Akm->m[0] = 0;
+        Akm->Re[0] = (1.0 / 7.0) * (EigenEnergies[0] + 3 * EigenEnergies[1] + 3 * EigenEnergies[2]);
+        Akm->l[1] = 4;
+        Akm->m[1] = 0;
+        Akm->Re[1] = (3.0 / 4.0) * (-2 * EigenEnergies[0] + 3 * EigenEnergies[1] - EigenEnergies[2]);
+        Akm->l[2] = 4;
+        Akm->m[2] = -4;
+        Akm->Re[2] = (3.0 / 4.0) * sqrt(5.0 / 14.0) * (-2 * EigenEnergies[0] + 3 * EigenEnergies[1] - EigenEnergies[2]);
+        Akm->l[3] = 4;
+        Akm->m[3] = 4;
+        Akm->Re[3] = (3.0 / 4.0) * sqrt(5.0 / 14.0) * (-2 * EigenEnergies[0] + 3 * EigenEnergies[1] - EigenEnergies[2]);
+        Akm->l[4] = 6;
+        Akm->m[4] = 0;
+        Akm->Re[4] = (39.0 / 280.0) * (4 * EigenEnergies[0] + 5 * EigenEnergies[1] - 9 * EigenEnergies[2]);
+        Akm->l[5] = 6;
+        Akm->m[5] = -4;
+        Akm->Re[5] = -(39.0 / (40.0 * sqrt(14.0))) * (4 * EigenEnergies[0] + 5 * EigenEnergies[1] - 9 * EigenEnergies[2]);
+        Akm->l[6] = 6;
+        Akm->m[6] = 4;
+        Akm->Re[6] = -(39.0 / (40.0 * sqrt(14.0))) * (4 * EigenEnergies[0] + 5 * EigenEnergies[1] - 9 * EigenEnergies[2]);
       }
       break;
     }

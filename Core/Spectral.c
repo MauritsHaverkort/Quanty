@@ -74,6 +74,7 @@ void SpectrumFree(SpectraType * const G)
 void CopySpectra(const SpectraType In, SpectraType * Out)
 {
   uint32_t i;
+  strcpy(Out->Name, In.Name);
   Out->N = In.N;
   Out->Emin = In.Emin;
   Out->Emax = In.Emax;
@@ -99,6 +100,21 @@ void CopySpectra(const SpectraType In, SpectraType * Out)
     Out->Im[i] = In.Im[i];
   }
 }
+
+uint32_t CopySpectraArray(SpectraTypeArray *In, SpectraTypeArray *Out)
+{
+  uint32_t i;
+  Out->NSpectra=In->NSpectra;
+  Out->Spec = malloc(In->NSpectra*sizeof(SpectraType));
+  if(Out->Spec==NULL){printf("malloc failed in CopySpectraArray\n");return 1;}
+  for(i=0;i<In->NSpectra;i++)
+  {
+    SpectrumAllocate(In->Spec[i], &(Out->Spec[i]));
+    CopySpectra(In->Spec[i], &(Out->Spec[i]));
+  }
+  return 0;
+}
+
 
 int SpectraScalarMultiply(SpectraType * const A, double const aRe, double const aIm)
 {
@@ -745,23 +761,31 @@ void Lorentzian(SpectraType * const G)
 */
 void BroadenG(SpectraType * const G, const double FWHM)
 {
-  int    i, Ein, Eout;
+  if(2*FWHM<G->dE) return;
+  int    i, Ein, Eout, j;
   double dataoutRe[G->N + 1];
   double dataoutIm[G->N + 1];
+  double denom;
   const double sa = 2.0 * Sqr(FWHM / (2.0 * sqrt(2.0 * log(2.0))));
-  const double sb = (FWHM / (2.0 * sqrt(2.0 * log(2.0)))) * sqrt(2.0 * Pi) / G->dE;
+  const double sb = 1/((FWHM / (2.0 * sqrt(2.0 * log(2.0)))) * sqrt(2.0 * Pi) / G->dE);
   for (i = 0; i <= (int)G->N; i++)
   {
     dataoutRe[i] = 0;
     dataoutIm[i] = 0;
   }
-#pragma omp parallel for private(Ein)
+#pragma omp parallel for private(Ein,j,denom)
   for (Eout = 0; Eout <= (int)G->N; Eout++)
   {
     for (Ein = 0; Ein <= (int)G->N; Ein++)
     {
-      dataoutRe[Eout] += (G->Re[Ein] / sb) * exp(-Sqr((Eout - Ein) * G->dE) / sa);
-      dataoutIm[Eout] += (G->Im[Ein] / sb) * exp(-Sqr((Eout - Ein) * G->dE) / sa);
+      denom=0;
+      for(j=-3;j<=3;j++)
+      {
+        denom += exp(-Sqr((Eout - Ein + j/7.0) * G->dE) / sa);
+      }
+      denom*=sb/7.0;
+      dataoutRe[Eout] += G->Re[Ein] * denom;
+      dataoutIm[Eout] += G->Im[Ein] * denom;
     }
   }
   for (i = 0; i <= (int)G->N; i++)
@@ -771,6 +795,48 @@ void BroadenG(SpectraType * const G, const double FWHM)
   }
 }
 
+/*
+ *   input  : G.N
+ *          : G.dE
+ *          : G.Re
+ *          : G.Im
+ *          : FWHM
+ *   output : G.Re
+ *          : G.Im
+ */
+void BroadenL(SpectraType * const G, const double FWHM)
+{
+  int    i, Ein, Eout,j;
+  double denom;
+  double dataoutRe[G->N + 1];
+  double dataoutIm[G->N + 1];
+  if(2*FWHM<G->dE) return;
+  for (i = 0; i <= (int)G->N; i++)
+  {
+    dataoutRe[i] = 0;
+    dataoutIm[i] = 0;
+  }
+#pragma omp parallel for private(Ein,j,denom)
+  for (Eout = 0; Eout <= (int)G->N; Eout++)
+  {
+    for (Ein = 0; Ein <= (int)G->N; Ein++)
+    {
+      denom=0;
+      for(j=-3;j<=3;j++)
+      {
+        denom+=1/(Sqr(FWHM)+4*Sqr(G->dE*(Eout-Ein+j/7.0)));
+      }
+      denom*=G->dE*2*FWHM/(7.0*Pi);
+      dataoutRe[Eout] += G->Re[Ein] * denom;
+      dataoutIm[Eout] += G->Im[Ein] * denom;
+    }
+  }
+  for (i = 0; i <= (int)G->N; i++)
+  {
+    G->Re[i] = dataoutRe[i];
+    G->Im[i] = dataoutIm[i];
+  }
+}
 
 /*
 *   input  : G.N
@@ -783,25 +849,32 @@ void BroadenG(SpectraType * const G, const double FWHM)
 */
 void BroadenGvar(SpectraType * const G, const double *const FWHM)
 {
-  int    i, Ein, Eout;
+  int    i, Ein, Eout,j;
   double dataoutRe[G->N + 1];
   double dataoutIm[G->N + 1];
   double sa[G->N + 1];
   double sb[G->N + 1];
+  double denom;
   for (i = 0; i <= (int)G->N; i++)
   {
     dataoutRe[i] = 0;
     dataoutIm[i] = 0;
-    sa[i] = 2.0 * Sqr(FWHM[i] / (2.0 * sqrt(2.0 * log(2.0))));
-    sb[i] = (FWHM[i] / (2.0 * sqrt(2.0 * log(2.0)))) * sqrt(2.0 * Pi) / G->dE;
+    sa[i] = 2.0 * Sqr(Max(FWHM[i],G->dE/2.0) / (2.0 * sqrt(2.0 * log(2.0))));
+    sb[i] = 1/((Max(FWHM[i],G->dE/2.0) / (2.0 * sqrt(2.0 * log(2.0)))) * sqrt(2.0 * Pi) / G->dE);
   }
-#pragma omp parallel for private(Ein)
+#pragma omp parallel for private(Ein,j,denom)
   for (Eout = 0; Eout <= (int)G->N; Eout++)
   {
     for (Ein = 0; Ein <= (int)G->N; Ein++)
     {
-      dataoutRe[Eout] += (G->Re[Ein] / sb[Ein]) * exp(-Sqr((Eout - Ein) * G->dE) / sa[Ein]);
-      dataoutIm[Eout] += (G->Im[Ein] / sb[Ein]) * exp(-Sqr((Eout - Ein) * G->dE) / sa[Ein]);
+      denom=0;
+      for(j=-3;j<=3;j++)
+      {
+        denom += exp(-Sqr((Eout - Ein + j/7.0) * G->dE) / sa[Ein]);
+      }
+      denom *=sb[Ein]/7.0;
+      dataoutRe[Eout] += G->Re[Ein] * denom;
+      dataoutIm[Eout] += G->Im[Ein] * denom;
     }
   }
   for (i = 0; i <= (int)G->N; i++)
@@ -810,6 +883,51 @@ void BroadenGvar(SpectraType * const G, const double *const FWHM)
     G->Im[i] = dataoutIm[i];
   }
 }
+
+
+/*
+ *   input  : G.N
+ *          : G.dE
+ *          : G.Re
+ *          : G.Im
+ *          : FWHM
+ *   output : G.Re
+ *          : G.Im
+ */
+void BroadenLvar(SpectraType * const G, const double *const FWHM)
+{
+  int    i, Ein, Eout,j;
+  double dataoutRe[G->N + 1];
+  double dataoutIm[G->N + 1];
+  double denom;
+  for (i = 0; i <= (int)G->N; i++)
+  {
+    dataoutRe[i] = 0;
+    dataoutIm[i] = 0;
+  }
+#pragma omp parallel for private(Ein,j,denom)
+  for (Eout = 0; Eout <= (int)G->N; Eout++)
+  {
+    for (Ein = 0; Ein <= (int)G->N; Ein++)
+    {
+      denom=0;
+      for(j=-3;j<=3;j++)
+      {
+        denom+=1/(Sqr(Max(FWHM[Ein],G->dE/2.0))+4*Sqr(G->dE*(Eout-Ein+j/7.0)));
+      }
+      denom*=G->dE*2*Max(FWHM[Ein],G->dE/2.0)/(7.0*Pi);
+      dataoutRe[Eout] += G->Re[Ein] * denom;
+      dataoutIm[Eout] += G->Im[Ein] * denom;
+    }
+  }
+  for (i = 0; i <= (int)G->N; i++)
+  {
+    G->Re[i] = dataoutRe[i];
+    G->Im[i] = dataoutIm[i];
+  }
+}
+
+
 
 /*
 *   input  : G.N

@@ -6,7 +6,7 @@
  *    Emin and Emax set the min and max energy in the spectrum
  *    N the number of energies.
  *
- *    G = sum_i lim_{n->0^+} b_i^+ 1/(w - a_i + I n) b_i
+ *    G = sum_i lim_{n->0^+} b_i^* 1/(w - a_i + I n) b_i^T
  *    G = sum_i lim_{n->0^+} b^2 / (w - a_i + I n)
  *
  *    Implementation first the im part of lim_{n->0^+} 1/(w - a_i + I n) is added as a "delta" function moved to the energies E_i and E_{i+1} such that
@@ -186,12 +186,15 @@ uint32_t BlockListOfPolesToSpectra(BlockListOfPoles const A, SpectraType *G, dou
 
 /*  Turn a block list of poles into a matrix
  *       ( a0   b1  b2  b3  ..  bn  )
- *   M = ( b1^+ a1  0   0   ..  0   )
- *       ( b2^+ 0   a2  0   ..  0   )
+ *       ( b1^+ a1  0   0   ..  0   )
+ *   B = ( b2^+ 0   a2  0   ..  0   )
  *       ( ..   ..  ..  ..  ..  ..  )
  *       ( bn^+ 0   0   0   ..  an  )
+ *
+ *   The greensfunction (w-B)^-1_[blocksize,blocksize] is equal to the inverse of the greensfunction defined by BlockListOfPoles
+ *   
  */
-uint32_t BlockListOfPolesToCompactMatrix(BlockListOfPoles const * const A, CompactMatrixType * const B)
+uint32_t BlockListOfPolesInversedToCompactMatrix(BlockListOfPoles const * const A, CompactMatrixType * const B)
 {
   uint32_t i,j,k,kA,kBa;
   B->QComplex = A->QComplex;
@@ -573,7 +576,7 @@ uint32_t TightBindingHamiltonianMultiSiteToBlockListOfPoles(TightBindingDef cons
                 phase.Re=cos(piornot * Dot(dvec,q));
                 phase.Im=sin(piornot * Dot(dvec,q));
                 
-               // printf("phase for ivec %i jvec %i is %12.5E + I %12.5E at q is %12.5E %12.5E %12.5E and vec is  %12.5E %12.5E %12.5E q.dvec = %12.5E\n",ivec, jvec, phase.Re, phase.Im, q[0], q[1], q[2], dvec[0], dvec[1], dvec[2], Dot(dvec,q));
+               //printf("phase for ivec %i jvec %i is %12.5E + I %12.5E at q is %12.5E %12.5E %12.5E and vec is  %12.5E %12.5E %12.5E q.dvec = %12.5E piornot = %12.5E\n",ivec, jvec, phase.Re, phase.Im, q[0], q[1], q[2], dvec[0], dvec[1], dvec[2], Dot(dvec,q),piornot);
                 
                 for(i=0;i<A.NFermion;i++)
                 {
@@ -656,7 +659,7 @@ uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles(TightBindingDef
     energy+=dE;
   }
   // create HSigma
-  BlockListOfPolesToCompactMatrix(&Sigma, &HSigma);
+  BlockListOfPolesInversedToCompactMatrix(&Sigma, &HSigma);
   if(Sigma.QComplex==0)
   {
     CompactMatrixCopy(HSigma, &HSigmaComplex);
@@ -840,7 +843,7 @@ uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles(TightBindingDef
 
 
 /*  Given an tight binding Hamiltonian and a k-mesh defined by the number of divisions of a, b and c (Nk)
- *  returns the green function matrix of size A.NFermion by A.NFermion
+ *  returns the green function matrix of size Nvec*A.NFermion by Nvec*A.NFermion
  *          on an energy mesh with N+3 points. N+1 points from Emin to Emax and one point below Emin and one above Emax such that all weight and first moment is ok
  *  Calculates the eigen values and functions for each k including a self energy input as a Block List of poles
  *  for each k and eigen value i
@@ -862,7 +865,7 @@ uint32_t TightBindingHamiltonianPlusSelfEnergyMultiSiteToBlockListOfPoles(TightB
   // test if sigma size is ok
   if(Sigma.BlockSize!=A.NFermion)
   {
-    printf("in TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles\nThe dimension of the self energy (%i) is not equal to the dimension of the tight binding Hamiltonian (%i) times the number of cells in the super cell (%i)\n",Sigma.BlockSize,A.NFermion,Nvec);
+    printf("in TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles\nThe dimension of the self energy (%i) is not equal to the dimension of the tight binding Hamiltonian (%i) \n",Sigma.BlockSize,A.NFermion);
     return 1;
   }
   // init G
@@ -883,7 +886,7 @@ uint32_t TightBindingHamiltonianPlusSelfEnergyMultiSiteToBlockListOfPoles(TightB
     energy+=dE;
   }
   // create HSigma
-  BlockListOfPolesToCompactMatrix(&Sigma, &HSigma);
+  BlockListOfPolesInversedToCompactMatrix(&Sigma, &HSigma);
   if(Sigma.QComplex==0)
   {
     CompactMatrixCopy(HSigma, &HSigmaComplex);
@@ -1110,7 +1113,7 @@ uint32_t TightBindingHamiltonianPlusSelfEnergyMultiSiteToBlockListOfPoles(TightB
 
 
 /*  Given an tight binding Hamiltonian and a k-mesh defined by the number of divisions of a, b and c (Nk)
- *  returns the green function matrix of size A.NFermion by A.NFermion
+ *  returns the green function matrix of size 2*A.NFermion by 2*A.NFermion
  *          on an energy mesh with N+3 points. N+1 points from Emin to Emax and one point below Emin and one above Emax such that all weight and first moment is ok
  *  Calculates the eigen values and functions for each k including a self energy input as a Block List of poles
  *  for each k and eigen value i
@@ -1155,7 +1158,7 @@ uint32_t TightBindingHamiltonianAddSpinPlusSelfEnergyToBlockListOfPoles(TightBin
     energy+=dE;
   }
   // create HSigma
-  BlockListOfPolesToCompactMatrix(&Sigma, &HSigma);
+  BlockListOfPolesInversedToCompactMatrix(&Sigma, &HSigma);
   if(Sigma.QComplex==0)
   {
     CompactMatrixCopy(HSigma, &HSigmaComplex);
@@ -1339,7 +1342,7 @@ uint32_t TightBindingHamiltonianAddSpinPlusSelfEnergyToBlockListOfPoles(TightBin
 
 
 /*  Given an tight binding Hamiltonian and a k-mesh defined by the number of divisions of a, b and c (Nk)
- *  returns the green function matrix of size A.NFermion by A.NFermion
+ *  returns the green function matrix of size 2 * Nvec * A.NFermion by 2 * Nvec * A.NFermion
  *          on an energy mesh with N+3 points. N+1 points from Emin to Emax and one point below Emin and one above Emax such that all weight and first moment is ok
  *  Calculates the eigen values and functions for each k including a self energy input as a Block List of poles
  *  for each k and eigen value i
@@ -1369,7 +1372,7 @@ uint32_t TightBindingHamiltonianAddSpinPlusSelfEnergyMultiSiteToBlockListOfPoles
     return 1;
   }
   // init G
-  G->BlockSize=A.NFermion * Nvec;
+  G->BlockSize=2 * A.NFermion * Nvec;
   G->N=NE+3;
   G->QComplex=1;
   strcpy(G->Name, A.Name);
@@ -1386,7 +1389,7 @@ uint32_t TightBindingHamiltonianAddSpinPlusSelfEnergyMultiSiteToBlockListOfPoles
     energy+=dE;
   }
   // create HSigma
-  BlockListOfPolesToCompactMatrix(&Sigma, &HSigma);
+  BlockListOfPolesInversedToCompactMatrix(&Sigma, &HSigma);
   if(Sigma.QComplex==0)
   {
     CompactMatrixCopy(HSigma, &HSigmaComplex);
@@ -1506,12 +1509,12 @@ uint32_t TightBindingHamiltonianAddSpinPlusSelfEnergyMultiSiteToBlockListOfPoles
                     dvec[2] = (vec[3*ivec+0]-vec[3*jvec+0]) * A.Cell.rUnitCell[0][2] + (vec[3*ivec+1]-vec[3*jvec+1]) * A.Cell.rUnitCell[1][2] + (vec[3*ivec+2]-vec[3*jvec+2]) * A.Cell.rUnitCell[2][2];
                     phase.Re=cos(piornot * Dot(dvec,q));
                     phase.Im=sin(piornot * Dot(dvec,q));
-                    G->V[(NE+2)*(1+G->BlockSize*G->BlockSize)+1 + j+jvec*A.NFermion + (i+ivec*A.NFermion)*G->BlockSize].Re += phase.Re*PsiChar.VRe[i][j];
-                    G->V[(NE+2)*(1+G->BlockSize*G->BlockSize)+1 + j+jvec*A.NFermion + (i+ivec*A.NFermion)*G->BlockSize].Im += phase.Im*PsiChar.VRe[i][j];
+                    G->V[(NE+2)*(1+G->BlockSize*G->BlockSize)+1 + j+jvec*2*A.NFermion + (i+ivec*2*A.NFermion)*G->BlockSize].Re += phase.Re*PsiChar.VRe[i][j];
+                    G->V[(NE+2)*(1+G->BlockSize*G->BlockSize)+1 + j+jvec*2*A.NFermion + (i+ivec*2*A.NFermion)*G->BlockSize].Im += phase.Im*PsiChar.VRe[i][j];
                     if(T.QComplex)
                     {
-                      G->V[(NE+2)*(1+G->BlockSize*G->BlockSize)+1 + j+jvec*A.NFermion + (i+ivec*A.NFermion)*G->BlockSize].Re -= phase.Im*PsiChar.VIm[i][j];
-                      G->V[(NE+2)*(1+G->BlockSize*G->BlockSize)+1 + j+jvec*A.NFermion + (i+ivec*A.NFermion)*G->BlockSize].Im += phase.Re*PsiChar.VIm[i][j];
+                      G->V[(NE+2)*(1+G->BlockSize*G->BlockSize)+1 + j+jvec*2*A.NFermion + (i+ivec*2*A.NFermion)*G->BlockSize].Re -= phase.Im*PsiChar.VIm[i][j];
+                      G->V[(NE+2)*(1+G->BlockSize*G->BlockSize)+1 + j+jvec*2*A.NFermion + (i+ivec*2*A.NFermion)*G->BlockSize].Im += phase.Re*PsiChar.VIm[i][j];
                     }
                   }
                 }
@@ -1545,12 +1548,12 @@ uint32_t TightBindingHamiltonianAddSpinPlusSelfEnergyMultiSiteToBlockListOfPoles
                     dvec[2] = (vec[3*ivec+0]-vec[3*jvec+0]) * A.Cell.rUnitCell[0][2] + (vec[3*ivec+1]-vec[3*jvec+1]) * A.Cell.rUnitCell[1][2] + (vec[3*ivec+2]-vec[3*jvec+2]) * A.Cell.rUnitCell[2][2];
                     phase.Re=cos(piornot * Dot(dvec,q));
                     phase.Im=sin(piornot * Dot(dvec,q));
-                    G->V[1 + j+jvec*A.NFermion + (i+ivec*A.NFermion)*G->BlockSize].Re += phase.Re*PsiChar.VRe[i][j];
-                    G->V[1 + j+jvec*A.NFermion + (i+ivec*A.NFermion)*G->BlockSize].Im += phase.Im*PsiChar.VRe[i][j];
+                    G->V[1 + j+jvec*2*A.NFermion + (i+ivec*2*A.NFermion)*G->BlockSize].Re += phase.Re*PsiChar.VRe[i][j];
+                    G->V[1 + j+jvec*2*A.NFermion + (i+ivec*2*A.NFermion)*G->BlockSize].Im += phase.Im*PsiChar.VRe[i][j];
                     if(T.QComplex)
                     {
-                      G->V[1 + j+jvec*A.NFermion + (i+ivec*A.NFermion)*G->BlockSize].Re -= phase.Im*PsiChar.VIm[i][j];
-                      G->V[1 + j+jvec*A.NFermion + (i+ivec*A.NFermion)*G->BlockSize].Im += phase.Re*PsiChar.VIm[i][j];
+                      G->V[1 + j+jvec*2*A.NFermion + (i+ivec*2*A.NFermion)*G->BlockSize].Re -= phase.Im*PsiChar.VIm[i][j];
+                      G->V[1 + j+jvec*2*A.NFermion + (i+ivec*2*A.NFermion)*G->BlockSize].Im += phase.Re*PsiChar.VIm[i][j];
                     }
                   }
                 }
@@ -1574,16 +1577,16 @@ uint32_t TightBindingHamiltonianAddSpinPlusSelfEnergyMultiSiteToBlockListOfPoles
                 {
                   for(j=0;j<2*A.NFermion;j++)
                   {
-                    G->V[(iE+1)*(1+G->BlockSize*G->BlockSize)+1 + j+jvec*A.NFermion + (i+ivec*A.NFermion)*G->BlockSize].Re += phase.Re*(1-rest)*PsiChar.VRe[i][j];
-                    G->V[(iE+1)*(1+G->BlockSize*G->BlockSize)+1 + j+jvec*A.NFermion + (i+ivec*A.NFermion)*G->BlockSize].Im += phase.Im*(1-rest)*PsiChar.VRe[i][j];
-                    G->V[(iE+2)*(1+G->BlockSize*G->BlockSize)+1 + j+jvec*A.NFermion + (i+ivec*A.NFermion)*G->BlockSize].Re += phase.Re*(  rest)*PsiChar.VRe[i][j];
-                    G->V[(iE+2)*(1+G->BlockSize*G->BlockSize)+1 + j+jvec*A.NFermion + (i+ivec*A.NFermion)*G->BlockSize].Im += phase.Im*(  rest)*PsiChar.VRe[i][j];
+                    G->V[(iE+1)*(1+G->BlockSize*G->BlockSize)+1 + j+jvec*2*A.NFermion + (i+ivec*2*A.NFermion)*G->BlockSize].Re += phase.Re*(1-rest)*PsiChar.VRe[i][j];
+                    G->V[(iE+1)*(1+G->BlockSize*G->BlockSize)+1 + j+jvec*2*A.NFermion + (i+ivec*2*A.NFermion)*G->BlockSize].Im += phase.Im*(1-rest)*PsiChar.VRe[i][j];
+                    G->V[(iE+2)*(1+G->BlockSize*G->BlockSize)+1 + j+jvec*2*A.NFermion + (i+ivec*2*A.NFermion)*G->BlockSize].Re += phase.Re*(  rest)*PsiChar.VRe[i][j];
+                    G->V[(iE+2)*(1+G->BlockSize*G->BlockSize)+1 + j+jvec*2*A.NFermion + (i+ivec*2*A.NFermion)*G->BlockSize].Im += phase.Im*(  rest)*PsiChar.VRe[i][j];
                     if(T.QComplex)
                     {
-                      G->V[(iE+1)*(1+G->BlockSize*G->BlockSize)+1 + j+jvec*A.NFermion + (i+ivec*A.NFermion)*G->BlockSize].Re -= phase.Im*(1-rest)*PsiChar.VIm[i][j];
-                      G->V[(iE+1)*(1+G->BlockSize*G->BlockSize)+1 + j+jvec*A.NFermion + (i+ivec*A.NFermion)*G->BlockSize].Im += phase.Re*(1-rest)*PsiChar.VIm[i][j];
-                      G->V[(iE+2)*(1+G->BlockSize*G->BlockSize)+1 + j+jvec*A.NFermion + (i+ivec*A.NFermion)*G->BlockSize].Re -= phase.Im*(  rest)*PsiChar.VIm[i][j];
-                      G->V[(iE+2)*(1+G->BlockSize*G->BlockSize)+1 + j+jvec*A.NFermion + (i+ivec*A.NFermion)*G->BlockSize].Im += phase.Re*(  rest)*PsiChar.VIm[i][j];
+                      G->V[(iE+1)*(1+G->BlockSize*G->BlockSize)+1 + j+jvec*2*A.NFermion + (i+ivec*2*A.NFermion)*G->BlockSize].Re -= phase.Im*(1-rest)*PsiChar.VIm[i][j];
+                      G->V[(iE+1)*(1+G->BlockSize*G->BlockSize)+1 + j+jvec*2*A.NFermion + (i+ivec*2*A.NFermion)*G->BlockSize].Im += phase.Re*(1-rest)*PsiChar.VIm[i][j];
+                      G->V[(iE+2)*(1+G->BlockSize*G->BlockSize)+1 + j+jvec*2*A.NFermion + (i+ivec*2*A.NFermion)*G->BlockSize].Re -= phase.Im*(  rest)*PsiChar.VIm[i][j];
+                      G->V[(iE+2)*(1+G->BlockSize*G->BlockSize)+1 + j+jvec*2*A.NFermion + (i+ivec*2*A.NFermion)*G->BlockSize].Im += phase.Re*(  rest)*PsiChar.VIm[i][j];
                     }
                   }
                 }
@@ -1614,12 +1617,16 @@ uint32_t TightBindingHamiltonianAddSpinPlusSelfEnergyMultiSiteToBlockListOfPoles
 
 
 /*  On input 
- *    matrix A is diagonal and real and of dimension psi->Nj. Values are stored as a vector of doubles
+ *    matrix A is diagonal and real and of dimension psi->Nj by psi->Nj. Values are stored as a vector of doubles
  *    matrix psi is of dimension psi->Ni * psi->Nj
+ *
+ *  Calculated is a block tridiagonal matrix ABlock that has the same Green's function as psi . 1/(w-A) . psi^{C}
+ *  aka [1/(w-ABlock)]_[[1;;psi->Ni,1;;psi->Ni]] = psi . 1/(w-A) . psi^{C}
+ *
  *  on output matrix T is of dimension psi->Ni*NBlock by psi->Nj such that T^{dag} A T is block tridiagonal of dimension Ni*NBlock with psi on element 1 to psi->Ni
  *    ABlock = T^dag A T
  *
- *  if psi is non orthogonal then an orthogonal form of psi is stored as the first block in T. b0 is psi^+ psi_{ortho}
+ * if psi is non orthogonal then an orthogonal form of psi is stored as the first block in T. b0 is psi psi_{ortho}^+
  */
 uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType const *psi, CompactMatrixType *const T, BlockTriDiagonalMatrixType *const ABlock, double NBlock, double SingularValue)
 {
@@ -1663,8 +1670,8 @@ uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType co
     Tnow.Ni=psi->Ni;
     Tnow.Nj=psi->Nj;
     /* orthonormalize Tnow */
-    CompactMatrixGramSchmidtOrthogonalizeCol(&Tnow, SingularValue);
-    zgemm(charC,charN,&ABlock->BlockSize,&ABlock->BlockSize,&psi->Nj,&one,psi->VRe,&psi->Nj,Tnow.VRe,&psi->Nj,&zero,ABlock->b,&ABlock->BlockSize);
+    CompactMatrixGramSchmidtOrthogonalizeRow(&Tnow, SingularValue);
+    zgemm(charC,charN,&ABlock->BlockSize,&ABlock->BlockSize,&psi->Nj,&one,Tnow.VRe,&psi->Nj,psi->VRe,&psi->Nj,&zero,ABlock->b,&ABlock->BlockSize);
     /* loop over psi_{n+1} = A psi_{n} and orthonormalization */
     oldindex=0;
     newindex=psi->Ni*psi->Nj;
@@ -1731,21 +1738,22 @@ uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType co
         ABlock->N=k;
       }
     }
-    /*
-    printf("transformation matrix T\n");
-    PrintCompactMatrixMinimal(T);
-    CompactMatrixType test1, test2;
-    CompactMatrixMultiply('C', 'N', T, T, &test1);
-    CompactMatrixChop(&test1, 1000*DBL_EPSILON);
-    PrintCompactMatrixMinimal(test1);
-    TransformDiagonalMatrixByCompactMatrixTdagAT(A, T, &test2);
-    CompactMatrixChop(&test2, 1000*DBL_EPSILON);
-    PrintCompactMatrixMinimal(test2);
-    */
+    
+    //printf("transformation matrix T\n");
+    //PrintCompactMatrixMinimal(T);
+    //CompactMatrixType test1, test2;
+    //CompactMatrixMultiply('N', 'C', T, T, &test1);
+    //CompactMatrixChop(&test1, 1000*DBL_EPSILON);
+    //printf("matrix T T^C = test1 should be identity matrix\n");
+    //PrintCompactMatrixMinimal(test1);
+    //TransformDiagonalMatrixByCompactMatrixTconATtran(A, T, &test2);
+    //CompactMatrixChop(&test2, 1000*DBL_EPSILON);
+    //printf("matrix T^C A T = test2\n");
+    //PrintCompactMatrixMinimal(test2);
+
+    
     /*  calculate ABlock = T^dag A T
-     *  ABlock(i,j) = sum_k     T(j,k)^* AT(i,k)
-     *              = sum_k,k'  T(j,k)^* A(k',k) T(i,k')
-     *              = sum_k     T(j,k)^* A(k,k)  T(i,k)
+     *  ABlock(i,j) = sum_k T(k,i)^* A(k,k) T(k,j)
      */
     iipos=ABlock->BlockSize*ABlock->BlockSize; /* block position in tridiagonal matrix */
     for(ia=0;ia<ABlock->N;ia++)
@@ -1776,8 +1784,8 @@ uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType co
       {
         for(j=0;j<ABlock->BlockSize;j++)
         {
-          icol=(i+(ib+1)*ABlock->BlockSize)*T->Nj;
-          jcol=(j+ib*ABlock->BlockSize)*T->Nj;
+          icol=(i+ib*ABlock->BlockSize)*T->Nj;
+          jcol=(j+(ib+1)*ABlock->BlockSize)*T->Nj;
           ABlock->b[iipos].Re=0;
           ABlock->b[iipos].Im=0;
           for(k=0;k<T->Nj;k++)
@@ -1801,8 +1809,8 @@ uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType co
     Tnow.Ni=psi->Ni;
     Tnow.Nj=psi->Nj;
     /* orthonormalize Tnow */
-    CompactMatrixGramSchmidtOrthogonalizeCol(&Tnow, SingularValue);
-    dgemm(charC,charN,&ABlock->BlockSize,&ABlock->BlockSize,&psi->Nj,&one,psi->VRe,&psi->Nj,Tnow.VRe,&psi->Nj,&zero,ABlock->bRe,&ABlock->BlockSize);
+    CompactMatrixGramSchmidtOrthogonalizeRow(&Tnow, SingularValue);
+    dgemm(charC,charN,&ABlock->BlockSize,&ABlock->BlockSize,&psi->Nj,&one,Tnow.VRe,&psi->Nj,psi->VRe,&psi->Nj,&zero,ABlock->bRe,&ABlock->BlockSize);
     /* loop over psi_{n+1} = A psi_{n} and orthonormalization */
     oldindex=0;
     newindex=psi->Ni*psi->Nj;
@@ -1892,8 +1900,8 @@ uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType co
       {
         for(j=0;j<ABlock->BlockSize;j++)
         {
-          icol=(i+(ib+1)*ABlock->BlockSize)*T->Nj;
-          jcol=(j+ib*ABlock->BlockSize)*T->Nj;
+          icol=(i+ib*ABlock->BlockSize)*T->Nj;
+          jcol=(j+(ib+1)*ABlock->BlockSize)*T->Nj;
           ABlock->bRe[iipos]=0;
           for(k=0;k<T->Nj;k++)
           {
@@ -2034,11 +2042,9 @@ uint32_t BlockListOfPolesToBlockTridiagonalMatrixReduceDimension(BlockListOfPole
       iN+=1+A.BlockSize*A.BlockSize;
     }
   }
-  
-  CompactMatrixMultiply('C', 'N', &beta, AT, &ATbeta);
-  
+  // note that we need to complex transpose beta to get a set of NBlock row vectors
+  CompactMatrixMultiply('N', 'C', AT, &beta, &ATbeta);
   FreeCompactMatrix(&beta);
-  
   DiagonalMatrixBlockTridiagonalize(alpha, &ATbeta, &T, B, NBlockMax, SingularValue);
   B->mu=A.mu;
   free(alpha);
@@ -2046,8 +2052,14 @@ uint32_t BlockListOfPolesToBlockTridiagonalMatrixReduceDimension(BlockListOfPole
   return 0;
 }
 
+
+/*  on entry A contains the Green's function in a BlockListOfPoles format.
+ *  on excit B contains the Green's function in a NaturalImpurityOrbital format.
+ *
+ */
 uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(BlockListOfPoles const *A, BlockNaturalImpurityOrbitalMatrixType * const B, double const kbT, uint32_t const NBlockMaxVal, uint32_t const NBlockMaxCon)
 {
+  //TODO: test
   int i,j;
   CompactMatrixType T,M;
   BlockListOfPoles Acon, Aval;
@@ -2183,6 +2195,7 @@ uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(BlockListOfPoles co
  */
 uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrixReduceDimension(BlockListOfPoles const *A, BlockNaturalImpurityOrbitalMatrixType * const B, CompactMatrixType const *AT, double const kbT, uint32_t const NBlockMaxVal, uint32_t const NBlockMaxCon)
 {
+  //TODO: test
   int i,j;
   CompactMatrixType T,M;
   BlockListOfPoles Acon, Aval;
@@ -2195,7 +2208,7 @@ uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrixReduceDimension(Bloc
   B->a0.Ni=AT->Ni;
   B->a0.Nj=AT->Ni;
   InitCompactMatrix(&B->a0);
-  // still to do copy a0
+  //TODO: copy a0
   
   CopyBlockListOfPolesCon(*A, &Acon, A->mu, kbT);
   CopyBlockListOfPolesVal(*A, &Aval, A->mu, kbT);
@@ -2306,8 +2319,9 @@ uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrixReduceDimension(Bloc
  */
 uint32_t BlockTriDiagonalMatrixToBlockListOfPoles(BlockTriDiagonalMatrixType const * A, BlockListOfPoles * const G, double const Emin, double const Emax, uint32_t const NE)
 {
+  //TODO: test
   int i,j,k,irho,kfun,iE;
-  CompactMatrixType Afull, Afun, Rho;
+  CompactMatrixType Afull, Afun, Rho, b0;
   double energy, dE=(Emax-Emin)/((double)NE), rest, totmin=0, totmax=0, totnow;
   double *Aval;
   /* first turn the matrix into compact form */
@@ -2533,7 +2547,20 @@ uint32_t BlockTriDiagonalMatrixToBlockListOfPoles(BlockTriDiagonalMatrixType con
       }
     }
   }
+  b0.QComplex=A->QComplex;
+  b0.Ni=A->BlockSize;
+  b0.Nj=A->BlockSize;
+  if(b0.QComplex)
+  {
+    b0.V=A->b;
+  }
+  else
+  {
+    b0.VRe=A->bRe;
+  }
+  BlockListOfPolesTransformInlineNC(G, &b0);
   ChopBlockListOfPoles(G, DBL_EPSILON);
+  G->mu = A->mu;
   FreeCompactMatrix(&Rho);
   FreeCompactMatrix(&Afull);
   FreeCompactMatrix(&Afun);
@@ -2552,7 +2579,7 @@ uint32_t BlockTriDiagonalMatrixToBlockListOfPoles(BlockTriDiagonalMatrixType con
  *    N the number of energies.
  *    Gamma sets the lorenzian broadening Gamma > 3*(Emax-Emin)/N
  *
- *    G = a0 + b0^+ (1/( w + i Gamma/2 - a1 - b1^+  ( w + i Gamma/2 - a2 - b2^+ ( ... ) b2 ) b1 )) b0
+ *    G = a0 + b0 (1/( w + i Gamma/2 - a1 - b1  ( w + i Gamma/2 - a2 - b2 ( ... ) b2^+ ) b1^+ )) b0^+
  *
  */
 uint32_t BlockTriDiagonalMatrixToSpectra(BlockTriDiagonalMatrixType const * A, SpectraType *const G, double const Emin, double const Emax, uint32_t const N, double const Gamma)
@@ -2614,7 +2641,7 @@ uint32_t BlockTriDiagonalMatrixToSpectra(BlockTriDiagonalMatrixType const * A, S
         Gw.V[i].Im+=Gamma/2.0;
       }
       CompactMatrixInverse(&Gw);
-      TransformCompactMatrixInlineNNC(&Gw, &b); /* Gw <- b Gw b^dag */
+      TransformCompactMatrixInlineNC(&Gw, &b); /* Gw <- b Gw b^dag */
     }
     if(A->QComplex)
     {
@@ -2631,6 +2658,7 @@ uint32_t BlockTriDiagonalMatrixToSpectra(BlockTriDiagonalMatrixType const * A, S
       G[i].Im[iw]=Gw.V[i].Im;
     }
   }
+  FreeCompactMatrix(&Gw);
   return 0;
 }
 
@@ -2646,6 +2674,7 @@ uint32_t BlockTriDiagonalMatrixToSpectra(BlockTriDiagonalMatrixType const * A, S
  */
 uint32_t BlockNaturalImpurityOrbitalToSpectra(BlockNaturalImpurityOrbitalMatrixType const * A, SpectraType *const G, double const Emin, double const Emax, uint32_t const N, double const Gamma)
 {
+  //TODO: test
   SpectraType Gval[A->BlockSize*A->BlockSize], Gcon[A->BlockSize*A->BlockSize];
   uint32_t i,j,k,ii,jj;
   
@@ -2728,5 +2757,255 @@ uint32_t BlockNaturalImpurityOrbitalToSpectra(BlockNaturalImpurityOrbitalMatrixT
   }
   return 0;
 }
+
+
+
+/*  Should go in BasicMath_BlockTypeConversion.c
+ *
+ * Takes a blocktridiagonal matrix as input
+ * Diagonalizes the bath part of this matrix, and uses the eigenvectors to transform the
+ * block coupling the impurity to the bath into a row of blocks coupling the impurity
+ * to the new Anderson sites with energies obtained from eigenvalues.
+ *
+ * !!Does not work as intended yet!!
+ * Two issues:
+ * 1. I get mixed hopping in the anderson matrix: xz hops to both xz/yz, and same for yz.
+ * 2. The bath orbitals become reordered because the eigenvalues from the diagonalization
+ *    are sorted. Not sure if this is an issue.
+ *
+ * End result is a spectrum calculated after using this is slightly different from the original
+ * spectrum using the BlockTridiagonalMatrix, and I think it is due to issue #1.
+ *
+ */
+uint32_t BlockTriDiagonalMatrixToBlockAndersonMatrix(BlockTriDiagonalMatrixType const ATri, BlockAndersonMatrixType * const B)
+{
+  //TODO: test
+  int i,j,bpos,cpos,epos,k;
+  CompactMatrixType Afull, Afun, C,D,E;
+  double *Aval;
+  
+  /* Convert the portion after the first block to compact matrix */
+  if(BlockTriDiagonalMatrixPartToCompactMatrix(&ATri,&Afull,1,ATri.N-1))
+  {
+    printf("BlockTriDiagonalMatrixPartToCompactMatrix failed in BlockTriDiagonalMatrixToBlockAndersonMatrix\n");
+    return 1;
+  }
+  
+  /* Diagonalize compact matrix */
+  Aval=malloc(ATri.BlockSize*(ATri.N-1)*sizeof(double));
+  if(CompactMatrixEigensystem(&Afull, &Afun, Aval))
+  {
+    printf("CompactMatrixEigensystem failed in BlockTriDiagonalMatrixToBlockAndersonMatrix\n");
+    return 1;
+  }
+  
+  B->QComplex = ATri.QComplex;
+  B->N = ATri.N;
+  B->BlockSize = ATri.BlockSize;
+  InitBlockAndersonMatrix(B);
+  
+  if(ATri.QComplex)
+  {
+    /* First diagonal block is same as ATri first diagonal block */
+    bpos = B->BlockSize*B->BlockSize;
+    for(i = 0; i < B->BlockSize; i++)
+    {
+      for(j = 0; j < B->BlockSize; j++)
+      {
+        B->a[bpos].Re = ATri.a[bpos].Re;
+        bpos++;
+      }
+    }
+    
+    /* Set diagonals to eigenvalues */
+    cpos = 0;
+    for(k = 1; k < ATri.N; k++)
+    {
+      for(i = 0; i < B->BlockSize; i++)
+      {
+        B->a[(k+1)*B->BlockSize*B->BlockSize + i*B->BlockSize + i].Re = Aval[cpos++];
+      }
+    }
+    
+    /* Transform first block of ATri using eigenfunctions from diagonalization */
+    C.QComplex = B->QComplex;
+    C.Ni = B->BlockSize;
+    C.Nj = B->BlockSize;
+    InitCompactMatrix(&C);
+    bpos = B->BlockSize*B->BlockSize;
+    for(i = 0; i < B->BlockSize*B->BlockSize; i++)
+    {
+      C.V[i].Re = ATri.b[bpos++].Re;
+      C.V[i].Im = ATri.b[bpos++].Im;
+    }
+    
+    D.QComplex = B->QComplex;
+    D.Nj = B->BlockSize;
+    D.Ni = B->BlockSize*(B->N-1);
+    InitCompactMatrix(&D);
+    for(i = 0; i < B->BlockSize; i++)
+    {
+      for(j = 0; j < B->BlockSize*(B->N-1); j++)
+      {
+        D.V[i*B->BlockSize*(B->N-1)+ j].Re = Afun.V[i*B->BlockSize*(B->N-1)+j].Re;
+        D.V[i*B->BlockSize*(B->N-1) + j].Im = Afun.V[i*B->BlockSize*(B->N-1)+j].Im;
+      }
+    }
+    
+    /* Transform the block that coupled impurity to chain into a row of blocks
+     coupling impurity to anderson bath
+     */
+    CompactMatrixMultiply('N', 'N', &C, &D, &E);
+    /* Now copy E into the beta values of block matrix*/
+    bpos = B->BlockSize*B->BlockSize;
+    for(k = 1; k < B->BlockSize; k++)
+    {
+      for(i = 0; i < B->BlockSize; i++)
+      {
+        for(j = 0; j < B->BlockSize; j++)
+        {
+          B->b[bpos].Re = E.V[j*B->BlockSize*(B->N-1)+(k-1)*B->BlockSize+i].Re;
+          B->b[bpos++].Im = E.V[j*B->BlockSize*(B->N-1)+(k-1)*B->BlockSize+i].Im;
+        }
+      }
+    }
+  }
+  else
+  {
+    /* Real */
+    /* First diagonal block is same as ATri first diagonal block */
+    bpos = B->BlockSize*B->BlockSize;
+    for(i = 0; i < B->BlockSize; i++)
+    {
+      for(j = 0; j < B->BlockSize; j++)
+      {
+        B->aRe[bpos] = ATri.aRe[bpos];
+        bpos++;
+      }
+    }
+    
+    /* Set diagonals to eigenvalues */
+    cpos = 0;
+    for(k = 1; k < ATri.N; k++)
+    {
+      for(i = 0; i < B->BlockSize; i++)
+      {
+        B->aRe[(k+1)*B->BlockSize*B->BlockSize + i*B->BlockSize + i] = Aval[cpos++];
+      }
+    }
+    
+    /* Transform first block of ATri using eigenfunctions from diagonalization */
+    C.QComplex = B->QComplex;
+    C.Ni = B->BlockSize;
+    C.Nj = B->BlockSize;
+    InitCompactMatrix(&C);
+    bpos = B->BlockSize*B->BlockSize;
+    for(i = 0; i < B->BlockSize*B->BlockSize; i++)
+    {
+      C.VRe[i] = ATri.bRe[bpos++];
+    }
+    
+    D.QComplex = B->QComplex;
+    D.Nj = B->BlockSize;
+    D.Ni = B->BlockSize*(B->N-1);
+    InitCompactMatrix(&D);
+    for(i = 0; i < B->BlockSize; i++)
+    {
+      for(j = 0; j < B->BlockSize*(B->N-1); j++)
+      {
+        D.VRe[i*B->BlockSize*(B->N-1) + j] = Afun.VRe[i*B->BlockSize*(B->N-1)+j];
+      }
+    }
+    
+    /* Transform the block that coupled impurity to chain into a row of blocks
+     coupling impurity to anderson bath */
+    CompactMatrixMultiply('N', 'N', &C, &D, &E);
+    
+    /* Now copy E into the beta values of anderson block matrix*/
+    bpos = B->BlockSize*B->BlockSize;
+    for(k = 1; k < B->N; k++)
+    {
+      for(i = 0; i < B->BlockSize; i++)
+      {
+        for(j = 0; j < B->BlockSize; j++)
+        {
+          B->bRe[bpos++] = E.VRe[j*B->BlockSize*(B->N-1)+(k-1)*B->BlockSize+i];
+        }
+      }
+    }
+  }
+  
+  FreeCompactMatrix(&C);
+  FreeCompactMatrix(&D);
+  FreeCompactMatrix(&E);
+  FreeCompactMatrix(&Afun);
+  FreeCompactMatrix(&Afull);
+  free(Aval);
+  
+  return 0;
+}
+
+
+/*  BasicMath_BlockTypeConversion.c
+ *
+ * Converts a BlockListofpoles to blockandersonmatrix, using a blocktridiagonalmatrix as intermediate
+ * (I was not sure how to do the conversion directly)
+ *
+ *
+ */
+uint32_t BlockListOfPolesToBlockAndersonMatrix(BlockListOfPoles const A, BlockAndersonMatrixType *const B, int const NBlockMax)
+{
+  //TODO: test
+  BlockTriDiagonalMatrixType ATri;
+  
+  if(BlockListOfPolesToBlockTridiagonalMatrix(A, &ATri, NBlockMax, DBL_EPSILON))
+  {
+    printf("BlockListOfPolesToBlockTridiagonalMatrix failed in BlockListOfPolesToBlockAndersonMatrix\n");
+    return 1;
+  }
+  
+  BlockTridiagonalMatrixChop(&ATri,10*DBL_EPSILON);
+  
+  if(BlockTriDiagonalMatrixToBlockAndersonMatrix(ATri,B))
+  {
+    printf("BlockTriDiagonalMatrixToBlockAndersonMatrix failed in BlockListOfPolesToBlockAndersonMatrix\n");
+    return 1;
+  }
+  
+  return 0;
+}
+
+/*  on entry A contains the Green's function in a BlockListOfPoles format.
+ *
+ * Converts a BlockListofpoles to blockandersonmatrix, using a blocktridiagonalmatrix as intermediate
+ * (I was not sure how to do the conversion directly)
+ *
+ *
+ *  AT specifies how to reduce the dimension
+ *
+ */
+uint32_t BlockListOfPolesToBlockAndersonMatrixReduceDimension(BlockListOfPoles const A, BlockAndersonMatrixType *B, CompactMatrixType const *AT, int const NBlockMax)
+{
+  //TODO: test
+  BlockTriDiagonalMatrixType ATri;
+  
+  if(BlockListOfPolesToBlockTridiagonalMatrixReduceDimension(A, &ATri, AT, NBlockMax, DBL_EPSILON))
+  {
+    printf("BlockListOfPolesToBlockTridiagonalMatrixReduceDimension failed in BlockListOfPolesToBlockAndersonMatrixReduceDimension\n");
+    return 1;
+  }
+  
+  BlockTridiagonalMatrixChop(&ATri,1000*DBL_EPSILON);
+  
+  if(BlockTriDiagonalMatrixToBlockAndersonMatrix(ATri,B))
+  {
+    printf("BlockTriDiagonalMatrixToBlockAndersonMatrix failed in BlockListOfPolesToBlockAndersonMatrixReduceDimension\n");
+    return 1;
+  }
+  
+  return 0;
+}
+
+
 
 

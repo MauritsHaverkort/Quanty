@@ -159,7 +159,7 @@ ConvergenceSettingsType InitConvergenceSettings()
 {
   ConvergenceSettingsType ret=
   {
-    500 /*DenseBoarder*/,
+    1000 /*DenseBoarder*/,
     100 /*NKrylovStart*/,
     500 /*NKrylovMax*/,
      10 /*NKrylovStep*/,
@@ -173,9 +173,9 @@ ConvergenceSettingsType InitConvergenceSettings()
     {0, NULL, NULL, NULL} /*restricitons*/,
     {0, NULL, NULL, NULL} /*restricitons1*/,
     {0, NULL, NULL, NULL} /*restricitons2*/,
-    DBL_MAX,-DBL_MAX,0,0 /*Energy range */,
-    DBL_MAX,-DBL_MAX,0,0 /*Energy range 1*/,
-    DBL_MAX,-DBL_MAX,0,0 /*Energy range 2*/
+    DBL_MAX,-DBL_MAX,1000,0 /*Energy range */,
+    DBL_MAX,-DBL_MAX,1000,0 /*Energy range 1*/,
+    DBL_MAX,-DBL_MAX,1000,0 /*Energy range 2*/
   };
   return ret;
 };
@@ -196,13 +196,15 @@ TimeType;
  *  The left top element is A[0][0], the right bottom element is A[Ni-1][Nj-1]
  *  The label QComplex sets a real (0) or complex (1) matrix.
  *
- *     ( A[0][0] | A[0][1] | A[0][2] )
- *   A=( A[1][0] | A[1][1] | A[1][2] )
- *     ( A[2][0] | A[2][1] | A[2][2] )
+ *     ( A[0][0]    | A[0][1]    | A[0][2]    | ... | A[0][Nj-1]    )
+ *   A=( A[1][0]    | A[1][1]    | A[1][2]    | ... | A[1][Nj-1]    )
+ *     ( A[2][0]    | A[2][1]    | A[2][2]    | ... | A[2][Nj-1]    )
+ *     ( .......    | .......    | .......    | ... | A[2][Nj-1]    )
+ *     ( A[Ni-1][0] | A[Ni-1][1] | A[Ni-1][2] | ... | A[Ni-1][Nj-1] )
  *
  *   (A B)[i][j] = \sum_k A[i][k] B[k][j]
  *
- *   y[j] = \sum_i A[i][j] x[i]  <== Really ???
+ *   y[i] = \sum_j A[i][j] x[j]
  *
  *   A[i][j]=A[0][i*A.Nj+j]
  */
@@ -218,21 +220,21 @@ typedef struct MatrixType
 }
 MatrixType;
 
-
-
-/*  CompactMatrixType defines a 2-dimensional tensor (matrix) with Nj rows and Ni columns
- *  The left top element is A(00), the right bottom element is A(Ni-1,Nj-1)
+/*  CompactMatrixType defines a 2-dimensional tensor (matrix) with Ni rows and Nj columns
+ *  The left top element is A(0,0), the right bottom element is A(Ni-1,Nj-1)
  *  The label QComplex sets a real (0) or complex (1) matrix.
  *
- *     ( A(0,0) | A(1,0) | A(2,0) )
- *   A=( A(0,1) | A(1,1) | A(2,1) )
- *     ( A(0,2) | A(1,2) | A(2,2) )
+ *     ( A(0,0)    | A(0,1)    | A(0,2)    | ... | A(0,Nj-1)    )
+ *   A=( A(1,0)    | A(1,1)    | A(1,2)    | ... | A(1,Nj-1)    )
+ *     ( A(2,0)    | A(2,1)    | A(2,2)    | ... | A(2,Nj-1)    )
+ *     ( .......   | .......   | .......   | ... | A(2,Nj-1)    )
+ *     ( A(Ni-1,0) | A(Ni-1,1) | A(Ni-1,2) | ... | A(Ni-1,Nj-1) )
  *
- *   (A B)(i,j) = \sum_k A(k,j) B(i,k)
+ *   (A B)(i,j) = \sum_k A(i,k) B(k,j)
  *
- *   y[j] = \sum_i A(i,j) x[i]
+ *   y[i] = \sum_j A(i,j) x[j]
  *
- *   element (i,j) is found at position [i*Nj + j]
+ *   element (i,j) is found at position [i*A.Nj+j]
  */
 typedef struct CompactMatrixType
 {
@@ -249,6 +251,18 @@ typedef struct CompactMatrixType
   double mu;
 }
 CompactMatrixType;
+
+typedef struct CompactVectorType
+{
+  uint32_t Ni;                  /* Length of vector */
+  uint32_t QComplex;            /* complex or real */
+  union
+  {
+    double *VRe;
+    Complex16 *V;
+  };
+}
+CompactVectorType;
 
 /*  A sparse matrix indexed with the use of a hash function.
  *  KeyList and Next elements that are zero point to nowhere
@@ -356,12 +370,12 @@ ListOfPoles;
  *    A0 can be found at position N*(1+BlockSize*BlockSize) to (N+1)*(1+BlockSize*BlockSize)-2
  *
  *  The Green's function represented is:
- *    G = A0 + sum_i B'_i^{dag} 1/(w-a_i I) B'_i
+ *    G = A0 + sum_i B'_i 1/(w-a_i I) B'_i^C
  *    with I the identity matrix of size BlockSize
  *  this is equivalent to
- *    G = A0 + sum_i B'_i^dag . B'_i * 1/(w-a_i)
+ *    G = A0 + sum_i B'_i . B'_i^C * 1/(w-a_i)
  *  use
- *    B_i = B'_i^dag B'_i to get to
+ *    B_i = B'_i B'_i^C to get to
  *    G = A0 + sum_i B_i * 1/(w-a_i)
  *
  *  a0 is an aditional pointer to V[N*(1+BlockSize*BlockSize)]
@@ -394,9 +408,9 @@ BlockListOfPoles;
  *
  *   with ai and bi matrices
  *
- *   (A B)(i,j) = \sum_k A(k,j) B(i,k)
+ *   (A B)(i,j) = \sum_k A(i,k) B(k,j)
  *
- *   y[j] = \sum_i A(i,j) x[i]
+ *   y[i] = \sum_j A(i,j) x[j]
  *
  *   element (i,j) is found at position [i*Nj + j]
  *
@@ -404,6 +418,12 @@ BlockListOfPoles;
  *
  *   matrix k can be found at position [k*BlockSize*BlockSize]
  *   element [i,j] of matrix k can be found at position [k*BlockSize*BlockSize+i*BlockSize+j]
+ *
+ *   when represented as a Green's function the function is:
+ *   G0 = a0 + b0 . ( G1 ) . b0^+
+ *   G1 = a1 + b1 . ( G2 ) . b1^+
+ *   ...
+ *
  */
 typedef struct BlockTriDiagonalMatrixType
 {
@@ -425,9 +445,9 @@ BlockTriDiagonalMatrixType;
  *     ( A[2][1]=b2^+ | 0            | A[2][2]=a3   | 0          )
  *     ( A[3][2]=b3^+ | 0            | 0            | A[3][3]=a4 )
  *
- *   (A B)(i,j) = \sum_k A(k,j) B(i,k)
+ *   (A B)(i,j) = \sum_k A(i,k) B(k,j)
  *
- *   y[j] = \sum_i A(i,j) x[i]
+ *   y[i] = \sum_j A(i,j) x[j]
  *
  *   element (i,j) is found at position [i*Nj + j]
  *
@@ -436,7 +456,6 @@ BlockTriDiagonalMatrixType;
  *   matrix k can be found at position [k*BlockSize*BlockSize]
  *   element [i,j] of matrix k can be found at position [k*BlockSize*BlockSize+i*BlockSize+j]
  */
-
 typedef struct BlockAndersonMatrixType
 {
   char   Name[MAXStrLength];   /* A pointer to a name string that can be used to lable functions, good for printing etc. */
@@ -469,7 +488,7 @@ BlockAndersonMatrixType;
  *     ( 0             | 0             | 0             | 0             | 0           | A[5][4]=bc2^+ | A[5][5]=ac3   | A[5][6]=bc3 )
  *     ( 0             | 0             | 0             | 0             | 0           | 0             | A[6][5]=bc3^+ | A[6][6]=ac4 )
  *
- *  A = T Ap T^+
+ *  A = T^* Ap T^T
  *
  *     ( A[0][0]=av1   | 0             | A[0][1]=bv1   | 0             | 0           | 0             | 0             | 0           )
  *     ( 0             | A[0][0]=ac1   | 0             | 0             | 0           | A[0][4]=bc1   | 0             | 0           )
@@ -490,9 +509,9 @@ BlockAndersonMatrixType;
  *     ( 0             | 0             | 0             | 0             | 0           | 0             | 1             | 0           )
  *     ( 0             | 0             | 0             | 0             | 0           | 0             | 0             | 1           )
  *
- *   (A B)(i,j) = \sum_k A(k,j) B(i,k)
+ *   (A B)(i,j) = \sum_k A(i,k) B(k,j)
  *
- *   y[j] = \sum_i A(i,j) x[i]
+ *   y[i] = \sum_j A(i,j) x[j]
  *
  *   element (i,j) is found at position [i*Nj + j]
  *
@@ -674,7 +693,7 @@ SecondAndersonMatrixType;
  *     ( 0             | 0             | 0             | 0             | 0           | A[5][4]=bc2   | A[5][5]=ac3   | A[5][6]=bc3 )
  *     ( 0             | 0             | 0             | 0             | 0           | 0             | A[6][5]=bc3   | A[6][6]=ac4 )
  *
- *  A = T Ap T^+
+ *  A = T^* Ap T^T
  *
  *     ( A[0][0]=av1   | 0             | A[0][1]=bv1   | 0             | 0           | 0             | 0             | 0           )
  *     ( 0             | A[0][0]=ac1   | 0             | 0             | 0           | A[0][4]=bc1   | 0             | 0           )
@@ -714,7 +733,7 @@ typedef struct BADoubleTriDiagonalMatrixType
   double bvB0;                  /* val.b[0] * val.b[1] */
   double bcB0;                  /* con.b[0] * con.b[1] */
   double bvA0;                  /* con.b[0] * val.b[1] */
-  double bcA0;         /*-val.b[0] * con.b[1] */
+  double bcA0;                  /*-val.b[0] * con.b[1] */
   TriDiagonalMatrixType val;
   TriDiagonalMatrixType con;
 }
@@ -743,12 +762,16 @@ typedef struct OperatorPerturbationType
 }
 OperatorPerturbationType;
 
-
-
-
-
-
-
+/*
+ *
+ */
+typedef struct LuaOptionsType
+{
+  char * name;
+  char * type;
+  void * variable;
+}
+LuaOptionsType;
 
 
 
@@ -890,9 +913,6 @@ typedef struct BandstructurePathType
                                  */
 }
 BandstructurePathType;
-
-
-
 
 
 

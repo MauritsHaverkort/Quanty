@@ -84,9 +84,9 @@ Complex16* luaL_checkarray_complex16(lua_State *L, int narg, uint32_t *len_out)
       lua_pop(L, 1);
       buff[i].Im=0;
     }
-    else if (luaL_testudata(L, -1, "Lua.complex") != NULL)
+    else if (luaL_testudata(L, -1, "Complex_Type") != NULL)
     {
-      buff[i] = *(Complex16 *)luaL_checkudata(L, -1, "Lua.complex");
+      buff[i] = *(Complex16 *)luaL_checkudata(L, -1, "Complex_Type");
       lua_pop(L, 1);
     }
     else
@@ -108,25 +108,25 @@ MatrixType* luaL_checkMatrix(lua_State *L, int narg)
   uint32_t len = (uint32_t)lua_objlen(L, narg);
   buff=malloc(sizeof(MatrixType));
   buff->QComplex=1;
-  buff->Nj=len;
+  buff->Ni=len;
   for(i=0;i<len;i++)
   {
     lua_rawgeti(L, narg, i+1);
     row = luaL_checkarray_complex16(L, -1, &len_row);
     if(i==0)
     {
-      buff->Ni=len_row;
+      buff->Nj=len_row;
       InitMatrix(buff);
     }
     lua_pop(L, 1);
-    if(len_row!=buff->Ni)
+    if(len_row!=buff->Nj)
     {
-      luaL_error(L, "Error while reading matrix. Dimensions of rows not constant. %d at first row %d at row %d",buff->Ni,len_row,i);
+      luaL_error(L, "Error while reading matrix. Dimensions of rows not constant. %d at first row %d at row %d",buff->Nj,len_row,i);
     }
-    for(j=0;j<buff->Ni;j++)
+    for(j=0;j<buff->Nj;j++)
     {
-      buff->VRe[j][i]=row[j].Re;
-      buff->VIm[j][i]=row[j].Im;
+      buff->VRe[i][j]=row[j].Re;
+      buff->VIm[i][j]=row[j].Im;
     }
     free(row);
   }
@@ -145,7 +145,7 @@ WaveFunctionType* luaL_checkarray_WaveFunctionType(lua_State *L, int narg, uint3
   for(i=0;i<len;i++)
   {
     lua_rawgeti(L, narg, i+1);
-    buff[i] = *(WaveFunctionType *)luaL_checkudata(L, -1, "ssp.wavefunction");
+    buff[i] = *(WaveFunctionType *)luaL_checkudata(L, -1, "Wavefunction_Type");
     lua_pop(L, 1);
     for(j=0;j<i;j++)
     {
@@ -168,7 +168,7 @@ OperatorType* luaL_checkarray_OperatorType(lua_State *L, int narg, uint32_t *len
   for(i=0;i<len;i++)
   {
     lua_rawgeti(L, narg, i+1);
-    buff[i] = *(OperatorType *)luaL_checkudata(L, -1, "ssp.operator");
+    buff[i] = *(OperatorType *)luaL_checkudata(L, -1, "Operator_Type");
     lua_pop(L, 1);
     for(j=0;j<i;j++)
     {
@@ -188,28 +188,21 @@ DeterminantRestrictionType* luaL_checkarray_DeterminantRestrictionType(lua_State
   uint32_t len,len2,detleng,NWord;
   DeterminantRestrictionType *buff;
   char * detchar;
-  
   buff = malloc(sizeof(DeterminantRestrictionType));
-  
   luaL_checktype(L, narg, LUA_TTABLE);
   len = (uint32_t)lua_objlen(L, narg);
-  
-  if(len<3) luaL_error(L, "Restrictions should be given in the format {NFermion,NBoson,{{\"determinant1\",minocc,maxocc},{\"determinant2\",minocc,maxocc},...}}");
+  if(len<3) luaL_error(L, "Restrictions should be given in the format {NFermion,NBoson,{\"determinant1\",minocc,maxocc},{\"determinant2\",minocc,maxocc},...}");
   buff->N=len-2;
   buff->Min=malloc(buff->N*sizeof(uint32_t));
   buff->Max=malloc(buff->N*sizeof(uint32_t));
   buff->Determinant=malloc(buff->N*sizeof(uint8_t*));
-  
   lua_rawgeti(L, narg, 1);
   NFermion=(uint32_t)luaL_checkunsigned(L, -1);
   lua_pop(L, 1);
   lua_rawgeti(L, narg, 2);
   NBoson=(uint32_t)luaL_checkunsigned(L, -1);
   lua_pop(L, 1);
-  
   NWord=NBoson + Min(NFermion, 1 + (NFermion - 1) / 8);
-  
-  
   for(i=0;i<buff->N;i++)
   {
     lua_rawgeti(L, narg, i+3);
@@ -294,7 +287,7 @@ HarmonicsExpansion* luaL_checkarray_HarmonicsExpansion(lua_State *L, int narg)
       }
       else
       {
-        temp=*(Complex16 *)luaL_checkudata(L, -1, "Lua.complex");
+        temp=*(Complex16 *)luaL_checkudata(L, -1, "Complex_Type");
         buff->Re[i]=temp.Re;
         buff->Im[i]=temp.Im;
         if(Abs(temp.Im)>10*(DBL_EPSILON*Abs(temp.Re)+DBL_MIN)) buff->QComplex=1;
@@ -305,6 +298,18 @@ HarmonicsExpansion* luaL_checkarray_HarmonicsExpansion(lua_State *L, int narg)
   }
   return buff;
 }
+
+void LuaPushArray_double(lua_State *L, double *val, int N)
+{
+  uint32_t i;
+  lua_createtable(L, N, 0);
+  for(i=0;i<N;i++)
+  {
+    lua_pushnumber(L, val[i]);
+    lua_rawseti(L, -2, i+1);
+  }
+}
+
 
 void LuaPushTable_HarmonicsExpansion(lua_State *L, HarmonicsExpansion *Akm)
 {
@@ -324,7 +329,7 @@ void LuaPushTable_HarmonicsExpansion(lua_State *L, HarmonicsExpansion *Akm)
         res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
         res->Re=Akm->Re[i];
         res->Im=Akm->Im[i];
-        luaL_setmetatable(L, "Lua.complex");
+        luaL_setmetatable(L, "Complex_Type");
       }
       else
       {
@@ -344,7 +349,7 @@ void LuaPushTable_WaveFunctionType(lua_State* L, WaveFunctionType const * const 
   for(i=0;i<Npsi;i++)
   {
     buff = (WaveFunctionType*) lua_newuserdata(L, sizeof(WaveFunctionType));
-    luaL_setmetatable(L, "ssp.wavefunction");
+    luaL_setmetatable(L, "Wavefunction_Type");
     *buff = psi[i];
     lua_rawseti(L, -2, i+1);
   }
@@ -365,7 +370,7 @@ void LuaPushTable_MatrixType(lua_State* L, MatrixType const * const M)
         res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
         res->Re = M->VRe[i][j];
         res->Im = M->VIm[i][j];
-        luaL_setmetatable(L, "Lua.complex");
+        luaL_setmetatable(L, "Complex_Type");
       }
       else
       {
@@ -377,6 +382,30 @@ void LuaPushTable_MatrixType(lua_State* L, MatrixType const * const M)
   }
 }
 
+
+void LuaPushTable_SpectraTypeArray(lua_State* L, SpectraTypeArray const * const M)
+{
+  uint32_t i,j;
+  Complex16 *res;
+  lua_createtable(L,M->NSpectra,0);
+  for(i=0;i<M->NSpectra;i++)
+  {
+    lua_createtable(L,M->Spec[i].N+1,0);
+    for(j=0;j<=M->Spec[i].N;j++)
+    {
+      lua_createtable(L,2,0);
+      lua_pushnumber(L, M->Spec[i].Emin+j*M->Spec[i].dE);
+      lua_rawseti(L, -2, 1);
+      res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
+      res->Re = M->Spec[i].Re[j];
+      res->Im = M->Spec[i].Im[j];
+      luaL_setmetatable(L, "Complex_Type");
+      lua_rawseti(L, -2, 2);
+      lua_rawseti(L, -2, j+1);
+    }
+    lua_rawseti(L, -2, i+1);
+  }
+}
 
 
 void shallowtablecopy(lua_State* L, int index)
@@ -395,6 +424,7 @@ void * LuaReturnVariableType(lua_State * L, int narg, char * type)
 {
   int *buffint;
   double *buffdouble;
+  Bool *buffBoolean;
   DeterminantRestrictionType *buffDeterimantRestrictionType;
   void *buff;
   if (strcmp(type, "char*") == 0)
@@ -405,7 +435,25 @@ void * LuaReturnVariableType(lua_State * L, int narg, char * type)
   if (strcmp(type, "int") == 0)
   {
     buffint = malloc(sizeof(int));
-    *buffint = luaL_checkint(L, narg);
+    *buffint = (int)luaL_checkint(L, narg);
+    return (void*) buffint;
+  }
+  if (strcmp(type, "uint32_t") == 0)
+  {
+    buffint = malloc(sizeof(uint32_t));
+    *buffint = (uint32_t)luaL_checkint(L, narg);
+    return (void*) buffint;
+  }
+  if (strcmp(type, "uint16_t") == 0)
+  {
+    buffint = malloc(sizeof(uint16_t));
+    *buffint = (uint16_t)luaL_checkint(L, narg);
+    return (void*) buffint;
+  }
+  if (strcmp(type, "uint8_t") == 0)
+  {
+    buffint = malloc(sizeof(uint8_t));
+    *buffint = (uint8_t)luaL_checkint(L, narg);
     return (void*) buffint;
   }
   if (strcmp(type, "double") == 0)
@@ -413,6 +461,15 @@ void * LuaReturnVariableType(lua_State * L, int narg, char * type)
     buffdouble = malloc(sizeof(double));
     *buffdouble = (double)luaL_checknumber(L, narg);
     return (void*) buffdouble;
+  }
+  if (strcmp(type, "bool") == 0)
+  {
+    buffint = malloc(sizeof(int));
+    buffBoolean = malloc(sizeof(Bool));
+    *buffint = (int)lua_toboolean(L, narg);
+    *buffBoolean= ((*buffint==1)? True: False);
+    free(buffint);
+    return (void*) buffBoolean;
   }
   if (strcmp(type, "DeterminantRestrictionType") == 0)
   {
@@ -471,3 +528,101 @@ void * LuaFindOptionsInTable(lua_State * L, int narg, char* token, char* type)
   }
   return buff;
 }
+
+int32_t LuaCheckOptions(lua_State *L, int narg, LuaOptionsType *Options)
+{
+  char *tokenread, *Buffer;
+  uint32_t i,j, len, tokenfound;
+  /* check if L has a table at position narg and set len to the length of this table */
+  luaL_checktype(L, narg, LUA_TTABLE);
+  len = (uint32_t)lua_objlen(L, narg);
+  /* check if there are options in the list at position narg that are not in the array Options */
+  for(i=1;i<=len;i++)
+  {
+    lua_rawgeti(L, narg, i);
+    if(!(lua_istable(L, -1)))
+    {
+      luaL_error(L, "Error in option %d, Options should be a LIST of two elements of the form {\"name\",value}\n",i);
+    }
+    if(!(((int)lua_objlen(L, -1))==2))
+    {
+      luaL_error(L, "Error in option %d, Options should be a list of TWO elements of the form {\"name\",value}\n",i);
+    }
+    lua_rawgeti(L, -1, 1);
+    if(!(lua_type(L, -1)==LUA_TSTRING))
+    {
+      luaL_error(L, "Error in option %d, Options should be a list of two elements of the form {\"NAME\",value}\n",i);
+    }
+    tokenread = (char*) luaL_checkstring(L, -1);
+    tokenfound=0;
+    j=0;
+    while (Options[j].name!=NULL)
+    {
+      if (strcmp(tokenread, Options[j].name) == 0)
+      {
+        tokenfound=1;
+        lua_rawgeti(L, -2, 2);
+        
+        if (strcmp(Options[j].type, "char*") == 0)
+        {
+          *(char**)Options[j].variable=(char*)LuaReturnVariableType(L, -1, Options[j].type);
+        }
+        else if(strcmp(Options[j].type, "int") == 0)
+        {
+          *(int*)Options[j].variable=*(int*)LuaReturnVariableType(L, -1, Options[j].type);
+        }
+        else if(strcmp(Options[j].type, "uint32_t") == 0)
+        {
+          *(uint32_t*)Options[j].variable=*(uint32_t*)LuaReturnVariableType(L, -1, Options[j].type);
+        }
+        else if(strcmp(Options[j].type, "uint16_t") == 0)
+        {
+          *(uint16_t*)Options[j].variable=*(uint16_t*)LuaReturnVariableType(L, -1, Options[j].type);
+        }
+        else if(strcmp(Options[j].type, "uint8_t") == 0)
+        {
+          *(uint32_t*)Options[j].variable=*(uint32_t*)LuaReturnVariableType(L, -1, Options[j].type);
+        }
+        else if(strcmp(Options[j].type, "double") == 0)
+        {
+          *(double*)Options[j].variable=*(double*)LuaReturnVariableType(L, -1, Options[j].type);
+        }
+        else if(strcmp(Options[j].type, "bool") == 0)
+        {
+          *(Bool*)Options[j].variable=*(Bool*)LuaReturnVariableType(L, -1, Options[j].type);
+        }
+        else if(strcmp(Options[j].type, "DeterminantRestrictionType") == 0)
+        {
+          *(DeterminantRestrictionType*)Options[j].variable=*(DeterminantRestrictionType*)LuaReturnVariableType(L, -1, Options[j].type);
+        }
+        else
+        {
+          printf("ERROR: unrecognized type in LuaCheckOptions [%s]\n",Options[j].type);
+        }
+        lua_pop(L,1);
+      }
+      j++;
+    }
+    if(!tokenfound)
+    {
+      Buffer = malloc(4048);
+      if(Buffer==NULL)
+      {
+        printf("ERROR: malloc failed in LuaCheckOptions\n");
+        return 1;
+      }
+      Buffer[0]='\0';
+      j=0;
+      while (Options[j].name!=NULL)
+      {
+        sprintfAdd(&Buffer, "%s [%s]\n",Options[j].name,Options[j].type);
+        j++;
+      }
+      luaL_error(L, "Error in option %d, Unrecognized option \"%s\"\n Possible values for options are:\n%s",i,tokenread,Buffer);
+    }
+    lua_pop(L,1);
+    lua_pop(L,1);
+  }
+  return 0;
+}
+

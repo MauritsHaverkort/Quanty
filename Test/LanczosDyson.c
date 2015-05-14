@@ -1,13 +1,8 @@
-/*
- *  LanczosDyson.c
- *  Model
- *
- *  Created by Maurits Haverkort on 3/23/12.
- *
- */
+
 
 void TestLanczosDyson3()
 {
+  //TODO: test
   double epsilon;
   uint8_t *det;
   WaveFunctionType psi0;

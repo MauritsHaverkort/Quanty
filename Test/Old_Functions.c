@@ -1,4 +1,227 @@
 
+/*  Given an semi definite hermitian matrix, CompactMatrixSqrt calculates its sqrt, such that
+ *   B * B^{dag} = A
+ *
+ */
+uint32_t CompactMatrixSqrtold(CompactMatrixType const *A, CompactMatrixType *SqrtA)
+{
+  int i,j;
+  double val[A->Ni],sqrtval;
+  CompactMatrixType fun,B;
+  
+  CompactMatrixEigensystem(A, &fun, val);
+  CompactMatrixCopy(fun, &B);
+  
+  if(B.QComplex)
+  {
+    for(i=0;i<fun.Ni;i++)
+    {
+      if(val[i]<0)
+      {
+        printf("Negative value in CompactMatrixSqrt, eigen value is %22.15E at pos %i\n",val[i],i);
+        val[i]=0;
+      }
+      sqrtval=sqrt(val[i]);
+      {
+        for(j=i*B.Nj;j<fun.Nj+i*B.Nj;j++)
+        {
+          B.V[j].Re*=sqrtval;
+          B.V[j].Im*=sqrtval;
+        }
+      }
+    }
+  }
+  else
+  {
+    for(i=0;i<fun.Ni;i++)
+    {
+      if(val[i]<0)
+      {
+        printf("Negative value in CompactMatrixSqrt, eigen value is %22.15E at pos %i\n",val[i],i);
+        val[i]=0;
+      }
+      sqrtval=sqrt(val[i]);
+      {
+        for(j=i*B.Nj;j<fun.Nj+i*B.Nj;j++)
+        {
+          B.VRe[j]*=sqrtval;
+        }
+      }
+    }
+  }
+  
+  CompactMatrixMultiply('N', 'C', &B, &fun, SqrtA);
+  
+  FreeCompactMatrix(&fun);
+  FreeCompactMatrix(&B);
+  
+  return 0;
+}
+
+
+
+static int LuaReadConvergenceSettingsFromOptions(lua_State *L, int len, ConvergenceSettingsType *Settings)
+{
+  void *buff;
+  buff=LuaFindOptionsInTable(L, len, "DenseBoarder", "int");
+  if(buff!=NULL)
+  {
+    Settings->DenseBoarder = *(uint32_t*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "NKrylovStart", "int");
+  if(buff!=NULL)
+  {
+    Settings->NKrylovStart = *(uint32_t*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "NKrylovMax", "int");
+  if(buff!=NULL)
+  {
+    Settings->NKrylovMax = *(uint32_t*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "NKrylovStep", "int");
+  if(buff!=NULL)
+  {
+    Settings->NKrylovStep = *(uint32_t*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "NKrylovMin", "int");
+  if(buff!=NULL)
+  {
+    Settings->NKrylovMin = *(uint32_t*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "NTri", "int");
+  if(buff!=NULL)
+  {
+    Settings->NTri = *(uint32_t*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "NTri1", "int");
+  if(buff!=NULL)
+  {
+    Settings->NTri1 = *(uint32_t*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "NTri2", "int");
+  if(buff!=NULL)
+  {
+    Settings->NTri2 = *(uint32_t*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "zero", "double");
+  if(buff!=NULL)
+  {
+    Settings->zero = *(double*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "epsilon", "double");
+  if(buff!=NULL)
+  {
+    Settings->epsilon = *(double*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "NBitsKey", "int");
+  if(buff!=NULL)
+  {
+    Settings->NBitsKey = *(uint32_t*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "restrictions", "DeterminantRestrictionType");
+  if(buff!=NULL)
+  {
+    Settings->restrictions = *(DeterminantRestrictionType*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "restrictions1", "DeterminantRestrictionType");
+  if(buff!=NULL)
+  {
+    Settings->restrictions = *(DeterminantRestrictionType*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "restrictions2", "DeterminantRestrictionType");
+  if(buff!=NULL)
+  {
+    Settings->restrictions = *(DeterminantRestrictionType*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "Emin", "double");
+  if(buff!=NULL)
+  {
+    Settings->Emin = *(double*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "Emax", "double");
+  if(buff!=NULL)
+  {
+    Settings->Emax = *(double*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "NE", "int");
+  if(buff!=NULL)
+  {
+    Settings->NE = *(uint32_t*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "Gamma", "double");
+  if(buff!=NULL)
+  {
+    Settings->Gamma = *(double*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "Emin1", "double");
+  if(buff!=NULL)
+  {
+    Settings->Emin1 = *(double*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "Emax1", "double");
+  if(buff!=NULL)
+  {
+    Settings->Emax1 = *(double*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "NE1", "int");
+  if(buff!=NULL)
+  {
+    Settings->NE1 = *(uint32_t*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "Gamma1", "double");
+  if(buff!=NULL)
+  {
+    Settings->Gamma1 = *(double*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "Emin2", "double");
+  if(buff!=NULL)
+  {
+    Settings->Emin2 = *(double*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "Emax2", "double");
+  if(buff!=NULL)
+  {
+    Settings->Emax2 = *(double*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "NE2", "int");
+  if(buff!=NULL)
+  {
+    Settings->NE2 = *(uint32_t*)buff;
+    free(buff);
+  }
+  buff=LuaFindOptionsInTable(L, len, "Gamma2", "double");
+  if(buff!=NULL)
+  {
+    Settings->Gamma2 = *(double*)buff;
+    free(buff);
+  }
+  return 0;
+}
+
 
 uint32_t LanczosGroundStateRestrictedRR(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType const Restrictions, double *epsilon, const double zero, double shiftin, WaveFunctionType * OtherPsi, uint32_t NOtherPsi)
 {

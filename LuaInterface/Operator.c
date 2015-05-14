@@ -1,5 +1,5 @@
-/*  define the ssp.NewOperator functions
- *  depending on the first argument of ssp.NewOperator different types of standard operators are created. Here the implementation
+/*  define the NewOperator functions
+ *  depending on the first argument of NewOperator different types of standard operators are created. Here the implementation
  */
 
 static int LuaOperatorNewCoulomb(lua_State * L)
@@ -30,7 +30,7 @@ static int LuaOperatorNewCoulomb(lua_State * L)
     }
     op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
     CreateOperatorCoulombSingleShell(NFermion, l, LindexUp, LindexDn, F, op);
-    luaL_setmetatable(L, "ssp.operator");
+    luaL_setmetatable(L, "Operator_Type");
     free(LindexUp);
     free(LindexDn);
     free(F);
@@ -74,7 +74,7 @@ static int LuaOperatorNewCoulomb(lua_State * L)
     }
     op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
     CreateOperatorCoulombTwoShellsConstantOccupation(NFermion, lA, lB, LindexUpA, LindexDnA, LindexUpB, LindexDnB, F, G, op);
-    luaL_setmetatable(L, "ssp.operator");
+    luaL_setmetatable(L, "Operator_Type");
     free(LindexUpA);
     free(LindexDnA);
     free(LindexUpB);
@@ -106,7 +106,7 @@ static int LuaOperatorNewSx(lua_State * L)
   }
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   CreateOperatorSx(NFermion, NShell, LindexUp, LindexDn, op);
-  luaL_setmetatable(L, "ssp.operator");
+  luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
   return 1;
@@ -127,7 +127,7 @@ static int LuaOperatorNewSy(lua_State * L)
   }
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   CreateOperatorSy(NFermion, NShell, LindexUp, LindexDn, op);
-  luaL_setmetatable(L, "ssp.operator");
+  luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
   return 1;
@@ -148,7 +148,7 @@ static int LuaOperatorNewSz(lua_State * L)
   }
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   CreateOperatorSz(NFermion, NShell, LindexUp, LindexDn, op);
-  luaL_setmetatable(L, "ssp.operator");
+  luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
   return 1;
@@ -169,7 +169,7 @@ static int LuaOperatorNewSsqr(lua_State * L)
   }
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   CreateOperatorSsqr(NFermion, NShell, LindexUp, LindexDn, op);
-  luaL_setmetatable(L, "ssp.operator");
+  luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
   return 1;
@@ -190,7 +190,7 @@ static int LuaOperatorNewSplus(lua_State * L)
   }
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   CreateOperatorSplus(NFermion, NShell, LindexUp, LindexDn, op);
-  luaL_setmetatable(L, "ssp.operator");
+  luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
   return 1;
@@ -211,7 +211,7 @@ static int LuaOperatorNewSmin(lua_State * L)
   }
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   CreateOperatorSmin(NFermion, NShell, LindexUp, LindexDn, op);
-  luaL_setmetatable(L, "ssp.operator");
+  luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
   return 1;
@@ -239,7 +239,7 @@ static int LuaOperatorNewLx(lua_State * L)
   }
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   CreateOperatorLx(NFermion, l, LindexUp, LindexDn, op);
-  luaL_setmetatable(L, "ssp.operator");
+  luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
   return 1;
@@ -265,7 +265,7 @@ static int LuaOperatorNewLy(lua_State * L)
   }
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   CreateOperatorLy(NFermion, l, LindexUp, LindexDn, op);
-  luaL_setmetatable(L, "ssp.operator");
+  luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
   return 1;
@@ -291,7 +291,7 @@ static int LuaOperatorNewLz(lua_State * L)
   }
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   CreateOperatorLz(NFermion, l, LindexUp, LindexDn, op);
-  luaL_setmetatable(L, "ssp.operator");
+  luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
   return 1;
@@ -317,7 +317,7 @@ static int LuaOperatorNewLplus(lua_State * L)
   }
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   CreateOperatorLplus(NFermion, l, LindexUp, LindexDn, op);
-  luaL_setmetatable(L, "ssp.operator");
+  luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
   return 1;
@@ -343,7 +343,7 @@ static int LuaOperatorNewLmin(lua_State * L)
   }
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   CreateOperatorLmin(NFermion, l, LindexUp, LindexDn, op);
-  luaL_setmetatable(L, "ssp.operator");
+  luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
   return 1;
@@ -369,7 +369,7 @@ static int LuaOperatorNewLsqr(lua_State * L)
   }
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   CreateOperatorLsqr(NFermion, l, LindexUp, LindexDn, op);
-  luaL_setmetatable(L, "ssp.operator");
+  luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
   return 1;
@@ -395,7 +395,7 @@ static int LuaOperatorNewJx(lua_State * L)
   }
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   CreateOperatorJx(NFermion, l, LindexUp, LindexDn, op);
-  luaL_setmetatable(L, "ssp.operator");
+  luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
   return 1;
@@ -421,7 +421,7 @@ static int LuaOperatorNewJy(lua_State * L)
   }
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   CreateOperatorJy(NFermion, l, LindexUp, LindexDn, op);
-  luaL_setmetatable(L, "ssp.operator");
+  luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
   return 1;
@@ -447,7 +447,7 @@ static int LuaOperatorNewJz(lua_State * L)
   }
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   CreateOperatorJz(NFermion, l, LindexUp, LindexDn, op);
-  luaL_setmetatable(L, "ssp.operator");
+  luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
   return 1;
@@ -473,7 +473,7 @@ static int LuaOperatorNewJplus(lua_State * L)
   }
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   CreateOperatorJplus(NFermion, l, LindexUp, LindexDn, op);
-  luaL_setmetatable(L, "ssp.operator");
+  luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
   return 1;
@@ -499,7 +499,7 @@ static int LuaOperatorNewJmin(lua_State * L)
   }
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   CreateOperatorJmin(NFermion, l, LindexUp, LindexDn, op);
-  luaL_setmetatable(L, "ssp.operator");
+  luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
   return 1;
@@ -525,7 +525,7 @@ static int LuaOperatorNewJsqr(lua_State * L)
   }
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   CreateOperatorJsqr(NFermion, l, LindexUp, LindexDn, op);
-  luaL_setmetatable(L, "ssp.operator");
+  luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
   return 1;
@@ -551,7 +551,7 @@ static int LuaOperatorNewldots(lua_State * L)
   }
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   CreateOperatorldots(NFermion, l, LindexUp, LindexDn, op);
-  luaL_setmetatable(L, "ssp.operator");
+  luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
   return 1;
@@ -638,7 +638,7 @@ static int LuaOperatorNewCF(lua_State * L)
   
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   CreateOperatorCF(NFermion, lCr, lAn, LindexUpCr, LindexDnCr, LindexUpAn, LindexDnAn, *Akm, op);
-  luaL_setmetatable(L, "ssp.operator");
+  luaL_setmetatable(L, "Operator_Type");
   
   free(Akm->l);
   free(Akm->m);
@@ -676,7 +676,7 @@ static int LuaOperatorNewCreate(lua_State * L)
     uint16_t Crindex = (uint16_t)luaL_checkunsigned(L, 2);
     op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
     CreateOperatorCreate(NFermion, Crindex, op);
-    luaL_setmetatable(L, "ssp.operator");
+    luaL_setmetatable(L, "Operator_Type");
   }
   else if(len==3)
   {
@@ -696,7 +696,7 @@ static int LuaOperatorNewCreate(lua_State * L)
     }
     op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
     CreateOperatorCreateList(NFermion, CrIndex, PrefactorsRe, PrefactorsIm, NOpp, op);
-    luaL_setmetatable(L, "ssp.operator");
+    luaL_setmetatable(L, "Operator_Type");
     free(CrIndex);
     free(Prefactors);
   }
@@ -718,7 +718,7 @@ static int LuaOperatorNewAnnihilate(lua_State * L)
     uint16_t Crindex = (uint16_t)luaL_checkunsigned(L, 2);
     op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
     CreateOperatorAnnihilate(NFermion, Crindex, op);
-    luaL_setmetatable(L, "ssp.operator");
+    luaL_setmetatable(L, "Operator_Type");
   }
   else if(len==3)
   {
@@ -738,7 +738,7 @@ static int LuaOperatorNewAnnihilate(lua_State * L)
     }
     op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
     CreateOperatorAnnihilateList(NFermion, CrIndex, PrefactorsRe, PrefactorsIm, NOpp, op);
-    luaL_setmetatable(L, "ssp.operator");
+    luaL_setmetatable(L, "Operator_Type");
     free(CrIndex);
     free(Prefactors);
   }
@@ -764,7 +764,7 @@ static int LuaOperatorNewNumber(lua_State * L)
     double one=1;
     double zero=0;
     CreateOperatorCreateAnnihilateList(NFermion, &Crindex, &Anindex, &one, &zero, 1, op);
-    luaL_setmetatable(L, "ssp.operator");
+    luaL_setmetatable(L, "Operator_Type");
   }
   else if(len==4)
   {
@@ -789,7 +789,7 @@ static int LuaOperatorNewNumber(lua_State * L)
     }
     op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
     CreateOperatorCreateAnnihilateList(NFermion, CrIndex, AnIndex, PrefactorsRe, PrefactorsIm, NOppCr, op);
-    luaL_setmetatable(L, "ssp.operator");
+    luaL_setmetatable(L, "Operator_Type");
     free(CrIndex);
     free(AnIndex);
     free(Prefactors);
@@ -809,11 +809,11 @@ static int LuaOperatorNewNumber(lua_State * L)
 
 static int LuaOperatorAdd(lua_State * L)
 {
-  OperatorType *l = (OperatorType *) luaL_checkudata(L, 1, "ssp.operator");
-  OperatorType *r = (OperatorType *) luaL_checkudata(L, 2, "ssp.operator");
+  OperatorType *l = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
+  OperatorType *r = (OperatorType *) luaL_checkudata(L, 2, "Operator_Type");
   lua_settop(L, 0);
   OperatorType *res = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-  luaL_setmetatable(L, "ssp.operator");
+  luaL_setmetatable(L, "Operator_Type");
   OperatorCopy(res, *l);
   OperatorAdd(res, *r, 1., 0);
   return 1;
@@ -821,10 +821,10 @@ static int LuaOperatorAdd(lua_State * L)
 
 static int LuaOperatorSub(lua_State * L)
 {
-  OperatorType *l = (OperatorType *) luaL_checkudata(L, 1, "ssp.operator");
-  OperatorType *r = (OperatorType *) luaL_checkudata(L, 2, "ssp.operator");
+  OperatorType *l = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
+  OperatorType *r = (OperatorType *) luaL_checkudata(L, 2, "Operator_Type");
   OperatorType *res = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-  luaL_setmetatable(L, "ssp.operator");
+  luaL_setmetatable(L, "Operator_Type");
   OperatorCopy(res, *l);
   OperatorAdd(res, *r, -1., 0);
   return 1;
@@ -878,78 +878,78 @@ static int LuaOperatorMul(lua_State * L)
   if (lua_isnumber(L, 1))
   {
     double b = (double) luaL_checknumber(L, 1);
-    OperatorType *O = (OperatorType*) luaL_checkudata(L, len, "ssp.operator");
+    OperatorType *O = (OperatorType*) luaL_checkudata(L, len, "Operator_Type");
     OperatorType *ONew;
     ONew = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
     OperatorCopy(ONew, *O);
     OperatorScale(ONew, b, 0);
-    luaL_setmetatable(L, "ssp.operator");
+    luaL_setmetatable(L, "Operator_Type");
     return 1;
   }
   if (lua_isnumber(L, len))
   {
     double b = (double) luaL_checknumber(L, len);
-    OperatorType *O = (OperatorType*) luaL_checkudata(L, 1, "ssp.operator");
+    OperatorType *O = (OperatorType*) luaL_checkudata(L, 1, "Operator_Type");
     OperatorType *ONew;
     ONew = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
     OperatorCopy(ONew, *O);
     OperatorScale(ONew, b, 0);
-    luaL_setmetatable(L, "ssp.operator");
+    luaL_setmetatable(L, "Operator_Type");
     return 1;
   }
-  if (luaL_testudata(L, 1, "Lua.complex") != NULL)
+  if (luaL_testudata(L, 1, "Complex_Type") != NULL)
   {
-    Complex16 *b = (Complex16 *) luaL_checkudata(L, 1, "Lua.complex");
-    OperatorType *O = (OperatorType*) luaL_checkudata(L, len, "ssp.operator");
+    Complex16 *b = (Complex16 *) luaL_checkudata(L, 1, "Complex_Type");
+    OperatorType *O = (OperatorType*) luaL_checkudata(L, len, "Operator_Type");
     OperatorType *ONew;
     ONew = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
     OperatorCopy(ONew, *O);
     OperatorScale(ONew, b->Re, b->Im);
-    luaL_setmetatable(L, "ssp.operator");
+    luaL_setmetatable(L, "Operator_Type");
     return 1;
   }
-  if (luaL_testudata(L, len, "Lua.complex") != NULL)
+  if (luaL_testudata(L, len, "Complex_Type") != NULL)
   {
-    Complex16 *b = (Complex16 *) luaL_checkudata(L, len, "Lua.complex");
-    OperatorType *O = (OperatorType*) luaL_checkudata(L, 1, "ssp.operator");
+    Complex16 *b = (Complex16 *) luaL_checkudata(L, len, "Complex_Type");
+    OperatorType *O = (OperatorType*) luaL_checkudata(L, 1, "Operator_Type");
     OperatorType *ONew;
     ONew = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
     OperatorCopy(ONew, *O);
     OperatorScale(ONew, b->Re, b->Im);
-    luaL_setmetatable(L, "ssp.operator");
+    luaL_setmetatable(L, "Operator_Type");
     return 1;
   }
-  if (luaL_testudata(L, len, "ssp.wavefunction") != NULL)
+  if (luaL_testudata(L, len, "Wavefunction_Type") != NULL)
   {
     /* O | psi> */
-    WaveFunctionType *psi = (WaveFunctionType*) luaL_checkudata(L, len, "ssp.wavefunction");
-    OperatorType *O = (OperatorType *) luaL_checkudata(L,1,"ssp.operator");
+    WaveFunctionType *psi = (WaveFunctionType*) luaL_checkudata(L, len, "Wavefunction_Type");
+    OperatorType *O = (OperatorType *) luaL_checkudata(L,1,"Operator_Type");
     WaveFunctionType *Opsi;
     Opsi = (WaveFunctionType *) lua_newuserdata(L, sizeof(WaveFunctionType));
     OperatorPsi(*O, *psi, Opsi);
-    luaL_setmetatable(L, "ssp.wavefunction");
+    luaL_setmetatable(L, "Wavefunction_Type");
     return 1;
   }
-  if (luaL_testudata(L, 1, "ssp.wavefunction") != NULL)
+  if (luaL_testudata(L, 1, "Wavefunction_Type") != NULL)
   {
     /* <psi | O */
-    WaveFunctionType *psi = (WaveFunctionType*) luaL_checkudata(L, 1, "ssp.wavefunction");
-    OperatorType *O = (OperatorType *) luaL_checkudata(L,len,"ssp.operator");
+    WaveFunctionType *psi = (WaveFunctionType*) luaL_checkudata(L, 1, "Wavefunction_Type");
+    OperatorType *O = (OperatorType *) luaL_checkudata(L,len,"Operator_Type");
     OperatorType OT;
     OperatorConjugateTransposeNormalOrder(*O, &OT, &QDetNotOrderedFcFaBcBa);
     WaveFunctionType *Opsi;
     Opsi = (WaveFunctionType *) lua_newuserdata(L, sizeof(WaveFunctionType));
     OperatorPsi(OT, *psi, Opsi);
     FreeOperator(&OT);
-    luaL_setmetatable(L, "ssp.wavefunction");
+    luaL_setmetatable(L, "Wavefunction_Type");
     return 1;
   }
   {
     /* O * O */
-    OperatorType *l = (OperatorType *) luaL_checkudata(L, 1, "ssp.operator");
-    OperatorType *r = (OperatorType *) luaL_checkudata(L, len, "ssp.operator");
+    OperatorType *l = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
+    OperatorType *r = (OperatorType *) luaL_checkudata(L, len, "Operator_Type");
     OperatorType *res = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-    luaL_setmetatable(L, "ssp.operator");
+    luaL_setmetatable(L, "Operator_Type");
     InitOperatorForMult(res, 2, l, r);
     OperatorMultiply2NormalOrder(res, *l, *r, 'N', 'N', &QDetNotOrderedFcFaBcBa);
   }
@@ -1067,7 +1067,7 @@ static int LuaOperatorTranspose(lua_State * L)
 
 static int LuaOperatorIndex(lua_State * L)
 {
-  OperatorType *a = (OperatorType *) luaL_checkudata(L, 1, "ssp.operator");
+  OperatorType *a = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
   const char *str = lua_tostring(L, 2);
   currentudata = a;
   
@@ -1106,7 +1106,7 @@ static int LuaOperatorIndex(lua_State * L)
 
 static int LuaOperatorNewIndex(lua_State * L)
 {
-  OperatorType *a = (OperatorType *) luaL_checkudata(L, 1, "ssp.operator");
+  OperatorType *a = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
   const char *str = lua_tostring(L, 2);
   
   if(strcmp(str, "Name")==0)
@@ -1122,14 +1122,16 @@ static int LuaOperatorNewIndex(lua_State * L)
 
 static int LuaOperatorToString(lua_State * L)
 {
-  OperatorType *res = (OperatorType *) luaL_checkudata(L, 1, "ssp.operator");
-  lua_pushstring(L, res->Name);
+  OperatorType *res = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
+  char *Buffer;
+  StringPrintOperatorReadable(*res, &Buffer);
+  lua_pushstring(L, Buffer);
   return 1;
 }
 
 static int LuaOperatorDestroy(lua_State * L)
 {
-  OperatorType *a = (OperatorType *) luaL_checkudata(L, 1, "ssp.operator");
+  OperatorType *a = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
   FreeOperator(a);
   return 0;
 }

@@ -847,6 +847,7 @@ uint32_t MatrixTransform(MatrixType * const M, MatrixType const A, MatrixType co
     return 0;
   }
   /* all real */
+  //TODO: matrix multiplication for real by blass
   for (i = 0; i < M->Ni; i++)
   {
     for (j = 0; j < M->Nj; j++)
@@ -980,6 +981,7 @@ uint32_t MatrixTransformPart(MatrixType * const M, MatrixType const A, MatrixTyp
     return 0;
   }
   /* all real */
+  //TODO: matrix multiplication for real by blass
   for (i = MNiMin; i <= MNiMax; i++)
   {
     for (j = MNjMin; j <= MNjMax; j++)
@@ -1012,16 +1014,15 @@ uint32_t MatrixMultiply(MatrixType * const M, MatrixType const A, MatrixType con
     return 1;
   }
   uint32_t i, j, k;
-  strcpy(M->Name, A.Name);
-  strncat(M->Name, " * ", Max(0, (int)((int)MAXStrLength - (int)strlen(A.Name))));
-  strncat(M->Name, B.Name, Max(0, (int)((int)MAXStrLength - (int)strlen(A.Name) + (int)4)));
   M->Ni = A.Ni;
   M->Nj = B.Nj;
   if ((A.QComplex) && (B.QComplex))
   {                             /* all complex */
     M->QComplex = 1;
-    if (InitMatrix(M))
-      return 1;
+    if (InitMatrix(M)) return 1;
+    strcpy(M->Name, A.Name);
+    strncat(M->Name, " * ", Max(0, (int)((int)MAXStrLength - (int)strlen(A.Name))));
+    strncat(M->Name, B.Name, Max(0, (int)((int)MAXStrLength - (int)strlen(A.Name) + (int)4)));
     for (i = 0; i < M->Ni; i++)
     {
       for (j = 0; j < M->Nj; j++)
@@ -1040,8 +1041,10 @@ uint32_t MatrixMultiply(MatrixType * const M, MatrixType const A, MatrixType con
   if (A.QComplex)
   {                             /* A complex, B real */
     M->QComplex = 1;
-    if (InitMatrix(M))
-      return 1;
+    if (InitMatrix(M)) return 1;
+    strcpy(M->Name, A.Name);
+    strncat(M->Name, " * ", Max(0, (int)((int)MAXStrLength - (int)strlen(A.Name))));
+    strncat(M->Name, B.Name, Max(0, (int)((int)MAXStrLength - (int)strlen(A.Name) + (int)4)));
     for (i = 0; i < M->Ni; i++)
     {
       for (j = 0; j < M->Nj; j++)
@@ -1060,8 +1063,10 @@ uint32_t MatrixMultiply(MatrixType * const M, MatrixType const A, MatrixType con
   if (B.QComplex)
   {                             /* B complex, A real */
     M->QComplex = 1;
-    if (InitMatrix(M))
-      return 1;
+    if (InitMatrix(M)) return 1;
+    strcpy(M->Name, A.Name);
+    strncat(M->Name, " * ", Max(0, (int)((int)MAXStrLength - (int)strlen(A.Name))));
+    strncat(M->Name, B.Name, Max(0, (int)((int)MAXStrLength - (int)strlen(A.Name) + (int)4)));
     for (i = 0; i < M->Ni; i++)
     {
       for (j = 0; j < M->Nj; j++)
@@ -1078,9 +1083,12 @@ uint32_t MatrixMultiply(MatrixType * const M, MatrixType const A, MatrixType con
     return 0;
   }
   /* all real */
+  //TODO: do matrix multiplication for real by blass
   M->QComplex = 0;
-  if (InitMatrix(M))
-    return 1;
+  if (InitMatrix(M)) return 1;
+  strcpy(M->Name, A.Name);
+  strncat(M->Name, " * ", Max(0, (int)((int)MAXStrLength - (int)strlen(A.Name))));
+  strncat(M->Name, B.Name, Max(0, (int)((int)MAXStrLength - (int)strlen(A.Name) + (int)4)));
   for (i = 0; i < M->Ni; i++)
   {
     for (j = 0; j < M->Nj; j++)
@@ -1253,8 +1261,7 @@ uint32_t RealTransposeMatrixVector(MatrixType const M, const double *const a, do
  * b already allocated
  * b[i]=sum_j M[i][j] a[j]
  */
-uint32_t ComplexMatrixVector(MatrixType const M, const double *const aRe, const double *const aIm, double *const bRe,
-                             double *const bIm)
+uint32_t ComplexMatrixVector(MatrixType const M, const double *const aRe, const double *const aIm, double *const bRe, double *const bIm)
 {
   uint32_t i, j;
   if (M.QComplex)
@@ -1291,8 +1298,7 @@ uint32_t ComplexMatrixVector(MatrixType const M, const double *const aRe, const 
  * b already allocated
  * b[i]=sum_j M[j][i]^* a[j]
  */
-uint32_t ComplexConjugateTransposeMatrixVector(MatrixType const M, const double *const aRe, const double *const aIm,
-                                               double *const bRe, double *const bIm)
+uint32_t ComplexConjugateTransposeMatrixVector(MatrixType const M, const double *const aRe, const double *const aIm, double *const bRe, double *const bIm)
 {
   uint32_t i, j;
   if (M.QComplex)
@@ -1462,6 +1468,6 @@ void MatrixOrthonormalize(MatrixType * const M)
  */
 uint32_t MatrixBasisOrthonormalize(MatrixType const S, MatrixType * const T)
 {
-
+  printf("To DO\n");
   return 0;
 }

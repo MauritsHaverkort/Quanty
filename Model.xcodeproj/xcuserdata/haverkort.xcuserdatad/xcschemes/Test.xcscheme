@@ -49,7 +49,8 @@
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       allowLocationSimulation = "YES">
-      <BuildableProductRunnable>
+      <BuildableProductRunnable
+         runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "4C2AAABB163265F500138620"
@@ -74,6 +75,10 @@
          <CommandLineArgument
             argument = "CompactMatrixVector"
             isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "BlockFunctions"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "MF"
@@ -149,7 +154,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "BlockLanczos"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "Opar"
@@ -184,7 +189,8 @@
       useCustomWorkingDirectory = "NO"
       buildConfiguration = "Release"
       debugDocumentVersioning = "YES">
-      <BuildableProductRunnable>
+      <BuildableProductRunnable
+         runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "4C2AAABB163265F500138620"

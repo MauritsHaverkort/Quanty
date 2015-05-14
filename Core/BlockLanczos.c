@@ -99,6 +99,49 @@ uint32_t QCanNotOccupy(uint32_t const iFermion, uint32_t const NFermion, uint8_t
   return 0;
 }
 
+uint32_t ExtendBasisUsingRestrictions(DeterminantRestrictionType const StartingPoint, WaveFunctionType * psi)
+{
+  uint16_t oadd[2];
+  uint32_t iN, iFermion, jFermion;
+  OperatorType O;
+  WaveFunctionType psi0;
+  psi0 = *psi;
+  InitOperator(&O);
+  O.NFermion=psi0.NFermion;
+  O.NBoson=psi0.NBoson;
+  O.NWord=psi0.NWord;
+  InitOperatorFixedLength(&O, 2, 8);
+  RealOperatorAddLader(&O, oadd, 0, 1);
+  for(iN=0;iN<StartingPoint.N;iN++)
+  {
+    for(iFermion=0;iFermion<O.NFermion;iFermion++)
+    {
+      for(jFermion=iFermion+1;jFermion<O.NFermion;jFermion++)
+      {
+        if((StartingPoint.Determinant[iN][(iFermion)>>3]&(128>>(iFermion&7)))&&(StartingPoint.Determinant[iN][(jFermion)>>3]&(128>>(jFermion&7))))
+        {
+          oadd[0]=CrAnMask+(uint16_t)iFermion;
+          oadd[1]=(uint16_t)jFermion;
+          RealOperatorAddLader(&O, oadd, 2, 1);
+          oadd[0]=CrAnMask+(uint16_t)jFermion;
+          oadd[1]=(uint16_t)iFermion;
+          RealOperatorAddLader(&O, oadd, 2, 1);
+        }
+      }
+    }
+  }
+  if(OperatorPsiRestricted(O, psi0, psi, StartingPoint))
+  {
+    printf("Warning: OperatorPsiRestricted failed in ExtendBasisUsingRestrictions\n");
+    *psi = psi0;
+    return 1;
+  }
+  WaveFunctionFree(&psi0);
+  FreeOperator(&O);
+  return 0;
+}
+
+
 /*  given a set of restrictions create Npsi orthonormal functions on a reasonably large basis that can serve as a starting point for
  *  finding the ground-state of H
  */
@@ -121,10 +164,10 @@ uint32_t CreateStartingFunctions(const OperatorType H, uint32_t const Npsi, Dete
     return 1;
   }
   // create some determinants fullfilling the StartingPoint conditions
-  // "some" is equal to 10+3*Npsi
+  // "some" is equal to 200+3*Npsi
   Determinant = calloc(psi0.NWord, sizeof(uint8_t));
   avvOcc = 0.5;
-  for(i=0;i<200+3*Npsi;i++)
+  for(i=0;i<Min(300+100*Npsi,5000);i++)
   {
     totOcc=0;
     for(iFermion=0;iFermion<H.NFermion;iFermion++)
@@ -196,7 +239,19 @@ uint32_t CreateStartingFunctions(const OperatorType H, uint32_t const Npsi, Dete
     printf("OperatorPsiRestricted failed in CreateStartingFunctions\n");
     return 1;
   }
+  WaveFunctionAddUnionBasis(&(psi[0]), psi0);
   WaveFunctionFree(&psi0);
+  if(psi[0].N<Npsi)
+  {
+    // did not find Npsi independent determinants, extand basis further
+    ExtendBasisUsingRestrictions(StartingPoint, &(psi[0]));
+  }
+  if(psi[0].N<Npsi)
+  {
+    VerbosityPrintf(0x0002, "Warning: Number of states to find smaller than number of determinants in random starting vector\n");
+  }
+  
+  
   // init other functions
   for(i=1;i<Npsi;i++)
   {
@@ -207,7 +262,7 @@ uint32_t CreateStartingFunctions(const OperatorType H, uint32_t const Npsi, Dete
     }
   }
   // randomize and orthonormalize psi
-  for(i=1;i<Npsi;i++)
+  for(i=0;i<Npsi;i++)
   {
     WaveFunctionRandomize(&(psi[i]));
     WaveFunctionOrthogonalizeSameBasis(&(psi[i]), &(psi[0]), i);
@@ -246,11 +301,15 @@ uint32_t BlockOperatorPsiConserveBasisPreAllocated(const OperatorType H, WaveFun
 uint32_t BlockOperatorPsiRestricted(const OperatorType H, WaveFunctionType const * const psi, WaveFunctionType * const Opsi, uint32_t const Npsi, DeterminantRestrictionType const Restrictions)
 {
   uint32_t i,j;
+  VerbosityPrintf(0x0002,"Start of BlockOperatorPsiRestricted\n");
   if(OperatorPsiRestricted(H, psi[0], &(Opsi[0]), Restrictions))
   {
     printf("OperatorPsi failed in BlockOperatorPsi\n");
     return 1;
   }
+  
+  WaveFunctionAddMultipliedUnionBasis(&(Opsi[0]), psi[0], 0);
+  
   for(i=1;i<Npsi;i++)
   {
     if(WaveFunctionInitCopyBasis(&(Opsi[i]), (Opsi[0])))
@@ -272,18 +331,22 @@ uint32_t BlockOperatorPsiRestricted(const OperatorType H, WaveFunctionType const
   return 0;
 }
 
-/*  Calculate Opsi[i] = H psi[i] for i=0 to Npsi
+/*  Calculate Opsi[i] = H psi[i] + 0 psi[i] for i=0 to Npsi
  *  on input all psi[i]'s are on the same basis
  *  on excit all Opsi[i]'s are on the same basis
  */
 uint32_t BlockOperatorPsi(const OperatorType H, WaveFunctionType const * const psi, WaveFunctionType * const Opsi, uint32_t const Npsi)
 {
   uint32_t i,j;
+  VerbosityPrintf(0x0002,"Start of BlockOperatorPsi\n");
   if(OperatorPsi(H, psi[0], &(Opsi[0])))
   {
     printf("OperatorPsi failed in BlockOperatorPsi\n");
     return 1;
   }
+  
+  WaveFunctionAddMultipliedUnionBasis(&(Opsi[0]), psi[0], 0);
+  
   for(i=1;i<Npsi;i++)
   {
     if(WaveFunctionInitCopyBasis(&(Opsi[i]), (Opsi[0])))
@@ -517,6 +580,7 @@ void BlockWaveFunctionTruncateBasis(WaveFunctionType *const psi, uint32_t const 
 
 uint32_t BlockWaveFunctionCalculatOverlapMatrix(WaveFunctionType *const psi, uint32_t const Npsi, CompactMatrixType *const S)
 {
+  //TODO: test after converging matrix format
   uint32_t i,j;
   S->Ni=Npsi;
   S->Nj=Npsi;
@@ -555,9 +619,11 @@ uint32_t BlockLanczosGroundStateConserveBasisDense(const OperatorType H, WaveFun
   uint32_t i,j,k;
   CompactMatrixType Hdens,fun;
   double val[psi[0].N];
+  VerbosityPrintf(0x0100,"Start of BlockLanczosGroundStateConserveBasisDense\n");
   // test if psi is complex when H is complex, if not turn it into a complex function
   if((H.QComplex)&&(psi[0].QComplex==0))
   {
+    VerbosityPrintf(0x0100,"Complex Hamiltonian on real wave-function, make functions complex\n");
     for(i=0;i<Npsi;i++)
     {
       if(MakeComplexWaveFunctionFromReal(&(psi[i]), psi[i]))
@@ -593,19 +659,20 @@ uint32_t BlockLanczosGroundStateConserveBasisDense(const OperatorType H, WaveFun
     if(WaveFunctionInitCopyBasis(&Hpsi, psi[0]))
     {
       printf("WaveFunctionInitCopyBasis failed in BlockLanczosGroundStateConserveBasisDense\n");
-      
+      // need to clean things in parallel session before return - to do
+      // return 1;
     }
     if(Hdens.QComplex)
     {
 #pragma omp for
       for(iOMP=0;iOMP<psi[0].N;iOMP++)
       {
-        i=(uint32_t)iOMP;
-        OperatorDeterminantPreAllocated(&H, &(psi[0].Determinant[BlokElementDet(i+1,psi[0].NWord,0)]), &Hpsi);
-        for(j=0;j<psi[0].N;j++)
+        j=(uint32_t)iOMP;
+        OperatorDeterminantPreAllocated(&H, &(psi[0].Determinant[BlokElementDet(j+1,psi[0].NWord,0)]), &Hpsi);
+        for(i=0;i<psi[0].N;i++)
         {
-          Hdens.V[j+i*Hdens.Nj].Re=Hpsi.ValueRe[BlokElement(j+1)];
-          Hdens.V[j+i*Hdens.Nj].Im=Hpsi.ValueIm[BlokElement(j+1)];
+          Hdens.V[j+i*Hdens.Nj].Re=Hpsi.ValueRe[BlokElement(i+1)];
+          Hdens.V[j+i*Hdens.Nj].Im=Hpsi.ValueIm[BlokElement(i+1)];
         }
       }
     }
@@ -614,11 +681,11 @@ uint32_t BlockLanczosGroundStateConserveBasisDense(const OperatorType H, WaveFun
 #pragma omp for
       for(iOMP=0;iOMP<psi[0].N;iOMP++)
       {
-        i=(uint32_t)iOMP;
-        OperatorDeterminantPreAllocated(&H, &(psi[0].Determinant[BlokElementDet(i+1,psi[0].NWord,0)]), &Hpsi);
-        for(j=0;j<psi[0].N;j++)
+        j=(uint32_t)iOMP;
+        OperatorDeterminantPreAllocated(&H, &(psi[0].Determinant[BlokElementDet(j+1,psi[0].NWord,0)]), &Hpsi);
+        for(i=0;i<psi[0].N;i++)
         {
-          Hdens.VRe[j+i*Hdens.Nj]=Hpsi.ValueRe[BlokElement(j+1)];
+          Hdens.VRe[j+i*Hdens.Nj]=Hpsi.ValueRe[BlokElement(i+1)];
         }
       }
     }
@@ -667,6 +734,10 @@ uint32_t BlockLanczosGroundStateConserveBasisDense(const OperatorType H, WaveFun
   }
   FreeCompactMatrix(&fun);
   if(GlobalTimeOn&0x40) EndTiming("Diagonalize Hdens", &GlobalTime);
+  for(i=0;i<psi[0].N;i++)
+  {
+    VerbosityPrintf(0x0100,"val[%3i] = %22.15E\n",i,val[i]);
+  }
   return 0;
 }
 
@@ -835,7 +906,7 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylovReal(const OperatorType H, Wa
     // initialize variables
     NpsiDeflated=Npsi;
     NorthoExtra=0;
-    memset(HKrylov.V, 0, HKrylov.Ni*HKrylov.Nj*sizeof(double));
+    memset(HKrylov.VRe, 0, HKrylov.Ni*HKrylov.Nj*sizeof(double));
     // loop over NKrylovNow states
     for(i=0;i<NKrylovNow;i++)
     {
@@ -1107,7 +1178,14 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylovComplex(const OperatorType H,
         }
       }
       // calculate v[i+NpsiDeflated] = H v[i] and onsite term < v[i] | H | v[i] >
-      OperatorPsiConserveBasisPreAllocatedCC(&H, &v[i], &v[i+NpsiDeflated]);
+      if(H.QComplex==1)
+      {
+        OperatorPsiConserveBasisPreAllocatedCC(&H, &v[i], &v[i+NpsiDeflated]);
+      }
+      else
+      {
+        OperatorPsiConserveBasisPreAllocatedMC(&H, &v[i], &v[i+NpsiDeflated]);
+      }
       ComplexWaveFunctionDotProductSameBasis(v[i], v[i+NpsiDeflated], &HKrylov.V[i+i*HKrylov.Nj].Re, &DotIm);
       // orthogonalize v[i+NpsiDeflated] to v[j] (the new candiate agains the latest found states)
       // for j from i-NpsiDeflated to i-1
@@ -1257,6 +1335,7 @@ uint32_t BlockLanczosGroundStateConserveBasis(const OperatorType H, WaveFunction
 {
   uint32_t i;
   WaveFunctionType *v;
+  VerbosityPrintf(0x0100,"Start of BlockLanczosGroundStateConserveBasis\n");
   // for small basises do a dense calculation
   if(psi[0].N<=Settings->DenseBoarder) return BlockLanczosGroundStateConserveBasisDense(H,psi, Npsi);
   // create the vectors v in memory.
@@ -1312,8 +1391,9 @@ uint32_t BlockLanczosGroundStateConserveBasis(const OperatorType H, WaveFunction
  *  Input:
  *    H:             Operator
  *    Npsi:          number of states to converge
- *    zero:          smallest positive real larger than zero considered to be equal to zero in convergence tests
- *    epsilon:       smallest norm of prefactor of a determinant kept in a wave function
+ *    Settings:      ConvergenceSettingsType* pointer to important values that need to be set:
+ *                   Settings->zero    smallest possitive double that is considered different from zero when comparing convergence creteria
+ *                   Settings->epsilon smallest positive double that is considered different from zero when truncating wavefunctions
  *    StartingPoint: a set of restrictions defining the starting point wave function
  *                   if StartingPoint.N = 0 it is assumed that the functions psi are intialized and one starts from there
  *    Restrictions:  a set of restrictions makeing the basis smaler
@@ -1355,12 +1435,13 @@ uint32_t BlockGroundState(const OperatorType H, uint32_t const Npsi, Convergence
   {
     Energy[0][i]=1E+99;
   }
-  printf("Start of BlockGroundState. Converge %i states to an energy with variance smaller than %22.15E\n\n",Npsi,Settings->zero);
+  VerbosityPrintf(0x0002,"Start of BlockGroundState. Converge %i states to an energy with relative variance smaller than %22.15E\n\n",Npsi,Settings->zero);
   // loop until converged
   while((!Qconverged)&&(iloop<100))
   {
     iloop++;
     // expand basis depending on Restrictions.N use either restrictions or don't use them
+
     while( (Restrictions.N) ? BlockOperatorPsiRestricted(H, psi, Opsi, Npsi, Restrictions) : BlockOperatorPsi(H, psi, Opsi, Npsi))
     {
       // was not able to evaluate O psi, need to truncate psi further
@@ -1374,6 +1455,7 @@ uint32_t BlockGroundState(const OperatorType H, uint32_t const Npsi, Convergence
     }
     // calculate Energy and variance of Energy - test for convergence
     Qconverged=1;
+    VerbosityPrintf(0x0100,"Number of determinants in basis %i\n",psi[0].N);
     VerbosityPrintf(0x0100,"State # |   Energy               |  Variance of Energy    |  Energy change\n");
     for(i=0;i<Npsi;i++)
     {
@@ -1382,7 +1464,7 @@ uint32_t BlockGroundState(const OperatorType H, uint32_t const Npsi, Convergence
       WaveFunctionDotProduct(psi[i], Opsi[i], &Energy[0][i], &temp);
       WaveFunctionDotProductSameBasis(Opsi[i], Opsi[i], &EnergySqr[0][i], &temp);
       VerbosityPrintf(0x0100,"%7i | %22.15E | %22.15E | %22.15E\n",i,Energy[0][i],EnergySqr[0][i]-Sqr(Energy[0][i]),Energy[0][i]-Energy[1][i]);
-      if((EnergySqr[0][i]-Sqr(Energy[0][i])>Settings->zero)&&((Energy[1][i]-Energy[0][i])>DBL_EPSILON)) Qconverged=0;
+      if((EnergySqr[0][i]-Sqr(Energy[0][i])>=(EnergySqr[0][i]*Settings->zero))&&((Energy[1][i]-Energy[0][i])>DBL_EPSILON)) Qconverged=0;
     }
     VerbosityPrintf(0x0100,"\n");
     if(AtLeastAnOtherLoop)

@@ -298,7 +298,7 @@ void RealWaveFunctionAddElementConserveBasis(WaveFunctionType const *psi, const 
 {
   uint32_t i, NextIndex, PsiAIsPsiB;
   /* test if the key that belongs to psi already excists */
-  if (a == 0) return;
+  if (fabs(a) < 10*DBL_MIN) return;
   NextIndex=psi->KeyList[hash(det, psi->NWord, psi->NBitsKey)];
   if (!NextIndex)
   {                             /* det not in key, do nothing */
@@ -484,8 +484,7 @@ uint32_t RealWaveFunctionAddUnionBasis(WaveFunctionType * const a, const WaveFun
     {                           /* Allocation of new memory for a failed Remove all elements added so far and return 1 */
       for (j = b.N; j != i; --j)
       {
-        RealWaveFunctionAddElementConserveBasis(a, &b.Determinant[BlokElementDet(i, b.NWord, 0)],
-                                                -b.ValueRe[BlokElement(i)]);
+        RealWaveFunctionAddElementConserveBasis(a, &b.Determinant[BlokElementDet(i, b.NWord, 0)],-b.ValueRe[BlokElement(i)]);
       }
       return 1;
     }
@@ -500,19 +499,16 @@ uint32_t RealWaveFunctionAddUnionBasis(WaveFunctionType * const a, const WaveFun
 *   Therefor values of a might change and a is returned from the function
 *   If a is an empty function b is copied into a (use of copy is strongly recommanded)
 */
-uint32_t RealWaveFunctionAddMultipliedUnionBasis(WaveFunctionType * const a, const WaveFunctionType b,
-                                                 const double alpha)
+uint32_t RealWaveFunctionAddMultipliedUnionBasis(WaveFunctionType * const a, const WaveFunctionType b, const double alpha)
 {
   uint32_t i, j;
   for (i = b.N; i != 0; --i)
   {
-    if (RealWaveFunctionAddElement(a, &b.Determinant[BlokElementDet(i, b.NWord, 0)], alpha * b.ValueRe[BlokElement(i)])
-        != 0)
+    if (RealWaveFunctionAddElement(a, &b.Determinant[BlokElementDet(i, b.NWord, 0)], alpha * b.ValueRe[BlokElement(i)])!= 0)
     {                           /* Allocation of new memory for a failed Remove all elements added so far and return 1 */
       for (j = b.N; j != i; --j)
       {
-        RealWaveFunctionAddElementConserveBasis(a, &b.Determinant[BlokElementDet(i, b.NWord, 0)],
-                                                -alpha * b.ValueRe[BlokElement(i)]);
+        RealWaveFunctionAddElementConserveBasis(a, &b.Determinant[BlokElementDet(i, b.NWord, 0)],-alpha * b.ValueRe[BlokElement(i)]);
       }
       return 1;
     }
@@ -536,8 +532,7 @@ void RealWaveFunctionAddConserveBasis(WaveFunctionType * const a, const WaveFunc
   for (iOMP = 1; iOMP <= (int)b.N; iOMP++)
   {
     i = (uint32_t) iOMP;
-    RealWaveFunctionAddElementConserveBasis(a, &b.Determinant[BlokElementDet(i, b.NWord, 0)],
-                                            b.ValueRe[BlokElement(i)]);
+    RealWaveFunctionAddElementConserveBasis(a, &b.Determinant[BlokElementDet(i, b.NWord, 0)],b.ValueRe[BlokElement(i)]);
   }
 }
 
@@ -548,8 +543,7 @@ void RealWaveFunctionAddConserveBasis(WaveFunctionType * const a, const WaveFunc
 *   Therefor values of a might change and a is returned from the function
 *   If a is an empty function b is copied into a (use of copy is strongly recommanded)
 */
-void RealWaveFunctionAddMultipliedConserveBasis(WaveFunctionType * const a, const WaveFunctionType b,
-                                                const double alpha)
+void RealWaveFunctionAddMultipliedConserveBasis(WaveFunctionType * const a, const WaveFunctionType b,const double alpha)
 {
   uint32_t i;
   int    iOMP;
@@ -557,8 +551,7 @@ void RealWaveFunctionAddMultipliedConserveBasis(WaveFunctionType * const a, cons
   for (iOMP = 1; iOMP <= (int)b.N; iOMP++)
   {
     i = (uint32_t) iOMP;
-    RealWaveFunctionAddElementConserveBasis(a, &b.Determinant[BlokElementDet(i, b.NWord, 0)],
-                                            alpha * b.ValueRe[BlokElement(i)]);
+    RealWaveFunctionAddElementConserveBasis(a, &b.Determinant[BlokElementDet(i, b.NWord, 0)],alpha * b.ValueRe[BlokElement(i)]);
   }
 }
 

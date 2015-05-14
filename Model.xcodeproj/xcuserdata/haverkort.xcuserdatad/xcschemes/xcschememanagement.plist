@@ -14,11 +14,6 @@
 			<key>orderHint</key>
 			<integer>4</integer>
 		</dict>
-		<key>LuaInterface.xcscheme</key>
-		<dict>
-			<key>orderHint</key>
-			<integer>7</integer>
-		</dict>
 		<key>MartinPESXAS.xcscheme</key>
 		<dict>
 			<key>orderHint</key>
@@ -28,6 +23,11 @@
 		<dict>
 			<key>orderHint</key>
 			<integer>0</integer>
+		</dict>
+		<key>Quanty.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>7</integer>
 		</dict>
 		<key>Robert.xcscheme</key>
 		<dict>

@@ -1,4 +1,5 @@
-static void luaL_stackDump (lua_State *L) {
+static void luaMWH_StackDump (lua_State *L)
+{
   int i,len;
   int top = lua_gettop(L);
   if(top<=0)
@@ -29,11 +30,11 @@ static void luaL_stackDump (lua_State *L) {
         break;
         
       case LUA_TUSERDATA:  /* userdata */
-        if (luaL_testudata(L, i, "Lua.complex") != NULL) printf("complex");
-        else if (luaL_testudata(L, i, "ssp.operator") != NULL) printf("operator");
-        else if (luaL_testudata(L, i, "ssp.wavefunction") != NULL) printf("wavefunction");
-        else if (luaL_testudata(L, i, "ssp.spectra") != NULL) printf("spectra");
-        else printf("unrecognized");
+        if (luaL_testudata(L, i, "Complex_Type") != NULL) printf("Complex");
+        else if (luaL_testudata(L, i, "Operator_Type") != NULL) printf("Operator");
+        else if (luaL_testudata(L, i, "Wavefunction_Type") != NULL) printf("Wavefunction");
+        else if (luaL_testudata(L, i, "Spectra_Type") != NULL) printf("Spectra");
+        else printf("Unrecognized");
         break;
         
       default:  /* other values */
@@ -45,3 +46,27 @@ static void luaL_stackDump (lua_State *L) {
   printf("\n");  /* end the listing */
   fflush(stdout);
 }
+
+static void luaMWH_RegisterGlobalFunctions (lua_State *L, const luaL_Reg *l)
+{
+  for (; l->name != NULL; l++)
+  {  /* loop over all entries in regestry */
+    lua_pushcfunction(L, l->func);
+    lua_setglobal(L, l->name);
+  }
+}
+
+uint32_t luaMWH_fulltablelen(lua_State *L, const int t)
+{
+  uint32_t len=0;
+  lua_pushnil(L);
+  while (lua_next(L, t) != 0)
+  {
+    lua_pop(L, 1);
+    len++;
+  }
+  lua_pop(L, 1);
+  return len;
+}
+
+

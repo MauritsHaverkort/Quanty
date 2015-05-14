@@ -8,26 +8,31 @@
 #define DBL_EPSILON 2.3E-16
 #endif
 #define TimeStampAll() printf("=============================================================\n");\
-                       printf("====    written by Maurits W. Haverkort,                 ====\n");\
+                       printf("====    written by Maurits W. Haverkort                  ====\n");\
+                       printf("====    with contributions from:                         ====\n");\
                        printf("====    Yi Lu, Robert Green and Sebastian Macke          ====\n");\
-                       printf("====    (C) www.solstatphys.org                          ====\n");\
-                       printf("====    Only use in collaboration with authors           ====\n");\
+                       printf("====    (C) 1995-2015   All rights reserved              ====\n");\
+                       printf("====    www.quanty.org                                   ====\n");\
                        printf("====    Beta version, be critical and report errors!!!   ====\n");\
+                       printf("=============================================================\n");\
+                       printf("====    Version compiled at: %s at %s     ====\n",__DATE__,__TIME__);\
+                       printf("=============================================================\n");\
+                       printf("====    When used in scientific publications please cite ====\n");\
+                       printf("====    Phys. Rev. B 85, 165113 (2012)                   ====\n");\
+                       printf("====    Phys. Rev. B 90, 085102 (2014)                   ====\n");\
+                       printf("====    Euro Phys. Lett. 108, 57004 (2014)               ====\n");\
                        printf("=============================================================\n");\
                        time_t MWHrawtime;\
                        struct tm * MWHtimeinfo;\
                        time ( &MWHrawtime );\
                        MWHtimeinfo = localtime ( &MWHrawtime );\
-                       printf("Program excicuted on: %s", asctime (MWHtimeinfo) );\
+                       printf("Program executed on: %s", asctime (MWHtimeinfo) );\
                        char MWHHostName[_POSIX_HOST_NAME_MAX+1];\
                        gethostname(MWHHostName, _POSIX_HOST_NAME_MAX+1);\
-                       printf("Running on host: %s\n",MWHHostName);\
-                       printf("number of available processors: %i\n",omp_get_num_procs());\
+                       printf("Running on host    : %s\n",MWHHostName);\
+                       printf("number of available processors              : %i\n",omp_get_num_procs());\
                        printf("maximum number of threads in parallel region: %i\n",omp_get_max_threads());\
-                       printf("Compilation of %s\n",__FILE__);\
-                       printf("Compiled on %s at %s\n",__DATE__,__TIME__);\
-                       printf("File last modified on %s \n",__TIMESTAMP__);\
-                       printf("Smallest possitive float:  %E \n",DBL_MIN);\
+                       printf("Smallest positive float  : %E \n",DBL_MIN);\
                        printf("Smallest deviation from 1: %E \n",DBL_EPSILON);\
                        printf("\n");
 

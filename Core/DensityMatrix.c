@@ -313,10 +313,10 @@ uint32_t CalculatePartialDensityCorrelationTensor(Complex16 * Rho, const WaveFun
  *  Calculate the Spin correlation matrix
  *  On input psi contains a wave-function and Rho points to a not allocated matrix
  *  On excite Rho contains an psi.N/2 by psi.N/2 matrix
- *  needs testing TODO
  */
 uint32_t CalculateSpinCorrelationMatrix(MatrixType * const Rho, const WaveFunctionType psi)
 {
+  //TODO: needs testing
   uint16_t i, j;
   OperatorType O;
   Rho->QComplex = psi.QComplex;
