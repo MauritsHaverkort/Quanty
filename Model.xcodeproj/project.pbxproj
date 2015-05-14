@@ -294,6 +294,7 @@
 		4C8274DC17DC4A8400A5F555 /* core_basic_math.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = core_basic_math.h; sourceTree = "<group>"; };
 		4C8274E017DCF6D000A5F555 /* TestAtomicPhysics.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = TestAtomicPhysics.c; sourceTree = "<group>"; };
 		4C8B605818D924E40017AC8C /* BasisOptimization.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = BasisOptimization.c; sourceTree = "<group>"; };
+		4C8F24DB1AB089EC0040BD92 /* TestBasicMathBlock.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = TestBasicMathBlock.c; sourceTree = "<group>"; };
 		4C944CD8187AEDE500FE9B7B /* StuttgartNMTO.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = StuttgartNMTO.c; sourceTree = "<group>"; };
 		4CA262D8170787D900B8E76E /* TestGreenFunctions.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = TestGreenFunctions.c; sourceTree = "<group>"; };
 		4CA4BA43192740820057A26C /* HarmonicOscillator.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = HarmonicOscillator.c; sourceTree = "<group>"; };
@@ -672,6 +673,7 @@
 				4C8B605818D924E40017AC8C /* BasisOptimization.c */,
 				4C4637E619C3844500EB0DB0 /* CI.c */,
 				4C363D6F19D464EE00162048 /* NiO.c */,
+				4C8F24DB1AB089EC0040BD92 /* TestBasicMathBlock.c */,
 			);
 			path = Test;
 			sourceTree = "<group>";

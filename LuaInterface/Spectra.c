@@ -374,7 +374,6 @@ static int LuaSpectraMultiplyByEnergyMethod(lua_State * L)
 
 static int LuaSpectraSum(lua_State * L)
 {
-  
   uint32_t len,i,j,k;
   SpectraTypeArray *a,*res;
   Complex16 alpha;

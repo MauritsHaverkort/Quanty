@@ -1094,6 +1094,7 @@ uint32_t ImpurityHFromModelBathPerturbation(OperatorType *const Himp, OperatorTy
 
 uint32_t ImpurityHFromTB(OperatorType *const Himp, ModelSettings O)
 {
+  //TODO: test after converging matrix format
   StuttgartCTRL CTRLin;
   StuttgartHAMR HAMRin;
   TightBindingDef TB,TBAF;

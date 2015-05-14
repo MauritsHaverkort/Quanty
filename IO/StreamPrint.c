@@ -757,20 +757,20 @@ uint32_t StreamPrintCompactMatrixMinimal(CompactMatrixType const M, FILE * strea
   uint32_t i,j;
   if(M.QComplex)
   {
-    for(j=0;j<M.Nj;j++)
+    for(i=0;i<M.Ni;i++)
     {
-      for(i=0;i<M.Ni;i++)
+      for(j=0;j<M.Nj;j++)
       {
-        fprintf(stream,"(%22.15E ",M.V[j+M.Nj*i].Re);
-        if(M.V[j+M.Nj*i].Im>=0)
+        fprintf(stream,"( %17.10E ",M.V[i*M.Nj+j].Re);
+        if(M.V[i*M.Nj+j].Im>=0)
         {
           fprintf(stream,"+");
         }
         else
         {
-          fprintf(stream," ");
+          fprintf(stream,"-");
         }
-        fprintf(stream,"%22.15E I) ",M.V[j+M.Nj*i].Im);
+        fprintf(stream,"%17.10E I) ",fabs(M.V[i*M.Nj+j].Im));
       }
       fprintf(stream,"\n");
     }
@@ -778,11 +778,11 @@ uint32_t StreamPrintCompactMatrixMinimal(CompactMatrixType const M, FILE * strea
   }
   else
   {
-    for(j=0;j<M.Nj;j++)
+    for(i=0;i<M.Ni;i++)
     {
-      for(i=0;i<M.Ni;i++)
+      for(j=0;j<M.Nj;j++)
       {
-        fprintf(stream,"%22.15E ",M.VRe[j+M.Nj*i]);
+        fprintf(stream,"%17.10E ",M.VRe[i*M.Nj+j]);
       }
       fprintf(stream,"\n");
     }

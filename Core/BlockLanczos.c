@@ -580,6 +580,7 @@ void BlockWaveFunctionTruncateBasis(WaveFunctionType *const psi, uint32_t const 
 
 uint32_t BlockWaveFunctionCalculatOverlapMatrix(WaveFunctionType *const psi, uint32_t const Npsi, CompactMatrixType *const S)
 {
+  //TODO: test after converging matrix format
   uint32_t i,j;
   S->Ni=Npsi;
   S->Nj=Npsi;
@@ -666,12 +667,12 @@ uint32_t BlockLanczosGroundStateConserveBasisDense(const OperatorType H, WaveFun
 #pragma omp for
       for(iOMP=0;iOMP<psi[0].N;iOMP++)
       {
-        i=(uint32_t)iOMP;
-        OperatorDeterminantPreAllocated(&H, &(psi[0].Determinant[BlokElementDet(i+1,psi[0].NWord,0)]), &Hpsi);
-        for(j=0;j<psi[0].N;j++)
+        j=(uint32_t)iOMP;
+        OperatorDeterminantPreAllocated(&H, &(psi[0].Determinant[BlokElementDet(j+1,psi[0].NWord,0)]), &Hpsi);
+        for(i=0;i<psi[0].N;i++)
         {
-          Hdens.V[j+i*Hdens.Nj].Re=Hpsi.ValueRe[BlokElement(j+1)];
-          Hdens.V[j+i*Hdens.Nj].Im=Hpsi.ValueIm[BlokElement(j+1)];
+          Hdens.V[j+i*Hdens.Nj].Re=Hpsi.ValueRe[BlokElement(i+1)];
+          Hdens.V[j+i*Hdens.Nj].Im=Hpsi.ValueIm[BlokElement(i+1)];
         }
       }
     }
@@ -680,11 +681,11 @@ uint32_t BlockLanczosGroundStateConserveBasisDense(const OperatorType H, WaveFun
 #pragma omp for
       for(iOMP=0;iOMP<psi[0].N;iOMP++)
       {
-        i=(uint32_t)iOMP;
-        OperatorDeterminantPreAllocated(&H, &(psi[0].Determinant[BlokElementDet(i+1,psi[0].NWord,0)]), &Hpsi);
-        for(j=0;j<psi[0].N;j++)
+        j=(uint32_t)iOMP;
+        OperatorDeterminantPreAllocated(&H, &(psi[0].Determinant[BlokElementDet(j+1,psi[0].NWord,0)]), &Hpsi);
+        for(i=0;i<psi[0].N;i++)
         {
-          Hdens.VRe[j+i*Hdens.Nj]=Hpsi.ValueRe[BlokElement(j+1)];
+          Hdens.VRe[j+i*Hdens.Nj]=Hpsi.ValueRe[BlokElement(i+1)];
         }
       }
     }
@@ -737,8 +738,6 @@ uint32_t BlockLanczosGroundStateConserveBasisDense(const OperatorType H, WaveFun
   {
     VerbosityPrintf(0x0100,"val[%3i] = %22.15E\n",i,val[i]);
   }
-  
-  
   return 0;
 }
 
@@ -907,7 +906,7 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylovReal(const OperatorType H, Wa
     // initialize variables
     NpsiDeflated=Npsi;
     NorthoExtra=0;
-    memset(HKrylov.V, 0, HKrylov.Ni*HKrylov.Nj*sizeof(double));
+    memset(HKrylov.VRe, 0, HKrylov.Ni*HKrylov.Nj*sizeof(double));
     // loop over NKrylovNow states
     for(i=0;i<NKrylovNow;i++)
     {
@@ -1392,8 +1391,9 @@ uint32_t BlockLanczosGroundStateConserveBasis(const OperatorType H, WaveFunction
  *  Input:
  *    H:             Operator
  *    Npsi:          number of states to converge
- *    zero:          smallest positive real larger than zero considered to be equal to zero in convergence tests
- *    epsilon:       smallest norm of prefactor of a determinant kept in a wave function
+ *    Settings:      ConvergenceSettingsType* pointer to important values that need to be set:
+ *                   Settings->zero    smallest possitive double that is considered different from zero when comparing convergence creteria
+ *                   Settings->epsilon smallest positive double that is considered different from zero when truncating wavefunctions
  *    StartingPoint: a set of restrictions defining the starting point wave function
  *                   if StartingPoint.N = 0 it is assumed that the functions psi are intialized and one starts from there
  *    Restrictions:  a set of restrictions makeing the basis smaler

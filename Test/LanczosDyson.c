@@ -1,10 +1,4 @@
-/*
- *  LanczosDyson.c
- *  Model
- *
- *  Created by Maurits Haverkort on 3/23/12.
- *
- */
+
 
 void TestLanczosDyson3()
 {

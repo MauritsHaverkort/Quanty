@@ -1,3 +1,65 @@
+
+/*  Given an semi definite hermitian matrix, CompactMatrixSqrt calculates its sqrt, such that
+ *   B * B^{dag} = A
+ *
+ */
+uint32_t CompactMatrixSqrtold(CompactMatrixType const *A, CompactMatrixType *SqrtA)
+{
+  int i,j;
+  double val[A->Ni],sqrtval;
+  CompactMatrixType fun,B;
+  
+  CompactMatrixEigensystem(A, &fun, val);
+  CompactMatrixCopy(fun, &B);
+  
+  if(B.QComplex)
+  {
+    for(i=0;i<fun.Ni;i++)
+    {
+      if(val[i]<0)
+      {
+        printf("Negative value in CompactMatrixSqrt, eigen value is %22.15E at pos %i\n",val[i],i);
+        val[i]=0;
+      }
+      sqrtval=sqrt(val[i]);
+      {
+        for(j=i*B.Nj;j<fun.Nj+i*B.Nj;j++)
+        {
+          B.V[j].Re*=sqrtval;
+          B.V[j].Im*=sqrtval;
+        }
+      }
+    }
+  }
+  else
+  {
+    for(i=0;i<fun.Ni;i++)
+    {
+      if(val[i]<0)
+      {
+        printf("Negative value in CompactMatrixSqrt, eigen value is %22.15E at pos %i\n",val[i],i);
+        val[i]=0;
+      }
+      sqrtval=sqrt(val[i]);
+      {
+        for(j=i*B.Nj;j<fun.Nj+i*B.Nj;j++)
+        {
+          B.VRe[j]*=sqrtval;
+        }
+      }
+    }
+  }
+  
+  CompactMatrixMultiply('N', 'C', &B, &fun, SqrtA);
+  
+  FreeCompactMatrix(&fun);
+  FreeCompactMatrix(&B);
+  
+  return 0;
+}
+
+
+
 static int LuaReadConvergenceSettingsFromOptions(lua_State *L, int len, ConvergenceSettingsType *Settings)
 {
   void *buff;

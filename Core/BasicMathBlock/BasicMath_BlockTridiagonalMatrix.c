@@ -104,6 +104,18 @@ uint32_t BlockTridiagonalMatrixChop(BlockTriDiagonalMatrixType *const A, double 
         KeepComplex=1;
       }
     }
+    for(i=0;i<A->BlockSize*A->BlockSize*(A->N);i++)
+    {
+      if(Abs(A->b[i].Re)<Epsilon)A->b[i].Re=0;
+      if(Abs(A->b[i].Im)<Epsilon)
+      {
+        A->b[i].Im=0;
+      }
+      else
+      {
+        KeepComplex=1;
+      }
+    }
     if(!KeepComplex) ComplexBlockTridiagonalMatrixToReal(A);
   }
   else
@@ -111,6 +123,10 @@ uint32_t BlockTridiagonalMatrixChop(BlockTriDiagonalMatrixType *const A, double 
     for(i=0;i<A->BlockSize*A->BlockSize*(A->N+1);i++)
     {
       if(Abs(A->aRe[i])<Epsilon)A->aRe[i]=0;
+    }
+    for(i=0;i<A->BlockSize*A->BlockSize*(A->N);i++)
+    {
+      if(Abs(A->bRe[i])<Epsilon)A->bRe[i]=0;
     }
   }
   return 0;
