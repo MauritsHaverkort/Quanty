@@ -418,6 +418,12 @@ BlockListOfPoles;
  *
  *   matrix k can be found at position [k*BlockSize*BlockSize]
  *   element [i,j] of matrix k can be found at position [k*BlockSize*BlockSize+i*BlockSize+j]
+ *
+ *   when represented as a Green's function the function is:
+ *   G0 = a0 + b0 . ( G1 ) . b0^+
+ *   G1 = a1 + b1 . ( G2 ) . b1^+
+ *   ...
+ *
  */
 typedef struct BlockTriDiagonalMatrixType
 {
