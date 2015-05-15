@@ -390,7 +390,6 @@ void TestCompactMatrixVector()
   CompactVectorType x,y,xcom;
   int i,j,k;
   CompactMatrixType M,Mcom,Mcomfun,Mfun,AM,BM,CM,DM,EM,FM,GM,q,r;
-  BlockTriDiagonalMatrixType AMTri;
   double Mval[20];
   
   
@@ -1343,8 +1342,8 @@ void TestBlockLanczosAfterChange()
 
 void TestCompactMatrixCallers()
 {
-  uint32_t i,j,k;
-  BlockListOfPoles RealBLP, ComplexBLP;
+  uint32_t i;
+  BlockListOfPoles RealBLP;
   RealBLP.QComplex=0;
   RealBLP.N=10;
   RealBLP.BlockSize=4;
