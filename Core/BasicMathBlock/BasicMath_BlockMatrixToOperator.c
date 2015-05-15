@@ -10,6 +10,7 @@
  */
 uint32_t BlockTridiagonalMatrixToImpurityHamiltonian(OperatorType *const H, BlockTriDiagonalMatrixType const *A, uint32_t const NBlockMax, uint32_t const Spin, uint32_t const NFermionShift, uint32_t const NFermion)
 {
+  //TODO: test
   uint32_t i,j,k,ia,ifer,jfer,ib;
   uint16_t oadd[2];
   InitNamedOperator(H, "Impurity Hamiltonian");
@@ -1753,7 +1754,7 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(OperatorType *co
 
 uint32_t BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonianPerturpation(OperatorType *const H, OperatorType * const VPerturbation, TriDiagonalMatrixType * const gPerturbation, BlockNaturalImpurityOrbitalMatrixType const *A, uint32_t const NBlockMaxVal, uint32_t const NBlockMaxCon, uint32_t const Spin, uint32_t const NFermionShift, uint32_t const NFermion)
 {
-  //TODO:
+  //TODO: implement
   printf("To DO\n");
   return 0;
 }
