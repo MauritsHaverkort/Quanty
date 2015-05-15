@@ -78,7 +78,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "BlockFunctions"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "MF"
@@ -151,6 +151,10 @@
          <CommandLineArgument
             argument = "NiO"
             isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "BlockOpp"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "BlockLanczos"

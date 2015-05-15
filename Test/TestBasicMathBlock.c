@@ -843,3 +843,61 @@ void TestBasicMathBlock()
   
   
 }
+
+
+
+
+void TestBlockToOperator()
+{
+  uint32_t i,j,k;
+  BlockListOfPoles BLP;
+  BlockTriDiagonalMatrixType BTD;
+  BlockNaturalImpurityOrbitalMatrixType BNO;
+  OperatorType HBTD;
+  
+  BLP.N=4;
+  BLP.BlockSize=3;
+  BLP.QComplex=1;
+  InitBlockListOfPoles(&BLP);
+  BLP.V[0 * (1+BLP.BlockSize*BLP.BlockSize)].Re = -0.2;
+  BLP.V[1 * (1+BLP.BlockSize*BLP.BlockSize)].Re = -0.1;
+  BLP.V[2 * (1+BLP.BlockSize*BLP.BlockSize)].Re =  0.3;
+  BLP.V[3 * (1+BLP.BlockSize*BLP.BlockSize)].Re =  0.4;
+  
+  for(k=0;k<BLP.N;k++)
+  {
+    for(i=0;i<BLP.BlockSize;i++)
+    {
+      for(j=0;j<BLP.BlockSize;j++)
+      {
+        BLP.V[k * (1+BLP.BlockSize*BLP.BlockSize) + 1 + i + j * BLP.BlockSize].Re = 0.2*sqrt((double)(k+i+j));
+        BLP.V[k * (1+BLP.BlockSize*BLP.BlockSize) + 1 + i + j * BLP.BlockSize].Im = 0.8 * ((double)i-(double)j)/sqrt((double)(k+1));
+      }
+      BLP.V[k * (1+BLP.BlockSize*BLP.BlockSize) + 1 + i * (BLP.BlockSize+1) ].Re+=2;
+    }
+  }
+  // normalize block list of poles
+  BlockListOfPolesToBlockTridiagonalMatrix(BLP, &BTD, 5, 100*DBL_EPSILON);
+  for(i=0;i<BLP.BlockSize*BLP.BlockSize;i++)
+  {
+    BTD.b[i].Re=0;
+    BTD.b[i].Im=0;
+  }
+  BTD.b[0].Re=1;
+  BTD.b[4].Re=1;
+  BTD.b[8].Re=1;
+  FreeBlockListOfPoles(&BLP);
+  BlockTridiagonalMatrixChop(&BTD, 100*DBL_EPSILON);
+  BlockTriDiagonalMatrixToBlockListOfPoles(&BTD, &BLP, -0.5, 0.5, 10);
+  ReduceBlockListOfPoles(&BLP, 4, 0.0);
+  BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(&BLP, &BNO, DBL_EPSILON, 4, 4);
+  BlockNaturalImpurityOrbitalMatrixChop(&BNO, 100*DBL_EPSILON);
+  
+  PrintBlockListOfPoles(BLP);
+  PrintBlockTriDiagonalMatrix(BTD);
+  PrintBlockNaturalImpurityOrbitalMatrix(BNO);
+  
+  BlockTridiagonalMatrixToImpurityHamiltonian(&HBTD, &BTD, 10, 0, 0, 0);
+  PrintOperatorReadable(HBTD);
+  
+}

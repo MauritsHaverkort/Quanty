@@ -37,7 +37,7 @@ void TestNiO()
    */
   
   // set which calculations should be done and which not. Note that not all calculations are needed (DOS and G0 are nice to test, but otherwise just take time
-  uint32_t DoBANDS=0, DoDOS=0, DoG0=0, DoG0AF=0, DoGAF=1, DoHAF=1, DoGrd=1, DoPES=1, DoIPES=1;
+  uint32_t DoBANDS=1, DoDOS=1, DoG0=1, DoG0AF=1, DoGAF=1, DoHAF=1, DoGrd=1, DoPES=1, DoIPES=1;
   
   // read the output from the Stuttgart NMTO code
   if(FileReadStuttgartCTRL(&CTRLin, "NiO/OMTA/CTRL"))printf("ERROR in CTRL file\n");
@@ -134,9 +134,9 @@ void TestNiO()
     // Calculate the DOS - note again that one can also use these functions to calculate partial DOSes
     BeginTiming("DOS", &Time);
     // Define k-mesh
-    Nk[0]=80;
-    Nk[1]=80;
-    Nk[2]=80;
+    Nk[0]=10;
+    Nk[1]=10;
+    Nk[2]=10;
     // define DOS range
     DOS.Emin=EFermi-10;
     DOS.Emax=EFermi+5;
@@ -159,9 +159,9 @@ void TestNiO()
     // Create G0 as a 8 by 8 matrix
     BeginTiming("Create G0", &Time);
     // Define k-mesh
-    Nk[0]=80;
-    Nk[1]=80;
-    Nk[2]=80;
+    Nk[0]=10;
+    Nk[1]=10;
+    Nk[2]=10;
     TightBindingHamiltonianToBlockListOfPoles(HTB, Nk, &G0, EFermi-10, EFermi+5, 1500);
     BlockListOfPolesToSpectra(G0, G0Spec, EFermi-10, EFermi+5, 1500);
     FilePrintSpectra(G0Spec, HTB.NFermion*HTB.NFermion, "NiO/G0", "w");
@@ -175,9 +175,9 @@ void TestNiO()
     // It only includes one spin species
     BeginTiming("Create G0AF", &Time);
     // Define k-mesh
-    Nk[0]=80;
-    Nk[1]=80;
-    Nk[2]=80;
+    Nk[0]=10;
+    Nk[1]=10;
+    Nk[2]=10;
     TightBindingHamiltonianToBlockListOfPoles(HTBAF, Nk, &G0AF, EFermi-10, EFermi+5, 1500);
     BlockListOfPolesToSpectra(G0AF, G0AFSpec, EFermi-10, EFermi+5, 1500);
     FilePrintSpectra(G0AFSpec, HTBAF.NFermion*HTBAF.NFermion, "NiO/G0AF", "w");
@@ -191,9 +191,9 @@ void TestNiO()
     // It includes two sites (unit cells) and spin up/dn
     BeginTiming("Create GAF", &Time);
     // Define k-mesh
-    Nk[0]=80;
-    Nk[1]=80;
-    Nk[2]=80;
+    Nk[0]=10;
+    Nk[1]=10;
+    Nk[2]=10;
     TightBindingHamiltonianAddSpinPlusSelfEnergyToBlockListOfPoles(HTBAF, Nk, Sigma, &GAF, EFermi-10, EFermi+5, 250); //change 250 to 1500 for consistence (does not work with debuger on)
     BlockListOfPolesToSpectra(GAF, GAFSpec, EFermi-10, EFermi+5, 1500);
     FilePrintSpectra(GAFSpec, 4*HTBAF.NFermion*HTBAF.NFermion, "NiO/GAF", "w");

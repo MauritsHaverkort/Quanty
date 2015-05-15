@@ -1826,8 +1826,8 @@ uint32_t CompactMatrixQRDecompositionEigenHermitian(CompactMatrixType const *A, 
  */
 uint32_t CompactMatrixSqrt(CompactMatrixType const *A, CompactMatrixType * const SqrtA)
 {
-  int i;
-  double val[A->Ni];
+  int i,j;
+  double val[A->Ni],sumval;
   CompactMatrixType fun;
   
   CompactMatrixEigensystem(A, &fun, val);
@@ -1835,7 +1835,12 @@ uint32_t CompactMatrixSqrt(CompactMatrixType const *A, CompactMatrixType * const
   {
     if(val[i]<0)
     {
-      printf("Negative value in CompactMatrixSqrt, eigen value is %22.15E at pos %i\n",val[i],i);
+      sumval=0;
+      for(j=0;j<A->Ni;j++)
+      {
+        sumval+=Abs(val[j]);
+      }
+      if(val[i]<-1000*DBL_EPSILON*sumval) printf("Negative value in CompactMatrixSqrt, eigen value is %22.15E at pos %i (trace val = %22.15E)\n",val[i],i,sumval);
       val[i]=0;
     }
     val[i]=sqrt(val[i]);
