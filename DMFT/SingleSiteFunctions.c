@@ -806,7 +806,7 @@ uint32_t FindGroundStateFromG0andSigma(DMFTSettings const O, AndersonMatrixType 
   PrintWaveFunctionDensity(*Psi);
   PrintWaveFunctionPrefactorHistogram(*Psi, 2.0, 20);
   FermionIncluded[0]=0;
-  FermionIncluded[0]=1;
+  FermionIncluded[1]=1;
   PrintWaveFunctionPartialCorrelationTensor(*Psi, 2, FermionIncluded);
   *GBathBARet = GBathBA;
   *GBathAndRet = GBathAnd;
