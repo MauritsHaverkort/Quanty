@@ -619,6 +619,7 @@ uint32_t StreamReadAndersonMatrixTypeUndeterminedPlusMu(AndersonMatrixType * O, 
     return 1;
   }
   *mu=mutemp;
+  O->mu=mutemp;
   return 0;
 }
 
