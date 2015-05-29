@@ -1731,7 +1731,6 @@ static int LuaEigensystem(lua_State * L)
   Options.restrictions=False;
   Options.ExpandBasis=True;
   Options.DeterminantRestrictions.N=0;
-  Options.NBitsKey=20;
   OperatorType *Opp;
   DeterminantRestrictionType StartRestrictions;
   StartRestrictions.N=0;
@@ -1813,7 +1812,7 @@ static int LuaEigensystem(lua_State * L)
   /* calculate groundstate */
   if(Options.ExpandBasis==True)
   {
-    BlockGroundState(*Opp, Npsi, &(Options.Settings) , StartRestrictions, Options.DeterminantRestrictions, psi, Options.NBitsKey);
+    BlockGroundState(*Opp, Npsi, &(Options.Settings) , StartRestrictions, Options.DeterminantRestrictions, psi, Options.Settings.NBitsKey);
   }
   else
   {

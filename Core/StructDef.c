@@ -29,7 +29,7 @@
  * MAXStrLength          The fixed maximum length for strings, i.e. names and variables of matrices, vectors and functions
  *                       Do not go below 32, as some parts of the program do add at least this length to the name
  */
-#define NBitsBlok 16
+#define NBitsBlok 14
 #define NBitsMiniBlok 7
 
 #define MiniBlokSize ((uint32_t)1<<NBitsMiniBlok)

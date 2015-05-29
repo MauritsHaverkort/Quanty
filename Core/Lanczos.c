@@ -2830,7 +2830,7 @@ uint32_t LanczosTriDiagonalizeRestrictedMR(const OperatorType H, WaveFunctionTyp
  */
 uint32_t LanczosTriDiagonalizePlusDensityRR(const OperatorType H, WaveFunctionType psi, double epsilon, TriDiagonalMatrixType * const M, MatrixType * const Rho, double Gamma)
 {
-  printf("\nStart of LanczosTriDiagonalizePlusDensityRR\n\n");
+  printf("Start of LanczosTriDiagonalizePlusDensityRR\n");
   fflush(stdout);
   WaveFunctionType v[3];
   uint32_t i, vi=0, vip=0, vim=0;
@@ -2994,7 +2994,7 @@ uint32_t LanczosTriDiagonalizePlusDensityMR(const OperatorType H, WaveFunctionTy
 
 uint32_t LanczosTriDiagonalizePlusDensityRC(const OperatorType H, WaveFunctionType psi, double epsilon, TriDiagonalMatrixType * const M, MatrixType * const Rho, double Gamma)
 {
-  printf("\nStart of LanczosTriDiagonalizePlusDensityRC\n\n");
+  printf("Start of LanczosTriDiagonalizePlusDensityRC\n");
   fflush(stdout);
   WaveFunctionType v[3];
   uint32_t i, vi=0, vip=0, vim=0;
@@ -3090,7 +3090,7 @@ uint32_t LanczosTriDiagonalizePlusDensityRC(const OperatorType H, WaveFunctionTy
 
 uint32_t LanczosTriDiagonalizePlusDensityCC(const OperatorType H, WaveFunctionType psi, double epsilon, TriDiagonalMatrixType * const M, MatrixType * const Rho, double Gamma)
 {
-  printf("\nStart of LanczosTriDiagonalizePlusDensityCC\n\n");
+  printf("Start of LanczosTriDiagonalizePlusDensityCC\n");
   fflush(stdout);
   WaveFunctionType v[3];
   uint32_t i, vi=0, vip=0, vim=0;
@@ -3186,7 +3186,7 @@ uint32_t LanczosTriDiagonalizePlusDensityCC(const OperatorType H, WaveFunctionTy
 
 uint32_t LanczosTriDiagonalizePlusDensityMC(const OperatorType H, WaveFunctionType psi, double epsilon, TriDiagonalMatrixType * const M, MatrixType * const Rho, double Gamma)
 {
-  printf("\nStart of LanczosTriDiagonalizePlusDensityMC\n\n");
+  printf("Start of LanczosTriDiagonalizePlusDensityMC\n");
   fflush(stdout);
   WaveFunctionType v[3];
   uint32_t i, vi=0, vip=0, vim=0;
@@ -3283,7 +3283,7 @@ uint32_t LanczosTriDiagonalizePlusDensityMC(const OperatorType H, WaveFunctionTy
 
 uint32_t LanczosTriDiagonalizeKrylovRRNonOrtho(const OperatorType H, WaveFunctionType psi, double epsilon, TriDiagonalMatrixType * const M, WaveFunctionType * PsiBasis, double Gamma)
 {
-  printf("\nStart of LanczosTriDiagonalizeKrylovNonOrthoRR\n\n");
+  printf("Start of LanczosTriDiagonalizeKrylovNonOrthoRR\n");
   fflush(stdout);
   uint32_t i;
   double temp, errorestimate = 1.0;
@@ -3396,7 +3396,7 @@ uint32_t LanczosTriDiagonalizeKrylovRRNonOrtho(const OperatorType H, WaveFunctio
 
 uint32_t LanczosTriDiagonalizeKrylovRR(const OperatorType H, WaveFunctionType psi, double epsilon, TriDiagonalMatrixType * const M, WaveFunctionType * const PsiBasis)
 {
-  printf("\nStart of LanczosTriDiagonalizeKrylovRR\n\n");
+  printf("Start of LanczosTriDiagonalizeKrylovRR\n");
   fflush(stdout);
   uint32_t i, j, k, stop;
   double temp, dot;
@@ -3507,7 +3507,7 @@ uint32_t LanczosTriDiagonalizeKrylovRR(const OperatorType H, WaveFunctionType ps
 
 uint32_t LanczosTriDiagonalizeKrylovRC(const OperatorType H, WaveFunctionType psi, double epsilon, TriDiagonalMatrixType * const M, WaveFunctionType * const PsiBasis)
 {
-  printf("\nStart of LanczosTriDiagonalizeKrylovRC\n\n");
+  printf("Start of LanczosTriDiagonalizeKrylovRC\n");
   fflush(stdout);
   uint32_t i, j, k, stop;
   double temp, dotRe,dotIm;
@@ -3619,7 +3619,7 @@ uint32_t LanczosTriDiagonalizeKrylovRC(const OperatorType H, WaveFunctionType ps
 
 uint32_t LanczosTriDiagonalizeKrylovCC(const OperatorType H, WaveFunctionType psi, double epsilon, TriDiagonalMatrixType * const M, WaveFunctionType * const PsiBasis)
 {
-  printf("\nStart of LanczosTriDiagonalizeKrylovCC\n\n");
+  printf("Start of LanczosTriDiagonalizeKrylovCC\n");
   fflush(stdout);
   uint32_t i, j, k, stop;
   double temp, dotRe,dotIm;
@@ -3731,7 +3731,7 @@ uint32_t LanczosTriDiagonalizeKrylovCC(const OperatorType H, WaveFunctionType ps
 
 uint32_t LanczosTriDiagonalizeKrylovMC(const OperatorType H, WaveFunctionType psi, double epsilon, TriDiagonalMatrixType * const M, WaveFunctionType * const PsiBasis)
 {
-  printf("\nStart of LanczosTriDiagonalizeKrylovMC\n\n");
+  printf("Start of LanczosTriDiagonalizeKrylovMC\n");
   fflush(stdout);
   uint32_t i, j, k, stop;
   double temp, dotRe,dotIm;
@@ -3844,7 +3844,7 @@ uint32_t LanczosTriDiagonalizeKrylovMC(const OperatorType H, WaveFunctionType ps
 
 uint32_t LanczosTriDiagonalizeKrylovRestrictedRR(const OperatorType H, WaveFunctionType psi, DeterminantRestrictionType Restrictions, double epsilon, TriDiagonalMatrixType * const M, WaveFunctionType * const PsiBasis)
 {
-  printf("\nStart of LanczosTriDiagonalizeKrylovRR\n\n");
+  printf("Start of LanczosTriDiagonalizeKrylovRR\n");
   fflush(stdout);
   uint32_t i, j, k, stop;
   double temp, dot;
@@ -3955,7 +3955,7 @@ uint32_t LanczosTriDiagonalizeKrylovRestrictedRR(const OperatorType H, WaveFunct
 
 uint32_t LanczosTriDiagonalizeKrylovRestrictedRC(const OperatorType H, WaveFunctionType psi, DeterminantRestrictionType Restrictions, double epsilon, TriDiagonalMatrixType * const M, WaveFunctionType * const PsiBasis)
 {
-  printf("\nStart of LanczosTriDiagonalizeKrylovRC\n\n");
+  printf("Start of LanczosTriDiagonalizeKrylovRC\n");
   fflush(stdout);
   uint32_t i, j, k, stop;
   double temp, dotRe,dotIm;
@@ -4067,7 +4067,7 @@ uint32_t LanczosTriDiagonalizeKrylovRestrictedRC(const OperatorType H, WaveFunct
 
 uint32_t LanczosTriDiagonalizeKrylovRestrictedCC(const OperatorType H, WaveFunctionType psi, DeterminantRestrictionType Restrictions, double epsilon, TriDiagonalMatrixType * const M, WaveFunctionType * const PsiBasis)
 {
-  printf("\nStart of LanczosTriDiagonalizeKrylovCC\n\n");
+  printf("Start of LanczosTriDiagonalizeKrylovCC\n");
   fflush(stdout);
   uint32_t i, j, k, stop;
   double temp, dotRe,dotIm;
@@ -4179,7 +4179,7 @@ uint32_t LanczosTriDiagonalizeKrylovRestrictedCC(const OperatorType H, WaveFunct
 
 uint32_t LanczosTriDiagonalizeKrylovRestrictedMC(const OperatorType H, WaveFunctionType psi, DeterminantRestrictionType Restrictions, double epsilon, TriDiagonalMatrixType * const M, WaveFunctionType * const PsiBasis)
 {
-  printf("\nStart of LanczosTriDiagonalizeKrylovMC\n\n");
+  printf("Start of LanczosTriDiagonalizeKrylovMC\n");
   fflush(stdout);
   uint32_t i, j, k, stop;
   double temp, dotRe,dotIm;
@@ -4292,7 +4292,7 @@ uint32_t LanczosTriDiagonalizeKrylovRestrictedMC(const OperatorType H, WaveFunct
 
 uint32_t ArnoldiTriDiagonalizeKrylovRR(const OperatorType H, WaveFunctionType psi, double epsilon, MatrixType * const M, WaveFunctionType * const PsiBasis)
 {
-  printf("\nStart of ArnoldiTriDiagonalizeKrylovRR\n\n");
+  printf("Start of ArnoldiTriDiagonalizeKrylovRR\n");
   fflush(stdout);
   uint32_t i, j, stop;
   double temp;
@@ -4400,7 +4400,7 @@ uint32_t ArnoldiTriDiagonalizeKrylovRR(const OperatorType H, WaveFunctionType ps
 
 uint32_t ArnoldiTriDiagonalizeKrylovRC(const OperatorType H, WaveFunctionType psi, double epsilon, MatrixType * const M, WaveFunctionType * const PsiBasis)
 {
-  printf("\nStart of ArnoldiTriDiagonalizeKrylovRC\n\n");
+  printf("Start of ArnoldiTriDiagonalizeKrylovRC\n");
   fflush(stdout);
   uint32_t i, j, stop;
   double temp;
@@ -4519,7 +4519,7 @@ uint32_t ArnoldiTriDiagonalizeKrylovRC(const OperatorType H, WaveFunctionType ps
 uint32_t ArnoldiTriDiagonalizeKrylovCC(const OperatorType H, WaveFunctionType psi, double epsilon, MatrixType * const M,
                                        WaveFunctionType * const PsiBasis)
 {
-  printf("\nStart of ArnoldiTriDiagonalizeKrylovCC\n\n");
+  printf("Start of ArnoldiTriDiagonalizeKrylovCC\n");
   fflush(stdout);
   uint32_t i, j, stop;
   double temp;
@@ -4637,7 +4637,7 @@ uint32_t ArnoldiTriDiagonalizeKrylovCC(const OperatorType H, WaveFunctionType ps
 
 uint32_t ArnoldiTriDiagonalizeKrylovMC(const OperatorType H, WaveFunctionType psi, double epsilon, MatrixType * const M, WaveFunctionType * const PsiBasis)
 {
-  printf("\nStart of ArnoldiTriDiagonalizeKrylovMC\n\n");
+  printf("Start of ArnoldiTriDiagonalizeKrylovMC\n");
   fflush(stdout);
   uint32_t i, j, stop;
   double temp;
