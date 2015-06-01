@@ -889,7 +889,7 @@ TightBindingDefHopping;
 
 typedef struct TightBindingDef
 {
-  char   Name[32];
+  char   Name[MAXStrLength];
   CrystalStructureType Cell;
   int    nH;
   TightBindingDefHopping *H;

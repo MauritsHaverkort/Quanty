@@ -15,7 +15,7 @@ uint32_t AddAditionalInformationToSuperCell(CrystalStructureSuperCellType * A)
       UnitCellDouble[i][j] = (double)A->rSuperCell[i][j];
     }
   }
-  ResiprocalLatticeVector(UnitCellDouble, A->gSuperCell);
+  ResiprocalLatticeVector(UnitCellDouble, A->gSuperCell,A->Crystal.Units);
   l = 0;
   for (i = -(int32_t) A->NCell; i < (int32_t) A->NCell; i++)
   {
@@ -26,8 +26,8 @@ uint32_t AddAditionalInformationToSuperCell(CrystalStructureSuperCellType * A)
         a = A->gSuperCell[0][0] * i + A->gSuperCell[1][0] * j + A->gSuperCell[2][0] * k;
         b = A->gSuperCell[0][1] * i + A->gSuperCell[1][1] * j + A->gSuperCell[2][1] * k;
         c = A->gSuperCell[0][2] * i + A->gSuperCell[1][2] * j + A->gSuperCell[2][2] * k;
-        if ((a >= 0) && (a < 1.999999999 * Pi) && (b >= 0) && (b < 1.999999999 * Pi) && (c >= 0)
-            && (c < 1.999999999 * Pi))
+        //TODO: correct for units used (either 2p or not)
+        if ((a >= 0) && (a < 1.999999999 * Pi) && (b >= 0) && (b < 1.999999999 * Pi) && (c >= 0) && (c < 1.999999999 * Pi))
         {
           A->kVector[l][0] = a;
           A->kVector[l][1] = b;

@@ -601,8 +601,17 @@ uint32_t StreamPrintOperatorFullReadable(OperatorType O, FILE * stream)
  */
 uint32_t StreamPrintCrystalStructure(CrystalStructureType O, FILE * stream)
 {
+  //TODO: make streamprint equal to stringprint
   uint32_t i,j,k;
   fprintf(stream, "\nprintout of Crystal Structure\n");
+  fprintf(stream, "Units: ");
+  if((O.Units&1)==0) fprintf(stream, "NoPi (g.r=1)  ");
+  if((O.Units&1)==1) fprintf(stream, "2Pi (g.r=2Pi) ");
+  if((O.Units&6)==0) fprintf(stream, "Angstrom ");
+  if((O.Units&6)==2) fprintf(stream, "Bohr     ");
+  if((O.Units&6)==4) fprintf(stream, "nm       ");
+  if((O.Units&8)==0) fprintf(stream, "Absolute atom positions");
+  if((O.Units&8)==8) fprintf(stream, "Relative atom positions");
   fprintf(stream, "Unit cell parameters:\n");
   fprintf(stream, "a: %15.7F %15.7F %15.7F\n", O.rUnitCell[0][0], O.rUnitCell[0][1], O.rUnitCell[0][2]);
   fprintf(stream, "b: %15.7F %15.7F %15.7F\n", O.rUnitCell[1][0], O.rUnitCell[1][1], O.rUnitCell[1][2]);
@@ -797,26 +806,37 @@ uint32_t StreamPrintCompactMatrixMinimal(CompactMatrixType const M, FILE * strea
  */
 uint32_t StreamPrintTightBindingDef(TightBindingDef O, FILE * stream)
 {
-  int    i, j;
+  //TODO: make streamprint equal to stringprint
+  int    i, j,k;
   fprintf(stream, "\nSettigns of a tight binding model: %s\n", O.Name);
-  fprintf(stream, "unit cell parameters:\n");
-  fprintf(stream, "a: %22.15E %22.15E %22.15E\n", O.Cell.rUnitCell[0][0], O.Cell.rUnitCell[0][1],
-          O.Cell.rUnitCell[0][2]);
-  fprintf(stream, "b: %22.15E %22.15E %22.15E\n", O.Cell.rUnitCell[1][0], O.Cell.rUnitCell[1][1],
-          O.Cell.rUnitCell[1][2]);
-  fprintf(stream, "c: %22.15E %22.15E %22.15E\n", O.Cell.rUnitCell[2][0], O.Cell.rUnitCell[2][1],
-          O.Cell.rUnitCell[2][2]);
+  fprintf(stream, "Units: ");
+  if((O.Cell.Units&1)==0) fprintf(stream, "NoPi (g.r=1)  ");
+  if((O.Cell.Units&1)==1) fprintf(stream, "2Pi (g.r=2Pi) ");
+  if((O.Cell.Units&6)==0) fprintf(stream, "Angstrom ");
+  if((O.Cell.Units&6)==2) fprintf(stream, "Bohr     ");
+  if((O.Cell.Units&6)==4) fprintf(stream, "nm       ");
+  if((O.Cell.Units&8)==0) fprintf(stream, "Absolute atom positions");
+  if((O.Cell.Units&8)==8) fprintf(stream, "Relative atom positions");
+  fprintf(stream, "\nUnit cell parameters:\n");
+  fprintf(stream, "a: %22.15E %22.15E %22.15E\n", O.Cell.rUnitCell[0][0], O.Cell.rUnitCell[0][1], O.Cell.rUnitCell[0][2]);
+  fprintf(stream, "b: %22.15E %22.15E %22.15E\n", O.Cell.rUnitCell[1][0], O.Cell.rUnitCell[1][1], O.Cell.rUnitCell[1][2]);
+  fprintf(stream, "c: %22.15E %22.15E %22.15E\n", O.Cell.rUnitCell[2][0], O.Cell.rUnitCell[2][1], O.Cell.rUnitCell[2][2]);
+  fprintf(stream, "Reciprocal latice:\n");
+  fprintf(stream, "a: %15.7F %15.7F %15.7F\n", O.Cell.gUnitCell[0][0], O.Cell.gUnitCell[0][1], O.Cell.gUnitCell[0][2]);
+  fprintf(stream, "b: %15.7F %15.7F %15.7F\n", O.Cell.gUnitCell[1][0], O.Cell.gUnitCell[1][1], O.Cell.gUnitCell[1][2]);
+  fprintf(stream, "c: %15.7F %15.7F %15.7F\n", O.Cell.gUnitCell[2][0], O.Cell.gUnitCell[2][1], O.Cell.gUnitCell[2][2]);
+  fprintf(stream, "Number of attoms %4i\n", O.Cell.NAtoms);
   for (i = 0; i < O.Cell.NAtoms; i++)
   {
-    fprintf(stream, "Atom  #: %4i %4s   %22.15E %22.15E %22.15E\n", i, O.Cell.Atom[i].Name, O.Cell.Atom[i].Position[0],
-            O.Cell.Atom[i].Position[1], O.Cell.Atom[i].Position[2]);
-  }
-  for (i = 0; i < O.Cell.NAtoms; i++)
-  {
-    fprintf(stream, "Atom  #: %4i %4s\n", i, O.Cell.Atom[i].Name);
-    for (j = 0; j < O.Cell.Atom[i].Nshell; j++)
+    fprintf(stream, "#%4i | %2s | %2i |  %15.7F %15.7F %15.7F\n", i, O.Cell.Atom[i].Name, O.Cell.Atom[i].AtomNumber, O.Cell.Atom[i].Position[0], O.Cell.Atom[i].Position[1], O.Cell.Atom[i].Position[2]);
+    for(j=0;j<O.Cell.Atom[i].Nshell;j++)
     {
-      fprintf(stream, "Shell #: %4i - %4i %4i fold degenerate.\n", i, j, O.Cell.Atom[i].shelldegeneracy[j]);
+      fprintf(stream, "      | %2s |",O.Cell.Atom[i].ShellName[j]);
+      for(k=0;k<O.Cell.Atom[i].shelldegeneracy[j];k++)
+      {
+        fprintf(stream, " %8s |",O.Cell.Atom[i].OrbitalName[j][k]);
+      }
+      fprintf(stream, "\n");
     }
   }
   fprintf(stream, "Hopping definitions ( %4i )\n", O.nH);

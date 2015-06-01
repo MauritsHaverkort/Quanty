@@ -54,7 +54,7 @@ uint32_t CrystalStructureFromStuttgartCTRL(StuttgartCTRL CTRL, CrystalStructureT
       Cell->rUnitCell[i][j]=CTRL.STRUC.PLAT[i][j]*CTRL.STRUC.ALAT;
     }
   }
-  ResiprocalLatticeVector(Cell->rUnitCell, Cell->gUnitCell);
+  ResiprocalLatticeVector(Cell->rUnitCell, Cell->gUnitCell,Cell->Units);
   /* determine number of atoms */
   Cell->NAtoms=CTRL.SITE.Nactive;
   Cell->Atom=malloc(Cell->NAtoms*sizeof(AtomType));

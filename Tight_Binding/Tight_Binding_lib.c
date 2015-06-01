@@ -1,17 +1,70 @@
+uint32_t AtomNameToNumber(const char* Name)
+{
+  uint32_t i;
+  char *PeriodicTable[] = {"H" ,                                                                                                                                                          "He",
+                           "Li","Be",                                                                                                                            "B", "C", "N", "O", "F", "Ne",
+                           "Na","Mg",                                                                                                                           "Al","Si", "P", "S","Cl", "Ar",
+                            "K","Ca",                                                                        "Sc","Ti", "V","Cr","Mn","Fe","Co","Ni","Cu","Zn", "Ga","Ge","As","Se","Br", "Kr",
+                           "Rb","Sr",                                                                         "Y","Zr","Nb","Mo","Tc","Ru","Rh","Pd","Ag","Cd", "In","Sn","Sb","Te", "I", "Xe",
+                           "Cs","Ba", "La","Ce","Pr","Nd","Pm","Sm","Eu","Gd","Tb","Dy","Ho","Er","Tm","Yb", "Lu","Hf","Ta", "W","Re","Os","Ir","Pt","Au","Hg", "Tl","Pb","Bi","Po","At", "Rn",
+                           "Fr","Ra", "Ac","Th","Pa", "U","Np","Pu","Am","Cm","Bk","Cf","Es","Fm","Md","No", "Lr","Rf","Db","Sg","Bh","Hs","Mt","Ds","Rg","Cn"};
+  for(i=0;i<36;i++)
+  {
+    if(strcmp(Name, PeriodicTable[i] )==0) return i+1;
+  }
+  return 0;
+}
+
+int FreeAtomType(AtomType *A)
+{
+  int i,j;
+  for(i=0;i<A->Nshell;i++)
+  {
+    free(A->ShellName[i]);
+    for(j=0;j<A->shelldegeneracy[i];j++)
+    {
+      free(A->OrbitalName[i][j]);
+    }
+    free(A->OrbitalName[i]);
+  }
+  if(A->Nshell!=0)
+  {
+    free(A->ShellName);
+    free(A->shelldegeneracy);
+    free(A->OrbitalName);
+  }
+  A->Nshell=0;
+  return 0;
+}
+
+int FreeCrystalStructureType(CrystalStructureType *A)
+{
+  int i;
+  for(i=0;i<A->NAtoms;i++)
+  {
+    FreeAtomType(&(A->Atom[i]));
+  }
+  if(A->NAtoms!=0) free(A->Atom);
+  A->NAtoms=0;
+  return 0;
+}
+
 int FreeTightBindingDef(TightBindingDef * A)
 {
   int    i;
-//  free(&(A->Cell.Atom));
-  for (i = 0; i < A->nH; i++)
+  for(i=0;i<A->nH;i++)
   {
     FreeMatrix(&(A->H[i].Hop));
   }
-//  if(A->nH>0)free(&(A->H));
-  for (i = 0; i < A->NFermion; i++)
+  if(A->nH!=0) free(A->H);
+  A->nH=0;
+  for (i = 0; i < A->Cell.NAtoms; i++)
   {
-    free(&(A->FermionIndex[i]));
+    free(A->FermionIndex[i]);
   }
-//  free(&(A->FermionIndex));
+  if(A->Cell.NAtoms!=0) free(A->FermionIndex);
+  A->Cell.NAtoms=0;
+  FreeCrystalStructureType(&(A->Cell));
   return 0;
 }
 
@@ -54,8 +107,8 @@ int CreateOneBandCubicLaticeTightBindingDef(TightBindingDef * A)
   A->Cell.rUnitCell[2][0] = 0.00000;
   A->Cell.rUnitCell[2][1] = 0.00000;
   A->Cell.rUnitCell[2][2] = 1.00000;
-  ResiprocalLatticeVector(A->Cell.rUnitCell, A->Cell.gUnitCell);
   A->Cell.Units = 1;
+  ResiprocalLatticeVector(A->Cell.rUnitCell, A->Cell.gUnitCell,A->Cell.Units);
   A->Cell.NAtoms = 1;
   A->Cell.Atom = malloc(1 * sizeof(AtomType));
   strncpy(A->Cell.Atom[0].Name, "s", 3);
@@ -110,8 +163,8 @@ int CreateOneBandSquareLaticeTightBindingDef(TightBindingDef * A)
   A->Cell.rUnitCell[2][0] = 0.00000;
   A->Cell.rUnitCell[2][1] = 0.00000;
   A->Cell.rUnitCell[2][2] = 4.00000;
-  ResiprocalLatticeVector(A->Cell.rUnitCell, A->Cell.gUnitCell);
   A->Cell.Units = 1;
+  ResiprocalLatticeVector(A->Cell.rUnitCell, A->Cell.gUnitCell,A->Cell.Units);
   A->Cell.NAtoms = 1;
   A->Cell.Atom = malloc(1 * sizeof(AtomType));
   strncpy(A->Cell.Atom[0].Name, "s", 3);
@@ -167,8 +220,8 @@ int CreateOneBandChainLaticeTightBindingDef(TightBindingDef * A)
   A->Cell.rUnitCell[2][0] = 0.00000;
   A->Cell.rUnitCell[2][1] = 0.00000;
   A->Cell.rUnitCell[2][2] = 4.00000;
-  ResiprocalLatticeVector(A->Cell.rUnitCell, A->Cell.gUnitCell);
   A->Cell.Units = 1;
+  ResiprocalLatticeVector(A->Cell.rUnitCell, A->Cell.gUnitCell,A->Cell.Units);
   A->Cell.NAtoms = 1;
   A->Cell.Atom = malloc(1 * sizeof(AtomType));
   strncpy(A->Cell.Atom[0].Name, "s", 3);
@@ -1358,7 +1411,7 @@ int CreateCrystalStructureFromCrystalStructureSuperCell(CrystalStructureSuperCel
   Cell->rUnitCell[2][0] = SuperCell.rSuperCell[2][0] * SuperCell.Crystal.rUnitCell[0][0] + SuperCell.rSuperCell[2][1] * SuperCell.Crystal.rUnitCell[1][0] + SuperCell.rSuperCell[2][2] * SuperCell.Crystal.rUnitCell[2][0];
   Cell->rUnitCell[2][1] = SuperCell.rSuperCell[2][0] * SuperCell.Crystal.rUnitCell[0][1] + SuperCell.rSuperCell[2][1] * SuperCell.Crystal.rUnitCell[1][1] + SuperCell.rSuperCell[2][2] * SuperCell.Crystal.rUnitCell[2][1];
   Cell->rUnitCell[2][2] = SuperCell.rSuperCell[2][0] * SuperCell.Crystal.rUnitCell[0][2] + SuperCell.rSuperCell[2][1] * SuperCell.Crystal.rUnitCell[1][2] + SuperCell.rSuperCell[2][2] * SuperCell.Crystal.rUnitCell[2][2];
-  ResiprocalLatticeVector(Cell->rUnitCell, Cell->gUnitCell);
+  ResiprocalLatticeVector(Cell->rUnitCell, Cell->gUnitCell,Cell->Units);
   Cell->NAtoms = SuperCell.NCell * SuperCell.Crystal.NAtoms;
   Cell->Atom = malloc(Cell->NAtoms * sizeof(AtomType));
   iAtomsuper = 0;
@@ -1434,7 +1487,7 @@ int CreateTightBindingSuperCell(TightBindingDef A, TightBindingDef * ASuper, Cry
   ASuper->Cell.rUnitCell[2][2] =
     SuperCell.rSuperCell[2][0] * A.Cell.rUnitCell[0][2] + SuperCell.rSuperCell[2][1] * A.Cell.rUnitCell[1][2] +
     SuperCell.rSuperCell[2][2] * A.Cell.rUnitCell[2][2];
-  ResiprocalLatticeVector(ASuper->Cell.rUnitCell, ASuper->Cell.gUnitCell);
+  ResiprocalLatticeVector(ASuper->Cell.rUnitCell, ASuper->Cell.gUnitCell,A.Cell.Units);
   ASuper->Cell.NAtoms = SuperCell.NCell * A.Cell.NAtoms;
   ASuper->Cell.Atom = malloc(ASuper->Cell.NAtoms * sizeof(AtomType));
   ASuper->nH = SuperCell.NCell * A.nH;
@@ -1533,7 +1586,7 @@ int CreateTightBindingSquareSuperCell(TightBindingDef A, TightBindingDef * ASupe
   ASuper->Cell.rUnitCell[2][0] = N[2] * A.Cell.rUnitCell[2][0];
   ASuper->Cell.rUnitCell[2][1] = N[2] * A.Cell.rUnitCell[2][1];
   ASuper->Cell.rUnitCell[2][2] = N[2] * A.Cell.rUnitCell[2][2];
-  ResiprocalLatticeVector(ASuper->Cell.rUnitCell, ASuper->Cell.gUnitCell);
+  ResiprocalLatticeVector(ASuper->Cell.rUnitCell, ASuper->Cell.gUnitCell,A.Cell.Units);
   ASuper->Cell.NAtoms = N[0] * N[1] * N[2] * A.Cell.NAtoms;
   ASuper->Cell.Atom = malloc(ASuper->Cell.NAtoms * sizeof(AtomType));
   ASuper->nH = N[0] * N[1] * N[2] * A.nH;

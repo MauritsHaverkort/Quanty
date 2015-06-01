@@ -1,0 +1,487 @@
+
+static int LuaNewTightBinding(lua_State * L)
+{
+  TightBindingDef *TB;
+  uint32_t len = (uint32_t)lua_gettop(L);
+  if(len==0)
+  {
+    TB = (TightBindingDef*) lua_newuserdata(L, sizeof(TightBindingDef));
+    luaL_setmetatable(L, "TightBinding_Type");
+    TB->nH=0;
+    TB->NFermion=0;
+    TB->Cell.NAtoms=0;
+    TB->Cell.Units=1;
+  }
+  else
+  {
+    return luaL_error(L, "Error in NewTightBinding(arg) unrecognized arguments arg, should be empty\n");
+  }
+  return 1;
+}
+
+
+static int LuaTightBindingIndex(lua_State * L)
+{
+  uint32_t i,j;
+  TightBindingDef *a = (TightBindingDef *) luaL_checkudata(L, 1, "TightBinding_Type");
+  const char *str = lua_tostring(L, 2);  
+  if (strcmp(str, "Name") == 0)
+  {
+    lua_pushstring(L, a->Name);
+    return 1;
+  }
+  else if (strcmp(str, "Cell")==0)
+  {
+    lua_createtable(L,3,0);
+    for(i=0;i<3;i++)
+    {
+      lua_createtable(L,3,0);
+      for(j=0;j<3;j++)
+      {
+        lua_pushnumber(L, a->Cell.rUnitCell[i][j]);
+        lua_rawseti(L, -2, j+1);
+      }
+      lua_rawseti(L, -2, i+1);
+    }
+    return 1;
+  }
+  else if (strcmp(str, "Units")==0)
+  {
+    lua_createtable(L,3,0);
+    if((a->Cell.Units&1)==1)
+    {
+      lua_pushfstring(L, "2Pi");
+      lua_rawseti(L, -2, 1);
+    }
+    if((a->Cell.Units&1)==0)
+    {
+      lua_pushfstring(L, "NoPi");
+      lua_rawseti(L, -2, 1);
+    }
+    if((a->Cell.Units&6)==0)
+    {
+      lua_pushfstring(L, "Angstrom");
+      lua_rawseti(L, -2, 2);
+    }
+    if((a->Cell.Units&6)==2)
+    {
+      lua_pushfstring(L, "Bohr");
+      lua_rawseti(L, -2, 2);
+    }
+    if((a->Cell.Units&6)==4)
+    {
+      lua_pushfstring(L, "nm");
+      lua_rawseti(L, -2, 2);
+    }
+    if((a->Cell.Units&8)==0)
+    {
+      lua_pushfstring(L, "Absolute");
+      lua_rawseti(L, -2, 3);
+    }
+    if((a->Cell.Units&8)==8)
+    {
+      lua_pushfstring(L, "Relative");
+      lua_rawseti(L, -2, 3);
+    }
+    return 1;
+  }
+  return luaL_error(L, "Error index %s not found in TightBinding Object\n",str);
+}
+
+/*
+ * reads a list of atom definitions from the Lua stack
+ * format:
+ *           Atom   = {Name, Position, {Shell1, Shell2, ...}}
+ *           Shelli = {Name, {orb1, orb2, ...}}
+ */
+static int LuaReadAtom(lua_State *L, int narg, AtomType *a)
+{
+  uint32_t i,j,len;
+  double *arr;
+  if(lua_type(L,narg)==LUA_TTABLE)
+  {
+    len = (uint32_t)lua_objlen(L, narg);
+    if(len!=3) return luaL_error(L, "Error ReadAtom expects a list of the form {Name, Position, {Shell1, Shell2, ...}}\n");
+    // get the name of the atom
+    lua_rawgeti(L, narg, 1);
+    strncpy(a->Name, luaL_checkstring(L, -1), MAXStrLength-1);
+    lua_pop(L, 1);
+    // set the atom number
+    a->AtomNumber=AtomNameToNumber(a->Name);
+    // get the position of the atom
+    lua_rawgeti(L, narg, 2);
+    arr=luaL_checkarray_double(L,-1,&len);
+    if(len!=3) return luaL_error(L, "Error ReadAtom position of atom %s should be a list of 3 numbers\n",a->Name);
+    a->Position[0]=arr[0];a->Position[1]=arr[1];a->Position[2]=arr[2];
+    free(arr);
+    lua_pop(L, 1);
+    // get the list with shells
+    lua_rawgeti(L, narg, 3);
+    if(lua_type(L,-1)!=LUA_TTABLE) return luaL_error(L, "Error ReadAtom shells of atom %s should be a list of shells\n",a->Name);
+    a->Nshell = (int)lua_objlen(L, -1);
+    a->ShellName = malloc(a->Nshell*sizeof(char*));
+    a->shelldegeneracy = malloc(a->Nshell*sizeof(int));
+    a->OrbitalName = malloc(a->Nshell*sizeof(char**));
+    for(i=0;i<a->Nshell;i++)
+    {
+      lua_rawgeti(L, -1, i+1);
+      if(lua_type(L,-1)!=LUA_TTABLE) return luaL_error(L, "Error ReadAtom shell %i of atom %s should be a list containing the name and a list of orbitals\n",i+1,a->Name);
+      len = (uint32_t)lua_objlen(L, -1);
+      if(len!=2) return luaL_error(L, "Error ReadAtom shell %i of atom %s should be a list containing the name and a list of orbitals\n",i+1,a->Name);
+      lua_rawgeti(L, -1, 1);
+      a->ShellName[i]=malloc(MAXStrLength*sizeof(char));
+      strncpy(a->ShellName[i], luaL_checkstring(L, -1), MAXStrLength-1);
+      lua_pop(L, 1);
+      lua_rawgeti(L, -1, 2);
+      if(lua_type(L,-1)!=LUA_TTABLE) return luaL_error(L, "Error ReadAtom shell %s(%i) of atom %s should be a list containing the name and a list of orbitals\n",a->ShellName[i],i+1,a->Name);
+      a->shelldegeneracy[i] = (uint32_t)lua_objlen(L, -1);
+      a->OrbitalName[i] = malloc(a->shelldegeneracy[i]*sizeof(char*));
+      for(j=0;j<a->shelldegeneracy[i];j++)
+      {
+        lua_rawgeti(L, -1, j+1);
+        a->OrbitalName[i][j]=malloc(MAXStrLength*sizeof(char));
+        strncpy(a->OrbitalName[i][j], luaL_checkstring(L, -1), MAXStrLength-1);
+        lua_pop(L, 1);
+      }
+      lua_pop(L, 1);
+      lua_pop(L, 1);
+    }
+    lua_pop(L, 1);
+  }
+  else
+  {
+    return luaL_error(L, "Error ReadAtom expects a list of the form {Name, Position, {Shell1, Shell2, ...}}\n");
+  }
+  return 0;
+}
+
+/*
+ * reads a Hopping definition from the Lua stack
+ * format
+ *          Hopping = {"AtomName1.ShellName1","AtomName2.ShellName2",Vec,H}
+ *        with H a table of tables of real or complex numbers / matrix
+ *
+ */
+static int LuaReadHopping(lua_State *L, int narg, CrystalStructureType *Cell, TightBindingDefHopping *H)
+{
+  double buff,CellVolume,r[3],idouble[3];
+  uint32_t i,j;
+  char AtomShell1[2*MAXStrLength+1];
+  char AtomShell2[2*MAXStrLength+1];
+  char *Atom1,*Atom2,*Shell1,*Shell2;
+  // test input
+  if((lua_type(L,narg)!=LUA_TTABLE)) return luaL_error(L, "ReadHopping expects a table of the form {\"AtomName1.ShellName1\",\"AtomName2.ShellName2\",Vec,H}\n");
+  if (lua_objlen(L, narg)!=4) return luaL_error(L, "ReadHopping expects a table of the form {\"AtomName1.ShellName1\",\"AtomName2.ShellName2\",Vec,H}\n");
+  // read atom and shell 1
+  lua_rawgeti(L, narg, 1);
+  strncpy(AtomShell1, luaL_checkstring(L, -1), 2*MAXStrLength);
+  lua_pop(L, 1);
+  Atom1=AtomShell1;
+  Shell1=strchr(AtomShell1 , '.');
+  if(Shell1==NULL) return luaL_error(L, "ReadHopping expects a string of the form \"AtomName.ShellName\" defining the first atom and shell in the hopping got %s\n",AtomShell1);
+  *Shell1='\0';
+  Shell1++;
+  H->Atompos1=Cell->NAtoms;
+  for(i=0;i<Cell->NAtoms;i++)
+  {
+    if(strcmp(Cell->Atom[i].Name, Atom1)==0)
+    {
+      H->Atompos1=i;
+      break;
+    }
+  }
+  if(H->Atompos1==Cell->NAtoms) return luaL_error(L, "Atom name %s in ReadHopping not found in Cell definition\n",Atom1);
+  H->Shellpos1=Cell->Atom[H->Atompos1].Nshell;
+  for(i=0;i<Cell->Atom[H->Atompos1].Nshell;i++)
+  {
+    if(strcmp(Cell->Atom[H->Atompos1].ShellName[i], Shell1)==0)
+    {
+      H->Shellpos1=i;
+      break;
+    }
+  }
+  if(H->Shellpos1==Cell->Atom[H->Atompos1].Nshell) return luaL_error(L, "Shell name %s of Atom %s in ReadHopping not found in Cell definition\n",Shell1,Atom1);
+  // read atom and shell 2
+  lua_rawgeti(L, narg, 2);
+  strncpy(AtomShell2, luaL_checkstring(L, -1), 2*MAXStrLength);
+  lua_pop(L, 1);
+  Atom2=AtomShell2;
+  Shell2=strchr(AtomShell2 , '.');
+  if(Shell2==NULL) return luaL_error(L, "ReadHopping expects a string of the form \"AtomName.ShellName\" defining the second atom and shell in the hopping got %s\n",AtomShell2);
+  *Shell2='\0';
+  Shell2++;
+  H->Atompos2=Cell->NAtoms;
+  for(i=0;i<Cell->NAtoms;i++)
+  {
+    if(strcmp(Cell->Atom[i].Name, Atom2)==0)
+    {
+      H->Atompos2=i;
+      break;
+    }
+  }
+  if(H->Atompos2==Cell->NAtoms) return luaL_error(L, "Atom name %s in ReadHopping not found in Cell definition\n",Atom2);
+  H->Shellpos2=Cell->Atom[H->Atompos2].Nshell;
+  for(i=0;i<Cell->Atom[H->Atompos2].Nshell;i++)
+  {
+    if(strcmp(Cell->Atom[H->Atompos2].ShellName[i], Shell2)==0)
+    {
+      H->Shellpos2=i;
+      break;
+    }
+  }
+  if(H->Shellpos2==Cell->Atom[H->Atompos2].Nshell) return luaL_error(L, "Shell name %s of Atom %s in ReadHopping not found in Cell definition\n",Shell2,Atom2);
+  // read trans vector
+  lua_rawgeti(L, narg, 3);
+  if((lua_type(L,-1)!=LUA_TTABLE)) return luaL_error(L, "ReadHopping expects a table of the form {x,y,z} or {i,j,k} for the vector defining the connection between atom %s and atom %s\n",AtomShell1,AtomShell2);
+  if (lua_objlen(L, -1)!=3) return luaL_error(L, "ReadHopping expects a table of the form {x,y,z} or {i,j,k} for the vector defining the connection between atom %s and atom %s\n",AtomShell1,AtomShell2);
+  if((Cell->Units&8)==0) // absolute units
+  {
+    for(i=0;i<3;i++)
+    {
+      lua_rawgeti(L, -1, i+1);
+      H->ConnectingVector[i]=(double)luaL_checknumber(L, -1);
+      lua_pop(L,1);
+    }
+    lua_pop(L,1);
+    // create TransVec from connecting Vector
+    // {x,y,z} = i a + j b + k c + AtomPos2 - AtomPos1
+    // r = {x,y,z} - AtomPos2 + AtomPos1
+    // i = Cross[b,c] . r / (Cross[a,b].c)
+    // j = Cross[c,a] . r / (Cross[a,b].c)
+    // k = Cross[a,b] . r / (Cross[a,b].c)
+    CellVolume=ParallelalPipedVolume(Cell->rUnitCell[0], Cell->rUnitCell[1], Cell->rUnitCell[2]);
+    if(fabs(CellVolume)<100*sqrt(DBL_MIN)) return luaL_error(L, "ReadHopping called with a cell defined that has a zero volume:\n    a={%22.15E %22.15E %22.15E}\n    b={%22.15E %22.15E %22.15E}\n    c={%22.15E %22.15E %22.15E}\n",Cell->rUnitCell[0][0],Cell->rUnitCell[0][1],Cell->rUnitCell[0][2],Cell->rUnitCell[1][0],Cell->rUnitCell[1][1],Cell->rUnitCell[1][2],Cell->rUnitCell[2][0],Cell->rUnitCell[2][1],Cell->rUnitCell[2][2]);
+    r[0]=H->ConnectingVector[0]+Cell->Atom[H->Atompos1].Position[0]-Cell->Atom[H->Atompos2].Position[0];
+    r[1]=H->ConnectingVector[1]+Cell->Atom[H->Atompos1].Position[1]-Cell->Atom[H->Atompos2].Position[1];
+    r[2]=H->ConnectingVector[2]+Cell->Atom[H->Atompos1].Position[2]-Cell->Atom[H->Atompos2].Position[2];
+    idouble[0]=ParallelalPipedVolume(Cell->rUnitCell[1], Cell->rUnitCell[2], r)/CellVolume;
+    idouble[1]=ParallelalPipedVolume(Cell->rUnitCell[2], Cell->rUnitCell[0], r)/CellVolume;
+    idouble[2]=ParallelalPipedVolume(Cell->rUnitCell[0], Cell->rUnitCell[1], r)/CellVolume;
+    H->TransVecs[0]=(int)idouble[0];
+    H->TransVecs[1]=(int)idouble[1];
+    H->TransVecs[2]=(int)idouble[2];
+    if((fabs(idouble[0]-H->TransVecs[0])>0.0000001)||(fabs(idouble[1]-H->TransVecs[1])>0.0000001)||(fabs(idouble[2]-H->TransVecs[2])>0.0000001)) return luaL_error(L, "ReadHopping connecting vector given in absolute coordinates, but not an integer number of unit cells plus the distance in the unit cell between the atoms:\n   {x,y,z} = {%22.15E %22.15E %22.15E}\n   {i,j,k} = {%22.15E %22.15E %22.15E}\n",H->ConnectingVector[0],H->ConnectingVector[1],H->ConnectingVector[2],idouble[0],idouble[1],idouble[2]);
+    
+  }
+  else // relative units
+  {
+    for(i=0;i<3;i++)
+    {
+      lua_rawgeti(L, -1, i+1);
+      buff=(double)luaL_checknumber(L, -1);
+      H->TransVecs[i]=(int)buff;
+      if(fabs(buff-H->TransVecs[i])>100*DBL_EPSILON) return luaL_error(L, "Units for atom positions is set to Relative, i.e. all vectors must be given in units of a,b and c.\nReadHopping expects a table of the form {ai,bi,ci} for the vector defining the connection between atom %s and atom %s\nWith ai, bi and ci being integers, found %22.25E\n",AtomShell1,AtomShell2,buff);
+      lua_pop(L,1);
+    }
+    lua_pop(L,1);
+    // create Connecting Vector from Trans Vec
+    for(i=0;i<3;i++) // i loops over x,y,z
+    {
+      H->ConnectingVector[i]=0;
+      for(j=0;j<3;j++) // j loops over a,b,c
+      {
+        H->ConnectingVector[i] += (H->TransVecs[j]+Cell->Atom[H->Atompos2].Position[j]-Cell->Atom[H->Atompos2].Position[j]) * Cell->rUnitCell[j][i];
+      }
+    }
+  }
+  // read H
+  lua_rawgeti(L, narg, 4);
+  if((lua_type(L,-1)!=LUA_TTABLE)) return luaL_error(L, "ReadHopping expects a matrix for the definition of H between atom %s and %s\n",AtomShell1,AtomShell2);
+  H->Hop = *luaL_checkMatrix(L, -1);
+  
+  
+  lua_pop(L,1);
+  return 0;
+}
+
+static int LuaTightBindingNewIndex(lua_State * L)
+{
+  uint32_t i,j,len;
+  TightBindingDef *a = (TightBindingDef *) luaL_checkudata(L, 1, "TightBinding_Type");
+  const char *str = lua_tostring(L, 2);
+  
+  if(strcmp(str, "Name")==0)
+  {
+    strncpy(a->Name, luaL_checkstring(L, 3), MAXStrLength-1);
+  }
+  else if(strcmp(str, "Cell")==0)
+  {
+    luaL_checktype(L, 3, LUA_TTABLE);
+    len = (uint32_t)lua_objlen(L, 3);
+    if(len!=3)
+    {
+      return luaL_error(L, "Error TightBindingObject.Cell should be of the form { a, b, c }\n");
+    }
+    for(i=0;i<3;i++)
+    {
+      lua_rawgeti(L, 3, i+1);
+      luaL_checktype(L, -1, LUA_TTABLE);
+      len = (uint32_t)lua_objlen(L, -1);
+      if(len!=3)
+      {
+        return luaL_error(L, "Error TightBindingObject.Cell should be of the form { {a1,a2,a3}, {b1,b2,b3}, {c1,c2,c3} }\n");
+      }
+      for(j=0;j<3;j++)
+      {
+        lua_rawgeti(L, -1, j+1);
+        a->Cell.rUnitCell[i][j]=(double)luaL_checknumber(L, -1);
+        lua_pop(L, 1);
+      }
+      lua_pop(L, 1);
+    }
+    if(fabs(ParallelalPipedVolume(a->Cell.rUnitCell[0], a->Cell.rUnitCell[1], a->Cell.rUnitCell[2]))<100*sqrt(DBL_MIN)) return luaL_error(L, "Error TightBindingObject.Cell should be of the form { {a1,a2,a3}, {b1,b2,b3}, {c1,c2,c3} } and span a non-zero volume.\n       i.e. a, b and c must be independent vectors and they are not\n");
+    ResiprocalLatticeVector(a->Cell.rUnitCell, a->Cell.gUnitCell,a->Cell.Units);
+    //TODO: set ConnectionVector anew
+  }
+  else if(strcmp(str, "Atoms")==0)
+  {
+    if(a->nH!=0)
+    {
+      luaL_warning(L, "Warning Changed the settings of atoms for a tight binding hamiltonian (%s)\n Previous definition will be arrased\n",a->Name);
+      for(i=0;i<a->nH;i++)
+      {
+        FreeMatrix(&(a->H[i].Hop));
+      }
+      free(a->H);
+      a->nH=0;
+    }
+    // format of atoms  = {Atom1, Atom2, ...}
+    //           Atomi  = {Name, Position, {Shell1, Shell2, ...}}
+    //           Shelli = {Name, {orb1, orb2, ...}}
+    if(lua_type(L,3)==LUA_TTABLE)
+    {
+      len = (uint32_t)lua_objlen(L, 3);
+      a->Cell.NAtoms=len;
+      a->Cell.Atom=malloc(len*sizeof(AtomType));
+      for(i=0;i<len;i++)
+      {
+        lua_rawgeti(L, 3, i+1);
+        LuaReadAtom(L, -1, &(a->Cell.Atom[i]));
+        lua_pop(L, 1);
+      }
+    }
+    else
+    {
+      return luaL_error(L, "Error TightBindingObject.Atoms expect a list of atoms\n");
+    }
+    SetNFermionIndexTightBindingDef(a);
+  }
+  else if(strcmp(str, "Units")==0)
+  {
+    if(lua_type(L,3)==LUA_TNUMBER)
+    {
+      a->Cell.Units=(uint32_t)luaL_checkunsigned(L, 3);
+    }
+    else if((lua_type(L,3)==LUA_TSTRING)||(lua_type(L,3)==LUA_TTABLE))
+    {
+      if(lua_type(L,3)==LUA_TSTRING)
+      {
+        str = luaL_checkstring(L, 3);
+        len=0;
+      }
+      else
+      {
+        len = (uint32_t)lua_objlen(L, 3);
+      }
+      for(i=0;i<=len;i++)
+      {
+        if(i==0) i++;
+        if(len!=0)
+        {
+          lua_rawgeti(L, 3, i);
+          str = luaL_checkstring(L, -1);
+        }
+        if(strcmp(str, "2Pi")==0)
+        {
+          a->Cell.Units |= (uint32_t)1;       // set bit 0 to 1
+        }
+        else if(strcmp(str, "NoPi")==0)
+        {
+          a->Cell.Units &= ~((uint32_t)1);    // set bit 0 to 0
+        }
+        else if((strcmp(str, "Angstrom")==0)||(strcmp(str, "A")==0))
+        {
+          a->Cell.Units &= ~((uint32_t)1<<1); // set bit 1 to 0
+          a->Cell.Units &= ~((uint32_t)1<<2); // set bit 2 to 0
+        }
+        else if((strcmp(str, "Bohr")==0)||(strcmp(str, "a0")==0))
+        {
+          a->Cell.Units |= (uint32_t)1<<1;    // set bit 1 to 1
+          a->Cell.Units &= ~((uint32_t)1<<2); // set bit 2 to 0
+        }
+        else if((strcmp(str, "nanometer")==0)||(strcmp(str, "nm")==0))
+        {
+          a->Cell.Units &= ~((uint32_t)1<<1); // set bit 1 to 0
+          a->Cell.Units |= (uint32_t)1<<2;    // set bit 2 to 1
+        }
+        else if(strcmp(str, "Absolute")==0)
+        {
+          a->Cell.Units &= ~((uint32_t)1<<3); // set bit 3 to 0
+        }
+        else if(strcmp(str, "Relative")==0)
+        {
+          a->Cell.Units |= (uint32_t)1<<3;    // set bit 3 to 1
+        }
+        else
+        {
+          return luaL_error(L, "Error TightBindingObject.Unit %s is not defined\n",str);
+        }
+        if(len!=0)
+        {
+          lua_pop(L, 1);
+        }
+      }
+    }
+    else
+    {
+      return luaL_error(L, "Error not a valid type assignment for TightBinding Object (%s) should be integer, string or table of strings\n",lua_typename(L, lua_type(L, 3)));
+    }
+    ResiprocalLatticeVector(a->Cell.rUnitCell, a->Cell.gUnitCell,a->Cell.Units);
+    //TODO: set ConnectionVector anew
+  }
+  else if(strcmp(str, "Hopping")==0)
+  {
+    //
+    if((lua_type(L,3)!=LUA_TTABLE)) return luaL_error(L, "Error TightBinding.Hopping should be a list of hopping definitions {{def1}, {def2}, ...}\n");
+    a->nH = (uint32_t)lua_objlen(L, 3);
+    a->H=malloc(a->nH*sizeof(TightBindingDefHopping));
+    for(i=0;i<a->nH;i++)
+    {
+      lua_rawgeti(L, 3, i+1);
+      LuaReadHopping(L, -1, &(a->Cell), &(a->H[i]));
+      lua_pop(L, 1);
+    }
+  }
+  else
+  {
+    return luaL_error(L, "Error index %s not found in TightBinding Object\n",str);
+  }
+  return 0;
+}
+
+static int LuaTightBindingToString(lua_State * L)
+{
+  TightBindingDef *res = (TightBindingDef *) luaL_checkudata(L, 1, "TightBinding_Type");
+  char *Buffer;
+  StringPrintTightBindingDef(*res, &Buffer);
+  lua_pushstring(L, Buffer);
+  return 1;
+}
+
+static int LuaTightBindingDestroy(lua_State * L)
+{
+  TightBindingDef *a = (TightBindingDef *) luaL_checkudata(L, 1, "TightBinding_Type");
+  FreeTightBindingDef(a);
+  return 0;
+}
+
+
+
+
+static const struct luaL_Reg TightBinding_meta[] = {
+  {"__index", LuaTightBindingIndex},
+  {"__newindex", LuaTightBindingNewIndex},
+  {"__tostring", LuaTightBindingToString},
+  {"__gc", LuaTightBindingDestroy},
+  {NULL, NULL}
+};

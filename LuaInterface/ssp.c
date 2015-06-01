@@ -1940,6 +1940,7 @@ static const struct luaL_Reg global_functions[] = {
   {"PotentialExpandedOnClm", LuaPotentialExpandedOnClm},
   {"NewOperator", LuaNewOperator},
   {"NewWavefunction", LuaNewWaveFunction},
+  {"NewTightBinding", LuaNewTightBinding},
   {"DensityMatrix",LuaDensityMatrix},
   {"Copy", Luacopy},
   {"Clone", Luacopy},
@@ -1986,6 +1987,9 @@ int luaopen_ssp(lua_State * L)
   luaL_setfuncs(L, Spectra_meta, 0);
   luaL_newlib(L, Spectra_func);
   lua_setglobal(L, "Spectra");
+  
+  luaL_newmetatable(L, "TightBinding_Type");
+  luaL_setfuncs(L, TightBinding_meta, 0);
     
   luaMWH_RegisterGlobalFunctions(L, global_functions);
   

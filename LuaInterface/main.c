@@ -46,6 +46,7 @@
 #include "../Tight_Binding/TightBindingToG.c"
 #include "../Tight_Binding/ImpurityUnfolding.c"
 #include "../Tight_Binding/StuttgartNMTO.c"
+#include "../Tight_Binding/DresdenFPLO.c"
 #include "../DMFT/SingleSiteFunctions.c"
 #include "../IO/StuttgartNMTO.c"
 
@@ -58,6 +59,8 @@ static void *currentudata = NULL;
 #include "Operator.c"
 #include "Wavefunction.c"
 #include "Spectra.c"
+#include "TightBinding.c"
+#include "ResponseFunction.c"
 #include "BraKet.c"
 #include "eval.c"
 #include "ssp.c"

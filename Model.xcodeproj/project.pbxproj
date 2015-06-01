@@ -288,6 +288,10 @@
 		4C6925C418D869FE00E6FA6F /* MartinPESXAS */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = MartinPESXAS; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C77BA751741188E00AC7E7D /* OperatorWaveFunctionPerturbation.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = OperatorWaveFunctionPerturbation.c; sourceTree = "<group>"; };
 		4C79F5D817B53C8000189682 /* Hubart */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Hubart; sourceTree = BUILT_PRODUCTS_DIR; };
+		4C7FE75F1B1A168F00FD19A3 /* DresdenFPLO.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = DresdenFPLO.c; sourceTree = "<group>"; };
+		4C7FE7601B1A1C2A00FD19A3 /* ResponseFunction.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = ResponseFunction.c; path = LuaInterface/ResponseFunction.c; sourceTree = SOURCE_ROOT; };
+		4C7FE7611B1A1C6100FD19A3 /* TightBinding.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = TightBinding.c; sourceTree = "<group>"; };
+		4C7FE7621B1AB1C200FD19A3 /* DresdenFPLO.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = DresdenFPLO.c; sourceTree = "<group>"; };
 		4C8274D917DC49B000A5F555 /* header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = header.h; sourceTree = "<group>"; };
 		4C8274DA17DC49CA00A5F555 /* core.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = core.h; sourceTree = "<group>"; };
 		4C8274DB17DC49F700A5F555 /* io.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = io.h; sourceTree = "<group>"; };
@@ -412,7 +416,9 @@
 				4CE50BC51975556500091F1C /* BraKet.c */,
 				4CE50BC6197555E100091F1C /* eval.c */,
 				4C639499197968E4009C7F12 /* Spectra.c */,
+				4C7FE7601B1A1C2A00FD19A3 /* ResponseFunction.c */,
 				4CDDD7FF1A599D55004D27DF /* Documentation.c */,
+				4C7FE7611B1A1C6100FD19A3 /* TightBinding.c */,
 			);
 			path = LuaInterface;
 			sourceTree = "<group>";
@@ -637,6 +643,7 @@
 				4C5A6B9B175E6E8700EEA17F /* PrintMathematicaExpression.c */,
 				4C03B020186E321D004C2B7B /* StuttgartNMTO.c */,
 				4C2B19731A7F57980055C950 /* StringPrint.c */,
+				4C7FE75F1B1A168F00FD19A3 /* DresdenFPLO.c */,
 			);
 			path = IO;
 			sourceTree = "<group>";
@@ -686,6 +693,7 @@
 				4C2AAA71163265DD00138620 /* Tight_Binding_lib.c */,
 				4C2AAA72163265DD00138620 /* TightBindingToG.c */,
 				4C944CD8187AEDE500FE9B7B /* StuttgartNMTO.c */,
+				4C7FE7621B1AB1C200FD19A3 /* DresdenFPLO.c */,
 			);
 			path = Tight_Binding;
 			sourceTree = "<group>";
@@ -1122,6 +1130,7 @@
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
@@ -1151,9 +1160,11 @@
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = YES;
+				DEAD_CODE_STRIPPING = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
