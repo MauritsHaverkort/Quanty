@@ -257,9 +257,9 @@ static int LuaReadHopping(lua_State *L, int narg, CrystalStructureType *Cell, Ti
     idouble[0]=ParallelalPipedVolume(Cell->rUnitCell[1], Cell->rUnitCell[2], r)/CellVolume;
     idouble[1]=ParallelalPipedVolume(Cell->rUnitCell[2], Cell->rUnitCell[0], r)/CellVolume;
     idouble[2]=ParallelalPipedVolume(Cell->rUnitCell[0], Cell->rUnitCell[1], r)/CellVolume;
-    H->TransVecs[0]=(int)idouble[0];
-    H->TransVecs[1]=(int)idouble[1];
-    H->TransVecs[2]=(int)idouble[2];
+    H->TransVecs[0]=(int)(idouble[0]+0.5);
+    H->TransVecs[1]=(int)(idouble[1]+0.5);
+    H->TransVecs[2]=(int)(idouble[2]+0.5);
     if((fabs(idouble[0]-H->TransVecs[0])>0.0000001)||(fabs(idouble[1]-H->TransVecs[1])>0.0000001)||(fabs(idouble[2]-H->TransVecs[2])>0.0000001)) return luaL_error(L, "ReadHopping connecting vector given in absolute coordinates, but not an integer number of unit cells plus the distance in the unit cell between the atoms:\n   {x,y,z} = {%22.15E %22.15E %22.15E}\n   {i,j,k} = {%22.15E %22.15E %22.15E}\n",H->ConnectingVector[0],H->ConnectingVector[1],H->ConnectingVector[2],idouble[0],idouble[1],idouble[2]);
     
   }

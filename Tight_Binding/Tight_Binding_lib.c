@@ -1455,7 +1455,7 @@ int CreateCrystalStructureFromCrystalStructureSuperCell(CrystalStructureSuperCel
 
 int CreateTightBindingSuperCell(TightBindingDef A, TightBindingDef * ASuper, CrystalStructureSuperCellType SuperCell)
 {
-  int    iCell, iAtom, iAtomsuper, ishell, iH, iHsuper, ia, ib, ic, atomvec[3];
+  int    iCell, iAtom, iAtomsuper, ishell, iorb, iH, iHsuper, ia, ib, ic, atomvec[3];
   double transvec[3];
   /* A = N[0][0] a + N[0][1] b + N[0][2] c */
   ASuper->Cell.rUnitCell[0][0] =
@@ -1504,16 +1504,26 @@ int CreateTightBindingSuperCell(TightBindingDef A, TightBindingDef * ASuper, Cry
     transvec[2] = ia * A.Cell.rUnitCell[0][2] + ib * A.Cell.rUnitCell[1][2] + ic * A.Cell.rUnitCell[2][2];
     for (iAtom = 0; iAtom < A.Cell.NAtoms; iAtom++)
     {
-      strncpy(ASuper->Cell.Atom[iAtomsuper].Name, A.Cell.Atom[iAtom].Name, 32);
+      strncpy(ASuper->Cell.Atom[iAtomsuper].Name, A.Cell.Atom[iAtom].Name, MAXStrLength);
       ASuper->Cell.Atom[iAtomsuper].AtomNumber = A.Cell.Atom[iAtom].AtomNumber;
       ASuper->Cell.Atom[iAtomsuper].Position[0] = transvec[0] + A.Cell.Atom[iAtom].Position[0];
       ASuper->Cell.Atom[iAtomsuper].Position[1] = transvec[1] + A.Cell.Atom[iAtom].Position[1];
       ASuper->Cell.Atom[iAtomsuper].Position[2] = transvec[2] + A.Cell.Atom[iAtom].Position[2];
       ASuper->Cell.Atom[iAtomsuper].Nshell = A.Cell.Atom[iAtom].Nshell;
       ASuper->Cell.Atom[iAtomsuper].shelldegeneracy = malloc(ASuper->Cell.Atom[iAtomsuper].Nshell * sizeof(int));
+      ASuper->Cell.Atom[iAtomsuper].ShellName=malloc(ASuper->Cell.Atom[iAtomsuper].Nshell*sizeof(char*));
+      ASuper->Cell.Atom[iAtomsuper].OrbitalName=malloc(ASuper->Cell.Atom[iAtomsuper].Nshell*sizeof(char*));
       for (ishell = 0; ishell < ASuper->Cell.Atom[iAtomsuper].Nshell; ishell++)
       {
+        ASuper->Cell.Atom[iAtomsuper].ShellName[ishell]=malloc(MAXStrLength);
+        strncpy(ASuper->Cell.Atom[iAtomsuper].ShellName[ishell], A.Cell.Atom[iAtom].ShellName[ishell], MAXStrLength);
         ASuper->Cell.Atom[iAtomsuper].shelldegeneracy[ishell] = A.Cell.Atom[iAtom].shelldegeneracy[ishell];
+        ASuper->Cell.Atom[iAtomsuper].OrbitalName[ishell]=malloc(A.Cell.Atom[iAtom].shelldegeneracy[ishell]*sizeof(char*));
+        for(iorb=0; iorb<A.Cell.Atom[iAtom].shelldegeneracy[ishell]; iorb++)
+        {
+          ASuper->Cell.Atom[iAtomsuper].OrbitalName[ishell][iorb]=malloc(MAXStrLength);
+          strncpy(ASuper->Cell.Atom[iAtomsuper].OrbitalName[ishell][iorb], A.Cell.Atom[iAtom].OrbitalName[ishell][iorb], MAXStrLength);
+        }
       }
       iAtomsuper++;
     }

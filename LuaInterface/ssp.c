@@ -1788,6 +1788,13 @@ static int LuaEigensystem(lua_State * L)
   {
     return luaL_error(L, "Error Eigensystem called with 2 arguments, whereby the first is the operator and the second a set of restrictions\nNeed a thrid argument how many eigenstates should be calculated\n");
   }
+  /* read options */
+  if((len==4)||((len==3)&&(!(QStartRestrictions))))
+  {
+    LuaCheckOptions(L, -1, LuaEigensystemOptions);
+    if(Options.DeterminantRestrictions.N!=0)Options.restrictions=True;
+    Options.Settings.DenseBoarder = Max(Options.Settings.DenseBoarder,Npsi);
+  }
   if(QStartRestrictions)
   {
     Npsi=(uint32_t)luaL_checkunsigned(L, 3);
@@ -1801,13 +1808,6 @@ static int LuaEigensystem(lua_State * L)
     {
       psi=malloc(Npsi*sizeof(WaveFunctionType));
     }
-  }
-  /* read options */
-  if((len==4)||((len==3)&&(!(QStartRestrictions))))
-  {
-    LuaCheckOptions(L, -1, LuaEigensystemOptions);
-    if(Options.DeterminantRestrictions.N!=0)Options.restrictions=True;
-    Options.Settings.DenseBoarder = Max(Options.Settings.DenseBoarder,Npsi);
   }
   /* calculate groundstate */
   if(Options.ExpandBasis==True)
