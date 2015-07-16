@@ -5012,7 +5012,8 @@ uint32_t HermitianOperatorNormalOrderExponent(OperatorType const O, Complex16 al
   uint32_t i,j,k;
   CompactMatrixType Omat,fun;
   Complex16 c={0,0};
-  double val[O.NFermion],prefac;
+  Complex16 prefac;
+  double val[O.NFermion];
   OperatorType Ob;
   /* test if operator fullfills basic conditions */
   if(O.NBoson!=0)
@@ -5115,11 +5116,6 @@ uint32_t HermitianOperatorNormalOrderExponent(OperatorType const O, Complex16 al
   }
   /* create eigenbasis */
   CompactMatrixEigensystem(&Omat, &fun, val);
-  
-  //PrintCompactMatrixMinimal(Omat);
-  //printf("%22.15E %22.15E %22.15E %22.15E %22.15E %22.15E \n\n",val[0],val[1],val[2],val[3],val[4],val[5]);
-  //PrintCompactMatrixMinimal(fun);
-  
   /* init operator ExpO to be the identity operator */
   InitOperator(ExpO);
   ExpO->NFermion=O.NFermion;
@@ -5134,8 +5130,9 @@ uint32_t HermitianOperatorNormalOrderExponent(OperatorType const O, Complex16 al
     Ob.NBoson=O.NBoson;
     InitOperatorFixedLength(&Ob, 2, 1);
     OperatorAddLaderNormalOrder(&Ob, oadd, 0, 1, 0, QDetNotOrdered);
-    /* add (e^beta_tau -1) b^dag_tau b^_tau to Ob */
-    prefac=exp(val[i])-1.0;
+    /* add (e^(alpha*beta_tau) -1) b^dag_tau b^_tau to Ob */
+    prefac.Re=exp(val[i]*alpha.Re)*cos(val[i]*alpha.Im)-1.0;
+    prefac.Im=exp(val[i]*alpha.Re)*sin(val[i]*alpha.Im);
     if(fun.QComplex)
     {
       for(j=0;j<O.NFermion;j++)
@@ -5144,7 +5141,22 @@ uint32_t HermitianOperatorNormalOrderExponent(OperatorType const O, Complex16 al
         {
           oadd[1]=(uint16_t)j+CrAnMask;
           oadd[0]=(uint16_t)k;
-          ComplexOperatorAddLaderNormalOrder(&Ob, oadd, 2, prefac*(fun.V[i*fun.Nj+j].Re*fun.V[i*fun.Nj+k].Re+fun.V[i*fun.Nj+j].Im*fun.V[i*fun.Nj+k].Im), prefac*(fun.V[i*fun.Nj+j].Im*fun.V[i*fun.Nj+k].Re-fun.V[i*fun.Nj+j].Re*fun.V[i*fun.Nj+k].Im),QDetNotOrdered);
+          ComplexOperatorAddLaderNormalOrder(&Ob, oadd, 2, prefac.Re*(fun.V[i*fun.Nj+j].Re*fun.V[i*fun.Nj+k].Re+fun.V[i*fun.Nj+j].Im*fun.V[i*fun.Nj+k].Im)
+                                                          -prefac.Im*(fun.V[i*fun.Nj+j].Im*fun.V[i*fun.Nj+k].Re-fun.V[i*fun.Nj+j].Re*fun.V[i*fun.Nj+k].Im),
+                                                           prefac.Re*(fun.V[i*fun.Nj+j].Im*fun.V[i*fun.Nj+k].Re-fun.V[i*fun.Nj+j].Re*fun.V[i*fun.Nj+k].Im)
+                                                          +prefac.Im*(fun.V[i*fun.Nj+j].Re*fun.V[i*fun.Nj+k].Re+fun.V[i*fun.Nj+j].Im*fun.V[i*fun.Nj+k].Im),QDetNotOrdered);
+        }
+      }
+    }
+    else if(fabs(alpha.Im)>100*DBL_MIN)
+    {
+      for(j=0;j<O.NFermion;j++)
+      {
+        for(k=0;k<O.NFermion;k++)
+        {
+          oadd[1]=(uint16_t)j+CrAnMask;
+          oadd[0]=(uint16_t)k;
+          ComplexOperatorAddLaderNormalOrder(&Ob, oadd, 2, prefac.Re*(fun.VRe[i*fun.Nj+j]*fun.VRe[i*fun.Nj+k]),prefac.Im*(fun.VRe[i*fun.Nj+j]*fun.VRe[i*fun.Nj+k]),QDetNotOrdered);
         }
       }
     }
@@ -5156,7 +5168,7 @@ uint32_t HermitianOperatorNormalOrderExponent(OperatorType const O, Complex16 al
         {
           oadd[1]=(uint16_t)j+CrAnMask;
           oadd[0]=(uint16_t)k;
-          RealOperatorAddLaderNormalOrder(&Ob, oadd, 2, prefac*fun.VRe[i*fun.Nj+j]*fun.VRe[i*fun.Nj+k],QDetNotOrdered);
+          RealOperatorAddLaderNormalOrder(&Ob, oadd, 2, prefac.Re*fun.VRe[i*fun.Nj+j]*fun.VRe[i*fun.Nj+k],QDetNotOrdered);
         }
       }
     }

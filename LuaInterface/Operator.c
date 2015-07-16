@@ -822,9 +822,9 @@ static int LuaOperatorExp(lua_State * L)
       alpha.Re = (double) luaL_checknumber(L, len);
       alpha.Im=0.0;
     }
-    else if(luaL_testudata(L, 1, "Complex_Type") != NULL)
+    else if(luaL_testudata(L, 2, "Complex_Type") != NULL)
     {
-      alpha = * (Complex16 *) luaL_checkudata(L, 1, "Complex_Type");
+      alpha = * (Complex16 *) luaL_checkudata(L, 2, "Complex_Type");
     }
     else
     {
