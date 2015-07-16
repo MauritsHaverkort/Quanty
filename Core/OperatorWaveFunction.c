@@ -1202,7 +1202,7 @@ uint32_t OperatorPsiCC(const OperatorType O, const WaveFunctionType psi, WaveFun
   }                             /* end of parallel region */
   if (OutOffMem)
   {
-    RealWaveFunctionFree(Opsi);
+    ComplexWaveFunctionFree(Opsi);
     return 1;
   }
   return 0;
@@ -1281,7 +1281,7 @@ uint32_t OperatorPsiCR(const OperatorType O, const WaveFunctionType psi, WaveFun
   }                             /* end of parallel region */
   if (OutOffMem)
   {
-    RealWaveFunctionFree(Opsi);
+    ComplexWaveFunctionFree(Opsi);
     return 1;
   }
   return 0;
@@ -1360,7 +1360,7 @@ uint32_t OperatorPsiRC(const OperatorType O, const WaveFunctionType psi, WaveFun
   }                             /* end of parallel region */
   if (OutOffMem)
   {
-    RealWaveFunctionFree(Opsi);
+    ComplexWaveFunctionFree(Opsi);
     return 1;
   }
   return 0;
@@ -1495,7 +1495,7 @@ uint32_t OperatorPsiMC(const OperatorType O, const WaveFunctionType psi, WaveFun
                 {               /* flush Mini buffer */
                   if (ComplexWaveFunctionAddElementOMPMiniFlush(Opsi, &NMini, MiniDet, MiniValueRe, MiniValueIm))
                   {             /* Allocation failed */
-                    printf("ComplexWaveFunctionAddElementOMPMiniFlush failed in OperatorPsiRC\n 01");
+                    printf("ComplexWaveFunctionAddElementOMPMiniFlush failed in OperatorPsiMC\n 01");
                     fflush(stdout);
                     OutOffMem = 1;
 #pragma omp flush(OutOffMem)
@@ -1524,7 +1524,7 @@ uint32_t OperatorPsiMC(const OperatorType O, const WaveFunctionType psi, WaveFun
                 {               /* flush Mini buffer */
                   if (ComplexWaveFunctionAddElementOMPMiniFlush(Opsi, &NMini, MiniDet, MiniValueRe, MiniValueIm))
                   {             /* Allocation failed */
-                    printf("ComplexWaveFunctionAddElementOMPMiniFlush failed in OperatorPsiCC\n 01");
+                    printf("ComplexWaveFunctionAddElementOMPMiniFlush failed in OperatorPsiMC\n 01");
                     fflush(stdout);
                     OutOffMem = 1;
 #pragma omp flush(OutOffMem)
@@ -1540,7 +1540,7 @@ uint32_t OperatorPsiMC(const OperatorType O, const WaveFunctionType psi, WaveFun
     }                           /* end of loop over elements of psi this loop runs parallel */
     if (ComplexWaveFunctionAddElementOMPMiniFlush(Opsi, &NMini, MiniDet, MiniValueRe, MiniValueIm))
     {                           /* Allocation failed */
-      printf("ComplexWaveFunctionAddElementOMPMiniFlush failed in OperatorPsiCC 02\n");
+      printf("ComplexWaveFunctionAddElementOMPMiniFlush failed in OperatorPsiMC 02\n");
       fflush(stdout);
       OutOffMem = 1;
 #pragma omp flush(OutOffMem)
@@ -1548,7 +1548,7 @@ uint32_t OperatorPsiMC(const OperatorType O, const WaveFunctionType psi, WaveFun
   }                             /* end of parallel region */
   if (OutOffMem)
   {
-    RealWaveFunctionFree(Opsi);
+    ComplexWaveFunctionFree(Opsi);
     return 1;
   }
   return 0;
@@ -1598,14 +1598,15 @@ uint32_t OperatorPsiMR(const OperatorType O, const WaveFunctionType psi, WaveFun
               if (fabs(phase) > (10 * DBL_MIN))
               {
                 MiniValueRe[NMini] = phase * O.l[l].VRe[j] * psi.ValueRe[ii][ik];
+                MiniValueIm[NMini] = 0;
                 for (k = 0; k < Opsi->NWord; k++)
                   MiniDet[NMini * Opsi->NWord + k] = Det[k];
                 NMini++;
                 if (NMini == MiniBlokSize)
                 {               /* flush Mini buffer */
-                  if (RealWaveFunctionAddElementOMPMiniFlush(Opsi, &NMini, MiniDet, MiniValueRe))
+                  if (ComplexWaveFunctionAddElementOMPMiniFlush(Opsi, &NMini, MiniDet, MiniValueRe, MiniValueIm))
                   {             /* Allocation failed */
-                    printf("RealWaveFunctionAddElementOMPMiniFlush failed in OperatorPsiRR\n 01");
+                    printf("ComplexWaveFunctionAddElementOMPMiniFlush failed in OperatorPsiMR\n 01");
                     fflush(stdout);
                     OutOffMem = 1;
 #pragma omp flush(OutOffMem)
@@ -1634,7 +1635,7 @@ uint32_t OperatorPsiMR(const OperatorType O, const WaveFunctionType psi, WaveFun
                 {               /* flush Mini buffer */
                   if (ComplexWaveFunctionAddElementOMPMiniFlush(Opsi, &NMini, MiniDet, MiniValueRe, MiniValueIm))
                   {             /* Allocation failed */
-                    printf("ComplexWaveFunctionAddElementOMPMiniFlush failed in OperatorPsiCR\n 01");
+                    printf("ComplexWaveFunctionAddElementOMPMiniFlush failed in OperatorPsiMR\n 01");
                     fflush(stdout);
                     OutOffMem = 1;
 #pragma omp flush(OutOffMem)
@@ -1650,7 +1651,7 @@ uint32_t OperatorPsiMR(const OperatorType O, const WaveFunctionType psi, WaveFun
     }                           /* end of loop over elements of psi this loop runs parallel */
     if (ComplexWaveFunctionAddElementOMPMiniFlush(Opsi, &NMini, MiniDet, MiniValueRe, MiniValueIm))
     {                           /* Allocation failed */
-      printf("ComplexWaveFunctionAddElementOMPMiniFlush failed in OperatorPsiCR 02\n");
+      printf("ComplexWaveFunctionAddElementOMPMiniFlush failed in OperatorPsiMR 02\n");
       fflush(stdout);
       OutOffMem = 1;
 #pragma omp flush(OutOffMem)
@@ -1658,7 +1659,7 @@ uint32_t OperatorPsiMR(const OperatorType O, const WaveFunctionType psi, WaveFun
   }                             /* end of parallel region */
   if (OutOffMem)
   {
-    RealWaveFunctionFree(Opsi);
+    ComplexWaveFunctionFree(Opsi);
     return 1;
   }
   return 0;

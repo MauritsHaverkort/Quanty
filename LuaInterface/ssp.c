@@ -1090,7 +1090,7 @@ static int Luaconjugatetranspose(lua_State * L)
         OperatorType *O = (OperatorType*) luaL_checkudata(L, len, "Operator_Type");
         OperatorType *ONew;
         ONew = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-        OperatorConjugateTranspose(*O, ONew);
+        OperatorConjugateTransposeNormalOrder(*O, ONew, &QDetNotOrderedFcFaBaBc);
         luaL_setmetatable(L, "Operator_Type");
         return 1;
       }
@@ -1159,7 +1159,7 @@ static int Luatranspose(lua_State * L)
         OperatorType *O = (OperatorType*) luaL_checkudata(L, len, "Operator_Type");
         OperatorType *ONew;
         ONew = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-        OperatorTranspose(*O, ONew);
+        OperatorTransposeNormalOrder(*O, ONew,&QDetNotOrderedFcFaBaBc);
         luaL_setmetatable(L, "Operator_Type");
         return 1;
       }

@@ -801,7 +801,46 @@ static int LuaOperatorNewNumber(lua_State * L)
   return 1;
 }
 
-
+static int LuaOperatorExp(lua_State * L)
+{
+  uint32_t len = (uint32_t)lua_gettop(L);
+  OperatorType *l = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
+  OperatorType *res = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+  Complex16 alpha={1.0,0.0};
+  luaL_setmetatable(L, "Operator_Type");
+  if(len==1)
+  {
+    if(HermitianOperatorNormalOrderExponent(*l, alpha, res, &QDetNotOrderedFcFaBcBa))
+    {
+      return luaL_error(L, "Errorr, call to OperatorExp failed\n");
+    }
+  }
+  else if(len==2)
+  {
+    if (lua_isnumber(L, 2))
+    {
+      alpha.Re = (double) luaL_checknumber(L, len);
+      alpha.Im=0.0;
+    }
+    else if(luaL_testudata(L, 1, "Complex_Type") != NULL)
+    {
+      alpha = * (Complex16 *) luaL_checkudata(L, 1, "Complex_Type");
+    }
+    else
+    {
+      return luaL_error(L, "Errorr, call to OperatorExp with 2 arguments, first should be an operator, second is an optional real or complex number. Type found at position two is %s\n",lua_typename(L,lua_type(L,2)));
+    }
+    if(HermitianOperatorNormalOrderExponent(*l, alpha, res, &QDetNotOrderedFcFaBcBa))
+    {
+      return luaL_error(L, "Errorr, call to OperatorExp failed\n");
+    }
+  }
+  else
+  {
+    return luaL_error(L, "Errorr, call to OperatorExp with %d arguments, expected 1 or 2\n",len);
+  }
+  return 1;
+}
 
 /***********************/
 /* Operator meta actions */
@@ -932,6 +971,7 @@ static int LuaOperatorMul(lua_State * L)
   }
   if (luaL_testudata(L, 1, "Wavefunction_Type") != NULL)
   {
+    // this part never excecutes while it is handled by the wave-function multiplication rules
     /* <psi | O */
     WaveFunctionType *psi = (WaveFunctionType*) luaL_checkudata(L, 1, "Wavefunction_Type");
     OperatorType *O = (OperatorType *) luaL_checkudata(L,len,"Operator_Type");

@@ -1668,6 +1668,17 @@ uint32_t CompactMatrixLowdinOrthogonalize(CompactMatrixType * A)
 }
 
 /*
+ *A=funinv.H.fun with H a diagonal matrix with the values val on the diagonal
+ *  input M defined, fun not initiallized, val allocated
+ */
+uint32_t CompactMatrixGeneralEigensystem(CompactMatrixType const *A, CompactMatrixType * const fun, CompactMatrixType * const funinv, Complex16 *val)
+{
+  printf("To Do CompactMatrixGeneralEigensystem\n");
+  return 0;
+}
+
+
+/*
  *  A=fun.H.fun^{\dag} with H a diagonal matrix with the values val on the diagonal
  *  input M defined, fun not initiallized, val allocated
  */
@@ -2490,4 +2501,34 @@ uint32_t CompactMatrixBlockBandTridiagonalizeHermitianNoReorthogonalization(Comp
   return 0;
 }
 
+/* returns 1 if O=O^dag, zero otherwise 
+ * epsilon gives the accuracy
+ */
 
+uint32_t QCompactMatrixHermitian(const CompactMatrixType O, const double epsilon)
+{
+  uint32_t i,j;
+  if(O.Ni!=O.Nj)return 0;
+  if(O.QComplex)
+  {
+    for(i=0;i<O.Ni;i++)
+    {
+      for(j=0;j<=i;j++)
+      {
+        if(fabs(O.V[i*O.Nj+j].Re-O.V[j*O.Nj+i].Re)>((fabs(O.V[i*O.Nj+j].Re+O.V[j*O.Nj+i].Re)*epsilon+DBL_MIN*100))) return 0;
+        if(fabs(O.V[i*O.Nj+j].Im+O.V[j*O.Nj+i].Im)>((fabs(O.V[i*O.Nj+j].Im-O.V[j*O.Nj+i].Im)*epsilon+DBL_MIN*100))) return 0;
+      }
+    }
+  }
+  else
+  {
+    for(i=0;i<O.Ni;i++)
+    {
+      for(j=0;j<i;j++)
+      {
+        if(fabs(O.VRe[i*O.Nj+j]-O.VRe[j*O.Nj+i])>((fabs(O.VRe[i*O.Nj+j]+O.VRe[j*O.Nj+i])*epsilon+DBL_MIN*100))) return 0;
+      }
+    }
+  }
+  return 1;
+}
