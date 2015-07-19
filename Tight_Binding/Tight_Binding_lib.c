@@ -58,11 +58,14 @@ int FreeTightBindingDef(TightBindingDef * A)
   }
   if(A->nH!=0) free(A->H);
   A->nH=0;
-  for (i = 0; i < A->Cell.NAtoms; i++)
+  if(A->FermionIndex!=NULL)
   {
-    free(A->FermionIndex[i]);
+    for (i = 0; i < A->Cell.NAtoms; i++)
+    {
+      free(A->FermionIndex[i]);
+    }
+    if(A->Cell.NAtoms!=0) free(A->FermionIndex);
   }
-  if(A->Cell.NAtoms!=0) free(A->FermionIndex);
   A->Cell.NAtoms=0;
   FreeCrystalStructureType(&(A->Cell));
   return 0;
@@ -354,31 +357,24 @@ int CreateHamiltonianOperatorFromTightBindingDef(TightBindingDef A, double k[3],
     vector[0] = A.Cell.Atom[A.H[iH].Atompos1].Position[0] - A.Cell.Atom[A.H[iH].Atompos2].Position[0];
     vector[1] = A.Cell.Atom[A.H[iH].Atompos1].Position[1] - A.Cell.Atom[A.H[iH].Atompos2].Position[1];
     vector[2] = A.Cell.Atom[A.H[iH].Atompos1].Position[2] - A.Cell.Atom[A.H[iH].Atompos2].Position[2];
-    vector[0] +=
-      A.Cell.rUnitCell[0][0] * A.H[iH].TransVecs[0] + A.Cell.rUnitCell[1][0] * A.H[iH].TransVecs[1] +
-      A.Cell.rUnitCell[2][0] * A.H[iH].TransVecs[2];
-    vector[1] +=
-      A.Cell.rUnitCell[0][1] * A.H[iH].TransVecs[0] + A.Cell.rUnitCell[1][1] * A.H[iH].TransVecs[1] +
-      A.Cell.rUnitCell[2][1] * A.H[iH].TransVecs[2];
-    vector[2] +=
-      A.Cell.rUnitCell[0][2] * A.H[iH].TransVecs[0] + A.Cell.rUnitCell[1][2] * A.H[iH].TransVecs[1] +
-      A.Cell.rUnitCell[2][2] * A.H[iH].TransVecs[2];
+    vector[0] += A.Cell.rUnitCell[0][0] * A.H[iH].TransVecs[0] + A.Cell.rUnitCell[1][0] * A.H[iH].TransVecs[1] + A.Cell.rUnitCell[2][0] * A.H[iH].TransVecs[2];
+    vector[1] += A.Cell.rUnitCell[0][1] * A.H[iH].TransVecs[0] + A.Cell.rUnitCell[1][1] * A.H[iH].TransVecs[1] + A.Cell.rUnitCell[2][1] * A.H[iH].TransVecs[2];
+    vector[2] += A.Cell.rUnitCell[0][2] * A.H[iH].TransVecs[0] + A.Cell.rUnitCell[1][2] * A.H[iH].TransVecs[1] + A.Cell.rUnitCell[2][2] * A.H[iH].TransVecs[2];
     alphaRe = cos(Dot(k, vector));
     alphaIm = sin(Dot(k, vector));
-    if (Sqr(alphaIm) < Sqr(alphaRe) * DBL_EPSILON * 100)
-      alphaIm = 0;
+    if (Sqr(alphaIm) < Sqr(alphaRe) * DBL_EPSILON * 100) alphaIm = 0;
     if (A.H[iH].Hop.QComplex)
     {                           /* A.H[iH].Hop is Complex */
       for (isub = 0; isub < A.H[iH].Hop.Ni; isub++)
       {
         for (jsub = 0; jsub < A.H[iH].Hop.Nj; jsub++)
         {
-          if ((fabs(A.H[iH].Hop.VRe[i][j]) + fabs(A.H[iH].Hop.VIm[i][j])) > DBL_MIN * 10)
+          if ((fabs(A.H[iH].Hop.VRe[isub][jsub]) + fabs(A.H[iH].Hop.VIm[isub][jsub])) > DBL_MIN * 10)
           {
             HVRe = A.H[iH].Hop.VRe[isub][jsub] * alphaRe - A.H[iH].Hop.VIm[isub][jsub] * alphaIm;
             HVIm = A.H[iH].Hop.VRe[isub][jsub] * alphaIm + A.H[iH].Hop.VIm[isub][jsub] * alphaRe;
-            oadd[0] = CrAnMask + i + isub;
-            oadd[1] = j + jsub;
+            oadd[1] = CrAnMask + i + isub;
+            oadd[0] = j + jsub;
             OperatorAddLaderNormalOrder(H, oadd, 2, HVRe, HVIm, &QDetNotOrderedFcFaBcBa);
           }
         }
@@ -394,14 +390,82 @@ int CreateHamiltonianOperatorFromTightBindingDef(TightBindingDef A, double k[3],
           {
             HVRe = A.H[iH].Hop.VRe[isub][jsub] * alphaRe;
             HVIm = A.H[iH].Hop.VRe[isub][jsub] * alphaIm;
-            oadd[0] = CrAnMask + i + isub;
-            oadd[1] = j + jsub;
+            oadd[1] = CrAnMask + i + isub;
+            oadd[0] = j + jsub;
             OperatorAddLaderNormalOrder(H, oadd, 2, HVRe, HVIm, &QDetNotOrderedFcFaBcBa);
           }
         }
       }
     }
   }
+  OperatorChop(H, DBL_MIN*10);
+  return 0;
+}
+int CreateHamiltonianOperatorFromTightBindingDefPlusSpin(TightBindingDef A, double k[3], OperatorType * H)
+{
+  int    iH, i, j, isub, jsub;
+  double alphaRe, alphaIm, HVRe, HVIm;
+  double vector[3];
+  uint16_t oadd[2];
+  InitOperator(H);
+  H->NFermion = 2*A.NFermion;
+  H->NWord = Min(H->NFermion, 1 + (H->NFermion - 1) / 8);
+  InitOperatorFixedLength(H, 2, 10);
+  for (iH = 0; iH < A.nH; iH++)
+  {
+    i = A.FermionIndex[A.H[iH].Atompos1][A.H[iH].Shellpos1];
+    j = A.FermionIndex[A.H[iH].Atompos2][A.H[iH].Shellpos2];
+    vector[0] = A.Cell.Atom[A.H[iH].Atompos1].Position[0] - A.Cell.Atom[A.H[iH].Atompos2].Position[0];
+    vector[1] = A.Cell.Atom[A.H[iH].Atompos1].Position[1] - A.Cell.Atom[A.H[iH].Atompos2].Position[1];
+    vector[2] = A.Cell.Atom[A.H[iH].Atompos1].Position[2] - A.Cell.Atom[A.H[iH].Atompos2].Position[2];
+    vector[0] += A.Cell.rUnitCell[0][0] * A.H[iH].TransVecs[0] + A.Cell.rUnitCell[1][0] * A.H[iH].TransVecs[1] + A.Cell.rUnitCell[2][0] * A.H[iH].TransVecs[2];
+    vector[1] += A.Cell.rUnitCell[0][1] * A.H[iH].TransVecs[0] + A.Cell.rUnitCell[1][1] * A.H[iH].TransVecs[1] + A.Cell.rUnitCell[2][1] * A.H[iH].TransVecs[2];
+    vector[2] += A.Cell.rUnitCell[0][2] * A.H[iH].TransVecs[0] + A.Cell.rUnitCell[1][2] * A.H[iH].TransVecs[1] + A.Cell.rUnitCell[2][2] * A.H[iH].TransVecs[2];
+    alphaRe = cos(Dot(k, vector));
+    alphaIm = sin(Dot(k, vector));
+    if (Sqr(alphaIm) < Sqr(alphaRe) * DBL_EPSILON * 100) alphaIm = 0;
+    if (A.H[iH].Hop.QComplex)
+    {                           /* A.H[iH].Hop is Complex */
+      for (isub = 0; isub < A.H[iH].Hop.Ni; isub++)
+      {
+        for (jsub = 0; jsub < A.H[iH].Hop.Nj; jsub++)
+        {
+          if ((fabs(A.H[iH].Hop.VRe[isub][jsub]) + fabs(A.H[iH].Hop.VIm[isub][jsub])) > DBL_MIN * 10)
+          {
+            HVRe = A.H[iH].Hop.VRe[isub][jsub] * alphaRe - A.H[iH].Hop.VIm[isub][jsub] * alphaIm;
+            HVIm = A.H[iH].Hop.VRe[isub][jsub] * alphaIm + A.H[iH].Hop.VIm[isub][jsub] * alphaRe;
+            oadd[1] = CrAnMask + 2*(i + isub);
+            oadd[0] = 2*(j + jsub);
+            OperatorAddLaderNormalOrder(H, oadd, 2, HVRe, HVIm, &QDetNotOrderedFcFaBcBa);
+            oadd[1] = CrAnMask + 2*(i + isub)+1;
+            oadd[0] = 2*(j + jsub)+1;
+            OperatorAddLaderNormalOrder(H, oadd, 2, HVRe, HVIm, &QDetNotOrderedFcFaBcBa);
+          }
+        }
+      }
+    }
+    else
+    {                           /* A.H[iH].Hop is Real */
+      for (isub = 0; isub < A.H[iH].Hop.Ni; isub++)
+      {
+        for (jsub = 0; jsub < A.H[iH].Hop.Nj; jsub++)
+        {
+          if (fabs(A.H[iH].Hop.VRe[isub][jsub]) > DBL_MIN * 10)
+          {
+            HVRe = A.H[iH].Hop.VRe[isub][jsub] * alphaRe;
+            HVIm = A.H[iH].Hop.VRe[isub][jsub] * alphaIm;
+            oadd[1] = CrAnMask + 2*(i + isub);
+            oadd[0] = 2*(j + jsub);
+            OperatorAddLaderNormalOrder(H, oadd, 2, HVRe, HVIm, &QDetNotOrderedFcFaBcBa);
+            oadd[1] = CrAnMask + 2*(i + isub)+1;
+            oadd[0] = 2*(j + jsub)+1;
+            OperatorAddLaderNormalOrder(H, oadd, 2, HVRe, HVIm, &QDetNotOrderedFcFaBcBa);
+          }
+        }
+      }
+    }
+  }
+  OperatorChop(H, DBL_MIN*10);
   return 0;
 }
 
@@ -1532,29 +1596,59 @@ int CreateTightBindingSuperCell(TightBindingDef A, TightBindingDef * ASuper, Cry
       atomvec[0] = ia + A.H[iH].TransVecs[0];
       atomvec[1] = ib + A.H[iH].TransVecs[1];
       atomvec[2] = ic + A.H[iH].TransVecs[2];
-      if (Dot(atomvec, SuperCell.gSuperCell[0]) >= -0.000000001)
+      if(SuperCell.Crystal.Units&1)
       {
-        ASuper->H[iHsuper].TransVecs[0] = (int)(Dot(atomvec, SuperCell.gSuperCell[0]) / (1.999999999 * Pi));
+        if (Dot(atomvec, SuperCell.gSuperCell[0]) >= -0.000000001)
+        {
+          ASuper->H[iHsuper].TransVecs[0] = (int)(Dot(atomvec, SuperCell.gSuperCell[0]) / (1.999999999 * Pi));
+        }
+        else
+        {
+          ASuper->H[iHsuper].TransVecs[0] = (int)(Dot(atomvec, SuperCell.gSuperCell[0]) / (2.000000001 * Pi)) - 1;
+        }
+        if (Dot(atomvec, SuperCell.gSuperCell[1]) >= -0.000000001)
+        {
+          ASuper->H[iHsuper].TransVecs[1] = (int)(Dot(atomvec, SuperCell.gSuperCell[1]) / (1.999999999 * Pi));
+        }
+        else
+        {
+          ASuper->H[iHsuper].TransVecs[1] = (int)(Dot(atomvec, SuperCell.gSuperCell[1]) / (2.000000001 * Pi)) - 1;
+        }
+        if (Dot(atomvec, SuperCell.gSuperCell[2]) >= -0.000000001)
+        {
+          ASuper->H[iHsuper].TransVecs[2] = (int)(Dot(atomvec, SuperCell.gSuperCell[2]) / (1.999999999 * Pi));
+        }
+        else
+        {
+          ASuper->H[iHsuper].TransVecs[2] = (int)(Dot(atomvec, SuperCell.gSuperCell[2]) / (2.000000001 * Pi)) - 1;
+        }
       }
       else
       {
-        ASuper->H[iHsuper].TransVecs[0] = (int)(Dot(atomvec, SuperCell.gSuperCell[0]) / (2.000000001 * Pi)) - 1;
-      }
-      if (Dot(atomvec, SuperCell.gSuperCell[1]) >= -0.000000001)
-      {
-        ASuper->H[iHsuper].TransVecs[1] = (int)(Dot(atomvec, SuperCell.gSuperCell[1]) / (1.999999999 * Pi));
-      }
-      else
-      {
-        ASuper->H[iHsuper].TransVecs[1] = (int)(Dot(atomvec, SuperCell.gSuperCell[1]) / (2.000000001 * Pi)) - 1;
-      }
-      if (Dot(atomvec, SuperCell.gSuperCell[2]) >= -0.000000001)
-      {
-        ASuper->H[iHsuper].TransVecs[2] = (int)(Dot(atomvec, SuperCell.gSuperCell[2]) / (1.999999999 * Pi));
-      }
-      else
-      {
-        ASuper->H[iHsuper].TransVecs[2] = (int)(Dot(atomvec, SuperCell.gSuperCell[2]) / (2.000000001 * Pi)) - 1;
+        if (Dot(atomvec, SuperCell.gSuperCell[0]) >= -0.000000001)
+        {
+          ASuper->H[iHsuper].TransVecs[0] = (int)(Dot(atomvec, SuperCell.gSuperCell[0]) / (0.999999999));
+        }
+        else
+        {
+          ASuper->H[iHsuper].TransVecs[0] = (int)(Dot(atomvec, SuperCell.gSuperCell[0]) / (1.000000001)) - 1;
+        }
+        if (Dot(atomvec, SuperCell.gSuperCell[1]) >= -0.000000001)
+        {
+          ASuper->H[iHsuper].TransVecs[1] = (int)(Dot(atomvec, SuperCell.gSuperCell[1]) / (0.999999999));
+        }
+        else
+        {
+          ASuper->H[iHsuper].TransVecs[1] = (int)(Dot(atomvec, SuperCell.gSuperCell[1]) / (1.000000001)) - 1;
+        }
+        if (Dot(atomvec, SuperCell.gSuperCell[2]) >= -0.000000001)
+        {
+          ASuper->H[iHsuper].TransVecs[2] = (int)(Dot(atomvec, SuperCell.gSuperCell[2]) / (0.999999999));
+        }
+        else
+        {
+          ASuper->H[iHsuper].TransVecs[2] = (int)(Dot(atomvec, SuperCell.gSuperCell[2]) / (1.000000001)) - 1;
+        }
       }
       atomvec[0] -=
         ASuper->H[iHsuper].TransVecs[0] * SuperCell.rSuperCell[0][0] +
@@ -1579,8 +1673,8 @@ int CreateTightBindingSuperCell(TightBindingDef A, TightBindingDef * ASuper, Cry
     }
   }
   SetNFermionIndexTightBindingDef(ASuper);
+  strncpy(ASuper->Name, A.Name, MAXStrLength-1);
   return 0;
-
 }
 
 int CreateTightBindingSquareSuperCell(TightBindingDef A, TightBindingDef * ASuper, int N[3])

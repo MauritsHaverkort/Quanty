@@ -327,6 +327,7 @@ uint32_t StringPrintTightBindingDef(TightBindingDef O, char **Buffer)
   O.Name[MAXStrLength - 1] = '\0';
   sprintfAdd(Buffer, "\nSettigns of a tight binding model: %s\n", O.Name);
   StringPrintAddCrystalStructure(O.Cell,Buffer);
+  sprintfAdd(Buffer, "Containing a total number of %i orbitals\n",O.NFermion);
   sprintfAdd(Buffer, "Hopping definitions ( %i )\n", O.nH);
   for (i = 0; i < O.nH; i++)
   {

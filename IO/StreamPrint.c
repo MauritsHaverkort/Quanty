@@ -601,7 +601,6 @@ uint32_t StreamPrintOperatorFullReadable(OperatorType O, FILE * stream)
  */
 uint32_t StreamPrintCrystalStructure(CrystalStructureType O, FILE * stream)
 {
-  //TODO: make streamprint equal to stringprint
   uint32_t i,j,k;
   fprintf(stream, "\nprintout of Crystal Structure\n");
   fprintf(stream, "Units: ");
@@ -811,14 +810,23 @@ uint32_t StreamPrintTightBindingDef(TightBindingDef O, FILE * stream)
   O.Name[MAXStrLength - 1] = '\0';
   fprintf(stream, "\nSettigns of a tight binding model: %s\n", O.Name);
   StreamPrintCrystalStructure(O.Cell, stream);
-  
+  fprintf(stream,"Containing a total number of %i orbitals\n",O.NFermion);
   fprintf(stream, "Hopping definitions ( %i )\n", O.nH);
   for (i = 0; i < O.nH; i++)
   {
-    fprintf(stream, "Hopping from %s - %s to %s - %s with translation vector in unit cells: { %i , %i , %i }\n", O.Cell.Atom[O.H[i].Atompos1].Name, O.Cell.Atom[O.H[i].Atompos1].ShellName[O.H[i].Shellpos1], O.Cell.Atom[O.H[i].Atompos2].Name, O.Cell.Atom[O.H[i].Atompos2].ShellName[O.H[i].Shellpos2], O.H[i].TransVecs[0], O.H[i].TransVecs[1], O.H[i].TransVecs[2]);
+    fprintf(stream, "Hopping from %i : %s - %s to %i : %s - %s with translation vector in unit cells: { %i , %i , %i }\n", O.H[i].Atompos1, O.Cell.Atom[O.H[i].Atompos1].Name,O.Cell.Atom[O.H[i].Atompos1].ShellName[O.H[i].Shellpos1], O.H[i].Atompos2, O.Cell.Atom[O.H[i].Atompos2].Name, O.Cell.Atom[O.H[i].Atompos2].ShellName[O.H[i].Shellpos2], O.H[i].TransVecs[0], O.H[i].TransVecs[1], O.H[i].TransVecs[2]);
     StreamPrintMatrix(O.H[i].Hop, stream);
   }
   fprintf(stream, "\n");
+  //fprintf(stream, "Fermion index is given as:\n");
+  //for(i=0;i<O.Cell.NAtoms;i++)
+  //{
+  //  for(j=0;j<O.Cell.Atom[i].Nshell;j++)
+  //  {
+  //    fprintf(stream, "  Hamiltonian for atom %i and shell %i starts at index %i\n",i,j,O.FermionIndex[i][j]);
+  //  }
+  //}
+  //fprintf(stream, "\n");
   return 0;
 }
 

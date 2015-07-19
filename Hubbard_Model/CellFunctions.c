@@ -26,13 +26,25 @@ uint32_t AddAditionalInformationToSuperCell(CrystalStructureSuperCellType * A)
         a = A->gSuperCell[0][0] * i + A->gSuperCell[1][0] * j + A->gSuperCell[2][0] * k;
         b = A->gSuperCell[0][1] * i + A->gSuperCell[1][1] * j + A->gSuperCell[2][1] * k;
         c = A->gSuperCell[0][2] * i + A->gSuperCell[1][2] * j + A->gSuperCell[2][2] * k;
-        //TODO: correct for units used (either 2p or not)
-        if ((a >= 0) && (a < 1.999999999 * Pi) && (b >= 0) && (b < 1.999999999 * Pi) && (c >= 0) && (c < 1.999999999 * Pi))
+        if(A->Crystal.Units&1)
         {
-          A->kVector[l][0] = a;
-          A->kVector[l][1] = b;
-          A->kVector[l][2] = c;
-          l++;
+          if ((a >= 0) && (a < 1.999999999 * Pi) && (b >= 0) && (b < 1.999999999 * Pi) && (c >= 0) && (c < 1.999999999 * Pi))
+          {
+            A->kVector[l][0] = a;
+            A->kVector[l][1] = b;
+            A->kVector[l][2] = c;
+            l++;
+          }
+        }
+        else
+        {
+          if ((a >= 0) && (a < 0.999999999) && (b >= 0) && (b < 0.999999999) && (c >= 0) && (c < 0.999999999))
+          {
+            A->kVector[l][0] = a;
+            A->kVector[l][1] = b;
+            A->kVector[l][2] = c;
+            l++;
+          }
         }
       }
     }
@@ -58,58 +70,35 @@ uint32_t AddAditionalInformationToSuperCell(CrystalStructureSuperCellType * A)
         a = Dot(ivec, A->gSuperCell[0]);
         b = Dot(ivec, A->gSuperCell[1]);
         c = Dot(ivec, A->gSuperCell[2]);
-        if ((a >= 0) && (a < 1.999999999 * Pi) && (b >= 0) && (b < 1.999999999 * Pi) && (c >= 0)
-            && (c < 1.999999999 * Pi))
+        if(A->Crystal.Units&1)
         {
-          A->CellPos[icell][0] = ivec[0];
-          A->CellPos[icell][1] = ivec[1];
-          A->CellPos[icell][2] = ivec[2];
-          icell++;
+          if ((a >= 0) && (a < 1.999999999 * Pi) && (b >= 0) && (b < 1.999999999 * Pi) && (c >= 0) && (c < 1.999999999 * Pi))
+          {
+            A->CellPos[icell][0] = ivec[0];
+            A->CellPos[icell][1] = ivec[1];
+            A->CellPos[icell][2] = ivec[2];
+            icell++;
+          }
+        }
+        else
+        {
+          if ((a >= 0) && (a < 0.999999999) && (b >= 0) && (b < 0.999999999) && (c >= 0) && (c < 0.999999999))
+          {
+            A->CellPos[icell][0] = ivec[0];
+            A->CellPos[icell][1] = ivec[1];
+            A->CellPos[icell][2] = ivec[2];
+            icell++;
+          }
         }
       }
     }
   }
-
-
   if (icell != A->NCell)
   {
     printf("NCell=%i icell=%i thats not the same and that is a problem !!!\n\n\nSTOP", A->NCell, icell);
     PrintCrystalStructureSuperCell(*A);
     exit(1);
   }
-
-
-/*
-
-  ResiprocalLatticeVector(UnitCellDouble, A->gSuperCell);
-  A->NCell=0;
-  denom=ParallelalPipedVolume(UnitCellDouble[0],UnitCellDouble[1],UnitCellDouble[2]);
-  for(i=-(abs(A->rSuperCell[0][0])+abs(A->rSuperCell[1][0])+abs(A->rSuperCell[2][0]));i<(abs(A->rSuperCell[0][0])+abs(A->rSuperCell[1][0])+abs(A->rSuperCell[2][0]));i++)
-  {
-    for(j=-(abs(A->rSuperCell[0][1])+abs(A->rSuperCell[1][1])+abs(A->rSuperCell[2][1]));j<(abs(A->rSuperCell[0][1])+abs(A->rSuperCell[1][1])+abs(A->rSuperCell[2][1]));j++)
-    {
-      for(k=-(abs(A->rSuperCell[0][2])+abs(A->rSuperCell[1][2])+abs(A->rSuperCell[2][2]));k<(abs(A->rSuperCell[0][2])+abs(A->rSuperCell[1][2])+abs(A->rSuperCell[2][2]));k++)
-      {
-        a=((double)(i*(A->rSuperCell[1][1]*A->rSuperCell[2][2]-A->rSuperCell[1][2]*A->rSuperCell[2][1])+
-                    j*(A->rSuperCell[1][2]*A->rSuperCell[2][0]-A->rSuperCell[1][0]*A->rSuperCell[2][2])+
-                    k*(A->rSuperCell[1][0]*A->rSuperCell[2][2]-A->rSuperCell[1][1]*A->rSuperCell[2][0])))/denom;
-        b=((double)(i*(A->rSuperCell[0][2]*A->rSuperCell[2][1]-A->rSuperCell[0][1]*A->rSuperCell[2][2])+
-                    j*(A->rSuperCell[0][0]*A->rSuperCell[2][2]-A->rSuperCell[0][2]*A->rSuperCell[2][0])+
-                    k*(A->rSuperCell[0][1]*A->rSuperCell[2][0]-A->rSuperCell[0][0]*A->rSuperCell[2][1])))/denom;
-        c=((double)(i*(A->rSuperCell[0][1]*A->rSuperCell[1][2]-A->rSuperCell[0][2]*A->rSuperCell[1][1])+
-                    j*(A->rSuperCell[0][2]*A->rSuperCell[1][0]-A->rSuperCell[0][0]*A->rSuperCell[1][2])+
-                    k*(A->rSuperCell[0][0]*A->rSuperCell[1][1]-A->rSuperCell[0][1]*A->rSuperCell[1][0])))/denom;
-        if((a>=0)&&(a<1.0)&&(b>=0)&&(b<1.0)&&(c>=0)&&(c<1.0))
-        {
-          A->CellPos[A->NCell][0]=i;
-          A->CellPos[A->NCell][1]=j;
-          A->CellPos[A->NCell][2]=k;
-          A->NCell++;
-        }
-      }
-    }
-  }
-*/
   return 0;
 }
 
@@ -203,8 +192,7 @@ uint32_t FindCellPosInCrystalStructureSuperCellType(CrystalStructureSuperCellTyp
   *pos = A.NCell;
   for (i = 0; i < *pos; i++)
   {
-    if ((A.CellPos[i][0] == vec[0]) && (A.CellPos[i][1] == vec[1]) && (A.CellPos[i][2] == vec[2]))
-      *pos = i;
+    if ((A.CellPos[i][0] == vec[0]) && (A.CellPos[i][1] == vec[1]) && (A.CellPos[i][2] == vec[2])) *pos = i;
   }
   if (*pos == A.NCell)
   {

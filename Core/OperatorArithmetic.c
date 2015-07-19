@@ -5411,8 +5411,7 @@ uint32_t OperatorAddNormalOrder(OperatorType * const OA, const OperatorType OB, 
 /*
  *
  */
-uint32_t MappedOperatorFixedLengthAtLevel(OperatorFixedLengthType * const OA, const OperatorFixedLengthType OB,
-                                          const MatrixType U, const uint32_t level, const uint32_t length)
+uint32_t MappedOperatorFixedLengthAtLevel(OperatorFixedLengthType * const OA, const OperatorFixedLengthType OB, const MatrixType U, const uint32_t level, const uint32_t length)
 {
   uint32_t i, j, k;
   OA->N = 0;
@@ -5755,11 +5754,18 @@ uint32_t MappedOperatorAdd(OperatorType * const OA, const OperatorType OB, const
  *  a_j        = \sum_i U_{i,j}   a_i
  *  a_j^{\dag} = \sum_i U_{i,j}^* a_i^{dag}
  */
-uint32_t MappedOperatorAddNormalOrder(OperatorType * const OA, const OperatorType OB, const MatrixType U,
-                                      uint32_t(*QDetNotOrdered) (uint16_t, uint16_t, uint32_t))
+//TODO: test if order of U is right
+uint32_t MappedOperatorAddNormalOrder(OperatorType * const OA, const OperatorType OB, const MatrixType U, uint32_t(*QDetNotOrdered) (uint16_t, uint16_t, uint32_t))
 {
   uint32_t level, length, i, k;
   OperatorFixedLengthType FA, FB;
+  for(i=OA->MaxLength+1;i<=OB.MaxLength;i++)
+  {
+    if(OB.l[i].N>0)
+    {
+      InitOperatorFixedLength(OA, i, OB.l[i].NBitsKey);
+    }
+  }
   for (length = 0; length <= OB.MaxLength; length++)
   {
     for (i = 0; i < OB.l[length].N; i++)

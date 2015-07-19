@@ -1954,6 +1954,15 @@ static const struct luaL_Reg global_functions[] = {
   {"CreateSpectra", LuaCreateSpectra},
   {"CreateFluorescenceYield", LuaCreateFluorescenceYield},
   {"CreateResonantSpectra", LuaCreateResonantSpectra},
+  {"CreateClusterHamiltonian", LuaCreateClusterHamiltonian},
+  {"CalculateDOS", LuaCalculateDOS},
+  {"CalculateBands", LuaCalculateBands},
+  {"CalculateFermi", LuaCalculateFermi},
+  {"CalculateG", LuaCalculateG},
+  {"PlotDOS", LuaPlotDOS},
+  {"PlotBands", LuaPlotBands},
+  {"PlotBandsAndDOS", LuaPlotBandsAndDOS},
+  {"PlotFermi", LuaPlotFermi},
   {NULL, NULL}
 };
 
@@ -1990,8 +1999,9 @@ int luaopen_ssp(lua_State * L)
   
   luaL_newmetatable(L, "TightBinding_Type");
   luaL_setfuncs(L, TightBinding_meta, 0);
-    
+  
   luaMWH_RegisterGlobalFunctions(L, global_functions);
+  luaMWH_RegisterGlobalFunctions(L, mathlib);
   
   return 0;
 }

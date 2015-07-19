@@ -61,6 +61,7 @@ static void *currentudata = NULL;
 #include "Spectra.c"
 #include "TightBinding.c"
 #include "ResponseFunction.c"
+#include "Plot.c"
 #include "BraKet.c"
 #include "eval.c"
 #include "ssp.c"

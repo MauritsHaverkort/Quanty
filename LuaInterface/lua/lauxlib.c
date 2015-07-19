@@ -212,6 +212,7 @@ LUALIB_API int luaL_warning (lua_State *L, const char *fmt, ...) {
   va_end(argp);
   lua_concat(L, 2);
   printf("warning: %s\n",lua_tostring(L,-1));
+  lua_pop(L, 1);
   return 0;
 }
 

@@ -1,4 +1,6 @@
-
+/*  push a new TightBinding object to the lua stack
+ *  the tight binding object is empty as its properties need to be set via its ellements
+ */
 static int LuaNewTightBinding(lua_State * L)
 {
   TightBindingDef *TB;
@@ -11,6 +13,7 @@ static int LuaNewTightBinding(lua_State * L)
     TB->NFermion=0;
     TB->Cell.NAtoms=0;
     TB->Cell.Units=1;
+    TB->FermionIndex=NULL;
   }
   else
   {
@@ -20,76 +23,227 @@ static int LuaNewTightBinding(lua_State * L)
 }
 
 
-static int LuaTightBindingIndex(lua_State * L)
+/*
+ *
+ */
+static int LuaCalculateDOS(lua_State *L)
 {
-  uint32_t i,j;
-  TightBindingDef *a = (TightBindingDef *) luaL_checkudata(L, 1, "TightBinding_Type");
-  const char *str = lua_tostring(L, 2);  
-  if (strcmp(str, "Name") == 0)
+  //TODO:
+  
+  return 1;
+}
+/*
+ *
+ */
+static int LuaCalculateBands(lua_State *L)
+{
+  //TODO:
+  
+  return 1;
+}
+/*
+ *
+ */
+static int LuaCalculateFermi(lua_State *L)
+{
+  //TODO:
+  
+  return 1;
+}
+/*
+ *
+ */
+static int LuaCalculateG(lua_State *L)
+{
+  //TODO:
+  
+  return 1;
+}
+
+
+/*  Creates an Hamiltonian representing a real space cluster
+ *  Input on stack
+ *    A tight binding Definition
+ *    A cluster definition
+ *       Possible formats:
+ *         {"periodic", {a,b,c}, atoms_to_include_optional}
+ *         {"open", atoms_to_include}
+ *    Aditional Operator to add (optional)
+ *         Fermion index should follow the definition in the original tight binding Hamiltonian, when spin is added it is added in the form down/up, down/up, ...
+ *    Options (optional)
+ */
+static int LuaCreateClusterHamiltonian(lua_State *L)
+{
+  uint32_t len, lenclusterdef,i,j;
+  char *tokenread;
+  TightBindingDef *a, aSuper;
+  CrystalStructureSuperCellType SuperCell;
+  uint32_t periodic;
+  OperatorType *H;
+  double k[3]={0.,0.,0.};
+  Bool AddSpin=False;
+  Bool QOperators=False, QOptions=False;
+  OperatorType *AditionalOperator=NULL;
+  MatrixType U;
+  LuaOptionsType LuaCreateClusterHamiltonianOptions[]={
+    {"AddSpin", "bool", &AddSpin},
+    {NULL, NULL, NULL}};
+  /* check number of input parameters */
+  len = (uint32_t)lua_gettop(L);
+  if(!((len==2)||(len==3)||(len==4)))
   {
-    lua_pushstring(L, a->Name);
-    return 1;
+    return luaL_error(L, "Error CreateClusterHamiltonian called with %d arguments, 2, 3 or 4 expected\n",len);
   }
-  else if (strcmp(str, "Cell")==0)
+  /* read the tight binding defintion from the first place on the lua stack */
+  a = (TightBindingDef *) luaL_checkudata(L, 1, "TightBinding_Type");
+  /* read the cluster defintion from the second position on the stack */
+  if(lua_type(L,2)!=LUA_TTABLE)
   {
-    lua_createtable(L,3,0);
-    for(i=0;i<3;i++)
+    return luaL_error(L, "Error CreateClusterHamiltonian second argument should be a table of the form {\"periodic\", {a,b,c}, (optional)atoms_to_include } or {\"open\", atoms_to_include}\n",len);
+  }
+  lenclusterdef = (uint32_t)lua_objlen(L, 2);
+  if(!((lenclusterdef==2)||(lenclusterdef==3)))
+  {
+    return luaL_error(L, "Error CreateClusterHamiltonian second argument should be a table of the form {\"periodic\", {a,b,c}, (optional)atoms_to_include } or {\"open\", atoms_to_include}\n",len);
+  }
+  /* read if we have open or periodic boundary conditions */
+  lua_rawgeti(L, 2, 1);
+  if(lua_type(L, -1)!=LUA_TSTRING)
+  {
+    return luaL_error(L, "Error in CreateClusterHamiltonian second argument should be a table with the first element either the string \"open\" or \"periodic\"\n");
+  }
+  tokenread = (char*) luaL_checkstring(L, -1);
+  if (strcmp(tokenread, "periodic") == 0)
+  {
+    periodic=1;
+  }
+  else if (strcmp(tokenread, "open") == 0)
+  {
+    periodic=0;
+  }
+  else
+  {
+    return luaL_error(L, "Error in CreateClusterHamiltonian second argument should be a table with the first element either the string \"open\" or \"periodic\"\n");
+  }
+  lua_pop(L,1);
+  /* if peridic read the super-cell parameters */
+  if(periodic)
+  {
+    lua_rawgeti(L, 2, 2);
+    if((lua_type(L, -1)!=LUA_TTABLE)||((uint32_t)lua_objlen(L, -1)!=3))
     {
-      lua_createtable(L,3,0);
-      for(j=0;j<3;j++)
+      return luaL_error(L, "Error in CreateClusterHamiltonian second argument should be a table with the second element a table of the form {a,b,c}\n");
+    }
+    for(i=1;i<=3;i++)
+    {
+      lua_rawgeti(L, -1, i);
+      if((lua_type(L, -1)!=LUA_TTABLE)||((uint32_t)lua_objlen(L, -1)!=3))
       {
-        lua_pushnumber(L, a->Cell.rUnitCell[i][j]);
-        lua_rawseti(L, -2, j+1);
+        return luaL_error(L, "Error in CreateClusterHamiltonian second argument should be a table with the second element a table of the form {a,b,c} and element %i (a,b,c) should be a list of 3 integers\n",i);
       }
-      lua_rawseti(L, -2, i+1);
+      for(j=1;j<=3;j++)
+      {
+        lua_rawgeti(L, -1, j);
+        SuperCell.rSuperCell[i-1][j-1]=(int32_t)luaL_checkinteger(L, -1);
+        lua_pop(L,1);
+      }
+      lua_pop(L,1);
     }
-    return 1;
+    lua_pop(L,1);
+    /* read a list of atoms to include / exclude */
+    if(lenclusterdef==3)
+    {
+      //TODO:
+      return luaL_error(L, "Error in CreateClusterHamiltonian including only some of the atoms / shells / orbitals not yet implemented \n");
+    }
+    else
+    {
+      SuperCell.Crystal=a->Cell;
+    }
+    AddAditionalInformationToSuperCell(&SuperCell);
   }
-  else if (strcmp(str, "Units")==0)
+  else
   {
-    lua_createtable(L,3,0);
-    if((a->Cell.Units&1)==1)
-    {
-      lua_pushfstring(L, "2Pi");
-      lua_rawseti(L, -2, 1);
-    }
-    if((a->Cell.Units&1)==0)
-    {
-      lua_pushfstring(L, "NoPi");
-      lua_rawseti(L, -2, 1);
-    }
-    if((a->Cell.Units&6)==0)
-    {
-      lua_pushfstring(L, "Angstrom");
-      lua_rawseti(L, -2, 2);
-    }
-    if((a->Cell.Units&6)==2)
-    {
-      lua_pushfstring(L, "Bohr");
-      lua_rawseti(L, -2, 2);
-    }
-    if((a->Cell.Units&6)==4)
-    {
-      lua_pushfstring(L, "nm");
-      lua_rawseti(L, -2, 2);
-    }
-    if((a->Cell.Units&8)==0)
-    {
-      lua_pushfstring(L, "Absolute");
-      lua_rawseti(L, -2, 3);
-    }
-    if((a->Cell.Units&8)==8)
-    {
-      lua_pushfstring(L, "Relative");
-      lua_rawseti(L, -2, 3);
-    }
-    return 1;
+    //TODO:
+    return luaL_error(L, "Error in CreateClusterHamiltonian open boundary conditions not yet implemented \n");
   }
-  return luaL_error(L, "Error index %s not found in TightBinding Object\n",str);
+  /* deterimine if there are aditional operators or aditional options */
+  if(len==2)
+  {
+    QOperators=False;
+    QOptions=False;
+  }
+  else if(len==4)
+  {
+    QOperators=True;
+    QOptions=True;
+  }
+  /* read additional operators from the stack */
+  if (luaL_testudata(L, 3, "Operator_Type") != NULL)
+  {
+    QOperators=True;
+    AditionalOperator = (OperatorType *) luaL_checkudata(L, 3, "Operator_Type");
+    if(len==3)
+    {
+      QOptions=False;
+    }
+  }
+  else
+  {
+    QOperators=False;
+    QOptions=True;
+    if(len==4)
+    {
+      return luaL_error(L, "Error CreateClusterHamiltonian third argument should be an operator defining aditional interactions within the unit cell\n");
+    }
+  }
+  /* read options */
+  if(QOptions)
+  {
+    LuaCheckOptions(L, -1, LuaCreateClusterHamiltonianOptions);
+  }
+  /* create the cluster hamiltonian */
+  CreateTightBindingSuperCell(*a, &aSuper, SuperCell);
+  H=(OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+  luaL_setmetatable(L, "Operator_Type");
+  if(AddSpin)
+  {
+    CreateHamiltonianOperatorFromTightBindingDefPlusSpin(aSuper, k, H);
+  }
+  else
+  {
+    CreateHamiltonianOperatorFromTightBindingDef(aSuper, k, H);
+  }
+  /* add aditional operators */
+  if(QOperators)
+  {
+    if(AddSpin)
+    {
+      if(AditionalOperator->NFermion!=(2*a->NFermion)) return luaL_error(L, "Error CreateClusterHamiltonian aditional operator should have the same number of spin-orbitals (%f) as the cluster has (%f)\n",(double)AditionalOperator->NFermion,(double)a->NFermion);
+    }
+    else
+    {
+      if(AditionalOperator->NFermion!=a->NFermion) return luaL_error(L, "Error CreateClusterHamiltonian aditional operator should have the same number of spin-orbitals (%f) as the cluster has (%f)\n",(double)AditionalOperator->NFermion,(double)a->NFermion);
+    }
+    U.Nj=H->NFermion;
+    U.Ni=AditionalOperator->NFermion;
+    U.QComplex=0;
+    InitMatrix(&U);
+    for(i=0;i<SuperCell.NCell;i++)
+    {
+      MatrixScalarMultiply(&U, 0, 0);
+      for(j=0;j<AditionalOperator->NFermion;j++)
+      {
+        U.VRe[j][j+i*AditionalOperator->NFermion]=1;
+      }
+      MappedOperatorAddNormalOrder(H, *AditionalOperator, U, &QDetNotOrderedFcFaBcBa);
+    }
+  }
+  return 1;
 }
 
 /*
- * reads a list of atom definitions from the Lua stack
+ * reads a atom definition from the Lua stack
  * format:
  *           Atom   = {Name, Position, {Shell1, Shell2, ...}}
  *           Shelli = {Name, {orb1, orb2, ...}}
@@ -125,15 +279,15 @@ static int LuaReadAtom(lua_State *L, int narg, AtomType *a)
     for(i=0;i<a->Nshell;i++)
     {
       lua_rawgeti(L, -1, i+1);
-      if(lua_type(L,-1)!=LUA_TTABLE) return luaL_error(L, "Error ReadAtom shell %i of atom %s should be a list containing the name and a list of orbitals\n",i+1,a->Name);
+      if(lua_type(L,-1)!=LUA_TTABLE) return luaL_error(L, "Error ReadAtom shell %d of atom %s should be a list containing the name and a list of orbitals\n",i+1,a->Name);
       len = (uint32_t)lua_objlen(L, -1);
-      if(len!=2) return luaL_error(L, "Error ReadAtom shell %i of atom %s should be a list containing the name and a list of orbitals\n",i+1,a->Name);
+      if(len!=2) return luaL_error(L, "Error ReadAtom shell %d of atom %s should be a list containing the name and a list of orbitals\n",i+1,a->Name);
       lua_rawgeti(L, -1, 1);
       a->ShellName[i]=malloc(MAXStrLength*sizeof(char));
       strncpy(a->ShellName[i], luaL_checkstring(L, -1), MAXStrLength-1);
       lua_pop(L, 1);
       lua_rawgeti(L, -1, 2);
-      if(lua_type(L,-1)!=LUA_TTABLE) return luaL_error(L, "Error ReadAtom shell %s(%i) of atom %s should be a list containing the name and a list of orbitals\n",a->ShellName[i],i+1,a->Name);
+      if(lua_type(L,-1)!=LUA_TTABLE) return luaL_error(L, "Error ReadAtom shell %s(%d) of atom %s should be a list containing the name and a list of orbitals\n",a->ShellName[i],i+1,a->Name);
       a->shelldegeneracy[i] = (uint32_t)lua_objlen(L, -1);
       a->OrbitalName[i] = malloc(a->shelldegeneracy[i]*sizeof(char*));
       for(j=0;j<a->shelldegeneracy[i];j++)
@@ -153,6 +307,18 @@ static int LuaReadAtom(lua_State *L, int narg, AtomType *a)
     return luaL_error(L, "Error ReadAtom expects a list of the form {Name, Position, {Shell1, Shell2, ...}}\n");
   }
   return 0;
+}
+
+/*
+ * push a definition of an atom to the stack as list
+ * format:
+ *           Atom   = {Name, Position, {Shell1, Shell2, ...}}
+ *           Shelli = {Name, {orb1, orb2, ...}}
+ */
+static int LuaPushAtom(lua_State *L, AtomType const *a)
+{
+  //TODO:
+  return 1;
 }
 
 /*
@@ -250,17 +416,17 @@ static int LuaReadHopping(lua_State *L, int narg, CrystalStructureType *Cell, Ti
     // j = Cross[c,a] . r / (Cross[a,b].c)
     // k = Cross[a,b] . r / (Cross[a,b].c)
     CellVolume=ParallelalPipedVolume(Cell->rUnitCell[0], Cell->rUnitCell[1], Cell->rUnitCell[2]);
-    if(fabs(CellVolume)<100*sqrt(DBL_MIN)) return luaL_error(L, "ReadHopping called with a cell defined that has a zero volume:\n    a={%22.15E %22.15E %22.15E}\n    b={%22.15E %22.15E %22.15E}\n    c={%22.15E %22.15E %22.15E}\n",Cell->rUnitCell[0][0],Cell->rUnitCell[0][1],Cell->rUnitCell[0][2],Cell->rUnitCell[1][0],Cell->rUnitCell[1][1],Cell->rUnitCell[1][2],Cell->rUnitCell[2][0],Cell->rUnitCell[2][1],Cell->rUnitCell[2][2]);
+    if(fabs(CellVolume)<100*sqrt(DBL_MIN)) return luaL_error(L, "ReadHopping called with a cell defined that has a zero volume:\n    a={%d %d %d}\n    b={%d %d %d}\n    c={%d %d %2d}\n",Cell->rUnitCell[0][0],Cell->rUnitCell[0][1],Cell->rUnitCell[0][2],Cell->rUnitCell[1][0],Cell->rUnitCell[1][1],Cell->rUnitCell[1][2],Cell->rUnitCell[2][0],Cell->rUnitCell[2][1],Cell->rUnitCell[2][2]);
     r[0]=H->ConnectingVector[0]+Cell->Atom[H->Atompos1].Position[0]-Cell->Atom[H->Atompos2].Position[0];
     r[1]=H->ConnectingVector[1]+Cell->Atom[H->Atompos1].Position[1]-Cell->Atom[H->Atompos2].Position[1];
     r[2]=H->ConnectingVector[2]+Cell->Atom[H->Atompos1].Position[2]-Cell->Atom[H->Atompos2].Position[2];
     idouble[0]=ParallelalPipedVolume(Cell->rUnitCell[1], Cell->rUnitCell[2], r)/CellVolume;
     idouble[1]=ParallelalPipedVolume(Cell->rUnitCell[2], Cell->rUnitCell[0], r)/CellVolume;
     idouble[2]=ParallelalPipedVolume(Cell->rUnitCell[0], Cell->rUnitCell[1], r)/CellVolume;
-    H->TransVecs[0]=(int)(idouble[0]+0.5);
-    H->TransVecs[1]=(int)(idouble[1]+0.5);
-    H->TransVecs[2]=(int)(idouble[2]+0.5);
-    if((fabs(idouble[0]-H->TransVecs[0])>0.0000001)||(fabs(idouble[1]-H->TransVecs[1])>0.0000001)||(fabs(idouble[2]-H->TransVecs[2])>0.0000001)) return luaL_error(L, "ReadHopping connecting vector given in absolute coordinates, but not an integer number of unit cells plus the distance in the unit cell between the atoms:\n   {x,y,z} = {%22.15E %22.15E %22.15E}\n   {i,j,k} = {%22.15E %22.15E %22.15E}\n",H->ConnectingVector[0],H->ConnectingVector[1],H->ConnectingVector[2],idouble[0],idouble[1],idouble[2]);
+    H->TransVecs[0]=(int)(idouble[0]+(idouble[0]>0?1:-1)*0.5);
+    H->TransVecs[1]=(int)(idouble[1]+(idouble[1]>0?1:-1)*0.5);
+    H->TransVecs[2]=(int)(idouble[2]+(idouble[2]>0?1:-1)*0.5);
+    if((fabs(idouble[0]-H->TransVecs[0])>0.0000001)||(fabs(idouble[1]-H->TransVecs[1])>0.0000001)||(fabs(idouble[2]-H->TransVecs[2])>0.0000001)) return luaL_error(L, "ReadHopping connecting vector given in absolute coordinates, but not an integer number of unit cells plus the distance in the unit cell between the atoms:\n   {x,y,z} = {%f %f %f} (%f %f %f)\n   {i,j,k} = {%f %f %f}\n",(double)H->ConnectingVector[0],(double)H->ConnectingVector[1],(double)H->ConnectingVector[2],(double)H->TransVecs[0],(double)H->TransVecs[1],(double)H->TransVecs[2],idouble[0],idouble[1],idouble[2]);
     
   }
   else // relative units
@@ -270,7 +436,7 @@ static int LuaReadHopping(lua_State *L, int narg, CrystalStructureType *Cell, Ti
       lua_rawgeti(L, -1, i+1);
       buff=(double)luaL_checknumber(L, -1);
       H->TransVecs[i]=(int)buff;
-      if(fabs(buff-H->TransVecs[i])>100*DBL_EPSILON) return luaL_error(L, "Units for atom positions is set to Relative, i.e. all vectors must be given in units of a,b and c.\nReadHopping expects a table of the form {ai,bi,ci} for the vector defining the connection between atom %s and atom %s\nWith ai, bi and ci being integers, found %22.25E\n",AtomShell1,AtomShell2,buff);
+      if(fabs(buff-H->TransVecs[i])>100*DBL_EPSILON) return luaL_error(L, "Units for atom positions is set to Relative, i.e. all vectors must be given in units of a,b and c.\nReadHopping expects a table of the form {ai,bi,ci} for the vector defining the connection between atom %s and atom %s\nWith ai, bi and ci being integers, found %d\n",AtomShell1,AtomShell2,buff);
       lua_pop(L,1);
     }
     lua_pop(L,1);
@@ -293,6 +459,104 @@ static int LuaReadHopping(lua_State *L, int narg, CrystalStructureType *Cell, Ti
   lua_pop(L,1);
   return 0;
 }
+
+/*
+ * push a Hopping definition to the Lua stack
+ * format
+ *          Hopping = {"AtomName1.ShellName1","AtomName2.ShellName2",Vec,H}
+ *        with H a table of tables of real or complex numbers / matrix
+ *
+ */
+static int LuaPushHopping(lua_State *L, CrystalStructureType const *Cell, TightBindingDefHopping const *H)
+{
+  //TODO:
+  return 1;
+}
+
+
+static int LuaTightBindingIndex(lua_State * L)
+{
+  uint32_t i,j;
+  TightBindingDef *a = (TightBindingDef *) luaL_checkudata(L, 1, "TightBinding_Type");
+  const char *str = lua_tostring(L, 2);  
+  if (strcmp(str, "Name") == 0)
+  {
+    lua_pushstring(L, a->Name);
+    return 1;
+  }
+  else if (strcmp(str, "Cell")==0)
+  {
+    lua_createtable(L,3,0);
+    for(i=0;i<3;i++)
+    {
+      lua_createtable(L,3,0);
+      for(j=0;j<3;j++)
+      {
+        lua_pushnumber(L, a->Cell.rUnitCell[i][j]);
+        lua_rawseti(L, -2, j+1);
+      }
+      lua_rawseti(L, -2, i+1);
+    }
+    return 1;
+  }
+  else if (strcmp(str, "Atoms") == 0)
+  {
+    //TODO: push a table to the stack contianing the list of atoms as defined in reading when setting the variable
+    return 1;
+  }
+  else if (strcmp(str, "Units")==0)
+  {
+    lua_createtable(L,3,0);
+    if((a->Cell.Units&1)==1)
+    {
+      lua_pushfstring(L, "2Pi");
+      lua_rawseti(L, -2, 1);
+    }
+    if((a->Cell.Units&1)==0)
+    {
+      lua_pushfstring(L, "NoPi");
+      lua_rawseti(L, -2, 1);
+    }
+    if((a->Cell.Units&6)==0)
+    {
+      lua_pushfstring(L, "Angstrom");
+      lua_rawseti(L, -2, 2);
+    }
+    if((a->Cell.Units&6)==2)
+    {
+      lua_pushfstring(L, "Bohr");
+      lua_rawseti(L, -2, 2);
+    }
+    if((a->Cell.Units&6)==4)
+    {
+      lua_pushfstring(L, "nm");
+      lua_rawseti(L, -2, 2);
+    }
+    if((a->Cell.Units&8)==0)
+    {
+      lua_pushfstring(L, "Absolute");
+      lua_rawseti(L, -2, 3);
+    }
+    if((a->Cell.Units&8)==8)
+    {
+      lua_pushfstring(L, "Relative");
+      lua_rawseti(L, -2, 3);
+    }
+    return 1;
+  }
+  else if (strcmp(str, "Hopping") == 0)
+  {
+    //TODO: push a table to the stack with the hopping definitions as defined when reading the variable
+    return 1;
+  }
+  else if (strcmp(str, "Hk")==0)
+  {
+    //TODO: push a matrix to the stack as table representing Hk(kx,ky,kz) read options to define either constant or kx phase in the unit cell
+    return 1;
+  }
+  return luaL_error(L, "Error index %s not found in TightBinding Object\n",str);
+}
+
 
 static int LuaTightBindingNewIndex(lua_State * L)
 {
@@ -337,13 +601,22 @@ static int LuaTightBindingNewIndex(lua_State * L)
   {
     if(a->nH!=0)
     {
-      luaL_warning(L, "Warning Changed the settings of atoms for a tight binding hamiltonian (%s)\n Previous definition will be arrased\n",a->Name);
+      luaL_warning(L, "Warning Changed the settings of atoms for a tight binding hamiltonian (%s)\n Previous definition of all hoppings will be arrased\n",a->Name);
       for(i=0;i<a->nH;i++)
       {
         FreeMatrix(&(a->H[i].Hop));
       }
       free(a->H);
       a->nH=0;
+      if(a->FermionIndex!=NULL)
+      {
+        for (i = 0; i < a->Cell.NAtoms; i++)
+        {
+          free(a->FermionIndex[i]);
+        }
+        if(a->Cell.NAtoms!=0) free(a->FermionIndex);
+      }
+      a->Cell.NAtoms=0;
     }
     // format of atoms  = {Atom1, Atom2, ...}
     //           Atomi  = {Name, Position, {Shell1, Shell2, ...}}
@@ -451,6 +724,10 @@ static int LuaTightBindingNewIndex(lua_State * L)
       LuaReadHopping(L, -1, &(a->Cell), &(a->H[i]));
       lua_pop(L, 1);
     }
+  }
+  else if(strcmp(str, "Hk")==0)
+  {
+    return luaL_error(L, "Error can not set Hk in a TightBinding Object\n",str);
   }
   else
   {
