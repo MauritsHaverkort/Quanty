@@ -5883,8 +5883,7 @@ uint32_t RotateOperator(OperatorType * const OA, const OperatorType OB, const Ma
   }
   return MappedOperatorAdd(OA, OB, U);
 }
-uint32_t RotateOperatorNormalOrder(OperatorType * const OA, const OperatorType OB, const MatrixType U,
-                                   uint32_t(*QDetNotOrdered) (uint16_t, uint16_t, uint32_t))
+uint32_t RotateOperatorNormalOrder(OperatorType * const OA, const OperatorType OB, const MatrixType U, uint32_t(*QDetNotOrdered) (uint16_t, uint16_t, uint32_t))
 {
   if(InitOperatorCopySettings(OA, OB))
   {

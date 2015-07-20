@@ -80,13 +80,17 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
   CrystalStructureSuperCellType SuperCell;
   uint32_t periodic;
   OperatorType *H;
-  double k[3]={0.,0.,0.};
+  CompactVectorType k;
   Bool AddSpin=False;
   Bool QOperators=False, QOptions=False;
   OperatorType *AditionalOperator=NULL;
   MatrixType U;
+  k.Ni=3;
+  k.QComplex=0;
+  k.VRe=calloc(3,sizeof(double));
   LuaOptionsType LuaCreateClusterHamiltonianOptions[]={
     {"AddSpin", "bool", &AddSpin},
+    {"k", "Vector", &k},
     {NULL, NULL, NULL}};
   /* check number of input parameters */
   len = (uint32_t)lua_gettop(L);
@@ -201,6 +205,14 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
   if(QOptions)
   {
     LuaCheckOptions(L, -1, LuaCreateClusterHamiltonianOptions);
+    if(k.Ni!=3)
+    {
+      return luaL_error(L, "Error CreateClusterHamiltonian optional k-vector should have a length of 3\n");
+    }
+    if(k.QComplex)
+    {
+      return luaL_error(L, "Error CreateClusterHamiltonian optional k-vector should be real\n");
+    }
   }
   /* create the cluster hamiltonian */
   CreateTightBindingSuperCell(*a, &aSuper, SuperCell);
@@ -208,11 +220,11 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
   luaL_setmetatable(L, "Operator_Type");
   if(AddSpin)
   {
-    CreateHamiltonianOperatorFromTightBindingDefPlusSpin(aSuper, k, H);
+    CreateHamiltonianOperatorFromTightBindingDefPlusSpin(aSuper, k.VRe, H);
   }
   else
   {
-    CreateHamiltonianOperatorFromTightBindingDef(aSuper, k, H);
+    CreateHamiltonianOperatorFromTightBindingDef(aSuper, k.VRe, H);
   }
   /* add aditional operators */
   if(QOperators)
@@ -239,6 +251,7 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
       MappedOperatorAddNormalOrder(H, *AditionalOperator, U, &QDetNotOrderedFcFaBcBa);
     }
   }
+  SetQComplexOperator(H);
   return 1;
 }
 

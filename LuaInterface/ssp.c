@@ -1952,8 +1952,7 @@ static int LuaStatistics(lua_State *L)
     printf("Statistical information on wavefunction %s\n",psi->Name);
     printf("Total number of determinants %i\n",psi->N);
     printf("NF %i NB %i QComplex %i\n",psi->NFermion, psi->NBoson, psi->QComplex);
-    PrintWaveFunctionPrefactorHistogram(*psi, 10.0, 30);
-    PrintWaveFunctionPrefactorHistogram(*psi, 2.154434690031884, 60);
+    PrintWaveFunctionPrefactorHistogram(*psi, 10.0, 20);
     
     
   }
