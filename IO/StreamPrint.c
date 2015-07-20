@@ -482,8 +482,7 @@ uint32_t StreamPrintWaveFunctionPartialCorrelationTensor(WaveFunctionType const 
 /*
  *   prints a Histogram lisitng the prefactors of a wave-funciton
  */
-uint32_t StreamPrintWaveFunctionPrefactorHistogram(WaveFunctionType const psi, const double exp, const uint32_t N,
-                                                   FILE * stream)
+uint32_t StreamPrintWaveFunctionPrefactorHistogram(WaveFunctionType const psi, const double exp, const uint32_t N, FILE * stream)
 {
   uint32_t i;
   double Hist[N];

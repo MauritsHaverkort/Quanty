@@ -1930,6 +1930,39 @@ static int LuaDensityMatrix(lua_State *L)
   return 1;
 }
 
+static int LuaStatistics(lua_State *L)
+{
+  uint32_t len;
+  len = (uint32_t)lua_gettop(L);
+  
+  
+  if (luaL_testudata(L, 1, "Operator_Type") != NULL)
+  {
+    OperatorType *O = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
+    printf("Statistical information on operator %s\n",O->Name);
+    //TODO:
+    
+    
+    
+    
+  }
+  else if (luaL_testudata(L, 1, "Wavefunction_Type") != NULL)
+  {
+    WaveFunctionType *psi = (WaveFunctionType *) luaL_checkudata(L, 1, "Wavefunction_Type");
+    printf("Statistical information on wavefunction %s\n",psi->Name);
+    printf("Total number of determinants %i\n",psi->N);
+    printf("NF %i NB %i QComplex %i\n",psi->NFermion, psi->NBoson, psi->QComplex);
+    PrintWaveFunctionPrefactorHistogram(*psi, 10.0, 30);
+    PrintWaveFunctionPrefactorHistogram(*psi, 2.154434690031884, 60);
+    
+    
+  }
+  else
+  {
+    return luaL_error(L, "Error Statistics expects a wave-function or operator as imput\n");
+  }
+  return 0;
+}
 
 static const struct luaL_Reg global_functions[] = {
   {"Help", LuaHelp},
@@ -1942,6 +1975,7 @@ static const struct luaL_Reg global_functions[] = {
   {"NewWavefunction", LuaNewWaveFunction},
   {"NewTightBinding", LuaNewTightBinding},
   {"DensityMatrix",LuaDensityMatrix},
+  {"Statistics",LuaStatistics},
   {"Copy", Luacopy},
   {"Clone", Luacopy},
   {"Chop", LuaChop},
