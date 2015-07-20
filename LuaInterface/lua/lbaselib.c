@@ -97,6 +97,9 @@ static int luaB_error (lua_State *L) {
   return lua_error(L);
 }
 
+static int luaB_warning (lua_State *L) {
+  return luaL_warning(L, "%s", luaL_checkstring(L, 1));
+}
 
 static int luaB_getmetatable (lua_State *L) {
   luaL_checkany(L, 1);
@@ -419,6 +422,7 @@ static const luaL_Reg base_funcs[] = {
   {"collectgarbage", luaB_collectgarbage},
   {"dofile", luaB_dofile},
   {"error", luaB_error},
+  {"warning", luaB_warning},
   {"getmetatable", luaB_getmetatable},
   {"ipairs", luaB_ipairs},
   {"loadfile", luaB_loadfile},

@@ -204,6 +204,18 @@ LUALIB_API int luaL_error (lua_State *L, const char *fmt, ...) {
 }
 
 
+LUALIB_API int luaL_warning (lua_State *L, const char *fmt, ...) {
+  va_list argp;
+  va_start(argp, fmt);
+  luaL_where(L, 1);
+  lua_pushvfstring(L, fmt, argp);
+  va_end(argp);
+  lua_concat(L, 2);
+  printf("warning: %s\n",lua_tostring(L,-1));
+  lua_pop(L, 1);
+  return 0;
+}
+
 LUALIB_API int luaL_fileresult (lua_State *L, int stat, const char *fname) {
   int en = errno;  /* calls to Lua API may change this value */
   if (stat) {

@@ -80,7 +80,6 @@ uint32_t StreamPrintBandstructurePath();
 uint32_t StreamPrintBlockNaturalImpurityOrbitalMatrix();
 uint32_t StreamPrintBlockListOfPoles();
 
-
 uint32_t PrintSparseMatrixMathematica();
 uint32_t StreamPrintSparseMatrixMathematica();
 uint32_t FilePrintSparseMatrixMathematica();

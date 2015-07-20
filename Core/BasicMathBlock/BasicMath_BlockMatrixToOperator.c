@@ -10,7 +10,7 @@
  */
 uint32_t BlockTridiagonalMatrixToImpurityHamiltonian(OperatorType *const H, BlockTriDiagonalMatrixType const *A, uint32_t const NBlockMax, uint32_t const Spin, uint32_t const NFermionShift, uint32_t const NFermion)
 {
-  //TODO: test
+  //TODO: test add H to Block tridiag using block lanczos
   uint32_t i,j,k,ia,ifer,jfer,ib;
   uint16_t oadd[2];
   InitNamedOperator(H, "Impurity Hamiltonian");
@@ -234,7 +234,7 @@ uint32_t BlockTridiagonalMatrixToImpurityHamiltonian(OperatorType *const H, Bloc
 }
 
 
-/* BasicMath_BlockMatrixToOperator.c
+/* 
  *
  * !!Complex case is not quite completed. Everything is there, but gPert is TriDiagonalMatrixType which does
  *   not accept complex values.  So I always just give it the real part of the b value

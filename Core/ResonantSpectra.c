@@ -591,6 +591,11 @@ uint32_t FluorescenceYieldRestricted(const OperatorType OppH, DeterminantRestric
     }
     WaveFunctionFree(&GTpsi);
   }
+  // free PsiBasis
+  for(i=0;i<NKrylov1;i++)
+  {
+    WaveFunctionFree(&PsiBasis[i]);
+  }
   return 0;
 }
 

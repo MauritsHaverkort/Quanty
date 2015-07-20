@@ -262,6 +262,10 @@ static int math_exp (lua_State *L)
     res->Re = exp(a->Re)*cos(a->Im);
     res->Im = exp(a->Re)*sin(a->Im);
   }
+  else if (luaL_testudata(L, 1, "Operator_Type") != NULL)
+  {
+    return LuaOperatorExp(L);
+  }
   else
   {
     lua_pushnumber(L, l_mathop(exp)(luaL_checknumber(L, 1)));

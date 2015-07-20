@@ -1090,7 +1090,7 @@ static int Luaconjugatetranspose(lua_State * L)
         OperatorType *O = (OperatorType*) luaL_checkudata(L, len, "Operator_Type");
         OperatorType *ONew;
         ONew = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-        OperatorConjugateTranspose(*O, ONew);
+        OperatorConjugateTransposeNormalOrder(*O, ONew, &QDetNotOrderedFcFaBaBc);
         luaL_setmetatable(L, "Operator_Type");
         return 1;
       }
@@ -1159,7 +1159,7 @@ static int Luatranspose(lua_State * L)
         OperatorType *O = (OperatorType*) luaL_checkudata(L, len, "Operator_Type");
         OperatorType *ONew;
         ONew = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-        OperatorTranspose(*O, ONew);
+        OperatorTransposeNormalOrder(*O, ONew,&QDetNotOrderedFcFaBaBc);
         luaL_setmetatable(L, "Operator_Type");
         return 1;
       }
@@ -1731,7 +1731,6 @@ static int LuaEigensystem(lua_State * L)
   Options.restrictions=False;
   Options.ExpandBasis=True;
   Options.DeterminantRestrictions.N=0;
-  Options.NBitsKey=20;
   OperatorType *Opp;
   DeterminantRestrictionType StartRestrictions;
   StartRestrictions.N=0;
@@ -1789,6 +1788,13 @@ static int LuaEigensystem(lua_State * L)
   {
     return luaL_error(L, "Error Eigensystem called with 2 arguments, whereby the first is the operator and the second a set of restrictions\nNeed a thrid argument how many eigenstates should be calculated\n");
   }
+  /* read options */
+  if((len==4)||((len==3)&&(!(QStartRestrictions))))
+  {
+    LuaCheckOptions(L, -1, LuaEigensystemOptions);
+    if(Options.DeterminantRestrictions.N!=0)Options.restrictions=True;
+    Options.Settings.DenseBoarder = Max(Options.Settings.DenseBoarder,Npsi);
+  }
   if(QStartRestrictions)
   {
     Npsi=(uint32_t)luaL_checkunsigned(L, 3);
@@ -1803,17 +1809,10 @@ static int LuaEigensystem(lua_State * L)
       psi=malloc(Npsi*sizeof(WaveFunctionType));
     }
   }
-  /* read options */
-  if((len==4)||((len==3)&&(!(QStartRestrictions))))
-  {
-    LuaCheckOptions(L, -1, LuaEigensystemOptions);
-    if(Options.DeterminantRestrictions.N!=0)Options.restrictions=True;
-    Options.Settings.DenseBoarder = Max(Options.Settings.DenseBoarder,Npsi);
-  }
   /* calculate groundstate */
   if(Options.ExpandBasis==True)
   {
-    BlockGroundState(*Opp, Npsi, &(Options.Settings) , StartRestrictions, Options.DeterminantRestrictions, psi, Options.NBitsKey);
+    BlockGroundState(*Opp, Npsi, &(Options.Settings) , StartRestrictions, Options.DeterminantRestrictions, psi, Options.Settings.NBitsKey);
   }
   else
   {
@@ -1931,6 +1930,39 @@ static int LuaDensityMatrix(lua_State *L)
   return 1;
 }
 
+static int LuaStatistics(lua_State *L)
+{
+  uint32_t len;
+  len = (uint32_t)lua_gettop(L);
+  
+  
+  if (luaL_testudata(L, 1, "Operator_Type") != NULL)
+  {
+    OperatorType *O = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
+    printf("Statistical information on operator %s\n",O->Name);
+    //TODO:
+    
+    
+    
+    
+  }
+  else if (luaL_testudata(L, 1, "Wavefunction_Type") != NULL)
+  {
+    WaveFunctionType *psi = (WaveFunctionType *) luaL_checkudata(L, 1, "Wavefunction_Type");
+    printf("Statistical information on wavefunction %s\n",psi->Name);
+    printf("Total number of determinants %i\n",psi->N);
+    printf("NF %i NB %i QComplex %i\n",psi->NFermion, psi->NBoson, psi->QComplex);
+    PrintWaveFunctionPrefactorHistogram(*psi, 10.0, 30);
+    PrintWaveFunctionPrefactorHistogram(*psi, 2.154434690031884, 60);
+    
+    
+  }
+  else
+  {
+    return luaL_error(L, "Error Statistics expects a wave-function or operator as imput\n");
+  }
+  return 0;
+}
 
 static const struct luaL_Reg global_functions[] = {
   {"Help", LuaHelp},
@@ -1941,7 +1973,9 @@ static const struct luaL_Reg global_functions[] = {
   {"PotentialExpandedOnClm", LuaPotentialExpandedOnClm},
   {"NewOperator", LuaNewOperator},
   {"NewWavefunction", LuaNewWaveFunction},
+  {"NewTightBinding", LuaNewTightBinding},
   {"DensityMatrix",LuaDensityMatrix},
+  {"Statistics",LuaStatistics},
   {"Copy", Luacopy},
   {"Clone", Luacopy},
   {"Chop", LuaChop},
@@ -1954,6 +1988,15 @@ static const struct luaL_Reg global_functions[] = {
   {"CreateSpectra", LuaCreateSpectra},
   {"CreateFluorescenceYield", LuaCreateFluorescenceYield},
   {"CreateResonantSpectra", LuaCreateResonantSpectra},
+  {"CreateClusterHamiltonian", LuaCreateClusterHamiltonian},
+  {"CalculateDOS", LuaCalculateDOS},
+  {"CalculateBands", LuaCalculateBands},
+  {"CalculateFermi", LuaCalculateFermi},
+  {"CalculateG", LuaCalculateG},
+  {"PlotDOS", LuaPlotDOS},
+  {"PlotBands", LuaPlotBands},
+  {"PlotBandsAndDOS", LuaPlotBandsAndDOS},
+  {"PlotFermi", LuaPlotFermi},
   {NULL, NULL}
 };
 
@@ -1987,8 +2030,12 @@ int luaopen_ssp(lua_State * L)
   luaL_setfuncs(L, Spectra_meta, 0);
   luaL_newlib(L, Spectra_func);
   lua_setglobal(L, "Spectra");
-    
+  
+  luaL_newmetatable(L, "TightBinding_Type");
+  luaL_setfuncs(L, TightBinding_meta, 0);
+  
   luaMWH_RegisterGlobalFunctions(L, global_functions);
+  luaMWH_RegisterGlobalFunctions(L, mathlib);
   
   return 0;
 }

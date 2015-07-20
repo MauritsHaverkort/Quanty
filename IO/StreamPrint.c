@@ -482,8 +482,7 @@ uint32_t StreamPrintWaveFunctionPartialCorrelationTensor(WaveFunctionType const 
 /*
  *   prints a Histogram lisitng the prefactors of a wave-funciton
  */
-uint32_t StreamPrintWaveFunctionPrefactorHistogram(WaveFunctionType const psi, const double exp, const uint32_t N,
-                                                   FILE * stream)
+uint32_t StreamPrintWaveFunctionPrefactorHistogram(WaveFunctionType const psi, const double exp, const uint32_t N, FILE * stream)
 {
   uint32_t i;
   double Hist[N];
@@ -603,6 +602,14 @@ uint32_t StreamPrintCrystalStructure(CrystalStructureType O, FILE * stream)
 {
   uint32_t i,j,k;
   fprintf(stream, "\nprintout of Crystal Structure\n");
+  fprintf(stream, "Units: ");
+  if((O.Units&1)==0) fprintf(stream, "NoPi (g.r=1)  ");
+  if((O.Units&1)==1) fprintf(stream, "2Pi (g.r=2Pi) ");
+  if((O.Units&6)==0) fprintf(stream, "Angstrom ");
+  if((O.Units&6)==2) fprintf(stream, "Bohr     ");
+  if((O.Units&6)==4) fprintf(stream, "nm       ");
+  if((O.Units&8)==0) fprintf(stream, "Absolute atom positions");
+  if((O.Units&8)==8) fprintf(stream, "Relative atom positions");
   fprintf(stream, "Unit cell parameters:\n");
   fprintf(stream, "a: %15.7F %15.7F %15.7F\n", O.rUnitCell[0][0], O.rUnitCell[0][1], O.rUnitCell[0][2]);
   fprintf(stream, "b: %15.7F %15.7F %15.7F\n", O.rUnitCell[1][0], O.rUnitCell[1][1], O.rUnitCell[1][2]);
@@ -611,19 +618,20 @@ uint32_t StreamPrintCrystalStructure(CrystalStructureType O, FILE * stream)
   fprintf(stream, "a: %15.7F %15.7F %15.7F\n", O.gUnitCell[0][0], O.gUnitCell[0][1], O.gUnitCell[0][2]);
   fprintf(stream, "b: %15.7F %15.7F %15.7F\n", O.gUnitCell[1][0], O.gUnitCell[1][1], O.gUnitCell[1][2]);
   fprintf(stream, "c: %15.7F %15.7F %15.7F\n", O.gUnitCell[2][0], O.gUnitCell[2][1], O.gUnitCell[2][2]);
-  fprintf(stream, "Number of attoms %4i\n", O.NAtoms);
+  fprintf(stream, "Number of attoms %i\n", O.NAtoms);
+  
   for (i = 0; i < O.NAtoms; i++)
   {
-    fprintf(stream, "#%4i | %2s | %2i |  %15.7F %15.7F %15.7F\n", i, O.Atom[i].Name, O.Atom[i].AtomNumber,
-            O.Atom[i].Position[0], O.Atom[i].Position[1], O.Atom[i].Position[2]);
+    fprintf(stream, "#%4i | %s ( %i ) at position { %15.7F , %15.7F , %15.7F }\n", i, O.Atom[i].Name, O.Atom[i].AtomNumber, O.Atom[i].Position[0], O.Atom[i].Position[1], O.Atom[i].Position[2]);
     for(j=0;j<O.Atom[i].Nshell;j++)
     {
-      fprintf(stream, "      | %2s |",O.Atom[i].ShellName[j]);
+      fprintf(stream, "      | %s shell with %i orbitals {",O.Atom[i].ShellName[j],O.Atom[i].shelldegeneracy[j]);
       for(k=0;k<O.Atom[i].shelldegeneracy[j];k++)
       {
-        fprintf(stream, " %8s |",O.Atom[i].OrbitalName[j][k]);
+        if(k!=0) fprintf(stream, ",");
+        fprintf(stream, " %s ",O.Atom[i].OrbitalName[j][k]);
       }
-      fprintf(stream, "\n");
+      fprintf(stream, "}\n");
     }
   }
   return 0;
@@ -797,37 +805,27 @@ uint32_t StreamPrintCompactMatrixMinimal(CompactMatrixType const M, FILE * strea
  */
 uint32_t StreamPrintTightBindingDef(TightBindingDef O, FILE * stream)
 {
-  int    i, j;
+  int    i;
+  O.Name[MAXStrLength - 1] = '\0';
   fprintf(stream, "\nSettigns of a tight binding model: %s\n", O.Name);
-  fprintf(stream, "unit cell parameters:\n");
-  fprintf(stream, "a: %22.15E %22.15E %22.15E\n", O.Cell.rUnitCell[0][0], O.Cell.rUnitCell[0][1],
-          O.Cell.rUnitCell[0][2]);
-  fprintf(stream, "b: %22.15E %22.15E %22.15E\n", O.Cell.rUnitCell[1][0], O.Cell.rUnitCell[1][1],
-          O.Cell.rUnitCell[1][2]);
-  fprintf(stream, "c: %22.15E %22.15E %22.15E\n", O.Cell.rUnitCell[2][0], O.Cell.rUnitCell[2][1],
-          O.Cell.rUnitCell[2][2]);
-  for (i = 0; i < O.Cell.NAtoms; i++)
-  {
-    fprintf(stream, "Atom  #: %4i %4s   %22.15E %22.15E %22.15E\n", i, O.Cell.Atom[i].Name, O.Cell.Atom[i].Position[0],
-            O.Cell.Atom[i].Position[1], O.Cell.Atom[i].Position[2]);
-  }
-  for (i = 0; i < O.Cell.NAtoms; i++)
-  {
-    fprintf(stream, "Atom  #: %4i %4s\n", i, O.Cell.Atom[i].Name);
-    for (j = 0; j < O.Cell.Atom[i].Nshell; j++)
-    {
-      fprintf(stream, "Shell #: %4i - %4i %4i fold degenerate.\n", i, j, O.Cell.Atom[i].shelldegeneracy[j]);
-    }
-  }
-  fprintf(stream, "Hopping definitions ( %4i )\n", O.nH);
+  StreamPrintCrystalStructure(O.Cell, stream);
+  fprintf(stream,"Containing a total number of %i orbitals\n",O.NFermion);
+  fprintf(stream, "Hopping definitions ( %i )\n", O.nH);
   for (i = 0; i < O.nH; i++)
   {
-    fprintf(stream, "Hopping from %4i - %4i to %4i - %4i with translation vector in unit cells: %4i %4i %4i\n",
-            O.H[i].Atompos1, O.H[i].Shellpos1, O.H[i].Atompos2, O.H[i].Shellpos2, O.H[i].TransVecs[0],
-            O.H[i].TransVecs[1], O.H[i].TransVecs[2]);
+    fprintf(stream, "Hopping from %i : %s - %s to %i : %s - %s with translation vector in unit cells: { %i , %i , %i }\n", O.H[i].Atompos1, O.Cell.Atom[O.H[i].Atompos1].Name,O.Cell.Atom[O.H[i].Atompos1].ShellName[O.H[i].Shellpos1], O.H[i].Atompos2, O.Cell.Atom[O.H[i].Atompos2].Name, O.Cell.Atom[O.H[i].Atompos2].ShellName[O.H[i].Shellpos2], O.H[i].TransVecs[0], O.H[i].TransVecs[1], O.H[i].TransVecs[2]);
     StreamPrintMatrix(O.H[i].Hop, stream);
   }
   fprintf(stream, "\n");
+  //fprintf(stream, "Fermion index is given as:\n");
+  //for(i=0;i<O.Cell.NAtoms;i++)
+  //{
+  //  for(j=0;j<O.Cell.Atom[i].Nshell;j++)
+  //  {
+  //    fprintf(stream, "  Hamiltonian for atom %i and shell %i starts at index %i\n",i,j,O.FermionIndex[i][j]);
+  //  }
+  //}
+  //fprintf(stream, "\n");
   return 0;
 }
 

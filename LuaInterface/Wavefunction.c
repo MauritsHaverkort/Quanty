@@ -195,12 +195,12 @@ static int LuaWavefunctionMul(lua_State * L)
     WaveFunctionType *psi = (WaveFunctionType*) luaL_checkudata(L, 1, "Wavefunction_Type");
     OperatorType *O = (OperatorType *) luaL_checkudata(L,len,"Operator_Type");
     OperatorType OT;
-    OperatorConjugateTransposeNormalOrder(*O, &OT, &QDetNotOrderedFcFaBaBc);
     WaveFunctionType *Opsi;
+    OperatorConjugateTransposeNormalOrder(*O, &OT, &QDetNotOrderedFcFaBaBc);
     Opsi = (WaveFunctionType *) lua_newuserdata(L, sizeof(WaveFunctionType));
+    luaL_setmetatable(L, "Wavefunction_Type");
     OperatorPsi(OT, *psi, Opsi);
     FreeOperator(&OT);
-    luaL_setmetatable(L, "Wavefunction_Type");
     return 1;
   }
   {
