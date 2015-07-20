@@ -879,21 +879,24 @@ static int Luacopy(lua_State * L)
 }
 
 
-/*  copy or clone the element on the lua stack and place it on the stack
+/*  copy or clone the one but last element on the lua stack and place it on the stack
  *  set values smaller then epsilon to zero
  *  works recursively on tables
  *  allocates new memory for user types
  *
- *  if there is one ellement on the stack clone this element using epsilon=2*DBL_EPSILON
+ *  if there is one ellement on the stack use epsilon=2*DBL_EPSILON
  *  if there are two ellements on the stack and the last is a number use the last as epsilon
- *  if there are two ellements on the stack and the last is a list use this list as an option list
- *  if there are three ellements on the stack and the second is a number and the last a list, use the number as epsilon and the list as options
  */
 static int LuaChop(lua_State * L)
 {
   double epsilon=2*DBL_EPSILON;
   double temp;
   uint32_t len = (uint32_t)lua_gettop(L);
+  if(len!=1)
+  {
+    epsilon=luaL_checknumber(L,len);
+    len=len-1;
+  }
   switch (lua_type(L,len))
   {
     case LUA_TNIL:
@@ -913,8 +916,7 @@ static int LuaChop(lua_State * L)
     case LUA_TLIGHTUSERDATA:
       lua_pushlightuserdata(L,(void*)lua_touserdata(L,len));
       break;
-    case
-    LUA_TUSERDATA:
+    case LUA_TUSERDATA:
       if (luaL_testudata(L, len, "Complex_Type") != NULL)
       {
         Complex16 *a = (Complex16 *) luaL_checkudata(L, len, "Complex_Type");
@@ -951,11 +953,12 @@ static int LuaChop(lua_State * L)
       lua_pushnil(L);
       while(lua_next(L, len) != 0)
       {
-        Luacopy(L);
-        lua_pushvalue(L, -3);
+        lua_pushnumber(L, epsilon);
+        LuaChop(L);
+        lua_pushvalue(L, -4);
         lua_insert(L, -2);
-        lua_settable(L, -5);
-        lua_pop(L, 1);
+        lua_settable(L, -6);
+        lua_pop(L, 2);
       }
       break;
     default:
@@ -1030,7 +1033,7 @@ static int Luaconjugate(lua_State * L)
       lua_pushnil(L);
       while(lua_next(L, len) != 0)
       {
-        Luacopy(L);
+        Luaconjugate(L);
         lua_pushvalue(L, -3);
         lua_insert(L, -2);
         lua_settable(L, -5);
@@ -1045,6 +1048,8 @@ static int Luaconjugate(lua_State * L)
 
 static int Luaconjugatetranspose(lua_State * L)
 {
+  Bool matrix=True,Warning=False;
+  uint32_t Ni=0,i,Nj=0,j;
   uint32_t len = (uint32_t)lua_gettop(L);
   switch (lua_type(L,len))
   {
@@ -1096,15 +1101,65 @@ static int Luaconjugatetranspose(lua_State * L)
       }
       return luaL_error(L, "Error: copying or cloning an object of unrecognised type\n");
     case LUA_TTABLE:
-      lua_newtable(L);
-      lua_pushnil(L);
-      while(lua_next(L, len) != 0)
+      // check if we have a table of tables of equal length, in that case we treat the table of tables as a matrix and transpose the matrix
+      Ni=(uint32_t)lua_objlen(L, len);
+      for(i=0;i<Ni;i++)
       {
-        Luacopy(L);
-        lua_pushvalue(L, -3);
-        lua_insert(L, -2);
-        lua_settable(L, -5);
-        lua_pop(L, 1);
+        lua_rawgeti(L, len, i+1);
+        if(lua_type(L,-1)==LUA_TTABLE)
+        {
+          Warning=True;
+          if(i==0)
+          {
+            Nj=(uint32_t)lua_objlen(L,-1);
+          }
+          else
+          {
+            if(Nj!=(uint32_t)lua_objlen(L,-1))
+            {
+              matrix=False;
+            }
+          }
+        }
+        else
+        {
+          matrix=False;
+        }
+        lua_pop(L,1);
+      }
+      if(Warning&(!matrix)) luaL_warning(L, "Transpose of a table containing tables, but not of equal length, transposed the elements, not the table\n");
+      if(matrix)
+      {
+        lua_createtable(L,Nj,0);
+        for(j=0;j<Nj;j++)
+        {
+          lua_pushnumber(L, j+1);
+          lua_createtable(L, Ni, 0);
+          for(i=0;i<Ni;i++)
+          {
+            lua_rawgeti(L, len, i+1);
+            lua_rawgeti(L,-1,j+1);
+            Luaconjugatetranspose(L);
+            lua_pushnumber(L, i+1);
+            lua_insert(L, -2);
+            lua_settable(L, -5);
+            lua_pop(L, 2);
+          }
+          lua_settable(L, -3);
+        }
+      }
+      else
+      {
+        lua_newtable(L);
+        lua_pushnil(L);
+        while(lua_next(L, len) != 0)
+        {
+          Luaconjugatetranspose(L);
+          lua_pushvalue(L, -3);
+          lua_insert(L, -2);
+          lua_settable(L, -5);
+          lua_pop(L, 1);
+        }
       }
       break;
     default:
@@ -1115,6 +1170,8 @@ static int Luaconjugatetranspose(lua_State * L)
 
 static int Luatranspose(lua_State * L)
 {
+  Bool matrix=True,Warning=False;
+  uint32_t Ni=0,i,Nj=0,j;
   uint32_t len = (uint32_t)lua_gettop(L);
   switch (lua_type(L,len))
   {
@@ -1165,15 +1222,65 @@ static int Luatranspose(lua_State * L)
       }
       return luaL_error(L, "Error: copying or cloning an object of unrecognised type\n");
     case LUA_TTABLE:
-      lua_newtable(L);
-      lua_pushnil(L);
-      while(lua_next(L, len) != 0)
+      // check if we have a table of tables of equal length, in that case we treat the table of tables as a matrix and transpose the matrix
+      Ni=(uint32_t)lua_objlen(L, len);
+      for(i=0;i<Ni;i++)
       {
-        Luacopy(L);
-        lua_pushvalue(L, -3);
-        lua_insert(L, -2);
-        lua_settable(L, -5);
-        lua_pop(L, 1);
+        lua_rawgeti(L, len, i+1);
+        if(lua_type(L,-1)==LUA_TTABLE)
+        {
+          Warning=True;
+          if(i==0)
+          {
+            Nj=(uint32_t)lua_objlen(L,-1);
+          }
+          else
+          {
+            if(Nj!=(uint32_t)lua_objlen(L,-1))
+            {
+              matrix=False;
+            }
+          }
+        }
+        else
+        {
+          matrix=False;
+        }
+        lua_pop(L,1);
+      }
+      if(Warning&(!matrix)) luaL_warning(L, "Transpose of a table containing tables, but not of equal length, transposed the elements, not the table\n");
+      if(matrix)
+      {
+        lua_createtable(L,Nj,0);
+        for(j=0;j<Nj;j++)
+        {
+          lua_pushnumber(L, j+1);
+          lua_createtable(L, Ni, 0);
+          for(i=0;i<Ni;i++)
+          {
+            lua_rawgeti(L, len, i+1);
+            lua_rawgeti(L,-1,j+1);
+            Luatranspose(L);
+            lua_pushnumber(L, i+1);
+            lua_insert(L, -2);
+            lua_settable(L, -5);
+            lua_pop(L, 2);
+          }
+          lua_settable(L, -3);
+        }
+      }
+      else
+      {
+        lua_newtable(L);
+        lua_pushnil(L);
+        while(lua_next(L, len) != 0)
+        {
+          Luatranspose(L);
+          lua_pushvalue(L, -3);
+          lua_insert(L, -2);
+          lua_settable(L, -5);
+          lua_pop(L, 1);
+        }
       }
       break;
     default:
