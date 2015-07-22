@@ -60,7 +60,6 @@ static int LuaCalculateG(lua_State *L)
   return 1;
 }
 
-
 /*  Creates an Hamiltonian representing a real space cluster
  *  Input on stack
  *    A tight binding Definition
@@ -76,17 +75,22 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
 {
   uint32_t len, lenclusterdef,i,j;
   char *tokenread;
-  TightBindingDef *a, aSuper;
+  TightBindingDef *a, aSuper, *aSuperReturn;
   CrystalStructureSuperCellType SuperCell;
   uint32_t periodic;
   OperatorType *H;
-  double k[3]={0.,0.,0.};
+  CompactVectorType k;
   Bool AddSpin=False;
-  Bool QOperators=False, QOptions=False;
+  Bool QOperators=False, QOptions=False, ReturnTBSuperCell=True;
   OperatorType *AditionalOperator=NULL;
   MatrixType U;
+  k.Ni=3;
+  k.QComplex=0;
+  k.VRe=calloc(3,sizeof(double));
   LuaOptionsType LuaCreateClusterHamiltonianOptions[]={
     {"AddSpin", "bool", &AddSpin},
+    {"ReturnTBSuperCell", "bool", &ReturnTBSuperCell},
+    {"k", "Vector", &k},
     {NULL, NULL, NULL}};
   /* check number of input parameters */
   len = (uint32_t)lua_gettop(L);
@@ -201,6 +205,14 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
   if(QOptions)
   {
     LuaCheckOptions(L, -1, LuaCreateClusterHamiltonianOptions);
+    if(k.Ni!=3)
+    {
+      return luaL_error(L, "Error CreateClusterHamiltonian optional k-vector should have a length of 3\n");
+    }
+    if(k.QComplex)
+    {
+      return luaL_error(L, "Error CreateClusterHamiltonian optional k-vector should be real\n");
+    }
   }
   /* create the cluster hamiltonian */
   CreateTightBindingSuperCell(*a, &aSuper, SuperCell);
@@ -208,11 +220,11 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
   luaL_setmetatable(L, "Operator_Type");
   if(AddSpin)
   {
-    CreateHamiltonianOperatorFromTightBindingDefPlusSpin(aSuper, k, H);
+    CreateHamiltonianOperatorFromTightBindingDefPlusSpin(aSuper, k.VRe, H);
   }
   else
   {
-    CreateHamiltonianOperatorFromTightBindingDef(aSuper, k, H);
+    CreateHamiltonianOperatorFromTightBindingDef(aSuper, k.VRe, H);
   }
   /* add aditional operators */
   if(QOperators)
@@ -239,7 +251,20 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
       MappedOperatorAddNormalOrder(H, *AditionalOperator, U, &QDetNotOrderedFcFaBcBa);
     }
   }
-  return 1;
+  SetQComplexOperator(H);
+  /* return TBsupercell if asked for */
+  if(ReturnTBSuperCell)
+  {
+    aSuperReturn=(TightBindingDef*) lua_newuserdata(L, sizeof(TightBindingDef));
+    luaL_setmetatable(L, "TightBinding_Type");
+    *aSuperReturn=aSuper;
+    return 2;
+  }
+  else
+  {
+    FreeTightBindingDef(&aSuper);
+    return 1;
+  }
 }
 
 /*
@@ -317,7 +342,41 @@ static int LuaReadAtom(lua_State *L, int narg, AtomType *a)
  */
 static int LuaPushAtom(lua_State *L, AtomType const *a)
 {
-  //TODO:
+  uint32_t i,j;
+  lua_createtable(L, 3, 0);
+  {
+    lua_pushstring(L, a->Name);
+    lua_rawseti(L, -2, 1); // set name of atom to first position
+    lua_createtable(L, 3, 0);
+    {
+      for(i=0;i<3;i++)
+      {
+        lua_pushnumber(L, a->Position[i]);
+        lua_rawseti(L, -2, i+1);
+      }
+    }
+    lua_rawseti(L, -2, 2); // set table with atom coordinates to second position
+    lua_createtable(L, a->Nshell, 0);
+    {
+      for(i=0;i<a->Nshell;i++)
+      {
+        lua_createtable(L,2,0);
+        {
+          lua_pushstring(L, a->ShellName[i]);
+          lua_rawseti(L, -2, 1); // set name of the shell to first position
+          lua_createtable(L,a->shelldegeneracy[i],0);
+          for(j=0;j<a->shelldegeneracy[i];j++)
+          {
+            lua_pushstring(L, &(a->ShellName[i][j]));
+            lua_rawseti(L, -2, j+1);
+          }
+          lua_rawseti(L, -2, 2); // set a table with a list of the orbitals to the second position
+        }
+        lua_rawseti(L, -2, i+1); // set a table with the shell name and orbital definitions to position i+1
+      }
+    }
+    lua_rawseti(L, -2, 3); // set a table with the shell definitions to the third position
+  }
   return 1;
 }
 
@@ -499,9 +558,19 @@ static int LuaTightBindingIndex(lua_State * L)
     }
     return 1;
   }
+  else if (strcmp(str, "NAtoms") == 0)
+  {
+    lua_pushunsigned(L, a->Cell.NAtoms);
+    return 1;
+  }
   else if (strcmp(str, "Atoms") == 0)
   {
-    //TODO: push a table to the stack contianing the list of atoms as defined in reading when setting the variable
+    lua_createtable(L, a->Cell.NAtoms, 0);
+    for(i=0;i<a->Cell.NAtoms;i++)
+    {
+      LuaPushAtom(L, &(a->Cell.Atom[i]));
+      lua_rawseti(L, -2, i+1);
+    }
     return 1;
   }
   else if (strcmp(str, "Units")==0)

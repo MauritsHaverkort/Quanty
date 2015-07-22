@@ -1116,12 +1116,7 @@ static int LuaOperatorIndex(lua_State * L)
     lua_pushcfunction(L, LuaOperatorPrint);
     return 1;
   }
-  if (strcmp(str, "Name") == 0)
-  {
-    lua_pushstring(L, a->Name);
-    return 1;
-  }
-  else if (strcmp(str, "Chop") == 0)
+  if (strcmp(str, "Chop") == 0)
   {
     lua_pushcfunction(L, LuaOperatorChop);
     return 1;
@@ -1139,6 +1134,26 @@ static int LuaOperatorIndex(lua_State * L)
   if ((strcmp(str, "Transpose") == 0)||(strcmp(str, "T")==0))
   {
     lua_pushcfunction(L, LuaOperatorTranspose);
+    return 1;
+  }
+  if (strcmp(str, "Name") == 0)
+  {
+    lua_pushstring(L, a->Name);
+    return 1;
+  }
+  if (strcmp(str, "NF") == 0)
+  {
+    lua_pushinteger(L, a->NFermion);
+    return 1;
+  }
+  if (strcmp(str, "NB") == 0)
+  {
+    lua_pushinteger(L, a->NBoson);
+    return 1;
+  }
+  if (strcmp(str, "Complex") == 0)
+  {
+    lua_pushboolean(L, a->QComplex);
     return 1;
   }
   return luaL_error(L, "Error operator variable not found");;

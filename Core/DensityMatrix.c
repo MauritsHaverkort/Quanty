@@ -674,8 +674,7 @@ uint32_t CalculatePrefactorHistogram(double *const Hist, const WaveFunctionType 
           (uint32_t) (-
                       (log(DBL_MIN + Sqr(psi.ValueRe[iBlok][iElement]) + Sqr(psi.ValueIm[iBlok][iElement])) /
                        (2 * log(exp))));
-        if (i >= N)
-          i = N - 1;
+        if (i >= N) i = N - 1;
         HistPrivate[i]++;
       }
 #pragma omp for
@@ -688,19 +687,16 @@ uint32_t CalculatePrefactorHistogram(double *const Hist, const WaveFunctionType 
             (uint32_t) (-
                         (log(DBL_MIN + Sqr(psi.ValueRe[iBlok][iElement]) + Sqr(psi.ValueIm[iBlok][iElement])) /
                          (2 * log(exp))));
-          if (i >= N)
-            i = N - 1;
+          if (i >= N) i = N - 1;
           HistPrivate[i]++;
         }
       }
       i = (uint32_t) (-(log(DBL_MIN + Sqr(psi.ValueRe[0][0]) + Sqr(psi.ValueIm[0][0])) / (2 * log(exp))));
-      if (i >= N)
-        i = N - 1;
+      if (i >= N) i = N - 1;
       HistPrivate[i]--;
 #pragma omp critical (AddToHistogram)
       {
-        for (i = 0; i < N; i++)
-          Hist[i] += HistPrivate[i];
+        for (i = 0; i < N; i++) Hist[i] += HistPrivate[i];
       }
       free(HistPrivate);
     }
@@ -743,14 +739,13 @@ uint32_t CalculatePrefactorHistogram(double *const Hist, const WaveFunctionType 
       }
       free(HistPrivate);
     }
+    i = (uint32_t) (-(log(DBL_MIN + fabs(psi.ValueRe[0][0])) / log(exp)));
+    if (i >= N) i = N - 1;
+    Hist[i]--;
   }
-  i = (uint32_t) (-(log(DBL_MIN + fabs(psi.ValueRe[0][0])) / log(exp)));
-  if (i >= N)
-    i = N - 1;
-  Hist[i]--;
-  for (i = 0; i < N; i++)
-  {
-    Hist[i] /= (double)psi.N;
-  }
+  //for (i = 0; i < N; i++)
+  //{
+  //  Hist[i] /= (double)psi.N;
+  //}
   return 0;
 }

@@ -54,7 +54,7 @@ uint8_t *StringToDet(uint32_t const NFermion, uint32_t const NBoson, char *s)
     }
     else if(s[i+nspaces]=='0')
     {
-      
+      // nothing to do
     }
     else
     {

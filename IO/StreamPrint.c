@@ -492,7 +492,7 @@ uint32_t StreamPrintWaveFunctionPrefactorHistogram(WaveFunctionType const psi, c
   {
     printf("(%f)^(-%2i) to (%f)^(-%2i) | %22.15E\n", exp, i, exp, i + 1, Hist[i]);
   }
-  printf("(%f)^(-%2i) to (%f)       | %22.15E\n", exp, i, 0.0, Hist[N - 1]);
+  printf("(%f)^(-%2i) to ( %f)       | %22.15E\n", exp, i, 0.0, Hist[N - 1]);
   printf("\n");
   return 0;
 }

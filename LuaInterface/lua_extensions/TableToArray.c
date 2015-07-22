@@ -97,6 +97,29 @@ Complex16* luaL_checkarray_complex16(lua_State *L, int narg, uint32_t *len_out)
   return buff;
 }
 
+CompactVectorType luaL_checkVector(lua_State *L, int narg)
+{
+  uint32_t i;
+  CompactVectorType buff;
+  buff.V=luaL_checkarray_complex16(L, narg, &(buff.Ni));
+  buff.QComplex=0;
+  for(i=0;i<buff.Ni;i++)
+  {
+    if(Abs(buff.V[i].Im)>(10*DBL_MIN+10*Abs(buff.V[i].Re)*DBL_EPSILON)) buff.QComplex=1;
+  }
+  if(buff.QComplex==0)
+  {
+    double *VRe = malloc(buff.Ni*sizeof(double));
+    for(i=0;i<buff.Ni;i++)
+    {
+      VRe[i]=buff.V[i].Re;
+    }
+    free(buff.V);
+    buff.VRe=VRe;
+  }
+  return buff;
+}
+
 
 MatrixType* luaL_checkMatrix(lua_State *L, int narg)
 {
@@ -427,6 +450,7 @@ void * LuaReturnVariableType(lua_State * L, int narg, char * type)
   Bool *buffBoolean;
   DeterminantRestrictionType *buffDeterimantRestrictionType;
   void *buff;
+  CompactVectorType *buffVector;
   if (strcmp(type, "char*") == 0)
   {
     buff = (void*) luaL_checkstring(L, narg);
@@ -470,6 +494,12 @@ void * LuaReturnVariableType(lua_State * L, int narg, char * type)
     *buffBoolean= ((*buffint==1)? True: False);
     free(buffint);
     return (void*) buffBoolean;
+  }
+  if( strcmp(type, "Vector") ==0)
+  {
+    buffVector = malloc(sizeof(CompactVectorType));
+    *buffVector = (CompactVectorType)luaL_checkVector(L,narg);
+    return (void*) buffVector;
   }
   if (strcmp(type, "DeterminantRestrictionType") == 0)
   {
@@ -590,6 +620,21 @@ int32_t LuaCheckOptions(lua_State *L, int narg, LuaOptionsType *Options)
         else if(strcmp(Options[j].type, "bool") == 0)
         {
           *(Bool*)Options[j].variable=*(Bool*)LuaReturnVariableType(L, -1, Options[j].type);
+        }
+        else if(strcmp(Options[j].type, "Vector") ==0)
+        {
+          if(((CompactVectorType*)Options[j].variable)->Ni!=0)
+          {
+            if(((CompactVectorType*)Options[j].variable)->QComplex)
+            {
+              free(((CompactVectorType*)Options[j].variable)->V);
+            }
+            else
+            {
+              free(((CompactVectorType*)Options[j].variable)->VRe);
+            }
+          }
+          *(CompactVectorType*)Options[j].variable=*(CompactVectorType*)LuaReturnVariableType(L, -1, Options[j].type);
         }
         else if(strcmp(Options[j].type, "DeterminantRestrictionType") == 0)
         {

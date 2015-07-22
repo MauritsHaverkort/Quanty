@@ -1409,7 +1409,7 @@ uint32_t BlockGroundState(const OperatorType H, uint32_t const Npsi, Convergence
 {
   uint32_t i,Qconverged=0, AtLeastAnOtherLoop=0,iloop=0;;
   WaveFunctionType Opsi[Npsi];
-  double Energy[2][Npsi],EnergySqr[2][Npsi], temp;
+  double Energy[2][Npsi],EnergySqr[2][Npsi],temp;
   // if StartingPoint.N != 0
   // create Npsi independent functions fullfiling the starting point conditions
   // all functions must have the same basis
@@ -1441,7 +1441,6 @@ uint32_t BlockGroundState(const OperatorType H, uint32_t const Npsi, Convergence
   {
     iloop++;
     // expand basis depending on Restrictions.N use either restrictions or don't use them
-
     while( (Restrictions.N) ? BlockOperatorPsiRestricted(H, psi, Opsi, Npsi, Restrictions) : BlockOperatorPsi(H, psi, Opsi, Npsi))
     {
       // was not able to evaluate O psi, need to truncate psi further
@@ -1455,7 +1454,7 @@ uint32_t BlockGroundState(const OperatorType H, uint32_t const Npsi, Convergence
     }
     // calculate Energy and variance of Energy - test for convergence
     Qconverged=1;
-    VerbosityPrintf(0x0100,"Number of determinants in basis %i\n",psi[0].N);
+    VerbosityPrintf(0x0100,"Number of determinants in basis %i (and basis of H psi %i)\n",psi[0].N,Opsi[0].N);
     VerbosityPrintf(0x0100,"State # |   Energy               |  Variance of Energy    |  Energy change\n");
     for(i=0;i<Npsi;i++)
     {
