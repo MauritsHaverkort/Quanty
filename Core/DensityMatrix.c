@@ -749,9 +749,9 @@ uint32_t CalculatePrefactorHistogram(double *const Hist, const WaveFunctionType 
     if (i >= N) i = N - 1;
     Hist[i]--;
   }
-  for (i = 0; i < N; i++)
-  {
-    Hist[i] /= (double)psi.N;
-  }
+  //for (i = 0; i < N; i++)
+  //{
+  //  Hist[i] /= (double)psi.N;
+  //}
   return 0;
 }

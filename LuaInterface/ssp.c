@@ -1996,6 +1996,10 @@ static int LuaDensityMatrix(lua_State *L)
   {
     case LUA_TTABLE:
     {
+      if(len==1)
+      {
+        return luaL_error(L, "Error: DensityMatrix when density matrix of a list of functions is calculated an explicit labeling of the orbitals is required\n");
+      }
       lua_newtable(L);
       lua_pushnil(L);
       while(lua_next(L, 1) != 0)
@@ -2028,9 +2032,16 @@ static int LuaDensityMatrix(lua_State *L)
     }
   }
   // the argument at position len is a list of integers
-  jindex = luaL_checkarray_unit32_t(L,len,&Nparticles);
-  // calculate the density matrix
-  CalculatePartialDensityMatrix(&Rho, *psi, Nparticles, jindex);
+  if(len==1)
+  {
+    CalculateDensityMatrix(&Rho, *psi);
+  }
+  else
+  {
+    jindex = luaL_checkarray_unit32_t(L,len,&Nparticles);
+    // calculate the density matrix
+    CalculatePartialDensityMatrix(&Rho, *psi, Nparticles, jindex);
+  }
   // return a lua table of tables of dimension Nparticles by Nparticles
   LuaPushTable_MatrixType(L, &Rho);
   FreeMatrix(&Rho);
@@ -2052,22 +2063,23 @@ static int LuaStatistics(lua_State *L)
     
     
     
+    return 0;
   }
   else if (luaL_testudata(L, 1, "Wavefunction_Type") != NULL)
   {
+    double *Hist;
     WaveFunctionType *psi = (WaveFunctionType *) luaL_checkudata(L, 1, "Wavefunction_Type");
-    printf("Statistical information on wavefunction %s\n",psi->Name);
-    printf("Total number of determinants %i\n",psi->N);
-    printf("NF %i NB %i QComplex %i\n",psi->NFermion, psi->NBoson, psi->QComplex);
-    PrintWaveFunctionPrefactorHistogram(*psi, 10.0, 20);
-    
-    
+    double exp = (double) luaL_checknumber(L, 2);
+    uint32_t N = (uint32_t) luaL_checkunsigned(L, 3);
+    Hist=malloc(N*sizeof(double));
+    CalculatePrefactorHistogram(Hist, *psi, exp, N);
+    LuaPushArray_double(L, Hist, N);
+    return 1;
   }
   else
   {
-    return luaL_error(L, "Error Statistics expects a wave-function or operator as imput\n");
+    return luaL_error(L, "Error Statistics expects a wave-function or operator as first imput\n");
   }
-  return 0;
 }
 
 static const struct luaL_Reg global_functions[] = {

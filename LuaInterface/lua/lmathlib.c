@@ -538,6 +538,58 @@ static int math_binomial(lua_State * L)
   return 1;
 }
 
+static int math_IntegerQ(lua_State *L)
+{
+  double nd;
+  if(lua_type(L,-1)==LUA_TNUMBER)
+  {
+    nd=luaL_checknumber(L, -1);
+    if(Abs(round(nd)-nd)<10*DBL_EPSILON*Abs(nd))
+    {
+      lua_pushboolean(L, 1);
+    }
+    return 1;
+  }
+  lua_pushboolean(L, 0);
+  return 1;
+}
+
+static int math_EvenQ(lua_State *L)
+{
+  double nd;
+  if(lua_type(L,-1)==LUA_TNUMBER)
+  {
+    nd=luaL_checknumber(L, -1)/2.;
+    if(Abs(round(nd)-nd)<(10*DBL_EPSILON*Abs(nd)+10*DBL_MIN))
+    {
+      lua_pushboolean(L, 1);
+      return 1;
+    }
+  }
+  else
+  {
+    printf("A\n");
+  }
+  lua_pushboolean(L, 0);
+  return 1;
+}
+
+static int math_OddQ(lua_State *L)
+{
+  double nd;
+  if(lua_type(L,-1)==LUA_TNUMBER)
+  {
+    nd=(1.+luaL_checknumber(L, -1))/2.;
+    if(Abs(round(nd)-nd)<10*DBL_EPSILON*Abs(nd))
+    {
+      lua_pushboolean(L, 1);
+    }
+    return 1;
+  }
+  lua_pushboolean(L, 0);
+  return 1;
+}
+
 static const luaL_Reg mathlib[] = {
   {"abs",   math_abs},{"Abs",   math_abs},
   {"acos",  math_acos},{"Acos",  math_acos},
@@ -579,6 +631,9 @@ static const luaL_Reg mathlib[] = {
   {"KubicHarmonicE",     math_KubicHarmonicE},
   {"SphericalBesselJ",   math_SphericalBesselJ},
   {"LaguerreL",          math_LaguerreL},
+  {"IntegerQ",           math_IntegerQ},
+  {"EvenQ",              math_EvenQ},
+  {"OddQ",               math_OddQ},
   {NULL, NULL}
 };
 

@@ -317,11 +317,6 @@ static int LuaWavefunctionIndex(lua_State * L)
     lua_pushcfunction(L, LuaWavefunctionPrint);
     return 1;
   }
-  if (strcmp(str, "Name") == 0)
-  {
-    lua_pushstring(L, a->Name);
-    return 1;
-  }
   if (strcmp(str, "Chop") == 0)
   {
     lua_pushcfunction(L, LuaWavefunctionChop);
@@ -342,6 +337,36 @@ static int LuaWavefunctionIndex(lua_State * L)
     lua_pushcfunction(L, LuaWavefunctionRandomize);
     return 1;
   }
+  if (strcmp(str, "Name") == 0)
+  {
+    lua_pushstring(L, a->Name);
+    return 1;
+  }
+  if (strcmp(str, "NF") == 0)
+  {
+    lua_pushinteger(L, a->NFermion);
+    return 1;
+  }
+  if (strcmp(str, "NB") == 0)
+  {
+    lua_pushinteger(L, a->NBoson);
+    return 1;
+  }
+  if (strcmp(str, "Complex") == 0)
+  {
+    lua_pushboolean(L, a->QComplex);
+    return 1;
+  }
+  if (strcmp(str, "N") == 0)
+  {
+    lua_pushinteger(L, a->N);
+    return 1;
+  }
+  if (strcmp(str, "NBitsKey") == 0)
+  {
+    lua_pushinteger(L, a->NBitsKey);
+    return 1;
+  }
   return luaL_error(L, "Error operation \".%s()\" not defined on wavefunction\n",str);
 }
 
@@ -350,7 +375,7 @@ static int LuaWavefunctionNewIndex(lua_State * L)
 {
   WaveFunctionType *a = (WaveFunctionType *) luaL_checkudata(L, 1, "Wavefunction_Type");
   const char *str = lua_tostring(L, 2);
-  
+  // NBitsKey
   if(strcmp(str, "Name")==0)
   {
     WavefunctionSetName(a, lua_tostring(L, 3));
