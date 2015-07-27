@@ -710,7 +710,7 @@ void TestMeanField()
   CreateOperatorJsqr(NFermion, L, LindexUp, LindexDn, &Jsqr);
   CreateOperatorldots(NFermion, L, LindexUp, LindexDn, &ldots);
   OperatorCopy(&H, U);
-  //OperatorAdd(&H, ldots, 0.01, 0.0);
+  OperatorAdd(&H, ldots, 0.01, 0.0);
   OperatorAdd(&H, Sz, 0.002, 0.0);
   OperatorAdd(&H, Lz, 0.001, 0.0);
   CreateStartWaveFunctionOnsiteEnergy(H, &psi, Nelectron, 0, 16);

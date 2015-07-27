@@ -1133,6 +1133,30 @@ double CompactMatrixInverse(CompactMatrixType * const M)
   return INFO;
 }
 
+/*
+ *
+ */
+uint32_t CompactMatrixScale(CompactMatrixType * const A, double alpha)
+{
+  uint32_t i;
+  if(A->QComplex)
+  {
+    for(i=0;i<A->Ni*A->Nj;i++)
+    {
+      A->V[i].Re*=alpha;
+      A->V[i].Im*=alpha;
+    }
+  }
+  else
+  {
+    for(i=0;i<A->Ni*A->Nj;i++)
+    {
+      A->VRe[i]*=alpha;
+    }
+  }
+  return 0;
+}
+
 /*  A <- A + B
  *
  */

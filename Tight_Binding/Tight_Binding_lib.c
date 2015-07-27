@@ -469,6 +469,79 @@ int CreateHamiltonianOperatorFromTightBindingDefPlusSpin(TightBindingDef A, doub
   return 0;
 }
 
+/*
+ *
+ */
+uint32_t CalculateTotalEnergyFromListOfEigenvalues(const double * const val, const uint32_t NVal, const double kbT, const double mu, double *Etot)
+{
+  uint32_t i;
+  *Etot=0;
+  for(i=0;i<NVal;i++)
+  {
+    *Etot+=FermiFunction(val[i], mu, kbT)*val[i];
+  }
+  return 0;
+}
+
+
+/*
+ *
+ */
+uint32_t CalculateChemicalPotentialFromListOfEigenvalues(const double * const val, const uint32_t NVal, const double kbT, const double NE, double * const mu, double *Etot)
+{
+  double musmaler, mularger;
+  double NEmu,NEmusmaler=0,NEmularger=0;
+  Bool Converged=False;
+  uint32_t i,iloop=0;
+  musmaler=val[0];
+  mularger=val[0];
+  for(i=0;i<NVal;i++)
+  {
+    if(val[i]<musmaler)musmaler=val[i];
+    if(val[i]>mularger)mularger=val[i];
+  }
+  for(i=0;i<NVal;i++)
+  {
+    NEmularger+=FermiFunction(val[i], mularger, kbT);
+    NEmusmaler+=FermiFunction(val[i], musmaler, kbT);
+  }
+  while(!Converged)
+  {
+    iloop++;
+    if(NEmularger<NE) mularger+=NE-NEmularger;
+    if(NEmusmaler>NE) musmaler+=NE-NEmusmaler;
+    *mu=(musmaler+mularger)/2.0;
+    NEmu=0;
+    for(i=0;i<NVal;i++)
+    {
+      NEmu+=FermiFunction(val[i], *mu, kbT);
+    }
+    if(Abs(NEmu-NE)<100*DBL_EPSILON)
+    {
+      Converged=1;
+    }
+    if(iloop==64)
+    {
+      printf("Warning: CalculateChemicalPotentialFromListOfEigenvalues did not converge in %i steps musmaller=%f mularger=%f\n",i,musmaler,mularger);
+      CalculateTotalEnergyFromListOfEigenvalues(val, NVal, kbT, *mu, Etot);
+      return 1;
+    }
+    if(NEmu>NE)
+    {
+      mularger=*mu;
+      NEmularger=NEmu;
+    }
+    else
+    {
+      musmaler=*mu;
+      NEmusmaler=NEmu;
+    }
+  }
+  CalculateTotalEnergyFromListOfEigenvalues(val, NVal, kbT, *mu, Etot);
+  return 0;
+}
+
+
 /*  Calculates the fermi surface
  *  the k points to use are defined by the parallelogram defined by the left bottom point k0, left top point k1 and right bottom point k2
  *  intput:

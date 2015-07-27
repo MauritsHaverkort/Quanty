@@ -120,6 +120,42 @@ CompactVectorType luaL_checkVector(lua_State *L, int narg)
   return buff;
 }
 
+CompactMatrixType* luaL_checkCompactMatrix(lua_State *L, int narg)
+{
+  uint32_t len_row;
+  int i,j;
+  CompactMatrixType *buff;
+  Complex16 * row;
+  luaL_checktype(L, narg, LUA_TTABLE);
+  uint32_t len = (uint32_t)lua_objlen(L, narg);
+  buff=malloc(sizeof(CompactMatrixType));
+  buff->QComplex=1;
+  buff->Ni=len;
+  for(i=0;i<len;i++)
+  {
+    lua_rawgeti(L, narg, i+1);
+    row = luaL_checkarray_complex16(L, -1, &len_row);
+    if(i==0)
+    {
+      buff->Nj=len_row;
+      InitCompactMatrix(buff);
+    }
+    lua_pop(L, 1);
+    if(len_row!=buff->Nj)
+    {
+      luaL_error(L, "Error while reading matrix. Dimensions of rows not constant. %d at first row %d at row %d",buff->Nj,len_row,i);
+    }
+    for(j=0;j<buff->Nj;j++)
+    {
+      buff->V[i*buff->Nj+j].Re=row[j].Re;
+      buff->V[i*buff->Nj+j].Im=row[j].Im;
+    }
+    free(row);
+  }
+  CompactMatrixChop(buff, 100*DBL_MIN);
+  return buff;
+}
+
 
 MatrixType* luaL_checkMatrix(lua_State *L, int narg)
 {
@@ -403,6 +439,50 @@ void LuaPushTable_MatrixType(lua_State* L, MatrixType const * const M)
     }
     lua_rawseti(L, -2, i+1);
   }
+}
+
+void LuaPushTable_CompactMatrixType(lua_State* L, CompactMatrixType const * const M)
+{
+  uint32_t i,j;
+  Complex16 *res;
+  lua_createtable(L,M->Ni,0);
+  for(i=0;i<M->Ni;i++)
+  {
+    lua_createtable(L,M->Nj,0);
+    for(j=0;j<M->Nj;j++)
+    {
+      if(M->QComplex)
+      {
+        res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
+        res->Re = M->V[i*M->Nj+j].Re;
+        res->Im = M->V[i*M->Nj+j].Im;
+        luaL_setmetatable(L, "Complex_Type");
+      }
+      else
+      {
+        lua_pushnumber(L, M->VRe[i*M->Nj+j]);
+      }
+      lua_rawseti(L, -2, j+1);
+    }
+    lua_rawseti(L, -2, i+1);
+  }
+}
+
+/*  if at position len of the lua stack a table is found it is over writen by the table in matrix M
+ *  otherwise an error is thrown
+ */
+void LuaInsertTable_CompactMatrixType(lua_State*L, int len, CompactMatrixType const * const M)
+{
+  luaL_checktype(L, len, LUA_TTABLE);
+  
+  luaMWH_StackDump(L);
+  
+  LuaPushTable_CompactMatrixType(L, M);
+  
+  luaMWH_StackDump(L);
+  lua_replace(L, len);
+  
+  luaMWH_StackDump(L);
 }
 
 

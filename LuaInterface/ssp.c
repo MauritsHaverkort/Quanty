@@ -762,6 +762,10 @@ static int LuaNewWaveFunction(lua_State * L)
       if(lua_isstring(L, -1))
       {
         detchar = (char *) luaL_checkstring(L, -1);
+        if(strlen(detchar)<psi->NFermion+2*psi->NBoson)
+        {
+          return luaL_error(L, "Error in LuaWavefunctionNew, length of string(%d) different from NFermion(%d)+2*NBoson(%d)\n",strlen(detchar),psi->NFermion,psi->NBoson);
+        }
         det = StringToDet(psi->NFermion, psi->NBoson, detchar);
         detleng = psi->NBoson + Min(psi->NFermion, 1 + (psi->NFermion - 1) / 8);
       }
@@ -1713,7 +1717,34 @@ static int LuaCreateFluorescenceYield(lua_State *L)
   return 1;
 }
 
-
+/*  Calculate the ground-state of an Hamiltonian in mean-field.
+ *  On stack are
+ *  1) operator
+ *  2) density matrix to start from
+ *  3) temperature kbT
+ *
+ *  on output the density matrix will be changed such that it resembles the density matrix of the ground-state
+ *  aditionally the total energy is pushed to the stack
+ */
+static int LuaMeanFieldGroundstate(lua_State *L)
+{
+  OperatorType *H;
+  CompactMatrixType *Rho;
+  double kbT;
+  double Etot;
+  H = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
+  Rho = (CompactMatrixType *) luaL_checkCompactMatrix(L, 2);
+  kbT = (double) luaL_checknumber(L, 3);
+  if((H->NFermion+H->NBoson)!=Rho->Ni)
+  {
+    return luaL_error(L, "Error in MeanFieldGroundstate, length of operator (NF %i NB %i) is not equal to length of density matrix (%i)\n",H->NFermion,H->NBoson,Rho->Ni);
+  }
+  MeanFieldGroundstate(H, Rho, kbT,&Etot);
+  LuaPushTable_CompactMatrixType(L, Rho);
+  FreeCompactMatrix(Rho);
+  lua_pushnumber(L, Etot);
+  return 2;
+}
 
 
 
@@ -2103,6 +2134,7 @@ static const struct luaL_Reg global_functions[] = {
   {"Rotate", Luarotate},
   {"EvolveToGroundstate", LuaEvolveToGroundstate},
   {"Eigensystem", LuaEigensystem},
+  {"MeanFieldGroundState", LuaMeanFieldGroundstate},
   {"CreateSpectra", LuaCreateSpectra},
   {"CreateFluorescenceYield", LuaCreateFluorescenceYield},
   {"CreateResonantSpectra", LuaCreateResonantSpectra},

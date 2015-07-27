@@ -138,7 +138,8 @@ void EigenFunctionToCharacter();
 void RealEigenFunctionToCharacterMultiSite();
 void ComplexEigenFunctionToCharacterMultiSite();
 void EigenFunctionToCharacterMultiSite();
-
+uint32_t CalculateChemicalPotentialFromListOfEigenvalues();
+uint32_t CalculateTotalEnergyFromListOfEigenvalues();
 
 
 /**********************************************************/
