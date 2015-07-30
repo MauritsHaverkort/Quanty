@@ -349,7 +349,7 @@ double FindSelfconsistentnumber(double const *valin, double const *valout, uint3
 
 
 
-void ResiprocalLatticeVector(double const r[3][3], double g[3][3], uint32_t const Units)
+void ResiprocalLatticeVector(const double r[3][3], double g[3][3], uint32_t const Units)
 {
   double V;
   Cross(r[1], r[2], g[0]);
