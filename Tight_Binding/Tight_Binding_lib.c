@@ -522,7 +522,7 @@ uint32_t CalculateChemicalPotentialFromListOfEigenvalues(const double * const va
     }
     if(iloop==64)
     {
-      printf("Warning: CalculateChemicalPotentialFromListOfEigenvalues did not converge in %i steps musmaller=%f mularger=%f\n",i,musmaler,mularger);
+      printf("Warning: CalculateChemicalPotentialFromListOfEigenvalues did not converge in %i steps musmaller=%22.15E mularger=%22.15E\nOccupation is %22.15E wheras it should be %22.15E\n",iloop,musmaler,mularger,NEmu,NE);
       CalculateTotalEnergyFromListOfEigenvalues(val, NVal, kbT, *mu, Etot);
       return 1;
     }

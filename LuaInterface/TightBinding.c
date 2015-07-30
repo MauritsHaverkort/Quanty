@@ -32,6 +32,7 @@ static int LuaCalculateDOS(lua_State *L)
   
   return 1;
 }
+
 /*
  *
  */
@@ -41,6 +42,7 @@ static int LuaCalculateBands(lua_State *L)
   
   return 1;
 }
+
 /*
  *
  */
@@ -50,6 +52,7 @@ static int LuaCalculateFermi(lua_State *L)
   
   return 1;
 }
+
 /*
  *
  */
@@ -73,7 +76,7 @@ static int LuaCalculateG(lua_State *L)
  */
 static int LuaCreateClusterHamiltonian(lua_State *L)
 {
-  uint32_t len, lenclusterdef,i,j;
+  uint32_t len, lenclusterdef,i,j,nreturn=1;
   char *tokenread;
   TightBindingDef *a, aSuper, *aSuperReturn;
   CrystalStructureSuperCellType SuperCell;
@@ -81,7 +84,7 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
   OperatorType *H;
   CompactVectorType k;
   Bool AddSpin=False;
-  Bool QOperators=False, QOptions=False, ReturnTBSuperCell=True;
+  Bool QOperators=False, QOptions=False, ReturnTBSuperCell=True, ReturnTBCellPositions=True, ReturnTBKVectors=True;
   OperatorType *AditionalOperator=NULL;
   MatrixType U;
   k.Ni=3;
@@ -90,6 +93,8 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
   LuaOptionsType LuaCreateClusterHamiltonianOptions[]={
     {"AddSpin", "bool", &AddSpin},
     {"ReturnTBSuperCell", "bool", &ReturnTBSuperCell},
+    {"ReturnTBCellPositions", "bool", &ReturnTBCellPositions},
+    {"ReturnTBKVectors", "bool", &ReturnTBKVectors},
     {"k", "Vector", &k},
     {NULL, NULL, NULL}};
   /* check number of input parameters */
@@ -168,6 +173,9 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
   }
   else
   {
+    ReturnTBSuperCell=False;
+    ReturnTBKVectors=False;
+    ReturnTBCellPositions=False;
     //TODO:
     return luaL_error(L, "Error in CreateClusterHamiltonian open boundary conditions not yet implemented \n");
   }
@@ -258,13 +266,45 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
     aSuperReturn=(TightBindingDef*) lua_newuserdata(L, sizeof(TightBindingDef));
     luaL_setmetatable(L, "TightBinding_Type");
     *aSuperReturn=aSuper;
-    return 2;
+    nreturn++;
   }
   else
   {
     FreeTightBindingDef(&aSuper);
-    return 1;
   }
+  if(ReturnTBCellPositions)
+  {
+    lua_createtable(L, SuperCell.NCell, 0);
+    for(i=0;i<SuperCell.NCell;i++)
+    {
+      lua_createtable(L, 3, 0);
+      lua_pushnumber(L, SuperCell.CellPos[i][0]);
+      lua_rawseti(L, -2, 1);
+      lua_pushnumber(L, SuperCell.CellPos[i][1]);
+      lua_rawseti(L, -2, 2);
+      lua_pushnumber(L, SuperCell.CellPos[i][2]);
+      lua_rawseti(L, -2, 3);
+      lua_rawseti(L, -2, i+1);
+    }
+    nreturn++;
+  }
+  if(ReturnTBKVectors)
+  {
+    lua_createtable(L, SuperCell.NCell, 0);
+    for(i=0;i<SuperCell.NCell;i++)
+    {
+      lua_createtable(L, 3, 0);
+      lua_pushnumber(L, SuperCell.kVector[i][0]);
+      lua_rawseti(L, -2, 1);
+      lua_pushnumber(L, SuperCell.kVector[i][1]);
+      lua_rawseti(L, -2, 2);
+      lua_pushnumber(L, SuperCell.kVector[i][2]);
+      lua_rawseti(L, -2, 3);
+      lua_rawseti(L, -2, i+1);
+    }
+    nreturn++;
+  }
+  return nreturn;
 }
 
 /*
@@ -552,6 +592,21 @@ static int LuaTightBindingIndex(lua_State * L)
       for(j=0;j<3;j++)
       {
         lua_pushnumber(L, a->Cell.rUnitCell[i][j]);
+        lua_rawseti(L, -2, j+1);
+      }
+      lua_rawseti(L, -2, i+1);
+    }
+    return 1;
+  }
+  else if (strcmp(str, "ReciprocalCell")==0)
+  {
+    lua_createtable(L,3,0);
+    for(i=0;i<3;i++)
+    {
+      lua_createtable(L,3,0);
+      for(j=0;j<3;j++)
+      {
+        lua_pushnumber(L, a->Cell.gUnitCell[i][j]);
         lua_rawseti(L, -2, j+1);
       }
       lua_rawseti(L, -2, i+1);

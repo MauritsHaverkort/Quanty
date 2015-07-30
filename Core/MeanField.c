@@ -2,11 +2,11 @@
 
 /*  Given a many particle operator O and a density matrix Rho
  *  create the mean-field approximated operator MO
- *  a^dag_1 a^dag_2 a_3 a_4 ->
+ *  a^dag_1 a^dag_2 a_3 a_4 -> 0.5 (
  *   - a^dag_1 a_3 < a^dag_2 a_4 >
  *   + a^dag_1 a_4 < a^dag_2 a_3 >
  *   + a^dag_2 a_3 < a^dag_1 a_4 >
- *   - a^dag_2 a_4 < a^dag_1 a_3 >
+ *   - a^dag_2 a_4 < a^dag_1 a_3 > )
  */
 uint32_t MeanFieldOperator(const OperatorType * const O, OperatorType * const MO, const MatrixType Rho)
 {
@@ -248,11 +248,11 @@ uint32_t OperatorCrAnLength2ToOneElectronCompactMatrix(const OperatorType * cons
 
 /*  Given a many particle operator O and a density matrix Rho
  *  create the mean-field approximated operator MO as a one particle matrix
- *  a^dag_i a^dag_j a_k a_l ->
+ *  a^dag_i a^dag_j a_k a_l -> 0.5 (
  *   - a^dag_i a_k < a^dag_j a_l >
  *   + a^dag_i a_l < a^dag_j a_k >
  *   + a^dag_j a_k < a^dag_i a_l >
- *   - a^dag_j a_l < a^dag_i a_k >
+ *   - a^dag_j a_l < a^dag_i a_k > )
  *
  */
 uint32_t MeanFieldOperatorOneElectronMatrix(const OperatorType * const O, CompactMatrixType * const MO, const CompactMatrixType Rho)
@@ -378,11 +378,11 @@ uint32_t MeanFieldOperatorOneElectronMatrix(const OperatorType * const O, Compac
     return 0;
   }
   /* length 4 */
-  // Cr_i Cr_j An_k An_l ->
-  //   - a^dag_i a_k < a^dag_j a_l >
+  // Cr_i Cr_j An_k An_l ->     0.5 (
+  //  - a^dag_i a_k < a^dag_j a_l >
   //  + a^dag_i a_l < a^dag_j a_k >
   //  + a^dag_j a_k < a^dag_i a_l >
-  //  - a^dag_j a_l < a^dag_i a_k >
+  //  - a^dag_j a_l < a^dag_i a_k > )
   if(Oo.l[4].QComplex)
   {
     if(Rho.QComplex)
@@ -589,6 +589,10 @@ uint32_t MeanFieldGroundstate(const OperatorType *const O, CompactMatrixType * c
     if(iloop==Maxit)
     {
       printf("Max number of loops reached in MeanFieldGroundstate, but energy not converged\n");
+      for(i=0;i<Maxit;i++)
+      {
+        printf("Energy at step %4i is %22.15E\n",i,Etotlist[i]);
+      }
       return 1;
     }
   }
