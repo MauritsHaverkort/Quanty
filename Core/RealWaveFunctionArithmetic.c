@@ -745,7 +745,7 @@ double RealWaveFunctionDotProduct(const WaveFunctionType *a, const WaveFunctionT
   for (iOMP = 1; iOMP <= (int)(a->N); ++iOMP)
   {
     i = (uint32_t) iOMP;
-    NextIndex = b->KeyList[hash(&a->Determinant[BlokElementDet(i, a->NWord, 0)], a->NWord, a->NBitsKey)];
+    NextIndex = b->KeyList[hash(&a->Determinant[BlokElementDet(i, a->NWord, 0)], b->NWord, b->NBitsKey)];
     while (NextIndex)
     {
       PsiAIsPsiB = 1;
