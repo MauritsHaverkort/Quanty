@@ -2170,6 +2170,7 @@ void luaconstants(lua_State *L)
 
 int luaopen_ssp(lua_State * L)
 {
+  
   luaL_newmetatable(L, "Operator_Type");
   luaL_setfuncs(L, Operator_meta, 0);
   

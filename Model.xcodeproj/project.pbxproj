@@ -314,6 +314,7 @@
 		4CDD1CAC179994DC00614F34 /* TestGFBA.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = TestGFBA.c; sourceTree = "<group>"; };
 		4CDD1CAD179D2F0900614F34 /* TestStandardOperators.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = TestStandardOperators.c; sourceTree = "<group>"; };
 		4CDDD7FF1A599D55004D27DF /* Documentation.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = Documentation.c; sourceTree = "<group>"; };
+		4CE1A0DA1B81CA84001213D4 /* units.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = units.c; sourceTree = "<group>"; };
 		4CE50BC319754E6F00091F1C /* ssp.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; lineEnding = 0; path = ssp.c; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
 		4CE50BC51975556500091F1C /* BraKet.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = BraKet.c; sourceTree = "<group>"; };
 		4CE50BC6197555E100091F1C /* eval.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = eval.c; sourceTree = "<group>"; };
@@ -421,6 +422,7 @@
 				4CDDD7FF1A599D55004D27DF /* Documentation.c */,
 				4C7FE7611B1A1C6100FD19A3 /* TightBinding.c */,
 				4C33766D1B58FEA50097323E /* Plot.c */,
+				4CE1A0DA1B81CA84001213D4 /* units.c */,
 			);
 			path = LuaInterface;
 			sourceTree = "<group>";

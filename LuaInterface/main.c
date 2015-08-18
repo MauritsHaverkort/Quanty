@@ -55,6 +55,7 @@
 static void *currentudata = NULL;
 #include "lua_extensions/tools.c"
 #include "lua_extensions/TableToArray.c"
+#include "units.c"
 #include "Complex.c"
 #include "Operator.c"
 #include "Wavefunction.c"
@@ -91,6 +92,7 @@ int main(int argc, char *argv[])
   
   lua_State *L = luaL_newstate();
   luaL_openlibs(L);
+  luaopen_units(L);
   luaopen_Complex(L);
   luaopen_ssp(L);
   

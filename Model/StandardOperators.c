@@ -813,8 +813,7 @@ uint32_t CreateOperatorLmin(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, 
  *    *LindexDn    - An array of legnth 2L+1 indexing the ml values from -L to L with spin down
  *    The operators J*** are not initialized on input
  */
-uint32_t CreateOperatorJx(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn,
-                          OperatorType * const Jx)
+uint32_t CreateOperatorJx(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jx)
 {
   uint32_t i;
   double m, l;
