@@ -1306,6 +1306,15 @@ uint32_t CreateOperatorNumberShell(uint32_t const NFermion, uint32_t const Nelec
   return 0;
 }
 
+uint32_t CreateOperatorIdentity(uint32_t const NFermion, OperatorType * const OppN)
+{
+  InitNamedOperator(OppN, "Identity operator");
+  OppN->NFermion = NFermion;
+  OppN->NWord = Min(OppN->NFermion, 1 + (OppN->NFermion - 1) / 8);
+  RealOperatorAddLader(OppN, NULL, 0, 1);
+  return 0;
+}
+
 uint32_t CreateOperatorNumberShellSqr(uint32_t const NFermion, uint32_t const Nelectron, const uint16_t * const index, OperatorType * const OppNSqr)
 {
   OperatorType temp;

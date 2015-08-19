@@ -225,7 +225,16 @@ static int LuaWavefunctionMul(lua_State * L)
   return 1;
 }
 
-
+static int LuaWavefunctionUnm(lua_State * L)
+{
+  WaveFunctionType *res, *a;
+  a = (WaveFunctionType *) luaL_checkudata(L, 1, "Wavefunction_Type");
+  res = (WaveFunctionType *) lua_newuserdata(L, sizeof(WaveFunctionType));
+  WaveFunctionCopy(*a, res);
+  WaveFunctionMultiply(res, -1, 0);
+  luaL_setmetatable(L, "Wavefunction_Type");
+  return 1;
+}
 
 static int LuaWavefunctionPrint(lua_State * L)
 {
@@ -407,6 +416,7 @@ static const struct luaL_Reg Wavefunction_meta[] = {
   {"__add", LuaWavefunctionAdd},
   {"__sub", LuaWavefunctionSub},
   {"__mul", LuaWavefunctionMul},
+  {"__unm", LuaWavefunctionUnm},
   {"__index", LuaWavefunctionIndex},
   {"__newindex", LuaWavefunctionNewIndex},
   {"__tostring", LuaWavefunctionToString},

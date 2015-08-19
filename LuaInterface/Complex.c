@@ -176,7 +176,13 @@ static int LuaComplexAdd(lua_State * L)
           if (luaL_testudata(L, len, "Operator_Type") != NULL)
           {
             // (original variable) operator (user data - operator)
-            return luaL_error(L, "Still to do: complex number plus operator\n");
+            OperatorType *res,*b;
+            b = (OperatorType *) luaL_checkudata(L, 2, "Operator_Type");
+            res = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+            luaL_setmetatable(L, "Operator_Type");
+            OperatorCopy(res, *b);
+            OperatorAddLader(res, NULL, 0, a->Re, a->Im);
+            return 1;
           }
           if (luaL_testudata(L, len, "Spectra_Type") != NULL)
           {
@@ -342,7 +348,14 @@ static int LuaComplexSub(lua_State * L)
           if (luaL_testudata(L, len, "Operator_Type") != NULL)
           {
             // (original variable) operator (user data - operator)
-            return luaL_error(L, "Still to do: complex number minus operator\n");
+            OperatorType *res,*b;
+            b = (OperatorType *) luaL_checkudata(L, 2, "Operator_Type");
+            res = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+            luaL_setmetatable(L, "Operator_Type");
+            OperatorCopy(res, *b);
+            OperatorScale(res, -1, 0);
+            OperatorAddLader(res, NULL, 0, a->Re, a->Im);
+            return 1;
           }
           if (luaL_testudata(L, len, "Spectra_Type") != NULL)
           {
