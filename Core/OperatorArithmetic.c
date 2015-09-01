@@ -208,7 +208,7 @@ uint32_t InitOperatorFixedLength(OperatorType * const O, const uint32_t length, 
 {
   uint32_t l;
   if (length == 0)
-    return 1;
+    return 0;
   if (length > O->MaxLength)
   {                             /* allongate the vector O->l */
     if ((O->l = realloc(O->l, (length + 1) * sizeof(OperatorFixedLengthType))) == NULL)
@@ -679,7 +679,7 @@ uint32_t ComplexOperatorAddLader(OperatorType * const O, const uint16_t * const 
       return 0;
     }
     O->l[0].V[0].Re += VRe;
-    O->l[0].V[0].Im += VRe;
+    O->l[0].V[0].Im += VIm;
     return 0;
   }
   /* test if the key that belongs to oadd already excists */

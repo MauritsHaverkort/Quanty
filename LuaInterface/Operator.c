@@ -749,6 +749,23 @@ static int LuaOperatorNewAnnihilate(lua_State * L)
   return 1;
 }
 
+static int LuaOperatorNewIdentity(lua_State * L)
+{
+  OperatorType *op;
+  uint32_t len = (uint32_t)lua_gettop(L);
+  if(len==1)
+  {
+    uint32_t NFermion = (uint32_t)luaL_checkunsigned(L, 1);
+    op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+    CreateOperatorIdentity(NFermion, op);
+    luaL_setmetatable(L, "Operator_Type");
+    return 1;
+  }
+  else
+  {
+    return luaL_error(L, "Error in NewOperator(\"Identity\",...), expected 1 aditional argument, not %d\n",len);
+  }
+}
 
 static int LuaOperatorNewNumber(lua_State * L)
 {
@@ -848,25 +865,116 @@ static int LuaOperatorExp(lua_State * L)
 
 static int LuaOperatorAdd(lua_State * L)
 {
-  OperatorType *l = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
-  OperatorType *r = (OperatorType *) luaL_checkudata(L, 2, "Operator_Type");
-  lua_settop(L, 0);
-  OperatorType *res = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-  luaL_setmetatable(L, "Operator_Type");
-  OperatorCopy(res, *l);
-  OperatorAdd(res, *r, 1., 0);
-  return 1;
+  OperatorType *l,*r,*res;
+  double a;
+  Complex16 *b;
+  if (lua_isnumber(L, 1))
+  {
+    a = (double) luaL_checknumber(L, 1);
+    r = (OperatorType *) luaL_checkudata(L, 2, "Operator_Type");
+    res = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+    luaL_setmetatable(L, "Operator_Type");
+    OperatorCopy(res, *r);
+    OperatorAddLader(res, NULL, 0, a, 0);
+    return 1;
+  }
+  if (lua_isnumber(L, 2))
+  {
+    l = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
+    a = (double) luaL_checknumber(L, 2);
+    res = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+    luaL_setmetatable(L, "Operator_Type");
+    OperatorCopy(res, *l);
+    OperatorAddLader(res, NULL, 0, a, 0);
+    return 1;
+  }
+  if (luaL_testudata(L, 1, "Complex_Type") != NULL)
+  {
+    b = (Complex16 *) luaL_checkudata(L, 1, "Complex_Type");
+    r = (OperatorType *) luaL_checkudata(L, 2, "Operator_Type");
+    res = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+    luaL_setmetatable(L, "Operator_Type");
+    OperatorCopy(res, *r);
+    OperatorAddLader(res, NULL, 0, b->Re, b->Im);
+    return 1;
+  }
+  if (luaL_testudata(L, 2, "Complex_Type") != NULL)
+  {
+    l = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
+    b = (Complex16 *) luaL_checkudata(L, 2, "Complex_Type");
+    res = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+    luaL_setmetatable(L, "Operator_Type");
+    OperatorCopy(res, *l);
+    OperatorAddLader(res, NULL, 0, b->Re, b->Im);
+    return 1;
+  }
+  {
+    l = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
+    r = (OperatorType *) luaL_checkudata(L, 2, "Operator_Type");
+    res = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+    luaL_setmetatable(L, "Operator_Type");
+    OperatorCopy(res, *l);
+    OperatorAdd(res, *r, 1., 0);
+    return 1;
+  }
 }
 
 static int LuaOperatorSub(lua_State * L)
 {
-  OperatorType *l = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
-  OperatorType *r = (OperatorType *) luaL_checkudata(L, 2, "Operator_Type");
-  OperatorType *res = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-  luaL_setmetatable(L, "Operator_Type");
-  OperatorCopy(res, *l);
-  OperatorAdd(res, *r, -1., 0);
-  return 1;
+  OperatorType *l,*r,*res;
+  double a;
+  Complex16 *b;
+  if (lua_isnumber(L, 1))
+  {
+    a = (double) luaL_checknumber(L, 1);
+    r = (OperatorType *) luaL_checkudata(L, 2, "Operator_Type");
+    res = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+    luaL_setmetatable(L, "Operator_Type");
+    OperatorCopy(res, *r);
+    OperatorScale(res, -1, 0);
+    OperatorAddLader(res, NULL, 0, a, 0);
+    return 1;
+  }
+  if (lua_isnumber(L, 2))
+  {
+    l = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
+    a = (double) luaL_checknumber(L, 2);
+    res = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+    luaL_setmetatable(L, "Operator_Type");
+    OperatorCopy(res, *l);
+    OperatorAddLader(res, NULL, 0, -a, 0);
+    return 1;
+  }
+  if (luaL_testudata(L, 1, "Complex_Type") != NULL)
+  {
+    b = (Complex16 *) luaL_checkudata(L, 1, "Complex_Type");
+    r = (OperatorType *) luaL_checkudata(L, 2, "Operator_Type");
+    res = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+    luaL_setmetatable(L, "Operator_Type");
+    OperatorCopy(res, *r);
+    OperatorScale(res, -1, 0);
+    OperatorAddLader(res, NULL, 0, b->Re, b->Im);
+    return 1;
+  }
+  if (luaL_testudata(L, 2, "Complex_Type") != NULL)
+  {
+    l = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
+    b = (Complex16 *) luaL_checkudata(L, 2, "Complex_Type");
+    res = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+    luaL_setmetatable(L, "Operator_Type");
+    OperatorCopy(res, *l);
+    OperatorAddLader(res, NULL, 0, -b->Re, -b->Im);
+    return 1;
+  }
+  {
+    l = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
+    r = (OperatorType *) luaL_checkudata(L, 2, "Operator_Type");
+    res = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+    luaL_setmetatable(L, "Operator_Type");
+    OperatorCopy(res, *l);
+    OperatorAdd(res, *r, -1., 0);
+    return 1;
+  }
 }
 
 
@@ -996,7 +1104,16 @@ static int LuaOperatorMul(lua_State * L)
   return 1;
 }
 
-
+static int LuaOperatorUnm(lua_State * L)
+{
+  OperatorType *res, *a;
+  a = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
+  res = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+  OperatorCopy(res, *a);
+  OperatorScale(res, -1, 0);
+  luaL_setmetatable(L, "Operator_Type");
+  return 1;
+}
 
 static int LuaOperatorPrint(lua_State * L)
 {
@@ -1195,6 +1312,7 @@ static const struct luaL_Reg Operator_meta[] = {
   {"__add", LuaOperatorAdd},
   {"__sub", LuaOperatorSub},
   {"__mul", LuaOperatorMul},
+  {"__unm", LuaOperatorUnm},
   {"__index", LuaOperatorIndex},
   {"__newindex", LuaOperatorNewIndex},
   {"__tostring", LuaOperatorToString},

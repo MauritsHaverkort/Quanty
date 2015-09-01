@@ -813,8 +813,7 @@ uint32_t CreateOperatorLmin(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, 
  *    *LindexDn    - An array of legnth 2L+1 indexing the ml values from -L to L with spin down
  *    The operators J*** are not initialized on input
  */
-uint32_t CreateOperatorJx(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn,
-                          OperatorType * const Jx)
+uint32_t CreateOperatorJx(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jx)
 {
   uint32_t i;
   double m, l;
@@ -1304,6 +1303,15 @@ uint32_t CreateOperatorNumberShell(uint32_t const NFermion, uint32_t const Nelec
     oadd[0] = index[i];
     RealOperatorAddLader(OppN, oadd, 2, 1);
   }
+  return 0;
+}
+
+uint32_t CreateOperatorIdentity(uint32_t const NFermion, OperatorType * const OppN)
+{
+  InitNamedOperator(OppN, "Identity operator");
+  OppN->NFermion = NFermion;
+  OppN->NWord = Min(OppN->NFermion, 1 + (OppN->NFermion - 1) / 8);
+  RealOperatorAddLader(OppN, NULL, 0, 1);
   return 0;
 }
 

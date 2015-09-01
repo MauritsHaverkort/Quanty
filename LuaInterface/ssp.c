@@ -686,6 +686,11 @@ static int LuaNewOperator(lua_State * L)
     lua_remove(L, 1);
     return LuaOperatorNewNumber(L);
   }
+  if ((strcmp(OT, "Identity") == 0)||(strcmp(OT, "I") == 0)||(strcmp(OT, "1") == 0))
+  {
+    lua_remove(L, 1);
+    return LuaOperatorNewIdentity(L);
+  }
   return luaL_error(L, "ERROR: first argument in NewOperator (%s) is not recognized as a known operatortype\n See Help(\"NewOperator\") for more information\n",OT);
 }
 
@@ -2170,6 +2175,7 @@ void luaconstants(lua_State *L)
 
 int luaopen_ssp(lua_State * L)
 {
+  
   luaL_newmetatable(L, "Operator_Type");
   luaL_setfuncs(L, Operator_meta, 0);
   
