@@ -2119,39 +2119,39 @@ static int LuaStatistics(lua_State *L)
 }
 
 static const struct luaL_Reg global_functions[] = {
-  {"Help", LuaHelp},
-  {"Verbosity",LuaVerbosity},
-  {"TimeStart",LuaTimeStart},
-  {"TimeEnd",LuaTimeEnd},
-  {"TimePrint",LuaTimePrint},
-  {"PotentialExpandedOnClm", LuaPotentialExpandedOnClm},
-  {"NewOperator", LuaNewOperator},
-  {"NewWavefunction", LuaNewWaveFunction},
-  {"NewTightBinding", LuaNewTightBinding},
-  {"DensityMatrix",LuaDensityMatrix},
-  {"Statistics",LuaStatistics},
-  {"Copy", Luacopy},
-  {"Clone", Luacopy},
+  {"CalculateBands", LuaCalculateBands},
+  {"CalculateDOS", LuaCalculateDOS},
+  {"CalculateFermi", LuaCalculateFermi},
+  {"CalculateG", LuaCalculateG},
   {"Chop", LuaChop},
+  {"Clone", Luacopy},
   {"Conjugate", Luaconjugate},
   {"ConjugateTranspose", Luaconjugatetranspose},
-  {"Transpose", Luatranspose},
-  {"Rotate", Luarotate},
-  {"EvolveToGroundstate", LuaEvolveToGroundstate},
-  {"Eigensystem", LuaEigensystem},
-  {"MeanFieldGroundState", LuaMeanFieldGroundstate},
+  {"Copy", Luacopy},
   {"CreateSpectra", LuaCreateSpectra},
   {"CreateFluorescenceYield", LuaCreateFluorescenceYield},
   {"CreateResonantSpectra", LuaCreateResonantSpectra},
   {"CreateClusterHamiltonian", LuaCreateClusterHamiltonian},
-  {"CalculateDOS", LuaCalculateDOS},
-  {"CalculateBands", LuaCalculateBands},
-  {"CalculateFermi", LuaCalculateFermi},
-  {"CalculateG", LuaCalculateG},
-  {"PlotDOS", LuaPlotDOS},
+  {"DensityMatrix",LuaDensityMatrix},
+  {"Eigensystem", LuaEigensystem},
+  {"EvolveToGroundstate", LuaEvolveToGroundstate},
+  {"Help", LuaHelp},
+  {"MeanFieldGroundState", LuaMeanFieldGroundstate},
+  {"NewOperator", LuaNewOperator},
+  {"NewTightBinding", LuaNewTightBinding},
+  {"NewWavefunction", LuaNewWaveFunction},
+  {"PotentialExpandedOnClm", LuaPotentialExpandedOnClm},
   {"PlotBands", LuaPlotBands},
   {"PlotBandsAndDOS", LuaPlotBandsAndDOS},
+  {"PlotDOS", LuaPlotDOS},
   {"PlotFermi", LuaPlotFermi},
+  {"Rotate", Luarotate},
+  {"Statistics",LuaStatistics},
+  {"TimeEnd",LuaTimeEnd},
+  {"TimePrint",LuaTimePrint},
+  {"TimeStart",LuaTimeStart},
+  {"Transpose", Luatranspose},
+  {"Verbosity",LuaVerbosity},
   {NULL, NULL}
 };
 
@@ -2175,7 +2175,6 @@ void luaconstants(lua_State *L)
 
 int luaopen_ssp(lua_State * L)
 {
-  
   luaL_newmetatable(L, "Operator_Type");
   luaL_setfuncs(L, Operator_meta, 0);
   
