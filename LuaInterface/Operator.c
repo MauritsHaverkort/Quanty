@@ -1115,21 +1115,36 @@ static int LuaOperatorUnm(lua_State * L)
   return 1;
 }
 
+
 static int LuaOperatorPrint(lua_State * L)
 {
+  struct
+  {
+    char *stream;
+  } Options;
   uint32_t len = (uint32_t)lua_gettop(L);
+  LuaOptionsType LuaOperatorPrintOptions[]={
+    {"file", "char*", &(Options.stream)},
+    {NULL, NULL, NULL}};
+  if(!((len==0)||(len==1)))
+  {
+    return luaL_error(L, "Error in .Print(arg) unrecognized arguments in Print()\n");
+  }
   if(len==0)
   {
     PrintOperatorReadable(*((OperatorType *) currentudata));
   }
-  else if(lua_istable(L,-1))
+  if(len==1)
   {
-    printf("Options for print recognized but not implemented\n");
-    PrintOperatorReadable(*((OperatorType *) currentudata));
+    LuaCheckOptions(L, -1, LuaOperatorPrintOptions);
+  }
+  if(Options.stream==NULL)
+  {
+    PrintOperatorFullReadable(*(OperatorType *) currentudata);
   }
   else
   {
-    return luaL_error(L, "Error in .Print(arg) unrecognized arguments in Print()\n");
+    FilePrintOperatorReadable(*(OperatorType *) currentudata, Options.stream, "w");
   }
   return 0;
 }
