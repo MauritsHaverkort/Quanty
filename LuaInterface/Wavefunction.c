@@ -238,19 +238,33 @@ static int LuaWavefunctionUnm(lua_State * L)
 
 static int LuaWavefunctionPrint(lua_State * L)
 {
+  struct
+  {
+    char *stream;
+  } Options;
   uint32_t len = (uint32_t)lua_gettop(L);
+  LuaOptionsType LuaWavefunctionPrintOptions[]={
+    {"file", "char*", &(Options.stream)},
+    {NULL, NULL, NULL}};
+  if(!((len==0)||(len==1)))
+  {
+    return luaL_error(L, "Error in .Print(arg) unrecognized arguments in Print()\n");
+  }
   if(len==0)
   {
     PrintWaveFunctionReadable(*(WaveFunctionType *) currentudata);
   }
-  else if(lua_istable(L,-1))
+  if(len==1)
   {
-    printf("Options for print recognized but not implemented\n");
+    LuaCheckOptions(L, -1, LuaWavefunctionPrintOptions);
+  }
+  if(Options.stream==NULL)
+  {
     PrintWaveFunctionFullReadable(*(WaveFunctionType *) currentudata);
   }
   else
   {
-    return luaL_error(L, "Error in .Print(arg) unrecognized arguments in Print()\n");
+    FilePrintWaveFunctionPlainBinary(*(WaveFunctionType *) currentudata, Options.stream, "w");
   }
   return 0;
 }

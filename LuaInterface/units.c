@@ -160,7 +160,7 @@ static int RegisterEnergyUnits(lua_State *L, char* EnUnits)
   const uint32_t nelements=sizeof(EnergyUnits)/sizeof(EnergyUnits[0]);
   uint32_t i,iEnUnits=0;
   double conversion=1;
-  Bool found=false;
+  Bool found=False;
   i=0;
   while(!found)
   {
