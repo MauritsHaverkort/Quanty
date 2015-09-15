@@ -807,7 +807,7 @@ uint32_t StreamPrintTightBindingDef(TightBindingDef O, FILE * stream)
 {
   int    i;
   O.Name[MAXStrLength - 1] = '\0';
-  fprintf(stream, "\nSettigns of a tight binding model: %s\n", O.Name);
+  fprintf(stream, "\nSettings of a tight binding model: %s\n", O.Name);
   StreamPrintCrystalStructure(O.Cell, stream);
   fprintf(stream,"Containing a total number of %i orbitals\n",O.NFermion);
   fprintf(stream, "Hopping definitions ( %i )\n", O.nH);
@@ -836,7 +836,7 @@ uint32_t StreamPrintTightBindingDef(TightBindingDef O, FILE * stream)
  */
 uint32_t StreamPrintDimerizedSpinChainSettings(DimerizedSpinChainSettings O, FILE * stream)
 {
-  fprintf(stream, "\nSettigns of Heisenberg Model\n");
+  fprintf(stream, "\nSettings of Heisenberg Model\n");
   fprintf(stream, "Nearest Neighbor exchange constant JA:%22.15F\n", O.JA);
   fprintf(stream, "Nearest Neighbor exchange constant JB:%22.15F\n", O.JB);
   fprintf(stream, "Number of dimers in the chain        :    %i\n", O.Ndimer);
@@ -860,7 +860,7 @@ uint32_t StreamPrintDimerizedSpinChainSettings(DimerizedSpinChainSettings O, FIL
  */
 uint32_t StreamPrintHeisenbergModelSettings(HeisenbergModelSettings O, FILE * stream)
 {
-  fprintf(stream, "\nSettigns of Heisenberg Model\n");
+  fprintf(stream, "\nSettings of Heisenberg Model\n");
   fprintf(stream, "Nearest Neighbor exchange constant J:%22.15F\n", O.J);
   StreamPrintCrystalStructureSuperCell(O.Cluster, stream);
   fprintf(stream, "Additional information for numerical settings\n");
@@ -884,7 +884,7 @@ uint32_t StreamPrintHeisenbergModelSettings(HeisenbergModelSettings O, FILE * st
  */
 uint32_t StreamPrinttJModelSettings(tJModelSettings O, FILE * stream)
 {
-  fprintf(stream, "\nSettigns of tJ Model\n");
+  fprintf(stream, "\nSettings of tJ Model\n");
   fprintf(stream, "Nearest Neighbor exchange constant J:%22.15F\n", O.J);
   fprintf(stream, "Nearest Neighbor hopping constant  t:%22.15F\n", O.t);
   fprintf(stream, "Number of electrons                 : %i\n", O.nElectron);
@@ -910,7 +910,7 @@ uint32_t StreamPrinttJModelSettings(tJModelSettings O, FILE * stream)
  */
 uint32_t StreamPrintSpinLaderSettings(SpinLaderSettings O, FILE * stream)
 {
-  fprintf(stream, "\nSettigns of Spin Lader Model\n");
+  fprintf(stream, "\nSettings of Spin Lader Model\n");
   fprintf(stream, "Nearest Neighbor exchange constant Jrung:%22.15F\n", O.Jrung);
   fprintf(stream, "Nearest Neighbor exchange constant Jleg: %22.15F\n", O.Jleg);
   fprintf(stream, "Nearest Neighbor exchange constant Jcyc: %22.15F\n", O.Jcyc);
@@ -937,7 +937,7 @@ uint32_t StreamPrintSpinLaderSettings(SpinLaderSettings O, FILE * stream)
 uint32_t StreamPrintHubbardModelSettings(HubbardModelSettings O, FILE * stream)
 {
   uint32_t iatom, ishell, ifermion;
-  fprintf(stream, "\nSettigns of Hubbard Model\n");
+  fprintf(stream, "\nSettings of Hubbard Model\n");
   fprintf(stream, "Crystal structure and super cell settings\n");
   StreamPrintCrystalStructureSuperCell(O.SuperCell, stream);
   fprintf(stream, "Tigth Binding definitions within unit cell\n");
@@ -985,7 +985,7 @@ uint32_t StreamPrintHubbardModelSettings(HubbardModelSettings O, FILE * stream)
  */
 uint32_t StreamPrintDMFTXASSettings(DMFTXASSettings O, FILE * stream)
 {
-  fprintf(stream, "\nSettigns of XAS on DMFT model\n");
+  fprintf(stream, "\nSettings of XAS on DMFT model\n");
   fprintf(stream, "BathFilename         : %s\n", O.BathFilename);
   fprintf(stream, "U                    : %24.17E\n", O.U);
   fprintf(stream, "Q                    : %24.17E\n", O.Q);
@@ -1008,7 +1008,7 @@ uint32_t StreamPrintDMFTXASSettings(DMFTXASSettings O, FILE * stream)
 uint32_t StreamPrintDMFTSettings(DMFTSettings O, FILE * stream)
 {
   uint32_t i;
-  fprintf(stream, "\nSettigns of self-consistent DMFT calculation\n");
+  fprintf(stream, "\nSettings of self-consistent DMFT calculation\n");
   fprintf(stream, "G0FileName               : %s\n", O.G0FileName);
   fprintf(stream, "RootFileName             : %s\n", O.RootFileName);
   fprintf(stream, "SpecRootFileName         : %s\n", O.SpecRootFileName);

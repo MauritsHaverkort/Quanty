@@ -248,16 +248,18 @@ uint32_t OperatorCrAnLength2ToOneElectronCompactMatrix(const OperatorType * cons
 
 /*  Given a many particle operator O and a density matrix Rho
  *  create the mean-field approximated operator MO as a one particle matrix
- *  a^dag_i a^dag_j a_k a_l -> 0.5 (
- *   - a^dag_i a_k < a^dag_j a_l >
- *   + a^dag_i a_l < a^dag_j a_k >
- *   + a^dag_j a_k < a^dag_i a_l >
- *   - a^dag_j a_l < a^dag_i a_k > )
- *
+ *  a^dag_i a^dag_j a_k a_l ->
+ *  -  a^dag_i a_k  < a^dag_j a_l >
+ *  +  a^dag_i a_l  < a^dag_j a_k >
+ *  +  a^dag_j a_k  < a^dag_i a_l >
+ *  -  a^dag_j a_l  < a^dag_i a_k >
+ *  -< a^dag_i a_l >< a^dag_j a_k >
+ *  +< a^dag_i a_k >< a^dag_j a_l >
  */
 uint32_t MeanFieldOperatorOneElectronMatrix(const OperatorType * const O, CompactMatrixType * const MO, const CompactMatrixType Rho)
 {
-  uint32_t i,j,k,l,m;
+  uint32_t i,j,k,l,m,n;
+  double HFRe, HFIm;
   Complex16 Nelec={0,0};
   OperatorType Oo;
   if((O->MaxLength>4)||((O->MaxLength>0)&&(O->l[1].N!=0))||((O->MaxLength>2)&&(O->l[3].N!=0)))
@@ -272,7 +274,7 @@ uint32_t MeanFieldOperatorOneElectronMatrix(const OperatorType * const O, Compac
   }
   if(Rho.Ni!=O->NFermion)
   {
-    printf("ERROR: Density matrix should have dimensions of NFerion by NFermion of operator in MeanFieldOperatorOneElectronMatrix\n");
+    printf("ERROR: Density matrix should have dimensions of NFermion by NFermion of operator in MeanFieldOperatorOneElectronMatrix\n");
     return 1;
   }
   /* initiallize */
@@ -298,7 +300,7 @@ uint32_t MeanFieldOperatorOneElectronMatrix(const OperatorType * const O, Compac
   {
     for(i=0;i<Rho.Ni;i++)
     {
-      Nelec.Re=Rho.VRe[i*Rho.Nj+i];
+      Nelec.Re+=Rho.VRe[i*Rho.Nj+i];
     }
   }
   if(Abs(Nelec.Im)<Abs(DBL_EPSILON*10*Nelec.Re)) Nelec.Im=0;
@@ -307,20 +309,23 @@ uint32_t MeanFieldOperatorOneElectronMatrix(const OperatorType * const O, Compac
   {
     if(MO->QComplex)
     {
-      if(Oo.l[0].QComplex)
+      for(i=0;i<MO->Ni;i++)
       {
-        for(j=0;j<Oo.l[0].N;j++)
+        if(Oo.l[0].QComplex)
         {
-          MO->V[i*MO->Nj+i].Re+=(Oo.l[0].V[j].Re*Nelec.Re+Oo.l[0].V[j].Im*Nelec.Im)/(Sqr(Nelec.Re)+Sqr(Nelec.Im));
-          MO->V[i*MO->Nj+i].Im+=(Oo.l[0].V[j].Im*Nelec.Re-Oo.l[0].V[j].Re*Nelec.Im)/(Sqr(Nelec.Re)+Sqr(Nelec.Im));
+          for(j=0;j<Oo.l[0].N;j++)
+          {
+            MO->V[i*MO->Nj+i].Re+=(Oo.l[0].V[j].Re*Nelec.Re+Oo.l[0].V[j].Im*Nelec.Im)/(Sqr(Nelec.Re)+Sqr(Nelec.Im));
+            MO->V[i*MO->Nj+i].Im+=(Oo.l[0].V[j].Im*Nelec.Re-Oo.l[0].V[j].Re*Nelec.Im)/(Sqr(Nelec.Re)+Sqr(Nelec.Im));
+          }
         }
-      }
-      else
-      {
-        for(j=0;j<Oo.l[0].N;j++)
+        else
         {
-          MO->V[i*MO->Nj+i].Re+=(Oo.l[0].VRe[j]*Nelec.Re)/(Sqr(Nelec.Re)+Sqr(Nelec.Im));
-          MO->V[i*MO->Nj+i].Im-=(Oo.l[0].VRe[j]*Nelec.Im)/(Sqr(Nelec.Re)+Sqr(Nelec.Im));
+          for(j=0;j<Oo.l[0].N;j++)
+          {
+            MO->V[i*MO->Nj+i].Re+=(Oo.l[0].VRe[j]*Nelec.Re)/(Sqr(Nelec.Re)+Sqr(Nelec.Im));
+            MO->V[i*MO->Nj+i].Im-=(Oo.l[0].VRe[j]*Nelec.Im)/(Sqr(Nelec.Re)+Sqr(Nelec.Im));
+          }
         }
       }
     }
@@ -378,11 +383,13 @@ uint32_t MeanFieldOperatorOneElectronMatrix(const OperatorType * const O, Compac
     return 0;
   }
   /* length 4 */
-  // Cr_i Cr_j An_k An_l ->     0.5 (
-  //  - a^dag_i a_k < a^dag_j a_l >
-  //  + a^dag_i a_l < a^dag_j a_k >
-  //  + a^dag_j a_k < a^dag_i a_l >
-  //  - a^dag_j a_l < a^dag_i a_k > )
+  // Cr_i Cr_j An_k An_l ->
+  //  -  a^dag_i a_k  < a^dag_j a_l >
+  //  +  a^dag_i a_l  < a^dag_j a_k >
+  //  +  a^dag_j a_k  < a^dag_i a_l >
+  //  -  a^dag_j a_l  < a^dag_i a_k >
+  //  -< a^dag_i a_l >< a^dag_j a_k >
+  //  +< a^dag_i a_k >< a^dag_j a_l >
   if(Oo.l[4].QComplex)
   {
     if(Rho.QComplex)
@@ -393,14 +400,48 @@ uint32_t MeanFieldOperatorOneElectronMatrix(const OperatorType * const O, Compac
         j=(uint32_t)(NotCrAnMask & Oo.l[4].o[4*m+2]);
         k=(uint32_t)(Oo.l[4].o[4*m+1]);
         l=(uint32_t)(Oo.l[4].o[4*m]);
-        MO->V[i*MO->Nj+k].Re-= 0.5 * ( Oo.l[4].V[m].Re * Rho.V[j*Rho.Nj+l].Re - Oo.l[4].V[m].Im * Rho.V[j*Rho.Nj+l].Im );
-        MO->V[i*MO->Nj+l].Re+= 0.5 * ( Oo.l[4].V[m].Re * Rho.V[j*Rho.Nj+k].Re - Oo.l[4].V[m].Im * Rho.V[j*Rho.Nj+k].Im );
-        MO->V[j*MO->Nj+k].Re+= 0.5 * ( Oo.l[4].V[m].Re * Rho.V[i*Rho.Nj+l].Re - Oo.l[4].V[m].Im * Rho.V[i*Rho.Nj+l].Im );
-        MO->V[j*MO->Nj+l].Re-= 0.5 * ( Oo.l[4].V[m].Re * Rho.V[i*Rho.Nj+k].Re - Oo.l[4].V[m].Im * Rho.V[i*Rho.Nj+k].Im );
-        MO->V[i*MO->Nj+k].Im-= 0.5 * ( Oo.l[4].V[m].Im * Rho.V[j*Rho.Nj+l].Re + Oo.l[4].V[m].Re * Rho.V[j*Rho.Nj+l].Im );
-        MO->V[i*MO->Nj+l].Im+= 0.5 * ( Oo.l[4].V[m].Im * Rho.V[j*Rho.Nj+k].Re + Oo.l[4].V[m].Re * Rho.V[j*Rho.Nj+k].Im );
-        MO->V[j*MO->Nj+k].Im+= 0.5 * ( Oo.l[4].V[m].Im * Rho.V[i*Rho.Nj+l].Re + Oo.l[4].V[m].Re * Rho.V[i*Rho.Nj+l].Im );
-        MO->V[j*MO->Nj+l].Im-= 0.5 * ( Oo.l[4].V[m].Im * Rho.V[i*Rho.Nj+k].Re + Oo.l[4].V[m].Re * Rho.V[i*Rho.Nj+k].Im );
+        MO->V[i*MO->Nj+k].Re-= Oo.l[4].V[m].Re * Rho.V[j*Rho.Nj+l].Re - Oo.l[4].V[m].Im * Rho.V[j*Rho.Nj+l].Im;
+        MO->V[i*MO->Nj+l].Re+= Oo.l[4].V[m].Re * Rho.V[j*Rho.Nj+k].Re - Oo.l[4].V[m].Im * Rho.V[j*Rho.Nj+k].Im;
+        MO->V[j*MO->Nj+k].Re+= Oo.l[4].V[m].Re * Rho.V[i*Rho.Nj+l].Re - Oo.l[4].V[m].Im * Rho.V[i*Rho.Nj+l].Im;
+        MO->V[j*MO->Nj+l].Re-= Oo.l[4].V[m].Re * Rho.V[i*Rho.Nj+k].Re - Oo.l[4].V[m].Im * Rho.V[i*Rho.Nj+k].Im;
+        MO->V[i*MO->Nj+k].Im-= Oo.l[4].V[m].Im * Rho.V[j*Rho.Nj+l].Re + Oo.l[4].V[m].Re * Rho.V[j*Rho.Nj+l].Im;
+        MO->V[i*MO->Nj+l].Im+= Oo.l[4].V[m].Im * Rho.V[j*Rho.Nj+k].Re + Oo.l[4].V[m].Re * Rho.V[j*Rho.Nj+k].Im;
+        MO->V[j*MO->Nj+k].Im+= Oo.l[4].V[m].Im * Rho.V[i*Rho.Nj+l].Re + Oo.l[4].V[m].Re * Rho.V[i*Rho.Nj+l].Im;
+        MO->V[j*MO->Nj+l].Im-= Oo.l[4].V[m].Im * Rho.V[i*Rho.Nj+k].Re + Oo.l[4].V[m].Re * Rho.V[i*Rho.Nj+k].Im;
+        
+        HFRe = ( Rho.V[i*Rho.Nj+k].Re * Rho.V[j*Rho.Nj+l].Re
+                -Rho.V[i*Rho.Nj+l].Re * Rho.V[j*Rho.Nj+k].Re
+                -Rho.V[i*Rho.Nj+k].Im * Rho.V[j*Rho.Nj+l].Im
+                +Rho.V[i*Rho.Nj+l].Im * Rho.V[j*Rho.Nj+k].Im ) * Oo.l[4].V[m].Re
+              -( Rho.V[i*Rho.Nj+k].Im * Rho.V[j*Rho.Nj+l].Re
+                -Rho.V[i*Rho.Nj+l].Im * Rho.V[j*Rho.Nj+k].Re
+                +Rho.V[i*Rho.Nj+k].Re * Rho.V[j*Rho.Nj+l].Im
+                -Rho.V[i*Rho.Nj+l].Re * Rho.V[j*Rho.Nj+k].Im ) * Oo.l[4].V[m].Im;
+        HFIm = ( Rho.V[i*Rho.Nj+k].Re * Rho.V[j*Rho.Nj+l].Re
+                -Rho.V[i*Rho.Nj+l].Re * Rho.V[j*Rho.Nj+k].Re
+                -Rho.V[i*Rho.Nj+k].Im * Rho.V[j*Rho.Nj+l].Im
+                +Rho.V[i*Rho.Nj+l].Im * Rho.V[j*Rho.Nj+k].Im ) * Oo.l[4].V[m].Im
+              +( Rho.V[i*Rho.Nj+k].Im * Rho.V[j*Rho.Nj+l].Re
+                -Rho.V[i*Rho.Nj+l].Im * Rho.V[j*Rho.Nj+k].Re
+                +Rho.V[i*Rho.Nj+k].Re * Rho.V[j*Rho.Nj+l].Im
+                -Rho.V[i*Rho.Nj+l].Re * Rho.V[j*Rho.Nj+k].Im ) * Oo.l[4].V[m].Re;
+        
+        if((Sqr(Nelec.Re)+Sqr(Nelec.Im))>DBL_EPSILON)
+        {
+          for (n=0; n<MO->Ni; n++)
+          {
+            MO->V[n*MO->Nj+n].Re += (HFRe*Nelec.Re+HFIm*Nelec.Im)/(Sqr(Nelec.Re)+Sqr(Nelec.Im));
+            MO->V[n*MO->Nj+n].Im += (HFIm*Nelec.Re-HFRe*Nelec.Im)/(Sqr(Nelec.Re)+Sqr(Nelec.Im));
+          }
+        }
+        else
+        {
+          for (n=0; n<MO->Ni; n++)
+          {
+            MO->V[n*MO->Nj+n].Re += HFRe/Nelec.Re;
+            MO->V[n*MO->Nj+n].Im += HFIm/Nelec.Re;
+          }
+        }
       }
     }
     else // Rho real Oo complex MO complex
@@ -411,14 +452,36 @@ uint32_t MeanFieldOperatorOneElectronMatrix(const OperatorType * const O, Compac
         j=(uint32_t)(NotCrAnMask & Oo.l[4].o[4*m+2]);
         k=(uint32_t)(Oo.l[4].o[4*m+1]);
         l=(uint32_t)(Oo.l[4].o[4*m]);
-        MO->V[i*MO->Nj+k].Re-= 0.5 * Oo.l[4].V[m].Re * Rho.VRe[j*Rho.Nj+l];
-        MO->V[i*MO->Nj+l].Re+= 0.5 * Oo.l[4].V[m].Re * Rho.VRe[j*Rho.Nj+k];
-        MO->V[j*MO->Nj+k].Re+= 0.5 * Oo.l[4].V[m].Re * Rho.VRe[i*Rho.Nj+l];
-        MO->V[j*MO->Nj+l].Re-= 0.5 * Oo.l[4].V[m].Re * Rho.VRe[i*Rho.Nj+k];
-        MO->V[i*MO->Nj+k].Im-= 0.5 * Oo.l[4].V[m].Im * Rho.VRe[j*Rho.Nj+l];
-        MO->V[i*MO->Nj+l].Im+= 0.5 * Oo.l[4].V[m].Im * Rho.VRe[j*Rho.Nj+k];
-        MO->V[j*MO->Nj+k].Im+= 0.5 * Oo.l[4].V[m].Im * Rho.VRe[i*Rho.Nj+l];
-        MO->V[j*MO->Nj+l].Im-= 0.5 * Oo.l[4].V[m].Im * Rho.VRe[i*Rho.Nj+k];
+        MO->V[i*MO->Nj+k].Re-= Oo.l[4].V[m].Re * Rho.VRe[j*Rho.Nj+l];
+        MO->V[i*MO->Nj+l].Re+= Oo.l[4].V[m].Re * Rho.VRe[j*Rho.Nj+k];
+        MO->V[j*MO->Nj+k].Re+= Oo.l[4].V[m].Re * Rho.VRe[i*Rho.Nj+l];
+        MO->V[j*MO->Nj+l].Re-= Oo.l[4].V[m].Re * Rho.VRe[i*Rho.Nj+k];
+        MO->V[i*MO->Nj+k].Im-= Oo.l[4].V[m].Im * Rho.VRe[j*Rho.Nj+l];
+        MO->V[i*MO->Nj+l].Im+= Oo.l[4].V[m].Im * Rho.VRe[j*Rho.Nj+k];
+        MO->V[j*MO->Nj+k].Im+= Oo.l[4].V[m].Im * Rho.VRe[i*Rho.Nj+l];
+        MO->V[j*MO->Nj+l].Im-= Oo.l[4].V[m].Im * Rho.VRe[i*Rho.Nj+k];
+      }
+      
+      HFRe = ( Rho.VRe[i*Rho.Nj+k] * Rho.VRe[j*Rho.Nj+l]
+              -Rho.VRe[i*Rho.Nj+l] * Rho.VRe[j*Rho.Nj+k]) * Oo.l[4].V[m].Re;
+      HFIm = ( Rho.VRe[i*Rho.Nj+k] * Rho.VRe[j*Rho.Nj+l]
+              -Rho.VRe[i*Rho.Nj+l] * Rho.VRe[j*Rho.Nj+k]) * Oo.l[4].V[m].Im;
+      
+      if((Sqr(Nelec.Re)+Sqr(Nelec.Im))>DBL_EPSILON)
+      {
+        for (n=0; n<MO->Ni; n++)
+        {
+          MO->V[n*MO->Nj+n].Re += (HFRe*Nelec.Re+HFIm*Nelec.Im)/(Sqr(Nelec.Re)+Sqr(Nelec.Im));
+          MO->V[n*MO->Nj+n].Im += (HFIm*Nelec.Re-HFRe*Nelec.Im)/(Sqr(Nelec.Re)+Sqr(Nelec.Im));
+        }
+      }
+      else
+      {
+        for (n=0; n<MO->Ni; n++)
+        {
+          MO->V[n*MO->Nj+n].Re += HFRe/Nelec.Re;
+          MO->V[n*MO->Nj+n].Im += HFIm/Nelec.Re;
+        }
       }
     }
   }
@@ -434,14 +497,40 @@ uint32_t MeanFieldOperatorOneElectronMatrix(const OperatorType * const O, Compac
           j=(uint32_t)(NotCrAnMask & Oo.l[4].o[4*m+2]);
           k=(uint32_t)(Oo.l[4].o[4*m+1]);
           l=(uint32_t)(Oo.l[4].o[4*m]);
-          MO->V[i*MO->Nj+k].Re-= 0.5 * Oo.l[4].VRe[m] * Rho.V[j*Rho.Nj+l].Re;
-          MO->V[i*MO->Nj+l].Re+= 0.5 * Oo.l[4].VRe[m] * Rho.V[j*Rho.Nj+k].Re;
-          MO->V[j*MO->Nj+k].Re+= 0.5 * Oo.l[4].VRe[m] * Rho.V[i*Rho.Nj+l].Re;
-          MO->V[j*MO->Nj+l].Re-= 0.5 * Oo.l[4].VRe[m] * Rho.V[i*Rho.Nj+k].Re;
-          MO->V[i*MO->Nj+k].Im-= 0.5 * Oo.l[4].VRe[m] * Rho.V[j*Rho.Nj+l].Im;
-          MO->V[i*MO->Nj+l].Im+= 0.5 * Oo.l[4].VRe[m] * Rho.V[j*Rho.Nj+k].Im;
-          MO->V[j*MO->Nj+k].Im+= 0.5 * Oo.l[4].VRe[m] * Rho.V[i*Rho.Nj+l].Im;
-          MO->V[j*MO->Nj+l].Im-= 0.5 * Oo.l[4].VRe[m] * Rho.V[i*Rho.Nj+k].Im;
+          MO->V[i*MO->Nj+k].Re-= Oo.l[4].VRe[m] * Rho.V[j*Rho.Nj+l].Re;
+          MO->V[i*MO->Nj+l].Re+= Oo.l[4].VRe[m] * Rho.V[j*Rho.Nj+k].Re;
+          MO->V[j*MO->Nj+k].Re+= Oo.l[4].VRe[m] * Rho.V[i*Rho.Nj+l].Re;
+          MO->V[j*MO->Nj+l].Re-= Oo.l[4].VRe[m] * Rho.V[i*Rho.Nj+k].Re;
+          MO->V[i*MO->Nj+k].Im-= Oo.l[4].VRe[m] * Rho.V[j*Rho.Nj+l].Im;
+          MO->V[i*MO->Nj+l].Im+= Oo.l[4].VRe[m] * Rho.V[j*Rho.Nj+k].Im;
+          MO->V[j*MO->Nj+k].Im+= Oo.l[4].VRe[m] * Rho.V[i*Rho.Nj+l].Im;
+          MO->V[j*MO->Nj+l].Im-= Oo.l[4].VRe[m] * Rho.V[i*Rho.Nj+k].Im;
+          
+          HFRe = ( Rho.V[i*Rho.Nj+k].Re * Rho.V[j*Rho.Nj+l].Re
+                  -Rho.V[i*Rho.Nj+l].Re * Rho.V[j*Rho.Nj+k].Re
+                  -Rho.V[i*Rho.Nj+k].Im * Rho.V[j*Rho.Nj+l].Im
+                  +Rho.V[i*Rho.Nj+l].Im * Rho.V[j*Rho.Nj+k].Im ) * Oo.l[4].V[m].Re;
+          HFIm = ( Rho.V[i*Rho.Nj+k].Im * Rho.V[j*Rho.Nj+l].Re
+                  -Rho.V[i*Rho.Nj+l].Im * Rho.V[j*Rho.Nj+k].Re
+                  +Rho.V[i*Rho.Nj+k].Re * Rho.V[j*Rho.Nj+l].Im
+                  -Rho.V[i*Rho.Nj+l].Re * Rho.V[j*Rho.Nj+k].Im ) * Oo.l[4].V[m].Re;
+          
+          if((Sqr(Nelec.Re)+Sqr(Nelec.Im))>DBL_EPSILON)
+          {
+            for (n=0; n<MO->Ni; n++)
+            {
+              MO->V[n*MO->Nj+n].Re += (HFRe*Nelec.Re+HFIm*Nelec.Im)/(Sqr(Nelec.Re)+Sqr(Nelec.Im));
+              MO->V[n*MO->Nj+n].Im += (HFIm*Nelec.Re-HFRe*Nelec.Im)/(Sqr(Nelec.Re)+Sqr(Nelec.Im));
+            }
+          }
+          else
+          {
+            for (n=0; n<MO->Ni; n++)
+            {
+              MO->V[n*MO->Nj+n].Re += HFRe/Nelec.Re;
+              MO->V[n*MO->Nj+n].Im += HFIm/Nelec.Re;
+            }
+          }
         }
       }
       else // Rho real Oo real MO complex
@@ -452,10 +541,28 @@ uint32_t MeanFieldOperatorOneElectronMatrix(const OperatorType * const O, Compac
           j=(uint32_t)(NotCrAnMask & Oo.l[4].o[4*m+2]);
           k=(uint32_t)(Oo.l[4].o[4*m+1]);
           l=(uint32_t)(Oo.l[4].o[4*m]);
-          MO->V[i*MO->Nj+k].Re-= 0.5 * Oo.l[4].VRe[m] * Rho.VRe[j*Rho.Nj+l];
-          MO->V[i*MO->Nj+l].Re+= 0.5 * Oo.l[4].VRe[m] * Rho.VRe[j*Rho.Nj+k];
-          MO->V[j*MO->Nj+k].Re+= 0.5 * Oo.l[4].VRe[m] * Rho.VRe[i*Rho.Nj+l];
-          MO->V[j*MO->Nj+l].Re-= 0.5 * Oo.l[4].VRe[m] * Rho.VRe[i*Rho.Nj+k];
+          MO->V[i*MO->Nj+k].Re-= Oo.l[4].VRe[m] * Rho.VRe[j*Rho.Nj+l];
+          MO->V[i*MO->Nj+l].Re+= Oo.l[4].VRe[m] * Rho.VRe[j*Rho.Nj+k];
+          MO->V[j*MO->Nj+k].Re+= Oo.l[4].VRe[m] * Rho.VRe[i*Rho.Nj+l];
+          MO->V[j*MO->Nj+l].Re-= Oo.l[4].VRe[m] * Rho.VRe[i*Rho.Nj+k];
+          
+          HFRe = ( Rho.VRe[i*Rho.Nj+k] * Rho.VRe[j*Rho.Nj+l]
+                  -Rho.VRe[i*Rho.Nj+l] * Rho.VRe[j*Rho.Nj+k]) * Oo.l[4].V[m].Re;
+          if((Sqr(Nelec.Re)+Sqr(Nelec.Im))>DBL_EPSILON)
+          {
+            for (n=0; n<MO->Ni; n++)
+            {
+              MO->V[n*MO->Nj+n].Re += HFRe*Nelec.Re/(Sqr(Nelec.Re)+Sqr(Nelec.Im));
+              MO->V[n*MO->Nj+n].Im -= HFRe*Nelec.Im/(Sqr(Nelec.Re)+Sqr(Nelec.Im));
+            }
+          }
+          else
+          {
+            for (n=0; n<MO->Ni; n++)
+            {
+              MO->V[n*MO->Nj+n].Re += HFRe/Nelec.Re;
+            }
+          }
         }
       }
     }
@@ -467,10 +574,17 @@ uint32_t MeanFieldOperatorOneElectronMatrix(const OperatorType * const O, Compac
         j=(uint32_t)(NotCrAnMask & Oo.l[4].o[4*m+2]);
         k=(uint32_t)(Oo.l[4].o[4*m+1]);
         l=(uint32_t)(Oo.l[4].o[4*m]);
-        MO->VRe[i*MO->Nj+k]-= 0.5 * Oo.l[4].VRe[m] * Rho.VRe[j*Rho.Nj+l];
-        MO->VRe[i*MO->Nj+l]+= 0.5 * Oo.l[4].VRe[m] * Rho.VRe[j*Rho.Nj+k];
-        MO->VRe[j*MO->Nj+k]+= 0.5 * Oo.l[4].VRe[m] * Rho.VRe[i*Rho.Nj+l];
-        MO->VRe[j*MO->Nj+l]-= 0.5 * Oo.l[4].VRe[m] * Rho.VRe[i*Rho.Nj+k];
+        MO->VRe[i*MO->Nj+k]-= Oo.l[4].VRe[m] * Rho.VRe[j*Rho.Nj+l];
+        MO->VRe[i*MO->Nj+l]+= Oo.l[4].VRe[m] * Rho.VRe[j*Rho.Nj+k];
+        MO->VRe[j*MO->Nj+k]+= Oo.l[4].VRe[m] * Rho.VRe[i*Rho.Nj+l];
+        MO->VRe[j*MO->Nj+l]-= Oo.l[4].VRe[m] * Rho.VRe[i*Rho.Nj+k];
+        
+        for (n=0; n<MO->Ni; n++)
+        {
+          MO->VRe[n*MO->Nj+n] += ( Rho.VRe[i*Rho.Nj+k] * Rho.VRe[j*Rho.Nj+l]
+                                  -Rho.VRe[i*Rho.Nj+l] * Rho.VRe[j*Rho.Nj+k])
+                                * Oo.l[4].VRe[m]/(Nelec.Re);
+        }
       }
     }
   }

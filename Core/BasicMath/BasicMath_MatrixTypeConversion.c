@@ -1267,6 +1267,8 @@ uint32_t TriDiagonalMatrixToAndersonMatrix(TriDiagonalMatrixType const M, Anders
   }
   FreeMatrix(&Tminor);
   FreeTriDiagonalMatrix(&Mminor);
+  
+  A->mu = M.mu;
   return 0;
 }
 

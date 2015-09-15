@@ -123,6 +123,7 @@ uint32_t initializeDMFTReadG0(DMFTSettings * const O, AndersonMatrixType * const
       printf("Fatal Error in main\n Failed to read G0 from file %s\n", O->G0FileName);
       return 1;
     };
+    G0And->mu = O->mu0;
   }
   strcpy(G0And->Name, "G0");
   if ((O->SymOpt) & 2)
@@ -131,7 +132,6 @@ uint32_t initializeDMFTReadG0(DMFTSettings * const O, AndersonMatrixType * const
     SymmetrizeAndersonMatrix(G0And);
   }
   printf("\nRead G0 from file \"%s\"\n", O->G0FileName);
-  G0And->mu = O->mu0;
   PrintAndersonMatrixEssentials(*G0And);
   return 0;
 }
@@ -806,7 +806,7 @@ uint32_t FindGroundStateFromG0andSigma(DMFTSettings const O, AndersonMatrixType 
   PrintWaveFunctionDensity(*Psi);
   PrintWaveFunctionPrefactorHistogram(*Psi, 2.0, 20);
   FermionIncluded[0]=0;
-  FermionIncluded[0]=1;
+  FermionIncluded[1]=1;
   PrintWaveFunctionPartialCorrelationTensor(*Psi, 2, FermionIncluded);
   *GBathBARet = GBathBA;
   *GBathAndRet = GBathAnd;

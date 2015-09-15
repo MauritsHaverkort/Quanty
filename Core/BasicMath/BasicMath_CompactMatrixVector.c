@@ -708,7 +708,7 @@ uint32_t CompactMatrixAddMultiply(char const TransA, char const TransB, CompactM
   }
   else
   {
-    if((TransB=='N')||(TransB=='n'))
+    if((TransB=='N')||(TransB=='*'))
     {
       Nk=A->Ni;
       if((A->Ni!=B->Ni)||(C->Ni!=A->Nj)||(C->Nj!=B->Nj))

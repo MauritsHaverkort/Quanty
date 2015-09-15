@@ -17,7 +17,7 @@ uint32_t ResonantSpectra(const OperatorType OppH1, const OperatorType OppH2, con
    6. Use the vector from step 5 to calculate RIXS spectrum using Lanczos
    */
   
-  /* settigns that need to be set:
+  /* settings that need to be set:
    * NTri1, NTri2
    * Emin1, Emax1, NE1, Gamma1 - for automatic determination use DBL_MAX, -DBL_MAX, 0, 0
    * Emin2, Emax2, NE2, Gamma2 - for automatic determination use DBL_MAX, -DBL_MAX, 0, 0
