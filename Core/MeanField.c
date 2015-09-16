@@ -461,11 +461,20 @@ uint32_t MeanFieldOperatorOneElectronMatrix(const OperatorType * const O, Compac
         MO->V[j*MO->Nj+k].Im+= Oo.l[4].V[m].Im * Rho.VRe[i*Rho.Nj+l];
         MO->V[j*MO->Nj+l].Im-= Oo.l[4].V[m].Im * Rho.VRe[i*Rho.Nj+k];
         
+        
+          
+          
+          
+          
         HFRe = ( Rho.VRe[i*Rho.Nj+k] * Rho.VRe[j*Rho.Nj+l]
                 -Rho.VRe[i*Rho.Nj+l] * Rho.VRe[j*Rho.Nj+k]) * Oo.l[4].V[m].Re;
         HFIm = ( Rho.VRe[i*Rho.Nj+k] * Rho.VRe[j*Rho.Nj+l]
                 -Rho.VRe[i*Rho.Nj+l] * Rho.VRe[j*Rho.Nj+k]) * Oo.l[4].V[m].Im;
         
+        
+          
+          
+          
         if((Sqr(Nelec.Re)+Sqr(Nelec.Im))>DBL_EPSILON)
         {
           for (n=0; n<MO->Ni; n++)
