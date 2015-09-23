@@ -36,15 +36,14 @@
 uint32_t FreeOperator(OperatorType * const H)
 {
   uint32_t i;
-  if (H->l[0].N)
-    (H->l[0].QComplex) ? free(H->l[0].V) : free(H->l[0].VRe);
+  if (H->l[0].N) (H->l[0].QComplex) ? free(H->l[0].V) : free(H->l[0].VRe);
   for (i = 1; i <= H->MaxLength; i++)
   {
+    free(H->l[i].KeyList);
     if (H->l[i].NAloc)
     {
       free(H->l[i].o);
       free(H->l[i].Next);
-      free(H->l[i].KeyList);
       (H->l[i].QComplex) ? free(H->l[i].V) : free(H->l[i].VRe);
     }
   }
@@ -207,8 +206,7 @@ uint32_t MakeRealOperatorFixedLengthComplex(OperatorType * const O, const uint32
 uint32_t InitOperatorFixedLength(OperatorType * const O, const uint32_t length, const uint32_t NBitsKey)
 {
   uint32_t l;
-  if (length == 0)
-    return 0;
+  if (length == 0) return 0;
   if (length > O->MaxLength)
   {                             /* allongate the vector O->l */
     if ((O->l = realloc(O->l, (length + 1) * sizeof(OperatorFixedLengthType))) == NULL)
@@ -222,8 +220,7 @@ uint32_t InitOperatorFixedLength(OperatorType * const O, const uint32_t length, 
       O->l[l].NBitsKey = 0;
       O->l[l].NAloc = 0;
       O->l[l].QComplex = 0;
-      if ((O->l[l].KeyList = calloc(1, sizeof(uint32_t))) == NULL)
-        return 1;
+      if ((O->l[l].KeyList = calloc(1, sizeof(uint32_t))) == NULL) return 1;
     }
     if ((O->l[length].KeyList = calloc((uint32_t) 1 << NBitsKey, sizeof(uint32_t))) == NULL)
     {

@@ -276,6 +276,7 @@ uint32_t CreateStartingFunctions(const OperatorType H, uint32_t const Npsi, Dete
       WaveFunctionMultiply(&(psi[i]), 1/Norm, 0);
     }
   }
+  free(Determinant);
   return 0;
 }
 
@@ -1341,7 +1342,7 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylovRecalculate(const OperatorTyp
  */
 uint32_t BlockLanczosGroundStateConserveBasis(const OperatorType H, WaveFunctionType * const psi, uint32_t const Npsi, ConvergenceSettingsType * Settings)
 {
-  uint32_t i,MaxAlloc=2*Npsi+Settings->NKrylovMax;
+  uint32_t i,MaxAlloc=2*Npsi+Settings->NKrylovMax, StartAlloc=2*Npsi+Settings->NKrylovStart;
   WaveFunctionType *v;
   VerbosityPrintf(0x0100,"Start of BlockLanczosGroundStateConserveBasis\n");
   // for small basises do a dense calculation
@@ -1360,7 +1361,7 @@ uint32_t BlockLanczosGroundStateConserveBasis(const OperatorType H, WaveFunction
   {
     v[i]=psi[i];
   }
-  for(i=Npsi;i<MaxAlloc;i++)
+  for(i=Npsi;i<StartAlloc;i++)
   {
     if(WaveFunctionInitCopyBasis(&(v[i]), (v[0])))
     {
@@ -1368,8 +1369,8 @@ uint32_t BlockLanczosGroundStateConserveBasis(const OperatorType H, WaveFunction
       {
         return 1;
       }
-      MaxAlloc=i-1;
-      if(BlockLanczosGroundStateConserveBasisKrylovRecalculate(H, v, Npsi, MaxAlloc, Settings))
+      StartAlloc=i-1;
+      if(BlockLanczosGroundStateConserveBasisKrylovRecalculate(H, v, Npsi, StartAlloc, Settings))
       {
         printf("BlockLanczosGroundStateConserveBasisKrylovRecalculate failed in BlockLanczosGroundStateConserveBasis\n");
         return 1;
