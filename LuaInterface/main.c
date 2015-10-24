@@ -46,6 +46,7 @@
 #include "../Tight_Binding/TightBindingToG.c"
 #include "../Tight_Binding/ImpurityUnfolding.c"
 #include "../Tight_Binding/StuttgartNMTO.c"
+#include "../Tight_Binding/DresdenFPLO.c"
 #include "../DMFT/SingleSiteFunctions.c"
 #include "../IO/StuttgartNMTO.c"
 
@@ -54,13 +55,18 @@
 static void *currentudata = NULL;
 #include "lua_extensions/tools.c"
 #include "lua_extensions/TableToArray.c"
+#include "units.c"
 #include "Complex.c"
 #include "Operator.c"
 #include "Wavefunction.c"
 #include "Spectra.c"
+#include "TightBinding.c"
+#include "ResponseFunction.c"
+#include "Plot.c"
 #include "BraKet.c"
 #include "eval.c"
 #include "ssp.c"
+
 
 
 
@@ -86,6 +92,7 @@ int main(int argc, char *argv[])
   
   lua_State *L = luaL_newstate();
   luaL_openlibs(L);
+  luaopen_units(L);
   luaopen_Complex(L);
   luaopen_ssp(L);
   

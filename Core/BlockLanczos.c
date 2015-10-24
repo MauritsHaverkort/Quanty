@@ -276,6 +276,7 @@ uint32_t CreateStartingFunctions(const OperatorType H, uint32_t const Npsi, Dete
       WaveFunctionMultiply(&(psi[i]), 1/Norm, 0);
     }
   }
+  free(Determinant);
   return 0;
 }
 
@@ -844,7 +845,7 @@ uint32_t BlockWaveFunctionOrthonormalizeSameBasis(WaveFunctionType *const v, uin
 
 /*  Use Band Lanczos method to find lowest Npsi eigenstates of H
  *  Starting vectors are in v[0] to v[Npis-1]
- *  v[1] to v[2*Npsi+NKrylovStart-1] are allocated
+ *  v[0] to v[2*Npsi+NKrylovStart-1] are allocated
  *  after a restart increase KrylovBasis by NKrylovStep if one is able to allocate the needed v's for this.
  *  maximum allocate v[2*Npsi+NKrylovMax]
  *  all states on same basis
@@ -1308,12 +1309,20 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylov(const OperatorType H, WaveFu
  */
 uint32_t BlockLanczosGroundStateConserveBasisKrylovRecalculate(const OperatorType H, WaveFunctionType * const v, uint32_t const Npsi, uint32_t const NpsiAlloc, ConvergenceSettingsType * Settings)
 {
-  uint32_t i;
+  uint32_t temp;
+  
   printf("to do BlockLanczosGroundStateConserveBasisKrylovRecalculate\n");
-  for(i=Npsi;i<NpsiAlloc;i++)
+  printf("Cheap fix needs to be improved\n");
+  
+  temp=Settings->NKrylovStart;
+  Settings->NKrylovStart=Min(Settings->NKrylovStart,NpsiAlloc-2*Npsi);
+  
+  if(BlockLanczosGroundStateConserveBasisKrylov(H, v, Npsi, Settings))
   {
-    WaveFunctionFreeValues(&v[i]);
+    printf("BlockLanczosGroundStateConserveBasisKrylov failed in BlockLanczosGroundStateConserveBasis\n");
+    return 1;
   }
+  Settings->NKrylovStart=temp;
   return 0;
 }
 
@@ -1333,7 +1342,7 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylovRecalculate(const OperatorTyp
  */
 uint32_t BlockLanczosGroundStateConserveBasis(const OperatorType H, WaveFunctionType * const psi, uint32_t const Npsi, ConvergenceSettingsType * Settings)
 {
-  uint32_t i;
+  uint32_t i,MaxAlloc=2*Npsi+Settings->NKrylovMax, StartAlloc=2*Npsi+Settings->NKrylovStart;
   WaveFunctionType *v;
   VerbosityPrintf(0x0100,"Start of BlockLanczosGroundStateConserveBasis\n");
   // for small basises do a dense calculation
@@ -1342,7 +1351,7 @@ uint32_t BlockLanczosGroundStateConserveBasis(const OperatorType H, WaveFunction
   //   if all 2*Npsi+NKrylovMax are created return BlockLanczosGroundStateConserveBasisKrylov
   //   if only 2*Npsi+1 states can be created return BlockLanczosGroundStateConserveBasisKrylovRecalculate
   //   if less then 2*Npsi+1 states can be created return 1
-  v=malloc((2*Npsi+Settings->NKrylovMax)*sizeof(WaveFunctionType));
+  v=malloc(MaxAlloc*sizeof(WaveFunctionType));
   if(v==NULL)
   {
     printf("malloc failed in BlockLanczosGroundStateConserveBasis\n");
@@ -1352,7 +1361,7 @@ uint32_t BlockLanczosGroundStateConserveBasis(const OperatorType H, WaveFunction
   {
     v[i]=psi[i];
   }
-  for(i=Npsi;i<2*Npsi+Settings->NKrylovMax;i++)
+  for(i=Npsi;i<StartAlloc;i++)
   {
     if(WaveFunctionInitCopyBasis(&(v[i]), (v[0])))
     {
@@ -1360,7 +1369,8 @@ uint32_t BlockLanczosGroundStateConserveBasis(const OperatorType H, WaveFunction
       {
         return 1;
       }
-      if(BlockLanczosGroundStateConserveBasisKrylovRecalculate(H, v, Npsi, i-1, Settings))
+      StartAlloc=i-1;
+      if(BlockLanczosGroundStateConserveBasisKrylovRecalculate(H, v, Npsi, StartAlloc, Settings))
       {
         printf("BlockLanczosGroundStateConserveBasisKrylovRecalculate failed in BlockLanczosGroundStateConserveBasis\n");
         return 1;
@@ -1409,7 +1419,7 @@ uint32_t BlockGroundState(const OperatorType H, uint32_t const Npsi, Convergence
 {
   uint32_t i,Qconverged=0, AtLeastAnOtherLoop=0,iloop=0;;
   WaveFunctionType Opsi[Npsi];
-  double Energy[2][Npsi],EnergySqr[2][Npsi], temp;
+  double Energy[2][Npsi],EnergySqr[2][Npsi],temp;
   // if StartingPoint.N != 0
   // create Npsi independent functions fullfiling the starting point conditions
   // all functions must have the same basis
@@ -1441,7 +1451,6 @@ uint32_t BlockGroundState(const OperatorType H, uint32_t const Npsi, Convergence
   {
     iloop++;
     // expand basis depending on Restrictions.N use either restrictions or don't use them
-
     while( (Restrictions.N) ? BlockOperatorPsiRestricted(H, psi, Opsi, Npsi, Restrictions) : BlockOperatorPsi(H, psi, Opsi, Npsi))
     {
       // was not able to evaluate O psi, need to truncate psi further
@@ -1455,7 +1464,7 @@ uint32_t BlockGroundState(const OperatorType H, uint32_t const Npsi, Convergence
     }
     // calculate Energy and variance of Energy - test for convergence
     Qconverged=1;
-    VerbosityPrintf(0x0100,"Number of determinants in basis %i\n",psi[0].N);
+    VerbosityPrintf(0x0100,"Number of determinants in basis %i (and basis of H psi %i)\n",psi[0].N,Opsi[0].N);
     VerbosityPrintf(0x0100,"State # |   Energy               |  Variance of Energy    |  Energy change\n");
     for(i=0;i<Npsi;i++)
     {

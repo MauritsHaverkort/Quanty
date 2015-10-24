@@ -686,6 +686,11 @@ static int LuaNewOperator(lua_State * L)
     lua_remove(L, 1);
     return LuaOperatorNewNumber(L);
   }
+  if ((strcmp(OT, "Identity") == 0)||(strcmp(OT, "I") == 0)||(strcmp(OT, "1") == 0))
+  {
+    lua_remove(L, 1);
+    return LuaOperatorNewIdentity(L);
+  }
   return luaL_error(L, "ERROR: first argument in NewOperator (%s) is not recognized as a known operatortype\n See Help(\"NewOperator\") for more information\n",OT);
 }
 
@@ -762,6 +767,10 @@ static int LuaNewWaveFunction(lua_State * L)
       if(lua_isstring(L, -1))
       {
         detchar = (char *) luaL_checkstring(L, -1);
+        if(strlen(detchar)<psi->NFermion+2*psi->NBoson)
+        {
+          return luaL_error(L, "Error in LuaWavefunctionNew, length of string(%d) different from NFermion(%d)+2*NBoson(%d)\n",strlen(detchar),psi->NFermion,psi->NBoson);
+        }
         det = StringToDet(psi->NFermion, psi->NBoson, detchar);
         detleng = psi->NBoson + Min(psi->NFermion, 1 + (psi->NFermion - 1) / 8);
       }
@@ -879,21 +888,24 @@ static int Luacopy(lua_State * L)
 }
 
 
-/*  copy or clone the element on the lua stack and place it on the stack
+/*  copy or clone the one but last element on the lua stack and place it on the stack
  *  set values smaller then epsilon to zero
  *  works recursively on tables
  *  allocates new memory for user types
  *
- *  if there is one ellement on the stack clone this element using epsilon=2*DBL_EPSILON
+ *  if there is one ellement on the stack use epsilon=2*DBL_EPSILON
  *  if there are two ellements on the stack and the last is a number use the last as epsilon
- *  if there are two ellements on the stack and the last is a list use this list as an option list
- *  if there are three ellements on the stack and the second is a number and the last a list, use the number as epsilon and the list as options
  */
 static int LuaChop(lua_State * L)
 {
   double epsilon=2*DBL_EPSILON;
   double temp;
   uint32_t len = (uint32_t)lua_gettop(L);
+  if(len!=1)
+  {
+    epsilon=luaL_checknumber(L,len);
+    len=len-1;
+  }
   switch (lua_type(L,len))
   {
     case LUA_TNIL:
@@ -913,8 +925,7 @@ static int LuaChop(lua_State * L)
     case LUA_TLIGHTUSERDATA:
       lua_pushlightuserdata(L,(void*)lua_touserdata(L,len));
       break;
-    case
-    LUA_TUSERDATA:
+    case LUA_TUSERDATA:
       if (luaL_testudata(L, len, "Complex_Type") != NULL)
       {
         Complex16 *a = (Complex16 *) luaL_checkudata(L, len, "Complex_Type");
@@ -951,11 +962,12 @@ static int LuaChop(lua_State * L)
       lua_pushnil(L);
       while(lua_next(L, len) != 0)
       {
-        Luacopy(L);
-        lua_pushvalue(L, -3);
+        lua_pushnumber(L, epsilon);
+        LuaChop(L);
+        lua_pushvalue(L, -4);
         lua_insert(L, -2);
-        lua_settable(L, -5);
-        lua_pop(L, 1);
+        lua_settable(L, -6);
+        lua_pop(L, 2);
       }
       break;
     default:
@@ -1030,7 +1042,7 @@ static int Luaconjugate(lua_State * L)
       lua_pushnil(L);
       while(lua_next(L, len) != 0)
       {
-        Luacopy(L);
+        Luaconjugate(L);
         lua_pushvalue(L, -3);
         lua_insert(L, -2);
         lua_settable(L, -5);
@@ -1045,6 +1057,8 @@ static int Luaconjugate(lua_State * L)
 
 static int Luaconjugatetranspose(lua_State * L)
 {
+  Bool matrix=True,Warning=False;
+  uint32_t Ni=0,i,Nj=0,j;
   uint32_t len = (uint32_t)lua_gettop(L);
   switch (lua_type(L,len))
   {
@@ -1090,21 +1104,71 @@ static int Luaconjugatetranspose(lua_State * L)
         OperatorType *O = (OperatorType*) luaL_checkudata(L, len, "Operator_Type");
         OperatorType *ONew;
         ONew = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-        OperatorConjugateTranspose(*O, ONew);
+        OperatorConjugateTransposeNormalOrder(*O, ONew, &QDetNotOrderedFcFaBaBc);
         luaL_setmetatable(L, "Operator_Type");
         return 1;
       }
       return luaL_error(L, "Error: copying or cloning an object of unrecognised type\n");
     case LUA_TTABLE:
-      lua_newtable(L);
-      lua_pushnil(L);
-      while(lua_next(L, len) != 0)
+      // check if we have a table of tables of equal length, in that case we treat the table of tables as a matrix and transpose the matrix
+      Ni=(uint32_t)lua_objlen(L, len);
+      for(i=0;i<Ni;i++)
       {
-        Luacopy(L);
-        lua_pushvalue(L, -3);
-        lua_insert(L, -2);
-        lua_settable(L, -5);
-        lua_pop(L, 1);
+        lua_rawgeti(L, len, i+1);
+        if(lua_type(L,-1)==LUA_TTABLE)
+        {
+          Warning=True;
+          if(i==0)
+          {
+            Nj=(uint32_t)lua_objlen(L,-1);
+          }
+          else
+          {
+            if(Nj!=(uint32_t)lua_objlen(L,-1))
+            {
+              matrix=False;
+            }
+          }
+        }
+        else
+        {
+          matrix=False;
+        }
+        lua_pop(L,1);
+      }
+      if(Warning&(!matrix)) luaL_warning(L, "Transpose of a table containing tables, but not of equal length, transposed the elements, not the table\n");
+      if(matrix)
+      {
+        lua_createtable(L,Nj,0);
+        for(j=0;j<Nj;j++)
+        {
+          lua_pushnumber(L, j+1);
+          lua_createtable(L, Ni, 0);
+          for(i=0;i<Ni;i++)
+          {
+            lua_rawgeti(L, len, i+1);
+            lua_rawgeti(L,-1,j+1);
+            Luaconjugatetranspose(L);
+            lua_pushnumber(L, i+1);
+            lua_insert(L, -2);
+            lua_settable(L, -5);
+            lua_pop(L, 2);
+          }
+          lua_settable(L, -3);
+        }
+      }
+      else
+      {
+        lua_newtable(L);
+        lua_pushnil(L);
+        while(lua_next(L, len) != 0)
+        {
+          Luaconjugatetranspose(L);
+          lua_pushvalue(L, -3);
+          lua_insert(L, -2);
+          lua_settable(L, -5);
+          lua_pop(L, 1);
+        }
       }
       break;
     default:
@@ -1115,6 +1179,8 @@ static int Luaconjugatetranspose(lua_State * L)
 
 static int Luatranspose(lua_State * L)
 {
+  Bool matrix=True,Warning=False;
+  uint32_t Ni=0,i,Nj=0,j;
   uint32_t len = (uint32_t)lua_gettop(L);
   switch (lua_type(L,len))
   {
@@ -1159,21 +1225,71 @@ static int Luatranspose(lua_State * L)
         OperatorType *O = (OperatorType*) luaL_checkudata(L, len, "Operator_Type");
         OperatorType *ONew;
         ONew = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-        OperatorTranspose(*O, ONew);
+        OperatorTransposeNormalOrder(*O, ONew,&QDetNotOrderedFcFaBaBc);
         luaL_setmetatable(L, "Operator_Type");
         return 1;
       }
       return luaL_error(L, "Error: copying or cloning an object of unrecognised type\n");
     case LUA_TTABLE:
-      lua_newtable(L);
-      lua_pushnil(L);
-      while(lua_next(L, len) != 0)
+      // check if we have a table of tables of equal length, in that case we treat the table of tables as a matrix and transpose the matrix
+      Ni=(uint32_t)lua_objlen(L, len);
+      for(i=0;i<Ni;i++)
       {
-        Luacopy(L);
-        lua_pushvalue(L, -3);
-        lua_insert(L, -2);
-        lua_settable(L, -5);
-        lua_pop(L, 1);
+        lua_rawgeti(L, len, i+1);
+        if(lua_type(L,-1)==LUA_TTABLE)
+        {
+          Warning=True;
+          if(i==0)
+          {
+            Nj=(uint32_t)lua_objlen(L,-1);
+          }
+          else
+          {
+            if(Nj!=(uint32_t)lua_objlen(L,-1))
+            {
+              matrix=False;
+            }
+          }
+        }
+        else
+        {
+          matrix=False;
+        }
+        lua_pop(L,1);
+      }
+      if(Warning&(!matrix)) luaL_warning(L, "Transpose of a table containing tables, but not of equal length, transposed the elements, not the table\n");
+      if(matrix)
+      {
+        lua_createtable(L,Nj,0);
+        for(j=0;j<Nj;j++)
+        {
+          lua_pushnumber(L, j+1);
+          lua_createtable(L, Ni, 0);
+          for(i=0;i<Ni;i++)
+          {
+            lua_rawgeti(L, len, i+1);
+            lua_rawgeti(L,-1,j+1);
+            Luatranspose(L);
+            lua_pushnumber(L, i+1);
+            lua_insert(L, -2);
+            lua_settable(L, -5);
+            lua_pop(L, 2);
+          }
+          lua_settable(L, -3);
+        }
+      }
+      else
+      {
+        lua_newtable(L);
+        lua_pushnil(L);
+        while(lua_next(L, len) != 0)
+        {
+          Luatranspose(L);
+          lua_pushvalue(L, -3);
+          lua_insert(L, -2);
+          lua_settable(L, -5);
+          lua_pop(L, 1);
+        }
       }
       break;
     default:
@@ -1606,7 +1722,34 @@ static int LuaCreateFluorescenceYield(lua_State *L)
   return 1;
 }
 
-
+/*  Calculate the ground-state of an Hamiltonian in mean-field.
+ *  On stack are
+ *  1) operator
+ *  2) density matrix to start from
+ *  3) temperature kbT
+ *
+ *  on output the density matrix will be changed such that it resembles the density matrix of the ground-state
+ *  aditionally the total energy is pushed to the stack
+ */
+static int LuaMeanFieldGroundstate(lua_State *L)
+{
+  OperatorType *H;
+  CompactMatrixType *Rho;
+  double kbT;
+  double Etot;
+  H = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
+  Rho = (CompactMatrixType *) luaL_checkCompactMatrix(L, 2);
+  kbT = (double) luaL_checknumber(L, 3);
+  if((H->NFermion+H->NBoson)!=Rho->Ni)
+  {
+    return luaL_error(L, "Error in MeanFieldGroundstate, length of operator (NF %i NB %i) is not equal to length of density matrix (%i)\n",H->NFermion,H->NBoson,Rho->Ni);
+  }
+  MeanFieldGroundstate(H, Rho, kbT,&Etot);
+  LuaPushTable_CompactMatrixType(L, Rho);
+  FreeCompactMatrix(Rho);
+  lua_pushnumber(L, Etot);
+  return 2;
+}
 
 
 
@@ -1731,7 +1874,6 @@ static int LuaEigensystem(lua_State * L)
   Options.restrictions=False;
   Options.ExpandBasis=True;
   Options.DeterminantRestrictions.N=0;
-  Options.NBitsKey=20;
   OperatorType *Opp;
   DeterminantRestrictionType StartRestrictions;
   StartRestrictions.N=0;
@@ -1789,6 +1931,13 @@ static int LuaEigensystem(lua_State * L)
   {
     return luaL_error(L, "Error Eigensystem called with 2 arguments, whereby the first is the operator and the second a set of restrictions\nNeed a thrid argument how many eigenstates should be calculated\n");
   }
+  /* read options */
+  if((len==4)||((len==3)&&(!(QStartRestrictions))))
+  {
+    LuaCheckOptions(L, -1, LuaEigensystemOptions);
+    if(Options.DeterminantRestrictions.N!=0)Options.restrictions=True;
+    Options.Settings.DenseBoarder = Max(Options.Settings.DenseBoarder,Npsi);
+  }
   if(QStartRestrictions)
   {
     Npsi=(uint32_t)luaL_checkunsigned(L, 3);
@@ -1803,17 +1952,10 @@ static int LuaEigensystem(lua_State * L)
       psi=malloc(Npsi*sizeof(WaveFunctionType));
     }
   }
-  /* read options */
-  if((len==4)||((len==3)&&(!(QStartRestrictions))))
-  {
-    LuaCheckOptions(L, -1, LuaEigensystemOptions);
-    if(Options.DeterminantRestrictions.N!=0)Options.restrictions=True;
-    Options.Settings.DenseBoarder = Max(Options.Settings.DenseBoarder,Npsi);
-  }
   /* calculate groundstate */
   if(Options.ExpandBasis==True)
   {
-    BlockGroundState(*Opp, Npsi, &(Options.Settings) , StartRestrictions, Options.DeterminantRestrictions, psi, Options.NBitsKey);
+    BlockGroundState(*Opp, Npsi, &(Options.Settings) , StartRestrictions, Options.DeterminantRestrictions, psi, Options.Settings.NBitsKey);
   }
   else
   {
@@ -1890,6 +2032,10 @@ static int LuaDensityMatrix(lua_State *L)
   {
     case LUA_TTABLE:
     {
+      if(len==1)
+      {
+        return luaL_error(L, "Error: DensityMatrix when density matrix of a list of functions is calculated an explicit labeling of the orbitals is required\n");
+      }
       lua_newtable(L);
       lua_pushnil(L);
       while(lua_next(L, 1) != 0)
@@ -1922,38 +2068,90 @@ static int LuaDensityMatrix(lua_State *L)
     }
   }
   // the argument at position len is a list of integers
-  jindex = luaL_checkarray_unit32_t(L,len,&Nparticles);
-  // calculate the density matrix
-  CalculatePartialDensityMatrix(&Rho, *psi, Nparticles, jindex);
+  if(len==1)
+  {
+    CalculateDensityMatrix(&Rho, *psi);
+  }
+  else
+  {
+    jindex = luaL_checkarray_unit32_t(L,len,&Nparticles);
+    // calculate the density matrix
+    CalculatePartialDensityMatrix(&Rho, *psi, Nparticles, jindex);
+  }
   // return a lua table of tables of dimension Nparticles by Nparticles
   LuaPushTable_MatrixType(L, &Rho);
   FreeMatrix(&Rho);
   return 1;
 }
 
+static int LuaStatistics(lua_State *L)
+{
+  uint32_t len;
+  len = (uint32_t)lua_gettop(L);
+  
+  
+  if (luaL_testudata(L, 1, "Operator_Type") != NULL)
+  {
+    OperatorType *O = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
+    printf("Statistical information on operator %s\n",O->Name);
+    //TODO:
+    
+    
+    
+    
+    return 0;
+  }
+  else if (luaL_testudata(L, 1, "Wavefunction_Type") != NULL)
+  {
+    double *Hist;
+    WaveFunctionType *psi = (WaveFunctionType *) luaL_checkudata(L, 1, "Wavefunction_Type");
+    double exp = (double) luaL_checknumber(L, 2);
+    uint32_t N = (uint32_t) luaL_checkunsigned(L, 3);
+    Hist=malloc(N*sizeof(double));
+    CalculatePrefactorHistogram(Hist, *psi, exp, N);
+    LuaPushArray_double(L, Hist, N);
+    return 1;
+  }
+  else
+  {
+    return luaL_error(L, "Error Statistics expects a wave-function or operator as first imput\n");
+  }
+}
 
 static const struct luaL_Reg global_functions[] = {
-  {"Help", LuaHelp},
-  {"Verbosity",LuaVerbosity},
-  {"TimeStart",LuaTimeStart},
-  {"TimeEnd",LuaTimeEnd},
-  {"TimePrint",LuaTimePrint},
-  {"PotentialExpandedOnClm", LuaPotentialExpandedOnClm},
-  {"NewOperator", LuaNewOperator},
-  {"NewWavefunction", LuaNewWaveFunction},
-  {"DensityMatrix",LuaDensityMatrix},
-  {"Copy", Luacopy},
-  {"Clone", Luacopy},
+  {"CalculateBands", LuaCalculateBands},
+  {"CalculateDOS", LuaCalculateDOS},
+  {"CalculateFermi", LuaCalculateFermi},
+  {"CalculateG", LuaCalculateG},
   {"Chop", LuaChop},
+  {"Clone", Luacopy},
   {"Conjugate", Luaconjugate},
   {"ConjugateTranspose", Luaconjugatetranspose},
-  {"Transpose", Luatranspose},
-  {"Rotate", Luarotate},
-  {"EvolveToGroundstate", LuaEvolveToGroundstate},
-  {"Eigensystem", LuaEigensystem},
+  {"Copy", Luacopy},
   {"CreateSpectra", LuaCreateSpectra},
   {"CreateFluorescenceYield", LuaCreateFluorescenceYield},
   {"CreateResonantSpectra", LuaCreateResonantSpectra},
+  {"CreateClusterHamiltonian", LuaCreateClusterHamiltonian},
+  {"DensityMatrix",LuaDensityMatrix},
+  {"Eigensystem", LuaEigensystem},
+  {"EvolveToGroundstate", LuaEvolveToGroundstate},
+  {"Help", LuaHelp},
+  {"MeanFieldGroundState", LuaMeanFieldGroundstate},
+  {"NewOperator", LuaNewOperator},
+  {"NewTightBinding", LuaNewTightBinding},
+  {"NewWavefunction", LuaNewWaveFunction},
+  {"PotentialExpandedOnClm", LuaPotentialExpandedOnClm},
+  {"PlotBands", LuaPlotBands},
+  {"PlotBandsAndDOS", LuaPlotBandsAndDOS},
+  {"PlotDOS", LuaPlotDOS},
+  {"PlotFermi", LuaPlotFermi},
+  {"Rotate", Luarotate},
+  {"Statistics",LuaStatistics},
+  {"TimeEnd",LuaTimeEnd},
+  {"TimePrint",LuaTimePrint},
+  {"TimeStart",LuaTimeStart},
+  {"Transpose", Luatranspose},
+  {"Verbosity",LuaVerbosity},
   {NULL, NULL}
 };
 
@@ -1987,8 +2185,12 @@ int luaopen_ssp(lua_State * L)
   luaL_setfuncs(L, Spectra_meta, 0);
   luaL_newlib(L, Spectra_func);
   lua_setglobal(L, "Spectra");
-    
+  
+  luaL_newmetatable(L, "TightBinding_Type");
+  luaL_setfuncs(L, TightBinding_meta, 0);
+  
   luaMWH_RegisterGlobalFunctions(L, global_functions);
+  luaMWH_RegisterGlobalFunctions(L, mathlib);
   
   return 0;
 }

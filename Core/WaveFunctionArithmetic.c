@@ -54,7 +54,7 @@ uint8_t *StringToDet(uint32_t const NFermion, uint32_t const NBoson, char *s)
     }
     else if(s[i+nspaces]=='0')
     {
-      
+      // nothing to do
     }
     else
     {
@@ -168,8 +168,7 @@ uint32_t WaveFunctionInit(WaveFunctionType * Psi)
       Psi->NWord = 0;
       return 1;
     };
-  if (Psi->QComplex)
-    Psi->ValueIm[0][0] = 0.0;
+  if (Psi->QComplex) Psi->ValueIm[0][0] = 0.0;
   if ((Psi->Next[Psi->NBlok - 1] = malloc(BlokSize * sizeof(uint32_t))) == NULL)
   {
     printf("malloc failed in WaveFunctionInit 07\n");

@@ -97,6 +97,65 @@ Complex16* luaL_checkarray_complex16(lua_State *L, int narg, uint32_t *len_out)
   return buff;
 }
 
+CompactVectorType luaL_checkVector(lua_State *L, int narg)
+{
+  uint32_t i;
+  CompactVectorType buff;
+  buff.V=luaL_checkarray_complex16(L, narg, &(buff.Ni));
+  buff.QComplex=0;
+  for(i=0;i<buff.Ni;i++)
+  {
+    if(Abs(buff.V[i].Im)>(10*DBL_MIN+10*Abs(buff.V[i].Re)*DBL_EPSILON)) buff.QComplex=1;
+  }
+  if(buff.QComplex==0)
+  {
+    double *VRe = malloc(buff.Ni*sizeof(double));
+    for(i=0;i<buff.Ni;i++)
+    {
+      VRe[i]=buff.V[i].Re;
+    }
+    free(buff.V);
+    buff.VRe=VRe;
+  }
+  return buff;
+}
+
+CompactMatrixType* luaL_checkCompactMatrix(lua_State *L, int narg)
+{
+  uint32_t len_row;
+  int i,j;
+  CompactMatrixType *buff;
+  Complex16 * row;
+  luaL_checktype(L, narg, LUA_TTABLE);
+  uint32_t len = (uint32_t)lua_objlen(L, narg);
+  buff=malloc(sizeof(CompactMatrixType));
+  buff->QComplex=1;
+  buff->Ni=len;
+  for(i=0;i<len;i++)
+  {
+    lua_rawgeti(L, narg, i+1);
+    row = luaL_checkarray_complex16(L, -1, &len_row);
+    if(i==0)
+    {
+      buff->Nj=len_row;
+      InitCompactMatrix(buff);
+    }
+    lua_pop(L, 1);
+    if(len_row!=buff->Nj)
+    {
+      luaL_error(L, "Error while reading matrix. Dimensions of rows not constant. %d at first row %d at row %d",buff->Nj,len_row,i);
+    }
+    for(j=0;j<buff->Nj;j++)
+    {
+      buff->V[i*buff->Nj+j].Re=row[j].Re;
+      buff->V[i*buff->Nj+j].Im=row[j].Im;
+    }
+    free(row);
+  }
+  CompactMatrixChop(buff, 100*DBL_MIN);
+  return buff;
+}
+
 
 MatrixType* luaL_checkMatrix(lua_State *L, int narg)
 {
@@ -382,6 +441,50 @@ void LuaPushTable_MatrixType(lua_State* L, MatrixType const * const M)
   }
 }
 
+void LuaPushTable_CompactMatrixType(lua_State* L, CompactMatrixType const * const M)
+{
+  uint32_t i,j;
+  Complex16 *res;
+  lua_createtable(L,M->Ni,0);
+  for(i=0;i<M->Ni;i++)
+  {
+    lua_createtable(L,M->Nj,0);
+    for(j=0;j<M->Nj;j++)
+    {
+      if(M->QComplex)
+      {
+        res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
+        res->Re = M->V[i*M->Nj+j].Re;
+        res->Im = M->V[i*M->Nj+j].Im;
+        luaL_setmetatable(L, "Complex_Type");
+      }
+      else
+      {
+        lua_pushnumber(L, M->VRe[i*M->Nj+j]);
+      }
+      lua_rawseti(L, -2, j+1);
+    }
+    lua_rawseti(L, -2, i+1);
+  }
+}
+
+/*  if at position len of the lua stack a table is found it is over writen by the table in matrix M
+ *  otherwise an error is thrown
+ */
+void LuaInsertTable_CompactMatrixType(lua_State*L, int len, CompactMatrixType const * const M)
+{
+  luaL_checktype(L, len, LUA_TTABLE);
+  
+  luaMWH_StackDump(L);
+  
+  LuaPushTable_CompactMatrixType(L, M);
+  
+  luaMWH_StackDump(L);
+  lua_replace(L, len);
+  
+  luaMWH_StackDump(L);
+}
+
 
 void LuaPushTable_SpectraTypeArray(lua_State* L, SpectraTypeArray const * const M)
 {
@@ -427,6 +530,7 @@ void * LuaReturnVariableType(lua_State * L, int narg, char * type)
   Bool *buffBoolean;
   DeterminantRestrictionType *buffDeterimantRestrictionType;
   void *buff;
+  CompactVectorType *buffVector;
   if (strcmp(type, "char*") == 0)
   {
     buff = (void*) luaL_checkstring(L, narg);
@@ -470,6 +574,12 @@ void * LuaReturnVariableType(lua_State * L, int narg, char * type)
     *buffBoolean= ((*buffint==1)? True: False);
     free(buffint);
     return (void*) buffBoolean;
+  }
+  if( strcmp(type, "Vector") ==0)
+  {
+    buffVector = malloc(sizeof(CompactVectorType));
+    *buffVector = (CompactVectorType)luaL_checkVector(L,narg);
+    return (void*) buffVector;
   }
   if (strcmp(type, "DeterminantRestrictionType") == 0)
   {
@@ -590,6 +700,21 @@ int32_t LuaCheckOptions(lua_State *L, int narg, LuaOptionsType *Options)
         else if(strcmp(Options[j].type, "bool") == 0)
         {
           *(Bool*)Options[j].variable=*(Bool*)LuaReturnVariableType(L, -1, Options[j].type);
+        }
+        else if(strcmp(Options[j].type, "Vector") ==0)
+        {
+          if(((CompactVectorType*)Options[j].variable)->Ni!=0)
+          {
+            if(((CompactVectorType*)Options[j].variable)->QComplex)
+            {
+              free(((CompactVectorType*)Options[j].variable)->V);
+            }
+            else
+            {
+              free(((CompactVectorType*)Options[j].variable)->VRe);
+            }
+          }
+          *(CompactVectorType*)Options[j].variable=*(CompactVectorType*)LuaReturnVariableType(L, -1, Options[j].type);
         }
         else if(strcmp(Options[j].type, "DeterminantRestrictionType") == 0)
         {

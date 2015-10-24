@@ -44,6 +44,7 @@ uint32_t StreamReadAtom(AtomType * O, FILE * stream)
  */
 uint32_t StreamReadCrystalStructure(CrystalStructureType * O, FILE * stream)
 {
+  //TODO: make streamread able to read crystal structure printed
   char   comments[1000];
   uint32_t i;
   fscanf(stream, "%lf %lf %lf", &(O->rUnitCell[0][0]), &(O->rUnitCell[0][1]), &(O->rUnitCell[0][2]));
@@ -59,8 +60,8 @@ uint32_t StreamReadCrystalStructure(CrystalStructureType * O, FILE * stream)
   {
     StreamReadAtom(&(O->Atom[i]), stream);
   }
-  ResiprocalLatticeVector(O->rUnitCell, O->gUnitCell);
   O->Units=1;
+  ResiprocalLatticeVector(O->rUnitCell, O->gUnitCell,O->Units);
   return 0;
 }
 
@@ -619,6 +620,7 @@ uint32_t StreamReadAndersonMatrixTypeUndeterminedPlusMu(AndersonMatrixType * O, 
     return 1;
   }
   *mu=mutemp;
+  O->mu=mutemp;
   return 0;
 }
 
@@ -635,6 +637,7 @@ uint32_t StreamReadTightBindingDefHopping(TightBindingDefHopping * O, FILE * str
 
 uint32_t StreamReadTightBindingDef(TightBindingDef * O, FILE * stream)
 {
+  //TODO: make streamread able to read streamprint
   char   comments[1000];
   int    i;
   fscanf(stream, "%s", (O->Name));

@@ -102,7 +102,8 @@ int main(int argc, const char *argv[])
     
     if (!strncmp("BlockFunctions", argv[argc], strlen(argv[argc])))
       TestBasicMathBlock();
-
+    if (!strncmp("BlockOpp", argv[argc], strlen(argv[argc])))
+      TestBlockToOperator();
     
     if (!strncmp("CI", argv[argc], strlen(argv[argc])))
       CItest();

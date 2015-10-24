@@ -11,8 +11,8 @@ void TestNiO()
   int Nk[3];
   double kBT=0.0000000001;
   uint32_t NBlockVal,NBlockCon;
-  SpectraType DOS, G0Spec[64], G0AFSpec[256], GAFSpec[1024], SpecNat[100],SpectraPES[10],SpectraIPES[10];
-  BlockListOfPoles G0, G0AF, GAF, Sigma;
+  SpectraType DOS, G0Spec[64], G0AFSpec[256], GAFSpec[1024],Specd[100], SpecNat[100],SpectraPES[10],SpectraIPES[10];
+  BlockListOfPoles G0, G0AF, GAF, Sigma, GAFd;
   CrystalStructureSuperCellType AFSuperCell;
   BlockNaturalImpurityOrbitalMatrixType GAFNat;
   CompactMatrixType AT;
@@ -37,7 +37,7 @@ void TestNiO()
    */
   
   // set which calculations should be done and which not. Note that not all calculations are needed (DOS and G0 are nice to test, but otherwise just take time
-  uint32_t DoBANDS=0, DoDOS=0, DoG0=0, DoG0AF=0, DoGAF=1, DoHAF=1, DoGrd=1, DoPES=1, DoIPES=1;
+  uint32_t DoBANDS=0, DoDOS=0, DoG0=0, DoG0AF=0, DoGAF=1, DoHAF=1, DoGrd=0, DoPES=0, DoIPES=0;
   
   // read the output from the Stuttgart NMTO code
   if(FileReadStuttgartCTRL(&CTRLin, "NiO/OMTA/CTRL"))printf("ERROR in CTRL file\n");
@@ -134,9 +134,9 @@ void TestNiO()
     // Calculate the DOS - note again that one can also use these functions to calculate partial DOSes
     BeginTiming("DOS", &Time);
     // Define k-mesh
-    Nk[0]=80;
-    Nk[1]=80;
-    Nk[2]=80;
+    Nk[0]=60;
+    Nk[1]=61;
+    Nk[2]=62;
     // define DOS range
     DOS.Emin=EFermi-10;
     DOS.Emax=EFermi+5;
@@ -159,9 +159,9 @@ void TestNiO()
     // Create G0 as a 8 by 8 matrix
     BeginTiming("Create G0", &Time);
     // Define k-mesh
-    Nk[0]=80;
-    Nk[1]=80;
-    Nk[2]=80;
+    Nk[0]=130;
+    Nk[1]=130;
+    Nk[2]=130;
     TightBindingHamiltonianToBlockListOfPoles(HTB, Nk, &G0, EFermi-10, EFermi+5, 1500);
     BlockListOfPolesToSpectra(G0, G0Spec, EFermi-10, EFermi+5, 1500);
     FilePrintSpectra(G0Spec, HTB.NFermion*HTB.NFermion, "NiO/G0", "w");
@@ -175,9 +175,9 @@ void TestNiO()
     // It only includes one spin species
     BeginTiming("Create G0AF", &Time);
     // Define k-mesh
-    Nk[0]=80;
-    Nk[1]=80;
-    Nk[2]=80;
+    Nk[0]=60;
+    Nk[1]=61;
+    Nk[2]=62;
     TightBindingHamiltonianToBlockListOfPoles(HTBAF, Nk, &G0AF, EFermi-10, EFermi+5, 1500);
     BlockListOfPolesToSpectra(G0AF, G0AFSpec, EFermi-10, EFermi+5, 1500);
     FilePrintSpectra(G0AFSpec, HTBAF.NFermion*HTBAF.NFermion, "NiO/G0AF", "w");
@@ -191,10 +191,10 @@ void TestNiO()
     // It includes two sites (unit cells) and spin up/dn
     BeginTiming("Create GAF", &Time);
     // Define k-mesh
-    Nk[0]=80;
-    Nk[1]=80;
-    Nk[2]=80;
-    TightBindingHamiltonianAddSpinPlusSelfEnergyToBlockListOfPoles(HTBAF, Nk, Sigma, &GAF, EFermi-10, EFermi+5, 250); //change 250 to 1500 for consistence (does not work with debuger on)
+    Nk[0]=130;
+    Nk[1]=130;
+    Nk[2]=130;
+    TightBindingHamiltonianAddSpinPlusSelfEnergyToBlockListOfPoles(HTBAF, Nk, Sigma, &GAF, EFermi-10, EFermi+5, 1500); //change 250 to 1500 for consistence (does not work with debuger on)
     BlockListOfPolesToSpectra(GAF, GAFSpec, EFermi-10, EFermi+5, 1500);
     FilePrintSpectra(GAFSpec, 4*HTBAF.NFermion*HTBAF.NFermion, "NiO/GAF", "w");
     EndTiming("Create GAF", &Time);
@@ -218,8 +218,8 @@ void TestNiO()
     //    10 -- 19                : a ligand shell such that if the d-occupation is 8.2 the Ligand occupation is 1.8 (total occupation of d and L shell is 10)
     //    20 -- 20 + 10 NBlockVal : NBlockVal valence shells, which are occupied
     //    ?? -- end               : NBlockCon conduction shells which are empty
-    NBlockVal=10;  // number of Valence bath orbitals
-    NBlockCon=4;   // number of Conduction bath orbitals
+    NBlockVal=1;  // number of Valence bath orbitals
+    NBlockCon=1;   // number of Conduction bath orbitals
     BeginTiming("Create HAF", &Time);
     // convert GAF (BlockListOfPoles) To impurity Hamiltonian
     if(!DoGAF)
@@ -245,14 +245,23 @@ void TestNiO()
     AT.VRe[19 + 8*AT.Nj]=1;
     AT.VRe[20 + 9*AT.Nj]=1;
     GAF.mu=EFermi;
+    
+    
+    BlockListOfPolesReduceDimcT(&GAF, &GAFd, &AT);
+    BlockListOfPolesToSpectra(GAFd, Specd, EFermi-10, EFermi+5, 1500);
+    FilePrintSpectra(Specd, 10*10, "NiO/GAFd", "w");
+    
+    
+    
+    
     BlockListOfPolesToBlockNaturalImpurityOrbitalMatrixReduceDimension(&GAF, &GAFNat, &AT, kBT, NBlockVal, NBlockCon);
     BlockNaturalImpurityOrbitalMatrixChop(&GAFNat, 1000*DBL_EPSILON);
     //PrintBlockNaturalImpurityOrbitalMatrix(GAFNat);
-    BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(&HAF, &GAFNat, NBlockVal, NBlockCon, 0, 0, 0);
-    OperatorChop(&HAF, 1000*DBL_EPSILON);
+//  BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(&HAF, &GAFNat, NBlockVal, NBlockCon, 0, 0, 0);
+//  OperatorChop(&HAF, 1000*DBL_EPSILON);
     //PrintOperatorReadable(HAF);
     BlockNaturalImpurityOrbitalToSpectra(&GAFNat, SpecNat, EFermi-10, EFermi+5, 1500, 0.01);
-    FilePrintSpectra(SpecNat, 10*10, "NiO/GAFd", "w");
+    FilePrintSpectra(SpecNat, 10*10, "NiO/GAFd2", "w");
     EndTiming("Create HAF", &Time);
   }
   

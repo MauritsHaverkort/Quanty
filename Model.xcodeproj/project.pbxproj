@@ -269,6 +269,7 @@
 		4C2F88B71928CFA5009AED78 /* CrystalField.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = CrystalField.c; sourceTree = "<group>"; };
 		4C2F88B91928CFC8009AED78 /* LigandField.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = LigandField.c; sourceTree = "<group>"; };
 		4C3261581850DF9300CEECC4 /* OperatorArithmetic.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = OperatorArithmetic.c; sourceTree = "<group>"; };
+		4C33766D1B58FEA50097323E /* Plot.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = Plot.c; sourceTree = "<group>"; };
 		4C363D6F19D464EE00162048 /* NiO.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = NiO.c; sourceTree = "<group>"; };
 		4C3FCCFC188419B6000B9DB8 /* BasicMathBlock.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = BasicMathBlock.c; path = BasicMathBlock/BasicMathBlock.c; sourceTree = "<group>"; };
 		4C3FCCFD188419E4000B9DB8 /* BasicMath_BlockListOfPoles.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = BasicMath_BlockListOfPoles.c; path = BasicMathBlock/BasicMath_BlockListOfPoles.c; sourceTree = "<group>"; };
@@ -288,6 +289,10 @@
 		4C6925C418D869FE00E6FA6F /* MartinPESXAS */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = MartinPESXAS; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C77BA751741188E00AC7E7D /* OperatorWaveFunctionPerturbation.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = OperatorWaveFunctionPerturbation.c; sourceTree = "<group>"; };
 		4C79F5D817B53C8000189682 /* Hubart */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Hubart; sourceTree = BUILT_PRODUCTS_DIR; };
+		4C7FE75F1B1A168F00FD19A3 /* DresdenFPLO.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = DresdenFPLO.c; sourceTree = "<group>"; };
+		4C7FE7601B1A1C2A00FD19A3 /* ResponseFunction.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = ResponseFunction.c; path = LuaInterface/ResponseFunction.c; sourceTree = SOURCE_ROOT; };
+		4C7FE7611B1A1C6100FD19A3 /* TightBinding.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = TightBinding.c; sourceTree = "<group>"; };
+		4C7FE7621B1AB1C200FD19A3 /* DresdenFPLO.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = DresdenFPLO.c; sourceTree = "<group>"; };
 		4C8274D917DC49B000A5F555 /* header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = header.h; sourceTree = "<group>"; };
 		4C8274DA17DC49CA00A5F555 /* core.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = core.h; sourceTree = "<group>"; };
 		4C8274DB17DC49F700A5F555 /* io.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = io.h; sourceTree = "<group>"; };
@@ -309,6 +314,7 @@
 		4CDD1CAC179994DC00614F34 /* TestGFBA.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = TestGFBA.c; sourceTree = "<group>"; };
 		4CDD1CAD179D2F0900614F34 /* TestStandardOperators.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = TestStandardOperators.c; sourceTree = "<group>"; };
 		4CDDD7FF1A599D55004D27DF /* Documentation.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = Documentation.c; sourceTree = "<group>"; };
+		4CE1A0DA1B81CA84001213D4 /* units.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = units.c; sourceTree = "<group>"; };
 		4CE50BC319754E6F00091F1C /* ssp.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; lineEnding = 0; path = ssp.c; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
 		4CE50BC51975556500091F1C /* BraKet.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = BraKet.c; sourceTree = "<group>"; };
 		4CE50BC6197555E100091F1C /* eval.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = eval.c; sourceTree = "<group>"; };
@@ -412,7 +418,11 @@
 				4CE50BC51975556500091F1C /* BraKet.c */,
 				4CE50BC6197555E100091F1C /* eval.c */,
 				4C639499197968E4009C7F12 /* Spectra.c */,
+				4C7FE7601B1A1C2A00FD19A3 /* ResponseFunction.c */,
 				4CDDD7FF1A599D55004D27DF /* Documentation.c */,
+				4C7FE7611B1A1C6100FD19A3 /* TightBinding.c */,
+				4C33766D1B58FEA50097323E /* Plot.c */,
+				4CE1A0DA1B81CA84001213D4 /* units.c */,
 			);
 			path = LuaInterface;
 			sourceTree = "<group>";
@@ -637,6 +647,7 @@
 				4C5A6B9B175E6E8700EEA17F /* PrintMathematicaExpression.c */,
 				4C03B020186E321D004C2B7B /* StuttgartNMTO.c */,
 				4C2B19731A7F57980055C950 /* StringPrint.c */,
+				4C7FE75F1B1A168F00FD19A3 /* DresdenFPLO.c */,
 			);
 			path = IO;
 			sourceTree = "<group>";
@@ -686,6 +697,7 @@
 				4C2AAA71163265DD00138620 /* Tight_Binding_lib.c */,
 				4C2AAA72163265DD00138620 /* TightBindingToG.c */,
 				4C944CD8187AEDE500FE9B7B /* StuttgartNMTO.c */,
+				4C7FE7621B1AB1C200FD19A3 /* DresdenFPLO.c */,
 			);
 			path = Tight_Binding;
 			sourceTree = "<group>";
@@ -1069,7 +1081,9 @@
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
 				CODE_SIGN_IDENTITY = "";
 				DEAD_CODE_STRIPPING = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEPLOYMENT_POSTPROCESSING = YES;
+				EMBEDDED_CONTENT_CONTAINS_SWIFT = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
@@ -1079,8 +1093,12 @@
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = NO;
+				GENERATE_PROFILING_CODE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 10.9;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SCAN_ALL_SOURCE_FILES_FOR_INCLUDES = YES;
+				STRIP_INSTALLED_PRODUCT = NO;
+				VALIDATE_PRODUCT = NO;
 				VERSIONING_SYSTEM = "apple-generic";
 			};
 			name = Debug;
@@ -1115,13 +1133,14 @@
 		4C2AAA211632655300138620 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
+				ALWAYS_SEARCH_USER_PATHS = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
@@ -1144,16 +1163,18 @@
 		4C2AAA221632655300138620 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
+				ALWAYS_SEARCH_USER_PATHS = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = YES;
+				DEAD_CODE_STRIPPING = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
@@ -1166,16 +1187,21 @@
 		4C2AAA241632655300138620 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				DEAD_CODE_STRIPPING = YES;
 				GCC_WARN_TYPECHECK_CALLS_TO_PRINTF = NO;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRIP_INSTALLED_PRODUCT = NO;
 			};
 			name = Debug;
 		};
 		4C2AAA251632655300138620 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				GCC_WARN_TYPECHECK_CALLS_TO_PRINTF = NO;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRIP_INSTALLED_PRODUCT = NO;
 			};
 			name = Release;
 		};

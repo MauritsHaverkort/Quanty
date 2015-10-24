@@ -813,8 +813,7 @@ uint32_t CreateOperatorLmin(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, 
  *    *LindexDn    - An array of legnth 2L+1 indexing the ml values from -L to L with spin down
  *    The operators J*** are not initialized on input
  */
-uint32_t CreateOperatorJx(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn,
-                          OperatorType * const Jx)
+uint32_t CreateOperatorJx(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jx)
 {
   uint32_t i;
   double m, l;
@@ -1108,18 +1107,194 @@ uint32_t CreateOperatorJmin(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, 
   return 0;
 }
 
+
+/*  CreateOperatorT*** creates the operators Tx, Ty, Tz, Tplus, Tmin or T^2
+ *  Input:
+ *    NFermion    - The number of Fermions in the basis
+ *    L           - The total angular momentum (2L+1) <= NFermion
+ *    *LindexUp    - An array of legnth 2L+1 indexing the ml values from -L to L with spin up
+ *    *LindexDn    - An array of legnth 2L+1 indexing the ml values from -L to L with spin down
+ *    The operators T*** are not initialized on input
+ */
+
+
+uint32_t CreateOperatorTx(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Tx)
+{
+  uint32_t i;
+  int    mCr, mAn, lCr, lAn, mk;
+  double val;
+  lCr = (int)L;
+  lAn = (int)L;
+  uint16_t oadd[2];
+  InitNamedOperator(Tx, "Tx");
+  Tx->NFermion = NFermion;
+  Tx->NWord = Min(Tx->NFermion, 1 + (Tx->NFermion - 1) / 8);
+  InitOperatorFixedLength(Tx, 2, 8);
+  for(i=0;i<2*L+1;i++)
+  {
+    // C sz
+    // C s+
+    // C s-
+  }
+  return 0;
+}
+
+uint32_t CreateOperatorTy(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Ty)
+{
+  uint32_t i;
+  int    mCr, mAn, lCr, lAn, mk;
+  double val;
+  lCr = (int)L;
+  lAn = (int)L;
+  uint16_t oadd[2];
+  InitNamedOperator(Ty, "Ty");
+  Ty->NFermion = NFermion;
+  Ty->NWord = Min(Ty->NFermion, 1 + (Ty->NFermion - 1) / 8);
+  InitOperatorFixedLength(Ty, 2, 8);
+  for(i=0;i<2*L+1;i++)
+  {
+    // C sz
+    // C s+
+    // C s-
+  }
+  return 0;
+}
+
+uint32_t CreateOperatorTz(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Tz)
+{
+  uint32_t i;
+  int    mCr, mAn, lCr, lAn, mk;
+  double val;
+  lCr = (int)L;
+  lAn = (int)L;
+  uint16_t oadd[2];
+  InitNamedOperator(Tz, "Tz");
+  Tz->NFermion = NFermion;
+  Tz->NWord = Min(Tz->NFermion, 1 + (Tz->NFermion - 1) / 8);
+  InitOperatorFixedLength(Tz, 2, 8);
+  for(i=0;i<2*L+1;i++)
+  {
+    // C0 sz
+    mk=0;
+    mCr = (int)i - lCr;
+    mAn = (int)i - lAn - mk;
+    val = (double)SlaterCoefficientC(2, lCr, mCr, lAn, mAn);
+    if (Abs(val) > DBL_EPSILON)
+    {
+      oadd[1] = CrAnMask + LindexUp[i];
+      oadd[0] = LindexUp[i];
+      RealOperatorAddLaderNormalOrder(Tz, oadd, 2, -val, &QDetNotOrderedFcFaBcBa);
+      oadd[1] = CrAnMask + LindexDn[i];
+      oadd[0] = LindexDn[i];
+      RealOperatorAddLaderNormalOrder(Tz, oadd, 2,  val, &QDetNotOrderedFcFaBcBa);
+    }
+    // C-1 s+
+    mk=-1;
+    mCr = (int)i - lCr;
+    mAn = (int)i - lAn - mk;
+    val = (double)SlaterCoefficientC(2, lCr, mCr, lAn, mAn);
+    if (Abs(val) > DBL_EPSILON)
+    {
+      oadd[1] = CrAnMask + LindexUp[i];
+      oadd[0] = LindexDn[i];
+      RealOperatorAddLaderNormalOrder(Tz, oadd, 2, -0.5*sqrt(6.)*val, &QDetNotOrderedFcFaBcBa);
+    }
+    // C1 s-
+    mk= 1;
+    mCr = (int)i - lCr;
+    mAn = (int)i - lAn - mk;
+    val = (double)SlaterCoefficientC(2, lCr, mCr, lAn, mAn);
+    if (Abs(val) > DBL_EPSILON)
+    {
+      oadd[1] = CrAnMask + LindexDn[i];
+      oadd[0] = LindexUp[i];
+      RealOperatorAddLaderNormalOrder(Tz, oadd, 2,  0.5*sqrt(6.)*val, &QDetNotOrderedFcFaBcBa);
+    }
+  }
+  return 0;
+}
+
+
+
+uint32_t CreateOperatorTplus(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Tplus)
+{
+  uint32_t i;
+  int    mCr, mAn, lCr, lAn, mk;
+  double val;
+  lCr = (int)L;
+  lAn = (int)L;
+  uint16_t oadd[2];
+  InitNamedOperator(Tplus, "Tplus");
+  Tplus->NFermion = NFermion;
+  Tplus->NWord = Min(Tplus->NFermion, 1 + (Tplus->NFermion - 1) / 8);
+  InitOperatorFixedLength(Tplus, 2, 8);
+  for(i=0;i<2*L+1;i++)
+  {
+    // C sz
+    // C s+
+    // C s-
+  }
+  return 0;
+}
+
+uint32_t CreateOperatorTmin(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Tmin)
+{
+  uint32_t i;
+  int    mCr, mAn, lCr, lAn, mk;
+  double val;
+  lCr = (int)L;
+  lAn = (int)L;
+  uint16_t oadd[2];
+  InitNamedOperator(Tmin, "Tmin");
+  Tmin->NFermion = NFermion;
+  Tmin->NWord = Min(Tmin->NFermion, 1 + (Tmin->NFermion - 1) / 8);
+  InitOperatorFixedLength(Tmin, 2, 8);
+  for(i=0;i<2*L+1;i++)
+  {
+    // C sz
+    // C s+
+    // C s-
+  }
+  return 0;
+}
+
+uint32_t CreateOperatorTsqr(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Tsqr)
+{
+  uint32_t i;
+  int    mCr, mAn, lCr, lAn, mk;
+  double val;
+  lCr = (int)L;
+  lAn = (int)L;
+  uint16_t oadd[4];
+  InitNamedOperator(Tsqr, "Tsqr");
+  Tsqr->NFermion = NFermion;
+  Tsqr->NWord = Min(Tsqr->NFermion, 1 + (Tsqr->NFermion - 1) / 8);
+  InitOperatorFixedLength(Tsqr, 2, 8);
+  InitOperatorFixedLength(Tsqr, 4, 8);
+  for(i=0;i<2*L+1;i++)
+  {
+    // C sz
+    // C s+
+    // C s-
+  }
+  return 0;
+}
+
+
+
+
+
 uint32_t CreateOperatorldots(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn,
                              OperatorType * const ldots)
 {
   uint32_t i;
   double mi, l;
   l = (double)L;
-  uint16_t oadd[4];
+  uint16_t oadd[2];
   InitNamedOperator(ldots, "l.s");
   ldots->NFermion = NFermion;
   ldots->NWord = Min(ldots->NFermion, 1 + (ldots->NFermion - 1) / 8);
   InitOperatorFixedLength(ldots, 2, 8);
-  InitOperatorFixedLength(ldots, 4, 8);
   for (i = 0; i < 2 * L + 1; i++)
   {
     mi = (double)i - l;
@@ -1304,6 +1479,15 @@ uint32_t CreateOperatorNumberShell(uint32_t const NFermion, uint32_t const Nelec
     oadd[0] = index[i];
     RealOperatorAddLader(OppN, oadd, 2, 1);
   }
+  return 0;
+}
+
+uint32_t CreateOperatorIdentity(uint32_t const NFermion, OperatorType * const OppN)
+{
+  InitNamedOperator(OppN, "Identity operator");
+  OppN->NFermion = NFermion;
+  OppN->NWord = Min(OppN->NFermion, 1 + (OppN->NFermion - 1) / 8);
+  RealOperatorAddLader(OppN, NULL, 0, 1);
   return 0;
 }
 

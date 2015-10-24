@@ -708,7 +708,7 @@ uint32_t CompactMatrixAddMultiply(char const TransA, char const TransB, CompactM
   }
   else
   {
-    if((TransB=='N')||(TransB=='n'))
+    if((TransB=='N')||(TransB=='*'))
     {
       Nk=A->Ni;
       if((A->Ni!=B->Ni)||(C->Ni!=A->Nj)||(C->Nj!=B->Nj))
@@ -1131,6 +1131,30 @@ double CompactMatrixInverse(CompactMatrixType * const M)
   }
   free(IPIV);
   return INFO;
+}
+
+/*
+ *
+ */
+uint32_t CompactMatrixScale(CompactMatrixType * const A, double alpha)
+{
+  uint32_t i;
+  if(A->QComplex)
+  {
+    for(i=0;i<A->Ni*A->Nj;i++)
+    {
+      A->V[i].Re*=alpha;
+      A->V[i].Im*=alpha;
+    }
+  }
+  else
+  {
+    for(i=0;i<A->Ni*A->Nj;i++)
+    {
+      A->VRe[i]*=alpha;
+    }
+  }
+  return 0;
 }
 
 /*  A <- A + B
@@ -1668,6 +1692,17 @@ uint32_t CompactMatrixLowdinOrthogonalize(CompactMatrixType * A)
 }
 
 /*
+ *A=funinv.H.fun with H a diagonal matrix with the values val on the diagonal
+ *  input M defined, fun not initiallized, val allocated
+ */
+uint32_t CompactMatrixGeneralEigensystem(CompactMatrixType const *A, CompactMatrixType * const fun, CompactMatrixType * const funinv, Complex16 *val)
+{
+  printf("To Do CompactMatrixGeneralEigensystem\n");
+  return 0;
+}
+
+
+/*
  *  A=fun.H.fun^{\dag} with H a diagonal matrix with the values val on the diagonal
  *  input M defined, fun not initiallized, val allocated
  */
@@ -1826,8 +1861,8 @@ uint32_t CompactMatrixQRDecompositionEigenHermitian(CompactMatrixType const *A, 
  */
 uint32_t CompactMatrixSqrt(CompactMatrixType const *A, CompactMatrixType * const SqrtA)
 {
-  int i;
-  double val[A->Ni];
+  int i,j;
+  double val[A->Ni],sumval;
   CompactMatrixType fun;
   
   CompactMatrixEigensystem(A, &fun, val);
@@ -1835,7 +1870,12 @@ uint32_t CompactMatrixSqrt(CompactMatrixType const *A, CompactMatrixType * const
   {
     if(val[i]<0)
     {
-      printf("Negative value in CompactMatrixSqrt, eigen value is %22.15E at pos %i\n",val[i],i);
+      sumval=0;
+      for(j=0;j<A->Ni;j++)
+      {
+        sumval+=Abs(val[j]);
+      }
+      if(val[i]<-1000*DBL_EPSILON*sumval) printf("Negative value in CompactMatrixSqrt, eigen value is %22.15E at pos %i (trace val = %22.15E)\n",val[i],i,sumval);
       val[i]=0;
     }
     val[i]=sqrt(val[i]);
@@ -2485,4 +2525,34 @@ uint32_t CompactMatrixBlockBandTridiagonalizeHermitianNoReorthogonalization(Comp
   return 0;
 }
 
+/* returns 1 if O=O^dag, zero otherwise 
+ * epsilon gives the accuracy
+ */
 
+uint32_t QCompactMatrixHermitian(const CompactMatrixType O, const double epsilon)
+{
+  uint32_t i,j;
+  if(O.Ni!=O.Nj)return 0;
+  if(O.QComplex)
+  {
+    for(i=0;i<O.Ni;i++)
+    {
+      for(j=0;j<=i;j++)
+      {
+        if(fabs(O.V[i*O.Nj+j].Re-O.V[j*O.Nj+i].Re)>((fabs(O.V[i*O.Nj+j].Re+O.V[j*O.Nj+i].Re)*epsilon+DBL_MIN*100))) return 0;
+        if(fabs(O.V[i*O.Nj+j].Im+O.V[j*O.Nj+i].Im)>((fabs(O.V[i*O.Nj+j].Im-O.V[j*O.Nj+i].Im)*epsilon+DBL_MIN*100))) return 0;
+      }
+    }
+  }
+  else
+  {
+    for(i=0;i<O.Ni;i++)
+    {
+      for(j=0;j<i;j++)
+      {
+        if(fabs(O.VRe[i*O.Nj+j]-O.VRe[j*O.Nj+i])>((fabs(O.VRe[i*O.Nj+j]+O.VRe[j*O.Nj+i])*epsilon+DBL_MIN*100))) return 0;
+      }
+    }
+  }
+  return 1;
+}

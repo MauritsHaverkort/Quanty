@@ -16,7 +16,7 @@ void TestCellFunctions()
   for (i = 0; i < 2; i++)
     CuLayer.rUnitCell[i][i] = 4.0;
   CuLayer.rUnitCell[2][2] = 8.0;
-  ResiprocalLatticeVector(CuLayer.rUnitCell, CuLayer.gUnitCell);
+  ResiprocalLatticeVector(CuLayer.rUnitCell, CuLayer.gUnitCell,0);
   SC.Crystal = CuLayer;
   SC.rSuperCell[0][0] = 2;
   SC.rSuperCell[0][1] = 0;

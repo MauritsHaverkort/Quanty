@@ -162,7 +162,7 @@ uint32_t StreamPrintSpectraSettings(SpectraSettings O, FILE * stream)
 {
   uint32_t i;
   
-  fprintf(stream, "\nSettigns of AIM-XAS calculation\n");
+  fprintf(stream, "\nSettings of AIM-XAS calculation\n");
   fprintf(stream, "===============================\n");
   fprintf(stream, "number of impurities     :  %i\n", O.NSite);
   for (i=0; i<O.NSite; i++)

@@ -191,13 +191,13 @@ uint32_t CalculateDensityCorrelationMatrix(MatrixType * const Rho, const WaveFun
  *  as the density correlation tensor scales to the 4-th power of the number of basis orbitals one can select a subset
  *  NFermionIncluded set the number included in the basis
  *  FermionIncluded is a list of length NFermionIncluded listing the included Fermions
- *  On excite Rho contains an NFerionInlcuded by NFerionInlcuded by NFerionInlcuded by NFerionInlcuded tensor
+ *  On exit Rho contains an NFermionInlcuded by NFermionInlcuded by NFermionInlcuded by NFermionInlcuded tensor
  *  the index of Rho is [i + NFermionIncluded j + NFermionIncluded^2 k + NFermionIncluded^3 l
  *  a^{\dag}_i a^{\dag}_j a_k a_l
  */
 uint32_t CalculatePartialDensityCorrelationTensor(Complex16 * Rho, const WaveFunctionType psi, uint32_t const NFermionIncluded, uint16_t const * FermionIncluded)
 {
-  uint32_t i, j,k,l,m=0;
+  uint32_t ii,i,j,k,l,m=0;
   OperatorType O;
   if(NFermionIncluded>psi.NFermion+psi.NBoson)
   {
@@ -227,25 +227,19 @@ uint32_t CalculatePartialDensityCorrelationTensor(Complex16 * Rho, const WaveFun
     fflush(stdout);
     return 1;
   }
-  O.l[0].N = 0;
-  O.l[0].NBitsKey = 0;
-  O.l[0].NAloc = 0;
-  O.l[0].QComplex = 0;
-  O.l[1].N = 0;
-  O.l[1].NBitsKey = 0;
-  O.l[1].NAloc = 0;
-  O.l[1].QComplex = 0;
-  O.l[2].N = 0;
-  O.l[2].NBitsKey = 0;
-  O.l[2].NAloc = 0;
-  O.l[2].QComplex = 0;
-  O.l[3].N = 0;
-  O.l[3].NBitsKey = 0;
-  O.l[3].NAloc = 0;
-  O.l[3].QComplex = 0;
+  for (ii=0; ii<4; ii++)
+  {
+    O.l[ii].N = 0;
+    O.l[ii].NBitsKey = 0;
+    O.l[ii].NAloc = 0;
+    O.l[ii].Next = (uint32_t*)malloc(0);
+    O.l[ii].KeyList = (uint32_t*)malloc(0);
+  }
   O.l[4].N = 1;
   O.l[4].NBitsKey = 0;
   O.l[4].NAloc = 1;
+  O.l[4].Next = (uint32_t*)malloc(sizeof(uint32_t));
+  O.l[4].KeyList = (uint32_t*)malloc(0);
   O.l[4].QComplex = 0;
   O.l[4].VRe = malloc(sizeof(double));
   O.l[4].VRe[0] = 1;
@@ -680,8 +674,7 @@ uint32_t CalculatePrefactorHistogram(double *const Hist, const WaveFunctionType 
           (uint32_t) (-
                       (log(DBL_MIN + Sqr(psi.ValueRe[iBlok][iElement]) + Sqr(psi.ValueIm[iBlok][iElement])) /
                        (2 * log(exp))));
-        if (i >= N)
-          i = N - 1;
+        if (i >= N) i = N - 1;
         HistPrivate[i]++;
       }
 #pragma omp for
@@ -694,19 +687,16 @@ uint32_t CalculatePrefactorHistogram(double *const Hist, const WaveFunctionType 
             (uint32_t) (-
                         (log(DBL_MIN + Sqr(psi.ValueRe[iBlok][iElement]) + Sqr(psi.ValueIm[iBlok][iElement])) /
                          (2 * log(exp))));
-          if (i >= N)
-            i = N - 1;
+          if (i >= N) i = N - 1;
           HistPrivate[i]++;
         }
       }
       i = (uint32_t) (-(log(DBL_MIN + Sqr(psi.ValueRe[0][0]) + Sqr(psi.ValueIm[0][0])) / (2 * log(exp))));
-      if (i >= N)
-        i = N - 1;
+      if (i >= N) i = N - 1;
       HistPrivate[i]--;
 #pragma omp critical (AddToHistogram)
       {
-        for (i = 0; i < N; i++)
-          Hist[i] += HistPrivate[i];
+        for (i = 0; i < N; i++) Hist[i] += HistPrivate[i];
       }
       free(HistPrivate);
     }
@@ -749,14 +739,13 @@ uint32_t CalculatePrefactorHistogram(double *const Hist, const WaveFunctionType 
       }
       free(HistPrivate);
     }
+    i = (uint32_t) (-(log(DBL_MIN + fabs(psi.ValueRe[0][0])) / log(exp)));
+    if (i >= N) i = N - 1;
+    Hist[i]--;
   }
-  i = (uint32_t) (-(log(DBL_MIN + fabs(psi.ValueRe[0][0])) / log(exp)));
-  if (i >= N)
-    i = N - 1;
-  Hist[i]--;
-  for (i = 0; i < N; i++)
-  {
-    Hist[i] /= (double)psi.N;
-  }
+  //for (i = 0; i < N; i++)
+  //{
+  //  Hist[i] /= (double)psi.N;
+  //}
   return 0;
 }
