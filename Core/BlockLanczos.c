@@ -1478,7 +1478,7 @@ uint32_t BlockGroundState(const OperatorType H, uint32_t const Npsi, Convergence
     }
     else
     {
-      VerbosityPrintf(0x0002,"Lanczos loop %3i, Number of Determinants: %9i %9i last variance %22.15E\n",iloop,psi[0].N,Opsi[0].N,EnergySqr[0][Npsi-1]-Sqr(Energy[0][Npsi-1]));
+      VerbosityPrintf(0x0002,"Outer loop %3i, Number of Determinants: %9i %9i last variance %22.15E\n",iloop,psi[0].N,Opsi[0].N,EnergySqr[0][Npsi-1]-Sqr(Energy[0][Npsi-1]));
       // free psi and set psi=Opsi
       BlockWaveFunctionFree(psi,Npsi);
       for(i=0;i<Npsi;i++)
