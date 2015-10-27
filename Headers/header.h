@@ -49,9 +49,10 @@ uint32_t GlobalVerbosity=0xF;
 /**********************************************************/
 #ifdef BLASunderscore
 #define daxpb daxpb_
+#define daxpy daxpy_
 #define dcopy dcopy_
 #define ddot ddot_
-#defien dgemm dgemm_
+#define dgemm dgemm_
 #define dgemv dgemv_
 #define dgeqrf dgeqrf_
 #define dgesvd dgesvd_
@@ -68,6 +69,7 @@ uint32_t GlobalVerbosity=0xF;
 #define dsygvd dsygvd_
 #define dtrsm dtrsm_
 #define zaxpb zaxpb_
+#define zaxpy zaxpy_
 #define zgemm zgemm_
 #define zgemv zgemv_
 #define zgetrf zgetrf_
