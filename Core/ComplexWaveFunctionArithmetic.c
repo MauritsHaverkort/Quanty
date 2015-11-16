@@ -379,6 +379,7 @@ void ComplexWaveFunctionAddElementConserveBasis(WaveFunctionType psi, const uint
       {                         /* psi already in basis set add and leave loop  */
 #pragma omp atomic
         psi.ValueRe[BlokElement(NextIndex)] += aRe;
+#pragma omp atomic
         psi.ValueIm[BlokElement(NextIndex)] += aIm;
         return;
       }
@@ -540,8 +541,7 @@ void ComplexWaveFunctionAddMultipliedSameBasis(WaveFunctionType a, const WaveFun
 *   As a and b only store pointers
 *   This function does alter the values a points to
 */
-void ComplexWaveFunctionAddComplexMultipliedSameBasis(WaveFunctionType a, const WaveFunctionType b,
-                                                      const double alphaRe, const double alphaIm)
+void ComplexWaveFunctionAddComplexMultipliedSameBasis(WaveFunctionType a, const WaveFunctionType b, const double alphaRe, const double alphaIm)
 {
   uint32_t iBlok, iElement;
   int    iOMP;
@@ -704,9 +704,7 @@ void ComplexWaveFunctionAddMultipliedConserveBasis(WaveFunctionType * const a, c
   for (iOMP = 1; iOMP <= (int)b.N; iOMP++)
   {
     i = (uint32_t) iOMP;
-    ComplexWaveFunctionAddElementConserveBasis(*a, &b.Determinant[BlokElementDet(i, b.NWord, 0)],
-                                               alphaRe * b.ValueRe[BlokElement(i)],
-                                               alphaRe * b.ValueIm[BlokElement(i)]);
+    ComplexWaveFunctionAddElementConserveBasis(*a, &b.Determinant[BlokElementDet(i, b.NWord, 0)], alphaRe * b.ValueRe[BlokElement(i)], alphaRe * b.ValueIm[BlokElement(i)]);
   }
 }
 
@@ -718,11 +716,7 @@ void ComplexWaveFunctionAddComplexMultipliedConserveBasis(WaveFunctionType * con
   for (iOMP = 1; iOMP <= (int)b.N; iOMP++)
   {
     i = (uint32_t) iOMP;
-    ComplexWaveFunctionAddElementConserveBasis(*a, &b.Determinant[BlokElementDet(i, b.NWord, 0)],
-                                               alphaRe * b.ValueRe[BlokElement(i)] -
-                                               alphaIm * b.ValueIm[BlokElement(i)],
-                                               alphaRe * b.ValueIm[BlokElement(i)] +
-                                               alphaIm * b.ValueRe[BlokElement(i)]);
+    ComplexWaveFunctionAddElementConserveBasis(*a, &b.Determinant[BlokElementDet(i, b.NWord, 0)], alphaRe * b.ValueRe[BlokElement(i)] - alphaIm * b.ValueIm[BlokElement(i)], alphaRe * b.ValueIm[BlokElement(i)] + alphaIm * b.ValueRe[BlokElement(i)]);
   }
 }
 
@@ -886,8 +880,7 @@ double ComplexWaveFunctionCalculateNorm(const WaveFunctionType a)
   for (iOMP = 0; iOMP <= (int)(a.N - iBlok * BlokSize); ++iOMP)
   {
     iElement = (uint32_t) iOMP;
-    NormA +=
-      a.ValueRe[iBlok][iElement] * a.ValueRe[iBlok][iElement] + a.ValueIm[iBlok][iElement] * a.ValueIm[iBlok][iElement];
+    NormA += a.ValueRe[iBlok][iElement] * a.ValueRe[iBlok][iElement] + a.ValueIm[iBlok][iElement] * a.ValueIm[iBlok][iElement];
   }
 #pragma omp parallel for private(iElement,iBlok) reduction(+ : NormB)
   for (iOMP = 0; iOMP < (int)(a.NBlok - 1); iOMP++)
@@ -895,9 +888,7 @@ double ComplexWaveFunctionCalculateNorm(const WaveFunctionType a)
     iBlok = (uint32_t) iOMP;
     for (iElement = 0; iElement < BlokSize; ++iElement)
     {
-      NormB +=
-        a.ValueRe[iBlok][iElement] * a.ValueRe[iBlok][iElement] +
-        a.ValueIm[iBlok][iElement] * a.ValueIm[iBlok][iElement];
+      NormB += a.ValueRe[iBlok][iElement] * a.ValueRe[iBlok][iElement] + a.ValueIm[iBlok][iElement] * a.ValueIm[iBlok][iElement];
     }
   }
   Norm = sqrt(NormA + NormB);
@@ -918,10 +909,8 @@ void ComplexWaveFunctionDotProductSameBasis(const WaveFunctionType a, const Wave
   for (iOMP = 0; iOMP <= (int)(a.N - iBlok * BlokSize); ++iOMP)
   {
     iElement = (uint32_t) iOMP;
-    DotReOMPA +=
-      a.ValueRe[iBlok][iElement] * b.ValueRe[iBlok][iElement] + a.ValueIm[iBlok][iElement] * b.ValueIm[iBlok][iElement];
-    DotImOMPA +=
-      a.ValueRe[iBlok][iElement] * b.ValueIm[iBlok][iElement] - a.ValueIm[iBlok][iElement] * b.ValueRe[iBlok][iElement];
+    DotReOMPA += a.ValueRe[iBlok][iElement] * b.ValueRe[iBlok][iElement] + a.ValueIm[iBlok][iElement] * b.ValueIm[iBlok][iElement];
+    DotImOMPA += a.ValueRe[iBlok][iElement] * b.ValueIm[iBlok][iElement] - a.ValueIm[iBlok][iElement] * b.ValueRe[iBlok][iElement];
   }
 #pragma omp parallel for private(iElement,iBlok) reduction(+ : DotReOMPB, DotImOMPB)
   for (iOMP = 0; iOMP < (int)(a.NBlok - 1); iOMP++)
@@ -929,12 +918,8 @@ void ComplexWaveFunctionDotProductSameBasis(const WaveFunctionType a, const Wave
     iBlok = (uint32_t) iOMP;
     for (iElement = 0; iElement < BlokSize; ++iElement)
     {
-      DotReOMPB +=
-        a.ValueRe[iBlok][iElement] * b.ValueRe[iBlok][iElement] +
-        a.ValueIm[iBlok][iElement] * b.ValueIm[iBlok][iElement];
-      DotImOMPB +=
-        a.ValueRe[iBlok][iElement] * b.ValueIm[iBlok][iElement] -
-        a.ValueIm[iBlok][iElement] * b.ValueRe[iBlok][iElement];
+      DotReOMPB += a.ValueRe[iBlok][iElement] * b.ValueRe[iBlok][iElement] + a.ValueIm[iBlok][iElement] * b.ValueIm[iBlok][iElement];
+      DotImOMPB += a.ValueRe[iBlok][iElement] * b.ValueIm[iBlok][iElement] - a.ValueIm[iBlok][iElement] * b.ValueRe[iBlok][iElement];
     }
   }
   *DotRe = DotReOMPA + DotReOMPB;
