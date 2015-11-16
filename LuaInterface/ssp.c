@@ -172,7 +172,7 @@ static int LuaHelp(lua_State *L)
   }
   if(len==1)
   {
-    char const *Help =lua_tostring(L, 1);
+    char const *Help =luaL_checkstring(L, 1);
     if (strcmp(Help, "NewOperator") == 0)
     {
       printf("NewOperator()\n");

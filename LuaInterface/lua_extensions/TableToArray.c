@@ -639,6 +639,43 @@ void * LuaFindOptionsInTable(lua_State * L, int narg, char* token, char* type)
   return buff;
 }
 
+/*  test if element at position narg of the stack could be a list of options
+ *  returns 1 if:
+ *    it is a table
+ *    each element of that table is a table with two elements
+ *      the first element of each table of length two is a string
+ */
+int32_t LuaTestOptionsList(lua_State *L, int narg)
+{
+  uint32_t i,len;
+  if(!(lua_istable(L, narg))) return 0;
+  len = (uint32_t)lua_objlen(L, narg);
+  for(i=1;i<=len;i++)
+  {
+    lua_rawgeti(L, narg, i);
+    if(!(lua_istable(L, -1)))
+    {
+      lua_pop(L,1);
+      return 0;
+    }
+    if(!(((int)lua_objlen(L, -1))==2))
+    {
+      lua_pop(L,1);
+      return 0;
+    }
+    lua_rawgeti(L,-1,1);
+    if(!(lua_type(L, -1)==LUA_TSTRING))
+    {
+      lua_pop(L,1);
+      lua_pop(L,1);
+      return 0;
+    }
+    lua_pop(L,1);
+    lua_pop(L,1);
+  }
+  return 1;
+}
+
 int32_t LuaCheckOptions(lua_State *L, int narg, LuaOptionsType *Options)
 {
   char *tokenread, *Buffer;

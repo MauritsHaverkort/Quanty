@@ -273,8 +273,7 @@ int StreamPrintRealMatrixToBitmap(MatrixType M, FILE * stream, void (*RealToRGBC
 /*  Print a Matrix to a file as a bitmap with collor coding acording to the function RealToRGBColor
  *
  */
-int FilePrintRealMatrixToBitmap(MatrixType M, const char *const flname,
-                                void (*RealToRGBColor) (double, unsigned char *))
+int FilePrintRealMatrixToBitmap(MatrixType M, const char *const flname, void (*RealToRGBColor) (double, unsigned char *))
 {
   FILE  *stream;
   uint32_t retval;
@@ -299,7 +298,7 @@ uint32_t PrintRealMatrixToBitmap(MatrixType M, void (*RealToRGBColor) (double, u
 
 
 
-/*  Print a Matrix to a stream as a bitmap with collor coding acording to the function RealToRGBColor
+/*  Print a list of 3 Matrices (RGB) to a stream as a bitmap with collor coding acording to the function RealToRGBColor
  *
  */
 int StreamPrintReal3MatrixToBitmap(MatrixType * M, FILE * stream, void (*Real3ToRGBColor) (double *, unsigned char *))
@@ -372,8 +371,7 @@ int StreamPrintReal3MatrixToBitmap(MatrixType * M, FILE * stream, void (*Real3To
 /*  Print a Matrix to a file as a bitmap with collor coding acording to the function RealToRGBColor
  *
  */
-int FilePrintReal3MatrixToBitmap(MatrixType * M, const char *const flname,
-                                 void (*Real3ToRGBColor) (double *, unsigned char *))
+int FilePrintReal3MatrixToBitmap(MatrixType * M, const char *const flname, void (*Real3ToRGBColor) (double *, unsigned char *))
 {
   FILE  *stream;
   uint32_t retval;
@@ -393,4 +391,62 @@ int FilePrintReal3MatrixToBitmap(MatrixType * M, const char *const flname,
 uint32_t PrintReal3MatrixToBitmap(MatrixType * M, void (*Real3ToRGBColor) (double *, unsigned char *))
 {
   return StreamPrintReal3MatrixToBitmap(M, stdout, Real3ToRGBColor);
+}
+
+
+/*  Print a Matrix to a stream as a bitmap with collor coding acording to the function RealToRGBColor
+ *  Rescale the matrix to get a bitmap of size NW by NH
+ *  if NW (NH) larger than the size of the matrix use a weighted average of the point left and right in the matrix
+ *  if NW (NH) smaller than the size of the matrix use a weighted average over several points in the original matrix
+ */
+int StreamPrintRealMatrixToBitmapRescale(MatrixType M, FILE * stream, void (*RealToRGBColor) (double, unsigned char *), uint32_t const NW, uint32_t const NH)
+{
+  //TODO:
+  return 0;
+}
+int FilePrintRealMatrixToBitmapRescale(MatrixType M, const char *const flname, void (*RealToRGBColor) (double, unsigned char *), uint32_t const NW, uint32_t const NH)
+{
+  FILE  *stream;
+  uint32_t retval;
+  if ((stream = fopen(flname, "wb")) == NULL)
+  {
+    printf("ERROR\nCan't open %s for writing with mode %s.\n", flname, "wb");
+    return 1;
+  }
+  retval = StreamPrintRealMatrixToBitmapRescale(M, stream, RealToRGBColor,NW,NH);
+  fclose(stream);
+  return retval;
+}
+uint32_t PrintRealMatrixToBitmapRescale(MatrixType M, void (*RealToRGBColor) (double, unsigned char *), uint32_t const NW, uint32_t const NH)
+{
+  return StreamPrintRealMatrixToBitmapRescale(M, stdout, RealToRGBColor,NW,NH);
+}
+
+
+/*  Print a list of 3 Matrices to a stream as a bitmap with collor coding acording to the function RealToRGBColor
+ *  Rescale the matrix to get a bitmap of size NW by NH
+ *  if NW (NH) larger than the size of the matrix use a weighted average of the point left and right in the matrix
+ *  if NW (NH) smaller than the size of the matrix use a weighted average over several points in the original matrix
+ */
+int StreamPrintReal3MatrixToBitmapRescale(MatrixType * M, FILE * stream, void (*RealToRGBColor) (double, unsigned char *), uint32_t const NW, uint32_t const NH)
+{
+  //TODO:
+  return 0;
+}
+int FilePrintReal3MatrixToBitmapRescale(MatrixType * M, const char *const flname, void (*RealToRGBColor) (double, unsigned char *), uint32_t const NW, uint32_t const NH)
+{
+  FILE  *stream;
+  uint32_t retval;
+  if ((stream = fopen(flname, "wb")) == NULL)
+  {
+    printf("ERROR\nCan't open %s for writing with mode %s.\n", flname, "wb");
+    return 1;
+  }
+  retval = StreamPrintReal3MatrixToBitmapRescale(M, stream, RealToRGBColor,NW,NH);
+  fclose(stream);
+  return retval;
+}
+uint32_t PrintReal3MatrixToBitmapRescale(MatrixType * M, void (*RealToRGBColor) (double, unsigned char *), uint32_t const NW, uint32_t const NH)
+{
+  return StreamPrintReal3MatrixToBitmapRescale(M, stdout, RealToRGBColor,NW,NH);
 }

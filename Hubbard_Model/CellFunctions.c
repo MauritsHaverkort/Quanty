@@ -246,6 +246,7 @@ uint32_t SpectraSiteFourierTransform(const CrystalStructureSuperCellType SC, Spe
 uint32_t OperatorSiteFourierTransform(const CrystalStructureSuperCellType SC, const OperatorType Oi, OperatorType * Ok,
                                       uint32_t(*QDetNotOrdered) (uint16_t, uint16_t, uint32_t))
 {
+  //TODO: test if function servived changes in MappedOperatorAddNormalOrder
   uint32_t i, j, k, FermionDegeneracy, BosonDegeneracy;
   MatrixType U;
   U.Ni = Oi.NFermion + Oi.NBoson;

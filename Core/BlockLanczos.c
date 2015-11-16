@@ -1281,7 +1281,7 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylovComplex(const OperatorType H,
   FreeCompactMatrix(&HKrylov);
   for(i=Npsi;i<Npsi+NKrylovNow;i++)
   {
-    WaveFunctionFreeValues(&v[i]);
+    ComplexWaveFunctionFreeValues(&v[i]);
   }
   return 0;
 }

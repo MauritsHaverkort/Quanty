@@ -221,24 +221,89 @@ static int LuaOperatorNewSmin(lua_State * L)
 
 static int LuaOperatorNewLx(lua_State * L)
 {
+  struct
+  {
+    char *basis;
+    uint32_t ibasis;   //  0  000 SphericalHarmonicY, alternating dn,up from m=-l to m=l
+                       //  1  001 TesseralHarmonicZ,  alternating dn,up sin first, than cos
+                       //  2  010 KubicHarmonicK,     alternatind dn,up order according to irep a,b,e,t
+                       //  3  011 jjz basis,          j=l-1/2 first, than j=l+1/2 from m=-j to m=j
+  } Options;
+  Options.ibasis=0;
   OperatorType *op;
   uint32_t Ntemp;
   uint32_t NFermion = (uint32_t)luaL_checkunsigned(L, 1);
   uint32_t NShell,l;
   uint16_t *LindexUp, *LindexDn;
+  LuaOptionsType LuaOperatorOptions[]={
+    {"basis","char*",&(Options.basis)},
+    {NULL, NULL, NULL}};
+  if(LuaTestOptionsList(L, -1))
+  {
+    LuaCheckOptions(L, -1, LuaOperatorOptions);
+    if((strcmp(Options.basis, "SphericalHarmonicsY")==0)||(strcmp(Options.basis, "SphericalHarmonics")==0)||(strcmp(Options.basis, "BasisY")==0)||(strcmp(Options.basis, "Y")==0))
+    {
+      Options.ibasis=0;
+    }
+    else if((strcmp(Options.basis, "TesseralHarmonicsZ")==0)||(strcmp(Options.basis, "TesseralHarmonics")==0)||(strcmp(Options.basis, "BasisZ")==0)||(strcmp(Options.basis, "Z")==0))
+    {
+      Options.ibasis=1;
+    }
+    else if((strcmp(Options.basis, "KubicHarmonicsK")==0)||(strcmp(Options.basis, "KubicHarmonics")==0)||(strcmp(Options.basis, "BasisK")==0)||(strcmp(Options.basis, "K")==0)||(strcmp(Options.basis, "CubicHarmonicsK")==0)||(strcmp(Options.basis, "CubicHarmonics")==0))
+    {
+      Options.ibasis=2;
+    }
+    else if((strcmp(Options.basis, "jjz")==0)||(strcmp(Options.basis, "Basisjjz")==0)||(strcmp(Options.basis, "Basisj")==0)||(strcmp(Options.basis, "j")==0))
+    {
+      Options.ibasis=3;
+    }
+    else
+    {
+      return luaL_error(L, "Unrecognized value for basis %s, use SphericalHarmonicsY, TesseralHarmonicsZ, KubicHarmonicsK, or jjz\n",Options.basis);
+    }
+  }
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(NShell!=Ntemp)
+  if(Options.ibasis==3)
   {
-    return luaL_error(L, "Error in LuaOperatorNewLx, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    if((NShell+2)!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewLx, Lenght of IndexJmin (%d) is not equal to lenght of IndexJplus-2 (%d)\n",NShell,Ntemp);
+    }
+    l=NShell/2;
+    if((2*l)!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewLx, Lenght of IndexJmin (%d) is not equal to 2l\n",NShell);
+    }
   }
-  l=(NShell-1)/2;
-  if(2*l+1!=NShell)
+  else
   {
-    return luaL_error(L, "Error in LuaOperatorNewLx, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    if(NShell!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewLx, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    }
+    l=(NShell-1)/2;
+    if(2*l+1!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewLx, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    }
   }
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-  CreateOperatorLx(NFermion, l, LindexUp, LindexDn, op);
+  switch (Options.ibasis)
+  {
+    case 0:
+      CreateOperatorLx(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 1:
+      CreateOperatorLxZ(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 2:
+      CreateOperatorLxK(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 3:
+      CreateOperatorLxjjz(NFermion, l, LindexUp, LindexDn, op);
+      break;
+  }
   luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
@@ -977,6 +1042,43 @@ static int LuaOperatorSub(lua_State * L)
   }
 }
 
+/* divide an operator by a number or complex number
+ *
+ */
+static int LuaOperatorDiv(lua_State * L)
+{
+  if (lua_isnumber(L, 1))
+  {
+    return luaL_error(L, "Error, number devided by an operator\n");
+  }
+  if(lua_type(L,1)==LUA_TTABLE)
+  {
+    return luaL_error(L, "Error, table devided by an operator\n");
+  }
+  if (lua_isnumber(L, 2))
+  {
+    double b = (double) luaL_checknumber(L, 2);
+    OperatorType *O = (OperatorType*) luaL_checkudata(L, 1, "Operator_Type");
+    OperatorType *ONew;
+    ONew = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+    OperatorCopy(ONew, *O);
+    OperatorScale(ONew, 1/b, 0);
+    luaL_setmetatable(L, "Operator_Type");
+    return 1;
+  }
+  if (luaL_testudata(L, 2, "Complex_Type") != NULL)
+  {
+    Complex16 *b = (Complex16 *) luaL_checkudata(L, 2, "Complex_Type");
+    OperatorType *O = (OperatorType*) luaL_checkudata(L, 1, "Operator_Type");
+    OperatorType *ONew;
+    ONew = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+    OperatorCopy(ONew, *O);
+    OperatorScale(ONew, b->Re/(Sqr(b->Re)+Sqr(b->Im)), -b->Im/(Sqr(b->Re)+Sqr(b->Im)));
+    luaL_setmetatable(L, "Operator_Type");
+    return 1;
+  }
+  return luaL_error(L, "Error, operator devided by an object of unrecognized type\n");
+}
 
 /*  multiplies two objects, whereby one is an operator
  *  a (complex) number times operator scales the operator - multiplication commutes
@@ -1327,6 +1429,7 @@ static const struct luaL_Reg Operator_meta[] = {
   {"__add", LuaOperatorAdd},
   {"__sub", LuaOperatorSub},
   {"__mul", LuaOperatorMul},
+  {"__div", LuaOperatorDiv},
   {"__unm", LuaOperatorUnm},
   {"__index", LuaOperatorIndex},
   {"__newindex", LuaOperatorNewIndex},

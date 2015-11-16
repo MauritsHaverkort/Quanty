@@ -759,9 +759,12 @@ LUALIB_API const char *luaL_tolstring (lua_State *L, int idx, size_t *len) {
       case LUA_TNIL:
         lua_pushliteral(L, "nil");
         break;
+      case LUA_TTABLE:
+        //TODO: handle the printout of tables correctly, based on global settings for maximum depth and size
+        lua_pushfstring(L,"Add table print handler %s: %p", luaL_typename(L, idx), lua_topointer(L, idx));
+        break;
       default:
-        lua_pushfstring(L, "%s: %p", luaL_typename(L, idx),
-                                            lua_topointer(L, idx));
+        lua_pushfstring(L, "%s: %p", luaL_typename(L, idx), lua_topointer(L, idx));
         break;
     }
   }
