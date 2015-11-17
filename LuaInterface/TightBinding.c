@@ -715,6 +715,11 @@ static int LuaTightBindingIndex(lua_State * L)
     //TODO: push a matrix to the stack as table representing Hk(kx,ky,kz) read options to define either constant or kx phase in the unit cell
     return 1;
   }
+  else if (strcmp(str, "NF")==0)
+  {
+      lua_pushinteger(L, a->NFermion);
+      return 1;
+  }
   return luaL_error(L, "Error index %s not found in TightBinding Object\n",str);
 }
 
