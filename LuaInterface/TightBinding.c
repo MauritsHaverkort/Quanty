@@ -22,6 +22,55 @@ static int LuaNewTightBinding(lua_State * L)
   return 1;
 }
 
+static int LuaFileReadStuttgartCTRL(lua_State * L)
+{
+  StuttgartCTRL *CTRL = NULL;
+  uint32_t len = (uint32_t)lua_gettop(L);
+  if(len!=1) return luaL_error(L, "Error in FileReadStuttgartCTRL(arg).\n The argument should be the file name.");
+  
+  const char *flname = luaL_checkstring(L, 1);
+  CTRL = (StuttgartCTRL*) lua_newuserdata(L, sizeof(StuttgartCTRL));
+  FileReadStuttgartCTRL(CTRL, flname);
+  luaL_setmetatable(L, "StuttgartCTRL_Type");
+  
+  return 1;
+}
+
+static int LuaFileReadStuttgartHAMR(lua_State * L)
+{
+  StuttgartHAMR *HAMR = NULL;
+  uint32_t len = (uint32_t)lua_gettop(L);
+  if(len!=1) return luaL_error(L, "Error in FileReadStuttgartHAMR(arg).\n The argument should be the file name.");
+  
+  const char *flname = luaL_checkstring(L, 1);
+  HAMR = (StuttgartHAMR*) lua_newuserdata(L, sizeof(StuttgartHAMR));
+  FileReadStuttgartHAMR(HAMR, flname);
+  luaL_setmetatable(L, "StuttgartHAMR_Type");
+  
+  return 1;
+}
+
+static int LuaTightBindingDefFromStuttgartCTRLHAMR(lua_State * L)
+{
+  TightBindingDef *TB;
+  StuttgartCTRL *CTRL = NULL;
+  StuttgartHAMR *HAMR = NULL;
+  uint32_t len = (uint32_t)lua_gettop(L);
+  if (len != 2)
+  {
+    return luaL_error(L, "Error in TightBindingDefFromStuttgartCTRLHAMR(arg).\nIt takes two arguments (CTRL and HAMR).");
+  }
+  
+  CTRL = (StuttgartCTRL *) luaL_checkudata(L, 1, "StuttgartCTRL_Type");
+  HAMR = (StuttgartHAMR *) luaL_checkudata(L, 2, "StuttgartHAMR_Type");
+  
+  TB = (TightBindingDef*) lua_newuserdata(L, sizeof(TightBindingDef));
+  TightBindingDefFromStuttgartCTRLHAMR(*CTRL, *HAMR, TB);
+  luaL_setmetatable(L, "TightBinding_Type");
+  
+  return 1;
+}
+
 
 /* on stack: 
  *   TB : TightBinding_Type
@@ -281,8 +330,8 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
     {
       if(AditionalOperator->NFermion!=a->NFermion) return luaL_error(L, "Error CreateClusterHamiltonian aditional operator should have the same number of spin-orbitals (%f) as the cluster has (%f)\n",(double)AditionalOperator->NFermion,(double)a->NFermion);
     }
-    U.Nj=H->NFermion;
-    U.Ni=AditionalOperator->NFermion;
+    U.Ni=H->NFermion;
+    U.Nj=AditionalOperator->NFermion;
     U.QComplex=0;
     InitMatrix(&U);
     for(i=0;i<SuperCell.NCell;i++)
@@ -717,8 +766,8 @@ static int LuaTightBindingIndex(lua_State * L)
   }
   else if (strcmp(str, "NF")==0)
   {
-      lua_pushinteger(L, a->NFermion);
-      return 1;
+    lua_pushinteger(L, a->NFermion);
+    return 1;
   }
   return luaL_error(L, "Error index %s not found in TightBinding Object\n",str);
 }
@@ -926,5 +975,13 @@ static const struct luaL_Reg TightBinding_meta[] = {
   {"__newindex", LuaTightBindingNewIndex},
   {"__tostring", LuaTightBindingToString},
   {"__gc", LuaTightBindingDestroy},
+  {NULL, NULL}
+};
+
+static const struct luaL_Reg StuttgartCTRL_meta[] = {
+  {NULL, NULL}
+};
+
+static const struct luaL_Reg StuttgartHAMR_meta[] = {
   {NULL, NULL}
 };
