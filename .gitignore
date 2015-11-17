@@ -1,5 +1,4 @@
-*.xccheckout
-*.xcodeproj
 *.xcscheme
+*.xccheckout
 *.xcuserstate
 *.plist
