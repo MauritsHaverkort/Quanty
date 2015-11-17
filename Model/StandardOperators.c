@@ -1,51 +1,8 @@
-/*  In the following functions the flag OrbitalSymmetry defines the atomic-like basis set used.
- *  Please not that in real calculations one very offten encounters some form of localize Wannier functions 
- *  that are similar to the atomic functions, but naturally not the same. It is those functions with the proper
- *  integrals I have in mind when labeling these.
- *
- *  Here all numbers are binary
- *    0*** 0**0 - No spin degeneracy
- *    0*** 0**1 - With spin degeneracy
- *    0*** 0*10 - only spin up is included
- *    0*** 0*00 - only spin down is included
- *    0*** 0*01 - Aternating down spin up spin per orbital
- *    0*** 0*11 - First a blok of down spin for all orbitals, then a block of up spin for all orbitals
- *
- *    0*00 0*** - Basis of Spherical Harmonics indexed from lz=-l to lz=l
- *    0*10 0*** - Basis of Tesseral Harmonics indexed accourding to ...
- *    0*11 0*** - Basis of Cubic Harmonics indexed according to ...
- *
- *    1*** 1*** - Basises where spin and orbital states are mixed, i.e. the j jz basis states
- */
-
-
-
-
-/* atomic orbitals are entered on several possible basis sets.
- * The flag OrbitalSymmetry can be set accordingly.
- *
- * Bit wise
- * 1)
- * 2) 00 spin degenerate: 01 only down 11: only up
- * 3)
- * 4) 00 complex spherical harmonics 01: tesseral harmonics 10: cubic harmonics 11: undifined
- *
- * Integer wise:
- * OrbitalSymmetry &  1 ==  0 => Spin degenerate basis all functions are alternated dn up dn up dn etc.
- * OrbitalSymmetry &  1 ==  1 => No spin degeneracy, next bit decides if up or dn is included
- * OrbitalSymmetry &  3 ==  3 => No spin degeneracy, only spin up Sz= 1/2 included
- * OribtalSymmetry &  3 ==  1 => No spin degeneracy, only spin dn Sz=-1/2 included
- * OrbitalSymmetry & 12 ==  0 => Basis of complex spherical harmonics ordered from ml=-l to ml=l
- * OrbitalSymmetry & 12 ==  4 => Basis of tesseral harmonics ordered ....
- * OrbitalSymmetry & 12 ==  8 => Basis of cubic harmonics ordered ...
- * OrbitalSymmetry & 12 == 12 => non defined
- */
 
 
 uint16_t lmsigmaToIndex(int const l, int const m, int const sigma, uint16_t const *LindexUp, uint16_t const *LindexDn)
 {
-  if (sigma > 0)
-    return LindexUp[l + m];
+  if (sigma > 0) return LindexUp[l + m];
   return LindexDn[l + m];
 }
 
@@ -58,8 +15,7 @@ uint16_t lmsigmaToIndex(int const l, int const m, int const sigma, uint16_t cons
  *    *F           - An array of length L+1 with the Slater integrals, F[0], F[2], F[4], ...
  *    The operator U is initialized on input
  */
-uint32_t CreateOperatorCoulombSingleShell(uint32_t const NFermion, uint32_t const L, uint16_t const *LindexUp,
-                                          uint16_t const *LindexDn, double const *F, OperatorType * const U)
+uint32_t CreateOperatorCoulombSingleShell(uint32_t const NFermion, uint32_t const L, uint16_t const *LindexUp, uint16_t const *LindexDn, double const *F, OperatorType * const U)
 {
   uint16_t oadd[4];
   double val;
@@ -105,10 +61,7 @@ uint32_t CreateOperatorCoulombSingleShell(uint32_t const NFermion, uint32_t cons
   return 0;
 }
 
-uint32_t CreateOperatorCoulombTwoShellsConstantOccupation(uint32_t const NFermion, uint32_t const L1, uint32_t const L2,
-                                                          uint16_t const *Lindex1Up, uint16_t const *Lindex1Dn,
-                                                          uint16_t const *Lindex2Up, uint16_t const *Lindex2Dn,
-                                                          double const *F, double const *G, OperatorType * const U)
+uint32_t CreateOperatorCoulombTwoShellsConstantOccupation(uint32_t const NFermion, uint32_t const L1, uint32_t const L2, uint16_t const *Lindex1Up, uint16_t const *Lindex1Dn, uint16_t const *Lindex2Up, uint16_t const *Lindex2Dn, double const *F, double const *G, OperatorType * const U)
 {
   uint16_t oadd[4];
   double val;
@@ -203,8 +156,7 @@ uint32_t CreateOperatorCoulombTwoShellsConstantOccupation(uint32_t const NFermio
  *  Output:
  *    Operators acting on NFermions representing the spin operators
  */
-uint32_t CreateOperatorSx(uint32_t NFermion, uint32_t NSpin, uint16_t * SpinUp, uint16_t * SpinDn,
-                          OperatorType * const Sx)
+uint32_t CreateOperatorSx(uint32_t NFermion, uint32_t NSpin, uint16_t * SpinUp, uint16_t * SpinDn, OperatorType * const Sx)
 {
   uint32_t i;
   uint16_t oadd[2];
@@ -225,8 +177,7 @@ uint32_t CreateOperatorSx(uint32_t NFermion, uint32_t NSpin, uint16_t * SpinUp, 
   return 0;
 }
 
-uint32_t CreateOperatorSy(uint32_t NFermion, uint32_t NSpin, uint16_t * SpinUp, uint16_t * SpinDn,
-                          OperatorType * const Sy)
+uint32_t CreateOperatorSy(uint32_t NFermion, uint32_t NSpin, uint16_t * SpinUp, uint16_t * SpinDn, OperatorType * const Sy)
 {
   uint32_t i;
   uint16_t oadd[2];
@@ -249,8 +200,7 @@ uint32_t CreateOperatorSy(uint32_t NFermion, uint32_t NSpin, uint16_t * SpinUp, 
   return 0;
 }
 
-uint32_t CreateOperatorSz(uint32_t NFermion, uint32_t NSpin, uint16_t * SpinUp, uint16_t * SpinDn,
-                          OperatorType * const Sz)
+uint32_t CreateOperatorSz(uint32_t NFermion, uint32_t NSpin, uint16_t * SpinUp, uint16_t * SpinDn, OperatorType * const Sz)
 {
   uint32_t i;
   uint16_t oadd[2];
@@ -271,8 +221,7 @@ uint32_t CreateOperatorSz(uint32_t NFermion, uint32_t NSpin, uint16_t * SpinUp, 
   return 0;
 }
 
-uint32_t CreateOperatorSsqr(uint32_t NFermion, uint32_t NSpin, uint16_t * SpinUp, uint16_t * SpinDn,
-                            OperatorType * const Ssqr)
+uint32_t CreateOperatorSsqr(uint32_t NFermion, uint32_t NSpin, uint16_t * SpinUp, uint16_t * SpinDn, OperatorType * const Ssqr)
 {
   uint32_t i, j;
   uint16_t oadd[4];
@@ -322,8 +271,7 @@ uint32_t CreateOperatorSsqr(uint32_t NFermion, uint32_t NSpin, uint16_t * SpinUp
   return 0;
 }
 
-uint32_t CreateOperatorSplus(uint32_t NFermion, uint32_t NSpin, uint16_t * SpinUp, uint16_t * SpinDn,
-                             OperatorType * const Splus)
+uint32_t CreateOperatorSplus(uint32_t NFermion, uint32_t NSpin, uint16_t * SpinUp, uint16_t * SpinDn, OperatorType * const Splus)
 {
   uint32_t i;
   uint16_t oadd[2];
@@ -341,8 +289,7 @@ uint32_t CreateOperatorSplus(uint32_t NFermion, uint32_t NSpin, uint16_t * SpinU
   return 0;
 }
 
-uint32_t CreateOperatorSmin(uint32_t NFermion, uint32_t NSpin, uint16_t * SpinUp, uint16_t * SpinDn,
-                            OperatorType * const Smin)
+uint32_t CreateOperatorSmin(uint32_t NFermion, uint32_t NSpin, uint16_t * SpinUp, uint16_t * SpinDn, OperatorType * const Smin)
 {
   uint32_t i;
   uint16_t oadd[2];
@@ -360,9 +307,7 @@ uint32_t CreateOperatorSmin(uint32_t NFermion, uint32_t NSpin, uint16_t * SpinUp
   return 0;
 }
 
-uint32_t CreateSpinOperators(uint32_t NFermion, uint32_t NSpin, uint16_t * SpinUp, uint16_t * SpinDn,
-                             OperatorType * const Sx, OperatorType * const Sy, OperatorType * const Sz,
-                             OperatorType * const S2)
+uint32_t CreateSpinOperators(uint32_t NFermion, uint32_t NSpin, uint16_t * SpinUp, uint16_t * SpinDn, OperatorType * const Sx, OperatorType * const Sy, OperatorType * const Sz, OperatorType * const S2)
 {
   uint32_t i;
   uint16_t oadd[2];
@@ -585,8 +530,7 @@ uint32_t CreateOperatorLminNoSpin(uint32_t NFermion, uint32_t L, uint16_t * Lind
  *    *LindexDn    - An array of legnth 2L+1 indexing the ml values from -L to L with spin down
  *    The operators L*** are not initialized on input
  */
-uint32_t CreateOperatorLx(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn,
-                          OperatorType * const Lx)
+uint32_t CreateOperatorLx(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Lx)
 {
   uint32_t i;
   uint16_t oadd[2];
@@ -615,9 +559,26 @@ uint32_t CreateOperatorLx(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, ui
   OperatorChop(Lx, 0.001);
   return 0;
 }
+uint32_t CreateOperatorLxY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Lx)
+{
+  return CreateOperatorLx(NFermion, L, LindexUp, LindexDn, Lx);
+}
+uint32_t CreateOperatorLxK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Lx)
+{
+  return 0;
+}
+uint32_t CreateOperatorLxZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Lx)
+{
+  return 0;
+}
+uint32_t CreateOperatorLxjjz(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Lx)
+{
+  return 0;
+}
 
-uint32_t CreateOperatorLy(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn,
-                          OperatorType * const Ly)
+
+
+uint32_t CreateOperatorLy(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Ly)
 {
   uint32_t i;
   uint16_t oadd[2];
@@ -649,8 +610,7 @@ uint32_t CreateOperatorLy(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, ui
   return 0;
 }
 
-uint32_t CreateOperatorLz(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn,
-                          OperatorType * const Lz)
+uint32_t CreateOperatorLz(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Lz)
 {
   uint32_t i;
   uint16_t oadd[2];
@@ -1284,8 +1244,7 @@ uint32_t CreateOperatorTsqr(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, 
 
 
 
-uint32_t CreateOperatorldots(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn,
-                             OperatorType * const ldots)
+uint32_t CreateOperatorldots(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const ldots)
 {
   uint32_t i;
   double mi, l;
@@ -1319,9 +1278,7 @@ uint32_t CreateOperatorldots(uint32_t NFermion, uint32_t L, uint16_t * LindexUp,
   return 0;
 }
 
-uint32_t CreateOperatorCF(uint32_t const NFermion, uint32_t LCr, uint32_t LAn, uint16_t * LCrindexUp,
-                          uint16_t * LCrindexDn, uint16_t * LAnindexUp, uint16_t * LAnindexDn,
-                          HarmonicsExpansion const Akm, OperatorType * const CF)
+uint32_t CreateOperatorCF(uint32_t const NFermion, uint32_t LCr, uint32_t LAn, uint16_t * LCrindexUp, uint16_t * LCrindexDn, uint16_t * LAnindexUp, uint16_t * LAnindexDn, HarmonicsExpansion const Akm, OperatorType * const CF)
 {
   uint32_t i;
   uint16_t oadd[2];

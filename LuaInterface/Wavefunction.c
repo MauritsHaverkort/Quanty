@@ -89,6 +89,46 @@ static int LuaWavefunctionSub(lua_State * L)
   return 1;
 }
 
+
+
+/* divide a wavefunction by a number or complex number
+ *
+ */
+static int LuaWavefunctionDiv(lua_State * L)
+{
+  if (lua_isnumber(L, 1))
+  {
+    return luaL_error(L, "Error, number devided by an operator\n");
+  }
+  if(lua_type(L,1)==LUA_TTABLE)
+  {
+    return luaL_error(L, "Error, table devided by an operator\n");
+  }
+  if (lua_isnumber(L, 2))
+  {
+    double b = (double) luaL_checknumber(L, 2);
+    WaveFunctionType *psi = (WaveFunctionType*) luaL_checkudata(L, 1, "Wavefunction_Type");
+    WaveFunctionType *psiNew;
+    psiNew = (WaveFunctionType *) lua_newuserdata(L, sizeof(WaveFunctionType));
+    WaveFunctionCopy(*psi, psiNew);
+    WaveFunctionMultiply(psiNew, 1/b, 0);
+    luaL_setmetatable(L, "Wavefunction_Type");
+    return 1;
+  }
+  if (luaL_testudata(L, 2, "Complex_Type") != NULL)
+  {
+    Complex16 *b = (Complex16 *) luaL_checkudata(L, 2, "Complex_Type");
+    WaveFunctionType *psi = (WaveFunctionType*) luaL_checkudata(L, 1, "Wavefunction_Type");
+    WaveFunctionType *psiNew;
+    psiNew = (WaveFunctionType *) lua_newuserdata(L, sizeof(WaveFunctionType));
+    WaveFunctionCopy(*psi, psiNew);
+    WaveFunctionMultiply(psiNew, b->Re/(Sqr(b->Re)+Sqr(b->Im)), -b->Im/(Sqr(b->Re)+Sqr(b->Im)));
+    luaL_setmetatable(L, "Wavefunction_Type");
+    return 1;
+  }
+  return luaL_error(L, "Error, wavefunction devided by an object of unrecognized type\n");
+}
+
 /*  multiplies two objects, whereby one is a wavefunction
  *  a (complex) number times wave-function scales the wave-function - multiplication commutes
  *  a wavefunction times wave-function is implemented as: psiA * psiB == Conjugate(psiA) . psiB - cummutation leads to complex conjugation
@@ -430,6 +470,7 @@ static const struct luaL_Reg Wavefunction_meta[] = {
   {"__add", LuaWavefunctionAdd},
   {"__sub", LuaWavefunctionSub},
   {"__mul", LuaWavefunctionMul},
+  {"__div", LuaWavefunctionDiv},
   {"__unm", LuaWavefunctionUnm},
   {"__index", LuaWavefunctionIndex},
   {"__newindex", LuaWavefunctionNewIndex},

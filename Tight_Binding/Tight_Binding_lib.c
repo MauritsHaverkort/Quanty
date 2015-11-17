@@ -1344,9 +1344,7 @@ int TightBindingFermiCharacterUnfolding(TightBindingDef A, double Emin, double E
 
 
 
-int TightBindingDOSCharacter(TightBindingDef A, int Nk[3], SpectraType * DOS, int Ncharacter,
-                             int (*EigenFunctionToCharacters) (TightBindingDef, MatrixType, double *, MatrixType,
-                                                               MatrixType *))
+int TightBindingDOSCharacter(TightBindingDef A, int Nk[3], SpectraType * DOS, int Ncharacter, int (*EigenFunctionToCharacters) (TightBindingDef, MatrixType, double *, MatrixType, MatrixType *))
 {
   MatrixType H, T, TempChar;
   double q[3], val[A.NFermion];
@@ -1405,10 +1403,7 @@ int TightBindingDOSCharacter(TightBindingDef A, int Nk[3], SpectraType * DOS, in
   return 0;
 }
 
-int TightBindingBANDSCharacter(TightBindingDef A, BandstructurePathType kList, MatrixType * BANDS, int Ncharacter,
-                               MatrixType Character[], int (*EigenFunctionToCharacters) (TightBindingDef, MatrixType,
-                                                                                         double *, MatrixType,
-                                                                                         MatrixType *))
+int TightBindingBANDSCharacter(TightBindingDef A, BandstructurePathType kList, MatrixType * BANDS, int Ncharacter, MatrixType Character[], int (*EigenFunctionToCharacters) (TightBindingDef, MatrixType, double *, MatrixType, MatrixType *))
 {
   int    iq, iqpath, Nqtot, iqtot, ival, ichar;
   double q[3], val[A.NFermion];

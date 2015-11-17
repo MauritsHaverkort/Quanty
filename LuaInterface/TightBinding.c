@@ -23,12 +23,50 @@ static int LuaNewTightBinding(lua_State * L)
 }
 
 
-/*
- *
+/* on stack: 
+ *   TB : TightBinding_Type
+ *   {Emin,Emax,NE}
+ *   Options
+ *       "Nk" -> {Nkx,Nky,Nkz} number of k-points       standard {40,40,40}
+ *       Method -> "mesh", ...                          standard "mesh"
+ *       Character -> {matrix} or "full" or "total" standard "full" rho is psi^* (x) psi, rho2 = M^T . psi^* (x) psi . M^*
+ *       Broadening -> "None", {"Gauss",FMHM}, {"Lorentz, FWHM}
+ *   returns a Spectra_Type
  */
-static int LuaCalculateDOS(lua_State *L)
+static int LuaCalculateG(lua_State *L)
 {
-  //TODO:
+  //TODO: all
+  struct
+  {
+    double Nk[3];
+    char Method[64];
+    char Character[64];
+    char Broadening[64];
+    double FWHM;
+    double Emin;
+    double Emax;
+    uint32_t NE;
+  } Options;
+  Options.Nk[0]=40;
+  Options.Nk[1]=40;
+  Options.Nk[2]=40;
+  strcpy(Options.Method,     "Mesh");
+  strcpy(Options.Character,  "Full");
+  strcpy(Options.Broadening, "None");
+  Options.FWHM=0;
+  Options.Emin=-10;
+  Options.Emax=10;
+  Options.NE=2000;
+  LuaOptionsType LuaCalculateGOptions[]={
+    {"Nk","array-uint32_t-3",&(Options.Nk[0])},
+    {"Method","char*",&(Options.Method[0])},
+    {"Character","char*",&(Options.Character[0])},
+    {"Broadening", "char*", &(Options.Broadening[0])},
+    {"FWHM","double",&(Options.FWHM)},
+    {"Emin","double",&(Options.Emin)},
+    {"Emax","double",&(Options.Emax)},
+    {"NE","uint32_t",&(Options.NE)},
+    {NULL, NULL, NULL}};
   
   return 1;
 }
@@ -38,7 +76,7 @@ static int LuaCalculateDOS(lua_State *L)
  */
 static int LuaCalculateBands(lua_State *L)
 {
-  //TODO:
+  //TODO: all
   
   return 1;
 }
@@ -48,7 +86,7 @@ static int LuaCalculateBands(lua_State *L)
  */
 static int LuaCalculateFermi(lua_State *L)
 {
-  //TODO:
+  //TODO: all
   
   return 1;
 }
@@ -56,11 +94,9 @@ static int LuaCalculateFermi(lua_State *L)
 /*
  *
  */
-static int LuaCalculateG(lua_State *L)
+static int LuaCalculateDOS(lua_State *L)
 {
-  //TODO:
-  
-  return 1;
+  return LuaCalculateG;
 }
 
 /*  Creates an Hamiltonian representing a real space cluster
@@ -256,6 +292,7 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
       {
         U.VRe[j][j+i*AditionalOperator->NFermion]=1;
       }
+      //TODO: test if function servived changes made in order in mappedOperatorAddNormalOrder. (i.e. row/column major)
       MappedOperatorAddNormalOrder(H, *AditionalOperator, U, &QDetNotOrderedFcFaBcBa);
     }
   }

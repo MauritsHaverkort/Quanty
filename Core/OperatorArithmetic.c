@@ -5336,8 +5336,7 @@ uint32_t OperatorAdd(OperatorType * const OA, const OperatorType OB, const doubl
  *  if OB.Maxlength > OA.Maxlength then OA is extended
  *  the values of NBitsKey are copied
  */
-uint32_t OperatorAddNormalOrder(OperatorType * const OA, const OperatorType OB, const double alphaRe,
-                                const double alphaIm, uint32_t(*QDetNotOrdered) (uint16_t, uint16_t, uint32_t))
+uint32_t OperatorAddNormalOrder(OperatorType * const OA, const OperatorType OB, const double alphaRe, const double alphaIm, uint32_t(*QDetNotOrdered) (uint16_t, uint16_t, uint32_t))
 {
   uint32_t i, j;
   for (i = OA->MaxLength + 1; i <= OB.MaxLength; i++)
@@ -5405,12 +5404,19 @@ uint32_t OperatorAddNormalOrder(OperatorType * const OA, const OperatorType OB, 
 
 
 
-/*
+/* OA <- OA + U OB
+ *  U is a (NFermionB+NBosonB)*(NFermionA+NBosonA) demensional matrix that defines the transformation
+ *  U.Ni = (NFermionA+NBosonA)
+ *  U.Nj = (NFermionB+NBosonB)
+ *  a_i        = \sum_j U_{i,j}   a_j
+ *  a_i^{\dag} = \sum_j U_{i,j}^* a_j^{dag}
  *
+ * an operator is given as sum_j (alpha_j pi_i a_i)
+ * this function rotates the creation/annihilation operator at i=level with the knowledge that i runs from 0 to lenght-1
  */
 uint32_t MappedOperatorFixedLengthAtLevel(OperatorFixedLengthType * const OA, const OperatorFixedLengthType OB, const MatrixType U, const uint32_t level, const uint32_t length)
 {
-  uint32_t i, j, k;
+  uint32_t j, i, k;
   OA->N = 0;
   OA->NAloc = 16;
   if (OB.QComplex)
@@ -5428,12 +5434,12 @@ uint32_t MappedOperatorFixedLengthAtLevel(OperatorFixedLengthType * const OA, co
         printf("Could not allocate memory for OA->o in MappedOperatorFixedLengthAtLevel\n");
         return 1;
       }
-      for (i = 0; i < OB.N; i++)
+      for (j= 0; j< OB.N; j++)
       {
-        for (j = 0; j < U.Nj; j++)
+        for (i = 0; i < U.Ni; i++)
         {
-          if (((fabs(U.VRe[(OB.o[i * length + level] & NotCrAnMask)][j]) +
-                fabs(U.VIm[(OB.o[i * length + level] & NotCrAnMask)][j])) * (fabs(OB.V[i].Re) + fabs(OB.V[i].Im))) >
+          if (((fabs(U.VRe[i][(OB.o[j * length + level] & NotCrAnMask)]) +
+                fabs(U.VIm[i][(OB.o[j * length + level] & NotCrAnMask)])) * (fabs(OB.V[j].Re) + fabs(OB.V[j].Im))) >
               (DBL_MIN * 10))
           {
             if (OA->N == OA->NAloc)
@@ -5450,30 +5456,30 @@ uint32_t MappedOperatorFixedLengthAtLevel(OperatorFixedLengthType * const OA, co
                 return 1;
               }
             }
-            if (OB.o[i * length + level] & CrAnMask)
-            {                   /* transformation of a creation operator a_j^{\dag} = \sum_i U_{i,j}^* a_i^{dag} */
+            if (OB.o[j* length + level] & CrAnMask)
+            {                   /* transformation of a creation operator a_i^{\dag} = \sum_j U_{i,j}^* a_j^{dag} */
               OA->V[OA->N].Re =
-                U.VRe[(OB.o[i * length + level] & NotCrAnMask)][j] * OB.V[i].Re +
-                U.VIm[(OB.o[i * length + level] & NotCrAnMask)][j] * OB.V[i].Im;
+                U.VRe[i][(OB.o[j* length + level] & NotCrAnMask)] * OB.V[j].Re +
+                U.VIm[i][(OB.o[j* length + level] & NotCrAnMask)] * OB.V[j].Im;
               OA->V[OA->N].Im =
-                U.VRe[(OB.o[i * length + level] & NotCrAnMask)][j] * OB.V[i].Im -
-                U.VIm[(OB.o[i * length + level] & NotCrAnMask)][j] * OB.V[i].Re;
+                U.VRe[i][(OB.o[j* length + level] & NotCrAnMask)] * OB.V[j].Im -
+                U.VIm[i][(OB.o[j* length + level] & NotCrAnMask)] * OB.V[j].Re;
             }
             else
-            {                   /* transformation of an annihilation operator a_j = \sum_i U_{i,j}   a_i */
+            {                   /* transformation of an annihilation operator a_i = \sum_j U_{i,j}   a_j */
               OA->V[OA->N].Re =
-                U.VRe[(OB.o[i * length + level] & NotCrAnMask)][j] * OB.V[i].Re -
-                U.VIm[(OB.o[i * length + level] & NotCrAnMask)][j] * OB.V[i].Im;
+                U.VRe[i][(OB.o[j * length + level] & NotCrAnMask)] * OB.V[j].Re -
+                U.VIm[i][(OB.o[j * length + level] & NotCrAnMask)] * OB.V[j].Im;
               OA->V[OA->N].Im =
-                U.VRe[(OB.o[i * length + level] & NotCrAnMask)][j] * OB.V[i].Im +
-                U.VIm[(OB.o[i * length + level] & NotCrAnMask)][j] * OB.V[i].Re;
+                U.VRe[i][(OB.o[j * length + level] & NotCrAnMask)] * OB.V[j].Im +
+                U.VIm[i][(OB.o[j * length + level] & NotCrAnMask)] * OB.V[j].Re;
             }
             for (k = 0; k < length; k++)
             {
-              OA->o[OA->N * length + k] = OB.o[i * length + k];
+              OA->o[OA->N * length + k] = OB.o[j * length + k];
             }
             OA->o[OA->N * length + level] &= CrAnMask;
-            OA->o[OA->N * length + level] |= j;
+            OA->o[OA->N * length + level] |= (uint16_t)i;
             OA->N++;
           }
         }
@@ -5492,11 +5498,11 @@ uint32_t MappedOperatorFixedLengthAtLevel(OperatorFixedLengthType * const OA, co
         printf("Could not allocate memory for OA->o in MappedOperatorFixedLengthAtLevel\n");
         return 1;
       }
-      for (i = 0; i < OB.N; i++)
+      for (j = 0; j < OB.N; j++)
       {
-        for (j = 0; j < U.Nj; j++)
+        for (i = 0; i < U.Ni; i++)
         {
-          if (((fabs(U.VRe[(OB.o[i * length + level] & NotCrAnMask)][j])) * (fabs(OB.V[i].Re) + fabs(OB.V[i].Im))) >
+          if (((fabs(U.VRe[i][(OB.o[j * length + level] & NotCrAnMask)])) * (fabs(OB.V[j].Re) + fabs(OB.V[j].Im))) >
               (DBL_MIN * 10))
           {
             if (OA->N == OA->NAloc)
@@ -5513,14 +5519,14 @@ uint32_t MappedOperatorFixedLengthAtLevel(OperatorFixedLengthType * const OA, co
                 return 1;
               }
             }
-            OA->V[OA->N].Re = U.VRe[(OB.o[i * length + level] & NotCrAnMask)][j] * OB.V[i].Re;
-            OA->V[OA->N].Im = U.VRe[(OB.o[i * length + level] & NotCrAnMask)][j] * OB.V[i].Im;
+            OA->V[OA->N].Re = U.VRe[i][(OB.o[j * length + level] & NotCrAnMask)] * OB.V[j].Re;
+            OA->V[OA->N].Im = U.VRe[i][(OB.o[j * length + level] & NotCrAnMask)] * OB.V[j].Im;
             for (k = 0; k < length; k++)
             {
-              OA->o[OA->N * length + k] = OB.o[i * length + k];
+              OA->o[OA->N * length + k] = OB.o[j * length + k];
             }
             OA->o[OA->N * length + level] &= CrAnMask;
-            OA->o[OA->N * length + level] |= j;
+            OA->o[OA->N * length + level] |= (uint16_t)i;
             OA->N++;
           }
         }
@@ -5542,12 +5548,12 @@ uint32_t MappedOperatorFixedLengthAtLevel(OperatorFixedLengthType * const OA, co
         printf("Could not allocate memory for OA->o in MappedOperatorFixedLengthAtLevel\n");
         return 1;
       }
-      for (i = 0; i < OB.N; i++)
+      for (j = 0; j < OB.N; j++)
       {
-        for (j = 0; j < U.Nj; j++)
+        for (i = 0; i < U.Ni; i++)
         {
-          if (((fabs(U.VRe[(OB.o[i * length + level] & NotCrAnMask)][j]) +
-                fabs(U.VIm[(OB.o[i * length + level] & NotCrAnMask)][j])) * fabs(OB.VRe[i])) > (DBL_MIN * 10))
+          if (((fabs(U.VRe[i][(OB.o[j * length + level] & NotCrAnMask)]) +
+                fabs(U.VIm[i][(OB.o[j * length + level] & NotCrAnMask)])) * fabs(OB.VRe[j])) > (DBL_MIN * 10))
           {
             if (OA->N == OA->NAloc)
             {
@@ -5563,22 +5569,22 @@ uint32_t MappedOperatorFixedLengthAtLevel(OperatorFixedLengthType * const OA, co
                 return 1;
               }
             }
-            if (OB.o[i * length + level] & CrAnMask)
+            if (OB.o[j * length + level] & CrAnMask)
             {                   /* transformation of a creation operator a_j^{\dag} = \sum_i U_{i,j}^* a_i^{dag} */
-              OA->V[OA->N].Re = U.VRe[(OB.o[i * length + level] & NotCrAnMask)][j] * OB.VRe[i];
-              OA->V[OA->N].Im = -U.VIm[(OB.o[i * length + level] & NotCrAnMask)][j] * OB.VRe[i];
+              OA->V[OA->N].Re =  U.VRe[i][(OB.o[j * length + level] & NotCrAnMask)] * OB.VRe[j];
+              OA->V[OA->N].Im = -U.VIm[i][(OB.o[j * length + level] & NotCrAnMask)] * OB.VRe[j];
             }
             else
             {                   /* transformation of an annihilation operator a_j = \sum_i U_{i,j}   a_i */
-              OA->V[OA->N].Re = U.VRe[(OB.o[i * length + level] & NotCrAnMask)][j] * OB.VRe[i];
-              OA->V[OA->N].Im = U.VIm[(OB.o[i * length + level] & NotCrAnMask)][j] * OB.VRe[i];
+              OA->V[OA->N].Re = U.VRe[i][(OB.o[j * length + level] & NotCrAnMask)] * OB.VRe[j];
+              OA->V[OA->N].Im = U.VIm[i][(OB.o[j * length + level] & NotCrAnMask)] * OB.VRe[j];
             }
             for (k = 0; k < length; k++)
             {
-              OA->o[OA->N * length + k] = OB.o[i * length + k];
+              OA->o[OA->N * length + k] = OB.o[j * length + k];
             }
             OA->o[OA->N * length + level] &= CrAnMask;
-            OA->o[OA->N * length + level] |= j;
+            OA->o[OA->N * length + level] |= (uint16_t)i;
             OA->N++;
           }
         }
@@ -5597,11 +5603,11 @@ uint32_t MappedOperatorFixedLengthAtLevel(OperatorFixedLengthType * const OA, co
         printf("Could not allocate memory for OA->o in MappedOperatorFixedLengthAtLevel\n");
         return 1;
       }
-      for (i = 0; i < OB.N; i++)
+      for (j = 0; j < OB.N; j++)
       {
-        for (j = 0; j < U.Nj; j++)
+        for (i = 0; i < U.Ni; i++)
         {
-          if (fabs(U.VRe[(OB.o[i * length + level] & NotCrAnMask)][j] * OB.VRe[i]) > (DBL_MIN * 10))
+          if (fabs(U.VRe[i][(OB.o[j * length + level] & NotCrAnMask)] * OB.VRe[j]) > (DBL_MIN * 10))
           {
             if (OA->N == OA->NAloc)
             {
@@ -5617,13 +5623,13 @@ uint32_t MappedOperatorFixedLengthAtLevel(OperatorFixedLengthType * const OA, co
                 return 1;
               }
             }
-            OA->VRe[OA->N] = U.VRe[(OB.o[i * length + level] & NotCrAnMask)][j] * OB.VRe[i];
+            OA->VRe[OA->N] = U.VRe[i][(OB.o[j * length + level] & NotCrAnMask)] * OB.VRe[j];
             for (k = 0; k < length; k++)
             {
-              OA->o[OA->N * length + k] = OB.o[i * length + k];
+              OA->o[OA->N * length + k] = OB.o[j * length + k];
             }
             OA->o[OA->N * length + level] &= CrAnMask;
-            OA->o[OA->N * length + level] |= j;
+            OA->o[OA->N * length + level] |= (uint16_t)i;
             OA->N++;
           }
         }
@@ -5636,8 +5642,10 @@ uint32_t MappedOperatorFixedLengthAtLevel(OperatorFixedLengthType * const OA, co
 
 /* OA <- OA + U OB
  *  U is a (NFermionB+NBosonB)*(NFermionA+NBosonA) demensional matrix that defines the transformation
- *  a_j        = \sum_i U_{i,j}   a_i
- *  a_j^{\dag} = \sum_i U_{i,j}^* a_i^{dag}
+ *  U.Ni = (NFermionA+NBosonA)
+ *  U.Nj = (NFermionB+NBosonB)
+ *  a_i        = \sum_j U_{i,j}   a_j
+ *  a_i^{\dag} = \sum_j U_{i,j}^* a_j^{dag}
  */
 uint32_t MappedOperatorAdd(OperatorType * const OA, const OperatorType OB, const MatrixType U)
 {
@@ -5745,13 +5753,13 @@ uint32_t MappedOperatorAdd(OperatorType * const OA, const OperatorType OB, const
   return OperatorRemoveSmallValues(OA, DBL_MIN * 10);
 }
 
-
 /* OA <- OA + U OB
- *  U is a (NFermionB+NBosonB)*(NFermionA+NBosonA) demensional matrix that defines the transformation
- *  a_j        = \sum_i U_{i,j}   a_i
- *  a_j^{\dag} = \sum_i U_{i,j}^* a_i^{dag}
+ *  U is a (NFermionB+NBosonB)*(NFermionA+NBosonA) dimensional matrix that defines the transformation
+ *  U.Ni = (NFermionA+NBosonA)
+ *  U.Nj = (NFermionB+NBosonB)
+ *  a_i        = \sum_j U_{i,j}   a_j
+ *  a_i^{\dag} = \sum_j U_{i,j}^* a_j^{dag}
  */
-//TODO: test if order of U is right
 uint32_t MappedOperatorAddNormalOrder(OperatorType * const OA, const OperatorType OB, const MatrixType U, uint32_t(*QDetNotOrdered) (uint16_t, uint16_t, uint32_t))
 {
   uint32_t level, length, i, k;
@@ -5865,11 +5873,12 @@ uint32_t MappedOperatorAddNormalOrder(OperatorType * const OA, const OperatorTyp
   return OperatorRemoveSmallValues(OA, DBL_MIN * 10);
 }
 
-/* OA <-  U OB
- * OA not initiallized on input
- *  U is a (NFermionB+NBosonB)*(NFermionA+NBosonA) demensional matrix that defines the transformation
- *  a_j        = \sum_i U_{i,j}   a_i
- *  a_j^{\dag} = \sum_i U_{i,j}^* a_i^{dag}
+/* OA <- U OB
+ *  U is a (NFermionB+NBosonB)*(NFermionA+NBosonA) dimensional matrix that defines the transformation
+ *  U.Ni = (NFermionA+NBosonA)
+ *  U.Nj = (NFermionB+NBosonB)
+ *  a_i        = \sum_j U_{i,j}   a_j
+ *  a_i^{\dag} = \sum_j U_{i,j}^* a_j^{dag}
  */
 uint32_t RotateOperator(OperatorType * const OA, const OperatorType OB, const MatrixType U)
 {
