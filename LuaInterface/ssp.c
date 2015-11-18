@@ -2139,6 +2139,9 @@ static const struct luaL_Reg global_functions[] = {
   {"MeanFieldGroundState", LuaMeanFieldGroundstate},
   {"NewOperator", LuaNewOperator},
   {"NewTightBinding", LuaNewTightBinding},
+  {"FileReadStuttgartCTRL", LuaFileReadStuttgartCTRL},
+  {"FileReadStuttgartHAMR", LuaFileReadStuttgartHAMR},
+  {"TightBindingDefFromStuttgartCTRLHAMR", LuaTightBindingDefFromStuttgartCTRLHAMR},
   {"NewWavefunction", LuaNewWaveFunction},
   {"PotentialExpandedOnClm", LuaPotentialExpandedOnClm},
   {"PlotBands", LuaPlotBands},
@@ -2188,6 +2191,12 @@ int luaopen_ssp(lua_State * L)
   
   luaL_newmetatable(L, "TightBinding_Type");
   luaL_setfuncs(L, TightBinding_meta, 0);
+  
+  luaL_newmetatable(L, "StuttgartCTRL_Type");
+  luaL_setfuncs(L, StuttgartCTRL_meta, 0);
+  
+  luaL_newmetatable(L, "StuttgartHAMR_Type");
+  luaL_setfuncs(L, StuttgartHAMR_meta, 0);
   
   luaMWH_RegisterGlobalFunctions(L, global_functions);
   luaMWH_RegisterGlobalFunctions(L, mathlib);

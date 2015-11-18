@@ -35,6 +35,8 @@ static void luaMWH_StackDump (lua_State *L)
         else if (luaL_testudata(L, i, "Wavefunction_Type") != NULL) printf("Wavefunction");
         else if (luaL_testudata(L, i, "Spectra_Type") != NULL) printf("Spectra");
         else if (luaL_testudata(L, i, "TightBinding_Type") != NULL) printf("TightBinding");
+        else if (luaL_testudata(L, i, "StuttgartCTRL_Type") != NULL) printf("StuttgartCTRL");
+        else if (luaL_testudata(L, i, "StuttgartHAMR_Type") != NULL) printf("StuttgartHAMR");
         else printf("Unrecognized");
         break;
         
