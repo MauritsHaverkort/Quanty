@@ -930,10 +930,21 @@ static int LuaChop(lua_State * L)
       {
         Complex16 *a = (Complex16 *) luaL_checkudata(L, len, "Complex_Type");
         Complex16 *res;
-        res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
-        res->Re = ((Abs(a->Re)>epsilon)?a->Re:0);
-        res->Im = ((Abs(a->Im)>epsilon)?a->Im:0);
-        luaL_setmetatable(L, "Complex_Type");
+        double reres = 0;
+
+        if (Abs(a->Im)<=epsilon)
+        {
+          reres = ((Abs(a->Re)>epsilon)?a->Re:0);
+          lua_pushnumber(L, reres);
+        }
+        else
+        {
+          res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
+          res->Re = ((Abs(a->Re)>epsilon)?a->Re:0);
+          res->Im = ((Abs(a->Im)>epsilon)?a->Im:0);
+          luaL_setmetatable(L, "Complex_Type");
+        }
+        
         return 1;
       }
       if (luaL_testudata(L, len, "Wavefunction_Type") != NULL)

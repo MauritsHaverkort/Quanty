@@ -339,7 +339,7 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
       MatrixScalarMultiply(&U, 0, 0);
       for(j=0;j<AditionalOperator->NFermion;j++)
       {
-        U.VRe[j][j+i*AditionalOperator->NFermion]=1;
+        U.VRe[j+i*AditionalOperator->NFermion][j]=1;
       }
       //TODO: test if function servived changes made in order in mappedOperatorAddNormalOrder. (i.e. row/column major)
       MappedOperatorAddNormalOrder(H, *AditionalOperator, U, &QDetNotOrderedFcFaBcBa);
