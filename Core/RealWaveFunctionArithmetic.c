@@ -1005,7 +1005,7 @@ uint32_t RealMappedDetToWaveFunction(WaveFunctionType * const A, uint8_t *Det, M
     {
       for(j=0;j<A->NFermion;j++)
       {
-        O.l[1].VRe[j]=U.VRe[i][j];
+        O.l[1].VRe[j]=U.VRe[j][i];
       }
       OperatorPsiRR(O, *A, &Temp);
       RealWaveFunctionTruncateBasis(&Temp, 10*DBL_EPSILON);
@@ -1026,9 +1026,14 @@ uint32_t RealMappedDetToWaveFunction(WaveFunctionType * const A, uint8_t *Det, M
 
 
 /* psiA <- psiA + U psiB
- *  U is a (NFermionB+NBosonB)*(NFermionA+NBosonA) demensional matrix that defines the transformation
- *  a_j        = \sum_i U_{i,j}   a_i
- *  a_j^{\dag} = \sum_i U_{i,j}^* a_i^{dag}
+ *  U is a (NFermionA+NBosonA)*(NFermionB+NBosonB) demensional matrix that defines the transformation
+ *  For operators we have
+ *  a_i        = \sum_j U_{i,j}   a_j
+ *  a_i^{\dag} = \sum_j U_{i,j}^* a_j^{dag}
+ *  writing:
+ *    psi = \sum_j alpha_j a_j^{dag} |0>
+ *    we have
+ *    U psi = \sum_j U_{i,j}^* alpha_j a_j^{dag} |0>
  *
  * assume A B and U are real (version RRR)
  */
@@ -1037,8 +1042,6 @@ uint32_t MappedWaveFunctionAddRRR(WaveFunctionType * const A, WaveFunctionType c
   uint8_t *Det;
   uint32_t idetB;
   WaveFunctionType Udet;
-  
-  
   Udet.NFermion=A->NFermion;
   Udet.NBoson=A->NBoson;
   Udet.QComplex=0;

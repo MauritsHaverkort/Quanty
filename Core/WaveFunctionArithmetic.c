@@ -782,6 +782,19 @@ void WaveFunctionRandomize(WaveFunctionType * const a)
 
 void WaveFunctionTruncateBasis(WaveFunctionType * const a, const double epsilon)
 {
+  //TODO: needs to be tested! introduced the option that complex functios become real. Lanczoss call the complex version directly. I'm not sure there if there are other routines that assume that chop keeps complex functions complex. Do not think so.
+  if (a->QComplex == 0)
+  {
+    RealWaveFunctionTruncateBasis(a, epsilon);
+  }
+  else
+  {
+    ComplexWaveFunctionTruncateBasisAllowReal(a, epsilon);
+  }
+}
+
+void WaveFunctionTruncateBasisDisallowComplexToReal(WaveFunctionType * const a, const double epsilon)
+{
   if (a->QComplex == 0)
   {
     RealWaveFunctionTruncateBasis(a, epsilon);
@@ -1131,11 +1144,15 @@ uint32_t WaveFunctionCopy(WaveFunctionType const A, WaveFunctionType * const B)
                           
 
 /* psiA <- psiA + U psiB
- *  U is a (NFermionB+NBosonB)*(NFermionA+NBosonA) demensional matrix that defines the transformation
- *  a_j        = \sum_i U_{i,j}   a_i
- *  a_j^{\dag} = \sum_i U_{i,j}^* a_i^{dag}
+ *  U is a (NFermionA+NBosonA)*(NFermionB+NBosonB) demensional matrix that defines the transformation
+ *  For operators we have
+ *  a_i        = \sum_j U_{i,j}   a_j
+ *  a_i^{\dag} = \sum_j U_{i,j}^* a_j^{dag}
+ *  writing:
+ *    psi = \sum_j alpha_j a_j^{dag} |0>
+ *    we have
+ *    U psi = \sum_j U_{i,j}^* alpha_j a_j^{dag} |0>
  *
- * assume A B and U are real (version RRR)
  */
 uint32_t MappedWaveFunctionAdd(WaveFunctionType * const A, WaveFunctionType const B, MatrixType const U)
 {
@@ -1164,11 +1181,14 @@ uint32_t MappedWaveFunctionAdd(WaveFunctionType * const A, WaveFunctionType cons
 
 /* psiA <-  U psiB
  * A not initiallized on input
- *  U is a (NFermionB+NBosonB)*(NFermionA+NBosonA) demensional matrix that defines the transformation
- *  a_j        = \sum_i U_{i,j}   a_i
- *  a_j^{\dag} = \sum_i U_{i,j}^* a_i^{dag}
- *
- * assume A B and U are real (version RRR)
+ *  U is a (NFermionA+NBosonA)*(NFermionB+NBosonB) demensional matrix that defines the transformation
+ *  For operators we have
+ *  a_i        = \sum_j U_{i,j}   a_j
+ *  a_i^{\dag} = \sum_j U_{i,j}^* a_j^{dag}
+ *  writing:
+ *    psi = \sum_j alpha_j a_j^{dag} |0>
+ *    we have
+ *    U psi = \sum_j U_{i,j}^* alpha_j a_j^{dag} |0>
  */
 uint32_t RotateWaveFunction(WaveFunctionType * const A, WaveFunctionType const B, MatrixType const U)
 {

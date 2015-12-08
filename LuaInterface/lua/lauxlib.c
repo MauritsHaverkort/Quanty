@@ -761,7 +761,85 @@ LUALIB_API const char *luaL_tolstring (lua_State *L, int idx, size_t *len) {
         break;
       case LUA_TTABLE:
         //TODO: handle the printout of tables correctly, based on global settings for maximum depth and size
-        lua_pushfstring(L,"Add table print handler %s: %p", luaL_typename(L, idx), lua_topointer(L, idx));
+        {
+          Bool FirstElement=False;
+          size_t i,tablelen = lua_objlen(L, idx);
+          lua_pushstring(L, "{ ");
+          /* array elements */
+          for(i=0;i<tablelen;i++)
+          {
+            lua_rawgeti(L, idx, (int)i+1);
+            if((i!=0)&&(lua_type(L, -1)==LUA_TTABLE))
+            {
+              lua_pushstring(L, "\n  ");
+            }
+            else
+            {
+              lua_pushstring(L, "");
+            }
+            luaL_tolstring(L, lua_gettop(L)-1, NULL);
+            lua_remove(L,-3);
+            if(i==(tablelen-1))
+            {
+              lua_pushstring(L, "");
+            }
+            else
+            {
+              lua_pushstring(L, " , ");
+            }
+            lua_concat(L, 4);
+          }
+          /* hash ellements */
+          if(tablelen==0) FirstElement=True;
+          lua_pushnil(L);
+          while (lua_next(L,idx)!=0)
+          {
+            if((0<lua_tonumber(L, -2))&&(lua_tonumber(L, -2)<=tablelen))
+            {
+              lua_pop(L, 1);
+            }
+            else
+            {
+              if(lua_isstring(L,-2)&&(!lua_isnumber(L, -2)))
+              {
+                if(FirstElement)
+                {
+                  lua_pushstring(L, "");
+                  FirstElement=False;
+                }
+                else
+                {
+                  lua_pushstring(L, " ,\n  ");
+                }
+                luaL_tolstring(L, lua_gettop(L)-2, NULL);
+                lua_pushstring(L, " = ");
+              }
+              else
+              {
+                if(FirstElement)
+                {
+                  lua_pushstring(L, "[");
+                  FirstElement=False;
+                }
+                else
+                {
+                  lua_pushstring(L, " ,\n  [");
+                }
+                luaL_tolstring(L, lua_gettop(L)-2, NULL);
+                lua_pushstring(L, "] = ");
+              }
+              luaL_tolstring(L, lua_gettop(L)-3, NULL);
+              lua_concat(L, 4);
+              lua_insert(L,-3);
+              lua_pop(L, 1);
+              lua_insert(L,-3);
+              lua_concat(L, 2);
+              lua_insert(L,-2);
+            }
+          }
+          lua_pushstring(L, " }");
+          lua_concat(L, 2);
+        }
         break;
       default:
         lua_pushfstring(L, "%s: %p", luaL_typename(L, idx), lua_topointer(L, idx));

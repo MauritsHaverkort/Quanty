@@ -370,6 +370,34 @@ static int LuaWavefunctionRandomize(lua_State * L)
   return 0;
 }
 
+static int LuaWavefunctionDet(lua_State *L)
+{
+  uint32_t len = (uint32_t)lua_gettop(L);
+  WaveFunctionType *a = (WaveFunctionType *)currentudata;
+  WaveFunctionType *psi;
+  uint32_t idet;
+  if(len!=1) return luaL_error(L, "Error in .Det(arg) arg should be an integer between 1 and .N (%d)\n",a->N);
+  idet = (uint32_t) luaL_checkinteger(L, 1);
+  if((idet>a->N)||(idet==0))return luaL_error(L, "Error in .Det(arg = %d) arg should be an integer between 1 and .N (%d)\n",idet,a->N);
+  psi = (WaveFunctionType*) lua_newuserdata(L, sizeof(WaveFunctionType));
+  luaL_setmetatable(L, "Wavefunction_Type");
+  psi->NFermion=a->NFermion;
+  psi->NBoson=a->NBoson;
+  psi->QComplex=a->QComplex;
+  psi->NBitsKey=a->NBitsKey;
+  WaveFunctionInit(psi);
+  snprintf(psi->Name,MAXStrLength,"%s.Det(%d)",a->Name,idet);
+  if(psi->QComplex)
+  {
+    ComplexWaveFunctionAddElement(psi, &(a->Determinant[BlokElementDet(idet, a->NWord, 0)]), a->ValueRe[BlokElement(idet)], a->ValueIm[BlokElement(idet)]);
+  }
+  else
+  {
+    RealWaveFunctionAddElement(psi, &(a->Determinant[BlokElementDet(idet, a->NWord, 0)]), a->ValueRe[BlokElement(idet)]);
+  }
+  return 1;
+}
+
 static int LuaWavefunctionIndex(lua_State * L)
 {
   WaveFunctionType *a = (WaveFunctionType *) luaL_checkudata(L, 1, "Wavefunction_Type");
@@ -428,6 +456,11 @@ static int LuaWavefunctionIndex(lua_State * L)
   if (strcmp(str, "NBitsKey") == 0)
   {
     lua_pushinteger(L, a->NBitsKey);
+    return 1;
+  }
+  if (strcmp(str, "Det") == 0)
+  {
+    lua_pushcfunction(L, LuaWavefunctionDet);
     return 1;
   }
   return luaL_error(L, "Error operation \".%s()\" not defined on wavefunction\n",str);

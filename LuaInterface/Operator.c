@@ -1390,6 +1390,20 @@ static int LuaOperatorIndex(lua_State * L)
     lua_pushboolean(L, a->QComplex);
     return 1;
   }
+  if (strcmp(str, "N") == 0)
+  {
+    uint32_t i=0;
+    lua_createtable(L, a->MaxLength, 1);
+    lua_pushnumber(L, i);
+    lua_pushnumber(L, a->l[i].N);
+    lua_settable(L, -3);
+    for(i=1;i<=a->MaxLength;i++)
+    {
+      lua_pushnumber(L, a->l[i].N);
+      lua_rawseti(L, -2, i);
+    }
+    return 1;
+  }
   return luaL_error(L, "Error operator variable not found");;
 }
 

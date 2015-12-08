@@ -1013,6 +1013,7 @@ void ComplexWaveFunctionRandomize(WaveFunctionType * const a)
 */
 void ComplexWaveFunctionTruncateBasis(WaveFunctionType * const a, const double epsilon)
 {
+  const double Sqrepsilon = Sqr(epsilon);
   uint32_t startN, iBlok, iElement;
   a->ValueRe[0][0] = 0;
   a->ValueIm[0][0] = 0;
@@ -1027,22 +1028,16 @@ void ComplexWaveFunctionTruncateBasis(WaveFunctionType * const a, const double e
     for (iElement = 0; iElement < BlokSize; iElement++)
     {
       a->Next[iBlok][iElement] = 0;
-      if (Sqr(a->ValueRe[iBlok][iElement]) + Sqr(a->ValueIm[iBlok][iElement]) > Sqr(epsilon))
-        if (ComplexWaveFunctionAddElement
-            (a, &a->Determinant[iBlok][iElement * a->NWord], a->ValueRe[iBlok][iElement],
-             a->ValueIm[iBlok][iElement]) != 0)
-          AllocFailed();
+      if (Sqr(a->ValueRe[iBlok][iElement]) + Sqr(a->ValueIm[iBlok][iElement]) > Sqrepsilon)
+        if (ComplexWaveFunctionAddElement(a, &a->Determinant[iBlok][iElement * a->NWord], a->ValueRe[iBlok][iElement], a->ValueIm[iBlok][iElement]) != 0) AllocFailed();
     }
   }
   iBlok = a->NBlok - 1;
   for (iElement = 0; iElement < 1 + startN - iBlok * BlokSize; ++iElement)
   {
     a->Next[iBlok][iElement] = 0;
-    if (Sqr(a->ValueRe[iBlok][iElement]) + Sqr(a->ValueIm[iBlok][iElement]) > Sqr(epsilon))
-      if (ComplexWaveFunctionAddElement
-          (a, &a->Determinant[iBlok][iElement * a->NWord], a->ValueRe[iBlok][iElement],
-           a->ValueIm[iBlok][iElement]) != 0)
-        AllocFailed();
+    if (Sqr(a->ValueRe[iBlok][iElement]) + Sqr(a->ValueIm[iBlok][iElement]) > Sqrepsilon)
+      if (ComplexWaveFunctionAddElement(a, &a->Determinant[iBlok][iElement * a->NWord], a->ValueRe[iBlok][iElement], a->ValueIm[iBlok][iElement]) != 0) AllocFailed();
   }
   for (iBlok = 1 + (a->N >> NBitsBlok); iBlok < a->NBlok; iBlok++)
   {
@@ -1057,6 +1052,71 @@ void ComplexWaveFunctionTruncateBasis(WaveFunctionType * const a, const double e
   a->Next = realloc(a->Next, a->NBlok * sizeof(uint32_t *));
   a->Determinant = realloc(a->Determinant, a->NBlok * sizeof(uint8_t *));
 }
+
+/*  remove determinants from the basis that have a prefactor smaller then epsilon
+ *  if all imaginary parts are in absolute value smaller than epsilon make complex function real
+ */
+void ComplexWaveFunctionTruncateBasisAllowReal(WaveFunctionType * const a, const double epsilon)
+{
+  const double Sqrepsilon = Sqr(epsilon);
+  Bool keepcomplex=False;
+  uint32_t startN, iBlok, iElement;
+  a->ValueRe[0][0] = 0;
+  a->ValueIm[0][0] = 0;
+  startN = a->N;
+  a->N = 0;
+  for (iElement = 0; iElement < ((uint32_t) 1 << (a->NBitsKey)); ++iElement)
+  {                             /* Whipe out the entire KeyList */
+    a->KeyList[iElement] = 0;
+  }
+  for (iBlok = 0; iBlok < a->NBlok - 1; iBlok++)
+  {
+    for (iElement = 0; iElement < BlokSize; iElement++)
+    {
+      a->Next[iBlok][iElement] = 0;
+      if (Sqr(a->ValueRe[iBlok][iElement]) + Sqr(a->ValueIm[iBlok][iElement]) > Sqrepsilon)
+      {
+        if (ComplexWaveFunctionAddElement(a, &a->Determinant[iBlok][iElement * a->NWord], a->ValueRe[iBlok][iElement], a->ValueIm[iBlok][iElement]) != 0) AllocFailed();
+        if (Sqr(a->ValueIm[iBlok][iElement]) > Sqrepsilon) keepcomplex = True;
+      }
+    }
+  }
+  iBlok = a->NBlok - 1;
+  for (iElement = 0; iElement < 1 + startN - iBlok * BlokSize; ++iElement)
+  {
+    a->Next[iBlok][iElement] = 0;
+    if (Sqr(a->ValueRe[iBlok][iElement]) + Sqr(a->ValueIm[iBlok][iElement]) > Sqrepsilon)
+    {
+      if (ComplexWaveFunctionAddElement(a, &a->Determinant[iBlok][iElement * a->NWord], a->ValueRe[iBlok][iElement], a->ValueIm[iBlok][iElement]) != 0) AllocFailed();
+      if (Sqr(a->ValueIm[iBlok][iElement]) > Sqrepsilon) keepcomplex = True;
+    }
+  }
+  for (iBlok = 1 + (a->N >> NBitsBlok); iBlok < a->NBlok; iBlok++)
+  {
+    free(a->ValueRe[iBlok]);
+    free(a->ValueIm[iBlok]);
+    free(a->Next[iBlok]);
+    free(a->Determinant[iBlok]);
+  }
+  a->NBlok = 1 + (a->N >> NBitsBlok);
+  a->ValueRe = realloc(a->ValueRe, a->NBlok * sizeof(double *));
+  a->Next = realloc(a->Next, a->NBlok * sizeof(uint32_t *));
+  a->Determinant = realloc(a->Determinant, a->NBlok * sizeof(uint8_t *));
+  if(keepcomplex)
+  {
+    a->ValueIm = realloc(a->ValueIm, a->NBlok * sizeof(double *));
+  }
+  else
+  {
+    for (iBlok = 0; iBlok < a->NBlok; iBlok++)
+    {
+      free(a->ValueIm[iBlok]);
+    }
+    free(a->ValueIm);
+    a->QComplex = 0;
+  }
+}
+
 
 /*
  *   Make psi orthogonal to OtherPsi, psi and other psi are on the same basis
@@ -1152,8 +1212,8 @@ uint32_t ComplexMappedDetToWaveFunction(WaveFunctionType * const A, uint8_t *Det
     {
       for(j=0;j<A->NFermion;j++)
       {
-        O.l[1].V[j].Re=U.VRe[i][j];
-        O.l[1].V[j].Im=-U.VIm[i][j];
+        O.l[1].V[j].Re=U.VRe[j][i];
+        O.l[1].V[j].Im=-U.VIm[j][i];
       }
       OperatorPsiCC(O, *A, &Temp);
       ComplexWaveFunctionTruncateBasis(&Temp, 10*DBL_EPSILON);
@@ -1174,9 +1234,14 @@ uint32_t ComplexMappedDetToWaveFunction(WaveFunctionType * const A, uint8_t *Det
 
 
 /* psiA <- psiA + U psiB
- *  U is a (NFermionB+NBosonB)*(NFermionA+NBosonA) demensional matrix that defines the transformation
- *  a_j        = \sum_i U_{i,j}   a_i
- *  a_j^{\dag} = \sum_i U_{i,j}^* a_i^{dag}
+ *  U is a (NFermionA+NBosonA)*(NFermionB+NBosonB) demensional matrix that defines the transformation
+ *  For operators we have
+ *  a_i        = \sum_j U_{i,j}   a_j
+ *  a_i^{\dag} = \sum_j U_{i,j}^* a_j^{dag}
+ *  writing:
+ *    psi = \sum_j alpha_j a_j^{dag} |0>
+ *    we have
+ *    U psi = \sum_j U_{i,j}^* alpha_j a_j^{dag} |0>
  *
  * assume A B and U are complex (version CCC)
  */
