@@ -1404,6 +1404,35 @@ static int LuaOperatorIndex(lua_State * L)
     }
     return 1;
   }
+  if (strcmp(str, "Restrictions") == 0)
+  {
+    uint32_t i;
+    char *s;
+    if (a->Res.N==0)
+    {
+      lua_pushnil(L);
+      return 1;
+    }
+    lua_createtable(L, a->Res.N+2, 0);
+    lua_pushnumber(L, a->NFermion);
+    lua_rawseti(L, -2, 1);
+    lua_pushnumber(L, a->NBoson);
+    lua_rawseti(L, -2, 2);
+    for(i=0;i<a->Res.N;i++)
+    {
+      lua_createtable(L, 3, 0);
+      s=DetToString(a->NFermion, a->NBoson, a->Res.Determinant[i]);
+      lua_pushstring(L,s);
+      free(s);
+      lua_rawseti(L, -2, 1);
+      lua_pushnumber(L, a->Res.Min[i]);
+      lua_rawseti(L, -2, 2);
+      lua_pushnumber(L, a->Res.Max[i]);
+      lua_rawseti(L, -2, 3);
+      lua_rawseti(L, -2, i+3);
+    }
+    return 1;
+  }
   return luaL_error(L, "Error operator variable not found");;
 }
 
@@ -1415,6 +1444,25 @@ static int LuaOperatorNewIndex(lua_State * L)
   if(strcmp(str, "Name")==0)
   {
     OperatorSetName(a, lua_tostring(L, 3));
+  }
+  if (strcmp(str, "Restrictions") == 0)
+  {
+    uint32_t i;
+    for(i=0;i<a->Res.N;i++)
+    {
+      free(a->Res.Determinant[i]);
+    }
+    if(a->Res.N!=0)
+    {
+      free(a->Res.Min);
+      free(a->Res.Max);
+      free(a->Res.Determinant);
+    }
+    a->Res.N=0;
+    if(!lua_isnil(L,3))
+    {
+      luaL_setarray_DeterminatRestrictionType(L,3,&(a->Res));
+    }
   }
   else
   {

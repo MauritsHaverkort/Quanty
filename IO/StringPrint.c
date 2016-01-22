@@ -90,9 +90,17 @@ uint32_t StringPrintWaveFunctionReadable(WaveFunctionType psi, char **Buffer)
     for (i = 1; i <= psi.N; i++)
     {
       sprintfAdd(Buffer, "%4i %20.12E       %20.12E       ", i, psi.ValueRe[BlokElement(i)], psi.ValueIm[BlokElement(i)]);
-      for (j = 0; j < psi.NWord; j++)
+      //for (j = 0; j < psi.NWord; j++)
+      //{
+      //  sprintfAdd(Buffer, "%2.2X", psi.Determinant[BlokElementDet(i, psi.NWord, j)]);
+      //}
+      for(j=0;j<psi.NFermion;j++)
       {
-        sprintfAdd(Buffer, "%2.2X", psi.Determinant[BlokElementDet(i, psi.NWord, j)]);
+        sprintfAdd(Buffer, "%c",(psi.Determinant[BlokElementDet(i, psi.NWord, (j >> 3))] & (128 >> (j & 7)))?'1':'0');
+      }
+      for(j=psi.NWord-psi.NBoson;j<psi.NWord;j++)
+      {
+        sprintfAdd(Buffer, " %2.2X", psi.Determinant[BlokElementDet(i, psi.NWord, j)]);
       }
       sprintfAdd(Buffer, "\n");
     }
@@ -104,9 +112,17 @@ uint32_t StringPrintWaveFunctionReadable(WaveFunctionType psi, char **Buffer)
     for (i = 1; i <= psi.N; i++)
     {
       sprintfAdd(Buffer, "%4i %20.12E       ", i, psi.ValueRe[BlokElement(i)]);
-      for (j = 0; j < psi.NWord; j++)
+      //for (j = 0; j < psi.NWord; j++)
+      //{
+      //  sprintfAdd(Buffer, "%2.2X", psi.Determinant[BlokElementDet(i, psi.NWord, j)]);
+      //}
+      for(j=0;j<psi.NFermion;j++)
       {
-        sprintfAdd(Buffer, "%2.2X", psi.Determinant[BlokElementDet(i, psi.NWord, j)]);
+        sprintfAdd(Buffer, "%c",(psi.Determinant[BlokElementDet(i, psi.NWord, (j >> 3))] & (128 >> (j & 7)))?'1':'0');
+      }
+      for(j=psi.NWord-psi.NBoson;j<psi.NWord;j++)
+      {
+        sprintfAdd(Buffer, " %2.2X", psi.Determinant[BlokElementDet(i, psi.NWord, j)]);
       }
       sprintfAdd(Buffer, "\n");
     }

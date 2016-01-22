@@ -1053,6 +1053,51 @@ void ComplexWaveFunctionTruncateBasis(WaveFunctionType * const a, const double e
   a->Determinant = realloc(a->Determinant, a->NBlok * sizeof(uint8_t *));
 }
 
+
+/*
+ *   remove determinants from the basis that do not fullfill the restrictions
+ */
+void ComplexWaveFunctionRestrict(WaveFunctionType * const a, const DeterminantRestrictionType res)
+{
+  uint32_t startN, iBlok, iElement;
+  a->ValueRe[0][0] = 0;
+  a->ValueIm[0][0] = 0;
+  startN = a->N;
+  a->N = 0;
+  for (iElement = 0; iElement < ((uint32_t) 1 << (a->NBitsKey)); ++iElement)
+  {                             /* Whipe out the entire KeyList */
+    a->KeyList[iElement] = 0;
+  }
+  for (iBlok = 0; iBlok < a->NBlok - 1; iBlok++)
+  {
+    for (iElement = 0; iElement < BlokSize; iElement++)
+    {
+      a->Next[iBlok][iElement] = 0;
+      if (QDetNotRestricted(&(a->Determinant[iBlok][iElement*a->NWord]), a->NFermion, a->NBoson, a->NWord, res))
+        if (ComplexWaveFunctionAddElement(a, &a->Determinant[iBlok][iElement * a->NWord], a->ValueRe[iBlok][iElement], a->ValueIm[iBlok][iElement]) != 0) AllocFailed();
+    }
+  }
+  iBlok = a->NBlok - 1;
+  for (iElement = 0; iElement < 1 + startN - iBlok * BlokSize; ++iElement)
+  {
+    a->Next[iBlok][iElement] = 0;
+    if (QDetNotRestricted(&(a->Determinant[iBlok][iElement*a->NWord]), a->NFermion, a->NBoson, a->NWord, res))
+      if (ComplexWaveFunctionAddElement(a, &a->Determinant[iBlok][iElement * a->NWord], a->ValueRe[iBlok][iElement], a->ValueIm[iBlok][iElement]) != 0) AllocFailed();
+  }
+  for (iBlok = 1 + (a->N >> NBitsBlok); iBlok < a->NBlok; iBlok++)
+  {
+    free(a->ValueRe[iBlok]);
+    free(a->ValueIm[iBlok]);
+    free(a->Next[iBlok]);
+    free(a->Determinant[iBlok]);
+  }
+  a->NBlok = 1 + (a->N >> NBitsBlok);
+  a->ValueRe = realloc(a->ValueRe, a->NBlok * sizeof(double *));
+  a->ValueIm = realloc(a->ValueIm, a->NBlok * sizeof(double *));
+  a->Next = realloc(a->Next, a->NBlok * sizeof(uint32_t *));
+  a->Determinant = realloc(a->Determinant, a->NBlok * sizeof(uint8_t *));
+}
+
 /*  remove determinants from the basis that have a prefactor smaller then epsilon
  *  if all imaginary parts are in absolute value smaller than epsilon make complex function real
  */

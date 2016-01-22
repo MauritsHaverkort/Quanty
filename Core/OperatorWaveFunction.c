@@ -5012,32 +5012,6 @@ uint32_t OperatorPsiConserveBasisPreAllocated(const OperatorType *O, const WaveF
 *     Opsi points to completely newly assigned memory
 *     This function conservse the values O and psi point to
 */
-uint32_t OperatorPsi(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi)
-{
-  if (O.QComplex == 0)
-  {
-    if (psi.QComplex)
-    {
-      return OperatorPsiRC(O, psi, Opsi);
-    }
-    return OperatorPsiRR(O, psi, Opsi);
-  }
-  if (O.QComplex == 1)
-  {
-    if (psi.QComplex)
-    {
-      return OperatorPsiCC(O, psi, Opsi);
-    }
-    return OperatorPsiCR(O, psi, Opsi);
-  }
-  if (psi.QComplex)
-  {
-    return OperatorPsiMC(O, psi, Opsi);
-  }
-  return OperatorPsiMR(O, psi, Opsi);
-}
-
-
 uint32_t OperatorPsiRestricted(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi, DeterminantRestrictionType const restrictions)
 {
   if (O.QComplex == 0)
@@ -5061,6 +5035,32 @@ uint32_t OperatorPsiRestricted(const OperatorType O, const WaveFunctionType psi,
     return OperatorPsiRestrictedMC(O, psi, Opsi, restrictions);
   }
   return OperatorPsiRestrictedMR(O, psi, Opsi, restrictions);
+}
+
+uint32_t OperatorPsi(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi)
+{
+  if(O.Res.N!=0) return OperatorPsiRestricted(O, psi, Opsi, O.Res);
+  if (O.QComplex == 0)
+  {
+    if (psi.QComplex)
+    {
+      return OperatorPsiRC(O, psi, Opsi);
+    }
+    return OperatorPsiRR(O, psi, Opsi);
+  }
+  if (O.QComplex == 1)
+  {
+    if (psi.QComplex)
+    {
+      return OperatorPsiCC(O, psi, Opsi);
+    }
+    return OperatorPsiCR(O, psi, Opsi);
+  }
+  if (psi.QComplex)
+  {
+    return OperatorPsiMC(O, psi, Opsi);
+  }
+  return OperatorPsiMR(O, psi, Opsi);
 }
 
 /*  Calcualtes <psi|O|psi>

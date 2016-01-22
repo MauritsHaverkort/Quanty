@@ -174,7 +174,7 @@ typedef struct DeterminantRestrictionType
   uint32_t  N;                  /* number of restrictions */
   uint32_t  *Min;               /* minimum number of particles required */
   uint32_t  *Max;               /* maximum number of particles allowed */
-  uint8_t   **Determinant;      /* an array of N vecotors of length NWord of the wave-function applied to. Containing a bitfield wich filters the particles included in the sum */
+  uint8_t   **Determinant;      /* an array of N vectors of length NWord of the wave-function applied to. Containing a bitfield wich filters the particles included in the sum */
 }
 DeterminantRestrictionType;
 
@@ -196,12 +196,13 @@ OperatorFixedLengthType;
 typedef struct OperatorType
 {
   char   Name[MAXStrLength];
-  uint32_t QComplex;            /* If all operators with non-zero value of O.l[ilength].N are real    O.QComplex=0; * If all operators with non-zero value of O.l[ilength].N are complex O.QComplex=1; * If there is a mixture of real and complex values                   O.QComplex=2; */
-  uint32_t NFermion;            /* Number of fermions in the basis */
-  uint32_t NBoson;              /* Number of bosons in the basis */
-  uint32_t NWord;               /* NFermionWord+NBoson */
-  uint32_t MaxLength;           /* Largest number of terms of lader operators */
-  OperatorFixedLengthType *l;   /* array of length MaxLength+1 */
+  uint32_t QComplex;              /* If all operators with non-zero value of O.l[ilength].N are real    O.QComplex=0; * If all operators with non-zero value of O.l[ilength].N are complex O.QComplex=1; * If there is a mixture of real and complex values                   O.QComplex=2; */
+  uint32_t NFermion;              /* Number of fermions in the basis */
+  uint32_t NBoson;                /* Number of bosons in the basis */
+  uint32_t NWord;                 /* NFermionWord+NBoson */
+  uint32_t MaxLength;             /* Largest number of terms of lader operators */
+  OperatorFixedLengthType *l;     /* array of length MaxLength+1 */
+  DeterminantRestrictionType Res; /* set of restrictions applied to Operator psi calculations */
 }
 OperatorType;
 

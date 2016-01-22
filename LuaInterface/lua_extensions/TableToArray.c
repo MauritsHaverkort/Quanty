@@ -240,14 +240,11 @@ OperatorType* luaL_checkarray_OperatorType(lua_State *L, int narg, uint32_t *len
   return buff;
 }
 
-
-DeterminantRestrictionType* luaL_checkarray_DeterminantRestrictionType(lua_State *L, int narg)
+void luaL_setarray_DeterminatRestrictionType(lua_State *L, int narg, DeterminantRestrictionType * buff)
 {
   uint32_t NFermion,NBoson,i;
   uint32_t len,len2,detleng,NWord;
-  DeterminantRestrictionType *buff;
   char * detchar;
-  buff = malloc(sizeof(DeterminantRestrictionType));
   luaL_checktype(L, narg, LUA_TTABLE);
   len = (uint32_t)lua_objlen(L, narg);
   if(len<3) luaL_error(L, "Restrictions should be given in the format {NFermion,NBoson,{\"determinant1\",minocc,maxocc},{\"determinant2\",minocc,maxocc},...}");
@@ -300,6 +297,14 @@ DeterminantRestrictionType* luaL_checkarray_DeterminantRestrictionType(lua_State
     }
     lua_pop(L, 1);
   }
+  return;
+}
+
+DeterminantRestrictionType* luaL_checkarray_DeterminantRestrictionType(lua_State *L, int narg)
+{
+  DeterminantRestrictionType *buff;
+  buff = malloc(sizeof(DeterminantRestrictionType));
+  luaL_setarray_DeterminatRestrictionType(L, narg, buff);
   return buff;
 }
 
@@ -358,7 +363,7 @@ HarmonicsExpansion* luaL_checkarray_HarmonicsExpansion(lua_State *L, int narg)
   return buff;
 }
 
-void LuaPushArray_double(lua_State *L, double *val, int N)
+void LuaPushArray_double(lua_State *L, double const * const val, int const N)
 {
   uint32_t i;
   lua_createtable(L, N, 0);
@@ -468,21 +473,37 @@ void LuaPushTable_CompactMatrixType(lua_State* L, CompactMatrixType const * cons
   }
 }
 
+void LuaPushTable_TriDiagonalMatrixType(lua_State* L, TriDiagonalMatrixType const * const M)
+{
+  uint32_t i,MNtrunc=M->N;
+  for(i=1;i<M->N;i++)
+  {
+    if(Sqr(M->b[i])<0.01*DBL_EPSILON)
+    {
+      MNtrunc=i;
+      break;
+    }
+  }
+  lua_createtable(L, 3, 0);
+  /* push a */
+  LuaPushArray_double(L, M->a, MNtrunc+1);
+  lua_rawseti(L, -2, 1);
+  /* push b */
+  LuaPushArray_double(L, M->b, MNtrunc);
+  lua_rawseti(L, -2, 2);
+  /* push mu */
+  lua_pushnumber(L, M->mu);
+  lua_rawseti(L, -2, 3);
+}
+
 /*  if at position len of the lua stack a table is found it is over writen by the table in matrix M
  *  otherwise an error is thrown
  */
 void LuaInsertTable_CompactMatrixType(lua_State*L, int len, CompactMatrixType const * const M)
 {
   luaL_checktype(L, len, LUA_TTABLE);
-  
-  luaMWH_StackDump(L);
-  
   LuaPushTable_CompactMatrixType(L, M);
-  
-  luaMWH_StackDump(L);
   lua_replace(L, len);
-  
-  luaMWH_StackDump(L);
 }
 
 

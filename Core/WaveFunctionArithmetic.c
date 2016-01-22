@@ -75,6 +75,49 @@ uint8_t *StringToDet(uint32_t const NFermion, uint32_t const NBoson, char *s)
   return det;
 }
 
+/*
+ *
+ */
+char *DetToString(uint32_t const NFermion, uint32_t const NBoson, uint8_t * det)
+{
+  char *ret;
+  int z;
+  uint32_t i,pos=0;
+  uint32_t NWord=NBoson + Min(NFermion, 1 + (NFermion - 1) / 8);
+  ret = malloc((NFermion+NBoson+4)*sizeof(char));
+  ret[0]='"';
+  pos++;
+  for(i=0;i<NWord-NBoson;i++)
+  {
+    for(z=128;z>0;z>>=1)
+    {
+      ret[pos]=((det[i]&z)==z) ? '1' : '0';
+      pos++;
+    }
+  }
+  if(NBoson==0)
+  {
+    pos=NFermion+1;
+    ret[pos]='"';
+    pos++;
+    ret[pos]='\0';
+  }
+  else
+  {
+    ret[pos]=' ';
+    pos++;
+    for(i=0;i<NBoson;i++)
+    {
+      sprintf(ret+pos,"%02X",det[NWord-NBoson+i]);
+    }
+    pos+=2;
+    ret[pos]='"';
+    pos++;
+    ret[pos]='\0';
+  }
+  return ret;
+}
+
 /*  NFermion, NBoson, QComplex, NBitsKey need to be set
  *
  */
@@ -790,6 +833,18 @@ void WaveFunctionTruncateBasis(WaveFunctionType * const a, const double epsilon)
   else
   {
     ComplexWaveFunctionTruncateBasisAllowReal(a, epsilon);
+  }
+}
+
+void WaveFunctionRestrict(WaveFunctionType * const a, const DeterminantRestrictionType res)
+{
+  if (a->QComplex == 0)
+  {
+    RealWaveFunctionRestrict(a, res);
+  }
+  else
+  {
+    ComplexWaveFunctionRestrict(a, res);
   }
 }
 

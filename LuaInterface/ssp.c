@@ -1433,6 +1433,7 @@ static int LuaCreateSpectra(lua_State *L)
     for(iT=0;iT<Options.NT;iT++)
     {
       psiEn[iT*Options.Npsi+ipsi]=psiEntemp;
+      GTri[iT*Options.Npsi+ipsi].mu=psiEntemp;
     }
   }
   /* loop over all Transition operators */
@@ -1465,10 +1466,28 @@ static int LuaCreateSpectra(lua_State *L)
     if((val[Options.Settings.NTri-1]-psiEn[i])>Emaxpole)Emaxpole=val[Options.Settings.NTri-1]-psiEn[i];
   }
   /* if Emin=DBL_MAX or Emax=-DBL_MAX or Gamma==0 determine these */
+  if(Eminpole==Emaxpole)
+  {
+    if(Eminpole==0)
+    {
+      if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin =-1;
+      if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax = 1;
+    }
+    if(Eminpole<0)
+    {
+      if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin = 2.125*Eminpole;
+      if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax =-0.125*Eminpole;
+    }
+    if(Eminpole>0)
+    {
+      if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin =-0.125*Eminpole;
+      if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax = 2.125*Eminpole;
+    }
+  }
   if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin = Eminpole - 0.125 * (Emaxpole-Eminpole);
-  if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax = Emaxpole + 0.125 * (Emaxpole-Eminpole);
+  if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax = Emaxpole + 0.125 * (Emaxpole-Eminpole);    
   if(Options.Settings.Gamma==0) Options.Settings.Gamma = 10*(Options.Settings.Emax-Options.Settings.Emin)/((double)Options.Settings.NE);
-  /* transform tridiagonal form to spectral form */
+  /* transform tridiagonal form to spectral form and push to stack */
   Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
   luaL_setmetatable(L, "Spectra_Type");
   Spec->NSpectra=Options.NT*Options.Npsi;
@@ -1487,23 +1506,32 @@ static int LuaCreateSpectra(lua_State *L)
     sprintf(Spec->Spec[i].Name, "Spectrum %i",i);
     TriDiagonalMatrixToSpectrum(psiEn[i], GTri[i], &(Spec->Spec[i]));
   }
+  /* push a table to L containing the spectra in tridiagonal form */
+  /* table contains {{a,b,mu},{a,b,mu},{a,b,mu},....} */
+  lua_createtable(L,Spec->NSpectra,0);
+  for(i=0;i<Spec->NSpectra;i++)
+  {
+    LuaPushTable_TriDiagonalMatrixType(L, &(GTri[i]));
+    lua_rawseti(L, -2, i+1);
+  }
+  /* free tridiagonal representation in memory */
   for(i=0;i<Spec->NSpectra;i++)
   {
     FreeTriDiagonalMatrix(&GTri[i]);
   }
   free(GTri);
   free(psiEn);
-  return 1;
+  return 2;
 }
 
 
 
-/*  calculates <psi_i | T_1^+ G_1 T_2 G_2 T_2^+ G_1 T_1 | psi_i >
+/*  calculates <psi_i | T_1^+ G_1 T_2^+ G_2 T_2 G_1 T_1 | psi_i >
  *  On stack:
  *     H1
  *     H2
  *     T1
- *     T2^+
+ *     T2
  *     psi
  *     options
  *        {E1min, E1max, N1, Gamma1}
@@ -1903,6 +1931,7 @@ static int LuaEigensystem(lua_State * L)
     {"restrictions", "DeterminantRestrictionType", &(Options.DeterminantRestrictions)},
     {"ExpandBasis", "bool",&(Options.ExpandBasis)},
     {NULL, NULL, NULL}};
+  VerbosityPrintf(0x10000000,"Start of LuaEigensystem\n");
   /* check number of input parameters */
   len = (uint32_t)lua_gettop(L);
   if(len==1) return LuaEigensystemDenseTable(L);

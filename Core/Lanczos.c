@@ -4875,50 +4875,6 @@ uint32_t LanczosEigenSystemRestricted(const OperatorType H, WaveFunctionType con
 
 
 
-uint32_t LanczosTriDiagonalize(const OperatorType H, WaveFunctionType psi, double epsilon, TriDiagonalMatrixType * const M, double Gamma)
-{
-  WaveFunctionType Cpsi;
-  if (psi.QComplex)
-  {
-    if (H.QComplex == 0)
-    {
-      return LanczosTriDiagonalizeRC(H, psi, epsilon, M, Gamma);
-    }
-    else if (H.QComplex == 1)
-    {
-      return LanczosTriDiagonalizeCC(H, psi, epsilon, M, Gamma);
-    }
-    else
-    {
-      return LanczosTriDiagonalizeMC(H, psi, epsilon, M, Gamma);
-    }
-  }
-  else
-  {
-    if (H.QComplex == 0)
-    {
-      return LanczosTriDiagonalizeRR(H, psi, epsilon, M, Gamma);
-    }
-    else if (H.QComplex == 1)
-    {
-      if (MakeComplexWaveFunctionFromReal(&Cpsi, psi))
-      {
-        printf("MakeComplexWaveFunctionFromReal failed in LanczosTriDiagonalize\n");
-        return 1;
-      }
-      return LanczosTriDiagonalizeCC(H, Cpsi, epsilon, M, Gamma);
-    }
-    else
-    {
-      if (MakeComplexWaveFunctionFromReal(&Cpsi, psi))
-      {
-        printf("MakeComplexWaveFunctionFromReal failed in LanczosTriDiagonalize\n");
-        return 1;
-      }
-      return LanczosTriDiagonalizeMC(H, Cpsi, epsilon, M, Gamma);
-    }
-  }
-}
 
 
 uint32_t LanczosTriDiagonalizeRestricted(const OperatorType H, WaveFunctionType psi, DeterminantRestrictionType Restrictions, double epsilon, TriDiagonalMatrixType * const M, double Gamma)
@@ -4962,6 +4918,57 @@ uint32_t LanczosTriDiagonalizeRestricted(const OperatorType H, WaveFunctionType 
         return 1;
       }
       return LanczosTriDiagonalizeRestrictedMC(H, Cpsi, Restrictions, epsilon, M, Gamma);
+    }
+  }
+}
+
+
+uint32_t LanczosTriDiagonalize(const OperatorType H, WaveFunctionType psi, double epsilon, TriDiagonalMatrixType * const M, double Gamma)
+{
+  WaveFunctionType Cpsi;
+  if(H.Res.N!=0)
+  {
+    WaveFunctionRestrict(&psi, H.Res);
+    return LanczosTriDiagonalizeRestricted(H, psi, H.Res, epsilon, M, Gamma);
+  }
+  if (psi.QComplex)
+  {
+    if (H.QComplex == 0)
+    {
+      return LanczosTriDiagonalizeRC(H, psi, epsilon, M, Gamma);
+    }
+    else if (H.QComplex == 1)
+    {
+      return LanczosTriDiagonalizeCC(H, psi, epsilon, M, Gamma);
+    }
+    else
+    {
+      return LanczosTriDiagonalizeMC(H, psi, epsilon, M, Gamma);
+    }
+  }
+  else
+  {
+    if (H.QComplex == 0)
+    {
+      return LanczosTriDiagonalizeRR(H, psi, epsilon, M, Gamma);
+    }
+    else if (H.QComplex == 1)
+    {
+      if (MakeComplexWaveFunctionFromReal(&Cpsi, psi))
+      {
+        printf("MakeComplexWaveFunctionFromReal failed in LanczosTriDiagonalize\n");
+        return 1;
+      }
+      return LanczosTriDiagonalizeCC(H, Cpsi, epsilon, M, Gamma);
+    }
+    else
+    {
+      if (MakeComplexWaveFunctionFromReal(&Cpsi, psi))
+      {
+        printf("MakeComplexWaveFunctionFromReal failed in LanczosTriDiagonalize\n");
+        return 1;
+      }
+      return LanczosTriDiagonalizeMC(H, Cpsi, epsilon, M, Gamma);
     }
   }
 }

@@ -845,6 +845,45 @@ void RealWaveFunctionTruncateBasis(WaveFunctionType * const a, const double epsi
 }
 
 /*
+ *  remove determinants from the basis that do not fullfill the restrictions  
+ */
+void RealWaveFunctionRestrict(WaveFunctionType * const a, const DeterminantRestrictionType res)
+{
+  uint32_t startN, iBlok, iElement;
+  a->ValueRe[0][0] = 0;
+  startN = a->N;
+  a->N = 0;
+  for (iElement = 0; iElement < ((uint32_t) 1 << (a->NBitsKey)); ++iElement)
+  {                             /* Whipe out the entire KeyList */
+    a->KeyList[iElement] = 0;
+  }
+  for (iBlok = 0; iBlok < a->NBlok - 1; iBlok++)
+  {
+    for (iElement = 0; iElement < BlokSize; iElement++)
+    {
+      a->Next[iBlok][iElement] = 0;
+      if (QDetNotRestricted(&(a->Determinant[iBlok][iElement*a->NWord]), a->NFermion, a->NBoson, a->NWord, res)) if (RealWaveFunctionAddElement(a, &a->Determinant[iBlok][iElement * a->NWord], a->ValueRe[iBlok][iElement]) != 0) AllocFailed();
+    }
+  }
+  iBlok = a->NBlok - 1;
+  for (iElement = 0; iElement < 1 + startN - iBlok * BlokSize; ++iElement)
+  {
+    a->Next[iBlok][iElement] = 0;
+    if (QDetNotRestricted(&(a->Determinant[iBlok][iElement*a->NWord]), a->NFermion, a->NBoson, a->NWord, res)) if (RealWaveFunctionAddElement(a, &a->Determinant[iBlok][iElement * a->NWord], a->ValueRe[iBlok][iElement]) != 0) AllocFailed();
+  }
+  for (iBlok = 1 + (a->N >> NBitsBlok); iBlok < a->NBlok; iBlok++)
+  {
+    free(a->ValueRe[iBlok]);
+    free(a->Next[iBlok]);
+    free(a->Determinant[iBlok]);
+  }
+  a->NBlok = 1 + (a->N >> NBitsBlok);
+  a->ValueRe = realloc(a->ValueRe, a->NBlok * sizeof(double *));
+  a->Next = realloc(a->Next, a->NBlok * sizeof(uint32_t *));
+  a->Determinant = realloc(a->Determinant, a->NBlok * sizeof(uint8_t *));
+}
+
+/*
  *   Make psi orthogonal to OtherPsi, psi and other psi are on the same basis
  */
 void RealWaveFunctionOrthogonalizeSameBasis(WaveFunctionType * const psi, const WaveFunctionType * const OtherPsi, const uint32_t Npsi)

@@ -36,6 +36,16 @@
 uint32_t FreeOperator(OperatorType * const H)
 {
   uint32_t i;
+  for(i=0;i<H->Res.N;i++)
+  {
+    free(H->Res.Determinant[i]);
+  }
+  if(H->Res.N!=0)
+  {
+    free(H->Res.Min);
+    free(H->Res.Max);
+    free(H->Res.Determinant);
+  }
   if (H->l[0].N) (H->l[0].QComplex) ? free(H->l[0].V) : free(H->l[0].VRe);
   for (i = 1; i <= H->MaxLength; i++)
   {
@@ -54,6 +64,7 @@ uint32_t FreeOperator(OperatorType * const H)
   H->NBoson = 0;
   H->NWord = 0;
   H->MaxLength = 0;
+  H->Res.N=0;
   return 0;
 }
 
@@ -68,6 +79,7 @@ uint32_t InitOperator(OperatorType * const O)
   O->NBoson = 0;
   O->NWord = 0;
   O->MaxLength = 0;
+  O->Res.N=0;
   if ((O->l = malloc(sizeof(OperatorFixedLengthType))) == NULL)
   {
     printf("Could not allocate OperatorFixedLengthType in InitOperator\n");
@@ -111,6 +123,7 @@ void InitOperatorForMult(OperatorType *prod, int count, const OperatorType *l, .
   prod->NFermion = l->NFermion;
   prod->NBoson = l->NBoson;
   prod->NWord = l->NWord;
+  prod->Res.N = 0;
   
   va_start(ap, l);
   for(j=1; j<count; j++)
@@ -270,6 +283,7 @@ uint32_t InitOperatorCopySettings(OperatorType * const O, const OperatorType Ose
   O->NFermion = Oset.NFermion;
   O->NBoson = Oset.NBoson;
   O->NWord = Oset.NWord;
+  O->Res.N = 0;
   for (length = 1; length < Oset.MaxLength; length++)
   {
     if (Oset.l[length].NBitsKey)
