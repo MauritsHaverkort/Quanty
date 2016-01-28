@@ -1,11 +1,17 @@
 #ifndef __TIMESTAMP__
-#define __TIMESTAMP__ "???"
+# define __TIMESTAMP__ "???"
 #endif
 #ifndef DBL_MIN
-#define DBL_MIN 2.3E-308
+# define DBL_MIN 2.3E-308
 #endif
 #ifndef DBL_EPSILON
-#define DBL_EPSILON 2.3E-16
+# define DBL_EPSILON 2.3E-16
+#endif
+#ifndef _POSIX_HOST_NAME_MAX
+# ifndef HOST_NAME_MAX
+#  define HOST_NAME_MAX 1023
+# endif
+#define _POSIX_HOST_NAME_MAX HOST_NAME_MAX
 #endif
 #define TimeStampAll() printf("=============================================================\n");\
                        printf("====    written by Maurits W. Haverkort                  ====\n");\
