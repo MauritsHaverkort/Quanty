@@ -845,6 +845,56 @@ void RealWaveFunctionTruncateBasis(WaveFunctionType * const a, const double epsi
 }
 
 /*
+ *  change the size of the keylist
+ */
+uint32_t RealWaveFunctionResetKeylist(WaveFunctionType * const a, const uint32_t NBitsKey)
+{
+  const double epsilon = sqrt(10*DBL_MIN);
+  const uint32_t startN=a->N;
+  uint32_t iBlok, iElement;
+  uint32_t *tempKeyList;
+  a->ValueRe[0][0] = 0;
+  tempKeyList=a->KeyList;
+  if((a->KeyList=realloc(a->KeyList, sizeof(uint32_t)*(1<<NBitsKey)))==NULL)
+  {
+    a->KeyList=tempKeyList;
+    printf("realloc failed in RealWaveFunctionResetKeylist\n");
+    return 1;
+  }
+  a->NBitsKey=NBitsKey;
+  a->N = 0;
+  for (iBlok = 0; iBlok < a->NBlok - 1; iBlok++)
+  {
+    for (iElement = 0; iElement < BlokSize; iElement++)
+    {
+      a->Next[iBlok][iElement] = 0;
+      if ((a->ValueRe[iBlok][iElement] > epsilon) || (-a->ValueRe[iBlok][iElement] > epsilon))
+        if (RealWaveFunctionAddElement(a, &a->Determinant[iBlok][iElement * a->NWord], a->ValueRe[iBlok][iElement]) != 0) AllocFailed();
+    }
+  }
+  iBlok = a->NBlok - 1;
+  for (iElement = 0; iElement < 1 + startN - iBlok * BlokSize; ++iElement)
+  {
+    a->Next[iBlok][iElement] = 0;
+    if ((a->ValueRe[iBlok][iElement] > epsilon) || (-a->ValueRe[iBlok][iElement] > epsilon))
+      if (RealWaveFunctionAddElement(a, &a->Determinant[iBlok][iElement * a->NWord], a->ValueRe[iBlok][iElement]) != 0) AllocFailed();
+  }
+  for (iBlok = 1 + (a->N >> NBitsBlok); iBlok < a->NBlok; iBlok++)
+  {
+    free(a->ValueRe[iBlok]);
+    free(a->Next[iBlok]);
+    free(a->Determinant[iBlok]);
+  }
+  a->NBlok = 1 + (a->N >> NBitsBlok);
+  a->ValueRe = realloc(a->ValueRe, a->NBlok * sizeof(double *));
+  a->Next = realloc(a->Next, a->NBlok * sizeof(uint32_t *));
+  a->Determinant = realloc(a->Determinant, a->NBlok * sizeof(uint8_t *));
+  return 0;
+}
+
+
+
+/*
  *  remove determinants from the basis that do not fullfill the restrictions  
  */
 void RealWaveFunctionRestrict(WaveFunctionType * const a, const DeterminantRestrictionType res)

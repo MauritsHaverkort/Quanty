@@ -1526,7 +1526,7 @@ static int LuaCreateSpectra(lua_State *L)
 
 
 
-/*  calculates <psi_i | T_1^+ G_1 T_2^+ G_2 T_2 G_1 T_1 | psi_i >
+/*  calculates <psi_i | T_1^+ G_1^+ T_2^+ G_2 T_2 G_1 T_1 | psi_i >
  *  On stack:
  *     H1
  *     H2
@@ -1772,7 +1772,7 @@ static int LuaCreateFluorescenceYield(lua_State *L)
  */
 static int LuaMeanFieldGroundstate(lua_State *L)
 {
-  OperatorType *H;
+  OperatorType *H, *HMF;
   CompactMatrixType *Rho;
   double kbT;
   double Etot;
@@ -1785,9 +1785,12 @@ static int LuaMeanFieldGroundstate(lua_State *L)
   }
   MeanFieldGroundstate(H, Rho, kbT,&Etot);
   LuaPushTable_CompactMatrixType(L, Rho);
-  FreeCompactMatrix(Rho);
   lua_pushnumber(L, Etot);
-  return 2;
+  HMF = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+  MeanFieldOperator(H, HMF, *Rho);
+  luaL_setmetatable(L, "Operator_Type");
+  FreeCompactMatrix(Rho);
+  return 3;
 }
 
 

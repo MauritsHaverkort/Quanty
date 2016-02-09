@@ -24,21 +24,21 @@ uint32_t StreamPrintSpectra(SpectraType * const Spec, const uint32_t NSpec, FILE
     fprintf(stream, " %22.15E %22.15E", Spec[i].dE, Spec[i].Gamma);
   }
   fprintf(stream, "\n");
-  fprintf(stream, "Phase_____0        ");
-  for (i = 0; i < NSpec; i++)
-  {
-    fprintf(stream, " %22.15E %22.15E", Spec[i].phase, 0.0);
-  }
-  fprintf(stream, "\n");
-  for (j = 0; j < 5; j++)
-  {
-    fprintf(stream, "a[%1i]______b[%1i]     ", j, j);
-    for (i = 0; i < NSpec; i++)
-    {
-      fprintf(stream, " %22.15E %22.15E", Spec[i].a[j], Spec[i].b[j]);
-    }
-    fprintf(stream, "\n");
-  }
+//  fprintf(stream, "Phase_____0        ");
+//  for (i = 0; i < NSpec; i++)
+//  {
+//    fprintf(stream, " %22.15E %22.15E", Spec[i].phase, 0.0);
+//  }
+//  fprintf(stream, "\n");
+//  for (j = 0; j < 5; j++)
+//  {
+//    fprintf(stream, "a[%1i]______b[%1i]     ", j, j);
+//    for (i = 0; i < NSpec; i++)
+//    {
+//      fprintf(stream, " %22.15E %22.15E", Spec[i].a[j], Spec[i].b[j]);
+//    }
+//    fprintf(stream, "\n");
+//  }
   fprintf(stream, "Energy             ");
   for (i = 0; i < NSpec; i++)
   {
@@ -387,7 +387,7 @@ uint32_t StreamPrintWaveFunctionFullReadable(WaveFunctionType psi, FILE * stream
   if (psi.QComplex)
   {
     fprintf(stream,
-            "\n  pre-factor             +I  pre-factor         Pointer Addres  Next_Hash Hash_Value   Determinant\n");
+            "\n  pre-factor             +I  pre-factor            Pointer Addres  Next_Hash Hash_Value   Determinant\n");
     for (i = 1; i <= psi.N; i++)
     {
       fprintf(stream, "%20.12E       %20.12E       %p %10i %10i   ", psi.ValueRe[BlokElement(i)],
@@ -403,7 +403,7 @@ uint32_t StreamPrintWaveFunctionFullReadable(WaveFunctionType psi, FILE * stream
   }
   else
   {
-    fprintf(stream, "\n  pre-factor         Pointer Addres  Next_Hash Hash_Value   Determinant\n");
+    fprintf(stream, "\n  pre-factor            Pointer Addres  Next_Hash Hash_Value   Determinant\n");
     for (i = 1; i <= psi.N; i++)
     {
       fprintf(stream, "%20.12E       %p %10i %10i   ", psi.ValueRe[BlokElement(i)], &psi.ValueRe[BlokElement(i)],

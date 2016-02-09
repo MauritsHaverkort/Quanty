@@ -825,7 +825,6 @@ void WaveFunctionRandomize(WaveFunctionType * const a)
 
 void WaveFunctionTruncateBasis(WaveFunctionType * const a, const double epsilon)
 {
-  //TODO: needs to be tested! introduced the option that complex functios become real. Lanczoss call the complex version directly. I'm not sure there if there are other routines that assume that chop keeps complex functions complex. Do not think so.
   if (a->QComplex == 0)
   {
     RealWaveFunctionTruncateBasis(a, epsilon);
@@ -833,6 +832,20 @@ void WaveFunctionTruncateBasis(WaveFunctionType * const a, const double epsilon)
   else
   {
     ComplexWaveFunctionTruncateBasisAllowReal(a, epsilon);
+  }
+}
+
+
+
+uint32_t WaveFunctionResetKeylist(WaveFunctionType * const a, const uint32_t NBitsKey)
+{
+  if (a->QComplex == 0)
+  {
+    return RealWaveFunctionResetKeylist(a, NBitsKey);
+  }
+  else
+  {
+    return ComplexWaveFunctionResetKeylist(a, NBitsKey);
   }
 }
 
@@ -1008,8 +1021,7 @@ uint32_t CreateStartWaveFunctionOnsiteEnergy(const OperatorType O, WaveFunctionT
  *  If occupied is one the Fermion is occupied
  *  If occupied is zero the Fermion is empty
  */
-uint32_t WaveFunctionAddFermion(WaveFunctionType const psiIn, WaveFunctionType * const psiOut, uint32_t FermionPos,
-                                uint32_t occupied)
+uint32_t WaveFunctionAddFermion(WaveFunctionType const psiIn, WaveFunctionType * const psiOut, uint32_t FermionPos, uint32_t occupied)
 {
   uint8_t det[psiIn.NWord + 1];
   uint32_t i, j;
@@ -1177,6 +1189,70 @@ uint32_t WaveFunctionRemoveFermion(WaveFunctionType const psiIn, WaveFunctionTyp
   return 0;
 }
 
+
+/*
+ *  change the number of Fermions and bosons in the wave-function.
+ *  changes are made to the end of the function (determinant with the highest index)
+ */
+uint32_t WaveFunctionChangeNFandNB(WaveFunctionType *psi, uint32_t NFnew, uint32_t NBnew)
+{
+  WaveFunctionType psiOld;
+  uint8_t det[NBnew + Min(NFnew, 1 + (NFnew - 1) / 8)];
+  uint8_t detleft;
+  uint32_t i,detleng;
+  if((NFnew==psi->NFermion)&&(NBnew==psi->NBoson))return 0;
+  if(NFnew+NBnew>65536)
+  {
+    printf("Error in WaveFunctionChangeNFandNB NFnew (%i) + NBnew (%i) larger than 65536 (%i)\n",NFnew,NBnew,NFnew+NBnew);
+    return 1;
+  }
+  psiOld=*psi;
+  psi->NBoson=NBnew;
+  psi->NFermion=NFnew;
+  if(WaveFunctionInit(psi))
+  {
+    printf("Error WaveFunctionInit failed in WaveFunctionChangeNFandNB\n");
+    return 1;
+  }
+  WavefunctionSetName(psi, psiOld.Name);
+  for(i=0;i<psi->NWord;i++)
+  {
+    det[i]=0;
+  }
+  detleng=Min(psi->NWord-psi->NBoson,psiOld.NWord-psiOld.NBoson);
+  detleft=(127>>(psi->NFermion&7));
+  detleft=~detleft;
+  if(psi->QComplex)
+  {
+    for(i=1;i<=psiOld.N;i++)
+    {
+      memcpy(det, &(psiOld.Determinant[BlokElementDet(i,psiOld.NWord,0)]), detleng);
+      det[detleng-1]&=detleft;
+      memcpy(&(det[psi->NWord-psi->NBoson]), &(psiOld.Determinant[BlokElementDet(i,psiOld.NWord,psi->NWord-psi->NBoson)]), psi->NBoson);
+      if(ComplexWaveFunctionAddElement(psi, det, psiOld.ValueRe[BlokElement(i)], psiOld.ValueIm[BlokElement(i)]))
+      {
+        printf("Error RealWaveFunctionAddElement failed in WaveFunctionChangeNFandNB\n");
+        return 1;
+      }
+    }
+  }
+  else
+  {
+    for(i=1;i<=psiOld.N;i++)
+    {
+      memcpy(det, &(psiOld.Determinant[BlokElementDet(i,psiOld.NWord,0)]), detleng);
+      det[detleng-1]&=detleft;
+      memcpy(&(det[psi->NWord-psi->NBoson]), &(psiOld.Determinant[BlokElementDet(i,psiOld.NWord,psi->NWord-psi->NBoson)]), psi->NBoson);
+      if(RealWaveFunctionAddElement(psi, det, psiOld.ValueRe[BlokElement(i)]))
+      {
+        printf("Error RealWaveFunctionAddElement failed in WaveFunctionChangeNFandNB\n");
+        return 1;
+      }
+    }
+  }
+  WaveFunctionFree(&psiOld);
+  return 0;
+}
 
 uint32_t WaveFunctionCopy(WaveFunctionType const A, WaveFunctionType * const B)
 {

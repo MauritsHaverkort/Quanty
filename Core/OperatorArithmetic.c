@@ -1085,8 +1085,7 @@ uint32_t OperatorAddLader(OperatorType * const O, const uint16_t * const oadd, c
   {
     return ComplexOperatorAddLader(O, oadd, length, VRe, VIm);
   }
-  if (fabs(VIm) < (DBL_MIN * 10))
-    return RealOperatorAddLader(O, oadd, length, VRe);
+  if (fabs(VIm) < (DBL_MIN * 10)) return RealOperatorAddLader(O, oadd, length, VRe);
   if (MakeRealOperatorFixedLengthComplex(O, length))
   {
     printf("MakeRealOperatorFixedLengthComplex at length=%i failed in OperatorAddLader\n", length);
@@ -1105,8 +1104,7 @@ uint32_t OperatorAddLaderNormalOrder(OperatorType * const O, const uint16_t * co
   {
     return ComplexOperatorAddLaderNormalOrder(O, oadd, length, VRe, VIm, QDetNotOrdered);
   }
-  if (fabs(VIm) < (DBL_MIN * 10))
-    return RealOperatorAddLaderNormalOrder(O, oadd, length, VRe, QDetNotOrdered);
+  if (fabs(VIm) < (DBL_MIN * 10)) return RealOperatorAddLaderNormalOrder(O, oadd, length, VRe, QDetNotOrdered);
   if (MakeRealOperatorFixedLengthComplex(O, length))
   {
     printf("MakeRealOperatorFixedLengthComplex at length=%i failed in OperatorAddLaderNormalOrder\n", length);
@@ -1307,39 +1305,31 @@ uint32_t OperatorRemoveSmallValues(OperatorType * const O, const double epsilon)
           if (fabs(O->l[j].VRe[i]) > epsilon)
             if (RealOperatorAddLader(O, &(O->l[j].o[j * i]), j, O->l[j].VRe[i]))
             {
-              printf
-                ("RealOperatorAddLader failed in OperatorRemoveSmallValues\n This should not happen\n No clue how to recover\n");
+              printf("RealOperatorAddLader failed in OperatorRemoveSmallValues\n This should not happen\n No clue how to recover\n");
               AllocFailed();
             }
         }
         if ((O->l[j].VRe = realloc(O->l[j].VRe, O->l[j].N * sizeof(double))) == NULL)
           if (O->l[j].N != 0)
           {
-            printf
-              ("realloc failed for O->l[j=%i].VRe in OperatorRemoveSmallValues\n This should not happen\n No clue how to recover\n",
-               j);
+            printf("realloc failed for O->l[j=%i].VRe in OperatorRemoveSmallValues\n This should not happen\n No clue how to recover\n",j);
             AllocFailed();
           }
       }
       if ((O->l[j].Next = realloc(O->l[j].Next, O->l[j].N * sizeof(uint32_t))) == NULL)
         if (O->l[j].N != 0)
         {
-          printf
-            ("realloc failed for O->l[j=%i].Next in OperatorRemoveSmallValues\n This should not happen\n No clue how to recover\n",
-             j);
+          printf("realloc failed for O->l[j=%i].Next in OperatorRemoveSmallValues\n This should not happen\n No clue how to recover\n",j);
           AllocFailed();
         }
       if ((O->l[j].o = realloc(O->l[j].o, O->l[j].N * j * sizeof(uint16_t))) == NULL)
         if (O->l[j].N != 0)
         {
-          printf
-            ("realloc failed for O->l[j=%i].o in OperatorRemoveSmallValues\n This should not happen\n No clue how to recover\n",
-             j);
+          printf("realloc failed for O->l[j=%i].o in OperatorRemoveSmallValues\n This should not happen\n No clue how to recover\n",j);
           AllocFailed();
         }
       O->l[j].NAloc = O->l[j].N;
-      if (O->l[j].N == 0)
-        SetQComplexOperator(O);
+      if (O->l[j].N == 0) SetQComplexOperator(O);
     }
   }
   return 0;
@@ -6125,4 +6115,120 @@ uint32_t QOperatorHermitian(OperatorType O, double epsilon)
   }
   FreeOperator(&OT);
   return 1;
+}
+
+
+/*
+ *
+ */
+uint32_t OperatorChangeNFandNB(OperatorType *O, uint32_t NFnew, uint32_t NBnew)
+{
+  uint32_t l,j;
+  int i,shift;
+  if(NFnew+NBnew>65536)
+  {
+    printf("Error in ChangeNFandNB NFnew (%i) + NBnew (%i) larger than 65536 (%i)\n",NFnew,NBnew,NFnew+NBnew);
+    return 1;
+  }
+  // remove fermions from operator when needed. (leave NFermion to the old value)
+  if(NFnew<O->NFermion)
+  {
+    for(l=1;l<=O->MaxLength;l++)
+    {
+      if(O->l[l].QComplex)
+      {
+#pragma omp parallel for private(j)
+        for(i=0;i<O->l[l].N;i++)
+        {
+          for(j=i*l;j<i*l+l;j++)
+          {
+            if(((O->l[l].o[j])&NotCrAnMask)>=NFnew)
+            {
+              O->l[l].V[i].Re=0;
+              O->l[l].V[i].Im=0;
+              break;
+            }
+          }
+        }
+      }
+      else
+      {
+#pragma omp parallel for private(j)
+        for(i=0;i<O->l[l].N;i++)
+        {
+          for(j=i*l;j<i*l+l;j++)
+          {
+            if(((O->l[l].o[j])&NotCrAnMask)>=NFnew)
+            {
+              O->l[l].VRe[i]=0;
+              break;
+            }
+          }
+        }
+      }
+    }
+  }
+  // remove bosons from operator when needed. (leave NBoson to the old value)
+  if(NBnew<O->NBoson)
+  {
+    for(l=1;l<=O->MaxLength;l++)
+    {
+      if(O->l[l].QComplex)
+      {
+#pragma omp parallel for private(j)
+        for(i=0;i<O->l[l].N;i++)
+        {
+          for(j=i*l;j<i*l+l;j++)
+          {
+            if(((O->l[l].o[j])&NotCrAnMask)>=NBnew+O->NFermion)
+            {
+              O->l[l].V[i].Re=0;
+              O->l[l].V[i].Im=0;
+              break;
+            }
+          }
+        }
+      }
+      else
+      {
+#pragma omp parallel for private(j)
+        for(i=0;i<O->l[l].N;i++)
+        {
+          for(j=i*l;j<i*l+l;j++)
+          {
+            if(((O->l[l].o[j])&NotCrAnMask)>=NBnew+O->NFermion)
+            {
+              O->l[l].VRe[i]=0;
+              break;
+            }
+          }
+        }
+      }
+    }
+  }
+  OperatorChop(O, 10*DBL_MIN);
+  // shift the bosons when needed
+  if(NFnew!=O->NFermion)
+  {
+    shift=(int)NFnew-(int)O->NFermion;
+#pragma omp parallel for private(j)
+    for(l=1;l<=O->MaxLength;l++)
+    {
+      for(i=0;i<O->l[l].N;i++)
+      {
+        for(j=i*l;j<i*l+l;j++)
+        {
+          if(((O->l[l].o[j])&NotCrAnMask)>=O->NFermion)
+          {
+            O->l[l].o[j]+=shift;
+          }
+        }
+      }
+    }
+  }
+  // set the number of bosons and Fermions
+  O->NFermion=NFnew;
+  O->NBoson=NBnew;
+  O->NWord = Min(O->NFermion, 1 + (O->NFermion - 1) / 8) + O->NBoson;
+  return 0;
 }

@@ -281,10 +281,14 @@ static int LuaWavefunctionPrint(lua_State * L)
   struct
   {
     char *stream;
+    Bool Full;
+    Bool Binary;
   } Options;
   uint32_t len = (uint32_t)lua_gettop(L);
   LuaOptionsType LuaWavefunctionPrintOptions[]={
     {"file", "char*", &(Options.stream)},
+    {"Full", "bool", &(Options.Full)},
+    {"Binary", "bool", &(Options.Binary)},
     {NULL, NULL, NULL}};
   if(!((len==0)||(len==1)))
   {
@@ -293,18 +297,39 @@ static int LuaWavefunctionPrint(lua_State * L)
   if(len==0)
   {
     PrintWaveFunctionReadable(*(WaveFunctionType *) currentudata);
+    return 0;
   }
-  if(len==1)
-  {
-    LuaCheckOptions(L, -1, LuaWavefunctionPrintOptions);
-  }
+  Options.Full=False;
+  Options.Binary=False;
+  Options.stream=NULL;
+  LuaCheckOptions(L, -1, LuaWavefunctionPrintOptions);
+  if((Options.Binary==True)&&(Options.Full==True)) return luaL_error(L, "Error in .Print(arg) Binary and full text format are exclusive\n");
+  if((Options.Binary==True)&&(Options.stream==NULL)) return luaL_error(L, "Error in .Print(arg) Binary mode only allowed for printing to file\n");
   if(Options.stream==NULL)
   {
-    PrintWaveFunctionFullReadable(*(WaveFunctionType *) currentudata);
+    if(Options.Full==True)
+    {
+      PrintWaveFunctionFullReadable(*(WaveFunctionType *) currentudata);
+    }
+    else
+    {
+      PrintWaveFunctionReadable(*(WaveFunctionType *) currentudata);
+    }
   }
   else
   {
-    FilePrintWaveFunctionPlainBinary(*(WaveFunctionType *) currentudata, Options.stream, "w");
+    if(Options.Full==True)
+    {
+      FilePrintWaveFunctionFullReadable(*(WaveFunctionType *) currentudata, Options.stream, "w");
+    }
+    else if(Options.Binary==True)
+    {
+      FilePrintWaveFunctionPlainBinary(*(WaveFunctionType *) currentudata, Options.stream, "w");
+    }
+    else
+    {
+      FilePrintWaveFunctionReadable(*(WaveFunctionType *) currentudata, Options.stream, "w");
+    }
   }
   return 0;
 }
@@ -403,44 +428,9 @@ static int LuaWavefunctionIndex(lua_State * L)
   WaveFunctionType *a = (WaveFunctionType *) luaL_checkudata(L, 1, "Wavefunction_Type");
   const char *str = lua_tostring(L, 2);
   currentudata = a;
-  if (strcmp(str, "Print") == 0)
-  {
-    lua_pushcfunction(L, LuaWavefunctionPrint);
-    return 1;
-  }
   if (strcmp(str, "Chop") == 0)
   {
     lua_pushcfunction(L, LuaWavefunctionChop);
-    return 1;
-  }
-  if ((strcmp(str, "Conjugate") == 0)||(strcmp(str, "C")==0))
-  {
-    lua_pushcfunction(L, LuaWavefunctionConjugate);
-    return 1;
-  }
-  if (strcmp(str, "Norm") == 0)
-  {
-    lua_pushcfunction(L, LuaWavefunctionNorm);
-    return 1;
-  }
-  if (strcmp(str, "Randomize") == 0)
-  {
-    lua_pushcfunction(L, LuaWavefunctionRandomize);
-    return 1;
-  }
-  if (strcmp(str, "Name") == 0)
-  {
-    lua_pushstring(L, a->Name);
-    return 1;
-  }
-  if (strcmp(str, "NF") == 0)
-  {
-    lua_pushinteger(L, a->NFermion);
-    return 1;
-  }
-  if (strcmp(str, "NB") == 0)
-  {
-    lua_pushinteger(L, a->NBoson);
     return 1;
   }
   if (strcmp(str, "Complex") == 0)
@@ -448,9 +438,39 @@ static int LuaWavefunctionIndex(lua_State * L)
     lua_pushboolean(L, a->QComplex);
     return 1;
   }
+  if ((strcmp(str, "Conjugate") == 0)||(strcmp(str, "C")==0))
+  {
+    lua_pushcfunction(L, LuaWavefunctionConjugate);
+    return 1;
+  }
+  if (strcmp(str, "Det") == 0)
+  {
+    lua_pushcfunction(L, LuaWavefunctionDet);
+    return 1;
+  }
+  if (strcmp(str, "Print") == 0)
+  {
+    lua_pushcfunction(L, LuaWavefunctionPrint);
+    return 1;
+  }
+  if (strcmp(str, "Randomize") == 0)
+  {
+    lua_pushcfunction(L, LuaWavefunctionRandomize);
+    return 1;
+  }
   if (strcmp(str, "N") == 0)
   {
     lua_pushinteger(L, a->N);
+    return 1;
+  }
+  if (strcmp(str, "Name") == 0)
+  {
+    lua_pushstring(L, a->Name);
+    return 1;
+  }
+  if (strcmp(str, "NB") == 0)
+  {
+    lua_pushinteger(L, a->NBoson);
     return 1;
   }
   if (strcmp(str, "NBitsKey") == 0)
@@ -458,9 +478,14 @@ static int LuaWavefunctionIndex(lua_State * L)
     lua_pushinteger(L, a->NBitsKey);
     return 1;
   }
-  if (strcmp(str, "Det") == 0)
+  if (strcmp(str, "NF") == 0)
   {
-    lua_pushcfunction(L, LuaWavefunctionDet);
+    lua_pushinteger(L, a->NFermion);
+    return 1;
+  }
+  if (strcmp(str, "Normalize") == 0)
+  {
+    lua_pushcfunction(L, LuaWavefunctionNorm);
     return 1;
   }
   return luaL_error(L, "Error operation \".%s()\" not defined on wavefunction\n",str);
@@ -471,16 +496,52 @@ static int LuaWavefunctionNewIndex(lua_State * L)
 {
   WaveFunctionType *a = (WaveFunctionType *) luaL_checkudata(L, 1, "Wavefunction_Type");
   const char *str = lua_tostring(L, 2);
-  // NBitsKey
+  if (strcmp(str, "Complex") == 0)
+  {
+    return luaL_error(L, "Errorr, you can not change the value Complex of a wavefunction %s.\nIn order to change you have to modify the wavefunction itselves, the value of Complex will follow automatically.",a->Name);
+  }
+  if (strcmp(str, "Det") == 0)
+  {
+    return luaL_error(L, "Errorr, you can not change the value of a determiant via indexing for wavefunction %s",a->Name);
+  }
+  if (strcmp(str, "N") == 0)
+  {
+    return luaL_error(L, "Errorr, you can not change the value representing the number of determinants in %s\nIf you add or remove determinants from the wavefunction the number will follow automatically.",a->Name);
+  }
   if(strcmp(str, "Name")==0)
   {
     WavefunctionSetName(a, lua_tostring(L, 3));
+    return 0;
   }
-  else
+  if (strcmp(str, "NB") == 0)
   {
-    return luaL_error(L, "Error index %s not found in Wavefunction Object\n",str);
+    uint32_t NBnew;
+    NBnew = (uint32_t)luaL_checknumber(L, 3);
+    if(NBnew+a->NFermion>65535) return luaL_error(L, "Maximum number of fermions + bosons allowed is 2^16 = 65535\nTrying to change the number of bosons from %d to %d with %d fermions\n",a->NBoson,NBnew,a->NFermion);
+    WaveFunctionChangeNFandNB(a, a->NFermion, NBnew);
+    //TODO: allow bosons - remove this line when debuged
+    return luaL_error(L, "Current version does not suport Bosons\n");
+    return 0;
   }
-  return 0;
+  if (strcmp(str, "NBitsKey") == 0)
+  {
+    uint32_t Nbitskey;
+    Nbitskey = (uint32_t)luaL_checknumber(L, 3);
+    if(WaveFunctionResetKeylist(a, Nbitskey))
+    {
+      return luaL_error(L, "Internal error in WaveFunctionResetKeylist\n");
+    }
+    return 0;
+  }
+  if (strcmp(str, "NF") == 0)
+  {
+    uint32_t NFnew;
+    NFnew = (uint32_t)luaL_checknumber(L, 3);
+    if(NFnew+a->NBoson>65535) return luaL_error(L, "Maximum number of fermions + bosons allowed is 2^16 = 65535\nTrying to change the number of fermions from %d to %d with %d bosons\n",a->NFermion,NFnew,a->NBoson);
+    WaveFunctionChangeNFandNB(a, NFnew, a->NBoson);
+    return 0;
+  }
+  return luaL_error(L, "Error index %s not found in Wavefunction Object\n",str);
 }
 
 static int LuaWavefunctionToString(lua_State * L)

@@ -770,7 +770,7 @@ void TestMeanField()
   
   printf("\n================\n Mean field operator \n================\n ");
   
-  MeanFieldOperator(&H, &HMF, Rho);
+  //MeanFieldOperator(&H, &HMF, Rho);
   PrintOperatorReadable(HMF);
   
   PsiHermitianOperatorPsi(H, psi, &energy);
@@ -805,7 +805,7 @@ void TestMeanField()
   
   printf("\n================\n Mean field operator \n================\n ");
   
-  MeanFieldOperator(&RH, &RHMF, RRho);
+  //MeanFieldOperator(&RH, &RHMF, RRho);
   PrintOperatorReadable(RHMF);
   
   PsiHermitianOperatorPsi(RH, Rpsi, &Renergy);

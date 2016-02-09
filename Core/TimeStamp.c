@@ -11,7 +11,7 @@
 # ifndef HOST_NAME_MAX
 #  define HOST_NAME_MAX 1023
 # endif
-#define _POSIX_HOST_NAME_MAX HOST_NAME_MAX
+# define _POSIX_HOST_NAME_MAX HOST_NAME_MAX
 #endif
 #define TimeStampAll() printf("=============================================================\n");\
                        printf("====    written by Maurits W. Haverkort                  ====\n");\
@@ -34,13 +34,23 @@
                        MWHtimeinfo = localtime ( &MWHrawtime );\
                        printf("Program executed on: %s", asctime (MWHtimeinfo) );\
                        char MWHHostName[_POSIX_HOST_NAME_MAX+1];\
-                       gethostname(MWHHostName, _POSIX_HOST_NAME_MAX+1);\
+                       MWHgethostname(MWHHostName, _POSIX_HOST_NAME_MAX+1);\
                        printf("Running on host    : %s\n",MWHHostName);\
                        printf("number of available processors              : %i\n",omp_get_num_procs());\
                        printf("maximum number of threads in parallel region: %i\n",omp_get_max_threads());\
                        printf("Smallest positive float  : %E \n",DBL_MIN);\
                        printf("Smallest deviation from 1: %E \n",DBL_EPSILON);\
                        printf("\n");
+
+
+void MWHgethostname(char * MWHHostName, size_t len)
+{
+#ifdef MWHWin
+  strcpy(MWHHostName, "Windows");
+#else
+  gethostname(MWHHostName, len);
+#endif
+}
 
 
 TimeType GlobalTime;

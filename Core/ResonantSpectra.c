@@ -92,12 +92,12 @@ uint32_t ResonantSpectra(const OperatorType OppH1, const OperatorType OppH2, con
   if(settings->NE1==0)
   {
     settings->NE1    =(uint32_t)(5*(settings->Emax1-settings->Emin1)/settings->Gamma1);
-    VerbosityPrintf(0x0002, "Automatically set number of energy points (NE=%d) and lifetime (Gamma=%22.15E) for intermediate state\n",settings->NE1,settings->Gamma1);
+    VerbosityPrintf(0x0002, "Automatically set number of energy points (NE=%d) and for intermediate state\n",settings->NE1);
   }
   if(settings->Gamma1==0)
   {
-    settings->Gamma1 =(uint32_t)(5*(settings->Emax1-settings->Emin1)/settings->NE1);
-    VerbosityPrintf(0x0002, "Automatically set number of energy points (NE=%d) and lifetime (Gamma=%22.15E) for intermediate state\n",settings->NE1,settings->Gamma1);
+    settings->Gamma1 =(5*(settings->Emax1-settings->Emin1)/settings->NE1);
+    VerbosityPrintf(0x0002, "Automatically set lifetime (Gamma=%22.15E) for intermediate state\n",settings->Gamma1);
   }
   
   /* allocate SpecTri2 */
@@ -231,12 +231,12 @@ uint32_t ResonantSpectra(const OperatorType OppH1, const OperatorType OppH2, con
   if(settings->NE2==0)
   {
     settings->NE2    =(uint32_t)(5*(settings->Emax2-settings->Emin2)/settings->Gamma2);
-    VerbosityPrintf(0x0002, "Automatically set number of energy points (NE=%d) and lifetime (Gamma=%22.15E) for final state\n",settings->NE2,settings->Gamma2);
+    VerbosityPrintf(0x0002, "Automatically set number of energy points (NE=%d) for final state\n",settings->NE2);
   }
   if(settings->Gamma2==0)
   {
-    settings->Gamma2 =(uint32_t)(5*(settings->Emax2-settings->Emin2)/settings->NE2);
-    VerbosityPrintf(0x0002, "Automatically set number of energy points (NE=%d) and lifetime (Gamma=%22.15E) for final state\n",settings->NE2,settings->Gamma2);
+    settings->Gamma2 =(5*(settings->Emax2-settings->Emin2)/settings->NE2);
+    VerbosityPrintf(0x0002, "Automatically set lifetime (Gamma=%22.15E) for final state\n",settings->Gamma2);
   }
   for(i=0;i<NT2*(settings->NE1+1);i++)
   {

@@ -967,7 +967,18 @@ static int LuaComplexIm(lua_State * L)
 static int LuaComplexToString(lua_State * L)
 {
   Complex16 *v = (Complex16 *) luaL_checkudata(L, 1, "Complex_Type");
-  lua_pushfstring(L, "(%f + %f I)", v->Re, v->Im);
+  if(v->Im==0)
+  {
+    lua_pushfstring(L, "%f", v->Re);
+  }
+  else if(v->Im<0)
+  {
+    lua_pushfstring(L, "(%f - %f I)", v->Re, -v->Im);
+  }
+  else
+  {
+    lua_pushfstring(L, "(%f + %f I)", v->Re, v->Im);
+  }
   return 1;
 }
 

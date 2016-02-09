@@ -9,6 +9,8 @@ double inline OperatorCr(uint8_t * const Determinant, const uint16_t i, const ui
 {
   uint8_t detblok;
   uint32_t j;
+  const uint16_t k=i>>3;
+  const uint16_t m=i&7;
   if (i >= NFermion)
   {
     j = i - NFermion + ((NFermion + 7) >> 3);
@@ -21,24 +23,21 @@ double inline OperatorCr(uint8_t * const Determinant, const uint16_t i, const ui
       return sqrt(++Determinant[j]);  /* add one to Determinant[j] and then return sqrt(Determinant[j]) */
     }
   }
-  if (Determinant[i >> 3] & (128 >> (i & 7)))
+  if (Determinant[k] & (128 >> (m)))
   {
     return 0;
   }
-  Determinant[i >> 3] += (128 >> (i & 7));
-  detblok = Determinant[i >> 3] >> (8 - (i & 7));
-  for (j = i >> 3; j != 0;)
+  Determinant[k] += (128 >> (m));
+  detblok = Determinant[k] >> (8 - (m));
+  for (j = k; j != 0;)
   {
     j--;
     detblok ^= Determinant[j];
   }
   detblok ^= detblok >> 4;
-  detblok &= 15;
   detblok ^= detblok >> 2;
-  detblok &= 3;
   detblok ^= detblok >> 1;
-  detblok &= 1;
-  if (detblok)
+  if (detblok & 1)
   {
     return -1;
   }
@@ -55,6 +54,8 @@ double inline OperatorAn(uint8_t * const Determinant, const uint16_t i, const ui
 {
   uint8_t detblok;
   uint32_t j;
+  const uint16_t k=i>>3;
+  const uint16_t m=i&7;
   if (i >= NFermion)
   {
     j = i - NFermion + ((NFermion + 7) >> 3);
@@ -67,24 +68,21 @@ double inline OperatorAn(uint8_t * const Determinant, const uint16_t i, const ui
       return sqrt(Determinant[j]--);  /* return sqrt(Determinant[j]) and subtract one from Determinant[j] */
     }
   }
-  if (!(Determinant[i >> 3] & (128 >> (i & 7))))
+  if (!(Determinant[k] & (128 >> (m))))
   {
     return 0;
   }
-  Determinant[i >> 3] -= (128 >> (i & 7));
-  detblok = Determinant[i >> 3] >> (8 - (i & 7));
-  for (j = i >> 3; j != 0;)
+  Determinant[k] -= (128 >> (m));
+  detblok = Determinant[k] >> (8 - (m));
+  for (j = k; j != 0;)
   {
     j--;
     detblok ^= Determinant[j];
   }
   detblok ^= detblok >> 4;
-  detblok &= 15;
   detblok ^= detblok >> 2;
-  detblok &= 3;
   detblok ^= detblok >> 1;
-  detblok &= 1;
-  if (detblok)
+  if (detblok & 1)
   {
     return -1;
   }

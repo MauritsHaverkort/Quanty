@@ -1833,9 +1833,9 @@ static int LuaSpectraIndex(lua_State * L)
   SpectraTypeArray *a = (SpectraTypeArray*) luaL_checkudata(L, 1, "Spectra_Type");
   const char *str = lua_tostring(L, 2);
   currentudata = a;
-  if (strcmp(str, "Print") == 0)
+  if (strcmp(str, "Broaden") == 0)
   {
-    lua_pushcfunction(L, LuaSpectraPrintMethod);
+    lua_pushcfunction(L, LuaSpectraBroadenMethod);
     return 1;
   }
   if (strcmp(str, "Element") == 0)
@@ -1843,19 +1843,19 @@ static int LuaSpectraIndex(lua_State * L)
     lua_pushcfunction(L, LuaSpectraElementMethod);
     return 1;
   }
-  if (strcmp(str, "Sum") == 0)
+  if (strcmp(str, "Print") == 0)
   {
-    lua_pushcfunction(L, LuaSpectraSumMethod);
-    return 1;
-  }
-  if (strcmp(str, "Broaden") == 0)
-  {
-    lua_pushcfunction(L, LuaSpectraBroadenMethod);
+    lua_pushcfunction(L, LuaSpectraPrintMethod);
     return 1;
   }
   if (strcmp(str, "Shift") == 0)
   {
     lua_pushcfunction(L, LuaSpectraShiftMethod);
+    return 1;
+  }
+  if (strcmp(str, "Sum") == 0)
+  {
+    lua_pushcfunction(L, LuaSpectraSumMethod);
     return 1;
   }
   if (strcmp(str, "MultiplyByEnergy") == 0)
@@ -1902,13 +1902,13 @@ static const struct luaL_Reg Spectra_meta[] = {
 };
 
 static const struct luaL_Reg Spectra_func[] = {
+  {"Broaden", LuaSpectraBroaden},
   {"Copy", LuaSpectraCopy},
   {"Clone", LuaSpectraCopy},
   {"Element", LuaSpectraElement},
-  {"Sum", LuaSpectraSum},
-  {"Broaden", LuaSpectraBroaden},
-  {"Shift", LuaSpectraShift},
   {"MultiplyByEnergy", LuaSpectraMultiplyByEnergy},
+  {"Shift", LuaSpectraShift},
+  {"Sum", LuaSpectraSum},
 //  {"ToFunction", LuaSpectraToFunction},
   {"ToTable", LuaSpectraToTable},
   {NULL, NULL}
