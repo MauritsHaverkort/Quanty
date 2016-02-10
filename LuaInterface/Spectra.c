@@ -1840,6 +1840,7 @@ static int LuaSpectraIndex(lua_State * L)
   }
   if (strcmp(str, "Element") == 0)
   {
+    printf("WARNING: G.Element is deprecated. Please use Spectra.Element instead");
     lua_pushcfunction(L, LuaSpectraElementMethod);
     return 1;
   }
@@ -1855,12 +1856,106 @@ static int LuaSpectraIndex(lua_State * L)
   }
   if (strcmp(str, "Sum") == 0)
   {
+    printf("WARNING: G.Sum is deprecated. Please use Spectra.Sum instead");
     lua_pushcfunction(L, LuaSpectraSumMethod);
     return 1;
   }
   if (strcmp(str, "MultiplyByEnergy") == 0)
   {
     lua_pushcfunction(L, LuaSpectraMultiplyByEnergyMethod);
+    return 1;
+  }
+  if (strcmp(str, "N") == 0)
+  {
+    lua_pushinteger(L, a->NSpectra);
+    return 1;
+  }
+  if (strcmp(str, "NE") == 0)
+  {
+    uint32_t i;
+    lua_createtable(L, a->NSpectra, 0);
+    for(i=0;i<a->NSpectra;i++)
+    {
+      lua_pushinteger(L, a->Spec[i].N);
+      lua_rawseti(L, -2, i+1);
+    }
+    return 1;
+  }
+  if (strcmp(str, "dE") == 0)
+  {
+    uint32_t i;
+    lua_createtable(L, a->NSpectra, 0);
+    for(i=0;i<a->NSpectra;i++)
+    {
+      lua_pushnumber(L, a->Spec[i].dE);
+      lua_rawseti(L, -2, i+1);
+    }
+    return 1;
+  }
+  if (strcmp(str, "Emin") == 0)
+  {
+    uint32_t i;
+    lua_createtable(L, a->NSpectra, 0);
+    for(i=0;i<a->NSpectra;i++)
+    {
+      lua_pushnumber(L, a->Spec[i].Emin);
+      lua_rawseti(L, -2, i+1);
+    }
+    return 1;
+  }
+  if (strcmp(str, "Emax") == 0)
+  {
+    uint32_t i;
+    lua_createtable(L, a->NSpectra, 0);
+    for(i=0;i<a->NSpectra;i++)
+    {
+      lua_pushnumber(L, a->Spec[i].Emax);
+      lua_rawseti(L, -2, i+1);
+    }
+    return 1;
+  }
+  if (strcmp(str, "EminPole") == 0)
+  {
+    uint32_t i;
+    lua_createtable(L, a->NSpectra, 0);
+    for(i=0;i<a->NSpectra;i++)
+    {
+      lua_pushnumber(L, a->Spec[i].EminPole);
+      lua_rawseti(L, -2, i+1);
+    }
+    return 1;
+  }
+  if (strcmp(str, "EmaxPole") == 0)
+  {
+    uint32_t i;
+    lua_createtable(L, a->NSpectra, 0);
+    for(i=0;i<a->NSpectra;i++)
+    {
+      lua_pushnumber(L, a->Spec[i].EmaxPole);
+      lua_rawseti(L, -2, i+1);
+    }
+    return 1;
+  }
+  if (strcmp(str, "Gamma") == 0)
+  {
+    uint32_t i;
+    lua_createtable(L, a->NSpectra, 0);
+    for(i=0;i<a->NSpectra;i++)
+    {
+      lua_pushnumber(L, a->Spec[i].Gamma);
+      lua_rawseti(L, -2, i+1);
+    }
+    return 1;
+  }
+  if (strcmp(str, "Integral") == 0)
+  {
+    uint32_t i;
+    lua_createtable(L, a->NSpectra, 0);
+    for(i=0;i<a->NSpectra;i++)
+    {
+      lua_pushnumber(L, Sqr(a->Spec[i].b[0]));
+      lua_rawseti(L, -2, i+1);
+    }
     return 1;
   }
   return luaL_error(L, "Error operation \".%s()\" not defined on spectra\n",str);

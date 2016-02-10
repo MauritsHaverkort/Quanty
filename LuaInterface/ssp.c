@@ -2178,7 +2178,7 @@ static const struct luaL_Reg global_functions[] = {
   {"DensityMatrix",LuaDensityMatrix},
   {"Eigensystem", LuaEigensystem},
   {"EvolveToGroundstate", LuaEvolveToGroundstate},
-  {"Help", LuaHelp},
+//  {"Help", LuaHelp},
   {"MeanFieldGroundState", LuaMeanFieldGroundstate},
   {"NewOperator", LuaNewOperator},
   {"NewTightBinding", LuaNewTightBinding},

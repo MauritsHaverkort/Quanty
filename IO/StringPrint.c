@@ -163,21 +163,21 @@ uint32_t StringPrintSpectra(SpectraType * const Spec, const uint32_t NSpec, char
     sprintfAdd(Buffer, " %22.15E %22.15E", Spec[i].dE, Spec[i].Gamma);
   }
   sprintfAdd(Buffer, "\n");
-  sprintfAdd(Buffer, "Phase_____0        ");
-  for (i = 0; i < NSpec; i++)
-  {
-    sprintfAdd(Buffer, " %22.15E %22.15E", Spec[i].phase, 0.0);
-  }
-  sprintfAdd(Buffer, "\n");
-  for (j = 0; j < 5; j++)
-  {
-    sprintfAdd(Buffer, "a[%1i]______b[%1i]     ", j, j);
-    for (i = 0; i < NSpec; i++)
-    {
-      sprintfAdd(Buffer, " %22.15E %22.15E", Spec[i].a[j], Spec[i].b[j]);
-    }
-    sprintfAdd(Buffer, "\n");
-  }
+//  sprintfAdd(Buffer, "Phase_____0        ");
+//  for (i = 0; i < NSpec; i++)
+//  {
+//    sprintfAdd(Buffer, " %22.15E %22.15E", Spec[i].phase, 0.0);
+//  }
+//  sprintfAdd(Buffer, "\n");
+//  for (j = 0; j < 5; j++)
+//  {
+//    sprintfAdd(Buffer, "a[%1i]______b[%1i]     ", j, j);
+//    for (i = 0; i < NSpec; i++)
+//    {
+//      sprintfAdd(Buffer, " %22.15E %22.15E", Spec[i].a[j], Spec[i].b[j]);
+//    }
+//    sprintfAdd(Buffer, "\n");
+//  }
   sprintfAdd(Buffer, "Energy             ");
   for (i = 0; i < NSpec; i++)
   {
