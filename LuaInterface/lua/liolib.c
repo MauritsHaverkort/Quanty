@@ -584,6 +584,44 @@ static int f_flush (lua_State *L) {
 }
 
 
+static int io_get(lua_State *L)
+{
+  const char *FileName,*VariableName;
+  FileName = luaL_checkstring(L, 1);
+  VariableName = luaL_checkstring(L, 2);
+  if(LuaGet(L, FileName, VariableName))
+  {
+    return luaL_error(L, "io.get failed");
+  }
+  return 0;
+}
+
+static int io_put(lua_State *L)
+{
+  const char *FileName,*VariableName,*FileType;
+  uint32_t len = (uint32_t)lua_gettop(L);
+  if(!((len==2)||(len==3))) return luaL_error(L, "io.put caled with %d arguments, 2 (file name, variable name) or 3 (file name, variable name, file type) arguments expected.\n",len);
+  FileName = luaL_checkstring(L, 1);
+  VariableName = luaL_checkstring(L, 2);
+  if(len==3)
+  {
+    FileType = luaL_checkstring(L, 3);
+  }
+  else
+  {
+    FileType=NULL;
+  }
+  if(LuaPut(L, FileName, VariableName, FileType))
+  {
+    return luaL_error(L, "io.put failed");
+  }
+  return 0;
+}
+
+
+
+
+
 /*
 ** functions for 'io' library
 */
@@ -599,6 +637,8 @@ static const luaL_Reg iolib[] = {
   {"tmpfile", io_tmpfile},
   {"type", io_type},
   {"write", io_write},
+  {"get", io_get},
+  {"put", io_put},
   {NULL, NULL}
 };
 

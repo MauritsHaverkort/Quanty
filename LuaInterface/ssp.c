@@ -561,6 +561,87 @@ static int LuaNewOperator(lua_State * L)
   {
     return luaL_error(L, "ERROR: LuaNewOperator called with 0 arguments, expect at least one\n");
   }
+  if(lua_type(L, 1)==LUA_TNUMBER)
+  {
+    uint32_t i,j,lenopp,l;
+    uint16_t *oadd;
+    Complex16 V;
+    double oaddtemp;
+    struct
+    {
+      char *Name;
+      CompactVectorType NBitsKeyDouble;
+      DeterminantRestrictionType DeterminantRestrictions;
+    } Options;
+    OperatorType *O;
+    const uint32_t len = (uint32_t)lua_gettop(L);
+    LuaOptionsType LuaNewOperatorOptions[]={
+      {"restrictions", "DeterminantRestrictionType", &(Options.DeterminantRestrictions)},
+      {"Restrictions", "DeterminantRestrictionType", &(Options.DeterminantRestrictions)},
+      {"Name" ,        "char*",                      &(Options.Name)},
+      {"NBitsKey",     "Vector",                     &(Options.NBitsKeyDouble)},
+      {NULL, NULL, NULL}};
+    Options.DeterminantRestrictions.N=0;
+    Options.Name=NULL;
+    Options.NBitsKeyDouble.Ni=0;
+    Options.NBitsKeyDouble.QComplex=0;
+    if((len!=3)&&(len!=4)) return luaL_error(L, "ERROR: LuaNewOperator called with %u arguments, expectd 3 or 4\n",len);
+    if(len==4) LuaCheckOptions(L, -1, LuaNewOperatorOptions);
+    O = (OperatorType*) lua_newuserdata(L, sizeof(OperatorType));
+    luaL_setmetatable(L, "Operator_Type");
+    InitOperator(O);
+    O->NFermion=(uint32_t)luaL_checkunsigned(L, 1);
+    O->NBoson  =(uint32_t)luaL_checkunsigned(L, 2);
+    for(i=0;i<Options.NBitsKeyDouble.Ni;i++)
+    {
+      if(Abs(Options.NBitsKeyDouble.VRe[i])>0.5)
+      {
+        InitOperatorFixedLength(O, i+1, (uint32_t)round(Options.NBitsKeyDouble.VRe[i]));
+      }
+    }
+    if(Options.Name!=NULL) strlcpy(O->Name, Options.Name, MAXStrLength-1);
+    O->Res=Options.DeterminantRestrictions;
+    oadd=malloc(sizeof(uint16_t)*O->MaxLength);
+    luaL_checktype(L, 3, LUA_TTABLE);
+    lenopp = (uint32_t)lua_objlen(L, 3);
+    for(i=1;i<=lenopp;i++)
+    {
+      lua_rawgeti(L, 3, i);
+      luaL_checktype(L, -1, LUA_TTABLE);
+      l = (uint32_t)lua_objlen(L, -1);
+      if(l==0) return luaL_error(L, "ERROR: LuaNewOperator called an empty table as operator at position %d\n",i);
+      l--;
+      for(j=1;j<=l;j++)
+      {
+        lua_rawgeti(L, -1, j);
+        oaddtemp = luaL_checknumber(L, -1);
+        if(oaddtemp<0)
+        {
+          oadd[l-j]=(uint16_t)(-oaddtemp);
+        }
+        else
+        {
+          oadd[l-j]=CrAnMask + (uint16_t)oaddtemp;
+        }
+        lua_pop(L, 1);
+      }
+      lua_rawgeti(L, -1, l+1);
+      if(lua_type(L,-1)==LUA_TNUMBER)
+      {
+        V.Im=0;
+        V.Re=lua_tonumber(L, -1);
+      }
+      else
+      {
+        V = *(Complex16 *) luaL_checkudata(L, -1, "Complex_Type");
+      }
+      lua_pop(L,1);
+      OperatorAddLader(O, oadd, l, V.Re, V.Im);
+      lua_pop(L,1);
+    }
+    free(oadd);
+    return 1;
+  }
   if(lua_type(L, 1)!=LUA_TSTRING)
   {
     return luaL_error(L, "ERROR: first argument in LuaNewOperator should be a string (use \"Oppname\" as first argument)\n");
@@ -1379,7 +1460,9 @@ static int LuaCreateSpectra(lua_State *L)
   LuaOptionsType LuaCreateSpectraOptions[]={
     {"NTri","uint32_t",&(Options.Settings.NTri)},
     {"epsilon","double",&(Options.Settings.epsilon)},
+    {"Epsilon","double",&(Options.Settings.epsilon)},
     {"restrictions", "DeterminantRestrictionType", &(Options.Settings.restrictions)},
+    {"Restrictions", "DeterminantRestrictionType", &(Options.Settings.restrictions)},
     {"Emin","double",&(Options.Settings.Emin)},
     {"Emax","double",&(Options.Settings.Emax)},
     {"NE","uint32_t",&(Options.Settings.NE)},
@@ -1668,7 +1751,9 @@ static int LuaCreateFluorescenceYield(lua_State *L)
   LuaOptionsType LuaCreateSpectraOptions[]={
     {"NTri","uint32_t",&(Options.Settings.NTri)},
     {"epsilon","double",&(Options.Settings.epsilon)},
+    {"Epsilon","double",&(Options.Settings.epsilon)},
     {"restrictions", "DeterminantRestrictionType", &(Options.Settings.restrictions)},
+    {"Restrictions", "DeterminantRestrictionType", &(Options.Settings.restrictions)},
     {"Emin","double",&(Options.Settings.Emin)},
     {"Emax","double",&(Options.Settings.Emax)},
     {"NE","uint32_t",&(Options.Settings.NE)},
@@ -1813,8 +1898,11 @@ static int LuaEvolveToGroundstate(lua_State * L)
   uint32_t i,len;
   LuaOptionsType LuaEvolveToGroundStateOptions[]={
     {"epsilon","double",&(Options.epsilon)},
+    {"Epsilon","double",&(Options.epsilon)},
     {"zero","double",&(Options.zero)},
+    {"Aero","double",&(Options.zero)},
     {"restrictions", "DeterminantRestrictionType", &(Options.DeterminantRestrictions)},
+    {"Restrictions", "DeterminantRestrictionType", &(Options.DeterminantRestrictions)},
     {NULL, NULL, NULL}};
   /* check number of input parameters */
   len = (uint32_t)lua_gettop(L);
@@ -1930,8 +2018,11 @@ static int LuaEigensystem(lua_State * L)
     {"NKrylovMin","uint32_t",&(Options.Settings.NKrylovMin)},
     {"NBitsKey","uint32_t",&(Options.Settings.NBitsKey)},
     {"epsilon","double",&(Options.Settings.epsilon)},
+    {"Epsilon","double",&(Options.Settings.epsilon)},
     {"zero","double",&(Options.Settings.zero)},
+    {"Zero","double",&(Options.Settings.zero)},
     {"restrictions", "DeterminantRestrictionType", &(Options.DeterminantRestrictions)},
+    {"Restrictions", "DeterminantRestrictionType", &(Options.DeterminantRestrictions)},
     {"ExpandBasis", "bool",&(Options.ExpandBasis)},
     {NULL, NULL, NULL}};
   VerbosityPrintf(0x10000000,"Start of LuaEigensystem\n");

@@ -9,6 +9,8 @@
 #include <unistd.h>
 #include <stdarg.h>
 #include <complex.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -55,6 +57,7 @@
 static void *currentudata = NULL;
 #include "lua_extensions/tools.c"
 #include "lua_extensions/TableToArray.c"
+#include "lua_extensions/get_put.c"
 #include "units.c"
 #include "Complex.c"
 #include "Operator.c"

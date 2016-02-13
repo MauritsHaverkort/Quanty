@@ -1571,3 +1571,5 @@ uint32_t StreamPrintBandstructurePath(BandstructurePathType M, FILE * stream)
   }
   return 0;
 }
+
+

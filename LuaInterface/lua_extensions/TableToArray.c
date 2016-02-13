@@ -245,6 +245,11 @@ void luaL_setarray_DeterminatRestrictionType(lua_State *L, int narg, Determinant
   uint32_t NFermion,NBoson,i;
   uint32_t len,len2,detleng,NWord;
   char * detchar;
+  if(lua_isnil(L,narg))
+  {
+    buff->N=0;
+    return;
+  }
   luaL_checktype(L, narg, LUA_TTABLE);
   len = (uint32_t)lua_objlen(L, narg);
   if(len<3) luaL_error(L, "Restrictions should be given in the format {NFermion,NBoson,{\"determinant1\",minocc,maxocc},{\"determinant2\",minocc,maxocc},...}");

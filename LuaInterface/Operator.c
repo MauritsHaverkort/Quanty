@@ -1475,7 +1475,7 @@ static int LuaOperatorNewIndex(lua_State * L)
   {
     uint32_t NBnew;
     NBnew = (uint32_t)luaL_checknumber(L, 3);
-    if(NBnew+a->NFermion>65535) return luaL_error(L, "Maximum number of fermions + bosons allowed is 2^16 = 65535\nTrying to change the number of bosons from %d to %d with %d fermions\n",a->NBoson,NBnew,a->NFermion);
+    if(NBnew+a->NFermion>32768) return luaL_error(L, "Maximum number of fermions + bosons allowed is 2^15 = 32768\nTrying to change the number of bosons from %d to %d with %d fermions\n",a->NBoson,NBnew,a->NFermion);
     OperatorChangeNFandNB(a, a->NFermion, NBnew);
     //TODO: allow bosons - remove this line when debuged
     return luaL_error(L, "Current version does not suport Bosons\n");
@@ -1485,7 +1485,7 @@ static int LuaOperatorNewIndex(lua_State * L)
   {
     uint32_t NFnew;
     NFnew = (uint32_t)luaL_checknumber(L, 3);
-    if(NFnew+a->NBoson>65535) return luaL_error(L, "Maximum number of fermions + bosons allowed is 2^16 = 65535\nTrying to change the number of fermions from %d to %d with %d bosons\n",a->NFermion,NFnew,a->NBoson);
+    if(NFnew+a->NBoson>32768) return luaL_error(L, "Maximum number of fermions + bosons allowed is 2^15 = 32768\nTrying to change the number of fermions from %d to %d with %d bosons\n",a->NFermion,NFnew,a->NBoson);
     OperatorChangeNFandNB(a, NFnew, a->NBoson);
     return 0;
   }
