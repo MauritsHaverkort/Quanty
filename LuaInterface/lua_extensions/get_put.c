@@ -521,8 +521,28 @@ uint32_t LuaASCIIStreamPrint(lua_State *L, int narg, FILE * stream)
     }
     if (luaL_testudata(L, narg, "Spectra_Type") != NULL)
     {
-      //TODO: function table to spectra and print
-      fprintf(stream,"Some_Variable_Of_Spectra_type");
+      SpectraTypeArray *n;
+      uint32_t i,j;
+      n = (SpectraTypeArray *) luaL_checkudata(L, narg, "Spectra_Type");
+      fprintf(stream,"Spectra.FromTable({\n");
+      for(i=0;i<n->NSpectra;i++)
+      {
+        if(i!=0)fprintf(stream,",\n");
+        fprintf(stream,"{");
+        for(j=0;j<=n->Spec[i].N;j++)
+        {
+          fprintf(stream,"{%22.15E,%22.15E %c I * %22.15E},",n->Spec[i].Emin+j*n->Spec[i].dE,n->Spec[i].Re[j],(n->Spec[i].Im[j]<0)?'-':'+',Abs(n->Spec[i].Im[j]));
+        }
+        if(strcmp("", n->Spec[i].Name)!=0)
+        {
+          fprintf(stream,"[\"Name\"]=%s,",n->Spec[i].Name);
+        }
+        fprintf(stream,"[\"EminPole\"]=%22.15E,",n->Spec[i].EminPole);
+        fprintf(stream,"[\"EmaxPole\"]=%22.15E,",n->Spec[i].EmaxPole);
+        fprintf(stream,"[\"Gamma\"]=%22.15E,",n->Spec[i].Gamma);
+        fprintf(stream,"[\"Integral\"]=%22.15E}",Sqr(n->Spec[i].b[0]));
+      }
+      fprintf(stream,"})");
       return 0;
     }
     fprintf(stream,"Unrecognized User Data");

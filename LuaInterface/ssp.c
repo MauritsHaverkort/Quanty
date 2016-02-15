@@ -1465,16 +1465,19 @@ static int LuaCreateSpectra(lua_State *L)
   struct
   {
     ConvergenceSettingsType Settings;
+    char *stream;
     uint32_t Npsi;
     uint32_t NT;
   } Options;
   Options.Settings=InitConvergenceSettings();
+  Options.stream=NULL;
   SpectraTypeArray *Spec;
   TriDiagonalMatrixType *GTri;
   OperatorType *H,*T;
   WaveFunctionType *psi,Tpsi;
   uint32_t i,iT,ipsi,len;
   double Eminpole,Emaxpole, *val, *psiEn, psiEntemp;
+  char filename[MAXStrLength];
   LuaOptionsType LuaCreateSpectraOptions[]={
     {"NTri","uint32_t",&(Options.Settings.NTri)},
     {"epsilon","double",&(Options.Settings.epsilon)},
@@ -1485,6 +1488,7 @@ static int LuaCreateSpectra(lua_State *L)
     {"Emax","double",&(Options.Settings.Emax)},
     {"NE","uint32_t",&(Options.Settings.NE)},
     {"Gamma","double",&(Options.Settings.Gamma)},
+    {"file","char*",&(Options.stream)}, // temporary undoccumented option
     {NULL, NULL, NULL}};
   /* check number of input parameters */
   len = (uint32_t)lua_gettop(L);
@@ -1552,6 +1556,17 @@ static int LuaCreateSpectra(lua_State *L)
       {
         OperatorPsiRestricted(T[iT], psi[ipsi], &Tpsi, Options.Settings.restrictions);
         LanczosTriDiagonalizeRestricted(*H, Tpsi, Options.Settings.restrictions, Options.Settings.epsilon, &GTri[iT*Options.Npsi+ipsi], Max(Options.Settings.Gamma,Options.Settings.epsilon));
+      }
+      if(Options.stream!=NULL)
+      {
+        if (Options.NT*Options.Npsi==1) {
+          snprintf(filename, MAXStrLength, "%s", Options.stream);
+        }
+        else
+        {
+          snprintf(filename, MAXStrLength, "%s_%02d", Options.stream, iT*Options.Npsi+ipsi);
+        }
+        FilePrintPlainTriDiagonalMatrix(GTri[iT*Options.Npsi+ipsi], filename, "w");
       }
     }
   }

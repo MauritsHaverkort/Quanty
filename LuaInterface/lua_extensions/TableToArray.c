@@ -540,6 +540,11 @@ void LuaPushTable_SpectraTypeArray(lua_State* L, SpectraTypeArray const * const 
     lua_setfield(L,-2,"Gamma");
     lua_pushnumber(L, Sqr(M->Spec[i].b[0]));
     lua_setfield(L,-2,"Integral");
+    if(strcmp("", M->Spec[i].Name)!=0)
+    {
+      lua_pushstring(L, M->Spec[i].Name);
+      lua_setfield(L, -2, "Name");
+    }
     lua_rawseti(L, -2, i+1);
   }
   return;
