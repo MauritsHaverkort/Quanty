@@ -124,6 +124,7 @@ char *DetToString(uint32_t const NFermion, uint32_t const NBoson, uint8_t * det)
 uint32_t WaveFunctionInit(WaveFunctionType * Psi)
 {
   strcpy(Psi->Name, "Wave Function");
+  Psi->Name[MAXStrLength-1]='\0';
   Psi->N = 0;
   Psi->NBlok = 1;
   Psi->NWord = Psi->NBoson + Min(Psi->NFermion, 1 + (Psi->NFermion - 1) / 8);

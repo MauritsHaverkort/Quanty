@@ -519,7 +519,7 @@ void LuaPushTable_SpectraTypeArray(lua_State* L, SpectraTypeArray const * const 
   lua_createtable(L,M->NSpectra,0);
   for(i=0;i<M->NSpectra;i++)
   {
-    lua_createtable(L,M->Spec[i].N+1,0);
+    lua_createtable(L,M->Spec[i].N+1,4);
     for(j=0;j<=M->Spec[i].N;j++)
     {
       lua_createtable(L,2,0);
@@ -532,8 +532,17 @@ void LuaPushTable_SpectraTypeArray(lua_State* L, SpectraTypeArray const * const 
       lua_rawseti(L, -2, 2);
       lua_rawseti(L, -2, j+1);
     }
+    lua_pushnumber(L, M->Spec[i].EminPole);
+    lua_setfield(L,-2,"EminPole");
+    lua_pushnumber(L, M->Spec[i].EmaxPole);
+    lua_setfield(L,-2,"EmaxPole");
+    lua_pushnumber(L, M->Spec[i].Gamma);
+    lua_setfield(L,-2,"Gamma");
+    lua_pushnumber(L, Sqr(M->Spec[i].b[0]));
+    lua_setfield(L,-2,"Integral");
     lua_rawseti(L, -2, i+1);
   }
+  return;
 }
 
 

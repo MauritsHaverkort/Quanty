@@ -600,6 +600,7 @@ static int LuaNewOperator(lua_State * L)
       }
     }
     if(Options.Name!=NULL) strlcpy(O->Name, Options.Name, MAXStrLength-1);
+    
     O->Res=Options.DeterminantRestrictions;
     oadd=malloc(sizeof(uint16_t)*O->MaxLength);
     luaL_checktype(L, 3, LUA_TTABLE);
@@ -615,6 +616,9 @@ static int LuaNewOperator(lua_State * L)
       {
         lua_rawgeti(L, -1, j);
         oaddtemp = luaL_checknumber(L, -1);
+        
+        if(Abs(oaddtemp)>O->NFermion+O->NBoson-1) return luaL_error(L, "ERROR: Opperator %d at position %d adding particle with index %d but there are only %d (%d Fermions + %d Bosons in the basis)\n)\n",i,j,(int)oaddtemp,O->NFermion+O->NBoson,O->NFermion,O->NBoson);
+        
         if(oaddtemp<0)
         {
           oadd[l-j]=(uint16_t)(-oaddtemp);
@@ -636,7 +640,8 @@ static int LuaNewOperator(lua_State * L)
         V = *(Complex16 *) luaL_checkudata(L, -1, "Complex_Type");
       }
       lua_pop(L,1);
-      OperatorAddLader(O, oadd, l, V.Re, V.Im);
+      if(l>O->MaxLength) InitOperatorFixedLength(O, l, 6);
+      OperatorAddLaderNormalOrder(O, oadd, l, V.Re, V.Im, &QDetNotOrderedFcFaBcBa);
       lua_pop(L,1);
     }
     free(oadd);
@@ -807,8 +812,19 @@ static int LuaNewWaveFunction(lua_State * L)
   uint32_t QComplex=0,NDet,i,detleng;
   uint8_t *det;
 	WaveFunctionType *psi;
-  uint32_t len = (uint32_t)lua_gettop(L);
-	psi = (WaveFunctionType*) lua_newuserdata(L, sizeof(WaveFunctionType));
+  const uint32_t len = (uint32_t)lua_gettop(L);
+  struct
+  {
+    char *Name;
+    uint32_t NBitsKey;
+  } Options;
+  LuaOptionsType LuaNewWaveFunctionOptions[]={
+    {"Name" ,        "char*",                      &(Options.Name)},
+    {"NBitsKey",     "uint32_t",                   &(Options.NBitsKey)},
+    {NULL, NULL, NULL}};
+  Options.Name=NULL;
+  Options.NBitsKey=16;
+  psi = (WaveFunctionType*) lua_newuserdata(L, sizeof(WaveFunctionType));
   luaL_setmetatable(L, "Wavefunction_Type");
   psi->NFermion=(uint32_t)luaL_checkunsigned(L, 1);
   psi->NBoson  =(uint32_t)luaL_checkunsigned(L, 2);
@@ -818,20 +834,22 @@ static int LuaNewWaveFunction(lua_State * L)
     return luaL_error(L, "Bosons not included in this version\n Sorry\n");
   }
   
+  if((len!=3)&&(len!=4)) return luaL_error(L, "ERROR: LuaNewWaveFunction called with %u arguments, expectd 3 or 4\n",len);
+  if(len==4)
+  {
+    if(lua_isnumber(L, 4))
+    {
+      psi->NBitsKey  =(uint32_t)luaL_checkunsigned(L, 4);
+    }
+    else
+    {
+      LuaCheckOptions(L, 4, LuaNewWaveFunctionOptions);
+    }
+  }
   psi->QComplex=1;
-  if(len==3)
-  {
-    psi->NBitsKey=16;
-  }
-  else if(len==4)
-  {
-    psi->NBitsKey  =(uint32_t)luaL_checkunsigned(L, 4);
-  }
-  else
-  {
-    return luaL_error(L, "Error in LuaWavefunctionNew, expected 3 or 4 arguments, not %d\n",len);
-  }
+  psi->NBitsKey=Options.NBitsKey;
   WaveFunctionInit(psi);
+  if(Options.Name!=NULL)strlcpy(psi->Name, Options.Name, MAXStrLength-1);
   luaL_checktype(L, 3, LUA_TTABLE);
   NDet = (uint32_t)lua_objlen(L, 3);
   for(i=1;i<=NDet;i++)

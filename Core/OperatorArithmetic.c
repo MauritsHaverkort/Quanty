@@ -74,6 +74,7 @@ uint32_t FreeOperator(OperatorType * const H)
 uint32_t InitOperator(OperatorType * const O)
 {
   strcpy(O->Name, "Operator");
+  O->Name[MAXStrLength-1]='\0';
   O->QComplex = 0;
   O->NFermion = 0;
   O->NBoson = 0;
