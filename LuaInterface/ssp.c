@@ -561,6 +561,92 @@ static int LuaNewOperator(lua_State * L)
   {
     return luaL_error(L, "ERROR: LuaNewOperator called with 0 arguments, expect at least one\n");
   }
+  if(lua_type(L, 1)==LUA_TNUMBER)
+  {
+    uint32_t i,j,lenopp,l;
+    uint16_t *oadd;
+    Complex16 V;
+    double oaddtemp;
+    struct
+    {
+      char *Name;
+      CompactVectorType NBitsKeyDouble;
+      DeterminantRestrictionType DeterminantRestrictions;
+    } Options;
+    OperatorType *O;
+    const uint32_t len = (uint32_t)lua_gettop(L);
+    LuaOptionsType LuaNewOperatorOptions[]={
+      {"restrictions", "DeterminantRestrictionType", &(Options.DeterminantRestrictions)},
+      {"Restrictions", "DeterminantRestrictionType", &(Options.DeterminantRestrictions)},
+      {"Name" ,        "char*",                      &(Options.Name)},
+      {"NBitsKey",     "Vector",                     &(Options.NBitsKeyDouble)},
+      {NULL, NULL, NULL}};
+    Options.DeterminantRestrictions.N=0;
+    Options.Name=NULL;
+    Options.NBitsKeyDouble.Ni=0;
+    Options.NBitsKeyDouble.QComplex=0;
+    if((len!=3)&&(len!=4)) return luaL_error(L, "ERROR: LuaNewOperator called with %u arguments, expectd 3 or 4\n",len);
+    if(len==4) LuaCheckOptions(L, -1, LuaNewOperatorOptions);
+    O = (OperatorType*) lua_newuserdata(L, sizeof(OperatorType));
+    luaL_setmetatable(L, "Operator_Type");
+    InitOperator(O);
+    O->NFermion=(uint32_t)luaL_checkunsigned(L, 1);
+    O->NBoson  =(uint32_t)luaL_checkunsigned(L, 2);
+    for(i=0;i<Options.NBitsKeyDouble.Ni;i++)
+    {
+      if(Abs(Options.NBitsKeyDouble.VRe[i])>0.5)
+      {
+        InitOperatorFixedLength(O, i+1, (uint32_t)round(Options.NBitsKeyDouble.VRe[i]));
+      }
+    }
+    if(Options.Name!=NULL) strlcpy(O->Name, Options.Name, MAXStrLength-1);
+    
+    O->Res=Options.DeterminantRestrictions;
+    oadd=malloc(sizeof(uint16_t)*O->MaxLength);
+    luaL_checktype(L, 3, LUA_TTABLE);
+    lenopp = (uint32_t)lua_objlen(L, 3);
+    for(i=1;i<=lenopp;i++)
+    {
+      lua_rawgeti(L, 3, i);
+      luaL_checktype(L, -1, LUA_TTABLE);
+      l = (uint32_t)lua_objlen(L, -1);
+      if(l==0) return luaL_error(L, "ERROR: LuaNewOperator called an empty table as operator at position %d\n",i);
+      l--;
+      for(j=1;j<=l;j++)
+      {
+        lua_rawgeti(L, -1, j);
+        oaddtemp = luaL_checknumber(L, -1);
+        
+        if(Abs(oaddtemp)>O->NFermion+O->NBoson-1) return luaL_error(L, "ERROR: Opperator %d at position %d adding particle with index %d but there are only %d (%d Fermions + %d Bosons in the basis)\n)\n",i,j,(int)oaddtemp,O->NFermion+O->NBoson,O->NFermion,O->NBoson);
+        
+        if(oaddtemp<0)
+        {
+          oadd[l-j]=(uint16_t)(-oaddtemp);
+        }
+        else
+        {
+          oadd[l-j]=CrAnMask + (uint16_t)oaddtemp;
+        }
+        lua_pop(L, 1);
+      }
+      lua_rawgeti(L, -1, l+1);
+      if(lua_type(L,-1)==LUA_TNUMBER)
+      {
+        V.Im=0;
+        V.Re=lua_tonumber(L, -1);
+      }
+      else
+      {
+        V = *(Complex16 *) luaL_checkudata(L, -1, "Complex_Type");
+      }
+      lua_pop(L,1);
+      if(l>O->MaxLength) InitOperatorFixedLength(O, l, 6);
+      OperatorAddLaderNormalOrder(O, oadd, l, V.Re, V.Im, &QDetNotOrderedFcFaBcBa);
+      lua_pop(L,1);
+    }
+    free(oadd);
+    return 1;
+  }
   if(lua_type(L, 1)!=LUA_TSTRING)
   {
     return luaL_error(L, "ERROR: first argument in LuaNewOperator should be a string (use \"Oppname\" as first argument)\n");
@@ -726,8 +812,19 @@ static int LuaNewWaveFunction(lua_State * L)
   uint32_t QComplex=0,NDet,i,detleng;
   uint8_t *det;
 	WaveFunctionType *psi;
-  uint32_t len = (uint32_t)lua_gettop(L);
-	psi = (WaveFunctionType*) lua_newuserdata(L, sizeof(WaveFunctionType));
+  const uint32_t len = (uint32_t)lua_gettop(L);
+  struct
+  {
+    char *Name;
+    uint32_t NBitsKey;
+  } Options;
+  LuaOptionsType LuaNewWaveFunctionOptions[]={
+    {"Name" ,        "char*",                      &(Options.Name)},
+    {"NBitsKey",     "uint32_t",                   &(Options.NBitsKey)},
+    {NULL, NULL, NULL}};
+  Options.Name=NULL;
+  Options.NBitsKey=16;
+  psi = (WaveFunctionType*) lua_newuserdata(L, sizeof(WaveFunctionType));
   luaL_setmetatable(L, "Wavefunction_Type");
   psi->NFermion=(uint32_t)luaL_checkunsigned(L, 1);
   psi->NBoson  =(uint32_t)luaL_checkunsigned(L, 2);
@@ -737,20 +834,22 @@ static int LuaNewWaveFunction(lua_State * L)
     return luaL_error(L, "Bosons not included in this version\n Sorry\n");
   }
   
+  if((len!=3)&&(len!=4)) return luaL_error(L, "ERROR: LuaNewWaveFunction called with %u arguments, expectd 3 or 4\n",len);
+  if(len==4)
+  {
+    if(lua_isnumber(L, 4))
+    {
+      psi->NBitsKey  =(uint32_t)luaL_checkunsigned(L, 4);
+    }
+    else
+    {
+      LuaCheckOptions(L, 4, LuaNewWaveFunctionOptions);
+    }
+  }
   psi->QComplex=1;
-  if(len==3)
-  {
-    psi->NBitsKey=16;
-  }
-  else if(len==4)
-  {
-    psi->NBitsKey  =(uint32_t)luaL_checkunsigned(L, 4);
-  }
-  else
-  {
-    return luaL_error(L, "Error in LuaWavefunctionNew, expected 3 or 4 arguments, not %d\n",len);
-  }
+  psi->NBitsKey=Options.NBitsKey;
   WaveFunctionInit(psi);
+  if(Options.Name!=NULL)strlcpy(psi->Name, Options.Name, MAXStrLength-1);
   luaL_checktype(L, 3, LUA_TTABLE);
   NDet = (uint32_t)lua_objlen(L, 3);
   for(i=1;i<=NDet;i++)
@@ -1366,24 +1465,30 @@ static int LuaCreateSpectra(lua_State *L)
   struct
   {
     ConvergenceSettingsType Settings;
+    char *stream;
     uint32_t Npsi;
     uint32_t NT;
   } Options;
   Options.Settings=InitConvergenceSettings();
+  Options.stream=NULL;
   SpectraTypeArray *Spec;
   TriDiagonalMatrixType *GTri;
   OperatorType *H,*T;
   WaveFunctionType *psi,Tpsi;
   uint32_t i,iT,ipsi,len;
   double Eminpole,Emaxpole, *val, *psiEn, psiEntemp;
+  char filename[MAXStrLength];
   LuaOptionsType LuaCreateSpectraOptions[]={
     {"NTri","uint32_t",&(Options.Settings.NTri)},
     {"epsilon","double",&(Options.Settings.epsilon)},
+    {"Epsilon","double",&(Options.Settings.epsilon)},
     {"restrictions", "DeterminantRestrictionType", &(Options.Settings.restrictions)},
+    {"Restrictions", "DeterminantRestrictionType", &(Options.Settings.restrictions)},
     {"Emin","double",&(Options.Settings.Emin)},
     {"Emax","double",&(Options.Settings.Emax)},
     {"NE","uint32_t",&(Options.Settings.NE)},
     {"Gamma","double",&(Options.Settings.Gamma)},
+    {"file","char*",&(Options.stream)}, // temporary undoccumented option
     {NULL, NULL, NULL}};
   /* check number of input parameters */
   len = (uint32_t)lua_gettop(L);
@@ -1433,6 +1538,7 @@ static int LuaCreateSpectra(lua_State *L)
     for(iT=0;iT<Options.NT;iT++)
     {
       psiEn[iT*Options.Npsi+ipsi]=psiEntemp;
+      GTri[iT*Options.Npsi+ipsi].mu=psiEntemp;
     }
   }
   /* loop over all Transition operators */
@@ -1451,6 +1557,17 @@ static int LuaCreateSpectra(lua_State *L)
         OperatorPsiRestricted(T[iT], psi[ipsi], &Tpsi, Options.Settings.restrictions);
         LanczosTriDiagonalizeRestricted(*H, Tpsi, Options.Settings.restrictions, Options.Settings.epsilon, &GTri[iT*Options.Npsi+ipsi], Max(Options.Settings.Gamma,Options.Settings.epsilon));
       }
+      if(Options.stream!=NULL)
+      {
+        if (Options.NT*Options.Npsi==1) {
+          snprintf(filename, MAXStrLength, "%s", Options.stream);
+        }
+        else
+        {
+          snprintf(filename, MAXStrLength, "%s_%02d", Options.stream, iT*Options.Npsi+ipsi);
+        }
+        FilePrintPlainTriDiagonalMatrix(GTri[iT*Options.Npsi+ipsi], filename, "w");
+      }
     }
   }
   /* determine Eminpole and Emaxpole */
@@ -1465,10 +1582,28 @@ static int LuaCreateSpectra(lua_State *L)
     if((val[Options.Settings.NTri-1]-psiEn[i])>Emaxpole)Emaxpole=val[Options.Settings.NTri-1]-psiEn[i];
   }
   /* if Emin=DBL_MAX or Emax=-DBL_MAX or Gamma==0 determine these */
+  if(Eminpole==Emaxpole)
+  {
+    if(Eminpole==0)
+    {
+      if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin =-1;
+      if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax = 1;
+    }
+    if(Eminpole<0)
+    {
+      if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin = 2.125*Eminpole;
+      if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax =-0.125*Eminpole;
+    }
+    if(Eminpole>0)
+    {
+      if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin =-0.125*Eminpole;
+      if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax = 2.125*Eminpole;
+    }
+  }
   if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin = Eminpole - 0.125 * (Emaxpole-Eminpole);
-  if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax = Emaxpole + 0.125 * (Emaxpole-Eminpole);
+  if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax = Emaxpole + 0.125 * (Emaxpole-Eminpole);    
   if(Options.Settings.Gamma==0) Options.Settings.Gamma = 10*(Options.Settings.Emax-Options.Settings.Emin)/((double)Options.Settings.NE);
-  /* transform tridiagonal form to spectral form */
+  /* transform tridiagonal form to spectral form and push to stack */
   Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
   luaL_setmetatable(L, "Spectra_Type");
   Spec->NSpectra=Options.NT*Options.Npsi;
@@ -1487,23 +1622,32 @@ static int LuaCreateSpectra(lua_State *L)
     sprintf(Spec->Spec[i].Name, "Spectrum %i",i);
     TriDiagonalMatrixToSpectrum(psiEn[i], GTri[i], &(Spec->Spec[i]));
   }
+  /* push a table to L containing the spectra in tridiagonal form */
+  /* table contains {{a,b,mu},{a,b,mu},{a,b,mu},....} */
+  lua_createtable(L,Spec->NSpectra,0);
+  for(i=0;i<Spec->NSpectra;i++)
+  {
+    LuaPushTable_TriDiagonalMatrixType(L, &(GTri[i]));
+    lua_rawseti(L, -2, i+1);
+  }
+  /* free tridiagonal representation in memory */
   for(i=0;i<Spec->NSpectra;i++)
   {
     FreeTriDiagonalMatrix(&GTri[i]);
   }
   free(GTri);
   free(psiEn);
-  return 1;
+  return 2;
 }
 
 
 
-/*  calculates <psi_i | T_1^+ G_1 T_2 G_2 T_2^+ G_1 T_1 | psi_i >
+/*  calculates <psi_i | T_1^+ G_1^+ T_2^+ G_2 T_2 G_1 T_1 | psi_i >
  *  On stack:
  *     H1
  *     H2
  *     T1
- *     T2^+
+ *     T2
  *     psi
  *     options
  *        {E1min, E1max, N1, Gamma1}
@@ -1640,7 +1784,9 @@ static int LuaCreateFluorescenceYield(lua_State *L)
   LuaOptionsType LuaCreateSpectraOptions[]={
     {"NTri","uint32_t",&(Options.Settings.NTri)},
     {"epsilon","double",&(Options.Settings.epsilon)},
+    {"Epsilon","double",&(Options.Settings.epsilon)},
     {"restrictions", "DeterminantRestrictionType", &(Options.Settings.restrictions)},
+    {"Restrictions", "DeterminantRestrictionType", &(Options.Settings.restrictions)},
     {"Emin","double",&(Options.Settings.Emin)},
     {"Emax","double",&(Options.Settings.Emax)},
     {"NE","uint32_t",&(Options.Settings.NE)},
@@ -1744,7 +1890,7 @@ static int LuaCreateFluorescenceYield(lua_State *L)
  */
 static int LuaMeanFieldGroundstate(lua_State *L)
 {
-  OperatorType *H;
+  OperatorType *H, *HMF;
   CompactMatrixType *Rho;
   double kbT;
   double Etot;
@@ -1757,9 +1903,12 @@ static int LuaMeanFieldGroundstate(lua_State *L)
   }
   MeanFieldGroundstate(H, Rho, kbT,&Etot);
   LuaPushTable_CompactMatrixType(L, Rho);
-  FreeCompactMatrix(Rho);
   lua_pushnumber(L, Etot);
-  return 2;
+  HMF = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+  MeanFieldOperator(H, HMF, *Rho);
+  luaL_setmetatable(L, "Operator_Type");
+  FreeCompactMatrix(Rho);
+  return 3;
 }
 
 
@@ -1782,8 +1931,11 @@ static int LuaEvolveToGroundstate(lua_State * L)
   uint32_t i,len;
   LuaOptionsType LuaEvolveToGroundStateOptions[]={
     {"epsilon","double",&(Options.epsilon)},
+    {"Epsilon","double",&(Options.epsilon)},
     {"zero","double",&(Options.zero)},
+    {"Aero","double",&(Options.zero)},
     {"restrictions", "DeterminantRestrictionType", &(Options.DeterminantRestrictions)},
+    {"Restrictions", "DeterminantRestrictionType", &(Options.DeterminantRestrictions)},
     {NULL, NULL, NULL}};
   /* check number of input parameters */
   len = (uint32_t)lua_gettop(L);
@@ -1899,10 +2051,14 @@ static int LuaEigensystem(lua_State * L)
     {"NKrylovMin","uint32_t",&(Options.Settings.NKrylovMin)},
     {"NBitsKey","uint32_t",&(Options.Settings.NBitsKey)},
     {"epsilon","double",&(Options.Settings.epsilon)},
+    {"Epsilon","double",&(Options.Settings.epsilon)},
     {"zero","double",&(Options.Settings.zero)},
+    {"Zero","double",&(Options.Settings.zero)},
     {"restrictions", "DeterminantRestrictionType", &(Options.DeterminantRestrictions)},
+    {"Restrictions", "DeterminantRestrictionType", &(Options.DeterminantRestrictions)},
     {"ExpandBasis", "bool",&(Options.ExpandBasis)},
     {NULL, NULL, NULL}};
+  VerbosityPrintf(0x10000000,"Start of LuaEigensystem\n");
   /* check number of input parameters */
   len = (uint32_t)lua_gettop(L);
   if(len==1) return LuaEigensystemDenseTable(L);
@@ -2146,7 +2302,7 @@ static const struct luaL_Reg global_functions[] = {
   {"DensityMatrix",LuaDensityMatrix},
   {"Eigensystem", LuaEigensystem},
   {"EvolveToGroundstate", LuaEvolveToGroundstate},
-  {"Help", LuaHelp},
+//  {"Help", LuaHelp},
   {"MeanFieldGroundState", LuaMeanFieldGroundstate},
   {"NewOperator", LuaNewOperator},
   {"NewTightBinding", LuaNewTightBinding},

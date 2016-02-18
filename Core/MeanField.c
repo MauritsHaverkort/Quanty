@@ -1,138 +1,61 @@
-
-
-/*  Given a many particle operator O and a density matrix Rho
- *  create the mean-field approximated operator MO
- *  a^dag_1 a^dag_2 a_3 a_4 -> 0.5 (
- *   - a^dag_1 a_3 < a^dag_2 a_4 >
- *   + a^dag_1 a_4 < a^dag_2 a_3 >
- *   + a^dag_2 a_3 < a^dag_1 a_4 >
- *   - a^dag_2 a_4 < a^dag_1 a_3 > )
+/*  This function changes a compact matrix into a one particel operator
+ *
+ *  state |0> is chaged by the operator Cr1 An0 to state |1>
+ *  the matrix
+ *    ( 0 0 )
+ *    ( 1 0 )
+ * acting on the vector
+ *   (1 0)
+ * becomes the vector
+ *   (0 1)
+ * if i is the index for the different rows and j for the different columns, Cr1 An0 is thus found at the position i=1 j=0
+ * or at position M(i*Nj+j) in compact form
+ *   is the position M[i][j] in extended form
+ *
  */
-uint32_t MeanFieldOperator(const OperatorType * const O, OperatorType * const MO, const MatrixType Rho)
+uint32_t CompactMatrixToOneParticleOperator(const CompactMatrixType * const Omat, OperatorType * const O)
 {
-  uint32_t i;
   uint16_t oadd[2];
-  InitOperatorCopySettings(MO, *O);
-  if(NormalOrderOperator(*O, MO, &QDetNotOrderedFcFaBcBa))
+  if(Omat->Ni!=Omat->Nj)
   {
-    printf("NormalOrderOperator failed in MeanFieldOperator\n");
+    printf("Error in CompactMatrixToOneParticleOperator, expected a square matrix got dimensions %i %i\n",Omat->Ni,Omat->Nj);
     return 1;
   }
-  if(MO->MaxLength!=4)
+  uint32_t i,j;
+  InitOperator(O);
+  O->NFermion=Omat->Ni;
+  O->NBoson=0;
+  O->NWord = Min(O->NFermion, 1 + (O->NFermion - 1) / 8)+O->NBoson;
+  O->QComplex = 0;
+  InitOperatorFixedLength(O,2,8);
+  if(Omat->QComplex)
   {
-    printf("MeanFieldOperator only implemented to reduce a 2 particle operator to 1 particle operator\n");
-    return 1;
-  }
-  /* all real */
-  if((Rho.QComplex==0)&&(MO->l[4].QComplex==0)&&(MO->l[2].QComplex==0))
-  {
-    for(i=0;i<MO->l[4].N;i++)
+    MakeRealOperatorFixedLengthComplex(O, 2);
+    for(i=0;i<Omat->Ni;i++)
     {
-      oadd[0]=MO->l[4].o[i*4+0];
-      oadd[1]=MO->l[4].o[i*4+2];
-      RealOperatorAddLaderNormalOrder(MO, oadd, 2,-Rho.VRe[NotCrAnMask & MO->l[4].o[i*4+3]][MO->l[4].o[i*4+1]]*MO->l[4].VRe[i]/2.0, &QDetNotOrderedFcFaBcBa);
-      oadd[0]=MO->l[4].o[i*4+0];
-      oadd[1]=MO->l[4].o[i*4+3];
-      RealOperatorAddLaderNormalOrder(MO, oadd, 2, Rho.VRe[NotCrAnMask & MO->l[4].o[i*4+2]][MO->l[4].o[i*4+1]]*MO->l[4].VRe[i]/2.0, &QDetNotOrderedFcFaBcBa);
-      oadd[0]=MO->l[4].o[i*4+1];
-      oadd[1]=MO->l[4].o[i*4+2];
-      RealOperatorAddLaderNormalOrder(MO, oadd, 2, Rho.VRe[NotCrAnMask & MO->l[4].o[i*4+3]][MO->l[4].o[i*4+0]]*MO->l[4].VRe[i]/2.0, &QDetNotOrderedFcFaBcBa);
-      oadd[0]=MO->l[4].o[i*4+1];
-      oadd[1]=MO->l[4].o[i*4+3];
-      RealOperatorAddLaderNormalOrder(MO, oadd, 2,-Rho.VRe[NotCrAnMask & MO->l[4].o[i*4+2]][MO->l[4].o[i*4+0]]*MO->l[4].VRe[i]/2.0, &QDetNotOrderedFcFaBcBa);
+      oadd[1]=CrAnMask + (uint16_t)i;
+      for(j=0;j<Omat->Nj;j++)
+      {
+        oadd[0]=(uint16_t)j;
+        if(Sqr(Omat->V[i*Omat->Nj+j].Re)+Sqr(Omat->V[i*Omat->Nj+j].Im)>10*DBL_MIN) ComplexOperatorAddLader(O, oadd, 2, Omat->V[i*Omat->Nj+j].Re, Omat->V[i*Omat->Nj+j].Im);
+      }
     }
   }
   else
   {
-    if(MO->l[2].QComplex==0) MakeRealOperatorFixedLengthComplex(MO, 2);
-    if((Rho.QComplex==0)&&(MO->l[4].QComplex==0))
+    for(i=0;i<Omat->Ni;i++)
     {
-      for(i=0;i<MO->l[4].N;i++)
+      oadd[1]=CrAnMask + (uint16_t)i;
+      for(j=0;j<Omat->Nj;j++)
       {
-        oadd[0]=MO->l[4].o[i*4+0];
-        oadd[1]=MO->l[4].o[i*4+2];
-        ComplexOperatorAddLaderNormalOrder(MO, oadd, 2,-Rho.VRe[NotCrAnMask & MO->l[4].o[i*4+3]][MO->l[4].o[i*4+1]]*MO->l[4].VRe[i]/2.0, 0, &QDetNotOrderedFcFaBcBa);
-        oadd[0]=MO->l[4].o[i*4+0];
-        oadd[1]=MO->l[4].o[i*4+3];
-        ComplexOperatorAddLaderNormalOrder(MO, oadd, 2, Rho.VRe[NotCrAnMask & MO->l[4].o[i*4+2]][MO->l[4].o[i*4+1]]*MO->l[4].VRe[i]/2.0, 0, &QDetNotOrderedFcFaBcBa);
-        oadd[0]=MO->l[4].o[i*4+1];
-        oadd[1]=MO->l[4].o[i*4+2];
-        ComplexOperatorAddLaderNormalOrder(MO, oadd, 2, Rho.VRe[NotCrAnMask & MO->l[4].o[i*4+3]][MO->l[4].o[i*4+0]]*MO->l[4].VRe[i]/2.0, 0, &QDetNotOrderedFcFaBcBa);
-        oadd[0]=MO->l[4].o[i*4+1];
-        oadd[1]=MO->l[4].o[i*4+3];
-        ComplexOperatorAddLaderNormalOrder(MO, oadd, 2,-Rho.VRe[NotCrAnMask & MO->l[4].o[i*4+2]][MO->l[4].o[i*4+0]]*MO->l[4].VRe[i]/2.0, 0, &QDetNotOrderedFcFaBcBa);
-      }
-    }
-    else if((Rho.QComplex==0)&&(MO->l[4].QComplex==1))
-    {
-      for(i=0;i<MO->l[4].N;i++)
-      {
-        oadd[0]=MO->l[4].o[i*4+0];
-        oadd[1]=MO->l[4].o[i*4+2];
-        ComplexOperatorAddLaderNormalOrder(MO, oadd, 2,-Rho.VRe[NotCrAnMask & MO->l[4].o[i*4+3]][MO->l[4].o[i*4+1]]*MO->l[4].V[i].Re/2.0, -Rho.VRe[NotCrAnMask & MO->l[4].o[i*4+3]][MO->l[4].o[i*4+1]]*MO->l[4].V[i].Im/2.0, &QDetNotOrderedFcFaBcBa);
-        oadd[0]=MO->l[4].o[i*4+0];
-        oadd[1]=MO->l[4].o[i*4+3];
-        ComplexOperatorAddLaderNormalOrder(MO, oadd, 2, Rho.VRe[NotCrAnMask & MO->l[4].o[i*4+2]][MO->l[4].o[i*4+1]]*MO->l[4].V[i].Re/2.0,  Rho.VRe[NotCrAnMask & MO->l[4].o[i*4+2]][MO->l[4].o[i*4+1]]*MO->l[4].V[i].Im/2.0, &QDetNotOrderedFcFaBcBa);
-        oadd[0]=MO->l[4].o[i*4+1];
-        oadd[1]=MO->l[4].o[i*4+2];
-        ComplexOperatorAddLaderNormalOrder(MO, oadd, 2, Rho.VRe[NotCrAnMask & MO->l[4].o[i*4+3]][MO->l[4].o[i*4+0]]*MO->l[4].V[i].Re/2.0,  Rho.VRe[NotCrAnMask & MO->l[4].o[i*4+3]][MO->l[4].o[i*4+0]]*MO->l[4].V[i].Im/2.0, &QDetNotOrderedFcFaBcBa);
-        oadd[0]=MO->l[4].o[i*4+1];
-        oadd[1]=MO->l[4].o[i*4+3];
-        ComplexOperatorAddLaderNormalOrder(MO, oadd, 2,-Rho.VRe[NotCrAnMask & MO->l[4].o[i*4+2]][MO->l[4].o[i*4+0]]*MO->l[4].V[i].Re/2.0, -Rho.VRe[NotCrAnMask & MO->l[4].o[i*4+2]][MO->l[4].o[i*4+0]]*MO->l[4].V[i].Im/2.0, &QDetNotOrderedFcFaBcBa);
-      }
-    }
-    else if((Rho.QComplex==1)&&(MO->l[4].QComplex==0))
-    {
-      for(i=0;i<MO->l[4].N;i++)
-      {
-        oadd[0]=MO->l[4].o[i*4+0];
-        oadd[1]=MO->l[4].o[i*4+2];
-        ComplexOperatorAddLaderNormalOrder(MO, oadd, 2,-Rho.VRe[NotCrAnMask & MO->l[4].o[i*4+3]][MO->l[4].o[i*4+1]]*MO->l[4].VRe[i]/2.0, -Rho.VIm[NotCrAnMask & MO->l[4].o[i*4+3]][MO->l[4].o[i*4+1]]*MO->l[4].VRe[i]/2.0, &QDetNotOrderedFcFaBcBa);
-        oadd[0]=MO->l[4].o[i*4+0];
-        oadd[1]=MO->l[4].o[i*4+3];
-        ComplexOperatorAddLaderNormalOrder(MO, oadd, 2, Rho.VRe[NotCrAnMask & MO->l[4].o[i*4+2]][MO->l[4].o[i*4+1]]*MO->l[4].VRe[i]/2.0,  Rho.VIm[NotCrAnMask & MO->l[4].o[i*4+2]][MO->l[4].o[i*4+1]]*MO->l[4].VRe[i]/2.0, &QDetNotOrderedFcFaBcBa);
-        oadd[0]=MO->l[4].o[i*4+1];
-        oadd[1]=MO->l[4].o[i*4+2];
-        ComplexOperatorAddLaderNormalOrder(MO, oadd, 2, Rho.VRe[NotCrAnMask & MO->l[4].o[i*4+3]][MO->l[4].o[i*4+0]]*MO->l[4].VRe[i]/2.0,  Rho.VIm[NotCrAnMask & MO->l[4].o[i*4+3]][MO->l[4].o[i*4+0]]*MO->l[4].VRe[i]/2.0, &QDetNotOrderedFcFaBcBa);
-        oadd[0]=MO->l[4].o[i*4+1];
-        oadd[1]=MO->l[4].o[i*4+3];
-        ComplexOperatorAddLaderNormalOrder(MO, oadd, 2,-Rho.VRe[NotCrAnMask & MO->l[4].o[i*4+2]][MO->l[4].o[i*4+0]]*MO->l[4].VRe[i]/2.0, -Rho.VIm[NotCrAnMask & MO->l[4].o[i*4+2]][MO->l[4].o[i*4+0]]*MO->l[4].VRe[i]/2.0, &QDetNotOrderedFcFaBcBa);
-      }
-    }
-    else if((Rho.QComplex==1)&&(MO->l[4].QComplex==1))
-    {
-      for(i=0;i<MO->l[4].N;i++)
-      {
-        oadd[0]=MO->l[4].o[i*4+0];
-        oadd[1]=MO->l[4].o[i*4+2];
-        ComplexOperatorAddLaderNormalOrder(MO, oadd, 2,-Rho.VRe[NotCrAnMask & MO->l[4].o[i*4+3]][MO->l[4].o[i*4+1]]*MO->l[4].V[i].Re/2.0 + Rho.VIm[NotCrAnMask & MO->l[4].o[i*4+3]][MO->l[4].o[i*4+1]]*MO->l[4].V[i].Im/2.0, -Rho.VRe[NotCrAnMask & MO->l[4].o[i*4+3]][MO->l[4].o[i*4+1]]*MO->l[4].V[i].Im/2.0 -Rho.VIm[NotCrAnMask & MO->l[4].o[i*4+3]][MO->l[4].o[i*4+1]]*MO->l[4].V[i].Re/2.0, &QDetNotOrderedFcFaBcBa);
-        oadd[0]=MO->l[4].o[i*4+0];
-        oadd[1]=MO->l[4].o[i*4+3];
-        ComplexOperatorAddLaderNormalOrder(MO, oadd, 2, Rho.VRe[NotCrAnMask & MO->l[4].o[i*4+2]][MO->l[4].o[i*4+1]]*MO->l[4].V[i].Re/2.0 - Rho.VIm[NotCrAnMask & MO->l[4].o[i*4+2]][MO->l[4].o[i*4+1]]*MO->l[4].V[i].Im/2.0,  Rho.VRe[NotCrAnMask & MO->l[4].o[i*4+2]][MO->l[4].o[i*4+1]]*MO->l[4].V[i].Im/2.0 +Rho.VIm[NotCrAnMask & MO->l[4].o[i*4+2]][MO->l[4].o[i*4+1]]*MO->l[4].V[i].Re/2.0, &QDetNotOrderedFcFaBcBa);
-        oadd[0]=MO->l[4].o[i*4+1];
-        oadd[1]=MO->l[4].o[i*4+2];
-        ComplexOperatorAddLaderNormalOrder(MO, oadd, 2, Rho.VRe[NotCrAnMask & MO->l[4].o[i*4+3]][MO->l[4].o[i*4+0]]*MO->l[4].V[i].Re/2.0 - Rho.VIm[NotCrAnMask & MO->l[4].o[i*4+3]][MO->l[4].o[i*4+0]]*MO->l[4].V[i].Im/2.0,  Rho.VRe[NotCrAnMask & MO->l[4].o[i*4+3]][MO->l[4].o[i*4+0]]*MO->l[4].V[i].Im/2.0 +Rho.VIm[NotCrAnMask & MO->l[4].o[i*4+3]][MO->l[4].o[i*4+0]]*MO->l[4].V[i].Re/2.0, &QDetNotOrderedFcFaBcBa);
-        oadd[0]=MO->l[4].o[i*4+1];
-        oadd[1]=MO->l[4].o[i*4+3];
-        ComplexOperatorAddLaderNormalOrder(MO, oadd, 2,-Rho.VRe[NotCrAnMask & MO->l[4].o[i*4+2]][MO->l[4].o[i*4+0]]*MO->l[4].V[i].Re/2.0 + Rho.VIm[NotCrAnMask & MO->l[4].o[i*4+2]][MO->l[4].o[i*4+0]]*MO->l[4].V[i].Im/2.0, -Rho.VRe[NotCrAnMask & MO->l[4].o[i*4+2]][MO->l[4].o[i*4+0]]*MO->l[4].V[i].Im/2.0 -Rho.VIm[NotCrAnMask & MO->l[4].o[i*4+2]][MO->l[4].o[i*4+0]]*MO->l[4].V[i].Re/2.0, &QDetNotOrderedFcFaBcBa);
+        oadd[0]=(uint16_t)j;
+        if(Sqr(Omat->VRe[i*Omat->Nj+j])>10*DBL_MIN) RealOperatorAddLader(O, oadd, 2, Omat->VRe[i*Omat->Nj+j]);
       }
     }
   }
-  for (i = 3; i <= MO->MaxLength; i++)
-  {
-    if (MO->l[i].NAloc)
-    {
-      free(MO->l[i].o);
-      free(MO->l[i].Next);
-      free(MO->l[i].KeyList);
-      (MO->l[i].QComplex) ? free(MO->l[i].V) : free(MO->l[i].VRe);
-    }
-  }
-  MO->MaxLength=2;
-  OperatorChop(MO, DBL_MIN*100);
-  SetQComplexOperator(MO);
   return 0;
 }
+
 
 
 /*
@@ -594,6 +517,18 @@ uint32_t MeanFieldOperatorOneElectronMatrix(const OperatorType * const O, Compac
 }
 
 
+/*
+ *
+ */
+uint32_t MeanFieldOperator(const OperatorType * const O, OperatorType * const MO, const CompactMatrixType Rho)
+{
+  CompactMatrixType Omat;
+  MeanFieldOperatorOneElectronMatrix(O, &Omat, Rho);
+  CompactMatrixToOneParticleOperator(&Omat, MO);
+  FreeCompactMatrix(&Omat);
+  return 0;
+}
+
 /*  given an eigen-system with val[i] the i-th eigenvalue and fun[i*Nj] the i-th eigen-vector and a total occupation of Nelec
  *
  *  first calcualte the chemical potential
@@ -681,7 +616,7 @@ uint32_t MeanFieldGroundstate(const OperatorType *const O, CompactMatrixType * c
     if(iloop==500) mix=0.1;
     if(iloop==600) mix=0.8;
     MeanFieldOperatorOneElectronMatrix(O, &HMF, *Rho);
-    //FreeCompactMatrix(Rho);
+    
     CompactMatrixEigensystem(&HMF, &fun, val);
     CalculateDensityMatrixFromOneElectronEigensystem(&fun, val, &RhoNew, kbT, Nelec,Etot);
     

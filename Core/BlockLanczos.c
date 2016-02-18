@@ -309,7 +309,7 @@ uint32_t BlockOperatorPsiRestricted(const OperatorType H, WaveFunctionType const
     return 1;
   }
   
-  WaveFunctionAddMultipliedUnionBasis(&(Opsi[0]), psi[0], 0);
+  //WaveFunctionAddMultipliedUnionBasis(&(Opsi[0]), psi[0], 0); this should not matter, was there from earlier times when I did not add states to psi with small prefactors?
   
   for(i=1;i<Npsi;i++)
   {
@@ -332,7 +332,7 @@ uint32_t BlockOperatorPsiRestricted(const OperatorType H, WaveFunctionType const
   return 0;
 }
 
-/*  Calculate Opsi[i] = H psi[i] + 0 psi[i] for i=0 to Npsi
+/*  Calculate Opsi[i] = H psi[i] for i=0 to Npsi
  *  on input all psi[i]'s are on the same basis
  *  on excit all Opsi[i]'s are on the same basis
  */
@@ -346,7 +346,7 @@ uint32_t BlockOperatorPsi(const OperatorType H, WaveFunctionType const * const p
     return 1;
   }
   
-  WaveFunctionAddMultipliedUnionBasis(&(Opsi[0]), psi[0], 0);
+  //WaveFunctionAddMultipliedUnionBasis(&(Opsi[0]), psi[0], 0);
   
   for(i=1;i<Npsi;i++)
   {
@@ -661,7 +661,7 @@ uint32_t BlockLanczosGroundStateConserveBasisDense(const OperatorType H, WaveFun
     {
       printf("WaveFunctionInitCopyBasis failed in BlockLanczosGroundStateConserveBasisDense\n");
       // need to clean things in parallel session before return - to do
-      // return 1;
+      //return 1;
     }
     if(Hdens.QComplex)
     {
@@ -691,6 +691,11 @@ uint32_t BlockLanczosGroundStateConserveBasisDense(const OperatorType H, WaveFun
       }
     }
     WaveFunctionFreeValues(&Hpsi);
+  }
+  if(GlobalVerbosity&0x1000000)
+  {
+    printf("matrix to diagonalize\n");
+    PrintCompactMatrixMinimal(Hdens);
   }
   if(GlobalTimeOn&0x40) EndTiming("Create Hdens", &GlobalTime);
   if(GlobalTimeOn&0x40) BeginTiming("Diagonalize Hdens", &GlobalTime);
@@ -1344,7 +1349,7 @@ uint32_t BlockLanczosGroundStateConserveBasis(const OperatorType H, WaveFunction
 {
   uint32_t i,MaxAlloc=2*Npsi+Settings->NKrylovMax, StartAlloc=2*Npsi+Settings->NKrylovStart;
   WaveFunctionType *v;
-  VerbosityPrintf(0x0100,"Start of BlockLanczosGroundStateConserveBasis\n");
+  VerbosityPrintf(0x10000000,"Start of BlockLanczosGroundStateConserveBasis\n");
   // for small basises do a dense calculation
   if(psi[0].N<=Settings->DenseBoarder) return BlockLanczosGroundStateConserveBasisDense(H,psi, Npsi);
   // create the vectors v in memory.
@@ -1424,6 +1429,7 @@ uint32_t BlockGroundState(const OperatorType H, uint32_t const Npsi, Convergence
   // create Npsi independent functions fullfiling the starting point conditions
   // all functions must have the same basis
   // if H is complex or mixed psi will be complex, if H is real psi is real
+  VerbosityPrintf(0x10000000,"Start of BlockGroundState\n");
   if((StartingPoint.N!=0)&&(!(NBitsKey==0)))
   {
     if(CreateStartingFunctions(H, Npsi, StartingPoint, psi, NBitsKey))
@@ -1433,13 +1439,11 @@ uint32_t BlockGroundState(const OperatorType H, uint32_t const Npsi, Convergence
     }
     BlockGroundState(H, Npsi, Settings, StartingPoint, StartingPoint, psi, 0);
   }
-#ifdef PrintDebugInfo
   VerbosityPrintf(0x20000,"\nStarting function 1 to Npsi=%i in BlockGroundState\n\n",Npsi);
   if(GlobalVerbosity&0x20000)
   {
       for(i=0;i<Npsi;i++) PrintWaveFunctionReadable(psi[i]);
   }
-#endif
   // set energy[0]
   for(i=0;i<Npsi;i++)
   {
@@ -1473,9 +1477,10 @@ uint32_t BlockGroundState(const OperatorType H, uint32_t const Npsi, Convergence
       WaveFunctionDotProduct(psi[i], Opsi[i], &Energy[0][i], &temp);
       WaveFunctionDotProductSameBasis(Opsi[i], Opsi[i], &EnergySqr[0][i], &temp);
       VerbosityPrintf(0x0100,"%7i | %22.15E | %22.15E | %22.15E\n",i,Energy[0][i],EnergySqr[0][i]-Sqr(Energy[0][i]),Energy[0][i]-Energy[1][i]);
-      if((EnergySqr[0][i]-Sqr(Energy[0][i])>=(EnergySqr[0][i]*Settings->zero))&&((Energy[1][i]-Energy[0][i])>DBL_EPSILON)) Qconverged=0;
+      if((EnergySqr[0][i]-Sqr(Energy[0][i])>=(EnergySqr[0][i]*Settings->zero))&&(((Energy[1][i]-Energy[0][i])>fabs(Energy[0][i]*10*DBL_EPSILON))||(Energy[0][i]-Energy[1][i]>fabs(Energy[0][i]*Settings->zero)))) Qconverged=0;
     }
     VerbosityPrintf(0x0100,"\n");
+    VerbosityPrintf(0x10000000,"Converged %i\n",Qconverged);
     if(AtLeastAnOtherLoop)
     {
       Qconverged=0;

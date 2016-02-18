@@ -1223,10 +1223,12 @@ static int LuaOperatorPrint(lua_State * L)
   struct
   {
     char *stream;
+    Bool Full;
   } Options;
   uint32_t len = (uint32_t)lua_gettop(L);
   LuaOptionsType LuaOperatorPrintOptions[]={
     {"file", "char*", &(Options.stream)},
+    {"Full", "bool", &(Options.Full)},
     {NULL, NULL, NULL}};
   if(!((len==0)||(len==1)))
   {
@@ -1235,18 +1237,32 @@ static int LuaOperatorPrint(lua_State * L)
   if(len==0)
   {
     PrintOperatorReadable(*((OperatorType *) currentudata));
+    return 0;
   }
-  if(len==1)
-  {
-    LuaCheckOptions(L, -1, LuaOperatorPrintOptions);
-  }
+  Options.Full=False;
+  Options.stream=NULL;
+  LuaCheckOptions(L, -1, LuaOperatorPrintOptions);
   if(Options.stream==NULL)
   {
-    PrintOperatorFullReadable(*(OperatorType *) currentudata);
+    if(Options.Full==False)
+    {
+      PrintOperatorReadable(*((OperatorType *) currentudata));
+    }
+    else
+    {
+      PrintOperatorFullReadable(*((OperatorType *) currentudata));
+    }
   }
   else
   {
-    FilePrintOperatorReadable(*(OperatorType *) currentudata, Options.stream, "w");
+    if(Options.Full==False)
+    {
+      FilePrintOperatorReadable(*((OperatorType *) currentudata), Options.stream, "w");
+    }
+    else
+    {
+      FilePrintOperatorFullReadable(*((OperatorType *) currentudata), Options.stream, "w");
+    }
   }
   return 0;
 }
@@ -1305,6 +1321,7 @@ static int LuaOperatorConjugate(lua_State * L)
 
 static int LuaOperatorConjugateTranspose(lua_State * L)
 {
+  //TODO: write the function OperatorTransposeInline
   uint32_t len = (uint32_t)lua_gettop(L);
   if(len==0)
   {
@@ -1323,6 +1340,7 @@ static int LuaOperatorConjugateTranspose(lua_State * L)
 
 static int LuaOperatorTranspose(lua_State * L)
 {
+  //TODO: write the function OperatorTransposeInline
   uint32_t len = (uint32_t)lua_gettop(L);
   if(len==0)
   {
@@ -1390,6 +1408,49 @@ static int LuaOperatorIndex(lua_State * L)
     lua_pushboolean(L, a->QComplex);
     return 1;
   }
+  if (strcmp(str, "N") == 0)
+  {
+    uint32_t i=0;
+    lua_createtable(L, a->MaxLength, 1);
+    lua_pushnumber(L, i);
+    lua_pushnumber(L, a->l[i].N);
+    lua_settable(L, -3);
+    for(i=1;i<=a->MaxLength;i++)
+    {
+      lua_pushnumber(L, a->l[i].N);
+      lua_rawseti(L, -2, i);
+    }
+    return 1;
+  }
+  if (strcmp(str, "Restrictions") == 0)
+  {
+    uint32_t i;
+    char *s;
+    if (a->Res.N==0)
+    {
+      lua_pushnil(L);
+      return 1;
+    }
+    lua_createtable(L, a->Res.N+2, 0);
+    lua_pushnumber(L, a->NFermion);
+    lua_rawseti(L, -2, 1);
+    lua_pushnumber(L, a->NBoson);
+    lua_rawseti(L, -2, 2);
+    for(i=0;i<a->Res.N;i++)
+    {
+      lua_createtable(L, 3, 0);
+      s=DetToString(a->NFermion, a->NBoson, a->Res.Determinant[i]);
+      lua_pushstring(L,s);
+      free(s);
+      lua_rawseti(L, -2, 1);
+      lua_pushnumber(L, a->Res.Min[i]);
+      lua_rawseti(L, -2, 2);
+      lua_pushnumber(L, a->Res.Max[i]);
+      lua_rawseti(L, -2, 3);
+      lua_rawseti(L, -2, i+3);
+    }
+    return 1;
+  }
   return luaL_error(L, "Error operator variable not found");;
 }
 
@@ -1397,16 +1458,72 @@ static int LuaOperatorNewIndex(lua_State * L)
 {
   OperatorType *a = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
   const char *str = lua_tostring(L, 2);
-  
   if(strcmp(str, "Name")==0)
   {
     OperatorSetName(a, lua_tostring(L, 3));
+    return 0;
   }
-  else
+  if(strcmp(str, "Complex")==0)
   {
-    return luaL_error(L, "Error index %s not found in Operator Object\n",str);
+    return luaL_error(L, "Errorr, you can not change the value Complex of an operator %s.\nIn order to change you have to modify the operator itselves, the value of Complex will follow automatically.",a->Name);
   }
-  return 0;
+  if(strcmp(str, "N")==0)
+  {
+    return luaL_error(L, "Errorr, you can not change the value representing the number of operators in %s\nIf you add or subtract something from the operator the number will follow automatically.",a->Name);
+  }
+  if(strcmp(str, "NB")==0)
+  {
+    uint32_t NBnew;
+    NBnew = (uint32_t)luaL_checknumber(L, 3);
+    if(NBnew+a->NFermion>32768) return luaL_error(L, "Maximum number of fermions + bosons allowed is 2^15 = 32768\nTrying to change the number of bosons from %d to %d with %d fermions\n",a->NBoson,NBnew,a->NFermion);
+    OperatorChangeNFandNB(a, a->NFermion, NBnew);
+    //TODO: allow bosons - remove this line when debuged
+    return luaL_error(L, "Current version does not suport Bosons\n");
+    return 0;
+  }
+  if(strcmp(str, "NF")==0)
+  {
+    uint32_t NFnew;
+    NFnew = (uint32_t)luaL_checknumber(L, 3);
+    if(NFnew+a->NBoson>32768) return luaL_error(L, "Maximum number of fermions + bosons allowed is 2^15 = 32768\nTrying to change the number of fermions from %d to %d with %d bosons\n",a->NFermion,NFnew,a->NBoson);
+    OperatorChangeNFandNB(a, NFnew, a->NBoson);
+    return 0;
+  }
+  if (strcmp(str, "Restrictions") == 0)
+  {
+    uint32_t i;
+    for(i=0;i<a->Res.N;i++)
+    {
+      free(a->Res.Determinant[i]);
+    }
+    if(a->Res.N!=0)
+    {
+      free(a->Res.Min);
+      free(a->Res.Max);
+      free(a->Res.Determinant);
+    }
+    a->Res.N=0;
+    if(!lua_isnil(L,3))
+    {
+      // check if NF and NB agree with size of operator and through an error if not
+      
+      lua_rawgeti(L, 3, 1);
+      if(a->NFermion!=(uint32_t)luaL_checkunsigned(L, -1))
+      {
+        return luaL_error(L, "Number of Fermions in definition of restrictions (%d) not the same as number of Fermions in operator (%d)\n",(uint32_t)luaL_checkunsigned(L, -1),a->NFermion);
+      }
+      lua_pop(L, 1);
+      lua_rawgeti(L, 3, 2);
+      if(a->NBoson!=(uint32_t)luaL_checkunsigned(L, -1))
+      {
+        return luaL_error(L, "Number of Bosons in definition of restrictions (%d) not the same as number of Bosons in operator (%d)\n",(uint32_t)luaL_checkunsigned(L, -1),a->NBoson);
+      }
+      lua_pop(L, 1);
+      luaL_setarray_DeterminatRestrictionType(L,3,&(a->Res));
+    }
+    return 0;
+  }
+  return luaL_error(L, "Error index %s not found in Operator Object\n",str);
 }
 
 static int LuaOperatorToString(lua_State * L)

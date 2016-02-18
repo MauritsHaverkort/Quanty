@@ -145,7 +145,7 @@ static int LuaCalculateFermi(lua_State *L)
  */
 static int LuaCalculateDOS(lua_State *L)
 {
-  return LuaCalculateG;
+  return LuaCalculateG(L);
 }
 
 /*  Creates an Hamiltonian representing a real space cluster

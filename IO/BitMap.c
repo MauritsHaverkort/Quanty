@@ -5,7 +5,7 @@ typedef struct                       /**** BMP file header structure ****/
   unsigned short bfReserved1;   /* Reserved */
   unsigned short bfReserved2;   /* Reserved */
   unsigned int bfOffBits;       /* Offset to bitmap data */
-} BITMAPFILEHEADER;
+} BitmapFileHeader;
 
 typedef struct                       /**** BMP file info structure ****/
 {
@@ -20,7 +20,7 @@ typedef struct                       /**** BMP file info structure ****/
   int    biYPelsPerMeter;       /* Y pixels per meter */
   unsigned int biClrUsed;       /* Number of colors used */
   unsigned int biClrImportant;  /* Number of important colors */
-} BITMAPINFOHEADER;
+} BitmapInfoHeader;
 
 
 typedef struct                       /**** Colormap entry structure ****/
@@ -29,14 +29,14 @@ typedef struct                       /**** Colormap entry structure ****/
   unsigned char rgbGreen;       /* Green value */
   unsigned char rgbRed;         /* Red value */
   unsigned char rgbReserved;    /* Reserved */
-} RGBQUAD;
+} RGBQuad;
 
 typedef struct                       /**** Bitmap information structure ****/
 {
-  BITMAPFILEHEADER bmfHeader;   /* File header */
-  BITMAPINFOHEADER bmiHeader;   /* Image header */
-  RGBQUAD bmiColors[256];       /* Image colormap */
-} BITMAPINFO;
+  BitmapFileHeader bmfHeader;   /* File header */
+  BitmapInfoHeader bmiHeader;   /* Image header */
+  RGBQuad bmiColors[256];       /* Image colormap */
+} BitmapInfo;
 
 /*
  * 'read_word()' - Read a 16-bit unsigned integer.
@@ -211,7 +211,7 @@ void Real3ToRGBColorSimpleInverse(double V[3], unsigned char *RGB)
  */
 int StreamPrintRealMatrixToBitmap(MatrixType M, FILE * stream, void (*RealToRGBColor) (double, unsigned char *))
 {
-  BITMAPINFO info;              /* I - Bitmap information */
+  BitmapInfo info;              /* I - Bitmap information */
   uint32_t i, j;
   uint8_t RGB[3];
   unsigned int biSizeImage;
@@ -303,7 +303,7 @@ uint32_t PrintRealMatrixToBitmap(MatrixType M, void (*RealToRGBColor) (double, u
  */
 int StreamPrintReal3MatrixToBitmap(MatrixType * M, FILE * stream, void (*Real3ToRGBColor) (double *, unsigned char *))
 {
-  BITMAPINFO info;              /* I - Bitmap information */
+  BitmapInfo info;              /* I - Bitmap information */
   uint32_t i, j;
   uint8_t RGB[3];
   double doubleRGB[3];

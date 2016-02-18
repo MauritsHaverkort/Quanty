@@ -333,6 +333,138 @@ static int LuaSpectraToTable(lua_State * L)
   return 1;
 }
 
+
+static int LuaTableToSpectra(lua_State * L)
+{
+  SpectraTypeArray *res;
+  Complex16 * tempval;
+  uint32_t i,j;
+  double Enow,epsilon;
+  if(lua_gettop(L)!=1) return luaL_error(L, "Error Spectra.FromTable called with %d arguments, 1 argument (a table) expected\n",lua_gettop(L));
+  luaL_checktype(L, 1, LUA_TTABLE);
+  res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+  luaL_setmetatable(L, "Spectra_Type");
+  res->NSpectra = 0;
+  res->Spec=malloc(lua_objlen(L, 1)*sizeof(SpectraType));
+  for(i=0;i<(uint32_t)lua_objlen(L, 1);i++)
+  {
+    lua_rawgeti(L, 1, i+1);
+    if(lua_type(L,-1)!=LUA_TTABLE) return luaL_error(L, "Error Spectra.FromTable the %d-th spectrum is not a table\n",i+1);
+    res->Spec[i].N=(uint32_t)lua_objlen(L, -1);
+    if(res->Spec[i].N==0) return luaL_error(L, "Error Spectra.FromTable the %d-th spectrum has no elements\n",i+1);
+    res->Spec[i].N--;
+    res->Spec[i].Re=malloc((res->Spec[i].N+1)*sizeof(double));
+    res->Spec[i].Im=malloc((res->Spec[i].N+1)*sizeof(double));
+    res->NSpectra++;
+    // get Emin
+    lua_rawgeti(L, -1, 1);
+    if(lua_type(L,-1)!=LUA_TTABLE) return luaL_error(L, "Error Spectra.FromTable the %d-th spectrum should be a table of elements consisting of {energy,Intensity}\n",i+1);
+    lua_rawgeti(L, -1, 1);
+    res->Spec[i].Emin=(double)lua_tonumber(L, -1);
+    lua_pop(L, 2);
+    // get Emax
+    lua_rawgeti(L, -1, res->Spec[i].N+1);
+    if(lua_type(L,-1)!=LUA_TTABLE) return luaL_error(L, "Error Spectra.FromTable the %d-th spectrum should be a table of elements consisting of {energy,Intensity}\n",i+1);
+    lua_rawgeti(L, -1, 1);
+    res->Spec[i].Emax=(double)lua_tonumber(L, -1);
+    lua_pop(L, 2);
+    // set meta information
+    res->Spec[i].dE=(res->Spec[i].Emax-res->Spec[i].Emin)/res->Spec[i].N;
+    lua_getfield(L, -1, "Name");
+    if(lua_type(L, -1)==LUA_TNIL)
+    {
+      lua_pop(L, 1);
+      strcpy(res->Spec[i].Name, "");
+    }
+    else if(lua_type(L,-1)==LUA_TSTRING)
+    {
+      strlcpy(res->Spec[i].Name, lua_tostring(L, -1), MAXStrLength);
+      lua_pop(L,1);
+    }
+    else return luaL_error(L, "Error Spectra.FromTable \"Name\" of spectrum %d should be a string\n",lua_gettop(L));
+    lua_getfield(L, -1, "EminPole");
+    if(lua_type(L, -1)==LUA_TNIL)
+    {
+      lua_pop(L, 1);
+      res->Spec[i].EminPole=res->Spec[i].Emin;
+    }
+    else if(lua_type(L,-1)==LUA_TNUMBER)
+    {
+      res->Spec[i].EminPole=(double)lua_tonumber(L, -1);
+      lua_pop(L,1);
+    }
+    else return luaL_error(L, "Error Spectra.FromTable \"EminPole\" of spectrum %d should be a number\n",lua_gettop(L));
+    lua_getfield(L, -1, "EmaxPole");
+    if(lua_type(L, -1)==LUA_TNIL)
+    {
+      lua_pop(L, 1);
+      res->Spec[i].EmaxPole=res->Spec[i].Emax;
+    }
+    else if(lua_type(L,-1)==LUA_TNUMBER)
+    {
+      res->Spec[i].EmaxPole=(double)lua_tonumber(L, -1);
+      lua_pop(L,1);
+    }
+    else return luaL_error(L, "Error Spectra.FromTable \"EmaxPole\" of spectrum %d should be a number\n",lua_gettop(L));
+    lua_getfield(L, -1, "Gamma");
+    if(lua_type(L, -1)==LUA_TNIL)
+    {
+      lua_pop(L, 1);
+      res->Spec[i].Gamma=0;
+    }
+    else if(lua_type(L,-1)==LUA_TNUMBER)
+    {
+      res->Spec[i].Gamma=(double)lua_tonumber(L, -1);
+      lua_pop(L,1);
+    }
+    else return luaL_error(L, "Error Spectra.FromTable \"Gamma\" of spectrum %d should be a number\n",lua_gettop(L));
+    // read the intensity
+    epsilon = Abs(res->Spec[i].Emax-res->Spec[i].Emin)*DBL_EPSILON*res->Spec[i].N;
+    Enow=res->Spec[i].Emin;
+    for(j=0;j<=res->Spec[i].N;j++)
+    {
+      lua_rawgeti(L, -1, j+1);
+      if(lua_type(L,-1)!=LUA_TTABLE) return luaL_error(L, "Error Spectra.FromTable the %d-th spectrum should be a table of elements consisting of {energy,Intensity}\n",i+1);
+      lua_rawgeti(L, -1, 2);
+      if (lua_isnumber(L, -1))
+      {
+        res->Spec[i].Re[j]=lua_tonumber(L, -1);
+        res->Spec[i].Im[j]=0;
+      }
+      else
+      {
+        tempval = (Complex16 *) luaL_checkudata(L, -1, "Complex_Type");
+        res->Spec[i].Re[j] = tempval->Re;
+        res->Spec[i].Im[j] = tempval->Im;
+      }
+      lua_rawgeti(L, -2, 1);
+      if(Abs((double)lua_tonumber(L, -1)-Enow)>epsilon) return luaL_error(L, "Error Spectra.FromTable the %d-th spectrum should be a table of elements consisting of {energy,Intensity}, whereby the energy needs to be a list of increasing energies with constant difference.\n(Energy steps not constant.)",i+1);
+      lua_pop(L, 3);
+      Enow+=res->Spec[i].dE;
+    }
+    lua_getfield(L, -1, "Integral");
+    if(lua_type(L, -1)==LUA_TNIL)
+    {
+      lua_pop(L, 1);
+      res->Spec[i].b[0]=0;
+      for(j=0;j<=res->Spec[i].N;j++)
+      {
+        res->Spec[i].b[0]-=res->Spec[i].Im[j];
+      }
+      res->Spec[i].b[0]*=res->Spec[i].dE/Pi;
+      res->Spec[i].b[0]=sqrt(res->Spec[i].b[0]);
+    }
+    else if(lua_type(L,-1)==LUA_TNUMBER)
+    {
+      res->Spec[i].b[0]=sqrt((double)lua_tonumber(L, -1));
+      lua_pop(L,1);
+    }
+    else return luaL_error(L, "Error Spectra.FromTable \"Integral\" of spectrum %d should be a number\n",lua_gettop(L));
+    lua_pop(L,1);
+  }
+  return 1;
+}
+
 static int LuaSpectraMultiplyByEnergy(lua_State * L)
 {
   uint32_t len,i,j;
@@ -1833,24 +1965,20 @@ static int LuaSpectraIndex(lua_State * L)
   SpectraTypeArray *a = (SpectraTypeArray*) luaL_checkudata(L, 1, "Spectra_Type");
   const char *str = lua_tostring(L, 2);
   currentudata = a;
-  if (strcmp(str, "Print") == 0)
+  if (strcmp(str, "Broaden") == 0)
   {
-    lua_pushcfunction(L, LuaSpectraPrintMethod);
+    lua_pushcfunction(L, LuaSpectraBroadenMethod);
     return 1;
   }
   if (strcmp(str, "Element") == 0)
   {
+    printf("WARNING: G.Element is deprecated. Please use Spectra.Element instead");
     lua_pushcfunction(L, LuaSpectraElementMethod);
     return 1;
   }
-  if (strcmp(str, "Sum") == 0)
+  if (strcmp(str, "Print") == 0)
   {
-    lua_pushcfunction(L, LuaSpectraSumMethod);
-    return 1;
-  }
-  if (strcmp(str, "Broaden") == 0)
-  {
-    lua_pushcfunction(L, LuaSpectraBroadenMethod);
+    lua_pushcfunction(L, LuaSpectraPrintMethod);
     return 1;
   }
   if (strcmp(str, "Shift") == 0)
@@ -1858,9 +1986,108 @@ static int LuaSpectraIndex(lua_State * L)
     lua_pushcfunction(L, LuaSpectraShiftMethod);
     return 1;
   }
+  if (strcmp(str, "Sum") == 0)
+  {
+    printf("WARNING: G.Sum is deprecated. Please use Spectra.Sum instead");
+    lua_pushcfunction(L, LuaSpectraSumMethod);
+    return 1;
+  }
   if (strcmp(str, "MultiplyByEnergy") == 0)
   {
     lua_pushcfunction(L, LuaSpectraMultiplyByEnergyMethod);
+    return 1;
+  }
+  if (strcmp(str, "N") == 0)
+  {
+    lua_pushinteger(L, a->NSpectra);
+    return 1;
+  }
+  if (strcmp(str, "NE") == 0)
+  {
+    uint32_t i;
+    lua_createtable(L, a->NSpectra, 0);
+    for(i=0;i<a->NSpectra;i++)
+    {
+      lua_pushinteger(L, a->Spec[i].N);
+      lua_rawseti(L, -2, i+1);
+    }
+    return 1;
+  }
+  if (strcmp(str, "dE") == 0)
+  {
+    uint32_t i;
+    lua_createtable(L, a->NSpectra, 0);
+    for(i=0;i<a->NSpectra;i++)
+    {
+      lua_pushnumber(L, a->Spec[i].dE);
+      lua_rawseti(L, -2, i+1);
+    }
+    return 1;
+  }
+  if (strcmp(str, "Emin") == 0)
+  {
+    uint32_t i;
+    lua_createtable(L, a->NSpectra, 0);
+    for(i=0;i<a->NSpectra;i++)
+    {
+      lua_pushnumber(L, a->Spec[i].Emin);
+      lua_rawseti(L, -2, i+1);
+    }
+    return 1;
+  }
+  if (strcmp(str, "Emax") == 0)
+  {
+    uint32_t i;
+    lua_createtable(L, a->NSpectra, 0);
+    for(i=0;i<a->NSpectra;i++)
+    {
+      lua_pushnumber(L, a->Spec[i].Emax);
+      lua_rawseti(L, -2, i+1);
+    }
+    return 1;
+  }
+  if (strcmp(str, "EminPole") == 0)
+  {
+    uint32_t i;
+    lua_createtable(L, a->NSpectra, 0);
+    for(i=0;i<a->NSpectra;i++)
+    {
+      lua_pushnumber(L, a->Spec[i].EminPole);
+      lua_rawseti(L, -2, i+1);
+    }
+    return 1;
+  }
+  if (strcmp(str, "EmaxPole") == 0)
+  {
+    uint32_t i;
+    lua_createtable(L, a->NSpectra, 0);
+    for(i=0;i<a->NSpectra;i++)
+    {
+      lua_pushnumber(L, a->Spec[i].EmaxPole);
+      lua_rawseti(L, -2, i+1);
+    }
+    return 1;
+  }
+  if (strcmp(str, "Gamma") == 0)
+  {
+    uint32_t i;
+    lua_createtable(L, a->NSpectra, 0);
+    for(i=0;i<a->NSpectra;i++)
+    {
+      lua_pushnumber(L, a->Spec[i].Gamma);
+      lua_rawseti(L, -2, i+1);
+    }
+    return 1;
+  }
+  if (strcmp(str, "Integral") == 0)
+  {
+    uint32_t i;
+    lua_createtable(L, a->NSpectra, 0);
+    for(i=0;i<a->NSpectra;i++)
+    {
+      lua_pushnumber(L, Sqr(a->Spec[i].b[0]));
+      lua_rawseti(L, -2, i+1);
+    }
     return 1;
   }
   return luaL_error(L, "Error operation \".%s()\" not defined on spectra\n",str);
@@ -1902,14 +2129,15 @@ static const struct luaL_Reg Spectra_meta[] = {
 };
 
 static const struct luaL_Reg Spectra_func[] = {
+  {"Broaden", LuaSpectraBroaden},
   {"Copy", LuaSpectraCopy},
   {"Clone", LuaSpectraCopy},
   {"Element", LuaSpectraElement},
-  {"Sum", LuaSpectraSum},
-  {"Broaden", LuaSpectraBroaden},
-  {"Shift", LuaSpectraShift},
   {"MultiplyByEnergy", LuaSpectraMultiplyByEnergy},
-//  {"ToFunction", LuaSpectraToFunction},
+  {"Shift", LuaSpectraShift},
+  {"Sum", LuaSpectraSum},
+  //  {"ToFunction", LuaSpectraToFunction},
   {"ToTable", LuaSpectraToTable},
+  {"FromTable", LuaTableToSpectra},
   {NULL, NULL}
 };

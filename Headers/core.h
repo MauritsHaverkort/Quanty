@@ -208,8 +208,7 @@ uint32_t MappedOperatorAdd();
 
 double OperatorCr(uint8_t * const Determinant, const uint16_t i, const uint32_t NFermion);
 double OperatorAn(uint8_t * const Determinant, const uint16_t i, const uint32_t NFermion);
-double OperatorLader(uint8_t * const Determinant, const uint16_t * const o, const uint32_t lenght,
-                     const uint32_t NFermion);
+double OperatorLader(uint8_t * const Determinant, const uint16_t * const o, const uint32_t lenght, const uint32_t NFermion);
 uint32_t OperatorPsiConserveBasisCC();
 uint32_t OperatorPsiConserveBasisCR();
 uint32_t OperatorPsiConserveBasisRC();
@@ -245,6 +244,9 @@ uint32_t OperatorPsiConserveBasisPreAllocated();
 uint32_t OperatorPsi();
 uint32_t OperatorPsiSerial();
 uint32_t PsiOperatorPsi();
+uint32_t QDetNotRestricted(uint8_t const *det, uint32_t const NFermion, uint32_t const NBoson, uint32_t const NWord, DeterminantRestrictionType const Restrictions);
+
+
 
 /**********************************************************/
 /*****    Core/OperatorWaveFunctionPerturbation.c     *****/

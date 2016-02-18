@@ -75,12 +75,56 @@ uint8_t *StringToDet(uint32_t const NFermion, uint32_t const NBoson, char *s)
   return det;
 }
 
+/*
+ *
+ */
+char *DetToString(uint32_t const NFermion, uint32_t const NBoson, uint8_t * det)
+{
+  char *ret;
+  int z;
+  uint32_t i,pos=0;
+  uint32_t NWord=NBoson + Min(NFermion, 1 + (NFermion - 1) / 8);
+  ret = malloc((NFermion+NBoson+4)*sizeof(char));
+  ret[0]='"';
+  pos++;
+  for(i=0;i<NWord-NBoson;i++)
+  {
+    for(z=128;z>0;z>>=1)
+    {
+      ret[pos]=((det[i]&z)==z) ? '1' : '0';
+      pos++;
+    }
+  }
+  if(NBoson==0)
+  {
+    pos=NFermion+1;
+    ret[pos]='"';
+    pos++;
+    ret[pos]='\0';
+  }
+  else
+  {
+    ret[pos]=' ';
+    pos++;
+    for(i=0;i<NBoson;i++)
+    {
+      sprintf(ret+pos,"%02X",det[NWord-NBoson+i]);
+    }
+    pos+=2;
+    ret[pos]='"';
+    pos++;
+    ret[pos]='\0';
+  }
+  return ret;
+}
+
 /*  NFermion, NBoson, QComplex, NBitsKey need to be set
  *
  */
 uint32_t WaveFunctionInit(WaveFunctionType * Psi)
 {
   strcpy(Psi->Name, "Wave Function");
+  Psi->Name[MAXStrLength-1]='\0';
   Psi->N = 0;
   Psi->NBlok = 1;
   Psi->NWord = Psi->NBoson + Min(Psi->NFermion, 1 + (Psi->NFermion - 1) / 8);
@@ -788,6 +832,44 @@ void WaveFunctionTruncateBasis(WaveFunctionType * const a, const double epsilon)
   }
   else
   {
+    ComplexWaveFunctionTruncateBasisAllowReal(a, epsilon);
+  }
+}
+
+
+
+uint32_t WaveFunctionResetKeylist(WaveFunctionType * const a, const uint32_t NBitsKey)
+{
+  if (a->QComplex == 0)
+  {
+    return RealWaveFunctionResetKeylist(a, NBitsKey);
+  }
+  else
+  {
+    return ComplexWaveFunctionResetKeylist(a, NBitsKey);
+  }
+}
+
+void WaveFunctionRestrict(WaveFunctionType * const a, const DeterminantRestrictionType res)
+{
+  if (a->QComplex == 0)
+  {
+    RealWaveFunctionRestrict(a, res);
+  }
+  else
+  {
+    ComplexWaveFunctionRestrict(a, res);
+  }
+}
+
+void WaveFunctionTruncateBasisDisallowComplexToReal(WaveFunctionType * const a, const double epsilon)
+{
+  if (a->QComplex == 0)
+  {
+    RealWaveFunctionTruncateBasis(a, epsilon);
+  }
+  else
+  {
     ComplexWaveFunctionTruncateBasis(a, epsilon);
   }
 }
@@ -940,8 +1022,7 @@ uint32_t CreateStartWaveFunctionOnsiteEnergy(const OperatorType O, WaveFunctionT
  *  If occupied is one the Fermion is occupied
  *  If occupied is zero the Fermion is empty
  */
-uint32_t WaveFunctionAddFermion(WaveFunctionType const psiIn, WaveFunctionType * const psiOut, uint32_t FermionPos,
-                                uint32_t occupied)
+uint32_t WaveFunctionAddFermion(WaveFunctionType const psiIn, WaveFunctionType * const psiOut, uint32_t FermionPos, uint32_t occupied)
 {
   uint8_t det[psiIn.NWord + 1];
   uint32_t i, j;
@@ -1110,6 +1191,70 @@ uint32_t WaveFunctionRemoveFermion(WaveFunctionType const psiIn, WaveFunctionTyp
 }
 
 
+/*
+ *  change the number of Fermions and bosons in the wave-function.
+ *  changes are made to the end of the function (determinant with the highest index)
+ */
+uint32_t WaveFunctionChangeNFandNB(WaveFunctionType *psi, uint32_t NFnew, uint32_t NBnew)
+{
+  WaveFunctionType psiOld;
+  uint8_t det[NBnew + Min(NFnew, 1 + (NFnew - 1) / 8)];
+  uint8_t detleft;
+  uint32_t i,detleng;
+  if((NFnew==psi->NFermion)&&(NBnew==psi->NBoson))return 0;
+  if(NFnew+NBnew>65536)
+  {
+    printf("Error in WaveFunctionChangeNFandNB NFnew (%i) + NBnew (%i) larger than 65536 (%i)\n",NFnew,NBnew,NFnew+NBnew);
+    return 1;
+  }
+  psiOld=*psi;
+  psi->NBoson=NBnew;
+  psi->NFermion=NFnew;
+  if(WaveFunctionInit(psi))
+  {
+    printf("Error WaveFunctionInit failed in WaveFunctionChangeNFandNB\n");
+    return 1;
+  }
+  WavefunctionSetName(psi, psiOld.Name);
+  for(i=0;i<psi->NWord;i++)
+  {
+    det[i]=0;
+  }
+  detleng=Min(psi->NWord-psi->NBoson,psiOld.NWord-psiOld.NBoson);
+  detleft=(127>>(psi->NFermion&7));
+  detleft=~detleft;
+  if(psi->QComplex)
+  {
+    for(i=1;i<=psiOld.N;i++)
+    {
+      memcpy(det, &(psiOld.Determinant[BlokElementDet(i,psiOld.NWord,0)]), detleng);
+      det[detleng-1]&=detleft;
+      memcpy(&(det[psi->NWord-psi->NBoson]), &(psiOld.Determinant[BlokElementDet(i,psiOld.NWord,psi->NWord-psi->NBoson)]), psi->NBoson);
+      if(ComplexWaveFunctionAddElement(psi, det, psiOld.ValueRe[BlokElement(i)], psiOld.ValueIm[BlokElement(i)]))
+      {
+        printf("Error RealWaveFunctionAddElement failed in WaveFunctionChangeNFandNB\n");
+        return 1;
+      }
+    }
+  }
+  else
+  {
+    for(i=1;i<=psiOld.N;i++)
+    {
+      memcpy(det, &(psiOld.Determinant[BlokElementDet(i,psiOld.NWord,0)]), detleng);
+      det[detleng-1]&=detleft;
+      memcpy(&(det[psi->NWord-psi->NBoson]), &(psiOld.Determinant[BlokElementDet(i,psiOld.NWord,psi->NWord-psi->NBoson)]), psi->NBoson);
+      if(RealWaveFunctionAddElement(psi, det, psiOld.ValueRe[BlokElement(i)]))
+      {
+        printf("Error RealWaveFunctionAddElement failed in WaveFunctionChangeNFandNB\n");
+        return 1;
+      }
+    }
+  }
+  WaveFunctionFree(&psiOld);
+  return 0;
+}
+
 uint32_t WaveFunctionCopy(WaveFunctionType const A, WaveFunctionType * const B)
 {
   B->NFermion = A.NFermion;
@@ -1131,11 +1276,15 @@ uint32_t WaveFunctionCopy(WaveFunctionType const A, WaveFunctionType * const B)
                           
 
 /* psiA <- psiA + U psiB
- *  U is a (NFermionB+NBosonB)*(NFermionA+NBosonA) demensional matrix that defines the transformation
- *  a_j        = \sum_i U_{i,j}   a_i
- *  a_j^{\dag} = \sum_i U_{i,j}^* a_i^{dag}
+ *  U is a (NFermionA+NBosonA)*(NFermionB+NBosonB) demensional matrix that defines the transformation
+ *  For operators we have
+ *  a_i        = \sum_j U_{i,j}   a_j
+ *  a_i^{\dag} = \sum_j U_{i,j}^* a_j^{dag}
+ *  writing:
+ *    psi = \sum_j alpha_j a_j^{dag} |0>
+ *    we have
+ *    U psi = \sum_j U_{i,j}^* alpha_j a_j^{dag} |0>
  *
- * assume A B and U are real (version RRR)
  */
 uint32_t MappedWaveFunctionAdd(WaveFunctionType * const A, WaveFunctionType const B, MatrixType const U)
 {
@@ -1164,11 +1313,14 @@ uint32_t MappedWaveFunctionAdd(WaveFunctionType * const A, WaveFunctionType cons
 
 /* psiA <-  U psiB
  * A not initiallized on input
- *  U is a (NFermionB+NBosonB)*(NFermionA+NBosonA) demensional matrix that defines the transformation
- *  a_j        = \sum_i U_{i,j}   a_i
- *  a_j^{\dag} = \sum_i U_{i,j}^* a_i^{dag}
- *
- * assume A B and U are real (version RRR)
+ *  U is a (NFermionA+NBosonA)*(NFermionB+NBosonB) demensional matrix that defines the transformation
+ *  For operators we have
+ *  a_i        = \sum_j U_{i,j}   a_j
+ *  a_i^{\dag} = \sum_j U_{i,j}^* a_j^{dag}
+ *  writing:
+ *    psi = \sum_j alpha_j a_j^{dag} |0>
+ *    we have
+ *    U psi = \sum_j U_{i,j}^* alpha_j a_j^{dag} |0>
  */
 uint32_t RotateWaveFunction(WaveFunctionType * const A, WaveFunctionType const B, MatrixType const U)
 {

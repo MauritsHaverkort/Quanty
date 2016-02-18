@@ -310,7 +310,7 @@ int TightBindingImpurityUnfoldingRandomImpurity3D(int Nsupercell, double Rho, do
   for (i = 0; i < Cubed(Nsupercell); i++)
   {
     QImpurity = 0;
-    if (Rho > drand48())
+    if (Rho > mwhdrand())
       QImpurity = 1;
     SetSuper.H[7 * i].Hop.VRe[0][0] = Vpot * QImpurity;
     printf("%1i", QImpurity);
@@ -409,7 +409,7 @@ int TightBindingImpurityUnfoldingRandomImpurity3D(int Nsupercell, double Rho, do
   }
   free(Character);
 
-  NkDOS[0] = (30 * drand48() + 200) / Nsupercell;
+  NkDOS[0] = (30 * mwhdrand() + 200) / Nsupercell;
   NkDOS[1] = NkDOS[0] + 1;
   NkDOS[2] = NkDOS[0] + 2;
   DOS[0].Emin = Emin;
@@ -465,7 +465,7 @@ int TightBindingImpurityUnfoldingRandomImpurity2D(int Nsupercell, double Rho, do
   for (i = 0; i < Sqr(Nsupercell); i++)
   {
     QImpurity = 0;
-    if (Rho > drand48())
+    if (Rho > mwhdrand())
       QImpurity = 1;
     SetSuper.H[5 * i].Hop.VRe[0][0] = Vpot * QImpurity;
     printf("%1i", QImpurity);
@@ -562,7 +562,7 @@ int TightBindingImpurityUnfoldingRandomImpurity2D(int Nsupercell, double Rho, do
   free(Character);
   FreeMatrix(&BANDS);
 
-  NkDOS[0] = (30 * drand48() + 200) / Nsupercell;
+  NkDOS[0] = (30 * mwhdrand() + 200) / Nsupercell;
   NkDOS[1] = NkDOS[0] + 1;
   NkDOS[2] = 1;
   DOS[0].Emin = Emin;
@@ -620,7 +620,7 @@ int TightBindingImpurityUnfoldingRandomImpurity1D(int Nsupercell, double Rho, do
   for (i = 0; i < (Nsupercell); i++)
   {
     QImpurity = 0;
-    if (Rho > drand48())
+    if (Rho > mwhdrand())
       QImpurity = 1;
     SetSuper.H[3 * i].Hop.VRe[0][0] = Vpot * QImpurity;
     printf("%1i", QImpurity);
@@ -723,7 +723,7 @@ int TightBindingImpurityUnfoldingRandomImpuritySeries(int Dimension, int Nsuperc
       return 1;
     };
   }
-  srand48((unsigned int)time(NULL));
+  mwhsrand((unsigned int)time(NULL));
   sprintf(fullfilename, "%s_single", filename);
   if (Dimension == 3)
     TightBindingImpurityUnfoldingRandomImpurity3D(Nsupercell, Rho, Vpot, fullfilename, &BWValue, RGBValue, DOS, Fermi);

@@ -845,6 +845,95 @@ void RealWaveFunctionTruncateBasis(WaveFunctionType * const a, const double epsi
 }
 
 /*
+ *  change the size of the keylist
+ */
+uint32_t RealWaveFunctionResetKeylist(WaveFunctionType * const a, const uint32_t NBitsKey)
+{
+  const double epsilon = sqrt(10*DBL_MIN);
+  const uint32_t startN=a->N;
+  uint32_t iBlok, iElement;
+  uint32_t *tempKeyList;
+  a->ValueRe[0][0] = 0;
+  tempKeyList=a->KeyList;
+  if((a->KeyList=realloc(a->KeyList, sizeof(uint32_t)*(1<<NBitsKey)))==NULL)
+  {
+    a->KeyList=tempKeyList;
+    printf("realloc failed in RealWaveFunctionResetKeylist\n");
+    return 1;
+  }
+  a->NBitsKey=NBitsKey;
+  a->N = 0;
+  for (iBlok = 0; iBlok < a->NBlok - 1; iBlok++)
+  {
+    for (iElement = 0; iElement < BlokSize; iElement++)
+    {
+      a->Next[iBlok][iElement] = 0;
+      if ((a->ValueRe[iBlok][iElement] > epsilon) || (-a->ValueRe[iBlok][iElement] > epsilon))
+        if (RealWaveFunctionAddElement(a, &a->Determinant[iBlok][iElement * a->NWord], a->ValueRe[iBlok][iElement]) != 0) AllocFailed();
+    }
+  }
+  iBlok = a->NBlok - 1;
+  for (iElement = 0; iElement < 1 + startN - iBlok * BlokSize; ++iElement)
+  {
+    a->Next[iBlok][iElement] = 0;
+    if ((a->ValueRe[iBlok][iElement] > epsilon) || (-a->ValueRe[iBlok][iElement] > epsilon))
+      if (RealWaveFunctionAddElement(a, &a->Determinant[iBlok][iElement * a->NWord], a->ValueRe[iBlok][iElement]) != 0) AllocFailed();
+  }
+  for (iBlok = 1 + (a->N >> NBitsBlok); iBlok < a->NBlok; iBlok++)
+  {
+    free(a->ValueRe[iBlok]);
+    free(a->Next[iBlok]);
+    free(a->Determinant[iBlok]);
+  }
+  a->NBlok = 1 + (a->N >> NBitsBlok);
+  a->ValueRe = realloc(a->ValueRe, a->NBlok * sizeof(double *));
+  a->Next = realloc(a->Next, a->NBlok * sizeof(uint32_t *));
+  a->Determinant = realloc(a->Determinant, a->NBlok * sizeof(uint8_t *));
+  return 0;
+}
+
+
+
+/*
+ *  remove determinants from the basis that do not fullfill the restrictions  
+ */
+void RealWaveFunctionRestrict(WaveFunctionType * const a, const DeterminantRestrictionType res)
+{
+  uint32_t startN, iBlok, iElement;
+  a->ValueRe[0][0] = 0;
+  startN = a->N;
+  a->N = 0;
+  for (iElement = 0; iElement < ((uint32_t) 1 << (a->NBitsKey)); ++iElement)
+  {                             /* Whipe out the entire KeyList */
+    a->KeyList[iElement] = 0;
+  }
+  for (iBlok = 0; iBlok < a->NBlok - 1; iBlok++)
+  {
+    for (iElement = 0; iElement < BlokSize; iElement++)
+    {
+      a->Next[iBlok][iElement] = 0;
+      if (QDetNotRestricted(&(a->Determinant[iBlok][iElement*a->NWord]), a->NFermion, a->NBoson, a->NWord, res)) if (RealWaveFunctionAddElement(a, &a->Determinant[iBlok][iElement * a->NWord], a->ValueRe[iBlok][iElement]) != 0) AllocFailed();
+    }
+  }
+  iBlok = a->NBlok - 1;
+  for (iElement = 0; iElement < 1 + startN - iBlok * BlokSize; ++iElement)
+  {
+    a->Next[iBlok][iElement] = 0;
+    if (QDetNotRestricted(&(a->Determinant[iBlok][iElement*a->NWord]), a->NFermion, a->NBoson, a->NWord, res)) if (RealWaveFunctionAddElement(a, &a->Determinant[iBlok][iElement * a->NWord], a->ValueRe[iBlok][iElement]) != 0) AllocFailed();
+  }
+  for (iBlok = 1 + (a->N >> NBitsBlok); iBlok < a->NBlok; iBlok++)
+  {
+    free(a->ValueRe[iBlok]);
+    free(a->Next[iBlok]);
+    free(a->Determinant[iBlok]);
+  }
+  a->NBlok = 1 + (a->N >> NBitsBlok);
+  a->ValueRe = realloc(a->ValueRe, a->NBlok * sizeof(double *));
+  a->Next = realloc(a->Next, a->NBlok * sizeof(uint32_t *));
+  a->Determinant = realloc(a->Determinant, a->NBlok * sizeof(uint8_t *));
+}
+
+/*
  *   Make psi orthogonal to OtherPsi, psi and other psi are on the same basis
  */
 void RealWaveFunctionOrthogonalizeSameBasis(WaveFunctionType * const psi, const WaveFunctionType * const OtherPsi, const uint32_t Npsi)
@@ -1005,7 +1094,7 @@ uint32_t RealMappedDetToWaveFunction(WaveFunctionType * const A, uint8_t *Det, M
     {
       for(j=0;j<A->NFermion;j++)
       {
-        O.l[1].VRe[j]=U.VRe[i][j];
+        O.l[1].VRe[j]=U.VRe[j][i];
       }
       OperatorPsiRR(O, *A, &Temp);
       RealWaveFunctionTruncateBasis(&Temp, 10*DBL_EPSILON);
@@ -1026,9 +1115,14 @@ uint32_t RealMappedDetToWaveFunction(WaveFunctionType * const A, uint8_t *Det, M
 
 
 /* psiA <- psiA + U psiB
- *  U is a (NFermionB+NBosonB)*(NFermionA+NBosonA) demensional matrix that defines the transformation
- *  a_j        = \sum_i U_{i,j}   a_i
- *  a_j^{\dag} = \sum_i U_{i,j}^* a_i^{dag}
+ *  U is a (NFermionA+NBosonA)*(NFermionB+NBosonB) demensional matrix that defines the transformation
+ *  For operators we have
+ *  a_i        = \sum_j U_{i,j}   a_j
+ *  a_i^{\dag} = \sum_j U_{i,j}^* a_j^{dag}
+ *  writing:
+ *    psi = \sum_j alpha_j a_j^{dag} |0>
+ *    we have
+ *    U psi = \sum_j U_{i,j}^* alpha_j a_j^{dag} |0>
  *
  * assume A B and U are real (version RRR)
  */
@@ -1037,8 +1131,6 @@ uint32_t MappedWaveFunctionAddRRR(WaveFunctionType * const A, WaveFunctionType c
   uint8_t *Det;
   uint32_t idetB;
   WaveFunctionType Udet;
-  
-  
   Udet.NFermion=A->NFermion;
   Udet.NBoson=A->NBoson;
   Udet.QComplex=0;

@@ -15,6 +15,7 @@
 #if defined(_WIN32)
 #include <windows.h>
 #endif
+#undef LoadString
 
 
 #include <stdlib.h>
