@@ -45,7 +45,7 @@
 
 void MWHgethostname(char * MWHHostName, size_t len)
 {
-#ifdef MWHWin
+#if defined(_WIN32)
   strcpy(MWHHostName, "Windows");
 #else
   gethostname(MWHHostName, len);

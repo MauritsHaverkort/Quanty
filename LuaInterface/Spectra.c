@@ -378,7 +378,7 @@ static int LuaTableToSpectra(lua_State * L)
     }
     else if(lua_type(L,-1)==LUA_TSTRING)
     {
-      strlcpy(res->Spec[i].Name, lua_tostring(L, -1), MAXStrLength);
+      strncpy(res->Spec[i].Name, lua_tostring(L, -1), MAXStrLength);
       lua_pop(L,1);
     }
     else return luaL_error(L, "Error Spectra.FromTable \"Name\" of spectrum %d should be a string\n",lua_gettop(L));

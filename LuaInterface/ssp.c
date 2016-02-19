@@ -599,7 +599,7 @@ static int LuaNewOperator(lua_State * L)
         InitOperatorFixedLength(O, i+1, (uint32_t)round(Options.NBitsKeyDouble.VRe[i]));
       }
     }
-    if(Options.Name!=NULL) strlcpy(O->Name, Options.Name, MAXStrLength-1);
+    if(Options.Name!=NULL) strncpy(O->Name, Options.Name, MAXStrLength-1);
     
     O->Res=Options.DeterminantRestrictions;
     oadd=malloc(sizeof(uint16_t)*O->MaxLength);
@@ -849,7 +849,7 @@ static int LuaNewWaveFunction(lua_State * L)
   psi->QComplex=1;
   psi->NBitsKey=Options.NBitsKey;
   WaveFunctionInit(psi);
-  if(Options.Name!=NULL)strlcpy(psi->Name, Options.Name, MAXStrLength-1);
+  if(Options.Name!=NULL)strncpy(psi->Name, Options.Name, MAXStrLength-1);
   luaL_checktype(L, 3, LUA_TTABLE);
   NDet = (uint32_t)lua_objlen(L, 3);
   for(i=1;i<=NDet;i++)

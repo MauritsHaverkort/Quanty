@@ -364,7 +364,7 @@ uint32_t LuaASCIIStreamPrint(lua_State *L, int narg, FILE * stream)
       int32_t i,j,l;
       OperatorType *a = (OperatorType *) luaL_checkudata(L, narg, "Operator_Type");
       fprintf(stream, "NewOperator( %d, %d,{\n",a->NFermion,a->NBoson);
-      komma=false;
+      komma=False;
       if(a->QComplex)
       {
         for(l=0;l<=a->MaxLength;l++)
