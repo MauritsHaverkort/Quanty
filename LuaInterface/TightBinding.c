@@ -193,12 +193,12 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
   /* read the cluster defintion from the second position on the stack */
   if(lua_type(L,2)!=LUA_TTABLE)
   {
-    return luaL_error(L, "Error CreateClusterHamiltonian second argument should be a table of the form {\"periodic\", {a,b,c}, (optional)atoms_to_include } or {\"open\", atoms_to_include}\n",len);
+    return luaL_error(L, "Error CreateClusterHamiltonian second argument should be a table of the form {\"periodic\", {a,b,c}, (optional)atoms_to_include } or {\"open\", atoms_to_include}\n");
   }
   lenclusterdef = (uint32_t)lua_objlen(L, 2);
   if(!((lenclusterdef==2)||(lenclusterdef==3)))
   {
-    return luaL_error(L, "Error CreateClusterHamiltonian second argument should be a table of the form {\"periodic\", {a,b,c}, (optional)atoms_to_include } or {\"open\", atoms_to_include}\n",len);
+    return luaL_error(L, "Error CreateClusterHamiltonian second argument should be a table of the form {\"periodic\", {a,b,c}, (optional)atoms_to_include } or {\"open\", atoms_to_include}\n");
   }
   /* read if we have open or periodic boundary conditions */
   lua_rawgeti(L, 2, 1);
@@ -233,7 +233,7 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
       lua_rawgeti(L, -1, i);
       if((lua_type(L, -1)!=LUA_TTABLE)||((uint32_t)lua_objlen(L, -1)!=3))
       {
-        return luaL_error(L, "Error in CreateClusterHamiltonian second argument should be a table with the second element a table of the form {a,b,c} and element %i (a,b,c) should be a list of 3 integers\n",i);
+        return luaL_error(L, "Error in CreateClusterHamiltonian second argument should be a table with the second element a table of the form {a,b,c} and element %d (a,b,c) should be a list of 3 integers\n",i);
       }
       for(j=1;j<=3;j++)
       {
@@ -270,32 +270,35 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
     QOperators=False;
     QOptions=False;
   }
-  else if(len==4)
-  {
-    QOperators=True;
-    QOptions=True;
-  }
-  /* read additional operators from the stack */
-  if (luaL_testudata(L, 3, "Operator_Type") != NULL)
-  {
-    QOperators=True;
-    AditionalOperator = (OperatorType *) luaL_checkudata(L, 3, "Operator_Type");
-    if(len==3)
-    {
-      QOptions=False;
-    }
-  }
   else
   {
-    QOperators=False;
-    QOptions=True;
     if(len==4)
     {
-      return luaL_error(L, "Error CreateClusterHamiltonian third argument should be an operator defining aditional interactions within the unit cell\n");
+      QOperators=True;
+      QOptions=True;
+    }
+    /* read additional operators from the stack */
+    if (luaL_testudata(L, 3, "Operator_Type") != NULL)
+    {
+      QOperators=True;
+      AditionalOperator = (OperatorType *) luaL_checkudata(L, 3, "Operator_Type");
+      if(len==3)
+      {
+        QOptions=False;
+      }
+    }
+    else
+    {
+      QOperators=False;
+      QOptions=True;
+      if(len==4)
+      {
+        return luaL_error(L, "Error CreateClusterHamiltonian third argument should be an operator defining aditional interactions within the unit cell\n");
+      }
     }
   }
   /* read options */
-  if(QOptions)
+  if(QOptions==True)
   {
     LuaCheckOptions(L, -1, LuaCreateClusterHamiltonianOptions);
     if(k.Ni!=3)
@@ -311,7 +314,7 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
   CreateTightBindingSuperCell(*a, &aSuper, SuperCell);
   H=(OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   luaL_setmetatable(L, "Operator_Type");
-  if(AddSpin)
+  if(AddSpin==True)
   {
     CreateHamiltonianOperatorFromTightBindingDefPlusSpin(aSuper, k.VRe, H);
   }

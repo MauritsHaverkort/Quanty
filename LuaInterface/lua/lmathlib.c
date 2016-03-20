@@ -186,7 +186,9 @@ static int math_modf (lua_State *L) {
 }
 
 static int math_sqrt (lua_State *L) {
-  lua_pushnumber(L, l_mathop(sqrt)(luaL_checknumber(L, 1)));
+  double s=luaL_checknumber(L, 1);
+  if(s<0) luaL_error(L, "Calculating sqrt(%d). Can not take the root of a negative number\n",s);
+  lua_pushnumber(L, l_mathop(sqrt)(s));
   return 1;
 }
 

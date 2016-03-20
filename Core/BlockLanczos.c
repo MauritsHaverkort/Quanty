@@ -308,9 +308,7 @@ uint32_t BlockOperatorPsiRestricted(const OperatorType H, WaveFunctionType const
     printf("OperatorPsi failed in BlockOperatorPsi\n");
     return 1;
   }
-  
-  //WaveFunctionAddMultipliedUnionBasis(&(Opsi[0]), psi[0], 0); this should not matter, was there from earlier times when I did not add states to psi with small prefactors?
-  
+  WaveFunctionAddMultipliedUnionBasis(&(Opsi[0]), psi[0], 0);
   for(i=1;i<Npsi;i++)
   {
     if(WaveFunctionInitCopyBasis(&(Opsi[i]), (Opsi[0])))
@@ -345,9 +343,7 @@ uint32_t BlockOperatorPsi(const OperatorType H, WaveFunctionType const * const p
     printf("OperatorPsi failed in BlockOperatorPsi\n");
     return 1;
   }
-  
-  //WaveFunctionAddMultipliedUnionBasis(&(Opsi[0]), psi[0], 0);
-  
+  WaveFunctionAddMultipliedUnionBasis(&(Opsi[0]), psi[0], 0);
   for(i=1;i<Npsi;i++)
   {
     if(WaveFunctionInitCopyBasis(&(Opsi[i]), (Opsi[0])))

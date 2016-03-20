@@ -308,9 +308,7 @@ uint32_t LuaASCIIStreamPrint(lua_State *L, int narg, FILE * stream)
   }
   if(lua_type(L,narg)==LUA_TFUNCTION)
   {
-    //TODO: get the function name of the function on stack
-    fprintf(stream,"Some_function_name");
-    return 0;
+    return luaL_error(L, "Error in LuaASCIIStreamPrint unrecognized type of function\n");
   }
   if(lua_type(L,narg)==LUA_TUSERDATA)
   {
@@ -366,7 +364,7 @@ uint32_t LuaASCIIStreamPrint(lua_State *L, int narg, FILE * stream)
       int32_t i,j,l;
       OperatorType *a = (OperatorType *) luaL_checkudata(L, narg, "Operator_Type");
       fprintf(stream, "NewOperator( %d, %d,{\n",a->NFermion,a->NBoson);
-      komma=false;
+      komma=False;
       if(a->QComplex)
       {
         for(l=0;l<=a->MaxLength;l++)
@@ -517,7 +515,6 @@ uint32_t LuaASCIIStreamPrint(lua_State *L, int narg, FILE * stream)
       //TODO: Tight binding
       fprintf(stream,"Some_Variable_Of_TightBinding_Type");
       return 0;
-      return 0;
     }
     if (luaL_testudata(L, narg, "Spectra_Type") != NULL)
     {
@@ -545,18 +542,15 @@ uint32_t LuaASCIIStreamPrint(lua_State *L, int narg, FILE * stream)
       fprintf(stream,"})");
       return 0;
     }
-    fprintf(stream,"Unrecognized User Data");
-    return 0;
+    return luaL_error(L, "Error in LuaASCIIStreamPrint unrecognized type of user data\n");
   }
   if(lua_type(L,narg)==LUA_TTHREAD)
   {
-    fprintf(stream,"Unrecognized thread");
-    return 0;
+    return luaL_error(L, "Error in LuaASCIIStreamPrint unrecognized type of thread\n");
   }
   if(lua_type(L,narg)==LUA_TLIGHTUSERDATA)
   {
-    fprintf(stream,"Unrecognized light user data");
-    return 0;
+    return luaL_error(L, "Error in LuaASCIIStreamPrint unrecognized type of light user data\n");
   }
   return luaL_error(L, "Error in LuaASCIIStreamPrint unrecognized type of data\n");
 }
