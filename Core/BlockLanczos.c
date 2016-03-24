@@ -605,7 +605,7 @@ uint32_t BlockWaveFunctionCalculatOverlapMatrix(WaveFunctionType *const psi, uin
   return 0;
 }
 
-/*  use a dense mehtod to find the Npsi lowest states of Operator H
+/*  use a dense method to find the Npsi lowest states of Operator H
  *  The basis is given by the psi[0].N determinants
  *  psi[0] to psi[Npsi-1] are allocated and live on the same basis
  *  on output psi[i].V is changed to represent the Npsi lowest eigen states
@@ -843,6 +843,121 @@ uint32_t BlockWaveFunctionOrthonormalizeSameBasis(WaveFunctionType *const v, uin
   }
   return 0;
 }
+
+
+/*******************************************************************
+ *********************** Block Tri-diagonalize *********************
+ *******************************************************************/
+
+
+/*  Calculates a Block tri diagonal representation of H starting from the wavefunctions psi
+ *  On input
+ *  H Hamiltonian
+ *  psi[0] to psi[M->BlockSize-1] wavefunctions
+ *  epsilon smallest prefactor for a determinant considered different from zero
+ *  Gamma imaginary part of broadening. (used to determine convergence)
+ *  M->N number of tri-diagonal steps made in the calculation. (when converged wave-functions truncate to lenght zero and everyghing is fast, M->N is there to set a maximum)
+ *    Note that current implementations do not test enough on convergence and one normally does not reach a state where code thinks we are converged, (although we are)
+ *
+ *  Different versions for real and complex, Conserve basis and restrictions on the operator. 
+ *  Specific versions are "unsafe" no checking of imput conditions is done.
+ */
+uint32_t LanczosBlockTriDiagonalizeConserveBasisRC(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
+{
+  VerbosityPrintf(0x0001,"Start of LanczosBlockTriDiagonalizeConserveBasisRC\n");
+  fflush(stdout);
+  //TODO:
+  
+  return 1;
+}
+uint32_t LanczosBlockTriDiagonalizeConserveBasisMC(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
+{
+  VerbosityPrintf(0x0001,"Start of LanczosBlockTriDiagonalizeConserveBasisMC\n");
+  fflush(stdout);
+  //TODO:
+  
+  return 1;
+}
+uint32_t LanczosBlockTriDiagonalizeConserveBasisCC(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
+{
+  VerbosityPrintf(0x0001,"Start of LanczosBlockTriDiagonalizeConserveBasisCC\n");
+  fflush(stdout);
+  //TODO:
+  
+  return 1;
+}
+uint32_t LanczosBlockTriDiagonalizeConserveBasisRR(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
+{
+  VerbosityPrintf(0x0001,"Start of LanczosBlockTriDiagonalizeConserveBasisRR\n");
+  fflush(stdout);
+  //TODO:
+  
+  return 1;
+}
+uint32_t LanczosBlockTriDiagonalizeConserveBasisMR(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
+{
+  // make psi complex, call MC and make psi real again
+  uint32_t i,retval;
+  WaveFunctionType Cpsi[M->BlockSize];
+  VerbosityPrintf(0x0001,"Start of LanczosBlockTriDiagonalizeConserveBasisMR\n");
+  fflush(stdout);
+  for(i=0;i<M->BlockSize;i++)
+  {
+    if (MakeComplexWaveFunctionFromReal(&Cpsi[i], psi[i]))
+    {
+      printf("LanczosBlockTriDiagonalizeConserveBasisMR called with a real wave-function and a complex Hamiltonian.\nTurned the wave-function complex in step 1.\nBut failed at function %i.\n",i);
+      fflush(stdout);
+      for(;i>0;i--)
+      {
+        MakeRealWaveFunctionFromComplex(Cpsi[i-1], &Cpsi[i-1]);
+      }
+      return 1;
+    }
+  }
+  retval=LanczosBlockTriDiagonalizeConserveBasisMC(H,psi,epsilon,M,Gamma);
+  for(i=0;i<M->BlockSize;i++)
+  {
+    MakeRealWaveFunctionFromComplex(Cpsi[i-1], &Cpsi[i-1]);
+  }
+  return retval;
+}
+uint32_t LanczosBlockTriDiagonalizeConserveBasisCR(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
+{
+  // make psi complex, call CC and make psi real again
+  uint32_t i,retval;
+  WaveFunctionType Cpsi[M->BlockSize];
+  VerbosityPrintf(0x0001,"Start of LanczosBlockTriDiagonalizeConserveBasisCR\n");
+  fflush(stdout);
+  for(i=0;i<M->BlockSize;i++)
+  {
+    if (MakeComplexWaveFunctionFromReal(&Cpsi[i], psi[i]))
+    {
+      printf("LanczosBlockTriDiagonalizeConserveBasisCR called with a real wave-function and a complex Hamiltonian.\nTurned the wave-function complex in step 1.\nBut failed at function %i.\n",i);
+      fflush(stdout);
+      for(;i>0;i--)
+      {
+        MakeRealWaveFunctionFromComplex(Cpsi[i-1], &Cpsi[i-1]);
+      }
+      return 1;
+    }
+  }
+  retval=LanczosBlockTriDiagonalizeConserveBasisCC(H,psi,epsilon,M,Gamma);
+  for(i=0;i<M->BlockSize;i++)
+  {
+    MakeRealWaveFunctionFromComplex(Cpsi[i-1], &Cpsi[i-1]);
+  }
+  return retval;
+}
+
+
+
+
+
+/*******************************************************************
+ **************************** Ground-state *************************
+ *******************************************************************/
+
+
 
 /*  Use Band Lanczos method to find lowest Npsi eigenstates of H
  *  Starting vectors are in v[0] to v[Npis-1]
