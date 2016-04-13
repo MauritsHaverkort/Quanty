@@ -384,8 +384,7 @@ double RealWaveFunctionPrefactorDet(const WaveFunctionType psi, const uint8_t * 
 *   return 0 if everything worked
 *   return 1 if out off memory
 */
-uint32_t RealWaveFunctionAddElementOMPMiniFlush(WaveFunctionType * const psi, uint32_t * NMini,
-                                                const uint8_t * const MiniDet, const double *const MiniValue)
+uint32_t RealWaveFunctionAddElementOMPMiniFlush(WaveFunctionType * const psi, uint32_t * NMini, const uint8_t * const MiniDet, const double *const MiniValue)
 {
   uint32_t i, NoMoreMem = 0;
 #pragma omp critical (AddToPsi)

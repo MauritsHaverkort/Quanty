@@ -238,6 +238,7 @@ static int LuaOperatorNewLx(lua_State * L)
   LuaOptionsType LuaOperatorOptions[]={
     {"basis","char*",&(Options.basis)},
     {NULL, NULL, NULL}};
+  Options.basis="SphericalHarmonicsY";
   if(LuaTestOptionsList(L, -1))
   {
     LuaCheckOptions(L, -1, LuaOperatorOptions);

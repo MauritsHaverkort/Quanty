@@ -2162,7 +2162,142 @@ static int LuaEigensystem(lua_State * L)
   }
 }
 
+/*  Given a table of vectors or wave-functions returns a new set that is orthonormalized
+ * @ param L
+ *         Pointer to a lua state
+ *         First argument on stack should be a table of complex vectors or wave-functions
+ *         second optional argument can be a lsit of options.
+ *         possible options are: (first option is standard)
+ *         - Method:         string value: "Lowdin", "GramSchimdt"
+ *         - Order:          string value: "Row", "Column"
+ *         - SingularValue:  double: values equal or smaller than SingularValue are removed from basis
+ *         - KeepDimensions: boolean (remove singular vectors or add a zero vector to the basis)
+ */
 
+static int LuaOrthonormalize(lua_State *L)
+{
+  int matorfun;
+  uint32_t len;
+  struct
+  {
+    char* Method;
+    char* Order;
+    double SingularValue;
+    Bool ReduceDimension;
+  } Options;
+  LuaOptionsType LuaOrthonormalizeOptions[]={
+    {"Method",          "char*", &(Options.Method)},
+    {"Order",           "char*", &(Options.Order)},
+    {"SingularValue",   "char*", &(Options.SingularValue)},
+    {"ReduceDimension", "bool",  &(Options.ReduceDimension)},
+    {NULL, NULL, NULL}};
+  Options.Method="Lowdin";
+  Options.Order="Row";
+  Options.SingularValue=1E-12;
+  Options.ReduceDimension=True;
+  // get options when defined
+  len = (uint32_t)lua_gettop(L);
+  if(len>2)
+  {
+    return luaL_error(L, "Orthogonalize called with %d arguments. One or Two expected\n",len);
+  }
+  if(len==2)
+  {
+    if(LuaTestOptionsList(L, -1))
+    {
+      LuaCheckOptions(L, -1, LuaOrthonormalizeOptions);
+      if(!((strcmp(Options.Method, "Lowdin")==0)||(strcmp(Options.Method, "GramSchmidt")==0)))
+      {
+        return luaL_error(L, "Error Orthogonalize Option \"Method\" should either be \"Lowdin\" (standard) or \"GramSchmidt\" and not\"%s\"\n",Options.Method);
+      }
+      if(!((strcmp(Options.Order, "Row")==0)||(strcmp(Options.Order, "Column")==0)))
+      {
+        return luaL_error(L, "Error Orthogonalize Option \"Order\" should either be \"Row\" (standard) or \"Column\" and not\"%s\"\n",Options.Order);
+      }
+    }
+    else
+    {
+      return luaL_error(L, "Second argument of Orthogonalize is optional but iff given should be a list of options.\n");
+    }
+  }
+  // determine if we deal with a dense matrix or with a list of wave-functions
+  luaL_checktype(L, 1, LUA_TTABLE);
+  len = (uint32_t)lua_objlen(L, 1);
+  if(len==0)
+  {
+    return luaL_error(L, "First argument of Orthogonalize should either be a table of wave-functions or a rectangular matrix (table of tables of equal lenght).\n");
+  }
+  lua_rawgeti(L, 1, 1);
+  matorfun = lua_type(L, -1);
+  lua_pop(L, 1);
+  if(matorfun==LUA_TTABLE)
+  {
+    CompactMatrixType *M, *MO;
+    M = (CompactMatrixType *) luaL_checkCompactMatrix(L, 1);
+    MO = malloc(sizeof(CompactMatrixType));
+    if(CompactMatrixCopy(*M, MO))
+    {
+      lua_gc(L, LUA_GCCOLLECT, 0);
+      if(CompactMatrixCopy(*M, MO))
+      {
+        return luaL_error(L, "Not able to initialize matrix. Probably ran outoff memory on a bad moment\n");
+      }
+    }
+    if(strcmp(Options.Method, "Lowdin")==0)
+    {
+      if(strcmp(Options.Order, "Row")==0)
+      {
+        CompactMatrixSVDOrthogonalizeRow(MO, Options.SingularValue, Options.ReduceDimension);
+      }
+      else if(strcmp(Options.Order, "Column")==0)
+      {
+        CompactMatrixSVDOrthogonalizeCol(MO, Options.SingularValue, Options.ReduceDimension);
+      }
+      else
+      {
+        return luaL_error(L, "Error Orthogonalize Option \"Order\" should either be \"Row\" (standard) or \"Column\" and not\"%s\"\n",Options.Order);
+      }
+    }
+    else if(strcmp(Options.Method, "GramSchmidt")==0)
+    {
+      if(strcmp(Options.Order, "Row")==0)
+      {
+        CompactMatrixGramSchmidtOrthogonalizeRow(MO, Options.SingularValue, Options.ReduceDimension);
+      }
+      else if(strcmp(Options.Order, "Column")==0)
+      {
+        CompactMatrixGramSchmidtOrthogonalizeCol(MO, Options.SingularValue, Options.ReduceDimension);
+      }
+      else
+      {
+        return luaL_error(L, "Error Orthogonalize Option \"Order\" should either be \"Row\" (standard) or \"Column\" and not\"%s\"\n",Options.Order);
+      }
+    }
+    else
+    {
+      return luaL_error(L, "Error Orthogonalize Option \"Method\" should either be \"Lowdin\" (standard) or \"GramSchmidt\" and not\"%s\"\n",Options.Method);
+    }
+    LuaPushTable_CompactMatrixType(L, MO);
+    FreeCompactMatrix(MO);
+    FreeCompactMatrix(M);
+    free(MO);
+    free(M);
+  }
+  else if(matorfun==LUA_TUSERDATA)
+  {
+    WaveFunctionType *psilist;
+    uint32_t Npsi;
+    psilist = luaL_checkarray_WaveFunctionType(L, 1, &Npsi);
+    
+    return luaL_error(L, "Orthogonalizing a list of wave-functions is planned, but not jet implemented.\n");
+  
+  }
+  else
+  {
+    return luaL_error(L, "First argument of Orthogonalize should either be a table of wave-functions or a rectangular matrix (table of tables of equal lenght).\n");
+  }
+  return 1;
+}
 
 static int LuaTimeEnd(lua_State * L)
 {
@@ -2302,14 +2437,15 @@ static const struct luaL_Reg global_functions[] = {
   {"DensityMatrix",LuaDensityMatrix},
   {"Eigensystem", LuaEigensystem},
   {"EvolveToGroundstate", LuaEvolveToGroundstate},
+  {"Expand",LuaWavefunctionExpand},
+  {"FileReadStuttgartCTRL", LuaFileReadStuttgartCTRL},
+  {"FileReadStuttgartHAMR", LuaFileReadStuttgartHAMR},
 //  {"Help", LuaHelp},
   {"MeanFieldGroundState", LuaMeanFieldGroundstate},
   {"NewOperator", LuaNewOperator},
   {"NewTightBinding", LuaNewTightBinding},
-  {"FileReadStuttgartCTRL", LuaFileReadStuttgartCTRL},
-  {"FileReadStuttgartHAMR", LuaFileReadStuttgartHAMR},
-  {"TightBindingDefFromStuttgartCTRLHAMR", LuaTightBindingDefFromStuttgartCTRLHAMR},
   {"NewWavefunction", LuaNewWaveFunction},
+  {"Orthonormalize", LuaOrthonormalize},
   {"PotentialExpandedOnClm", LuaPotentialExpandedOnClm},
   {"PlotBands", LuaPlotBands},
   {"PlotBandsAndDOS", LuaPlotBandsAndDOS},
@@ -2320,6 +2456,7 @@ static const struct luaL_Reg global_functions[] = {
   {"TimeEnd",LuaTimeEnd},
   {"TimePrint",LuaTimePrint},
   {"TimeStart",LuaTimeStart},
+  {"TightBindingDefFromStuttgartCTRLHAMR", LuaTightBindingDefFromStuttgartCTRLHAMR},
   {"Transpose", Luatranspose},
   {"Verbosity",LuaVerbosity},
   {NULL, NULL}

@@ -1670,7 +1670,7 @@ uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType co
     Tnow.Ni=psi->Ni;
     Tnow.Nj=psi->Nj;
     /* orthonormalize Tnow */
-    CompactMatrixGramSchmidtOrthogonalizeRow(&Tnow, SingularValue);
+    CompactMatrixGramSchmidtOrthogonalizeRow(&Tnow, SingularValue, True);
     zgemm(charC,charN,&ABlock->BlockSize,&ABlock->BlockSize,&psi->Nj,&one,Tnow.VRe,&psi->Nj,psi->VRe,&psi->Nj,&zero,ABlock->b,&ABlock->BlockSize);
     /* loop over psi_{n+1} = A psi_{n} and orthonormalization */
     oldindex=0;
@@ -1809,7 +1809,7 @@ uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType co
     Tnow.Ni=psi->Ni;
     Tnow.Nj=psi->Nj;
     /* orthonormalize Tnow */
-    CompactMatrixGramSchmidtOrthogonalizeRow(&Tnow, SingularValue);
+    CompactMatrixGramSchmidtOrthogonalizeRow(&Tnow, SingularValue, True);
     dgemm(charC,charN,&ABlock->BlockSize,&ABlock->BlockSize,&psi->Nj,&one,Tnow.VRe,&psi->Nj,psi->VRe,&psi->Nj,&zero,ABlock->bRe,&ABlock->BlockSize);
     /* loop over psi_{n+1} = A psi_{n} and orthonormalization */
     oldindex=0;
@@ -2174,7 +2174,7 @@ uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(BlockListOfPoles co
       }
     }
   }
-  CompactMatrixGramSchmidtOrthogonalizeRow(&T, 1000*DBL_EPSILON);
+  CompactMatrixGramSchmidtOrthogonalizeRow(&T, 1000*DBL_EPSILON, True);
   CompactMatrixMultiply3('N', 'N', 'C', &T, &M, &T, &(B->TMT));
   FreeCompactMatrix(&T);
   FreeCompactMatrix(&M);
@@ -2311,7 +2311,7 @@ uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrixReduceDimension(Bloc
       }
     }
   }
-  CompactMatrixGramSchmidtOrthogonalizeRow(&T, 1000*DBL_EPSILON);
+  CompactMatrixGramSchmidtOrthogonalizeRow(&T, 1000*DBL_EPSILON, True);
   CompactMatrixMultiply3('N', 'N', 'C', &T, &M, &T, &(B->TMT));
   FreeCompactMatrix(&T);
   FreeCompactMatrix(&M);

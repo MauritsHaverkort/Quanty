@@ -395,6 +395,10 @@ static int LuaWavefunctionRandomize(lua_State * L)
   return 0;
 }
 
+/*  pushes a new wavefunction on the lua stack
+ *  On the stack should be a wavefunction and an integer
+ *  The wave-function returned is determinant found at the position of the integer
+ */
 static int LuaWavefunctionDet(lua_State *L)
 {
   uint32_t len = (uint32_t)lua_gettop(L);
@@ -422,6 +426,39 @@ static int LuaWavefunctionDet(lua_State *L)
   }
   return 1;
 }
+
+
+
+/*  On stack:
+ *    a wavefunction
+ *    a table of integers representing the determinants included in the expansion
+ *  Returns:
+ *    a table of wavefunctions
+ */
+static int LuaWavefunctionExpand(lua_State * L)
+{
+  WaveFunctionType *psi,*psilist;
+  uint16_t *index;
+  uint32_t Ndet;
+  if(lua_gettop(L)!=2) luaL_error(L, "Error in Expand(psi,index) two arguments expected, recieved (%d)\n",lua_gettop(L));
+    psi = (WaveFunctionType *) luaL_checkudata(L, 1, "Wavefunction_Type");
+  index = luaL_checkarray_unit16_t(L, 2, &Ndet);
+  if(Ndet>24) luaL_error(L, "Error in Expand(psi,index). Expanding a wavefunction in determinants yields 2^N new functions for N=%d this would not fit in your memory\n",psi->N);
+  psilist = malloc((1<<Ndet)*sizeof(WaveFunctionType));
+  if(psilist==NULL)
+  {
+    luaL_error(L, "Error in Expand(psi,index). Out off memory when expanding a function with %d determinants for % determinants into %d seperate functions\n",psi->N,Ndet,(1<<Ndet));
+  }
+  if(WaveFunctionExpand(psi, index, Ndet, psilist))
+  {
+    luaL_error(L, "Error in Expand(psi,index). Out off memory when expanding a function with %d determinants for % determinants into %d seperate functions\n",psi->N,Ndet,(1<<Ndet));
+  }
+  LuaPushTable_WaveFunctionType(L, psilist, (1<<Ndet));
+  free(psilist);
+  free(index);
+  return 1;
+}
+
 
 static int LuaWavefunctionIndex(lua_State * L)
 {

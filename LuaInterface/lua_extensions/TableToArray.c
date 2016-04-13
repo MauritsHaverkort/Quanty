@@ -217,6 +217,10 @@ WaveFunctionType* luaL_checkarray_WaveFunctionType(lua_State *L, int narg, uint3
   return buff;
 }
 
+
+
+
+
 OperatorType* luaL_checkarray_OperatorType(lua_State *L, int narg, uint32_t *len_out)
 {
   int i,j;

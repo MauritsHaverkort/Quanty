@@ -1379,3 +1379,112 @@ uint32_t WaveFunctionArraySeperateBasis(WaveFunctionType * const psi, uint32_t c
   }
   return 0;
 }
+
+
+/*  input:
+ *     psi:     a wavefunction
+ *     index:   a list of Ndet integers (16 bit) in the range 0 to psi->NFermion
+ *     Ndet:    integer length of index
+ *  return:
+ *     psilist: a list of 2^Ndet wavefunctions with occupation of fermions at position index equal to the position in the list in binary form
+ *              the sum over psilist is equal to the original function
+ *  psilist must be allocated when function is called
+ */
+uint32_t WaveFunctionExpand(const WaveFunctionType * const psi, const uint16_t * const index, uint32_t const Ndet, WaveFunctionType * psilist)
+{
+  const uint32_t Nout=(1<<Ndet);
+  uint32_t j,k,retval;
+  int i;
+  Bool add;
+  char detname[Ndet+1];
+  detname[Ndet]='\0';
+  for(i=0;i<Nout;i++)
+  {
+    psilist[i].NFermion=psi->NFermion;
+    psilist[i].NBoson=psi->NBoson;
+    psilist[i].QComplex=psi->QComplex;
+    psilist[i].NBitsKey=psi->NBitsKey;
+    if(WaveFunctionInit(&(psilist[i])))
+    {
+      while (i>0)
+      {
+        i--;
+        WaveFunctionFree(&(psilist[i]));
+      }
+      printf("WaveFunctionInit failed in WaveFunctionExpand\n");
+      return 1;
+    }
+    for(k=0;k<Ndet;k++) detname[k]=((i>>k)&1)?'1':'0';
+    snprintf(psilist[i].Name, MAXStrLength, "%s %s",psi->Name,detname);
+    psilist[i].Name[MAXStrLength-1]='\0';
+  }
+  retval=0;
+  if(psi->QComplex)
+  {
+#pragma omp parallel for private(j,add,k)
+    for(i=0;i<Nout;i++)
+    {
+      if(retval)break;
+      for(j=1;j<=psi->N;j++)
+      {
+        add=True;
+        for(k=0;k<Ndet;k++)
+        {
+          if(((psi->Determinant[BlokElementDet(j,psi->NWord,index[k]>>7)]>>(7-(index[k]&255)))&1)!=((i>>k)&1))
+          {
+            add=False;
+            break;
+          }
+        }
+        if(add==True)
+        {
+          if(ComplexWaveFunctionAddElement(&(psilist[i]), &psi->Determinant[BlokElementDet(j,psi->NWord,0)], psi->ValueRe[BlokElement(j)], psi->ValueIm[BlokElement(j)]))
+          {
+            retval=1;
+            printf("ComplexWaveFunctionAddElement failed in WaveFunctionExpand for determinant %i/%i of function %i/%i",j,psi->N,i,Nout);
+#pragma omp flush(retval)
+            break;
+          }
+        }
+      }
+    }
+  }
+  else
+  {
+#pragma omp parallel for private(j,add,k)
+    for(i=0;i<Nout;i++)
+    {
+      if(retval)break;
+      for(j=1;j<=psi->N;j++)
+      {
+        add=True;
+        for(k=0;k<Ndet;k++)
+        {
+          if(((psi->Determinant[BlokElementDet(j,psi->NWord,index[k]>>7)]>>(7-(index[k]&255)))&1)!=((i>>k)&1))
+          {
+            add=False;
+            break;
+          }
+        }
+        if(add==True)
+        {
+          if(RealWaveFunctionAddElement(&(psilist[i]), &psi->Determinant[BlokElementDet(j,psi->NWord,0)], psi->ValueRe[BlokElement(j)]))
+          {
+            retval=1;
+            printf("RealWaveFunctionAddElement failed in WaveFunctionExpand for determinant %i/%i of function %i/%i",j,psi->N,i,Nout);
+#pragma omp flush(retval)
+            break;
+          }
+        }
+      }
+    }
+  }
+  if(retval)
+  {
+    for(i=0;i<Nout;i++)
+    {
+      WaveFunctionFree(&(psilist[i]));
+    }
+  }
+  return retval;
+}
