@@ -5,7 +5,9 @@
 /**********************************************************/
 
 uint32_t WaveFunctionInit(WaveFunctionType * Psi);
-void   WaveFunctionFree(WaveFunctionType * const psi);
+uint32_t WaveFunctionInitCopyBasis(WaveFunctionType * Psi, WaveFunctionType const PsiOrig);
+void     WaveFunctionFree(WaveFunctionType * const psi);
+void     WaveFunctionFreeValues(WaveFunctionType * const psi);
 uint32_t PsiHermitianOperatorPsi(const OperatorType O, const WaveFunctionType psi, double *VRe);
 uint32_t PsiHermitianOperatorSqrPsi(const OperatorType O, const WaveFunctionType psi, double *VRe);
 

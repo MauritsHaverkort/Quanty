@@ -372,7 +372,7 @@ void BlockWaveFunctionFree(WaveFunctionType *psi, const uint32_t Npsi)
   {
     WaveFunctionFreeValues(&(psi[i]));
   }
-  WaveFunctionFree(&(psi[0]));
+  if(Npsi>0) WaveFunctionFree(&(psi[0]));
 }
 
 void RealBlockWaveFunctionTruncateBasis(WaveFunctionType *const psi, uint32_t const Npsi, const double epsilon)
@@ -589,7 +589,8 @@ uint32_t BlockWaveFunctionCalculatOverlapMatrix(WaveFunctionType *const psi, uin
     {
       for(j=0;j<Npsi;j++)
       {
-        ComplexWaveFunctionDotProductSameBasis(psi[i], psi[j], &(S->V[j+i*Npsi].Re), &(S->V[j+i*Npsi].Im));      }
+        ComplexWaveFunctionDotProductSameBasis(psi[i], psi[j], &(S->V[j+i*Npsi].Re), &(S->V[j+i*Npsi].Im));
+      }
     }
   }
   else
@@ -861,95 +862,307 @@ uint32_t BlockWaveFunctionOrthonormalizeSameBasis(WaveFunctionType *const v, uin
  *
  *  Different versions for real and complex, Conserve basis and restrictions on the operator. 
  *  Specific versions are "unsafe" no checking of imput conditions is done.
+ *
+ *  the wave-functions in the list psi are distroyed (and freed) after a succesfull calculation
+ *  all wavefunctions must be on the same basis
+ *
  */
-uint32_t LanczosBlockTriDiagonalizeConserveBasisRC(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
+
+
+
+uint32_t LanczosBlockTriDiagonalizeRestricted(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
 {
-  VerbosityPrintf(0x0001,"Start of LanczosBlockTriDiagonalizeConserveBasisRC\n");
-  fflush(stdout);
-  //TODO:
-  
+  //TODO: Implement restricted version
   return 1;
-}
-uint32_t LanczosBlockTriDiagonalizeConserveBasisMC(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
-{
-  VerbosityPrintf(0x0001,"Start of LanczosBlockTriDiagonalizeConserveBasisMC\n");
-  fflush(stdout);
-  //TODO:
-  
-  
-  return 1;
-}
-uint32_t LanczosBlockTriDiagonalizeConserveBasisCC(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
-{
-  VerbosityPrintf(0x0001,"Start of LanczosBlockTriDiagonalizeConserveBasisCC\n");
-  fflush(stdout);
-  //TODO:
-  
-  return 1;
-}
-uint32_t LanczosBlockTriDiagonalizeConserveBasisRR(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
-{
-  VerbosityPrintf(0x0001,"Start of LanczosBlockTriDiagonalizeConserveBasisRR\n");
-  fflush(stdout);
-  //TODO:
-  
-  return 1;
-}
-uint32_t LanczosBlockTriDiagonalizeConserveBasisMR(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
-{
-  // make psi complex, call MC and make psi real again
-  uint32_t i,retval;
-  WaveFunctionType Cpsi[M->BlockSize];
-  VerbosityPrintf(0x0001,"Start of LanczosBlockTriDiagonalizeConserveBasisMR\n");
-  fflush(stdout);
-  for(i=0;i<M->BlockSize;i++)
-  {
-    if (MakeComplexWaveFunctionFromReal(&Cpsi[i], psi[i]))
-    {
-      printf("LanczosBlockTriDiagonalizeConserveBasisMR called with a real wave-function and a complex Hamiltonian.\nTurned the wave-function complex in step 1.\nBut failed at function %i.\n",i);
-      fflush(stdout);
-      for(;i>0;i--)
-      {
-        MakeRealWaveFunctionFromComplex(Cpsi[i-1], &Cpsi[i-1]);
-      }
-      return 1;
-    }
-  }
-  retval=LanczosBlockTriDiagonalizeConserveBasisMC(H,psi,epsilon,M,Gamma);
-  for(i=0;i<M->BlockSize;i++)
-  {
-    MakeRealWaveFunctionFromComplex(Cpsi[i-1], &Cpsi[i-1]);
-  }
-  return retval;
-}
-uint32_t LanczosBlockTriDiagonalizeConserveBasisCR(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
-{
-  // make psi complex, call CC and make psi real again
-  uint32_t i,retval;
-  WaveFunctionType Cpsi[M->BlockSize];
-  VerbosityPrintf(0x0001,"Start of LanczosBlockTriDiagonalizeConserveBasisCR\n");
-  fflush(stdout);
-  for(i=0;i<M->BlockSize;i++)
-  {
-    if (MakeComplexWaveFunctionFromReal(&Cpsi[i], psi[i]))
-    {
-      printf("LanczosBlockTriDiagonalizeConserveBasisCR called with a real wave-function and a complex Hamiltonian.\nTurned the wave-function complex in step 1.\nBut failed at function %i.\n",i);
-      fflush(stdout);
-      for(;i>0;i--)
-      {
-        MakeRealWaveFunctionFromComplex(Cpsi[i-1], &Cpsi[i-1]);
-      }
-      return 1;
-    }
-  }
-  retval=LanczosBlockTriDiagonalizeConserveBasisCC(H,psi,epsilon,M,Gamma);
-  for(i=0;i<M->BlockSize;i++)
-  {
-    MakeRealWaveFunctionFromComplex(Cpsi[i-1], &Cpsi[i-1]);
-  }
-  return retval;
 }
 
+uint32_t LanczosBlockTriDiagonalizeRC(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
+{
+  VerbosityPrintf(0x0001,"Start of LanczosBlockTriDiagonalizeRC\n");
+  fflush(stdout);
+  //TODO:
+  
+  return 1;
+}
+uint32_t LanczosBlockTriDiagonalizeMC(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
+{
+  VerbosityPrintf(0x0001,"Start of LanczosBlockTriDiagonalizeMC\n");
+  fflush(stdout);
+  //TODO:
+  
+  
+  return 1;
+}
+uint32_t LanczosBlockTriDiagonalizeCC(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
+{
+  VerbosityPrintf(0x0001,"Start of LanczosBlockTriDiagonalizeCC\n");
+  fflush(stdout);
+  //TODO:
+  
+  return 1;
+}
+uint32_t LanczosBlockTriDiagonalizeRR(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
+{
+  uint32_t i,j,k,vi,vip,vim;
+  CompactMatrixType Mab;
+  WaveFunctionType *v[4];
+  uint32_t NSingular,Npsi=M->BlockSize,Npsivi=M->BlockSize,Npsivim=M->BlockSize;
+  VerbosityPrintf(0x0001,"Start of LanczosBlockTriDiagonalizeRR\n");
+  fflush(stdout);
+  v[0] = psi;
+  v[1] = malloc(Npsi*sizeof(WaveFunctionType));
+  v[2] = malloc(Npsi*sizeof(WaveFunctionType));
+  v[3] = malloc(Npsi*sizeof(WaveFunctionType));
+  Mab.Ni=M->BlockSize;
+  Mab.Nj=M->BlockSize;
+  Mab.QComplex=0;
+  RealWaveFunctionListSVDOrthogonalizeSameBasis(v[0], v[1], &Npsi, epsilon, True); // v[1] = orthonormal[v0]
+  NSingular=M->BlockSize-Npsi;
+  // b[0] = v[0] . v[1]^+ or b[0]^T = v[1]^* . v[0]^T
+  for(i=0;i<Npsi+NSingular;i++)
+  {
+    for(j=0;j<Npsi;j++)
+    {
+      M->bRe[i * M->BlockSize + j] = RealWaveFunctionDotProductSameBasis(v[1][j], v[0][i]);
+    }
+  }
+  vi=1;
+  vim=0;
+  vip=2;
+  for(k=1;k<M->N;k++)
+  {
+    // v[vip] = H v[vi]^T
+    while(OperatorPsiListRR(H, v[vi], v[vip], Npsi))
+    {
+      printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeRR for the function OperatorPsiListRR\n");
+      printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
+      fflush(stdout);
+      epsilon *= 2.0;
+      if (v[vi][0].NBlok == 1) AllocFailed();
+      RealBlockWaveFunctionTruncateBasis(v[vi], Npsi, epsilon);
+    }
+    // a[k] = v[vi]^* . v[vip]^T  (v[vi]^* . H . v[vi]^T)
+    Mab.VRe = &(M->aRe[k*Sqr(M->BlockSize)]);
+    RealWaveFunctionListDotProduct(v[vi], Npsi, v[vip], Npsi, &Mab);
+    if(k!=1)
+    {
+      // b[k-1] = v[vim]^* . v[vip]^T  (v[vim]^* . H . v[vi]^T)
+      Mab.VRe = &(M->bRe[(k-1)*Sqr(M->BlockSize)]);
+      RealWaveFunctionListDotProduct(v[vim], Npsi, v[vip], Npsi, &Mab);
+    }
+    NSingular=1;
+    while(NSingular)
+    {
+      // orthogonalize v[vip] to v[vi] and v[vim]
+      // we use matrix multiplication between v[vip] and v[vi] which is a numerical unstable form of Gram Schmidt
+      // we heal this by repeating the orthogonalization twice
+      Mab.VRe=M->aRe;
+      // w = v[vip]^* . v[vi]^T
+      CompactMatrixScale(&Mab, 0);
+      RealWaveFunctionListDotProduct(v[vip], Npsi, v[vi], Npsivi, &Mab);
+      // v[vip] -= w . v[vi]
+      if(RealWaveFunctionBlockSubtractMultipliedUnionBasis(v[vip], Npsi, v[vi], Npsivi, Mab))
+      {
+        
+      }
+      // w = v[vip]^* . v[vi]^T
+      CompactMatrixScale(&Mab, 0);
+      RealWaveFunctionListDotProduct(v[vip], Npsi, v[vi], Npsivi, &Mab);
+      // v[vip] -= w . v[vi]
+      if(RealWaveFunctionBlockSubtractMultipliedUnionBasis(v[vip], Npsi, v[vi], Npsivi, Mab))
+      {
+        
+      }
+      // w = v[vip]^* . v[vim]^T
+      CompactMatrixScale(&Mab, 0);
+      RealWaveFunctionListDotProduct(v[vip], Npsi, v[vim], Npsivim, &Mab);
+      // v[vip] -= w . v[vim]
+      if(RealWaveFunctionBlockSubtractMultipliedUnionBasis(v[vip], Npsi, v[vim], Npsivim, Mab))
+      {
+        
+      }
+      // w = v[vip]^* . v[vim]^T
+      CompactMatrixScale(&Mab, 0);
+      RealWaveFunctionListDotProduct(v[vip], Npsi, v[vim], Npsivim, &Mab);
+      // v[vip] -= w . v[vim]
+      if(RealWaveFunctionBlockSubtractMultipliedUnionBasis(v[vip], Npsi, v[vim], Npsivim, Mab))
+      {
+        
+      }
+      // Lowdin orthonormalize v[vip] into v[3], free v[vip] and set v[vip] equal to v[3]
+      NSingular=Npsi;
+      RealWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, epsilon, True);
+      NSingular-=Npsi;
+      if(NSingular!=0)
+      {
+        VerbosityPrintf(0x0001, "Reduce dimension from %u to %u in block %u\n",Npsi+NSingular,Npsi,k);
+      }
+      for(i=0;i<Npsi+NSingular;i++)
+      {
+        WaveFunctionFreeValues(&v[vip][i]);
+      }
+      for(i=0;i<Npsi;i++)
+      {
+        v[vip][i]=v[3][i];
+      }
+      // remove small values from v[vip]
+      BlockWaveFunctionTruncateBasis(v[vip], Npsi, epsilon);
+    }
+    // remove vim from memory and set vim to vi and vi to vip
+    if(k==1)
+    {
+      // nothing to free
+    }
+    else if(k==2)
+    {
+      for(i=0;i<Npsi;i++)
+      {
+        WaveFunctionFreeValues(&(v[vim][i]));
+      }
+    }
+    else
+    {
+      BlockWaveFunctionFree(v[vim], Npsivim);
+    }
+    vim=vi;
+    vi=vip;
+    vip=(vip+1)%3;
+    Npsivim=Npsivi;
+    Npsivi=Npsi;
+  }
+  if(M->N<=1)
+  {
+    for(i=0;i<Npsivi;i++)
+    {
+      WaveFunctionFreeValues(&(v[1][i]));
+    }
+  }
+  else if(M->N==2)
+  {
+    for(i=0;i<Npsivim;i++)
+    {
+      WaveFunctionFreeValues(&(v[vim][i]));
+    }
+    BlockWaveFunctionFree(v[vi],  Npsivi);
+  }
+  else
+  {
+    BlockWaveFunctionFree(v[vim], Npsivim);
+    BlockWaveFunctionFree(v[vi],  Npsivi);
+  }
+  for(i=0;i<Sqr(M->BlockSize);i++)
+  {
+    M->aRe[i]=0;
+  }
+  free(v[1]);
+  free(v[2]);
+  free(v[3]);
+  return 0;
+}
+uint32_t LanczosBlockTriDiagonalizeMR(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
+{
+  // make psi complex, call MC
+  uint32_t i;
+  VerbosityPrintf(0x0001,"Start of LanczosBlockTriDiagonalizeMR\n");
+  fflush(stdout);
+  for(i=0;i<M->BlockSize;i++)
+  {
+    if (MakeComplexWaveFunctionFromReal(&psi[i], psi[i]))
+    {
+      printf("LanczosBlockTriDiagonalizeMR called with a real wave-function and a complex Hamiltonian.\nTurned the wave-function complex in step 1.\nBut failed at function %i.\n",i);
+      fflush(stdout);
+      for(;i>0;i--)
+      {
+        MakeRealWaveFunctionFromComplex(psi[i-1], &psi[i-1]);
+      }
+      return 1;
+    }
+  }
+  return LanczosBlockTriDiagonalizeMC(H,psi,epsilon,M,Gamma);
+}
+uint32_t LanczosBlockTriDiagonalizeCR(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
+{
+  // make psi complex, and call CC
+  uint32_t i;
+  VerbosityPrintf(0x0001,"Start of LanczosBlockTriDiagonalizeCR\n");
+  fflush(stdout);
+  for(i=0;i<M->BlockSize;i++)
+  {
+    if (MakeComplexWaveFunctionFromReal(&psi[i], psi[i]))
+    {
+      printf("LanczosBlockTriDiagonalizeCR called with a real wave-function and a complex Hamiltonian.\nTurned the wave-function complex in step 1.\nBut failed at function %i.\n",i);
+      fflush(stdout);
+      for(;i>0;i--)
+      {
+        MakeRealWaveFunctionFromComplex(psi[i-1], &psi[i-1]);
+      }
+      return 1;
+    }
+  }
+  return LanczosBlockTriDiagonalizeCC(H,psi,epsilon,M,Gamma);
+}
+uint32_t LanczosBlockTriDiagonalize(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
+{
+  uint32_t i,psiComplex=0;
+  VerbosityPrintf(0x0001,"Start of LanczosBlockTriDiagonalize\n");
+  // restrictions ?
+  if(H.Res.N!=0)
+  {
+    //TODO: put restictions on psi note that this needs testing if psi[i] have the same or different basis
+    return LanczosBlockTriDiagonalizeRestricted(H, psi, H.Res, epsilon, M, Gamma);
+  }
+  // all psi complex ?
+  for(i=0;i<M->BlockSize;i++)
+  {
+    if(psi[i].QComplex)psiComplex++;
+  }
+  if(!((psiComplex==M->BlockSize)||(psiComplex==0)))
+  {
+    for(i=0;i<M->BlockSize;i++)
+    {
+      if (MakeComplexWaveFunctionFromReal(&psi[i], psi[i]))
+      {
+        printf("LanczosBlockTriDiagonalize called with a set of wave-functions that are mixed real and complex.\nTurned the wave-function complex in step 1.\nBut failed at function %i.\n",i);
+        fflush(stdout);
+        for(;i>0;i--)
+        {
+          MakeRealWaveFunctionFromComplex(psi[i-1], &psi[i-1]);
+        }
+        return 1;
+      }
+    }
+  }
+  if (psiComplex)
+  {
+    if (H.QComplex == 0)
+    {
+      return LanczosBlockTriDiagonalizeRC(H, psi, epsilon, M, Gamma);
+    }
+    else if (H.QComplex == 1)
+    {
+      return LanczosBlockTriDiagonalizeCC(H, psi, epsilon, M, Gamma);
+    }
+    else
+    {
+      return LanczosBlockTriDiagonalizeMC(H, psi, epsilon, M, Gamma);
+    }
+  }
+  else
+  {
+    if (H.QComplex == 0)
+    {
+      return LanczosBlockTriDiagonalizeRR(H, psi, epsilon, M, Gamma);
+    }
+    else if (H.QComplex == 1)
+    {
+      return LanczosBlockTriDiagonalizeCR(H, psi, epsilon, M, Gamma);
+    }
+    else
+    {
+      return LanczosBlockTriDiagonalizeMR(H, psi, epsilon, M, Gamma);
+    }
+  }
+}
 
 
 

@@ -1212,6 +1212,38 @@ void ComplexWaveFunctionTruncateBasisAllowReal(WaveFunctionType * const a, const
   }
 }
 
+void MakeComplexFunctionRealWhenNormSmall(WaveFunctionType * const a, const double epsilon)
+{
+  uint32_t iBlok, iElement;
+  int    iOMP;
+  double NormA = 0, NormB = 0, Norm = 0;
+  iBlok = a->NBlok - 1;
+#pragma omp parallel for private(iElement) reduction(+ : NormA)
+  for (iOMP = 0; iOMP <= (int)(a->N - iBlok * BlokSize); ++iOMP)
+  {
+    iElement = (uint32_t) iOMP;
+    NormA += a->ValueIm[iBlok][iElement] * a->ValueIm[iBlok][iElement];
+  }
+#pragma omp parallel for private(iElement,iBlok) reduction(+ : NormB)
+  for (iOMP = 0; iOMP < (int)(a->NBlok - 1); iOMP++)
+  {
+    iBlok = (uint32_t) iOMP;
+    for (iElement = 0; iElement < BlokSize; ++iElement)
+    {
+      NormB += a->ValueIm[iBlok][iElement] * a->ValueIm[iBlok][iElement];
+    }
+  }
+  Norm = sqrt(NormA + NormB);
+  if(Norm<epsilon)
+  {
+    for (iBlok = 0; iBlok < a->NBlok; iBlok++)
+    {
+      free(a->ValueIm[iBlok]);
+    }
+    free(a->ValueIm);
+    a->QComplex = 0;
+  }
+}
 
 /*
  *   Make psi orthogonal to OtherPsi, psi and other psi are on the same basis
@@ -1261,6 +1293,367 @@ uint32_t ComplexWaveFunctionOrthogonalize(WaveFunctionType * const psi, const Wa
 }
 
 
+
+uint32_t ComplexWaveFunctionListSVDOrthogonalizeSameBasis(WaveFunctionType * const psilist, WaveFunctionType * const psilistOrtho, uint32_t * const Npsi, const double SingularValue, const Bool ReduceDimension)
+{
+  
+  uint32_t i,j,NSingular=0;
+  double val[2*(*Npsi)];
+  CompactMatrixType S,SvS;
+  WaveFunctionType *psilisttemp;
+  int    info;
+  const char *jobz = "V";
+  const char *uplo = "U";
+  int    lwork = 1024 + 6 * (*Npsi) + 2 * Sqr((*Npsi));
+  int    lcwork = 1024 + 2 * (*Npsi) + Sqr((*Npsi));
+  int    liwork = 1024 + 5 * (*Npsi);
+  int    *iwork;
+  double *work;
+  Complex16 *cwork;
+  // shortcut for zero dimensional vectors
+  if(*Npsi==0) return 0;
+  // calculate overlap matrix S = - psilist^* . psilist^T
+  S.Ni=*Npsi;
+  S.Nj=*Npsi;
+  S.QComplex=1;
+  InitCompactMatrix(&S);
+  for(i=0;i<*Npsi;i++)
+  {
+    S.V[i*S.Nj+i].Re = ComplexWaveFunctionCalculateNorm(psilist[i]);
+    S.V[i*S.Nj+i].Re*=-S.V[i*S.Nj+i].Re;
+    for(j=0;j<i;j++)
+    {
+      ComplexWaveFunctionDotProductSameBasis(psilist[i], psilist[j], &S.V[i*S.Nj+j].Re, &S.V[i*S.Nj+j].Im);
+      S.V[i*S.Nj+j].Re=-S.V[i*S.Nj+j].Re;
+    }
+  }
+  // calculate eigensystem of S: S -> S^* . val . S^T
+  iwork = malloc(liwork*sizeof(int));
+  if(iwork==NULL)
+  {
+    printf("malloc for iwork failed in ComplexWaveFunctionListSVDOrthogonalizeSameBasis\n");
+    return 1;
+  }
+  work = malloc(lwork*sizeof(double));
+  if(work==NULL)
+  {
+    printf("malloc for work failed in ComplexWaveFunctionListSVDOrthogonalizeSameBasis\n");
+    return 1;
+  }
+  cwork =malloc(lcwork*sizeof(Complex16));
+  if(cwork==NULL)
+  {
+    printf("malloc for cwork failed in ComplexWaveFunctionListSVDOrthogonalizeSameBasis\n");
+    return 1;
+  }
+  zheevd(jobz, uplo, Npsi, S.V, Npsi, val, cwork, &lcwork, work, &lwork, iwork, &liwork, &info);
+  if (info)
+  {
+    printf("zhevd failed in ComplexWaveFunctionListSVDOrthogonalizeSameBasis with info value %i\n", info);
+    printf("ERORR!!!!!!!!!!\n");
+    fflush(stdout);
+    return 1;
+  }
+  free(cwork);
+  free(iwork);
+  free(work);
+  // determine the number of singular values (sqrt(-val)<SingularValue) (NSingular)
+  for(i=0;i<*Npsi;i++)
+  {
+    val[i] = sqrt(Max(0,-val[i]));
+    if(val[i]<=SingularValue)
+    {
+      val[i]=0;
+      NSingular++;
+    }
+    else
+    {
+      val[i]=1./val[i];
+    }
+  }
+  // psilist <- (S[[1;;-1-NSingular]]^+ . 1/(sqrt(val)[[1;;-1-NSingular]]) . S[[1;;-1-NSingular]]) . psilist
+  S.Ni-=NSingular;
+  TransformDiagonalMatrixByCompactMatrixTdagAT(val, &S, &SvS);
+  FreeCompactMatrix(&S);
+  for(i=0;i<SvS.Ni;i++)
+  {
+    for(j=0;j<=i;j++)
+    {
+      SvS.V[i*SvS.Nj+j].Re+=SvS.V[j*SvS.Nj+i].Re;
+      SvS.V[i*SvS.Nj+j].Im-=SvS.V[j*SvS.Nj+i].Im;
+      SvS.V[i*SvS.Nj+j].Re/=2;
+      SvS.V[i*SvS.Nj+j].Im/=2;
+      SvS.V[j*SvS.Nj+i].Re=SvS.V[i*SvS.Nj+j].Re;
+      SvS.V[j*SvS.Nj+i].Im=-SvS.V[i*SvS.Nj+j].Im;
+    }
+  }
+  for(i=0;i<*Npsi;i++)
+  {
+    if(WaveFunctionInitCopyBasis(&(psilistOrtho[i]),psilist[i]))
+    {
+      printf("WaveFunctionInitCopyBasis failed in ComplexWaveFunctionListSVDOrthogonalizeSameBasis\n");
+      return 1;
+    }
+    for(j=0;j<*Npsi;j++)
+    {
+      ComplexWaveFunctionAddComplexMultipliedSameBasis(psilistOrtho[i], psilist[j], SvS.V[i*SvS.Nj+j].Re, SvS.V[i*SvS.Nj+j].Im);
+    }
+  }
+  FreeCompactMatrix(&SvS);
+  // no singular values or ReduceDimension = False
+  // return 0
+  if((NSingular==0)||(ReduceDimension==False)) return 0;
+  // singular values and reduce dimension
+  // normlist = psilist[[i]]^* . psilist[[i]]
+  for(i=0;i<*Npsi;i++)
+  {
+    val[2*i] = ComplexWaveFunctionCalculateNorm(psilistOrtho[i]);
+    val[2*i+1] = i;
+  }
+  // remove the NSingular states with smallest norm (change Npsi)
+  qsort(val, *Npsi, 2*sizeof(double), cmpdouble);
+  psilisttemp = malloc((*Npsi-NSingular)*sizeof(WaveFunctionType));
+  for(i=0;i<(*Npsi-NSingular);i++)
+  {
+    psilisttemp[i] = psilistOrtho[(int)(val[2*i+1])];
+  }
+  for(i=(*Npsi-NSingular);i<*Npsi;i++)
+  {
+    WaveFunctionFreeValues(&(psilistOrtho[(int)(val[2*i+1])]));
+  }
+  *Npsi-=NSingular;
+  // call RealWaveFunctionListSVDOrthogonalize again
+  if(ComplexWaveFunctionListSVDOrthogonalizeSameBasis(psilisttemp, psilistOrtho, Npsi, SingularValue, False))
+  {
+    printf("ComplexWaveFunctionListSVDOrthogonalizeSameBasis failed in ComplexWaveFunctionListSVDOrthogonalizeSameBasis\n");
+    return 1;
+  }
+  for(i=0;i<*Npsi;i++)
+  {
+    WaveFunctionFreeValues(&(psilisttemp[i]));
+  }
+  return 0;
+}
+
+uint32_t ComplexWaveFunctionListSVDOrthogonalize(WaveFunctionType * const psilist, WaveFunctionType * const psilistOrtho, uint32_t * const Npsi, const double SingularValue, const Bool ReduceDimension)
+{
+  uint32_t i,j,NSingular=0;
+  double val[2*(*Npsi)];
+  CompactMatrixType S,SvS;
+  WaveFunctionType *psilisttemp;
+  int    info;
+  const char *jobz = "V";
+  const char *uplo = "U";
+  int    lwork = 1024 + 6 * (*Npsi) + 2 * Sqr((*Npsi));
+  int    lcwork = 1024 + 2 * (*Npsi) + Sqr((*Npsi));
+  int    liwork = 1024 + 5 * (*Npsi);
+  int    *iwork;
+  double *work;
+  Complex16 *cwork;
+  // shortcut for zero dimensional vectors
+  if(*Npsi==0) return 0;
+  // calculate overlap matrix S = - psilist^* . psilist^T
+  S.Ni=*Npsi;
+  S.Nj=*Npsi;
+  S.QComplex=1;
+  InitCompactMatrix(&S);
+  for(i=0;i<*Npsi;i++)
+  {
+    S.V[i*S.Nj+i].Re = ComplexWaveFunctionCalculateNorm(psilist[i]);
+    S.V[i*S.Nj+i].Re*=-S.V[i*S.Nj+i].Re;
+    for(j=0;j<i;j++)
+    {
+      ComplexWaveFunctionDotProduct(&(psilist[i]), &(psilist[j]), &S.V[i*S.Nj+j].Re, &S.V[i*S.Nj+j].Im);
+      S.V[i*S.Nj+j].Re=-S.V[i*S.Nj+j].Re;
+    }
+  }
+  // calculate eigensystem of S: S -> S^* . val . S^T
+  iwork = malloc(liwork*sizeof(int));
+  if(iwork==NULL)
+  {
+    printf("malloc for iwork failed in ComplexWaveFunctionListSVDOrthogonalize\n");
+    return 1;
+  }
+  work = malloc(lwork*sizeof(double));
+  if(work==NULL)
+  {
+    printf("malloc for work failed in ComplexWaveFunctionListSVDOrthogonalize\n");
+    return 1;
+  }
+  cwork =malloc(lcwork*sizeof(Complex16));
+  if(cwork==NULL)
+  {
+    printf("malloc for cwork failed in ComplexWaveFunctionListSVDOrthogonalize\n");
+    return 1;
+  }
+  zheevd(jobz, uplo, Npsi, S.V, Npsi, val, cwork, &lcwork, work, &lwork, iwork, &liwork, &info);
+  if (info)
+  {
+    printf("zhevd failed in ComplexWaveFunctionListSVDOrthogonalize with info value %i\n", info);
+    printf("ERORR!!!!!!!!!!\n");
+    fflush(stdout);
+    return 1;
+  }
+  free(cwork);
+  free(iwork);
+  free(work);
+  // determine the number of singular values (sqrt(-val)<SingularValue) (NSingular)
+  for(i=0;i<*Npsi;i++)
+  {
+    val[i] = sqrt(Max(0,-val[i]));
+    if(val[i]<=SingularValue)
+    {
+      val[i]=0;
+      NSingular++;
+    }
+    else
+    {
+      val[i]=1./val[i];
+    }
+  }
+  // psilist <- (S[[1;;-1-NSingular]]^+ . 1/(sqrt(val)[[1;;-1-NSingular]]) . S[[1;;-1-NSingular]]) . psilist
+  S.Ni-=NSingular;
+  TransformDiagonalMatrixByCompactMatrixTdagAT(val, &S, &SvS);
+  FreeCompactMatrix(&S);
+  for(i=0;i<SvS.Ni;i++)
+  {
+    for(j=0;j<=i;j++)
+    {
+      SvS.V[i*SvS.Nj+j].Re+=SvS.V[j*SvS.Nj+i].Re;
+      SvS.V[i*SvS.Nj+j].Im-=SvS.V[j*SvS.Nj+i].Im;
+      SvS.V[i*SvS.Nj+j].Re/=2;
+      SvS.V[i*SvS.Nj+j].Im/=2;
+      SvS.V[j*SvS.Nj+i].Re=SvS.V[i*SvS.Nj+j].Re;
+      SvS.V[j*SvS.Nj+i].Im=-SvS.V[i*SvS.Nj+j].Im;
+    }
+  }
+  for(i=0;i<*Npsi;i++)
+  {
+    psilistOrtho[i].NFermion=psilist[i].NFermion;
+    psilistOrtho[i].NBoson=psilist[i].NBoson;
+    psilistOrtho[i].NBitsKey=psilist[i].NBitsKey;
+    psilistOrtho[i].QComplex=psilist[i].QComplex;
+    if(WaveFunctionInit(&(psilistOrtho[i])))
+    {
+      printf("WaveFunctionInit failed in ComplexWaveFunctionListSVDOrthogonalize\n");
+      return 1;
+    }
+    for(j=0;j<*Npsi;j++)
+    {
+      ComplexWaveFunctionAddComplexMultipliedUnionBasis(&(psilistOrtho[i]), psilist[j], SvS.V[i*SvS.Nj+j].Re, SvS.V[i*SvS.Nj+j].Im);
+    }
+  }
+  FreeCompactMatrix(&SvS);
+  // no singular values or ReduceDimension = False
+  // return 0
+  if((NSingular==0)||(ReduceDimension==False)) return 0;
+  // singular values and reduce dimension
+  // normlist = psilist[[i]]^* . psilist[[i]]
+  for(i=0;i<*Npsi;i++)
+  {
+    val[2*i] = ComplexWaveFunctionCalculateNorm(psilistOrtho[i]);
+    val[2*i+1] = i;
+  }
+  // remove the NSingular states with smallest norm (change Npsi)
+  qsort(val, *Npsi, 2*sizeof(double), cmpdouble);
+  psilisttemp = malloc((*Npsi-NSingular)*sizeof(WaveFunctionType));
+  for(i=0;i<(*Npsi-NSingular);i++)
+  {
+    psilisttemp[i] = psilistOrtho[(int)(val[2*i+1])];
+  }
+  for(i=(*Npsi-NSingular);i<*Npsi;i++)
+  {
+    WaveFunctionFree(&(psilistOrtho[(int)(val[2*i+1])]));
+  }
+  *Npsi-=NSingular;
+  // call RealWaveFunctionListSVDOrthogonalize again
+  if(ComplexWaveFunctionListSVDOrthogonalize(psilisttemp, psilistOrtho, Npsi, SingularValue, False))
+  {
+    printf("ComplexWaveFunctionListSVDOrthogonalize failed in ComplexWaveFunctionListSVDOrthogonalize\n");
+    return 1;
+  }
+  for(i=0;i<*Npsi;i++)
+  {
+    WaveFunctionFree(&(psilisttemp[i]));
+  }
+  return 0;
+}
+
+uint32_t ComplexWaveFunctionListOrthogonalizeSameBasis(WaveFunctionType * const psilist, uint32_t * const Npsi, const double SingularValue, const Bool ReduceDimension)
+{
+  uint32_t i,j;
+  double Norm,DotRe,DotIm;
+  if(*Npsi==0) return 0;
+  for(i=0;i<*Npsi;i++)
+  {
+    // normalize psi[i] if norm smaller than Singular value set psi[i] to zero or remove psi[i] from basis
+    while((Norm=ComplexWaveFunctionCalculateNorm(psilist[i]))<SingularValue)
+    {
+      if(ReduceDimension==True)
+      {
+        ComplexWaveFunctionFreeValues(&(psilist[i]));
+        for(j=i+1;j<*Npsi;j++)
+        {
+          psilist[j-1]=psilist[j];
+        }
+        (*Npsi)--;
+      }
+      else
+      {
+        ComplexWaveFunctionMultiply(psilist[i], 0);
+        i++;
+      }
+      if(i==*Npsi) return 0;
+    }
+    ComplexWaveFunctionMultiply(psilist[i], 1.0/Norm);
+    for(j=i+1;j<*Npsi;j++)
+    {
+      // subtract the projection of psi[i] on psi[j] from psi[j]
+      ComplexWaveFunctionDotProductSameBasis(psilist[i], psilist[j],&DotRe,&DotIm); // Norm = < psi_i | psi_j >
+      ComplexWaveFunctionAddComplexMultipliedSameBasis(psilist[j], psilist[i], -DotRe,-DotIm); // psi_j = psi_j - Norm * psi_i
+    }
+  }
+  return 0;
+}
+
+uint32_t ComplexWaveFunctionListOrthogonalize(WaveFunctionType * const psilist, uint32_t * const Npsi, const double SingularValue, const Bool ReduceDimension)
+{
+  uint32_t i,j;
+  double Norm,DotRe,DotIm;
+  double epsilon=DBL_EPSILON*DBL_EPSILON; // do I need this as an imput? do we renormalize if this would be a real number ??
+  if(*Npsi==0) return 0;
+  for(i=0;i<*Npsi;i++)
+  {
+    // normalize psi[i] if norm smaller than Singular value set psi[i] to zero or remove psi[i] from basis
+    while((Norm=ComplexWaveFunctionCalculateNorm(psilist[i]))<SingularValue)
+    {
+      if(ReduceDimension==True)
+      {
+        ComplexWaveFunctionFree(&(psilist[i]));
+        for(j=i+1;j<*Npsi;j++)
+        {
+          psilist[j-1]=psilist[j];
+        }
+        (*Npsi)--;
+      }
+      else
+      {
+        ComplexWaveFunctionTruncateBasis(&(psilist[i]), 1+sqrt(SingularValue));
+        i++;
+      }
+      if(i==*Npsi) return 0;
+    }
+    ComplexWaveFunctionTruncateBasis(&(psilist[i]), epsilon*Norm);
+    ComplexWaveFunctionMultiply(psilist[i], 1.0/Norm);
+    for(j=i+1;j<*Npsi;j++)
+    {
+      // subtract the projection of psi[i] on psi[j] from psi[j]
+      ComplexWaveFunctionDotProduct(&(psilist[i]), &(psilist[j]),&DotRe,&DotIm); // Norm = < psi_i | psi_j >
+      ComplexWaveFunctionAddComplexMultipliedUnionBasis(&(psilist[j]), psilist[i], -DotRe,-DotIm); // psi_j = psi_j - Norm * psi_i
+    }
+  }
+  return 0;
+}
 
 
 /* on entry

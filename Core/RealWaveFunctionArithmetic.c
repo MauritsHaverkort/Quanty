@@ -289,11 +289,226 @@ uint32_t RealWaveFunctionAddElement(WaveFunctionType * const psi, const uint8_t 
 
 
 /*
+ *   add ellement with single slater determinant det and Npsi pre-factors a[i] to Npsi wave functions psi[i]
+ *   all psi[i] must have the same basis (all values are the same execept for ValueRe
+ *   returns 0 if succeded
+ *   returns 1 if no memory available in order to add det to psi
+ *   If succeded psi -> psi+det
+ *   If not succeded psi -> psi
+ */
+uint32_t RealWaveFunctionBlockAddElement(WaveFunctionType * const psi, const uint8_t * const det, const double * a, const uint32_t Npsi)
+{
+  uint32_t i, j, k, NextIndex, ThereIsANext, PsiAIsPsiB;
+  void  *temp;
+  /* test if the key that belongs to psi already excists */
+  if (psi[0].KeyList[hash(det, psi[0].NWord, psi[0].NBitsKey)] == 0)
+  {                             /* add a new element to psi with unique new key */
+    for(j=0;j<Npsi;j++) psi[j].N++;
+    /* test if one has to add a new block to psi in order to store the new element of psi */
+    if (psi[0].N >= BlokSize * psi[0].NBlok)
+    {                           /* add a new block to psi */
+      temp = realloc(psi[0].Next, (psi[0].NBlok+1) * sizeof(uint32_t *));
+      if(temp==NULL)
+      {                         /* Allocation failed */
+        printf("alloc failed RealWaveFunctionBlockAddElement Next\n");
+        fflush(stdout);
+        /* restore psi and return 0 */
+        for(j=0;j<Npsi;j++) psi[j].N--;
+        return 1;
+      }
+      for(j=0;j<Npsi;j++) psi[j].Next = temp;
+      temp = realloc(psi[0].Determinant, (psi[0].NBlok+1) * sizeof(uint32_t *));
+      if(temp==NULL)
+      {                         /* Allocation failed */
+        printf("alloc failed RealWaveFunctionBlockAddElement Determinant\n");
+        fflush(stdout);
+        /* restore psi and return 0 */
+        for(j=0;j<Npsi;j++) psi[j].N--;
+        return 1;
+      }
+      for(j=0;j<Npsi;j++) psi[j].Determinant = temp;
+      for(j=0;j<Npsi;j++)
+      {
+        temp = realloc(psi[j].ValueRe, (psi[j].NBlok+1) * sizeof(double *));
+        if (temp == NULL)
+        {                         /* Allocation failed */
+          printf("alloc failed RealWaveFunctionBlockAddElement ValueRe %i\n",j);
+          fflush(stdout);
+          /* restore psi and return 0 */
+          for(j=0;j<Npsi;j++) psi[j].N--;
+          return (1);
+        }
+        psi[j].ValueRe = temp;
+      }
+      psi[0].Next[psi[0].NBlok] = malloc(BlokSize * sizeof(uint32_t));
+      if (psi[0].Next[psi[0].NBlok] == NULL)
+      {                         /* Allocation failed */
+        printf("alloc failed RealWaveFunctionBlockAddElement Next[-1]\n");
+        fflush(stdout);
+        /* restore psi and return 0 */
+      for(j=0;j<Npsi;j++) psi[j].N--;
+        return (1);
+      }
+      psi[0].Determinant[psi[0].NBlok] = malloc(BlokSize * psi[0].NWord * sizeof(uint8_t));
+      if (psi[0].Determinant[psi[0].NBlok] == NULL)
+      {                         /* Allocation failed */
+        printf("alloc failed RealWaveFunctionBlockAddElement Determinant[-1]\n");
+        fflush(stdout);
+        /* restore psi and return 0 */
+        for(j=0;j<Npsi;j++) psi[j].N--;
+        free(psi[0].Next[psi[0].NBlok]);
+        return (1);
+      }
+      for(j=0;j<Npsi;j++)
+      {
+        psi[j].ValueRe[psi[0].NBlok] = malloc(BlokSize * sizeof(double));
+        if(psi[j].ValueRe[psi[0].NBlok]==NULL)
+        {
+          printf("alloc failed RealWaveFunctionBlockAddElement ValueRe[%i]\n",j);
+          fflush(stdout);
+          /* restore psi and return 0 */
+          for(k=0;k<Npsi;k++) psi[k].N--;
+          free(psi[0].Next[psi[0].NBlok]);
+          free(psi[0].Determinant[psi[0].NBlok]);
+          for(k=0;k<j;k++) free(psi[k].ValueRe[psi[0].NBlok]);
+          return (1);
+        }
+      }
+      for(j=0;j<Npsi;j++) psi[j].NBlok++;
+    }                           /* Added a new block to psi */
+    for(i=0;i<Npsi;i++)
+    {
+      psi[i].ValueRe[BlokElement(psi[0].N)] = a[i];
+    }
+    psi[0].Next[BlokElement(psi[0].N)] = 0;
+    for (i = 0; i < psi[0].NWord; i++)
+    {
+      psi[0].Determinant[BlokElementDet(psi[0].N, psi[0].NWord, i)] = det[i];
+    }
+    psi[0].KeyList[hash(det, psi[0].NWord, psi[0].NBitsKey)] = psi[0].N;
+  }
+  else
+  {                             /* The key is already taken, test if this is due to a collision, or if psi is already in the basis set */
+    ThereIsANext = 1;
+    NextIndex = psi[0].KeyList[hash(det, psi[0].NWord, psi[0].NBitsKey)];
+    while (ThereIsANext)
+    {
+      PsiAIsPsiB = 1;
+      for (i = 0; i < psi[0].NWord; i++)
+      {
+        if (psi[0].Determinant[BlokElementDet(NextIndex, psi[0].NWord, i)] != det[i]) PsiAIsPsiB = 0;
+      }
+      if (PsiAIsPsiB)
+      {                         /* psi already in basis set add and leave loop  */
+        ThereIsANext = 0;
+        for(i=0;i<Npsi;i++)
+        {
+          psi[i].ValueRe[BlokElement(NextIndex)] += a[i];
+        }
+      }
+      else
+      {                         /* psi not equal to this one, if there is a next continue, otherwise add */
+        if (!psi[0].Next[BlokElement(NextIndex)])
+        {                       /* add a new element to psi with already used key */
+          for(j=0;j<Npsi;j++) psi[j].N++;
+          /* test if one has to add a new block to psi in order to store the new element of psi */
+          if (psi[0].N >= BlokSize * psi[0].NBlok)
+          {                           /* add a new block to psi */
+            temp = realloc(psi[0].Next, (psi[0].NBlok+1) * sizeof(uint32_t *));
+            if(temp==NULL)
+            {                         /* Allocation failed */
+              printf("alloc failed RealWaveFunctionBlockAddElement Next\n");
+              fflush(stdout);
+              /* restore psi and return 0 */
+              for(j=0;j<Npsi;j++) psi[j].N--;
+              return 1;
+            }
+            for(j=0;j<Npsi;j++) psi[j].Next = temp;
+            temp = realloc(psi[0].Determinant, (psi[0].NBlok+1) * sizeof(uint32_t *));
+            if(temp==NULL)
+            {                         /* Allocation failed */
+              printf("alloc failed RealWaveFunctionBlockAddElement Determinant\n");
+              fflush(stdout);
+              /* restore psi and return 0 */
+              for(j=0;j<Npsi;j++) psi[j].N--;
+              return 1;
+            }
+            for(j=0;j<Npsi;j++) psi[j].Determinant = temp;
+            for(j=0;j<Npsi;j++)
+            {
+              temp = realloc(psi[j].ValueRe, (psi[j].NBlok+1) * sizeof(double *));
+              if (temp == NULL)
+              {                         /* Allocation failed */
+                printf("alloc failed RealWaveFunctionBlockAddElement ValueRe %i\n",j);
+                fflush(stdout);
+                /* restore psi and return 0 */
+                for(j=0;j<Npsi;j++) psi[j].N--;
+                return (1);
+              }
+              psi[j].ValueRe = temp;
+            }
+            psi[0].Next[psi[0].NBlok] = malloc(BlokSize * sizeof(uint32_t));
+            if (psi[0].Next[psi[0].NBlok] == NULL)
+            {                         /* Allocation failed */
+              printf("alloc failed RealWaveFunctionBlockAddElement Next[-1]\n");
+              fflush(stdout);
+              /* restore psi and return 0 */
+              for(j=0;j<Npsi;j++) psi[j].N--;
+              return (1);
+            }
+            psi[0].Determinant[psi[0].NBlok] = malloc(BlokSize * psi[0].NWord * sizeof(uint8_t));
+            if (psi[0].Determinant[psi[0].NBlok] == NULL)
+            {                         /* Allocation failed */
+              printf("alloc failed RealWaveFunctionBlockAddElement Determinant[-1]\n");
+              fflush(stdout);
+              /* restore psi and return 0 */
+              for(j=0;j<Npsi;j++) psi[j].N--;
+              free(psi[0].Next[psi[0].NBlok]);
+              return (1);
+            }
+            for(j=0;j<Npsi;j++)
+            {
+              psi[j].ValueRe[psi[0].NBlok] = malloc(BlokSize * sizeof(double));
+              if(psi[j].ValueRe[psi[0].NBlok]==NULL)
+              {
+                printf("alloc failed RealWaveFunctionBlockAddElement ValueRe[%i]\n",j);
+                fflush(stdout);
+                /* restore psi and return 0 */
+                for(k=0;k<Npsi;k++) psi[k].N--;
+                free(psi[0].Next[psi[0].NBlok]);
+                free(psi[0].Determinant[psi[0].NBlok]);
+                for(k=0;k<j;k++) free(psi[k].ValueRe[psi[0].NBlok]);
+                return (1);
+              }
+            }
+            for(j=0;j<Npsi;j++) psi[j].NBlok++;
+          }          /* Added a new block to psi */
+          /* add the element */
+          for(i=0;i<Npsi;i++) psi[i].ValueRe[BlokElement(psi[0].N)] = a[i];
+          psi[0].Next[BlokElement(psi[0].N)] = 0;
+          for (i = 0; i < psi[0].NWord; i++)
+          {
+            psi[0].Determinant[BlokElementDet(psi[0].N, psi[0].NWord, i)] = det[i];
+          }
+          psi[0].Next[BlokElement(NextIndex)] = psi[0].N;
+          ThereIsANext = 0;
+        }
+        else
+        {                       /* the key is in use and there still is at least one more element with the same key, continu checking */
+          NextIndex = psi[0].Next[BlokElement(NextIndex)];
+        }
+      }
+    }
+  }
+  return (0);
+}
+
+/*
 *   add element with single slater determinant det and prefactor a to wave function psi
 *   But only add it iff det is already present in the basis
 *   As psi only stores the number of non zero elements and pointers to the real values the value of psi is not changed.
 *   The values psi points to are naturaly changed
-*/
+ */
 void RealWaveFunctionAddElementConserveBasis(WaveFunctionType const *psi, const uint8_t * const det, const double a)
 {
   uint32_t i, NextIndex, PsiAIsPsiB;
@@ -331,6 +546,50 @@ void RealWaveFunctionAddElementConserveBasis(WaveFunctionType const *psi, const 
         else
         {                       /* the key is in use and there still is at least one more element with the same key, continu checking */
           NextIndex = psi->Next[BlokElement(NextIndex)];
+        }
+      }
+    }
+  }
+}
+void RealWaveFunctionBlockAddElementConserveBasis(WaveFunctionType const *psi, const uint8_t * const det, const double * a, const uint32_t Npsi)
+{
+  uint32_t i, NextIndex, PsiAIsPsiB;
+  /* test if the key that belongs to psi already excists */
+  NextIndex=psi[0].KeyList[hash(det, psi[0].NWord, psi[0].NBitsKey)];
+  if (!NextIndex)
+  {                             /* det not in key, do nothing */
+    return;
+  }
+  else
+  {                             /* The key is already taken, test if this is due to a collision, or if psi is already in the basis set */
+    while (1)
+    {
+      PsiAIsPsiB = 1;
+      for (i = 0; i < psi[0].NWord; i++)
+      {
+        if (psi[0].Determinant[BlokElementDet(NextIndex, psi[0].NWord, i)] != det[i])
+        {
+          PsiAIsPsiB = 0;
+        }
+      }
+      if (PsiAIsPsiB)
+      {                         /* psi already in basis set add and leave loop  */
+        for(i=0;i<Npsi;i++)
+        {
+#pragma omp atomic
+          psi[i].ValueRe[BlokElement(NextIndex)] += a[i];
+        }
+        return;
+      }
+      else
+      {                         /* psi not equal to this one, if there is a next continue, otherwise leave */
+        if (!psi[0].Next[BlokElement(NextIndex)])
+        {                       /* hash(psi) had a collision, but det is different. There are no other psi's with the same hash, so det not in basis lets leave */
+          return;
+        }
+        else
+        {                       /* the key is in use and there still is at least one more element with the same key, continu checking */
+          NextIndex = psi[0].Next[BlokElement(NextIndex)];
         }
       }
     }
@@ -406,6 +665,27 @@ uint32_t RealWaveFunctionAddElementOMPMiniFlush(WaveFunctionType * const psi, ui
   return NoMoreMem;
 }
 
+uint32_t RealWaveFunctionListAddElementOMPMiniFlush(WaveFunctionType * const psi, uint32_t * NMini, const uint8_t * const MiniDet, const double *const MiniValue, const uint32_t Npsi)
+{
+  uint32_t i, NoMoreMem = 0;
+#pragma omp critical (AddToPsi)
+  {
+    for (i = 0; i < *NMini; i++)
+    {
+      if (RealWaveFunctionBlockAddElement(psi, &MiniDet[i * psi->NWord], &(MiniValue[i*Npsi]), Npsi))
+      {
+        printf("RealWaveFunctionBlockAddElement failed in RealWaveFunctionListAddElementOMPMiniFlush\n");
+        fflush(stdout);
+        NoMoreMem = 1;
+        i = *NMini;
+        *NMini = 0;
+      }
+    }
+#pragma omp flush
+  }
+  *NMini = 0;
+  return NoMoreMem;
+}
 
 /*
 *   a->a+b
@@ -434,6 +714,7 @@ void RealWaveFunctionAddSameBasis(WaveFunctionType a, const WaveFunctionType b)
     }
   }
 }
+
 
 
 /*
@@ -491,13 +772,46 @@ uint32_t RealWaveFunctionAddUnionBasis(WaveFunctionType * const a, const WaveFun
   return 0;
 }
 
+/*   a and b are block Wavefunctions of the same length Npsi
+ *   (a+new allocation) <- a+b
+ *   a[i] <- a[i] + b[i]
+ *   This function leaves b in the memory and adds values to a
+ *   When aditional space for a needs to be allocated it will
+ *   Therefor values of a might change and a is returned from the function
+ *   If a is an empty function b is copied into a
+ *   return 0 if succeded
+ *   return 1 if not enough memory in order to allocate a
+ *   If not enough memory a is not changed, but might have a larger basis
+ */
+uint32_t RealWaveFunctionBlockAddUnionBasis(WaveFunctionType * const a, const WaveFunctionType * const b, const uint32_t Npsi)
+{
+  uint32_t i, j, k;
+  double bVRe[Npsi];
+  for (i = b[0].N; i != 0; --i)
+  {
+    for(j=0;j<Npsi;j++)
+    {
+      bVRe[j] = b[j].ValueRe[BlokElement(i)];
+    }
+    if (RealWaveFunctionBlockAddElement(a, &b[0].Determinant[BlokElementDet(i, b[0].NWord, 0)], bVRe, Npsi) != 0)
+    {                           /* Allocation of new memory for a failed Remove all elements added so far and return 1 */
+      for (j = b[0].N; j != i; --j)
+      {
+        for(k=0;k<Npsi;k++)
+        {
+          bVRe[j] = -b[k].ValueRe[BlokElement(i)];
+        }
+        RealWaveFunctionBlockAddElementConserveBasis(a, &b[0].Determinant[BlokElementDet(i, b[0].NWord, 0)],bVRe, Npsi);
+      }
+      return 1;
+    }
+  }
+  return 0;
+}
+
 /*
-*   (a+new allocation) <- a+alpha b
-*   This function leaves b in the memory and adds values to a
-*   When aditional space for a needs to be allocated it will
-*   Therefor values of a might change and a is returned from the function
-*   If a is an empty function b is copied into a (use of copy is strongly recommanded)
-*/
+ *
+ */
 uint32_t RealWaveFunctionAddMultipliedUnionBasis(WaveFunctionType * const a, const WaveFunctionType b, const double alpha)
 {
   uint32_t i, j;
@@ -515,6 +829,89 @@ uint32_t RealWaveFunctionAddMultipliedUnionBasis(WaveFunctionType * const a, con
   return 0;
 }
 
+/*   a and b are block Wavefunctions that might have different length, alpha is a matrix
+ *   (a+new allocation) <- a+alpha b
+ *   a[i] = a[i] + sum_j alpha[i][j] b[j]
+ *   This function leaves b in the memory and adds values to a
+ *   When aditional space for a needs to be allocated it will
+ *   Therefor values of a might change and a is returned from the function
+ *   If a is an empty function b is copied into a (use of copy is strongly recommanded)
+ */
+uint32_t RealWaveFunctionBlockAddMultipliedUnionBasis(WaveFunctionType * const a, const uint32_t Npsia, const WaveFunctionType * const b, const uint32_t Npsib, const CompactMatrixType alpha)
+{
+  uint32_t i, j, k;
+  double bVRe[Npsia];
+  for(k=b[0].N;k!=0;--k)
+  {
+    for(i=0;i<Npsia;i++)
+    {
+      bVRe[i]=0;
+      for(j=0;j<Npsib;j++)
+      {
+        bVRe[i] += alpha.VRe[i*alpha.Nj+j] * b[j].ValueRe[BlokElement(k)];
+      }
+    }
+    if(RealWaveFunctionBlockAddElement(a, &b[0].Determinant[BlokElementDet(k, b[0].NWord, 0)], bVRe, Npsia))
+    {                          /* Allocation of new memory for a failed Remove all elements added so far and return 1 */
+      for(k=k+1;k<=b[0].N;k++)
+      {
+        for(i=0;i<Npsia;i++)
+        {
+          bVRe[i]=0;
+          for(j=0;j<Npsib;j++)
+          {
+            bVRe[i] -= alpha.VRe[i*alpha.Nj+j] * b[j].ValueRe[BlokElement(k)];
+          }
+        }
+        RealWaveFunctionBlockAddElementConserveBasis(a, &b[0].Determinant[BlokElementDet(k, b[0].NWord, 0)], bVRe, Npsia);
+      }
+      return 1;
+    }
+  }
+  return 0;
+}
+
+/*   a and b are block Wavefunctions that might have different length, alpha is a matrix
+ *   (a+new allocation) <- a-alpha b
+ *   a[i] = a[i] - sum_j alpha[i][j] b[j]
+ *   This function leaves b in the memory and adds values to a
+ *   When aditional space for a needs to be allocated it will
+ *   Therefor values of a might change and a is returned from the function
+ *   If a is an empty function b is copied into a (use of copy is strongly recommanded)
+ */
+uint32_t RealWaveFunctionBlockSubtractMultipliedUnionBasis(WaveFunctionType * const a, const uint32_t Npsia, const WaveFunctionType * const b, const uint32_t Npsib, const CompactMatrixType alpha)
+{
+  uint32_t i, j, k;
+  double bVRe[Npsia];
+  for(k=b[0].N;k!=0;--k)
+  {
+    for(i=0;i<Npsia;i++)
+    {
+      bVRe[i]=0;
+      for(j=0;j<Npsib;j++)
+      {
+        bVRe[i] -= alpha.VRe[i*alpha.Nj+j] * b[j].ValueRe[BlokElement(k)];
+      }
+    }
+    if(RealWaveFunctionBlockAddElement(a, &b[0].Determinant[BlokElementDet(k, b[0].NWord, 0)], bVRe, Npsia))
+    {                          /* Allocation of new memory for a failed Remove all elements added so far and return 1 */
+      for(k=k+1;k<=b[0].N;k++)
+      {
+        for(i=0;i<Npsia;i++)
+        {
+          bVRe[i]=0;
+          for(j=0;j<Npsib;j++)
+          {
+            bVRe[i] += alpha.VRe[i*alpha.Nj+j] * b[j].ValueRe[BlokElement(k)];
+          }
+        }
+        RealWaveFunctionBlockAddElementConserveBasis(a, &b[0].Determinant[BlokElementDet(k, b[0].NWord, 0)], bVRe, Npsia);
+      }
+      return 1;
+    }
+  }
+  return 0;
+}
 
 /*
  *   (a) <- a+ b
@@ -774,6 +1171,106 @@ double RealWaveFunctionDotProduct(const WaveFunctionType *a, const WaveFunctionT
 }
 
 
+/*
+ *   calculate S[i,j] = <a[i]|b[j]> with a and b lists on the same basis, but a and b on a different basis
+ *   S should be initiallized before the function call
+ */
+uint32_t RealWaveFunctionListDotProduct( const WaveFunctionType * a, const uint32_t Npsia, const WaveFunctionType * b, const uint32_t Npsib, CompactMatrixType *S)
+{
+  uint32_t failed=0;
+  /* switch coefficients to reduce number of hash lookups */
+  if (a[0].N > b[0].N)
+  {
+    CompactMatrixType ST;
+    uint32_t i,j;
+    ST.Ni=S->Nj;
+    ST.Nj=S->Ni;
+    ST.QComplex=S->QComplex;
+    InitCompactMatrix(&ST);
+    if(RealWaveFunctionListDotProduct(b, Npsib, a, Npsia, &ST))
+    {
+      printf("RealWaveFunctionListDotProduct failed in RealWaveFunctionListDotProduct\n");
+      return 1;
+    }
+    for(i=0;i<S->Ni;i++)
+    {
+      for(j=0;j<S->Nj;j++)
+      {
+        S->VRe[i*S->Nj+j] = ST.VRe[j*ST.Nj+i];
+      }
+    }
+    FreeCompactMatrix(&ST);
+    return 0;
+  }
+  CompactMatrixScale(S, 0);
+#pragma omp parallel 
+  {
+    uint32_t i, j, k, index, NextIndex, PsiAIsPsiB;
+    int    iOMP;
+    volatile double t,y;
+    CompactMatrixType Sprivate,c;
+    Sprivate.Ni=S->Ni;
+    Sprivate.Nj=S->Nj;
+    Sprivate.QComplex=0;
+    if(InitCompactMatrix(&Sprivate)) failed =1;
+    c.Ni=S->Ni;
+    c.Nj=S->Nj;
+    c.QComplex=0;
+    if(InitCompactMatrix(&c)) failed =1;
+    if(failed==0)
+    {
+#pragma omp for
+      for (iOMP = 1; iOMP <= (int)(a[0].N); ++iOMP)
+      {
+        k = (uint32_t) iOMP;
+        NextIndex = b[0].KeyList[hash(&a[0].Determinant[BlokElementDet(k, a[0].NWord, 0)], b[0].NWord, b[0].NBitsKey)];
+        while (NextIndex)
+        {
+          PsiAIsPsiB = 1;
+          for (j = 0; j < b[0].NWord; j++)
+          {
+            if (b[0].Determinant[BlokElementDet(NextIndex, b[0].NWord, j)] != a[0].Determinant[BlokElementDet(k, a[0].NWord, j)])
+            {
+              PsiAIsPsiB = 0;
+            }
+          }
+          if (PsiAIsPsiB)
+          {                         /* a=b found add the product to Dot and leave loop  */
+            for(i=0;i<Npsia;i++)
+            {
+              index = i * S->Ni;
+              for(j=0;j<Npsib;j++)
+              {
+                y = a[i].ValueRe[BlokElement(k)] * b[j].ValueRe[BlokElement(NextIndex)] - c.VRe[index];
+                t = Sprivate.VRe[index] + y;
+                c.VRe[index] = t - Sprivate.VRe[index];
+                c.VRe[index] -= y;
+                Sprivate.VRe[index] = t;
+                index++;
+              }
+            }
+            NextIndex = 0;
+          }
+          else
+          {
+            NextIndex = b[0].Next[BlokElement(NextIndex)];
+          }
+        }
+      }
+#pragma omp critical
+      for(i=0;i<Sqr(Sprivate.Ni);i++)
+      {
+        S->VRe[i]+=Sprivate.VRe[i];
+      }
+      FreeCompactMatrix(&c);
+      FreeCompactMatrix(&Sprivate);
+    }
+  }
+  return failed;
+}
+
+
+
 /* Set the pre-factors of a to a random value
 */
 void RealWaveFunctionRandomize(WaveFunctionType * const a)
@@ -978,6 +1475,341 @@ uint32_t RealWaveFunctionOrthogonalize(WaveFunctionType * const psi, const WaveF
   }
   return 0;
 }
+
+uint32_t RealWaveFunctionListSVDOrthogonalizeSameBasis(WaveFunctionType * const psilist, WaveFunctionType * const psilistOrtho, uint32_t * const Npsi, const double SingularValue, const Bool ReduceDimension)
+{
+  uint32_t i,j,NSingular=0;
+  double val[2*(*Npsi)];
+  CompactMatrixType S,SvS;
+  WaveFunctionType *psilisttemp;
+  int    info;
+  const char *jobz = "V";
+  const char *uplo = "U";
+  int    lwork = 1024 + 6 * (*Npsi) + 2 * Sqr((*Npsi));
+  int    liwork = 1024 + 5 * (*Npsi);
+  int    *iwork;
+  double *work;
+  // shortcut for zero dimensional vectors
+  if(*Npsi==0) return 0;
+  // calculate overlap matrix S = - psilist^* . psilist^T
+  S.Ni=*Npsi;
+  S.Nj=*Npsi;
+  S.QComplex=0;
+  InitCompactMatrix(&S);
+  for(i=0;i<*Npsi;i++)
+  {
+    S.VRe[i*S.Nj+i] = RealWaveFunctionCalculateNorm(psilist[i]);
+    S.VRe[i*S.Nj+i]*=-S.VRe[i*S.Nj+i];
+    for(j=0;j<i;j++)
+    {
+      S.VRe[i*S.Nj+j] =-RealWaveFunctionDotProductSameBasis(psilist[i], psilist[j]);
+    }
+  }
+  // calculate eigensystem of S: S -> S^* . val . S^T
+  iwork = malloc(liwork*sizeof(int));
+  if(iwork==NULL)
+  {
+    printf("malloc for iwork failed in CompactMatrixEigensystem\n");
+    return 1;
+  }
+  work = malloc(lwork*sizeof(double));
+  if(work==NULL)
+  {
+    printf("malloc for work failed in CompactMatrixEigensystem\n");
+    return 1;
+  }
+  dsyevd(jobz, uplo, Npsi, S.VRe, Npsi, val, work, &lwork, iwork, &liwork, &info);
+  if (info)
+  {
+    printf("dsyvd failed in RealWaveFunctionListSVDOrthogonalizeSameBasis with info value %i\n", info);
+    printf("ERORR!!!!!!!!!!\n");
+    fflush(stdout);
+    return 1;
+  }
+  free(iwork);
+  free(work);
+  // determine the number of singular values (sqrt(-val)<SingularValue) (NSingular)
+  for(i=0;i<*Npsi;i++)
+  {
+    val[i] = sqrt(Max(0,-val[i]));
+    if(val[i]<=SingularValue)
+    {
+      val[i]=0;
+      NSingular++;
+    }
+    else
+    {
+      val[i]=1./val[i];
+    }
+  }
+  // psilist <- (S[[1;;-1-NSingular]]^+ . 1/(sqrt(val)[[1;;-1-NSingular]]) . S[[1;;-1-NSingular]]) . psilist
+  S.Ni-=NSingular;
+  TransformDiagonalMatrixByCompactMatrixTdagAT(val, &S, &SvS);
+  FreeCompactMatrix(&S);
+  for(i=0;i<SvS.Ni;i++)
+  {
+    for(j=0;j<i;j++)
+    {
+      SvS.VRe[i*SvS.Nj+j]+=SvS.VRe[j*SvS.Nj+i];
+      SvS.VRe[i*SvS.Nj+j]/=2;
+      SvS.VRe[j*SvS.Nj+i]=SvS.VRe[i*SvS.Nj+j];
+    }
+  }
+  for(i=0;i<*Npsi;i++)
+  {
+    if(WaveFunctionInitCopyBasis(&(psilistOrtho[i]),psilist[i]))
+    {
+      printf("WaveFunctionInitCopyBasis failed in RealWaveFunctionListSVDOrthogonalizeSameBasis\n");
+      return 1;
+    }
+    for(j=0;j<*Npsi;j++)
+    {
+      RealWaveFunctionAddMultipliedSameBasis(psilistOrtho[i], psilist[j], SvS.VRe[i*SvS.Nj+j]);
+    }
+  }
+  FreeCompactMatrix(&SvS);
+  // no singular values or ReduceDimension = False
+  // return 0
+  if((NSingular==0)||(ReduceDimension==False)) return 0;
+  // singular values and reduce dimension
+  // normlist = psilist[[i]]^* . psilist[[i]]
+  for(i=0;i<*Npsi;i++)
+  {
+    val[2*i] = RealWaveFunctionCalculateNorm(psilistOrtho[i]);
+    val[2*i+1] = i;
+  }
+  // remove the NSingular states with smallest norm (change Npsi)
+  qsort(val, *Npsi, 2*sizeof(double), cmpdouble);
+  psilisttemp = malloc((*Npsi-NSingular)*sizeof(WaveFunctionType));
+  for(i=0;i<(*Npsi-NSingular);i++)
+  {
+    psilisttemp[i] = psilistOrtho[(int)(val[2*i+1])];
+  }
+  for(i=(*Npsi-NSingular);i<*Npsi;i++)
+  {
+    WaveFunctionFreeValues(&(psilistOrtho[(int)(val[2*i+1])]));
+  }
+  *Npsi-=NSingular;
+  // call RealWaveFunctionListSVDOrthogonalize again
+  if(RealWaveFunctionListSVDOrthogonalizeSameBasis(psilisttemp, psilistOrtho, Npsi, SingularValue, False))
+  {
+    printf("RealWaveFunctionListSVDOrthogonalizeSameBasis failed in RealWaveFunctionListSVDOrthogonalizeSameBasis\n");
+    return 1;
+  }
+  for(i=0;i<*Npsi;i++)
+  {
+    WaveFunctionFreeValues(&(psilisttemp[i]));
+  }
+  return 0;
+}
+
+uint32_t RealWaveFunctionListSVDOrthogonalize(WaveFunctionType * const psilist, WaveFunctionType * const psilistOrtho, uint32_t * const Npsi, const double SingularValue, const Bool ReduceDimension)
+{
+  uint32_t i,j,NSingular=0;
+  double val[2*(*Npsi)];
+  CompactMatrixType S,SvS;
+  WaveFunctionType *psilisttemp;
+  int    info;
+  const char *jobz = "V";
+  const char *uplo = "U";
+  int    lwork = 1024 + 6 * (*Npsi) + 2 * Sqr((*Npsi));
+  int    liwork = 1024 + 5 * (*Npsi);
+  int    *iwork;
+  double *work;
+  // shortcut for zero dimensional vectors
+  if(*Npsi==0) return 0;
+  // calculate overlap matrix S = - psilist^* . psilist^T
+  S.Ni=*Npsi;
+  S.Nj=*Npsi;
+  S.QComplex=0;
+  InitCompactMatrix(&S);
+  for(i=0;i<*Npsi;i++)
+  {
+    S.VRe[i*S.Nj+i] = RealWaveFunctionCalculateNorm(psilist[i]);
+    S.VRe[i*S.Nj+i]*=-S.VRe[i*S.Nj+i];
+    for(j=0;j<i;j++)
+    {
+      S.VRe[i*S.Nj+j] =-RealWaveFunctionDotProduct(&(psilist[i]), &(psilist[j]));
+    }
+  }
+  // calculate eigensystem of S: S -> S^* . val . S^T
+  iwork = malloc(liwork*sizeof(int));
+  if(iwork==NULL)
+  {
+    printf("malloc for iwork failed in CompactMatrixEigensystem\n");
+    return 1;
+  }
+  work = malloc(lwork*sizeof(double));
+  if(work==NULL)
+  {
+    printf("malloc for work failed in CompactMatrixEigensystem\n");
+    return 1;
+  }
+  dsyevd(jobz, uplo, Npsi, S.VRe, Npsi, val, work, &lwork, iwork, &liwork, &info);
+  if (info)
+  {
+    printf("dsyvd failed in RealWaveFunctionListSVDOrthogonalize with info value %i\n", info);
+    printf("ERORR!!!!!!!!!!\n");
+    fflush(stdout);
+    return 1;
+  }
+  free(iwork);
+  free(work);
+  // determine the number of singular values (sqrt(-val)<SingularValue) (NSingular)
+  for(i=0;i<*Npsi;i++)
+  {
+    val[i] = sqrt(Max(0,-val[i]));
+    if(val[i]<=SingularValue)
+    {
+      val[i]=0;
+      NSingular++;
+    }
+    else
+    {
+      val[i]=1./val[i];
+    }
+  }
+  // psilist <- (S[[1;;-1-NSingular]]^+ . 1/(sqrt(val)[[1;;-1-NSingular]]) . S[[1;;-1-NSingular]]) . psilist
+  S.Ni-=NSingular;
+  TransformDiagonalMatrixByCompactMatrixTdagAT(val, &S, &SvS);
+  FreeCompactMatrix(&S);
+  for(i=0;i<SvS.Ni;i++)
+  {
+    for(j=0;j<i;j++)
+    {
+      SvS.VRe[i*SvS.Nj+j]+=SvS.VRe[j*SvS.Nj+i];
+      SvS.VRe[i*SvS.Nj+j]/=2;
+      SvS.VRe[j*SvS.Nj+i]=SvS.VRe[i*SvS.Nj+j];
+    }
+  }
+  for(i=0;i<*Npsi;i++)
+  {
+    psilistOrtho[i].NFermion=psilist[i].NFermion;
+    psilistOrtho[i].NBoson=psilist[i].NBoson;
+    psilistOrtho[i].NBitsKey=psilist[i].NBitsKey;
+    psilistOrtho[i].QComplex=psilist[i].QComplex;
+    if(WaveFunctionInit(&(psilistOrtho[i])))
+    {
+      printf("WaveFunctionInit failed in RealWaveFunctionListSVDOrthogonalize\n");
+      return 1;
+    }
+    for(j=0;j<*Npsi;j++)
+    {
+      RealWaveFunctionAddMultipliedUnionBasis(&(psilistOrtho[i]), psilist[j], SvS.VRe[i*SvS.Nj+j]);
+    }
+  }
+  FreeCompactMatrix(&SvS);
+  // no singular values or ReduceDimension = False
+  // return 0
+  if((NSingular==0)||(ReduceDimension==False)) return 0;
+  // singular values and reduce dimension
+  // normlist = psilist[[i]]^* . psilist[[i]]
+  for(i=0;i<*Npsi;i++)
+  {
+    val[2*i] = RealWaveFunctionCalculateNorm(psilistOrtho[i]);
+    val[2*i+1] = i;
+  }
+  // remove the NSingular states with smallest norm (change Npsi)
+  qsort(val, *Npsi, 2*sizeof(double), cmpdouble);
+  psilisttemp = malloc((*Npsi-NSingular)*sizeof(WaveFunctionType));
+  for(i=0;i<(*Npsi-NSingular);i++)
+  {
+    psilisttemp[i] = psilistOrtho[(int)(val[2*i+1])];
+  }
+  for(i=(*Npsi-NSingular);i<*Npsi;i++)
+  {
+    WaveFunctionFree(&(psilistOrtho[(int)(val[2*i+1])]));
+  }
+  *Npsi-=NSingular;
+  // call RealWaveFunctionListSVDOrthogonalize again
+  if(RealWaveFunctionListSVDOrthogonalize(psilisttemp, psilistOrtho, Npsi, SingularValue, False))
+  {
+    printf("RealWaveFunctionListSVDOrthogonalize failed in RealWaveFunctionListSVDOrthogonalize\n");
+    return 1;
+  }
+  for(i=0;i<*Npsi;i++)
+  {
+    WaveFunctionFree(&(psilisttemp[i]));
+  }
+  return 0;
+}
+
+uint32_t RealWaveFunctionListOrthogonalizeSameBasis(WaveFunctionType * const psilist, uint32_t * const Npsi, const double SingularValue, const Bool ReduceDimension)
+{
+  uint32_t i,j;
+  double Norm;
+  if(*Npsi==0) return 0;
+  for(i=0;i<*Npsi;i++)
+  {
+    // normalize psi[i] if norm smaller than Singular value set psi[i] to zero or remove psi[i] from basis
+    while((Norm=RealWaveFunctionCalculateNorm(psilist[i]))<=SingularValue)
+    {
+      if(ReduceDimension==True)
+      {
+        RealWaveFunctionFreeValues(&(psilist[i]));
+        for(j=i+1;j<*Npsi;j++)
+        {
+          psilist[j-1]=psilist[j];
+        }
+        (*Npsi)--;
+      }
+      else
+      {
+        RealWaveFunctionMultiply(psilist[i], 0);
+        i++;
+      }
+      if(i==*Npsi) return 0;
+    }
+    RealWaveFunctionMultiply(psilist[i], 1.0/Norm);
+    for(j=i+1;j<*Npsi;j++)
+    {
+      // subtract the projection of psi[i] on psi[j] from psi[j]
+      Norm = RealWaveFunctionDotProductSameBasis(psilist[i], psilist[j]); // Norm = < psi_i | psi_j >
+      RealWaveFunctionAddMultipliedSameBasis(psilist[j], psilist[i], -Norm); // psi_j = psi_j - Norm * psi_i
+    }
+  }
+  return 0;
+}
+
+uint32_t RealWaveFunctionListOrthogonalize(WaveFunctionType * const psilist, uint32_t * const Npsi, const double SingularValue, const Bool ReduceDimension)
+{
+  uint32_t i,j;
+  double Norm;
+  double epsilon=DBL_EPSILON*DBL_EPSILON; // do I need this as an imput? do we renormalize if this would be a real number ??
+  if(*Npsi==0) return 0;
+  for(i=0;i<*Npsi;i++)
+  {
+    // normalize psi[i] if norm smaller than Singular value set psi[i] to zero or remove psi[i] from basis
+    while((Norm=RealWaveFunctionCalculateNorm(psilist[i]))<=SingularValue)
+    {
+      if(ReduceDimension==True)
+      {
+        RealWaveFunctionFree(&(psilist[i]));
+        for(j=i+1;j<*Npsi;j++)
+        {
+          psilist[j-1]=psilist[j];
+        }
+        (*Npsi)--;
+      }
+      else
+      {
+        RealWaveFunctionTruncateBasis(&(psilist[i]), 1+sqrt(SingularValue));
+        i++;
+      }
+      if(i==*Npsi) return 0;
+    }
+    RealWaveFunctionTruncateBasis(&(psilist[i]), epsilon*Norm);
+    RealWaveFunctionMultiply(psilist[i], 1.0/Norm);
+    for(j=i+1;j<*Npsi;j++)
+    {
+      // subtract the projection of psi[i] on psi[j] from psi[j]
+      Norm = RealWaveFunctionDotProduct(&(psilist[i]), &(psilist[j])); // Norm = < psi_i | psi_j >
+      RealWaveFunctionAddMultipliedUnionBasis(&(psilist[j]), psilist[i], -Norm); // psi_j = psi_j - Norm * psi_i
+    }
+  }
+  return 0;
+}
+
 
 
 uint32_t CreateRealRandomWaveFunction(WaveFunctionType * const psi, uint32_t const NFermions, uint32_t const nelectrons)

@@ -569,7 +569,7 @@ uint32_t TransformDiagonalMatrixByCompactMatrixTdagAT(double const *A, CompactMa
         irow=i;
         jrow=j;
         TdagAT->VRe[TATindex]=0;
-        for(k=0;k<T->Nj;k++)
+        for(k=0;k<T->Ni;k++)
         {
           TdagAT->VRe[TATindex]+=T->VRe[jrow]*A[k]*T->VRe[irow];
           irow+=T->Nj;
@@ -1282,12 +1282,6 @@ uint32_t CompactMatrixAddShifted(CompactMatrixType * const M, const CompactMatri
 }
 
 
-
-int cmpuint32t (const void * a, const void *b)
-{
-  return (*(uint32_t*)a<*(uint32_t*)b)?(1):(-1);
-}
-
 /*  A is replaced by an orthonormal form of A using Singular value decomposition (eigen value decomposition)
  *  If a SingularValue is smaller than SingularValue this vector is removed from the basis
  *  If ReduceDimension is True the number of Rows in A is allowed to change and A . A^dag = 1
@@ -1313,6 +1307,12 @@ uint32_t CompactMatrixSVDOrthogonalizeRow(CompactMatrixType * A, const double Si
   double *U=NULL;
   double *S;
   CompactMatrixType V;
+  if(A->Ni==0) return 0;
+  if(A->Nj==0)
+  {
+    A->Ni=0;
+    return 0;
+  }
   V.Ni=A->Ni;
   V.Nj=A->Ni;
   S=calloc(A->Ni,sizeof(double));
@@ -1412,7 +1412,7 @@ uint32_t CompactMatrixSVDOrthogonalizeRow(CompactMatrixType * A, const double Si
     dgesvd(JOBU, JOBVT, &A->Nj, &A->Ni, A->VRe, &A->Nj,S,U, &A->Ni,V.VRe, &A->Ni, WORK, &LWORK, &INFO);
     if(INFO)
     {
-      printf("dgesvd failed in CompactMatrixSVDOrthogonalize with INFO %i\n",INFO);
+      printf("dgesvd failed in CompactMatrixSVDOrthogonalize with INFO %i (A->Ni %u, A->Nj %u)\n",INFO,A->Ni,A->Nj);
       return 1;
     }
     NSingular=0;
@@ -2571,7 +2571,235 @@ uint32_t CompactMatrixBlockBandTridiagonalizeHermitianNoReorthogonalization(Comp
   return 0;
 }
 
-/* returns 1 if O=O^dag, zero otherwise 
+/*  Returns a block tridiagonal form of matrix A in matrix B using the starting vector vec.
+ *  B is not initialized on input
+ *  vec is destroyed during the calculation. (values and size changed but not freed)
+ */
+uint32_t CompactMatrixBlockBandDiagonalizeReal(CompactMatrixType const * const A, CompactMatrixType * vec, BlockTriDiagonalMatrixType *const B, double const SingularValue, uint32_t const NTri, uint32_t const NOrtho, Bool const ReOrthogonalize)
+{
+  uint32_t i,j;
+  char *charN="N";
+  char *charT="T";
+  double one=1;
+  double minusone=-1;
+  double zero=0;
+  uint32_t NSingular;
+  double *b,*a,work[vec->Ni*vec->Ni];
+  CompactMatrixType *veclist;
+  B->BlockSize=vec->Ni;
+  B->N=MIN(A->Ni,NTri);
+  B->QComplex=0;
+  InitBlockTridiagonalMatrix(B);
+  for(i=0;i<B->BlockSize;i++)
+  {
+    B->bRe[i+i*B->BlockSize]=0;
+  }
+  B->mu=A->mu;
+  strncpy(B->Name, A->Name, MAXStrLength);
+  b=B->bRe;
+  a=B->aRe;
+  veclist=malloc((B->N+1)*sizeof(CompactMatrixType));
+  veclist[0]=*vec;
+  CompactMatrixCopy(veclist[0], &veclist[1]);
+  CompactMatrixSVDOrthogonalizeRow(&veclist[1], SingularValue, True);
+  NSingular=veclist[0].Ni-veclist[1].Ni;
+  if(NSingular!=0)
+  {
+    VerbosityPrintf(0x0001,"Reduce dimension from %u to %u in block %u\n",veclist[0].Ni,veclist[1].Ni,0);
+  }
+  if(ReOrthogonalize==True)
+  {
+    CompactMatrixGramSchmidtOrthogonalizeRow(&veclist[1], SingularValue, False);
+  }
+  dgemm(charT,charN,&veclist[1].Ni,&veclist[0].Ni,&veclist[0].Nj,&one,veclist[1].VRe,&veclist[1].Nj,veclist[0].VRe,&veclist[0].Nj,&zero,b,&B->BlockSize); // b = v[0] . v[1]^T
+  for(i=1;i<NTri;i++)
+  {
+    veclist[i+1].Ni=veclist[i].Ni;
+    veclist[i+1].Nj=veclist[i].Nj;
+    veclist[i+1].QComplex=veclist[i].QComplex;
+    if(InitCompactMatrix(&veclist[i+1]))
+    {
+      // out off memory - could implement freeing some vectors and retry
+      printf("InitCompactMatrix failed in CompactMatrixBlockBandDiagonalizeReal\n");
+      return 1;
+    }
+    dgemm(charN,charN,&A->Ni,&veclist[i].Ni,&A->Nj,&one,A->VRe,&A->Nj,veclist[i].VRe,&veclist[i].Nj,&zero,veclist[i+1].VRe,&veclist[i+1].Nj); // v[i+1] = v[i] . A
+    a+=B->BlockSize*B->BlockSize;
+    dgemm(charT,charN,&veclist[i+1].Ni,&veclist[i].Ni,&veclist[i].Nj,&one,veclist[i+1].VRe,&veclist[i+1].Nj,veclist[i].VRe,&veclist[i].Nj,&zero,a,&B->BlockSize); // a = v[i] . v[i+1]^T
+    if(i!=1)
+    {
+      b+=B->BlockSize*B->BlockSize;
+      dgemm(charT,charN,&veclist[i+1].Ni,&veclist[i-1].Ni,&veclist[i-1].Nj,&one,veclist[i+1].VRe,&veclist[i+1].Nj,veclist[i-1].VRe,&veclist[i-1].Nj,&zero,b,&B->BlockSize); // b = v[i-1] . v[i+1]^T
+    }
+    NSingular=1;
+    while(NSingular!=0)
+    {
+      // orthogonalize veclist[i+1] to veclist[i] ... veclist[Max(1,i+1-NOrtho)]
+      // we use matrix multiplication of veclist[i+1] and veclist[k], which is a numerical unstable form of Gramm Schmidt
+      // as a soltion we repeat the orthonormalization once more when finished.
+      for(j=i;j>((NOrtho>i)?0:i-NOrtho);j--)
+      {
+        dgemm(charT,charN,&veclist[j].Ni,&veclist[i+1].Ni,&veclist[i+1].Nj,&one,veclist[j].VRe,&veclist[j].Nj,veclist[i+1].VRe,&veclist[i+1].Nj,&zero,work,&B->BlockSize); // w = v[i+1] . v[j]^T
+        dgemm(charN,charN,&veclist[j].Nj,&veclist[i+1].Ni,&veclist[j].Ni,&minusone,veclist[j].VRe,&veclist[j].Nj,work,&B->BlockSize,&one,veclist[i+1].VRe,&veclist[i+1].Nj); // v[i+1] <= -1 * w . v[j] + 1 * v[i+1]
+        dgemm(charT,charN,&veclist[j].Ni,&veclist[i+1].Ni,&veclist[i+1].Nj,&one,veclist[j].VRe,&veclist[j].Nj,veclist[i+1].VRe,&veclist[i+1].Nj,&zero,work,&B->BlockSize); // w = v[i+1] . v[j]^T
+        dgemm(charN,charN,&veclist[j].Nj,&veclist[i+1].Ni,&veclist[j].Ni,&minusone,veclist[j].VRe,&veclist[j].Nj,work,&B->BlockSize,&one,veclist[i+1].VRe,&veclist[i+1].Nj); // v[i+1] <= -1 * w . v[j] + 1 * v[i+1]
+      }
+      NSingular=veclist[i+1].Ni;
+      CompactMatrixSVDOrthogonalizeRow(&veclist[i+1], SingularValue, True);
+      NSingular-=veclist[i+1].Ni;
+      if(NSingular!=0)
+      {
+        VerbosityPrintf(0x0001,"Reduce dimension from %u to %u in block %u\n",veclist[i].Ni,veclist[i+1].Ni,i);
+        if(veclist[i+1].Ni==0) break;
+      }
+    }
+    if(veclist[i+1].Ni==0) break;
+    if(ReOrthogonalize==True)
+    {
+      CompactMatrixGramSchmidtOrthogonalizeRow(&veclist[i+1], SingularValue, False);
+    }
+  }
+  for(j=1;j<=MIN(i+1,NTri);j++)
+  {
+    FreeCompactMatrix(&veclist[j]);
+  }
+  free(veclist);
+  return 0;
+}
+uint32_t CompactMatrixBlockBandDiagonalizeComplex(CompactMatrixType const * const A, CompactMatrixType * vec, BlockTriDiagonalMatrixType *const B, double const SingularValue, uint32_t const NTri, uint32_t const NOrtho, Bool const ReOrthogonalize)
+{
+  uint32_t i,j;
+  char *charN="N";
+  char *charT="T";
+  char *charC="C";
+  Complex16 one={1,0};
+  Complex16 minusone={-1,0};
+  Complex16 zero={0,0};
+  uint32_t NSingular;
+  Complex16 *b,*a,work[vec->Ni*vec->Ni];
+  CompactMatrixType *veclist;
+  B->BlockSize=vec->Ni;
+  B->N=MIN(A->Ni,NTri);
+  B->QComplex=1;
+  InitBlockTridiagonalMatrix(B);
+  for(i=0;i<B->BlockSize;i++)
+  {
+    B->b[i+i*B->BlockSize].Re=0;
+  }
+  B->mu=A->mu;
+  strncpy(B->Name, A->Name, MAXStrLength);
+  b=B->b;
+  a=B->a;
+  veclist=malloc((B->N+1)*sizeof(CompactMatrixType));
+  veclist[0]=*vec;
+  CompactMatrixCopy(veclist[0], &veclist[1]);
+  CompactMatrixSVDOrthogonalizeRow(&veclist[1], SingularValue, True);
+  NSingular=veclist[0].Ni-veclist[1].Ni;
+  if(NSingular!=0)
+  {
+    VerbosityPrintf(0x0001,"Reduce dimension from %u to %u in block %u\n",veclist[0].Ni,veclist[1].Ni,0);
+  }
+  if(ReOrthogonalize==True)
+  {
+    CompactMatrixGramSchmidtOrthogonalizeRow(&veclist[1], SingularValue, False);
+  }
+  zgemm(charC,charN,&veclist[1].Ni,&veclist[0].Ni,&veclist[0].Nj,&one,veclist[1].V,&veclist[1].Nj,veclist[0].V,&veclist[0].Nj,&zero,b,&B->BlockSize); // b = v[0] . v[1]^+
+  for(i=1;i<NTri;i++)
+  {
+    veclist[i+1].Ni=veclist[i].Ni;
+    veclist[i+1].Nj=veclist[i].Nj;
+    veclist[i+1].QComplex=veclist[i].QComplex;
+    if(InitCompactMatrix(&veclist[i+1]))
+    {
+      // out off memory - could implement freeing some vectors and retry
+      printf("InitCompactMatrix failed in CompactMatrixBlockBandDiagonalizeReal\n");
+      return 1;
+    }
+    zgemm(charT,charN,&A->Nj,&veclist[i].Ni,&A->Ni,&one,A->V,&A->Ni,veclist[i].V,&veclist[i].Nj,&zero,veclist[i+1].V,&veclist[i+1].Nj); // v[i+1] = v[i] . A^* or v[i+1] = v[i] . A^T
+    a+=B->BlockSize*B->BlockSize;
+    zgemm(charC,charN,&veclist[i+1].Ni,&veclist[i].Ni,&veclist[i].Nj,&one,veclist[i+1].V,&veclist[i+1].Nj,veclist[i].V,&veclist[i].Nj,&zero,a,&B->BlockSize); // a = v[i]^* . v[i+1]^T -> a^* = v[i] . v[i+1]^+
+    for(j=0;j<B->BlockSize*B->BlockSize;j++)
+    {
+      a[j].Im=-a[j].Im;
+    }
+    if(i!=1)
+    {
+      b+=B->BlockSize*B->BlockSize;
+      zgemm(charC,charN,&veclist[i+1].Ni,&veclist[i-1].Ni,&veclist[i-1].Nj,&one,veclist[i+1].V,&veclist[i+1].Nj,veclist[i-1].V,&veclist[i-1].Nj,&zero,b,&B->BlockSize); // b = v[i-1]^* . v[i+1]^T
+      for(j=0;j<B->BlockSize*B->BlockSize;j++)
+      {
+        b[j].Im=-b[j].Im;
+      }
+    }
+    NSingular=1;
+    while(NSingular!=0)
+    {
+      // orthogonalize veclist[i+1] to veclist[i] ... veclist[Max(1,i+1-NOrtho)]
+      // we use matrix multiplication of veclist[i+1] and veclist[k], which is a numerical unstable form of Gramm Schmidt
+      // as a soltion we repeat the orthonormalization once more when finished.
+      for(j=i;j>((NOrtho>i)?0:i-NOrtho);j--)
+      {
+        zgemm(charC,charN,&veclist[j].Ni,&veclist[i+1].Ni,&veclist[i+1].Nj,&one,veclist[j].V,&veclist[j].Nj,veclist[i+1].V,&veclist[i+1].Nj,&zero,work,&B->BlockSize); // w = v[i+1] . v[j]^+
+        zgemm(charN,charN,&veclist[j].Nj,&veclist[i+1].Ni,&veclist[j].Ni,&minusone,veclist[j].V,&veclist[j].Nj,work,&B->BlockSize,&one,veclist[i+1].V,&veclist[i+1].Nj); // v[i+1] <= -1 * w . v[j] + 1 * v[i+1]
+        zgemm(charC,charN,&veclist[j].Ni,&veclist[i+1].Ni,&veclist[i+1].Nj,&one,veclist[j].V,&veclist[j].Nj,veclist[i+1].V,&veclist[i+1].Nj,&zero,work,&B->BlockSize); // w = v[i+1] . v[j]^+
+        zgemm(charN,charN,&veclist[j].Nj,&veclist[i+1].Ni,&veclist[j].Ni,&minusone,veclist[j].V,&veclist[j].Nj,work,&B->BlockSize,&one,veclist[i+1].V,&veclist[i+1].Nj); // v[i+1] <= -1 * w . v[j] + 1 * v[i+1]
+      }
+      NSingular=veclist[i+1].Ni;
+      CompactMatrixSVDOrthogonalizeRow(&veclist[i+1], SingularValue, True);
+      NSingular-=veclist[i+1].Ni;
+      if(NSingular!=0)
+      {
+        VerbosityPrintf(0x0001,"Reduce dimension from %u to %u in block %u\n",veclist[i].Ni,veclist[i+1].Ni,i);
+        if(veclist[i+1].Ni==0) break;
+      }
+    }
+    if(veclist[i+1].Ni==0) break;
+    if(ReOrthogonalize==True)
+    {
+      CompactMatrixGramSchmidtOrthogonalizeRow(&veclist[i+1], SingularValue, False);
+    }
+  }
+  for(j=1;j<=MIN(i+1,NTri);j++)
+  {
+    FreeCompactMatrix(&veclist[j]);
+  }
+  free(veclist);
+  return 0;
+}
+uint32_t CompactMatrixBlockBandDiagonalize(CompactMatrixType const * const A, CompactMatrixType * vec, BlockTriDiagonalMatrixType *const B, double const SingularValue, uint32_t const NTri, uint32_t const NOrtho, Bool const ReOrthogonalize)
+{
+  uint32_t ret;
+  CompactMatrixType Acopy;
+  if(A->QComplex==0)
+  {
+    if(vec->QComplex==0)
+    {
+      return CompactMatrixBlockBandDiagonalizeReal(A, vec, B, SingularValue, NTri, NOrtho, ReOrthogonalize);
+    }
+    else
+    {
+      CompactMatrixCopy(*A, &Acopy);
+      MakeCompactRealMatrixComplex(&Acopy);
+      ret = CompactMatrixBlockBandDiagonalizeComplex(A, vec, B, SingularValue, NTri, NOrtho, ReOrthogonalize);
+      FreeCompactMatrix(&Acopy);
+      return ret;
+    }
+  }
+  else
+  {
+    if(vec->QComplex==0)
+    {
+      MakeCompactRealMatrixComplex(vec);
+      return CompactMatrixBlockBandDiagonalizeComplex(A, vec, B, SingularValue, NTri, NOrtho, ReOrthogonalize);
+    }
+    else
+    {
+      return CompactMatrixBlockBandDiagonalizeComplex(A, vec, B, SingularValue, NTri, NOrtho, ReOrthogonalize);
+    }
+  }
+}
+
+/* returns 1 if O=O^dag, zero otherwise
  * epsilon gives the accuracy
  */
 
@@ -2602,3 +2830,5 @@ uint32_t QCompactMatrixHermitian(const CompactMatrixType O, const double epsilon
   }
   return 1;
 }
+
+

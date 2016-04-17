@@ -2041,7 +2041,7 @@ static int LuaEigensystem(lua_State * L)
   DeterminantRestrictionType StartRestrictions;
   StartRestrictions.N=0;
   WaveFunctionType *psi=NULL,*temp;
-  uint32_t i,len, Npsi=0,QStartRestrictions=0;
+  uint32_t i,j,len, Npsi=0,QStartRestrictions=0;
   /* set options */
   LuaOptionsType LuaEigensystemOptions[]={
     {"DenseBoarder", "uint32_t", &(Options.Settings.DenseBoarder)},
@@ -2081,7 +2081,21 @@ static int LuaEigensystem(lua_State * L)
     }
     else
     {
+      // read list of wave-functions to start from
+      // The list is copied into a new array in order to have them in "order" in memory
+      // Note that this means that when we change the wave-function the original function is not changed (except for the values it points to
+      // we need to copy the changed function back into the original at the end.
       psi=luaL_checkarray_WaveFunctionType(L, 2, &Npsi);
+      for(i=0;i<Npsi;i++)
+      {
+        for(j=0;j<i;j++)
+        {
+          if(psi[i].ValueRe==psi[j].ValueRe)
+          {
+            luaL_error(L, "Eigensystem called with a list of functions. Function with name \"%s\" is at position %d and %d\n",psi[i].Name,j+1,i+1);
+          }
+        }
+      }
       if(WaveFunctionArrayToSameBasis(psi, Npsi))
       {
         printf("WaveFunctionArrayToSameBasis failed in LuaEigensystem\n");
@@ -2285,18 +2299,193 @@ static int LuaOrthonormalize(lua_State *L)
   }
   else if(matorfun==LUA_TUSERDATA)
   {
-    WaveFunctionType *psilist;
-    uint32_t Npsi;
+    WaveFunctionType *psilist,*psilistNew;
+    uint32_t i,Npsi;
     psilist = luaL_checkarray_WaveFunctionType(L, 1, &Npsi);
-    
-    return luaL_error(L, "Orthogonalizing a list of wave-functions is planned, but not jet implemented.\n");
-  
+    psilistNew=malloc(Npsi*sizeof(WaveFunctionType));
+    if(psilistNew==NULL) return luaL_error(L, "Failure in Orthogonalize, not able to initialize pointers to list of orthogonal functions.\nOut of memory on a bad moment?\n");
+    if(strcmp(Options.Method, "Lowdin")==0)
+    {
+      if(WaveFunctionListSVDOrthogonalizeDifferentBasis(psilist, psilistNew, &Npsi, Options.SingularValue, Options.ReduceDimension)) return luaL_error(L, "Failure in Orthogonalize Sorry\n");
+    }
+    else if(strcmp(Options.Method, "GramSchmidt")==0)
+    {
+      for(i=0;i<Npsi;i++)
+      {
+        if(WaveFunctionCopy(psilist[i], &(psilistNew[i]))) return luaL_error(L, "Failure in Orthogonalize, not able to initialize list of orthogonal functions.\nOut of memory on a bad moment?\n");
+      }
+      if(WaveFunctionListOrthogonalizeDifferentBasis(psilistNew, &Npsi, Options.SingularValue, Options.ReduceDimension)) return luaL_error(L, "Failure in Orthogonalize Sorry\n");
+    }
+    else
+    {
+      return luaL_error(L, "Error Orthogonalize Option \"Method\" should either be \"Lowdin\" (standard) or \"GramSchmidt\" and not\"%s\"\n",Options.Method);
+    }
+    LuaPushTable_WaveFunctionType(L, psilistNew, Npsi);
+    free(psilist);
+    free(psilistNew);
   }
   else
   {
     return luaL_error(L, "First argument of Orthogonalize should either be a table of wave-functions or a rectangular matrix (table of tables of equal lenght).\n");
   }
   return 1;
+}
+
+/*  Given a square hermitian matrix and a set of starting vectors returns a block band diagonal form
+ * @ param L
+ *         Pointer to a lua state
+ *     Two posible inputs, either on dense matrices or on operators and wave-functions
+ *     In both cases returns a BlockTridiagonalMatrix pushed on the lua stack
+ *     Case 1
+ *         First argument on stack should be a hermitian matrix represented as a table of table of (complex) numbers
+ *         Second argument on stack should either be an integer representing the block size or a list of vectors representing the starting states
+ *     Case 2
+ *         First argument on stack should be a hermitian operator
+ *         Second argument should be a single wave-function or a list of wavefunctions
+ *     In both cases:
+ *         Posible third argument specifies options
+ *         - SingularValue:   double:  values equal or smaller than SignularValue are removed from basis (standard 10^-6)
+ *         - NTri:            integer: Maximum number of blocks included (standard infinity)
+ *         - NOrtho:          integer: Maximum number of reorthogonalizations (standard infinity)
+ *         - ReOrthogonalize: boolean: Use aditional Gramm-Schmidt orthogonalization after the Lowdin orthogonalization (standard true)
+ */
+static int LuaBlockBandDiagonalize(lua_State *L)
+{
+  uint32_t len;
+  BlockTriDiagonalMatrixType B;
+  struct
+  {
+    double SingularValue;
+    uint32_t NTri;
+    uint32_t NOrtho;
+    Bool ReOrthogonalize;
+  } Options;
+  LuaOptionsType LuaBlockBandDiagonalizeOptions[]={
+    {"SingularValue",   "char*",    &(Options.SingularValue)},
+    {"NTri",            "uint32_t", &(Options.NTri)},
+    {"NOrtho",          "uint32_t", &(Options.NOrtho)},
+    {"ReduceDimension", "bool",     &(Options.ReOrthogonalize)},
+    {NULL, NULL, NULL}};
+  Options.SingularValue=1E-6;
+  Options.NTri  =200;
+  Options.NOrtho=UINT32_MAX;
+  Options.ReOrthogonalize=True;
+  // get options when defined
+  len = (uint32_t)lua_gettop(L);
+  if(len>3)
+  {
+    return luaL_error(L, "BlockBandDiagonalize called with %d arguments. Two or Three expected\n",len);
+  }
+  if(len==3)
+  {
+    if(LuaTestOptionsList(L, -1))
+    {
+      LuaCheckOptions(L, -1, LuaBlockBandDiagonalizeOptions);
+      if(Options.NOrtho<2)
+      {
+        return luaL_error(L, "Northo (%d) should be an intereger of at least 2\n",Options.NOrtho);
+      }
+    }
+    else
+    {
+      return luaL_error(L, "Third argument of BlockBandDiagonalize is optional but iff given should be a list of options.\n");
+    }
+  }
+  // case 1 - dense matrices
+  if(lua_istable(L,1)==1)
+  {
+    CompactMatrixType *M,*vec;
+    M = (CompactMatrixType *) luaL_checkCompactMatrix(L, 1);
+    if(M->Ni != M->Nj)
+    {
+      return luaL_error(L, "BlockBandDiagonalize expects as a first argument either an operator or a square hermitian matrix, current matrix is not square: dimensions are %d by %d\n",M->Ni,M->Nj);
+    }
+    if(lua_type(L, 2)==LUA_TNUMBER)
+    {
+      vec=malloc(sizeof(CompactMatrixType));
+      vec->QComplex=0;
+      vec->Ni=(uint32_t)luaL_checkinteger(L, 2);
+      vec->Nj=M->Nj;
+      if(vec->Ni>vec->Nj) return luaL_error(L, "Block size (%d) should be smaller than dimension of matrix (%d)\n",vec->Ni,vec->Nj);
+      InitCompactIdentityMatrix(vec);
+    }
+    else
+    {
+      vec = (CompactMatrixType *) luaL_checkCompactMatrix(L, 2);
+      if(vec->Ni>vec->Nj) return luaL_error(L, "Block size (%d) should be smaller than dimension of matrix (%d)",vec->Ni,vec->Nj);
+      if(vec->Nj!=M->Nj) return luaL_error(L, "Length of starting vector (%d) should be equivalent to dimension of matrix (%d).\n",vec->Nj,M->Nj);
+    }
+    Options.NTri=MIN(Options.NTri, M->Ni);
+    if(CompactMatrixBlockBandDiagonalize(M, vec, &B, Options.SingularValue, Options.NTri, Options.NOrtho, Options.ReOrthogonalize))
+    {
+      return luaL_error(L, "CompactMatrixBlockBandDiagonalize failed that should not happen\n");
+    }
+    LuaPushTable_BlockTriDiagonalMatrixType(L, &B);
+    FreeBlockTridiagonalMatrix(&B);
+    FreeCompactMatrix(M);
+    free(M);
+    FreeCompactMatrix(vec);
+    free(vec);
+    return 1;
+  }
+  // case 2 - operator wave-functions
+  else if (luaL_testudata(L, 1, "Operator_Type") != NULL)
+  {
+    uint32_t i;
+    WaveFunctionType **orig=NULL;
+    WaveFunctionType *psilist;
+    OperatorType *O;
+    uint32_t Npsi;
+    // read the operator from the lua stack
+    O = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
+    // read a list of pointers to the original functions from the lua stack
+    if(lua_type(L,2)==LUA_TTABLE)
+    {
+      orig = luaL_checkarray_PointerWaveFunctionType(L, 2, &Npsi);    }
+    else
+    {
+      Npsi=1;
+      orig =  malloc(sizeof(WaveFunctionType*));
+      orig[0] = (WaveFunctionType *) luaL_checkudata(L, 2, "Wavefunction_Type");
+    }
+    // copy the original functions that each live on their own basis to a new array where all functions have the same basis
+    psilist = malloc(Npsi*sizeof(WaveFunctionType));
+    if(psilist==NULL)
+    {
+      return luaL_error(L, "malloc failed. Out of memory during initialization in BlockBandDiagonalize\n");
+    }
+    if(WaveFunctionCopy(*(orig[0]), &(psilist[0]))) return luaL_error(L, "malloc failed. Out of memory during initialization in BlockBandDiagonalize\n");
+    for(i=1;i<Npsi;i++)
+    {
+      if(WaveFunctionAddMultipliedUnionBasis(&psilist[0], *(orig[i]), 0)) return luaL_error(L, "malloc failed. Out of memory during initialization in BlockBandDiagonalize\n");
+    }
+    for(i=1;i<Npsi;i++)
+    {
+      if(WaveFunctionInitCopyBasis(&(psilist[i]), psilist[0])) return luaL_error(L, "malloc failed. Out of memory during initialization in BlockBandDiagonalize\n");
+      WaveFunctionAddConserveBasis(&(psilist[i]), *(orig[i]));
+    }
+    // remove the pointers to the original functions from memory. lua knows where they are
+    free(orig);
+    // call the c function
+    B.N=Options.NTri;
+    B.BlockSize=Npsi;
+    B.QComplex=0;
+    if(O->QComplex) B.QComplex=1;
+    for(i=0;i<Npsi;i++)
+    {
+      if(psilist[i].QComplex) B.QComplex=1;
+    }
+    InitBlockTridiagonalMatrix(&B);
+    if(LanczosBlockTriDiagonalize(*O, psilist, Options.SingularValue, &B, 0)) luaL_error(L, "LanczosBlockTriDiagonalize failed in BlockBandDiagonalize");
+    LuaPushTable_BlockTriDiagonalMatrixType(L, &B);
+    FreeBlockTridiagonalMatrix(&B);
+    return 1;
+  }
+  // error not case 1 or 2
+  else
+  {
+    return luaL_error(L, "BlockBandDiagonalize expects as a first argument either an operator or a square hermitian matrix (table of tables)\n");
+  }
 }
 
 static int LuaTimeEnd(lua_State * L)
@@ -2421,6 +2610,7 @@ static int LuaStatistics(lua_State *L)
 }
 
 static const struct luaL_Reg global_functions[] = {
+  {"BlockBandDiagonalize", LuaBlockBandDiagonalize},
   {"CalculateBands", LuaCalculateBands},
   {"CalculateDOS", LuaCalculateDOS},
   {"CalculateFermi", LuaCalculateFermi},
