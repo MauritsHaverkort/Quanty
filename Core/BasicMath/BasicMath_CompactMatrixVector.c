@@ -43,7 +43,7 @@ uint32_t InitCompactMatrix(CompactMatrixType * const M)
   else
   {
     M->VRe=(double*)calloc(M->Ni*M->Nj,sizeof(double));
-    if(M->V==NULL)
+    if(M->VRe==NULL)
     {
       printf("Malloc failed in InitCompactMatrix for real allocation\n");
       fflush(stdout);

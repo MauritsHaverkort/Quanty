@@ -281,6 +281,7 @@
 		4C4637E419C312EE00EB0DB0 /* ImpurityModelFromTB.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; lineEnding = 2; path = ImpurityModelFromTB.c; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
 		4C4637E519C312EE00EB0DB0 /* Spectra2p3d.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; lineEnding = 2; path = Spectra2p3d.c; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
 		4C4637E619C3844500EB0DB0 /* CI.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = CI.c; sourceTree = "<group>"; };
+		4C4E1BC11CC4CA3E00E4F754 /* BlockWaveFunctionArithmetic.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = BlockWaveFunctionArithmetic.c; sourceTree = "<group>"; };
 		4C5A6B9B175E6E8700EEA17F /* PrintMathematicaExpression.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = PrintMathematicaExpression.c; sourceTree = "<group>"; };
 		4C5CA61716D18BBF00BE1C25 /* DMFT */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = DMFT; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C639499197968E4009C7F12 /* Spectra.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = Spectra.c; sourceTree = "<group>"; };
@@ -564,26 +565,27 @@
 				4C3FCCFB1884196D000B9DB8 /* BasicMathBlock */,
 				4C2AAA29163265DD00138620 /* BasicMath */,
 				4C2AAA3A163265DD00138620 /* BasicMath.c */,
-				4C2AAA3B163265DD00138620 /* ComplexRealWaveFunctionArithmetic.c */,
-				4C2AAA3C163265DD00138620 /* ComplexWaveFunctionArithmetic.c */,
-				4C2AAA3D163265DD00138620 /* DensityMatrix.c */,
 				4C2AAA3E163265DD00138620 /* Error.c */,
 				4C2AAA3F163265DD00138620 /* Hash.c */,
-				4C2AAA40163265DD00138620 /* Lanczos.c */,
-				4CB3643519EB8DC0000B721A /* BlockLanczos.c */,
-				4C2AAA41163265DD00138620 /* MatrixOperator.c */,
-				4C2AAA42163265DD00138620 /* OperatorArithmetic.c */,
-				4C2AAA43163265DD00138620 /* OperatorWaveFunction.c */,
-				4C77BA751741188E00AC7E7D /* OperatorWaveFunctionPerturbation.c */,
-				4C2AAA44163265DD00138620 /* Random.c */,
-				4C2AAA45163265DD00138620 /* RealComplexWaveFunctionArithmetic.c */,
-				4C2AAA46163265DD00138620 /* RealWaveFunctionArithmetic.c */,
-				4C2AAA47163265DD00138620 /* Spectral.c */,
-				4CC07E7B1A08D9D10053B938 /* ResonantSpectra.c */,
 				4C2AAA48163265DD00138620 /* StructDef.c */,
 				4C2AAA49163265DD00138620 /* TimeStamp.c */,
+				4C2AAA3C163265DD00138620 /* ComplexWaveFunctionArithmetic.c */,
+				4C2AAA3B163265DD00138620 /* ComplexRealWaveFunctionArithmetic.c */,
+				4C2AAA45163265DD00138620 /* RealComplexWaveFunctionArithmetic.c */,
+				4C2AAA46163265DD00138620 /* RealWaveFunctionArithmetic.c */,
 				4C2AAA4A163265DD00138620 /* WaveFunctionArithmetic.c */,
 				4C0877991737CDE600CE9AB4 /* WaveFunctionPerturbationArithmetic.c */,
+				4C4E1BC11CC4CA3E00E4F754 /* BlockWaveFunctionArithmetic.c */,
+				4C2AAA43163265DD00138620 /* OperatorWaveFunction.c */,
+				4C2AAA42163265DD00138620 /* OperatorArithmetic.c */,
+				4C77BA751741188E00AC7E7D /* OperatorWaveFunctionPerturbation.c */,
+				4C2AAA41163265DD00138620 /* MatrixOperator.c */,
+				4C2AAA40163265DD00138620 /* Lanczos.c */,
+				4CB3643519EB8DC0000B721A /* BlockLanczos.c */,
+				4C2AAA3D163265DD00138620 /* DensityMatrix.c */,
+				4C2AAA47163265DD00138620 /* Spectral.c */,
+				4CC07E7B1A08D9D10053B938 /* ResonantSpectra.c */,
+				4C2AAA44163265DD00138620 /* Random.c */,
 				4C6534801927B39400D00679 /* MeanField.c */,
 			);
 			path = Core;

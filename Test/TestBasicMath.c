@@ -1397,7 +1397,7 @@ void TestCompactMatrixCallers()
   
   printf("\n============= uint32_t BlockTriDiagonalMatrixToSpectra(BlockTriDiagonalMatrixType const * A, SpectraType *const G, double const Emin, double const Emax, uint32_t const N, double const Gamma) ============\n");
 
-  printf("\n============= uint32_t BlockWaveFunctionCalculatOverlapMatrix(WaveFunctionType *const psi, uint32_t const Npsi, CompactMatrixType *const S) ============\n");
+  printf("\n============= uint32_t BlockWaveFunctionCalculatOverlapMatrixSerial(WaveFunctionType *const psi, uint32_t const Npsi, CompactMatrixType *const S) ============\n");
   
   
   printf("\n============= uint32_t ImpurityHFromTB(OperatorType *const Himp, ModelSettings O) ============\n");

@@ -280,332 +280,6 @@ uint32_t CreateStartingFunctions(const OperatorType H, uint32_t const Npsi, Dete
   return 0;
 }
 
-/*  Calculate Opsi[i] = H psi[i] for i=0 to Npsi
- *  on input all psi[i]'s are on the same basis
- *  on excit all Opsi[i]'s are on the same basis as psi[i]'s
- *  memory for values of Opsi is already allocated.
- */
-uint32_t BlockOperatorPsiConserveBasisPreAllocated(const OperatorType H, WaveFunctionType const * const psi, WaveFunctionType * const Opsi, uint32_t const Npsi)
-{
-  uint32_t i;
-  for(i=0;i<Npsi;i++)
-  {
-    OperatorPsiConserveBasisPreAllocated(&H, &(psi[i]), &(Opsi[i]));
-  }
-  return 0;
-}
-
-/*  Calculate Opsi[i] = H psi[i] for i=0 to Npsi
- *  on input all psi[i]'s are on the same basis
- *  on excit all Opsi[i]'s are on the same basis
- */
-uint32_t BlockOperatorPsiRestricted(const OperatorType H, WaveFunctionType const * const psi, WaveFunctionType * const Opsi, uint32_t const Npsi, DeterminantRestrictionType const Restrictions)
-{
-  uint32_t i,j;
-  VerbosityPrintf(0x0002,"Start of BlockOperatorPsiRestricted\n");
-  if(OperatorPsiRestricted(H, psi[0], &(Opsi[0]), Restrictions))
-  {
-    printf("OperatorPsi failed in BlockOperatorPsi\n");
-    return 1;
-  }
-  WaveFunctionAddMultipliedUnionBasis(&(Opsi[0]), psi[0], 0);
-  for(i=1;i<Npsi;i++)
-  {
-    if(WaveFunctionInitCopyBasis(&(Opsi[i]), (Opsi[0])))
-    {
-      for(j=1;j<i;j++)
-      {
-        WaveFunctionFreeValues(&Opsi[j]);
-      }
-      WaveFunctionFree(&Opsi[0]);
-      free(Opsi);
-      printf("WaveFunctionInitCopyBasis failed in BlockOperatorPsi\n");
-      return 1;
-    }
-  }
-  for(i=1;i<Npsi;i++)
-  {
-    OperatorPsiConserveBasisPreAllocated(&H, &(psi[i]), &(Opsi[i]));
-  }
-  return 0;
-}
-
-/*  Calculate Opsi[i] = H psi[i] for i=0 to Npsi
- *  on input all psi[i]'s are on the same basis
- *  on excit all Opsi[i]'s are on the same basis
- */
-uint32_t BlockOperatorPsi(const OperatorType H, WaveFunctionType const * const psi, WaveFunctionType * const Opsi, uint32_t const Npsi)
-{
-  uint32_t i,j;
-  VerbosityPrintf(0x0002,"Start of BlockOperatorPsi\n");
-  if(OperatorPsi(H, psi[0], &(Opsi[0])))
-  {
-    printf("OperatorPsi failed in BlockOperatorPsi\n");
-    return 1;
-  }
-  WaveFunctionAddMultipliedUnionBasis(&(Opsi[0]), psi[0], 0);
-  for(i=1;i<Npsi;i++)
-  {
-    if(WaveFunctionInitCopyBasis(&(Opsi[i]), (Opsi[0])))
-    {
-      for(j=1;j<i;j++)
-      {
-        WaveFunctionFreeValues(&Opsi[j]);
-      }
-      WaveFunctionFree(&Opsi[0]);
-      free(Opsi);
-      printf("WaveFunctionInitCopyBasis failed in BlockOperatorPsi\n");
-      return 1;
-    }
-  }
-  for(i=1;i<Npsi;i++)
-  {
-    OperatorPsiConserveBasisPreAllocated(&H, &(psi[i]), &(Opsi[i]));
-  }
-  return 0;
-}
-
-void BlockWaveFunctionFree(WaveFunctionType *psi, const uint32_t Npsi)
-{
-  uint32_t i;
-  for(i=1;i<Npsi;i++)
-  {
-    WaveFunctionFreeValues(&(psi[i]));
-  }
-  if(Npsi>0) WaveFunctionFree(&(psi[0]));
-}
-
-void RealBlockWaveFunctionTruncateBasis(WaveFunctionType *const psi, uint32_t const Npsi, const double epsilon)
-{
-  uint32_t startN, iBlok, iElement, ipsi, KeepDeterminant;
-  for(ipsi=0;ipsi<Npsi;ipsi++)
-  {
-    psi[ipsi].ValueRe[0][0] = 0;
-  }
-  startN = psi[0].N;
-  psi[0].N = 0;
-  for (iElement = 0; iElement < ((uint32_t) 1 << (psi[0].NBitsKey)); ++iElement)
-  {                             /* Whipe out the entire KeyList */
-    psi[0].KeyList[iElement] = 0;
-  }
-  for (iBlok = 0; iBlok < psi[0].NBlok - 1; iBlok++)
-  {
-    for (iElement = 0; iElement < BlokSize; iElement++)
-    {
-      psi[0].Next[iBlok][iElement] = 0;
-      KeepDeterminant=0;
-      for(ipsi=0;ipsi<Npsi;ipsi++)
-      {
-        if(Abs(psi[ipsi].ValueRe[iBlok][iElement])<epsilon)
-        {
-          psi[ipsi].ValueRe[iBlok][iElement]=0;
-        }
-        else
-        {
-          KeepDeterminant=1;
-        }
-      }
-      if (KeepDeterminant)
-      {
-        RealWaveFunctionAddElement(&(psi[0]), &(psi[0].Determinant[iBlok][iElement * psi[0].NWord]), psi[0].ValueRe[iBlok][iElement]);
-        for(ipsi=1;ipsi<Npsi;ipsi++)
-        {
-          psi[ipsi].ValueRe[BlokElement(psi[0].N)] = psi[ipsi].ValueRe[iBlok][iElement];
-        }
-      }
-    }
-  }
-  iBlok = psi[0].NBlok - 1;
-  for (iElement = 0; iElement < 1 + startN - iBlok * BlokSize; ++iElement)
-  {
-    psi[0].Next[iBlok][iElement] = 0;
-    KeepDeterminant=0;
-    for(ipsi=0;ipsi<Npsi;ipsi++)
-    {
-      if(Abs(psi[ipsi].ValueRe[iBlok][iElement])<epsilon)
-      {
-        psi[ipsi].ValueRe[iBlok][iElement]=0;
-      }
-      else
-      {
-        KeepDeterminant=1;
-      }
-    }
-    if (KeepDeterminant)
-    {
-      RealWaveFunctionAddElement(&(psi[0]), &(psi[0].Determinant[iBlok][iElement * psi[0].NWord]), psi[0].ValueRe[iBlok][iElement]);
-      for(ipsi=1;ipsi<Npsi;ipsi++)
-      {
-        psi[ipsi].ValueRe[BlokElement(psi[0].N)] = psi[ipsi].ValueRe[iBlok][iElement];
-      }
-    }
-  }
-  for (iBlok = 1 + (psi[0].N >> NBitsBlok); iBlok < psi[0].NBlok; iBlok++)
-  {
-    free(psi[0].Next[iBlok]);
-    free(psi[0].Determinant[iBlok]);
-    for(ipsi=0;ipsi<Npsi;ipsi++)
-    {
-      free(psi[ipsi].ValueRe[iBlok]);
-    }
-  }
-  psi[0].NBlok = 1 + (psi[0].N >> NBitsBlok);
-  psi[0].Next = realloc(psi[0].Next, psi[0].NBlok * sizeof(uint32_t *));
-  psi[0].Determinant = realloc(psi[0].Determinant, psi[0].NBlok * sizeof(uint8_t *));
-  for(ipsi=0;ipsi<Npsi;ipsi++)
-  {
-    psi[ipsi].ValueRe = realloc(psi[ipsi].ValueRe, psi[0].NBlok * sizeof(double *));
-  }
-  for(ipsi=1;ipsi<Npsi;ipsi++)
-  {
-    psi[ipsi].N           = psi[0].N;
-    psi[ipsi].NBlok       = psi[0].NBlok;
-    psi[ipsi].Next        = psi[0].Next;
-    psi[ipsi].Determinant = psi[0].Determinant;
-  }
-}
-
-void ComplexBlockWaveFunctionTruncateBasis(WaveFunctionType *const psi, uint32_t const Npsi, const double epsilon)
-{
-  double const epsilonSqr=Sqr(epsilon);
-  uint32_t startN, iBlok, iElement, ipsi, KeepDeterminant;
-  for(ipsi=0;ipsi<Npsi;ipsi++)
-  {
-    psi[ipsi].ValueRe[0][0] = 0;
-    psi[ipsi].ValueIm[0][0] = 0;
-  }
-  startN = psi[0].N;
-  psi[0].N = 0;
-  for (iElement = 0; iElement < ((uint32_t) 1 << (psi[0].NBitsKey)); ++iElement)
-  {                             /* Whipe out the entire KeyList */
-    psi[0].KeyList[iElement] = 0;
-  }
-  for (iBlok = 0; iBlok < psi[0].NBlok - 1; iBlok++)
-  {
-    for (iElement = 0; iElement < BlokSize; iElement++)
-    {
-      psi[0].Next[iBlok][iElement] = 0;
-      KeepDeterminant=0;
-      for(ipsi=0;ipsi<Npsi;ipsi++)
-      {
-        if((Sqr(psi[ipsi].ValueRe[iBlok][iElement])+Sqr(psi[ipsi].ValueIm[iBlok][iElement]))<epsilonSqr)
-        {
-          psi[ipsi].ValueRe[iBlok][iElement]=0;
-          psi[ipsi].ValueIm[iBlok][iElement]=0;
-        }
-        else
-        {
-          KeepDeterminant=1;
-        }
-      }
-      if (KeepDeterminant)
-      {
-        ComplexWaveFunctionAddElement(&(psi[0]), &(psi[0].Determinant[iBlok][iElement * psi[0].NWord]), psi[0].ValueRe[iBlok][iElement], psi[0].ValueIm[iBlok][iElement]);
-        for(ipsi=1;ipsi<Npsi;ipsi++)
-        {
-          psi[ipsi].ValueRe[BlokElement(psi[0].N)] = psi[ipsi].ValueRe[iBlok][iElement];
-          psi[ipsi].ValueIm[BlokElement(psi[0].N)] = psi[ipsi].ValueIm[iBlok][iElement];
-        }
-      }
-    }
-  }
-  iBlok = psi[0].NBlok - 1;
-  for (iElement = 0; iElement < 1 + startN - iBlok * BlokSize; ++iElement)
-  {
-    psi[0].Next[iBlok][iElement] = 0;
-    KeepDeterminant=0;
-    for(ipsi=0;ipsi<Npsi;ipsi++)
-    {
-      if((Sqr(psi[ipsi].ValueRe[iBlok][iElement])+Sqr(psi[ipsi].ValueIm[iBlok][iElement]))<epsilonSqr)
-      {
-        psi[ipsi].ValueRe[iBlok][iElement]=0;
-        psi[ipsi].ValueIm[iBlok][iElement]=0;
-      }
-      else
-      {
-        KeepDeterminant=1;
-      }
-    }
-    if (KeepDeterminant)
-    {
-      ComplexWaveFunctionAddElement(&(psi[0]), &(psi[0].Determinant[iBlok][iElement * psi[0].NWord]), psi[0].ValueRe[iBlok][iElement], psi[0].ValueIm[iBlok][iElement]);
-      for(ipsi=1;ipsi<Npsi;ipsi++)
-      {
-        psi[ipsi].ValueRe[BlokElement(psi[0].N)] = psi[ipsi].ValueRe[iBlok][iElement];
-        psi[ipsi].ValueIm[BlokElement(psi[0].N)] = psi[ipsi].ValueIm[iBlok][iElement];
-      }
-    }
-  }
-  for (iBlok = 1 + (psi[0].N >> NBitsBlok); iBlok < psi[0].NBlok; iBlok++)
-  {
-    free(psi[0].Next[iBlok]);
-    free(psi[0].Determinant[iBlok]);
-    for(ipsi=0;ipsi<Npsi;ipsi++)
-    {
-      free(psi[ipsi].ValueRe[iBlok]);
-      free(psi[ipsi].ValueIm[iBlok]);
-    }
-  }
-  psi[0].NBlok = 1 + (psi[0].N >> NBitsBlok);
-  psi[0].Next = realloc(psi[0].Next, psi[0].NBlok * sizeof(uint32_t *));
-  psi[0].Determinant = realloc(psi[0].Determinant, psi[0].NBlok * sizeof(uint8_t *));
-  for(ipsi=0;ipsi<Npsi;ipsi++)
-  {
-    psi[ipsi].ValueRe = realloc(psi[ipsi].ValueRe, psi[0].NBlok * sizeof(double *));
-    psi[ipsi].ValueIm = realloc(psi[ipsi].ValueIm, psi[0].NBlok * sizeof(double *));
-  }
-  for(ipsi=1;ipsi<Npsi;ipsi++)
-  {
-    psi[ipsi].N           = psi[0].N;
-    psi[ipsi].NBlok       = psi[0].NBlok;
-    psi[ipsi].Next        = psi[0].Next;
-    psi[ipsi].Determinant = psi[0].Determinant;
-  }
-}
-
-void BlockWaveFunctionTruncateBasis(WaveFunctionType *const psi, uint32_t const Npsi, const double epsilon)
-{
-  if(psi[0].QComplex)
-  {
-    ComplexBlockWaveFunctionTruncateBasis(psi, Npsi, epsilon);
-  }
-  else
-  {
-    RealBlockWaveFunctionTruncateBasis(psi, Npsi, epsilon);
-  }
-}
-
-uint32_t BlockWaveFunctionCalculatOverlapMatrix(WaveFunctionType *const psi, uint32_t const Npsi, CompactMatrixType *const S)
-{
-  //TODO: test after converging matrix format
-  uint32_t i,j;
-  S->Ni=Npsi;
-  S->Nj=Npsi;
-  S->QComplex=psi[0].QComplex;
-  InitCompactMatrix(S);
-  if(psi[0].QComplex)
-  {
-    for(i=0;i<Npsi;i++)
-    {
-      for(j=0;j<Npsi;j++)
-      {
-        ComplexWaveFunctionDotProductSameBasis(psi[i], psi[j], &(S->V[j+i*Npsi].Re), &(S->V[j+i*Npsi].Im));
-      }
-    }
-  }
-  else
-  {
-    for(i=0;i<Npsi;i++)
-    {
-      for(j=0;j<Npsi;j++)
-      {
-        S->VRe[j+i*Npsi]=RealWaveFunctionDotProductSameBasis(psi[i], psi[j]);
-      }
-    }
-  }
-  return 0;
-}
-
 /*  use a dense method to find the Npsi lowest states of Operator H
  *  The basis is given by the psi[0].N determinants
  *  psi[0] to psi[Npsi-1] are allocated and live on the same basis
@@ -929,26 +603,27 @@ uint32_t LanczosBlockTriDiagonalizeRR(const OperatorType H, WaveFunctionType * c
   vi=1;
   vim=0;
   vip=2;
+  Npsivi=Npsi;
   for(k=1;k<M->N;k++)
   {
     // v[vip] = H v[vi]^T
-    while(OperatorPsiListRR(H, v[vi], v[vip], Npsi))
+    while(BlockOperatorPsiRR(H, v[vi], v[vip], Npsivi))
     {
-      printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeRR for the function OperatorPsiListRR\n");
+      printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeRR for the function BlockOperatorPsiRR\n");
       printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
       fflush(stdout);
       epsilon *= 2.0;
       if (v[vi][0].NBlok == 1) AllocFailed();
-      RealBlockWaveFunctionTruncateBasis(v[vi], Npsi, epsilon);
+      RealBlockWaveFunctionTruncateBasis(v[vi], Npsivi, epsilon);
     }
     // a[k] = v[vi]^* . v[vip]^T  (v[vi]^* . H . v[vi]^T)
     Mab.VRe = &(M->aRe[k*Sqr(M->BlockSize)]);
-    RealWaveFunctionListDotProduct(v[vi], Npsi, v[vip], Npsi, &Mab);
+    RealBlockWaveFunctionDotProduct(v[vi], Npsi, v[vip], Npsi, &Mab); //Npsivi = Npsi - changes at Lowdin Orthonormalization
     if(k!=1)
     {
       // b[k-1] = v[vim]^* . v[vip]^T  (v[vim]^* . H . v[vi]^T)
       Mab.VRe = &(M->bRe[(k-1)*Sqr(M->BlockSize)]);
-      RealWaveFunctionListDotProduct(v[vim], Npsi, v[vip], Npsi, &Mab);
+      RealBlockWaveFunctionDotProduct(v[vim], Npsivim, v[vip], Npsi, &Mab);
     }
     NSingular=1;
     while(NSingular)
@@ -959,33 +634,33 @@ uint32_t LanczosBlockTriDiagonalizeRR(const OperatorType H, WaveFunctionType * c
       Mab.VRe=M->aRe;
       // w = v[vip]^* . v[vi]^T
       CompactMatrixScale(&Mab, 0);
-      RealWaveFunctionListDotProduct(v[vip], Npsi, v[vi], Npsivi, &Mab);
+      RealBlockWaveFunctionDotProduct(v[vip], Npsi, v[vi], Npsivi, &Mab);
       // v[vip] -= w . v[vi]
-      if(RealWaveFunctionBlockSubtractMultipliedUnionBasis(v[vip], Npsi, v[vi], Npsivi, Mab))
+      if(RealBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vi], Npsivi, Mab))
       {
         
       }
       // w = v[vip]^* . v[vi]^T
       CompactMatrixScale(&Mab, 0);
-      RealWaveFunctionListDotProduct(v[vip], Npsi, v[vi], Npsivi, &Mab);
+      RealBlockWaveFunctionDotProduct(v[vip], Npsi, v[vi], Npsivi, &Mab);
       // v[vip] -= w . v[vi]
-      if(RealWaveFunctionBlockSubtractMultipliedUnionBasis(v[vip], Npsi, v[vi], Npsivi, Mab))
+      if(RealBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vi], Npsivi, Mab))
       {
         
       }
       // w = v[vip]^* . v[vim]^T
       CompactMatrixScale(&Mab, 0);
-      RealWaveFunctionListDotProduct(v[vip], Npsi, v[vim], Npsivim, &Mab);
+      RealBlockWaveFunctionDotProduct(v[vip], Npsi, v[vim], Npsivim, &Mab);
       // v[vip] -= w . v[vim]
-      if(RealWaveFunctionBlockSubtractMultipliedUnionBasis(v[vip], Npsi, v[vim], Npsivim, Mab))
+      if(RealBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vim], Npsivim, Mab))
       {
         
       }
       // w = v[vip]^* . v[vim]^T
       CompactMatrixScale(&Mab, 0);
-      RealWaveFunctionListDotProduct(v[vip], Npsi, v[vim], Npsivim, &Mab);
+      RealBlockWaveFunctionDotProduct(v[vip], Npsi, v[vim], Npsivim, &Mab);
       // v[vip] -= w . v[vim]
-      if(RealWaveFunctionBlockSubtractMultipliedUnionBasis(v[vip], Npsi, v[vim], Npsivim, Mab))
+      if(RealBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vim], Npsivim, Mab))
       {
         
       }
@@ -1299,7 +974,7 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylovReal(const OperatorType H, Wa
       }
       /* // print aditional information on convergence and norms of v
       printf("i+NpsiDeflated = %i + %i\n",i,NpsiDeflated);
-      BlockWaveFunctionCalculatOverlapMatrix(v, NpsiDeflated+Npsi, &tempS);
+      BlockWaveFunctionCalculatOverlapMatrixSerial(v, NpsiDeflated+Npsi, &tempS);
       PrintCompactMatrixMinimal(tempS);
       FreeCompactMatrix(&tempS);
       */
@@ -1529,7 +1204,7 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylovComplex(const OperatorType H,
       /*
        // print aditional information on convergence and norms of v
        printf("i+NpsiDeflated = %i + %i\n",i,NpsiDeflated);
-       BlockWaveFunctionCalculatOverlapMatrix(v, NpsiDeflated+i, &tempS);
+       BlockWaveFunctionCalculatOverlapMatrixSerial(v, NpsiDeflated+i, &tempS);
        CompactMatrixChop(&tempS, 10000*DBL_EPSILON);
        PrintCompactMatrixMinimal(tempS);
        FreeCompactMatrix(&tempS);
@@ -1780,7 +1455,7 @@ uint32_t BlockGroundState(const OperatorType H, uint32_t const Npsi, Convergence
   {
     iloop++;
     // expand basis depending on Restrictions.N use either restrictions or don't use them
-    while( (Restrictions.N) ? BlockOperatorPsiRestricted(H, psi, Opsi, Npsi, Restrictions) : BlockOperatorPsi(H, psi, Opsi, Npsi))
+    while( (Restrictions.N) ? BlockOperatorPsiSerialRestricted(H, psi, Opsi, Npsi, Restrictions) : BlockOperatorPsiSerial(H, psi, Opsi, Npsi))
     {
       // was not able to evaluate O psi, need to truncate psi further
       if(psi[0].NBlok==1)
