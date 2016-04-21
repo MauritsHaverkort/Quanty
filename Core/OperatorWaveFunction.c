@@ -1306,8 +1306,7 @@ uint32_t OperatorPsiRC(const OperatorType O, const WaveFunctionType psi, WaveFun
     uint8_t MiniDet[MiniBlokSize * Opsi->NWord];
     double MiniValueRe[MiniBlokSize];
     double MiniValueIm[MiniBlokSize];
-    uint32_t NMini;
-    NMini = 0;
+    uint32_t NMini = 0;
 #pragma omp for
     for (iOMP = 1; iOMP <= psi.N; iOMP++)
     {
@@ -1590,15 +1589,13 @@ uint32_t OperatorPsiMR(const OperatorType O, const WaveFunctionType psi, WaveFun
           {                     /* Operator real at this length */
             for (j = 0; j < O.l[l].N; j++)
             {
-              for (k = 0; k < Opsi->NWord; k++)
-                Det[k] = psi.Determinant[ii][ij + k];
+              for (k = 0; k < Opsi->NWord; k++) Det[k] = psi.Determinant[ii][ij + k];
               phase = OperatorLader(Det, &(O.l[l].o[j * l]), l, O.NFermion);
               if (fabs(phase) > (10 * DBL_MIN))
               {
                 MiniValueRe[NMini] = phase * O.l[l].VRe[j] * psi.ValueRe[ii][ik];
                 MiniValueIm[NMini] = 0;
-                for (k = 0; k < Opsi->NWord; k++)
-                  MiniDet[NMini * Opsi->NWord + k] = Det[k];
+                for (k = 0; k < Opsi->NWord; k++) MiniDet[NMini * Opsi->NWord + k] = Det[k];
                 NMini++;
                 if (NMini == MiniBlokSize)
                 {               /* flush Mini buffer */

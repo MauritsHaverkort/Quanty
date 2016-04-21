@@ -552,28 +552,507 @@ uint32_t LanczosBlockTriDiagonalizeRestricted(const OperatorType H, WaveFunction
 
 uint32_t LanczosBlockTriDiagonalizeRC(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
 {
+  uint32_t i,j,k,vi,vip,vim;
+  CompactMatrixType Mab;
+  WaveFunctionType *v[4];
+  uint32_t NSingular,Npsi=M->BlockSize,Npsivi=M->BlockSize,Npsivim=M->BlockSize;
   VerbosityPrintf(0x0001,"Start of LanczosBlockTriDiagonalizeRC\n");
   fflush(stdout);
-  //TODO:
-  
-  return 1;
+  for(i=0;i<M->BlockSize;i++)
+  {
+    M->b[i+i*M->BlockSize].Re=0;
+  }
+  v[0] = psi;
+  v[1] = malloc(Npsi*sizeof(WaveFunctionType));
+  v[2] = malloc(Npsi*sizeof(WaveFunctionType));
+  v[3] = malloc(Npsi*sizeof(WaveFunctionType));
+  Mab.Ni=M->BlockSize;
+  Mab.Nj=M->BlockSize;
+  Mab.QComplex=1;
+  ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[0], v[1], &Npsi, epsilon, True); // v[1] = orthonormal[v0]
+  NSingular=M->BlockSize-Npsi;
+  if(NSingular!=0)
+  {
+    VerbosityPrintf(0x0001,"Reduce dimension from %u to %u in block %u\n",M->BlockSize,M->BlockSize-NSingular,0);
+  }
+  // b[0] = v[0] . v[1]^+ or b[0]^T = v[1]^* . v[0]^T
+  for(i=0;i<Npsi+NSingular;i++)
+  {
+    for(j=0;j<Npsi;j++)
+    {
+      ComplexWaveFunctionDotProductSameBasis(v[1][j], v[0][i], &(M->b[i * M->BlockSize + j].Re), &(M->b[i * M->BlockSize + j].Im));
+    }
+  }
+  vi=1;
+  vim=0;
+  vip=2;
+  Npsivi=Npsi;
+  for(k=1;k<M->N;k++)
+  {
+    // v[vip] = H v[vi]^T
+    while(BlockOperatorPsiRC(H, v[vi], v[vip], Npsivi))
+    {
+      printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeRR for the function BlockOperatorPsiRR\n");
+      printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
+      fflush(stdout);
+      epsilon *= 2.0;
+      if (v[vi][0].NBlok == 1) AllocFailed();
+      ComplexBlockWaveFunctionTruncateBasis(v[vi], Npsivi, epsilon);
+    }
+    // a[k] = v[vi]^* . v[vip]^T  (v[vi]^* . H . v[vi]^T)
+    Mab.V = &(M->a[k*Sqr(M->BlockSize)]);
+    ComplexBlockWaveFunctionDotProduct(v[vi], Npsi, v[vip], Npsi, &Mab); //Npsivi = Npsi - changes at Lowdin Orthonormalization
+    if(k!=1)
+    {
+      // b[k-1] = v[vim]^* . v[vip]^T  (v[vim]^* . H . v[vi]^T)
+      Mab.V = &(M->b[(k-1)*Sqr(M->BlockSize)]);
+      ComplexBlockWaveFunctionDotProduct(v[vim], Npsivim, v[vip], Npsi, &Mab);
+    }
+    NSingular=1;
+    while(NSingular)
+    {
+      // orthogonalize v[vip] to v[vi] and v[vim]
+      // we use matrix multiplication between v[vip] and v[vi] which is a numerical unstable form of Gram Schmidt
+      // we heal this by repeating the orthogonalization twice
+      Mab.V=M->a;
+      // w = v[vip]^* . v[vi]^T
+      CompactMatrixScale(&Mab, 0);
+      ComplexBlockWaveFunctionDotProduct(v[vip], Npsi, v[vi], Npsivi, &Mab);
+      // v[vip] -= w^* . v[vi]
+      if(ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vi], Npsivi, Mab))
+      {
+        
+      }
+      // w = v[vip]^* . v[vi]^T
+      CompactMatrixScale(&Mab, 0);
+      ComplexBlockWaveFunctionDotProduct(v[vip], Npsi, v[vi], Npsivi, &Mab);
+      // v[vip] -= w^* . v[vi]
+      if(ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vi], Npsivi, Mab))
+      {
+        
+      }
+      // w = v[vip]^* . v[vim]^T
+      CompactMatrixScale(&Mab, 0);
+      ComplexBlockWaveFunctionDotProduct(v[vip], Npsi, v[vim], Npsivim, &Mab);
+      // v[vip] -= w^* . v[vim]
+      if(ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vim], Npsivim, Mab))
+      {
+        
+      }
+      // w = v[vip]^* . v[vim]^T
+      CompactMatrixScale(&Mab, 0);
+      ComplexBlockWaveFunctionDotProduct(v[vip], Npsi, v[vim], Npsivim, &Mab);
+      // v[vip] -= w^* . v[vim]
+      if(ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vim], Npsivim, Mab))
+      {
+        
+      }
+      // Lowdin orthonormalize v[vip] into v[3], free v[vip] and set v[vip] equal to v[3]
+      NSingular=Npsi;
+      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, epsilon, True);
+      NSingular-=Npsi;
+      if(NSingular!=0)
+      {
+        VerbosityPrintf(0x0001, "Reduce dimension from %u to %u in block %u\n",Npsi+NSingular,Npsi,k);
+      }
+      for(i=0;i<Npsi+NSingular;i++)
+      {
+        ComplexWaveFunctionFreeValues(&v[vip][i]);
+      }
+      for(i=0;i<Npsi;i++)
+      {
+        v[vip][i]=v[3][i];
+      }
+      // remove small values from v[vip]
+      ComplexBlockWaveFunctionTruncateBasis(v[vip], Npsi, epsilon);
+    }
+    // remove vim from memory and set vim to vi and vi to vip
+    if(k==1)
+    {
+      // nothing to free
+    }
+    else if(k==2)
+    {
+      for(i=0;i<Npsi;i++)
+      {
+        ComplexWaveFunctionFreeValues(&(v[vim][i]));
+      }
+    }
+    else
+    {
+      BlockWaveFunctionFree(v[vim], Npsivim);
+    }
+    vim=vi;
+    vi=vip;
+    vip=(vip+1)%3;
+    Npsivim=Npsivi;
+    Npsivi=Npsi;
+  }
+  if(M->N<=1)
+  {
+    for(i=0;i<Npsivi;i++)
+    {
+      ComplexWaveFunctionFreeValues(&(v[1][i]));
+    }
+  }
+  else if(M->N==2)
+  {
+    for(i=0;i<Npsivim;i++)
+    {
+      ComplexWaveFunctionFreeValues(&(v[vim][i]));
+    }
+    BlockWaveFunctionFree(v[vi],  Npsivi);
+  }
+  else
+  {
+    BlockWaveFunctionFree(v[vim], Npsivim);
+    BlockWaveFunctionFree(v[vi],  Npsivi);
+  }
+  for(i=0;i<Sqr(M->BlockSize);i++)
+  {
+    M->a[i].Re=0;
+    M->a[i].Im=0;
+  }
+  free(v[1]);
+  free(v[2]);
+  free(v[3]);
+  return 0;
 }
 uint32_t LanczosBlockTriDiagonalizeMC(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
 {
+  uint32_t i,j,k,vi,vip,vim;
+  CompactMatrixType Mab;
+  WaveFunctionType *v[4];
+  uint32_t NSingular,Npsi=M->BlockSize,Npsivi=M->BlockSize,Npsivim=M->BlockSize;
   VerbosityPrintf(0x0001,"Start of LanczosBlockTriDiagonalizeMC\n");
   fflush(stdout);
-  //TODO:
-  
-  
-  return 1;
+  for(i=0;i<M->BlockSize;i++)
+  {
+    M->b[i+i*M->BlockSize].Re=0;
+  }
+  v[0] = psi;
+  v[1] = malloc(Npsi*sizeof(WaveFunctionType));
+  v[2] = malloc(Npsi*sizeof(WaveFunctionType));
+  v[3] = malloc(Npsi*sizeof(WaveFunctionType));
+  Mab.Ni=M->BlockSize;
+  Mab.Nj=M->BlockSize;
+  Mab.QComplex=1;
+  ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[0], v[1], &Npsi, epsilon, True); // v[1] = orthonormal[v0]
+  NSingular=M->BlockSize-Npsi;
+  if(NSingular!=0)
+  {
+    VerbosityPrintf(0x0001,"Reduce dimension from %u to %u in block %u\n",M->BlockSize,M->BlockSize-NSingular,0);
+  }
+  // b[0] = v[0] . v[1]^+ or b[0]^T = v[1]^* . v[0]^T
+  for(i=0;i<Npsi+NSingular;i++)
+  {
+    for(j=0;j<Npsi;j++)
+    {
+      ComplexWaveFunctionDotProductSameBasis(v[1][j], v[0][i], &(M->b[i * M->BlockSize + j].Re), &(M->b[i * M->BlockSize + j].Im));
+    }
+  }
+  vi=1;
+  vim=0;
+  vip=2;
+  Npsivi=Npsi;
+  for(k=1;k<M->N;k++)
+  {
+    // v[vip] = H v[vi]^T
+    while(BlockOperatorPsiMC(H, v[vi], v[vip], Npsivi))
+    {
+      printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeRR for the function BlockOperatorPsiRR\n");
+      printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
+      fflush(stdout);
+      epsilon *= 2.0;
+      if (v[vi][0].NBlok == 1) AllocFailed();
+      ComplexBlockWaveFunctionTruncateBasis(v[vi], Npsivi, epsilon);
+    }
+    // a[k] = v[vi]^* . v[vip]^T  (v[vi]^* . H . v[vi]^T)
+    Mab.V = &(M->a[k*Sqr(M->BlockSize)]);
+    ComplexBlockWaveFunctionDotProduct(v[vi], Npsi, v[vip], Npsi, &Mab); //Npsivi = Npsi - changes at Lowdin Orthonormalization
+    if(k!=1)
+    {
+      // b[k-1] = v[vim]^* . v[vip]^T  (v[vim]^* . H . v[vi]^T)
+      Mab.V = &(M->b[(k-1)*Sqr(M->BlockSize)]);
+      ComplexBlockWaveFunctionDotProduct(v[vim], Npsivim, v[vip], Npsi, &Mab);
+    }
+    NSingular=1;
+    while(NSingular)
+    {
+      // orthogonalize v[vip] to v[vi] and v[vim]
+      // we use matrix multiplication between v[vip] and v[vi] which is a numerical unstable form of Gram Schmidt
+      // we heal this by repeating the orthogonalization twice
+      Mab.V=M->a;
+      // w = v[vip]^* . v[vi]^T
+      CompactMatrixScale(&Mab, 0);
+      ComplexBlockWaveFunctionDotProduct(v[vip], Npsi, v[vi], Npsivi, &Mab);
+      // v[vip] -= w^* . v[vi]
+      if(ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vi], Npsivi, Mab))
+      {
+        
+      }
+      // w = v[vip]^* . v[vi]^T
+      CompactMatrixScale(&Mab, 0);
+      ComplexBlockWaveFunctionDotProduct(v[vip], Npsi, v[vi], Npsivi, &Mab);
+      // v[vip] -= w^* . v[vi]
+      if(ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vi], Npsivi, Mab))
+      {
+        
+      }
+      // w = v[vip]^* . v[vim]^T
+      CompactMatrixScale(&Mab, 0);
+      ComplexBlockWaveFunctionDotProduct(v[vip], Npsi, v[vim], Npsivim, &Mab);
+      // v[vip] -= w^* . v[vim]
+      if(ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vim], Npsivim, Mab))
+      {
+        
+      }
+      // w = v[vip]^* . v[vim]^T
+      CompactMatrixScale(&Mab, 0);
+      ComplexBlockWaveFunctionDotProduct(v[vip], Npsi, v[vim], Npsivim, &Mab);
+      // v[vip] -= w^* . v[vim]
+      if(ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vim], Npsivim, Mab))
+      {
+        
+      }
+      // Lowdin orthonormalize v[vip] into v[3], free v[vip] and set v[vip] equal to v[3]
+      NSingular=Npsi;
+      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, epsilon, True);
+      NSingular-=Npsi;
+      if(NSingular!=0)
+      {
+        VerbosityPrintf(0x0001, "Reduce dimension from %u to %u in block %u\n",Npsi+NSingular,Npsi,k);
+      }
+      for(i=0;i<Npsi+NSingular;i++)
+      {
+        ComplexWaveFunctionFreeValues(&v[vip][i]);
+      }
+      for(i=0;i<Npsi;i++)
+      {
+        v[vip][i]=v[3][i];
+      }
+      // remove small values from v[vip]
+      ComplexBlockWaveFunctionTruncateBasis(v[vip], Npsi, epsilon);
+    }
+    // remove vim from memory and set vim to vi and vi to vip
+    if(k==1)
+    {
+      // nothing to free
+    }
+    else if(k==2)
+    {
+      for(i=0;i<Npsi;i++)
+      {
+        ComplexWaveFunctionFreeValues(&(v[vim][i]));
+      }
+    }
+    else
+    {
+      BlockWaveFunctionFree(v[vim], Npsivim);
+    }
+    vim=vi;
+    vi=vip;
+    vip=(vip+1)%3;
+    Npsivim=Npsivi;
+    Npsivi=Npsi;
+  }
+  if(M->N<=1)
+  {
+    for(i=0;i<Npsivi;i++)
+    {
+      ComplexWaveFunctionFreeValues(&(v[1][i]));
+    }
+  }
+  else if(M->N==2)
+  {
+    for(i=0;i<Npsivim;i++)
+    {
+      ComplexWaveFunctionFreeValues(&(v[vim][i]));
+    }
+    BlockWaveFunctionFree(v[vi],  Npsivi);
+  }
+  else
+  {
+    BlockWaveFunctionFree(v[vim], Npsivim);
+    BlockWaveFunctionFree(v[vi],  Npsivi);
+  }
+  for(i=0;i<Sqr(M->BlockSize);i++)
+  {
+    M->a[i].Re=0;
+    M->a[i].Im=0;
+  }
+  free(v[1]);
+  free(v[2]);
+  free(v[3]);
+  return 0;
 }
 uint32_t LanczosBlockTriDiagonalizeCC(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
 {
+  uint32_t i,j,k,vi,vip,vim;
+  CompactMatrixType Mab;
+  WaveFunctionType *v[4];
+  uint32_t NSingular,Npsi=M->BlockSize,Npsivi=M->BlockSize,Npsivim=M->BlockSize;
   VerbosityPrintf(0x0001,"Start of LanczosBlockTriDiagonalizeCC\n");
   fflush(stdout);
-  //TODO:
-  
-  return 1;
+  for(i=0;i<M->BlockSize;i++)
+  {
+    M->b[i+i*M->BlockSize].Re=0;
+  }
+  v[0] = psi;
+  v[1] = malloc(Npsi*sizeof(WaveFunctionType));
+  v[2] = malloc(Npsi*sizeof(WaveFunctionType));
+  v[3] = malloc(Npsi*sizeof(WaveFunctionType));
+  Mab.Ni=M->BlockSize;
+  Mab.Nj=M->BlockSize;
+  Mab.QComplex=1;
+  ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[0], v[1], &Npsi, epsilon, True); // v[1] = orthonormal[v0]
+  NSingular=M->BlockSize-Npsi;
+  if(NSingular!=0)
+  {
+    VerbosityPrintf(0x0001,"Reduce dimension from %u to %u in block %u\n",M->BlockSize,M->BlockSize-NSingular,0);
+  }
+  // b[0] = v[0] . v[1]^+ or b[0]^T = v[1]^* . v[0]^T
+  for(i=0;i<Npsi+NSingular;i++)
+  {
+    for(j=0;j<Npsi;j++)
+    {
+      ComplexWaveFunctionDotProductSameBasis(v[1][j], v[0][i], &(M->b[i * M->BlockSize + j].Re), &(M->b[i * M->BlockSize + j].Im));
+    }
+  }
+  vi=1;
+  vim=0;
+  vip=2;
+  Npsivi=Npsi;
+  for(k=1;k<M->N;k++)
+  {
+    // v[vip] = H v[vi]^T
+    while(BlockOperatorPsiCC(H, v[vi], v[vip], Npsivi))
+    {
+      printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeRR for the function BlockOperatorPsiRR\n");
+      printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
+      fflush(stdout);
+      epsilon *= 2.0;
+      if (v[vi][0].NBlok == 1) AllocFailed();
+      ComplexBlockWaveFunctionTruncateBasis(v[vi], Npsivi, epsilon);
+    }
+    // a[k] = v[vi]^* . v[vip]^T  (v[vi]^* . H . v[vi]^T)
+    Mab.V = &(M->a[k*Sqr(M->BlockSize)]);
+    ComplexBlockWaveFunctionDotProduct(v[vi], Npsi, v[vip], Npsi, &Mab); //Npsivi = Npsi - changes at Lowdin Orthonormalization
+    if(k!=1)
+    {
+      // b[k-1] = v[vim]^* . v[vip]^T  (v[vim]^* . H . v[vi]^T)
+      Mab.V = &(M->b[(k-1)*Sqr(M->BlockSize)]);
+      ComplexBlockWaveFunctionDotProduct(v[vim], Npsivim, v[vip], Npsi, &Mab);
+    }
+    NSingular=1;
+    while(NSingular)
+    {
+      // orthogonalize v[vip] to v[vi] and v[vim]
+      // we use matrix multiplication between v[vip] and v[vi] which is a numerical unstable form of Gram Schmidt
+      // we heal this by repeating the orthogonalization twice
+      Mab.V=M->a;
+      // w = v[vip]^* . v[vi]^T
+      CompactMatrixScale(&Mab, 0);
+      ComplexBlockWaveFunctionDotProduct(v[vip], Npsi, v[vi], Npsivi, &Mab);
+      // v[vip] -= w^* . v[vi]
+      if(ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vi], Npsivi, Mab))
+      {
+        
+      }
+      // w = v[vip]^* . v[vi]^T
+      CompactMatrixScale(&Mab, 0);
+      ComplexBlockWaveFunctionDotProduct(v[vip], Npsi, v[vi], Npsivi, &Mab);
+      // v[vip] -= w^* . v[vi]
+      if(ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vi], Npsivi, Mab))
+      {
+        
+      }
+      // w = v[vip]^* . v[vim]^T
+      CompactMatrixScale(&Mab, 0);
+      ComplexBlockWaveFunctionDotProduct(v[vip], Npsi, v[vim], Npsivim, &Mab);
+      // v[vip] -= w^* . v[vim]
+      if(ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vim], Npsivim, Mab))
+      {
+        
+      }
+      // w = v[vip]^* . v[vim]^T
+      CompactMatrixScale(&Mab, 0);
+      ComplexBlockWaveFunctionDotProduct(v[vip], Npsi, v[vim], Npsivim, &Mab);
+      // v[vip] -= w^* . v[vim]
+      if(ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vim], Npsivim, Mab))
+      {
+        
+      }
+      // Lowdin orthonormalize v[vip] into v[3], free v[vip] and set v[vip] equal to v[3]
+      NSingular=Npsi;
+      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, epsilon, True);
+      NSingular-=Npsi;
+      if(NSingular!=0)
+      {
+        VerbosityPrintf(0x0001, "Reduce dimension from %u to %u in block %u\n",Npsi+NSingular,Npsi,k);
+      }
+      for(i=0;i<Npsi+NSingular;i++)
+      {
+        ComplexWaveFunctionFreeValues(&v[vip][i]);
+      }
+      for(i=0;i<Npsi;i++)
+      {
+        v[vip][i]=v[3][i];
+      }
+      // remove small values from v[vip]
+      ComplexBlockWaveFunctionTruncateBasis(v[vip], Npsi, epsilon);
+    }
+    // remove vim from memory and set vim to vi and vi to vip
+    if(k==1)
+    {
+      // nothing to free
+    }
+    else if(k==2)
+    {
+      for(i=0;i<Npsi;i++)
+      {
+        ComplexWaveFunctionFreeValues(&(v[vim][i]));
+      }
+    }
+    else
+    {
+      BlockWaveFunctionFree(v[vim], Npsivim);
+    }
+    vim=vi;
+    vi=vip;
+    vip=(vip+1)%3;
+    Npsivim=Npsivi;
+    Npsivi=Npsi;
+  }
+  if(M->N<=1)
+  {
+    for(i=0;i<Npsivi;i++)
+    {
+      ComplexWaveFunctionFreeValues(&(v[1][i]));
+    }
+  }
+  else if(M->N==2)
+  {
+    for(i=0;i<Npsivim;i++)
+    {
+      ComplexWaveFunctionFreeValues(&(v[vim][i]));
+    }
+    BlockWaveFunctionFree(v[vi],  Npsivi);
+  }
+  else
+  {
+    BlockWaveFunctionFree(v[vim], Npsivim);
+    BlockWaveFunctionFree(v[vi],  Npsivi);
+  }
+  for(i=0;i<Sqr(M->BlockSize);i++)
+  {
+    M->a[i].Re=0;
+    M->a[i].Im=0;
+  }
+  free(v[1]);
+  free(v[2]);
+  free(v[3]);
+  return 0;
 }
 uint32_t LanczosBlockTriDiagonalizeRR(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
 {
@@ -583,6 +1062,10 @@ uint32_t LanczosBlockTriDiagonalizeRR(const OperatorType H, WaveFunctionType * c
   uint32_t NSingular,Npsi=M->BlockSize,Npsivi=M->BlockSize,Npsivim=M->BlockSize;
   VerbosityPrintf(0x0001,"Start of LanczosBlockTriDiagonalizeRR\n");
   fflush(stdout);
+  for(i=0;i<M->BlockSize;i++)
+  {
+    M->bRe[i+i*M->BlockSize]=0;
+  }
   v[0] = psi;
   v[1] = malloc(Npsi*sizeof(WaveFunctionType));
   v[2] = malloc(Npsi*sizeof(WaveFunctionType));
@@ -592,6 +1075,10 @@ uint32_t LanczosBlockTriDiagonalizeRR(const OperatorType H, WaveFunctionType * c
   Mab.QComplex=0;
   RealWaveFunctionListSVDOrthogonalizeSameBasis(v[0], v[1], &Npsi, epsilon, True); // v[1] = orthonormal[v0]
   NSingular=M->BlockSize-Npsi;
+  if(NSingular!=0)
+  {
+    VerbosityPrintf(0x0001,"Reduce dimension from %u to %u in block %u\n",M->BlockSize,M->BlockSize-NSingular,0);
+  }
   // b[0] = v[0] . v[1]^+ or b[0]^T = v[1]^* . v[0]^T
   for(i=0;i<Npsi+NSingular;i++)
   {
@@ -630,12 +1117,12 @@ uint32_t LanczosBlockTriDiagonalizeRR(const OperatorType H, WaveFunctionType * c
     {
       // orthogonalize v[vip] to v[vi] and v[vim]
       // we use matrix multiplication between v[vip] and v[vi] which is a numerical unstable form of Gram Schmidt
-      // we heal this by repeating the orthogonalization twice
+      // we heal this by repeating the orthogonalization twice for each matrix vector and once for vi and vim (factor of 3 reduction in speed but needed in tests)
       Mab.VRe=M->aRe;
       // w = v[vip]^* . v[vi]^T
       CompactMatrixScale(&Mab, 0);
       RealBlockWaveFunctionDotProduct(v[vip], Npsi, v[vi], Npsivi, &Mab);
-      // v[vip] -= w . v[vi]
+      // v[vip] -= w^* . v[vi]
       if(RealBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vi], Npsivi, Mab))
       {
         
@@ -643,7 +1130,7 @@ uint32_t LanczosBlockTriDiagonalizeRR(const OperatorType H, WaveFunctionType * c
       // w = v[vip]^* . v[vi]^T
       CompactMatrixScale(&Mab, 0);
       RealBlockWaveFunctionDotProduct(v[vip], Npsi, v[vi], Npsivi, &Mab);
-      // v[vip] -= w . v[vi]
+      // v[vip] -= w^* . v[vi]
       if(RealBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vi], Npsivi, Mab))
       {
         
@@ -651,7 +1138,7 @@ uint32_t LanczosBlockTriDiagonalizeRR(const OperatorType H, WaveFunctionType * c
       // w = v[vip]^* . v[vim]^T
       CompactMatrixScale(&Mab, 0);
       RealBlockWaveFunctionDotProduct(v[vip], Npsi, v[vim], Npsivim, &Mab);
-      // v[vip] -= w . v[vim]
+      // v[vip] -= w^* . v[vim]
       if(RealBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vim], Npsivim, Mab))
       {
         
@@ -659,7 +1146,23 @@ uint32_t LanczosBlockTriDiagonalizeRR(const OperatorType H, WaveFunctionType * c
       // w = v[vip]^* . v[vim]^T
       CompactMatrixScale(&Mab, 0);
       RealBlockWaveFunctionDotProduct(v[vip], Npsi, v[vim], Npsivim, &Mab);
-      // v[vip] -= w . v[vim]
+      // v[vip] -= w^* . v[vim]
+      if(RealBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vim], Npsivim, Mab))
+      {
+        
+      }
+      // w = v[vip]^* . v[vi]^T
+      CompactMatrixScale(&Mab, 0);
+      RealBlockWaveFunctionDotProduct(v[vip], Npsi, v[vi], Npsivi, &Mab);
+      // v[vip] -= w^* . v[vi]
+      if(RealBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vi], Npsivi, Mab))
+      {
+        
+      }
+      // w = v[vip]^* . v[vim]^T
+      CompactMatrixScale(&Mab, 0);
+      RealBlockWaveFunctionDotProduct(v[vip], Npsi, v[vim], Npsivim, &Mab);
+      // v[vip] -= w^* . v[vim]
       if(RealBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vim], Npsivim, Mab))
       {
         
@@ -692,7 +1195,7 @@ uint32_t LanczosBlockTriDiagonalizeRR(const OperatorType H, WaveFunctionType * c
     {
       for(i=0;i<Npsi;i++)
       {
-        WaveFunctionFreeValues(&(v[vim][i]));
+        RealWaveFunctionFreeValues(&(v[vim][i]));
       }
     }
     else
@@ -709,14 +1212,14 @@ uint32_t LanczosBlockTriDiagonalizeRR(const OperatorType H, WaveFunctionType * c
   {
     for(i=0;i<Npsivi;i++)
     {
-      WaveFunctionFreeValues(&(v[1][i]));
+      RealWaveFunctionFreeValues(&(v[1][i]));
     }
   }
   else if(M->N==2)
   {
     for(i=0;i<Npsivim;i++)
     {
-      WaveFunctionFreeValues(&(v[vim][i]));
+      RealWaveFunctionFreeValues(&(v[vim][i]));
     }
     BlockWaveFunctionFree(v[vi],  Npsivi);
   }
@@ -783,7 +1286,7 @@ uint32_t LanczosBlockTriDiagonalize(const OperatorType H, WaveFunctionType * con
   // restrictions ?
   if(H.Res.N!=0)
   {
-    //TODO: put restictions on psi note that this needs testing if psi[i] have the same or different basis
+    BlockWaveFunctionRestrict(psi, M->BlockSize, H.Res);
     return LanczosBlockTriDiagonalizeRestricted(H, psi, H.Res, epsilon, M, Gamma);
   }
   // all psi complex ?

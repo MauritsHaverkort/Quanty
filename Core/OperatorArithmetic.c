@@ -545,7 +545,7 @@ uint32_t RealOperatorAddLaderNormalOrder(OperatorType * const O, const uint16_t 
             oaddnew[k - 2] = oadd[k];
           if (O->l[length - 2].QComplex)
           {
-            if (ComplexOperatorAddLaderNormalOrder(O, oaddnew, length - 2, phase * VRe, 0, QDetNotOrdered))
+            if (ComplexOperatorAddLaderNormalOrder(O, oaddnew, length - 2, phase * VRe, 0.0, QDetNotOrdered))
             {
               printf
                 ("ComplexOperatorAddLaderNormalOrder with operator of length %i failed in RealOperatorAddLaderNormalOrder case 2\n",
@@ -594,7 +594,7 @@ uint32_t RealOperatorAddLaderNormalOrder(OperatorType * const O, const uint16_t 
             oaddnew[k - 2] = oadd[k];
           if (O->l[length - 2].QComplex)
           {
-            if (ComplexOperatorAddLaderNormalOrder(O, oaddnew, length - 2, phase * VRe, 0, QDetNotOrdered))
+            if (ComplexOperatorAddLaderNormalOrder(O, oaddnew, length - 2, phase * VRe, 0.0, QDetNotOrdered))
             {
               printf
                 ("ComplexOperatorAddLaderNormalOrder with operator of length %i failed in RealOperatorAddLaderNormalOrder case 4\n",
@@ -633,7 +633,7 @@ uint32_t RealOperatorAddLaderNormalOrder(OperatorType * const O, const uint16_t 
             oaddnew[k - 2] = oadd[k];
           if (O->l[length - 2].QComplex)
           {
-            if (ComplexOperatorAddLaderNormalOrder(O, oaddnew, length - 2, -phase * VRe, 0, QDetNotOrdered))
+            if (ComplexOperatorAddLaderNormalOrder(O, oaddnew, length - 2, -phase * VRe, 0.0, QDetNotOrdered))
             {
               printf
                 ("ComplexOperatorAddLaderNormalOrder with operator of length %i failed in RealOperatorAddLaderNormalOrder case 5\n",
@@ -1507,7 +1507,7 @@ uint32_t NormalOrderOperator(const OperatorType O, OperatorType * const Oo, uint
       {
         for (iN = 0; iN < O.l[il].N; iN++)
         {
-          if (ComplexOperatorAddLaderNormalOrder(Oo, &(O.l[il].o[il * iN]), il, O.l[il].V[iN].Re, 0, QDetNotOrdered))
+          if (ComplexOperatorAddLaderNormalOrder(Oo, &(O.l[il].o[il * iN]), il, O.l[il].V[iN].Re, 0.0, QDetNotOrdered))
           {
             printf("ComplexOperatorAddLaderNormalOrder failed in NormalOrderOperator\n");
             fflush(stdout);
@@ -2141,7 +2141,7 @@ uint32_t OperatorMultiply2NormalOrder(OperatorType * const O, OperatorType const
           for (iNB = 0; iNB < B.l[ilB].N; iNB++)
           {
             for (k = 0; k < ilB; k++) det[k + ilA] = B.l[ilB].o[iNB * ilB + k];
-            if (ComplexOperatorAddLaderNormalOrder(O, det, ilA + ilB, A.l[ilA].VRe[iNA] * B.l[ilB].VRe[iNB], 0, QDetNotOrdered))
+            if (ComplexOperatorAddLaderNormalOrder(O, det, ilA + ilB, A.l[ilA].VRe[iNA] * B.l[ilB].VRe[iNB], 0.0, QDetNotOrdered))
             {
               printf("ComplexOperatorAddLaderNormalOrder failed in OperatorMultiply2NormalOrder\n");
               fflush(stdout);
@@ -2242,7 +2242,7 @@ uint32_t OperatorMultiply2NormalOrder(OperatorType * const O, OperatorType const
           {
             for (k = 0; k < ilB; k++)
               det[ilB - 1 - k + ilA] = B.l[ilB].o[iNB * ilB + k] ^ CrAnMask;
-            if (ComplexOperatorAddLaderNormalOrder(O, det, ilA + ilB, A.l[ilA].VRe[iNA] * B.l[ilB].VRe[iNB], 0, QDetNotOrdered))
+            if (ComplexOperatorAddLaderNormalOrder(O, det, ilA + ilB, A.l[ilA].VRe[iNA] * B.l[ilB].VRe[iNB], 0.0, QDetNotOrdered))
             {
               printf("ComplexOperatorAddLaderNormalOrder failed in OperatorMultiply2NormalOrder\n");
               fflush(stdout);
@@ -2345,7 +2345,7 @@ uint32_t OperatorMultiply2NormalOrder(OperatorType * const O, OperatorType const
           {
             for (k = 0; k < ilB; k++)
               det[k + ilA] = B.l[ilB].o[iNB * ilB + k];
-            if (ComplexOperatorAddLaderNormalOrder(O, det, ilA + ilB, A.l[ilA].VRe[iNA] * B.l[ilB].VRe[iNB], 0, QDetNotOrdered))
+            if (ComplexOperatorAddLaderNormalOrder(O, det, ilA + ilB, A.l[ilA].VRe[iNA] * B.l[ilB].VRe[iNB], 0.0, QDetNotOrdered))
             {
               printf("ComplexOperatorAddLaderNormalOrder failed in OperatorMultiply2NormalOrder\n");
               fflush(stdout);
@@ -2448,7 +2448,7 @@ uint32_t OperatorMultiply2NormalOrder(OperatorType * const O, OperatorType const
           {
             for (k = 0; k < ilB; k++)
               det[ilB - 1 - k + ilA] = B.l[ilB].o[iNB * ilB + k] ^ CrAnMask;
-            if (ComplexOperatorAddLaderNormalOrder(O, det, ilA + ilB, A.l[ilA].VRe[iNA] * B.l[ilB].VRe[iNB], 0, QDetNotOrdered))
+            if (ComplexOperatorAddLaderNormalOrder(O, det, ilA + ilB, A.l[ilA].VRe[iNA] * B.l[ilB].VRe[iNB], 0.0, QDetNotOrdered))
             {
               printf("ComplexOperatorAddLaderNormalOrder failed in OperatorMultiply2NormalOrder\n");
               fflush(stdout);
@@ -3896,7 +3896,7 @@ uint32_t OperatorMultiply3NormalOrder(OperatorType * const O, OperatorType const
                           det[k + ilA + ilB] = C.l[ilC].o[iNC * ilC + k];
                         }
                         if (ComplexOperatorAddLaderNormalOrder
-                            (O, det, ilA + ilB + ilC, A.l[ilA].VRe[iNA] * B.l[ilB].VRe[iNB] * C.l[ilC].VRe[iNC], 0,
+                            (O, det, ilA + ilB + ilC, A.l[ilA].VRe[iNA] * B.l[ilB].VRe[iNB] * C.l[ilC].VRe[iNC], 0.0,
                              QDetNotOrdered))
                         {
                           printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");
@@ -4247,7 +4247,7 @@ uint32_t OperatorMultiply3NormalOrder(OperatorType * const O, OperatorType const
                           det[k + ilA + ilB] = C.l[ilC].o[iNC * ilC + k];
                         }
                         if (ComplexOperatorAddLaderNormalOrder
-                            (O, det, ilA + ilB + ilC, A.l[ilA].VRe[iNA] * B.l[ilB].VRe[iNB] * C.l[ilC].VRe[iNC], 0,
+                            (O, det, ilA + ilB + ilC, A.l[ilA].VRe[iNA] * B.l[ilB].VRe[iNB] * C.l[ilC].VRe[iNC], 0.0,
                              QDetNotOrdered))
                         {
                           printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");
@@ -4598,7 +4598,7 @@ uint32_t OperatorMultiply3NormalOrder(OperatorType * const O, OperatorType const
                           det[ilC - 1 - k + ilA + ilB] = C.l[ilC].o[iNC * ilC + k] ^ CrAnMask;
                         }
                         if (ComplexOperatorAddLaderNormalOrder
-                            (O, det, ilA + ilB + ilC, A.l[ilA].VRe[iNA] * B.l[ilB].VRe[iNB] * C.l[ilC].VRe[iNC], 0,
+                            (O, det, ilA + ilB + ilC, A.l[ilA].VRe[iNA] * B.l[ilB].VRe[iNB] * C.l[ilC].VRe[iNC], 0.0,
                              QDetNotOrdered))
                         {
                           printf("ComplexOperatorAddLader failed in OperatorMultiply3\n");
@@ -5847,7 +5847,7 @@ uint32_t MappedOperatorAddNormalOrder(OperatorType * const OA, const OperatorTyp
         {
           for (k = 0; k < FA.N; k++)
           {
-            if (ComplexOperatorAddLaderNormalOrder(OA, &(FA.o[k * length]), length, FA.VRe[k], 0, QDetNotOrdered))
+            if (ComplexOperatorAddLaderNormalOrder(OA, &(FA.o[k * length]), length, FA.VRe[k], 0.0, QDetNotOrdered))
             {
               printf("ComplexOperatorAddLaderNormalOrder failed in MappedOperatorAddNormalOrder\n");
               fflush(stdout);

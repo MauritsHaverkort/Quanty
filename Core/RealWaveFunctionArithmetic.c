@@ -1097,6 +1097,19 @@ uint32_t RealWaveFunctionListSVDOrthogonalizeSameBasis(WaveFunctionType * const 
     WaveFunctionFreeValues(&(psilistOrtho[(int)(val[2*i+1])]));
   }
   *Npsi-=NSingular;
+  // through a warning if Norms of the removed state are equal to norm of state kept
+  if(*Npsi!=0)
+  {
+    if((val[2*(*Npsi)-2]-val[2*(*Npsi)])<SingularValue)
+    {
+      VerbosityPrintf(0x0001, "Warning in RealWaveFunctionListSVDOrthogonalizeSameBasis\nNorm of states after first Lowdin orthonormalization are not seperated in large and small norms\nOverlap is:\n");
+      for(i=0;i<*Npsi+NSingular;i++)
+      {
+        printf("%3g %22.15E\n",val[2*i+1],val[2*i]);
+      }
+    }
+  }
+  
   // call RealWaveFunctionListSVDOrthogonalize again
   if(RealWaveFunctionListSVDOrthogonalizeSameBasis(psilisttemp, psilistOrtho, Npsi, SingularValue, False))
   {

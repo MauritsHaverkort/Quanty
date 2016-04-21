@@ -2780,7 +2780,7 @@ uint32_t CompactMatrixBlockBandDiagonalize(CompactMatrixType const * const A, Co
     {
       CompactMatrixCopy(*A, &Acopy);
       MakeCompactRealMatrixComplex(&Acopy);
-      ret = CompactMatrixBlockBandDiagonalizeComplex(A, vec, B, SingularValue, NTri, NOrtho, ReOrthogonalize);
+      ret = CompactMatrixBlockBandDiagonalizeComplex(&Acopy, vec, B, SingularValue, NTri, NOrtho, ReOrthogonalize);
       FreeCompactMatrix(&Acopy);
       return ret;
     }

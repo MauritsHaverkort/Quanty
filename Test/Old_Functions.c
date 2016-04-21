@@ -1454,7 +1454,7 @@ uint32_t OperatorMultiplyNormalOrder(OperatorType * const AB, OperatorType const
                   det[k + ilA] = B.l[ilB].o[iNB * ilB + k];
                 }
                 if (ComplexOperatorAddLaderNormalOrder
-                    (AB, det, ilA + ilB, A.l[ilA].VRe[iNA] * B.l[ilB].VRe[iNB], 0, QDetNotOrdered))
+                    (AB, det, ilA + ilB, A.l[ilA].VRe[iNA] * B.l[ilB].VRe[iNB], 0.0, QDetNotOrdered))
                 {
                   printf("ComplexOperatorAddLaderNormalOrder failed in OperatorMultiplyNormalOrder\n");
                   fflush(stdout);
