@@ -1104,7 +1104,7 @@ void TestCompactMatrixVector()
   
   printf("Original\n");
   PrintCompactMatrixMinimal(AM);
-  CompactMatrixGramSchmidtOrthogonalizeRow(&AM, DBL_EPSILON);
+  CompactMatrixGramSchmidtOrthogonalizeRow(&AM, DBL_EPSILON, True);
   printf("Orhtonormal\n");
   PrintCompactMatrixMinimal(AM);
   CompactMatrixMultiply('N', 'C', &AM, &AM, &BM);
@@ -1130,7 +1130,7 @@ void TestCompactMatrixVector()
   AM.VRe[1]+=0.1;
   AM.VRe[0]+=12;
   
-  CompactMatrixGramSchmidtOrthogonalizeRowplusT(&AM, &BM, &CM, &DM, DBL_EPSILON);
+  CompactMatrixGramSchmidtOrthogonalizeRowplusT(&AM, &BM, &CM, &DM, DBL_EPSILON, True);
   
   printf("Original\n");
   PrintCompactMatrixMinimal(AM);
@@ -1186,7 +1186,7 @@ void TestCompactMatrixVector()
   
   printf("Original\n");
   PrintCompactMatrixMinimal(AM);
-  CompactMatrixGramSchmidtOrthogonalizeRow(&AM, DBL_EPSILON);
+  CompactMatrixGramSchmidtOrthogonalizeRow(&AM, DBL_EPSILON, True);
   printf("Orhtonormal\n");
   PrintCompactMatrixMinimal(AM);
   CompactMatrixMultiply('N', 'C', &AM, &AM, &BM);
@@ -1208,7 +1208,7 @@ void TestCompactMatrixVector()
   AM.V[1].Re+=0.1;
   AM.V[0].Im+=12;
   
-  CompactMatrixGramSchmidtOrthogonalizeRowplusT(&AM, &BM, &CM, &DM, DBL_EPSILON);
+  CompactMatrixGramSchmidtOrthogonalizeRowplusT(&AM, &BM, &CM, &DM, DBL_EPSILON, True);
   
   printf("Original\n");
   PrintCompactMatrixMinimal(AM);
@@ -1397,7 +1397,7 @@ void TestCompactMatrixCallers()
   
   printf("\n============= uint32_t BlockTriDiagonalMatrixToSpectra(BlockTriDiagonalMatrixType const * A, SpectraType *const G, double const Emin, double const Emax, uint32_t const N, double const Gamma) ============\n");
 
-  printf("\n============= uint32_t BlockWaveFunctionCalculatOverlapMatrix(WaveFunctionType *const psi, uint32_t const Npsi, CompactMatrixType *const S) ============\n");
+  printf("\n============= uint32_t BlockWaveFunctionCalculatOverlapMatrixSerial(WaveFunctionType *const psi, uint32_t const Npsi, CompactMatrixType *const S) ============\n");
   
   
   printf("\n============= uint32_t ImpurityHFromTB(OperatorType *const Himp, ModelSettings O) ============\n");

@@ -886,8 +886,7 @@ void WaveFunctionOrthogonalizeSameBasis(WaveFunctionType * const psi, const Wave
   }
 }
 
-void WaveFunctionOrthogonalizeConserveBasis(WaveFunctionType * const psi, const WaveFunctionType * const OtherPsi,
-                                            const uint32_t Npsi)
+void WaveFunctionOrthogonalizeConserveBasis(WaveFunctionType * const psi, const WaveFunctionType * const OtherPsi, const uint32_t Npsi)
 {
   if (psi->QComplex == 0)
   {
@@ -899,8 +898,7 @@ void WaveFunctionOrthogonalizeConserveBasis(WaveFunctionType * const psi, const 
   }
 }
 
-uint32_t WaveFunctionOrthogonalize(WaveFunctionType * const psi, const WaveFunctionType * const OtherPsi,
-                                   const uint32_t Npsi)
+uint32_t WaveFunctionOrthogonalize(WaveFunctionType * const psi, const WaveFunctionType * const OtherPsi, const uint32_t Npsi)
 {
   if (psi->QComplex == 0)
   {
@@ -910,6 +908,304 @@ uint32_t WaveFunctionOrthogonalize(WaveFunctionType * const psi, const WaveFunct
   {
     return ComplexWaveFunctionOrthogonalize(psi, OtherPsi, Npsi);
   }
+}
+
+
+
+
+
+/*  Given Npsi functions do a Lowdin orthogonalization on them
+ *  depending on the functions in psilist call:
+ *  same basis or different basis
+ *  complex or real
+ *  if states are mixed complex and real turn them first all complex and then call the complex version
+ *  if some states are on the same basis, but others are not trow an error
+ *
+ *  If ReduceDimension is true the number of states returned can be different from the number of states entered. In this case:
+ *  psilist is unaltered but several functions will be freed
+ *  Npsi is changed
+ *
+ *  This function changes the functions in psilist
+ */
+uint32_t WaveFunctionListSVDOrthogonalizeSameBasis(WaveFunctionType * const psilist, WaveFunctionType * const psilistOrtho, uint32_t * const Npsi, const double SingularValue, const Bool ReduceDimension)
+{
+  uint32_t i,QComplex=0;
+  for(i=0;i<*Npsi;i++)
+  {
+    if(psilist[i].QComplex!=0) QComplex++;
+  }
+  if(!(QComplex==0)||(QComplex==*Npsi))
+  {
+    for(i=0;i<*Npsi;i++)
+    {
+      if(psilist[i].QComplex==0)
+      {
+        if(MakeComplexWaveFunctionFromReal(&(psilist[i]), psilist[i]))
+        {
+          printf("MakeComplexWaveFunctionFromReal failed in WaveFunctionListSVDOrthogonalize\n");
+          return 1;
+        }
+      }
+    }
+  }
+  if(QComplex==0)
+  {
+    return RealWaveFunctionListSVDOrthogonalizeSameBasis(psilist, psilistOrtho, Npsi, SingularValue, ReduceDimension);
+  }
+  else
+  {
+    return ComplexWaveFunctionListSVDOrthogonalizeSameBasis(psilist, psilistOrtho, Npsi, SingularValue, ReduceDimension);
+  }
+}
+uint32_t WaveFunctionListSVDOrthogonalizeDifferentBasis(WaveFunctionType * const psilist, WaveFunctionType * const psilistOrtho, uint32_t * const Npsi, const double SingularValue, const Bool ReduceDimension)
+{
+  uint32_t i,QComplex=0;
+  for(i=0;i<*Npsi;i++)
+  {
+    if(psilist[i].QComplex!=0) QComplex++;
+  }
+  if(!(QComplex==0)||(QComplex==*Npsi))
+  {
+    for(i=0;i<*Npsi;i++)
+    {
+      if(psilist[i].QComplex==0)
+      {
+        if(MakeComplexWaveFunctionFromReal(&(psilist[i]), psilist[i]))
+        {
+          printf("MakeComplexWaveFunctionFromReal failed in WaveFunctionListSVDOrthogonalize\n");
+          return 1;
+        }
+      }
+    }
+  }
+  if(QComplex==0)
+  {
+    return RealWaveFunctionListSVDOrthogonalize(psilist, psilistOrtho, Npsi, SingularValue, ReduceDimension);
+  }
+  else
+  {
+    if(ComplexWaveFunctionListSVDOrthogonalize(psilist, psilistOrtho, Npsi, SingularValue, ReduceDimension))
+    {
+      printf("ComplexWaveFunctionListSVDOrthogonalize failed in WaveFunctionListSVDOrthogonalizeDifferentBasis\n");
+      return 1;
+    }
+    for(i=0;i<*Npsi;i++)
+    {
+      MakeComplexFunctionRealWhenNormSmall(&(psilist[i]), DBL_EPSILON);
+    }
+    return 0;
+  }
+}
+uint32_t WaveFunctionListSVDOrthogonalize(WaveFunctionType * const psilist, WaveFunctionType * const psilistOrtho, uint32_t * const Npsi, const double SingularValue, const Bool ReduceDimension)
+{
+  uint32_t i,j,samebasis=0,QComplex=0;
+  if(*Npsi==0) return 0;
+  for(i=1;i<*Npsi;i++)
+  {
+    for(j=0;j<i;i++)
+    {
+      if(psilist[i].Determinant==psilist[j].Determinant) samebasis++;
+    }
+  }
+  for(i=0;i<*Npsi;i++)
+  {
+    if(psilist[i].QComplex!=0) QComplex++;
+  }
+  if(!(QComplex==0)||(QComplex==*Npsi))
+  {
+    for(i=0;i<*Npsi;i++)
+    {
+      if(psilist[i].QComplex==0)
+      {
+        if(MakeComplexWaveFunctionFromReal(&(psilist[i]), psilist[i]))
+        {
+          printf("MakeComplexWaveFunctionFromReal failed in WaveFunctionListSVDOrthogonalize\n");
+          return 1;
+        }
+      }
+    }
+  }
+  if (samebasis==0)
+  {
+    if(QComplex==0)
+    {
+      return RealWaveFunctionListSVDOrthogonalize(psilist, psilistOrtho, Npsi, SingularValue, ReduceDimension);
+    }
+    else
+    {
+      if(ComplexWaveFunctionListSVDOrthogonalize(psilist, psilistOrtho, Npsi, SingularValue, ReduceDimension))
+      {
+        printf("ComplexWaveFunctionListSVDOrthogonalize failed in WaveFunctionListSVDOrthogonalize\n");
+        return 1;
+      }
+      for(i=0;i<*Npsi;i++)
+      {
+        MakeComplexFunctionRealWhenNormSmall(&(psilist[i]), DBL_EPSILON);
+      }
+      return 0;
+    }
+  }
+  if (2*samebasis==*Npsi*(*Npsi-1))
+  {
+    if(QComplex==0)
+    {
+      return RealWaveFunctionListSVDOrthogonalizeSameBasis(psilist, psilistOrtho, Npsi, SingularValue, ReduceDimension);
+    }
+    else
+    {
+      return ComplexWaveFunctionListSVDOrthogonalizeSameBasis(psilist, psilistOrtho, Npsi, SingularValue, ReduceDimension);
+    }
+  }
+  printf("WaveFunctionListSVDOrthogonalize called with %u functions that are partly on the same basis and partly on a different basis\nThat's not yet implemented\n",*Npsi);
+  return 1;
+}
+
+
+
+/*  Given Npsi functions do a Gramm Schmidt orthogonalization on them
+ *  depending on the functions in psilist call:
+ *  same basis or different basis
+ *  complex or real
+ *  if states are mixed complex and real turn them first all complex and then call the complex version
+ *  if some states are on the same basis, but others are not trow an error
+ *
+ *  If ReduceDimension is true the number of states returned can be different from the number of states entered. In this case:
+ *  psilist is unaltered but several functions will be freed
+ *  Npsi is changed
+ *
+ *  This function changes the functions in psilist
+ */
+uint32_t WaveFunctionListOrthogonalizeSameBasis(WaveFunctionType * const psilist, uint32_t * const Npsi, const double SingularValue, const Bool ReduceDimension)
+{
+  uint32_t i,QComplex=0;
+  for(i=0;i<*Npsi;i++)
+  {
+    if(psilist[i].QComplex!=0) QComplex++;
+  }
+  if(!(QComplex==0)||(QComplex==*Npsi))
+  {
+    for(i=0;i<*Npsi;i++)
+    {
+      if(psilist[i].QComplex==0)
+      {
+        if(MakeComplexWaveFunctionFromReal(&(psilist[i]), psilist[i]))
+        {
+          printf("MakeComplexWaveFunctionFromReal failed in WaveFunctionListOrthogonalize\n");
+          return 1;
+        }
+      }
+    }
+  }
+  if(QComplex==0)
+  {
+    return RealWaveFunctionListOrthogonalizeSameBasis(psilist, Npsi, SingularValue, ReduceDimension);
+  }
+  else
+  {
+    return ComplexWaveFunctionListOrthogonalizeSameBasis(psilist, Npsi, SingularValue, ReduceDimension);
+  }
+}
+uint32_t WaveFunctionListOrthogonalizeDifferentBasis(WaveFunctionType * const psilist, uint32_t * const Npsi, const double SingularValue, const Bool ReduceDimension)
+{
+  uint32_t i,QComplex=0;
+  for(i=0;i<*Npsi;i++)
+  {
+    if(psilist[i].QComplex!=0) QComplex++;
+  }
+  if(!(QComplex==0)||(QComplex==*Npsi))
+  {
+    for(i=0;i<*Npsi;i++)
+    {
+      if(psilist[i].QComplex==0)
+      {
+        if(MakeComplexWaveFunctionFromReal(&(psilist[i]), psilist[i]))
+        {
+          printf("MakeComplexWaveFunctionFromReal failed in WaveFunctionListOrthogonalize\n");
+          return 1;
+        }
+      }
+    }
+  }
+  if(QComplex==0)
+  {
+    return RealWaveFunctionListOrthogonalize(psilist, Npsi, SingularValue, ReduceDimension);
+  }
+  else
+  {
+    if(ComplexWaveFunctionListOrthogonalize(psilist, Npsi, SingularValue, ReduceDimension))
+    {
+      printf("ComplexWaveFunctionListOrthogonalize failed in WaveFunctionListOrthogonalizeDifferentBasis\n");
+      return 1;
+    }
+    for(i=0;i<*Npsi;i++)
+    {
+      MakeComplexFunctionRealWhenNormSmall(&(psilist[i]), DBL_EPSILON);
+    }
+    return 0;
+  }
+}
+uint32_t WaveFunctionListOrthogonalize(WaveFunctionType * const psilist, uint32_t * const Npsi, const double SingularValue, const Bool ReduceDimension)
+{
+  uint32_t i,j,samebasis=0,QComplex=0;
+  if(*Npsi==0) return 0;
+  for(i=1;i<*Npsi;i++)
+  {
+    for(j=0;j<i;i++)
+    {
+      if(psilist[i].Determinant==psilist[j].Determinant) samebasis++;
+    }
+  }
+  for(i=0;i<*Npsi;i++)
+  {
+    if(psilist[i].QComplex!=0) QComplex++;
+  }
+  if(!(QComplex==0)||(QComplex==*Npsi))
+  {
+    for(i=0;i<*Npsi;i++)
+    {
+      if(psilist[i].QComplex==0)
+      {
+        if(MakeComplexWaveFunctionFromReal(&(psilist[i]), psilist[i]))
+        {
+          printf("MakeComplexWaveFunctionFromReal failed in WaveFunctionListOrthogonalize\n");
+          return 1;
+        }
+      }
+    }
+  }
+  if (samebasis==0)
+  {
+    if(QComplex==0)
+    {
+      return RealWaveFunctionListOrthogonalize(psilist, Npsi, SingularValue, ReduceDimension);
+    }
+    else
+    {
+      if(ComplexWaveFunctionListOrthogonalize(psilist, Npsi, SingularValue, ReduceDimension))
+      {
+        printf("ComplexWaveFunctionListOrthogonalize failed in WaveFunctionListOrthogonalize\n");
+        return 1;
+      }
+      for(i=0;i<*Npsi;i++)
+      {
+        MakeComplexFunctionRealWhenNormSmall(&(psilist[i]), DBL_EPSILON);
+      }
+      return 0;
+    }
+  }
+  if (2*samebasis==*Npsi*(*Npsi-1))
+  {
+    if(QComplex==0)
+    {
+      return RealWaveFunctionListOrthogonalizeSameBasis(psilist, Npsi, SingularValue, ReduceDimension);
+    }
+    else
+    {
+      return ComplexWaveFunctionListOrthogonalizeSameBasis(psilist, Npsi, SingularValue, ReduceDimension);
+    }
+  }
+  printf("WaveFunctionListOrthogonalize called with %u functions that are partly on the same basis and partly on a different basis\nThat's not yet implemented\n",*Npsi);
+  return 1;
 }
 
 uint32_t CreateWaveFunctionFromString(WaveFunctionType * psi, uint16_t * createString, uint32_t const NParticle, uint32_t const NFermion, uint32_t const NBoson, uint32_t const NBitsKey)
@@ -1341,7 +1637,7 @@ uint32_t WaveFunctionArrayToSameBasis(WaveFunctionType * const psi, uint32_t con
   uint32_t i;
   WaveFunctionType psicopy;
   // enlarge the basis of psi[0] to include psi[1] to psi[Npsi-1]
-  for(i=0;i<Npsi;i++)
+  for(i=1;i<Npsi;i++)
   {
     WaveFunctionAddMultipliedUnionBasis(&psi[0], psi[i], 0);
   }
@@ -1378,4 +1674,113 @@ uint32_t WaveFunctionArraySeperateBasis(WaveFunctionType * const psi, uint32_t c
     psi[i]=psicopy;
   }
   return 0;
+}
+
+
+/*  input:
+ *     psi:     a wavefunction
+ *     index:   a list of Ndet integers (16 bit) in the range 0 to psi->NFermion
+ *     Ndet:    integer length of index
+ *  return:
+ *     psilist: a list of 2^Ndet wavefunctions with occupation of fermions at position index equal to the position in the list in binary form
+ *              the sum over psilist is equal to the original function
+ *  psilist must be allocated when function is called
+ */
+uint32_t WaveFunctionExpand(const WaveFunctionType * const psi, const uint16_t * const index, uint32_t const Ndet, WaveFunctionType * psilist)
+{
+  const uint32_t Nout=(1<<Ndet);
+  uint32_t j,k,retval;
+  int i;
+  Bool add;
+  char detname[Ndet+1];
+  detname[Ndet]='\0';
+  for(i=0;i<Nout;i++)
+  {
+    psilist[i].NFermion=psi->NFermion;
+    psilist[i].NBoson=psi->NBoson;
+    psilist[i].QComplex=psi->QComplex;
+    psilist[i].NBitsKey=psi->NBitsKey;
+    if(WaveFunctionInit(&(psilist[i])))
+    {
+      while (i>0)
+      {
+        i--;
+        WaveFunctionFree(&(psilist[i]));
+      }
+      printf("WaveFunctionInit failed in WaveFunctionExpand\n");
+      return 1;
+    }
+    for(k=0;k<Ndet;k++) detname[k]=((i>>k)&1)?'1':'0';
+    snprintf(psilist[i].Name, MAXStrLength, "%s %s",psi->Name,detname);
+    psilist[i].Name[MAXStrLength-1]='\0';
+  }
+  retval=0;
+  if(psi->QComplex)
+  {
+#pragma omp parallel for private(j,add,k)
+    for(i=0;i<Nout;i++)
+    {
+      if(retval)break;
+      for(j=1;j<=psi->N;j++)
+      {
+        add=True;
+        for(k=0;k<Ndet;k++)
+        {
+          if(((psi->Determinant[BlokElementDet(j,psi->NWord,index[k]>>7)]>>(7-(index[k]&255)))&1)!=((i>>k)&1))
+          {
+            add=False;
+            break;
+          }
+        }
+        if(add==True)
+        {
+          if(ComplexWaveFunctionAddElement(&(psilist[i]), &psi->Determinant[BlokElementDet(j,psi->NWord,0)], psi->ValueRe[BlokElement(j)], psi->ValueIm[BlokElement(j)]))
+          {
+            retval=1;
+            printf("ComplexWaveFunctionAddElement failed in WaveFunctionExpand for determinant %i/%i of function %i/%i",j,psi->N,i,Nout);
+#pragma omp flush(retval)
+            break;
+          }
+        }
+      }
+    }
+  }
+  else
+  {
+#pragma omp parallel for private(j,add,k)
+    for(i=0;i<Nout;i++)
+    {
+      if(retval)break;
+      for(j=1;j<=psi->N;j++)
+      {
+        add=True;
+        for(k=0;k<Ndet;k++)
+        {
+          if(((psi->Determinant[BlokElementDet(j,psi->NWord,index[k]>>7)]>>(7-(index[k]&255)))&1)!=((i>>k)&1))
+          {
+            add=False;
+            break;
+          }
+        }
+        if(add==True)
+        {
+          if(RealWaveFunctionAddElement(&(psilist[i]), &psi->Determinant[BlokElementDet(j,psi->NWord,0)], psi->ValueRe[BlokElement(j)]))
+          {
+            retval=1;
+            printf("RealWaveFunctionAddElement failed in WaveFunctionExpand for determinant %i/%i of function %i/%i",j,psi->N,i,Nout);
+#pragma omp flush(retval)
+            break;
+          }
+        }
+      }
+    }
+  }
+  if(retval)
+  {
+    for(i=0;i<Nout;i++)
+    {
+      WaveFunctionFree(&(psilist[i]));
+    }
+  }
+  return retval;
 }

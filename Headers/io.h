@@ -4,7 +4,7 @@
 /*****************       IO/Print.c       *****************/
 /**********************************************************/
 
-//void     VerbosityPrintf();
+void     VerbosityPrintf(const uint32_t verbosity, char *fmt, ...);
 uint32_t PrintSpectra();
 uint32_t PrintWaveFunctionReadable();
 uint32_t PrintWaveFunctionFullReadable();

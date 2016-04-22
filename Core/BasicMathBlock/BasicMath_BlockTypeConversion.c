@@ -1670,7 +1670,7 @@ uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType co
     Tnow.Ni=psi->Ni;
     Tnow.Nj=psi->Nj;
     /* orthonormalize Tnow */
-    CompactMatrixGramSchmidtOrthogonalizeRow(&Tnow, SingularValue);
+    CompactMatrixGramSchmidtOrthogonalizeRow(&Tnow, SingularValue, True);
     zgemm(charC,charN,&ABlock->BlockSize,&ABlock->BlockSize,&psi->Nj,&one,Tnow.VRe,&psi->Nj,psi->VRe,&psi->Nj,&zero,ABlock->b,&ABlock->BlockSize);
     /* loop over psi_{n+1} = A psi_{n} and orthonormalization */
     oldindex=0;
@@ -1809,7 +1809,7 @@ uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType co
     Tnow.Ni=psi->Ni;
     Tnow.Nj=psi->Nj;
     /* orthonormalize Tnow */
-    CompactMatrixGramSchmidtOrthogonalizeRow(&Tnow, SingularValue);
+    CompactMatrixGramSchmidtOrthogonalizeRow(&Tnow, SingularValue, True);
     dgemm(charC,charN,&ABlock->BlockSize,&ABlock->BlockSize,&psi->Nj,&one,Tnow.VRe,&psi->Nj,psi->VRe,&psi->Nj,&zero,ABlock->bRe,&ABlock->BlockSize);
     /* loop over psi_{n+1} = A psi_{n} and orthonormalization */
     oldindex=0;
@@ -2174,7 +2174,7 @@ uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(BlockListOfPoles co
       }
     }
   }
-  CompactMatrixGramSchmidtOrthogonalizeRow(&T, 1000*DBL_EPSILON);
+  CompactMatrixGramSchmidtOrthogonalizeRow(&T, 1000*DBL_EPSILON, True);
   CompactMatrixMultiply3('N', 'N', 'C', &T, &M, &T, &(B->TMT));
   FreeCompactMatrix(&T);
   FreeCompactMatrix(&M);
@@ -2311,13 +2311,27 @@ uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrixReduceDimension(Bloc
       }
     }
   }
-  CompactMatrixGramSchmidtOrthogonalizeRow(&T, 1000*DBL_EPSILON);
+  CompactMatrixGramSchmidtOrthogonalizeRow(&T, 1000*DBL_EPSILON, True);
   CompactMatrixMultiply3('N', 'N', 'C', &T, &M, &T, &(B->TMT));
   FreeCompactMatrix(&T);
   FreeCompactMatrix(&M);
   
   return 0;
 }
+
+
+uint32_t BlockTriDiagonalMatrixEigenValues()
+{
+  //TODO: use dsbtrd
+  return 0;
+}
+
+uint32_t BlockTriDiagonalMatrixEigenSystem()
+{
+  //TODO: use dsbtrd
+  return 0;
+}
+
 
 /*  On entry A represents a Green's function in a block tridiagonal form
  *  On excit G represents the same Green's function by a list of poles (energy weigth)
@@ -2589,7 +2603,7 @@ uint32_t BlockTriDiagonalMatrixToBlockListOfPoles(BlockTriDiagonalMatrixType con
  *    G = a0 + b0 (1/( w + i Gamma/2 - a1 - b1  ( w + i Gamma/2 - a2 - b2 ( ... ) b2^+ ) b1^+ )) b0^+
  *
  */
-uint32_t BlockTriDiagonalMatrixToSpectra(BlockTriDiagonalMatrixType const * A, SpectraType *const G, double const Emin, double const Emax, uint32_t const N, double const Gamma)
+uint32_t BlockTriDiagonalMatrixToSpectra(const double Energy, BlockTriDiagonalMatrixType const * A, SpectraType *const G, double const Emin, double const Emax, uint32_t const N, double const Gamma)
 {
   int i,iw,iblock;
   double omega;
@@ -2617,7 +2631,7 @@ uint32_t BlockTriDiagonalMatrixToSpectra(BlockTriDiagonalMatrixType const * A, S
   InitCompactMatrix(&Gw);
   for(iw=0;iw<=N;iw++)
   {
-    omega = Emin + iw * G[0].dE;
+    omega = Emin + iw * G[0].dE + Energy;
     for(i=0;i<A->BlockSize*A->BlockSize;i++)
     {
       Gw.V[i].Re=0;
@@ -2648,8 +2662,16 @@ uint32_t BlockTriDiagonalMatrixToSpectra(BlockTriDiagonalMatrixType const * A, S
         Gw.V[i].Im+=Gamma/2.0;
       }
       CompactMatrixInverse(&Gw);
-      TransformCompactMatrixInlineNC(&Gw, &b); /* Gw <- b Gw b^dag */
+      if(iblock==1)
+      {
+        TransformCompactMatrixInlinecT(&Gw, &b); /* Gw <- b Gw b^T */
+      }
+      else
+      {
+        TransformCompactMatrixInlineNC(&Gw, &b); /* Gw <- b Gw b^dag */
+      }
     }
+    // add a0
     if(A->QComplex)
     {
       a.V=A->a;
@@ -2659,6 +2681,7 @@ uint32_t BlockTriDiagonalMatrixToSpectra(BlockTriDiagonalMatrixType const * A, S
       a.VRe=A->aRe;
     }
     CompactMatrixAdd(&Gw, &a);
+    // add Gw to G
     for(i=0;i<A->BlockSize*A->BlockSize;i++)
     {
       G[i].Re[iw]=Gw.V[i].Re;
@@ -2684,8 +2707,8 @@ uint32_t BlockNaturalImpurityOrbitalToSpectra(BlockNaturalImpurityOrbitalMatrixT
   SpectraType Gval[A->BlockSize*A->BlockSize], Gcon[A->BlockSize*A->BlockSize];
   uint32_t i,j;
   
-  BlockTriDiagonalMatrixToSpectra(&(A->val), Gval, Emin, Emax, N, Gamma);
-  BlockTriDiagonalMatrixToSpectra(&(A->con), Gcon, Emin, Emax, N, Gamma);
+  BlockTriDiagonalMatrixToSpectra(0, &(A->val), Gval, Emin, Emax, N, Gamma);
+  BlockTriDiagonalMatrixToSpectra(0, &(A->con), Gcon, Emin, Emax, N, Gamma);
   
   G[0].N=N;
   G[0].Emin=Emin;

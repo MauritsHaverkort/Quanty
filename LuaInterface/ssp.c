@@ -1468,17 +1468,19 @@ static int LuaCreateSpectra(lua_State *L)
     char *stream;
     uint32_t Npsi;
     uint32_t NT;
+    Bool Tensor;
   } Options;
   Options.Settings=InitConvergenceSettings();
   Options.stream=NULL;
+  Options.Tensor=False;
   SpectraTypeArray *Spec;
-  TriDiagonalMatrixType *GTri;
   OperatorType *H,*T;
-  WaveFunctionType *psi,Tpsi;
+  WaveFunctionType *psi;
   uint32_t i,iT,ipsi,len;
   double Eminpole,Emaxpole, *val, *psiEn, psiEntemp;
   char filename[MAXStrLength];
   LuaOptionsType LuaCreateSpectraOptions[]={
+    {"Tensor","bool",&(Options.Tensor)},
     {"NTri","uint32_t",&(Options.Settings.NTri)},
     {"epsilon","double",&(Options.Settings.epsilon)},
     {"Epsilon","double",&(Options.Settings.epsilon)},
@@ -1523,13 +1525,6 @@ static int LuaCreateSpectra(lua_State *L)
   {
     LuaCheckOptions(L, -1, LuaCreateSpectraOptions);
   }
-  /* calculate spectra in Tridiagonal form */
-  GTri = malloc(Options.NT*Options.Npsi*sizeof(TriDiagonalMatrixType));
-  for(i=0;i<Options.NT*Options.Npsi;i++)
-  {
-    GTri[i].N=Options.Settings.NTri;
-    InitTriDiagonalMatrix(&GTri[i]);
-  }
   /* calculate groundstate energy */
   psiEn=malloc(Options.Npsi*Options.NT*sizeof(double));
   for(ipsi=0;ipsi<Options.Npsi;ipsi++)
@@ -1538,106 +1533,237 @@ static int LuaCreateSpectra(lua_State *L)
     for(iT=0;iT<Options.NT;iT++)
     {
       psiEn[iT*Options.Npsi+ipsi]=psiEntemp;
-      GTri[iT*Options.Npsi+ipsi].mu=psiEntemp;
     }
   }
-  /* loop over all Transition operators */
-  for(iT=0;iT<Options.NT;iT++)
+  if(Options.Tensor==False)
   {
-    /* loop over all wavefunctions */
-    for(ipsi=0;ipsi<Options.Npsi;ipsi++)
+    WaveFunctionType Tpsi;
+    TriDiagonalMatrixType *GTri;
+    /* calculate spectra in Tridiagonal form for each combination fo operator and wave-function seperately*/
+    GTri = malloc(Options.NT*Options.Npsi*sizeof(TriDiagonalMatrixType));
+    for(i=0;i<Options.NT*Options.Npsi;i++)
     {
-      if(Options.Settings.restrictions.N==0)
+      GTri[i].N=Options.Settings.NTri;
+      InitTriDiagonalMatrix(&GTri[i]);
+      GTri[i].mu=psiEn[i];
+    }
+    /* loop over all Transition operators */
+    for(iT=0;iT<Options.NT;iT++)
+    {
+      /* loop over all wavefunctions */
+      for(ipsi=0;ipsi<Options.Npsi;ipsi++)
       {
-        OperatorPsi(T[iT], psi[ipsi], &Tpsi);
-        LanczosTriDiagonalize(*H, Tpsi, Options.Settings.epsilon, &GTri[iT*Options.Npsi+ipsi], Max(Options.Settings.Gamma,Options.Settings.epsilon));
-      }
-      else
-      {
-        OperatorPsiRestricted(T[iT], psi[ipsi], &Tpsi, Options.Settings.restrictions);
-        LanczosTriDiagonalizeRestricted(*H, Tpsi, Options.Settings.restrictions, Options.Settings.epsilon, &GTri[iT*Options.Npsi+ipsi], Max(Options.Settings.Gamma,Options.Settings.epsilon));
-      }
-      if(Options.stream!=NULL)
-      {
-        if (Options.NT*Options.Npsi==1) {
-          snprintf(filename, MAXStrLength, "%s", Options.stream);
+        if(Options.Settings.restrictions.N==0)
+        {
+          OperatorPsi(T[iT], psi[ipsi], &Tpsi);
+          LanczosTriDiagonalize(*H, Tpsi, Options.Settings.epsilon, &GTri[iT*Options.Npsi+ipsi], Max(Options.Settings.Gamma,Options.Settings.epsilon));
         }
         else
         {
-          snprintf(filename, MAXStrLength, "%s_%02d", Options.stream, iT*Options.Npsi+ipsi);
+          OperatorPsiRestricted(T[iT], psi[ipsi], &Tpsi, Options.Settings.restrictions);
+          LanczosTriDiagonalizeRestricted(*H, Tpsi, Options.Settings.restrictions, Options.Settings.epsilon, &GTri[iT*Options.Npsi+ipsi], Max(Options.Settings.Gamma,Options.Settings.epsilon));
         }
-        FilePrintPlainTriDiagonalMatrix(GTri[iT*Options.Npsi+ipsi], filename, "w");
+        if(Options.stream!=NULL)
+        {
+          if (Options.NT*Options.Npsi==1)
+          {
+            snprintf(filename, MAXStrLength, "%s", Options.stream);
+          }
+          else
+          {
+            snprintf(filename, MAXStrLength, "%s_%02d", Options.stream, iT*Options.Npsi+ipsi);
+          }
+          FilePrintPlainTriDiagonalMatrix(GTri[iT*Options.Npsi+ipsi], filename, "w");
+        }
       }
     }
-  }
-  /* determine Eminpole and Emaxpole */
-  /* get eigenvalues of all Tri diagonal matrices and set smallest and largest eigenvalue */
-  Eminpole=DBL_MAX;
-  Emaxpole=-DBL_MAX;
-  val=malloc((Options.Settings.NTri)*sizeof(double));
-  for(i=0;i<Options.NT*Options.Npsi;i++)
-  {
-    TriDiagonalMatrixToEigenvalues(GTri[i], val);
-    if((val[0]-psiEn[i])<Eminpole)Eminpole=val[0]-psiEn[i];
-    if((val[Options.Settings.NTri-1]-psiEn[i])>Emaxpole)Emaxpole=val[Options.Settings.NTri-1]-psiEn[i];
-  }
-  /* if Emin=DBL_MAX or Emax=-DBL_MAX or Gamma==0 determine these */
-  if(Eminpole==Emaxpole)
-  {
-    if(Eminpole==0)
+    /* determine Eminpole and Emaxpole */
+    /* get eigenvalues of all Tri diagonal matrices and set smallest and largest eigenvalue */
+    Eminpole=DBL_MAX;
+    Emaxpole=-DBL_MAX;
+    val=malloc((Options.Settings.NTri)*sizeof(double));
+    for(i=0;i<Options.NT*Options.Npsi;i++)
     {
-      if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin =-1;
-      if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax = 1;
+      TriDiagonalMatrixToEigenvalues(GTri[i], val);
+      if((val[0]-psiEn[i])<Eminpole)Eminpole=val[0]-psiEn[i];
+      if((val[Options.Settings.NTri-1]-psiEn[i])>Emaxpole)Emaxpole=val[Options.Settings.NTri-1]-psiEn[i];
     }
-    if(Eminpole<0)
+    /* if Emin=DBL_MAX or Emax=-DBL_MAX or Gamma==0 determine these */
+    if(Eminpole==Emaxpole)
     {
-      if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin = 2.125*Eminpole;
-      if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax =-0.125*Eminpole;
+      if(Eminpole==0)
+      {
+        if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin =-1;
+        if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax = 1;
+      }
+      if(Eminpole<0)
+      {
+        if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin = 2.125*Eminpole;
+        if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax =-0.125*Eminpole;
+      }
+      if(Eminpole>0)
+      {
+        if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin =-0.125*Eminpole;
+        if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax = 2.125*Eminpole;
+      }
     }
-    if(Eminpole>0)
+    if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin = Eminpole - 0.125 * (Emaxpole-Eminpole);
+    if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax = Emaxpole + 0.125 * (Emaxpole-Eminpole);
+    if(Options.Settings.Gamma==0) Options.Settings.Gamma = 10*(Options.Settings.Emax-Options.Settings.Emin)/((double)Options.Settings.NE);
+    /* transform tridiagonal form to spectral form and push to stack */
+    Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+    luaL_setmetatable(L, "Spectra_Type");
+    Spec->NSpectra=Options.NT*Options.Npsi;
+    Spec->Spec=malloc(Spec->NSpectra*sizeof(SpectraType));
+    Spec->Spec[0].N=Options.Settings.NE;
+    Spec->Spec[0].Emin=Options.Settings.Emin;
+    Spec->Spec[0].Emax=Options.Settings.Emax;
+    Spec->Spec[0].dE=(Options.Settings.Emax-Options.Settings.Emin)/((double)Options.Settings.NE);
+    Spec->Spec[0].EminPole=Eminpole;
+    Spec->Spec[0].EmaxPole=Emaxpole;
+    Spec->Spec[0].Gamma=Options.Settings.Gamma;
+    strcpy(Spec->Spec[0].Name, "Spec");
+    for(i=0;i<Spec->NSpectra;i++)
     {
-      if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin =-0.125*Eminpole;
-      if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax = 2.125*Eminpole;
+      SpectrumAllocate(Spec->Spec[0], &(Spec->Spec[i]));
+      sprintf(Spec->Spec[i].Name, "Spectrum %i",i);
+      TriDiagonalMatrixToSpectrum(psiEn[i], GTri[i], &(Spec->Spec[i]));
     }
+    /* push a table to L containing the spectra in tridiagonal form */
+    /* table contains {{a,b,mu},{a,b,mu},{a,b,mu},....} */
+    lua_createtable(L,Spec->NSpectra,0);
+    for(i=0;i<Spec->NSpectra;i++)
+    {
+      LuaPushTable_TriDiagonalMatrixType(L, &(GTri[i]));
+      lua_rawseti(L, -2, i+1);
+    }
+    /* free tridiagonal representation in memory */
+    for(i=0;i<Spec->NSpectra;i++)
+    {
+      FreeTriDiagonalMatrix(&GTri[i]);
+    }
+    free(GTri);
+    free(psiEn);
+    return 2;
   }
-  if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin = Eminpole - 0.125 * (Emaxpole-Eminpole);
-  if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax = Emaxpole + 0.125 * (Emaxpole-Eminpole);    
-  if(Options.Settings.Gamma==0) Options.Settings.Gamma = 10*(Options.Settings.Emax-Options.Settings.Emin)/((double)Options.Settings.NE);
-  /* transform tridiagonal form to spectral form and push to stack */
-  Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
-  luaL_setmetatable(L, "Spectra_Type");
-  Spec->NSpectra=Options.NT*Options.Npsi;
-  Spec->Spec=malloc(Spec->NSpectra*sizeof(SpectraType));
-  Spec->Spec[0].N=Options.Settings.NE;
-  Spec->Spec[0].Emin=Options.Settings.Emin;
-  Spec->Spec[0].Emax=Options.Settings.Emax;
-  Spec->Spec[0].dE=(Options.Settings.Emax-Options.Settings.Emin)/((double)Options.Settings.NE);
-  Spec->Spec[0].EminPole=Eminpole;
-  Spec->Spec[0].EmaxPole=Emaxpole;
-  Spec->Spec[0].Gamma=Options.Settings.Gamma;
-  strcpy(Spec->Spec[0].Name, "Spec");
-  for(i=0;i<Spec->NSpectra;i++)
+  else
   {
-    SpectrumAllocate(Spec->Spec[0], &(Spec->Spec[i]));
-    sprintf(Spec->Spec[i].Name, "Spectrum %i",i);
-    TriDiagonalMatrixToSpectrum(psiEn[i], GTri[i], &(Spec->Spec[i]));
+    /* calcualte spectra using tensor form, i.e. returned are Sqr(Options.NT * Options.Npsi) sepctra */
+    WaveFunctionType Tpsi[Options.NT*Options.Npsi];
+    WaveFunctionType TpsiSameBasis[Options.NT*Options.Npsi];
+    BlockTriDiagonalMatrixType GTri;
+    
+    
+    
+    /* create starting functions */
+    /* loop over all Transition operators */
+    for(iT=0;iT<Options.NT;iT++)
+    {
+      /* loop over all wavefunctions */
+      for(ipsi=0;ipsi<Options.Npsi;ipsi++)
+      {
+        if(OperatorPsi(T[iT], psi[ipsi], &Tpsi[iT*Options.Npsi+ipsi]))
+        {
+          luaL_error(L, "OperatorPsi failed in calculation of spectra using the option Tensor=True\n Out of memory?\nTry to calcualte the spectra with the option Tensor=False");
+        }
+      }
+    }
+    WaveFunctionCopy(Tpsi[0], &TpsiSameBasis[0]);
+    WaveFunctionFree(&(Tpsi[0]));
+    for(i=1;i<Options.NT*Options.Npsi;i++)
+    {
+      if(WaveFunctionAddMultipliedUnionBasis(&TpsiSameBasis[0], Tpsi[i], 0)) return luaL_error(L, "malloc failed. Out of memory during initialization in CalculateSpectra\n");
+    }
+    for(i=1;i<Options.NT*Options.Npsi;i++)
+    {
+      if(WaveFunctionInitCopyBasis(&(TpsiSameBasis[i]), TpsiSameBasis[0])) return luaL_error(L, "malloc failed. Out of memory during initialization in CalculateSpectra\n");
+      WaveFunctionAddConserveBasis(&(TpsiSameBasis[i]), Tpsi[i]);
+      WaveFunctionFree(&(Tpsi[i]));
+    }
+    
+    
+    /* init BlockTriDiagonal Matrix */
+    GTri.BlockSize = Options.NT*Options.Npsi;
+    GTri.N = Options.Settings.NTri;
+    /* create block tridiagonal representation */
+    GTri.QComplex=0;
+    if(H->QComplex) GTri.QComplex=1;
+    for(i=0;i<GTri.BlockSize;i++)
+    {
+      if(Tpsi[i].QComplex) GTri.QComplex=1;
+    }
+    InitBlockTridiagonalMatrix(&GTri);
+    GTri.mu=psiEn[0];
+    LanczosBlockTriDiagonalize(*H, TpsiSameBasis, Options.Settings.epsilon, &GTri, Max(Options.Settings.Gamma,Options.Settings.epsilon));
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    /* determine Eminpole and Emaxpole */
+    /* get eigenvalues Block Tridiagonal matrix and set smallest and largest eigenvalue */
+    Eminpole=DBL_MAX;
+    Emaxpole=-DBL_MAX;
+    
+    
+    
+    
+    BlockTriDiagonalMatrixEigenValues();
+    
+    
+    
+    
+    
+    
+    
+    /* if Emin=DBL_MAX or Emax=-DBL_MAX or Gamma==0 determine these */
+    if(Eminpole==Emaxpole)
+    {
+      if(Eminpole==0)
+      {
+        if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin =-1;
+        if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax = 1;
+      }
+      if(Eminpole<0)
+      {
+        if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin = 2.125*Eminpole;
+        if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax =-0.125*Eminpole;
+      }
+      if(Eminpole>0)
+      {
+        if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin =-0.125*Eminpole;
+        if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax = 2.125*Eminpole;
+      }
+    }
+    if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin = Eminpole - 0.125 * (Emaxpole-Eminpole);
+    if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax = Emaxpole + 0.125 * (Emaxpole-Eminpole);
+    if(Options.Settings.Gamma==0) Options.Settings.Gamma = 10*(Options.Settings.Emax-Options.Settings.Emin)/((double)Options.Settings.NE);
+    /* transform tridiagonal form to spectral form and push to stack */
+    Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+    luaL_setmetatable(L, "Spectra_Type");
+    Spec->NSpectra=Sqr(Options.NT*Options.Npsi);
+    Spec->Spec=malloc(Spec->NSpectra*sizeof(SpectraType));
+    BlockTriDiagonalMatrixToSpectra(psiEn[0], &GTri, Spec->Spec, Options.Settings.Emin, Options.Settings.Emax, Options.Settings.NE, Options.Settings.Gamma);
+    for(i=0;i<Spec->NSpectra;i++)
+    {
+      Spec->Spec[0].EminPole=Eminpole;
+      Spec->Spec[0].EmaxPole=Emaxpole;
+    }
+    /* push a table to L containing the spectra in Block Tridiagonal form */
+    LuaPushTable_BlockTriDiagonalMatrixType(L, &GTri);
+    /* free tridiagonal representation in memory */
+    FreeBlockTridiagonalMatrix(&GTri);
+    return 2;
   }
-  /* push a table to L containing the spectra in tridiagonal form */
-  /* table contains {{a,b,mu},{a,b,mu},{a,b,mu},....} */
-  lua_createtable(L,Spec->NSpectra,0);
-  for(i=0;i<Spec->NSpectra;i++)
-  {
-    LuaPushTable_TriDiagonalMatrixType(L, &(GTri[i]));
-    lua_rawseti(L, -2, i+1);
-  }
-  /* free tridiagonal representation in memory */
-  for(i=0;i<Spec->NSpectra;i++)
-  {
-    FreeTriDiagonalMatrix(&GTri[i]);
-  }
-  free(GTri);
-  free(psiEn);
-  return 2;
 }
 
 
@@ -2041,7 +2167,7 @@ static int LuaEigensystem(lua_State * L)
   DeterminantRestrictionType StartRestrictions;
   StartRestrictions.N=0;
   WaveFunctionType *psi=NULL,*temp;
-  uint32_t i,len, Npsi=0,QStartRestrictions=0;
+  uint32_t i,j,len, Npsi=0,QStartRestrictions=0;
   /* set options */
   LuaOptionsType LuaEigensystemOptions[]={
     {"DenseBoarder", "uint32_t", &(Options.Settings.DenseBoarder)},
@@ -2081,7 +2207,21 @@ static int LuaEigensystem(lua_State * L)
     }
     else
     {
+      // read list of wave-functions to start from
+      // The list is copied into a new array in order to have them in "order" in memory
+      // Note that this means that when we change the wave-function the original function is not changed (except for the values it points to
+      // we need to copy the changed function back into the original at the end.
       psi=luaL_checkarray_WaveFunctionType(L, 2, &Npsi);
+      for(i=0;i<Npsi;i++)
+      {
+        for(j=0;j<i;j++)
+        {
+          if(psi[i].ValueRe==psi[j].ValueRe)
+          {
+            luaL_error(L, "Eigensystem called with a list of functions. Function with name \"%s\" is at position %d and %d\n",psi[i].Name,j+1,i+1);
+          }
+        }
+      }
       if(WaveFunctionArrayToSameBasis(psi, Npsi))
       {
         printf("WaveFunctionArrayToSameBasis failed in LuaEigensystem\n");
@@ -2162,7 +2302,317 @@ static int LuaEigensystem(lua_State * L)
   }
 }
 
+/*  Given a table of vectors or wave-functions returns a new set that is orthonormalized
+ * @ param L
+ *         Pointer to a lua state
+ *         First argument on stack should be a table of complex vectors or wave-functions
+ *         second optional argument can be a lsit of options.
+ *         possible options are: (first option is standard)
+ *         - Method:         string value: "Lowdin", "GramSchimdt"
+ *         - Order:          string value: "Row", "Column"
+ *         - SingularValue:  double: values equal or smaller than SingularValue are removed from basis
+ *         - KeepDimensions: boolean (remove singular vectors or add a zero vector to the basis)
+ */
 
+static int LuaOrthonormalize(lua_State *L)
+{
+  int matorfun;
+  uint32_t len;
+  struct
+  {
+    char* Method;
+    char* Order;
+    double SingularValue;
+    Bool ReduceDimension;
+  } Options;
+  LuaOptionsType LuaOrthonormalizeOptions[]={
+    {"Method",          "char*", &(Options.Method)},
+    {"Order",           "char*", &(Options.Order)},
+    {"SingularValue",   "char*", &(Options.SingularValue)},
+    {"ReduceDimension", "bool",  &(Options.ReduceDimension)},
+    {NULL, NULL, NULL}};
+  Options.Method="Lowdin";
+  Options.Order="Row";
+  Options.SingularValue=1E-12;
+  Options.ReduceDimension=True;
+  // get options when defined
+  len = (uint32_t)lua_gettop(L);
+  if(len>2)
+  {
+    return luaL_error(L, "Orthogonalize called with %d arguments. One or Two expected\n",len);
+  }
+  if(len==2)
+  {
+    if(LuaTestOptionsList(L, -1))
+    {
+      LuaCheckOptions(L, -1, LuaOrthonormalizeOptions);
+      if(!((strcmp(Options.Method, "Lowdin")==0)||(strcmp(Options.Method, "GramSchmidt")==0)))
+      {
+        return luaL_error(L, "Error Orthogonalize Option \"Method\" should either be \"Lowdin\" (standard) or \"GramSchmidt\" and not\"%s\"\n",Options.Method);
+      }
+      if(!((strcmp(Options.Order, "Row")==0)||(strcmp(Options.Order, "Column")==0)))
+      {
+        return luaL_error(L, "Error Orthogonalize Option \"Order\" should either be \"Row\" (standard) or \"Column\" and not\"%s\"\n",Options.Order);
+      }
+    }
+    else
+    {
+      return luaL_error(L, "Second argument of Orthogonalize is optional but iff given should be a list of options.\n");
+    }
+  }
+  // determine if we deal with a dense matrix or with a list of wave-functions
+  luaL_checktype(L, 1, LUA_TTABLE);
+  len = (uint32_t)lua_objlen(L, 1);
+  if(len==0)
+  {
+    return luaL_error(L, "First argument of Orthogonalize should either be a table of wave-functions or a rectangular matrix (table of tables of equal lenght).\n");
+  }
+  lua_rawgeti(L, 1, 1);
+  matorfun = lua_type(L, -1);
+  lua_pop(L, 1);
+  if(matorfun==LUA_TTABLE)
+  {
+    CompactMatrixType *M, *MO;
+    M = (CompactMatrixType *) luaL_checkCompactMatrix(L, 1);
+    MO = malloc(sizeof(CompactMatrixType));
+    if(CompactMatrixCopy(*M, MO))
+    {
+      lua_gc(L, LUA_GCCOLLECT, 0);
+      if(CompactMatrixCopy(*M, MO))
+      {
+        return luaL_error(L, "Not able to initialize matrix. Probably ran outoff memory on a bad moment\n");
+      }
+    }
+    if(strcmp(Options.Method, "Lowdin")==0)
+    {
+      if(strcmp(Options.Order, "Row")==0)
+      {
+        CompactMatrixSVDOrthogonalizeRow(MO, Options.SingularValue, Options.ReduceDimension);
+      }
+      else if(strcmp(Options.Order, "Column")==0)
+      {
+        CompactMatrixSVDOrthogonalizeCol(MO, Options.SingularValue, Options.ReduceDimension);
+      }
+      else
+      {
+        return luaL_error(L, "Error Orthogonalize Option \"Order\" should either be \"Row\" (standard) or \"Column\" and not\"%s\"\n",Options.Order);
+      }
+    }
+    else if(strcmp(Options.Method, "GramSchmidt")==0)
+    {
+      if(strcmp(Options.Order, "Row")==0)
+      {
+        CompactMatrixGramSchmidtOrthogonalizeRow(MO, Options.SingularValue, Options.ReduceDimension);
+      }
+      else if(strcmp(Options.Order, "Column")==0)
+      {
+        CompactMatrixGramSchmidtOrthogonalizeCol(MO, Options.SingularValue, Options.ReduceDimension);
+      }
+      else
+      {
+        return luaL_error(L, "Error Orthogonalize Option \"Order\" should either be \"Row\" (standard) or \"Column\" and not\"%s\"\n",Options.Order);
+      }
+    }
+    else
+    {
+      return luaL_error(L, "Error Orthogonalize Option \"Method\" should either be \"Lowdin\" (standard) or \"GramSchmidt\" and not\"%s\"\n",Options.Method);
+    }
+    LuaPushTable_CompactMatrixType(L, MO);
+    FreeCompactMatrix(MO);
+    FreeCompactMatrix(M);
+    free(MO);
+    free(M);
+  }
+  else if(matorfun==LUA_TUSERDATA)
+  {
+    WaveFunctionType *psilist,*psilistNew;
+    uint32_t i,Npsi;
+    psilist = luaL_checkarray_WaveFunctionType(L, 1, &Npsi);
+    psilistNew=malloc(Npsi*sizeof(WaveFunctionType));
+    if(psilistNew==NULL) return luaL_error(L, "Failure in Orthogonalize, not able to initialize pointers to list of orthogonal functions.\nOut of memory on a bad moment?\n");
+    if(strcmp(Options.Method, "Lowdin")==0)
+    {
+      if(WaveFunctionListSVDOrthogonalizeDifferentBasis(psilist, psilistNew, &Npsi, Options.SingularValue, Options.ReduceDimension)) return luaL_error(L, "Failure in Orthogonalize Sorry\n");
+    }
+    else if(strcmp(Options.Method, "GramSchmidt")==0)
+    {
+      for(i=0;i<Npsi;i++)
+      {
+        if(WaveFunctionCopy(psilist[i], &(psilistNew[i]))) return luaL_error(L, "Failure in Orthogonalize, not able to initialize list of orthogonal functions.\nOut of memory on a bad moment?\n");
+      }
+      if(WaveFunctionListOrthogonalizeDifferentBasis(psilistNew, &Npsi, Options.SingularValue, Options.ReduceDimension)) return luaL_error(L, "Failure in Orthogonalize Sorry\n");
+    }
+    else
+    {
+      return luaL_error(L, "Error Orthogonalize Option \"Method\" should either be \"Lowdin\" (standard) or \"GramSchmidt\" and not\"%s\"\n",Options.Method);
+    }
+    LuaPushTable_WaveFunctionType(L, psilistNew, Npsi);
+    free(psilist);
+    free(psilistNew);
+  }
+  else
+  {
+    return luaL_error(L, "First argument of Orthogonalize should either be a table of wave-functions or a rectangular matrix (table of tables of equal lenght).\n");
+  }
+  return 1;
+}
+
+/*  Given a square hermitian matrix and a set of starting vectors returns a block band diagonal form
+ * @ param L
+ *         Pointer to a lua state
+ *     Two posible inputs, either on dense matrices or on operators and wave-functions
+ *     In both cases returns a BlockTridiagonalMatrix pushed on the lua stack
+ *     Case 1
+ *         First argument on stack should be a hermitian matrix represented as a table of table of (complex) numbers
+ *         Second argument on stack should either be an integer representing the block size or a list of vectors representing the starting states
+ *     Case 2
+ *         First argument on stack should be a hermitian operator
+ *         Second argument should be a single wave-function or a list of wavefunctions
+ *     In both cases:
+ *         Posible third argument specifies options
+ *         - SingularValue:   double:  values equal or smaller than SignularValue are removed from basis (standard 10^-6)
+ *         - NTri:            integer: Maximum number of blocks included (standard infinity)
+ *         - NOrtho:          integer: Maximum number of reorthogonalizations (standard infinity)
+ *         - ReOrthogonalize: boolean: Use aditional Gramm-Schmidt orthogonalization after the Lowdin orthogonalization (standard true)
+ */
+static int LuaBlockBandDiagonalize(lua_State *L)
+{
+  uint32_t len;
+  BlockTriDiagonalMatrixType B;
+  struct
+  {
+    double SingularValue;
+    uint32_t NTri;
+    uint32_t NOrtho;
+    Bool ReOrthogonalize;
+  } Options;
+  LuaOptionsType LuaBlockBandDiagonalizeOptions[]={
+    {"SingularValue",   "char*",    &(Options.SingularValue)},
+    {"NTri",            "uint32_t", &(Options.NTri)},
+    {"NOrtho",          "uint32_t", &(Options.NOrtho)},
+    {"ReduceDimension", "bool",     &(Options.ReOrthogonalize)},
+    {NULL, NULL, NULL}};
+  Options.SingularValue=1E-6;
+  Options.NTri  =200;
+  Options.NOrtho=UINT32_MAX;
+  Options.ReOrthogonalize=True;
+  // get options when defined
+  len = (uint32_t)lua_gettop(L);
+  if(len>3)
+  {
+    return luaL_error(L, "BlockBandDiagonalize called with %d arguments. Two or Three expected\n",len);
+  }
+  if(len==3)
+  {
+    if(LuaTestOptionsList(L, -1))
+    {
+      LuaCheckOptions(L, -1, LuaBlockBandDiagonalizeOptions);
+      if(Options.NOrtho<2)
+      {
+        return luaL_error(L, "Northo (%d) should be an intereger of at least 2\n",Options.NOrtho);
+      }
+    }
+    else
+    {
+      return luaL_error(L, "Third argument of BlockBandDiagonalize is optional but iff given should be a list of options.\n");
+    }
+  }
+  // case 1 - dense matrices
+  if(lua_istable(L,1)==1)
+  {
+    CompactMatrixType *M,*vec;
+    M = (CompactMatrixType *) luaL_checkCompactMatrix(L, 1);
+    if(M->Ni != M->Nj)
+    {
+      return luaL_error(L, "BlockBandDiagonalize expects as a first argument either an operator or a square hermitian matrix, current matrix is not square: dimensions are %d by %d\n",M->Ni,M->Nj);
+    }
+    if(lua_type(L, 2)==LUA_TNUMBER)
+    {
+      vec=malloc(sizeof(CompactMatrixType));
+      vec->QComplex=0;
+      vec->Ni=(uint32_t)luaL_checkinteger(L, 2);
+      vec->Nj=M->Nj;
+      if(vec->Ni>vec->Nj) return luaL_error(L, "Block size (%d) should be smaller than dimension of matrix (%d)\n",vec->Ni,vec->Nj);
+      InitCompactIdentityMatrix(vec);
+    }
+    else
+    {
+      vec = (CompactMatrixType *) luaL_checkCompactMatrix(L, 2);
+      if(vec->Ni>vec->Nj) return luaL_error(L, "Block size (%d) should be smaller than dimension of matrix (%d)",vec->Ni,vec->Nj);
+      if(vec->Nj!=M->Nj) return luaL_error(L, "Length of starting vector (%d) should be equivalent to dimension of matrix (%d).\n",vec->Nj,M->Nj);
+    }
+    Options.NTri=MIN(Options.NTri, M->Ni);
+    if(CompactMatrixBlockBandDiagonalize(M, vec, &B, Options.SingularValue, Options.NTri, Options.NOrtho, Options.ReOrthogonalize))
+    {
+      return luaL_error(L, "CompactMatrixBlockBandDiagonalize failed that should not happen\n");
+    }
+    LuaPushTable_BlockTriDiagonalMatrixType(L, &B);
+    FreeBlockTridiagonalMatrix(&B);
+    FreeCompactMatrix(M);
+    free(M);
+    FreeCompactMatrix(vec);
+    free(vec);
+    return 1;
+  }
+  // case 2 - operator wave-functions
+  else if (luaL_testudata(L, 1, "Operator_Type") != NULL)
+  {
+    uint32_t i;
+    WaveFunctionType **orig=NULL;
+    WaveFunctionType *psilist;
+    OperatorType *O;
+    uint32_t Npsi;
+    // read the operator from the lua stack
+    O = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
+    // read a list of pointers to the original functions from the lua stack
+    if(lua_type(L,2)==LUA_TTABLE)
+    {
+      orig = luaL_checkarray_PointerWaveFunctionType(L, 2, &Npsi);    }
+    else
+    {
+      Npsi=1;
+      orig =  malloc(sizeof(WaveFunctionType*));
+      orig[0] = (WaveFunctionType *) luaL_checkudata(L, 2, "Wavefunction_Type");
+    }
+    // copy the original functions that each live on their own basis to a new array where all functions have the same basis
+    psilist = malloc(Npsi*sizeof(WaveFunctionType));
+    if(psilist==NULL)
+    {
+      return luaL_error(L, "malloc failed. Out of memory during initialization in BlockBandDiagonalize\n");
+    }
+    if(WaveFunctionCopy(*(orig[0]), &(psilist[0]))) return luaL_error(L, "malloc failed. Out of memory during initialization in BlockBandDiagonalize\n");
+    for(i=1;i<Npsi;i++)
+    {
+      if(WaveFunctionAddMultipliedUnionBasis(&psilist[0], *(orig[i]), 0)) return luaL_error(L, "malloc failed. Out of memory during initialization in BlockBandDiagonalize\n");
+    }
+    for(i=1;i<Npsi;i++)
+    {
+      if(WaveFunctionInitCopyBasis(&(psilist[i]), psilist[0])) return luaL_error(L, "malloc failed. Out of memory during initialization in BlockBandDiagonalize\n");
+      WaveFunctionAddConserveBasis(&(psilist[i]), *(orig[i]));
+    }
+    // remove the pointers to the original functions from memory. lua knows where they are
+    free(orig);
+    // call the c function
+    B.N=Options.NTri;
+    B.BlockSize=Npsi;
+    B.QComplex=0;
+    if(O->QComplex) B.QComplex=1;
+    for(i=0;i<Npsi;i++)
+    {
+      if(psilist[i].QComplex) B.QComplex=1;
+    }
+    InitBlockTridiagonalMatrix(&B);
+    if(LanczosBlockTriDiagonalize(*O, psilist, Options.SingularValue, &B, 0)) luaL_error(L, "LanczosBlockTriDiagonalize failed in BlockBandDiagonalize");
+    LuaPushTable_BlockTriDiagonalMatrixType(L, &B);
+    FreeBlockTridiagonalMatrix(&B);
+    return 1;
+  }
+  // error not case 1 or 2
+  else
+  {
+    return luaL_error(L, "BlockBandDiagonalize expects as a first argument either an operator or a square hermitian matrix (table of tables)\n");
+  }
+}
 
 static int LuaTimeEnd(lua_State * L)
 {
@@ -2286,6 +2736,7 @@ static int LuaStatistics(lua_State *L)
 }
 
 static const struct luaL_Reg global_functions[] = {
+  {"BlockBandDiagonalize", LuaBlockBandDiagonalize},
   {"CalculateBands", LuaCalculateBands},
   {"CalculateDOS", LuaCalculateDOS},
   {"CalculateFermi", LuaCalculateFermi},
@@ -2302,14 +2753,15 @@ static const struct luaL_Reg global_functions[] = {
   {"DensityMatrix",LuaDensityMatrix},
   {"Eigensystem", LuaEigensystem},
   {"EvolveToGroundstate", LuaEvolveToGroundstate},
+  {"Expand",LuaWavefunctionExpand},
+  {"FileReadStuttgartCTRL", LuaFileReadStuttgartCTRL},
+  {"FileReadStuttgartHAMR", LuaFileReadStuttgartHAMR},
 //  {"Help", LuaHelp},
   {"MeanFieldGroundState", LuaMeanFieldGroundstate},
   {"NewOperator", LuaNewOperator},
   {"NewTightBinding", LuaNewTightBinding},
-  {"FileReadStuttgartCTRL", LuaFileReadStuttgartCTRL},
-  {"FileReadStuttgartHAMR", LuaFileReadStuttgartHAMR},
-  {"TightBindingDefFromStuttgartCTRLHAMR", LuaTightBindingDefFromStuttgartCTRLHAMR},
   {"NewWavefunction", LuaNewWaveFunction},
+  {"Orthonormalize", LuaOrthonormalize},
   {"PotentialExpandedOnClm", LuaPotentialExpandedOnClm},
   {"PlotBands", LuaPlotBands},
   {"PlotBandsAndDOS", LuaPlotBandsAndDOS},
@@ -2320,6 +2772,7 @@ static const struct luaL_Reg global_functions[] = {
   {"TimeEnd",LuaTimeEnd},
   {"TimePrint",LuaTimePrint},
   {"TimeStart",LuaTimeStart},
+  {"TightBindingDefFromStuttgartCTRLHAMR", LuaTightBindingDefFromStuttgartCTRLHAMR},
   {"Transpose", Luatranspose},
   {"Verbosity",LuaVerbosity},
   {NULL, NULL}

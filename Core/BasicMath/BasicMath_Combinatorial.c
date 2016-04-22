@@ -246,3 +246,12 @@ double SlaterCoefficientC(int k, int l1, int m1, int l2, int m2)
     return 0;
   return (double)(1 - 2 * (m1 & 1)) * sqrt((double)((2 * l1 + 1) * (2 * l2 + 1))) * ThreeJSymbol(l1, 0, k, 0, l2, 0) * ThreeJSymbol(l1, -m1,k,m1 -m2,l2,m2);
 }
+
+int cmpuint32t (const void * a, const void *b)
+{
+  return (*(uint32_t*)a<*(uint32_t*)b)?(1):(-1);
+}
+int cmpdouble (const void * a, const void *b)
+{
+  return (*(double*)a<*(double*)b)?(1):(-1);
+}

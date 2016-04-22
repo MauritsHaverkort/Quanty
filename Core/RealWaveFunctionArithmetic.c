@@ -293,7 +293,7 @@ uint32_t RealWaveFunctionAddElement(WaveFunctionType * const psi, const uint8_t 
 *   But only add it iff det is already present in the basis
 *   As psi only stores the number of non zero elements and pointers to the real values the value of psi is not changed.
 *   The values psi points to are naturaly changed
-*/
+ */
 void RealWaveFunctionAddElementConserveBasis(WaveFunctionType const *psi, const uint8_t * const det, const double a)
 {
   uint32_t i, NextIndex, PsiAIsPsiB;
@@ -336,7 +336,6 @@ void RealWaveFunctionAddElementConserveBasis(WaveFunctionType const *psi, const 
     }
   }
 }
-
 
 /*  return the prefactor of det in wave function psi
  *
@@ -384,8 +383,7 @@ double RealWaveFunctionPrefactorDet(const WaveFunctionType psi, const uint8_t * 
 *   return 0 if everything worked
 *   return 1 if out off memory
 */
-uint32_t RealWaveFunctionAddElementOMPMiniFlush(WaveFunctionType * const psi, uint32_t * NMini,
-                                                const uint8_t * const MiniDet, const double *const MiniValue)
+uint32_t RealWaveFunctionAddElementOMPMiniFlush(WaveFunctionType * const psi, uint32_t * NMini, const uint8_t * const MiniDet, const double *const MiniValue)
 {
   uint32_t i, NoMoreMem = 0;
 #pragma omp critical (AddToPsi)
@@ -406,6 +404,7 @@ uint32_t RealWaveFunctionAddElementOMPMiniFlush(WaveFunctionType * const psi, ui
   *NMini = 0;
   return NoMoreMem;
 }
+
 
 
 /*
@@ -435,6 +434,7 @@ void RealWaveFunctionAddSameBasis(WaveFunctionType a, const WaveFunctionType b)
     }
   }
 }
+
 
 
 /*
@@ -492,13 +492,11 @@ uint32_t RealWaveFunctionAddUnionBasis(WaveFunctionType * const a, const WaveFun
   return 0;
 }
 
+
+
 /*
-*   (a+new allocation) <- a+alpha b
-*   This function leaves b in the memory and adds values to a
-*   When aditional space for a needs to be allocated it will
-*   Therefor values of a might change and a is returned from the function
-*   If a is an empty function b is copied into a (use of copy is strongly recommanded)
-*/
+ *
+ */
 uint32_t RealWaveFunctionAddMultipliedUnionBasis(WaveFunctionType * const a, const WaveFunctionType b, const double alpha)
 {
   uint32_t i, j;
@@ -515,6 +513,8 @@ uint32_t RealWaveFunctionAddMultipliedUnionBasis(WaveFunctionType * const a, con
   }
   return 0;
 }
+
+
 
 
 /*
@@ -775,6 +775,9 @@ double RealWaveFunctionDotProduct(const WaveFunctionType *a, const WaveFunctionT
 }
 
 
+
+
+
 /* Set the pre-factors of a to a random value
 */
 void RealWaveFunctionRandomize(WaveFunctionType * const a)
@@ -979,6 +982,354 @@ uint32_t RealWaveFunctionOrthogonalize(WaveFunctionType * const psi, const WaveF
   }
   return 0;
 }
+
+uint32_t RealWaveFunctionListSVDOrthogonalizeSameBasis(WaveFunctionType * const psilist, WaveFunctionType * const psilistOrtho, uint32_t * const Npsi, const double SingularValue, const Bool ReduceDimension)
+{
+  uint32_t i,j,NSingular=0;
+  double val[2*(*Npsi)];
+  CompactMatrixType S,SvS;
+  WaveFunctionType *psilisttemp;
+  int    info;
+  const char *jobz = "V";
+  const char *uplo = "U";
+  int    lwork = 1024 + 6 * (*Npsi) + 2 * Sqr((*Npsi));
+  int    liwork = 1024 + 5 * (*Npsi);
+  int    *iwork;
+  double *work;
+  // shortcut for zero dimensional vectors
+  if(*Npsi==0) return 0;
+  // calculate overlap matrix S = - psilist^* . psilist^T
+  S.Ni=*Npsi;
+  S.Nj=*Npsi;
+  S.QComplex=0;
+  InitCompactMatrix(&S);
+  for(i=0;i<*Npsi;i++)
+  {
+    S.VRe[i*S.Nj+i] = RealWaveFunctionCalculateNorm(psilist[i]);
+    S.VRe[i*S.Nj+i]*=-S.VRe[i*S.Nj+i];
+    for(j=0;j<i;j++)
+    {
+      S.VRe[i*S.Nj+j] =-RealWaveFunctionDotProductSameBasis(psilist[i], psilist[j]);
+    }
+  }
+  // calculate eigensystem of S: S -> S^* . val . S^T
+  iwork = malloc(liwork*sizeof(int));
+  if(iwork==NULL)
+  {
+    printf("malloc for iwork failed in CompactMatrixEigensystem\n");
+    return 1;
+  }
+  work = malloc(lwork*sizeof(double));
+  if(work==NULL)
+  {
+    printf("malloc for work failed in CompactMatrixEigensystem\n");
+    return 1;
+  }
+  dsyevd(jobz, uplo, Npsi, S.VRe, Npsi, val, work, &lwork, iwork, &liwork, &info);
+  if (info)
+  {
+    printf("dsyvd failed in RealWaveFunctionListSVDOrthogonalizeSameBasis with info value %i\n", info);
+    printf("ERORR!!!!!!!!!!\n");
+    fflush(stdout);
+    return 1;
+  }
+  free(iwork);
+  free(work);
+  // determine the number of singular values (sqrt(-val)<SingularValue) (NSingular)
+  for(i=0;i<*Npsi;i++)
+  {
+    val[i] = sqrt(Max(0,-val[i]));
+    if(val[i]<=SingularValue)
+    {
+      val[i]=0;
+      NSingular++;
+    }
+    else
+    {
+      val[i]=1./val[i];
+    }
+  }
+  // psilist <- (S[[1;;-1-NSingular]]^+ . 1/(sqrt(val)[[1;;-1-NSingular]]) . S[[1;;-1-NSingular]]) . psilist
+  S.Ni-=NSingular;
+  TransformDiagonalMatrixByCompactMatrixTdagAT(val, &S, &SvS);
+  FreeCompactMatrix(&S);
+  for(i=0;i<SvS.Ni;i++)
+  {
+    for(j=0;j<i;j++)
+    {
+      SvS.VRe[i*SvS.Nj+j]+=SvS.VRe[j*SvS.Nj+i];
+      SvS.VRe[i*SvS.Nj+j]/=2;
+      SvS.VRe[j*SvS.Nj+i]=SvS.VRe[i*SvS.Nj+j];
+    }
+  }
+  for(i=0;i<*Npsi;i++)
+  {
+    if(WaveFunctionInitCopyBasis(&(psilistOrtho[i]),psilist[i]))
+    {
+      printf("WaveFunctionInitCopyBasis failed in RealWaveFunctionListSVDOrthogonalizeSameBasis\n");
+      return 1;
+    }
+    for(j=0;j<*Npsi;j++)
+    {
+      RealWaveFunctionAddMultipliedSameBasis(psilistOrtho[i], psilist[j], SvS.VRe[i*SvS.Nj+j]);
+    }
+  }
+  FreeCompactMatrix(&SvS);
+  // no singular values or ReduceDimension = False
+  // return 0
+  if((NSingular==0)||(ReduceDimension==False)) return 0;
+  // singular values and reduce dimension
+  // normlist = psilist[[i]]^* . psilist[[i]]
+  for(i=0;i<*Npsi;i++)
+  {
+    val[2*i] = RealWaveFunctionCalculateNorm(psilistOrtho[i]);
+    val[2*i+1] = i;
+  }
+  // remove the NSingular states with smallest norm (change Npsi)
+  qsort(val, *Npsi, 2*sizeof(double), cmpdouble);
+  psilisttemp = malloc((*Npsi-NSingular)*sizeof(WaveFunctionType));
+  for(i=0;i<(*Npsi-NSingular);i++)
+  {
+    psilisttemp[i] = psilistOrtho[(int)(val[2*i+1])];
+  }
+  for(i=(*Npsi-NSingular);i<*Npsi;i++)
+  {
+    WaveFunctionFreeValues(&(psilistOrtho[(int)(val[2*i+1])]));
+  }
+  *Npsi-=NSingular;
+  // through a warning if Norms of the removed state are equal to norm of state kept
+  if(*Npsi!=0)
+  {
+    if((val[2*(*Npsi)-2]-val[2*(*Npsi)])<SingularValue)
+    {
+      VerbosityPrintf(0x0001, "Warning in RealWaveFunctionListSVDOrthogonalizeSameBasis\nNorm of states after first Lowdin orthonormalization are not seperated in large and small norms\nOverlap is:\n");
+      for(i=0;i<*Npsi+NSingular;i++)
+      {
+        printf("%3g %22.15E\n",val[2*i+1],val[2*i]);
+      }
+    }
+  }
+  
+  // call RealWaveFunctionListSVDOrthogonalize again
+  if(RealWaveFunctionListSVDOrthogonalizeSameBasis(psilisttemp, psilistOrtho, Npsi, SingularValue, False))
+  {
+    printf("RealWaveFunctionListSVDOrthogonalizeSameBasis failed in RealWaveFunctionListSVDOrthogonalizeSameBasis\n");
+    return 1;
+  }
+  for(i=0;i<*Npsi;i++)
+  {
+    WaveFunctionFreeValues(&(psilisttemp[i]));
+  }
+  return 0;
+}
+
+uint32_t RealWaveFunctionListSVDOrthogonalize(WaveFunctionType * const psilist, WaveFunctionType * const psilistOrtho, uint32_t * const Npsi, const double SingularValue, const Bool ReduceDimension)
+{
+  uint32_t i,j,NSingular=0;
+  double val[2*(*Npsi)];
+  CompactMatrixType S,SvS;
+  WaveFunctionType *psilisttemp;
+  int    info;
+  const char *jobz = "V";
+  const char *uplo = "U";
+  int    lwork = 1024 + 6 * (*Npsi) + 2 * Sqr((*Npsi));
+  int    liwork = 1024 + 5 * (*Npsi);
+  int    *iwork;
+  double *work;
+  // shortcut for zero dimensional vectors
+  if(*Npsi==0) return 0;
+  // calculate overlap matrix S = - psilist^* . psilist^T
+  S.Ni=*Npsi;
+  S.Nj=*Npsi;
+  S.QComplex=0;
+  InitCompactMatrix(&S);
+  for(i=0;i<*Npsi;i++)
+  {
+    S.VRe[i*S.Nj+i] = RealWaveFunctionCalculateNorm(psilist[i]);
+    S.VRe[i*S.Nj+i]*=-S.VRe[i*S.Nj+i];
+    for(j=0;j<i;j++)
+    {
+      S.VRe[i*S.Nj+j] =-RealWaveFunctionDotProduct(&(psilist[i]), &(psilist[j]));
+    }
+  }
+  // calculate eigensystem of S: S -> S^* . val . S^T
+  iwork = malloc(liwork*sizeof(int));
+  if(iwork==NULL)
+  {
+    printf("malloc for iwork failed in CompactMatrixEigensystem\n");
+    return 1;
+  }
+  work = malloc(lwork*sizeof(double));
+  if(work==NULL)
+  {
+    printf("malloc for work failed in CompactMatrixEigensystem\n");
+    return 1;
+  }
+  dsyevd(jobz, uplo, Npsi, S.VRe, Npsi, val, work, &lwork, iwork, &liwork, &info);
+  if (info)
+  {
+    printf("dsyvd failed in RealWaveFunctionListSVDOrthogonalize with info value %i\n", info);
+    printf("ERORR!!!!!!!!!!\n");
+    fflush(stdout);
+    return 1;
+  }
+  free(iwork);
+  free(work);
+  // determine the number of singular values (sqrt(-val)<SingularValue) (NSingular)
+  for(i=0;i<*Npsi;i++)
+  {
+    val[i] = sqrt(Max(0,-val[i]));
+    if(val[i]<=SingularValue)
+    {
+      val[i]=0;
+      NSingular++;
+    }
+    else
+    {
+      val[i]=1./val[i];
+    }
+  }
+  // psilist <- (S[[1;;-1-NSingular]]^+ . 1/(sqrt(val)[[1;;-1-NSingular]]) . S[[1;;-1-NSingular]]) . psilist
+  S.Ni-=NSingular;
+  TransformDiagonalMatrixByCompactMatrixTdagAT(val, &S, &SvS);
+  FreeCompactMatrix(&S);
+  for(i=0;i<SvS.Ni;i++)
+  {
+    for(j=0;j<i;j++)
+    {
+      SvS.VRe[i*SvS.Nj+j]+=SvS.VRe[j*SvS.Nj+i];
+      SvS.VRe[i*SvS.Nj+j]/=2;
+      SvS.VRe[j*SvS.Nj+i]=SvS.VRe[i*SvS.Nj+j];
+    }
+  }
+  for(i=0;i<*Npsi;i++)
+  {
+    psilistOrtho[i].NFermion=psilist[i].NFermion;
+    psilistOrtho[i].NBoson=psilist[i].NBoson;
+    psilistOrtho[i].NBitsKey=psilist[i].NBitsKey;
+    psilistOrtho[i].QComplex=psilist[i].QComplex;
+    if(WaveFunctionInit(&(psilistOrtho[i])))
+    {
+      printf("WaveFunctionInit failed in RealWaveFunctionListSVDOrthogonalize\n");
+      return 1;
+    }
+    for(j=0;j<*Npsi;j++)
+    {
+      RealWaveFunctionAddMultipliedUnionBasis(&(psilistOrtho[i]), psilist[j], SvS.VRe[i*SvS.Nj+j]);
+    }
+  }
+  FreeCompactMatrix(&SvS);
+  // no singular values or ReduceDimension = False
+  // return 0
+  if((NSingular==0)||(ReduceDimension==False)) return 0;
+  // singular values and reduce dimension
+  // normlist = psilist[[i]]^* . psilist[[i]]
+  for(i=0;i<*Npsi;i++)
+  {
+    val[2*i] = RealWaveFunctionCalculateNorm(psilistOrtho[i]);
+    val[2*i+1] = i;
+  }
+  // remove the NSingular states with smallest norm (change Npsi)
+  qsort(val, *Npsi, 2*sizeof(double), cmpdouble);
+  psilisttemp = malloc((*Npsi-NSingular)*sizeof(WaveFunctionType));
+  for(i=0;i<(*Npsi-NSingular);i++)
+  {
+    psilisttemp[i] = psilistOrtho[(int)(val[2*i+1])];
+  }
+  for(i=(*Npsi-NSingular);i<*Npsi;i++)
+  {
+    WaveFunctionFree(&(psilistOrtho[(int)(val[2*i+1])]));
+  }
+  *Npsi-=NSingular;
+  // call RealWaveFunctionListSVDOrthogonalize again
+  if(RealWaveFunctionListSVDOrthogonalize(psilisttemp, psilistOrtho, Npsi, SingularValue, False))
+  {
+    printf("RealWaveFunctionListSVDOrthogonalize failed in RealWaveFunctionListSVDOrthogonalize\n");
+    return 1;
+  }
+  for(i=0;i<*Npsi;i++)
+  {
+    WaveFunctionFree(&(psilisttemp[i]));
+  }
+  return 0;
+}
+
+uint32_t RealWaveFunctionListOrthogonalizeSameBasis(WaveFunctionType * const psilist, uint32_t * const Npsi, const double SingularValue, const Bool ReduceDimension)
+{
+  uint32_t i,j;
+  double Norm;
+  if(*Npsi==0) return 0;
+  for(i=0;i<*Npsi;i++)
+  {
+    // normalize psi[i] if norm smaller than Singular value set psi[i] to zero or remove psi[i] from basis
+    while((Norm=RealWaveFunctionCalculateNorm(psilist[i]))<=SingularValue)
+    {
+      if(ReduceDimension==True)
+      {
+        RealWaveFunctionFreeValues(&(psilist[i]));
+        for(j=i+1;j<*Npsi;j++)
+        {
+          psilist[j-1]=psilist[j];
+        }
+        (*Npsi)--;
+      }
+      else
+      {
+        RealWaveFunctionMultiply(psilist[i], 0);
+        i++;
+      }
+      if(i==*Npsi) return 0;
+    }
+    RealWaveFunctionMultiply(psilist[i], 1.0/Norm);
+    for(j=i+1;j<*Npsi;j++)
+    {
+      // subtract the projection of psi[i] on psi[j] from psi[j]
+      Norm = RealWaveFunctionDotProductSameBasis(psilist[i], psilist[j]); // Norm = < psi_i | psi_j >
+      RealWaveFunctionAddMultipliedSameBasis(psilist[j], psilist[i], -Norm); // psi_j = psi_j - Norm * psi_i
+    }
+  }
+  return 0;
+}
+
+uint32_t RealWaveFunctionListOrthogonalize(WaveFunctionType * const psilist, uint32_t * const Npsi, const double SingularValue, const Bool ReduceDimension)
+{
+  uint32_t i,j;
+  double Norm;
+  double epsilon=DBL_EPSILON*DBL_EPSILON; // do I need this as an imput? do we renormalize if this would be a real number ??
+  if(*Npsi==0) return 0;
+  for(i=0;i<*Npsi;i++)
+  {
+    // normalize psi[i] if norm smaller than Singular value set psi[i] to zero or remove psi[i] from basis
+    while((Norm=RealWaveFunctionCalculateNorm(psilist[i]))<=SingularValue)
+    {
+      if(ReduceDimension==True)
+      {
+        RealWaveFunctionFree(&(psilist[i]));
+        for(j=i+1;j<*Npsi;j++)
+        {
+          psilist[j-1]=psilist[j];
+        }
+        (*Npsi)--;
+      }
+      else
+      {
+        RealWaveFunctionTruncateBasis(&(psilist[i]), 1+sqrt(SingularValue));
+        i++;
+      }
+      if(i==*Npsi) return 0;
+    }
+    RealWaveFunctionTruncateBasis(&(psilist[i]), epsilon*Norm);
+    RealWaveFunctionMultiply(psilist[i], 1.0/Norm);
+    for(j=i+1;j<*Npsi;j++)
+    {
+      // subtract the projection of psi[i] on psi[j] from psi[j]
+      Norm = RealWaveFunctionDotProduct(&(psilist[i]), &(psilist[j])); // Norm = < psi_i | psi_j >
+      RealWaveFunctionAddMultipliedUnionBasis(&(psilist[j]), psilist[i], -Norm); // psi_j = psi_j - Norm * psi_i
+    }
+  }
+  return 0;
+}
+
 
 
 uint32_t CreateRealRandomWaveFunction(WaveFunctionType * const psi, uint32_t const NFermions, uint32_t const nelectrons)

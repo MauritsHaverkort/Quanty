@@ -196,26 +196,37 @@ MatrixType* luaL_checkMatrix(lua_State *L, int narg)
 
 WaveFunctionType* luaL_checkarray_WaveFunctionType(lua_State *L, int narg, uint32_t *len_out)
 {
-  int i,j;
+  int i;
   luaL_checktype(L, narg, LUA_TTABLE);
-  uint32_t len = (uint32_t)lua_objlen(L, narg);
-  *len_out = len;
-  WaveFunctionType *buff = (WaveFunctionType*)malloc(len*sizeof(WaveFunctionType));
-  for(i=0;i<len;i++)
+  *len_out = (uint32_t)lua_objlen(L, narg);
+  WaveFunctionType *buff = (WaveFunctionType*)malloc((*len_out)*sizeof(WaveFunctionType));
+  for(i=0;i<(*len_out);i++)
   {
     lua_rawgeti(L, narg, i+1);
     buff[i] = *(WaveFunctionType *)luaL_checkudata(L, -1, "Wavefunction_Type");
     lua_pop(L, 1);
-    for(j=0;j<i;j++)
-    {
-      if(buff[i].ValueRe==buff[j].ValueRe)
-      {
-        WaveFunctionCopy(buff[j], &buff[i]);
-      }
-    }
   }
   return buff;
 }
+
+WaveFunctionType** luaL_checkarray_PointerWaveFunctionType(lua_State *L, int narg, uint32_t *len_out)
+{
+  int i;
+  luaL_checktype(L, narg, LUA_TTABLE);
+  *len_out = (uint32_t)lua_objlen(L, narg);
+  WaveFunctionType **buff = (WaveFunctionType**)malloc((*len_out)*sizeof(WaveFunctionType*));
+  for(i=0;i<(*len_out);i++)
+  {
+    lua_rawgeti(L, narg, i+1);
+    buff[i] = (WaveFunctionType *)luaL_checkudata(L, -1, "Wavefunction_Type");
+    lua_pop(L, 1);
+  }
+  return buff;
+}
+
+
+
+
 
 OperatorType* luaL_checkarray_OperatorType(lua_State *L, int narg, uint32_t *len_out)
 {
@@ -495,6 +506,107 @@ void LuaPushTable_TriDiagonalMatrixType(lua_State* L, TriDiagonalMatrixType cons
   lua_rawseti(L, -2, 1);
   /* push b */
   LuaPushArray_double(L, M->b, MNtrunc);
+  lua_rawseti(L, -2, 2);
+  /* push mu */
+  lua_pushnumber(L, M->mu);
+  lua_rawseti(L, -2, 3);
+}
+
+void LuaPushTable_BlockTriDiagonalMatrixType(lua_State* L, BlockTriDiagonalMatrixType const * const M)
+{
+  uint32_t k,i,MNtrunc=M->N;
+  double totb;
+  CompactMatrixType block;
+  //*   matrix k can be found at position [k*BlockSize*BlockSize]
+  //*   element [i,j] of matrix k can be found at position [k*BlockSize*BlockSize+i*BlockSize+j]
+  //*   stop the printing if the sum of the absulute value of all elements of b[i] is less then 0.01*DBL_EPSILON
+  if(M->QComplex)
+  {
+    for(k=1;k<M->N;k++)
+    {
+      totb=0;
+      for(i=k*M->BlockSize*M->BlockSize;i<(k+1)*M->BlockSize*M->BlockSize;i++)
+      {
+        totb+=M->b[i].Re*M->b[i].Re+M->b[i].Im*M->b[i].Im;
+      }
+      if(totb<0.01*DBL_EPSILON)
+      {
+        MNtrunc=k;
+        break;
+      }
+    }
+  }
+  else
+  {
+    for(k=1;k<M->N;k++)
+    {
+      totb=0;
+      for(i=k*M->BlockSize*M->BlockSize;i<(k+1)*M->BlockSize*M->BlockSize;i++)
+      {
+        totb+=M->bRe[i]*M->bRe[i];
+      }
+      if(totb<0.01*DBL_EPSILON)
+      {
+        MNtrunc=k;
+        break;
+      }
+    }
+  }
+  block.QComplex=M->QComplex;
+  block.Ni=M->BlockSize;
+  block.Nj=M->BlockSize;
+  block.a0=0;
+  block.b0=0;
+  block.mu=0;
+  block.Name=NULL;
+  lua_createtable(L, 3, 0);
+  /* push a */
+  if(block.QComplex)
+  {
+    block.V = M->a;
+  }
+  else
+  {
+    block.VRe = M->aRe;
+  }
+  lua_createtable(L, MNtrunc+1, 0);
+  for(k=0;k<=MNtrunc;k++)
+  {
+    LuaPushTable_CompactMatrixType(L, &block);
+    lua_rawseti(L, -2, k+1);
+    if(block.QComplex)
+    {
+      block.V += Sqr(M->BlockSize);
+    }
+    else
+    {
+      block.VRe += Sqr(M->BlockSize);
+    }
+  }
+  lua_rawseti(L, -2, 1);
+  /* push b */
+  if(block.QComplex)
+  {
+    block.V = M->b;
+  }
+  else
+  {
+    block.VRe = M->bRe;
+  }
+  lua_createtable(L, MNtrunc, 0);
+  for(k=0;k<MNtrunc;k++)
+  {
+    LuaPushTable_CompactMatrixType(L, &block);
+    lua_rawseti(L, -2, k+1);
+    if(block.QComplex)
+    {
+      block.V += Sqr(M->BlockSize);
+    }
+    else
+    {
+      block.VRe += Sqr(M->BlockSize);
+    }
+  }
   lua_rawseti(L, -2, 2);
   /* push mu */
   lua_pushnumber(L, M->mu);

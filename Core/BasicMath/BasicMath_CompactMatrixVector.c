@@ -43,7 +43,7 @@ uint32_t InitCompactMatrix(CompactMatrixType * const M)
   else
   {
     M->VRe=(double*)calloc(M->Ni*M->Nj,sizeof(double));
-    if(M->V==NULL)
+    if(M->VRe==NULL)
     {
       printf("Malloc failed in InitCompactMatrix for real allocation\n");
       fflush(stdout);
@@ -265,6 +265,29 @@ uint32_t CompactMatrixChop(CompactMatrixType * const M, double const epsilon)
   }
   return 0;
 }
+
+uint32_t CompactMatrixRemoveRow(CompactMatrixType * const A, uint32_t row)
+{
+  if(row>=A->Ni)
+  {
+    printf("Error in CompactMatrixRemoveRow, tried to remove row %u, but there are only %u rows (counting starts at zero)\n",row,A->Ni);
+    return 1;
+  }
+  if(A->QComplex)
+  {
+    if(!(row+1==A->Ni)) memmove(&(A->V[row*A->Nj]), &(A->V[(row+1)*A->Nj]), (A->Ni-row-1)*A->Nj*sizeof(Complex16));
+    A->Ni--;
+    A->V=realloc(A->V, A->Ni*A->Nj*sizeof(Complex16));
+  }
+  else
+  {
+    if(!(row+1==A->Ni)) memmove(&(A->VRe[row*A->Nj]), &(A->VRe[(row+1)*A->Nj]), (A->Ni-row-1)*A->Nj*sizeof(double));
+    A->Ni--;
+    A->VRe=realloc(A->VRe, A->Ni*A->Nj*sizeof(double));
+  }
+  return 0;
+}
+
 
 /*   y = A x
  *   y is uninitialized on entry
@@ -546,7 +569,7 @@ uint32_t TransformDiagonalMatrixByCompactMatrixTdagAT(double const *A, CompactMa
         irow=i;
         jrow=j;
         TdagAT->VRe[TATindex]=0;
-        for(k=0;k<T->Nj;k++)
+        for(k=0;k<T->Ni;k++)
         {
           TdagAT->VRe[TATindex]+=T->VRe[jrow]*A[k]*T->VRe[irow];
           irow+=T->Nj;
@@ -1259,163 +1282,42 @@ uint32_t CompactMatrixAddShifted(CompactMatrixType * const M, const CompactMatri
 }
 
 
-/*  TO DO
- *  on input A contains the matrix to be factorized
- *  on output A = Q^C * R
- *  with Q orthogonal (Q^C.Q=1) and R upper triangular
- */
-uint32_t CompactMatrixQRDecomposition(CompactMatrixType const *A, CompactMatrixType *Q, CompactMatrixType *R)
-{
-  int LWORK=A->Ni*A->Nj,INFO;
-  
-  
-  if(A->QComplex)
-  {
-    
-  }
-  else
-  {
-    double *TAU,*WORK;
-    TAU=malloc(Min(A->Ni,A->Nj*sizeof(double)));
-    WORK=malloc(A->Ni*A->Nj*sizeof(double));
-    dgeqrf(&(A->Ni),&(A->Nj),A->VRe,&(A->Ni),TAU,WORK,&LWORK,&INFO);
-    
-    
-  }
-  
-  printf("To Do CompactMatrixQRDecomposition\n");
-  return 1;
-}
-
-/*  A is replaced by an orthonormal form of A using Singular value decomposition (eigen value decomposition)
- *  If a SingularValue is smaller than SingularValue this vector is removed (set to zero) from the basis
- *  Aortho = A T
- *  A = Aortho Tinv
- *  if A has no singular values Tinv . T is the identity matrix
- *  the trace of Tinv . T is equal to the dimension (number of rows) of A minus the number of singular vectors in A.
- */
-uint32_t CompactMatrixSVDOrthogonalizeCol(CompactMatrixType * A, double const SingularValue, CompactMatrixType *T, CompactMatrixType *Tinv)
-{
-  uint32_t i;
-  char *JOBU ="A";  /* in SVD A = U S V^T return full array U */
-  char *JOBVT="O";  /* in SVD A = U S V^T return the first min(Ni,Nj) rows of V^T in matrix A, which is over written */
-  int LWORK, INFO;
-  LWORK = Max(5,A->Ni)*Max(5,A->Nj);
-  double *WORK;
-  Complex16 *WORKIM;
-  double *VT=NULL;
-  double *S;
-  Tinv->Ni=A->Nj;
-  Tinv->Nj=A->Nj;
-  S=calloc(A->Nj,sizeof(double));
-  Tinv->QComplex=A->QComplex;
-  InitCompactMatrix(Tinv);
-  if(A->QComplex)
-  {
-    WORK = malloc(5*Min(A->Ni,A->Nj)*sizeof(double));
-    if(WORK==NULL)
-    {
-      printf("malloc failed in CompactMatrixSVDOrthogonalize\n");
-      return 1;
-    }
-    WORKIM = malloc(LWORK*sizeof(Complex16));
-    if(WORKIM==NULL)
-    {
-      free(WORK);
-      printf("malloc failed in CompactMatrixSVDOrthogonalize\n");
-      return 1;
-    }
-    zgesvd(JOBU, JOBVT, &A->Nj, &A->Ni, A->V, &A->Nj,S,Tinv->V, &A->Nj,VT, &A->Nj, WORKIM, &LWORK,WORK, &INFO);
-    if(INFO)
-    {
-      printf("zgesvd failed in CompactMatrixSVDOrthogonalize with INFO %i\n",INFO);
-      return 1;
-    }
-    free(WORKIM);
-    free(WORK);
-  }
-  else
-  {
-    WORK = malloc(LWORK*sizeof(double));
-    if(WORK==NULL)
-    {
-      printf("malloc failed in CompactMatrixSVDOrthogonalize\n");
-      return 1;
-    }
-    dgesvd(JOBU, JOBVT, &A->Nj, &A->Ni, A->VRe, &A->Nj,S,Tinv->VRe, &A->Nj,VT, &A->Nj, WORK, &LWORK, &INFO);
-    if(INFO)
-    {
-      printf("dgesvd failed in CompactMatrixSVDOrthogonalize with INFO %i\n",INFO);
-      return 1;
-    }
-    free(WORK);
-  }
-  CompactMatrixCopy(*Tinv, T);
-  CompactMatrixConjugateTranspose(T);
-  for(i=0;i<A->Nj;i++)
-  {
-    if(S[i]<SingularValue)
-    {
-      S[i]=0;
-    }
-  }
-  MultiplyDiagonalMatrixCompactMatrix(S,Tinv);
-  //MultiplyCompactMatrixDiagonalMatrix(Tinv, S);
-  for(i=0;i<A->Nj;i++)
-  {
-    if(S[i]<SingularValue)
-    {
-      S[i]=0;
-    }
-    else
-    {
-      S[i]=1.0/S[i];
-    }
-  }
-  MultiplyCompactMatrixDiagonalMatrix(T, S);
-  //MultiplyDiagonalMatrixCompactMatrix(S,T);
-  for(i=0;i<A->Nj;i++)
-  {
-    if(S[i]<100*DBL_MIN)
-    {
-      S[i]=0;
-    }
-    else
-    {
-      S[i]=1;
-    }
-  }
-  //MultiplyDiagonalMatrixCompactMatrix(S,A);
-  free(S);
-  return 0;
-}
-
-
 /*  A is replaced by an orthonormal form of A using Singular value decomposition (eigen value decomposition)
  *  If a SingularValue is smaller than SingularValue this vector is removed from the basis
- *  Aortho = T A
- *  A = Tinv Aortho
- *  if A has no singular values Tinv . T is the identity matrix
- *  the trace of Tinv . T is equal to the dimension (number of columns) of A minus the number of singular vectors in A.
- *
- *  The first vector returned is the most non-singular vector, the second vector reduced the second etc. The last vector has the smallest overlap with the original basis
+ *  If ReduceDimension is True the number of Rows in A is allowed to change and A . A^dag = 1
+ *  If ReduceDimension is False the number of Rows in A stays constant. The matrix returned will not be fully orthonormal
+ *  The trace of A.A^dag is equal to the numer of non-singular elements in A
+ *  Diagonalizing A.A^dag wil yield NSingular states with eigen-value zero and all others with eigen-value 1.
  */
-uint32_t CompactMatrixSVDOrthogonalizeRow(CompactMatrixType * A, double const SingularValue, CompactMatrixType *T, CompactMatrixType *Tinv)
+uint32_t CompactMatrixSVDOrthogonalizeRow(CompactMatrixType * A, const double SingularValue, const Bool ReduceDimension)
 {
-  uint32_t i;
+  uint32_t i,j,k,NSingular;
   char *JOBU ="O";  /* in SVD A = U S V^T return the first min(Ni,Nj) collumns of U in matrix A, which is over written */
   char *JOBVT="A";  /* in SVD A = U S V^T return full array VT */
+  char *TRANSA="N";
+  char *TRANSB="N";
+  Complex16 ALPHA,BETA;
+  ALPHA.Re=1; ALPHA.Im=0;
+  BETA.Re =0; BETA.Im =0;
+  int M,N,K,LDA,LDB,LDC;
   int LWORK, INFO;
   LWORK = Max(5,A->Ni)*Max(5,A->Nj);
   double *WORK;
   Complex16 *WORKIM;
   double *U=NULL;
   double *S;
-  Tinv->Ni=A->Ni;
-  Tinv->Nj=A->Ni;
+  CompactMatrixType V;
+  if(A->Ni==0) return 0;
+  if(A->Nj==0)
+  {
+    A->Ni=0;
+    return 0;
+  }
+  V.Ni=A->Ni;
+  V.Nj=A->Ni;
   S=calloc(A->Ni,sizeof(double));
-  Tinv->QComplex=A->QComplex;
-  InitCompactMatrix(Tinv);
+  V.QComplex=A->QComplex;
+  InitCompactMatrix(&V);
   if(A->QComplex)
   {
     WORK = malloc(5*Min(A->Ni,A->Nj)*sizeof(double));
@@ -1431,14 +1333,73 @@ uint32_t CompactMatrixSVDOrthogonalizeRow(CompactMatrixType * A, double const Si
       printf("malloc failed in CompactMatrixSVDOrthogonalize\n");
       return 1;
     }
-    zgesvd(JOBU, JOBVT, &A->Nj, &A->Ni, A->V, &A->Nj,S,U, &A->Ni,Tinv->V, &A->Ni, WORKIM, &LWORK, WORK, &INFO);
+    zgesvd(JOBU, JOBVT, &A->Nj, &A->Ni, A->V, &A->Nj,S,U, &A->Ni,V.V, &A->Ni, WORKIM, &LWORK, WORK, &INFO);
     if(INFO)
     {
       printf("zgesvd failed in CompactMatrixSVDOrthogonalize with INFO %i\n",INFO);
       return 1;
     }
-    free(WORKIM);
+    NSingular=0;
+    for(i=0;i<A->Ni;i++)
+    {
+      if(S[i]<=SingularValue)
+      {
+        S[i]=0;
+        NSingular++;
+      }
+    }
+    
+    M=A->Nj;//ok
+    N=A->Ni;//?
+    K=A->Ni-NSingular;//?
+    
+    LDA=A->Nj;//ok
+    LDB=V.Nj; //ok
+    LDC=A->Nj;//ok
+    
+    zgemm(TRANSA,TRANSB,&M,&N,&K,&ALPHA.Re,A->V,&LDA,V.V,&LDB,&BETA.Re,WORKIM,&LDC);
+    
+    free(A->V);
+    A->V=WORKIM;
+    FreeCompactMatrix(&V);
     free(WORK);
+    
+    if((NSingular!=0)&&(ReduceDimension==True))
+    {
+      uint32_t Spos[NSingular];
+      double Smin[NSingular],Snow;
+      for(i=0;i<NSingular;i++)
+      {
+        Smin[i]=DBL_MAX;
+      }
+      for(i=0;i<A->Ni;i++)
+      {
+        Snow=0;
+        for(j=0;j<A->Nj;j++)
+        {
+          Snow+=A->V[i*A->Nj+j].Re*A->V[i*A->Nj+j].Re+A->V[i*A->Nj+j].Im*A->V[i*A->Nj+j].Im;
+        }
+        for(j=0;j<NSingular;j++)
+        {
+          if(Snow<Smin[j])
+          {
+            for(k=NSingular-1;k>j+1;k--)
+            {
+              Smin[k]=Smin[k-1];
+              Spos[k]=Spos[k-1];
+            }
+            Smin[j]=Snow;
+            Spos[j]=i;
+            break;
+          }
+        }
+      }
+      qsort(Spos, NSingular, sizeof(uint32_t), cmpuint32t);
+      for(i=0;i<NSingular;i++)
+      {
+        CompactMatrixRemoveRow(A, Spos[i]);
+      }
+    }
   }
   else
   {
@@ -1448,101 +1409,153 @@ uint32_t CompactMatrixSVDOrthogonalizeRow(CompactMatrixType * A, double const Si
       printf("malloc failed in CompactMatrixSVDOrthogonalize\n");
       return 1;
     }
-    dgesvd(JOBU, JOBVT, &A->Nj, &A->Ni, A->VRe, &A->Nj,S,U, &A->Ni,Tinv->VRe, &A->Ni, WORK, &LWORK, &INFO);
+    dgesvd(JOBU, JOBVT, &A->Nj, &A->Ni, A->VRe, &A->Nj,S,U, &A->Ni,V.VRe, &A->Ni, WORK, &LWORK, &INFO);
     if(INFO)
     {
-      printf("dgesvd failed in CompactMatrixSVDOrthogonalize with INFO %i\n",INFO);
+      printf("dgesvd failed in CompactMatrixSVDOrthogonalize with INFO %i (A->Ni %u, A->Nj %u)\n",INFO,A->Ni,A->Nj);
       return 1;
     }
-    free(WORK);
-  }
-  CompactMatrixCopy(*Tinv, T);
-  CompactMatrixConjugateTranspose(T);
-  for(i=0;i<A->Ni;i++)
-  {
-    if(S[i]<SingularValue)
+    NSingular=0;
+    for(i=0;i<A->Ni;i++)
     {
-      S[i]=0;
+      if(S[i]<=SingularValue)
+      {
+        S[i]=0;
+        NSingular++;
+      }
+    }
+    
+    M=A->Nj;//ok
+    N=A->Ni;//?
+    K=A->Ni-NSingular;//?
+    
+    LDA=A->Nj;//ok
+    LDB=V.Nj; //ok
+    LDC=A->Nj;//ok
+    
+    dgemm(TRANSA,TRANSB,&M,&N,&K,&ALPHA.Re,A->VRe,&LDA,V.VRe,&LDB,&BETA.Re,WORK,&LDC);
+    
+    free(A->VRe);
+    A->VRe=WORK;
+    FreeCompactMatrix(&V);
+    
+    if((NSingular!=0)&&(ReduceDimension==True))
+    {
+      uint32_t Spos[NSingular];
+      double Smin[NSingular],Snow;
+      for(i=0;i<NSingular;i++)
+      {
+        Smin[i]=DBL_MAX;
+      }
+      for(i=0;i<A->Ni;i++)
+      {
+        Snow=0;
+        for(j=0;j<A->Nj;j++)
+        {
+          Snow+=A->VRe[i*A->Nj+j]*A->VRe[i*A->Nj+j];
+        }
+        for(j=0;j<NSingular;j++)
+        {
+          if(Snow<Smin[j])
+          {
+            for(k=NSingular-1;k>j+1;k--)
+            {
+              Smin[k]=Smin[k-1];
+              Spos[k]=Spos[k-1];
+            }
+            Smin[j]=Snow;
+            Spos[j]=i;
+            break;
+          }
+        }
+      }
+      qsort(Spos, NSingular, sizeof(uint32_t), cmpuint32t);
+      for(i=0;i<NSingular;i++)
+      {
+        CompactMatrixRemoveRow(A, Spos[i]);
+      }
     }
   }
-  MultiplyCompactMatrixDiagonalMatrix(Tinv, S);
-  for(i=0;i<A->Ni;i++)
-  {
-    if(S[i]<SingularValue)
-    {
-      S[i]=0;
-    }
-    else
-    {
-      S[i]=1.0/S[i];
-    }
-  }
-  MultiplyDiagonalMatrixCompactMatrix(S, T);
-  for(i=0;i<A->Ni;i++)
-  {
-    if(S[i]<100*DBL_MIN)
-    {
-      S[i]=0;
-    }
-    else
-    {
-      S[i]=1;
-    }
-  }
-  MultiplyDiagonalMatrixCompactMatrix(S, A);
   free(S);
+  if((NSingular>0)&&(ReduceDimension==True)) return CompactMatrixSVDOrthogonalizeRow(A, SingularValue, ReduceDimension);
   return 0;
+}
+uint32_t CompactMatrixSVDOrthogonalizeRowplusT(CompactMatrixType * A, CompactMatrixType *const Anew, CompactMatrixType *const T, CompactMatrixType *const Tinv, double const SingularValue, Bool const ReduceDimension)
+{
+  //TODO: implement (look at git for older implementation)
+  return 1;
 }
 
 
 
 /*  A is replaced by an orthonormal form of A using Gram Schmidt
- *  If the norm of a vector A_{i} is smaller than SingularValue this vector is set to zero
+ *  If the norm of a vector A_{i} is smaller than SingularValue this vector is set to zero or removed from the basis depending on ReduceDimension
  */
-uint32_t CompactMatrixGramSchmidtOrthogonalizeRow(CompactMatrixType * A, double const SingularValue)
+uint32_t CompactMatrixGramSchmidtOrthogonalizeRow(CompactMatrixType * A, double const SingularValue, Bool const ReduceDimension)
 {
-  int i,j,ii,ipos,iipos;
+  int i,j,ii,ipos,iipos, NSingular;
   double dot,norm,dotRe,dotIm;
+  NSingular=0;
   if(A->QComplex)
   {
     for(i=0;i<A->Ni;i++)
     {
       ipos=i*A->Nj;
-      /* normalize vector i */
+      /* set vector i-NSingular equal to the normalized vector i */
       norm=0;
       for(j=ipos;j<ipos+A->Nj;j++)
       {
         norm+=Sqr(A->V[j].Re) + Sqr(A->V[j].Im);
       }
-      if(norm<SingularValue)
+      if(sqrt(norm)<=SingularValue)
       {
         norm=0;
+        NSingular++;
       }
       else
       {
         norm=1.0/sqrt(norm);
-      }
-      for(j=ipos;j<ipos+A->Nj;j++)
-      {
-        A->V[j].Re*=norm;
-        A->V[j].Im*=norm;
-      }
-      /* for all vectors after vector i subtract projection on vector i */
-      for(ii=i+1;ii<A->Ni;ii++)
-      {
-        iipos = ii*A->Nj;
-        dotRe=0;
-        dotIm=0;
-        for(j=0;j<A->Nj;j++)
+        for(j=ipos;j<ipos+A->Nj;j++)
         {
-          dotRe+=A->V[ipos+j].Re*A->V[iipos+j].Re + A->V[ipos+j].Im*A->V[iipos+j].Im;
-          dotIm+=A->V[ipos+j].Re*A->V[iipos+j].Im - A->V[ipos+j].Im*A->V[iipos+j].Re;
+          A->V[j].Re*=norm;
+          A->V[j].Im*=norm;
+          /* shift vector to account for singular vectors */
+          A->V[j-NSingular*A->Nj].Re=A->V[j].Re;
+          A->V[j-NSingular*A->Nj].Im=A->V[j].Im;
         }
-        for(j=0;j<A->Nj;j++)
+        /* for all vectors after vector i subtract projection on vector i */
+        for(ii=i+1+NSingular;ii<A->Ni;ii++)
         {
-          A->V[iipos+j].Re-=dotRe*A->V[ipos+j].Re - dotIm*A->V[ipos+j].Im;
-          A->V[iipos+j].Im-=dotRe*A->V[ipos+j].Im + dotIm*A->V[ipos+j].Re;
+          iipos = ii*A->Nj;
+          dotRe=0;
+          dotIm=0;
+          for(j=0;j<A->Nj;j++)
+          {
+            dotRe+=A->V[ipos+j].Re*A->V[iipos+j].Re + A->V[ipos+j].Im*A->V[iipos+j].Im;
+            dotIm+=A->V[ipos+j].Re*A->V[iipos+j].Im - A->V[ipos+j].Im*A->V[iipos+j].Re;
+          }
+          for(j=0;j<A->Nj;j++)
+          {
+            A->V[iipos+j].Re-=dotRe*A->V[ipos+j].Re - dotIm*A->V[ipos+j].Im;
+            A->V[iipos+j].Im-=dotRe*A->V[ipos+j].Im + dotIm*A->V[ipos+j].Re;
+          }
         }
+      }
+    }
+    if(NSingular!=0)
+    {
+      if(ReduceDimension==False)
+      {
+        for(i=(A->Ni-NSingular)*A->Nj;i<A->Ni*A->Nj;i++)
+        {
+          A->V[i].Re=0;
+          A->V[i].Im=0;
+        }
+      }
+      else
+      {
+        A->Ni-=NSingular;
+        A->V=(Complex16*)realloc(A->V,A->Ni*A->Nj*sizeof(Complex16));
       }
     }
   }
@@ -1551,7 +1564,7 @@ uint32_t CompactMatrixGramSchmidtOrthogonalizeRow(CompactMatrixType * A, double 
     for(i=0;i<A->Ni;i++)
     {
       ipos=i*A->Nj;
-      /* normalize vector i */
+      /* set vector i-NSingular equal to the normalized vector i */
       norm=0;
       for(j=ipos;j<ipos+A->Nj;j++)
       {
@@ -1560,28 +1573,46 @@ uint32_t CompactMatrixGramSchmidtOrthogonalizeRow(CompactMatrixType * A, double 
       if(norm<SingularValue)
       {
         norm=0;
+        NSingular++;
       }
       else
       {
         norm=1.0/sqrt(norm);
-      }
-      for(j=ipos;j<ipos+A->Nj;j++)
-      {
-        A->VRe[j]*=norm;
-      }
-      /* for all vectors subtract projection on vector i */
-      for(ii=i+1;ii<A->Ni;ii++)
-      {
-        iipos = ii*A->Nj;
-        dot=0;
-        for(j=0;j<A->Nj;j++)
+        for(j=ipos;j<ipos+A->Nj;j++)
         {
-          dot+=A->VRe[ipos+j]*A->VRe[iipos+j];
+          A->VRe[j]*=norm;
+          /* shift vector to account for singular vectors */
+          A->VRe[j-NSingular*A->Nj]=A->VRe[j];
         }
-        for(j=0;j<A->Nj;j++)
+        /* for all vectors subtract projection on vector i */
+        for(ii=i+1;ii<A->Ni;ii++)
         {
-          A->VRe[iipos+j]-=dot*A->VRe[ipos+j];
+          iipos = ii*A->Nj;
+          dot=0;
+          for(j=0;j<A->Nj;j++)
+          {
+            dot+=A->VRe[ipos+j]*A->VRe[iipos+j];
+          }
+          for(j=0;j<A->Nj;j++)
+          {
+            A->VRe[iipos+j]-=dot*A->VRe[ipos+j];
+          }
         }
+      }
+    }
+    if(NSingular!=0)
+    {
+      if(ReduceDimension==False)
+      {
+        for(i=(A->Ni-NSingular)*A->Nj;i<A->Ni*A->Nj;i++)
+        {
+          A->VRe[i]=0;
+        }
+      }
+      else
+      {
+        A->Ni-=NSingular;
+        A->VRe=(double*)realloc(A->VRe,A->Ni*A->Nj*sizeof(double));
       }
     }
   }
@@ -1592,8 +1623,9 @@ uint32_t CompactMatrixGramSchmidtOrthogonalizeRow(CompactMatrixType * A, double 
  *  A = Tinv Anew
  *  with Anew^+ Anew an identity matrix
  */
-uint32_t CompactMatrixGramSchmidtOrthogonalizeRowplusT(CompactMatrixType const * A, CompactMatrixType *const Anew, CompactMatrixType *const T, CompactMatrixType *const Tinv, double const SingularValue)
+uint32_t CompactMatrixGramSchmidtOrthogonalizeRowplusT(CompactMatrixType const * A, CompactMatrixType *const Anew, CompactMatrixType *const T, CompactMatrixType *const Tinv, double const SingularValue, Bool const ReduceDimension)
 {
+  //TODO: add ReduceDimension + debug
   int i,ii,ipos,iipos, one=1;
   CompactMatrixCopy(*A, Anew);
   T->Ni=A->Ni;
@@ -1619,7 +1651,7 @@ uint32_t CompactMatrixGramSchmidtOrthogonalizeRowplusT(CompactMatrixType const *
       }
       /* normalize vector i */
       zdotc(&norm,&(A->Nj), &(Anew->V[ipos]), &one,  &(Anew->V[ipos]), &one);
-      if(norm.Re<SingularValue)
+      if(norm.Re<=SingularValue)
       {
         norm.Re=0;
         norm.Im=0;
@@ -1650,7 +1682,7 @@ uint32_t CompactMatrixGramSchmidtOrthogonalizeRowplusT(CompactMatrixType const *
       }
       /* normalize vector i */
       norm=ddot(&(A->Nj), &(Anew->VRe[ipos]), &one,  &(Anew->VRe[ipos]), &one);
-      if(norm<SingularValue)
+      if(norm<=SingularValue)
       {
         norm=0;
       }
@@ -1666,29 +1698,42 @@ uint32_t CompactMatrixGramSchmidtOrthogonalizeRowplusT(CompactMatrixType const *
   return 0;
 }
 
-/*  A is replaced by an orthonormal form of A using Gram Schmidt
- *  If the norm of a vector A_{i} is smaller than SingularValue this vector is set to zero
+/*  See the row version for the implementation, here orthogonalization per column
+ *  Slow versions using two aditional transposes
  */
-uint32_t CompactMatrixGramSchmidtOrthogonalizeCol(CompactMatrixType * A, double const SingularValue)
+uint32_t CompactMatrixSVDOrthogonalizeCol(CompactMatrixType * A, double const SingularValue, Bool const ReduceDimension)
 {
-  printf("To Do CompactMatrixGramSchmidtOrthogonalizeCol\n");
-  return 1;
+  if(CompactMatrixTranspose(A)) {printf("CompactMatrixTranspose failed in CompactMatrixSVDOrthogonalizeCol\n");return 1;};
+  if(CompactMatrixSVDOrthogonalizeRow(A,SingularValue,ReduceDimension)) {printf("CompactMatrixSVDOrthogonalizeRow failed in CompactMatrixSVDOrthogonalizeCol\n");return 1;};
+  if(CompactMatrixTranspose(A)) {printf("CompactMatrixTranspose failed in CompactMatrixSVDOrthogonalizeCol\n");return 1;};
+  return 0;
 }
-
-/*  Anew = A T
- *  A = Anew Tinv
- *  with Anew^+ Anew an identity matrix
- */
-uint32_t CompactMatrixGramSchmidtOrthogonalizeColplusT(CompactMatrixType const * A, CompactMatrixType *const Anew, CompactMatrixType *const T, CompactMatrixType *const Tinv, double const SingularValue)
+uint32_t CompactMatrixSVDOrthogonalizeColplusT(CompactMatrixType const * A, CompactMatrixType *const Anew, CompactMatrixType *const T, CompactMatrixType *const Tinv, double const SingularValue, Bool const ReduceDimension)
 {
-  printf("To Do CompactMatrixGramSchmidtOrthogonalizeColplusT\n");
-  return 1;
+  CompactMatrixType AT;
+  CompactMatrixCopy(*A, &AT);
+  if(CompactMatrixTranspose(&AT)) {printf("CompactMatrixTranspose failed in CompactMatrixSVDOrthogonalizeCol\n");return 1;};
+  if(CompactMatrixGramSchmidtOrthogonalizeRowplusT(&AT,Anew,T,Tinv,SingularValue,ReduceDimension)) {printf("CompactMatrixSVDOrthogonalizeRowplusT failed in CompactMatrixSVDOrthogonalizeColplusT\n");return 1;};
+  if(CompactMatrixTranspose(Anew)) {printf("CompactMatrixTranspose failed in CompactMatrixSVDOrthogonalizeColplusT\n");return 1;};
+  FreeCompactMatrix(&AT);
+  return 0;
 }
-
-uint32_t CompactMatrixLowdinOrthogonalize(CompactMatrixType * A)
+uint32_t CompactMatrixGramSchmidtOrthogonalizeCol(CompactMatrixType * A, double const SingularValue, Bool const ReduceDimension)
 {
-  printf("To Do CompactMatrixLowdinOrthogonalize\n");
-  return 1;
+  if(CompactMatrixTranspose(A)) {printf("CompactMatrixTranspose failed in CompactMatrixGramSchmidtOrthogonalizeCol\n");return 1;};
+  if(CompactMatrixGramSchmidtOrthogonalizeRow(A,SingularValue,ReduceDimension)) {printf("CompactMatrixGramSchmidtOrthogonalizeRow failed in CompactMatrixGramSchmidtOrthogonalizeCol\n");return 1;};
+  if(CompactMatrixTranspose(A)) {printf("CompactMatrixTranspose failed in CompactMatrixGramSchmidtOrthogonalizeCol\n");return 1;};
+  return 0;
+}
+uint32_t CompactMatrixGramSchmidtOrthogonalizeColplusT(CompactMatrixType const * A, CompactMatrixType *const Anew, CompactMatrixType *const T, CompactMatrixType *const Tinv, double const SingularValue, Bool const ReduceDimension)
+{
+  CompactMatrixType AT;
+  CompactMatrixCopy(*A, &AT);
+  if(CompactMatrixTranspose(&AT)) {printf("CompactMatrixTranspose failed in CompactMatrixGramSchmidtOrthogonalizeCol\n");return 1;};
+  if(CompactMatrixGramSchmidtOrthogonalizeRowplusT(&AT,Anew,T,Tinv,SingularValue,ReduceDimension)) {printf("CompactMatrixGramSchmidtOrthogonalizeRowplusT failed in CompactMatrixGramSchmidtOrthogonalizeColplusT\n");return 1;};
+  if(CompactMatrixTranspose(Anew)) {printf("CompactMatrixTranspose failed in CompactMatrixGramSchmidtOrthogonalizeColplusT\n");return 1;};
+  FreeCompactMatrix(&AT);
+  return 0;
 }
 
 /*
@@ -1697,8 +1742,9 @@ uint32_t CompactMatrixLowdinOrthogonalize(CompactMatrixType * A)
  */
 uint32_t CompactMatrixGeneralEigensystem(CompactMatrixType const *A, CompactMatrixType * const fun, CompactMatrixType * const funinv, Complex16 *val)
 {
+  //TODO: implement
   printf("To Do CompactMatrixGeneralEigensystem\n");
-  return 0;
+  return 1;
 }
 
 
@@ -1875,7 +1921,7 @@ uint32_t CompactMatrixSqrt(CompactMatrixType const *A, CompactMatrixType * const
       {
         sumval+=Abs(val[j]);
       }
-      if(val[i]<-1000*DBL_EPSILON*sumval) printf("Negative value in CompactMatrixSqrt, eigen value is %22.15E at pos %i (trace val = %22.15E)\n",val[i],i,sumval);
+      if(val[i]<-1000*DBL_EPSILON*sumval) printf("Negative value in CompactMatrixSqrt, eigen value is %22.15E at pos %i (trace |val| = %22.15E)\n",val[i],i,sumval);
       val[i]=0;
     }
     val[i]=sqrt(val[i]);
@@ -2066,7 +2112,7 @@ uint32_t CompactMatrixToSpectra(CompactMatrixType const *A, SpectraType * const 
  */
 uint32_t BlockNaturalImpurityOrbitalMatrixToCompactMatrix(BlockNaturalImpurityOrbitalMatrixType const * A, CompactMatrixType * const B)
 {
-  //TODO: test after changing compat matrix order
+  //TODO: test after changing compact matrix order
   int i,j,k,apos,bposL,bposR;
   B->QComplex=A->QComplex;
   B->Ni=(Max(1,A->val.N)+Max(1,A->con.N))*A->BlockSize;
@@ -2436,7 +2482,7 @@ uint32_t BlockTriDiagonalMatrixPartToCompactMatrix(BlockTriDiagonalMatrixType co
  */
 uint32_t CompactMatrixBlockBandTridiagonalizeHermitianNoReorthogonalization(CompactMatrixType const *A, BlockTriDiagonalMatrixType *const B, double const SingularValue, uint32_t NBlockMax, uint32_t BlockSize)
 {
-  //TODO: test after changing compat matrix order
+  //TODO: test after changing compact matrix order
   int i,NSingular;
   CompactMatrixType V,Vm1,Vm2,alpha,beta,R;
   B->N=NBlockMax;
@@ -2525,7 +2571,235 @@ uint32_t CompactMatrixBlockBandTridiagonalizeHermitianNoReorthogonalization(Comp
   return 0;
 }
 
-/* returns 1 if O=O^dag, zero otherwise 
+/*  Returns a block tridiagonal form of matrix A in matrix B using the starting vector vec.
+ *  B is not initialized on input
+ *  vec is destroyed during the calculation. (values and size changed but not freed)
+ */
+uint32_t CompactMatrixBlockBandDiagonalizeReal(CompactMatrixType const * const A, CompactMatrixType * vec, BlockTriDiagonalMatrixType *const B, double const SingularValue, uint32_t const NTri, uint32_t const NOrtho, Bool const ReOrthogonalize)
+{
+  uint32_t i,j;
+  char *charN="N";
+  char *charT="T";
+  double one=1;
+  double minusone=-1;
+  double zero=0;
+  uint32_t NSingular;
+  double *b,*a,work[vec->Ni*vec->Ni];
+  CompactMatrixType *veclist;
+  B->BlockSize=vec->Ni;
+  B->N=MIN(A->Ni,NTri);
+  B->QComplex=0;
+  InitBlockTridiagonalMatrix(B);
+  for(i=0;i<B->BlockSize;i++)
+  {
+    B->bRe[i+i*B->BlockSize]=0;
+  }
+  B->mu=A->mu;
+  strncpy(B->Name, A->Name, MAXStrLength);
+  b=B->bRe;
+  a=B->aRe;
+  veclist=malloc((B->N+1)*sizeof(CompactMatrixType));
+  veclist[0]=*vec;
+  CompactMatrixCopy(veclist[0], &veclist[1]);
+  CompactMatrixSVDOrthogonalizeRow(&veclist[1], SingularValue, True);
+  NSingular=veclist[0].Ni-veclist[1].Ni;
+  if(NSingular!=0)
+  {
+    VerbosityPrintf(0x0001,"Reduce dimension from %u to %u in block %u\n",veclist[0].Ni,veclist[1].Ni,0);
+  }
+  if(ReOrthogonalize==True)
+  {
+    CompactMatrixGramSchmidtOrthogonalizeRow(&veclist[1], SingularValue, False);
+  }
+  dgemm(charT,charN,&veclist[1].Ni,&veclist[0].Ni,&veclist[0].Nj,&one,veclist[1].VRe,&veclist[1].Nj,veclist[0].VRe,&veclist[0].Nj,&zero,b,&B->BlockSize); // b = v[0] . v[1]^T
+  for(i=1;i<NTri;i++)
+  {
+    veclist[i+1].Ni=veclist[i].Ni;
+    veclist[i+1].Nj=veclist[i].Nj;
+    veclist[i+1].QComplex=veclist[i].QComplex;
+    if(InitCompactMatrix(&veclist[i+1]))
+    {
+      // out off memory - could implement freeing some vectors and retry
+      printf("InitCompactMatrix failed in CompactMatrixBlockBandDiagonalizeReal\n");
+      return 1;
+    }
+    dgemm(charN,charN,&A->Ni,&veclist[i].Ni,&A->Nj,&one,A->VRe,&A->Nj,veclist[i].VRe,&veclist[i].Nj,&zero,veclist[i+1].VRe,&veclist[i+1].Nj); // v[i+1] = v[i] . A
+    a+=B->BlockSize*B->BlockSize;
+    dgemm(charT,charN,&veclist[i+1].Ni,&veclist[i].Ni,&veclist[i].Nj,&one,veclist[i+1].VRe,&veclist[i+1].Nj,veclist[i].VRe,&veclist[i].Nj,&zero,a,&B->BlockSize); // a = v[i] . v[i+1]^T
+    if(i!=1)
+    {
+      b+=B->BlockSize*B->BlockSize;
+      dgemm(charT,charN,&veclist[i+1].Ni,&veclist[i-1].Ni,&veclist[i-1].Nj,&one,veclist[i+1].VRe,&veclist[i+1].Nj,veclist[i-1].VRe,&veclist[i-1].Nj,&zero,b,&B->BlockSize); // b = v[i-1] . v[i+1]^T
+    }
+    NSingular=1;
+    while(NSingular!=0)
+    {
+      // orthogonalize veclist[i+1] to veclist[i] ... veclist[Max(1,i+1-NOrtho)]
+      // we use matrix multiplication of veclist[i+1] and veclist[k], which is a numerical unstable form of Gramm Schmidt
+      // as a soltion we repeat the orthonormalization once more when finished.
+      for(j=i;j>((NOrtho>i)?0:i-NOrtho);j--)
+      {
+        dgemm(charT,charN,&veclist[j].Ni,&veclist[i+1].Ni,&veclist[i+1].Nj,&one,veclist[j].VRe,&veclist[j].Nj,veclist[i+1].VRe,&veclist[i+1].Nj,&zero,work,&B->BlockSize); // w = v[i+1] . v[j]^T
+        dgemm(charN,charN,&veclist[j].Nj,&veclist[i+1].Ni,&veclist[j].Ni,&minusone,veclist[j].VRe,&veclist[j].Nj,work,&B->BlockSize,&one,veclist[i+1].VRe,&veclist[i+1].Nj); // v[i+1] <= -1 * w . v[j] + 1 * v[i+1]
+        dgemm(charT,charN,&veclist[j].Ni,&veclist[i+1].Ni,&veclist[i+1].Nj,&one,veclist[j].VRe,&veclist[j].Nj,veclist[i+1].VRe,&veclist[i+1].Nj,&zero,work,&B->BlockSize); // w = v[i+1] . v[j]^T
+        dgemm(charN,charN,&veclist[j].Nj,&veclist[i+1].Ni,&veclist[j].Ni,&minusone,veclist[j].VRe,&veclist[j].Nj,work,&B->BlockSize,&one,veclist[i+1].VRe,&veclist[i+1].Nj); // v[i+1] <= -1 * w . v[j] + 1 * v[i+1]
+      }
+      NSingular=veclist[i+1].Ni;
+      CompactMatrixSVDOrthogonalizeRow(&veclist[i+1], SingularValue, True);
+      NSingular-=veclist[i+1].Ni;
+      if(NSingular!=0)
+      {
+        VerbosityPrintf(0x0001,"Reduce dimension from %u to %u in block %u\n",veclist[i].Ni,veclist[i+1].Ni,i);
+        if(veclist[i+1].Ni==0) break;
+      }
+    }
+    if(veclist[i+1].Ni==0) break;
+    if(ReOrthogonalize==True)
+    {
+      CompactMatrixGramSchmidtOrthogonalizeRow(&veclist[i+1], SingularValue, False);
+    }
+  }
+  for(j=1;j<=MIN(i+1,NTri);j++)
+  {
+    FreeCompactMatrix(&veclist[j]);
+  }
+  free(veclist);
+  return 0;
+}
+uint32_t CompactMatrixBlockBandDiagonalizeComplex(CompactMatrixType const * const A, CompactMatrixType * vec, BlockTriDiagonalMatrixType *const B, double const SingularValue, uint32_t const NTri, uint32_t const NOrtho, Bool const ReOrthogonalize)
+{
+  uint32_t i,j;
+  char *charN="N";
+  char *charT="T";
+  char *charC="C";
+  Complex16 one={1,0};
+  Complex16 minusone={-1,0};
+  Complex16 zero={0,0};
+  uint32_t NSingular;
+  Complex16 *b,*a,work[vec->Ni*vec->Ni];
+  CompactMatrixType *veclist;
+  B->BlockSize=vec->Ni;
+  B->N=MIN(A->Ni,NTri);
+  B->QComplex=1;
+  InitBlockTridiagonalMatrix(B);
+  for(i=0;i<B->BlockSize;i++)
+  {
+    B->b[i+i*B->BlockSize].Re=0;
+  }
+  B->mu=A->mu;
+  strncpy(B->Name, A->Name, MAXStrLength);
+  b=B->b;
+  a=B->a;
+  veclist=malloc((B->N+1)*sizeof(CompactMatrixType));
+  veclist[0]=*vec;
+  CompactMatrixCopy(veclist[0], &veclist[1]);
+  CompactMatrixSVDOrthogonalizeRow(&veclist[1], SingularValue, True);
+  NSingular=veclist[0].Ni-veclist[1].Ni;
+  if(NSingular!=0)
+  {
+    VerbosityPrintf(0x0001,"Reduce dimension from %u to %u in block %u\n",veclist[0].Ni,veclist[1].Ni,0);
+  }
+  if(ReOrthogonalize==True)
+  {
+    CompactMatrixGramSchmidtOrthogonalizeRow(&veclist[1], SingularValue, False);
+  }
+  zgemm(charC,charN,&veclist[1].Ni,&veclist[0].Ni,&veclist[0].Nj,&one,veclist[1].V,&veclist[1].Nj,veclist[0].V,&veclist[0].Nj,&zero,b,&B->BlockSize); // b = v[0] . v[1]^+
+  for(i=1;i<NTri;i++)
+  {
+    veclist[i+1].Ni=veclist[i].Ni;
+    veclist[i+1].Nj=veclist[i].Nj;
+    veclist[i+1].QComplex=veclist[i].QComplex;
+    if(InitCompactMatrix(&veclist[i+1]))
+    {
+      // out off memory - could implement freeing some vectors and retry
+      printf("InitCompactMatrix failed in CompactMatrixBlockBandDiagonalizeReal\n");
+      return 1;
+    }
+    zgemm(charT,charN,&A->Nj,&veclist[i].Ni,&A->Ni,&one,A->V,&A->Ni,veclist[i].V,&veclist[i].Nj,&zero,veclist[i+1].V,&veclist[i+1].Nj); // v[i+1] = v[i] . A^* or v[i+1] = v[i] . A^T
+    a+=B->BlockSize*B->BlockSize;
+    zgemm(charC,charN,&veclist[i+1].Ni,&veclist[i].Ni,&veclist[i].Nj,&one,veclist[i+1].V,&veclist[i+1].Nj,veclist[i].V,&veclist[i].Nj,&zero,a,&B->BlockSize); // a = v[i]^* . v[i+1]^T -> a^* = v[i] . v[i+1]^+
+    for(j=0;j<B->BlockSize*B->BlockSize;j++)
+    {
+      a[j].Im=-a[j].Im;
+    }
+    if(i!=1)
+    {
+      b+=B->BlockSize*B->BlockSize;
+      zgemm(charC,charN,&veclist[i+1].Ni,&veclist[i-1].Ni,&veclist[i-1].Nj,&one,veclist[i+1].V,&veclist[i+1].Nj,veclist[i-1].V,&veclist[i-1].Nj,&zero,b,&B->BlockSize); // b = v[i-1]^* . v[i+1]^T
+      for(j=0;j<B->BlockSize*B->BlockSize;j++)
+      {
+        b[j].Im=-b[j].Im;
+      }
+    }
+    NSingular=1;
+    while(NSingular!=0)
+    {
+      // orthogonalize veclist[i+1] to veclist[i] ... veclist[Max(1,i+1-NOrtho)]
+      // we use matrix multiplication of veclist[i+1] and veclist[k], which is a numerical unstable form of Gramm Schmidt
+      // as a soltion we repeat the orthonormalization once more when finished.
+      for(j=i;j>((NOrtho>i)?0:i-NOrtho);j--)
+      {
+        zgemm(charC,charN,&veclist[j].Ni,&veclist[i+1].Ni,&veclist[i+1].Nj,&one,veclist[j].V,&veclist[j].Nj,veclist[i+1].V,&veclist[i+1].Nj,&zero,work,&B->BlockSize); // w = v[i+1] . v[j]^+
+        zgemm(charN,charN,&veclist[j].Nj,&veclist[i+1].Ni,&veclist[j].Ni,&minusone,veclist[j].V,&veclist[j].Nj,work,&B->BlockSize,&one,veclist[i+1].V,&veclist[i+1].Nj); // v[i+1] <= -1 * w . v[j] + 1 * v[i+1]
+        zgemm(charC,charN,&veclist[j].Ni,&veclist[i+1].Ni,&veclist[i+1].Nj,&one,veclist[j].V,&veclist[j].Nj,veclist[i+1].V,&veclist[i+1].Nj,&zero,work,&B->BlockSize); // w = v[i+1] . v[j]^+
+        zgemm(charN,charN,&veclist[j].Nj,&veclist[i+1].Ni,&veclist[j].Ni,&minusone,veclist[j].V,&veclist[j].Nj,work,&B->BlockSize,&one,veclist[i+1].V,&veclist[i+1].Nj); // v[i+1] <= -1 * w . v[j] + 1 * v[i+1]
+      }
+      NSingular=veclist[i+1].Ni;
+      CompactMatrixSVDOrthogonalizeRow(&veclist[i+1], SingularValue, True);
+      NSingular-=veclist[i+1].Ni;
+      if(NSingular!=0)
+      {
+        VerbosityPrintf(0x0001,"Reduce dimension from %u to %u in block %u\n",veclist[i].Ni,veclist[i+1].Ni,i);
+        if(veclist[i+1].Ni==0) break;
+      }
+    }
+    if(veclist[i+1].Ni==0) break;
+    if(ReOrthogonalize==True)
+    {
+      CompactMatrixGramSchmidtOrthogonalizeRow(&veclist[i+1], SingularValue, False);
+    }
+  }
+  for(j=1;j<=MIN(i+1,NTri);j++)
+  {
+    FreeCompactMatrix(&veclist[j]);
+  }
+  free(veclist);
+  return 0;
+}
+uint32_t CompactMatrixBlockBandDiagonalize(CompactMatrixType const * const A, CompactMatrixType * vec, BlockTriDiagonalMatrixType *const B, double const SingularValue, uint32_t const NTri, uint32_t const NOrtho, Bool const ReOrthogonalize)
+{
+  uint32_t ret;
+  CompactMatrixType Acopy;
+  if(A->QComplex==0)
+  {
+    if(vec->QComplex==0)
+    {
+      return CompactMatrixBlockBandDiagonalizeReal(A, vec, B, SingularValue, NTri, NOrtho, ReOrthogonalize);
+    }
+    else
+    {
+      CompactMatrixCopy(*A, &Acopy);
+      MakeCompactRealMatrixComplex(&Acopy);
+      ret = CompactMatrixBlockBandDiagonalizeComplex(&Acopy, vec, B, SingularValue, NTri, NOrtho, ReOrthogonalize);
+      FreeCompactMatrix(&Acopy);
+      return ret;
+    }
+  }
+  else
+  {
+    if(vec->QComplex==0)
+    {
+      MakeCompactRealMatrixComplex(vec);
+      return CompactMatrixBlockBandDiagonalizeComplex(A, vec, B, SingularValue, NTri, NOrtho, ReOrthogonalize);
+    }
+    else
+    {
+      return CompactMatrixBlockBandDiagonalizeComplex(A, vec, B, SingularValue, NTri, NOrtho, ReOrthogonalize);
+    }
+  }
+}
+
+/* returns 1 if O=O^dag, zero otherwise
  * epsilon gives the accuracy
  */
 
@@ -2556,3 +2830,5 @@ uint32_t QCompactMatrixHermitian(const CompactMatrixType O, const double epsilon
   }
   return 1;
 }
+
+

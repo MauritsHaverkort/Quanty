@@ -503,14 +503,14 @@ BlockListOfPoles;
  *   element [i,j] of matrix k can be found at position [k*BlockSize*BlockSize+i*BlockSize+j]
  *
  *   when represented as a Green's function the function is:
- *   G0 = a0 + b0 . ( G1 ) . b0^+
- *   G1 = a1 + b1 . ( G2 ) . b1^+
+ *   G0 =        a0 + b0 . ( G1 ) . b0^+
+ *   G1 = 1/(w - a1 - b1 . ( G2 ) . b1^+)
  *   ...
- *
+ *   Gn = 1/(w - an)
  */
 typedef struct BlockTriDiagonalMatrixType
 {
-  char   Name[MAXStrLength];   /* A pointer to a name string that can be used to lable functions, good for printing etc. */
+  char   Name[MAXStrLength];   /* A pointer to a name string that can be used to label functions, good for printing etc. */
   uint32_t N;                  /* number of diagonal blocks */
   uint32_t BlockSize;          /* dimension of square matrices */
   uint32_t QComplex;           /* matrices are complex or real */
