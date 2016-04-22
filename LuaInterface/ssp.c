@@ -1469,10 +1469,12 @@ static int LuaCreateSpectra(lua_State *L)
     uint32_t Npsi;
     uint32_t NT;
     Bool Tensor;
+    double E0;
   } Options;
   Options.Settings=InitConvergenceSettings();
   Options.stream=NULL;
   Options.Tensor=False;
+  Options.E0=DBL_MAX;
   SpectraTypeArray *Spec;
   OperatorType *H,*T;
   WaveFunctionType *psi;
@@ -1490,6 +1492,7 @@ static int LuaCreateSpectra(lua_State *L)
     {"Emax","double",&(Options.Settings.Emax)},
     {"NE","uint32_t",&(Options.Settings.NE)},
     {"Gamma","double",&(Options.Settings.Gamma)},
+    {"E0","double",&(Options.E0)},
     {"file","char*",&(Options.stream)}, // temporary undoccumented option
     {NULL, NULL, NULL}};
   /* check number of input parameters */
@@ -1527,12 +1530,25 @@ static int LuaCreateSpectra(lua_State *L)
   }
   /* calculate groundstate energy */
   psiEn=malloc(Options.Npsi*Options.NT*sizeof(double));
-  for(ipsi=0;ipsi<Options.Npsi;ipsi++)
+  if(Options.E0==DBL_MAX)
   {
-    PsiHermitianOperatorPsi(*H, psi[ipsi], &psiEntemp);
-    for(iT=0;iT<Options.NT;iT++)
+    for(ipsi=0;ipsi<Options.Npsi;ipsi++)
     {
-      psiEn[iT*Options.Npsi+ipsi]=psiEntemp;
+      PsiHermitianOperatorPsi(*H, psi[ipsi], &psiEntemp);
+      for(iT=0;iT<Options.NT;iT++)
+      {
+        psiEn[iT*Options.Npsi+ipsi]=psiEntemp;
+      }
+    }
+  }
+  else
+  {
+    for(ipsi=0;ipsi<Options.Npsi;ipsi++)
+    {
+      for(iT=0;iT<Options.NT;iT++)
+      {
+        psiEn[iT*Options.Npsi+ipsi]=Options.E0;
+      }
     }
   }
   if(Options.Tensor==False)
@@ -1652,9 +1668,11 @@ static int LuaCreateSpectra(lua_State *L)
     WaveFunctionType Tpsi[Options.NT*Options.Npsi];
     WaveFunctionType TpsiSameBasis[Options.NT*Options.Npsi];
     BlockTriDiagonalMatrixType GTri;
-    
-    
-    
+    /* give warning when more than one function defined and E0 not set */
+    if((Options.Npsi!=1)&&(Options.E0==DBL_MAX))
+    {
+      luaL_warning(L, "CreateSpectra called with option Tensor->true and %d wave-functions but no energy-shift set.\nTensors can have only one shift and no different shift for each eigen-state.\nConsider using E0->0.0 in order to define a fixed shift.\nUsed the energy of the first wave-function (%f) in this case.\n(Probably does not make physical sence!)",Options.Npsi,psiEn[0]);
+    }
     /* create starting functions */
     /* loop over all Transition operators */
     for(iT=0;iT<Options.NT;iT++)
@@ -1695,24 +1713,10 @@ static int LuaCreateSpectra(lua_State *L)
     InitBlockTridiagonalMatrix(&GTri);
     GTri.mu=psiEn[0];
     LanczosBlockTriDiagonalize(*H, TpsiSameBasis, Options.Settings.epsilon, &GTri, Max(Options.Settings.Gamma,Options.Settings.epsilon));
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     /* determine Eminpole and Emaxpole */
     /* get eigenvalues Block Tridiagonal matrix and set smallest and largest eigenvalue */
-    Eminpole=DBL_MAX;
-    Emaxpole=-DBL_MAX;
+    Eminpole = DBL_MAX;
+    Emaxpole =-DBL_MAX;
     
     
     
