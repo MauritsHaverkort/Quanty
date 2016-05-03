@@ -1698,8 +1698,6 @@ static int LuaCreateSpectra(lua_State *L)
       WaveFunctionAddConserveBasis(&(TpsiSameBasis[i]), Tpsi[i]);
       WaveFunctionFree(&(Tpsi[i]));
     }
-    
-    
     /* init BlockTriDiagonal Matrix */
     GTri.BlockSize = Options.NT*Options.Npsi;
     GTri.N = Options.Settings.NTri;
@@ -1718,7 +1716,7 @@ static int LuaCreateSpectra(lua_State *L)
     Eminpole = DBL_MAX;
     Emaxpole =-DBL_MAX;
     
-    
+    //TODO: set Eminpole and Emaxpole (they are in the output and I need them for auto range determination
     
     
     BlockTriDiagonalMatrixEigenValues();

@@ -1717,7 +1717,6 @@ uint32_t WaveFunctionExpand(const WaveFunctionType * const psi, const uint16_t *
   retval=0;
   if(psi->QComplex)
   {
-#pragma omp parallel for private(j,add,k)
     for(i=0;i<Nout;i++)
     {
       if(retval)break;
@@ -1738,7 +1737,6 @@ uint32_t WaveFunctionExpand(const WaveFunctionType * const psi, const uint16_t *
           {
             retval=1;
             printf("ComplexWaveFunctionAddElement failed in WaveFunctionExpand for determinant %i/%i of function %i/%i",j,psi->N,i,Nout);
-#pragma omp flush(retval)
             break;
           }
         }
@@ -1747,7 +1745,6 @@ uint32_t WaveFunctionExpand(const WaveFunctionType * const psi, const uint16_t *
   }
   else
   {
-#pragma omp parallel for private(j,add,k)
     for(i=0;i<Nout;i++)
     {
       if(retval)break;
@@ -1768,7 +1765,6 @@ uint32_t WaveFunctionExpand(const WaveFunctionType * const psi, const uint16_t *
           {
             retval=1;
             printf("RealWaveFunctionAddElement failed in WaveFunctionExpand for determinant %i/%i of function %i/%i",j,psi->N,i,Nout);
-#pragma omp flush(retval)
             break;
           }
         }
