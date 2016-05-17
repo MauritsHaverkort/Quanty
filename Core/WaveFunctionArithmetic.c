@@ -1753,7 +1753,7 @@ uint32_t WaveFunctionExpand(const WaveFunctionType * const psi, const uint16_t *
         add=True;
         for(k=0;k<Ndet;k++)
         {
-          if(((psi->Determinant[BlokElementDet(j,psi->NWord,index[k]>>7)]>>(7-(index[k]&255)))&1)!=((i>>k)&1))
+          if(((psi->Determinant[BlokElementDet(j,psi->NWord,index[k]>>3)]>>(7-(index[k]&7)))&1)!=((i>>k)&1))
           {
             add=False;
             break;

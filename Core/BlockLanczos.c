@@ -99,6 +99,52 @@ uint32_t QCanNotOccupy(uint32_t const iFermion, uint32_t const NFermion, uint8_t
   return 0;
 }
 
+uint32_t ExtendBasisCompletenessSmallSystems(DeterminantRestrictionType const StartingPoint, WaveFunctionType * psi)
+{
+  uint32_t i;
+  uint8_t  newdet[4];
+  if(psi->NFermion>30)
+  {
+    printf("Error in ExtendBasisCompletenessSmallSystems max number of Fermions is 30\n");
+    return 1;
+  }
+  if(psi->QComplex)
+  {
+    for(i=0xFFFFFFFF;i>(0xFFFFFFFF>>(psi->NFermion));i-=1<<(32-psi->NFermion))
+    {
+      newdet[0]=(uint8_t)(i>>24);
+      newdet[1]=(uint8_t)(i>>16);
+      newdet[2]=(uint8_t)(i>>8);
+      newdet[3]=(uint8_t)(i);
+      if(QDetNotRestricted(newdet, psi->NFermion, psi->NBoson, psi->NWord, StartingPoint))
+      {
+        if(ComplexWaveFunctionAddElement(psi, newdet, 1,1))
+        {
+          return 1;
+        }
+      }
+    }
+  }
+  else
+  {
+    for(i=0xFFFFFFFF;i>(0xFFFFFFFF>>(psi->NFermion));i-=1<<(32-psi->NFermion))
+    {
+      newdet[0]=(uint8_t)(i>>24);
+      newdet[1]=(uint8_t)(i>>16);
+      newdet[2]=(uint8_t)(i>>8);
+      newdet[3]=(uint8_t)(i);
+      if(QDetNotRestricted(newdet, psi->NFermion, psi->NBoson, psi->NWord, StartingPoint))
+      {
+        if(RealWaveFunctionAddElement(psi, newdet, 1))
+        {
+          return 1;
+        }
+      }
+    }
+  }
+  return 0;
+}
+
 uint32_t ExtendBasisUsingRestrictions(DeterminantRestrictionType const StartingPoint, WaveFunctionType * psi)
 {
   uint16_t oadd[2];
@@ -164,94 +210,112 @@ uint32_t CreateStartingFunctions(const OperatorType H, uint32_t const Npsi, Dete
     return 1;
   }
   // create some determinants fullfilling the StartingPoint conditions
-  // "some" is equal to 200+3*Npsi
-  Determinant = calloc(psi0.NWord, sizeof(uint8_t));
-  avvOcc = 0.5;
-  for(i=0;i<Min(300+100*Npsi,5000);i++)
+  if(psi0.NFermion<=24)
   {
-    totOcc=0;
-    for(iFermion=0;iFermion<H.NFermion;iFermion++)
+    ExtendBasisCompletenessSmallSystems(StartingPoint, &(psi0));
+#ifdef PrintDebugInfo
+    VerbosityPrintf(0x20000,"All possible states psi0 created in CreateStartingFunctions\n");
+    if(GlobalVerbosity&0x20000)
     {
-      MustOccupy=QMustOccupy(iFermion, H.NFermion, Determinant, StartingPoint);
-      CannotOccupy=QCanNotOccupy(iFermion, H.NFermion, Determinant, StartingPoint);
-      if(MustOccupy&&CannotOccupy)
+      PrintWaveFunctionReadable(psi0);
+    }
+#endif
+    // randomize psi0
+    WaveFunctionRandomize(&(psi0));
+    // set psi[0]
+    psi[0] = psi0;
+  }
+  else
+  {
+    Determinant = calloc(psi0.NWord, sizeof(uint8_t));
+    // strategy based on randomness and occupations
+    avvOcc = 0.5;
+    for(i=0;i<Min(300+100*Npsi,5000);i++)
+    {
+      totOcc=0;
+      for(iFermion=0;iFermion<H.NFermion;iFermion++)
       {
-        printf("Cannot fullfill all restrictions in CreateStartingFunctions\n");
-        free(Determinant);
-        return 1;
-      }
-      if(MustOccupy)
-      {
-        OperatorCr(Determinant, (uint16_t)iFermion, psi0.NFermion);
-        totOcc++;
-      }
-      else if(CannotOccupy)
-      {
-        // do nothing
-      }
-      else
-      {
-        // if current spinorbital should be filled or not is random
-        // in order to make sure all states get equal changes the change if an orbital gets filled depends on the
-        // occupation of that orbital in psi0
-        // calculate occupation of orbital iFermion in psi0
-        occiFermion = 0;
-        for (idet = 1; idet <= psi0.N; idet++)
+        MustOccupy=QMustOccupy(iFermion, H.NFermion, Determinant, StartingPoint);
+        CannotOccupy=QCanNotOccupy(iFermion, H.NFermion, Determinant, StartingPoint);
+        if(MustOccupy&&CannotOccupy)
         {
-          if (psi0.Determinant[BlokElementDet(idet, psi0.NWord, (iFermion >> 3))] & (128 >> (iFermion & 7)))
-          {
-            occiFermion += Abs(psi0.ValueRe[BlokElement(idet)]);
-          }
+          printf("Cannot fullfill all restrictions in CreateStartingFunctions\n");
+          free(Determinant);
+          return 1;
         }
-        // create random value between 0 and 1
-        dice=rand()/(double)RAND_MAX;
-        // if occupation < average occupation times number of electrons in the system, add an electron, otherwise not
-        // add randomness in this by multiplying with (2*dice)^2
-        // due to restrictions the avverage occupation might be off we thus run the avverage occupation from 0 to 200%
-        if(occiFermion < Sqr(2 * dice) * avvOcc * Sqr(i+1)/200.)
+        if(MustOccupy)
         {
           OperatorCr(Determinant, (uint16_t)iFermion, psi0.NFermion);
           totOcc++;
         }
+        else if(CannotOccupy)
+        {
+          // do nothing
+        }
+        else
+        {
+          // if current spinorbital should be filled or not is random
+          // in order to make sure all states get equal changes the change if an orbital gets filled depends on the
+          // occupation of that orbital in psi0
+          // calculate occupation of orbital iFermion in psi0
+          occiFermion = 0;
+          for (idet = 1; idet <= psi0.N; idet++)
+          {
+            if (psi0.Determinant[BlokElementDet(idet, psi0.NWord, (iFermion >> 3))] & (128 >> (iFermion & 7)))
+            {
+              occiFermion += Abs(psi0.ValueRe[BlokElement(idet)]);
+            }
+          }
+          // create random value between 0 and 1
+          dice=rand()/(double)RAND_MAX;
+          // if occupation < average occupation times number of electrons in the system, add an electron, otherwise not
+          // add randomness in this by multiplying with (2*dice)^2
+          // due to restrictions the avverage occupation might be off we thus run the avverage occupation from 0 to 200%
+          if(occiFermion < Sqr(2 * dice) * avvOcc * Sqr(i+1)/200.)
+          {
+            OperatorCr(Determinant, (uint16_t)iFermion, psi0.NFermion);
+            totOcc++;
+          }
+        }
       }
+      WaveFunctionAddElement(&psi0, Determinant, 1, 0);
+      for(j=0;j<psi0.NWord;j++)
+      {
+        Determinant[j]=0;
+      }
+      avvOcc*=i;
+      avvOcc+=(totOcc/(double)H.NFermion);
+      avvOcc/=(i+1.0);
     }
-    WaveFunctionAddElement(&psi0, Determinant, 1, 0);
-    for(j=0;j<psi0.NWord;j++)
-    {
-      Determinant[j]=0;
-    }
-    avvOcc*=i;
-    avvOcc+=(totOcc/(double)H.NFermion);
-    avvOcc/=(i+1.0);
-  }
 #ifdef PrintDebugInfo
-  VerbosityPrintf(0x20000,"Random state psi0 created in CreateStartingFunctions\n");
-  if(GlobalVerbosity&0x20000)
-  {
-    PrintWaveFunctionReadable(psi0);
-  }
+    VerbosityPrintf(0x20000,"Random state psi0 created in CreateStartingFunctions\n");
+    if(GlobalVerbosity&0x20000)
+    {
+      PrintWaveFunctionReadable(psi0);
+    }
 #endif
-  // randomize psi0
-  WaveFunctionRandomize(&(psi0));
-  // add states by making psi = O psi0
-  if(OperatorPsiRestricted(H, psi0, &(psi[0]), StartingPoint))
-  {
-    printf("OperatorPsiRestricted failed in CreateStartingFunctions\n");
-    return 1;
+    // randomize psi0
+    WaveFunctionRandomize(&(psi0));
+    // add states by making psi = O psi0
+    if(OperatorPsiRestricted(H, psi0, &(psi[0]), StartingPoint))
+    {
+      printf("OperatorPsiRestricted failed in CreateStartingFunctions\n");
+      return 1;
+    }
+    WaveFunctionAddUnionBasis(&(psi[0]), psi0);
+    WaveFunctionFree(&psi0);
+    if(psi[0].N<Npsi)
+    {
+      // did not find Npsi independent determinants, extand basis further
+      ExtendBasisUsingRestrictions(StartingPoint, &(psi[0]));
+    }
+    free(Determinant);
   }
-  WaveFunctionAddUnionBasis(&(psi[0]), psi0);
-  WaveFunctionFree(&psi0);
-  if(psi[0].N<Npsi)
-  {
-    // did not find Npsi independent determinants, extand basis further
-    ExtendBasisUsingRestrictions(StartingPoint, &(psi[0]));
-  }
+  // print warning if there are not enough starting determinant
   if(psi[0].N<Npsi)
   {
     VerbosityPrintf(0x0002, "Warning: Number of states to find smaller than number of determinants in random starting vector\n");
   }
-  
-  
   // init other functions
   for(i=1;i<Npsi;i++)
   {
@@ -276,7 +340,6 @@ uint32_t CreateStartingFunctions(const OperatorType H, uint32_t const Npsi, Dete
       WaveFunctionMultiply(&(psi[i]), 1/Norm, 0);
     }
   }
-  free(Determinant);
   return 0;
 }
 
