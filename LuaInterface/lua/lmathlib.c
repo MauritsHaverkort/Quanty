@@ -540,17 +540,170 @@ static int math_binomial(lua_State * L)
   return 1;
 }
 
+static int math_ThreeJSymbol(lua_State *L)
+{
+  double l1,l2,l3,m1,m2,m3;
+  double threeJ;
+  int il1,il2,il3,im1,im2,im3;
+  if(lua_gettop(L)!=3) return luaL_error(L, "math.ThreeJSymbol expects 6 parameters grouped in 3 lists of length 2:\n{l1,m1}, {l2,m2}, {l3,m3}");
+  luaL_checktype(L, 1, LUA_TTABLE);
+  if(lua_objlen(L,1)!=2) return luaL_error(L, "math.ThreeJSymbol expects 6 parameters grouped in 3 lists of length 2:\n{l1,m1}, {l2,m2}, {l3,m3}");
+  luaL_checktype(L, 2, LUA_TTABLE);
+  if(lua_objlen(L,2)!=2) return luaL_error(L, "math.ThreeJSymbol expects 6 parameters grouped in 3 lists of length 2:\n{l1,m1}, {l2,m2}, {l3,m3}");
+  luaL_checktype(L, 3, LUA_TTABLE);
+  if(lua_objlen(L,3)!=2) return luaL_error(L, "math.ThreeJSymbol expects 6 parameters grouped in 3 lists of length 2:\n{l1,m1}, {l2,m2}, {l3,m3}");
+  lua_rawgeti(L,1,1);
+  l1=(double)luaL_checknumber(L, -1);
+  lua_pop(L,1);
+  lua_rawgeti(L,1,2);
+  m1=(double)luaL_checknumber(L, -1);
+  lua_pop(L,1);
+  lua_rawgeti(L,2,1);
+  l2=(double)luaL_checknumber(L, -1);
+  lua_pop(L,1);
+  lua_rawgeti(L,2,2);
+  m2=(double)luaL_checknumber(L, -1);
+  lua_pop(L,1);
+  lua_rawgeti(L,3,1);
+  l3=(double)luaL_checknumber(L, -1);
+  lua_pop(L,1);
+  lua_rawgeti(L,3,2);
+  m3=(double)luaL_checknumber(L, -1);
+  lua_pop(L,1);
+  if((Abs(round(l1)-l1)<10*DBL_EPSILON*Abs(l1)+DBL_MIN)&&
+     (Abs(round(m1)-m1)<10*DBL_EPSILON*Abs(m1)+DBL_MIN)&&
+     (Abs(round(l2)-l2)<10*DBL_EPSILON*Abs(l2)+DBL_MIN)&&
+     (Abs(round(m2)-m2)<10*DBL_EPSILON*Abs(m2)+DBL_MIN)&&
+     (Abs(round(l3)-l3)<10*DBL_EPSILON*Abs(l3)+DBL_MIN)&&
+     (Abs(round(m3)-m3)<10*DBL_EPSILON*Abs(m3)+DBL_MIN))
+  {
+    il1 = (int)round(l1);
+    im1 = (int)round(m1);
+    il2 = (int)round(l2);
+    im2 = (int)round(m2);
+    il3 = (int)round(l3);
+    im3 = (int)round(m3);
+    threeJ=ThreeJSymbol(il1, im1, il2, im2, il3, im3);
+    lua_pushnumber(L, threeJ);
+  }
+  else if((Abs(round(2*l1)-2*l1)<10*DBL_EPSILON*Abs(2*l1)+DBL_MIN)&&
+          (Abs(round(2*m1)-2*m1)<10*DBL_EPSILON*Abs(2*m1)+DBL_MIN)&&
+          (Abs(round(2*l2)-2*l2)<10*DBL_EPSILON*Abs(2*l2)+DBL_MIN)&&
+          (Abs(round(2*m2)-2*m2)<10*DBL_EPSILON*Abs(2*m2)+DBL_MIN)&&
+          (Abs(round(2*l3)-2*l3)<10*DBL_EPSILON*Abs(2*l3)+DBL_MIN)&&
+          (Abs(round(2*m3)-2*m3)<10*DBL_EPSILON*Abs(2*m3)+DBL_MIN))
+  {
+    il1 = (int)round(2*l1);
+    im1 = (int)round(2*m1);
+    il2 = (int)round(2*l2);
+    im2 = (int)round(2*m2);
+    il3 = (int)round(2*l3);
+    im3 = (int)round(2*m3);
+    threeJ=ThreeJSymbolHalf(il1, im1, il2, im2, il3, im3);
+    lua_pushnumber(L, threeJ);
+  }
+  else
+  {
+    return luaL_error(L, "ThreeJSymbol expects 6 angular momentum as input that need to be integer or half integer values");
+  }
+  return 1;
+}
+
+
+static int math_SlaterCoefficientC(lua_State *L)
+{
+  double l1,l2,l3,m1,m2,m3;
+  double Ck;
+  int il1,il2,il3,im1,im2,im3;
+  if(lua_gettop(L)!=3) return luaL_error(L, "math.SlaterCoefficientC expects 6 parameters grouped in 3 lists of length 2:\n{l1,m1}, {l2,m2}, {l3,m3}");
+  if(lua_istable(L, 1))
+  {
+    if(lua_objlen(L,1)!=2) return luaL_error(L, "math.SlaterCoefficientC expects 6 parameters grouped in 3 lists of length 2:\n{l1,m1}, {l2,m2}, {l3,m3}");
+    luaL_checktype(L, 2, LUA_TTABLE);
+    if(lua_objlen(L,2)!=2) return luaL_error(L, "math.SlaterCoefficientC expects 6 parameters grouped in 3 lists of length 2:\n{l1,m1}, {l2,m2}, {l3,m3}");
+    luaL_checktype(L, 3, LUA_TTABLE);
+    if(lua_objlen(L,3)!=2) return luaL_error(L, "math.SlaterCoefficientC expects 6 parameters grouped in 3 lists of length 2:\n{l1,m1}, {l2,m2}, {l3,m3}");
+    lua_rawgeti(L,1,1);
+    l1=(double)luaL_checknumber(L, -1);
+    lua_pop(L,1);
+    lua_rawgeti(L,1,2);
+    m1=(double)luaL_checknumber(L, -1);
+    lua_pop(L,1);
+    lua_rawgeti(L,2,1);
+    l2=(double)luaL_checknumber(L, -1);
+    lua_pop(L,1);
+    lua_rawgeti(L,2,2);
+    m2=(double)luaL_checknumber(L, -1);
+    lua_pop(L,1);
+    lua_rawgeti(L,3,1);
+    l3=(double)luaL_checknumber(L, -1);
+    lua_pop(L,1);
+    lua_rawgeti(L,3,2);
+    m3=(double)luaL_checknumber(L, -1);
+    lua_pop(L,1);
+  }
+  else
+  {
+    luaL_checktype(L, 2, LUA_TTABLE);
+    if(lua_objlen(L,2)!=2) return luaL_error(L, "math.SlaterCoefficientC expects 5 parameters grouped in one integer and 2 lists of length 2:\nk, {l1,m1}, {l2,m2}");
+    luaL_checktype(L, 3, LUA_TTABLE);
+    if(lua_objlen(L,3)!=2) return luaL_error(L, "math.SlaterCoefficientC expects 5 parameters grouped in one integer and 2 lists of length 2:\nk, {l1,m1}, {l2,m2}");
+    lua_rawgeti(L,2,1);
+    l1=(double)luaL_checknumber(L, -1);
+    lua_pop(L,1);
+    lua_rawgeti(L,2,2);
+    m1=(double)luaL_checknumber(L, -1);
+    lua_pop(L,1);
+    lua_rawgeti(L,3,1);
+    l3=(double)luaL_checknumber(L, -1);
+    lua_pop(L,1);
+    lua_rawgeti(L,3,2);
+    m3=(double)luaL_checknumber(L, -1);
+    lua_pop(L,1);
+    l2=(double)luaL_checknumber(L, 1);
+    m2=m1-m3;
+  }
+  if((Abs(round(l1)-l1)<10*DBL_EPSILON*Abs(l1)+DBL_MIN)&&
+     (Abs(round(m1)-m1)<10*DBL_EPSILON*Abs(m1)+DBL_MIN)&&
+     (Abs(round(l2)-l2)<10*DBL_EPSILON*Abs(l2)+DBL_MIN)&&
+     (Abs(round(m2)-m2)<10*DBL_EPSILON*Abs(m2)+DBL_MIN)&&
+     (Abs(round(l3)-l3)<10*DBL_EPSILON*Abs(l3)+DBL_MIN)&&
+     (Abs(round(m3)-m3)<10*DBL_EPSILON*Abs(m3)+DBL_MIN))
+  {
+    il1 = (int)round(l1);
+    im1 = (int)round(m1);
+    il2 = (int)round(l2);
+    im2 = (int)round(m2);
+    il3 = (int)round(l3);
+    im3 = (int)round(m3);
+    if(((-im1+im2+im3)!=0)||(il2>il1+il3)||(il2<Abs(il1-il3))||(((il1+il2+il3)&1)==1))
+    {
+      Ck=0;
+    }
+    else
+    {
+      Ck=SlaterCoefficientC(il2, il1, im1, il3, im3);
+    }
+    lua_pushnumber(L, Ck);
+  }
+  else
+  {
+    return luaL_error(L, "math.SlaterCoefficientC expects 6 angular momentum as input that need to be integer values");
+  }
+  return 1;
+}
+
 static int math_IntegerQ(lua_State *L)
 {
   double nd;
   if(lua_type(L,-1)==LUA_TNUMBER)
   {
     nd=luaL_checknumber(L, -1);
-    if(Abs(round(nd)-nd)<10*DBL_EPSILON*Abs(nd))
+    if(Abs(round(nd)-nd)<10*DBL_EPSILON*Abs(nd)+DBL_MIN)
     {
       lua_pushboolean(L, 1);
+      return 1;
     }
-    return 1;
   }
   lua_pushboolean(L, 0);
   return 1;
@@ -624,7 +777,9 @@ static const luaL_Reg mathlib[] = {
   {"tanh",   math_tanh},{"Tanh",   math_tanh},
   {"tan",   math_tan},{"Tan",   math_tan},
   {"fact",   math_fact},{"Fact",   math_fact},{"factorial",   math_fact},{"Factorial",   math_fact},
-  {"Binomial",   math_binomial},{"BinomialCoefficient",   math_fact},
+  {"Binomial",   math_binomial},{"BinomialCoefficient",   math_binomial},
+  {"ThreeJ",   math_ThreeJSymbol},{"ThreeJSymbol",   math_ThreeJSymbol},
+  {"SlaterCoefficientC", math_SlaterCoefficientC},
   {"SphericalHarmonicY", math_SphericalHarmonicY},
   {"SphericalHarmonicC", math_SphericalHarmonicC},
   {"TesseralHarmonicZ",  math_TesseralHarmonicZ},

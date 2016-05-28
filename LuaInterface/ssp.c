@@ -747,6 +747,61 @@ static int LuaNewOperator(lua_State * L)
     lua_remove(L, 1);
     return LuaOperatorNewJsqr(L);
   }
+  if (strcmp(OT, "Tx") == 0)
+  {
+    lua_remove(L, 1);
+    return LuaOperatorNewTx(L);
+  }
+  if (strcmp(OT, "Ty") == 0)
+  {
+    lua_remove(L, 1);
+    return LuaOperatorNewTy(L);
+  }
+  if (strcmp(OT, "Tz") == 0)
+  {
+    lua_remove(L, 1);
+    return LuaOperatorNewTz(L);
+  }
+  if (strcmp(OT, "Tplus") == 0)
+  {
+    lua_remove(L, 1);
+    return LuaOperatorNewTplus(L);
+  }
+  if (strcmp(OT, "Tmin") == 0)
+  {
+    lua_remove(L, 1);
+    return LuaOperatorNewTmin(L);
+  }
+  if ((strcmp(OT, "Qx") == 0)||(strcmp(OT, "Qxx") == 0))
+  {
+    lua_remove(L, 1);
+    return LuaOperatorNewQxx(L);
+  }
+  if ((strcmp(OT, "Qy") == 0)||(strcmp(OT, "Qyy") == 0))
+  {
+    lua_remove(L, 1);
+    return LuaOperatorNewQyy(L);
+  }
+  if ((strcmp(OT, "Qz") == 0)||(strcmp(OT, "Qzz") == 0))
+  {
+    lua_remove(L, 1);
+    return LuaOperatorNewQzz(L);
+  }
+  if ((strcmp(OT, "Qxy") == 0)||(strcmp(OT, "Qyx") == 0))
+  {
+    lua_remove(L, 1);
+    return LuaOperatorNewQxy(L);
+  }
+  if ((strcmp(OT, "Qxz") == 0)||(strcmp(OT, "Qzx") == 0))
+  {
+    lua_remove(L, 1);
+    return LuaOperatorNewQxz(L);
+  }
+  if ((strcmp(OT, "Qyz") == 0)||(strcmp(OT, "Qzy") == 0))
+  {
+    lua_remove(L, 1);
+    return LuaOperatorNewQyz(L);
+  }
   if (strcmp(OT, "ldots") == 0)
   {
     lua_remove(L, 1);
