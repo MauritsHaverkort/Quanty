@@ -1562,6 +1562,8 @@ uint32_t WaveFunctionCopy(WaveFunctionType const A, WaveFunctionType * const B)
     printf("WaveFunctionInit failed in WaveFunctionCopy\n");
     return 1;
   };
+  strncpy(B->Name, A.Name, MAXStrLength);
+  B->Name[MAXStrLength-1]='\0';
   if (WaveFunctionAddUnionBasis(B, A))
   {
     printf("WaveFunctionAddUnionBasis failed in WaveFunctionCopy\n");

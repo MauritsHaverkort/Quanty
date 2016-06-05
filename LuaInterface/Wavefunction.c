@@ -468,7 +468,7 @@ static int LuaWavefunctionExpand(lua_State * L)
   uint16_t *index;
   uint32_t Ndet;
   if(lua_gettop(L)!=2) luaL_error(L, "Error in Expand(psi,index) two arguments expected, recieved (%d)\n",lua_gettop(L));
-    psi = (WaveFunctionType *) luaL_checkudata(L, 1, "Wavefunction_Type");
+  psi = (WaveFunctionType *) luaL_checkudata(L, 1, "Wavefunction_Type");
   index = luaL_checkarray_unit16_t(L, 2, &Ndet);
   if(Ndet>24) luaL_error(L, "Error in Expand(psi,index). Expanding a wavefunction in determinants yields 2^N new functions for N=%d this would not fit in your memory\n",psi->N);
   psilist = malloc((1<<Ndet)*sizeof(WaveFunctionType));

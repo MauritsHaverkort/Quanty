@@ -7,14 +7,15 @@ static int callback(void *NotUsed, int argc, char **argv, char **azColName){
    return 0;
   }
 
-void TestSQL()
+
+/* void TestSQL()
 {
   sqlite3 *db;
   char *zErrMsg = 0;
   int  rc;
   char *sql;
   
-  /* Open database */
+  // Open database //
   rc = sqlite3_open("newSQLDatabase", &db);
   if( rc ){
     fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
@@ -22,7 +23,7 @@ void TestSQL()
   }else{
     fprintf(stdout, "Opened database successfully\n");
   }
-  /* Create SQL statement */
+  // Create SQL statement //
   sql = "CREATE TABLE COMPANY("  \
   "ID INT PRIMARY KEY     NOT NULL," \
   "NAME           TEXT    NOT NULL," \
@@ -30,7 +31,7 @@ void TestSQL()
   "ADDRESS        CHAR(50)," \
   "SALARY         REAL );";
   
-  /* Execute SQL statement */
+  // Execute SQL statement //
   rc = sqlite3_exec(db, sql, callback, 0, &zErrMsg);
   if( rc != SQLITE_OK ){
     fprintf(stderr, "SQL error: %s\n", zErrMsg);
@@ -39,7 +40,7 @@ void TestSQL()
     fprintf(stdout, "Table created successfully\n");
   }
   
-  /* Create SQL statement */
+  // Create SQL statement //
   sql = "INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY) "  \
   "VALUES (1, 'Paul', 32, 'California', 20000.00 ); " \
   "INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY) "  \
@@ -49,7 +50,7 @@ void TestSQL()
   "INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY)" \
   "VALUES (4, 'Mark', 25, 'Rich-Mond ', 65000.00 );";
   
-  /* Execute SQL statement */
+  // Execute SQL statement //
   rc = sqlite3_exec(db, sql, callback, 0, &zErrMsg);
   if( rc != SQLITE_OK ){
     fprintf(stderr, "SQL error: %s\n", zErrMsg);
@@ -62,7 +63,7 @@ void TestSQL()
   sqlite3_close(db);
   return ;
 }
-
+*/
 
 void TestBMP()
 {

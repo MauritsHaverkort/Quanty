@@ -132,3 +132,27 @@ uint32_t BlockTridiagonalMatrixChop(BlockTriDiagonalMatrixType *const A, double 
   return 0;
 }
 
+void ShiftBlockTridiagonalMatrix(BlockTriDiagonalMatrixType *const A, double const delta)
+{
+  uint32_t i,k;
+  if(A->QComplex)
+  {
+    for(k=1;k<=A->N;k++)
+    {
+      for(i=k*A->BlockSize*A->BlockSize;i<(k+1)*A->BlockSize*A->BlockSize;i+=A->BlockSize+1)
+      {
+        A->a[i].Re+=delta;
+      }
+    }
+  }
+  else
+  {
+    for(k=1;k<=A->N;k++)
+    {
+      for(i=k*A->BlockSize*A->BlockSize;i<(k+1)*A->BlockSize*A->BlockSize;i+=A->BlockSize+1)
+      {
+        A->aRe[i]+=delta;
+      }
+    }
+  }
+}

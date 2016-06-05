@@ -1610,13 +1610,13 @@ static int LuaCreateSpectra(lua_State *L)
   {
     WaveFunctionType Tpsi;
     TriDiagonalMatrixType *GTri;
-    /* calculate spectra in Tridiagonal form for each combination fo operator and wave-function seperately*/
+    /* calculate spectra in Tridiagonal form for each combination of operator and wave-function seperately*/
     GTri = malloc(Options.NT*Options.Npsi*sizeof(TriDiagonalMatrixType));
     for(i=0;i<Options.NT*Options.Npsi;i++)
     {
       GTri[i].N=Options.Settings.NTri;
       InitTriDiagonalMatrix(&GTri[i]);
-      GTri[i].mu=psiEn[i];
+      GTri[i].mu=0; // we have no knowlede on the chemical potential at this point
     }
     /* loop over all Transition operators */
     for(iT=0;iT<Options.NT;iT++)
@@ -1701,10 +1701,11 @@ static int LuaCreateSpectra(lua_State *L)
       TriDiagonalMatrixToSpectrum(psiEn[i], GTri[i], &(Spec->Spec[i]));
     }
     /* push a table to L containing the spectra in tridiagonal form */
-    /* table contains {{a,b,mu},{a,b,mu},{a,b,mu},....} */
+    /* table contains {{a,b,mu=mu,type=tri},{a,b,,mu=mu,type=tri},{a,b,,mu=mu,type=tri},....} */
     lua_createtable(L,Spec->NSpectra,0);
     for(i=0;i<Spec->NSpectra;i++)
     {
+      ShiftTriDiagonalMatrix(&(GTri[i]), psiEn[i]);
       LuaPushTable_TriDiagonalMatrixType(L, &(GTri[i]));
       lua_rawseti(L, -2, i+1);
     }
@@ -1816,6 +1817,7 @@ static int LuaCreateSpectra(lua_State *L)
       Spec->Spec[0].EmaxPole=Emaxpole;
     }
     /* push a table to L containing the spectra in Block Tridiagonal form */
+    ShiftBlockTridiagonalMatrix(&GTri, psiEn[0]);
     LuaPushTable_BlockTriDiagonalMatrixType(L, &GTri);
     /* free tridiagonal representation in memory */
     FreeBlockTridiagonalMatrix(&GTri);
@@ -2359,6 +2361,143 @@ static int LuaEigensystem(lua_State * L)
   }
 }
 
+
+/*  Given an impurity Green's function, a Bath represented by a hybridization function and a set of transition operators acting on the impurity calculate
+ *  < psi_i | T G T | psi_i >
+ *  @param L
+ *         Pointer to a lua state
+ *         1-st  argument on stack should be an Hermitian operator (Hamiltonian) [H] with NI fermions
+ *         2-nd  argument on stack should be the bath represented by the bath hybridization function. Given as a block list in either tri-diagonal, anderson or list of pole form matrices should have dimension NBath by NBath
+ *         3-rd  argument is either an integer specifying the number of states to calculate or a list of wave-functions
+ *         4-th  argument is a transition operator or list of transition operators
+ *         Possible fifth argument can be a list of options
+ *         - Tensor          boolean false
+ *         - NTri            integer 200
+ *         - OrderV          integer 1
+ *         - LevelCon        integer 1
+ *         - LevelVal        integer 1
+ *         - RecalculatePsi  boolean true - can only be given if StartPsi is given
+ *
+ *  @return 3
+ *         in adition changes the lua stack
+ *         - First argument the Greens function in blocktridiagonal form
+ *         - Second argument list of Npsi eigen-states of the extended impurity
+ *         - Third argument the bath hybridization function in NIO form
+ *
+ */
+static int LuaImpurityGreensFunction(lua_State * L)
+{
+  uint32_t len, Npsi;
+  WaveFunctionType *psi;
+  OperatorType *H,*T;
+  void *DeltaBath;
+  BlockNaturalImpurityOrbitalMatrixType *DeltaBathNIO;
+  char DeltaBathType; // l a t n (for list of poles, anderson, tridiagonal or natural impurity orbital
+  struct
+  {
+    ConvergenceSettingsType Settings;
+    uint32_t NT;
+    Bool Tensor;
+    uint32_t OrderV;
+    uint32_t LevelCon;
+    uint32_t LevelVal;
+    WaveFunctionType *psi;
+    uint32_t Npsi;
+    Bool RecalculatePsi;
+    Bool RecalculateNIO;
+  } Options;
+  Options.Settings=InitConvergenceSettings();
+  Options.Tensor=False;
+  Options.OrderV=1;
+  Options.LevelCon=1;
+  Options.LevelVal=1;
+  Options.psi=NULL;
+  Options.Npsi=1;
+  Options.RecalculatePsi=True;
+  Options.RecalculateNIO=True;
+  LuaOptionsType LuaImpurityGreensFunctionOptions[]={
+    {"NTri","uint32_t",&(Options.Settings.NTri)},
+    {"NBitsKey","uint32_t",&(Options.Settings.NBitsKey)},
+    {"epsilon","double",&(Options.Settings.epsilon)},
+    {"Epsilon","double",&(Options.Settings.epsilon)},
+    {"restrictions", "DeterminantRestrictionType", &(Options.Settings.restrictions)},
+    {"Restrictions", "DeterminantRestrictionType", &(Options.Settings.restrictions)},
+    {"Tensor","bool",&(Options.Tensor)},
+    {"OrderV","uint32_t",&(Options.OrderV)},
+    {"LevelCon","uint32_t",&(Options.LevelCon)},
+    {"LevelVal","uint32_t",&(Options.LevelVal)},
+    {"RecalculatePsi","bool",&(Options.RecalculatePsi)},
+    {"RecalculateNIO","bool",&(Options.RecalculateNIO)},
+    {"MeanFieldStartingPointTemperature","double",&(Options.Settings.EffT)},
+    {NULL, NULL, NULL}};
+  /* check number of input parameters */
+  len = (uint32_t)lua_gettop(L);
+  if(!((len==4)||(len==5)))
+  {
+    return luaL_error(L, "Error ImpurityGreensFunction called with %d arguments, 4 or 5 expected\n",len);
+  }
+  /* read Hamiltonian */
+  H = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
+  /* read hybridization function either in Natural Impurity Orbital basis, BlockListOfPoles, Anderson or Tridiagonal form */
+  DeltaBath = luaL_checkBlockGreensfunction(L,2,&DeltaBathType);
+  /* read psi or Npsi */
+  if(lua_istable(L,3))
+  {
+    psi = luaL_checkarray_WaveFunctionType(L, 3, &Npsi);
+    if(Npsi==0) return luaL_error(L, "Error ImpurityGreensFunction called with a table of wave-functions of length 0\n");
+  }
+  else
+  {
+    Npsi = luaL_checknumber(L, 3);
+    psi = NULL;
+  }
+  /* read transtion operator */
+  if(lua_type(L,4)==LUA_TTABLE)
+  {
+    T=luaL_checkarray_OperatorType(L, 4, &Options.NT);
+    if(Options.NT==0) return luaL_error(L, "Error ImpurityGreensFunction called with a table of transition operators of length 0\n");
+  }
+  else
+  {
+    Options.NT = 1;
+    T = (OperatorType *) luaL_checkudata(L, 4, "Operator_Type");
+  }
+  /* read options */
+  if(len==5)
+  {
+    LuaCheckOptions(L, 5, LuaImpurityGreensFunctionOptions);
+  }
+  if((Options.RecalculatePsi==False)&&(psi==NULL)) return luaL_error(L, "Error ImpurityGreensFunction called option RecalculatePsi = false but without a wave-function\n");
+  if((Options.RecalculateNIO==False)&&(DeltaBathType!='n')) return luaL_error(L, "Error ImpurityGreensFunction called option RecalculateNIO = false but without a hybridization function in natural impurity basis format\n");
+  // calculate ground-state and natural impurity orbital representation
+  if((Options.RecalculatePsi==True)&&(Options.RecalculateNIO==True))
+  {
+    if(ImpurityGroundState(H, DeltaBath, DeltaBathType, Options.Npsi, &Options.Settings, psi, DeltaBathNIO))
+    {
+      return luaL_error(L, "Error in ImpurityGroundState in ImpurityGreensFunction fatal sorry, should not happen\n");
+    }
+  }
+  
+  
+  
+  // calculate Greens function
+  if(Options.Tensor==True)
+  {
+    // call tensor form
+    
+    
+  }
+  else
+  {
+    // call single form
+    
+    
+    
+  }
+  FreeBlockListOfPoles(DeltaBath);
+  return 3;
+}
+
 /*  Given a table of vectors or wave-functions returns a new set that is orthonormalized
  * @ param L
  *         Pointer to a lua state
@@ -2370,7 +2509,6 @@ static int LuaEigensystem(lua_State * L)
  *         - SingularValue:  double: values equal or smaller than SingularValue are removed from basis
  *         - KeepDimensions: boolean (remove singular vectors or add a zero vector to the basis)
  */
-
 static int LuaOrthonormalize(lua_State *L)
 {
   int matorfun;
@@ -2814,6 +2952,7 @@ static const struct luaL_Reg global_functions[] = {
   {"FileReadStuttgartCTRL", LuaFileReadStuttgartCTRL},
   {"FileReadStuttgartHAMR", LuaFileReadStuttgartHAMR},
 //  {"Help", LuaHelp},
+  {"ImpurityGreensFunction", LuaImpurityGreensFunction},
   {"MeanFieldGroundState", LuaMeanFieldGroundstate},
   {"NewOperator", LuaNewOperator},
   {"NewTightBinding", LuaNewTightBinding},

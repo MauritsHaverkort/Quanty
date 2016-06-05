@@ -219,6 +219,7 @@ typedef struct ConvergenceSettingsType
   uint32_t NTri2;           /* number of Krylov states in single shot tri-diagonalization routines used for resonant spectra */
   double   zero;            /* smallest number different from one in convergence tests */
   double   epsilon;         /* smallest absolute prefactor of a determinant in wave-functions considered different from 0 */
+  double   EffT;            /* effective temperature in mean-field convergence loops*/
   uint32_t NBitsKey;        /* number of bits in key */
   DeterminantRestrictionType restrictions;  /* restrictions on possible determinatns */
   DeterminantRestrictionType restrictions1; /* restrictions on possible determinatns in resonant spectra */
@@ -252,6 +253,7 @@ ConvergenceSettingsType InitConvergenceSettings()
     100 /*NTri2*/,
     100*sqrt(DBL_EPSILON) /*zero*/,
     sqrt(DBL_EPSILON)     /*epsilon*/,
+    0.00008621738         /* 1K, EffT */,
     20                    /*bits in key*/,
     {0, NULL, NULL, NULL} /*restricitons*/,
     {0, NULL, NULL, NULL} /*restricitons1*/,
@@ -528,7 +530,7 @@ typedef struct BlockTriDiagonalMatrixType
   Complex16 *a;
   double *bRe;                 /* List of (N) * BlockSize*BlockSize values */
   Complex16 *b;
-  double mu;                   /* chemical potential if transformed to Green's function */
+  double mu;                   /* chemical potential */
 }
 BlockTriDiagonalMatrixType;
 
@@ -628,11 +630,6 @@ typedef struct BlockNaturalImpurityOrbitalMatrixType
   CompactMatrixType a0;
 }
 BlockNaturalImpurityOrbitalMatrixType;
-
-
-
-
-
 
 
 

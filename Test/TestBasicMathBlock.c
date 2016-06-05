@@ -135,7 +135,7 @@ void TestBasicMathBlock()
   
   PrintBlockTriDiagonalMatrix(BTD);
   
-  BlockTriDiagonalMatrixToSpectra(&BTD, G1, -1, 5, 6000, 0.1);
+  BlockTriDiagonalMatrixToSpectra(0, &BTD, G1, -1, 5, 6000, 0.1);
   
   FilePrintSpectra(G1, 4,"G1","w");
   for(i=0;i<9;i++)
@@ -480,7 +480,7 @@ void TestBasicMathBlock()
   {
     SpectrumFree(&G1[i]);
   }
-  BlockTriDiagonalMatrixToSpectra(&BTD, G1, -0.5, 0.5, 1000, 0.01);
+  BlockTriDiagonalMatrixToSpectra(0, &BTD, G1, -0.5, 0.5, 1000, 0.01);
   FilePrintSpectra(G1, 16,"G10","w");
   for(i=0;i<16;i++)
   {
@@ -541,7 +541,7 @@ void TestBasicMathBlock()
   {
     SpectrumFree(&G1[i]);
   }
-  BlockTriDiagonalMatrixToSpectra(&BTD, G1, -0.5, 0.5, 1000, 0.01);
+  BlockTriDiagonalMatrixToSpectra(0, &BTD, G1, -0.5, 0.5, 1000, 0.01);
   FilePrintSpectra(G1, 16,"G12","w");
   for(i=0;i<16;i++)
   {
@@ -617,7 +617,7 @@ void TestBasicMathBlock()
   {
     SpectrumFree(&G1[i]);
   }
-  BlockTriDiagonalMatrixToSpectra(&BTD, G1, -0.5, 0.5, 1000, 0.01);
+  BlockTriDiagonalMatrixToSpectra(0, &BTD, G1, -0.5, 0.5, 1000, 0.01);
   FilePrintSpectra(G1, 9,"G15","w");
   for(i=0;i<9;i++)
   {

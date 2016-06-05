@@ -130,7 +130,7 @@ void TestLanczosDyson3()
   
   
   BeginTiming("BlockTriDiagonalMatrixToSpectra", &Time);
-  BlockTriDiagonalMatrixToSpectra(&Gtri, GTriSpec, -4.0, 6.0, 1000, 0.05);
+  BlockTriDiagonalMatrixToSpectra(0, &Gtri, GTriSpec, -4.0, 6.0, 1000, 0.05);
   EndTiming("BlockTriDiagonalMatrixToSpectra", &Time);
   
   
@@ -163,7 +163,7 @@ void TestLanczosDyson3()
   EndTiming("BlockListOfPolesToBlockTridiagonalMatrixReduced", &Time);
   
   BeginTiming("BlockTriDiagonalMatrixToSpectra", &Time);
-  BlockTriDiagonalMatrixToSpectra(&Gtrireduced, GTriSpecreduced, -4.0, 6.0, 1000, 0.05);
+  BlockTriDiagonalMatrixToSpectra(0, &Gtrireduced, GTriSpecreduced, -4.0, 6.0, 1000, 0.05);
   EndTiming("BlockTriDiagonalMatrixToSpectra", &Time);
   
   
