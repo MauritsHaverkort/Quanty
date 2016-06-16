@@ -298,7 +298,7 @@ ListOfPoles * luaL_checkListOfPoles(lua_State *L, int narg)
     lua_getfield(L, narg, "name");
     if(lua_isstring(L, -1)==1)
     {
-      strlcpy(buff->Name, luaL_checkstring(L, -1), MAXStrLength);
+      strncpy(buff->Name, luaL_checkstring(L, -1), MAXStrLength);
       buff->Name[MAXStrLength-1]='\0';
     }
     else if(lua_isnil(L, -1)==1)
@@ -551,7 +551,7 @@ BlockListOfPoles * luaL_checkBlockListOfPoles(lua_State *L, int narg)
     lua_getfield(L, narg, "name");
     if(lua_isstring(L, -1)==1)
     {
-      strlcpy(buff->Name, luaL_checkstring(L, -1), MAXStrLength);
+      strncpy(buff->Name, luaL_checkstring(L, -1), MAXStrLength);
       buff->Name[MAXStrLength-1]='\0';
     }
     else if(lua_isnil(L, -1)==1)
