@@ -2521,10 +2521,10 @@ static int LuaOrthonormalize(lua_State *L)
     Bool ReduceDimension;
   } Options;
   LuaOptionsType LuaOrthonormalizeOptions[]={
-    {"Method",          "char*", &(Options.Method)},
-    {"Order",           "char*", &(Options.Order)},
-    {"SingularValue",   "char*", &(Options.SingularValue)},
-    {"ReduceDimension", "bool",  &(Options.ReduceDimension)},
+    {"Method",          "char*",  &(Options.Method)},
+    {"Order",           "char*",  &(Options.Order)},
+    {"SingularValue",   "double", &(Options.SingularValue)},
+    {"ReduceDimension", "bool",   &(Options.ReduceDimension)},
     {NULL, NULL, NULL}};
   Options.Method="Lowdin";
   Options.Order="Row";

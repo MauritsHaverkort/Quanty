@@ -3844,7 +3844,7 @@ uint32_t LanczosTriDiagonalizeKrylovMC(const OperatorType H, WaveFunctionType ps
 
 uint32_t LanczosTriDiagonalizeKrylovRestrictedRR(const OperatorType H, WaveFunctionType psi, DeterminantRestrictionType Restrictions, double epsilon, TriDiagonalMatrixType * const M, WaveFunctionType * const PsiBasis)
 {
-  printf("Start of LanczosTriDiagonalizeKrylovRR\n");
+  printf("Start of LanczosTriDiagonalizeKrylovRestrictedRR\n");
   fflush(stdout);
   uint32_t i, j, k, stop;
   double temp, dot;
@@ -3955,7 +3955,7 @@ uint32_t LanczosTriDiagonalizeKrylovRestrictedRR(const OperatorType H, WaveFunct
 
 uint32_t LanczosTriDiagonalizeKrylovRestrictedRC(const OperatorType H, WaveFunctionType psi, DeterminantRestrictionType Restrictions, double epsilon, TriDiagonalMatrixType * const M, WaveFunctionType * const PsiBasis)
 {
-  printf("Start of LanczosTriDiagonalizeKrylovRC\n");
+  printf("Start of LanczosTriDiagonalizeKrylovRestrictedRC\n");
   fflush(stdout);
   uint32_t i, j, k, stop;
   double temp, dotRe,dotIm;
@@ -4067,7 +4067,7 @@ uint32_t LanczosTriDiagonalizeKrylovRestrictedRC(const OperatorType H, WaveFunct
 
 uint32_t LanczosTriDiagonalizeKrylovRestrictedCC(const OperatorType H, WaveFunctionType psi, DeterminantRestrictionType Restrictions, double epsilon, TriDiagonalMatrixType * const M, WaveFunctionType * const PsiBasis)
 {
-  printf("Start of LanczosTriDiagonalizeKrylovCC\n");
+  printf("Start of LanczosTriDiagonalizeKrylovRestrictedCC\n");
   fflush(stdout);
   uint32_t i, j, k, stop;
   double temp, dotRe,dotIm;
@@ -4179,7 +4179,7 @@ uint32_t LanczosTriDiagonalizeKrylovRestrictedCC(const OperatorType H, WaveFunct
 
 uint32_t LanczosTriDiagonalizeKrylovRestrictedMC(const OperatorType H, WaveFunctionType psi, DeterminantRestrictionType Restrictions, double epsilon, TriDiagonalMatrixType * const M, WaveFunctionType * const PsiBasis)
 {
-  printf("Start of LanczosTriDiagonalizeKrylovMC\n");
+  printf("Start of LanczosTriDiagonalizeKrylovRestrictedMC\n");
   fflush(stdout);
   uint32_t i, j, k, stop;
   double temp, dotRe,dotIm;
