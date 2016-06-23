@@ -991,7 +991,7 @@ uint32_t WaveFunctionListSVDOrthogonalizeDifferentBasis(WaveFunctionType * const
     }
     for(i=0;i<*Npsi;i++)
     {
-      MakeComplexFunctionRealWhenNormSmall(&(psilist[i]), DBL_EPSILON);
+      MakeComplexFunctionRealWhenNormSmall(&(psilistOrtho[i]), DBL_EPSILON);
     }
     return 0;
   }
@@ -1040,7 +1040,7 @@ uint32_t WaveFunctionListSVDOrthogonalize(WaveFunctionType * const psilist, Wave
       }
       for(i=0;i<*Npsi;i++)
       {
-        MakeComplexFunctionRealWhenNormSmall(&(psilist[i]), DBL_EPSILON);
+        MakeComplexFunctionRealWhenNormSmall(&(psilistOrtho[i]), DBL_EPSILON);
       }
       return 0;
     }

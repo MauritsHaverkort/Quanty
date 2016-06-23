@@ -1450,9 +1450,10 @@ uint32_t ComplexWaveFunctionListSVDOrthogonalize(WaveFunctionType * const psilis
   int    *iwork;
   double *work;
   Complex16 *cwork;
+  VerbosityPrintf(0x0100, "Call ComplexWaveFunctionListSVDOrthogonalize with Npsi = %i\n",*Npsi);
   // shortcut for zero dimensional vectors
   if(*Npsi==0) return 0;
-  // calculate overlap matrix S = - psilist^* . psilist^T
+  // calculate negative overlap matrix S = - psilist^* . psilist^T
   S.Ni=*Npsi;
   S.Nj=*Npsi;
   S.QComplex=1;
@@ -1501,6 +1502,7 @@ uint32_t ComplexWaveFunctionListSVDOrthogonalize(WaveFunctionType * const psilis
   for(i=0;i<*Npsi;i++)
   {
     val[i] = sqrt(Max(0,-val[i]));
+    VerbosityPrintf(0x0100, "  Norm[%i] = %22.15E\n",i,val[i]);
     if(val[i]<=SingularValue)
     {
       val[i]=0;
@@ -1567,7 +1569,7 @@ uint32_t ComplexWaveFunctionListSVDOrthogonalize(WaveFunctionType * const psilis
   }
   *Npsi-=NSingular;
   // call RealWaveFunctionListSVDOrthogonalize again
-  if(ComplexWaveFunctionListSVDOrthogonalize(psilisttemp, psilistOrtho, Npsi, SingularValue, False))
+  if(ComplexWaveFunctionListSVDOrthogonalize(psilisttemp, psilistOrtho, Npsi, SingularValue, True))
   {
     printf("ComplexWaveFunctionListSVDOrthogonalize failed in ComplexWaveFunctionListSVDOrthogonalize\n");
     return 1;
