@@ -2809,6 +2809,17 @@ static int LuaBlockBandDiagonalize(lua_State *L)
   }
 }
 
+
+static int LuaInverse(lua_State *L)
+{
+  if(lua_gettop(L)!=1) return luaL_error(L, "Inverse expects a single matrix as input");
+  CompactMatrixType *M;
+  M = luaL_checkCompactMatrix(L, 1);
+  if(CompactMatrixInverse(M)!=0) return luaL_error(L, "Inverse failed");
+  LuaPushTable_CompactMatrixType(L, M);
+  return 1;
+}
+
 static int LuaTimeEnd(lua_State * L)
 {
   char *string;
@@ -2953,6 +2964,7 @@ static const struct luaL_Reg global_functions[] = {
   {"FileReadStuttgartHAMR", LuaFileReadStuttgartHAMR},
 //  {"Help", LuaHelp},
   {"ImpurityGreensFunction", LuaImpurityGreensFunction},
+  {"Inverse", LuaInverse},
   {"MeanFieldGroundState", LuaMeanFieldGroundstate},
   {"NewOperator", LuaNewOperator},
   {"NewTightBinding", LuaNewTightBinding},
