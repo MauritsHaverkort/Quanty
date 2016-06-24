@@ -43,6 +43,7 @@
 #include "../Core/DensityMatrix.c"
 #include "../Core/Random.c"
 #include "../Core/MatrixOperator.c"
+#include "../Core/ImpurityLanczos.c"
 #include "../Model/StandardOperators.c"
 #include "../Hubbard_Model/CellFunctions.c"
 #include "../Tight_Binding/Tight_Binding_lib.c"

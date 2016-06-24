@@ -1151,8 +1151,7 @@ uint32_t CreateGclDMFT(DMFTSettings const O, OperatorType const HAnd, WaveFuncti
   case 1:
     GclMdn.N = Max(O.NTriDiag, O.NGCluster);
     InitTriDiagonalMatrix(&GclMdn);
-    LanczosTriDiagonalizeDysonLowMem(HAnd, OPsi, O.zeroLancWavefunction, O.NTriDiag, VPerturbation, gPerturbation, 4,
-                                     &GclMdn);
+    LanczosTriDiagonalizeDysonLowMem(HAnd, OPsi, O.zeroLancWavefunction, O.NTriDiag, VPerturbation, gPerturbation, 4, &GclMdn);
     break;
   default:
     GclMdn.N = O.NTriDiag;
@@ -1168,8 +1167,7 @@ uint32_t CreateGclDMFT(DMFTSettings const O, OperatorType const HAnd, WaveFuncti
   case 1:
     GclPup.N = Max(O.NTriDiag, O.NGCluster);
     InitTriDiagonalMatrix(&GclPup);
-    LanczosTriDiagonalizeDysonLowMem(HAnd, OPsi, O.zeroLancWavefunction, O.NTriDiag, VPerturbation, gPerturbation, 4,
-                                     &GclPup);
+    LanczosTriDiagonalizeDysonLowMem(HAnd, OPsi, O.zeroLancWavefunction, O.NTriDiag, VPerturbation, gPerturbation, 4, &GclPup);
     break;
   default:
     GclPup.N = O.NTriDiag;

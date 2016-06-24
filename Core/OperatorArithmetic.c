@@ -281,6 +281,8 @@ uint32_t InitOperatorCopySettings(OperatorType * const O, const OperatorType Ose
     printf("could not Initiallize Operator in InitOperatorCopySettings\n");
     return 1;
   }
+  strncpy(O->Name, Oset.Name, MAXStrLength);
+  O->Name[MAXStrLength-1]='\0';
   O->NFermion = Oset.NFermion;
   O->NBoson = Oset.NBoson;
   O->NWord = Oset.NWord;

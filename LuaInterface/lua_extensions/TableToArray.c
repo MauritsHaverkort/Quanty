@@ -193,6 +193,430 @@ MatrixType* luaL_checkMatrix(lua_State *L, int narg)
   return buff;
 }
 
+TriDiagonalMatrixType* luaL_checkTriDiagonalMatrixType(lua_State *L, int narg)
+{
+  //TODO: all
+  TriDiagonalMatrixType *buff;
+  return buff;
+}
+
+BlockTriDiagonalMatrixType* luaL_checkBlockTriDiagonalMatrixType(lua_State *L, int narg)
+{
+  //TODO: all
+  BlockTriDiagonalMatrixType *buff;
+  return buff;
+}
+
+AndersonMatrixType* luaL_checkAndersonMatrixType(lua_State *L, int narg)
+{
+  //TODO: all
+  AndersonMatrixType *buff;
+  return buff;
+}
+
+BlockAndersonMatrixType* luaL_checkBlockAndersonMatrixType(lua_State *L, int narg)
+{
+  //TODO: all
+  BlockAndersonMatrixType *buff;
+  return buff;
+}
+
+DoubleTriDiagonalMatrixType * luaL_checkNatrualImpurityOrbitalMatrixType(lua_State *L, int narg)
+{
+  //TODO: all
+  DoubleTriDiagonalMatrixType *buff;
+  return buff;
+}
+
+BlockNaturalImpurityOrbitalMatrixType * luaL_checkBlockNatrualImpurityOrbitalMatrixType(lua_State *L, int narg)
+{
+  //TODO: all
+  BlockNaturalImpurityOrbitalMatrixType *buff;
+  return buff;
+}
+
+ListOfPoles * luaL_checkListOfPoles(lua_State *L, int narg)
+{
+  uint32_t i,len;
+  const char *type;
+  ListOfPoles *buff;
+  if(lua_istable(L, narg)==0)
+  {
+    luaL_error(L, "Error Green's function should be represented by a table");
+  }
+  lua_getfield(L, narg, "type");
+  if(lua_isstring(L,-1)==0)
+  {
+    luaL_error(L, "Error Reading Green's function without type declaration.");
+  }
+  type = lua_tolstring(L, -1, NULL);
+  if(strcmp(type, "Tri")==0)
+  {
+    TriDiagonalMatrixType *temp;
+    lua_pop(L, 1);
+    temp = luaL_checkTriDiagonalMatrixType(L, narg);
+    //TODO: transform TriDiagonalMatrix to ListOfPoles
+    
+    return buff;
+  }
+  if(strcmp(type, "And")==0)
+  {
+    AndersonMatrixType *temp;
+    lua_pop(L, 1);
+    temp = luaL_checkAndersonMatrixType(L, narg);
+    //TODO: transform AndersonMatrixType to ListOfPoles
+    
+    return buff;
+  }
+  if(strcmp(type, "NaturalImpurityOrbital")==0)
+  {
+    DoubleTriDiagonalMatrixType *temp;
+    lua_pop(L, 1);
+    temp = luaL_checkNatrualImpurityOrbitalMatrixType(L, narg);
+    //TODO: transform NaturalImpurityOrbitalMatrixType to ListOfPoles
+    
+    return buff;
+  }
+  if(strcmp(type, "ListOfPoles")==0)
+  {
+    buff=malloc(sizeof(ListOfPoles));
+    lua_pop(L, 1);
+    if(lua_objlen(L,narg)!=2)
+    {
+      luaL_error(L, "Error a list of pole should be a list of two lists {{a1,a2,...,an+1},{b1^2,b2^2,...,bn^2}}");
+    }
+    lua_getfield(L, narg, "mu");
+    if(lua_isnumber(L, -1)==1)
+    {
+      buff->mu=(double)luaL_checknumber(L, -1);
+    }
+    else
+    {
+      luaL_error(L, "Reading List of poles without mu defined");
+    }
+    lua_pop(L,1);
+    lua_getfield(L, narg, "name");
+    if(lua_isstring(L, -1)==1)
+    {
+      strncpy(buff->Name, luaL_checkstring(L, -1), MAXStrLength);
+      buff->Name[MAXStrLength-1]='\0';
+    }
+    else if(lua_isnil(L, -1)==1)
+    {
+      buff->Name[0]='\0';
+    }
+    else
+    {
+      luaL_error(L, "Reading List of poles without name defined");
+    }
+    lua_pop(L,1);
+    // read a
+    lua_rawgeti(L, narg, 1);
+    len = (uint32_t)lua_objlen(L, -1);
+    if(len==0) luaL_error(L, "Errorr reading Greens function with lenght of a equal to zero");
+    if(len==1) luaL_error(L, "Errorr reading Greens function with lenght of a equal to one");
+    buff->N=len-1;
+    buff->a = (double*)malloc(buff->N*sizeof(double));
+    for(i=0;i<buff->N;i++)
+    {
+      lua_rawgeti(L, -1, i+2);
+      buff->a[i]=(double)luaL_checknumber(L, -1);
+      lua_pop(L, 1);
+    }
+    lua_pop(L, 1);
+    // read b
+    lua_rawgeti(L, narg, 2);
+    buff->b=luaL_checkarray_double(L, -1, &len);
+    if(len!=buff->N)
+    {
+      luaL_error(L, "Error Reading List of poles. Length of a (%g) should be one more than length of b (%g)",buff->N+1,len);
+    }
+    lua_pop(L, 1);
+    return buff;
+  }
+  luaL_error(L, "Errorr reading Greens function of unknown type (%s)",type);
+  return NULL;
+}
+
+BlockListOfPoles * luaL_checkBlockListOfPoles(lua_State *L, int narg)
+{
+  Bool MakeReal=True;
+  uint32_t i,j,k,len;
+  const char *type;
+  BlockListOfPoles *buff;
+  if(lua_istable(L, narg)==0)
+  {
+    luaL_error(L, "Error Green's function should be represented by a table");
+  }
+  lua_getfield(L, narg, "type");
+  if(lua_isstring(L,-1)==0)
+  {
+    luaL_error(L, "Error Reading Green's function without type declaration.");
+  }
+  type = lua_tolstring(L, -1, NULL);
+  if(strcmp(type, "Tri")==0)
+  {
+    BlockTriDiagonalMatrixType *temp;
+    lua_pop(L, 1);
+    temp = luaL_checkBlockTriDiagonalMatrixType(L, narg);
+    //TODO: transform BlockTriDiagonalMatrix to BlockListOfPoles via dsbtrd
+    
+    return buff;
+  }
+  if(strcmp(type, "And")==0)
+  {
+    BlockAndersonMatrixType *temp;
+    lua_pop(L, 1);
+    temp = luaL_checkBlockAndersonMatrixType(L, narg);
+    //TODO: transform BlockAndersonMatrixType to BlockListOfPoles via dsbtrd
+    
+    return buff;
+  }
+  if(strcmp(type, "NaturalImpurityOrbital")==0)
+  {
+    BlockNaturalImpurityOrbitalMatrixType *temp;
+    lua_pop(L, 1);
+    temp = luaL_checkBlockNatrualImpurityOrbitalMatrixType(L, narg);
+    //TODO: transform BlockNaturalImpurityOrbitalMatrixType to BlockListOfPoles via dsbtrd
+    
+    return buff;
+  }
+  if(strcmp(type, "ListOfPoles")==0)
+  {
+    buff=malloc(sizeof(BlockListOfPoles));
+    lua_pop(L, 1);
+    if(lua_objlen(L,narg)!=2)
+    {
+      luaL_error(L, "Error a list of poles should be a list of two lists {{a1,a2,...,an+1},{b1^2,b2^2,...,bn^2}}, with b matrices and a1 optionally a matrix");
+    }
+    // read b
+    lua_rawgeti(L, narg, 2);
+    {
+      len = (uint32_t)lua_objlen(L, -1);
+      if(len==0) luaL_error(L, "Errorr reading Greens function with lenght of b equal to zero");
+      buff->N=len;
+      lua_rawgeti(L, -1, 1);
+      buff->BlockSize = (uint32_t)lua_objlen(L, -1);
+      lua_pop(L, 1);
+      buff->QComplex=1;
+      InitBlockListOfPoles(buff);
+      for(i=0;i<buff->N;i++)
+      {
+        lua_rawgeti(L, -1, i+1); // get b_i+1 onto the stack
+        {
+          if((uint32_t)lua_objlen(L, -1)!=buff->BlockSize)
+          {
+            luaL_error(L, "Errorr reading Greens function as block list of poles, but all blocks must be equal in size. BlockSize (%g), size at i=%g is %g",buff->BlockSize,i+1,lua_objlen(L, -1));
+          }
+          for(j=0;j<buff->BlockSize;j++)
+          {
+            lua_rawgeti(L,-1,j+1);
+            {
+              if((uint32_t)lua_objlen(L, -1)!=buff->BlockSize)
+              {
+                luaL_error(L, "Errorr reading Greens function as block list of poles, but all blocks must be equal in size. BlockSize (%g), size at i=%g j=%g is %g",buff->BlockSize,i+1,j+1,lua_objlen(L, -1));
+              }
+              for(k=0;k<buff->BlockSize;k++)
+              {
+                lua_rawgeti(L,-1,k+1);
+                {
+                  if(lua_isnumber(L, -1))
+                  {
+                    buff->V[i*(1+Sqr(buff->BlockSize))+1+k+j*buff->BlockSize].Re=(double)luaL_checknumber(L, -1);
+                    buff->V[i*(1+Sqr(buff->BlockSize))+1+k+j*buff->BlockSize].Im=0;
+                  }
+                  else if (luaL_testudata(L, -1, "Complex_Type") != NULL)
+                  {
+                    MakeReal=False;
+                    buff->V[i*(1+Sqr(buff->BlockSize))+1+k+j*buff->BlockSize] = *(Complex16 *)luaL_checkudata(L, -1, "Complex_Type");
+                  }
+                  else
+                  {
+                    luaL_error(L, "Error in reading complex table\n");
+                  }
+                }
+                lua_pop(L, 1);
+              }
+            }
+            lua_pop(L, 1);
+          }
+        }
+        lua_pop(L, 1);
+      }
+    }
+    lua_pop(L, 1);
+    // read a
+    lua_rawgeti(L, narg, 1);
+    {
+      len = (uint32_t)lua_objlen(L, -1);
+      if(len!=buff->N+1)
+      {
+        luaL_error(L, "Error Reading List of poles. Length of a (%g) should be one more than length of b (%g)",len,buff->N);
+      }
+      lua_rawgeti(L, -1, 1);
+      {
+        if(lua_isnumber(L, -1))
+        {
+          for(i=0;i<Sqr(buff->BlockSize);i++)
+          {
+            buff->a0[i].Re=0;
+            buff->a0[i].Im=0;
+          }
+          buff->a0[0].Re=(double)luaL_checknumber(L, -1);
+          for(i=buff->BlockSize+1;i<Sqr(buff->BlockSize);i+=buff->BlockSize+1)
+          {
+            buff->a0[i].Re=buff->a0[0].Re;
+          }
+        }
+        else if (luaL_testudata(L, -1, "Complex_Type") != NULL)
+        {
+          MakeReal=False;
+          for(i=0;i<Sqr(buff->BlockSize);i++)
+          {
+            buff->a0[i].Re=0;
+            buff->a0[i].Im=0;
+          }
+          buff->a0[0]=*(Complex16 *)luaL_checkudata(L, -1, "Complex_Type");
+          for(i=buff->BlockSize+1;i<Sqr(buff->BlockSize);i+=buff->BlockSize+1)
+          {
+            buff->a0[i]=buff->a0[0];
+          }
+        }
+        else
+        {
+          if((uint32_t)lua_objlen(L, -1)!=buff->BlockSize)
+          {
+            luaL_error(L, "Errorr reading Greens function as block list of poles, but all blocks must be equal in size. BlockSize (%g), size of a0 is %g",buff->BlockSize,lua_objlen(L, -1));
+          }
+          for(j=0;j<buff->BlockSize;j++)
+          {
+            lua_rawgeti(L,-1,j+1);
+            {
+              if((uint32_t)lua_objlen(L, -1)!=buff->BlockSize)
+              {
+                luaL_error(L, "Errorr reading Greens function as block list of poles, but all blocks must be equal in size. BlockSize (%g), size of a0(%g) is %g",buff->BlockSize,j+1,lua_objlen(L, -1));
+              }
+              for(k=0;k<buff->BlockSize;k++)
+              {
+                lua_rawgeti(L,-1,k+1);
+                {
+                  if(lua_isnumber(L, -1))
+                  {
+                    buff->a0[k+j*buff->BlockSize].Re=(double)luaL_checknumber(L, -1);
+                    buff->a0[k+j*buff->BlockSize].Im=0;
+                  }
+                  else if (luaL_testudata(L, -1, "Complex_Type") != NULL)
+                  {
+                    MakeReal=False;
+                    buff->a0[k+j*buff->BlockSize] = *(Complex16 *)luaL_checkudata(L, -1, "Complex_Type");
+                  }
+                  else
+                  {
+                    luaL_error(L, "Error in reading complex table\n");
+                  }
+                }
+                lua_pop(L, 1);
+              }
+            }
+            lua_pop(L, 1);
+          }
+        }
+      }
+      lua_pop(L, 1);
+      for(i=0;i<buff->N;i++)
+      {
+        lua_rawgeti(L,-1,i+2);
+        {
+          buff->V[i*(1+Sqr(buff->BlockSize))].Re=(double)luaL_checknumber(L, -1);
+          buff->V[i*(1+Sqr(buff->BlockSize))].Im=0;
+        }
+        lua_pop(L,1);
+      }
+    }
+    lua_pop(L, 1);
+    if(MakeReal==True)
+    {
+      MakeComplexBlockListOfPolesReal(buff);
+    }
+    lua_getfield(L, narg, "mu");
+    if(lua_isnumber(L, -1)==1)
+    {
+      buff->mu=(double)luaL_checknumber(L, -1);
+    }
+    else
+    {
+      luaL_error(L, "Reading List of poles without mu defined");
+    }
+    lua_pop(L,1);
+    lua_getfield(L, narg, "name");
+    if(lua_isstring(L, -1)==1)
+    {
+      strncpy(buff->Name, luaL_checkstring(L, -1), MAXStrLength);
+      buff->Name[MAXStrLength-1]='\0';
+    }
+    else if(lua_isnil(L, -1)==1)
+    {
+      buff->Name[0]='\0';
+    }
+    else
+    {
+      luaL_error(L, "Reading List of poles without name correctly defined");
+    }
+    lua_pop(L,1);
+    return buff;
+  }
+  luaL_error(L, "Errorr reading Greens function of unknown type (%s)",type);
+  return NULL;
+}
+
+
+void * luaL_checkBlockGreensfunction(lua_State *L, int narg, char * rettype)
+{
+  void *buff;
+  const char *type;
+  if(lua_istable(L, narg)==0)
+  {
+    luaL_error(L, "Error Green's function should be represented by a table");
+  }
+  lua_getfield(L, narg, "type");
+  if(lua_isstring(L,-1)==0)
+  {
+    luaL_error(L, "Error Reading Green's function without valid type declaration.");
+  }
+  type = lua_tolstring(L, -1, NULL);
+  if(strcmp(type, "Tri")==0)
+  {
+    lua_pop(L, 1);
+    *rettype='t';
+    buff = (void*)luaL_checkBlockTriDiagonalMatrixType(L, narg);
+    return buff;
+  }
+  if(strcmp(type, "And")==0)
+  {
+    lua_pop(L, 1);
+    *rettype='a';
+    buff = (void*)luaL_checkBlockAndersonMatrixType(L, narg);
+    return buff;
+  }
+  if(strcmp(type, "NaturalImpurityOrbital")==0)
+  {
+    lua_pop(L, 1);
+    *rettype='n';
+    buff = (void*)luaL_checkBlockNatrualImpurityOrbitalMatrixType(L, narg);
+    return buff;
+  }
+  if(strcmp(type, "ListOfPoles")==0)
+  {
+    lua_pop(L, 1);
+    *rettype='l';
+    buff = (void*)luaL_checkBlockListOfPoles(L, narg);
+    return buff;
+  }
+  luaL_error(L, "Errorr reading Greens function of unknown type (%s)\nAllowed are:\nTri\nAnd\nNaturalImpurityOrbital\nListOfPoles",type);
+  return NULL;
+}
+
+
 
 WaveFunctionType* luaL_checkarray_WaveFunctionType(lua_State *L, int narg, uint32_t *len_out)
 {
@@ -223,10 +647,6 @@ WaveFunctionType** luaL_checkarray_PointerWaveFunctionType(lua_State *L, int nar
   }
   return buff;
 }
-
-
-
-
 
 OperatorType* luaL_checkarray_OperatorType(lua_State *L, int narg, uint32_t *len_out)
 {
@@ -500,7 +920,7 @@ void LuaPushTable_TriDiagonalMatrixType(lua_State* L, TriDiagonalMatrixType cons
       break;
     }
   }
-  lua_createtable(L, 3, 0);
+  lua_createtable(L, 2, 3);
   /* push a */
   LuaPushArray_double(L, M->a, MNtrunc+1);
   lua_rawseti(L, -2, 1);
@@ -509,7 +929,13 @@ void LuaPushTable_TriDiagonalMatrixType(lua_State* L, TriDiagonalMatrixType cons
   lua_rawseti(L, -2, 2);
   /* push mu */
   lua_pushnumber(L, M->mu);
-  lua_rawseti(L, -2, 3);
+  lua_setfield(L,-2,"mu");
+  /* push type */
+  lua_pushstring(L, "Tri");
+  lua_setfield(L,-2,"type");
+  /* push name */
+  lua_pushstring(L, M->Name);
+  lua_setfield(L,-2,"name");
 }
 
 void LuaPushTable_BlockTriDiagonalMatrixType(lua_State* L, BlockTriDiagonalMatrixType const * const M)
@@ -559,7 +985,7 @@ void LuaPushTable_BlockTriDiagonalMatrixType(lua_State* L, BlockTriDiagonalMatri
   block.b0=0;
   block.mu=0;
   block.Name=NULL;
-  lua_createtable(L, 3, 0);
+  lua_createtable(L, 2, 2);
   /* push a */
   if(block.QComplex)
   {
@@ -610,8 +1036,215 @@ void LuaPushTable_BlockTriDiagonalMatrixType(lua_State* L, BlockTriDiagonalMatri
   lua_rawseti(L, -2, 2);
   /* push mu */
   lua_pushnumber(L, M->mu);
-  lua_rawseti(L, -2, 3);
+  lua_setfield(L,-2,"mu");
+  /* push type */
+  lua_pushstring(L, "Tri");
+  lua_setfield(L,-2,"type");
+  /* push name */
+  lua_pushstring(L, M->Name);
+  lua_setfield(L,-2,"name");
 }
+
+void LuaPushTable_AndersonMatrixType(lua_State* L, AndersonMatrixType const * const M)
+{
+  lua_createtable(L, 2, 3);
+  /* push a */
+  LuaPushArray_double(L, M->a, M->N+1);
+  lua_rawseti(L, -2, 1);
+  /* push b */
+  LuaPushArray_double(L, M->b, M->N);
+  lua_rawseti(L, -2, 2);
+  /* push mu */
+  lua_pushnumber(L, M->mu);
+  lua_setfield(L,-2,"mu");
+  /* push type */
+  lua_pushstring(L, "And");
+  lua_setfield(L,-2,"type");
+  /* push name */
+  lua_pushstring(L, M->Name);
+  lua_setfield(L,-2,"name");
+}
+
+void LuaPushTable_BlockAndersonMatrixType(lua_State* L, BlockAndersonMatrixType const * const M)
+{
+  uint32_t k;
+  CompactMatrixType block;
+  //*   matrix k can be found at position [k*BlockSize*BlockSize]
+  //*   element [i,j] of matrix k can be found at position [k*BlockSize*BlockSize+i*BlockSize+j]
+  //*   stop the printing if the sum of the absulute value of all elements of b[i] is less then 0.01*DBL_EPSILON
+  block.QComplex=M->QComplex;
+  block.Ni=M->BlockSize;
+  block.Nj=M->BlockSize;
+  block.a0=0;
+  block.b0=0;
+  block.mu=0;
+  block.Name=NULL;
+  lua_createtable(L, 2, 3);
+  /* push a */
+  if(block.QComplex)
+  {
+    block.V = M->a;
+  }
+  else
+  {
+    block.VRe = M->aRe;
+  }
+  lua_createtable(L, M->N+1, 0);
+  for(k=0;k<=M->N;k++)
+  {
+    LuaPushTable_CompactMatrixType(L, &block);
+    lua_rawseti(L, -2, k+1);
+    if(block.QComplex)
+    {
+      block.V += Sqr(M->BlockSize);
+    }
+    else
+    {
+      block.VRe += Sqr(M->BlockSize);
+    }
+  }
+  lua_rawseti(L, -2, 1);
+  /* push b */
+  if(block.QComplex)
+  {
+    block.V = M->b;
+  }
+  else
+  {
+    block.VRe = M->bRe;
+  }
+  lua_createtable(L, M->N, 0);
+  for(k=0;k<M->N;k++)
+  {
+    LuaPushTable_CompactMatrixType(L, &block);
+    lua_rawseti(L, -2, k+1);
+    if(block.QComplex)
+    {
+      block.V += Sqr(M->BlockSize);
+    }
+    else
+    {
+      block.VRe += Sqr(M->BlockSize);
+    }
+  }
+  lua_rawseti(L, -2, 2);
+  /* push mu */
+  lua_pushnumber(L, M->mu);
+  lua_setfield(L,-2,"mu");
+  /* push type */
+  lua_pushstring(L, "And");
+  lua_setfield(L,-2,"type");
+  /* push name */
+  lua_pushstring(L, M->Name);
+  lua_setfield(L,-2,"name");
+}
+
+
+void LuaPushTable_ListOfPoles(lua_State* L, ListOfPoles const * const M)
+{
+  uint32_t i;
+  lua_createtable(L, 2, 3);
+  /* push a */
+  lua_createtable(L, M->N+1, 0);
+  lua_pushnumber(L, M->a0);
+  lua_rawseti(L, -2, 1);
+  for(i=0;i<M->N;i++)
+  {
+    lua_pushnumber(L, M->a[i]);
+    lua_rawseti(L, -2, i+2);
+  }
+  LuaPushArray_double(L, M->a, M->N);
+  lua_rawseti(L, -2, 1);
+  /* push b */
+  LuaPushArray_double(L, M->b, M->N);
+  lua_rawseti(L, -2, 2);
+  /* push mu */
+  lua_pushnumber(L, M->mu);
+  lua_setfield(L,-2,"mu");
+  /* push type */
+  lua_pushstring(L, "ListOfPoles");
+  lua_setfield(L,-2,"type");
+  /* push name */
+  lua_pushstring(L, M->Name);
+  lua_setfield(L,-2,"name");
+}
+
+void LuaPushTable_BlockListOfPoles(lua_State* L, BlockListOfPoles const * const M)
+{
+  uint32_t k;
+  CompactMatrixType block;
+  block.QComplex=M->QComplex;
+  block.Ni=M->BlockSize;
+  block.Nj=M->BlockSize;
+  block.a0=0;
+  block.b0=0;
+  block.mu=0;
+  block.Name=NULL;
+  lua_createtable(L, 2, 3);
+  /* push a */
+  if(block.QComplex)
+  {
+    block.V = M->a0;
+  }
+  else
+  {
+    block.VRe = M->a0Re;
+  }
+  lua_createtable(L, M->N+1, 0);
+  LuaPushTable_CompactMatrixType(L, &block);
+  lua_rawseti(L, -2, 1);
+  if(M->QComplex)
+  {
+    for(k=0;k<M->N;k++)
+    {
+      lua_pushnumber(L, M->V[k*(1+Sqr(M->BlockSize))].Re);
+      lua_rawseti(L, -2, k+2);
+    }
+  }
+  else
+  {
+    for(k=0;k<M->N;k++)
+    {
+      lua_pushnumber(L, M->VRe[k*(1+Sqr(M->BlockSize))]);
+      lua_rawseti(L, -2, k+2);
+    }
+  }
+  lua_rawseti(L, -2, 1);
+  /* push b */
+  if(block.QComplex)
+  {
+    block.V = M->V+1;
+  }
+  else
+  {
+    block.VRe = M->VRe+1;
+  }
+  lua_createtable(L, M->N, 0);
+  for(k=0;k<M->N;k++)
+  {
+    LuaPushTable_CompactMatrixType(L, &block);
+    lua_rawseti(L, -2, k+1);
+    if(block.QComplex)
+    {
+      block.V += Sqr(M->BlockSize)+1;
+    }
+    else
+    {
+      block.VRe += Sqr(M->BlockSize)+1;
+    }
+  }
+  lua_rawseti(L, -2, 2);
+  /* push mu */
+  lua_pushnumber(L, M->mu);
+  lua_setfield(L,-2,"mu");
+  /* push type */
+  lua_pushstring(L, "ListOfPoles");
+  lua_setfield(L,-2,"type");
+  /* push name */
+  lua_pushstring(L, M->Name);
+  lua_setfield(L,-2,"name");
+}
+
 
 /*  if at position len of the lua stack a table is found it is over writen by the table in matrix M
  *  otherwise an error is thrown

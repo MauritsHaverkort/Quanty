@@ -921,11 +921,11 @@ void TestCompactMatrixVector()
   
   printf("original matrix\n");
   PrintCompactMatrixMinimal(AM);
-  CompactMatrixSVDOrthogonalizeRow(&AM, 10000*DBL_EPSILON, &BM, &CM);
+  CompactMatrixSVDOrthogonalizeRowplusT(&AM, &EM, &BM, &CM, 10000*DBL_EPSILON, True);
   
   
   printf("Orthogonalized\n");
-  PrintCompactMatrixMinimal(AM);
+  PrintCompactMatrixMinimal(EM);
   
   printf("T\n");
   PrintCompactMatrixMinimal(BM);
@@ -983,7 +983,7 @@ void TestCompactMatrixVector()
   
   printf("original matrix\n");
   PrintCompactMatrixMinimal(AM);
-  CompactMatrixSVDOrthogonalizeRow(&AM, 10000*DBL_EPSILON, &BM, &CM);
+  CompactMatrixSVDOrthogonalizeRowplusT(&AM, &EM, &BM, &CM, 10000*DBL_EPSILON, True);
   
   
   printf("Orthogonalized\n");
@@ -1046,7 +1046,7 @@ void TestCompactMatrixVector()
   
   printf("original matrix\n");
   PrintCompactMatrixMinimal(AM);
-  CompactMatrixSVDOrthogonalizeCol(&AM, 1000000*DBL_EPSILON, &BM, &CM);
+  CompactMatrixSVDOrthogonalizeRowplusT(&AM, &EM, &BM, &CM, 10000*DBL_EPSILON, True);
   
   
   printf("Orthogonalized\n");

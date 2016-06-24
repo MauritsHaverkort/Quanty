@@ -1864,7 +1864,7 @@ uint32_t OperatorPsiRestrictedRC(const OperatorType O, const WaveFunctionType ps
   Opsi->NBitsKey = psi.NBitsKey;
   if (WaveFunctionInit(Opsi))
   {
-    printf("Could not initialize Opsi in OperatorPsiRC\n");
+    printf("Could not initialize Opsi in OperatorPsiRestrictedRC\n");
     return 1;
   };
   OutOffMem = 0;

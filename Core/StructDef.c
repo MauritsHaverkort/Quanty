@@ -219,6 +219,7 @@ typedef struct ConvergenceSettingsType
   uint32_t NTri2;           /* number of Krylov states in single shot tri-diagonalization routines used for resonant spectra */
   double   zero;            /* smallest number different from one in convergence tests */
   double   epsilon;         /* smallest absolute prefactor of a determinant in wave-functions considered different from 0 */
+  double   EffT;            /* effective temperature in mean-field convergence loops*/
   uint32_t NBitsKey;        /* number of bits in key */
   DeterminantRestrictionType restrictions;  /* restrictions on possible determinatns */
   DeterminantRestrictionType restrictions1; /* restrictions on possible determinatns in resonant spectra */
@@ -252,6 +253,7 @@ ConvergenceSettingsType InitConvergenceSettings()
     100 /*NTri2*/,
     100*sqrt(DBL_EPSILON) /*zero*/,
     sqrt(DBL_EPSILON)     /*epsilon*/,
+    0.00008621738         /* 1K, EffT */,
     20                    /*bits in key*/,
     {0, NULL, NULL, NULL} /*restricitons*/,
     {0, NULL, NULL, NULL} /*restricitons1*/,
@@ -503,10 +505,20 @@ BlockListOfPoles;
  *   element [i,j] of matrix k can be found at position [k*BlockSize*BlockSize+i*BlockSize+j]
  *
  *   when represented as a Green's function the function is:
- *   G0 =        a0 + b0 . ( G1 ) . b0^+
+ *   G0 =        a0^* + b0 . ( G1 ) . b0^T
  *   G1 = 1/(w - a1 - b1 . ( G2 ) . b1^+)
+ *   G2 = 1/(w - a2 - b2 . ( G3 ) . b2^+)
  *   ...
  *   Gn = 1/(w - an)
+ *  
+ *   note that the later needs to be changed to
+ *   G0 =        a0^* + b0 . ( G1 ) . b0^T
+ *   G1 = 1/(w - a1 - b1^* . ( G2 ) . b1^T)
+ *   G2 = 1/(w - a2 - b2^* . ( G3 ) . b2^T)
+ *   ...
+ *   Gn = 1/(w - an)
+ *
+ *   in order to be consistent and easily allow to create H from G^{-1}
  */
 typedef struct BlockTriDiagonalMatrixType
 {
@@ -518,7 +530,7 @@ typedef struct BlockTriDiagonalMatrixType
   Complex16 *a;
   double *bRe;                 /* List of (N) * BlockSize*BlockSize values */
   Complex16 *b;
-  double mu;                   /* chemical potential if transformed to Green's function */
+  double mu;                   /* chemical potential */
 }
 BlockTriDiagonalMatrixType;
 
@@ -618,11 +630,6 @@ typedef struct BlockNaturalImpurityOrbitalMatrixType
   CompactMatrixType a0;
 }
 BlockNaturalImpurityOrbitalMatrixType;
-
-
-
-
-
 
 
 

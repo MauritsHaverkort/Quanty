@@ -991,7 +991,7 @@ uint32_t WaveFunctionListSVDOrthogonalizeDifferentBasis(WaveFunctionType * const
     }
     for(i=0;i<*Npsi;i++)
     {
-      MakeComplexFunctionRealWhenNormSmall(&(psilist[i]), DBL_EPSILON);
+      MakeComplexFunctionRealWhenNormSmall(&(psilistOrtho[i]), DBL_EPSILON);
     }
     return 0;
   }
@@ -1040,7 +1040,7 @@ uint32_t WaveFunctionListSVDOrthogonalize(WaveFunctionType * const psilist, Wave
       }
       for(i=0;i<*Npsi;i++)
       {
-        MakeComplexFunctionRealWhenNormSmall(&(psilist[i]), DBL_EPSILON);
+        MakeComplexFunctionRealWhenNormSmall(&(psilistOrtho[i]), DBL_EPSILON);
       }
       return 0;
     }
@@ -1562,6 +1562,8 @@ uint32_t WaveFunctionCopy(WaveFunctionType const A, WaveFunctionType * const B)
     printf("WaveFunctionInit failed in WaveFunctionCopy\n");
     return 1;
   };
+  strncpy(B->Name, A.Name, MAXStrLength);
+  B->Name[MAXStrLength-1]='\0';
   if (WaveFunctionAddUnionBasis(B, A))
   {
     printf("WaveFunctionAddUnionBasis failed in WaveFunctionCopy\n");
@@ -1717,7 +1719,6 @@ uint32_t WaveFunctionExpand(const WaveFunctionType * const psi, const uint16_t *
   retval=0;
   if(psi->QComplex)
   {
-#pragma omp parallel for private(j,add,k)
     for(i=0;i<Nout;i++)
     {
       if(retval)break;
@@ -1738,7 +1739,6 @@ uint32_t WaveFunctionExpand(const WaveFunctionType * const psi, const uint16_t *
           {
             retval=1;
             printf("ComplexWaveFunctionAddElement failed in WaveFunctionExpand for determinant %i/%i of function %i/%i",j,psi->N,i,Nout);
-#pragma omp flush(retval)
             break;
           }
         }
@@ -1747,7 +1747,6 @@ uint32_t WaveFunctionExpand(const WaveFunctionType * const psi, const uint16_t *
   }
   else
   {
-#pragma omp parallel for private(j,add,k)
     for(i=0;i<Nout;i++)
     {
       if(retval)break;
@@ -1756,7 +1755,7 @@ uint32_t WaveFunctionExpand(const WaveFunctionType * const psi, const uint16_t *
         add=True;
         for(k=0;k<Ndet;k++)
         {
-          if(((psi->Determinant[BlokElementDet(j,psi->NWord,index[k]>>7)]>>(7-(index[k]&255)))&1)!=((i>>k)&1))
+          if(((psi->Determinant[BlokElementDet(j,psi->NWord,index[k]>>3)]>>(7-(index[k]&7)))&1)!=((i>>k)&1))
           {
             add=False;
             break;
@@ -1768,7 +1767,6 @@ uint32_t WaveFunctionExpand(const WaveFunctionType * const psi, const uint16_t *
           {
             retval=1;
             printf("RealWaveFunctionAddElement failed in WaveFunctionExpand for determinant %i/%i of function %i/%i",j,psi->N,i,Nout);
-#pragma omp flush(retval)
             break;
           }
         }

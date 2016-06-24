@@ -190,6 +190,7 @@
 		4C0B5589196AB837000B8E97 /* TableToArray.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = TableToArray.c; path = lua_extensions/TableToArray.c; sourceTree = "<group>"; };
 		4C0B558A196C6A9D000B8E97 /* tools.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = tools.c; path = lua_extensions/tools.c; sourceTree = "<group>"; };
 		4C11812319A3E8F100E11DB1 /* OneDBand.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = OneDBand.c; sourceTree = "<group>"; };
+		4C15AABE1D02F46400FD42B8 /* ImpurityLanczos.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ImpurityLanczos.c; sourceTree = "<group>"; };
 		4C18752F1A36CF0800BB2FF4 /* ForCore.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ForCore.c; sourceTree = "<group>"; };
 		4C2AAA191632655300138620 /* Model */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Model; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C2AAA261632659D00138620 /* Model.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = Model.c; sourceTree = "<group>"; };
@@ -587,6 +588,7 @@
 				4CC07E7B1A08D9D10053B938 /* ResonantSpectra.c */,
 				4C2AAA44163265DD00138620 /* Random.c */,
 				4C6534801927B39400D00679 /* MeanField.c */,
+				4C15AABE1D02F46400FD42B8 /* ImpurityLanczos.c */,
 			);
 			path = Core;
 			sourceTree = "<group>";

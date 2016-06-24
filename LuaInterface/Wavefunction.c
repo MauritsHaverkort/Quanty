@@ -428,6 +428,33 @@ static int LuaWavefunctionDet(lua_State *L)
 }
 
 
+/*  pushes the prefactor of a determinant to the stack
+ *  On the stack should be a wavefunction and an integer or a string representing the determinant
+ *  The (complex) number returned is the prefactor of the given determinant
+ */
+static int LuaWavefunctionPrefactorDet(lua_State *L)
+{
+  uint32_t len = (uint32_t)lua_gettop(L);
+  WaveFunctionType *a = (WaveFunctionType *)currentudata;
+  uint32_t idet;
+  if(len!=1) return luaL_error(L, "Error in .PrefactorDet(arg) arg should be an integer between 1 and .N (%d) or a string representing the determinant\n",a->N);
+  //TODO: read a string representing the determinant
+  
+  idet = (uint32_t) luaL_checkinteger(L, 1);
+  if((idet>a->N)||(idet==0))return luaL_error(L, "Error in .PrefactorDet(arg = %d) arg should be an integer between 1 and .N (%d) or a string representing the determinant\n",idet,a->N);
+  if(a->QComplex)
+  {
+    Complex16 *res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
+    res->Re = a->ValueRe[BlokElement(idet)];
+    res->Im = a->ValueIm[BlokElement(idet)];
+    luaL_setmetatable(L, "Complex_Type");
+  }
+  else
+  {
+    lua_pushnumber(L,a->ValueRe[BlokElement(idet)]);
+  }
+  return 1;
+}
 
 /*  On stack:
  *    a wavefunction
@@ -441,7 +468,7 @@ static int LuaWavefunctionExpand(lua_State * L)
   uint16_t *index;
   uint32_t Ndet;
   if(lua_gettop(L)!=2) luaL_error(L, "Error in Expand(psi,index) two arguments expected, recieved (%d)\n",lua_gettop(L));
-    psi = (WaveFunctionType *) luaL_checkudata(L, 1, "Wavefunction_Type");
+  psi = (WaveFunctionType *) luaL_checkudata(L, 1, "Wavefunction_Type");
   index = luaL_checkarray_unit16_t(L, 2, &Ndet);
   if(Ndet>24) luaL_error(L, "Error in Expand(psi,index). Expanding a wavefunction in determinants yields 2^N new functions for N=%d this would not fit in your memory\n",psi->N);
   psilist = malloc((1<<Ndet)*sizeof(WaveFunctionType));
@@ -483,6 +510,11 @@ static int LuaWavefunctionIndex(lua_State * L)
   if (strcmp(str, "Det") == 0)
   {
     lua_pushcfunction(L, LuaWavefunctionDet);
+    return 1;
+  }
+  if (strcmp(str, "PrefactorDet") == 0)
+  {
+    lua_pushcfunction(L, LuaWavefunctionPrefactorDet);
     return 1;
   }
   if (strcmp(str, "Print") == 0)
@@ -538,6 +570,10 @@ static int LuaWavefunctionNewIndex(lua_State * L)
     return luaL_error(L, "Errorr, you can not change the value Complex of a wavefunction %s.\nIn order to change you have to modify the wavefunction itselves, the value of Complex will follow automatically.",a->Name);
   }
   if (strcmp(str, "Det") == 0)
+  {
+    return luaL_error(L, "Errorr, you can not change the value of a determiant via indexing for wavefunction %s",a->Name);
+  }
+  if (strcmp(str, "PrefactorDet") == 0)
   {
     return luaL_error(L, "Errorr, you can not change the value of a determiant via indexing for wavefunction %s",a->Name);
   }

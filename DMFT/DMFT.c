@@ -87,8 +87,7 @@ int main(int argc, const char *argv[])
       printf("***********************************************************************\n\n\n");
 
       BeginTiming("Find Groundstate and mu", &Time);
-      FindGroundStateFromG0andSigma(DMFTSet, G0And, SigmaLP, &mu, &Nelectron, &Psi, &GBathBA, &GBathAnd, &Time,
-                                    &onsiteshiftstart);
+      FindGroundStateFromG0andSigma(DMFTSet, G0And, SigmaLP, &mu, &Nelectron, &Psi, &GBathBA, &GBathAnd, &Time, &onsiteshiftstart);
       EndTiming("Find Groundstate and mu", &Time);
       BeginTiming("Set up the V and g", &Time);
       createGBathBATruncandVPerturbation(DMFTSet, GBathBA, &GBathBATrunc, VPerturbation, gPerturbation);
