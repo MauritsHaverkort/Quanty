@@ -1486,7 +1486,11 @@ uint32_t MappedWaveFunctionAddRRR(WaveFunctionType * const A, WaveFunctionType c
   Udet.NBoson=A->NBoson;
   Udet.QComplex=0;
   Udet.NBitsKey=A->NBitsKey;
-  WaveFunctionInit(&Udet);
+  if(WaveFunctionInit(&Udet))
+  {
+    printf("WaveFunctionInit failed in MappedWaveFunctionAddRRR\n");
+    return 1;
+  }
   
   /* loop over all determinants in B */
   for(idetB=1;idetB<=B.N;idetB++)

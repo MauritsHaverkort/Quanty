@@ -903,7 +903,14 @@ static int LuaNewWaveFunction(lua_State * L)
   }
   psi->QComplex=1;
   psi->NBitsKey=Options.NBitsKey;
-  WaveFunctionInit(psi);
+  if(WaveFunctionInit(psi))
+  {
+    lua_gc (L, LUA_GCCOLLECT, 0);
+    if(WaveFunctionInit(psi))
+    {
+      return luaL_error(L, "WaveFunctionInit failed, your most probably out of memory");
+    }
+  }
   if(Options.Name!=NULL)strncpy(psi->Name, Options.Name, MAXStrLength-1);
   luaL_checktype(L, 3, LUA_TTABLE);
   NDet = (uint32_t)lua_objlen(L, 3);
