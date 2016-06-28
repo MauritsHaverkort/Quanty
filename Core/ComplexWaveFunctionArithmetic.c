@@ -1744,7 +1744,11 @@ uint32_t MappedWaveFunctionAddCCC(WaveFunctionType * const A, WaveFunctionType c
   Udet.NBoson=A->NBoson;
   Udet.QComplex=1;
   Udet.NBitsKey=A->NBitsKey;
-  WaveFunctionInit(&Udet);
+  if(WaveFunctionInit(&Udet))
+  {
+    printf("WaveFunctionInit failed in MappedWaveFunctionAddCCC\n");
+    return 1;
+  }
   /* loop over all determinants in B */
   for(idetB=1;idetB<=B.N;idetB++)
   {
@@ -1767,7 +1771,11 @@ uint32_t MappedWaveFunctionAddCCR(WaveFunctionType * const A, WaveFunctionType c
   Udet.NBoson=A->NBoson;
   Udet.QComplex=0;
   Udet.NBitsKey=A->NBitsKey;
-  WaveFunctionInit(&Udet);
+  if(WaveFunctionInit(&Udet))
+  {
+    printf("WaveFunctionInit failed in MappedWaveFunctionAddCCR\n");
+    return 1;
+  }
   /* loop over all determinants in B */
   for(idetB=1;idetB<=B.N;idetB++)
   {
@@ -1790,7 +1798,11 @@ uint32_t MappedWaveFunctionAddCRC(WaveFunctionType * const A, WaveFunctionType c
   Udet.NBoson=A->NBoson;
   Udet.QComplex=1;
   Udet.NBitsKey=A->NBitsKey;
-  WaveFunctionInit(&Udet);
+  if(WaveFunctionInit(&Udet))
+  {
+    printf("WaveFunctionInit failed in MappedWaveFunctionAddCRC\n");
+    return 1;
+  }
   /* loop over all determinants in B */
   for(idetB=1;idetB<=B.N;idetB++)
   {

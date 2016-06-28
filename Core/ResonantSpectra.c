@@ -134,7 +134,11 @@ uint32_t ResonantSpectra(const OperatorType OppH1, const OperatorType OppH2, con
     GTpsi.NBoson   = psi.NBoson;
     GTpsi.QComplex = psi.QComplex;
     GTpsi.NBitsKey = psi.NBitsKey;
-    WaveFunctionInit(&GTpsi);
+    if(WaveFunctionInit(&GTpsi))
+    {
+      printf("WaveFunctionInit failed in ResonantSpectra 00");
+      return 1;
+    }
     for(i = 0; i < settings->NTri1; i++)
     {
       tempDoubleRe = 0;
@@ -320,7 +324,11 @@ uint32_t ResonantSpectraOrig(const OperatorType OppH, const OperatorType OppH2, 
     GTpsi.NBoson = psi.NBoson;
     GTpsi.QComplex = psi.QComplex;
     GTpsi.NBitsKey = psi.NBitsKey;
-    WaveFunctionInit(&GTpsi);
+    if(WaveFunctionInit(&GTpsi))
+    {
+      printf("WaveFunctionInit failed in ResonantSpectraOrig 00");
+      return 1;
+    }
     for(i = 0; i < NKrylov1; i++)
     {
       tempDoubleRe = 0;
@@ -547,7 +555,11 @@ uint32_t FluorescenceYieldRestricted(const OperatorType OppH, DeterminantRestric
     GTpsi.NBoson = psi.NBoson;
     GTpsi.QComplex = psi.QComplex;
     GTpsi.NBitsKey = psi.NBitsKey;
-    WaveFunctionInit(&GTpsi);
+    if(WaveFunctionInit(&GTpsi))
+    {
+      printf("WaveFunctionInit failed in FluorescenceYieldRestricted 00");
+      return 1;
+    }
     for(i = 0; i < NKrylov1; i++)
     {
       tempDoubleRe = 0;

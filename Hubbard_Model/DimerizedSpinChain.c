@@ -145,7 +145,11 @@ uint32_t CreateDimerizedSpinChainStartWaveFunction(DimerizedSpinChainSettings Se
   f.NFermion = 4 * Set.Ndimer;
   f.NBoson = 0;
   f.NBitsKey = Set.NBitsKey;
-  WaveFunctionInit(&f);
+  if(WaveFunctionInit(&f))
+  {
+    printf("WaveFunctionInit failed in CreateDimerizedSpinChainStartWaveFunction\n");
+    return 1;
+  }
   Determinant = calloc(f.NWord, sizeof(uint8_t));
   WaveFunctionAddElement(&f, Determinant, 1);
   OperatorPsi(O, f, Psi);

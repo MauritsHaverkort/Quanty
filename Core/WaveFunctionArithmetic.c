@@ -1215,7 +1215,11 @@ uint32_t CreateWaveFunctionFromString(WaveFunctionType * psi, uint16_t * createS
   psi->NBoson = NBoson;
   psi->QComplex = 0;
   psi->NBitsKey = NBitsKey;
-  WaveFunctionInit(psi);
+  if(WaveFunctionInit(psi))
+  {
+    printf("WaveFunctionInit failed in CreateWaveFunctionFromString\n");
+    return 1;
+  }
   uint8_t Determinant[psi->NWord];
   for(i=0;i<psi->NWord;i++)
   {
@@ -1243,7 +1247,11 @@ uint32_t CreateStartWaveFunctionOnsiteEnergy(const OperatorType O, WaveFunctionT
   psi->NBoson = O.NBoson;
   psi->QComplex = 0;
   psi->NBitsKey = NBitsKey;
-  WaveFunctionInit(psi);
+  if(WaveFunctionInit(psi))
+  {
+    printf("WaveFunctionInit failed in CreateStartWaveFunctionOnsiteEnergy\n");
+    return 1;
+  }
   if (nFermion > O.NFermion)
   {
     printf("Can't create a starting wave-function with %i Fermions, when there are only %i basis fermions\n", nFermion,
@@ -1326,7 +1334,11 @@ uint32_t WaveFunctionAddFermion(WaveFunctionType const psiIn, WaveFunctionType *
   psiOut->NBoson = psiIn.NBoson;
   psiOut->NBitsKey = psiIn.NBitsKey;
   psiOut->QComplex = psiIn.QComplex;
-  WaveFunctionInit(psiOut);
+  if(WaveFunctionInit(psiOut))
+  {
+    printf("WaveFunctionInit failed in WaveFunctionAddFermion\n");
+    return 1;
+  }
   if (psiIn.QComplex)
   {
     for (i = 1; i <= psiIn.N; i++)
@@ -1415,7 +1427,11 @@ uint32_t WaveFunctionRemoveFermion(WaveFunctionType const psiIn, WaveFunctionTyp
   psiOut->NBoson = psiIn.NBoson;
   psiOut->NBitsKey = psiIn.NBitsKey;
   psiOut->QComplex = psiIn.QComplex;
-  WaveFunctionInit(psiOut);
+  if(WaveFunctionInit(psiOut))
+  {
+    printf("WaveFunctionInit failed in WaveFunctionAddFermion\n");
+    return 1;
+  }
   if (psiIn.QComplex)
   {
     for (i = 1; i <= psiIn.N; i++)
@@ -1626,7 +1642,11 @@ uint32_t RotateWaveFunction(WaveFunctionType * const A, WaveFunctionType const B
   A->NBoson=B.NBoson;
   A->QComplex=B.QComplex;
   A->NBitsKey=B.NBitsKey;
-  WaveFunctionInit(A);
+  if(WaveFunctionInit(A))
+  {
+    printf("WaveFunctionInit failed in RotateWaveFunction\n");
+    return 1;
+  }
   return MappedWaveFunctionAdd(A, B, U);
 }
 

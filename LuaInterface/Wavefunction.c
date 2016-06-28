@@ -414,7 +414,14 @@ static int LuaWavefunctionDet(lua_State *L)
   psi->NBoson=a->NBoson;
   psi->QComplex=a->QComplex;
   psi->NBitsKey=a->NBitsKey;
-  WaveFunctionInit(psi);
+  if(WaveFunctionInit(psi))
+  {
+    lua_gc(L, LUA_GCCOLLECT, 0);
+    if(WaveFunctionInit(psi))
+    {
+      return luaL_error(L, "Error in .Det(%d) WaveFunctionInit failed out of memory?",idet);
+    }
+  }
   snprintf(psi->Name,MAXStrLength,"%s.Det(%d)",a->Name,idet);
   if(psi->QComplex)
   {
