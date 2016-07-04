@@ -1490,7 +1490,7 @@ uint32_t ComplexWaveFunctionListSVDOrthogonalize(WaveFunctionType * const psilis
   zheevd(jobz, uplo, Npsi, S.V, Npsi, val, cwork, &lcwork, work, &lwork, iwork, &liwork, &info);
   if (info)
   {
-    printf("zhevd failed in ComplexWaveFunctionListSVDOrthogonalize with info value %i\n", info);
+    printf("zheevd failed in ComplexWaveFunctionListSVDOrthogonalize with info value %i\n", info);
     printf("ERORR!!!!!!!!!!\n");
     fflush(stdout);
     return 1;

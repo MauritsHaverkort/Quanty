@@ -145,6 +145,7 @@ uint32_t WaveFunctionInit(WaveFunctionType * Psi)
     Psi->NWord = 0;
     return 1;
   };
+  Psi->ValueIm = NULL;
   if (Psi->QComplex)
     if ((Psi->ValueIm = malloc(Psi->NBlok * sizeof(double *))) == NULL)
     {
@@ -581,8 +582,7 @@ uint32_t WaveFunctionAddConserveBasis(WaveFunctionType * const a, const WaveFunc
   return 0;
 }
 
-uint32_t WaveFunctionAddMultipliedConserveBasis(WaveFunctionType * const a, const WaveFunctionType b,
-                                                const double alpha)
+uint32_t WaveFunctionAddMultipliedConserveBasis(WaveFunctionType * const a, const WaveFunctionType b, const double alpha)
 {
   if ((b.QComplex) && (!a->QComplex))
     if (MakeComplexWaveFunctionFromReal(a, *a))
@@ -630,69 +630,80 @@ uint32_t WaveFunctionAddComplexMultipliedConserveBasis(WaveFunctionType * const 
   return 0;
 }
 
+/* a <- a + b
+*/
 uint32_t WaveFunctionAddUnionBasis(WaveFunctionType * const a, const WaveFunctionType b)
 {
-  if ((b.QComplex) && (!a->QComplex))
+  if(a->QComplex)
+  {
+    if(b.QComplex)
+    {
+      return ComplexWaveFunctionAddUnionBasis(a, b);
+    }
+    return ComplexRealWaveFunctionAddUnionBasis(a, b);
+  }
+  if(b.QComplex)
+  {
     if (MakeComplexWaveFunctionFromReal(a, *a))
     {
       printf("MakeComplexWaveFunctionFromReal failed in WaveFunctionAddUnionBasis\n");
       return 1;
     }
-  if (b.QComplex)
-  {
     return ComplexWaveFunctionAddUnionBasis(a, b);
   }
-  else
-  {
-    return RealWaveFunctionAddUnionBasis(a, b);
-  }
+  return RealWaveFunctionAddUnionBasis(a, b);
 }
 
 uint32_t WaveFunctionAddMultipliedUnionBasis(WaveFunctionType * const a, const WaveFunctionType b, const double alpha)
 {
-  if ((b.QComplex) && (!a->QComplex))
+  if(a->QComplex)
+  {
+    if(b.QComplex)
+    {
+      return ComplexWaveFunctionAddMultipliedUnionBasis(a, b, alpha);
+    }
+    return ComplexRealWaveFunctionAddMultipliedUnionBasis(a, b, alpha);
+  }
+  if(b.QComplex)
+  {
     if (MakeComplexWaveFunctionFromReal(a, *a))
     {
       printf("MakeComplexWaveFunctionFromReal failed in WaveFunctionAddMultipliedUnionBasis\n");
       return 1;
     }
-  if (b.QComplex)
-  {
     return ComplexWaveFunctionAddMultipliedUnionBasis(a, b, alpha);
   }
-  else
-  {
-    return RealWaveFunctionAddMultipliedUnionBasis(a, b, alpha);
-  }
+  return RealWaveFunctionAddMultipliedUnionBasis(a, b, alpha);
 }
 
-uint32_t WaveFunctionAddComplexMultipliedUnionBasis(WaveFunctionType * const a, const WaveFunctionType b,
-                                                    const double alphaRe, const double alphaIm)
+uint32_t WaveFunctionAddComplexMultipliedUnionBasis(WaveFunctionType * const a, const WaveFunctionType b,const double alphaRe, const double alphaIm)
 {
-  if ((b.QComplex) && (!a->QComplex))
-    if (MakeComplexWaveFunctionFromReal(a, *a))
-    {
-      printf("MakeComplexWaveFunctionFromReal failed in WaveFunctionAddComplexMultipliedUnionBasis\n");
-      return 1;
-    }
   if ((Abs(alphaIm) > (DBL_MIN + Abs(alphaRe) * DBL_EPSILON)) && (!a->QComplex))
+  {
     if (MakeComplexWaveFunctionFromReal(a, *a))
     {
       printf("MakeComplexWaveFunctionFromReal failed in WaveFunctionAddComplexMultipliedUnionBasis\n");
       return 1;
     }
-  if (b.QComplex)
-  {
-    return ComplexWaveFunctionAddComplexMultipliedUnionBasis(a, b, alphaRe, alphaIm);
   }
-  else if (a->QComplex)
+  if(a->QComplex)
   {
+    if(b.QComplex)
+    {
+      return ComplexWaveFunctionAddComplexMultipliedUnionBasis(a, b, alphaRe, alphaIm);
+    }
     return ComplexRealWaveFunctionAddComplexMultipliedUnionBasis(a, b, alphaRe, alphaIm);
   }
-  else
+  if(b.QComplex)
   {
-    return RealWaveFunctionAddMultipliedUnionBasis(a, b, alphaRe);
+    if (MakeComplexWaveFunctionFromReal(a, *a))
+    {
+      printf("MakeComplexWaveFunctionFromReal failed in WaveFunctionAddMultipliedUnionBasis\n");
+      return 1;
+    }
+    return ComplexWaveFunctionAddComplexMultipliedUnionBasis(a, b, alphaRe, alphaIm);
   }
+  return RealWaveFunctionAddMultipliedUnionBasis(a, b, alphaRe);
 }
 
 uint32_t WaveFunctionMultiply(WaveFunctionType * a, const double bRe, const double bIm)

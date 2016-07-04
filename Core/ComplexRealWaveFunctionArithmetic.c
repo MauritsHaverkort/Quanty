@@ -132,8 +132,39 @@ void ComplexRealWaveFunctionAddComplexMultipliedConserveBasis(WaveFunctionType *
  *   Therefor values of a might change and a is returned from the function
  *   If a is an empty function b is copied into a (use of copy is strongly recommanded)
  */
-uint32_t ComplexRealWaveFunctionAddComplexMultipliedUnionBasis(WaveFunctionType * const a, const WaveFunctionType b,
-                                                               const double alphaRe, const double alphaIm)
+uint32_t ComplexRealWaveFunctionAddUnionBasis(WaveFunctionType * const a, const WaveFunctionType b)
+{
+  uint32_t i, j;
+  for (i = b.N; i != 0; --i)
+  {
+    if (ComplexWaveFunctionAddElement(a, &b.Determinant[BlokElementDet(i, b.NWord, 0)], b.ValueRe[BlokElement(i)], 0) != 0)
+    {                           /* Allocation of new memory for a failed Remove all elements added so far and return 1 */
+      for (j = b.N; j != i; --j)
+      {
+        ComplexWaveFunctionAddElementConserveBasis(*a, &b.Determinant[BlokElementDet(i, b.NWord, 0)],-b.ValueRe[BlokElement(i)],0);
+      }
+      return 1;
+    }
+  }
+  return 0;
+}
+uint32_t ComplexRealWaveFunctionAddMultipliedUnionBasis(WaveFunctionType * const a, const WaveFunctionType b, const double alphaRe)
+{
+  uint32_t i, j;
+  for (i = b.N; i != 0; --i)
+  {
+    if (ComplexWaveFunctionAddElement(a, &b.Determinant[BlokElementDet(i, b.NWord, 0)], alphaRe * b.ValueRe[BlokElement(i)],0) != 0)
+    {                           /* Allocation of new memory for a failed Remove all elements added so far and return 1 */
+      for (j = b.N; j != i; --j)
+      {
+        ComplexWaveFunctionAddElementConserveBasis(*a, &b.Determinant[BlokElementDet(i, b.NWord, 0)],-alphaRe * b.ValueRe[BlokElement(i)],0);
+      }
+      return 1;
+    }
+  }
+  return 0;
+}
+uint32_t ComplexRealWaveFunctionAddComplexMultipliedUnionBasis(WaveFunctionType * const a, const WaveFunctionType b, const double alphaRe, const double alphaIm)
 {
   uint32_t i, j;
   for (i = b.N; i != 0; --i)
