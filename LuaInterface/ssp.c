@@ -3034,6 +3034,11 @@ int luaopen_ssp(lua_State * L)
   luaL_newmetatable(L, "StuttgartHAMR_Type");
   luaL_setfuncs(L, StuttgartHAMR_meta, 0);
   
+  luaL_newmetatable(L, "Yi_Type");
+  luaL_setfuncs(L, Yi_meta, 0);
+  luaL_newlib(L, Yi_func);
+  lua_setglobal(L, "Yi");
+  
   luaMWH_RegisterGlobalFunctions(L, global_functions);
   luaMWH_RegisterGlobalFunctions(L, mathlib);
   
