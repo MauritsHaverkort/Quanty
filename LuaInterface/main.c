@@ -70,6 +70,7 @@ static void *currentudata = NULL;
 #include "Plot.c"
 #include "BraKet.c"
 #include "eval.c"
+#include "../Yi/functions_yi.c"
 #include "ssp.c"
 
 
