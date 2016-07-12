@@ -443,6 +443,19 @@ void WaveFunctionFreeValues(WaveFunctionType * const psi)
   }
 }
 
+uint32_t QWaveFunctionSameBasis(WaveFunctionType const * const psiA, WaveFunctionType const * const psiB)
+{
+  if(psiA->KeyList==psiB->KeyList) return 1;
+  return 0;
+}
+
+uint32_t QWaveFunctionSame(WaveFunctionType const * const psiA, WaveFunctionType const * const psiB)
+{
+  if(psiA->ValueRe==psiB->ValueRe) return 1;
+  return 0;
+}
+
+
 uint32_t WaveFunctionAddElement(WaveFunctionType * const psi, const uint8_t * const det, const double aRe, const double aIm)
 {
   if (psi->QComplex == 0)

@@ -2950,6 +2950,7 @@ static int LuaStatistics(lua_State *L)
 
 static const struct luaL_Reg global_functions[] = {
   {"BlockBandDiagonalize", LuaBlockBandDiagonalize},
+  {"Braket", LuaBraKet},
   {"CalculateBands", LuaCalculateBands},
   {"CalculateDOS", LuaCalculateDOS},
   {"CalculateFermi", LuaCalculateFermi},

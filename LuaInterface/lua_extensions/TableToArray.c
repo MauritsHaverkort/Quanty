@@ -1139,7 +1139,6 @@ void LuaPushTable_BlockAndersonMatrixType(lua_State* L, BlockAndersonMatrixType 
   lua_setfield(L,-2,"name");
 }
 
-
 void LuaPushTable_ListOfPoles(lua_State* L, ListOfPoles const * const M)
 {
   uint32_t i;

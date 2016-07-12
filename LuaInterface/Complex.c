@@ -538,23 +538,15 @@ static int LuaComplexMul(lua_State * L)
           if (luaL_testudata(L, len, "Spectra_Type") != NULL)
           {
             // (original variable) operator (user data - spectra)
-            uint32_t i,j;
+            uint32_t i;
             SpectraTypeArray *res, *b;
             b = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
-            res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
-            res->NSpectra = b->NSpectra;
-            res->Spec=malloc(res->NSpectra*sizeof(SpectraType));
+            res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+            
+            if(CopySpectraArray(b, res)) return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
             for(i=0;i<res->NSpectra;i++)
             {
-              if(SpectrumAllocate(b->Spec[i], &(res->Spec[i])))
-              {
-                return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
-              }
-              for(j=0;j<=res->Spec[i].N;j++)
-              {
-                res->Spec[i].Re[j]= b->Spec[i].Re[j]*a->Re - b->Spec[i].Im[j]*a->Im;
-                res->Spec[i].Im[j]= b->Spec[i].Re[j]*a->Im + b->Spec[i].Im[j]*a->Re;
-              }
+              SpectraScalarMultiply(&(res->Spec[i]), a->Re, a->Im);
             }
             luaL_setmetatable(L, "Spectra_Type");
             return 1;
@@ -905,6 +897,22 @@ static int LuaComplexPow(lua_State * L)
   }
 }
 
+static int LuaComplexEq(lua_State * L)
+{
+  Complex16 *l,*r;
+  l = (Complex16 *) luaL_checkudata(L, 1, "Complex_Type");
+  r = (Complex16 *) luaL_checkudata(L, 2, "Complex_Type");
+  if((l->Re==r->Re)&&(l->Im==r->Im))
+  {
+    lua_pushboolean (L, 1);
+  }
+  else
+  {
+    lua_pushboolean (L, 0);
+  }
+  return 1;
+}
+
 static int LuaComplexUnm(lua_State * L)
 {
   Complex16 *res;
@@ -990,6 +998,7 @@ static const struct luaL_Reg Complex_meta[] = {
   {"__div", LuaComplexDiv},
   {"__pow", LuaComplexPow},
   {"__unm", LuaComplexUnm},
+  {"__eq", LuaComplexEq},
   {"__newindex", LuaComplexNewIndex},
   {"__tostring", LuaComplexToString},
   {NULL, NULL}

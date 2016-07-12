@@ -248,7 +248,14 @@ static int LuaWavefunctionMul(lua_State * L)
     WaveFunctionType *l = (WaveFunctionType *) luaL_checkudata(L, 1, "Wavefunction_Type");
     WaveFunctionType *r = (WaveFunctionType *) luaL_checkudata(L, len, "Wavefunction_Type");
     double DotRe, DotIm;
-    WaveFunctionDotProduct(*l, *r, &DotRe, &DotIm);
+    if(QWaveFunctionSameBasis(l, r))
+    {
+      WaveFunctionDotProductSameBasis(*l, *r, &DotRe, &DotIm);
+    }
+    else
+    {
+      WaveFunctionDotProduct(*l, *r, &DotRe, &DotIm);
+    }
     if(Abs(DotIm)<10*(DBL_EPSILON*Abs(DotRe)+DBL_MIN))
     {
       lua_pushnumber(L, DotRe);

@@ -950,20 +950,15 @@ static int LuaSpectraAdd(lua_State * L)
       SpectraTypeArray *res, *b;
       a = luaL_checknumber(L, 1);
       b = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
-      res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
-      res->NSpectra = b->NSpectra;
-      res->Spec=malloc(res->NSpectra*sizeof(SpectraType));
+      res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+      if(CopySpectraArray(b, res)) return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
       for(i=0;i<res->NSpectra;i++)
       {
-        if(SpectrumAllocate(b->Spec[i], &(res->Spec[i])))
-        {
-          return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
-        }
         for(j=0;j<=res->Spec[i].N;j++)
         {
-          res->Spec[i].Re[j]= b->Spec[i].Re[j]+a;
-          res->Spec[i].Im[j]= b->Spec[i].Im[j];
+          res->Spec[i].Re[j]+=a;
         }
+        res->Spec[i].a[0]+=a;
       }
       luaL_setmetatable(L, "Spectra_Type");
       return 1;
@@ -1018,20 +1013,15 @@ static int LuaSpectraAdd(lua_State * L)
           double b;
           SpectraTypeArray *res;
           b = luaL_checknumber(L, len);
-          res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
-          res->NSpectra = a->NSpectra;
-          res->Spec = malloc(res->NSpectra * sizeof(SpectraType));
+          res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+          if(CopySpectraArray(a, res)) return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
           for(i=0;i<res->NSpectra;i++)
           {
-            if(SpectrumAllocate(a->Spec[i], &(res->Spec[i])))
-            {
-              return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
-            }
             for(j=0;j<=res->Spec[i].N;j++)
             {
-              res->Spec[i].Re[j]= a->Spec[i].Re[j]+b;
-              res->Spec[i].Im[j]= a->Spec[i].Im[j];
+              res->Spec[i].Re[j]+=b;
             }
+            res->Spec[i].a[0]+=b;
           }
           luaL_setmetatable(L, "Spectra_Type");
           return 1;
@@ -1051,20 +1041,16 @@ static int LuaSpectraAdd(lua_State * L)
             Complex16 *b;
             SpectraTypeArray *res;
             b = (Complex16 *) luaL_checkudata(L, len, "Complex_Type");
-            res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
-            res->NSpectra = a->NSpectra;
-            res->Spec = malloc(res->NSpectra * sizeof(SpectraType));
+            res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+            if(CopySpectraArray(a, res)) return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
             for(i=0;i<res->NSpectra;i++)
             {
-              if(SpectrumAllocate(a->Spec[i], &(res->Spec[i])))
-              {
-                return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
-              }
               for(j=0;j<=res->Spec[i].N;j++)
               {
-                res->Spec[i].Re[j]= a->Spec[i].Re[j]+b->Re;
-                res->Spec[i].Im[j]= a->Spec[i].Im[j]+b->Im;
+                res->Spec[i].Re[j]+=b->Re;
+                res->Spec[i].Re[j]+=b->Im;
               }
+              //TODO: recalculate phase, a and b
             }
             luaL_setmetatable(L, "Spectra_Type");
             return 1;
@@ -1082,33 +1068,15 @@ static int LuaSpectraAdd(lua_State * L)
           if (luaL_testudata(L, len, "Spectra_Type") != NULL)
           {
             // (original variable) operator (user data - spectra)
-            uint32_t i,j;
+            uint32_t i;
             SpectraTypeArray *res, *b;
             b = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
-            if(a->NSpectra!=b->NSpectra) return luaL_error(L, "Error: Adding to sets of spectra with different number of elements (%d) + (%d)\n",a->NSpectra,b->NSpectra);
-            res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
-            res->NSpectra = a->NSpectra;
-            res->Spec=malloc(res->NSpectra*sizeof(SpectraType));
+            if(a->NSpectra!=b->NSpectra) return luaL_error(L, "Error: Adding two sets of spectra with different number of elements (%d) + (%d)\n",a->NSpectra,b->NSpectra);
+            res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+            if(CopySpectraArray(a, res)) return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
             for(i=0;i<res->NSpectra;i++)
             {
-              if((a->Spec[i].N==b->Spec[i].N)&&(a->Spec[i].Emin==b->Spec[i].Emin)&&(a->Spec[i].Emax==b->Spec[i].Emax))
-              {
-                if(SpectrumAllocate(b->Spec[i], &(res->Spec[i])))
-                {
-                  return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
-                }
-                res->Spec[i].EminPole = Min(a->Spec[i].EminPole,b->Spec[i].EminPole);
-                res->Spec[i].EmaxPole = Max(a->Spec[i].EmaxPole,b->Spec[i].EmaxPole);
-                for(j=0;j<=res->Spec[i].N;j++)
-                {
-                  res->Spec[i].Re[j]= a->Spec[i].Re[j] + b->Spec[i].Re[j];
-                  res->Spec[i].Im[j]= a->Spec[i].Im[j] + b->Spec[i].Im[j];
-                }
-              }
-              else
-              {
-                return luaL_error(L, "Still to do: add two spectra with different energy ranges, spectra %d\n",i);
-              }
+              SafeAddMultipliedSpectra(&(res->Spec[i]), b->Spec[i], 1, 0);
             }
             luaL_setmetatable(L, "Spectra_Type");
             return 1;
@@ -1166,20 +1134,19 @@ static int LuaSpectraSub(lua_State * L)
       SpectraTypeArray *res, *b;
       a = luaL_checknumber(L, 1);
       b = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
-      res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
-      res->NSpectra = b->NSpectra;
-      res->Spec = malloc(res->NSpectra * sizeof(SpectraType));
+      res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+      if(CopySpectraArray(b, res)) return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
       for(i=0;i<res->NSpectra;i++)
       {
-        if(SpectrumAllocate(b->Spec[i], &(res->Spec[i])))
-        {
-          return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
-        }
         for(j=0;j<=res->Spec[i].N;j++)
         {
-          res->Spec[i].Re[j]= -b->Spec[i].Re[j]+a;
-          res->Spec[i].Im[j]= -b->Spec[i].Im[j];
+          res->Spec[i].Re[j]*=-1;
+          res->Spec[i].Im[j]*=-1;
+          res->Spec[i].Re[j]+=a;
         }
+        res->Spec[i].a[0]-=a;
+        res->Spec[i].phase+=Pi;
+        if(res->Spec[i].phase>2*Pi) res->Spec[i].phase-=2*Pi;
       }
       luaL_setmetatable(L, "Spectra_Type");
       return 1;
@@ -1234,20 +1201,15 @@ static int LuaSpectraSub(lua_State * L)
           double b;
           SpectraTypeArray *res;
           b = luaL_checknumber(L, len);
-          res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
-          res->NSpectra = a->NSpectra;
-          res->Spec = malloc(res->NSpectra * sizeof(SpectraType));
+          res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+          if(CopySpectraArray(a, res)) return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
           for(i=0;i<res->NSpectra;i++)
           {
-            if(SpectrumAllocate(a->Spec[i], &(res->Spec[i])))
-            {
-              return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
-            }
             for(j=0;j<=res->Spec[i].N;j++)
             {
-              res->Spec[i].Re[j]= a->Spec[i].Re[j]-b;
-              res->Spec[i].Im[j]= a->Spec[i].Im[j];
+              res->Spec[i].Re[j]-=b;
             }
+            res->Spec[i].a[0]-=b;
           }
           luaL_setmetatable(L, "Spectra_Type");
           return 1;
@@ -1267,20 +1229,16 @@ static int LuaSpectraSub(lua_State * L)
             Complex16 *b;
             SpectraTypeArray *res;
             b = (Complex16 *) luaL_checkudata(L, len, "Complex_Type");
-            res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
-            res->NSpectra = a->NSpectra;
-            res->Spec = malloc(res->NSpectra * sizeof(SpectraType));
+            res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+            if(CopySpectraArray(a, res)) return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
             for(i=0;i<res->NSpectra;i++)
             {
-              if(SpectrumAllocate(a->Spec[i], &(res->Spec[i])))
-              {
-                return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
-              }
               for(j=0;j<=res->Spec[i].N;j++)
               {
-                res->Spec[i].Re[j]= a->Spec[i].Re[j]-b->Re;
-                res->Spec[i].Im[j]= a->Spec[i].Im[j]-b->Im;
+                res->Spec[i].Re[j]-=b->Re;
+                res->Spec[i].Re[j]-=b->Im;
               }
+              //TODO: recalculate phase, a and b
             }
             luaL_setmetatable(L, "Spectra_Type");
             return 1;
@@ -1298,33 +1256,15 @@ static int LuaSpectraSub(lua_State * L)
           if (luaL_testudata(L, len, "Spectra_Type") != NULL)
           {
             // (original variable) operator (user data - spectra)
-            uint32_t i,j;
+            uint32_t i;
             SpectraTypeArray *res, *b;
             b = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
             if(a->NSpectra!=b->NSpectra) return luaL_error(L, "Error: Subtracting to sets of spectra with different number of elements (%d) + (%d)\n",a->NSpectra,b->NSpectra);
-            res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
-            res->NSpectra = a->NSpectra;
-            res->Spec = malloc(res->NSpectra * sizeof(SpectraType));
+            res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+            if(CopySpectraArray(a, res)) return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
             for(i=0;i<res->NSpectra;i++)
             {
-              if((a->Spec[i].N==b->Spec[i].N)&&(a->Spec[i].Emin==b->Spec[i].Emin)&&(a->Spec[i].Emax==b->Spec[i].Emax))
-              {
-                if(SpectrumAllocate(b->Spec[i], &(res->Spec[i])))
-                {
-                  return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
-                }
-                res->Spec[i].EminPole = Min(a->Spec[i].EminPole,b->Spec[i].EminPole);
-                res->Spec[i].EmaxPole = Max(a->Spec[i].EmaxPole,b->Spec[i].EmaxPole);
-                for(j=0;j<=res->Spec[i].N;j++)
-                {
-                  res->Spec[i].Re[j]= a->Spec[i].Re[j] - b->Spec[i].Re[j];
-                  res->Spec[i].Im[j]= a->Spec[i].Im[j] - b->Spec[i].Im[j];
-                }
-              }
-              else
-              {
-                return luaL_error(L, "Still to do: subtract two spectra with different energy ranges, spectra %d\n",i);
-              }
+              SafeAddMultipliedSpectra(&(res->Spec[i]), b->Spec[i], -1, 0);
             }
             luaL_setmetatable(L, "Spectra_Type");
             return 1;
@@ -1377,25 +1317,16 @@ static int LuaSpectraMul(lua_State * L)
     case LUA_TNUMBER:
     {
       // (number) operator (original variable)
-      uint32_t i,j;
+      uint32_t i;
       double a;
       SpectraTypeArray *res, *b;
       a = luaL_checknumber(L, 1);
       b = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
-      res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
-      res->NSpectra = b->NSpectra;
-      res->Spec = malloc(res->NSpectra*sizeof(SpectraType));
+      res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+      if(CopySpectraArray(b, res)) return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
       for(i=0;i<res->NSpectra;i++)
       {
-        if(SpectrumAllocate(b->Spec[i], &(res->Spec[i])))
-        {
-          return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
-        }
-        for(j=0;j<=res->Spec[i].N;j++)
-        {
-          res->Spec[i].Re[j]= b->Spec[i].Re[j]*a;
-          res->Spec[i].Im[j]= b->Spec[i].Im[j]*a;
-        }
+        SpectraScalarMultiply(&(res->Spec[i]), a, 0);
       }
       luaL_setmetatable(L, "Spectra_Type");
       return 1;
@@ -1446,24 +1377,15 @@ static int LuaSpectraMul(lua_State * L)
         case LUA_TNUMBER:
         {
           // (original variable) operator (number)
-          uint32_t i,j;
+          uint32_t i;
           double b;
           SpectraTypeArray *res;
           b = luaL_checknumber(L, len);
-          res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
-          res->NSpectra = a->NSpectra;
-          res->Spec = malloc(res->NSpectra * sizeof(SpectraType));
+          res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+          if(CopySpectraArray(a, res)) return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
           for(i=0;i<res->NSpectra;i++)
           {
-            if(SpectrumAllocate(a->Spec[i], &(res->Spec[i])))
-            {
-              return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
-            }
-            for(j=0;j<=res->Spec[i].N;j++)
-            {
-              res->Spec[i].Re[j]= a->Spec[i].Re[j]*b;
-              res->Spec[i].Im[j]= a->Spec[i].Im[j]*b;
-            }
+            SpectraScalarMultiply(&(res->Spec[i]), b, 0);
           }
           luaL_setmetatable(L, "Spectra_Type");
           return 1;
@@ -1479,24 +1401,15 @@ static int LuaSpectraMul(lua_State * L)
           if (luaL_testudata(L, len, "Complex_Type") != NULL)
           {
             // (original variable) operator (user data - complex)
-            uint32_t i,j;
+            uint32_t i;
             Complex16 *b;
             SpectraTypeArray *res;
             b = (Complex16 *) luaL_checkudata(L, len, "Complex_Type");
-            res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
-            res->NSpectra = a->NSpectra;
-            res->Spec = malloc(res->NSpectra * sizeof(SpectraType));
+            res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+            if(CopySpectraArray(a, res)) return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
             for(i=0;i<res->NSpectra;i++)
             {
-              if(SpectrumAllocate(a->Spec[i], &(res->Spec[i])))
-              {
-                return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
-              }
-              for(j=0;j<=res->Spec[i].N;j++)
-              {
-                res->Spec[i].Re[j]= a->Spec[i].Re[j]*b->Re - a->Spec[i].Im[j]*b->Im;
-                res->Spec[i].Im[j]= a->Spec[i].Re[j]*b->Im + a->Spec[i].Im[j]*b->Re;
-              }
+              SpectraScalarMultiply(&(res->Spec[i]), b->Re, b->Im);
             }
             luaL_setmetatable(L, "Spectra_Type");
             return 1;
@@ -1662,24 +1575,17 @@ static int LuaSpectraDiv(lua_State * L)
         case LUA_TNUMBER:
         {
           // (original variable) operator (number)
-          uint32_t i,j;
+          uint32_t i;
           double b;
           SpectraTypeArray *res;
           b = luaL_checknumber(L, len);
-          res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
-          res->NSpectra = a->NSpectra;
-          res->Spec = malloc(res->NSpectra * sizeof(SpectraType));
+          if(b==0) return luaL_error(L, "Error: spectra divided by zero\n");
+          b=1/b;
+          res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+          if(CopySpectraArray(a, res)) return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
           for(i=0;i<res->NSpectra;i++)
           {
-            if(SpectrumAllocate(a->Spec[i], &(res->Spec[i])))
-            {
-              return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
-            }
-            for(j=0;j<=res->Spec[i].N;j++)
-            {
-              res->Spec[i].Re[j]= a->Spec[i].Re[j]/b;
-              res->Spec[i].Im[j]= a->Spec[i].Im[j]/b;
-            }
+            SpectraScalarMultiply(&(res->Spec[i]), b, 0);
           }
           luaL_setmetatable(L, "Spectra_Type");
           return 1;
@@ -1695,24 +1601,15 @@ static int LuaSpectraDiv(lua_State * L)
           if (luaL_testudata(L, len, "Complex_Type") != NULL)
           {
             // (original variable) operator (user data - complex)
-            uint32_t i,j;
+            uint32_t i;
             Complex16 *b;
             SpectraTypeArray *res;
             b = (Complex16 *) luaL_checkudata(L, len, "Complex_Type");
-            res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
-            res->NSpectra = a->NSpectra;
-            res->Spec = malloc(res->NSpectra * sizeof(SpectraType));
+            res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+            if(CopySpectraArray(a, res)) return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
             for(i=0;i<res->NSpectra;i++)
             {
-              if(SpectrumAllocate(a->Spec[i], &(res->Spec[i])))
-              {
-                return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
-              }
-              for(j=0;j<=res->Spec[i].N;j++)
-              {
-                res->Spec[i].Re[j]= (a->Spec[i].Re[j]*b->Re + a->Spec[i].Im[j]*b->Im)/(Sqr(b->Re) + Sqr(b->Im));
-                res->Spec[i].Im[j]= (a->Spec[i].Im[j]*b->Re - a->Spec[i].Re[j]*b->Im)/(Sqr(b->Re) + Sqr(b->Im));
-              }
+              SpectraScalarMultiply(&(res->Spec[i]), b->Re/(Sqr(b->Re) + Sqr(b->Im)), b->Im/(Sqr(b->Re) + Sqr(b->Im)));
             }
             luaL_setmetatable(L, "Spectra_Type");
             return 1;

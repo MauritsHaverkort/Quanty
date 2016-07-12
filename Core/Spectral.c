@@ -109,7 +109,11 @@ uint32_t CopySpectraArray(SpectraTypeArray *In, SpectraTypeArray *Out)
   if(Out->Spec==NULL){printf("malloc failed in CopySpectraArray\n");return 1;}
   for(i=0;i<In->NSpectra;i++)
   {
-    SpectrumAllocate(In->Spec[i], &(Out->Spec[i]));
+    if(SpectrumAllocate(In->Spec[i], &(Out->Spec[i])))
+    {
+      printf("SpectrumAllocate failed in CopySpectraArray at spectrum %d",i);
+      return 1;
+    }
     CopySpectra(In->Spec[i], &(Out->Spec[i]));
   }
   return 0;
@@ -126,6 +130,10 @@ int SpectraScalarMultiply(SpectraType * const A, double const aRe, double const 
     A->Re[i] = aRe * temp - aIm * A->Im[i];
     A->Im[i] = aRe * A->Im[i] + aIm * temp;
   }
+  //TODO: phase
+  A->b[0]*=sqrt(sqrt(Sqr(aRe)+Sqr(aIm)));
+  A->ZerothMoment*=sqrt(Sqr(aRe)+Sqr(aIm));
+  //TODO: first moment
   return 1;
 }
 
@@ -174,7 +182,7 @@ int AvverageSpectra(SpectraType * const A, SpectraType * const B)
   B->EminPole = Min(A->EminPole, B->EminPole);
   A->EmaxPole = Max(A->EmaxPole, B->EmaxPole);
   B->EmaxPole = Max(A->EmaxPole, B->EmaxPole);
-  /* TO DO recalculate a[0] ... a[4] and b[0] ... b[4] */
+  //TODO: recalculate a[0] ... a[4] and b[0] ... b[4] */
   return 0;
 }
 
@@ -228,7 +236,7 @@ int MixSpectra(SpectraType * const A, const SpectraType B, const double alpha)
   A->FirstMoment = ABF;
   A->EminPole = Min(A->EminPole, B.EminPole);
   A->EmaxPole = Max(A->EmaxPole, B.EmaxPole);
-  /* TO DO recalculate a[0] ... a[4] and b[0] ... b[4] */
+  //TODO: recalculate a[0] ... a[4] and b[0] ... b[4] */
   return 0;
 }
 
@@ -265,7 +273,8 @@ int AddMultipliedSpectra(SpectraType * const A, const SpectraType B, const doubl
   }
   A->EminPole = Min(A->EminPole, B.EminPole);
   A->EmaxPole = Max(A->EmaxPole, B.EmaxPole);
-  /* TO DO recalculate a[0] ... a[4] and b[0] ... b[4] phase, ZeroMoment and FirstMoment */
+  //TODO: recalculate a[0] ... a[4] and b[0] ... b[4] phase, ZeroMoment and FirstMoment */
+  A->b[0] = sqrt(Sqr(A->b[0])+alphaRe*Sqr(B.b[0]));
   return 0;
 }
 
@@ -330,6 +339,10 @@ int SubtractSpectra(SpectraType * const A, const SpectraType B)
   A->EminPole = Min(A->EminPole, B.EminPole);
   A->EmaxPole = Max(A->EmaxPole, B.EmaxPole);
   /* TO DO recalculate a[0] ... a[4] and b[0] ... b[4] */
+  if(A->b[0]>B.b[0])
+  {
+    A->b[0] = sqrt(Sqr(A->b[0])-Sqr(B.b[0]));
+  }
   return 0;
 }
 
