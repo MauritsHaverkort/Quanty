@@ -104,6 +104,9 @@ int main(int argc, char *argv[])
   
   luaconstants(L);
   
+  //lua_gc(L, LUA_GCSETPAUSE, 100);
+  //lua_gc(L, LUA_GCSETSTEPMUL, 500);
+  
   result = luaL_loadfile(L, argv[1]);
   if (result)
   {

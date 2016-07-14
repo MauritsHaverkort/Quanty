@@ -906,6 +906,7 @@ static int LuaNewWaveFunction(lua_State * L)
   if(WaveFunctionInit(psi))
   {
     lua_gc (L, LUA_GCCOLLECT, 0);
+    lua_gc (L, LUA_GCCOLLECT, 0);
     if(WaveFunctionInit(psi))
     {
       return luaL_error(L, "WaveFunctionInit failed, your most probably out of memory");
@@ -2580,6 +2581,7 @@ static int LuaOrthonormalize(lua_State *L)
     if(CompactMatrixCopy(*M, MO))
     {
       lua_gc(L, LUA_GCCOLLECT, 0);
+      lua_gc (L, LUA_GCCOLLECT, 0);
       if(CompactMatrixCopy(*M, MO))
       {
         return luaL_error(L, "Not able to initialize matrix. Probably ran outoff memory on a bad moment\n");

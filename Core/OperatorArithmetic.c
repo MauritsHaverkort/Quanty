@@ -6062,7 +6062,11 @@ uint32_t OperatorConjugateTransposeNormalOrder(OperatorType O, OperatorType * OT
         {
           oadd[il - j - 1] = O.l[il].o[j + i * il] ^ CrAnMask;
         }
-        if (ComplexOperatorAddLaderNormalOrder(OT, oadd, il, O.l[il].V[i].Re, -O.l[il].V[i].Im, QDetNotOrdered)) return 1;
+        if (ComplexOperatorAddLaderNormalOrder(OT, oadd, il, O.l[il].V[i].Re, -O.l[il].V[i].Im, QDetNotOrdered))
+        {
+          FreeOperator(OT);
+          return 1;
+        }
       }
     }
     else
@@ -6073,7 +6077,11 @@ uint32_t OperatorConjugateTransposeNormalOrder(OperatorType O, OperatorType * OT
         {
           oadd[il - j - 1] = O.l[il].o[j + i * il] ^ CrAnMask;
         }
-        if (RealOperatorAddLaderNormalOrder(OT, oadd, il, O.l[il].VRe[i], QDetNotOrdered)) return 1;
+        if (RealOperatorAddLaderNormalOrder(OT, oadd, il, O.l[il].VRe[i], QDetNotOrdered))
+        {
+          FreeOperator(OT);
+          return 1;
+        }
       }
     }
   }

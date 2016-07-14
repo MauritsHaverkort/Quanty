@@ -1607,6 +1607,7 @@ uint32_t WaveFunctionCopy(WaveFunctionType const A, WaveFunctionType * const B)
   if (WaveFunctionAddUnionBasis(B, A))
   {
     printf("WaveFunctionAddUnionBasis failed in WaveFunctionCopy\n");
+    WaveFunctionFree(B);
     return 1;
   };
   return 0;
