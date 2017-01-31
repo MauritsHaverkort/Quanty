@@ -1037,6 +1037,12 @@ LUA_API int lua_gc (lua_State *L, int what, int data) {
       luaC_fullgc(L, 0);
       break;
     }
+    case LUA_GCEMERGENCYCOLLECT: {
+      /* do I needt to call fullgc(L,1) only once ?? but finalizers of userdata need to be called to free the internal allocated memory */
+      luaC_fullgc(L, 0);
+      luaC_fullgc(L, 0);
+      break;
+    }
     case LUA_GCCOUNT: {
       /* GC values are expressed in Kbytes: #bytes/2^10 */
       res = cast_int(gettotalbytes(g) >> 10);

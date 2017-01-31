@@ -616,10 +616,10 @@ static int LuaNewOperator(lua_State * L)
       {
         lua_rawgeti(L, -1, j);
         oaddtemp = luaL_checknumber(L, -1);
-        
         if(Abs(oaddtemp)>O->NFermion+O->NBoson-1) return luaL_error(L, "ERROR: Opperator %d at position %d adding particle with index %d but there are only %d (%d Fermions + %d Bosons in the basis)\n)\n",i,j,(int)oaddtemp,O->NFermion+O->NBoson,O->NFermion,O->NBoson);
-        
-        if(oaddtemp<0)
+        if(Abs((Abs(oaddtemp)-(uint16_t)(Abs(oaddtemp))))>10*DBL_EPSILON) return luaL_error(L, "ERROR: Opperator %d at position %d addign particle with index %f should be integer",i,j,oaddtemp);
+        // negative numbers annihilate, positive create, but we also have to capture negative and postive zero
+        if(signbit(oaddtemp))
         {
           oadd[l-j]=(uint16_t)(-oaddtemp);
         }
@@ -905,8 +905,7 @@ static int LuaNewWaveFunction(lua_State * L)
   psi->NBitsKey=Options.NBitsKey;
   if(WaveFunctionInit(psi))
   {
-    lua_gc (L, LUA_GCCOLLECT, 0);
-    lua_gc (L, LUA_GCCOLLECT, 0);
+    if(L->l_G->gcrunning)lua_gc (L, LUA_GCEMERGENCYCOLLECT, 0);
     if(WaveFunctionInit(psi))
     {
       return luaL_error(L, "WaveFunctionInit failed, your most probably out of memory");
@@ -2285,14 +2284,17 @@ static int LuaEigensystem(lua_State * L)
         {
           if(psi[i].ValueRe==psi[j].ValueRe)
           {
-            luaL_error(L, "Eigensystem called with a list of functions. Function with name \"%s\" is at position %d and %d\n",psi[i].Name,j+1,i+1);
+            return luaL_error(L, "Eigensystem called with a list of functions. Function with name \"%s\" is at position %d and %d\n",psi[i].Name,j+1,i+1);
           }
         }
       }
       if(WaveFunctionArrayToSameBasis(psi, Npsi))
       {
-        printf("WaveFunctionArrayToSameBasis failed in LuaEigensystem\n");
-        return 1;
+        if(L->l_G->gcrunning)lua_gc (L, LUA_GCEMERGENCYCOLLECT, 0);
+        if(WaveFunctionArrayToSameBasis(psi, Npsi))
+        {
+          return luaL_error(L, "Out of memory in Eigensystem");
+        }
       }
     }
   }
@@ -2357,6 +2359,7 @@ static int LuaEigensystem(lua_State * L)
     // this is not needed for a single value as there the pointer psi just points to the original
     if(lua_type(L,2)==LUA_TTABLE)
     {
+      //TODO: test if this is really needed (i.e. compare the pointer temp to the pointer psi[i]
       for(i=0;i<Npsi;i++)
       {
         lua_rawgeti(L, 2, i+1);
@@ -2580,8 +2583,7 @@ static int LuaOrthonormalize(lua_State *L)
     MO = malloc(sizeof(CompactMatrixType));
     if(CompactMatrixCopy(*M, MO))
     {
-      lua_gc(L, LUA_GCCOLLECT, 0);
-      lua_gc (L, LUA_GCCOLLECT, 0);
+      if(L->l_G->gcrunning)lua_gc (L, LUA_GCEMERGENCYCOLLECT, 0);
       if(CompactMatrixCopy(*M, MO))
       {
         return luaL_error(L, "Not able to initialize matrix. Probably ran outoff memory on a bad moment\n");
@@ -3030,11 +3032,19 @@ int luaopen_ssp(lua_State * L)
   luaL_newmetatable(L, "TightBinding_Type");
   luaL_setfuncs(L, TightBinding_meta, 0);
   
+  luaL_newmetatable(L, "ResponseFunction_Type");
+  luaL_setfuncs(L, ResponseFunction_meta, 0);
+  
+  
+  
   luaL_newmetatable(L, "StuttgartCTRL_Type");
   luaL_setfuncs(L, StuttgartCTRL_meta, 0);
   
   luaL_newmetatable(L, "StuttgartHAMR_Type");
   luaL_setfuncs(L, StuttgartHAMR_meta, 0);
+  
+  
+  
   
   luaL_newmetatable(L, "Yi_Type");
   luaL_setfuncs(L, Yi_meta, 0);

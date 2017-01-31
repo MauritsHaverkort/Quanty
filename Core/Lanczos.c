@@ -5596,20 +5596,18 @@ uint32_t LanczosTriDiagonalizeDysonFullLowMem(OperatorType const O, uint32_t nma
     OperatorMultiply2NormalOrder(&VOVtemp, V[i], V[i], 'D', 'N', &QDetNotOrderedFcFaBcBa);
     PsiOperatorPsiMatrix(VOVtemp, PsiKrylov, &VOV[0]);
     FreeOperator(&VOVtemp);
-    for (n = 1; n <= 2 * nmax + 1; n++)
+    OperatorCopy(&Otemp, O);
+    InitOperatorForMult(&VOVtemp, 3, &V[i], &Otemp, &V[i]);
+    OperatorMultiply3NormalOrder(&VOVtemp, V[i], Otemp, V[i], 'D', 'N', 'N', &QDetNotOrderedFcFaBcBa);
+    PsiOperatorPsiMatrix(VOVtemp, PsiKrylov, &VOV[i]);
+    FreeOperator(&VOVtemp);
+    for (n = 2; n <= 2 * nmax + 1; n++)
     {
-      if (n == 1)
-      {
-        OperatorCopy(&Otemp, O);
-      }
-      else
-      {
-        OperatorCopy(&Otempold, Otemp);
-        FreeOperator(&Otemp);
-        InitOperatorForMult(&Otemp, 2, &Otempold, &O);
-        OperatorMultiplyNormalOrder(&Otemp, O, Otempold, &QDetNotOrderedFcFaBcBa);
-        FreeOperator(&Otempold);
-      }
+      OperatorCopy(&Otempold, Otemp);
+      FreeOperator(&Otemp);
+      InitOperatorForMult(&Otemp, 2, &Otempold, &O);
+      OperatorMultiplyNormalOrder(&Otemp, O, Otempold, &QDetNotOrderedFcFaBcBa);
+      FreeOperator(&Otempold);
       InitOperatorForMult(&VOVtemp, 3, &V[i], &Otemp, &V[i]);
       OperatorMultiply3NormalOrder(&VOVtemp, V[i], Otemp, V[i], 'D', 'N', 'N', &QDetNotOrderedFcFaBcBa);
       PsiOperatorPsiMatrix(VOVtemp, PsiKrylov, &VOV[i]);

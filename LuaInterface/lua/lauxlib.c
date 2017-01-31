@@ -802,6 +802,7 @@ LUALIB_API const char *luaL_tolstring (lua_State *L, int idx, size_t *len) {
             {
               if(lua_isstring(L,-2)&&(!lua_isnumber(L, -2)))
               {
+                //TODO: test if string is safe (no spaces, no " and act apropriately
                 if(FirstElement)
                 {
                   lua_pushstring(L, "");

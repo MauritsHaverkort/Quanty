@@ -726,11 +726,21 @@ int TightBindingImpurityUnfoldingRandomImpuritySeries(int Dimension, int Nsuperc
   mwhsrand((unsigned int)time(NULL));
   sprintf(fullfilename, "%s_single", filename);
   if (Dimension == 3)
+  {
     TightBindingImpurityUnfoldingRandomImpurity3D(Nsupercell, Rho, Vpot, fullfilename, &BWValue, RGBValue, DOS, Fermi);
-  if (Dimension == 2)
+  }
+  else if (Dimension == 2)
+  {
     TightBindingImpurityUnfoldingRandomImpurity2D(Nsupercell, Rho, Vpot, fullfilename, &BWValue, RGBValue, DOS, Fermi);
-  if (Dimension == 1)
+  }
+  else if (Dimension == 1)
+  {
     TightBindingImpurityUnfoldingRandomImpurity1D(Nsupercell, Rho, Vpot, fullfilename, &BWValue, RGBValue);
+  }
+  else
+  {
+    return 1;
+  }
   SpectrumAllocate(DOS[0], &SumDOS[0]);
   SpectrumAllocate(DOS[1], &SumDOS[1]);
   SpectrumAllocate(DOS[2], &SumDOS[2]);
@@ -753,13 +763,21 @@ int TightBindingImpurityUnfoldingRandomImpuritySeries(int Dimension, int Nsuperc
     fflush(stdout);
     printf("Repetition %i from %i\n", i, repetitions);
     if (Dimension == 3)
-      TightBindingImpurityUnfoldingRandomImpurity3D(Nsupercell, Rho, Vpot, fullfilename, &BWValue, RGBValue, DOS,
-                                                    Fermi);
-    if (Dimension == 2)
-      TightBindingImpurityUnfoldingRandomImpurity2D(Nsupercell, Rho, Vpot, fullfilename, &BWValue, RGBValue, DOS,
-                                                    Fermi);
-    if (Dimension == 1)
+    {
+      TightBindingImpurityUnfoldingRandomImpurity3D(Nsupercell, Rho, Vpot, fullfilename, &BWValue, RGBValue, DOS, Fermi);
+    }
+    else if (Dimension == 2)
+    {
+      TightBindingImpurityUnfoldingRandomImpurity2D(Nsupercell, Rho, Vpot, fullfilename, &BWValue, RGBValue, DOS, Fermi);
+    }
+    else if (Dimension == 1)
+    {
       TightBindingImpurityUnfoldingRandomImpurity1D(Nsupercell, Rho, Vpot, fullfilename, &BWValue, RGBValue);
+    }
+    else
+    {
+      return 1;
+    }
     AddMultipliedSpectra(&SumDOS[0], DOS[0], 1, 0);
     AddMultipliedSpectra(&SumDOS[1], DOS[1], 1, 0);
     AddMultipliedSpectra(&SumDOS[2], DOS[2], 1, 0);

@@ -1686,7 +1686,11 @@ uint32_t WaveFunctionArrayToSameBasis(WaveFunctionType * const psi, uint32_t con
   // enlarge the basis of psi[0] to include psi[1] to psi[Npsi-1]
   for(i=1;i<Npsi;i++)
   {
-    WaveFunctionAddMultipliedUnionBasis(&psi[0], psi[i], 0);
+    if(WaveFunctionAddMultipliedUnionBasis(&psi[0], psi[i], 0))
+    {
+      printf("WaveFunctionAddMultipliedUnionBasis failed in WaveFunctionArrayToSameBasis at %i from %i",i,Npsi);
+      return 1;
+    }
   }
   //
   for(i=1;i<Npsi;i++)

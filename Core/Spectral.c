@@ -1294,7 +1294,7 @@ uint32_t MatrixToSpectrum(const MatrixType M, const double E0, const double Gamm
 {
   printf("Start of MatrixToSpectrum\n");
 
-  MatrixType Mtot, Mtest, MtestI;
+  MatrixType Mtot;
   uint32_t i, j;
   double w;
   for (i = 0; i <= G->N; i++)
@@ -1310,26 +1310,11 @@ uint32_t MatrixToSpectrum(const MatrixType M, const double E0, const double Gamm
     {
       MatrixAdd(&Mtot, Mw[j], -Gw[j].Re[i], -Gw[j].Im[i]);
     }
-
-    if (i == 2000)
-    {
-      MatrixCopy(&Mtest, Mtot);
-    }
-
     printf("%lf %lf %lf %lf %lf | ", w, Mtot.VRe[0][0], Mtot.VIm[0][0], Gw[0].Re[i], Gw[0].Im[i]);
     MatrixInverse(&Mtot);
     printf("%lf %lf \n", Mtot.VRe[0][0], Mtot.VIm[0][0]);
     G->Re[i] = Mtot.VRe[0][0];
     G->Im[i] = Mtot.VIm[0][0];
-
-    if (i == 2000)
-    {
-      PrintMatrix(Mtest);
-      PrintMatrix(Mtot);
-      MatrixMultiply(&MtestI, Mtest, Mtot);
-      PrintMatrix(MtestI);
-    }
-
     FreeMatrix(&Mtot);
   }
   return 0;

@@ -74,11 +74,21 @@ int main(int argc, const char *argv[])
     printf("Use single impurity calculation\n");
     sprintf(filenamepre, "D%i_N%i_V%5.3f_SingleImpurity", Dimension, ClusterSize, Vpot);
     if (Dimension == 1)
+    {
       TightBindingImpurityUnfolding1Impurity1D(ClusterSize, Vpot, filenamepre);
-    if (Dimension == 2)
+    }
+    else if (Dimension == 2)
+    {
       TightBindingImpurityUnfolding1Impurity2D(ClusterSize, Vpot, filenamepre);
-    if (Dimension == 3)
+    }
+    else if (Dimension == 3)
+    {
       TightBindingImpurityUnfolding1Impurity3D(ClusterSize, Vpot, filenamepre);
+    }
+    else
+    {
+      return 1;
+    }
   }
   else
   {

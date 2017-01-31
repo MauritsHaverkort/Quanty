@@ -27,8 +27,7 @@ static int LuaWavefunctionAdd(lua_State * L)
   luaL_setmetatable(L, "Wavefunction_Type");
   if(WaveFunctionCopy(*l, res))
   {
-    lua_gc (L, LUA_GCCOLLECT, 0);
-    lua_gc (L, LUA_GCCOLLECT, 0);
+    if(L->l_G->gcrunning)lua_gc (L, LUA_GCEMERGENCYCOLLECT, 0);
     if(WaveFunctionCopy(*l, res))
     {
       return luaL_error(L, "out of memory when adding two wavefunctions");
@@ -36,15 +35,14 @@ static int LuaWavefunctionAdd(lua_State * L)
   }
   if(WaveFunctionAddUnionBasis(res, *r))
   {
-    lua_gc (L, LUA_GCCOLLECT, 0);
-    lua_gc (L, LUA_GCCOLLECT, 0);
+    if(L->l_G->gcrunning)lua_gc (L, LUA_GCEMERGENCYCOLLECT, 0);
     if(WaveFunctionAddUnionBasis(res, *r))
     {
       return luaL_error(L, "out of memory when adding two wavefunctions");
     }
   }
   //TODO: check timing of garbage collection full cycle
-  lua_gc (L, LUA_GCCOLLECT, 0);
+  if(L->l_G->gcrunning)lua_gc (L, LUA_GCCOLLECT, 0);
   return 1;
 }
 
@@ -104,8 +102,7 @@ static int LuaWavefunctionSub(lua_State * L)
   luaL_setmetatable(L, "Wavefunction_Type");
   if(WaveFunctionCopy(*l, res))
   {
-    lua_gc (L, LUA_GCCOLLECT, 0);
-    lua_gc (L, LUA_GCCOLLECT, 0);
+    if(L->l_G->gcrunning)lua_gc (L, LUA_GCEMERGENCYCOLLECT, 0);
     if(WaveFunctionCopy(*l, res))
     {
       return luaL_error(L, "out of memory when subtracting two wavefunctions");
@@ -113,15 +110,14 @@ static int LuaWavefunctionSub(lua_State * L)
   }
   if(WaveFunctionAddMultipliedUnionBasis(res, *r, -1.0))
   {
-    lua_gc (L, LUA_GCCOLLECT, 0);
-    lua_gc (L, LUA_GCCOLLECT, 0);
+    if(L->l_G->gcrunning)lua_gc (L, LUA_GCEMERGENCYCOLLECT, 0);
     if(WaveFunctionAddMultipliedUnionBasis(res, *r, -1.0))
     {
       return luaL_error(L, "out of memory when subtracting two wavefunctions");
     }
   }
   //TODO: check timing of garbage collection full cycle
-  lua_gc (L, LUA_GCCOLLECT, 0);
+  if(L->l_G->gcrunning)lua_gc (L, LUA_GCCOLLECT, 0);
   return 1;
 }
 
@@ -149,8 +145,7 @@ static int LuaWavefunctionDiv(lua_State * L)
     luaL_setmetatable(L, "Wavefunction_Type");
     if(WaveFunctionCopy(*psi, psiNew))
     {
-      lua_gc (L, LUA_GCCOLLECT, 0);
-      lua_gc (L, LUA_GCCOLLECT, 0);
+      if(L->l_G->gcrunning)lua_gc (L, LUA_GCEMERGENCYCOLLECT, 0);
       if(WaveFunctionCopy(*psi, psiNew))
       {
         return luaL_error(L, "out of memory when deviding a wavefunction by a number");
@@ -158,7 +153,7 @@ static int LuaWavefunctionDiv(lua_State * L)
     }
     WaveFunctionMultiply(psiNew, 1/b, 0);
     //TODO: check timing of garbage collection full cycle
-    lua_gc (L, LUA_GCCOLLECT, 0);
+    if(L->l_G->gcrunning)lua_gc (L, LUA_GCCOLLECT, 0);
     return 1;
   }
   if (luaL_testudata(L, 2, "Complex_Type") != NULL)
@@ -170,8 +165,7 @@ static int LuaWavefunctionDiv(lua_State * L)
     luaL_setmetatable(L, "Wavefunction_Type");
     if(WaveFunctionCopy(*psi, psiNew))
     {
-      lua_gc (L, LUA_GCCOLLECT, 0);
-      lua_gc (L, LUA_GCCOLLECT, 0);
+      if(L->l_G->gcrunning)lua_gc (L, LUA_GCEMERGENCYCOLLECT, 0);
       if(WaveFunctionCopy(*psi, psiNew))
       {
         return luaL_error(L, "out of memory when deviding a wavefunction by a complex number");
@@ -179,15 +173,14 @@ static int LuaWavefunctionDiv(lua_State * L)
     }
     if(WaveFunctionMultiply(psiNew, b->Re/(Sqr(b->Re)+Sqr(b->Im)), -b->Im/(Sqr(b->Re)+Sqr(b->Im))))
     {
-      lua_gc (L, LUA_GCCOLLECT, 0);
-      lua_gc (L, LUA_GCCOLLECT, 0);
+      if(L->l_G->gcrunning)lua_gc (L, LUA_GCEMERGENCYCOLLECT, 0);
       if(WaveFunctionMultiply(psiNew, b->Re/(Sqr(b->Re)+Sqr(b->Im)), -b->Im/(Sqr(b->Re)+Sqr(b->Im))))
       {
         return luaL_error(L, "out of memory when deviding a wavefunction by a complex number");
       }
     }
     //TODO: check timing of garbage collection full cycle
-    lua_gc (L, LUA_GCCOLLECT, 0);
+    if(L->l_G->gcrunning)lua_gc (L, LUA_GCCOLLECT, 0);
     return 1;
   }
   return luaL_error(L, "Error, wavefunction devided by an object of unrecognized type\n");
@@ -203,7 +196,6 @@ static int LuaWavefunctionDiv(lua_State * L)
  */
 static int LuaWavefunctionMul(lua_State * L)
 {
-  
   uint32_t len = (uint32_t)lua_gettop(L);
   if(lua_type(L,len)==LUA_TTABLE)
   {
@@ -247,8 +239,7 @@ static int LuaWavefunctionMul(lua_State * L)
     luaL_setmetatable(L, "Wavefunction_Type");
     if(WaveFunctionCopy(*psi, psiNew))
     {
-      lua_gc (L, LUA_GCCOLLECT, 0);
-      lua_gc (L, LUA_GCCOLLECT, 0);
+      if(L->l_G->gcrunning)lua_gc (L, LUA_GCEMERGENCYCOLLECT, 0);
       if(WaveFunctionCopy(*psi, psiNew))
       {
         return luaL_error(L, "out of memory when multipling a number with a wavefunction");
@@ -256,7 +247,7 @@ static int LuaWavefunctionMul(lua_State * L)
     }
     WaveFunctionMultiply(psiNew, b, 0);
     //TODO: check timing of garbage collection full cycle
-    lua_gc (L, LUA_GCCOLLECT, 0);
+    if(L->l_G->gcrunning)lua_gc (L, LUA_GCCOLLECT, 0);
     return 1;
   }
   if (lua_isnumber(L, len))
@@ -268,8 +259,7 @@ static int LuaWavefunctionMul(lua_State * L)
     luaL_setmetatable(L, "Wavefunction_Type");
     if(WaveFunctionCopy(*psi, psiNew))
     {
-      lua_gc (L, LUA_GCCOLLECT, 0);
-      lua_gc (L, LUA_GCCOLLECT, 0);
+      if(L->l_G->gcrunning)lua_gc (L, LUA_GCEMERGENCYCOLLECT, 0);
       if(WaveFunctionCopy(*psi, psiNew))
       {
         return luaL_error(L, "out of memory when multipling a wavefunction with a number");
@@ -277,7 +267,7 @@ static int LuaWavefunctionMul(lua_State * L)
     }
     WaveFunctionMultiply(psiNew, b, 0);
     //TODO: check timing of garbage collection full cycle
-    lua_gc (L, LUA_GCCOLLECT, 0);
+    if(L->l_G->gcrunning)lua_gc (L, LUA_GCCOLLECT, 0);
     return 1;
   }
   if (luaL_testudata(L, 1, "Complex_Type") != NULL)
@@ -289,8 +279,7 @@ static int LuaWavefunctionMul(lua_State * L)
     luaL_setmetatable(L, "Wavefunction_Type");
     if(WaveFunctionCopy(*psi, psiNew))
     {
-      lua_gc (L, LUA_GCCOLLECT, 0);
-      lua_gc (L, LUA_GCCOLLECT, 0);
+      if(L->l_G->gcrunning)lua_gc (L, LUA_GCEMERGENCYCOLLECT, 0);
       if(WaveFunctionCopy(*psi, psiNew))
       {
         return luaL_error(L, "out of memory when multipling a complex number with a wavefunction");
@@ -298,15 +287,14 @@ static int LuaWavefunctionMul(lua_State * L)
     }
     if(WaveFunctionMultiply(psiNew, b->Re, b->Im))
     {
-      lua_gc (L, LUA_GCCOLLECT, 0);
-      lua_gc (L, LUA_GCCOLLECT, 0);
+      if(L->l_G->gcrunning)lua_gc (L, LUA_GCEMERGENCYCOLLECT, 0);
       if(WaveFunctionMultiply(psiNew, b->Re, b->Im))
       {
         return luaL_error(L, "out of memory when multipling a complex number with a wavefunction");
       }
     }
     //TODO: check timing of garbage collection full cycle
-    lua_gc (L, LUA_GCCOLLECT, 0);
+    if(L->l_G->gcrunning)lua_gc (L, LUA_GCCOLLECT, 0);
     return 1;
   }
   if (luaL_testudata(L, len, "Complex_Type") != NULL)
@@ -318,8 +306,7 @@ static int LuaWavefunctionMul(lua_State * L)
     luaL_setmetatable(L, "Wavefunction_Type");
     if(WaveFunctionCopy(*psi, psiNew))
     {
-      lua_gc (L, LUA_GCCOLLECT, 0);
-      lua_gc (L, LUA_GCCOLLECT, 0);
+      if(L->l_G->gcrunning)lua_gc (L, LUA_GCEMERGENCYCOLLECT, 0);
       if(WaveFunctionCopy(*psi, psiNew))
       {
         return luaL_error(L, "out of memory when multipling a wavefunction with a complex number");
@@ -327,15 +314,14 @@ static int LuaWavefunctionMul(lua_State * L)
     }
     if(WaveFunctionMultiply(psiNew, b->Re, b->Im))
     {
-      lua_gc (L, LUA_GCCOLLECT, 0);
-      lua_gc (L, LUA_GCCOLLECT, 0);
+      if(L->l_G->gcrunning)lua_gc (L, LUA_GCEMERGENCYCOLLECT, 0);
       if(WaveFunctionMultiply(psiNew, b->Re, b->Im))
       {
         return luaL_error(L, "out of memory when multipling a wavefunction with a complex number");
       }
     }
     //TODO: check timing of garbage collection full cycle
-    lua_gc (L, LUA_GCCOLLECT, 0);
+    if(L->l_G->gcrunning)lua_gc (L, LUA_GCCOLLECT, 0);
     return 1;
   }
   if (luaL_testudata(L, 1, "Operator_Type") != NULL)
@@ -348,15 +334,14 @@ static int LuaWavefunctionMul(lua_State * L)
     luaL_setmetatable(L, "Wavefunction_Type");
     if(OperatorPsi(*O, *psi, Opsi))
     {
-      lua_gc (L, LUA_GCCOLLECT, 0);
-      lua_gc (L, LUA_GCCOLLECT, 0);
+      if(L->l_G->gcrunning)lua_gc (L, LUA_GCEMERGENCYCOLLECT, 0);
       if(OperatorPsi(*O, *psi, Opsi))
       {
         return luaL_error(L, "out of memory when multipling an operator times a wavefunction");
       }
     }
     //TODO: check timing of garbage collection full cycle
-    lua_gc (L, LUA_GCCOLLECT, 0);
+    if(L->l_G->gcrunning)lua_gc (L, LUA_GCCOLLECT, 0);
     return 1;
   }
   if (luaL_testudata(L, len, "Operator_Type") != NULL)
@@ -368,8 +353,7 @@ static int LuaWavefunctionMul(lua_State * L)
     WaveFunctionType *Opsi;
     if(OperatorConjugateTransposeNormalOrder(*O, &OT, &QDetNotOrderedFcFaBaBc))
     {
-      lua_gc (L, LUA_GCCOLLECT, 0);
-      lua_gc (L, LUA_GCCOLLECT, 0);
+      if(L->l_G->gcrunning)lua_gc (L, LUA_GCEMERGENCYCOLLECT, 0);
       if(OperatorConjugateTransposeNormalOrder(*O, &OT, &QDetNotOrderedFcFaBaBc))
       {
         return luaL_error(L, "out of memory when multipling wavefunction times an operator");
@@ -379,8 +363,7 @@ static int LuaWavefunctionMul(lua_State * L)
     luaL_setmetatable(L, "Wavefunction_Type");
     if(OperatorPsi(OT, *psi, Opsi))
     {
-      lua_gc (L, LUA_GCCOLLECT, 0);
-      lua_gc (L, LUA_GCCOLLECT, 0);
+      if(L->l_G->gcrunning)lua_gc (L, LUA_GCEMERGENCYCOLLECT, 0);
       if(OperatorPsi(OT, *psi, Opsi))
       {
         return luaL_error(L, "out of memory when multipling wavefunction times an operator");
@@ -388,7 +371,7 @@ static int LuaWavefunctionMul(lua_State * L)
     }
     FreeOperator(&OT);
     //TODO: check timing of garbage collection full cycle
-    lua_gc (L, LUA_GCCOLLECT, 0);
+    if(L->l_G->gcrunning)lua_gc (L, LUA_GCCOLLECT, 0);
     return 1;
   }
   {
@@ -428,8 +411,7 @@ static int LuaWavefunctionUnm(lua_State * L)
   luaL_setmetatable(L, "Wavefunction_Type");
   if(WaveFunctionCopy(*a, res))
   {
-    lua_gc (L, LUA_GCCOLLECT, 0);
-    lua_gc (L, LUA_GCCOLLECT, 0);
+    if(L->l_G->gcrunning)lua_gc (L, LUA_GCEMERGENCYCOLLECT, 0);
     if(WaveFunctionCopy(*a, res))
     {
       luaL_error(L, "Negation of wave-function failed, not enough memory");
@@ -437,7 +419,7 @@ static int LuaWavefunctionUnm(lua_State * L)
   }
   WaveFunctionMultiply(res, -1, 0);
   //TODO: check timing of garbage collection full cycle
-  lua_gc (L, LUA_GCCOLLECT, 0);
+  if(L->l_G->gcrunning)lua_gc (L, LUA_GCCOLLECT, 0);
   return 1;
 }
 
@@ -581,8 +563,7 @@ static int LuaWavefunctionDet(lua_State *L)
   psi->NBitsKey=a->NBitsKey;
   if(WaveFunctionInit(psi))
   {
-    lua_gc(L, LUA_GCCOLLECT, 0);
-    lua_gc (L, LUA_GCCOLLECT, 0);
+    if(L->l_G->gcrunning)lua_gc (L, LUA_GCEMERGENCYCOLLECT, 0);
     if(WaveFunctionInit(psi))
     {
       return luaL_error(L, "Error in .Det(%d) WaveFunctionInit failed out of memory?",idet);

@@ -793,8 +793,7 @@ uint32_t FindGroundStateFromG0andSigma(DMFTSettings const O, AndersonMatrixType 
         *mu = mulist[iiter];
       }
     }
-    if (!converged)
-      FreeOperator(&HAnd);
+    if (!converged) FreeOperator(&HAnd);
   }
   /* print info on groundstate */
   PrintInfoOnGBathAndG0InDMFTFindGroundstate(G0, GBathBA);
