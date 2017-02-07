@@ -1871,18 +1871,32 @@ uint32_t Eigensystem(MatrixType const M, MatrixType * const T, double *val)
   const char *uplo = "U";
   int    lwork = 1 + 6 * M.Ni + 2 * Sqr(M.Ni);
   int    liwork = 3 + 5 * M.Ni;
-  int    iwork[liwork];
-  double work[lwork];
+  double *work;
+  int   *iwork;
+  work = malloc(lwork * sizeof(double));
+  if (work == NULL)
+  {
+    printf("malloc of work failed in Eigensystem\n");
+    return 1;
+  };
+  iwork = malloc(liwork * sizeof(int));
+  if (iwork == NULL)
+  {
+    printf("malloc of iwork failed in Eigensystem\n");
+    free(work);
+    return 1;
+  };
   if (M.Ni != M.Nj)
   {
     printf("Eigensystem called with non-square matrix\n");
     printf("ERORR!!!!!!\n");
+    free(work);
+    free(iwork);
     return 1;
   }
   if (M.QComplex == 0)
   {                             /* Real */
-    if (MatrixCopy(T, M))
-      return 1;
+    if (MatrixCopy(T, M)) return 1;
     strcpy(T->Name, "Eigenvectors of ");
     strncat(T->Name, M.Name, Max(0, MAXStrLength - 16));
     dsyev(jobz, uplo, &M.Ni, T->VRe[0], &M.Ni, val, work, &lwork, &info);
@@ -1894,7 +1908,11 @@ uint32_t Eigensystem(MatrixType const M, MatrixType * const T, double *val)
       fflush(stdout);
       FreeMatrix(T);
       if (MatrixCopy(T, M))
+      {
+        free(work);
+        free(iwork);
         return 1;
+      }
       strcpy(T->Name, "Eigenvectors of ");
       strncat(T->Name, M.Name, Max(0, MAXStrLength - 16));
       dsyevd(jobz, uplo, &M.Ni, T->VRe[0], &M.Ni, val, work, &lwork, iwork, &liwork, &info);
@@ -1903,11 +1921,11 @@ uint32_t Eigensystem(MatrixType const M, MatrixType * const T, double *val)
         printf("also dsyvd failed in Eigensystem with info value %i\n", info);
         printf("ERORR!!!!!!!!!!\n");
         fflush(stdout);
+        free(work);
+        free(iwork);
         return 1;
       }
-      return 0;
     }
-    return 0;
   }
   else
   {                             /* complex */
@@ -1918,7 +1936,12 @@ uint32_t Eigensystem(MatrixType const M, MatrixType * const T, double *val)
     T->Ni = M.Ni;
     T->Nj = M.Nj;
     T->QComplex = M.QComplex;
-    if (InitMatrix(T)) return 1;
+    if (InitMatrix(T))
+    {
+      free(work);
+      free(iwork);
+      return 1;
+    }
     strcpy(T->Name, "Eigenvectors of ");
     strncat(T->Name, M.Name, Max(0, MAXStrLength - 16));
     for (i = 0; i < M.Ni * M.Ni; i++)
@@ -1944,6 +1967,8 @@ uint32_t Eigensystem(MatrixType const M, MatrixType * const T, double *val)
         printf("also zheevd failed in Eigensystem with info value %i\n", info);
         printf("ERORR!!!!!!!!!!\n");
         fflush(stdout);
+        free(work);
+        free(iwork);
         return 1;
       }
     }
@@ -1952,8 +1977,9 @@ uint32_t Eigensystem(MatrixType const M, MatrixType * const T, double *val)
       T->VRe[0][i] = MReIm[i].Re;
       T->VIm[0][i] = -MReIm[i].Im;
     }
-    return 0;
   }
+  free(work);
+  free(iwork);
   return 0;
 }
 

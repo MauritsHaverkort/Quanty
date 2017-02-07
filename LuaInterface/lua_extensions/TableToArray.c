@@ -168,6 +168,9 @@ MatrixType* luaL_checkMatrix(lua_State *L, int narg)
   buff=malloc(sizeof(MatrixType));
   buff->QComplex=1;
   buff->Ni=len;
+  buff->a0=0;
+  buff->b0=0;
+  buff->mu=0;
   for(i=0;i<len;i++)
   {
     lua_rawgeti(L, narg, i+1);

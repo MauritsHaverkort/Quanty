@@ -1153,8 +1153,7 @@ uint32_t MatrixCopy(MatrixType * const M, MatrixType const A)
   M->Ni = A.Ni;
   M->Nj = A.Nj;
   M->QComplex = A.QComplex;
-  if (InitMatrix(M))
-    return 1;
+  if (InitMatrix(M)) return 1;
   strcpy(M->Name, A.Name);
   if (M->QComplex)
   {

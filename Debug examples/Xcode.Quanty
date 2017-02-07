@@ -1,0 +1,3 @@
+Verbosity(0xFFFFFFFF)
+
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/EigensystemDense.Quanty")

@@ -2191,8 +2191,18 @@ static int LuaEigensystemDenseTable(lua_State *L)
 {
   MatrixType *H,fun;
   double *val;
+  
+  printf("%p %p\n",H,&fun);
+  
   H=luaL_checkMatrix(L,1);
+
+  printf("%p %p\n",H,&fun);
+  
   val=malloc(H->Ni*sizeof(double));
+  
+  
+  printf("%p %p\n",H,&fun);
+  
   Eigensystem(*H,&fun,val);
   FreeMatrix(H);
   LuaPushArray_double(L, val, fun.Ni);
