@@ -2,7 +2,7 @@ Verbosity(0xFFFF)
 
 local H = {}
 
-N = 800 --size of H. On my computer, >357 crashes.
+N = 2000 --size of H. On my computer, >357 crashes. (problem solved)
 
 --parameters defining a tridiagonal matrix which we will represent in dense form as a lua table
 V = 2.0
