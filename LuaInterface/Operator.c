@@ -5,7 +5,7 @@
 static int LuaOperatorNewCoulomb(lua_State * L)
 {
   OperatorType *op;
-  uint32_t Ntemp,NShell,l,lA,lB;
+  uint32_t Ntemp,NShell,l,lA,lB,lC,lD;
   uint32_t NFermion = (uint32_t)luaL_checkunsigned(L, 1);
   uint32_t len = (uint32_t)lua_gettop(L);
   if(NFermion==0) return luaL_error(L, "Coulomb operator acting on zero fermions is not defined");
@@ -39,7 +39,7 @@ static int LuaOperatorNewCoulomb(lua_State * L)
     free(F);
     return 1;
   }
-  else if (len==7)
+  else if (len==7) /* creates the coulomb operator between two shells with LA and LB conserving the occupation of the A and B shell */
   {
     uint16_t *LindexUpA, *LindexDnA, *LindexUpB, *LindexDnB;
     double *F,*G;
@@ -72,12 +72,12 @@ static int LuaOperatorNewCoulomb(lua_State * L)
     F = luaL_checkarray_double(L, 6, &Ntemp);
     if(Ntemp!=(Min(lA,lB)+1))
     {
-      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of F (%d) is not equal to (Min(lA,lB)+1)1\n",Ntemp);
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of F (%d) is not equal to (Min(lA,lB)+1)\n",Ntemp);
     }
     G = luaL_checkarray_double(L, 7, &Ntemp);
     if(Ntemp!=(Min(lA,lB)+1))
     {
-      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of G (%d) is not equal to (Min(lA,lB)+1)1\n",Ntemp);
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of G (%d) is not equal to (Min(lA,lB)+1)\n",Ntemp);
     }
     op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
     CreateOperatorCoulombTwoShellsConstantOccupation(NFermion, lA, lB, LindexUpA, LindexDnA, LindexUpB, LindexDnB, F, G, op);
@@ -90,9 +90,88 @@ static int LuaOperatorNewCoulomb(lua_State * L)
     free(G);
     return 1;
   }
+  else if (len==10) /* creates the general coulomb operator between four shels with LA, LB, LC and LD */
+  {
+    uint16_t *LindexUpA, *LindexDnA, *LindexUpB, *LindexDnB, *LindexUpC, *LindexDnC, *LindexUpD, *LindexDnD;
+    double *R;
+    LindexUpA = luaL_checkarray_unit16_t(L, 2, &NShell);
+    LindexDnA = luaL_checkarray_unit16_t(L, 3, &Ntemp);
+    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUpA, NShell)==False) return luaL_error(L, "Index up of first shell contains a refference outside the range [0,%d]",NFermion-1);
+    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDnA, Ntemp )==False) return luaL_error(L, "Index dn of first shell contains a refference outside the range [0,%d]",NFermion-1);
+    if(NShell!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, For first shell lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    }
+    lA=(NShell-1)/2;
+    if(2*lA+1!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, For first shell lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    }
+    LindexUpB = luaL_checkarray_unit16_t(L, 4, &NShell);
+    LindexDnB = luaL_checkarray_unit16_t(L, 5, &Ntemp);
+    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUpB, NShell)==False) return luaL_error(L, "Index up of second shell contains a refference outside the range [0,%d]",NFermion-1);
+    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDnB, Ntemp )==False) return luaL_error(L, "Index dn of second shell contains a refference outside the range [0,%d]",NFermion-1);
+    if(NShell!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, For second shell lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    }
+    lB=(NShell-1)/2;
+    if(2*lB+1!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, For second shell lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    }
+    LindexUpC = luaL_checkarray_unit16_t(L, 6, &NShell);
+    LindexDnC = luaL_checkarray_unit16_t(L, 7, &Ntemp);
+    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUpC, NShell)==False) return luaL_error(L, "Index up of third shell contains a refference outside the range [0,%d]",NFermion-1);
+    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDnC, Ntemp )==False) return luaL_error(L, "Index dn of third shell contains a refference outside the range [0,%d]",NFermion-1);
+    if(NShell!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, For third shell lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    }
+    lC=(NShell-1)/2;
+    if(2*lC+1!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, For third shell lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    }
+    LindexUpD = luaL_checkarray_unit16_t(L, 8, &NShell);
+    LindexDnD = luaL_checkarray_unit16_t(L, 9, &Ntemp);
+    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUpD, NShell)==False) return luaL_error(L, "Index up of forth shell contains a refference outside the range [0,%d]",NFermion-1);
+    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDnD, Ntemp )==False) return luaL_error(L, "Index dn of forth shell contains a refference outside the range [0,%d]",NFermion-1);
+    if(NShell!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, For forth shell lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    }
+    lD=(NShell-1)/2;
+    if(2*lD+1!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, For forth shell lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    }
+    if((lA+lB+lC+lD)&1)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, lA(%d)+lB(%d)+lC(%d)+lD(%d) should be even.",lA,lB,lC,lD);
+    }
+    R = luaL_checkarray_double(L, 10, &Ntemp);
+    if(Ntemp!=(Min(lA+lC,lB+lD)-Max(Max(lA,lC)-Min(lA,lC),Max(lB,lD)-Min(lB,lD)))/2+1)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of F (%d) is not equal to (Min(lA+lC,lB+lD)-Max(Abs(lA-lC),Abs(lB-lD)))/2+1\n",Ntemp);
+    }
+    op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+    CreateOperatorCoulombFourShells(NFermion, lA, lB, lC, lD, LindexUpA, LindexDnA, LindexUpB, LindexDnB, LindexUpC, LindexDnC, LindexUpD, LindexDnD, R, op);
+    luaL_setmetatable(L, "Operator_Type");
+    free(LindexUpA);
+    free(LindexDnA);
+    free(LindexUpB);
+    free(LindexDnB);
+    free(LindexUpC);
+    free(LindexDnC);
+    free(LindexUpD);
+    free(LindexDnD);
+    free(R);
+    return 1;
+  }
   else
   {
-    return luaL_error(L, "Error in LuaOperatorNewCoulomb, expected 4 or 7 arguments not %d",len);
+    return luaL_error(L, "Error in LuaOperatorNewCoulomb, expected 4, 7, or 10 arguments not %d",len);
   }
   return 1;
 }

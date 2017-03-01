@@ -143,6 +143,60 @@ uint32_t CreateOperatorCoulombTwoShellsConstantOccupation(uint32_t const NFermio
   return 0;
 }
 
+uint32_t CreateOperatorCoulombFourShells(uint32_t const NFermion, uint32_t const L1, uint32_t const L2, uint32_t const L3, uint32_t const L4, uint16_t const *Lindex1Up, uint16_t const *Lindex1Dn, uint16_t const *Lindex2Up, uint16_t const *Lindex2Dn, uint16_t const *Lindex3Up, uint16_t const *Lindex3Dn, uint16_t const *Lindex4Up, uint16_t const *Lindex4Dn, double const *R, OperatorType * const U)
+{
+  uint16_t oadd[4];
+  double val;
+  int    ik, k, l1, l2, l3, l4, m1, m2, m3, m4, s1, s2;
+  l1 = (int)L1;
+  l2 = (int)L2;
+  l3 = (int)L3;
+  l4 = (int)L4;
+  InitNamedOperator(U, "Coulomb Operator");
+  U->NFermion = NFermion;
+  U->NWord = Min(U->NFermion, 1 + (U->NFermion - 1) / 8);
+  InitOperatorFixedLength(U, 2, 8);
+  InitOperatorFixedLength(U, 4, 8);
+  ik=-1;
+  for (k=Max(l1-l3,l2-l4); k<=Min(l1+l3,l2+l4); k+=2)
+  {
+    ik++;
+    for (m1 = -l1; m1 <= l1; m1++)
+    {
+      for (m2 = -l2; m2 <= l2; m2++)
+      {
+        for (m3 = Max(-l3, m1 + m2 - l4); m3 <= Min(l3, m1 + m2 + l4); m3++)
+        {
+          /* -l4 <= m4 <= l4
+           * -l4 <= m1+m2-m3 <= l4
+           *  thus m3-l4 <= m1 + m2 <= m3+l4
+           */
+          m4 = m1 + m2 - m3;
+          
+          val = -0.5*SlaterCoefficientC(k, l1, m1, l3, m3) * SlaterCoefficientC(k, l4, m4, l2, m2);
+          if (Abs(val) > DBL_EPSILON)
+          {
+            for (s1 = 0; s1 <= 1; s1++)
+            {
+              for (s2 = 0; s2 <= 1; s2++)
+              {
+                oadd[3] = CrAnMask + (s1 == 0 ? Lindex1Dn[l1 + m1] : Lindex1Up[l1 + m1]);
+                oadd[2] = CrAnMask + (s2 == 0 ? Lindex2Dn[l2 + m2] : Lindex2Up[l2 + m2]);
+                oadd[1] = (s1 == 0 ? Lindex3Dn[l3 + m3] : Lindex3Up[l3 + m3]);
+                oadd[0] = (s2 == 0 ? Lindex4Dn[l4 + m4] : Lindex4Up[l4 + m4]);
+                RealOperatorAddLaderNormalOrder(U, oadd, 4, val * R[ik], &QDetNotOrderedFcFaBcBa);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  OperatorChop(U, 100 * DBL_EPSILON);
+  return 0;
+}
+
+
 /*  Operators Sx, Sy, Sz, Splus Smin and S^2
  *  Input:
  *    NFermion    - The number of Fermions in the basis

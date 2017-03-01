@@ -323,6 +323,7 @@
 		4CE50BC6197555E100091F1C /* eval.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = eval.c; sourceTree = "<group>"; };
 		4CF05D051E4A113A0068EA5A /* EigensystemDense.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; name = EigensystemDense.Quanty; path = "Debug examples/EigensystemDense.Quanty"; sourceTree = "<group>"; };
 		4CF05D061E4A116F0068EA5A /* Xcode.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; name = Xcode.Quanty; path = "Debug examples/Xcode.Quanty"; sourceTree = "<group>"; };
+		4CF05D071E6488E70068EA5A /* Coulomb.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; name = Coulomb.Quanty; path = "Debug examples/Coulomb.Quanty"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -778,6 +779,7 @@
 			children = (
 				4CF05D051E4A113A0068EA5A /* EigensystemDense.Quanty */,
 				4CF05D061E4A116F0068EA5A /* Xcode.Quanty */,
+				4CF05D071E6488E70068EA5A /* Coulomb.Quanty */,
 			);
 			name = "Debug examples";
 			sourceTree = "<group>";
