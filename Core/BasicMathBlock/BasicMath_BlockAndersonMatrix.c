@@ -117,3 +117,13 @@ uint32_t BlockAndersonMatrixChop(BlockAndersonMatrixType *const A, double const 
   }
   return 0;
 }
+
+/*
+ *  B <- A
+ *  B not initialized on entry
+ */
+uint32_t CopyBlockAndersonMatrix(BlockAndersonMatrixType A, BlockAndersonMatrixType *B)
+{
+  //TODO: all
+  return 0;
+}

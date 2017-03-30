@@ -6,15 +6,17 @@ static int LuaOperatorNewCoulomb(lua_State * L)
 {
   OperatorType *op;
   uint32_t Ntemp,NShell,l,lA,lB,lC,lD;
+  Bool jbasis=False;
   uint32_t NFermion = (uint32_t)luaL_checkunsigned(L, 1);
   uint32_t len = (uint32_t)lua_gettop(L);
+  if(lua_isnumber(L,3)) jbasis=True;
   if(NFermion==0) return luaL_error(L, "Coulomb operator acting on zero fermions is not defined");
-  if(len==4) /* creates the coulomb operator in a single shell of angular momentum L */
+  if ((len==4)&&(jbasis==False)) /* creates the coulomb operator in a single shell of angular momentum L */
   {
     uint16_t *LindexUp, *LindexDn;
     double *F;
-    LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
-    LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
+    LindexDn = luaL_checkarray_unit16_t(L, 2, &NShell);
+    LindexUp = luaL_checkarray_unit16_t(L, 3, &Ntemp);
     if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==False) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
     if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==False) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
     if(NShell!=Ntemp)
@@ -39,12 +41,12 @@ static int LuaOperatorNewCoulomb(lua_State * L)
     free(F);
     return 1;
   }
-  else if (len==7) /* creates the coulomb operator between two shells with LA and LB conserving the occupation of the A and B shell */
+  else if ((len==7)&&(jbasis==False)) /* creates the coulomb operator between two shells with LA and LB conserving the occupation of the A and B shell */
   {
     uint16_t *LindexUpA, *LindexDnA, *LindexUpB, *LindexDnB;
     double *F,*G;
-    LindexUpA = luaL_checkarray_unit16_t(L, 2, &NShell);
-    LindexDnA = luaL_checkarray_unit16_t(L, 3, &Ntemp);
+    LindexDnA = luaL_checkarray_unit16_t(L, 2, &NShell);
+    LindexUpA = luaL_checkarray_unit16_t(L, 3, &Ntemp);
     if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUpA, NShell)==False) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
     if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDnA, Ntemp )==False) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
     if(NShell!=Ntemp)
@@ -56,8 +58,8 @@ static int LuaOperatorNewCoulomb(lua_State * L)
     {
       return luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
     }
-    LindexUpB = luaL_checkarray_unit16_t(L, 4, &NShell);
-    LindexDnB = luaL_checkarray_unit16_t(L, 5, &Ntemp);
+    LindexDnB = luaL_checkarray_unit16_t(L, 4, &NShell);
+    LindexUpB = luaL_checkarray_unit16_t(L, 5, &Ntemp);
     if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUpB, NShell)==False) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
     if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDnB, Ntemp )==False) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
     if(NShell!=Ntemp)
@@ -90,12 +92,12 @@ static int LuaOperatorNewCoulomb(lua_State * L)
     free(G);
     return 1;
   }
-  else if (len==10) /* creates the general coulomb operator between four shels with LA, LB, LC and LD */
+  else if ((len==10)&&(jbasis==False)) /* creates the general coulomb operator between four shels with LA, LB, LC and LD */
   {
     uint16_t *LindexUpA, *LindexDnA, *LindexUpB, *LindexDnB, *LindexUpC, *LindexDnC, *LindexUpD, *LindexDnD;
     double *R;
-    LindexUpA = luaL_checkarray_unit16_t(L, 2, &NShell);
-    LindexDnA = luaL_checkarray_unit16_t(L, 3, &Ntemp);
+    LindexDnA = luaL_checkarray_unit16_t(L, 2, &NShell);
+    LindexUpA = luaL_checkarray_unit16_t(L, 3, &Ntemp);
     if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUpA, NShell)==False) return luaL_error(L, "Index up of first shell contains a refference outside the range [0,%d]",NFermion-1);
     if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDnA, Ntemp )==False) return luaL_error(L, "Index dn of first shell contains a refference outside the range [0,%d]",NFermion-1);
     if(NShell!=Ntemp)
@@ -107,8 +109,8 @@ static int LuaOperatorNewCoulomb(lua_State * L)
     {
       return luaL_error(L, "Error in LuaOperatorNewCoulomb, For first shell lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
     }
-    LindexUpB = luaL_checkarray_unit16_t(L, 4, &NShell);
-    LindexDnB = luaL_checkarray_unit16_t(L, 5, &Ntemp);
+    LindexDnB = luaL_checkarray_unit16_t(L, 4, &NShell);
+    LindexUpB = luaL_checkarray_unit16_t(L, 5, &Ntemp);
     if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUpB, NShell)==False) return luaL_error(L, "Index up of second shell contains a refference outside the range [0,%d]",NFermion-1);
     if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDnB, Ntemp )==False) return luaL_error(L, "Index dn of second shell contains a refference outside the range [0,%d]",NFermion-1);
     if(NShell!=Ntemp)
@@ -120,8 +122,8 @@ static int LuaOperatorNewCoulomb(lua_State * L)
     {
       return luaL_error(L, "Error in LuaOperatorNewCoulomb, For second shell lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
     }
-    LindexUpC = luaL_checkarray_unit16_t(L, 6, &NShell);
-    LindexDnC = luaL_checkarray_unit16_t(L, 7, &Ntemp);
+    LindexDnC = luaL_checkarray_unit16_t(L, 6, &NShell);
+    LindexUpC = luaL_checkarray_unit16_t(L, 7, &Ntemp);
     if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUpC, NShell)==False) return luaL_error(L, "Index up of third shell contains a refference outside the range [0,%d]",NFermion-1);
     if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDnC, Ntemp )==False) return luaL_error(L, "Index dn of third shell contains a refference outside the range [0,%d]",NFermion-1);
     if(NShell!=Ntemp)
@@ -133,8 +135,8 @@ static int LuaOperatorNewCoulomb(lua_State * L)
     {
       return luaL_error(L, "Error in LuaOperatorNewCoulomb, For third shell lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
     }
-    LindexUpD = luaL_checkarray_unit16_t(L, 8, &NShell);
-    LindexDnD = luaL_checkarray_unit16_t(L, 9, &Ntemp);
+    LindexDnD = luaL_checkarray_unit16_t(L, 8, &NShell);
+    LindexUpD = luaL_checkarray_unit16_t(L, 9, &Ntemp);
     if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUpD, NShell)==False) return luaL_error(L, "Index up of forth shell contains a refference outside the range [0,%d]",NFermion-1);
     if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDnD, Ntemp )==False) return luaL_error(L, "Index dn of forth shell contains a refference outside the range [0,%d]",NFermion-1);
     if(NShell!=Ntemp)
@@ -153,7 +155,7 @@ static int LuaOperatorNewCoulomb(lua_State * L)
     R = luaL_checkarray_double(L, 10, &Ntemp);
     if(Ntemp!=(Min(lA+lC,lB+lD)-Max(Max(lA,lC)-Min(lA,lC),Max(lB,lD)-Min(lB,lD)))/2+1)
     {
-      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of F (%d) is not equal to (Min(lA+lC,lB+lD)-Max(Abs(lA-lC),Abs(lB-lD)))/2+1\n",Ntemp);
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of R (%d) is not equal to (Min(lA+lC,lB+lD)-Max(Abs(lA-lC),Abs(lB-lD)))/2+1\n",Ntemp);
     }
     op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
     CreateOperatorCoulombFourShells(NFermion, lA, lB, lC, lD, LindexUpA, LindexDnA, LindexUpB, LindexDnB, LindexUpC, LindexDnC, LindexUpD, LindexDnD, R, op);
@@ -169,9 +171,174 @@ static int LuaOperatorNewCoulomb(lua_State * L)
     free(R);
     return 1;
   }
+  else if (len==4) /* creates the coulomb operator in a single shell of total angular momentum J */
+  {
+    // Althought the large and small componten of the wave function have a differnt l, the angular part works out such that they have the same form of the operator
+    // The resulting slater integral is
+    // Int dr1 dr2 Min[r1,r2]^k / Max[r1,r2]^(k+1)  ( G(r1)^2 G(r2)^2 + 2 G(r1)^2 F(r2)^2 + F(r1)^2 F(r2)^2 )
+    // with k 0, 2, 4, ... and k <= 2j
+    //
+    uint32_t twoj;
+    uint16_t *Jindex;
+    int kappa;
+    double *F;
+    Jindex = luaL_checkarray_unit16_t(L, 2, &NShell);
+    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), Jindex, NShell)==False) return luaL_error(L, "Index of Jshell contains a refference outside the range [0,%d]",NFermion-1);
+    twoj=(NShell-1);
+    if(NShell&1)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of Index for J shell (%d) is not equal to 2j+1 for half integer j\n",NShell);
+    }
+    kappa = luaL_checknumber(L, 3);
+    if(twoj!=2*Abs(kappa)-1)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, j (%d/2) is not equal to |kappa|-1/2 (kappa = %d)\n",twoj,kappa);
+    }
+    F = luaL_checkarray_double(L, 4, &Ntemp);
+    if(Ntemp!=(twoj+1)/2)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of Flarge (%d) is not equal to (2j+1)/2 (%d+1)/2\n",Ntemp,twoj);
+    }
+    op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+    CreateOperatorCoulombSingleRelativisticShell(NFermion, kappa, Jindex, F, op);
+    luaL_setmetatable(L, "Operator_Type");
+    free(Jindex);
+    free(F);
+    return 1;
+  }
+  else if (len==7) /* creates the coulomb operator between two shells with JA and JB conserving the occupation of the A and B shell */
+  {
+    // Althought the large and small componten of the wave function have a differnt l, the angular part works out such that they have the same form of the operator
+    // The resulting slater integral is
+    // F[k] = Int dr1 dr2 Min[r1,r2]^k / Max[r1,r2]^(k+1)  ( G1(r1)^2 G2(r2)^2 + G1(r1)^2 F2(r2)^2 + G2(r1)^2 F1(r2)^2 + F1(r1)^2 F2(r2)^2 )
+    // with k 0, 2, 4, ... and k <= 2 Min[j1,j2]
+    // G[k] = Int dr1 dr2 Min[r1,r2]^k / Max[r1,r2]^(k+1)  ( G1(r1) G2(r1) G1(r2) G2(r2) + F1(r1) F2(r1) F1(r2) F2(r2)  )
+    // with k |j1-j2|, |j1-j2|+2, |j1-j2|+4, ... and k <= j1+j2
+    //
+    int kappaA, kappaB;
+    uint32_t twojA,twojB;
+    uint16_t *JindexA,*JindexB;
+    double *F, *G;
+    JindexA = luaL_checkarray_unit16_t(L, 2, &NShell);
+    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), JindexA, NShell)==False) return luaL_error(L, "Index of first J shell contains a refference outside the range [0,%d]",NFermion-1);
+    twojA   = NShell-1;
+    if(NShell&1)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of Index for first J shell (%d) is not equal to 2j+1 for half integer j\n",NShell);
+    }
+    kappaA = luaL_checknumber(L, 3);
+    if(twojA!=2*Abs(kappaA)-1)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, for first shell: j (%d/2) is not equal to |kappa|-1/2 (kappa = %d)\n",twojA,kappaA);
+    }
+    JindexB = luaL_checkarray_unit16_t(L, 4, &NShell);
+    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), JindexB, NShell)==False) return luaL_error(L, "Index of second J shell contains a refference outside the range [0,%d]",NFermion-1);
+    twojB   = NShell-1;
+    if(NShell&1)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of Index for second J shell (%d) is not equal to 2j+1 for half integer j\n",NShell);
+    }
+    kappaB = luaL_checknumber(L, 5);
+    if(twojB!=2*Abs(kappaB)-1)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, for second shell: j (%d/2) is not equal to |kappa|-1/2 (kappa = %d)\n",twojB,kappaB);
+    }
+    F = luaL_checkarray_double(L, 6, &Ntemp);
+    if(Ntemp!=(Min(twojA,twojB)+1)/2)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of F (%d) is not equal to (Min(2 j1 (%d),2 j2 (%d))+1)/2\n",Ntemp,twojA,twojB);
+    }
+    G = luaL_checkarray_double(L, 7, &Ntemp);
+    if(Ntemp!=(Min(twojA,twojB)+1)/2)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of G (%d) is not equal to (Min(2 j1 (%d),2 j2 (%d))+1)/2\n",Ntemp,twojA,twojB);
+    }
+    op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+    CreateOperatorCoulombTwoRelativisticShellsConstantOccupation(NFermion, kappaA, kappaB, JindexA, JindexB, F, G, op);
+    luaL_setmetatable(L, "Operator_Type");
+    free(JindexA);
+    free(JindexB);
+    free(F);
+    free(G);
+    return 1;
+  }
+  else if (len==10) /* creates the general coulomb operator between four shells with JA, JB, JC and JD */
+  {
+    // Althought the large and small componten of the wave function have a differnt l, the angular part works out such that they have the same form of the operator
+    // The resulting slater integral is
+    // R[k] = Int dr1 dr2 Min[r1,r2]^k / Max[r1,r2]^(k+1)  ( G3(r1)G1(r1) + F3(r1)F1(r1) ) ( G4(r2)G2(r2) + F4(r2)F2(r2) )
+    // with k Max[|j1-j3|,|j2-j4|], 2+Max[|j1-j3|,|j2-j4|], ... and k <= Min[j1+j3,j2+j4]
+    //
+    int kappaA, kappaB, kappaC, kappaD;
+    uint32_t twojA,twojB,twojC,twojD;
+    uint16_t *JindexA,*JindexB,*JindexC,*JindexD;
+    double *R;
+    JindexA = luaL_checkarray_unit16_t(L, 2, &NShell);
+    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), JindexA, NShell)==False) return luaL_error(L, "Index of first J shell contains a refference outside the range [0,%d]",NFermion-1);
+    twojA   = NShell-1;
+    if(NShell&1)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of Index for first J shell (%d) is not equal to 2j+1 for half integer j\n",NShell);
+    }
+    kappaA = luaL_checknumber(L, 3);
+    if(twojA!=2*Abs(kappaA)-1)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, for first shell: j (%d/2) is not equal to |kappa|-1/2 (kappa = %d)\n",twojA,kappaA);
+    }
+    JindexB = luaL_checkarray_unit16_t(L, 4, &NShell);
+    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), JindexB, NShell)==False) return luaL_error(L, "Index of second J shell contains a refference outside the range [0,%d]",NFermion-1);
+    twojB   = NShell-1;
+    if(NShell&1)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of Index for second J shell (%d) is not equal to 2j+1 for half integer j\n",NShell);
+    }
+    kappaB = luaL_checknumber(L, 5);
+    if(twojB!=2*Abs(kappaB)-1)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, for second shell: j (%d/2) is not equal to |kappa|-1/2 (kappa = %d)\n",twojB,kappaB);
+    }
+    JindexC = luaL_checkarray_unit16_t(L, 6, &NShell);
+    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), JindexC, NShell)==False) return luaL_error(L, "Index of third J shell contains a refference outside the range [0,%d]",NFermion-1);
+    twojC   = NShell-1;
+    if(NShell&1)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of Index for third J shell (%d) is not equal to 2j+1 for half integer j\n",NShell);
+    }
+    kappaC = luaL_checknumber(L, 7);
+    if(twojC!=2*Abs(kappaC)-1)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, for third shell: j (%d/2) is not equal to |kappa|-1/2 (kappa = %d)\n",twojC,kappaC);
+    }
+    JindexD = luaL_checkarray_unit16_t(L, 8, &NShell);
+    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), JindexD, NShell)==False) return luaL_error(L, "Index of forth J shell contains a refference outside the range [0,%d]",NFermion-1);
+    twojD   = NShell-1;
+    if(NShell&1)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of Index for forth J shell (%d) is not equal to 2j+1 for half integer j\n",NShell);
+    }
+    kappaD = luaL_checknumber(L, 9);
+    if(twojD!=2*Abs(kappaD)-1)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, for forth shell: j (%d/2) is not equal to |kappa|-1/2 (kappa = %d)\n",twojD,kappaD);
+    }
+    R = luaL_checkarray_double(L, 10, &Ntemp);
+    if(Ntemp!=(Min(Min(twojA,twojB),Min(twojC,twojD))+1)/2)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of F (%d) is not equal to (Min(2 j1 (%d), 2 j2 (%d), 2 j3 (%d), 2 j4 (%d))+1)/2\n",Ntemp,twojA,twojB,twojC,twojD);
+    }
+    op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+    CreateOperatorCoulombFourRelativisticShells(NFermion, kappaA, kappaB, kappaC, kappaD, JindexA, JindexB, JindexC, JindexD, R, op);
+    luaL_setmetatable(L, "Operator_Type");
+    free(JindexA);
+    free(JindexB);
+    free(JindexC);
+    free(JindexD);
+    free(R);
+    return 1;
+  }
   else
   {
-    return luaL_error(L, "Error in LuaOperatorNewCoulomb, expected 4, 7, or 10 arguments not %d",len);
+    return luaL_error(L, "Error in LuaOperatorNewCoulomb, expected 4, 7, or 10 arguments for Coulomb repulsion in ls coupling basis or 3, 5, or 6 arguments for Coulomb repulsion in jj coupling basis, not %d",len);
   }
   return 1;
 }

@@ -1,3 +1,10 @@
+
+uint32_t EvaluateBlockListOfPoles(BlockListOfPoles const *A, CompactMatrixType * Gw, const double omega, const double Gamma)
+{
+  //TODO: all
+  return 0;
+}
+
 /*  Transform a Block List of Poles representation of G to a spectral representation of G.
  *
  *  On entry:
@@ -2588,8 +2595,94 @@ uint32_t BlockTriDiagonalMatrixToBlockListOfPoles(BlockTriDiagonalMatrixType con
   return 0;
 }
 
-
-
+/*  Transform a BlockTriDiagonalMatrix representation of G to a spectral representation of G at one specific energy.
+ *
+ *  On entry:
+ *    A contains the BlockTriDiagonal matrix to transform
+ *    G is a pointer to SpectraType wich allocats A->BlockSize^2 spectra
+ *    Emin and Emax set the min and max energy in the spectrum
+ *    N the number of energies.
+ *    Gamma sets the lorenzian broadening Gamma > 3*(Emax-Emin)/N
+ *
+ *    Gw = a0 + b0 (1/( w + i Gamma/2 - a1 - b1  ( w + i Gamma/2 - a2 - b2 ( ... ) b2^+ ) b1^+ )) b0^+
+ *
+ *    Gw is not initialized on entry but is when function finishes
+ *
+ */
+uint32_t EvaluateBlockTriDiagonalMatrix(BlockTriDiagonalMatrixType const * A, CompactMatrixType * Gw, const double omega, const double Gamma)
+{
+  int i,iblock;
+  CompactMatrixType a,b;
+  a.Ni=A->BlockSize;
+  a.Nj=A->BlockSize;
+  b.Ni=A->BlockSize;
+  b.Nj=A->BlockSize;
+  a.QComplex=A->QComplex;
+  b.QComplex=A->QComplex;
+  a.a0=0;
+  a.b0=0;
+  a.mu=0;
+  b.a0=0;
+  b.b0=0;
+  b.mu=0;
+  Gw->QComplex=1;
+  Gw->Ni=A->BlockSize;
+  Gw->Nj=A->BlockSize;
+  Gw->a0=0;
+  Gw->b0=0;
+  Gw->mu=A->mu;
+  InitCompactMatrix(Gw);
+  for(i=0;i<A->BlockSize*A->BlockSize;i++)
+  {
+    Gw->V[i].Re=0;
+    Gw->V[i].Im=0;
+  }
+  for(iblock=A->N;iblock>0;iblock--)
+  {
+    /* set a and b to point to right matrices */
+    if(A->QComplex)
+    {
+      a.V=&(A->a[iblock    *A->BlockSize*A->BlockSize]);
+      b.V=&(A->b[(iblock-1)*A->BlockSize*A->BlockSize]);
+    }
+    else
+    {
+      a.VRe=&(A->aRe[iblock    *A->BlockSize*A->BlockSize]);
+      b.VRe=&(A->bRe[(iblock-1)*A->BlockSize*A->BlockSize]);
+    }
+    CompactMatrixAdd(Gw, &a);
+    for(i=0;i<A->BlockSize*A->BlockSize;i++)
+    {
+      Gw->V[i].Re*=-1;
+      Gw->V[i].Im*=-1;
+    }
+    for(i=0;i<A->BlockSize*A->BlockSize;i+=A->BlockSize+1)
+    {
+      Gw->V[i].Re+=omega;
+      Gw->V[i].Im+=Gamma/2.0;
+    }
+    CompactMatrixInverse(Gw);
+    if(iblock==1)
+    {
+      TransformCompactMatrixInlinecT(Gw, &b); /* Gw <- b Gw b^T */
+    }
+    else
+    {
+      TransformCompactMatrixInlineNC(Gw, &b); /* Gw <- b Gw b^dag */
+    }
+  }
+  // add a0
+  if(A->QComplex)
+  {
+    a.V=A->a;
+  }
+  else
+  {
+    a.VRe=A->aRe;
+  }
+  CompactMatrixAdd(Gw, &a);
+  return 0;
+}
 
 /*  Transform a BlockTriDiagonalMatrix representation of G to a spectral representation of G.
  *
@@ -2615,6 +2708,7 @@ uint32_t BlockTriDiagonalMatrixToSpectra(const double Energy, BlockTriDiagonalMa
   G[0].EmaxPole=Emax;
   G[0].dE=(Emax-Emin)/((double)N);
   G[0].Gamma=Gamma;
+  G[0].ResonantEnergy=NAN;
   for(i=0;i<A->BlockSize*A->BlockSize;i++)
   {
     SpectrumAllocate(G[0], &(G[i]));
@@ -2691,6 +2785,13 @@ uint32_t BlockTriDiagonalMatrixToSpectra(const double Energy, BlockTriDiagonalMa
   FreeCompactMatrix(&Gw);
   return 0;
 }
+
+uint32_t EvaluateBlockaturalImpurityOrbital(BlockNaturalImpurityOrbitalMatrixType const *A, CompactMatrixType * Gw, const double omega, const double Gamma)
+{
+  //TODO: all
+  return 0;
+}
+
 
 /*  G = (T Gp T^+)[1,1]
  *

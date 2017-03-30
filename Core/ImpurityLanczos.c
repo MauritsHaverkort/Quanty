@@ -4,11 +4,10 @@
  *  Calculate the lowest Npsi eigenstates as well as the Impurity Hamiltonian and Hybridization function rotated to natural impurity orbitals
  */
 
-uint32_t ImpurityGroundState(const OperatorType * Himp, const void * DeltaHyb, const char DeltaHybType, uint32_t const Npsi, ConvergenceSettingsType * Settings, WaveFunctionType * psi, BlockNaturalImpurityOrbitalMatrixType * DeltaHybNIO)
+uint32_t ImpurityGroundState(const OperatorType * Himp, const BlockMatrixType * DeltaHyb, uint32_t const Npsi, ConvergenceSettingsType * Settings, WaveFunctionType * psi, BlockNaturalImpurityOrbitalMatrixType * DeltaHybNIO)
 {
-  printf("Hello world %c\n",DeltaHybType);
+  printf("Hello world\n");
   
-  PrintBlockListOfPoles(*(BlockListOfPoles*)DeltaHyb);
   
   return 1;
 }

@@ -382,6 +382,18 @@ static int LuaTableToSpectra(lua_State * L)
       lua_pop(L,1);
     }
     else return luaL_error(L, "Error Spectra.FromTable \"Name\" of spectrum %d should be a string\n",lua_gettop(L));
+    lua_getfield(L, -1,"ResonantEnergy");
+    if(lua_type(L, -1)==LUA_TNIL)
+    {
+      lua_pop(L,1);
+      res->Spec[i].ResonantEnergy=NAN;
+    }
+    else if(lua_type(L,-1)==LUA_TNUMBER)
+    {
+      res->Spec[i].ResonantEnergy=(double)lua_tonumber(L, -1);
+      lua_pop(L,1);
+    }
+    else return luaL_error(L, "Error Spectra.FromTable \"ResonantEnergy\" of spectrum %d should be a number\n",lua_gettop(L));
     lua_getfield(L, -1, "EminPole");
     if(lua_type(L, -1)==LUA_TNIL)
     {
@@ -1983,6 +1995,28 @@ static int LuaSpectraIndex(lua_State * L)
     for(i=0;i<a->NSpectra;i++)
     {
       lua_pushnumber(L, Sqr(a->Spec[i].b[0]));
+      lua_rawseti(L, -2, i+1);
+    }
+    return 1;
+  }
+  if (strcmp(str, "ResonantEnergy") == 0)
+  {
+    uint32_t i;
+    lua_createtable(L, a->NSpectra, 0);
+    for(i=0;i<a->NSpectra;i++)
+    {
+      lua_pushnumber(L, a->Spec[i].ResonantEnergy);
+      lua_rawseti(L, -2, i+1);
+    }
+    return 1;
+  }
+  if (strcmp(str, "Name") == 0)
+  {
+    uint32_t i;
+    lua_createtable(L, a->NSpectra, 0);
+    for(i=0;i<a->NSpectra;i++)
+    {
+      lua_pushstring(L, a->Spec[i].Name);
       lua_rawseti(L, -2, i+1);
     }
     return 1;

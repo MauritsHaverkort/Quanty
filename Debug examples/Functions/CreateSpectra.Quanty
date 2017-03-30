@@ -1,0 +1,77 @@
+Verbosity(0x0)
+
+Nf=6
+Nb=0
+IndexDn={0,2,4}
+IndexUp={1,3,5}
+
+Opp1 = NewOperator("Lx",Nf,IndexUp,IndexDn)
+Opp2 = NewOperator("Ly",Nf,IndexUp,IndexDn)
+psi1 = NewWavefunction(Nf,Nb,{{"100010",sqrt(9/10)},{"110000",sqrt(1/10)}})
+psi2 = NewWavefunction(Nf,Nb,{{"010010",1}})
+mat = {{1,1,0},
+{1,2,1},
+{0,1,3}}
+
+OppLx    = NewOperator("Lx",   Nf,IndexUp,IndexDn)
+OppLy    = NewOperator("Ly",   Nf,IndexUp,IndexDn)
+OppLz    = NewOperator("Lz",   Nf,IndexUp,IndexDn)
+OppLsqr  = NewOperator("Lsqr", Nf,IndexUp,IndexDn)
+OppSx    = NewOperator("Sx",   Nf,IndexUp,IndexDn)
+OppSy    = NewOperator("Sy",   Nf,IndexUp,IndexDn)
+OppSz    = NewOperator("Sz",   Nf,IndexUp,IndexDn)
+OppSsqr  = NewOperator("Ssqr", Nf,IndexUp,IndexDn)
+OppJx    = NewOperator("Jx",   Nf,IndexUp,IndexDn)
+OppJy    = NewOperator("Jy",   Nf,IndexUp,IndexDn)
+OppJz    = NewOperator("Jz",   Nf,IndexUp,IndexDn)
+OppJsqr  = NewOperator("Jsqr", Nf,IndexUp,IndexDn)
+Oppldots = NewOperator("ldots",Nf,IndexUp,IndexDn)
+OppU     = NewOperator("U",    Nf,IndexUp,IndexDn,{0,10})
+Akm = PotentialExpandedOnClm("D2h",1,{0,0,1})
+Opppx = Chop(NewOperator("CF", Nf, IndexUp, IndexDn, Akm))
+Opppx.Name="Opp px"
+Akm = PotentialExpandedOnClm("D2h",1,{0,1,0})
+Opppy = Chop(NewOperator("CF", Nf, IndexUp, IndexDn, Akm))
+Opppy.Name="Opp py"
+Akm = PotentialExpandedOnClm("D2h",1,{1,0,0})
+Opppz = Chop(NewOperator("CF", Nf, IndexUp, IndexDn, Akm))
+Opppz.Name="Opp pz"
+
+psim1dn = NewWavefunction(Nf,Nb,{{"100000",1}})
+psi0dn  = NewWavefunction(Nf,Nb,{{"001000",1}})
+psip1dn = NewWavefunction(Nf,Nb,{{"000010",1}})
+psim1up = NewWavefunction(Nf,Nb,{{"010000",1}})
+psi0up  = NewWavefunction(Nf,Nb,{{"000100",1}})
+psip1up = NewWavefunction(Nf,Nb,{{"000001",1}})
+
+psixdn  = NewWavefunction(Nf,Nb,{{"100000",  sqrt(1/2)},{"000010", -sqrt(1/2)}})
+psiydn  = NewWavefunction(Nf,Nb,{{"100000",I*sqrt(1/2)},{"000010",I*sqrt(1/2)}})
+psizdn  = NewWavefunction(Nf,Nb,{{"001000",1}})
+psixup  = NewWavefunction(Nf,Nb,{{"010000",  sqrt(1/2)},{"000001", -sqrt(1/2)}})
+psiyup  = NewWavefunction(Nf,Nb,{{"010000",I*sqrt(1/2)},{"000001",I*sqrt(1/2)}})
+psizup  = NewWavefunction(Nf,Nb,{{"000100",1}})
+
+t = sqrt(1/2)
+rotmat = {{  t,  0, 0, 0, -t,  0},
+{  0,  t, 0, 0,  0, -t},
+{I*t,  0, 0, 0,I*t,  0},
+{  0,I*t, 0, 0,  0,I*t},
+{  0,  0, 1, 0,  0,  0},
+{  0,  0, 0, 1,  0,  0}}
+
+-- define an Hamiltonian (in this case a magnetic field of 6 tesla in the z direction)
+H = 6 * EnergyUnits.Tesla.value * (2*OppSz + OppLz)
+-- define a transition operator (in this case a pulsed magnetic field of 20 tesla in the x direction)
+T = 20 * EnergyUnits.Tesla.value * (2*OppSx + OppLx)
+-- define a ground-state (in this case a p electron with spin and angular momentum down)
+psigrd = psim1dn
+psilist = {psigrd,sqrt(4)*psigrd,sqrt(16)*psigrd}
+
+-- calculate < psigrd | T^dag 1/(w-H+i*G/2+E0) T | psigrd >
+--   with E0 = <psigrd | H | psigrd >
+-- spectri is optional
+spec, spectri = CreateSpectra(H, {T,sqrt(100)*T}, psilist,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5}})
+
+-- the real and imaginary part on a fixed energy grid
+print(spectri)
+print(spec)

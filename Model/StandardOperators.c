@@ -158,7 +158,7 @@ uint32_t CreateOperatorCoulombFourShells(uint32_t const NFermion, uint32_t const
   InitOperatorFixedLength(U, 2, 8);
   InitOperatorFixedLength(U, 4, 8);
   ik=-1;
-  for (k=Max(l1-l3,l2-l4); k<=Min(l1+l3,l2+l4); k+=2)
+  for (k=Max(Abs(l1-l3),Abs(l2-l4)); k<=Min(l1+l3,l2+l4); k+=2)
   {
     ik++;
     for (m1 = -l1; m1 <= l1; m1++)
@@ -196,6 +196,282 @@ uint32_t CreateOperatorCoulombFourShells(uint32_t const NFermion, uint32_t const
   return 0;
 }
 
+
+uint32_t CreateOperatorCoulombSingleRelativisticShell(uint32_t const NFermion, int const kappa, uint16_t const *Jindex, double const *F, OperatorType * const U)
+{
+  uint16_t oadd[4];
+  double val;
+  int const twoj = 2*Abs(kappa)-1;
+  int const l=(twoj+Sgn(kappa))/2; // l of the large component, l of the small component is j-Sgn(kappa)/2
+  int k,twojz1,twojz2,twojz3,twojz4;
+  InitNamedOperator(U, "Coulomb Operator");
+  U->NFermion = NFermion;
+  U->NWord = Min(U->NFermion, 1 + (U->NFermion - 1) / 8);
+  InitOperatorFixedLength(U, 2, 8);
+  InitOperatorFixedLength(U, 4, 8);
+  for(k=0;k<twoj+1;k+=2)
+  {
+    for(twojz1 = -twoj; twojz1 <= twoj; twojz1+=2)
+    {
+      for(twojz2 = -twoj; twojz2 <= twoj; twojz2+=2)
+      {
+        for (twojz3 = Max(-twoj, twojz1 + twojz2 - twoj); twojz3 <= Min(twoj, twojz1 + twojz2 + twoj); twojz3+=2)
+        {
+          /* -l >= m1+m2-m3 >= l
+           *  thus m3-l >= m1 + m2 >= m3+l
+           */
+          twojz4 = twojz1 + twojz2 - twojz3;
+          val = -0.5 * SlaterCoefficientCjcoupling(k, l, twoj, twojz1, l, twoj, twojz3) * SlaterCoefficientCjcoupling(k, l, twoj, twojz4, l, twoj, twojz2);
+          if (Abs(val) > DBL_EPSILON)
+          {
+            oadd[3] = CrAnMask + Jindex[(twoj+twojz1)/2];
+            oadd[2] = CrAnMask + Jindex[(twoj+twojz2)/2];
+            oadd[1] =            Jindex[(twoj+twojz3)/2];
+            oadd[0] =            Jindex[(twoj+twojz4)/2];
+            RealOperatorAddLaderNormalOrder(U, oadd, 4, val * F[k / 2], &QDetNotOrderedFcFaBcBa);
+          }
+        }
+      }
+    }
+  }
+  OperatorChop(U, 100 * DBL_EPSILON);
+  return 0;
+}
+
+uint32_t CreateOperatorCoulombTwoRelativisticShellsConstantOccupation(uint32_t const NFermion, int const kappa1, int const kappa2, uint16_t const *Jindex1, uint16_t const *Jindex2, double const *F, double const *G, OperatorType * const U)
+{
+  uint16_t oadd[4];
+  double val;
+  int const twoj1 = 2*Abs(kappa1)-1;
+  int const twoj2 = 2*Abs(kappa2)-1;
+  int const l1=(twoj1+Sgn(kappa1))/2; // l of the large component, l of the small component is j-Sgn(kappa)/2
+  int const l2=(twoj2+Sgn(kappa2))/2; // l of the large component, l of the small component is j-Sgn(kappa)/2
+  int ik,k,twojz1,twojz2,twojz3,twojz4;
+  InitNamedOperator(U, "Coulomb Operator");
+  U->NFermion = NFermion;
+  U->NWord = Min(U->NFermion, 1 + (U->NFermion - 1) / 8);
+  InitOperatorFixedLength(U, 2, 8);
+  InitOperatorFixedLength(U, 4, 8);
+  /* case 1 jz1 and jz3 belong to jz1, jz2 and jz4 belong to j2 */
+  for (k = 0; k <= (Min(twoj1, twoj2) + 1); k += 2)
+  {
+    for(twojz1 = -twoj1; twojz1 <= twoj1; twojz1+=2)
+    {
+      for(twojz2 = -twoj2; twojz2 <= twoj2; twojz2+=2)
+      {
+        for (twojz3 = Max(-twoj1, twojz1 + twojz2 - twoj2); twojz3 <= Min(twoj1, twojz1 + twojz2 + twoj2); twojz3+=2)
+        {
+          /* -j2 <= jz4 <= j2
+           * -j2 <= jz1+jz2-jz3 <= j2
+           * thus
+           * -j2-jz1-jz2 <= -jz3 <= j2-jz1-jz2
+           * or
+           *  jz1+jz2-j2 <= jz3 <= j2+jz1+jz2
+           */
+          twojz4 = twojz1 + twojz2 - twojz3;
+          val = -SlaterCoefficientCjcoupling(k, l1, twoj1, twojz1, l1, twoj1, twojz3) * SlaterCoefficientCjcoupling(k, l2, twoj2, twojz4, l2, twoj2, twojz2);
+          if (Abs(val) > DBL_EPSILON)
+          {
+            oadd[3] = CrAnMask + Jindex1[(twoj1+twojz1)/2];
+            oadd[2] = CrAnMask + Jindex2[(twoj2+twojz2)/2];
+            oadd[1] =            Jindex1[(twoj1+twojz3)/2];
+            oadd[0] =            Jindex2[(twoj2+twojz4)/2];
+            RealOperatorAddLaderNormalOrder(U, oadd, 4, val * F[k / 2], &QDetNotOrderedFcFaBcBa);
+          }
+        }
+      }
+    }
+  }
+  /* case 2 m1 and m4 belong to l1/j1, m2 and m3 belong to l2/j2 */
+  ik=-1;
+  for (k = Abs(l1 - l2); k <= (twoj1 + twoj2)/2; k += 2)
+  {
+    if(k<Abs(twoj1 - twoj2)/2) continue;
+    ik++;
+    for (twojz1 = -twoj1; twojz1 <= twoj1; twojz1+=2)
+    {
+      for (twojz2 = -twoj2; twojz2 <= twoj2; twojz2+=2)
+      {
+        for (twojz3 = Max(-twoj2, twojz1 + twojz2 - twoj1); twojz3 <= Min(twoj2, twojz1 + twojz2 + twoj1); twojz3+=2)
+        {
+         /* -j1 <= jz4 <= j1
+          * -j1 <= jz1+jz2-jz3 <= j1
+          * thus
+          * -j1-jz1-jz2 <= -jz3 <= j1-jz1-jz2
+          * or
+          *  jz1+jz2-j1 <= jz3 <= j1+jz1+jz2
+          */
+          twojz4 = twojz1 + twojz2 - twojz3;
+          val = -SlaterCoefficientCjcoupling(k, l1, twoj1, twojz1, l2, twoj2, twojz3) * SlaterCoefficientCjcoupling(k, l1, twoj1, twojz4, l2, twoj2, twojz2);
+          if (Abs(val) > DBL_EPSILON)
+          {
+            oadd[3] = CrAnMask + Jindex1[(twoj1+twojz1)/2];
+            oadd[2] = CrAnMask + Jindex2[(twoj2+twojz2)/2];
+            oadd[1] =            Jindex2[(twoj2+twojz3)/2];
+            oadd[0] =            Jindex1[(twoj1+twojz4)/2];
+            RealOperatorAddLaderNormalOrder(U, oadd, 4, val * G[ik], &QDetNotOrderedFcFaBcBa);
+          }
+        }
+      }
+    }
+  }
+  OperatorChop(U, 100 * DBL_EPSILON);
+  return 0;
+}
+
+uint32_t CreateOperatorCoulombFourRelativisticShells(uint32_t const NFermion, int const kappa1, int const kappa2, int const kappa3, int const kappa4, uint16_t const *Jindex1, uint16_t const *Jindex2, uint16_t const *Jindex3, uint16_t const *Jindex4, double const *R, OperatorType * const U)
+{
+  uint16_t oadd[4];
+  double val;
+  int const twoj1 = 2*Abs(kappa1)-1;
+  int const twoj2 = 2*Abs(kappa2)-1;
+  int const twoj3 = 2*Abs(kappa3)-1;
+  int const twoj4 = 2*Abs(kappa4)-1;
+  int const l1=(twoj1+Sgn(kappa1))/2; // l of the large component, l of the small component is j-Sgn(kappa)/2
+  int const l2=(twoj2+Sgn(kappa2))/2; // l of the large component, l of the small component is j-Sgn(kappa)/2
+  int const l3=(twoj3+Sgn(kappa3))/2; // l of the large component, l of the small component is j-Sgn(kappa)/2
+  int const l4=(twoj4+Sgn(kappa4))/2; // l of the large component, l of the small component is j-Sgn(kappa)/2
+  int ik,k,twojz1,twojz2,twojz3,twojz4;
+  InitNamedOperator(U, "Coulomb Operator");
+  U->NFermion = NFermion;
+  U->NWord = Min(U->NFermion, 1 + (U->NFermion - 1) / 8);
+  InitOperatorFixedLength(U, 2, 8);
+  InitOperatorFixedLength(U, 4, 8);
+  ik=-1;
+  for (k=Max(Abs(l1-l3),Abs(l2-l4)); k<=Min(twoj1+twoj3,twoj2+twoj4); k+=2)
+  {
+    if (k<Max(Abs(twoj1-twoj3),Abs(twoj2-twoj4))) continue;
+    ik++;
+    for (twojz1 = -twoj1; twojz1 <= twoj1; twojz1+=2)
+    {
+      for (twojz2 = -twoj2; twojz2 <= twoj2; twojz2+=2)
+      {
+        for (twojz3 = Max(-twoj3, twojz1 + twojz2 - twoj4); twojz3 <= Min(twoj3, twojz1 + twojz2 + twoj4); twojz3+=2)
+        {
+          /* -j4 <= jz4 <= j4
+           * -j4 <= jz1+jz2-jz3 <= j4
+           * thus
+           * -j4-jz1-jz2 <= -jz3 <= j4-jz1-jz2
+           * or
+           *  jz1+jz2-j4 <= jz3 <= j44+jz1+jz2
+           */
+          twojz4 = twojz1 + twojz2 - twojz3;
+          val = -0.5*SlaterCoefficientCjcoupling(k, l1, twoj1, twojz1, l3, twoj3, twojz3) * SlaterCoefficientCjcoupling(k, l4, twoj4, twojz4, l2, twoj2, twojz2);
+          if (Abs(val) > DBL_EPSILON)
+          {
+            oadd[3] = CrAnMask + Jindex1[(twoj1+twojz1)/2];
+            oadd[2] = CrAnMask + Jindex2[(twoj2+twojz2)/2];
+            oadd[1] =            Jindex3[(twoj3+twojz3)/2];
+            oadd[0] =            Jindex4[(twoj4+twojz4)/2];
+            RealOperatorAddLaderNormalOrder(U, oadd, 4, val * R[ik], &QDetNotOrderedFcFaBcBa);
+          }
+        }
+      }
+    }
+  }
+  OperatorChop(U, 100 * DBL_EPSILON);
+  return 0;
+}
+
+
+uint32_t CreateOperatorCoulombSingleRelativisticShellOld(uint32_t const NFermion, int const kappa, uint16_t const *Jindex, double const *Flarge, double const *Fsmall, double const *Fmix, OperatorType * const U)
+{
+  uint16_t oadd[4];
+  double val;
+  int const twoj=abs(2*kappa)-1;
+  int const llarge=(twoj+Sgn(kappa))/2;
+  int const lsmall=(twoj-Sgn(kappa))/2;
+  int k,twojz1,twojz2,twojz3,twojz4;
+  InitNamedOperator(U, "Coulomb Operator");
+  U->NFermion = NFermion;
+  U->NWord = Min(U->NFermion, 1 + (U->NFermion - 1) / 8);
+  InitOperatorFixedLength(U, 2, 8);
+  InitOperatorFixedLength(U, 4, 8);
+  for(k=0;k<2*(llarge+1);k+=2)
+  {
+    for(twojz1 = -twoj; twojz1 <= twoj; twojz1+=2)
+    {
+      for(twojz2 = -twoj; twojz2 <= twoj; twojz2+=2)
+      {
+        for (twojz3 = Max(-twoj, twojz1 + twojz2 - twoj); twojz3 <= Min(twoj, twojz1 + twojz2 + twoj); twojz3+=2)
+        {
+          /* -l >= m1+m2-m3 >= l
+           *  thus m3-l >= m1 + m2 >= m3+l
+           */
+          
+          
+          //printf("Ck[k=%i;l=%i,2j=%i,2jz=%2i;l=%i,2j=%i,2jz=%2i]=%7.4f  ",k,llarge,twoj,twojz1,llarge,twoj,twojz3,SlaterCoefficientCjcoupling(k, llarge, twoj, twojz1, llarge, twoj, twojz3));
+          //printf("Ck[k=%i;l=%i,2j=%i,2jz=%2i;l=%i,2j=%i,2jz=%2i]=%7.4f\n",k,lsmall,twoj,twojz1,lsmall,twoj,twojz3,SlaterCoefficientCjcoupling(k, lsmall, twoj, twojz1, lsmall, twoj, twojz3));
+          
+          
+          
+          twojz4 = twojz1 + twojz2 - twojz3;
+          val = -0.5 * SlaterCoefficientCjcoupling(k, llarge, twoj, twojz1, llarge, twoj, twojz3) * SlaterCoefficientCjcoupling(k, llarge, twoj, twojz4, llarge, twoj, twojz2);
+          if (Abs(val) > DBL_EPSILON)
+          {
+            oadd[3] = CrAnMask + Jindex[(twoj+twojz1)/2];
+            oadd[2] = CrAnMask + Jindex[(twoj+twojz2)/2];
+            oadd[1] =            Jindex[(twoj+twojz3)/2];
+            oadd[0] =            Jindex[(twoj+twojz4)/2];
+            RealOperatorAddLaderNormalOrder(U, oadd, 4, val * Flarge[k / 2], &QDetNotOrderedFcFaBcBa);
+          }
+        }
+      }
+    }
+  }
+  for(k=0;k<2*(lsmall+1);k+=2)
+  {
+    for(twojz1 = -twoj; twojz1 <= twoj; twojz1+=2)
+    {
+      for(twojz2 = -twoj; twojz2 <= twoj; twojz2+=2)
+      {
+        for (twojz3 = Max(-twoj, twojz1 + twojz2 - twoj); twojz3 <= Min(twoj, twojz1 + twojz2 + twoj); twojz3+=2)
+        {
+          /* -l >= m1+m2-m3 >= l
+           *  thus m3-l >= m1 + m2 >= m3+l
+           */
+          twojz4 = twojz1 + twojz2 - twojz3;
+          val = -0.5 * SlaterCoefficientCjcoupling(k, lsmall, twoj, twojz1, lsmall, twoj, twojz3) * SlaterCoefficientCjcoupling(k, lsmall, twoj, twojz4, lsmall, twoj, twojz2);
+          if (Abs(val) > DBL_EPSILON)
+          {
+            oadd[3] = CrAnMask + Jindex[(twoj+twojz1)/2];
+            oadd[2] = CrAnMask + Jindex[(twoj+twojz2)/2];
+            oadd[1] =            Jindex[(twoj+twojz3)/2];
+            oadd[0] =            Jindex[(twoj+twojz4)/2];
+            RealOperatorAddLaderNormalOrder(U, oadd, 4, val * Fsmall[k / 2], &QDetNotOrderedFcFaBcBa);
+          }
+        }
+      }
+    }
+  }
+  for(k=0;k<2*(Min(llarge,lsmall)+1);k+=2)
+  {
+    for(twojz1 = -twoj; twojz1 <= twoj; twojz1+=2)
+    {
+      for(twojz2 = -twoj; twojz2 <= twoj; twojz2+=2)
+      {
+        for (twojz3 = Max(-twoj, twojz1 + twojz2 - twoj); twojz3 <= Min(twoj, twojz1 + twojz2 + twoj); twojz3+=2)
+        {
+          /* -l >= m1+m2-m3 >= l
+           *  thus m3-l >= m1 + m2 >= m3+l
+           */
+          twojz4 = twojz1 + twojz2 - twojz3;
+          val = - SlaterCoefficientCjcoupling(k, llarge, twoj, twojz1, llarge, twoj, twojz3) * SlaterCoefficientCjcoupling(k, lsmall, twoj, twojz4, lsmall, twoj, twojz2);
+          if (Abs(val) > DBL_EPSILON)
+          {
+            oadd[3] = CrAnMask + Jindex[(twoj+twojz1)/2];
+            oadd[2] = CrAnMask + Jindex[(twoj+twojz2)/2];
+            oadd[1] =            Jindex[(twoj+twojz3)/2];
+            oadd[0] =            Jindex[(twoj+twojz4)/2];
+            RealOperatorAddLaderNormalOrder(U, oadd, 4, val * Fmix[k / 2], &QDetNotOrderedFcFaBcBa);
+          }
+        }
+      }
+    }
+  }
+  OperatorChop(U, 100 * DBL_EPSILON);
+  return 1;
+}
 
 /*  Operators Sx, Sy, Sz, Splus Smin and S^2
  *  Input:

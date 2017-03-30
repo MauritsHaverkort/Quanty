@@ -18,6 +18,7 @@ int SpectrumAllocate(const SpectraType Settings, SpectraType * const G)
   G->Gamma = Settings.Gamma;
   G->ZerothMoment = 0;
   G->FirstMoment = 0;
+  G->ResonantEnergy = Settings.ResonantEnergy;
   G->a[0] = 0;
   G->a[1] = 0;
   G->a[2] = 0;
@@ -53,6 +54,7 @@ void SpectrumFree(SpectraType * const G)
   G->N = 0;
   G->ZerothMoment = 0;
   G->FirstMoment = 0;
+  G->ResonantEnergy = NAN;
   G->a[0] = 0;
   G->a[1] = 0;
   G->a[2] = 0;
@@ -84,6 +86,7 @@ void CopySpectra(const SpectraType In, SpectraType * Out)
   Out->Gamma = In.Gamma;
   Out->ZerothMoment = In.ZerothMoment;
   Out->FirstMoment = In.FirstMoment;
+  Out->ResonantEnergy = In.ResonantEnergy;
   Out->a[0] = In.a[0];
   Out->a[1] = In.a[1];
   Out->a[2] = In.a[2];
@@ -1671,8 +1674,7 @@ void CalculateG0fromSandGSpectralRepresentation(SpectraType * const G0, const Sp
 * There must thus also be Natom positions listed. The first spectrum is taken at the first position.
 * The n-th spectrum is taken as the sum of T_atom_0 +T_atom_n
 */
-int SiteFourierTransform(uint32_t Natom, int32_t AtomPos[][3], int32_t UnitCell[3][3], double klist[][3],
-                         SpectraType * Spectra)
+int SiteFourierTransform(uint32_t Natom, int32_t AtomPos[][3], int32_t UnitCell[3][3], double klist[][3], SpectraType * Spectra)
 {
   int32_t i, j, k;
   SpectraType SpectraDeltaR[Natom];

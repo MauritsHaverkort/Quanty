@@ -156,3 +156,14 @@ void ShiftBlockTridiagonalMatrix(BlockTriDiagonalMatrixType *const A, double con
     }
   }
 }
+
+/*
+ *  B <- A
+ *  B not initialized on entry
+ */
+uint32_t CopyBlockTridiagonalMatrix(BlockTriDiagonalMatrixType A, BlockTriDiagonalMatrixType *B)
+{
+  //TODO: all
+  return 0;
+}
+

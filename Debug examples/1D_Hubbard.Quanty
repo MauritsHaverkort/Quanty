@@ -1,0 +1,48 @@
+TB = NewTightBinding()
+
+TB.Name = "1D Hubbard"
+TB.Cell = {{1,0,0},{0,1,0},{0,0,1}}
+TB.Atoms = { {"Cu",
+              {0,0,0},
+              { {"d",{"x^2-y^2"}} }
+           } }
+TB.Hopping = { {"Cu.d","Cu.d", { 1,0,0}, {{1}} },
+               {"Cu.d","Cu.d", {-1,0,0}, {{1}} } }
+
+print(TB)
+
+NFloc = 2
+NBloc = 0
+U=1
+Hloc = NewOperator(NFloc, NBloc, {{0,-0,1,-1,   U}})
+
+NCell = 2
+NF    = 2*NCell
+NB    = 0
+Occup = NCell/2
+Occdn = NCell/2
+
+
+Hamiltonian, xpos, kvec = CreateClusterHamiltonian(TB, {"periodic", {{NCell,0,0},{0,1,0},{0,0,1}}}, Hloc, {{"AddSpin",true}, {"ReturnTBCellPositions",true}, {"ReturnTBKVectors",true}})
+
+print(Hamiltonian)
+print(xpos)
+print(kvec)
+
+strdn = ""
+strup = ""
+for i=1,NCell do
+  strdn = strdn .. "10"
+  strup = strup .. "01"
+end
+
+StartRestrictions = {NF, NB,  {strdn,Occdn,Occdn}, {strup,Occup,Occup}}
+
+psi = Eigensystem(Hamiltonian,StartRestrictions,1)
+
+E = psi*Hamiltonian*psi
+Esqr = psi*Hamiltonian*Hamiltonian*psi
+
+print("Energy   ",E)
+print("Variance ",E*E-Esqr)
+

@@ -69,12 +69,13 @@ uint32_t InitBlockNaturalImpurityOrbitalMatrix(BlockNaturalImpurityOrbitalMatrix
   return 0;
 }
 
-void FreeBlockNaturalImpurityOrbitalMatrix(BlockNaturalImpurityOrbitalMatrixType *const A)
+uint32_t FreeBlockNaturalImpurityOrbitalMatrix(BlockNaturalImpurityOrbitalMatrixType *const A)
 {
   FreeBlockTridiagonalMatrix(&(A->val));
   FreeBlockTridiagonalMatrix(&(A->con));
   FreeCompactMatrix(&(A->a0));
   FreeCompactMatrix(&(A->TMT));
+  return 0;
 }
 
 uint32_t BlockNaturalImpurityOrbitalMatrixChop(BlockNaturalImpurityOrbitalMatrixType *const A, double const Epsilon)
@@ -192,3 +193,16 @@ uint32_t BlockNaturalImpurityOrbitalMatrixChop(BlockNaturalImpurityOrbitalMatrix
   }
   return 0;
 }
+
+
+/*
+ *  B <- A
+ *  B not initialized on entry
+ */
+uint32_t CopyBlockNaturalImpurityOrbitalMatrix(BlockNaturalImpurityOrbitalMatrixType A, BlockNaturalImpurityOrbitalMatrixType *B)
+{
+  //TODO: all
+  return 0;
+}
+
+

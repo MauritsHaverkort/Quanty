@@ -100,3 +100,89 @@ print(Chop(OppUpdF2-OppUpdF2_sec))
 print(Chop(OppUpdG1-OppUpdG1_sec))
 print(Chop(OppUpdG3-OppUpdG3_sec))
 
+
+print("==================")
+print("j depended Coulomb")
+print("==================")
+
+NF = 6
+
+TYdnupTojjz    = {{     0,-sqrt(2/3), sqrt(1/3),         0,         0,     0},
+                  {     0,         0,         0,-sqrt(1/3), sqrt(2/3),     0},
+                  {     1,         0,         0,         0,         0,     0},
+                  {     0, sqrt(1/3), sqrt(2/3),         0,         0,     0},
+                  {     0,         0,         0, sqrt(2/3), sqrt(1/3),     0},
+                  {     0,         0,         0,         0,         0,     1}}
+
+TYdnupTojjz12  = {{     0,-sqrt(2/3), sqrt(1/3),         0,         0,     0},
+                  {     0,         0,         0,-sqrt(1/3), sqrt(2/3),     0},
+                  {     0,         0,         0,         0,         0,     0},
+                  {     0,         0,         0,         0,         0,     0},
+                  {     0,         0,         0,         0,         0,     0},
+                  {     0,         0,         0,         0,         0,     0}}
+
+TYdnupTojjz32  = {{     0,         0,         0,         0,         0,     0},
+                  {     0,         0,         0,         0,         0,     0},
+                  {     1,         0,         0,         0,         0,     0},
+                  {     0, sqrt(1/3), sqrt(2/3),         0,         0,     0},
+                  {     0,         0,         0, sqrt(2/3), sqrt(1/3),     0},
+                  {     0,         0,         0,         0,         0,     1}}
+
+
+Basisj12={0,1}
+Basisj32={2,3,4,5}
+BasispDn={0,2,4}
+BasispUp={1,3,5}
+
+OppF0 = NewOperator("U", NF, BasispDn, BasispUp, {1,0})
+OppF2 = NewOperator("U", NF, BasispDn, BasispUp, {0,1})
+
+OppF0j12 = NewOperator("U", NF, Basisj12, 1, {1})
+OppF0j32 = NewOperator("U", NF, Basisj32,-2, {1,0})
+OppF2j32 = NewOperator("U", NF, Basisj32,-2, {0,1})
+
+OppF0j12rot = Chop(Rotate(OppF0,TYdnupTojjz12))
+OppF0j32rot = Chop(Rotate(OppF0,TYdnupTojjz32))
+OppF2j32rot = Chop(Rotate(OppF2,TYdnupTojjz32))
+
+print(Chop(OppF0j12-OppF0j12rot))
+print(Chop(OppF0j32-OppF0j32rot))
+print(Chop(OppF2j32-OppF2j32rot))
+
+OppF0jfullrot = Chop(Rotate(OppF0,TYdnupTojjz))
+OppF2jfullrot = Chop(Rotate(OppF2,TYdnupTojjz))
+
+print("================")
+print(Chop(OppF0jfullrot-OppF0j12-OppF0j32))
+print(Chop(OppF2jfullrot-OppF2j32))
+print("================")
+
+OppF0j12j32 = NewOperator("U", NF, Basisj12, 1, Basisj32, -2, {1}, {0})
+OppG2j12j32 = NewOperator("U", NF, Basisj12, 1, Basisj32, -2, {0}, {1})
+
+print(Chop(OppF0jfullrot-OppF0j12-OppF0j32-OppF0j12j32))
+
+print("================")
+print(Chop(OppF2jfullrot-OppF2j32-OppG2j12j32))
+print("================")
+
+OppUp12F0_sec = NewOperator("U",NF, Basisj12,  1, Basisj12,  1, Basisj12,  1, Basisj12,  1, {1})
+OppUp32F0_sec = NewOperator("U",NF, Basisj32, -2, Basisj32, -2, Basisj32, -2, Basisj32, -2, {1,0})
+OppUp32F2_sec = NewOperator("U",NF, Basisj32, -2, Basisj32, -2, Basisj32, -2, Basisj32, -2, {0,1})
+
+print(Chop(OppUp12F0_sec-OppF0j12))
+print(Chop(OppUp32F0_sec-OppF0j32))
+print(Chop(OppUp32F2_sec-OppF2j32))
+
+OppUp12p12p32p32R2 = NewOperator("U",NF, Basisj12,  1, Basisj12,  1, Basisj32, -2, Basisj32, -2, {1})
+OppUp32p32p12p12R2 = NewOperator("U",NF, Basisj32, -2, Basisj32, -2, Basisj12,  1, Basisj12,  1, {1})
+OppUp12p32p32p32R2 = NewOperator("U",NF, Basisj12,  1, Basisj32, -2, Basisj32, -2, Basisj32, -2, {1})
+OppUp32p12p32p32R2 = NewOperator("U",NF, Basisj32, -2, Basisj12,  1, Basisj32, -2, Basisj32, -2, {1})
+OppUp32p32p12p32R2 = NewOperator("U",NF, Basisj32, -2, Basisj32, -2, Basisj12,  1, Basisj32, -2, {1})
+OppUp32p32p32p12R2 = NewOperator("U",NF, Basisj32, -2, Basisj32, -2, Basisj32, -2, Basisj12,  1, {1})
+
+OppUmix = OppUp12p12p32p32R2 + OppUp32p32p12p12R2 + OppUp12p32p32p32R2 + OppUp32p12p32p32R2 + OppUp32p32p12p32R2 + OppUp32p32p32p12R2
+
+print("================")
+print(Chop(OppF2jfullrot-OppF2j32-OppG2j12j32-OppUmix))
+print("================")

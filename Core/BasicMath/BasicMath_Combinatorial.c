@@ -109,8 +109,7 @@ void PerturbationOrderListToIndex(uint32_t * const POList, uint32_t * const POIn
  *  Given a unique index position ranging from 0 to PerturbationOptions(NV,order)-1
  *  return list of how many of each operators I have (i.e. NV integers)
  */
-void PerturbationOrderIndexToList(uint32_t const POIndex, uint32_t * const POList, uint32_t const NV,
-                                  uint32_t const order)
+void PerturbationOrderIndexToList(uint32_t const POIndex, uint32_t * const POList, uint32_t const NV, uint32_t const order)
 {
   uint32_t i, nl, POIndexnew, deg;
   if (NV == 1)
@@ -137,8 +136,7 @@ void PerturbationOrderIndexToList(uint32_t const POIndex, uint32_t * const POLis
 /*
  *
  */
-void AddPerturbationIndex(uint32_t const Vi, uint32_t const IndexOld, uint32_t const NV, uint32_t const order,
-                          uint32_t * const IndexNew, int *const phase)
+void AddPerturbationIndex(uint32_t const Vi, uint32_t const IndexOld, uint32_t const NV, uint32_t const order, uint32_t * const IndexNew, int *const phase)
 {
   uint32_t i, List[NV];
   PerturbationOrderIndexToList(IndexOld, List, NV, order);
@@ -155,8 +153,7 @@ void AddPerturbationIndex(uint32_t const Vi, uint32_t const IndexOld, uint32_t c
 /*
  *
  */
-void RemovePerturbationIndex(uint32_t const Vi, uint32_t const IndexOld, uint32_t const NV, uint32_t const order,
-                             uint32_t * const IndexNew, int *const phase)
+void RemovePerturbationIndex(uint32_t const Vi, uint32_t const IndexOld, uint32_t const NV, uint32_t const order, uint32_t * const IndexNew, int *const phase)
 {
   uint32_t i, List[NV];
   PerturbationOrderIndexToList(IndexOld, List, NV, order);
@@ -242,9 +239,15 @@ double ThreeJSymbolHalf(int j1, int m1, int j2, int m2, int j3, int m3)
 
 double SlaterCoefficientC(int k, int l1, int m1, int l2, int m2)
 {
-  if (m1 - m2 > k)
-    return 0;
+  if (Abs(m1 - m2) > k) return 0;
   return (double)(1 - 2 * (m1 & 1)) * sqrt((double)((2 * l1 + 1) * (2 * l2 + 1))) * ThreeJSymbol(l1, 0, k, 0, l2, 0) * ThreeJSymbol(l1, -m1,k,m1 -m2,l2,m2);
+}
+
+double SlaterCoefficientCjcoupling(int k, int l1, int twoj1, int twojz1, int l2, int twoj2, int twojz2)
+{
+  return (1-2*((l1+l2-1+(twojz1+twojz2)/2)&1))*sqrt((double)((twoj1+1)*(twoj2+1)))*
+         ( ThreeJSymbolHalf(2*l1, twojz1+1, 1, -1, twoj1,-twojz1)*ThreeJSymbolHalf(2*l2, twojz2+1, 1, -1, twoj2,-twojz2)*SlaterCoefficientC(k, l1, (twojz1+1)/2, l2, (twojz2+1)/2) +
+           ThreeJSymbolHalf(2*l1, twojz1-1, 1,  1, twoj1,-twojz1)*ThreeJSymbolHalf(2*l2, twojz2-1, 1,  1, twoj2,-twojz2)*SlaterCoefficientC(k, l1, (twojz1-1)/2, l2, (twojz2-1)/2) );
 }
 
 int cmpuint32t (const void * a, const void *b)

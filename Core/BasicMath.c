@@ -4,6 +4,7 @@
 #define Max(a,b) ((a) < (b) ? (b) : (a))
 #define Abs(a)   ((a) < (0) ? (-(a)) : (a))
 #define Sqr(a) ((a)*(a))
+#define Sgn(x) ((x > 0) ? 1 : ((x < 0) ? -1 : 0))
 #define Cubed(a) ((a)*(a)*(a))
 #define Dot(a,b) ((a[0])*(b[0])+(a[1])*(b[1])+(a[2])*(b[2]))
 #define Crossx(a,b) ((a[1])*(b[2])-(b[1])*(a[2]))

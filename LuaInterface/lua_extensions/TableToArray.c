@@ -572,11 +572,20 @@ BlockListOfPoles * luaL_checkBlockListOfPoles(lua_State *L, int narg)
   return NULL;
 }
 
-
-void * luaL_checkBlockGreensfunction(lua_State *L, int narg, char * rettype)
+/*  reads a Block Greens function from the stack
+ *  These functions can be in different formats (t, a, n, l) for tri-diagonal, anderson, natural or list of poles
+ *  If a pointer to an excisting structure is returned (user data on stack) a lowercase letter is returned
+ *  If a newly created structure is returned (table on stack) an upper case letter is returned
+ */
+BlockMatrixType * luaL_checkBlockGreensfunction(lua_State *L, int narg)
 {
-  void *buff;
-  const char *type;
+  char const * type;
+  BlockMatrixType *buff;
+  buff = (BlockMatrixType*)luaL_checkudata(L, narg, "ResponseFunction_Type");
+  if (buff!=NULL)
+  {
+    return buff;
+  }
   if(lua_istable(L, narg)==0)
   {
     luaL_error(L, "Error Green's function should be represented by a table");
@@ -590,36 +599,65 @@ void * luaL_checkBlockGreensfunction(lua_State *L, int narg, char * rettype)
   if(strcmp(type, "Tri")==0)
   {
     lua_pop(L, 1);
-    *rettype='t';
-    buff = (void*)luaL_checkBlockTriDiagonalMatrixType(L, narg);
+    buff=malloc(sizeof(BlockMatrixType));
+    buff->type='T';
+    buff->data=(void*)luaL_checkBlockTriDiagonalMatrixType(L, narg);
     return buff;
   }
   if(strcmp(type, "And")==0)
   {
     lua_pop(L, 1);
-    *rettype='a';
-    buff = (void*)luaL_checkBlockAndersonMatrixType(L, narg);
+    buff=malloc(sizeof(BlockMatrixType));
+    buff->type='A';
+    buff->data = (void*)luaL_checkBlockAndersonMatrixType(L, narg);
     return buff;
   }
   if(strcmp(type, "NaturalImpurityOrbital")==0)
   {
     lua_pop(L, 1);
-    *rettype='n';
-    buff = (void*)luaL_checkBlockNatrualImpurityOrbitalMatrixType(L, narg);
+    buff=malloc(sizeof(BlockMatrixType));
+    buff->type='N';
+    buff->data = (void*)luaL_checkBlockNatrualImpurityOrbitalMatrixType(L, narg);
     return buff;
   }
   if(strcmp(type, "ListOfPoles")==0)
   {
     lua_pop(L, 1);
-    *rettype='l';
-    buff = (void*)luaL_checkBlockListOfPoles(L, narg);
+    buff=malloc(sizeof(BlockMatrixType));
+    buff->type='L';
+    buff->data = (void*)luaL_checkBlockListOfPoles(L, narg);
     return buff;
   }
   luaL_error(L, "Errorr reading Greens function of unknown type (%s)\nAllowed are:\nTri\nAnd\nNaturalImpurityOrbital\nListOfPoles",type);
   return NULL;
 }
 
+BlockMatrixType * luaL_checkResponsefunction(lua_State *L, int narg)
+{
+  return luaL_checkBlockGreensfunction(L,narg);
+}
 
+
+int lua_isBlockGreensfunction(lua_State *L, int narg)
+{
+  const char *type;
+  if(luaL_checkudata (L, narg, "ResponseFunction_Type")!=NULL) return 1;
+  if(lua_istable(L, narg)==0) return 0;
+  lua_getfield(L, narg, "type");
+  if(lua_isstring(L,-1)==0) return 0;
+  type = lua_tolstring(L, -1, NULL);
+  if(strcmp(type, "Tri")==0) {lua_pop(L, 1);return 1;}
+  if(strcmp(type, "And")==0) {lua_pop(L, 1);return 1;}
+  if(strcmp(type, "NaturalImpurityOrbital")==0) {lua_pop(L, 1);return 1;}
+  if(strcmp(type, "ListOfPoles")==0) {lua_pop(L, 1);return 1;}
+  lua_pop(L, 1);
+  return 0;
+}
+
+int lua_isResponsefunction(lua_State *L, int narg)
+{
+  return lua_isBlockGreensfunction(L, narg);
+}
 
 WaveFunctionType* luaL_checkarray_WaveFunctionType(lua_State *L, int narg, uint32_t *len_out)
 {
@@ -1292,10 +1330,78 @@ void LuaPushTable_SpectraTypeArray(lua_State* L, SpectraTypeArray const * const 
       lua_pushstring(L, M->Spec[i].Name);
       lua_setfield(L, -2, "Name");
     }
+    if(M->Spec[i].ResonantEnergy!=NAN)
+    {
+      lua_pushnumber(L, M->Spec[i].ResonantEnergy);
+      lua_setfield(L,-2,"ResonantEnergy");
+    }
     lua_rawseti(L, -2, i+1);
   }
   return;
 }
+
+
+/*  reads a Block Greens function from the stack
+ *  These functions can be in different formats (t, a, n, l) for tri-diagonal, anderson, natural or list of poles
+ *  If a pointer to an excisting structure is returned (user data on stack) a lowercase letter is returned
+ *  If a newly created structure is returned (table on stack) an upper case letter is returned
+ */
+void LuaPush_BlockGreensFunction(lua_State *L, BlockMatrixType const * const M)
+{
+  BlockMatrixType *res;
+  if((M->type&32)==0)
+  {
+    /* push a user data to the stack */
+    res = (BlockMatrixType *) lua_newuserdata(L, sizeof(BlockMatrixType));
+    *res = *M;
+    luaL_setmetatable(L, "ResponseFunction_Type");
+    return;
+  }
+  switch (M->type)
+  {
+    case 'T':
+    {
+      LuaPushTable_BlockTriDiagonalMatrixType(L, M->data);
+      return;
+    }
+    case 'A':
+    {
+      LuaPushTable_BlockAndersonMatrixType(L, M->data);
+      return;
+    }
+    case 'L':
+    {
+      LuaPushTable_BlockListOfPoles(L, M->data);
+      return;
+    }
+    case 'N':
+    {
+      //TODO: LuaPushTable_BlockNaturalImpurityOrbital(L, M->data);
+      return;
+    }
+    default:
+    {
+      printf("Error in LuaPush_BlockGreensFunction: Type of BlockMatrix should be either t,a,l, or n\n");
+      return;
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 void shallowtablecopy(lua_State* L, int index)
@@ -1575,3 +1681,99 @@ int32_t LuaCheckOptions(lua_State *L, int narg, LuaOptionsType *Options)
   return 0;
 }
 
+
+static int LuaReadSingleSelfenergy(lua_State *L, int narg, OperatorType *V, SpectraTypeArray *SonGrid, BlockMatrixType *SasMatrix)
+{
+  uint32_t n;
+  /* read self energy */
+  /* the self energy can be */
+  // 1 a single object of spectra type
+  // 2 a single object of ResponseFunction type
+  // 3 A list of length 2 containing an operator or a list of operators and a self energy in format 1 or 2
+  if ((lua_type(L,narg)==LUA_TUSERDATA)&&(luaL_testudata(L, narg, "Spectra_Type") != NULL))
+  { // single self energy in spectra format
+    V=NULL;
+    SasMatrix=NULL;
+    SonGrid = (SpectraTypeArray *) luaL_checkudata(L, narg, "Spectra_Type");
+    if(SonGrid->NSpectra!=1)
+    {
+      return luaL_error(L, "Error in self energy. A spectrum object with more than one spectrum is given\n");
+    }
+  }
+  else if(lua_isResponsefunction(L, narg))
+  { // single self energy as matrix type (either tri, and, lp, or nai
+    V=NULL;
+    SonGrid=NULL;
+    SasMatrix=luaL_checkResponsefunction(L, narg);
+  }
+  else if((lua_type(L,narg)==LUA_TTABLE)&&(lua_objlen(L, narg)==2))
+  { // single or list of operators followed by a spectral function or response function as matrix type
+    lua_rawgeti(L,narg,1);
+    if (lua_type(L,narg)==LUA_TTABLE)
+    {
+      V = luaL_checkarray_OperatorType(L, -1, &n);
+    }
+    else
+    {
+      n=1;
+      V = (OperatorType*)malloc(sizeof(OperatorType));
+      V[0] = *(OperatorType *)luaL_checkudata(L, -1, "Operator_Type");
+    }
+    lua_pop(L,1);
+    lua_rawgeti(L,narg,2);
+    
+    if ((lua_type(L,-1)==LUA_TUSERDATA)&&(luaL_testudata(L, -1, "Spectra_Type") != NULL))
+    { // self energy in spectra format
+      SasMatrix=NULL;
+      SonGrid = (SpectraTypeArray *) luaL_checkudata(L, narg, "Spectra_Type");
+      if(SonGrid->NSpectra!=n*n)
+      {
+        return luaL_error(L, "Error in self energy. A spectrum object for %d operators should have %d*%d elements instead of %d\n",n,n,n,SonGrid->NSpectra);
+      }
+    }
+    else if(lua_isResponsefunction(L, narg))
+    { // single self energy as matrix type (either tri, and, lp, or nai
+      SonGrid=NULL;
+      SasMatrix=luaL_checkResponsefunction(L, narg);
+      if(((SasMatrix->type|32)=='t')&&(((BlockTriDiagonalMatrixType*)(SasMatrix->data))->BlockSize!=n)) return luaL_error(L, "Error dimension of self energy representation in tridiagonal form is not the same as number of operators\n");
+      if(((SasMatrix->type|32)=='a')&&(((BlockAndersonMatrixType*)(SasMatrix->data))->BlockSize!=n)) return luaL_error(L, "Error dimension of self energy representation in anderson impurity matrix form is not the same as number of operators\n");
+      if(((SasMatrix->type|32)=='l')&&(((BlockListOfPoles*)(SasMatrix->data))->BlockSize!=n)) return luaL_error(L, "Error dimension of self energy representation as list of poles form is not the same as number of operators\n");
+      if(((SasMatrix->type|32)=='n')&&(((BlockNaturalImpurityOrbitalMatrixType*)(SasMatrix->data))->BlockSize!=n)) return luaL_error(L, "Error dimension of self energy representation in natural impurity orbital form is not the same as number of operators\n");
+    }
+    else
+    {
+      return luaL_error(L,"Error in format of self energy with operators, should be of Spectra_Type or ResponsFunction_Type\n");
+    }
+    lua_pop(L,1);
+    return 0;
+  }
+  return luaL_error(L, "Error reading self energy, wrong format. Self energy should be either of Spectra_Type, of ResponsFunction_Type or a table containing an operator or table of operators and one of the previous two\n");
+}
+
+uint32_t FreeSelfEnergyArrayFromLua(uint32_t NSigma, OperatorType **V, SpectraTypeArray **SonGrid, BlockMatrixType **SasMatrix)
+{
+  uint32_t i;
+  for(i=0;i<NSigma;i++)
+  {
+    // Operators are copied into an array by dereferencing the OperatorType structure. The pointers do not need to be freed, the operator needs to be.
+    if(V[i]!=NULL)
+    {
+      free(V[i]);
+    }
+    // Spectra type is all copied by pointers, Lua controls them
+    // Response functions need care capital and small letters for type are allocated differently
+    if(SasMatrix[i]!=NULL)
+    {
+      if((SasMatrix[i]->type&32)==0)
+      {
+        // capital letter for type, read as lua table and thus allocated the structure
+        FreeBlockMatrix(SasMatrix[i]);
+        free(SasMatrix[i]);
+      }
+    }
+  }
+  free(V);
+  free(SonGrid);
+  free(SasMatrix);
+  return 0;
+}

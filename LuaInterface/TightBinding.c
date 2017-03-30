@@ -169,7 +169,7 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
   OperatorType *H;
   CompactVectorType k;
   Bool AddSpin=False;
-  Bool QOperators=False, QOptions=False, ReturnTBSuperCell=True, ReturnTBCellPositions=True, ReturnTBKVectors=True;
+  Bool QOperators=False, QOptions=False, ReturnTBSuperCell=False, ReturnTBCellPositions=False, ReturnTBKVectors=False;
   OperatorType *AditionalOperator=NULL;
   MatrixType U;
   k.Ni=3;

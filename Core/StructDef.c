@@ -631,6 +631,17 @@ typedef struct BlockNaturalImpurityOrbitalMatrixType
 }
 BlockNaturalImpurityOrbitalMatrixType;
 
+typedef struct BlockMatrixType
+{
+  char type;                               // l,a,t,n or L,A,T,N
+  void * data;
+}
+BlockMatrixType;
+
+
+
+
+
 
 
 /*
@@ -909,6 +920,7 @@ typedef struct SpectraType
   double FirstMoment;           /* First moment of the Im part of (e^{-i phase}) G */
   double a[5];                  /* First five values of tri-diagonal representation of the spectrum given by (e^{-i phase}) G */
   double b[5];                  /* First five values of tri-diagonal representation of the spectrum given by (e^{-i phase}) G */
+  double ResonantEnergy;        /* NAN in general, value of resonant energy in the case of RIXS */
 }
 SpectraType;
 
