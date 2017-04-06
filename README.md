@@ -1,0 +1,4 @@
+Master reporistry of Quanty. If you intend to work on part of the code please discuss this first with Maurits, he coordinates the different parts and tasks. Part of the codes are experimental and used to test ideas of students. If you work on your own tests and want them to be integrated please put your experimental code in a folder with your own name. For other users, please respect the privacy of the work of others, code in a folder with somebodys name belongs to that person. 
+
+Quanty is intended to be compilable on all linux systems found in the wild. This includes 10 year old clusters at some insitute of a univeristy that runs fine and never has been updated. We thus can not assume that there are libraries available. We link to blas and lapack but should not assume other external libraries. (i.e. no boost, hdf5 or fft library linking. For hdf5 we should think of inlcuding things in the source code.
+
