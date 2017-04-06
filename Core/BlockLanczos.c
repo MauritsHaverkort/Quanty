@@ -2473,7 +2473,7 @@ uint32_t LanczosBlockTriDiagonalizeCR(const OperatorType H, WaveFunctionType * c
 
 //TODO: krylov version now is a copy of the normal version. Needs to be done from scratch
 
-uint32_t LanczosBlockTriDiagonalizeKrylovRC(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
+uint32_t LanczosBlockTriDiagonalizeKrylovRC(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, double *BlockSize)
 {
   //TODO: add Krylov
   uint32_t i,j,k,vi,vip,vim;
@@ -2694,8 +2694,9 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRC(const OperatorType H, WaveFunctionTy
   free(v[3]);
   return 0;
 }
-uint32_t LanczosBlockTriDiagonalizeKrylovMC(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
+uint32_t LanczosBlockTriDiagonalizeKrylovMC(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, double *BlockSize)
 {
+  //TODO: add Krylov
   uint32_t i,j,k,vi,vip,vim;
   CompactMatrixType Mab;
   WaveFunctionType *v[4];
@@ -2914,7 +2915,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovMC(const OperatorType H, WaveFunctionTy
   free(v[3]);
   return 0;
 }
-uint32_t LanczosBlockTriDiagonalizeKrylovCC(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
+uint32_t LanczosBlockTriDiagonalizeKrylovCC(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, double *BlockSize)
 {
   //TODO: add Krylov basis as output
   uint32_t i,j,k,vi,vip,vim;
@@ -3135,8 +3136,9 @@ uint32_t LanczosBlockTriDiagonalizeKrylovCC(const OperatorType H, WaveFunctionTy
   free(v[3]);
   return 0;
 }
-uint32_t LanczosBlockTriDiagonalizeKrylovRR(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
+uint32_t LanczosBlockTriDiagonalizeKrylovRR(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, double *BlockSize)
 {
+  //TODO: all
   uint32_t i,j,k,vi,vip,vim;
   CompactMatrixType Mab;
   WaveFunctionType *v[4];
@@ -3354,7 +3356,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRR(const OperatorType H, WaveFunctionTy
   free(v[3]);
   return 0;
 }
-uint32_t LanczosBlockTriDiagonalizeKrylovMR(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
+uint32_t LanczosBlockTriDiagonalizeKrylovMR(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, double *BlockSize)
 {
   // make psi complex, call MC
   uint32_t i;
@@ -3373,9 +3375,9 @@ uint32_t LanczosBlockTriDiagonalizeKrylovMR(const OperatorType H, WaveFunctionTy
       return 1;
     }
   }
-  return LanczosBlockTriDiagonalizeKrylovMC(H,psi,epsilon,M,Gamma);
+  return LanczosBlockTriDiagonalizeKrylovMC(H,psi,epsilon,M,psiBasis,BlockSize);
 }
-uint32_t LanczosBlockTriDiagonalizeKrylovCR(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
+uint32_t LanczosBlockTriDiagonalizeKrylovCR(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, double *BlockSize)
 {
   // make psi complex, and call CC
   uint32_t i;
@@ -3394,7 +3396,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovCR(const OperatorType H, WaveFunctionTy
       return 1;
     }
   }
-  return LanczosBlockTriDiagonalizeKrylovCC(H,psi,epsilon,M,Gamma);
+  return LanczosBlockTriDiagonalizeKrylovCC(H,psi,epsilon,M,psiBasis,BlockSize);
 }
 
 
@@ -3521,16 +3523,17 @@ uint32_t LanczosBlockTriDiagonalize(const OperatorType H, WaveFunctionType * con
 
 
 
-uint32_t LanczosBlockTriDiagonalizeKrylovRestricted(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
+uint32_t LanczosBlockTriDiagonalizeKrylovRestricted(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, double *BlockSize)
 {
   //TODO: Implement restricted version that returns Krylov basis
   return 1;
 }
 
-/*  psi needs to be a vector of length M->N * M->BlockSize with only the first M->BlockSize functions being initialized
- *
+/*  The Krylov basis is returned as a list of M->N pointers each poiter allocates a set of wave-functions that have the same basis
+ *  The number of functions to allocate is M->BlockSize-Nsingular[i] = BlockSize[i]
+ *  The wave functions psi are freed (or used in psiBasis) on succesfull exit
  */
-uint32_t LanczosBlockTriDiagonalizeKrylov(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
+uint32_t LanczosBlockTriDiagonalizeKrylov(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, double *BlockSize)
 {
   uint32_t i,psiComplex=0;
   VerbosityPrintf(0x0001,"Start of LanczosBlockTriDiagonalize Krylov\n");
@@ -3538,7 +3541,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylov(const OperatorType H, WaveFunctionType
   if(H.Res.N!=0)
   {
     BlockWaveFunctionRestrict(psi, M->BlockSize, H.Res);
-    return LanczosBlockTriDiagonalizeKrylovRestricted(H, psi, H.Res, epsilon, M, Gamma);
+    return LanczosBlockTriDiagonalizeKrylovRestricted(H, psi, H.Res, epsilon, M, psiBasis, BlockSize);
   }
   // all psi complex ?
   for(i=0;i<M->BlockSize;i++)
@@ -3565,30 +3568,30 @@ uint32_t LanczosBlockTriDiagonalizeKrylov(const OperatorType H, WaveFunctionType
   {
     if (H.QComplex == 0)
     {
-      return LanczosBlockTriDiagonalizeKrylovRC(H, psi, epsilon, M, Gamma);
+      return LanczosBlockTriDiagonalizeKrylovRC(H, psi, epsilon, M, psiBasis, BlockSize);
     }
     else if (H.QComplex == 1)
     {
-      return LanczosBlockTriDiagonalizeKrylovCC(H, psi, epsilon, M, Gamma);
+      return LanczosBlockTriDiagonalizeKrylovCC(H, psi, epsilon, M, psiBasis, BlockSize);
     }
     else
     {
-      return LanczosBlockTriDiagonalizeKrylovMC(H, psi, epsilon, M, Gamma);
+      return LanczosBlockTriDiagonalizeKrylovMC(H, psi, epsilon, M, psiBasis, BlockSize);
     }
   }
   else
   {
     if (H.QComplex == 0)
     {
-      return LanczosBlockTriDiagonalizeKrylovRR(H, psi, epsilon, M, Gamma);
+      return LanczosBlockTriDiagonalizeKrylovRR(H, psi, epsilon, M, psiBasis, BlockSize);
     }
     else if (H.QComplex == 1)
     {
-      return LanczosBlockTriDiagonalizeKrylovCR(H, psi, epsilon, M, Gamma);
+      return LanczosBlockTriDiagonalizeKrylovCR(H, psi, epsilon, M, psiBasis, BlockSize);
     }
     else
     {
-      return LanczosBlockTriDiagonalizeKrylovMR(H, psi, epsilon, M, Gamma);
+      return LanczosBlockTriDiagonalizeKrylovMR(H, psi, epsilon, M, psiBasis, BlockSize);
     }
   }
 }

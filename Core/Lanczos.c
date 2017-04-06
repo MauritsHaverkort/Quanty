@@ -3403,6 +3403,7 @@ uint32_t LanczosTriDiagonalizeKrylovRR(const OperatorType H, WaveFunctionType ps
   double errorestimate = 1;
   /* copy the name of psi to PsiBasis[0] in order to do the loop more cleanely  */
   PsiBasis[0].N = psi.N;
+  strcpy(PsiBasis[0].Name, psi.Name);
   PsiBasis[0].NBlok = psi.NBlok;
   PsiBasis[0].NFermion = psi.NFermion;
   PsiBasis[0].NBoson = psi.NBoson;
@@ -3514,6 +3515,7 @@ uint32_t LanczosTriDiagonalizeKrylovRC(const OperatorType H, WaveFunctionType ps
   double errorestimate = 1;
   /* copy the name of psi to PsiBasis[0] in order to do the loop more cleanely  */
   PsiBasis[0].N = psi.N;
+  strcpy(PsiBasis[0].Name, psi.Name);
   PsiBasis[0].NBlok = psi.NBlok;
   PsiBasis[0].NFermion = psi.NFermion;
   PsiBasis[0].NBoson = psi.NBoson;
@@ -3626,6 +3628,7 @@ uint32_t LanczosTriDiagonalizeKrylovCC(const OperatorType H, WaveFunctionType ps
   double errorestimate = 1;
   /* copy the name of psi to PsiBasis[0] in order to do the loop more cleanely  */
   PsiBasis[0].N = psi.N;
+  strcpy(PsiBasis[0].Name, psi.Name);
   PsiBasis[0].NBlok = psi.NBlok;
   PsiBasis[0].NFermion = psi.NFermion;
   PsiBasis[0].NBoson = psi.NBoson;
@@ -3738,6 +3741,7 @@ uint32_t LanczosTriDiagonalizeKrylovMC(const OperatorType H, WaveFunctionType ps
   double errorestimate = 1;
   /* copy the name of psi to PsiBasis[0] in order to do the loop more cleanely  */
   PsiBasis[0].N = psi.N;
+  strcpy(PsiBasis[0].Name, psi.Name);
   PsiBasis[0].NBlok = psi.NBlok;
   PsiBasis[0].NFermion = psi.NFermion;
   PsiBasis[0].NBoson = psi.NBoson;
@@ -3851,6 +3855,7 @@ uint32_t LanczosTriDiagonalizeKrylovRestrictedRR(const OperatorType H, WaveFunct
   double errorestimate = 1;
   /* copy the name of psi to PsiBasis[0] in order to do the loop more cleanely  */
   PsiBasis[0].N = psi.N;
+  strcpy(PsiBasis[0].Name, psi.Name);
   PsiBasis[0].NBlok = psi.NBlok;
   PsiBasis[0].NFermion = psi.NFermion;
   PsiBasis[0].NBoson = psi.NBoson;
@@ -3962,6 +3967,7 @@ uint32_t LanczosTriDiagonalizeKrylovRestrictedRC(const OperatorType H, WaveFunct
   double errorestimate = 1;
   /* copy the name of psi to PsiBasis[0] in order to do the loop more cleanely  */
   PsiBasis[0].N = psi.N;
+  strcpy(PsiBasis[0].Name, psi.Name);
   PsiBasis[0].NBlok = psi.NBlok;
   PsiBasis[0].NFermion = psi.NFermion;
   PsiBasis[0].NBoson = psi.NBoson;
@@ -4074,6 +4080,7 @@ uint32_t LanczosTriDiagonalizeKrylovRestrictedCC(const OperatorType H, WaveFunct
   double errorestimate = 1;
   /* copy the name of psi to PsiBasis[0] in order to do the loop more cleanely  */
   PsiBasis[0].N = psi.N;
+  strcpy(PsiBasis[0].Name, psi.Name);
   PsiBasis[0].NBlok = psi.NBlok;
   PsiBasis[0].NFermion = psi.NFermion;
   PsiBasis[0].NBoson = psi.NBoson;
@@ -4186,6 +4193,7 @@ uint32_t LanczosTriDiagonalizeKrylovRestrictedMC(const OperatorType H, WaveFunct
   double errorestimate = 1;
   /* copy the name of psi to PsiBasis[0] in order to do the loop more cleanely  */
   PsiBasis[0].N = psi.N;
+  strcpy(PsiBasis[0].Name, psi.Name);
   PsiBasis[0].NBlok = psi.NBlok;
   PsiBasis[0].NFermion = psi.NFermion;
   PsiBasis[0].NBoson = psi.NBoson;

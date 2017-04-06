@@ -2372,6 +2372,7 @@ uint32_t BlockTriDiagonalMatrixToCompactMatrix(BlockTriDiagonalMatrixType const 
   return 0;
 }
 
+
 /* Should go in BasicMath_CompactMatrixVector.c
  *
  * !!Not all cases thoroughly tested yet!!

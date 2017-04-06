@@ -1539,20 +1539,25 @@ static int LuaCreateSpectra(lua_State *L)
     char *stream;
     Bool Tensor;
     Bool Sigma;
+    Bool KrylovBasis;
   } Options;
   Options.Settings=InitConvergenceSettings();
   Options.stream=NULL;
   Options.Tensor=False;
   Options.Sigma=False;
+  Options.KrylovBasis=False;
   Options.E0=DBL_MAX;
   SpectraTypeArray *Spec;
   OperatorType *H,*T;
   WaveFunctionType *psi;
+  WaveFunctionType **psiBasis=NULL;
   uint32_t i,iT,ipsi,len;
   double Eminpole,Emaxpole, *val, *psiEn, psiEntemp;
   char filename[MAXStrLength];
   LuaOptionsType LuaCreateSpectraOptions[]={
     {"Tensor","bool",&(Options.Tensor)},
+    {"Sigma","bool",&(Options.Sigma)},
+    {"KrylovBasis","bool",&(Options.KrylovBasis)},
     {"NTri","uint32_t",&(Options.Settings.NTri)},
     {"epsilon","double",&(Options.Settings.epsilon)},
     {"Epsilon","double",&(Options.Settings.epsilon)},
@@ -1636,7 +1641,7 @@ static int LuaCreateSpectra(lua_State *L)
       Sigma.V=malloc(Sigma.NSigma*sizeof(OperatorType*));
       Sigma.SonGrid=malloc(Sigma.NSigma*sizeof(SpectraTypeArray*));
       Sigma.SasMatrix=malloc(Sigma.NSigma*sizeof(BlockMatrixType*));
-      LuaReadSingleSelfenergy(L, 4, Sigma.V[i], Sigma.SonGrid[i], Sigma.SasMatrix[i]);
+      LuaReadSingleSelfenergy(L, 4, Sigma.V[0], Sigma.SonGrid[0], Sigma.SasMatrix[0]);
     }
     else
     {
@@ -1688,6 +1693,16 @@ static int LuaCreateSpectra(lua_State *L)
       InitTriDiagonalMatrix(&GTri[i]);
       GTri[i].mu=0; // we have no knowlede on the chemical potential at this point
     }
+    /* alocate memory for the krylov basis */
+    if(Options.KrylovBasis==True)
+    {
+      psiBasis=malloc(Options.NT*Options.Npsi*sizeof(WaveFunctionType*));
+      for(i=0;i<Options.NT*Options.Npsi;i++)
+      {
+        psiBasis[i]=malloc(Options.Settings.NTri*sizeof(WaveFunctionType));
+      }
+    }
+     
     /* loop over all Transition operators */
     for(iT=0;iT<Options.NT;iT++)
     {
@@ -1697,15 +1712,26 @@ static int LuaCreateSpectra(lua_State *L)
         if(Options.Settings.restrictions.N==0)
         {
           OperatorPsi(T[iT], psi[ipsi], &Tpsi);
-          LanczosTriDiagonalize(*H, Tpsi, Options.Settings.epsilon, &GTri[iT*Options.Npsi+ipsi], Max(Options.Settings.Gamma,Options.Settings.epsilon));
+          if(Options.KrylovBasis==True)
+          {
+            LanczosTriDiagonalizeKrylov(*H, Tpsi, Options.Settings.epsilon, &GTri[iT*Options.Npsi+ipsi], psiBasis[iT*Options.Npsi+ipsi]);
+          }
+          else
+          {
+            LanczosTriDiagonalize(*H, Tpsi, Options.Settings.epsilon, &GTri[iT*Options.Npsi+ipsi], Max(Options.Settings.Gamma,Options.Settings.epsilon));
+          }
         }
         else
         {
           OperatorPsiRestricted(T[iT], psi[ipsi], &Tpsi, Options.Settings.restrictions);
-          
-          //TODO: when self energy is added and operators are present need format with full krylov basis
-          
-          LanczosTriDiagonalizeRestricted(*H, Tpsi, Options.Settings.restrictions, Options.Settings.epsilon, &GTri[iT*Options.Npsi+ipsi], Max(Options.Settings.Gamma,Options.Settings.epsilon));
+          if(Options.KrylovBasis==True)
+          {
+            LanczosTriDiagonalizeKrylovRestricted(*H, Tpsi,  Options.Settings.restrictions, Options.Settings.epsilon, &GTri[iT*Options.Npsi+ipsi], psiBasis[iT*Options.Npsi+ipsi]);
+          }
+          else
+          {
+            LanczosTriDiagonalizeRestricted(*H, Tpsi, Options.Settings.restrictions, Options.Settings.epsilon, &GTri[iT*Options.Npsi+ipsi], Max(Options.Settings.Gamma,Options.Settings.epsilon));
+          }
         }
         if(Options.stream!=NULL)
         {
@@ -1794,7 +1820,30 @@ static int LuaCreateSpectra(lua_State *L)
     }
     free(GTri);
     free(psiEn);
-    return 2;
+    if(Options.KrylovBasis==True)
+    {
+      if(Options.NT*Options.Npsi==1)
+      {
+        LuaPushTable_WaveFunctionType(L, psiBasis[0], Options.Settings.NTri);
+        free(psiBasis[0]);
+      }
+      else
+      {
+        lua_createtable(L,Options.NT*Options.Npsi,0);
+        for(i=0;i<Options.NT*Options.Npsi;i++)
+        {
+          LuaPushTable_WaveFunctionType(L, psiBasis[i], Options.Settings.NTri);
+          free(psiBasis[i]);
+          lua_rawseti(L, -2, i+1);
+        }
+      }
+      free(psiBasis);      
+      return 3;
+    }
+    else
+    {
+      return 2;
+    }
   }
   else
   {
@@ -1802,6 +1851,8 @@ static int LuaCreateSpectra(lua_State *L)
     WaveFunctionType Tpsi[Options.NT*Options.Npsi];
     WaveFunctionType TpsiSameBasis[Options.NT*Options.Npsi];
     BlockTriDiagonalMatrixType GTri;
+    /* TODO: currently no Krylov basis returned in tensor form */
+    if(Options.KrylovBasis==True) luaL_error(L, "Currently no Krylov basis returnable for tensor true");
     /* give warning when more than one function defined and E0 not set */
     if((Options.Npsi!=1)&&(Options.E0==DBL_MAX))
     {

@@ -1,6 +1,6 @@
 Verbosity(0xFFFFFFFF)
 
-dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Functions/CreateResonantSpectra.Quanty")
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Functions/CreateSpectra.Quanty")
 os.exit()
 
 NF=6
@@ -75,3 +75,4 @@ dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/EigensystemDen
 
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/1D_Hubbard.Quanty")
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Functions/CreateSpectra.Quanty")
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Functions/CreateResonantSpectra.Quanty")

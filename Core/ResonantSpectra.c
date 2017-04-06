@@ -264,7 +264,7 @@ uint32_t ResonantSpectra(const OperatorType OppH1, const OperatorType OppH2, con
  *  psi and T1 are contract to a single vector of length Np*NT1
  *  returned is a matrix of dimensions (Np*NT1) * NT2
  */
-uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH2, const OperatorType *T1, unit32_t NT1, const OperatorType *T2, uint32_t NT2, const WaveFunctionType *psi, uint32_t Npsi, TriDiagonalMatrixType **SpecTri2, SpectraType **Spec, double energy1, double energy2, ConvergenceSettingsType *settings)
+uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH2, const OperatorType *T1, uint32_t NT1, const OperatorType *T2, uint32_t NT2, const WaveFunctionType *psi, uint32_t Npsi, TriDiagonalMatrixType **SpecTri2, SpectraType **Spec, double energy1, double energy2, ConvergenceSettingsType *settings)
 {
   /*Given wavefunction psi (usually ground state, but could be excited)*/
   
@@ -291,10 +291,12 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
    *  If energy?=DBL_MAX we set energy? = <psi[0] | H? | psi[0]> and print a warning
    */
   
+  //TODO: All
   
-  WaveFunctionType Tpsi[Npsi*NT1],GTpsi,TGTpsi, PsiBasis[settings->NTri1];
-  TriDiagonalMatrixType SpecTri1;
+  WaveFunctionType Tpsi[Npsi*NT1],GTpsi,TGTpsi, *PsiBasis[settings->NTri1];
+  BlockTriDiagonalMatrixType SpecTri1;
   MatrixType EFun;
+  double BlockSize[settings->NTri];
   double EVal[settings->NTri1], EValInvRe[settings->NTri1], EValInvIm[settings->NTri1],tempDoubleRe,tempDoubleIm, EVal2[settings->NTri2];
   int i,ipsi,iT1,iT2,p,k;
   double wRes;
@@ -351,23 +353,33 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
   /* Use T|i>==Tpsi to transform H to BLock tridiagonal form in Krylov basis */
   /* Using the version which gives back the Krylov basis vectors */
   SpecTri1.N = settings->NTri1;
-  InitTriDiagonalMatrix(&SpecTri1);
+  SpecTri1.BlockSize = Npsi*NT1;
+  SpecTri1.QComplex = 0;
+  if(OppH1.QComplex!=0) SpecTri1.QComplex = 1;
+  for(i=0;i<SpecTri1.BlockSize;i++)
+  {
+    if(Tpsi[i].QComplex!=0) SpecTri1.QComplex = 1;
+  }
+  InitBlockTridiagonalMatrix(&SpecTri1);
   if(settings->restrictions1.N==0)
   {
-    LanczosTriDiagonalizeKrylov(OppH1,Tpsi,settings->epsilon,&SpecTri1,PsiBasis);
+    LanczosBlockTriDiagonalizeKrylov(OppH1, Tpsi, settings->epsilon, &SpecTri1, PsiBasis, BlockSize);
   }
   else
   {
-    LanczosTriDiagonalizeKrylovRestricted(OppH1, Tpsi, settings->restrictions1, settings->epsilon, &SpecTri1, PsiBasis);
+    LanczosBlockTriDiagonalizeKrylovRestricted(OppH1, Tpsi, settings->restrictions1, settings->epsilon, &SpecTri1, PsiBasis, BlockSize);
   }
   
   /*Compute eigenvalues and eigenvectors, then S^-1 = QAQ^T where
    Q are the eigenvectors and A is a matrix with the eigenvalue inverses on the diagonal.
    */
-  if(TriDiagonalMatrixToEigensystem(SpecTri1, &EFun, EVal))
-  {
-    printf("Problem with TridiagonalMatrixToEigenSystem\n");
-  }
+  //TODO: eigensystem of BlockTridiagonal matrix with deflation
+  //if(TriDiagonalMatrixToEigensystem(SpecTri1, &EFun, EVal))
+  //{
+  //  printf("Problem with TridiagonalMatrixToEigenSystem\n");
+  //}
+  
+  
   
   /* determine Emin1, Emax1, NE1 and Gamma1 if not set */
   if(settings->Emin1>( 0.001*DBL_MAX) && (settings->Emax1<(-0.001*DBL_MAX)))
@@ -433,10 +445,10 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
     /* We are trying to calculate Q[0,:]A^(-1)Q^(-1).  Because A is diagonal, we were
      able to calculate B = Q[0,:]*I*Q^(-1) outside the loop. Now we calculate diag(A)*B */
     /* Calculate Q*A^(-1)*Q^(-1)[:,0] */
-    GTpsi.NFermion = psi.NFermion;
-    GTpsi.NBoson   = psi.NBoson;
-    GTpsi.QComplex = psi.QComplex;
-    GTpsi.NBitsKey = psi.NBitsKey;
+    //GTpsi.NFermion = psi.NFermion;
+    //GTpsi.NBoson   = psi.NBoson;
+    //GTpsi.QComplex = psi.QComplex;
+    //GTpsi.NBitsKey = psi.NBitsKey;
     if(WaveFunctionInit(&GTpsi))
     {
       printf("WaveFunctionInit failed in ResonantSpectra 00");
@@ -469,7 +481,7 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
           tempDoubleIm += EValInvIm[k]*EFun.VRe[k][i]*EFun.VRe[k][0];
         }
       }
-      WaveFunctionAddComplexMultipliedUnionBasis(&GTpsi, PsiBasis[i],SpecTri1.b[0]*tempDoubleRe,SpecTri1.b[0]*tempDoubleIm);
+      //WaveFunctionAddComplexMultipliedUnionBasis(&GTpsi, PsiBasis[i],SpecTri1.b[0]*tempDoubleRe,SpecTri1.b[0]*tempDoubleIm);
     }
     for(i = 0; i < NT2; i++)
     {

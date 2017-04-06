@@ -75,3 +75,7 @@ spec, spectri = CreateSpectra(H, {T,sqrt(100)*T}, psilist,{{"NE",2},{"Emin",0},{
 -- the real and imaginary part on a fixed energy grid
 print(spectri)
 print(spec)
+
+print("================")
+spec, spectri, psiKrylov = CreateSpectra(H, {T,sqrt(100)*T}, psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"KrylovBasis",true}})
+print(psiKrylov)
