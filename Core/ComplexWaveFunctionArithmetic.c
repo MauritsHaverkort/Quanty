@@ -1758,7 +1758,7 @@ uint32_t MappedWaveFunctionAddCCC(WaveFunctionType * const A, WaveFunctionType c
     ComplexWaveFunctionAddComplexMultipliedUnionBasis(A, Udet, B.ValueRe[BlokElement(idetB)], B.ValueIm[BlokElement(idetB)]);
   }
   ComplexWaveFunctionTruncateBasis(A, 10*DBL_EPSILON);
-  ComplexWaveFunctionNormalize(A);
+  //ComplexWaveFunctionNormalize(A);
   WaveFunctionFree(&Udet);
   return 0;
 }
@@ -1785,7 +1785,7 @@ uint32_t MappedWaveFunctionAddCCR(WaveFunctionType * const A, WaveFunctionType c
     RealWaveFunctionAddComplexMultipliedUnionBasis(A, Udet, B.ValueRe[BlokElement(idetB)], B.ValueIm[BlokElement(idetB)]);
   }
   ComplexWaveFunctionTruncateBasis(A, 10*DBL_EPSILON);
-  ComplexWaveFunctionNormalize(A);
+  //ComplexWaveFunctionNormalize(A);
   WaveFunctionFree(&Udet);
   return 0;
 }
@@ -1812,7 +1812,7 @@ uint32_t MappedWaveFunctionAddCRC(WaveFunctionType * const A, WaveFunctionType c
     ComplexWaveFunctionAddMultipliedUnionBasis(A, Udet, B.ValueRe[BlokElement(idetB)]);
   }
   ComplexWaveFunctionTruncateBasis(A, 10*DBL_EPSILON);
-  ComplexWaveFunctionNormalize(A);
+  //ComplexWaveFunctionNormalize(A);
   WaveFunctionFree(&Udet);
   return 0;
 }

@@ -1501,7 +1501,7 @@ uint32_t MappedWaveFunctionAddRRR(WaveFunctionType * const A, WaveFunctionType c
     RealWaveFunctionAddMultipliedUnionBasis(A, Udet, B.ValueRe[BlokElement(idetB)]);
   }
   RealWaveFunctionTruncateBasis(A, 10*DBL_EPSILON);
-  RealWaveFunctionNormalize(A);
+  //RealWaveFunctionNormalize(A);
   WaveFunctionFree(&Udet);
   
   return 0;

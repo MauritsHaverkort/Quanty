@@ -101,13 +101,20 @@ uint32_t QCanNotOccupy(uint32_t const iFermion, uint32_t const NFermion, uint8_t
 
 uint32_t ExtendBasisCompletenessSmallSystems(DeterminantRestrictionType const StartingPoint, WaveFunctionType * psi)
 {
-  uint32_t i;
+  uint32_t i,iFull;
   uint8_t  newdet[4]={0,0,0,0};
   if(psi->NFermion>30)
   {
     printf("Error in ExtendBasisCompletenessSmallSystems max number of Fermions is 30\n");
     return 1;
   }
+  iFull=0;
+  for(i=0;i<psi->NFermion;i++)
+  {
+    iFull+=1<<(31-i);
+  }
+  printf("detfull %x \n",iFull);
+  
   if(psi->QComplex)
   {
     if(QDetNotRestricted(newdet, psi->NFermion, psi->NBoson, psi->NWord, StartingPoint))
@@ -117,7 +124,7 @@ uint32_t ExtendBasisCompletenessSmallSystems(DeterminantRestrictionType const St
         return 1;
       }
     }
-    for(i=0xFFFFFFFF;i>(0xFFFFFFFF>>(psi->NFermion));i-=1<<(32-psi->NFermion))
+    for(i=iFull;i>(iFull>>(psi->NFermion));i-=1<<(32-psi->NFermion))
     {
       newdet[0]=(uint8_t)(i>>24);
       newdet[1]=(uint8_t)(i>>16);
@@ -141,7 +148,7 @@ uint32_t ExtendBasisCompletenessSmallSystems(DeterminantRestrictionType const St
         return 1;
       }
     }
-    for(i=0xFFFFFFFF;i>(0xFFFFFFFF>>(psi->NFermion));i-=1<<(32-psi->NFermion))
+    for(i=iFull;i>(iFull>>(psi->NFermion));i-=1<<(32-psi->NFermion))
     {
       newdet[0]=(uint8_t)(i>>24);
       newdet[1]=(uint8_t)(i>>16);

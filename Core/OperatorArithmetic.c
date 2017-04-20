@@ -275,7 +275,7 @@ uint32_t InitOperatorFixedLength(OperatorType * const O, const uint32_t length, 
  */
 uint32_t InitOperatorCopySettings(OperatorType * const O, const OperatorType Oset)
 {
-  uint32_t length;
+  uint32_t i,length;
   if (InitOperator(O))
   {
     printf("could not Initiallize Operator in InitOperatorCopySettings\n");
@@ -286,7 +286,17 @@ uint32_t InitOperatorCopySettings(OperatorType * const O, const OperatorType Ose
   O->NFermion = Oset.NFermion;
   O->NBoson = Oset.NBoson;
   O->NWord = Oset.NWord;
-  O->Res.N = 0;
+  O->Res.N = Oset.Res.N;
+  O->Res.Min = malloc(Oset.Res.N*sizeof(uint32_t));
+  O->Res.Max = malloc(Oset.Res.N*sizeof(uint32_t));
+  O->Res.Determinant = malloc(Oset.Res.N*sizeof(uint8_t*));
+  for(i=0;i<Oset.Res.N;i++)
+  {
+    O->Res.Min[i]=Oset.Res.Min[i];
+    O->Res.Max[i]=Oset.Res.Max[i];
+    O->Res.Determinant[i]=malloc(Oset.NWord*sizeof(uint8_t));
+    memcpy(O->Res.Determinant[i], Oset.Res.Determinant[i], Oset.NWord);
+  }
   for (length = 1; length < Oset.MaxLength; length++)
   {
     if (Oset.l[length].NBitsKey)
