@@ -17,16 +17,19 @@
                        printf("====    written by Maurits W. Haverkort                  ====\n");\
                        printf("====    with contributions from:                         ====\n");\
                        printf("====    Yi Lu, Robert Green and Sebastian Macke          ====\n");\
-                       printf("====    (C) 1995-2015   All rights reserved              ====\n");\
+                       printf("====    (C) 1995-2017   All rights reserved              ====\n");\
                        printf("====    www.quanty.org                                   ====\n");\
                        printf("====    Beta version, be critical and report errors!!!   ====\n");\
                        printf("=============================================================\n");\
                        printf("====    Version compiled at: %s at %s     ====\n",__DATE__,__TIME__);\
                        printf("=============================================================\n");\
                        printf("====    When used in scientific publications please cite ====\n");\
+                       printf("====    one of the following papers as appropiate with   ====\n");\
+                       printf("====    respect to the methods used in your publication: ====\n");\
                        printf("====    Phys. Rev. B 85, 165113 (2012)                   ====\n");\
                        printf("====    Phys. Rev. B 90, 085102 (2014)                   ====\n");\
                        printf("====    Euro Phys. Lett. 108, 57004 (2014)               ====\n");\
+                       printf("====    J. of Phys.: Conf. Series 712, 012001 (2016)     ====\n");\
                        printf("=============================================================\n");\
                        time_t MWHrawtime;\
                        struct tm * MWHtimeinfo;\
