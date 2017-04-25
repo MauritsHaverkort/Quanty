@@ -1,0 +1,25 @@
+These set of subroutines, functions and notebooks are property of Maurits W. Haverkort in the following referred to as the author.
+
+I will adhere to the following conditions upon receipt of the program:
+
+- When used in scientific publication the program will be cited properly. For a list of publications on which Quanty is based see the list of publications that aperears when the code is run or www.quanty.org
+- All title, ownership and rights to the program or to copies of it remain with the author, irrespective of the ownership of the media on which the program resides.
+- I will not supply a copy of the code to anyone for any reason whatsoever. This in no way limits my making copies of the code for backup purposes, or for running on more than one computer system at my institution (it is a site license for the registered group). I will refer any request for copies of the program to the author.
+- I will not incorporate any part of these codes into any other program system, without prior written permission of the author.
+- I will keep intact all copyright notices.
+- I understand that the author supplies these codes and its documentation on an “as is” basis without any warranty, and thus with no additional responsibility or liability. I agree to report any difficulties encountered in the use of these codes to the author.
+
+-  changes made to the code that are usefull for a larger community should be communicated back to the author such that he can incorporate them to the official release version of Quanty. It is understood that the author has all rights to redistribute these changes with the original code to any other user under any condition.
+
+-------
+For research centers: 
+
+Please note that our license is usually a "group license", i.e. it allows (unlimited) use of Quanty within a research group.
+
+But this also means, that a license for a computing center does NOT allow all users of this center to use the Quanty code. Instead, every user should have it's own (private) license and only then he would be allowed to use Quanty also on your hardware.
+
+We would request that you INFORM your users about this regulation, but we do not insist that you enforce (or check) this regulation, so that no extra effort is necessary from your side (besides giving the info mentioned above) to your users.
+
+However, we do request that you make sure that users cannot copy the source code illegally.
+
+Note that this currently means users (one per group) should register at www.quanty.org. This helps me to create an overview of active users of the code.
