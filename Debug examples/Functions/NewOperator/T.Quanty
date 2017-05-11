@@ -21,8 +21,10 @@ function ShellSpecificFun()
   LengthOfOperator=Chop(Opp["Tsqr"]-(Opp["Tx"]*Opp["Tx"] + Opp["Ty"]*Opp["Ty"] + Opp["Tz"]*Opp["Tz"])).N
   if (( LengthOfOperator[0]==0 ) and ( LengthOfOperator[1]==0 ) and ( LengthOfOperator[2]==0 )) then
     print("OK")
-    else
-    print("Errorr")
+  else
+  print("Errorr")
+  print(Chop(Opp["Tsqr"]))
+  print(Chop(Opp["Tsqr"]-(Opp["Tx"]*Opp["Tx"] + Opp["Ty"]*Opp["Ty"] + Opp["Tz"]*Opp["Tz"])))
   end
 
 end

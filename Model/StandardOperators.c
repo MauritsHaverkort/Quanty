@@ -1763,13 +1763,13 @@ uint32_t CreateOperatorTsqr(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, 
   InitOperatorFixedLength(Tsqr, 2, 8);
   InitOperatorFixedLength(Tsqr, 4, 8);
   CreateOperatorTx(NFermion,L,LindexUp,LindexDn,&Otemp);
-  OperatorMultiply(Tsqr, Otemp, Otemp);
+  OperatorMultiplyNormalOrder(Tsqr, Otemp, Otemp, &QDetNotOrderedFcFaBcBa);
   FreeOperator(&Otemp);
   CreateOperatorTy(NFermion,L,LindexUp,LindexDn,&Otemp);
-  OperatorMultiply(Tsqr, Otemp, Otemp);
+  OperatorMultiplyNormalOrder(Tsqr, Otemp, Otemp, &QDetNotOrderedFcFaBcBa);
   FreeOperator(&Otemp);
   CreateOperatorTz(NFermion,L,LindexUp,LindexDn,&Otemp);
-  OperatorMultiply(Tsqr, Otemp, Otemp);
+  OperatorMultiplyNormalOrder(Tsqr, Otemp, Otemp, &QDetNotOrderedFcFaBcBa);
   FreeOperator(&Otemp);
   return 0;
 }
