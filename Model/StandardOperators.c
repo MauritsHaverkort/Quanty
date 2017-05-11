@@ -1754,6 +1754,27 @@ uint32_t CreateOperatorTmin(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, 
   return 0;
 }
 
+uint32_t CreateOperatorTsqr(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Tsqr)
+{
+  OperatorType Otemp;
+  InitNamedOperator(Tsqr, "T^2");
+  Tsqr->NFermion = NFermion;
+  Tsqr->NWord = Min(Tsqr->NFermion, 1 + (Tsqr->NFermion - 1) / 8);
+  InitOperatorFixedLength(Tsqr, 2, 8);
+  InitOperatorFixedLength(Tsqr, 4, 8);
+  CreateOperatorTx(NFermion,L,LindexUp,LindexDn,&Otemp);
+  OperatorMultiply(Tsqr, Otemp, Otemp);
+  FreeOperator(&Otemp);
+  CreateOperatorTy(NFermion,L,LindexUp,LindexDn,&Otemp);
+  OperatorMultiply(Tsqr, Otemp, Otemp);
+  FreeOperator(&Otemp);
+  CreateOperatorTz(NFermion,L,LindexUp,LindexDn,&Otemp);
+  OperatorMultiply(Tsqr, Otemp, Otemp);
+  FreeOperator(&Otemp);
+  return 0;
+}
+
+
 uint32_t CreateOperatorldots(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const ldots)
 {
   uint32_t i;

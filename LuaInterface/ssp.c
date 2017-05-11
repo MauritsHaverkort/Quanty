@@ -772,6 +772,11 @@ static int LuaNewOperator(lua_State * L)
     lua_remove(L, 1);
     return LuaOperatorNewTmin(L);
   }
+  if (strcmp(OT, "Tsqr") == 0)
+  {
+    lua_remove(L, 1);
+    return LuaOperatorNewTsqr(L);
+  }
   if ((strcmp(OT, "Qx") == 0)||(strcmp(OT, "Qxx") == 0))
   {
     lua_remove(L, 1);

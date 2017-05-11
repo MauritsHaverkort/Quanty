@@ -192,7 +192,10 @@
 		4C11812319A3E8F100E11DB1 /* OneDBand.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = OneDBand.c; sourceTree = "<group>"; };
 		4C15AABE1D02F46400FD42B8 /* ImpurityLanczos.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ImpurityLanczos.c; sourceTree = "<group>"; };
 		4C18752F1A36CF0800BB2FF4 /* ForCore.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ForCore.c; sourceTree = "<group>"; };
-		4C2268121E6CB38C00678B7E /* 1D_Hubbard.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; name = 1D_Hubbard.Quanty; path = "Debug examples/1D_Hubbard.Quanty"; sourceTree = "<group>"; };
+		4C2268121E6CB38C00678B7E /* 1D_Hubbard.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; name = 1D_Hubbard.Quanty; path = "Debug examples/1D_Hubbard.Quanty"; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.lua; };
+		4C25C4941EC44EAD00142379 /* Tx.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; name = Tx.Quanty; path = "Debug examples/Functions/NewOperator/Tx.Quanty"; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.lua; };
+		4C25C4951EC44EC400142379 /* Ty.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; name = Ty.Quanty; path = "Debug examples/Functions/NewOperator/Ty.Quanty"; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.lua; };
+		4C25C4961EC44EDC00142379 /* T.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; name = T.Quanty; path = "Debug examples/Functions/NewOperator/T.Quanty"; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.lua; };
 		4C2AAA191632655300138620 /* Model */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Model; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C2AAA261632659D00138620 /* Model.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = Model.c; sourceTree = "<group>"; };
 		4C2AAA271632659D00138620 /* StandardOperators.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = StandardOperators.c; sourceTree = "<group>"; };
@@ -283,6 +286,8 @@
 		4C4637E419C312EE00EB0DB0 /* ImpurityModelFromTB.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; lineEnding = 2; path = ImpurityModelFromTB.c; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
 		4C4637E519C312EE00EB0DB0 /* Spectra2p3d.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; lineEnding = 2; path = Spectra2p3d.c; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
 		4C4637E619C3844500EB0DB0 /* CI.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = CI.c; sourceTree = "<group>"; };
+		4C4834E41EC0947E00575510 /* All.Quanty */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = All.Quanty; path = "Debug examples/Shared/All.Quanty"; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.lua; };
+		4C4834E51EC0949A00575510 /* Tz.Quanty */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = Tz.Quanty; path = "Debug examples/Functions/NewOperator/Tz.Quanty"; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.lua; };
 		4C4E1BC11CC4CA3E00E4F754 /* BlockWaveFunctionArithmetic.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = BlockWaveFunctionArithmetic.c; sourceTree = "<group>"; };
 		4C5A6B9B175E6E8700EEA17F /* PrintMathematicaExpression.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = PrintMathematicaExpression.c; sourceTree = "<group>"; };
 		4C5CA61716D18BBF00BE1C25 /* DMFT */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = DMFT; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -290,7 +295,7 @@
 		4C6534801927B39400D00679 /* MeanField.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = MeanField.c; sourceTree = "<group>"; };
 		4C6925BF18D8683700E6FA6F /* CodeMartin.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = CodeMartin.c; path = Martin/CodeMartin.c; sourceTree = "<group>"; };
 		4C6925C418D869FE00E6FA6F /* MartinPESXAS */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = MartinPESXAS; sourceTree = BUILT_PRODUCTS_DIR; };
-		4C6B13BC1E8A2A4A009D7EDC /* CreateResonantSpectra.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; name = CreateResonantSpectra.Quanty; path = "Debug examples/Functions/CreateResonantSpectra.Quanty"; sourceTree = "<group>"; };
+		4C6B13BC1E8A2A4A009D7EDC /* CreateResonantSpectra.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; name = CreateResonantSpectra.Quanty; path = "Debug examples/Functions/CreateResonantSpectra.Quanty"; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.lua; };
 		4C77BA751741188E00AC7E7D /* OperatorWaveFunctionPerturbation.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = OperatorWaveFunctionPerturbation.c; sourceTree = "<group>"; };
 		4C7924621C6E139500250C45 /* get_put.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = get_put.c; path = lua_extensions/get_put.c; sourceTree = "<group>"; };
 		4C79F5D817B53C8000189682 /* Hubart */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Hubart; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -313,7 +318,7 @@
 		4CAB1A131A929B3A00F3E06B /* lua.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = lua.h; sourceTree = "<group>"; };
 		4CB3643519EB8DC0000B721A /* BlockLanczos.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = BlockLanczos.c; sourceTree = "<group>"; };
 		4CC07E7B1A08D9D10053B938 /* ResonantSpectra.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; lineEnding = 0; path = ResonantSpectra.c; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
-		4CCF20B11E70507B0070A1B6 /* CreateSpectra.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; name = CreateSpectra.Quanty; path = "Debug examples/Functions/CreateSpectra.Quanty"; sourceTree = "<group>"; };
+		4CCF20B11E70507B0070A1B6 /* CreateSpectra.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; name = CreateSpectra.Quanty; path = "Debug examples/Functions/CreateSpectra.Quanty"; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.php; };
 		4CD93EC319EA1F9E008DFB54 /* BasicMath_BlockNaturalImpurityOrbital.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = BasicMath_BlockNaturalImpurityOrbital.c; path = BasicMathBlock/BasicMath_BlockNaturalImpurityOrbital.c; sourceTree = "<group>"; };
 		4CDD1C9F1796D14100614F34 /* YiDMFT */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = YiDMFT; sourceTree = BUILT_PRODUCTS_DIR; };
 		4CDD1CAB1799666C00614F34 /* BasicMath_BADoubleTriDiagonalMatrixVector.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = BasicMath_BADoubleTriDiagonalMatrixVector.c; sourceTree = "<group>"; };
@@ -324,9 +329,9 @@
 		4CE50BC319754E6F00091F1C /* ssp.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; lineEnding = 0; path = ssp.c; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
 		4CE50BC51975556500091F1C /* BraKet.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = BraKet.c; sourceTree = "<group>"; };
 		4CE50BC6197555E100091F1C /* eval.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = eval.c; sourceTree = "<group>"; };
-		4CF05D051E4A113A0068EA5A /* EigensystemDense.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; name = EigensystemDense.Quanty; path = "Debug examples/EigensystemDense.Quanty"; sourceTree = "<group>"; };
-		4CF05D061E4A116F0068EA5A /* Xcode.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; name = Xcode.Quanty; path = "Debug examples/Xcode.Quanty"; sourceTree = "<group>"; };
-		4CF05D071E6488E70068EA5A /* Coulomb.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; name = Coulomb.Quanty; path = "Debug examples/Coulomb.Quanty"; sourceTree = "<group>"; };
+		4CF05D051E4A113A0068EA5A /* EigensystemDense.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; name = EigensystemDense.Quanty; path = "Debug examples/EigensystemDense.Quanty"; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.lua; };
+		4CF05D061E4A116F0068EA5A /* Xcode.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; name = Xcode.Quanty; path = "Debug examples/Xcode.Quanty"; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.lua; };
+		4CF05D071E6488E70068EA5A /* Coulomb.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; name = Coulomb.Quanty; path = "Debug examples/Coulomb.Quanty"; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.lua; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -748,6 +753,25 @@
 			path = Robert;
 			sourceTree = "<group>";
 		};
+		4C4834DF1EC0901800575510 /* NewOperator */ = {
+			isa = PBXGroup;
+			children = (
+				4C25C4941EC44EAD00142379 /* Tx.Quanty */,
+				4C25C4951EC44EC400142379 /* Ty.Quanty */,
+				4C4834E51EC0949A00575510 /* Tz.Quanty */,
+				4C25C4961EC44EDC00142379 /* T.Quanty */,
+			);
+			name = NewOperator;
+			sourceTree = "<group>";
+		};
+		4C4834E11EC091C000575510 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				4C4834E41EC0947E00575510 /* All.Quanty */,
+			);
+			name = Shared;
+			sourceTree = "<group>";
+		};
 		4C6925BE18D867CD00E6FA6F /* Martin */ = {
 			isa = PBXGroup;
 			children = (
@@ -771,6 +795,7 @@
 		4CCF20AF1E704F520070A1B6 /* Functions */ = {
 			isa = PBXGroup;
 			children = (
+				4C4834DF1EC0901800575510 /* NewOperator */,
 				4CCF20B11E70507B0070A1B6 /* CreateSpectra.Quanty */,
 				4C6B13BC1E8A2A4A009D7EDC /* CreateResonantSpectra.Quanty */,
 			);
@@ -789,6 +814,7 @@
 		4CF05D041E4A109D0068EA5A /* Debug examples */ = {
 			isa = PBXGroup;
 			children = (
+				4C4834E11EC091C000575510 /* Shared */,
 				4CCF20AF1E704F520070A1B6 /* Functions */,
 				4CF05D051E4A113A0068EA5A /* EigensystemDense.Quanty */,
 				4CF05D061E4A116F0068EA5A /* Xcode.Quanty */,

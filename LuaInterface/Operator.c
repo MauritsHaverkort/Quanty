@@ -1049,6 +1049,35 @@ static int LuaOperatorNewTmin(lua_State * L)
   return 1;
 }
 
+static int LuaOperatorNewTsqr(lua_State * L)
+{
+  OperatorType *op;
+  uint32_t Ntemp;
+  uint32_t NFermion = (uint32_t)luaL_checkunsigned(L, 1);
+  uint32_t NShell,l;
+  uint16_t *LindexUp, *LindexDn;
+  if(NFermion==0) return luaL_error(L, "Magnetic dipole operator acting on zero fermions is not defined");
+  LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
+  LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==False) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==False) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
+  if(NShell!=Ntemp)
+  {
+    return luaL_error(L, "Error in LuaOperatorNewTsqr, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+  }
+  l=(NShell-1)/2;
+  if(2*l+1!=NShell)
+  {
+    return luaL_error(L, "Error in LuaOperatorNewTsqr, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+  }
+  op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+  CreateOperatorTsqr(NFermion, l, LindexUp, LindexDn, op);
+  luaL_setmetatable(L, "Operator_Type");
+  free(LindexUp);
+  free(LindexDn);
+  return 1;
+}
+
 static int LuaOperatorNewQxx(lua_State * L)
 {
   OperatorType *op;

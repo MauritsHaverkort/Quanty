@@ -1,0 +1,104 @@
+Verbosity(0)
+
+function ShellSpecificFun()
+  print("Calculations for shell with angular momentum ",Opp["l"])
+  
+  io.write("Test Tx =   ( T+ + T-)/2  : ")
+  LengthOfOperator=Chop(Opp["Tx"]-0.5*(Opp["Tplus"]+Opp["Tmin"])).N
+  if (( LengthOfOperator[0]==0 ) and ( LengthOfOperator[1]==0 ) and ( LengthOfOperator[2]==0 )) then
+    print("OK")
+    else
+    print("Errorr")
+  end
+  io.write("Test Ty = I (-T+ + T-)/2  : ")
+  LengthOfOperator=Chop(Opp["Ty"]+I*0.5*(Opp["Tplus"]-Opp["Tmin"])).N
+  if (( LengthOfOperator[0]==0 ) and ( LengthOfOperator[1]==0 ) and ( LengthOfOperator[2]==0 )) then
+    print("OK")
+    else
+    print("Errorr")
+  end
+  io.write("Test T^2 = Tx^2+Ty^2+Tz^2 : ")
+  LengthOfOperator=Chop(Opp["Tsqr"]-(Opp["Tx"]*Opp["Tx"] + Opp["Ty"]*Opp["Ty"] + Opp["Tz"]*Opp["Tz"])).N
+  if (( LengthOfOperator[0]==0 ) and ( LengthOfOperator[1]==0 ) and ( LengthOfOperator[2]==0 )) then
+    print("OK")
+    else
+    print("Errorr")
+  end
+
+end
+
+function ConfigSpecificFun()
+  
+  testaccuracy = 1E-7
+  
+  print("Calculations for shell with angular momentum ",Opp["l"])
+  print("Calculations for filling of ",nElec," electrons in shell")
+  
+  Hamiltonian    = Opp["U"] + 0.1 * Opp["ldots"]
+  Hamiltonian100 = Hamiltonian + 0.000001 * (2*Opp["Sx"]+Opp["Lx"])
+  Hamiltonian010 = Hamiltonian + 0.000001 * (2*Opp["Sy"]+Opp["Ly"])
+  Hamiltonian001 = Hamiltonian + 0.000001 * (2*Opp["Sz"]+Opp["Lz"])
+  Hamiltonian111 = Hamiltonian + 0.000001 * sqrt(1/3)*((2*Opp["Sx"]+Opp["Lx"])+(2*Opp["Sy"]+Opp["Ly"])+(2*Opp["Sz"]+Opp["Lz"]))
+  Hamiltonian123 = Hamiltonian + 0.000001 * sqrt(1/(1^2+2^2+3^2))*((2*Opp["Sx"]+Opp["Lx"])+2*(2*Opp["Sy"]+Opp["Ly"])+3*(2*Opp["Sz"]+Opp["Lz"]))
+  
+  psi100 = Eigensystem(Hamiltonian100,StartRestrictions,Binomial(Opp["NF"],nElec))
+  psi010 = Eigensystem(Hamiltonian010,StartRestrictions,Binomial(Opp["NF"],nElec))
+  psi001 = Eigensystem(Hamiltonian001,StartRestrictions,Binomial(Opp["NF"],nElec))
+  psi111 = Eigensystem(Hamiltonian111,StartRestrictions,Binomial(Opp["NF"],nElec))
+  psi123 = Eigensystem(Hamiltonian123,StartRestrictions,Binomial(Opp["NF"],nElec))
+  
+  if type(psi100)~="table" then
+    psi100 = {psi100}
+    psi010 = {psi010}
+    psi001 = {psi001}
+    psi111 = {psi111}
+    psi123 = {psi123}
+  end
+  
+  -- Expectation values of these calculations should be independent of the direction of the field
+  oppList={Hamiltonian, Opp["Ssqr"], Opp["Lsqr"], Opp["Jsqr"], Opp["Tsqr"]};
+  
+  -- The vectors made from the expectation values of these operators should have the same length
+  oppListVec={{Opp["Sx"],Opp["Sy"],Opp["Sz"]},{Opp["Lx"],Opp["Ly"],Opp["Lz"]},{Opp["Jx"],Opp["Jy"],Opp["Jz"]},{Opp["Tx"],Opp["Ty"],Opp["Tz"]}};
+  
+  -- next we loop over all operators and all states and print the expectation value
+  print("  <E>     <S^2>   <L^2>   <J^2>   <T^2>   <S>^2   <L>^2   <J>^2   <T>^2  | Rotation Invariant");
+  for i = 1,#psi100 do
+    RotInv = "yes"
+    DebugInf = ""
+    for j = 1,#oppList do
+      expectationvalue100 = Chop(psi100[i]*oppList[j]*psi100[i])
+      expectationvalue010 = Chop(psi010[i]*oppList[j]*psi010[i])
+      if Chop(expectationvalue010-expectationvalue100,testaccuracy)~=0 then RotInv = "No" end
+      expectationvalue001 = Chop(psi001[i]*oppList[j]*psi001[i])
+      if Chop(expectationvalue001-expectationvalue100,testaccuracy)~=0 then RotInv = "No" end
+      expectationvalue111 = Chop(psi111[i]*oppList[j]*psi111[i])
+      if Chop(expectationvalue111-expectationvalue100,testaccuracy)~=0 then RotInv = "No" end
+      expectationvalue123 = Chop(psi123[i]*oppList[j]*psi123[i])
+      if Chop(expectationvalue123-expectationvalue100,testaccuracy)~=0 then RotInv = "No" end
+      io.write(string.format("%7.3f ",Complex.Re(expectationvalue100)))
+      if RotInv=="No" then
+        DebugInf = DebugInf..oppList[j].Name.." ".."100 "..expectationvalue100.." || 010 "..expectationvalue010.." || 001 "..expectationvalue001.." || 111 "..expectationvalue111.." || 123 "..expectationvalue123.."\n"
+      end
+    end
+    for j = 1,#oppListVec do
+      expectationvalue100 = Chop( (psi100[i]*oppListVec[j][1]*psi100[i])^2 + (psi100[i]*oppListVec[j][2]*psi100[i])^2 + (psi100[i]*oppListVec[j][3]*psi100[i])^2 )
+      expectationvalue010 = Chop( (psi010[i]*oppListVec[j][1]*psi010[i])^2 + (psi010[i]*oppListVec[j][2]*psi010[i])^2 + (psi010[i]*oppListVec[j][3]*psi010[i])^2 )
+      if Chop(expectationvalue010-expectationvalue100,testaccuracy)~=0 then RotInv = "No" end
+      expectationvalue001 = Chop( (psi001[i]*oppListVec[j][1]*psi001[i])^2 + (psi001[i]*oppListVec[j][2]*psi001[i])^2 + (psi001[i]*oppListVec[j][3]*psi001[i])^2 )
+      if Chop(expectationvalue001-expectationvalue100,testaccuracy)~=0 then RotInv = "No" end
+      expectationvalue111 = Chop( (psi111[i]*oppListVec[j][1]*psi111[i])^2 + (psi111[i]*oppListVec[j][2]*psi111[i])^2 + (psi111[i]*oppListVec[j][3]*psi111[i])^2 )
+      if Chop(expectationvalue111-expectationvalue100,testaccuracy)~=0 then RotInv = "No" end
+      expectationvalue123 = Chop( (psi123[i]*oppListVec[j][1]*psi123[i])^2 + (psi123[i]*oppListVec[j][2]*psi123[i])^2 + (psi123[i]*oppListVec[j][3]*psi123[i])^2 )
+      if Chop(expectationvalue123-expectationvalue100,testaccuracy)~=0 then RotInv = "No" end
+      io.write(string.format("%7.3f ",Complex.Re(expectationvalue100)))
+      if RotInv=="No" then
+        DebugInf = DebugInf..oppList[j].Name.." ".."100 "..expectationvalue100.." || 010 "..expectationvalue010.." || 001 "..expectationvalue001.." || 111 "..expectationvalue111.." || 123 "..expectationvalue123.."\n"
+      end
+    end
+    io.write(" | "..RotInv.."\n"..DebugInf)
+  end
+  
+end
+
+LoopOverAllAtomicConfigurations(ConfigSpecificFun,ShellSpecificFun)

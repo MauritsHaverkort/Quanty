@@ -112,9 +112,7 @@ uint32_t ExtendBasisCompletenessSmallSystems(DeterminantRestrictionType const St
   for(i=0;i<psi->NFermion;i++)
   {
     iFull+=1<<(31-i);
-  }
-  printf("detfull %x \n",iFull);
-  
+  }  
   if(psi->QComplex)
   {
     if(QDetNotRestricted(newdet, psi->NFermion, psi->NBoson, psi->NWord, StartingPoint))
