@@ -1982,18 +1982,23 @@ static int LuaCreateSpectra(lua_State *L)
  *        epsilon
  *        restrictions1
  *        restrictions2
+ *        E0 E0_1 E0_2
  */
 static int LuaCreateResonantSpectra(lua_State *L)
 {
   struct
   {
     ConvergenceSettingsType Settings;
+    double E0, E01, E02;
     uint32_t Npsi;
     uint32_t NT1;
     uint32_t NT2;
     Bool Tensor;
   } Options;
   Options.Settings=InitConvergenceSettings();
+  Options.E0=DBL_MAX;
+  Options.E01=DBL_MAX;
+  Options.E02=DBL_MAX;
   Options.Tensor=False;
   ConvergenceSettingsType SettingsNow;
   SpectraTypeArray *Spec;
@@ -2009,6 +2014,9 @@ static int LuaCreateResonantSpectra(lua_State *L)
     {"restrictions1", "DeterminantRestrictionType", &(Options.Settings.restrictions1)},
     {"restrictions2", "DeterminantRestrictionType", &(Options.Settings.restrictions2)},
     {"epsilon","double",&(Options.Settings.epsilon)},
+    {"E0","double",&(Options.E0)},
+    {"E0_1","double",&(Options.E01)},
+    {"E0_2","double",&(Options.E02)},
     {"Emin1","double",&(Options.Settings.Emin1)},
     {"Emax1","double",&(Options.Settings.Emax1)},
     {"NE1","uint32_t",&(Options.Settings.NE1)},
@@ -2062,6 +2070,8 @@ static int LuaCreateResonantSpectra(lua_State *L)
   {
     LuaCheckOptions(L, -1, LuaCreateResonantSpectraOptions);
   }
+  if(Options.E01==DBL_MAX)Options.E01=Options.E0;
+  if(Options.E02==DBL_MAX)Options.E02=Options.E0;
   /* allocate spectra and and pointer to return matrix on lua stack */
   Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
   luaL_setmetatable(L, "Spectra_Type");
@@ -2074,7 +2084,7 @@ static int LuaCreateResonantSpectra(lua_State *L)
       for(iT=0;iT<Options.NT1;iT++)
       {
         SettingsNow = Options.Settings;
-        ResonantSpectra(*H1, *H2, T1[iT], T2, Options.NT2, psi[ipsi], &SpecTri, &SpecT1psi, &(SettingsNow));
+        ResonantSpectra(*H1, *H2, T1[iT], T2, Options.NT2, psi[ipsi], &SpecTri, &SpecT1psi, Options.E01, Options.E02, &(SettingsNow));
         Spec->NSpectra+=(SettingsNow.NE1+1)*Options.NT2;
         Spec->Spec=realloc(Spec->Spec, Spec->NSpectra*sizeof(SpectraType));
         for(i=0;i<(SettingsNow.NE1+1)*Options.NT2;i++)
@@ -2092,7 +2102,9 @@ static int LuaCreateResonantSpectra(lua_State *L)
   }
   else
   {
+    SettingsNow = Options.Settings;
     
+    //ResonantSpectraTensor(*H1, *H2, T1, Options.NT1, T2, Options.NT2, psi, Options.Npsi, &SpecTri, &(Spec->Spec[0]), Options.E01, Options.E02, &SettingsNow);
     
     
     

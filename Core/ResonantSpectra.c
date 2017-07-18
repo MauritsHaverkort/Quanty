@@ -3,7 +3,7 @@
 
 /*  Calculate < psi | T1^+ G1^+ T2^+ G2 T2 G1 T1 | psi >
  */
-uint32_t ResonantSpectra(const OperatorType OppH1, const OperatorType OppH2, const OperatorType T1, const OperatorType *T2, uint32_t NT2, const WaveFunctionType psi, TriDiagonalMatrixType **SpecTri2, SpectraType **Spec, ConvergenceSettingsType *settings)
+uint32_t ResonantSpectra(const OperatorType OppH1, const OperatorType OppH2, const OperatorType T1, const OperatorType *T2, uint32_t NT2, const WaveFunctionType psi, TriDiagonalMatrixType **SpecTri2, SpectraType **Spec, double energy1, double energy2, ConvergenceSettingsType *settings)
 {
   /*Given wavefunction psi (usually ground state, but could be excited)*/
   
@@ -29,11 +29,11 @@ uint32_t ResonantSpectra(const OperatorType OppH1, const OperatorType OppH2, con
   MatrixType EFun;
   double EVal[settings->NTri1], EValInvRe[settings->NTri1], EValInvIm[settings->NTri1],tempDoubleRe,tempDoubleIm, EVal2[settings->NTri2];
   int i,p,k;
-  double energy1, energy2, wRes;
+  double wRes;
   
   /* calcualte ground state energy */
-  PsiHermitianOperatorPsi(OppH1, psi, &energy1);
-  PsiHermitianOperatorPsi(OppH2, psi, &energy2);
+  if(energy1==DBL_MAX) PsiHermitianOperatorPsi(OppH1, psi, &energy1);
+  if(energy2==DBL_MAX) PsiHermitianOperatorPsi(OppH2, psi, &energy2);
   
   /* Calculate T|i> */
   if(settings->restrictions1.N==0)
@@ -350,7 +350,7 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
     }
   }
   
-  /* Use T|i>==Tpsi to transform H to BLock tridiagonal form in Krylov basis */
+  /* Use T|i>==Tpsi to transform H to Block tridiagonal form in Krylov basis */
   /* Using the version which gives back the Krylov basis vectors */
   SpecTri1.N = settings->NTri1;
   SpecTri1.BlockSize = Npsi*NT1;

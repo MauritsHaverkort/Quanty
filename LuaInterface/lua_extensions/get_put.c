@@ -173,7 +173,6 @@ char * QuantyVariableToValidFilename(const char * str)
   return retchar;
 }
 
-
 uint32_t LuaGetASCII(lua_State *L, char * DirName, char * VariableName)
 {
   char *FileName;
@@ -187,8 +186,6 @@ uint32_t LuaGetASCII(lua_State *L, char * DirName, char * VariableName)
   free(FullName);
   return luaB_dofile(L);
 }
-
-
 
 uint32_t LuaASCIIStreamPrint(lua_State *L, int narg, FILE * stream)
 {

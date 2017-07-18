@@ -338,9 +338,17 @@ uint32_t CreateOperatorCoulombFourRelativisticShells(uint32_t const NFermion, in
   InitOperatorFixedLength(U, 2, 8);
   InitOperatorFixedLength(U, 4, 8);
   ik=-1;
-  for (k=Max(Abs(l1-l3),Abs(l2-l4)); k<=Min(twoj1+twoj3,twoj2+twoj4); k+=2)
+  
+  //printf("l=  %d %d %d %d\n",l1,l2,l3,l4);
+  //printf("2j= %d %d %d %d\n",twoj1,twoj2,twoj3,twoj4);
+  //printf("k range: %d %d\n" ,Max(Abs(l1-l3),Abs(l2-l4)), Min(twoj1+twoj3,twoj2+twoj4));
+  //printf("k filter: remove 2k<%d\n",Max(Abs(twoj1-twoj3),Abs(twoj2-twoj4)));
+  //printf("k filter: remove 2k>%d\n",Min(twoj1+twoj3,twoj2+twoj4));
+  
+  for (k=Max(Abs(l1-l3),Abs(l2-l4)); k<=Min(l1+l3,l2+l4); k+=2)
   {
-    if (k<Max(Abs(twoj1-twoj3),Abs(twoj2-twoj4))) continue;
+    if ((2*k)<Max(Abs(twoj1-twoj3),Abs(twoj2-twoj4))) continue;
+    if ((2*k)>Min(twoj1+twoj3,twoj2+twoj4)) continue;
     ik++;
     for (twojz1 = -twoj1; twojz1 <= twoj1; twojz1+=2)
     {

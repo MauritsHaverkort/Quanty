@@ -322,9 +322,9 @@ static int LuaOperatorNewCoulomb(lua_State * L)
       return luaL_error(L, "Error in LuaOperatorNewCoulomb, for forth shell: j (%d/2) is not equal to |kappa|-1/2 (kappa = %d)\n",twojD,kappaD);
     }
     R = luaL_checkarray_double(L, 10, &Ntemp);
-    if(Ntemp!=(Min(Min(twojA,twojB),Min(twojC,twojD))+1)/2)
+    if(Ntemp!=(1+(Min(twojA+twojC,twojB+twojD)-Max(Max(twojA,twojC)-Min(twojA,twojC),Max(twojB,twojD)-Min(twojB,twojD)))/4))
     {
-      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of F (%d) is not equal to (Min(2 j1 (%d), 2 j2 (%d), 2 j3 (%d), 2 j4 (%d))+1)/2\n",Ntemp,twojA,twojB,twojC,twojD);
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb (10), Lenght of F (%d) is not equal to (Max(2 j1 (%d) + 2 j3 (%d), 2 j2 (%d) + 2 j4 (%d)) - Min( |2j1-2j3|,|2j2-2j4| ))/2)+1\n",Ntemp,twojA,twojC,twojB,twojD);
     }
     op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
     CreateOperatorCoulombFourRelativisticShells(NFermion, kappaA, kappaB, kappaC, kappaD, JindexA, JindexB, JindexC, JindexD, R, op);
