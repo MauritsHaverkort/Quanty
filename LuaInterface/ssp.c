@@ -1829,7 +1829,7 @@ static int LuaCreateSpectra(lua_State *L)
     {
       if(Options.NT*Options.Npsi==1)
       {
-        LuaPushTable_WaveFunctionType(L, psiBasis[0], Options.Settings.NTri);
+        LuaPushTable_WaveFunctionType_RemoveEmpty(L, psiBasis[0], Options.Settings.NTri);
         free(psiBasis[0]);
       }
       else
@@ -1837,7 +1837,7 @@ static int LuaCreateSpectra(lua_State *L)
         lua_createtable(L,Options.NT*Options.Npsi,0);
         for(i=0;i<Options.NT*Options.Npsi;i++)
         {
-          LuaPushTable_WaveFunctionType(L, psiBasis[i], Options.Settings.NTri);
+          LuaPushTable_WaveFunctionType_RemoveEmpty(L, psiBasis[i], Options.Settings.NTri);
           free(psiBasis[i]);
           lua_rawseti(L, -2, i+1);
         }
@@ -1865,14 +1865,31 @@ static int LuaCreateSpectra(lua_State *L)
     }
     /* create starting functions */
     /* loop over all Transition operators */
-    for(iT=0;iT<Options.NT;iT++)
+    if(Options.Settings.restrictions.N==0)
     {
-      /* loop over all wavefunctions */
-      for(ipsi=0;ipsi<Options.Npsi;ipsi++)
+      for(iT=0;iT<Options.NT;iT++)
       {
-        if(OperatorPsi(T[iT], psi[ipsi], &Tpsi[iT*Options.Npsi+ipsi]))
+        /* loop over all wavefunctions */
+        for(ipsi=0;ipsi<Options.Npsi;ipsi++)
         {
-          luaL_error(L, "OperatorPsi failed in calculation of spectra using the option Tensor=True\n Out of memory?\nTry to calcualte the spectra with the option Tensor=False");
+          if(OperatorPsi(T[iT], psi[ipsi], &Tpsi[iT*Options.Npsi+ipsi]))
+          {
+            luaL_error(L, "OperatorPsi failed in calculation of spectra using the option Tensor=True\n Out of memory?\nTry to calcualte the spectra with the option Tensor=False");
+          }
+        }
+      }
+    }
+    else
+    {
+      for(iT=0;iT<Options.NT;iT++)
+      {
+        /* loop over all wavefunctions */
+        for(ipsi=0;ipsi<Options.Npsi;ipsi++)
+        {
+          if(OperatorPsiRestricted(T[iT], psi[ipsi], &Tpsi[iT*Options.Npsi+ipsi], Options.Settings.restrictions))
+          {
+            luaL_error(L, "OperatorPsi failed in calculation of spectra using the option Tensor=True\n Out of memory?\nTry to calcualte the spectra with the option Tensor=False");
+          }
         }
       }
     }
@@ -1901,9 +1918,32 @@ static int LuaCreateSpectra(lua_State *L)
     InitBlockTridiagonalMatrix(&GTri);
     GTri.mu=psiEn[0];
     
-    //TODO: differnt blockTriDiagonalize when self energy is needed (need krylov basis)
+    if(Options.Settings.restrictions.N==0)
+    {
+      if(Options.KrylovBasis==True)
+      {
+        //TODO: add Krylov Basis
+        luaL_error(L, "Not yet implemented");
+      }
+      else
+      {
+        LanczosBlockTriDiagonalize(*H, TpsiSameBasis, Options.Settings.epsilon, &GTri, Max(Options.Settings.Gamma,Options.Settings.epsilon));
+      }
+    }
+    else
+    {
+      if(Options.KrylovBasis==True)
+      {
+        //TODO: add Krylov Basis
+        luaL_error(L, "Not yet implemented");
+      }
+      else
+      {
+        LanczosBlockTriDiagonalizeRestricted(*H, TpsiSameBasis, Options.Settings.restrictions, Options.Settings.epsilon, &GTri, Max(Options.Settings.Gamma,Options.Settings.epsilon));
+      }
+    }
     
-    LanczosBlockTriDiagonalize(*H, TpsiSameBasis, Options.Settings.epsilon, &GTri, Max(Options.Settings.Gamma,Options.Settings.epsilon));
+    
     /* determine Eminpole and Emaxpole */
     /* get eigenvalues Block Tridiagonal matrix and set smallest and largest eigenvalue */
     Eminpole = DBL_MAX;

@@ -896,6 +896,29 @@ void LuaPushTable_WaveFunctionType(lua_State* L, WaveFunctionType const * const 
   }
 }
 
+
+void LuaPushTable_WaveFunctionType_RemoveEmpty(lua_State* L, WaveFunctionType * const psi, uint32_t const Npsi )
+{
+  uint32_t i,j=0;
+  WaveFunctionType *buff;
+  lua_newtable(L);
+  for(i=0;i<Npsi;i++)
+  {
+    if(psi[i].N==0)
+    {
+      WaveFunctionFree(&(psi[i]));
+    }
+    else
+    {
+      j++;
+      buff = (WaveFunctionType*) lua_newuserdata(L, sizeof(WaveFunctionType));
+      luaL_setmetatable(L, "Wavefunction_Type");
+      *buff = psi[i];
+      lua_rawseti(L, -2, j);
+    }
+  }
+}
+
 void LuaPushTable_MatrixType(lua_State* L, MatrixType const * const M)
 {
   uint32_t i,j;
@@ -1480,6 +1503,7 @@ void * LuaReturnVariableType(lua_State * L, int narg, char * type)
     return (void*) buffDeterimantRestrictionType;
   }
   luaL_error (L, "Error while reading variable type from stack. Type \"%s\" not recognized\n",type);
+  buff=NULL;
   return buff;
 }
 

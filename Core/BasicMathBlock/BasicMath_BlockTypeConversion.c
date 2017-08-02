@@ -2709,6 +2709,7 @@ uint32_t BlockTriDiagonalMatrixToSpectra(const double Energy, BlockTriDiagonalMa
   G[0].dE=(Emax-Emin)/((double)N);
   G[0].Gamma=Gamma;
   G[0].ResonantEnergy=NAN;
+  strcpy(G[0].Name, A->Name);
   for(i=0;i<A->BlockSize*A->BlockSize;i++)
   {
     SpectrumAllocate(G[0], &(G[i]));
