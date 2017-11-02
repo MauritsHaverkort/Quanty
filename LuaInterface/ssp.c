@@ -2897,17 +2897,20 @@ static int LuaBlockBandDiagonalize(lua_State *L)
     uint32_t NTri;
     uint32_t NOrtho;
     Bool ReOrthogonalize;
+    Bool ReturnT;
   } Options;
   LuaOptionsType LuaBlockBandDiagonalizeOptions[]={
     {"SingularValue",   "char*",    &(Options.SingularValue)},
     {"NTri",            "uint32_t", &(Options.NTri)},
     {"NOrtho",          "uint32_t", &(Options.NOrtho)},
-    {"ReduceDimension", "bool",     &(Options.ReOrthogonalize)},
+    {"ReOrthogonalize", "bool",     &(Options.ReOrthogonalize)},
+    {"ReturnT",         "bool",     &(Options.ReturnT)},
     {NULL, NULL, NULL}};
   Options.SingularValue=1E-6;
   Options.NTri  =200;
   Options.NOrtho=UINT32_MAX;
   Options.ReOrthogonalize=True;
+  Options.ReturnT=True;
   // get options when defined
   len = (uint32_t)lua_gettop(L);
   if(len>3)
@@ -2954,7 +2957,7 @@ static int LuaBlockBandDiagonalize(lua_State *L)
       if(vec->Nj!=M->Nj) return luaL_error(L, "Length of starting vector (%d) should be equivalent to dimension of matrix (%d).\n",vec->Nj,M->Nj);
     }
     Options.NTri=MIN(Options.NTri, M->Ni);
-    if(CompactMatrixBlockBandDiagonalize(M, vec, &B, Options.SingularValue, Options.NTri, Options.NOrtho, Options.ReOrthogonalize))
+    if(CompactMatrixBlockBandDiagonalize(M, vec, &B, Options.SingularValue, Options.NTri, Options.NOrtho, Options.ReOrthogonalize, Options.ReturnT))
     {
       return luaL_error(L, "CompactMatrixBlockBandDiagonalize failed that should not happen\n");
     }
@@ -2962,6 +2965,13 @@ static int LuaBlockBandDiagonalize(lua_State *L)
     FreeBlockTridiagonalMatrix(&B);
     FreeCompactMatrix(M);
     free(M);
+    if(Options.ReturnT==True)
+    {
+      LuaPushTable_CompactMatrixType(L, vec);
+      FreeCompactMatrix(vec);
+      free(vec);
+      return 2;
+    }
     FreeCompactMatrix(vec);
     free(vec);
     return 1;

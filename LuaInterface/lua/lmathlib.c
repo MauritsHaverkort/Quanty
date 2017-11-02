@@ -745,6 +745,59 @@ static int math_OddQ(lua_State *L)
   return 1;
 }
 
+static int math_Dot(lua_State *L)
+{
+  CompactMatrixType *A,*B,C;
+  luaL_checktype(L, 1, LUA_TTABLE);
+  luaL_checktype(L, 2, LUA_TTABLE);
+  A = (CompactMatrixType *) luaL_checkCompactMatrix(L, 1);
+  B = (CompactMatrixType *) luaL_checkCompactMatrix(L, 2);
+  CompactMatrixMultiply('N', 'N', A, B, &C);
+  LuaPushTable_CompactMatrixType(L, &C);
+  FreeCompactMatrix(A);
+  free(A);
+  FreeCompactMatrix(B);
+  free(B);
+  FreeCompactMatrix(&C);
+  return 1;
+}
+
+static int math_MatrixTranspose(lua_State *L)
+{
+  CompactMatrixType *A;
+  luaL_checktype(L, 1, LUA_TTABLE);
+  A = (CompactMatrixType *) luaL_checkCompactMatrix(L, 1);
+  CompactMatrixTranspose(A);
+  LuaPushTable_CompactMatrixType(L, A);
+  FreeCompactMatrix(A);
+  free(A);
+  return 1;
+}
+
+static int math_MatrixConjugateTranspose(lua_State *L)
+{
+  CompactMatrixType *A;
+  luaL_checktype(L, 1, LUA_TTABLE);
+  A = (CompactMatrixType *) luaL_checkCompactMatrix(L, 1);
+  CompactMatrixConjugateTranspose(A);
+  LuaPushTable_CompactMatrixType(L, A);
+  FreeCompactMatrix(A);
+  free(A);
+  return 1;
+}
+
+static int math_MatrixConjugate(lua_State *L)
+{
+  CompactMatrixType *A;
+  luaL_checktype(L, 1, LUA_TTABLE);
+  A = (CompactMatrixType *) luaL_checkCompactMatrix(L, 1);
+  CompactMatrixConjugate(A);
+  LuaPushTable_CompactMatrixType(L, A);
+  FreeCompactMatrix(A);
+  free(A);
+  return 1;
+}
+
 static const luaL_Reg mathlib[] = {
   {"abs",   math_abs},{"Abs",   math_abs},
   {"acos",  math_acos},{"Acos",  math_acos},
@@ -791,6 +844,10 @@ static const luaL_Reg mathlib[] = {
   {"IntegerQ",           math_IntegerQ},
   {"EvenQ",              math_EvenQ},
   {"OddQ",               math_OddQ},
+  {"Dot",                math_Dot},
+  {"MatrixTranspose",    math_MatrixTranspose},
+  {"MatrixConjugateTranspose",    math_MatrixConjugateTranspose},
+  {"MatrixConjugate",    math_MatrixConjugate},
   {NULL, NULL}
 };
 

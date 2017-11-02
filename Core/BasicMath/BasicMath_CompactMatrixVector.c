@@ -53,6 +53,33 @@ uint32_t InitCompactMatrix(CompactMatrixType * const M)
   return 0;
 }
 
+uint32_t ResizeCompactMatrix(CompactMatrixType * const M, uint32_t Ni, uint32_t Nj)
+{
+  if(M->QComplex)
+  {
+    M->V=(Complex16*)realloc(M->V,Ni*Nj*sizeof(Complex16));
+    if(M->V==NULL)
+    {
+      printf("Realloc failed in ResizeCompactMatrix for complex allocation\n");
+      fflush(stdout);
+      return 1;
+    }
+  }
+  else
+  {
+    M->VRe=(double*)realloc(M->VRe,Ni*Nj*sizeof(double));
+    if(M->VRe==NULL)
+    {
+      printf("Realloc failed in ResizeCompactMatrix for real allocation\n");
+      fflush(stdout);
+      return 1;
+    }
+  }
+  M->Ni=Ni;
+  M->Nj=Nj;
+  return 0;
+}
+
 /* sets all values of M to zero
  *
  */
@@ -2575,10 +2602,11 @@ uint32_t CompactMatrixBlockBandTridiagonalizeHermitianNoReorthogonalization(Comp
 /*  Returns a block tridiagonal form of matrix A in matrix B using the starting vector vec.
  *  B is not initialized on input
  *  vec is destroyed during the calculation. (values and size changed but not freed)
+ *  if ReturnT is true vec contains T
  */
-uint32_t CompactMatrixBlockBandDiagonalizeReal(CompactMatrixType const * const A, CompactMatrixType * vec, BlockTriDiagonalMatrixType *const B, double const SingularValue, uint32_t const NTri, uint32_t const NOrtho, Bool const ReOrthogonalize)
+uint32_t CompactMatrixBlockBandDiagonalizeReal(CompactMatrixType const * const A, CompactMatrixType * vec, BlockTriDiagonalMatrixType *const B, double const SingularValue, uint32_t const NTri, uint32_t const NOrtho, Bool const ReOrthogonalize, Bool const ReturnT)
 {
-  uint32_t i,j;
+  uint32_t i,j,Ni;
   char *charN="N";
   char *charT="T";
   double one=1;
@@ -2644,6 +2672,10 @@ uint32_t CompactMatrixBlockBandDiagonalizeReal(CompactMatrixType const * const A
         dgemm(charN,charN,&veclist[j].Nj,&veclist[i+1].Ni,&veclist[j].Ni,&minusone,veclist[j].VRe,&veclist[j].Nj,work,&B->BlockSize,&one,veclist[i+1].VRe,&veclist[i+1].Nj); // v[i+1] <= -1 * w . v[j] + 1 * v[i+1]
         dgemm(charT,charN,&veclist[j].Ni,&veclist[i+1].Ni,&veclist[i+1].Nj,&one,veclist[j].VRe,&veclist[j].Nj,veclist[i+1].VRe,&veclist[i+1].Nj,&zero,work,&B->BlockSize); // w = v[i+1] . v[j]^T
         dgemm(charN,charN,&veclist[j].Nj,&veclist[i+1].Ni,&veclist[j].Ni,&minusone,veclist[j].VRe,&veclist[j].Nj,work,&B->BlockSize,&one,veclist[i+1].VRe,&veclist[i+1].Nj); // v[i+1] <= -1 * w . v[j] + 1 * v[i+1]
+        if(ReOrthogonalize==True)
+        {
+          //TODO: do a single gramm-schmidt in the end
+        }
       }
       NSingular=veclist[i+1].Ni;
       CompactMatrixSVDOrthogonalizeRow(&veclist[i+1], SingularValue, True);
@@ -2660,6 +2692,21 @@ uint32_t CompactMatrixBlockBandDiagonalizeReal(CompactMatrixType const * const A
       CompactMatrixGramSchmidtOrthogonalizeRow(&veclist[i+1], SingularValue, False);
     }
   }
+  if(ReturnT==True)
+  {
+    Ni=0;
+    for(j=1;j<=MIN(i+1,NTri);j++)
+    {
+      Ni=Ni+veclist[j].Ni;
+    }
+    ResizeCompactMatrix(vec, Ni, vec->Nj);
+    Ni=0;
+    for(j=1;j<=MIN(i+1,NTri);j++)
+    {
+      memcpy(&(vec->VRe[Ni*vec->Nj]),veclist[j].VRe,veclist[j].Ni*veclist[j].Nj*sizeof(double));
+      Ni=Ni+veclist[j].Ni;
+    }
+  }
   for(j=1;j<=MIN(i+1,NTri);j++)
   {
     FreeCompactMatrix(&veclist[j]);
@@ -2667,9 +2714,9 @@ uint32_t CompactMatrixBlockBandDiagonalizeReal(CompactMatrixType const * const A
   free(veclist);
   return 0;
 }
-uint32_t CompactMatrixBlockBandDiagonalizeComplex(CompactMatrixType const * const A, CompactMatrixType * vec, BlockTriDiagonalMatrixType *const B, double const SingularValue, uint32_t const NTri, uint32_t const NOrtho, Bool const ReOrthogonalize)
+uint32_t CompactMatrixBlockBandDiagonalizeComplex(CompactMatrixType const * const A, CompactMatrixType * vec, BlockTriDiagonalMatrixType *const B, double const SingularValue, uint32_t const NTri, uint32_t const NOrtho, Bool const ReOrthogonalize,Bool const ReturnT)
 {
-  uint32_t i,j;
+  uint32_t i,j,Ni;
   char *charN="N";
   char *charT="T";
   char *charC="C";
@@ -2744,6 +2791,10 @@ uint32_t CompactMatrixBlockBandDiagonalizeComplex(CompactMatrixType const * cons
         zgemm(charN,charN,&veclist[j].Nj,&veclist[i+1].Ni,&veclist[j].Ni,&minusone,veclist[j].V,&veclist[j].Nj,work,&B->BlockSize,&one,veclist[i+1].V,&veclist[i+1].Nj); // v[i+1] <= -1 * w . v[j] + 1 * v[i+1]
         zgemm(charC,charN,&veclist[j].Ni,&veclist[i+1].Ni,&veclist[i+1].Nj,&one,veclist[j].V,&veclist[j].Nj,veclist[i+1].V,&veclist[i+1].Nj,&zero,work,&B->BlockSize); // w = v[i+1] . v[j]^+
         zgemm(charN,charN,&veclist[j].Nj,&veclist[i+1].Ni,&veclist[j].Ni,&minusone,veclist[j].V,&veclist[j].Nj,work,&B->BlockSize,&one,veclist[i+1].V,&veclist[i+1].Nj); // v[i+1] <= -1 * w . v[j] + 1 * v[i+1]
+        if(ReOrthogonalize==True)
+        {
+          //TODO: do a single gramm-schmidt in the end
+        }
       }
       NSingular=veclist[i+1].Ni;
       CompactMatrixSVDOrthogonalizeRow(&veclist[i+1], SingularValue, True);
@@ -2760,6 +2811,21 @@ uint32_t CompactMatrixBlockBandDiagonalizeComplex(CompactMatrixType const * cons
       CompactMatrixGramSchmidtOrthogonalizeRow(&veclist[i+1], SingularValue, False);
     }
   }
+  if(ReturnT==True)
+  {
+    Ni=0;
+    for(j=1;j<=MIN(i+1,NTri);j++)
+    {
+      Ni=Ni+veclist[j].Ni;
+    }
+    ResizeCompactMatrix(vec, Ni, vec->Nj);
+    Ni=0;
+    for(j=1;j<=MIN(i+1,NTri);j++)
+    {
+      memcpy(&(vec->VRe[Ni*vec->Nj]),veclist[j].VRe,veclist[j].Ni*veclist[j].Nj*sizeof(double));
+      Ni=Ni+veclist[j].Ni;
+    }
+  }
   for(j=1;j<=MIN(i+1,NTri);j++)
   {
     FreeCompactMatrix(&veclist[j]);
@@ -2767,7 +2833,7 @@ uint32_t CompactMatrixBlockBandDiagonalizeComplex(CompactMatrixType const * cons
   free(veclist);
   return 0;
 }
-uint32_t CompactMatrixBlockBandDiagonalize(CompactMatrixType const * const A, CompactMatrixType * vec, BlockTriDiagonalMatrixType *const B, double const SingularValue, uint32_t const NTri, uint32_t const NOrtho, Bool const ReOrthogonalize)
+uint32_t CompactMatrixBlockBandDiagonalize(CompactMatrixType const * const A, CompactMatrixType * vec, BlockTriDiagonalMatrixType *const B, double const SingularValue, uint32_t const NTri, uint32_t const NOrtho, Bool const ReOrthogonalize, Bool const ReturnT)
 {
   uint32_t ret;
   CompactMatrixType Acopy;
@@ -2775,13 +2841,13 @@ uint32_t CompactMatrixBlockBandDiagonalize(CompactMatrixType const * const A, Co
   {
     if(vec->QComplex==0)
     {
-      return CompactMatrixBlockBandDiagonalizeReal(A, vec, B, SingularValue, NTri, NOrtho, ReOrthogonalize);
+      return CompactMatrixBlockBandDiagonalizeReal(A, vec, B, SingularValue, NTri, NOrtho, ReOrthogonalize, ReturnT);
     }
     else
     {
       CompactMatrixCopy(*A, &Acopy);
       MakeCompactRealMatrixComplex(&Acopy);
-      ret = CompactMatrixBlockBandDiagonalizeComplex(&Acopy, vec, B, SingularValue, NTri, NOrtho, ReOrthogonalize);
+      ret = CompactMatrixBlockBandDiagonalizeComplex(&Acopy, vec, B, SingularValue, NTri, NOrtho, ReOrthogonalize, ReturnT);
       FreeCompactMatrix(&Acopy);
       return ret;
     }
@@ -2791,11 +2857,11 @@ uint32_t CompactMatrixBlockBandDiagonalize(CompactMatrixType const * const A, Co
     if(vec->QComplex==0)
     {
       MakeCompactRealMatrixComplex(vec);
-      return CompactMatrixBlockBandDiagonalizeComplex(A, vec, B, SingularValue, NTri, NOrtho, ReOrthogonalize);
+      return CompactMatrixBlockBandDiagonalizeComplex(A, vec, B, SingularValue, NTri, NOrtho, ReOrthogonalize, ReturnT);
     }
     else
     {
-      return CompactMatrixBlockBandDiagonalizeComplex(A, vec, B, SingularValue, NTri, NOrtho, ReOrthogonalize);
+      return CompactMatrixBlockBandDiagonalizeComplex(A, vec, B, SingularValue, NTri, NOrtho, ReOrthogonalize, ReturnT);
     }
   }
 }

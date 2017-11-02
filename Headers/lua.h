@@ -9,3 +9,7 @@ uint32_t LuaPut();
 
 uint32_t LuaGetASCII();
 uint32_t LuaPutASCII();
+
+
+CompactMatrixType* luaL_checkCompactMatrix();
+void LuaPushTable_CompactMatrixType();
