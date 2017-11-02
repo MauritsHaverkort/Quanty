@@ -38,8 +38,7 @@ uint32_t AndersonMatrixToMatrix(AndersonMatrixType const M, MatrixType * const M
   return 0;
 }
 
-uint32_t AndersonMatrixToTriDiagonalMatrixNonOrthogonal(AndersonMatrixType const M, TriDiagonalMatrixType * const H,
-                                                        uint32_t NTriDiag)
+uint32_t AndersonMatrixToTriDiagonalMatrixNonOrthogonal(AndersonMatrixType const M, TriDiagonalMatrixType * const H, uint32_t NTriDiag)
 {
   uint32_t i;
   double *vec[3];
@@ -199,8 +198,7 @@ uint32_t AndersonMatrixToTriDiagonalMatrixPlusT(AndersonMatrixType const M, Matr
   return 0;
 }
 
-uint32_t AndersonMatrixToTriDiagonalMatrix(AndersonMatrixType const M, TriDiagonalMatrixType * const H,
-                                           uint32_t NTriDiag)
+uint32_t AndersonMatrixToTriDiagonalMatrix(AndersonMatrixType const M, TriDiagonalMatrixType * const H, uint32_t NTriDiag)
 {
   MatrixType T;
   if (AndersonMatrixToTriDiagonalMatrixPlusT(M, &T, H, NTriDiag))
@@ -211,9 +209,7 @@ uint32_t AndersonMatrixToTriDiagonalMatrix(AndersonMatrixType const M, TriDiagon
   return 0;
 }
 
-uint32_t AndersonMatrixToDoubleTriDiagonalMatrixNonOrthogonal(AndersonMatrixType const M,
-                                                              DoubleTriDiagonalMatrixType * const H, double const Ef,
-                                                              double const epsilon)
+uint32_t AndersonMatrixToDoubleTriDiagonalMatrixNonOrthogonal(AndersonMatrixType const M, DoubleTriDiagonalMatrixType * const H, double const Ef, double const epsilon)
 {
   /* To DO */
   return 1;
@@ -370,8 +366,7 @@ uint32_t AndersonMatrixToDoubleTriDiagonalMatrixPlusT(AndersonMatrixType const M
   return 0;
 }
 
-uint32_t AndersonMatrixToDoubleTriDiagonalMatrix(AndersonMatrixType const M, DoubleTriDiagonalMatrixType * const H,
-                                                 double const Ef, double const epsilon)
+uint32_t AndersonMatrixToDoubleTriDiagonalMatrix(AndersonMatrixType const M, DoubleTriDiagonalMatrixType * const H, double const Ef, double const epsilon)
 {
   MatrixType T;
   if (AndersonMatrixToDoubleTriDiagonalMatrixPlusT(M, &T, H, Ef, epsilon))
@@ -659,8 +654,7 @@ uint32_t AndersonMatrixToBADoubleTriDiagonalMatrixSimple(AndersonMatrixType cons
 /*
  *
  */
-uint32_t AndersonMatrixToBADoubleTriDiagonalMatrix(AndersonMatrixType const M, double const onsiteshift,
-                                                   BADoubleTriDiagonalMatrixType * const A, double *const occupation)
+uint32_t AndersonMatrixToBADoubleTriDiagonalMatrix(AndersonMatrixType const M, double const onsiteshift, BADoubleTriDiagonalMatrixType * const A, double *const occupation)
 {
   uint32_t i, j, nVal;
   MatrixType Eigenfun;
@@ -1319,8 +1313,7 @@ uint32_t TriDiagonalMatrixToAndersonMatrixPlusT(TriDiagonalMatrixType const M, M
   return 0;
 }
 
-uint32_t TriDiagonalMatrixToDoubleTriDiagonalMatrix(TriDiagonalMatrixType const M,
-                                                    DoubleTriDiagonalMatrixType * const A, double Ef, double epsilon)
+uint32_t TriDiagonalMatrixToDoubleTriDiagonalMatrix(TriDiagonalMatrixType const M, DoubleTriDiagonalMatrixType * const A, double Ef, double epsilon)
 {
   AndersonMatrixType An;
   if (TriDiagonalMatrixToAndersonMatrix(M, &An))
@@ -1340,9 +1333,7 @@ uint32_t TriDiagonalMatrixToDoubleTriDiagonalMatrix(TriDiagonalMatrixType const 
 }
 
 
-uint32_t TriDiagonalMatrixToSecondDoubleTriDiagonalMatrix(TriDiagonalMatrixType const M,
-                                                          SecondDoubleTriDiagonalMatrixType * const A, double Ef,
-                                                          double epsilon)
+uint32_t TriDiagonalMatrixToSecondDoubleTriDiagonalMatrix(TriDiagonalMatrixType const M, SecondDoubleTriDiagonalMatrixType * const A, double Ef, double epsilon)
 {
   TriDiagonalMatrixType SecTri;
   if (M.N < 2)
@@ -1493,8 +1484,7 @@ uint32_t TriDiagonalMatrixToBADoubleTriDiagonalMatrixOccupation(TriDiagonalMatri
 /********************         DoubleTriDiagonalMatrix To ... ********************/
 /********************************************************************************/
 
-uint32_t DoubleTriDiagonalMatrixToTriDiagonalMatrix(DoubleTriDiagonalMatrixType const M,
-                                                    TriDiagonalMatrixType * const H, uint32_t NTriDiag)
+uint32_t DoubleTriDiagonalMatrixToTriDiagonalMatrix(DoubleTriDiagonalMatrixType const M, TriDiagonalMatrixType * const H, uint32_t NTriDiag)
 {
   uint32_t i, j;
   double tempRe;
@@ -1621,8 +1611,7 @@ uint32_t SparseMatrixToTriDiagonalMatrixNonOrthogonal(SparseMatrixType M, TriDia
 /*
  *
  */
-uint32_t SparseMatrixToTriDiagonalMatrix(SparseMatrixType M, MatrixType * const T, TriDiagonalMatrixType * const H,
-                                         uint32_t NTriDiag)
+uint32_t SparseMatrixToTriDiagonalMatrix(SparseMatrixType M, MatrixType * const T, TriDiagonalMatrixType * const H, uint32_t NTriDiag)
 {
   uint32_t i, j;
   double tempRe;
@@ -3393,10 +3382,7 @@ uint32_t MatrixToDoubleTriDiagonalMatrixNoOverlap(MatrixType const M, MatrixType
 }
 
 
-uint32_t MatrixToBlokDoubleTriDiagonalMatrixNoOverlap(MatrixType const M, MatrixType * const Tval,
-                                                      MatrixType * const Tcon,
-                                                      BlokDoubleTriDiagonalMatrixType * const H, const uint32_t BlokDim,
-                                                      double const Ef)
+uint32_t MatrixToBlokDoubleTriDiagonalMatrixNoOverlap(MatrixType const M, MatrixType * const Tval, MatrixType * const Tcon, BlokDoubleTriDiagonalMatrixType * const H, const uint32_t BlokDim, double const Ef)
 {
   //TODO: General coding
   return 0;
@@ -3514,9 +3500,7 @@ uint32_t ListOfPolesToBADoubleTridiagonalMatrix(const ListOfPoles A, BADoubleTri
 /*
  *
  */
-uint32_t ListOfPolesToBADoubleTridiagonalMatrixOccupation(const ListOfPoles A, BADoubleTriDiagonalMatrixType * const M,
-                                                          uint32_t NTriDiagval, uint32_t NTriDiagcon, double mu,
-                                                          double occupation)
+uint32_t ListOfPolesToBADoubleTridiagonalMatrixOccupation(const ListOfPoles A, BADoubleTriDiagonalMatrixType * const M, uint32_t NTriDiagval, uint32_t NTriDiagcon, double mu, double occupation)
 {
   double muOccupation;
   ListOfPoles Achop;

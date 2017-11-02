@@ -130,18 +130,18 @@ uint32_t CopyCrystalStructure(CrystalStructureType A, CrystalStructureType * B);
 /**********************************************************/
 int    SetNFermionIndexTightBindingDef(TightBindingDef * A);
 uint32_t CreateUSperCell(OperatorType U, OperatorType * USuperCell, CrystalStructureSuperCellType SuperCell);
-int    CreateTightBindingSuperCell();
-int CreateHamiltonianFromTightBindingDef();
-int CreateHamiltonianFromTightBindingDefConstantPhaseInUnitCell();
-int CreateCrystalStructureFromCrystalStructureSuperCell();
-void RealEigenFunctionToCharacter();
-void ComplexEigenFunctionToCharacter();
-void EigenFunctionToCharacter();
-void RealEigenFunctionToCharacterMultiSite();
-void ComplexEigenFunctionToCharacterMultiSite();
-void EigenFunctionToCharacterMultiSite();
-uint32_t CalculateChemicalPotentialFromListOfEigenvalues();
-uint32_t CalculateTotalEnergyFromListOfEigenvalues();
+int    CreateTightBindingSuperCell(TightBindingDef A, TightBindingDef * ASuper, CrystalStructureSuperCellType SuperCell);
+int CreateHamiltonianFromTightBindingDef(TightBindingDef A, double k[3], MatrixType * H);
+int CreateHamiltonianFromTightBindingDefConstantPhaseInUnitCell(TightBindingDef A, double k[3], MatrixType * H);
+int CreateCrystalStructureFromCrystalStructureSuperCell(CrystalStructureSuperCellType SuperCell, CrystalStructureType * Cell);
+void RealEigenFunctionToCharacter(double const * EigenFun, MatrixType *Char);
+void ComplexEigenFunctionToCharacter(Complex16 const * EigenFun, MatrixType *Char);
+void EigenFunctionToCharacter(void const * EigenFun, MatrixType *Char);
+void RealEigenFunctionToCharacterMultiSite(double const * EigenFun, MatrixType *Char, uint32_t const Nvec, int const *vec);
+void ComplexEigenFunctionToCharacterMultiSite(Complex16 const * EigenFun, MatrixType *Char, uint32_t const Nvec, int const *vec);
+void EigenFunctionToCharacterMultiSite(void const * EigenFun, MatrixType *Char, uint32_t const Nvec, int const *vec);
+uint32_t CalculateChemicalPotentialFromListOfEigenvalues(const double * const val, const uint32_t NVal, const double kbT, const double NE, double * const mu, double *Etot);
+uint32_t CalculateTotalEnergyFromListOfEigenvalues(const double * const val, const uint32_t NVal, const double kbT, const double mu, double *Etot);
 
 
 /**********************************************************/

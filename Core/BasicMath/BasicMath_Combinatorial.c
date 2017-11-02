@@ -88,8 +88,7 @@ uint32_t PerturbationOptions(uint32_t NV, uint32_t order)
  *  Given a list of how many of each operators I have (i.e. NV integers, the sum over this list is "order")
  *  retrun a unique index position ranging from 0 to PerturbationOptions(NV,order)-1
  */
-void PerturbationOrderListToIndex(uint32_t * const POList, uint32_t * const POIndex, uint32_t const NV,
-                                  uint32_t const order)
+void PerturbationOrderListToIndex(uint32_t * const POList, uint32_t * const POIndex, uint32_t const NV, uint32_t const order)
 {
   uint32_t i, POIndexSmaller;
   *POIndex = 0;

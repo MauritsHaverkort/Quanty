@@ -200,8 +200,7 @@ void DoubleTriDiagonalMatrixScalarMultiply(DoubleTriDiagonalMatrixType * const M
  * and is a copy of a part of A
  * M not allocated on call of the subroutine
  */
-uint32_t DoubleTriDiagonalMatrixPart(DoubleTriDiagonalMatrixType * const M, DoubleTriDiagonalMatrixType A,
-                                     const uint32_t iEndval, const uint32_t iEndcon)
+uint32_t DoubleTriDiagonalMatrixPart(DoubleTriDiagonalMatrixType * const M, DoubleTriDiagonalMatrixType A, const uint32_t iEndval, const uint32_t iEndcon)
 {
   uint32_t i;
   if ((iEndval > A.val.N) || (iEndcon > A.con.N))
@@ -293,8 +292,7 @@ uint32_t RealDoubleTriDiagonalMatrixVector(DoubleTriDiagonalMatrixType const M, 
  * y already allocated
  * y[i]=sum_j M[i][j] x[j]
  */
-uint32_t ComplexDoubleTriDiagonalMatrixVector(DoubleTriDiagonalMatrixType const M, const double *const xRe,
-                                              const double *const xIm, double *const yRe, double *const yIm)
+uint32_t ComplexDoubleTriDiagonalMatrixVector(DoubleTriDiagonalMatrixType const M, const double *const xRe, const double *const xIm, double *const yRe, double *const yIm)
 {
   uint32_t i;
   yRe[0] = (M.val.a[0] + M.con.a[0]) * xRe[0] / 2.0;
@@ -335,8 +333,7 @@ uint32_t ComplexDoubleTriDiagonalMatrixVector(DoubleTriDiagonalMatrixType const 
  * y already allocated
  * y=sum_ij x[i] M[i][j] x[j]
  */
-uint32_t RealVectorDoubleTriDiagonalMatrixVector(DoubleTriDiagonalMatrixType const M, const double *const x,
-                                                 double *const y)
+uint32_t RealVectorDoubleTriDiagonalMatrixVector(DoubleTriDiagonalMatrixType const M, const double *const x, double *const y)
 {
   uint32_t i;
   *y = x[0] * (M.val.a[0] + M.con.a[0]) * x[0] / 2.0;
@@ -364,8 +361,7 @@ uint32_t RealVectorDoubleTriDiagonalMatrixVector(DoubleTriDiagonalMatrixType con
  * y already allocated
  * y=sum_ij x[i]^* M[i][j] x[j]
  */
-uint32_t ComplexVectorDoubleTriDiagonalMatrixVector(DoubleTriDiagonalMatrixType const M, const double *const xRe,
-                                                    const double *const xIm, double *const yRe, double *const yIm)
+uint32_t ComplexVectorDoubleTriDiagonalMatrixVector(DoubleTriDiagonalMatrixType const M, const double *const xRe, const double *const xIm, double *const yRe, double *const yIm)
 {
   uint32_t i;
   *yRe = xRe[0] * (M.val.a[0] + M.con.a[0]) * xRe[0] / 2.0 + xIm[0] * (M.val.a[0] + M.con.a[0]) * xIm[0] / 2.0;

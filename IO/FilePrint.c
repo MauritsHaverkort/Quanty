@@ -1,6 +1,5 @@
 
-uint32_t FilePrintSpectra(SpectraType * const Spec, const uint32_t NSpec, const char *const flname,
-                          const char *const mode)
+uint32_t FilePrintSpectra(SpectraType * const Spec, const uint32_t NSpec, const char *const flname, const char *const mode)
 {
   FILE  *stream;
   uint32_t retval;
@@ -225,8 +224,7 @@ uint32_t FilePrintWaveFunctionPartialCorrelationTensor(WaveFunctionType psi, con
 
 
 
-uint32_t FilePrintWaveFunctionPrefactorHistogram(WaveFunctionType psi, const double exp, const uint32_t N,
-                                                 const char *const flname, const char *const mode)
+uint32_t FilePrintWaveFunctionPrefactorHistogram(WaveFunctionType psi, const double exp, const uint32_t N, const char *const flname, const char *const mode)
 {
   FILE  *stream;
   uint32_t retval;

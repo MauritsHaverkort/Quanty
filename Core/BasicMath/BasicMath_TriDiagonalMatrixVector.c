@@ -186,8 +186,7 @@ void TriDiagonalMatrixScalarMultiply(TriDiagonalMatrixType * const M, double alp
  * namely A[{iStart;;iEnd}][{iStart;;iEnd}]
  * M not allocated on call of the subroutine
  */
-uint32_t TriDiagonalMatrixPart(TriDiagonalMatrixType * const M, TriDiagonalMatrixType A, const uint32_t iStart,
-                               const uint32_t iEnd)
+uint32_t TriDiagonalMatrixPart(TriDiagonalMatrixType * const M, TriDiagonalMatrixType A, const uint32_t iStart, const uint32_t iEnd)
 {
   uint32_t i;
   if ((iEnd < iStart) || (iEnd > A.N))
@@ -252,8 +251,7 @@ void RealTriDiagonalMatrixVector(TriDiagonalMatrixType const M, const double *co
  * y already allocated
  * y[i]=sum_j M[i][j] x[j]
  */
-void ComplexTriDiagonalMatrixVector(TriDiagonalMatrixType const M, const double *const xRe, const double *const xIm,
-                                    double *const yRe, double *const yIm)
+void ComplexTriDiagonalMatrixVector(TriDiagonalMatrixType const M, const double *const xRe, const double *const xIm, double *const yRe, double *const yIm)
 {
   uint32_t i;
   for (i = 0; i < M.N; i++)
@@ -292,8 +290,7 @@ void RealVectorTriDiagonalMatrixVector(TriDiagonalMatrixType const M, const doub
  * y already allocated
  * y=sum_ij x[i]^* M[i][j] x[j]
  */
-void ComplexVectorTriDiagonalMatrixVector(TriDiagonalMatrixType const M, const double *const xRe,
-                                          const double *const xIm, double *const yRe, double *const yIm)
+void ComplexVectorTriDiagonalMatrixVector(TriDiagonalMatrixType const M, const double *const xRe, const double *const xIm, double *const yRe, double *const yIm)
 {
   uint32_t i;
   *yRe = 0;

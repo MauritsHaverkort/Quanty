@@ -110,8 +110,7 @@ uint32_t SumGreensfunctionsTriDiagonalRepresentationNonOrtho(TriDiagonalMatrixTy
 
 }
 
-uint32_t SumGreensfunctionsTriDiagonalRepresentation(TriDiagonalMatrixType const A, TriDiagonalMatrixType const B,
-                                                     TriDiagonalMatrixType * const M)
+uint32_t SumGreensfunctionsTriDiagonalRepresentation(TriDiagonalMatrixType const A, TriDiagonalMatrixType const B, TriDiagonalMatrixType * const M)
 {
   double vecA[A.N + B.N][A.N];
   double vecB[A.N + B.N][B.N];

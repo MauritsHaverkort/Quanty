@@ -2977,8 +2977,7 @@ uint32_t LanczosTriDiagonalizePlusDensityCR(const OperatorType H, WaveFunctionTy
   return retval;
 }
 
-uint32_t LanczosTriDiagonalizePlusDensityMR(const OperatorType H, WaveFunctionType psi, double epsilon,
-                                            TriDiagonalMatrixType * const M, MatrixType * const Rho, double Gamma)
+uint32_t LanczosTriDiagonalizePlusDensityMR(const OperatorType H, WaveFunctionType psi, double epsilon, TriDiagonalMatrixType * const M, MatrixType * const Rho, double Gamma)
 {
   uint32_t retval;
   WaveFunctionType Cpsi;
@@ -4981,8 +4980,7 @@ uint32_t LanczosTriDiagonalize(const OperatorType H, WaveFunctionType psi, doubl
   }
 }
 
-uint32_t LanczosTriDiagonalizePlusDensity(const OperatorType H, WaveFunctionType psi, double epsilon,
-                                          TriDiagonalMatrixType * const M, MatrixType * const Rho, double Gamma)
+uint32_t LanczosTriDiagonalizePlusDensity(const OperatorType H, WaveFunctionType psi, double epsilon, TriDiagonalMatrixType * const M, MatrixType * const Rho, double Gamma)
 {
   WaveFunctionType Cpsi;
   if (psi.QComplex)

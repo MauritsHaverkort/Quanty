@@ -451,9 +451,7 @@ void ComplexWaveFunctionPrefactorDet(const WaveFunctionType psi, const uint8_t *
 *   return 0 if everything worked
 *   return 1 if out off memory
 */
-uint32_t ComplexWaveFunctionAddElementOMPMiniFlush(WaveFunctionType * const psi, uint32_t * NMini,
-                                                   const uint8_t * const MiniDet, const double *const MiniValueRe,
-                                                   const double *const MiniValueIm)
+uint32_t ComplexWaveFunctionAddElementOMPMiniFlush(WaveFunctionType * const psi, uint32_t * NMini, const uint8_t * const MiniDet, const double *const MiniValueRe, const double *const MiniValueIm)
 {
   uint32_t i, NoMoreMem = 0;
 #pragma omp critical (AddToPsi)
@@ -622,8 +620,7 @@ uint32_t ComplexWaveFunctionAddMultipliedUnionBasis(WaveFunctionType * const a, 
   return 0;
 }
 
-uint32_t ComplexWaveFunctionAddComplexMultipliedUnionBasis(WaveFunctionType * const a, const WaveFunctionType b,
-                                                           const double alphaRe, const double alphaIm)
+uint32_t ComplexWaveFunctionAddComplexMultipliedUnionBasis(WaveFunctionType * const a, const WaveFunctionType b, const double alphaRe, const double alphaIm)
 {
   uint32_t i, j;
   for (i = b.N; i != 0; --i)
@@ -1276,8 +1273,7 @@ void ComplexWaveFunctionOrthogonalizeConserveBasis(WaveFunctionType * const psi,
 /*  
 *   Make psi orthogonal to OtherPsi, if needed enlarge the basis set of psi
 */
-uint32_t ComplexWaveFunctionOrthogonalize(WaveFunctionType * const psi, const WaveFunctionType * const OtherPsi,
-                                          const uint32_t Npsi)
+uint32_t ComplexWaveFunctionOrthogonalize(WaveFunctionType * const psi, const WaveFunctionType * const OtherPsi, const uint32_t Npsi)
 {
   uint32_t i;
   double aRe, aIm;
@@ -1692,9 +1688,9 @@ uint32_t ComplexMappedDetToWaveFunction(WaveFunctionType * const A, uint8_t *Det
   for(i=0;i<A->NFermion;i++)
   {
     oadd[0]=CrAnMask | (uint16_t)i;
-    ComplexOperatorAddLader(&O, oadd, 1, 0.0);
+    ComplexOperatorAddLader(&O, oadd, 1, 0.0, 0.0);
   }
-  
+
   for(i=0;i<A->NFermion;i++)
   {
     /* test if Fermion i is occupied */

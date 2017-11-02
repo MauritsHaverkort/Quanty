@@ -2578,7 +2578,7 @@ static int LuaEigensystem(lua_State * L)
  *  @param L
  *         Pointer to a lua state
  *         1-st  argument on stack should be an Hermitian operator (Hamiltonian) [H] with NI fermions
- *         2-nd  argument on stack should be the bath represented by the bath hybridization function. Given as a block list in either tri-diagonal, anderson or list of pole form matrices should have dimension NBath by NBath
+ *         2-nd  argument on stack should be the bath represented by the bath hybridization function. Given as a block list in either tri-diagonal, anderson or list of pole form matrices should have dimension NI by NI
  *         3-rd  argument is either an integer specifying the number of states to calculate or a list of wave-functions
  *         4-th  argument is a transition operator or list of transition operators
  *         Possible fifth argument can be a list of options

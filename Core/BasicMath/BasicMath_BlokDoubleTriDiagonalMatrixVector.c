@@ -44,8 +44,7 @@ void FreeFrameBlokDoubleTriDiagonalMatrix(BlokDoubleTriDiagonalMatrixType * cons
 *  M.val.N and M.con.N must be set
 *  bloksize gives the dimension of the matrices that build the bloks
 */
-uint32_t InitBlokDoubleTriDiagonalMatrix(BlokDoubleTriDiagonalMatrixType * const M, uint32_t bloksize,
-                                         uint32_t QComplex)
+uint32_t InitBlokDoubleTriDiagonalMatrix(BlokDoubleTriDiagonalMatrixType * const M, uint32_t bloksize, uint32_t QComplex)
 {
   strcpy(M->Name, "Matrix");
   if ((M->val.N == 0) || (M->con.N == 0))
@@ -82,8 +81,7 @@ uint32_t InitFrameBlokDoubleTriDiagonalMatrix(BlokDoubleTriDiagonalMatrixType * 
 *  M.N must be set
 *  bloksize gives the dimension of the matrices that build the bloks
 */
-uint32_t InitIdentityBlokDoubleTriDiagonalMatrix(BlokDoubleTriDiagonalMatrixType * const M, uint32_t bloksize,
-                                                 uint32_t QComplex)
+uint32_t InitIdentityBlokDoubleTriDiagonalMatrix(BlokDoubleTriDiagonalMatrixType * const M, uint32_t bloksize, uint32_t QComplex)
 {
   strcpy(M->Name, "I_Matrix");
   if ((M->val.N == 0) || (M->con.N == 0))
@@ -110,8 +108,7 @@ uint32_t BlokDoubleTriDiagonalMatrixChop(BlokDoubleTriDiagonalMatrixType * const
 /*
 *  M<- M + alpha B
 */
-uint32_t BlokDoubleTriDiagonalMatrixAdd(BlokDoubleTriDiagonalMatrixType * const M, BlokDoubleTriDiagonalMatrixType B,
-                                        double const alphaRe)
+uint32_t BlokDoubleTriDiagonalMatrixAdd(BlokDoubleTriDiagonalMatrixType * const M, BlokDoubleTriDiagonalMatrixType B, double const alphaRe)
 {
   BlokTriDiagonalMatrixAdd(&M->val, B.val, alphaRe);
   BlokTriDiagonalMatrixAdd(&M->con, B.con, alphaRe);
@@ -130,8 +127,7 @@ uint32_t BlokDoubleTriDiagonalMatrixScalarMultiply(BlokDoubleTriDiagonalMatrixTy
 
 /*  returns a new blok tridiagonal matrix consisting of bloks 0 to iEndcon and iEndval
  */
-uint32_t BlokDoubleTriDiagonalMatrixPart(BlokDoubleTriDiagonalMatrixType * const M, BlokDoubleTriDiagonalMatrixType A,
-                                         uint32_t iEndval, uint32_t iEndcon)
+uint32_t BlokDoubleTriDiagonalMatrixPart(BlokDoubleTriDiagonalMatrixType * const M, BlokDoubleTriDiagonalMatrixType A, uint32_t iEndval, uint32_t iEndcon)
 {
   M->mu = A.mu;
   M->Epsilon = A.Epsilon;
@@ -208,8 +204,7 @@ uint32_t BlokDoubleTriDiagonalMatrixConjugateTranspose(BlokDoubleTriDiagonalMatr
  * y already allocated
  * y[i]=sum_j M[i][j] x[j]
  */
-uint32_t RealBlokDoubleTriDiagonalMatrixVector(BlokDoubleTriDiagonalMatrixType const M, double *const x,
-                                               double *const y)
+uint32_t RealBlokDoubleTriDiagonalMatrixVector(BlokDoubleTriDiagonalMatrixType const M, double *const x, double *const y)
 {
   int const Nblok = M.val.a[0].Ni;
   double temp[Nblok];
@@ -247,8 +242,7 @@ uint32_t RealBlokDoubleTriDiagonalMatrixVector(BlokDoubleTriDiagonalMatrixType c
  * y already allocated
  * y[i]=sum_j M[i][j] x[j]
  */
-uint32_t ComplexBlokDoubleTriDiagonalMatrixVector(BlokDoubleTriDiagonalMatrixType const M, double *const xRe,
-                                                  double *const xIm, double *const yRe, double *const yIm)
+uint32_t ComplexBlokDoubleTriDiagonalMatrixVector(BlokDoubleTriDiagonalMatrixType const M, double *const xRe, double *const xIm, double *const yRe, double *const yIm)
 {
   int const Nblok = M.val.a[0].Ni;
   double tempRe[Nblok], tempIm[Nblok];
@@ -290,8 +284,7 @@ uint32_t ComplexBlokDoubleTriDiagonalMatrixVector(BlokDoubleTriDiagonalMatrixTyp
  * y already allocated
  * y=sum_ij x[i] M[i][j] x[j]
  */
-uint32_t RealVectorBlokDoubleTriDiagonalMatrixVector(BlokDoubleTriDiagonalMatrixType const M, const double *const x,
-                                                     double *const y)
+uint32_t RealVectorBlokDoubleTriDiagonalMatrixVector(BlokDoubleTriDiagonalMatrixType const M, const double *const x, double *const y)
 {
 
   return 0;
@@ -301,9 +294,7 @@ uint32_t RealVectorBlokDoubleTriDiagonalMatrixVector(BlokDoubleTriDiagonalMatrix
  * y already allocated
  * y=sum_ij x[i]^* M[i][j] x[j]
  */
-uint32_t ComplexVectorBlokDoubleTriDiagonalMatrixVector(BlokDoubleTriDiagonalMatrixType const M,
-                                                        const double *const xRe, const double *const xIm,
-                                                        double *const yRe, double *const yIm)
+uint32_t ComplexVectorBlokDoubleTriDiagonalMatrixVector(BlokDoubleTriDiagonalMatrixType const M, const double *const xRe, const double *const xIm, double *const yRe, double *const yIm)
 {
   return 0;
 }

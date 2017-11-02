@@ -110,8 +110,7 @@ void SetBADoubleTriDiagonalMatrixConVal(BADoubleTriDiagonalMatrixType * const M)
 /*
  *
  */
-uint32_t MapSecondoubleTridiagonalMatrixToBA(SecondDoubleTriDiagonalMatrixType const A,
-                                             BADoubleTriDiagonalMatrixType * const M)
+uint32_t MapSecondoubleTridiagonalMatrixToBA(SecondDoubleTriDiagonalMatrixType const A,  BADoubleTriDiagonalMatrixType * const M)
 {
   uint32_t i;
   M->b0 = A.b0;

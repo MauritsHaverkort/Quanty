@@ -226,8 +226,7 @@ void BlokAndersonMatrixScalarMultiply(BlokAndersonMatrixType * const M, double a
  * namely A[{0,iStart;;iEnd}][{0,iStart;;iEnd}]
  * M not allocated on call of the subroutine
  */
-uint32_t BlokAndersonMatrixPart(BlokAndersonMatrixType * const M, BlokAndersonMatrixType A, const uint32_t iStart,
-                                const uint32_t iEnd)
+uint32_t BlokAndersonMatrixPart(BlokAndersonMatrixType * const M, BlokAndersonMatrixType A, const uint32_t iStart, const uint32_t iEnd)
 {
   uint32_t i;
   if ((iEnd < iStart) || (iEnd >= A.N) || (iStart == 0))
@@ -377,8 +376,7 @@ uint32_t RealBlokAndersonMatrixVector(BlokAndersonMatrixType const M, const doub
  * y already allocated
  * y[i]=sum_j M[i][j] x[j]
  */
-uint32_t ComplexBlokAndersonMatrixVector(BlokAndersonMatrixType const M, const double *const xRe,
-                                         const double *const xIm, double *const yRe, double *const yIm)
+uint32_t ComplexBlokAndersonMatrixVector(BlokAndersonMatrixType const M, const double *const xRe, const double *const xIm, double *const yRe, double *const yIm)
 {
   uint32_t i, StartOfBloki[M.N], StartOfBlokj[M.N], Ni, Nj, MaxNi, MaxNj;
   StartOfBloki[0] = 0;
@@ -495,8 +493,7 @@ uint32_t RealVectorBlokAndersonMatrixVector(BlokAndersonMatrixType const M, cons
  * y already allocated
  * y=sum_ij x[i]^* M[i][j] x[j]
  */
-uint32_t ComplexVectorBlokAndersonMatrixVector(BlokAndersonMatrixType const M, const double *const xRe,
-                                               const double *const xIm, double *const yRe, double *const yIm)
+uint32_t ComplexVectorBlokAndersonMatrixVector(BlokAndersonMatrixType const M, const double *const xRe,const double *const xIm, double *const yRe, double *const yIm)
 {
   uint32_t i, StartOfBloki[M.N], StartOfBlokj[M.N], Ni, Nj, MaxNi, MaxNj;
   double ytempRe, ytempIm;

@@ -1074,8 +1074,7 @@ double SparseMatrixInverse(SparseMatrixType * const M, double epsilon)
 /*
  *  M=M + alpha B
  */
-uint32_t SparseMatrixAdd(SparseMatrixType * const M, const SparseMatrixType B, double const alphaRe,
-                         double const alphaIm)
+uint32_t SparseMatrixAdd(SparseMatrixType * const M, const SparseMatrixType B, double const alphaRe, double const alphaIm)
 {
   if ((M->Ni != B.Ni) || (M->Nj != B.Nj))
   {
@@ -1151,8 +1150,7 @@ uint32_t SparseMatrixScalarMultiply(SparseMatrixType * const M, double const alp
  * M.Ni=M.Nj=T.Ni;
  * M on entrance not initiallized
  */
-uint32_t SparseMatrixTransform(SparseMatrixType * const M, SparseMatrixType const A, SparseMatrixType const T,
-                               double epsilon)
+uint32_t SparseMatrixTransform(SparseMatrixType * const M, SparseMatrixType const A, SparseMatrixType const T, double epsilon)
 {
   if ((A.Ni != A.Nj) || (A.Ni != T.Nj))
   {
@@ -1300,8 +1298,7 @@ uint32_t SparseMatrixTransform(SparseMatrixType * const M, SparseMatrixType cons
  * M.Ni=M.Nj=T.Ni;
  * M on entrance not initiallized
  */
-uint32_t SparseMatrixDenseTransform(SparseMatrixType * const M, SparseMatrixType const A, MatrixType const T,
-                                    double epsilon)
+uint32_t SparseMatrixDenseTransform(SparseMatrixType * const M, SparseMatrixType const A, MatrixType const T, double epsilon)
 {
   /**** To Do ****/
   return 0;
@@ -1313,32 +1310,25 @@ uint32_t SparseMatrixDenseTransform(SparseMatrixType * const M, SparseMatrixType
  * M.Ni=M.Nj=T.Ni;
  * M on entrance not initiallized
  */
-uint32_t DenseMatrixSparseTransform(SparseMatrixType * const M, MatrixType const A, SparseMatrixType const T,
-                                    double epsilon)
+uint32_t DenseMatrixSparseTransform(SparseMatrixType * const M, MatrixType const A, SparseMatrixType const T, double epsilon)
 {
   /**** To Do ****/
   return 0;
 }
 
-uint32_t SparseMatrixTransformPart(SparseMatrixType * const M, SparseMatrixType const A, SparseMatrixType const T,
-                                   double epsilon, const uint32_t MNiMin, const uint32_t MNiMax, const uint32_t MNjMin,
-                                   const uint32_t MNjMax)
+uint32_t SparseMatrixTransformPart(SparseMatrixType * const M, SparseMatrixType const A, SparseMatrixType const T, double epsilon, const uint32_t MNiMin, const uint32_t MNiMax, const uint32_t MNjMin, const uint32_t MNjMax)
 {
   /**** To Do ****/
   return 0;
 }
 
-uint32_t SparseMatrixDenseTransformPart(SparseMatrixType * const M, SparseMatrixType const A, MatrixType const T,
-                                        double epsilon, const uint32_t MNiMin, const uint32_t MNiMax,
-                                        const uint32_t MNjMin, const uint32_t MNjMax)
+uint32_t SparseMatrixDenseTransformPart(SparseMatrixType * const M, SparseMatrixType const A, MatrixType const T, double epsilon, const uint32_t MNiMin, const uint32_t MNiMax, const uint32_t MNjMin, const uint32_t MNjMax)
 {
   /**** To Do ****/
   return 0;
 }
 
-uint32_t DenseMatrixSparseTransformPart(SparseMatrixType * const M, MatrixType const A, SparseMatrixType const T,
-                                        double epsilon, const uint32_t MNiMin, const uint32_t MNiMax,
-                                        const uint32_t MNjMin, const uint32_t MNjMax)
+uint32_t DenseMatrixSparseTransformPart(SparseMatrixType * const M, MatrixType const A, SparseMatrixType const T, double epsilon, const uint32_t MNiMin, const uint32_t MNiMax, const uint32_t MNjMin, const uint32_t MNjMax)
 {
   /**** To Do ****/
   return 0;
@@ -1554,8 +1544,7 @@ uint32_t DenseMatrixSparseMultiply(SparseMatrixType * const M, MatrixType const 
  * and is a copy of a part of A
  * M not allocated on call of the subroutine
  */
-uint32_t SparseMatrixPart(SparseMatrixType * const M, SparseMatrixType const A, const uint32_t iStart,
-                          const uint32_t iEnd, const uint32_t jStart, const uint32_t jEnd)
+uint32_t SparseMatrixPart(SparseMatrixType * const M, SparseMatrixType const A, const uint32_t iStart, const uint32_t iEnd, const uint32_t jStart, const uint32_t jEnd)
 {
   uint32_t l;
   if ((iEnd < iStart) || (jEnd < jStart) || (iEnd >= A.Ni) || (jEnd >= A.Nj))
@@ -1713,8 +1702,7 @@ uint32_t RealTransposeSparseMatrixVector(SparseMatrixType const M, const double 
  * b already allocated
  * b[i]=sum_j M[i][j] a[j]
  */
-void ComplexSparseMatrixVector(SparseMatrixType const M, const double *const aRe, const double *const aIm,
-                               double *const bRe, double *const bIm)
+void ComplexSparseMatrixVector(SparseMatrixType const M, const double *const aRe, const double *const aIm, double *const bRe, double *const bIm)
 {
   int    k;
   if (M.QComplex)
@@ -1749,8 +1737,7 @@ void ComplexSparseMatrixVector(SparseMatrixType const M, const double *const aRe
  * b already allocated
  * b[i]=sum_j M[j][i]^* a[j]
  */
-void ComplexConjugateTransposeSparseMatrixVector(SparseMatrixType const M, const double *const aRe,
-                                                 const double *const aIm, double *const bRe, double *const bIm)
+void ComplexConjugateTransposeSparseMatrixVector(SparseMatrixType const M, const double *const aRe, const double *const aIm, double *const bRe, double *const bIm)
 {
   int    k;
   if (M.QComplex)
@@ -1817,8 +1804,7 @@ uint32_t RealVectorSparseMatrixVector(SparseMatrixType const M, const double *co
  * b already allocated
  * b=sum_ij a[i]^* M[i][j] a[j]
  */
-void ComplexVectorSparseMatrixVector(SparseMatrixType const M, const double *const aRe, const double *const aIm,
-                                     double *const bRe, double *const bIm)
+void ComplexVectorSparseMatrixVector(SparseMatrixType const M, const double *const aRe, const double *const aIm, double *const bRe, double *const bIm)
 {
   int    k;
   *bRe = 0;

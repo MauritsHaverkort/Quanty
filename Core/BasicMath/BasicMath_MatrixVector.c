@@ -872,8 +872,7 @@ uint32_t MatrixTransform(MatrixType * const M, MatrixType const A, MatrixType co
  * M.Ni=M.Nj=T.Ni;
  * M on entrance not initiallized
  */
-uint32_t MatrixTransformPart(MatrixType * const M, MatrixType const A, MatrixType const T, const uint32_t MNiMin,
-                             const uint32_t MNiMax, const uint32_t MNjMin, const uint32_t MNjMax)
+uint32_t MatrixTransformPart(MatrixType * const M, MatrixType const A, MatrixType const T, const uint32_t MNiMin, const uint32_t MNiMax, const uint32_t MNjMin, const uint32_t MNjMax)
 {
   if ((A.Ni != A.Nj) || (A.Ni != T.Nj))
   {
@@ -1107,8 +1106,7 @@ uint32_t MatrixMultiply(MatrixType * const M, MatrixType const A, MatrixType con
  * and is a copy of a part of A
  * M not allocated on call of the subroutine
  */
-uint32_t MatrixPart(MatrixType * const M, MatrixType const A, const uint32_t iStart, const uint32_t iEnd,
-                    const uint32_t jStart, const uint32_t jEnd)
+uint32_t MatrixPart(MatrixType * const M, MatrixType const A, const uint32_t iStart, const uint32_t iEnd, const uint32_t jStart, const uint32_t jEnd)
 {
   uint32_t i, j;
   if ((iEnd < iStart) || (jEnd < jStart) || (iEnd >= A.Ni) || (jEnd >= A.Nj))
@@ -1357,8 +1355,7 @@ uint32_t RealVectorMatrixVector(MatrixType const M, const double *const a, doubl
  * b already allocated
  * b=sum_ij a[i] M[i][j] a[j]
  */
-uint32_t ComplexVectorMatrixVector(MatrixType const M, const double *const aRe, const double *const aIm,
-                                   double *const bRe, double *const bIm)
+uint32_t ComplexVectorMatrixVector(MatrixType const M, const double *const aRe, const double *const aIm, double *const bRe, double *const bIm)
 {
   uint32_t i, j;
   *bRe = 0;

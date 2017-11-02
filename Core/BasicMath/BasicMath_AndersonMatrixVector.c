@@ -172,8 +172,7 @@ void AndersonMatrixScalarMultiply(AndersonMatrixType * const M, double alphaRe)
  * namely A[{0,iStart;;iEnd}][{0,iStart;;iEnd}]
  * M not allocated on call of the subroutine
  */
-uint32_t AndersonMatrixPart(AndersonMatrixType * const M, AndersonMatrixType A, const uint32_t iStart,
-                            const uint32_t iEnd)
+uint32_t AndersonMatrixPart(AndersonMatrixType * const M, AndersonMatrixType A, const uint32_t iStart, const uint32_t iEnd)
 {
   uint32_t i;
   if ((iEnd < iStart) || (iEnd >= A.N) || (iStart == 0))
@@ -317,8 +316,7 @@ void RealAndersonMatrixVector(AndersonMatrixType const M, const double *const x,
  * y already allocated
  * y[i]=sum_j M[i][j] x[j]
  */
-void ComplexAndersonMatrixVector(AndersonMatrixType const M, const double *const xRe, const double *const xIm,
-                                 double *const yRe, double *const yIm)
+void ComplexAndersonMatrixVector(AndersonMatrixType const M, const double *const xRe, const double *const xIm, double *const yRe, double *const yIm)
 {
   uint32_t i;
   for (i = 0; i < M.N; i++)
@@ -358,8 +356,7 @@ void RealVectorAndersonMatrixVector(AndersonMatrixType const M, const double *co
  * y already allocated
  * y=sum_ij x[i]^* M[i][j] x[j]
  */
-void ComplexVectorAndersonMatrixVector(AndersonMatrixType const M, const double *const xRe, const double *const xIm,
-                                       double *const yRe, double *const yIm)
+void ComplexVectorAndersonMatrixVector(AndersonMatrixType const M, const double *const xRe, const double *const xIm, double *const yRe, double *const yIm)
 {
   uint32_t i;
   *yRe = 0;

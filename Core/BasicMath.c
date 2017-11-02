@@ -284,8 +284,7 @@ double InterpolateRootOfset(double const *x, double const *y, uint32_t N, double
   return InterpolateRoot(x, yoff, N);
 }
 
-void InterpolateRoot2D(double const *x1, double const *x2, double const *y1, double const *y2, uint32_t N,
-                       double *const x1next, double *const x2next)
+void InterpolateRoot2D(double const *x1, double const *x2, double const *y1, double const *y2, uint32_t N, double *const x1next, double *const x2next)
 {
   uint32_t const maxit1 = 10;
   uint32_t i;
@@ -319,8 +318,7 @@ void InterpolateRoot2D(double const *x1, double const *x2, double const *y1, dou
 }
 
 
-void InterpolateRoot2DOfset(double const *x1, double const *x2, double const *y1, double const *y2, uint32_t N,
-                            double const ofsety1, double const ofsety2, double *const x1next, double *const x2next)
+void InterpolateRoot2DOfset(double const *x1, double const *x2, double const *y1, double const *y2, uint32_t N, double const ofsety1, double const ofsety2, double *const x1next, double *const x2next)
 {
   double y1off[N], y2off[N];
   uint32_t i;
