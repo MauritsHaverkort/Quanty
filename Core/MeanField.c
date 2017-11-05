@@ -586,7 +586,7 @@ uint32_t CalculateDensityMatrixFromOneElectronEigensystem(const CompactMatrixTyp
  */
 uint32_t MeanFieldGroundstate(const OperatorType *const O, CompactMatrixType * const Rho, const double kbT, double * Etot)
 {
-  uint32_t i,iloop=0, Maxit=1000;
+  uint32_t i,iloop=0, Maxit=1000,somemore=0;
   CompactMatrixType HMF, fun, RhoNew;
   double val[O->NFermion],Etotlist[Maxit],mix=0.8;
   double Nelec=0;
@@ -631,7 +631,15 @@ uint32_t MeanFieldGroundstate(const OperatorType *const O, CompactMatrixType * c
     {
       if(Abs(Etotlist[iloop]-Etotlist[iloop-1])<(100*((DBL_EPSILON)*Abs(Etotlist[iloop]+Etotlist[iloop-1])+sqrt(DBL_MIN))))
       {
-        Converged=True;
+        if(somemore==3)
+        {
+          Converged=True;
+        }
+        else
+        {
+          mix=1.0;
+          somemore++;
+        }
       }
     }
     VerbosityPrintf(0x0100,"In MeanFieldGroundstate loop %4i total energy is %22.15E dE is %22.15E\n",iloop,Etotlist[iloop],Etotlist[iloop]-Etotlist[(iloop==0)?(0):(iloop-1)]);

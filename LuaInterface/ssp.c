@@ -2303,7 +2303,35 @@ static int LuaMeanFieldGroundstate(lua_State *L)
   return 3;
 }
 
-
+static int LuaOperatorToMatrix(lua_State *L)
+{
+  OperatorType *H;
+  CompactMatrixType *Rho, HMat;
+  uint32_t len;
+  len = (uint32_t)lua_gettop(L);
+  H = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
+  if(len==1)
+  {
+    Rho=malloc(sizeof(CompactMatrixType));
+    Rho->Ni=H->NFermion;
+    Rho->Nj=H->NFermion;
+    Rho->QComplex=0;
+    InitCompactMatrix(Rho);
+  }
+  else if (len==2)
+  {
+    Rho = (CompactMatrixType *) luaL_checkCompactMatrix(L, 2);
+  }
+  else
+  {
+    return luaL_error(L, "Error in OperatorToMatrix, expected one (Operator) or two (Operator, DensityMatrix) input parameters, not (%i)\n",len);
+  }
+  MeanFieldOperatorOneElectronMatrix(H, &HMat, *Rho);
+  LuaPushTable_CompactMatrixType(L, &HMat);
+  FreeCompactMatrix(Rho);
+  free(Rho);
+  return 1;
+}
 
 static int LuaEvolveToGroundstate(lua_State * L)
 {
@@ -3197,6 +3225,7 @@ static const struct luaL_Reg global_functions[] = {
   {"NewOperator", LuaNewOperator},
   {"NewTightBinding", LuaNewTightBinding},
   {"NewWavefunction", LuaNewWaveFunction},
+  {"OperatorToMatrix", LuaOperatorToMatrix},
   {"Orthonormalize", LuaOrthonormalize},
   {"PotentialExpandedOnClm", LuaPotentialExpandedOnClm},
   {"PlotBands", LuaPlotBands},

@@ -296,7 +296,7 @@
 		4C6925BF18D8683700E6FA6F /* CodeMartin.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = CodeMartin.c; path = Martin/CodeMartin.c; sourceTree = "<group>"; };
 		4C6925C418D869FE00E6FA6F /* MartinPESXAS */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = MartinPESXAS; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C6B13BC1E8A2A4A009D7EDC /* CreateResonantSpectra.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; name = CreateResonantSpectra.Quanty; path = "Debug examples/Functions/CreateResonantSpectra.Quanty"; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.lua; };
-		4C6E52E31FAB582A00C676E6 /* Impurity.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; name = Impurity.Quanty; path = "Debug examples/Impurity.Quanty"; sourceTree = "<group>"; };
+		4C6E52E31FAB582A00C676E6 /* Impurity.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; name = Impurity.Quanty; path = "Debug examples/Impurity.Quanty"; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.lua; };
 		4C77BA751741188E00AC7E7D /* OperatorWaveFunctionPerturbation.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = OperatorWaveFunctionPerturbation.c; sourceTree = "<group>"; };
 		4C7924621C6E139500250C45 /* get_put.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = get_put.c; path = lua_extensions/get_put.c; sourceTree = "<group>"; };
 		4C79F5D817B53C8000189682 /* Hubart */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Hubart; sourceTree = BUILT_PRODUCTS_DIR; };

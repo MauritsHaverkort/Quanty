@@ -1852,6 +1852,7 @@ uint32_t MatrixToTriDiagonalMatrixNonOrthogonal(MatrixType const M, TriDiagonalM
 /*
 *  M=T^{*}.H.T^{T} with H a diagonal matrix with the values val on the diagonal
 *  input M defined, T not initiallized
+*
 */
 uint32_t Eigensystem(MatrixType const M, MatrixType * const T, double *val)
 {
@@ -2499,6 +2500,71 @@ uint32_t GeneralizedEigensystemSingular(MatrixType const M, MatrixType const S, 
   FreeMatrix(&Ttemp);
   return retval;
 }
+
+/*  Rotate degenerate states of an eigensystem
+ *  States are degenerate if |val[i+1]-val[i]| < epsilon
+ *  Method determines how the states are rotated
+ */
+uint32_t RotateStates(CompactMatrixType *fun, uint32_t start, uint32_t end, char *method)
+{
+  if(strcmp(method, "QRDecomposition")==0)
+  {
+    // for N degenerate states, find the N columns with largest elements, and use a QR decomposite on this matrix
+    CompactMatrixType subfun;
+    subfun.Ni=end-start+1;
+    subfun.Nj=end-start+1;
+    if(fun->QComplex==0)
+    { // real
+      //TODO: implement real QR rotation
+    }
+    else
+    { // complex
+      //TODO: implement complex QR rotation
+    }
+  }
+  else
+  {
+    printf("ERROR: Unknown method in Rotate: %s",method);
+    return 1;
+  }
+  return 0;
+}
+uint32_t RotateDegenerateStates(CompactMatrixType *fun, double *val, double epsilon, char *method)
+{
+  uint32_t degenerateStart=0, degenerateEnd=0;
+  while(degenerateEnd<(fun->Ni-1))
+  {
+    if(Abs(val[degenerateStart]-val[degenerateEnd+1])<=epsilon)
+    {
+      degenerateEnd++;
+    }
+    else
+    {
+      if(degenerateStart==degenerateEnd)
+      {
+        degenerateStart++;
+        degenerateEnd++;
+        continue;
+      }
+      else
+      {
+        RotateStates(fun, degenerateStart, degenerateEnd, method);
+        degenerateEnd++;
+        degenerateStart=degenerateEnd;
+      }
+    }
+    if((degenerateEnd==(fun->Ni-1))&&(degenerateEnd>degenerateStart))
+    {
+      RotateStates(fun, degenerateStart, degenerateEnd, method);
+      degenerateEnd++;
+      degenerateStart=degenerateEnd;
+    }
+  }
+  return 0;
+}
+
+
+
 
 /*
  *

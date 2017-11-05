@@ -92,3 +92,36 @@ dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/EigensystemDen
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/1D_Hubbard.Quanty")
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Functions/CreateSpectra.Quanty")
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Functions/CreateResonantSpectra.Quanty")
+
+
+--[[Mat = {{1,2,3,4,5,6,7,8,9},
+ {2,1,2,3,4,5,6,7,8},
+ {3,2,1,2,3,4,5,6,7},
+ {4,3,2,1,2,3,4,5,6},
+ {5,4,3,2,1,2,3,4,5},
+ {6,5,4,3,2,1,2,3,4},
+ {7,6,5,4,3,2,1,2,3},
+ {8,7,6,5,4,3,2,1,2},
+ {9,8,7,6,5,4,3,2,1}}
+ 
+ 
+ MatTri, MatT = BlockBandDiagonalize(Mat,2)
+ 
+ print(Mat)
+ 
+ print("===============")
+ 
+ print(MatTri)
+ 
+ print("===============")
+ 
+ print(MatT)
+ 
+ print("===============")
+ 
+ print(Chop(Dot(MatrixTranspose(MatT),MatT)))
+ 
+ print("===============")
+ 
+ print(Chop(Dot(MatT,Dot(Mat,MatrixTranspose(MatT))),1E-12))
+ ]]--

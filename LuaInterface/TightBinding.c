@@ -525,7 +525,7 @@ static int LuaReadHopping(lua_State *L, int narg, CrystalStructureType *Cell, Ti
   char *Atom1,*Atom2,*Shell1,*Shell2;
   // test input
   if((lua_type(L,narg)!=LUA_TTABLE)) return luaL_error(L, "ReadHopping expects a table of the form {\"AtomName1.ShellName1\",\"AtomName2.ShellName2\",Vec,H}\n");
-  if (lua_objlen(L, narg)!=4) return luaL_error(L, "ReadHopping expects a table of the form {\"AtomName1.ShellName1\",\"AtomName2.ShellName2\",Vec,H}\n");
+  if (lua_objlen(L, narg)!=4) return luaL_error(L, "ReadHopping expects a table with 4 elements of the form {\"AtomName1.ShellName1\",\"AtomName2.ShellName2\",Vec,H}\n");
   // read atom and shell 1
   lua_rawgeti(L, narg, 1);
   strncpy(AtomShell1, luaL_checkstring(L, -1), 2*MAXStrLength);
