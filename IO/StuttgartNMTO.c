@@ -145,9 +145,9 @@ uint32_t OrderAndCheckStuttgartCTRL(StuttgartCTRL * O)
     return 1;
   }
   /* place atoms in order of CLASS in STR, START and RHOFIT */
-  
+
   /* TO DO */
-  
+
   /* set values of ICLASS */
   O->SITE.ICLASS=malloc(O->SITE.N*sizeof(int));
   for(i=0;i<O->SITE.N;i++)
@@ -1017,8 +1017,8 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
           {
             StreamReadStuttgartCTRLdouble(stream, 1, &(O->START.VMTZ));
           }
-          
-          
+
+
           else if(strcmp(str, "ATOM")==0)
           {
             if(O->START.N==-1)
@@ -1481,7 +1481,7 @@ uint32_t StreamReadStuttgartHAMR(StuttgartHAMR * O, FILE * stream)
   O->Nelement=-1;
   if(fgets(ReadLine, 1023, stream)==NULL)
   {
-    printf("In function StreamReadStuttgartHAMR intial reading of file failed\n");
+    printf("In function StreamReadStuttgartHAMR initial reading of file failed\n");
     return 1;
   }
   O->eV=False;
@@ -1583,17 +1583,17 @@ uint32_t StreamReadStuttgartHAMR(StuttgartHAMR * O, FILE * stream)
           ContinueLabel=0;
         }
       }
-      
-      
-      
+
+
+
     }
     if(fgets(ReadLine, 1023, stream)==NULL)
     {
       ContinueLine=0;
     }
   }
-  
-  
+
+
   return 0;
 }
 uint32_t ReadStuttgartHAMR(StuttgartHAMR * O)

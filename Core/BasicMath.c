@@ -150,7 +150,7 @@ double Avverage(double x[], int N)
 *
 *   Error     =\sum_i Sqr(y_i-a x_i - b)
 *   dError/da =\sum_i -2 x_i (y_i - a x_i - b) = 0
-*   dError/db =\sum_i -2 (y_i - a x_i -b)      = 0 
+*   dError/db =\sum_i -2 (y_i - a x_i -b)      = 0
 *
 */
 void LinearInterpolate(double x[], double y[], int N, double *a, double *b)
@@ -348,7 +348,7 @@ double FindSelfconsistentnumber(double const *valin, double const *valout, uint3
 
 
 
-void ResiprocalLatticeVector(const double r[3][3], double g[3][3], uint32_t const Units)
+void ReciprocalLatticeVector(const double r[3][3], double g[3][3], uint32_t const Units)
 {
   double V;
   Cross(r[1], r[2], g[0]);

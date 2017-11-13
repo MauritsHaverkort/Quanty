@@ -91,10 +91,10 @@ uint32_t StreamPrintRIXSSpectra(const uint32_t numwRes, SpectraType (*Spec)[numw
     {
       fprintf(stream, "%f          ", wRes[j]);
     }
-    
+
   }
   fprintf(stream, "\n");
-  
+
   NE = Spec[0][0].N;
   for (i = 1; i < NSpec; i++)
   {
@@ -106,7 +106,7 @@ uint32_t StreamPrintRIXSSpectra(const uint32_t numwRes, SpectraType (*Spec)[numw
     fprintf(stream, "%19.12E", (double)(Spec[0][0].dE * j + Spec[0][0].Emin));
     for (i = 0; i < NSpec; i++)
     {
-      
+
       for(p = 0; p < numwRes; p++)
       {
         if(j <= Spec[i][p].N)
@@ -121,7 +121,7 @@ uint32_t StreamPrintRIXSSpectra(const uint32_t numwRes, SpectraType (*Spec)[numw
         else
           fprintf(stream, " %22.15E ", 0.0);
       }
-      
+
     }
     fprintf(stream, "\n");
   }
@@ -135,7 +135,7 @@ uint32_t StreamPrintRIXSSpectrum(const uint32_t numwRes, SpectraType (*Spec)[num
 {
   //printReal == 1 : print the real part to the file
   //printReal == other : print the imaginary part
-  
+
   uint32_t j, p, NE;
   fprintf(stream, "Energy           ");
   /*Header */
@@ -143,11 +143,11 @@ uint32_t StreamPrintRIXSSpectrum(const uint32_t numwRes, SpectraType (*Spec)[num
   {
     fprintf(stream, "%f          ", wRes[j]);
   }
-  
+
   fprintf(stream, "\n");
-  
+
   NE = Spec[iSpec][0].N;
-  
+
   for (j = 0; j <= NE; j++)
   {
     fprintf(stream, "%19.12E", (double)(Spec[iSpec][0].dE * j + Spec[iSpec][0].Emin));
@@ -618,8 +618,8 @@ uint32_t StreamPrintCrystalStructure(CrystalStructureType O, FILE * stream)
   fprintf(stream, "a: %15.7F %15.7F %15.7F\n", O.gUnitCell[0][0], O.gUnitCell[0][1], O.gUnitCell[0][2]);
   fprintf(stream, "b: %15.7F %15.7F %15.7F\n", O.gUnitCell[1][0], O.gUnitCell[1][1], O.gUnitCell[1][2]);
   fprintf(stream, "c: %15.7F %15.7F %15.7F\n", O.gUnitCell[2][0], O.gUnitCell[2][1], O.gUnitCell[2][2]);
-  fprintf(stream, "Number of attoms %i\n", O.NAtoms);
-  
+  fprintf(stream, "Number of atoms %i\n", O.NAtoms);
+
   for (i = 0; i < O.NAtoms; i++)
   {
     fprintf(stream, "#%4i | %s ( %i ) at position { %15.7F , %15.7F , %15.7F }\n", i, O.Atom[i].Name, O.Atom[i].AtomNumber, O.Atom[i].Position[0], O.Atom[i].Position[1], O.Atom[i].Position[2]);
@@ -649,9 +649,9 @@ uint32_t StreamPrintCrystalStructureSuperCell(CrystalStructureSuperCellType O, F
   CreateCrystalStructureFromCrystalStructureSuperCell(O, &Otemp);
   StreamPrintCrystalStructure(Otemp, stream);
   // need to free Otemp
-  
+
   fprintf(stream, "\nSuper cell created from\n");
-  
+
   StreamPrintCrystalStructure(O.Crystal, stream);
   fprintf(stream, "Number of Unit Cells in super cell: %4i\n", O.NCell);
   fprintf(stream, "Super Cell in Cell units:\n");
@@ -1525,7 +1525,7 @@ uint32_t StreamPrintBlockNaturalImpurityOrbitalMatrix(BlockNaturalImpurityOrbita
   StreamPrintBlockTriDiagonalMatrix(M.con, stream);
   fprintf(stream, "first 4 blocks\n");
   PrintCompactMatrixMinimal(M.TMT);
-  
+
   return 0;
 }
 

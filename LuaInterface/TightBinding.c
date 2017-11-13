@@ -27,12 +27,12 @@ static int LuaFileReadStuttgartCTRL(lua_State * L)
   StuttgartCTRL *CTRL = NULL;
   uint32_t len = (uint32_t)lua_gettop(L);
   if(len!=1) return luaL_error(L, "Error in FileReadStuttgartCTRL(arg).\n The argument should be the file name.");
-  
+
   const char *flname = luaL_checkstring(L, 1);
   CTRL = (StuttgartCTRL*) lua_newuserdata(L, sizeof(StuttgartCTRL));
   FileReadStuttgartCTRL(CTRL, flname);
   luaL_setmetatable(L, "StuttgartCTRL_Type");
-  
+
   return 1;
 }
 
@@ -41,12 +41,26 @@ static int LuaFileReadStuttgartHAMR(lua_State * L)
   StuttgartHAMR *HAMR = NULL;
   uint32_t len = (uint32_t)lua_gettop(L);
   if(len!=1) return luaL_error(L, "Error in FileReadStuttgartHAMR(arg).\n The argument should be the file name.");
-  
+
   const char *flname = luaL_checkstring(L, 1);
   HAMR = (StuttgartHAMR*) lua_newuserdata(L, sizeof(StuttgartHAMR));
   FileReadStuttgartHAMR(HAMR, flname);
   luaL_setmetatable(L, "StuttgartHAMR_Type");
-  
+
+  return 1;
+}
+
+static int LuaFileReadDresdenFPLO(lua_State * L)
+{
+  DresdenFPLO *FPLO = NULL;
+  uint32_t len = (uint32_t)lua_gettop(L);
+  if(len!=1) return luaL_error(L, "Error in FileReadDresdenFPLO(arg).\n The argument should be the file name of the wan output.");
+
+  const char *flname = luaL_checkstring(L, 1);
+  FPLO = (DresdenFPLO*) lua_newuserdata(L, sizeof(DresdenFPLO));
+  FileReadDresdenFPLO(FPLO, flname);
+  luaL_setmetatable(L, "DresdenFPLO_Type");
+
   return 1;
 }
 
@@ -60,19 +74,36 @@ static int LuaTightBindingDefFromStuttgartCTRLHAMR(lua_State * L)
   {
     return luaL_error(L, "Error in TightBindingDefFromStuttgartCTRLHAMR(arg).\nIt takes two arguments (CTRL and HAMR).");
   }
-  
+
   CTRL = (StuttgartCTRL *) luaL_checkudata(L, 1, "StuttgartCTRL_Type");
   HAMR = (StuttgartHAMR *) luaL_checkudata(L, 2, "StuttgartHAMR_Type");
-  
+
   TB = (TightBindingDef*) lua_newuserdata(L, sizeof(TightBindingDef));
   TightBindingDefFromStuttgartCTRLHAMR(*CTRL, *HAMR, TB);
   luaL_setmetatable(L, "TightBinding_Type");
-  
+
   return 1;
 }
 
+static int LuaTightBindingDefFromDresdenFPLO(lua_State * L)
+{
+  TightBindingDef *TB;
+  DresdenFPLO *FPLO = NULL;
+  uint32_t len = (uint32_t)lua_gettop(L);
+  if (len != 1)
+  {
+    return luaL_error(L, "Error in TightBindingDefFromDresdenFPLO(arg).\nIt takes a DresdenFPLO type as the single argument.");
+  }
 
-/* on stack: 
+  FPLO = (DresdenFPLO *) luaL_checkudata(L, 1, "DresdenFPLO_Type");
+  TB = (TightBindingDef*) lua_newuserdata(L, sizeof(TightBindingDef));
+
+  TightBindingDefFromDresdenFPLO(*FPLO, TB);
+  luaL_setmetatable(L, "TightBinding_Type");
+
+  return 1;
+}
+/* on stack:
  *   TB : TightBinding_Type
  *   {Emin,Emax,NE}
  *   Options
@@ -116,7 +147,7 @@ static int LuaCalculateG(lua_State *L)
     {"Emax","double",&(Options.Emax)},
     {"NE","uint32_t",&(Options.NE)},
     {NULL, NULL, NULL}};
-  
+
   return 1;
 }
 
@@ -126,7 +157,7 @@ static int LuaCalculateG(lua_State *L)
 static int LuaCalculateBands(lua_State *L)
 {
   //TODO: all
-  
+
   return 1;
 }
 
@@ -136,7 +167,7 @@ static int LuaCalculateBands(lua_State *L)
 static int LuaCalculateFermi(lua_State *L)
 {
   //TODO: all
-  
+
   return 1;
 }
 
@@ -615,7 +646,7 @@ static int LuaReadHopping(lua_State *L, int narg, CrystalStructureType *Cell, Ti
     H->TransVecs[1]=(int)(idouble[1]+(idouble[1]>0?1:-1)*0.5);
     H->TransVecs[2]=(int)(idouble[2]+(idouble[2]>0?1:-1)*0.5);
     if((fabs(idouble[0]-H->TransVecs[0])>0.0000001)||(fabs(idouble[1]-H->TransVecs[1])>0.0000001)||(fabs(idouble[2]-H->TransVecs[2])>0.0000001)) return luaL_error(L, "ReadHopping connecting vector given in absolute coordinates, but not an integer number of unit cells plus the distance in the unit cell between the atoms:\n   {x,y,z} = {%f %f %f} (%f %f %f)\n   {i,j,k} = {%f %f %f}\n",(double)H->ConnectingVector[0],(double)H->ConnectingVector[1],(double)H->ConnectingVector[2],(double)H->TransVecs[0],(double)H->TransVecs[1],(double)H->TransVecs[2],idouble[0],idouble[1],idouble[2]);
-    
+
   }
   else // relative units
   {
@@ -642,8 +673,8 @@ static int LuaReadHopping(lua_State *L, int narg, CrystalStructureType *Cell, Ti
   lua_rawgeti(L, narg, 4);
   if((lua_type(L,-1)!=LUA_TTABLE)) return luaL_error(L, "ReadHopping expects a matrix for the definition of H between atom %s and %s\n",AtomShell1,AtomShell2);
   H->Hop = *luaL_checkMatrix(L, -1);
-  
-  
+
+
   lua_pop(L,1);
   return 0;
 }
@@ -666,7 +697,7 @@ static int LuaTightBindingIndex(lua_State * L)
 {
   uint32_t i,j;
   TightBindingDef *a = (TightBindingDef *) luaL_checkudata(L, 1, "TightBinding_Type");
-  const char *str = lua_tostring(L, 2);  
+  const char *str = lua_tostring(L, 2);
   if (strcmp(str, "Name") == 0)
   {
     lua_pushstring(L, a->Name);
@@ -781,7 +812,7 @@ static int LuaTightBindingNewIndex(lua_State * L)
   uint32_t i,j,len;
   TightBindingDef *a = (TightBindingDef *) luaL_checkudata(L, 1, "TightBinding_Type");
   const char *str = lua_tostring(L, 2);
-  
+
   if(strcmp(str, "Name")==0)
   {
     strncpy(a->Name, luaL_checkstring(L, 3), MAXStrLength-1);
@@ -812,7 +843,7 @@ static int LuaTightBindingNewIndex(lua_State * L)
       lua_pop(L, 1);
     }
     if(fabs(ParallelalPipedVolume(a->Cell.rUnitCell[0], a->Cell.rUnitCell[1], a->Cell.rUnitCell[2]))<100*sqrt(DBL_MIN)) return luaL_error(L, "Error TightBindingObject.Cell should be of the form { {a1,a2,a3}, {b1,b2,b3}, {c1,c2,c3} } and span a non-zero volume.\n       i.e. a, b and c must be independent vectors and they are not\n");
-    ResiprocalLatticeVector(a->Cell.rUnitCell, a->Cell.gUnitCell,a->Cell.Units);
+    ReciprocalLatticeVector(a->Cell.rUnitCell, a->Cell.gUnitCell,a->Cell.Units);
     //TODO: set ConnectionVector anew
   }
   else if(strcmp(str, "Atoms")==0)
@@ -927,7 +958,7 @@ static int LuaTightBindingNewIndex(lua_State * L)
     {
       return luaL_error(L, "Error not a valid type assignment for TightBinding Object (%s) should be integer, string or table of strings\n",lua_typename(L, lua_type(L, 3)));
     }
-    ResiprocalLatticeVector(a->Cell.rUnitCell, a->Cell.gUnitCell,a->Cell.Units);
+    ReciprocalLatticeVector(a->Cell.rUnitCell, a->Cell.gUnitCell,a->Cell.Units);
     //TODO: set ConnectionVector anew
   }
   else if(strcmp(str, "Hopping")==0)
@@ -986,5 +1017,9 @@ static const struct luaL_Reg StuttgartCTRL_meta[] = {
 };
 
 static const struct luaL_Reg StuttgartHAMR_meta[] = {
+  {NULL, NULL}
+};
+
+static const struct luaL_Reg DresdenFPLO_meta[] = {
   {NULL, NULL}
 };

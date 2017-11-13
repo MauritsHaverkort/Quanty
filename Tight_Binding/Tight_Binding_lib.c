@@ -78,7 +78,7 @@ int FreeTightBindingDef(TightBindingDef * A)
  *  This basis is given by atoms (AtomType) at certain positions
  *  An atom has certain shells which have a degeneracy
  *  One often needs to know the total number of fermions in the shell
- *  The list FermionIndex[AtomNumber][ShellNumber] stores the number of the first fermion within this shell. 
+ *  The list FermionIndex[AtomNumber][ShellNumber] stores the number of the first fermion within this shell.
  */
 int SetNFermionIndexTightBindingDef(TightBindingDef * A)
 {
@@ -111,7 +111,7 @@ int CreateOneBandCubicLaticeTightBindingDef(TightBindingDef * A)
   A->Cell.rUnitCell[2][1] = 0.00000;
   A->Cell.rUnitCell[2][2] = 1.00000;
   A->Cell.Units = 1;
-  ResiprocalLatticeVector(A->Cell.rUnitCell, A->Cell.gUnitCell,A->Cell.Units);
+  ReciprocalLatticeVector(A->Cell.rUnitCell, A->Cell.gUnitCell,A->Cell.Units);
   A->Cell.NAtoms = 1;
   A->Cell.Atom = malloc(1 * sizeof(AtomType));
   strncpy(A->Cell.Atom[0].Name, "s", 3);
@@ -167,7 +167,7 @@ int CreateOneBandSquareLaticeTightBindingDef(TightBindingDef * A)
   A->Cell.rUnitCell[2][1] = 0.00000;
   A->Cell.rUnitCell[2][2] = 4.00000;
   A->Cell.Units = 1;
-  ResiprocalLatticeVector(A->Cell.rUnitCell, A->Cell.gUnitCell,A->Cell.Units);
+  ReciprocalLatticeVector(A->Cell.rUnitCell, A->Cell.gUnitCell,A->Cell.Units);
   A->Cell.NAtoms = 1;
   A->Cell.Atom = malloc(1 * sizeof(AtomType));
   strncpy(A->Cell.Atom[0].Name, "s", 3);
@@ -224,7 +224,7 @@ int CreateOneBandChainLaticeTightBindingDef(TightBindingDef * A)
   A->Cell.rUnitCell[2][1] = 0.00000;
   A->Cell.rUnitCell[2][2] = 4.00000;
   A->Cell.Units = 1;
-  ResiprocalLatticeVector(A->Cell.rUnitCell, A->Cell.gUnitCell,A->Cell.Units);
+  ReciprocalLatticeVector(A->Cell.rUnitCell, A->Cell.gUnitCell,A->Cell.Units);
   A->Cell.NAtoms = 1;
   A->Cell.Atom = malloc(1 * sizeof(AtomType));
   strncpy(A->Cell.Atom[0].Name, "s", 3);
@@ -549,9 +549,9 @@ uint32_t CalculateChemicalPotentialFromListOfEigenvalues(const double * const va
  *     double Emin          : lowest energy point for which the fermi function is calculated
  *     double Emax          : highest energy point for which the fermi function is calculated
  *     int NE               : number of energy points used at wich the fermi function is calculated
- *     double k0            : left bottom of the parallelogram at wich the fermi function is calcualted 
- *     double k1            : left top of the parallelogram at wich the fermi function is calcualted 
- *     double k2            : right bottom of the parallelogram at wich the fermi function is calcualted 
+ *     double k0            : left bottom of the parallelogram at wich the fermi function is calcualted
+ *     double k1            : left top of the parallelogram at wich the fermi function is calcualted
+ *     double k2            : right bottom of the parallelogram at wich the fermi function is calcualted
  *     Fermi[Ei].Ni         : number of k points on the axes k0 to k1
  *     Fermi[Ei].Nj         : number of k points on the axes k0 to k2
  *     Fermi is a matrix with NE+1 components.
@@ -1171,9 +1171,9 @@ int EigenFunctionToCharactersOnsiteEnergyPhaseRGBkshifted(TightBindingDef A, Mat
  *     double Emin          : lowest energy point for which the fermi function is calculated
  *     double Emax          : highest energy point for which the fermi function is calculated
  *     int NE               : number of energy points used at wich the fermi function is calculated
- *     double k0            : left bottom of the parallelogram at wich the fermi function is calcualted 
- *     double k1            : left top of the parallelogram at wich the fermi function is calcualted 
- *     double k2            : right bottom of the parallelogram at wich the fermi function is calcualted 
+ *     double k0            : left bottom of the parallelogram at wich the fermi function is calcualted
+ *     double k1            : left top of the parallelogram at wich the fermi function is calcualted
+ *     double k2            : right bottom of the parallelogram at wich the fermi function is calcualted
  *     Fermi[Ei].Ni         : number of k points on the axes k0 to k1
  *     Fermi[Ei].Nj         : number of k points on the axes k0 to k2
  *     Fermi is a matrix with Ncharacter*(NE+1) components.
@@ -1252,10 +1252,10 @@ int TightBindingFermiCharacter(TightBindingDef A, double Emin, double Emax, int 
  *     double Emin          : lowest energy point for which the fermi function is calculated
  *     double Emax          : highest energy point for which the fermi function is calculated
  *     int NE               : number of energy points used at wich the fermi function is calculated
- *     double k0            : left bottom of the parallelogram at wich the fermi function is calcualted 
- *     double k1            : left top of the parallelogram at wich the fermi function is calcualted 
- *     double k2            : right bottom of the parallelogram at wich the fermi function is calcualted 
- *     int Nk1              : 
+ *     double k0            : left bottom of the parallelogram at wich the fermi function is calcualted
+ *     double k1            : left top of the parallelogram at wich the fermi function is calcualted
+ *     double k2            : right bottom of the parallelogram at wich the fermi function is calcualted
+ *     int Nk1              :
  *     int Nk2              :
  *     Fermi[Ei].Ni         : number of k points on the axes k0 to k1
  *     Fermi[Ei].Nj         : number of k points on the axes k0 to k2
@@ -1543,7 +1543,7 @@ int CreateCrystalStructureFromCrystalStructureSuperCell(CrystalStructureSuperCel
   Cell->rUnitCell[2][0] = SuperCell.rSuperCell[2][0] * SuperCell.Crystal.rUnitCell[0][0] + SuperCell.rSuperCell[2][1] * SuperCell.Crystal.rUnitCell[1][0] + SuperCell.rSuperCell[2][2] * SuperCell.Crystal.rUnitCell[2][0];
   Cell->rUnitCell[2][1] = SuperCell.rSuperCell[2][0] * SuperCell.Crystal.rUnitCell[0][1] + SuperCell.rSuperCell[2][1] * SuperCell.Crystal.rUnitCell[1][1] + SuperCell.rSuperCell[2][2] * SuperCell.Crystal.rUnitCell[2][1];
   Cell->rUnitCell[2][2] = SuperCell.rSuperCell[2][0] * SuperCell.Crystal.rUnitCell[0][2] + SuperCell.rSuperCell[2][1] * SuperCell.Crystal.rUnitCell[1][2] + SuperCell.rSuperCell[2][2] * SuperCell.Crystal.rUnitCell[2][2];
-  ResiprocalLatticeVector(Cell->rUnitCell, Cell->gUnitCell,Cell->Units);
+  ReciprocalLatticeVector(Cell->rUnitCell, Cell->gUnitCell,Cell->Units);
   Cell->NAtoms = SuperCell.NCell * SuperCell.Crystal.NAtoms;
   Cell->Atom = malloc(Cell->NAtoms * sizeof(AtomType));
   iAtomsuper = 0;
@@ -1619,7 +1619,7 @@ int CreateTightBindingSuperCell(TightBindingDef A, TightBindingDef * ASuper, Cry
   ASuper->Cell.rUnitCell[2][2] =
     SuperCell.rSuperCell[2][0] * A.Cell.rUnitCell[0][2] + SuperCell.rSuperCell[2][1] * A.Cell.rUnitCell[1][2] +
     SuperCell.rSuperCell[2][2] * A.Cell.rUnitCell[2][2];
-  ResiprocalLatticeVector(ASuper->Cell.rUnitCell, ASuper->Cell.gUnitCell,A.Cell.Units);
+  ReciprocalLatticeVector(ASuper->Cell.rUnitCell, ASuper->Cell.gUnitCell,A.Cell.Units);
   ASuper->Cell.NAtoms = SuperCell.NCell * A.Cell.NAtoms;
   ASuper->Cell.Atom = malloc(ASuper->Cell.NAtoms * sizeof(AtomType));
   ASuper->nH = SuperCell.NCell * A.nH;
@@ -1758,7 +1758,7 @@ int CreateTightBindingSquareSuperCell(TightBindingDef A, TightBindingDef * ASupe
   ASuper->Cell.rUnitCell[2][0] = N[2] * A.Cell.rUnitCell[2][0];
   ASuper->Cell.rUnitCell[2][1] = N[2] * A.Cell.rUnitCell[2][1];
   ASuper->Cell.rUnitCell[2][2] = N[2] * A.Cell.rUnitCell[2][2];
-  ResiprocalLatticeVector(ASuper->Cell.rUnitCell, ASuper->Cell.gUnitCell,A.Cell.Units);
+  ReciprocalLatticeVector(ASuper->Cell.rUnitCell, ASuper->Cell.gUnitCell,A.Cell.Units);
   ASuper->Cell.NAtoms = N[0] * N[1] * N[2] * A.Cell.NAtoms;
   ASuper->Cell.Atom = malloc(ASuper->Cell.NAtoms * sizeof(AtomType));
   ASuper->nH = N[0] * N[1] * N[2] * A.nH;

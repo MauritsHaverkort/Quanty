@@ -294,7 +294,7 @@ uint32_t StringPrintAddCrystalStructure(CrystalStructureType O, char **Buffer)
   sprintfAdd(Buffer, "a: %15.7F %15.7F %15.7F\n", O.gUnitCell[0][0], O.gUnitCell[0][1], O.gUnitCell[0][2]);
   sprintfAdd(Buffer, "b: %15.7F %15.7F %15.7F\n", O.gUnitCell[1][0], O.gUnitCell[1][1], O.gUnitCell[1][2]);
   sprintfAdd(Buffer, "c: %15.7F %15.7F %15.7F\n", O.gUnitCell[2][0], O.gUnitCell[2][1], O.gUnitCell[2][2]);
-  sprintfAdd(Buffer, "Number of attoms %i\n", O.NAtoms);
+  sprintfAdd(Buffer, "Number of atoms %i\n", O.NAtoms);
   for (i = 0; i < O.NAtoms; i++)
   {
     sprintfAdd(Buffer, "#%4i | %s ( %i ) at position { %15.7F , %15.7F , %15.7F }\n", i, O.Atom[i].Name, O.Atom[i].AtomNumber, O.Atom[i].Position[0], O.Atom[i].Position[1], O.Atom[i].Position[2]);
@@ -349,7 +349,7 @@ uint32_t StringPrintTightBindingDef(TightBindingDef O, char **Buffer)
   {
     sprintfAdd(Buffer, "Hopping from %s - %s to %s - %s with translation vector in unit cells: { %i , %i , %i }\n", O.Cell.Atom[O.H[i].Atompos1].Name, O.Cell.Atom[O.H[i].Atompos1].ShellName[O.H[i].Shellpos1], O.Cell.Atom[O.H[i].Atompos2].Name, O.Cell.Atom[O.H[i].Atompos2].ShellName[O.H[i].Shellpos2], O.H[i].TransVecs[0], O.H[i].TransVecs[1], O.H[i].TransVecs[2]);
     StringPrintAddMatrix(O.H[i].Hop, Buffer);
-    
+
   }
   sprintfAdd(Buffer, "\n");
   return 0;
