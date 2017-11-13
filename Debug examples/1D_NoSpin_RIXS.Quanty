@@ -1,0 +1,429 @@
+
+-- set verbosity low
+Verbosity(0x0)
+
+
+-- take NSite to be 4n+2 in order to make the ground-state non degenerate
+NSite = 22
+
+
+-- create the hopping, starting from a tight binding definition
+HTB = NewTightBinding()
+HTB.Name="1D chain"
+HTB.Cell={{1,0,0},{0,1,0},{0,0,1}}
+HTB.Atoms={{"Cu",{0,0,0},{{"d",{"x^2-y^2"}}}}}
+HTB.Hopping={{"Cu.d","Cu.d",{ 1,0,0},{{1}}},
+{"Cu.d","Cu.d",{-1,0,0},{{1}}}}
+
+print(HTB)
+
+-- and creating a cluster Hamiltonian, with periodic boundary conditions
+H=CreateClusterHamiltonian(HTB,{"periodic",{{NSite,0,0},{0,1,0},{0,0,1}}})
+
+print(H)
+
+-- create OppQ
+OppQ = NewOperator(NSite,0,{{0,-0,-1}})
+
+print(OppQ)
+
+
+
+-- As a first step we calculate the ground-state in mean-field theory
+-- The function that creates the mean-field ground-state is iterative and needs a starting density
+-- We here take a density where all orbitals are half filed
+Rho={}
+for i=1,NSite do
+  Rho[i]={}
+  for j=1,NSite do
+    if i==j then
+      Rho[i][j]=0.5
+      else
+      Rho[i][j]=0
+    end
+  end
+end
+
+print(Rho)
+
+-- We need an artificial temperature needed to average over degenrate states
+-- It should be small as we do not want occupation of excited states and our ground-state is a singlet
+Teff=0.0000000001
+RhoMF, En, OppMF = MeanFieldGroundState(H,Rho,Teff)
+
+print(RhoMF)
+print(En)
+print(OppMF)
+
+-- to test we can look at the eigensystem of the density, which should have eigen-values of 0 and 1 only
+valRho, funRho = Eigensystem(RhoMF)
+
+print("========")
+print("========")
+print(Chop(valRho))
+print("======== funRho")
+print(Chop(funRho))
+
+
+
+
+-- We want to rotate the basis, but only for the bath, not including the impurity.
+-- We thus set the density matrix between the impurity and the bath to zero
+-- and subtract 1 from the impurity density.
+-- The later assures that the impurity stays in the first position
+RhoImp = Copy(RhoMF)
+for i=2,NSite do
+  RhoImp[i][1]=0
+  RhoImp[1][i]=0
+end
+RhoImp[1][1]=RhoImp[1][1]-2
+
+print("========")
+print("======== RhoMF")
+--print(RhoMF)
+print("======== RhoImp")
+--print(RhoImp)
+
+valRhoImp, funRhoImp = Eigensystem(RhoImp)
+valRhoImp = Chop(valRhoImp)
+
+print("========")
+print("======== valRhoImp")
+print(valRhoImp)
+print("======== funRhoImp")
+--print(funRhoImp)
+
+-- reorder funRhoImp and determine number of open shells
+-- We split the bath into states with an occupation larger than Rhomax
+--                                                  smaller than Rhomin
+--                                                  or inbetween
+-- We order the states by
+-- 1) impurity states
+-- 2) partially filled bath states
+-- 3) occupied bath state (valence bath)
+-- 4) unoccupied bath states (conduction bath)
+funRhoImpOrdered={}
+ReorderIndex={}
+NImp=0
+NvalBath=0
+NconBath=0
+Rhomin = 0.1
+Rhomax = 0.9
+for i=1,NSite do
+  if valRhoImp[i] < -0.5 then
+    ReorderIndex[#ReorderIndex+1]=i
+    funRhoImpOrdered[#funRhoImpOrdered+1]=Copy(funRhoImp[i])
+    NImp = NImp + 1
+  end
+end
+for i=1,NSite do
+  if (valRhoImp[i] >= Rhomin) and (valRhoImp[i] <= Rhomax) then
+    ReorderIndex[#ReorderIndex+1]=i
+    funRhoImpOrdered[#funRhoImpOrdered+1]=Copy(funRhoImp[i])
+    NImp = NImp + 1
+  end
+end
+for i=1,NSite do
+  if (valRhoImp[i] >= -0.5) and (valRhoImp[i] < Rhomin) then
+    ReorderIndex[#ReorderIndex+1]=i
+    funRhoImpOrdered[#funRhoImpOrdered+1]=Copy(funRhoImp[i])
+    NvalBath = NvalBath + 1
+  end
+end
+for i=1,NSite do
+  if valRhoImp[i] >= Rhomax then
+    ReorderIndex[#ReorderIndex+1]=i
+    funRhoImpOrdered[#funRhoImpOrdered+1]=Copy(funRhoImp[i])
+    NconBath = NconBath + 1
+  end
+end
+print("======== funRhoImpOrdered")
+--print(NImp, NvalBath, NconBath)
+--print(ReorderIndex)
+--print(funRhoImpOrdered)
+
+
+print("======== IdentityMatrix = funRhoImpOrdered . runRhoImpOrdered ^T")
+--print(Dot(funRhoImpOrdered,MatrixTranspose(funRhoImpOrdered)))
+
+-- rotation to the natural impurity orbital basis (eigenstates of Rho impurity ordered), funRhoImpOrdered)
+-- is not sufficient to get a good convergence.
+-- As all valence (conduction) bath orbitals have a degenerate occupation of 1 (0) the returned eigen system is an random mixture
+-- We disentangle them by looking at the Hamiltonian of these states and tri-diagonlize this with repsect to the impurity
+
+-- as a first step we need the (mean-field) operator as a matrix on the basis of the orbitals
+-- create matrix from mean-field operator
+print("======== OppMFMat")
+OppMFMat = OperatorToMatrix(OppMF);
+--print(OppMFMat)
+
+-- rotate matrix to a basis where the density matrix is 0 and 1 for the bath and mixed for the extended impurity
+print("======== OppMFMatRot")
+OppMFMatRot = Dot(funRhoImpOrdered,Dot(OppMFMat,MatrixTranspose(funRhoImpOrdered)))
+--print(OppMFMatRot)
+
+-- Block tri diagonalize the extended impurity with Block size of the original impurity
+OppMFMatRotImp = {}
+for i=1,NImp do
+  OppMFMatRotImp[i]={}
+  for j=1,NImp do
+    OppMFMatRotImp[i][j]=OppMFMatRot[i][j]
+  end
+end
+OppMFMatRotImpTri, TOppMFMatRotImpTri = BlockBandDiagonalize(OppMFMatRotImp,1)
+
+
+print(TOppMFMatRotImpTri)
+
+TImp = {}
+for i=1,NSite do
+  TImp[i]={}
+  for j=1,NSite do
+    if i==j then
+      TImp[i][j]=1
+      else
+      TImp[i][j]=0
+    end
+  end
+end
+for i=1,NImp do
+  for j=1,NImp do
+    TImp[i][j]=TOppMFMatRotImpTri[i][j]
+  end
+end
+OppMFMatRotFull = Dot(TImp,Dot(OppMFMatRot,MatrixTranspose(TImp)))
+print("========== OppMFMatRotFull")
+--print(OppMFMatRotFull)
+
+-- Block tri diagonalize the valence bath orbitals with respect to the extended impurity
+OppMFMatRotImpVal = {}
+for i=1,NImp+NvalBath do
+  OppMFMatRotImpVal[i]={}
+  for j=1,NImp+NvalBath do
+    OppMFMatRotImpVal[i][j]=OppMFMatRotFull[i][j]
+  end
+end
+OppMFMatRotImpValTri, TOppMFMatRotImpValTri = BlockBandDiagonalize(OppMFMatRotImpVal,NImp)
+
+--print(TOppMFMatRotImpValTri)
+NSingularVal = NImp+NvalBath - #TOppMFMatRotImpValTri
+print("Number of non-coupling valence bath sites",NSingularVal)
+
+TImpVal = {}
+for i=1,NSite do
+  TImpVal[i]={}
+  for j=1,NSite do
+    if i==j then
+      TImpVal[i][j]=1
+      else
+      TImpVal[i][j]=0
+    end
+  end
+end
+for i=1,NImp+NvalBath-NSingularVal do
+  for j=1,NImp+NvalBath do
+    TImpVal[i][j]=TOppMFMatRotImpValTri[i][j]
+  end
+end
+for i=NImp+NvalBath-NSingularVal+1,NImp+NvalBath do
+  for j=1,NImp+NvalBath do
+    TImpVal[i][j]=0
+  end
+end
+
+-- Block tri diagonalize the conduction bath orbitals with respect to the extended impurity
+OppMFMatRotImpCon = {}
+for i=1,NImp+NconBath do
+  ii = i
+  if i>NImp then
+    ii = i + NvalBath
+  end
+  OppMFMatRotImpCon[i]={}
+  for j=1,NImp+NconBath do
+    jj = j
+    if j>NImp then
+      jj = j + NvalBath
+    end
+    OppMFMatRotImpCon[i][j]=OppMFMatRotFull[ii][jj]
+  end
+end
+OppMFMatRotImpConTri, TOppMFMatRotImpConTri = BlockBandDiagonalize(OppMFMatRotImpCon,NImp)
+
+print(TOppMFMatRotImpConTri)
+NSingularCon = NImp+NconBath - #TOppMFMatRotImpConTri
+print("Number of non-coupling conduction bath sites",NSingularCon)
+
+
+TImpCon = {}
+for i=1,NSite do
+  TImpCon[i]={}
+  for j=1,NSite do
+    if i==j then
+      TImpCon[i][j]=1
+      else
+      TImpCon[i][j]=0
+    end
+  end
+end
+for i=1,NImp+NconBath-NSingularCon do
+  ii = i
+  if i>NImp then
+    ii = i + NvalBath
+  end
+  for j=1,NImp+NconBath do
+    jj = j
+    if j>NImp then
+      jj = j + NvalBath
+    end
+    TImpCon[ii][jj]=TOppMFMatRotImpConTri[i][j]
+  end
+end
+for i=1+NImp+NconBath-NSingularCon,NImp+NconBath do
+  ii = i
+  if i>NImp then
+    ii = i + NvalBath
+  end
+  for j=1,NImp+NconBath do
+    jj = j
+    if j>NImp then
+      jj = j + NvalBath
+    end
+    TImpCon[ii][jj]=0
+  end
+end
+
+--print(TImp)
+--print(TImpVal)
+--print(TImpCon)
+--print(Dot(TImp,Dot(TImpVal,TImpCon)))
+
+-- combining all rotatins
+
+Ttot = Chop(Dot(Dot(Dot(TImp,TImpVal),TImpCon),funRhoImpOrdered))
+print("=======Ttot")
+--print(Ttot)
+print("=======Ttot.Ttot^T")
+--print(Dot(Ttot,MatrixTranspose(Ttot)))
+print("=======Ttot.OppMFMat.Ttot^T")
+--print(Dot(Ttot,Dot(OppMFMat,MatrixTranspose(Ttot))))
+print("=======Ttot.RhoMF.Ttot^T")
+--print(Dot(Ttot,Dot(RhoMF,MatrixTranspose(Ttot))))
+
+print("\n\n\n\n\n")
+
+print("=======Ttot")
+--print(Ttot)
+--print(Chop(Ttot))
+print("=======Ttot.Ttot^T")
+print(Chop(Dot(Ttot,MatrixTranspose(Ttot))))
+print("=======Ttot.OppMFMat.Ttot^T")
+--print(Chop(Dot(Ttot,Dot(OppMFMat,MatrixTranspose(Ttot)))))
+print("=======Ttot.RhoMF.Ttot^T")
+--print(Chop(Dot(Ttot,Dot(RhoMF,MatrixTranspose(Ttot)))))
+
+
+print("\n\n\n\n\n")
+-- The New Hamiltonian on the rotated basis
+HNatImpOrb = Chop(Rotate(H,Chop(Ttot)),1E-10)
+
+print(HNatImpOrb)
+
+
+-- test the resutl using the original Hamiltonian (not in mean-field)
+
+
+OrbitalStringVal = ""
+OrbitalStringCon = ""
+OrbitalStringImp = ""
+for i=1,NImp do
+  OrbitalStringVal = OrbitalStringVal.."0"
+  OrbitalStringCon = OrbitalStringCon.."0"
+  OrbitalStringImp = OrbitalStringImp.."1"
+end
+for i=1,NconBath do
+  OrbitalStringVal = OrbitalStringVal.."0"
+  OrbitalStringCon = OrbitalStringCon.."1"
+  OrbitalStringImp = OrbitalStringImp.."0"
+end
+for i=1,NvalBath do
+  OrbitalStringVal = OrbitalStringVal.."1"
+  OrbitalStringCon = OrbitalStringCon.."0"
+  OrbitalStringImp = OrbitalStringImp.."0"
+end
+
+NoBathHoles  = {NSite,0,{OrbitalStringVal,NvalBath,NvalBath},{OrbitalStringCon,0,0},{OrbitalStringImp,NImp/2,NImp/2}}
+OneBathHole  = {NSite,0,{OrbitalStringVal,NvalBath-1,NvalBath},{OrbitalStringCon,0,1}}
+TwoBathHoles = {NSite,0,{OrbitalStringVal,NvalBath-2,NvalBath},{OrbitalStringCon,0,2}}
+ThreeBathHoles = {NSite,0,{OrbitalStringVal,NvalBath-3,NvalBath},{OrbitalStringCon,0,3}}
+FourBathHoles = {NSite,0,{OrbitalStringVal,NvalBath-4,NvalBath},{OrbitalStringCon,0,4}}
+
+print(NoBathHoles)
+print(OneBathHole)
+print(TwoBathHoles)
+print(FourBathHoles)
+
+
+print("Restricted to no Bath fluctuations")
+psi = Eigensystem(HNatImpOrb, NoBathHoles, 1,{{"Restrictions",NoBathHoles}})
+print("Energy = ",psi*HNatImpOrb*psi," Number of determinants ",psi.N)
+rho0 = DensityMatrix(psi)
+
+print("Restricted to one Bath fluctuations")
+psi = Eigensystem(HNatImpOrb, NoBathHoles, 1,{{"Restrictions",OneBathHole}})
+print("Energy = ",psi*HNatImpOrb*psi," Number of determinants ",psi.N)
+rho1 = DensityMatrix(psi)
+
+print("Restricted to two Bath fluctuations")
+psi = Eigensystem(HNatImpOrb, NoBathHoles, 1,{{"Restrictions",TwoBathHoles}})
+print("Energy = ",psi*HNatImpOrb*psi," Number of determinants ",psi.N)
+rho2 = DensityMatrix(psi)
+
+print("Restricted to two Four fluctuations")
+psi = Eigensystem(HNatImpOrb, NoBathHoles, 1,{{"Restrictions",FourBathHoles}})
+print("Energy = ",psi*HNatImpOrb*psi," Number of determinants ",psi.N)
+
+print("No restrictions")
+psi = Eigensystem(HNatImpOrb, NoBathHoles, 1)
+print("Energy = ",psi*HNatImpOrb*psi," Number of determinants ",psi.N)
+rhoAll = DensityMatrix(psi)
+
+print("No restrictions high accuracy")
+psi = Eigensystem(HNatImpOrb, NoBathHoles, 1,{{"zero",1E-14},{"epsilon",1E-15}})
+print("Energy = ",psi*HNatImpOrb*psi," Number of determinants ",psi.N)
+rhoAllHighRes = DensityMatrix(psi)
+
+print(psi)
+
+
+--print(rho0)
+--print(rho1)
+--print(rho2)
+--print(rhoAll)
+--print(rhoAllHighRes)
+
+-- Absorbtion
+
+OppT = NewOperator(NSite,0,{{0,1}})
+
+print(OppT*psi)
+
+OppT.Restrictions = { 22 , 0 ,
+  { "0011111111110000000000" , 0 , 1 },
+  { "0000000000001111111111" , 9 , 10 }  }
+
+print(OppT)
+print(OppT.Restrictions)
+
+print(OppT*psi)
+
+
+spec, spectri = CreateSpectra(H, OppT, psi,{{"NE",1500},{"Emin",-5},{"Emax",10},{"Gamma",0.01},{"NTri",2},{"Restrictions",TwoBathHoles}})
+print(spectri)
+--print(spec)
+
+
+-- RIXS
+
+-- effective operators
+
+

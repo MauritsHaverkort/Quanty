@@ -18,7 +18,7 @@ Verbosity(0x0)
 -- There is a difference between an odd number of bath sites, in which case the total system is a singlet and an even number of bath sites where the total cluster is a doublet
 -- Please take  4n-1 at the moment, as 2n-1 gives crashes (see below)
 NSiteBath = 11
-U = 2
+U = 8
 
 -- create coulomb operator on impurity site (positive index createtion, negative index annihilation)
 OppU = NewOperator(2*(NSiteBath+1),0,{{0,-0,1,-1,U}})
@@ -232,7 +232,6 @@ for i=1,2*(NSiteBath+1) do
 end
 for i=1,NImp+NvalBath do
   for j=1,NImp+NvalBath do
-    print(i,j)
     TImpVal[i][j]=TOppMFMatRotImpValTri[i][j]
   end
 end

@@ -971,9 +971,9 @@ typedef struct CrystalStructureSuperCellType
   CrystalStructureType Crystal; /* definition of the unit cell */
   /* additional info that can be derived from the above settings */
   uint32_t NCell;               /* total number of cells in the super cell */
-  int32_t CellPos[100][3];      /* position of cells, not read in but calculated from above info */
+  int32_t CellPos[5000][3];      /* position of cells, not read in but calculated from above info */
   double gSuperCell[3][3];      /* reciprocal unit cell */
-  double kVector[100][3];       /* k-points wihtin super cell */
+  double kVector[5000][3];       /* k-points wihtin super cell */
 }
 CrystalStructureSuperCellType;
 

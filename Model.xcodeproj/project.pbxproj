@@ -316,6 +316,7 @@
 		4CA4BA43192740820057A26C /* HarmonicOscillator.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = HarmonicOscillator.c; sourceTree = "<group>"; };
 		4CA5D6B6188AE32500A7F1DE /* BasicMath_BlockAndersonMatrix.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = BasicMath_BlockAndersonMatrix.c; path = BasicMathBlock/BasicMath_BlockAndersonMatrix.c; sourceTree = "<group>"; };
 		4CA5D6B7188AE35400A7F1DE /* BasicMath_BlockTridiagonalMatrix.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = BasicMath_BlockTridiagonalMatrix.c; path = BasicMathBlock/BasicMath_BlockTridiagonalMatrix.c; sourceTree = "<group>"; };
+		4CA816C81FB9861800BE570C /* 1D_NoSpin_RIXS.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; name = 1D_NoSpin_RIXS.Quanty; path = "Debug examples/1D_NoSpin_RIXS.Quanty"; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.lua; };
 		4CAB1A131A929B3A00F3E06B /* lua.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = lua.h; sourceTree = "<group>"; };
 		4CB3643519EB8DC0000B721A /* BlockLanczos.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = BlockLanczos.c; sourceTree = "<group>"; };
 		4CC07E7B1A08D9D10053B938 /* ResonantSpectra.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; lineEnding = 0; path = ResonantSpectra.c; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
@@ -821,6 +822,7 @@
 				4CF05D061E4A116F0068EA5A /* Xcode.Quanty */,
 				4CF05D071E6488E70068EA5A /* Coulomb.Quanty */,
 				4C2268121E6CB38C00678B7E /* 1D_Hubbard.Quanty */,
+				4CA816C81FB9861800BE570C /* 1D_NoSpin_RIXS.Quanty */,
 				4C6E52E31FAB582A00C676E6 /* Impurity.Quanty */,
 			);
 			name = "Debug examples";
@@ -1142,6 +1144,7 @@
 				CLANG_ANALYZER_SECURITY_INSECUREAPI_MKSTEMP = NO;
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = NO;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
 				CLANG_WARN_ENUM_CONVERSION = YES;
@@ -1177,6 +1180,7 @@
 				CLANG_ANALYZER_SECURITY_INSECUREAPI_MKSTEMP = NO;
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = NO;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
 				CLANG_WARN_ENUM_CONVERSION = YES;
