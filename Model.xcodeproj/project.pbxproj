@@ -994,6 +994,7 @@
 				ORGANIZATIONNAME = "Maurits Haverkort";
 				TargetAttributes = {
 					4C2AAA181632655300138620 = {
+						DevelopmentTeam = 7887K65LXR;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -1300,7 +1301,7 @@
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "Mac Developer";
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = 7887K65LXR;
 				GCC_WARN_TYPECHECK_CALLS_TO_PRINTF = NO;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1314,7 +1315,7 @@
 				CODE_SIGN_IDENTITY = "Mac Developer";
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = 7887K65LXR;
 				GCC_WARN_TYPECHECK_CALLS_TO_PRINTF = NO;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
