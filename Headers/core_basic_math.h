@@ -16,7 +16,7 @@ double InterpolateRootOfset(double const *x, double const *y, uint32_t N, double
 void InterpolateRoot2D(double const *x1, double const *x2, double const *y1, double const *y2, uint32_t N, double *const x1next, double *const x2next);
 void InterpolateRoot2DOfset(double const *x1, double const *x2, double const *y1, double const *y2, uint32_t N, double const ofsety1, double const ofsety2, double *const x1next, double *const x2next);
 double FindSelfconsistentnumber(double const *valin, double const *valout, uint32_t N);
-void ResiprocalLatticeVector(const double r[3][3], double g[3][3], uint32_t const Units);
+void ReciprocalLatticeVector(const double r[3][3], double g[3][3], uint32_t const Units);
 
 
 /**********************************************************/

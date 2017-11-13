@@ -1,6 +1,6 @@
 /*  A supercell is in principle defined if the unit cell is defined and the number
- *  Of repetitions is given. However it is nice to also have an index of the postions of atoms and g-vectors within the 
- *  supercell. 
+ *  Of repetitions is given. However it is nice to also have an index of the postions of atoms and g-vectors within the
+ *  supercell.
  */
 uint32_t AddAditionalInformationToSuperCell(CrystalStructureSuperCellType * A)
 {
@@ -15,7 +15,7 @@ uint32_t AddAditionalInformationToSuperCell(CrystalStructureSuperCellType * A)
       UnitCellDouble[i][j] = (double)A->rSuperCell[i][j];
     }
   }
-  ResiprocalLatticeVector(UnitCellDouble, A->gSuperCell,A->Crystal.Units);
+  ReciprocalLatticeVector(UnitCellDouble, A->gSuperCell,A->Crystal.Units);
   l = 0;
   for (i = -(int32_t) A->NCell; i < (int32_t) A->NCell; i++)
   {
@@ -202,7 +202,7 @@ uint32_t FindCellPosInCrystalStructureSuperCellType(CrystalStructureSuperCellTyp
   return 0;
 }
 
-/* 
+/*
 * For k resolved spectroscopy one wants to calculate <i|\Sum_r` e^{- i k . r`} T^\dag_r` G \sum_r e^{i k . r} T_r |i>
 * However it is simpler to calculate <i|T_(r)+T^\dag_(r+dr) G T_(r)+T^\dag_(r+dr)|i>
 * This function assumes T(dr) as input for the list spectra and replaces this by the fourier transform.
@@ -240,7 +240,7 @@ uint32_t SpectraSiteFourierTransform(const CrystalStructureSuperCellType SC, Spe
   return 0;
 }
 
-/*  
+/*
  *
  */
 uint32_t OperatorSiteFourierTransform(const CrystalStructureSuperCellType SC, const OperatorType Oi, OperatorType * Ok,

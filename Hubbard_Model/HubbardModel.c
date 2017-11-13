@@ -175,7 +175,7 @@ OperatorType CreateSimpelTwistedHubbardModel(const HubbardModelSettings HSet, co
   double   a,b,c,r[3],g[3][3],rUnitCell[3][3],phase;
   H.NFermion=0;
   InitOperator(&H);
-  // Create reciprocal lattice vectors 
+  // Create reciprocal lattice vectors
   rUnitCell[0][0]=(double)HSet.rUnitCell[0][0];
   rUnitCell[0][1]=(double)HSet.rUnitCell[0][1];
   rUnitCell[0][2]=(double)HSet.rUnitCell[0][2];
@@ -185,33 +185,33 @@ OperatorType CreateSimpelTwistedHubbardModel(const HubbardModelSettings HSet, co
   rUnitCell[2][0]=(double)HSet.rUnitCell[2][0];
   rUnitCell[2][1]=(double)HSet.rUnitCell[2][1];
   rUnitCell[2][2]=(double)HSet.rUnitCell[2][2];
-  ResiprocalLatticeVector(rUnitCell, g);
-  // determine the unit cell by a loop over i=min(x) to max(x), j=min(y) to max(y) and k=min(z) to max(z) 
-  // and then selecting only the points that lay witnin the unit cell 
+  ReciprocalLatticeVector(rUnitCell, g);
+  // determine the unit cell by a loop over i=min(x) to max(x), j=min(y) to max(y) and k=min(z) to max(z)
+  // and then selecting only the points that lay witnin the unit cell
   for(i=-(abs(HSet.rUnitCell[0][0])+abs(HSet.rUnitCell[1][0])+abs(HSet.rUnitCell[2][0]));i<(abs(HSet.rUnitCell[0][0])+abs(HSet.rUnitCell[1][0])+abs(HSet.rUnitCell[2][0]));i++)
   {
     for(j=-(abs(HSet.rUnitCell[0][1])+abs(HSet.rUnitCell[1][1])+abs(HSet.rUnitCell[2][1]));j<(abs(HSet.rUnitCell[0][1])+abs(HSet.rUnitCell[1][1])+abs(HSet.rUnitCell[2][1]));j++)
     {
       for(k=-(abs(HSet.rUnitCell[0][2])+abs(HSet.rUnitCell[1][2])+abs(HSet.rUnitCell[2][2]));k<(abs(HSet.rUnitCell[0][2])+abs(HSet.rUnitCell[1][2])+abs(HSet.rUnitCell[2][2]));k++)
       {
-        a=-((double)(HSet.rUnitCell[1][2]*HSet.rUnitCell[2][1]*i - HSet.rUnitCell[1][1]*HSet.rUnitCell[2][2]*i - 
-          HSet.rUnitCell[0][2]*HSet.rUnitCell[2][1]*j + HSet.rUnitCell[0][1]*HSet.rUnitCell[2][2]*j + HSet.rUnitCell[0][2]*HSet.rUnitCell[1][1]*k - 
+        a=-((double)(HSet.rUnitCell[1][2]*HSet.rUnitCell[2][1]*i - HSet.rUnitCell[1][1]*HSet.rUnitCell[2][2]*i -
+          HSet.rUnitCell[0][2]*HSet.rUnitCell[2][1]*j + HSet.rUnitCell[0][1]*HSet.rUnitCell[2][2]*j + HSet.rUnitCell[0][2]*HSet.rUnitCell[1][1]*k -
           HSet.rUnitCell[0][1]*HSet.rUnitCell[1][2]*k)/(double)
-        (-(HSet.rUnitCell[0][2]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][0]) + HSet.rUnitCell[0][1]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][0] + 
-          HSet.rUnitCell[0][2]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][1] - HSet.rUnitCell[0][0]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][1] - 
+        (-(HSet.rUnitCell[0][2]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][0]) + HSet.rUnitCell[0][1]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][0] +
+          HSet.rUnitCell[0][2]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][1] - HSet.rUnitCell[0][0]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][1] -
           HSet.rUnitCell[0][1]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][2] + HSet.rUnitCell[0][0]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][2]));
-        b=-((double)(HSet.rUnitCell[1][2]*HSet.rUnitCell[2][0]*i - HSet.rUnitCell[1][0]*HSet.rUnitCell[2][2]*i - 
-          HSet.rUnitCell[0][2]*HSet.rUnitCell[2][0]*j + HSet.rUnitCell[0][0]*HSet.rUnitCell[2][2]*j + HSet.rUnitCell[0][2]*HSet.rUnitCell[1][0]*k - 
+        b=-((double)(HSet.rUnitCell[1][2]*HSet.rUnitCell[2][0]*i - HSet.rUnitCell[1][0]*HSet.rUnitCell[2][2]*i -
+          HSet.rUnitCell[0][2]*HSet.rUnitCell[2][0]*j + HSet.rUnitCell[0][0]*HSet.rUnitCell[2][2]*j + HSet.rUnitCell[0][2]*HSet.rUnitCell[1][0]*k -
           HSet.rUnitCell[0][0]*HSet.rUnitCell[1][2]*k)/(double)
-        (HSet.rUnitCell[0][2]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][0] - HSet.rUnitCell[0][1]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][0] - 
-          HSet.rUnitCell[0][2]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][1] + HSet.rUnitCell[0][0]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][1] + 
+        (HSet.rUnitCell[0][2]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][0] - HSet.rUnitCell[0][1]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][0] -
+          HSet.rUnitCell[0][2]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][1] + HSet.rUnitCell[0][0]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][1] +
           HSet.rUnitCell[0][1]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][2] - HSet.rUnitCell[0][0]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][2]));
-        c=-((double)(-(HSet.rUnitCell[1][1]*HSet.rUnitCell[2][0]*i) + HSet.rUnitCell[1][0]*HSet.rUnitCell[2][1]*i + 
-          HSet.rUnitCell[0][1]*HSet.rUnitCell[2][0]*j - HSet.rUnitCell[0][0]*HSet.rUnitCell[2][1]*j - HSet.rUnitCell[0][1]*HSet.rUnitCell[1][0]*k + 
+        c=-((double)(-(HSet.rUnitCell[1][1]*HSet.rUnitCell[2][0]*i) + HSet.rUnitCell[1][0]*HSet.rUnitCell[2][1]*i +
+          HSet.rUnitCell[0][1]*HSet.rUnitCell[2][0]*j - HSet.rUnitCell[0][0]*HSet.rUnitCell[2][1]*j - HSet.rUnitCell[0][1]*HSet.rUnitCell[1][0]*k +
           HSet.rUnitCell[0][0]*HSet.rUnitCell[1][1]*k)/(double)
-        (HSet.rUnitCell[0][2]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][0] - HSet.rUnitCell[0][1]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][0] - 
-          HSet.rUnitCell[0][2]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][1] + HSet.rUnitCell[0][0]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][1] + 
-          HSet.rUnitCell[0][1]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][2] - HSet.rUnitCell[0][0]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][2]));      
+        (HSet.rUnitCell[0][2]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][0] - HSet.rUnitCell[0][1]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][0] -
+          HSet.rUnitCell[0][2]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][1] + HSet.rUnitCell[0][0]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][1] +
+          HSet.rUnitCell[0][1]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][2] - HSet.rUnitCell[0][0]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][2]));
         if((a>=0)&&(a<1.0)&&(b>=0)&&(b<1.0)&&(c>=0)&&(c<1.0))
         {
           AtomPos[H.NFermion][0]=i;
@@ -370,24 +370,24 @@ void CreateSimpelHubbardModelOpticsT(const HubbardModelSettings HSet, OperatorTy
     {
       for(k=-(abs(HSet.rUnitCell[0][2])+abs(HSet.rUnitCell[1][2])+abs(HSet.rUnitCell[2][2]));k<(abs(HSet.rUnitCell[0][2])+abs(HSet.rUnitCell[1][2])+abs(HSet.rUnitCell[2][2]));k++)
       {
-        a=-((double)(HSet.rUnitCell[1][2]*HSet.rUnitCell[2][1]*i - HSet.rUnitCell[1][1]*HSet.rUnitCell[2][2]*i - 
-          HSet.rUnitCell[0][2]*HSet.rUnitCell[2][1]*j + HSet.rUnitCell[0][1]*HSet.rUnitCell[2][2]*j + HSet.rUnitCell[0][2]*HSet.rUnitCell[1][1]*k - 
+        a=-((double)(HSet.rUnitCell[1][2]*HSet.rUnitCell[2][1]*i - HSet.rUnitCell[1][1]*HSet.rUnitCell[2][2]*i -
+          HSet.rUnitCell[0][2]*HSet.rUnitCell[2][1]*j + HSet.rUnitCell[0][1]*HSet.rUnitCell[2][2]*j + HSet.rUnitCell[0][2]*HSet.rUnitCell[1][1]*k -
           HSet.rUnitCell[0][1]*HSet.rUnitCell[1][2]*k)/(double)
-        (-(HSet.rUnitCell[0][2]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][0]) + HSet.rUnitCell[0][1]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][0] + 
-          HSet.rUnitCell[0][2]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][1] - HSet.rUnitCell[0][0]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][1] - 
+        (-(HSet.rUnitCell[0][2]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][0]) + HSet.rUnitCell[0][1]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][0] +
+          HSet.rUnitCell[0][2]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][1] - HSet.rUnitCell[0][0]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][1] -
           HSet.rUnitCell[0][1]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][2] + HSet.rUnitCell[0][0]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][2]));
-        b=-((double)(HSet.rUnitCell[1][2]*HSet.rUnitCell[2][0]*i - HSet.rUnitCell[1][0]*HSet.rUnitCell[2][2]*i - 
-          HSet.rUnitCell[0][2]*HSet.rUnitCell[2][0]*j + HSet.rUnitCell[0][0]*HSet.rUnitCell[2][2]*j + HSet.rUnitCell[0][2]*HSet.rUnitCell[1][0]*k - 
+        b=-((double)(HSet.rUnitCell[1][2]*HSet.rUnitCell[2][0]*i - HSet.rUnitCell[1][0]*HSet.rUnitCell[2][2]*i -
+          HSet.rUnitCell[0][2]*HSet.rUnitCell[2][0]*j + HSet.rUnitCell[0][0]*HSet.rUnitCell[2][2]*j + HSet.rUnitCell[0][2]*HSet.rUnitCell[1][0]*k -
           HSet.rUnitCell[0][0]*HSet.rUnitCell[1][2]*k)/(double)
-        (HSet.rUnitCell[0][2]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][0] - HSet.rUnitCell[0][1]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][0] - 
-          HSet.rUnitCell[0][2]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][1] + HSet.rUnitCell[0][0]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][1] + 
+        (HSet.rUnitCell[0][2]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][0] - HSet.rUnitCell[0][1]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][0] -
+          HSet.rUnitCell[0][2]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][1] + HSet.rUnitCell[0][0]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][1] +
           HSet.rUnitCell[0][1]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][2] - HSet.rUnitCell[0][0]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][2]));
-        c=-((double)(-(HSet.rUnitCell[1][1]*HSet.rUnitCell[2][0]*i) + HSet.rUnitCell[1][0]*HSet.rUnitCell[2][1]*i + 
-          HSet.rUnitCell[0][1]*HSet.rUnitCell[2][0]*j - HSet.rUnitCell[0][0]*HSet.rUnitCell[2][1]*j - HSet.rUnitCell[0][1]*HSet.rUnitCell[1][0]*k + 
+        c=-((double)(-(HSet.rUnitCell[1][1]*HSet.rUnitCell[2][0]*i) + HSet.rUnitCell[1][0]*HSet.rUnitCell[2][1]*i +
+          HSet.rUnitCell[0][1]*HSet.rUnitCell[2][0]*j - HSet.rUnitCell[0][0]*HSet.rUnitCell[2][1]*j - HSet.rUnitCell[0][1]*HSet.rUnitCell[1][0]*k +
           HSet.rUnitCell[0][0]*HSet.rUnitCell[1][1]*k)/(double)
-        (HSet.rUnitCell[0][2]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][0] - HSet.rUnitCell[0][1]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][0] - 
-          HSet.rUnitCell[0][2]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][1] + HSet.rUnitCell[0][0]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][1] + 
-          HSet.rUnitCell[0][1]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][2] - HSet.rUnitCell[0][0]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][2]));      
+        (HSet.rUnitCell[0][2]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][0] - HSet.rUnitCell[0][1]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][0] -
+          HSet.rUnitCell[0][2]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][1] + HSet.rUnitCell[0][0]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][1] +
+          HSet.rUnitCell[0][1]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][2] - HSet.rUnitCell[0][0]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][2]));
         if((a>=0)&&(a<1.0)&&(b>=0)&&(b<1.0)&&(c>=0)&&(c<1.0))
         {
           AtomPos[H->NFermion][0]=i;
@@ -472,31 +472,31 @@ void CreateSimpelTwistedHubbardModelOpticsT(const HubbardModelSettings HSet, Ope
   rUnitCell[2][0]=(double)HSet.rUnitCell[2][0];
   rUnitCell[2][1]=(double)HSet.rUnitCell[2][1];
   rUnitCell[2][2]=(double)HSet.rUnitCell[2][2];
-  ResiprocalLatticeVector(rUnitCell, g);
+  ReciprocalLatticeVector(rUnitCell, g);
   for(i=-(abs(HSet.rUnitCell[0][0])+abs(HSet.rUnitCell[1][0])+abs(HSet.rUnitCell[2][0]));i<(abs(HSet.rUnitCell[0][0])+abs(HSet.rUnitCell[1][0])+abs(HSet.rUnitCell[2][0]));i++)
   {
     for(j=-(abs(HSet.rUnitCell[0][1])+abs(HSet.rUnitCell[1][1])+abs(HSet.rUnitCell[2][1]));j<(abs(HSet.rUnitCell[0][1])+abs(HSet.rUnitCell[1][1])+abs(HSet.rUnitCell[2][1]));j++)
     {
       for(k=-(abs(HSet.rUnitCell[0][2])+abs(HSet.rUnitCell[1][2])+abs(HSet.rUnitCell[2][2]));k<(abs(HSet.rUnitCell[0][2])+abs(HSet.rUnitCell[1][2])+abs(HSet.rUnitCell[2][2]));k++)
       {
-        a=-((double)(HSet.rUnitCell[1][2]*HSet.rUnitCell[2][1]*i - HSet.rUnitCell[1][1]*HSet.rUnitCell[2][2]*i - 
-          HSet.rUnitCell[0][2]*HSet.rUnitCell[2][1]*j + HSet.rUnitCell[0][1]*HSet.rUnitCell[2][2]*j + HSet.rUnitCell[0][2]*HSet.rUnitCell[1][1]*k - 
+        a=-((double)(HSet.rUnitCell[1][2]*HSet.rUnitCell[2][1]*i - HSet.rUnitCell[1][1]*HSet.rUnitCell[2][2]*i -
+          HSet.rUnitCell[0][2]*HSet.rUnitCell[2][1]*j + HSet.rUnitCell[0][1]*HSet.rUnitCell[2][2]*j + HSet.rUnitCell[0][2]*HSet.rUnitCell[1][1]*k -
           HSet.rUnitCell[0][1]*HSet.rUnitCell[1][2]*k)/(double)
-        (-(HSet.rUnitCell[0][2]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][0]) + HSet.rUnitCell[0][1]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][0] + 
-          HSet.rUnitCell[0][2]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][1] - HSet.rUnitCell[0][0]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][1] - 
+        (-(HSet.rUnitCell[0][2]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][0]) + HSet.rUnitCell[0][1]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][0] +
+          HSet.rUnitCell[0][2]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][1] - HSet.rUnitCell[0][0]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][1] -
           HSet.rUnitCell[0][1]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][2] + HSet.rUnitCell[0][0]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][2]));
-        b=-((double)(HSet.rUnitCell[1][2]*HSet.rUnitCell[2][0]*i - HSet.rUnitCell[1][0]*HSet.rUnitCell[2][2]*i - 
-          HSet.rUnitCell[0][2]*HSet.rUnitCell[2][0]*j + HSet.rUnitCell[0][0]*HSet.rUnitCell[2][2]*j + HSet.rUnitCell[0][2]*HSet.rUnitCell[1][0]*k - 
+        b=-((double)(HSet.rUnitCell[1][2]*HSet.rUnitCell[2][0]*i - HSet.rUnitCell[1][0]*HSet.rUnitCell[2][2]*i -
+          HSet.rUnitCell[0][2]*HSet.rUnitCell[2][0]*j + HSet.rUnitCell[0][0]*HSet.rUnitCell[2][2]*j + HSet.rUnitCell[0][2]*HSet.rUnitCell[1][0]*k -
           HSet.rUnitCell[0][0]*HSet.rUnitCell[1][2]*k)/(double)
-        (HSet.rUnitCell[0][2]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][0] - HSet.rUnitCell[0][1]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][0] - 
-          HSet.rUnitCell[0][2]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][1] + HSet.rUnitCell[0][0]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][1] + 
+        (HSet.rUnitCell[0][2]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][0] - HSet.rUnitCell[0][1]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][0] -
+          HSet.rUnitCell[0][2]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][1] + HSet.rUnitCell[0][0]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][1] +
           HSet.rUnitCell[0][1]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][2] - HSet.rUnitCell[0][0]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][2]));
-        c=-((double)(-(HSet.rUnitCell[1][1]*HSet.rUnitCell[2][0]*i) + HSet.rUnitCell[1][0]*HSet.rUnitCell[2][1]*i + 
-          HSet.rUnitCell[0][1]*HSet.rUnitCell[2][0]*j - HSet.rUnitCell[0][0]*HSet.rUnitCell[2][1]*j - HSet.rUnitCell[0][1]*HSet.rUnitCell[1][0]*k + 
+        c=-((double)(-(HSet.rUnitCell[1][1]*HSet.rUnitCell[2][0]*i) + HSet.rUnitCell[1][0]*HSet.rUnitCell[2][1]*i +
+          HSet.rUnitCell[0][1]*HSet.rUnitCell[2][0]*j - HSet.rUnitCell[0][0]*HSet.rUnitCell[2][1]*j - HSet.rUnitCell[0][1]*HSet.rUnitCell[1][0]*k +
           HSet.rUnitCell[0][0]*HSet.rUnitCell[1][1]*k)/(double)
-        (HSet.rUnitCell[0][2]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][0] - HSet.rUnitCell[0][1]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][0] - 
-          HSet.rUnitCell[0][2]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][1] + HSet.rUnitCell[0][0]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][1] + 
-          HSet.rUnitCell[0][1]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][2] - HSet.rUnitCell[0][0]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][2]));      
+        (HSet.rUnitCell[0][2]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][0] - HSet.rUnitCell[0][1]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][0] -
+          HSet.rUnitCell[0][2]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][1] + HSet.rUnitCell[0][0]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][1] +
+          HSet.rUnitCell[0][1]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][2] - HSet.rUnitCell[0][0]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][2]));
         if((a>=0)&&(a<1.0)&&(b>=0)&&(b<1.0)&&(c>=0)&&(c<1.0))
         {
           AtomPos[H->NFermion][0]=i;
@@ -601,24 +601,24 @@ WaveFunctionType CreateStartWaveFunitionNeelState(const HubbardModelSettings HSe
     {
       for(k=-(abs(HSet.rUnitCell[0][2])+abs(HSet.rUnitCell[1][2])+abs(HSet.rUnitCell[2][2]));k<(abs(HSet.rUnitCell[0][2])+abs(HSet.rUnitCell[1][2])+abs(HSet.rUnitCell[2][2]));k++)
       {
-        a=-((double)(HSet.rUnitCell[1][2]*HSet.rUnitCell[2][1]*i - HSet.rUnitCell[1][1]*HSet.rUnitCell[2][2]*i - 
-          HSet.rUnitCell[0][2]*HSet.rUnitCell[2][1]*j + HSet.rUnitCell[0][1]*HSet.rUnitCell[2][2]*j + HSet.rUnitCell[0][2]*HSet.rUnitCell[1][1]*k - 
+        a=-((double)(HSet.rUnitCell[1][2]*HSet.rUnitCell[2][1]*i - HSet.rUnitCell[1][1]*HSet.rUnitCell[2][2]*i -
+          HSet.rUnitCell[0][2]*HSet.rUnitCell[2][1]*j + HSet.rUnitCell[0][1]*HSet.rUnitCell[2][2]*j + HSet.rUnitCell[0][2]*HSet.rUnitCell[1][1]*k -
           HSet.rUnitCell[0][1]*HSet.rUnitCell[1][2]*k)/(double)
-        (-(HSet.rUnitCell[0][2]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][0]) + HSet.rUnitCell[0][1]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][0] + 
-          HSet.rUnitCell[0][2]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][1] - HSet.rUnitCell[0][0]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][1] - 
+        (-(HSet.rUnitCell[0][2]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][0]) + HSet.rUnitCell[0][1]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][0] +
+          HSet.rUnitCell[0][2]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][1] - HSet.rUnitCell[0][0]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][1] -
           HSet.rUnitCell[0][1]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][2] + HSet.rUnitCell[0][0]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][2]));
-        b=-((double)(HSet.rUnitCell[1][2]*HSet.rUnitCell[2][0]*i - HSet.rUnitCell[1][0]*HSet.rUnitCell[2][2]*i - 
-          HSet.rUnitCell[0][2]*HSet.rUnitCell[2][0]*j + HSet.rUnitCell[0][0]*HSet.rUnitCell[2][2]*j + HSet.rUnitCell[0][2]*HSet.rUnitCell[1][0]*k - 
+        b=-((double)(HSet.rUnitCell[1][2]*HSet.rUnitCell[2][0]*i - HSet.rUnitCell[1][0]*HSet.rUnitCell[2][2]*i -
+          HSet.rUnitCell[0][2]*HSet.rUnitCell[2][0]*j + HSet.rUnitCell[0][0]*HSet.rUnitCell[2][2]*j + HSet.rUnitCell[0][2]*HSet.rUnitCell[1][0]*k -
           HSet.rUnitCell[0][0]*HSet.rUnitCell[1][2]*k)/(double)
-        (HSet.rUnitCell[0][2]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][0] - HSet.rUnitCell[0][1]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][0] - 
-          HSet.rUnitCell[0][2]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][1] + HSet.rUnitCell[0][0]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][1] + 
+        (HSet.rUnitCell[0][2]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][0] - HSet.rUnitCell[0][1]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][0] -
+          HSet.rUnitCell[0][2]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][1] + HSet.rUnitCell[0][0]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][1] +
           HSet.rUnitCell[0][1]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][2] - HSet.rUnitCell[0][0]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][2]));
-        c=-((double)(-(HSet.rUnitCell[1][1]*HSet.rUnitCell[2][0]*i) + HSet.rUnitCell[1][0]*HSet.rUnitCell[2][1]*i + 
-          HSet.rUnitCell[0][1]*HSet.rUnitCell[2][0]*j - HSet.rUnitCell[0][0]*HSet.rUnitCell[2][1]*j - HSet.rUnitCell[0][1]*HSet.rUnitCell[1][0]*k + 
+        c=-((double)(-(HSet.rUnitCell[1][1]*HSet.rUnitCell[2][0]*i) + HSet.rUnitCell[1][0]*HSet.rUnitCell[2][1]*i +
+          HSet.rUnitCell[0][1]*HSet.rUnitCell[2][0]*j - HSet.rUnitCell[0][0]*HSet.rUnitCell[2][1]*j - HSet.rUnitCell[0][1]*HSet.rUnitCell[1][0]*k +
           HSet.rUnitCell[0][0]*HSet.rUnitCell[1][1]*k)/(double)
-        (HSet.rUnitCell[0][2]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][0] - HSet.rUnitCell[0][1]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][0] - 
-          HSet.rUnitCell[0][2]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][1] + HSet.rUnitCell[0][0]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][1] + 
-          HSet.rUnitCell[0][1]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][2] - HSet.rUnitCell[0][0]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][2]));      
+        (HSet.rUnitCell[0][2]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][0] - HSet.rUnitCell[0][1]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][0] -
+          HSet.rUnitCell[0][2]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][1] + HSet.rUnitCell[0][0]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][1] +
+          HSet.rUnitCell[0][1]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][2] - HSet.rUnitCell[0][0]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][2]));
         if((a>=0)&&(a<1.0)&&(b>=0)&&(b<1.0)&&(c>=0)&&(c<1.0))
         {
           AtomPos[iorb][0]=i;
@@ -764,24 +764,24 @@ WaveFunctionType CreateStartComplexWaveFunitionNeelState(const HubbardModelSetti
     {
       for(k=-(abs(HSet.rUnitCell[0][2])+abs(HSet.rUnitCell[1][2])+abs(HSet.rUnitCell[2][2]));k<(abs(HSet.rUnitCell[0][2])+abs(HSet.rUnitCell[1][2])+abs(HSet.rUnitCell[2][2]));k++)
       {
-        a=-((double)(HSet.rUnitCell[1][2]*HSet.rUnitCell[2][1]*i - HSet.rUnitCell[1][1]*HSet.rUnitCell[2][2]*i - 
-          HSet.rUnitCell[0][2]*HSet.rUnitCell[2][1]*j + HSet.rUnitCell[0][1]*HSet.rUnitCell[2][2]*j + HSet.rUnitCell[0][2]*HSet.rUnitCell[1][1]*k - 
+        a=-((double)(HSet.rUnitCell[1][2]*HSet.rUnitCell[2][1]*i - HSet.rUnitCell[1][1]*HSet.rUnitCell[2][2]*i -
+          HSet.rUnitCell[0][2]*HSet.rUnitCell[2][1]*j + HSet.rUnitCell[0][1]*HSet.rUnitCell[2][2]*j + HSet.rUnitCell[0][2]*HSet.rUnitCell[1][1]*k -
           HSet.rUnitCell[0][1]*HSet.rUnitCell[1][2]*k)/(double)
-        (-(HSet.rUnitCell[0][2]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][0]) + HSet.rUnitCell[0][1]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][0] + 
-          HSet.rUnitCell[0][2]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][1] - HSet.rUnitCell[0][0]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][1] - 
+        (-(HSet.rUnitCell[0][2]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][0]) + HSet.rUnitCell[0][1]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][0] +
+          HSet.rUnitCell[0][2]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][1] - HSet.rUnitCell[0][0]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][1] -
           HSet.rUnitCell[0][1]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][2] + HSet.rUnitCell[0][0]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][2]));
-        b=-((double)(HSet.rUnitCell[1][2]*HSet.rUnitCell[2][0]*i - HSet.rUnitCell[1][0]*HSet.rUnitCell[2][2]*i - 
-          HSet.rUnitCell[0][2]*HSet.rUnitCell[2][0]*j + HSet.rUnitCell[0][0]*HSet.rUnitCell[2][2]*j + HSet.rUnitCell[0][2]*HSet.rUnitCell[1][0]*k - 
+        b=-((double)(HSet.rUnitCell[1][2]*HSet.rUnitCell[2][0]*i - HSet.rUnitCell[1][0]*HSet.rUnitCell[2][2]*i -
+          HSet.rUnitCell[0][2]*HSet.rUnitCell[2][0]*j + HSet.rUnitCell[0][0]*HSet.rUnitCell[2][2]*j + HSet.rUnitCell[0][2]*HSet.rUnitCell[1][0]*k -
           HSet.rUnitCell[0][0]*HSet.rUnitCell[1][2]*k)/(double)
-        (HSet.rUnitCell[0][2]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][0] - HSet.rUnitCell[0][1]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][0] - 
-          HSet.rUnitCell[0][2]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][1] + HSet.rUnitCell[0][0]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][1] + 
+        (HSet.rUnitCell[0][2]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][0] - HSet.rUnitCell[0][1]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][0] -
+          HSet.rUnitCell[0][2]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][1] + HSet.rUnitCell[0][0]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][1] +
           HSet.rUnitCell[0][1]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][2] - HSet.rUnitCell[0][0]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][2]));
-        c=-((double)(-(HSet.rUnitCell[1][1]*HSet.rUnitCell[2][0]*i) + HSet.rUnitCell[1][0]*HSet.rUnitCell[2][1]*i + 
-          HSet.rUnitCell[0][1]*HSet.rUnitCell[2][0]*j - HSet.rUnitCell[0][0]*HSet.rUnitCell[2][1]*j - HSet.rUnitCell[0][1]*HSet.rUnitCell[1][0]*k + 
+        c=-((double)(-(HSet.rUnitCell[1][1]*HSet.rUnitCell[2][0]*i) + HSet.rUnitCell[1][0]*HSet.rUnitCell[2][1]*i +
+          HSet.rUnitCell[0][1]*HSet.rUnitCell[2][0]*j - HSet.rUnitCell[0][0]*HSet.rUnitCell[2][1]*j - HSet.rUnitCell[0][1]*HSet.rUnitCell[1][0]*k +
           HSet.rUnitCell[0][0]*HSet.rUnitCell[1][1]*k)/(double)
-        (HSet.rUnitCell[0][2]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][0] - HSet.rUnitCell[0][1]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][0] - 
-          HSet.rUnitCell[0][2]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][1] + HSet.rUnitCell[0][0]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][1] + 
-          HSet.rUnitCell[0][1]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][2] - HSet.rUnitCell[0][0]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][2]));      
+        (HSet.rUnitCell[0][2]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][0] - HSet.rUnitCell[0][1]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][0] -
+          HSet.rUnitCell[0][2]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][1] + HSet.rUnitCell[0][0]*HSet.rUnitCell[1][2]*HSet.rUnitCell[2][1] +
+          HSet.rUnitCell[0][1]*HSet.rUnitCell[1][0]*HSet.rUnitCell[2][2] - HSet.rUnitCell[0][0]*HSet.rUnitCell[1][1]*HSet.rUnitCell[2][2]));
         if((a>=0)&&(a<1.0)&&(b>=0)&&(b<1.0)&&(c>=0)&&(c<1.0))
         {
           AtomPos[iorb][0]=i;
@@ -964,12 +964,12 @@ WaveFunctionType CreateStartWaveFunctionSimpelHubbardModel(const HubbardModelSet
   RealWaveFunctionNormalize(&psi);
   RealWaveFunctionFree(&Opsi);
   printf("Starting Wave Function Created\n\n");
-  return psi;  
+  return psi;
 }
 */
 
 /*
-void mainHubbardModel (HubbardModelSettings HSet) 
+void mainHubbardModel (HubbardModelSettings HSet)
 {
   WaveFunctionType psi,Opsi,*PsiList;
   OperatorType H,T;
@@ -980,7 +980,7 @@ void mainHubbardModel (HubbardModelSettings HSet)
   char flname[64];
   FILE *stream;
   time_t t0,t1,t2,tTotal=0,tLanczosGroundState=0,tLanczosTriDiagonalize=0,tTriDiagonalMatrixToSpectrum=0;
-  
+
   time(&t0);
 
   s.N=HSet.NTriDiag;
@@ -1055,7 +1055,7 @@ void mainHubbardModel (HubbardModelSettings HSet)
       printf("Ground state energy is %22.15E\n",Energy);
       RealWaveFunctionFreeValues(&Opsi);
       fflush(stdout);
-  
+
       printf("Optical conductivety \n\n");
       CreateSimpelHubbardModelOpticsT(HSet,&T);
       OperatorPsi(T,psi,&Opsi);
@@ -1071,7 +1071,7 @@ void mainHubbardModel (HubbardModelSettings HSet)
       printf("Time used for TriDiagonalMatrixToSpectrum %i\n",(int)(t2-t1));
       fflush(stdout);
       FreeOperator(&T);
-      
+
       printf("\n\nPES\n\n");
       T.NAn=1;
       T.iAn=malloc(2*sizeof(uint32_t));
@@ -1101,8 +1101,8 @@ void mainHubbardModel (HubbardModelSettings HSet)
         TriDiagonalMatrixToSpectrum(Energy,s,&SpecPES[j]);
       }
       FreeOperator(&T);
-  
-  
+
+
       printf("\n\nIPES\n\n");
       T.NCr=1;
       T.iCr=malloc(2*sizeof(uint32_t));
@@ -1132,7 +1132,7 @@ void mainHubbardModel (HubbardModelSettings HSet)
         TriDiagonalMatrixToSpectrum(Energy,s,&SpecIPES[j]);
       }
       FreeOperator(&T);
-  
+
       printf("\n\nSPIN Up\n\n");
       T.NCrAn=1;
       T.iCrAn=malloc(2*sizeof(uint32_t));
@@ -1165,8 +1165,8 @@ void mainHubbardModel (HubbardModelSettings HSet)
         TriDiagonalMatrixToSpectrum(Energy,s,&SpecSPINUp[j]);
       }
       FreeOperator(&T);
-      
-        
+
+
       printf("\n\nSPIN Dn\n\n");
       T.NCrAn=1;
       T.iCrAn=malloc(2*sizeof(uint32_t));
@@ -1200,15 +1200,15 @@ void mainHubbardModel (HubbardModelSettings HSet)
       }
       FreeOperator(&T);
 
-      
+
       printf("\n Fourier transform spectra within cluster\n");
       SiteFourierTransform(HSet.NSite, HSet.NE, HSet.AtomPos, HSet.rUnitCell, HSet.kVector, SpecSPINUp);
       SiteFourierTransform(HSet.NSite, HSet.NE, HSet.AtomPos, HSet.rUnitCell, HSet.kVector, SpecSPINDn);
       SiteFourierTransform(HSet.NSite, HSet.NE, HSet.AtomPos, HSet.rUnitCell, HSet.kVector, SpecPES);
       SiteFourierTransform(HSet.NSite, HSet.NE, HSet.AtomPos, HSet.rUnitCell, HSet.kVector, SpecIPES);
-      
-      
-      
+
+
+
       printf("\n\nSpectra written to file %s\n",flname);
 
       stream=fopen(flname,"w");
@@ -1217,7 +1217,7 @@ void mainHubbardModel (HubbardModelSettings HSet)
         printf("Can't open file %s\n",flname);
         printf("That's bad program terminates\n");
         exit(1);
-      }  
+      }
       for(i=0;i<=HSet.NE;++i)
       {
         fprintf(stream,"%22.15E        %14.7E %14.7E ",HSet.Emin+(HSet.Emax-HSet.Emin)*i/((double)HSet.NE),SpecOpt.Re[i],SpecOpt.Im[i]);
@@ -1256,11 +1256,11 @@ void mainHubbardModel (HubbardModelSettings HSet)
       }
       printf("\n");
     }
-    
+
     fflush(stdout);
-    
+
   }// End of loop over different accuracies //
-  
+
   time(&tTotal);
   printf("\nTiming Results\n");
   printf("Total time                                : %20i seconds\n",(int)(tTotal-t0));
@@ -1272,7 +1272,7 @@ void mainHubbardModel (HubbardModelSettings HSet)
 
 
 /*
-void mainTwistedHubbardModel (HubbardModelSettings HSet) 
+void mainTwistedHubbardModel (HubbardModelSettings HSet)
 {
   WaveFunctionType psi,Opsi,*PsiList;
   OperatorType H,T;
@@ -1283,7 +1283,7 @@ void mainTwistedHubbardModel (HubbardModelSettings HSet)
   char flname[64];
   FILE *stream;
   time_t t0,t1,t2,tTotal=0,tLanczosGroundState=0,tLanczosTriDiagonalize=0,tTriDiagonalMatrixToSpectrum=0;
-  
+
   time(&t0);
 
   s.N=HSet.NTriDiag;
@@ -1291,7 +1291,7 @@ void mainTwistedHubbardModel (HubbardModelSettings HSet)
   printf("Number of sites in Hubbard Model %i\n",H.NFermion);
   H.NFermion*=2;
   // allocate memory //
-  
+
   SpecOpt.N=HSet.NE;
   SpecOpt.Emin=HSet.Emin;
   SpecOpt.Emax=HSet.Emax;
@@ -1301,7 +1301,7 @@ void mainTwistedHubbardModel (HubbardModelSettings HSet)
   SpecOpt.Gamma=HSet.Gamma;
 
   SpectrumAllocate(SpecOpt,&SpecOpt);
-  
+
   SpecPES=malloc(H.NFermion/2*sizeof(SpectraType));
   SpecIPES=malloc(H.NFermion/2*sizeof(SpectraType));
   SpecSPINUp=malloc(H.NFermion/2*sizeof(SpectraType));
@@ -1313,7 +1313,7 @@ void mainTwistedHubbardModel (HubbardModelSettings HSet)
     SpectrumAllocate(SpecOpt,&SpecSPINUp[j]);
     SpectrumAllocate(SpecOpt,&SpecSPINDn[j]);
   }
-  
+
   s.a=malloc(s.N*sizeof(double));
   s.b=malloc(s.N*sizeof(double));
   PsiList=malloc(HSet.NPsi*sizeof(WaveFunctionType));
@@ -1369,7 +1369,7 @@ void mainTwistedHubbardModel (HubbardModelSettings HSet)
             printf("Ground state energy is %22.15E + I (%22.15E)\n",Energy,junk);
             ComplexWaveFunctionFreeValues(&Opsi);
             fflush(stdout);
-  
+
             printf("Optical conductivety \n\n");
             CreateSimpelTwistedHubbardModelOpticsT(HSet,&T,iq);
             ComplexOperatorPsi(T,psi,&Opsi);
@@ -1385,7 +1385,7 @@ void mainTwistedHubbardModel (HubbardModelSettings HSet)
             printf("Time used for TriDiagonalMatrixToSpectrum %i\n",(int)(t2-t1));
             fflush(stdout);
             FreeOperator(&T);
-      
+
             printf("\n\nPES\n\n");
             T.NAn=HSet.NSite;
             T.iAn=malloc(T.NAn*sizeof(uint32_t));
@@ -1444,9 +1444,9 @@ void mainTwistedHubbardModel (HubbardModelSettings HSet)
               ComplexLanczosTriDiagonalize(H, Opsi, HSet.zeroLancWavefunction,&s,HSet.Gamma);
               TriDiagonalMatrixToSpectrum(Energy,s,&SpecSPINUp[j]);
             }
-            FreeOperator(&T); 
-            
-                         
+            FreeOperator(&T);
+
+
             printf("\n\nSPIN Dn\n\n");
             T.NCrAn=2*HSet.NSite;
             T.iCrAn=malloc(T.NCrAn*sizeof(uint32_t));
@@ -1470,8 +1470,8 @@ void mainTwistedHubbardModel (HubbardModelSettings HSet)
               ComplexLanczosTriDiagonalize(H, Opsi, HSet.zeroLancWavefunction,&s,HSet.Gamma);
               TriDiagonalMatrixToSpectrum(Energy,s,&SpecSPINDn[j]);
             }
-            FreeOperator(&T);              
-  
+            FreeOperator(&T);
+
             printf("\n\nSpectra written to file %s\n",flname);
 
             stream=fopen(flname,"w");
@@ -1521,16 +1521,16 @@ void mainTwistedHubbardModel (HubbardModelSettings HSet)
             }
             printf("\n");
           }
-    
+
           fflush(stdout);
-    
+
         }// End of loop over different accuracies //
         FreeOperator(&H);
       } // End of loop over iq[2] //
     } // End of loop over iq[1] //
   } // End of loop over iq[0] //
 
-  
+
   time(&tTotal);
   printf("\nTiming Results\n");
   printf("Total time                                : %20i seconds\n",(int)(tTotal-t0));

@@ -54,7 +54,7 @@ uint32_t CrystalStructureFromStuttgartCTRL(StuttgartCTRL CTRL, CrystalStructureT
       Cell->rUnitCell[i][j]=CTRL.STRUC.PLAT[i][j]*CTRL.STRUC.ALAT;
     }
   }
-  ResiprocalLatticeVector(Cell->rUnitCell, Cell->gUnitCell,Cell->Units);
+  ReciprocalLatticeVector(Cell->rUnitCell, Cell->gUnitCell,Cell->Units);
   /* determine number of atoms */
   Cell->NAtoms=CTRL.SITE.Nactive;
   Cell->Atom=malloc(Cell->NAtoms*sizeof(AtomType));
@@ -239,7 +239,7 @@ uint32_t CrystalStructureFromStuttgartCTRL(StuttgartCTRL CTRL, CrystalStructureT
 
 uint32_t TightBindingDefFromStuttgartCTRLHAMR(StuttgartCTRL CTRL, StuttgartHAMR HAMR, TightBindingDef *HTB)
 {
-  
+
   int iHAMRelement,iHTBelement,iShell1,iShell2,StartShell1,StartShell2,i1,i2;
   strncpy(HTB->Name, CTRL.HEADER, 31);
   HTB->Name[31]='\0';

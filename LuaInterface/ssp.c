@@ -2,7 +2,7 @@
  * Prints the help file to screen
  * @param L
  *        Pointer to a lua state
- * @return 0 
+ * @return 0
  *         as it leaves the lua state unaltered
  */
 static int LuaHelp(lua_State *L)
@@ -96,7 +96,7 @@ static int LuaHelp(lua_State *L)
     printf("  - calculated is <psi | T1^+ 1/(w-H1-i G/2) T2 1/(w-H2+i G/2) T2^+ 1/(w-H1+i G/2) T1 | psi>\n");
     printf("  - expects as input two operators a (list of) transition operator(s) T1 a (list of) transition operator(s) T2^+ and a (list of) wavefunction(s)\n");
     printf("\n");
-    
+
     printf("\n\n");
     printf("Available objects\n");
     printf("\n");
@@ -168,7 +168,7 @@ static int LuaHelp(lua_State *L)
     printf("    - Spectra.ToTable()\n");
     printf("       - return a table representing the spectra\n");
     printf("\n");
-    
+
   }
   if(len==1)
   {
@@ -534,8 +534,8 @@ static int LuaHelp(lua_State *L)
       printf("\n");
       printf("\n");
     }
-    
-    
+
+
     if (strcmp(Help, "") == 0)
     {
       printf("\n");
@@ -600,7 +600,7 @@ static int LuaNewOperator(lua_State * L)
       }
     }
     if(Options.Name!=NULL) strncpy(O->Name, Options.Name, MAXStrLength-1);
-    
+
     O->Res=Options.DeterminantRestrictions;
     oadd=malloc(sizeof(uint16_t)*O->MaxLength);
     luaL_checktype(L, 3, LUA_TTABLE);
@@ -888,12 +888,12 @@ static int LuaNewWaveFunction(lua_State * L)
   luaL_setmetatable(L, "Wavefunction_Type");
   psi->NFermion=(uint32_t)luaL_checkunsigned(L, 1);
   psi->NBoson  =(uint32_t)luaL_checkunsigned(L, 2);
-  
+
   if(psi->NBoson!=0)
   {
     return luaL_error(L, "Bosons not included in this version\n Sorry\n");
   }
-  
+
   if((len!=3)&&(len!=4)) return luaL_error(L, "ERROR: LuaNewWaveFunction called with %u arguments, expectd 3 or 4\n",len);
   if(len==4)
   {
@@ -1110,7 +1110,7 @@ static int LuaChop(lua_State * L)
           res->Im = ((Abs(a->Im)>epsilon)?a->Im:0);
           luaL_setmetatable(L, "Complex_Type");
         }
-        
+
         return 1;
       }
       if (luaL_testudata(L, len, "Wavefunction_Type") != NULL)
@@ -1519,7 +1519,7 @@ static int Luarotate(lua_State *L)
   if(lua_type(L,len-1)==LUA_TTABLE)
   {
     return luaL_error(L, "Rotate called with a table, not yet implemented\n");
-    
+
     return 0;
   }
   return luaL_error(L, "Rotate called unrecognized type. Can only rotate wavefunctions operators and tables of these\n");
@@ -1707,7 +1707,7 @@ static int LuaCreateSpectra(lua_State *L)
         psiBasis[i]=malloc(Options.Settings.NTri*sizeof(WaveFunctionType));
       }
     }
-     
+
     /* loop over all Transition operators */
     for(iT=0;iT<Options.NT;iT++)
     {
@@ -1786,7 +1786,7 @@ static int LuaCreateSpectra(lua_State *L)
     if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax = Emaxpole + 0.125 * (Emaxpole-Eminpole);
     if(Options.Settings.Gamma==0) Options.Settings.Gamma = 10*(Options.Settings.Emax-Options.Settings.Emin)/((double)Options.Settings.NE);
     // TODO different tridiag to spectral form when self energy is present
-    
+
     /* transform tridiagonal form to spectral form and push to stack */
     Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
     luaL_setmetatable(L, "Spectra_Type");
@@ -1808,7 +1808,7 @@ static int LuaCreateSpectra(lua_State *L)
       TriDiagonalMatrixToSpectrum(psiEn[i], GTri[i], &(Spec->Spec[i]));
     }
     //TODO different spectrum pushed to stack when self energy is present
-    
+
     /* push a table to L containing the spectra in tridiagonal form */
     /* table contains {{a,b,mu=mu,type=tri},{a,b,,mu=mu,type=tri},{a,b,,mu=mu,type=tri},....} */
     lua_createtable(L,Spec->NSpectra,0);
@@ -1842,7 +1842,7 @@ static int LuaCreateSpectra(lua_State *L)
           lua_rawseti(L, -2, i+1);
         }
       }
-      free(psiBasis);      
+      free(psiBasis);
       return 3;
     }
     else
@@ -1917,7 +1917,7 @@ static int LuaCreateSpectra(lua_State *L)
     }
     InitBlockTridiagonalMatrix(&GTri);
     GTri.mu=psiEn[0];
-    
+
     if(Options.Settings.restrictions.N==0)
     {
       if(Options.KrylovBasis==True)
@@ -1942,24 +1942,24 @@ static int LuaCreateSpectra(lua_State *L)
         LanczosBlockTriDiagonalizeRestricted(*H, TpsiSameBasis, Options.Settings.restrictions, Options.Settings.epsilon, &GTri, Max(Options.Settings.Gamma,Options.Settings.epsilon));
       }
     }
-    
-    
+
+
     /* determine Eminpole and Emaxpole */
     /* get eigenvalues Block Tridiagonal matrix and set smallest and largest eigenvalue */
     Eminpole = DBL_MAX;
     Emaxpole =-DBL_MAX;
-    
+
     //TODO: set Eminpole and Emaxpole (they are in the output and I need them for auto range determination
-    
-    
+
+
     BlockTriDiagonalMatrixEigenValues();
-    
-    
-    
-    
-    
-    
-    
+
+
+
+
+
+
+
     /* if Emin=DBL_MAX or Emax=-DBL_MAX or Gamma==0 determine these */
     if(Eminpole==Emaxpole)
     {
@@ -1982,9 +1982,9 @@ static int LuaCreateSpectra(lua_State *L)
     if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin = Eminpole - 0.125 * (Emaxpole-Eminpole);
     if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax = Emaxpole + 0.125 * (Emaxpole-Eminpole);
     if(Options.Settings.Gamma==0) Options.Settings.Gamma = 10*(Options.Settings.Emax-Options.Settings.Emin)/((double)Options.Settings.NE);
-    
+
     //TODO: different transformation to spectralform when self energy is present
-    
+
     /* transform tridiagonal form to spectral form and push to stack */
     Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
     luaL_setmetatable(L, "Spectra_Type");
@@ -2143,13 +2143,13 @@ static int LuaCreateResonantSpectra(lua_State *L)
   else
   {
     SettingsNow = Options.Settings;
-    
+
     //ResonantSpectraTensor(*H1, *H2, T1, Options.NT1, T2, Options.NT2, psi, Options.Npsi, &SpecTri, &(Spec->Spec[0]), Options.E01, Options.E02, &SettingsNow);
-    
-    
-    
-    
-    
+
+
+
+
+
   }
   return 1;
 }
@@ -2715,31 +2715,31 @@ static int LuaImpurityGreensFunction(lua_State * L)
       return luaL_error(L, "Error in ImpurityGroundState in ImpurityGreensFunction fatal sorry, should not happen\n");
     }
   }
-  
-  
-  
+
+
+
   // calculate Greens function
   if(Options.Tensor==True)
   {
     // call tensor form
-    
-    
+
+
   }
   else
   {
     // call single form
-    
-    
-    
+
+
+
   }
   if(DeltaBath->type&32)
   {
     FreeBlockMatrix(DeltaBath);
     free(DeltaBath);
   }
-  
-  
-  
+
+
+
   return 3;
 }
 
@@ -3166,17 +3166,17 @@ static int LuaStatistics(lua_State *L)
 {
   uint32_t len;
   len = (uint32_t)lua_gettop(L);
-  
-  
+
+
   if (luaL_testudata(L, 1, "Operator_Type") != NULL)
   {
     OperatorType *O = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
     printf("Statistical information on operator %s\n",O->Name);
     //TODO:
-    
-    
-    
-    
+
+
+
+
     return 0;
   }
   else if (luaL_testudata(L, 1, "Wavefunction_Type") != NULL)
@@ -3218,6 +3218,7 @@ static const struct luaL_Reg global_functions[] = {
   {"Expand",LuaWavefunctionExpand},
   {"FileReadStuttgartCTRL", LuaFileReadStuttgartCTRL},
   {"FileReadStuttgartHAMR", LuaFileReadStuttgartHAMR},
+  {"FileReadDresdenFPLO", LuaFileReadDresdenFPLO},
 //  {"Help", LuaHelp},
   {"ImpurityGreensFunction", LuaImpurityGreensFunction},
   {"Inverse", LuaInverse},
@@ -3238,6 +3239,7 @@ static const struct luaL_Reg global_functions[] = {
   {"TimePrint",LuaTimePrint},
   {"TimeStart",LuaTimeStart},
   {"TightBindingDefFromStuttgartCTRLHAMR", LuaTightBindingDefFromStuttgartCTRLHAMR},
+  {"TightBindingDefFromDresdenFPLO", LuaTightBindingDefFromDresdenFPLO},
   {"Transpose", Luatranspose},
   {"Verbosity",LuaVerbosity},
   {NULL, NULL}
@@ -3265,42 +3267,43 @@ int luaopen_ssp(lua_State * L)
 {
   luaL_newmetatable(L, "Operator_Type");
   luaL_setfuncs(L, Operator_meta, 0);
-  
+
   luaL_newmetatable(L, "Wavefunction_Type");
   luaL_setfuncs(L, Wavefunction_meta, 0);
-  
+
   luaL_newmetatable(L, "Spectra_Type");
   luaL_setfuncs(L, Spectra_meta, 0);
   luaL_newlib(L, Spectra_func);
   lua_setglobal(L, "Spectra");
-  
+
   luaL_newmetatable(L, "TightBinding_Type");
   luaL_setfuncs(L, TightBinding_meta, 0);
-  
+
   luaL_newmetatable(L, "ResponseFunction_Type");
   luaL_setfuncs(L, ResponseFunction_meta, 0);
   lua_pushvalue(L, -1);
   lua_setfield(L, -1, "__index");
   lua_setglobal(L, "ResponseFunctionMeta");
   luaMWH_RegisterGlobalFunctions(L, ResponseFunction_func);
-  
-  
+
+
   luaL_newmetatable(L, "StuttgartCTRL_Type");
   luaL_setfuncs(L, StuttgartCTRL_meta, 0);
-  
+
   luaL_newmetatable(L, "StuttgartHAMR_Type");
   luaL_setfuncs(L, StuttgartHAMR_meta, 0);
-  
-  
-  
-  
+
+  luaL_newmetatable(L, "DresdenFPLO_Type");
+  luaL_setfuncs(L, DresdenFPLO_meta, 0);
+
+
   luaL_newmetatable(L, "Yi_Type");
   luaL_setfuncs(L, Yi_meta, 0);
   luaL_newlib(L, Yi_func);
   lua_setglobal(L, "Yi");
-  
+
   luaMWH_RegisterGlobalFunctions(L, global_functions);
   luaMWH_RegisterGlobalFunctions(L, mathlib);
-  
+
   return 0;
 }

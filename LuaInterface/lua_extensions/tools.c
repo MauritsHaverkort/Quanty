@@ -11,24 +11,24 @@ static void luaMWH_StackDump (lua_State *L)
     int t = lua_type(L, i);
     printf("\n%s - ",lua_typename(L, t));
     switch (t) {
-        
+
       case LUA_TSTRING:  /* strings */
         printf("`%s'", lua_tostring(L, i));
         break;
-        
+
       case LUA_TBOOLEAN:  /* booleans */
         printf(lua_toboolean(L, i) ? "true" : "false");
         break;
-        
+
       case LUA_TNUMBER:  /* numbers */
         printf("%g", lua_tonumber(L, i));
         break;
-        
+
       case LUA_TTABLE:  /* table */
         len = (int)lua_objlen(L, i);
         printf("%d entries", len);
         break;
-        
+
       case LUA_TUSERDATA:  /* userdata */
         if (luaL_testudata(L, i, "Complex_Type") != NULL) printf("Complex");
         else if (luaL_testudata(L, i, "Operator_Type") != NULL) printf("Operator");
@@ -37,13 +37,14 @@ static void luaMWH_StackDump (lua_State *L)
         else if (luaL_testudata(L, i, "TightBinding_Type") != NULL) printf("TightBinding");
         else if (luaL_testudata(L, i, "StuttgartCTRL_Type") != NULL) printf("StuttgartCTRL");
         else if (luaL_testudata(L, i, "StuttgartHAMR_Type") != NULL) printf("StuttgartHAMR");
+        else if (luaL_testudata(L, i, "DresdenFPLO_Type") != NULL) printf("DresdenFPLO");
         else printf("Unrecognized");
         break;
-        
+
       default:  /* other values */
         printf("%s", lua_typename(L, t));
         break;
-        
+
     }
   }
   printf("\n");  /* end the listing */

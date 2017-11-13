@@ -23,7 +23,7 @@ uint32_t StreamReadAtom(AtomType * O, FILE * stream)
     fscanf(stream, "%i", &(O->shelldegeneracy[i]));
   }
   fgets(comments, 1000, stream);
-    
+
   O->ShellName = malloc(O->Nshell * sizeof(char*));
   O->OrbitalName = malloc(O->Nshell * sizeof(char**));
   for (i=0; i < O->Nshell; i++)
@@ -35,7 +35,7 @@ uint32_t StreamReadAtom(AtomType * O, FILE * stream)
       O->OrbitalName[i][j] = malloc(MAXStrLength*sizeof(char));
     }
   }
-    
+
   return 0;
 }
 
@@ -61,7 +61,7 @@ uint32_t StreamReadCrystalStructure(CrystalStructureType * O, FILE * stream)
     StreamReadAtom(&(O->Atom[i]), stream);
   }
   O->Units=1;
-  ResiprocalLatticeVector(O->rUnitCell, O->gUnitCell,O->Units);
+  ReciprocalLatticeVector(O->rUnitCell, O->gUnitCell,O->Units);
   return 0;
 }
 

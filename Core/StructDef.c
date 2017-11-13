@@ -510,7 +510,7 @@ BlockListOfPoles;
  *   G2 = 1/(w - a2 - b2 . ( G3 ) . b2^+)
  *   ...
  *   Gn = 1/(w - an)
- *  
+ *
  *   note that the later needs to be changed to
  *   G0 =        a0 + b0^* . ( G1 ) . b0^T
  *   G1 = 1/(w - a1 - b1^* . ( G2 ) . b1^T)
@@ -623,7 +623,7 @@ typedef struct BlockNaturalImpurityOrbitalMatrixType
   uint32_t BlockSize;          /* dimension of square matrices */
   uint32_t QComplex;           /* matrices are complex or real */
   double   mu;
-  
+
   BlockTriDiagonalMatrixType val;
   BlockTriDiagonalMatrixType con;
   CompactMatrixType TMT;
@@ -697,7 +697,7 @@ BlokAndersonMatrixType;
  *     ( 0           | 0           | 0           | 0           | A[5][4]=bc1 | A[5][5]=ac2 | A[5][6]=bc2 )
  *     ( 0           | 0           | 0           | 0           | 0           | A[6][5]=bc2 | A[6][6]=ac3 )
  *
- *   avc0 = (a0val + a0con)/2 
+ *   avc0 = (a0val + a0con)/2
  *
  *   (A B)[i][j] = \sum_k A[i][k] B[k][j]
  *
@@ -724,7 +724,7 @@ DoubleTriDiagonalMatrixType;
  *     ( 0             | 0             | 0             | 0           | A[5][4]=bc1^+ | A[5][5]=ac2   | A[5][6]=bc2 )
  *     ( 0             | 0             | 0             | 0           | 0             | A[6][5]=bc2^+ | A[6][6]=ac3 )
  *
- *   acv0 = (a0val + a0con)/2 
+ *   acv0 = (a0val + a0con)/2
  *
  *   (A B)[i][j] = \sum_k A[i][k] . B[k][j]
  *
@@ -1208,8 +1208,8 @@ typedef struct HubbardModelSettings
 }
 HubbardModelSettings;
 
-/* Defines a structure that can store the Stuttgart CTRL file for LMTO and NMTO calculations 
- * The controle file is structured into categories 
+/* Defines a structure that can store the Stuttgart CTRL file for LMTO and NMTO calculations
+ * The controle file is structured into categories
  *
  * The StuttgartCTRL file defines a struct for each category in the CTRL file.
  *   Categories defined:
@@ -1509,3 +1509,41 @@ typedef struct StuttgartHAMR
   StuttgartHAMRelement *element;
 }
 StuttgartHAMR;
+
+typedef struct DresdenFPLO
+{
+  char Compound[16];
+  struct
+  {
+    double LattConst[3];
+    double Angles[3];
+    double LattVec[3][3];
+    double gLattVec[3][3];
+  }
+  Lattice;
+
+  struct
+  {
+    int Natom;
+    char **Atom;
+    double **Pos;
+  }
+  Atoms;
+
+  struct
+  {
+    int Nwandef;
+    char **Name;
+    int NActAtom;
+    int *ActMap;
+    int *Site;
+    int **Orbital;     // n,l,m
+    double **PosCenter;
+    int *Nhop;
+    double ***HopVec;  // Translating+Connecting, as direct output of fplo.
+    double **HopVal;
+  }
+  Wannier;
+
+}
+DresdenFPLO;
