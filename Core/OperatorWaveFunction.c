@@ -1937,19 +1937,6 @@ uint32_t OperatorPsiRestrictedRR(const OperatorType O, const WaveFunctionType ps
   uint32_t i, j, k, l, ii, ij, ik, OutOffMem;
   int    iOMP;
   double phase;
-  
-  /*
-  printf("Restrictions.N %i\n",Restrictions.N);
-  for(i=0;i<Restrictions.N;i++)
-  {
-    for(j=0;j<psi.NWord-psi.NBoson;j++)
-    {
-      printf("%02x",Restrictions.Determinant[i][j]);
-    }
-    printf(" Interval %i %i\n",Restrictions.Min[i],Restrictions.Max[i]);
-  }
-  */
-  
   Opsi->QComplex = 0;
   Opsi->NFermion = psi.NFermion;
   Opsi->NBoson = psi.NBoson;
@@ -1980,8 +1967,7 @@ uint32_t OperatorPsiRestrictedRR(const OperatorType O, const WaveFunctionType ps
         {
           for (j = 0; j < O.l[l].N; j++)
           {
-            for (k = 0; k < Opsi->NWord; k++)
-              Det[k] = psi.Determinant[ii][ij + k];
+            for (k = 0; k < Opsi->NWord; k++) Det[k] = psi.Determinant[ii][ij + k];
             phase = OperatorLader(Det, &(O.l[l].o[j * l]), l, O.NFermion);
             if ((QDetNotRestricted(Det, O.NFermion, O.NBoson, O.NWord, Restrictions))&&(fabs(phase) > (10 * DBL_MIN)))
             {

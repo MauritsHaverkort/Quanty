@@ -592,6 +592,7 @@ static int LuaNewOperator(lua_State * L)
     InitOperator(O);
     O->NFermion=(uint32_t)luaL_checkunsigned(L, 1);
     O->NBoson  =(uint32_t)luaL_checkunsigned(L, 2);
+    O->NWord   = O->NBoson + Min(O->NFermion, 1 + (O->NFermion - 1) / 8);
     for(i=0;i<Options.NBitsKeyDouble.Ni;i++)
     {
       if(Abs(Options.NBitsKeyDouble.VRe[i])>0.5)

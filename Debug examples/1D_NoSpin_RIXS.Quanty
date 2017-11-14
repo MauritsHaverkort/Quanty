@@ -409,7 +409,8 @@ print(OppT*psi)
 
 OppT.Restrictions = { 22 , 0 ,
   { "0011111111110000000000" , 0 , 1 },
-  { "0000000000001111111111" , 9 , 10 }  }
+{ "0000000000001111111111" , 9 , 10 }  }
+OppT.Restrictions = { 22 , 0 , { "1100000000001111111111" , 9 , 12 }  }
 
 print(OppT)
 print(OppT.Restrictions)
