@@ -105,8 +105,11 @@ static int LuaTightBindingDefFromDresdenFPLO(lua_State * L)
 }
 /* on stack:
  *   TB : TightBinding_Type
- *   {Emin,Emax,NE}
+ *
  *   Options
+ *       Emin
+ *       Emax
+ *       NE
  *       "Nk" -> {Nkx,Nky,Nkz} number of k-points       standard {40,40,40}
  *       Method -> "mesh", ...                          standard "mesh"
  *       Character -> {matrix} or "full" or "total" standard "full" rho is psi^* (x) psi, rho2 = M^T . psi^* (x) psi . M^*
@@ -115,38 +118,117 @@ static int LuaTightBindingDefFromDresdenFPLO(lua_State * L)
  */
 static int LuaCalculateG(lua_State *L)
 {
-  //TODO: all
+  //TODO: character
+  uint32_t i, len;
+  TightBindingDef *a;
+  SpectraTypeArray *DOS;
+
   struct
   {
-    double Nk[3];
-    char Method[64];
-    char Character[64];
-    char Broadening[64];
+    int *Nk;
+    //char* Method;   //only method implemented is the mesh/grid.
+    char* Character;
+    char* Broadening;
     double FWHM;
     double Emin;
     double Emax;
     uint32_t NE;
   } Options;
+  Options.Nk = malloc(3*sizeof(int));
   Options.Nk[0]=40;
   Options.Nk[1]=40;
   Options.Nk[2]=40;
-  strcpy(Options.Method,     "Mesh");
-  strcpy(Options.Character,  "Full");
-  strcpy(Options.Broadening, "None");
+  //Options.Method    = "Mesh";
+  Options.Character = "Full";
+  Options.Broadening= "None";
   Options.FWHM=0;
   Options.Emin=-10;
   Options.Emax=10;
   Options.NE=2000;
   LuaOptionsType LuaCalculateGOptions[]={
-    {"Nk","array-uint32_t-3",&(Options.Nk[0])},
-    {"Method","char*",&(Options.Method[0])},
-    {"Character","char*",&(Options.Character[0])},
-    {"Broadening", "char*", &(Options.Broadening[0])},
-    {"FWHM","double",&(Options.FWHM)},
-    {"Emin","double",&(Options.Emin)},
-    {"Emax","double",&(Options.Emax)},
-    {"NE","uint32_t",&(Options.NE)},
+    {"Nk", "array-uint32_t-3", &(Options.Nk)},
+    //{"Method",     "char*",    &(Options.Method)},
+    {"Character",  "char*",    &(Options.Character)},
+    {"Broadening", "char*",    &(Options.Broadening)},
+    {"FWHM",       "double",   &(Options.FWHM)},
+    {"Emin",       "double",   &(Options.Emin)},
+    {"Emax",       "double",   &(Options.Emax)},
+    {"NE",         "uint32_t", &(Options.NE)},
     {NULL, NULL, NULL}};
+
+  len = (uint32_t)lua_gettop(L);
+  if(!(len==1||len==2))
+  {
+    return luaL_error(L, "Error CalculateG: called with %d arguments, 1 or 2 expected (TightBindingDef, and options).\n",len);
+  }
+  a = (TightBindingDef*) luaL_checkudata(L, 1, "TightBinding_Type");
+  if(len==2)
+  {
+    LuaCheckOptions(L, -1, LuaCalculateGOptions);
+  }
+
+  DOS = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+  luaL_setmetatable(L, "Spectra_Type");
+  if(strcicmp(Options.Character, "Full")==0)
+  {
+    DOS->NSpectra = 1;
+    DOS->Spec=malloc(DOS->NSpectra*sizeof(SpectraType));
+    DOS->Spec[0].N    = Options.NE;
+    DOS->Spec[0].Emin = Options.Emin;
+    DOS->Spec[0].Emax = Options.Emax;
+    DOS->Spec[0].dE   =(DOS->Spec[0].Emax-DOS->Spec[0].Emin)/DOS->Spec[0].N;
+    SpectrumAllocate(DOS->Spec[0], &(DOS->Spec[0]));
+    strcpy(DOS->Spec[0].Name, "Total DOS");
+
+    TightBindingDOS(*a, Options.Nk, &(DOS->Spec[0]));
+  }
+  else
+  {
+    printf("Warning CalculateG: character-resolved DOS only outputs the -Im part of the spectra to the real part.");
+    DOS->NSpectra = (*a).NFermion+1;
+    printf("%d\n", DOS->NSpectra);
+    DOS->Spec=malloc(DOS->NSpectra*sizeof(SpectraType));
+    DOS->Spec[0].N    = Options.NE;
+    DOS->Spec[0].Emin = Options.Emin;
+    DOS->Spec[0].Emax = Options.Emax;
+    DOS->Spec[0].dE   =(DOS->Spec[0].Emax-DOS->Spec[0].Emin)/DOS->Spec[0].N;
+    for(i=0;i<DOS->NSpectra-1;i++)
+    {
+      SpectrumAllocate(DOS->Spec[0], &(DOS->Spec[i]));
+      sprintf(DOS->Spec[i].Name, "DOS %i/%i", i, DOS->NSpectra-1);
+    }
+    SpectrumAllocate(DOS->Spec[0], &(DOS->Spec[DOS->NSpectra-1]));
+    strcpy(DOS->Spec[DOS->NSpectra-1].Name, "Total DOS");
+
+    TightBindingDOSCharacter(*a, Options.Nk, DOS->Spec, (*a).NFermion+1, &EigenFunctionToCharactersStandard);
+  }
+
+  if(strcicmp(Options.Broadening, "Gaussian")==0||
+     strcicmp(Options.Broadening, "Gauss")==0||
+     strcicmp(Options.Broadening, "G")==0)
+  {
+    for(i=0;i<DOS->NSpectra;i++)
+    {
+      BroadenG(&(DOS->Spec[i]), Options.FWHM);
+    }
+  }
+  else if(strcicmp(Options.Broadening, "Lorentzian")==0||
+          strcicmp(Options.Broadening, "Lorentz")==0||
+          strcicmp(Options.Broadening, "L")==0)
+  {
+    for(i=0;i<DOS->NSpectra;i++)
+    {
+      BroadenL(&(DOS->Spec[i]), Options.FWHM);
+    }
+  }
+  else if(strcicmp(Options.Broadening, "None")!=0)
+  {
+    printf("\nWarning: Unrecognized broadening method, using Gaussian.\n");
+    for(i=0;i<DOS->NSpectra;i++)
+    {
+      BroadenL(&(DOS->Spec[i]), Options.FWHM);
+    }
+  }
 
   return 1;
 }
