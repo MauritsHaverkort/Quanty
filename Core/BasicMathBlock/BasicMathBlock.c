@@ -96,42 +96,46 @@ uint32_t FreeBlockMatrixFromLua(BlockMatrixType *M)
 }
 
 /*
- * change the type of a response funciton from M->type to type
+ * change the type of a response function from M->type to type
  */
 BlockMatrixType *ConvertBlockMatrix(BlockMatrixType *M, const char type, double T)
 {
   BlockMatrixType *res;
   res = malloc(sizeof(BlockMatrixType));
   res->type = type;
-  switch (type|32)
+  switch (M->type|32)      // original type
   {
     case 'l':
     {
-      switch (M->type|32)
+      switch (type|32)     // target type
       {
         case 'l':
         {
+          res->data = (void*) malloc(sizeof(BlockListOfPoles));
           CopyBlockListOfPoles(*(BlockListOfPoles*)M->data, (BlockListOfPoles*)res->data);
         }
         break;
         case 't':
         {
+          res->data = (void*) malloc(sizeof(BlockTriDiagonalMatrixType));
           BlockListOfPolesToBlockTridiagonalMatrix(*(BlockListOfPoles*)M->data, (BlockTriDiagonalMatrixType*)res->data, ((BlockListOfPoles*)(M->data))->N+1, 1000*DBL_EPSILON);
         }
         break;
         case 'a':
         {
+          res->data = (void*) malloc(sizeof(BlockAndersonMatrixType));
           BlockListOfPolesToBlockAndersonMatrix(*(BlockListOfPoles*)M->data, (BlockAndersonMatrixType*)res->data, ((BlockListOfPoles*)(M->data))->N+1);
         }
         break;
         case 'n':
         {
+          res->data = (void*) malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
           BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix((BlockListOfPoles*)M->data, (BlockNaturalImpurityOrbitalMatrixType*)res->data, T, ((BlockListOfPoles*)(M->data))->N+1, ((BlockListOfPoles*)(M->data))->N+1);
         }
         break;
         default:
         {
-          printf("Error in ConvertBlockMatrix unrecognized type of M: %c",M->type);
+          printf("Error in ConvertBlockMatrix unrecognized type to convert to: %c", type);
         }
         break;
       }
@@ -139,31 +143,32 @@ BlockMatrixType *ConvertBlockMatrix(BlockMatrixType *M, const char type, double 
     break;
     case 't':
     {
-      switch (M->type|32)
+      switch (type|32)
       {
         case 'l':
         {
-          
+
         }
         break;
         case 't':
         {
+          res->data = (void*) malloc(sizeof(BlockTriDiagonalMatrixType));
           CopyBlockTridiagonalMatrix(*(BlockTriDiagonalMatrixType*)M->data, (BlockTriDiagonalMatrixType*)res->data);
         }
         break;
         case 'a':
         {
-          
+
         }
         break;
         case 'n':
         {
-          
+
         }
         break;
         default:
         {
-          printf("Error in ConvertBlockMatrix unrecognized type of M: %c",M->type);
+          printf("Error in ConvertBlockMatrix unrecognized type to convert to: %c",type);
         }
         break;
       }
@@ -171,16 +176,16 @@ BlockMatrixType *ConvertBlockMatrix(BlockMatrixType *M, const char type, double 
     break;
     case 'a':
     {
-      switch (M->type|32)
+      switch (type|32)
       {
         case 'l':
         {
-          
+
         }
         break;
         case 't':
         {
-          
+
         }
         break;
         case 'a':
@@ -190,7 +195,7 @@ BlockMatrixType *ConvertBlockMatrix(BlockMatrixType *M, const char type, double 
         break;
         case 'n':
         {
-          
+
         }
         break;
         default:
@@ -207,27 +212,28 @@ BlockMatrixType *ConvertBlockMatrix(BlockMatrixType *M, const char type, double 
       {
         case 'l':
         {
-          
+
         }
         break;
         case 't':
         {
-          
+
         }
         break;
         case 'a':
         {
-          
+
         }
         break;
         case 'n':
         {
+          res->data = (void*) malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
           CopyBlockNaturalImpurityOrbitalMatrix(*(BlockNaturalImpurityOrbitalMatrixType*)M->data, (BlockNaturalImpurityOrbitalMatrixType*)res->data);
         }
         break;
         default:
         {
-          printf("Error in ConvertBlockMatrix unrecognized type of M: %c",M->type);
+          printf("Error in ConvertBlockMatrix unrecognized type to convert to: %c",type);
         }
         break;
       }
@@ -235,7 +241,7 @@ BlockMatrixType *ConvertBlockMatrix(BlockMatrixType *M, const char type, double 
     break;
     default:
     {
-      printf("Error in ConvertBlockMatrix unrecognized type to convert to: %c",type);
+      printf("Error in ConvertBlockMatrix unrecognized type of M: %c",M->type);
     }
     break;
   }

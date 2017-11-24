@@ -116,7 +116,7 @@ static int LuaTightBindingDefFromDresdenFPLO(lua_State * L)
  *       Broadening -> "None", {"Gauss",FMHM}, {"Lorentz, FWHM}
  *   returns a Spectra_Type
  */
-static int LuaCalculateG(lua_State *L)
+static int LuaCalculateDOS(lua_State *L)
 {
   //TODO: character
   uint32_t i, len;
@@ -145,7 +145,7 @@ static int LuaCalculateG(lua_State *L)
   Options.Emin=-10;
   Options.Emax=10;
   Options.NE=2000;
-  LuaOptionsType LuaCalculateGOptions[]={
+  LuaOptionsType LuaCalculateDOSOptions[]={
     {"Nk", "array-uint32_t-3", &(Options.Nk)},
     //{"Method",     "char*",    &(Options.Method)},
     {"Character",  "char*",    &(Options.Character)},
@@ -159,12 +159,12 @@ static int LuaCalculateG(lua_State *L)
   len = (uint32_t)lua_gettop(L);
   if(!(len==1||len==2))
   {
-    return luaL_error(L, "Error CalculateG: called with %d arguments, 1 or 2 expected (TightBindingDef, and options).\n",len);
+    return luaL_error(L, "Error CalculateDOS: called with %d arguments, 1 or 2 expected (TightBindingDef, and options).\n",len);
   }
   a = (TightBindingDef*) luaL_checkudata(L, 1, "TightBinding_Type");
   if(len==2)
   {
-    LuaCheckOptions(L, -1, LuaCalculateGOptions);
+    LuaCheckOptions(L, -1, LuaCalculateDOSOptions);
   }
 
   DOS = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
@@ -181,10 +181,12 @@ static int LuaCalculateG(lua_State *L)
     strcpy(DOS->Spec[0].Name, "Total DOS");
 
     TightBindingDOS(*a, Options.Nk, &(DOS->Spec[0]));
+    // Note there are some inconsistencies regarding how the DOS is normalized in the original functions.
+    SpectraScalarMultiply(&(DOS->Spec[0]), DOS->Spec[0].dE, 0.);
   }
   else
   {
-    printf("Warning CalculateG: character-resolved DOS only outputs the -Im part of the spectra to the real part.");
+    printf("Warning CalculateDOS: character-resolved DOS only outputs the -Im part of the spectra to the real part.");
     DOS->NSpectra = (*a).NFermion+1;
     printf("%d\n", DOS->NSpectra);
     DOS->Spec=malloc(DOS->NSpectra*sizeof(SpectraType));
@@ -200,7 +202,7 @@ static int LuaCalculateG(lua_State *L)
     SpectrumAllocate(DOS->Spec[0], &(DOS->Spec[DOS->NSpectra-1]));
     strcpy(DOS->Spec[DOS->NSpectra-1].Name, "Total DOS");
 
-    TightBindingDOSCharacter(*a, Options.Nk, DOS->Spec, (*a).NFermion+1, &EigenFunctionToCharactersStandard);
+    TightBindingDOSCharacter(*a, Options.Nk, DOS->Spec, a->NFermion+1, &EigenFunctionToCharactersStandard);
   }
 
   if(strcicmp(Options.Broadening, "Gaussian")==0||
@@ -253,12 +255,75 @@ static int LuaCalculateFermi(lua_State *L)
   return 1;
 }
 
-/*
- *
+/* Calculate the Green's function from a given tight-binding Hamiltonian.
+ * Input on stack:
+ *   TB : TightBinding_Type
+ *   Options
+ *       Emin
+ *       Emax
+ *       NE
+ *       Nk -> {Nkx,Nky,Nkz} number of k-points       standard {40,40,40}
+ *       Type
  */
-static int LuaCalculateDOS(lua_State *L)
+static int LuaChangeTypeResponseFunction(lua_State *L);
+static int LuaCalculateG(lua_State *L)
 {
-  return LuaCalculateG(L);
+  uint32_t i, len;
+  TightBindingDef *a;
+  BlockMatrixType *G, *G2;
+
+  struct
+  {
+    int *Nk;
+    //char* Method;   //only method implemented is the mesh/grid.
+    double Emin;
+    double Emax;
+    uint32_t NE;
+    char* Type;
+  } Options;
+  Options.Nk = malloc(3*sizeof(int));
+  Options.Nk[0]=40;
+  Options.Nk[1]=40;
+  Options.Nk[2]=40;
+  //Options.Method    = "Mesh";
+  Options.Emin=-10;
+  Options.Emax=10;
+  Options.NE=2000;
+  Options.Type="ListOfPoles";
+  LuaOptionsType LuaCalculateGOptions[]={
+    {"Nk", "array-uint32_t-3", &(Options.Nk)},
+    //{"Method",     "char*",    &(Options.Method)},
+    {"Emin",       "double",   &(Options.Emin)},
+    {"Emax",       "double",   &(Options.Emax)},
+    {"NE",         "uint32_t", &(Options.NE)},
+    {"Type",       "char*",    &(Options.Type)},
+    {NULL, NULL, NULL}};
+
+  len = (uint32_t)lua_gettop(L);
+  if(!(len==1||len==2))
+  {
+    return luaL_error(L, "Error CalculateG: called with %d arguments, 1 or 2 expected (TightBindingDef, and options).\n",len);
+  }
+  a = (TightBindingDef*) luaL_checkudata(L, 1, "TightBinding_Type");
+  if(len==2)
+  {
+    LuaCheckOptions(L, -1, LuaCalculateGOptions);
+  }
+
+  lua_pop(L,2);
+  G = (BlockMatrixType *) lua_newuserdata(L, sizeof(BlockMatrixType));
+  G->type = 'L';
+  G->data = (void*) malloc(sizeof(BlockListOfPoles));
+  TightBindingHamiltonianToBlockListOfPoles(*a, Options.Nk, (BlockListOfPoles*)G->data, Options.Emin, Options.Emax, Options.NE);
+  luaL_setmetatable(L, "ResponseFunction_Type");
+
+  if(strcicmp(Options.Type, "ListOfPoles")!=0)
+  {
+    lua_pushstring(L, Options.Type);
+    return LuaChangeTypeResponseFunction(L);
+  }
+
+  return 1;
 }
 
 /*  Creates an Hamiltonian representing a real space cluster

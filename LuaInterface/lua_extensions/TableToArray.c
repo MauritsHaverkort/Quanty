@@ -1364,7 +1364,7 @@ void LuaPushTable_SpectraTypeArray(lua_State* L, SpectraTypeArray const * const 
 }
 
 
-/*  reads a Block Greens function from the stack
+/*  push a Block Greens function to the stack
  *  These functions can be in different formats (t, a, n, l) for tri-diagonal, anderson, natural or list of poles
  *  If a pointer to an excisting structure is returned (user data on stack) a lowercase letter is returned
  *  If a newly created structure is returned (table on stack) an upper case letter is returned

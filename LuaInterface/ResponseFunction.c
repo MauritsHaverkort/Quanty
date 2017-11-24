@@ -11,7 +11,7 @@
  *  In order for the meta methods to function for table representations one needs to set the meta table "ResponseFunctionMeta" in lua
  *  There is no type-check, (i.e. setting the meta table is optional) for the functions acting on these tables.
  *
- *  
+ *
  *
  */
 
@@ -34,7 +34,7 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
   convert = luaL_checkstring(L, 2);
   if(strcmp(convert, "Tri")==0)
   {
-    type='T'|(32&Min->type);  // t = T & 32, i.e. keep capital or not from imput, but change letter to t/T
+    type='T'|(32&Min->type);  // t = T & 32, i.e. keep capital or not from input, but change letter to t/T
   }
   else if(strcmp(convert, "And")==0)
   {
@@ -101,19 +101,19 @@ static int LuaResponseFunctionAdd(lua_State * L)
 {
   char temp;
   printf("LuaResponseFunctionAdd\n");
-  
+
   for(temp='A';temp<='Z';temp++)
   {
     printf("original %c, lowercased %c\n",temp,(temp|32));
   }
-  
+
   for(temp='a';temp<='z';temp++)
   {
     printf("original %c, lowercased %c\n",temp,(temp|32));
   }
-  
-  
-  
+
+
+
   lua_pushnumber(L, 1.23456);
   return 1;
 }
