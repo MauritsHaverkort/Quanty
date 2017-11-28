@@ -265,12 +265,13 @@ static int LuaCalculateFermi(lua_State *L)
  *       Nk -> {Nkx,Nky,Nkz} number of k-points       standard {40,40,40}
  *       Type
  */
-static int LuaChangeTypeResponseFunction(lua_State *L);
 static int LuaCalculateG(lua_State *L)
 {
   uint32_t i, len;
   TightBindingDef *a;
-  BlockMatrixType *G, *G2;
+  BlockListOfPoles *Gl;
+  BlockTriDiagonalMatrixType *Gt;
+  BlockAndersonMatrixType *Ga;
 
   struct
   {
@@ -310,17 +311,40 @@ static int LuaCalculateG(lua_State *L)
     LuaCheckOptions(L, -1, LuaCalculateGOptions);
   }
 
-  lua_pop(L,2);
-  G = (BlockMatrixType *) lua_newuserdata(L, sizeof(BlockMatrixType));
-  G->type = 'L';
-  G->data = (void*) malloc(sizeof(BlockListOfPoles));
-  TightBindingHamiltonianToBlockListOfPoles(*a, Options.Nk, (BlockListOfPoles*)G->data, Options.Emin, Options.Emax, Options.NE);
-  luaL_setmetatable(L, "ResponseFunction_Type");
+  Gl = malloc(sizeof(BlockListOfPoles));
+  TightBindingHamiltonianToBlockListOfPoles(*a, Options.Nk, Gl, Options.Emin, Options.Emax, Options.NE);
 
-  if(strcicmp(Options.Type, "ListOfPoles")!=0)
-  {
-    lua_pushstring(L, Options.Type);
-    return LuaChangeTypeResponseFunction(L);
+  switch (Options.Type[0]|32) {
+    case 'l':
+    {
+      LuaPushTable_BlockListOfPoles(L, Gl);
+      FreeBlockListOfPoles(Gl);
+      return 1;
+    }
+    case 'a':
+    {
+      Ga = malloc(sizeof(BlockAndersonMatrixType));
+      BlockListOfPolesToBlockAndersonMatrix(*Gl, Ga, Gl->N+1);
+      LuaPushTable_BlockAndersonMatrixType(L, Ga);
+      FreeBlockAndersonMatrix(Ga);
+      return 1;
+    }
+    case 't':
+    {
+      Gt = malloc(sizeof(BlockTriDiagonalMatrixType));
+      BlockListOfPolesToBlockTridiagonalMatrix(*Gl, Gt, Gl->N+1, 1000*DBL_EPSILON);
+      LuaPushTable_BlockTriDiagonalMatrixType(L, Gt);
+      FreeBlockTridiagonalMatrix(Gt);
+      return 1;
+    }
+    case 'n':
+    {
+      return luaL_error(L, "Error CalculateG: not yet implemented.");
+    }
+    default:
+    {
+      return luaL_error(L, "Error CalculateG: unrecognized type.");
+    }
   }
 
   return 1;
