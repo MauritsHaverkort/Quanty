@@ -733,7 +733,7 @@ uint32_t StreamReadHubbardModelSettings(HubbardModelSettings * O, FILE * stream)
   StreamReadTightBindingDefNoCrystalStructure(&(O->TightBinding), stream);
   CreateTightBindingSuperCell(O->TightBinding, &(O->TightBindingSuperCell), O->SuperCell);
   StreamReadOperatorType(&(O->U), stream);
-  CreateUSperCell(O->U, &(O->USuperCell), O->SuperCell);
+  CreateUSuperCell(O->U, &(O->USuperCell), O->SuperCell);
   O->NElectron = malloc(O->SuperCell.Crystal.NAtoms * sizeof(uint32_t **));
   for (iatom = 0; iatom < O->SuperCell.Crystal.NAtoms; iatom++)
   {

@@ -259,7 +259,7 @@ ListOfPoles * luaL_checkListOfPoles(lua_State *L, int narg)
     lua_pop(L, 1);
     temp = luaL_checkTriDiagonalMatrixType(L, narg);
     //TODO: transform TriDiagonalMatrix to ListOfPoles
-    
+
     return buff;
   }
   if(strcmp(type, "And")==0)
@@ -268,7 +268,7 @@ ListOfPoles * luaL_checkListOfPoles(lua_State *L, int narg)
     lua_pop(L, 1);
     temp = luaL_checkAndersonMatrixType(L, narg);
     //TODO: transform AndersonMatrixType to ListOfPoles
-    
+
     return buff;
   }
   if(strcmp(type, "NaturalImpurityOrbital")==0)
@@ -277,7 +277,7 @@ ListOfPoles * luaL_checkListOfPoles(lua_State *L, int narg)
     lua_pop(L, 1);
     temp = luaL_checkNatrualImpurityOrbitalMatrixType(L, narg);
     //TODO: transform NaturalImpurityOrbitalMatrixType to ListOfPoles
-    
+
     return buff;
   }
   if(strcmp(type, "ListOfPoles")==0)
@@ -363,7 +363,7 @@ BlockListOfPoles * luaL_checkBlockListOfPoles(lua_State *L, int narg)
     lua_pop(L, 1);
     temp = luaL_checkBlockTriDiagonalMatrixType(L, narg);
     //TODO: transform BlockTriDiagonalMatrix to BlockListOfPoles via dsbtrd
-    
+
     return buff;
   }
   if(strcmp(type, "And")==0)
@@ -372,7 +372,7 @@ BlockListOfPoles * luaL_checkBlockListOfPoles(lua_State *L, int narg)
     lua_pop(L, 1);
     temp = luaL_checkBlockAndersonMatrixType(L, narg);
     //TODO: transform BlockAndersonMatrixType to BlockListOfPoles via dsbtrd
-    
+
     return buff;
   }
   if(strcmp(type, "NaturalImpurityOrbital")==0)
@@ -381,7 +381,7 @@ BlockListOfPoles * luaL_checkBlockListOfPoles(lua_State *L, int narg)
     lua_pop(L, 1);
     temp = luaL_checkBlockNatrualImpurityOrbitalMatrixType(L, narg);
     //TODO: transform BlockNaturalImpurityOrbitalMatrixType to BlockListOfPoles via dsbtrd
-    
+
     return buff;
   }
   if(strcmp(type, "ListOfPoles")==0)
@@ -1364,7 +1364,7 @@ void LuaPushTable_SpectraTypeArray(lua_State* L, SpectraTypeArray const * const 
 }
 
 
-/*  reads a Block Greens function from the stack
+/*  push a Block Greens function to the stack
  *  These functions can be in different formats (t, a, n, l) for tri-diagonal, anderson, natural or list of poles
  *  If a pointer to an excisting structure is returned (user data on stack) a lowercase letter is returned
  *  If a newly created structure is returned (table on stack) an upper case letter is returned
@@ -1442,6 +1442,7 @@ void shallowtablecopy(lua_State* L, int index)
 void * LuaReturnVariableType(lua_State * L, int narg, char * type)
 {
   int *buffint;
+  uint32_t *buffuint, len;
   double *buffdouble;
   Bool *buffBoolean;
   DeterminantRestrictionType *buffDeterimantRestrictionType;
@@ -1491,7 +1492,14 @@ void * LuaReturnVariableType(lua_State * L, int narg, char * type)
     free(buffint);
     return (void*) buffBoolean;
   }
-  if( strcmp(type, "Vector") ==0)
+  if (strcmp(type, "array-uint32_t-3") ==0)
+  {
+    buffuint = luaL_checkarray_unit32_t(L, narg, &len);
+    if(len!=3)
+      buffuint=NULL;
+    return buffuint;
+  }
+  if (strcmp(type, "Vector") ==0)
   {
     buffVector = malloc(sizeof(CompactVectorType));
     *buffVector = (CompactVectorType)luaL_checkVector(L,narg);
@@ -1593,6 +1601,19 @@ int32_t LuaTestOptionsList(lua_State *L, int narg)
   return 1;
 }
 
+int strcicmp(char const *a, char const *b)
+{
+  int d;
+  if(!(*a&&*b))
+    return 1;
+  for (;; a++, b++)
+  {
+    d = tolower(*a) - tolower(*b);
+    if (d != 0 || !*a)
+      return d;
+  }
+}
+
 int32_t LuaCheckOptions(lua_State *L, int narg, LuaOptionsType *Options)
 {
   char *tokenread, *Buffer;
@@ -1622,11 +1643,11 @@ int32_t LuaCheckOptions(lua_State *L, int narg, LuaOptionsType *Options)
     j=0;
     while (Options[j].name!=NULL)
     {
-      if (strcmp(tokenread, Options[j].name) == 0)
+      if (strcicmp(tokenread, Options[j].name) == 0)
       {
         tokenfound=1;
         lua_rawgeti(L, -2, 2);
-        
+
         if (strcmp(Options[j].type, "char*") == 0)
         {
           *(char**)Options[j].variable=(char*)LuaReturnVariableType(L, -1, Options[j].type);
@@ -1654,6 +1675,10 @@ int32_t LuaCheckOptions(lua_State *L, int narg, LuaOptionsType *Options)
         else if(strcmp(Options[j].type, "bool") == 0)
         {
           *(Bool*)Options[j].variable=*(Bool*)LuaReturnVariableType(L, -1, Options[j].type);
+        }
+        else if(strcmp(Options[j].type, "array-uint32_t-3") == 0)
+        {
+          *(uint32_t**)Options[j].variable=(uint32_t*)LuaReturnVariableType(L, -1, Options[j].type);
         }
         else if(strcmp(Options[j].type, "Vector") ==0)
         {
@@ -1745,7 +1770,7 @@ static int LuaReadSingleSelfenergy(lua_State *L, int narg, OperatorType *V, Spec
     }
     lua_pop(L,1);
     lua_rawgeti(L,narg,2);
-    
+
     if ((lua_type(L,-1)==LUA_TUSERDATA)&&(luaL_testudata(L, -1, "Spectra_Type") != NULL))
     { // self energy in spectra format
       SasMatrix=NULL;

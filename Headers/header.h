@@ -19,7 +19,7 @@ uint32_t GlobalVerbosity=0xF;
  *      0000 0000 0000 1000 - 0x0008 - main specific
  *      0000 0000 0001 0000 - 0x0010 - Lanczos function start
  *      0000 0000 0010 0000 - 0x0020 - Lanczos function converge info
- *      0000 0000 0100 0000 - 0x0040 - 
+ *      0000 0000 0100 0000 - 0x0040 -
  *      0000 0000 1000 0000 - 0x0080 -
  *
  *      1111 1111 1111 1111 - 0xFFFF0000 - print all debug statements
@@ -129,7 +129,7 @@ uint32_t CopyCrystalStructure(CrystalStructureType A, CrystalStructureType * B);
 /********    Tight Binding/Tight_Binding_lib.c    *********/
 /**********************************************************/
 int    SetNFermionIndexTightBindingDef(TightBindingDef * A);
-uint32_t CreateUSperCell(OperatorType U, OperatorType * USuperCell, CrystalStructureSuperCellType SuperCell);
+uint32_t CreateUSuperCell(OperatorType U, OperatorType * USuperCell, CrystalStructureSuperCellType SuperCell);
 int    CreateTightBindingSuperCell(TightBindingDef A, TightBindingDef * ASuper, CrystalStructureSuperCellType SuperCell);
 int CreateHamiltonianFromTightBindingDef(TightBindingDef A, double k[3], MatrixType * H);
 int CreateHamiltonianFromTightBindingDefConstantPhaseInUnitCell(TightBindingDef A, double k[3], MatrixType * H);

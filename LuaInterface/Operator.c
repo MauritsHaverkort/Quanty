@@ -1367,17 +1367,17 @@ static int LuaOperatorNewCF(lua_State * L)
       if(Akm->QComplex) Akm->Im[i]*=0.5;
     }
   }
-  
+
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   CreateOperatorCF(NFermion, lCr, lAn, LindexUpCr, LindexDnCr, LindexUpAn, LindexDnAn, *Akm, op);
   luaL_setmetatable(L, "Operator_Type");
-  
+
   free(Akm->l);
   free(Akm->m);
   free(Akm->Re);
   if(Akm->QComplex)  free(Akm->Im);
   free(Akm);
-  
+
   if(len==3)
   {
     free(LindexUpCr);
@@ -2029,7 +2029,7 @@ static int LuaOperatorIndex(lua_State * L)
   OperatorType *a = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
   const char *str = lua_tostring(L, 2);
   currentudata = a;
-  
+
   if (strcmp(str, "Print") == 0)
   {
     lua_pushcfunction(L, LuaOperatorPrint);
@@ -2173,7 +2173,7 @@ static int LuaOperatorNewIndex(lua_State * L)
     if(!lua_isnil(L,3))
     {
       // check if NF and NB agree with size of operator and through an error if not
-      
+
       lua_rawgeti(L, 3, 1);
       if(a->NFermion!=(uint32_t)luaL_checkunsigned(L, -1))
       {

@@ -1470,19 +1470,19 @@ int TightBindingBANDSCharacter(TightBindingDef A, BandstructurePathType kList, M
   return 0;
 }
 
-uint32_t CreateUSperCell(OperatorType U, OperatorType * USuperCell, CrystalStructureSuperCellType SuperCell)
+uint32_t CreateUSuperCell(OperatorType U, OperatorType * USuperCell, CrystalStructureSuperCellType SuperCell)
 {
   int    iCell, il, iN, io;
   uint16_t *oadd;
   if ((oadd = malloc(U.MaxLength * sizeof(uint16_t))) == NULL)
   {
-    printf("malloc for oadd failed in CreateUSperCell\n");
+    printf("malloc for oadd failed in CreateUSuperCell\n");
     fflush(stdout);
     return 1;
   };
   if (InitOperatorCopySettings(USuperCell, U))
   {
-    printf("InitOperatorCopySettings failed in CreateUSperCell\n");
+    printf("InitOperatorCopySettings failed in CreateUSuperCell\n");
     fflush(stdout);
     return 1;
   };

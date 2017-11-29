@@ -593,7 +593,7 @@ static int LuaWavefunctionPrefactorDet(lua_State *L)
   uint32_t idet;
   if(len!=1) return luaL_error(L, "Error in .PrefactorDet(arg) arg should be an integer between 1 and .N (%d) or a string representing the determinant\n",a->N);
   //TODO: read a string representing the determinant
-  
+
   idet = (uint32_t) luaL_checkinteger(L, 1);
   if((idet>a->N)||(idet==0))return luaL_error(L, "Error in .PrefactorDet(arg = %d) arg should be an integer between 1 and .N (%d) or a string representing the determinant\n",idet,a->N);
   if(a->QComplex)
