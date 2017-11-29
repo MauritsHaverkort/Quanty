@@ -405,20 +405,7 @@ print(psi)
 
 OppT = NewOperator(NSite,0,{{0,1}})
 
-print(OppT*psi)
-
-OppT.Restrictions = { 22 , 0 ,
-  { "0011111111110000000000" , 0 , 1 },
-{ "0000000000001111111111" , 9 , 10 }  }
-OppT.Restrictions = { 22 , 0 , { "1100000000001111111111" , 9 , 12 }  }
-
-print(OppT)
-print(OppT.Restrictions)
-
-print(OppT*psi)
-
-
-spec, spectri = CreateSpectra(H, OppT, psi,{{"NE",1500},{"Emin",-5},{"Emax",10},{"Gamma",0.01},{"NTri",2},{"Restrictions",TwoBathHoles}})
+spec, spectri = CreateSpectra(H, OppT, psi,{{"NE",1500},{"Emin",-5},{"Emax",10},{"Gamma",0.01},{"NTri",10},{"Restrictions",TwoBathHoles}})
 print(spectri)
 --print(spec)
 
