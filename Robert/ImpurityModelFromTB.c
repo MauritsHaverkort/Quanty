@@ -892,7 +892,7 @@ uint32_t ImpurityHFromModelBath(OperatorType *const Himp, int geometry, int shap
   }
   else if(geometry == 2)
   {
-    BlockTriDiagonalMatrixToBlockListOfPoles(&TriBlockMat, &BlockPoles, -width*5/8, width*5/8, NPoles);
+    BlockTriDiagonalMatrixToBlockListOfPolesFixedGrid(&TriBlockMat, &BlockPoles, -width*5/8, width*5/8, NPoles);
     BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(&BlockPoles, &NatBlockMat, kBT, NBathSitesV, NBathSitesC);
     BlockNaturalImpurityOrbitalMatrixChop(&NatBlockMat, 1000*DBL_EPSILON);
     BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(Himp, &NatBlockMat, NBathSitesV, NBathSitesC, spin, NFermionShift, NFermion);  
@@ -1081,7 +1081,7 @@ uint32_t ImpurityHFromModelBathPerturbation(OperatorType *const Himp, OperatorTy
   }
   else if(geometry == 2)
   {
-    BlockTriDiagonalMatrixToBlockListOfPoles(&TriBlockMat, &BlockPoles, -width*5/8, width*5/8, NPoles);
+    BlockTriDiagonalMatrixToBlockListOfPolesFixedGrid(&TriBlockMat, &BlockPoles, -width*5/8, width*5/8, NPoles);
     BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(&BlockPoles, &NatBlockMat, kBT, NBathSitesV, NBathSitesC);
     BlockNaturalImpurityOrbitalMatrixChop(&NatBlockMat, 1000*DBL_EPSILON);
     BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(Himp, &NatBlockMat, NBathSitesV, NBathSitesC, spin, NFermionShift, NFermion);  

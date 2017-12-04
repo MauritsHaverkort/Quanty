@@ -702,7 +702,7 @@ void TestBasicMathBlock()
   BTD.bRe[4]=1;
   BTD.bRe[8]=1;
   FreeBlockListOfPoles(&BLP);
-  BlockTriDiagonalMatrixToBlockListOfPoles(&BTD, &BLP, -0.5, 0.5, 10);
+  BlockTriDiagonalMatrixToBlockListOfPolesFixedGrid(&BTD, &BLP, -0.5, 0.5, 10);
   FreeBlockTridiagonalMatrix(&BTD);
   ReduceBlockListOfPoles(&BLP, 4, 0.0);
   
@@ -761,7 +761,7 @@ void TestBasicMathBlock()
   BTD.b[4].Re=1;
   BTD.b[8].Re=1;
   FreeBlockListOfPoles(&BLP);
-  BlockTriDiagonalMatrixToBlockListOfPoles(&BTD, &BLP, -0.5, 0.5, 10);
+  BlockTriDiagonalMatrixToBlockListOfPolesFixedGrid(&BTD, &BLP, -0.5, 0.5, 10);
   ReduceBlockListOfPoles(&BLP, 4, 0.0);
   
   
@@ -790,7 +790,7 @@ void TestBasicMathBlock()
   
   
   
-  printf("\n============= BlockTriDiagonalMatrixToBlockListOfPoles and vice versa ============\n");
+  printf("\n============= BlockTriDiagonalMatrixToBlockListOfPolesFixedGrid and vice versa ============\n");
   
   printf("Complex\n");
   BLP.N=4;
@@ -819,7 +819,7 @@ void TestBasicMathBlock()
   
   PrintBlockTriDiagonalMatrix(BTD);
   
-  BlockTriDiagonalMatrixToBlockListOfPoles(&BTD, &B2LP, -0.5, 0.5, 10);
+  BlockTriDiagonalMatrixToBlockListOfPolesFixedGrid(&BTD, &B2LP, -0.5, 0.5, 10);
   ReduceBlockListOfPoles(&B2LP, 4, 0.0);
   
   PrintBlockListOfPoles(BLP);
@@ -888,7 +888,7 @@ void TestBlockToOperator()
   BTD.b[8].Re=1;
   FreeBlockListOfPoles(&BLP);
   BlockTridiagonalMatrixChop(&BTD, 100*DBL_EPSILON);
-  BlockTriDiagonalMatrixToBlockListOfPoles(&BTD, &BLP, -0.5, 0.5, 10);
+  BlockTriDiagonalMatrixToBlockListOfPolesFixedGrid(&BTD, &BLP, -0.5, 0.5, 10);
   ReduceBlockListOfPoles(&BLP, 4, 0.0);
   BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(&BLP, &BNO, DBL_EPSILON, 4, 4);
   BlockNaturalImpurityOrbitalMatrixChop(&BNO, 100*DBL_EPSILON);

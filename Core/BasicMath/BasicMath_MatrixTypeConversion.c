@@ -1553,6 +1553,23 @@ uint32_t DoubleTriDiagonalMatrixToTriDiagonalMatrix(DoubleTriDiagonalMatrixType 
   return 0;
 }
 
+uint32_t BADoubleTriDiagonalMatrixToTriDiagonalMatrix(BADoubleTriDiagonalMatrixType const M, TriDiagonalMatrixType * const H)
+{
+  //TODO: all
+  return 1;
+}
+
+uint32_t BADoubleTriDiagonalMatrixToListOfPoles(BADoubleTriDiagonalMatrixType const M, ListOfPoles * const H)
+{
+  //TODO: all
+  return 1;
+}
+
+uint32_t BADoubleTriDiagonalMatrixToAndersonMatrix(BADoubleTriDiagonalMatrixType const M, AndersonMatrixType * const H)
+{
+  //TODO: all
+  return 1;
+}
 
 
 /**************************************************************************************/

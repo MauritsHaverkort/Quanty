@@ -137,9 +137,9 @@ void TestLanczosDyson3()
   FilePrintSpectra(GTriSpec, TB.NFermion*TB.NFermion, "TBDOS3", "w");
   
   
-  BeginTiming("BlockTriDiagonalMatrixToBlockListOfPoles", &Time);
-  BlockTriDiagonalMatrixToBlockListOfPoles(&Gtri, &GLP2, -3, 5.5, 500);
-  EndTiming("BlockTriDiagonalMatrixToBlockListOfPoles", &Time);
+  BeginTiming("BlockTriDiagonalMatrixToBlockListOfPolesFixedGrid", &Time);
+  BlockTriDiagonalMatrixToBlockListOfPolesFixedGrid(&Gtri, &GLP2, -3, 5.5, 500);
+  EndTiming("BlockTriDiagonalMatrixToBlockListOfPolesFixedGrid", &Time);
   
   PrintBlockListOfPoles(GLP2);
   

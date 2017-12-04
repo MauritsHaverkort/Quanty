@@ -1,9 +1,139 @@
+/*  These functions convert one type of representation to an other
+ *
+ *  Conversions are:
+ *    Evaluate__ (at one specific point)
+ *    __ToSpectra (return a spectrum object)
+ */
 
+
+/*
+ *  Evaluate__ calcualtes the Green's function at one specific point
+ */
+
+/*
+ *
+ */
 uint32_t EvaluateBlockListOfPoles(BlockListOfPoles const *A, CompactMatrixType * Gw, const double omega, const double Gamma)
 {
   //TODO: all
+  printf("Not implemented \n");
   return 0;
 }
+
+
+/*
+ *
+ */
+uint32_t EvaluateBlockAndersonMatrix(BlockListOfPoles const *A, CompactMatrixType * Gw, const double omega, const double Gamma)
+{
+  //TODO: all
+  printf("Not implemented \n");
+  return 0;
+}
+
+/*  Transform a BlockTriDiagonalMatrix representation of G to a spectral representation of G at one specific energy.
+ *
+ *  On entry:
+ *    A contains the BlockTriDiagonal matrix to transform
+ *    G is a pointer to SpectraType wich allocats A->BlockSize^2 spectra
+ *    Emin and Emax set the min and max energy in the spectrum
+ *    N the number of energies.
+ *    Gamma sets the lorenzian broadening Gamma > 3*(Emax-Emin)/N
+ *
+ *    Gw = a0 + b0 (1/( w + i Gamma/2 - a1 - b1  ( w + i Gamma/2 - a2 - b2 ( ... ) b2^+ ) b1^+ )) b0^+
+ *
+ *    Gw is not initialized on entry but is when function finishes
+ *
+ */
+uint32_t EvaluateBlockTriDiagonalMatrix(BlockTriDiagonalMatrixType const * A, CompactMatrixType * Gw, const double omega, const double Gamma)
+{
+  int i,iblock;
+  CompactMatrixType a,b;
+  a.Ni=A->BlockSize;
+  a.Nj=A->BlockSize;
+  b.Ni=A->BlockSize;
+  b.Nj=A->BlockSize;
+  a.QComplex=A->QComplex;
+  b.QComplex=A->QComplex;
+  a.a0=0;
+  a.b0=0;
+  a.mu=0;
+  b.a0=0;
+  b.b0=0;
+  b.mu=0;
+  Gw->QComplex=1;
+  Gw->Ni=A->BlockSize;
+  Gw->Nj=A->BlockSize;
+  Gw->a0=0;
+  Gw->b0=0;
+  Gw->mu=A->mu;
+  InitCompactMatrix(Gw);
+  for(i=0;i<A->BlockSize*A->BlockSize;i++)
+  {
+    Gw->V[i].Re=0;
+    Gw->V[i].Im=0;
+  }
+  for(iblock=A->N;iblock>0;iblock--)
+  {
+    /* set a and b to point to right matrices */
+    if(A->QComplex)
+    {
+      a.V=&(A->a[iblock    *A->BlockSize*A->BlockSize]);
+      b.V=&(A->b[(iblock-1)*A->BlockSize*A->BlockSize]);
+    }
+    else
+    {
+      a.VRe=&(A->aRe[iblock    *A->BlockSize*A->BlockSize]);
+      b.VRe=&(A->bRe[(iblock-1)*A->BlockSize*A->BlockSize]);
+    }
+    CompactMatrixAdd(Gw, &a);
+    for(i=0;i<A->BlockSize*A->BlockSize;i++)
+    {
+      Gw->V[i].Re*=-1;
+      Gw->V[i].Im*=-1;
+    }
+    for(i=0;i<A->BlockSize*A->BlockSize;i+=A->BlockSize+1)
+    {
+      Gw->V[i].Re+=omega;
+      Gw->V[i].Im+=Gamma/2.0;
+    }
+    CompactMatrixInverse(Gw);
+    if(iblock==1)
+    {
+      TransformCompactMatrixInlinecT(Gw, &b); /* Gw <- b Gw b^T */
+    }
+    else
+    {
+      TransformCompactMatrixInlineNC(Gw, &b); /* Gw <- b Gw b^dag */
+    }
+  }
+  // add a0
+  if(A->QComplex)
+  {
+    a.V=A->a;
+  }
+  else
+  {
+    a.VRe=A->aRe;
+  }
+  CompactMatrixAdd(Gw, &a);
+  return 0;
+}
+
+/*
+ *
+ */
+uint32_t EvaluateBlockaturalImpurityOrbital(BlockNaturalImpurityOrbitalMatrixType const *A, CompactMatrixType * Gw, const double omega, const double Gamma)
+{
+  //TODO: all
+  printf("Not implemented \n");
+  return 0;
+}
+
+/*
+ *  __ToSpectra calcualtes the Green's function at a grid
+ */
+
 
 /*  Transform a Block List of Poles representation of G to a spectral representation of G.
  *
@@ -188,8 +318,183 @@ uint32_t BlockListOfPolesToSpectra(BlockListOfPoles const A, SpectraType *G, dou
   }
   return 0;
 }
+/*
+ *
+ */
+uint32_t BlockAndersonMatrixToSpectra(BlockAndersonMatrixType const A, SpectraType *G, double Emin, double Emax, uint32_t N)
+{
+  //TODO: all
+  printf("Not implemented \n");
+  return 1;
+}
+
+/*  Transform a BlockTriDiagonalMatrix representation of G to a spectral representation of G.
+ *
+ *  On entry:
+ *    A contains the BlockTriDiagonal matrix to transform
+ *    G is a pointer to SpectraType wich allocats A->BlockSize^2 spectra
+ *    Emin and Emax set the min and max energy in the spectrum
+ *    N the number of energies.
+ *    Gamma sets the lorenzian broadening Gamma > 3*(Emax-Emin)/N
+ *
+ *    G = a0 + b0 (1/( w + i Gamma/2 - a1 - b1  ( w + i Gamma/2 - a2 - b2 ( ... ) b2^+ ) b1^+ )) b0^+
+ *
+ */
+uint32_t BlockTriDiagonalMatrixToSpectra(const double Energy, BlockTriDiagonalMatrixType const * A, SpectraType *const G, double const Emin, double const Emax, uint32_t const N, double const Gamma)
+{
+  int i,iw,iblock;
+  double omega;
+  CompactMatrixType Gw,a,b;
+  G[0].N=N;
+  G[0].Emin=Emin;
+  G[0].Emax=Emax;
+  G[0].EminPole=Emin;
+  G[0].EmaxPole=Emax;
+  G[0].dE=(Emax-Emin)/((double)N);
+  G[0].Gamma=Gamma;
+  G[0].ResonantEnergy=NAN;
+  strcpy(G[0].Name, A->Name);
+  for(i=0;i<A->BlockSize*A->BlockSize;i++)
+  {
+    SpectrumAllocate(G[0], &(G[i]));
+  }
+  a.Ni=A->BlockSize;
+  a.Nj=A->BlockSize;
+  b.Ni=A->BlockSize;
+  b.Nj=A->BlockSize;
+  a.QComplex=A->QComplex;
+  b.QComplex=A->QComplex;
+  Gw.QComplex=1;
+  Gw.Ni=A->BlockSize;
+  Gw.Nj=A->BlockSize;
+  InitCompactMatrix(&Gw);
+  for(iw=0;iw<=N;iw++)
+  {
+    omega = Emin + iw * G[0].dE + Energy;
+    for(i=0;i<A->BlockSize*A->BlockSize;i++)
+    {
+      Gw.V[i].Re=0;
+      Gw.V[i].Im=0;
+    }
+    for(iblock=A->N;iblock>0;iblock--)
+    {
+      /* set a and b to point to right matrices */
+      if(A->QComplex)
+      {
+        a.V=&(A->a[iblock    *A->BlockSize*A->BlockSize]);
+        b.V=&(A->b[(iblock-1)*A->BlockSize*A->BlockSize]);
+      }
+      else
+      {
+        a.VRe=&(A->aRe[iblock    *A->BlockSize*A->BlockSize]);
+        b.VRe=&(A->bRe[(iblock-1)*A->BlockSize*A->BlockSize]);
+      }
+      CompactMatrixAdd(&Gw, &a);
+      for(i=0;i<A->BlockSize*A->BlockSize;i++)
+      {
+        Gw.V[i].Re*=-1;
+        Gw.V[i].Im*=-1;
+      }
+      for(i=0;i<A->BlockSize*A->BlockSize;i+=A->BlockSize+1)
+      {
+        Gw.V[i].Re+=omega;
+        Gw.V[i].Im+=Gamma/2.0;
+      }
+      CompactMatrixInverse(&Gw);
+      if(iblock==1)
+      {
+        TransformCompactMatrixInlinecT(&Gw, &b); /* Gw <- b Gw b^T */
+      }
+      else
+      {
+        TransformCompactMatrixInlineNC(&Gw, &b); /* Gw <- b Gw b^dag */
+      }
+    }
+    // add a0
+    if(A->QComplex)
+    {
+      a.V=A->a;
+    }
+    else
+    {
+      a.VRe=A->aRe;
+    }
+    CompactMatrixAdd(&Gw, &a);
+    // add Gw to G
+    for(i=0;i<A->BlockSize*A->BlockSize;i++)
+    {
+      G[i].Re[iw]=Gw.V[i].Re;
+      G[i].Im[iw]=Gw.V[i].Im;
+    }
+  }
+  FreeCompactMatrix(&Gw);
+  return 0;
+}
 
 
+/*  G = (T Gp T^+)[1,1]
+ *
+ *       (Gv 0  )
+ *  Gp = (0  Gc )
+ *
+ *       ( bv0    bc0 )
+ *  T  = (~bc0  ~-bv0 )
+ *
+ *  G = bc0 gc bc0^+ + bv0 gv bv0^+
+ */
+uint32_t BlockNaturalImpurityOrbitalToSpectra(BlockNaturalImpurityOrbitalMatrixType const * A, SpectraType *const G, double const Emin, double const Emax, uint32_t const N, double const Gamma)
+{
+  SpectraType Gval[A->BlockSize*A->BlockSize], Gcon[A->BlockSize*A->BlockSize];
+  uint32_t i,j;
+  
+  BlockTriDiagonalMatrixToSpectra(0, &(A->val), Gval, Emin, Emax, N, Gamma);
+  BlockTriDiagonalMatrixToSpectra(0, &(A->con), Gcon, Emin, Emax, N, Gamma);
+  
+  G[0].N=N;
+  G[0].Emin=Emin;
+  G[0].Emax=Emax;
+  G[0].EminPole=Emin;
+  G[0].EmaxPole=Emax;
+  G[0].dE=(Emax-Emin)/((double)N);
+  G[0].Gamma=Gamma;
+  for(i=0;i<A->BlockSize*A->BlockSize;i++)
+  {
+    SpectrumAllocate(G[0], &(G[i]));
+  }
+  
+  if(A->QComplex)
+  {
+    for(i=0;i<A->BlockSize*A->BlockSize;i++)
+    {
+      for(j=0;j<=N;j++)
+      {
+        G[i].Re[j] = Gval[i].Re[j] + Gcon[i].Re[j];
+        G[i].Im[j] = Gval[i].Im[j] + Gcon[i].Im[j];
+      }
+    }
+  }
+  else
+  {
+    for(i=0;i<A->BlockSize*A->BlockSize;i++)
+    {
+      for(j=0;j<=N;j++)
+      {
+        G[i].Re[j] = Gval[i].Re[j] + Gcon[i].Re[j];
+      }
+    }
+  }
+  
+  for(i=0;i<A->BlockSize*A->BlockSize;i++)
+  {
+    SpectrumFree(&Gval[i]);
+    SpectrumFree(&Gcon[i]);
+  }
+  return 0;
+}
+
+/*
+ *  __Inversed to compact matrix
+ */
 
 /*  Turn a block list of poles into a matrix
  *       ( a0   b1  b2  b3  ..  bn  )
@@ -280,6 +585,9 @@ uint32_t BlockListOfPolesInversedToCompactMatrix(BlockListOfPoles const * const 
   return 0;
 }
 
+/*
+ *  TigthBindingHamiltonian to __
+ */
 
 /*  Given an tight binding Hamiltonian and a k-mesh defined by the number of divisions of a, b and c (Nk)
  *  returns the green function matrix of size A.NFermion by A.NFermion
@@ -1924,6 +2232,17 @@ uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType co
   return 0;
 }
 
+
+
+
+
+
+
+
+/*
+ *  Block list of poles to __
+ */
+
 /*  on entry A contains the Green's function in a BlockListOfPoles format.
  *  on excit B contains the Green's function in a BlockTridiagonal format. (note that a0 and b0 are aditional prefactors)
  *  The returned matrix is always of the dimension NBLockMax by A.BlockSize, if couplings are small (SingularValue) they are set to zero.
@@ -2327,18 +2646,87 @@ uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrixReduceDimension(Bloc
 }
 
 
+/*
+ *
+ * Converts a BlockListofpoles to blockandersonmatrix, using a blocktridiagonalmatrix as intermediate
+ *
+ *
+ */
+uint32_t BlockListOfPolesToBlockAndersonMatrix(BlockListOfPoles const A, BlockAndersonMatrixType *const B, int const NBlockMax)
+{
+  BlockTriDiagonalMatrixType ATri;
+  if(BlockListOfPolesToBlockTridiagonalMatrix(A, &ATri, NBlockMax, DBL_EPSILON))
+  {
+    printf("BlockListOfPolesToBlockTridiagonalMatrix failed in BlockListOfPolesToBlockAndersonMatrix\n");
+    return 1;
+  }
+  BlockTridiagonalMatrixChop(&ATri,10*DBL_EPSILON);
+  if(BlockTriDiagonalMatrixToBlockAndersonMatrix(ATri,B))
+  {
+    printf("BlockTriDiagonalMatrixToBlockAndersonMatrix failed in BlockListOfPolesToBlockAndersonMatrix\n");
+    return 1;
+  }
+  FreeBlockTridiagonalMatrix(&ATri);
+  return 0;
+}
+
+/*  on entry A contains the Green's function in a BlockListOfPoles format.
+ *
+ * Converts a BlockListofpoles to blockandersonmatrix, using a blocktridiagonalmatrix as intermediate
+ *
+ *
+ *  AT specifies how to reduce the dimension
+ *
+ */
+uint32_t BlockListOfPolesToBlockAndersonMatrixReduceDimension(BlockListOfPoles const A, BlockAndersonMatrixType *B, CompactMatrixType const *AT, int const NBlockMax)
+{
+  BlockTriDiagonalMatrixType ATri;
+  if(BlockListOfPolesToBlockTridiagonalMatrixReduceDimension(A, &ATri, AT, NBlockMax, DBL_EPSILON))
+  {
+    printf("BlockListOfPolesToBlockTridiagonalMatrixReduceDimension failed in BlockListOfPolesToBlockAndersonMatrixReduceDimension\n");
+    return 1;
+  }
+  BlockTridiagonalMatrixChop(&ATri,100*DBL_EPSILON);
+  if(BlockTriDiagonalMatrixToBlockAndersonMatrix(ATri,B))
+  {
+    printf("BlockTriDiagonalMatrixToBlockAndersonMatrix failed in BlockListOfPolesToBlockAndersonMatrixReduceDimension\n");
+    return 1;
+  }
+  FreeBlockTridiagonalMatrix(&ATri);
+  return 0;
+}
+
+
+
+
+
 uint32_t BlockTriDiagonalMatrixEigenValues()
 {
   //TODO: use dsbtrd
+  printf("Not implemented \n");
   return 0;
 }
 
 uint32_t BlockTriDiagonalMatrixEigenSystem()
 {
   //TODO: use dsbtrd
+  printf("Not implemented \n");
   return 0;
 }
 
+uint32_t BlockTriDiagonalMatrixToBlockListOfPoles(BlockTriDiagonalMatrixType const * A, BlockListOfPoles * const G)
+{
+  //TODO: all
+  printf("not yet implemented BlockTriDiagonalMatrixToBlockListOfPoles\n");
+  return 1;
+}
+
+uint32_t BlockTriDiagonalMatrixToBlockListOfPolesVariableGrid(BlockTriDiagonalMatrixType const * A, BlockListOfPoles * const G, const double * const Grid, const uint32_t NGridPoints)
+{
+  //TODO: all
+  printf("not yet implemented BlockTriDiagonalMatrixToBlockListOfPolesVariableGrid\n");
+  return 1;
+}
 
 /*  On entry A represents a Green's function in a block tridiagonal form
  *  On excit G represents the same Green's function by a list of poles (energy weigth)
@@ -2346,7 +2734,7 @@ uint32_t BlockTriDiagonalMatrixEigenSystem()
  *
  *  This routine goes via a dense representation of the matrix and should be avoided, or replaced
  */
-uint32_t BlockTriDiagonalMatrixToBlockListOfPoles(BlockTriDiagonalMatrixType const * A, BlockListOfPoles * const G, double const Emin, double const Emax, uint32_t const NE)
+uint32_t BlockTriDiagonalMatrixToBlockListOfPolesFixedGrid(BlockTriDiagonalMatrixType const * A, BlockListOfPoles * const G, double const Emin, double const Emax, uint32_t const NE)
 {
   int i,j,k,irho,kfun,iE;
   CompactMatrixType Afull, Afun, Rho, b0;
@@ -2355,14 +2743,14 @@ uint32_t BlockTriDiagonalMatrixToBlockListOfPoles(BlockTriDiagonalMatrixType con
   /* first turn the matrix into compact form */
   if(BlockTriDiagonalMatrixToCompactMatrix(A,&Afull))
   {
-    printf("BlockTriDiagonalMatrixToCompactMatrix failed in BlockTriDiagonalMatrixToBlockListOfPoles\n");
+    printf("BlockTriDiagonalMatrixToCompactMatrix failed in BlockTriDiagonalMatrixToBlockListOfPolesFixedGrid\n");
     return 1;
   }
   /* calcualte the eigen vectors and eigen values */
   Aval=malloc(A->BlockSize*A->N*sizeof(double));
   if(CompactMatrixEigensystem(&Afull, &Afun, Aval))
   {
-    printf("CompactMatrixEigensystem failed in BlockTriDiagonalMatrixToBlockListOfPoles\n");
+    printf("CompactMatrixEigensystem failed in BlockTriDiagonalMatrixToBlockListOfPolesFixedGrid\n");
     return 1;
   }
   /* initiallize the memory for the block list of poles */
@@ -2372,7 +2760,7 @@ uint32_t BlockTriDiagonalMatrixToBlockListOfPoles(BlockTriDiagonalMatrixType con
   strcpy(G->Name, A->Name);
   if(InitBlockListOfPoles(G))
   {
-    printf("InitBlockListOfPoles failed in BlockTriDiagonalMatrixToBlockListOfPoles\n");
+    printf("InitBlockListOfPoles failed in BlockTriDiagonalMatrixToBlockListOfPolesFixedGrid\n");
     return 1;
   }
   energy=Emin-dE;
@@ -2382,7 +2770,7 @@ uint32_t BlockTriDiagonalMatrixToBlockListOfPoles(BlockTriDiagonalMatrixType con
   Rho.Nj=A->BlockSize;
   if(InitCompactMatrix(&Rho))
   {
-    printf("InitCompactMatrix failed in BlockTriDiagonalMatrixToBlockListOfPoles\n");
+    printf("InitCompactMatrix failed in BlockTriDiagonalMatrixToBlockListOfPolesFixedGrid\n");
     return 1;
   }
   if(A->QComplex)
@@ -2595,266 +2983,6 @@ uint32_t BlockTriDiagonalMatrixToBlockListOfPoles(BlockTriDiagonalMatrixType con
   return 0;
 }
 
-/*  Transform a BlockTriDiagonalMatrix representation of G to a spectral representation of G at one specific energy.
- *
- *  On entry:
- *    A contains the BlockTriDiagonal matrix to transform
- *    G is a pointer to SpectraType wich allocats A->BlockSize^2 spectra
- *    Emin and Emax set the min and max energy in the spectrum
- *    N the number of energies.
- *    Gamma sets the lorenzian broadening Gamma > 3*(Emax-Emin)/N
- *
- *    Gw = a0 + b0 (1/( w + i Gamma/2 - a1 - b1  ( w + i Gamma/2 - a2 - b2 ( ... ) b2^+ ) b1^+ )) b0^+
- *
- *    Gw is not initialized on entry but is when function finishes
- *
- */
-uint32_t EvaluateBlockTriDiagonalMatrix(BlockTriDiagonalMatrixType const * A, CompactMatrixType * Gw, const double omega, const double Gamma)
-{
-  int i,iblock;
-  CompactMatrixType a,b;
-  a.Ni=A->BlockSize;
-  a.Nj=A->BlockSize;
-  b.Ni=A->BlockSize;
-  b.Nj=A->BlockSize;
-  a.QComplex=A->QComplex;
-  b.QComplex=A->QComplex;
-  a.a0=0;
-  a.b0=0;
-  a.mu=0;
-  b.a0=0;
-  b.b0=0;
-  b.mu=0;
-  Gw->QComplex=1;
-  Gw->Ni=A->BlockSize;
-  Gw->Nj=A->BlockSize;
-  Gw->a0=0;
-  Gw->b0=0;
-  Gw->mu=A->mu;
-  InitCompactMatrix(Gw);
-  for(i=0;i<A->BlockSize*A->BlockSize;i++)
-  {
-    Gw->V[i].Re=0;
-    Gw->V[i].Im=0;
-  }
-  for(iblock=A->N;iblock>0;iblock--)
-  {
-    /* set a and b to point to right matrices */
-    if(A->QComplex)
-    {
-      a.V=&(A->a[iblock    *A->BlockSize*A->BlockSize]);
-      b.V=&(A->b[(iblock-1)*A->BlockSize*A->BlockSize]);
-    }
-    else
-    {
-      a.VRe=&(A->aRe[iblock    *A->BlockSize*A->BlockSize]);
-      b.VRe=&(A->bRe[(iblock-1)*A->BlockSize*A->BlockSize]);
-    }
-    CompactMatrixAdd(Gw, &a);
-    for(i=0;i<A->BlockSize*A->BlockSize;i++)
-    {
-      Gw->V[i].Re*=-1;
-      Gw->V[i].Im*=-1;
-    }
-    for(i=0;i<A->BlockSize*A->BlockSize;i+=A->BlockSize+1)
-    {
-      Gw->V[i].Re+=omega;
-      Gw->V[i].Im+=Gamma/2.0;
-    }
-    CompactMatrixInverse(Gw);
-    if(iblock==1)
-    {
-      TransformCompactMatrixInlinecT(Gw, &b); /* Gw <- b Gw b^T */
-    }
-    else
-    {
-      TransformCompactMatrixInlineNC(Gw, &b); /* Gw <- b Gw b^dag */
-    }
-  }
-  // add a0
-  if(A->QComplex)
-  {
-    a.V=A->a;
-  }
-  else
-  {
-    a.VRe=A->aRe;
-  }
-  CompactMatrixAdd(Gw, &a);
-  return 0;
-}
-
-/*  Transform a BlockTriDiagonalMatrix representation of G to a spectral representation of G.
- *
- *  On entry:
- *    A contains the BlockTriDiagonal matrix to transform
- *    G is a pointer to SpectraType wich allocats A->BlockSize^2 spectra
- *    Emin and Emax set the min and max energy in the spectrum
- *    N the number of energies.
- *    Gamma sets the lorenzian broadening Gamma > 3*(Emax-Emin)/N
- *
- *    G = a0 + b0 (1/( w + i Gamma/2 - a1 - b1  ( w + i Gamma/2 - a2 - b2 ( ... ) b2^+ ) b1^+ )) b0^+
- *
- */
-uint32_t BlockTriDiagonalMatrixToSpectra(const double Energy, BlockTriDiagonalMatrixType const * A, SpectraType *const G, double const Emin, double const Emax, uint32_t const N, double const Gamma)
-{
-  int i,iw,iblock;
-  double omega;
-  CompactMatrixType Gw,a,b;
-  G[0].N=N;
-  G[0].Emin=Emin;
-  G[0].Emax=Emax;
-  G[0].EminPole=Emin;
-  G[0].EmaxPole=Emax;
-  G[0].dE=(Emax-Emin)/((double)N);
-  G[0].Gamma=Gamma;
-  G[0].ResonantEnergy=NAN;
-  strcpy(G[0].Name, A->Name);
-  for(i=0;i<A->BlockSize*A->BlockSize;i++)
-  {
-    SpectrumAllocate(G[0], &(G[i]));
-  }
-  a.Ni=A->BlockSize;
-  a.Nj=A->BlockSize;
-  b.Ni=A->BlockSize;
-  b.Nj=A->BlockSize;
-  a.QComplex=A->QComplex;
-  b.QComplex=A->QComplex;
-  Gw.QComplex=1;
-  Gw.Ni=A->BlockSize;
-  Gw.Nj=A->BlockSize;
-  InitCompactMatrix(&Gw);
-  for(iw=0;iw<=N;iw++)
-  {
-    omega = Emin + iw * G[0].dE + Energy;
-    for(i=0;i<A->BlockSize*A->BlockSize;i++)
-    {
-      Gw.V[i].Re=0;
-      Gw.V[i].Im=0;
-    }
-    for(iblock=A->N;iblock>0;iblock--)
-    {
-      /* set a and b to point to right matrices */
-      if(A->QComplex)
-      {
-        a.V=&(A->a[iblock    *A->BlockSize*A->BlockSize]);
-        b.V=&(A->b[(iblock-1)*A->BlockSize*A->BlockSize]);
-      }
-      else
-      {
-        a.VRe=&(A->aRe[iblock    *A->BlockSize*A->BlockSize]);
-        b.VRe=&(A->bRe[(iblock-1)*A->BlockSize*A->BlockSize]);
-      }
-      CompactMatrixAdd(&Gw, &a);
-      for(i=0;i<A->BlockSize*A->BlockSize;i++)
-      {
-        Gw.V[i].Re*=-1;
-        Gw.V[i].Im*=-1;
-      }
-      for(i=0;i<A->BlockSize*A->BlockSize;i+=A->BlockSize+1)
-      {
-        Gw.V[i].Re+=omega;
-        Gw.V[i].Im+=Gamma/2.0;
-      }
-      CompactMatrixInverse(&Gw);
-      if(iblock==1)
-      {
-        TransformCompactMatrixInlinecT(&Gw, &b); /* Gw <- b Gw b^T */
-      }
-      else
-      {
-        TransformCompactMatrixInlineNC(&Gw, &b); /* Gw <- b Gw b^dag */
-      }
-    }
-    // add a0
-    if(A->QComplex)
-    {
-      a.V=A->a;
-    }
-    else
-    {
-      a.VRe=A->aRe;
-    }
-    CompactMatrixAdd(&Gw, &a);
-    // add Gw to G
-    for(i=0;i<A->BlockSize*A->BlockSize;i++)
-    {
-      G[i].Re[iw]=Gw.V[i].Re;
-      G[i].Im[iw]=Gw.V[i].Im;
-    }
-  }
-  FreeCompactMatrix(&Gw);
-  return 0;
-}
-
-uint32_t EvaluateBlockaturalImpurityOrbital(BlockNaturalImpurityOrbitalMatrixType const *A, CompactMatrixType * Gw, const double omega, const double Gamma)
-{
-  //TODO: all
-  return 0;
-}
-
-
-/*  G = (T Gp T^+)[1,1]
- *
- *       (Gv 0  )
- *  Gp = (0  Gc )
- *
- *       ( bv0    bc0 )
- *  T  = (~bc0  ~-bv0 )
- *
- *  G = bc0 gc bc0^+ + bv0 gv bv0^+
- */
-uint32_t BlockNaturalImpurityOrbitalToSpectra(BlockNaturalImpurityOrbitalMatrixType const * A, SpectraType *const G, double const Emin, double const Emax, uint32_t const N, double const Gamma)
-{
-  SpectraType Gval[A->BlockSize*A->BlockSize], Gcon[A->BlockSize*A->BlockSize];
-  uint32_t i,j;
-  
-  BlockTriDiagonalMatrixToSpectra(0, &(A->val), Gval, Emin, Emax, N, Gamma);
-  BlockTriDiagonalMatrixToSpectra(0, &(A->con), Gcon, Emin, Emax, N, Gamma);
-  
-  G[0].N=N;
-  G[0].Emin=Emin;
-  G[0].Emax=Emax;
-  G[0].EminPole=Emin;
-  G[0].EmaxPole=Emax;
-  G[0].dE=(Emax-Emin)/((double)N);
-  G[0].Gamma=Gamma;
-  for(i=0;i<A->BlockSize*A->BlockSize;i++)
-  {
-    SpectrumAllocate(G[0], &(G[i]));
-  }
-  
-  if(A->QComplex)
-  {
-    for(i=0;i<A->BlockSize*A->BlockSize;i++)
-    {
-      for(j=0;j<=N;j++)
-      {
-        G[i].Re[j] = Gval[i].Re[j] + Gcon[i].Re[j];
-        G[i].Im[j] = Gval[i].Im[j] + Gcon[i].Im[j];
-      }
-    }
-  }
-  else
-  {
-    for(i=0;i<A->BlockSize*A->BlockSize;i++)
-    {
-      for(j=0;j<=N;j++)
-      {
-        G[i].Re[j] = Gval[i].Re[j] + Gcon[i].Re[j];
-      }
-    }
-  }
-  
-  for(i=0;i<A->BlockSize*A->BlockSize;i++)
-  {
-    SpectrumFree(&Gval[i]);
-    SpectrumFree(&Gcon[i]);
-  }
-  return 0;
-}
-
-
 
 /*
  *
@@ -3044,57 +3172,69 @@ uint32_t BlockTriDiagonalMatrixToBlockAndersonMatrix(BlockTriDiagonalMatrixType 
   return 0;
 }
 
-
-/*  BasicMath_BlockTypeConversion.c
- *
- * Converts a BlockListofpoles to blockandersonmatrix, using a blocktridiagonalmatrix as intermediate
- *
- *
- */
-uint32_t BlockListOfPolesToBlockAndersonMatrix(BlockListOfPoles const A, BlockAndersonMatrixType *const B, int const NBlockMax)
+uint32_t BlockTriDiagonalMatrixToBlockNaturalImpurityMatrix(BlockTriDiagonalMatrixType const ATri, BlockNaturalImpurityOrbitalMatrixType * const B)
 {
-  BlockTriDiagonalMatrixType ATri;
-  if(BlockListOfPolesToBlockTridiagonalMatrix(A, &ATri, NBlockMax, DBL_EPSILON))
-  {
-    printf("BlockListOfPolesToBlockTridiagonalMatrix failed in BlockListOfPolesToBlockAndersonMatrix\n");
-    return 1;
-  }
-  BlockTridiagonalMatrixChop(&ATri,10*DBL_EPSILON);
-  if(BlockTriDiagonalMatrixToBlockAndersonMatrix(ATri,B))
-  {
-    printf("BlockTriDiagonalMatrixToBlockAndersonMatrix failed in BlockListOfPolesToBlockAndersonMatrix\n");
-    return 1;
-  }
-  FreeBlockTridiagonalMatrix(&ATri);
-  return 0;
+  //TODO: all
+  printf("Not implemented BlockTriDiagonalMatrixToBlockNaturalImpurityMatrix\n");
+  return 1;
 }
 
-/*  on entry A contains the Green's function in a BlockListOfPoles format.
- *
- * Converts a BlockListofpoles to blockandersonmatrix, using a blocktridiagonalmatrix as intermediate
- *
- *
- *  AT specifies how to reduce the dimension
- *
+/*
+ *   BlockAndersonMatrix to Block__
  */
-uint32_t BlockListOfPolesToBlockAndersonMatrixReduceDimension(BlockListOfPoles const A, BlockAndersonMatrixType *B, CompactMatrixType const *AT, int const NBlockMax)
+
+uint32_t BlockAndersonMatrixToBlockListOfPoles(BlockAndersonMatrixType const AAnd, BlockListOfPoles * const B)
 {
-  BlockTriDiagonalMatrixType ATri;
-  if(BlockListOfPolesToBlockTridiagonalMatrixReduceDimension(A, &ATri, AT, NBlockMax, DBL_EPSILON))
-  {
-    printf("BlockListOfPolesToBlockTridiagonalMatrixReduceDimension failed in BlockListOfPolesToBlockAndersonMatrixReduceDimension\n");
-    return 1;
-  }
-  BlockTridiagonalMatrixChop(&ATri,100*DBL_EPSILON);
-  if(BlockTriDiagonalMatrixToBlockAndersonMatrix(ATri,B))
-  {
-    printf("BlockTriDiagonalMatrixToBlockAndersonMatrix failed in BlockListOfPolesToBlockAndersonMatrixReduceDimension\n");
-    return 1;
-  }
-  FreeBlockTridiagonalMatrix(&ATri);
-  return 0;
+  //TODO: all
+  printf("Not implemented BlockAndersonMatrixToBlockListOfPoles\n");
+  return 1;
+}
+uint32_t BlockAndersonMatrixToBlockListOfPolesVariableGrid(BlockAndersonMatrixType const AAnd, BlockListOfPoles * const B, const double * const Grid, const uint32_t NGridPoints)
+{
+  //TODO: all
+  printf("Not implemented BlockAndersonMatrixToBlockListOfPoles\n");
+  return 1;
+}
+uint32_t BlockAndersonMatrixToBlockTridiagonalMatrix(BlockAndersonMatrixType const AAnd, BlockTriDiagonalMatrixType * const B)
+{
+  //TODO: all
+  printf("Not implemented \n");
+  return 1;
+}
+uint32_t BlockAndersonMatrixToBlockNaturalImpurityOrbitalMatrix(BlockAndersonMatrixType const AAnd, BlockNaturalImpurityOrbitalMatrixType * const B)
+{
+  //TODO: all
+  printf("Not implemented \n");
+  return 1;
 }
 
+/*
+ *   BlockNaturalImpurityOrbitalMatrix to Block__
+ */
 
+uint32_t BlockNaturalImpurityOrbitalMatrixToBlockAndersonMatrix(BlockNaturalImpurityOrbitalMatrixType const AAnd, BlockAndersonMatrixType * const B)
+{
+  //TODO: all
+  printf("Not implemented \n");
+  return 1;
+}
+uint32_t BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles(BlockNaturalImpurityOrbitalMatrixType const AAnd, BlockListOfPoles * const B)
+{
+  //TODO: all
+  printf("Not implemented \n");
+  return 1;
+}
+uint32_t BlockNaturalImpurityOrbitalMatrixToBlockListOfPolesVariableGrid(BlockNaturalImpurityOrbitalMatrixType const AAnd, BlockListOfPoles * const B, const double * const Grid, const uint32_t NGridPoints)
+{
+  //TODO: all
+  printf("Not implemented \n");
+  return 1;
+}
 
+uint32_t BlockNaturalImpurityOrbitalMatrixToBlockTridiagonalMatrix(BlockNaturalImpurityOrbitalMatrixType const AAnd, BlockTriDiagonalMatrixType * const B)
+{
+  //TODO: all
+  printf("Not implemented \n");
+  return 1;
+}
 

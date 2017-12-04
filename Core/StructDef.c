@@ -631,10 +631,40 @@ typedef struct BlockNaturalImpurityOrbitalMatrixType
 }
 BlockNaturalImpurityOrbitalMatrixType;
 
+
+/*  BlockMatrixType defines a single type that can hold block matrices of different forms
+ *  l or L for BlockListOfPoles
+ *  a or A for BlockAndersonMatrix
+ *  t or T for BlockTridiagonalMatrix
+ *  n or N for BlockNaturalMatrix
+ *
+ *  the difference between small and captical is used for a container pointing to a unique object (capital)
+ *  or to a container pointing to a shared object (small)
+ *
+ *  unique objects should be freed once not used any more
+ *  shared objects are controled by other parts of the code and one should realize that changing these objects
+ *  will influence other calculations as well.
+ *
+ *  The capital lower case is used for different representations on the lua stack.
+ *  lower case letters are pushed to the lua stack as a pointer to the variable (user type)
+ *  upper case letters are pushed to the lua stack as a lua table
+ *  reading a user type will read the pointer
+ *  reading a lua table will regenerate the BlockMatrixType
+ *
+ *  The array SugestedGrid contains NSugestedGridPoints in ascending order.
+ *  The Sugested Grid is used for transformations of Matrix types and functions acting on them
+ *  The actual grid used can be different and will be different in several cases.
+ *  i.e. transformation functions will change the BlockMatrix as little as possible, but
+ *  if the size of the BlockMatrix would grow (i.e. for transformations to list of poles)
+ *  and a Grid is provided the Grid is used
+ */
+
 typedef struct BlockMatrixType
 {
   char type;                               // l,a,t,n or L,A,T,N
   void * data;
+  double *SugestedGrid;
+  uint32_t NSugestedGridPoints;
 }
 BlockMatrixType;
 
