@@ -52,7 +52,7 @@ uint32_t FreeBlockMatrix(BlockMatrixType *M)
 /* capital read from table and needs to be freed, small read from user data type */
 uint32_t FreeBlockMatrixFromLua(BlockMatrixType *M)
 {
-  if(M->NSugestedGridPoints!=0)
+  if((M->type>='A') && (M->type<='Z') && (M->NSugestedGridPoints!=0))
   {
     free(M->SugestedGrid);
     M->SugestedGrid=NULL;
@@ -170,9 +170,14 @@ BlockMatrixType *ConvertBlockMatrix(BlockMatrixType *M, const char type, double 
         case 'l':
         {
           res->data = (void*) malloc(sizeof(BlockListOfPoles));
-          
-          //TODO: transform tri to list of poles
-          //BlockTriDiagonalMatrixToBlockListOfPolesFixedGrid(*(BlockTriDiagonalMatrixType*)M->data, (BlockListOfPoles*)res->data, <#const double Emin#>, <#const double Emax#>, <#const uint32_t NE#>)
+          if(M->NSugestedGridPoints!=0)
+          {
+            BlockTriDiagonalMatrixToBlockListOfPolesVariableGrid((BlockTriDiagonalMatrixType*)M->data, (BlockListOfPoles*)res->data, M->SugestedGrid, M->NSugestedGridPoints);
+          }
+          else
+          {
+            BlockTriDiagonalMatrixToBlockListOfPoles((BlockTriDiagonalMatrixType*)M->data, (BlockListOfPoles*)res->data);
+          }
         }
         break;
         case 't':
@@ -183,12 +188,14 @@ BlockMatrixType *ConvertBlockMatrix(BlockMatrixType *M, const char type, double 
         break;
         case 'a':
         {
-
+          res->data = (void*) malloc(sizeof(BlockAndersonMatrixType));
+          BlockTriDiagonalMatrixToBlockAndersonMatrix(*(BlockTriDiagonalMatrixType*)M->data, (BlockAndersonMatrixType*)res->data);
         }
         break;
         case 'n':
         {
-
+          res->data = (void*) malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
+          BlockTriDiagonalMatrixToBlockNaturalImpurityMatrix(*(BlockTriDiagonalMatrixType*)M->data,(BlockNaturalImpurityOrbitalMatrixType*)res->data);
         }
         break;
         default:
@@ -205,12 +212,21 @@ BlockMatrixType *ConvertBlockMatrix(BlockMatrixType *M, const char type, double 
       {
         case 'l':
         {
-
+          res->data = (void*) malloc(sizeof(BlockListOfPoles));
+          if(M->NSugestedGridPoints!=0)
+          {
+            BlockAndersonMatrixToBlockListOfPolesVariableGrid(*(BlockAndersonMatrixType*)M->data, (BlockListOfPoles*)res->data, M->SugestedGrid, M->NSugestedGridPoints);
+          }
+          else
+          {
+            BlockAndersonMatrixToBlockListOfPoles(*(BlockAndersonMatrixType*)M->data, (BlockListOfPoles*)res->data);
+          }
         }
         break;
         case 't':
         {
-
+          res->data = (void*) malloc(sizeof(BlockTriDiagonalMatrixType));
+          BlockAndersonMatrixToBlockTridiagonalMatrix(*(BlockAndersonMatrixType*)M->data, (BlockTriDiagonalMatrixType*)res->data);
         }
         break;
         case 'a':
@@ -220,7 +236,8 @@ BlockMatrixType *ConvertBlockMatrix(BlockMatrixType *M, const char type, double 
         break;
         case 'n':
         {
-
+          res->data = (void*) malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
+          BlockAndersonMatrixToBlockNaturalImpurityOrbitalMatrix(*(BlockAndersonMatrixType*)M->data,(BlockNaturalImpurityOrbitalMatrixType*)res->data);
         }
         break;
         default:
@@ -237,16 +254,27 @@ BlockMatrixType *ConvertBlockMatrix(BlockMatrixType *M, const char type, double 
       {
         case 'l':
         {
-
+          res->data = (void*) malloc(sizeof(BlockListOfPoles));
+          if(M->NSugestedGridPoints!=0)
+          {
+            BlockNaturalImpurityOrbitalMatrixToBlockListOfPolesVariableGrid(*(BlockNaturalImpurityOrbitalMatrixType*)M->data, (BlockListOfPoles*)res->data, M->SugestedGrid, M->NSugestedGridPoints);
+          }
+          else
+          {
+            BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles(*(BlockNaturalImpurityOrbitalMatrixType*)M->data, (BlockListOfPoles*)res->data);
+          }
         }
         break;
         case 't':
         {
-
+          res->data = (void*) malloc(sizeof(BlockTriDiagonalMatrixType));
+          BlockNaturalImpurityOrbitalMatrixToBlockTridiagonalMatrix(*(BlockNaturalImpurityOrbitalMatrixType*)M->data, (BlockTriDiagonalMatrixType*)res->data);
         }
         break;
         case 'a':
         {
+          res->data = (void*) malloc(sizeof(BlockAndersonMatrixType));
+          BlockNaturalImpurityOrbitalMatrixToBlockAndersonMatrix(*(BlockNaturalImpurityOrbitalMatrixType*)M->data, (BlockAndersonMatrixType*)res->data);
 
         }
         break;
