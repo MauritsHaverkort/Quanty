@@ -52,11 +52,7 @@ uint32_t FreeBlockMatrix(BlockMatrixType *M)
 /* capital read from table and needs to be freed, small read from user data type */
 uint32_t FreeBlockMatrixFromLua(BlockMatrixType *M)
 {
-<<<<<<< HEAD
-  if(M->NSuggestedGridPoints!=0)
-=======
-  if((M->type>='A') && (M->type<='Z') && (M->NSugestedGridPoints!=0))
->>>>>>> da11d2fb475e3cbbeb1036adc7f7910879caeba8
+  if((M->type>='A') && (M->type<='Z') && (M->NSuggestedGridPoints!=0))
   {
     free(M->SuggestedGrid);
     M->SuggestedGrid=NULL;
@@ -175,20 +171,14 @@ BlockMatrixType *ConvertBlockMatrix(BlockMatrixType *M, const char type, double 
         case 'l':
         {
           res->data = (void*) malloc(sizeof(BlockListOfPoles));
-<<<<<<< HEAD
-
-          //TODO: transform tri to list of poles
-          //BlockTriDiagonalMatrixToBlockListOfPolesFixedGrid(*(BlockTriDiagonalMatrixType*)M->data, (BlockListOfPoles*)res->data, <#const double Emin#>, <#const double Emax#>, <#const uint32_t NE#>)
-=======
-          if(M->NSugestedGridPoints!=0)
+          if(M->NSuggestedGridPoints!=0)
           {
-            BlockTriDiagonalMatrixToBlockListOfPolesVariableGrid((BlockTriDiagonalMatrixType*)M->data, (BlockListOfPoles*)res->data, M->SugestedGrid, M->NSugestedGridPoints);
+            BlockTriDiagonalMatrixToBlockListOfPolesVariableGrid((BlockTriDiagonalMatrixType*)M->data, (BlockListOfPoles*)res->data, M->SuggestedGrid, M->NSuggestedGridPoints);
           }
           else
           {
             BlockTriDiagonalMatrixToBlockListOfPoles((BlockTriDiagonalMatrixType*)M->data, (BlockListOfPoles*)res->data);
           }
->>>>>>> da11d2fb475e3cbbeb1036adc7f7910879caeba8
         }
         break;
         case 't':
@@ -224,9 +214,9 @@ BlockMatrixType *ConvertBlockMatrix(BlockMatrixType *M, const char type, double 
         case 'l':
         {
           res->data = (void*) malloc(sizeof(BlockListOfPoles));
-          if(M->NSugestedGridPoints!=0)
+          if(M->NSuggestedGridPoints!=0)
           {
-            BlockAndersonMatrixToBlockListOfPolesVariableGrid(*(BlockAndersonMatrixType*)M->data, (BlockListOfPoles*)res->data, M->SugestedGrid, M->NSugestedGridPoints);
+            BlockAndersonMatrixToBlockListOfPolesVariableGrid(*(BlockAndersonMatrixType*)M->data, (BlockListOfPoles*)res->data, M->SuggestedGrid, M->NSuggestedGridPoints);
           }
           else
           {
@@ -266,9 +256,9 @@ BlockMatrixType *ConvertBlockMatrix(BlockMatrixType *M, const char type, double 
         case 'l':
         {
           res->data = (void*) malloc(sizeof(BlockListOfPoles));
-          if(M->NSugestedGridPoints!=0)
+          if(M->NSuggestedGridPoints!=0)
           {
-            BlockNaturalImpurityOrbitalMatrixToBlockListOfPolesVariableGrid(*(BlockNaturalImpurityOrbitalMatrixType*)M->data, (BlockListOfPoles*)res->data, M->SugestedGrid, M->NSugestedGridPoints);
+            BlockNaturalImpurityOrbitalMatrixToBlockListOfPolesVariableGrid(*(BlockNaturalImpurityOrbitalMatrixType*)M->data, (BlockListOfPoles*)res->data, M->SuggestedGrid, M->NSuggestedGridPoints);
           }
           else
           {
