@@ -15,8 +15,61 @@
  */
 uint32_t EvaluateBlockListOfPoles(BlockListOfPoles const *A, CompactMatrixType * Gw, const double omega, const double Gamma)
 {
-  //TODO: all
-  printf("Not implemented \n");
+  int i,iblock,itot;
+  Complex16 Lorentzian;
+  Gw->QComplex=1;
+  Gw->Ni=A->BlockSize;
+  Gw->Nj=A->BlockSize;
+  Gw->a0=0;
+  Gw->b0=0;
+  Gw->mu=A->mu;
+  InitCompactMatrix(Gw);
+  if(A->QComplex==0)
+  {// real
+    // add A0
+    for(i=0;i<A->BlockSize*A->BlockSize;i++)
+    {
+      Gw->V[i].Re=A->VRe[A->N*(1+A->BlockSize*A->BlockSize)+i];
+      Gw->V[i].Im=0;
+    }
+    // loop over all poles
+    itot=0;
+    for(iblock=0;iblock<A->N;i++)
+    {
+      Lorentzian.Re = (omega-A->VRe[itot]) / (Sqr(Gamma) + Sqr(omega-A->VRe[itot]));
+      Lorentzian.Im = (-Gamma            ) / (Sqr(Gamma) + Sqr(omega-A->VRe[itot]));
+      itot++;
+      for(i=0;i<A->BlockSize*A->BlockSize;i++)
+      {
+        Gw->V[i].Re += A->VRe[itot] * Lorentzian.Re;
+        Gw->V[i].Im += A->VRe[itot] * Lorentzian.Im;
+        itot++;
+      }
+    }
+  }
+  else
+  {// complex
+    // add A0
+    for(i=0;i<A->BlockSize*A->BlockSize;i++)
+    {
+      Gw->V[i].Re=A->V[A->N*(1+A->BlockSize*A->BlockSize)+i].Re;
+      Gw->V[i].Im=A->V[A->N*(1+A->BlockSize*A->BlockSize)+i].Im;
+    }
+    // loop over all poles
+    itot=0;
+    for(iblock=0;iblock<A->N;i++)
+    {
+      Lorentzian.Re = (omega-A->VRe[itot]) / (Sqr(Gamma) + Sqr(omega-A->VRe[itot]));
+      Lorentzian.Im = (-Gamma            ) / (Sqr(Gamma) + Sqr(omega-A->VRe[itot]));
+      itot++;
+      for(i=0;i<A->BlockSize*A->BlockSize;i++)
+      {
+        Gw->V[i].Re += A->V[itot].Re * Lorentzian.Re - A->V[itot].Im * Lorentzian.Im;
+        Gw->V[i].Im += A->V[itot].Re * Lorentzian.Im + A->V[itot].Im * Lorentzian.Re;
+        itot++;
+      }
+    }
+  }
   return 0;
 }
 
@@ -29,6 +82,7 @@ uint32_t EvaluateBlockAndersonMatrix(BlockListOfPoles const *A, CompactMatrixTyp
   //TODO: all
   printf("Not implemented \n");
   return 0;
+  
 }
 
 /*  Transform a BlockTriDiagonalMatrix representation of G to a spectral representation of G at one specific energy.
