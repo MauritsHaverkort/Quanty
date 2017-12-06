@@ -206,7 +206,7 @@ MatrixType* luaL_checkMatrix(lua_State *L, int narg)
  *
  *  the later functions read from the lua stack a function of any of the types possible
  *  and transform this to the type requested
- *  If SugestedGrid is set this will be used for the type conversion
+ *  If SuggestedGrid is set this will be used for the type conversion
  *
  */
 
@@ -288,7 +288,7 @@ BlockTriDiagonalMatrixType* luaL_checkBlockTriDiagonalMatrixType(lua_State *L, i
     lua_pop(L, 1);
     buff = malloc(sizeof(BlockTriDiagonalMatrixType));
     //TODO: read BlockTriDiagonalMatrixType
-    
+
     return buff;
   }
   if(strcmp(type, "And")==0)
@@ -416,7 +416,7 @@ BlockAndersonMatrixType* luaL_checkBlockAndersonMatrixType(lua_State *L, int nar
     lua_pop(L, 1);
     buff = malloc(sizeof(BlockAndersonMatrixType));
     //TODO: read BlockAndersonMatrixType
-    
+
     return buff;
   }
   if(strcmp(type, "NaturalImpurityOrbital")==0)
@@ -542,7 +542,7 @@ BlockNaturalImpurityOrbitalMatrixType * luaL_checkBlockNatrualImpurityOrbitalMat
     lua_pop(L, 1);
     buff = malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
     //TODO: Read NaturalImpurityOrbital
-    
+
     return buff;
   }
   if(strcmp(type, "ListOfPoles")==0)
@@ -971,10 +971,13 @@ BlockMatrixType * luaL_checkBlockGreensfunction(lua_State *L, int narg)
   char const * type;
   BlockMatrixType *buff;
   // Block matrix stored as pointer to structure on lua stack
-  buff = (BlockMatrixType*)luaL_checkudata(L, narg, "ResponseFunction_Type");
-  if (buff!=NULL)
+  if (luaL_testudata(L, narg, "ResponseFunction_Type") != NULL)
   {
-    return buff;
+    buff = (BlockMatrixType*)luaL_checkudata(L, narg, "ResponseFunction_Type");
+    if (buff!=NULL)
+    {
+      return buff;
+    }
   }
   // Block Matrix stored as lua table read type and allocate structure
   if(lua_istable(L, narg)==0)
@@ -989,21 +992,22 @@ BlockMatrixType * luaL_checkBlockGreensfunction(lua_State *L, int narg)
   type = lua_tolstring(L, -1, NULL);
   lua_pop(L, 1);
   buff=malloc(sizeof(BlockMatrixType));
-  // test if there is a sugested grid present. If present Stored in field SugestedGrid
-  lua_getfield(L, narg, "SugestedGrid");
+  // test if there is a suggested grid present. If present Stored in field SuggestedGrid
+  lua_getfield(L, narg, "SuggestedGrid");
   if(lua_isnil(L, -1)==1)
   {
-    buff->NSugestedGridPoints=0;
-    buff->SugestedGrid=NULL;
+    printf("No suggested grid.\n");
+    buff->NSuggestedGridPoints=0;
+    buff->SuggestedGrid=NULL;
   }
   else if(lua_istable(L, -1)==1)
   {
-    buff->SugestedGrid = luaL_checkarray_double(L, -1, &(buff->NSugestedGridPoints));
+    buff->SuggestedGrid = luaL_checkarray_double(L, -1, &(buff->NSuggestedGridPoints));
     lua_pop(L,1);
   }
   else
   {
-    luaL_error(L, "Error reading Green's function: \"SugestedGrid\" should be an table of doubles.");
+    luaL_error(L, "Error reading Green's function: \"SuggestedGrid\" should be an table of doubles.");
   }
   if(strcmp(type, "Tri")==0)
   {
@@ -1026,13 +1030,13 @@ BlockMatrixType * luaL_checkBlockGreensfunction(lua_State *L, int narg)
   if(strcmp(type, "ListOfPoles")==0)
   {
     buff->type='L';
-    if(buff->NSugestedGridPoints==0)
+    if(buff->NSuggestedGridPoints==0)
     {
       buff->data = (void*)luaL_checkBlockListOfPoles(L, narg);
     }
     else
     {
-      buff->data = (void*)luaL_checkBlockListOfPolesVariableGrid(L, narg, buff->SugestedGrid, buff->NSugestedGridPoints);
+      buff->data = (void*)luaL_checkBlockListOfPolesVariableGrid(L, narg, buff->SuggestedGrid, buff->NSuggestedGridPoints);
     }
     return buff;
   }
@@ -1417,7 +1421,7 @@ void LuaPushTable_BlockTriDiagonalMatrixType(lua_State* L, BlockTriDiagonalMatri
   CompactMatrixType block;
   //*   matrix k can be found at position [k*BlockSize*BlockSize]
   //*   element [i,j] of matrix k can be found at position [k*BlockSize*BlockSize+i*BlockSize+j]
-  //*   stop the printing if the sum of the absulute value of all elements of b[i] is less then 0.01*DBL_EPSILON
+  //*   stop the printing if the sum of the absolute value of all elements of b[i] is less then 0.01*DBL_EPSILON
   if(M->QComplex)
   {
     for(k=1;k<M->N;k++)
@@ -1543,7 +1547,7 @@ void LuaPushTable_BlockAndersonMatrixType(lua_State* L, BlockAndersonMatrixType 
   CompactMatrixType block;
   //*   matrix k can be found at position [k*BlockSize*BlockSize]
   //*   element [i,j] of matrix k can be found at position [k*BlockSize*BlockSize+i*BlockSize+j]
-  //*   stop the printing if the sum of the absulute value of all elements of b[i] is less then 0.01*DBL_EPSILON
+  //*   stop the printing if the sum of the absolute value of all elements of b[i] is less than 0.01*DBL_EPSILON
   block.QComplex=M->QComplex;
   block.Ni=M->BlockSize;
   block.Nj=M->BlockSize;
@@ -1795,22 +1799,22 @@ void LuaPush_BlockGreensFunction(lua_State *L, BlockMatrixType const * const M)
   }
   switch (M->type)
   {
-    case 'T':
+    case 't':
     {
       LuaPushTable_BlockTriDiagonalMatrixType(L, M->data);
       return;
     }
-    case 'A':
+    case 'a':
     {
       LuaPushTable_BlockAndersonMatrixType(L, M->data);
       return;
     }
-    case 'L':
+    case 'l':
     {
       LuaPushTable_BlockListOfPoles(L, M->data);
       return;
     }
-    case 'N':
+    case 'n':
     {
       LuaPushTable_BlockNaturalImpurityOrbital(L, M->data);
       return;

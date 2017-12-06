@@ -10,11 +10,11 @@
 /* use FreeBlockMatrixFromLua instead */
 uint32_t FreeBlockMatrix(BlockMatrixType *M)
 {
-  if(M->NSugestedGridPoints!=0)
+  if(M->NSuggestedGridPoints!=0)
   {
-    free(M->SugestedGrid);
-    M->SugestedGrid=NULL;
-    M->NSugestedGridPoints=0;
+    free(M->SuggestedGrid);
+    M->SuggestedGrid=NULL;
+    M->NSuggestedGridPoints=0;
   }
   switch (M->type|32) {
     case 'l':
@@ -52,11 +52,15 @@ uint32_t FreeBlockMatrix(BlockMatrixType *M)
 /* capital read from table and needs to be freed, small read from user data type */
 uint32_t FreeBlockMatrixFromLua(BlockMatrixType *M)
 {
+<<<<<<< HEAD
+  if(M->NSuggestedGridPoints!=0)
+=======
   if((M->type>='A') && (M->type<='Z') && (M->NSugestedGridPoints!=0))
+>>>>>>> da11d2fb475e3cbbeb1036adc7f7910879caeba8
   {
-    free(M->SugestedGrid);
-    M->SugestedGrid=NULL;
-    M->NSugestedGridPoints=0;
+    free(M->SuggestedGrid);
+    M->SuggestedGrid=NULL;
+    M->NSuggestedGridPoints=0;
   }
   switch (M->type) {
     case 'l':
@@ -114,16 +118,17 @@ BlockMatrixType *ConvertBlockMatrix(BlockMatrixType *M, const char type, double 
 {
   BlockMatrixType *res;
   res = malloc(sizeof(BlockMatrixType));
+  res->NSuggestedGridPoints = 0;
   res->type = type;
-  res->NSugestedGridPoints=M->NSugestedGridPoints;
-  if(res->NSugestedGridPoints==0)
+  res->NSuggestedGridPoints=M->NSuggestedGridPoints;
+  if(res->NSuggestedGridPoints==0)
   {
-    res->SugestedGrid=NULL;
+    res->SuggestedGrid=NULL;
   }
   else
   {
-    res->SugestedGrid=malloc(res->NSugestedGridPoints*sizeof(double));
-    memcpy(res->SugestedGrid, M->SugestedGrid, res->NSugestedGridPoints*sizeof(double));
+    res->SuggestedGrid=malloc(res->NSuggestedGridPoints*sizeof(double));
+    memcpy(res->SuggestedGrid, M->SuggestedGrid, res->NSuggestedGridPoints*sizeof(double));
   }
   switch (M->type|32)      // original type
   {
@@ -170,6 +175,11 @@ BlockMatrixType *ConvertBlockMatrix(BlockMatrixType *M, const char type, double 
         case 'l':
         {
           res->data = (void*) malloc(sizeof(BlockListOfPoles));
+<<<<<<< HEAD
+
+          //TODO: transform tri to list of poles
+          //BlockTriDiagonalMatrixToBlockListOfPolesFixedGrid(*(BlockTriDiagonalMatrixType*)M->data, (BlockListOfPoles*)res->data, <#const double Emin#>, <#const double Emax#>, <#const uint32_t NE#>)
+=======
           if(M->NSugestedGridPoints!=0)
           {
             BlockTriDiagonalMatrixToBlockListOfPolesVariableGrid((BlockTriDiagonalMatrixType*)M->data, (BlockListOfPoles*)res->data, M->SugestedGrid, M->NSugestedGridPoints);
@@ -178,6 +188,7 @@ BlockMatrixType *ConvertBlockMatrix(BlockMatrixType *M, const char type, double 
           {
             BlockTriDiagonalMatrixToBlockListOfPoles((BlockTriDiagonalMatrixType*)M->data, (BlockListOfPoles*)res->data);
           }
+>>>>>>> da11d2fb475e3cbbeb1036adc7f7910879caeba8
         }
         break;
         case 't':
