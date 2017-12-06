@@ -34,7 +34,7 @@ uint32_t EvaluateBlockListOfPoles(BlockListOfPoles const *A, CompactMatrixType *
     }
     // loop over all poles
     itot=0;
-    for(iblock=0;iblock<A->N;i++)
+    for(iblock=0;iblock<A->N;iblock++)
     {
       Lorentzian.Re = (omega-A->VRe[itot]) / (Sqr(Gamma) + Sqr(omega-A->VRe[itot]));
       Lorentzian.Im = (-Gamma            ) / (Sqr(Gamma) + Sqr(omega-A->VRe[itot]));
@@ -181,6 +181,39 @@ uint32_t EvaluateBlockaturalImpurityOrbital(BlockNaturalImpurityOrbitalMatrixTyp
 {
   //TODO: all
   printf("Not implemented \n");
+  return 0;
+}
+
+uint32_t EvaluateBlockMatrixType(BlockMatrixType const *A, CompactMatrixType * Gw, const double omega, const double Gamma)
+{
+  switch (A->type)
+  {
+    case 't':
+    case 'T':
+    {
+      return EvaluateBlockTriDiagonalMatrix(A->data, Gw, omega, Gamma);
+    }
+    case 'a':
+    case 'A':
+    {
+      return EvaluateBlockAndersonMatrix(A->data, Gw, omega, Gamma);
+    }
+    case 'l':
+    case 'L':
+    {
+      return EvaluateBlockListOfPoles(A->data, Gw, omega, Gamma);
+    }
+    case 'n':
+    case 'N':
+    {
+      return EvaluateBlockaturalImpurityOrbital(A->data, Gw, omega, Gamma);
+    }
+    default:
+    {
+      printf("Error in LuaPush_BlockGreensFunction: Type of BlockMatrix should be either T/t,A/a,L/l, or N/n and not %s\n",A->type);
+      return 0;
+    }
+  }
   return 0;
 }
 

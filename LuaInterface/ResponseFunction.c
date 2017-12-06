@@ -273,8 +273,20 @@ static int LuaResponseFunctionMode(lua_State * L)
  */
 static int LuaResponseFunctionCall(lua_State * L)
 {
-  printf("LuaResponseFunctionCall\n");
-  return 0;
+  BlockMatrixType *res;
+  double omega, gamma;
+  CompactMatrixType out;
+  if (lua_gettop(L)!=3)
+  {
+    return luaL_error(L, "Call to a response-function should contain two elements, (omega, gamma) with omega the energy at which the response function is evaluated and gamma an imaginary ofset from the real axis (FWMH lorenzian broadening)\n");
+  }
+  res = luaL_checkBlockGreensfunction(L,1);
+  omega = (double)luaL_checknumber(L, 2);
+  gamma = (double)luaL_checknumber(L, 3);
+  EvaluateBlockMatrixType(res, &out, omega, gamma);
+  LuaPushTable_CompactMatrixType(L, &out);
+  FreeBlockMatrixFromLua(res);
+  return 1;
 }
 
 static const struct luaL_Reg ResponseFunction_func[] = {

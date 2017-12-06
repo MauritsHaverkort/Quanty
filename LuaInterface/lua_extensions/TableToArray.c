@@ -979,24 +979,17 @@ BlockMatrixType * luaL_checkBlockGreensfunction(lua_State *L, int narg)
       return buff;
     }
   }
-  // Block Matrix stored as lua table read type and allocate structure
+  // Block Matrix stored as lua table read sugested grid, type and allocate structure
   if(lua_istable(L, narg)==0)
   {
     luaL_error(L, "Error Green's function should be represented by a table");
   }
-  lua_getfield(L, narg, "type");
-  if(lua_isstring(L,-1)==0)
-  {
-    luaL_error(L, "Error Reading Green's function without valid type declaration.");
-  }
-  type = lua_tolstring(L, -1, NULL);
-  lua_pop(L, 1);
   buff=malloc(sizeof(BlockMatrixType));
   // test if there is a suggested grid present. If present Stored in field SuggestedGrid
   lua_getfield(L, narg, "SuggestedGrid");
   if(lua_isnil(L, -1)==1)
   {
-    printf("No suggested grid.\n");
+    // no sugested grid
     buff->NSuggestedGridPoints=0;
     buff->SuggestedGrid=NULL;
   }
@@ -1009,26 +1002,37 @@ BlockMatrixType * luaL_checkBlockGreensfunction(lua_State *L, int narg)
   {
     luaL_error(L, "Error reading Green's function: \"SuggestedGrid\" should be an table of doubles.");
   }
+  // read type
+  lua_getfield(L, narg, "type");
+  if(lua_isstring(L,-1)==0)
+  {
+    luaL_error(L, "Error Reading Green's function without valid type declaration.");
+  }
+  type = lua_tolstring(L, -1, NULL);
   if(strcmp(type, "Tri")==0)
   {
+    lua_pop(L, 1);
     buff->type='T';
     buff->data=(void*)luaL_checkBlockTriDiagonalMatrixType(L, narg);
     return buff;
   }
   if(strcmp(type, "And")==0)
   {
+    lua_pop(L, 1);
     buff->type='A';
     buff->data = (void*)luaL_checkBlockAndersonMatrixType(L, narg);
     return buff;
   }
   if(strcmp(type, "NaturalImpurityOrbital")==0)
   {
+    lua_pop(L, 1);
     buff->type='N';
     buff->data = (void*)luaL_checkBlockNatrualImpurityOrbitalMatrixType(L, narg);
     return buff;
   }
   if(strcmp(type, "ListOfPoles")==0)
   {
+    lua_pop(L, 1);
     buff->type='L';
     if(buff->NSuggestedGridPoints==0)
     {
