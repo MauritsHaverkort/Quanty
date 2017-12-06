@@ -265,13 +265,12 @@ static int LuaCalculateFermi(lua_State *L)
  *       Nk -> {Nkx,Nky,Nkz} number of k-points       standard {40,40,40}
  *       Type
  */
+static int LuaChangeTypeResponseFunction(lua_State *L);
 static int LuaCalculateG(lua_State *L)
 {
   uint32_t i, len;
   TightBindingDef *a;
-  BlockListOfPoles *Gl;
-  BlockTriDiagonalMatrixType *Gt;
-  BlockAndersonMatrixType *Ga;
+  BlockMatrixType *G;
 
   struct
   {
@@ -308,43 +307,21 @@ static int LuaCalculateG(lua_State *L)
   a = (TightBindingDef*) luaL_checkudata(L, 1, "TightBinding_Type");
   if(len==2)
   {
-    LuaCheckOptions(L, -1, LuaCalculateGOptions);
+    LuaCheckOptions(L, 2, LuaCalculateGOptions);
   }
 
-  Gl = malloc(sizeof(BlockListOfPoles));
-  TightBindingHamiltonianToBlockListOfPoles(*a, Options.Nk, Gl, Options.Emin, Options.Emax, Options.NE);
+  lua_settop(L, 0);
+  G = (BlockMatrixType *) lua_newuserdata(L, sizeof(BlockMatrixType));
+  luaL_setmetatable(L, "ResponseFunction_Type");
+  G->NSuggestedGridPoints = 0;
+  G->type = 'L';
+  G->data = (void*) malloc(sizeof(BlockListOfPoles));
+  TightBindingHamiltonianToBlockListOfPoles(*a, Options.Nk, (BlockListOfPoles*)G->data, Options.Emin, Options.Emax, Options.NE);
 
-  switch (Options.Type[0]|32) {
-    case 'l':
-    {
-      LuaPushTable_BlockListOfPoles(L, Gl);
-      FreeBlockListOfPoles(Gl);
-      return 1;
-    }
-    case 'a':
-    {
-      Ga = malloc(sizeof(BlockAndersonMatrixType));
-      BlockListOfPolesToBlockAndersonMatrix(*Gl, Ga, Gl->N+1);
-      LuaPushTable_BlockAndersonMatrixType(L, Ga);
-      FreeBlockAndersonMatrix(Ga);
-      return 1;
-    }
-    case 't':
-    {
-      Gt = malloc(sizeof(BlockTriDiagonalMatrixType));
-      BlockListOfPolesToBlockTridiagonalMatrix(*Gl, Gt, Gl->N+1, 1000*DBL_EPSILON);
-      LuaPushTable_BlockTriDiagonalMatrixType(L, Gt);
-      FreeBlockTridiagonalMatrix(Gt);
-      return 1;
-    }
-    case 'n':
-    {
-      return luaL_error(L, "Error CalculateG: not yet implemented.");
-    }
-    default:
-    {
-      return luaL_error(L, "Error CalculateG: unrecognized type.");
-    }
+  if(strcmp(Options.Type, "ListOfPoles")!=0)
+  {
+    lua_pushstring(L, Options.Type);
+    return LuaChangeTypeResponseFunction(L);
   }
 
   return 1;

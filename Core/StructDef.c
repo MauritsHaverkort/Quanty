@@ -651,8 +651,8 @@ BlockNaturalImpurityOrbitalMatrixType;
  *  reading a user type will read the pointer
  *  reading a lua table will regenerate the BlockMatrixType
  *
- *  The array SugestedGrid contains NSugestedGridPoints in ascending order.
- *  The Sugested Grid is used for transformations of Matrix types and functions acting on them
+ *  The array SuggestedGrid contains NSuggestedGridPoints in ascending order.
+ *  The Suggested Grid is used for transformations of Matrix types and functions acting on them
  *  The actual grid used can be different and will be different in several cases.
  *  i.e. transformation functions will change the BlockMatrix as little as possible, but
  *  if the size of the BlockMatrix would grow (i.e. for transformations to list of poles)
@@ -663,8 +663,8 @@ typedef struct BlockMatrixType
 {
   char type;                               // l,a,t,n or L,A,T,N
   void * data;
-  double *SugestedGrid;
-  uint32_t NSugestedGridPoints;
+  double *SuggestedGrid;
+  uint32_t NSuggestedGridPoints;
 }
 BlockMatrixType;
 
