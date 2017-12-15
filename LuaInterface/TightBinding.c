@@ -317,6 +317,7 @@ static int LuaCalculateG(lua_State *L)
   G->type = 'L';
   G->data = (void*) malloc(sizeof(BlockListOfPoles));
   TightBindingHamiltonianToBlockListOfPoles(*a, Options.Nk, (BlockListOfPoles*)G->data, Options.Emin, Options.Emax, Options.NE);
+  ChopBlockListOfPoles((BlockListOfPoles*)G->data, 1000*DBL_EPSILON);
 
   if(strcmp(Options.Type, "ListOfPoles")!=0)
   {

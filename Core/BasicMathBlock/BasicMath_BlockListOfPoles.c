@@ -324,12 +324,11 @@ uint32_t AddBlockListOfPoles(BlockListOfPoles * const A, BlockListOfPoles const 
     {
       A->a0Re[i]+=B.a0Re[i];
     }
-    memcpy(&(A->VRe[A->N*(1+A->BlockSize*A->BlockSize)]), B.VRe, B.N*(1+A->BlockSize*A->BlockSize)*sizeof(double));    
+    memcpy(&(A->VRe[A->N*(1+A->BlockSize*A->BlockSize)]), B.VRe, B.N*(1+A->BlockSize*A->BlockSize)*sizeof(double));
   }
   A->N+=B.N;
   return 0;
 }
-
 
 /* A <- alpha A + (1-alpha) B
  *
@@ -794,7 +793,141 @@ uint32_t BlockListOfPolesMoveNegativeEnergyToMu(BlockListOfPoles * const A)
 uint32_t BlockListOfPolesMovePositiveEnergyToMu(BlockListOfPoles * const A)
 {
   //TODO: full implementation
-  
+
+  return 0;
+}
+
+uint32_t BlockListOfPolesPlaceOnMesh(BlockListOfPoles * const A, double const *mesh, int const NE)
+{
+  Complex16 *temp=NULL;
+  double *tempRe=NULL;
+  uint32_t i, j, k;
+  double de, rl, rr;
+  int bs = 1+A->BlockSize*A->BlockSize;
+
+  if(NE<=1)
+  {
+    printf("Error: The mesh should contain at least 2 points.\nSetting N=2.\n");
+    return 1;
+  }
+
+  if(A->QComplex)
+  {
+    temp = calloc((NE+1)*bs-1,sizeof(Complex16));
+    if(temp==NULL)
+    {
+      printf("malloc failed in BlockListOfPolesPlaceOnMesh\n");
+      return 1;
+    }
+    for(i=0;i<NE;i++)
+    {
+      temp[i*bs].Re = mesh[i];
+    }
+  }
+  else
+  {
+    tempRe = calloc((NE+1)*bs-1,sizeof(double));
+    if(tempRe==NULL)
+    {
+      printf("malloc failed in BlockListOfPolesPlaceOnMesh\n");
+      return 1;
+    }
+    for(i=0;i<NE;i++)
+    {
+      tempRe[i*bs] = mesh[i];
+    }
+  }
+
+
+  if(A->QComplex)
+  {
+    for(i=0;i<A->N;i++)
+    {
+      if(A->V[i*bs].Re<mesh[0])
+      {
+        for(k=1;k<bs;k++)
+        {
+          temp[k].Re += A->V[i*bs+k].Re;
+          temp[k].Im += A->V[i*bs+k].Im;
+        }
+      }
+      else if(A->V[i*bs].Re>=mesh[NE-1])
+      {
+        for(k=1;k<bs;k++)
+        {
+          temp[(NE-1)*bs+k].Re += A->V[i*bs+k].Re;
+          temp[(NE-1)*bs+k].Im += A->V[i*bs+k].Im;
+        }
+      }
+      else
+      {
+        for(j=0;j<NE-1;j++)
+        {
+          if( (A->V[i*bs].Re>=mesh[j]) && (A->V[i*bs].Re<mesh[j+1]) )
+          {
+            de = mesh[j+1] - mesh[j];
+            rr = (A->V[i*bs].Re-mesh[j])/de;
+            rl = 1.0 - rr;
+            for(k=1;k<bs;k++)
+            {
+              temp[j*bs    +k].Re += rl * A->V[i*bs+k].Re;
+              temp[(j+1)*bs+k].Re += rr * A->V[i*bs+k].Re;
+              temp[j*bs    +k].Im += rl * A->V[i*bs+k].Im;
+              temp[(j+1)*bs+k].Im += rr * A->V[i*bs+k].Im;
+            }
+          }
+        }
+      }
+    }
+    memcpy(&(temp[NE*bs]), A->a0, (bs-1)*sizeof(Complex16));
+    free(A->V);
+    A->N = NE;
+    A->V = temp;
+    A->a0=&(A->V[A->N*bs]);
+  }
+  else
+  {
+    for(i=0;i<A->N;i++)
+    {
+      if(A->VRe[i*bs]<mesh[0])
+      {
+        for(k=1;k<bs;k++)
+        {
+          tempRe[k] += A->VRe[i*bs+k];
+        }
+      }
+      else if(A->VRe[i*bs]>=mesh[NE-1])
+      {
+        for(k=1;k<bs;k++)
+        {
+          tempRe[(NE-1)*bs+k] += A->VRe[i*bs+k];
+        }
+      }
+      else
+      {
+        for(j=0;j<NE-1;j++)
+        {
+          if( (A->VRe[i*bs]>=mesh[j]) && (A->VRe[i*bs]<mesh[j+1]) )
+          {
+            de = mesh[j+1] - mesh[j];
+            rr = (A->VRe[i*bs]-mesh[j])/de;
+            rl = 1.0 - rr;
+            for(k=1;k<bs;k++)
+            {
+              tempRe[j*bs    +k] += rl * A->VRe[i*bs+k];
+              tempRe[(j+1)*bs+k] += rr * A->VRe[i*bs+k];
+            }
+          }
+        }
+      }
+    }
+    memcpy(&(tempRe[NE*bs]), A->a0Re, (bs-1)*sizeof(double));
+    free(A->VRe);
+    A->N = NE;
+    A->VRe = tempRe;
+    A->a0Re=&(A->VRe[A->N*bs]);
+  }
+
   return 0;
 }
 
@@ -806,15 +939,86 @@ uint32_t BlockListOfPolesMovePositiveEnergyToMu(BlockListOfPoles * const A)
  */
 uint32_t SubtractBlockListOfPoles(BlockListOfPoles * const A, BlockListOfPoles const B)
 {
-  //TODO: full implementation
-  
+  // TODO: fine-tuning for small number of poles.
+  double *mesh;
+  int bs=1+A->BlockSize*A->BlockSize;
+  BlockListOfPoles *Bsub;
+  uint32_t i,j;
+
+  if(A->N<=1)
+  {
+    printf("SubtractBlockListOfPoles called with 1 pole or fewer.\n");
+    return 1;
+  }
+  if(A->BlockSize!=B.BlockSize)
+  {
+    printf("Tried to subtract two BlockListOfPoles with different matrix sizes %i and %i\n",A->BlockSize,B.BlockSize);
+    printf("Error in SubtractBlockListOfPoles\n");
+    return 1;
+  }
+  OrderBlockListOfPoles(A);
+
+  mesh = malloc(A->N*sizeof(double));
+  if(A->QComplex)
+  {
+    for(i=0;i<A->N;i++) mesh[i]=A->V[i*bs].Re;
+  }
+  else
+  {
+    for(i=0;i<A->N;i++) mesh[i]=A->VRe[i*bs];
+    if(B.QComplex)
+    {
+      if(MakeRealBlockListOfPolesComplex(A))
+      {
+        printf("MakeRealBlockListOfPolesComplex failed in SubtractBlockListOfPoles\n");
+        return 1;
+      }
+    }
+  }
+
+  Bsub = malloc(sizeof(BlockListOfPoles));
+  CopyBlockListOfPoles(B, Bsub);
+  BlockListOfPolesPlaceOnMesh(Bsub, mesh, A->N);
+
+  if(A->QComplex)
+  {
+    for(i=0;i<A->N;i++)
+    {
+      for(j=1;j<bs;j++)
+      {
+        A->V[i*bs+j].Re -= Bsub->V[i*bs+j].Re;
+        A->V[i*bs+j].Im -= Bsub->V[i*bs+j].Im;
+      }
+    }
+    for(j=0;j<bs-1;j++)
+    {
+      A->a0[A->N*bs+j].Re -= Bsub->a0[A->N*bs+j].Re;
+      A->a0[A->N*bs+j].Im -= Bsub->a0[A->N*bs+j].Im;
+    }
+  }
+  else
+  {
+    for(i=0;i<A->N;i++)
+    {
+      for(j=1;j<bs;j++)
+      {
+        A->VRe[i*bs+j] -= Bsub->VRe[i*bs+j];
+      }
+    }
+    for(j=0;j<bs-1;j++)
+    {
+      A->a0Re[A->N*bs+j] -= Bsub->a0Re[A->N*bs+j];
+    }
+  }
+
+  ChopBlockListOfPoles(A, 1000*DBL_EPSILON);
   return 0;
 }
 
 
 
 /*  Reduce the dimension of the Green's function represented by a block list of poles
- *  The basis transformation is given by 
+ *  The basis transformation is given by
  *  BasisB = T BasisA
  *  B = T^* A T^T
  */
@@ -934,10 +1138,12 @@ uint32_t BlockListOfPolesReduceDimNC(BlockListOfPoles const * A, BlockListOfPole
   }
   return 0;
 }
+
 uint32_t BlockListOfPolesTransformNC(BlockListOfPoles const * A, BlockListOfPoles * const B, CompactMatrixType const *T)
 {
   return(BlockListOfPolesReduceDimNC(A,B,T));
 }
+
 uint32_t BlockListOfPolesTransformInlineNC(BlockListOfPoles * const A, CompactMatrixType const *T)
 {
   BlockListOfPoles B;
@@ -957,7 +1163,7 @@ uint32_t BlockListOfPolesG0plusSigmaToGFixedEGrid(BlockListOfPoles const *G0, Bl
   //TODO: this function is wrong??
   printf("This function \"BlockListOfPolesG0plusSigmaToGFixedEGrid\"is wrong ???why???\n");
 
-  
+
   CompactMatrixType S,fun, beta, Char, betasqrt;
   double *val, rest, totnow, totmax, totmin, energy;
   double const dE = (Emax - Emin)/((double)NE);

@@ -463,7 +463,7 @@ ListOfPoles;
  *    B_i = B'_i B'_i^C to get to
  *    G = A0 + sum_i B_i * 1/(w-a_i)
  *
- *  a0 is an aditional pointer to V[N*(1+BlockSize*BlockSize)]
+ *  a0 is an additional pointer to V[N*(1+BlockSize*BlockSize)]
  */
 typedef struct BlockListOfPoles
 {

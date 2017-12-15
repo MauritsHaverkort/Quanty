@@ -82,7 +82,7 @@ uint32_t EvaluateBlockAndersonMatrix(BlockListOfPoles const *A, CompactMatrixTyp
   //TODO: all
   printf("Not implemented \n");
   return 0;
-  
+
 }
 
 /*  Transform a BlockTriDiagonalMatrix representation of G to a spectral representation of G at one specific energy.
@@ -210,7 +210,7 @@ uint32_t EvaluateBlockMatrixType(BlockMatrixType const *A, CompactMatrixType * G
     }
     default:
     {
-      printf("Error in LuaPush_BlockGreensFunction: Type of BlockMatrix should be either T/t,A/a,L/l, or N/n and not %s\n",A->type);
+      printf("Error in LuaPush_BlockGreensFunction: Type of BlockMatrix should be either T/t,A/a,L/l, or N/n and not %c\n",A->type);
       return 0;
     }
   }
