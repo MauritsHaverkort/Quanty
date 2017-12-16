@@ -324,12 +324,11 @@ uint32_t AddBlockListOfPoles(BlockListOfPoles * const A, BlockListOfPoles const 
     {
       A->a0Re[i]+=B.a0Re[i];
     }
-    memcpy(&(A->VRe[A->N*(1+A->BlockSize*A->BlockSize)]), B.VRe, B.N*(1+A->BlockSize*A->BlockSize)*sizeof(double));    
+    memcpy(&(A->VRe[A->N*(1+A->BlockSize*A->BlockSize)]), B.VRe, B.N*(1+A->BlockSize*A->BlockSize)*sizeof(double));
   }
   A->N+=B.N;
   return 0;
 }
-
 
 /* A <- alpha A + (1-alpha) B
  *
@@ -592,7 +591,6 @@ uint32_t ReduceBlockListOfPoles(BlockListOfPoles * const A, uint32_t N, double c
         {
           Normi=ListOfPolesNormFlatWeightComplex(A->V+1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm), A->BlockSize, 0, 0, 0);
           Normimin=ListOfPolesNormFlatWeightComplex(A->V+1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm-1), A->BlockSize, 0, 0, 0);
-          Normiplus=1-Normimin;
           if(Normi+Normimin<DBL_MIN*1000)
           {
             a=0.5;
@@ -612,7 +610,6 @@ uint32_t ReduceBlockListOfPoles(BlockListOfPoles * const A, uint32_t N, double c
         {
           Normi=ListOfPolesNormFlatWeightComplex(A->V+1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm), A->BlockSize, 0, 0, 0);
           Normiplus=ListOfPolesNormFlatWeightComplex(A->V+1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm+1), A->BlockSize, 0, 0, 0);
-          Normimin = 1-Normiplus;
           if(Normi+Normiplus<DBL_MIN*1000)
           {
             a=0.5;
@@ -629,22 +626,24 @@ uint32_t ReduceBlockListOfPoles(BlockListOfPoles * const A, uint32_t N, double c
           }
         }
         else
-        if((aplus-amin)<DBL_MIN*1000)
         {
-          Normiplus=0.5;
-          Normimin=0.5;
-        }
-        else
-        {
-          Normiplus = (a-amin)/(aplus-amin);
-          Normimin = 1-Normiplus;
-        }
-        for(i=1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm);i<(1+A->BlockSize*A->BlockSize)*(iSmallestNorm+1);i++)
-        {
-          A->V[i-1-A->BlockSize*A->BlockSize].Re+=Normimin*A->V[i].Re;
-          A->V[i-1-A->BlockSize*A->BlockSize].Im+=Normimin*A->V[i].Im;
-          A->V[i+1+A->BlockSize*A->BlockSize].Re+=Normiplus*A->V[i].Re;
-          A->V[i+1+A->BlockSize*A->BlockSize].Im+=Normiplus*A->V[i].Im;
+          if((aplus-amin)<DBL_MIN*1000)
+          {
+            Normiplus=0.5;
+            Normimin=0.5;
+          }
+          else
+          {
+            Normiplus = (a-amin)/(aplus-amin);
+            Normimin = 1-Normiplus;
+          }
+          for(i=1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm);i<(1+A->BlockSize*A->BlockSize)*(iSmallestNorm+1);i++)
+          {
+            A->V[i-1-A->BlockSize*A->BlockSize].Re+=Normimin*A->V[i].Re;
+            A->V[i-1-A->BlockSize*A->BlockSize].Im+=Normimin*A->V[i].Im;
+            A->V[i+1+A->BlockSize*A->BlockSize].Re+=Normiplus*A->V[i].Re;
+            A->V[i+1+A->BlockSize*A->BlockSize].Im+=Normiplus*A->V[i].Im;
+          }
         }
       }
       memmove(&(A->V[iSmallestNorm*(A->BlockSize*A->BlockSize+1)]), &(A->V[(iSmallestNorm+1)*(A->BlockSize*A->BlockSize+1)]),((A->N-iSmallestNorm)*(A->BlockSize*A->BlockSize+1)-1)*sizeof(Complex16));
@@ -760,20 +759,23 @@ uint32_t ReduceBlockListOfPoles(BlockListOfPoles * const A, uint32_t N, double c
             A->VRe[1+A->BlockSize*A->BlockSize+i]+=A->VRe[i];
           }
         }
-        else if((aplus-amin)<DBL_MIN*1000)
-        {
-          Normiplus=0.5;
-          Normimin=0.5;
-        }
         else
         {
-          Normiplus = (a-amin)/(aplus-amin);
-          Normimin = 1-Normiplus;
-        }
-        for(i=1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm);i<(1+A->BlockSize*A->BlockSize)*(iSmallestNorm+1);i++)
-        {
-          A->VRe[i-1-A->BlockSize*A->BlockSize]+=Normimin*A->VRe[i];
-          A->VRe[i+1+A->BlockSize*A->BlockSize]+=Normiplus*A->VRe[i];
+          if((aplus-amin)<DBL_MIN*1000)
+          {
+            Normiplus=0.5;
+            Normimin=0.5;
+          }
+          else
+          {
+            Normiplus = (a-amin)/(aplus-amin);
+            Normimin = 1-Normiplus;
+          }
+          for(i=1+(1+A->BlockSize*A->BlockSize)*(iSmallestNorm);i<(1+A->BlockSize*A->BlockSize)*(iSmallestNorm+1);i++)
+          {
+            A->VRe[i-1-A->BlockSize*A->BlockSize]+=Normimin*A->VRe[i];
+            A->VRe[i+1+A->BlockSize*A->BlockSize]+=Normiplus*A->VRe[i];
+          }
         }
       }
       memmove(&(A->VRe[iSmallestNorm*(A->BlockSize*A->BlockSize+1)]), &(A->VRe[(iSmallestNorm+1)*(A->BlockSize*A->BlockSize+1)]),((A->N-iSmallestNorm)*(A->BlockSize*A->BlockSize+1)-1)*sizeof(double));
@@ -794,7 +796,165 @@ uint32_t BlockListOfPolesMoveNegativeEnergyToMu(BlockListOfPoles * const A)
 uint32_t BlockListOfPolesMovePositiveEnergyToMu(BlockListOfPoles * const A)
 {
   //TODO: full implementation
-  
+
+  return 0;
+}
+
+uint32_t BlockListOfPolesPlaceOnMesh(BlockListOfPoles * const A, double const *mesh, int const NE)
+{
+  Complex16 *temp=NULL;
+  double *tempRe=NULL;
+  uint32_t i, j, k;
+  double de, rl, rr;
+  int bs = 1+A->BlockSize*A->BlockSize;
+
+  if(NE<=1)
+  {
+    printf("Error: The mesh should contain at least 2 points.\nSetting N=2.\n");
+    return 1;
+  }
+  for(i=1;i<NE;i++)
+  {
+    if(mesh[i]-mesh[i-1]<DBL_EPSILON)
+    {
+      printf("The mesh are two dense or not in correct order:\nNo. %d - %15.10E \nNo. %d - %15.10E\n", i-1, mesh[i-1], i, mesh[i]);
+      return 1;
+    }
+  }
+
+  if(A->QComplex)
+  {
+    temp = calloc((NE+1)*bs-1,sizeof(Complex16));
+    if(temp==NULL)
+    {
+      printf("malloc failed in BlockListOfPolesPlaceOnMesh\n");
+      return 1;
+    }
+    for(i=0;i<NE;i++)
+    {
+      temp[i*bs].Re = mesh[i];
+    }
+  }
+  else
+  {
+    tempRe = calloc((NE+1)*bs-1,sizeof(double));
+    if(tempRe==NULL)
+    {
+      printf("malloc failed in BlockListOfPolesPlaceOnMesh\n");
+      return 1;
+    }
+    for(i=0;i<NE;i++)
+    {
+      tempRe[i*bs] = mesh[i];
+    }
+  }
+
+
+  if(A->QComplex)
+  {
+    for(i=0;i<A->N;i++)
+    {
+      if(A->V[i*bs].Re<mesh[0])
+      {
+        for(k=1;k<bs;k++)
+        {
+          temp[k].Re += A->V[i*bs+k].Re;
+          temp[k].Im += A->V[i*bs+k].Im;
+        }
+      }
+      else if(A->V[i*bs].Re>=mesh[NE-1])
+      {
+        for(k=1;k<bs;k++)
+        {
+          temp[(NE-1)*bs+k].Re += A->V[i*bs+k].Re;
+          temp[(NE-1)*bs+k].Im += A->V[i*bs+k].Im;
+        }
+      }
+      else
+      {
+        for(j=0;j<NE-1;j++)
+        {
+          if( (A->V[i*bs].Re>=mesh[j]) && (A->V[i*bs].Re<mesh[j+1]) )
+          {
+            de = mesh[j+1] - mesh[j];
+            rr = (A->V[i*bs].Re-mesh[j])/de;
+            rl = 1.0 - rr;
+            for(k=1;k<bs;k++)
+            {
+              temp[j*bs    +k].Re += rl * A->V[i*bs+k].Re;
+              temp[(j+1)*bs+k].Re += rr * A->V[i*bs+k].Re;
+              temp[j*bs    +k].Im += rl * A->V[i*bs+k].Im;
+              temp[(j+1)*bs+k].Im += rr * A->V[i*bs+k].Im;
+            }
+          }
+        }
+      }
+    }
+    memcpy(&(temp[NE*bs]), A->a0, (bs-1)*sizeof(Complex16));
+    free(A->V);
+    A->N = NE;
+    A->V = temp;
+    A->a0=&(A->V[A->N*bs]);
+  }
+  else
+  {
+    for(i=0;i<A->N;i++)
+    {
+      if(A->VRe[i*bs]<mesh[0])
+      {
+        for(k=1;k<bs;k++)
+        {
+          tempRe[k] += A->VRe[i*bs+k];
+        }
+      }
+      else if(A->VRe[i*bs]>=mesh[NE-1])
+      {
+        for(k=1;k<bs;k++)
+        {
+          tempRe[(NE-1)*bs+k] += A->VRe[i*bs+k];
+        }
+      }
+      else
+      {
+        for(j=0;j<NE-1;j++)
+        {
+          if( (A->VRe[i*bs]>=mesh[j]) && (A->VRe[i*bs]<mesh[j+1]) )
+          {
+            if(mesh[j]<A->mu&&mesh[j+1]>=A->mu)
+            {
+              if(A->VRe[i*bs]>A->mu)
+              {
+                rr = 1.0;
+                rl = 0.0;
+              }
+              else
+              {
+                rr = 0.0;
+                rl = 1.0;
+              }
+            }
+            else
+            {
+            de = mesh[j+1] - mesh[j];
+            rr = (A->VRe[i*bs]-mesh[j])/de;
+            rl = 1.0 - rr;
+            }
+            for(k=1;k<bs;k++)
+            {
+              tempRe[j*bs    +k] += rl * A->VRe[i*bs+k];
+              tempRe[(j+1)*bs+k] += rr * A->VRe[i*bs+k];
+            }
+          }
+        }
+      }
+    }
+    memcpy(&(tempRe[NE*bs]), A->a0Re, (bs-1)*sizeof(double));
+    free(A->VRe);
+    A->N = NE;
+    A->VRe = tempRe;
+    A->a0Re=&(A->VRe[A->N*bs]);
+  }
+
   return 0;
 }
 
@@ -806,15 +966,214 @@ uint32_t BlockListOfPolesMovePositiveEnergyToMu(BlockListOfPoles * const A)
  */
 uint32_t SubtractBlockListOfPoles(BlockListOfPoles * const A, BlockListOfPoles const B)
 {
-  //TODO: full implementation
-  
+  // TODO: fine-tuning for small number of poles.
+  double *mesh;
+  double de, rl, rr, zero=1000*DBL_EPSILON;
+  int bs=1+A->BlockSize*A->BlockSize, Nnegwt=0, lb=0, rb=A->N-1;
+  BlockListOfPoles *Bsub;
+  uint32_t i,j;
+
+  if(A->N<=1)
+  {
+    printf("SubtractBlockListOfPoles called with 1 pole or fewer.\n");
+    return 1;
+  }
+  if(A->BlockSize!=B.BlockSize)
+  {
+    printf("Tried to subtract two BlockListOfPoles with different matrix sizes %i and %i\n",A->BlockSize,B.BlockSize);
+    printf("Error in SubtractBlockListOfPoles\n");
+    return 1;
+  }
+  OrderBlockListOfPoles(A);
+
+  mesh = malloc(A->N*sizeof(double));
+  if(A->QComplex)
+  {
+    for(i=0;i<A->N;i++) mesh[i]=A->V[i*bs].Re;
+  }
+  else
+  {
+    for(i=0;i<A->N;i++) mesh[i]=A->VRe[i*bs];
+    if(B.QComplex)
+    {
+      if(MakeRealBlockListOfPolesComplex(A))
+      {
+        printf("MakeRealBlockListOfPolesComplex failed in SubtractBlockListOfPoles\n");
+        return 1;
+      }
+    }
+  }
+
+  Bsub = malloc(sizeof(BlockListOfPoles));
+  CopyBlockListOfPoles(B, Bsub);
+  BlockListOfPolesPlaceOnMesh(Bsub, mesh, A->N);
+
+  if(A->QComplex)
+  {
+    for(j=0;j<bs-1;j++)
+    {
+      A->a0[A->N*bs+j].Re -= Bsub->a0[A->N*bs+j].Re;
+      A->a0[A->N*bs+j].Im -= Bsub->a0[A->N*bs+j].Im;
+    }
+
+    for(i=0;i<A->N;i++)
+    {
+      for(j=1;j<bs;j++)
+      {
+        A->V[i*bs+j].Re -= Bsub->V[i*bs+j].Re;
+        A->V[i*bs+j].Im -= Bsub->V[i*bs+j].Im;
+      }
+      if(ListOfPolesNormFlatWeightComplex(&(A->V[i*bs+1]), A->BlockSize,0,0,0)<-zero) Nnegwt++;
+    }
+    while(Nnegwt!=0)
+    {
+      if(lb==rb)
+      {
+        if(ListOfPolesNormFlatWeightComplex(&(A->V[lb*bs+1]), A->BlockSize,0,0,0)<-zero)
+          printf("Warning: There is only one negative pole left after subtraction.\n");
+        break;
+      }
+      for(i=0;i<A->N;i++)
+      {
+        if(ListOfPolesNormFlatWeightComplex(&(A->V[i*bs+1]), A->BlockSize,0,0,0)<-zero)
+        {
+          // if the negative pole is left-most, merge with the right one.
+          if(i==lb)
+          {
+            for(j=1;j<bs;j++)
+            {
+              A->V[(i+1)*bs+j].Re += A->V[i*bs+j].Re; A->V[i*bs+j].Re = 0;
+              A->V[(i+1)*bs+j].Im += A->V[i*bs+j].Im; A->V[i*bs+j].Im = 0;
+            }
+            lb++;
+          }
+          else if(i==rb)
+          {
+            // if the negative pole is right-most, merge with the left one.
+            for(j=1;j<bs;j++)
+            {
+              A->V[(i-1)*bs+j].Re += A->V[i*bs+j].Re; A->V[i*bs+j].Re = 0;
+              A->V[(i-1)*bs+j].Im += A->V[i*bs+j].Im; A->V[i*bs+j].Im = 0;
+            }
+            rb--;
+          }
+          else
+          {
+            // distribute to the two neighbors.
+            de = A->V[(i+1)*bs].Re - A->V[(i-1)*bs].Re;
+            if(de<DBL_MIN*1000)
+            {
+              rr = 0.5;
+              rl = 0.5;
+            }
+            else
+            {
+              rr = (A->VRe[i*bs]-A->V[(i-1)*bs].Re)/de;
+              rl = 1.0 - rr;
+            }
+            for(j=1;j<bs;j++)
+            {
+              A->V[(i-1)*bs+j].Re += rl*A->V[i*bs+j].Re;
+              A->V[(i-1)*bs+j].Im += rl*A->V[i*bs+j].Im;
+              A->V[(i+1)*bs+j].Re += rr*A->V[i*bs+j].Re;
+              A->V[(i+1)*bs+j].Im += rr*A->V[i*bs+j].Im;
+              A->V[i*bs+j].Re = 0;
+              A->V[i*bs+j].Im = 0;
+            }
+    }
+        }
+      }
+      Nnegwt = 0;
+      for(i=0;i<A->N;i++)
+    {
+        if(ListOfPolesNormFlatWeightComplex(&(A->V[i*bs+1]), A->BlockSize,0,0,0)<-zero) Nnegwt++;
+      }
+    }
+  }
+  else
+  {
+    for(j=0;j<bs-1;j++)
+    {
+      A->a0Re[A->N*bs+j] -= Bsub->a0Re[A->N*bs+j];
+    }
+
+    for(i=0;i<A->N;i++)
+    {
+      for(j=1;j<bs;j++)
+      {
+        A->VRe[i*bs+j] -= Bsub->VRe[i*bs+j];
+      }
+      if(ListOfPolesNormFlatWeightReal(&(A->VRe[i*bs+1]), A->BlockSize,0,0,0)<-zero) Nnegwt++;
+    }
+    while(Nnegwt!=0)
+    {
+      if(lb==rb)
+      {
+        if(ListOfPolesNormFlatWeightReal(&(A->VRe[lb*bs+1]), A->BlockSize,0,0,0)<-zero)
+          printf("Warning: There is only one negative pole left after subtraction.\n");
+        break;
+      }
+      for(i=0;i<A->N;i++)
+      {
+        if(ListOfPolesNormFlatWeightReal(&(A->VRe[i*bs+1]), A->BlockSize,0,0,0)<-zero)
+        {
+          // if the negative pole is left-most, merge with the right one.
+          if(i==lb)
+          {
+            for(j=1;j<bs;j++)
+            {
+              A->VRe[(i+1)*bs+j] += A->VRe[i*bs+j]; A->VRe[i*bs+j] = 0;
+            }
+            lb++;
+          }
+          else if(i==rb)
+          {
+            // if the negative pole is right-most, merge with the left one.
+            for(j=1;j<bs;j++)
+            {
+              A->VRe[(i-1)*bs+j] += A->VRe[i*bs+j]; A->VRe[i*bs+j] = 0;
+            }
+            rb--;
+          }
+          else
+          {
+            // distribute to the two neighbors.
+            de = A->VRe[(i+1)*bs] - A->VRe[(i-1)*bs];
+            if(de<DBL_EPSILON)
+            {
+              rr = 0.5;
+              rl = 0.5;
+            }
+            else
+            {
+              rr = (A->VRe[i*bs]-A->VRe[(i-1)*bs])/de;
+              rl = 1.0 - rr;
+    }
+            for(j=1;j<bs;j++)
+            {
+              A->VRe[(i-1)*bs+j] += rl*A->VRe[i*bs+j];
+              A->VRe[(i+1)*bs+j] += rr*A->VRe[i*bs+j];
+              A->VRe[i*bs+j] = 0;
+            }
+          }
+        }
+      }
+      Nnegwt = 0;
+      for(i=0;i<A->N;i++)
+    {
+        if(ListOfPolesNormFlatWeightReal(&(A->VRe[i*bs+1]), A->BlockSize,0,0,0)<-zero) Nnegwt++;
+      }
+    }
+  }
+
+  ChopBlockListOfPoles(A, zero);
   return 0;
 }
 
 
 
 /*  Reduce the dimension of the Green's function represented by a block list of poles
- *  The basis transformation is given by 
+ *  The basis transformation is given by
  *  BasisB = T BasisA
  *  B = T^* A T^T
  */
@@ -934,10 +1293,12 @@ uint32_t BlockListOfPolesReduceDimNC(BlockListOfPoles const * A, BlockListOfPole
   }
   return 0;
 }
+
 uint32_t BlockListOfPolesTransformNC(BlockListOfPoles const * A, BlockListOfPoles * const B, CompactMatrixType const *T)
 {
   return(BlockListOfPolesReduceDimNC(A,B,T));
 }
+
 uint32_t BlockListOfPolesTransformInlineNC(BlockListOfPoles * const A, CompactMatrixType const *T)
 {
   BlockListOfPoles B;
@@ -957,7 +1318,7 @@ uint32_t BlockListOfPolesG0plusSigmaToGFixedEGrid(BlockListOfPoles const *G0, Bl
   //TODO: this function is wrong??
   printf("This function \"BlockListOfPolesG0plusSigmaToGFixedEGrid\"is wrong ???why???\n");
 
-  
+
   CompactMatrixType S,fun, beta, Char, betasqrt;
   double *val, rest, totnow, totmax, totmin, energy;
   double const dE = (Emax - Emin)/((double)NE);

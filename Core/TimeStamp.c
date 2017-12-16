@@ -24,7 +24,7 @@
                        printf("====    Version compiled at: %s at %s     ====\n",__DATE__,__TIME__);\
                        printf("=============================================================\n");\
                        printf("====    When used in scientific publications please cite ====\n");\
-                       printf("====    one of the following papers as appropiate with   ====\n");\
+                       printf("====    one of the following papers as appropriate with  ====\n");\
                        printf("====    respect to the methods used in your publication: ====\n");\
                        printf("====    Phys. Rev. B 85, 165113 (2012)                   ====\n");\
                        printf("====    Phys. Rev. B 90, 085102 (2014)                   ====\n");\
