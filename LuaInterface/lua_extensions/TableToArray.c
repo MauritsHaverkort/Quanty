@@ -210,7 +210,9 @@ MatrixType* luaL_checkMatrix(lua_State *L, int narg)
  *
  */
 
-
+/*
+ *
+ */
 TriDiagonalMatrixType* luaL_checkTriDiagonalMatrixType(lua_State *L, int narg)
 {
   const char *type;
@@ -269,6 +271,9 @@ TriDiagonalMatrixType* luaL_checkTriDiagonalMatrixType(lua_State *L, int narg)
   return NULL;
 }
 
+/*
+ *
+ */
 BlockTriDiagonalMatrixType* luaL_checkBlockTriDiagonalMatrixType(lua_State *L, int narg)
 {
   const char *type;
@@ -328,6 +333,9 @@ BlockTriDiagonalMatrixType* luaL_checkBlockTriDiagonalMatrixType(lua_State *L, i
   return NULL;
 }
 
+/*
+ *
+ */
 AndersonMatrixType* luaL_checkAndersonMatrixType(lua_State *L, int narg)
 {
   const char *type;
@@ -386,6 +394,9 @@ AndersonMatrixType* luaL_checkAndersonMatrixType(lua_State *L, int narg)
   return NULL;
 }
 
+/*
+ *
+ */
 BlockAndersonMatrixType* luaL_checkBlockAndersonMatrixType(lua_State *L, int narg)
 {
   const char *type;
@@ -445,6 +456,9 @@ BlockAndersonMatrixType* luaL_checkBlockAndersonMatrixType(lua_State *L, int nar
   return NULL;
 }
 
+/*
+ *
+ */
 BADoubleTriDiagonalMatrixType * luaL_checkNatrualImpurityOrbitalMatrixType(lua_State *L, int narg)
 {
   const char *type;
@@ -502,6 +516,9 @@ BADoubleTriDiagonalMatrixType * luaL_checkNatrualImpurityOrbitalMatrixType(lua_S
   return NULL;
 }
 
+/*
+ *
+ */
 BlockNaturalImpurityOrbitalMatrixType * luaL_checkBlockNatrualImpurityOrbitalMatrixType(lua_State *L, int narg)
 {
   const char *type;
@@ -560,6 +577,20 @@ BlockNaturalImpurityOrbitalMatrixType * luaL_checkBlockNatrualImpurityOrbitalMat
   return NULL;
 }
 
+/*
+ *  On the lua stack at position narg should be a response function of any type
+ *  Returned is a list of poles
+ *  transformation to list of poles depends on the setting SuggestedGrid
+ *  if NSuggestedGrid=0 the transformation is made exact, thereby increasing the number of Blocks
+ *  For a tri-diagonal representation with N Blocks of NBlockSize there will be N*NBlockSize poles
+ *  each of NBlockSize.
+ *
+ *  The format of ListOfPoles should be:
+ 
+ *    { {a0,a1,a2,a3}, {b1,b2,b3}, mu=0, type="ListOfPoles"}
+ *    and defines the Green's function
+ *    a0 + sum_{i=1^N} b_i * 1/(w-a_i)
+ */
 ListOfPoles * luaL_checkListOfPoles(lua_State *L, int narg)
 {
   uint32_t i,len;
@@ -669,6 +700,20 @@ ListOfPoles * luaL_checkListOfPoles(lua_State *L, int narg)
   return NULL;
 }
 
+/*
+ *  On the lua stack at position narg should be a Block response function of any type
+ *  Returned is a list of poles
+ *  transformation to list of poles depends on the setting SuggestedGrid
+ *  if NSuggestedGrid=0 the transformation is made exact, thereby increasing the number of Blocks
+ *  For a tri-diagonal representation with N Blocks of NBlockSize there will be N*NBlockSize poles
+ *  each of NBlockSize.
+ *
+ *  The format of ListOfPoles should be:
+ *    { {A0,a1,a2,a3}, {B1,B2,B3}, mu=0, type="ListOfPoles"}
+ *    and defines the Green's function
+ *    A0 + sum_{i=1^N} B_i * 1/(w-a_i)
+ *
+ */
 BlockListOfPoles * luaL_checkBlockListOfPoles(lua_State *L, int narg)
 {
   Bool MakeReal=True;

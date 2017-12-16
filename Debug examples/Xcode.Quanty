@@ -7,6 +7,9 @@ os.exit()
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/1D_NoSpin_RIXS.Quanty")
 os.exit()
 
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/1D_NoSpin_RIXS.Quanty")
+os.exit()
+
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Impurity.Quanty")
 os.exit()
 
