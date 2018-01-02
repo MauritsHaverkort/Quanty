@@ -3102,65 +3102,229 @@ static int LuaTimePrint(lua_State * L)
 
 static int LuaDensityMatrix(lua_State *L)
 {
-  uint32_t len, Nparticles, *jindex;
-  WaveFunctionType *psi;
-  MatrixType Rho;
+  uint32_t i, j, len, Npsi, Nparticles;
+  uint16_t *jindex;
+  WaveFunctionType *psi,**psiList;
+  MatrixType Rho, *RhoMat;
+  Bool tensor=False;
+  LuaOptionsType LuaDensityMatrixOptions[]={
+    {"Tensor", "bool", &(tensor)},
+    {NULL, NULL, NULL}};
   len = (uint32_t)lua_gettop(L);
-  // first argument is a wave-function or a list of functions
-  switch (lua_type(L,1))
-  {
-    case LUA_TTABLE:
-    {
-      if(len==1)
-      {
-        return luaL_error(L, "Error: DensityMatrix when density matrix of a list of functions is calculated an explicit labeling of the orbitals is required\n");
-      }
-      lua_newtable(L);
-      lua_pushnil(L);
-      while(lua_next(L, 1) != 0)
-      {
-        lua_insert(L, 1);
-        lua_pushvalue(L, -3);
-        LuaDensityMatrix(L);
-        lua_pushvalue(L, -3);
-        lua_replace(L, -3);
-        lua_settable(L, -4);
-        lua_remove(L, 1);
-      }
-      return 1;
-    }
-    case LUA_TUSERDATA:
-    {
-      if (luaL_testudata(L, 1, "Wavefunction_Type") != NULL)
-      {
-        psi = (WaveFunctionType *) luaL_checkudata(L, 1, "Wavefunction_Type");
-      }
-      else
-      {
-        return luaL_error(L, "Error: DensityMatrix expects a function or a list of functions on the first position\n");
-      }
-      break;
-    }
-    default:
-    {
-      return luaL_error(L, "Error: DensityMatrix expects a function or a list of functions on the first position\n");
-    }
-  }
-  // the argument at position len is a list of integers
   if(len==1)
   {
-    CalculateDensityMatrix(&Rho, *psi);
+    // first argument is a wave-function or a list of functions
+    switch (lua_type(L,1))
+    {
+      case LUA_TTABLE:
+      {
+        psiList=luaL_checkarray_PointerWaveFunctionType(L, 1, &Npsi);
+        lua_createtable(L,Npsi,0);
+        for(i=0;i<Npsi;i++)
+        {
+          CalculateDensityMatrix(&Rho, *psiList[i]);
+          LuaPushTable_MatrixType(L, &Rho);
+          lua_rawseti(L, -2, i+1);
+          FreeMatrix(&Rho);
+        }
+        free(psiList);
+        return 1;
+      }
+      case LUA_TUSERDATA:
+      {
+        if (luaL_testudata(L, 1, "Wavefunction_Type") != NULL)
+        {
+          psi = (WaveFunctionType *) luaL_checkudata(L, 1, "Wavefunction_Type");
+          CalculateDensityMatrix(&Rho, *psi);
+          LuaPushTable_MatrixType(L, &Rho);
+          FreeMatrix(&Rho);
+          return 1;
+        }
+        return luaL_error(L, "Error: DensityMatrix expects a function or a list of functions on the first position\n");
+      }
+    }
+    return luaL_error(L, "Error: DensityMatrix expects a function or a list of functions on the first position\n");
   }
-  else
+  else if (len==3)
   {
-    jindex = luaL_checkarray_unit32_t(L,len,&Nparticles);
-    // calculate the density matrix
-    CalculatePartialDensityMatrix(&Rho, *psi, Nparticles, jindex);
+    LuaCheckOptions(L, 3, LuaDensityMatrixOptions);
+    jindex = luaL_checkarray_unit16_t(L,2,&Nparticles);
+    // first argument is a wave-function or a list of functions
+    switch (lua_type(L,1))
+    {
+      case LUA_TTABLE:
+      {
+        if(tensor==False)
+        {
+          psiList=luaL_checkarray_PointerWaveFunctionType(L, 1, &Npsi);
+          lua_createtable(L,Npsi,0);
+          for(i=0;i<Npsi;i++)
+          {
+            CalculatePartialDensityMatrix(&Rho, *psiList[i], Nparticles, jindex);
+            LuaPushTable_MatrixType(L, &Rho);
+            lua_rawseti(L, -2, i+1);
+            FreeMatrix(&Rho);
+          }
+          free(psiList);
+          return 1;
+        }
+        else
+        {
+          /* calcualte partial density tensor for a list of functions */
+          psi=luaL_checkarray_WaveFunctionType(L, 1, &Npsi);
+          RhoMat=malloc(Npsi*Npsi*sizeof(MatrixType));
+          CalculatePartialDensityMatrixWithOffDiagonals(RhoMat, Npsi, psi, Nparticles, jindex);
+          lua_createtable(L,Npsi,0);
+          for(i=0;i<Npsi;i++)
+          {
+            lua_createtable(L,Npsi,0);
+            for(j=0;j<Npsi;j++)
+            {
+              LuaPushTable_MatrixType(L, &(RhoMat[i*Npsi+j]));
+              lua_rawseti(L, -2, j+1);
+              FreeMatrix(&(RhoMat[i*Npsi+j]));
+            }
+            lua_rawseti(L, -2, i+1);
+          }
+          free(psi);
+          free(RhoMat);
+          return 1;
+        }
+      }
+      case LUA_TUSERDATA:
+      {
+        if(tensor==False)
+        {
+          if (luaL_testudata(L, 1, "Wavefunction_Type") != NULL)
+          {
+            psi = (WaveFunctionType *) luaL_checkudata(L, 1, "Wavefunction_Type");
+            CalculatePartialDensityMatrix(&Rho, *psi, Nparticles, jindex);
+            LuaPushTable_MatrixType(L, &Rho);
+            FreeMatrix(&Rho);
+            return 1;
+          }
+          return luaL_error(L, "Error: DensityMatrix expects a function or a list of functions on the first position\n");
+        }
+        return luaL_error(L, "Error: DensityMatrix expects a list of functions on the first position when the option {\"Tensor\",True} is set\n");
+      }
+    }
+    return luaL_error(L, "Error: DensityMatrix expects a function or a list of functions on the first position\n");
   }
-  // return a lua table of tables of dimension Nparticles by Nparticles
-  LuaPushTable_MatrixType(L, &Rho);
-  FreeMatrix(&Rho);
-  return 1;
+  else if (len==2)
+  {
+    /* position 1 is either a list of functions or a function */
+    /* position 2 is either a list of integers or a list of options */
+    luaL_checktype(L, 2, LUA_TTABLE);
+    lua_rawgeti(L, 2, 1);
+    switch (lua_type(L,-1))
+    {
+      case LUA_TTABLE:
+      {
+        lua_pop(L,1);
+        LuaCheckOptions(L, 2, LuaDensityMatrixOptions);
+        switch (lua_type(L,1))
+        {
+          case LUA_TTABLE:
+          {
+            if(tensor==False)
+            {
+              psiList=luaL_checkarray_PointerWaveFunctionType(L, 1, &Npsi);
+              lua_createtable(L,Npsi,0);
+              for(i=0;i<Npsi;i++)
+              {
+                CalculateDensityMatrix(&Rho, *psiList[i]);
+                LuaPushTable_MatrixType(L, &Rho);
+                lua_rawseti(L, -2, i+1);
+                FreeMatrix(&Rho);
+              }
+              free(psiList);
+              return 1;
+            }
+            else
+            {
+              /* calcualte density tensor for a list of functions */
+              psi=luaL_checkarray_WaveFunctionType(L, 1, &Npsi);
+              RhoMat=malloc(Npsi*Npsi*sizeof(MatrixType));
+              CalculateDensityMatrixWithOffDiagonals(RhoMat, Npsi, psi);
+              lua_createtable(L,Npsi,0);
+              for(i=0;i<Npsi;i++)
+              {
+                lua_createtable(L,Npsi,0);
+                for(j=0;j<Npsi;j++)
+                {
+                  LuaPushTable_MatrixType(L, &(RhoMat[i*Npsi+j]));
+                  lua_rawseti(L, -2, j+1);
+                  FreeMatrix(&(RhoMat[i*Npsi+j]));
+                }
+                lua_rawseti(L, -2, i+1);
+              }
+              free(psi);
+              free(RhoMat);
+              return 1;
+            }
+          }
+          case LUA_TUSERDATA:
+          {
+            if(tensor==False)
+            {
+              if (luaL_testudata(L, 1, "Wavefunction_Type") != NULL)
+              {
+                psi = (WaveFunctionType *) luaL_checkudata(L, 1, "Wavefunction_Type");
+                CalculateDensityMatrix(&Rho, *psi);
+                LuaPushTable_MatrixType(L, &Rho);
+                FreeMatrix(&Rho);
+                return 1;
+              }
+              return luaL_error(L, "Error: DensityMatrix expects a function or a list of functions on the first position\n");
+            }
+            return luaL_error(L, "Error: DensityMatrix expects a list of functions on the first position when the option {\"Tensor\",True} is set\n");
+          }
+        }
+        return luaL_error(L, "Error: DensityMatrix expects a function or a list of functions on the first position\n");
+      }
+      case LUA_TNUMBER:
+      {
+        lua_pop(L,1);
+        jindex = luaL_checkarray_unit16_t(L,2,&Nparticles);
+        switch (lua_type(L,1))
+        {
+          case LUA_TTABLE:
+          {
+            psiList=luaL_checkarray_PointerWaveFunctionType(L, 1, &Npsi);
+            lua_createtable(L,Npsi,0);
+            for(i=0;i<Npsi;i++)
+            {
+              CalculatePartialDensityMatrix(&Rho, *psiList[i], Nparticles, jindex);
+              LuaPushTable_MatrixType(L, &Rho);
+              lua_rawseti(L, -2, i+1);
+              FreeMatrix(&Rho);
+            }
+            free(psiList);
+            return 1;
+          }
+          case LUA_TUSERDATA:
+          {
+            if(tensor==False)
+            {
+              if (luaL_testudata(L, 1, "Wavefunction_Type") != NULL)
+              {
+                psi = (WaveFunctionType *) luaL_checkudata(L, 1, "Wavefunction_Type");
+                CalculatePartialDensityMatrix(&Rho, *psi, Nparticles, jindex);
+                LuaPushTable_MatrixType(L, &Rho);
+                FreeMatrix(&Rho);
+                return 1;
+              }
+              return luaL_error(L, "Error: DensityMatrix expects a function or a list of functions on the first position\n");
+            }
+            return luaL_error(L, "Error: DensityMatrix expects a list of functions on the first position when the option {\"Tensor\",True} is set\n");
+          }
+        }
+        return luaL_error(L, "Error: DensityMatrix expects a function or a list of functions on the first position\n");
+      }
+    }
+    return luaL_error(L, "Error: DensityMatrix position 2 should either be a list of integers selecting the orbitals to include or a list of options\n");
+  }
+  return luaL_error(L, "Error: DensityMatrix called with %d arguments, 1, 2 or 3 arguments expected", len);
 }
 
 static int LuaStatistics(lua_State *L)

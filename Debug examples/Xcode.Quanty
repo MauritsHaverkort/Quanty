@@ -1,5 +1,7 @@
 Verbosity(0xFFFFFFFF)
 
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Functions/DensityMatrix.Quanty")
+os.exit()
 
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/ResponseFunctions.Quanty")
 os.exit()

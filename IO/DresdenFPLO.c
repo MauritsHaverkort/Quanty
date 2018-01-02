@@ -54,7 +54,7 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
   char ReadLine[1024];
   char *phrase[1024] = {NULL}, tmpstr[1024];
   double tmpvec[3];
-  uint32_t Nphrase, Nwandef, Nimag=0, i, j, ihop, iatom;
+  uint32_t Nphrase, Nwandef, Nimag=0, i, j, ihop=0, iatom;
   const int NhopMax=256;
 
   ReadLine[1023] = '\0';

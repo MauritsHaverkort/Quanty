@@ -1,4 +1,3 @@
-
 /*
  *  Calculate the density matrix of a wave-function
  *  On input psi contains a wave-function and Rho points to a not allocated matrix
@@ -24,6 +23,7 @@ uint32_t CalculateDensityMatrix(MatrixType * const Rho, const WaveFunctionType p
   O.NBoson = psi.NBoson;
   O.NWord = psi.NWord;
   O.MaxLength = 2;
+  O.Res.N=0;
   O.l = malloc(3 * sizeof(OperatorFixedLengthType));
   if (O.l == NULL)
   {
@@ -85,6 +85,110 @@ uint32_t CalculateDensityMatrix(MatrixType * const Rho, const WaveFunctionType p
   return 0;
 }
 
+/*  Calculate the density matrix of a set of wave-functions
+ *  On input psi contains a wave-function and Rho is a pointer to an array of NPsi*NPsi not allocated matrices
+ *  On excite Rho[i + NPsi*j] contains an NFermionIncluded square matrix
+ *  < psi[j] | a^dag_t` a_t | psi[i] >
+ *
+ */
+uint32_t CalculatePartialDensityMatrixWithOffDiagonals(MatrixType * const Rho, uint32_t const NPsi, const WaveFunctionType * const psi, uint32_t const NFermionIncluded, uint16_t const * FermionIncluded)
+{
+  uint32_t i,j,k,l;
+  MatrixType aDaga;
+  OperatorType O;
+  /* init matrices Rho and aDaga */
+  aDaga.QComplex=0;
+  for(j=0;j<NPsi;j++)
+  {
+    for(i=0;i<NPsi;i++)
+    {
+      Rho[i+NPsi*j].Ni=NFermionIncluded;
+      Rho[i+NPsi*j].Nj=NFermionIncluded;
+      Rho[i+NPsi*j].QComplex = (((psi[i].QComplex==0)&&(psi[j].QComplex==0)) ? 0 : 1);
+      aDaga.QComplex += Rho[i+NPsi*j].QComplex;
+      InitMatrix(&(Rho[i+NPsi*j]));
+    }
+  }
+  aDaga.Ni=NPsi;
+  aDaga.Nj=NPsi;
+  InitMatrix(&aDaga);
+  /* init number operatro */
+  strcpy(O.Name, "Calc. Den. Mat. Int. Opp. ");
+  strcpy(Rho->Name, "Density Matrix.");
+  O.QComplex = 0;
+  O.NFermion = psi[0].NFermion;
+  O.NBoson = psi[0].NBoson;
+  O.NWord = psi[0].NWord;
+  O.MaxLength = 2;
+  O.Res.N=0;
+  O.l = malloc(3 * sizeof(OperatorFixedLengthType));
+  if (O.l == NULL)
+  {
+    printf("alloc of O.l failed in CalculateDensityMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
+  O.l[0].N = 0;
+  O.l[0].NBitsKey = 0;
+  O.l[0].NAloc = 0;
+  O.l[0].QComplex = 0;
+  O.l[1].N = 0;
+  O.l[1].NBitsKey = 0;
+  O.l[1].NAloc = 0;
+  O.l[1].QComplex = 0;
+  O.l[2].N = 1;
+  O.l[2].NBitsKey = 0;
+  O.l[2].NAloc = 1;
+  O.l[2].QComplex = 0;
+  O.l[2].VRe = malloc(sizeof(double));
+  O.l[2].VRe[0] = 1;
+  if (O.l[2].VRe == NULL)
+  {
+    printf("alloc of O.l[2].VRe failed in CalculateDensityMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
+  O.l[2].o = malloc(2 * sizeof(uint16_t));
+  if (O.l[2].o == NULL)
+  {
+    printf("alloc of O.l[2].o failed in CalculateDensityMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
+  /* loop over all included fermions */
+  for(k=0;k<NFermionIncluded;k++)
+  {
+    O.l[2].o[1] = (FermionIncluded[k] | CrAnMask);
+    for(l=0;l<NFermionIncluded;l++)
+    {
+      O.l[2].o[0] = FermionIncluded[l];
+      PsiOperatorPsiMatrix(O, psi, &aDaga);
+      for(i=0;i<NPsi;i++)
+      {
+        for(j=0;j<NPsi;j++)
+        {
+          Rho[j+NPsi*i].VRe[k][l]=aDaga.VRe[i][j];
+          if(Rho[j+NPsi*i].QComplex)
+          {
+            Rho[j+NPsi*i].VIm[k][l]=aDaga.VIm[i][j];
+          }
+        }
+      }
+    }
+  }
+  return 0;
+}
+uint32_t CalculateDensityMatrixWithOffDiagonals(MatrixType * const Rho, uint32_t const NPsi, const WaveFunctionType * const psi)
+{
+  uint32_t i;
+  uint16_t FermionIncluded[psi[0].NFermion+psi[0].NBoson];
+  for(i=0;i<psi[0].NFermion+psi[0].NBoson;i++)
+  {
+    FermionIncluded[i]=i;
+  }
+  return CalculatePartialDensityMatrixWithOffDiagonals(Rho,NPsi,psi,psi[0].NFermion+psi[0].NBoson,FermionIncluded);
+}
+
 
 /*
  *  Calculate the density matrix of a wave-function
@@ -112,6 +216,7 @@ uint32_t CalculateDensityCorrelationMatrix(MatrixType * const Rho, const WaveFun
   O.NBoson = psi.NBoson;
   O.NWord = psi.NWord;
   O.MaxLength = 4;
+  O.Res.N=0;
   O.l = malloc(5 * sizeof(OperatorFixedLengthType));
   if (O.l == NULL)
   {
@@ -220,6 +325,7 @@ uint32_t CalculatePartialDensityCorrelationTensor(Complex16 * Rho, const WaveFun
   O.NBoson = psi.NBoson;
   O.NWord = psi.NWord;
   O.MaxLength = 4;
+  O.Res.N=0;
   O.l = malloc(5 * sizeof(OperatorFixedLengthType));
   if (O.l == NULL)
   {
@@ -329,6 +435,7 @@ uint32_t CalculateSpinCorrelationMatrix(MatrixType * const Rho, const WaveFuncti
   O.NBoson = psi.NBoson;
   O.NWord = psi.NWord;
   O.MaxLength = 4;
+  O.Res.N=0;
   O.l = malloc(5 * sizeof(OperatorFixedLengthType));
   if (O.l == NULL)
   {
@@ -459,7 +566,7 @@ uint32_t CalculateSpinCorrelationMatrix(MatrixType * const Rho, const WaveFuncti
  *  On input psi contains a wave-function and Rho points to a not allocated matrix
  *  On excite Rho contains an Nparticles by Nparticles matrix
  */
-uint32_t CalculatePartialDensityMatrix(MatrixType * const Rho, const WaveFunctionType psi, const uint32_t Nparticles, const uint32_t * const jindex)
+uint32_t CalculatePartialDensityMatrix(MatrixType * const Rho, const WaveFunctionType psi, const uint32_t Nparticles, const uint16_t * const jindex)
 {
   uint32_t i, j;
   OperatorType O;
@@ -479,6 +586,7 @@ uint32_t CalculatePartialDensityMatrix(MatrixType * const Rho, const WaveFunctio
   O.NBoson = psi.NBoson;
   O.NWord = psi.NWord;
   O.MaxLength = 2;
+  O.Res.N=0;
   O.l = malloc(3 * sizeof(OperatorFixedLengthType));
   if (O.l == NULL)
   {

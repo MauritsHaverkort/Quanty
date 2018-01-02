@@ -1,0 +1,116 @@
+NF=6
+NB=0
+
+psi1 = NewWavefunction(NF,NB,{{"100010",sqrt(9/10)},{"011000",I*sqrt(1/10)}})
+psi1.Name="psi 1"
+psi2 = NewWavefunction(NF,NB,{{"010010",1}})
+psi2.Name="psi 2"
+psi3 = NewWavefunction(NF,NB,{{"010010",sqrt(1/2)},{"010001",sqrt(1/2)}})
+psi3.Name="psi 3"
+psi4 = NewWavefunction(NF,NB,{{"010010",sqrt(1/2)},{"010001",I*sqrt(1/2)}})
+psi4.Name="psi 4"
+
+rho1 = DensityMatrix(psi1)
+rho2 = DensityMatrix(psi2)
+rho3 = DensityMatrix(psi3)
+rho4 = DensityMatrix(psi4)
+
+rho1partial = DensityMatrix(psi1,{1,4,5})
+rho2partial = DensityMatrix(psi2,{1,4,5})
+rho3partial = DensityMatrix(psi3,{1,4,5})
+rho4partial = DensityMatrix(psi4,{1,4,5})
+
+
+rhoall = DensityMatrix({psi1,psi2,psi3,psi4})
+
+rhoallpartial = DensityMatrix({psi1,psi2,psi3,psi4},{1,4,5})
+
+rhotensor = DensityMatrix({psi1,psi2,psi3,psi4},{{"Tensor",true}})
+
+rhotensorpartial = DensityMatrix({psi1,psi2,psi3,psi4},{1,4,5},{{"Tensor",true}})
+
+print("===================================================")
+print("===================================================")
+print("===================================================")
+print(psi1)
+print(rho1)
+print(rho1partial)
+print(rhoall[1])
+print(rhoallpartial[1])
+print(rhotensor[1][1])
+print(rhotensorpartial[1][1])
+
+print()
+print("===================================================")
+print("===================================================")
+print("===================================================")
+print(psi2)
+print(rho2)
+print(rho2partial)
+print(rhoall[2])
+print(rhoallpartial[2])
+print(rhotensor[2][2])
+print(rhotensorpartial[2][2])
+
+print()
+print("===================================================")
+print("===================================================")
+print("===================================================")
+print(psi3)
+print(rho3)
+print(rho3partial)
+print(rhoall[3])
+print(rhoallpartial[3])
+print(rhotensor[3][3])
+print(rhotensorpartial[3][3])
+
+print()
+print("===================================================")
+print("===================================================")
+print("===================================================")
+print(psi4)
+print(rho4)
+print(rho4partial)
+print(rhoall[4])
+print(rhoallpartial[4])
+print(rhotensor[4][4])
+print(rhotensorpartial[4][4])
+
+print()
+print("===================================================")
+print("===================================================")
+print("===================================================")
+print("Element rho[i][j] is found in the i-th row and j-th column")
+print("rho4[5][6] is thus equal to",rho4[5][6])
+print("which is <psi4 | a^{dag}_{5-1} a_{6-1} | psi4 >")
+print("                         a_{6-1} |psi_4> = I \\sqrt{1/2} \"010000\"")
+print("          a^{\\dag}_{5-1} a_{6-1} |psi_4> = I \\sqrt{1/2} \"010010\"")
+print("< psi_4 | a^{\\dag}_{5-1} a_{6-1} |psi_4> = I 1/2 ")
+
+
+print()
+print("===================================================")
+print("===================================================")
+print("===================================================")
+print()
+print("RhoTensor[i][j] = <psi_{i} | a^{dag} a | psi_{j}>")
+print("For a function |vec>  = \\sum_k v_k  |psi_k> given as a vector v  with elements v_k and")
+print("For a function |vec'> = \\sum_k v'_k |psi_k> given as a vector v' with elements v'_k")
+print("We can calculate the density matrix between these two as")
+print("<vec'|a^dag a|vec> = \\sum_{k',k} <psi_{k'} v'_{k'} | a^{dag}a | v_k psi_k >")
+print("                   = \\sum_{k',k} v'_k'^* v_k <psi_{k'} | a^{dag} a | psi_{k} > ")
+print("                   = \\sum_{k',k} v'_k'^* v_k RhoTensor[k'][k] ")
+print("         using that (M.V)[i] = \\sum_j M[i][j] V[j] ")
+print("         we have")
+print("<vec'|a^dag a|vec> = v'^* . RhoTensor . v")
+print()
+
+
+for i=1,4 do
+  for j=1,4 do
+    io.write("<psi_{i=",i,"} | a^{dag} a | psi_{j=",j,"}>\n")
+    print(rhotensor[i][j])
+    print(rhotensorpartial[i][j])
+    print()
+  end
+end
