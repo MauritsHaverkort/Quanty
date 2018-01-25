@@ -90,6 +90,7 @@ uint32_t RealBlockWaveFunctionAddElement(WaveFunctionType * const psi, const uin
 {
   uint32_t i, j, k, NextIndex, ThereIsANext, PsiAIsPsiB;
   void  *temp;
+  if(Npsi==0) return 0;
   /* test if the key that belongs to psi already excists */
   if (psi[0].KeyList[hash(det, psi[0].NWord, psi[0].NBitsKey)] == 0)
   {                             /* add a new element to psi with unique new key */
@@ -296,6 +297,7 @@ uint32_t ComplexBlockWaveFunctionAddElement(WaveFunctionType * const psi, const 
 {
   uint32_t i, j, k, NextIndex, ThereIsANext, PsiAIsPsiB;
   void  *temp;
+  if(Npsi==0) return 0;
   /* test if the key that belongs to psi already excists */
   if (psi[0].KeyList[hash(det, psi[0].NWord, psi[0].NBitsKey)] == 0)
   {                             /* add a new element to psi with unique new key */
@@ -566,6 +568,7 @@ uint32_t BlockWaveFunctionAddElement(WaveFunctionType * const psi, const uint8_t
 {
   double imsum,resum;
   uint32_t i;
+  if(Npsi==0) return 0;
   if(psi[0].QComplex==0)
   {
     if(aIm==NULL)
@@ -607,6 +610,7 @@ uint32_t BlockWaveFunctionAddElement(WaveFunctionType * const psi, const uint8_t
 void RealBlockWaveFunctionAddElementConserveBasis(WaveFunctionType const *psi, const uint8_t * const det, const double * a, const uint32_t Npsi)
 {
   uint32_t i, NextIndex, PsiAIsPsiB;
+  if(Npsi==0) return;
   /* test if the key that belongs to psi already excists */
   NextIndex=psi[0].KeyList[hash(det, psi[0].NWord, psi[0].NBitsKey)];
   if (!NextIndex)
@@ -651,6 +655,7 @@ void RealBlockWaveFunctionAddElementConserveBasis(WaveFunctionType const *psi, c
 void ComplexBlockWaveFunctionAddElementConserveBasis(WaveFunctionType const *psi, const uint8_t * const det, const double * aRe, const double * aIm, const uint32_t Npsi)
 {
   uint32_t i, NextIndex, PsiAIsPsiB;
+  if(Npsi==0) return;
   /* test if the key that belongs to psi already excists */
   NextIndex=psi[0].KeyList[hash(det, psi[0].NWord, psi[0].NBitsKey)];
   if (!NextIndex)
@@ -905,6 +910,7 @@ uint32_t RealBlockWaveFunctionSubtractMultipliedUnionBasis(WaveFunctionType * co
 {
   uint32_t i, j, k;
   double bVRe[Npsia];
+  if(Npsib==0) return 0;
   for(k=b[0].N;k!=0;--k)
   {
     for(i=0;i<Npsia;i++)
@@ -939,6 +945,7 @@ uint32_t ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(WaveFunctionType *
   uint32_t i, j, k;
   double bVRe[Npsia];
   double bVIm[Npsia];
+  if(Npsib==0) return 0;
   for(k=b[0].N;k!=0;--k)
   {
     for(i=0;i<Npsia;i++)
@@ -982,6 +989,7 @@ void RealBlockWaveFunctionRestrict(WaveFunctionType * const a, const uint32_t Np
 {
   uint32_t i,startN, iBlok, iElement;
   double aval[Npsi];
+  if(Npsi==0) return ;
   startN = a[0].N;
   for(i=0;i<Npsi;i++)
   {
@@ -1039,6 +1047,7 @@ void ComplexBlockWaveFunctionRestrict(WaveFunctionType * const a, const uint32_t
   uint32_t i,startN, iBlok, iElement;
   double avalRe[Npsi];
   double avalIm[Npsi];
+  if(Npsi==0) return;
   startN = a[0].N;
   for(i=0;i<Npsi;i++)
   {
@@ -1100,6 +1109,7 @@ void ComplexBlockWaveFunctionRestrict(WaveFunctionType * const a, const uint32_t
 }
 void BlockWaveFunctionRestrict(WaveFunctionType * const a, const uint32_t Npsi, const DeterminantRestrictionType res)
 {
+  if(Npsi==0) return;
   if(a[0].QComplex==0)
   {
     RealBlockWaveFunctionRestrict(a, Npsi, res);
@@ -1140,6 +1150,7 @@ uint32_t BlockOperatorPsiSerialRestricted(const OperatorType H, WaveFunctionType
 {
   uint32_t i,j;
   VerbosityPrintf(0x0002,"Start of BlockOperatorPsiSerialRestricted\n");
+  if(Npsi==0) return 0;
   if(OperatorPsiRestricted(H, psi[0], &(Opsi[0]), Restrictions))
   {
     printf("OperatorPsi failed in BlockOperatorPsiSerial\n");
@@ -1176,6 +1187,7 @@ uint32_t BlockOperatorPsiSerial(const OperatorType H, WaveFunctionType const * c
   uint32_t i,j;
   if(H.Res.N!=0) return BlockOperatorPsiSerialRestricted(H, psi, Opsi, Npsi, H.Res);
   VerbosityPrintf(0x0002,"Start of BlockOperatorPsiSerial\n");
+  if(Npsi==0) return 0;
   if(OperatorPsi(H, psi[0], &(Opsi[0])))
   {
     printf("OperatorPsi failed in BlockOperatorPsiSerial\n");
@@ -1239,6 +1251,7 @@ uint32_t BlockOperatorPsiRestrictedMC(const OperatorType O, WaveFunctionType con
 }
 uint32_t BlockOperatorPsiRestricted(const OperatorType O, WaveFunctionType const * const psi, WaveFunctionType * const Opsi, DeterminantRestrictionType const Restrictions, uint32_t const Npsi)
 {
+  if(Npsi==0) return 0;
   if (O.QComplex == 0)
   {
     if (psi[0].QComplex)
@@ -1271,6 +1284,7 @@ uint32_t BlockOperatorPsiRR(const OperatorType O, WaveFunctionType const * const
   uint32_t i, j, k, l, m, ii, ij, ik, OutOffMem;
   int    iOMP;
   double phase;
+  if(Npsi==0) return 0;
   Opsi[0].QComplex = 0;
   Opsi[0].NFermion = psi[0].NFermion;
   Opsi[0].NBoson = psi[0].NBoson;
@@ -1364,6 +1378,7 @@ uint32_t BlockOperatorPsiRC(const OperatorType O, WaveFunctionType const * const
   uint32_t i, j, k, l, m, ii, ij, ik, OutOffMem;
   int    iOMP;
   double phase;
+  if(Npsi==0) return 0;
   Opsi[0].QComplex = 1;
   Opsi[0].NFermion = psi[0].NFermion;
   Opsi[0].NBoson = psi[0].NBoson;
@@ -1460,6 +1475,7 @@ uint32_t BlockOperatorPsiCR(const OperatorType O, WaveFunctionType const * const
   uint32_t i, j, k, l, m, ii, ij, ik, OutOffMem;
   int    iOMP;
   double phase;
+  if(Npsi==0) return 0;
   Opsi[0].QComplex = 1;
   Opsi[0].NFermion = psi[0].NFermion;
   Opsi[0].NBoson = psi[0].NBoson;
@@ -1556,6 +1572,7 @@ uint32_t BlockOperatorPsiCC(const OperatorType O, WaveFunctionType const * const
   uint32_t i, j, k, l, m, ii, ij, ik, OutOffMem;
   int    iOMP;
   double phase;
+  if(Npsi==0) return 0;
   Opsi[0].QComplex = 1;
   Opsi[0].NFermion = psi[0].NFermion;
   Opsi[0].NBoson = psi[0].NBoson;
@@ -1652,6 +1669,7 @@ uint32_t BlockOperatorPsiMR(const OperatorType O, WaveFunctionType const * const
   uint32_t i, j, k, l, m, ii, ij, ik, OutOffMem;
   int    iOMP;
   double phase;
+  if(Npsi==0) return 0;
   Opsi[0].QComplex = 1;
   Opsi[0].NFermion = psi[0].NFermion;
   Opsi[0].NBoson = psi[0].NBoson;
@@ -1781,6 +1799,7 @@ uint32_t BlockOperatorPsiMC(const OperatorType O, WaveFunctionType const * const
   uint32_t i, j, k, l, m, ii, ij, ik, OutOffMem;
   int    iOMP;
   double phase;
+  if(Npsi==0) return 0;
   Opsi[0].QComplex = 1;
   Opsi[0].NFermion = psi[0].NFermion;
   Opsi[0].NBoson = psi[0].NBoson;
@@ -1907,6 +1926,7 @@ uint32_t BlockOperatorPsiMC(const OperatorType O, WaveFunctionType const * const
 }
 uint32_t BlockOperatorPsi(const OperatorType O, WaveFunctionType const * const psi, WaveFunctionType * const Opsi, uint32_t const Npsi)
 {
+  if(Npsi==0) return 0;
   if(O.Res.N!=0) return BlockOperatorPsiRestricted(O, psi, Opsi, O.Res, Npsi);
   if (O.QComplex == 0)
   {
@@ -1938,6 +1958,7 @@ uint32_t BlockOperatorPsi(const OperatorType O, WaveFunctionType const * const p
 void RealBlockWaveFunctionTruncateBasis(WaveFunctionType *const psi, uint32_t const Npsi, const double epsilon)
 {
   uint32_t startN, iBlok, iElement, ipsi, KeepDeterminant;
+  if(Npsi==0) return;
   for(ipsi=0;ipsi<Npsi;ipsi++)
   {
     psi[ipsi].ValueRe[0][0] = 0;
@@ -2028,6 +2049,7 @@ void ComplexBlockWaveFunctionTruncateBasis(WaveFunctionType *const psi, uint32_t
 {
   double const epsilonSqr=Sqr(epsilon);
   uint32_t startN, iBlok, iElement, ipsi, KeepDeterminant;
+  if(Npsi==0) return;
   for(ipsi=0;ipsi<Npsi;ipsi++)
   {
     psi[ipsi].ValueRe[0][0] = 0;
@@ -2123,6 +2145,7 @@ void ComplexBlockWaveFunctionTruncateBasis(WaveFunctionType *const psi, uint32_t
 }
 void BlockWaveFunctionTruncateBasis(WaveFunctionType *const psi, uint32_t const Npsi, const double epsilon)
 {
+  if(Npsi==0) return;
   if(psi[0].QComplex)
   {
     ComplexBlockWaveFunctionTruncateBasis(psi, Npsi, epsilon);
@@ -2141,9 +2164,16 @@ uint32_t BlockWaveFunctionCalculatOverlapMatrixSerial(WaveFunctionType *const ps
   uint32_t i,j;
   S->Ni=Npsi;
   S->Nj=Npsi;
-  S->QComplex=psi[0].QComplex;
+  if(Npsi==0)
+  {
+    S->QComplex=0;
+  }
+  else
+  {
+    S->QComplex=psi[0].QComplex;
+  }
   InitCompactMatrix(S);
-  if(psi[0].QComplex)
+  if(S->QComplex)
   {
     for(i=0;i<Npsi;i++)
     {
@@ -2173,6 +2203,7 @@ uint32_t BlockWaveFunctionCalculatOverlapMatrixSerial(WaveFunctionType *const ps
 uint32_t RealBlockWaveFunctionDotProduct( const WaveFunctionType * a, const uint32_t Npsia, const WaveFunctionType * b, const uint32_t Npsib, CompactMatrixType *S)
 {
   uint32_t failed=0;
+  if((Npsia==0)||(Npsib==0)) return 0;
   /* switch coefficients to reduce number of hash lookups */
   if (a[0].N > b[0].N)
   {
@@ -2266,6 +2297,7 @@ uint32_t RealBlockWaveFunctionDotProduct( const WaveFunctionType * a, const uint
 uint32_t ComplexBlockWaveFunctionDotProduct( const WaveFunctionType * a, const uint32_t Npsia, const WaveFunctionType * b, const uint32_t Npsib, CompactMatrixType *S)
 {
   uint32_t failed=0;
+  if((Npsia==0)||(Npsib==0)) return 0;
   /* switch coefficients to reduce number of hash lookups */
   if (a[0].N > b[0].N)
   {
@@ -2365,6 +2397,7 @@ uint32_t ComplexBlockWaveFunctionDotProduct( const WaveFunctionType * a, const u
 }
 uint32_t BlockWaveFunctionDotProduct( const WaveFunctionType * a, const uint32_t Npsia, const WaveFunctionType * b, const uint32_t Npsib, CompactMatrixType *S)
 {
+  if((Npsia==0)||(Npsib==0)) return 0;
   if(a[0].QComplex==0)
   {
     if(b[0].QComplex==0)

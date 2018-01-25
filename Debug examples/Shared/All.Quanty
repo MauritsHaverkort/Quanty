@@ -128,3 +128,63 @@ function LoopOverAllAtomicConfigurations(fun1,fun2)
     end
   end
 end
+
+-- define a function that creaetes an operator of effective angular momentum l_eff=1 for a t_2g shell
+function EffectiveOrbitalAngularMomentum(NF, IndexUp, IndexDn)
+  
+  local rotmatKd   = {}
+  local rotmatKt2g = {}
+  for i=1,NF do
+    rotmatKd[i]   = {}
+    rotmatKt2g[i] = {}
+    for j=1,NF do
+      rotmatKd[i][j]   = 0
+      rotmatKt2g[i][j] = 0
+    end
+  end
+  local t = sqrt(1/2)
+  local u = I*sqrt(1/2)
+  
+  rotmatKd[1+IndexUp[1]][1+IndexUp[1]] = t
+  rotmatKd[1+IndexUp[1]][1+IndexUp[5]] = t
+  rotmatKd[1+IndexUp[2]][1+IndexUp[3]] = 1
+  rotmatKd[1+IndexUp[3]][1+IndexUp[2]] = u
+  rotmatKd[1+IndexUp[3]][1+IndexUp[4]] = u
+  rotmatKd[1+IndexUp[4]][1+IndexUp[2]] = t
+  rotmatKd[1+IndexUp[4]][1+IndexUp[4]] =-t
+  rotmatKd[1+IndexUp[5]][1+IndexUp[1]] = u
+  rotmatKd[1+IndexUp[5]][1+IndexUp[5]] =-u
+  
+  rotmatKd[1+IndexDn[1]][1+IndexDn[1]] = t
+  rotmatKd[1+IndexDn[1]][1+IndexDn[5]] = t
+  rotmatKd[1+IndexDn[2]][1+IndexDn[3]] = 1
+  rotmatKd[1+IndexDn[3]][1+IndexDn[2]] = u
+  rotmatKd[1+IndexDn[3]][1+IndexDn[4]] = u
+  rotmatKd[1+IndexDn[4]][1+IndexDn[2]] = t
+  rotmatKd[1+IndexDn[4]][1+IndexDn[4]] =-t
+  rotmatKd[1+IndexDn[5]][1+IndexDn[1]] = u
+  rotmatKd[1+IndexDn[5]][1+IndexDn[5]] =-u
+  
+  rotmatKt2g[1+IndexUp[3]][1+IndexUp[2]] = u
+  rotmatKt2g[1+IndexUp[3]][1+IndexUp[4]] = u
+  rotmatKt2g[1+IndexUp[4]][1+IndexUp[2]] = t
+  rotmatKt2g[1+IndexUp[4]][1+IndexUp[4]] =-t
+  rotmatKt2g[1+IndexUp[5]][1+IndexUp[1]] = u
+  rotmatKt2g[1+IndexUp[5]][1+IndexUp[5]] =-u
+  
+  rotmatKt2g[1+IndexDn[3]][1+IndexDn[2]] = u
+  rotmatKt2g[1+IndexDn[3]][1+IndexDn[4]] = u
+  rotmatKt2g[1+IndexDn[4]][1+IndexDn[2]] = t
+  rotmatKt2g[1+IndexDn[4]][1+IndexDn[4]] =-t
+  rotmatKt2g[1+IndexDn[5]][1+IndexDn[1]] = u
+  rotmatKt2g[1+IndexDn[5]][1+IndexDn[5]] =-u
+  
+  return {-Chop(Rotate(Chop(Rotate(NewOperator("Lx",   NF, IndexUp, IndexDn),rotmatKt2g)),ConjugateTranspose(rotmatKd))),
+    -Chop(Rotate(Chop(Rotate(NewOperator("Ly",   NF, IndexUp, IndexDn),rotmatKt2g)),ConjugateTranspose(rotmatKd))),
+    -Chop(Rotate(Chop(Rotate(NewOperator("Lz",   NF, IndexUp, IndexDn),rotmatKt2g)),ConjugateTranspose(rotmatKd))) }
+  
+end
+
+
+
+

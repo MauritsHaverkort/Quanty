@@ -2478,7 +2478,7 @@ uint32_t LanczosBlockTriDiagonalizeCR(const OperatorType H, WaveFunctionType * c
 
 //TODO: krylov version now is a copy of the normal version. Needs to be done from scratch
 
-uint32_t LanczosBlockTriDiagonalizeKrylovRC(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, double *BlockSize)
+uint32_t LanczosBlockTriDiagonalizeKrylovRC(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
 {
   //TODO: add Krylov
   uint32_t i,j,k,vi,vip,vim;
@@ -2699,7 +2699,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRC(const OperatorType H, WaveFunctionTy
   free(v[3]);
   return 0;
 }
-uint32_t LanczosBlockTriDiagonalizeKrylovMC(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, double *BlockSize)
+uint32_t LanczosBlockTriDiagonalizeKrylovMC(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
 {
   //TODO: add Krylov
   uint32_t i,j,k,vi,vip,vim;
@@ -2920,7 +2920,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovMC(const OperatorType H, WaveFunctionTy
   free(v[3]);
   return 0;
 }
-uint32_t LanczosBlockTriDiagonalizeKrylovCC(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, double *BlockSize)
+uint32_t LanczosBlockTriDiagonalizeKrylovCC(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
 {
   //TODO: add Krylov basis as output
   uint32_t i,j,k,vi,vip,vim;
@@ -3141,9 +3141,8 @@ uint32_t LanczosBlockTriDiagonalizeKrylovCC(const OperatorType H, WaveFunctionTy
   free(v[3]);
   return 0;
 }
-uint32_t LanczosBlockTriDiagonalizeKrylovRR(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, double *BlockSize)
+uint32_t LanczosBlockTriDiagonalizeKrylovRR(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
 {
-  //TODO: all
   uint32_t i,j,k,vi,vip,vim;
   CompactMatrixType Mab;
   WaveFunctionType *v[4];
@@ -3155,13 +3154,27 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRR(const OperatorType H, WaveFunctionTy
     M->bRe[i+i*M->BlockSize]=0;
   }
   v[0] = psi;
-  v[1] = malloc(Npsi*sizeof(WaveFunctionType));
-  v[2] = malloc(Npsi*sizeof(WaveFunctionType));
   v[3] = malloc(Npsi*sizeof(WaveFunctionType));
+  
   Mab.Ni=M->BlockSize;
   Mab.Nj=M->BlockSize;
   Mab.QComplex=0;
-  RealWaveFunctionListSVDOrthogonalizeSameBasis(v[0], v[1], &Npsi, epsilon, True); // v[1] = orthonormal[v0]
+  v[1] = malloc(Npsi*sizeof(WaveFunctionType));
+  RealWaveFunctionListSVDOrthogonalize(v[0], v[1], &Npsi, epsilon, True); // v[1] = orthonormal[v0]
+  BlockSize[0]=Npsi;
+  psiBasis[0]=v[1];
+  if(BlockSize[0]==0)
+  {
+    free(v[1]);
+    psiBasis[0]=NULL;
+    for(i=0;i<Sqr(M->BlockSize);i++)
+    {
+      M->aRe[i]=0;
+      M->bRe[i]=0;
+    }
+    free(v[3]);
+    return 0;
+  }
   NSingular=M->BlockSize-Npsi;
   if(NSingular!=0)
   {
@@ -3172,7 +3185,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRR(const OperatorType H, WaveFunctionTy
   {
     for(j=0;j<Npsi;j++)
     {
-      M->bRe[i * M->BlockSize + j] = RealWaveFunctionDotProductSameBasis(v[1][j], v[0][i]);
+      M->bRe[i * M->BlockSize + j] = RealWaveFunctionDotProduct(&(v[1][j]), &(v[0][i]));
     }
   }
   vi=1;
@@ -3182,6 +3195,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRR(const OperatorType H, WaveFunctionTy
   for(k=1;k<M->N;k++)
   {
     // v[vip] = H v[vi]^T
+    v[vip] = malloc(Npsivi*sizeof(WaveFunctionType));
     while(BlockOperatorPsiRR(H, v[vi], v[vip], Npsivi))
     {
       printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeRR for the function BlockOperatorPsiRR\n");
@@ -3310,58 +3324,36 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRR(const OperatorType H, WaveFunctionTy
       // remove small values from v[vip]
       BlockWaveFunctionTruncateBasis(v[vip], Npsi, epsilon);
     }
-    // remove vim from memory and set vim to vi and vi to vip
-    if(k==1)
+    BlockSize[k]=Npsi;
+    psiBasis[k]=v[vip];
+    if(BlockSize[k]==0)
     {
-      // nothing to free
-    }
-    else if(k==2)
-    {
-      for(i=0;i<Npsi;i++)
+      free(v[vip]);
+      psiBasis[k]=NULL;
+      for(i=0;i<Sqr(M->BlockSize);i++)
       {
-        RealWaveFunctionFreeValues(&(v[vim][i]));
+        M->aRe[i]=0;
       }
+      free(v[3]);
+      return 0;
     }
-    else
-    {
-      BlockWaveFunctionFree(v[vim], Npsivim);
-    }
+    // set pointers for next state
     vim=vi;
     vi=vip;
     vip=(vip+1)%3;
     Npsivim=Npsivi;
     Npsivi=Npsi;
   }
-  if(M->N<=1)
-  {
-    for(i=0;i<Npsivi;i++)
-    {
-      RealWaveFunctionFreeValues(&(v[1][i]));
-    }
-  }
-  else if(M->N==2)
-  {
-    for(i=0;i<Npsivim;i++)
-    {
-      RealWaveFunctionFreeValues(&(v[vim][i]));
-    }
-    BlockWaveFunctionFree(v[vi],  Npsivi);
-  }
-  else
-  {
-    BlockWaveFunctionFree(v[vim], Npsivim);
-    BlockWaveFunctionFree(v[vi],  Npsivi);
-  }
   for(i=0;i<Sqr(M->BlockSize);i++)
   {
     M->aRe[i]=0;
   }
-  free(v[1]);
-  free(v[2]);
   free(v[3]);
   return 0;
 }
-uint32_t LanczosBlockTriDiagonalizeKrylovMR(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, double *BlockSize)
+
+
+uint32_t LanczosBlockTriDiagonalizeKrylovMR(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
 {
   // make psi complex, call MC
   uint32_t i;
@@ -3382,7 +3374,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovMR(const OperatorType H, WaveFunctionTy
   }
   return LanczosBlockTriDiagonalizeKrylovMC(H,psi,epsilon,M,psiBasis,BlockSize);
 }
-uint32_t LanczosBlockTriDiagonalizeKrylovCR(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, double *BlockSize)
+uint32_t LanczosBlockTriDiagonalizeKrylovCR(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
 {
   // make psi complex, and call CC
   uint32_t i;
@@ -3528,7 +3520,7 @@ uint32_t LanczosBlockTriDiagonalize(const OperatorType H, WaveFunctionType * con
 
 
 
-uint32_t LanczosBlockTriDiagonalizeKrylovRestricted(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, double *BlockSize)
+uint32_t LanczosBlockTriDiagonalizeKrylovRestricted(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
 {
   //TODO: Implement restricted version that returns Krylov basis
   return 1;
@@ -3538,7 +3530,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRestricted(const OperatorType H, WaveFu
  *  The number of functions to allocate is M->BlockSize-Nsingular[i] = BlockSize[i]
  *  The wave functions psi are freed (or used in psiBasis) on succesfull exit
  */
-uint32_t LanczosBlockTriDiagonalizeKrylov(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, double *BlockSize)
+uint32_t LanczosBlockTriDiagonalizeKrylov(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
 {
   uint32_t i,psiComplex=0;
   VerbosityPrintf(0x0001,"Start of LanczosBlockTriDiagonalize Krylov\n");

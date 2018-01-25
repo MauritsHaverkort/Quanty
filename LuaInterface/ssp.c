@@ -1557,7 +1557,7 @@ static int LuaCreateSpectra(lua_State *L)
   OperatorType *H,*T;
   WaveFunctionType *psi;
   WaveFunctionType **psiBasis=NULL;
-  uint32_t i,iT,ipsi,len;
+  uint32_t i,iT,ipsi,len, *BlockSizeN=NULL;
   double Eminpole,Emaxpole, *val, *psiEn, psiEntemp;
   char filename[MAXStrLength];
   LuaOptionsType LuaCreateSpectraOptions[]={
@@ -1815,7 +1815,7 @@ static int LuaCreateSpectra(lua_State *L)
     lua_createtable(L,Spec->NSpectra,0);
     for(i=0;i<Spec->NSpectra;i++)
     {
-      ShiftTriDiagonalMatrix(&(GTri[i]), psiEn[i]);
+      ShiftTriDiagonalMatrix(&(GTri[i]), -psiEn[i]);
       LuaPushTable_TriDiagonalMatrixType(L, &(GTri[i]));
       lua_rawseti(L, -2, i+1);
     }
@@ -1857,8 +1857,6 @@ static int LuaCreateSpectra(lua_State *L)
     WaveFunctionType Tpsi[Options.NT*Options.Npsi];
     WaveFunctionType TpsiSameBasis[Options.NT*Options.Npsi];
     BlockTriDiagonalMatrixType GTri;
-    /* TODO: currently no Krylov basis returned in tensor form */
-    if(Options.KrylovBasis==True) luaL_error(L, "Currently no Krylov basis returnable for tensor true");
     /* give warning when more than one function defined and E0 not set */
     if((Options.Npsi!=1)&&(Options.E0==DBL_MAX))
     {
@@ -1923,8 +1921,9 @@ static int LuaCreateSpectra(lua_State *L)
     {
       if(Options.KrylovBasis==True)
       {
-        //TODO: add Krylov Basis
-        luaL_error(L, "Not yet implemented");
+        BlockSizeN=malloc(GTri.N*sizeof(uint32_t));
+        psiBasis=malloc(Options.Settings.NTri*sizeof(WaveFunctionType*));
+        LanczosBlockTriDiagonalizeKrylov(*H, TpsiSameBasis, Options.Settings.epsilon, &GTri, psiBasis, BlockSizeN);
       }
       else
       {
@@ -1936,7 +1935,7 @@ static int LuaCreateSpectra(lua_State *L)
       if(Options.KrylovBasis==True)
       {
         //TODO: add Krylov Basis
-        luaL_error(L, "Not yet implemented");
+        luaL_error(L, "Not yet implemented Krylov with restrictions in tensor form");
       }
       else
       {
@@ -1998,11 +1997,29 @@ static int LuaCreateSpectra(lua_State *L)
       Spec->Spec[0].EmaxPole=Emaxpole;
     }
     /* push a table to L containing the spectra in Block Tridiagonal form */
-    ShiftBlockTridiagonalMatrix(&GTri, psiEn[0]);
+    ShiftBlockTridiagonalMatrix(&GTri, -psiEn[0]);
     LuaPushTable_BlockTriDiagonalMatrixType(L, &GTri);
+    /* push Krylov basis to stack */
+    if(Options.KrylovBasis==True)
+    {
+      /* push a table to L containing the krylov basis */
+      lua_createtable(L,GTri.N,0);
+      {
+        for(i=0;i<GTri.N;i++)
+        {
+          if(BlockSizeN[i]==0) break;
+          LuaPushTable_WaveFunctionType(L, psiBasis[i], BlockSizeN[i]);
+          lua_rawseti(L, -2, i+1);
+        }
+      }
+      free(BlockSizeN);
+    }
+    
+    
+    
     /* free tridiagonal representation in memory */
     FreeBlockTridiagonalMatrix(&GTri);
-    return 2;
+    return 3;
   }
 }
 

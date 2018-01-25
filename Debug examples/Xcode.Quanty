@@ -1,5 +1,15 @@
 Verbosity(0xFFFFFFFF)
 
+
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Functions/CreateSpectra.Quanty")
+os.exit()
+
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Examples/Effective_Angular_Momentum.Quanty")
+os.exit()
+
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Functions/PotentialExpandedOnClm.Quanty")
+os.exit()
+
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Functions/DensityMatrix.Quanty")
 os.exit()
 
@@ -16,8 +26,6 @@ dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Impurity.Quant
 os.exit()
 
 
-dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Functions/CreateSpectra.Quanty")
-os.exit()
 
 
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Shared/All.Quanty")

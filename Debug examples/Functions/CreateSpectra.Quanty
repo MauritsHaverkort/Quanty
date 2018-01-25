@@ -64,8 +64,15 @@ H = 6 * EnergyUnits.Tesla.value * (2*OppSz + OppLz)
 -- define a transition operator (in this case a pulsed magnetic field of 20 tesla in the x or y direction)
 Tx = 20 * EnergyUnits.Tesla.value * (2*OppSx + OppLx)
 Ty = 20 * EnergyUnits.Tesla.value * (2*OppSy + OppLy)
+Tz = 20 * EnergyUnits.Tesla.value * (2*OppSz + OppLz)
+Ident = 0*H+1
+
 -- define a ground-state (in this case a p electron with spin and angular momentum down)
 psigrd = psim1dn
+
+-- define a ground-state (in this case a p electron with spin and angular momentum down combined with spin and angular momentum up)
+psigrd = NewWavefunction(Nf,Nb,{{"100000",sqrt(1/2)},{"000001",sqrt(1/2)}})
+
 psilist = {psigrd,sqrt(4)*psigrd,sqrt(16)*psigrd}
 
 -- calculate < psigrd | T^dag 1/(w-H+i*G/2+E0) T | psigrd >
@@ -80,14 +87,32 @@ print(spectri)
 print(spec)
 
 print("======== with Krylov basis ========")
-spec, spectri, psiKrylov = CreateSpectra(H, {Tx,sqrt(100)*Tx}, psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"KrylovBasis",true}})
+spec, spectri, psiKrylov = CreateSpectra(H, {Tx,sqrt(100)*Tx,Ident,Ty}, psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"KrylovBasis",true}})
 print(spectri)
 print(spec)
 print(psiKrylov)
+Egrd = psigrd * H * psigrd
+print("The ground state energy is: ",Egrd)
+for i=1,#psiKrylov do
+  retmat={}
+  S={}
+  for j=1,#psiKrylov[i] do
+    retmat[j]={}
+    S[j]={}
+    for k=1,#psiKrylov[i] do
+      S[j][k]      = psiKrylov[i][k] * psiKrylov[i][j]
+      retmat[j][k] = psiKrylov[i][k] * (H-Egrd) * psiKrylov[i][j]
+    end
+  end
+  print(Chop(S))
+  print(retmat)
+end
 
+
+print("======== with Krylov basis and restrictions ========")
 
 print("======== As tensor ========")
-spec, spectri = CreateSpectra(H, {Tx,Ty}, psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"Tensor",true}})
+spec, spectri = CreateSpectra(H, {Tx,Tz}, psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"Tensor",true}})
 print(spectri)
 print(spec)
 
@@ -96,3 +121,13 @@ print("======== As tensor with restriction ========")
 spec, spectri = CreateSpectra(H, {Tx,Ty}, psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"Tensor",true},{"restrictions",{Nf,Nb,{"010000",1,1}}}})
 print(spectri)
 print(spec)
+
+
+print("======== As tensor with Krylov basis ========")
+spec, spectri, psiKrylov = CreateSpectra(H, {Tx,Tz,Ident}, psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"Tensor",true},{"KrylovBasis",true}})
+print(spectri)
+print(spec)
+print(psiKrylov)
+
+
+print("======== As tensor with Krylov basis and restrictions ========")

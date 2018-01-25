@@ -80,7 +80,7 @@ uint32_t EvaluateBlockListOfPoles(BlockListOfPoles const *A, CompactMatrixType *
 uint32_t EvaluateBlockAndersonMatrix(BlockListOfPoles const *A, CompactMatrixType * Gw, const double omega, const double Gamma)
 {
   //TODO: all
-  printf("Not implemented \n");
+  printf("Not implemented EvaluateBlockAndersonMatrix\n");
   return 0;
 
 }
@@ -180,7 +180,7 @@ uint32_t EvaluateBlockTriDiagonalMatrix(BlockTriDiagonalMatrixType const * A, Co
 uint32_t EvaluateBlockaturalImpurityOrbital(BlockNaturalImpurityOrbitalMatrixType const *A, CompactMatrixType * Gw, const double omega, const double Gamma)
 {
   //TODO: all
-  printf("Not implemented \n");
+  printf("Not implemented EvaluateBlockaturalImpurityOrbital\n");
   return 0;
 }
 
@@ -411,7 +411,7 @@ uint32_t BlockListOfPolesToSpectra(BlockListOfPoles const A, SpectraType *G, dou
 uint32_t BlockAndersonMatrixToSpectra(BlockAndersonMatrixType const A, SpectraType *G, double Emin, double Emax, uint32_t N)
 {
   //TODO: all
-  printf("Not implemented \n");
+  printf("Not implemented BlockAndersonMatrixToSpectra\n");
   return 1;
 }
 
@@ -2790,14 +2790,14 @@ uint32_t BlockListOfPolesToBlockAndersonMatrixReduceDimension(BlockListOfPoles c
 uint32_t BlockTriDiagonalMatrixEigenValues()
 {
   //TODO: use dsbtrd
-  printf("Not implemented \n");
+  printf("Not implemented BlockTriDiagonalMatrixEigenValues\n");
   return 0;
 }
 
 uint32_t BlockTriDiagonalMatrixEigenSystem()
 {
   //TODO: use dsbtrd
-  printf("Not implemented \n");
+  printf("Not implemented BlockTriDiagonalMatrixEigenSystem\n");
   return 0;
 }
 
@@ -3285,13 +3285,13 @@ uint32_t BlockAndersonMatrixToBlockListOfPolesVariableGrid(BlockAndersonMatrixTy
 uint32_t BlockAndersonMatrixToBlockTridiagonalMatrix(BlockAndersonMatrixType const AAnd, BlockTriDiagonalMatrixType * const B)
 {
   //TODO: all
-  printf("Not implemented \n");
+  printf("Not implemented BlockAndersonMatrixToBlockTridiagonalMatrix\n");
   return 1;
 }
 uint32_t BlockAndersonMatrixToBlockNaturalImpurityOrbitalMatrix(BlockAndersonMatrixType const AAnd, BlockNaturalImpurityOrbitalMatrixType * const B)
 {
   //TODO: all
-  printf("Not implemented \n");
+  printf("Not implemented BlockAndersonMatrixToBlockNaturalImpurityOrbitalMatrix\n");
   return 1;
 }
 
@@ -3302,26 +3302,26 @@ uint32_t BlockAndersonMatrixToBlockNaturalImpurityOrbitalMatrix(BlockAndersonMat
 uint32_t BlockNaturalImpurityOrbitalMatrixToBlockAndersonMatrix(BlockNaturalImpurityOrbitalMatrixType const AAnd, BlockAndersonMatrixType * const B)
 {
   //TODO: all
-  printf("Not implemented \n");
+  printf("Not implemented BlockNaturalImpurityOrbitalMatrixToBlockAndersonMatrix\n");
   return 1;
 }
 uint32_t BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles(BlockNaturalImpurityOrbitalMatrixType const AAnd, BlockListOfPoles * const B)
 {
   //TODO: all
-  printf("Not implemented \n");
+  printf("Not implemented BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles\n");
   return 1;
 }
 uint32_t BlockNaturalImpurityOrbitalMatrixToBlockListOfPolesVariableGrid(BlockNaturalImpurityOrbitalMatrixType const AAnd, BlockListOfPoles * const B, const double * const Grid, const uint32_t NGridPoints)
 {
   //TODO: all
-  printf("Not implemented \n");
+  printf("Not implemented BlockNaturalImpurityOrbitalMatrixToBlockListOfPolesVariableGrid\n");
   return 1;
 }
 
 uint32_t BlockNaturalImpurityOrbitalMatrixToBlockTridiagonalMatrix(BlockNaturalImpurityOrbitalMatrixType const AAnd, BlockTriDiagonalMatrixType * const B)
 {
   //TODO: all
-  printf("Not implemented \n");
+  printf("Not implemented BlockNaturalImpurityOrbitalMatrixToBlockTridiagonalMatrix\n");
   return 1;
 }
 
