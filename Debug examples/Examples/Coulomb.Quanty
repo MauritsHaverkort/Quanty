@@ -1,0 +1,188 @@
+NF = 2+6+10+14
+indexsdn = {0}
+indexsup = {1}
+indexpdn = {2,4,6}
+indexpup = {3,5,7}
+indexddn = { 8,10,12,14,16}
+indexdup = { 9,11,13,15,17}
+indexfdn = {18,20,22,24,26,28,30}
+indexfup = {19,21,23,25,27,29,31}
+
+OppUsF0 = NewOperator("U",NF,indexsdn,indexsup,{1})
+OppUpF0 = NewOperator("U",NF,indexpdn,indexpup,{1,0})
+OppUpF2 = NewOperator("U",NF,indexpdn,indexpup,{0,1})
+OppUdF0 = NewOperator("U",NF,indexddn,indexdup,{1,0,0})
+OppUdF2 = NewOperator("U",NF,indexddn,indexdup,{0,1,0})
+OppUdF4 = NewOperator("U",NF,indexddn,indexdup,{0,0,1})
+OppUfF0 = NewOperator("U",NF,indexfdn,indexfup,{1,0,0,0})
+OppUfF2 = NewOperator("U",NF,indexfdn,indexfup,{0,1,0,0})
+OppUfF4 = NewOperator("U",NF,indexfdn,indexfup,{0,0,1,0})
+OppUfF6 = NewOperator("U",NF,indexfdn,indexfup,{0,0,0,1})
+
+OppUspF0 = NewOperator("U",NF,indexsdn,indexsup,indexpdn,indexpup,{1},{0})
+OppUspG1 = NewOperator("U",NF,indexsdn,indexsup,indexpdn,indexpup,{0},{1})
+OppUsdF0 = NewOperator("U",NF,indexsdn,indexsup,indexddn,indexdup,{1},{0})
+OppUsdG2 = NewOperator("U",NF,indexsdn,indexsup,indexddn,indexdup,{0},{1})
+OppUsfF0 = NewOperator("U",NF,indexsdn,indexsup,indexfdn,indexfup,{1},{0})
+OppUsfG3 = NewOperator("U",NF,indexsdn,indexsup,indexfdn,indexfup,{0},{1})
+OppUpdF0 = NewOperator("U",NF,indexpdn,indexpup,indexddn,indexdup,{1,0},{0,0})
+OppUpdF2 = NewOperator("U",NF,indexpdn,indexpup,indexddn,indexdup,{0,1},{0,0})
+OppUpdG1 = NewOperator("U",NF,indexpdn,indexpup,indexddn,indexdup,{0,0},{1,0})
+OppUpdG3 = NewOperator("U",NF,indexpdn,indexpup,indexddn,indexdup,{0,0},{0,1})
+OppUpfF0 = NewOperator("U",NF,indexpdn,indexpup,indexfdn,indexfup,{1,0},{0,0})
+OppUpfF2 = NewOperator("U",NF,indexpdn,indexpup,indexfdn,indexfup,{0,1},{0,0})
+OppUpfG2 = NewOperator("U",NF,indexpdn,indexpup,indexfdn,indexfup,{0,0},{1,0})
+OppUpfG4 = NewOperator("U",NF,indexpdn,indexpup,indexfdn,indexfup,{0,0},{0,1})
+OppUdfF0 = NewOperator("U",NF,indexddn,indexdup,indexfdn,indexfup,{1,0,0},{0,0,0})
+OppUdfF2 = NewOperator("U",NF,indexddn,indexdup,indexfdn,indexfup,{0,1,0},{0,0,0})
+OppUdfF4 = NewOperator("U",NF,indexddn,indexdup,indexfdn,indexfup,{0,0,1},{0,0,0})
+OppUdfG1 = NewOperator("U",NF,indexddn,indexdup,indexfdn,indexfup,{0,0,0},{1,0,0})
+OppUdfG3 = NewOperator("U",NF,indexddn,indexdup,indexfdn,indexfup,{0,0,0},{0,1,0})
+OppUdfG5 = NewOperator("U",NF,indexddn,indexdup,indexfdn,indexfup,{0,0,0},{0,0,1})
+
+OppUsF0_sec = NewOperator("U",NF, indexsdn,indexsup, indexsdn,indexsup, indexsdn,indexsup, indexsdn,indexsup, {1})
+OppUpF0_sec = NewOperator("U",NF, indexpdn,indexpup, indexpdn,indexpup, indexpdn,indexpup, indexpdn,indexpup, {1,0})
+OppUpF2_sec = NewOperator("U",NF, indexpdn,indexpup, indexpdn,indexpup, indexpdn,indexpup, indexpdn,indexpup, {0,1})
+OppUdF0_sec = NewOperator("U",NF, indexddn,indexdup, indexddn,indexdup, indexddn,indexdup, indexddn,indexdup, {1,0,0})
+OppUdF2_sec = NewOperator("U",NF, indexddn,indexdup, indexddn,indexdup, indexddn,indexdup, indexddn,indexdup, {0,1,0})
+OppUdF4_sec = NewOperator("U",NF, indexddn,indexdup, indexddn,indexdup, indexddn,indexdup, indexddn,indexdup, {0,0,1})
+OppUfF0_sec = NewOperator("U",NF, indexfdn,indexfup, indexfdn,indexfup, indexfdn,indexfup, indexfdn,indexfup, {1,0,0,0})
+OppUfF2_sec = NewOperator("U",NF, indexfdn,indexfup, indexfdn,indexfup, indexfdn,indexfup, indexfdn,indexfup, {0,1,0,0})
+OppUfF4_sec = NewOperator("U",NF, indexfdn,indexfup, indexfdn,indexfup, indexfdn,indexfup, indexfdn,indexfup, {0,0,1,0})
+OppUfF6_sec = NewOperator("U",NF, indexfdn,indexfup, indexfdn,indexfup, indexfdn,indexfup, indexfdn,indexfup, {0,0,0,1})
+
+print(Chop(OppUsF0-OppUsF0_sec))
+print(Chop(OppUpF0-OppUpF0_sec))
+print(Chop(OppUpF2-OppUpF2_sec))
+print(Chop(OppUdF0-OppUdF0_sec))
+print(Chop(OppUdF2-OppUdF2_sec))
+print(Chop(OppUdF4-OppUdF4_sec))
+print(Chop(OppUfF0-OppUfF0_sec))
+print(Chop(OppUfF2-OppUfF2_sec))
+print(Chop(OppUfF4-OppUfF4_sec))
+print(Chop(OppUfF6-OppUfF6_sec))
+
+
+OppUspF0_sec = NewOperator("U",NF, indexsdn,indexsup, indexpdn,indexpup, indexsdn,indexsup, indexpdn,indexpup, {1}) +
+               NewOperator("U",NF, indexpdn,indexpup, indexsdn,indexsup, indexpdn,indexpup, indexsdn,indexsup, {1})
+OppUspG1_sec = NewOperator("U",NF, indexsdn,indexsup, indexpdn,indexpup, indexpdn,indexpup, indexsdn,indexsup, {1}) +
+               NewOperator("U",NF, indexpdn,indexpup, indexsdn,indexsup, indexsdn,indexsup, indexpdn,indexpup, {1})
+
+OppUsdF0_sec = NewOperator("U",NF, indexsdn,indexsup, indexddn,indexdup, indexsdn,indexsup, indexddn,indexdup, {1}) +
+               NewOperator("U",NF, indexddn,indexdup, indexsdn,indexsup, indexddn,indexdup, indexsdn,indexsup, {1})
+OppUsdG2_sec = NewOperator("U",NF, indexsdn,indexsup, indexddn,indexdup, indexddn,indexdup, indexsdn,indexsup, {1}) +
+               NewOperator("U",NF, indexddn,indexdup, indexsdn,indexsup, indexsdn,indexsup, indexddn,indexdup, {1})
+
+OppUsfF0_sec = NewOperator("U",NF, indexsdn,indexsup, indexfdn,indexfup, indexsdn,indexsup, indexfdn,indexfup, {1}) +
+               NewOperator("U",NF, indexfdn,indexfup, indexsdn,indexsup, indexfdn,indexfup, indexsdn,indexsup, {1})
+OppUsfG3_sec = NewOperator("U",NF, indexsdn,indexsup, indexfdn,indexfup, indexfdn,indexfup, indexsdn,indexsup, {1}) +
+               NewOperator("U",NF, indexfdn,indexfup, indexsdn,indexsup, indexsdn,indexsup, indexfdn,indexfup, {1})
+
+OppUpdF0_sec = NewOperator("U",NF, indexpdn,indexpup, indexddn,indexdup, indexpdn,indexpup, indexddn,indexdup, {1,0}) +
+               NewOperator("U",NF, indexddn,indexdup, indexpdn,indexpup, indexddn,indexdup, indexpdn,indexpup, {1,0})
+OppUpdF2_sec = NewOperator("U",NF, indexpdn,indexpup, indexddn,indexdup, indexpdn,indexpup, indexddn,indexdup, {0,1}) +
+               NewOperator("U",NF, indexddn,indexdup, indexpdn,indexpup, indexddn,indexdup, indexpdn,indexpup, {0,1})
+
+OppUpdG1_sec = NewOperator("U",NF, indexpdn,indexpup, indexddn,indexdup, indexddn,indexdup, indexpdn,indexpup, {1,0}) +
+               NewOperator("U",NF, indexddn,indexdup, indexpdn,indexpup, indexpdn,indexpup, indexddn,indexdup, {1,0})
+OppUpdG3_sec = NewOperator("U",NF, indexpdn,indexpup, indexddn,indexdup, indexddn,indexdup, indexpdn,indexpup, {0,1}) +
+               NewOperator("U",NF, indexddn,indexdup, indexpdn,indexpup, indexpdn,indexpup, indexddn,indexdup, {0,1})
+
+print(Chop(OppUspF0-OppUspF0_sec))
+print(Chop(OppUspG1-OppUspG1_sec))
+print(Chop(OppUsdF0-OppUsdF0_sec))
+print(Chop(OppUsdG2-OppUsdG2_sec))
+print(Chop(OppUsfF0-OppUsfF0_sec))
+print(Chop(OppUsfG3-OppUsfG3_sec))
+
+print(Chop(OppUpdF0-OppUpdF0_sec))
+print(Chop(OppUpdF2-OppUpdF2_sec))
+print(Chop(OppUpdG1-OppUpdG1_sec))
+print(Chop(OppUpdG3-OppUpdG3_sec))
+
+
+print("==================")
+print("j depended Coulomb")
+print("==================")
+
+NF = 6
+
+TYdnupTojjz    = {{     0,-sqrt(2/3), sqrt(1/3),         0,         0,     0},
+                  {     0,         0,         0,-sqrt(1/3), sqrt(2/3),     0},
+                  {     1,         0,         0,         0,         0,     0},
+                  {     0, sqrt(1/3), sqrt(2/3),         0,         0,     0},
+                  {     0,         0,         0, sqrt(2/3), sqrt(1/3),     0},
+                  {     0,         0,         0,         0,         0,     1}}
+
+TYdnupTojjz12  = {{     0,-sqrt(2/3), sqrt(1/3),         0,         0,     0},
+                  {     0,         0,         0,-sqrt(1/3), sqrt(2/3),     0},
+                  {     0,         0,         0,         0,         0,     0},
+                  {     0,         0,         0,         0,         0,     0},
+                  {     0,         0,         0,         0,         0,     0},
+                  {     0,         0,         0,         0,         0,     0}}
+
+TYdnupTojjz32  = {{     0,         0,         0,         0,         0,     0},
+                  {     0,         0,         0,         0,         0,     0},
+                  {     1,         0,         0,         0,         0,     0},
+                  {     0, sqrt(1/3), sqrt(2/3),         0,         0,     0},
+                  {     0,         0,         0, sqrt(2/3), sqrt(1/3),     0},
+                  {     0,         0,         0,         0,         0,     1}}
+
+
+Basisj12={0,1}
+Basisj32={2,3,4,5}
+BasispDn={0,2,4}
+BasispUp={1,3,5}
+
+OppF0 = NewOperator("U", NF, BasispDn, BasispUp, {1,0})
+OppF2 = NewOperator("U", NF, BasispDn, BasispUp, {0,1})
+
+OppF0j12 = NewOperator("U", NF, Basisj12, 1, {1})
+OppF0j32 = NewOperator("U", NF, Basisj32,-2, {1,0})
+OppF2j32 = NewOperator("U", NF, Basisj32,-2, {0,1})
+
+OppF0j12rot = Chop(Rotate(OppF0,TYdnupTojjz12))
+OppF0j32rot = Chop(Rotate(OppF0,TYdnupTojjz32))
+OppF2j32rot = Chop(Rotate(OppF2,TYdnupTojjz32))
+
+print(Chop(OppF0j12-OppF0j12rot))
+print(Chop(OppF0j32-OppF0j32rot))
+print(Chop(OppF2j32-OppF2j32rot))
+
+OppF0jfullrot = Chop(Rotate(OppF0,TYdnupTojjz))
+OppF2jfullrot = Chop(Rotate(OppF2,TYdnupTojjz))
+
+print("================")
+print(Chop(OppF0jfullrot-OppF0j12-OppF0j32))
+print(Chop(OppF2jfullrot-OppF2j32))
+print("================")
+
+OppF0j12j32 = NewOperator("U", NF, Basisj12, 1, Basisj32, -2, {1}, {0})
+OppG2j12j32 = NewOperator("U", NF, Basisj12, 1, Basisj32, -2, {0}, {1})
+
+print(Chop(OppF0jfullrot-OppF0j12-OppF0j32-OppF0j12j32))
+
+print("================")
+print(Chop(OppF2jfullrot-OppF2j32-OppG2j12j32))
+print("================")
+
+OppUp12F0_sec = NewOperator("U",NF, Basisj12,  1, Basisj12,  1, Basisj12,  1, Basisj12,  1, {1})
+OppUp32F0_sec = NewOperator("U",NF, Basisj32, -2, Basisj32, -2, Basisj32, -2, Basisj32, -2, {1,0})
+OppUp32F2_sec = NewOperator("U",NF, Basisj32, -2, Basisj32, -2, Basisj32, -2, Basisj32, -2, {0,1})
+
+print(Chop(OppUp12F0_sec-OppF0j12))
+print(Chop(OppUp32F0_sec-OppF0j32))
+print(Chop(OppUp32F2_sec-OppF2j32))
+
+OppUp12p12p32p32R2 = NewOperator("U",NF, Basisj12,  1, Basisj12,  1, Basisj32, -2, Basisj32, -2, {1})
+OppUp32p32p12p12R2 = NewOperator("U",NF, Basisj32, -2, Basisj32, -2, Basisj12,  1, Basisj12,  1, {1})
+OppUp12p32p32p32R2 = NewOperator("U",NF, Basisj12,  1, Basisj32, -2, Basisj32, -2, Basisj32, -2, {1})
+OppUp32p12p32p32R2 = NewOperator("U",NF, Basisj32, -2, Basisj12,  1, Basisj32, -2, Basisj32, -2, {1})
+OppUp32p32p12p32R2 = NewOperator("U",NF, Basisj32, -2, Basisj32, -2, Basisj12,  1, Basisj32, -2, {1})
+OppUp32p32p32p12R2 = NewOperator("U",NF, Basisj32, -2, Basisj32, -2, Basisj32, -2, Basisj12,  1, {1})
+
+OppUmix = OppUp12p12p32p32R2 + OppUp32p32p12p12R2 + OppUp12p32p32p32R2 + OppUp32p12p32p32R2 + OppUp32p32p12p32R2 + OppUp32p32p32p12R2
+
+print("================")
+print(Chop(OppF2jfullrot-OppF2j32-OppG2j12j32-OppUmix))
+print("================")
