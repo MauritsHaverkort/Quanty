@@ -547,6 +547,7 @@ static int LuaSpectraSum(lua_State * L)
   res->Spec[0].b[2] = 0;
   res->Spec[0].b[3] = 0;
   res->Spec[0].b[4] = 0;
+  strcpy(res->Spec[0].Name, "Spectra");
   for(i=1;i<a->NSpectra;i++)
   {
     if(a->Spec[i].Emin<res->Spec[0].Emin) res->Spec[0].Emin=a->Spec[i].Emin;

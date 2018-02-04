@@ -1934,8 +1934,9 @@ static int LuaCreateSpectra(lua_State *L)
     {
       if(Options.KrylovBasis==True)
       {
-        //TODO: add Krylov Basis
-        luaL_error(L, "Not yet implemented Krylov with restrictions in tensor form");
+        BlockSizeN=malloc(GTri.N*sizeof(uint32_t));
+        psiBasis=malloc(Options.Settings.NTri*sizeof(WaveFunctionType*));
+        LanczosBlockTriDiagonalizeKrylovRestricted(*H, TpsiSameBasis, Options.Settings.restrictions, Options.Settings.epsilon, &GTri, psiBasis, BlockSizeN);
       }
       else
       {

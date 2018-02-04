@@ -2476,11 +2476,9 @@ uint32_t LanczosBlockTriDiagonalizeCR(const OperatorType H, WaveFunctionType * c
 }
 
 
-//TODO: krylov version now is a copy of the normal version. Needs to be done from scratch
 
-uint32_t LanczosBlockTriDiagonalizeKrylovRC(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
+uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedRC(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
 {
-  //TODO: add Krylov
   uint32_t i,j,k,vi,vip,vim;
   CompactMatrixType Mab;
   WaveFunctionType *v[4];
@@ -2490,15 +2488,32 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRC(const OperatorType H, WaveFunctionTy
   for(i=0;i<M->BlockSize;i++)
   {
     M->b[i+i*M->BlockSize].Re=0;
+    M->b[i+i*M->BlockSize].Im=0;
   }
   v[0] = psi;
-  v[1] = malloc(Npsi*sizeof(WaveFunctionType));
-  v[2] = malloc(Npsi*sizeof(WaveFunctionType));
   v[3] = malloc(Npsi*sizeof(WaveFunctionType));
+  
   Mab.Ni=M->BlockSize;
   Mab.Nj=M->BlockSize;
   Mab.QComplex=1;
-  ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[0], v[1], &Npsi, epsilon, True); // v[1] = orthonormal[v0]
+  v[1] = malloc(Npsi*sizeof(WaveFunctionType));
+  ComplexWaveFunctionListSVDOrthogonalize(v[0], v[1], &Npsi, epsilon, True); // v[1] = orthonormal[v0]
+  BlockSize[0]=Npsi;
+  psiBasis[0]=v[1];
+  if(BlockSize[0]==0)
+  {
+    free(v[1]);
+    psiBasis[0]=NULL;
+    for(i=0;i<Sqr(M->BlockSize);i++)
+    {
+      M->a[i].Re=0;
+      M->b[i].Re=0;
+      M->a[i].Im=0;
+      M->b[i].Im=0;
+    }
+    free(v[3]);
+    return 0;
+  }
   NSingular=M->BlockSize-Npsi;
   if(NSingular!=0)
   {
@@ -2509,7 +2524,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRC(const OperatorType H, WaveFunctionTy
   {
     for(j=0;j<Npsi;j++)
     {
-      ComplexWaveFunctionDotProductSameBasis(v[1][j], v[0][i], &(M->b[i * M->BlockSize + j].Re), &(M->b[i * M->BlockSize + j].Im));
+      ComplexWaveFunctionDotProduct(&(v[1][j]), &(v[0][i]), &(M->b[i * M->BlockSize + j].Re), &(M->b[i * M->BlockSize + j].Im));
     }
   }
   vi=1;
@@ -2519,9 +2534,10 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRC(const OperatorType H, WaveFunctionTy
   for(k=1;k<M->N;k++)
   {
     // v[vip] = H v[vi]^T
-    while(BlockOperatorPsiRC(H, v[vi], v[vip], Npsivi))
+    v[vip] = malloc(Npsivi*sizeof(WaveFunctionType));
+    while(BlockOperatorPsiRestrictedRC(H, v[vi], v[vip], Restrictions, Npsivi))
     {
-      printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeRR for the function BlockOperatorPsiRR\n");
+      printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeRC for the function BlockOperatorPsiRR\n");
       printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
       fflush(stdout);
       epsilon *= 2.0;
@@ -2542,7 +2558,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRC(const OperatorType H, WaveFunctionTy
     {
       // orthogonalize v[vip] to v[vi] and v[vim]
       // we use matrix multiplication between v[vip] and v[vi] which is a numerical unstable form of Gram Schmidt
-      // we heal this by repeating the orthogonalization twice
+      // we heal this by repeating the orthogonalization twice for each matrix vector and once for vi and vim (factor of 3 reduction in speed but needed in tests)
       Mab.V=M->a;
       // w = v[vip]^* . v[vi]^T
       CompactMatrixScale(&Mab, 0);
@@ -2550,7 +2566,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRC(const OperatorType H, WaveFunctionTy
       // v[vip] -= w^* . v[vi]
       while(ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vi], Npsivi, Mab))
       {
-        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeRC for the function ComplexBlockWaveFunctionSubtractMultipliedUnionBasis\n");
+        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeRC for the function RealBlockWaveFunctionSubtractMultipliedUnionBasis\n");
         printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
         fflush(stdout);
         epsilon *= 2.0;
@@ -2564,7 +2580,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRC(const OperatorType H, WaveFunctionTy
       // v[vip] -= w^* . v[vi]
       while(ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vi], Npsivi, Mab))
       {
-        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeRC for the function ComplexBlockWaveFunctionSubtractMultipliedUnionBasis\n");
+        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeRC for the function RealBlockWaveFunctionSubtractMultipliedUnionBasis\n");
         printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
         fflush(stdout);
         epsilon *= 2.0;
@@ -2578,11 +2594,11 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRC(const OperatorType H, WaveFunctionTy
       // v[vip] -= w^* . v[vim]
       while(ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vim], Npsivim, Mab))
       {
-        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeRC for the function ComplexBlockWaveFunctionSubtractMultipliedUnionBasis\n");
+        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeRC for the function RealBlockWaveFunctionSubtractMultipliedUnionBasis\n");
         printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
         fflush(stdout);
         epsilon *= 2.0;
-        if ((v[vi][0].NBlok == 1)&&(v[vip][0].NBlok == 1)) AllocFailed();
+        if ((v[vim][0].NBlok == 1)&&(v[vip][0].NBlok == 1)) AllocFailed();
         ComplexBlockWaveFunctionTruncateBasis(v[vim], Npsivim, epsilon);
         ComplexBlockWaveFunctionTruncateBasis(v[vip], Npsi,    epsilon);
       }
@@ -2592,11 +2608,11 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRC(const OperatorType H, WaveFunctionTy
       // v[vip] -= w^* . v[vim]
       while(ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vim], Npsivim, Mab))
       {
-        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeRC for the function ComplexBlockWaveFunctionSubtractMultipliedUnionBasis\n");
+        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeRC for the function RealBlockWaveFunctionSubtractMultipliedUnionBasis\n");
         printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
         fflush(stdout);
         epsilon *= 2.0;
-        if ((v[vi][0].NBlok == 1)&&(v[vip][0].NBlok == 1)) AllocFailed();
+        if ((v[vim][0].NBlok == 1)&&(v[vip][0].NBlok == 1)) AllocFailed();
         ComplexBlockWaveFunctionTruncateBasis(v[vim], Npsivim, epsilon);
         ComplexBlockWaveFunctionTruncateBasis(v[vip], Npsi,    epsilon);
       }
@@ -2606,7 +2622,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRC(const OperatorType H, WaveFunctionTy
       // v[vip] -= w^* . v[vi]
       while(ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vi], Npsivi, Mab))
       {
-        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeRC for the function ComplexBlockWaveFunctionSubtractMultipliedUnionBasis\n");
+        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeRC for the function RealBlockWaveFunctionSubtractMultipliedUnionBasis\n");
         printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
         fflush(stdout);
         epsilon *= 2.0;
@@ -2620,11 +2636,11 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRC(const OperatorType H, WaveFunctionTy
       // v[vip] -= w^* . v[vim]
       while(ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vim], Npsivim, Mab))
       {
-        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeRC for the function ComplexBlockWaveFunctionSubtractMultipliedUnionBasis\n");
+        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeRC for the function RealBlockWaveFunctionSubtractMultipliedUnionBasis\n");
         printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
         fflush(stdout);
         epsilon *= 2.0;
-        if ((v[vi][0].NBlok == 1)&&(v[vip][0].NBlok == 1)) AllocFailed();
+        if ((v[vim][0].NBlok == 1)&&(v[vip][0].NBlok == 1)) AllocFailed();
         ComplexBlockWaveFunctionTruncateBasis(v[vim], Npsivim, epsilon);
         ComplexBlockWaveFunctionTruncateBasis(v[vip], Npsi,    epsilon);
       }
@@ -2647,61 +2663,37 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRC(const OperatorType H, WaveFunctionTy
       // remove small values from v[vip]
       ComplexBlockWaveFunctionTruncateBasis(v[vip], Npsi, epsilon);
     }
-    // remove vim from memory and set vim to vi and vi to vip
-    if(k==1)
+    BlockSize[k]=Npsi;
+    psiBasis[k]=v[vip];
+    if(BlockSize[k]==0)
     {
-      // nothing to free
-    }
-    else if(k==2)
-    {
-      for(i=0;i<Npsi;i++)
+      free(v[vip]);
+      psiBasis[k]=NULL;
+      for(i=0;i<Sqr(M->BlockSize);i++)
       {
-        ComplexWaveFunctionFreeValues(&(v[vim][i]));
+        M->a[i].Re=0;
+        M->a[i].Im=0;
       }
+      free(v[3]);
+      return 0;
     }
-    else
-    {
-      BlockWaveFunctionFree(v[vim], Npsivim);
-    }
+    // set pointers for next state
     vim=vi;
     vi=vip;
     vip=(vip+1)%3;
     Npsivim=Npsivi;
     Npsivi=Npsi;
   }
-  if(M->N<=1)
-  {
-    for(i=0;i<Npsivi;i++)
-    {
-      ComplexWaveFunctionFreeValues(&(v[1][i]));
-    }
-  }
-  else if(M->N==2)
-  {
-    for(i=0;i<Npsivim;i++)
-    {
-      ComplexWaveFunctionFreeValues(&(v[vim][i]));
-    }
-    BlockWaveFunctionFree(v[vi],  Npsivi);
-  }
-  else
-  {
-    BlockWaveFunctionFree(v[vim], Npsivim);
-    BlockWaveFunctionFree(v[vi],  Npsivi);
-  }
   for(i=0;i<Sqr(M->BlockSize);i++)
   {
     M->a[i].Re=0;
     M->a[i].Im=0;
   }
-  free(v[1]);
-  free(v[2]);
   free(v[3]);
   return 0;
 }
-uint32_t LanczosBlockTriDiagonalizeKrylovMC(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
+uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedMC(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
 {
-  //TODO: add Krylov
   uint32_t i,j,k,vi,vip,vim;
   CompactMatrixType Mab;
   WaveFunctionType *v[4];
@@ -2711,15 +2703,32 @@ uint32_t LanczosBlockTriDiagonalizeKrylovMC(const OperatorType H, WaveFunctionTy
   for(i=0;i<M->BlockSize;i++)
   {
     M->b[i+i*M->BlockSize].Re=0;
+    M->b[i+i*M->BlockSize].Im=0;
   }
   v[0] = psi;
-  v[1] = malloc(Npsi*sizeof(WaveFunctionType));
-  v[2] = malloc(Npsi*sizeof(WaveFunctionType));
   v[3] = malloc(Npsi*sizeof(WaveFunctionType));
+  
   Mab.Ni=M->BlockSize;
   Mab.Nj=M->BlockSize;
   Mab.QComplex=1;
-  ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[0], v[1], &Npsi, epsilon, True); // v[1] = orthonormal[v0]
+  v[1] = malloc(Npsi*sizeof(WaveFunctionType));
+  ComplexWaveFunctionListSVDOrthogonalize(v[0], v[1], &Npsi, epsilon, True); // v[1] = orthonormal[v0]
+  BlockSize[0]=Npsi;
+  psiBasis[0]=v[1];
+  if(BlockSize[0]==0)
+  {
+    free(v[1]);
+    psiBasis[0]=NULL;
+    for(i=0;i<Sqr(M->BlockSize);i++)
+    {
+      M->a[i].Re=0;
+      M->b[i].Re=0;
+      M->a[i].Im=0;
+      M->b[i].Im=0;
+    }
+    free(v[3]);
+    return 0;
+  }
   NSingular=M->BlockSize-Npsi;
   if(NSingular!=0)
   {
@@ -2730,7 +2739,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovMC(const OperatorType H, WaveFunctionTy
   {
     for(j=0;j<Npsi;j++)
     {
-      ComplexWaveFunctionDotProductSameBasis(v[1][j], v[0][i], &(M->b[i * M->BlockSize + j].Re), &(M->b[i * M->BlockSize + j].Im));
+      ComplexWaveFunctionDotProduct(&(v[1][j]), &(v[0][i]), &(M->b[i * M->BlockSize + j].Re), &(M->b[i * M->BlockSize + j].Im));
     }
   }
   vi=1;
@@ -2740,9 +2749,10 @@ uint32_t LanczosBlockTriDiagonalizeKrylovMC(const OperatorType H, WaveFunctionTy
   for(k=1;k<M->N;k++)
   {
     // v[vip] = H v[vi]^T
-    while(BlockOperatorPsiMC(H, v[vi], v[vip], Npsivi))
+    v[vip] = malloc(Npsivi*sizeof(WaveFunctionType));
+    while(BlockOperatorPsiRestrictedMC(H, v[vi], v[vip], Restrictions, Npsivi))
     {
-      printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeRR for the function BlockOperatorPsiRR\n");
+      printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeMC for the function BlockOperatorPsiRR\n");
       printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
       fflush(stdout);
       epsilon *= 2.0;
@@ -2763,7 +2773,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovMC(const OperatorType H, WaveFunctionTy
     {
       // orthogonalize v[vip] to v[vi] and v[vim]
       // we use matrix multiplication between v[vip] and v[vi] which is a numerical unstable form of Gram Schmidt
-      // we heal this by repeating the orthogonalization twice
+      // we heal this by repeating the orthogonalization twice for each matrix vector and once for vi and vim (factor of 3 reduction in speed but needed in tests)
       Mab.V=M->a;
       // w = v[vip]^* . v[vi]^T
       CompactMatrixScale(&Mab, 0);
@@ -2771,7 +2781,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovMC(const OperatorType H, WaveFunctionTy
       // v[vip] -= w^* . v[vi]
       while(ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vi], Npsivi, Mab))
       {
-        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeMC for the function ComplexBlockWaveFunctionSubtractMultipliedUnionBasis\n");
+        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeMC for the function RealBlockWaveFunctionSubtractMultipliedUnionBasis\n");
         printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
         fflush(stdout);
         epsilon *= 2.0;
@@ -2785,7 +2795,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovMC(const OperatorType H, WaveFunctionTy
       // v[vip] -= w^* . v[vi]
       while(ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vi], Npsivi, Mab))
       {
-        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeMC for the function ComplexBlockWaveFunctionSubtractMultipliedUnionBasis\n");
+        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeMC for the function RealBlockWaveFunctionSubtractMultipliedUnionBasis\n");
         printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
         fflush(stdout);
         epsilon *= 2.0;
@@ -2799,11 +2809,11 @@ uint32_t LanczosBlockTriDiagonalizeKrylovMC(const OperatorType H, WaveFunctionTy
       // v[vip] -= w^* . v[vim]
       while(ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vim], Npsivim, Mab))
       {
-        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeMC for the function ComplexBlockWaveFunctionSubtractMultipliedUnionBasis\n");
+        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeMC for the function RealBlockWaveFunctionSubtractMultipliedUnionBasis\n");
         printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
         fflush(stdout);
         epsilon *= 2.0;
-        if ((v[vi][0].NBlok == 1)&&(v[vip][0].NBlok == 1)) AllocFailed();
+        if ((v[vim][0].NBlok == 1)&&(v[vip][0].NBlok == 1)) AllocFailed();
         ComplexBlockWaveFunctionTruncateBasis(v[vim], Npsivim, epsilon);
         ComplexBlockWaveFunctionTruncateBasis(v[vip], Npsi,    epsilon);
       }
@@ -2813,11 +2823,11 @@ uint32_t LanczosBlockTriDiagonalizeKrylovMC(const OperatorType H, WaveFunctionTy
       // v[vip] -= w^* . v[vim]
       while(ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vim], Npsivim, Mab))
       {
-        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeMC for the function ComplexBlockWaveFunctionSubtractMultipliedUnionBasis\n");
+        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeMC for the function RealBlockWaveFunctionSubtractMultipliedUnionBasis\n");
         printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
         fflush(stdout);
         epsilon *= 2.0;
-        if ((v[vi][0].NBlok == 1)&&(v[vip][0].NBlok == 1)) AllocFailed();
+        if ((v[vim][0].NBlok == 1)&&(v[vip][0].NBlok == 1)) AllocFailed();
         ComplexBlockWaveFunctionTruncateBasis(v[vim], Npsivim, epsilon);
         ComplexBlockWaveFunctionTruncateBasis(v[vip], Npsi,    epsilon);
       }
@@ -2827,7 +2837,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovMC(const OperatorType H, WaveFunctionTy
       // v[vip] -= w^* . v[vi]
       while(ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vi], Npsivi, Mab))
       {
-        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeMC for the function ComplexBlockWaveFunctionSubtractMultipliedUnionBasis\n");
+        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeMC for the function RealBlockWaveFunctionSubtractMultipliedUnionBasis\n");
         printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
         fflush(stdout);
         epsilon *= 2.0;
@@ -2841,11 +2851,11 @@ uint32_t LanczosBlockTriDiagonalizeKrylovMC(const OperatorType H, WaveFunctionTy
       // v[vip] -= w^* . v[vim]
       while(ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vim], Npsivim, Mab))
       {
-        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeMC for the function ComplexBlockWaveFunctionSubtractMultipliedUnionBasis\n");
+        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeMC for the function RealBlockWaveFunctionSubtractMultipliedUnionBasis\n");
         printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
         fflush(stdout);
         epsilon *= 2.0;
-        if ((v[vi][0].NBlok == 1)&&(v[vip][0].NBlok == 1)) AllocFailed();
+        if ((v[vim][0].NBlok == 1)&&(v[vip][0].NBlok == 1)) AllocFailed();
         ComplexBlockWaveFunctionTruncateBasis(v[vim], Npsivim, epsilon);
         ComplexBlockWaveFunctionTruncateBasis(v[vip], Npsi,    epsilon);
       }
@@ -2868,61 +2878,37 @@ uint32_t LanczosBlockTriDiagonalizeKrylovMC(const OperatorType H, WaveFunctionTy
       // remove small values from v[vip]
       ComplexBlockWaveFunctionTruncateBasis(v[vip], Npsi, epsilon);
     }
-    // remove vim from memory and set vim to vi and vi to vip
-    if(k==1)
+    BlockSize[k]=Npsi;
+    psiBasis[k]=v[vip];
+    if(BlockSize[k]==0)
     {
-      // nothing to free
-    }
-    else if(k==2)
-    {
-      for(i=0;i<Npsi;i++)
+      free(v[vip]);
+      psiBasis[k]=NULL;
+      for(i=0;i<Sqr(M->BlockSize);i++)
       {
-        ComplexWaveFunctionFreeValues(&(v[vim][i]));
+        M->a[i].Re=0;
+        M->a[i].Im=0;
       }
+      free(v[3]);
+      return 0;
     }
-    else
-    {
-      BlockWaveFunctionFree(v[vim], Npsivim);
-    }
+    // set pointers for next state
     vim=vi;
     vi=vip;
     vip=(vip+1)%3;
     Npsivim=Npsivi;
     Npsivi=Npsi;
   }
-  if(M->N<=1)
-  {
-    for(i=0;i<Npsivi;i++)
-    {
-      ComplexWaveFunctionFreeValues(&(v[1][i]));
-    }
-  }
-  else if(M->N==2)
-  {
-    for(i=0;i<Npsivim;i++)
-    {
-      ComplexWaveFunctionFreeValues(&(v[vim][i]));
-    }
-    BlockWaveFunctionFree(v[vi],  Npsivi);
-  }
-  else
-  {
-    BlockWaveFunctionFree(v[vim], Npsivim);
-    BlockWaveFunctionFree(v[vi],  Npsivi);
-  }
   for(i=0;i<Sqr(M->BlockSize);i++)
   {
     M->a[i].Re=0;
     M->a[i].Im=0;
   }
-  free(v[1]);
-  free(v[2]);
   free(v[3]);
   return 0;
 }
-uint32_t LanczosBlockTriDiagonalizeKrylovCC(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
+uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedCC(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
 {
-  //TODO: add Krylov basis as output
   uint32_t i,j,k,vi,vip,vim;
   CompactMatrixType Mab;
   WaveFunctionType *v[4];
@@ -2932,15 +2918,32 @@ uint32_t LanczosBlockTriDiagonalizeKrylovCC(const OperatorType H, WaveFunctionTy
   for(i=0;i<M->BlockSize;i++)
   {
     M->b[i+i*M->BlockSize].Re=0;
+    M->b[i+i*M->BlockSize].Im=0;
   }
   v[0] = psi;
-  v[1] = malloc(Npsi*sizeof(WaveFunctionType));
-  v[2] = malloc(Npsi*sizeof(WaveFunctionType));
   v[3] = malloc(Npsi*sizeof(WaveFunctionType));
+  
   Mab.Ni=M->BlockSize;
   Mab.Nj=M->BlockSize;
   Mab.QComplex=1;
-  ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[0], v[1], &Npsi, epsilon, True); // v[1] = orthonormal[v0]
+  v[1] = malloc(Npsi*sizeof(WaveFunctionType));
+  ComplexWaveFunctionListSVDOrthogonalize(v[0], v[1], &Npsi, epsilon, True); // v[1] = orthonormal[v0]
+  BlockSize[0]=Npsi;
+  psiBasis[0]=v[1];
+  if(BlockSize[0]==0)
+  {
+    free(v[1]);
+    psiBasis[0]=NULL;
+    for(i=0;i<Sqr(M->BlockSize);i++)
+    {
+      M->a[i].Re=0;
+      M->b[i].Re=0;
+      M->a[i].Im=0;
+      M->b[i].Im=0;
+    }
+    free(v[3]);
+    return 0;
+  }
   NSingular=M->BlockSize-Npsi;
   if(NSingular!=0)
   {
@@ -2951,7 +2954,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovCC(const OperatorType H, WaveFunctionTy
   {
     for(j=0;j<Npsi;j++)
     {
-      ComplexWaveFunctionDotProductSameBasis(v[1][j], v[0][i], &(M->b[i * M->BlockSize + j].Re), &(M->b[i * M->BlockSize + j].Im));
+      ComplexWaveFunctionDotProduct(&(v[1][j]), &(v[0][i]), &(M->b[i * M->BlockSize + j].Re), &(M->b[i * M->BlockSize + j].Im));
     }
   }
   vi=1;
@@ -2961,9 +2964,10 @@ uint32_t LanczosBlockTriDiagonalizeKrylovCC(const OperatorType H, WaveFunctionTy
   for(k=1;k<M->N;k++)
   {
     // v[vip] = H v[vi]^T
-    while(BlockOperatorPsiCC(H, v[vi], v[vip], Npsivi))
+    v[vip] = malloc(Npsivi*sizeof(WaveFunctionType));
+    while(BlockOperatorPsiRestrictedCC(H, v[vi], v[vip], Restrictions, Npsivi))
     {
-      printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeCC for the function BlockOperatorPsiCC\n");
+      printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeCC for the function BlockOperatorPsiRR\n");
       printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
       fflush(stdout);
       epsilon *= 2.0;
@@ -2984,7 +2988,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovCC(const OperatorType H, WaveFunctionTy
     {
       // orthogonalize v[vip] to v[vi] and v[vim]
       // we use matrix multiplication between v[vip] and v[vi] which is a numerical unstable form of Gram Schmidt
-      // we heal this by repeating the orthogonalization twice and once for vi and vim (factor of 3 reduction in speed but needed in tests)
+      // we heal this by repeating the orthogonalization twice for each matrix vector and once for vi and vim (factor of 3 reduction in speed but needed in tests)
       Mab.V=M->a;
       // w = v[vip]^* . v[vi]^T
       CompactMatrixScale(&Mab, 0);
@@ -2992,7 +2996,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovCC(const OperatorType H, WaveFunctionTy
       // v[vip] -= w^* . v[vi]
       while(ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vi], Npsivi, Mab))
       {
-        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeCC for the function ComplexBlockWaveFunctionSubtractMultipliedUnionBasis\n");
+        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeCC for the function RealBlockWaveFunctionSubtractMultipliedUnionBasis\n");
         printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
         fflush(stdout);
         epsilon *= 2.0;
@@ -3006,7 +3010,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovCC(const OperatorType H, WaveFunctionTy
       // v[vip] -= w^* . v[vi]
       while(ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vi], Npsivi, Mab))
       {
-        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeCC for the function ComplexBlockWaveFunctionSubtractMultipliedUnionBasis\n");
+        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeCC for the function RealBlockWaveFunctionSubtractMultipliedUnionBasis\n");
         printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
         fflush(stdout);
         epsilon *= 2.0;
@@ -3020,13 +3024,13 @@ uint32_t LanczosBlockTriDiagonalizeKrylovCC(const OperatorType H, WaveFunctionTy
       // v[vip] -= w^* . v[vim]
       while(ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vim], Npsivim, Mab))
       {
-        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeCC for the function ComplexBlockWaveFunctionSubtractMultipliedUnionBasis\n");
+        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeCC for the function RealBlockWaveFunctionSubtractMultipliedUnionBasis\n");
         printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
         fflush(stdout);
         epsilon *= 2.0;
         if ((v[vim][0].NBlok == 1)&&(v[vip][0].NBlok == 1)) AllocFailed();
-        ComplexBlockWaveFunctionTruncateBasis(v[vim],  Npsivim, epsilon);
-        ComplexBlockWaveFunctionTruncateBasis(v[vip],  Npsi,   epsilon);
+        ComplexBlockWaveFunctionTruncateBasis(v[vim], Npsivim, epsilon);
+        ComplexBlockWaveFunctionTruncateBasis(v[vip], Npsi,    epsilon);
       }
       // w = v[vip]^* . v[vim]^T
       CompactMatrixScale(&Mab, 0);
@@ -3034,13 +3038,13 @@ uint32_t LanczosBlockTriDiagonalizeKrylovCC(const OperatorType H, WaveFunctionTy
       // v[vip] -= w^* . v[vim]
       while(ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vim], Npsivim, Mab))
       {
-        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeCC for the function ComplexBlockWaveFunctionSubtractMultipliedUnionBasis\n");
+        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeCC for the function RealBlockWaveFunctionSubtractMultipliedUnionBasis\n");
         printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
         fflush(stdout);
         epsilon *= 2.0;
         if ((v[vim][0].NBlok == 1)&&(v[vip][0].NBlok == 1)) AllocFailed();
-        ComplexBlockWaveFunctionTruncateBasis(v[vim],  Npsivim, epsilon);
-        ComplexBlockWaveFunctionTruncateBasis(v[vip],  Npsi,   epsilon);
+        ComplexBlockWaveFunctionTruncateBasis(v[vim], Npsivim, epsilon);
+        ComplexBlockWaveFunctionTruncateBasis(v[vip], Npsi,    epsilon);
       }
       // w = v[vip]^* . v[vi]^T
       CompactMatrixScale(&Mab, 0);
@@ -3048,7 +3052,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovCC(const OperatorType H, WaveFunctionTy
       // v[vip] -= w^* . v[vi]
       while(ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vi], Npsivi, Mab))
       {
-        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeCC for the function ComplexBlockWaveFunctionSubtractMultipliedUnionBasis\n");
+        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeCC for the function RealBlockWaveFunctionSubtractMultipliedUnionBasis\n");
         printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
         fflush(stdout);
         epsilon *= 2.0;
@@ -3062,13 +3066,13 @@ uint32_t LanczosBlockTriDiagonalizeKrylovCC(const OperatorType H, WaveFunctionTy
       // v[vip] -= w^* . v[vim]
       while(ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vim], Npsivim, Mab))
       {
-        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeCC for the function ComplexBlockWaveFunctionSubtractMultipliedUnionBasis\n");
+        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeCC for the function RealBlockWaveFunctionSubtractMultipliedUnionBasis\n");
         printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
         fflush(stdout);
         epsilon *= 2.0;
         if ((v[vim][0].NBlok == 1)&&(v[vip][0].NBlok == 1)) AllocFailed();
-        ComplexBlockWaveFunctionTruncateBasis(v[vim],  Npsivim, epsilon);
-        ComplexBlockWaveFunctionTruncateBasis(v[vip],  Npsi,   epsilon);
+        ComplexBlockWaveFunctionTruncateBasis(v[vim], Npsivim, epsilon);
+        ComplexBlockWaveFunctionTruncateBasis(v[vip], Npsi,    epsilon);
       }
       // Lowdin orthonormalize v[vip] into v[3], free v[vip] and set v[vip] equal to v[3]
       NSingular=Npsi;
@@ -3089,55 +3093,930 @@ uint32_t LanczosBlockTriDiagonalizeKrylovCC(const OperatorType H, WaveFunctionTy
       // remove small values from v[vip]
       ComplexBlockWaveFunctionTruncateBasis(v[vip], Npsi, epsilon);
     }
-    // remove vim from memory and set vim to vi and vi to vip
-    if(k==1)
+    BlockSize[k]=Npsi;
+    psiBasis[k]=v[vip];
+    if(BlockSize[k]==0)
     {
-      // nothing to free
-    }
-    else if(k==2)
-    {
-      for(i=0;i<Npsi;i++)
+      free(v[vip]);
+      psiBasis[k]=NULL;
+      for(i=0;i<Sqr(M->BlockSize);i++)
       {
-        ComplexWaveFunctionFreeValues(&(v[vim][i]));
+        M->a[i].Re=0;
+        M->a[i].Im=0;
       }
+      free(v[3]);
+      return 0;
     }
-    else
-    {
-      BlockWaveFunctionFree(v[vim], Npsivim);
-    }
+    // set pointers for next state
     vim=vi;
     vi=vip;
     vip=(vip+1)%3;
     Npsivim=Npsivi;
     Npsivi=Npsi;
   }
-  if(M->N<=1)
+  for(i=0;i<Sqr(M->BlockSize);i++)
   {
-    for(i=0;i<Npsivi;i++)
+    M->a[i].Re=0;
+    M->a[i].Im=0;
+  }
+  free(v[3]);
+  return 0;
+}
+uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedRR(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
+{
+  uint32_t i,j,k,vi,vip,vim;
+  CompactMatrixType Mab;
+  WaveFunctionType *v[4];
+  uint32_t NSingular,Npsi=M->BlockSize,Npsivi=M->BlockSize,Npsivim=M->BlockSize;
+  VerbosityPrintf(0x0001,"Start of LanczosBlockTriDiagonalizeKrylovRestrictedRR\n");
+  fflush(stdout);
+  for(i=0;i<M->BlockSize;i++)
+  {
+    M->bRe[i+i*M->BlockSize]=0;
+  }
+  v[0] = psi;
+  v[3] = malloc(Npsi*sizeof(WaveFunctionType));
+  
+  Mab.Ni=M->BlockSize;
+  Mab.Nj=M->BlockSize;
+  Mab.QComplex=0;
+  v[1] = malloc(Npsi*sizeof(WaveFunctionType));
+  RealWaveFunctionListSVDOrthogonalize(v[0], v[1], &Npsi, epsilon, True); // v[1] = orthonormal[v0]
+  BlockSize[0]=Npsi;
+  psiBasis[0]=v[1];
+  if(BlockSize[0]==0)
+  {
+    free(v[1]);
+    psiBasis[0]=NULL;
+    for(i=0;i<Sqr(M->BlockSize);i++)
     {
-      ComplexWaveFunctionFreeValues(&(v[1][i]));
+      M->aRe[i]=0;
+      M->bRe[i]=0;
+    }
+    free(v[3]);
+    return 0;
+  }
+  NSingular=M->BlockSize-Npsi;
+  if(NSingular!=0)
+  {
+    VerbosityPrintf(0x0001,"Reduce dimension from %u to %u in block %u\n",M->BlockSize,M->BlockSize-NSingular,0);
+  }
+  // b[0] = v[0] . v[1]^+ or b[0]^T = v[1]^* . v[0]^T
+  for(i=0;i<Npsi+NSingular;i++)
+  {
+    for(j=0;j<Npsi;j++)
+    {
+      M->bRe[i * M->BlockSize + j] = RealWaveFunctionDotProduct(&(v[1][j]), &(v[0][i]));
     }
   }
-  else if(M->N==2)
+  vi=1;
+  vim=0;
+  vip=2;
+  Npsivi=Npsi;
+  for(k=1;k<M->N;k++)
   {
-    for(i=0;i<Npsivim;i++)
+    // v[vip] = H v[vi]^T
+    v[vip] = malloc(Npsivi*sizeof(WaveFunctionType));
+    while(BlockOperatorPsiRestrictedRR(H, v[vi], v[vip], Restrictions, Npsivi))
     {
-      ComplexWaveFunctionFreeValues(&(v[vim][i]));
+      printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeRR for the function BlockOperatorPsiRR\n");
+      printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
+      fflush(stdout);
+      epsilon *= 2.0;
+      if (v[vi][0].NBlok == 1) AllocFailed();
+      RealBlockWaveFunctionTruncateBasis(v[vi], Npsivi, epsilon);
     }
-    BlockWaveFunctionFree(v[vi],  Npsivi);
+    // a[k] = v[vi]^* . v[vip]^T  (v[vi]^* . H . v[vi]^T)
+    Mab.VRe = &(M->aRe[k*Sqr(M->BlockSize)]);
+    RealBlockWaveFunctionDotProduct(v[vi], Npsi, v[vip], Npsi, &Mab); //Npsivi = Npsi - changes at Lowdin Orthonormalization
+    if(k!=1)
+    {
+      // b[k-1] = v[vim]^* . v[vip]^T  (v[vim]^* . H . v[vi]^T)
+      Mab.VRe = &(M->bRe[(k-1)*Sqr(M->BlockSize)]);
+      RealBlockWaveFunctionDotProduct(v[vim], Npsivim, v[vip], Npsi, &Mab);
+    }
+    NSingular=1;
+    while(NSingular)
+    {
+      // orthogonalize v[vip] to v[vi] and v[vim]
+      // we use matrix multiplication between v[vip] and v[vi] which is a numerical unstable form of Gram Schmidt
+      // we heal this by repeating the orthogonalization twice for each matrix vector and once for vi and vim (factor of 3 reduction in speed but needed in tests)
+      Mab.VRe=M->aRe;
+      // w = v[vip]^* . v[vi]^T
+      CompactMatrixScale(&Mab, 0);
+      RealBlockWaveFunctionDotProduct(v[vip], Npsi, v[vi], Npsivi, &Mab);
+      // v[vip] -= w^* . v[vi]
+      while(RealBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vi], Npsivi, Mab))
+      {
+        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeRR for the function RealBlockWaveFunctionSubtractMultipliedUnionBasis\n");
+        printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
+        fflush(stdout);
+        epsilon *= 2.0;
+        if ((v[vi][0].NBlok == 1)&&(v[vip][0].NBlok == 1)) AllocFailed();
+        RealBlockWaveFunctionTruncateBasis(v[vi],  Npsivi, epsilon);
+        RealBlockWaveFunctionTruncateBasis(v[vip], Npsi,   epsilon);
+      }
+      // w = v[vip]^* . v[vi]^T
+      CompactMatrixScale(&Mab, 0);
+      RealBlockWaveFunctionDotProduct(v[vip], Npsi, v[vi], Npsivi, &Mab);
+      // v[vip] -= w^* . v[vi]
+      while(RealBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vi], Npsivi, Mab))
+      {
+        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeRR for the function RealBlockWaveFunctionSubtractMultipliedUnionBasis\n");
+        printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
+        fflush(stdout);
+        epsilon *= 2.0;
+        if ((v[vi][0].NBlok == 1)&&(v[vip][0].NBlok == 1)) AllocFailed();
+        RealBlockWaveFunctionTruncateBasis(v[vi],  Npsivi, epsilon);
+        RealBlockWaveFunctionTruncateBasis(v[vip], Npsi,   epsilon);
+      }
+      // w = v[vip]^* . v[vim]^T
+      CompactMatrixScale(&Mab, 0);
+      RealBlockWaveFunctionDotProduct(v[vip], Npsi, v[vim], Npsivim, &Mab);
+      // v[vip] -= w^* . v[vim]
+      while(RealBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vim], Npsivim, Mab))
+      {
+        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeRR for the function RealBlockWaveFunctionSubtractMultipliedUnionBasis\n");
+        printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
+        fflush(stdout);
+        epsilon *= 2.0;
+        if ((v[vim][0].NBlok == 1)&&(v[vip][0].NBlok == 1)) AllocFailed();
+        RealBlockWaveFunctionTruncateBasis(v[vim], Npsivim, epsilon);
+        RealBlockWaveFunctionTruncateBasis(v[vip], Npsi,    epsilon);
+      }
+      // w = v[vip]^* . v[vim]^T
+      CompactMatrixScale(&Mab, 0);
+      RealBlockWaveFunctionDotProduct(v[vip], Npsi, v[vim], Npsivim, &Mab);
+      // v[vip] -= w^* . v[vim]
+      while(RealBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vim], Npsivim, Mab))
+      {
+        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeRR for the function RealBlockWaveFunctionSubtractMultipliedUnionBasis\n");
+        printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
+        fflush(stdout);
+        epsilon *= 2.0;
+        if ((v[vim][0].NBlok == 1)&&(v[vip][0].NBlok == 1)) AllocFailed();
+        RealBlockWaveFunctionTruncateBasis(v[vim], Npsivim, epsilon);
+        RealBlockWaveFunctionTruncateBasis(v[vip], Npsi,    epsilon);
+      }
+      // w = v[vip]^* . v[vi]^T
+      CompactMatrixScale(&Mab, 0);
+      RealBlockWaveFunctionDotProduct(v[vip], Npsi, v[vi], Npsivi, &Mab);
+      // v[vip] -= w^* . v[vi]
+      while(RealBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vi], Npsivi, Mab))
+      {
+        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeRR for the function RealBlockWaveFunctionSubtractMultipliedUnionBasis\n");
+        printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
+        fflush(stdout);
+        epsilon *= 2.0;
+        if ((v[vi][0].NBlok == 1)&&(v[vip][0].NBlok == 1)) AllocFailed();
+        RealBlockWaveFunctionTruncateBasis(v[vi],  Npsivi, epsilon);
+        RealBlockWaveFunctionTruncateBasis(v[vip], Npsi,   epsilon);
+      }
+      // w = v[vip]^* . v[vim]^T
+      CompactMatrixScale(&Mab, 0);
+      RealBlockWaveFunctionDotProduct(v[vip], Npsi, v[vim], Npsivim, &Mab);
+      // v[vip] -= w^* . v[vim]
+      while(RealBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vim], Npsivim, Mab))
+      {
+        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeRR for the function RealBlockWaveFunctionSubtractMultipliedUnionBasis\n");
+        printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
+        fflush(stdout);
+        epsilon *= 2.0;
+        if ((v[vim][0].NBlok == 1)&&(v[vip][0].NBlok == 1)) AllocFailed();
+        RealBlockWaveFunctionTruncateBasis(v[vim], Npsivim, epsilon);
+        RealBlockWaveFunctionTruncateBasis(v[vip], Npsi,    epsilon);
+      }
+      // Lowdin orthonormalize v[vip] into v[3], free v[vip] and set v[vip] equal to v[3]
+      NSingular=Npsi;
+      RealWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, epsilon, True);
+      NSingular-=Npsi;
+      if(NSingular!=0)
+      {
+        VerbosityPrintf(0x0001, "Reduce dimension from %u to %u in block %u\n",Npsi+NSingular,Npsi,k);
+      }
+      for(i=0;i<Npsi+NSingular;i++)
+      {
+        WaveFunctionFreeValues(&v[vip][i]);
+      }
+      for(i=0;i<Npsi;i++)
+      {
+        v[vip][i]=v[3][i];
+      }
+      // remove small values from v[vip]
+      BlockWaveFunctionTruncateBasis(v[vip], Npsi, epsilon);
+    }
+    BlockSize[k]=Npsi;
+    psiBasis[k]=v[vip];
+    if(BlockSize[k]==0)
+    {
+      free(v[vip]);
+      psiBasis[k]=NULL;
+      for(i=0;i<Sqr(M->BlockSize);i++)
+      {
+        M->aRe[i]=0;
+      }
+      free(v[3]);
+      return 0;
+    }
+    // set pointers for next state
+    vim=vi;
+    vi=vip;
+    vip=(vip+1)%3;
+    Npsivim=Npsivi;
+    Npsivi=Npsi;
   }
-  else
+  for(i=0;i<Sqr(M->BlockSize);i++)
   {
-    BlockWaveFunctionFree(v[vim], Npsivim);
-    BlockWaveFunctionFree(v[vi],  Npsivi);
+    M->aRe[i]=0;
+  }
+  free(v[3]);
+  return 0;
+}
+uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedMR(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
+{
+  // make psi complex, call MC
+  uint32_t i;
+  VerbosityPrintf(0x0001,"Start of LanczosBlockTriDiagonalizeKrylovRestrictedMR\n");
+  fflush(stdout);
+  for(i=0;i<M->BlockSize;i++)
+  {
+    if (MakeComplexWaveFunctionFromReal(&psi[i], psi[i]))
+    {
+      printf("LanczosBlockTriDiagonalizeKrylovRestrictedMR called with a real wave-function and a complex Hamiltonian.\nTurned the wave-function complex in step 1.\nBut failed at function %i.\n",i);
+      fflush(stdout);
+      for(;i>0;i--)
+      {
+        MakeRealWaveFunctionFromComplex(psi[i-1], &psi[i-1]);
+      }
+      return 1;
+    }
+  }
+  return LanczosBlockTriDiagonalizeKrylovRestrictedMC(H,psi,Restrictions,epsilon,M,psiBasis,BlockSize);
+}
+uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedCR(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
+{
+  // make psi complex, and call CC
+  uint32_t i;
+  VerbosityPrintf(0x0001,"Start of LanczosBlockTriDiagonalizeKrylovRestrictedCR\n");
+  fflush(stdout);
+  for(i=0;i<M->BlockSize;i++)
+  {
+    if (MakeComplexWaveFunctionFromReal(&psi[i], psi[i]))
+    {
+      printf("LanczosBlockTriDiagonalizeKrylovRestrictedCR called with a real wave-function and a complex Hamiltonian.\nTurned the wave-function complex in step 1.\nBut failed at function %i.\n",i);
+      fflush(stdout);
+      for(;i>0;i--)
+      {
+        MakeRealWaveFunctionFromComplex(psi[i-1], &psi[i-1]);
+      }
+      return 1;
+    }
+  }
+  return LanczosBlockTriDiagonalizeKrylovRestrictedCC(H,psi,Restrictions,epsilon,M,psiBasis,BlockSize);
+}
+
+uint32_t LanczosBlockTriDiagonalizeKrylovRC(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
+{
+  uint32_t i,j,k,vi,vip,vim;
+  CompactMatrixType Mab;
+  WaveFunctionType *v[4];
+  uint32_t NSingular,Npsi=M->BlockSize,Npsivi=M->BlockSize,Npsivim=M->BlockSize;
+  VerbosityPrintf(0x0001,"Start of LanczosBlockTriDiagonalizeRC\n");
+  fflush(stdout);
+  for(i=0;i<M->BlockSize;i++)
+  {
+    M->b[i+i*M->BlockSize].Re=0;
+    M->b[i+i*M->BlockSize].Im=0;
+  }
+  v[0] = psi;
+  v[3] = malloc(Npsi*sizeof(WaveFunctionType));
+  
+  Mab.Ni=M->BlockSize;
+  Mab.Nj=M->BlockSize;
+  Mab.QComplex=1;
+  v[1] = malloc(Npsi*sizeof(WaveFunctionType));
+  ComplexWaveFunctionListSVDOrthogonalize(v[0], v[1], &Npsi, epsilon, True); // v[1] = orthonormal[v0]
+  BlockSize[0]=Npsi;
+  psiBasis[0]=v[1];
+  if(BlockSize[0]==0)
+  {
+    free(v[1]);
+    psiBasis[0]=NULL;
+    for(i=0;i<Sqr(M->BlockSize);i++)
+    {
+      M->a[i].Re=0;
+      M->b[i].Re=0;
+      M->a[i].Im=0;
+      M->b[i].Im=0;
+    }
+    free(v[3]);
+    return 0;
+  }
+  NSingular=M->BlockSize-Npsi;
+  if(NSingular!=0)
+  {
+    VerbosityPrintf(0x0001,"Reduce dimension from %u to %u in block %u\n",M->BlockSize,M->BlockSize-NSingular,0);
+  }
+  // b[0] = v[0] . v[1]^+ or b[0]^T = v[1]^* . v[0]^T
+  for(i=0;i<Npsi+NSingular;i++)
+  {
+    for(j=0;j<Npsi;j++)
+    {
+      ComplexWaveFunctionDotProduct(&(v[1][j]), &(v[0][i]), &(M->b[i * M->BlockSize + j].Re), &(M->b[i * M->BlockSize + j].Im));
+    }
+  }
+  vi=1;
+  vim=0;
+  vip=2;
+  Npsivi=Npsi;
+  for(k=1;k<M->N;k++)
+  {
+    // v[vip] = H v[vi]^T
+    v[vip] = malloc(Npsivi*sizeof(WaveFunctionType));
+    while(BlockOperatorPsiRC(H, v[vi], v[vip], Npsivi))
+    {
+      printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeRC for the function BlockOperatorPsiRR\n");
+      printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
+      fflush(stdout);
+      epsilon *= 2.0;
+      if (v[vi][0].NBlok == 1) AllocFailed();
+      ComplexBlockWaveFunctionTruncateBasis(v[vi], Npsivi, epsilon);
+    }
+    // a[k] = v[vi]^* . v[vip]^T  (v[vi]^* . H . v[vi]^T)
+    Mab.V = &(M->a[k*Sqr(M->BlockSize)]);
+    ComplexBlockWaveFunctionDotProduct(v[vi], Npsi, v[vip], Npsi, &Mab); //Npsivi = Npsi - changes at Lowdin Orthonormalization
+    if(k!=1)
+    {
+      // b[k-1] = v[vim]^* . v[vip]^T  (v[vim]^* . H . v[vi]^T)
+      Mab.V = &(M->b[(k-1)*Sqr(M->BlockSize)]);
+      ComplexBlockWaveFunctionDotProduct(v[vim], Npsivim, v[vip], Npsi, &Mab);
+    }
+    NSingular=1;
+    while(NSingular)
+    {
+      // orthogonalize v[vip] to v[vi] and v[vim]
+      // we use matrix multiplication between v[vip] and v[vi] which is a numerical unstable form of Gram Schmidt
+      // we heal this by repeating the orthogonalization twice for each matrix vector and once for vi and vim (factor of 3 reduction in speed but needed in tests)
+      Mab.V=M->a;
+      // w = v[vip]^* . v[vi]^T
+      CompactMatrixScale(&Mab, 0);
+      ComplexBlockWaveFunctionDotProduct(v[vip], Npsi, v[vi], Npsivi, &Mab);
+      // v[vip] -= w^* . v[vi]
+      while(ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vi], Npsivi, Mab))
+      {
+        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeRC for the function RealBlockWaveFunctionSubtractMultipliedUnionBasis\n");
+        printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
+        fflush(stdout);
+        epsilon *= 2.0;
+        if ((v[vi][0].NBlok == 1)&&(v[vip][0].NBlok == 1)) AllocFailed();
+        ComplexBlockWaveFunctionTruncateBasis(v[vi],  Npsivi, epsilon);
+        ComplexBlockWaveFunctionTruncateBasis(v[vip], Npsi,   epsilon);
+      }
+      // w = v[vip]^* . v[vi]^T
+      CompactMatrixScale(&Mab, 0);
+      ComplexBlockWaveFunctionDotProduct(v[vip], Npsi, v[vi], Npsivi, &Mab);
+      // v[vip] -= w^* . v[vi]
+      while(ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vi], Npsivi, Mab))
+      {
+        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeRC for the function RealBlockWaveFunctionSubtractMultipliedUnionBasis\n");
+        printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
+        fflush(stdout);
+        epsilon *= 2.0;
+        if ((v[vi][0].NBlok == 1)&&(v[vip][0].NBlok == 1)) AllocFailed();
+        ComplexBlockWaveFunctionTruncateBasis(v[vi],  Npsivi, epsilon);
+        ComplexBlockWaveFunctionTruncateBasis(v[vip], Npsi,   epsilon);
+      }
+      // w = v[vip]^* . v[vim]^T
+      CompactMatrixScale(&Mab, 0);
+      ComplexBlockWaveFunctionDotProduct(v[vip], Npsi, v[vim], Npsivim, &Mab);
+      // v[vip] -= w^* . v[vim]
+      while(ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vim], Npsivim, Mab))
+      {
+        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeRC for the function RealBlockWaveFunctionSubtractMultipliedUnionBasis\n");
+        printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
+        fflush(stdout);
+        epsilon *= 2.0;
+        if ((v[vim][0].NBlok == 1)&&(v[vip][0].NBlok == 1)) AllocFailed();
+        ComplexBlockWaveFunctionTruncateBasis(v[vim], Npsivim, epsilon);
+        ComplexBlockWaveFunctionTruncateBasis(v[vip], Npsi,    epsilon);
+      }
+      // w = v[vip]^* . v[vim]^T
+      CompactMatrixScale(&Mab, 0);
+      ComplexBlockWaveFunctionDotProduct(v[vip], Npsi, v[vim], Npsivim, &Mab);
+      // v[vip] -= w^* . v[vim]
+      while(ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vim], Npsivim, Mab))
+      {
+        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeRC for the function RealBlockWaveFunctionSubtractMultipliedUnionBasis\n");
+        printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
+        fflush(stdout);
+        epsilon *= 2.0;
+        if ((v[vim][0].NBlok == 1)&&(v[vip][0].NBlok == 1)) AllocFailed();
+        ComplexBlockWaveFunctionTruncateBasis(v[vim], Npsivim, epsilon);
+        ComplexBlockWaveFunctionTruncateBasis(v[vip], Npsi,    epsilon);
+      }
+      // w = v[vip]^* . v[vi]^T
+      CompactMatrixScale(&Mab, 0);
+      ComplexBlockWaveFunctionDotProduct(v[vip], Npsi, v[vi], Npsivi, &Mab);
+      // v[vip] -= w^* . v[vi]
+      while(ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vi], Npsivi, Mab))
+      {
+        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeRC for the function RealBlockWaveFunctionSubtractMultipliedUnionBasis\n");
+        printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
+        fflush(stdout);
+        epsilon *= 2.0;
+        if ((v[vi][0].NBlok == 1)&&(v[vip][0].NBlok == 1)) AllocFailed();
+        ComplexBlockWaveFunctionTruncateBasis(v[vi],  Npsivi, epsilon);
+        ComplexBlockWaveFunctionTruncateBasis(v[vip], Npsi,   epsilon);
+      }
+      // w = v[vip]^* . v[vim]^T
+      CompactMatrixScale(&Mab, 0);
+      ComplexBlockWaveFunctionDotProduct(v[vip], Npsi, v[vim], Npsivim, &Mab);
+      // v[vip] -= w^* . v[vim]
+      while(ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vim], Npsivim, Mab))
+      {
+        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeRC for the function RealBlockWaveFunctionSubtractMultipliedUnionBasis\n");
+        printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
+        fflush(stdout);
+        epsilon *= 2.0;
+        if ((v[vim][0].NBlok == 1)&&(v[vip][0].NBlok == 1)) AllocFailed();
+        ComplexBlockWaveFunctionTruncateBasis(v[vim], Npsivim, epsilon);
+        ComplexBlockWaveFunctionTruncateBasis(v[vip], Npsi,    epsilon);
+      }
+      // Lowdin orthonormalize v[vip] into v[3], free v[vip] and set v[vip] equal to v[3]
+      NSingular=Npsi;
+      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, epsilon, True);
+      NSingular-=Npsi;
+      if(NSingular!=0)
+      {
+        VerbosityPrintf(0x0001, "Reduce dimension from %u to %u in block %u\n",Npsi+NSingular,Npsi,k);
+      }
+      for(i=0;i<Npsi+NSingular;i++)
+      {
+        ComplexWaveFunctionFreeValues(&v[vip][i]);
+      }
+      for(i=0;i<Npsi;i++)
+      {
+        v[vip][i]=v[3][i];
+      }
+      // remove small values from v[vip]
+      ComplexBlockWaveFunctionTruncateBasis(v[vip], Npsi, epsilon);
+    }
+    BlockSize[k]=Npsi;
+    psiBasis[k]=v[vip];
+    if(BlockSize[k]==0)
+    {
+      free(v[vip]);
+      psiBasis[k]=NULL;
+      for(i=0;i<Sqr(M->BlockSize);i++)
+      {
+        M->a[i].Re=0;
+        M->a[i].Im=0;
+      }
+      free(v[3]);
+      return 0;
+    }
+    // set pointers for next state
+    vim=vi;
+    vi=vip;
+    vip=(vip+1)%3;
+    Npsivim=Npsivi;
+    Npsivi=Npsi;
   }
   for(i=0;i<Sqr(M->BlockSize);i++)
   {
     M->a[i].Re=0;
     M->a[i].Im=0;
   }
-  free(v[1]);
-  free(v[2]);
+  free(v[3]);
+  return 0;
+}
+uint32_t LanczosBlockTriDiagonalizeKrylovMC(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
+{
+  uint32_t i,j,k,vi,vip,vim;
+  CompactMatrixType Mab;
+  WaveFunctionType *v[4];
+  uint32_t NSingular,Npsi=M->BlockSize,Npsivi=M->BlockSize,Npsivim=M->BlockSize;
+  VerbosityPrintf(0x0001,"Start of LanczosBlockTriDiagonalizeMC\n");
+  fflush(stdout);
+  for(i=0;i<M->BlockSize;i++)
+  {
+    M->b[i+i*M->BlockSize].Re=0;
+    M->b[i+i*M->BlockSize].Im=0;
+  }
+  v[0] = psi;
+  v[3] = malloc(Npsi*sizeof(WaveFunctionType));
+  
+  Mab.Ni=M->BlockSize;
+  Mab.Nj=M->BlockSize;
+  Mab.QComplex=1;
+  v[1] = malloc(Npsi*sizeof(WaveFunctionType));
+  ComplexWaveFunctionListSVDOrthogonalize(v[0], v[1], &Npsi, epsilon, True); // v[1] = orthonormal[v0]
+  BlockSize[0]=Npsi;
+  psiBasis[0]=v[1];
+  if(BlockSize[0]==0)
+  {
+    free(v[1]);
+    psiBasis[0]=NULL;
+    for(i=0;i<Sqr(M->BlockSize);i++)
+    {
+      M->a[i].Re=0;
+      M->b[i].Re=0;
+      M->a[i].Im=0;
+      M->b[i].Im=0;
+    }
+    free(v[3]);
+    return 0;
+  }
+  NSingular=M->BlockSize-Npsi;
+  if(NSingular!=0)
+  {
+    VerbosityPrintf(0x0001,"Reduce dimension from %u to %u in block %u\n",M->BlockSize,M->BlockSize-NSingular,0);
+  }
+  // b[0] = v[0] . v[1]^+ or b[0]^T = v[1]^* . v[0]^T
+  for(i=0;i<Npsi+NSingular;i++)
+  {
+    for(j=0;j<Npsi;j++)
+    {
+      ComplexWaveFunctionDotProduct(&(v[1][j]), &(v[0][i]), &(M->b[i * M->BlockSize + j].Re), &(M->b[i * M->BlockSize + j].Im));
+    }
+  }
+  vi=1;
+  vim=0;
+  vip=2;
+  Npsivi=Npsi;
+  for(k=1;k<M->N;k++)
+  {
+    // v[vip] = H v[vi]^T
+    v[vip] = malloc(Npsivi*sizeof(WaveFunctionType));
+    while(BlockOperatorPsiMC(H, v[vi], v[vip], Npsivi))
+    {
+      printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeMC for the function BlockOperatorPsiRR\n");
+      printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
+      fflush(stdout);
+      epsilon *= 2.0;
+      if (v[vi][0].NBlok == 1) AllocFailed();
+      ComplexBlockWaveFunctionTruncateBasis(v[vi], Npsivi, epsilon);
+    }
+    // a[k] = v[vi]^* . v[vip]^T  (v[vi]^* . H . v[vi]^T)
+    Mab.V = &(M->a[k*Sqr(M->BlockSize)]);
+    ComplexBlockWaveFunctionDotProduct(v[vi], Npsi, v[vip], Npsi, &Mab); //Npsivi = Npsi - changes at Lowdin Orthonormalization
+    if(k!=1)
+    {
+      // b[k-1] = v[vim]^* . v[vip]^T  (v[vim]^* . H . v[vi]^T)
+      Mab.V = &(M->b[(k-1)*Sqr(M->BlockSize)]);
+      ComplexBlockWaveFunctionDotProduct(v[vim], Npsivim, v[vip], Npsi, &Mab);
+    }
+    NSingular=1;
+    while(NSingular)
+    {
+      // orthogonalize v[vip] to v[vi] and v[vim]
+      // we use matrix multiplication between v[vip] and v[vi] which is a numerical unstable form of Gram Schmidt
+      // we heal this by repeating the orthogonalization twice for each matrix vector and once for vi and vim (factor of 3 reduction in speed but needed in tests)
+      Mab.V=M->a;
+      // w = v[vip]^* . v[vi]^T
+      CompactMatrixScale(&Mab, 0);
+      ComplexBlockWaveFunctionDotProduct(v[vip], Npsi, v[vi], Npsivi, &Mab);
+      // v[vip] -= w^* . v[vi]
+      while(ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vi], Npsivi, Mab))
+      {
+        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeMC for the function RealBlockWaveFunctionSubtractMultipliedUnionBasis\n");
+        printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
+        fflush(stdout);
+        epsilon *= 2.0;
+        if ((v[vi][0].NBlok == 1)&&(v[vip][0].NBlok == 1)) AllocFailed();
+        ComplexBlockWaveFunctionTruncateBasis(v[vi],  Npsivi, epsilon);
+        ComplexBlockWaveFunctionTruncateBasis(v[vip], Npsi,   epsilon);
+      }
+      // w = v[vip]^* . v[vi]^T
+      CompactMatrixScale(&Mab, 0);
+      ComplexBlockWaveFunctionDotProduct(v[vip], Npsi, v[vi], Npsivi, &Mab);
+      // v[vip] -= w^* . v[vi]
+      while(ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vi], Npsivi, Mab))
+      {
+        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeMC for the function RealBlockWaveFunctionSubtractMultipliedUnionBasis\n");
+        printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
+        fflush(stdout);
+        epsilon *= 2.0;
+        if ((v[vi][0].NBlok == 1)&&(v[vip][0].NBlok == 1)) AllocFailed();
+        ComplexBlockWaveFunctionTruncateBasis(v[vi],  Npsivi, epsilon);
+        ComplexBlockWaveFunctionTruncateBasis(v[vip], Npsi,   epsilon);
+      }
+      // w = v[vip]^* . v[vim]^T
+      CompactMatrixScale(&Mab, 0);
+      ComplexBlockWaveFunctionDotProduct(v[vip], Npsi, v[vim], Npsivim, &Mab);
+      // v[vip] -= w^* . v[vim]
+      while(ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vim], Npsivim, Mab))
+      {
+        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeMC for the function RealBlockWaveFunctionSubtractMultipliedUnionBasis\n");
+        printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
+        fflush(stdout);
+        epsilon *= 2.0;
+        if ((v[vim][0].NBlok == 1)&&(v[vip][0].NBlok == 1)) AllocFailed();
+        ComplexBlockWaveFunctionTruncateBasis(v[vim], Npsivim, epsilon);
+        ComplexBlockWaveFunctionTruncateBasis(v[vip], Npsi,    epsilon);
+      }
+      // w = v[vip]^* . v[vim]^T
+      CompactMatrixScale(&Mab, 0);
+      ComplexBlockWaveFunctionDotProduct(v[vip], Npsi, v[vim], Npsivim, &Mab);
+      // v[vip] -= w^* . v[vim]
+      while(ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vim], Npsivim, Mab))
+      {
+        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeMC for the function RealBlockWaveFunctionSubtractMultipliedUnionBasis\n");
+        printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
+        fflush(stdout);
+        epsilon *= 2.0;
+        if ((v[vim][0].NBlok == 1)&&(v[vip][0].NBlok == 1)) AllocFailed();
+        ComplexBlockWaveFunctionTruncateBasis(v[vim], Npsivim, epsilon);
+        ComplexBlockWaveFunctionTruncateBasis(v[vip], Npsi,    epsilon);
+      }
+      // w = v[vip]^* . v[vi]^T
+      CompactMatrixScale(&Mab, 0);
+      ComplexBlockWaveFunctionDotProduct(v[vip], Npsi, v[vi], Npsivi, &Mab);
+      // v[vip] -= w^* . v[vi]
+      while(ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vi], Npsivi, Mab))
+      {
+        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeMC for the function RealBlockWaveFunctionSubtractMultipliedUnionBasis\n");
+        printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
+        fflush(stdout);
+        epsilon *= 2.0;
+        if ((v[vi][0].NBlok == 1)&&(v[vip][0].NBlok == 1)) AllocFailed();
+        ComplexBlockWaveFunctionTruncateBasis(v[vi],  Npsivi, epsilon);
+        ComplexBlockWaveFunctionTruncateBasis(v[vip], Npsi,   epsilon);
+      }
+      // w = v[vip]^* . v[vim]^T
+      CompactMatrixScale(&Mab, 0);
+      ComplexBlockWaveFunctionDotProduct(v[vip], Npsi, v[vim], Npsivim, &Mab);
+      // v[vip] -= w^* . v[vim]
+      while(ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vim], Npsivim, Mab))
+      {
+        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeMC for the function RealBlockWaveFunctionSubtractMultipliedUnionBasis\n");
+        printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
+        fflush(stdout);
+        epsilon *= 2.0;
+        if ((v[vim][0].NBlok == 1)&&(v[vip][0].NBlok == 1)) AllocFailed();
+        ComplexBlockWaveFunctionTruncateBasis(v[vim], Npsivim, epsilon);
+        ComplexBlockWaveFunctionTruncateBasis(v[vip], Npsi,    epsilon);
+      }
+      // Lowdin orthonormalize v[vip] into v[3], free v[vip] and set v[vip] equal to v[3]
+      NSingular=Npsi;
+      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, epsilon, True);
+      NSingular-=Npsi;
+      if(NSingular!=0)
+      {
+        VerbosityPrintf(0x0001, "Reduce dimension from %u to %u in block %u\n",Npsi+NSingular,Npsi,k);
+      }
+      for(i=0;i<Npsi+NSingular;i++)
+      {
+        ComplexWaveFunctionFreeValues(&v[vip][i]);
+      }
+      for(i=0;i<Npsi;i++)
+      {
+        v[vip][i]=v[3][i];
+      }
+      // remove small values from v[vip]
+      ComplexBlockWaveFunctionTruncateBasis(v[vip], Npsi, epsilon);
+    }
+    BlockSize[k]=Npsi;
+    psiBasis[k]=v[vip];
+    if(BlockSize[k]==0)
+    {
+      free(v[vip]);
+      psiBasis[k]=NULL;
+      for(i=0;i<Sqr(M->BlockSize);i++)
+      {
+        M->a[i].Re=0;
+        M->a[i].Im=0;
+      }
+      free(v[3]);
+      return 0;
+    }
+    // set pointers for next state
+    vim=vi;
+    vi=vip;
+    vip=(vip+1)%3;
+    Npsivim=Npsivi;
+    Npsivi=Npsi;
+  }
+  for(i=0;i<Sqr(M->BlockSize);i++)
+  {
+    M->a[i].Re=0;
+    M->a[i].Im=0;
+  }
+  free(v[3]);
+  return 0;
+}
+uint32_t LanczosBlockTriDiagonalizeKrylovCC(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
+{
+  uint32_t i,j,k,vi,vip,vim;
+  CompactMatrixType Mab;
+  WaveFunctionType *v[4];
+  uint32_t NSingular,Npsi=M->BlockSize,Npsivi=M->BlockSize,Npsivim=M->BlockSize;
+  VerbosityPrintf(0x0001,"Start of LanczosBlockTriDiagonalizeCC\n");
+  fflush(stdout);
+  for(i=0;i<M->BlockSize;i++)
+  {
+    M->b[i+i*M->BlockSize].Re=0;
+    M->b[i+i*M->BlockSize].Im=0;
+  }
+  v[0] = psi;
+  v[3] = malloc(Npsi*sizeof(WaveFunctionType));
+  
+  Mab.Ni=M->BlockSize;
+  Mab.Nj=M->BlockSize;
+  Mab.QComplex=1;
+  v[1] = malloc(Npsi*sizeof(WaveFunctionType));
+  ComplexWaveFunctionListSVDOrthogonalize(v[0], v[1], &Npsi, epsilon, True); // v[1] = orthonormal[v0]
+  BlockSize[0]=Npsi;
+  psiBasis[0]=v[1];
+  if(BlockSize[0]==0)
+  {
+    free(v[1]);
+    psiBasis[0]=NULL;
+    for(i=0;i<Sqr(M->BlockSize);i++)
+    {
+      M->a[i].Re=0;
+      M->b[i].Re=0;
+      M->a[i].Im=0;
+      M->b[i].Im=0;
+    }
+    free(v[3]);
+    return 0;
+  }
+  NSingular=M->BlockSize-Npsi;
+  if(NSingular!=0)
+  {
+    VerbosityPrintf(0x0001,"Reduce dimension from %u to %u in block %u\n",M->BlockSize,M->BlockSize-NSingular,0);
+  }
+  // b[0] = v[0] . v[1]^+ or b[0]^T = v[1]^* . v[0]^T
+  for(i=0;i<Npsi+NSingular;i++)
+  {
+    for(j=0;j<Npsi;j++)
+    {
+      ComplexWaveFunctionDotProduct(&(v[1][j]), &(v[0][i]), &(M->b[i * M->BlockSize + j].Re), &(M->b[i * M->BlockSize + j].Im));
+    }
+  }
+  vi=1;
+  vim=0;
+  vip=2;
+  Npsivi=Npsi;
+  for(k=1;k<M->N;k++)
+  {
+    // v[vip] = H v[vi]^T
+    v[vip] = malloc(Npsivi*sizeof(WaveFunctionType));
+    while(BlockOperatorPsiCC(H, v[vi], v[vip], Npsivi))
+    {
+      printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeCC for the function BlockOperatorPsiRR\n");
+      printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
+      fflush(stdout);
+      epsilon *= 2.0;
+      if (v[vi][0].NBlok == 1) AllocFailed();
+      ComplexBlockWaveFunctionTruncateBasis(v[vi], Npsivi, epsilon);
+    }
+    // a[k] = v[vi]^* . v[vip]^T  (v[vi]^* . H . v[vi]^T)
+    Mab.V = &(M->a[k*Sqr(M->BlockSize)]);
+    ComplexBlockWaveFunctionDotProduct(v[vi], Npsi, v[vip], Npsi, &Mab); //Npsivi = Npsi - changes at Lowdin Orthonormalization
+    if(k!=1)
+    {
+      // b[k-1] = v[vim]^* . v[vip]^T  (v[vim]^* . H . v[vi]^T)
+      Mab.V = &(M->b[(k-1)*Sqr(M->BlockSize)]);
+      ComplexBlockWaveFunctionDotProduct(v[vim], Npsivim, v[vip], Npsi, &Mab);
+    }
+    NSingular=1;
+    while(NSingular)
+    {
+      // orthogonalize v[vip] to v[vi] and v[vim]
+      // we use matrix multiplication between v[vip] and v[vi] which is a numerical unstable form of Gram Schmidt
+      // we heal this by repeating the orthogonalization twice for each matrix vector and once for vi and vim (factor of 3 reduction in speed but needed in tests)
+      Mab.V=M->a;
+      // w = v[vip]^* . v[vi]^T
+      CompactMatrixScale(&Mab, 0);
+      ComplexBlockWaveFunctionDotProduct(v[vip], Npsi, v[vi], Npsivi, &Mab);
+      // v[vip] -= w^* . v[vi]
+      while(ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vi], Npsivi, Mab))
+      {
+        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeCC for the function RealBlockWaveFunctionSubtractMultipliedUnionBasis\n");
+        printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
+        fflush(stdout);
+        epsilon *= 2.0;
+        if ((v[vi][0].NBlok == 1)&&(v[vip][0].NBlok == 1)) AllocFailed();
+        ComplexBlockWaveFunctionTruncateBasis(v[vi],  Npsivi, epsilon);
+        ComplexBlockWaveFunctionTruncateBasis(v[vip], Npsi,   epsilon);
+      }
+      // w = v[vip]^* . v[vi]^T
+      CompactMatrixScale(&Mab, 0);
+      ComplexBlockWaveFunctionDotProduct(v[vip], Npsi, v[vi], Npsivi, &Mab);
+      // v[vip] -= w^* . v[vi]
+      while(ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vi], Npsivi, Mab))
+      {
+        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeCC for the function RealBlockWaveFunctionSubtractMultipliedUnionBasis\n");
+        printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
+        fflush(stdout);
+        epsilon *= 2.0;
+        if ((v[vi][0].NBlok == 1)&&(v[vip][0].NBlok == 1)) AllocFailed();
+        ComplexBlockWaveFunctionTruncateBasis(v[vi],  Npsivi, epsilon);
+        ComplexBlockWaveFunctionTruncateBasis(v[vip], Npsi,   epsilon);
+      }
+      // w = v[vip]^* . v[vim]^T
+      CompactMatrixScale(&Mab, 0);
+      ComplexBlockWaveFunctionDotProduct(v[vip], Npsi, v[vim], Npsivim, &Mab);
+      // v[vip] -= w^* . v[vim]
+      while(ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vim], Npsivim, Mab))
+      {
+        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeCC for the function RealBlockWaveFunctionSubtractMultipliedUnionBasis\n");
+        printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
+        fflush(stdout);
+        epsilon *= 2.0;
+        if ((v[vim][0].NBlok == 1)&&(v[vip][0].NBlok == 1)) AllocFailed();
+        ComplexBlockWaveFunctionTruncateBasis(v[vim], Npsivim, epsilon);
+        ComplexBlockWaveFunctionTruncateBasis(v[vip], Npsi,    epsilon);
+      }
+      // w = v[vip]^* . v[vim]^T
+      CompactMatrixScale(&Mab, 0);
+      ComplexBlockWaveFunctionDotProduct(v[vip], Npsi, v[vim], Npsivim, &Mab);
+      // v[vip] -= w^* . v[vim]
+      while(ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vim], Npsivim, Mab))
+      {
+        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeCC for the function RealBlockWaveFunctionSubtractMultipliedUnionBasis\n");
+        printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
+        fflush(stdout);
+        epsilon *= 2.0;
+        if ((v[vim][0].NBlok == 1)&&(v[vip][0].NBlok == 1)) AllocFailed();
+        ComplexBlockWaveFunctionTruncateBasis(v[vim], Npsivim, epsilon);
+        ComplexBlockWaveFunctionTruncateBasis(v[vip], Npsi,    epsilon);
+      }
+      // w = v[vip]^* . v[vi]^T
+      CompactMatrixScale(&Mab, 0);
+      ComplexBlockWaveFunctionDotProduct(v[vip], Npsi, v[vi], Npsivi, &Mab);
+      // v[vip] -= w^* . v[vi]
+      while(ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vi], Npsivi, Mab))
+      {
+        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeCC for the function RealBlockWaveFunctionSubtractMultipliedUnionBasis\n");
+        printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
+        fflush(stdout);
+        epsilon *= 2.0;
+        if ((v[vi][0].NBlok == 1)&&(v[vip][0].NBlok == 1)) AllocFailed();
+        ComplexBlockWaveFunctionTruncateBasis(v[vi],  Npsivi, epsilon);
+        ComplexBlockWaveFunctionTruncateBasis(v[vip], Npsi,   epsilon);
+      }
+      // w = v[vip]^* . v[vim]^T
+      CompactMatrixScale(&Mab, 0);
+      ComplexBlockWaveFunctionDotProduct(v[vip], Npsi, v[vim], Npsivim, &Mab);
+      // v[vip] -= w^* . v[vim]
+      while(ComplexBlockWaveFunctionSubtractMultipliedUnionBasis(v[vip], Npsi, v[vim], Npsivim, Mab))
+      {
+        printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeCC for the function RealBlockWaveFunctionSubtractMultipliedUnionBasis\n");
+        printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
+        fflush(stdout);
+        epsilon *= 2.0;
+        if ((v[vim][0].NBlok == 1)&&(v[vip][0].NBlok == 1)) AllocFailed();
+        ComplexBlockWaveFunctionTruncateBasis(v[vim], Npsivim, epsilon);
+        ComplexBlockWaveFunctionTruncateBasis(v[vip], Npsi,    epsilon);
+      }
+      // Lowdin orthonormalize v[vip] into v[3], free v[vip] and set v[vip] equal to v[3]
+      NSingular=Npsi;
+      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, epsilon, True);
+      NSingular-=Npsi;
+      if(NSingular!=0)
+      {
+        VerbosityPrintf(0x0001, "Reduce dimension from %u to %u in block %u\n",Npsi+NSingular,Npsi,k);
+      }
+      for(i=0;i<Npsi+NSingular;i++)
+      {
+        ComplexWaveFunctionFreeValues(&v[vip][i]);
+      }
+      for(i=0;i<Npsi;i++)
+      {
+        v[vip][i]=v[3][i];
+      }
+      // remove small values from v[vip]
+      ComplexBlockWaveFunctionTruncateBasis(v[vip], Npsi, epsilon);
+    }
+    BlockSize[k]=Npsi;
+    psiBasis[k]=v[vip];
+    if(BlockSize[k]==0)
+    {
+      free(v[vip]);
+      psiBasis[k]=NULL;
+      for(i=0;i<Sqr(M->BlockSize);i++)
+      {
+        M->a[i].Re=0;
+        M->a[i].Im=0;
+      }
+      free(v[3]);
+      return 0;
+    }
+    // set pointers for next state
+    vim=vi;
+    vi=vip;
+    vip=(vip+1)%3;
+    Npsivim=Npsivi;
+    Npsivi=Npsi;
+  }
+  for(i=0;i<Sqr(M->BlockSize);i++)
+  {
+    M->a[i].Re=0;
+    M->a[i].Im=0;
+  }
   free(v[3]);
   return 0;
 }
@@ -3351,8 +4230,6 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRR(const OperatorType H, WaveFunctionTy
   free(v[3]);
   return 0;
 }
-
-
 uint32_t LanczosBlockTriDiagonalizeKrylovMR(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
 {
   // make psi complex, call MC
@@ -3400,7 +4277,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovCR(const OperatorType H, WaveFunctionTy
 uint32_t LanczosBlockTriDiagonalizeRestricted(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
 {
   uint32_t i,psiComplex=0;
-  VerbosityPrintf(0x0001,"Start of LanczosBlockTriDiagonalize\n");
+  VerbosityPrintf(0x0001,"Start of LanczosBlockTriDiagonalizeRestricted\n");
   // all psi complex ?
   for(i=0;i<M->BlockSize;i++)
   {
@@ -3453,7 +4330,6 @@ uint32_t LanczosBlockTriDiagonalizeRestricted(const OperatorType H, WaveFunction
     }
   }
 }
-
 
 uint32_t LanczosBlockTriDiagonalize(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
 {
@@ -3518,14 +4394,63 @@ uint32_t LanczosBlockTriDiagonalize(const OperatorType H, WaveFunctionType * con
   }
 }
 
-
-
 uint32_t LanczosBlockTriDiagonalizeKrylovRestricted(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
 {
-  //TODO: Implement restricted version that returns Krylov basis
-  return 1;
+  uint32_t i,psiComplex=0;
+  VerbosityPrintf(0x0001,"Start of LanczosBlockTriDiagonalize Krylov Restricted \n");
+  // all psi complex ?
+  for(i=0;i<M->BlockSize;i++)
+  {
+    if(psi[i].QComplex)psiComplex++;
+  }
+  if(!((psiComplex==M->BlockSize)||(psiComplex==0)))
+  {
+    for(i=0;i<M->BlockSize;i++)
+    {
+      if (MakeComplexWaveFunctionFromReal(&psi[i], psi[i]))
+      {
+        printf("LanczosBlockTriDiagonalizeKrylovRestricted called with a set of wave-functions that are mixed real and complex.\nTurned the wave-function complex in step 1.\nBut failed at function %i.\n",i);
+        fflush(stdout);
+        for(;i>0;i--)
+        {
+          MakeRealWaveFunctionFromComplex(psi[i-1], &psi[i-1]);
+        }
+        return 1;
+      }
+    }
+  }
+  if (psiComplex)
+  {
+    if (H.QComplex == 0)
+    {
+      return LanczosBlockTriDiagonalizeKrylovRestrictedRC(H, psi, Restrictions, epsilon, M, psiBasis, BlockSize);
+    }
+    else if (H.QComplex == 1)
+    {
+      return LanczosBlockTriDiagonalizeKrylovRestrictedCC(H, psi, Restrictions, epsilon, M, psiBasis, BlockSize);
+    }
+    else
+    {
+      return LanczosBlockTriDiagonalizeKrylovRestrictedMC(H, psi, Restrictions, epsilon, M, psiBasis, BlockSize);
+    }
+  }
+  else
+  {
+    if (H.QComplex == 0)
+    {
+      return LanczosBlockTriDiagonalizeKrylovRestrictedRR(H, psi, Restrictions, epsilon, M, psiBasis, BlockSize);
+    }
+    else if (H.QComplex == 1)
+    {
+      return LanczosBlockTriDiagonalizeKrylovRestrictedCR(H, psi, Restrictions, epsilon, M, psiBasis, BlockSize);
+    }
+    else
+    {
+      return LanczosBlockTriDiagonalizeKrylovRestrictedMR(H, psi, Restrictions, epsilon, M, psiBasis, BlockSize);
+    }
+  }
 }
-
+ 
 /*  The Krylov basis is returned as a list of M->N pointers each poiter allocates a set of wave-functions that have the same basis
  *  The number of functions to allocate is M->BlockSize-Nsingular[i] = BlockSize[i]
  *  The wave functions psi are freed (or used in psiBasis) on succesfull exit
