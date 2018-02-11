@@ -2786,11 +2786,88 @@ uint32_t BlockListOfPolesToBlockAndersonMatrixReduceDimension(BlockListOfPoles c
 
 
 
-
-uint32_t BlockTriDiagonalMatrixEigenValues()
+// Given a matrix in BlockTriDiagonal form calculate the Eigenvalues
+// val is allocated with a minimal length of A->N * A->BlockSize
+uint32_t BlockTriDiagonalMatrixEigenValues(const BlockTriDiagonalMatrixType * const A, double * val)
 {
-  //TODO: use dsbtrd
-  printf("Not implemented BlockTriDiagonalMatrixEigenValues\n");
+  uint32_t i,j,k;
+  char *UPLO="U";
+  char *VECT="N";
+  const int N=A->N*A->BlockSize;
+  const int KD = A->BlockSize-1;
+  const int LDAB = KD+1;
+  TriDiagonalMatrixType M;
+  int INFO=0;
+  M.N=N;
+  InitTriDiagonalMatrix(&M);
+  if(A->QComplex==0)
+  {
+    double * AB;
+    double *WORK;
+    AB=malloc(LDAB*N*sizeof(double));
+    if(AB==NULL)
+    {
+      printf("ERROR: malloc failed in BlockTriDiagonalMatrixEigenValues\n");
+      return 1;
+    }
+    WORK=malloc((N+1)*sizeof(double));
+    if(WORK==NULL)
+    {
+      free(AB);
+      printf("ERROR: malloc failed in BlockTriDiagonalMatrixEigenValues\n");
+      return 1;
+    }
+    // use dsbtrd to transform A into a tri diagonal form
+    //TODO: fill matrix AB
+    // if UPLO = 'U', AB(kd+1+i-j,j) = A(i,j) for max(1,j-kd)<=i<=j;
+    for(k=0;k<N;k++)
+    {
+      
+    }
+    
+    dsbtrd(VECT, UPLO, &N, &KD, AB, &LDAB, &(M.a[1]), &(M.b[1]), NULL, &INFO, WORK, &INFO);
+    free(AB);
+    free(WORK);
+    if(INFO!=0)
+    {
+      printf("ERROR: dsbtrd failed in BlockTriDiagonalMatrixEigenValues with INFO %i\n",INFO);
+      return 1;
+    }
+  }
+  else
+  {
+    Complex16 * AB;
+    Complex16 *WORK;
+    AB=malloc(LDAB*N*sizeof(Complex16));
+    if(AB==NULL)
+    {
+      printf("ERROR: malloc failed in BlockTriDiagonalMatrixEigenValues\n");
+      return 1;
+    }
+    WORK=malloc(N*sizeof(Complex16));
+    if(WORK==NULL)
+    {
+      free(AB);
+      printf("ERROR: malloc failed in BlockTriDiagonalMatrixEigenValues\n");
+      return 1;
+    }
+    // use zhbtrd to transform A into a tri diagonal form
+    
+    
+    
+    
+    
+    zhbtrd(VECT, UPLO, &N, &KD, AB, &LDAB, &(M.a[1]), &(M.b[1]), NULL, &INFO, WORK, &INFO);
+    free(AB);
+    free(WORK);
+    if(INFO!=0)
+    {
+      printf("ERROR: zhbtrd failed in BlockTriDiagonalMatrixEigenValues with INFO %i\n",INFO);
+      return 1;
+    }
+  }
+  TriDiagonalMatrixToEigenvalues(M, val);
+  FreeTriDiagonalMatrix(&M);
   return 0;
 }
 

@@ -208,7 +208,7 @@ static int math_log (lua_State *L)
     res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
     luaL_setmetatable(L, "Complex_Type");
     res->Re = 0.5*log(Sqr(a->Re)+Sqr(a->Im));
-    res->Im = atan2(a->Re, a->Im);
+    res->Im = atan2(a->Im,a->Re);
     if (!lua_isnoneornil(L, 2))
     {
       lua_Number base = luaL_checknumber(L, 2);
@@ -243,7 +243,7 @@ static int math_log10 (lua_State *L)
     res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
     luaL_setmetatable(L, "Complex_Type");
     res->Re = 0.5*log10(Sqr(a->Re)+Sqr(a->Im));
-    res->Im = atan2(a->Re, a->Im)/log(10.0);
+    res->Im = atan2(a->Im,a->Re)/log(10.0);
   }
   else
   {
@@ -271,6 +271,40 @@ static int math_exp (lua_State *L)
   else
   {
     lua_pushnumber(L, l_mathop(exp)(luaL_checknumber(L, 1)));
+  }
+  return 1;
+}
+
+static int math_erf (lua_State *L)
+{
+  if (luaL_testudata(L, 1, "Complex_Type") != NULL)
+  {
+    Complex16 *res;
+    Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Complex_Type");
+    res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
+    luaL_setmetatable(L, "Complex_Type");
+    *res = Cerf(*a);
+  }
+  else
+  {
+    lua_pushnumber(L, l_mathop(erf)(luaL_checknumber(L, 1)));
+  }
+  return 1;
+}
+
+static int math_erfc (lua_State *L)
+{
+  if (luaL_testudata(L, 1, "Complex_Type") != NULL)
+  {
+    Complex16 *res;
+    Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Complex_Type");
+    res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
+    luaL_setmetatable(L, "Complex_Type");
+    *res = Cerfc(*a);
+  }
+  else
+  {
+    lua_pushnumber(L, l_mathop(erfc)(luaL_checknumber(L, 1)));
   }
   return 1;
 }
@@ -507,6 +541,22 @@ static int math_LaguerreL(lua_State * L)
   l = (int) luaL_checknumber(L, 2);
   x = (double) luaL_checknumber(L, 3);
   res = LaguerrePolynomial(n,l,x);
+  lua_pushnumber(L, res);
+  return 1;
+}
+
+/* on stack w,GFWHM,LFWHM
+ *  returns a real number
+ */
+static int math_Voight(lua_State * L)
+{
+  double w,GFWHM,LFWHM;
+  double res;
+  if(lua_gettop(L)!=3) return luaL_error(L, "math.Voight expects 3 parameters w,GFWMH,LFWHM");
+  w     = (double) luaL_checknumber(L, 1);
+  GFWHM = (double) luaL_checknumber(L, 2);
+  LFWHM = (double) luaL_checknumber(L, 3);
+  res = Voight(w, GFWHM, LFWHM);
   lua_pushnumber(L, res);
   return 1;
 }
@@ -809,6 +859,8 @@ static const luaL_Reg mathlib[] = {
   {"cos",   math_cos},{"Cos",   math_cos},
   {"deg",   math_deg},{"Deg",   math_deg},
   {"exp",   math_exp},{"Exp",   math_exp},
+  {"erf",   math_erf},{"Erf",   math_erf},
+  {"erfc",   math_erfc},{"Erfc",   math_erfc},
   {"floor", math_floor},{"Floor", math_floor},
   {"fmod",   math_fmod},{"Fmod",   math_fmod},
   {"frexp", math_frexp},{"Frexp", math_frexp},
@@ -841,6 +893,7 @@ static const luaL_Reg mathlib[] = {
   {"KubicHarmonicE",     math_KubicHarmonicE},
   {"SphericalBesselJ",   math_SphericalBesselJ},
   {"LaguerreL",          math_LaguerreL},
+  {"Voight",             math_Voight},
   {"IntegerQ",           math_IntegerQ},
   {"EvenQ",              math_EvenQ},
   {"OddQ",               math_OddQ},
@@ -850,7 +903,6 @@ static const luaL_Reg mathlib[] = {
   {"MatrixConjugate",    math_MatrixConjugate},
   {NULL, NULL}
 };
-
 
 /*
 ** Open math library

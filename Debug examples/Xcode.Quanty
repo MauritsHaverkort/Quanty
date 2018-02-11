@@ -1,5 +1,7 @@
 Verbosity(0xFFFFFFFF)
 
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Functions/Math/complex.Quanty")
+os.exit()
 
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Functions/CreateSpectra.Quanty")
 os.exit()

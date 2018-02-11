@@ -82,6 +82,21 @@ double Gaussian(const double w, const double FWHM)
   return 0.9394372786996513 * exp(-2.772588722239781 * Sqr(w / FWHM)) / FWHM;
 }
 
+/* Voight profile
+ *
+ */
+double Voight(const double w, const double GFWHM, const double LFWHM)
+{
+  Complex16 z;
+  Complex16 ret;
+  z.Re=w/0.60056120439322489742890164304761;
+  z.Im=LFWHM/1.2011224087864497948578032860952;
+  ret=FaddeevaW(z);
+  ret.Re/=(1.0644670194312261793152675962346*LFWHM);
+  return ret.Re;
+}
+
+
 /* Fermi function
  *
  */
@@ -6297,3 +6312,8 @@ uint32_t SphericalHarmonicjjzToK(uint32_t l, CompactMatrixType *U)
   }
   return 0;
 }
+
+
+
+
+

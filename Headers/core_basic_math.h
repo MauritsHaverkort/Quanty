@@ -417,3 +417,13 @@ void   PerturbationOrderIndexToList(uint32_t const POIndex, uint32_t * const POL
 double ThreeJSymbol(int j1, int m1, int j2, int m2, int j3, int m3);
 double ThreeJSymbolHalf(int j1, int m1, int j2, int m2, int j3, int m3);
 double SlaterCoefficientC(int k, int l1, int m1, int l2, int m2);
+
+
+
+/**********************************************************/
+/***********        BasisMath/Complex           ***********/
+/**********************************************************/
+
+Complex16 FaddeevaW(Complex16 z);
+double FaddeevaW_Im(double x);
+double erfcx(const double x);

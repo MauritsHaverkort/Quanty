@@ -60,6 +60,7 @@ uint32_t GlobalVerbosity=0xF;
 #define dgetri dgetri_
 #define dsyrk dsyrk_
 #define dpotrf dpotrf_
+#define dsbtrd dsbtrd_
 #define dstev dstev_
 #define dscal dscal_
 #define dstevd dstevd_
@@ -74,6 +75,7 @@ uint32_t GlobalVerbosity=0xF;
 #define zgemv zgemv_
 #define zgetrf zgetrf_
 #define zgetri zgetri_
+#define zhbtrd zhbtrd_
 #define zherk zherk_
 #define zheev zheev_
 #define zheevd zheevd_
@@ -95,6 +97,7 @@ int    dgesvd();
 void   dgetrf();
 void   dgetri();
 int    dpotrf();
+int    dsbtrd();
 int    dscal();
 int    dsyrk();
 int    dstev();
@@ -110,6 +113,7 @@ int    zgemm();
 int    zgemv();
 void   zgetrf();
 void   zgetri();
+int    zhbtrd();
 int    zherk();
 int    zheev();
 int    zheevd();

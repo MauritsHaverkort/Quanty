@@ -1950,10 +1950,12 @@ static int LuaCreateSpectra(lua_State *L)
     Eminpole = DBL_MAX;
     Emaxpole =-DBL_MAX;
 
-    //TODO: set Eminpole and Emaxpole (they are in the output and I need them for auto range determination
-
-
-    BlockTriDiagonalMatrixEigenValues();
+    //set Eminpole and Emaxpole (they are in the output and I need them for auto range determination
+    val=malloc(GTri.N*GTri.BlockSize*sizeof(double));
+    BlockTriDiagonalMatrixEigenValues(&GTri,val);
+    Eminpole=val[0];
+    Emaxpole=val[GTri.N*GTri.BlockSize-1];
+    free(val);
 
 
 
