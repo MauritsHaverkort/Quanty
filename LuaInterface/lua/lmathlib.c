@@ -207,7 +207,7 @@ static int math_log (lua_State *L)
     Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Complex_Type");
     res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
     luaL_setmetatable(L, "Complex_Type");
-    res->Re = 0.5*log(Sqr(a->Re)+Sqr(a->Im));
+    res->Re = LogHypotemuse(a->Re,a->Im);
     res->Im = atan2(a->Im,a->Re);
     if (!lua_isnoneornil(L, 2))
     {
@@ -242,7 +242,7 @@ static int math_log10 (lua_State *L)
     Complex16 *a = (Complex16 *) luaL_checkudata(L, 1, "Complex_Type");
     res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
     luaL_setmetatable(L, "Complex_Type");
-    res->Re = 0.5*log10(Sqr(a->Re)+Sqr(a->Im));
+    res->Re = Log10Hypotemuse(a->Re,a->Im);
     res->Im = atan2(a->Im,a->Re)/log(10.0);
   }
   else

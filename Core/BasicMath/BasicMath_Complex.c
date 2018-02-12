@@ -94,6 +94,59 @@ Complex16 Cexp(const Complex16 z)
   return ret;
 }
 
+/*returns log(sqrt(a^2+b^2))*/
+double LogHypotemuse(const double a, const double b)
+{
+  if(Abs(a)<(Abs(b)/100))
+  {
+    double x = a/b;
+    x=x*x;
+    return log(Abs(b)) + 0.5*x*(1. - x*(0.5 - x*(0.33333333333333333333333333333333 -x*(0.25 - x*(0.2 -x*(0.16666666666666666666666666666667 -x*(0.14285714285714285714285714285714 -x*(0.125 - x*(0.11111111111111111111111111111111 - 0.1*x)))))))));
+  }
+  if(Abs(b)<(Abs(a)/100))
+  {
+    double x = b/a;
+    x=x*x;
+    return log(Abs(a)) + 0.5*x*(1. - x*(0.5 - x*(0.33333333333333333333333333333333 -x*(0.25 - x*(0.2 -x*(0.16666666666666666666666666666667 -x*(0.14285714285714285714285714285714 -x*(0.125 - x*(0.11111111111111111111111111111111 - 0.1*x)))))))));
+  }
+  return log(Sqr(a)+Sqr(b))*0.5;
+}
+/* log */
+Complex16 Clog(const Complex16 z)
+{
+  Complex16 res;
+  res.Re = LogHypotemuse(z.Re,z.Im);
+  res.Im = atan2(z.Im,z.Re);
+  return res;
+}
+
+/*returns log10(sqrt(a^2+b^2))*/
+double Log10Hypotemuse(const double a, const double b)
+{
+  if(Abs(a)<(Abs(b)/100))
+  {
+    double x = a/b;
+    x=x*x;
+    return log10(Abs(b)) + (0.5/log(10.0))*x*(1. - x*(0.5 - x*(0.33333333333333333333333333333333 -x*(0.25 - x*(0.2 -x*(0.16666666666666666666666666666667 -x*(0.14285714285714285714285714285714 -x*(0.125 - x*(0.11111111111111111111111111111111 - 0.1*x)))))))));
+  }
+  if(Abs(b)<(Abs(a)/100))
+  {
+    double x = b/a;
+    x=x*x;
+    return log(Abs(a)) + (0.5/log(10.0))*x*(1. - x*(0.5 - x*(0.33333333333333333333333333333333 -x*(0.25 - x*(0.2 -x*(0.16666666666666666666666666666667 -x*(0.14285714285714285714285714285714 -x*(0.125 - x*(0.11111111111111111111111111111111 - 0.1*x)))))))));
+  }
+  return log10(Sqr(a)+Sqr(b))*0.5;
+}
+/* log10 */
+Complex16 Clog10(const Complex16 z)
+{
+  Complex16 res;
+  res.Re = Log10Hypotemuse(z.Re,z.Im);
+  res.Im = atan2(z.Im,z.Re)/log(10.0);
+  return res;
+}
+
+
 /*Sin*/
 Complex16 Csin(const Complex16 z)
 {
@@ -551,6 +604,7 @@ Complex16 FaddeevaW(const Complex16 z)
   {
     double prod2ax = 1, prodm2ax = 1;
     double expx2;
+    int n;
     if (isnan(y))
     return Cnum(y,y);
     /* Somewhat ugly copy-and-paste duplication here, but I see significant
@@ -565,7 +619,7 @@ Complex16 FaddeevaW(const Complex16 z)
       1 + ax2 * (1 + ax2 * (0.5 + 0.166666666666666666667*ax2));
       const double expm2ax =
       1 - ax2 * (1 - ax2 * (0.5 - 0.166666666666666666667*ax2));
-      for (int n = 1; 1; ++n) {
+      for (n = 1; 1; ++n) {
         const double coef = expa2n2[n-1] * expx2 / (a2*(n*n) + y*y);
         prod2ax *= exp2ax;
         prodm2ax *= expm2ax;
@@ -581,7 +635,7 @@ Complex16 FaddeevaW(const Complex16 z)
     else { // x > 5e-4, compute sum4 and sum5 separately
       expx2 = exp(-x*x);
       const double exp2ax = exp((2*a)*x), expm2ax = 1 / exp2ax;
-      for (int n = 1; 1; ++n) {
+      for (n = 1; 1; ++n) {
         const double coef = expa2n2[n-1] * expx2 / (a2*(n*n) + y*y);
         prod2ax *= exp2ax;
         prodm2ax *= expm2ax;

@@ -2374,7 +2374,7 @@ static int LuaEvolveToGroundstate(lua_State * L)
     {"epsilon","double",&(Options.epsilon)},
     {"Epsilon","double",&(Options.epsilon)},
     {"zero","double",&(Options.zero)},
-    {"Aero","double",&(Options.zero)},
+    {"Zero","double",&(Options.zero)},
     {"restrictions", "DeterminantRestrictionType", &(Options.DeterminantRestrictions)},
     {"Restrictions", "DeterminantRestrictionType", &(Options.DeterminantRestrictions)},
     {NULL, NULL, NULL}};
