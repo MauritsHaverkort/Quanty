@@ -1,0 +1,334 @@
+-- CTM4XAS Calculation with Quanty
+-- L23 XAS with Charge Transfer (LMCT)
+-------------------------------------------------------------------------------------
+-- we define now some base transformation
+-------------------------------------------------------------------------------------
+
+function TableToString(t)
+  local ret = ""
+  for k,v in pairs(t) do
+    if (type(v) == "table") then
+      ret = ret..TableToString(v)
+      elseif (type(v) == "string") then
+      if k~=1 then
+        ret = ret.." , "
+      end
+      ret = ret..v
+      else
+      if k~=1 then
+        ret = ret.." , "
+      end
+      if(Complex.Im(v) < 0) then
+        ret = ret..string.format("%10.7f - I %10.7f ",Complex.Re(v),-Complex.Im(v))
+        else
+        ret = ret..string.format("%10.7f + I %10.7f ",Complex.Re(v),Complex.Im(v))
+      end
+    end
+  end
+  ret = ret.."\n"
+  return ret
+end
+
+function NumberToString(t)
+  local ret = ""
+  if(Complex.Im(t) < 0) then
+    ret = ret..string.format("%10.7f - I %10.7f ",Complex.Re(t),-Complex.Im(t))
+    else
+    ret = ret..string.format("%10.7f + I %10.7f ",Complex.Re(t),Complex.Im(t))
+  end
+  return ret
+end
+
+function RealNToString(t)
+  local ret = ""
+  ret = string.format("%10.7f",Complex.Re(t))
+  return ret
+end
+
+function ComplexConj(t)
+  local num = 0
+  num = Complex.Re(t) - I*Complex.Im(t)
+  return num
+end
+
+function ToSOCbse(matrix)
+  local Tsphsoc = {{0, 1/math.sqrt(3), 0, 0., 1/math.sqrt(6), 0, 0, 1/math.sqrt(2), 0, 0}, {0, 0, -(1/math.sqrt(3)), 0., 0, 1/math.sqrt(6), 0, 0, 1/math.sqrt(2), 0}, {0, 0, 1/math.sqrt(3), 0., 0, math.sqrt(2/3), 0, 0, 0, 0}, {0, 0, 0, 1., 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0., 0, 0, 0, 0, 0, 1}, {0, 0, 0, 0., 0, 0, 1, 0, 0, 0}, {1, 0, 0, 0., 0, 0, 0, 0, 0, 0}, {0, 1/math.sqrt(3), 0, 0., -math.sqrt(2/3), 0, 0, 0, 0, 0}, {0, -(1/math.sqrt(3)), 0, 0., -(1/math.sqrt(6)), 0, 0, 1/math.sqrt(2), 0, 0}, {0, 0, 1/math.sqrt(3), 0., 0, -(1/math.sqrt(6)), 0, 0, 1/math.sqrt(2), 0}}
+  local mat1 = {}
+  local mat2 = {}
+  
+  for i=1,10,1 do
+    mat1[i] = {}
+    mat2[i] = {}
+  end
+  
+  for k = 1,10,1 do  for l = 1,10,1 do
+    mat1[k][l] = 0
+    for j = 1,10,1 do
+      mat1[k][l] = mat1[k][l] + matrix[k][j]*Tsphsoc[j][l]
+    end
+  end
+end
+
+for k = 1,10,1 do  for l = 1,10,1 do
+  mat2[k][l] = 0
+  for j = 1,10,1 do
+    mat2[k][l] = mat2[k][l] + ComplexConj(Tsphsoc[j][k])*mat1[j][l]
+  end
+end
+end
+return mat2
+end
+
+function ToRealbse(matrix)
+  local TsphReal = {{(-I)/math.sqrt(2), 0, 0, 0, 0, 0, 0, 0, I/math.sqrt(2), 0}, {0, (-I)/math.sqrt(2), 0, 0, 0, 0, 0, 0, 0, I/math.sqrt(2)}, {0, 0, (-I)/math.sqrt(2), 0, 0, 0, (-I)/math.sqrt(2), 0, 0, 0}, {0, 0, 0, (-I)/math.sqrt(2), 0, 0, 0, (-I)/math.sqrt(2), 0, 0}, {0, 0, 1/math.sqrt(2), 0, 0, 0, -(1/math.sqrt(2)), 0, 0, 0}, {0, 0, 0, 1/math.sqrt(2), 0, 0, 0, -(1/math.sqrt(2)), 0, 0}, {1/math.sqrt(2), 0, 0, 0, 0, 0, 0, 0, 1/math.sqrt(2), 0}, {0, 1/math.sqrt(2), 0, 0, 0, 0, 0, 0, 0, 1/math.sqrt(2)}, {0, 0, 0, 0, 1, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 1, 0, 0, 0, 0}}
+  local mat1 = {}
+  local mat2 = {}
+  
+  for i=1,10,1 do
+    mat1[i] = {}
+    mat2[i] = {}
+  end
+  
+  for k = 1,10,1 do  for l = 1,10,1 do
+    mat1[k][l] = 0
+    for j = 1,10,1 do
+      mat1[k][l] = mat1[k][l] + matrix[k][j]*ComplexConj(TsphReal[l][j])
+    end
+  end
+end
+
+for k = 1,10,1 do  for l = 1,10,1 do
+  mat2[k][l] = 0
+  for j = 1,10,1 do
+    mat2[k][l] = mat2[k][l] + TsphReal[k][j]*mat1[j][l]
+  end
+end
+end
+return mat2
+end
+
+-------------------------------------------------------------------------------------
+--   Operators and System
+-------------------------------------------------------------------------------------
+-- Number of electrons in the d-shell:
+Nelec = 8
+
+-- Available Fermions, Bosons and shells:
+
+NF=16
+NB=0
+IndexDn_2p={ 0, 2, 4}
+IndexUp_2p={ 1, 3, 5}
+IndexDn_3d={ 6, 8,10,12,14}
+IndexUp_3d={ 7, 9,11,13,15}
+
+-- angular momentum operators on the d-shell:
+OppSx_3d   =NewOperator("Sx"   ,NF, IndexUp_3d, IndexDn_3d)
+OppSy_3d   =NewOperator("Sy"   ,NF, IndexUp_3d, IndexDn_3d)
+OppSz_3d   =NewOperator("Sz"   ,NF, IndexUp_3d, IndexDn_3d)
+OppSsqr_3d =NewOperator("Ssqr" ,NF, IndexUp_3d, IndexDn_3d)
+OppSplus_3d=NewOperator("Splus",NF, IndexUp_3d, IndexDn_3d)
+OppSmin_3d =NewOperator("Smin" ,NF, IndexUp_3d, IndexDn_3d)
+
+OppLx_3d   =NewOperator("Lx"   ,NF, IndexUp_3d, IndexDn_3d)
+OppLy_3d   =NewOperator("Ly"   ,NF, IndexUp_3d, IndexDn_3d)
+OppLz_3d   =NewOperator("Lz"   ,NF, IndexUp_3d, IndexDn_3d)
+OppLsqr_3d =NewOperator("Lsqr" ,NF, IndexUp_3d, IndexDn_3d)
+OppLplus_3d=NewOperator("Lplus",NF, IndexUp_3d, IndexDn_3d)
+OppLmin_3d =NewOperator("Lmin" ,NF, IndexUp_3d, IndexDn_3d)
+
+OppJx_3d   =NewOperator("Jx"   ,NF, IndexUp_3d, IndexDn_3d)
+OppJy_3d   =NewOperator("Jy"   ,NF, IndexUp_3d, IndexDn_3d)
+OppJz_3d   =NewOperator("Jz"   ,NF, IndexUp_3d, IndexDn_3d)
+OppJsqr_3d =NewOperator("Jsqr" ,NF, IndexUp_3d, IndexDn_3d)
+OppJplus_3d=NewOperator("Jplus",NF, IndexUp_3d, IndexDn_3d)
+OppJmin_3d =NewOperator("Jmin" ,NF, IndexUp_3d, IndexDn_3d)
+
+Oppldots_3d=NewOperator("ldots",NF, IndexUp_3d, IndexDn_3d)
+
+
+-- define the coulomb operator
+-- we here define the part depending on F0 seperately from the part depending on F2
+-- when summing we can put in the numerical values of the slater integrals
+OppF0_3d =NewOperator("U", NF, IndexUp_3d, IndexDn_3d, {1,0,0})
+OppF2_3d =NewOperator("U", NF, IndexUp_3d, IndexDn_3d, {0,1,0})
+OppF4_3d =NewOperator("U", NF, IndexUp_3d, IndexDn_3d, {0,0,1})
+
+-- define onsite energies - crystal field
+-- Akm = {{k1,m1,Akm1},{k2,m2,Akm2}, ... }
+
+
+Ea1g = 1
+Eegpi =2
+Eegsigma = 3
+Eegmix = 4
+print("In D3d we have 3 states beloning to the a1g, eg and eg irriducible representation")
+print("This gives us 4 parameters related to the energy of the 3 states and the mixing between the two states belonging to the eg irriducible representation")
+print("We label the two eg states as egpi and egsigma")
+print("If Ea1g = Eegpi and Eegmix=0 one has cubic symmetry")
+print("In order to define the orientation of the crystal we list the direction of the C3 and C2 axis belonging to the D3d pointgroup")
+print("We furthermore list the direction of the C4 axis one obtains if Ea1g = Eegpi and Eegmix=0")
+print("Even for cases where the axis of the D3d pointgroup are the same we still have two different orientations related to how one branches from Oh to D3d")
+print(":-)")
+
+
+Akm = PotentialExpandedOnClm("D3dA",2,{Ea1g,Eegpi,Eegsigma,Eegmix})
+print("Setting A (C3//001, C2//1-10 C4//111)")
+print(Akm)
+Akm = PotentialExpandedOnClm("D3dB",2,{Ea1g,Eegpi,Eegsigma,Eegmix})
+print("Setting B (C3//001, C2//100 C4//0t-1)")
+print(Akm)
+Akm = PotentialExpandedOnClm("D3dC",2,{Ea1g,Eegpi,Eegsigma,Eegmix})
+print("Setting C (C3//001, C2//100 C4//0t1)")
+print(Akm)
+Akm = PotentialExpandedOnClm("D3dD",2,{Ea1g,Eegpi,Eegsigma,Eegmix})
+print("Setting D (C3//001, C2//010 C4//t0-1)")
+print(Akm)
+Akm = PotentialExpandedOnClm("D3dE",2,{Ea1g,Eegpi,Eegsigma,Eegmix})
+print("Setting E (C3//001, C2//010 C4//t01)")
+print(Akm)
+--Akm = PotentialExpandedOnClm("D3dF",2,{Ea1g,Eegpi,Eegsigma,Eegmix})
+--print("Setting F (C3//111, C2//1-10 C4//100)")
+--print(Akm)
+--Akm = PotentialExpandedOnClm("D3d",2,{Ea1g,Eegpi,Eegsigma,Eegmix})
+--print("This line is never reached as there is no general D3d potential without specifying the orientation")
+
+
+Akm = {{4, 0,(-14/10)},
+  {4,-3,-14/10*math.sqrt(10/7)},
+{4, 3,-14/10*math.sqrt(10/7)}}
+
+--Akm = {{4, 0,(-14/10)},
+--  {4,-3,-14/10*math.sqrt(10/7)},
+--{4, 3, 14/10*math.sqrt(10/7)}}
+
+OpptenDq_3d = NewOperator("CF", NF, IndexUp_3d, IndexDn_3d, Akm)
+
+Akm = {{2, 0,-7}}
+OppDs_3d = NewOperator("CF", NF, IndexUp_3d, IndexDn_3d, Akm)
+
+Akm = {{4, 0,-21}}
+OppDt_3d = NewOperator("CF", NF, IndexUp_3d, IndexDn_3d, Akm)
+
+OppNUp_2p = NewOperator("Number", NF, IndexUp_2p, IndexUp_2p, {1,1,1})
+OppNDn_2p = NewOperator("Number", NF, IndexDn_2p, IndexDn_2p, {1,1,1})
+OppN_2p = OppNUp_2p + OppNDn_2p
+OppNUp_3d = NewOperator("Number", NF, IndexUp_3d, IndexUp_3d, {1,1,1,1,1})
+OppNDn_3d = NewOperator("Number", NF, IndexDn_3d, IndexDn_3d, {1,1,1,1,1})
+OppN_3d = OppNUp_3d + OppNDn_3d
+
+-- core valence interaction
+Oppcldots= NewOperator("ldots", NF, IndexUp_2p, IndexDn_2p)
+OppUpdF0 = NewOperator("U", NF, IndexUp_2p, IndexDn_2p, IndexUp_3d, IndexDn_3d, {1,0}, {0,0})
+OppUpdF2 = NewOperator("U", NF, IndexUp_2p, IndexDn_2p, IndexUp_3d, IndexDn_3d, {0,1}, {0,0})
+OppUpdG1 = NewOperator("U", NF, IndexUp_2p, IndexDn_2p, IndexUp_3d, IndexDn_3d, {0,0}, {1,0})
+OppUpdG3 = NewOperator("U", NF, IndexUp_2p, IndexDn_2p, IndexUp_3d, IndexDn_3d, {0,0}, {0,1})
+
+-- dipole transition
+
+t=math.sqrt(1/2)
+Akm = {{1,-1,t},{1, 1,-t}}
+TXASx = NewOperator("CF", NF, IndexUp_3d, IndexDn_3d, IndexUp_2p, IndexDn_2p, Akm)
+Akm = {{1,-1,t*I},{1, 1,t*I}}
+TXASy = NewOperator("CF", NF, IndexUp_3d, IndexDn_3d, IndexUp_2p, IndexDn_2p, Akm)
+Akm = {{1,0,1}}
+TXASz = NewOperator("CF", NF, IndexUp_3d, IndexDn_3d, IndexUp_2p, IndexDn_2p, Akm)
+
+TXASr = t*(TXASx - I * TXASy)
+TXASl =-t*(TXASx + I * TXASy)
+
+-------------------------------------------------------------------------------------
+--   Parameters
+-------------------------------------------------------------------------------------
+
+-- number of electrons (formal valence)
+nd = Nelec
+
+-- Parameters used in this calculation:
+
+Udd     =  6.5
+Upd     =  8.5
+Delta   =  5
+F2dd    = 12.233*0.75
+F4dd    =  7.597*0.75
+
+F2pd    =  7.721*0.75
+G1pd    =  5.787*0.75
+G3pd    =  3.291*0.75
+XF2dd   = 13.005*0.75
+XF4dd   =  8.084*0.75
+
+tenDq   =  1.65 
+tenDq_e =  tenDq
+Ds      =  0.0
+Dt      =  0.00
+Ds_e    =  Ds
+Dt_e    =  Dt
+
+zeta_3d =  0.083 --Ground
+Xzeta_3d =  0.102 -- Excited
+zeta_2p = 11.507
+
+
+F0dd    = Udd + (F2dd+F4dd) * 2/63
+XF0dd    = Udd + (XF2dd+XF4dd) * 2/63
+F0pd    = Upd + (1/15)*G1pd + (3/70)*G3pd
+
+-- Hamiltonians in the Ground and Excited States:
+Hamiltonian =  F0dd*OppF0_3d + F2dd*OppF2_3d + F4dd*OppF4_3d + zeta_3d*Oppldots_3d + tenDq*OpptenDq_3d  + Ds*OppDs_3d  + Dt*OppDt_3d
+
+XASHamiltonian = XF0dd*OppF0_3d + XF2dd*OppF2_3d + XF4dd*OppF4_3d + Xzeta_3d*Oppldots_3d + tenDq_e*OpptenDq_3d + Ds_e*OppDs_3d + Dt_e*OppDt_3d + zeta_2p * Oppcldots + F0pd * OppUpdF0 + F2pd * OppUpdF2 + G1pd * OppUpdG1 + G3pd * OppUpdG3
+
+-- we now can create the lowest Npsi eigenstates:
+-- in order to make sure we have a filling of 2 electrons we need to define some restrictions
+StartRestrictions = {NF, NB, {"000000 1111111111",Nelec,Nelec}, {"111111 0000000000",6,6}}
+-- Calculation of Ground State WaveFunctions:
+Npsi=10
+
+psiList = Eigensystem(Hamiltonian, StartRestrictions, Npsi)
+
+shift = psiList[1]*XASHamiltonian*psiList[1]-psiList[1]*Hamiltonian*psiList[1]
+Egrd=psiList[1] * Hamiltonian * psiList[1]
+
+-- Create Spectra
+
+XASSpectra = 0
+Z = 0
+Temp = 300 -- Temperature for Boltzmann population
+
+Egrd= psiList[1] * Hamiltonian * psiList[1]
+for j=1,Npsi do
+  XASSpectra = XASSpectra +CreateSpectra(XASHamiltonian, {TXASx, TXASy, TXASz}, psiList[j], {{"Emin",-13.5}, {"Emax",21.5}, {"NE",3500}, {"Gamma",0.07}})* exp(-(psiList[j] * Hamiltonian * psiList[j] - Egrd)/(Temp*8.61733248e-5))
+  Z = Z + exp(-(psiList[j] * Hamiltonian * psiList[j] - Egrd)/(Temp*8.61733248e-5))
+end
+XASSpectra = XASSpectra / Z
+XASSpectra.Shift(shift)
+XASSpectra.Broaden(0.5, {{-13.5,0.46}, {3,0.46}, {3.01,0.46}, {21.5,0.46}})
+outputname = debug.getinfo(1,"S")
+outputname = string.gsub(outputname.source,"@","")
+outputname = string.gsub(outputname,".lua","")
+XASSpectra.Print({{"file",outputname.."XAS.dat"}})
+tempfile = io.open(outputname.."_.obj","w")
+io.output(tempfile)
+for n = 1, Npsi, 1 do
+  io.write(
+           "The "..tostring(n).."-th state\n",
+           "      ".."\n",
+           "E   = "..NumberToString(   Chop(psiList[n] * Hamiltonian     * psiList[n] )).."\n",
+           "var = "..NumberToString(   Chop((psiList[n] * Hamiltonian     * psiList[n] )*(psiList[n] * Hamiltonian     * psiList[n] ) - psiList[n] * Hamiltonian * Hamiltonian     * psiList[n])).."\n",
+           "S^2d = "..NumberToString(   Chop(psiList[n] * OppSsqr_3d * psiList[n] )).."\n",
+           "L^2d = "..NumberToString(   Chop(psiList[n] * OppLsqr_3d * psiList[n] )).."\n",
+           "J^2d = "..NumberToString(   Chop(psiList[n] * OppJsqr_3d * psiList[n] )).."\n",
+           "Sx  = "..NumberToString(   Chop(psiList[n] * OppSx_3d   * psiList[n] )).."\n",
+           "Lx  = "..NumberToString(   Chop(psiList[n] * OppLx_3d   * psiList[n] )).."\n",
+           "Jx  = "..NumberToString(   Chop(psiList[n] * OppJx_3d   * psiList[n] )).."\n",
+           "Sy  = "..NumberToString(   Chop(psiList[n] * OppSy_3d   * psiList[n] )).."\n",
+           "Ly  = "..NumberToString(   Chop(psiList[n] * OppLy_3d   * psiList[n] )).."\n",
+           "Jy  = "..NumberToString(   Chop(psiList[n] * OppJy_3d   * psiList[n] )).."\n",
+           "Sz  = "..NumberToString(   Chop(psiList[n] * OppSz_3d   * psiList[n] )).."\n",
+           "Lz  = "..NumberToString(   Chop(psiList[n] * OppLz_3d   * psiList[n])).."\n",
+           "Jz  = "..NumberToString(   Chop(psiList[n] * OppJz_3d   * psiList[n])).."\n",
+           "\n",
+           "          ".."\n"
+           )
+end

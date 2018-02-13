@@ -97,13 +97,13 @@ Complex16 Cexp(const Complex16 z)
 /*returns log(sqrt(a^2+b^2))*/
 double LogHypotemuse(const double a, const double b)
 {
-  if(Abs(a)<(Abs(b)/100))
+  if(Abs(a)<(Abs(b)/10))
   {
     double x = a/b;
     x=x*x;
     return log(Abs(b)) + 0.5*x*(1. - x*(0.5 - x*(0.33333333333333333333333333333333 -x*(0.25 - x*(0.2 -x*(0.16666666666666666666666666666667 -x*(0.14285714285714285714285714285714 -x*(0.125 - x*(0.11111111111111111111111111111111 - 0.1*x)))))))));
   }
-  if(Abs(b)<(Abs(a)/100))
+  if(Abs(b)<(Abs(a)/10))
   {
     double x = b/a;
     x=x*x;
@@ -123,13 +123,13 @@ Complex16 Clog(const Complex16 z)
 /*returns log10(sqrt(a^2+b^2))*/
 double Log10Hypotemuse(const double a, const double b)
 {
-  if(Abs(a)<(Abs(b)/100))
+  if(Abs(a)<(Abs(b)/10))
   {
     double x = a/b;
     x=x*x;
     return log10(Abs(b)) + (0.5/log(10.0))*x*(1. - x*(0.5 - x*(0.33333333333333333333333333333333 -x*(0.25 - x*(0.2 -x*(0.16666666666666666666666666666667 -x*(0.14285714285714285714285714285714 -x*(0.125 - x*(0.11111111111111111111111111111111 - 0.1*x)))))))));
   }
-  if(Abs(b)<(Abs(a)/100))
+  if(Abs(b)<(Abs(a)/10))
   {
     double x = b/a;
     x=x*x;
@@ -305,7 +305,7 @@ Complex16 Cerf(const Complex16 z)
   }
 }
 
-/* Cerfc(z) = 1 - erf(z) */
+/* Cerfc(z) = 1 - Cerf(z) */
 Complex16 Cerfc(const Complex16 z)
 {
   Complex16 ret;

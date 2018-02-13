@@ -6102,40 +6102,62 @@ uint32_t OperatorConjugateTransposeNormalOrder(OperatorType O, OperatorType * OT
 /*  function 
  *  returns 0 if operator is not Hermitian
  *  returns 1 if operator is Hermitian
- *  returns 2 if test failed
+ *  returns 2 if operator is Hermitian after Chop(H,epsilon), i.e. small non Hermitian parts are allowed
+ *  returns 3 if failed
  */
 uint32_t QOperatorHermitian(OperatorType O, double epsilon)
 {
-  uint32_t il;
+  uint32_t il, Hermitian=1;
   OperatorType OT;
   if (OperatorConjugateTransposeNormalOrder(O, &OT, QDetNotOrderedFcFaBaBc))
   {
     printf("OperatorConjugateTransposeNormalOrder failed in QOperatorHermitian\n");
     FreeOperator(&OT);
     fflush(stdout);
-    return 2;
+    return 3;
   };
   if (OperatorAddNormalOrder(&OT, O, -1, 0, QDetNotOrderedFcFaBaBc))
   {
     printf("OperatorAddNormalOrder failed in QOperatorHermitian\n");
     FreeOperator(&OT);
     fflush(stdout);
-    return 2;
+    return 3;
   };
+  if (OperatorChop(&OT, 0))
+  {
+    printf("OperatorChop failed in QOperatorHermitian\n");
+    FreeOperator(&OT);
+    fflush(stdout);
+    return 3;
+  };
+  for (il = 0; il <= OT.MaxLength; il++)
+  {
+    if (OT.l[il].N != 0) Hermitian = 0;
+  }
+  if (Hermitian==1)
+  {
+    FreeOperator(&OT);
+    return 1;
+  }
+  Hermitian=2;
   if (OperatorChop(&OT, epsilon))
   {
     printf("OperatorChop failed in QOperatorHermitian\n");
     FreeOperator(&OT);
     fflush(stdout);
-    return 2;
+    return 3;
   };
   for (il = 0; il <= OT.MaxLength; il++)
   {
-    if (OT.l[il].N != 0)
-      return 0;
+    if (OT.l[il].N != 0) Hermitian = 0;
+  }
+  if (Hermitian==2)
+  {
+    FreeOperator(&OT);
+    return 2;
   }
   FreeOperator(&OT);
-  return 1;
+  return 0;
 }
 
 

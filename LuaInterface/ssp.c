@@ -1663,6 +1663,31 @@ static int LuaCreateSpectra(lua_State *L)
       }
     }
   }
+  /* test if operator is Hermitian */
+  switch(QOperatorHermitian(*H, 0.0001*Options.Settings.zero))
+  {
+    case 3 :
+    {
+      printf("WARNING: QOperatorHermitian failed in LuaCreateSpectra, this should not happen\n");
+      printf("my guess is that you are out of memory and will crash soon\n");
+      break;
+    }
+    case 2 :
+    {
+      luaL_warning(L, "CreateSpectra called with an operator that is not fully Hermitian\nStrongly sugested to stop the calculation and repair this\n\n\n\nDo it\n\n\nReally Check this\n\n\nDid you?\n\n\n");
+      break;
+    }
+    case 1 :
+    {
+      // all fine H is Hermitian upto zero
+      break;
+    }
+    case 0 :
+    {
+      luaL_error(L, "CreateSpectra called with an operator that is not Hermitian\n");
+      break;
+    }
+  }
   /* calculate groundstate energy */
   psiEn=malloc(Options.Npsi*Options.NT*sizeof(double));
   if(Options.E0==DBL_MAX)
@@ -2133,6 +2158,56 @@ static int LuaCreateResonantSpectra(lua_State *L)
   }
   if(Options.E01==DBL_MAX)Options.E01=Options.E0;
   if(Options.E02==DBL_MAX)Options.E02=Options.E0;
+  
+  /* test if operator is Hermitian */
+  switch(QOperatorHermitian(*H1, 0.0001*Options.Settings.zero))
+  {
+    case 3 :
+    {
+      printf("WARNING: QOperatorHermitian failed in LuaCreateResonantSpectra, this should not happen\n");
+      printf("my guess is that you are out of memory and will crash soon\n");
+      break;
+    }
+    case 2 :
+    {
+      luaL_warning(L, "CreateResonantSpectra called with an operator (H1) that is not fully Hermitian\nStrongly sugested to stop the calculation and repair this\n\n\n\nDo it\n\n\nReally Check this\n\n\nDid you?\n\n\n");
+      break;
+    }
+    case 1 :
+    {
+      // all fine H is Hermitian upto zero
+      break;
+    }
+    case 0 :
+    {
+      luaL_error(L, "CreateResonantSpectra called with an operator (H1) that is not Hermitian\n");
+      break;
+    }
+  }
+  switch(QOperatorHermitian(*H2, 0.0001*Options.Settings.zero))
+  {
+    case 3 :
+    {
+      printf("WARNING: QOperatorHermitian failed in LuaCreateResonantSpectra, this should not happen\n");
+      printf("my guess is that you are out of memory and will crash soon\n");
+      break;
+    }
+    case 2 :
+    {
+      luaL_warning(L, "CreateResonantSpectra called with an operator (H2) that is not fully Hermitian\nStrongly sugested to stop the calculation and repair this\n\n\n\nDo it\n\n\nReally Check this\n\n\nDid you?\n\n\n");
+      break;
+    }
+    case 1 :
+    {
+      // all fine H is Hermitian upto zero
+      break;
+    }
+    case 0 :
+    {
+      luaL_error(L, "CreateResonantSpectra called with an operator (H2) that is not Hermitian\n");
+      break;
+    }
+  }
   /* allocate spectra and and pointer to return matrix on lua stack */
   Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
   luaL_setmetatable(L, "Spectra_Type");
@@ -2254,6 +2329,31 @@ static int LuaCreateFluorescenceYield(lua_State *L)
   luaL_setmetatable(L, "Spectra_Type");
   Spec->NSpectra=Options.NT1*Options.NT2*Options.Npsi;
   Spec->Spec=malloc(Spec->NSpectra*sizeof(SpectraType));
+  /* test if H is Hermitian */
+  switch(QOperatorHermitian(*H, 0.0001*Options.Settings.zero))
+  {
+    case 3 :
+    {
+      printf("WARNING: QOperatorHermitian failed in LuaCreateFluorescenceYield, this should not happen\n");
+      printf("my guess is that you are out of memory and will crash soon\n");
+      break;
+    }
+    case 2 :
+    {
+      luaL_warning(L, "CreateFluorescenceYield called with an operator that is not fully Hermitian\nStrongly sugested to stop the calculation and repair this\n\n\n\nDo it\n\n\nReally Check this\n\n\nDid you?\n\n\n");
+      break;
+    }
+    case 1 :
+    {
+      // all fine H is Hermitian upto zero
+      break;
+    }
+    case 0 :
+    {
+      luaL_error(L, "CreateFluorescenceYield called with an operator that is not Hermitian\n");
+      break;
+    }
+  }
   /* calculate groundstate energy */
   psiEn=malloc(Options.Npsi*sizeof(double));
   for(ipsi=0;ipsi<Options.Npsi;ipsi++)
@@ -2575,6 +2675,31 @@ static int LuaEigensystem(lua_State * L)
     else
     {
       psi=malloc(Npsi*sizeof(WaveFunctionType));
+    }
+  }
+  /* test if operator is Hermitian */
+  switch(QOperatorHermitian(*Opp, 0.0001*Options.Settings.zero))
+  {
+    case 3 :
+    {
+      printf("WARNING: QOperatorHermitian failed in LuaEigensystem, this should not happen\n");
+      printf("my guess is that you are out of memory and will crash soon\n");
+      break;
+    }
+    case 2 :
+    {
+      luaL_warning(L, "Eigensystem called with an operator that is not fully Hermitian\nStrongly sugested to stop the calculation and repair this\n\n\n\nDo it\n\n\nReally Check this\n\n\nDid you?\n\n\n");
+      break;
+    }
+    case 1 :
+    {
+      // all fine H is Hermitian upto zero
+      break;
+    }
+    case 0 :
+    {
+      luaL_error(L, "Eigensystem called with an operator that is not Hermitian\n");
+      break;
     }
   }
   /* calculate groundstate */
