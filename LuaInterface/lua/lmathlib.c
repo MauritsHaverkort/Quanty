@@ -309,6 +309,26 @@ static int math_erfc (lua_State *L)
   return 1;
 }
 
+static int math_FaddeevaW (lua_State *L)
+{
+  Complex16 *res;
+  Complex16 *a;
+  Complex16 aval={0,0};
+  if (luaL_testudata(L, 1, "Complex_Type") != NULL)
+  {
+    a = (Complex16 *) luaL_checkudata(L, 1, "Complex_Type");
+  }
+  else
+  {
+    a = & aval;
+    a->Re = luaL_checknumber(L, 1);
+  }
+  res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
+  luaL_setmetatable(L, "Complex_Type");
+  *res = FaddeevaW(*a);
+  return 1;
+}
+
 static int math_deg (lua_State *L) {
   lua_pushnumber(L, luaL_checknumber(L, 1)/RADIANS_PER_DEGREE);
   return 1;
@@ -861,6 +881,7 @@ static const luaL_Reg mathlib[] = {
   {"exp",   math_exp},{"Exp",   math_exp},
   {"erf",   math_erf},{"Erf",   math_erf},
   {"erfc",   math_erfc},{"Erfc",   math_erfc},
+  {"FaddeevaW",   math_FaddeevaW},
   {"floor", math_floor},{"Floor", math_floor},
   {"fmod",   math_fmod},{"Fmod",   math_fmod},
   {"frexp", math_frexp},{"Frexp", math_frexp},

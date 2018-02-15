@@ -6105,7 +6105,7 @@ uint32_t OperatorConjugateTransposeNormalOrder(OperatorType O, OperatorType * OT
  *  returns 2 if operator is Hermitian after Chop(H,epsilon), i.e. small non Hermitian parts are allowed
  *  returns 3 if failed
  */
-uint32_t QOperatorHermitian(OperatorType O, double epsilon)
+uint32_t QOperatorHermitian(OperatorType O, const double epsilon)
 {
   uint32_t il, Hermitian=1;
   OperatorType OT;

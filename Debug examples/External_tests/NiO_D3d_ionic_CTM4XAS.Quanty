@@ -198,9 +198,9 @@ Akm = {{4, 0,(-14/10)},
   {4,-3,-14/10*math.sqrt(10/7)},
 {4, 3,-14/10*math.sqrt(10/7)}}
 
---Akm = {{4, 0,(-14/10)},
---  {4,-3,-14/10*math.sqrt(10/7)},
---{4, 3, 14/10*math.sqrt(10/7)}}
+Akm = {{4, 0,(-14/10)},
+  {4,-3,-14/10*math.sqrt(10/7)},
+{4, 3, 14/10*math.sqrt(10/7)}}
 
 OpptenDq_3d = NewOperator("CF", NF, IndexUp_3d, IndexDn_3d, Akm)
 
