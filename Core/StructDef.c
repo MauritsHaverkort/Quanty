@@ -390,6 +390,11 @@ SparseMatrixType;
  *
  *   (A B)[i][j] = \sum_k A[i][k] B[k][j]
  *
+ *    and defines the Green's function
+ *    G0 = a0 + b0^2 . ( G1 )
+ *       with Gi = 1/(w - ai - bi^2 ( Gi+1 ) )
+ *       and Gn = 1/(w - an )
+ *       and ai and bi real
  */
 typedef struct TriDiagonalMatrixType
 {
@@ -418,6 +423,10 @@ TriDiagonalMatrixType;
  *
  *   (A B)[i][j] = \sum_k A[i][k] B[k][j]
  *
+ *    and defines the Green's function
+ *    G0 = a0 + b0^2 . ( G1 )
+ *       with Gn = 1/(w - an - bn^2 ( Gn+1 ) )
+ *       and an and bn real
  */
 typedef struct AndersonMatrixType
 {
@@ -442,6 +451,137 @@ typedef struct ListOfPoles
   double mu;                    /* chemical potential if transformed to Greens function */
 }
 ListOfPoles;
+
+
+
+/*
+ *     ( A[0][0]=avc0| A[0][1]=bv0 | 0           | 0           | A[0][4]=bc0 | 0           | 0           )
+ *   A=( A[1][0]=bv0 | A[1][1]=av1 | A[1][2]=bv1 | 0           | 0           | 0           | 0           )
+ *     ( 0           | A[2][1]=bv1 | A[2][2]=av2 | A[2][3]=bv2 | 0           | 0           | 0           )
+ *     ( 0           | 0           | A[3][2]=bv2 | A[3][3]=av3 | 0           | 0           | 0           )
+ *     ( A[4][0]=bc0 | 0           | 0           | 0           | A[4][4]=ac1 | A[4][5]=bc1 | 0           )
+ *     ( 0           | 0           | 0           | 0           | A[5][4]=bc1 | A[5][5]=ac2 | A[5][6]=bc2 )
+ *     ( 0           | 0           | 0           | 0           | 0           | A[6][5]=bc2 | A[6][6]=ac3 )
+ *
+ *   avc0 = (a0val + a0con)/2
+ *
+ *   (A B)[i][j] = \sum_k A[i][k] B[k][j]
+ *
+ *   Note that the block A[1;;3][1;;3] and the block A[4;;6][4;;6] are normal tri-diagonal matrices
+ */
+typedef struct DoubleTriDiagonalMatrixType
+{
+  char   Name[MAXStrLength];    /* A pointer to a name string that can be used to lable functions, good for printing etc. */
+  double mu;                    /* border if a number belongs to val or con */
+  double Epsilon;               /* values in a range of [Ef-1/2 Epsilon , Ef+1/2 Epsilon] contribute half to val and half to con */
+  double a0;                    /* storing a possible real shift if a continued fraction notation is used */
+  double b0;                    /* storing a possilbe over-all scaling if a continued fraction notation is used */
+  TriDiagonalMatrixType val;
+  TriDiagonalMatrixType con;
+}
+DoubleTriDiagonalMatrixType;
+
+
+/*     ( A[0][0]=Dt.a0  | A[0][1]=Dt.b0  | 0              | 0           | 0           | 0           | 0           | 0           )
+ *     ( A[1][0]=Dt.b0  | A[1][1]=Dt.avc0| A[1][2]=Dt.bv0 | 0           | 0           | A[1][5]=bc0 | 0           | 0           )
+ *   A=( 0              | A[2][1]=Dt.bv0 | A[2][2]=Dt.av1 | A[2][3]=bv1 | 0           | 0           | 0           | 0           )
+ *     ( 0              | 0              | A[3][2]=Dt.bv1 | A[3][3]=av2 | A[3][4]=bv2 | 0           | 0           | 0           )
+ *     ( 0              | 0              | 0              | A[4][3]=bv2 | A[4][4]=av3 | 0           | 0           | 0           )
+ *     ( 0              | A[5][1]=Dt.bc0 | 0              | 0           | 0           | A[5][5]=ac1 | A[5][6]=bc1 | 0           )
+ *     ( 0              | 0              | 0              | 0           | 0           | A[6][5]=bc1 | A[6][6]=ac2 | A[6][7]=bc2 )
+ *     ( 0              | 0              | 0              | 0           | 0           | 0           | A[7][6]=bc2 | A[7][7]=ac3 )
+ *
+ *   avc0 = (a0val + a0con)/2
+ *
+ *   (A B)[i][j] = \sum_k A[i][k] B[k][j]
+ *
+ *   Note that the block A[1;;3][1;;3] and the block A[4;;6][4;;6] are normal tri-diagonal matrices
+ */
+typedef struct SecondDoubleTriDiagonalMatrixType
+{
+  char   Name[MAXStrLength];    /* A pointer to a name string that can be used to lable functions, good for printing etc. */
+  double mu;                    /* border if a number belongs to val or con */
+  double Epsilon;               /* values in a range of [Ef-1/2 Epsilon , Ef+1/2 Epsilon] contribute half to val and half to con */
+  double a0;                    /* storing a possible real shift if a continued fraction notation is used */
+  double b0;                    /* storing a possilbe over-all scaling if a continued fraction notation is used */
+  DoubleTriDiagonalMatrixType Dt;
+}
+SecondDoubleTriDiagonalMatrixType;
+
+/*     ( A[0][0]=Dt.a[0] | A[0][1]=Dt.b[0] | 0               | 0               | 0               )
+ *     ( A[1][0]=Dt.b[0] | A[1][1]=Dt.a[1] | A[1][2]=Dt.b[1] | A[1][2]=Dt.b[2] | A[1][2]=Dt.b[3] )
+ *   A=( 0               | A[2][1]=Dt.b[1] | A[2][2]=Dt.a[2] | 0               | 0               )
+ *     ( 0               | A[1][2]=Dt.b[2] | 0               | A[2][2]=Dt.a[3] | 0               )
+ *     ( 0               | A[1][2]=Dt.b[3] | 0               | 0               | A[2][2]=Dt.a[4] )
+ */
+typedef struct SecondAndersonMatrixType
+{
+  char   Name[MAXStrLength];    /* A pointer to a name string that can be used to lable functions, good for printing etc. */
+  double mu;                    /* border if a number belongs to val or con */
+  double Epsilon;               /* values in a range of [Ef-1/2 Epsilon , Ef+1/2 Epsilon] contribute half to val and half to con */
+  double a0;                    /* storing a possible real shift if a continued fraction notation is used */
+  double b0;                    /* storing a possilbe over-all scaling if a continued fraction notation is used */
+  AndersonMatrixType Dt;
+}
+SecondAndersonMatrixType;
+
+
+/*
+ *     ( A[0][0]=acvB  | A[0][0]=acvBA | A[0][1]=bvB0  | 0             | 0           | A[0][4]=bcB0  | 0             | 0           )
+ *     ( A[0][0]=acvBA | A[0][0]=acvA  | A[0][1]=bvA0  | 0             | 0           | A[0][4]=bcA0  | 0             | 0           )
+ *     ( A[1][0]=bvB0  | A[1][0]=bvA0  | A[1][1]=av2   | A[1][2]=bv2   | 0           | 0             | 0             | 0           )
+ *   A=( 0             | 0             | A[2][1]=bv2   | A[2][2]=av3   | A[2][3]=bv3 | 0             | 0             | 0           )
+ *     ( 0             | 0             | 0             | A[3][2]=bv3   | A[3][3]=av4 | 0             | 0             | 0           )
+ *     ( A[4][0]=bcB0  | A[4][0]=bcA0  | 0             | 0             | 0           | A[4][4]=ac2   | A[4][5]=bc2   | 0           )
+ *     ( 0             | 0             | 0             | 0             | 0           | A[5][4]=bc2   | A[5][5]=ac3   | A[5][6]=bc3 )
+ *     ( 0             | 0             | 0             | 0             | 0           | 0             | A[6][5]=bc3   | A[6][6]=ac4 )
+ *
+ *  A = T^* Ap T^T
+ *
+ *     ( A[0][0]=av1   | 0             | A[0][1]=bv1   | 0             | 0           | 0             | 0             | 0           )
+ *     ( 0             | A[0][0]=ac1   | 0             | 0             | 0           | A[0][4]=bc1   | 0             | 0           )
+ *     ( A[1][0]=bv1   | 0             | A[1][1]=av2   | A[1][2]=bv2   | 0           | 0             | 0             | 0           )
+ *  Ap=( 0             | 0             | A[2][1]=bv2   | A[2][2]=av3   | A[2][3]=bv3 | 0             | 0             | 0           )
+ *     ( 0             | 0             | 0             | A[3][2]=bv3   | A[3][3]=av4 | 0             | 0             | 0           )
+ *     ( 0             | A[4][0]=bc1   | 0             | 0             | 0           | A[4][4]=ac2   | A[4][5]=bc2   | 0           )
+ *     ( 0             | 0             | 0             | 0             | 0           | A[5][4]=bc2   | A[5][5]=ac3   | A[5][6]=bc3 )
+ *     ( 0             | 0             | 0             | 0             | 0           | 0             | A[6][5]=bc3   | A[6][6]=ac4 )
+ *
+ *
+ *     ( A[0][0]=bv0   | A[0][0]=bc0   | 0             | 0             | 0           | 0             | 0             | 0           )
+ *     ( A[0][0]=bc0   | A[0][0]=-bv0  | 0             | 0             | 0           | 0             | 0             | 0           )
+ *     ( 0             | 0             | 1             | 0             | 0           | 0             | 0             | 0           )
+ *   T=( 0             | 0             | 0             | 1             | 0           | 0             | 0             | 0           )
+ *     ( 0             | 0             | 0             | 0             | 1           | 0             | 0             | 0           )
+ *     ( 0             | 0             | 0             | 0             | 0           | 1             | 0             | 0           )
+ *     ( 0             | 0             | 0             | 0             | 0           | 0             | 1             | 0           )
+ *     ( 0             | 0             | 0             | 0             | 0           | 0             | 0             | 1           )
+ *
+ *   (A B)[i][j] = \sum_k A[i][k] . B[k][j]
+ *
+ *   Note that the block A[2;;4][2;;4] and the block A[5;;7][5;;7] are normal tri-diagonal matrices
+ *   The states av1 and ac1 in Ap are linear combinations of the impurity site and a special linear combination of the other sites
+ *   such that the impurity has an occupation n, the other site an occupation 1-n, av1 an occupation 1 and ac1 an occupaiton of 0.
+ */
+typedef struct BADoubleTriDiagonalMatrixType
+{
+  char   Name[MAXStrLength];    /* A pointer to a name string that can be used to lable functions, good for printing etc. */
+  double mu;                    /* border if a number belongs to val or con */
+  double Epsilon;               /* values in a range of [Ef-1/2 Epsilon , Ef+1/2 Epsilon] contribute half to val and half to con */
+  double a0;                    /* storing a possible real shift if a continued fraction notation is used */
+  double b0;                    /* storing a possilbe over-all scaling if a continued fraction notation is used */
+  double acvB;                  /* val.b[0]^2 * val.a[1] + con.b[0]^2 * con.a[1] */
+  double acvA;                  /* val.b[0]^2 * con.a[1] + con.b[0]^2 * val.a[1] */
+  double acvBA;                 /* val.b[0]*con.b[0] * (val.a[1]-con.a[1]) */
+  double bvB0;                  /* val.b[0] * val.b[1] */
+  double bcB0;                  /* con.b[0] * con.b[1] */
+  double bvA0;                  /* con.b[0] * val.b[1] */
+  double bcA0;                  /*-val.b[0] * con.b[1] */
+  TriDiagonalMatrixType val;
+  TriDiagonalMatrixType con;
+}
+BADoubleTriDiagonalMatrixType;
+
 
 
 /*  V is an array of length (N+1)*(1+BlockSize*BlockSize)-1
@@ -632,11 +772,13 @@ typedef struct BlockNaturalImpurityOrbitalMatrixType
 BlockNaturalImpurityOrbitalMatrixType;
 
 
-/*  BlockMatrixType defines a single type that can hold block matrices of different forms
- *  l or L for BlockListOfPoles
- *  a or A for BlockAndersonMatrix
- *  t or T for BlockTridiagonalMatrix
- *  n or N for BlockNaturalMatrix
+/*  ResponsefunctionType defines a single type that can hold (Block) matrices of different forms
+ *  l or L for (Block)ListOfPoles
+ *  a or A for (Block)AndersonMatrix
+ *  t or T for (Block)TridiagonalMatrix
+ *  n or N for (Block)NaturalMatrix
+ *
+ *  Boolean Block is true for block matrtices, false for non-block matrices
  *
  *  the difference between small and captical is used for a container pointing to a unique object (capital)
  *  or to a container pointing to a shared object (small)
@@ -649,7 +791,7 @@ BlockNaturalImpurityOrbitalMatrixType;
  *  lower case letters are pushed to the lua stack as a pointer to the variable (user type)
  *  upper case letters are pushed to the lua stack as a lua table
  *  reading a user type will read the pointer
- *  reading a lua table will regenerate the BlockMatrixType
+ *  reading a lua table will regenerate the ResponsefunctionType
  *
  *  The array SuggestedGrid contains NSuggestedGridPoints in ascending order.
  *  The Suggested Grid is used for transformations of Matrix types and functions acting on them
@@ -659,242 +801,17 @@ BlockNaturalImpurityOrbitalMatrixType;
  *  and a Grid is provided the Grid is used
  */
 
-typedef struct BlockMatrixType
+typedef struct ResponsefunctionType
 {
   char type;                               // l,a,t,n or L,A,T,N
+  Bool Block;
   void * data;
   double *SuggestedGrid;
   uint32_t NSuggestedGridPoints;
 }
-BlockMatrixType;
+ResponsefunctionType;
 
 
-
-
-
-
-
-/*
- *     ( A[0][0]=a1   | A[0][1]=b1   | 0            | 0          )
- *   A=( A[1][0]=b1^+ | A[1][1]=a2   | A[1][2]=b2   | 0          )
- *     ( 0            | A[2][1]=b2^+ | A[2][2]=a3   | A[2][3]=b3 )
- *     ( 0            | 0            | A[3][2]=b3^+ | A[3][3]=a4 )
- *
- *   with ai and bi matrices
- *
- *   (A B)[i][j] = \sum_k A[i][k] . B[k][j]
- *
- *   !!!! warning, part of the routines include a0 and b0 as ofsets, but not all routines do !!!!!!
- */
-typedef struct BlokTriDiagonalMatrixType
-{
-  char   Name[MAXStrLength];    /* A pointer to a name string that can be used to lable functions, good for printing etc. */
-  uint32_t N;                   /* number of diagonal blocks */
-  MatrixType *a;                /* diagonal elements of matrix (length N)       elements a[i]=M[i,i]                  of the full matrix */
-  MatrixType *b;                /* off diagonal elements of matrix (length N-1) elements b[i]=M[i,i+1]=M[i+1,i]^{dag} of the full matrix */
-  double mu;                    /* chemical potential if transformed to Greens function */
-}
-BlokTriDiagonalMatrixType;
-
-/*
- *     ( A[0][0]=a1   | A[0][1]=b1   | A[1][2]=b2   | A[2][3]=b3 )
- *   A=( A[1][0]=b1^+ | A[1][1]=a2   | 0            | 0          )
- *     ( A[2][1]=b2^+ | 0            | A[2][2]=a3   | 0          )
- *     ( A[3][2]=b3^+ | 0            | 0            | A[3][3]=a4 )
- *
- *   with a and b matrices
- *
- *   (A B)[i][j] = \sum_k A[i][k] . B[k][j]
- *
- *   !!!! warning, part of the routines include a0 and b0 as ofsets, but not all routines do !!!!!!
- */
-typedef struct BlokAndersonMatrixType
-{
-  char   Name[MAXStrLength];    /* A pointer to a name string that can be used to lable functions, good for printing etc. */
-  uint32_t N;                   /* number of diagonal blocks */
-  MatrixType *a;                /* diagonal elements of matrix (length N)       elements a[i]=M[i,i]                  of the full matrix */
-  MatrixType *b;                /* off diagonal elements of matrix (length N-1) elements b[i]=M[0,i+1]=M[i+1,0]^{dag} of the full matrix */
-  double mu;                    /* chemical potential if transformed to Greens function */
-}
-BlokAndersonMatrixType;
-
-/*
- *     ( A[0][0]=avc0| A[0][1]=bv0 | 0           | 0           | A[0][4]=bc0 | 0           | 0           )
- *   A=( A[1][0]=bv0 | A[1][1]=av1 | A[1][2]=bv1 | 0           | 0           | 0           | 0           )
- *     ( 0           | A[2][1]=bv1 | A[2][2]=av2 | A[2][3]=bv2 | 0           | 0           | 0           )
- *     ( 0           | 0           | A[3][2]=bv2 | A[3][3]=av3 | 0           | 0           | 0           )
- *     ( A[4][0]=bc0 | 0           | 0           | 0           | A[4][4]=ac1 | A[4][5]=bc1 | 0           )
- *     ( 0           | 0           | 0           | 0           | A[5][4]=bc1 | A[5][5]=ac2 | A[5][6]=bc2 )
- *     ( 0           | 0           | 0           | 0           | 0           | A[6][5]=bc2 | A[6][6]=ac3 )
- *
- *   avc0 = (a0val + a0con)/2
- *
- *   (A B)[i][j] = \sum_k A[i][k] B[k][j]
- *
- *   Note that the block A[1;;3][1;;3] and the block A[4;;6][4;;6] are normal tri-diagonal matrices
- */
-typedef struct DoubleTriDiagonalMatrixType
-{
-  char   Name[MAXStrLength];    /* A pointer to a name string that can be used to lable functions, good for printing etc. */
-  double mu;                    /* border if a number belongs to val or con */
-  double Epsilon;               /* values in a range of [Ef-1/2 Epsilon , Ef+1/2 Epsilon] contribute half to val and half to con */
-  double a0;                    /* storing a possible real shift if a continued fraction notation is used */
-  double b0;                    /* storing a possilbe over-all scaling if a continued fraction notation is used */
-  TriDiagonalMatrixType val;
-  TriDiagonalMatrixType con;
-}
-DoubleTriDiagonalMatrixType;
-
-/*
- *     ( A[0][0]=acv0  | A[0][1]=bv0   | 0             | 0           | A[0][4]=bc0   | 0             | 0           )
- *   A=( A[1][0]=bv0^+ | A[1][1]=av1   | A[1][2]=bv1   | 0           | 0             | 0             | 0           )
- *     ( 0             | A[2][1]=bv1^+ | A[2][2]=av2   | A[2][3]=bv2 | 0             | 0             | 0           )
- *     ( 0             | 0             | A[3][2]=bv2^+ | A[3][3]=av3 | 0             | 0             | 0           )
- *     ( A[4][0]=bc0^+ | 0             | 0             | 0           | A[4][4]=ac1   | A[4][5]=bc1   | 0           )
- *     ( 0             | 0             | 0             | 0           | A[5][4]=bc1^+ | A[5][5]=ac2   | A[5][6]=bc2 )
- *     ( 0             | 0             | 0             | 0           | 0             | A[6][5]=bc2^+ | A[6][6]=ac3 )
- *
- *   acv0 = (a0val + a0con)/2
- *
- *   (A B)[i][j] = \sum_k A[i][k] . B[k][j]
- *
- *   Note that the block A[1;;3][1;;3] and the block A[4;;6][4;;6] are normal blok-tri-diagonal matrices
- */
-typedef struct BlokDoubleTriDiagonalMatrixType
-{
-  char   Name[MAXStrLength];    /* A pointer to a name string that can be used to lable functions, good for printing etc. */
-  double mu;                    /* border if a number belongs to val or con */
-  double Epsilon;               /* values in a range of [Ef-1/2 Epsilon , Ef+1/2 Epsilon] contribute half to val and half to con */
-  MatrixType a0;                /* storing a possible real shift if a continued fraction notation is used */
-  MatrixType b0;                /* storing a possilbe over-all scaling if a continued fraction notation is used */
-  BlokTriDiagonalMatrixType val;
-  BlokTriDiagonalMatrixType con;
-}
-BlokDoubleTriDiagonalMatrixType;
-
-
-/*     ( A[0][0]=Dt.a0  | A[0][1]=Dt.b0  | 0              | 0           | 0           | 0           | 0           | 0           )
- *     ( A[1][0]=Dt.b0  | A[1][1]=Dt.avc0| A[1][2]=Dt.bv0 | 0           | 0           | A[1][5]=bc0 | 0           | 0           )
- *   A=( 0              | A[2][1]=Dt.bv0 | A[2][2]=Dt.av1 | A[2][3]=bv1 | 0           | 0           | 0           | 0           )
- *     ( 0              | 0              | A[3][2]=Dt.bv1 | A[3][3]=av2 | A[3][4]=bv2 | 0           | 0           | 0           )
- *     ( 0              | 0              | 0              | A[4][3]=bv2 | A[4][4]=av3 | 0           | 0           | 0           )
- *     ( 0              | A[5][1]=Dt.bc0 | 0              | 0           | 0           | A[5][5]=ac1 | A[5][6]=bc1 | 0           )
- *     ( 0              | 0              | 0              | 0           | 0           | A[6][5]=bc1 | A[6][6]=ac2 | A[6][7]=bc2 )
- *     ( 0              | 0              | 0              | 0           | 0           | 0           | A[7][6]=bc2 | A[7][7]=ac3 )
- *
- *   avc0 = (a0val + a0con)/2
- *
- *   (A B)[i][j] = \sum_k A[i][k] B[k][j]
- *
- *   Note that the block A[1;;3][1;;3] and the block A[4;;6][4;;6] are normal tri-diagonal matrices
- */
-typedef struct SecondDoubleTriDiagonalMatrixType
-{
-  char   Name[MAXStrLength];    /* A pointer to a name string that can be used to lable functions, good for printing etc. */
-  double mu;                    /* border if a number belongs to val or con */
-  double Epsilon;               /* values in a range of [Ef-1/2 Epsilon , Ef+1/2 Epsilon] contribute half to val and half to con */
-  double a0;                    /* storing a possible real shift if a continued fraction notation is used */
-  double b0;                    /* storing a possilbe over-all scaling if a continued fraction notation is used */
-  DoubleTriDiagonalMatrixType Dt;
-}
-SecondDoubleTriDiagonalMatrixType;
-
-/*     ( A[0][0]=Dt.a[0] | A[0][1]=Dt.b[0] | 0               | 0               | 0               )
- *     ( A[1][0]=Dt.b[0] | A[1][1]=Dt.a[1] | A[1][2]=Dt.b[1] | A[1][2]=Dt.b[2] | A[1][2]=Dt.b[3] )
- *   A=( 0               | A[2][1]=Dt.b[1] | A[2][2]=Dt.a[2] | 0               | 0               )
- *     ( 0               | A[1][2]=Dt.b[2] | 0               | A[2][2]=Dt.a[3] | 0               )
- *     ( 0               | A[1][2]=Dt.b[3] | 0               | 0               | A[2][2]=Dt.a[4] )
- */
-typedef struct SecondAndersonMatrixType
-{
-  char   Name[MAXStrLength];    /* A pointer to a name string that can be used to lable functions, good for printing etc. */
-  double mu;                    /* border if a number belongs to val or con */
-  double Epsilon;               /* values in a range of [Ef-1/2 Epsilon , Ef+1/2 Epsilon] contribute half to val and half to con */
-  double a0;                    /* storing a possible real shift if a continued fraction notation is used */
-  double b0;                    /* storing a possilbe over-all scaling if a continued fraction notation is used */
-  AndersonMatrixType Dt;
-}
-SecondAndersonMatrixType;
-
-
-/*
- *     ( A[0][0]=acvB  | A[0][0]=acvBA | A[0][1]=bvB0  | 0             | 0           | A[0][4]=bcB0  | 0             | 0           )
- *     ( A[0][0]=acvBA | A[0][0]=acvA  | A[0][1]=bvA0  | 0             | 0           | A[0][4]=bcA0  | 0             | 0           )
- *     ( A[1][0]=bvB0  | A[1][0]=bvA0  | A[1][1]=av2   | A[1][2]=bv2   | 0           | 0             | 0             | 0           )
- *   A=( 0             | 0             | A[2][1]=bv2   | A[2][2]=av3   | A[2][3]=bv3 | 0             | 0             | 0           )
- *     ( 0             | 0             | 0             | A[3][2]=bv3   | A[3][3]=av4 | 0             | 0             | 0           )
- *     ( A[4][0]=bcB0  | A[4][0]=bcA0  | 0             | 0             | 0           | A[4][4]=ac2   | A[4][5]=bc2   | 0           )
- *     ( 0             | 0             | 0             | 0             | 0           | A[5][4]=bc2   | A[5][5]=ac3   | A[5][6]=bc3 )
- *     ( 0             | 0             | 0             | 0             | 0           | 0             | A[6][5]=bc3   | A[6][6]=ac4 )
- *
- *  A = T^* Ap T^T
- *
- *     ( A[0][0]=av1   | 0             | A[0][1]=bv1   | 0             | 0           | 0             | 0             | 0           )
- *     ( 0             | A[0][0]=ac1   | 0             | 0             | 0           | A[0][4]=bc1   | 0             | 0           )
- *     ( A[1][0]=bv1   | 0             | A[1][1]=av2   | A[1][2]=bv2   | 0           | 0             | 0             | 0           )
- *  Ap=( 0             | 0             | A[2][1]=bv2   | A[2][2]=av3   | A[2][3]=bv3 | 0             | 0             | 0           )
- *     ( 0             | 0             | 0             | A[3][2]=bv3   | A[3][3]=av4 | 0             | 0             | 0           )
- *     ( 0             | A[4][0]=bc1   | 0             | 0             | 0           | A[4][4]=ac2   | A[4][5]=bc2   | 0           )
- *     ( 0             | 0             | 0             | 0             | 0           | A[5][4]=bc2   | A[5][5]=ac3   | A[5][6]=bc3 )
- *     ( 0             | 0             | 0             | 0             | 0           | 0             | A[6][5]=bc3   | A[6][6]=ac4 )
- *
- *
- *     ( A[0][0]=bv0   | A[0][0]=bc0   | 0             | 0             | 0           | 0             | 0             | 0           )
- *     ( A[0][0]=bc0   | A[0][0]=-bv0  | 0             | 0             | 0           | 0             | 0             | 0           )
- *     ( 0             | 0             | 1             | 0             | 0           | 0             | 0             | 0           )
- *   T=( 0             | 0             | 0             | 1             | 0           | 0             | 0             | 0           )
- *     ( 0             | 0             | 0             | 0             | 1           | 0             | 0             | 0           )
- *     ( 0             | 0             | 0             | 0             | 0           | 1             | 0             | 0           )
- *     ( 0             | 0             | 0             | 0             | 0           | 0             | 1             | 0           )
- *     ( 0             | 0             | 0             | 0             | 0           | 0             | 0             | 1           )
- *
- *   (A B)[i][j] = \sum_k A[i][k] . B[k][j]
- *
- *   Note that the block A[2;;4][2;;4] and the block A[5;;7][5;;7] are normal tri-diagonal matrices
- *   The states av1 and ac1 in Ap are linear combinations of the impurity site and a special linear combination of the other sites
- *   such that the impurity has an occupation n, the other site an occupation 1-n, av1 an occupation 1 and ac1 an occupaiton of 0.
- */
-typedef struct BADoubleTriDiagonalMatrixType
-{
-  char   Name[MAXStrLength];    /* A pointer to a name string that can be used to lable functions, good for printing etc. */
-  double mu;                    /* border if a number belongs to val or con */
-  double Epsilon;               /* values in a range of [Ef-1/2 Epsilon , Ef+1/2 Epsilon] contribute half to val and half to con */
-  double a0;                    /* storing a possible real shift if a continued fraction notation is used */
-  double b0;                    /* storing a possilbe over-all scaling if a continued fraction notation is used */
-  double acvB;                  /* val.b[0]^2 * val.a[1] + con.b[0]^2 * con.a[1] */
-  double acvA;                  /* val.b[0]^2 * con.a[1] + con.b[0]^2 * val.a[1] */
-  double acvBA;                 /* val.b[0]*con.b[0] * (val.a[1]-con.a[1]) */
-  double bvB0;                  /* val.b[0] * val.b[1] */
-  double bcB0;                  /* con.b[0] * con.b[1] */
-  double bvA0;                  /* con.b[0] * val.b[1] */
-  double bcA0;                  /*-val.b[0] * con.b[1] */
-  TriDiagonalMatrixType val;
-  TriDiagonalMatrixType con;
-}
-BADoubleTriDiagonalMatrixType;
-
-/*
- *
- */
-typedef struct WaveFunctionPerturbationType
-{
-  uint32_t NV;
-  uint32_t order;
-  WaveFunctionType **psiOrder;
-}
-WaveFunctionPerturbationType;
-
-/*
- *
- */
-typedef struct OperatorPerturbationType
-{
-  uint32_t NV;
-  OperatorType O;
-  OperatorType *V;
-  BlokTriDiagonalMatrixType g;
-}
-OperatorPerturbationType;
 
 /*
  *
@@ -1577,3 +1494,105 @@ typedef struct DresdenFPLO
 
 }
 DresdenFPLO;
+
+
+
+// Obsolete structures that are replaced by new versions, use is discuraged and need to be faded out
+
+
+
+/*
+ *     ( A[0][0]=a1   | A[0][1]=b1   | 0            | 0          )
+ *   A=( A[1][0]=b1^+ | A[1][1]=a2   | A[1][2]=b2   | 0          )
+ *     ( 0            | A[2][1]=b2^+ | A[2][2]=a3   | A[2][3]=b3 )
+ *     ( 0            | 0            | A[3][2]=b3^+ | A[3][3]=a4 )
+ *
+ *   with ai and bi matrices
+ *
+ *   (A B)[i][j] = \sum_k A[i][k] . B[k][j]
+ *
+ *   !!!! warning, part of the routines include a0 and b0 as ofsets, but not all routines do !!!!!!
+ */
+typedef struct BlokTriDiagonalMatrixType
+{
+  char   Name[MAXStrLength];    /* A pointer to a name string that can be used to lable functions, good for printing etc. */
+  uint32_t N;                   /* number of diagonal blocks */
+  MatrixType *a;                /* diagonal elements of matrix (length N)       elements a[i]=M[i,i]                  of the full matrix */
+  MatrixType *b;                /* off diagonal elements of matrix (length N-1) elements b[i]=M[i,i+1]=M[i+1,i]^{dag} of the full matrix */
+  double mu;                    /* chemical potential if transformed to Greens function */
+}
+BlokTriDiagonalMatrixType;
+
+/*
+ *     ( A[0][0]=a1   | A[0][1]=b1   | A[1][2]=b2   | A[2][3]=b3 )
+ *   A=( A[1][0]=b1^+ | A[1][1]=a2   | 0            | 0          )
+ *     ( A[2][1]=b2^+ | 0            | A[2][2]=a3   | 0          )
+ *     ( A[3][2]=b3^+ | 0            | 0            | A[3][3]=a4 )
+ *
+ *   with a and b matrices
+ *
+ *   (A B)[i][j] = \sum_k A[i][k] . B[k][j]
+ *
+ *   !!!! warning, part of the routines include a0 and b0 as ofsets, but not all routines do !!!!!!
+ */
+typedef struct BlokAndersonMatrixType
+{
+  char   Name[MAXStrLength];    /* A pointer to a name string that can be used to lable functions, good for printing etc. */
+  uint32_t N;                   /* number of diagonal blocks */
+  MatrixType *a;                /* diagonal elements of matrix (length N)       elements a[i]=M[i,i]                  of the full matrix */
+  MatrixType *b;                /* off diagonal elements of matrix (length N-1) elements b[i]=M[0,i+1]=M[i+1,0]^{dag} of the full matrix */
+  double mu;                    /* chemical potential if transformed to Greens function */
+}
+BlokAndersonMatrixType;
+
+/*
+ *     ( A[0][0]=acv0  | A[0][1]=bv0   | 0             | 0           | A[0][4]=bc0   | 0             | 0           )
+ *   A=( A[1][0]=bv0^+ | A[1][1]=av1   | A[1][2]=bv1   | 0           | 0             | 0             | 0           )
+ *     ( 0             | A[2][1]=bv1^+ | A[2][2]=av2   | A[2][3]=bv2 | 0             | 0             | 0           )
+ *     ( 0             | 0             | A[3][2]=bv2^+ | A[3][3]=av3 | 0             | 0             | 0           )
+ *     ( A[4][0]=bc0^+ | 0             | 0             | 0           | A[4][4]=ac1   | A[4][5]=bc1   | 0           )
+ *     ( 0             | 0             | 0             | 0           | A[5][4]=bc1^+ | A[5][5]=ac2   | A[5][6]=bc2 )
+ *     ( 0             | 0             | 0             | 0           | 0             | A[6][5]=bc2^+ | A[6][6]=ac3 )
+ *
+ *   acv0 = (a0val + a0con)/2
+ *
+ *   (A B)[i][j] = \sum_k A[i][k] . B[k][j]
+ *
+ *   Note that the block A[1;;3][1;;3] and the block A[4;;6][4;;6] are normal blok-tri-diagonal matrices
+ */
+typedef struct BlokDoubleTriDiagonalMatrixType
+{
+  char   Name[MAXStrLength];    /* A pointer to a name string that can be used to lable functions, good for printing etc. */
+  double mu;                    /* border if a number belongs to val or con */
+  double Epsilon;               /* values in a range of [Ef-1/2 Epsilon , Ef+1/2 Epsilon] contribute half to val and half to con */
+  MatrixType a0;                /* storing a possible real shift if a continued fraction notation is used */
+  MatrixType b0;                /* storing a possilbe over-all scaling if a continued fraction notation is used */
+  BlokTriDiagonalMatrixType val;
+  BlokTriDiagonalMatrixType con;
+}
+BlokDoubleTriDiagonalMatrixType;
+
+
+
+/*
+ *
+ */
+typedef struct WaveFunctionPerturbationType
+{
+  uint32_t NV;
+  uint32_t order;
+  WaveFunctionType **psiOrder;
+}
+WaveFunctionPerturbationType;
+
+/*
+ *
+ */
+typedef struct OperatorPerturbationType
+{
+  uint32_t NV;
+  OperatorType O;
+  OperatorType *V;
+  BlokTriDiagonalMatrixType g;
+}
+OperatorPerturbationType;

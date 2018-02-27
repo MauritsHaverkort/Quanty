@@ -649,12 +649,35 @@ uint32_t AndersonMatrixToBADoubleTriDiagonalMatrixSimple(AndersonMatrixType cons
   return 0;
 }
 
-
+/*
+ *  Transform a tridiagonal matrix to Natural orbital format using chemical potential Ef / mu with the soft edge given by
+ *  the interval Ef-Epsilon to Ef+Epsilon, scaled by ( Epole - (Ef-Epsilon) ) / (2 Epsilon))
+ *  Reduce the number of poles in for the valence and conduction part to NTriDiagVal and NTriDiagCon
+ *
+ *  Go via ListOfPoles
+ */
+uint32_t AndersonMatrixToBADoubleTriDiagonalMatrix(AndersonMatrixType const M, BADoubleTriDiagonalMatrixType * const A, uint32_t NTriDiagVal, uint32_t NTriDiagCon, double Ef, double Epsilon)
+{
+  ListOfPoles LP;
+  if (AndersonMatrixToListOfPoles(M, &LP))
+  {
+    printf("AndersonMatrixToListOfPoles failed in AndersonMatrixToBADoubleTriDiagonalMatrix\n");
+    return 1;
+  };
+  if (ListOfPolesToBADoubleTridiagonalMatrix(LP, A, NTriDiagVal, NTriDiagCon, Ef, Epsilon))
+  {
+    printf("ListOfPolesToBADoubleTridiagonalMatrix failed in AndersonMatrixToBADoubleTriDiagonalMatrix\n");
+    return 1;
+  };
+  FreeListOfPoles(&LP);
+  strcpy(A->Name, M.Name);
+  return 0;
+}
 
 /*
  *
  */
-uint32_t AndersonMatrixToBADoubleTriDiagonalMatrix(AndersonMatrixType const M, double const onsiteshift, BADoubleTriDiagonalMatrixType * const A, double *const occupation)
+uint32_t AndersonMatrixToBADoubleTriDiagonalMatrixOccupation(AndersonMatrixType const M, double const onsiteshift, BADoubleTriDiagonalMatrixType * const A, double *const occupation)
 {
   uint32_t i, j, nVal;
   MatrixType Eigenfun;
@@ -890,9 +913,7 @@ uint32_t AndersonMatrixToBADoubleTriDiagonalMatrixOld(AndersonMatrixType const M
  *  a tridiagonal form of the valence and conduction states is created starting from the valence and conduction functions.
  *  The valence and conduction functions are linear combined to the impurity and extra site in the BA form.
  */
-uint32_t AndersonMatrixToBADoubleTriDiagonalMatrixTemperature(AndersonMatrixType const M, double const onsiteshift,
-                                                              double const kbT, BADoubleTriDiagonalMatrixType * const A,
-                                                              double *const occupation)
+uint32_t AndersonMatrixToBADoubleTriDiagonalMatrixTemperature(AndersonMatrixType const M, double const onsiteshift, double const kbT, BADoubleTriDiagonalMatrixType * const A, double *const occupation)
 {
   uint32_t i, j;
   MatrixType Eigenfun, Eigenfundbl;
@@ -1422,11 +1443,13 @@ uint32_t TriDiagonalMatrixToMatrix(TriDiagonalMatrixType const M, MatrixType * c
 }
 
 /*
+ *  Transform a tridiagonal matrix to Natural orbital format using chemical potential Ef / mu with the soft edge given by
+ *  the interval Ef-Epsilon to Ef+Epsilon, scaled by ( Epole - (Ef-Epsilon) ) / (2 Epsilon))
+ *  Reduce the number of poles in for the valence and conduction part to NTriDiagVal and NTriDiagCon
  *
+ *  Go via ListOfPoles
  */
-uint32_t TriDiagonalMatrixToBADoubleTriDiagonalMatrix(TriDiagonalMatrixType const M,
-                                                      BADoubleTriDiagonalMatrixType * const A, uint32_t NTriDiagVal,
-                                                      uint32_t NTriDiagCon, double Ef, double Epsilon)
+uint32_t TriDiagonalMatrixToBADoubleTriDiagonalMatrix(TriDiagonalMatrixType const M, BADoubleTriDiagonalMatrixType * const A, uint32_t NTriDiagVal, uint32_t NTriDiagCon, double Ef, double Epsilon)
 {
   ListOfPoles LP;
   if (TriDiagonalMatrixToListOfPoles(M, &LP))
@@ -2773,7 +2796,7 @@ uint32_t MatrixToAndersonMatrix(MatrixType const M, MatrixType * const T, Anders
 */
 uint32_t BlokTriDiagonalize(MatrixType const M, MatrixType * const T, BlokTriDiagonalMatrixType * const H, const uint32_t BlokDim)
 {
-  //TODO: M=T.H.T^Dag does not seem right, should be H=T^*.M.T^T
+  //M=T.H.T^Dag does not seem right, should be H=T^*.M.T^T
   int    i, j, k, l, CurrentDim, NBlok;
   const char *jobu = "N";
   const char *jobvt = "A";
@@ -3240,7 +3263,7 @@ uint32_t MatrixToBlokTriDiagonalMatrix(MatrixType const M, MatrixType * const T,
 */
 uint32_t MatrixToBlokAndersonMatrix(MatrixType const M, MatrixType * const T, BlokAndersonMatrixType * const H, const uint32_t BlokDim)
 {
-  //TODO: M=T.H.T^Dag does not seem right, should be H=T^*.M.T^T
+  //M=T.H.T^Dag does not seem right, should be H=T^*.M.T^T
   int    i, j, info, NBlok;
   const char *jobz = "V";
   const char *uplo = "U";
@@ -3459,16 +3482,16 @@ uint32_t MatrixToDoubleTriDiagonalMatrixNoOverlap(MatrixType const M, MatrixType
   }
 
 
-  //TODO: general coding
+  //general coding
 
-  return 0;
+  return 1;
 }
 
 
 uint32_t MatrixToBlokDoubleTriDiagonalMatrixNoOverlap(MatrixType const M, MatrixType * const Tval, MatrixType * const Tcon, BlokDoubleTriDiagonalMatrixType * const H, const uint32_t BlokDim, double const Ef)
 {
-  //TODO: General coding
-  return 0;
+  //general coding
+  return 1;
 }
 
 
@@ -3616,3 +3639,9 @@ uint32_t ListOfPolesToBADoubleTridiagonalMatrixOccupation(const ListOfPoles A, B
 /********************  Matrix conversions                ********************/
 /********************  BADoubleTridiagonalMatrix To ...  ********************/
 /****************************************************************************/
+
+
+
+
+
+

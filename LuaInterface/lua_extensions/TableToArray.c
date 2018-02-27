@@ -207,15 +207,71 @@ MatrixType* luaL_checkMatrix(lua_State *L, int narg)
  *  the later functions read from the lua stack a function of any of the types possible
  *  and transform this to the type requested
  *  If SuggestedGrid is set this will be used for the type conversion
+ *  Note that the sugested grid is only used when needed, i.e. The Green's funciton can well be on a different Grid then sugested
  *
+ *  The format of the different types on the lua stack are:
+ *
+ *  The format of TriDiagonalMatrixType should be
+ *    { {a0,a1,a2,a3,...,an}, {b0,b1,b2,...,bn-1}, mu=0, type="Tri"}
+ *    and defines the Green's function
+ *    G0 = a0 + b0^2 . ( G1 )
+ *       with Gi = 1/(w - ai - bi^2 ( Gi+1 ) )
+ *       and Gn = 1/(w - an )
+ *       and ai and bi real
+ *
+ *  The format of BlockTriDiagonalMatrixType should be
+ *    { {A0,A1,A2,A3,..,An}, {B0,B1,B2,...,Bn-1}, mu=0, type="Tri"}
+ *    and defines the Green's function
+ *    G0 = A0 + B0^* . ( G1 ) . B0^T
+ *       with Gi = 1/(w - Ai - Bi . ( Gi+1 ) . Bi^+)
+ *       and Gn = 1/(w - An)
+ *
+ *  The format of AndersonMatrixType should be
+ *    { {a0,a1,a2,a3,...,an}, {b0,b1,b2,...,bn-1}, mu=0, type="And"}
+ *    and defines the Green's function
+ *    G = a0 + b0^2 . ( 1/(w - a1 - sum_{i=1}^{n-1} bi^2 1/(w-ai+1) ) )
+ *       and an and bn real
+ *
+ *  The format of BlockAndersonMatrixType should be
+ *    { {A0,A1,A2,A3,...,An}, {B0,B1,B2,...,Bn-1}, mu=0, type="And"}
+ *    and defines the Green's function
+ *    G = A0 + B0^* . ( 1/(w - A1 - sum_{i=1}^{n-1} Bi . 1/(w-Ai+1) . Bi^+ ) ) . B0^T
+ *
+ *
+ *  The format of NaturalImpurityMatrixType should be
+ *
+ *    and defines the Green's function
+ *
+ *
+ *  The format of BlockNaturalImpurityMatrixType should be
+ *
+ *    and defines the Green's function
+ *
+ *
+ *  The format of ListOfPoles should be:
+ *    { {a0,a1,a2,a3,..,an}, {b1,b2,b3,..,bn}, mu=0, type="ListOfPoles"}
+ *    and defines the Green's function
+ *    a0 + sum_{i=1^N} b_i * 1/(w-a_i)
+ *
+ *  The format of BlockListOfPoles should be:
+ *    { {A0,a1,a2,a3,..,an}, {B1,B2,B3,..,Bn}, mu=0, type="ListOfPoles"}
+ *    and defines the Green's function
+ *    A0 + sum_{i=1^N} B_i * 1/(w-a_i)
  */
 
 /*
- *
+ *  The format of TriDiagonalMatrixType should be
+ *    { {a0,a1,a2,a3,...,an}, {b0,b1,b2,...,an-1}, mu=0, type="Tri"}
+ *    and defines the Green's function
+ *    G0 = a0 + b0^2 . ( G1 )
+ *       with Gi = 1/(w - ai - bi^2 ( Gi+1 ) )
+ *       stopping at  Gn = 1/(w - an )
+ *       and ai and bi real
  */
 TriDiagonalMatrixType* luaL_checkTriDiagonalMatrixType(lua_State *L, int narg)
 {
   const char *type;
+  uint32_t len;
   TriDiagonalMatrixType *buff;
   if(lua_istable(L, narg)==0)
   {
@@ -231,7 +287,49 @@ TriDiagonalMatrixType* luaL_checkTriDiagonalMatrixType(lua_State *L, int narg)
   {
     lua_pop(L, 1);
     buff = malloc(sizeof(TriDiagonalMatrixType));
-    //TODO: read TriDiagonalMatrix from lua stack
+    if(lua_objlen(L,narg)!=2)
+    {
+      luaL_error(L, "Error a Green's function represented as a tri-diagonal matrix should be a list of two lists {{a0,a1,a2,...,an},{b0,b1,b2,...,bn-1}}");
+    }
+    lua_getfield(L, narg, "mu");
+    if(lua_isnumber(L, -1)==1)
+    {
+      buff->mu=(double)luaL_checknumber(L, -1);
+    }
+    else
+    {
+      luaL_error(L, "Reading Green's function represented as a tri-diagonal matrix without mu defined");
+    }
+    lua_pop(L,1);
+    lua_getfield(L, narg, "name");
+    if(lua_isstring(L, -1)==1)
+    {
+      strncpy(buff->Name, luaL_checkstring(L, -1), MAXStrLength);
+      buff->Name[MAXStrLength-1]='\0';
+    }
+    else if(lua_isnil(L, -1)==1)
+    {
+      buff->Name[0]='\0';
+    }
+    else
+    {
+      luaL_error(L, "Reading Green's function represented as a tri-diagonal matrix without name defined");
+    }
+    lua_pop(L,1);
+    // read a
+    lua_rawgeti(L, narg, 1);
+    buff->a=luaL_checkarray_double(L, -1, &len);
+    if(len==0) luaL_error(L, "Errorr reading Greens function with lenght of a equal to zero");
+    buff->N=len-1;
+    lua_pop(L, 1);
+    // read b
+    lua_rawgeti(L, narg, 2);
+    buff->b=luaL_checkarray_double(L, -1, &len);
+    if(len!=buff->N)
+    {
+      luaL_error(L, "Error Reading List of poles. Length of a (%d) should be one more than length of b (%d)",buff->N+1,len);
+    }
+    lua_pop(L, 1);
     return buff;
   }
   if(strcmp(type, "And")==0)
@@ -272,11 +370,18 @@ TriDiagonalMatrixType* luaL_checkTriDiagonalMatrixType(lua_State *L, int narg)
 }
 
 /*
- *
+ *  The format of BlockTriDiagonalMatrixType should be
+ *    { {A0,A1,A2,A3,...An}, {B0,B1,B2,...,Bn-1}, mu=0, type="Tri"}
+ *    and defines the Green's function
+ *    G0 = A0 + B0^* . ( G1 ) . B0^T
+ *       with Gi = 1/(w - Ai - Bi . ( Gi+1 ) . Bi^+)
+ *       with Gn = 1/(w - An)
  */
 BlockTriDiagonalMatrixType* luaL_checkBlockTriDiagonalMatrixType(lua_State *L, int narg)
 {
   const char *type;
+  uint32_t len,i,j,k;
+  Bool MakeReal=True;
   BlockTriDiagonalMatrixType *buff;
   if(lua_istable(L, narg)==0)
   {
@@ -292,8 +397,145 @@ BlockTriDiagonalMatrixType* luaL_checkBlockTriDiagonalMatrixType(lua_State *L, i
   {
     lua_pop(L, 1);
     buff = malloc(sizeof(BlockTriDiagonalMatrixType));
-    //TODO: read BlockTriDiagonalMatrixType
-
+    if(lua_objlen(L,narg)!=2)
+    {
+      luaL_error(L, "Error a tridiagonal matrix should be a list of two lists {{A0,A1,...,An+1},{B0,B1,...,Bn}}, with A and B matrices and A Hermitian");
+    }
+    // read b
+    lua_rawgeti(L, narg, 2);
+    {
+      len = (uint32_t)lua_objlen(L, -1);
+      if(len==0) luaL_error(L, "Errorr reading Greens function with lenght of b equal to zero");
+      buff->N=len;
+      lua_rawgeti(L, -1, 1);
+      buff->BlockSize = (uint32_t)lua_objlen(L, -1);
+      lua_pop(L, 1);
+      buff->QComplex=1;
+      InitBlockTridiagonalMatrix(buff);
+      for(i=0;i<buff->N;i++)
+      {
+        lua_rawgeti(L, -1, i+1); // get b_i onto the stack
+        {
+          if((uint32_t)lua_objlen(L, -1)!=buff->BlockSize)
+          {
+            luaL_error(L, "Errorr reading Greens function as block tridiagonal matrix, but all blocks must be equal in size. BlockSize (%d), size at i=%d is %d",buff->BlockSize,i+1,lua_objlen(L, -1));
+          }
+          for(j=0;j<buff->BlockSize;j++)
+          {
+            lua_rawgeti(L,-1,j+1);
+            {
+              if((uint32_t)lua_objlen(L, -1)!=buff->BlockSize)
+              {
+                luaL_error(L, "Errorr reading Greens function as block tridiagonal matrix, but all blocks must be equal in size. BlockSize (%d), size at i=%d j=%d is %d",buff->BlockSize,i+1,j+1,lua_objlen(L, -1));
+              }
+              for(k=0;k<buff->BlockSize;k++)
+              {
+                lua_rawgeti(L,-1,k+1);
+                {
+                  if(lua_isnumber(L, -1))
+                  {
+                    buff->b[i*(Sqr(buff->BlockSize))+k+j*buff->BlockSize].Re=(double)luaL_checknumber(L, -1);
+                    buff->b[i*(Sqr(buff->BlockSize))+k+j*buff->BlockSize].Im=0;
+                  }
+                  else if (luaL_testudata(L, -1, "Complex_Type") != NULL)
+                  {
+                    MakeReal=False;
+                    buff->b[i*(Sqr(buff->BlockSize))+k+j*buff->BlockSize] = *(Complex16 *)luaL_checkudata(L, -1, "Complex_Type");
+                  }
+                  else
+                  {
+                    luaL_error(L, "Error in reading complex table\n");
+                  }
+                }
+                lua_pop(L, 1);
+              }
+            }
+            lua_pop(L, 1);
+          }
+        }
+        lua_pop(L, 1);
+      }
+    }
+    lua_pop(L, 1);
+    // read a
+    lua_rawgeti(L, narg, 1);
+    {
+      len = (uint32_t)lua_objlen(L, -1);
+      if(len!=buff->N+1) luaL_error(L, "Errorr reading Greens function in form of Block list of poles length of A(%d) should be one larger then length of B(%d)",len,buff->N);
+      for(i=0;i<=buff->N;i++)
+      {
+        lua_rawgeti(L, -1, i+1); // get a_i onto the stack
+        {
+          if((uint32_t)lua_objlen(L, -1)!=buff->BlockSize)
+          {
+            luaL_error(L, "Errorr reading Greens function as block tridiagonal matrix, but all blocks must be equal in size. BlockSize (%d), size at i=%d is %d",buff->BlockSize,i+1,lua_objlen(L, -1));
+          }
+          for(j=0;j<buff->BlockSize;j++)
+          {
+            lua_rawgeti(L,-1,j+1);
+            {
+              if((uint32_t)lua_objlen(L, -1)!=buff->BlockSize)
+              {
+                luaL_error(L, "Errorr reading Greens function as block tridiagonal matrix, but all blocks must be equal in size. BlockSize (%d), size at i=%d j=%d is %d",buff->BlockSize,i+1,j+1,lua_objlen(L, -1));
+              }
+              for(k=0;k<buff->BlockSize;k++)
+              {
+                lua_rawgeti(L,-1,k+1);
+                {
+                  if(lua_isnumber(L, -1))
+                  {
+                    buff->a[i*(Sqr(buff->BlockSize))+k+j*buff->BlockSize].Re=(double)luaL_checknumber(L, -1);
+                    buff->a[i*(Sqr(buff->BlockSize))+k+j*buff->BlockSize].Im=0;
+                  }
+                  else if (luaL_testudata(L, -1, "Complex_Type") != NULL)
+                  {
+                    MakeReal=False;
+                    buff->a[i*(Sqr(buff->BlockSize))+k+j*buff->BlockSize] = *(Complex16 *)luaL_checkudata(L, -1, "Complex_Type");
+                  }
+                  else
+                  {
+                    luaL_error(L, "Error in reading complex table\n");
+                  }
+                }
+                lua_pop(L, 1);
+              }
+            }
+            lua_pop(L, 1);
+          }
+        }
+        lua_pop(L, 1);
+      }
+    }
+    lua_pop(L, 1);
+    if(MakeReal==True)
+    {
+      ComplexBlockTridiagonalMatrixToReal(buff);
+    }
+    lua_getfield(L, narg, "mu");
+    if(lua_isnumber(L, -1)==1)
+    {
+      buff->mu=(double)luaL_checknumber(L, -1);
+    }
+    else
+    {
+      luaL_error(L, "Reading Block tridiagonal matrix without mu defined");
+    }
+    lua_pop(L,1);
+    lua_getfield(L, narg, "name");
+    if(lua_isstring(L, -1)==1)
+    {
+      strncpy(buff->Name, luaL_checkstring(L, -1), MAXStrLength);
+      buff->Name[MAXStrLength-1]='\0';
+    }
+    else if(lua_isnil(L, -1)==1)
+    {
+      buff->Name[0]='\0';
+    }
+    else
+    {
+      luaL_error(L, "Reading Block tridiagonal matrix without name correctly defined");
+    }
+    lua_pop(L,1);
     return buff;
   }
   if(strcmp(type, "And")==0)
@@ -334,11 +576,17 @@ BlockTriDiagonalMatrixType* luaL_checkBlockTriDiagonalMatrixType(lua_State *L, i
 }
 
 /*
- *
+ *  The format of AndersonMatrixType should be
+ *    { {a0,a1,a2,a3,...,an}, {b0,b1,b2,...,bn-1}, mu=0, type="And"}
+ *    and defines the Green's function
+ *    G0 = a0 + b0^2 . ( G1 )
+ *       with Gn = 1/(w - an - bn^2 ( Gn+1 ) )
+ *       and an and bn real
  */
 AndersonMatrixType* luaL_checkAndersonMatrixType(lua_State *L, int narg)
 {
   const char *type;
+  uint32_t len;
   AndersonMatrixType *buff;
   if(lua_istable(L, narg)==0)
   {
@@ -365,7 +613,49 @@ AndersonMatrixType* luaL_checkAndersonMatrixType(lua_State *L, int narg)
   {
     lua_pop(L, 1);
     buff = malloc(sizeof(AndersonMatrixType));
-    //TODO: Read AndersonMatrixType from lua stack
+    if(lua_objlen(L,narg)!=2)
+    {
+      luaL_error(L, "Error a Green's function represented as a Anderson matrix should be a list of two lists {{a0,a1,a2,...,an},{b0,b1,b2,...,bn-1}}");
+    }
+    lua_getfield(L, narg, "mu");
+    if(lua_isnumber(L, -1)==1)
+    {
+      buff->mu=(double)luaL_checknumber(L, -1);
+    }
+    else
+    {
+      luaL_error(L, "Reading Green's function represented as an Anderson matrix without mu defined");
+    }
+    lua_pop(L,1);
+    lua_getfield(L, narg, "name");
+    if(lua_isstring(L, -1)==1)
+    {
+      strncpy(buff->Name, luaL_checkstring(L, -1), MAXStrLength);
+      buff->Name[MAXStrLength-1]='\0';
+    }
+    else if(lua_isnil(L, -1)==1)
+    {
+      buff->Name[0]='\0';
+    }
+    else
+    {
+      luaL_error(L, "Reading Green's function represented as an Anderson matrix without name defined");
+    }
+    lua_pop(L,1);
+    // read a
+    lua_rawgeti(L, narg, 1);
+    buff->a=luaL_checkarray_double(L, -1, &len);
+    if(len==0) luaL_error(L, "Errorr reading Greens function with lenght of a equal to zero");
+    buff->N=len-1;
+    lua_pop(L, 1);
+    // read b
+    lua_rawgeti(L, narg, 2);
+    buff->b=luaL_checkarray_double(L, -1, &len);
+    if(len!=buff->N)
+    {
+      luaL_error(L, "Error Reading Andeson matrix. Length of a (%d) should be one more than length of b (%d)",buff->N+1,len);
+    }
+    lua_pop(L, 1);
     return buff;
   }
   if(strcmp(type, "NaturalImpurityOrbital")==0)
@@ -395,11 +685,17 @@ AndersonMatrixType* luaL_checkAndersonMatrixType(lua_State *L, int narg)
 }
 
 /*
- *
+ *  The format of BlockAndersonMatrixType should be
+ *    { {A0,A1,A2,A3,...,An}, {B0,B1,B2,...,Bn-1}, mu=0, type="And"}
+ *    and defines the Green's function
+ *    G0 = A0 + B0^* . ( G1 ) . B0^T
+ *       with Gn = 1/(w - An - Bn . ( Gn+1 ) . Bn^+ )
  */
 BlockAndersonMatrixType* luaL_checkBlockAndersonMatrixType(lua_State *L, int narg)
 {
   const char *type;
+  uint32_t len,i,j,k;
+  Bool MakeReal=True;
   BlockAndersonMatrixType *buff;
   if(lua_istable(L, narg)==0)
   {
@@ -426,8 +722,145 @@ BlockAndersonMatrixType* luaL_checkBlockAndersonMatrixType(lua_State *L, int nar
   {
     lua_pop(L, 1);
     buff = malloc(sizeof(BlockAndersonMatrixType));
-    //TODO: read BlockAndersonMatrixType
-
+    if(lua_objlen(L,narg)!=2)
+    {
+      luaL_error(L, "Error an Anderson matrix should be a list of two lists {{A0,A1,...,An+1},{B0,B1,...,Bn}}, with A and B matrices and A Hermitian");
+    }
+    // read b
+    lua_rawgeti(L, narg, 2);
+    {
+      len = (uint32_t)lua_objlen(L, -1);
+      if(len==0) luaL_error(L, "Errorr reading Greens function with lenght of b equal to zero");
+      buff->N=len;
+      lua_rawgeti(L, -1, 1);
+      buff->BlockSize = (uint32_t)lua_objlen(L, -1);
+      lua_pop(L, 1);
+      buff->QComplex=1;
+      InitBlockAndersonMatrix(buff);
+      for(i=0;i<buff->N;i++)
+      {
+        lua_rawgeti(L, -1, i+1); // get b_i onto the stack
+        {
+          if((uint32_t)lua_objlen(L, -1)!=buff->BlockSize)
+          {
+            luaL_error(L, "Errorr reading Greens function as block Anderson matrix, but all blocks must be equal in size. BlockSize (%d), size at i=%d is %d",buff->BlockSize,i+1,lua_objlen(L, -1));
+          }
+          for(j=0;j<buff->BlockSize;j++)
+          {
+            lua_rawgeti(L,-1,j+1);
+            {
+              if((uint32_t)lua_objlen(L, -1)!=buff->BlockSize)
+              {
+                luaL_error(L, "Errorr reading Greens function as block Anderson matrix, but all blocks must be equal in size. BlockSize (%d), size at i=%d j=%d is %d",buff->BlockSize,i+1,j+1,lua_objlen(L, -1));
+              }
+              for(k=0;k<buff->BlockSize;k++)
+              {
+                lua_rawgeti(L,-1,k+1);
+                {
+                  if(lua_isnumber(L, -1))
+                  {
+                    buff->b[i*(Sqr(buff->BlockSize))+k+j*buff->BlockSize].Re=(double)luaL_checknumber(L, -1);
+                    buff->b[i*(Sqr(buff->BlockSize))+k+j*buff->BlockSize].Im=0;
+                  }
+                  else if (luaL_testudata(L, -1, "Complex_Type") != NULL)
+                  {
+                    MakeReal=False;
+                    buff->b[i*(Sqr(buff->BlockSize))+k+j*buff->BlockSize] = *(Complex16 *)luaL_checkudata(L, -1, "Complex_Type");
+                  }
+                  else
+                  {
+                    luaL_error(L, "Error in reading complex table\n");
+                  }
+                }
+                lua_pop(L, 1);
+              }
+            }
+            lua_pop(L, 1);
+          }
+        }
+        lua_pop(L, 1);
+      }
+    }
+    lua_pop(L, 1);
+    // read a
+    lua_rawgeti(L, narg, 1);
+    {
+      len = (uint32_t)lua_objlen(L, -1);
+      if(len!=buff->N+1) luaL_error(L, "Errorr reading Greens function in form of Block Anderson Matrix length of A(%d) should be one larger then length of B(%d)",len,buff->N);
+      for(i=0;i<=buff->N;i++)
+      {
+        lua_rawgeti(L, -1, i+1); // get a_i onto the stack
+        {
+          if((uint32_t)lua_objlen(L, -1)!=buff->BlockSize)
+          {
+            luaL_error(L, "Errorr reading Greens function as block Anderson matrix, but all blocks must be equal in size. BlockSize (%d), size at i=%d is %d",buff->BlockSize,i+1,lua_objlen(L, -1));
+          }
+          for(j=0;j<buff->BlockSize;j++)
+          {
+            lua_rawgeti(L,-1,j+1);
+            {
+              if((uint32_t)lua_objlen(L, -1)!=buff->BlockSize)
+              {
+                luaL_error(L, "Errorr reading Greens function as block Anderson matrix, but all blocks must be equal in size. BlockSize (%d), size at i=%d j=%d is %d",buff->BlockSize,i+1,j+1,lua_objlen(L, -1));
+              }
+              for(k=0;k<buff->BlockSize;k++)
+              {
+                lua_rawgeti(L,-1,k+1);
+                {
+                  if(lua_isnumber(L, -1))
+                  {
+                    buff->a[i*(Sqr(buff->BlockSize))+k+j*buff->BlockSize].Re=(double)luaL_checknumber(L, -1);
+                    buff->a[i*(Sqr(buff->BlockSize))+k+j*buff->BlockSize].Im=0;
+                  }
+                  else if (luaL_testudata(L, -1, "Complex_Type") != NULL)
+                  {
+                    MakeReal=False;
+                    buff->a[i*(Sqr(buff->BlockSize))+k+j*buff->BlockSize] = *(Complex16 *)luaL_checkudata(L, -1, "Complex_Type");
+                  }
+                  else
+                  {
+                    luaL_error(L, "Error in reading complex table\n");
+                  }
+                }
+                lua_pop(L, 1);
+              }
+            }
+            lua_pop(L, 1);
+          }
+        }
+        lua_pop(L, 1);
+      }
+    }
+    lua_pop(L, 1);
+    if(MakeReal==True)
+    {
+      ComplexBlockAndersonMatrixToReal(buff);
+    }
+    lua_getfield(L, narg, "mu");
+    if(lua_isnumber(L, -1)==1)
+    {
+      buff->mu=(double)luaL_checknumber(L, -1);
+    }
+    else
+    {
+      luaL_error(L, "Reading Block Anderson matrix without mu defined");
+    }
+    lua_pop(L,1);
+    lua_getfield(L, narg, "name");
+    if(lua_isstring(L, -1)==1)
+    {
+      strncpy(buff->Name, luaL_checkstring(L, -1), MAXStrLength);
+      buff->Name[MAXStrLength-1]='\0';
+    }
+    else if(lua_isnil(L, -1)==1)
+    {
+      buff->Name[0]='\0';
+    }
+    else
+    {
+      luaL_error(L, "Reading Block Anderson matrix without name correctly defined");
+    }
+    lua_pop(L,1);
     return buff;
   }
   if(strcmp(type, "NaturalImpurityOrbital")==0)
@@ -645,7 +1078,7 @@ ListOfPoles * luaL_checkListOfPoles(lua_State *L, int narg)
     lua_pop(L, 1);
     if(lua_objlen(L,narg)!=2)
     {
-      luaL_error(L, "Error a list of pole should be a list of two lists {{a1,a2,...,an+1},{b1^2,b2^2,...,bn^2}}");
+      luaL_error(L, "Error a list of pole should be a list of two lists {{a0,a1,a2,...,an},{b1^2,b2^2,...,bn^2}}");
     }
     lua_getfield(L, narg, "mu");
     if(lua_isnumber(L, -1)==1)
@@ -691,7 +1124,7 @@ ListOfPoles * luaL_checkListOfPoles(lua_State *L, int narg)
     buff->b=luaL_checkarray_double(L, -1, &len);
     if(len!=buff->N)
     {
-      luaL_error(L, "Error Reading List of poles. Length of a (%g) should be one more than length of b (%g)",buff->N+1,len);
+      luaL_error(L, "Error Reading List of poles. Length of a (%d) should be one more than length of b (%d)",buff->N+1,len);
     }
     lua_pop(L, 1);
     return buff;
@@ -700,6 +1133,12 @@ ListOfPoles * luaL_checkListOfPoles(lua_State *L, int narg)
   return NULL;
 }
 
+
+ListOfPoles * luaL_checkListOfPolesVariableGrid(lua_State *L, int narg, const double * const Grid, const uint32_t NGridPoints)
+{
+  //TODO: all
+  return NULL;
+}
 /*
  *  On the lua stack at position narg should be a Block response function of any type
  *  Returned is a list of poles
@@ -708,7 +1147,7 @@ ListOfPoles * luaL_checkListOfPoles(lua_State *L, int narg)
  *  For a tri-diagonal representation with N Blocks of NBlockSize there will be N*NBlockSize poles
  *  each of NBlockSize.
  *
- *  The format of ListOfPoles should be:
+ *  The format of BlockListOfPoles should be:
  *    { {A0,a1,a2,a3}, {B1,B2,B3}, mu=0, type="ListOfPoles"}
  *    and defines the Green's function
  *    A0 + sum_{i=1^N} B_i * 1/(w-a_i)
@@ -765,8 +1204,8 @@ BlockListOfPoles * luaL_checkBlockListOfPoles(lua_State *L, int narg)
   }
   if(strcmp(type, "ListOfPoles")==0)
   {
-    buff=malloc(sizeof(BlockListOfPoles));
     lua_pop(L, 1);
+    buff=malloc(sizeof(BlockListOfPoles));
     if(lua_objlen(L,narg)!=2)
     {
       luaL_error(L, "Error a list of poles should be a list of two lists {{a1,a2,...,an+1},{b1^2,b2^2,...,bn^2}}, with b matrices and a1 optionally a matrix");
@@ -788,7 +1227,7 @@ BlockListOfPoles * luaL_checkBlockListOfPoles(lua_State *L, int narg)
         {
           if((uint32_t)lua_objlen(L, -1)!=buff->BlockSize)
           {
-            luaL_error(L, "Errorr reading Greens function as block list of poles, but all blocks must be equal in size. BlockSize (%g), size at i=%g is %g",buff->BlockSize,i+1,lua_objlen(L, -1));
+            luaL_error(L, "Errorr reading Greens function as block list of poles, but all blocks must be equal in size. BlockSize (%d), size at i=%d is %d",buff->BlockSize,i+1,lua_objlen(L, -1));
           }
           for(j=0;j<buff->BlockSize;j++)
           {
@@ -796,7 +1235,7 @@ BlockListOfPoles * luaL_checkBlockListOfPoles(lua_State *L, int narg)
             {
               if((uint32_t)lua_objlen(L, -1)!=buff->BlockSize)
               {
-                luaL_error(L, "Errorr reading Greens function as block list of poles, but all blocks must be equal in size. BlockSize (%g), size at i=%g j=%g is %g",buff->BlockSize,i+1,j+1,lua_objlen(L, -1));
+                luaL_error(L, "Errorr reading Greens function as block list of poles, but all blocks must be equal in size. BlockSize (%d), size at i=%d j=%d is %d",buff->BlockSize,i+1,j+1,lua_objlen(L, -1));
               }
               for(k=0;k<buff->BlockSize;k++)
               {
@@ -833,7 +1272,7 @@ BlockListOfPoles * luaL_checkBlockListOfPoles(lua_State *L, int narg)
       len = (uint32_t)lua_objlen(L, -1);
       if(len!=buff->N+1)
       {
-        luaL_error(L, "Error Reading List of poles. Length of a (%g) should be one more than length of b (%g)",len,buff->N);
+        luaL_error(L, "Error Reading List of poles. Length of a (%d) should be one more than length of b (%d)",len,buff->N);
       }
       lua_rawgeti(L, -1, 1);
       {
@@ -868,7 +1307,7 @@ BlockListOfPoles * luaL_checkBlockListOfPoles(lua_State *L, int narg)
         {
           if((uint32_t)lua_objlen(L, -1)!=buff->BlockSize)
           {
-            luaL_error(L, "Errorr reading Greens function as block list of poles, but all blocks must be equal in size. BlockSize (%g), size of a0 is %g",buff->BlockSize,lua_objlen(L, -1));
+            luaL_error(L, "Errorr reading Greens function as block list of poles, but all blocks must be equal in size. BlockSize (%d), size of a0 is %d",buff->BlockSize,lua_objlen(L, -1));
           }
           for(j=0;j<buff->BlockSize;j++)
           {
@@ -876,7 +1315,7 @@ BlockListOfPoles * luaL_checkBlockListOfPoles(lua_State *L, int narg)
             {
               if((uint32_t)lua_objlen(L, -1)!=buff->BlockSize)
               {
-                luaL_error(L, "Errorr reading Greens function as block list of poles, but all blocks must be equal in size. BlockSize (%g), size of a0(%g) is %g",buff->BlockSize,j+1,lua_objlen(L, -1));
+                luaL_error(L, "Errorr reading Greens function as block list of poles, but all blocks must be equal in size. BlockSize (%d), size of a0(%d) is %d",buff->BlockSize,j+1,lua_objlen(L, -1));
               }
               for(k=0;k<buff->BlockSize;k++)
               {
@@ -1006,19 +1445,20 @@ BlockListOfPoles * luaL_checkBlockListOfPolesVariableGrid(lua_State *L, int narg
 
 
 
-/*  reads a Block Greens function from the stack
+/*  reads a response function from the stack
  *  These functions can be in different formats (t, a, n, l) for tri-diagonal, anderson, natural or list of poles
+ *  they can be in Block form or not
  *  If a pointer to an excisting structure is returned (user data on stack) a lowercase letter is returned
  *  If a newly created structure is returned (table on stack) an upper case letter is returned
  */
-BlockMatrixType * luaL_checkBlockGreensfunction(lua_State *L, int narg)
+ResponsefunctionType * luaL_checkResponsefunction(lua_State *L, int narg)
 {
   char const * type;
-  BlockMatrixType *buff;
+  ResponsefunctionType *buff;
   // Block matrix stored as pointer to structure on lua stack
   if (luaL_testudata(L, narg, "ResponseFunction_Type") != NULL)
   {
-    buff = (BlockMatrixType*)luaL_checkudata(L, narg, "ResponseFunction_Type");
+    buff = (ResponsefunctionType*)luaL_checkudata(L, narg, "ResponseFunction_Type");
     if (buff!=NULL)
     {
       return buff;
@@ -1029,7 +1469,7 @@ BlockMatrixType * luaL_checkBlockGreensfunction(lua_State *L, int narg)
   {
     luaL_error(L, "Error Green's function should be represented by a table");
   }
-  buff=malloc(sizeof(BlockMatrixType));
+  buff=malloc(sizeof(ResponsefunctionType));
   // test if there is a suggested grid present. If present Stored in field SuggestedGrid
   lua_getfield(L, narg, "SuggestedGrid");
   if(lua_isnil(L, -1)==1)
@@ -1047,6 +1487,12 @@ BlockMatrixType * luaL_checkBlockGreensfunction(lua_State *L, int narg)
   {
     luaL_error(L, "Error reading Green's function: \"SuggestedGrid\" should be an table of doubles.");
   }
+  // check if Response function is of Block type or not
+  lua_rawgeti(L, narg, 1); // puts table a on the stack
+  lua_rawgeti(L,-1,1); // puts element A0 or a0 or the stack
+  buff->Block = False;
+  if(lua_istable(L,-1)) buff->Block = True;
+  lua_pop(L,2);
   // read type
   lua_getfield(L, narg, "type");
   if(lua_isstring(L,-1)==0)
@@ -1058,44 +1504,74 @@ BlockMatrixType * luaL_checkBlockGreensfunction(lua_State *L, int narg)
   {
     lua_pop(L, 1);
     buff->type='T';
-    buff->data=(void*)luaL_checkBlockTriDiagonalMatrixType(L, narg);
+    if(buff->Block==True)
+    {
+      buff->data=(void*)luaL_checkBlockTriDiagonalMatrixType(L, narg);
+    }
+    else
+    {
+      buff->data=(void*)luaL_checkTriDiagonalMatrixType(L, narg);
+    }
     return buff;
   }
   if(strcmp(type, "And")==0)
   {
     lua_pop(L, 1);
     buff->type='A';
-    buff->data = (void*)luaL_checkBlockAndersonMatrixType(L, narg);
+    if(buff->Block==True)
+    {
+      buff->data = (void*)luaL_checkBlockAndersonMatrixType(L, narg);
+    }
+    else
+    {
+      buff->data = (void*)luaL_checkAndersonMatrixType(L, narg);
+    }
     return buff;
   }
   if(strcmp(type, "NaturalImpurityOrbital")==0)
   {
     lua_pop(L, 1);
     buff->type='N';
-    buff->data = (void*)luaL_checkBlockNatrualImpurityOrbitalMatrixType(L, narg);
+    if(buff->Block==True)
+    {
+      buff->data = (void*)luaL_checkBlockNatrualImpurityOrbitalMatrixType(L, narg);
+    }
+    else
+    {
+      buff->data = (void*)luaL_checkNatrualImpurityOrbitalMatrixType(L, narg);
+    }
     return buff;
   }
   if(strcmp(type, "ListOfPoles")==0)
   {
     lua_pop(L, 1);
     buff->type='L';
-    if(buff->NSuggestedGridPoints==0)
+    if(buff->Block==True)
     {
-      buff->data = (void*)luaL_checkBlockListOfPoles(L, narg);
+      if(buff->NSuggestedGridPoints==0)
+      {
+        buff->data = (void*)luaL_checkBlockListOfPoles(L, narg);
+      }
+      else
+      {
+        buff->data = (void*)luaL_checkBlockListOfPolesVariableGrid(L, narg, buff->SuggestedGrid, buff->NSuggestedGridPoints);
+      }
     }
     else
     {
-      buff->data = (void*)luaL_checkBlockListOfPolesVariableGrid(L, narg, buff->SuggestedGrid, buff->NSuggestedGridPoints);
+      if(buff->NSuggestedGridPoints==0)
+      {
+        buff->data = (void*)luaL_checkListOfPoles(L, narg);
+      }
+      else
+      {
+        buff->data = (void*)luaL_checkListOfPolesVariableGrid(L, narg, buff->SuggestedGrid, buff->NSuggestedGridPoints);
+      }
     }
     return buff;
   }
   luaL_error(L, "Errorr reading Greens function of unknown type (%s)\nAllowed are:\nTri\nAnd\nNaturalImpurityOrbital\nListOfPoles",type);
   return NULL;
-}
-
-BlockMatrixType * luaL_checkResponsefunction(lua_State *L, int narg)
-{
-  return luaL_checkBlockGreensfunction(L,narg);
 }
 
 
@@ -1769,6 +2245,12 @@ void LuaPushTable_BlockListOfPoles(lua_State* L, BlockListOfPoles const * const 
   lua_setfield(L,-2,"name");
 }
 
+void LuaPushTable_NaturalImpurityOrbital(lua_State* L, BADoubleTriDiagonalMatrixType * const M)
+{
+  //TODO: push BlockNaturalImpurityOrbitalMatrixType as a table to lua stack
+}
+
+
 void LuaPushTable_BlockNaturalImpurityOrbital(lua_State* L, BlockNaturalImpurityOrbitalMatrixType * const M)
 {
   //TODO: push BlockNaturalImpurityOrbitalMatrixType as a table to lua stack
@@ -1835,42 +2317,70 @@ void LuaPushTable_SpectraTypeArray(lua_State* L, SpectraTypeArray const * const 
  *  If a pointer to an excisting structure is returned (user data on stack) a lowercase letter is returned
  *  If a newly created structure is returned (table on stack) an upper case letter is returned
  */
-void LuaPush_BlockGreensFunction(lua_State *L, BlockMatrixType const * const M)
+void LuaPush_ResponseFunction(lua_State *L, ResponsefunctionType const * const M)
 {
-  BlockMatrixType *res;
-  if((M->type&32)==0)
+  ResponsefunctionType *res;
+  if((M->type|32)==M->type) //lowercase
   {
     /* push a user data to the stack */
-    res = (BlockMatrixType *) lua_newuserdata(L, sizeof(BlockMatrixType));
+    res = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
     *res = *M;
     luaL_setmetatable(L, "ResponseFunction_Type");
     return;
   }
   switch (M->type)
   {
-    case 't':
+    case 'T':
     {
-      LuaPushTable_BlockTriDiagonalMatrixType(L, M->data);
+      if(M->Block==True)
+      {
+        LuaPushTable_BlockTriDiagonalMatrixType(L, M->data);
+      }
+      else
+      {
+        LuaPushTable_TriDiagonalMatrixType(L, M->data);
+      }
       return;
     }
-    case 'a':
+    case 'A':
     {
-      LuaPushTable_BlockAndersonMatrixType(L, M->data);
+      if(M->Block==True)
+      {
+        LuaPushTable_BlockAndersonMatrixType(L, M->data);
+      }
+      else
+      {
+        LuaPushTable_AndersonMatrixType(L, M->data);
+      }
       return;
     }
-    case 'l':
+    case 'L':
     {
-      LuaPushTable_BlockListOfPoles(L, M->data);
+      if(M->Block==True)
+      {
+        LuaPushTable_BlockListOfPoles(L, M->data);
+      }
+      else
+      {
+        LuaPushTable_ListOfPoles(L, M->data);
+      }
       return;
     }
-    case 'n':
+    case 'N':
     {
-      LuaPushTable_BlockNaturalImpurityOrbital(L, M->data);
+      if(M->Block==True)
+      {
+        LuaPushTable_BlockNaturalImpurityOrbital(L, M->data);
+      }
+      else
+      {
+        LuaPushTable_NaturalImpurityOrbital(L, M->data);
+      }
       return;
     }
     default:
     {
-      printf("Error in LuaPush_BlockGreensFunction: Type of BlockMatrix should be either t,a,l, or n\n");
+      printf("Error in LuaPush_ResponseFunction: Type of response function should be either t/T,a/A,l/L, or n/N\n");
       return;
     }
   }
@@ -2197,7 +2707,7 @@ int32_t LuaCheckOptions(lua_State *L, int narg, LuaOptionsType *Options)
 }
 
 
-static int LuaReadSingleSelfenergy(lua_State *L, int narg, OperatorType *V, SpectraTypeArray *SonGrid, BlockMatrixType *SasMatrix)
+static int LuaReadSingleSelfenergy(lua_State *L, int narg, OperatorType *V, SpectraTypeArray *SonGrid, ResponsefunctionType *SasMatrix)
 {
   uint32_t n;
   /* read self energy */
@@ -2265,7 +2775,7 @@ static int LuaReadSingleSelfenergy(lua_State *L, int narg, OperatorType *V, Spec
   return luaL_error(L, "Error reading self energy, wrong format. Self energy should be either of Spectra_Type, of ResponsFunction_Type or a table containing an operator or table of operators and one of the previous two\n");
 }
 
-uint32_t FreeSelfEnergyArrayFromLua(uint32_t NSigma, OperatorType **V, SpectraTypeArray **SonGrid, BlockMatrixType **SasMatrix)
+uint32_t FreeSelfEnergyArrayFromLua(uint32_t NSigma, OperatorType **V, SpectraTypeArray **SonGrid, ResponsefunctionType **SasMatrix)
 {
   uint32_t i;
   for(i=0;i<NSigma;i++)

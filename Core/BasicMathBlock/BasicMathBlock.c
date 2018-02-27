@@ -8,7 +8,7 @@
 /* Free the BlockMatrix, independent if the type is capital or small */
 /* Block types read from the lua stack need different freeing depending on capital or small cap */
 /* use FreeBlockMatrixFromLua instead */
-uint32_t FreeBlockMatrix(BlockMatrixType *M)
+uint32_t FreeBlockMatrix(ResponsefunctionType *M)
 {
   if(M->NSuggestedGridPoints!=0)
   {
@@ -50,7 +50,7 @@ uint32_t FreeBlockMatrix(BlockMatrixType *M)
 }
 
 /* capital read from table and needs to be freed, small read from user data type */
-uint32_t FreeBlockMatrixFromLua(BlockMatrixType *M)
+uint32_t FreeBlockMatrixFromLua(ResponsefunctionType *M)
 {
   if((M->type>='A') && (M->type<='Z') && (M->NSuggestedGridPoints!=0))
   {
@@ -108,14 +108,16 @@ uint32_t FreeBlockMatrixFromLua(BlockMatrixType *M)
 }
 
 /*
- * change the type of a response function from M->type to type
+ * change the type of a Block response function from M->type to type
  */
-BlockMatrixType *ConvertBlockMatrix(BlockMatrixType *M, const char type, double T)
+ResponsefunctionType *ConvertBlockMatrix(ResponsefunctionType *M, const char type, double T)
 {
-  BlockMatrixType *res;
-  res = malloc(sizeof(BlockMatrixType));
+  ResponsefunctionType *res;
+  if(M->Block!=True) printf("ERROR: called ConvertBlockMatrix on a ResponsefunctionType that is not in Block Form.\n");
+  res = malloc(sizeof(ResponsefunctionType));
   res->NSuggestedGridPoints = 0;
   res->type = type;
+  res->Block = True;
   res->NSuggestedGridPoints=M->NSuggestedGridPoints;
   if(res->NSuggestedGridPoints==0)
   {

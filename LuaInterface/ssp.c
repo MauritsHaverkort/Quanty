@@ -1533,7 +1533,7 @@ static int LuaCreateSpectra(lua_State *L)
   {
     OperatorType **V;
     SpectraTypeArray **SonGrid;
-    BlockMatrixType **SasMatrix;
+    ResponsefunctionType **SasMatrix;
     uint32_t NSigma;
   } Sigma;
   struct
@@ -1646,7 +1646,7 @@ static int LuaCreateSpectra(lua_State *L)
     {
       Sigma.V=malloc(Sigma.NSigma*sizeof(OperatorType*));
       Sigma.SonGrid=malloc(Sigma.NSigma*sizeof(SpectraTypeArray*));
-      Sigma.SasMatrix=malloc(Sigma.NSigma*sizeof(BlockMatrixType*));
+      Sigma.SasMatrix=malloc(Sigma.NSigma*sizeof(ResponsefunctionType*));
       LuaReadSingleSelfenergy(L, 4, Sigma.V[0], Sigma.SonGrid[0], Sigma.SasMatrix[0]);
     }
     else
@@ -1654,7 +1654,7 @@ static int LuaCreateSpectra(lua_State *L)
       Sigma.NSigma=(uint32_t)lua_objlen(L, 4);
       Sigma.V=malloc(Sigma.NSigma*sizeof(OperatorType*));
       Sigma.SonGrid=malloc(Sigma.NSigma*sizeof(SpectraTypeArray*));
-      Sigma.SasMatrix=malloc(Sigma.NSigma*sizeof(BlockMatrixType*));
+      Sigma.SasMatrix=malloc(Sigma.NSigma*sizeof(ResponsefunctionType*));
       for(i=0;i<Sigma.NSigma;i++)
       {
         lua_rawgeti(L,4,i+1);
@@ -2775,7 +2775,7 @@ static int LuaImpurityGreensFunction(lua_State * L)
   uint32_t len, Npsi;
   WaveFunctionType *psi;
   OperatorType *H,*T;
-  BlockMatrixType *DeltaBath;
+  ResponsefunctionType *DeltaBath;
   BlockNaturalImpurityOrbitalMatrixType *DeltaBathNIO;
   struct
   {
@@ -2823,7 +2823,7 @@ static int LuaImpurityGreensFunction(lua_State * L)
   /* read Hamiltonian */
   H = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
   /* read hybridization function either in Natural Impurity Orbital basis, BlockListOfPoles, Anderson or Tridiagonal form */
-  DeltaBath = luaL_checkBlockGreensfunction(L,2);
+  DeltaBath = luaL_checkResponsefunction(L,2);
   /* read psi or Npsi */
   if(lua_istable(L,3))
   {
@@ -3591,7 +3591,9 @@ int luaopen_ssp(lua_State * L)
 
   luaL_newmetatable(L, "ResponseFunction_Type");
   luaL_setfuncs(L, ResponseFunction_meta, 0);
-  lua_pushvalue(L, -1);
+  lua_newtable(L);
+  lua_newtable(L);
+  luaL_setfuncs(L, ResponseFunctionTable_meta, 0);
   lua_setfield(L, -1, "__index");
   lua_setglobal(L, "ResponseFunctionMeta");
   luaMWH_RegisterGlobalFunctions(L, ResponseFunction_func);

@@ -590,7 +590,7 @@ uint32_t PrintInfoOnGBathAndG0InDMFTFindGroundstate(AndersonMatrixType const G0A
 {
   double occupation;
   BADoubleTriDiagonalMatrixType G0BA;
-  AndersonMatrixToBADoubleTriDiagonalMatrix(G0And, 0, &G0BA, &occupation);
+  AndersonMatrixToBADoubleTriDiagonalMatrixOccupation(G0And, 0, &G0BA, &occupation);
   printf
     ("                               G0v                    G0c                    GBathv                 GBathc\n");
   printf("N           %22i %22i %22i %22i\n", G0BA.val.N, G0BA.con.N, GBathBA.val.N, GBathBA.con.N);
@@ -841,7 +841,7 @@ uint32_t FindGroundStateFromG0andSigmaDoubleLoop(DMFTSettings const O, AndersonM
     GBathAndListAndRepresentation(G0, *mu, Sigma, &GBathAnd);
     ReducePolesAndersonMatrixNumberFermi(&GBathAnd, O.NGBath, *mu);
     AndersonMatrixFindOnsiteEnergyShift(GBathAnd, *Nelectron / 2.0, &onsiteshift);
-    AndersonMatrixToBADoubleTriDiagonalMatrix(GBathAnd, onsiteshift, &GBathBA, &occupation);
+    AndersonMatrixToBADoubleTriDiagonalMatrixOccupation(GBathAnd, onsiteshift, &GBathBA, &occupation);
     GBathBATrunc = GBathBA;
     GBathBATrunc.con.N = Min(GBathBA.con.N, O.NBath + 1);
     GBathBATrunc.val.N = Min(GBathBA.val.N, O.NBath + 1);

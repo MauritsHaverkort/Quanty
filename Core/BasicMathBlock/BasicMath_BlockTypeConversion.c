@@ -184,7 +184,7 @@ uint32_t EvaluateBlockaturalImpurityOrbital(BlockNaturalImpurityOrbitalMatrixTyp
   return 0;
 }
 
-uint32_t EvaluateBlockMatrixType(BlockMatrixType const *A, CompactMatrixType * Gw, const double omega, const double Gamma)
+uint32_t EvaluateBlockResponsefunctionType(ResponsefunctionType const *A, CompactMatrixType * Gw, const double omega, const double Gamma)
 {
   switch (A->type)
   {
@@ -210,7 +210,7 @@ uint32_t EvaluateBlockMatrixType(BlockMatrixType const *A, CompactMatrixType * G
     }
     default:
     {
-      printf("Error in LuaPush_BlockGreensFunction: Type of BlockMatrix should be either T/t,A/a,L/l, or N/n and not %c\n",A->type);
+      printf("Error in LuaPush_ResponseFunction: Type of Response function should be either T/t,A/a,L/l, or N/n and not %c\n",A->type);
       return 0;
     }
   }

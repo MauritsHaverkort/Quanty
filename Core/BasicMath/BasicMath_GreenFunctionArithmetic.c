@@ -45,9 +45,7 @@
  *
  *   input A and B defined, M not initiallized
  */
-uint32_t SumGreensfunctionsTriDiagonalRepresentationNonOrtho(TriDiagonalMatrixType const A,
-                                                             TriDiagonalMatrixType const B,
-                                                             TriDiagonalMatrixType * const M)
+uint32_t SumGreensfunctionsTriDiagonalRepresentationNonOrtho(TriDiagonalMatrixType const A, TriDiagonalMatrixType const B, TriDiagonalMatrixType * const M)
 {
   double vecA[3][A.N], vecB[3][B.N];
   double Atemp, Btemp;
@@ -1721,4 +1719,377 @@ uint32_t GreenFunctionConvoluteTriDiagonalRepresentation(TriDiagonalMatrixType *
   FreeMatrix(&T);
   FreeSparseMatrix(&fgSparse);
   return 0;
+}
+
+
+
+/****************************************************************************/
+/********************  Evaluate Matrix to Complex16      ********************/
+/****************************************************************************/
+
+
+Complex16 EvaluateTriDiagonalMatrix(TriDiagonalMatrixType const * A, const double omega, const double Gamma)
+{
+  Complex16 res;
+  double denom;
+  uint32_t j;
+  
+  denom = (Sqr(Gamma * 0.5) + Sqr(omega - A->a[A->N]));
+  res.Re = (omega - A->a[A->N]) / denom;
+  res.Im = (-Gamma * 0.5) / denom;
+  for (j = Max(1, A->N) - 1; j >= 1; j--)
+  {
+    denom = Sqr(Gamma * 0.5 - res.Im * Sqr(A->b[j])) + Sqr(omega - A->a[j] - res.Re * Sqr(A->b[j]));
+    res.Re = (omega - A->a[j] - res.Re * Sqr(A->b[j])) / denom;
+    res.Im = (res.Im * Sqr(A->b[j]) - Gamma * 0.5) / denom;
+  }
+  res.Re = A->a[0] + res.Re * Sqr(A->b[0]);
+  res.Im = res.Im * Sqr(A->b[0]);
+  return res;
+}
+
+Complex16 EvaluateListOfPoles(ListOfPoles const * A, const double omega, const double Gamma)
+{
+  Complex16 res;
+  int i;
+  double bdivdenom,resIm,resRe,omina;
+  double const Gh = Gamma * 0.5;
+  resIm=0;
+  resRe=A->a0;
+#pragma omp parallel for private(bdivdenom,omina) reduction(+ : resIm,resRe)
+  for(i=0;i<A->N;i++)
+  {
+    omina = omega - A->a[i];
+    bdivdenom = A->b[i] / ( Sqr(Gh) + Sqr(omina) );
+    resIm -= Gh * bdivdenom;
+    resRe += omina * bdivdenom;
+  }
+  res.Im=resIm;
+  res.Re=resRe;
+  return res;
+}
+
+Complex16 EvaluateAndersonMatrix(AndersonMatrixType const * A, const double omega, const double Gamma)
+{
+  Complex16 res;
+  uint32_t j;
+  double denom;
+  res.Im=0;
+  res.Re=0;
+  for (j = A->N; j >= 2; j--)
+  {
+    denom = Sqr(Gamma * 0.5) + Sqr(omega - A->a[j]);
+    res.Re += Sqr(A->b[j - 1]) * (omega - A->a[j]) / denom;
+    res.Im += Sqr(A->b[j - 1]) * (-Gamma * 0.5) / denom;
+  }
+  denom = (Sqr(Gamma * 0.5 - res.Im) + Sqr(omega - A->a[1] - res.Re));
+  res.Re = A->a[0] + (omega - A->a[1] - res.Re) * Sqr(A->b[0]) / denom;
+  res.Im = (res.Im - Gamma * 0.5) * Sqr(A->b[0]) / denom;
+  return res;
+}
+
+Complex16 EvaluateBADoubleTriDiagonalMatrix(BADoubleTriDiagonalMatrixType const * A, const double omega, const double Gamma)
+{
+  Complex16 res,rescon;
+  rescon = EvaluateTriDiagonalMatrix(&(A->con), omega, Gamma);
+  res    = EvaluateTriDiagonalMatrix(&(A->val), omega, Gamma);
+  res.Re += rescon.Re;
+  res.Im += rescon.Im;
+  res.Re *= Sqr(A->b0);
+  res.Im *= Sqr(A->b0);
+  res.Re += A->a0;
+  return res;
+}
+
+
+Complex16 EvaluateResponsefunctionType(ResponsefunctionType const *A, const double omega, const double Gamma)
+{
+  const Complex16 res={0.0,0.0};
+  switch (A->type)
+  {
+    case 't':
+    case 'T':
+    {
+      return EvaluateTriDiagonalMatrix(A->data, omega, Gamma);
+    }
+    case 'a':
+    case 'A':
+    {
+      return EvaluateAndersonMatrix(A->data, omega, Gamma);
+    }
+    case 'l':
+    case 'L':
+    {
+      return EvaluateListOfPoles(A->data, omega, Gamma);
+    }
+    case 'n':
+    case 'N':
+    {
+      return EvaluateBADoubleTriDiagonalMatrix(A->data, omega, Gamma);
+    }
+    default:
+    {
+      printf("Error in LuaEvaluate_ResponseFunction: Type of Response function should be either T/t,A/a,L/l, or N/n and not %c\n",A->type);
+      return res;
+    }
+  }
+  return res;
+}
+
+
+/*
+ *
+ */
+ResponsefunctionType *ConvertResponsefunction(ResponsefunctionType *M, const char type, double T)
+{
+  ResponsefunctionType *res;
+  if(M->Block==True) return ConvertBlockMatrix(M,type,T);
+  res = malloc(sizeof(ResponsefunctionType));
+  res->NSuggestedGridPoints = 0;
+  res->type = type;
+  res->Block = False;
+  res->NSuggestedGridPoints=M->NSuggestedGridPoints;
+  if(res->NSuggestedGridPoints==0)
+  {
+    res->SuggestedGrid=NULL;
+  }
+  else
+  {
+    res->SuggestedGrid=malloc(res->NSuggestedGridPoints*sizeof(double));
+    memcpy(res->SuggestedGrid, M->SuggestedGrid, res->NSuggestedGridPoints*sizeof(double));
+  }
+  switch (M->type|32)      // original type
+  {
+    case 'l': // original list of poles
+    {
+      switch (type|32)     // target type
+      {
+        case 'l':
+        {
+          res->data = (void*) malloc(sizeof(ListOfPoles));
+          ListOfPolesCopy((ListOfPoles*)res->data,*(ListOfPoles*)M->data);
+        }
+        break;
+        case 't':
+        {
+          res->data = (void*) malloc(sizeof(TriDiagonalMatrixType));
+          ListOfPolesToTridiagonalMatrix(*(ListOfPoles*)M->data, (TriDiagonalMatrixType*)res->data, ((BlockListOfPoles*)(M->data))->N+1);
+        }
+        break;
+        case 'a':
+        {
+          res->data = (void*) malloc(sizeof(AndersonMatrixType));
+          ListOfPolesToAndersonMatrix(*(ListOfPoles*)M->data, (AndersonMatrixType*)res->data);
+        }
+        break;
+        case 'n':
+        {
+          res->data = (void*) malloc(sizeof(BADoubleTriDiagonalMatrixType));
+          ListOfPolesToBADoubleTridiagonalMatrix(*(ListOfPoles*)M->data, (BADoubleTriDiagonalMatrixType*)res->data, ((BlockListOfPoles*)(M->data))->N+1, ((BlockListOfPoles*)(M->data))->N+1, ((BlockListOfPoles*)(M->data))->mu, 1000*DBL_EPSILON);
+        }
+        break;
+        default:
+        {
+          printf("Error in ConvertResponsefunction unrecognized type to convert to: %c", type);
+        }
+        break;
+      }
+    }
+    break;
+    case 't': // original tri-diagonal
+    {
+      switch (type|32)
+      {
+        case 'l':
+        {
+          res->data = (void*) malloc(sizeof(ListOfPoles));
+          if(M->NSuggestedGridPoints!=0)
+          {
+            //TODO: TriDiagonalMatrixToListOfPolesVariableGrid
+          }
+          else
+          {
+            TriDiagonalMatrixToListOfPoles(*(TriDiagonalMatrixType*)M->data, (ListOfPoles*)res->data);
+          }
+        }
+        break;
+        case 't':
+        {
+          res->data = (void*) malloc(sizeof(TriDiagonalMatrixType));
+          TriDiagonalMatrixCopy((TriDiagonalMatrixType*)res->data, *(TriDiagonalMatrixType*)M->data);
+        }
+        break;
+        case 'a':
+        {
+          res->data = (void*) malloc(sizeof(AndersonMatrixType));
+          TriDiagonalMatrixToAndersonMatrix(*(TriDiagonalMatrixType*)M->data, (AndersonMatrixType*)res->data);
+        }
+        break;
+        case 'n':
+        {
+          res->data = (void*) malloc(sizeof(BADoubleTriDiagonalMatrixType));
+          TriDiagonalMatrixToBADoubleTriDiagonalMatrix(*(TriDiagonalMatrixType*)M->data, (BADoubleTriDiagonalMatrixType*)res->data, ((TriDiagonalMatrixType*)M->data)->N, ((TriDiagonalMatrixType*)M->data)->N, ((TriDiagonalMatrixType*)M->data)->mu, 1000*DBL_EPSILON);
+        }
+        break;
+        default:
+        {
+          printf("Error in ConvertResponsefunction unrecognized type to convert to: %c",type);
+        }
+        break;
+      }
+    }
+    break;
+    case 'a': // original anderson matrix
+    {
+      switch (type|32)
+      {
+        case 'l':
+        {
+          res->data = (void*) malloc(sizeof(ListOfPoles));
+          if(M->NSuggestedGridPoints!=0)
+          {
+            //TODO: AndersonMatrixToListOfPolesVariableGrid
+          }
+          else
+          {
+            AndersonMatrixToListOfPoles(*(AndersonMatrixType*)M->data, (ListOfPoles*)res->data);
+          }
+        }
+        break;
+        case 't':
+        {
+          res->data = (void*) malloc(sizeof(TriDiagonalMatrixType));
+          AndersonMatrixToTriDiagonalMatrix(*(AndersonMatrixType*)M->data, (TriDiagonalMatrixType*)res->data, ((AndersonMatrixType*)M->data)->N);
+        }
+        break;
+        case 'a':
+        {
+          AndersonMatrixCopy((AndersonMatrixType*)res->data,*(AndersonMatrixType*)M->data);
+        }
+        break;
+        case 'n':
+        {
+          res->data = (void*) malloc(sizeof(BADoubleTriDiagonalMatrixType));
+          //TODO:  AndersonMatrixToBADoubleTriDiagonalMatrix(*(TriDiagonalMatrixType*)M->data, (BADoubleTriDiagonalMatrixType*)res->data, ((TriDiagonalMatrixType*)M->data)->N, ((TriDiagonalMatrixType*)M->data)->N, ((TriDiagonalMatrixType*)M->data)->mu, 1000*DBL_EPSILON);
+        }
+        break;
+        default:
+        {
+          printf("Error in ConvertResponsefunction unrecognized type of M: %c",M->type);
+        }
+        break;
+      }
+    }
+    break;
+    case 'n': // original natural impurity orbitals (BADoubleTriDiagonalMatrixType)
+    {
+      switch (M->type|32)
+      {
+        case 'l':
+        {
+          res->data = (void*) malloc(sizeof(ListOfPoles));
+          if(M->NSuggestedGridPoints!=0)
+          {
+            //TODO: BADoubleTriDiagonalMatrixToListOfPolesVariableGrid(*(NaturalImpurityOrbitalMatrixType*)M->data, (ListOfPoles*)res->data, M->SuggestedGrid, M->NSuggestedGridPoints);
+          }
+          else
+          {
+            BADoubleTriDiagonalMatrixToListOfPoles(*(BADoubleTriDiagonalMatrixType*)M->data, (ListOfPoles*)res->data);
+          }
+        }
+        break;
+        case 't':
+        {
+          res->data = (void*) malloc(sizeof(TriDiagonalMatrixType));
+          BADoubleTriDiagonalMatrixToTriDiagonalMatrix(*(BADoubleTriDiagonalMatrixType*)M->data, (TriDiagonalMatrixType*)res->data);
+        }
+        break;
+        case 'a':
+        {
+          res->data = (void*) malloc(sizeof(AndersonMatrixType));
+          BADoubleTriDiagonalMatrixToAndersonMatrix(*(BADoubleTriDiagonalMatrixType*)M->data, (AndersonMatrixType*)res->data);
+        }
+        break;
+        case 'n':
+        {
+          res->data = (void*) malloc(sizeof(BADoubleTriDiagonalMatrixType));
+          BADoubleTriDiagonalMatrixCopy((BADoubleTriDiagonalMatrixType*)res->data, *(BADoubleTriDiagonalMatrixType*)M->data);
+        }
+        break;
+        default:
+        {
+          printf("Error in ConvertResponsefunction unrecognized type to convert to: %c",type);
+        }
+        break;
+      }
+    }
+    break;
+    default:
+    {
+      printf("Error in ConvertResponsefunction unrecognized type of M: %c",M->type);
+    }
+    break;
+  }
+  return res;
+}
+
+/*
+ *
+ */
+uint32_t FreeResponsefunction(ResponsefunctionType *M)
+{
+  if(M->Block==True) return FreeBlockMatrixFromLua(M);
+  if((M->type>='A') && (M->type<='Z') && (M->NSuggestedGridPoints!=0))
+  {
+    free(M->SuggestedGrid);
+    M->SuggestedGrid=NULL;
+    M->NSuggestedGridPoints=0;
+  }
+  switch (M->type) {
+    case 'l':
+    {
+      return 0;
+    }
+    case 'L':
+    {
+      FreeListOfPoles((ListOfPoles *)M->data);
+      free((ListOfPoles *)(M->data));
+      return 0;
+    }
+    case 'a':
+    {
+      return 0;
+    }
+    case 'A':
+    {
+      FreeAndersonMatrix((AndersonMatrixType *)M->data);
+      free((AndersonMatrixType *)(M->data));
+      return 0;
+    }
+    case 't':
+    {
+      return 0;
+    }
+    case 'T':
+    {
+      FreeTriDiagonalMatrix((TriDiagonalMatrixType *)M->data);
+      free((TriDiagonalMatrixType *)(M->data));
+      return 0;
+    }
+    case 'n':
+    {
+      return 0;
+    }
+    case 'N':
+    {
+      FreeBADoubleTriDiagonalMatrix((BADoubleTriDiagonalMatrixType *)M->data);
+      free((BADoubleTriDiagonalMatrixType *)(M->data));
+      return 0;
+    }
+    default:
+    {
+      printf("Error in FreeResponsefunction unrecognized type %c",M->type);
+      return 1;
+    }
+  }
 }

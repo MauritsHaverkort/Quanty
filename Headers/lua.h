@@ -37,8 +37,8 @@ BlockNaturalImpurityOrbitalMatrixType * luaL_checkBlockNatrualImpurityOrbitalMat
 ListOfPoles * luaL_checkListOfPoles();
 BlockListOfPoles * luaL_checkBlockListOfPoles();
 BlockListOfPoles * luaL_checkBlockListOfPolesVariableGrid();
-BlockMatrixType * luaL_checkBlockGreensfunction();
-BlockMatrixType * luaL_checkResponsefunction();
+ResponsefunctionType * luaL_checkResponsefunction();
+ResponsefunctionType * luaL_checkResponsefunction();
 int lua_isBlockGreensfunction();
 int lua_isResponsefunction();
 WaveFunctionType* luaL_checkarray_WaveFunctionType();

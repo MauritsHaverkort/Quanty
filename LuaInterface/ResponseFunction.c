@@ -1,5 +1,5 @@
 /*  Response functions are stored either as matrix representations and reside fully on the lua stack as tables
- *                                or as BlockMatrixType
+ *                                or as ResponsefunctionType
  *
  *  There are different types of response functions
  *    Tri
@@ -24,13 +24,13 @@
  */
 static int LuaChangeTypeResponseFunction(lua_State *L)
 {
-  BlockMatrixType *Min, *Mout;
+  ResponsefunctionType *Min, *Mout;
   char const * convert;
   char type;
   double T=0;
   uint32_t len = (uint32_t)lua_gettop(L);
   if(len!=2) return luaL_error(L, "Error in ChangeType expected 2 arguments, not %d\n",len);
-  Min = luaL_checkBlockGreensfunction(L,1);
+  Min = luaL_checkResponsefunction(L,1);
   convert = luaL_checkstring(L, 2);
   if(strcmp(convert, "Tri")==0)
   {
@@ -44,7 +44,7 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
   {
     type='L'|(32&Min->type);
   }
-  else if(strcmp(convert, "NaturalImpurityOrbital")==0)
+  else if((strcmp(convert, "NaturalImpurityOrbital")==0)||(strcmp(convert, "Nat")==0))
   {
     type='N'|(32&Min->type);
   }
@@ -60,41 +60,107 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
   {
     return luaL_error(L, "Error in ChangeType, second argument needs to be a string containgin either: \"And\", \"Tri\", \"ListOfPoles\", \"NaturalImpurityOrbital\", \"Userdata\", \"Table\" and not %s\n",convert);
   }
-  Mout = ConvertBlockMatrix(Min, type, T);
-  LuaPush_BlockGreensFunction(L, Mout);
-  //FreeBlockMatrixFromLua(Mout);
-  //FreeBlockMatrixFromLua(Min);
-
+  if(Min->Block==True)
+  {
+    Mout = ConvertBlockMatrix(Min, type, T);
+  }
+  else
+  {
+    Mout = ConvertResponsefunction(Min, type, T);
+  }
+  LuaPush_ResponseFunction(L, Mout);
+  FreeResponsefunction(Mout);
+  FreeResponsefunction(Min);
   return 1;
 }
 
+static int LuaResponseFunctionToUserdata(lua_State *L)
+{
+  ResponsefunctionType *M;
+  uint32_t len = (uint32_t)lua_gettop(L);
+  if(len!=1) return luaL_error(L, "Error in ToUserdata expected a single argument, not %d\n",len);
+  M = luaL_checkResponsefunction(L,1);
+  if((M->type|32)==M->type) //lowercase
+  {
+    //TODO: ResponseFunctionCopy
+  }
+  else
+  {
+    M->type+=32;
+    LuaPush_ResponseFunction(L, M);
+  }
+  return 1;
+}
+
+
 static int LuaResponseFunctionToTable(lua_State *L)
 {
-  BlockMatrixType *M;
+  ResponsefunctionType *M;
   uint32_t len = (uint32_t)lua_gettop(L);
   if(len!=1) return luaL_error(L, "Error in ToTable expected a single argument, not %d\n",len);
-
-  M = luaL_checkBlockGreensfunction(L,1);
+  M = luaL_checkResponsefunction(L,1);
   switch(M->type)
   {
     case 'L':
-      LuaPushTable_BlockListOfPoles(L, M->data);
-      return 1;
+    case 'l':
+    {
+      if(M->Block==True)
+      {
+        LuaPushTable_BlockListOfPoles(L, M->data);
+      }
+      else
+      {
+        LuaPushTable_ListOfPoles(L, M->data);
+      }
+      break;
+    }
     case 'A':
-      LuaPushTable_BlockAndersonMatrixType(L, M->data);
-      return 1;
+    case 'a':
+    {
+      if(M->Block==True)
+      {
+        LuaPushTable_BlockAndersonMatrixType(L, M->data);
+      }
+      else
+      {
+        LuaPushTable_AndersonMatrixType(L, M->data);
+      }
+      break;
+    }
     case 'T':
-      LuaPushTable_BlockTriDiagonalMatrixType(L, M->data);
-      return 1;
+    case 't':
+    {
+      if(M->Block==True)
+      {
+        LuaPushTable_BlockTriDiagonalMatrixType(L, M->data);
+      }
+      else
+      {
+        LuaPushTable_TriDiagonalMatrixType(L, M->data);
+      }
+      break;
+    }
     case 'N':
-      LuaPushTable_BlockNaturalImpurityOrbital(L, M->data);
-      return 1;
+    case 'n':
+    {
+      if(M->Block==True)
+      {
+        LuaPushTable_BlockNaturalImpurityOrbital(L, M->data);
+      }
+      else
+      {
+        LuaPushTable_NaturalImpurityOrbital(L, M->data);
+      }
+      break;
+    }
     default:
+    {
       printf("Error in ResponseFunctionToTable: unrecognized type %c",M->type);
       return 0;
+    }
   }
-
-  return 0;
+  FreeResponsefunction(M);
+  return 1;
 }
 
 /*
@@ -102,19 +168,19 @@ static int LuaResponseFunctionToTable(lua_State *L)
  */
 static int LuaReducePolesResponseFunction(lua_State *L)
 {
-  BlockMatrixType *M;
+  ResponsefunctionType *M;
   int Nred;
 
   uint32_t len = (uint32_t)lua_gettop(L);
   if(len!=2) return luaL_error(L, "Error in ReducePoles: %d argument(s), 2 expected (ListOfPoles, desired number of poles).\n", len);
 
-  M = luaL_checkBlockGreensfunction(L,1);
+  M = luaL_checkResponsefunction(L,1);
   if(!lua_isnumber(L, 2)) return luaL_error(L, "Error in ReducePoles: 2nd argument should be the desired number of poles.\n");
   Nred = (int)lua_tointeger(L, 2);
   if((M->type|32)!='l') return luaL_error(L, "Error in ReducePoles: The input Green's function is of %c type, it should be a ListOfPoles", M->type);
 
   ReduceBlockListOfPoles((BlockListOfPoles*)(M->data), Nred, ((BlockListOfPoles*)(M->data))->mu);
-  LuaPush_BlockGreensFunction(L, M);
+  LuaPush_ResponseFunction(L, M);
 
   return 1;
 }
@@ -124,7 +190,7 @@ static int LuaReducePolesResponseFunction(lua_State *L)
  */
 static int LuaPlaceOnMeshResponseFunction(lua_State *L)
 {
-  BlockMatrixType *M;
+  ResponsefunctionType *M;
   uint32_t NE;
   double *mesh;
 
@@ -132,14 +198,14 @@ static int LuaPlaceOnMeshResponseFunction(lua_State *L)
   if(len!=2) return luaL_error(L, "Error in PlaceOnMesh: %d argument(s), 2 expected (ListOfPoles, desired list of grid points).\n", len);
   if(lua_type(L,2)!=LUA_TTABLE) return luaL_error(L, "Error in PlaceOnMesh: the 2nd argument should be a list of energy grid points.\n");
 
-  M = luaL_checkBlockGreensfunction(L,1);
+  M = luaL_checkResponsefunction(L,1);
   if((M->type|32)!='l')
   {
     return luaL_error(L, "Error in PlaceOnMesh: The first argument should be of type 'L'/'l' (ListOfPoles).\n");
   }
   mesh = luaL_checkarray_double(L, 2, &NE);
   BlockListOfPolesPlaceOnMesh((BlockListOfPoles*)M->data, mesh, NE);
-  LuaPush_BlockGreensFunction(L, M);
+  LuaPush_ResponseFunction(L, M);
 
   return 1;
 }
@@ -149,17 +215,17 @@ static int LuaPlaceOnMeshResponseFunction(lua_State *L)
  */
 static int LuaResponseFunctionUnm(lua_State * L)
 {
-  BlockMatrixType *res, *M;
+  ResponsefunctionType *res, *M;
 
-  M = ConvertBlockMatrix(luaL_checkBlockGreensfunction(L,1), 'l', 0);
-  res = (BlockMatrixType *) lua_newuserdata(L, sizeof(BlockMatrixType));
+  M = ConvertBlockMatrix(luaL_checkResponsefunction(L,1), 'l', 0);
+  res = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
   luaL_setmetatable(L, "ResponseFunction_Type");
   res->NSuggestedGridPoints = 0;
   res->type = 'L';
   res->data = malloc(sizeof(BlockListOfPoles));
   CopyBlockListOfPoles(*(BlockListOfPoles*)(M->data),res->data);
   ScaleBlockListOfPoles(res->data, -1);
-  LuaPush_BlockGreensFunction(L, res);
+  LuaPush_ResponseFunction(L, res);
 
   return 1;
 }
@@ -169,22 +235,22 @@ static int LuaResponseFunctionUnm(lua_State * L)
  */
 static int LuaResponseFunctionAdd(lua_State * L)
 {
-  BlockMatrixType *Ma, *Mb, *res;
+  ResponsefunctionType *Ma, *Mb, *res;
 
   uint32_t len = (uint32_t)lua_gettop(L);
   if(len!=2) return luaL_error(L, "Error in ResponseFunctionAdd: %d argument(s), 2 expected.\n", len);
 
-  Ma = ConvertBlockMatrix(luaL_checkBlockGreensfunction(L,1), 'l', 0);
-  Mb = ConvertBlockMatrix(luaL_checkBlockGreensfunction(L,2), 'l', 0);
+  Ma = ConvertBlockMatrix(luaL_checkResponsefunction(L,1), 'l', 0);
+  Mb = ConvertBlockMatrix(luaL_checkResponsefunction(L,2), 'l', 0);
   AddBlockListOfPoles((BlockListOfPoles*)(Ma->data), *(BlockListOfPoles*)(Mb->data));
 
-  res = (BlockMatrixType *) lua_newuserdata(L, sizeof(BlockMatrixType));
+  res = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
   luaL_setmetatable(L, "ResponseFunction_Type");
   res->NSuggestedGridPoints = 0;
   res->type = 'L';
   res->data = malloc(sizeof(BlockListOfPoles));
   CopyBlockListOfPoles(*(BlockListOfPoles*)(Ma->data),res->data);
-  LuaPush_BlockGreensFunction(L, res);
+  LuaPush_ResponseFunction(L, res);
 
   FreeBlockMatrixFromLua(Ma);
   FreeBlockMatrixFromLua(Mb);
@@ -197,22 +263,22 @@ static int LuaResponseFunctionAdd(lua_State * L)
  */
 static int LuaResponseFunctionSub(lua_State * L)
 {
-  BlockMatrixType *Ma, *Mb, *res;
+  ResponsefunctionType *Ma, *Mb, *res;
 
   uint32_t len = (uint32_t)lua_gettop(L);
   if(len!=2) return luaL_error(L, "Error in ResponseFunctionAdd: %d argument(s), 2 expected.\n", len);
 
-  Ma = ConvertBlockMatrix(luaL_checkBlockGreensfunction(L,1), 'l', 0);
-  Mb = ConvertBlockMatrix(luaL_checkBlockGreensfunction(L,2), 'l', 0);
+  Ma = ConvertBlockMatrix(luaL_checkResponsefunction(L,1), 'l', 0);
+  Mb = ConvertBlockMatrix(luaL_checkResponsefunction(L,2), 'l', 0);
   SubtractBlockListOfPoles((BlockListOfPoles*)(Ma->data), *(BlockListOfPoles*)(Mb->data));
 
-  res = (BlockMatrixType *) lua_newuserdata(L, sizeof(BlockMatrixType));
+  res = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
   luaL_setmetatable(L, "ResponseFunction_Type");
   res->NSuggestedGridPoints = 0;
   res->type = 'L';
   res->data = malloc(sizeof(BlockListOfPoles));
   CopyBlockListOfPoles(*(BlockListOfPoles*)(Ma->data),res->data);
-  LuaPush_BlockGreensFunction(L, res);
+  LuaPush_ResponseFunction(L, res);
 
   FreeBlockMatrixFromLua(Ma);
   FreeBlockMatrixFromLua(Mb);
@@ -315,20 +381,48 @@ static int LuaResponseFunctionMode(lua_State * L)
  */
 static int LuaResponseFunctionCall(lua_State * L)
 {
-  BlockMatrixType *res;
+  ResponsefunctionType *res;
   double omega, gamma;
-  CompactMatrixType out;
   if (lua_gettop(L)!=3)
   {
     return luaL_error(L, "Call to a response-function should contain two elements, (omega, gamma) with omega the energy at which the response function is evaluated and gamma an imaginary ofset from the real axis (FWMH lorenzian broadening)\n");
   }
-  res = luaL_checkBlockGreensfunction(L,1);
+  res = luaL_checkResponsefunction(L,1);
   omega = (double)luaL_checknumber(L, 2);
   gamma = (double)luaL_checknumber(L, 3);
-  EvaluateBlockMatrixType(res, &out, omega, gamma);
-  LuaPushTable_CompactMatrixType(L, &out);
+  if(res->Block==True)
+  {
+    CompactMatrixType out;
+    EvaluateBlockResponsefunctionType(res, &out, omega, gamma);
+    LuaPushTable_CompactMatrixType(L, &out);
+  }
+  else
+  {
+    Complex16 *out;
+    out = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
+    *out = EvaluateResponsefunctionType(res, omega, gamma);
+    luaL_setmetatable(L, "Complex_Type");
+  }
   FreeBlockMatrixFromLua(res);
   return 1;
+}
+
+/*
+ *
+ */
+static int LuaResponseFunctionToString(lua_State * L)
+{
+  lua_pushfstring(L, "ResponseFunction in userdata format use ToTable() in order to get a table form");
+  return 1;
+}
+
+/*
+ *
+ */
+static int LuaResponseFunctionDestroy(lua_State * L)
+{
+  printf("LuaResponseFunctionDestroy\n");
+  return 0;
 }
 
 static const struct luaL_Reg ResponseFunction_func[] = {
@@ -336,10 +430,31 @@ static const struct luaL_Reg ResponseFunction_func[] = {
   {"ReducePoles", LuaReducePolesResponseFunction},
   {"PlaceOnMesh", LuaPlaceOnMeshResponseFunction},
   {"ToTable", LuaResponseFunctionToTable},
+  {"ToUserdata", LuaResponseFunctionToUserdata},
   {NULL, NULL}
 };
 
 static const struct luaL_Reg ResponseFunction_meta[] = {
+  {"__unm", LuaResponseFunctionUnm},
+  {"__add", LuaResponseFunctionAdd},
+  {"__sub", LuaResponseFunctionSub},
+  {"__mul", LuaResponseFunctionMul},
+  {"__div", LuaResponseFunctionDiv},
+  {"__pow", LuaResponseFunctionPow},
+  {"__concat", LuaResponseFunctionConcat},
+  {"__eq", LuaResponseFunctionEq},
+  {"__lt", LuaResponseFunctionLt},
+  {"__le", LuaResponseFunctionLe},
+  {"__index", LuaResponseFunctionIndex},
+  {"__newindex", LuaResponseFunctionNewIndex},
+  {"__mode", LuaResponseFunctionMode},
+  {"__call", LuaResponseFunctionCall},
+  {"__tostring", LuaResponseFunctionToString},
+  {"__gc", LuaResponseFunctionDestroy},
+  {NULL, NULL}
+};
+
+static const struct luaL_Reg ResponseFunctionTable_meta[] = {
   {"__unm", LuaResponseFunctionUnm},
   {"__add", LuaResponseFunctionAdd},
   {"__sub", LuaResponseFunctionSub},

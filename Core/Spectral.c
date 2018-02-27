@@ -137,7 +137,19 @@ int SpectraScalarMultiply(SpectraType * const A, double const aRe, double const 
   A->b[0]*=sqrt(sqrt(Sqr(aRe)+Sqr(aIm)));
   A->ZerothMoment*=sqrt(Sqr(aRe)+Sqr(aIm));
   //TODO: first moment
-  return 1;
+  return 0;
+}
+
+int SpectraScalarAdd(SpectraType * const A, double const aRe, double const aIm)
+{
+  int    i;
+  for (i = 0; i <= A->N; i++)
+  {
+    A->Re[i] += aRe;
+    A->Im[i] += aIm;
+  }
+  //TODO: moments etc.
+  return 0;
 }
 
 /* A<-(A+B)/2
@@ -1446,8 +1458,7 @@ void SecondDoubleTriDiagonalMatrixToSpectrum(const double Energy, const SecondDo
   SpectrumFree(&GSec);
 }
 
-void BADoubleTriDiagonalMatrixToSpectrum(const double Energy, const BADoubleTriDiagonalMatrixType M,
-                                         SpectraType * const G)
+void BADoubleTriDiagonalMatrixToSpectrum(const double Energy, const BADoubleTriDiagonalMatrixType M, SpectraType * const G)
 {
   SpectraType GSec;
   TriDiagonalMatrixToSpectrum(Energy, M.con, G);
@@ -1459,10 +1470,11 @@ void BADoubleTriDiagonalMatrixToSpectrum(const double Energy, const BADoubleTriD
   TriDiagonalMatrixToSpectrum(Energy, M.val, &GSec);
   AddMultipliedSpectra(G, GSec, 1, 0);
   SpectrumFree(&GSec);
+  SpectraScalarMultiply(G, Sqr(M.b0), 0);
+  SpectraScalarAdd(G,M.a0,0);
 }
 
-void DoubleTriDiagonalMatrixToSpectrumOld(const double Energy, const TriDiagonalMatrixType V,
-                                          const TriDiagonalMatrixType C, SpectraType * const G)
+void DoubleTriDiagonalMatrixToSpectrumOld(const double Energy, const TriDiagonalMatrixType V, const TriDiagonalMatrixType C, SpectraType * const G)
 {
   double hnu, valReC, valImC, valReV, valImV, denom;
   uint32_t i, j;

@@ -268,9 +268,9 @@ static int LuaCalculateFermi(lua_State *L)
 static int LuaChangeTypeResponseFunction(lua_State *L);
 static int LuaCalculateG(lua_State *L)
 {
-  uint32_t i, len;
+  uint32_t len;
   TightBindingDef *a;
-  BlockMatrixType *G;
+  ResponsefunctionType *G;
 
   struct
   {
@@ -311,7 +311,7 @@ static int LuaCalculateG(lua_State *L)
   }
 
   lua_settop(L, 0);
-  G = (BlockMatrixType *) lua_newuserdata(L, sizeof(BlockMatrixType));
+  G = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
   luaL_setmetatable(L, "ResponseFunction_Type");
   G->NSuggestedGridPoints = 0;
   G->type = 'L';

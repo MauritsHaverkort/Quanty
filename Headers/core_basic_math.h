@@ -216,7 +216,7 @@ uint32_t ComplexVectorBlokTriDiagonalMatrixVector(BlokTriDiagonalMatrixType cons
 /**********************************************************/
 uint32_t InitBlockTridiagonalMatrix(BlockTriDiagonalMatrixType *const A);
 uint32_t FreeBlockTridiagonalMatrix(BlockTriDiagonalMatrixType *A);
-
+uint32_t FreeBlockMatrixFromLua(ResponsefunctionType *M);
 
 
 /**********************************************************/
@@ -276,7 +276,8 @@ uint32_t AndersonMatrixToDoubleTriDiagonalMatrix(AndersonMatrixType const M, Dou
 uint32_t AndersonMatrixInverseToListOfPoles(AndersonMatrixType const M, ListOfPoles * const H);
 uint32_t AndersonMatrixToEigensystem(AndersonMatrixType const M, MatrixType * const T, double *val);
 uint32_t AndersonMatrixToListOfPoles(AndersonMatrixType const M, ListOfPoles * const A);
-uint32_t AndersonMatrixToBADoubleTriDiagonalMatrix(AndersonMatrixType const M, double const onsiteshift, BADoubleTriDiagonalMatrixType * const A, double *const occupation);
+uint32_t AndersonMatrixToBADoubleTriDiagonalMatrix(AndersonMatrixType const M, BADoubleTriDiagonalMatrixType * const A, uint32_t NTriDiagVal, uint32_t NTriDiagCon, double Ef, double Epsilon);
+uint32_t AndersonMatrixToBADoubleTriDiagonalMatrixOccupation(AndersonMatrixType const M, double const onsiteshift, BADoubleTriDiagonalMatrixType * const A, double *const occupation);
 /********    MatrixTo                              ********/
 //uint32_t BlokAndersonMatrixToSparseMatrix();
 uint32_t MatrixToEigensystem(MatrixType const M, MatrixType * const T, double *val);
@@ -391,7 +392,7 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToBlockAndersonMatrix(BlockNaturalImpu
 uint32_t BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles(BlockNaturalImpurityOrbitalMatrixType const AAnd, BlockListOfPoles * const B);
 uint32_t BlockNaturalImpurityOrbitalMatrixToBlockListOfPolesVariableGrid(BlockNaturalImpurityOrbitalMatrixType const AAnd, BlockListOfPoles * const B, const double * const Grid, const uint32_t NGridPoints);
 uint32_t BlockNaturalImpurityOrbitalMatrixToBlockTridiagonalMatrix(BlockNaturalImpurityOrbitalMatrixType const AAnd, BlockTriDiagonalMatrixType * const B);
-
+ResponsefunctionType *ConvertBlockMatrix(ResponsefunctionType *M, const char type, double T);
 
 
 
