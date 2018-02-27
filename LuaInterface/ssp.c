@@ -1576,6 +1576,8 @@ static int LuaCreateSpectra(lua_State *L)
     {"E0","double",&(Options.E0)},
     {"file","char*",&(Options.stream)}, // temporary undoccumented option
     {NULL, NULL, NULL}};
+  /* free garbage full cycle*/
+  if(L->l_G->gcrunning) lua_gc(L, LUA_GCCOLLECT, 0);
   /* check number of input parameters */
   len = (uint32_t)lua_gettop(L);
   if(!((len==3)||(len==4)||(len=5)))
@@ -2112,6 +2114,8 @@ static int LuaCreateResonantSpectra(lua_State *L)
     {"NE2","uint32_t",&(Options.Settings.NE2)},
     {"Gamma2","double",&(Options.Settings.Gamma2)},
     {NULL, NULL, NULL}};
+  /* free garbage full cycle*/
+  if(L->l_G->gcrunning) lua_gc(L, LUA_GCCOLLECT, 0);
   /* check number of input parameters */
   len = (uint32_t)lua_gettop(L);
   if(!((len==5)||(len==6)))
@@ -2280,7 +2284,8 @@ static int LuaCreateFluorescenceYield(lua_State *L)
     {"NE","uint32_t",&(Options.Settings.NE)},
     {"Gamma","double",&(Options.Settings.Gamma)},
     {NULL, NULL, NULL}};
-
+  /* free garbage full cycle*/
+  if(L->l_G->gcrunning) lua_gc(L, LUA_GCCOLLECT, 0);
   /* check number of input parameters */
   len = (uint32_t)lua_gettop(L);
   if(!((len==4)||(len==5)))
@@ -2583,6 +2588,8 @@ static int LuaEigensystem(lua_State * L)
   StartRestrictions.N=0;
   WaveFunctionType *psi=NULL,*temp;
   uint32_t i,j,len, Npsi=0,QStartRestrictions=0;
+  /* free garbage full cycle*/
+  if(L->l_G->gcrunning) lua_gc(L, LUA_GCCOLLECT, 0);
   /* set options */
   LuaOptionsType LuaEigensystemOptions[]={
     {"DenseBoarder", "uint32_t", &(Options.Settings.DenseBoarder)},
@@ -2921,6 +2928,8 @@ static int LuaOrthonormalize(lua_State *L)
   Options.Order="Row";
   Options.SingularValue=1E-12;
   Options.ReduceDimension=True;
+  /* free garbage full cycle*/
+  if(L->l_G->gcrunning) lua_gc(L, LUA_GCCOLLECT, 0);
   // get options when defined
   len = (uint32_t)lua_gettop(L);
   if(len>2)

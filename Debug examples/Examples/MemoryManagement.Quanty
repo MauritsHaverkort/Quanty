@@ -1,0 +1,33 @@
+-- define some random wave functions
+
+local charset = {"0","1"}
+
+local function randomString(length)
+  if not length or length <= 0 then return '' end
+  return randomString(length - 1) .. charset[math.random(1, #charset)]
+end
+
+NF=20
+NPsi=100
+psiList={}
+for i=1, NPsi do
+  psiList[i] = NewWavefunction(NF,0,{{randomString(NF),math.random()},{randomString(NF),math.random()},{randomString(NF),math.random()},{randomString(NF),math.random()},{randomString(NF),math.random()}})
+  psiList[i].Normalize()
+end
+
+collectgarbage("collect")
+collectgarbage("collect")
+
+for i=1,NPsi do
+  m = floor(collectgarbage("count"))
+  print("at start of loop ",i," the memory in use is",m,"kB")
+  for j=i+1,NPsi do
+    psiList[i] = psiList[i] - (psiList[j]*psiList[i]) * psiList[j]
+  end
+end
+
+
+collectgarbage("collect")
+collectgarbage("collect")
+m = floor(collectgarbage("count"))
+print("finished with all loops: the memory in use is",m,"kB")

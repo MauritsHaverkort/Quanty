@@ -105,7 +105,8 @@ int main(int argc, char *argv[])
 
   luaconstants(L);
 
-  //lua_gc(L, LUA_GCSETPAUSE, 100);
+  lua_gc(L, LUA_GCSETPAUSE, 100); //do not weight between garbage cycles
+  //lua_gc(L, LUA_GCGEN, 0); //use generation mode, i.e. visit new data more often
   //lua_gc(L, LUA_GCSETSTEPMUL, 500);
 
   result = luaL_loadfile(L, argv[1]);
@@ -122,8 +123,6 @@ int main(int argc, char *argv[])
     lua_close(L);
     return 1;
   }
-
   lua_close(L);
   return 0;
-
 }

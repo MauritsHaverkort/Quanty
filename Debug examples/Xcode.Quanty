@@ -1,5 +1,8 @@
 --Verbosity(0xFFFFFFFF)
 
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Examples/MemoryManagement.Quanty")
+os.exit()
+
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Examples/ResponseFunctions.Quanty")
 os.exit()
 
