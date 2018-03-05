@@ -1,16 +1,120 @@
+print("========= defined Green's function as a list of poles ==========")
 a = {1,0,1,2,4}
 b = {0.25,0.2,0.4,0.25}
-MListOfPoles = {a,b, mu=0, type="ListOfPoles"}
-setmetatable(MListOfPoles, ResponseFunctionMeta)
-print(MListOfPoles)
-MListOfPolesU = ToUserdata(MListOfPoles)
-print(MListOfPolesU)
+M = {a,b, mu=0, type="ListOfPoles"}
+setmetatable(M, ResponseFunctionMeta)
+print(M)
+print("========= transform it to a userdata for speed        ==========")
+U = ToUserdata(M)
+print(U)
+print("========= transform it back to a table for convininence ==========")
+T = ToTable(U)
+print(T)
+print("========= Evaluate M ==========")
+print(M(1,1))
+print("========= Evaluate U ==========")
+print(U(1,1))
+print("========= Evaluate T ==========")
+print(T(1,1))
+print("========= Free response functions ==========")
+M=nil
+U=nil
+T=nil
+collectgarbage()
+print("\n\n\n")
+
+print("========= defined Green's function as a tri-diagonal matrix ==========")
+a = {1,0,1,2,4}
+b = {0.25,0.2,0.4,0.25}
+M = {a,b, mu=0, type="Tri"}
+setmetatable(M, ResponseFunctionMeta)
+print(M)
+print("========= transform it to a userdata for speed        ==========")
+U = ToUserdata(M)
+print(U)
+print("========= transform it back to a table for convininence ==========")
+T = ToTable(U)
+print(T)
+print("========= Evaluate M ==========")
+print(M(1,1))
+print("========= Evaluate U ==========")
+print(U(1,1))
+print("========= Evaluate T ==========")
+print(T(1,1))
+print("========= Free response functions ==========")
+M=nil
+U=nil
+T=nil
+collectgarbage()
+print("\n\n\n")
+
+
+print("========= defined Green's function as an Anderson impurity matrix ==========")
+a = {1,0,1,2,4}
+b = {0.25,0.2,0.4,0.25}
+M = {a,b, mu=0, type="And"}
+setmetatable(M, ResponseFunctionMeta)
+print(M)
+print("========= transform it to a userdata for speed        ==========")
+U = ToUserdata(M)
+print(U)
+print("========= transform it back to a table for convininence ==========")
+T = ToTable(U)
+print(T)
+print("========= Evaluate M ==========")
+print(M(1,1))
+print("========= Evaluate U ==========")
+print(U(1,1))
+print("========= Evaluate T ==========")
+print(T(1,1))
+print("========= Free response functions ==========")
+M=nil
+U=nil
+T=nil
+collectgarbage()
+print("\n\n\n")
+
+
+print("========= defined Green's function as Natural Orbital impurity matrix ==========")
+aval = {1,0,1,2,4}
+bval = {0.25,0.2,0.4,0.25}
+acon = {11,10,11,12,14}
+bcon = {1.25,1.2,1.4,1.25}
+Mval = {aval,bval, mu=0, type="Tri"}
+Mcon = {acon,bcon, mu=0, type="Tri"}
+a0=1
+b0=1.2
+M = {{a0,b0},val=Mval, con=Mcon, mu=0, type="Nat"}
+setmetatable(M, ResponseFunctionMeta)
+print(M)
+print("========= transform it to a userdata for speed        ==========")
+U = ToUserdata(M)
+print(U)
+print("========= transform it back to a table for convininence ==========")
+T = ToTable(U)
+print(T)
+print("========= Evaluate M ==========")
+print(M(1,1))
+print("========= Evaluate U ==========")
+print(U(1,1))
+print("========= Evaluate T ==========")
+print(T(1,1))
+print("========= Free response functions ==========")
+M=nil
+U=nil
+T=nil
+collectgarbage()
+print("\n\n\n")
+
+
+
+
+os.exit()
 
 
 MTri = ChangeType(MListOfPoles,"Tri")
 print(MTri)
-MTriT =ToTable(MTri)
-setmetatable(MTriT, ResponseFunctionMeta)
+MTriU =ToUserdata(MTri)
 print(MTriT)
 MAnd = ChangeType(MListOfPoles,"And")
 print(MAnd)

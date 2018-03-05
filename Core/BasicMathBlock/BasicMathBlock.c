@@ -155,7 +155,10 @@ ResponsefunctionType *ConvertBlockMatrix(ResponsefunctionType *M, const char typ
         case 'n':
         {
           res->data = (void*) malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
-          BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix((BlockListOfPoles*)M->data, (BlockNaturalImpurityOrbitalMatrixType*)res->data, T, ((BlockListOfPoles*)(M->data))->N+1, ((BlockListOfPoles*)(M->data))->N+1);
+          //TODO: get res->data->N right for block list of poles
+          //TODO: allow flexible set of states in tri-diag form with options
+         // BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix((BlockListOfPoles*)(M->data), (BlockNaturalImpurityOrbitalMatrixType*)(res->data), T, ((BlockListOfPoles*)(M->data))->N+1, ((BlockListOfPoles*)(M->data))->N+1);
+          BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix((BlockListOfPoles*)(M->data), (BlockNaturalImpurityOrbitalMatrixType*)(res->data), T, 10, 10);
         }
         break;
         default:

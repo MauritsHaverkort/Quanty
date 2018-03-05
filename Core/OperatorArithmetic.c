@@ -297,6 +297,10 @@ uint32_t InitOperatorCopySettings(OperatorType * const O, const OperatorType Ose
     O->Res.Determinant[i]=malloc(Oset.NWord*sizeof(uint8_t));
     memcpy(O->Res.Determinant[i], Oset.Res.Determinant[i], Oset.NWord);
   }
+  
+  
+  
+  
   for (length = 1; length < Oset.MaxLength; length++)
   {
     if (Oset.l[length].NBitsKey)
@@ -1489,7 +1493,11 @@ uint32_t QDetNotOrderedFaFcBcBa(const uint16_t A, const uint16_t B, const uint32
 uint32_t NormalOrderOperator(const OperatorType O, OperatorType * const Oo, uint32_t(*QDetNotOrdered) (uint16_t, uint16_t, uint32_t))
 {
   uint32_t il, iN;
-  for (il = 0; il <= O.MaxLength; il++)
+  if(O.l[0].N!=0)
+  {
+    OperatorAddLader(Oo, NULL, 0, O.l[0].VRe[0], 0);
+  }
+  for (il = 1; il <= O.MaxLength; il++)
   {
     if (O.l[il].QComplex)
     {                           /* O complex at level il */

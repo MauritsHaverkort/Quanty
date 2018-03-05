@@ -3601,9 +3601,7 @@ int luaopen_ssp(lua_State * L)
   luaL_newmetatable(L, "ResponseFunction_Type");
   luaL_setfuncs(L, ResponseFunction_meta, 0);
   lua_newtable(L);
-  lua_newtable(L);
   luaL_setfuncs(L, ResponseFunctionTable_meta, 0);
-  lua_setfield(L, -1, "__index");
   lua_setglobal(L, "ResponseFunctionMeta");
   luaMWH_RegisterGlobalFunctions(L, ResponseFunction_func);
 

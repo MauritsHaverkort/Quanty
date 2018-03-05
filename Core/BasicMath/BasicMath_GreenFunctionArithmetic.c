@@ -1970,7 +1970,7 @@ ResponsefunctionType *ConvertResponsefunction(ResponsefunctionType *M, const cha
         case 'n':
         {
           res->data = (void*) malloc(sizeof(BADoubleTriDiagonalMatrixType));
-          //TODO:  AndersonMatrixToBADoubleTriDiagonalMatrix(*(TriDiagonalMatrixType*)M->data, (BADoubleTriDiagonalMatrixType*)res->data, ((TriDiagonalMatrixType*)M->data)->N, ((TriDiagonalMatrixType*)M->data)->N, ((TriDiagonalMatrixType*)M->data)->mu, 1000*DBL_EPSILON);
+          AndersonMatrixToBADoubleTriDiagonalMatrix(*(AndersonMatrixType*)M->data, (BADoubleTriDiagonalMatrixType*)res->data, ((AndersonMatrixType*)M->data)->N, ((AndersonMatrixType*)M->data)->N, ((AndersonMatrixType*)M->data)->mu, 1000*DBL_EPSILON);
         }
         break;
         default:
@@ -2031,6 +2031,15 @@ ResponsefunctionType *ConvertResponsefunction(ResponsefunctionType *M, const cha
     break;
   }
   return res;
+}
+
+
+/*
+ *
+ */
+ResponsefunctionType *ResponsefunctionCopy(ResponsefunctionType *M)
+{
+  return ConvertResponsefunction(M,M->type,0);
 }
 
 /*

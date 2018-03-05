@@ -296,7 +296,7 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
   WaveFunctionType Tpsi[Npsi*NT1],GTpsi,TGTpsi, *PsiBasis[settings->NTri1];
   BlockTriDiagonalMatrixType SpecTri1;
   MatrixType EFun;
-  double BlockSize[settings->NTri];
+  uint32_t BlockSize[settings->NTri];
   double EVal[settings->NTri1], EValInvRe[settings->NTri1], EValInvIm[settings->NTri1],tempDoubleRe,tempDoubleIm, EVal2[settings->NTri2];
   int i,ipsi,iT1,iT2,p,k;
   double wRes;

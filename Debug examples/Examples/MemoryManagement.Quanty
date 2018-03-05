@@ -8,7 +8,7 @@ local function randomString(length)
 end
 
 NF=20
-NPsi=100
+NPsi=200
 psiList={}
 for i=1, NPsi do
   psiList[i] = NewWavefunction(NF,0,{{randomString(NF),math.random()},{randomString(NF),math.random()},{randomString(NF),math.random()},{randomString(NF),math.random()},{randomString(NF),math.random()}})

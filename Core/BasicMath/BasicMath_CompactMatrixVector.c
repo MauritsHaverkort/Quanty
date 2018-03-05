@@ -105,7 +105,7 @@ uint32_t SetCompactMatrixToZero(CompactMatrixType * const M)
 }
 
 /* B <- A
- * B should not be allocated
+ * B should not be initiallized
  */
 uint32_t CompactMatrixCopy(CompactMatrixType const A, CompactMatrixType * const B)
 {

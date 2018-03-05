@@ -14,7 +14,7 @@ uint32_t LuaPutASCII();
 CompactMatrixType* luaL_checkCompactMatrix();
 void LuaPushTable_CompactMatrixType();
 
-
+static int LuaChangeTypeResponseFunction();
 
 /**********************************************************/
 /**********    lua_extensions/TableToArray.c     **********/

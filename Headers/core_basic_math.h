@@ -358,7 +358,7 @@ uint32_t MapSecondoubleTridiagonalMatrixToBA(SecondDoubleTriDiagonalMatrixType c
 uint32_t EvaluateBlockListOfPoles(BlockListOfPoles const *A, CompactMatrixType * Gw, const double omega, const double Gamma);
 uint32_t EvaluateBlockAndersonMatrix(BlockListOfPoles const *A, CompactMatrixType * Gw, const double omega, const double Gamma);
 uint32_t EvaluateBlockTriDiagonalMatrix(BlockTriDiagonalMatrixType const * A, CompactMatrixType * Gw, const double omega, const double Gamma);
-uint32_t EvaluateBlockaturalImpurityOrbital(BlockNaturalImpurityOrbitalMatrixType const *A, CompactMatrixType * Gw, const double omega, const double Gamma);
+uint32_t EvaluateBlockNaturalImpurityOrbital(BlockNaturalImpurityOrbitalMatrixType const *A, CompactMatrixType * Gw, const double omega, const double Gamma);
 uint32_t BlockListOfPolesToSpectra(BlockListOfPoles const A, SpectraType *G, double Emin, double Emax, uint32_t N);
 uint32_t BlockAndersonMatrixToSpectra(BlockAndersonMatrixType const A, SpectraType *G, double Emin, double Emax, uint32_t N);
 uint32_t BlockTriDiagonalMatrixToSpectra(const double Energy, BlockTriDiagonalMatrixType const * A, SpectraType *const G, double const Emin, double const Emax, uint32_t const N, double const Gamma);
@@ -393,7 +393,7 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles(BlockNaturalImpurit
 uint32_t BlockNaturalImpurityOrbitalMatrixToBlockListOfPolesVariableGrid(BlockNaturalImpurityOrbitalMatrixType const AAnd, BlockListOfPoles * const B, const double * const Grid, const uint32_t NGridPoints);
 uint32_t BlockNaturalImpurityOrbitalMatrixToBlockTridiagonalMatrix(BlockNaturalImpurityOrbitalMatrixType const AAnd, BlockTriDiagonalMatrixType * const B);
 ResponsefunctionType *ConvertBlockMatrix(ResponsefunctionType *M, const char type, double T);
-
+uint32_t CopyBlockNaturalImpurityOrbitalMatrix(BlockNaturalImpurityOrbitalMatrixType A, BlockNaturalImpurityOrbitalMatrixType *B);
 
 
 

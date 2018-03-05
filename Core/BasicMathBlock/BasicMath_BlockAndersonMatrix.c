@@ -47,7 +47,6 @@ uint32_t InitBlockAndersonMatrix(BlockAndersonMatrixType *const A)
     {
       A->bRe[i+i*A->BlockSize]=1;
     }
-    
   }
   A->mu=0;
   return 0;
@@ -124,6 +123,42 @@ uint32_t BlockAndersonMatrixChop(BlockAndersonMatrixType *const A, double const 
  */
 uint32_t CopyBlockAndersonMatrix(BlockAndersonMatrixType A, BlockAndersonMatrixType *B)
 {
-  //TODO: all
+  *B=A;
+  if(B->QComplex)
+  {
+    B->a=malloc((B->N+1)*(B->BlockSize*B->BlockSize)*sizeof(Complex16));
+    if(B->a==NULL)
+    {
+      printf("malloc failed in CopyBlockAndersonMatrix\n");
+      return 1;
+    }
+    B->b=malloc((B->N)*(B->BlockSize*B->BlockSize)*sizeof(Complex16));
+    if(B->b==NULL)
+    {
+      free(B->a);
+      printf("malloc failed in CopyBlockAndersonMatrix\n");
+      return 1;
+    }
+    memcpy(B->a, A.a, (B->N+1)*(B->BlockSize*B->BlockSize)*sizeof(Complex16));
+    memcpy(B->b, A.b, (B->N  )*(B->BlockSize*B->BlockSize)*sizeof(Complex16));
+  }
+  else
+  {
+    B->aRe=malloc((B->N+1)*(B->BlockSize*B->BlockSize)*sizeof(double));
+    if(B->aRe==NULL)
+    {
+      printf("malloc failed in CopyBlockAndersonMatrix\n");
+      return 1;
+    }
+    B->bRe=malloc((B->N)*(B->BlockSize*B->BlockSize)*sizeof(double));
+    if(B->bRe==NULL)
+    {
+      free(B->aRe);
+      printf("malloc failed in CopyBlockAndersonMatrix\n");
+      return 1;
+    }
+    memcpy(B->a, A.a, (B->N+1)*(B->BlockSize*B->BlockSize)*sizeof(double));
+    memcpy(B->b, A.b, (B->N  )*(B->BlockSize*B->BlockSize)*sizeof(double));
+  }
   return 0;
 }

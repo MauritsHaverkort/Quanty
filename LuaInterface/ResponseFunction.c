@@ -27,7 +27,7 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
   ResponsefunctionType *Min, *Mout;
   char const * convert;
   char type;
-  double T=0;
+  double T=sqrt(DBL_MIN);
   uint32_t len = (uint32_t)lua_gettop(L);
   if(len!=2) return luaL_error(L, "Error in ChangeType expected 2 arguments, not %d\n",len);
   Min = luaL_checkResponsefunction(L,1);
@@ -80,11 +80,11 @@ static int LuaResponseFunctionToUserdata(lua_State *L)
   uint32_t len = (uint32_t)lua_gettop(L);
   if(len!=1) return luaL_error(L, "Error in ToUserdata expected a single argument, not %d\n",len);
   M = luaL_checkResponsefunction(L,1);
-  if((M->type|32)==M->type) //lowercase
+  if((M->type|32)==M->type) //lowercase, i.e. only pointer stored
   {
-    //TODO: ResponseFunctionCopy
+    LuaPush_ResponseFunction(L, ResponsefunctionCopy(M));
   }
-  else
+  else // upercase read a table from the stack
   {
     M->type+=32;
     LuaPush_ResponseFunction(L, M);
@@ -355,6 +355,7 @@ static int LuaResponseFunctionLe(lua_State * L)
 static int LuaResponseFunctionIndex(lua_State * L)
 {
   printf("LuaResponseFunctionIndex\n");
+  luaMWH_StackDump(L);
   return 0;
 }
 
@@ -403,7 +404,7 @@ static int LuaResponseFunctionCall(lua_State * L)
     *out = EvaluateResponsefunctionType(res, omega, gamma);
     luaL_setmetatable(L, "Complex_Type");
   }
-  FreeBlockMatrixFromLua(res);
+  FreeResponsefunction(res);
   return 1;
 }
 
@@ -421,7 +422,10 @@ static int LuaResponseFunctionToString(lua_State * L)
  */
 static int LuaResponseFunctionDestroy(lua_State * L)
 {
-  printf("LuaResponseFunctionDestroy\n");
+  ResponsefunctionType *a = (ResponsefunctionType *) luaL_checkudata(L, 1, "ResponseFunction_Type");
+  // convert type to captial letter, i.e. claim controle over the allocation
+  a->type^=32;
+  FreeResponsefunction(a);  
   return 0;
 }
 

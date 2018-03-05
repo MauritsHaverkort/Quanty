@@ -265,7 +265,6 @@ static int LuaCalculateFermi(lua_State *L)
  *       Nk -> {Nkx,Nky,Nkz} number of k-points       standard {40,40,40}
  *       Type
  */
-static int LuaChangeTypeResponseFunction(lua_State *L);
 static int LuaCalculateG(lua_State *L)
 {
   uint32_t len;
@@ -314,7 +313,8 @@ static int LuaCalculateG(lua_State *L)
   G = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
   luaL_setmetatable(L, "ResponseFunction_Type");
   G->NSuggestedGridPoints = 0;
-  G->type = 'L';
+  G->type = 'l';
+  G->Block = True;
   G->data = (void*) malloc(sizeof(BlockListOfPoles));
   TightBindingHamiltonianToBlockListOfPoles(*a, Options.Nk, (BlockListOfPoles*)G->data, Options.Emin, Options.Emax, Options.NE);
   ChopBlockListOfPoles((BlockListOfPoles*)G->data, 1000*DBL_EPSILON);

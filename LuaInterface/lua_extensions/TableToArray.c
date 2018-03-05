@@ -239,13 +239,14 @@ MatrixType* luaL_checkMatrix(lua_State *L, int narg)
  *
  *
  *  The format of NaturalImpurityMatrixType should be
- *
+ *    { {a0, b0}, val=Gval, con=Gcon, mu=0, type="Nat" }
  *    and defines the Green's function
- *
+ *    a0 + b0^2 ( Gval(w) + Gcon(w) )
  *
  *  The format of BlockNaturalImpurityMatrixType should be
- *
+ *    { {A0, B0}, val=Gval, con=Gcon, mu=0, type="Nat" }
  *    and defines the Green's function
+ *    a0 + b0^2 ( Gval(w) + Gcon(w) )
  *
  *
  *  The format of ListOfPoles should be:
@@ -291,7 +292,8 @@ TriDiagonalMatrixType* luaL_checkTriDiagonalMatrixType(lua_State *L, int narg)
     {
       luaL_error(L, "Error a Green's function represented as a tri-diagonal matrix should be a list of two lists {{a0,a1,a2,...,an},{b0,b1,b2,...,bn-1}}");
     }
-    lua_getfield(L, narg, "mu");
+    lua_pushstring(L, "mu");
+    lua_rawget(L, narg);
     if(lua_isnumber(L, -1)==1)
     {
       buff->mu=(double)luaL_checknumber(L, -1);
@@ -301,7 +303,8 @@ TriDiagonalMatrixType* luaL_checkTriDiagonalMatrixType(lua_State *L, int narg)
       luaL_error(L, "Reading Green's function represented as a tri-diagonal matrix without mu defined");
     }
     lua_pop(L,1);
-    lua_getfield(L, narg, "name");
+    lua_pushstring(L, "name");
+    lua_rawget(L, narg);
     if(lua_isstring(L, -1)==1)
     {
       strncpy(buff->Name, luaL_checkstring(L, -1), MAXStrLength);
@@ -343,7 +346,7 @@ TriDiagonalMatrixType* luaL_checkTriDiagonalMatrixType(lua_State *L, int narg)
     free(temp);
     return buff;
   }
-  if(strcmp(type, "NaturalImpurityOrbital")==0)
+  if((strcmp(type, "NaturalImpurityOrbital")==0)||(strcmp(type, "Nat")==0))
   {
     BADoubleTriDiagonalMatrixType *temp;
     lua_pop(L, 1);
@@ -521,7 +524,8 @@ BlockTriDiagonalMatrixType* luaL_checkBlockTriDiagonalMatrixType(lua_State *L, i
       luaL_error(L, "Reading Block tridiagonal matrix without mu defined");
     }
     lua_pop(L,1);
-    lua_getfield(L, narg, "name");
+    lua_pushstring(L, "name");
+    lua_rawget(L, narg);
     if(lua_isstring(L, -1)==1)
     {
       strncpy(buff->Name, luaL_checkstring(L, -1), MAXStrLength);
@@ -549,7 +553,7 @@ BlockTriDiagonalMatrixType* luaL_checkBlockTriDiagonalMatrixType(lua_State *L, i
     free(temp);
     return buff;
   }
-  if(strcmp(type, "NaturalImpurityOrbital")==0)
+  if((strcmp(type, "NaturalImpurityOrbital")==0)||(strcmp(type, "Nat")==0))
   {
     BlockNaturalImpurityOrbitalMatrixType *temp;
     lua_pop(L, 1);
@@ -627,7 +631,8 @@ AndersonMatrixType* luaL_checkAndersonMatrixType(lua_State *L, int narg)
       luaL_error(L, "Reading Green's function represented as an Anderson matrix without mu defined");
     }
     lua_pop(L,1);
-    lua_getfield(L, narg, "name");
+    lua_pushstring(L, "name");
+    lua_rawget(L, narg);
     if(lua_isstring(L, -1)==1)
     {
       strncpy(buff->Name, luaL_checkstring(L, -1), MAXStrLength);
@@ -658,7 +663,7 @@ AndersonMatrixType* luaL_checkAndersonMatrixType(lua_State *L, int narg)
     lua_pop(L, 1);
     return buff;
   }
-  if(strcmp(type, "NaturalImpurityOrbital")==0)
+  if((strcmp(type, "NaturalImpurityOrbital")==0)||(strcmp(type, "Nat")==0))
   {
     BADoubleTriDiagonalMatrixType *temp;
     lua_pop(L, 1);
@@ -836,7 +841,8 @@ BlockAndersonMatrixType* luaL_checkBlockAndersonMatrixType(lua_State *L, int nar
     {
       ComplexBlockAndersonMatrixToReal(buff);
     }
-    lua_getfield(L, narg, "mu");
+    lua_pushstring(L, "mu");
+    lua_rawget(L, narg);
     if(lua_isnumber(L, -1)==1)
     {
       buff->mu=(double)luaL_checknumber(L, -1);
@@ -846,7 +852,8 @@ BlockAndersonMatrixType* luaL_checkBlockAndersonMatrixType(lua_State *L, int nar
       luaL_error(L, "Reading Block Anderson matrix without mu defined");
     }
     lua_pop(L,1);
-    lua_getfield(L, narg, "name");
+    lua_pushstring(L, "name");
+    lua_rawget(L, narg);
     if(lua_isstring(L, -1)==1)
     {
       strncpy(buff->Name, luaL_checkstring(L, -1), MAXStrLength);
@@ -863,7 +870,7 @@ BlockAndersonMatrixType* luaL_checkBlockAndersonMatrixType(lua_State *L, int nar
     lua_pop(L,1);
     return buff;
   }
-  if(strcmp(type, "NaturalImpurityOrbital")==0)
+  if((strcmp(type, "NaturalImpurityOrbital")==0)||(strcmp(type, "Nat")==0))
   {
     BlockNaturalImpurityOrbitalMatrixType *temp;
     lua_pop(L, 1);
@@ -890,7 +897,10 @@ BlockAndersonMatrixType* luaL_checkBlockAndersonMatrixType(lua_State *L, int nar
 }
 
 /*
- *
+ *  The format of NaturalImpurityMatrixType should be
+ *    { {a0, b0}, val=Gval, con=Gcon, mu=0, type="Nat" }
+ *    and defines the Green's function
+ *    a0 + b0^2 ( Gval(w) + Gcon(w) )
  */
 BADoubleTriDiagonalMatrixType * luaL_checkNatrualImpurityOrbitalMatrixType(lua_State *L, int narg)
 {
@@ -928,10 +938,93 @@ BADoubleTriDiagonalMatrixType * luaL_checkNatrualImpurityOrbitalMatrixType(lua_S
     free(temp);
     return buff;
   }
-  if(strcmp(type, "NaturalImpurityOrbital")==0)
+  if((strcmp(type, "NaturalImpurityOrbital")==0)||(strcmp(type, "Nat")==0))
   {
+    TriDiagonalMatrixType *temp;
     buff = malloc(sizeof(BADoubleTriDiagonalMatrixType));
-    //TODO: read NaturalImpurityOrbital
+    lua_pop(L,1);
+    /* read val */
+    lua_pushstring(L, "val");
+    lua_rawget(L, narg);
+    if(lua_istable(L,-1)==0)
+    {
+      luaL_error(L, "Error Green's function of format NaturalImpurityOrbital should have a field val");
+    }
+    temp = luaL_checkTriDiagonalMatrixType(L, lua_gettop(L));
+    buff->val = *temp;
+    free(temp);
+    lua_pop(L,1);
+    /* read con */
+    lua_pushstring(L, "con");
+    lua_rawget(L, narg);
+    if(lua_istable(L,-1)==0)
+    {
+      luaL_error(L, "Error Green's function of format NaturalImpurityOrbital should have a field con");
+    }
+    temp = luaL_checkTriDiagonalMatrixType(L, lua_gettop(L));
+    buff->con = *temp;
+    free(temp);
+    lua_pop(L,1);
+    /* read {a0,b0} */
+    lua_rawgeti(L, narg, 1);
+    if(lua_istable(L,-1)==0)
+    {
+      luaL_error(L, "Error Green's function of format NaturalImpurityOrbital should have the table {a0, b0} at position 1");
+    }
+    lua_rawgeti(L, -1, 1);
+    buff->a0 = (double)luaL_checknumber(L, -1);
+    lua_pop(L,1);
+    lua_rawgeti(L, -1, 2);
+    buff->b0 = (double)luaL_checknumber(L, -1);
+    lua_pop(L,2);
+    /* read mu */
+    lua_pushstring(L, "mu");
+    lua_rawget(L, narg);
+    if(lua_isnumber(L, -1)==1)
+    {
+      buff->mu=(double)luaL_checknumber(L, -1);
+    }
+    else
+    {
+      luaL_error(L, "Reading NaturalImpurityOrbital matrix without mu defined");
+    }
+    lua_pop(L,1);
+    /* read name */
+    lua_pushstring(L, "name");
+    lua_rawget(L, narg);
+    if(lua_isstring(L, -1)==1)
+    {
+      strncpy(buff->Name, luaL_checkstring(L, -1), MAXStrLength);
+      buff->Name[MAXStrLength-1]='\0';
+    }
+    else if(lua_isnil(L, -1)==1)
+    {
+      buff->Name[0]='\0';
+    }
+    else
+    {
+      luaL_error(L, "Reading NaturalImpurityOrbital matrix without name correctly defined");
+    }
+    lua_pop(L,1);
+    /* read epsilon */
+    lua_pushstring(L, "epsilon");
+    lua_rawget(L, narg);
+    if(lua_isnumber(L, -1)==1)
+    {
+      buff->Epsilon=(double)luaL_checknumber(L, -1);
+    }
+    else
+    {
+      buff->Epsilon=1000*DBL_EPSILON;
+    }
+    lua_pop(L,1);
+    buff->acvB  = Sqr(buff->val.b[0]) * buff->val.a[1] + Sqr(buff->con.b[0]) * buff->con.a[1];
+    buff->acvA  = Sqr(buff->val.b[0]) * buff->con.a[1] + Sqr(buff->con.b[0]) * buff->val.a[1];
+    buff->acvBA =  buff->val.b[0] * buff->con.b[0] * (buff->val.a[1]-buff->con.a[1]);
+    buff->bvB0  =  buff->val.b[0] * buff->val.b[1];
+    buff->bcB0  =  buff->con.b[0] * buff->con.b[1];
+    buff->bvA0  =  buff->con.b[0] * buff->val.b[1];
+    buff->bcA0  = -buff->val.b[0] * buff->con.b[1];
     return buff;
   }
   if(strcmp(type, "ListOfPoles")==0)
@@ -956,6 +1049,7 @@ BlockNaturalImpurityOrbitalMatrixType * luaL_checkBlockNatrualImpurityOrbitalMat
 {
   const char *type;
   BlockNaturalImpurityOrbitalMatrixType *buff;
+  CompactMatrixType *B0;
   if(lua_istable(L, narg)==0)
   {
     luaL_error(L, "Error Green's function should be represented by a table");
@@ -986,13 +1080,57 @@ BlockNaturalImpurityOrbitalMatrixType * luaL_checkBlockNatrualImpurityOrbitalMat
     BlockAndersonMatrixToBlockNaturalImpurityOrbitalMatrix(*temp, buff);
     FreeBlockAndersonMatrix(temp);
     free(temp);
-    return buff;  }
-  if(strcmp(type, "NaturalImpurityOrbital")==0)
+    return buff;
+  }
+  if((strcmp(type, "NaturalImpurityOrbital")==0)||(strcmp(type, "Nat")==0))
   {
+    BlockTriDiagonalMatrixType *temp;
+    CompactMatrixType *tempM;
     lua_pop(L, 1);
     buff = malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
-    //TODO: Read NaturalImpurityOrbital
-
+    lua_pushstring(L, "val");
+    lua_rawget(L, narg);
+    if(lua_istable(L,-1)==0)
+    {
+      luaL_error(L, "Error Green's function of format NaturalImpurityOrbital should have a field val");
+    }
+    temp = luaL_checkBlockTriDiagonalMatrixType(L, lua_gettop(L));
+    buff->val = *temp;
+    free(temp);
+    lua_pop(L,1);
+    lua_pushstring(L, "con");
+    lua_rawget(L, narg);
+    if(lua_istable(L,-1)==0)
+    {
+      luaL_error(L, "Error Green's function of format NaturalImpurityOrbital should have a field con");
+    }
+    temp = luaL_checkBlockTriDiagonalMatrixType(L, lua_gettop(L));
+    buff->con = *temp;
+    free(temp);
+    lua_pop(L,1);
+    lua_rawgeti(L, narg, 1);
+    if(lua_istable(L,-1)==0)
+    {
+      luaL_error(L, "Error Green's function of format NaturalImpurityOrbital should have the table {A0, B0} at position 1");
+    }
+    lua_rawgeti(L, -1, 1);
+    tempM = luaL_checkCompactMatrix(L, lua_gettop(L));
+    buff->a0 = *tempM;
+    free(tempM);
+    lua_pop(L,1);
+    // read B0 from stack. if B0 is not the identity matrix scale val and con
+    lua_rawgeti(L, -1, 2);
+    tempM = luaL_checkCompactMatrix(L, lua_gettop(L));
+    
+    
+    free(tempM);
+    lua_pop(L,1);
+    
+    
+    
+    
+    //TODO: set matrix TMT
+    lua_pop(L,1);
     return buff;
   }
   if(strcmp(type, "ListOfPoles")==0)
@@ -1061,7 +1199,7 @@ ListOfPoles * luaL_checkListOfPoles(lua_State *L, int narg)
     free(temp);
     return buff;
   }
-  if(strcmp(type, "NaturalImpurityOrbital")==0)
+  if((strcmp(type, "NaturalImpurityOrbital")==0)||(strcmp(type, "Nat")==0))
   {
     BADoubleTriDiagonalMatrixType *temp;
     lua_pop(L, 1);
@@ -1090,7 +1228,8 @@ ListOfPoles * luaL_checkListOfPoles(lua_State *L, int narg)
       luaL_error(L, "Reading List of poles without mu defined");
     }
     lua_pop(L,1);
-    lua_getfield(L, narg, "name");
+    lua_pushstring(L, "name");
+    lua_rawget(L, narg);
     if(lua_isstring(L, -1)==1)
     {
       strncpy(buff->Name, luaL_checkstring(L, -1), MAXStrLength);
@@ -1110,6 +1249,9 @@ ListOfPoles * luaL_checkListOfPoles(lua_State *L, int narg)
     len = (uint32_t)lua_objlen(L, -1);
     if(len==0) luaL_error(L, "Errorr reading Greens function with lenght of a equal to zero");
     if(len==1) luaL_error(L, "Errorr reading Greens function with lenght of a equal to one");
+    lua_rawgeti(L, -1, 1);
+    buff->a0=(double)luaL_checknumber(L, -1);
+    lua_pop(L, 1);
     buff->N=len-1;
     buff->a = (double*)malloc(buff->N*sizeof(double));
     for(i=0;i<buff->N;i++)
@@ -1191,7 +1333,7 @@ BlockListOfPoles * luaL_checkBlockListOfPoles(lua_State *L, int narg)
     free(temp);
     return buff;
   }
-  if(strcmp(type, "NaturalImpurityOrbital")==0)
+  if((strcmp(type, "NaturalImpurityOrbital")==0)||(strcmp(type, "Nat")==0))
   {
     BlockNaturalImpurityOrbitalMatrixType *temp;
     lua_pop(L, 1);
@@ -1369,7 +1511,8 @@ BlockListOfPoles * luaL_checkBlockListOfPoles(lua_State *L, int narg)
       luaL_error(L, "Reading List of poles without mu defined");
     }
     lua_pop(L,1);
-    lua_getfield(L, narg, "name");
+    lua_pushstring(L, "name");
+    lua_rawget(L, narg);
     if(lua_isstring(L, -1)==1)
     {
       strncpy(buff->Name, luaL_checkstring(L, -1), MAXStrLength);
@@ -1425,7 +1568,7 @@ BlockListOfPoles * luaL_checkBlockListOfPolesVariableGrid(lua_State *L, int narg
     free(temp);
     return buff;
   }
-  if(strcmp(type, "NaturalImpurityOrbital")==0)
+  if((strcmp(type, "NaturalImpurityOrbital")==0)||(strcmp(type, "Nat")==0))
   {
     BlockNaturalImpurityOrbitalMatrixType *temp;
     temp = luaL_checkBlockNatrualImpurityOrbitalMatrixType(L, narg);
@@ -1471,7 +1614,9 @@ ResponsefunctionType * luaL_checkResponsefunction(lua_State *L, int narg)
   }
   buff=malloc(sizeof(ResponsefunctionType));
   // test if there is a suggested grid present. If present Stored in field SuggestedGrid
-  lua_getfield(L, narg, "SuggestedGrid");
+  //lua_getfield(L, narg, "SuggestedGrid"); Invoces methamethods which we do not want here
+  lua_pushstring(L, "SuggestedGrid");
+  lua_rawget(L, narg);
   if(lua_isnil(L, -1)==1)
   {
     // no sugested grid
@@ -1481,14 +1626,15 @@ ResponsefunctionType * luaL_checkResponsefunction(lua_State *L, int narg)
   else if(lua_istable(L, -1)==1)
   {
     buff->SuggestedGrid = luaL_checkarray_double(L, -1, &(buff->NSuggestedGridPoints));
-    lua_pop(L,1);
   }
   else
   {
     luaL_error(L, "Error reading Green's function: \"SuggestedGrid\" should be an table of doubles.");
   }
+  lua_pop(L,1);
   // check if Response function is of Block type or not
   lua_rawgeti(L, narg, 1); // puts table a on the stack
+  if(lua_objlen(L,-1)==0) luaL_error(L,"Error reading Green's function the length of the table is 0");
   lua_rawgeti(L,-1,1); // puts element A0 or a0 or the stack
   buff->Block = False;
   if(lua_istable(L,-1)) buff->Block = True;
@@ -1528,7 +1674,7 @@ ResponsefunctionType * luaL_checkResponsefunction(lua_State *L, int narg)
     }
     return buff;
   }
-  if(strcmp(type, "NaturalImpurityOrbital")==0)
+  if((strcmp(type, "NaturalImpurityOrbital")==0)||(strcmp(type, "Nat")==0))
   {
     lua_pop(L, 1);
     buff->type='N';
@@ -1585,7 +1731,7 @@ int lua_isBlockGreensfunction(lua_State *L, int narg)
   type = lua_tolstring(L, -1, NULL);
   if(strcmp(type, "Tri")==0) {lua_pop(L, 1);return 1;}
   if(strcmp(type, "And")==0) {lua_pop(L, 1);return 1;}
-  if(strcmp(type, "NaturalImpurityOrbital")==0) {lua_pop(L, 1);return 1;}
+  if((strcmp(type, "NaturalImpurityOrbital")==0)||(strcmp(type, "Nat")==0)) {lua_pop(L, 1);return 1;}
   if(strcmp(type, "ListOfPoles")==0) {lua_pop(L, 1);return 1;}
   lua_pop(L, 1);
   return 0;
@@ -1856,6 +2002,22 @@ void LuaPushTable_WaveFunctionType_RemoveEmpty(lua_State* L, WaveFunctionType * 
   }
 }
 
+void LuaPushTable_IdentityMatrix(lua_State *L, uint32_t dim)
+{
+  uint32_t i,j;
+  lua_createtable(L,dim,0);
+  for(i=1;i<=dim;i++)
+  {
+    lua_createtable(L,dim,0);
+    for(j=1;j<=dim;j++)
+    {
+      lua_pushnumber(L, ((i==j)?1:0));
+      lua_rawseti(L,-2,j);
+    }
+    lua_rawseti(L,-2,i);
+  }
+}
+
 void LuaPushTable_MatrixType(lua_State* L, MatrixType const * const M)
 {
   uint32_t i,j;
@@ -1937,6 +2099,9 @@ void LuaPushTable_TriDiagonalMatrixType(lua_State* L, TriDiagonalMatrixType cons
   /* push name */
   lua_pushstring(L, M->Name);
   lua_setfield(L,-2,"name");
+  /* set metatable */
+  lua_getglobal(L, "ResponseFunctionMeta");
+  lua_setmetatable(L, -2);
 }
 
 void LuaPushTable_BlockTriDiagonalMatrixType(lua_State* L, BlockTriDiagonalMatrixType const * const M)
@@ -2044,6 +2209,9 @@ void LuaPushTable_BlockTriDiagonalMatrixType(lua_State* L, BlockTriDiagonalMatri
   /* push name */
   lua_pushstring(L, M->Name);
   lua_setfield(L,-2,"name");
+  /* set metatable */
+  lua_getglobal(L, "ResponseFunctionMeta");
+  lua_setmetatable(L, -2);
 }
 
 void LuaPushTable_AndersonMatrixType(lua_State* L, AndersonMatrixType const * const M)
@@ -2064,6 +2232,9 @@ void LuaPushTable_AndersonMatrixType(lua_State* L, AndersonMatrixType const * co
   /* push name */
   lua_pushstring(L, M->Name);
   lua_setfield(L,-2,"name");
+  /* set metatable */
+  lua_getglobal(L, "ResponseFunctionMeta");
+  lua_setmetatable(L, -2);
 }
 
 void LuaPushTable_BlockAndersonMatrixType(lua_State* L, BlockAndersonMatrixType const * const M)
@@ -2138,6 +2309,9 @@ void LuaPushTable_BlockAndersonMatrixType(lua_State* L, BlockAndersonMatrixType 
   /* push name */
   lua_pushstring(L, M->Name);
   lua_setfield(L,-2,"name");
+  /* set metatable */
+  lua_getglobal(L, "ResponseFunctionMeta");
+  lua_setmetatable(L, -2);
 }
 
 void LuaPushTable_ListOfPoles(lua_State* L, ListOfPoles const * const M)
@@ -2153,7 +2327,6 @@ void LuaPushTable_ListOfPoles(lua_State* L, ListOfPoles const * const M)
     lua_pushnumber(L, M->a[i]);
     lua_rawseti(L, -2, i+2);
   }
-  LuaPushArray_double(L, M->a, M->N);
   lua_rawseti(L, -2, 1);
   /* push b */
   LuaPushArray_double(L, M->b, M->N);
@@ -2167,6 +2340,9 @@ void LuaPushTable_ListOfPoles(lua_State* L, ListOfPoles const * const M)
   /* push name */
   lua_pushstring(L, M->Name);
   lua_setfield(L,-2,"name");
+  /* set metatable */
+  lua_getglobal(L, "ResponseFunctionMeta");
+  lua_setmetatable(L, -2);
 }
 
 void LuaPushTable_BlockListOfPoles(lua_State* L, BlockListOfPoles const * const M)
@@ -2243,17 +2419,76 @@ void LuaPushTable_BlockListOfPoles(lua_State* L, BlockListOfPoles const * const 
   /* push name */
   lua_pushstring(L, M->Name);
   lua_setfield(L,-2,"name");
+  /* set metatable */
+  lua_getglobal(L, "ResponseFunctionMeta");
+  lua_setmetatable(L, -2);
 }
 
 void LuaPushTable_NaturalImpurityOrbital(lua_State* L, BADoubleTriDiagonalMatrixType * const M)
 {
-  //TODO: push BlockNaturalImpurityOrbitalMatrixType as a table to lua stack
+  lua_createtable(L, 1, 3);
+  /* push {a0, b0} */
+  lua_createtable(L,2,0);
+  lua_pushnumber(L,M->a0);
+  lua_rawseti(L, -2, 1);
+  lua_pushnumber(L,M->b0);
+  lua_rawseti(L, -2, 2);
+  lua_rawseti(L, -2, 1);
+  /* push val */
+  LuaPushTable_TriDiagonalMatrixType(L, &(M->val));
+  lua_setfield(L, -2, "val");
+  /* push con */
+  LuaPushTable_TriDiagonalMatrixType(L, &(M->con));
+  lua_setfield(L, -2, "con");
+  /* push mu */
+  lua_pushnumber(L, M->mu);
+  lua_setfield(L,-2,"mu");
+  /* push Epsilon */
+  lua_pushnumber(L, M->Epsilon);
+  lua_setfield(L,-2,"epsilon");
+  /* push type */
+  lua_pushstring(L, "NaturalImpurityOrbital");
+  lua_setfield(L,-2,"type");
+  /* push name */
+  lua_pushstring(L, M->Name);
+  lua_setfield(L,-2,"name");
+  /* set metatable */
+  lua_getglobal(L, "ResponseFunctionMeta");
+  lua_setmetatable(L, -2);
 }
 
 
 void LuaPushTable_BlockNaturalImpurityOrbital(lua_State* L, BlockNaturalImpurityOrbitalMatrixType * const M)
 {
-  //TODO: push BlockNaturalImpurityOrbitalMatrixType as a table to lua stack
+  lua_createtable(L, 1, 3);
+  /* push {a0, b0} */
+  lua_createtable(L,2,0);
+  LuaPushTable_CompactMatrixType(L, &(M->a0));
+  lua_rawseti(L, -2, 1);
+  LuaPushTable_IdentityMatrix(L,M->BlockSize);
+  lua_rawseti(L, -2, 2);
+  lua_rawseti(L, -2, 1);
+  /* push val */
+  LuaPushTable_BlockTriDiagonalMatrixType(L, &(M->val));
+  lua_setfield(L, -2, "val");
+  /* push con */
+  LuaPushTable_BlockTriDiagonalMatrixType(L, &(M->con));
+  lua_setfield(L, -2, "con");
+  /* push mu */
+  lua_pushnumber(L, M->mu);
+  lua_setfield(L,-2,"mu");
+  /* push Epsilon */
+  lua_pushnumber(L, M->Epsilon);
+  lua_setfield(L,-2,"epsilon");
+  /* push type */
+  lua_pushstring(L, "NaturalImpurityOrbital");
+  lua_setfield(L,-2,"type");
+  /* push name */
+  lua_pushstring(L, M->Name);
+  lua_setfield(L,-2,"name");
+  /* set metatable */
+  lua_getglobal(L, "ResponseFunctionMeta");
+  lua_setmetatable(L, -2);
 }
 
 

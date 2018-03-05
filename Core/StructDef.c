@@ -763,6 +763,7 @@ typedef struct BlockNaturalImpurityOrbitalMatrixType
   uint32_t BlockSize;          /* dimension of square matrices */
   uint32_t QComplex;           /* matrices are complex or real */
   double   mu;
+  double Epsilon;              /* values in a range of [Ef-1/2 Epsilon , Ef+1/2 Epsilon] contribute half to val and half to con */
 
   BlockTriDiagonalMatrixType val;
   BlockTriDiagonalMatrixType con;
