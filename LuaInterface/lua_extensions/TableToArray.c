@@ -1934,6 +1934,21 @@ void LuaPushArray_double(lua_State *L, double const * const val, int const N)
   }
 }
 
+void LuaPushArray_Complex16(lua_State *L, Complex16 const * const val, int const N)
+{
+  uint32_t i;
+  Complex16 *res;
+  lua_createtable(L, N, 0);
+  for(i=0;i<N;i++)
+  {
+    res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
+    res->Re=val[i].Re;
+    res->Im=val[i].Im;
+    luaL_setmetatable(L, "Complex_Type");
+    lua_rawseti(L, -2, i+1);
+  }
+}
+
 
 void LuaPushTable_HarmonicsExpansion(lua_State *L, HarmonicsExpansion *Akm)
 {

@@ -356,7 +356,7 @@ uint32_t MapSecondoubleTridiagonalMatrixToBA(SecondDoubleTriDiagonalMatrixType c
 /**********************************************************/
 
 uint32_t EvaluateBlockListOfPoles(BlockListOfPoles const *A, CompactMatrixType * Gw, const double omega, const double Gamma);
-uint32_t EvaluateBlockAndersonMatrix(BlockListOfPoles const *A, CompactMatrixType * Gw, const double omega, const double Gamma);
+uint32_t EvaluateBlockAndersonMatrix(BlockAndersonMatrixType const *A, CompactMatrixType * Gw, const double omega, const double Gamma);
 uint32_t EvaluateBlockTriDiagonalMatrix(BlockTriDiagonalMatrixType const * A, CompactMatrixType * Gw, const double omega, const double Gamma);
 uint32_t EvaluateBlockNaturalImpurityOrbital(BlockNaturalImpurityOrbitalMatrixType const *A, CompactMatrixType * Gw, const double omega, const double Gamma);
 uint32_t BlockListOfPolesToSpectra(BlockListOfPoles const A, SpectraType *G, double Emin, double Emax, uint32_t N);

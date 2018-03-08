@@ -2543,15 +2543,36 @@ static int LuaEvolveToGroundstate(lua_State * L)
  */
 static int LuaEigensystemDenseTable(lua_State *L)
 {
-  MatrixType *H,fun;
-  double *val;
-  H=luaL_checkMatrix(L,1);
-  val=malloc(H->Ni*sizeof(double));
-  Eigensystem(*H,&fun,val);
-  FreeMatrix(H);
-  LuaPushArray_double(L, val, fun.Ni);
-  LuaPushTable_MatrixType(L, &fun);
-  return 2;
+  CompactMatrixType *H;
+  H=luaL_checkCompactMatrix(L, 1);
+  if(QCompactMatrixHermitian(*H, DBL_EPSILON)==0)
+  {
+    CompactMatrixType funL, funR;
+    Complex16 *val;
+    val=malloc(H->Ni*sizeof(Complex16));
+    NonHermitianCompactMatrixEigensystem(H,&funL, &funR,val);
+    FreeCompactMatrix(H);
+    LuaPushArray_Complex16(L, val, funL.Ni);
+    free(val);
+    LuaPushTable_CompactMatrixType(L, &funL);
+    FreeCompactMatrix(&funL);
+    LuaPushTable_CompactMatrixType(L, &funR);
+    FreeCompactMatrix(&funR);
+    return 3;
+  }
+  else
+  {
+    CompactMatrixType fun;
+    double *val;
+    val=malloc(H->Ni*sizeof(double));
+    CompactMatrixEigensystem(H,&fun,val);
+    FreeCompactMatrix(H);
+    LuaPushArray_double(L, val, fun.Ni);
+    free(val);
+    LuaPushTable_CompactMatrixType(L, &fun);
+    FreeCompactMatrix(&fun);
+    return 2;
+  }
 }
 
 /**

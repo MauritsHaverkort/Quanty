@@ -986,7 +986,7 @@ uint32_t TransformCompactMatrixPreAllocatedcT(CompactMatrixType const *A, Compac
 {
   return CompactMatrixMultiply3PreAllocated('*', 'N', 'T', T, A, T, TcATT);
 }
-/*  Calculates A <= T A T^dag
+/*  Calculates A <= T^c A T^dag
  *
  */
 uint32_t TransformCompactMatrixInlinecT(CompactMatrixType * const A, CompactMatrixType const *T)
@@ -1774,10 +1774,238 @@ uint32_t CompactMatrixGeneralEigensystem(CompactMatrixType const *A, CompactMatr
   return 1;
 }
 
+uint32_t CompactMatrixLeftRightNormalize(CompactMatrixType * const funL, CompactMatrixType * const funR)
+{
+  uint32_t i,j,k;
+  Complex16 norm;
+  double scale,phase;
+  if((funL->Ni!=funR->Ni)||(funL->Nj!=funR->Nj))
+  {
+    printf("Dimensions of matrices in CompactMatrixLeftRightNormalize not ok to calculate funL^* . funR^T (%i %i)(%i %i)\n",funL->Ni,funL->Nj,funR->Ni,funR->Nj);
+    return 1;
+  }
+  if(funL->QComplex==0) MakeCompactRealMatrixComplex(funL);
+  
+  for(i=0;i<funL->Ni;i++)
+  {
+    norm.Re=0;
+    norm.Im=0;
+    k=i*funL->Nj;
+    for(j=0;j<funL->Nj;j++)
+    {
+      norm.Re+=funL->V[k].Re*funR->V[k].Re + funL->V[k].Im*funR->V[k].Im;
+      norm.Im+=funL->V[k].Re*funR->V[k].Im - funL->V[k].Im*funR->V[k].Re;
+      k++;
+    }
+    scale=sqrt(sqrt(Sqr(norm.Re)+Sqr(norm.Im)));
+    phase=0.5*atan2(norm.Im,norm.Re);
+    if(scale<100*DBL_EPSILON)
+    {
+      scale=0;
+    }
+    else
+    {
+      scale=1/scale;
+    }
+    for(k=i*funL->Nj;k<(i+1)*funL->Nj;k++)
+    {
+      norm.Re = funL->V[k].Re;
+      norm.Im = funL->V[k].Im;
+      funL->V[k].Re = scale * ( cos(phase)*norm.Re - sin(phase)*norm.Im);
+      funL->V[k].Im = scale * ( cos(phase)*norm.Im + sin(phase)*norm.Re);
+      norm.Re = funR->V[k].Re;
+      norm.Im = funR->V[k].Im;
+      funR->V[k].Re = scale * ( cos(phase)*norm.Re + sin(phase)*norm.Im);
+      funR->V[k].Im = scale * ( cos(phase)*norm.Im - sin(phase)*norm.Re);
+    }
+  }
+  return 0;
+}
+
+//TODO: test definition of fulL and funR
+/*
+ *  D=funL^*.A.funR^{T} with D a diagonal matrix with the values val on the diagonal and
+ *  funL^* . funR^T = I
+ *  input A defined, fun not initiallized, val allocated
+ */
+uint32_t NonHermitianCompactMatrixEigensystem(CompactMatrixType const *A, CompactMatrixType * const funL, CompactMatrixType * const funR, Complex16 *val)
+{
+  int    info;
+  const char *jobvl = "V";
+  const char *jobvr = "V";
+  int    lwork = 1 + 6 * A->Ni + 2 * Sqr(A->Ni);
+  double *work,*valRe,*valIm;
+  double *Vl, *Vr, *Acopy;
+  uint32_t i,k;
+  
+  if (A->Ni != A->Nj)
+  {
+    printf("NonHermitianCompactMatrixEigensystem called with non-square matrix\n");
+    printf("ERORR!!!!!!\n");
+    return 1;
+  }
+  
+  funL->Ni=A->Ni;
+  funL->Nj=A->Nj;
+  funL->QComplex=1;
+  if(InitCompactMatrix(funL))
+  {
+    printf("InitCompactMatrix failed in NonHermitianCompactMatrixEigensystem\n");
+    return 1;
+  }
+  funL->a0=0;
+  funL->b0=1;
+  funL->mu=0;
+  strcpy(funL->Name, "Left Eigen vectors");
+  
+  funR->Ni=A->Ni;
+  funR->Nj=A->Nj;
+  funR->QComplex=1;
+  if(InitCompactMatrix(funR))
+  {
+    printf("InitCompactMatrix failed in NonHermitianCompactMatrixEigensystem\n");
+    FreeCompactMatrix(funL);
+    return 1;
+  }
+  funR->a0=0;
+  funR->b0=1;
+  funR->mu=0;
+  strcpy(funL->Name, "Right Eigen vectors");
+  
+  work = malloc(lwork*sizeof(double));
+  if(work==NULL)
+  {
+    printf("malloc for work failed in CompactMatrixEigensystem\n");
+    FreeCompactMatrix(funL);
+    FreeCompactMatrix(funR);
+    return 1;
+  }
+  valRe=malloc(A->Ni*sizeof(double));
+  if(valRe==NULL)
+  {
+    printf("malloc failed in NonHermitianCompactMatrixEigensystem\n");
+    free(work);
+    FreeCompactMatrix(funL);
+    FreeCompactMatrix(funR);
+    return 1;
+  }
+  valIm=malloc(A->Ni*sizeof(double));
+  if(valIm==NULL)
+  {
+    printf("malloc failed in NonHermitianCompactMatrixEigensystem\n");
+    free(work);
+    free(valRe);
+    FreeCompactMatrix(funL);
+    FreeCompactMatrix(funR);
+    return 1;
+  }
+  Acopy=malloc(A->Ni*A->Ni*sizeof(double));
+  if(Acopy==NULL)
+  {
+    printf("malloc failed in NonHermitianCompactMatrixEigensystem\n");
+    free(work);
+    free(valRe);
+    free(valIm);
+    FreeCompactMatrix(funL);
+    FreeCompactMatrix(funR);
+    return 1;
+  }
+  Vl=malloc(A->Ni*A->Ni*sizeof(double));
+  if(Vl==NULL)
+  {
+    printf("malloc failed in NonHermitianCompactMatrixEigensystem\n");
+    free(work);
+    free(valRe);
+    free(valIm);
+    free(Acopy);
+    FreeCompactMatrix(funL);
+    FreeCompactMatrix(funR);
+    return 1;
+  }
+  Vr=malloc(A->Ni*A->Ni*sizeof(double));
+  if(Vr==NULL)
+  {
+    printf("malloc failed in NonHermitianCompactMatrixEigensystem\n");
+    free(work);
+    free(valRe);
+    free(valIm);
+    free(Acopy);
+    free(Vl);
+    FreeCompactMatrix(funL);
+    FreeCompactMatrix(funR);
+    return 1;
+  }
+  if (A->QComplex == 0)
+  {                             /* Real */
+    memcpy(Acopy, A->VRe, A->Ni*A->Ni*sizeof(double));
+    dgeev(jobvl, jobvr, &(A->Ni), Acopy, &(A->Ni), valRe, valIm, Vl, &(A->Ni), Vr, &(A->Ni), work, &lwork, &info);
+    free(Acopy);
+    free(work);
+    if (info)
+    {
+      printf("dgeev failed in NonHermitianCompactMatrixEigensystem with info value %i\n", info);
+      printf("While working on matrix %s\n", A->Name);
+      fflush(stdout);
+      free(valRe);
+      free(valIm);
+      free(Vl);
+      free(Vr);
+      return 1;
+    }
+    for(i=0;i<A->Ni;i++)
+    {
+      val[i].Re=valRe[i];
+      val[i].Im=valIm[i];
+      if(val[i].Im==0)
+      { // R and L switch due to Fortran to C row to column major
+        for(k=i*A->Nj;k<(i+1)*A->Nj;k++)
+        {
+          funR->V[k].Re=Vl[k];
+          funR->V[k].Im=0;
+          funL->V[k].Re=Vr[k];
+          funL->V[k].Im=0;
+        }
+      }
+      else
+      {
+        for(k=i*A->Nj;k<(i+1)*A->Nj;k++)
+        { // R and L switch and become complex conjugated due to Fortran to C row to column major
+          funR->V[k].Re      = Vl[k];
+          funR->V[k].Im      =-Vl[k+A->Nj];
+          funL->V[k].Re      = Vr[k];
+          funL->V[k].Im      =-Vr[k+A->Nj];
+          funR->V[k+A->Nj].Re= Vl[k];
+          funR->V[k+A->Nj].Im= Vl[k+A->Nj];
+          funL->V[k+A->Nj].Re= Vr[k];
+          funL->V[k+A->Nj].Im= Vr[k+A->Nj];
+        }
+        i++;
+        val[i].Re=valRe[i];
+        val[i].Im=valIm[i];
+      }
+    }
+    free(valRe);
+    free(valIm);
+    free(Vl);
+    free(Vr);
+    // normalize vector funR and funL such that funL^* . fulR^T = 1
+    CompactMatrixLeftRightNormalize(funL,funR);
+    
+    
+    return 0;
+  }
+  else
+  {                             /* Complex */
+    printf("your screwed\n");
+    return 1;
+  }
+  
+  return 0;
+}
 
 /*
- *  A=fun.H.fun^{\dag} with H a diagonal matrix with the values val on the diagonal
- *  input M defined, fun not initiallized, val allocated
+ *  D=fun^*.A.fun^{T} with D a diagonal matrix with the values val on the diagonal
+ *  input A defined, fun not initiallized, val allocated
  */
 uint32_t CompactMatrixEigensystem(CompactMatrixType const *A, CompactMatrixType * const fun, double *val)
 {

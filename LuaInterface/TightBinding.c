@@ -324,7 +324,7 @@ static int LuaCalculateG(lua_State *L)
     lua_pushstring(L, Options.Type);
     return LuaChangeTypeResponseFunction(L);
   }
-
+  
   return 1;
 }
 

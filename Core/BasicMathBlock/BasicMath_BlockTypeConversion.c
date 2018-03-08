@@ -75,12 +75,94 @@ uint32_t EvaluateBlockListOfPoles(BlockListOfPoles const *A, CompactMatrixType *
 
 
 /*
- *
+ *  G(w) = A0 + B0^* ( 1 / ( w - A1 - \sum_i ( B_i 1 / ( w - A_{i+1} ) . B_i^+ ) ) ) . B0^T
  */
-uint32_t EvaluateBlockAndersonMatrix(BlockListOfPoles const *A, CompactMatrixType * Gw, const double omega, const double Gamma)
+uint32_t EvaluateBlockAndersonMatrix(BlockAndersonMatrixType const *A, CompactMatrixType * Gw, const double omega, const double Gamma)
 {
-  //TODO: all
-  printf("Not implemented EvaluateBlockAndersonMatrix\n");
+  uint32_t i,iblock;
+  CompactMatrixType a,b,Gwi;
+  a.Ni=A->BlockSize;
+  a.Nj=A->BlockSize;
+  b.Ni=A->BlockSize;
+  b.Nj=A->BlockSize;
+  a.QComplex=A->QComplex;
+  b.QComplex=A->QComplex;
+  a.a0=0;
+  a.b0=0;
+  a.mu=0;
+  b.a0=0;
+  b.b0=0;
+  b.mu=0;
+  Gw->QComplex=1;
+  Gw->Ni=A->BlockSize;
+  Gw->Nj=A->BlockSize;
+  Gw->a0=0;
+  Gw->b0=0;
+  Gw->mu=A->mu;
+  Gwi.QComplex=1;
+  Gwi.Ni=A->BlockSize;
+  Gwi.Nj=A->BlockSize;
+  Gwi.a0=0;
+  Gwi.b0=0;
+  Gwi.mu=A->mu;
+  InitCompactMatrix(Gw);
+  InitCompactMatrix(&Gwi);
+  for(i=0;i<A->BlockSize*A->BlockSize;i++)
+  {
+    Gw->V[i].Re=0;
+    Gw->V[i].Im=0;
+  }
+  // calculate Gi = b_{i-1} . 1/(w-a_i) . b_{i-1}^+ and add Gi to Gw
+  for(iblock=A->N;iblock>1;iblock--)
+  {
+    /* set a and b to point to right matrices */
+    if(A->QComplex)
+    {
+      a.V=&(A->a[iblock    *A->BlockSize*A->BlockSize]);
+      b.V=&(A->b[(iblock-1)*A->BlockSize*A->BlockSize]);
+    }
+    else
+    {
+      a.VRe=&(A->aRe[iblock    *A->BlockSize*A->BlockSize]);
+      b.VRe=&(A->bRe[(iblock-1)*A->BlockSize*A->BlockSize]);
+    }
+    // Gi = b_{i-1} . 1/(w-a_i) . b_{i-1}^+
+    SetCompactMatrixToZero(&Gwi);
+    CompactMatrixAdd(&Gwi, &a);
+    for(i=0;i<A->BlockSize*A->BlockSize;i++)
+    {
+      Gwi.V[i].Re*=-1;
+      Gwi.V[i].Im*=-1;
+    }
+    for(i=0;i<A->BlockSize*A->BlockSize;i+=A->BlockSize+1)
+    {
+      Gwi.V[i].Re+=omega;
+      Gwi.V[i].Im+=Gamma/2.0;
+    }
+    CompactMatrixInverse(&Gwi);
+    TransformCompactMatrixInlineNC(&Gwi, &b); /* Gwi <- b Gw b^dag */
+    CompactMatrixAdd(Gw, &Gwi);
+  }
+  // multiply by b0
+  if(A->QComplex)
+  {
+    b.V=A->b;
+  }
+  else
+  {
+    b.VRe=A->bRe;
+  }
+  TransformCompactMatrixInlinecT(Gw, &b); /* Gw <- b^* Gw b^T */
+  // add a0
+  if(A->QComplex)
+  {
+    a.V=A->a;
+  }
+  else
+  {
+    a.VRe=A->aRe;
+  }
+  CompactMatrixAdd(Gw, &a);
   return 0;
 
 }
@@ -154,7 +236,7 @@ uint32_t EvaluateBlockTriDiagonalMatrix(BlockTriDiagonalMatrixType const * A, Co
     CompactMatrixInverse(Gw);
     if(iblock==1)
     {
-      TransformCompactMatrixInlinecT(Gw, &b); /* Gw <- b Gw b^T */
+      TransformCompactMatrixInlinecT(Gw, &b); /* Gw <- b^* Gw b^T */
     }
     else
     {
@@ -2597,7 +2679,7 @@ uint32_t BlockListOfPolesToBlockAndersonMatrixReduceDimension(BlockListOfPoles c
 // val is allocated with a minimal length of A->N * A->BlockSize
 uint32_t BlockTriDiagonalMatrixEigenValues(const BlockTriDiagonalMatrixType * const A, double * val)
 {
-  uint32_t i,j,k;
+  uint32_t k;
   char *UPLO="U";
   char *VECT="N";
   const int N=A->N*A->BlockSize;
@@ -2658,7 +2740,7 @@ uint32_t BlockTriDiagonalMatrixEigenValues(const BlockTriDiagonalMatrixType * co
       printf("ERROR: malloc failed in BlockTriDiagonalMatrixEigenValues\n");
       return 1;
     }
-    // use zhbtrd to transform A into a tri diagonal form
+    //TODO: use zhbtrd to transform A into a tri diagonal form
     
     
     

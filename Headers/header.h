@@ -56,6 +56,7 @@ uint32_t GlobalVerbosity=0xF;
 #define dgemv dgemv_
 #define dgeqrf dgeqrf_
 #define dgesvd dgesvd_
+#define dgeev dgeev_
 #define dgetrf dgetrf_
 #define dgetri dgetri_
 #define dsyrk dsyrk_
@@ -90,6 +91,7 @@ uint32_t GlobalVerbosity=0xF;
 int    daxpy();
 int    dcopy();
 double ddot();
+int    dgeev();
 int    dgemm();
 int    dgemv();
 int    dgeqrf();

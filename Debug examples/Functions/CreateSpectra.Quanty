@@ -132,19 +132,19 @@ i=0
 retmat={}
 S={}
 for i1=1,#psiKrylov do
-for i2=1,#psiKrylov[i1] do
-i=i+1
-retmat[i]={}
-S[i]={}
-j=0
-for j1=1,#psiKrylov do
-for j2=1,#psiKrylov[j1] do
-j=j+1
-S[i][j]      = psiKrylov[i1][i2] * psiKrylov[j1][j2]
-retmat[i][j] = psiKrylov[i1][i2] * (H-Egrd) * psiKrylov[j1][j2]
-end
-end
-end
+  for i2=1,#psiKrylov[i1] do
+    i=i+1
+    retmat[i]={}
+    S[i]={}
+    j=0
+    for j1=1,#psiKrylov do
+      for j2=1,#psiKrylov[j1] do
+        j=j+1
+        S[i][j]      = psiKrylov[i1][i2] * psiKrylov[j1][j2]
+        retmat[i][j] = psiKrylov[i1][i2] * (H-Egrd) * psiKrylov[j1][j2]
+      end
+    end
+  end
 end
 print(Chop(S))
 print(retmat)
@@ -158,19 +158,19 @@ i=0
 retmat={}
 S={}
 for i1=1,#psiKrylov do
-for i2=1,#psiKrylov[i1] do
-i=i+1
-retmat[i]={}
-S[i]={}
-j=0
-for j1=1,#psiKrylov do
-for j2=1,#psiKrylov[j1] do
-j=j+1
-S[i][j]      = psiKrylov[i1][i2] * psiKrylov[j1][j2]
-retmat[i][j] = psiKrylov[i1][i2] * (H-Egrd) * psiKrylov[j1][j2]
-end
-end
-end
+  for i2=1,#psiKrylov[i1] do
+    i=i+1
+    retmat[i]={}
+    S[i]={}
+    j=0
+    for j1=1,#psiKrylov do
+      for j2=1,#psiKrylov[j1] do
+        j=j+1
+        S[i][j]      = psiKrylov[i1][i2] * psiKrylov[j1][j2]
+        retmat[i][j] = psiKrylov[i1][i2] * (H-Egrd) * psiKrylov[j1][j2]
+      end
+    end
+  end
 end
 print(Chop(S))
 print(retmat)
@@ -186,19 +186,19 @@ i=0
 retmat={}
 S={}
 for i1=1,#psiKrylov do
-for i2=1,#psiKrylov[i1] do
-i=i+1
-retmat[i]={}
-S[i]={}
-j=0
-for j1=1,#psiKrylov do
-for j2=1,#psiKrylov[j1] do
-j=j+1
-S[i][j]      = psiKrylov[i1][i2] * psiKrylov[j1][j2]
-retmat[i][j] = psiKrylov[i1][i2] * (H-Egrd) * psiKrylov[j1][j2]
-end
-end
-end
+  for i2=1,#psiKrylov[i1] do
+    i=i+1
+    retmat[i]={}
+    S[i]={}
+    j=0
+    for j1=1,#psiKrylov do
+      for j2=1,#psiKrylov[j1] do
+        j=j+1
+        S[i][j]      = psiKrylov[i1][i2] * psiKrylov[j1][j2]
+        retmat[i][j] = psiKrylov[i1][i2] * (H-Egrd) * psiKrylov[j1][j2]
+      end
+    end
+  end
 end
 print(Chop(S))
 print(retmat)

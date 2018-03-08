@@ -106,11 +106,11 @@ static int LuaResponseFunctionToTable(lua_State *L)
     {
       if(M->Block==True)
       {
-        LuaPushTable_BlockListOfPoles(L, M->data);
+        LuaPushTable_BlockListOfPoles(L, (BlockListOfPoles*)M->data);
       }
       else
       {
-        LuaPushTable_ListOfPoles(L, M->data);
+        LuaPushTable_ListOfPoles(L, (ListOfPoles*)(M->data));
       }
       break;
     }

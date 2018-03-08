@@ -1,5 +1,13 @@
 --Verbosity(0xFFFFFFFF)
 
+
+
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Functions/Eigensystem.Quanty")
+os.exit()
+
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Functions/CreateSpectra.Quanty")
+os.exit()
+
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Tutorials/NiO LDA plus Ligand Field Theory/FPLO/Calculate_Double_Counting_Potential.Quanty")
 os.exit()
 
@@ -24,14 +32,9 @@ dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Functions/Math
 os.exit()
 
 
-dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Functions/Eigensystem.Quanty")
-os.exit()
-
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/External_tests/NiO_D3d_ionic_CTM4XAS.Quanty")
 os.exit()
 
-dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Functions/CreateSpectra.Quanty")
-os.exit()
 
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Tutorials/NiO Ligand Field Theory/cPES.Quanty")
 os.exit()
