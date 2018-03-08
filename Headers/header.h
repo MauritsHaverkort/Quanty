@@ -72,6 +72,7 @@ uint32_t GlobalVerbosity=0xF;
 #define dtrsm dtrsm_
 #define zaxpb zaxpb_
 #define zaxpy zaxpy_
+#define zgeev zgeev_
 #define zgemm zgemm_
 #define zgemv zgemv_
 #define zgetrf zgetrf_
@@ -109,6 +110,7 @@ int    dsyevd();
 int    dsygv();
 int    dsygvd();
 int    dtrsm();
+int    zgeev();
 int    zscal();
 int    zaxpy();
 int    zgemm();

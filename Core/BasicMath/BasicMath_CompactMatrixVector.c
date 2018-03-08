@@ -1834,8 +1834,6 @@ uint32_t NonHermitianCompactMatrixEigensystem(CompactMatrixType const *A, Compac
   const char *jobvl = "V";
   const char *jobvr = "V";
   int    lwork = 1 + 6 * A->Ni + 2 * Sqr(A->Ni);
-  double *work,*valRe,*valIm;
-  double *Vl, *Vr, *Acopy;
   uint32_t i,k;
   
   if (A->Ni != A->Nj)
@@ -1872,71 +1870,73 @@ uint32_t NonHermitianCompactMatrixEigensystem(CompactMatrixType const *A, Compac
   funR->mu=0;
   strcpy(funL->Name, "Right Eigen vectors");
   
-  work = malloc(lwork*sizeof(double));
-  if(work==NULL)
-  {
-    printf("malloc for work failed in CompactMatrixEigensystem\n");
-    FreeCompactMatrix(funL);
-    FreeCompactMatrix(funR);
-    return 1;
-  }
-  valRe=malloc(A->Ni*sizeof(double));
-  if(valRe==NULL)
-  {
-    printf("malloc failed in NonHermitianCompactMatrixEigensystem\n");
-    free(work);
-    FreeCompactMatrix(funL);
-    FreeCompactMatrix(funR);
-    return 1;
-  }
-  valIm=malloc(A->Ni*sizeof(double));
-  if(valIm==NULL)
-  {
-    printf("malloc failed in NonHermitianCompactMatrixEigensystem\n");
-    free(work);
-    free(valRe);
-    FreeCompactMatrix(funL);
-    FreeCompactMatrix(funR);
-    return 1;
-  }
-  Acopy=malloc(A->Ni*A->Ni*sizeof(double));
-  if(Acopy==NULL)
-  {
-    printf("malloc failed in NonHermitianCompactMatrixEigensystem\n");
-    free(work);
-    free(valRe);
-    free(valIm);
-    FreeCompactMatrix(funL);
-    FreeCompactMatrix(funR);
-    return 1;
-  }
-  Vl=malloc(A->Ni*A->Ni*sizeof(double));
-  if(Vl==NULL)
-  {
-    printf("malloc failed in NonHermitianCompactMatrixEigensystem\n");
-    free(work);
-    free(valRe);
-    free(valIm);
-    free(Acopy);
-    FreeCompactMatrix(funL);
-    FreeCompactMatrix(funR);
-    return 1;
-  }
-  Vr=malloc(A->Ni*A->Ni*sizeof(double));
-  if(Vr==NULL)
-  {
-    printf("malloc failed in NonHermitianCompactMatrixEigensystem\n");
-    free(work);
-    free(valRe);
-    free(valIm);
-    free(Acopy);
-    free(Vl);
-    FreeCompactMatrix(funL);
-    FreeCompactMatrix(funR);
-    return 1;
-  }
   if (A->QComplex == 0)
   {                             /* Real */
+    double *work,*valRe,*valIm;
+    double *Vl, *Vr, *Acopy;
+    work = malloc(lwork*sizeof(double));
+    if(work==NULL)
+    {
+      printf("malloc for work failed in CompactMatrixEigensystem\n");
+      FreeCompactMatrix(funL);
+      FreeCompactMatrix(funR);
+      return 1;
+    }
+    valRe=malloc(A->Ni*sizeof(double));
+    if(valRe==NULL)
+    {
+      printf("malloc failed in NonHermitianCompactMatrixEigensystem\n");
+      free(work);
+      FreeCompactMatrix(funL);
+      FreeCompactMatrix(funR);
+      return 1;
+    }
+    valIm=malloc(A->Ni*sizeof(double));
+    if(valIm==NULL)
+    {
+      printf("malloc failed in NonHermitianCompactMatrixEigensystem\n");
+      free(work);
+      free(valRe);
+      FreeCompactMatrix(funL);
+      FreeCompactMatrix(funR);
+      return 1;
+    }
+    Acopy=malloc(A->Ni*A->Ni*sizeof(double));
+    if(Acopy==NULL)
+    {
+      printf("malloc failed in NonHermitianCompactMatrixEigensystem\n");
+      free(work);
+      free(valRe);
+      free(valIm);
+      FreeCompactMatrix(funL);
+      FreeCompactMatrix(funR);
+      return 1;
+    }
+    Vl=malloc(A->Ni*A->Ni*sizeof(double));
+    if(Vl==NULL)
+    {
+      printf("malloc failed in NonHermitianCompactMatrixEigensystem\n");
+      free(work);
+      free(valRe);
+      free(valIm);
+      free(Acopy);
+      FreeCompactMatrix(funL);
+      FreeCompactMatrix(funR);
+      return 1;
+    }
+    Vr=malloc(A->Ni*A->Ni*sizeof(double));
+    if(Vr==NULL)
+    {
+      printf("malloc failed in NonHermitianCompactMatrixEigensystem\n");
+      free(work);
+      free(valRe);
+      free(valIm);
+      free(Acopy);
+      free(Vl);
+      FreeCompactMatrix(funL);
+      FreeCompactMatrix(funR);
+      return 1;
+    }
     memcpy(Acopy, A->VRe, A->Ni*A->Ni*sizeof(double));
     dgeev(jobvl, jobvr, &(A->Ni), Acopy, &(A->Ni), valRe, valIm, Vl, &(A->Ni), Vr, &(A->Ni), work, &lwork, &info);
     free(Acopy);
@@ -1990,14 +1990,49 @@ uint32_t NonHermitianCompactMatrixEigensystem(CompactMatrixType const *A, Compac
     free(Vr);
     // normalize vector funR and funL such that funL^* . fulR^T = 1
     CompactMatrixLeftRightNormalize(funL,funR);
-    
-    
     return 0;
   }
   else
   {                             /* Complex */
-    printf("your screwed\n");
-    return 1;
+    Complex16 *Acopy,*work;
+    double *rwork;
+    Acopy = malloc(A->Ni*A->Nj*sizeof(Complex16));
+    if(Acopy==NULL)
+    {
+      printf("malloc failed in NonHermitianCompactMatrixEigensystem\n");
+      return 1;
+    }
+    work  = malloc(lwork*sizeof(Complex16));
+    if(work==NULL)
+    {
+      free(Acopy);
+      printf("malloc failed in NonHermitianCompactMatrixEigensystem\n");
+      return 1;
+    }
+    rwork = malloc(2*A->Ni*sizeof(double));
+    if(rwork==NULL)
+    {
+      free(Acopy);
+      free(work);
+      printf("malloc failed in NonHermitianCompactMatrixEigensystem\n");
+      return 1;
+    }
+    memcpy(Acopy, A->VRe, A->Ni*A->Ni*sizeof(Complex16));
+    zgeev(jobvl,jobvr,&(A->Ni),Acopy,&(A->Ni),val,funR->V,&(A->Ni),funL->V,&(A->Ni),work,&lwork,rwork,&info);
+    CompactMatrixConjugate(funL);
+    CompactMatrixConjugate(funR);
+    if (info)
+    {
+      printf("zgeev failed in NonHermitianCompactMatrixEigensystem with info value %i\n", info);
+      printf("While working on matrix %s\n", A->Name);
+      fflush(stdout);
+      return 1;
+    }
+    free(Acopy);
+    free(work);
+    free(rwork);
+    CompactMatrixLeftRightNormalize(funL,funR);
+    return 0;
   }
   
   return 0;
