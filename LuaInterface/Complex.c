@@ -551,6 +551,17 @@ static int LuaComplexMul(lua_State * L)
             luaL_setmetatable(L, "Spectra_Type");
             return 1;
           }
+          if (luaL_testudata(L, len, "Matrix_Type") != NULL)
+          {
+            // (complex number) operator (matrix as userdata)
+            CompactMatrixType *B,*C;
+            B = (CompactMatrixType *) luaL_checkCompactMatrix(L, len);
+            C = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+            luaL_setmetatable(L, "Matrix_Type");
+            CompactMatrixCopy(*B, C);
+            CompactMatrixScaleComplex(C, *a);
+            return 1;
+          }
           return luaL_error(L, "Error: complex number multiplied with unrecognized userdata\n");
         }
         case LUA_TTABLE:
@@ -717,10 +728,42 @@ static int LuaComplexDiv(lua_State * L)
             luaL_setmetatable(L, "Spectra_Type");
             return 1;
           }
+          if (luaL_testudata(L, len, "Matrix_Type") != NULL)
+          {
+            // (complex number) operator (matrix as userdata)
+            CompactMatrixType *B,*C;
+            B = (CompactMatrixType *) luaL_checkCompactMatrix(L, len);
+            C = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+            luaL_setmetatable(L, "Matrix_Type");
+            CompactMatrixCopy(*B, C);
+            if(C->Nj!=C->Ni) return luaL_error(L,"Matrix inversion only works for square matrices dimensions are (%d %d)\n",C->Ni,C->Nj);
+            if(CompactMatrixInverse(C)!=0) return luaL_error(L,"Matrix inversion failed, probably the matrix is singular\n");
+            CompactMatrixScaleComplex(C, *a);
+            return 1;
+          }
           return luaL_error(L, "Error: complex number divided by unrecognized userdata\n");
         }
         case LUA_TTABLE:
-        {
+        { // if the table has a metatable MatrixMeta then do matrix devision otherwise do a devision per element
+          if(lua_getmetatable(L, -1))
+          {
+            lua_getglobal(L, "MatrixMeta");
+            if(lua_equal(L,-1,-2))
+            {
+              // (complex number) operator (matrix)
+              CompactMatrixType *B;
+              lua_pop(L, 2);
+              B = (CompactMatrixType *) luaL_checkCompactMatrix(L, len);
+              if(B->Nj!=B->Ni) return luaL_error(L,"Matrix inversion only works for square matrices dimensions are (%d %d)\n",B->Ni,B->Nj);
+              if(CompactMatrixInverse(B)!=0) return luaL_error(L,"Matrix inversion failed, probably the matrix is singular\n");
+              CompactMatrixScaleComplex(B, *a);
+              LuaPushTable_CompactMatrixType(L, B);
+              FreeCompactMatrix(B);
+              free(B);
+              return 1;
+            }
+            lua_pop(L, 2);
+          }
           lua_newtable(L);
           lua_pushnil(L);
           while(lua_next(L, len) != 0)

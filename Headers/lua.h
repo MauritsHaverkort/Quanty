@@ -47,3 +47,8 @@ OperatorType* luaL_checkarray_OperatorType();
 void luaL_setarray_DeterminatRestrictionType();
 DeterminantRestrictionType* luaL_checkarray_DeterminantRestrictionType();
 HarmonicsExpansion* luaL_checkarray_HarmonicsExpansion();
+
+
+static int LuaMatrixConjugate();
+static int LuaMatrixConjugateTranspose();
+static int LuaMatrixTranspose();

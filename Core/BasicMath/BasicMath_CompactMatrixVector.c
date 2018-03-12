@@ -496,12 +496,11 @@ uint32_t TransformDiagonalMatrixByCompactMatrixTATdag(double const *A, CompactMa
   return 0;
 }
 
-/*  Calculates T A T^dag
+/*  Calculates T^con A T^tran
  *  dimensions of input T : T.Ni by T.Nj
  *                      A : T.Nj by T.Nj
  *  dimensions of output: T.Ni by T.Ni
  */
-
 uint32_t TransformDiagonalMatrixByCompactMatrixTconATtran(double const *A, CompactMatrixType const *T, CompactMatrixType * const TconATtran)
 {
   uint32_t i,j,k,TATindex,icol,jcol;
@@ -552,6 +551,178 @@ uint32_t TransformDiagonalMatrixByCompactMatrixTconATtran(double const *A, Compa
   }
   return 0;
 }
+
+uint32_t TransformComplexDiagonalMatrixByCompactMatrixTconATtran(Complex16 const *A, CompactMatrixType const *T, CompactMatrixType * const TconATtran)
+{
+  uint32_t i,j,k,TATindex,icol,jcol;
+  TconATtran->Ni=T->Ni;
+  TconATtran->Nj=T->Ni;
+  TconATtran->QComplex = 1;
+  InitCompactMatrix(TconATtran);
+  TATindex=0;
+  if(T->QComplex)
+  {
+    for(i=0;i<TconATtran->Ni;i++)
+    {
+      for(j=0;j<TconATtran->Nj;j++)
+      {
+        icol=i*T->Nj;
+        jcol=j*T->Nj;
+        TconATtran->V[TATindex].Re=0;
+        TconATtran->V[TATindex].Im=0;
+        for(k=0;k<T->Nj;k++)
+        {
+          TconATtran->V[TATindex].Re+= T->V[jcol].Re*A[k].Re*T->V[icol].Re + T->V[jcol].Im*A[k].Re*T->V[icol].Im
+                                      +T->V[jcol].Re*A[k].Im*T->V[icol].Im - T->V[jcol].Im*A[k].Im*T->V[icol].Re;
+          TconATtran->V[TATindex].Im+=-T->V[jcol].Re*A[k].Re*T->V[icol].Im + T->V[jcol].Im*A[k].Re*T->V[icol].Re
+                                      +T->V[jcol].Re*A[k].Im*T->V[icol].Re + T->V[jcol].Im*A[k].Im*T->V[icol].Im;
+          icol++;
+          jcol++;
+        }
+        TATindex++;
+      }
+    }
+  }
+  else
+  {
+    for(i=0;i<TconATtran->Ni;i++)
+    {
+      for(j=0;j<TconATtran->Nj;j++)
+      {
+        icol=i*T->Nj;
+        jcol=j*T->Nj;
+        TconATtran->V[TATindex].Re=0;
+        TconATtran->V[TATindex].Im=0;
+        for(k=0;k<T->Nj;k++)
+        {
+          TconATtran->V[TATindex].Re+=T->VRe[jcol]*A[k].Re*T->VRe[icol];
+          TconATtran->V[TATindex].Im+=T->VRe[jcol]*A[k].Im*T->VRe[icol];
+          icol++;
+          jcol++;
+        }
+        TATindex++;
+      }
+    }
+  }
+  return 0;
+}
+
+/*  Calculates TL^con A TR^tran
+ *  dimensions of input TL : TL.Ni by TL.Nj
+ *                      A  : A.N   by A.N
+ *                      TR : TR.Ni by TR.Nj
+ *                 A.N == TR.Nj
+ *                 TL.Nj = A.N
+ *  dimensions of output: TL.Ni by TR.Ni
+ */
+uint32_t TransformComplexDiagonalMatrixByCompactMatrixTLconATRtran(Complex16 const *A, CompactMatrixType const *TL, CompactMatrixType const *TR, CompactMatrixType * const TLconATRtran)
+{
+  uint32_t i,j,k,TATindex,icol,jcol;
+  if(TL->Nj!=TR->Nj)
+  {
+    printf("Error in input of TransformComplexDiagonalMatrixByCompactMatrixTLconATRtran, dimension of left and right matrix not compatible\n");
+    return 1;
+  }
+  TLconATRtran->Ni=TL->Ni;
+  TLconATRtran->Nj=TR->Ni;
+  TLconATRtran->QComplex = 1;
+  InitCompactMatrix(TLconATRtran);
+  TATindex=0;
+  if(TL->QComplex)
+  {
+    if(TR->QComplex)
+    { // L and R complex
+      for(i=0;i<TLconATRtran->Ni;i++)
+      {
+        for(j=0;j<TLconATRtran->Nj;j++)
+        {
+          icol=i*TL->Nj;
+          jcol=j*TR->Nj;
+          TLconATRtran->V[TATindex].Re=0;
+          TLconATRtran->V[TATindex].Im=0;
+          for(k=0;k<TL->Nj;k++)
+          {
+            TLconATRtran->V[TATindex].Re+=TR->V[jcol].Re*A[k].Re*TL->V[icol].Re+TR->V[jcol].Re*A[k].Im*TL->V[icol].Im
+                                         +TR->V[jcol].Im*A[k].Re*TL->V[icol].Im-TR->V[jcol].Im*A[k].Im*TL->V[icol].Re;
+            TLconATRtran->V[TATindex].Im+=TR->V[jcol].Re*A[k].Im*TL->V[icol].Re-TR->V[jcol].Re*A[k].Re*TL->V[icol].Im
+                                         +TR->V[jcol].Im*A[k].Re*TL->V[icol].Re+TR->V[jcol].Im*A[k].Im*TL->V[icol].Im;
+            icol++;
+            jcol++;
+          }
+          TATindex++;
+        }
+      }
+    }
+    else
+    { // L complex, R real
+      for(i=0;i<TLconATRtran->Ni;i++)
+      {
+        for(j=0;j<TLconATRtran->Nj;j++)
+        {
+          icol=i*TL->Nj;
+          jcol=j*TR->Nj;
+          TLconATRtran->V[TATindex].Re=0;
+          TLconATRtran->V[TATindex].Im=0;
+          for(k=0;k<TL->Nj;k++)
+          {
+            TLconATRtran->V[TATindex].Re+=TR->VRe[jcol]*A[k].Re*TL->V[icol].Re+TR->VRe[jcol]*A[k].Im*TL->V[icol].Im;
+            TLconATRtran->V[TATindex].Im+=TR->VRe[jcol]*A[k].Im*TL->V[icol].Re-TR->VRe[jcol]*A[k].Re*TL->V[icol].Im;
+            icol++;
+            jcol++;
+          }
+          TATindex++;
+        }
+      }
+    }
+  }
+  else
+  {
+    if(TR->QComplex)
+    { // L real, R complex
+      for(i=0;i<TLconATRtran->Ni;i++)
+      {
+        for(j=0;j<TLconATRtran->Nj;j++)
+        {
+          icol=i*TL->Nj;
+          jcol=j*TR->Nj;
+          TLconATRtran->V[TATindex].Re=0;
+          TLconATRtran->V[TATindex].Im=0;
+          for(k=0;k<TL->Nj;k++)
+          {
+            TLconATRtran->V[TATindex].Re+=TR->V[jcol].Re*A[k].Re*TL->VRe[icol]-TR->V[jcol].Im*A[k].Im*TL->VRe[icol];
+            TLconATRtran->V[TATindex].Im+=TR->V[jcol].Re*A[k].Im*TL->VRe[icol]+TR->V[jcol].Im*A[k].Re*TL->VRe[icol];
+            icol++;
+            jcol++;
+          }
+          TATindex++;
+        }
+      }
+    }
+    else
+    { //L and R real
+      for(i=0;i<TLconATRtran->Ni;i++)
+      {
+        for(j=0;j<TLconATRtran->Nj;j++)
+        {
+          icol=i*TL->Nj;
+          jcol=j*TR->Nj;
+          TLconATRtran->V[TATindex].Re=0;
+          TLconATRtran->V[TATindex].Im=0;
+          for(k=0;k<TL->Nj;k++)
+          {
+            TLconATRtran->V[TATindex].Re+=TR->VRe[jcol]*A[k].Re*TL->VRe[icol];
+            TLconATRtran->V[TATindex].Im+=TR->VRe[jcol]*A[k].Im*TL->VRe[icol];
+            icol++;
+            jcol++;
+          }
+          TATindex++;
+        }
+      }
+    }
+  }
+  return 0;
+}
+
 
 /*  Calculates T^dag A T
  *  dimensions of input T : T.Ni by T.Nj
@@ -660,6 +831,123 @@ uint32_t TransformDiagonalMatrixByCompactMatrixTtranATcon(double const *A, Compa
           jrow+=T->Nj;
         }
         TATindex++;
+      }
+    }
+  }
+  return 0;
+}
+
+
+/*  Calculates TR^tran A TL^con
+ *  dimensions of input TL : TL.Ni by TL.Nj
+ *                      A  : A.N   by A.N
+ *                      TR : TR.Ni by TR.Nj
+ *                 A.N == TR.Ni
+ *                 TL.Ni = A.N
+ *  dimensions of output: TR.Nj by TL.Nj
+ */
+uint32_t TransformComplexDiagonalMatrixByCompactMatrixTRtranATLcon(Complex16 const *A, CompactMatrixType const *TL, CompactMatrixType const *TR, CompactMatrixType * const TRtranATLcon)
+{
+  uint32_t i,j,k,TATindex,irow,jrow;
+  if(TL->Ni!=TR->Ni)
+  {
+    printf("Error in input of TransformComplexDiagonalMatrixByCompactMatrixTRtranATLcon, dimension of left and right matrix not compatible\n");
+    return 1;
+  }
+  TRtranATLcon->Ni=TR->Nj;
+  TRtranATLcon->Nj=TL->Nj;
+  TRtranATLcon->QComplex = 1;
+  InitCompactMatrix(TRtranATLcon);
+  TATindex=0;
+  if(TL->QComplex)
+  {
+    if(TR->QComplex)
+    { // L and R complex
+      for(i=0;i<TRtranATLcon->Ni;i++)
+      {
+        for(j=0;j<TRtranATLcon->Nj;j++)
+        {
+          irow=i;
+          jrow=j;
+          TRtranATLcon->V[TATindex].Re=0;
+          TRtranATLcon->V[TATindex].Im=0;
+          for(k=0;k<TRtranATLcon->Nj;k++)
+          {
+            TRtranATLcon->V[TATindex].Re+=TL->V[jrow].Re*A[k].Re*TR->V[irow].Re+TL->V[jrow].Im*A[k].Im*TR->V[irow].Re
+                                         +TL->V[jrow].Im*A[k].Re*TR->V[irow].Im-TL->V[jrow].Re*A[k].Im*TR->V[irow].Im;
+            TRtranATLcon->V[TATindex].Im+=TL->V[jrow].Re*A[k].Im*TR->V[irow].Re+TL->V[jrow].Im*A[k].Im*TR->V[irow].Im
+                                         +TL->V[jrow].Re*A[k].Re*TR->V[irow].Im-TL->V[jrow].Im*A[k].Re*TR->V[irow].Re;
+            irow+=TRtranATLcon->Nj;
+            jrow+=TRtranATLcon->Nj;
+          }
+          TATindex++;
+        }
+      }
+    }
+    else
+    { // L complex, R real
+      for(i=0;i<TRtranATLcon->Ni;i++)
+      {
+        for(j=0;j<TRtranATLcon->Nj;j++)
+        {
+          irow=i;
+          jrow=j;
+          TRtranATLcon->V[TATindex].Re=0;
+          TRtranATLcon->V[TATindex].Im=0;
+          for(k=0;k<TRtranATLcon->Nj;k++)
+          {
+            TRtranATLcon->V[TATindex].Re+=TL->V[jrow].Re*A[k].Re*TR->VRe[irow]+TL->V[jrow].Im*A[k].Im*TR->VRe[irow];
+            TRtranATLcon->V[TATindex].Im+=TL->V[jrow].Re*A[k].Im*TR->VRe[irow]-TL->V[jrow].Im*A[k].Re*TR->VRe[irow];
+            irow+=TRtranATLcon->Nj;
+            jrow+=TRtranATLcon->Nj;
+          }
+          TATindex++;
+        }
+      }
+    }
+  }
+  else
+  {
+    if(TR->QComplex)
+    { // L real, R complex
+      for(i=0;i<TRtranATLcon->Ni;i++)
+      {
+        for(j=0;j<TRtranATLcon->Nj;j++)
+        {
+          irow=i;
+          jrow=j;
+          TRtranATLcon->V[TATindex].Re=0;
+          TRtranATLcon->V[TATindex].Im=0;
+          for(k=0;k<TRtranATLcon->Nj;k++)
+          {
+            TRtranATLcon->V[TATindex].Re+=TL->VRe[jrow]*A[k].Re*TR->V[irow].Im-TL->VRe[jrow]*A[k].Im*TR->V[irow].Im;
+            TRtranATLcon->V[TATindex].Im+=TL->VRe[jrow]*A[k].Im*TR->V[irow].Re+TL->VRe[jrow]*A[k].Re*TR->V[irow].Im;
+            irow+=TRtranATLcon->Nj;
+            jrow+=TRtranATLcon->Nj;
+          }
+          TATindex++;
+        }
+      }
+    }
+    else
+    { //L and R real
+      for(i=0;i<TRtranATLcon->Ni;i++)
+      {
+        for(j=0;j<TRtranATLcon->Nj;j++)
+        {
+          irow=i;
+          jrow=j;
+          TRtranATLcon->V[TATindex].Re=0;
+          TRtranATLcon->V[TATindex].Im=0;
+          for(k=0;k<TRtranATLcon->Nj;k++)
+          {
+            TRtranATLcon->V[TATindex].Re+=TL->VRe[jrow]*A[k].Re*TR->VRe[irow];
+            TRtranATLcon->V[TATindex].Im+=TL->VRe[jrow]*A[k].Im*TR->VRe[irow];
+            irow+=TRtranATLcon->Nj;
+            jrow+=TRtranATLcon->Nj;
+          }
+          TATindex++;
+        }
       }
     }
   }
@@ -1207,6 +1495,25 @@ uint32_t CompactMatrixScale(CompactMatrixType * const A, double alpha)
   return 0;
 }
 
+/*
+ *
+ */
+uint32_t CompactMatrixScaleComplex(CompactMatrixType * const A, Complex16 alpha)
+{
+  uint32_t i;
+  Complex16 v;
+  if(alpha.Im==0) return CompactMatrixScale(A, alpha.Re);
+  MakeCompactRealMatrixComplex(A);
+  for(i=0;i<A->Ni*A->Nj;i++)
+  {
+    v.Re = A->V[i].Re*alpha.Re - A->V[i].Im*alpha.Im;
+    v.Im = A->V[i].Re*alpha.Im + A->V[i].Im*alpha.Re;
+    A->V[i].Re=v.Re;
+    A->V[i].Im=v.Im;
+  }
+  return 0;
+}
+
 /*  A <- A + B
  *
  */
@@ -1252,6 +1559,57 @@ uint32_t CompactMatrixAdd(CompactMatrixType * const A, CompactMatrixType const *
       for(i=0;i<A->Ni*A->Nj;i++)
       {
         A->VRe[i]+=B->VRe[i];
+      }
+    }
+  }
+  return 0;
+}
+
+/*  A <- A - B
+ *
+ */
+uint32_t CompactMatrixSub(CompactMatrixType * const A, CompactMatrixType const * B)
+{
+  int i;
+  if(((A->Ni)!=(B->Ni))||((A->Nj)!=(B->Nj)))
+  {
+    printf("Error in CompactMatrixSub can not subtract matrices with different dimensions\n");
+    return 1;
+  }
+  if(A->QComplex)
+  {
+    if(B->QComplex)
+    {
+      for(i=0;i<A->Ni*A->Nj;i++)
+      {
+        A->V[i].Re-=B->V[i].Re;
+        A->V[i].Im-=B->V[i].Im;
+      }
+    }
+    else
+    {
+      for(i=0;i<A->Ni*A->Nj;i++)
+      {
+        A->V[i].Re-=B->VRe[i];
+      }
+    }
+  }
+  else
+  {
+    if(B->QComplex)
+    {
+      MakeCompactRealMatrixComplex(A);
+      for(i=0;i<A->Ni*A->Nj;i++)
+      {
+        A->V[i].Re-=B->V[i].Re;
+        A->V[i].Im-=B->V[i].Im;
+      }
+    }
+    else
+    {
+      for(i=0;i<A->Ni*A->Nj;i++)
+      {
+        A->VRe[i]-=B->VRe[i];
       }
     }
   }
@@ -2191,16 +2549,151 @@ uint32_t CompactMatrixQRDecompositionEigenHermitian(CompactMatrixType const *A, 
   return NSingular;
 }
 
+uint32_t CompactMatrixSqrPreAllocated(CompactMatrixType const *A, CompactMatrixType * const SqrA)
+{
+  return CompactMatrixMultiplyPreAllocated('N', 'N', A, A, SqrA);
+}
+uint32_t CompactMatrixSqr(CompactMatrixType const *A, CompactMatrixType * const SqrA)
+{
+  return CompactMatrixMultiply('N', 'N', A, A, SqrA);
+}
+
+
+/*  Given a square matrix calculates PowA = A^n
+ *  It is assumed that A->Ni == A->Nj
+ *  PowA is allocated but not initiallized
+ */
+uint32_t CompactMatrixPow(CompactMatrixType const *A, CompactMatrixType * const PowA, const int n)
+{
+  CompactMatrixType temp;
+  if(n==0)
+  {
+    PowA->Ni = A->Ni;
+    PowA->Nj = A->Nj;
+    PowA->QComplex=0;
+    if(InitCompactIdentityMatrix(PowA))
+    {
+      printf("CompactMatrixPow faild at InitCompactIdentityMatrix\n");
+      return 1;
+    }
+    return 0;
+  }
+  if(n==1)
+  {
+    if(CompactMatrixCopy(*A, PowA))
+    {
+      printf("CompactMatrixPow faild at CompactMatrixCopy\n");
+      return 1;
+    }
+    return 0;
+  }
+  if(n<0)
+  {
+    if(CompactMatrixCopy(*A, &temp))
+    {
+      printf("CompactMatrixPow faild at CompactMatrixCopy\n");
+      return 1;
+    }
+    if(CompactMatrixInverse(&temp))
+    {
+      printf("CompactMatrixPow faild at CompactMatrixInverse\n");
+      return 1;
+    }
+    if(CompactMatrixPow(&temp,PowA,-n))
+    {
+      printf("CompactMatrixPow faild at CompactMatrixPow(%d)\n",-n);
+      return 1;
+    }
+    FreeCompactMatrix(&temp);
+    return 0;
+  }
+  if((n%2)==0) //even
+  {
+    if(CompactMatrixSqr(A,&temp))
+    {
+      printf("CompactMatrixPow faild at CompactMatrixSqr\n");
+      return 1;
+    }
+    if(CompactMatrixPow(&temp,PowA,n/2))
+    {
+      printf("CompactMatrixPow faild at CompactMatrixPow(%d)\n",n/2);
+      return 1;
+    }
+    FreeCompactMatrix(&temp);
+    return 0;
+  }
+  else //odd
+  {
+    if(CompactMatrixPow(A,&temp,n-1))
+    {
+      printf("CompactMatrixPow faild at CompactMatrixPow(%d)\n",n-1);
+      return 1;
+    }
+    if(CompactMatrixMultiply('N', 'N', A, &temp, PowA))
+    {
+      printf("CompactMatrixPow faild at CompactMatrixMultiply\n");
+      return 1;
+    }
+    FreeCompactMatrix(&temp);
+    return 0;
+  }
+}
+
+/*  Given an  hermitian matrix, HermitianCompactMatrixExp calculates its exponent
+ *   ExpA = e^A
+ *
+ */
+uint32_t HermitianCompactMatrixExp(CompactMatrixType const *A, CompactMatrixType * const ExpA)
+{
+  int i;
+  double val[A->Ni];
+  CompactMatrixType fun;
+  if(CompactMatrixEigensystem(A, &fun, val))
+  {
+    printf("CompactMatrixEigensystem failed in HermitianCompactMatrixExp\n");
+    return 1;
+  }
+  for(i=0;i<fun.Ni;i++)
+  {
+    val[i]=exp(val[i]);
+  }
+  TransformDiagonalMatrixByCompactMatrixTtranATcon(val, &fun, ExpA);
+  FreeCompactMatrix(&fun);
+  return 0;
+}
+
+uint32_t NonHermitianCompactMatrixExp(CompactMatrixType const *A, CompactMatrixType * const ExpA)
+{
+  int i;
+  double temp;
+  Complex16 val[A->Ni];
+  CompactMatrixType funL,funR;
+  if(NonHermitianCompactMatrixEigensystem(A, &funL, &funR, val))
+  {
+    printf("NonHermitianCompactMatrixEigensystem failed in NonHermitianCompactMatrixExp\n");
+    return 1;
+  }
+  for(i=0;i<A->Ni;i++)
+  {
+    temp = exp(val[i].Re);
+    val[i].Re = temp * cos(val[i].Im);
+    val[i].Im = temp * sin(val[i].Im);
+  }
+  TransformComplexDiagonalMatrixByCompactMatrixTRtranATLcon(val, &funL, &funR, ExpA);
+  FreeCompactMatrix(&funL);
+  FreeCompactMatrix(&funR);
+  return 0;
+}
+
 /*  Given an semi definite hermitian matrix, CompactMatrixSqrt calculates its sqrt, such that
  *   B * B^{dag} = A
  *
  */
 uint32_t CompactMatrixSqrt(CompactMatrixType const *A, CompactMatrixType * const SqrtA)
 {
-  int i,j;
+  int i,j,retval=0;
   double val[A->Ni],sumval;
   CompactMatrixType fun;
-  
   CompactMatrixEigensystem(A, &fun, val);
   for(i=0;i<fun.Ni;i++)
   {
@@ -2211,17 +2704,25 @@ uint32_t CompactMatrixSqrt(CompactMatrixType const *A, CompactMatrixType * const
       {
         sumval+=Abs(val[j]);
       }
-      if(val[i]<-1000*DBL_EPSILON*sumval) printf("Negative value in CompactMatrixSqrt, eigen value is %22.15E at pos %i (trace |val| = %22.15E)\n",val[i],i,sumval);
+      if(val[i]<-1000*DBL_EPSILON*sumval)
+      {
+        printf("Negative value in CompactMatrixSqrt, eigen value is %22.15E at pos %i (trace |val| = %22.15E)\n",val[i],i,sumval);
+        retval++;
+      }
       val[i]=0;
     }
     val[i]=sqrt(val[i]);
   }
   TransformDiagonalMatrixByCompactMatrixTtranATcon(val, &fun, SqrtA);
   FreeCompactMatrix(&fun);
-  return 0;
+  return retval;
 }
 
-
+uint32_t NonHermitianCompactMatrixSqrt(CompactMatrixType const *A, CompactMatrixType * const SqrtA)
+{
+  //TODO: all
+  return 1;
+}
 /* Given a compact matrix A calculates (w-A)^{-1}_[[1;;BlockSize,1;;BlockSize]] on an energy mesh given by Emin and Emax with N points
  *
  */

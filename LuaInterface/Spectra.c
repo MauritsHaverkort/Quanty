@@ -2070,6 +2070,7 @@ static const struct luaL_Reg Spectra_func[] = {
   {"Sum", LuaSpectraSum},
   //  {"ToFunction", LuaSpectraToFunction},
   {"ToTable", LuaSpectraToTable},
-  {"FromTable", LuaTableToSpectra},
+  {"FromTable", LuaTableToSpectra}, // deprecated, use ToUserdata
+  {"ToUserdata", LuaTableToSpectra},
   {NULL, NULL}
 };

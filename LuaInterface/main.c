@@ -66,6 +66,7 @@ static void *currentudata = NULL;
 #include "Operator.c"
 #include "Wavefunction.c"
 #include "Spectra.c"
+#include "Matrix.c"
 #include "TightBinding.c"
 #include "ResponseFunction.c"
 #include "Plot.c"

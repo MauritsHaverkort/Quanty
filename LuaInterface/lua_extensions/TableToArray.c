@@ -127,8 +127,18 @@ CompactMatrixType* luaL_checkCompactMatrix(lua_State *L, int narg)
   int i,j;
   CompactMatrixType *buff;
   Complex16 * row;
+  uint32_t len;
+  // Matrix stored as pointer to structure on lua stack
+  if (luaL_testudata(L, narg, "Matrix_Type") != NULL)
+  {
+    buff = (CompactMatrixType*)luaL_checkudata(L, narg, "Matrix_Type");
+    if (buff!=NULL)
+    {
+      return buff;
+    }
+  }
   luaL_checktype(L, narg, LUA_TTABLE);
-  uint32_t len = (uint32_t)lua_objlen(L, narg);
+  len = (uint32_t)lua_objlen(L, narg);
   buff=malloc(sizeof(CompactMatrixType));
   buff->QComplex=1;
   buff->Ni=len;
@@ -153,7 +163,6 @@ CompactMatrixType* luaL_checkCompactMatrix(lua_State *L, int narg)
     }
     free(row);
   }
-  CompactMatrixChop(buff, 100*DBL_MIN);
   return buff;
 }
 
@@ -2058,6 +2067,9 @@ void LuaPushTable_MatrixType(lua_State* L, MatrixType const * const M)
     }
     lua_rawseti(L, -2, i+1);
   }
+  /* set metatable */
+  lua_getglobal(L, "MatrixMeta");
+  lua_setmetatable(L, -2);
 }
 
 void LuaPushTable_CompactMatrixType(lua_State* L, CompactMatrixType const * const M)
@@ -2085,6 +2097,9 @@ void LuaPushTable_CompactMatrixType(lua_State* L, CompactMatrixType const * cons
     }
     lua_rawseti(L, -2, i+1);
   }
+  /* set metatable */
+  lua_getglobal(L, "MatrixMeta");
+  lua_setmetatable(L, -2);
 }
 
 void LuaPushTable_TriDiagonalMatrixType(lua_State* L, TriDiagonalMatrixType const * const M)

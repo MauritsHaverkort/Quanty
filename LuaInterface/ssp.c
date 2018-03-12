@@ -1134,6 +1134,16 @@ static int LuaChop(lua_State * L)
         luaL_setmetatable(L, "Operator_Type");
         return 1;
       }
+      if (luaL_testudata(L, len, "Matrix_Type") != NULL)
+      {
+        CompactMatrixType *M = (CompactMatrixType*) luaL_checkudata(L, len, "Matrix_Type");
+        CompactMatrixType *Mnew;
+        Mnew = (CompactMatrixType*) lua_newuserdata(L, sizeof(CompactMatrixType));
+        CompactMatrixCopy(*M, Mnew);
+        CompactMatrixChop(Mnew, epsilon);
+        luaL_setmetatable(L, "Matrix_Type");
+        return 1;
+      }
       return luaL_error(L, "Error: Chop an object of unrecognised type\n");
     case LUA_TTABLE:
       lua_newtable(L);
@@ -2101,7 +2111,10 @@ static int LuaCreateResonantSpectra(lua_State *L)
     {"Tensor","bool",&(Options.Tensor)},
     {"restrictions1", "DeterminantRestrictionType", &(Options.Settings.restrictions1)},
     {"restrictions2", "DeterminantRestrictionType", &(Options.Settings.restrictions2)},
+    {"Restrictions1", "DeterminantRestrictionType", &(Options.Settings.restrictions1)},
+    {"Restrictions2", "DeterminantRestrictionType", &(Options.Settings.restrictions2)},
     {"epsilon","double",&(Options.Settings.epsilon)},
+    {"Epsilon","double",&(Options.Settings.epsilon)},
     {"E0","double",&(Options.E0)},
     {"E0_1","double",&(Options.E01)},
     {"E0_2","double",&(Options.E02)},
@@ -2543,36 +2556,7 @@ static int LuaEvolveToGroundstate(lua_State * L)
  */
 static int LuaEigensystemDenseTable(lua_State *L)
 {
-  CompactMatrixType *H;
-  H=luaL_checkCompactMatrix(L, 1);
-  if(QCompactMatrixHermitian(*H, DBL_EPSILON)==0)
-  {
-    CompactMatrixType funL, funR;
-    Complex16 *val;
-    val=malloc(H->Ni*sizeof(Complex16));
-    NonHermitianCompactMatrixEigensystem(H,&funL, &funR,val);
-    FreeCompactMatrix(H);
-    LuaPushArray_Complex16(L, val, funL.Ni);
-    free(val);
-    LuaPushTable_CompactMatrixType(L, &funL);
-    FreeCompactMatrix(&funL);
-    LuaPushTable_CompactMatrixType(L, &funR);
-    FreeCompactMatrix(&funR);
-    return 3;
-  }
-  else
-  {
-    CompactMatrixType fun;
-    double *val;
-    val=malloc(H->Ni*sizeof(double));
-    CompactMatrixEigensystem(H,&fun,val);
-    FreeCompactMatrix(H);
-    LuaPushArray_double(L, val, fun.Ni);
-    free(val);
-    LuaPushTable_CompactMatrixType(L, &fun);
-    FreeCompactMatrix(&fun);
-    return 2;
-  }
+  return LuaMatrixEigensystem(L);
 }
 
 /**
@@ -2761,7 +2745,6 @@ static int LuaEigensystem(lua_State * L)
     // this is not needed for a single value as there the pointer psi just points to the original
     if(lua_type(L,2)==LUA_TTABLE)
     {
-      //TODO: test if this is really needed (i.e. compare the pointer temp to the pointer psi[i]
       for(i=0;i<Npsi;i++)
       {
         lua_rawgeti(L, 2, i+1);
@@ -2769,6 +2752,7 @@ static int LuaEigensystem(lua_State * L)
         *temp = psi[i];
         lua_pop(L, 1);
       }
+      free(psi); //free the array, as this is now stored in temp, but keep the pointers allocated within the structure
     }
     return 0;
   }
@@ -3626,6 +3610,13 @@ int luaopen_ssp(lua_State * L)
   lua_setglobal(L, "ResponseFunctionMeta");
   luaMWH_RegisterGlobalFunctions(L, ResponseFunction_func);
 
+  luaL_newmetatable(L, "Matrix_Type");
+  luaL_setfuncs(L, Matrix_meta, 0);
+  luaL_newlib(L, Matrix_func);
+  lua_setglobal(L, "Matrix");
+  lua_newtable(L);
+  luaL_setfuncs(L, MatrixTable_meta, 0);
+  lua_setglobal(L, "MatrixMeta");
 
   luaL_newmetatable(L, "StuttgartCTRL_Type");
   luaL_setfuncs(L, StuttgartCTRL_meta, 0);

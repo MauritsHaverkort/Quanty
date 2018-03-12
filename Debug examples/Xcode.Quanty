@@ -1,6 +1,8 @@
 --Verbosity(0xFFFFFFFF)
 
 
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Functions/Matrix/Matrix.Quanty")
+os.exit()
 
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Functions/Eigensystem.Quanty")
 os.exit()

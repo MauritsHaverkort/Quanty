@@ -291,6 +291,7 @@ static int LuaResponseFunctionSub(lua_State * L)
  */
 static int LuaResponseFunctionMul(lua_State * L)
 {
+  //TODO: all
   printf("LuaResponseFunctionMul\n");
   return 0;
 }
@@ -300,6 +301,7 @@ static int LuaResponseFunctionMul(lua_State * L)
  */
 static int LuaResponseFunctionDiv(lua_State * L)
 {
+  //TODO: all
   printf("LuaResponseFunctionDiv\n");
   return 0;
 }
@@ -309,6 +311,7 @@ static int LuaResponseFunctionDiv(lua_State * L)
  */
 static int LuaResponseFunctionPow(lua_State * L)
 {
+  //TODO: all
   printf("LuaResponseFunctionPow\n");
   return 0;
 }
@@ -318,6 +321,7 @@ static int LuaResponseFunctionPow(lua_State * L)
  */
 static int LuaResponseFunctionConcat(lua_State * L)
 {
+  //TODO: all
   printf("LuaResponseFunctionConcat\n");
   return 0;
 }
@@ -327,6 +331,7 @@ static int LuaResponseFunctionConcat(lua_State * L)
  */
 static int LuaResponseFunctionEq(lua_State * L)
 {
+  //TODO: all
   printf("LuaResponseFunctionEq\n");
   return 0;
 }
@@ -336,6 +341,7 @@ static int LuaResponseFunctionEq(lua_State * L)
  */
 static int LuaResponseFunctionLt(lua_State * L)
 {
+  //TODO: all
   printf("LuaResponseFunctionLt\n");
   return 0;
 }
@@ -345,6 +351,7 @@ static int LuaResponseFunctionLt(lua_State * L)
  */
 static int LuaResponseFunctionLe(lua_State * L)
 {
+  //TODO: all
   printf("LuaResponseFunctionLe\n");
   return 0;
 }
@@ -354,6 +361,7 @@ static int LuaResponseFunctionLe(lua_State * L)
  */
 static int LuaResponseFunctionIndex(lua_State * L)
 {
+  //TODO: all
   printf("LuaResponseFunctionIndex\n");
   luaMWH_StackDump(L);
   return 0;
@@ -364,6 +372,7 @@ static int LuaResponseFunctionIndex(lua_State * L)
  */
 static int LuaResponseFunctionNewIndex(lua_State * L)
 {
+  //TODO: all
   printf("LuaResponseFunctionNewIndex\n");
   return 0;
 }
@@ -373,6 +382,7 @@ static int LuaResponseFunctionNewIndex(lua_State * L)
  */
 static int LuaResponseFunctionMode(lua_State * L)
 {
+  //TODO: all
   printf("LuaResponseFunctionMode\n");
   return 0;
 }

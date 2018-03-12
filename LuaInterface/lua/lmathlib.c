@@ -834,38 +834,17 @@ static int math_Dot(lua_State *L)
 
 static int math_MatrixTranspose(lua_State *L)
 {
-  CompactMatrixType *A;
-  luaL_checktype(L, 1, LUA_TTABLE);
-  A = (CompactMatrixType *) luaL_checkCompactMatrix(L, 1);
-  CompactMatrixTranspose(A);
-  LuaPushTable_CompactMatrixType(L, A);
-  FreeCompactMatrix(A);
-  free(A);
-  return 1;
+  return LuaMatrixTranspose(L);
 }
 
 static int math_MatrixConjugateTranspose(lua_State *L)
 {
-  CompactMatrixType *A;
-  luaL_checktype(L, 1, LUA_TTABLE);
-  A = (CompactMatrixType *) luaL_checkCompactMatrix(L, 1);
-  CompactMatrixConjugateTranspose(A);
-  LuaPushTable_CompactMatrixType(L, A);
-  FreeCompactMatrix(A);
-  free(A);
-  return 1;
+  return LuaMatrixConjugateTranspose(L);
 }
 
 static int math_MatrixConjugate(lua_State *L)
 {
-  CompactMatrixType *A;
-  luaL_checktype(L, 1, LUA_TTABLE);
-  A = (CompactMatrixType *) luaL_checkCompactMatrix(L, 1);
-  CompactMatrixConjugate(A);
-  LuaPushTable_CompactMatrixType(L, A);
-  FreeCompactMatrix(A);
-  free(A);
-  return 1;
+  return LuaMatrixConjugate(L);
 }
 
 static const luaL_Reg mathlib[] = {

@@ -1,6 +1,5 @@
 Verbosity(0x0)
 
-
 -- The function Eigensystem calculates a set of eigen vectors and eigen values for a given matrix or operator
 -- The function has several options related to the accuracy needed and methods used
 
@@ -204,21 +203,33 @@ end
 -- test with real non hermitian matrix
 -----------------------------------------------------------
 
+print("Diagonalization of a non Hermitian matrix")
+
+-- for dense matrices, given as tables Quanty can handle non hermitian matrices
+-- For non hermitian matrices one has a left and a right eigensystem
+-- H psi^R_i   = E_i psi^R_i
+-- psi^L_i^* H = E_i psi^L_i^*
+--
+-- and psi^L_i^* . psi^R_j = delta_{i,j}
+-- and thus psi^L_i . H . psi^R_j = E_i delta_{i,j}
+--
+
 -- matrix to diagonalize
 A = {{ 1 , 2 , 3 },
      { 4 , 5 , 6 },
-     { 7 , 8 , 9 }}
+     { 7 , 8 , 0 }}
 
 val, funL, funR = Eigensystem(A)
 
-print(Chop(val))
-print(funL)
-print(funR)
+print("For the matrix\n",A)
+print("We have the eigen-values\n",Chop(val))
+print("The left eigen-functions\n",Chop(funL))
+print("The right eigen-functions\n",Chop(funR))
 
 Ident = Chop(Dot(MatrixConjugate(funL),MatrixTranspose(funR)))
-print(Ident)
+print("funL^* . funR^T gives the identity matrix\n",Ident)
 Ident = Chop(Dot(MatrixConjugate(funL),Dot(A,MatrixTranspose(funR))),1E-14)
-print(Ident)
+print("funL^* . H . funR^T gives a diagonal matrix with the eigen energies on the diagonal\n",Ident)
 
 print(Chop(MatrixTranspose(Dot(A,MatrixTranspose(funR)))))
 print(Chop(Dot(Ident,funR)))

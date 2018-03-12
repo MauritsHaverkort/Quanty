@@ -1,0 +1,223 @@
+
+A = {{ 1 , 1 , 3 },
+     { 1 , 2 , 1 }}
+setmetatable(A, MatrixMeta)
+
+B = {{ 10 , 1 , 3 },
+     { 1 , 2 , 1 },
+     { 1 , 2 , 8}}
+setmetatable(B, MatrixMeta)
+
+Au = Matrix.ToUserdata(A)
+Bu = Matrix.ToUserdata(B)
+
+collectgarbage()
+print("Test matrix times number")
+C = 3  * A
+print(C)
+C = 3  * Au
+print(Matrix.ToTable(C))
+C = A  * 3
+print(C)
+C = Au * 3
+print(Matrix.ToTable(C))
+collectgarbage()
+
+print("Test matrix times complex numer")
+C = (3+I)  * A
+print(C)
+C = (3+I)  * Au
+print(Matrix.ToTable(C))
+C = A  * (3+I)
+print(C)
+C = Au * (3+I)
+print(Matrix.ToTable(C))
+collectgarbage()
+
+print("Test matrix times matrix")
+C = A  * B
+print(C)
+C = Au * B
+print(C)
+C = A  * Bu
+print(C)
+C = Au * Bu
+print(C)
+collectgarbage()
+
+print("Test matrix addition and subtraction")
+C = B + B
+print(C)
+C = B - B
+print(C)
+collectgarbage()
+
+print("Test matrix divided by numer or number divided by matrix")
+C = 3  / B
+print(C)
+C = 3 / Bu
+print(Matrix.ToTable(C))
+C = B  / 3
+print(C)
+C = Bu / 3
+print(Matrix.ToTable(C))
+collectgarbage()
+
+print("Test matrix divided by complex numer or complex number divided by matrix")
+C = (3+I)  / B
+print(C)
+C = (3+I)  / Bu
+print(Matrix.ToTable(C))
+C = B  / (3+I)
+print(C)
+C = Bu / (3+I)
+print(Matrix.ToTable(C))
+collectgarbage()
+
+print("Test numer or complex number multiplied or divided by table (no metatable set)")
+-- note that complex numbers behaive diffrent from numbers !!!!!! need to change this ?
+Bp = {{ 10 , 1 , 3 },
+      { 1 , 2 , 1 },
+      { 1 , 2 , 8}}
+C = (3+I)  * Bp
+print(C)
+C =  Bp * (3+I)
+print(C)
+C = (3+I)  / Bp
+print(C)
+C = Bp / (3+I)
+print(C)
+collectgarbage()
+
+print("Test matrix diveded by matrix")
+C = A / B
+print(C)
+C = A / Bu
+print(Matrix.ToTable(C))
+C = Au / B
+print(Matrix.ToTable(C))
+C = Au / Bu
+print(Matrix.ToTable(C))
+collectgarbage()
+
+print("Test matrix inverse")
+C = Matrix.Inverse(B)
+print(B)
+print(C)
+print(Chop(B*C))
+print(Chop(C*B))
+
+C = Matrix.Inverse(Bu)
+print(Bu)
+print(C)
+print(Chop(Bu*C))
+print(Chop(C*Bu))
+
+
+print("Test matrix Pow")
+print("^0")
+C = B^0
+print(C)
+print("^1")
+C = B^1
+print(C)
+print(C-B)
+print("^2")
+C = B^2
+print(C)
+print(C-B*B)
+print("^3")
+C = B^3
+print(C)
+print(C-B*B*B)
+print("^12")
+C = B^12
+print(C)
+print(C-B*B*B*B*B*B*B*B*B*B*B*B)
+print("^-2")
+C = B^-2
+print(C)
+print(Chop(C*B*B))
+
+print("Test matrix Sqrt")
+C = B * Matrix.Transpose(B)
+print(C)
+D = Matrix.Sqrt(C)
+print(D)
+print(D*D)
+
+C = (2*B + I * B*B) * Matrix.ConjugateTranspose(2*B + I * B*B)
+print(C)
+D = Matrix.Sqrt(C)
+print(D)
+print(Chop(D*D,1E-13))
+
+print("Test matrix Exp Hermitian")
+C = B / 100
+C = C + Matrix.ConjugateTranspose(C)
+print(C)
+D = Matrix.Exp(C)
+print(D)
+print(Matrix.Identity(3) + C + C*C/2 + C*C*C/6 + C*C*C*C/24 + C*C*C*C*C/120 + C*C*C*C*C*C/720 + C*C*C*C*C*C*C/5040 + C*C*C*C*C*C*C*C/40320 + C*C*C*C*C*C*C*C*C/362880 + C*C*C*C*C*C*C*C*C*C/3628800)
+
+C = (2*B + I * B*B) / 100
+C = C + Matrix.ConjugateTranspose(C)
+print(C)
+D = Matrix.Exp(C)
+print(Chop(D))
+print(Chop(Matrix.Identity(3) + C + C*C/2 + C*C*C/6 + C*C*C*C/24 + C*C*C*C*C/120 + C*C*C*C*C*C/720 + C*C*C*C*C*C*C/5040 + C*C*C*C*C*C*C*C/40320 + C*C*C*C*C*C*C*C*C/362880 + C*C*C*C*C*C*C*C*C*C/3628800))
+
+print("Test matrix Exp Non Hermitian")
+C = B / 100
+print(C)
+D = Matrix.Exp(C)
+print(Chop(D))
+print(Matrix.Identity(3) + C + C*C/2 + C*C*C/6 + C*C*C*C/24 + C*C*C*C*C/120 + C*C*C*C*C*C/720 + C*C*C*C*C*C*C/5040 + C*C*C*C*C*C*C*C/40320 + C*C*C*C*C*C*C*C*C/362880 + C*C*C*C*C*C*C*C*C*C/3628800)
+
+C = (2*B + I * B*B) / 100
+print(C)
+D = Matrix.Exp(C)
+print(D)
+print(Matrix.Identity(3) + C + C*C/2 + C*C*C/6 + C*C*C*C/24 + C*C*C*C*C/120 + C*C*C*C*C*C/720 + C*C*C*C*C*C*C/5040 + C*C*C*C*C*C*C*C/40320 + C*C*C*C*C*C*C*C*C/362880 + C*C*C*C*C*C*C*C*C*C/3628800)
+
+
+print("Test random matrix")
+C = Matrix.Random({-1,1},{3,3})
+print(C)
+C = Matrix.Random({-1-I,1},{3,3})
+print(C)
+C = Matrix.Random({-1,1},{3,3},{{"Userdata",true}})
+print(C)
+C = Matrix.Random({-1,1+I},{3,3},{{"Userdata",true}})
+print(C)
+
+print("Test identity matrix")
+C = Matrix.Identity(5)
+print(C)
+C = Matrix.Identity(5,{{"Userdata",true}})
+print(C)
+
+print("Test Zero matrix")
+C = Matrix.Zero(5)
+print(C)
+C = Matrix.Zero(5,{{"Userdata",true}})
+print(C)
+
+print("Test diagonal matrix")
+C = Matrix.Diagonal({1,2,3,4,5})
+print(C)
+C = Matrix.Diagonal({1,2,3,4,5},{{"Userdata",true}})
+print(C)
+C = Matrix.Diagonal({1,2,3,4,5,I})
+print(C)
+C = Matrix.Diagonal({1,2,3,4,5,I},{{"Userdata",true}})
+print(C)
+
+print("test garbage collection")
+A = nil
+B = nil
+Au = nil
+Bu = nil
+C = nil
+collectgarbage()
+

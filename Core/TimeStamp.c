@@ -43,7 +43,9 @@
                        printf("maximum number of threads in parallel region: %i\n",omp_get_max_threads());\
                        printf("Smallest positive float  : %E \n",DBL_MIN);\
                        printf("Smallest deviation from 1: %E \n",DBL_EPSILON);\
-                       printf("\n");
+                       printf("\n");\
+                       srand((unsigned) time(&MWHrawtime));\
+                       rand();rand();rand();rand();rand();rand();rand();rand();rand();rand();
 
 
 void MWHgethostname(char * MWHHostName, size_t len)
