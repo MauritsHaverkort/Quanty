@@ -1,10 +1,10 @@
 --Verbosity(0xFFFFFFFF)
 
 
-dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Functions/Matrix/Matrix.Quanty")
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Functions/Eigensystem.Quanty")
 os.exit()
 
-dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Functions/Eigensystem.Quanty")
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Functions/Matrix/Matrix.Quanty")
 os.exit()
 
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Functions/CreateSpectra.Quanty")

@@ -14,6 +14,7 @@ static int LuaNewTightBinding(lua_State * L)
     TB->Cell.NAtoms=0;
     TB->Cell.Units=1;
     TB->FermionIndex=NULL;
+    TB->Name[0]='\0';
   }
   else
   {

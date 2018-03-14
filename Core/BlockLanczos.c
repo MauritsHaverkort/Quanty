@@ -4522,7 +4522,28 @@ uint32_t LanczosBlockTriDiagonalizeKrylov(const OperatorType H, WaveFunctionType
  **************************** Ground-state *************************
  *******************************************************************/
 
-
+uint32_t TimeToDeflateInBlockLanczosKrylov(double Norm, double Zero, uint32_t i, uint32_t NpsiDeflated, CompactMatrixType *HKrylov)
+{
+  uint32_t j;
+  double tot=sqrt(DBL_MIN);
+  if(HKrylov->QComplex==0)
+  {
+    for(j=0;j<i;j++)
+    {
+      tot+=Sqr(HKrylov->VRe[j+j*HKrylov->Nj]);
+    }
+  }
+  else
+  {
+    for(j=0;j<i;j++)
+    {
+      tot+=Sqr(HKrylov->V[j+j*HKrylov->Nj].Re);
+    }
+  }
+  
+  if(Sqr(Norm)<tot*Abs(Zero)) return 1;
+  return 0;
+}
 
 /*  Use Band Lanczos method to find lowest Npsi eigenstates of H
  *  Starting vectors are in v[0] to v[Npis-1]
@@ -4595,8 +4616,7 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylovReal(const OperatorType H, Wa
       if(i==Npsi+1)VerbosityPrintf(0x0002,"  Restart loop %i with a Krylov basis of %i and a full basis of %i\n",irestart,NKrylovNow,v[0].N);
       // normalize v[i] and set <v[i] | H | v[i-NpsiDeflated]>
       Norm=RealWaveFunctionCalculateNorm(v[i]);
-      //printf("i=%i Norm is %22.15E\n",i,Norm);
-      while(Sqr(Norm)<(DBL_EPSILON+0.1*Abs(Settings->zero))*((i<NpsiDeflated)?1:(Sqr(DBL_EPSILON)+Sqr(HKrylov.VRe[0])+Sqr(HKrylov.VRe[i-NpsiDeflated+(i-NpsiDeflated)*HKrylov.Nj]))))
+      while(TimeToDeflateInBlockLanczosKrylov(Norm, Settings->zero, i, NpsiDeflated, &HKrylov))
       {
         VerbosityPrintf(0x0100,"      Deflating from %i to %i at level %i\n",NpsiDeflated,NpsiDeflated-1,i);
         // Need to deflate
@@ -4805,7 +4825,7 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylovComplex(const OperatorType H,
       // normalize v[i] and set <v[i] | H | v[i-NpsiDeflated]>
       Norm=ComplexWaveFunctionCalculateNorm(v[i]);
       //printf("i=%i Norm is %22.15E\n",i,Norm);
-      while(Sqr(Norm)<(DBL_EPSILON+0.1*Abs(Settings->zero))*((i<NpsiDeflated)?1:(Sqr(DBL_EPSILON)+Sqr(HKrylov.V[0].Re)+Sqr(HKrylov.V[i-NpsiDeflated+(i-NpsiDeflated)*HKrylov.Nj].Re))))
+      while(TimeToDeflateInBlockLanczosKrylov(Norm, Settings->zero, i, NpsiDeflated, &HKrylov))
       {
         VerbosityPrintf(0x0100,"      Deflating from %i to %i at level %i\n",NpsiDeflated,NpsiDeflated-1,i);
         // Need to deflate
@@ -5080,7 +5100,7 @@ uint32_t BlockLanczosGroundStateConserveBasis(const OperatorType H, WaveFunction
 /*  Find the lowest Npsi eigen-states of the operator H
  *
  *  Input:
- *    H:             Operator
+ *    H:             Operator assumed to be Hermitian (not tested and function fails if it is not)
  *    Npsi:          number of states to converge
  *    Settings:      ConvergenceSettingsType* pointer to important values that need to be set:
  *                   Settings->zero    smallest possitive double that is considered different from zero when comparing convergence creteria
@@ -5096,11 +5116,14 @@ uint32_t BlockLanczosGroundStateConserveBasis(const OperatorType H, WaveFunction
  *    epsilon:       will change if not enough memory is available.
  *
  */
-uint32_t BlockGroundState(const OperatorType H, uint32_t const Npsi, ConvergenceSettingsType * Settings, DeterminantRestrictionType const StartingPoint, DeterminantRestrictionType const Restrictions, WaveFunctionType * const psi, const uint32_t NBitsKey)
+uint32_t BlockGroundState(OperatorType H, uint32_t const Npsi, ConvergenceSettingsType * Settings, DeterminantRestrictionType const StartingPoint, DeterminantRestrictionType const Restrictions, WaveFunctionType * const psi, const uint32_t NBitsKey)
 {
   uint32_t i,Qconverged=0, AtLeastAnOtherLoop=0,iloop=0;;
   WaveFunctionType Opsi[Npsi];
-  double Energy[2][Npsi],EnergySqr[2][Npsi],temp;
+  double Energy[2][Npsi],EnergySqr[2][Npsi],temp,shiftE,shiftVar,HE0,totESqr;
+  // in order to allow shifts we need H.l[0].VRe[0]
+  OperatorAddLader(&H, NULL, 0, 0, 0); // allocate the operator with length 0
+  HE0 = H.l[0].VRe[0];
   // if StartingPoint.N != 0
   // create Npsi independent functions fullfiling the starting point conditions
   // all functions must have the same basis
@@ -5120,6 +5143,13 @@ uint32_t BlockGroundState(const OperatorType H, uint32_t const Npsi, Convergence
   {
       for(i=0;i<Npsi;i++) PrintWaveFunctionReadable(psi[i]);
   }
+  // create some feeling for the energy of the state
+  WaveFunctionCopy(psi[0], &(Opsi[0]));
+  WaveFunctionRandomize(&(Opsi[0]));
+  WaveFunctionNormalize(&(Opsi[0]));
+  PsiHermitianOperatorPsi(H, Opsi[0], &totESqr);
+  totESqr*=totESqr;
+  WaveFunctionFree(&(Opsi[0]));
   // set energy[0]
   for(i=0;i<Npsi;i++)
   {
@@ -5142,7 +5172,7 @@ uint32_t BlockGroundState(const OperatorType H, uint32_t const Npsi, Convergence
       Settings->epsilon*=2;
       BlockWaveFunctionTruncateBasis(psi,Npsi,Settings->epsilon);
     }
-    // calculate Energy and variance of Energy - test for convergence
+    // calculate Energy and variance of Energy - these values are needed to test for convergence
     Qconverged=1;
     VerbosityPrintf(0x0100,"Number of determinants in basis %i (and basis of H psi %i)\n",psi[0].N,Opsi[0].N);
     VerbosityPrintf(0x0100,"State # |   Energy               |  Variance of Energy    |  Energy change\n");
@@ -5152,11 +5182,17 @@ uint32_t BlockGroundState(const OperatorType H, uint32_t const Npsi, Convergence
       EnergySqr[1][i]=EnergySqr[0][i];
       WaveFunctionDotProduct(psi[i], Opsi[i], &Energy[0][i], &temp);
       WaveFunctionDotProductSameBasis(Opsi[i], Opsi[i], &EnergySqr[0][i], &temp);
+      totESqr+=EnergySqr[0][i];
       VerbosityPrintf(0x0100,"%7i | %22.15E | %22.15E | %22.15E\n",i,Energy[0][i],EnergySqr[0][i]-Sqr(Energy[0][i]),Energy[0][i]-Energy[1][i]);
-      if((EnergySqr[0][i]-Sqr(Energy[0][i])>=(EnergySqr[0][i]*Settings->zero))&&(((Energy[1][i]-Energy[0][i])>fabs(Energy[0][i]*10*DBL_EPSILON))||(Energy[0][i]-Energy[1][i]>fabs(Energy[0][i]*Settings->zero)))) Qconverged=0;
+    }
+    // set Qconverged
+    for(i=0;i<Npsi;i++)
+    {
+      if(EnergySqr[0][i]-Sqr(Energy[0][i])>=(totESqr*Settings->zero/Npsi)) Qconverged=0;
     }
     VerbosityPrintf(0x0100,"\n");
     VerbosityPrintf(0x10000000,"Converged %i\n",Qconverged);
+    // converge to ground-state in current basis or stop if converged
     if(AtLeastAnOtherLoop)
     {
       Qconverged=0;
@@ -5169,6 +5205,21 @@ uint32_t BlockGroundState(const OperatorType H, uint32_t const Npsi, Convergence
     }
     else
     {
+      // we shift the Hamiltonian by the largest energy of psi[i]
+      // and by the largest variance of psi[i]
+      shiftE=-1E+99;
+      shiftVar=-1E+99;
+      for(i=0;i<Npsi;i++)
+      {
+        shiftE   = Max(shiftE,Energy[0][i]);
+        shiftVar = Max(shiftVar, EnergySqr[0][i] - Sqr(Energy[0][i]));
+      }
+      shiftVar = sqrt(Abs(shiftVar)+1000*DBL_MIN);
+      for(i=0;i<Npsi;i++)
+      {
+        WaveFunctionAddMultipliedConserveBasis(&(Opsi[i]), psi[i], -shiftE-shiftVar);
+      }
+      // print info
       VerbosityPrintf(0x0002,"Outer loop %3i, Number of Determinants: %9i %9i last variance %22.15E\n",iloop,psi[0].N,Opsi[0].N,EnergySqr[0][Npsi-1]-Sqr(Energy[0][Npsi-1]));
       // free psi and set psi=Opsi
       BlockWaveFunctionFree(psi,Npsi);
@@ -5176,6 +5227,8 @@ uint32_t BlockGroundState(const OperatorType H, uint32_t const Npsi, Convergence
       {
         psi[i]=Opsi[i];
       }
+      // shift H
+      H.l[0].VRe[0] -= shiftE+shiftVar;
       // find ground-state in basis
       while(BlockLanczosGroundStateConserveBasis(H, psi, Npsi, Settings))
       {
@@ -5190,6 +5243,8 @@ uint32_t BlockGroundState(const OperatorType H, uint32_t const Npsi, Convergence
         Settings->epsilon*=2;
         BlockWaveFunctionTruncateBasis(psi,Npsi,Settings->epsilon);
       }
+      // undo shift
+      H.l[0].VRe[0] = HE0;
       // truncate basis
       BlockWaveFunctionTruncateBasis(psi,Npsi,Settings->epsilon);
     }

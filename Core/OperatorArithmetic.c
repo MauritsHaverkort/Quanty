@@ -517,7 +517,7 @@ uint32_t RealOperatorAddLaderNormalOrder(OperatorType * const O, const uint16_t 
   uint16_t temp;
   uint32_t i, j, k, NeedToSwap;
   double phase = 1;
-  oaddordered[0] = oadd[0];
+  if(length>0) oaddordered[0] = oadd[0];
   for (i = 1; i < length; i++)
   {
     oaddordered[i] = oadd[i];
@@ -885,7 +885,7 @@ uint32_t ComplexOperatorAddLaderNormalOrder(OperatorType * const O, const uint16
   uint16_t temp;
   uint32_t i, j, k, NeedToSwap;
   double phase = 1;
-  oaddordered[0] = oadd[0];
+  if(length>0) oaddordered[0] = oadd[0];
   for (i = 1; i < length; i++)
   {
     oaddordered[i] = oadd[i];
@@ -6131,7 +6131,7 @@ uint32_t QOperatorHermitian(OperatorType O, const double epsilon)
     fflush(stdout);
     return 3;
   };
-  if (OperatorChop(&OT, 0))
+  if (OperatorChop(&OT, 100*DBL_MIN))
   {
     printf("OperatorChop failed in QOperatorHermitian\n");
     FreeOperator(&OT);
