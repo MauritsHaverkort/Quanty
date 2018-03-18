@@ -2180,6 +2180,258 @@ uint32_t CompactMatrixLeftRightNormalize(CompactMatrixType * const funL, Compact
   return 0;
 }
 
+int SortNonHermitianEigensystemOrder(const void * elem1, const void * elem2)
+{
+  double f = *((double*)elem1);
+  double s = *((double*)elem2);
+  if (f > s) return  1;
+  if (f < s) return -1;
+  return 0;
+}
+
+/*  The Lapack standard does not order the eigen values of Non Hermitian matrices
+ *  We here order them according to the real part of the eigen values from low to high
+ */
+uint32_t NonHermitianEigensystemOrder(Complex16 * val, CompactMatrixType * const funL, CompactMatrixType * const funR)
+{
+  // create a matrix with rows containing val[i] .. funL[i] .. funR[i]
+  uint32_t i,j,k;
+  double *data;
+  if(!(funL->Ni==funR->Ni))
+  {
+    printf("Number of rows for funL and funR need to be equal in NonHermitianEigensystemOrder\n");
+    return 1;
+  }
+  if(funL->QComplex==0)
+  {
+    if(funR->QComplex==0)
+    { //  all functions real
+      // fill data
+      data = malloc((2+funL->Nj+funR->Nj)*funL->Ni*sizeof(double));
+      if(data==NULL)
+      {
+        printf("malloc failed in NonHermitianEigensystemOrder\n");
+        return 1;
+      }
+      k=0;
+      for(i=0;i<funL->Ni;i++)
+      {
+        data[k]   = val[i].Re;
+        k++;
+        data[k] = val[i].Im;
+        k++;
+        for(j=0;j<funL->Nj;j++)
+        {
+          data[k] = funL->VRe[i*funL->Nj+j];
+          k++;
+        }
+        for(j=0;j<funR->Nj;j++)
+        {
+          data[k] = funR->VRe[i*funR->Nj+j];
+          k++;
+        }
+      }
+      // sort data
+      qsort(data,funL->Ni, (2+funL->Nj+funR->Nj)*sizeof(double), SortNonHermitianEigensystemOrder);
+      // copy back to val, funL and funR
+      k=0;
+      for(i=0;i<funL->Ni;i++)
+      {
+        val[i].Re = data[k];
+        k++;
+        val[i].Im = data[k];
+        k++;
+        for(j=0;j<funL->Nj;j++)
+        {
+          funL->VRe[i*funL->Nj+j] = data[k];
+          k++;
+        }
+        for(j=0;j<funR->Nj;j++)
+        {
+          funR->VRe[i*funR->Nj+j] = data[k];
+          k++;
+        }
+      }
+      //
+      free(data);
+    }
+    else
+    {  // L real R complex
+      // fill data
+      data = malloc((2+funL->Nj+2*funR->Nj)*funL->Ni*sizeof(double));
+      if(data==NULL)
+      {
+        printf("malloc failed in NonHermitianEigensystemOrder\n");
+        return 1;
+      }
+      k=0;
+      for(i=0;i<funL->Ni;i++)
+      {
+        data[k]   = val[i].Re;
+        k++;
+        data[k] = val[i].Im;
+        k++;
+        for(j=0;j<funL->Nj;j++)
+        {
+          data[k] = funL->VRe[i*funL->Nj+j];
+          k++;
+        }
+        for(j=0;j<funR->Nj;j++)
+        {
+          data[k] = funR->V[i*funR->Nj+j].Re;
+          k++;
+          data[k] = funR->V[i*funR->Nj+j].Im;
+          k++;
+        }
+      }
+      // sort data
+      qsort(data,funL->Ni, (2+funL->Nj+2*funR->Nj)*sizeof(double), SortNonHermitianEigensystemOrder);
+      // copy back to val, funL and funR
+      k=0;
+      for(i=0;i<funL->Ni;i++)
+      {
+        val[i].Re = data[k];
+        k++;
+        val[i].Im = data[k];
+        k++;
+        for(j=0;j<funL->Nj;j++)
+        {
+          funL->VRe[i*funL->Nj+j] = data[k];
+          k++;
+        }
+        for(j=0;j<funR->Nj;j++)
+        {
+          funR->V[i*funR->Nj+j].Re = data[k];
+          k++;
+          funR->V[i*funR->Nj+j].Im = data[k];
+          k++;
+        }
+      }
+      //
+      free(data);
+    }
+  }
+  else
+  {
+    if(funR->QComplex==0)
+    { // L complex R real
+      // fill data
+      data = malloc((2+2*funL->Nj+funR->Nj)*funL->Ni*sizeof(double));
+      if(data==NULL)
+      {
+        printf("malloc failed in NonHermitianEigensystemOrder\n");
+        return 1;
+      }
+      k=0;
+      for(i=0;i<funL->Ni;i++)
+      {
+        data[k]   = val[i].Re;
+        k++;
+        data[k] = val[i].Im;
+        k++;
+        for(j=0;j<funL->Nj;j++)
+        {
+          data[k] = funL->V[i*funL->Nj+j].Re;
+          k++;
+          data[k] = funL->V[i*funL->Nj+j].Im;
+          k++;
+        }
+        for(j=0;j<funR->Nj;j++)
+        {
+          data[k] = funR->VRe[i*funR->Nj+j];
+          k++;
+        }
+      }
+      // sort data
+      qsort(data,funL->Ni, (2+2*funL->Nj+funR->Nj)*sizeof(double), SortNonHermitianEigensystemOrder);
+      // copy back to val, funL and funR
+      k=0;
+      for(i=0;i<funL->Ni;i++)
+      {
+        val[i].Re = data[k];
+        k++;
+        val[i].Im = data[k];
+        k++;
+        for(j=0;j<funL->Nj;j++)
+        {
+          funL->V[i*funL->Nj+j].Re = data[k];
+          k++;
+          funL->V[i*funL->Nj+j].Im = data[k];
+          k++;
+        }
+        for(j=0;j<funR->Nj;j++)
+        {
+          funR->VRe[i*funR->Nj+j] = data[k];
+          k++;
+        }
+      }
+      //
+      free(data);
+    }
+    else
+    { // all functions complex
+      // fill data
+      data = malloc((2+2*funL->Nj+2*funR->Nj)*funL->Ni*sizeof(double));
+      if(data==NULL)
+      {
+        printf("malloc failed in NonHermitianEigensystemOrder\n");
+        return 1;
+      }
+      k=0;
+      for(i=0;i<funL->Ni;i++)
+      {
+        data[k]   = val[i].Re;
+        k++;
+        data[k] = val[i].Im;
+        k++;
+        for(j=0;j<funL->Nj;j++)
+        {
+          data[k] = funL->V[i*funL->Nj+j].Re;
+          k++;
+          data[k] = funL->V[i*funL->Nj+j].Im;
+          k++;
+        }
+        for(j=0;j<funR->Nj;j++)
+        {
+          data[k] = funR->V[i*funR->Nj+j].Re;
+          k++;
+          data[k] = funR->V[i*funR->Nj+j].Im;
+          k++;
+        }
+      }
+      // sort data
+      qsort(data,funL->Ni, (2+2*funL->Nj+2*funR->Nj)*sizeof(double), SortNonHermitianEigensystemOrder);
+      // copy back to val, funL and funR
+      k=0;
+      for(i=0;i<funL->Ni;i++)
+      {
+        val[i].Re = data[k];
+        k++;
+        val[i].Im = data[k];
+        k++;
+        for(j=0;j<funL->Nj;j++)
+        {
+          funL->V[i*funL->Nj+j].Re = data[k];
+          k++;
+          funL->V[i*funL->Nj+j].Im = data[k];
+          k++;
+        }
+        for(j=0;j<funR->Nj;j++)
+        {
+          funR->V[i*funR->Nj+j].Re = data[k];
+          k++;
+          funR->V[i*funR->Nj+j].Im = data[k];
+          k++;
+        }
+      }
+      //
+      free(data);
+    }
+  }
+  return 0;
+}
+
+
 //TODO: test definition of fulL and funR
 /*
  *  D=funL^*.A.funR^{T} with D a diagonal matrix with the values val on the diagonal and
@@ -2346,9 +2598,6 @@ uint32_t NonHermitianCompactMatrixEigensystem(CompactMatrixType const *A, Compac
     free(valIm);
     free(Vl);
     free(Vr);
-    // normalize vector funR and funL such that funL^* . fulR^T = 1
-    CompactMatrixLeftRightNormalize(funL,funR);
-    return 0;
   }
   else
   {                             /* Complex */
@@ -2389,10 +2638,10 @@ uint32_t NonHermitianCompactMatrixEigensystem(CompactMatrixType const *A, Compac
     free(Acopy);
     free(work);
     free(rwork);
-    CompactMatrixLeftRightNormalize(funL,funR);
-    return 0;
   }
-  
+  // normalize vector funR and funL such that funL^* . fulR^T = 1
+  CompactMatrixLeftRightNormalize(funL,funR);
+  NonHermitianEigensystemOrder(val, funL, funR);
   return 0;
 }
 

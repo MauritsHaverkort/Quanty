@@ -2717,11 +2717,11 @@ static int LuaEigensystem(lua_State * L)
   /* calculate groundstate */
   if(Options.ExpandBasis==True)
   {
-    BlockGroundState(*Opp, Npsi, &(Options.Settings) , StartRestrictions, Options.DeterminantRestrictions, psi, Options.Settings.NBitsKey);
+    BlockGroundState(Opp, Npsi, &(Options.Settings) , StartRestrictions, Options.DeterminantRestrictions, psi, Options.Settings.NBitsKey);
   }
   else
   {
-    BlockLanczosGroundStateConserveBasis(*Opp, psi, Npsi, &(Options.Settings));
+    BlockLanczosGroundStateConserveBasis(Opp, psi, Npsi, &(Options.Settings));
   }
   /* seperate basis */
   WaveFunctionArraySeperateBasis(psi, Npsi);

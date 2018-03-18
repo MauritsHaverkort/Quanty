@@ -254,7 +254,7 @@ ConvergenceSettingsType InitConvergenceSettings()
     100*sqrt(DBL_EPSILON) /*zero*/,
     sqrt(DBL_EPSILON)     /*epsilon*/,
     0.00008621738         /* 1K, EffT */,
-    20                    /*bits in key*/,
+    16                    /*bits in key*/,
     {0, NULL, NULL, NULL} /*restricitons*/,
     {0, NULL, NULL, NULL} /*restricitons1*/,
     {0, NULL, NULL, NULL} /*restricitons2*/,

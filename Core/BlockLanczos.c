@@ -4553,8 +4553,10 @@ uint32_t TimeToDeflateInBlockLanczosKrylov(double Norm, double Zero, uint32_t i,
  *  all states on same basis
  *
  *  on excess free memory of v[i], except v[0] to v[Npsi-1] which contains the Npsi eigen states
+ *
+ *  for restarts the energy is shifted to the previous largest energy in the krylov basis
  */
-uint32_t BlockLanczosGroundStateConserveBasisKrylovReal(const OperatorType H, WaveFunctionType * const v, uint32_t const Npsi, ConvergenceSettingsType * Settings)
+uint32_t BlockLanczosGroundStateConserveBasisKrylovReal(OperatorType * H, WaveFunctionType * const v, uint32_t const Npsi, ConvergenceSettingsType * Settings)
 {
   VerbosityPrintf(0x0100,"In BlockLanczosGroundStateConserveBasisKrylovReal\n");
   //CompactMatrixType tempS; // needed for testing of norm during convergence loops
@@ -4566,12 +4568,22 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylovReal(const OperatorType H, Wa
   int    *iwork;
   double *work;
   double *val;
-  double Norm, DotRe;
+  double Norm, DotRe, HE0;
   uint32_t NKrylovNow=Npsi+Settings->NKrylovStart;
   uint32_t i,j, NpsiDeflated, NorthoExtra, Deflated[Npsi],irestart=0;
   CompactMatrixType HKrylov;
   uint32_t QConverged=0;
   double **temp;
+  // get value of H->l[0] so we can shift and restore the operator
+  if(H->l[0].NAloc==0) OperatorAddLader(H, NULL, 0, 0, 0); // allocate the operator with length 0
+  if(H->l[0].QComplex==0)
+  {
+    HE0 = H->l[0].VRe[0];
+  }
+  else
+  {
+    HE0 = H->l[0].V[0].Re;
+  }
   // init several matrices
   val=malloc((Npsi+Settings->NKrylovMax)*sizeof(double));
   iwork = malloc(liwork*sizeof(int));
@@ -4659,10 +4671,17 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylovReal(const OperatorType H, Wa
         if(j>=NpsiDeflated) HKrylov.VRe[i+(j-NpsiDeflated)*HKrylov.Nj]=DotRe;
       }
       // calculate v[i+NpsiDeflated] = H v[i] and onsite term ( < v[i] | H | v[i] >
-      OperatorPsiConserveBasisPreAllocatedRR(&H, &v[i], &v[i+NpsiDeflated]);
+      OperatorPsiConserveBasisPreAllocatedRR(H, &v[i], &v[i+NpsiDeflated]);
       HKrylov.VRe[i+i*HKrylov.Nj]=RealWaveFunctionDotProductSameBasis(v[i], v[i+NpsiDeflated]);
+      // The Hamiltonian should be negative definite. If the onsite term is positive we should shift H
+      // we can do this by changing H and subtracting the energy from all previous diagonal elements
+      // but that should be implemented stop the loop as an alternative
+      //if(HKrylov.VRe[i+i*HKrylov.Nj]>0)
+      //{
+      //  NKrylovNow = Min(i+Npsi,NKrylovNow);
+      //}
       // orthogonalize v[i+NpsiDeflated] to v[j] (the new candiate agains all found states)
-      // for j from i-NpsiDeflated to i-1
+      // for j from i-NpsiDeflated to i
       for(j=(i-Min(i, NpsiDeflated));j<=i;j++)
       {
         HKrylov.VRe[j+i*HKrylov.Nj]=HKrylov.VRe[i+j*HKrylov.Nj];
@@ -4701,7 +4720,14 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylovReal(const OperatorType H, Wa
     {
       VerbosityPrintf(0x0100,"    Eigenvalue %3i = %22.15E\n",i,val[i]);
     }
+    if(Npsi<(NKrylovNow-1))
+    {
+      VerbosityPrintf(0x0100,"    Eigenvalue ...\n");
+      VerbosityPrintf(0x0100,"    Eigenvalue %3i = %22.15E\n",NKrylovNow-1,val[NKrylovNow-1]);
+    }
     fflush(stdout);
+    // shift the Hamiltonian
+    OperatorAddLader(H, NULL, 0, -(val[NKrylovNow-1]+val[Npsi-1])/2, 0);
     //Calculate new v[0] to v[Npsi-1]
     for(i=NKrylovNow;i<NKrylovNow+Npsi;i++)
     {
@@ -4748,10 +4774,19 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylovReal(const OperatorType H, Wa
   {
     WaveFunctionFreeValues(&v[i]);
   }
+  // undo shift
+  if(H->l[0].QComplex==0)
+  {
+    H->l[0].VRe[0] = HE0;
+  }
+  else
+  {
+    H->l[0].V[0].Re = HE0;
+  }
   return 0;
 }
 
-uint32_t BlockLanczosGroundStateConserveBasisKrylovComplex(const OperatorType H, WaveFunctionType * const v, uint32_t const Npsi, ConvergenceSettingsType * Settings)
+uint32_t BlockLanczosGroundStateConserveBasisKrylovComplex(OperatorType * H, WaveFunctionType * const v, uint32_t const Npsi, ConvergenceSettingsType * Settings)
 {
   VerbosityPrintf(0x0100,"In BlockLanczosGroundStateConserveBasisKrylovComplex\n");
   //CompactMatrixType tempS; // needed for testing of norm during convergence loops
@@ -4765,12 +4800,22 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylovComplex(const OperatorType H,
   double *work;
   Complex16 *cwork;
   double *val;
-  double Norm, DotRe, DotIm;
+  double Norm, DotRe, DotIm, HE0;
   uint32_t NKrylovNow=Npsi+Settings->NKrylovStart;
   uint32_t i,j, NpsiDeflated, NorthoExtra, Deflated[Npsi],irestart=0;
   CompactMatrixType HKrylov;
   uint32_t QConverged=0;
   double **tempRe, **tempIm;
+  // get value of H->l[0] so we can shift and restore the operator
+  if(H->l[0].NAloc==0) OperatorAddLader(H, NULL, 0, 0, 0); // allocate the operator with length 0
+  if(H->l[0].QComplex==0)
+  {
+    HE0 = H->l[0].VRe[0];
+  }
+  else
+  {
+    HE0 = H->l[0].V[0].Re;
+  }
   // init several matrices
   val=malloc((Npsi+Settings->NKrylovMax)*sizeof(double));
   iwork = malloc(liwork*sizeof(int));
@@ -4880,13 +4925,13 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylovComplex(const OperatorType H,
         }
       }
       // calculate v[i+NpsiDeflated] = H v[i] and onsite term < v[i] | H | v[i] >
-      if(H.QComplex==1)
+      if(H->QComplex==1)
       {
-        OperatorPsiConserveBasisPreAllocatedCC(&H, &v[i], &v[i+NpsiDeflated]);
+        OperatorPsiConserveBasisPreAllocatedCC(H, &v[i], &v[i+NpsiDeflated]);
       }
       else
       {
-        OperatorPsiConserveBasisPreAllocatedMC(&H, &v[i], &v[i+NpsiDeflated]);
+        OperatorPsiConserveBasisPreAllocatedMC(H, &v[i], &v[i+NpsiDeflated]);
       }
       ComplexWaveFunctionDotProductSameBasis(v[i], v[i+NpsiDeflated], &HKrylov.V[i+i*HKrylov.Nj].Re, &DotIm);
       // orthogonalize v[i+NpsiDeflated] to v[j] (the new candiate agains the latest found states)
@@ -4933,7 +4978,14 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylovComplex(const OperatorType H,
     {
       VerbosityPrintf(0x0100,"    Eigenvalue %3i = %22.15E\n",i,val[i]);
     }
+    if(Npsi<(NKrylovNow-1))
+    {
+      VerbosityPrintf(0x0100,"    Eigenvalue ...\n");
+      VerbosityPrintf(0x0100,"    Eigenvalue %3i = %22.15E\n",NKrylovNow-1,val[NKrylovNow-1]);
+    }
     fflush(stdout);
+    // shift the Hamiltonian
+    OperatorAddLader(H, NULL, 0, -(val[NKrylovNow-1]+val[Npsi-1])/2, 0);
     //Calculate new v[0] to v[Npsi-1]
     for(i=NKrylovNow;i<NKrylovNow+Npsi;i++)
     {
@@ -4984,12 +5036,21 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylovComplex(const OperatorType H,
   {
     ComplexWaveFunctionFreeValues(&v[i]);
   }
+  // undo shift
+  if(H->l[0].QComplex==0)
+  {
+    H->l[0].VRe[0] = HE0;
+  }
+  else
+  {
+    H->l[0].V[0].Re = HE0;
+  }
   return 0;
 }
 
-uint32_t BlockLanczosGroundStateConserveBasisKrylov(const OperatorType H, WaveFunctionType * const v, uint32_t const Npsi, ConvergenceSettingsType * Settings)
+uint32_t BlockLanczosGroundStateConserveBasisKrylov(OperatorType *H, WaveFunctionType * const v, uint32_t const Npsi, ConvergenceSettingsType * Settings)
 {
-  if(H.QComplex)
+  if(H->QComplex)
   {
     return BlockLanczosGroundStateConserveBasisKrylovComplex(H, v, Npsi, Settings);
   }
@@ -5008,7 +5069,7 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylov(const OperatorType H, WaveFu
  *  there are NpsiAlloc > 2 Npsi+1 states to work with
  *  on excess free memory of v[Npsi] to v[NpsiAlloc-1]
  */
-uint32_t BlockLanczosGroundStateConserveBasisKrylovRecalculate(const OperatorType H, WaveFunctionType * const v, uint32_t const Npsi, uint32_t const NpsiAlloc, ConvergenceSettingsType * Settings)
+uint32_t BlockLanczosGroundStateConserveBasisKrylovRecalculate(OperatorType * H, WaveFunctionType * const v, uint32_t const Npsi, uint32_t const NpsiAlloc, ConvergenceSettingsType * Settings)
 {
   uint32_t temp;
   
@@ -5041,13 +5102,13 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylovRecalculate(const OperatorTyp
  *   if psi[0].N <= DenseBoarder do a dense calculation
  *
  */
-uint32_t BlockLanczosGroundStateConserveBasis(const OperatorType H, WaveFunctionType * const psi, uint32_t const Npsi, ConvergenceSettingsType * Settings)
+uint32_t BlockLanczosGroundStateConserveBasis(OperatorType * H, WaveFunctionType * const psi, uint32_t const Npsi, ConvergenceSettingsType * Settings)
 {
   uint32_t i,MaxAlloc=2*Npsi+Settings->NKrylovMax, StartAlloc=2*Npsi+Settings->NKrylovStart;
   WaveFunctionType *v;
   VerbosityPrintf(0x10000000,"Start of BlockLanczosGroundStateConserveBasis\n");
   // for small basises do a dense calculation
-  if(psi[0].N<=Settings->DenseBoarder) return BlockLanczosGroundStateConserveBasisDense(H,psi, Npsi);
+  if(psi[0].N<=Settings->DenseBoarder) return BlockLanczosGroundStateConserveBasisDense(*H,psi, Npsi);
   // create the vectors v in memory.
   //   if all 2*Npsi+NKrylovMax are created return BlockLanczosGroundStateConserveBasisKrylov
   //   if only 2*Npsi+1 states can be created return BlockLanczosGroundStateConserveBasisKrylovRecalculate
@@ -5116,14 +5177,21 @@ uint32_t BlockLanczosGroundStateConserveBasis(const OperatorType H, WaveFunction
  *    epsilon:       will change if not enough memory is available.
  *
  */
-uint32_t BlockGroundState(OperatorType H, uint32_t const Npsi, ConvergenceSettingsType * Settings, DeterminantRestrictionType const StartingPoint, DeterminantRestrictionType const Restrictions, WaveFunctionType * const psi, const uint32_t NBitsKey)
+uint32_t BlockGroundState(OperatorType *H, uint32_t const Npsi, ConvergenceSettingsType * Settings, DeterminantRestrictionType const StartingPoint, DeterminantRestrictionType const Restrictions, WaveFunctionType * const psi, const uint32_t NBitsKey)
 {
-  uint32_t i,Qconverged=0, AtLeastAnOtherLoop=0,iloop=0;;
+  uint32_t i,Qconverged=0, AtLeastAnOtherLoop=0,iloop=0,NBitsKeyNew;
   WaveFunctionType Opsi[Npsi];
   double Energy[2][Npsi],EnergySqr[2][Npsi],temp,shiftE,shiftVar,HE0,totESqr;
   // in order to allow shifts we need H.l[0].VRe[0]
-  OperatorAddLader(&H, NULL, 0, 0, 0); // allocate the operator with length 0
-  HE0 = H.l[0].VRe[0];
+  if(H->l[0].NAloc==0) OperatorAddLader(H, NULL, 0, 0, 0); // allocate the operator with length 0
+  if(H->l[0].QComplex==0)
+  {
+    HE0 = H->l[0].VRe[0];
+  }
+  else
+  {
+    HE0 = H->l[0].V[0].Re;
+  }
   // if StartingPoint.N != 0
   // create Npsi independent functions fullfiling the starting point conditions
   // all functions must have the same basis
@@ -5131,7 +5199,7 @@ uint32_t BlockGroundState(OperatorType H, uint32_t const Npsi, ConvergenceSettin
   VerbosityPrintf(0x10000000,"Start of BlockGroundState\n");
   if((StartingPoint.N!=0)&&(!(NBitsKey==0)))
   {
-    if(CreateStartingFunctions(H, Npsi, StartingPoint, psi, NBitsKey))
+    if(CreateStartingFunctions(*H, Npsi, StartingPoint, psi, NBitsKey))
     {
       printf("CreateStartingFunctions failed in BlockGroundState\n");
       return 1;
@@ -5147,7 +5215,7 @@ uint32_t BlockGroundState(OperatorType H, uint32_t const Npsi, ConvergenceSettin
   WaveFunctionCopy(psi[0], &(Opsi[0]));
   WaveFunctionRandomize(&(Opsi[0]));
   WaveFunctionNormalize(&(Opsi[0]));
-  PsiHermitianOperatorPsi(H, Opsi[0], &totESqr);
+  PsiHermitianOperatorPsi(*H, Opsi[0], &totESqr);
   totESqr*=totESqr;
   WaveFunctionFree(&(Opsi[0]));
   // set energy[0]
@@ -5161,7 +5229,7 @@ uint32_t BlockGroundState(OperatorType H, uint32_t const Npsi, ConvergenceSettin
   {
     iloop++;
     // expand basis depending on Restrictions.N use either restrictions or don't use them
-    while( (Restrictions.N) ? BlockOperatorPsiSerialRestricted(H, psi, Opsi, Npsi, Restrictions) : BlockOperatorPsiSerial(H, psi, Opsi, Npsi))
+    while( (Restrictions.N) ? BlockOperatorPsiSerialRestricted(*H, psi, Opsi, Npsi, Restrictions) : BlockOperatorPsiSerial(*H, psi, Opsi, Npsi))
     {
       // was not able to evaluate O psi, need to truncate psi further
       if(psi[0].NBlok==1)
@@ -5172,9 +5240,16 @@ uint32_t BlockGroundState(OperatorType H, uint32_t const Npsi, ConvergenceSettin
       Settings->epsilon*=2;
       BlockWaveFunctionTruncateBasis(psi,Npsi,Settings->epsilon);
     }
+    // Change the size of the Hash lookuptable
+    NBitsKeyNew = 8;
+    while(Opsi[0].N>(1<<(NBitsKeyNew-1)))
+    {
+      NBitsKeyNew++;
+    }
+    if(Opsi[0].NBitsKey!=NBitsKeyNew) BlockWaveFunctionResetKeylist(Opsi, NBitsKeyNew, Npsi);
     // calculate Energy and variance of Energy - these values are needed to test for convergence
     Qconverged=1;
-    VerbosityPrintf(0x0100,"Number of determinants in basis %i (and basis of H psi %i)\n",psi[0].N,Opsi[0].N);
+    VerbosityPrintf(0x0100,"Number of determinants in basis %i (and basis of H psi %i) with size of lookuptable %i\n",psi[0].N,Opsi[0].N,1<<Opsi[0].NBitsKey);
     VerbosityPrintf(0x0100,"State # |   Energy               |  Variance of Energy    |  Energy change\n");
     for(i=0;i<Npsi;i++)
     {
@@ -5206,7 +5281,7 @@ uint32_t BlockGroundState(OperatorType H, uint32_t const Npsi, ConvergenceSettin
     else
     {
       // we shift the Hamiltonian by the largest energy of psi[i]
-      // and by the largest variance of psi[i]
+      // and by ten times the largest variance of psi[i]
       shiftE=-1E+99;
       shiftVar=-1E+99;
       for(i=0;i<Npsi;i++)
@@ -5215,9 +5290,12 @@ uint32_t BlockGroundState(OperatorType H, uint32_t const Npsi, ConvergenceSettin
         shiftVar = Max(shiftVar, EnergySqr[0][i] - Sqr(Energy[0][i]));
       }
       shiftVar = sqrt(Abs(shiftVar)+1000*DBL_MIN);
+      // shift H
+      OperatorAddLader(H, NULL, 0, -shiftE-10*shiftVar, 0);
+      // appli this shift in retrospect for the calculation of Opsi = H psi
       for(i=0;i<Npsi;i++)
       {
-        WaveFunctionAddMultipliedConserveBasis(&(Opsi[i]), psi[i], -shiftE-shiftVar);
+        WaveFunctionAddMultipliedConserveBasis(&(Opsi[i]), psi[i], -shiftE-10*shiftVar);
       }
       // print info
       VerbosityPrintf(0x0002,"Outer loop %3i, Number of Determinants: %9i %9i last variance %22.15E\n",iloop,psi[0].N,Opsi[0].N,EnergySqr[0][Npsi-1]-Sqr(Energy[0][Npsi-1]));
@@ -5227,8 +5305,6 @@ uint32_t BlockGroundState(OperatorType H, uint32_t const Npsi, ConvergenceSettin
       {
         psi[i]=Opsi[i];
       }
-      // shift H
-      H.l[0].VRe[0] -= shiftE+shiftVar;
       // find ground-state in basis
       while(BlockLanczosGroundStateConserveBasis(H, psi, Npsi, Settings))
       {
@@ -5244,7 +5320,14 @@ uint32_t BlockGroundState(OperatorType H, uint32_t const Npsi, ConvergenceSettin
         BlockWaveFunctionTruncateBasis(psi,Npsi,Settings->epsilon);
       }
       // undo shift
-      H.l[0].VRe[0] = HE0;
+      if(H->l[0].QComplex==0)
+      {
+        H->l[0].VRe[0] = HE0;
+      }
+      else
+      {
+        H->l[0].V[0].Re = HE0;
+      }
       // truncate basis
       BlockWaveFunctionTruncateBasis(psi,Npsi,Settings->epsilon);
     }

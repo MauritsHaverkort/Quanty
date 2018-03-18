@@ -978,7 +978,7 @@ void TestBlockLanczos()
   }
   
   DetRet.N=0;
-  BlockGroundState(H, Npsi, &Settings, DetRet, DetRet, psi, 0);
+  BlockGroundState(&H, Npsi, &Settings, DetRet, DetRet, psi, 0);
   
   
   BeginTiming("Energy", &GlobalTime);

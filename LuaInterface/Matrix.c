@@ -160,7 +160,7 @@ static int LuaMatrixEigensystem(lua_State * L)
   CompactMatrixType *H;
   H=luaL_checkCompactMatrix(L, 1);
   if(H->Ni!=H->Nj) return luaL_error(L,"Matrix Eigensystem only works on square matrices\n");
-  if(QCompactMatrixHermitian(*H, 2*DBL_EPSILON)==0)
+  if(QCompactMatrixHermitian(*H, 10*DBL_EPSILON)==0)
   {
     if (luaL_testudata(L, 1, "Matrix_Type") == NULL)
     {

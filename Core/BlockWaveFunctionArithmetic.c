@@ -2156,6 +2156,123 @@ void BlockWaveFunctionTruncateBasis(WaveFunctionType *const psi, uint32_t const 
   }
 }
 
+uint32_t RealBlockWaveFunctionResetKeylist(WaveFunctionType * const a, const uint32_t NBitsKey, uint32_t const Npsi)
+{
+  uint32_t *tempKeyList,i,iBlok,iElement;
+  const uint32_t startN=a[0].N;
+  double aval[Npsi];
+  // wipeout old keylist and replace it by a new one
+  if((tempKeyList=calloc((1<<NBitsKey), sizeof(uint32_t)))==NULL)
+  {
+    printf("realloc failed in RealWaveFunctionResetKeylist\n");
+    return 1;
+  }
+  free(a[0].KeyList);
+  for(i=0;i<Npsi;i++)
+  {
+    a[i].ValueRe[0][0] = 0;
+    a[i].NBitsKey=NBitsKey;
+    a[i].N = 0;
+    a[i].KeyList=tempKeyList;
+  }
+  // add all values back (and rest a.next while doing so)
+  // first loop over all Blokcs
+  for (iBlok = 0; iBlok < a[0].NBlok - 1; iBlok++)
+  {
+    for (iElement = 0; iElement < BlokSize; iElement++)
+    {
+      a[0].Next[iBlok][iElement] = 0;
+      if((iBlok==0)&&(iElement==0))continue;
+      for(i=0;i<Npsi;i++)
+      {
+        aval[i] = a[i].ValueRe[iBlok][iElement];
+      }
+      if (RealBlockWaveFunctionAddElement(a, &(a[0].Determinant[iBlok][iElement * a[0].NWord]), aval, Npsi)!= 0) AllocFailed();
+    }
+  }
+  // for the last block loop over all elements
+  iBlok = a[0].NBlok - 1;
+  for (iElement = 0; iElement < 1 + startN - iBlok * BlokSize; ++iElement)
+  {
+    a[0].Next[iBlok][iElement] = 0;
+    if((iBlok==0)&&(iElement==0))continue;
+    for(i=0;i<Npsi;i++)
+    {
+      aval[i] = a[i].ValueRe[iBlok][iElement];
+    }
+    if (RealBlockWaveFunctionAddElement(a, &(a[0].Determinant[iBlok][iElement * a[0].NWord]), aval, Npsi)!= 0) AllocFailed();
+  }
+  return 0;
+}
+uint32_t ComplexBlockWaveFunctionResetKeylist(WaveFunctionType * const a, const uint32_t NBitsKey, uint32_t const Npsi)
+{
+  uint32_t *tempKeyList,i,iBlok,iElement;
+  const uint32_t startN=a[0].N;
+  double avalRe[Npsi],avalIm[Npsi];
+  // wipeout old keylist and replace it by a new one
+  if((tempKeyList=calloc((1<<NBitsKey), sizeof(uint32_t)))==NULL)
+  {
+    printf("realloc failed in RealWaveFunctionResetKeylist\n");
+    return 1;
+  }
+  free(a[0].KeyList);
+  for(i=0;i<Npsi;i++)
+  {
+    a[i].ValueRe[0][0] = 0;
+    a[i].ValueIm[0][0] = 0;
+    a[i].NBitsKey=NBitsKey;
+    a[i].N = 0;
+    a[i].KeyList=tempKeyList;
+  }
+  // add all values back (and rest a.next while doing so)
+  // first loop over all Blokcs
+  for (iBlok = 0; iBlok < a[0].NBlok - 1; iBlok++)
+  {
+    for (iElement = 0; iElement < BlokSize; iElement++)
+    {
+      a[0].Next[iBlok][iElement] = 0;
+      if((iBlok==0)&&(iElement==0))continue;
+      for(i=0;i<Npsi;i++)
+      {
+        avalRe[i] = a[i].ValueRe[iBlok][iElement];
+        avalIm[i] = a[i].ValueRe[iBlok][iElement];
+      }
+      if (ComplexBlockWaveFunctionAddElement(a, &(a[0].Determinant[iBlok][iElement * a[0].NWord]), avalRe, avalIm, Npsi)!= 0) AllocFailed();
+    }
+  }
+  // for the last block loop over all elements
+  iBlok = a[0].NBlok - 1;
+  for (iElement = 0; iElement < 1 + startN - iBlok * BlokSize; ++iElement)
+  {
+    a[0].Next[iBlok][iElement] = 0;
+    if((iBlok==0)&&(iElement==0))continue;
+    for(i=0;i<Npsi;i++)
+    {
+      avalRe[i] = a[i].ValueRe[iBlok][iElement];
+      avalIm[i] = a[i].ValueIm[iBlok][iElement];
+    }
+    if (ComplexBlockWaveFunctionAddElement(a, &(a[0].Determinant[iBlok][iElement * a[0].NWord]), avalRe, avalIm, Npsi)!= 0) AllocFailed();
+  }
+  return 0;
+}
+
+uint32_t BlockWaveFunctionResetKeylist(WaveFunctionType * const a, const uint32_t NBitsKey, uint32_t const Npsi)
+{
+  if(Npsi==0) return 0;
+  if (a->QComplex == 0)
+  {
+    return RealBlockWaveFunctionResetKeylist(a, NBitsKey, Npsi);
+  }
+  else
+  {
+    return ComplexBlockWaveFunctionResetKeylist(a, NBitsKey, Npsi);
+  }
+}
+
+
+
+
+
 /*  calculate S[i][j] = < psi[i] | psi[j] >
  *  S not initialized on input
  */
