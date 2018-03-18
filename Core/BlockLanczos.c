@@ -5211,6 +5211,14 @@ uint32_t BlockGroundState(OperatorType *H, uint32_t const Npsi, ConvergenceSetti
   {
       for(i=0;i<Npsi;i++) PrintWaveFunctionReadable(psi[i]);
   }
+  // Change the size of the Hash lookuptable
+  NBitsKeyNew = 8;
+  while(psi[0].N>(1<<(NBitsKeyNew-1)))
+  {
+    NBitsKeyNew++;
+  }
+  NBitsKeyNew++;
+  if(psi[0].NBitsKey!=NBitsKeyNew) BlockWaveFunctionResetKeylist(psi, NBitsKeyNew, Npsi);
   // create some feeling for the energy of the state
   WaveFunctionCopy(psi[0], &(Opsi[0]));
   WaveFunctionRandomize(&(Opsi[0]));
