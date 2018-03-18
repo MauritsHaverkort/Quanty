@@ -3527,6 +3527,7 @@ static const struct luaL_Reg global_functions[] = {
   {"CalculateDOS", LuaCalculateDOS},
   {"CalculateFermi", LuaCalculateFermi},
   {"CalculateG", LuaCalculateG},
+  {"CalculateRho", LuaCalculateRho},
   {"Chop", LuaChop},
   {"Clone", Luacopy},
   {"Conjugate", Luaconjugate},

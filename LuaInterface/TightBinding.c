@@ -329,6 +329,62 @@ static int LuaCalculateG(lua_State *L)
   return 1;
 }
 
+
+/* Calculate the Density matrix from a given tight-binding Hamiltonian.
+ * Input on stack:
+ *   TB : TightBinding_Type
+ *   Options
+ *       Nk -> {Nkx,Nky,Nkz} number of k-points       standard {40,40,40}
+ */
+static int LuaCalculateRho(lua_State *L)
+{
+  uint32_t len;
+  TightBindingDef *a;
+  CompactMatrixType *rho;
+  
+  struct
+  {
+    int *Nk;
+    double mu;
+    double kbT;
+    //char* Method;   //only method implemented is the mesh/grid.
+  } Options;
+  Options.Nk = malloc(3*sizeof(int));
+  Options.Nk[0]=40;
+  Options.Nk[1]=40;
+  Options.Nk[2]=40;
+  Options.mu =0;
+  Options.kbT=DBL_EPSILON;
+  //Options.Method    = "Mesh";
+  LuaOptionsType LuaCalculateGOptions[]={
+    {"Nk", "array-uint32_t-3", &(Options.Nk)},
+    {"mu", "double"          , &(Options.mu)},
+    {"kbT","double"          , &(Options.kbT)},
+    {"kBT","double"          , &(Options.kbT)},
+    //{"Method",     "char*",    &(Options.Method)},
+    {NULL, NULL, NULL}};
+  
+  len = (uint32_t)lua_gettop(L);
+  if(!(len==1||len==2))
+  {
+    return luaL_error(L, "Error CalculateRho: called with %d arguments, 1 or 2 expected (TightBindingDef, and options).\n",len);
+  }
+  a = (TightBindingDef*) luaL_checkudata(L, 1, "TightBinding_Type");
+  if(len==2)
+  {
+    LuaCheckOptions(L, 2, LuaCalculateGOptions);
+  }
+  
+  lua_settop(L, 0);
+  rho = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+  luaL_setmetatable(L, "Matrix_Type");
+  TightBindingHamiltonianToDensityMatrix(a, Options.Nk, rho, Options.mu, Options.kbT);
+  
+  return 1;
+}
+
+
+
 /*  Creates an Hamiltonian representing a real space cluster
  *  Input on stack
  *    A tight binding Definition

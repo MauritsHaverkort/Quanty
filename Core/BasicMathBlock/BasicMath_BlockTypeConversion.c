@@ -763,6 +763,80 @@ uint32_t BlockListOfPolesInversedToCompactMatrix(BlockListOfPoles const * const 
  *          on an energy mesh with N+3 points. N+1 points from Emin to Emax and one point below Emin and one above Emax such that all weight and first moment is ok
  *  Calculates the eigen values and functions for each k
  *  for each k and eigen value i
+ *  weight is added to the density matrix according to Fermi-dirac statistics at temperature kBT and chemical potential mu
+ */
+uint32_t TightBindingHamiltonianToDensityMatrix(TightBindingDef const * const A, int Nk[3], CompactMatrixType *rho, double mu, double kbT)
+{
+  double q[3],diq[3],val[A->NFermion],weigth;
+  int iq[3],ival,k,Nktot=Nk[0]*Nk[1]*Nk[2];
+  MatrixType H;
+  CompactMatrixType T;
+  
+  rho->Ni=A->NFermion;
+  rho->Nj=A->NFermion;
+  rho->QComplex=1;
+  InitCompactMatrix(rho);
+  rho->mu = mu;
+  rho->a0=0;
+  rho->b0=1;
+  strcpy(rho->Name, A->Name);
+  for (iq[0] = 0; iq[0] < Nk[0]; iq[0]++)
+  {
+    for (iq[1] = 0; iq[1] < Nk[1]; iq[1]++)
+    {
+      for (iq[2] = 0; iq[2] < Nk[2]; iq[2]++)
+      {
+        diq[0] = iq[0] / ((double)(Nk[0]));
+        diq[1] = iq[1] / ((double)(Nk[1]));
+        diq[2] = iq[2] / ((double)(Nk[2]));
+        q[0] = diq[0] * A->Cell.gUnitCell[0][0] + diq[1] * A->Cell.gUnitCell[1][0] + diq[2] * A->Cell.gUnitCell[2][0];
+        q[1] = diq[0] * A->Cell.gUnitCell[0][1] + diq[1] * A->Cell.gUnitCell[1][1] + diq[2] * A->Cell.gUnitCell[2][1];
+        q[2] = diq[0] * A->Cell.gUnitCell[0][2] + diq[1] * A->Cell.gUnitCell[1][2] + diq[2] * A->Cell.gUnitCell[2][2];
+        CreateHamiltonianFromTightBindingDefConstantPhaseInUnitCell(*A, q, &H);
+        EigensystemToCompact(H, &T, val);
+        for(ival=0;ival<A->NFermion;ival++)
+        {
+          /* calculate contribution for eigen-value ival */
+          weigth = FermiFunction(val[ival], mu, kbT);
+          if(H.QComplex)
+          {
+            ComplexEigenFunctionToCharacter(&(T.V[ival*A->NFermion]), &H);
+            for(k=0;k<A->NFermion*A->NFermion;k++)
+            {
+              rho->V[k].Re += weigth * H.VRe[0][k];
+              rho->V[k].Im += weigth * H.VIm[0][k];
+            }
+          }
+          else
+          {
+            RealEigenFunctionToCharacter(&(T.VRe[ival*A->NFermion]), &H);
+            for(k=0;k<A->NFermion*A->NFermion;k++)
+            {
+              rho->V[k].Re += weigth * H.VRe[0][k];
+            }
+          }
+        }
+        FreeMatrix(&H);
+      }
+    }
+  }
+  
+  for(k=0;k<rho->Ni*rho->Nj;k++)
+  {
+    rho->V[k].Re/=Nktot;
+    rho->V[k].Im/=Nktot;
+  }
+  
+  return 0;
+}
+
+
+
+/*  Given an tight binding Hamiltonian and a k-mesh defined by the number of divisions of a, b and c (Nk)
+ *  returns the green function matrix of size A.NFermion by A.NFermion
+ *          on an energy mesh with N+3 points. N+1 points from Emin to Emax and one point below Emin and one above Emax such that all weight and first moment is ok
+ *  Calculates the eigen values and functions for each k
+ *  for each k and eigen value i
  *  weight is added to the pole at iE and iE+1 such that Energy[iE] < val < Energy[iE+1]
  *  The matrix h_{jk} is fun[i,j] * fun[i,k]^* is added
  */

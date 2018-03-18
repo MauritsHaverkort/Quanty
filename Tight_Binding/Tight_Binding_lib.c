@@ -724,7 +724,7 @@ int TightBindingBANDS(TightBindingDef A, BandstructurePathType kList, MatrixType
 }
 
 
-/*  given an eigen function the character matrix is calculated as char_{i,j} = psi_i * psi_j
+/*  given an eigen function the character matrix is calculated as char_{i,j} = psi_i * psi_j^*
  *
  */
 void RealEigenFunctionToCharacter(double const * EigenFun, MatrixType *Char)
@@ -738,8 +738,20 @@ void RealEigenFunctionToCharacter(double const * EigenFun, MatrixType *Char)
     }
   }
 }
+void RealEigenFunctionToCompactCharacter(double const * EigenFun, CompactMatrixType *Char)
+{
+  uint32_t i,j,k=0;
+  for(i=0;i<Char->Ni;i++)
+  {
+    for(j=0;j<Char->Nj;j++)
+    {
+      Char->VRe[k] = EigenFun[i]*EigenFun[j];
+      k++;
+    }
+  }
+}
 
-/*  given an eigen function the character matrix is calculated as char_{i,j} = psi_i * psi_j
+/*  given an eigen function the character matrix is calculated as char_{i,j} = psi_i * psi_j^*
  *
  */
 void ComplexEigenFunctionToCharacter(Complex16 const * EigenFun, MatrixType *Char)
@@ -751,6 +763,19 @@ void ComplexEigenFunctionToCharacter(Complex16 const * EigenFun, MatrixType *Cha
     {
       Char->VRe[i][j] = EigenFun[i].Re*EigenFun[j].Re+EigenFun[i].Im*EigenFun[j].Im;
       Char->VIm[i][j] = EigenFun[i].Im*EigenFun[j].Re-EigenFun[i].Re*EigenFun[j].Im;
+    }
+  }
+}
+void ComplexEigenFunctionToCompactCharacter(Complex16 const * EigenFun, CompactMatrixType *Char)
+{
+  uint32_t i,j,k=0;
+  for(i=0;i<Char->Ni;i++)
+  {
+    for(j=0;j<Char->Nj;j++)
+    {
+      Char->V[k].Re = EigenFun[i].Re*EigenFun[j].Re+EigenFun[i].Im*EigenFun[j].Im;
+      Char->V[k].Im = EigenFun[i].Im*EigenFun[j].Re-EigenFun[i].Re*EigenFun[j].Im;
+      k++;
     }
   }
 }
@@ -769,7 +794,17 @@ void EigenFunctionToCharacter(void const * EigenFun, MatrixType *Char)
     RealEigenFunctionToCharacter((double*) EigenFun, Char);
   }
 }
-
+void EigenFunctionToCompactCharacter(void const * EigenFun, CompactMatrixType *Char)
+{
+  if(Char->QComplex)
+  {
+    ComplexEigenFunctionToCompactCharacter((Complex16*) EigenFun, Char);
+  }
+  else
+  {
+    RealEigenFunctionToCompactCharacter((double*) EigenFun, Char);
+  }
+}
 
 
 /*  given an eigen function the character matrix is calculated as char_{i,j} = psi_i * psi_j

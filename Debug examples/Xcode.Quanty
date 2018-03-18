@@ -1,5 +1,10 @@
 --Verbosity(0xFFFFFFFF)
 
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Tutorials/NiO LDA plus Ligand Field Theory/FPLO/Calculate_Double_Counting_Potential.Quanty")
+
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Tutorials/NiO LDA plus Ligand Field Theory/FPLO/Run_FPLO_to_Selfconsistency.Quanty")
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Tutorials/NiO LDA plus Ligand Field Theory/FPLO/Calculate_Double_Counting_Potential.Quanty")
+os.exit()
 
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Functions/Eigensystem.Quanty")
 os.exit()
@@ -10,10 +15,6 @@ os.exit()
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Functions/CreateSpectra.Quanty")
 os.exit()
 
-dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Tutorials/NiO LDA plus Ligand Field Theory/FPLO/Calculate_Double_Counting_Potential.Quanty")
-os.exit()
-
-dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Tutorials/NiO LDA plus Ligand Field Theory/FPLO/Run_FPLO_to_Selfconsistency.Quanty")
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Tutorials/NiO LDA plus Ligand Field Theory/FPLO/Calculate_Double_Counting_Potential.Quanty")
 os.exit()
 

@@ -24,6 +24,10 @@ FPLOOut = FileReadDresdenFPLO("LDApMLFT/FPLO/out.wan")
 
 TB = TightBindingDefFromDresdenFPLO(FPLOOut)
 
+
+
+
+
 -- from a tight binding Hamiltonian we can calculate the Green's function  sum_k 1/(w-H_k)
 -- The imaginary part is the DOS
 
@@ -38,6 +42,11 @@ print("============")
 rhoNoSpin = Chop(MatrixSqr(GBAT.val[2][1]))
 print(rhoNoSpin)
 -- we now have the density matrix (you'll get a single function for this)
+print("============")
+rhoSec = Chop(CalculateRho(TB),1E-10);
+print(Matrix.ToTable(rhoSec))
+os.exit()
+
 
 -- the FPLO basis is without spin and contains both the Ni-d and O-p orbitals
 -- in order to calculate the coulomb repulsion of the d electrons on the d electrons I need the density matrix of the d shell with spin
