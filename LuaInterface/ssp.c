@@ -2610,6 +2610,7 @@ static int LuaEigensystem(lua_State * L)
     {"restrictions", "DeterminantRestrictionType", &(Options.DeterminantRestrictions)},
     {"Restrictions", "DeterminantRestrictionType", &(Options.DeterminantRestrictions)},
     {"ExpandBasis", "bool",&(Options.ExpandBasis)},
+    {"ShiftScheme", "char*",Options.Settings.ShiftScheme},
     {NULL, NULL, NULL}};
   VerbosityPrintf(0x10000000,"Start of LuaEigensystem\n");
   /* check number of input parameters */

@@ -5272,6 +5272,7 @@ uint32_t PsiOperatorPsiMatrix(const OperatorType O, const WaveFunctionType * psi
  */
 uint32_t PsiPrimeOperatorPsi(const OperatorType O, const WaveFunctionType psiPrime, const WaveFunctionType psi, double *VRe, double *VIm)
 {
+  //TODO: use the fact that one does not need to store O * psi
   MatrixType V;
   uint32_t returnVal;
   V.Ni = 1;

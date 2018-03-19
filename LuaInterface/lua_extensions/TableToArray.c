@@ -1950,10 +1950,17 @@ void LuaPushArray_Complex16(lua_State *L, Complex16 const * const val, int const
   lua_createtable(L, N, 0);
   for(i=0;i<N;i++)
   {
-    res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
-    res->Re=val[i].Re;
-    res->Im=val[i].Im;
-    luaL_setmetatable(L, "Complex_Type");
+    if(val[i].Im==0)
+    {
+      lua_pushnumber(L, val[i].Re);
+    }
+    else
+    {
+      res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
+      res->Re=val[i].Re;
+      res->Im=val[i].Im;
+      luaL_setmetatable(L, "Complex_Type");
+    }
     lua_rawseti(L, -2, i+1);
   }
 }
@@ -2084,10 +2091,17 @@ void LuaPushTable_CompactMatrixType(lua_State* L, CompactMatrixType const * cons
     {
       if(M->QComplex)
       {
-        res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
-        res->Re = M->V[i*M->Nj+j].Re;
-        res->Im = M->V[i*M->Nj+j].Im;
-        luaL_setmetatable(L, "Complex_Type");
+        if(M->V[i*M->Nj+j].Im==0)
+        {
+          lua_pushnumber(L, M->V[i*M->Nj+j].Re);
+        }
+        else
+        {
+          res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
+          res->Re = M->V[i*M->Nj+j].Re;
+          res->Im = M->V[i*M->Nj+j].Im;
+          luaL_setmetatable(L, "Complex_Type");
+        }
       }
       else
       {

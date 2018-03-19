@@ -4727,7 +4727,10 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylovReal(OperatorType * H, WaveFu
     }
     fflush(stdout);
     // shift the Hamiltonian
-    OperatorAddLader(H, NULL, 0, -(val[NKrylovNow-1]+val[Npsi-1])/2, 0);
+    if(strcmp("Automatic",Settings->ShiftScheme)==0)
+    {
+      OperatorAddLader(H, NULL, 0, -(val[NKrylovNow-1]+val[Npsi-1])/2, 0);
+    }
     //Calculate new v[0] to v[Npsi-1]
     for(i=NKrylovNow;i<NKrylovNow+Npsi;i++)
     {
@@ -4985,7 +4988,10 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylovComplex(OperatorType * H, Wav
     }
     fflush(stdout);
     // shift the Hamiltonian
-    OperatorAddLader(H, NULL, 0, -(val[NKrylovNow-1]+val[Npsi-1])/2, 0);
+    if(strcmp("Automatic",Settings->ShiftScheme)==0)
+    {
+      OperatorAddLader(H, NULL, 0, -(val[NKrylovNow-1]+val[Npsi-1])/2, 0);
+    }
     //Calculate new v[0] to v[Npsi-1]
     for(i=NKrylovNow;i<NKrylovNow+Npsi;i++)
     {
@@ -5288,22 +5294,25 @@ uint32_t BlockGroundState(OperatorType *H, uint32_t const Npsi, ConvergenceSetti
     }
     else
     {
-      // we shift the Hamiltonian by the largest energy of psi[i]
-      // and by ten times the largest variance of psi[i]
-      shiftE=-1E+99;
-      shiftVar=-1E+99;
-      for(i=0;i<Npsi;i++)
+      if(!(strcmp("None", Settings->ShiftScheme)==0))
       {
-        shiftE   = Max(shiftE,Energy[0][i]);
-        shiftVar = Max(shiftVar, EnergySqr[0][i] - Sqr(Energy[0][i]));
-      }
-      shiftVar = sqrt(Abs(shiftVar)+1000*DBL_MIN);
-      // shift H
-      OperatorAddLader(H, NULL, 0, -shiftE-10*shiftVar, 0);
-      // appli this shift in retrospect for the calculation of Opsi = H psi
-      for(i=0;i<Npsi;i++)
-      {
-        WaveFunctionAddMultipliedConserveBasis(&(Opsi[i]), psi[i], -shiftE-10*shiftVar);
+        // we shift the Hamiltonian by the largest energy of psi[i]
+        // and by ten times the largest variance of psi[i]
+        shiftE=-1E+99;
+        shiftVar=-1E+99;
+        for(i=0;i<Npsi;i++)
+        {
+          shiftE   = Max(shiftE,Energy[0][i]);
+          shiftVar = Max(shiftVar, EnergySqr[0][i] - Sqr(Energy[0][i]));
+        }
+        shiftVar = sqrt(Abs(shiftVar)+1000*DBL_MIN);
+        // shift H
+        OperatorAddLader(H, NULL, 0, -shiftE-10*shiftVar, 0);
+        // appli this shift in retrospect for the calculation of Opsi = H psi
+        for(i=0;i<Npsi;i++)
+        {
+          WaveFunctionAddMultipliedConserveBasis(&(Opsi[i]), psi[i], -shiftE-10*shiftVar);
+        }
       }
       // print info
       VerbosityPrintf(0x0002,"Outer loop %3i, Number of Determinants: %9i %9i last variance %22.15E\n",iloop,psi[0].N,Opsi[0].N,EnergySqr[0][Npsi-1]-Sqr(Energy[0][Npsi-1]));

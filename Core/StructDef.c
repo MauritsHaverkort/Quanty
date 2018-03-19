@@ -236,11 +236,13 @@ typedef struct ConvergenceSettingsType
   double Emax2;
   uint32_t NE2;
   double Gamma2;
+  char   *ShiftScheme;
 }
 ConvergenceSettingsType;
 
 ConvergenceSettingsType InitConvergenceSettings()
 {
+  char *ShiftScheme = "Variance";
   ConvergenceSettingsType ret=
   {
     1000 /*DenseBoarder*/,
@@ -260,7 +262,8 @@ ConvergenceSettingsType InitConvergenceSettings()
     {0, NULL, NULL, NULL} /*restricitons2*/,
     DBL_MAX,-DBL_MAX,1000,0 /*Energy range */,
     DBL_MAX,-DBL_MAX,1000,0 /*Energy range 1*/,
-    DBL_MAX,-DBL_MAX,1000,0 /*Energy range 2*/
+    DBL_MAX,-DBL_MAX,1000,0 /*Energy range 2*/,
+    ShiftScheme             /* shift according to variance (options Automatic, Variance, None*/
   };
   return ret;
 };
