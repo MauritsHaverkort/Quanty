@@ -2054,12 +2054,17 @@ static int LuaCreateSpectra(lua_State *L)
       }
       free(BlockSizeN);
     }
-    
-    
-    
     /* free tridiagonal representation in memory */
     FreeBlockTridiagonalMatrix(&GTri);
-    return 3;
+    
+    if(Options.KrylovBasis==True)
+    {
+      return 3;
+    }
+    else
+    {
+      return 2;
+    }
   }
 }
 
