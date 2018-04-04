@@ -2435,7 +2435,7 @@ static int LuaMeanFieldGroundstate(lua_State *L)
   kbT = (double) luaL_checknumber(L, 3);
   if((H->NFermion+H->NBoson)!=Rho->Ni)
   {
-    return luaL_error(L, "Error in MeanFieldGroundstate, length of operator (NF %i NB %i) is not equal to length of density matrix (%i)\n",H->NFermion,H->NBoson,Rho->Ni);
+    return luaL_error(L, "Error in MeanFieldGroundstate, length of operator (NF %d NB %d) is not equal to length of density matrix (%d)\n",H->NFermion,H->NBoson,Rho->Ni);
   }
   MeanFieldGroundstate(H, Rho, kbT,&Etot);
   LuaPushTable_CompactMatrixType(L, Rho);
@@ -2468,7 +2468,7 @@ static int LuaOperatorToMatrix(lua_State *L)
   }
   else
   {
-    return luaL_error(L, "Error in OperatorToMatrix, expected one (Operator) or two (Operator, DensityMatrix) input parameters, not (%i)\n",len);
+    return luaL_error(L, "Error in OperatorToMatrix, expected one (Operator) or two (Operator, DensityMatrix) input parameters, not (%d)\n",len);
   }
   MeanFieldOperatorOneElectronMatrix(H, &HMat, *Rho);
   LuaPushTable_CompactMatrixType(L, &HMat);

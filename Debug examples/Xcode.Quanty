@@ -1,5 +1,8 @@
 Verbosity(0xFFFF)
 
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Functions/MeanFieldGroundState.Quanty")
+os.exit()
+
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Functions/Braket.Quanty")
 os.exit()
 
