@@ -1,3 +1,5 @@
+#include "TestCore.h"
+
 void TestStruct()
 {
 /*

@@ -1,3 +1,5 @@
+#include "OperatorWaveFunctionPerturbation.h"
+
 /*
  *  The wave-funciton and operator is saved in parts.
  *  Operator O act on each part and does not connect different parts

@@ -1,3 +1,5 @@
+#include "Spectral.h"
+
 /*
 *   Defines a set of functions that act on the structure spectra
 *

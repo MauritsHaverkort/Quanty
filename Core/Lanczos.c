@@ -1,3 +1,5 @@
+#include "Lanczos.h"
+
 /*
 *   Lanczos Subroutines
 *   Functions Specified:

@@ -1,3 +1,5 @@
+#include "ImpurityModelFromTB.h"
+
 #include "../Yi/AtomicFunctions.c"
 
 #define MAXNSHELLS 8

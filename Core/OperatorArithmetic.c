@@ -1,3 +1,5 @@
+#include "OperatorArithmetic.h"
+
 /* format of a lader operator
  * stored as uint16_t
  *  if(o[i]&CrAnMask) then creation operator

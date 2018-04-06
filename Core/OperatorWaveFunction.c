@@ -1,3 +1,4 @@
+#include "OperatorWaveFunction.h"
 
 /*
 *   Input pointer to a determinant and an integer that specifies the position that has to be created

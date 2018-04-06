@@ -1,3 +1,5 @@
+#include "Test.h"
+
 /*
 *   Test.c contains a simple interface to test routines that test simple parts of the program
 *   In principle I try to suply each subroutine with a test routine that tests it expected

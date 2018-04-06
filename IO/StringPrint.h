@@ -1,0 +1,10 @@
+/* This file was automatically generated.  Do not edit! */
+uint32_t StringPrintTightBindingDef(TightBindingDef O,char **Buffer);
+uint32_t StringPrintCrystalStructure(CrystalStructureType O,char **Buffer);
+uint32_t StringPrintAddCrystalStructure(CrystalStructureType O,char **Buffer);
+uint32_t StringPrintMatrix(MatrixType M,char **Buffer);
+uint32_t StringPrintAddMatrix(MatrixType M,char **Buffer);
+uint32_t StringPrintSpectra(SpectraType *const Spec,const uint32_t NSpec,char **Buffer);
+uint32_t StringPrintWaveFunctionReadable(WaveFunctionType psi,char **Buffer);
+uint32_t StringPrintOperatorReadable(OperatorType O,char **Buffer);
+int sprintfAdd(char **A,char *fmt,...);

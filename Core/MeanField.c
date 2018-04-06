@@ -1,3 +1,5 @@
+#include "MeanField.h"
+
 /*  This function changes a compact matrix into a one particel operator
  *
  *  state |0> is chaged by the operator Cr1 An0 to state |1>

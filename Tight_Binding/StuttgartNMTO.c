@@ -1,3 +1,5 @@
+#include "StuttgartNMTO.h"
+
 uint32_t BandstructurePathFromStuttgartCTRL(StuttgartCTRL CTRL, BandstructurePathType *Path)
 {
   int QPathBrakes=0;

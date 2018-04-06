@@ -1,3 +1,5 @@
+#include "StuttgartNMTO.h"
+
 void TestStuttgartNMTO()
 {
   char testString[]="Hello World";

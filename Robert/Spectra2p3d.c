@@ -1,3 +1,5 @@
+#include "Spectra2p3d.h"
+
 #define NSiteMax 2
 typedef struct CalcData3d
 {

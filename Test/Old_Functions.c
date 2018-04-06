@@ -1,3 +1,4 @@
+#include "Old_Functions.h"
 
 /*  Given an semi definite hermitian matrix, CompactMatrixSqrt calculates its sqrt, such that
  *   B * B^{dag} = A

@@ -125,34 +125,3 @@ int    zgesvd();
 int    zhegv();
 int    zhegvd();
 void   zdotc();
-
-/**********************************************************/
-/********      Hubbard Model/CellFunctions.c      *********/
-/**********************************************************/
-uint32_t AddAditionalInformationToSuperCell(CrystalStructureSuperCellType * A);
-uint32_t CopyCrystalStructure(CrystalStructureType A, CrystalStructureType * B);
-
-
-/**********************************************************/
-/********    Tight Binding/Tight_Binding_lib.c    *********/
-/**********************************************************/
-int    SetNFermionIndexTightBindingDef(TightBindingDef * A);
-uint32_t CreateUSuperCell(OperatorType U, OperatorType * USuperCell, CrystalStructureSuperCellType SuperCell);
-int    CreateTightBindingSuperCell(TightBindingDef A, TightBindingDef * ASuper, CrystalStructureSuperCellType SuperCell);
-int CreateHamiltonianFromTightBindingDef(TightBindingDef A, double k[3], MatrixType * H);
-int CreateHamiltonianFromTightBindingDefConstantPhaseInUnitCell(TightBindingDef A, double k[3], MatrixType * H);
-int CreateCrystalStructureFromCrystalStructureSuperCell(CrystalStructureSuperCellType SuperCell, CrystalStructureType * Cell);
-void RealEigenFunctionToCharacter(double const * EigenFun, MatrixType *Char);
-void ComplexEigenFunctionToCharacter(Complex16 const * EigenFun, MatrixType *Char);
-void EigenFunctionToCharacter(void const * EigenFun, MatrixType *Char);
-void RealEigenFunctionToCharacterMultiSite(double const * EigenFun, MatrixType *Char, uint32_t const Nvec, int const *vec);
-void ComplexEigenFunctionToCharacterMultiSite(Complex16 const * EigenFun, MatrixType *Char, uint32_t const Nvec, int const *vec);
-void EigenFunctionToCharacterMultiSite(void const * EigenFun, MatrixType *Char, uint32_t const Nvec, int const *vec);
-uint32_t CalculateChemicalPotentialFromListOfEigenvalues(const double * const val, const uint32_t NVal, const double kbT, const double NE, double * const mu, double *Etot);
-uint32_t CalculateTotalEnergyFromListOfEigenvalues(const double * const val, const uint32_t NVal, const double kbT, const double mu, double *Etot);
-
-
-/**********************************************************/
-/********    DMFT.c    *********/
-/**********************************************************/
-uint32_t DMFTSpec();

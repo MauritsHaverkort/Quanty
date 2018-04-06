@@ -1,3 +1,5 @@
+#include "BasicMath_VectorLinearAlgabra.h"
+
 /*  
  *  u = M v     (see MatrixVector files)
  *  u = v^* M v (see MatrixVector files)

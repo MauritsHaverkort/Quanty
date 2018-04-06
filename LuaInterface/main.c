@@ -75,7 +75,7 @@ static void *currentudata = NULL;
 #include "../Yi/functions_yi.c"
 #include "ssp.c"
 
-
+#include "main.h"
 
 
 int main(int argc, char *argv[])

@@ -1,3 +1,5 @@
+#include "Complex.h"
+
 static int LuaComplexNew(lua_State * L)
 {
   Complex16 *res;

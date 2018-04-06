@@ -1,0 +1,22 @@
+/* This file was automatically generated.  Do not edit! */
+uint32_t CreateOperatorCreateList(uint32_t const NFermion,uint16_t const *Crindex,double const *VRe,double const *VIm,const uint32_t N,OperatorType *const OppCr);
+uint32_t CreateOperatorAnnihilateList(uint32_t const NFermion,uint16_t const *Anindex,double const *VRe,double const *VIm,const uint32_t N,OperatorType *const OppAn);
+uint32_t CreateOperatorCreateAnnihilateList(uint32_t const NFermion,uint16_t const *Crindex,uint16_t const *Anindex,double const *VRe,double const *VIm,const uint32_t N,OperatorType *const OppCrAn);
+uint32_t CreateOperatorCF(uint32_t const NFermion,uint32_t LCr,uint32_t LAn,uint16_t *LCrindexUp,uint16_t *LCrindexDn,uint16_t *LAnindexUp,uint16_t *LAnindexDn,HarmonicsExpansion const Akm,OperatorType *const CF);
+uint32_t CreateOperatorNumberShell(uint32_t const NFermion,uint32_t const Nelectron,const uint16_t *const index,OperatorType *const OppN);
+uint32_t CreateOperatorCoulombTwoShellsConstantOccupation(uint32_t const NFermion,uint32_t const L1,uint32_t const L2,uint16_t const *Lindex1Up,uint16_t const *Lindex1Dn,uint16_t const *Lindex2Up,uint16_t const *Lindex2Dn,double const *F,double const *G,OperatorType *const U);
+uint32_t CreateOperatorCoulombSingleShell(uint32_t const NFermion,uint32_t const L,uint16_t const *LindexUp,uint16_t const *LindexDn,double const *F,OperatorType *const U);
+uint32_t CreateOperatorldots(uint32_t NFermion,uint32_t L,uint16_t *LindexUp,uint16_t *LindexDn,OperatorType *const ldots);
+uint32_t CreateOperatorJsqr(uint32_t NFermion,uint32_t L,uint16_t *LindexUp,uint16_t *LindexDn,OperatorType *const Jsqr);
+uint32_t CreateOperatorJz(uint32_t NFermion,uint32_t L,uint16_t *LindexUp,uint16_t *LindexDn,OperatorType *const Jz);
+uint32_t CreateOperatorJy(uint32_t NFermion,uint32_t L,uint16_t *LindexUp,uint16_t *LindexDn,OperatorType *const Jy);
+uint32_t CreateOperatorJx(uint32_t NFermion,uint32_t L,uint16_t *LindexUp,uint16_t *LindexDn,OperatorType *const Jx);
+uint32_t CreateOperatorLsqr(uint32_t NFermion,uint32_t L,uint16_t *LindexUp,uint16_t *LindexDn,OperatorType *const Lsqr);
+uint32_t CreateOperatorLz(uint32_t NFermion,uint32_t L,uint16_t *LindexUp,uint16_t *LindexDn,OperatorType *const Lz);
+uint32_t CreateOperatorLy(uint32_t NFermion,uint32_t L,uint16_t *LindexUp,uint16_t *LindexDn,OperatorType *const Ly);
+uint32_t CreateOperatorLx(uint32_t NFermion,uint32_t L,uint16_t *LindexUp,uint16_t *LindexDn,OperatorType *const Lx);
+uint32_t CreateOperatorSsqr(uint32_t NFermion,uint32_t NSpin,uint16_t *SpinUp,uint16_t *SpinDn,OperatorType *const Ssqr);
+uint32_t CreateOperatorSz(uint32_t NFermion,uint32_t NSpin,uint16_t *SpinUp,uint16_t *SpinDn,OperatorType *const Sz);
+uint32_t CreateOperatorSy(uint32_t NFermion,uint32_t NSpin,uint16_t *SpinUp,uint16_t *SpinDn,OperatorType *const Sy);
+uint32_t CreateOperatorSx(uint32_t NFermion,uint32_t NSpin,uint16_t *SpinUp,uint16_t *SpinDn,OperatorType *const Sx);
+void CeImpurity();

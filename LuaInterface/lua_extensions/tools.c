@@ -1,3 +1,5 @@
+#include "tools.h"
+
 static void luaMWH_StackDump (lua_State *L)
 {
   int i,len;

@@ -1,3 +1,5 @@
+#include "TestGreenFunctions.h"
+
 void   GreenTransforms();
 void   TestSelfenergy();
 void   TestGBath();

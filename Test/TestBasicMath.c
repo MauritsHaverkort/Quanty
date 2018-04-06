@@ -1,3 +1,5 @@
+#include "TestBasicMath.h"
+
 void TestCompactMatrixCallers();
 void TestBlockLanczos();
 

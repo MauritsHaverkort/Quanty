@@ -1,3 +1,5 @@
+#include "NiO.h"
+
 void TestNiO()
 {
   TimeType Time;

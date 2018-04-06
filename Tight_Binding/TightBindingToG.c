@@ -1,3 +1,5 @@
+#include "TightBindingToG.h"
+
 double DOSFunctionBethe(double w)
 {
   return (4.0 / Pi) * sqrt(Max(0, 1 - 4 * Sqr(w)));

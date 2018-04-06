@@ -1,3 +1,4 @@
+
 /* The basis set is given by single slater determinant wave functions
  * these are represented as an array of NFermion bits, whereby 0 means empty and 1 occupied
  * and NBoson bites (8 bits) where 0 means empty, 1 means an occupation of one and 255 means an occupation of 255, the maximum

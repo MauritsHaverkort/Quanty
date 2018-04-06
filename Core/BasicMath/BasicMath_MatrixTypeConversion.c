@@ -1,3 +1,4 @@
+#include "BasicMath_MatrixTypeConversion.h"
 
 /*
 *   MatrixToSparseMatrix         (MatrixType const M, SparseMatrixType * const U, double const epsilon)          M=U for M[i,j]>epsilon

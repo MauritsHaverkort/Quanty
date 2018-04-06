@@ -1,3 +1,5 @@
+#include "BasicMath_BlockTypeConversion.h"
+
 /*  These functions convert one type of representation to an other
  *
  *  Conversions are:

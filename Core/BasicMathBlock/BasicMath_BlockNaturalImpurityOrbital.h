@@ -1,0 +1,10 @@
+/* This file was automatically generated.  Do not edit! */
+uint32_t SetTMTFromValandConInBlockNaturalImpurityOrbitalMatrixType(BlockNaturalImpurityOrbitalMatrixType *B);
+uint32_t CopyBlockTridiagonalMatrix(BlockTriDiagonalMatrixType A,BlockTriDiagonalMatrixType *B);
+uint32_t CopyBlockNaturalImpurityOrbitalMatrix(BlockNaturalImpurityOrbitalMatrixType A,BlockNaturalImpurityOrbitalMatrixType *B);
+uint32_t ComplexBlockTridiagonalMatrixToReal(BlockTriDiagonalMatrixType *const A);
+uint32_t BlockNaturalImpurityOrbitalMatrixChop(BlockNaturalImpurityOrbitalMatrixType *const A,double const Epsilon);
+uint32_t FreeBlockTridiagonalMatrix(BlockTriDiagonalMatrixType *A);
+uint32_t FreeBlockNaturalImpurityOrbitalMatrix(BlockNaturalImpurityOrbitalMatrixType *const A);
+uint32_t InitBlockTridiagonalMatrix(BlockTriDiagonalMatrixType *const A);
+uint32_t InitBlockNaturalImpurityOrbitalMatrix(BlockNaturalImpurityOrbitalMatrixType *const A);

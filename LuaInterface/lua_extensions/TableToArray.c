@@ -1,3 +1,4 @@
+#include "TableToArray.h"
 
 /*  returns a pointer to an array of lenght len_out
  *  of type _type

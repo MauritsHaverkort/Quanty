@@ -1,3 +1,5 @@
+#include "BlockLanczos.h"
+
 /*  given an Determinant and a set of Restrictions
  *  If I leave iFermion empty in the Determinant and I will be allowed to make changes to all fermions at higher index positions will I
  *  A) still be able to fullfill the restrictions - return 0

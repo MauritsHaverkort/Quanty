@@ -1,3 +1,5 @@
+#include "MatrixOperator.h"
+
 /*  These functions transform matrices to operators for some standard models
  *
  */

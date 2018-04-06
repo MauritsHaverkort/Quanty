@@ -1,3 +1,5 @@
+#include "TightBinding.h"
+
 /*  push a new TightBinding object to the lua stack
  *  the tight binding object is empty as its properties need to be set via its ellements
  */

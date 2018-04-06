@@ -1,3 +1,5 @@
+#include "BasicMath_BlokAndersonMatrixVector.h"
+
 /*
 *     ( A[0][0]=a1   | A[0][1]=b1   | A[1][2]=b2   | A[2][3]=b3 )
 *   A=( A[1][0]=b1^+ | A[1][1]=a2   | 0            | 0          )

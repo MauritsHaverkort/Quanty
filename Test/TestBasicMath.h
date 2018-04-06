@@ -1,0 +1,23 @@
+/* This file was automatically generated.  Do not edit! */
+void TestThreeJSymbol();
+void TestCombinatorial();
+void TestGeneralizedEigensystem();
+void TestTriDiagonalMatrix();
+void TestComplex();
+void TestDGESVD();
+void TestDGESVD2();
+void TestDGESVD3();
+void TestBasicMath();
+void TestMatrixInverse();
+extern const double a;
+void TestInterpolate();
+void TestAllMatrix();
+void TestBlockLanczosAfterChange();
+void TestBlockListOfPoles();
+void TestCompactMatrixVector();
+void TestMatrixVector();
+void TestMatrixTypeConversion();
+void TestBlockLanczos();
+void TestBlockLanczos();
+void TestCompactMatrixCallers();
+void TestCompactMatrixCallers();

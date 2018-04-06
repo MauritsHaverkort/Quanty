@@ -1,3 +1,5 @@
+#include "BasicMath_ListOfPoles.h"
+
 uint32_t InitListOfPoles(ListOfPoles * M)
 {
   strcpy(M->Name, "List of Poles");

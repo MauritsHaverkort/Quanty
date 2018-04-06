@@ -1,3 +1,5 @@
+#include "Operator.h"
+
 /*  define the NewOperator functions
  *  depending on the first argument of NewOperator different types of standard operators are created. Here the implementation
  */

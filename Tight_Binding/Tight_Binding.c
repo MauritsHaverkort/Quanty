@@ -1,3 +1,5 @@
+#include "Tight_Binding.h"
+
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>

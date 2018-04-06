@@ -1,3 +1,5 @@
+#include "DresdenFPLO.h"
+
 // Split a string into array of phrases according to the given delimiter.
 uint32_t SplitStringToArray(char **array, char *str, char *del)
 {

@@ -1,3 +1,5 @@
+#include "StringPrint.h"
+
 /*
  *
  */

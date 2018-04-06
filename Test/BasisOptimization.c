@@ -1,3 +1,5 @@
+#include "BasisOptimization.h"
+
 void BasisOptimizationSmallLowSym();
 void BasisOptimizationSmallD4h();
 

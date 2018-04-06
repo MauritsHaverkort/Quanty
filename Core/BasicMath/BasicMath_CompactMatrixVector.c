@@ -1,3 +1,5 @@
+#include "BasicMath_CompactMatrixVector.h"
+
 /*   Multiplication and other algorithms accept the following transformations as string
  *   'T' Transpose M^T(i,j) = M(j,i)
  *   'N' Do nothing

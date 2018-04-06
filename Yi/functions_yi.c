@@ -1,3 +1,5 @@
+#include "functions_yi.h"
+
 /* Some makeshift functions */
 
 static int LuaFileReadWavefunction(lua_State * L)

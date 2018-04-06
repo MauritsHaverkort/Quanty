@@ -1,3 +1,5 @@
+#include "HarmonicOscillator.h"
+
 // Solves the (periodic) harmonic oscillator H = -0.5*(d^2/dx^2) + 0.5*x*x
 // by using plane waves as basis functions
 // The harmonic oscillator 

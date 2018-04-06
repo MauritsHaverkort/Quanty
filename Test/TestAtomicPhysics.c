@@ -1,3 +1,5 @@
+#include "TestAtomicPhysics.h"
+
 uint32_t TestCommutationRelations()
 {
   return 0;

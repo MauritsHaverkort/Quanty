@@ -1,3 +1,5 @@
+#include "FileRead.h"
+
 uint32_t file_exists(const char *filename)
 {
   FILE  *stream;

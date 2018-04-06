@@ -1,3 +1,5 @@
+#include "TemperatureAvverage.h"
+
 typedef struct TemperatureSettings
 {
   uint32_t NFolders;            /* Number of folders needed to average over */

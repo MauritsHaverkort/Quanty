@@ -1,3 +1,5 @@
+#include "BlockWaveFunctionArithmetic.h"
+
 /*  Block Wavefunctions are arrays of wave-function types wich have the same basis.
  *  for the array psi[] the values
  *  psi[i].QComplex

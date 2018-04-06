@@ -1,3 +1,4 @@
+#include "StreamPrint.h"
 
 /*
  *  Prints an array of spectra

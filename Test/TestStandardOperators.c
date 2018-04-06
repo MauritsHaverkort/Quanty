@@ -1,3 +1,5 @@
+#include "TestStandardOperators.h"
+
 void TestS()
 {
   OperatorType Sx, Sy, Sz, S2, Stest;

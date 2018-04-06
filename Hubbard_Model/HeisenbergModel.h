@@ -1,0 +1,16 @@
+/* This file was automatically generated.  Do not edit! */
+int main(int argc,const char *argv[]);
+int main(int argc,const char *argv[]);
+int main(int argc,const char *argv[]);
+int main(int argc,const char *argv[]);
+int main(int argc,const char *argv[]);
+uint32_t CreateHeisenbergModelStartWaveFunctionFM(HeisenbergModelSettings Set,WaveFunctionType *Psi);
+uint32_t CreateHeisenbergModelStartWaveFunctionOperatorFM(HeisenbergModelSettings Set,OperatorType *O);
+uint32_t CreateHeisenbergModelStartWaveFunction(HeisenbergModelSettings Set,WaveFunctionType *Psi);
+uint32_t CreateHeisenbergModelStartWaveFunctionOperator(HeisenbergModelSettings Set,OperatorType *O);
+uint32_t CreateHeisenbergModelSpinFlipOperatorSxMomentumSpace(HeisenbergModelSettings Set,OperatorType *O);
+uint32_t CreateHeisenbergModelSpinFlipOperatorMomentumSpace(HeisenbergModelSettings Set,OperatorType *O);
+uint32_t CreateHeisenbergModelSpinFlipOperatorSxRealSpace(HeisenbergModelSettings Set,OperatorType *O);
+uint32_t CreateHeisenbergModelSpinFlipOperatorRealSpace(HeisenbergModelSettings Set,OperatorType *O);
+uint32_t ShortesConnectingVectorPeriodicSuperCell(const int32_t A[],const int32_t B[],const CrystalStructureSuperCellType SC,int32_t C[]);
+uint32_t CreateHeisenbergModelHamiltonian(HeisenbergModelSettings Set,OperatorType *H);

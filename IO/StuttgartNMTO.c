@@ -1,3 +1,5 @@
+#include "StuttgartNMTO.h"
+
 #define StuttgartCTRLCategories {"HEADER","VERS","IO","DIM","STRUC","OPTIONS","CLASS","SITE","SYMGRP","SCALE","STR","BZ","EWALD","DOS","SYML","START","HARTREE","PLOT","CHARGE","FINDES","SCELL","RHOFIT","NMTO","LOCALCS"}
 #define NStuttgartCTRLCategories 24
 

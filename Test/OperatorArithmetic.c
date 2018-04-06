@@ -1,3 +1,5 @@
+#include "OperatorArithmetic.h"
+
 void TestOppMult()
 {
   printf("Test multiplication of operators\n");

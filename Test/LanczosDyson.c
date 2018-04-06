@@ -1,4 +1,4 @@
-
+#include "LanczosDyson.h"
 
 void TestLanczosDyson3()
 {

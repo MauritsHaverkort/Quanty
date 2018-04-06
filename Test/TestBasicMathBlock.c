@@ -1,3 +1,5 @@
+#include "TestBasicMathBlock.h"
+
 void TestBasicMathBlock()
 {
   int Nk[3];

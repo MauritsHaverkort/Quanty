@@ -1,3 +1,5 @@
+#include "TestSpectral.h"
+
 void TestGreenFunctionCreation()
 {
   uint32_t i, Dim, Nk, NTriDiag;

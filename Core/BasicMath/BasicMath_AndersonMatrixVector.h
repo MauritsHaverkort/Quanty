@@ -1,0 +1,24 @@
+/* This file was automatically generated.  Do not edit! */
+uint32_t DetermineImpurityShiftFromOccupationAndersonMatrix(AndersonMatrixType M,double const occupation,double *const shift);
+uint32_t CalculateImpurityOccupationAndersonMatrix(AndersonMatrixType const M,double *const occupation);
+void FreeListOfPoles(ListOfPoles *M);
+uint32_t ListOfPolesCalculateChemicalPotential(ListOfPoles const M,double const occupation,double *const mu);
+uint32_t AndersonMatrixToListOfPoles(AndersonMatrixType const M,ListOfPoles *const A);
+uint32_t AndersonMatrixCalculateChemicalPotential(AndersonMatrixType const M,double const occupation,double *const mu);
+void ComplexVectorAndersonMatrixVector(AndersonMatrixType const M,const double *const xRe,const double *const xIm,double *const yRe,double *const yIm);
+void RealVectorAndersonMatrixVector(AndersonMatrixType const M,const double *const x,double *const y);
+void ComplexAndersonMatrixVector(AndersonMatrixType const M,const double *const xRe,const double *const xIm,double *const yRe,double *const yIm);
+void RealAndersonMatrixVector(AndersonMatrixType const M,const double *const x,double *const y);
+uint32_t AndersonMatrixOrderAndAbs(AndersonMatrixType *const M,AndersonMatrixType A);
+uint32_t AndersonMatrixOrder(AndersonMatrixType *const M,AndersonMatrixType A);
+uint32_t AndersonMatrixCopy(AndersonMatrixType *const M,AndersonMatrixType A);
+uint32_t AndersonMatrixPart(AndersonMatrixType *const M,AndersonMatrixType A,const uint32_t iStart,const uint32_t iEnd);
+void AndersonMatrixScalarMultiply(AndersonMatrixType *const M,double alphaRe);
+void AndersonMatrixAdd(AndersonMatrixType *const M,AndersonMatrixType B,double alphaRe);
+double MatrixInverse(MatrixType *M);
+uint32_t InitMatrix(MatrixType *const M);
+double AndersonMatrixInverse(AndersonMatrixType const M,MatrixType *const MI);
+void AndersonMatrixChop(AndersonMatrixType *const M,double const epsilon);
+uint32_t InitIdentityAndersonMatrix(AndersonMatrixType *const M);
+uint32_t InitAndersonMatrix(AndersonMatrixType *const M);
+void FreeAndersonMatrix(AndersonMatrixType *const M);

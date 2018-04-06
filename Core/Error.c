@@ -1,3 +1,5 @@
+#include "Error.h"
+
 void AllocFailed()
 {
   printf("Allocation failed\n");

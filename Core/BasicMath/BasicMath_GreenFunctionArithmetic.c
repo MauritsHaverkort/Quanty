@@ -1,3 +1,5 @@
+#include "BasicMath_GreenFunctionArithmetic.h"
+
 /*    Within this file the Green function is always represented as the resolvent of some matrix
  *    
  *    1) Tri-diagonal matrix representation

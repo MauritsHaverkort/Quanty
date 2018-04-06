@@ -1,3 +1,5 @@
+#include "BasicMath_BlockListOfPoles.h"
+
 /*
  *   Initialize a struct of BlockListOfPoles type
  *   malloc the space for storing N matrices of dimension BlockSize * BlockSize

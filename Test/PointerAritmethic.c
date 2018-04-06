@@ -1,3 +1,5 @@
+#include "PointerAritmethic.h"
+
 void TestPointerArithmetic()
 {
   int    a1[3] = { 0, 1, 2 };

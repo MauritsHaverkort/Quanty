@@ -1,3 +1,5 @@
+#include "TestGFBA.h"
+
 void TestGFBA()
 {
   uint32_t i, NBath = 4;

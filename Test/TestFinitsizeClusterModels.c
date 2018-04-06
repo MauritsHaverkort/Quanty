@@ -1,3 +1,5 @@
+#include "TestFinitsizeClusterModels.h"
+
 void TestCellFunctions()
 {
   uint32_t i, j;
