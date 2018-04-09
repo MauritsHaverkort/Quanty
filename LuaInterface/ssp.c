@@ -556,6 +556,13 @@ static int LuaVerbosity(lua_State * L)
 }
 
 
+int lua_return(lua_State *L, OperatorType *O) //TODO: For far better readability and lessened error-liability, this and similar functions should be used whenever possible.
+{
+	lua_pushlightuserdata(L,O);
+	luaL_setmetatable(L, "Operator_Type");
+	return 1;
+}
+
 
 static int LuaNewOperator(lua_State * L)
 {
@@ -2449,6 +2456,28 @@ static int LuaMeanFieldGroundstate(lua_State *L)
   return 3;
 }
 
+static int LuaMeanFieldOperator(lua_State *L)
+{
+  	OperatorType *H, *HMF;
+  	CompactMatrixType *Rho;
+  	uint32_t len = (uint32_t)lua_gettop(L);
+    if(len<2 || len>2)
+    {
+      return luaL_error(L, "MeanFieldOperator called with %d arguments. Exactly two expected, Operator and Density Matrix.\n",len);
+    }
+  	H = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
+  	Rho = (CompactMatrixType *) luaL_checkCompactMatrix(L, 2);
+  	if((H->NFermion+H->NBoson)!=Rho->Ni)
+  	{
+  	  return luaL_error(L, "Error in MeanFieldGroundstate, length of operator (NF %i NB %i) is not equal to length of density matrix (%i)\n",H->NFermion,H->NBoson,Rho->Ni);
+  	}
+  	HMF = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+  	MeanFieldOperator(H, HMF, *Rho);	
+  	strncpy(HMF->Name, "", MAXStrLength-1); //An appropriate Name can be given in Lua.
+  	FreeCompactMatrix(Rho);
+  	return lua_return(L,HMF);
+}
+
 static int LuaOperatorToMatrix(lua_State *L)
 {
   OperatorType *H;
@@ -3556,6 +3585,7 @@ static const struct luaL_Reg global_functions[] = {
   {"ImpurityGreensFunction", LuaImpurityGreensFunction},
   {"Inverse", LuaInverse},
   {"MeanFieldGroundState", LuaMeanFieldGroundstate},
+  {"MeanFieldOperator", LuaMeanFieldOperator},
   {"NewOperator", LuaNewOperator},
   {"NewTightBinding", LuaNewTightBinding},
   {"NewWavefunction", LuaNewWaveFunction},
