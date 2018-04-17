@@ -1,0 +1,22 @@
+dofile("definitions.Quanty")
+
+-- Broaden with a Gaussian of FWHM 0.2 and a Lorenzian with variable with, the interval 0 to 5.25 has FWHM=0.2. The interval 5.75,20 has FWHM=0.75. The interval 5.25 to 5.75 linearly increases from 0.2 to 0.75
+GBroaden = Spectra.Broaden(G, 0.2, {{0.0,0.2}, {5.25,0.2}, {5.75,0.75}, {20.0,0.75}})
+
+
+G.Print({{"file","Spectra.dat"}})
+GBroaden.Print({{"file","Spectra.Broaden.dat"}})
+
+gnuplotScript = gnuplotHead .. [[
+set output "Spectra.Broaden.ps"
+
+plot "Spectra.dat"  using 1:(-$3  ) title 'T1' with lines ls  1,\
+     "Spectra.Broaden.dat"  using 1:(-$3*2) title 'T1 Broaden' with lines ls  2
+]]
+
+file = io.open("Spectra.Broaden.gnuplot", "w")
+file:write(gnuplotScript)
+file:close()
+
+os.execute("gnuplot Spectra.Broaden.gnuplot ; ps2pdf Spectra.Broaden.ps ; ps2eps Spectra.Broaden.ps ; mv Spectra.Broaden.eps temp.eps ; eps2eps temp.eps Spectra.Broaden.eps ; rm temp.eps")
+

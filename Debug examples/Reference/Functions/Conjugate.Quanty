@@ -1,0 +1,10 @@
+﻿dofile("../definitions.Quanty")
+
+Opp3 = Conjugate(Opp2) 
+print(Opp2)
+print(Opp3)
+
+psi = psi1 + I * psi2
+psi3 = Conjugate(psi)
+print(psi)
+print(psi3)

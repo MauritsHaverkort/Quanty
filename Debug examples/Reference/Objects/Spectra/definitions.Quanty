@@ -1,0 +1,36 @@
+Verbosity(0x0)
+
+NF = 9
+NB = 0
+
+T1 = NewOperator("Create", NF, {0,1,2,3,4,5,6,7,8},{0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9})
+T2 = NewOperator("Create", NF, {0,1,2,3,4,5,6,7,8},{0.0,0.2,0.0,0.4,0.0,0.6,0.0,0.8,0.0})
+T3 = NewOperator("Create", NF, {0,1,2,3,4,5,6,7,8},{0.1,0.0,0.3,0.0,0.5,0.0,0.7,0.0,0.9})
+H = NewOperator("Number", NF, {0,1,2,3,4,5,6,7,8},  {0,1,2,3,4,5,6,7,8},  {1,2,3,4,5,6,7,8,9})
+psi = NewWavefunction(NF,NB,{{"000000000",1}})
+
+G = CreateSpectra(H, {T1,T2,T3}, psi, {{"Emin",-1}, {"Emax",11}, {"Gamma",0.1}})
+
+
+
+gnuplotHead = [[
+set autoscale                          # scale axes automatically
+set xtic auto                          # set xtics automatically
+set ytic auto                          # set ytics automatically
+set style line  1 lt 1 lw 1 lc rgb "#000000"
+set style line  2 lt 1 lw 1 lc rgb "#FF0000"
+set style line  3 lt 1 lw 1 lc rgb "#00FF00"
+set style line  4 lt 1 lw 1 lc rgb "#0000FF"
+set style line  5 lt 1 lw 3 lc rgb "#808080"
+set style line  6 lt 1 lw 3 lc rgb "#00FFFF"
+set style line  7 lt 1 lw 3 lc rgb "#FF00FF"
+set style line  8 lt 1 lw 3 lc rgb "#FFFF00"
+
+set xlabel "Energy (arb. units)" font "Times-Roman,12"
+set ylabel "Intensity (arb. units)" font "Times-Roman,12"
+
+set size 1.0, 0.3
+set terminal postscript portrait enhanced color  "Times-Roman" 8
+     
+]]
+

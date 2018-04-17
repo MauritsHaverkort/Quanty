@@ -1,6 +1,15 @@
+-- Sofar we calculated eigenstates and expectation values (or spectra) of these
+-- eigenstates. At 0 K one would measure the expectation value of the lowest eigenstate
+-- at finite temperature one would measure an average over several states weighted by
+-- Boltzmann statistics. In this example we calculate the temperature dependent 
+-- x-ray absorption spectra of NiO. (Ni L23 edge 2p to 3d) within the ligand-field
+-- theory approximation
+
+-- The first part is an exact copy of example 41
+
 Verbosity(0)
 
--- here we calculate the 2p XPS of NiO within the Ligand-field theory
+-- here we calculate the 2p to 3d x-ray absorption of NiO within the Ligand-field theory
 -- approximation. The first part of the script is very much the same as calculating
 -- the ground-state with the addition that we now also need a 2p core shell in the basis
 
@@ -126,15 +135,19 @@ OppUpdF2 = NewOperator("U", NF, IndexUp_2p, IndexDn_2p, IndexUp_3d, IndexDn_3d, 
 OppUpdG1 = NewOperator("U", NF, IndexUp_2p, IndexDn_2p, IndexUp_3d, IndexDn_3d, {0,0}, {1,0})
 OppUpdG3 = NewOperator("U", NF, IndexUp_2p, IndexDn_2p, IndexUp_3d, IndexDn_3d, {0,0}, {0,1})
 
--- transition operator, i.e. annihilation operator of one of the core electrons
--- there are 6 core orbitals. Depending on the light polarization and direction of observing the 
--- photo emitted electron one observs a different state.
+-- dipole transition
 
-T = {}
-for i=1,3 do
-  T[2*i-1] = NewOperator("An",NF,IndexDn_2p[i])
-  T[2*i  ] = NewOperator("An",NF,IndexUp_2p[i])
-end
+t=math.sqrt(1/2)
+
+Akm = {{1,-1,t},{1, 1,-t}}
+TXASx = NewOperator("CF", NF, IndexUp_3d, IndexDn_3d, IndexUp_2p, IndexDn_2p, Akm)
+Akm = {{1,-1,t*I},{1, 1,t*I}}
+TXASy = NewOperator("CF", NF, IndexUp_3d, IndexDn_3d, IndexUp_2p, IndexDn_2p, Akm)
+Akm = {{1,0,1}}
+TXASz = NewOperator("CF", NF, IndexUp_3d, IndexDn_3d, IndexUp_2p, IndexDn_2p, Akm)
+
+TXASr = t*(TXASx - I * TXASy)
+TXASl =-t*(TXASx + I * TXASy)
 
 -- We follow the energy definitions as introduced in the group of G.A. Sawatzky (Groningen)
 -- J. Zaanen, G.A. Sawatzky, and J.W. Allen PRL 55, 418 (1985)
@@ -154,24 +167,24 @@ end
 -- eL = nd*((1+nd)*Udd/2-Delta)/(10+nd)
 --
 -- For the final state we/they defined
--- The 2p^5 L^10 d^n configuration has an energy 0
--- The 2p^5 L^9  d^n+1 configuration has an energy Delta - Upd
--- The 2p^5 L^8  d^n+2 configuration has an energy 2*Delta + Udd - 2*Upd
+-- The 2p^5 L^10 d^n+1 configuration has an energy 0
+-- The 2p^5 L^9  d^n+2 configuration has an energy Delta + Udd - Upd
+-- The 2p^5 L^8  d^n+3 configuration has an energy 2*Delta + 3*Udd - 2*Upd
 --
 -- If we relate this to the onsite energy of the p and d orbitals we find
 -- 6 ep + 10 eL +  n    ed + n(n-1)     Udd/2 + 6 n     Upd == 0
 -- 6 ep +  9 eL + (n+1) ed + (n+1)n     Udd/2 + 6 (n+1) Upd == Delta
 -- 6 ep +  8 eL + (n+2) ed + (n+1)(n+2) Udd/2 + 6 (n+2) Upd == 2*Delta+Udd
--- 5 ep + 10 eL + (n+1) ed + n(n-1)     Udd/2 + 5 (n  ) Upd == 0
--- 5 ep +  9 eL + (n+2) ed + (n+1)n     Udd/2 + 5 (n+1) Upd == Delta-Upd
--- 5 ep +  8 eL + (n+3) ed + (n+1)(n+2) Udd/2 + 5 (n+2) Upd == 2*Delta+Udd-2*Upd
+-- 5 ep + 10 eL + (n+1) ed + (n+1)(n)   Udd/2 + 5 (n+1) Upd == 0
+-- 5 ep +  9 eL + (n+2) ed + (n+2)(n+1) Udd/2 + 5 (n+2) Upd == Delta+Udd-Upd
+-- 5 ep +  8 eL + (n+3) ed + (n+3)(n+2) Udd/2 + 5 (n+3) Upd == 2*Delta+3*Udd-2*Upd
 -- 6 equations with 3 unknowns, but with interdependence yield:
--- epfinal = (20*Delta - n(19+n)Udd) - 2(6+nd)(10+nd) Upd / (2(16+nd))
--- edfinal = (20*Delta - nd*(19+nd)*Udd - 120*Upd) / (2(16+nd))
--- eLfinal = (-2(6+nd)*Delta + nd*(13+nd)Udd+12(6+nd)*Upd) / (2(16+nd))
+-- epfinal = (10*Delta + (1+nd)*(nd*Udd/2-(10+nd)*Upd) / (16+nd)
+-- edfinal = (10*Delta - nd*(31+nd)*Udd/2-90*Upd) / (16+nd)
+-- eLfinal = ((1+nd)*(nd*Udd/2+6*Upd)-(6+nd)*Delta) / (16+nd)
 --
---
---
+-- 
+-- 
 -- note that ed-ep = Delta - nd * U and not Delta
 -- note furthermore that ep and ed here are defined for the onsite energy if the system had
 -- locally nd electrons in the d-shell. In DFT or Hartree Fock the d occupation is in the end not
@@ -179,7 +192,7 @@ end
 -- calculations.
 --
 -- note furthermore that ep and eL actually should be different for most systems. We happily ignore this fact
---
+-- 
 -- We normally take U and Delta as experimentally determined parameters
 
 -- number of electrons (formal valence)
@@ -189,7 +202,7 @@ Udd     =  7.3
 Upd     =  8.5
 Delta   =  4.7
 -- parameters obtained from DFT (PRB 85, 165113 (2012))
-F2dd    = 11.14
+F2dd    = 11.14 
 F4dd    =  6.87
 F2pd    =  6.67
 G1pd    =  4.92
@@ -206,17 +219,17 @@ Hz      =  0.120
 ed      = (10*Delta-nd*(19+nd)*Udd/2)/(10+nd)
 eL      = nd*((1+nd)*Udd/2-Delta)/(10+nd)
 
-epfinal = -(nd*Upd)
-edfinal = -(-20*Delta + nd*(19 + nd)*Udd + 120*Upd)/(2.*(10 + nd))
-eLfinal = (nd*(-2*Delta + Udd + nd*Udd + 12*Upd))/(2.*(10 + nd))
+epfinal = (10*Delta + (1+nd)*(nd*Udd/2-(10+nd)*Upd)) / (16+nd)
+edfinal = (10*Delta - nd*(31+nd)*Udd/2-90*Upd) / (16+nd)
+eLfinal = ((1+nd)*(nd*Udd/2+6*Upd) - (6+nd)*Delta) / (16+nd)
 
 F0dd    = Udd + (F2dd+F4dd) * 2/63
 F0pd    = Upd + (1/15)*G1pd + (3/70)*G3pd
 
 Hamiltonian =  F0dd*OppF0_3d + F2dd*OppF2_3d + F4dd*OppF4_3d + zeta_3d*Oppldots_3d + Bz*(2*OppSz_3d + OppLz_3d) + Hz * OppSz_3d + tenDq*OpptenDq_3d + tenDqL*OpptenDq_Ld + Veg * OppVeg + Vt2g * OppVt2g + ed * OppN_3d + eL * OppN_Ld
-
-cPESHamiltonian =  F0dd*OppF0_3d + F2dd*OppF2_3d + F4dd*OppF4_3d + zeta_3d*Oppldots_3d + Bz*(2*OppSz_3d + OppLz_3d)+ Hz * OppSz_3d + tenDq*OpptenDq_3d + tenDqL*OpptenDq_Ld + Veg * OppVeg + Vt2g * OppVt2g + edfinal * OppN_3d + eLfinal * OppN_Ld + epfinal * OppN_2p + zeta_2p * Oppcldots + F0pd * OppUpdF0 + F2pd * OppUpdF2 + G1pd * OppUpdG1 + G3pd * OppUpdG3
-
+            
+XASHamiltonian =  F0dd*OppF0_3d + F2dd*OppF2_3d + F4dd*OppF4_3d + zeta_3d*Oppldots_3d + Bz*(2*OppSz_3d + OppLz_3d)+ Hz * OppSz_3d + tenDq*OpptenDq_3d + tenDqL*OpptenDq_Ld + Veg * OppVeg + Vt2g * OppVt2g + edfinal * OppN_3d + eLfinal * OppN_Ld + epfinal * OppN_2p + zeta_2p * Oppcldots + F0pd * OppUpdF0 + F2pd * OppUpdF2 + G1pd * OppUpdG1 + G3pd * OppUpdG3  
+               
 -- we now can create the lowest Npsi eigenstates:
 Npsi=3
 -- in order to make sure we have a filling of 8 electrons we need to define some restrictions
@@ -229,94 +242,148 @@ oppList={Hamiltonian, OppSsqr, OppLsqr, OppJsqr, OppSz_3d, OppLz_3d, Oppldots_3d
 
 print("  #    <E>      <S^2>    <L^2>    <J^2>    <S_z^3d> <L_z^3d> <l.s>    <F[2]>   <F[4]>   <Neg^3d> <Nt2g^3d><Neg^Ld> <Nt2g^Ld><N^3d>");
 for i = 1,#psiList do
-io.write(string.format("%3i ",i))
-for j = 1,#oppList do
-expectationvalue = Chop(psiList[i]*oppList[j]*psiList[i])
-io.write(string.format("%8.3f ",expectationvalue))
-end
-io.write("\n")
+  io.write(string.format("%3i ",i))
+  for j = 1,#oppList do
+    expectationvalue = Chop(psiList[i]*oppList[j]*psiList[i])
+    io.write(string.format("%8.3f ",expectationvalue))
+  end
+  io.write("\n")
 end
 
 -- We calculate the x-ray absorption spectra for z, right circular and left circular polarized light for the 3 lowest eigen-states. (9 spectra in total)
 
-cPESSpectra = CreateSpectra(cPESHamiltonian, T, psiList, {{"Emin",-25}, {"Emax",25}, {"NE",5000}, {"Gamma",0.2}})
+XASSpectra = CreateSpectra(XASHamiltonian, {TXASz, TXASr, TXASl}, psiList, {{"Emin",-15}, {"Emax",25}, {"NE",2000}, {"Gamma",0.1}})
 
--- and put some additional energy broadening on it (0.4 Gaussian and 0.2 lorenzian)
-cPESSpectra.Broaden(0.4, 0.2)
+-- and put some additional energy broadening on it (0.4 Gaussian and energy dependent lorenzian)
+XASSpectra.Broaden(0.4, {{-3.7, 0.45}, {-2.2, 0.65}, { 0.0, 0.65}, { 1.0, 2.00}, { 6  , 2.00}, { 8  , 0.80}, {13.2, 0.80}, {14.0, 0.90}, {16.0, 0.90}, {17.0, 2.00}})
 
--- we can use several operations on a spectrum object. For one we can sum several spectra
--- the function Spectra.Sum sums the spectra with the prefactors given in the list afterwards
--- sum the spectra of the ground-state for different transition operators in order to get the
--- isotropic spectrum
-cPESIsoSpectra = Spectra.Sum(cPESSpectra,{1,0,0, 1,0,0, 1,0,0, 1,0,0, 1,0,0, 1,0,0})
+-- and now we start to do things different in order to include temperature averaging
+-- We have calculated three states. The energy of these states is:
+Enlist = {}
+for i=1,#psiList do
+  Enlist[i] = psiList[i] * Hamiltonian * psiList[i]
+end
+-- In order to calculate occupation numbers we need to calculate E^(-Energy/(kb T))
+-- If the ground-state has an energy of -3.5 eV and we calculate this pre-factor at a temperature
+-- of 10 Kelvin we get E^(3.5/(10*8.6*10^(-5))) = 8.3 * 10^(1763) a number so large it does
+-- not fit in the computer memory. The solution is simple, we need to make sure the lowest
+-- energy is zero.
+for i=2,#psiList do
+  Enlist[i] = Enlist[i] - Enlist[1]
+end
+Enlist[1]=0
+
+-- Besides the energy I would like to look at the magnetic moment, both spin and angular part
+-- so also here we calculate the expectation values in a list
+Szlist = {}
+Lzlist = {}
+for i=1,#psiList do
+  Szlist[i] = psiList[i] * OppSz_3d * psiList[i]
+  Lzlist[i] = psiList[i] * OppLz_3d * psiList[i]
+end
+
+-- We can now calcualte the temperature dependent expectation values:
+p={}
+print("Temperature, Total Energy,  Magnetic Moment, Sz,            Lz")
+for T=1,1000,10 do
+  Z=0
+  SzT=0
+  LzT=0
+  ET=0
+  for i=1,#psiList do
+    p[i] = exp(-Enlist[i]/(EnergyUnits.Kelvin.value * T))
+    Z = Z + p[i]
+    SzT = SzT + p[i] * Szlist[i]
+    LzT = LzT + p[i] * Lzlist[i]
+    ET  = ET  + p[i] * Enlist[i]
+  end
+  SzT = SzT / Z
+  LzT = LzT / Z
+  MzT = -LzT - 2*SzT
+  
+  io.write(string.format("%8i ",T))
+  io.write(string.format("%14.8f ",ET))
+  io.write(string.format("%14.8f   ",MzT))
+  io.write(string.format("%14.8f ",SzT))
+  io.write(string.format("%14.8f\n",LzT))
+end
+
+-- Note that in order to see the magnetic phase transition you need to make Hz in the Hamiltonian
+-- temperature dependent. This can be done using self consistent loops. (The mathematica version
+-- has an example of this, will make it here at some point as well)
+
+-- The first column shows you how much energy you need to add to the system in order to heat
+-- it. (specific heat) Be aware though that most of the specific heat is due to phonons, not
+-- included in this calculation. It does capture nicely the electronic contribution to the
+-- specific heat. (Including the change at cross overs for excited states (important in rare-
+-- earth systems) and Lambda peaks for phase transitions
+
+-- Now the temperature dependent XAS:
+
+-- The object XASSpectra contains 9 spectra. For 3 different polarizations and 3 different states
+-- What we need to do is to sum them according to Boltzmann statistics.
+
+T = 100
+Z=0
+for i=1,#psiList do
+  p[i] = exp(-Enlist[i]/(EnergyUnits.Kelvin.value * T))
+  Z = Z + p[i]
+end
+-- we now create the Bolzmann summ for z, right and left polarized absorption (at T=100 Kelvin)
+XASSpectraT100 = Spectra.Sum(XASSpectra,{p[1]/Z,p[2]/Z,p[3]/Z, 0,0,0, 0,0,0},{0,0,0, p[1]/Z,p[2]/Z,p[3]/Z, 0,0,0},{0,0,0, 0,0,0, p[1]/Z,p[2]/Z,p[3]/Z})
+
+-- and the same at 1000 Kelvin
+T = 1000
+Z=0
+for i=1,#psiList do
+  p[i] = exp(-Enlist[i]/(EnergyUnits.Kelvin.value * T))
+  Z = Z + p[i]
+end
+-- we now create the Bolzmann summ for z, right and left polarized absorption (at T=1000 Kelvin) (note again that we still have a large magnetization here as the exchange-field is not temperature dependent)
+XASSpectraT1000 = Spectra.Sum(XASSpectra,{p[1]/Z,p[2]/Z,p[3]/Z, 0,0,0, 0,0,0},{0,0,0, p[1]/Z,p[2]/Z,p[3]/Z, 0,0,0},{0,0,0, 0,0,0, p[1]/Z,p[2]/Z,p[3]/Z})
 
 
 -- We can print the spectra to file
-cPESSpectra.Print({{"file","cPESSpec.dat"}})
-cPESIsoSpectra.Print({{"file","cPESIsoSpec.dat"}})
+XASSpectraT100.Print({{"file","XASSpectraT100.dat"}})
+XASSpectraT1000.Print({{"file","XASSpectraT1000.dat"}})
 
--- In order to  make plots I use Gnu-plot, which can be called from within Quanty (if it is installed on your computer)
--- Here a script to make the plots
 
 gnuplotInput = [[
-set autoscale
-set xtic auto
-set ytic auto
-set style line  1 lt 1 lw 1 lc rgb "#000000"
+set autoscale 
+set xtic auto 
+set ytic auto 
+set style line  1 lt 1 lw 1 lc rgb "#0000FF"
 set style line  2 lt 1 lw 1 lc rgb "#FF0000"
-set style line  3 lt 1 lw 3 lc rgb "#000000"
+set style line  3 lt 1 lw 1 lc rgb "#00FF00"
 
 set xlabel "E (eV)" font "Times,12"
 set ylabel "Intensity (arb. units)" font "Times,12"
 
-set out 'cPESSpec.ps'
-set size 1.0, 1.0
-set terminal postscript landscape enhanced color  "Times" 12
-
-set multiplot layout 6, 3
-
-plot "cPESSpec.dat"  u 1:(-$3 ) title 'An m=-1 dn Sz=-1' with lines ls  1
-plot "cPESSpec.dat"  u 1:(-$5 ) title 'An m=-1 dn Sz= 0' with lines ls  1
-plot "cPESSpec.dat"  u 1:(-$7 ) title 'An m=-1 dn Sz= 1' with lines ls  1
-plot "cPESSpec.dat"  u 1:(-$9 ) title 'An m=-1 up Sz=-1' with lines ls  1
-plot "cPESSpec.dat"  u 1:(-$11) title 'An m=-1 up Sz= 0' with lines ls  1
-plot "cPESSpec.dat"  u 1:(-$13) title 'An m=-1 up Sz= 1' with lines ls  1
-plot "cPESSpec.dat"  u 1:(-$15) title 'An m= 0 dn Sz=-1' with lines ls  1
-plot "cPESSpec.dat"  u 1:(-$17) title 'An m= 0 dn Sz= 0' with lines ls  1
-plot "cPESSpec.dat"  u 1:(-$19) title 'An m= 0 dn Sz= 1' with lines ls  1
-plot "cPESSpec.dat"  u 1:(-$21) title 'An m= 0 up Sz=-1' with lines ls  1
-plot "cPESSpec.dat"  u 1:(-$23) title 'An m= 0 up Sz= 0' with lines ls  1
-plot "cPESSpec.dat"  u 1:(-$25) title 'An m= 0 up Sz= 1' with lines ls  1
-plot "cPESSpec.dat"  u 1:(-$27) title 'An m=+1 dn Sz=-1' with lines ls  1
-plot "cPESSpec.dat"  u 1:(-$29) title 'An m=+1 dn Sz= 0' with lines ls  1
-plot "cPESSpec.dat"  u 1:(-$31) title 'An m=+1 dn Sz= 1' with lines ls  1
-plot "cPESSpec.dat"  u 1:(-$33) title 'An m=+1 up Sz=-1' with lines ls  1
-plot "cPESSpec.dat"  u 1:(-$35) title 'An m=+1 up Sz= 0' with lines ls  1
-plot "cPESSpec.dat"  u 1:(-$37) title 'An m=+1 up Sz= 1' with lines ls  1
-
-unset multiplot
+set out 'XASSpecT.ps'
+set size 1.0, 0.6
+set terminal postscript portrait enhanced color  "Times" 12
 
 energyshift=857.6
-intensityscale=64
-
-plot "cPESSpec.dat" using ($1+energyshift):((-$3-$9-$15) * intensityscale) title 'isotropic theory' with lines ls 1
-
-
-set size 1.0, 0.6
 intensityscale=48
-set out 'cPESIsoSpec.ps'
-set xrange [840:880]
+set xrange [847:877]
 
-plot "cPESIsoSpec.dat" using ($1+energyshift):((-$3) * intensityscale) title 'isotropic theory' with lines ls 3
+plot "XASSpectraT100.dat"  using ($1+energyshift):((-$3-$5-$7) * intensityscale) title 'isotropic theory T=100K' with lines ls 1,\
+     "XASSpectraT1000.dat" using ($1+energyshift):((-$3-$5-$7) * intensityscale) title 'isotropic theory T=1000K' with lines ls 2,\
+     "NiO_Experiment/XAS_L23_PRB_57_11623_1998" using 1:2 title 'isotropic experiment' with lines ls 3,\
+     "XASSpectraT100.dat"  using ($1+energyshift):(($5-$7) * intensityscale) title 'XMCD theory T=100K' with lines ls 1,\
+     "XASSpectraT1000.dat" using ($1+energyshift):(($5-$7) * intensityscale) title 'XMCD theory T=1000K' with lines ls 2
+
+
 
 ]]
 
 -- write the gnuplot script to a file
-file = io.open("cPESSpec.gnuplot", "w")
+file = io.open("XASSpecT.gnuplot", "w")
 file:write(gnuplotInput)
 file:close()
 
 -- and finally call gnuplot to execute the script
-os.execute("gnuplot cPESSpec.gnuplot")
+os.execute("gnuplot XASSpecT.gnuplot")
 -- as I like pdf to view and eps to include in the manuel I transform the format
-os.execute(" ps2pdf cPESSpec.ps ; ps2pdf cPESIsoSpec.ps")
+os.execute(" ps2pdf XASSpecT.ps ; ps2eps XASSpecT.ps ;  mv XASSpecT.eps temp.eps ; eps2eps temp.eps XASSpecT.eps ; rm temp.eps")
+

@@ -1,0 +1,26 @@
+dofile("definitions.Quanty")
+
+G1 =  G * 5
+G2 =  G1 + G
+
+
+
+
+G.Print({{"file","SpectraMath.dat"}})
+G1.Print({{"file","SpectraMath1.dat"}})
+G2.Print({{"file","SpectraMath2.dat"}})
+
+gnuplotScript = gnuplotHead .. [[
+set output "SpectraMath.ps"
+
+plot "SpectraMath.dat"  using 1:(-$3  ) title 'G ' with lines ls  1,\
+     "SpectraMath1.dat" using 1:(-$3  ) title 'G1' with lines ls  2,\
+     "SpectraMath2.dat" using 1:(-$3  ) title 'G2' with lines ls  3
+]]
+
+file = io.open("SpectraMath.gnuplot", "w")
+file:write(gnuplotScript)
+file:close()
+
+-- call gnuplot to execute the script
+os.execute("gnuplot SpectraMath.gnuplot ; ps2pdf SpectraMath.ps ; ps2eps SpectraMath.ps ; mv SpectraMath.eps temp.eps ; eps2eps temp.eps SpectraMath.eps ; rm temp.eps")

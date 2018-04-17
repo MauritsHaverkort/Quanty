@@ -1,0 +1,6 @@
+﻿dofile("../../definitions.Quanty")
+
+psi = 0.5 * psi2
+print(psi)
+psi.Normalize()
+print(psi)

@@ -1,0 +1,11 @@
+-- 3d ion (e.g. Sc ... Cu) :
+ion = "Ni"
+-- Universal scaling parameter for the Slater integrals (beta):
+beta = 0.90
+-- Cubic Crystal Field Strength (10Dq) [eV]
+tenDq = 1.1
+-- External magnetic field Bext [Tesla]
+Bx = 5 ; By = 0 ; Bz = 10
+-- Temperature [Kelvin]
+T = 1
+

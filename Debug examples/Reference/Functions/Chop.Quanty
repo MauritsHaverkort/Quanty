@@ -1,0 +1,15 @@
+﻿dofile("../definitions.Quanty")
+
+Opp = Opp1 + 0.000001*Opp2
+print(Opp)
+Opp3 = Chop(Opp,0.001)
+print(Opp3)
+
+psi = psi1 + 0.00001 * psi2
+print(psi)
+psi3 = Chop(psi,0.001)
+print(psi3)
+
+a = 0.000001 + 0.3 * I
+b = Chop(a,0.001)
+print("a = ",a,"\nChop(a) = ",b)

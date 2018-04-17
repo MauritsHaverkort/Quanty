@@ -1,0 +1,7 @@
+﻿Nf = 5
+Nb = 0
+O = NewOperator(Nf, Nb, {{             10},
+                         {0,-0,         3},
+                         {0,1,2,3,4,  1+I}},
+                {{"Name","Liberty"}})
+print(O)

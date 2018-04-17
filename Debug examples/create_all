@@ -1,0 +1,29 @@
+#!/bin/bash
+
+dir=`date +%Y.%m.%d`
+if [ -e History/$dir ]
+then
+  echo "File $dir exists"
+  echo "script terminated"
+  exit 1
+fi
+mkdir History/$dir
+
+rm History/current
+ln -s $dir History/current 
+
+./create_Examples
+./create_Reference
+./create_Tutorials
+
+./compare
+
+if [ $? -ne 0 ]
+then
+  echo "comparison failed"
+  echo "in order to update link to latest finished set of calculations"
+  echo "update manuel \" ln -s $dir History/include \" "
+  exit 1
+fi
+
+ln -s $dir History/include

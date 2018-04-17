@@ -1,0 +1,22 @@
+dofile("definitions.Quanty")
+
+G2plus3 = Spectra.Sum(G,{0,1,1})
+
+G.Print({{"file","Spectra.dat"}})
+G2plus3.Print({{"file","Spectra.Sum.dat"}})
+
+gnuplotScript = gnuplotHead .. [[
+set output "Spectra.Sum.ps"
+
+plot "Spectra.dat"     using 1:(-$3   ) title 'T1'    with lines ls  1,\
+     "Spectra.dat"     using 1:(-$5+4 ) title 'T2'    with lines ls  2,\
+     "Spectra.dat"     using 1:(-$7+8 ) title 'T3'    with lines ls  3,\
+     "Spectra.Sum.dat"  using 1:(-$3+12) title 'T2+T3' with lines ls  4
+]]
+
+file = io.open("Spectra.Sum.gnuplot", "w")
+file:write(gnuplotScript)
+file:close()
+
+-- call gnuplot to execute the script
+os.execute("gnuplot Spectra.Sum.gnuplot ; ps2pdf Spectra.Sum.ps ; ps2eps Spectra.Sum.ps ; mv Spectra.Sum.eps temp.eps ; eps2eps temp.eps Spectra.Sum.eps ; rm temp.eps")

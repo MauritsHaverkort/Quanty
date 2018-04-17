@@ -1,0 +1,201 @@
+-- Minimize the output of the program, i.e. for longer calculations
+-- the program tells the user what it is doing. For these short
+-- examples the result is instant.
+Verbosity(0)
+
+print("--> In this example we shall plot the energy-level diagram (so-called 'Tanabe-Sugano Diagram')") 
+print("--> Energy levels will be printed a function of 10Dq parameter, representing the crystal field strength") 
+print("--> Setting up the d-shell")
+
+-- number of available fermionic spin-orbitals (d-shell in the present case)
+NFermion=10;      
+-- number of bosonic states (phonons, etc...)                
+NBoson=0;     
+-- indices for the "spin-dn" states                    
+IndexDn_3d={0,2,4,6,8};  
+-- indices for the "spin-up" states         
+IndexUp_3d={1,3,5,7,9};           
+
+-- function to print Term symbols
+function LSJ2term (S2,L2,J2)
+  L = math.floor(0.5 * (math.sqrt(math.abs(L2) * 4 +1) - 1) + 0.5)
+  if     L == 0   then str1="S"
+  elseif L == 1   then str1="P"
+  elseif L == 2   then str1="D"
+  elseif L == 3   then str1="F"
+  elseif L == 4   then str1="G"
+  elseif L == 5   then str1="H"
+  elseif L == 6   then str1="I"
+  elseif L == 7   then str1="K"
+  elseif L == 8   then str1="L"
+  elseif L == 9   then str1="M"
+  elseif L == 10  then str1="N"
+  elseif L == 11  then str1="O"
+  elseif L == 12  then str1="Q"
+  elseif L == 13  then str1="R"
+  elseif L == 14  then str1="T"
+  elseif L == 15  then str1="U"
+  elseif L == 16  then str1="V"
+  elseif L == 17  then str1="W"
+  elseif L == 18  then str1="X"
+  elseif L == 19  then str1="Y"
+  elseif L == 20  then str1="Z"
+  else 
+    str1="?"
+  end
+  mult = math.floor(math.sqrt(S2 * 4 +1)+0.5)
+  twoJ = math.floor((math.sqrt(math.abs(J2) * 4 +1) - 1) + 0.5)
+  if( 2*math.floor((twoJ+0.5)/2)==twoJ ) then
+    return "^{"..mult.."}"..str1.."_{"..(twoJ/2).."}"
+  else
+    return "^{"..mult.."}"..str1.."_{"..twoJ.."/2}"
+  end  
+end
+
+-- Here we define the operators in the space of chosen orbitals
+
+OppSx   =NewOperator("Sx"   ,NFermion, IndexUp_3d, IndexDn_3d)
+OppSy   =NewOperator("Sy"   ,NFermion, IndexUp_3d, IndexDn_3d)
+OppSz   =NewOperator("Sz"   ,NFermion, IndexUp_3d, IndexDn_3d)
+OppSsqr =NewOperator("Ssqr" ,NFermion, IndexUp_3d, IndexDn_3d)
+OppSplus=NewOperator("Splus",NFermion, IndexUp_3d, IndexDn_3d)
+OppSmin =NewOperator("Smin" ,NFermion, IndexUp_3d, IndexDn_3d)
+
+OppLx   =NewOperator("Lx"   ,NFermion, IndexUp_3d, IndexDn_3d)
+OppLy   =NewOperator("Ly"   ,NFermion, IndexUp_3d, IndexDn_3d)
+OppLz   =NewOperator("Lz"   ,NFermion, IndexUp_3d, IndexDn_3d)
+OppLsqr =NewOperator("Lsqr" ,NFermion, IndexUp_3d, IndexDn_3d)
+OppLplus=NewOperator("Lplus",NFermion, IndexUp_3d, IndexDn_3d)
+OppLmin =NewOperator("Lmin" ,NFermion, IndexUp_3d, IndexDn_3d)
+
+OppJx   =NewOperator("Jx"   ,NFermion, IndexUp_3d, IndexDn_3d)
+OppJy   =NewOperator("Jy"   ,NFermion, IndexUp_3d, IndexDn_3d)
+OppJz   =NewOperator("Jz"   ,NFermion, IndexUp_3d, IndexDn_3d)
+OppJsqr =NewOperator("Jsqr" ,NFermion, IndexUp_3d, IndexDn_3d)
+OppJplus=NewOperator("Jplus",NFermion, IndexUp_3d, IndexDn_3d)
+OppJmin =NewOperator("Jmin" ,NFermion, IndexUp_3d, IndexDn_3d)
+
+-- Spin-orbit coupling
+Oppldots=NewOperator("ldots",NFermion, IndexUp_3d, IndexDn_3d)
+
+-- e-e Coulomb repulsion
+OppF0 =NewOperator("U", NFermion, IndexUp_3d, IndexDn_3d, {1,0,0})
+OppF2 =NewOperator("U", NFermion, IndexUp_3d, IndexDn_3d, {0,1,0})
+OppF4 =NewOperator("U", NFermion, IndexUp_3d, IndexDn_3d, {0,0,1})
+
+-- Expansion of the effective electron-ion potential in the certain symmetry ("Oh" group in this case)
+-- This operator splits the states: it lowers one manifold on 0.4 [e.u.] and lifts the other on 0.6 [e.u.]
+-- in the limit of very strong CF we can call these manifolds as T2g and Eg
+Akm = PotentialExpandedOnClm("Oh", 2, {0.6,-0.4})
+OpptenDq = NewOperator("CF", NFermion, IndexUp_3d, IndexDn_3d, Akm)
+
+-- We can define the operator which will count the number of particles in each manifold
+Akm = PotentialExpandedOnClm("Oh", 2, {1,0})
+OppNeg = NewOperator("CF", NFermion, IndexUp_3d, IndexDn_3d, Akm)
+Akm = PotentialExpandedOnClm("Oh", 2, {0,1})
+OppNt2g = NewOperator("CF", NFermion, IndexUp_3d, IndexDn_3d, Akm)
+
+print("--> d8 (2 holes)  configuration has 45 possible states")
+print("")
+-- Here we set up the parameters for the operators, defined above.
+Npsi=45;
+U       =  0.000
+F2dd    = 11.142 
+F4dd    =  6.874
+F0dd    = U+(F2dd+F4dd)*2/63
+zeta_3d = 0.081
+Bz      = 0.000001
+
+print("")
+print("--> Initial Hamiltonian: H_e-e + H_SO + H_Zeeman")
+print("--> H0 = F0dd*OppF0 + F2dd*OppF2 + F4dd*OppF4 + zeta_3d*Oppldots + Bz*(2*OppSz + OppLz);")
+print("")
+print("=================================")
+print("--> List of parameters:");
+print("--> F2dd    = 11.142")
+print("--> F4dd    =  6.874")
+print("--> F0dd    = U+(F2dd+F4dd)*2/63")
+print("--> zeta_3d = 0.081")
+print("--> Bz      = 0.000001")
+print("=================================")
+print("")
+
+-- Setting up the initial Hamiltonian in the 2nd quantised form
+-- Note: here we do not have the CF
+Hamiltonian0 =  F0dd*OppF0 + F2dd*OppF2 + F4dd*OppF4 + zeta_3d*Oppldots + Bz*(2*OppSz + OppLz);
+-- We shall now diagonalise the Hamiltonian, looking for the states with the specific occupation (8 in this case).
+StartRestrictions = {NFermion, NBoson,  {"1111111111",8,8}}
+
+print("--> Diagonalising...")
+-- Diagonalisation of the initial Hamiltonian (no CF)
+psiList = Eigensystem(Hamiltonian0, StartRestrictions, Npsi)
+
+TermSymbol={} ; TermSymbol[0]=""; E0={} ;E0[0]=0
+for i =1,Npsi do
+  S2=psiList[i] * OppSsqr * psiList[i]
+  L2=psiList[i] * OppLsqr * psiList[i]
+  J2=psiList[i] * OppJsqr * psiList[i]
+  E0[i]=psiList[i] * Hamiltonian0 * psiList[i]
+  TermSymbol[i]=LSJ2term(S2,L2,J2)
+end
+
+-- Open up the file, where the data will be stored
+file = assert(io.open("EnergyLevelDiagram", "w"))
+
+print("")
+print("--> Adding the Crystal field as a perturbation: H' = H0 + x * H_CF")
+print("--> start increasing x ...")
+io.write("10Dq = ")
+-- We add the CF to the Hamiltonian and start varying its strength. Each time we update the H, we re-diagonalise it.
+for i=0, 300 do
+  tenDq = 0.01*i
+  file:write(string.format("%14.7E ",tenDq))
+  io.write(string.format("%5.3f ",tenDq))
+  io.flush()
+  Hamiltonian=Hamiltonian0 + tenDq * OpptenDq
+  Eigensystem(Hamiltonian, psiList)
+  for key,value in pairs(psiList) do
+    energy = value * Hamiltonian * value
+    file:write(string.format("%14.7E ",energy))
+  end
+  file:write("\n")
+end
+file:close()
+io.write("\n")
+
+-- The output will be supplied to the gnuplot for consequent visualisation
+-- Starting the preparation of the gnuplot-input file
+
+gnuplotInput = [[
+set terminal postscript portrait enhanced color  "Times" 12
+set autoscale                          # scale axes automatically
+set xtic auto                          # set xtics automatically
+set ytic auto                          # set ytics automatically
+set style line  1 lt 1 lw 1 lc rgb "#000000"
+
+set xlabel "10Dq (eV)" font "Times,12"
+set ylabel "Energy (eV)" font "Times,12" offset -3
+
+set out 'EnergyLevelDiagram.ps'
+set size 1.0, 0.625
+]]
+
+-- write the gnuplot script to a file
+file = io.open("EnergyLevelDiagram.gnuplot", "w")
+file:write(gnuplotInput)
+
+for i=1,Npsi do
+  if (abs(E0[i]-E0[i-1]) > 0.1 and TermSymbol[i] ~= TermSymbol[i-1]) then
+  	file:write("set label \""..TermSymbol[i].."\" at  -0.3,",E0[i]," font \"Times,14\"\n")
+  end 
+end
+
+gnuplotInput=[[
+plot for [i=2:46] "EnergyLevelDiagram" using 1:i notitle with lines ls  1
+]]
+
+file:write(gnuplotInput)
+file:close()
+
+-- call gnuplot to execute the script
+os.execute("gnuplot EnergyLevelDiagram.gnuplot ; ps2pdf EnergyLevelDiagram.ps ; ps2eps EnergyLevelDiagram.ps ; mv EnergyLevelDiagram.eps temp.eps ; eps2eps temp.eps EnergyLevelDiagram.eps ; rm temp.eps")

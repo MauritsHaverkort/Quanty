@@ -1,0 +1,5 @@
+dofile("definitions.Quanty")
+
+G = CreateSpectra(H,T1,psi,{{"Emin",-2},{"Emax",2},{"NE",20}})
+G.Print()
+G.Print({{"file","G.Print.dat"}})

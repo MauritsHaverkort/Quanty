@@ -1,0 +1,8 @@
+﻿A = {{ 1 , I , 0 },
+     {-I , 2 , 1 },
+     { 0 , 1 , 5 }}
+
+val, fun = Eigensystem(A)
+
+print(val)
+print(fun)

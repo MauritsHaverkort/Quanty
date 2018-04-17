@@ -1,0 +1,110 @@
+-- solves the Harmonic oscillator H = -1/2 (d^2/dx^2) + 1/2 x^2
+-- on a basis of complex plane waves
+-- the plane wave basis assumes a periodicity, this length is:
+a = 20
+-- maximum k (ikmax * 2 * pi/a)
+ikmax = 60
+-- each plane wave is a basis "spin-orbital" k runs from -kmax to kmax, including 0, i.e. the number of basis "spin-orbitals" is:
+NF = 2 * ikmax + 1
+-- integration steps
+dxint = 0.0001
+
+-- we first define a set of functions that are used to create the operators using integrals over the wave-functions
+
+-- the basis functions (plane waves) are:
+function Psi(x, i)
+  k = 2 * pi * i / a
+  return (math.cos(k*x) + I * math.sin(k*x)) / math.sqrt(a)
+end
+
+-- evaluate <psi_i | -1/2 (d^2/dx^2) | psi_j>
+function IntegrateKineticEnergy(i,j)
+  kj = 2 * pi * j / a
+  sum = 0
+  for x=-a/2, a/2, dxint do
+    sum = sum - Conjugate(Psi(x,i)) * (kj*kj/2) * Psi(x,j) * dxint
+  end
+  return sum
+end
+
+-- the previous integral has an analytical solution
+function IntegrateKineticEnergyAna(i,j)
+  if i==j then
+    return 2*(j*pi/a)^2
+  else
+    return 0
+  end
+end
+
+-- evaluate <psi_i | 1/2 x^2 | psi_j>
+function IntegratePotentialEnergy(i,j)
+  kj = 2 * pi * j / a
+  sum = 0
+  for x=-a/2, a/2, dxint do
+    sum = sum + Conjugate(Psi(x,i)) * (x*x/2) * Psi(x,j) * dxint
+  end
+  return sum
+end
+
+-- the previous integral has an analytical solution
+function IntegratePotentialEnergyAna(i,j)
+  if i==j then
+    return (a^2)/24
+  else
+    return a^2 * (2*(i-j) * pi * math.cos((i-j)*pi) + (-2+(i-j)^2*pi^2) * math.sin((i-j)*pi)) / (8 * (i-j)^3 * pi^3)
+  end
+end
+
+-- create the Hamiltonian
+H = 0*NewOperator("CrAn",NF,0,0)
+for i=-ikmax, ikmax do
+  for j=-ikmax, ikmax do
+    H = H + (IntegrateKineticEnergyAna(i,j) + IntegratePotentialEnergyAna(i,j)) * NewOperator("CrAn", NF, i+ikmax, j+ikmax)
+  end
+end
+
+-- create the operator to measure the kinetic energy
+Hkin = 0*NewOperator("CrAn",NF,0,0)
+for i=-ikmax, ikmax do
+  for j=-ikmax, ikmax do
+    Hkin = Hkin + IntegrateKineticEnergyAna(i,j) * NewOperator("CrAn", NF, i+ikmax, j+ikmax)
+  end
+end
+
+-- create the operator to measure the potential energy
+Hpot = 0*NewOperator("CrAn",NF,0,0)
+for i=-ikmax, ikmax do
+  for j=-ikmax, ikmax do
+    Hpot = Hpot + IntegratePotentialEnergyAna(i,j) * NewOperator("CrAn", NF, i+ikmax, j+ikmax)
+  end
+end
+
+-- The operators "do not know" how many electrons there are in the system.
+-- We can restrict the solutions to only find states with one electron
+-- For this we create a string with 1's and 0's that tells the code which basis orbitals to include for this specific restriction (useful if one has core states)
+-- and in restrictions we set the minimum and maximum occupation of these basis orbitals (min=1 and max=1 in our case)
+restrictionstring = ""
+for i=1, NF do
+  restrictionstring = restrictionstring .. "1"
+end
+StartRestrictions = {NF, 0, {restrictionstring,1,1}};
+
+
+-- we now can create the lowest Npsi eigenstates:
+Npsi=10;
+psiList = Eigensystem(H, StartRestrictions, Npsi);
+-- note that for small systems Eigensystem creates a dense matrix and uses dense methods. 
+-- The boarder between smal and big can be set, if you want to test the Lanczos algorithm as well
+-- psiList = Eigensystem(H, StartRestrictions, Npsi,{{"DenseBoarder",5}});
+
+-- create output that lists the energy, kinetic energy and potential energy of the states found
+oppList={H,Hkin,Hpot}
+
+print(" <E>            <Ekin>         <Epot>");
+for key,psi in pairs(psiList) do
+  expvalue = psi * oppList * psi;
+  for k,v in pairs(expvalue) do
+    io.write(string.format("%14.7E ",v))
+  end;
+  io.write("\n");
+end;

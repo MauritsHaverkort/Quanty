@@ -1,0 +1,7 @@
+#!/bin/bash
+
+dir=`date +%Y.%m.%d`
+
+diff -x *.pdf -x *.ps -x *.eps -r History/current History/include | tee compare$dir
+
+exit 1

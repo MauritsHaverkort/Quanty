@@ -1,0 +1,8 @@
+dofile("definitions.Quanty")
+
+G1 = Spectra.Element(G,2)
+G2 = Spectra.Element(G,{1,3})
+
+print("The orginal output contains ",G.N,"spectra")
+print("G1 contains ",G1.N,"spectra")
+print("G2 contains ",G2.N,"spectra")

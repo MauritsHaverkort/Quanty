@@ -1,0 +1,10 @@
+﻿dofile("../definitions.Quanty")
+
+print("For the wave-function")
+print(psi1)
+print("the density matrix is")
+rho = DensityMatrix(psi1)
+print(rho)
+print("the density matrix of orbital 1 and 4 is (counting starts at 0)")
+rho = DensityMatrix(psi1,{1,4})
+print(rho)

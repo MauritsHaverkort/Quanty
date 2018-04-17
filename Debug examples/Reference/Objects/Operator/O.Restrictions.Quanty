@@ -1,0 +1,38 @@
+﻿dofile("../../definitions.Quanty")
+
+
+print("OppSx.Restrictions =",OppSx.Restrictions)
+
+OppSx.Restrictions={Nf,Nb,{"101010",0,1}}
+
+print("OppSx.Restrictions =",OppSx.Restrictions)
+
+psitest = NewWavefunction(Nf,Nb,{{"010101",1}})
+psitest.Name = "|L=0 S=3/2 Lz=0 Sz/3/2>"
+print(psitest)
+psitest = OppSx*psitest
+psitest.Name = "Sx |L=0 S=3/2 Lz=0 Sz/3/2>"
+print(psitest)
+psitest = OppSx*psitest
+psitest.Name = "Sx Sx |L=0 S=3/2 Lz=0 Sz/3/2>"
+print(psitest)
+psitest = OppSx*psitest
+psitest.Name = "Sx Sx Sx |L=0 S=3/2 Lz=0 Sz/3/2>"
+print(psitest)
+
+OppSx.Restrictions = nil
+
+print("OppSx.Restrictions =",OppSx.Restrictions)
+
+psitest = NewWavefunction(Nf,Nb,{{"010101",1}})
+psitest.Name = "|L=0 S=3/2 Lz=0 Sz/3/2>"
+print(psitest)
+psitest = OppSx*psitest
+psitest.Name = "Sx |L=0 S=3/2 Lz=0 Sz/3/2>"
+print(psitest)
+psitest = OppSx*psitest
+psitest.Name = "Sx Sx |L=0 S=3/2 Lz=0 Sz/3/2>"
+print(psitest)
+psitest = OppSx*psitest
+psitest.Name = "Sx Sx Sx |L=0 S=3/2 Lz=0 Sz/3/2>"
+print(psitest)

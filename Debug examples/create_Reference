@@ -1,0 +1,34 @@
+#!/bin/bash
+
+echo "Start of running all references"
+cp -r Reference History/current
+
+echo "change to directory History/current/Reference"
+cd History/current/Reference
+  for directory in */
+  do
+    echo change to directory $directory
+    cd $directory
+      if [ "$directory" == "Objects/" ]
+      then
+        for directory2 in */
+        do
+          echo change to directory $directory2
+          cd $directory2
+            for file in *.Quanty
+            do
+              fileout="${file/Quanty/out}"
+              Quanty $file | tail -n +23 > $fileout
+            done
+          cd ..
+        done
+      else
+        for file in *.Quanty
+        do
+          fileout="${file/Quanty/out}"
+          Quanty $file | tail -n +23 > $fileout
+        done
+      cd ..
+    fi
+  done
+cd ..

@@ -1,0 +1,68 @@
+-- We start with the same basis as before
+NF=6
+NB=0
+IndexDn={0,2,4}
+IndexUp={1,3,5}
+
+-- We now can create wave functions. For this we 
+-- need three inputs:
+-- (1) The number of Fermions and Bosons
+-- (2) A list defining the wavefunctions. The lists
+ -- consists of a string defining a determinant by
+ -- its occupation: (1 occupied, 0 empty). One bit
+ -- for each fermion, 8 bit for a boson (i.e. a 
+ -- boson can have an occupation between 0 and 255).
+-- (3) A number giving the pre-factor of the 
+-- determinant.
+psi0=NewWavefunction(NF, NB, {{"100000",math.sqrt(1/2)}, {"000001",math.sqrt(1/2)}})
+
+-- We can print the function
+print(psi0)
+
+-- The name of the wave function is generic, we can
+-- set it
+psi0.Name = "psi 0"
+print(psi0)
+
+-- We now could create all one electron functions 
+-- in the basis of the p-shell.
+psi0=NewWavefunction(NF,NB,{{"100000",1}})
+psi0.Name = "psi(1 -1 1/2 -1/2)"
+psi1=NewWavefunction(NF,NB,{{"001000",1}})
+psi1.Name = "psi(1  0 1/2 -1/2)"
+psi2=NewWavefunction(NF,NB,{{"000010",1}})
+psi2.Name = "psi(1  1 1/2 -1/2)"
+psi3=NewWavefunction(NF,NB,{{"010000",1}})
+psi3.Name = "psi(1 -1 1/2  1/2)"
+psi4=NewWavefunction(NF,NB,{{"000100",1}})
+psi4.Name = "psi(1  0 1/2  1/2)"
+psi5=NewWavefunction(NF,NB,{{"000001",1}})
+psi5.Name = "psi(1  1 1/2  1/2)"
+
+-- And print them
+print("============================")
+print(psi0)
+print(psi1)
+print(psi2)
+print(psi3)
+print(psi4)
+print(psi5)
+print("============================")
+
+-- The wavefunctions should be orthonormal, we can 
+-- easily test this
+psiList={psi0,psi1,psi2,psi3,psi4,psi5}
+for i = 1, 6 do
+  for j = 1, 6 do
+    print("<",psiList[i].Name," | ", psiList[j].Name," > =",psiList[i] * psiList[j])
+  end
+end
+print("============================")
+-- in table or matrix form:
+psiList={psi0,psi1,psi2,psi3,psi4,psi5}
+for i = 1, 6 do
+  for j = 1, 6 do
+    io.write(string.format("%3i ",psiList[i] * psiList[j]))
+  end
+  io.write("\n")
+end

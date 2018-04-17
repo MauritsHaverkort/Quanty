@@ -1,0 +1,7 @@
+dofile("definitions.Quanty")
+
+GOmega = Spectra.MultiplyByEnergy(G)
+
+-- is equivalent to
+GOmega = Spectra.Copy(G)
+GOmega.MultiplyByEnergy()

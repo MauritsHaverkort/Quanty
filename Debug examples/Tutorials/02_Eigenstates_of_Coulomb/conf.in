@@ -1,0 +1,5 @@
+-- Angular momentum of the shell (0=="s" 1=="p" 2=="d" 3=="f")
+l = 2
+-- Number of electrons
+Nelec = 4
+

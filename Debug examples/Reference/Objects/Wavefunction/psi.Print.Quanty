@@ -1,0 +1,9 @@
+﻿dofile("../../definitions.Quanty")
+
+print("wavefunction . Print")
+psi1.Print()
+
+print("print wavefunction")
+print(psi1)
+
+psi1.Print({{"file","psi1.Print.out"}})

@@ -1,0 +1,152 @@
+-- script contributed by Yaroslav Kvashnin
+
+-- Minimize the output of the program, i.e. for longer calculations
+-- the program tells the user what it is doing. For these short
+-- examples the result is instant.
+Verbosity(0)
+
+print("")
+print("=============================================================")
+print("--> This small program will print out the multiplets (eigen-states of the Coulomb operator) for a given configuration")
+print("=============================================================")
+print("")
+
+-- read in the input
+dofile("conf.in")
+
+-- create the basis for quanty (define spin-orbitals and relate them to atomic shells
+-- there are 4*l+2 spin-orbitals in a shell with angular momentum l.
+-- we label the spin-orbitals in the order from ml=-l to ml=l alternating down and up
+
+Nf=4*l+2
+IndexDn={}
+IndexUp={}
+
+j=1
+for i=0,Nf-1,2 do
+  IndexDn[j]=i
+  IndexUp[j]=i+1
+  j=j+1
+end
+
+-- number of bosons
+Nb=0
+
+-- define few Operator on this basis
+OppSz   = NewOperator("Sz"   , Nf, IndexUp, IndexDn)
+OppLz   = NewOperator("Lz"   , Nf, IndexUp, IndexDn)
+OppSsqr = NewOperator("Ssqr" , Nf, IndexUp, IndexDn)
+OppLsqr = NewOperator("Lsqr" , Nf, IndexUp, IndexDn)
+OppJz   = NewOperator("Jz"   , Nf, IndexUp, IndexDn)
+OppJsqr = NewOperator("Jsqr" , Nf, IndexUp, IndexDn)
+Oppldots= NewOperator("ldots", Nf, IndexUp, IndexDn)
+
+SlaterInts={}
+OppFk={}
+Nk=l+1
+for j=1,Nk do
+  for i = 1,Nk do
+   SlaterInts[i]=0
+  end
+  SlaterInts[j]=1
+  OppFk[j] = NewOperator("U", Nf, IndexUp, IndexDn, SlaterInts)
+end
+
+TimeStart("Create Eigenstates of Coulomb Operator")
+
+Ham = 0.000001*(OppLz + 2 * OppSz) + 0.01 * Oppldots
+
+SlaterInts={}
+-- Number of allowed Slater integrals is L+1
+SlaterInts[1]=20
+for i = 2,Nk do
+ SlaterInts[i]=SlaterInts[i-1]/2
+end
+-- Set F[0] == SlaterInts[1] such that the center of gravity is 0.
+if(l==0) then SlaterInts[1] = 0 end
+if(l==1) then SlaterInts[1] = (2*SlaterInts[2])/25 end
+if(l==2) then SlaterInts[1] = (2*SlaterInts[2])/63 + (2*SlaterInts[3])/63 end
+if(l==3) then SlaterInts[1] = (4*SlaterInts[2])/195 + (2*SlaterInts[3])/143 + (100*SlaterInts[4])/5577 end
+if(l==4) then SlaterInts[1] = (20*SlaterInts[2])/1309 + (162*SlaterInts[3])/17017 + (20*SlaterInts[4])/2431 + (490*SlaterInts[5])/41327 end
+if(l==5) then SlaterInts[1] = (10*SlaterInts[2])/819 + (2*SlaterInts[3])/273 + (80*SlaterInts[4])/13923 + (70*SlaterInts[5])/12597 + (36*SlaterInts[6])/4199 end
+if(l==6) then SlaterInts[1] = (14*SlaterInts[2])/1375 + (28*SlaterInts[3])/4675 + (16*SlaterInts[4])/3553 + (14*SlaterInts[5])/3553 + (756*SlaterInts[6])/185725 + (30492*SlaterInts[7])/4643125 end
+if(l==7) then SlaterInts[1] = (56*SlaterInts[2])/6409 + (6804*SlaterInts[3])/1339481 + (5000*SlaterInts[4])/1339481 + (8750*SlaterInts[5])/2800733 + (40824*SlaterInts[6])/14003665 + (3388*SlaterInts[7])/1077205 + (163592*SlaterInts[8])/31238945 end
+if(l==8) then SlaterInts[1] = (8*SlaterInts[2])/1045 + (12*SlaterInts[3])/2717 + (200*SlaterInts[4])/62491 + (490*SlaterInts[5])/187473 + (56*SlaterInts[6])/24035 + (2156*SlaterInts[7])/950475 + (14872*SlaterInts[8])/5892945 + (1690*SlaterInts[9])/392863 end
+if(l==9) then SlaterInts[1] = (30*SlaterInts[2])/4403 + (396*SlaterInts[3])/101269 + (528*SlaterInts[4])/188071 + (98*SlaterInts[5])/43401 + (4116*SlaterInts[6])/2097715 + (23716*SlaterInts[7])/13005833 + (118976*SlaterInts[8])/65029165 + (11154*SlaterInts[9])/5355343 + (2149004*SlaterInts[10])/594443073 end
+if(l>9)  then SlaterInts[1] = 0 end
+
+-- Add Coulomb operator to the Hamiltonian
+OppU = NewOperator("U", Nf, IndexUp, IndexDn, SlaterInts)
+Ham=Ham+OppU
+
+-- make sure that we have a certain filling of the shell (min=max number of particles in the shell)
+Nstates=Binomial(Nf,Nelec)
+str=""
+for i=1,Nf do
+ str=str..1
+end
+Restrictions = {Nf, Nb, {str,Nelec,Nelec}}
+
+-- We look for the lowest "Nstates" states. 
+-- Meaning that we do complete diagonalisation of the H.
+
+psiEigen = Eigensystem(Ham, Restrictions, Nstates);
+
+TimeEnd("Create Eigenstates of Coulomb Operator")
+
+oppList={OppSsqr, OppLsqr, OppJsqr, OppSz, OppLz, OppJz, Oppldots}
+
+-- define function which will print the Term symbol according to L^2 S^2 and J^2
+
+function LSJ2term (S2,L2,J2)
+  L = floor(0.5 * (sqrt(abs(L2) * 4 +1) - 1) + 0.5)
+  if     L == 0   then str1="S"
+  elseif L == 1   then str1="P"
+  elseif L == 2   then str1="D"
+  elseif L == 3   then str1="F"
+  elseif L == 4   then str1="G"
+  elseif L == 5   then str1="H"
+  elseif L == 6   then str1="I"
+  elseif L == 7   then str1="K"
+  elseif L == 8   then str1="L"
+  elseif L == 9   then str1="M"
+  elseif L == 10  then str1="N"
+  elseif L == 11  then str1="O"
+  elseif L == 12  then str1="Q"
+  elseif L == 13  then str1="R"
+  elseif L == 14  then str1="T"
+  elseif L == 15  then str1="U"
+  elseif L == 16  then str1="V"
+  elseif L == 17  then str1="W"
+  elseif L == 18  then str1="X"
+  elseif L == 19  then str1="Y"
+  elseif L == 20  then str1="Z"
+  else 
+    str1="?"
+  end
+  mult = floor(sqrt(S2 * 4 +1)+0.5)
+  twoJ = floor((sqrt(abs(J2) * 4 +1) - 1) + 0.5)/2
+  return "^"..mult..str1.."_"..twoJ
+end
+
+for k=1,Nk do
+  io.write(string.format(" F[%2i] ",2*(k-1)))
+end
+  
+print(" <S^2>  <L^2>  <J^2>  <S_z>  <L_z>  <J_z>  <l.s> | Term");
+Res={}
+ResF={}
+for i=1,Nstates do
+  for k=1,Nk do
+    ResF[k] = psiEigen[i] * OppFk[k] * psiEigen[i]
+    io.write(string.format("%6.3f ",ResF[k]))
+  end
+  for j=1,7 do
+    Res[j] = psiEigen[i] * oppList[j] * psiEigen[i]
+    io.write(string.format("%6.3f ",Res[j]))
+  end
+  io.write(string.format("| %s",LSJ2term(Res[1],Res[2],Res[3])))
+  io.write("\n")
+end
+
+TimePrint()

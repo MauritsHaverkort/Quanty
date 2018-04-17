@@ -1,0 +1,5 @@
+﻿dofile("../../definitions.Quanty")
+
+print(OppSz.Name)
+OppSz.Name="bla bla"
+print(OppSz.Name)

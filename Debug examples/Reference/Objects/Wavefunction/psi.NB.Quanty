@@ -1,0 +1,8 @@
+﻿dofile("../../definitions.Quanty")
+
+print(psi1)
+print(psi1.NB)
+--psi1.NB=3
+--print(psi1)
+--psi1.NB=9
+--print(psi1)
