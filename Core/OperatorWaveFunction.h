@@ -92,6 +92,6 @@ uint32_t OperatorDeterminantPreAllocatedRC(const OperatorType *O,uint8_t *DetIn,
 void RealWaveFunctionAddElementConserveBasis(WaveFunctionType const *psi,const uint8_t *const det,const double a);
 void AllocFailed();
 uint32_t OperatorDeterminantPreAllocatedRR(const OperatorType *O,uint8_t *DetIn,WaveFunctionType *const Opsi);
-inline OperatorCr(uint8_t *const Determinant,const uint16_t i,const uint32_t NFermion);
-inline OperatorAn(uint8_t *const Determinant,const uint16_t i,const uint32_t NFermion);
-inline OperatorLader(uint8_t *const Determinant,const uint16_t *const o,const uint32_t lenght,const uint32_t NFermion);
+double inline OperatorCr(uint8_t *const Determinant,const uint16_t i,const uint32_t NFermion);
+double inline OperatorAn(uint8_t *const Determinant,const uint16_t i,const uint32_t NFermion);
+double inline OperatorLader(uint8_t *const Determinant,const uint16_t *const o,const uint32_t lenght,const uint32_t NFermion);
