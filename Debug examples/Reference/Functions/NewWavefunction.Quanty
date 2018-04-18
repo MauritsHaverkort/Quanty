@@ -1,6 +1,0 @@
-﻿Nf=6
-Nb=0
-
-psi0=NewWavefunction(Nf, Nb, {{"100000",math.sqrt(1/2)}, {"000001",math.sqrt(1/2)}})
-
-print(psi0)
