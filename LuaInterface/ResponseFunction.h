@@ -1,1 +1,22 @@
+static int LuaChangeTypeResponseFunction(lua_State *L);
+static int LuaResponseFunctionToUserdata(lua_State *L);
+static int LuaResponseFunctionToTable(lua_State *L);
+static int LuaReducePolesResponseFunction(lua_State *L);
+static int LuaPlaceOnMeshResponseFunction(lua_State *L);
+static int LuaResponseFunctionUnm(lua_State * L);
+static int LuaResponseFunctionAdd(lua_State * L);
+static int LuaResponseFunctionSub(lua_State * L);
+static int LuaResponseFunctionMul(lua_State * L);
+static int LuaResponseFunctionDiv(lua_State * L);
+static int LuaResponseFunctionPow(lua_State * L);
+static int LuaResponseFunctionConcat(lua_State * L);
+static int LuaResponseFunctionEq(lua_State * L);
+static int LuaResponseFunctionLt(lua_State * L);
+static int LuaResponseFunctionLe(lua_State * L);
+static int LuaResponseFunctionIndex(lua_State * L);
+static int LuaResponseFunctionNewIndex(lua_State * L);
+static int LuaResponseFunctionMode(lua_State * L);
+static int LuaResponseFunctionCall(lua_State * L);
+static int LuaResponseFunctionToString(lua_State * L);
+static int LuaResponseFunctionDestroy(lua_State * L);
 

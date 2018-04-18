@@ -1,5 +1,3 @@
-#include "Spectra.h"
-
 /*  copy a spectrum which is the last element on the stack
  *
  */

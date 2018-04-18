@@ -1,5 +1,3 @@
-#include "Operator.h"
-
 /*  define the NewOperator functions
  *  depending on the first argument of NewOperator different types of standard operators are created. Here the implementation
  */
@@ -345,7 +343,6 @@ static int LuaOperatorNewCoulomb(lua_State * L)
   return 1;
 }
 
-
 static int LuaOperatorNewSx(lua_State * L)
 {
   OperatorType *op;
@@ -489,8 +486,6 @@ static int LuaOperatorNewSmin(lua_State * L)
   free(LindexDn);
   return 1;
 }
-
-
 
 static int LuaOperatorNewLx(lua_State * L)
 {
@@ -1283,7 +1278,6 @@ static int LuaOperatorNewldots(lua_State * L)
   return 1;
 }
 
-
 static int LuaOperatorNewCF(lua_State * L)
 {
   OperatorType *op;
@@ -1885,7 +1879,6 @@ static int LuaOperatorUnm(lua_State * L)
   luaL_setmetatable(L, "Operator_Type");
   return 1;
 }
-
 
 static int LuaOperatorPrint(lua_State * L)
 {

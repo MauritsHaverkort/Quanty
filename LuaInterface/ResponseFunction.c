@@ -1,5 +1,3 @@
-#include "ResponseFunction.h"
-
 /*  Response functions are stored either as matrix representations and reside fully on the lua stack as tables
  *                                or as ResponsefunctionType
  *

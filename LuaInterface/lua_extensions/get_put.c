@@ -3,7 +3,7 @@
 /*  test if a string is a valid lua variable name
  *
  */
-uint32_t QStringIsValidLuaVariableName(char * c)
+uint32_t QStringIsValidLuaVariableName(const char * const c)
 {
   uint32_t i;
   if(strlen(c)==0) return 1;
@@ -30,7 +30,7 @@ uint32_t QStringIsValidLuaVariableName(char * c)
  *
  *  returns 0 on succes, returns 1 on failure
  */
-uint32_t LuaGet(lua_State *L, char * FileName, char * VariableName)
+uint32_t LuaGet(lua_State *L, const char * const FileName, const char * const VariableName)
 {
   struct stat info;
   // test if VariableName is lua safe
@@ -66,7 +66,7 @@ uint32_t LuaGet(lua_State *L, char * FileName, char * VariableName)
  *
  *  returns 0 on succes, returns 1 on failure
  */
-uint32_t LuaPut(lua_State *L, char * FileName, char * VariableName, char * FileType)
+uint32_t LuaPut(lua_State *L, const char * const FileName, const char * const VariableName, const char * const FileType)
 {
   struct stat info;
   // test if VariableName is lua safe
@@ -175,7 +175,7 @@ char * QuantyVariableToValidFilename(const char * str)
   return retchar;
 }
 
-uint32_t LuaGetASCII(lua_State *L, char * DirName, char * VariableName)
+uint32_t LuaGetASCII(lua_State *L, const char * const DirName, const char * const VariableName)
 {
   char *FileName;
   char *FullName;
@@ -554,7 +554,7 @@ uint32_t LuaASCIIStreamPrint(lua_State *L, int narg, FILE * stream)
   return luaL_error(L, "Error in LuaASCIIStreamPrint unrecognized type of data\n");
 }
 
-uint32_t LuaPutASCII(lua_State *L, char * DirName, char * VariableName)
+uint32_t LuaPutASCII(lua_State *L, const char * const DirName, const char * const VariableName)
 {
   FILE *fp;
   char *FileName;

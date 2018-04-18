@@ -1,5 +1,3 @@
-#include "ssp.h"
-
 /**
  * Prints the help file to screen
  * @param L
@@ -555,14 +553,17 @@ static int LuaVerbosity(lua_State * L)
   return 0;
 }
 
-
-int lua_return(lua_State *L, OperatorType *O) //TODO: For far better readability and lessened error-liability, this and similar functions should be used whenever possible.
+// NOOOOOO we want lua to do garbage collection
+// and metattables are defined for user data not light user data if I'm not mistaken
+// and we already placed the userdata on the lua stack
+/*
+int lua_return(lua_State *L, OperatorType *O)
 {
 	lua_pushlightuserdata(L,O);
 	luaL_setmetatable(L, "Operator_Type");
 	return 1;
 }
-
+*/
 
 static int LuaNewOperator(lua_State * L)
 {
@@ -2458,24 +2459,25 @@ static int LuaMeanFieldGroundstate(lua_State *L)
 
 static int LuaMeanFieldOperator(lua_State *L)
 {
-  	OperatorType *H, *HMF;
-  	CompactMatrixType *Rho;
-  	uint32_t len = (uint32_t)lua_gettop(L);
-    if(len<2 || len>2)
-    {
-      return luaL_error(L, "MeanFieldOperator called with %d arguments. Exactly two expected, Operator and Density Matrix.\n",len);
-    }
-  	H = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
-  	Rho = (CompactMatrixType *) luaL_checkCompactMatrix(L, 2);
-  	if((H->NFermion+H->NBoson)!=Rho->Ni)
-  	{
-  	  return luaL_error(L, "Error in MeanFieldGroundstate, length of operator (NF %i NB %i) is not equal to length of density matrix (%i)\n",H->NFermion,H->NBoson,Rho->Ni);
-  	}
-  	HMF = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-  	MeanFieldOperator(H, HMF, *Rho);	
-  	strncpy(HMF->Name, "", MAXStrLength-1); //An appropriate Name can be given in Lua.
-  	FreeCompactMatrix(Rho);
-  	return lua_return(L,HMF);
+  OperatorType *H, *HMF;
+  CompactMatrixType *Rho;
+  uint32_t len = (uint32_t)lua_gettop(L);
+  if(len<2 || len>2)
+  {
+    return luaL_error(L, "MeanFieldOperator called with %d arguments. Exactly two expected, Operator and Density Matrix.\n",len);
+  }
+  H = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
+  Rho = (CompactMatrixType *) luaL_checkCompactMatrix(L, 2);
+  if((H->NFermion+H->NBoson)!=Rho->Ni)
+  {
+    return luaL_error(L, "Error in MeanFieldGroundstate, length of operator (NF %i NB %i) is not equal to length of density matrix (%i)\n",H->NFermion,H->NBoson,Rho->Ni);
+  }
+  HMF = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+  MeanFieldOperator(H, HMF, *Rho);
+  luaL_setmetatable(L, "Operator_Type");
+  strncpy(HMF->Name, "", MAXStrLength-1); //An appropriate Name can be given in Lua.
+  FreeCompactMatrix(Rho);
+  return 1;
 }
 
 static int LuaOperatorToMatrix(lua_State *L)
@@ -2825,7 +2827,7 @@ static int LuaImpurityGreensFunction(lua_State * L)
   WaveFunctionType *psi;
   OperatorType *H,*T;
   ResponsefunctionType *DeltaBath;
-  BlockNaturalImpurityOrbitalMatrixType *DeltaBathNIO;
+  BlockNaturalImpurityOrbitalMatrixType *DeltaBathNIO=NULL;
   struct
   {
     ConvergenceSettingsType Settings;

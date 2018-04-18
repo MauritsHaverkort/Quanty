@@ -1,12 +1,10 @@
-#include "OperatorWaveFunction.h"
-
 /*
 *   Input pointer to a determinant and an integer that specifies the position that has to be created
 *   Output integer containing the phase (-1,1, or 0)
 *   Effects on the determinant pointed to
 *     If element (bit) i of the determinant was zero it now will be one
 */
-double inline OperatorCr(uint8_t * const Determinant, const uint16_t i, const uint32_t NFermion)
+double OperatorCr(uint8_t * const Determinant, const uint16_t i, const uint32_t NFermion)
 {
   uint8_t detblok;
   uint32_t j;
@@ -51,7 +49,7 @@ double inline OperatorCr(uint8_t * const Determinant, const uint16_t i, const ui
 *   Effects on the determinant pointed to
 *     If element (bit) i of the determinant was one it now will be zero
 */
-double inline OperatorAn(uint8_t * const Determinant, const uint16_t i, const uint32_t NFermion)
+double OperatorAn(uint8_t * const Determinant, const uint16_t i, const uint32_t NFermion)
 {
   uint8_t detblok;
   uint32_t j;
@@ -97,7 +95,7 @@ double inline OperatorAn(uint8_t * const Determinant, const uint16_t i, const ui
  *  Slight warning: there is no check on the maximum value of o[i]; if one tries to annihilate a particle that is not in the basis set then a bit somewhere someplace
  *  in memory will be set..... o[i] should be smaller then NFermion+NBoson-1 for all i.
  */
-double inline OperatorLader(uint8_t * const Determinant, const uint16_t * const o, const uint32_t lenght, const uint32_t NFermion)
+double OperatorLader(uint8_t * const Determinant, const uint16_t * const o, const uint32_t lenght, const uint32_t NFermion)
 {
   double phase = 1;
   uint32_t i;

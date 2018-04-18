@@ -1,1 +1,21 @@
-
+static int LuaMatrixTranspose(lua_State * L);
+static int LuaMatrixConjugateTranspose(lua_State * L);
+static int LuaMatrixConjugate(lua_State * L);
+static int LuaMatrixInverse(lua_State * L);
+static int LuaMatrixSqrt(lua_State * L);
+static int LuaMatrixEigensystem(lua_State * L);
+static int LuaMatrixExp(lua_State * L);
+static int LuaMatrixRandom(lua_State * L);
+static int LuaMatrixZero(lua_State * L);
+static int LuaMatrixIdentity(lua_State * L);
+static int LuaMatrixDiagonal(lua_State * L);
+static int LuaMatrixToTable(lua_State * L);
+static int LuaMatrixToUserdata(lua_State * L);
+static int LuaMatrixUnm(lua_State * L);
+static int LuaMatrixAdd(lua_State * L);
+static int LuaMatrixSub(lua_State * L);
+static int LuaMatrixMul(lua_State * L);
+static int LuaMatrixDiv(lua_State * L);
+static int LuaMatrixPow(lua_State * L);
+static int LuaMatrixToString(lua_State * L);
+static int LuaMatrixDestroy(lua_State * L);

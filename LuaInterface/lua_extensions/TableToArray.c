@@ -1059,7 +1059,6 @@ BlockNaturalImpurityOrbitalMatrixType * luaL_checkBlockNatrualImpurityOrbitalMat
 {
   const char *type;
   BlockNaturalImpurityOrbitalMatrixType *buff;
-  CompactMatrixType *B0;
   if(lua_istable(L, narg)==0)
   {
     luaL_error(L, "Error Green's function should be represented by a table");
