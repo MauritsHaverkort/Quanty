@@ -1,0 +1,147 @@
+-- This tutorial calculates the ground-state of NiO within the crystal-field theory approximation
+
+-- Within crystal-field theory the solid is approximated by a single atom in an effective 
+-- potential. Although an extremely crude approximation it is useful for some cases.
+-- For correlated transition metal insulators it captures the right symmetry of the 
+-- localized open d-shell. It is useful to determine magnetic g-factors, energies of d-d
+-- excitations or core level x-ray absorption. (2p to 3d excitations L23 edges) 
+
+-- One should notice that the effective crystal-field potential is an effective potential
+-- it is there to mimic the interaction with neighboring ligand atoms. In real materials
+-- there do not exist such large electro static potentials.
+
+-- In order to do crystal-field theory for NiO we need to define a Ni d-shell.
+-- A d-shell has 10 elements and we label again the even spin-orbitals to be spin down
+-- and the odd spin-orbitals to be spin up.
+NF=10
+NB=0
+IndexDn_3d={0,2,4,6,8}
+IndexUp_3d={1,3,5,7,9}
+
+-- We define several operators acting on the Ni d-shell
+
+OppSx   =NewOperator("Sx"   ,NF, IndexUp_3d, IndexDn_3d)
+OppSy   =NewOperator("Sy"   ,NF, IndexUp_3d, IndexDn_3d)
+OppSz   =NewOperator("Sz"   ,NF, IndexUp_3d, IndexDn_3d)
+OppSsqr =NewOperator("Ssqr" ,NF, IndexUp_3d, IndexDn_3d)
+OppSplus=NewOperator("Splus",NF, IndexUp_3d, IndexDn_3d)
+OppSmin =NewOperator("Smin" ,NF, IndexUp_3d, IndexDn_3d)
+
+OppLx   =NewOperator("Lx"   ,NF, IndexUp_3d, IndexDn_3d)
+OppLy   =NewOperator("Ly"   ,NF, IndexUp_3d, IndexDn_3d)
+OppLz   =NewOperator("Lz"   ,NF, IndexUp_3d, IndexDn_3d)
+OppLsqr =NewOperator("Lsqr" ,NF, IndexUp_3d, IndexDn_3d)
+OppLplus=NewOperator("Lplus",NF, IndexUp_3d, IndexDn_3d)
+OppLmin =NewOperator("Lmin" ,NF, IndexUp_3d, IndexDn_3d)
+
+OppJx   =NewOperator("Jx"   ,NF, IndexUp_3d, IndexDn_3d)
+OppJy   =NewOperator("Jy"   ,NF, IndexUp_3d, IndexDn_3d)
+OppJz   =NewOperator("Jz"   ,NF, IndexUp_3d, IndexDn_3d)
+OppJsqr =NewOperator("Jsqr" ,NF, IndexUp_3d, IndexDn_3d)
+OppJplus=NewOperator("Jplus",NF, IndexUp_3d, IndexDn_3d)
+OppJmin =NewOperator("Jmin" ,NF, IndexUp_3d, IndexDn_3d)
+
+Oppldots=NewOperator("ldots",NF, IndexUp_3d, IndexDn_3d)
+
+-- Next we define the Coulomb operator. The Coulomb operator is given as:
+-- Sum_{i,j} e^2/|r_i-r_j|
+-- This is actually a nastier sum than one might think as r_i-r_j=0 for r_i=r_j.
+-- The solution is to expand this operator on spherical harmonics
+-- ~ sum_k,m Y(t_i,p_i) Y(t_j,p_j)^* f(r_i,r_j)
+-- the part depending on the angles (theta and phi) can be solved analytically.
+-- The radial part (f(r_i,r_j)) is calculated  numerically and results in the Slater integrals
+-- The sum runs in principle over all possible values of k. The expansion coefficient k is
+-- related to the momentum transfer of two electrons when they scatter due to the Coulomb
+-- interaction. There is a maximal transfer of momentum that can happen between two electrons
+-- which is 2l. Furthermore k has to be even due to parity.
+-- There are thus l+1 = 3 Slater integrals for two electrons in the d-shell.
+-- F[0], F[2] and F[4]. F[0] is the spherical interaction between two d electrons. F[2] and
+-- F[4] represent interaction or scattering processes whereby the electrons exchange an angular
+-- momentum of 2 or 4.
+--
+-- We here define the part depending on F0, F2 and F4 separately.
+-- when summing we can put in the numerical values 
+-- of the slater integrals.
+OppF0 =NewOperator("U", NF, IndexUp_3d, IndexDn_3d, {1,0,0})
+OppF2 =NewOperator("U", NF, IndexUp_3d, IndexDn_3d, {0,1,0})
+OppF4 =NewOperator("U", NF, IndexUp_3d, IndexDn_3d, {0,0,1})
+
+-- Next we need to define the crystal field.
+-- The crystal-field is a potential that lifts the degeneracy of the d electrons.
+-- There are several ways to add such an interaction. We here follow the classical
+-- notation as for example used in Ballhausen or other textbooks on crystal-field theory.
+-- We expand the crystal-field potential on (renormalized) spherical harmonics and 
+-- enter the expansion coefficients of this potential.
+
+-- For specific symmetries there are relations between the different expansion coefficients.
+-- The function PotentialExpandedOnClm takes as an input the energies of the eigen-orbitals
+-- and creates the potential expanded on spherical harmonics. The order of the eigen-energies
+-- is the same as used in most point-group tables. (in cubic symmetry it is eg before t2g)
+
+-- We here create an operator that splits the d-shell into t2g orbitals at an energy of -0.4
+-- and eg orbitals at an energy of 0.6, such that the total splitting is one and the center
+-- of gravity is not changed. One can change the total splitting by multiplying this operator
+
+-- Akm = {{k1,m1,Akm1},{k2,m2,Akm2}, ... }
+Akm = PotentialExpandedOnClm("Oh",2,{0.6,-0.4});
+OpptenDq = NewOperator("CF", NF, IndexUp_3d, IndexDn_3d, Akm);
+
+-- We do not only want to give the t2g and eg electrons a different energy, it is also nice
+-- to define operators that count the number of t2g and eg electrons. If we define an operator
+-- where the eg electrons have an onsite energy of 1 and the t2g electrons have an onsite
+-- energy of 0 then the expectation value of such an operator is proportional to the total
+-- number of eg electrons. This is what we do in the next 4 lines, once to get an operator
+-- that counts the number of eg electrons, once to create an operator that counts the number
+-- of t2g electrons
+
+Akm = PotentialExpandedOnClm("Oh",2,{1,0});
+OppNeg = NewOperator("CF", NF, IndexUp_3d, IndexDn_3d, Akm);
+Akm = PotentialExpandedOnClm("Oh",2,{0,1});
+OppNt2g = NewOperator("CF", NF, IndexUp_3d, IndexDn_3d, Akm);
+
+-- once all operators are defined we can set some parameter values.
+
+-- the value of U drops out of a crystal-field calculation as the total number of electrons
+-- is always the same
+U       =  0.000
+-- F2 and F4 are often referred to in the literature as J_{Hund}. They represent the energy
+-- differences between different multiplets. Numerical values can be found in the back of
+-- my PhD. thesis for example. http://arxiv.org/abs/cond-mat/0505214 
+F2dd    = 11.142 
+F4dd    =  6.874
+-- F0 is not the same as U, although they are related. Unimportant in crystal-field theory
+-- the difference between U and F0 is so important that I do include it here. (U=0 so F0 is not)
+F0dd    = U+(F2dd+F4dd)*2/63
+-- tenDq in NiO is 1.1 eV as can be seen in optics or using IXS to measure d-d excitations
+tenDq   = 0
+-- the Ni 3d spin-orbit is small but finite
+zeta_3d = 0*0.081
+-- we add a small magnetic field
+Bz      = 0.000001
+-- note that all energies are in units of electron volt. (tesla to eV is EnergyUnits.Tesla.value = 5.788.... E-5)
+
+-- the total Hamiltonian is the sum of the different operators multiplied with their prefactor
+Hamiltonian =  F0dd*OppF0 + F2dd*OppF2 + F4dd*OppF4 + tenDq*OpptenDq + zeta_3d*Oppldots + Bz*(2*OppSz + OppLz)
+
+-- we now can create the lowest Npsi eigenstates:
+Npsi=45;
+-- in order to make sure we have a filling of 8 
+-- electrons we need to define some restrictions
+StartRestrictions = {NF, NB, {"1111111111",8,8}};
+
+-- we calculate the eigen system
+psiList = Eigensystem(Hamiltonian, StartRestrictions, Npsi);
+
+-- In order to get some information on these eigenstates it is good to plot expectation values
+-- We first define a list of all the operators we would like to calculate the expectation value of
+oppList={Hamiltonian, OppSsqr, OppLsqr, OppJsqr, OppSz, OppLz, Oppldots, OppF2, OppF4, OppNeg, OppNt2g};
+
+-- next we loop over all operators and all states and print the expectation value
+print(" <E>    <S^2>  <L^2>  <J^2>  <S_z>  <L_z>  <l.s>  <F[2]> <F[4]> <Neg>  <Nt2g>");
+for i = 1,#psiList do
+  for j = 1,#oppList do
+    expectationvalue = Chop(psiList[i]*oppList[j]*psiList[i])
+    io.write(string.format("%6.3f ",expectationvalue))
+  end
+  io.write("\n")
+end

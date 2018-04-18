@@ -1,0 +1,5 @@
+﻿for constant,var in pairs(EnergyUnits) do
+  io.write(string.format("EnergyUnits.%s\n",constant))
+  io.write(string.format("  %17.10E [%s]\n",var.value,var.units))
+  io.write(string.format("   %s\n",var.description))
+end

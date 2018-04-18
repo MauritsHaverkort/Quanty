@@ -1,0 +1,215 @@
+-- script contributed by Yaroslav Kvashnin.
+
+-- In order to simplify the program later on we first define some 
+-- functions.
+
+-- Function which swaps two character in a string. It will be used
+-- to check all possible particles permutations.
+------------------------------------------------
+function swap_char(pos1, pos2, str)
+ r=tostring((tonumber(str:sub(pos1,pos1))+3) % 2)
+ z=tostring((tonumber(str:sub(pos2,pos2))+3) % 2)
+ if (r ~= z) then
+  return str:sub(1, pos1-1) .. r .. str:sub(pos1+1,pos2-1) .. z .. str:sub(pos2+1)
+ else 
+  return str
+ end
+end
+------------------------------------------------
+
+-- begin of program
+print("")
+print("=============================================================")
+print("--> This small program will print out the possible many-body states for a given electronic configuration");
+print("--> The obtained states of single Slater determinants will be used as a Hilbert space for several operators.")
+print("")
+print("=============================================================")
+print("")
+
+-- read in the input
+dofile("conf.in")
+
+print("Calculating all possible Slater determinants for a shell with angular momentum "..l.." and a filling of "..Nelec.." electrons")
+
+-- Create the basis for quanty, define spin-orbitals and relate them
+-- to atomic shells. There are 4*l+2 spin-orbitals in a shell with
+-- angular momentum l. We label the spin-orbitals in the order from
+-- ml=-l to ml=l alternating down and up.
+
+Nf=4*l+2
+IndexDn={}
+IndexUp={}
+j=1
+for i=0,Nf-1,2 do
+  IndexDn[j]=i
+  IndexUp[j]=i+1
+  j=j+1
+end
+
+-- number of bosons
+Nb=0
+
+print("")
+print("======================== O U T P U T ========================")
+print("")
+
+-- Number of many particle states.
+Nstates=math.Binomial(Nf,Nelec)
+
+print("A shell with l= "..l.." and a filling of "..Nelec.." electrons has Binomial("..Nf.." "..Nelec..") = "..Nstates.." possible single Slater determinants")
+
+if(Nstates>3500) then
+  print("If you want to calculate more than 3500 states you have to remove this if then else from the script")
+  os.exit()
+end
+if(Nstates>64000) then
+  print("If you want to calculate more than 64000 states you have to remove this if then else from the script")
+  print("Furthermore it is recommended that you set the number of bits in the hash key table to a larger number.")
+  print("Change the line psi[i] = NewWavefunction(Nf, Nb, {{basis[i-1],1}})")
+  print("to psi[i] = NewWavefunction(Nf, Nb, {{basis[i-1],1}}, {{\"NBitsKey\",20}}).")
+  os.exit()
+end
+
+TimeStart("Create Determinants")
+
+-- Create the first determinant (spin-orbital 1 
+-- to Nelec filled, Nelec+1 to Nf empty).
+-- Determinants are stored as strings with 1 
+-- meaning occupied and 0 meaning empty
+str=""
+for i=1,Nelec do
+  str=str..1
+end
+for i=1,Nf-Nelec do
+  str=str..0
+end
+
+-- Search possible many-body states
+newstr={}; newstr[0]=str
+basis={};
+for i=1,Nstates do
+  basis[i]=str
+end
+kprev={} ; kprev[1]=0 ; kprev[2]=0 ; k=0 ; e=1
+for i=1,Nf do
+  for l=kprev[i],kprev[i+1] do
+    for j=i+1,Nf do
+      k=k+1
+      newstr[k]=swap_char(i,j,newstr[l])
+      info=0
+      for g=1,Nstates do
+        if (newstr[k] == basis[g]) then
+          info=1
+        end
+      end
+      if (info == 0) then
+        e=e+1
+        basis[e]=newstr[k]
+      end
+    end
+    if (e == Nstates) then
+      break
+    end
+  end 
+  kprev[i+2]=k
+end
+-- END of search
+
+TimeEnd("Create Determinants")
+
+-- print the possible many-body single Slater 
+-- determinant states
+print("--> List of possible single Slater determinants which span the basis for all many body states:")
+for i=1,(Nstates) do
+ print(string.format("%5i |%s>",i,basis[i]))
+end
+
+TimeStart("Create operators in second quantization")
+
+OppSz   = NewOperator("Sz"   ,Nf,IndexUp,IndexDn)
+OppLz   = NewOperator("Lz"   ,Nf,IndexUp,IndexDn)
+OppSsqr = NewOperator("Ssqr" ,Nf,IndexUp,IndexDn)
+OppLsqr = NewOperator("Lsqr" ,Nf,IndexUp,IndexDn)
+OppJz   = NewOperator("Jz"   ,Nf,IndexUp,IndexDn)
+OppJsqr = NewOperator("Jsqr" ,Nf,IndexUp,IndexDn)
+Oppldots= NewOperator("ldots",Nf,IndexUp,IndexDn)
+
+SlaterInts={}
+OppFk={}
+Nk=l+1
+for j=1,Nk do
+  for i = 1,Nk do
+   SlaterInts[i]=0
+  end
+  SlaterInts[j]=1
+  OppFk[j] = NewOperator("U", Nf, IndexUp, IndexDn, SlaterInts)
+end
+
+TimeEnd("Create operators in second quantization")
+
+TimeStart("Create operators in matrix form")
+
+--- create the set of wavefunctions, using the obtained states
+psi={}
+for i=1,Nstates do
+ psi[i] = NewWavefunction(Nf,Nb,{{basis[i],1}})
+end 
+
+print("\n=============================================================")
+print("The Sz operator on a basis Single slater determinants for a shell with l = "..l.." and a filling of "..Nelec.." electrons is:")
+for i = 1, Nstates do
+  io.write(string.format("%5i |%s>  ",i,basis[i]))
+  for j = 1, Nstates do
+    io.write(string.format("%5.2f ",psi[i] * OppSz * psi[j]))
+  end
+  io.write("\n")
+end
+
+print("\n=============================================================")
+print("The Lz operator on a basis Single slater determinants for a shell with l = "..l.." and a filling of "..Nelec.." electrons is:");
+for i = 1, Nstates do
+  io.write(string.format("%5i |%s>  ",i,basis[i]))
+  for j = 1, Nstates do
+    io.write(string.format("%5.2f ",psi[i] * OppLz * psi[j]));
+  end
+  io.write("\n");
+end
+
+print("\n=============================================================")
+print("The S^2 operator on a basis Single slater determinants for a shell with l = "..l.." and a filling of "..Nelec.." electrons is:")
+for i = 1, Nstates do
+  io.write(string.format("%5i |%s>  ",i,basis[i]))
+  for j = 1, Nstates do
+    io.write(string.format("%5.2f ",psi[i] * OppSsqr * psi[j]))
+  end
+  io.write("\n")
+end
+
+print("\n=============================================================")
+print("The L^2 operator on a basis Single slater determinants for a shell with l = "..l.." and a filling of "..Nelec.." electrons is:")
+for i = 1, Nstates do
+  io.write(string.format("%5i |%s>  ",i,basis[i]))
+  for j = 1, Nstates do
+    io.write(string.format("%5.2f ",psi[i] * OppLsqr * psi[j]))
+  end
+  io.write("\n")
+end
+
+print("\n=============================================================")
+print("The Coulomb operator for a shell with l = "..l.." is given by "..Nk.." different operators depending on the angular momentum of the expansion of 1/|r1-r2| in spherical Harmonics")
+for k=1,Nk do
+  print("=============================================================")
+  print("F["..(2*(k-1)).."]")
+  for i = 1, Nstates do
+    io.write(string.format("%5i |%s>  ",i,basis[i]))
+    for j = 1, Nstates do
+      io.write(string.format("%5.2f ",psi[i] * OppFk[k] * psi[j]))
+    end
+    io.write("\n")
+  end
+end
+
+TimeEnd("Create operators in matrix form")
+
+print("\n=============================================================")
+TimePrint()

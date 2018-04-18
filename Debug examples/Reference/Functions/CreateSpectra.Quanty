@@ -1,0 +1,20 @@
+﻿dofile("../definitions.Quanty")
+-- define an Hamiltonian (in this case a magnetic field of 6 tesla in the z direction)
+H = 6 * EnergyUnits.Tesla.value * (2*OppSz + OppLz)
+-- define a transition operator (in this case a pulsed magnetic field of 20 tesla in the x direction)
+T = 20 * EnergyUnits.Tesla.value * (2*OppSx + OppLx)
+-- define a ground-state (in this case a p electron with spin and angular momentum down)
+psigrd = psim1dn
+
+-- calculate < psigrd | T^dag 1/(w-H+i*G/2+E0) T | psigrd >
+--   with E0 = <psigrd | H | psigrd >
+-- spectri is optional
+spec, spectri = CreateSpectra(H, T, psigrd,{{"NE",20}})
+
+-- the real and imaginary part on a fixed energy grid
+print(spec)
+
+-- the spectrum represented as a continued fraction
+-- spectri contains {a,b,E0}
+-- and the spectrum is a[1] + b[1]^2 / (w + E0 + i G/2 - a[2] - b[2]^2 / (w + E0 + i G/2 - a[3] - b[3]^2 / ... ))
+print(spectri)

@@ -1,0 +1,4 @@
+﻿dofile("../../definitions.Quanty")
+
+print("OppSz.Complex = ",OppSz.Complex)
+print("OppSy.Complex = ",OppSy.Complex)

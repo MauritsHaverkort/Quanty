@@ -1,0 +1,138 @@
+-- For NiO we know that 10Dq=1.1 eV, however if you have a new compound you might roughly
+-- know these values, but never exactly. It is then nice to see how the eigen-state
+-- energies change as a function of 10Dq.
+
+-- plots were one shows the eigen-state energy as a function of some parameter (crystal-
+-- field strength) are called energy level diagrams or Sugano - Tanabe diagrams 
+
+-- here we create the diagram for Ni - d8
+
+-- in order to minimize the output of the calculation we set the verbosity to 0
+Verbosity(0)
+
+-- we have a single d-shell in the bases and thus need 10 Fermions, grouped in 5 orbitals
+-- with spin down and 5 with spin up.
+NF=10
+NB=0
+IndexDn_3d={0,2,4,6,8}
+IndexUp_3d={1,3,5,7,9}
+
+-- again we define several operators
+
+OppSx   =NewOperator("Sx"   ,NF, IndexUp_3d, IndexDn_3d)
+OppSy   =NewOperator("Sy"   ,NF, IndexUp_3d, IndexDn_3d)
+OppSz   =NewOperator("Sz"   ,NF, IndexUp_3d, IndexDn_3d)
+OppSsqr =NewOperator("Ssqr" ,NF, IndexUp_3d, IndexDn_3d)
+OppSplus=NewOperator("Splus",NF, IndexUp_3d, IndexDn_3d)
+OppSmin =NewOperator("Smin" ,NF, IndexUp_3d, IndexDn_3d)
+
+OppLx   =NewOperator("Lx"   ,NF, IndexUp_3d, IndexDn_3d)
+OppLy   =NewOperator("Ly"   ,NF, IndexUp_3d, IndexDn_3d)
+OppLz   =NewOperator("Lz"   ,NF, IndexUp_3d, IndexDn_3d)
+OppLsqr =NewOperator("Lsqr" ,NF, IndexUp_3d, IndexDn_3d)
+OppLplus=NewOperator("Lplus",NF, IndexUp_3d, IndexDn_3d)
+OppLmin =NewOperator("Lmin" ,NF, IndexUp_3d, IndexDn_3d)
+
+OppJx   =NewOperator("Jx"   ,NF, IndexUp_3d, IndexDn_3d)
+OppJy   =NewOperator("Jy"   ,NF, IndexUp_3d, IndexDn_3d)
+OppJz   =NewOperator("Jz"   ,NF, IndexUp_3d, IndexDn_3d)
+OppJsqr =NewOperator("Jsqr" ,NF, IndexUp_3d, IndexDn_3d)
+OppJplus=NewOperator("Jplus",NF, IndexUp_3d, IndexDn_3d)
+OppJmin =NewOperator("Jmin" ,NF, IndexUp_3d, IndexDn_3d)
+
+Oppldots=NewOperator("ldots",NF, IndexUp_3d, IndexDn_3d)
+
+OppF0 =NewOperator("U",NF, IndexUp_3d, IndexDn_3d, {1,0,0})
+OppF2 =NewOperator("U",NF, IndexUp_3d, IndexDn_3d, {0,1,0})
+OppF4 =NewOperator("U",NF, IndexUp_3d, IndexDn_3d, {0,0,1})
+
+Akm = PotentialExpandedOnClm("Oh",2,{0.6,-0.4})
+OpptenDq = NewOperator("CF", NF, IndexUp_3d, IndexDn_3d, Akm)
+
+Akm = PotentialExpandedOnClm("Oh",2,{1,0})
+OppNeg = NewOperator("CF", NF, IndexUp_3d, IndexDn_3d, Akm)
+Akm = PotentialExpandedOnClm("Oh",2,{0,1})
+OppNt2g = NewOperator("CF", NF, IndexUp_3d, IndexDn_3d, Akm)
+
+-- for d^8 there are 10*9/2 = 45 different states. For a diagram we want to calculate all
+Npsi=45
+
+-- as before we can set the parameters, in this case all but 10Dq
+U       =  0.000
+F2dd    = 11.142 
+F4dd    =  6.874
+F0dd    = U+(F2dd+F4dd)*2/63
+zeta_3d = 0.081
+Bz      = 0.000001
+
+-- and we define the Hamiltonian as a sum of prefactors times operators. Note that
+-- we do not include the crystal field here.
+Hamiltonian0 =  F0dd*OppF0 + F2dd*OppF2 + F4dd*OppF4 + zeta_3d*Oppldots + Bz*(2*OppSz + OppLz)
+
+-- We first calculate the eigen states of Hamiltonian0. For a filling of 8 electrons
+-- the wavefunctions are stored as a table in the variable psiList
+StartRestrictions = {NF, NB,  {"1111111111",8,8}}
+psiList = Eigensystem(Hamiltonian0, StartRestrictions, Npsi)
+
+-- We will write the eigen energies to the file EnergyLevelDiagram, which we open for writing
+-- The variable file now points to the file "EnergyLevelDiagram"
+file = assert(io.open("EnergyLevelDiagram", "w"))
+
+-- no we need to loop over the value of 10Dq and for each value diagonalize the Hamiltonian
+-- and save the eigenvalues to the file EnergyLevelDiagram
+-- we do 301 calculations changing 10Dq from 0 to 3 in steps of 10 meV.
+-- i is an index that counts from 0 to 300
+-- tenDq is a variable equal to 0.01*i and the actual crystal-field strength.
+-- During the loop we write the value of 10Dq to the screen so we know where the calculation is
+-- Into the file we write first the value of 10Dq and then the 45 eigenvalues
+-- but in order to calculate the eigenvalues we first need to call the function Eigensystem
+-- acting on Hamiltonian0 + tenDq * OpptenDq
+-- Eigensystem is a flexible function that can be used in different ways and on different
+-- objects. If you have a set of states close to the eigenstates you are interested in you can
+-- use these states as starting point.
+-- Calling Eigensystem with an operator as the first argument and a table of functions as the second
+-- will change the functions to become the lowest eigenstates of the operator.
+io.write("10Dq = ")
+for i=0, 300 do
+  tenDq = 0.01*i
+  io.write(string.format("%5.3f ",tenDq))
+  io.flush()
+  file:write(string.format("%14.7E ",tenDq))
+  Hamiltonian=Hamiltonian0 + tenDq * OpptenDq
+  Eigensystem(Hamiltonian, psiList)
+  for key,value in pairs(psiList) do
+    energy = value * Hamiltonian * value
+    file:write(string.format("%14.7E ",energy))
+  end
+  file:write("\n")
+end
+io.write("\n")
+file:close()
+
+-- Once we have created a file containing the eigenenergies we can make a plot
+-- A gnuplot script that would make this plot can be found below
+gnuplotInput = [[
+set autoscale 
+set xtic auto  
+set ytic auto  
+set style line  1 lt 1 lw 1 lc rgb "#000000"
+
+set xlabel "10Dq (eV)" font "Times,12"
+set ylabel "Energy (eV)" font "Times,12"
+
+set out 'EnergyLevelDiagram.ps'
+set size 1.0, 0.625
+set terminal postscript portrait enhanced color  "Times" 12
+
+plot for [i=2:46] "EnergyLevelDiagram" using 1:i notitle with lines ls  1
+]]
+
+-- write the gnuplot script to a file
+file = io.open("EnergyLevelDiagram.gnuplot", "w")
+file:write(gnuplotInput)
+file:close()
+
+-- call gnuplot to execute the script
+os.execute("gnuplot EnergyLevelDiagram.gnuplot")
+-- change the postscript file to pdf or eps
+os.execute("ps2pdf EnergyLevelDiagram.ps ; ps2eps EnergyLevelDiagram.ps ; mv EnergyLevelDiagram.eps temp.eps ; eps2eps temp.eps EnergyLevelDiagram.eps ; rm temp.eps")

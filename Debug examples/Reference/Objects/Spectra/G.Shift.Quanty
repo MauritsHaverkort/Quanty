@@ -1,0 +1,7 @@
+dofile("definitions.Quanty")
+
+GShift = Spectra.Shift(G, 5.3)
+
+--is equivalent to
+GShift = Spectra.Copy(G)
+GShift.Shift(5.3)

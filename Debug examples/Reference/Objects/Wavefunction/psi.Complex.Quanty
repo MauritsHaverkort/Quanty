@@ -1,0 +1,9 @@
+﻿dofile("../../definitions.Quanty")
+
+print(psi1)
+print(psi1.Complex)
+
+psi=sqrt(0.6)*psi1 + sqrt(0.4)* I * psi2
+
+print(psi)
+print(psi.Complex)

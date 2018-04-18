@@ -1,0 +1,245 @@
+-- using inelastic x-ray scattering one can not only measure low energy excitations,
+-- but equally well core to core transitions. This allows one to probe for example
+-- 3p to 3d transitions using octupole operators. 
+
+-- We use the definitions of all operators and basis orbitals as defined in the file
+-- 44_50_include and can afterwards directly continue by creating the Hamiltonian
+-- and calculating the spectra
+
+dofile("44_50_include.Quanty")
+
+-- The parameters and scheme needed is the same as the one used for XAS
+
+-- We follow the energy definitions as introduced in the group of G.A. Sawatzky (Groningen)
+-- J. Zaanen, G.A. Sawatzky, and J.W. Allen PRL 55, 418 (1985)
+-- for parameters of specific materials see
+-- A.E. Bockquet et al. PRB 55, 1161 (1996)
+-- After some initial discussion the energies U and Delta refer to the center of a configuration
+-- The L^10 d^n   configuration has an energy 0
+-- The L^9  d^n+1 configuration has an energy Delta
+-- The L^8  d^n+2 configuration has an energy 2*Delta+Udd
+--
+-- If we relate this to the onsite energy of the L and d orbitals we find
+-- 10 eL +  n    ed + n(n-1)     U/2 == 0
+--  9 eL + (n+1) ed + (n+1)n     U/2 == Delta
+--  8 eL + (n+2) ed + (n+1)(n+2) U/2 == 2*Delta+U
+-- 3 equations with 2 unknowns, but with interdependence yield:
+-- ed = (10*Delta-nd*(19+nd)*U/2)/(10+nd)
+-- eL = nd*((1+nd)*Udd/2-Delta)/(10+nd)
+--
+-- For the final state we/they defined
+-- The 2p^5 L^10 d^n+1 configuration has an energy 0
+-- The 2p^5 L^9  d^n+2 configuration has an energy Delta + Udd - Upd
+-- The 2p^5 L^8  d^n+3 configuration has an energy 2*Delta + 3*Udd - 2*Upd
+--
+-- If we relate this to the onsite energy of the p and d orbitals we find
+-- 6 ep + 10 eL +  n    ed + n(n-1)     Udd/2 + 6 n     Upd == 0
+-- 6 ep +  9 eL + (n+1) ed + (n+1)n     Udd/2 + 6 (n+1) Upd == Delta
+-- 6 ep +  8 eL + (n+2) ed + (n+1)(n+2) Udd/2 + 6 (n+2) Upd == 2*Delta+Udd
+-- 5 ep + 10 eL + (n+1) ed + (n+1)(n)   Udd/2 + 5 (n+1) Upd == 0
+-- 5 ep +  9 eL + (n+2) ed + (n+2)(n+1) Udd/2 + 5 (n+2) Upd == Delta+Udd-Upd
+-- 5 ep +  8 eL + (n+3) ed + (n+3)(n+2) Udd/2 + 5 (n+3) Upd == 2*Delta+3*Udd-2*Upd
+-- 6 equations with 3 unknowns, but with interdependence yield:
+-- epfinal = (10*Delta + (1+nd)*(nd*Udd/2-(10+nd)*Upd) / (16+nd)
+-- edfinal = (10*Delta - nd*(31+nd)*Udd/2-90*Upd) / (16+nd)
+-- eLfinal = ((1+nd)*(nd*Udd/2+6*Upd)-(6+nd)*Delta) / (16+nd)
+--
+-- 
+-- 
+-- note that ed-ep = Delta - nd * U and not Delta
+-- note furthermore that ep and ed here are defined for the onsite energy if the system had
+-- locally nd electrons in the d-shell. In DFT or Hartree Fock the d occupation is in the end not
+-- nd and thus the onsite energy of the Kohn-Sham orbitals is not equal to ep and ed in model
+-- calculations.
+--
+-- note furthermore that ep and eL actually should be different for most systems. We happily ignore this fact
+-- 
+-- We normally take U and Delta as experimentally determined parameters
+
+-- number of electrons (formal valence)
+nd = 8
+-- parameters from experiment (core level PES)
+Udd     =  7.3
+Upd     =  8.5
+Delta   =  4.7
+-- parameters obtained from DFT (PRB 85, 165113 (2012))
+F2dd    = 11.14 
+F4dd    =  6.87
+F2pd    =  6.67
+G1pd    =  4.92
+G3pd    =  2.80
+tenDq   =  0.56
+tenDqL  =  1.44
+Veg     =  2.06
+Vt2g    =  1.21
+zeta_3d =  0.081
+zeta_2p = 11.51
+Bz      =  0.000001
+H112    =  0
+
+ed      = (10*Delta-nd*(19+nd)*Udd/2)/(10+nd)
+eL      = nd*((1+nd)*Udd/2-Delta)/(10+nd)
+
+epfinal = (10*Delta + (1+nd)*(nd*Udd/2-(10+nd)*Upd)) / (16+nd)
+edfinal = (10*Delta - nd*(31+nd)*Udd/2-90*Upd) / (16+nd)
+eLfinal = ((1+nd)*(nd*Udd/2+6*Upd) - (6+nd)*Delta) / (16+nd)
+
+F0dd    = Udd + (F2dd+F4dd) * 2/63
+F0pd    = Upd + (1/15)*G1pd + (3/70)*G3pd
+
+Hamiltonian =  F0dd*OppF0_3d + F2dd*OppF2_3d + F4dd*OppF4_3d + zeta_3d*Oppldots_3d + Bz*(2*OppSz_3d + OppLz_3d) + H112 * (OppSx_3d+OppSy_3d+2*OppSz_3d)/sqrt(6) + tenDq*OpptenDq_3d + tenDqL*OpptenDq_Ld + Veg * OppVeg + Vt2g * OppVt2g + ed * OppN_3d + eL * OppN_Ld
+            
+XASHamiltonian =  F0dd*OppF0_3d + F2dd*OppF2_3d + F4dd*OppF4_3d + zeta_3d*Oppldots_3d + Bz*(2*OppSz_3d + OppLz_3d)+ H112 * (OppSx_3d+OppSy_3d+2*OppSz_3d)/sqrt(6) + tenDq*OpptenDq_3d + tenDqL*OpptenDq_Ld + Veg * OppVeg + Vt2g * OppVt2g + edfinal * OppN_3d + eLfinal * OppN_Ld + epfinal * OppN_2p + zeta_2p * Oppcldots + F0pd * OppUpdF0 + F2pd * OppUpdF2 + G1pd * OppUpdG1 + G3pd * OppUpdG3  
+               
+-- we now can create the lowest Npsi eigenstates:
+Npsi=3
+-- in order to make sure we have a filling of 8 electrons we need to define some restrictions
+StartRestrictions = {NF, NB, {"000000 00 1111111111 0000000000",8,8}, {"111111 11 0000000000 1111111111",18,18}}
+
+psiList = Eigensystem(Hamiltonian, StartRestrictions, Npsi)
+oppList={Hamiltonian, OppSsqr, OppLsqr, OppJsqr, OppSx_3d, OppLx_3d, OppSy_3d, OppLy_3d, OppSz_3d, OppLz_3d, Oppldots_3d, OppF2_3d, OppF4_3d, OppNeg_3d, OppNt2g_3d, OppNeg_Ld, OppNt2g_Ld, OppN_3d}
+
+-- print of some expectation values
+print("  #    <E>      <S^2>    <L^2>    <J^2>    <S_x^3d> <L_x^3d> <S_y^3d> <L_y^3d> <S_z^3d> <L_z^3d> <l.s>    <F[2]>   <F[4]>   <Neg^3d> <Nt2g^3d><Neg^Ld> <Nt2g^Ld><N^3d>");
+for i = 1,#psiList do
+  io.write(string.format("%3i ",i))
+  for j = 1,#oppList do
+    expectationvalue = Chop(psiList[i]*oppList[j]*psiList[i])
+    io.write(string.format("%8.3f ",expectationvalue))
+  end
+  io.write("\n")
+end
+
+
+-- in order to calculate nIXS we need to determine the intensity ratio for the different multipole intensities
+-- ( see PRL 99, 257401 (2007) for the formalism )
+-- in short the A^2 interaction is expanded on spherical harmonics and Bessel functions
+-- The 3d Wannier functions are expanded on spherical harmonics and a radial wave function
+-- For the radial wave-function we calculate <R(r) | j_k(q r) | R(r)>
+-- which defines the transition strength for the multipole of order k
+
+-- The radial functions here are calculated for a Ni 2+ atom and stored in the folder NiO_Radial
+-- more sophisticated methods can be used
+
+-- read the radial wave functions
+-- order of functions
+-- r	1S	2S	2P	3S	3P	3D
+file = io.open( "NiO_Radial/RnlNi_Atomic_Hartree_Fock", "r")
+Rnl = {}
+for line in file:lines() do
+  RnlLine={}
+  for i in string.gmatch(line, "%S+") do
+    table.insert(RnlLine,i)
+  end
+  table.insert(Rnl,RnlLine)
+end
+
+-- some constants
+a0      =  0.52917721092
+Rydberg = 13.60569253
+Hartree = 2*Rydberg
+
+-- pd transitions from 2p (index 4 in Rnl) to 3d (index 7 in Rnl)
+-- <R(r) | j_k(q r) | R(r)>
+function RjRpd (q)
+  Rj1R = 0
+  Rj3R = 0
+  dr = Rnl[3][1]-Rnl[2][1]
+  r0 = Rnl[2][1]-2*dr
+  for ir = 2, #Rnl, 1 do
+    r = r0 + ir * dr
+    Rj1R = Rj1R + Rnl[ir][4] * math.SphericalBesselJ(1,q*r) * Rnl[ir][7] * dr
+    Rj3R = Rj3R + Rnl[ir][4] * math.SphericalBesselJ(3,q*r) * Rnl[ir][7] * dr
+  end
+  return Rj1R, Rj3R
+end
+
+-- the angular part is given as C(theta_q, phi_q)^* C(theta_r, phi_r)
+-- which is a potential expanded on spherical harmonics
+function ExpandOnClm(k,theta,phi,scale)
+  ret={}
+  for m=-k, k, 1 do
+    table.insert(ret,{k,m,scale * math.SphericalHarmonicC(k,m,theta,phi)})
+  end
+  return ret
+end
+
+-- define nIXS transition operators
+function TnIXS_pd(q, theta, phi)
+  Rj1R, Rj3R = RjRpd(q)
+  k=1
+  A1 = ExpandOnClm(k, theta, phi, I^k*(2*k+1)*Rj1R)
+  T1 = NewOperator("CF", NF, IndexUp_3d, IndexDn_3d, IndexUp_2p, IndexDn_2p, A1)
+  k=3
+  A3 = ExpandOnClm(k, theta, phi, I^k*(2*k+1)*Rj3R)
+  T3 = NewOperator("CF", NF, IndexUp_3d, IndexDn_3d, IndexUp_2p, IndexDn_2p, A3)
+  T = T1+T3
+  T.Chop()
+  return T
+end
+
+-- q in units per a0 (if you want in units per A take 5*a0 to have a q of 5 per A)
+q=9.0
+
+print("for q=",q," per a0 (",q / a0," per A) The ratio of k=1 and k=3 transition strength is:", RjRpd(q))
+
+-- define some transition operators
+qtheta=0
+qphi=0
+Tq001 = TnIXS_pd(q,qtheta,qphi)
+
+qtheta=Pi/2
+qphi=Pi/4
+Tq110 = TnIXS_pd(q,qtheta,qphi)
+
+qtheta=math.acos(math.sqrt(1/3))
+qphi=Pi/4
+Tq111 = TnIXS_pd(q,qtheta,qphi)
+
+qtheta=math.acos(math.sqrt(9/14))
+qphi=math.acos(math.sqrt(1/5))
+Tq123 = TnIXS_pd(q,qtheta,qphi)
+
+-- calculate the spectra
+nIXSSpectra = CreateSpectra(XASHamiltonian, {Tq001, Tq110, Tq111, Tq123}, psiList, {{"Emin",-10}, {"Emax",20}, {"NE",6000}, {"Gamma",1.0}})
+
+-- print the spectra to a file
+nIXSSpectra.Print({{"file","NiOnIXS_L23.dat"}});
+
+-- a gnuplot script to make the plots
+gnuplotInput = [[
+set autoscale  
+set xtic auto
+set ytic auto  
+set style line  1 lt 1 lw 1 lc rgb "#FF0000"
+set style line  2 lt 1 lw 1 lc rgb "#0000FF"
+set style line  3 lt 1 lw 1 lc rgb "#00C000"
+set style line  4 lt 1 lw 1 lc rgb "#000000"
+set style line  5 lt 1 lw 3 lc rgb "#808080"
+
+set xlabel "E (eV)" font "Times,12"
+set ylabel "Intensity (arb. units)" font "Times,12"
+
+set out 'NiOnIXS_L23.ps'
+set size 1.0, 0.3
+set terminal postscript portrait enhanced color  "Times" 8
+
+energyshift=857.6
+
+plot "NiOnIXS_L23.dat" using ($1+energyshift):(-$9  -$11 -$13 +0.16) title '011' with lines ls  2,\
+     "NiOnIXS_L23.dat" using ($1+energyshift):(-$15 -$17 -$19 +0.11) title '111' with lines ls  3,\
+     "NiOnIXS_L23.dat" using ($1+energyshift):(-$21 -$23 -$25 +0.06) title '123' with lines ls  4,\
+     "NiOnIXS_L23.dat" using ($1+energyshift):(-$3   -$5  -$7 +0.01) title '001' with lines ls  1
+
+]]
+
+-- write the gnuplot script to a file
+file = io.open("NiOnIXS_L23.gnuplot", "w")
+file:write(gnuplotInput)
+file:close()
+
+-- call gnuplot to execute the script
+os.execute("gnuplot NiOnIXS_L23.gnuplot")
+-- transform to pdf and eps
+os.execute("ps2pdf NiOnIXS_L23.ps  ; ps2eps NiOnIXS_L23.ps  ;  mv NiOnIXS_L23.eps temp.eps  ; eps2eps temp.eps NiOnIXS_L23.eps  ; rm temp.eps")
+

@@ -1,0 +1,17 @@
+﻿dofile("../definitions.Quanty")
+-- define an Hamiltonian (in this case a magnetic field of 6 tesla in the z direction)
+H = 6 * EnergyUnits.Tesla.value * (2*OppSz + OppLz)
+-- define a transition operator (in this case a pulsed magnetic field of 20 tesla in the x direction)
+T1 = 20 * EnergyUnits.Tesla.value * (2*OppSx + OppLx)
+-- define a ground-state (in this case a p electron with spin and angular momentum down)
+psigrd = psim1dn
+-- define a feritale operator to be able to calculate FY
+T2 = (2*OppSy + OppLy)
+
+-- calculate < psigrd | T1^dag 1/(w-i*G/2+E0-H^dag) T2^dag T2 1/(w+i*G/2+E0-H) T1 | psigrd >
+--   with E0 = <psigrd | H | psigrd >
+spec = CreateFluorescenceYield(H, T1, T2, psigrd,{{"NE",20}})
+
+-- the real and imaginary=0 part on a fixed energy grid
+print(spec)
+

@@ -1,0 +1,167 @@
+-- Using operators and wavefunctions as explained in 
+-- the Operators and Wavefunctions example we can do
+-- simple calculations of expectation values
+
+-- Define the basis:
+ -- For a p-shell we would like the have 6 
+ -- spinorbitals, with the quantum numbers 
+ -- spin up ml=-1,ml=0,ml=1 and
+ -- spin down with ml=-1, ml=0, ml=1
+NF=6
+NB=0
+IndexDn={0,2,4}
+IndexUp={1,3,5}
+
+-- Define 6 one electron wave functions
+psi0=NewWavefunction(NF,NB,{{"100000",1}})
+psi0.Name = "psi(1 -1 1/2 -1/2)"
+psi1=NewWavefunction(NF,NB,{{"001000",1}})
+psi1.Name = "psi(1  0 1/2 -1/2)"
+psi2=NewWavefunction(NF,NB,{{"000010",1}})
+psi2.Name = "psi(1  1 1/2 -1/2)"
+psi3=NewWavefunction(NF,NB,{{"010000",1}})
+psi3.Name = "psi(1 -1 1/2  1/2)"
+psi4=NewWavefunction(NF,NB,{{"000100",1}})
+psi4.Name = "psi(1  0 1/2  1/2)"
+psi5=NewWavefunction(NF,NB,{{"000001",1}})
+psi5.Name = "psi(1  1 1/2  1/2)"
+
+-- Define spin and angular momentum operators
+OppSx   =NewOperator("Sx"   ,NF,IndexUp,IndexDn)
+OppSy   =NewOperator("Sy"   ,NF,IndexUp,IndexDn)
+OppSz   =NewOperator("Sz"   ,NF,IndexUp,IndexDn)
+OppSsqr =NewOperator("Ssqr" ,NF,IndexUp,IndexDn)
+OppSplus=NewOperator("Splus",NF,IndexUp,IndexDn)
+OppSmin =NewOperator("Smin" ,NF,IndexUp,IndexDn)
+
+OppLx   =NewOperator("Lx"   ,NF,IndexUp,IndexDn)
+OppLy   =NewOperator("Ly"   ,NF,IndexUp,IndexDn)
+OppLz   =NewOperator("Lz"   ,NF,IndexUp,IndexDn)
+OppLsqr =NewOperator("Lsqr" ,NF,IndexUp,IndexDn)
+OppLplus=NewOperator("Lplus",NF,IndexUp,IndexDn)
+OppLmin =NewOperator("Lmin" ,NF,IndexUp,IndexDn)
+
+OppJx   =NewOperator("Jx"   ,NF,IndexUp,IndexDn)
+OppJy   =NewOperator("Jy"   ,NF,IndexUp,IndexDn)
+OppJz   =NewOperator("Jz"   ,NF,IndexUp,IndexDn)
+OppJsqr =NewOperator("Jsqr" ,NF,IndexUp,IndexDn)
+OppJplus=NewOperator("Jplus",NF,IndexUp,IndexDn)
+OppJmin =NewOperator("Jmin" ,NF,IndexUp,IndexDn)
+
+Oppldots=NewOperator("ldots",NF,IndexUp,IndexDn)
+
+-- We can look at expectation values by multiplying
+-- a wavefunction with an operator with a 
+-- wavefunction
+ExpLz = psi0 * OppLz * psi0
+print("The expectation value for psi0 is given as <psi0 | Lz | psi0>=",ExpLz)
+ExpSz = psi0 * OppSz * psi0
+print("The expectation value for psi0 is given as <psi0 | Sz | psi0>=",ExpSz)
+print("")
+
+-- A print of the operator gives the operator in 
+-- second quantization. knowing a basis of 
+-- wavefunctions we can also look at a matrix
+-- representation of the operators. To simplify 
+-- loops we first create a table of the functions
+psiList={psi0,psi1,psi2,psi3,psi4,psi5}
+
+-- print the Sz operator
+print("The Sz operator on a basis of psi0 to psi5 looks like:")
+for i = 1, 6 do
+  for j = 1, 6 do
+    io.write(string.format("%5.2f ",psiList[i] * OppSz * psiList[j]))
+  end
+  io.write("\n")
+end
+print("")
+
+-- print the Lz operator
+print("The Lz operator on a basis of psi0 to psi5 looks like:")
+for i = 1, 6 do
+  for j = 1, 6 do
+    io.write(string.format("%5.2f ",psiList[i] * OppLz * psiList[j]))
+  end
+  io.write("\n")
+end
+print("")
+
+-- the Lz and Sz operators are represented by 
+-- diagonal matrices. This is so while our basis 
+-- states are chosen (created) to be eigen states 
+-- of Lz and Sz. If one looks at other operators
+-- this is different.
+print("The spin orbit coupling operator l.s on a basis of psi0 to psi5 looks like:")
+psiList={psi0,psi1,psi2,psi3,psi4,psi5}
+for i = 1, 6 do
+  for j = 1, 6 do
+    io.write(string.format("%5.2f ",psiList[i] * Oppldots * psiList[j]))
+  end
+  io.write("\n");
+end
+
+-- The matrix form of the operators depends on the 
+-- basis states we take. For two electrons we need
+-- to define 15 two particle states in the p-shell.
+print("")
+print("========== Two electrons in the p-shell ==========")
+psi0 =NewWavefunction(NF,NB,{{"110000",1}})
+psi1 =NewWavefunction(NF,NB,{{"101000",1}})
+psi2 =NewWavefunction(NF,NB,{{"100100",1}})
+psi3 =NewWavefunction(NF,NB,{{"100010",1}})
+psi4 =NewWavefunction(NF,NB,{{"100001",1}})
+psi5 =NewWavefunction(NF,NB,{{"011000",1}})
+psi6 =NewWavefunction(NF,NB,{{"010100",1}})
+psi7 =NewWavefunction(NF,NB,{{"010010",1}})
+psi8 =NewWavefunction(NF,NB,{{"010001",1}})
+psi9 =NewWavefunction(NF,NB,{{"001100",1}})
+psi10=NewWavefunction(NF,NB,{{"001010",1}})
+psi11=NewWavefunction(NF,NB,{{"001001",1}})
+psi12=NewWavefunction(NF,NB,{{"000110",1}})
+psi13=NewWavefunction(NF,NB,{{"000101",1}})
+psi14=NewWavefunction(NF,NB,{{"000011",1}})
+
+-- The operator in terms of creation and 
+-- annihilation operators is still the same 
+-- and can thus be used to calculate expectation 
+-- values
+print("")
+ExpLz = psi0 * OppLz * psi0
+print("The expectation value for psi0 is given as <psi0 | Lz | psi0> =",ExpLz)
+ExpSz = psi0 * OppSz * psi0
+print("The expectation value for psi0 is given as <psi0 | Sz | psi0> =",ExpSz)
+print("")
+
+-- to simplify loops we first create a table of the
+-- functions
+psiList = {psi0, psi1, psi2, psi3, psi4, psi5, psi6, psi7, psi8, psi9, psi10, psi11, psi12, psi13, psi14}
+
+-- print the Sz operator
+print("The Sz operator on a basis of psi0 to psi14 looks like:")
+for i = 1, 15 do
+  for j = 1, 15 do
+    io.write(string.format("%4.1f ",psiList[i] * OppSz * psiList[j]))
+  end
+  io.write("\n")
+end
+print("")
+
+-- print the Lz operator
+print("The Lz operator on a basis of psi0 to psi14 looks like:")
+for i = 1, 15 do
+  for j = 1, 15 do
+    io.write(string.format("%4.1f ",psiList[i] * OppLz * psiList[j]))
+  end
+  io.write("\n")
+end
+print("")
+
+-- print the Ssqr operator
+print("The S^2 operator on a basis of psi0 to psi14 looks like:")
+for i = 1, 15 do
+  for j = 1, 15 do
+    io.write(string.format("%4.1f ",psiList[i] * OppSsqr * psiList[j]))
+  end
+  io.write("\n")
+end
+print("")

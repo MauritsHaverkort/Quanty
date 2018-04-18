@@ -1,0 +1,20 @@
+#!/bin/bash
+
+echo "Start of running all tutorials"
+cp -r Tutorials History/current
+
+echo "change to directory History/current/Tutorials"
+cd History/current/Tutorials
+  for directory in */
+  do
+    echo change to directory $directory
+    cd $directory
+      for file in *.Quanty
+      do
+        fileout="${file/Quanty/out}"
+        Quanty $file | tail -n +23 > $fileout
+      done
+    cd ..
+  done
+cd ..
+

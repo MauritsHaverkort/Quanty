@@ -1,0 +1,81 @@
+Verbosity(0)
+
+function Tx(indexup, indexdn, NF)
+  if #indexup ~= #indexdn then
+    error("Length of index up must be equal to length of index dn and equal to 2l+1 in Tx")
+  end
+  local l=(#indexup-1)/2
+  if not IntegerQ(l) then
+    error("Length of index must be equal to 2l+1 in Tx")
+  end
+  local function Sx(m1,m2) 
+    return NewOperator("Number",NF,{indexup[m1+l+1],indexdn[m1+l+1]},
+                       {indexdn[m2+l+1],indexup[m2+l+1]},{1/2,1/2})
+  end
+  local function Sy(m1,m2) 
+    return NewOperator("Number",NF,{indexup[m1+l+1],indexdn[m1+l+1]},
+                       {indexdn[m2+l+1],indexup[m2+l+1]},{-I/2,I/2})
+  end
+  local function Sz(m1,m2) 
+    return NewOperator("Number",NF,{indexup[m1+l+1],indexdn[m1+l+1]},
+                       {indexup[m2+l+1],indexdn[m2+l+1]},{1/2,-1/2})
+  end
+  local opp = 0 * NewOperator("Number",NF,0,0)
+  for m1 = -l,l do
+    for m2 = -l,l do
+      opp = opp -2 * ( sqrt(3/8)*SlaterCoefficientC({l,m1},{2,-2},{l,m2})
+                      +sqrt(3/8)*SlaterCoefficientC({l,m1},{2, 2},{l,m2})
+                      -sqrt(2/8)*SlaterCoefficientC({l,m1},{2, 0},{l,m2})
+                     )*Sx(m1,m2)
+                -I * ( sqrt(3/2)*SlaterCoefficientC({l,m1},{2,-2},{l,m2})
+                      -sqrt(3/2)*SlaterCoefficientC({l,m1},{2, 2},{l,m2})
+                     )*Sy(m1,m2)
+                -    ( sqrt(3/2)*SlaterCoefficientC({l,m1},{2,-1},{l,m2})
+                      -sqrt(3/2)*SlaterCoefficientC({l,m1},{2, 1},{l,m2})
+                     )*Sz(m1,m2)
+    end
+  end
+  opp.Chop()
+  opp.Name="Tx"
+  return opp
+end
+
+function ShellSpecificFun()
+  print("Calculations for shell with angular momentum ",Opp["l"])
+  print("Test of Tz operator ")
+  LengthOfOperator=Chop(Tx(Opp["IndexUp"],Opp["IndexDn"],Opp["NF"])-Opp["Tx"]).N
+  if (( LengthOfOperator[0]==0 ) and ( LengthOfOperator[1]==0 ) and ( LengthOfOperator[2]==0 )) then
+    print("Internal definition of Tx equals defintion made externally ")
+  else
+    print("Errorr Internal definition of Tx is different from defintion made externally ")
+  end
+end
+
+function ConfigSpecificFun()
+  print("Calculations for shell with angular momentum ",Opp["l"])
+  print("Calculations for filling of ",nElec," electrons in shell")
+  
+  Hamiltonian = Opp["U"] + 0.1 * Opp["ldots"] + 0.000001 * (2*Opp["Sx"]+Opp["Lx"])
+  psi = Eigensystem(Hamiltonian,StartRestrictions,Binomial(Opp["NF"],nElec))
+  
+  if type(psi)~="table" then
+    psi = {psi}
+  end
+   
+  -- In order to get some information on these eigenstates it is good to plot expectation values
+  -- We first define a list of all the operators we would like to calculate the expectation value of
+  oppList={Hamiltonian, Opp["Ssqr"], Opp["Lsqr"], Opp["Jsqr"], Opp["Sx"], Opp["Lx"], Opp["ldots"], Opp["Tx"]};
+  
+  -- next we loop over all operators and all states and print the expectation value
+  print("  <E>     <S^2>   <L^2>   <J^2>   <S_x>   <L_x>   <l.s>   <Tx>   | Term");
+  for i = 1,#psi do
+    for j = 1,#oppList do
+      expectationvalue = Chop(psi[i]*oppList[j]*psi[i])
+      io.write(string.format("%7.3f ",Complex.Re(expectationvalue)))
+    end
+    io.write(" | "..LSJ2term(Chop(psi[i]*Opp["Lsqr"]*psi[i]),Chop(psi[i]*Opp["Ssqr"]*psi[i]),Chop(psi[i]*Opp["Jsqr"]*psi[i])).."\n")
+  end
+  
+end
+
+LoopOverAllAtomicConfigurations(ConfigSpecificFun,ShellSpecificFun)

@@ -1,0 +1,7 @@
+﻿dofile("../../definitions.Quanty")
+
+Opp = OppSx + 0.00001 * OppSy
+
+print(Opp)
+Opp.Chop(0.0001)
+print(Opp)

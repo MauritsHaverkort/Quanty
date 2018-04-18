@@ -1,0 +1,9 @@
+﻿dofile("../../definitions.Quanty")
+
+print("Operator . print")
+OppSz.Print()
+
+print("print Operator")
+print(OppSz)
+
+OppSz.Print({{"file","OppSz.Print.out"}})

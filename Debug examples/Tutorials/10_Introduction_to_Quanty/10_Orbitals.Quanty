@@ -1,0 +1,50 @@
+-- Although Quanty is a many body code, 
+-- the basis set is defined by one particle 
+-- orbitals with spin or sites. These are the 
+-- "boxes" that either can contain an
+-- electron or not. 
+-- These Fermionic modes (lets call them 
+-- spin-orbitals) can either be the Wannier
+-- functions in a solid, molecular orbitals for a 
+-- molecule or atomic wave-functions for an atom. 
+-- We obtain these orbitals with the use of either 
+-- DFT or Hartree Fock.
+-- A minimal definition of the basis set is given 
+-- by the total number of Fermionic modes
+-- (site, spin, orbital, ...) and Bosonic modes 
+-- (phonon modes, ...).
+ 
+-- Note that the current version needs NB=0. 
+
+NF = 6;
+NB = 0;
+
+-- The elements of the basis are labeled by a 
+-- number. In the case here (NF=6) there are
+-- six spin-orbitals with the imaginative name 
+-- 0,1,2,3,4, and 5.
+-- In order to create Operators on this basis we 
+-- can relate these spin-orbitals to shells
+-- in this case we could for example create a
+-- p-shell. The spin-orbitals then should be 
+-- related to states with ml=-1, ml=0, or ml=1 and 
+-- ms=-1/2 or ms=+1/2
+-- This we can realize by grouping them. Several 
+-- standard operators that only have a meaning
+-- for a given angular momentum shell will
+-- recognize this format. 
+-- For a p-shell we could define
+
+IndexDn={0,2,4};
+IndexUp={1,3,5};
+
+-- the code knows that a 3 fold degenerate shell 
+-- has l=1 and ml=-1, 0 and 1 are assigned to 
+-- them automatically
+
+-- That's all for basis sets. We do not define the 
+-- number of electrons at this point. Note that the 
+-- code is written to deal with systems where one 
+-- has 10^100 of possible determinants. The only 
+-- reason one can do this is by never writing down 
+-- those determinants.

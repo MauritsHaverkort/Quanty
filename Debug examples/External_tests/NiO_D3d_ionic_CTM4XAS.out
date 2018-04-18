@@ -1,0 +1,80 @@
+Smallest positive float  : 2.225074E-308 
+Smallest deviation from 1: 2.220446E-16 
+
+In D3d we have 3 states beloning to the a1g, eg and eg irriducible representation
+This gives us 4 parameters related to the energy of the 3 states and the mixing between the two states belonging to the eg irriducible representation
+We label the two eg states as egpi and egsigma
+If Ea1g = Eegpi and Eegmix=0 one has cubic symmetry
+In order to define the orientation of the crystal we list the direction of the C3 and C2 axis belonging to the D3d pointgroup
+We furthermore list the direction of the C4 axis one obtains if Ea1g = Eegpi and Eegmix=0
+Even for cases where the axis of the D3d pointgroup are the same we still have two different orientations related to how one branches from Oh to D3d
+:-)
+Setting A (C3//001, C2//1-10 C4//111)
+{ { 0 , 0 , 2.2 } , 
+  { 2 , 0 , -12.313708498985 } , 
+  { 4 , 0 , 8.1137084989848 } , 
+  { 4 , -3 , (-4.5298560627562 + 4.5298560627562 I) } , 
+  { 4 , 3 , (4.5298560627562 + 4.5298560627562 I) } }
+Setting B (C3//001, C2//100 C4//0t-1)
+{ { 0 , 0 , 2.2 } , 
+  { 2 , 0 , -12.313708498985 } , 
+  { 4 , 0 , 8.1137084989848 } , 
+  { 4 , -3 , (0 + 6.4061838795478 I) } , 
+  { 4 , 3 , (-0 + 6.4061838795478 I) } }
+Setting C (C3//001, C2//100 C4//0t1)
+{ { 0 , 0 , 2.2 } , 
+  { 2 , 0 , -12.313708498985 } , 
+  { 4 , 0 , 8.1137084989848 } , 
+  { 4 , -3 , (0 - 6.4061838795478 I) } , 
+  { 4 , 3 , (-0 - 6.4061838795478 I) } }
+Setting D (C3//001, C2//010 C4//t0-1)
+{ { 0 , 0 , 2.2 } , 
+  { 2 , 0 , -12.313708498985 } , 
+  { 4 , 0 , 8.1137084989848 } , 
+  { 4 , -3 , -6.4061838795478 } , 
+  { 4 , 3 , 6.4061838795478 } }
+Setting E (C3//001, C2//010 C4//t01)
+{ { 0 , 0 , 2.2 } , 
+  { 2 , 0 , -12.313708498985 } , 
+  { 4 , 0 , 8.1137084989848 } , 
+  { 4 , -3 , 6.4061838795478 } , 
+  { 4 , 3 , -6.4061838795478 } }
+Start of BlockGroundState. Converge 10 states to an energy with relative variance smaller than  1.490116119384766E-06
+
+Start of BlockOperatorPsiSerialRestricted
+Outer loop   1, Number of Determinants:        45        45 last variance  3.259570287045512E+00
+Start of BlockOperatorPsiSerialRestricted
+Start of BlockGroundState. Converge 10 states to an energy with relative variance smaller than  1.490116119384766E-06
+
+Start of BlockOperatorPsiSerial
+Start of LanczosTriDiagonalizeRR
+Start of LanczosTriDiagonalizeRC
+Start of LanczosTriDiagonalizeRR
+Start of LanczosTriDiagonalizeRR
+Start of LanczosTriDiagonalizeRC
+Start of LanczosTriDiagonalizeRR
+Start of LanczosTriDiagonalizeRR
+Start of LanczosTriDiagonalizeRC
+Start of LanczosTriDiagonalizeRR
+Start of LanczosTriDiagonalizeRR
+Start of LanczosTriDiagonalizeRC
+Start of LanczosTriDiagonalizeRR
+Start of LanczosTriDiagonalizeRR
+Start of LanczosTriDiagonalizeRC
+Start of LanczosTriDiagonalizeRR
+Start of LanczosTriDiagonalizeRR
+Start of LanczosTriDiagonalizeRC
+Start of LanczosTriDiagonalizeRR
+Start of LanczosTriDiagonalizeRR
+Start of LanczosTriDiagonalizeRC
+Start of LanczosTriDiagonalizeRR
+Start of LanczosTriDiagonalizeRR
+Start of LanczosTriDiagonalizeRC
+Start of LanczosTriDiagonalizeRR
+Start of LanczosTriDiagonalizeRR
+Start of LanczosTriDiagonalizeRC
+Start of LanczosTriDiagonalizeRR
+Start of LanczosTriDiagonalizeRR
+Start of LanczosTriDiagonalizeRC
+Start of LanczosTriDiagonalizeRR
+Spectra printed to file: NiO_D3d_ionic_CTM4XAS.QuantyXAS.dat

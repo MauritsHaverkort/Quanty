@@ -1,0 +1,6 @@
+﻿dofile("../../definitions.Quanty")
+
+psi = sqrt(0.5) * psi1 + sqrt(0.5) * I * psi2
+print(psi)
+psi.Conjugate()
+print(psi)

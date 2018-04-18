@@ -1,0 +1,72 @@
+-- A basis consists of:
+-- a number of Fermionic modes or spin-orbitals
+NF=6
+-- a number of Bosonic modes (phonon modes, ...)
+NB=0
+
+-- Once we have a basis we can define operators.
+-- Operators are defined in second quantization. 
+-- We thus need creation and annihilation operators.
+
+-- Operators are created with the function 
+-- "NewOperator". This function takes as a first 
+-- argument the type of operator to create and 
+-- further arguments are type specific.
+
+-- The creation operator on site 0 is created by 
+-- the following command 
+OppC0=NewOperator("Cr",NF,0)
+
+-- The annihilation operator on site 0 is created 
+-- by the following command
+OppA0=NewOperator("An",NF,0)
+
+-- you can print operators
+print(OppC0)
+
+-- the important part of this printout is given by 
+-- the last line "C  0 |  1.000000000000000E+00"
+-- this tells you that the operator creates at 
+-- position 0 with prefactor 1
+
+-- you are allowed to do mathematics with 
+-- operators, i.e. the number operator acting 
+-- on site 0 is given as:
+OppCA0 = OppC0 * OppA0
+print(OppCA0)
+
+
+-- the program knows about commutation relations, 
+-- so a^+_0 a_0 + a_0 a^+_0 = 1
+Oppdelta = OppC0 * OppA0 + OppA0 * OppC0
+print(Oppdelta)
+
+-- You see that this operator indeed has the 
+-- correct form: "|  1.000000000000000E+00"
+-- but it also has one element of length 2: 
+-- "C  0 A  0 |  0.000000000000000E+00"
+-- the total operator is the sum over these two terms.
+-- The term of length two has prefactor 0, but it is still 
+-- in the list of operators and thus takes memory.
+-- You can remove small elements with the command 
+-- Chop
+Oppdelta.Chop()
+print(Oppdelta)
+
+-- the number operator can also be created at once, 
+OppN0 = NewOperator("Number",NF,0,0)
+print(OppN0)
+
+-- you can create sum's of operators at once, 
+-- evaluate to see what it does
+Opp2=NewOperator("Cr", NF, {0,1,2}, {0.1,0.2,0.3})
+print(Opp2)
+Opp3=NewOperator("Number", NF, {0,1,2}, {0,1,5}, {0.1,0.2,0.3})
+print(Opp3)
+
+-- Operators have a name which is shown in error 
+-- messages and when you print the operator
+-- sometimes it can be good to set the name
+Opp4 =  1+((1+I) * Opp2*Opp3 + 2.7 * OppCA0 ) * Opp3
+Opp4.Name = "My fantastic Operator"
+print(Opp4)

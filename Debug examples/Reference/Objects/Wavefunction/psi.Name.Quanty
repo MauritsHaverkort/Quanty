@@ -1,0 +1,5 @@
+﻿dofile("../../definitions.Quanty")
+
+print(psi1)
+psi1.Name="bla bla"
+print(psi1)

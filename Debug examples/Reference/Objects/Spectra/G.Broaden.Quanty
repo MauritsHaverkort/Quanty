@@ -1,0 +1,8 @@
+dofile("definitions.Quanty")
+
+-- Broaden with a Gaussian of FWHM 0.2 and a Lorenzian with variable with, the interval 0 to 5.25 has FWHM=0.2. The interval 5.75,20 has FWHM=0.75. The interval 5.25 to 5.75 linearly increases from 0.2 to 0.75
+GBroaden = Spectra.Broaden(G,0.2,{{0.0,0.2},{5.25,0.2},{5.75,0.75},{20.0,0.75}})
+
+-- is equivalent to
+GBroaden = Spectra.Copy(G)
+GBroaden.Broaden(0.2,{{0.0,0.2},{5.25,0.2},{5.75,0.75},{20.0,0.75}})

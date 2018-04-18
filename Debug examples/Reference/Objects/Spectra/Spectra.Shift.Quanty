@@ -1,0 +1,19 @@
+dofile("definitions.Quanty")
+
+GShift = Spectra.Shift(G, 5.3)
+
+G.Print({{"file","Spectra.dat"}})
+GShift.Print({{"file","Spectra.Shift.dat"}})
+
+gnuplotScript = gnuplotHead .. [[
+set output "Spectra.Shift.ps"
+
+plot "Spectra.dat"  using 1:(-$3  ) title 'T1' with lines ls  1,\
+     "Spectra.Shift.dat"  using 1:(-$3) title 'T1 * Energy' with lines ls  2
+]]
+
+file = io.open("Spectra.Shift.gnuplot", "w")
+file:write(gnuplotScript)
+file:close()
+
+os.execute("gnuplot Spectra.Shift.gnuplot ; ps2pdf Spectra.Shift.ps ; ps2eps Spectra.Shift.ps ; mv Spectra.Shift.eps temp.eps ; eps2eps temp.eps Spectra.Shift.eps ; rm temp.eps")

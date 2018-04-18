@@ -1,0 +1,14 @@
+﻿dofile("../../definitions.Quanty")
+
+print(OppSy)
+OppSy.ConjugateTranspose()
+print(OppSy)
+
+-- the conjugate transpose of an Hermitian operator is it-selves
+-- for the example we define a non Hermitian operator
+
+Opp = Chop(OppSy - I * OppSx)
+
+print(Opp)
+Opp.ConjugateTranspose()
+print(Opp)

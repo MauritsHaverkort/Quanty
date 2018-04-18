@@ -1,0 +1,13 @@
+#!/bin/bash
+
+echo "Start of running all Examples"
+cp -r Reference History/Examples
+
+echo "change to directory History/current/Examples"
+cd History/current/Examples
+    for file in *.Quanty
+    do
+        fileout="${file/Quanty/out}"
+        Quanty $file | tail -n +23 > $fileout
+    done
+cd ..

@@ -1,0 +1,7 @@
+dofile("definitions.Quanty")
+
+G = CreateSpectra(H, {T1,T2,T3}, psi, {{"Emin",-1}, {"Emax",11}, {"NE",12}})
+
+Gtable = Spectra.ToTable(G)
+
+print(Gtable[1])

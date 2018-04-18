@@ -1,0 +1,6 @@
+﻿dofile("../../definitions.Quanty")
+
+psi = sqrt(0.6)*psi1+sqrt(0.4)*psi2
+print(psi)
+print(psi.Det(2))
+

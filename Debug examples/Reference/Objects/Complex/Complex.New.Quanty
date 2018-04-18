@@ -1,0 +1,2 @@
+﻿z = Complex.New(3,2)
+print(z)

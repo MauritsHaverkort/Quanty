@@ -1,0 +1,5 @@
+﻿dofile("../definitions.Quanty")
+
+Opp3 = ConjugateTranspose(Opp2) 
+print(Opp2)
+print(Opp3)

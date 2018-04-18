@@ -1,0 +1,5 @@
+﻿dofile("../../definitions.Quanty")
+
+print(psi1)
+psi1.Randomize()
+print(psi1)

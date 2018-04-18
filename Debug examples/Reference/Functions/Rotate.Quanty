@@ -1,0 +1,36 @@
+﻿dofile("../definitions.Quanty")
+
+OpppxR = Chop(Rotate(Opppx,rotmat))
+OpppyR = Chop(Rotate(Opppy,rotmat))
+OpppzR = Chop(Rotate(Opppz,rotmat))
+
+print("The matrix rotating an operator on the basis of spherical harmonics with alternating spin to a basis of kubic harmonics with alternating spin for a p orbital is:")
+print(rotmat)
+print("The operator adding a potential to the px orbital on a basis of spherical harmonics is: ",Opppx)
+print("The operator adding a potential to the px orbital on a basis of kubic harmonics is: ",OpppxR)
+print("The operator adding a potential to the py orbital on a basis of spherical harmonics is: ",Opppy)
+print("The operator adding a potential to the py orbital on a basis of kubic harmonics is: ",OpppyR)
+print("The operator adding a potential to the pz orbital on a basis of spherical harmonics is: ",Opppz)
+print("The operator adding a potential to the pz orbital on a basis of kubic harmonics is: ",OpppzR)
+
+psixdnR = Chop(Rotate(psixdn,rotmat))
+psixupR = Chop(Rotate(psixup,rotmat))
+psiydnR = Chop(Rotate(psiydn,rotmat))
+psiyupR = Chop(Rotate(psiyup,rotmat))
+psizdnR = Chop(Rotate(psizdn,rotmat))
+psizupR = Chop(Rotate(psizup,rotmat))
+
+print("The px orbital with spin down on a basis of spherical harmonics is: ",psixdn)
+print("The px orbital with spin down on a basis of kubic harmonics is: ",psixdnR)
+print("The py orbital with spin down on a basis of spherical harmonics is: ",psiydn)
+print("The py orbital with spin down on a basis of kubic harmonics is: ",psiydnR)
+print("The pz orbital with spin down on a basis of spherical harmonics is: ",psizdn)
+print("The pz orbital with spin down on a basis of kubic harmonics is: ",psizdnR)
+
+print("Counting the px orbital on a basis of spherical harmonics: ",psixdn *Opppx *psixdn)
+print("Counting the px orbital on a basis of kubic     harmonics: ",psixdnR*OpppxR*psixdnR)
+print("Counting the py orbital on a basis of spherical harmonics: ",psiydn *Opppy *psiydn)
+print("Counting the py orbital on a basis of kubic     harmonics: ",psiydnR*OpppyR*psiydnR)
+print("Counting the pz orbital on a basis of spherical harmonics: ",psizdn *Opppz *psizdn)
+print("Counting the pz orbital on a basis of kubic     harmonics: ",psizdnR*OpppzR*psizdnR)
+

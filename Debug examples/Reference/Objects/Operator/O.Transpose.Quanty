@@ -1,0 +1,5 @@
+﻿dofile("../../definitions.Quanty")
+
+print(OppSy)
+OppSy.Transpose()
+print(OppSy)

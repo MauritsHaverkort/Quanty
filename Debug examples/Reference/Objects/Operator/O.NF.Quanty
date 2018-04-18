@@ -1,0 +1,6 @@
+﻿dofile("../../definitions.Quanty")
+
+print(OppSz)
+print("OppSz.NF=",OppSz.NF)
+OppSz.NF=3
+print(OppSz)

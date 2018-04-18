@@ -1,0 +1,9 @@
+﻿dofile("../../definitions.Quanty")
+
+psi=sqrt(0.1)*psi1+sqrt(0.9)*psi2
+print(psi*psi1)
+psi.Print({{"Full",true}})
+
+psi.NBitsKey=2
+print(psi*psi1)
+psi.Print({{"Full",true}})

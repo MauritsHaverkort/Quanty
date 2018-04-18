@@ -1,0 +1,13 @@
+﻿dofile("../definitions.Quanty")
+
+Opp2 = Opp1 
+Opp1.Name = "I'm the name of operator one"
+Opp2.Name = "I'm the name of operator two"
+print(Opp1.Name)
+print(Opp2.Name)
+
+psi2 = psi1
+psi1.Name = "I'm the name of psi one"
+psi2.Name = "I'm the name of psi two"
+print(psi1.Name)
+print(psi2.Name)
