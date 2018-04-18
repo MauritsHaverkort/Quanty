@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 uint32_t TriDiagonalMatrixToGreensFunction(TriDiagonalMatrixType *const SpecTri,double wRes,double energy,double gamma,MatrixType *const invMat);
 uint32_t TriDiagonalMatrixBProduct(TriDiagonalMatrixType *SpecTri,uint32_t blow,uint32_t bhigh,double *bProduct);
 void ComplexVectorTriDiagonalMatrixVector(TriDiagonalMatrixType const M,const double *const xRe,const double *const xIm,double *const yRe,double *const yIm);

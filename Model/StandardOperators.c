@@ -1,5 +1,3 @@
-#include "StandardOperators.h"
-
 uint16_t lmsigmaToIndex(int const l, int const m, int const sigma, uint16_t const *LindexUp, uint16_t const *LindexDn)
 {
   if (sigma > 0) return LindexUp[l + m];

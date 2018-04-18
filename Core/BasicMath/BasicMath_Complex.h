@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 double w_im_y100(const double y100,const double x);
 double erfcx_y100(double y100);
 extern const double expa2n2[];

@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 uint32_t BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonianPerturpation(OperatorType *const H,OperatorType *const VPerturbation,TriDiagonalMatrixType *const gPerturbation,BlockNaturalImpurityOrbitalMatrixType const *A,uint32_t const NBlockMaxVal,uint32_t const NBlockMaxCon,uint32_t const Spin,uint32_t const NFermionShift,uint32_t const NFermion);
 uint32_t BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(OperatorType *const H,BlockNaturalImpurityOrbitalMatrixType const *A,uint32_t const NBlockMaxVal,uint32_t const NBlockMaxCon,uint32_t const Spin,uint32_t const NFermionShift,uint32_t const NFermion);
 uint32_t BlockAndersonMatrixToImpurityHamiltonian(OperatorType *const H,BlockAndersonMatrixType const *A,uint32_t const NBlockMax,uint32_t const Spin,uint32_t const NFermionShift,uint32_t const NFermion);

@@ -1,1 +1,2 @@
-/* This file was automatically generated.  Do not edit! */
+
+static int LuaOperatorExp(lua_State * L);

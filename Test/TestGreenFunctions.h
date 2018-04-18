@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 void GreenSpec();
 extern const double a;
 void TestGreenFunctionArithmetic();

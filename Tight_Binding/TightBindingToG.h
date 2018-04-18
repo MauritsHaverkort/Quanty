@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 uint32_t NearestNeighborTriangularTBToGSpectraRepresentation(SpectraType *const G,uint32_t Nk);
 uint32_t NearestNeighborTriangularTBToGTriDiagonalRepresentation(uint32_t NTriDiag,TriDiagonalMatrixType *const G,uint32_t Nk);
 uint32_t NearestNeighborHyperCubicTBToGTriDiagonalRepresentationNonOrthogonal(uint32_t Dim,uint32_t NTriDiag,TriDiagonalMatrixType *const G,uint32_t Nk);

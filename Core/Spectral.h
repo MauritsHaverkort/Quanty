@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 int SiteFourierTransform(uint32_t Natom,int32_t AtomPos[][3],int32_t UnitCell[3][3],double klist[][3],SpectraType *Spectra);
 void CalculateG0fromSandGSpectralRepresentation(SpectraType *const G0,const SpectraType G,const SpectraType S);
 void CalculateSelfEnergySpectralRepresentation(const SpectraType G0,const SpectraType G,SpectraType *const S,const double *const FWHM);

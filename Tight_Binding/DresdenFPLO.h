@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 int SetNFermionIndexTightBindingDef(TightBindingDef *A);
 uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO,TightBindingDef *HTB);
 uint32_t AtomNameToNumber(const char *Name);

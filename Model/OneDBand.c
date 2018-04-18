@@ -1,5 +1,3 @@
-#include "OneDBand.h"
-
 void ItinerantOneDBand()
 {
   WaveFunctionType psi, Opsi;

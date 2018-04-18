@@ -1,19 +1,4 @@
-#include "TemperatureAvverage.h"
 
-typedef struct TemperatureSettings
-{
-  uint32_t NFolders;            /* Number of folders needed to average over */
-  char   FolderName[100][256];  /* Name of the folder */
-  char   FileName[100][256];    /* General root of the file name within the corresponding folder */
-  uint32_t LowestFileNumber[100]; /* Lowest file number */
-  uint32_t HighestFileNumber[100];  /* Highest file number */
-  char   EnergyFileName[100][256];  /* File name where the energy can be found */
-  double Degeneracy[100];       /* Multiplication factor for these spectra */
-  uint32_t NTemperatures;       /* number of temperatures to average over */
-  double Temperatures[256];     /* Temperatures used */
-  uint32_t Nq[3];               /* Number of twisted boundary phases */
-}
-TemperatureSettings;
 
 
 void ReadTemperatureSettings(TemperatureSettings * const A, const char *const flname)

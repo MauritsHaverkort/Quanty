@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 uint32_t StreamReadDMFTSettings(DMFTSettings *O,FILE *stream);
 uint32_t StreamReadDMFTXASSettings(DMFTXASSettings *O,FILE *stream);
 uint32_t StreamReadHubbardModelSettings(HubbardModelSettings *O,FILE *stream);

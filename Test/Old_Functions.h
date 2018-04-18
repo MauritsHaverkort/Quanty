@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 int oldmainWorkingOnDoubleTriDiagonalBathFormat(int argc,const char *argv[]);
 int oldmainDysonSecond(DMFTSettings HSet,TimeType *Time);
 int oldmainNoDysonSecond(DMFTSettings HSet,TimeType *Time);

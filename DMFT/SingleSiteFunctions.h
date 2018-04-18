@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 uint32_t CreateGclDMFT(DMFTSettings const O,OperatorType const HAnd,WaveFunctionType const Psi,OperatorType const *VPerturbation,TriDiagonalMatrixType const *gPerturbation,double const mu,AndersonMatrixType *const GclAnd,TimeType *const Time);
 uint32_t FindGroundStateandMu(DMFTSettings const O,BADoubleTriDiagonalMatrixType const GAndTrunk,double *const mu,WaveFunctionType *const Psi,OperatorType *const HAnd,TimeType *const Time);
 uint32_t FindGroundStateFromG0andSigmaDoubleLoop(DMFTSettings const O,AndersonMatrixType const G0,ListOfPoles const Sigma,double *const mu,double *const Nelectron,WaveFunctionType *const Psi,BADoubleTriDiagonalMatrixType *const GBathBARet,AndersonMatrixType *const GBathAndRet,TimeType *const Time);

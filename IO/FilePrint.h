@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 uint32_t StreamPrintBlockNaturalImpurityOrbitalMatrix(BlockNaturalImpurityOrbitalMatrixType M,FILE *stream);
 uint32_t FilePrintBlockNaturalImpurityOrbitalMatrix(BlockNaturalImpurityOrbitalMatrixType M,const char *const flname,const char *const mode);
 uint32_t StreamPrintBandstructurePath(BandstructurePathType M,FILE *stream);

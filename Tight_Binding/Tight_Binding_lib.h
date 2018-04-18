@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 int TightBindingAddAxesToMatrix(double Emin,double Emax,int NELines,double *Elines,BandstructurePathType kList,MatrixType *RGBValue);
 int TightBindingBANDSCharacterToMatrix(double Emin,double Emax,int NEpoints,MatrixType BANDS,MatrixType Character,MatrixType *BWValue);
 int TightBindingBANDSToMatrix(double Emin,double Emax,int NEpoints,MatrixType BANDS,MatrixType *BWValue);

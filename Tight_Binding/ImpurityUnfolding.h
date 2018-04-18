@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 int TightBindingImpurityUnfoldingRandomImpuritySeries(int Dimension,int Nsupercell,double Rho,double Vpot,int repetitions,char *filename);
 int TightBindingImpurityUnfoldingRandomImpurity1D(int Nsupercell,double Rho,double Vpot,char *filename,MatrixType *BWValue,MatrixType *RGBValue);
 int TightBindingImpurityUnfoldingRandomImpurity2D(int Nsupercell,double Rho,double Vpot,char *filename,MatrixType *BWValue,MatrixType *RGBValue,SpectraType DOS[],MatrixType Fermi[]);

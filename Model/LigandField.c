@@ -1,5 +1,3 @@
-#include "LigandField.h"
-
 void CeLigandField()
 {
   TimeType Time;

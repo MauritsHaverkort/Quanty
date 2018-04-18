@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 uint32_t NiImpurity(SpectraSettings SpecSet);
 void NiLigandField();
 uint32_t LNOInitXASWavefunctionRandom(WaveFunctionType *const psi,uint32_t const NFermions,uint32_t const NBath);

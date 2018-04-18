@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 uint32_t NiImpurity(SpectraSettings SpecSet);
 uint32_t PrintSpectraSettings(SpectraSettings O);
 uint32_t FileReadSpectraSettings(SpectraSettings *O,const char *const flname);

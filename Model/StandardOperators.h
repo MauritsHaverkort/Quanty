@@ -1,4 +1,3 @@
-/* This file was automatically generated.  Do not edit! */
 uint32_t CreateRandomTwoParticleOperator(uint32_t const NFermion,uint32_t const QComplex,OperatorType *const Opp);
 uint32_t CreateOperatorNumberShellSqr(uint32_t const NFermion,uint32_t const Nelectron,const uint16_t *const index,OperatorType *const OppNSqr);
 uint32_t CreateOperatorIdentity(uint32_t const NFermion,OperatorType *const OppN);

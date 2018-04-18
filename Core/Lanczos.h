@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 uint32_t LanczosTriDiagonalizeDyson(OperatorType const O,WaveFunctionType psi,double epsilon,uint32_t const NKrylov,OperatorType const *V,TriDiagonalMatrixType const *g,uint32_t const NV,TriDiagonalMatrixType *Gout);
 uint32_t OperatorMultiply5NormalOrder(OperatorType *const O,OperatorType const E,OperatorType const D,OperatorType const C,OperatorType const B,OperatorType const A,char const Eset,char const Dset,char const Cset,char const Bset,char const Aset,uint32_t(*QDetNotOrdered)(uint16_t,uint16_t,uint32_t));
 uint32_t OperatorMultiply4NormalOrder(OperatorType *const O,OperatorType const D,OperatorType const C,OperatorType const B,OperatorType const A,char const Dset,char const Cset,char const Bset,char const Aset,uint32_t(*QDetNotOrdered)(uint16_t,uint16_t,uint32_t));

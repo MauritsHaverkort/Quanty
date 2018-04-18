@@ -1,5 +1,3 @@
-#include "units.h"
-
 static int PhysicalConstantsFailed (lua_State *L)
 {
   char *call;
@@ -157,7 +155,7 @@ static int AllEnergyUnitsToString (lua_State *L)
   return 1;
 }
 
-static int RegisterEnergyUnits(lua_State *L, char* EnUnits)
+int RegisterEnergyUnits(lua_State *L, char* EnUnits)
 {
   const uint32_t nelements=sizeof(EnergyUnits)/sizeof(EnergyUnits[0]);
   uint32_t i,iEnUnits=0;

@@ -20,7 +20,6 @@
 #define omp_get_max_threads() 0
 #endif
 
-#include "../Core/StructDef.c"
 #include "../Headers/header.h"
 #include "../Core/TimeStamp.c"
 #include "../Core/Hash.c"
@@ -55,8 +54,7 @@
 #include "../IO/StuttgartNMTO.c"
 #include "../IO/DresdenFPLO.c"
 
-#include "Documentation.c"
-#include "lua/includeLua.h"
+#include "lua/includeLua.c"
 static void *currentudata = NULL;
 #include "lua_extensions/tools.c"
 #include "lua_extensions/TableToArray.c"
@@ -75,7 +73,6 @@ static void *currentudata = NULL;
 #include "../Yi/functions_yi.c"
 #include "ssp.c"
 
-#include "main.h"
 
 
 int main(int argc, char *argv[])

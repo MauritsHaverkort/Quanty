@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 uint32_t ComplexVectorDoubleTriDiagonalMatrixVector(DoubleTriDiagonalMatrixType const M,const double *const xRe,const double *const xIm,double *const yRe,double *const yIm);
 uint32_t RealVectorDoubleTriDiagonalMatrixVector(DoubleTriDiagonalMatrixType const M,const double *const x,double *const y);
 uint32_t ComplexDoubleTriDiagonalMatrixVector(DoubleTriDiagonalMatrixType const M,const double *const xRe,const double *const xIm,double *const yRe,double *const yIm);

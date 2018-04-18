@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 void TestBlockLanczos();
 void TestBlockLanczos();
 void TestMeanField();

@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 void ComplexVectorDotVector(const double *const uRe,const double *const uIm,const double *const vRe,const double *const vIm,const uint32_t N,double *const aRe,double *const aIm);
 uint32_t ComplexVectorMatrixVector(MatrixType const M,const double *const aRe,const double *const aIm,double *const bRe,double *const bIm);
 uint32_t ComplexVectorBlokTriDiagonalMatrixVector(BlokTriDiagonalMatrixType const M,const double *const xRe,const double *const xIm,double *const yRe,double *const yIm);

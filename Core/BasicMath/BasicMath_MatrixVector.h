@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 uint32_t MatrixBasisOrthonormalize(MatrixType const S,MatrixType *const T);
 void RealVectorMultiply(double *const u,const uint32_t N,const double alphaRe);
 void RealVectorAdd(double *const u,double *const v,uint32_t N,double alphaRe);

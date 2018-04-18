@@ -1,5 +1,3 @@
-#include "CellFunctions.h"
-
 /*  A supercell is in principle defined if the unit cell is defined and the number
  *  Of repetitions is given. However it is nice to also have an index of the postions of atoms and g-vectors within the
  *  supercell.

@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 int cmpdouble(const void *a,const void *b);
 int cmpuint32t(const void *a,const void *b);
 double SlaterCoefficientCjcoupling(int k,int l1,int twoj1,int twojz1,int l2,int twoj2,int twojz2);

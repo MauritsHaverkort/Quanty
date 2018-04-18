@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 uint32_t DetermineImpurityShiftFromOccupationAndersonMatrix(AndersonMatrixType M,double const occupation,double *const shift);
 uint32_t CalculateImpurityOccupationAndersonMatrix(AndersonMatrixType const M,double *const occupation);
 void FreeListOfPoles(ListOfPoles *M);

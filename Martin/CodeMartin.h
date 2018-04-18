@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 int main(int argc,const char *argv[]);
 void PEStest();
 uint32_t CreateRealWaveFunctionNew(WaveFunctionType *const psi,uint32_t const NFermions,uint32_t const nelectrons);

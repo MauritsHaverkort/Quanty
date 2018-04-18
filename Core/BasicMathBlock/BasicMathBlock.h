@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 uint32_t CopyBlockNaturalImpurityOrbitalMatrix(BlockNaturalImpurityOrbitalMatrixType A,BlockNaturalImpurityOrbitalMatrixType *B);
 uint32_t BlockNaturalImpurityOrbitalMatrixToBlockAndersonMatrix(BlockNaturalImpurityOrbitalMatrixType const AAnd,BlockAndersonMatrixType *const B);
 uint32_t BlockNaturalImpurityOrbitalMatrixToBlockTridiagonalMatrix(BlockNaturalImpurityOrbitalMatrixType const AAnd,BlockTriDiagonalMatrixType *const B);

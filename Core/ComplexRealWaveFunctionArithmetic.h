@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 uint32_t ComplexRealWaveFunctionAddComplexMultipliedUnionBasis(WaveFunctionType *const a,const WaveFunctionType b,const double alphaRe,const double alphaIm);
 uint32_t ComplexRealWaveFunctionAddMultipliedUnionBasis(WaveFunctionType *const a,const WaveFunctionType b,const double alphaRe);
 uint32_t ComplexWaveFunctionAddElement(WaveFunctionType *const psi,const uint8_t *const det,const double aRe,const double aIm);

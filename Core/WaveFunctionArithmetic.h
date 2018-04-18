@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 uint32_t WaveFunctionExpand(const WaveFunctionType *const psi,const uint16_t *const index,uint32_t const Ndet,WaveFunctionType *psilist);
 uint32_t WaveFunctionArraySeperateBasis(WaveFunctionType *const psi,uint32_t const Npsi);
 uint32_t WaveFunctionArrayToSameBasis(WaveFunctionType *const psi,uint32_t const Npsi);
@@ -12,11 +12,9 @@ uint32_t WaveFunctionCopy(WaveFunctionType const A,WaveFunctionType *const B);
 uint32_t WaveFunctionChangeNFandNB(WaveFunctionType *psi,uint32_t NFnew,uint32_t NBnew);
 uint32_t WaveFunctionRemoveFermion(WaveFunctionType const psiIn,WaveFunctionType *const psiOut,uint32_t FermionPos);
 uint32_t WaveFunctionAddFermion(WaveFunctionType const psiIn,WaveFunctionType *const psiOut,uint32_t FermionPos,uint32_t occupied);
-double inline OperatorAn(uint8_t *const Determinant,const uint16_t i,const uint32_t NFermion);
 uint32_t PsiHermitianOperatorSqrPsi(const OperatorType O,const WaveFunctionType psi,double *VRe);
 uint32_t PsiHermitianOperatorPsi(const OperatorType O,const WaveFunctionType psi,double *VRe);
 uint32_t CreateStartWaveFunctionOnsiteEnergy(const OperatorType O,WaveFunctionType *psi,uint32_t nFermion,uint32_t nBoson,uint32_t NBitsKey);
-double inline OperatorCr(uint8_t *const Determinant,const uint16_t i,const uint32_t NFermion);
 uint32_t CreateWaveFunctionFromString(WaveFunctionType *psi,uint16_t *createString,uint32_t const NParticle,uint32_t const NFermion,uint32_t const NBoson,uint32_t const NBitsKey);
 uint32_t WaveFunctionListOrthogonalize(WaveFunctionType *const psilist,uint32_t *const Npsi,const double SingularValue,const Bool ReduceDimension);
 uint32_t ComplexWaveFunctionListOrthogonalize(WaveFunctionType *const psilist,uint32_t *const Npsi,const double SingularValue,const Bool ReduceDimension);

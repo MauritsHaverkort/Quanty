@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 void AllocFailed();
 uint32_t CalculatePrefactorHistogram(double *const Hist,const WaveFunctionType psi,const double exp,const uint32_t N);
 uint32_t CalculateOccupationHistogram(double *const Hist,const WaveFunctionType psi,const uint16_t *fermionlist,const uint32_t N);

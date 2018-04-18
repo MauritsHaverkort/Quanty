@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 uint32_t MappedWaveFunctionAddCRC(WaveFunctionType *const A,WaveFunctionType const B,MatrixType const U);
 uint32_t RealMappedDetToWaveFunction(WaveFunctionType *const A,uint8_t *Det,MatrixType const U);
 void RealWaveFunctionReset(WaveFunctionType *const psi);

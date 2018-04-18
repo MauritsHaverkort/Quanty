@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 uint32_t FileReadStuttgartHAMR(StuttgartHAMR *O,const char *const flname);
 uint32_t ReadStuttgartHAMR(StuttgartHAMR *O);
 uint32_t StreamReadStuttgartHAMR(StuttgartHAMR *O,FILE *stream);

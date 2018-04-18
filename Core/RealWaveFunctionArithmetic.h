@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 uint32_t MappedWaveFunctionAddRRR(WaveFunctionType *const A,WaveFunctionType const B,MatrixType const U);
 uint32_t FreeOperator(OperatorType *const H);
 uint32_t OperatorPsiRR(const OperatorType O,const WaveFunctionType psi,WaveFunctionType *const Opsi);
@@ -6,7 +6,6 @@ uint32_t RealOperatorAddLader(OperatorType *const O,const uint16_t *const oadd,c
 uint32_t InitOperatorFixedLength(OperatorType *const O,const uint32_t length,const uint32_t NBitsKey);
 uint32_t InitOperator(OperatorType *const O);
 uint32_t RealMappedDetToWaveFunction(WaveFunctionType *const A,uint8_t *Det,MatrixType const U);
-inline OperatorCr(uint8_t *const Determinant,const uint16_t i,const uint32_t NFermion);
 uint32_t CreateRealRandomWaveFunction(WaveFunctionType *const psi,uint32_t const NFermions,uint32_t const nelectrons);
 uint32_t RealWaveFunctionListOrthogonalize(WaveFunctionType *const psilist,uint32_t *const Npsi,const double SingularValue,const Bool ReduceDimension);
 uint32_t RealWaveFunctionListOrthogonalizeSameBasis(WaveFunctionType *const psilist,uint32_t *const Npsi,const double SingularValue,const Bool ReduceDimension);

@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 void TestThreeJSymbol();
 void TestCombinatorial();
 void TestGeneralizedEigensystem();

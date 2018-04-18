@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 uint32_t WaveFunctionRemoveFermion(WaveFunctionType const psiIn,WaveFunctionType *const psiOut,uint32_t FermionPos);
 uint32_t WaveFunctionPerturbationRemoveFermion(WaveFunctionPerturbationType const psiIn,WaveFunctionPerturbationType *const psiOut,uint32_t FermionPos);
 uint32_t WaveFunctionAddFermion(WaveFunctionType const psiIn,WaveFunctionType *const psiOut,uint32_t FermionPos,uint32_t occupied);

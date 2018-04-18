@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 uint32_t SetTMTFromValandConInBlockNaturalImpurityOrbitalMatrixType(BlockNaturalImpurityOrbitalMatrixType *B);
 uint32_t CopyBlockTridiagonalMatrix(BlockTriDiagonalMatrixType A,BlockTriDiagonalMatrixType *B);
 uint32_t CopyBlockNaturalImpurityOrbitalMatrix(BlockNaturalImpurityOrbitalMatrixType A,BlockNaturalImpurityOrbitalMatrixType *B);

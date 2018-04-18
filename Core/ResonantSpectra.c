@@ -300,7 +300,7 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
   MatrixType EFun;
   uint32_t BlockSize[settings->NTri];
   double EVal[settings->NTri1], EValInvRe[settings->NTri1], EValInvIm[settings->NTri1],tempDoubleRe,tempDoubleIm, EVal2[settings->NTri2];
-  int i,ipsi,iT1,iT2,p,k;
+  int i,ipsi,iT1,p,k;
   double wRes;
   
   /* calcualte ground state energy */

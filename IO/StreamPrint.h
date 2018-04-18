@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 uint32_t StreamPrintBandstructurePath(BandstructurePathType M,FILE *stream);
 uint32_t StreamPrintHarmonicsExpansion(HarmonicsExpansion M,FILE *stream);
 uint32_t PrintCompactMatrixMinimal(CompactMatrixType M);

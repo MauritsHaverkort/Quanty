@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 uint32_t PrintTiming(TimeType T);
 uint32_t FilePrintTiming(TimeType T,const char *const flname,const char *const mode);
 uint32_t StreamPrintTiming(TimeType T,FILE *stream);

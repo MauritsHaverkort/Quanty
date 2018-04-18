@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 uint32_t WaveFunctionAddMultipliedConserveBasis(WaveFunctionType *const a,const WaveFunctionType b,const double alpha);
 void WaveFunctionDotProduct(const WaveFunctionType a,const WaveFunctionType b,double *DotRe,double *DotIm);
 uint32_t BlockOperatorPsiSerial(const OperatorType H,WaveFunctionType const *const psi,WaveFunctionType *const Opsi,uint32_t const Npsi);
@@ -100,43 +100,6 @@ void WaveFunctionOrthogonalizeSameBasis(WaveFunctionType *const psi,const WaveFu
 uint32_t WaveFunctionInitCopyBasis(WaveFunctionType *Psi,WaveFunctionType const PsiOrig);
 uint32_t WaveFunctionAddUnionBasis(WaveFunctionType *const a,const WaveFunctionType b);
 uint32_t WaveFunctionAddElement(WaveFunctionType *const psi,const uint8_t *const det,const double aRe,const double aIm);
-inline OperatorCr(uint8_t *const Determinant,const uint16_t i,const uint32_t NFermion){
-  uint8_t detblok;
-  uint32_t j;
-  const uint16_t k=i>>3;
-  const uint16_t m=i&7;
-  if (i >= NFermion)
-  {
-    j = i - NFermion + ((NFermion + 7) >> 3);
-    if (Determinant[j] == 255)
-    {
-      return 0;
-    }
-    else
-    {
-      return sqrt(++Determinant[j]);  /* add one to Determinant[j] and then return sqrt(Determinant[j]) */
-    }
-  }
-  if (Determinant[k] & (128 >> (m)))
-  {
-    return 0;
-  }
-  Determinant[k] += (128 >> (m));
-  detblok = Determinant[k] >> (8 - (m));
-  for (j = k; j != 0;)
-  {
-    j--;
-    detblok ^= Determinant[j];
-  }
-  detblok ^= detblok >> 4;
-  detblok ^= detblok >> 2;
-  detblok ^= detblok >> 1;
-  if (detblok & 1)
-  {
-    return -1;
-  }
-  return 1;
-};
 void WaveFunctionRandomize(WaveFunctionType *const a);
 uint32_t WaveFunctionInit(WaveFunctionType *Psi);
 uint32_t CreateStartingFunctions(const OperatorType H,uint32_t const Npsi,DeterminantRestrictionType const StartingPoint,WaveFunctionType *psi,uint32_t const NBitsKey);

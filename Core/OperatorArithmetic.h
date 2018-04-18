@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 uint32_t OperatorChangeNFandNB(OperatorType *O,uint32_t NFnew,uint32_t NBnew);
 uint32_t QOperatorHermitian(OperatorType O,const double epsilon);
 uint32_t OperatorConjugateTransposeNormalOrder(OperatorType O,OperatorType *OT,uint32_t(*QDetNotOrdered)(uint16_t,uint16_t,uint32_t));

@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 void SparseMatrixOrthonormalize(MatrixType *const M,double epsilon);
 void ComplexVectorSparseMatrixVector(SparseMatrixType const M,const double *const aRe,const double *const aIm,double *const bRe,double *const bIm);
 uint32_t RealVectorSparseMatrixVector(SparseMatrixType const M,const double *const a,double *const b);

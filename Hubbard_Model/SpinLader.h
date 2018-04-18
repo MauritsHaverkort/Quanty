@@ -1,8 +1,3 @@
-/* This file was automatically generated.  Do not edit! */
-int main(int argc,const char *argv[]);
-int main(int argc,const char *argv[]);
-int main(int argc,const char *argv[]);
-int main(int argc,const char *argv[]);
 int main(int argc,const char *argv[]);
 uint32_t CreateSpinLaderSpinFlipOperator(SpinLaderSettings Set,OperatorType *O);
 uint32_t CreateSpinLaderStartWaveFunction(const SpinLaderSettings Set,WaveFunctionType *psi);

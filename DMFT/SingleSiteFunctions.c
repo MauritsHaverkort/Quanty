@@ -651,6 +651,9 @@ uint32_t FindGroundStateFromG0andSigma(DMFTSettings const O, AndersonMatrixType 
     occlist[nitermax + 1], ABocclist[nitermax + 1], mulist[nitermax + 1];
   OperatorType HAnd, Sx, Sy, Sz, S2;
   uint16_t *SpinUp, *SpinDn;
+  HAnd.MaxLength=0;
+  GBathBA.val.N=0;
+  GBathBA.con.N=0;
   WaveFunctionAccuracy = O.zeroLancWavefunction;
   onsiteshift[0] = *onsiteshiftstart;
   mulist[0] = *mu;
@@ -833,7 +836,10 @@ uint32_t FindGroundStateFromG0andSigmaDoubleLoop(DMFTSettings const O, AndersonM
   OperatorType HAnd, Sx, Sy, Sz, S2;
   uint16_t *SpinUp, *SpinDn;
   WaveFunctionAccuracy = O.zeroLancWavefunction;
-
+  GBathBA.val.N=0;
+  GBathBA.con.N=0;
+  GBathAnd.N=0;
+  HAnd.MaxLength=0;
   onsiteshift = *mu;
   occlist[0] = *Nelectron;
   mulist[0] = *mu;

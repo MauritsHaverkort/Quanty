@@ -1,1 +1,1 @@
-/* This file was automatically generated.  Do not edit! */
+static int LuaBraKet(lua_State * L);

@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 uint32_t ComplexVectorBlokDoubleTriDiagonalMatrixVector(BlokDoubleTriDiagonalMatrixType const M,const double *const xRe,const double *const xIm,double *const yRe,double *const yIm);
 uint32_t RealVectorBlokDoubleTriDiagonalMatrixVector(BlokDoubleTriDiagonalMatrixType const M,const double *const x,double *const y);
 uint32_t ComplexMatrixVector(MatrixType const M,const double *const aRe,const double *const aIm,double *const bRe,double *const bIm);

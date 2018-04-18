@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 uint32_t get2p3dAtomicInfo(uint32_t Z,uint32_t dCount,double *Fdd,double *Fpd,double *Gpd,double *zeta2p,double *zeta3d);
 uint32_t RunModelCalculation(ModelSettings MSet);
 uint32_t ScaleAtomicInteractions(ModelSettings *O);

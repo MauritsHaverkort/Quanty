@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 uint32_t CreateMultiSitesGclDMFT(MultiSitesDMFTSettings *const O,OperatorType const HAnd,WaveFunctionType const Psi,OperatorType const *VPerturbation,TriDiagonalMatrixType const *gPerturbation,double const mu,AndersonMatrixType *const GclupAnd,AndersonMatrixType *const GcldnAnd,TimeType *const Time);
 uint32_t CreateIPESOperator(OperatorType *O,uint32_t NFermion,uint32_t i);
 uint32_t CreatePESOperator(OperatorType *O,uint32_t NFermion,uint32_t i);

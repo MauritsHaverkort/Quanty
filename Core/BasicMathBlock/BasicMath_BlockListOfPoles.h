@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 uint32_t BlockListOfPolesG0plusSigmaToGFixedEGrid(BlockListOfPoles const *G0,BlockListOfPoles const *Sigma,BlockListOfPoles *const G,double const Emin,double const Emax,uint32_t const NE);
 uint32_t BlockListOfPolesTransformInlineNC(BlockListOfPoles *const A,CompactMatrixType const *T);
 uint32_t BlockListOfPolesTransformNC(BlockListOfPoles const *A,BlockListOfPoles *const B,CompactMatrixType const *T);

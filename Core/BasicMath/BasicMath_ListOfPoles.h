@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 uint32_t ListOfPolesCalculateChemicalPotential(ListOfPoles const M,double const occupation,double *const mu);
 uint32_t ShiftListOfPolesToMakeFirstMomentZero(ListOfPoles *const M);
 uint32_t ShiftListOfPoles(ListOfPoles *const M,double const munew);

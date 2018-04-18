@@ -1,8 +1,3 @@
-/* This file was automatically generated.  Do not edit! */
-int main(int argc,const char *argv[]);
-int main(int argc,const char *argv[]);
-int main(int argc,const char *argv[]);
-int main(int argc,const char *argv[]);
 int main(int argc,const char *argv[]);
 uint32_t CreateHeisenbergModelStartWaveFunctionFM(HeisenbergModelSettings Set,WaveFunctionType *Psi);
 uint32_t CreateHeisenbergModelStartWaveFunctionOperatorFM(HeisenbergModelSettings Set,OperatorType *O);

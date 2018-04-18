@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 uint32_t PrintReal3MatrixToBitmapRescale(MatrixType *M,void(*RealToRGBColor)(double,unsigned char *),uint32_t const NW,uint32_t const NH);
 int FilePrintReal3MatrixToBitmapRescale(MatrixType *M,const char *const flname,void(*RealToRGBColor)(double,unsigned char *),uint32_t const NW,uint32_t const NH);
 int StreamPrintReal3MatrixToBitmapRescale(MatrixType *M,FILE *stream,void(*RealToRGBColor)(double,unsigned char *),uint32_t const NW,uint32_t const NH);

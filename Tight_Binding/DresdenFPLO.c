@@ -193,7 +193,6 @@ uint32_t CrystalStructureFromDresdenFPLO(DresdenFPLO FPLO, CrystalStructureType 
 uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
 {
   int i, j, k, l, iatom, ihtb, ish, jsh, indwan, indsh, diffQ;
-  double UCvol, vectmp1[3], vectmp2[3], tmat[3][3];
   int Nwandef=FPLO.Wannier.Nwandef;
   int Nshell, *Norb, *NshellOfSite, *ShellLabel, *SiteInd, *ShellInd, **ShellOfSite, *OrbInd, **NVecShell, **NHopStart;
   char **SiteName, **ShellName;

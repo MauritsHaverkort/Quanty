@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 uint32_t BlockWaveFunctionDotProduct(const WaveFunctionType *a,const uint32_t Npsia,const WaveFunctionType *b,const uint32_t Npsib,CompactMatrixType *S);
 uint32_t ComplexBlockWaveFunctionDotProduct(const WaveFunctionType *a,const uint32_t Npsia,const WaveFunctionType *b,const uint32_t Npsib,CompactMatrixType *S);
 uint32_t RealBlockWaveFunctionDotProduct(const WaveFunctionType *a,const uint32_t Npsia,const WaveFunctionType *b,const uint32_t Npsib,CompactMatrixType *S);
@@ -23,9 +23,6 @@ void ComplexWaveFunctionFreeValues(WaveFunctionType *const psi);
 uint32_t BlockOperatorPsiRC(const OperatorType O,WaveFunctionType const *const psi,WaveFunctionType *const Opsi,uint32_t const Npsi);
 void RealWaveFunctionFree(WaveFunctionType *const psi);
 void RealWaveFunctionFreeValues(WaveFunctionType *const psi);
-inline OperatorCr(uint8_t *const Determinant,const uint16_t i,const uint32_t NFermion);
-inline OperatorAn(uint8_t *const Determinant,const uint16_t i,const uint32_t NFermion);
-inline OperatorLader(uint8_t *const Determinant,const uint16_t *const o,const uint32_t lenght,const uint32_t NFermion);
 uint32_t WaveFunctionInit(WaveFunctionType *Psi);
 uint32_t BlockOperatorPsiRR(const OperatorType O,WaveFunctionType const *const psi,WaveFunctionType *const Opsi,uint32_t const Npsi);
 uint32_t BlockOperatorPsiRestricted(const OperatorType O,WaveFunctionType const *const psi,WaveFunctionType *const Opsi,DeterminantRestrictionType const Restrictions,uint32_t const Npsi);

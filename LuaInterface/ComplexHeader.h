@@ -1,0 +1,16 @@
+static int LuaComplexNew(lua_State * L);
+static int LuaComplexI(lua_State * L);
+static int LuaComplexIndex(lua_State * L);
+static int LuaComplexNewIndex(lua_State * L);
+static int LuaComplexAdd(lua_State * L);
+static int LuaComplexSub(lua_State * L);
+static int LuaComplexMul(lua_State * L);
+static int LuaComplexDiv(lua_State * L);
+static int LuaComplexPow(lua_State * L);
+static int LuaComplexEq(lua_State * L);
+static int LuaComplexUnm(lua_State * L);
+static int LuaComplexExp(lua_State * L);
+static int LuaComplexRe(lua_State * L);
+static int LuaComplexIm(lua_State * L);
+static int LuaComplexToString(lua_State * L);
+int luaopen_Complex(lua_State * L);

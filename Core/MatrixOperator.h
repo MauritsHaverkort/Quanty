@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 uint32_t BADoubleTriDiagonalMatrixToAndersonImpurityOperator(OperatorType *O,BADoubleTriDiagonalMatrixType Mup,BADoubleTriDiagonalMatrixType Mdn,double U,double mu);
 uint32_t DoubleTriDiagonalMatrixToAndersonImpurityOperator(OperatorType *O,DoubleTriDiagonalMatrixType Mup,DoubleTriDiagonalMatrixType Mdn,double U,double mu);
 uint32_t SecondDoubleTriDiagonalMatrixToAndersonImpurityOperator(OperatorType *O,SecondDoubleTriDiagonalMatrixType Mup,SecondDoubleTriDiagonalMatrixType Mdn,double U,double mu);

@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 uint32_t CreateMultiSitesGclDMFT(MultiSitesDMFTSettings *const O,OperatorType const HAnd,WaveFunctionType const Psi,OperatorType const *VPerturbation,TriDiagonalMatrixType const *gPerturbation,double const mu,AndersonMatrixType *const GclupAnd,AndersonMatrixType *const GcldnAnd,TimeType *const Time);
 uint32_t MultiSitesBADoubleTriDiagonalMatrixToAndersonImpurityOperator(OperatorType *O,OperatorType *Oloc,BADoubleTriDiagonalMatrixType *Mup,BADoubleTriDiagonalMatrixType *Mdn,uint32_t NSite);
 uint32_t DCAHamiltonian(OperatorType *O,BADoubleTriDiagonalMatrixType *Mup,BADoubleTriDiagonalMatrixType *Mdn,uint32_t NSite,double U,double mu);

@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 void ComplexVectorAdd(double *const uRe,double *const uIm,double *const vRe,double *const vIm,const uint32_t N,const double alphaRe,const double alphaIm);
 void RealVectorAdd(double *const u,double *const v,uint32_t N,double alphaRe);
 void ComplexVectorDotVector(const double *const uRe,const double *const uIm,const double *const vRe,const double *const vIm,const uint32_t N,double *const aRe,double *const aIm);

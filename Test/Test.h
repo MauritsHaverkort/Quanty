@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 void TestNiO();
 void TestMeanField();
 void BasisOptimization();

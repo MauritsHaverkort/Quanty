@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 void FreeBADoubleTriDiagonalMatrix(BADoubleTriDiagonalMatrixType *const M);
 uint32_t FreeResponsefunction(ResponsefunctionType *M);
 ResponsefunctionType *ResponsefunctionCopy(ResponsefunctionType *M);

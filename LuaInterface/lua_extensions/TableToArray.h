@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 uint32_t FreeSelfEnergyArrayFromLua(uint32_t NSigma,OperatorType **V,SpectraTypeArray **SonGrid,ResponsefunctionType **SasMatrix);
 int32_t LuaCheckOptions(lua_State *L,int narg,LuaOptionsType *Options);
 int strcicmp(char const *a,char const *b);

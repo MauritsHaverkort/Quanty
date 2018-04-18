@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 uint32_t FluorescenceYield(const OperatorType OppH,const OperatorType Texc,const OperatorType *TDec,uint32_t NDec,const WaveFunctionType psi,double energy,double epsilon,uint32_t NKrylov1,SpectraType *spectra);
 uint32_t FluorescenceYieldRestricted(const OperatorType OppH,DeterminantRestrictionType const Restrictions,const OperatorType Texc,const OperatorType *TDec,uint32_t NDec,const WaveFunctionType psi,double energy,double epsilon,uint32_t NKrylov1,SpectraType *spectra);
 void BroadenG(SpectraType *const G,const double FWHM);

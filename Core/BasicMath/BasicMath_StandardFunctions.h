@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 uint32_t SphericalHarmonicjjzToK(uint32_t l,CompactMatrixType *U);
 uint32_t SphericalHarmonicKTojjz(uint32_t l,CompactMatrixType *U);
 uint32_t SphericalHarmonicjjzToZ(uint32_t l,CompactMatrixType *U);

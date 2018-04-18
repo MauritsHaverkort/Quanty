@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 uint32_t ListOfPoleCopyChoped(ListOfPoles M,ListOfPoles *A,double Epsilon);
 uint32_t ListOfPolesDetermineOccupation(ListOfPoles M,double const Ef,double *const occupation);
 uint32_t ListOfPolesCopyValOccupation(ListOfPoles *M,ListOfPoles B,double *Ef,double occupation);

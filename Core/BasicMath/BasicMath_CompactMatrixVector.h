@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 uint32_t QCompactMatrixHermitian(const CompactMatrixType O,const double epsilon);
 uint32_t CompactMatrixBlockBandDiagonalize(CompactMatrixType const *const A,CompactMatrixType *vec,BlockTriDiagonalMatrixType *const B,double const SingularValue,uint32_t const NTri,uint32_t const NOrtho,Bool const ReOrthogonalize,Bool const ReturnT);
 uint32_t CompactMatrixBlockBandDiagonalizeComplex(CompactMatrixType const *const A,CompactMatrixType *vec,BlockTriDiagonalMatrixType *const B,double const SingularValue,uint32_t const NTri,uint32_t const NOrtho,Bool const ReOrthogonalize,Bool const ReturnT);

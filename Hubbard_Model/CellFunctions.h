@@ -1,4 +1,3 @@
-/* This file was automatically generated.  Do not edit! */
 uint32_t OperatorSiteFourierTransform(const CrystalStructureSuperCellType SC,const OperatorType Oi,OperatorType *Ok,uint32_t(*QDetNotOrdered)(uint16_t,uint16_t,uint32_t));
 uint32_t SpectraSiteFourierTransform(const CrystalStructureSuperCellType SC,SpectraType *Spectra);
 uint32_t FindCellPosInCrystalStructureSuperCellType(CrystalStructureSuperCellType A,int32_t vec[3],int *pos);

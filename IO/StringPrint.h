@@ -1,4 +1,4 @@
-/* This file was automatically generated.  Do not edit! */
+
 uint32_t StringPrintTightBindingDef(TightBindingDef O,char **Buffer);
 uint32_t StringPrintCrystalStructure(CrystalStructureType O,char **Buffer);
 uint32_t StringPrintAddCrystalStructure(CrystalStructureType O,char **Buffer);
