@@ -71,6 +71,7 @@ static void *currentudata = NULL;
 #include "BraKet.c"
 #include "eval.c"
 #include "../Yi/functions_yi.c"
+#include "../Martin/functions_martin.c"
 #include "ssp.c"
 
 

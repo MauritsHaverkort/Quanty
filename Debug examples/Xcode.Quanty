@@ -1,5 +1,10 @@
 Verbosity(0xFFFF)
 
+
+print(Martin.test())
+os.exit()
+
+
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Functions/MeanFieldGroundState.Quanty")
 os.exit()
 

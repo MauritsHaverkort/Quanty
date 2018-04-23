@@ -3667,12 +3667,17 @@ int luaopen_ssp(lua_State * L)
 
   luaL_newmetatable(L, "DresdenFPLO_Type");
   luaL_setfuncs(L, DresdenFPLO_meta, 0);
-
-
+  
+  
   luaL_newmetatable(L, "Yi_Type");
   luaL_setfuncs(L, Yi_meta, 0);
   luaL_newlib(L, Yi_func);
   lua_setglobal(L, "Yi");
+  
+  luaL_newmetatable(L, "Martin_Type");
+  luaL_setfuncs(L, Martin_meta, 0);
+  luaL_newlib(L, Martin_func);
+  lua_setglobal(L, "Martin");
 
   luaMWH_RegisterGlobalFunctions(L, global_functions);
   luaMWH_RegisterGlobalFunctions(L, mathlib);
