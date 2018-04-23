@@ -1,22 +1,20 @@
 #!/bin/bash
 
-echo "Start of running all references"
-cp -r Reference History/current
-
-echo "change to directory History/current/Reference"
+echo "Changing to directory History/current/Reference"
 cd History/current/Reference
   for directory in */
   do
-    echo change to directory $directory
+    echo "Changing to directory $directory"
     cd $directory
       if [ "$directory" == "Objects/" ]
       then
         for directory2 in */
         do
-          echo change to directory $directory2
+          echo "Changing to directory $directory2"
           cd $directory2
             for file in *.Quanty
             do
+              echo "Running $file" 
               fileout="${file/Quanty/out}"
               Quanty $file | tail -n +23 > $fileout
             done
@@ -25,6 +23,7 @@ cd History/current/Reference
       else
         for file in *.Quanty
         do
+          echo "Running $file" 
           fileout="${file/Quanty/out}"
           Quanty $file | tail -n +23 > $fileout
         done
