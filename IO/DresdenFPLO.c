@@ -41,7 +41,7 @@ double RoundToDigit(double x, int n)
   return roundf(x * pow(10,n)) / pow(10,n);
 }
 
-void TransVecNorm(const double vec[3], const double gUC[3][3], double vecnorm[3])
+void TransVecNorm(const double vec[3], double gUC[3][3], double vecnorm[3])
 {
   double nfac = 1.;
   vecnorm[0] = RoundToDigit(Dot(vec, gUC[0])/nfac, 5);
