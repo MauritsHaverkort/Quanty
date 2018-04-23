@@ -1,7 +1,7 @@
 Verbosity(0xFFFF)
 
 
-print(Simon.test())
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Reference/Functions/Eigensystem.Quanty")
 os.exit()
 
 

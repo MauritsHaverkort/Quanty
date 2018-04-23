@@ -155,6 +155,7 @@ uint32_t GlobalVerbosity=0xF;
 #define dgeev dgeev_
 #define dgetrf dgetrf_
 #define dgetri dgetri_
+#define dsymv dsymv_
 #define dsyrk dsyrk_
 #define dpotrf dpotrf_
 #define dsbtrd dsbtrd_
@@ -201,6 +202,7 @@ int    dscal();
 int    dsyrk();
 int    dstev();
 int    dstevd();
+void   dsymv();
 int    dsyev();
 int    dsyevd();
 int    dsygv();
