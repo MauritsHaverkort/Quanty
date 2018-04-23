@@ -72,6 +72,7 @@ static void *currentudata = NULL;
 #include "eval.c"
 #include "../Yi/functions_yi.c"
 #include "../Martin/functions_martin.c"
+#include "../Simon/functions_simon.c"
 #include "ssp.c"
 
 

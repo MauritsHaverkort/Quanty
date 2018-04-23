@@ -1,7 +1,7 @@
 Verbosity(0xFFFF)
 
 
-print(Martin.test())
+print(Simon.test())
 os.exit()
 
 

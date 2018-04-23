@@ -3678,6 +3678,11 @@ int luaopen_ssp(lua_State * L)
   luaL_setfuncs(L, Martin_meta, 0);
   luaL_newlib(L, Martin_func);
   lua_setglobal(L, "Martin");
+  
+  luaL_newmetatable(L, "Simon_Type");
+  luaL_setfuncs(L, Simon_meta, 0);
+  luaL_newlib(L, Simon_func);
+  lua_setglobal(L, "Simon");
 
   luaMWH_RegisterGlobalFunctions(L, global_functions);
   luaMWH_RegisterGlobalFunctions(L, mathlib);
