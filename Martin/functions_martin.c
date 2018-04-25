@@ -6,12 +6,20 @@ static int LuaOperatorNewFullCoulomb (lua_State *L)
 {
     OperatorType *op;
     int *list, i;
-    uint32_t *tuple, Ntuple, NGridpoints, Nindices, temp;
+    uint32_t **tuple, NIntegrals, NGridpoints, Nindices, temp, len, NF;
     uint16_t **indices;
     MatrixType *wavefunctions;
     double *x;
 
-    uint32_t NF = (uint32_t)luaL_checkunsigned(L, 1);
+    len = (uint32_t)lua_gettop(L);
+
+    if ( len != 5 && len != 6)
+    {
+    	printf("Error in Martin.NewCoulomb: 5 or 6 arguments expected; got %d",len);
+    	return -1;
+    }
+
+    NF = (uint32_t)luaL_checkunsigned(L, 1);
     wavefunctions = luaL_checkMatrix(L,2);
     x = luaL_checkarray_double(L,3,&NGridpoints);
 
@@ -22,7 +30,19 @@ static int LuaOperatorNewFullCoulomb (lua_State *L)
     	return -1;
     }
 
-    tuple = luaL_checkarray_unit32_t(L,4, &Ntuple);
+    NIntegrals = lua_objlen(L,4);
+    tuple = (uint32_t **) malloc(NIntegrals*sizeof(uint32_t *));
+    for ( i = 0; i < NIntegrals; i++)
+    {
+    	lua_rawgeti(L, 4, i+1);
+    	tuple[i] = luaL_checkarray_unit32_t(L,-1,&temp);
+    	if ( temp != 8)
+    	{
+    		printf("Error in Martin.NewCoulomb: Length of tuple[%d] (%d) != 8",i,temp);
+    		return -1;
+    	}
+    	lua_pop(L,1);
+    }
 
     luaL_checktype(L, 5, LUA_TTABLE);
     Nindices = lua_objlen(L,5);
@@ -40,7 +60,14 @@ static int LuaOperatorNewFullCoulomb (lua_State *L)
 
     op = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
 
-    CreateOperatorFullCoulombRelativistic(NF,wavefunctions->VRe,wavefunctions->Ni,x,NGridpoints,tuple, Ntuple,indices, op);
+    if ( len == 5)
+    {
+    	CreateOperatorFullCoulombRelativistic(NF,wavefunctions->VRe,wavefunctions->Ni,x,NGridpoints,tuple, NIntegrals,indices, op);
+    }
+    else
+    {
+    	CreateOperatorFastCoulombRelativistic(NF,wavefunctions->VRe,wavefunctions->Ni,x,NGridpoints,tuple, NIntegrals,indices, op);
+    }
 
     luaL_setmetatable(L,"Operator_Type");
 
@@ -50,6 +77,35 @@ static int LuaOperatorNewFullCoulomb (lua_State *L)
 static const struct luaL_Reg Martin_meta[] = {
   {NULL, NULL}
 };
+
+/*
+ * Martin.NewCoulomb(NF, basisfuns,x,tuple,indices,...)
+ * 	creates all Coulomb terms specified by tupel and calculates
+ * 	the needed Slater integrals for the basisfuns on grid x,
+ *
+ * 		NF: number of fermionic modes
+ * 		x: list of points on which the radial wave functions are defined
+ *
+ * 		basisfuns: list of radial wave functions on x (let N be the number of points)
+ * 		basisfuns = { {G1(x0),...,G1(xN),F1(x0),...,F1(xN)},
+ * 					  {G2(x0),...,G2(xN),F2(x0),...,F2(xN)}, ...}
+ * 				where G (F) stands for the large (small) spinor component
+ *
+ * 		indices: indices of the mj orbitals corresponding to the basisfuns
+ * 		indices = { {m1(m=-j),...,m1(m=+j)}, {m2(m=-j),...,m2(m=+j)}, ... }
+ * 			where indices[i] corresponds to basisfuns[i]
+ * 		tuple: list of 4-tuple of quantum numbers for slater integrals to be used
+ * 		tuple = { {n1,k1,n2,k2,n3,k3,n4,k4}, ... }
+ *
+ * 		if a 6th argument "fast" is specified, tuple MUST NOT contain duplicates in
+ * 		the sense that two 4-tuple are equivalent if you can map one onto the other by
+ * 		using any combination of the following permutations: { (1,3), (2,4), (1,2)(3,4) }
+ * 		this assures that Slater integrals with the same value are calculated once only,
+ * 		which leads to an increase in speed.
+ *
+ *
+ *
+ */
 
 static const struct luaL_Reg Martin_func[] = {
   {"NewCoulomb", LuaOperatorNewFullCoulomb},
