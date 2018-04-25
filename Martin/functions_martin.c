@@ -79,10 +79,11 @@ static const struct luaL_Reg Martin_meta[] = {
 };
 
 /*
- * Martin.NewCoulomb(NF, basisfuns,x,tupel,indices,...)
+ * Martin.NewCoulomb(NF, basisfuns,x,tuple,indices,...)
  * 	creates all Coulomb terms specified by tupel and calculates
  * 	the needed Slater integrals for the basisfuns on grid x,
  *
+ * 		NF: number of fermionic modes
  * 		x: list of points on which the radial wave functions are defined
  *
  * 		basisfuns: list of radial wave functions on x (let N be the number of points)
@@ -93,6 +94,14 @@ static const struct luaL_Reg Martin_meta[] = {
  * 		indices: indices of the mj orbitals corresponding to the basisfuns
  * 		indices = { {m1(m=-j),...,m1(m=+j)}, {m2(m=-j),...,m2(m=+j)}, ... }
  * 			where indices[i] corresponds to basisfuns[i]
+ * 		tuple: list of 4-tuple of quantum numbers for slater integrals to be used
+ * 		tuple = { {n1,k1,n2,k2,n3,k3,n4,k4}, ... }
+ *
+ * 		if a 6th argument "fast" is specified, tuple MUST NOT contain duplicates in
+ * 		the sense that two 4-tuple are equivalent if you can map one onto the other by
+ * 		using any combination of the following permutations: { (1,3), (2,4), (1,2)(3,4) }
+ * 		this assures that Slater integrals with the same value are calculated once only,
+ * 		which leads to an increase in speed.
  *
  *
  *

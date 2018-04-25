@@ -57,17 +57,17 @@ uint32_t CreateOperatorFastCoulombRelativistic(uint32_t const NFermion,double **
 
     OperatorType optemp;
     SSlaterIntegral *integrals;
-    double t;
+    //double t;
 
-    t = dsecnd();
+    //t = dsecnd();
     integrals = GetSlaterIntegrals(basisfuns,NbasisFuns,grid, NGridpoints, (const int **) tuple, NIntegrals);
-    printf("%f\n",dsecnd()-t);
+    //printf("%f\n",dsecnd()-t);
 
     int *k, i;
     unsigned int *n;
     double *Fk;
 
-    t = dsecnd();
+    //t = dsecnd();
 
     k = integrals[0].tau.kappa;
     n = integrals[0].tau.n;
@@ -85,7 +85,7 @@ uint32_t CreateOperatorFastCoulombRelativistic(uint32_t const NFermion,double **
         OperatorAdd(op, optemp, 1., 0.);
 
     }
-    printf("%f\n",dsecnd()-t);
+    //printf("%f\n",dsecnd()-t);
     return 0;
 }
 

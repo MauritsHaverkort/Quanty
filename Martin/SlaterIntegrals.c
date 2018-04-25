@@ -35,13 +35,24 @@ SSlaterIntegral *GetSlaterIntegrals(double **basisfuns, unsigned int NBasisFuns,
     dualfuns = CreateDualFunctions(NBasisFuns, NGridPoints, basisfuns,x);
     
     si = InitializeIntegrals(tupel, NIntegrals,&kMax);
-    
+
     
     kernels = CreateAllKernels(kMax, NGridPoints, x); 
     
    
     CalculateSlaterIntegrals(NIntegrals, si,n,kernels,basisfuns,dualfuns);
-        
+/*
+  	int i,j;
+    FILE *f = fopen("slaterout4","w");
+    for ( i = 0; i < NIntegrals; i++)
+    {
+    	for ( j = 0; j < si[i].Nval; j++)
+    	{
+    		fprintf(f,"%.16e\n",si[i].val[j]);
+    	}
+    }
+    fclose(f);
+*/
     return si;
 }
 
