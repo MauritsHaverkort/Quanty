@@ -1,6 +1,6 @@
-void vdMul();
 void cblas_dsymv();
 double cblas_ddot();
+double dsecnd();
 
 typedef struct
 {
@@ -21,8 +21,7 @@ typedef struct
 #include "SlaterIntegrals.h"
 
 SSlaterIntegral *GetSlaterIntegrals(double **basisfuns, unsigned int NBasisFuns, const double *x,
-                                    unsigned int NGridPoints, int *tupel, const unsigned int Ntupel,
-                                    unsigned int *NIntegrals)
+                                    unsigned int NGridPoints,const int **tupel, unsigned int NIntegrals)
 {
         
     SSlaterIntegral *si;
@@ -35,13 +34,13 @@ SSlaterIntegral *GetSlaterIntegrals(double **basisfuns, unsigned int NBasisFuns,
     
     dualfuns = CreateDualFunctions(NBasisFuns, NGridPoints, basisfuns,x);
     
-    si = InitializeIntegrals(tupel,Ntupel, NIntegrals,&kMax);
+    si = InitializeIntegrals(tupel, NIntegrals,&kMax);
     
     
     kernels = CreateAllKernels(kMax, NGridPoints, x); 
     
    
-    CalculateSlaterIntegrals(*NIntegrals, si,n,kernels,basisfuns,dualfuns);
+    CalculateSlaterIntegrals(NIntegrals, si,n,kernels,basisfuns,dualfuns);
         
     return si;
 }
@@ -72,6 +71,16 @@ void CalculateSlaterIntegrals(const int NIntegrals, SSlaterIntegral *integrals, 
         }
     }
 };
+
+void vecMul(const int n, const double *f, const double *g, double *fout)
+{
+    int i;
+
+    for ( i = 0; i < n; i++)
+    {
+        fout[i] = f[i] * g[i];
+    }
+}
   
 
 double SlaterIntegral(const int n, const double *f1, const double *f2, const double *f3, 
@@ -87,8 +96,8 @@ double SlaterIntegral(const int n, const double *f1, const double *f2, const dou
     
     Mf = (double *) malloc(n*sizeof(double));
     
-    vdMul(n, f1, f3, f13);    
-    vdMul(n, f2, f4, f24);  
+    vecMul(n, f1, f3, f13);
+    vecMul(n, f2, f4, f24);
     
 
     cblas_dsymv(CblasRowMajor, CblasUpper, n, 1., Mr1r2, n, f24, 1, 0., Mf, 1);
@@ -195,35 +204,32 @@ double **CreateDualFunctions(const unsigned int NBasisFuns, const unsigned int N
 
 void Dual(const int n, const double *f, const double *weights, double *fdual)
 {
-    vdMul(n, f, weights, fdual);
+    vecMul(n, f, weights, fdual);
 }
 
-SSlaterIntegral *InitializeIntegrals(const int* tupel, const unsigned int Ntupel, unsigned int *NIntegrals,
+SSlaterIntegral *InitializeIntegrals(const int **tupel, unsigned int NIntegrals,
                                      unsigned int *kMax)
 {
-    unsigned int i,j,k;
+    unsigned int i, k;
     SSlaterIntegral *integrals;
     
-    *NIntegrals = Ntupel / 8;
-    
-    integrals = (SSlaterIntegral *) malloc((*NIntegrals)*sizeof(SSlaterIntegral));
-    for( i = 0; i < Ntupel; i++)
+    integrals = (SSlaterIntegral *) malloc((NIntegrals)*sizeof(SSlaterIntegral));
+    for( i = 0; i < NIntegrals; i++)
     {
                 
-        j = i % 8;
-        k = i / 8;
-        if ( (j % 2) == 0 )
-        {
-            integrals[k].tau.n[j/2] = tupel[i];
-        }
-        else
-        {
-            integrals[k].tau.kappa[j/2] = tupel[i];
-            
-        }
+    	integrals[i].tau.n[0] = tupel[i][0];
+    	integrals[i].tau.n[1] = tupel[i][2];
+    	integrals[i].tau.n[2] = tupel[i][4];
+    	integrals[i].tau.n[3] = tupel[i][6];
+
+    	integrals[i].tau.kappa[0] = tupel[i][1];
+    	integrals[i].tau.kappa[1] = tupel[i][3];
+    	integrals[i].tau.kappa[2] = tupel[i][5];
+    	integrals[i].tau.kappa[3] = tupel[i][7];
+
     }
     *kMax = 0;
-    for( i = 0; i < *NIntegrals; i++ )
+    for( i = 0; i < NIntegrals; i++ )
     {
         integrals[i].k = GetK(integrals[i].tau.kappa, &integrals[i].Nval);
         k = integrals[i].k[integrals[i].Nval-1];
