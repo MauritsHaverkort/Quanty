@@ -1,0 +1,31 @@
+NF = 70
+
+indices = {{0, 1}, {2, 3}, {10, 11}, {28, 29}, {60, 61}, {68, 69}, {4, 5}, {12, 
+  13}, {30, 31}, {62, 63}, {6, 7, 8, 9}, {14, 15, 16, 17}, {32, 33, 
+  34, 35}, {64, 65, 66, 67}, {18, 19, 20, 21}, {36, 37, 38, 39}, {22, 
+  23, 24, 25, 26, 27}, {40, 41, 42, 43, 44, 45}, {46, 47, 48, 49, 50, 
+  51}, {52, 53, 54, 55, 56, 57, 58, 59}}
+
+dofile("Lua_Input_Slater_integrals_Ho") -- defines tupel1, tupel2, basisfuns and x
+                                        -- x is list of points on which radial wavefunctions (basisfuns) are defined
+                                        -- basisfuns list of radial wavefunctions { { G(x[1]),...G(x[N]),F(x[1]),...F(x[N]) }, ... }
+                                        -- tupelX list of 8-tuple { {n1,k1,n2,k2,n3,k3,n4,k4}, ... } containing the quantum numbers for Slater integrals
+                                        -- a Mathematica file that creates "Lua_Input_Slater_integrals_Ho" is available and can be easily modified for other systems
+
+print("Calculate full Coulomb operator with #SlaterIntegrals:", #tupel1)
+
+TimeStart("All integrals") -- this will take approximately 5 minutes (on my single core)
+Op1 =  Martin.NewCoulomb(NF,basisfuns,x,tupel1,indices)
+TimeEnd("All integrals")
+
+print("The number of integrals can be reduced by using symmetries of the Slater integrals:")
+print("Calculate full Coulomb operator with #SlaterIntegrals:", #tupel2)
+
+TimeStart("Symmetry reduced integrals") -- this will take approximately 50 seconds (on my single core)
+Op2 =  Martin.NewCoulomb(NF,basisfuns,x,tupel2,indices,"fast")
+TimeEnd("Symmetry reduced integrals")
+
+TimePrint()
+
+print("Both calculations are the same up to numerical accuracy:")
+print(Chop(Op1-Op2))
