@@ -95,18 +95,22 @@ uint32_t CreateOperatorFullCoulombRelativistic(uint32_t const NFermion,double **
     
     OperatorType optemp;
     SSlaterIntegral *integrals;
-    double t;
-    
-    t = dsecnd();
+    //double t;
+  
+  
+  BeginTiming("GetSlaterIntegrals", &GlobalTime);
+    //t = dsecnd();
     integrals = GetSlaterIntegrals(basisfuns,NbasisFuns,grid, NGridpoints, (const int **) tuple, NIntegrals);
-    printf("%f\n",dsecnd()-t);
-    
+    //printf("%f\n",dsecnd()-t);
+  EndTiming("GetSlaterIntegrals", &GlobalTime);
+  
     int *k, i;
     unsigned int *n;
     double *Fk;
     
-    t = dsecnd();
-
+    //t = dsecnd();
+  
+  BeginTiming("CreateOperatorCoulomb", &GlobalTime);
     k = integrals[0].tau.kappa;
     n = integrals[0].tau.n;
     Fk = integrals[0].val;
@@ -122,7 +126,8 @@ uint32_t CreateOperatorFullCoulombRelativistic(uint32_t const NFermion,double **
         OperatorAdd(op, optemp, 1., 0.);
     
     }
-    printf("%f\n",dsecnd()-t);
+  EndTiming("CreateOperatorCoulomb", &GlobalTime);
+  PrintTiming(GlobalTime);
     return 0;
 }
 

@@ -1,7 +1,3 @@
-void cblas_dsymv();
-double cblas_ddot();
-double dsecnd();
-
 typedef struct
 {
     unsigned int n[4];
@@ -65,7 +61,6 @@ void CalculateSlaterIntegrals(const int NIntegrals, SSlaterIntegral *integrals, 
     int i,j, k;
     unsigned int *n;
     double Fk;
-    SQuantumNumbers *tau;
     
     for( i = 0; i < NIntegrals; i++)
     {
@@ -97,30 +92,26 @@ void vecMul(const int n, const double *f, const double *g, double *fout)
 double SlaterIntegral(const int n, const double *f1, const double *f2, const double *f3, 
                       const double *f4, const double *Mr1r2)
 {
-    int CblasRowMajor = 101;
-    int CblasUpper = 121;
+  const char UPLO='L';
+  const double alpha=1.0;
+  const int INCXY=1;
+  const double beta=0;
+  double *f13, *f24, *Mf, result;
     
-    double *f13, *f24, *Mf, result;
+  f13 = (double *) malloc(n*sizeof(double));
+  f24 = (double *) malloc(n*sizeof(double));
+  Mf = (double *) malloc(n*sizeof(double));
     
-    f13 = (double *) malloc(n*sizeof(double));
-    f24 = (double *) malloc(n*sizeof(double));
+  vecMul(n, f1, f3, f13);
+  vecMul(n, f2, f4, f24);
     
-    Mf = (double *) malloc(n*sizeof(double));
-    
-    vecMul(n, f1, f3, f13);
-    vecMul(n, f2, f4, f24);
-    
-
-    cblas_dsymv(CblasRowMajor, CblasUpper, n, 1., Mr1r2, n, f24, 1, 0., Mf, 1);
-    result = cblas_ddot(n, f13, 1, Mf, 1);
-    
-    
-    mkl_free(f13);
-    mkl_free(f24);
-    mkl_free(Mf);
-
-    
-    return result;
+  dsymv(&UPLO, &n, &alpha, Mr1r2, &n, f24, &INCXY, &beta, Mf, &INCXY);
+  result = ddot(&n, f13, &INCXY, Mf, &INCXY);
+  
+  free(f13);
+  free(f24);
+  free(Mf);
+  return result;
 } 
 
 double ** CreateAllKernels(const unsigned int kMax, const unsigned int NGridPoints, const double *x)
@@ -209,7 +200,7 @@ double **CreateDualFunctions(const unsigned int NBasisFuns, const unsigned int N
         dualfuns[i] = (double *) malloc(2*NGridPoints*sizeof(double));
         Dual(2*NGridPoints, basisfuns[i], weights, dualfuns[i]);
     }
-    mkl_free(weights);
+    free(weights);
     return dualfuns;
 }
 
@@ -256,7 +247,7 @@ SSlaterIntegral *InitializeIntegrals(const int **tupel, unsigned int NIntegrals,
 
 unsigned int *GetK(const int *kappa, int *n)
 {
-    unsigned int k0, k1, i, *k;
+    unsigned int k0=0, k1=0, i, *k;
     
     
     k0 = fmax( abs( abs(kappa[0])-abs(kappa[2]) ), abs( abs(kappa[1])-abs(kappa[3]) ) );
@@ -269,7 +260,8 @@ unsigned int *GetK(const int *kappa, int *n)
     *n = (k1-k0)/2 + 1;
     if ( k0 > k1 )
     {
-        printf("Warning: k0(%d) > k1(%d)\n This has to be fixed...",k0,k1);
+      k=NULL;
+      printf("Warning: k0(%d) > k1(%d)\n This has to be fixed...",k0,k1);
     }
     else
     {

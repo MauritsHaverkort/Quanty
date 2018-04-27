@@ -5,7 +5,7 @@
 static int LuaOperatorNewFullCoulomb (lua_State *L)
 {
     OperatorType *op;
-    int *list, i;
+    int i;
     uint32_t **tuple, NIntegrals, NGridpoints, Nindices, temp, len, NF;
     uint16_t **indices;
     MatrixType *wavefunctions;
@@ -30,7 +30,7 @@ static int LuaOperatorNewFullCoulomb (lua_State *L)
     	return -1;
     }
 
-    NIntegrals = lua_objlen(L,4);
+    NIntegrals = (uint32_t)lua_objlen(L,4);
     tuple = (uint32_t **) malloc(NIntegrals*sizeof(uint32_t *));
     for ( i = 0; i < NIntegrals; i++)
     {
@@ -45,7 +45,7 @@ static int LuaOperatorNewFullCoulomb (lua_State *L)
     }
 
     luaL_checktype(L, 5, LUA_TTABLE);
-    Nindices = lua_objlen(L,5);
+    Nindices = (uint32_t)lua_objlen(L,5);
 
     indices = (uint16_t **) malloc(Nindices * sizeof(uint16_t *));
 

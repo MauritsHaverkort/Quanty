@@ -11,6 +11,6 @@ double **CreateAllKernels(const unsigned int kMax,const unsigned int NGridPoints
 SSlaterIntegral *InitializeIntegrals(const int **tupel,unsigned int NIntegrals,unsigned int *kMax);
 double **CreateDualFunctions(const unsigned int NBasisFuns,const unsigned int NGridPoints,double **basisfuns,const double *x);
 SSlaterIntegral *GetSlaterIntegrals(double **basisfuns,unsigned int NBasisFuns,const double *x,unsigned int NGridPoints,const int **tupel,unsigned int NIntegrals);
-double dsecnd();
-double cblas_ddot();
-void cblas_dsymv();
+//double dsecnd();
+//double cblas_ddot();
+//void cblas_dsymv();
