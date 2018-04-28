@@ -894,6 +894,34 @@ double ComplexWaveFunctionCalculateNorm(const WaveFunctionType a)
 }
 
 /*
+ *   <-|a|
+ */
+double ComplexWaveFunctionCalculateNormSqr(const WaveFunctionType a)
+{
+  uint32_t iBlok, iElement;
+  int    iOMP;
+  double NormA = 0, NormB = 0, Norm = 0;
+  iBlok = a.NBlok - 1;
+#pragma omp parallel for private(iElement) reduction(+ : NormA)
+  for (iOMP = 0; iOMP <= (int)(a.N - iBlok * BlokSize); ++iOMP)
+  {
+    iElement = (uint32_t) iOMP;
+    NormA += a.ValueRe[iBlok][iElement] * a.ValueRe[iBlok][iElement] + a.ValueIm[iBlok][iElement] * a.ValueIm[iBlok][iElement];
+  }
+#pragma omp parallel for private(iElement,iBlok) reduction(+ : NormB)
+  for (iOMP = 0; iOMP < (int)(a.NBlok - 1); iOMP++)
+  {
+    iBlok = (uint32_t) iOMP;
+    for (iElement = 0; iElement < BlokSize; ++iElement)
+    {
+      NormB += a.ValueRe[iBlok][iElement] * a.ValueRe[iBlok][iElement] + a.ValueIm[iBlok][iElement] * a.ValueIm[iBlok][iElement];
+    }
+  }
+  Norm = NormA + NormB;
+  return Norm;
+}
+
+/*
 *   calculate <a|b>
 *   The first entry is complex conjugated
 */

@@ -27,6 +27,7 @@ void RealWaveFunctionRandomize(WaveFunctionType *const a);
 double RealWaveFunctionDotProduct(const WaveFunctionType *a,const WaveFunctionType *b);
 double RealWaveFunctionDotProductSameBasis(const WaveFunctionType a,const WaveFunctionType b);
 double RealWaveFunctionCalculateNorm(const WaveFunctionType a);
+double RealWaveFunctionCalculateNormSqr(const WaveFunctionType a);
 void RealWaveFunctionMultiply(WaveFunctionType a,const double b);
 void RealWaveFunctionNormalize(WaveFunctionType *const a);
 void RealWaveFunctionAddMultipliedConserveBasis(WaveFunctionType *const a,const WaveFunctionType b,const double alpha);

@@ -1,4 +1,4 @@
-Verbosity(0xFFFF)
+Verbosity(0x0)
 
 --goto dense
 --goto atom
@@ -306,6 +306,8 @@ print("Large systems with Lanczos")
 print("===========================================")
 print("Atom with a single f-shell with 6 electrons")
 print("===========================================")
+print("                    real                   ")
+print("===========================================\n\n")
 
 Basis_dn = {0,2,4,6,8,10,12}
 Basis_up = {1,3,5,7,9,11,13}
@@ -319,11 +321,20 @@ TimeEnd("Eigensystem 10 states")
 TimeStart("Eigensystem 1 states")
 fun1s = Eigensystem(Hamiltonian1,StartRestrictions,1)
 TimeEnd("Eigensystem 1 states")
-valgrd = fun1s*Hamiltonian1*fun1s
+valgrd = Braket(fun1s,Hamiltonian1,fun1s)
+print("      Energy           Energy-E0        Variance")
 for i=1,10 do
-  print(fun1[i]*Hamiltonian1*fun1[i], fun1[i]*Hamiltonian1*fun1[i]-valgrd, fun1[i]*Hamiltonian1*Hamiltonian1*fun1[i] - (fun1[i]*Hamiltonian1*fun1[i])^2)
+  Energy=Braket(fun1[i],Hamiltonian1,fun1[i])
+  Hfun=Hamiltonian1*fun1[i]
+  EnergySqr=Braket(Hfun,Hfun)
+  io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
 end
-print(fun1s*Hamiltonian1*fun1s, fun1s*Hamiltonian1*fun1s-valgrd, fun1s*Hamiltonian1*Hamiltonian1*fun1s - (fun1s*Hamiltonian1*fun1s)^2)
+print()
+Energy=Braket(fun1s,Hamiltonian1,fun1s)
+Hfun=Hamiltonian1*fun1s
+EnergySqr=Braket(Hfun,Hfun)
+io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+
 
 print("\n\n\n\n\n=======================\n    shifted\n========================\n\n\n\n")
 
@@ -336,11 +347,19 @@ TimeEnd("Eigensystem 10 states shifted")
 TimeStart("Eigensystem 1 states shifted")
 fun1s = Eigensystem(Hamiltonian2,StartRestrictions,1)
 TimeEnd("Eigensystem 1 states shifted")
-valgrd = fun1s*Hamiltonian2*fun1s
+valgrd = Braket(fun1s,Hamiltonian2,fun1s)
+print("      Energy           Energy-E0        Variance")
 for i=1,10 do
-  print(fun1[i]*Hamiltonian2*fun1[i], fun1[i]*Hamiltonian2*fun1[i]-valgrd, fun1[i]*Hamiltonian2*Hamiltonian2*fun1[i] - (fun1[i]*Hamiltonian2*fun1[i])^2)
+  Energy=Braket(fun1[i],Hamiltonian2,fun1[i])
+  Hfun=Hamiltonian2*fun1[i]
+  EnergySqr=Braket(Hfun,Hfun)
+  io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
 end
-print(fun1s*Hamiltonian2*fun1s, fun1s*Hamiltonian2*fun1s-valgrd, fun1s*Hamiltonian2*Hamiltonian2*fun1s - (fun1s*Hamiltonian2*fun1s)^2)
+print()
+Energy=Braket(fun1s,Hamiltonian2,fun1s)
+Hfun=Hamiltonian2*fun1s
+EnergySqr=Braket(Hfun,Hfun)
+io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
 
 print("\n\n\n\n\n=======================\n    scaled\n========================\n\n\n\n")
 
@@ -352,17 +371,31 @@ TimeEnd("Eigensystem 10 states scaled")
 TimeStart("Eigensystem 1 states scaled")
 fun1s = Eigensystem(Hamiltonian3,StartRestrictions,1)
 TimeEnd("Eigensystem 1 states scaled")
-valgrd = fun1s*Hamiltonian3*fun1s
+valgrd = Braket(fun1s,Hamiltonian3,fun1s)
+print("      Energy           Energy-E0        Variance")
 for i=1,10 do
-  print(fun1[i]*Hamiltonian3*fun1[i], fun1[i]*Hamiltonian3*fun1[i]-valgrd, fun1[i]*Hamiltonian3*Hamiltonian1*fun1[i] - (fun1[i]*Hamiltonian3*fun1[i])^2)
+  Energy=Braket(fun1[i],Hamiltonian3,fun1[i])
+  Hfun=Hamiltonian3*fun1[i]
+  EnergySqr=Braket(Hfun,Hfun)
+  io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
 end
-print(fun1s*Hamiltonian3*fun1s, fun1s*Hamiltonian3*fun1s-valgrd, fun1s*Hamiltonian3*Hamiltonian3*fun1s - (fun1s*Hamiltonian3*fun1s)^2)
+print()
+Energy=Braket(fun1s,Hamiltonian3,fun1s)
+Hfun=Hamiltonian3*fun1s
+EnergySqr=Braket(Hfun,Hfun)
+io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
 
 TimePrint()
 
 ------------------------------------------------------------
---                      compex atom                       --
+--                      complex atom                      --
 ------------------------------------------------------------
+
+print("===========================================")
+print("Atom with a single f-shell with 6 electrons")
+print("===========================================")
+print("                  complex                  ")
+print("===========================================\n\n")
 
 Basis_dn = {0,2,4,6,8,10,12}
 Basis_up = {1,3,5,7,9,11,13}
@@ -376,11 +409,19 @@ TimeEnd("Eigensystem 10 states complex")
 TimeStart("Eigensystem 1 states complex")
 fun1s = Eigensystem(Hamiltonian1,StartRestrictions,1)
 TimeEnd("Eigensystem 1 states complex")
-valgrd = fun1s*Hamiltonian1*fun1s
+valgrd = Complex.Re(Braket(fun1s,Hamiltonian1,fun1s))
+print("      Energy           Energy-E0        Variance")
 for i=1,10 do
-  print(fun1[i]*Hamiltonian1*fun1[i], fun1[i]*Hamiltonian1*fun1[i]-valgrd, fun1[i]*Hamiltonian1*Hamiltonian1*fun1[i] - (fun1[i]*Hamiltonian1*fun1[i])^2)
+  Energy=Complex.Re(Braket(fun1[i],Hamiltonian1,fun1[i]))
+  Hfun=Hamiltonian1*fun1[i]
+  EnergySqr=Complex.Re(Braket(Hfun,Hfun))
+  io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
 end
-print(fun1s*Hamiltonian1*fun1s, fun1s*Hamiltonian1*fun1s-valgrd, fun1s*Hamiltonian1*Hamiltonian1*fun1s - (fun1s*Hamiltonian1*fun1s)^2)
+print()
+Energy=Complex.Re(Braket(fun1s,Hamiltonian1,fun1s))
+Hfun=Hamiltonian1*fun1s
+EnergySqr=Complex.Re(Braket(Hfun,Hfun))
+io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
 
 print("\n\n\n\n\n=======================\n    shifted\n========================\n\n\n\n")
 
@@ -393,11 +434,19 @@ TimeEnd("Eigensystem 10 states shifted complex")
 TimeStart("Eigensystem 1 states shifted complex")
 fun1s = Eigensystem(Hamiltonian2,StartRestrictions,1)
 TimeEnd("Eigensystem 1 states shifted complex")
-valgrd = fun1s*Hamiltonian2*fun1s
+valgrd = Complex.Re(Braket(fun1s,Hamiltonian2,fun1s))
+print("      Energy           Energy-E0        Variance")
 for i=1,10 do
-  print(fun1[i]*Hamiltonian2*fun1[i], fun1[i]*Hamiltonian2*fun1[i]-valgrd, fun1[i]*Hamiltonian2*Hamiltonian2*fun1[i] - (fun1[i]*Hamiltonian2*fun1[i])^2)
+  Energy=Complex.Re(Braket(fun1[i],Hamiltonian2,fun1[i]))
+  Hfun=Hamiltonian2*fun1[i]
+  EnergySqr=Complex.Re(Braket(Hfun,Hfun))
+  io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
 end
-print(fun1s*Hamiltonian2*fun1s, fun1s*Hamiltonian2*fun1s-valgrd, fun1s*Hamiltonian2*Hamiltonian2*fun1s - (fun1s*Hamiltonian2*fun1s)^2)
+print()
+Energy=Complex.Re(Braket(fun1s,Hamiltonian2,fun1s))
+Hfun=Hamiltonian2*fun1s
+EnergySqr=Complex.Re(Braket(Hfun,Hfun))
+io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
 
 print("\n\n\n\n\n=======================\n    scaled\n========================\n\n\n\n")
 
@@ -409,11 +458,19 @@ TimeEnd("Eigensystem 10 states scaled complex")
 TimeStart("Eigensystem 1 states scaled complex")
 fun1s = Eigensystem(Hamiltonian3,StartRestrictions,1)
 TimeEnd("Eigensystem 1 states scaled complex")
-valgrd = fun1s*Hamiltonian3*fun1s
+valgrd = Complex.Re(Braket(fun1s,Hamiltonian3,fun1s))
+print("      Energy           Energy-E0        Variance")
 for i=1,10 do
-  print(fun1[i]*Hamiltonian3*fun1[i], fun1[i]*Hamiltonian3*fun1[i]-valgrd, fun1[i]*Hamiltonian3*Hamiltonian1*fun1[i] - (fun1[i]*Hamiltonian3*fun1[i])^2)
+  Energy=Complex.Re(Braket(fun1[i],Hamiltonian3,fun1[i]))
+  Hfun=Hamiltonian2*fun1[i]
+  EnergySqr=Complex.Re(Braket(Hfun,Hfun))
+  io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
 end
-print(fun1s*Hamiltonian3*fun1s, fun1s*Hamiltonian3*fun1s-valgrd, fun1s*Hamiltonian3*Hamiltonian3*fun1s - (fun1s*Hamiltonian3*fun1s)^2)
+print()
+Energy=Complex.Re(Braket(fun1s,Hamiltonian3,fun1s))
+Hfun=Hamiltonian3*fun1s
+EnergySqr=Complex.Re(Braket(Hfun,Hfun))
+io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
 
 TimePrint()
 
@@ -421,6 +478,12 @@ TimePrint()
 ------------------------------------------------------------
 --                  real ligand field theory              --
 ------------------------------------------------------------
+
+print("============================================")
+print("Ligand Field Theory d shell with 8 electrons")
+print("============================================")
+print("                    real                    ")
+print("============================================\n\n")
 
 NF=20
 NB=0
@@ -630,7 +693,7 @@ print("  #    <E>      <S^2>    <L^2>    <J^2>    <S_z^3d> <L_z^3d> <l.s>    <F[
 for i = 1,#psiList do
   io.write(string.format("%3i ",i))
   for j = 1,#oppList do
-    expectationvalue = Chop(Complex.Re(psiList[i]*oppList[j]*psiList[i]))
+    expectationvalue = Chop(Complex.Re(Braket(psiList[i],oppList[j],psiList[i])))
     io.write(string.format("%8.3f ",expectationvalue))
   end
   io.write("\n")
@@ -641,6 +704,12 @@ TimePrint()
 ------------------------------------------------------------
 --               Complex ligand field theory              --
 ------------------------------------------------------------
+
+print("============================================")
+print("Ligand Field Theory d shell with 8 electrons")
+print("============================================")
+print("                   complex                  ")
+print("============================================\n\n")
 
 -- and our Hamiltonian is the sum over several operators
 
@@ -664,7 +733,7 @@ print("  #    <E>      <S^2>    <L^2>    <J^2>    <S_y^3d> <L_y^3d> <l.s>    <F[
 for i = 1,#psiList do
   io.write(string.format("%3i ",i))
   for j = 1,#oppList do
-    expectationvalue = Chop(Complex.Re(psiList[i]*oppList[j]*psiList[i]))
+    expectationvalue = Chop(Complex.Re(Braket(psiList[i],oppList[j],psiList[i])))
     io.write(string.format("%8.3f ",expectationvalue))
   end
   io.write("\n")
@@ -674,103 +743,14 @@ TimePrint()
 
 ::hubbard::
 ------------------------------------------------------------
---            real Hubbard model strart from psi          --
-------------------------------------------------------------
-
-Htb = NewTightBinding()
-Htb.Cell={{1,0,0},
-          {0,1,0},
-          {0,0,1}}
-Htb.Atoms={{"Cu",{0,0,0},{{"s",{"^{dn}","^{up}"}}}}}
-Htb.Hopping={{"Cu.s","Cu.s",{0,0, 1},{{1  ,0},{0,1  }}},
-             {"Cu.s","Cu.s",{0,0,-1},{{1  ,0},{0,1  }}},
-             {"Cu.s","Cu.s",{0,0, 2},{{0.1,0},{0,0.1}}},
-             {"Cu.s","Cu.s",{0,0,-2},{{0.1,0},{0,0.1}}}}
-
-HlocU = NewOperator("Number",2,0,0)*NewOperator("Number",2,1,1)
-
-U=3.5
-Hamiltonian1 = CreateClusterHamiltonian(Htb,{"periodic",{{1,0,0},{0,1,0},{0,0,10}}},U*HlocU,{{"k",{0,0,Pi/2}}})
-
-print(Htb)
-print(Hamiltonian1)
-
-funstart10 = { NewWavefunction(20,0,{{"10011001100110011001",1}}),
-  NewWavefunction(20,0,{{"01100110011001100110",1}}),
-  NewWavefunction(20,0,{{"10010110011001100110",1}}),
-  NewWavefunction(20,0,{{"01101001011001100110",1}}),
-  NewWavefunction(20,0,{{"01100110100101100110",1}}),
-  NewWavefunction(20,0,{{"01100110011010010110",1}}),
-  NewWavefunction(20,0,{{"01100110011001101001",1}}),
-  NewWavefunction(20,0,{{"01101001100110011001",1}}),
-  NewWavefunction(20,0,{{"10010110100110011001",1}}),
-  NewWavefunction(20,0,{{"10011001011010011001",1}})}
-
-funstart1  = NewWavefunction(20,0,{{"10011001100110011001",sqrt(0.5)},{"01100110011001100110",sqrt(0.5)}})
-
-print(Htb)
-
-TimeStart("Hubbard psi Eigensystem 10 states")
-fun1 = Copy(funstart10)
-
-Eigensystem(Hamiltonian1,fun1)
-TimeEnd("Hubbard psi Eigensystem 10 states")
-TimeStart("Hubbard psi Eigensystem 1 states")
-fun1s = Copy(funstart1)
-Eigensystem(Hamiltonian1,fun1s)
-TimeEnd("Hubbard psi Eigensystem 1 states")
-valgrd = fun1s*Hamiltonian1*fun1s
-for i=1,10 do
-  print(fun1[i]*Hamiltonian1*fun1[i], fun1[i]*Hamiltonian1*fun1[i]-valgrd, fun1[i]*Hamiltonian1*Hamiltonian1*fun1[i] - (fun1[i]*Hamiltonian1*fun1[i])^2)
-end
-print(fun1s*Hamiltonian1*fun1s, fun1s*Hamiltonian1*fun1s-valgrd, fun1s*Hamiltonian1*Hamiltonian1*fun1s - (fun1s*Hamiltonian1*fun1s)^2)
-
-TimePrint()
-
-print("\n\n\n\n\n=======================\n    shifted\n========================\n\n\n\n")
-
--- Hamiltonian2 is Hamiltonian1 shifted to the ground-state energy
-Hamiltonian2 = Hamiltonian1-fun1s*Hamiltonian1*fun1s
-
-TimeStart("Hubbard psi Eigensystem 10 states shifted")
-fun1 = Copy(funstart10)
-Eigensystem(Hamiltonian2,fun1)
-TimeEnd("Hubbard psi Eigensystem 10 states shifted")
-TimeStart("Hubbard psi Eigensystem 1 states shifted")
-fun1s = Copy(funstart1)
-Eigensystem(Hamiltonian2,fun1s)
-TimeEnd("Hubbard psi Eigensystem 1 states shifted")
-valgrd = fun1s*Hamiltonian2*fun1s
-for i=1,10 do
-  print(fun1[i]*Hamiltonian2*fun1[i], fun1[i]*Hamiltonian2*fun1[i]-valgrd, fun1[i]*Hamiltonian2*Hamiltonian2*fun1[i] - (fun1[i]*Hamiltonian2*fun1[i])^2)
-end
-print(fun1s*Hamiltonian2*fun1s, fun1s*Hamiltonian2*fun1s-valgrd, fun1s*Hamiltonian2*Hamiltonian2*fun1s - (fun1s*Hamiltonian2*fun1s)^2)
-
-TimePrint()
-
-print("\n\n\n\n\n=======================\n    scaled\n========================\n\n\n\n")
-
--- Hamiltonian3 is Hamiltonian1 but transfered from units of eV to units of J (i.e. devide by energy of 1J in units of eV (6.2415091259E+18)
-Hamiltonian3 = Hamiltonian1 / EnergyUnits.J.value
-TimeStart("Hubbard psi Eigensystem 10 states scaled")
-fun1 = Copy(funstart10)
-Eigensystem(Hamiltonian3,fun1)
-TimeEnd("Hubbard psi Eigensystem 10 states scaled")
-TimeStart("Hubbard psi Eigensystem 1 states scaled")
-fun1s = Copy(funstart1)
-Eigensystem(Hamiltonian3,fun1s)
-TimeEnd("Hubbard psi Eigensystem 1 states scaled")
-valgrd = fun1s*Hamiltonian3*fun1s
-for i=1,10 do
-  print(fun1[i]*Hamiltonian3*fun1[i], fun1[i]*Hamiltonian3*fun1[i]-valgrd, fun1[i]*Hamiltonian3*Hamiltonian1*fun1[i] - (fun1[i]*Hamiltonian3*fun1[i])^2)
-end
-print(fun1s*Hamiltonian3*fun1s, fun1s*Hamiltonian3*fun1s-valgrd, fun1s*Hamiltonian3*Hamiltonian3*fun1s - (fun1s*Hamiltonian3*fun1s)^2)
-
-TimePrint()
-
-------------------------------------------------------------
 --                  real Hubbard model                    --
 ------------------------------------------------------------
+
+print("============================================")
+print("         Hubbard model 10 sites 1D          ")
+print("============================================")
+print("                    real                    ")
+print("============================================\n\n")
 
 Htb = NewTightBinding()
 Htb.Cell={{1,0,0},
@@ -785,9 +765,9 @@ Htb.Hopping={{"O.s","O.s",{0,0, 1},{{1  ,0},{0,1  }}},
 HlocU = NewOperator("Number",2,0,0)*NewOperator("Number",2,1,1)
 
 U=3.5
-Hamiltonian1 = CreateClusterHamiltonian(Htb,{"periodic",{{1,0,0},{0,1,0},{0,0,12}}},U*HlocU)
+Hamiltonian1 = CreateClusterHamiltonian(Htb,{"periodic",{{1,0,0},{0,1,0},{0,0,10}}},U*HlocU)
 
-StartRestrictions = {24,0,{"101010101010101010101010",6,6},{"010101010101010101010101",6,6}}
+StartRestrictions = {20,0,{"10101010101010101010",5,5},{"01010101010101010101",5,5}}
 
 TimeStart("Hubbard Eigensystem 10 states")
 fun1  = Eigensystem(Hamiltonian1,StartRestrictions,10)
@@ -795,11 +775,19 @@ TimeEnd("Hubbard Eigensystem 10 states")
 TimeStart("Hubbard Eigensystem 1 states")
 fun1s = Eigensystem(Hamiltonian1,StartRestrictions,1)
 TimeEnd("Hubbard Eigensystem 1 states")
-valgrd = fun1s*Hamiltonian1*fun1s
+valgrd = Braket(fun1s,Hamiltonian1,fun1s)
+print("      Energy           Energy-E0        Variance")
 for i=1,10 do
-  print(fun1[i]*Hamiltonian1*fun1[i], fun1[i]*Hamiltonian1*fun1[i]-valgrd, fun1[i]*Hamiltonian1*Hamiltonian1*fun1[i] - (fun1[i]*Hamiltonian1*fun1[i])^2)
+  Energy=Braket(fun1[i],Hamiltonian1,fun1[i])
+  Hfun=Hamiltonian1*fun1[i]
+  EnergySqr=Braket(Hfun,Hfun)
+  io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
 end
-print(fun1s*Hamiltonian1*fun1s, fun1s*Hamiltonian1*fun1s-valgrd, fun1s*Hamiltonian1*Hamiltonian1*fun1s - (fun1s*Hamiltonian1*fun1s)^2)
+print()
+Energy=Braket(fun1s,Hamiltonian1,fun1s)
+Hfun=Hamiltonian1*fun1s
+EnergySqr=Braket(Hfun,Hfun)
+io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
 
 TimePrint()
 
@@ -814,11 +802,19 @@ TimeEnd("Hubbard Eigensystem 10 states shifted")
 TimeStart("Hubbard Eigensystem 1 states shifted")
 fun1s = Eigensystem(Hamiltonian2,StartRestrictions,1)
 TimeEnd("Hubbard Eigensystem 1 states shifted")
-valgrd = fun1s*Hamiltonian2*fun1s
+valgrd = Braket(fun1s,Hamiltonian2,fun1s)
+print("      Energy           Energy-E0        Variance")
 for i=1,10 do
-  print(fun1[i]*Hamiltonian2*fun1[i], fun1[i]*Hamiltonian2*fun1[i]-valgrd, fun1[i]*Hamiltonian2*Hamiltonian2*fun1[i] - (fun1[i]*Hamiltonian2*fun1[i])^2)
+  Energy=Braket(fun1[i],Hamiltonian2,fun1[i])
+  Hfun=Hamiltonian2*fun1[i]
+  EnergySqr=Braket(Hfun,Hfun)
+  io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
 end
-print(fun1s*Hamiltonian2*fun1s, fun1s*Hamiltonian2*fun1s-valgrd, fun1s*Hamiltonian2*Hamiltonian2*fun1s - (fun1s*Hamiltonian2*fun1s)^2)
+print()
+Energy=Braket(fun1s,Hamiltonian2,fun1s)
+Hfun=Hamiltonian2*fun1s
+EnergySqr=Braket(Hfun,Hfun)
+io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
 
 TimePrint()
 
@@ -832,108 +828,19 @@ TimeEnd("Hubbard Eigensystem 10 states scaled")
 TimeStart("Hubbard Eigensystem 1 states scaled")
 fun1s = Eigensystem(Hamiltonian3,StartRestrictions,1)
 TimeEnd("Hubbard Eigensystem 1 states scaled")
-valgrd = fun1s*Hamiltonian3*fun1s
+valgrd = Braket(fun1s,Hamiltonian3,fun1s)
+print("      Energy           Energy-E0        Variance")
 for i=1,10 do
-  print(fun1[i]*Hamiltonian3*fun1[i], fun1[i]*Hamiltonian3*fun1[i]-valgrd, fun1[i]*Hamiltonian3*Hamiltonian1*fun1[i] - (fun1[i]*Hamiltonian3*fun1[i])^2)
+  Energy=Braket(fun1[i],Hamiltonian3,fun1[i])
+  Hfun=Hamiltonian3*fun1[i]
+  EnergySqr=Braket(Hfun,Hfun)
+  io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
 end
-print(fun1s*Hamiltonian3*fun1s, fun1s*Hamiltonian3*fun1s-valgrd, fun1s*Hamiltonian3*Hamiltonian3*fun1s - (fun1s*Hamiltonian3*fun1s)^2)
-
-TimePrint()
-
-
-
-------------------------------------------------------------
---         Complex Hubbard model strart from psi          --
-------------------------------------------------------------
-
-Htb = NewTightBinding()
-Htb.Cell={{1,0,0},
-          {0,1,0},
-          {0,0,1}}
-Htb.Atoms={{"Cu",{0,0,0},{{"s",{"^{dn}","^{up}"}}}}}
-Htb.Hopping={{"Cu.s","Cu.s",{0,0, 1},{{1  ,0},{0,1  }}},
-             {"Cu.s","Cu.s",{0,0,-1},{{1  ,0},{0,1  }}},
-             {"Cu.s","Cu.s",{0,0, 2},{{0.1,0},{0,0.1}}},
-             {"Cu.s","Cu.s",{0,0,-2},{{0.1,0},{0,0.1}}}}
-
-HlocU = NewOperator("Number",2,0,0)*NewOperator("Number",2,1,1)
-
-U=3.5
-Hamiltonian1 = CreateClusterHamiltonian(Htb,{"periodic",{{1,0,0},{0,1,0},{0,0,10}}},U*HlocU,{{"k",{0,0,Pi/2}}})
-
-print(Htb)
-print(Hamiltonian1)
-
-funstart10 = { NewWavefunction(20,0,{{"10011001100110011001",1}}),
-  NewWavefunction(20,0,{{"01100110011001100110",1}}),
-  NewWavefunction(20,0,{{"10010110011001100110",1}}),
-  NewWavefunction(20,0,{{"01101001011001100110",1}}),
-  NewWavefunction(20,0,{{"01100110100101100110",1}}),
-  NewWavefunction(20,0,{{"01100110011010010110",1}}),
-  NewWavefunction(20,0,{{"01100110011001101001",1}}),
-  NewWavefunction(20,0,{{"01101001100110011001",1}}),
-  NewWavefunction(20,0,{{"10010110100110011001",1}}),
-  NewWavefunction(20,0,{{"10011001011010011001",1}})}
-
-funstart1  = NewWavefunction(20,0,{{"10011001100110011001",sqrt(0.5)},{"01100110011001100110",sqrt(0.5)}})
-
-print(Htb)
-
-TimeStart("Hubbard psi Eigensystem 10 states")
-fun1 = Copy(funstart10)
-
-Eigensystem(Hamiltonian1,fun1)
-TimeEnd("Hubbard psi Eigensystem 10 states")
-TimeStart("Hubbard psi Eigensystem 1 states")
-fun1s = Copy(funstart1)
-Eigensystem(Hamiltonian1,fun1s)
-TimeEnd("Hubbard psi Eigensystem 1 states")
-valgrd = fun1s*Hamiltonian1*fun1s
-for i=1,10 do
-  print(fun1[i]*Hamiltonian1*fun1[i], fun1[i]*Hamiltonian1*fun1[i]-valgrd, fun1[i]*Hamiltonian1*Hamiltonian1*fun1[i] - (fun1[i]*Hamiltonian1*fun1[i])^2)
-end
-print(fun1s*Hamiltonian1*fun1s, fun1s*Hamiltonian1*fun1s-valgrd, fun1s*Hamiltonian1*Hamiltonian1*fun1s - (fun1s*Hamiltonian1*fun1s)^2)
-
-TimePrint()
-
-print("\n\n\n\n\n=======================\n    shifted\n========================\n\n\n\n")
-
--- Hamiltonian2 is Hamiltonian1 shifted to the ground-state energy
-Hamiltonian2 = Hamiltonian1-fun1s*Hamiltonian1*fun1s
-
-TimeStart("Hubbard psi Eigensystem 10 states shifted")
-fun1 = Copy(funstart10)
-Eigensystem(Hamiltonian2,fun1)
-TimeEnd("Hubbard psi Eigensystem 10 states shifted")
-TimeStart("Hubbard psi Eigensystem 1 states shifted")
-fun1s = Copy(funstart1)
-Eigensystem(Hamiltonian2,fun1s)
-TimeEnd("Hubbard psi Eigensystem 1 states shifted")
-valgrd = fun1s*Hamiltonian2*fun1s
-for i=1,10 do
-  print(fun1[i]*Hamiltonian2*fun1[i], fun1[i]*Hamiltonian2*fun1[i]-valgrd, fun1[i]*Hamiltonian2*Hamiltonian2*fun1[i] - (fun1[i]*Hamiltonian2*fun1[i])^2)
-end
-print(fun1s*Hamiltonian2*fun1s, fun1s*Hamiltonian2*fun1s-valgrd, fun1s*Hamiltonian2*Hamiltonian2*fun1s - (fun1s*Hamiltonian2*fun1s)^2)
-
-TimePrint()
-
-print("\n\n\n\n\n=======================\n    scaled\n========================\n\n\n\n")
-
--- Hamiltonian3 is Hamiltonian1 but transfered from units of eV to units of J (i.e. devide by energy of 1J in units of eV (6.2415091259E+18)
-Hamiltonian3 = Hamiltonian1 / EnergyUnits.J.value
-TimeStart("Hubbard psi Eigensystem 10 states scaled")
-fun1 = Copy(funstart10)
-Eigensystem(Hamiltonian3,fun1)
-TimeEnd("Hubbard psi Eigensystem 10 states scaled")
-TimeStart("Hubbard psi Eigensystem 1 states scaled")
-fun1s = Copy(funstart1)
-Eigensystem(Hamiltonian3,fun1s)
-TimeEnd("Hubbard psi Eigensystem 1 states scaled")
-valgrd = fun1s*Hamiltonian3*fun1s
-for i=1,10 do
-  print(fun1[i]*Hamiltonian3*fun1[i], fun1[i]*Hamiltonian3*fun1[i]-valgrd, fun1[i]*Hamiltonian3*Hamiltonian1*fun1[i] - (fun1[i]*Hamiltonian3*fun1[i])^2)
-end
-print(fun1s*Hamiltonian3*fun1s, fun1s*Hamiltonian3*fun1s-valgrd, fun1s*Hamiltonian3*Hamiltonian3*fun1s - (fun1s*Hamiltonian3*fun1s)^2)
+print()
+Energy=Braket(fun1s,Hamiltonian3,fun1s)
+Hfun=Hamiltonian3*fun1s
+EnergySqr=Braket(Hfun,Hfun)
+io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
 
 TimePrint()
 
@@ -941,6 +848,12 @@ TimePrint()
 --               Complex Hubbard model                    --
 ------------------------------------------------------------
 
+print("============================================")
+print("        Hubbartd model 10 sites 1D          ")
+print("============================================")
+print("                  complex                   ")
+print("============================================\n\n")
+
 Htb = NewTightBinding()
 Htb.Cell={{1,0,0},
           {0,1,0},
@@ -954,21 +867,29 @@ Htb.Hopping={{"O.s","O.s",{0,0, 1},{{1  ,0},{0,1  }}},
 HlocU = NewOperator("Number",2,0,0)*NewOperator("Number",2,1,1)
 
 U=3.5
-Hamiltonian1 = CreateClusterHamiltonian(Htb,{"periodic",{{1,0,0},{0,1,0},{0,0,12}}},U*HlocU,{{"k",{0,0,Pi/2}}})
+Hamiltonian1 = CreateClusterHamiltonian(Htb,{"periodic",{{1,0,0},{0,1,0},{0,0,10}}},U*HlocU,{{"k",{0,0,Pi/2}}})
 
-StartRestrictions = {24,0,{"101010101010101010101010",6,6},{"010101010101010101010101",6,6}}
+StartRestrictions = {20,0,{"10101010101010101010",5,5},{"01010101010101010101",5,5}}
 
-TimeStart("Hubbard Eigensystem 10 states")
+TimeStart("Hubbard Eigensystem 10 states complex")
 fun1  = Eigensystem(Hamiltonian1,StartRestrictions,10)
-TimeEnd("Hubbard Eigensystem 10 states")
-TimeStart("Hubbard Eigensystem 1 states")
+TimeEnd("Hubbard Eigensystem 10 states complex")
+TimeStart("Hubbard Eigensystem 1 states complex")
 fun1s = Eigensystem(Hamiltonian1,StartRestrictions,1)
-TimeEnd("Hubbard Eigensystem 1 states")
-valgrd = fun1s*Hamiltonian1*fun1s
+TimeEnd("Hubbard Eigensystem 1 states complex")
+valgrd = Complex.Re(Braket(fun1s,Hamiltonian1,fun1s))
+print("      Energy           Energy-E0        Variance")
 for i=1,10 do
-  print(fun1[i]*Hamiltonian1*fun1[i], fun1[i]*Hamiltonian1*fun1[i]-valgrd, fun1[i]*Hamiltonian1*Hamiltonian1*fun1[i] - (fun1[i]*Hamiltonian1*fun1[i])^2)
+  Energy=Complex.Re(Braket(fun1[i],Hamiltonian1,fun1[i]))
+  Hfun=Hamiltonian1*fun1[i]
+  EnergySqr=Complex.Re(Braket(Hfun,Hfun))
+  io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
 end
-print(fun1s*Hamiltonian1*fun1s, fun1s*Hamiltonian1*fun1s-valgrd, fun1s*Hamiltonian1*Hamiltonian1*fun1s - (fun1s*Hamiltonian1*fun1s)^2)
+print()
+Energy=Complex.Re(Braket(fun1s,Hamiltonian1,fun1s))
+Hfun=Hamiltonian1*fun1s
+EnergySqr=Complex.Re(Braket(Hfun,Hfun))
+io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
 
 TimePrint()
 
@@ -977,17 +898,25 @@ print("\n\n\n\n\n=======================\n    shifted\n========================\
 -- Hamiltonian2 is Hamiltonian1 shifted to the ground-state energy
 Hamiltonian2 = Hamiltonian1-fun1s*Hamiltonian1*fun1s
 
-TimeStart("Hubbard Eigensystem 10 states shifted")
+TimeStart("Hubbard Eigensystem 10 states shifted complex")
 fun1  = Eigensystem(Hamiltonian2,StartRestrictions,10)
-TimeEnd("Hubbard Eigensystem 10 states shifted")
-TimeStart("Hubbard Eigensystem 1 states shifted")
+TimeEnd("Hubbard Eigensystem 10 states shifted complex")
+TimeStart("Hubbard Eigensystem 1 states shifted complex")
 fun1s = Eigensystem(Hamiltonian2,StartRestrictions,1)
-TimeEnd("Hubbard Eigensystem 1 states shifted")
-valgrd = fun1s*Hamiltonian2*fun1s
+TimeEnd("Hubbard Eigensystem 1 states shifted complex")
+valgrd = Complex.Re(Braket(fun1s,Hamiltonian2,fun1s))
+print("      Energy           Energy-E0        Variance")
 for i=1,10 do
-  print(fun1[i]*Hamiltonian2*fun1[i], fun1[i]*Hamiltonian2*fun1[i]-valgrd, fun1[i]*Hamiltonian2*Hamiltonian2*fun1[i] - (fun1[i]*Hamiltonian2*fun1[i])^2)
+  Energy=Complex.Re(Braket(fun1[i],Hamiltonian2,fun1[i]))
+  Hfun=Hamiltonian2*fun1[i]
+  EnergySqr=Complex.Re(Braket(Hfun,Hfun))
+  io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
 end
-print(fun1s*Hamiltonian2*fun1s, fun1s*Hamiltonian2*fun1s-valgrd, fun1s*Hamiltonian2*Hamiltonian2*fun1s - (fun1s*Hamiltonian2*fun1s)^2)
+print()
+Energy=Complex.Re(Braket(fun1s,Hamiltonian2,fun1s))
+Hfun=Hamiltonian2*fun1s
+EnergySqr=Complex.Re(Braket(Hfun,Hfun))
+io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
 
 TimePrint()
 
@@ -995,19 +924,278 @@ print("\n\n\n\n\n=======================\n    scaled\n========================\n
 
 -- Hamiltonian3 is Hamiltonian1 but transfered from units of eV to units of J (i.e. devide by energy of 1J in units of eV (6.2415091259E+18)
 Hamiltonian3 = Hamiltonian1 / EnergyUnits.J.value
-TimeStart("Hubbard Eigensystem 10 states scaled")
+TimeStart("Hubbard Eigensystem 10 states scaled complex")
 fun1  = Eigensystem(Hamiltonian3,StartRestrictions,10)
-TimeEnd("Hubbard Eigensystem 10 states scaled")
-TimeStart("Hubbard Eigensystem 1 states scaled")
+TimeEnd("Hubbard Eigensystem 10 states scaled complex")
+TimeStart("Hubbard Eigensystem 1 states scaled complex")
 fun1s = Eigensystem(Hamiltonian3,StartRestrictions,1)
-TimeEnd("Hubbard Eigensystem 1 states scaled")
-valgrd = fun1s*Hamiltonian3*fun1s
+TimeEnd("Hubbard Eigensystem 1 states scaled complex")
+valgrd = Complex.Re(Braket(fun1s,Hamiltonian3,fun1s))
+print("      Energy           Energy-E0        Variance")
 for i=1,10 do
-  print(fun1[i]*Hamiltonian3*fun1[i], fun1[i]*Hamiltonian3*fun1[i]-valgrd, fun1[i]*Hamiltonian3*Hamiltonian1*fun1[i] - (fun1[i]*Hamiltonian3*fun1[i])^2)
+  Energy=Complex.Re(Braket(fun1[i],Hamiltonian3,fun1[i]))
+  Hfun=Hamiltonian3*fun1[i]
+  EnergySqr=Complex.Re(Braket(Hfun,Hfun))
+  io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
 end
-print(fun1s*Hamiltonian3*fun1s, fun1s*Hamiltonian3*fun1s-valgrd, fun1s*Hamiltonian3*Hamiltonian3*fun1s - (fun1s*Hamiltonian3*fun1s)^2)
+print()
+Energy=Complex.Re(Braket(fun1s,Hamiltonian3,fun1s))
+Hfun=Hamiltonian3*fun1s
+EnergySqr=Complex.Re(Braket(Hfun,Hfun))
+io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
 
 TimePrint()
 
+
+------------------------------------------------------------
+--         Real Hubbard model strart from psi          --
+------------------------------------------------------------
+
+print("============================================")
+print("         Hubbard model 10 sites 1D          ")
+print("============================================")
+print("               real psi start               ")
+print("============================================\n\n")
+
+Htb = NewTightBinding()
+Htb.Cell={{1,0,0},
+  {0,1,0},
+{0,0,1}}
+Htb.Atoms={{"Cu",{0,0,0},{{"s",{"^{dn}","^{up}"}}}}}
+Htb.Hopping={{"Cu.s","Cu.s",{0,0, 1},{{1  ,0},{0,1  }}},
+  {"Cu.s","Cu.s",{0,0,-1},{{1  ,0},{0,1  }}},
+  {"Cu.s","Cu.s",{0,0, 2},{{0.1,0},{0,0.1}}},
+{"Cu.s","Cu.s",{0,0,-2},{{0.1,0},{0,0.1}}}}
+
+HlocU = NewOperator("Number",2,0,0)*NewOperator("Number",2,1,1)
+
+U=3.5
+Hamiltonian1 = CreateClusterHamiltonian(Htb,{"periodic",{{1,0,0},{0,1,0},{0,0,10}}},U*HlocU)
+
+print(Htb)
+print(Hamiltonian1)
+
+funstart10 = { NewWavefunction(20,0,{{"10011001100110011001",1}}),
+  NewWavefunction(20,0,{{"01100110011001100110",1}}),
+  NewWavefunction(20,0,{{"10010110011001100110",1}}),
+  NewWavefunction(20,0,{{"01101001011001100110",1}}),
+  NewWavefunction(20,0,{{"01100110100101100110",1}}),
+  NewWavefunction(20,0,{{"01100110011010010110",1}}),
+  NewWavefunction(20,0,{{"01100110011001101001",1}}),
+  NewWavefunction(20,0,{{"01101001100110011001",1}}),
+  NewWavefunction(20,0,{{"10010110100110011001",1}}),
+  NewWavefunction(20,0,{{"10011001011010011001",1}})}
+
+funstart1  = NewWavefunction(20,0,{{"10011001100110011001",sqrt(0.5)},{"01100110011001100110",sqrt(0.5)}})
+
+print(Htb)
+
+TimeStart("Hubbard psi Eigensystem 10 states")
+fun1 = Copy(funstart10)
+
+Eigensystem(Hamiltonian1,fun1)
+TimeEnd("Hubbard psi Eigensystem 10 states")
+TimeStart("Hubbard psi Eigensystem 1 states")
+fun1s = Copy(funstart1)
+Eigensystem(Hamiltonian1,fun1s)
+TimeEnd("Hubbard psi Eigensystem 1 states")
+valgrd = Braket(fun1s,Hamiltonian1,fun1s)
+print("      Energy           Energy-E0        Variance")
+for i=1,10 do
+  Energy=Braket(fun1[i],Hamiltonian1,fun1[i])
+  Hfun=Hamiltonian1*fun1[i]
+  EnergySqr=Braket(Hfun,Hfun)
+  io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+end
+print()
+Energy=Braket(fun1s,Hamiltonian1,fun1s)
+Hfun=Hamiltonian1*fun1s
+EnergySqr=Braket(Hfun,Hfun)
+io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+
+TimePrint()
+
+print("\n\n\n\n\n=======================\n    shifted\n========================\n\n\n\n")
+
+-- Hamiltonian2 is Hamiltonian1 shifted to the ground-state energy
+Hamiltonian2 = Hamiltonian1-fun1s*Hamiltonian1*fun1s
+
+TimeStart("Hubbard psi Eigensystem 10 states shifted")
+fun1 = Copy(funstart10)
+Eigensystem(Hamiltonian2,fun1)
+TimeEnd("Hubbard psi Eigensystem 10 states shifted")
+TimeStart("Hubbard psi Eigensystem 1 states shifted")
+fun1s = Copy(funstart1)
+Eigensystem(Hamiltonian2,fun1s)
+TimeEnd("Hubbard psi Eigensystem 1 states shifted")
+valgrd = Braket(fun1s,Hamiltonian2,fun1s)
+print("      Energy           Energy-E0        Variance")
+for i=1,10 do
+  Energy=Braket(fun1[i],Hamiltonian2,fun1[i])
+  Hfun=Hamiltonian2*fun1[i]
+  EnergySqr=Braket(Hfun,Hfun)
+  io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+end
+print()
+Energy=Braket(fun1s,Hamiltonian2,fun1s)
+Hfun=Hamiltonian2*fun1s
+EnergySqr=Braket(Hfun,Hfun)
+io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+
+TimePrint()
+
+print("\n\n\n\n\n=======================\n    scaled\n========================\n\n\n\n")
+
+-- Hamiltonian3 is Hamiltonian1 but transfered from units of eV to units of J (i.e. devide by energy of 1J in units of eV (6.2415091259E+18)
+Hamiltonian3 = Hamiltonian1 / EnergyUnits.J.value
+TimeStart("Hubbard psi Eigensystem 10 states scaled")
+fun1 = Copy(funstart10)
+Eigensystem(Hamiltonian3,fun1)
+TimeEnd("Hubbard psi Eigensystem 10 states scaled")
+TimeStart("Hubbard psi Eigensystem 1 states scaled")
+fun1s = Copy(funstart1)
+Eigensystem(Hamiltonian3,fun1s)
+TimeEnd("Hubbard psi Eigensystem 1 states scaled")
+valgrd = Braket(fun1s,Hamiltonian3,fun1s)
+print("      Energy           Energy-E0        Variance")
+for i=1,10 do
+  Energy=Braket(fun1[i],Hamiltonian3,fun1[i])
+  Hfun=Hamiltonian3*fun1[i]
+  EnergySqr=Braket(Hfun,Hfun)
+  io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+end
+print()
+Energy=Braket(fun1s,Hamiltonian3,fun1s)
+Hfun=Hamiltonian3*fun1s
+EnergySqr=Braket(Hfun,Hfun)
+io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+
+TimePrint()
+
+
+------------------------------------------------------------
+--         Complex Hubbard model strart from psi          --
+------------------------------------------------------------
+
+print("============================================")
+print("         Hubbard model 10 sites 1D          ")
+print("============================================")
+print("             complex psi start              ")
+print("============================================\n\n")
+
+Htb = NewTightBinding()
+Htb.Cell={{1,0,0},
+  {0,1,0},
+{0,0,1}}
+Htb.Atoms={{"Cu",{0,0,0},{{"s",{"^{dn}","^{up}"}}}}}
+Htb.Hopping={{"Cu.s","Cu.s",{0,0, 1},{{1  ,0},{0,1  }}},
+  {"Cu.s","Cu.s",{0,0,-1},{{1  ,0},{0,1  }}},
+  {"Cu.s","Cu.s",{0,0, 2},{{0.1,0},{0,0.1}}},
+{"Cu.s","Cu.s",{0,0,-2},{{0.1,0},{0,0.1}}}}
+
+HlocU = NewOperator("Number",2,0,0)*NewOperator("Number",2,1,1)
+
+U=3.5
+Hamiltonian1 = CreateClusterHamiltonian(Htb,{"periodic",{{1,0,0},{0,1,0},{0,0,10}}},U*HlocU,{{"k",{0,0,Pi/2}}})
+
+print(Htb)
+print(Hamiltonian1)
+
+funstart10 = { NewWavefunction(20,0,{{"10011001100110011001",1}}),
+  NewWavefunction(20,0,{{"01100110011001100110",1}}),
+  NewWavefunction(20,0,{{"10010110011001100110",1}}),
+  NewWavefunction(20,0,{{"01101001011001100110",1}}),
+  NewWavefunction(20,0,{{"01100110100101100110",1}}),
+  NewWavefunction(20,0,{{"01100110011010010110",1}}),
+  NewWavefunction(20,0,{{"01100110011001101001",1}}),
+  NewWavefunction(20,0,{{"01101001100110011001",1}}),
+  NewWavefunction(20,0,{{"10010110100110011001",1}}),
+  NewWavefunction(20,0,{{"10011001011010011001",1}})}
+
+funstart1  = NewWavefunction(20,0,{{"10011001100110011001",sqrt(0.5)},{"01100110011001100110",sqrt(0.5)}})
+
+print(Htb)
+
+TimeStart("Hubbard psi Eigensystem 10 states complex")
+fun1 = Copy(funstart10)
+
+Eigensystem(Hamiltonian1,fun1)
+TimeEnd("Hubbard psi Eigensystem 10 states complex")
+TimeStart("Hubbard psi Eigensystem 1 states complex")
+fun1s = Copy(funstart1)
+Eigensystem(Hamiltonian1,fun1s)
+TimeEnd("Hubbard psi Eigensystem 1 states complex")
+valgrd = Complex.Re(Braket(fun1s,Hamiltonian1,fun1s))
+print("      Energy           Energy-E0        Variance")
+for i=1,10 do
+  Energy=Complex.Re(Braket(fun1[i],Hamiltonian1,fun1[i]))
+  Hfun=Hamiltonian1*fun1[i]
+  EnergySqr=Complex.Re(Braket(Hfun,Hfun))
+  io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+end
+print()
+Energy=Complex.Re(Braket(fun1s,Hamiltonian1,fun1s))
+Hfun=Hamiltonian1*fun1s
+EnergySqr=Complex.Re(Braket(Hfun,Hfun))
+io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+
+TimePrint()
+
+print("\n\n\n\n\n=======================\n    shifted\n========================\n\n\n\n")
+
+-- Hamiltonian2 is Hamiltonian1 shifted to the ground-state energy
+Hamiltonian2 = Hamiltonian1-fun1s*Hamiltonian1*fun1s
+
+TimeStart("Hubbard psi Eigensystem 10 states shifted complex")
+fun1 = Copy(funstart10)
+Eigensystem(Hamiltonian2,fun1)
+TimeEnd("Hubbard psi Eigensystem 10 states shifted complex")
+TimeStart("Hubbard psi Eigensystem 1 states shifted complex")
+fun1s = Copy(funstart1)
+Eigensystem(Hamiltonian2,fun1s)
+TimeEnd("Hubbard psi Eigensystem 1 states shifted complex")
+valgrd = Complex.Re(Braket(fun1s,Hamiltonian2,fun1s))
+print("      Energy           Energy-E0        Variance")
+for i=1,10 do
+  Energy=Complex.Re(Braket(fun1[i],Hamiltonian2,fun1[i]))
+  Hfun=Hamiltonian2*fun1[i]
+  EnergySqr=Complex.Re(Braket(Hfun,Hfun))
+  io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+end
+print()
+Energy=Complex.Re(Braket(fun1s,Hamiltonian2,fun1s))
+Hfun=Hamiltonian2*fun1s
+EnergySqr=Complex.Re(Braket(Hfun,Hfun))
+io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+
+TimePrint()
+
+print("\n\n\n\n\n=======================\n    scaled\n========================\n\n\n\n")
+
+-- Hamiltonian3 is Hamiltonian1 but transfered from units of eV to units of J (i.e. devide by energy of 1J in units of eV (6.2415091259E+18)
+Hamiltonian3 = Hamiltonian1 / EnergyUnits.J.value
+TimeStart("Hubbard psi Eigensystem 10 states scaled complex")
+fun1 = Copy(funstart10)
+Eigensystem(Hamiltonian3,fun1)
+TimeEnd("Hubbard psi Eigensystem 10 states scaled complex")
+TimeStart("Hubbard psi Eigensystem 1 states scaled complex")
+fun1s = Copy(funstart1)
+Eigensystem(Hamiltonian3,fun1s)
+TimeEnd("Hubbard psi Eigensystem 1 states scaled complex")
+valgrd = Complex.Re(Braket(fun1s,Hamiltonian3,fun1s))
+print("      Energy           Energy-E0        Variance")
+for i=1,10 do
+  Energy=Complex.Re(Braket(fun1[i],Hamiltonian3,fun1[i]))
+  Hfun=Hamiltonian3*fun1[i]
+  EnergySqr=Complex.Re(Braket(Hfun,Hfun))
+  io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+end
+print()
+Energy=Complex.Re(Braket(fun1s,Hamiltonian3,fun1s))
+Hfun=Hamiltonian3*fun1s
+EnergySqr=Complex.Re(Braket(Hfun,Hfun))
+io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+
+TimePrint()
 
 

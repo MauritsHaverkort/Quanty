@@ -32,6 +32,7 @@ void ComplexWaveFunctionRandomize(WaveFunctionType *const a);
 void ComplexWaveFunctionDotProduct(const WaveFunctionType *a,const WaveFunctionType *b,double *DotRe,double *DotIm);
 void ComplexWaveFunctionDotProductSameBasis(const WaveFunctionType a,const WaveFunctionType b,double *DotRe,double *DotIm);
 double ComplexWaveFunctionCalculateNorm(const WaveFunctionType a);
+double ComplexWaveFunctionCalculateNormSqr(const WaveFunctionType a);
 void ComplexWaveFunctionComplexMultiply(WaveFunctionType *a,const double bRe,const double bIm);
 void ComplexWaveFunctionConjugate(WaveFunctionType a);
 void ComplexWaveFunctionMultiply(WaveFunctionType a,const double b);

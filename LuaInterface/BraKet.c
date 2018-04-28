@@ -135,7 +135,7 @@ static int LuaBraKet(lua_State * L)
           WaveFunctionType *psiA;
           double res;
           psiA = (WaveFunctionType*) luaL_checkudata(L, 1, "Wavefunction_Type");
-          WaveFunctionCalculateNorm(*psiA, &res);
+          WaveFunctionCalculateNormSqr(*psiA, &res);
           lua_pushnumber(L, res);
           return 1;
         }
@@ -295,6 +295,7 @@ static int LuaBraKet(lua_State * L)
           temp->Im = res.Im;
           luaL_setmetatable(L, "Complex_Type");
         }
+        return 1;
       }
     }
   }

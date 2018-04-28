@@ -70,6 +70,7 @@ void WaveFunctionNormalize(WaveFunctionType *const a);
 double ComplexWaveFunctionCalculateNorm(const WaveFunctionType a);
 double RealWaveFunctionCalculateNorm(const WaveFunctionType a);
 void WaveFunctionCalculateNorm(const WaveFunctionType a,double *Norm);
+void WaveFunctionCalculateNormSqr(const WaveFunctionType a,double *Norm);
 void ComplexWaveFunctionConjugate(WaveFunctionType a);
 uint32_t WaveFunctionConjugate(WaveFunctionType a);
 void ComplexWaveFunctionComplexMultiply(WaveFunctionType *a,const double bRe,const double bIm);

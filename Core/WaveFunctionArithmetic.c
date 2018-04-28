@@ -761,6 +761,18 @@ void WaveFunctionCalculateNorm(const WaveFunctionType a, double *Norm)
   }
 }
 
+void WaveFunctionCalculateNormSqr(const WaveFunctionType a, double *Norm)
+{
+  if (a.QComplex == 0)
+  {
+    *Norm = RealWaveFunctionCalculateNormSqr(a);
+  }
+  else
+  {
+    *Norm = ComplexWaveFunctionCalculateNormSqr(a);
+  }
+}
+
 void WaveFunctionNormalize(WaveFunctionType * const a)
 {
   if (a->QComplex == 0)

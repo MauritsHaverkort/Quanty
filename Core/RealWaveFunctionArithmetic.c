@@ -684,6 +684,45 @@ double RealWaveFunctionCalculateNorm(const WaveFunctionType a)
 }
 
 /*
+ *   <-|a|
+ */
+double RealWaveFunctionCalculateNormSqr(const WaveFunctionType a)
+{
+  uint32_t iBlok, iElement;
+  volatile double c, t, y;
+  int    iOMP;
+  double NormA = 0, NormB = 0, Norm = 0;
+  iBlok = a.NBlok - 1;
+  c = 0;
+#pragma omp parallel for firstprivate(c) private(iElement,t,y) reduction(+ : NormA)
+  for (iOMP = 0; iOMP <= (int)(a.N - iBlok * BlokSize); ++iOMP)
+  {
+    iElement = (uint32_t) iOMP;
+    y = a.ValueRe[iBlok][iElement] * a.ValueRe[iBlok][iElement] - c;
+    t = NormA + y;
+    c = t - NormA;
+    c -= y;
+    NormA = t;
+  }
+  c = 0;
+#pragma omp parallel for firstprivate(c) private(iElement,iBlok,t,y) reduction(+ : NormB)
+  for (iOMP = 0; iOMP < (int)(a.NBlok - 1); iOMP++)
+  {
+    iBlok = (uint32_t) iOMP;
+    for (iElement = 0; iElement < BlokSize; ++iElement)
+    {
+      y = a.ValueRe[iBlok][iElement] * a.ValueRe[iBlok][iElement] - c;
+      t = NormB + y;
+      c = t - NormB;
+      c -= y;
+      NormB = t;
+    }
+  }
+  Norm = NormA + NormB;
+  return Norm;
+}
+
+/*
 *   calculate <a|b>
 */
 double RealWaveFunctionDotProductSameBasis(const WaveFunctionType a, const WaveFunctionType b)
