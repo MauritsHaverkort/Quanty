@@ -99,6 +99,22 @@ Complex16* luaL_checkarray_complex16(lua_State *L, int narg, uint32_t *len_out)
   return buff;
 }
 
+char** luaL_checkarray_string(lua_State *L, int narg, uint32_t *len_out)
+{
+  int i;
+  luaL_checktype(L, narg, LUA_TTABLE);
+  uint32_t len = (uint32_t)lua_objlen(L, narg);
+  *len_out = len;
+  char**buff = (char**)malloc(len*sizeof(char*));
+  for(i=0;i<len;i++)
+  {
+    lua_rawgeti(L, narg, i+1);
+    buff[i] = (char*)luaL_checkstring(L,-1);
+    lua_pop(L, 1);
+  }
+  return buff;
+}
+
 CompactVectorType luaL_checkVector(lua_State *L, int narg)
 {
   uint32_t i;
