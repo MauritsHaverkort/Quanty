@@ -1,6 +1,9 @@
 Verbosity(0xFFFF)
 
 
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Reference/Functions/ExpandToBasis.Quanty")
+os.exit()
+
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Reference/Functions/Eigensystem.Quanty")
 os.exit()
 

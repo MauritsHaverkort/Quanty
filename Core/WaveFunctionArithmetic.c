@@ -1843,3 +1843,51 @@ uint32_t WaveFunctionExpand(const WaveFunctionType * const psi, const uint16_t *
   }
   return retval;
 }
+
+
+/*  input:
+ *     psi:     a wavefunction
+ *  output:
+ *     psilist: a list of psi.N functions, each with a single determinant and prefactor 1
+ *  psilist must be allocated when function is called
+ */
+uint32_t WaveFunctionExpandToDeterminantBasis(const WaveFunctionType * const psi, WaveFunctionType * psilist)
+{
+  uint32_t i,j,k;
+  char detname[psi->NFermion+3*psi->NBoson+1];
+  detname[psi->NFermion+3*psi->NBoson]='\0';
+  for(i=0;i<psi->N;i++)
+  {
+    psilist[i].NFermion=psi->NFermion;
+    psilist[i].NBoson=psi->NBoson;
+    psilist[i].QComplex=0;
+    psilist[i].NBitsKey=2;
+    if(WaveFunctionInit(&(psilist[i])))
+    {
+      while (i!=0)
+      {
+        i--;
+        WaveFunctionFree(&(psilist[i]));
+      }
+      printf("WaveFunctionInit failed in WaveFunctionExpand\n");
+      return 1;
+    }
+    for(j=0;j<psi->NFermion;j++)
+    {
+      detname[j]= (psi->Determinant[BlokElementDet(i+1, psi->NWord, (j >> 3))] & (128 >> (j & 7)))?'1':'0';
+    }
+    k=0;
+    for(j=psi->NWord-psi->NBoson;j<psi->NWord;j++)
+    {
+      sprintf(&(detname[psi->NFermion+k]), " %2.2X", psi->Determinant[BlokElementDet(i+1, psi->NWord, j)]);
+      k+=3;
+    }
+    snprintf(psilist[i].Name, MAXStrLength, "%s %s",psi->Name,detname);
+    psilist[i].Name[MAXStrLength-1]='\0';
+  }
+  for(i=0;i<psi->N;i++)
+  {
+    RealWaveFunctionAddElement(&(psilist[i]), &(psi->Determinant[BlokElementDet(i+1, psi->NWord, 0)]), 1);
+  }
+  return 0;
+}

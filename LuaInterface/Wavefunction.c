@@ -636,6 +636,29 @@ static int LuaWavefunctionExpand(lua_State * L)
   return 1;
 }
 
+/* On stack:
+ *
+ */
+static int LuaWaveFunctionToDeterminantBasis(lua_State *L)
+{
+  WaveFunctionType *psi,*psilist;
+  if(lua_gettop(L)!=1) luaL_error(L, "Error in ExpandToBasis(psi) one argument expected, recieved (%d)\n",lua_gettop(L));
+  psi = (WaveFunctionType *) luaL_checkudata(L, 1, "Wavefunction_Type");
+  psilist = malloc((psi->N)*sizeof(WaveFunctionType));
+  if(psilist==NULL)
+  {
+    luaL_error(L, "Error in ExpandToBasis(psi). Out off memory when expanding a function with %d determinants into seperate functions\n",psi->N);
+  }
+  if(WaveFunctionExpandToDeterminantBasis(psi, psilist))
+  {
+    luaL_error(L, "Error in ExpandToBasis(psi). Out off memory when expanding a function with %d determinants into seperate functions\n",psi->N);
+  }
+  LuaPushTable_WaveFunctionType(L, psilist, psi->N);
+  free(psilist);
+  if(L->l_G->gcrunning)lua_gc (L, LUA_GCSTEP, 0);
+  return 1;
+}
+
 
 static int LuaWavefunctionIndex(lua_State * L)
 {

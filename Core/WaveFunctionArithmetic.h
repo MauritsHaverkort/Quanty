@@ -1,4 +1,5 @@
 
+uint32_t WaveFunctionExpandToDeterminantBasis(const WaveFunctionType * const psi, WaveFunctionType * psilist);
 uint32_t WaveFunctionExpand(const WaveFunctionType *const psi,const uint16_t *const index,uint32_t const Ndet,WaveFunctionType *psilist);
 uint32_t WaveFunctionArraySeperateBasis(WaveFunctionType *const psi,uint32_t const Npsi);
 uint32_t WaveFunctionArrayToSameBasis(WaveFunctionType *const psi,uint32_t const Npsi);
