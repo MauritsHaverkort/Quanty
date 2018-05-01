@@ -52,7 +52,7 @@ uint32_t LanczosGroundStateConserveBasisRR(const OperatorType H, WaveFunctionTyp
   {
     shift = -2 * energy - 1;
   }
-  
+
   // loop until the relative energy gain is smaller than zero.
   printf("Energy: %22.15E variance %22.15E Number of determinants %d\n", energy1,energysqr-Sqr(energy1),psi->N);
   while ((((energy - energy1) > (zero * (1.0 + fabs(energy)))) || minloop)&&((energysqr-Sqr(energy1))>zero*(fabs(energy1)+DBL_EPSILON)))
@@ -111,11 +111,11 @@ uint32_t LanczosGroundStateConserveBasisRR(const OperatorType H, WaveFunctionTyp
     fflush(stdout);
     goto Repeat;
   EnoughMem:
-    
+
     // Orthogonalize to previously found functions
     RealWaveFunctionOrthogonalizeConserveBasis(psi, OtherPsi, NOtherPsi);
     RealWaveFunctionNormalize(psi);
-    
+
     // For a given basis set determine the lowest state
     //  In the previous part the memory for 3 functions v[0], v[1] and v[2] is allocated on this basis set.
     energy1 = 2 * zero;
@@ -199,7 +199,7 @@ uint32_t LanczosGroundStateConserveBasisRR(const OperatorType H, WaveFunctionTyp
       shift -= DBL_EPSILON;
       shift -= shiftin;
       // Orthogonalize to previously found functions
-      
+
       RealWaveFunctionOrthogonalizeConserveBasis(psi, OtherPsi, NOtherPsi);
       RealWaveFunctionNormalize(psi);
       PsiOperatorPsiRHR(H, *psi, &energy1);
@@ -322,17 +322,17 @@ uint32_t LanczosGroundStateRR(const OperatorType H, WaveFunctionType * const psi
     fflush(stdout);
     goto Repeat;
   EnoughMem:
-    
+
     // Orthogonalize to previously found functions
     RealWaveFunctionOrthogonalizeConserveBasis(psi, OtherPsi, NOtherPsi);
     RealWaveFunctionNormalize(psi);
-    
+
     // For a given basis set determine the lowest state
     //  In the previous part the memory for 3 functions v[0], v[1] and v[2] is allocated on this basis set.
     energy1 = 2 * zero;
     energy2 = 4 * zero;
     // loop until the relative energy gain is smaller than zero, loop a minimum of 3 times
-    
+
     while ((energy2 - energy1) > (zero * (1.0 + fabs(energy1))))
     {
       // Calculate the Krylov basis of size NKrylov, starting from the sofar best approximation to the ground-state
@@ -405,7 +405,7 @@ uint32_t LanczosGroundStateRR(const OperatorType H, WaveFunctionType * const psi
       shift -= val[M.N - 1];
       shift -= shiftin;
       // Orthogonalize to previously found functions
-      
+
       RealWaveFunctionOrthogonalizeConserveBasis(psi, OtherPsi, NOtherPsi);
       RealWaveFunctionNormalize(psi);
       PsiOperatorPsiRHR(H, *psi, &energy1);
@@ -463,10 +463,10 @@ uint32_t LanczosGroundStateRC(const OperatorType H, WaveFunctionType * const psi
   {
     shift = -2 * energy - 1;
   }
-  
+
   // loop until the relative energy gain is smaller than zero.
   printf("Energy: %22.15E variance %22.15E Number of determinants %d\n", energy1,energysqr-Sqr(energy1),psi->N);
-  
+
   while ((((energy - energy1) > (zero * (1.0 + fabs(energy)))) || minloop)&&((energysqr-Sqr(energy1))>zero*(fabs(energy1)+DBL_EPSILON)))
   {
     if (minloop) minloop--;
@@ -524,17 +524,17 @@ uint32_t LanczosGroundStateRC(const OperatorType H, WaveFunctionType * const psi
     fflush(stdout);
     goto Repeat;
   EnoughMem:
-    
+
     // Orthogonalize to previously found functions
     ComplexWaveFunctionOrthogonalizeConserveBasis(psi, OtherPsi, NOtherPsi);
     ComplexWaveFunctionNormalize(psi);
-    
+
     // For a given basis set determine the lowest state
     //  In the previous part the memory for 3 functions v[0], v[1] and v[2] is allocated on this basis set.
     energy1 = 2 * zero;
     energy2 = 4 * zero;
     // loop until the relative energy gain is smaller than zero, loop a minimum of 3 times
-    
+
     while ((energy2 - energy1) > (zero * (1.0 + fabs(energy1))))
     {
       NKrylov = NKrylovStart + cycles % (NKrylovMax - NKrylovStart);
@@ -605,7 +605,7 @@ uint32_t LanczosGroundStateRC(const OperatorType H, WaveFunctionType * const psi
       shift -= val[M.N - 1];
       shift -= shiftin;
       // Orthogonalize to previously found functions
-      
+
       ComplexWaveFunctionOrthogonalizeConserveBasis(psi, OtherPsi, NOtherPsi);
       ComplexWaveFunctionNormalize(psi);
       PsiOperatorPsiRHC(H, *psi, &energy1);
@@ -663,10 +663,10 @@ uint32_t LanczosGroundStateMC(const OperatorType H, WaveFunctionType * const psi
   {
     shift = -2 * energy - 1;
   }
-  
+
   // loop until the relative energy gain is smaller than zero.
   printf("Energy: %22.15E variance %22.15E Number of determinants %d\n", energy1,energysqr-Sqr(energy1),psi->N);
-  
+
   while ((((energy - energy1) > (zero * (1.0 + fabs(energy)))) || minloop)&&((energysqr-Sqr(energy1))>zero*(fabs(energy1)+DBL_EPSILON)))
   {
     if (minloop) minloop--;
@@ -723,11 +723,11 @@ uint32_t LanczosGroundStateMC(const OperatorType H, WaveFunctionType * const psi
     fflush(stdout);
     goto Repeat;
   EnoughMem:
-    
+
     // Orthogonalize to previously found functions
     ComplexWaveFunctionOrthogonalizeConserveBasis(psi, OtherPsi, NOtherPsi);
     ComplexWaveFunctionNormalize(psi);
-    
+
     // For a given basis set determine the lowest state
     //  In the previous part the memory for 3 functions v[0], v[1] and v[2] is allocated on this basis set.
 
@@ -804,7 +804,7 @@ uint32_t LanczosGroundStateMC(const OperatorType H, WaveFunctionType * const psi
       shift -= val[M.N - 1];
       shift -= shiftin;
       // Orthogonalize to previously found functions
-      
+
       ComplexWaveFunctionOrthogonalizeConserveBasis(psi, OtherPsi, NOtherPsi);
       ComplexWaveFunctionNormalize(psi);
       PsiOperatorPsiMHC(H, *psi, &energy1);
@@ -862,23 +862,23 @@ uint32_t LanczosGroundStateCC(const OperatorType H, WaveFunctionType * const psi
   {
     shift = -2 * energy - 1;
   }
-  
+
   // loop until the relative energy gain is smaller than zero.
   printf("Energy: %22.15E variance %22.15E Number of determinants %d\n", energy1,energysqr-Sqr(energy1),psi->N);
   while ((((energy - energy1) > (zero * (1.0 + fabs(energy)))) || minloop)&&((energysqr-Sqr(energy1))>zero*(fabs(energy1)+DBL_EPSILON)))
   {
-    
-    
-    
-    
+
+
+
+
     double energy1tempa, energysqrtempa;
     PsiOperatorPsiCHC(H, *psi, &energy1tempa);
     PsiOperatorSqrPsiCHC(H, *psi, &energysqrtempa);
     printf("Extra: E %22.15E var %22.15E before loop\n",energy1tempa,energysqrtempa-Sqr(energy1tempa));
-    
-    
-    
-    
+
+
+
+
     if (minloop) minloop--;
     cycles = 0;
     energy = energy1;
@@ -933,24 +933,24 @@ uint32_t LanczosGroundStateCC(const OperatorType H, WaveFunctionType * const psi
     fflush(stdout);
     goto Repeat;
   EnoughMem:
-    
+
     // Orthogonalize to previously found functions
     ComplexWaveFunctionOrthogonalizeConserveBasis(psi, OtherPsi, NOtherPsi);
     ComplexWaveFunctionNormalize(psi);
-    
-    
+
+
     double energy1temp, energysqrtemp;
     PsiOperatorPsiCHC(H, *psi, &energy1temp);
     PsiOperatorSqrPsiCHC(H, *psi, &energysqrtemp);
     printf("Extra: E %22.15E var %22.15E\n",energy1temp,energysqrtemp-Sqr(energy1temp));
-    
-    
+
+
     // For a given basis set determine the lowest state
     //  In the previous part the memory for 3 functions v[0], v[1] and v[2] is allocated on this basis set.
     energy1 = 2 * zero;
     energy2 = 4 * zero;
     // loop until the relative energy gain is smaller than zero, loop a minimum of 3 times
-    
+
     while ((energy2 - energy1) > (zero * (1.0 + fabs(energy1))))
     {
       // Calculate the Krylov basis of size NKrylov, starting from the sofar best approximation to the ground-state
@@ -1023,7 +1023,7 @@ uint32_t LanczosGroundStateCC(const OperatorType H, WaveFunctionType * const psi
       shift -= val[M.N - 1];
       shift -= shiftin;
       // Orthogonalize to previously found functions
-      
+
       ComplexWaveFunctionOrthogonalizeConserveBasis(psi, OtherPsi, NOtherPsi);
       ComplexWaveFunctionNormalize(psi);
       PsiOperatorPsiCHC(H, *psi, &energy1);
@@ -1114,7 +1114,7 @@ uint32_t LanczosGroundStateRestrictedRR(const OperatorType H, WaveFunctionType *
   {
     shift = -2 * energy - 1;
   }
-  
+
   // loop until the relative energy gain is smaller than zero.
   printf("Energy: %22.15E variance %22.15E Number of determinants %d\n", energy1,energysqr-Sqr(energy1),psi->N);
   while ((((energy - energy1) > (zero * (1.0 + fabs(energy)))) || minloop)&&((energysqr-Sqr(energy1))>zero*(fabs(energy1)+DBL_EPSILON)))
@@ -1173,17 +1173,17 @@ uint32_t LanczosGroundStateRestrictedRR(const OperatorType H, WaveFunctionType *
     fflush(stdout);
     goto Repeat;
   EnoughMem:
-    
+
     // Orthogonalize to previously found functions
     RealWaveFunctionOrthogonalizeConserveBasis(psi, OtherPsi, NOtherPsi);
     RealWaveFunctionNormalize(psi);
-    
+
     // For a given basis set determine the lowest state
     //  In the previous part the memory for 3 functions v[0], v[1] and v[2] is allocated on this basis set.
     energy1 = 2 * zero;
     energy2 = 4 * zero;
     // loop until the relative energy gain is smaller than zero, loop a minimum of 3 times
-    
+
     while ((energy2 - energy1) > (zero * (1.0 + fabs(energy1))))
     {
       // Calculate the Krylov basis of size NKrylov, starting from the sofar best approximation to the ground-state
@@ -1256,7 +1256,7 @@ uint32_t LanczosGroundStateRestrictedRR(const OperatorType H, WaveFunctionType *
       shift -= val[M.N - 1];
       shift -= shiftin;
       // Orthogonalize to previously found functions
-      
+
       RealWaveFunctionOrthogonalizeConserveBasis(psi, OtherPsi, NOtherPsi);
       RealWaveFunctionNormalize(psi);
       PsiOperatorPsiRHR(H, *psi, &energy1);
@@ -1314,10 +1314,10 @@ uint32_t LanczosGroundStateRestrictedRC(const OperatorType H, WaveFunctionType *
   {
     shift = -2 * energy - 1;
   }
-  
+
   // loop until the relative energy gain is smaller than zero.
   printf("Energy: %22.15E variance %22.15E Number of determinants %d\n", energy1,energysqr-Sqr(energy1),psi->N);
-  
+
   while ((((energy - energy1) > (zero * (1.0 + fabs(energy)))) || minloop)&&((energysqr-Sqr(energy1))>zero*(fabs(energy1)+DBL_EPSILON)))
   {
     if (minloop) minloop--;
@@ -1375,17 +1375,17 @@ uint32_t LanczosGroundStateRestrictedRC(const OperatorType H, WaveFunctionType *
     fflush(stdout);
     goto Repeat;
   EnoughMem:
-    
+
     // Orthogonalize to previously found functions
     ComplexWaveFunctionOrthogonalizeConserveBasis(psi, OtherPsi, NOtherPsi);
     ComplexWaveFunctionNormalize(psi);
-    
+
     // For a given basis set determine the lowest state
     //  In the previous part the memory for 3 functions v[0], v[1] and v[2] is allocated on this basis set.
     energy1 = 2 * zero;
     energy2 = 4 * zero;
     // loop until the relative energy gain is smaller than zero, loop a minimum of 3 times
-    
+
     while ((energy2 - energy1) > (zero * (1.0 + fabs(energy1))))
     {
       NKrylov = NKrylovStart + cycles % (NKrylovMax - NKrylovStart);
@@ -1456,7 +1456,7 @@ uint32_t LanczosGroundStateRestrictedRC(const OperatorType H, WaveFunctionType *
       shift -= val[M.N - 1];
       shift -= shiftin;
       // Orthogonalize to previously found functions
-      
+
       ComplexWaveFunctionOrthogonalizeConserveBasis(psi, OtherPsi, NOtherPsi);
       ComplexWaveFunctionNormalize(psi);
       PsiOperatorPsiRHC(H, *psi, &energy1);
@@ -1514,10 +1514,10 @@ uint32_t LanczosGroundStateRestrictedMC(const OperatorType H, WaveFunctionType *
   {
     shift = -2 * energy - 1;
   }
-  
+
   // loop until the relative energy gain is smaller than zero.
   printf("Energy: %22.15E variance %22.15E Number of determinants %d\n", energy1,energysqr-Sqr(energy1),psi->N);
-  
+
   while ((((energy - energy1) > (zero * (1.0 + fabs(energy)))) || minloop)&&((energysqr-Sqr(energy1))>zero*(fabs(energy1)+DBL_EPSILON)))
   {
     if (minloop) minloop--;
@@ -1574,14 +1574,14 @@ uint32_t LanczosGroundStateRestrictedMC(const OperatorType H, WaveFunctionType *
     fflush(stdout);
     goto Repeat;
   EnoughMem:
-    
+
     // Orthogonalize to previously found functions
     ComplexWaveFunctionOrthogonalizeConserveBasis(psi, OtherPsi, NOtherPsi);
     ComplexWaveFunctionNormalize(psi);
-    
+
     // For a given basis set determine the lowest state
     //  In the previous part the memory for 3 functions v[0], v[1] and v[2] is allocated on this basis set.
-    
+
     energy1 = 2 * zero;
     energy2 = 4 * zero;
     while ((energy2 - energy1) > (zero * (1.0 + fabs(energy1))))
@@ -1655,7 +1655,7 @@ uint32_t LanczosGroundStateRestrictedMC(const OperatorType H, WaveFunctionType *
       shift -= val[M.N - 1];
       shift -= shiftin;
       // Orthogonalize to previously found functions
-      
+
       ComplexWaveFunctionOrthogonalizeConserveBasis(psi, OtherPsi, NOtherPsi);
       ComplexWaveFunctionNormalize(psi);
       PsiOperatorPsiMHC(H, *psi, &energy1);
@@ -1713,7 +1713,7 @@ uint32_t LanczosGroundStateRestrictedCC(const OperatorType H, WaveFunctionType *
   {
     shift = -2 * energy - 1;
   }
-  
+
   // loop until the relative energy gain is smaller than zero.
   printf("Energy: %22.15E variance %22.15E Number of determinants %d\n", energy1,energysqr-Sqr(energy1),psi->N);
   while ((((energy - energy1) > (zero * (1.0 + fabs(energy)))) || minloop)&&((energysqr-Sqr(energy1))>zero*(fabs(energy1)+DBL_EPSILON)))
@@ -1771,17 +1771,17 @@ uint32_t LanczosGroundStateRestrictedCC(const OperatorType H, WaveFunctionType *
     fflush(stdout);
     goto Repeat;
   EnoughMem:
-    
+
     // Orthogonalize to previously found functions
     RealWaveFunctionOrthogonalizeConserveBasis(psi, OtherPsi, NOtherPsi);
     RealWaveFunctionNormalize(psi);
-    
+
     // For a given basis set determine the lowest state
     //  In the previous part the memory for 3 functions v[0], v[1] and v[2] is allocated on this basis set.
     energy1 = 2 * zero;
     energy2 = 4 * zero;
     // loop until the relative energy gain is smaller than zero, loop a minimum of 3 times
-    
+
     while ((energy2 - energy1) > (zero * (1.0 + fabs(energy1))))
     {
       // Calculate the Krylov basis of size NKrylov, starting from the sofar best approximation to the ground-state
@@ -1854,7 +1854,7 @@ uint32_t LanczosGroundStateRestrictedCC(const OperatorType H, WaveFunctionType *
       shift -= val[M.N - 1];
       shift -= shiftin;
       // Orthogonalize to previously found functions
-      
+
       ComplexWaveFunctionOrthogonalizeConserveBasis(psi, OtherPsi, NOtherPsi);
       ComplexWaveFunctionNormalize(psi);
       PsiOperatorPsiCHC(H, *psi, &energy1);
@@ -2832,7 +2832,7 @@ uint32_t LanczosTriDiagonalizeRestrictedMR(const OperatorType H, WaveFunctionTyp
  */
 uint32_t LanczosTriDiagonalizePlusDensityRR(const OperatorType H, WaveFunctionType psi, double epsilon, TriDiagonalMatrixType * const M, MatrixType * const Rho, double Gamma)
 {
-  printf("Start of LanczosTriDiagonalizePlusDensityRR\n");
+  VerbosityPrintf(0x0001,"Start of LanczosTriDiagonalizePlusDensityRR\n");
   fflush(stdout);
   WaveFunctionType v[3];
   uint32_t i, vi=0, vip=0, vim=0;
@@ -2995,7 +2995,7 @@ uint32_t LanczosTriDiagonalizePlusDensityMR(const OperatorType H, WaveFunctionTy
 
 uint32_t LanczosTriDiagonalizePlusDensityRC(const OperatorType H, WaveFunctionType psi, double epsilon, TriDiagonalMatrixType * const M, MatrixType * const Rho, double Gamma)
 {
-  printf("Start of LanczosTriDiagonalizePlusDensityRC\n");
+  VerbosityPrintf(0x0001,"Start of LanczosTriDiagonalizePlusDensityRC\n");
   fflush(stdout);
   WaveFunctionType v[3];
   uint32_t i, vi=0, vip=0, vim=0;
@@ -3091,7 +3091,7 @@ uint32_t LanczosTriDiagonalizePlusDensityRC(const OperatorType H, WaveFunctionTy
 
 uint32_t LanczosTriDiagonalizePlusDensityCC(const OperatorType H, WaveFunctionType psi, double epsilon, TriDiagonalMatrixType * const M, MatrixType * const Rho, double Gamma)
 {
-  printf("Start of LanczosTriDiagonalizePlusDensityCC\n");
+  VerbosityPrintf(0x0001,"Start of LanczosTriDiagonalizePlusDensityCC\n");
   fflush(stdout);
   WaveFunctionType v[3];
   uint32_t i, vi=0, vip=0, vim=0;
@@ -3187,7 +3187,7 @@ uint32_t LanczosTriDiagonalizePlusDensityCC(const OperatorType H, WaveFunctionTy
 
 uint32_t LanczosTriDiagonalizePlusDensityMC(const OperatorType H, WaveFunctionType psi, double epsilon, TriDiagonalMatrixType * const M, MatrixType * const Rho, double Gamma)
 {
-  printf("Start of LanczosTriDiagonalizePlusDensityMC\n");
+  VerbosityPrintf(0x0001,"Start of LanczosTriDiagonalizePlusDensityMC\n");
   fflush(stdout);
   WaveFunctionType v[3];
   uint32_t i, vi=0, vip=0, vim=0;
@@ -3284,7 +3284,7 @@ uint32_t LanczosTriDiagonalizePlusDensityMC(const OperatorType H, WaveFunctionTy
 
 uint32_t LanczosTriDiagonalizeKrylovRRNonOrtho(const OperatorType H, WaveFunctionType psi, double epsilon, TriDiagonalMatrixType * const M, WaveFunctionType * PsiBasis, double Gamma)
 {
-  printf("Start of LanczosTriDiagonalizeKrylovNonOrthoRR\n");
+  VerbosityPrintf(0x0001,"Start of LanczosTriDiagonalizeKrylovNonOrthoRR\n");
   fflush(stdout);
   uint32_t i;
   double temp, errorestimate = 1.0;
@@ -3397,7 +3397,7 @@ uint32_t LanczosTriDiagonalizeKrylovRRNonOrtho(const OperatorType H, WaveFunctio
 
 uint32_t LanczosTriDiagonalizeKrylovRR(const OperatorType H, WaveFunctionType psi, double epsilon, TriDiagonalMatrixType * const M, WaveFunctionType * const PsiBasis)
 {
-  printf("Start of LanczosTriDiagonalizeKrylovRR\n");
+  VerbosityPrintf(0x0001,"Start of LanczosTriDiagonalizeKrylovRR\n");
   fflush(stdout);
   uint32_t i, j, k, stop;
   double temp, dot;
@@ -3550,7 +3550,7 @@ uint32_t LanczosTriDiagonalizeKrylovRR(const OperatorType H, WaveFunctionType ps
 
 uint32_t LanczosTriDiagonalizeKrylovRC(const OperatorType H, WaveFunctionType psi, double epsilon, TriDiagonalMatrixType * const M, WaveFunctionType * const PsiBasis)
 {
-  printf("Start of LanczosTriDiagonalizeKrylovRC\n");
+  VerbosityPrintf(0x0001,"Start of LanczosTriDiagonalizeKrylovRC\n");
   fflush(stdout);
   uint32_t i, j, k, stop;
   double temp, dotRe,dotIm;
@@ -3706,7 +3706,7 @@ uint32_t LanczosTriDiagonalizeKrylovRC(const OperatorType H, WaveFunctionType ps
 
 uint32_t LanczosTriDiagonalizeKrylovCC(const OperatorType H, WaveFunctionType psi, double epsilon, TriDiagonalMatrixType * const M, WaveFunctionType * const PsiBasis)
 {
-  printf("Start of LanczosTriDiagonalizeKrylovCC\n");
+  VerbosityPrintf(0x0001,"Start of LanczosTriDiagonalizeKrylovCC\n");
   fflush(stdout);
   uint32_t i, j, k, stop;
   double temp, dotRe,dotIm;
@@ -3862,7 +3862,7 @@ uint32_t LanczosTriDiagonalizeKrylovCC(const OperatorType H, WaveFunctionType ps
 
 uint32_t LanczosTriDiagonalizeKrylovMC(const OperatorType H, WaveFunctionType psi, double epsilon, TriDiagonalMatrixType * const M, WaveFunctionType * const PsiBasis)
 {
-  printf("Start of LanczosTriDiagonalizeKrylovMC\n");
+  VerbosityPrintf(0x0001,"Start of LanczosTriDiagonalizeKrylovMC\n");
   fflush(stdout);
   uint32_t i, j, k, stop;
   double temp, dotRe,dotIm;
@@ -4019,7 +4019,7 @@ uint32_t LanczosTriDiagonalizeKrylovMC(const OperatorType H, WaveFunctionType ps
 
 uint32_t LanczosTriDiagonalizeKrylovRestrictedRR(const OperatorType H, WaveFunctionType psi, DeterminantRestrictionType Restrictions, double epsilon, TriDiagonalMatrixType * const M, WaveFunctionType * const PsiBasis)
 {
-  printf("Start of LanczosTriDiagonalizeKrylovRestrictedRR\n");
+  VerbosityPrintf(0x0001,"Start of LanczosTriDiagonalizeKrylovRestrictedRR\n");
   fflush(stdout);
   uint32_t i, j, k, stop;
   double temp, dot;
@@ -4173,7 +4173,7 @@ uint32_t LanczosTriDiagonalizeKrylovRestrictedRR(const OperatorType H, WaveFunct
 
 uint32_t LanczosTriDiagonalizeKrylovRestrictedRC(const OperatorType H, WaveFunctionType psi, DeterminantRestrictionType Restrictions, double epsilon, TriDiagonalMatrixType * const M, WaveFunctionType * const PsiBasis)
 {
-  printf("Start of LanczosTriDiagonalizeKrylovRestrictedRC\n");
+  VerbosityPrintf(0x0001,"Start of LanczosTriDiagonalizeKrylovRestrictedRC\n");
   fflush(stdout);
   uint32_t i, j, k, stop;
   double temp, dotRe,dotIm;
@@ -4329,7 +4329,7 @@ uint32_t LanczosTriDiagonalizeKrylovRestrictedRC(const OperatorType H, WaveFunct
 
 uint32_t LanczosTriDiagonalizeKrylovRestrictedCC(const OperatorType H, WaveFunctionType psi, DeterminantRestrictionType Restrictions, double epsilon, TriDiagonalMatrixType * const M, WaveFunctionType * const PsiBasis)
 {
-  printf("Start of LanczosTriDiagonalizeKrylovRestrictedCC\n");
+  VerbosityPrintf(0x0001,"Start of LanczosTriDiagonalizeKrylovRestrictedCC\n");
   fflush(stdout);
   uint32_t i, j, k, stop;
   double temp, dotRe,dotIm;
@@ -4485,7 +4485,7 @@ uint32_t LanczosTriDiagonalizeKrylovRestrictedCC(const OperatorType H, WaveFunct
 
 uint32_t LanczosTriDiagonalizeKrylovRestrictedMC(const OperatorType H, WaveFunctionType psi, DeterminantRestrictionType Restrictions, double epsilon, TriDiagonalMatrixType * const M, WaveFunctionType * const PsiBasis)
 {
-  printf("Start of LanczosTriDiagonalizeKrylovRestrictedMC\n");
+  VerbosityPrintf(0x0001,"Start of LanczosTriDiagonalizeKrylovRestrictedMC\n");
   fflush(stdout);
   uint32_t i, j, k, stop;
   double temp, dotRe,dotIm;
@@ -5369,7 +5369,7 @@ uint32_t LanczosTriDiagonalizePlusDensity(const OperatorType H, WaveFunctionType
 }
 
 
-/*   A subroutine to create the krylov space for a given Matrix H and starting function psi. 
+/*   A subroutine to create the krylov space for a given Matrix H and starting function psi.
  *   Used is a Lanczos routine with reorthogonalization
  *
  *   On input are given:
@@ -5402,7 +5402,7 @@ uint32_t LanczosTriDiagonalizePlusDensity(const OperatorType H, WaveFunctionType
  *     ( 0          | A[2][1]=b2 | A[2][2]=a3 | A[2][3]=b3 )
  *     ( 0          | 0          | A[3][2]=b3 | A[3][3]=a4 )
  *
- * 
+ *
  */
 uint32_t LanczosTriDiagonalizeKrylov(const OperatorType H, WaveFunctionType psi, double epsilon, TriDiagonalMatrixType * const M, WaveFunctionType * const PsiBasis)
 {
@@ -5499,7 +5499,7 @@ uint32_t LanczosTriDiagonalizeKrylovRestricted(const OperatorType H, WaveFunctio
 
 
 /*
- *   
+ *
  */
 uint32_t LanczosTriDiagonalizeKrylovPerturbation(const OperatorPerturbationType H, WaveFunctionPerturbationType psi, double epsilon, TriDiagonalMatrixType * const M, WaveFunctionPerturbationType * const PsiBasis)
 {

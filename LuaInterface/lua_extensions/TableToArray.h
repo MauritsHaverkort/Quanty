@@ -47,6 +47,7 @@ TriDiagonalMatrixType *luaL_checkTriDiagonalMatrixType(lua_State *L,int narg);
 MatrixType *luaL_checkMatrix(lua_State *L,int narg);
 CompactMatrixType *luaL_checkCompactMatrix(lua_State *L,int narg);
 CompactVectorType luaL_checkVector(lua_State *L,int narg);
+char** luaL_checkarray_string(lua_State *L, int narg, uint32_t *len_out);
 Complex16 *luaL_checkarray_complex16(lua_State *L,int narg,uint32_t *len_out);
 double *luaL_checkarray_double(lua_State *L,int narg,uint32_t *len_out);
 uint32_t *luaL_checkarray_unit32_t(lua_State *L,int narg,uint32_t *len_out);
