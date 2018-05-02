@@ -59,10 +59,10 @@ uint32_t EvaluateBlockListOfPoles(BlockListOfPoles const *A, CompactMatrixType *
     }
     // loop over all poles
     itot=0;
-    for(iblock=0;iblock<A->N;i++)
+    for(iblock=0;iblock<A->N;iblock++)
     {
-      Lorentzian.Re = (omega-A->VRe[itot]) / (Sqr(Gamma) + Sqr(omega-A->VRe[itot]));
-      Lorentzian.Im = (-Gamma            ) / (Sqr(Gamma) + Sqr(omega-A->VRe[itot]));
+      Lorentzian.Re = (omega-A->V[itot].Re) / (Sqr(Gamma) + Sqr(omega-A->V[itot].Re));
+      Lorentzian.Im = (-Gamma             ) / (Sqr(Gamma) + Sqr(omega-A->V[itot].Re));
       itot++;
       for(i=0;i<A->BlockSize*A->BlockSize;i++)
       {
@@ -335,6 +335,8 @@ uint32_t BlockListOfPolesToSpectra(BlockListOfPoles const A, SpectraType *G, dou
   G[0].EmaxPole=Emax;
   G[0].dE=(Emax-Emin)/((double)N);
   G[0].Gamma=0;
+  G[0].ResonantEnergy=NAN;
+  strcpy(G[0].Name, A.Name);
   for(i=0;i<A.BlockSize*A.BlockSize;i++)
   {
     SpectrumAllocate(G[0], &(G[i]));
@@ -489,6 +491,84 @@ uint32_t BlockListOfPolesToSpectra(BlockListOfPoles const A, SpectraType *G, dou
   }
   return 0;
 }
+uint32_t BlockListOfPolesToSpectraWithBroadening(BlockListOfPoles const A, SpectraType *G, double Emin, double Emax, uint32_t N, double Gamma)
+{
+  int iE;
+  uint32_t i,iblock,itot;
+  Complex16 Lorentzian;
+  double omega;
+  G[0].N=N;
+  G[0].Emin=Emin;
+  G[0].Emax=Emax;
+  G[0].EminPole=Emin;
+  G[0].EmaxPole=Emax;
+  G[0].dE=(Emax-Emin)/((double)N);
+  G[0].Gamma=Gamma;
+  G[0].ResonantEnergy=NAN;
+  strcpy(G[0].Name, A.Name);
+  for(i=0;i<A.BlockSize*A.BlockSize;i++)
+  {
+    SpectrumAllocate(G[0], &(G[i]));
+  }
+  if(A.QComplex==0)
+  {// real
+#pragma omp parallel for private(omega,i,itot,iblock,Lorentzian)
+    for(iE=0;iE<=N;iE++)
+    {
+      omega = ((double)iE/(double)N)*(Emax-Emin)+Emin;
+      // add A0
+      for(i=0;i<A.BlockSize*A.BlockSize;i++)
+      {
+        G[i].Re[iE]=A.VRe[A.N*(1+A.BlockSize*A.BlockSize)+i];
+        G[i].Im[iE]=0;
+      }
+      // loop over all poles
+      itot=0;
+      for(iblock=0;iblock<A.N;iblock++)
+      {
+        Lorentzian.Re = (omega-A.VRe[itot]) / (Sqr(Gamma/2.0) + Sqr(omega-A.VRe[itot]));
+        Lorentzian.Im = (-Gamma/2.0       ) / (Sqr(Gamma/2.0) + Sqr(omega-A.VRe[itot]));
+        itot++;
+        for(i=0;i<A.BlockSize*A.BlockSize;i++)
+        {
+          G[i].Re[iE] += A.VRe[itot] * Lorentzian.Re;
+          G[i].Im[iE] += A.VRe[itot] * Lorentzian.Im;
+          itot++;
+        }
+      }
+    }
+  }
+  else
+  {// complex
+#pragma omp parallel for private(omega,i,itot,iblock,Lorentzian)
+    for(iE=0;iE<=N;iE++)
+    {
+      omega = ((double)iE/(double)N)*(Emax-Emin)+Emin;
+      // add A0
+      for(i=0;i<A.BlockSize*A.BlockSize;i++)
+      {
+        G[i].Re[iE]=A.V[A.N*(1+A.BlockSize*A.BlockSize)+i].Re;
+        G[i].Im[iE]=A.V[A.N*(1+A.BlockSize*A.BlockSize)+i].Im;
+      }
+      // loop over all poles
+      itot=0;
+      for(iblock=0;iblock<A.N;iblock++)
+      {
+        Lorentzian.Re = (omega-A.V[itot].Re) / (Sqr(Gamma) + Sqr(omega-A.V[itot].Re));
+        Lorentzian.Im = (-Gamma           ) / (Sqr(Gamma) + Sqr(omega-A.V[itot].Re));
+        itot++;
+        for(i=0;i<A.BlockSize*A.BlockSize;i++)
+        {
+          G[i].Re[iE] += A.V[itot].Re * Lorentzian.Re - A.V[itot].Im * Lorentzian.Im;
+          G[i].Im[iE] += A.V[itot].Re * Lorentzian.Im + A.V[itot].Im * Lorentzian.Re;
+          itot++;
+        }
+      }
+    }
+  }
+  return 0;
+}
+
 /*
  *
  */

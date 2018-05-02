@@ -629,3 +629,234 @@ uint32_t BADoubleTriDiagonalMatrixToAndersonImpurityOperator(OperatorType * O, B
   }
   return 0;
 }
+
+
+
+
+/*  transform an operator to a matrix on a basis of single slater determinants
+ *  the basis is given by the determinants in psi, in order they apear in psi
+ *  The prefactors in psi are ignored
+ */
+uint32_t OperatorToDeterminantMatrix(const OperatorType * const O, const WaveFunctionType * const psi, CompactMatrixType *M)
+{
+  uint32_t i, j, k, l, m, ii, ij, ik;
+  double phase;
+  uint8_t *Det;
+  M->Ni=psi->N;
+  M->Nj=psi->N;
+  if((O->QComplex==0))
+  {
+    M->QComplex=0;
+  }
+  else
+  {
+    M->QComplex=1;
+  }
+  InitCompactMatrix(M);
+  strcpy(M->Name, O->Name);
+  Det = malloc(psi->NWord * sizeof(uint8_t));
+  if (Det == NULL) AllocFailed();
+  for(i=1;i<=psi->N;i++)
+  {
+    ii = i >> NBitsBlok;
+    ik = i & BlokMask;
+    ij = psi->NWord * ik;
+    for (l = 0; l <= O->MaxLength; l++)
+    {
+      if (O->l[l].QComplex==0)
+      {
+        if(M->QComplex==0)
+        { // all real
+          for (j = 0; j < O->l[l].N; j++)
+          {
+            for (k = 0; k < psi->NWord; k++) Det[k] = psi->Determinant[ii][ij + k];
+            phase = OperatorLader(Det, &(O->l[l].o[l * j]), l, O->NFermion);
+            if (phase)
+            {
+              m=WaveFunctionIndexDet(psi, Det);
+              if(m!=0)
+              {
+                M->VRe[(m-1)*M->Ni+(i-1)] += phase * O->l[l].VRe[j];
+              }
+            }
+          }
+        }
+        else
+        { // M complex and O real
+          for (j = 0; j < O->l[l].N; j++)
+          {
+            for (k = 0; k < psi->NWord; k++) Det[k] = psi->Determinant[ii][ij + k];
+            phase = OperatorLader(Det, &(O->l[l].o[l * j]), l, O->NFermion);
+            if (phase)
+            {
+              m=WaveFunctionIndexDet(psi, Det);
+              if(m!=0)
+              {
+                M->V[(m-1)*M->Ni+(i-1)].Re += phase * O->l[l].VRe[j];
+              }
+            }
+          }
+        }
+      }
+      else
+      { // O complex
+        for (j = 0; j < O->l[l].N; j++)
+        {
+          for (k = 0; k < psi->NWord; k++) Det[k] = psi->Determinant[ii][ij + k];
+          phase = OperatorLader(Det, &(O->l[l].o[l * j]), l, O->NFermion);
+          if (phase)
+          {
+            m=WaveFunctionIndexDet(psi, Det);
+            if(m!=0)
+            {
+              M->V[(m-1)*M->Ni+(i-1)].Re += phase * O->l[l].V[j].Re;
+              M->V[(m-1)*M->Ni+(i-1)].Im += phase * O->l[l].V[j].Im;
+            }
+          }
+        }
+      }
+    }
+  }
+  free(Det);
+  return 0;
+}
+uint32_t OperatorToDeterminantMatrixWithPrefactorsInPsi(const OperatorType * const O, const WaveFunctionType * const psi, CompactMatrixType *M)
+{
+  uint32_t i, j, k, l, m, ii, ij, ik;
+  double phase;
+  uint8_t *Det;
+  M->Ni=psi->N;
+  M->Nj=psi->N;
+  if((O->QComplex==0)&&(psi->QComplex==0))
+  {
+    M->QComplex=0;
+  }
+  else
+  {
+    M->QComplex=1;
+  }
+  InitCompactMatrix(M);
+  strcpy(M->Name, O->Name);
+  Det = malloc(psi->NWord * sizeof(uint8_t));
+  if (Det == NULL) AllocFailed();
+  if(psi->QComplex==0)
+  {
+    for(i=1;i<=psi->N;i++)
+    {
+      ii = i >> NBitsBlok;
+      ik = i & BlokMask;
+      ij = psi->NWord * ik;
+      for (l = 0; l <= O->MaxLength; l++)
+      {
+        if (O->l[l].QComplex==0)
+        {
+          if(M->QComplex==0)
+          { // all real
+            for (j = 0; j < O->l[l].N; j++)
+            {
+              for (k = 0; k < psi->NWord; k++) Det[k] = psi->Determinant[ii][ij + k];
+              phase = OperatorLader(Det, &(O->l[l].o[l * j]), l, O->NFermion);
+              if (phase)
+              {
+                m=WaveFunctionIndexDet(psi, Det);
+                if(m!=0)
+                {
+                  M->VRe[(m-1)*M->Ni+(i-1)] += phase * psi->ValueRe[BlokElement(m)] * O->l[l].VRe[j] * psi->ValueRe[ii][ik];
+                }
+              }
+            }
+          }
+          else
+          { // M complex psi and O real
+            for (j = 0; j < O->l[l].N; j++)
+            {
+              for (k = 0; k < psi->NWord; k++) Det[k] = psi->Determinant[ii][ij + k];
+              phase = OperatorLader(Det, &(O->l[l].o[l * j]), l, O->NFermion);
+              if (phase)
+              {
+                m=WaveFunctionIndexDet(psi, Det);
+                if(m!=0)
+                {
+                  M->V[(m-1)*M->Ni+(i-1)].Re += phase * psi->ValueRe[BlokElement(m)] * O->l[l].VRe[j] * psi->ValueRe[ii][ik];
+                }
+              }
+            }
+          }
+        }
+        else
+        { // psi real O complex
+          for (j = 0; j < O->l[l].N; j++)
+          {
+            for (k = 0; k < psi->NWord; k++) Det[k] = psi->Determinant[ii][ij + k];
+            phase = OperatorLader(Det, &(O->l[l].o[l * j]), l, O->NFermion);
+            if (phase)
+            {
+              m=WaveFunctionIndexDet(psi, Det);
+              if(m!=0)
+              {
+                M->V[(m-1)*M->Ni+(i-1)].Re += phase * psi->ValueRe[BlokElement(m)] * O->l[l].V[j].Re * psi->ValueRe[ii][ik];
+                M->V[(m-1)*M->Ni+(i-1)].Im += phase * psi->ValueRe[BlokElement(m)] * O->l[l].V[j].Im * psi->ValueRe[ii][ik];
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  else
+  {
+    for(i=1;i<=psi->N;i++)
+    {
+      ii = i >> NBitsBlok;
+      ik = i & BlokMask;
+      ij = psi->NWord * ik;
+      for (l = 0; l <= O->MaxLength; l++)
+      {
+        if (O->l[l].QComplex==0)
+        { // psi complex O real
+          for (j = 0; j < O->l[l].N; j++)
+          {
+            for (k = 0; k < psi->NWord; k++) Det[k] = psi->Determinant[ii][ij + k];
+            phase = OperatorLader(Det, &(O->l[l].o[l * j]), l, O->NFermion);
+            if (phase)
+            {
+              m=WaveFunctionIndexDet(psi, Det);
+              if(m!=0)
+              {
+                M->V[(m-1)*M->Ni+(i-1)].Re += phase * ( psi->ValueRe[BlokElement(m)] * O->l[l].VRe[j] * psi->ValueRe[ii][ik]
+                                                       + psi->ValueIm[BlokElement(m)] * O->l[l].VRe[j] * psi->ValueIm[ii][ik] );
+                M->V[(m-1)*M->Ni+(i-1)].Im += phase * ( psi->ValueRe[BlokElement(m)] * O->l[l].VRe[j] * psi->ValueIm[ii][ik]
+                                                       - psi->ValueIm[BlokElement(m)] * O->l[l].VRe[j] * psi->ValueRe[ii][ik] );
+              }
+            }
+          }
+        }
+        else
+        { // psi complex O complex
+          for (j = 0; j < O->l[l].N; j++)
+          {
+            for (k = 0; k < psi->NWord; k++) Det[k] = psi->Determinant[ii][ij + k];
+            phase = OperatorLader(Det, &(O->l[l].o[l * j]), l, O->NFermion);
+            if (phase)
+            {
+              m=WaveFunctionIndexDet(psi, Det);
+              if(m!=0)
+              {
+                M->V[(m-1)*M->Ni+(i-1)].Re += phase * ( psi->ValueRe[BlokElement(m)] * O->l[l].V[j].Re * psi->ValueRe[ii][ik]
+                                                       + psi->ValueIm[BlokElement(m)] * O->l[l].V[j].Re * psi->ValueIm[ii][ik]
+                                                       - psi->ValueRe[BlokElement(m)] * O->l[l].V[j].Im * psi->ValueIm[ii][ik]
+                                                       + psi->ValueIm[BlokElement(m)] * O->l[l].V[j].Im * psi->ValueRe[ii][ik]);
+                M->V[(m-1)*M->Ni+(i-1)].Im += phase * ( psi->ValueRe[BlokElement(m)] * O->l[l].V[j].Re * psi->ValueIm[ii][ik]
+                                                       - psi->ValueIm[BlokElement(m)] * O->l[l].V[j].Re * psi->ValueRe[ii][ik]
+                                                       + psi->ValueRe[BlokElement(m)] * O->l[l].V[j].Im * psi->ValueRe[ii][ik]
+                                                       + psi->ValueIm[BlokElement(m)] * O->l[l].V[j].Im * psi->ValueIm[ii][ik]);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  free(Det);
+  return 0;
+}

@@ -67,9 +67,6 @@ Ty = 20 * EnergyUnits.Tesla.value * (2*OppSy + OppLy)
 Tz = 20 * EnergyUnits.Tesla.value * (2*OppSz + OppLz)
 Ident = 0*H+1
 
--- define a ground-state (in this case a p electron with spin and angular momentum down)
-psigrd = psim1dn
-
 -- define a ground-state (in this case a p electron with spin and angular momentum down combined with spin and angular momentum up)
 psigrd = NewWavefunction(Nf,Nb,{{"100000",sqrt(1/2)},{"000001",sqrt(1/2)}})
 
@@ -80,17 +77,30 @@ psilist = {psigrd,sqrt(4)*psigrd,sqrt(16)*psigrd}
 -- spectri is optional
 
 print("======== Original ========")
-spec, spectri = CreateSpectra(H, {Tx,sqrt(100)*Tx}, psilist,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5}})
+specLanc,  GLanc  = CreateSpectra(H, {Tx,sqrt(100)*Tx}, psilist,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"DenseBoarder",0}})
+specDense, GDense = CreateSpectra(H, {Tx,sqrt(100)*Tx}, psilist,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"DenseBoarder",100}})
 
--- the real and imaginary part on a fixed energy grid
-print(spectri)
-print(spec)
+print("The spectra in a Spetra Type, the standard to use and fastest method with intensities on a Grid\n",specLanc)
+print("The difference between the spectrum calculated using dense and sparse methods\n",specLanc-specDense)
+print("The spectrum in tri-diagonal form for sparse methods\n",GLanc)
+print("The spectrum as a list of poles in dense methods\n",GDense)
+print("The second argument is besides a table a function that can be evaluated at any energy and broadening\n",GLanc[1](1,5),GDense[1](1,5))
+
+
 
 print("======== with Krylov basis ========")
-spec, spectri, psiKrylov = CreateSpectra(H, {Tx,sqrt(100)*Tx,Ident,Ty}, psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"KrylovBasis",true}})
-print(spectri)
-print(spec)
-print(psiKrylov)
+specLanc,  GLanc,  psiKrylov = CreateSpectra(H, {Tx,sqrt(100)*Tx,Ident,Ty}, psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"KrylovBasis",true},{"DenseBoarder",0}})
+specDense, GDense, psiDense  = CreateSpectra(H, {Tx,sqrt(100)*Tx,Ident,Ty}, psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"KrylovBasis",true},{"DenseBoarder",100}})
+
+print("The spectra in a Spetra Type, the standard to use and fastest method with intensities on a Grid\n",specLanc)
+print("The difference between the spectrum calculated using dense and sparse methods\n",specLanc-specDense)
+print("The spectrum in tri-diagonal form for sparse methods\n",GLanc)
+print("The spectrum as a list of poles in dense methods\n",GDense)
+print("The second argument is besides a table a function that can be evaluated at any energy and broadening\n",GLanc[1](1,5),GDense[1](1,5))
+
+print("The Krylov basis for the Lanczos method\n",psiKrylov)
+print("The Dense basis for the Dense method\n",psiDense)
+
 Egrd = psigrd * H * psigrd
 print("The ground state energy is: ",Egrd)
 for i=1,#psiKrylov do
@@ -108,26 +118,42 @@ for i=1,#psiKrylov do
   print(retmat)
 end
 
-
-print("======== with Krylov basis and restrictions ========")
-
 print("======== As tensor ========")
-spec, spectri = CreateSpectra(H, {Tx,Tz}, psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"Tensor",true}})
-print(spectri)
-print(spec)
+specLanc,  GLanc  = CreateSpectra(H, {Tx,Tz+Tx}, psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"Tensor",true},{"DenseBoarder",0}})
+specDense, GDense = CreateSpectra(H, {Tx,Tz+Tx}, psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"Tensor",true},{"DenseBoarder",100}})
 
+print("The spectra in a Spetra Type, the standard to use and fastest method with intensities on a Grid\n",specLanc)
+print("The difference between the spectrum calculated using dense and sparse methods\n",specLanc-specDense)
+print("The spectrum in Block tri-diagonal form for sparse methods\n",GLanc)
+print("The spectrum as a BLock list of poles in dense methods\n",GDense)
+print("The second argument is besides a table a function that can be evaluated at any energy and broadening\n",GLanc(1,5),"\n",GDense(1,5))
 
 print("======== As tensor with restriction ========")
-spec, spectri = CreateSpectra(H, {Tx,Ty}, psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"Tensor",true},{"restrictions",{Nf,Nb,{"010000",1,1}}}})
-print(spectri)
-print(spec)
+
+specLanc,  GLanc  = CreateSpectra(H, {Tx,Tz+Tx}, psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"Tensor",true},{"restrictions",{Nf,Nb,{"010000",1,1}}},{"DenseBoarder",0}})
+specDense, GDense = CreateSpectra(H, {Tx,Tz+Tx}, psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"Tensor",true},{"restrictions",{Nf,Nb,{"010000",1,1}}},{"DenseBoarder",100}})
+
+print("The spectra in a Spetra Type, the standard to use and fastest method with intensities on a Grid\n",specLanc)
+print("The difference between the spectrum calculated using dense and sparse methods\n",specLanc-specDense)
+print("The spectrum in Block tri-diagonal form for sparse methods\n",GLanc)
+print("The spectrum as a BLock list of poles in dense methods\n",GDense)
+print("The second argument is besides a table a function that can be evaluated at any energy and broadening\n",GLanc(1,5),"\n",GDense(1,5))
 
 
 print("======== As tensor with Krylov basis ========")
-spec, spectri, psiKrylov = CreateSpectra(H, {Tx,Tz,Ident}, psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"Tensor",true},{"KrylovBasis",true}})
-print(spectri)
-print(spec)
-print(psiKrylov)
+
+specLanc,  GLanc,  psiKrylov = CreateSpectra(H, {Tx,sqrt(100)*Tx,Ident}, psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"Tensor",true},{"KrylovBasis",true},{"DenseBoarder",0}})
+specDense, GDense, psiDense  = CreateSpectra(H, {Tx,sqrt(100)*Tx,Ident}, psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"Tensor",true},{"KrylovBasis",true},{"DenseBoarder",100}})
+
+print("The spectra in a Spetra Type, the standard to use and fastest method with intensities on a Grid\n",specLanc)
+print("The difference between the spectrum calculated using dense and sparse methods\n",specLanc-specDense)
+print("The spectrum in tri-diagonal form for sparse methods\n",GLanc)
+print("The spectrum as a list of poles in dense methods\n",GDense)
+print("The second argument is besides a table a function that can be evaluated at any energy and broadening\n",GLanc(1,5),GDense(1,5))
+
+print("The Krylov basis for the Lanczos method\n",psiKrylov)
+print("The Dense basis for the Dense method\n",psiDense)
+
 i=0
 retmat={}
 S={}
@@ -150,10 +176,19 @@ print(Chop(S))
 print(retmat)
 
 print("======== As tensor with Krylov basis Complex ========")
-spec, spectri, psiKrylov = CreateSpectra(H+0*Ty, {Tx,Tz,Ident}, I*psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"Tensor",true},{"KrylovBasis",true}})
-print(spectri)
-print(spec)
-print(psiKrylov)
+
+specLanc,  GLanc,  psiKrylov = CreateSpectra(H+0*Ty, {Tx,Tz,Ident}, I*psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"Tensor",true},{"KrylovBasis",true},{"DenseBoarder",0}})
+specDense, GDense, psiDense  = CreateSpectra(H+0*Ty, {Tx,Tz,Ident}, I*psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"Tensor",true},{"KrylovBasis",true},{"DenseBoarder",100}})
+
+print("The spectra in a Spetra Type, the standard to use and fastest method with intensities on a Grid\n",specLanc)
+print("The difference between the spectrum calculated using dense and sparse methods\n",specLanc-specDense)
+print("The spectrum in tri-diagonal form for sparse methods\n",GLanc)
+print("The spectrum as a list of poles in dense methods\n",GDense)
+print("The second argument is besides a table a function that can be evaluated at any energy and broadening\n",GLanc(1,5),GDense(1,5))
+
+print("The Krylov basis for the Lanczos method\n",psiKrylov)
+print("The Dense basis for the Dense method\n",psiDense)
+
 i=0
 retmat={}
 S={}
@@ -174,14 +209,21 @@ for i1=1,#psiKrylov do
 end
 print(Chop(S))
 print(retmat)
-
-
 
 print("======== As tensor with Krylov basis and restrictions ========")
-spec, spectri, psiKrylov = CreateSpectra(H, {Tx,Tz,Ident}, psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"Tensor",true},{"KrylovBasis",true},{"restrictions",{Nf,Nb,{"010000",1,1}}}})
-print(spectri)
-print(spec)
-print(psiKrylov)
+
+specLanc,  GLanc,  psiKrylov = CreateSpectra(H, {Tx,Tz,Ident}, psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"Tensor",true},{"KrylovBasis",true},{"restrictions",{Nf,Nb,{"010000",1,1}}},{"DenseBoarder",0}})
+specDense, GDense, psiDense  = CreateSpectra(H, {Tx,Tz,Ident}, psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"Tensor",true},{"KrylovBasis",true},{"restrictions",{Nf,Nb,{"010000",1,1}}},{"DenseBoarder",100}})
+
+print("The spectra in a Spetra Type, the standard to use and fastest method with intensities on a Grid\n",specLanc)
+print("The difference between the spectrum calculated using dense and sparse methods\n",specLanc-specDense)
+print("The spectrum in tri-diagonal form for sparse methods\n",GLanc)
+print("The spectrum as a list of poles in dense methods\n",GDense)
+print("The second argument is besides a table a function that can be evaluated at any energy and broadening\n",GLanc(1,5),GDense(1,5))
+
+print("The Krylov basis for the Lanczos method\n",psiKrylov)
+print("The Dense basis for the Dense method\n",psiDense)
+
 i=0
 retmat={}
 S={}
@@ -202,3 +244,12 @@ for i1=1,#psiKrylov do
 end
 print(Chop(S))
 print(retmat)
+
+specLanc=nil
+specDense=nil
+GLanc=nil
+GDense=nil
+psiKrylov=nil
+psiDense=nil
+collectgarbage()
+collectgarbage()

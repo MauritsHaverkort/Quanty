@@ -1144,7 +1144,7 @@ uint32_t RealWaveFunctionListSVDOrthogonalizeSameBasis(WaveFunctionType * const 
       VerbosityPrintf(0x0001, "Warning in RealWaveFunctionListSVDOrthogonalizeSameBasis\nNorm of states after first Lowdin orthonormalization are not seperated in large and small norms\nOverlap is:\n");
       for(i=0;i<*Npsi+NSingular;i++)
       {
-        printf("%3g %22.15E\n",val[2*i+1],val[2*i]);
+        VerbosityPrintf(0x0001, "%3g %22.15E\n",val[2*i+1],val[2*i]);
       }
     }
   }
