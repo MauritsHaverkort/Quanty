@@ -2511,6 +2511,16 @@ static int LuaCreateResonantSpectra(lua_State *L)
   luaL_setmetatable(L, "Spectra_Type");
   Spec->NSpectra=0;
   Spec->Spec=NULL;
+  /* test if dense methods can be used */
+  // test if sum_{i,j} H1^n T1_j psi_i and sum_{i,j,k} H2^n T2_k H1^n T1_j psi_i fits on a basis smaller then DenseBoarder
+  // use dense methods
+  // create psiDense
+  // create T1Dense[i]
+  // create H1Dense
+  // create T2Dense[i]
+  // create H2Dense
+  
+  // use sparse methods
   if(Options.Tensor==False)
   {
     for(ipsi=0;ipsi<Options.Npsi;ipsi++)

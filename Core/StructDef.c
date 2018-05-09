@@ -246,7 +246,7 @@ ConvergenceSettingsType InitConvergenceSettings()
   char *ShiftScheme = "Variance";
   ConvergenceSettingsType ret=
   {
-    1512 /*DenseBoarder*/,
+    1513 /*DenseBoarder*/,
     100 /*NKrylovStart*/,
     500 /*NKrylovMax*/,
      10 /*NKrylovStep*/,
