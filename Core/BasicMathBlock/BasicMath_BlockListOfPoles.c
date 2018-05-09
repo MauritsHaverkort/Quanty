@@ -1172,7 +1172,26 @@ uint32_t SubtractBlockListOfPoles(BlockListOfPoles * const A, BlockListOfPoles c
   return 0;
 }
 
-
+uint32_t ShiftBlockListOfPoles(BlockListOfPoles * const A, double delta)
+{
+  uint32_t i;
+  if(A->QComplex==0)
+  {
+    for(i=0;i<(1+A->BlockSize*A->BlockSize)*A->N;i+=(1+A->BlockSize*A->BlockSize))
+    {
+      A->VRe[i]+=delta;
+    }
+  }
+  else
+  {
+    for(i=0;i<(1+A->BlockSize*A->BlockSize)*A->N;i+=(1+A->BlockSize*A->BlockSize))
+    {
+      A->V[i].Re+=delta;
+    }
+  }
+  A->mu+=delta;
+  return 0;
+}
 
 /*  Reduce the dimension of the Green's function represented by a block list of poles
  *  The basis transformation is given by

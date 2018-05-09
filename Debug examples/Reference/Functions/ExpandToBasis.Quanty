@@ -1,0 +1,7 @@
+Nf=6
+Nb=0
+psi = NewWavefunction(Nf,Nb,{{"100000",sqrt(1/12)},{"010000",sqrt(2/12)},{"001000",sqrt(3/12)},{"000001",sqrt(1/12)},{"000100",sqrt(5/12)}})
+psilist = ExpandToBasis(psi)
+
+print(psi)
+print(psilist)

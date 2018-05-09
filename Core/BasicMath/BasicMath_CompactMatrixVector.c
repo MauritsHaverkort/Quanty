@@ -32,6 +32,9 @@ uint32_t InitCompactMatrix(CompactMatrixType * const M)
   M->Name=(char*)malloc(MAXStrLength*sizeof(char));
   if(M->Name==NULL){printf("malloc for name failed in InitCompactMatrix\n");return 1;};
   strcpy(M->Name, "Matrix");
+  M->a0=0;
+  M->b0=1;
+  M->mu=0;
   if(M->QComplex)
   {
     M->V=(Complex16*)calloc(M->Ni*M->Nj,sizeof(Complex16));
@@ -2974,6 +2977,7 @@ uint32_t NonHermitianCompactMatrixSqrt(CompactMatrixType const *A, CompactMatrix
   //TODO: all
   return 1;
 }
+
 /* Given a compact matrix A calculates (w-A)^{-1}_[[1;;BlockSize,1;;BlockSize]] on an energy mesh given by Emin and Emax with N points
  *
  */
@@ -3146,6 +3150,195 @@ uint32_t CompactMatrixToSpectra(CompactMatrixType const *A, SpectraType * const 
       G[i].Re[j]*=Pi/G[i].dE;
     }
   }
+  return 0;
+}
+
+/*  Given a compact matrix A calculates vec[i]^* . (w-A)^-1 . vec[i]
+ *  returns a list of vec.Ni ListOfPoles
+ *  algorithm assumes A to be Hermitian
+ */
+uint32_t HermitianCompactMatrixToListOfPoles(CompactMatrixType const *A, ListOfPoles *L, CompactMatrixType *vec)
+{
+  uint32_t i,j;
+  CompactMatrixType fun,funvec;
+  double *val;
+  val=malloc(A->Ni*sizeof(double));
+  CompactMatrixEigensystem(A, &fun, val);
+  CompactMatrixMultiply('N', 'C', vec, &fun, &funvec);
+  FreeCompactMatrix(&fun);
+  for(i=0;i<vec->Ni;i++)
+  {
+    L[i].mu=A->mu;
+    L[i].a0=A->a0;
+    L[i].N=A->Ni;
+    InitListOfPoles(&(L[i]));
+    memcpy(L[i].a, val, A->Ni*sizeof(double));
+    if(funvec.QComplex==0)
+    {
+      for(j=0;j<A->Nj;j++)
+      {
+        L[i].b[j]=A->b0*Sqr(funvec.VRe[i*funvec.Nj+j]);
+      }
+    }
+    else
+    {
+      for(j=0;j<A->Nj;j++)
+      {
+        L[i].b[j]=A->b0*(Sqr(funvec.V[i*funvec.Nj+j].Re)+Sqr(funvec.V[i*funvec.Nj+j].Im));
+      }
+    }
+  }
+  free(val);
+  FreeCompactMatrix(&funvec);
+  return 0;
+}
+/* fun allocated but not initialized */
+uint32_t HermitianCompactMatrixToListOfPolesWithEigenstates(CompactMatrixType const *A, ListOfPoles *L, CompactMatrixType *vec, CompactMatrixType *fun)
+{
+  uint32_t i,j;
+  CompactMatrixType funvec;
+  double *val;
+  val=malloc(A->Ni*sizeof(double));
+  CompactMatrixEigensystem(A, fun, val);
+  CompactMatrixMultiply('N', 'C', vec, fun, &funvec);
+  for(i=0;i<vec->Ni;i++)
+  {
+    L[i].mu=A->mu;
+    L[i].a0=A->a0;
+    L[i].N=A->Ni;
+    InitListOfPoles(&(L[i]));
+    memcpy(L[i].a, val, A->Ni*sizeof(double));
+    if(funvec.QComplex==0)
+    {
+      for(j=0;j<A->Nj;j++)
+      {
+        L[i].b[j]=A->b0*Sqr(funvec.VRe[i*funvec.Nj+j]);
+      }
+    }
+    else
+    {
+      for(j=0;j<A->Nj;j++)
+      {
+        L[i].b[j]=A->b0*(Sqr(funvec.V[i*funvec.Nj+j].Re)+Sqr(funvec.V[i*funvec.Nj+j].Im));
+      }
+    }
+  }
+  free(val);
+  FreeCompactMatrix(&funvec);
+  return 0;
+}
+
+/*  Given a compact matrix A calculates vec[j]^* . (w-A)^-1 . vec[i]
+ *  returns a BlockListOfPoles of Blockdimension vec.Ni
+ *  algorithm assumes A to be Hermitian
+ */
+uint32_t HermitianCompactMatrixToBlockListOfPoles(CompactMatrixType const *A, BlockListOfPoles *L, CompactMatrixType *vec)
+{
+  uint32_t k,l,i,j,ifunvec;
+  CompactMatrixType fun,funvec;
+  double *val;
+  val=malloc(A->Ni*sizeof(double));
+  CompactMatrixEigensystem(A, &fun, val);
+  CompactMatrixMultiply('*', 'T', &fun, vec, &funvec);
+  FreeCompactMatrix(&fun);
+  L->BlockSize=vec->Ni;
+  L->N=vec->Nj;
+  L->QComplex=funvec.QComplex;
+  L->mu=A->mu;
+  InitBlockListOfPoles(L);
+  l=0;
+  ifunvec=0;
+  if(funvec.QComplex==0)
+  {
+    for(k=0;k<funvec.Ni;k++)
+    {
+      L->VRe[l]=val[k];
+      l++;
+      for(i=0;i<L->BlockSize;i++)
+      {
+        for(j=0;j<L->BlockSize;j++)
+        {
+          L->VRe[l]=funvec.VRe[ifunvec+j]*funvec.VRe[ifunvec+i];
+          l++;
+        }
+      }
+      ifunvec+=funvec.Nj;
+    }
+  }
+  else
+  {
+    for(k=0;k<funvec.Ni;k++)
+    {
+      L->V[l].Re=val[k];
+      l++;
+      for(i=0;i<L->BlockSize;i++)
+      {
+        for(j=0;j<L->BlockSize;j++)
+        {
+          L->V[l].Re=funvec.V[ifunvec+j].Re*funvec.V[ifunvec+i].Re+funvec.V[ifunvec+j].Im*funvec.V[ifunvec+i].Im;
+          L->V[l].Im=funvec.V[ifunvec+j].Re*funvec.V[ifunvec+i].Im-funvec.V[ifunvec+j].Im*funvec.V[ifunvec+i].Re;
+          l++;
+        }
+      }
+      ifunvec+=funvec.Nj;
+    }
+  }
+  free(val);
+  FreeCompactMatrix(&funvec);
+  return 0;
+}
+uint32_t HermitianCompactMatrixToBlockListOfPolesWithEigenstates(CompactMatrixType const *A, BlockListOfPoles *L, CompactMatrixType *vec, CompactMatrixType *fun)
+{
+  uint32_t k,l,i,j,ifunvec;
+  CompactMatrixType funvec;
+  double *val;
+  val=malloc(A->Ni*sizeof(double));
+  CompactMatrixEigensystem(A, fun, val);
+  CompactMatrixMultiply('*', 'T', fun, vec, &funvec);
+  L->BlockSize=vec->Ni;
+  L->N=vec->Nj;
+  L->QComplex=funvec.QComplex;
+  L->mu=A->mu;
+  InitBlockListOfPoles(L);
+  l=0;
+  ifunvec=0;
+  if(funvec.QComplex==0)
+  {
+    for(k=0;k<funvec.Ni;k++)
+    {
+      L->VRe[l]=val[k];
+      l++;
+      for(i=0;i<L->BlockSize;i++)
+      {
+        for(j=0;j<L->BlockSize;j++)
+        {
+          L->VRe[l]=funvec.VRe[ifunvec+j]*funvec.VRe[ifunvec+i];
+          l++;
+        }
+      }
+      ifunvec+=funvec.Nj;
+    }
+  }
+  else
+  {
+    for(k=0;k<funvec.Ni;k++)
+    {
+      L->V[l].Re=val[k];
+      l++;
+      for(i=0;i<L->BlockSize;i++)
+      {
+        for(j=0;j<L->BlockSize;j++)
+        {
+          L->V[l].Re=funvec.V[ifunvec+j].Re*funvec.V[ifunvec+i].Re+funvec.V[ifunvec+j].Im*funvec.V[ifunvec+i].Im;
+          L->V[l].Im=funvec.V[ifunvec+j].Re*funvec.V[ifunvec+i].Im-funvec.V[ifunvec+j].Im*funvec.V[ifunvec+i].Re;
+          l++;
+        }
+      }
+      ifunvec+=funvec.Nj;
+    }
+  }
+  free(val);
+  FreeCompactMatrix(&funvec);
   return 0;
 }
 

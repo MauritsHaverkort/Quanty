@@ -23,7 +23,7 @@ for key1,orbs in pairs(OrbList) do
         print(orbs)
         print("Options:")
         print(opts)
-        Ind, NF = Simon.CreateAtomicIndicesDict(orbs, opts)
+        Ind, NF = CreateAtomicIndicesDict(orbs, opts)
         print("NF="..NF)
         print("Ind[ \"all\" ]:")
         print(Ind["all"])
@@ -49,7 +49,7 @@ for key1,orbs in pairs(OrbList) do
     print("\n\n\n")
     print("Orbitals:")
     print(orbs)
-    Ind, NF = Simon.CreateAtomicIndicesList(orbs)
+    Ind, NF = CreateAtomicIndicesList(orbs)
     print(Ind)
 end
 
@@ -71,7 +71,7 @@ for key1,orbs in pairs(OrbList) do
         print(orbs)
         print("Options:")
         print(opts)
-        Ind, NF = Simon.CreateAtomicIndicesDict(orbs, opts)
+        Ind, NF = CreateAtomicIndicesDict(orbs, opts)
         print("NF="..NF)
         print("Ind[ \"all\" ]:")
         print(Ind["all"])
@@ -93,6 +93,6 @@ for key1,orbs in pairs(OrbList) do
     print("\n\n\n")
     print("Orbitals:")
     print(orbs)
-    Ind, NF = Simon.CreateAtomicIndicesList(orbs)
+    Ind, NF = CreateAtomicIndicesList(orbs)
     print(Ind)
 end

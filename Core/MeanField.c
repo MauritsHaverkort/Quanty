@@ -359,14 +359,6 @@ uint32_t MeanFieldOperatorOneElectronMatrix(const OperatorType * const O, Compac
             MO->V[n*MO->Nj+n].Im += (HFIm*Nelec.Re-HFRe*Nelec.Im)/(Sqr(Nelec.Re)+Sqr(Nelec.Im));
           }
         }
-        else
-        {
-          for (n=0; n<MO->Ni; n++)
-          {
-            MO->V[n*MO->Nj+n].Re += HFRe/Nelec.Re;
-            MO->V[n*MO->Nj+n].Im += HFIm/Nelec.Re;
-          }
-        }
       }
     }
     else // Rho real Oo complex MO complex
@@ -385,8 +377,6 @@ uint32_t MeanFieldOperatorOneElectronMatrix(const OperatorType * const O, Compac
         MO->V[i*MO->Nj+l].Im+= Oo.l[4].V[m].Im * Rho.VRe[j*Rho.Nj+k];
         MO->V[j*MO->Nj+k].Im+= Oo.l[4].V[m].Im * Rho.VRe[i*Rho.Nj+l];
         MO->V[j*MO->Nj+l].Im-= Oo.l[4].V[m].Im * Rho.VRe[i*Rho.Nj+k];
-      
-      
         HFRe = ( Rho.VRe[i*Rho.Nj+k] * Rho.VRe[j*Rho.Nj+l]
                 -Rho.VRe[i*Rho.Nj+l] * Rho.VRe[j*Rho.Nj+k]) * Oo.l[4].V[m].Re;
         HFIm = ( Rho.VRe[i*Rho.Nj+k] * Rho.VRe[j*Rho.Nj+l]
@@ -398,14 +388,6 @@ uint32_t MeanFieldOperatorOneElectronMatrix(const OperatorType * const O, Compac
           {
             MO->V[n*MO->Nj+n].Re += (HFRe*Nelec.Re+HFIm*Nelec.Im)/(Sqr(Nelec.Re)+Sqr(Nelec.Im));
             MO->V[n*MO->Nj+n].Im += (HFIm*Nelec.Re-HFRe*Nelec.Im)/(Sqr(Nelec.Re)+Sqr(Nelec.Im));
-          }
-        }
-        else
-        {
-          for (n=0; n<MO->Ni; n++)
-          {
-            MO->V[n*MO->Nj+n].Re += HFRe/Nelec.Re;
-            MO->V[n*MO->Nj+n].Im += HFIm/Nelec.Re;
           }
         }
       }
@@ -431,7 +413,6 @@ uint32_t MeanFieldOperatorOneElectronMatrix(const OperatorType * const O, Compac
           MO->V[i*MO->Nj+l].Im+= Oo.l[4].VRe[m] * Rho.V[j*Rho.Nj+k].Im;
           MO->V[j*MO->Nj+k].Im+= Oo.l[4].VRe[m] * Rho.V[i*Rho.Nj+l].Im;
           MO->V[j*MO->Nj+l].Im-= Oo.l[4].VRe[m] * Rho.V[i*Rho.Nj+k].Im;
-          
           HFRe = ( Rho.V[i*Rho.Nj+k].Re * Rho.V[j*Rho.Nj+l].Re
                   -Rho.V[i*Rho.Nj+l].Re * Rho.V[j*Rho.Nj+k].Re
                   -Rho.V[i*Rho.Nj+k].Im * Rho.V[j*Rho.Nj+l].Im
@@ -440,21 +421,12 @@ uint32_t MeanFieldOperatorOneElectronMatrix(const OperatorType * const O, Compac
                   -Rho.V[i*Rho.Nj+l].Im * Rho.V[j*Rho.Nj+k].Re
                   +Rho.V[i*Rho.Nj+k].Re * Rho.V[j*Rho.Nj+l].Im
                   -Rho.V[i*Rho.Nj+l].Re * Rho.V[j*Rho.Nj+k].Im ) * Oo.l[4].VRe[m];
-          
           if((Sqr(Nelec.Re)+Sqr(Nelec.Im))>DBL_EPSILON)
           {
             for (n=0; n<MO->Ni; n++)
             {
               MO->V[n*MO->Nj+n].Re += (HFRe*Nelec.Re+HFIm*Nelec.Im)/(Sqr(Nelec.Re)+Sqr(Nelec.Im));
               MO->V[n*MO->Nj+n].Im += (HFIm*Nelec.Re-HFRe*Nelec.Im)/(Sqr(Nelec.Re)+Sqr(Nelec.Im));
-            }
-          }
-          else
-          {
-            for (n=0; n<MO->Ni; n++)
-            {
-              MO->V[n*MO->Nj+n].Re += HFRe/Nelec.Re;
-              MO->V[n*MO->Nj+n].Im += HFIm/Nelec.Re;
             }
           }
         }
@@ -482,13 +454,6 @@ uint32_t MeanFieldOperatorOneElectronMatrix(const OperatorType * const O, Compac
               MO->V[n*MO->Nj+n].Im -= HFRe*Nelec.Im/(Sqr(Nelec.Re)+Sqr(Nelec.Im));
             }
           }
-          else
-          {
-            for (n=0; n<MO->Ni; n++)
-            {
-              MO->V[n*MO->Nj+n].Re += HFRe/Nelec.Re;
-            }
-          }
         }
       }
     }
@@ -504,12 +469,12 @@ uint32_t MeanFieldOperatorOneElectronMatrix(const OperatorType * const O, Compac
         MO->VRe[i*MO->Nj+l]+= Oo.l[4].VRe[m] * Rho.VRe[j*Rho.Nj+k];
         MO->VRe[j*MO->Nj+k]+= Oo.l[4].VRe[m] * Rho.VRe[i*Rho.Nj+l];
         MO->VRe[j*MO->Nj+l]-= Oo.l[4].VRe[m] * Rho.VRe[i*Rho.Nj+k];
-        
-        for (n=0; n<MO->Ni; n++)
+        if(Sqr(Nelec.Re)>DBL_EPSILON)
         {
-          MO->VRe[n*MO->Nj+n] += ( Rho.VRe[i*Rho.Nj+k] * Rho.VRe[j*Rho.Nj+l]
-                                  -Rho.VRe[i*Rho.Nj+l] * Rho.VRe[j*Rho.Nj+k])
-                                * Oo.l[4].VRe[m]/(Nelec.Re);
+          for (n=0; n<MO->Ni; n++)
+          {
+            MO->VRe[n*MO->Nj+n] += ( Rho.VRe[i*Rho.Nj+k] * Rho.VRe[j*Rho.Nj+l] -Rho.VRe[i*Rho.Nj+l] * Rho.VRe[j*Rho.Nj+k]) * Oo.l[4].VRe[m]/(Nelec.Re);
+          }
         }
       }
     }

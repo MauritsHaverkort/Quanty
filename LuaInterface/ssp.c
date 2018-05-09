@@ -553,18 +553,6 @@ static int LuaVerbosity(lua_State * L)
   return 0;
 }
 
-// NOOOOOO we want lua to do garbage collection
-// and metattables are defined for user data not light user data if I'm not mistaken
-// and we already placed the userdata on the lua stack
-/*
-int lua_return(lua_State *L, OperatorType *O)
-{
-	lua_pushlightuserdata(L,O);
-	luaL_setmetatable(L, "Operator_Type");
-	return 1;
-}
-*/
-
 static int LuaNewOperator(lua_State * L)
 {
   if(lua_gettop(L)==0)
@@ -1566,18 +1554,22 @@ static int LuaCreateSpectra(lua_State *L)
     Bool Tensor;
     Bool Sigma;
     Bool KrylovBasis;
+    Bool DenseMethod;
   } Options;
   Options.Settings=InitConvergenceSettings();
   Options.stream=NULL;
   Options.Tensor=False;
   Options.Sigma=False;
+  Options.DenseMethod=False;
   Options.KrylovBasis=False;
   Options.E0=DBL_MAX;
+  CompactMatrixType HDense, TpsiDense, EigenfunHDense;
   SpectraTypeArray *Spec;
   OperatorType *H,*T;
-  WaveFunctionType *psi;
+  WaveFunctionType *Tpsi;
+  WaveFunctionType *psi, psiDenseBasis, OpsiDenseBasis;
   WaveFunctionType **psiBasis=NULL;
-  uint32_t i,iT,ipsi,len, *BlockSizeN=NULL;
+  uint32_t i,j,k,iT,ipsi,len, *BlockSizeN=NULL;
   double Eminpole,Emaxpole, *val, *psiEn, psiEntemp;
   char filename[MAXStrLength];
   LuaOptionsType LuaCreateSpectraOptions[]={
@@ -1594,6 +1586,8 @@ static int LuaCreateSpectra(lua_State *L)
     {"NE","uint32_t",&(Options.Settings.NE)},
     {"Gamma","double",&(Options.Settings.Gamma)},
     {"E0","double",&(Options.E0)},
+    {"DenseMethod","bool",&(Options.DenseMethod)},
+    {"DenseBoarder","uint32_t",&(Options.Settings.DenseBoarder)},
     {"file","char*",&(Options.stream)}, // temporary undoccumented option
     {NULL, NULL, NULL}};
   /* free garbage full cycle*/
@@ -1733,164 +1727,309 @@ static int LuaCreateSpectra(lua_State *L)
       }
     }
   }
-  /* start calculating the spectra */
-  if(Options.Tensor==False)
+  /* calculate Tpsi for all functions and transition operators 
+     Tpsi is a single vector, the functions are stored at Tpsi[iT*Options.Npsi+ipsi] */
+  /* different function calls with and without restrictions */
+  Tpsi=malloc((Options.NT*Options.Npsi)*sizeof(WaveFunctionType));
+  if(Options.Settings.restrictions.N==0)
   {
-    WaveFunctionType Tpsi;
-    TriDiagonalMatrixType *GTri;
-    /* calculate spectra in Tridiagonal form for each combination of operator and wave-function seperately*/
-    GTri = malloc(Options.NT*Options.Npsi*sizeof(TriDiagonalMatrixType));
-    for(i=0;i<Options.NT*Options.Npsi;i++)
-    {
-      GTri[i].N=Options.Settings.NTri;
-      InitTriDiagonalMatrix(&GTri[i]);
-      GTri[i].mu=0; // we have no knowlede on the chemical potential at this point
-    }
-    /* alocate memory for the krylov basis */
-    if(Options.KrylovBasis==True)
-    {
-      psiBasis=malloc(Options.NT*Options.Npsi*sizeof(WaveFunctionType*));
-      for(i=0;i<Options.NT*Options.Npsi;i++)
-      {
-        psiBasis[i]=malloc(Options.Settings.NTri*sizeof(WaveFunctionType));
-      }
-    }
-
     /* loop over all Transition operators */
     for(iT=0;iT<Options.NT;iT++)
     {
       /* loop over all wavefunctions */
       for(ipsi=0;ipsi<Options.Npsi;ipsi++)
       {
-        if(Options.Settings.restrictions.N==0)
+        if(OperatorPsi(T[iT], psi[ipsi], &Tpsi[iT*Options.Npsi+ipsi]))
         {
-          OperatorPsi(T[iT], psi[ipsi], &Tpsi);
-          if(Options.KrylovBasis==True)
-          {
-            LanczosTriDiagonalizeKrylov(*H, Tpsi, Options.Settings.epsilon, &GTri[iT*Options.Npsi+ipsi], psiBasis[iT*Options.Npsi+ipsi]);
-          }
-          else
-          {
-            LanczosTriDiagonalize(*H, Tpsi, Options.Settings.epsilon, &GTri[iT*Options.Npsi+ipsi], Max(Options.Settings.Gamma,Options.Settings.epsilon));
-          }
-        }
-        else
-        {
-          OperatorPsiRestricted(T[iT], psi[ipsi], &Tpsi, Options.Settings.restrictions);
-          if(Options.KrylovBasis==True)
-          {
-            LanczosTriDiagonalizeKrylovRestricted(*H, Tpsi,  Options.Settings.restrictions, Options.Settings.epsilon, &GTri[iT*Options.Npsi+ipsi], psiBasis[iT*Options.Npsi+ipsi]);
-          }
-          else
-          {
-            LanczosTriDiagonalizeRestricted(*H, Tpsi, Options.Settings.restrictions, Options.Settings.epsilon, &GTri[iT*Options.Npsi+ipsi], Max(Options.Settings.Gamma,Options.Settings.epsilon));
-          }
-        }
-        if(Options.stream!=NULL)
-        {
-          if (Options.NT*Options.Npsi==1)
-          {
-            snprintf(filename, MAXStrLength, "%s", Options.stream);
-          }
-          else
-          {
-            snprintf(filename, MAXStrLength, "%s_%02d", Options.stream, iT*Options.Npsi+ipsi);
-          }
-          FilePrintPlainTriDiagonalMatrix(GTri[iT*Options.Npsi+ipsi], filename, "w");
+          luaL_error(L, "OperatorPsi failed in calculation of spectra\n Out of memory?\nTry to split the call to several calls for different wave-functions or transition operators\n");
         }
       }
     }
-    /* determine Eminpole and Emaxpole */
-    /* get eigenvalues of all Tri diagonal matrices and set smallest and largest eigenvalue */
-    Eminpole=DBL_MAX;
-    Emaxpole=-DBL_MAX;
-    val=malloc((Options.Settings.NTri)*sizeof(double));
+  }
+  else
+  {
+    /* loop over all Transition operators */
+    for(iT=0;iT<Options.NT;iT++)
+    {
+      /* loop over all wavefunctions */
+      for(ipsi=0;ipsi<Options.Npsi;ipsi++)
+      {
+        if(OperatorPsiRestricted(T[iT], psi[ipsi], &Tpsi[iT*Options.Npsi+ipsi], Options.Settings.restrictions))
+        {
+          luaL_error(L, "OperatorPsi with restrictions failed in calculation of spectra\n Out of memory?\nTry to split the call to several calls for different wave-functions or transition operators\n");
+        }
+      }
+    }
+  }
+  /* set DenseMethod to true if Hilbert space smaller then DensBoarder and calculate Basis at the same time create psiBasis */
+  /* create psiBasis = sum_{i,j} T_i psi_j */
+  WaveFunctionCopy(Tpsi[0], &psiDenseBasis);
+  for(i=1;i<Options.NT*Options.Npsi;i++)
+  {
+    if((Options.DenseMethod==False)&&(psiDenseBasis.N>Options.Settings.DenseBoarder))
+    {
+      WaveFunctionFree(&psiDenseBasis);
+      break;
+    }
+    if(WaveFunctionAddMultipliedUnionBasis(&psiDenseBasis, Tpsi[i], (double)(1+rand())/(double)RAND_MAX))
+    {
+      luaL_error(L, "WaveFunctionAddMultipliedUnionBasis failed in calculation of spectra\n Out of memory?\nTry to split the call to several calls for different wave-functions or transition operators\n");
+    }
+  }
+  /* expand psiBasis to represent H^n psiBasis for all n */
+  len=0;
+  if((Options.DenseMethod==True)||(OpsiDenseBasis.N<Options.Settings.DenseBoarder)) while(len!=psiDenseBasis.N)
+  {
+    len=psiDenseBasis.N;
+    if(OperatorPsi(*H, psiDenseBasis, &OpsiDenseBasis))
+    {
+      luaL_error(L, "OperatorPsi failed in calculation of spectra\n Out of memory?\nTry to split the call to several calls for different wave-functions or transition operators\n");
+    }
+    if((Options.DenseMethod==False)&&(OpsiDenseBasis.N>Options.Settings.DenseBoarder))
+    {
+      WaveFunctionFree(&OpsiDenseBasis);
+      WaveFunctionFree(&psiDenseBasis);
+      break;
+    }
+    WaveFunctionNormalize(&OpsiDenseBasis);
+    if(WaveFunctionAddUnionBasis(&psiDenseBasis, OpsiDenseBasis))
+    {
+      luaL_error(L, "WaveFunctionAddUnionBasis failed in calculation of spectra\n Out of memory?\nTry to split the call to several calls for different wave-functions or transition operators\n");
+    }
+    WaveFunctionFree(&OpsiDenseBasis);
+    if((Options.DenseMethod==False)&&(psiDenseBasis.N>Options.Settings.DenseBoarder))
+    {
+      WaveFunctionFree(&psiDenseBasis);
+      break;
+    }
+    if(len==psiDenseBasis.N) Options.DenseMethod=True;
+  }
+  /* If DenseMethod is true calculate spectra using dense methods */
+  if(Options.DenseMethod==True)
+  {
+    /* create HDense */
+    OperatorToDeterminantMatrix(H, &psiDenseBasis, &HDense);
+    /* create TpsiDense */
+    TpsiDense.Ni=Options.NT*Options.Npsi;
+    TpsiDense.Nj=psiDenseBasis.N;
+    TpsiDense.QComplex=psiDenseBasis.QComplex;
+    if(InitCompactMatrix(&TpsiDense))
+    {
+      luaL_error(L, "InitCompactMatrix failed in calculation of spectra\n Out of memory?\nTry to split the call to several calls for different wave-functions or transition operators or use sparse methods ({\"DenseBoarder\",0} in options)\n");
+    }
+    iT=0;
     for(i=0;i<Options.NT*Options.Npsi;i++)
     {
-      TriDiagonalMatrixToEigenvalues(GTri[i], val);
-      if((val[0]-psiEn[i])<Eminpole)Eminpole=val[0]-psiEn[i];
-      if((val[Options.Settings.NTri-1]-psiEn[i])>Emaxpole)Emaxpole=val[Options.Settings.NTri-1]-psiEn[i];
-    }
-    /* if Emin=DBL_MAX or Emax=-DBL_MAX or Gamma==0 determine these */
-    if(Eminpole==Emaxpole)
-    {
-      if(Eminpole==0)
+      WaveFunctionMultiply(&psiDenseBasis, 0, 0);
+      WaveFunctionAddConserveBasis(&psiDenseBasis, Tpsi[i]);
+      WaveFunctionFree(&Tpsi[i]);
+      if(TpsiDense.QComplex==0)
       {
-        if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin =-1;
-        if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax = 1;
-      }
-      if(Eminpole<0)
-      {
-        if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin = 2.125*Eminpole;
-        if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax =-0.125*Eminpole;
-      }
-      if(Eminpole>0)
-      {
-        if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin =-0.125*Eminpole;
-        if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax = 2.125*Eminpole;
-      }
-    }
-    if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin = Eminpole - 0.125 * (Emaxpole-Eminpole);
-    if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax = Emaxpole + 0.125 * (Emaxpole-Eminpole);
-    if(Options.Settings.Gamma==0) Options.Settings.Gamma = 10*(Options.Settings.Emax-Options.Settings.Emin)/((double)Options.Settings.NE);
-    // TODO different tridiag to spectral form when self energy is present
-
-    /* transform tridiagonal form to spectral form and push to stack */
-    Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
-    luaL_setmetatable(L, "Spectra_Type");
-    Spec->NSpectra=Options.NT*Options.Npsi;
-    Spec->Spec=malloc(Spec->NSpectra*sizeof(SpectraType));
-    Spec->Spec[0].N=Options.Settings.NE;
-    Spec->Spec[0].Emin=Options.Settings.Emin;
-    Spec->Spec[0].Emax=Options.Settings.Emax;
-    Spec->Spec[0].dE=(Options.Settings.Emax-Options.Settings.Emin)/((double)Options.Settings.NE);
-    Spec->Spec[0].EminPole=Eminpole;
-    Spec->Spec[0].EmaxPole=Emaxpole;
-    Spec->Spec[0].Gamma=Options.Settings.Gamma;
-    Spec->Spec[0].ResonantEnergy=NAN;
-    strcpy(Spec->Spec[0].Name, "Spec");
-    for(i=0;i<Spec->NSpectra;i++)
-    {
-      SpectrumAllocate(Spec->Spec[0], &(Spec->Spec[i]));
-      sprintf(Spec->Spec[i].Name, "Spectrum %i",i);
-      TriDiagonalMatrixToSpectrum(psiEn[i], GTri[i], &(Spec->Spec[i]));
-    }
-    //TODO different spectrum pushed to stack when self energy is present
-
-    /* push a table to L containing the spectra in tridiagonal form */
-    /* table contains {{a,b,mu=mu,type=tri},{a,b,,mu=mu,type=tri},{a,b,,mu=mu,type=tri},....} */
-    lua_createtable(L,Spec->NSpectra,0);
-    for(i=0;i<Spec->NSpectra;i++)
-    {
-      ShiftTriDiagonalMatrix(&(GTri[i]), -psiEn[i]);
-      LuaPushTable_TriDiagonalMatrixType(L, &(GTri[i]));
-      lua_rawseti(L, -2, i+1);
-    }
-    /* free tridiagonal representation in memory */
-    for(i=0;i<Spec->NSpectra;i++)
-    {
-      FreeTriDiagonalMatrix(&GTri[i]);
-    }
-    free(GTri);
-    free(psiEn);
-    if(Options.KrylovBasis==True)
-    {
-      if(Options.NT*Options.Npsi==1)
-      {
-        LuaPushTable_WaveFunctionType_RemoveEmpty(L, psiBasis[0], Options.Settings.NTri);
-        free(psiBasis[0]);
+        for(j=1;j<=psiDenseBasis.N;j++)
+        {
+          TpsiDense.VRe[iT]=psiDenseBasis.ValueRe[BlokElement(j)];
+          iT++;
+        }
       }
       else
       {
-        lua_createtable(L,Options.NT*Options.Npsi,0);
-        for(i=0;i<Options.NT*Options.Npsi;i++)
+        for(j=1;j<=psiDenseBasis.N;j++)
         {
-          LuaPushTable_WaveFunctionType_RemoveEmpty(L, psiBasis[i], Options.Settings.NTri);
-          free(psiBasis[i]);
+          TpsiDense.V[iT].Re=psiDenseBasis.ValueRe[BlokElement(j)];
+          TpsiDense.V[iT].Im=psiDenseBasis.ValueIm[BlokElement(j)];
+          iT++;
+        }
+      }
+    }
+    free(Tpsi);
+    if(Options.KrylovBasis==False)
+    {
+      WaveFunctionFree(&psiDenseBasis);
+    }
+    /* create spectra using dense methods */
+    if(Options.Tensor==False)
+    {
+      ListOfPoles *SpecLP;
+      SpecLP=malloc(TpsiDense.Ni*sizeof(ListOfPoles));
+      if(Options.KrylovBasis==True)
+      {
+        HermitianCompactMatrixToListOfPolesWithEigenstates(&HDense, SpecLP, &TpsiDense, &EigenfunHDense);
+      }
+      else
+      {
+        HermitianCompactMatrixToListOfPoles(&HDense, SpecLP, &TpsiDense);
+      }
+      /* determine Eminpole and Emaxpole */
+      Eminpole=DBL_MAX;
+      Emaxpole=-DBL_MAX;
+      for(i=0;i<Options.NT*Options.Npsi;i++)
+      {
+        if((SpecLP[i].a[0]-psiEn[i])<Eminpole)Eminpole=SpecLP[i].a[0]-psiEn[i];
+        if((SpecLP[i].a[SpecLP[i].N-1]-psiEn[i])>Emaxpole)Emaxpole=SpecLP[i].a[SpecLP[i].N-1]-psiEn[i];
+      }
+      /* if Emin=DBL_MAX or Emax=-DBL_MAX or Gamma==0 determine these */
+      if(Eminpole==Emaxpole)
+      {
+        if(Eminpole==0)
+        {
+          if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin =-1;
+          if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax = 1;
+        }
+        if(Eminpole<0)
+        {
+          if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin = 2.125*Eminpole;
+          if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax =-0.125*Eminpole;
+        }
+        if(Eminpole>0)
+        {
+          if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin =-0.125*Eminpole;
+          if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax = 2.125*Eminpole;
+        }
+      }
+      if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin = Eminpole - 0.125 * (Emaxpole-Eminpole);
+      if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax = Emaxpole + 0.125 * (Emaxpole-Eminpole);
+      if(Options.Settings.Gamma==0) Options.Settings.Gamma = 10*(Options.Settings.Emax-Options.Settings.Emin)/((double)Options.Settings.NE);
+      /* transform list of poles form to spectral form and push to stack */
+      Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+      luaL_setmetatable(L, "Spectra_Type");
+      Spec->NSpectra=Options.NT*Options.Npsi;
+      Spec->Spec=malloc(Spec->NSpectra*sizeof(SpectraType));
+      Spec->Spec[0].N=Options.Settings.NE;
+      Spec->Spec[0].Emin=Options.Settings.Emin;
+      Spec->Spec[0].Emax=Options.Settings.Emax;
+      Spec->Spec[0].dE=(Options.Settings.Emax-Options.Settings.Emin)/((double)Options.Settings.NE);
+      Spec->Spec[0].EminPole=Eminpole;
+      Spec->Spec[0].EmaxPole=Emaxpole;
+      Spec->Spec[0].Gamma=Options.Settings.Gamma;
+      Spec->Spec[0].ResonantEnergy=NAN;
+      strcpy(Spec->Spec[0].Name, "Spec");
+      for(i=0;i<Spec->NSpectra;i++)
+      {
+        SpectrumAllocate(Spec->Spec[0], &(Spec->Spec[i]));
+        sprintf(Spec->Spec[i].Name, "Spectrum %i",i);
+        ListOfPolesToSpectrum(psiEn[i], SpecLP[i], &(Spec->Spec[i]));
+      }
+      /* push a table to L containing the spectra in list of poles form */
+      /* table contains {{a,b,mu=mu,type=listofpoles},{a,b,,mu=mu,type=listofpoles},{a,b,,mu=mu,type=listofpoles},....} */
+      lua_createtable(L,Spec->NSpectra,0);
+      for(i=0;i<Spec->NSpectra;i++)
+      {
+        ShiftListOfPoles(&(SpecLP[i]), -psiEn[i]);
+        LuaPushTable_ListOfPoles(L, &(SpecLP[i]));
+        lua_rawseti(L, -2, i+1);
+      }
+      /* free list of poles representation in memory */
+      for(i=0;i<Options.NT*Options.Npsi;i++)
+      {
+        FreeListOfPoles(&(SpecLP[i]));
+      }
+      free(SpecLP);
+      free(psiEn);
+    }
+    else //Dense methods with tensor True
+    {
+      BlockListOfPoles SpecLP;
+      if(Options.KrylovBasis==True)
+      {
+        HermitianCompactMatrixToBlockListOfPolesWithEigenstates(&HDense, &SpecLP, &TpsiDense, &EigenfunHDense);
+      }
+      else
+      {
+        HermitianCompactMatrixToBlockListOfPoles(&HDense, &SpecLP, &TpsiDense);
+      }
+      /* determine Eminpole and Emaxpole */
+      if(SpecLP.QComplex==0)
+      {
+        Eminpole=SpecLP.VRe[0]-psiEn[0];
+        Emaxpole=SpecLP.VRe[(1+SpecLP.BlockSize*SpecLP.BlockSize)*(SpecLP.N-1)]-psiEn[0];
+      }
+      else
+      {
+        Eminpole=SpecLP.V[0].Re-psiEn[0];
+        Emaxpole=SpecLP.V[(1+SpecLP.BlockSize*SpecLP.BlockSize)*(SpecLP.N-1)].Re-psiEn[0];
+      }
+      /* if Emin=DBL_MAX or Emax=-DBL_MAX or Gamma==0 determine these */
+      if(Eminpole==Emaxpole)
+      {
+        if(Eminpole==0)
+        {
+          if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin =-1;
+          if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax = 1;
+        }
+        if(Eminpole<0)
+        {
+          if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin = 2.125*Eminpole;
+          if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax =-0.125*Eminpole;
+        }
+        if(Eminpole>0)
+        {
+          if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin =-0.125*Eminpole;
+          if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax = 2.125*Eminpole;
+        }
+      }
+      if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin = Eminpole - 0.125 * (Emaxpole-Eminpole);
+      if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax = Emaxpole + 0.125 * (Emaxpole-Eminpole);
+      if(Options.Settings.Gamma==0) Options.Settings.Gamma = 10*(Options.Settings.Emax-Options.Settings.Emin)/((double)Options.Settings.NE);
+      /* transform list of poles form to spectral form and push to stack */
+      Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+      luaL_setmetatable(L, "Spectra_Type");
+      Spec->NSpectra=Sqr(Options.NT*Options.Npsi);
+      Spec->Spec=malloc(Spec->NSpectra*sizeof(SpectraType));
+      BlockListOfPolesToSpectraWithBroadening(SpecLP, Spec->Spec, Options.Settings.Emin, Options.Settings.Emax, Options.Settings.NE, Options.Settings.Gamma);
+      for(i=0;i<Spec->NSpectra;i++)
+      {
+        Spec->Spec[i].EminPole=Eminpole;
+        Spec->Spec[i].EmaxPole=Emaxpole;
+      }
+      /* push a table to L containing the spectra in Block list of poles form */
+      ShiftBlockListOfPoles(&SpecLP, -psiEn[0]);
+      LuaPushTable_BlockListOfPoles(L, &SpecLP);
+      /* free list of poles representation in memory */
+      FreeBlockListOfPoles(&SpecLP);
+      free(psiEn);
+    }
+    /* create WaveFunction Basis for output if needed and put this on stack and return 2 or 3*/
+    if(Options.KrylovBasis==True)
+    {
+      WaveFunctionType *buff;
+      WaveFunctionMultiply(&psiDenseBasis, 0, 0);
+      if((psiDenseBasis.QComplex==0)&&(EigenfunHDense.QComplex!=0)) MakeComplexWaveFunctionFromReal(&psiDenseBasis, psiDenseBasis);
+      if((psiDenseBasis.QComplex!=0)&&(EigenfunHDense.QComplex==0)) MakeRealWaveFunctionFromComplex(psiDenseBasis, &psiDenseBasis);
+      k=0;
+      lua_createtable(L, EigenfunHDense.Ni, 0);
+      if(EigenfunHDense.QComplex==0)
+      {
+        for(i=0;i<EigenfunHDense.Ni;i++)
+        {
+          for(j=1;j<=EigenfunHDense.Nj;j++)
+          {
+            psiDenseBasis.ValueRe[BlokElement(j)]=EigenfunHDense.VRe[k];
+            k++;
+          }
+          buff = (WaveFunctionType*) lua_newuserdata(L, sizeof(WaveFunctionType));
+          luaL_setmetatable(L, "Wavefunction_Type");
+          WaveFunctionCopy(psiDenseBasis, buff);
           lua_rawseti(L, -2, i+1);
         }
       }
-      free(psiBasis);
+      else
+      {
+        for(i=0;i<EigenfunHDense.Ni;i++)
+        {
+          for(j=1;j<=EigenfunHDense.Nj;j++)
+          {
+            psiDenseBasis.ValueRe[BlokElement(j)]=EigenfunHDense.V[k].Re;
+            psiDenseBasis.ValueIm[BlokElement(j)]=EigenfunHDense.V[k].Im;
+            k++;
+          }
+          buff = (WaveFunctionType*) lua_newuserdata(L, sizeof(WaveFunctionType));
+          luaL_setmetatable(L, "Wavefunction_Type");
+          WaveFunctionCopy(psiDenseBasis, buff);
+          lua_rawseti(L, -2, i+1);
+        }
+      }
+      WaveFunctionFree(&psiDenseBasis);
+      FreeCompactMatrix(&EigenfunHDense);
       return 3;
     }
     else
@@ -1900,180 +2039,307 @@ static int LuaCreateSpectra(lua_State *L)
   }
   else
   {
-    /* calcualte spectra using tensor form, i.e. returned are Sqr(Options.NT * Options.Npsi) sepctra */
-    WaveFunctionType Tpsi[Options.NT*Options.Npsi];
-    WaveFunctionType TpsiSameBasis[Options.NT*Options.Npsi];
-    BlockTriDiagonalMatrixType GTri;
-    /* give warning when more than one function defined and E0 not set */
-    if((Options.Npsi!=1)&&(Options.E0==DBL_MAX))
+    /* start calculating the spectra using Lanczos */
+    if(Options.Tensor==False)
     {
-      luaL_warning(L, "CreateSpectra called with option Tensor->true and %d wave-functions but no energy-shift set.\nTensors can have only one shift and no different shift for each eigen-state.\nConsider using E0->0.0 in order to define a fixed shift.\nUsed the energy of the first wave-function (%f) in this case.\n(Probably does not make physical sence!)",Options.Npsi,psiEn[0]);
-    }
-    /* create starting functions */
-    /* loop over all Transition operators */
-    if(Options.Settings.restrictions.N==0)
-    {
+      TriDiagonalMatrixType *GTri;
+      /* calculate spectra in Tridiagonal form for each combination of operator and wave-function seperately*/
+      GTri = malloc(Options.NT*Options.Npsi*sizeof(TriDiagonalMatrixType));
+      for(i=0;i<Options.NT*Options.Npsi;i++)
+      {
+        GTri[i].N=Options.Settings.NTri;
+        InitTriDiagonalMatrix(&GTri[i]);
+        GTri[i].mu=0; // we have no knowlede on the chemical potential at this point
+      }
+      /* alocate memory for the krylov basis */
+      if(Options.KrylovBasis==True)
+      {
+        psiBasis=malloc(Options.NT*Options.Npsi*sizeof(WaveFunctionType*));
+        for(i=0;i<Options.NT*Options.Npsi;i++)
+        {
+          psiBasis[i]=malloc(Options.Settings.NTri*sizeof(WaveFunctionType));
+        }
+      }
+      /* loop over all Transition operators */
       for(iT=0;iT<Options.NT;iT++)
       {
         /* loop over all wavefunctions */
         for(ipsi=0;ipsi<Options.Npsi;ipsi++)
         {
-          if(OperatorPsi(T[iT], psi[ipsi], &Tpsi[iT*Options.Npsi+ipsi]))
+          if(Options.Settings.restrictions.N==0)
           {
-            luaL_error(L, "OperatorPsi failed in calculation of spectra using the option Tensor=True\n Out of memory?\nTry to calcualte the spectra with the option Tensor=False");
+            if(Options.KrylovBasis==True)
+            {
+              LanczosTriDiagonalizeKrylov(*H, Tpsi[iT*Options.Npsi+ipsi], Options.Settings.epsilon, &GTri[iT*Options.Npsi+ipsi], psiBasis[iT*Options.Npsi+ipsi]);
+            }
+            else
+            {
+              LanczosTriDiagonalize(*H, Tpsi[iT*Options.Npsi+ipsi], Options.Settings.epsilon, &GTri[iT*Options.Npsi+ipsi], Max(Options.Settings.Gamma,Options.Settings.epsilon));
+            }
+          }
+          else
+          {
+            if(Options.KrylovBasis==True)
+            {
+              LanczosTriDiagonalizeKrylovRestricted(*H, Tpsi[iT*Options.Npsi+ipsi],  Options.Settings.restrictions, Options.Settings.epsilon, &GTri[iT*Options.Npsi+ipsi], psiBasis[iT*Options.Npsi+ipsi]);
+            }
+            else
+            {
+              LanczosTriDiagonalizeRestricted(*H, Tpsi[iT*Options.Npsi+ipsi], Options.Settings.restrictions, Options.Settings.epsilon, &GTri[iT*Options.Npsi+ipsi], Max(Options.Settings.Gamma,Options.Settings.epsilon));
+            }
+          }
+          if(Options.stream!=NULL)
+          {
+            if (Options.NT*Options.Npsi==1)
+            {
+              snprintf(filename, MAXStrLength, "%s", Options.stream);
+            }
+            else
+            {
+              snprintf(filename, MAXStrLength, "%s_%02d", Options.stream, iT*Options.Npsi+ipsi);
+            }
+            FilePrintPlainTriDiagonalMatrix(GTri[iT*Options.Npsi+ipsi], filename, "w");
           }
         }
       }
-    }
-    else
-    {
-      for(iT=0;iT<Options.NT;iT++)
+      /* determine Eminpole and Emaxpole */
+      /* get eigenvalues of all Tri diagonal matrices and set smallest and largest eigenvalue */
+      Eminpole=DBL_MAX;
+      Emaxpole=-DBL_MAX;
+      val=malloc((Options.Settings.NTri)*sizeof(double));
+      for(i=0;i<Options.NT*Options.Npsi;i++)
       {
-        /* loop over all wavefunctions */
-        for(ipsi=0;ipsi<Options.Npsi;ipsi++)
+        TriDiagonalMatrixToEigenvalues(GTri[i], val);
+        if((val[0]-psiEn[i])<Eminpole)Eminpole=val[0]-psiEn[i];
+        if((val[Options.Settings.NTri-1]-psiEn[i])>Emaxpole)Emaxpole=val[Options.Settings.NTri-1]-psiEn[i];
+      }
+      /* if Emin=DBL_MAX or Emax=-DBL_MAX or Gamma==0 determine these */
+      if(Eminpole==Emaxpole)
+      {
+        if(Eminpole==0)
         {
-          if(OperatorPsiRestricted(T[iT], psi[ipsi], &Tpsi[iT*Options.Npsi+ipsi], Options.Settings.restrictions))
-          {
-            luaL_error(L, "OperatorPsi failed in calculation of spectra using the option Tensor=True\n Out of memory?\nTry to calcualte the spectra with the option Tensor=False");
-          }
+          if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin =-1;
+          if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax = 1;
+        }
+        if(Eminpole<0)
+        {
+          if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin = 2.125*Eminpole;
+          if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax =-0.125*Eminpole;
+        }
+        if(Eminpole>0)
+        {
+          if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin =-0.125*Eminpole;
+          if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax = 2.125*Eminpole;
         }
       }
-    }
-    WaveFunctionCopy(Tpsi[0], &TpsiSameBasis[0]);
-    WaveFunctionFree(&(Tpsi[0]));
-    for(i=1;i<Options.NT*Options.Npsi;i++)
-    {
-      if(WaveFunctionAddMultipliedUnionBasis(&TpsiSameBasis[0], Tpsi[i], 0)) return luaL_error(L, "malloc failed. Out of memory during initialization in CalculateSpectra\n");
-    }
-    for(i=1;i<Options.NT*Options.Npsi;i++)
-    {
-      if(WaveFunctionInitCopyBasis(&(TpsiSameBasis[i]), TpsiSameBasis[0])) return luaL_error(L, "malloc failed. Out of memory during initialization in CalculateSpectra\n");
-      WaveFunctionAddConserveBasis(&(TpsiSameBasis[i]), Tpsi[i]);
-      WaveFunctionFree(&(Tpsi[i]));
-    }
-    /* init BlockTriDiagonal Matrix */
-    GTri.BlockSize = Options.NT*Options.Npsi;
-    GTri.N = Options.Settings.NTri;
-    /* create block tridiagonal representation */
-    GTri.QComplex=0;
-    if(H->QComplex) GTri.QComplex=1;
-    for(i=0;i<GTri.BlockSize;i++)
-    {
-      if(Tpsi[i].QComplex) GTri.QComplex=1;
-    }
-    InitBlockTridiagonalMatrix(&GTri);
-    GTri.mu=psiEn[0];
-
-    if(Options.Settings.restrictions.N==0)
-    {
-      if(Options.KrylovBasis==True)
-      {
-        BlockSizeN=malloc(GTri.N*sizeof(uint32_t));
-        psiBasis=malloc(Options.Settings.NTri*sizeof(WaveFunctionType*));
-        LanczosBlockTriDiagonalizeKrylov(*H, TpsiSameBasis, Options.Settings.epsilon, &GTri, psiBasis, BlockSizeN);
-      }
-      else
-      {
-        LanczosBlockTriDiagonalize(*H, TpsiSameBasis, Options.Settings.epsilon, &GTri, Max(Options.Settings.Gamma,Options.Settings.epsilon));
-      }
-    }
-    else
-    {
-      if(Options.KrylovBasis==True)
-      {
-        BlockSizeN=malloc(GTri.N*sizeof(uint32_t));
-        psiBasis=malloc(Options.Settings.NTri*sizeof(WaveFunctionType*));
-        LanczosBlockTriDiagonalizeKrylovRestricted(*H, TpsiSameBasis, Options.Settings.restrictions, Options.Settings.epsilon, &GTri, psiBasis, BlockSizeN);
-      }
-      else
-      {
-        LanczosBlockTriDiagonalizeRestricted(*H, TpsiSameBasis, Options.Settings.restrictions, Options.Settings.epsilon, &GTri, Max(Options.Settings.Gamma,Options.Settings.epsilon));
-      }
-    }
-
-
-    /* determine Eminpole and Emaxpole */
-    /* get eigenvalues Block Tridiagonal matrix and set smallest and largest eigenvalue */
-    Eminpole = DBL_MAX;
-    Emaxpole =-DBL_MAX;
-
-    //set Eminpole and Emaxpole (they are in the output and I need them for auto range determination
-    val=malloc(GTri.N*GTri.BlockSize*sizeof(double));
-    BlockTriDiagonalMatrixEigenValues(&GTri,val);
-    Eminpole=val[0];
-    Emaxpole=val[GTri.N*GTri.BlockSize-1];
-    free(val);
-
-
-
-
-
-
-
-    /* if Emin=DBL_MAX or Emax=-DBL_MAX or Gamma==0 determine these */
-    if(Eminpole==Emaxpole)
-    {
-      if(Eminpole==0)
-      {
-        if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin =-1;
-        if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax = 1;
-      }
-      if(Eminpole<0)
-      {
-        if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin = 2.125*Eminpole;
-        if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax =-0.125*Eminpole;
-      }
-      if(Eminpole>0)
-      {
-        if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin =-0.125*Eminpole;
-        if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax = 2.125*Eminpole;
-      }
-    }
-    if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin = Eminpole - 0.125 * (Emaxpole-Eminpole);
-    if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax = Emaxpole + 0.125 * (Emaxpole-Eminpole);
-    if(Options.Settings.Gamma==0) Options.Settings.Gamma = 10*(Options.Settings.Emax-Options.Settings.Emin)/((double)Options.Settings.NE);
-
-    //TODO: different transformation to spectralform when self energy is present
-
-    /* transform tridiagonal form to spectral form and push to stack */
-    Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
-    luaL_setmetatable(L, "Spectra_Type");
-    Spec->NSpectra=Sqr(Options.NT*Options.Npsi);
-    Spec->Spec=malloc(Spec->NSpectra*sizeof(SpectraType));
-    BlockTriDiagonalMatrixToSpectra(psiEn[0], &GTri, Spec->Spec, Options.Settings.Emin, Options.Settings.Emax, Options.Settings.NE, Options.Settings.Gamma);
-    for(i=0;i<Spec->NSpectra;i++)
-    {
+      if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin = Eminpole - 0.125 * (Emaxpole-Eminpole);
+      if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax = Emaxpole + 0.125 * (Emaxpole-Eminpole);
+      if(Options.Settings.Gamma==0) Options.Settings.Gamma = 10*(Options.Settings.Emax-Options.Settings.Emin)/((double)Options.Settings.NE);
+      // TODO different tridiag to spectral form when self energy is present
+      
+      /* transform tridiagonal form to spectral form and push to stack */
+      Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+      luaL_setmetatable(L, "Spectra_Type");
+      Spec->NSpectra=Options.NT*Options.Npsi;
+      Spec->Spec=malloc(Spec->NSpectra*sizeof(SpectraType));
+      Spec->Spec[0].N=Options.Settings.NE;
+      Spec->Spec[0].Emin=Options.Settings.Emin;
+      Spec->Spec[0].Emax=Options.Settings.Emax;
+      Spec->Spec[0].dE=(Options.Settings.Emax-Options.Settings.Emin)/((double)Options.Settings.NE);
       Spec->Spec[0].EminPole=Eminpole;
       Spec->Spec[0].EmaxPole=Emaxpole;
-    }
-    /* push a table to L containing the spectra in Block Tridiagonal form */
-    ShiftBlockTridiagonalMatrix(&GTri, -psiEn[0]);
-    LuaPushTable_BlockTriDiagonalMatrixType(L, &GTri);
-    /* push Krylov basis to stack */
-    if(Options.KrylovBasis==True)
-    {
-      /* push a table to L containing the krylov basis */
-      lua_createtable(L,GTri.N,0);
+      Spec->Spec[0].Gamma=Options.Settings.Gamma;
+      Spec->Spec[0].ResonantEnergy=NAN;
+      strcpy(Spec->Spec[0].Name, "Spec");
+      for(i=0;i<Spec->NSpectra;i++)
       {
-        for(i=0;i<GTri.N;i++)
-        {
-          if(BlockSizeN[i]==0) break;
-          LuaPushTable_WaveFunctionType(L, psiBasis[i], BlockSizeN[i]);
-          lua_rawseti(L, -2, i+1);
-        }
+        SpectrumAllocate(Spec->Spec[0], &(Spec->Spec[i]));
+        sprintf(Spec->Spec[i].Name, "Spectrum %i",i);
+        TriDiagonalMatrixToSpectrum(psiEn[i], GTri[i], &(Spec->Spec[i]));
       }
-      free(BlockSizeN);
-    }
-    /* free tridiagonal representation in memory */
-    FreeBlockTridiagonalMatrix(&GTri);
-    
-    if(Options.KrylovBasis==True)
-    {
-      return 3;
+      //TODO different spectrum pushed to stack when self energy is present
+      
+      /* push a table to L containing the spectra in tridiagonal form */
+      /* table contains {{a,b,mu=mu,type=tri},{a,b,,mu=mu,type=tri},{a,b,,mu=mu,type=tri},....} */
+      lua_createtable(L,Spec->NSpectra,0);
+      for(i=0;i<Spec->NSpectra;i++)
+      {
+        ShiftTriDiagonalMatrix(&(GTri[i]), -psiEn[i]);
+        LuaPushTable_TriDiagonalMatrixType(L, &(GTri[i]));
+        lua_rawseti(L, -2, i+1);
+      }
+      /* free tridiagonal representation in memory */
+      for(i=0;i<Spec->NSpectra;i++)
+      {
+        FreeTriDiagonalMatrix(&GTri[i]);
+      }
+      free(GTri);
+      free(psiEn);
+      free(Tpsi);
+      /* return KrylovBasis if asked for and number of elements pushed on stack */
+      if(Options.KrylovBasis==True)
+      {
+        if(Options.NT*Options.Npsi==1)
+        {
+          LuaPushTable_WaveFunctionType_RemoveEmpty(L, psiBasis[0], Options.Settings.NTri);
+          free(psiBasis[0]);
+        }
+        else
+        {
+          lua_createtable(L,Options.NT*Options.Npsi,0);
+          for(i=0;i<Options.NT*Options.Npsi;i++)
+          {
+            LuaPushTable_WaveFunctionType_RemoveEmpty(L, psiBasis[i], Options.Settings.NTri);
+            free(psiBasis[i]);
+            lua_rawseti(L, -2, i+1);
+          }
+        }
+        free(psiBasis);
+        return 3;
+      }
+      else
+      {
+        return 2;
+      }
     }
     else
     {
-      return 2;
+      /* calcualte spectra using tensor form, i.e. returned are Sqr(Options.NT * Options.Npsi) sepctra */
+      WaveFunctionType TpsiSameBasis[Options.NT*Options.Npsi];
+      BlockTriDiagonalMatrixType GTri;
+      /* give warning when more than one function defined and E0 not set */
+      if((Options.Npsi!=1)&&(Options.E0==DBL_MAX))
+      {
+        luaL_warning(L, "CreateSpectra called with option Tensor->true and %d wave-functions but no energy-shift set.\nTensors can have only one shift and no different shift for each eigen-state.\nConsider using E0->0.0 in order to define a fixed shift.\nUsed the energy of the first wave-function (%f) in this case.\n(Probably does not make physical sence!)",Options.Npsi,psiEn[0]);
+      }
+      /* place starting functions on same basis */
+      WaveFunctionCopy(Tpsi[0], &TpsiSameBasis[0]);
+      WaveFunctionFree(&(Tpsi[0]));
+      for(i=1;i<Options.NT*Options.Npsi;i++)
+      {
+        if(WaveFunctionAddMultipliedUnionBasis(&TpsiSameBasis[0], Tpsi[i], 0)) return luaL_error(L, "malloc failed. Out of memory during initialization in CalculateSpectra\n");
+      }
+      for(i=1;i<Options.NT*Options.Npsi;i++)
+      {
+        if(WaveFunctionInitCopyBasis(&(TpsiSameBasis[i]), TpsiSameBasis[0])) return luaL_error(L, "malloc failed. Out of memory during initialization in CalculateSpectra\n");
+        WaveFunctionAddConserveBasis(&(TpsiSameBasis[i]), Tpsi[i]);
+        WaveFunctionFree(&(Tpsi[i]));
+      }
+      /* init BlockTriDiagonal Matrix */
+      GTri.BlockSize = Options.NT*Options.Npsi;
+      GTri.N = Options.Settings.NTri;
+      /* create block tridiagonal representation */
+      GTri.QComplex=0;
+      if(H->QComplex) GTri.QComplex=1;
+      for(i=0;i<GTri.BlockSize;i++)
+      {
+        if(TpsiSameBasis[i].QComplex) GTri.QComplex=1;
+      }
+      InitBlockTridiagonalMatrix(&GTri);
+      GTri.mu=psiEn[0];
+      
+      if(Options.Settings.restrictions.N==0)
+      {
+        if(Options.KrylovBasis==True)
+        {
+          BlockSizeN=malloc(GTri.N*sizeof(uint32_t));
+          psiBasis=malloc(Options.Settings.NTri*sizeof(WaveFunctionType*));
+          LanczosBlockTriDiagonalizeKrylov(*H, TpsiSameBasis, Options.Settings.epsilon, &GTri, psiBasis, BlockSizeN);
+        }
+        else
+        {
+          LanczosBlockTriDiagonalize(*H, TpsiSameBasis, Options.Settings.epsilon, &GTri, Max(Options.Settings.Gamma,Options.Settings.epsilon));
+        }
+      }
+      else
+      {
+        if(Options.KrylovBasis==True)
+        {
+          BlockSizeN=malloc(GTri.N*sizeof(uint32_t));
+          psiBasis=malloc(Options.Settings.NTri*sizeof(WaveFunctionType*));
+          LanczosBlockTriDiagonalizeKrylovRestricted(*H, TpsiSameBasis, Options.Settings.restrictions, Options.Settings.epsilon, &GTri, psiBasis, BlockSizeN);
+        }
+        else
+        {
+          LanczosBlockTriDiagonalizeRestricted(*H, TpsiSameBasis, Options.Settings.restrictions, Options.Settings.epsilon, &GTri, Max(Options.Settings.Gamma,Options.Settings.epsilon));
+        }
+      }
+      /* determine Eminpole and Emaxpole */
+      /* get eigenvalues Block Tridiagonal matrix and set smallest and largest eigenvalue */
+      Eminpole = DBL_MAX;
+      Emaxpole =-DBL_MAX;
+      //set Eminpole and Emaxpole (they are in the output and I need them for auto range determination
+      val=malloc(GTri.N*GTri.BlockSize*sizeof(double));
+      BlockTriDiagonalMatrixEigenValues(&GTri,val);
+      Eminpole=val[0]-psiEn[0];
+      Emaxpole=val[GTri.N*GTri.BlockSize-1]-psiEn[0];
+      free(val);
+      /* if Emin=DBL_MAX or Emax=-DBL_MAX or Gamma==0 determine these */
+      if(Eminpole==Emaxpole)
+      {
+        if(Eminpole==0)
+        {
+          if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin =-1;
+          if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax = 1;
+        }
+        if(Eminpole<0)
+        {
+          if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin = 2.125*Eminpole;
+          if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax =-0.125*Eminpole;
+        }
+        if(Eminpole>0)
+        {
+          if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin =-0.125*Eminpole;
+          if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax = 2.125*Eminpole;
+        }
+      }
+      if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin = Eminpole - 0.125 * (Emaxpole-Eminpole);
+      if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax = Emaxpole + 0.125 * (Emaxpole-Eminpole);
+      if(Options.Settings.Gamma==0) Options.Settings.Gamma = 10*(Options.Settings.Emax-Options.Settings.Emin)/((double)Options.Settings.NE);
+      
+      //TODO: different transformation to spectralform when self energy is present
+      
+      /* transform tridiagonal form to spectral form and push to stack */
+      Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+      luaL_setmetatable(L, "Spectra_Type");
+      Spec->NSpectra=Sqr(Options.NT*Options.Npsi);
+      Spec->Spec=malloc(Spec->NSpectra*sizeof(SpectraType));
+      BlockTriDiagonalMatrixToSpectra(psiEn[0], &GTri, Spec->Spec, Options.Settings.Emin, Options.Settings.Emax, Options.Settings.NE, Options.Settings.Gamma);
+      for(i=0;i<Spec->NSpectra;i++)
+      {
+        Spec->Spec[i].EminPole=Eminpole;
+        Spec->Spec[i].EmaxPole=Emaxpole;
+      }
+      /* push a table to L containing the spectra in Block Tridiagonal form */
+      ShiftBlockTridiagonalMatrix(&GTri, -psiEn[0]);
+      LuaPushTable_BlockTriDiagonalMatrixType(L, &GTri);
+      /* push Krylov basis to stack */
+      if(Options.KrylovBasis==True)
+      {
+        /* push a table to L containing the krylov basis */
+        lua_createtable(L,GTri.N,0);
+        {
+          for(i=0;i<GTri.N;i++)
+          {
+            if(BlockSizeN[i]==0) break;
+            WaveFunctionArraySeperateBasis(psiBasis[i], BlockSizeN[i]);
+            LuaPushTable_WaveFunctionType(L, psiBasis[i], BlockSizeN[i]);
+            lua_rawseti(L, -2, i+1);
+          }
+        }
+        free(BlockSizeN);
+      }
+      /* free tridiagonal representation in memory */
+      FreeBlockTridiagonalMatrix(&GTri);
+      
+      if(Options.KrylovBasis==True)
+      {
+        return 3;
+      }
+      else
+      {
+        return 2;
+      }
     }
   }
 }
@@ -2480,34 +2746,95 @@ static int LuaMeanFieldOperator(lua_State *L)
   return 1;
 }
 
+/*  transform an operator to a table
+ *  on stack an operator 
+ *  and optional either a wave-function, a list of wave functions or a density matrix
+ *  For the case there is only an operator on stack a mean-field operator for 0 density is returned
+ *  For the case there is a single function on stack returned is a table of size psi.N representing the Operator on a single determinant basis
+ *  For the case there is a list of funcitons on stack returned is a table representing <psi_j O psi_i >
+ *  For the case there is a density matrix on stack returned is a table representing the mean-field operator
+ */
 static int LuaOperatorToMatrix(lua_State *L)
 {
   OperatorType *H;
-  CompactMatrixType *Rho, HMat;
   uint32_t len;
   len = (uint32_t)lua_gettop(L);
   H = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
   if(len==1)
   {
+    CompactMatrixType *Rho, HMat;
     Rho=malloc(sizeof(CompactMatrixType));
     Rho->Ni=H->NFermion;
     Rho->Nj=H->NFermion;
     Rho->QComplex=0;
     InitCompactMatrix(Rho);
+    MeanFieldOperatorOneElectronMatrix(H, &HMat, *Rho);
+    LuaPushTable_CompactMatrixType(L, &HMat);
+    FreeCompactMatrix(&HMat);
+    FreeCompactMatrix(Rho);
+    free(Rho);
+    return 1;
   }
   else if (len==2)
   {
-    Rho = (CompactMatrixType *) luaL_checkCompactMatrix(L, 2);
+    switch (lua_type(L,2))
+    {
+      case LUA_TUSERDATA:
+      {
+        if (luaL_testudata(L, 2, "Wavefunction_Type") != NULL)
+        {
+          WaveFunctionType *psi;
+          CompactMatrixType HMat;
+          psi = (WaveFunctionType *) luaL_checkudata(L, 2, "Wavefunction_Type");
+          OperatorToDeterminantMatrix(H, psi, &HMat);
+          LuaPushTable_CompactMatrixType(L, &HMat);
+          FreeCompactMatrix(&HMat);
+          return 1;
+        }
+        return luaL_error(L, "OperatorToMatrix expects either a wave-function, table of functions or a density matrix on position two\n");
+      }
+      case LUA_TTABLE:
+      {
+        if(lua_objlen(L, 2)==0) return luaL_error(L, "Table of length 0 found at position 2 in OperatorToMatrix\n");
+        lua_rawgeti(L, 2, 1);
+        if (luaL_testudata(L, -1, "Wavefunction_Type") != NULL)
+        {
+          lua_pop(L,1);
+          MatrixType res;
+          WaveFunctionType *psi;
+          psi = luaL_checkarray_WaveFunctionType(L, 2, &(res.Ni));
+          res.Nj=res.Ni;
+          res.QComplex=1;
+          InitMatrix(&res);
+          PsiOperatorPsiMatrix(*H, psi, &res);
+          LuaPushTable_MatrixType(L, &res);
+          FreeMatrix(&res);
+          free(psi);
+          return 1;
+        }
+        else
+        {
+          lua_pop(L,1);
+          CompactMatrixType *Rho, HMat;
+          Rho = (CompactMatrixType *) luaL_checkCompactMatrix(L, 2);
+          MeanFieldOperatorOneElectronMatrix(H, &HMat, *Rho);
+          LuaPushTable_CompactMatrixType(L, &HMat);
+          FreeCompactMatrix(Rho);
+          FreeCompactMatrix(&HMat);
+          free(Rho);
+          return 1;
+        }
+      }
+      default:
+      {
+        return luaL_error(L, "Error in OperatorToMatrix, expected one (Operator) or two (Operator, Wavefunction / List of functions / DensityMatrix) input parameters, not (%d)\n",len);
+      }
+    }
   }
   else
   {
-    return luaL_error(L, "Error in OperatorToMatrix, expected one (Operator) or two (Operator, DensityMatrix) input parameters, not (%d)\n",len);
+    return luaL_error(L, "Error in OperatorToMatrix, expected one (Operator) or two (Operator, Wavefunction / List of functions / DensityMatrix) input parameters, not (%d)\n",len);
   }
-  MeanFieldOperatorOneElectronMatrix(H, &HMat, *Rho);
-  LuaPushTable_CompactMatrixType(L, &HMat);
-  FreeCompactMatrix(Rho);
-  free(Rho);
-  return 1;
 }
 
 static int LuaEvolveToGroundstate(lua_State * L)
@@ -3560,7 +3887,6 @@ static int LuaStatistics(lua_State *L)
 }
 
 
-//TODO: C++: no setSize needed anymore
 int isIntElementOf(const uint16_t element, const uint16_t * const set, const uint32_t setSize)
 {
 	int i;
@@ -3666,7 +3992,7 @@ void lua_groupOrbitals(lua_State *L, int indTablePos, char* groupKey, char** gro
 	if (!lua_isnil(L,-1))
 	{
 		printf("\nWarning: Group with name \"");
-		printf(groupKey);
+		printf("%s",groupKey);
 		printf("\" already exists and cannot be included a second time.\n");
 		return;
 	}
@@ -3680,7 +4006,7 @@ void lua_groupOrbitals(lua_State *L, int indTablePos, char* groupKey, char** gro
 		if (lua_isnil(L, -1))
 		{
 			printf("\nWarning: Orbital with name \"");
-			printf(groupMembers[j]);
+			printf("%s",groupMembers[j]);
 			printf("\" was not found and thus cannot be included in any grouping.\n");
 			lua_pop(L, 1);
 		} else
@@ -3783,7 +4109,7 @@ void lua_setAtomicOrbitalIndices(lua_State *L, char* orb, int * NF, int indTable
 	}	else
 	{
 		printf("\nWarning: Key \"");
-		printf(orb);
+		printf("%s",orb);
 		printf("\" could not be interpreted as an orbital\n");
 		return;
 	}
@@ -3825,7 +4151,7 @@ static int lua_createAtomicIndices(lua_State *L, int isDict)
 		{
 			lua_pop(L,1);
 			printf("\nWarning: Orbital with name \"");
-			printf(orbitals[i]);
+			printf("%s",orbitals[i]);
 			printf("\" already exists and cannot be included a second time.\n");
 		}
 	}
@@ -3905,6 +4231,7 @@ static const struct luaL_Reg global_functions[] = {
   {"Eigensystem", LuaEigensystem},
   {"EvolveToGroundstate", LuaEvolveToGroundstate},
   {"Expand",LuaWavefunctionExpand},
+  {"ExpandToBasis",LuaWaveFunctionToDeterminantBasis},
   {"FileReadStuttgartCTRL", LuaFileReadStuttgartCTRL},
   {"FileReadStuttgartHAMR", LuaFileReadStuttgartHAMR},
   {"FileReadDresdenFPLO", LuaFileReadDresdenFPLO},

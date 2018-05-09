@@ -508,6 +508,47 @@ void WaveFunctionPrefactorDet(const WaveFunctionType psi, const uint8_t * const 
   }
 }
 
+/* returns the index of det in psi
+ * if det is not in psi returns 0
+ * Note that the first index in psi can not be used!
+ */
+uint32_t WaveFunctionIndexDet(const WaveFunctionType * const psi, const uint8_t * const det)
+{
+  uint32_t i, NextIndex, PsiAIsPsiB;
+  /* test if the key that belongs to psi already excists */
+  if (psi->KeyList[hash(det, psi->NWord, psi->NBitsKey)] == 0)
+  {                             /* det not in key return 0 */
+    return 0;
+  }
+  else
+  {                             /* The key is already taken, test if this is due to a collision, or if psi is already in the basis set */
+    NextIndex = psi->KeyList[hash(det, psi->NWord, psi->NBitsKey)];
+    while (1)
+    {
+      PsiAIsPsiB = 1;
+      for (i = 0; i < psi->NWord; i++)
+      {
+        if (psi->Determinant[BlokElementDet(NextIndex, psi->NWord, i)] != det[i]) PsiAIsPsiB = 0;
+      }
+      if (PsiAIsPsiB)
+      {                         /* psi already in basis set return prefactor and leave loop  */
+        return NextIndex;
+      }
+      else
+      {                         /* psi not equal to this one, if there is a next continue, otherwise leave */
+        if (!psi->Next[BlokElement(NextIndex)])
+        {                       /* hash(psi) had a collision, but det is different. There are no other psi's with the same hash, so det not in basis lets leave */
+          return 0;
+        }
+        else
+        {                       /* the key is in use and there still is at least one more element with the same key, continu checking */
+          NextIndex = psi->Next[BlokElement(NextIndex)];
+        }
+      }
+    }
+  }
+}
+
 uint32_t WaveFunctionAddSameBasis(WaveFunctionType a, const WaveFunctionType b)
 {
   if ((b.QComplex) && (!a.QComplex))
@@ -1842,4 +1883,56 @@ uint32_t WaveFunctionExpand(const WaveFunctionType * const psi, const uint16_t *
     }
   }
   return retval;
+}
+
+
+/*  input:
+ *     psi:     a wavefunction
+ *  output:
+ *     psilist: a list of psi.N functions, each with a single determinant and prefactor 1
+ *  psilist must be allocated when function is called
+ */
+uint32_t WaveFunctionExpandToDeterminantBasis(const WaveFunctionType * const psi, WaveFunctionType * psilist)
+{
+  uint32_t i,j,k;
+  char detname[psi->NFermion+3*psi->NBoson+1];
+  detname[psi->NFermion+3*psi->NBoson]='\0';
+  for(i=0;i<psi->N;i++)
+  {
+    psilist[i].NFermion=psi->NFermion;
+    psilist[i].NBoson=psi->NBoson;
+    psilist[i].QComplex=0;
+    psilist[i].NBitsKey=2;
+    if(WaveFunctionInit(&(psilist[i])))
+    {
+      while (i!=0)
+      {
+        i--;
+        WaveFunctionFree(&(psilist[i]));
+      }
+      printf("WaveFunctionInit failed in WaveFunctionExpandToDeterminantBasis\n");
+      return 1;
+    }
+    for(j=0;j<psi->NFermion;j++)
+    {
+      detname[j]= (psi->Determinant[BlokElementDet(i+1, psi->NWord, (j >> 3))] & (128 >> (j & 7)))?'1':'0';
+    }
+    k=0;
+    for(j=psi->NWord-psi->NBoson;j<psi->NWord;j++)
+    {
+      sprintf(&(detname[psi->NFermion+k]), " %2.2X", psi->Determinant[BlokElementDet(i+1, psi->NWord, j)]);
+      k+=3;
+    }
+    snprintf(psilist[i].Name, MAXStrLength, "%s %s",psi->Name,detname);
+    psilist[i].Name[MAXStrLength-1]='\0';
+  }
+  for(i=0;i<psi->N;i++)
+  {
+    if(RealWaveFunctionAddElement(&(psilist[i]), &(psi->Determinant[BlokElementDet(i+1, psi->NWord, 0)]), 1))
+    {
+      printf("RealWaveFunctionAddElement failed in WaveFunctionExpandToDeterminantBasis\n");
+      return 1;
+    }
+  }
+  return 0;
 }
