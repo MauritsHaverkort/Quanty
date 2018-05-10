@@ -95,7 +95,7 @@ Npsi=10;
 psiList = Eigensystem(H, StartRestrictions, Npsi);
 -- note that for small systems Eigensystem creates a dense matrix and uses dense methods. 
 -- The boarder between smal and big can be set, if you want to test the Lanczos algorithm as well
--- psiList = Eigensystem(H, StartRestrictions, Npsi,{{"DenseBoarder",5}});
+-- psiList = Eigensystem(H, StartRestrictions, Npsi,{{"DenseBorder",5}});
 
 -- create output that lists the energy, kinetic energy and potential energy of the states found
 oppList={H,Hkin,Hpot}

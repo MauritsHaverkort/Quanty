@@ -1587,7 +1587,7 @@ static int LuaCreateSpectra(lua_State *L)
     {"Gamma","double",&(Options.Settings.Gamma)},
     {"E0","double",&(Options.E0)},
     {"DenseMethod","bool",&(Options.DenseMethod)},
-    {"DenseBoarder","uint32_t",&(Options.Settings.DenseBoarder)},
+    {"DenseBorder","uint32_t",&(Options.Settings.DenseBorder)},
     {"file","char*",&(Options.stream)}, // temporary undoccumented option
     {NULL, NULL, NULL}};
   /* free garbage full cycle*/
@@ -1766,7 +1766,7 @@ static int LuaCreateSpectra(lua_State *L)
   WaveFunctionCopy(Tpsi[0], &psiDenseBasis);
   for(i=1;i<Options.NT*Options.Npsi;i++)
   {
-    if((Options.DenseMethod==False)&&(psiDenseBasis.N>Options.Settings.DenseBoarder))
+    if((Options.DenseMethod==False)&&(psiDenseBasis.N>Options.Settings.DenseBorder))
     {
       WaveFunctionFree(&psiDenseBasis);
       break;
@@ -1778,14 +1778,14 @@ static int LuaCreateSpectra(lua_State *L)
   }
   /* expand psiBasis to represent H^n psiBasis for all n */
   len=0;
-  if((Options.DenseMethod==True)||(OpsiDenseBasis.N<Options.Settings.DenseBoarder)) while(len!=psiDenseBasis.N)
+  if((Options.DenseMethod==True)||(OpsiDenseBasis.N<Options.Settings.DenseBorder)) while(len!=psiDenseBasis.N)
   {
     len=psiDenseBasis.N;
     if(OperatorPsi(*H, psiDenseBasis, &OpsiDenseBasis))
     {
       luaL_error(L, "OperatorPsi failed in calculation of spectra\n Out of memory?\nTry to split the call to several calls for different wave-functions or transition operators\n");
     }
-    if((Options.DenseMethod==False)&&(OpsiDenseBasis.N>Options.Settings.DenseBoarder))
+    if((Options.DenseMethod==False)&&(OpsiDenseBasis.N>Options.Settings.DenseBorder))
     {
       WaveFunctionFree(&OpsiDenseBasis);
       WaveFunctionFree(&psiDenseBasis);
@@ -1797,7 +1797,7 @@ static int LuaCreateSpectra(lua_State *L)
       luaL_error(L, "WaveFunctionAddUnionBasis failed in calculation of spectra\n Out of memory?\nTry to split the call to several calls for different wave-functions or transition operators\n");
     }
     WaveFunctionFree(&OpsiDenseBasis);
-    if((Options.DenseMethod==False)&&(psiDenseBasis.N>Options.Settings.DenseBoarder))
+    if((Options.DenseMethod==False)&&(psiDenseBasis.N>Options.Settings.DenseBorder))
     {
       WaveFunctionFree(&psiDenseBasis);
       break;
@@ -1815,7 +1815,7 @@ static int LuaCreateSpectra(lua_State *L)
     TpsiDense.QComplex=psiDenseBasis.QComplex;
     if(InitCompactMatrix(&TpsiDense))
     {
-      luaL_error(L, "InitCompactMatrix failed in calculation of spectra\n Out of memory?\nTry to split the call to several calls for different wave-functions or transition operators or use sparse methods ({\"DenseBoarder\",0} in options)\n");
+      luaL_error(L, "InitCompactMatrix failed in calculation of spectra\n Out of memory?\nTry to split the call to several calls for different wave-functions or transition operators or use sparse methods ({\"DenseBorder\",0} in options)\n");
     }
     iT=0;
     for(i=0;i<Options.NT*Options.Npsi;i++)
@@ -2512,7 +2512,7 @@ static int LuaCreateResonantSpectra(lua_State *L)
   Spec->NSpectra=0;
   Spec->Spec=NULL;
   /* test if dense methods can be used */
-  // test if sum_{i,j} H1^n T1_j psi_i and sum_{i,j,k} H2^n T2_k H1^n T1_j psi_i fits on a basis smaller then DenseBoarder
+  // test if sum_{i,j} H1^n T1_j psi_i and sum_{i,j,k} H2^n T2_k H1^n T1_j psi_i fits on a basis smaller then DenseBorder
   // use dense methods
   // create psiDense
   // create T1Dense[i]
@@ -2972,7 +2972,7 @@ static int LuaEigensystem(lua_State * L)
   if(L->l_G->gcrunning) lua_gc(L, LUA_GCCOLLECT, 0);
   /* set options */
   LuaOptionsType LuaEigensystemOptions[]={
-    {"DenseBoarder", "uint32_t", &(Options.Settings.DenseBoarder)},
+    {"DenseBorder", "uint32_t", &(Options.Settings.DenseBorder)},
     {"NKrylovStart","uint32_t",&(Options.Settings.NKrylovStart)},
     {"NKrylovMax","uint32_t",&(Options.Settings.NKrylovMax)},
     {"NKrylovStep","uint32_t",&(Options.Settings.NKrylovStep)},
@@ -3049,7 +3049,7 @@ static int LuaEigensystem(lua_State * L)
   {
     LuaCheckOptions(L, -1, LuaEigensystemOptions);
     if(Options.DeterminantRestrictions.N!=0)Options.restrictions=True;
-    Options.Settings.DenseBoarder = Max(Options.Settings.DenseBoarder,Npsi);
+    Options.Settings.DenseBorder = Max(Options.Settings.DenseBorder,Npsi);
   }
   if(QStartRestrictions)
   {

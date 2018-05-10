@@ -77,8 +77,8 @@ psilist = {psigrd,sqrt(4)*psigrd,sqrt(16)*psigrd}
 -- spectri is optional
 
 print("======== Original ========")
-specLanc,  GLanc  = CreateSpectra(H, {Tx,sqrt(100)*Tx}, psilist,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"DenseBoarder",0}})
-specDense, GDense = CreateSpectra(H, {Tx,sqrt(100)*Tx}, psilist,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"DenseBoarder",100}})
+specLanc,  GLanc  = CreateSpectra(H, {Tx,sqrt(100)*Tx}, psilist,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"DenseBorder",0}})
+specDense, GDense = CreateSpectra(H, {Tx,sqrt(100)*Tx}, psilist,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"DenseBorder",100}})
 
 print("The spectra in a Spetra Type, the standard to use and fastest method with intensities on a Grid\n",specLanc)
 print("The difference between the spectrum calculated using dense and sparse methods\n",specLanc-specDense)
@@ -89,8 +89,8 @@ print("The second argument is besides a table a function that can be evaluated a
 
 
 print("======== with Krylov basis ========")
-specLanc,  GLanc,  psiKrylov = CreateSpectra(H, {Tx,sqrt(100)*Tx,Ident,Ty}, psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"KrylovBasis",true},{"DenseBoarder",0}})
-specDense, GDense, psiDense  = CreateSpectra(H, {Tx,sqrt(100)*Tx,Ident,Ty}, psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"KrylovBasis",true},{"DenseBoarder",100}})
+specLanc,  GLanc,  psiKrylov = CreateSpectra(H, {Tx,sqrt(100)*Tx,Ident,Ty}, psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"KrylovBasis",true},{"DenseBorder",0}})
+specDense, GDense, psiDense  = CreateSpectra(H, {Tx,sqrt(100)*Tx,Ident,Ty}, psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"KrylovBasis",true},{"DenseBorder",100}})
 
 print("The spectra in a Spetra Type, the standard to use and fastest method with intensities on a Grid\n",specLanc)
 print("The difference between the spectrum calculated using dense and sparse methods\n",specLanc-specDense)
@@ -119,8 +119,8 @@ for i=1,#psiKrylov do
 end
 
 print("======== As tensor ========")
-specLanc,  GLanc  = CreateSpectra(H, {Tx,Tz+Tx}, psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"Tensor",true},{"DenseBoarder",0}})
-specDense, GDense = CreateSpectra(H, {Tx,Tz+Tx}, psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"Tensor",true},{"DenseBoarder",100}})
+specLanc,  GLanc  = CreateSpectra(H, {Tx,Tz+Tx}, psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"Tensor",true},{"DenseBorder",0}})
+specDense, GDense = CreateSpectra(H, {Tx,Tz+Tx}, psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"Tensor",true},{"DenseBorder",100}})
 
 print("The spectra in a Spetra Type, the standard to use and fastest method with intensities on a Grid\n",specLanc)
 print("The difference between the spectrum calculated using dense and sparse methods\n",specLanc-specDense)
@@ -130,8 +130,8 @@ print("The second argument is besides a table a function that can be evaluated a
 
 print("======== As tensor with restriction ========")
 
-specLanc,  GLanc  = CreateSpectra(H, {Tx,Tz+Tx}, psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"Tensor",true},{"restrictions",{Nf,Nb,{"010000",1,1}}},{"DenseBoarder",0}})
-specDense, GDense = CreateSpectra(H, {Tx,Tz+Tx}, psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"Tensor",true},{"restrictions",{Nf,Nb,{"010000",1,1}}},{"DenseBoarder",100}})
+specLanc,  GLanc  = CreateSpectra(H, {Tx,Tz+Tx}, psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"Tensor",true},{"restrictions",{Nf,Nb,{"010000",1,1}}},{"DenseBorder",0}})
+specDense, GDense = CreateSpectra(H, {Tx,Tz+Tx}, psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"Tensor",true},{"restrictions",{Nf,Nb,{"010000",1,1}}},{"DenseBorder",100}})
 
 print("The spectra in a Spetra Type, the standard to use and fastest method with intensities on a Grid\n",specLanc)
 print("The difference between the spectrum calculated using dense and sparse methods\n",specLanc-specDense)
@@ -142,8 +142,8 @@ print("The second argument is besides a table a function that can be evaluated a
 
 print("======== As tensor with Krylov basis ========")
 
-specLanc,  GLanc,  psiKrylov = CreateSpectra(H, {Tx,sqrt(100)*Tx,Ident}, psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"Tensor",true},{"KrylovBasis",true},{"DenseBoarder",0}})
-specDense, GDense, psiDense  = CreateSpectra(H, {Tx,sqrt(100)*Tx,Ident}, psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"Tensor",true},{"KrylovBasis",true},{"DenseBoarder",100}})
+specLanc,  GLanc,  psiKrylov = CreateSpectra(H, {Tx,sqrt(100)*Tx,Ident}, psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"Tensor",true},{"KrylovBasis",true},{"DenseBorder",0}})
+specDense, GDense, psiDense  = CreateSpectra(H, {Tx,sqrt(100)*Tx,Ident}, psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"Tensor",true},{"KrylovBasis",true},{"DenseBorder",100}})
 
 print("The spectra in a Spetra Type, the standard to use and fastest method with intensities on a Grid\n",specLanc)
 print("The difference between the spectrum calculated using dense and sparse methods\n",specLanc-specDense)
@@ -177,8 +177,8 @@ print(retmat)
 
 print("======== As tensor with Krylov basis Complex ========")
 
-specLanc,  GLanc,  psiKrylov = CreateSpectra(H+0*Ty, {Tx,Tz,Ident}, I*psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"Tensor",true},{"KrylovBasis",true},{"DenseBoarder",0}})
-specDense, GDense, psiDense  = CreateSpectra(H+0*Ty, {Tx,Tz,Ident}, I*psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"Tensor",true},{"KrylovBasis",true},{"DenseBoarder",100}})
+specLanc,  GLanc,  psiKrylov = CreateSpectra(H+0*Ty, {Tx,Tz,Ident}, I*psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"Tensor",true},{"KrylovBasis",true},{"DenseBorder",0}})
+specDense, GDense, psiDense  = CreateSpectra(H+0*Ty, {Tx,Tz,Ident}, I*psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"Tensor",true},{"KrylovBasis",true},{"DenseBorder",100}})
 
 print("The spectra in a Spetra Type, the standard to use and fastest method with intensities on a Grid\n",specLanc)
 print("The difference between the spectrum calculated using dense and sparse methods\n",specLanc-specDense)
@@ -212,8 +212,8 @@ print(retmat)
 
 print("======== As tensor with Krylov basis and restrictions ========")
 
-specLanc,  GLanc,  psiKrylov = CreateSpectra(H, {Tx,Tz,Ident}, psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"Tensor",true},{"KrylovBasis",true},{"restrictions",{Nf,Nb,{"010000",1,1}}},{"DenseBoarder",0}})
-specDense, GDense, psiDense  = CreateSpectra(H, {Tx,Tz,Ident}, psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"Tensor",true},{"KrylovBasis",true},{"restrictions",{Nf,Nb,{"010000",1,1}}},{"DenseBoarder",100}})
+specLanc,  GLanc,  psiKrylov = CreateSpectra(H, {Tx,Tz,Ident}, psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"Tensor",true},{"KrylovBasis",true},{"restrictions",{Nf,Nb,{"010000",1,1}}},{"DenseBorder",0}})
+specDense, GDense, psiDense  = CreateSpectra(H, {Tx,Tz,Ident}, psigrd,{{"NE",2},{"Emin",0},{"Emax",1},{"Gamma",5},{"Tensor",true},{"KrylovBasis",true},{"restrictions",{Nf,Nb,{"010000",1,1}}},{"DenseBorder",100}})
 
 print("The spectra in a Spetra Type, the standard to use and fastest method with intensities on a Grid\n",specLanc)
 print("The difference between the spectrum calculated using dense and sparse methods\n",specLanc-specDense)

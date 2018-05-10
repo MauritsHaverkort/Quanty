@@ -64,10 +64,10 @@ uint32_t CompactMatrixSqrtold(CompactMatrixType const *A, CompactMatrixType *Sqr
 static int LuaReadConvergenceSettingsFromOptions(lua_State *L, int len, ConvergenceSettingsType *Settings)
 {
   void *buff;
-  buff=LuaFindOptionsInTable(L, len, "DenseBoarder", "int");
+  buff=LuaFindOptionsInTable(L, len, "DenseBorder", "int");
   if(buff!=NULL)
   {
-    Settings->DenseBoarder = *(uint32_t*)buff;
+    Settings->DenseBorder = *(uint32_t*)buff;
     free(buff);
   }
   buff=LuaFindOptionsInTable(L, len, "NKrylovStart", "int");

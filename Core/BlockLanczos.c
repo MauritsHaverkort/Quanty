@@ -5104,10 +5104,10 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylovRecalculate(OperatorType * H,
  *     zero:     smallest positive real to be considered different from 0 in convergent tests
  *
  *   Internal constants:
- *     DenseBoarder:  (the number of basis states below which a dense calculation is done)
+ *     DenseBorder:  (the number of basis states below which a dense calculation is done)
  *     NKrlylovStart: (the number of KrylovVectors to start with)
  *
- *   if psi[0].N <= DenseBoarder do a dense calculation
+ *   if psi[0].N <= DenseBorder do a dense calculation
  *
  */
 uint32_t BlockLanczosGroundStateConserveBasis(OperatorType * H, WaveFunctionType * const psi, uint32_t const Npsi, ConvergenceSettingsType * Settings)
@@ -5116,7 +5116,7 @@ uint32_t BlockLanczosGroundStateConserveBasis(OperatorType * H, WaveFunctionType
   WaveFunctionType *v;
   VerbosityPrintf(0x10000000,"Start of BlockLanczosGroundStateConserveBasis\n");
   // for small basises do a dense calculation
-  if(psi[0].N<=Settings->DenseBoarder) return BlockLanczosGroundStateConserveBasisDense(*H,psi, Npsi);
+  if(psi[0].N<=Settings->DenseBorder) return BlockLanczosGroundStateConserveBasisDense(*H,psi, Npsi);
   // create the vectors v in memory.
   //   if all 2*Npsi+NKrylovMax are created return BlockLanczosGroundStateConserveBasisKrylov
   //   if only 2*Npsi+1 states can be created return BlockLanczosGroundStateConserveBasisKrylovRecalculate

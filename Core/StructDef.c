@@ -210,7 +210,7 @@ OperatorType;
 
 typedef struct ConvergenceSettingsType
 {
-  uint32_t DenseBoarder;    /* If matrices have dimensions smaller than DenseBoarder dense methods are used - Normally this is determined by psi.N */
+  uint32_t DenseBorder;    /* If matrices have dimensions smaller than DenseBorder dense methods are used - Normally this is determined by psi.N */
   uint32_t NKrylovStart;    /* In tridiagonalization routines the number of Krylov states created in the first itteration */
   uint32_t NKrylovMax;      /* In tridiagonalization routines the maximum number of Krylov states created */
   uint32_t NKrylovStep;     /* the number of Krylov states added when a restart is done */
@@ -246,7 +246,7 @@ ConvergenceSettingsType InitConvergenceSettings()
   char *ShiftScheme = "Variance";
   ConvergenceSettingsType ret=
   {
-    1513 /*DenseBoarder*/,
+    1513 /*DenseBorder*/,
     100 /*NKrylovStart*/,
     500 /*NKrylovMax*/,
      10 /*NKrylovStep*/,
