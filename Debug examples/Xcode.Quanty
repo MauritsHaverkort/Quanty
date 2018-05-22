@@ -1,6 +1,12 @@
 Verbosity(0xFFFF)
 
 
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Tutorials/Connection to DFT/FPLO/Run SCF FPLO.Quanty")
+os.exit()
+
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Tutorials/20_NiO_Crystal_Field/25_FY_L23M1.Quanty")
+os.exit()
+
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Reference/Functions/CreateSpectra.Quanty")
 os.exit()
 

@@ -1586,7 +1586,6 @@ static int LuaCreateSpectra(lua_State *L)
     {"NE","uint32_t",&(Options.Settings.NE)},
     {"Gamma","double",&(Options.Settings.Gamma)},
     {"E0","double",&(Options.E0)},
-    {"DenseMethod","bool",&(Options.DenseMethod)},
     {"DenseBorder","uint32_t",&(Options.Settings.DenseBorder)},
     {"file","char*",&(Options.stream)}, // temporary undoccumented option
     {NULL, NULL, NULL}};
@@ -2373,18 +2372,20 @@ static int LuaCreateResonantSpectra(lua_State *L)
     uint32_t NT1;
     uint32_t NT2;
     Bool Tensor;
+    Bool DenseMethod;
   } Options;
   Options.Settings=InitConvergenceSettings();
   Options.E0=DBL_MAX;
   Options.E01=DBL_MAX;
   Options.E02=DBL_MAX;
   Options.Tensor=False;
+  Options.DenseMethod=False;
   ConvergenceSettingsType SettingsNow;
   SpectraTypeArray *Spec;
   SpectraType *SpecT1psi;
   TriDiagonalMatrixType *SpecTri;
   OperatorType *H1,*H2,*T1, *T2;
-  WaveFunctionType *psi;
+  WaveFunctionType *psi, psiDenseBasis,HTpsiDenseBasis,HTHTpsiDenseBasis,Opsi,TpsiSum;
   uint32_t iT,ipsi,len,i;
   LuaOptionsType LuaCreateResonantSpectraOptions[]={
     {"NTri1","uint32_t",&(Options.Settings.NTri1)},
@@ -2407,6 +2408,7 @@ static int LuaCreateResonantSpectra(lua_State *L)
     {"Emax2","double",&(Options.Settings.Emax2)},
     {"NE2","uint32_t",&(Options.Settings.NE2)},
     {"Gamma2","double",&(Options.Settings.Gamma2)},
+    {"DenseBorder","uint32_t",&(Options.Settings.DenseBorder)},
     {NULL, NULL, NULL}};
   /* free garbage full cycle*/
   if(L->l_G->gcrunning) lua_gc(L, LUA_GCCOLLECT, 0);
@@ -2512,48 +2514,198 @@ static int LuaCreateResonantSpectra(lua_State *L)
   Spec->NSpectra=0;
   Spec->Spec=NULL;
   /* test if dense methods can be used */
-  // test if sum_{i,j} H1^n T1_j psi_i and sum_{i,j,k} H2^n T2_k H1^n T1_j psi_i fits on a basis smaller then DenseBorder
-  // use dense methods
-  // create psiDense
-  // create T1Dense[i]
-  // create H1Dense
-  // create T2Dense[i]
-  // create H2Dense
-  
-  // use sparse methods
-  if(Options.Tensor==False)
+  // test if sum_{i,j,k} H2^n T2_k H1^n T1_j psi_i fits on a basis smaller then DenseBorder
+  if(psi[0].N>Options.Settings.DenseBorder) goto EndOfUseDenseTest;
+  WaveFunctionCopy(psi[0], &psiDenseBasis);
+  for(i=1;i<Options.Npsi;i++)
   {
-    for(ipsi=0;ipsi<Options.Npsi;ipsi++)
+    WaveFunctionAddUnionBasis(&psiDenseBasis, psi[i]);
+    if(psiDenseBasis.N>Options.Settings.DenseBorder)
     {
-      for(iT=0;iT<Options.NT1;iT++)
-      {
-        SettingsNow = Options.Settings;
-        ResonantSpectra(*H1, *H2, T1[iT], T2, Options.NT2, psi[ipsi], &SpecTri, &SpecT1psi, Options.E01, Options.E02, &(SettingsNow));
-        Spec->NSpectra+=(SettingsNow.NE1+1)*Options.NT2;
-        Spec->Spec=realloc(Spec->Spec, Spec->NSpectra*sizeof(SpectraType));
-        for(i=0;i<(SettingsNow.NE1+1)*Options.NT2;i++)
-        {
-          FreeTriDiagonalMatrix(&(SpecTri[i]));
-        }
-        free(SpecTri);
-        for(i=0;i<(SettingsNow.NE1+1)*Options.NT2;i++)
-        {
-          Spec->Spec[i+Spec->NSpectra-(SettingsNow.NE1+1)*Options.NT2] = SpecT1psi[i];
-        }
-        free(SpecT1psi);
-      }
+      WaveFunctionFree(&psiDenseBasis);
+      goto EndOfUseDenseTest;
     }
+  }
+  // T psi
+  WaveFunctionCopy(psiDenseBasis, &HTpsiDenseBasis);
+  if(OperatorPsi(T1[0], HTpsiDenseBasis, &TpsiSum))
+  {
+    WaveFunctionFree(&HTpsiDenseBasis);
+    WaveFunctionFree(&psiDenseBasis);
+    goto EndOfUseDenseTest;
+  }
+  for(i=1;i<Options.NT1;i++)
+  {
+    if(OperatorPsi(T1[i], HTpsiDenseBasis, &Opsi))
+    {
+      WaveFunctionFree(&TpsiSum);
+      WaveFunctionFree(&HTpsiDenseBasis);
+      WaveFunctionFree(&psiDenseBasis);
+      goto EndOfUseDenseTest;
+    }
+    WaveFunctionAddUnionBasis(&TpsiSum, Opsi);
+    WaveFunctionFree(&Opsi);
+    if(TpsiSum.N>Options.Settings.DenseBorder)
+    {
+      WaveFunctionFree(&TpsiSum);
+      WaveFunctionFree(&HTpsiDenseBasis);
+      WaveFunctionFree(&psiDenseBasis);
+      goto EndOfUseDenseTest;
+    }
+  }
+  WaveFunctionFree(&HTpsiDenseBasis);
+  HTpsiDenseBasis=TpsiSum;
+  WaveFunctionNormalize(&HTpsiDenseBasis);
+  // H T psi
+  len=0;
+  while(len!=HTpsiDenseBasis.N)
+  {
+    if(OperatorPsi(*H1, HTpsiDenseBasis, &Opsi))
+    {
+      WaveFunctionFree(&HTpsiDenseBasis);
+      WaveFunctionFree(&psiDenseBasis);
+      goto EndOfUseDenseTest;
+    }
+    WaveFunctionFree(&HTpsiDenseBasis);
+    if(Opsi.N>Options.Settings.DenseBorder)
+    {
+      WaveFunctionFree(&Opsi);
+      WaveFunctionFree(&psiDenseBasis);
+      goto EndOfUseDenseTest;
+    }
+    HTpsiDenseBasis=Opsi;
+    WaveFunctionNormalize(&HTpsiDenseBasis);
+  }
+  // T H T psi
+  WaveFunctionCopy(HTpsiDenseBasis, &HTHTpsiDenseBasis);
+  if(OperatorPsi(T2[0], HTHTpsiDenseBasis, &TpsiSum))
+  {
+    WaveFunctionFree(&HTHTpsiDenseBasis);
+    WaveFunctionFree(&HTpsiDenseBasis);
+    WaveFunctionFree(&psiDenseBasis);
+    goto EndOfUseDenseTest;
+  }
+  for(i=1;i<Options.NT2;i++)
+  {
+    if(OperatorPsi(T2[i], HTHTpsiDenseBasis, &Opsi))
+    {
+      WaveFunctionFree(&TpsiSum);
+      WaveFunctionFree(&HTHTpsiDenseBasis);
+      WaveFunctionFree(&HTpsiDenseBasis);
+      WaveFunctionFree(&psiDenseBasis);
+      goto EndOfUseDenseTest;
+    }
+    WaveFunctionAddUnionBasis(&TpsiSum, Opsi);
+    WaveFunctionFree(&Opsi);
+    if(TpsiSum.N>Options.Settings.DenseBorder)
+    {
+      WaveFunctionFree(&TpsiSum);
+      WaveFunctionFree(&HTHTpsiDenseBasis);
+      WaveFunctionFree(&HTpsiDenseBasis);
+      WaveFunctionFree(&psiDenseBasis);
+      goto EndOfUseDenseTest;
+    }
+  }
+  WaveFunctionFree(&HTHTpsiDenseBasis);
+  HTHTpsiDenseBasis=TpsiSum;
+  WaveFunctionNormalize(&HTHTpsiDenseBasis);
+  // H T H T psi
+  len=0;
+  while(len!=HTHTpsiDenseBasis.N)
+  {
+    if(OperatorPsi(*H2, HTHTpsiDenseBasis, &Opsi))
+    {
+      WaveFunctionFree(&HTHTpsiDenseBasis);
+      WaveFunctionFree(&HTpsiDenseBasis);
+      WaveFunctionFree(&psiDenseBasis);
+      goto EndOfUseDenseTest;
+    }
+    WaveFunctionFree(&HTHTpsiDenseBasis);
+    if(Opsi.N>Options.Settings.DenseBorder)
+    {
+      WaveFunctionFree(&Opsi);
+      WaveFunctionFree(&HTpsiDenseBasis);
+      WaveFunctionFree(&psiDenseBasis);
+      goto EndOfUseDenseTest;
+    }
+    WaveFunctionNormalize(&Opsi);
+    HTHTpsiDenseBasis=Opsi;
+  }
+  // finsihed all tests and psiDenseBasis still fits
+  Options.DenseMethod=True;
+  EndOfUseDenseTest:
+  if(Options.DenseMethod==True)
+  {
+    CompactMatrixType psiDense,T1Dense,H1Dense,T2Dense,H2Dense;
+    // use dense methods
+    // create psiDense
+    psiDense.Ni=Options.Npsi;
+    psiDense.Nj=psiDenseBasis.N;
+    psiDense.QComplex=psiDenseBasis.QComplex;
+    InitCompactMatrix(&psiDense);
+    
+    // create T1Dense[i]
+    T1Dense.Nj=psiDenseBasis.N;
+    T1Dense.Ni=HTpsiDenseBasis.N;
+    T1Dense.QComplex=HTpsiDenseBasis.QComplex;
+    InitCompactMatrix(&T1Dense);
+    
+    // create H1Dense
+    H1Dense.Ni=HTpsiDenseBasis.N;
+    H1Dense.Nj=HTpsiDenseBasis.N;
+    H1Dense.QComplex=HTpsiDenseBasis.QComplex;
+    InitCompactMatrix(&H1Dense);
+    
+    // create T2Dense[i]
+    printf("BLEEEEEh");
+    //TODO:
+    
+    
+    // create H2Dense
+    WaveFunctionFree(&HTHTpsiDenseBasis);
+    WaveFunctionFree(&HTpsiDenseBasis);
+    WaveFunctionFree(&psiDenseBasis);
+    //calcualte spectra
+    
+    // free dense representations of the operators and wavefunctions
   }
   else
   {
-    SettingsNow = Options.Settings;
-
-    //ResonantSpectraTensor(*H1, *H2, T1, Options.NT1, T2, Options.NT2, psi, Options.Npsi, &SpecTri, &(Spec->Spec[0]), Options.E01, Options.E02, &SettingsNow);
-
-
-
-
-
+    // use sparse methods
+    if(Options.Tensor==False)
+    {
+      for(ipsi=0;ipsi<Options.Npsi;ipsi++)
+      {
+        for(iT=0;iT<Options.NT1;iT++)
+        {
+          SettingsNow = Options.Settings;
+          ResonantSpectra(*H1, *H2, T1[iT], T2, Options.NT2, psi[ipsi], &SpecTri, &SpecT1psi, Options.E01, Options.E02, &(SettingsNow));
+          Spec->NSpectra+=(SettingsNow.NE1+1)*Options.NT2;
+          Spec->Spec=realloc(Spec->Spec, Spec->NSpectra*sizeof(SpectraType));
+          for(i=0;i<(SettingsNow.NE1+1)*Options.NT2;i++)
+          {
+            FreeTriDiagonalMatrix(&(SpecTri[i]));
+          }
+          free(SpecTri);
+          for(i=0;i<(SettingsNow.NE1+1)*Options.NT2;i++)
+          {
+            Spec->Spec[i+Spec->NSpectra-(SettingsNow.NE1+1)*Options.NT2] = SpecT1psi[i];
+          }
+          free(SpecT1psi);
+        }
+      }
+    }
+    else
+    {
+      SettingsNow = Options.Settings;
+      
+      //ResonantSpectraTensor(*H1, *H2, T1, Options.NT1, T2, Options.NT2, psi, Options.Npsi, &SpecTri, &(Spec->Spec[0]), Options.E01, Options.E02, &SettingsNow);
+      
+      
+      
+      
+      
+    }
   }
   return 1;
 }

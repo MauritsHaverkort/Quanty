@@ -167,12 +167,15 @@ for i = 1,#psiList do
   io.write("\n")
 end
 
+print(Chop(ConjugateTranspose(T3s2px)*T3s2px+ConjugateTranspose(T3s2py)*T3s2py+ConjugateTranspose(T3s2pz)*T3s2pz))
+                                   
+                                   
 -- here we calculate the x-ray absorption spectra, not the main task of this file, but nice to do so we can compare
-XASSpectra = CreateSpectra(XASHamiltonian, {TXASz, TXASr, TXASl}, psiList, {{"Emin",-10}, {"Emax",20}, {"NE",3500}, {"Gamma",1.0}});
+XASSpectra = CreateSpectra(XASHamiltonian, {TXASz, TXASr, TXASl}, psiList, {{"Emin",-10}, {"Emax",20}, {"NE",600}, {"Gamma",1.0}});
 XASSpectra.Print({{"file","FYL23M1_XAS.dat"}});
 
 -- and we calculate the FY spectra
-FYSpectra = CreateFluorescenceYield(XASHamiltonian, {TXASz, TXASr, TXASl}, {T3s2px, T3s2py, T3s2pz}, psiList, {{"Emin",-10}, {"Emax",20}, {"NE",3500}, {"Gamma",1.0}})
+FYSpectra = CreateFluorescenceYield(XASHamiltonian, {TXASz, TXASr, TXASl}, {T3s2px, T3s2py, T3s2pz}, psiList, {{"Emin",-10}, {"Emax",20}, {"NE",600}, {"Gamma",1.0}})
 FYSpectra.Print({{"file","FYL23M1_Spec.dat"}})
 
 -- in order to plot both the XAS and FY spectra we can define a gnuplot script
@@ -196,43 +199,43 @@ set size 1,1
 set multiplot layout 3, 3
 
 plot "FYL23M1_XAS.dat"  u 1:(-$3 )  title 'z-polarized Sz=-1' with filledcurves y1=0 ls  1 fs transparent solid 0.5,\
-     "FYL23M1_Spec.dat" u 1:(4*$2)  title 'FY - x out' with lines ls 2,\
-     "FYL23M1_Spec.dat" u 1:(4*$4)  title 'FY - y out' with lines ls 3,\
-     "FYL23M1_Spec.dat" u 1:(4*$6)  title 'FY - z out' with lines ls 4
+     "FYL23M1_Spec.dat" u 1:((9/2.)*$2)  title 'FY - x out' with lines ls 2,\
+     "FYL23M1_Spec.dat" u 1:((9/2.)*$4)  title 'FY - y out' with lines ls 3,\
+     "FYL23M1_Spec.dat" u 1:((9/2.)*$6)  title 'FY - z out' with lines ls 4
 plot "FYL23M1_XAS.dat"  u 1:(-$5 )  title 'z-polarized Sz= 0' with filledcurves y1=0 ls  1 fs transparent solid 0.5,\
-     "FYL23M1_Spec.dat" u 1:(4*$8)  title 'FY - x out' with lines ls 2,\
-     "FYL23M1_Spec.dat" u 1:(4*$10) title 'FY - y out' with lines ls 3,\
-     "FYL23M1_Spec.dat" u 1:(4*$12) title 'FY - z out' with lines ls 4
+     "FYL23M1_Spec.dat" u 1:((9/2.)*$8)  title 'FY - x out' with lines ls 2,\
+     "FYL23M1_Spec.dat" u 1:((9/2.)*$10) title 'FY - y out' with lines ls 3,\
+     "FYL23M1_Spec.dat" u 1:((9/2.)*$12) title 'FY - z out' with lines ls 4
 plot "FYL23M1_XAS.dat"  u 1:(-$7 )  title 'z-polarized Sz= 1' with filledcurves y1=0 ls  1 fs transparent solid 0.5,\
-     "FYL23M1_Spec.dat" u 1:(4*$14) title 'FY - x out' with lines ls 2,\
-     "FYL23M1_Spec.dat" u 1:(4*$16) title 'FY - y out' with lines ls 3,\
-     "FYL23M1_Spec.dat" u 1:(4*$18) title 'FY - z out' with lines ls 4
+     "FYL23M1_Spec.dat" u 1:((9/2.)*$14) title 'FY - x out' with lines ls 2,\
+     "FYL23M1_Spec.dat" u 1:((9/2.)*$16) title 'FY - y out' with lines ls 3,\
+     "FYL23M1_Spec.dat" u 1:((9/2.)*$18) title 'FY - z out' with lines ls 4
 
 plot "FYL23M1_XAS.dat"  u 1:(-$9 )  title 'r-polarized Sz=-1' with filledcurves y1=0 ls  1 fs transparent solid 0.5,\
-     "FYL23M1_Spec.dat" u 1:(4*$20) title 'FY - x out' with lines ls 2,\
-     "FYL23M1_Spec.dat" u 1:(4*$22) title 'FY - y out' with lines ls 3,\
-     "FYL23M1_Spec.dat" u 1:(4*$24) title 'FY - z out' with lines ls 4
+     "FYL23M1_Spec.dat" u 1:((9/2.)*$20) title 'FY - x out' with lines ls 2,\
+     "FYL23M1_Spec.dat" u 1:((9/2.)*$22) title 'FY - y out' with lines ls 3,\
+     "FYL23M1_Spec.dat" u 1:((9/2.)*$24) title 'FY - z out' with lines ls 4
 plot "FYL23M1_XAS.dat"  u 1:(-$11)  title 'r-polarized Sz= 0' with filledcurves y1=0 ls  1 fs transparent solid 0.5,\
-     "FYL23M1_Spec.dat" u 1:(4*$26) title 'FY - x out' with lines ls 2,\
-     "FYL23M1_Spec.dat" u 1:(4*$28) title 'FY - y out' with lines ls 3,\
-     "FYL23M1_Spec.dat" u 1:(4*$30) title 'FY - z out' with lines ls 4
+     "FYL23M1_Spec.dat" u 1:((9/2.)*$26) title 'FY - x out' with lines ls 2,\
+     "FYL23M1_Spec.dat" u 1:((9/2.)*$28) title 'FY - y out' with lines ls 3,\
+     "FYL23M1_Spec.dat" u 1:((9/2.)*$30) title 'FY - z out' with lines ls 4
 plot "FYL23M1_XAS.dat"  u 1:(-$13)  title 'r-polarized Sz= 1' with filledcurves y1=0 ls  1 fs transparent solid 0.5,\
-     "FYL23M1_Spec.dat" u 1:(4*$32) title 'FY - x out' with lines ls 2,\
-     "FYL23M1_Spec.dat" u 1:(4*$34) title 'FY - y out' with lines ls 3,\
-     "FYL23M1_Spec.dat" u 1:(4*$36) title 'FY - z out' with lines ls 4
+     "FYL23M1_Spec.dat" u 1:((9/2.)*$32) title 'FY - x out' with lines ls 2,\
+     "FYL23M1_Spec.dat" u 1:((9/2.)*$34) title 'FY - y out' with lines ls 3,\
+     "FYL23M1_Spec.dat" u 1:((9/2.)*$36) title 'FY - z out' with lines ls 4
 
 plot "FYL23M1_XAS.dat"  u 1:(-$15)  title 'l-polarized Sz=-1' with filledcurves y1=0 ls  1 fs transparent solid 0.5,\
-     "FYL23M1_Spec.dat" u 1:(4*$38) title 'FY - x out' with lines ls 2,\
-     "FYL23M1_Spec.dat" u 1:(4*$40) title 'FY - y out' with lines ls 3,\
-     "FYL23M1_Spec.dat" u 1:(4*$42) title 'FY - z out' with lines ls 4
+     "FYL23M1_Spec.dat" u 1:((9/2.)*$38) title 'FY - x out' with lines ls 2,\
+     "FYL23M1_Spec.dat" u 1:((9/2.)*$40) title 'FY - y out' with lines ls 3,\
+     "FYL23M1_Spec.dat" u 1:((9/2.)*$42) title 'FY - z out' with lines ls 4
 plot "FYL23M1_XAS.dat"  u 1:(-$17)  title 'l-polarized Sz= 0' with filledcurves y1=0 ls  1 fs transparent solid 0.5,\
-     "FYL23M1_Spec.dat" u 1:(4*$44) title 'FY - x out' with lines ls 2,\
-     "FYL23M1_Spec.dat" u 1:(4*$46) title 'FY - y out' with lines ls 3,\
-     "FYL23M1_Spec.dat" u 1:(4*$48) title 'FY - z out' with lines ls 4
+     "FYL23M1_Spec.dat" u 1:((9/2.)*$44) title 'FY - x out' with lines ls 2,\
+     "FYL23M1_Spec.dat" u 1:((9/2.)*$46) title 'FY - y out' with lines ls 3,\
+     "FYL23M1_Spec.dat" u 1:((9/2.)*$48) title 'FY - z out' with lines ls 4
 plot "FYL23M1_XAS.dat"  u 1:(-$19)  title 'l-polarized Sz= 1' with filledcurves y1=0 ls  1 fs transparent solid 0.5,\
-     "FYL23M1_Spec.dat" u 1:(4*$50) title 'FY - x out' with lines ls 2,\
-     "FYL23M1_Spec.dat" u 1:(4*$52) title 'FY - y out' with lines ls 3,\
-     "FYL23M1_Spec.dat" u 1:(4*$54) title 'FY - z out' with lines ls 4
+     "FYL23M1_Spec.dat" u 1:((9/2.)*$50) title 'FY - x out' with lines ls 2,\
+     "FYL23M1_Spec.dat" u 1:((9/2.)*$52) title 'FY - y out' with lines ls 3,\
+     "FYL23M1_Spec.dat" u 1:((9/2.)*$54) title 'FY - z out' with lines ls 4
 
 unset multiplot
 ]]
