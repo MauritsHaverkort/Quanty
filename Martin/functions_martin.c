@@ -71,6 +71,21 @@ static int LuaOperatorNewFullCoulomb (lua_State *L)
 
     luaL_setmetatable(L,"Operator_Type");
 
+	FreeMatrix(wavefunctions);
+	free(x);
+
+	for( i = 0; i < Nindices; i++ )
+	{
+		free(indices[i]);
+	}
+	free(indices);
+	for( i = 0; i < NIntegrals; i++ )
+	{
+		free(tuple[i]);
+	}
+	free(tuple);
+
+
     return 1;
 }
 
@@ -120,7 +135,71 @@ static int LuaOperatorNewDirac(lua_State *L)
 	CreateOperatorDirac(NF,basisfuns->Ni, basisfuns->VRe,derivfuns->VRe,x,NGridpoints,groups,NGroups,indices,Z,op);
 
 	luaL_setmetatable(L,"Operator_Type");
+
+	FreeMatrix(basisfuns);
+	FreeMatrix(derivfuns);
+	free(x);
+	free(groups);
+	for( i = 0; i < NIndices; i++ )
+	{
+		free(indices[i]);
+	}
+	free(indices);
+
+	//Todo free Memory !!!!! same for Slaters
+
 	return 1;
+}
+
+static int LuaCreateBaseForContinuum(lua_State *L)
+{
+	OperatorType *op;
+	uint32_t **indices;
+	uint32_t NF, i, NGroups, NGridpoints, NIndices, NBasisFuns, temp;
+	SKappaGroup *groups;
+	MatrixType *basisfuns, *derivfuns, *contfuns;
+	int Z;
+	double *x;
+
+	NF = (uint32_t)luaL_checkunsigned(L, 1);
+	basisfuns = luaL_checkMatrix(L,2);
+	derivfuns = luaL_checkMatrix(L,3);
+	x = luaL_checkarray_double(L,4,&NGridpoints);
+	luaL_checktype(L, 5, LUA_TTABLE);
+	NGroups = (uint32_t)lua_objlen(L,5);
+
+	groups = (SKappaGroup *) malloc(NGroups * sizeof(SKappaGroup));
+
+	for( i = 0; i < NGroups; i++ )
+	{
+		lua_rawgeti(L, 5, i+1);
+	   	lua_rawgeti(L, -1, 1);
+	   	groups[i].kappa = (int) luaL_checkunsigned(L, -1);
+	   	lua_pop(L,1);
+	   	lua_rawgeti(L, -1, 2);
+		groups[i].indices = luaL_checkarray_unit32_t(L,-1,&(groups[i].n));
+	   	lua_pop(L,1);
+	   	lua_pop(L,1);
+	}
+	Z = (int) luaL_checkunsigned(L, 6);
+	luaL_checktype(L, 7, LUA_TTABLE);
+
+	contfuns = luaL_checkMatrix(L,7);
+
+
+	double *eigenval;
+	eigenval = CreateBaseForContinuum(basisfuns->Ni, basisfuns->VRe,derivfuns->VRe,x,NGridpoints,groups,NGroups,contfuns->Ni,contfuns->VRe);
+
+	LuaPushArray_double(L,&(eigenval[0]), contfuns->Ni);
+	LuaPushTable_MatrixType(L,contfuns);
+
+	FreeMatrix(basisfuns);
+	FreeMatrix(derivfuns);
+	free(x);
+	free(groups);
+
+
+	return 2;
 }
 
 static const struct luaL_Reg Martin_meta[] = {
@@ -159,5 +238,6 @@ static const struct luaL_Reg Martin_meta[] = {
 static const struct luaL_Reg Martin_func[] = {
   {"NewCoulomb", LuaOperatorNewFullCoulomb},
   {"NewDirac", LuaOperatorNewDirac},
+  {"ContinuumBase",LuaCreateBaseForContinuum},
   {NULL, NULL}
 };
