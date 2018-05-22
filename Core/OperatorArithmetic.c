@@ -1497,7 +1497,14 @@ uint32_t NormalOrderOperator(const OperatorType O, OperatorType * const Oo, uint
   uint32_t il, iN;
   if(O.l[0].N!=0)
   {
-    OperatorAddLader(Oo, NULL, 0, O.l[0].VRe[0], 0);
+    if(O.l[0].QComplex==0)
+    {
+      OperatorAddLader(Oo, NULL, 0, O.l[0].VRe[0], 0);
+    }
+    else
+    {
+      OperatorAddLader(Oo, NULL, 0, O.l[0].V[0].Re, O.l[0].V[0].Im);
+    }
   }
   for (il = 1; il <= O.MaxLength; il++)
   {

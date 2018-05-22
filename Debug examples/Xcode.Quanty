@@ -1,5 +1,46 @@
 Verbosity(0xFFFF)
 
+NF = 2
+op1 = NewOperator("Number",NF,{0},{0},{1}) + 1
+op2 = NewOperator("Number",NF,{0},{0},{1}) + 1 + I
+op3 = NewOperator("Number",NF,{0},{0},{1}) + I
+print(op1)
+print(op2)
+print(op3)
+
+
+
+print("=====================================")
+print(OperatorToMatrix(op1))
+print("=====================================")
+print(OperatorToMatrix(op2))
+print("=====================================")
+print(OperatorToMatrix(op3))
+
+print("MeanFieldOperator(op1):")
+rho = {{1,0},{0,1}}
+print( MeanFieldOperator(op1, rho) )
+
+print("MatrixRepresentation(op1):")
+print( Simon.MatrixRepresentation(op1) )
+
+print("MeanFieldOperator(op2):")
+rho = {{1,0},{0,1}}
+print( MeanFieldOperator(op2, rho) )
+
+print("MatrixRepresentation(op2):")
+print( Simon.MatrixRepresentation(op2) )
+
+print("MeanFieldOperator(op3):")
+rho = {{1,0},{0,1}}
+print( MeanFieldOperator(op3, rho) )
+
+print("MatrixRepresentation(op3):")
+print( Simon.MatrixRepresentation(op3) )
+
+os.exit()
+
+
 
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Tutorials/Connection to DFT/FPLO/Run SCF FPLO.Quanty")
 os.exit()

@@ -375,6 +375,7 @@ void EigensystemSimon()
 static int LuaPartialMeanFieldEigensystem(lua_State *L)
 {
 	//TODO
+  return 0;
 }
 
 //initialises and modifies a list of indices that can, without any approximation, be treated on a mean field level.
