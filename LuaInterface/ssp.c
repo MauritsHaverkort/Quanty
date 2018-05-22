@@ -2924,6 +2924,8 @@ static int LuaOperatorToMatrix(lua_State *L)
   H = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
   if(len==1)
   {
+  	if (H->MaxLength > 2 || H->l[0].N != 0 || H->l[1].N != 0)
+  		VerbosityPrintf(0x0001,"\nWarning: Without a specified density the matrix representation can only be found for the quadratic part of an operator, all other parts will be ignored.\n");
     CompactMatrixType *Rho, HMat;
     Rho=malloc(sizeof(CompactMatrixType));
     Rho->Ni=H->NFermion;

@@ -55,6 +55,7 @@ uint32_t MeanFieldOperatorSimon(const OperatorType * const O, OperatorType * con
 	OperatorFixedLengthCopy(&(OMF->l[2]),O->l[2],2);
 	strncpy(OMF->Name, O->Name, MAXStrLength); //TODO: In C++, add "Mean Field" to the name.
 	OMF->Name[MAXStrLength - 1] = '\0';
+	//TODO: should I check if it is indeed a Creation-Annihilation pair?
 	if (O->l[4].QComplex)
 	{
 		if (Rho.QComplex)
@@ -422,60 +423,6 @@ static int LuaOrbToMultiplicity(lua_State * L)
   return 1;
 }
 
-//Takes an operator an transforms the quadratic (particle number preserving) part to its matrix representation
-static int LuaMatrixRepresentation(lua_State * L)
-{
-	OperatorType *opNotOrdered, op;
-	MatrixType mat;
-	int i;
-	uint16_t c,a;
-	uint32_t len = (uint32_t) lua_gettop(L);
-	if (len != 1)
-		return luaL_error(L,
-				"MatrixRepresentation called with %d arguments. Single operator expected.\n",
-				len);
-	opNotOrdered = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
-	if (opNotOrdered->MaxLength < 2 || opNotOrdered->l[2].N == 0)
-		return luaL_error(L,"MatrixRepresentation needs a quadratic operator part.");
-	InitOperatorCopySettings(&op, *opNotOrdered);
-
-	debug("");
-	NormalOrderOperator(*opNotOrdered,&op,&QDetNotOrderedFcFaBcBa);
-//TODO: Warum gibt mir das manchmal einen Segmentation Fault?
-	debug("");
-
-	if (op.MaxLength > 2 || op.l[0].N != 0 || op.l[1].N != 0)
-		printf("\nWarning: The matrix representation can only be found for the quadratic part of an operator, all other parts will be ignored.\n");
-	mat.Ni = op.NFermion;
-	mat.Nj = op.NFermion;
-	mat.QComplex = op.QComplex;
-	InitMatrix(&mat);
-	for (i=0;i<op.l[2].N;++i)
-	{
-		a = NotCrAnMask & op.l[2].o[2*i];
-		c = NotCrAnMask & op.l[2].o[2*i+1];
-		if (a == op.l[2].o[2*i] && c != op.l[2].o[2*i+1])
-		{
-			if (mat.QComplex)
-			{
-				mat.VRe[c][a] = op.l[2].V[i].Re;
-				mat.VIm[c][a] = op.l[2].V[i].Im;
-			} else
-			{
-				mat.VRe[c][a] = op.l[2].VRe[i];
-			}
-		} else
-		{
-			printf("\nWarning: Can only create matrix representation for particle number conserving operators and will ignore products of creation-creation or annihilation-annihilation operators.\n");
-		}
-	}
-	lua_pop(L,1);
-	FreeOperator(&op);
-	LuaPushTable_MatrixType(L, &mat);
-	return 1;
-}
-
-
 static int LuaSimontest(lua_State * L)
 {
 	DeterminantRestrictionType testDet = *(DeterminantRestrictionType*)luaL_checkarray_DeterminantRestrictionType(L, 1);
@@ -532,7 +479,6 @@ static const struct luaL_Reg Simon_meta[] = {
 
 static const struct luaL_Reg Simon_func[] = {
   {"test", LuaSimontest},
-	{"MatrixRepresentation",LuaMatrixRepresentation},
 	{"MeanFieldOperatorSimon",LuaMeanFieldOperatorSimon},
 	{"OrbToMultiplicity",LuaOrbToMultiplicity},
 	{"PartialMeanFieldEigensystem",LuaPartialMeanFieldEigensystem},
