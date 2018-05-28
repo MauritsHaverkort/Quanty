@@ -93,7 +93,7 @@ static int LuaOperatorNewDirac(lua_State *L)
 {
 	OperatorType *op;
 	uint32_t **indices;
-	uint32_t NF, i, NGroups, NGridpoints, NIndices, NBasisFuns, temp;
+	uint32_t NF, i, NGroups, NGridpoints, NIndices, temp;
 	SKappaGroup *groups;
 	MatrixType *basisfuns, *derivfuns;
 	int Z;
@@ -153,9 +153,10 @@ static int LuaOperatorNewDirac(lua_State *L)
 
 static int LuaCreateBaseForContinuum(lua_State *L)
 {
-	OperatorType *op;
-	uint32_t **indices;
-	uint32_t NF, i, NGroups, NGridpoints, NIndices, NBasisFuns, temp;
+	//TODO: unused variables
+  //OperatorType *op;
+	//uint32_t **indices;
+  uint32_t NF, i, NGroups, NGridpoints; //, NIndices, NBasisFuns, temp;
 	SKappaGroup *groups;
 	MatrixType *basisfuns, *derivfuns, *contfuns;
 	int Z;

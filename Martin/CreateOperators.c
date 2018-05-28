@@ -216,15 +216,16 @@ void PrintArray(double* a, int n)
 
 double* CreateBaseForContinuum( int NBasisFuns,double **basisfuns,double **derivfuns,double *x,uint32_t NGridpoints,SKappaGroup *groups,int NGroups,int Ncont,double **contfuns)
 {
-	int n,m,l,k,dim;
-	const int LAPACK_ROW_MAJOR = 101;
-	const int CblasRowMajor= 101;
-	const int CblasLeft = 141;
-	const int CblasRight = 142;
-	const int CblasUpper = 121;
-	const int CblasNoTrans = 111;
-	const int CblasTrans = 112;
-	const int CblasNonUnit = 131;
+	int n,l,k,dim;
+  // TODO: unused variables
+	//const int LAPACK_ROW_MAJOR = 101;
+	//const int CblasRowMajor= 101;
+	//const int CblasLeft = 141;
+	//const int CblasRight = 142;
+	//const int CblasUpper = 121;
+	//const int CblasNoTrans = 111;
+	//const int CblasTrans = 112;
+	//const int CblasNonUnit = 131;
 
 	double w, *T,*g, **dualfuns, **dualcont, *Tsub, *tau,*d,*e;
 
@@ -242,11 +243,11 @@ double* CreateBaseForContinuum( int NBasisFuns,double **basisfuns,double **deriv
 	T = KineticEnergyCB(basisfuns,derivfuns, dualfuns,dualcont, Ncont,groups->indices, groups->n,x,NGridpoints,k,w);
 
 	g = MetricCB(basisfuns,dualfuns,NBasisFuns,dualcont,Ncont,NGridpoints);
-
-	LAPACKE_dpotrf(LAPACK_ROW_MAJOR,'U',dim,g,dim);
-	LAPACKE_dtrtri(LAPACK_ROW_MAJOR,'U','N',dim,g,dim);
-	cblas_dtrmm(CblasRowMajor,CblasLeft,CblasUpper,CblasTrans,CblasNonUnit,dim,dim,1.,g,dim,T,dim);
-	cblas_dtrmm(CblasRowMajor,CblasRight,CblasUpper,CblasNoTrans,CblasNonUnit,dim,dim,1.,g,dim,T,dim);
+  //TODO: please use plain blas and lapack here so that one can compile on windows, sigwin, mac and older linux distributions
+	//LAPACKE_dpotrf(LAPACK_ROW_MAJOR,'U',dim,g,dim);
+	//LAPACKE_dtrtri(LAPACK_ROW_MAJOR,'U','N',dim,g,dim);
+	//cblas_dtrmm(CblasRowMajor,CblasLeft,CblasUpper,CblasTrans,CblasNonUnit,dim,dim,1.,g,dim,T,dim);
+	//cblas_dtrmm(CblasRowMajor,CblasRight,CblasUpper,CblasNoTrans,CblasNonUnit,dim,dim,1.,g,dim,T,dim);
 
 	//PrintMartix(T,Ncont+NBasisFuns);
 	//printf("\n\n");
@@ -255,10 +256,11 @@ double* CreateBaseForContinuum( int NBasisFuns,double **basisfuns,double **deriv
 
 	d = (double *) malloc(Ncont*sizeof(double));
 	e = (double *) malloc((Ncont-1)*sizeof(double));
-	tau = (double *) malloc(Ncont*sizeof(double));
-	LAPACKE_dsytrd(LAPACK_ROW_MAJOR, 'U',Ncont,Tsub,Ncont,d,e,tau);
-	LAPACKE_dorgtr(LAPACK_ROW_MAJOR,'U',Ncont,Tsub,Ncont,tau);
-	LAPACKE_dsteqr(LAPACK_ROW_MAJOR,'V',Ncont,d,e,Tsub,Ncont);
+  tau = (double *) malloc(Ncont*sizeof(double));
+  //TODO: please use plain blas and lapack here so that one can compile on windows, sigwin, mac and older linux distributions
+	//LAPACKE_dsytrd(LAPACK_ROW_MAJOR, 'U',Ncont,Tsub,Ncont,d,e,tau);
+	//LAPACKE_dorgtr(LAPACK_ROW_MAJOR,'U',Ncont,Tsub,Ncont,tau);
+	//LAPACKE_dsteqr(LAPACK_ROW_MAJOR,'V',Ncont,d,e,Tsub,Ncont);
 
 	CalcContinuumWFs(basisfuns, NBasisFuns, contfuns, Ncont, NGridpoints, g, Tsub);
 

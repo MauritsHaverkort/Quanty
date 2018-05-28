@@ -7,7 +7,7 @@
 void debug(char* debugMessage)
 {
 	printf("\n\nDEBUG: ");
-	printf(debugMessage);
+	printf("%s", debugMessage);
 	printf("\n\n");
 	fflush(stdout);
 }
@@ -22,7 +22,7 @@ void debug(char* debugMessage)
 //should go to MeanField.c
 uint32_t MeanFieldOperatorSimon(const OperatorType * const O, OperatorType * const OMF, const MatrixType Rho)
 {
-	uint32_t i, j, k, l, m, n;
+	uint32_t i, j, k, l, m;
 	double OVRe, OVIm, OMFVRe, OMFVIm;
 	uint16_t oadd[2] = { 0, 0 };
 	if ((O->MaxLength > 4) || ((O->MaxLength > 0) && (O->l[1].N != 0))
@@ -456,7 +456,7 @@ static int LuaOrbToMultiplicity(lua_State * L)
   if (multiplicity < 0)
   {
   	printf("\nCould not interpret orbital \"");
-  	printf(orb);
+  	printf("%s", orb);
   	printf("\" as either relativistic or non-relativistic atomic orbital, returning %d.",multiplicity);
   }
   lua_pushnumber(L,multiplicity);
@@ -480,7 +480,7 @@ static int LuaPrintExpectationValues(lua_State * L)
 {
 	WaveFunctionType *psiList;
 	OperatorType *hamil, *opList;
-	int numberOfWavefunctions, numberOfOperators;
+	uint32_t numberOfWavefunctions, numberOfOperators;
 	uint32_t len = (uint32_t) lua_gettop(L);
 	if (len < 2 || len > 3)
 		return luaL_error(L,
