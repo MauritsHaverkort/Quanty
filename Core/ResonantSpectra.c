@@ -289,9 +289,11 @@ uint32_t ResonantSpectraDense(const OperatorType OppH1, const OperatorType OppH2
   
   WaveFunctionType *Tpsi, *PsiBasis[settings->NTri1];
   uint32_t ipsi,iT1,iT1psi;
-  double energy1List[Npsi],energy2List[Npsi];
+  double energy1List[Npsi],energy2List[Npsi], *H1T1psival;
   BlockTriDiagonalMatrixType H1T1psi;
-  uint32_t BlockSize[settings->NTri1];
+  CompactMatrixType H1T1psifun;
+  uint32_t BlockSize[settings->NTri1+1];
+  BlockSize[0]=NT1*Npsi;
   
   // calculate energy?List
   for(ipsi=0;ipsi<Npsi;ipsi++)
@@ -343,15 +345,15 @@ uint32_t ResonantSpectraDense(const OperatorType OppH1, const OperatorType OppH2
   InitBlockTridiagonalMatrix(&H1T1psi);
   if(settings->restrictions1.N==0)
   {
-    LanczosBlockTriDiagonalizeKrylov(OppH1, Tpsi, settings->epsilon, &H1T1psi, PsiBasis, BlockSize);
+    LanczosBlockTriDiagonalizeKrylov(OppH1, Tpsi, settings->epsilon, &H1T1psi, PsiBasis, &BlockSize[1]);
   }
   else
   {
-    LanczosBlockTriDiagonalizeKrylovRestricted(OppH1, Tpsi, settings->restrictions1, settings->epsilon, &H1T1psi, PsiBasis, BlockSize);
+    LanczosBlockTriDiagonalizeKrylovRestricted(OppH1, Tpsi, settings->restrictions1, settings->epsilon, &H1T1psi, PsiBasis, &BlockSize[1]);
   }
   // 3.  Calculate eigen-states of Krylov basis (|m>) and eigen values Em
-  //TODO:
-  
+  H1T1psival=malloc(H1T1psi.N*H1T1psi.BlockSize*sizeof(double));
+  BlockTriDiagonalMatrixEigenSystemWithDeflation(&H1T1psi, H1T1psival, &H1T1psifun, BlockSize);
   // 4.  Calculate matrix <m|T1|i>
   
   // 5.  Calculate T2 |m> for all |m>'s
