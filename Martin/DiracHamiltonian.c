@@ -5,10 +5,14 @@
  *      Author: brass
  */
 
+#ifndef speedoflight
+#define speedoflight 137.0
+#endif
+
 double DiracH(double *basisfun,double *dualfun,double *derivfun,const double *x, int NGridPoints, const int kappa, const int Z)
 {
 	double *H11G, *H22F,*H12F, *H21G, result, r;
-	const double c = 137;
+	//const double speedoflight = 137;
 	int i, eins;
 	eins = 1;
 
@@ -33,13 +37,13 @@ double DiracH(double *basisfun,double *dualfun,double *derivfun,const double *x,
 	{
 		r = x[i];
 		H11G[i] = (-Z)/r * basisfun[i];
-		H22F[i] = (-2*c*c-Z/r) * basisfun[NGridPoints+i];
+		H22F[i] = (-2*speedoflight*speedoflight-Z/r) * basisfun[NGridPoints+i];
 		H12F[i] = kappa/r * basisfun[NGridPoints+i] - derivfun[NGridPoints+i];
 		H21G[i] = kappa/r * basisfun[i] + derivfun[i];
 		i++;
 	}
-	result = ddot(&NGridPoints,dualfun,&eins,H11G,&eins) + c * ddot(&NGridPoints,dualfun,&eins,H12F,&eins)
-			+ddot(&NGridPoints,&(dualfun[NGridPoints]),&eins,H22F,&eins) + c * ddot(&NGridPoints,&(dualfun[NGridPoints]),&eins,H21G,&eins);
+	result = ddot(&NGridPoints,dualfun,&eins,H11G,&eins) + speedoflight * ddot(&NGridPoints,dualfun,&eins,H12F,&eins)
+			+ddot(&NGridPoints,&(dualfun[NGridPoints]),&eins,H22F,&eins) + speedoflight * ddot(&NGridPoints,&(dualfun[NGridPoints]),&eins,H21G,&eins);
 	free(H11G);
 	free(H12F);
 	free(H21G);
@@ -69,6 +73,34 @@ double **CalculateDiracMatrixElements(double **basisfuns, double **derivativefun
 	return result;
 
 }
+
+/*
+double *CalculateDiracMatrixElements(double **basisfuns, double **derivativefuns, double **dualfuns, const unsigned int *indices, const unsigned int Nindices, const double *x,
+		unsigned int NGridPoints, const int kappa, const int Z)
+{
+	double *result = (double *) malloc(Nindices*Nindices * sizeof(double));
+	double h0;
+
+	unsigned int i, j, n, m;
+	for ( i = 0; i < Nindices; i++ )
+	{
+		n = indices[i];
+		for ( j = i; j < Nindices; j++)
+		{
+			m = indices[j];
+			h0 = DiracH(basisfuns[m],dualfuns[n],derivativefuns[m], x, NGridPoints, kappa, Z);
+			result[Nindices*i+ j] = h0;
+			result[Nindices*j+ i] = h0;
+
+		}
+	}
+
+
+	return result;
+
+}
+*/
+
 
 /*
  * for ( i = 0; i < Nindices; i++ )
