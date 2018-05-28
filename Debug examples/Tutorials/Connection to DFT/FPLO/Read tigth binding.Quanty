@@ -1,0 +1,11 @@
+-- read the output of FPLO
+-- note that these functions are work in progress, i.e. the exact format might change, the basic idea not
+
+FPLOOut = FileReadDresdenFPLO("LDApMLFT/FPLO/out.wan")
+
+-- from the DFT output we can create a tight binding Hamiltonian
+
+TB = TightBindingDefFromDresdenFPLO(FPLOOut)
+
+print(TB.Cell)
+print(TB.ReciprocalCell)

@@ -213,6 +213,93 @@ static int LuaPlaceOnMeshResponseFunction(lua_State *L)
 /*
  *
  */
+static int LuaResponseFunctionEigensystem(lua_State *L)
+{
+  ResponsefunctionType *M;
+  double *val;
+  CompactMatrixType fun;
+  M = luaL_checkResponsefunction(L,-1);
+  
+  switch(M->type)
+  {
+    case 'L':
+    case 'l':
+    {
+      if(M->Block==True)
+      {
+        val = malloc(((BlockListOfPoles*)M->data)->N*((BlockListOfPoles*)M->data)->BlockSize*sizeof(double));
+        BlockListOfPolesEigenSystem((BlockListOfPoles*)M->data, val, &fun);
+      }
+      else
+      {
+        val = malloc(((ListOfPoles*)M->data)->N*sizeof(double));
+        ListOfPolesToEigensystemCompact((ListOfPoles*)(M->data), val, &fun);
+      }
+      break;
+    }
+    case 'A':
+    case 'a':
+    {
+      if(M->Block==True)
+      {
+        val = malloc(((BlockAndersonMatrixType*)M->data)->N*((BlockAndersonMatrixType*)M->data)->BlockSize*sizeof(double));
+        BlockAndersonMatrixEigenSystem((BlockAndersonMatrixType*)M->data, val, &fun);
+      }
+      else
+      {
+        val = malloc(((AndersonMatrixType*)M->data)->N*sizeof(double));
+        AndersonMatrixToEigenSystemCompact((AndersonMatrixType*)M->data, val, &fun);
+      }
+      break;
+    }
+    case 'T':
+    case 't':
+    {
+      if(M->Block==True)
+      {
+        val = malloc(((BlockTriDiagonalMatrixType*)M->data)->N*((BlockTriDiagonalMatrixType*)M->data)->BlockSize*sizeof(double));
+        BlockTriDiagonalMatrixEigenSystem((BlockTriDiagonalMatrixType*)M->data, val, &fun);
+      }
+      else
+      {
+        val = malloc(((TriDiagonalMatrixType*)M->data)->N*sizeof(double));
+        TriDiagonalMatrixToEigensystemCompact((TriDiagonalMatrixType*)M->data, val, &fun);
+      }
+      break;
+    }
+    case 'N':
+    case 'n':
+    {
+      if(M->Block==True)
+      {
+        val = malloc((((BlockNaturalImpurityOrbitalMatrixType*)M->data)->val.N+ ((BlockNaturalImpurityOrbitalMatrixType*)M->data)->con.N )*((BlockNaturalImpurityOrbitalMatrixType*)M->data)->BlockSize*sizeof(double));
+        BlockNaturalImpurityOrbitalMatrixEigenSystem((BlockNaturalImpurityOrbitalMatrixType*)M->data, val, &fun);
+      }
+      else
+      {
+        val = malloc((((BADoubleTriDiagonalMatrixType*)M->data)->val.N+((BADoubleTriDiagonalMatrixType*)M->data)->con.N+1)*sizeof(double));
+        BADoubleTriDiagonalMatrixTypeToEigenSystemCompact((BADoubleTriDiagonalMatrixType*)M->data, val, &fun);
+      }
+      break;
+    }
+    default:
+    {
+      printf("Error in ResponseFunctionToTable: unrecognized type %c",M->type);
+      return 0;
+    }
+  }
+  LuaPushArray_double(L, val, fun.Ni);
+  LuaPushTable_CompactMatrixType(L, &fun);
+  FreeResponsefunction(M);
+  FreeCompactMatrix(&fun);
+  free(val);
+  return 2;
+}
+
+
+/*
+ *
+ */
 static int LuaResponseFunctionUnm(lua_State * L)
 {
   ResponsefunctionType *res, *M;
@@ -459,8 +546,6 @@ static const struct luaL_Reg ResponseFunction_meta[] = {
   {"__eq", LuaResponseFunctionEq},
   {"__lt", LuaResponseFunctionLt},
   {"__le", LuaResponseFunctionLe},
-  {"__index", LuaResponseFunctionIndex},
-  {"__newindex", LuaResponseFunctionNewIndex},
   {"__mode", LuaResponseFunctionMode},
   {"__call", LuaResponseFunctionCall},
   {"__tostring", LuaResponseFunctionToString},
@@ -479,9 +564,9 @@ static const struct luaL_Reg ResponseFunctionTable_meta[] = {
   {"__eq", LuaResponseFunctionEq},
   {"__lt", LuaResponseFunctionLt},
   {"__le", LuaResponseFunctionLe},
-  {"__index", LuaResponseFunctionIndex},
-  {"__newindex", LuaResponseFunctionNewIndex},
   {"__mode", LuaResponseFunctionMode},
   {"__call", LuaResponseFunctionCall},
   {NULL, NULL}
 };
+
+

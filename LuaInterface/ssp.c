@@ -1587,6 +1587,7 @@ static int LuaCreateSpectra(lua_State *L)
     {"Gamma","double",&(Options.Settings.Gamma)},
     {"E0","double",&(Options.E0)},
     {"DenseBorder","uint32_t",&(Options.Settings.DenseBorder)},
+    {"ForceDenseMethod","uint32_t",&(Options.DenseMethod)},
     {"file","char*",&(Options.stream)}, // temporary undoccumented option
     {NULL, NULL, NULL}};
   /* free garbage full cycle*/
@@ -1780,7 +1781,7 @@ static int LuaCreateSpectra(lua_State *L)
   if((Options.DenseMethod==True)||(OpsiDenseBasis.N<Options.Settings.DenseBorder)) while(len!=psiDenseBasis.N)
   {
     len=psiDenseBasis.N;
-    if(OperatorPsi(*H, psiDenseBasis, &OpsiDenseBasis))
+    if((Options.Settings.restrictions.N==0)?(OperatorPsi(*H, psiDenseBasis, &OpsiDenseBasis)):(OperatorPsiRestricted(*H, psiDenseBasis, &OpsiDenseBasis, Options.Settings.restrictions)))
     {
       luaL_error(L, "OperatorPsi failed in calculation of spectra\n Out of memory?\nTry to split the call to several calls for different wave-functions or transition operators\n");
     }
@@ -2385,7 +2386,7 @@ static int LuaCreateResonantSpectra(lua_State *L)
   SpectraType *SpecT1psi;
   TriDiagonalMatrixType *SpecTri;
   OperatorType *H1,*H2,*T1, *T2;
-  WaveFunctionType *psi, psiDenseBasis,HTpsiDenseBasis,HTHTpsiDenseBasis,Opsi,TpsiSum;
+  WaveFunctionType *psi, HTpsiDenseBasis,HTHTpsiDenseBasis,Opsi,TpsiSum;
   uint32_t iT,ipsi,len,i;
   LuaOptionsType LuaCreateResonantSpectraOptions[]={
     {"NTri1","uint32_t",&(Options.Settings.NTri1)},
@@ -2409,6 +2410,7 @@ static int LuaCreateResonantSpectra(lua_State *L)
     {"NE2","uint32_t",&(Options.Settings.NE2)},
     {"Gamma2","double",&(Options.Settings.Gamma2)},
     {"DenseBorder","uint32_t",&(Options.Settings.DenseBorder)},
+    {"ForceDenseMethod","uint32_t",&(Options.DenseMethod)},
     {NULL, NULL, NULL}};
   /* free garbage full cycle*/
   if(L->l_G->gcrunning) lua_gc(L, LUA_GCCOLLECT, 0);
@@ -2508,166 +2510,140 @@ static int LuaCreateResonantSpectra(lua_State *L)
       break;
     }
   }
-  /* allocate spectra and and pointer to return matrix on lua stack */
+  /* allocate spectra and a pointer to return matrix on lua stack */
   Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
   luaL_setmetatable(L, "Spectra_Type");
   Spec->NSpectra=0;
   Spec->Spec=NULL;
   /* test if dense methods can be used */
   // test if sum_{i,j,k} H2^n T2_k H1^n T1_j psi_i fits on a basis smaller then DenseBorder
-  if(psi[0].N>Options.Settings.DenseBorder) goto EndOfUseDenseTest;
-  WaveFunctionCopy(psi[0], &psiDenseBasis);
-  for(i=1;i<Options.Npsi;i++)
+  // We only need to do this test if we do not force to use dense methods independent of the size of the matrices
+  if(Options.DenseMethod==False)
   {
-    WaveFunctionAddUnionBasis(&psiDenseBasis, psi[i]);
-    if(psiDenseBasis.N>Options.Settings.DenseBorder)
+    // psi
+    if(psi[0].N>Options.Settings.DenseBorder) goto EndOfUseDenseTest;
+    WaveFunctionCopy(psi[0], &HTpsiDenseBasis);
+    for(i=1;i<Options.Npsi;i++)
     {
-      WaveFunctionFree(&psiDenseBasis);
-      goto EndOfUseDenseTest;
+      WaveFunctionAddUnionBasis(&HTpsiDenseBasis, psi[i]);
+      if(HTpsiDenseBasis.N>Options.Settings.DenseBorder)
+      {
+        WaveFunctionFree(&HTpsiDenseBasis);
+        goto EndOfUseDenseTest;
+      }
     }
-  }
-  // T psi
-  WaveFunctionCopy(psiDenseBasis, &HTpsiDenseBasis);
-  if(OperatorPsi(T1[0], HTpsiDenseBasis, &TpsiSum))
-  {
-    WaveFunctionFree(&HTpsiDenseBasis);
-    WaveFunctionFree(&psiDenseBasis);
-    goto EndOfUseDenseTest;
-  }
-  for(i=1;i<Options.NT1;i++)
-  {
-    if(OperatorPsi(T1[i], HTpsiDenseBasis, &Opsi))
-    {
-      WaveFunctionFree(&TpsiSum);
-      WaveFunctionFree(&HTpsiDenseBasis);
-      WaveFunctionFree(&psiDenseBasis);
-      goto EndOfUseDenseTest;
-    }
-    WaveFunctionAddUnionBasis(&TpsiSum, Opsi);
-    WaveFunctionFree(&Opsi);
-    if(TpsiSum.N>Options.Settings.DenseBorder)
-    {
-      WaveFunctionFree(&TpsiSum);
-      WaveFunctionFree(&HTpsiDenseBasis);
-      WaveFunctionFree(&psiDenseBasis);
-      goto EndOfUseDenseTest;
-    }
-  }
-  WaveFunctionFree(&HTpsiDenseBasis);
-  HTpsiDenseBasis=TpsiSum;
-  WaveFunctionNormalize(&HTpsiDenseBasis);
-  // H T psi
-  len=0;
-  while(len!=HTpsiDenseBasis.N)
-  {
-    if(OperatorPsi(*H1, HTpsiDenseBasis, &Opsi))
+    // T psi
+    if((Options.Settings.restrictions1.N==0)?(OperatorPsi(T1[0], HTpsiDenseBasis, &TpsiSum)):(OperatorPsiRestricted(T1[0], HTpsiDenseBasis, &TpsiSum, Options.Settings.restrictions1)))
     {
       WaveFunctionFree(&HTpsiDenseBasis);
-      WaveFunctionFree(&psiDenseBasis);
       goto EndOfUseDenseTest;
     }
-    WaveFunctionFree(&HTpsiDenseBasis);
-    if(Opsi.N>Options.Settings.DenseBorder)
+    for(i=1;i<Options.NT1;i++)
     {
+      if((Options.Settings.restrictions1.N==0)?(OperatorPsi(T1[i], HTpsiDenseBasis, &Opsi)):(OperatorPsiRestricted(T1[i], HTpsiDenseBasis, &Opsi, Options.Settings.restrictions1)))
+      {
+        WaveFunctionFree(&TpsiSum);
+        WaveFunctionFree(&HTpsiDenseBasis);
+        goto EndOfUseDenseTest;
+      }
+      WaveFunctionAddUnionBasis(&TpsiSum, Opsi);
       WaveFunctionFree(&Opsi);
-      WaveFunctionFree(&psiDenseBasis);
-      goto EndOfUseDenseTest;
+      if(TpsiSum.N>Options.Settings.DenseBorder)
+      {
+        WaveFunctionFree(&TpsiSum);
+        WaveFunctionFree(&HTpsiDenseBasis);
+        goto EndOfUseDenseTest;
+      }
     }
-    HTpsiDenseBasis=Opsi;
+    WaveFunctionFree(&HTpsiDenseBasis);
+    HTpsiDenseBasis=TpsiSum;
     WaveFunctionNormalize(&HTpsiDenseBasis);
-  }
-  // T H T psi
-  WaveFunctionCopy(HTpsiDenseBasis, &HTHTpsiDenseBasis);
-  if(OperatorPsi(T2[0], HTHTpsiDenseBasis, &TpsiSum))
-  {
+    // H T psi
+    len=0;
+    while(len!=HTpsiDenseBasis.N)
+    {
+      if((Options.Settings.restrictions1.N==0)?(OperatorPsi(*H1, HTpsiDenseBasis, &Opsi)):(OperatorPsiRestricted(*H1, HTpsiDenseBasis, &Opsi, Options.Settings.restrictions1)))
+      {
+        WaveFunctionFree(&HTpsiDenseBasis);
+        goto EndOfUseDenseTest;
+      }
+      WaveFunctionFree(&HTpsiDenseBasis);
+      if(Opsi.N>Options.Settings.DenseBorder)
+      {
+        WaveFunctionFree(&Opsi);
+        goto EndOfUseDenseTest;
+      }
+      HTpsiDenseBasis=Opsi;
+      WaveFunctionNormalize(&HTpsiDenseBasis);
+    }
+    // T H T psi
+    WaveFunctionCopy(HTpsiDenseBasis, &HTHTpsiDenseBasis);
+    if((Options.Settings.restrictions2.N==0)?(OperatorPsi(T2[0], HTHTpsiDenseBasis, &TpsiSum)):(OperatorPsiRestricted(T2[0], HTHTpsiDenseBasis, &TpsiSum, Options.Settings.restrictions2)))
+    {
+      WaveFunctionFree(&HTHTpsiDenseBasis);
+      WaveFunctionFree(&HTpsiDenseBasis);
+      goto EndOfUseDenseTest;
+    }
+    for(i=1;i<Options.NT2;i++)
+    {
+      if((Options.Settings.restrictions2.N==0)?(OperatorPsi(T2[i], HTHTpsiDenseBasis, &Opsi)):(OperatorPsiRestricted(T2[i], HTHTpsiDenseBasis, &Opsi, Options.Settings.restrictions2)))
+      {
+        WaveFunctionFree(&TpsiSum);
+        WaveFunctionFree(&HTHTpsiDenseBasis);
+        WaveFunctionFree(&HTpsiDenseBasis);
+        goto EndOfUseDenseTest;
+      }
+      WaveFunctionAddUnionBasis(&TpsiSum, Opsi);
+      WaveFunctionFree(&Opsi);
+      if(TpsiSum.N>Options.Settings.DenseBorder)
+      {
+        WaveFunctionFree(&TpsiSum);
+        WaveFunctionFree(&HTHTpsiDenseBasis);
+        WaveFunctionFree(&HTpsiDenseBasis);
+        goto EndOfUseDenseTest;
+      }
+    }
+    WaveFunctionFree(&HTHTpsiDenseBasis);
+    HTHTpsiDenseBasis=TpsiSum;
+    WaveFunctionNormalize(&HTHTpsiDenseBasis);
+    // H T H T psi
+    len=0;
+    while(len!=HTHTpsiDenseBasis.N)
+    {
+      if((Options.Settings.restrictions2.N==0)?(OperatorPsi(*H2, HTHTpsiDenseBasis, &Opsi)):(OperatorPsiRestricted(*H2, HTHTpsiDenseBasis, &Opsi, Options.Settings.restrictions2)))
+      {
+        WaveFunctionFree(&HTHTpsiDenseBasis);
+        WaveFunctionFree(&HTpsiDenseBasis);
+        goto EndOfUseDenseTest;
+      }
+      WaveFunctionFree(&HTHTpsiDenseBasis);
+      if(Opsi.N>Options.Settings.DenseBorder)
+      {
+        WaveFunctionFree(&Opsi);
+        WaveFunctionFree(&HTpsiDenseBasis);
+        goto EndOfUseDenseTest;
+      }
+      WaveFunctionNormalize(&Opsi);
+      HTHTpsiDenseBasis=Opsi;
+    }
+    // finsihed all tests and psiDenseBasis still fits
+    Options.DenseMethod=True;
+    // The function for dense methods does not use the created basis, so we can disgard this here
     WaveFunctionFree(&HTHTpsiDenseBasis);
     WaveFunctionFree(&HTpsiDenseBasis);
-    WaveFunctionFree(&psiDenseBasis);
-    goto EndOfUseDenseTest;
+    EndOfUseDenseTest:;
   }
-  for(i=1;i<Options.NT2;i++)
-  {
-    if(OperatorPsi(T2[i], HTHTpsiDenseBasis, &Opsi))
-    {
-      WaveFunctionFree(&TpsiSum);
-      WaveFunctionFree(&HTHTpsiDenseBasis);
-      WaveFunctionFree(&HTpsiDenseBasis);
-      WaveFunctionFree(&psiDenseBasis);
-      goto EndOfUseDenseTest;
-    }
-    WaveFunctionAddUnionBasis(&TpsiSum, Opsi);
-    WaveFunctionFree(&Opsi);
-    if(TpsiSum.N>Options.Settings.DenseBorder)
-    {
-      WaveFunctionFree(&TpsiSum);
-      WaveFunctionFree(&HTHTpsiDenseBasis);
-      WaveFunctionFree(&HTpsiDenseBasis);
-      WaveFunctionFree(&psiDenseBasis);
-      goto EndOfUseDenseTest;
-    }
-  }
-  WaveFunctionFree(&HTHTpsiDenseBasis);
-  HTHTpsiDenseBasis=TpsiSum;
-  WaveFunctionNormalize(&HTHTpsiDenseBasis);
-  // H T H T psi
-  len=0;
-  while(len!=HTHTpsiDenseBasis.N)
-  {
-    if(OperatorPsi(*H2, HTHTpsiDenseBasis, &Opsi))
-    {
-      WaveFunctionFree(&HTHTpsiDenseBasis);
-      WaveFunctionFree(&HTpsiDenseBasis);
-      WaveFunctionFree(&psiDenseBasis);
-      goto EndOfUseDenseTest;
-    }
-    WaveFunctionFree(&HTHTpsiDenseBasis);
-    if(Opsi.N>Options.Settings.DenseBorder)
-    {
-      WaveFunctionFree(&Opsi);
-      WaveFunctionFree(&HTpsiDenseBasis);
-      WaveFunctionFree(&psiDenseBasis);
-      goto EndOfUseDenseTest;
-    }
-    WaveFunctionNormalize(&Opsi);
-    HTHTpsiDenseBasis=Opsi;
-  }
-  // finsihed all tests and psiDenseBasis still fits
-  Options.DenseMethod=True;
-  EndOfUseDenseTest:
   if(Options.DenseMethod==True)
   {
-    CompactMatrixType psiDense,T1Dense,H1Dense,T2Dense,H2Dense;
-    // use dense methods
-    // create psiDense
-    psiDense.Ni=Options.Npsi;
-    psiDense.Nj=psiDenseBasis.N;
-    psiDense.QComplex=psiDenseBasis.QComplex;
-    InitCompactMatrix(&psiDense);
-    
-    // create T1Dense[i]
-    T1Dense.Nj=psiDenseBasis.N;
-    T1Dense.Ni=HTpsiDenseBasis.N;
-    T1Dense.QComplex=HTpsiDenseBasis.QComplex;
-    InitCompactMatrix(&T1Dense);
-    
-    // create H1Dense
-    H1Dense.Ni=HTpsiDenseBasis.N;
-    H1Dense.Nj=HTpsiDenseBasis.N;
-    H1Dense.QComplex=HTpsiDenseBasis.QComplex;
-    InitCompactMatrix(&H1Dense);
-    
-    // create T2Dense[i]
-    printf("BLEEEEEh");
-    //TODO:
-    
-    
-    // create H2Dense
-    WaveFunctionFree(&HTHTpsiDenseBasis);
-    WaveFunctionFree(&HTpsiDenseBasis);
-    WaveFunctionFree(&psiDenseBasis);
-    //calcualte spectra
-    
-    // free dense representations of the operators and wavefunctions
+    if(Options.Tensor==False)
+    {
+      ResonantSpectraDense(*H1, *H2, T1, Options.NT1, T2, Options.NT2, psi, Options.Npsi, &SpecTri, &(Spec->Spec), Options.E01, Options.E02, &(Options.Settings));
+      Spec->NSpectra=Options.NT1*Options.NT2*Options.Npsi*(SettingsNow.NE1+1);
+    }
+    else
+    {
+      return luaL_error(L,"Tensor form for Resonant spectra not yet available");
+    }
   }
   else
   {
@@ -2697,14 +2673,9 @@ static int LuaCreateResonantSpectra(lua_State *L)
     }
     else
     {
-      SettingsNow = Options.Settings;
       
-      //ResonantSpectraTensor(*H1, *H2, T1, Options.NT1, T2, Options.NT2, psi, Options.Npsi, &SpecTri, &(Spec->Spec[0]), Options.E01, Options.E02, &SettingsNow);
-      
-      
-      
-      
-      
+      //ResonantSpectraTensor(*H1, *H2, T1, Options.NT1, T2, Options.NT2, psi, Options.Npsi, &SpecTri, &(Spec->Spec[0]), Options.E01, Options.E02, &Options.Settings);
+      return luaL_error(L,"Tensor form for Resonant spectra not yet available");
     }
   }
   return 1;
@@ -3076,14 +3047,32 @@ static int LuaEvolveToGroundstate(lua_State * L)
 /**
  * Calculates all eigen values and functions of a matrix stored as a table of tables on the stack
  * @param L
- *        Pointer to a lua state. The last element on the stack needs to be a square table of tables of numbers (real or complex)
+ *        Pointer to a lua state. The last element on the stack needs to be a square table of tables of numbers (real or complex) or a response function
  * @return 2
  *         The first element added on the stack is a table of the eigenvalues
  *         The second element added on the stack is a table of the eigen functions
  */
 static int LuaEigensystemDenseTable(lua_State *L)
 {
-  return LuaMatrixEigensystem(L);
+  if (luaL_testudata(L, -1, "ResponseFunction_Type") == NULL)
+  {
+    // last element on stack is not a response function stored as a pointer to a responsefunctiontype object, i.e. it must be a table
+    if(lua_istable(L, -1)==0)
+    {
+      return luaL_error(L, "Error Eigensystem called with a single argument, which should be either a matrix (square table or one of the (block) response function types)");
+    }
+    // it is a table, either a square matrix or a reponse function type stored as table
+    lua_getfield(L, -1, "type");
+    if(lua_isstring(L,-1)==0)
+    {
+      // table without type definition, assume it is a square matrix
+      lua_pop(L, 1);
+      return LuaMatrixEigensystem(L);
+    }
+    lua_pop(L, 1);
+    // last element is a table with a type definition, assume it is a response function stored as table
+  }
+  return LuaResponseFunctionEigensystem(L);
 }
 
 /**

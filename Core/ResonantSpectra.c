@@ -259,6 +259,116 @@ uint32_t ResonantSpectra(const OperatorType OppH1, const OperatorType OppH2, con
   return 0;
 }
 
+/*  Calculate < psi | T1^+ G1^+ T2^+ G2 T2 G1 T1 | psi >
+ *  psi, T1 and T2 are vectors of Length Np, NT1 and NT2
+ *  psi and T1 are contract to a single vector of length Np*NT1
+ *  returned are (Np*NT1) * NT2 spectra
+ */
+uint32_t ResonantSpectraDense(const OperatorType OppH1, const OperatorType OppH2, const OperatorType *T1, uint32_t NT1, const OperatorType *T2, uint32_t NT2, const WaveFunctionType *psi, uint32_t Npsi, TriDiagonalMatrixType **SpecTri2, SpectraType **Spec, double energy1, double energy2, ConvergenceSettingsType *settings)
+{
+  /*Calculates resonant spectra using <i|T*GTGT*GT|i> = sum_f |sum_m <f|T2|m><m|T1|i> 1/(W-Em+energy1+iG1/2)|^2 1/(w-Ef+energy2 + iG2/2) in the following steps:
+   
+   1.  Calculate T1|i> for all T1 and |i>
+   2.  Use all T1|i>'s to transform H1 to tridiagonal form in Krylov basis using Block Lanczos
+   3.  Calculate eigen-states of Krylov basis (|m>) and eigen values Em
+   4.  Calculate matrix <m|T1|i>
+   5.  Calculate T2 |m> for all |m>'s
+   6.  Use all T2 |m>'s to transform H2 to tridiagonal form in Krylov basis using Block Lanczos
+   7.  Calculate eigen-states of Krylov basis |f> and eigen values Ef
+   8.  Calculate matrix <f|T2|m> for all T2's
+   9.  for each W calculate M_{fT2, T1i}(Em) = |sum_m <f|T2|m><m|T1|i> 1/(W-Em+energy1List[i]+iG1/2)|^2
+   10. for each w calcualte sum_f M_{fT2, T1i}(Em) 1/(w-Ef+energy2List[i] + iG2/2)
+   */
+  
+  /* settings that need to be set:
+   * NTri1, NTri2
+   * Emin1, Emax1, NE1, Gamma1 - for automatic determination use DBL_MAX, -DBL_MAX, 0, 0
+   * Emin2, Emax2, NE2, Gamma2 - for automatic determination use DBL_MAX, -DBL_MAX, 0, 0
+   * epsilon
+   */
+  
+  WaveFunctionType *Tpsi, *PsiBasis[settings->NTri1];
+  uint32_t ipsi,iT1,iT1psi;
+  double energy1List[Npsi],energy2List[Npsi];
+  BlockTriDiagonalMatrixType H1T1psi;
+  uint32_t BlockSize[settings->NTri1];
+  
+  // calculate energy?List
+  for(ipsi=0;ipsi<Npsi;ipsi++)
+  {
+    if(energy1==DBL_MAX)
+    {
+      PsiHermitianOperatorPsi(OppH1, psi[ipsi], &energy1List[ipsi]);
+    }
+    else
+    {
+      energy1List[ipsi]=energy1;
+    }
+    if(energy2==DBL_MAX)
+    {
+      PsiHermitianOperatorPsi(OppH2, psi[ipsi], &energy2List[ipsi]);
+    }
+    else
+    {
+      energy2List[ipsi]=energy2;
+    }
+  }
+  // 1. calculate T1|i>
+  Tpsi=malloc(NT1*Npsi*sizeof(WaveFunctionType));
+  for(ipsi=0;ipsi<Npsi;ipsi++)
+  {
+    for(iT1=0;iT1<NT1;iT1++)
+    {
+      if(settings->restrictions1.N==0)
+      {
+        OperatorPsi(T1[iT1], psi[ipsi], &Tpsi[ipsi*NT1+iT1]);
+      }
+      else
+      {
+        OperatorPsiRestricted(T1[iT1], psi[ipsi], &Tpsi[ipsi*NT1+iT1], settings->restrictions1);
+      }
+    }
+  }
+  // 2. Block diagonalize H1 starting from Tpsi
+  /* Use T|i>==Tpsi to transform H to Block tridiagonal form in Krylov basis */
+  /* Using the version which gives back the Krylov basis vectors */
+  H1T1psi.N = settings->NTri1;
+  H1T1psi.BlockSize = Npsi*NT1;
+  H1T1psi.QComplex = 0;
+  if(OppH1.QComplex!=0) H1T1psi.QComplex = 1;
+  for(iT1psi=0;iT1psi<H1T1psi.BlockSize;iT1psi++)
+  {
+    if(Tpsi[iT1psi].QComplex!=0) H1T1psi.QComplex = 1;
+  }
+  InitBlockTridiagonalMatrix(&H1T1psi);
+  if(settings->restrictions1.N==0)
+  {
+    LanczosBlockTriDiagonalizeKrylov(OppH1, Tpsi, settings->epsilon, &H1T1psi, PsiBasis, BlockSize);
+  }
+  else
+  {
+    LanczosBlockTriDiagonalizeKrylovRestricted(OppH1, Tpsi, settings->restrictions1, settings->epsilon, &H1T1psi, PsiBasis, BlockSize);
+  }
+  // 3.  Calculate eigen-states of Krylov basis (|m>) and eigen values Em
+  //TODO:
+  
+  // 4.  Calculate matrix <m|T1|i>
+  
+  // 5.  Calculate T2 |m> for all |m>'s
+  
+  // 6.  Use all T2 |m>'s to transform H2 to tridiagonal form in Krylov basis using Block Lanczos
+  
+  // 7.  Calculate eigen-states of Krylov basis |f> and eigen values Ef
+  
+  // 8.  Calculate matrix <f|T2|m> for all T2's
+  
+  // 9.  for each W calculate M_{fT2, T1i}(Em) = |sum_m <f|T2|m><m|T1|i> 1/(W-Em+energy1List[i]+iG1/2)|^2
+  
+  // 10. for each w calcualte sum_f M_{fT2, T1i}(Em) 1/(w-Ef+energy2List[i] + iG2/2)
+  
+  free(Tpsi);
+  return 0;
+}
 
 
 /*  Calculate < psi | T1^+ G1^+ T2^+ G2 T2 G1 T1 | psi >
@@ -298,7 +408,7 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
   WaveFunctionType Tpsi[Npsi*NT1],GTpsi,TGTpsi, *PsiBasis[settings->NTri1];
   BlockTriDiagonalMatrixType SpecTri1;
   MatrixType EFun;
-  uint32_t BlockSize[settings->NTri];
+  uint32_t BlockSize[settings->NTri1];
   double EVal[settings->NTri1], EValInvRe[settings->NTri1], EValInvIm[settings->NTri1],tempDoubleRe,tempDoubleIm, EVal2[settings->NTri2];
   int i,ipsi,iT1,p,k;
   double wRes;

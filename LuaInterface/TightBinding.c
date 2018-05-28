@@ -494,145 +494,146 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
       SuperCell.Crystal=a->Cell;
     }
     AddAditionalInformationToSuperCell(&SuperCell);
+    /* deterimine if there are aditional operators or aditional options */
+    if(len==2)
+    {
+      QOperators=False;
+      QOptions=False;
+    }
+    else
+    {
+      if(len==4)
+      {
+        QOperators=True;
+        QOptions=True;
+      }
+      /* read additional operators from the stack */
+      if (luaL_testudata(L, 3, "Operator_Type") != NULL)
+      {
+        QOperators=True;
+        AditionalOperator = (OperatorType *) luaL_checkudata(L, 3, "Operator_Type");
+        if(len==3)
+        {
+          QOptions=False;
+        }
+      }
+      else
+      {
+        QOperators=False;
+        QOptions=True;
+        if(len==4)
+        {
+          return luaL_error(L, "Error CreateClusterHamiltonian third argument should be an operator defining aditional interactions within the unit cell\n");
+        }
+      }
+    }
+    /* read options */
+    if(QOptions==True)
+    {
+      LuaCheckOptions(L, -1, LuaCreateClusterHamiltonianOptions);
+      if(k.Ni!=3)
+      {
+        return luaL_error(L, "Error CreateClusterHamiltonian optional k-vector should have a length of 3\n");
+      }
+      if(k.QComplex)
+      {
+        return luaL_error(L, "Error CreateClusterHamiltonian optional k-vector should be real\n");
+      }
+    }
+    /* create the cluster hamiltonian */
+    CreateTightBindingSuperCell(*a, &aSuper, SuperCell);
+    H=(OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+    luaL_setmetatable(L, "Operator_Type");
+    if(AddSpin==True)
+    {
+      CreateHamiltonianOperatorFromTightBindingDefPlusSpin(aSuper, k.VRe, H);
+    }
+    else
+    {
+      CreateHamiltonianOperatorFromTightBindingDef(aSuper, k.VRe, H);
+    }
+    /* add aditional operators */
+    if(QOperators)
+    {
+      if(AddSpin)
+      {
+        if(AditionalOperator->NFermion!=(2*a->NFermion)) return luaL_error(L, "Error CreateClusterHamiltonian aditional operator should have the same number of spin-orbitals (%f) as the cluster has (%f)\n",(double)AditionalOperator->NFermion,(double)a->NFermion);
+      }
+      else
+      {
+        if(AditionalOperator->NFermion!=a->NFermion) return luaL_error(L, "Error CreateClusterHamiltonian aditional operator should have the same number of spin-orbitals (%f) as the cluster has (%f)\n",(double)AditionalOperator->NFermion,(double)a->NFermion);
+      }
+      U.Ni=H->NFermion;
+      U.Nj=AditionalOperator->NFermion;
+      U.QComplex=0;
+      InitMatrix(&U);
+      for(i=0;i<SuperCell.NCell;i++)
+      {
+        MatrixScalarMultiply(&U, 0, 0);
+        for(j=0;j<AditionalOperator->NFermion;j++)
+        {
+          U.VRe[j+i*AditionalOperator->NFermion][j]=1;
+        }
+        //TODO: test if function servived changes made in order in mappedOperatorAddNormalOrder. (i.e. row/column major)
+        MappedOperatorAddNormalOrder(H, *AditionalOperator, U, &QDetNotOrderedFcFaBcBa);
+      }
+    }
+    SetQComplexOperator(H);
+    /* return TBsupercell if asked for */
+    if(ReturnTBSuperCell)
+    {
+      aSuperReturn=(TightBindingDef*) lua_newuserdata(L, sizeof(TightBindingDef));
+      luaL_setmetatable(L, "TightBinding_Type");
+      *aSuperReturn=aSuper;
+      nreturn++;
+    }
+    else
+    {
+      FreeTightBindingDef(&aSuper);
+    }
+    if(ReturnTBCellPositions)
+    {
+      lua_createtable(L, SuperCell.NCell, 0);
+      for(i=0;i<SuperCell.NCell;i++)
+      {
+        lua_createtable(L, 3, 0);
+        lua_pushnumber(L, SuperCell.CellPos[i][0]);
+        lua_rawseti(L, -2, 1);
+        lua_pushnumber(L, SuperCell.CellPos[i][1]);
+        lua_rawseti(L, -2, 2);
+        lua_pushnumber(L, SuperCell.CellPos[i][2]);
+        lua_rawseti(L, -2, 3);
+        lua_rawseti(L, -2, i+1);
+      }
+      nreturn++;
+    }
+    if(ReturnTBKVectors)
+    {
+      lua_createtable(L, SuperCell.NCell, 0);
+      for(i=0;i<SuperCell.NCell;i++)
+      {
+        lua_createtable(L, 3, 0);
+        lua_pushnumber(L, SuperCell.kVector[i][0]);
+        lua_rawseti(L, -2, 1);
+        lua_pushnumber(L, SuperCell.kVector[i][1]);
+        lua_rawseti(L, -2, 2);
+        lua_pushnumber(L, SuperCell.kVector[i][2]);
+        lua_rawseti(L, -2, 3);
+        lua_rawseti(L, -2, i+1);
+      }
+      nreturn++;
+    }
+    return nreturn;
   }
   else
-  {
-    ReturnTBSuperCell=False;
-    ReturnTBKVectors=False;
-    ReturnTBCellPositions=False;
+  { // open systems, i.e. finite size cluster
+    
+    
+    
+    
     //TODO:
     return luaL_error(L, "Error in CreateClusterHamiltonian open boundary conditions not yet implemented \n");
   }
-  /* deterimine if there are aditional operators or aditional options */
-  if(len==2)
-  {
-    QOperators=False;
-    QOptions=False;
-  }
-  else
-  {
-    if(len==4)
-    {
-      QOperators=True;
-      QOptions=True;
-    }
-    /* read additional operators from the stack */
-    if (luaL_testudata(L, 3, "Operator_Type") != NULL)
-    {
-      QOperators=True;
-      AditionalOperator = (OperatorType *) luaL_checkudata(L, 3, "Operator_Type");
-      if(len==3)
-      {
-        QOptions=False;
-      }
-    }
-    else
-    {
-      QOperators=False;
-      QOptions=True;
-      if(len==4)
-      {
-        return luaL_error(L, "Error CreateClusterHamiltonian third argument should be an operator defining aditional interactions within the unit cell\n");
-      }
-    }
-  }
-  /* read options */
-  if(QOptions==True)
-  {
-    LuaCheckOptions(L, -1, LuaCreateClusterHamiltonianOptions);
-    if(k.Ni!=3)
-    {
-      return luaL_error(L, "Error CreateClusterHamiltonian optional k-vector should have a length of 3\n");
-    }
-    if(k.QComplex)
-    {
-      return luaL_error(L, "Error CreateClusterHamiltonian optional k-vector should be real\n");
-    }
-  }
-  /* create the cluster hamiltonian */
-  CreateTightBindingSuperCell(*a, &aSuper, SuperCell);
-  H=(OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-  luaL_setmetatable(L, "Operator_Type");
-  if(AddSpin==True)
-  {
-    CreateHamiltonianOperatorFromTightBindingDefPlusSpin(aSuper, k.VRe, H);
-  }
-  else
-  {
-    CreateHamiltonianOperatorFromTightBindingDef(aSuper, k.VRe, H);
-  }
-  /* add aditional operators */
-  if(QOperators)
-  {
-    if(AddSpin)
-    {
-      if(AditionalOperator->NFermion!=(2*a->NFermion)) return luaL_error(L, "Error CreateClusterHamiltonian aditional operator should have the same number of spin-orbitals (%f) as the cluster has (%f)\n",(double)AditionalOperator->NFermion,(double)a->NFermion);
-    }
-    else
-    {
-      if(AditionalOperator->NFermion!=a->NFermion) return luaL_error(L, "Error CreateClusterHamiltonian aditional operator should have the same number of spin-orbitals (%f) as the cluster has (%f)\n",(double)AditionalOperator->NFermion,(double)a->NFermion);
-    }
-    U.Ni=H->NFermion;
-    U.Nj=AditionalOperator->NFermion;
-    U.QComplex=0;
-    InitMatrix(&U);
-    for(i=0;i<SuperCell.NCell;i++)
-    {
-      MatrixScalarMultiply(&U, 0, 0);
-      for(j=0;j<AditionalOperator->NFermion;j++)
-      {
-        U.VRe[j+i*AditionalOperator->NFermion][j]=1;
-      }
-      //TODO: test if function servived changes made in order in mappedOperatorAddNormalOrder. (i.e. row/column major)
-      MappedOperatorAddNormalOrder(H, *AditionalOperator, U, &QDetNotOrderedFcFaBcBa);
-    }
-  }
-  SetQComplexOperator(H);
-  /* return TBsupercell if asked for */
-  if(ReturnTBSuperCell)
-  {
-    aSuperReturn=(TightBindingDef*) lua_newuserdata(L, sizeof(TightBindingDef));
-    luaL_setmetatable(L, "TightBinding_Type");
-    *aSuperReturn=aSuper;
-    nreturn++;
-  }
-  else
-  {
-    FreeTightBindingDef(&aSuper);
-  }
-  if(ReturnTBCellPositions)
-  {
-    lua_createtable(L, SuperCell.NCell, 0);
-    for(i=0;i<SuperCell.NCell;i++)
-    {
-      lua_createtable(L, 3, 0);
-      lua_pushnumber(L, SuperCell.CellPos[i][0]);
-      lua_rawseti(L, -2, 1);
-      lua_pushnumber(L, SuperCell.CellPos[i][1]);
-      lua_rawseti(L, -2, 2);
-      lua_pushnumber(L, SuperCell.CellPos[i][2]);
-      lua_rawseti(L, -2, 3);
-      lua_rawseti(L, -2, i+1);
-    }
-    nreturn++;
-  }
-  if(ReturnTBKVectors)
-  {
-    lua_createtable(L, SuperCell.NCell, 0);
-    for(i=0;i<SuperCell.NCell;i++)
-    {
-      lua_createtable(L, 3, 0);
-      lua_pushnumber(L, SuperCell.kVector[i][0]);
-      lua_rawseti(L, -2, 1);
-      lua_pushnumber(L, SuperCell.kVector[i][1]);
-      lua_rawseti(L, -2, 2);
-      lua_pushnumber(L, SuperCell.kVector[i][2]);
-      lua_rawseti(L, -2, 3);
-      lua_rawseti(L, -2, i+1);
-    }
-    nreturn++;
-  }
-  return nreturn;
 }
 
 /*

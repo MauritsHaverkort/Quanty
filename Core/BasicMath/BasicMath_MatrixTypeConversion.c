@@ -407,8 +407,7 @@ uint32_t AndersonMatrixInverseToListOfPoles(AndersonMatrixType const M, ListOfPo
 /*
  *
  */
-uint32_t AndersonMatrixToEigensystemOnsiteShift(AndersonMatrixType const M, double const shift, MatrixType * const T,
-                                                double *val)
+uint32_t AndersonMatrixToEigensystemOnsiteShift(AndersonMatrixType const M, double const shift, MatrixType * const T, double *val)
 {
   MatrixType Tone, Ttwo;
   TriDiagonalMatrixType Mtri;
@@ -462,6 +461,12 @@ uint32_t AndersonMatrixToEigensystem(AndersonMatrixType const M, MatrixType * co
   FreeMatrix(&Tone);
   FreeMatrix(&Ttwo);
   FreeTriDiagonalMatrix(&Mtri);
+  return 0;
+}
+
+uint32_t AndersonMatrixToEigenSystemCompact(const AndersonMatrixType * const M, double *val, CompactMatrixType * const T)
+{
+  //TODO all
   return 0;
 }
 
@@ -1227,6 +1232,67 @@ uint32_t TriDiagonalMatrixToEigensystem(TriDiagonalMatrixType const M, MatrixTyp
   return 0;
 }
 
+uint32_t TriDiagonalMatrixToEigensystemCompact(const TriDiagonalMatrixType * const M, double *val, CompactMatrixType * const T)
+{
+  int    i, info;
+  const char *jobz = "V";
+  double e[M->N];
+  int    lwork = (1 + 4 * M->N + Sqr(M->N));
+  int    liwork = 3 + 5 * M->N;
+  double *work;
+  int   *iwork;
+  work = malloc(lwork * sizeof(double));
+  if (work == NULL)
+  {
+    printf("malloc of work failed in TriDiagonalMatrixToEigensystem\n");
+    return 1;
+  };
+  iwork = malloc(liwork * sizeof(int));
+  if (iwork == NULL)
+  {
+    printf("malloc of iwork failed in TriDiagonalMatrixToEigensystem\n");
+    return 1;
+  };
+  
+  for (i = 0; i < M->N - 1; i++) e[i] = M->b[i + 1];
+  e[M->N - 1] = 0.0;
+  for (i = 0; i < M->N; i++) val[i] = M->a[i + 1];
+  
+  T->Ni = M->N;
+  T->Nj = M->N;
+  T->QComplex = 0;
+  if (InitCompactMatrix(T))
+  {
+    printf("InitCompactMatrix(T) failed in TriDiagonalMatrixToEigensystemCompact\n");
+    fflush(stdout);
+    free(work);
+    free(iwork);
+    return 1;
+  }
+  strcpy(T->Name, "Eigenvectors of ");
+  strncat(T->Name, M->Name, Max(0, MAXStrLength - 18));
+  dstevd(jobz, &M->N, val, e, T->VRe, &M->N, work, &lwork, iwork, &liwork, &info);
+  if (info != 0)
+  {
+    printf("dstevd failed in TriDiagonalMatrixToEigensystemCompact with info value %i\n", info);
+    printf("While working on matrix %s\n", M->Name);
+    printf("continue diagonalization with dstev\n");
+    fflush(stdout);
+    dstev(jobz, &M->N, val, e, T->VRe, &M->N, work, &info);
+    if (info != 0)
+    {
+      printf("Also dstev failed with info value %i\n", info);
+      printf("I don't know what to do\n");
+      printf("ERROR!!!!!!!!!!!\n");
+      fflush(stdout);
+      return 1;
+    }
+  }
+  free(work);
+  free(iwork);
+  return 0;
+}
+
 uint32_t TriDiagonalMatrixToListOfPoles(TriDiagonalMatrixType const M, ListOfPoles * const A)
 {
   MatrixType T;
@@ -1577,21 +1643,31 @@ uint32_t DoubleTriDiagonalMatrixToTriDiagonalMatrix(DoubleTriDiagonalMatrixType 
   return 0;
 }
 
+uint32_t BADoubleTriDiagonalMatrixTypeToEigenSystemCompact(const BADoubleTriDiagonalMatrixType * const M, double * val, CompactMatrixType * const T)
+{
+  //TODO: all
+  printf("\n\n\nTODO\n\n\n");
+  return 1;
+}
+
 uint32_t BADoubleTriDiagonalMatrixToTriDiagonalMatrix(BADoubleTriDiagonalMatrixType const M, TriDiagonalMatrixType * const H)
 {
   //TODO: all
+  printf("\n\n\nTODO\n\n\n");
   return 1;
 }
 
 uint32_t BADoubleTriDiagonalMatrixToListOfPoles(BADoubleTriDiagonalMatrixType const M, ListOfPoles * const H)
 {
   //TODO: all
+  printf("\n\n\nTODO\n\n\n");
   return 1;
 }
 
 uint32_t BADoubleTriDiagonalMatrixToAndersonMatrix(BADoubleTriDiagonalMatrixType const M, AndersonMatrixType * const H)
 {
   //TODO: all
+  printf("\n\n\nTODO\n\n\n");
   return 1;
 }
 
@@ -3504,8 +3580,19 @@ uint32_t MatrixToBlokDoubleTriDiagonalMatrixNoOverlap(MatrixType const M, Matrix
 /*
  *
  */
-uint32_t ListOfPolesToTridiagonalMatrixNonOrthogonal(const ListOfPoles A, TriDiagonalMatrixType * const M,
-                                                     uint32_t NTriDiag)
+uint32_t ListOfPolesToEigensystemCompact(const ListOfPoles * const A, double * val, CompactMatrixType * const T)
+{
+  memcpy(val, &(A->a), A->N*sizeof(double));
+  T->Ni=A->N;
+  T->Nj=A->N;
+  T->QComplex=0;
+  InitCompactIdentityMatrix(T);
+  return 0;
+}
+/*
+ *
+ */
+uint32_t ListOfPolesToTridiagonalMatrixNonOrthogonal(const ListOfPoles A, TriDiagonalMatrixType * const M, uint32_t NTriDiag)
 {
   uint32_t i;
   AndersonMatrixType AM;

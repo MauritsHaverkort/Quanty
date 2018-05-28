@@ -1,5 +1,3 @@
-#include "TableToArray.h"
-
 /*  returns a pointer to an array of lenght len_out
  *  of type _type
  *  found in the lua stack at position narg
@@ -318,8 +316,7 @@ TriDiagonalMatrixType* luaL_checkTriDiagonalMatrixType(lua_State *L, int narg)
     {
       luaL_error(L, "Error a Green's function represented as a tri-diagonal matrix should be a list of two lists {{a0,a1,a2,...,an},{b0,b1,b2,...,bn-1}}");
     }
-    lua_pushstring(L, "mu");
-    lua_rawget(L, narg);
+    lua_getfield(L, narg, "mu");
     if(lua_isnumber(L, -1)==1)
     {
       buff->mu=(double)luaL_checknumber(L, -1);
@@ -329,8 +326,7 @@ TriDiagonalMatrixType* luaL_checkTriDiagonalMatrixType(lua_State *L, int narg)
       luaL_error(L, "Reading Green's function represented as a tri-diagonal matrix without mu defined");
     }
     lua_pop(L,1);
-    lua_pushstring(L, "name");
-    lua_rawget(L, narg);
+    lua_getfield(L, narg, "name");
     if(lua_isstring(L, -1)==1)
     {
       strncpy(buff->Name, luaL_checkstring(L, -1), MAXStrLength);
@@ -550,8 +546,7 @@ BlockTriDiagonalMatrixType* luaL_checkBlockTriDiagonalMatrixType(lua_State *L, i
       luaL_error(L, "Reading Block tridiagonal matrix without mu defined");
     }
     lua_pop(L,1);
-    lua_pushstring(L, "name");
-    lua_rawget(L, narg);
+    lua_getfield(L, narg, "name");
     if(lua_isstring(L, -1)==1)
     {
       strncpy(buff->Name, luaL_checkstring(L, -1), MAXStrLength);
@@ -657,8 +652,7 @@ AndersonMatrixType* luaL_checkAndersonMatrixType(lua_State *L, int narg)
       luaL_error(L, "Reading Green's function represented as an Anderson matrix without mu defined");
     }
     lua_pop(L,1);
-    lua_pushstring(L, "name");
-    lua_rawget(L, narg);
+    lua_getfield(L, narg, "name");
     if(lua_isstring(L, -1)==1)
     {
       strncpy(buff->Name, luaL_checkstring(L, -1), MAXStrLength);
@@ -867,8 +861,7 @@ BlockAndersonMatrixType* luaL_checkBlockAndersonMatrixType(lua_State *L, int nar
     {
       ComplexBlockAndersonMatrixToReal(buff);
     }
-    lua_pushstring(L, "mu");
-    lua_rawget(L, narg);
+    lua_getfield(L, narg, "mu");
     if(lua_isnumber(L, -1)==1)
     {
       buff->mu=(double)luaL_checknumber(L, -1);
@@ -878,8 +871,7 @@ BlockAndersonMatrixType* luaL_checkBlockAndersonMatrixType(lua_State *L, int nar
       luaL_error(L, "Reading Block Anderson matrix without mu defined");
     }
     lua_pop(L,1);
-    lua_pushstring(L, "name");
-    lua_rawget(L, narg);
+    lua_getfield(L, narg, "name");
     if(lua_isstring(L, -1)==1)
     {
       strncpy(buff->Name, luaL_checkstring(L, -1), MAXStrLength);
@@ -970,8 +962,7 @@ BADoubleTriDiagonalMatrixType * luaL_checkNatrualImpurityOrbitalMatrixType(lua_S
     buff = malloc(sizeof(BADoubleTriDiagonalMatrixType));
     lua_pop(L,1);
     /* read val */
-    lua_pushstring(L, "val");
-    lua_rawget(L, narg);
+    lua_getfield(L, narg, "val");
     if(lua_istable(L,-1)==0)
     {
       luaL_error(L, "Error Green's function of format NaturalImpurityOrbital should have a field val");
@@ -981,8 +972,7 @@ BADoubleTriDiagonalMatrixType * luaL_checkNatrualImpurityOrbitalMatrixType(lua_S
     free(temp);
     lua_pop(L,1);
     /* read con */
-    lua_pushstring(L, "con");
-    lua_rawget(L, narg);
+    lua_getfield(L, narg, "con");
     if(lua_istable(L,-1)==0)
     {
       luaL_error(L, "Error Green's function of format NaturalImpurityOrbital should have a field con");
@@ -1004,8 +994,7 @@ BADoubleTriDiagonalMatrixType * luaL_checkNatrualImpurityOrbitalMatrixType(lua_S
     buff->b0 = (double)luaL_checknumber(L, -1);
     lua_pop(L,2);
     /* read mu */
-    lua_pushstring(L, "mu");
-    lua_rawget(L, narg);
+    lua_getfield(L, narg, "mu");
     if(lua_isnumber(L, -1)==1)
     {
       buff->mu=(double)luaL_checknumber(L, -1);
@@ -1016,8 +1005,7 @@ BADoubleTriDiagonalMatrixType * luaL_checkNatrualImpurityOrbitalMatrixType(lua_S
     }
     lua_pop(L,1);
     /* read name */
-    lua_pushstring(L, "name");
-    lua_rawget(L, narg);
+    lua_getfield(L, narg, "name");
     if(lua_isstring(L, -1)==1)
     {
       strncpy(buff->Name, luaL_checkstring(L, -1), MAXStrLength);
@@ -1033,8 +1021,7 @@ BADoubleTriDiagonalMatrixType * luaL_checkNatrualImpurityOrbitalMatrixType(lua_S
     }
     lua_pop(L,1);
     /* read epsilon */
-    lua_pushstring(L, "epsilon");
-    lua_rawget(L, narg);
+    lua_getfield(L, narg, "epsilon");
     if(lua_isnumber(L, -1)==1)
     {
       buff->Epsilon=(double)luaL_checknumber(L, -1);
@@ -1113,8 +1100,7 @@ BlockNaturalImpurityOrbitalMatrixType * luaL_checkBlockNatrualImpurityOrbitalMat
     CompactMatrixType *tempM;
     lua_pop(L, 1);
     buff = malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
-    lua_pushstring(L, "val");
-    lua_rawget(L, narg);
+    lua_getfield(L, narg, "val");
     if(lua_istable(L,-1)==0)
     {
       luaL_error(L, "Error Green's function of format NaturalImpurityOrbital should have a field val");
@@ -1123,8 +1109,7 @@ BlockNaturalImpurityOrbitalMatrixType * luaL_checkBlockNatrualImpurityOrbitalMat
     buff->val = *temp;
     free(temp);
     lua_pop(L,1);
-    lua_pushstring(L, "con");
-    lua_rawget(L, narg);
+    lua_getfield(L, narg, "con");
     if(lua_istable(L,-1)==0)
     {
       luaL_error(L, "Error Green's function of format NaturalImpurityOrbital should have a field con");
@@ -1253,8 +1238,7 @@ ListOfPoles * luaL_checkListOfPoles(lua_State *L, int narg)
       luaL_error(L, "Reading List of poles without mu defined");
     }
     lua_pop(L,1);
-    lua_pushstring(L, "name");
-    lua_rawget(L, narg);
+    lua_getfield(L, narg, "name");
     if(lua_isstring(L, -1)==1)
     {
       strncpy(buff->Name, luaL_checkstring(L, -1), MAXStrLength);
@@ -1536,8 +1520,7 @@ BlockListOfPoles * luaL_checkBlockListOfPoles(lua_State *L, int narg)
       luaL_error(L, "Reading List of poles without mu defined");
     }
     lua_pop(L,1);
-    lua_pushstring(L, "name");
-    lua_rawget(L, narg);
+    lua_getfield(L, narg, "name");
     if(lua_isstring(L, -1)==1)
     {
       strncpy(buff->Name, luaL_checkstring(L, -1), MAXStrLength);
@@ -1639,9 +1622,7 @@ ResponsefunctionType * luaL_checkResponsefunction(lua_State *L, int narg)
   }
   buff=malloc(sizeof(ResponsefunctionType));
   // test if there is a suggested grid present. If present Stored in field SuggestedGrid
-  //lua_getfield(L, narg, "SuggestedGrid"); Invoces methamethods which we do not want here
-  lua_pushstring(L, "SuggestedGrid");
-  lua_rawget(L, narg);
+  lua_getfield(L, narg, "SuggestedGrid");
   if(lua_isnil(L, -1)==1)
   {
     // no sugested grid
