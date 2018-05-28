@@ -190,7 +190,9 @@ static int LuaCreateBaseForContinuum(lua_State *L)
 	double *eigenval;
 	eigenval = CreateBaseForContinuum(basisfuns->Ni, basisfuns->VRe,derivfuns->VRe,x,NGridpoints,groups,NGroups,contfuns->Ni,contfuns->VRe);
 
-	LuaPushArray_double(L,&(eigenval[0]), contfuns->Ni);
+	LuaPushArray_double(L,&(eigenval[contfuns->Ni/2]), contfuns->Ni/2);
+	contfuns->VRe = &(contfuns->VRe[contfuns->Ni/2]);
+	contfuns->Ni = contfuns->Ni/2;
 	LuaPushTable_MatrixType(L,contfuns);
 
 	FreeMatrix(basisfuns);
