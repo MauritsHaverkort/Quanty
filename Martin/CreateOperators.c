@@ -59,17 +59,12 @@ uint32_t CreateOperatorFastCoulombRelativistic(uint32_t const NFermion,double **
 
     OperatorType optemp;
     SSlaterIntegral *integrals;
-    //double t;
 
-    //t = dsecnd();
     integrals = GetSlaterIntegrals(basisfuns,NbasisFuns,grid, NGridpoints, (const int **) tuple, NIntegrals);
-    //printf("%f\n",dsecnd()-t);
 
     int *k, i;
     unsigned int *n;
     double *Fk;
-
-    //t = dsecnd();
 
     k = integrals[0].tau.kappa;
     n = integrals[0].tau.n;
@@ -87,7 +82,13 @@ uint32_t CreateOperatorFastCoulombRelativistic(uint32_t const NFermion,double **
         OperatorAdd(op, optemp, 1., 0.);
 
     }
-    //printf("%f\n",dsecnd()-t);
+    for ( i = 0; i < NIntegrals; i++)
+    {
+    	free(integrals[i].val);
+    	free(integrals[i].k);
+    }
+    free(integrals);
+
     return 0;
 }
 
@@ -100,19 +101,19 @@ uint32_t CreateOperatorFullCoulombRelativistic(uint32_t const NFermion,double **
     //double t;
   
   
-  BeginTiming("GetSlaterIntegrals", &GlobalTime);
-    //t = dsecnd();
+    BeginTiming("GetSlaterIntegrals", &GlobalTime);
+
     integrals = GetSlaterIntegrals(basisfuns,NbasisFuns,grid, NGridpoints, (const int **) tuple, NIntegrals);
-    //printf("%f\n",dsecnd()-t);
-  EndTiming("GetSlaterIntegrals", &GlobalTime);
+
+    EndTiming("GetSlaterIntegrals", &GlobalTime);
   
     int *k, i;
     unsigned int *n;
     double *Fk;
     
-    //t = dsecnd();
+
   
-  BeginTiming("CreateOperatorCoulomb", &GlobalTime);
+    BeginTiming("CreateOperatorCoulomb", &GlobalTime);
     k = integrals[0].tau.kappa;
     n = integrals[0].tau.n;
     Fk = integrals[0].val;
@@ -128,8 +129,14 @@ uint32_t CreateOperatorFullCoulombRelativistic(uint32_t const NFermion,double **
         OperatorAdd(op, optemp, 1., 0.);
     
     }
-  EndTiming("CreateOperatorCoulomb", &GlobalTime);
-  PrintTiming(GlobalTime);
+    EndTiming("CreateOperatorCoulomb", &GlobalTime);
+    PrintTiming(GlobalTime);
+    for ( i = 0; i < NIntegrals; i++)
+    {
+    	free(integrals[i].val);
+    	free(integrals[i].k);
+    }
+    free(integrals);
     return 0;
 }
 
@@ -214,58 +221,63 @@ void PrintArray(double* a, int n)
 	}
 }
 
-double* CreateBaseForContinuum( int NBasisFuns,double **basisfuns,double **derivfuns,double *x,uint32_t NGridpoints,SKappaGroup *groups,int NGroups,int Ncont,double **contfuns)
+double* CreateBaseForContinuum( int NBasisFuns,double **basisfuns,double **derivfuns,double *x,uint32_t NGridpoints,SKappaGroup *groups,int NGroups,int Ncont,
+								double **contfuns, double w)
 {
-	int n,l,k,dim;
-  // TODO: unused variables
-	//const int LAPACK_ROW_MAJOR = 101;
-	//const int CblasRowMajor= 101;
-	//const int CblasLeft = 141;
-	//const int CblasRight = 142;
-	//const int CblasUpper = 121;
-	//const int CblasNoTrans = 111;
-	//const int CblasTrans = 112;
-	//const int CblasNonUnit = 131;
+	int l,k,dim,info;
+	const int LAPACK_ROW_MAJOR = 101;
+	const int CblasRowMajor= 101;
+	const int CblasLeft = 141;
+	const int CblasRight = 142;
+	const int CblasUpper = 121;
+	const int CblasNoTrans = 111;
+	const int CblasTrans = 112;
+	const int CblasNonUnit = 131;
 
-	double w, *T,*g, **dualfuns, **dualcont, *Tsub, *tau,*d,*e;
+	double *T,*g, **dualfuns, **dualcont, *Tsub, *tau,*d,*e;
 
 	k = -1;
-	n = 1;
 	l = 0;
-	w = 2.;
 
 	dim = Ncont + NBasisFuns;
 
 	dualfuns = CreateDualFunctions(NBasisFuns,NGridpoints,basisfuns,x);
 
 	dualcont = CreateDualFunctions(Ncont,NGridpoints,contfuns,x);
-
+	//printf("w: %f\n",w);
 	T = KineticEnergyCB(basisfuns,derivfuns, dualfuns,dualcont, Ncont,groups->indices, groups->n,x,NGridpoints,k,w);
 
-	g = MetricCB(basisfuns,dualfuns,NBasisFuns,dualcont,Ncont,NGridpoints);
-  //TODO: please use plain blas and lapack here so that one can compile on windows, sigwin, mac and older linux distributions
-	//LAPACKE_dpotrf(LAPACK_ROW_MAJOR,'U',dim,g,dim);
-	//LAPACKE_dtrtri(LAPACK_ROW_MAJOR,'U','N',dim,g,dim);
-	//cblas_dtrmm(CblasRowMajor,CblasLeft,CblasUpper,CblasTrans,CblasNonUnit,dim,dim,1.,g,dim,T,dim);
-	//cblas_dtrmm(CblasRowMajor,CblasRight,CblasUpper,CblasNoTrans,CblasNonUnit,dim,dim,1.,g,dim,T,dim);
+	//PrintMartix(T,dim);
 
-	//PrintMartix(T,Ncont+NBasisFuns);
-	//printf("\n\n");
+	g = MetricCB(basisfuns,dualfuns,NBasisFuns,dualcont,Ncont,NGridpoints);
+
+	//PrintMartix(g,dim);
+
+	LAPACKE_dpotrf(LAPACK_ROW_MAJOR,'U',dim,g,dim);
+	LAPACKE_dtrtri(LAPACK_ROW_MAJOR,'U','N',dim,g,dim);
+	cblas_dtrmm(CblasRowMajor,CblasLeft,CblasUpper,CblasTrans,CblasNonUnit,dim,dim,1.,g,dim,T,dim);
+	cblas_dtrmm(CblasRowMajor,CblasRight,CblasUpper,CblasNoTrans,CblasNonUnit,dim,dim,1.,g,dim,T,dim);
+
+	//PrintMartix(g,dim);
+	//printf("%d\t%d\t%d\n",dim,NBasisFuns,Ncont);
 	Tsub = SubMatrix(T,dim,NBasisFuns,dim-1,NBasisFuns,dim-1);
 	//PrintMartix(Tsub,Ncont);
 
 	d = (double *) malloc(Ncont*sizeof(double));
 	e = (double *) malloc((Ncont-1)*sizeof(double));
-  tau = (double *) malloc(Ncont*sizeof(double));
-  //TODO: please use plain blas and lapack here so that one can compile on windows, sigwin, mac and older linux distributions
-	//LAPACKE_dsytrd(LAPACK_ROW_MAJOR, 'U',Ncont,Tsub,Ncont,d,e,tau);
-	//LAPACKE_dorgtr(LAPACK_ROW_MAJOR,'U',Ncont,Tsub,Ncont,tau);
-	//LAPACKE_dsteqr(LAPACK_ROW_MAJOR,'V',Ncont,d,e,Tsub,Ncont);
+	tau = (double *) malloc(Ncont*sizeof(double));
+
+	info = LAPACKE_dsytrd(LAPACK_ROW_MAJOR, 'U',Ncont,Tsub,Ncont,d,e,tau);
+	if ( 0 != info) printf("error: argument %d of LAPACKE_dsytrd",-info);
+	info = LAPACKE_dorgtr(LAPACK_ROW_MAJOR,'U',Ncont,Tsub,Ncont,tau);
+	if ( 0 != info) printf("error: argument %d of LAPACKE_dorgtr",-info);
+	info = LAPACKE_dsteqr(LAPACK_ROW_MAJOR,'V',Ncont,d,e,Tsub,Ncont);
+	if ( 0 != info) printf("error: argument %d of LAPACKE_dsteqr",-info);
 
 	CalcContinuumWFs(basisfuns, NBasisFuns, contfuns, Ncont, NGridpoints, g, Tsub);
 
 	//PrintMartix(Tsub,Ncont);
-	//PrintArray(contfuns[0],2*NGridpoints);
+	//PrintArray(d,Ncont);
 
 	free(T);
 	free(g);

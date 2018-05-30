@@ -93,7 +93,7 @@ static int LuaOperatorNewDirac(lua_State *L)
 {
 	OperatorType *op;
 	uint32_t **indices;
-	uint32_t NF, i, NGroups, NGridpoints, NIndices, temp;
+	uint32_t NF, i, NGroups, NGridpoints, NIndices, NBasisFuns, temp;
 	SKappaGroup *groups;
 	MatrixType *basisfuns, *derivfuns;
 	int Z;
@@ -153,27 +153,25 @@ static int LuaOperatorNewDirac(lua_State *L)
 
 static int LuaCreateBaseForContinuum(lua_State *L)
 {
-	//TODO: unused variables
-  //OperatorType *op;
+	OperatorType *op;
 	//uint32_t **indices;
-  uint32_t NF, i, NGroups, NGridpoints; //, NIndices, NBasisFuns, temp;
+	uint32_t NF, i, NGroups, NGridpoints, NIndices, NBasisFuns, temp;
 	SKappaGroup *groups;
 	MatrixType *basisfuns, *derivfuns, *contfuns;
-	int Z;
+	double w;
 	double *x;
 
-	NF = (uint32_t)luaL_checkunsigned(L, 1);
-	basisfuns = luaL_checkMatrix(L,2);
-	derivfuns = luaL_checkMatrix(L,3);
-	x = luaL_checkarray_double(L,4,&NGridpoints);
-	luaL_checktype(L, 5, LUA_TTABLE);
-	NGroups = (uint32_t)lua_objlen(L,5);
+	basisfuns = luaL_checkMatrix(L,1);
+	derivfuns = luaL_checkMatrix(L,1);
+	x = luaL_checkarray_double(L,3,&NGridpoints);
+	luaL_checktype(L, 4, LUA_TTABLE);
+	NGroups = (uint32_t)lua_objlen(L,4);
 
 	groups = (SKappaGroup *) malloc(NGroups * sizeof(SKappaGroup));
 
 	for( i = 0; i < NGroups; i++ )
 	{
-		lua_rawgeti(L, 5, i+1);
+		lua_rawgeti(L, 4, i+1);
 	   	lua_rawgeti(L, -1, 1);
 	   	groups[i].kappa = (int) luaL_checkunsigned(L, -1);
 	   	lua_pop(L,1);
@@ -182,14 +180,14 @@ static int LuaCreateBaseForContinuum(lua_State *L)
 	   	lua_pop(L,1);
 	   	lua_pop(L,1);
 	}
-	Z = (int) luaL_checkunsigned(L, 6);
-	luaL_checktype(L, 7, LUA_TTABLE);
+	w = luaL_checknumber(L, 5);
+	luaL_checktype(L, 6, LUA_TTABLE);
 
-	contfuns = luaL_checkMatrix(L,7);
+	contfuns = luaL_checkMatrix(L,6);
 
 
 	double *eigenval;
-	eigenval = CreateBaseForContinuum(basisfuns->Ni, basisfuns->VRe,derivfuns->VRe,x,NGridpoints,groups,NGroups,contfuns->Ni,contfuns->VRe);
+	eigenval = CreateBaseForContinuum(basisfuns->Ni, basisfuns->VRe,derivfuns->VRe,x,NGridpoints,groups,NGroups,contfuns->Ni,contfuns->VRe,w);
 
 	LuaPushArray_double(L,&(eigenval[contfuns->Ni/2]), contfuns->Ni/2);
 	contfuns->VRe = &(contfuns->VRe[contfuns->Ni/2]);
@@ -198,9 +196,9 @@ static int LuaCreateBaseForContinuum(lua_State *L)
 
 	FreeMatrix(basisfuns);
 	FreeMatrix(derivfuns);
+
 	free(x);
 	free(groups);
-
 
 	return 2;
 }
