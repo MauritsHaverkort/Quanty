@@ -2516,17 +2516,18 @@ static int LuaCreateResonantSpectra(lua_State *L)
   Spec->NSpectra=0;
   Spec->Spec=NULL;
   /* test if dense methods can be used */
-  // test if sum_{i,j,k} H2^n T2_k H1^n T1_j psi_i fits on a basis smaller then DenseBorder
-  // We only need to do this test if we do not force to use dense methods independent of the size of the matrices
-  if(Options.DenseMethod==False)
+  // at the same time create the wave-functions that define the basis sets of the dense matrices used in the dense methods
+  // we need the vectors:
+  // HmDenseBasis       : on which the Matrix for the intermediate state can be represented
+  // HfDenseBasis       : on which the Matrix fo rthe final states can be represented
   {
     // psi
-    if(psi[0].N>Options.Settings.DenseBorder) goto EndOfUseDenseTest;
+    if (Options.DenseMethod==False) if(psi[0].N>Options.Settings.DenseBorder) goto EndOfUseDenseTest;
     WaveFunctionCopy(psi[0], &HTpsiDenseBasis);
     for(i=1;i<Options.Npsi;i++)
     {
       WaveFunctionAddUnionBasis(&HTpsiDenseBasis, psi[i]);
-      if(HTpsiDenseBasis.N>Options.Settings.DenseBorder)
+      if (Options.DenseMethod==False) if(HTpsiDenseBasis.N>Options.Settings.DenseBorder)
       {
         WaveFunctionFree(&HTpsiDenseBasis);
         goto EndOfUseDenseTest;
@@ -2548,7 +2549,7 @@ static int LuaCreateResonantSpectra(lua_State *L)
       }
       WaveFunctionAddUnionBasis(&TpsiSum, Opsi);
       WaveFunctionFree(&Opsi);
-      if(TpsiSum.N>Options.Settings.DenseBorder)
+      if (Options.DenseMethod==False) if(TpsiSum.N>Options.Settings.DenseBorder)
       {
         WaveFunctionFree(&TpsiSum);
         WaveFunctionFree(&HTpsiDenseBasis);
@@ -2562,13 +2563,14 @@ static int LuaCreateResonantSpectra(lua_State *L)
     len=0;
     while(len!=HTpsiDenseBasis.N)
     {
+      len=HTpsiDenseBasis.N;
       if((Options.Settings.restrictions1.N==0)?(OperatorPsi(*H1, HTpsiDenseBasis, &Opsi)):(OperatorPsiRestricted(*H1, HTpsiDenseBasis, &Opsi, Options.Settings.restrictions1)))
       {
         WaveFunctionFree(&HTpsiDenseBasis);
         goto EndOfUseDenseTest;
       }
       WaveFunctionFree(&HTpsiDenseBasis);
-      if(Opsi.N>Options.Settings.DenseBorder)
+      if (Options.DenseMethod==False) if(Opsi.N>Options.Settings.DenseBorder)
       {
         WaveFunctionFree(&Opsi);
         goto EndOfUseDenseTest;
@@ -2595,7 +2597,7 @@ static int LuaCreateResonantSpectra(lua_State *L)
       }
       WaveFunctionAddUnionBasis(&TpsiSum, Opsi);
       WaveFunctionFree(&Opsi);
-      if(TpsiSum.N>Options.Settings.DenseBorder)
+      if (Options.DenseMethod==False) if(TpsiSum.N>Options.Settings.DenseBorder)
       {
         WaveFunctionFree(&TpsiSum);
         WaveFunctionFree(&HTHTpsiDenseBasis);
@@ -2610,6 +2612,7 @@ static int LuaCreateResonantSpectra(lua_State *L)
     len=0;
     while(len!=HTHTpsiDenseBasis.N)
     {
+      len=HTHTpsiDenseBasis.N;
       if((Options.Settings.restrictions2.N==0)?(OperatorPsi(*H2, HTHTpsiDenseBasis, &Opsi)):(OperatorPsiRestricted(*H2, HTHTpsiDenseBasis, &Opsi, Options.Settings.restrictions2)))
       {
         WaveFunctionFree(&HTHTpsiDenseBasis);
@@ -2617,7 +2620,7 @@ static int LuaCreateResonantSpectra(lua_State *L)
         goto EndOfUseDenseTest;
       }
       WaveFunctionFree(&HTHTpsiDenseBasis);
-      if(Opsi.N>Options.Settings.DenseBorder)
+      if (Options.DenseMethod==False) if(Opsi.N>Options.Settings.DenseBorder)
       {
         WaveFunctionFree(&Opsi);
         WaveFunctionFree(&HTpsiDenseBasis);
@@ -2628,17 +2631,14 @@ static int LuaCreateResonantSpectra(lua_State *L)
     }
     // finsihed all tests and psiDenseBasis still fits
     Options.DenseMethod=True;
-    // The function for dense methods does not use the created basis, so we can disgard this here
-    WaveFunctionFree(&HTHTpsiDenseBasis);
-    WaveFunctionFree(&HTpsiDenseBasis);
-    EndOfUseDenseTest:;
+  EndOfUseDenseTest:;
   }
   if(Options.DenseMethod==True)
   {
     if(Options.Tensor==False)
     {
-      ResonantSpectraDense(*H1, *H2, T1, Options.NT1, T2, Options.NT2, psi, Options.Npsi, &SpecTri, &(Spec->Spec), Options.E01, Options.E02, &(Options.Settings));
-      Spec->NSpectra=Options.NT1*Options.NT2*Options.Npsi*(SettingsNow.NE1+1);
+      ResonantSpectraDense(&HTpsiDenseBasis,&HTHTpsiDenseBasis,*H1, *H2, T1, Options.NT1, T2, Options.NT2, psi, Options.Npsi, &(Spec->Spec), Options.E01, Options.E02, &(Options.Settings));
+      Spec->NSpectra=Options.NT1*Options.NT2*Options.Npsi*(Options.Settings.NE1+1);
     }
     else
     {
@@ -2665,6 +2665,7 @@ static int LuaCreateResonantSpectra(lua_State *L)
           free(SpecTri);
           for(i=0;i<(SettingsNow.NE1+1)*Options.NT2;i++)
           {
+            sprintf(SpecT1psi[i].Name, "%s T1 %i/%i psi %i/%i",SpecT1psi[i].Name,iT,Options.NT1,ipsi,Options.Npsi);
             Spec->Spec[i+Spec->NSpectra-(SettingsNow.NE1+1)*Options.NT2] = SpecT1psi[i];
           }
           free(SpecT1psi);
