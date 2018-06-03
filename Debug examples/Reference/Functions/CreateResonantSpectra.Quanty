@@ -80,9 +80,12 @@ print(T1List[2]*psilist)
 
 
 
-GresDense  = CreateResonantSpectra(H,H,T1List,T2List,psilist,{{"Emin1",0},{"Emax1",1},{"NE1",5},{"Gamma1",5},{"Emin2",-1},{"Emax2",2},{"NE2",20},{"Gamma2",3},{"DenseBorder",1000}})
-GresSparse = CreateResonantSpectra(H,H,T1List,T2List,psilist,{{"Emin1",0},{"Emax1",1},{"NE1",5},{"Gamma1",5},{"Emin2",-1},{"Emax2",2},{"NE2",20},{"Gamma2",3},{"DenseBorder",0}})
+--GresDense  = CreateResonantSpectra(H,H,T1List,T2List,psilist,{{"Emin1",0},{"Emax1",1},{"NE1",5},{"Gamma1",5},{"Emin2",-1},{"Emax2",2},{"NE2",20},{"Gamma2",3},{"DenseBorder",1000}})
+--GresSparse = CreateResonantSpectra(H,H,T1List,T2List,psilist,{{"Emin1",0},{"Emax1",1},{"NE1",5},{"Gamma1",5},{"Emin2",-1},{"Emax2",2},{"NE2",20},{"Gamma2",3},{"DenseBorder",0}})
 
+
+GresDense  = CreateResonantSpectra(H,H,T1List,T2List,psilist,{{"Emin1",0},{"Emax1",1},{"NE1",5},{"Gamma1",5},{"NE2",15},{"DenseBorder",1000}})
+GresSparse = CreateResonantSpectra(H,H,T1List,T2List,psilist,{{"Emin1",0},{"Emax1",1},{"NE1",5},{"Gamma1",5},{"NE2",15},{"DenseBorder",0}})
 
 GresDenseTable  = Spectra.ToTable(GresDense)
 GresSparseTable = Spectra.ToTable(GresSparse)
