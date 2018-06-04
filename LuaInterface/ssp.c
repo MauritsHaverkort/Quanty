@@ -3060,24 +3060,23 @@ static int LuaEvolveToGroundstate(lua_State * L)
  */
 static int LuaEigensystemDenseTable(lua_State *L)
 {
-  if (luaL_testudata(L, -1, "ResponseFunction_Type") == NULL)
+  if (luaL_testudata(L, -1, "ResponseFunction_Type") != NULL) return LuaResponseFunctionEigensystem(L);
+  if (luaL_testudata(L, -1, "Matrix_Type") != NULL) return LuaMatrixEigensystem(L);
+  // last element on stack is not a user data storing a pointer to one of the types we can diagonalize, i.e. it must be a table
+  if(lua_istable(L, -1)==0)
   {
-    // last element on stack is not a response function stored as a pointer to a responsefunctiontype object, i.e. it must be a table
-    if(lua_istable(L, -1)==0)
-    {
-      return luaL_error(L, "Error Eigensystem called with a single argument, which should be either a matrix (square table or one of the (block) response function types)");
-    }
-    // it is a table, either a square matrix or a reponse function type stored as table
-    lua_getfield(L, -1, "type");
-    if(lua_isstring(L,-1)==0)
-    {
-      // table without type definition, assume it is a square matrix
-      lua_pop(L, 1);
-      return LuaMatrixEigensystem(L);
-    }
-    lua_pop(L, 1);
-    // last element is a table with a type definition, assume it is a response function stored as table
+    return luaL_error(L, "Error Eigensystem called with a single argument, which should be either a matrix (square table or one of the (block) response function types)");
   }
+  // it is a table, either a square matrix or a reponse function type stored as table
+  lua_getfield(L, -1, "type");
+  if(lua_isstring(L,-1)==0)
+  {
+    // table without type definition, assume it is a square matrix
+    lua_pop(L, 1);
+    return LuaMatrixEigensystem(L);
+  }
+  lua_pop(L, 1);
+  // last element is a table with a type definition, assume it is a response function stored as table
   return LuaResponseFunctionEigensystem(L);
 }
 

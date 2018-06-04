@@ -1,6 +1,6 @@
 Verbosity(0xFFFF)
 
-dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/External_tests/Mn4+Crispy.Quanty")
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Examples/EigensystemDense.Quanty")
 os.exit()
 
 
