@@ -1207,7 +1207,7 @@ uint32_t BlockTriDiagonalMatrixEigenSystem(const BlockTriDiagonalMatrixType * co
   {
     Complex16 * AB;
     Complex16 *WORK;
-    AB=malloc(LDAB*N*sizeof(Complex16));
+    AB=calloc(LDAB*N,sizeof(Complex16));
     if(AB==NULL)
     {
       printf("ERROR: malloc failed in BlockTriDiagonalMatrixEigenSystem\n");
@@ -1259,6 +1259,10 @@ uint32_t BlockTriDiagonalMatrixEigenSystem(const BlockTriDiagonalMatrixType * co
       return 1;
     }
   }
+  
+  
+  
+  
   TriDiagonalMatrixToEigensystemCompact(&M, val, &funQ);
   CompactMatrixMultiply('N', 'N', &funQ, &Q, fun);
   CompactMatrixConjugate(fun);
