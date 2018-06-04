@@ -1,5 +1,9 @@
 Verbosity(0xFFFF)
 
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/External_tests/Mn4+Crispy.Quanty")
+os.exit()
+
+
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Tutorials/20_NiO_Crystal_Field/26_RIXS_L23M45.Quanty")
 os.exit()
 

@@ -1778,31 +1778,34 @@ static int LuaCreateSpectra(lua_State *L)
   }
   /* expand psiBasis to represent H^n psiBasis for all n */
   len=0;
-  if((Options.DenseMethod==True)||(OpsiDenseBasis.N<Options.Settings.DenseBorder)) while(len!=psiDenseBasis.N)
+  if((Options.DenseMethod==True)||(psiDenseBasis.N<=Options.Settings.DenseBorder))
   {
-    len=psiDenseBasis.N;
-    if((Options.Settings.restrictions.N==0)?(OperatorPsi(*H, psiDenseBasis, &OpsiDenseBasis)):(OperatorPsiRestricted(*H, psiDenseBasis, &OpsiDenseBasis, Options.Settings.restrictions)))
+    while(len!=psiDenseBasis.N)
     {
-      luaL_error(L, "OperatorPsi failed in calculation of spectra\n Out of memory?\nTry to split the call to several calls for different wave-functions or transition operators\n");
-    }
-    if((Options.DenseMethod==False)&&(OpsiDenseBasis.N>Options.Settings.DenseBorder))
-    {
+      len=psiDenseBasis.N;
+      if((Options.Settings.restrictions.N==0)?(OperatorPsi(*H, psiDenseBasis, &OpsiDenseBasis)):(OperatorPsiRestricted(*H, psiDenseBasis, &OpsiDenseBasis, Options.Settings.restrictions)))
+      {
+        luaL_error(L, "OperatorPsi failed in calculation of spectra\n Out of memory?\nTry to split the call to several calls for different wave-functions or transition operators\n");
+      }
+      if((Options.DenseMethod==False)&&(OpsiDenseBasis.N>Options.Settings.DenseBorder))
+      {
+        WaveFunctionFree(&OpsiDenseBasis);
+        WaveFunctionFree(&psiDenseBasis);
+        break;
+      }
+      WaveFunctionNormalize(&OpsiDenseBasis);
+      if(WaveFunctionAddUnionBasis(&psiDenseBasis, OpsiDenseBasis))
+      {
+        luaL_error(L, "WaveFunctionAddUnionBasis failed in calculation of spectra\n Out of memory?\nTry to split the call to several calls for different wave-functions or transition operators\n");
+      }
       WaveFunctionFree(&OpsiDenseBasis);
-      WaveFunctionFree(&psiDenseBasis);
-      break;
+      if((Options.DenseMethod==False)&&(psiDenseBasis.N>Options.Settings.DenseBorder))
+      {
+        WaveFunctionFree(&psiDenseBasis);
+        break;
+      }
+      if(len==psiDenseBasis.N) Options.DenseMethod=True;
     }
-    WaveFunctionNormalize(&OpsiDenseBasis);
-    if(WaveFunctionAddUnionBasis(&psiDenseBasis, OpsiDenseBasis))
-    {
-      luaL_error(L, "WaveFunctionAddUnionBasis failed in calculation of spectra\n Out of memory?\nTry to split the call to several calls for different wave-functions or transition operators\n");
-    }
-    WaveFunctionFree(&OpsiDenseBasis);
-    if((Options.DenseMethod==False)&&(psiDenseBasis.N>Options.Settings.DenseBorder))
-    {
-      WaveFunctionFree(&psiDenseBasis);
-      break;
-    }
-    if(len==psiDenseBasis.N) Options.DenseMethod=True;
   }
   /* If DenseMethod is true calculate spectra using dense methods */
   if(Options.DenseMethod==True)

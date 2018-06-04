@@ -1,5 +1,7 @@
 Verbosity(0)
 
+dofile("../../../Shared/All.Quanty")
+
 function ShellSpecificFun()
   print("Calculations for shell with angular momentum ",Opp["l"])
   
