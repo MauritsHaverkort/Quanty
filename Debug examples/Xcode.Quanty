@@ -1,5 +1,9 @@
 Verbosity(0xFFFF)
 
+
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Reference/Functions/Eigensystem.Quanty")
+os.exit()
+
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Examples/EigensystemDense.Quanty")
 os.exit()
 
@@ -10,9 +14,6 @@ os.exit()
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Reference/Functions/CreateResonantSpectra.Quanty")
 os.exit()
 
-
-dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Reference/Functions/Eigensystem.Quanty")
-os.exit()
 
 
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Tutorials/Connection to DFT/FPLO/Read tigth binding.Quanty")
