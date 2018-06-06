@@ -32,6 +32,7 @@ static int LuaOperatorNewFullCoulomb (lua_State *L)
 
     NIntegrals = (uint32_t)lua_objlen(L,4);
     tuple = (uint32_t **) malloc(NIntegrals*sizeof(uint32_t *));
+    if(!tuple) printf("malloc fail at tuple in LuaOperatorNewFullCoulomb. size = %d\n",NIntegrals);
     for ( i = 0; i < NIntegrals; i++)
     {
     	lua_rawgeti(L, 4, i+1);
@@ -48,6 +49,7 @@ static int LuaOperatorNewFullCoulomb (lua_State *L)
     Nindices = (uint32_t)lua_objlen(L,5);
 
     indices = (uint16_t **) malloc(Nindices * sizeof(uint16_t *));
+    if(!indices) printf("malloc fail at indices in LuaOperatorNewFullCoulomb. size = %d\n",Nindices);
 
     for( i = 0; i < Nindices; i++ )
     {
@@ -107,6 +109,7 @@ static int LuaOperatorNewDirac(lua_State *L)
 	NGroups = (uint32_t)lua_objlen(L,5);
 
 	groups = (SKappaGroup *) malloc(NGroups * sizeof(SKappaGroup));
+	if (!groups) printf("malloc fail at groups in LuaOperatorNewDirac. size = %d\n",NGroups);
 
 	for( i = 0; i < NGroups; i++ )
 	{
@@ -124,6 +127,7 @@ static int LuaOperatorNewDirac(lua_State *L)
 	NIndices = (uint32_t)lua_objlen(L,7);
 
 	indices = (uint32_t **) malloc(NIndices * sizeof(uint32_t *));
+	if(!indices) printf("malloc fail at indices in LuaOperatorNewDirac. size = %d\n",NIndices);
 	for( i = 0; i < NIndices; i++ )
 	{
 	   	lua_rawgeti(L, 7, i+1);
@@ -153,8 +157,6 @@ static int LuaOperatorNewDirac(lua_State *L)
 
 static int LuaCreateBaseForContinuum(lua_State *L)
 {
-	OperatorType *op;
-	//uint32_t **indices;
 	uint32_t NF, i, NGroups, NGridpoints, NIndices, NBasisFuns, temp;
 	SKappaGroup *groups;
 	MatrixType *basisfuns, *derivfuns, *contfuns;
@@ -188,12 +190,18 @@ static int LuaCreateBaseForContinuum(lua_State *L)
 
 
 	double *eigenval;
+//	printf("CreateCont\n");
+//	fflush(stdout);
 	eigenval = CreateBaseForContinuum(basisfuns->Ni, basisfuns->VRe,derivfuns->VRe,x,NGridpoints,groups,NGroups,contfuns->Ni,contfuns->VRe,w);
-
+//	printf("Push\n");
+//	fflush(stdout);
 	LuaPushArray_double(L,&(eigenval[contfuns->Ni/2]), contfuns->Ni/2);
 	contfuns->VRe = &(contfuns->VRe[contfuns->Ni/2]);
 	contfuns->Ni = contfuns->Ni/2;
 	LuaPushTable_MatrixType(L,contfuns);
+
+//	printf("Free\n");
+//	fflush(stdout);
 
 	FreeMatrix(basisfuns);
 	FreeMatrix(derivfuns);

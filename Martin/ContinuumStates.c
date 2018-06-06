@@ -309,35 +309,36 @@ double *KineticEnergyCB(double **basisfuns, double **derivativefuns, double **du
 	return T;
 }
 
-double *MetricCB(double **basisfuns, double **dualfuns,const int NBasisFuns, double **dualcont, const int NcontFuns, unsigned int NGridPoints)
+double *MetricCB(double **basisfuns, double **dualfuns, const unsigned int *indices,
+		const unsigned int Nindices, double **dualcont, const int NcontFuns, unsigned int NGridPoints)
 {
 	int dim,i,j,n,eins;
 	eins = 1;
 	n = 2* NGridPoints;
-	dim = NBasisFuns + NcontFuns;
+	dim = Nindices + NcontFuns;
 	double *g = (double *) malloc(dim*dim*sizeof(double));
 	if (!g) printf("malloc fail at g in MetricCB. size = %d\n",dim*dim);
 	double y;
 
-	for ( i = 0; i < NBasisFuns; i++)
+	for ( i = 0; i < Nindices; i++)
 	{
-		for ( j = i; j < NBasisFuns; j++)
+		for ( j = i; j < Nindices; j++)
 		{
 			y = i==j ? 1. : 0.;
 			g[i*dim +j] = y;
 			g[j*dim +i] = y;
 		}
 	}
-	for ( i = NBasisFuns; i < dim; i++)
+	for ( i = Nindices; i < dim; i++)
 	{
-		for (j = 0; j < NBasisFuns; j++)
+		for (j = 0; j < Nindices; j++)
 		{
 
-			y = ddot(&n,dualcont[i-NBasisFuns],&eins,basisfuns[j],&eins);
+			y = ddot(&n,dualcont[i-Nindices],&eins,basisfuns[indices[j]],&eins);
 			g[i*dim + j] = y;
 			g[j*dim + i] = y;
 		}
-		for ( j = NBasisFuns; j < dim; j++)
+		for ( j = Nindices; j < dim; j++)
 		{
 			y = i==j ? 1. : 0.;
 			g[i*dim +j] = y;
@@ -383,33 +384,37 @@ void svMul(const double aleph, double *a, const int n)
 void PrintArray();
 void PrintMartix();
 
-void CalcContinuumWFs(double **basisfuns, const int NBasisfuns, double **contfuns, const int Ncont,const int NGridpoints, double *U, double *R)
+void CalcContinuumWFs(double **basisfuns, const unsigned int *indices, const unsigned int Nindices, double **contfuns, const int Ncont,const int NGridpoints, double *U, double *R)
 {
 	int i,j,dim,n, iU,jU;
 
 	double **retfuns;
+//	printf("retfuns\n");
 	retfuns = (double **) malloc(Ncont*sizeof(double *));
 	if (!retfuns) printf("malloc fail at retfuns in CalcContinuumWFs. size = %d\n",Ncont);
 
 	n = NGridpoints * 2;
-	dim = Ncont + NBasisfuns;
+	dim = Ncont + Nindices;
+
+//	printf("loop1\n");
 	for ( i = Ncont-1; i >= 0; i--)
 	{
-		iU = i + NBasisfuns;
+		iU = i + Nindices;
 		svMul(U[iU*dim+ iU],contfuns[i],n);
 		for ( j = i-1; j >= 0; j--)
 		{
-			jU = j + NBasisfuns;
+			jU = j + Nindices;
 			vAdd(contfuns[j],U[jU*dim + iU],contfuns[i],n);
 		}
-		for( j = 0; j < NBasisfuns; j++)
+		for( j = 0; j < Nindices; j++)
 		{
-			vAdd(basisfuns[j],U[j*dim + iU],contfuns[i],n);
+			vAdd(basisfuns[indices[j]],U[j*dim + iU],contfuns[i],n);
 		}
 	}
 	//PrintMartix(R,Ncont);
 	//PrintArray(contfuns[0],n);
 	//printf("start Rotating\n");
+//	printf("loop2\n");
 	for ( i = 0; i < Ncont; i++)
 	{
 		retfuns[i] = (double *) malloc(n*sizeof(double));
@@ -423,6 +428,7 @@ void CalcContinuumWFs(double **basisfuns, const int NBasisfuns, double **contfun
 			vAdd(contfuns[j],R[j*Ncont + i],retfuns[i],n);
 		}
 	}
+//	printf("loop3\n");
 	for ( i = 0; i < Ncont; i++)
 	{
 		//free(contfuns[i]);
