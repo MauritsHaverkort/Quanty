@@ -164,6 +164,7 @@ uint32_t CreateOperatorDirac(uint32_t const NFermion,const unsigned int NBasisFu
 	for ( n = 0; n < Ngroups; n++)
 	{
 		diracElements = CalculateDiracMatrixElements(basisfuns,derivfuns,dualfuns,groups[n].indices,groups[n].n,x,NGridpoints,groups[n].kappa,Z);
+		//PrintMartix2(diracElements,groups[n].n);
 
 		for ( i = 0; i < groups[n].n; i++)
 		{
@@ -206,6 +207,20 @@ void PrintMartix(double *M, int n)
 		for ( j = 0; j < n; j++)
 		{
 			printf("%f\t",M[i*n + j]);
+		}
+		printf("\n");
+	}
+	fflush(stdout);
+}
+
+void PrintMartix2(double **M, int n)
+{
+	int i,j;
+	for ( i = 0; i < n; i++)
+	{
+		for ( j = 0; j < n; j++)
+		{
+			printf("%f\t",M[i][j]);
 		}
 		printf("\n");
 	}

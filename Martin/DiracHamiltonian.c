@@ -9,6 +9,8 @@
 #define speedoflight 137.0
 #endif
 
+double ddot();
+
 double DiracH(double *basisfun,double *dualfun,double *derivfun,const double *x, int NGridPoints, const int kappa, const int Z)
 {
 	double *H11G, *H22F,*H12F, *H21G, result, r;
@@ -51,7 +53,7 @@ double DiracH(double *basisfun,double *dualfun,double *derivfun,const double *x,
 
 	return result;
 }
-
+void PrintMartix2();
 double **CalculateDiracMatrixElements(double **basisfuns, double **derivativefuns, double **dualfuns, const unsigned int *indices, const unsigned int Nindices, const double *x,
 		unsigned int NGridPoints, const int kappa, const int Z)
 {
@@ -68,7 +70,6 @@ double **CalculateDiracMatrixElements(double **basisfuns, double **derivativefun
 			result[i][j] = DiracH(basisfuns[m],dualfuns[n],derivativefuns[m], x, NGridPoints, kappa, Z);
 		}
 	}
-
 
 	return result;
 

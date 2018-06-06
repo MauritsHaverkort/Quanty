@@ -168,6 +168,7 @@ static int LuaCreateBaseForContinuum(lua_State *L)
 	NGroups = (uint32_t)lua_objlen(L,4);
 
 	groups = (SKappaGroup *) malloc(NGroups * sizeof(SKappaGroup));
+	if (!groups) printf("malloc fail at groups in LuaCreateBaseForContinuum. size = %d\n",NGroups);
 
 	for( i = 0; i < NGroups; i++ )
 	{
