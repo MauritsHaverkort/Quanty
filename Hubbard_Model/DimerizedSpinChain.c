@@ -150,7 +150,7 @@ uint32_t CreateDimerizedSpinChainStartWaveFunction(DimerizedSpinChainSettings Se
     printf("WaveFunctionInit failed in CreateDimerizedSpinChainStartWaveFunction\n");
     return 1;
   }
-  Determinant = calloc(f.NWord, sizeof(uint8_t));
+  Determinant = (uint8_t*)calloc(f.NWord, sizeof(uint8_t));
   WaveFunctionAddElement(&f, Determinant, 1);
   OperatorPsi(O, f, Psi);
   FreeOperator(&O);
@@ -224,8 +224,8 @@ int main(int argc, const char *argv[])
   BeginTiming("Create Transition Matrix", &Time);
   s.N = Set.NTriDiag;
   InitTriDiagonalMatrix(&s);
-  T = malloc(Set.Ndimer * 2 * sizeof(OperatorType));
-  Spec = malloc(Set.Ndimer * 2 * sizeof(SpectraType));
+  T = (OperatorType*)malloc(Set.Ndimer * 2 * sizeof(OperatorType));
+  Spec = (SpectraType*)malloc(Set.Ndimer * 2 * sizeof(SpectraType));
   Spec[0].N = Set.NE;
   Spec[0].Emin = Set.Emin;
   Spec[0].Emax = Set.Emax;
@@ -243,9 +243,9 @@ int main(int argc, const char *argv[])
   {
     PrintOperatorReadable(T[i]);
   }
-  PsiList = malloc(Set.NPsi * sizeof(WaveFunctionType));
-  EnergyList = malloc(Set.NPsi * sizeof(double));
-  WaveFunctionQuality = malloc(Set.NPsi * sizeof(double));
+  PsiList = (WaveFunctionType*)malloc(Set.NPsi * sizeof(WaveFunctionType));
+  EnergyList = (double*)malloc(Set.NPsi * sizeof(double));
+  WaveFunctionQuality = (double*)malloc(Set.NPsi * sizeof(double));
   for (jpsi = 0; jpsi < Set.NPsi; jpsi++)
   {
     CreateDimerizedSpinChainStartWaveFunction(Set, &PsiList[jpsi]);

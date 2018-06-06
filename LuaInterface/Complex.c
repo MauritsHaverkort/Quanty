@@ -192,7 +192,7 @@ static int LuaComplexAdd(lua_State * L)
             b = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
             res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
             res->NSpectra = b->NSpectra;
-            res->Spec=malloc(res->NSpectra*sizeof(SpectraType));
+            res->Spec= (SpectraType*)malloc(res->NSpectra*sizeof(SpectraType));
             for(i=0;i<res->NSpectra;i++)
             {
               if(SpectrumAllocate(b->Spec[i], &(res->Spec[i])))
@@ -365,7 +365,7 @@ static int LuaComplexSub(lua_State * L)
             b = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
             res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
             res->NSpectra = b->NSpectra;
-            res->Spec=malloc(res->NSpectra*sizeof(SpectraType));
+            res->Spec= (SpectraType*)malloc(res->NSpectra*sizeof(SpectraType));
             for(i=0;i<res->NSpectra;i++)
             {
               if(SpectrumAllocate(b->Spec[i], &(res->Spec[i])))
@@ -712,7 +712,7 @@ static int LuaComplexDiv(lua_State * L)
             b = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
             res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
             res->NSpectra = b->NSpectra;
-            res->Spec = malloc(res->NSpectra * sizeof(SpectraType));
+            res->Spec = (SpectraType*)malloc(res->NSpectra * sizeof(SpectraType));
             for(i=0;i<res->NSpectra;i++)
             {
               if(SpectrumAllocate(b->Spec[i], &(res->Spec[i])))

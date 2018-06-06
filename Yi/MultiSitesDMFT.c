@@ -81,8 +81,8 @@ int main(int argc, const char *argv[])
     return 1;
   }
   
-  VPerturbation=malloc(4*DMFTSet.NSite*sizeof(OperatorType));
-  gPerturbation=malloc(4*DMFTSet.NSite*sizeof(TriDiagonalMatrixType));
+  VPerturbation= (OperatorType*)malloc(4*DMFTSet.NSite*sizeof(OperatorType));
+  gPerturbation= (TriDiagonalMatrixType*)malloc(4*DMFTSet.NSite*sizeof(TriDiagonalMatrixType));
   mu = DMFTSet.mu;
   Nelectron = DMFTSet.Nelectron;
   EndTiming("Init", &Time);

@@ -70,7 +70,7 @@ uint32_t RealWaveFunctionAddElement(WaveFunctionType * const psi, const uint8_t 
     {                           /* add a new block to psi */
       psi->NBlok++;
       temp = psi->ValueRe;
-      psi->ValueRe = realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
+      psi->ValueRe = (double **)realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
       if (psi->ValueRe == NULL)
       {                         /* Allocation failed */
         printf("alloc failed RealWaveFunctionAddElement 01\n");
@@ -82,7 +82,7 @@ uint32_t RealWaveFunctionAddElement(WaveFunctionType * const psi, const uint8_t 
         return (1);
       }
       temp = psi->Next;
-      psi->Next = realloc(psi->Next, psi->NBlok * sizeof(uint32_t *));
+      psi->Next = (uint32_t **)realloc(psi->Next, psi->NBlok * sizeof(uint32_t *));
       if (psi->Next == NULL)
       {                         /* Allocation failed */
         printf("alloc failed RealWaveFunctionAddElement 02\n");
@@ -91,11 +91,11 @@ uint32_t RealWaveFunctionAddElement(WaveFunctionType * const psi, const uint8_t 
         psi->Next = temp;
         psi->NBlok--;
         psi->N--;
-        psi->ValueRe = realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
+        psi->ValueRe = (double **)realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
         return (1);
       }
       temp = psi->Determinant;
-      psi->Determinant = realloc(psi->Determinant, psi->NBlok * sizeof(uint8_t *));
+      psi->Determinant = (uint8_t **)realloc(psi->Determinant, psi->NBlok * sizeof(uint8_t *));
       if (psi->Determinant == NULL)
       {                         /* Allocation failed */
         printf("alloc failed RealWaveFunctionAddElement 03\n");
@@ -104,11 +104,11 @@ uint32_t RealWaveFunctionAddElement(WaveFunctionType * const psi, const uint8_t 
         psi->Determinant = temp;
         psi->NBlok--;
         psi->N--;
-        psi->ValueRe = realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
-        psi->Next = realloc(psi->Next, psi->NBlok * sizeof(uint32_t *));
+        psi->ValueRe = (double **)realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
+        psi->Next = (uint32_t **)realloc(psi->Next, psi->NBlok * sizeof(uint32_t *));
         return (1);
       }
-      psi->ValueRe[psi->NBlok - 1] = malloc(BlokSize * sizeof(double));
+      psi->ValueRe[psi->NBlok - 1] = (double*)malloc(BlokSize * sizeof(double));
       if (psi->ValueRe[psi->NBlok - 1] == NULL)
       {                         /* Allocation failed */
         printf("alloc failed RealWaveFunctionAddElement 04\n");
@@ -116,12 +116,12 @@ uint32_t RealWaveFunctionAddElement(WaveFunctionType * const psi, const uint8_t 
         /* restore psi and return 0 */
         psi->NBlok--;
         psi->N--;
-        psi->ValueRe = realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
-        psi->Next = realloc(psi->Next, psi->NBlok * sizeof(uint32_t *));
-        psi->Determinant = realloc(psi->Determinant, psi->NBlok * sizeof(uint8_t *));
+        psi->ValueRe = (double **)realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
+        psi->Next = (uint32_t **)realloc(psi->Next, psi->NBlok * sizeof(uint32_t *));
+        psi->Determinant = (uint8_t **)realloc(psi->Determinant, psi->NBlok * sizeof(uint8_t *));
         return (1);
       }
-      psi->Next[psi->NBlok - 1] = malloc(BlokSize * sizeof(uint32_t));
+      psi->Next[psi->NBlok - 1] = (uint32_t*)malloc(BlokSize * sizeof(uint32_t));
       if (psi->Next[psi->NBlok - 1] == NULL)
       {                         /* Allocation failed */
         printf("alloc failed RealWaveFunctionAddElement 05\n");
@@ -130,12 +130,12 @@ uint32_t RealWaveFunctionAddElement(WaveFunctionType * const psi, const uint8_t 
         free(psi->ValueRe[psi->NBlok - 1]);
         psi->NBlok--;
         psi->N--;
-        psi->ValueRe = realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
-        psi->Next = realloc(psi->Next, psi->NBlok * sizeof(uint32_t *));
-        psi->Determinant = realloc(psi->Determinant, psi->NBlok * sizeof(uint8_t *));
+        psi->ValueRe = (double **)realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
+        psi->Next = (uint32_t **)realloc(psi->Next, psi->NBlok * sizeof(uint32_t *));
+        psi->Determinant = (uint8_t **)realloc(psi->Determinant, psi->NBlok * sizeof(uint8_t *));
         return (1);
       }
-      psi->Determinant[psi->NBlok - 1] = malloc(BlokSize * psi->NWord * sizeof(uint8_t));
+      psi->Determinant[psi->NBlok - 1] = (uint8_t*)malloc(BlokSize * psi->NWord * sizeof(uint8_t));
       if (psi->Determinant[psi->NBlok - 1] == NULL)
       {                         /* Allocation failed */
         printf("alloc failed RealWaveFunctionAddElement 06\n");
@@ -145,9 +145,9 @@ uint32_t RealWaveFunctionAddElement(WaveFunctionType * const psi, const uint8_t 
         free(psi->Next[psi->NBlok - 1]);
         psi->NBlok--;
         psi->N--;
-        psi->ValueRe = realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
-        psi->Next = realloc(psi->Next, psi->NBlok * sizeof(uint32_t *));
-        psi->Determinant = realloc(psi->Determinant, psi->NBlok * sizeof(uint8_t *));
+        psi->ValueRe = (double **)realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
+        psi->Next = (uint32_t **)realloc(psi->Next, psi->NBlok * sizeof(uint32_t *));
+        psi->Determinant = (uint8_t **)realloc(psi->Determinant, psi->NBlok * sizeof(uint8_t *));
         return (1);
       }
     }                           /* Added a new block to psi */
@@ -186,7 +186,7 @@ uint32_t RealWaveFunctionAddElement(WaveFunctionType * const psi, const uint8_t 
           {                     /* add a new block to psi */
             psi->NBlok++;
             temp = psi->ValueRe;
-            psi->ValueRe = realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
+            psi->ValueRe = (double **)realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
             if (psi->ValueRe == NULL)
             {                   /* Allocation failed */
               printf("alloc failed RealWaveFunctionAddElement 11\n");
@@ -198,7 +198,7 @@ uint32_t RealWaveFunctionAddElement(WaveFunctionType * const psi, const uint8_t 
               return (1);
             }
             temp = psi->Next;
-            psi->Next = realloc(psi->Next, psi->NBlok * sizeof(uint32_t *));
+            psi->Next = (uint32_t **)realloc(psi->Next, psi->NBlok * sizeof(uint32_t *));
             if (psi->Next == NULL)
             {                   /* Allocation failed */
               printf("alloc failed RealWaveFunctionAddElement 12\n");
@@ -207,11 +207,11 @@ uint32_t RealWaveFunctionAddElement(WaveFunctionType * const psi, const uint8_t 
               psi->Next = temp;
               psi->NBlok--;
               psi->N--;
-              psi->ValueRe = realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
+              psi->ValueRe = (double **)realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
               return (1);
             }
             temp = psi->Determinant;
-            psi->Determinant = realloc(psi->Determinant, psi->NBlok * sizeof(uint8_t *));
+            psi->Determinant = (uint8_t **)realloc(psi->Determinant, psi->NBlok * sizeof(uint8_t *));
             if (psi->Determinant == NULL)
             {                   /* Allocation failed */
               printf("alloc failed RealWaveFunctionAddElement 13\n");
@@ -220,11 +220,11 @@ uint32_t RealWaveFunctionAddElement(WaveFunctionType * const psi, const uint8_t 
               psi->Determinant = temp;
               psi->NBlok--;
               psi->N--;
-              psi->ValueRe = realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
-              psi->Next = realloc(psi->Next, psi->NBlok * sizeof(uint32_t *));
+              psi->ValueRe = (double **)realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
+              psi->Next = (uint32_t **)realloc(psi->Next, psi->NBlok * sizeof(uint32_t *));
               return (1);
             }
-            psi->ValueRe[psi->NBlok - 1] = malloc(BlokSize * sizeof(double));
+            psi->ValueRe[psi->NBlok - 1] = (double*)malloc(BlokSize * sizeof(double));
             if (psi->ValueRe[psi->NBlok - 1] == NULL)
             {                   /* Allocation failed */
               printf("alloc failed RealWaveFunctionAddElement 14\n");
@@ -232,12 +232,12 @@ uint32_t RealWaveFunctionAddElement(WaveFunctionType * const psi, const uint8_t 
               /* restore psi and return 1 */
               psi->NBlok--;
               psi->N--;
-              psi->ValueRe = realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
-              psi->Next = realloc(psi->Next, psi->NBlok * sizeof(uint32_t *));
-              psi->Determinant = realloc(psi->Determinant, psi->NBlok * sizeof(uint8_t *));
+              psi->ValueRe = (double **)realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
+              psi->Next = (uint32_t **)realloc(psi->Next, psi->NBlok * sizeof(uint32_t *));
+              psi->Determinant = (uint8_t **)realloc(psi->Determinant, psi->NBlok * sizeof(uint8_t *));
               return (1);
             }
-            psi->Next[psi->NBlok - 1] = malloc(BlokSize * sizeof(uint32_t));
+            psi->Next[psi->NBlok - 1] = (uint32_t*)malloc(BlokSize * sizeof(uint32_t));
             if (psi->Next[psi->NBlok - 1] == NULL)
             {                   /* Allocation failed */
               printf("alloc failed RealWaveFunctionAddElement 15\n");
@@ -246,12 +246,12 @@ uint32_t RealWaveFunctionAddElement(WaveFunctionType * const psi, const uint8_t 
               free(psi->ValueRe[psi->NBlok - 1]);
               psi->NBlok--;
               psi->N--;
-              psi->ValueRe = realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
-              psi->Next = realloc(psi->Next, psi->NBlok * sizeof(uint32_t *));
-              psi->Determinant = realloc(psi->Determinant, psi->NBlok * sizeof(uint8_t *));
+              psi->ValueRe = (double **)realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
+              psi->Next = (uint32_t **)realloc(psi->Next, psi->NBlok * sizeof(uint32_t *));
+              psi->Determinant = (uint8_t **)realloc(psi->Determinant, psi->NBlok * sizeof(uint8_t *));
               return (1);
             }
-            psi->Determinant[psi->NBlok - 1] = malloc(BlokSize * psi->NWord * sizeof(uint8_t));
+            psi->Determinant[psi->NBlok - 1] = (uint8_t*)malloc(BlokSize * psi->NWord * sizeof(uint8_t));
             if (psi->Determinant[psi->NBlok - 1] == NULL)
             {                   /* Allocation failed */
               printf("alloc failed RealWaveFunctionAddElement 16\n");
@@ -261,9 +261,9 @@ uint32_t RealWaveFunctionAddElement(WaveFunctionType * const psi, const uint8_t 
               free(psi->Next[psi->NBlok - 1]);
               psi->NBlok--;
               psi->N--;
-              psi->ValueRe = realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
-              psi->Next = realloc(psi->Next, psi->NBlok * sizeof(uint32_t *));
-              psi->Determinant = realloc(psi->Determinant, psi->NBlok * sizeof(uint8_t *));
+              psi->ValueRe = (double **)realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
+              psi->Next = (uint32_t **)realloc(psi->Next, psi->NBlok * sizeof(uint32_t *));
+              psi->Determinant = (uint8_t **)realloc(psi->Determinant, psi->NBlok * sizeof(uint8_t *));
               return (1);
             }
           }                     /* Added a new block to psi */
@@ -881,9 +881,9 @@ void RealWaveFunctionTruncateBasis(WaveFunctionType * const a, const double epsi
     free(a->Determinant[iBlok]);
   }
   a->NBlok = 1 + (a->N >> NBitsBlok);
-  a->ValueRe = realloc(a->ValueRe, a->NBlok * sizeof(double *));
-  a->Next = realloc(a->Next, a->NBlok * sizeof(uint32_t *));
-  a->Determinant = realloc(a->Determinant, a->NBlok * sizeof(uint8_t *));
+  a->ValueRe = (double **)realloc(a->ValueRe, a->NBlok * sizeof(double *));
+  a->Next = (uint32_t **)realloc(a->Next, a->NBlok * sizeof(uint32_t *));
+  a->Determinant = (uint8_t **)realloc(a->Determinant, a->NBlok * sizeof(uint8_t *));
 }
 
 /*
@@ -897,7 +897,7 @@ uint32_t RealWaveFunctionResetKeylist(WaveFunctionType * const a, const uint32_t
   uint32_t *tempKeyList;
   a->ValueRe[0][0] = 0;
   tempKeyList=a->KeyList;
-  if((a->KeyList=realloc(a->KeyList, sizeof(uint32_t)*(1<<NBitsKey)))==NULL)
+  if((a->KeyList= (uint32_t*)realloc(a->KeyList, sizeof(uint32_t)*(1<<NBitsKey)))==NULL)
   {
     a->KeyList=tempKeyList;
     printf("realloc failed in RealWaveFunctionResetKeylist\n");
@@ -928,9 +928,9 @@ uint32_t RealWaveFunctionResetKeylist(WaveFunctionType * const a, const uint32_t
     free(a->Determinant[iBlok]);
   }
   a->NBlok = 1 + (a->N >> NBitsBlok);
-  a->ValueRe = realloc(a->ValueRe, a->NBlok * sizeof(double *));
-  a->Next = realloc(a->Next, a->NBlok * sizeof(uint32_t *));
-  a->Determinant = realloc(a->Determinant, a->NBlok * sizeof(uint8_t *));
+  a->ValueRe = (double **)realloc(a->ValueRe, a->NBlok * sizeof(double *));
+  a->Next = (uint32_t **)realloc(a->Next, a->NBlok * sizeof(uint32_t *));
+  a->Determinant = (uint8_t **)realloc(a->Determinant, a->NBlok * sizeof(uint8_t *));
   return 0;
 }
 
@@ -970,9 +970,9 @@ void RealWaveFunctionRestrict(WaveFunctionType * const a, const DeterminantRestr
     free(a->Determinant[iBlok]);
   }
   a->NBlok = 1 + (a->N >> NBitsBlok);
-  a->ValueRe = realloc(a->ValueRe, a->NBlok * sizeof(double *));
-  a->Next = realloc(a->Next, a->NBlok * sizeof(uint32_t *));
-  a->Determinant = realloc(a->Determinant, a->NBlok * sizeof(uint8_t *));
+  a->ValueRe = (double **)realloc(a->ValueRe, a->NBlok * sizeof(double *));
+  a->Next = (uint32_t **)realloc(a->Next, a->NBlok * sizeof(uint32_t *));
+  a->Determinant = (uint8_t **)realloc(a->Determinant, a->NBlok * sizeof(uint8_t *));
 }
 
 /*
@@ -1052,13 +1052,13 @@ uint32_t RealWaveFunctionListSVDOrthogonalizeSameBasis(WaveFunctionType * const 
     }
   }
   // calculate eigensystem of S: S -> S^* . val . S^T
-  iwork = malloc(liwork*sizeof(int));
+  iwork = (int*)malloc(liwork*sizeof(int));
   if(iwork==NULL)
   {
     printf("malloc for iwork failed in CompactMatrixEigensystem\n");
     return 1;
   }
-  work = malloc(lwork*sizeof(double));
+  work = (double*)malloc(lwork*sizeof(double));
   if(work==NULL)
   {
     printf("malloc for work failed in CompactMatrixEigensystem\n");
@@ -1126,7 +1126,7 @@ uint32_t RealWaveFunctionListSVDOrthogonalizeSameBasis(WaveFunctionType * const 
   }
   // remove the NSingular states with smallest norm (change Npsi)
   qsort(val, *Npsi, 2*sizeof(double), cmpdouble);
-  psilisttemp = malloc((*Npsi-NSingular)*sizeof(WaveFunctionType));
+  psilisttemp = (WaveFunctionType*)malloc((*Npsi-NSingular)*sizeof(WaveFunctionType));
   for(i=0;i<(*Npsi-NSingular);i++)
   {
     psilisttemp[i] = psilistOrtho[(int)(val[2*i+1])];
@@ -1192,13 +1192,13 @@ uint32_t RealWaveFunctionListSVDOrthogonalize(WaveFunctionType * const psilist, 
     }
   }
   // calculate eigensystem of S: S -> S^* . val . S^T
-  iwork = malloc(liwork*sizeof(int));
+  iwork = (int*)malloc(liwork*sizeof(int));
   if(iwork==NULL)
   {
     printf("malloc for iwork failed in CompactMatrixEigensystem\n");
     return 1;
   }
-  work = malloc(lwork*sizeof(double));
+  work = (double*)malloc(lwork*sizeof(double));
   if(work==NULL)
   {
     printf("malloc for work failed in CompactMatrixEigensystem\n");
@@ -1270,7 +1270,7 @@ uint32_t RealWaveFunctionListSVDOrthogonalize(WaveFunctionType * const psilist, 
   }
   // remove the NSingular states with smallest norm (change Npsi)
   qsort(val, *Npsi, 2*sizeof(double), cmpdouble);
-  psilisttemp = malloc((*Npsi-NSingular)*sizeof(WaveFunctionType));
+  psilisttemp = (WaveFunctionType*)malloc((*Npsi-NSingular)*sizeof(WaveFunctionType));
   for(i=0;i<(*Npsi-NSingular);i++)
   {
     psilisttemp[i] = psilistOrtho[(int)(val[2*i+1])];
@@ -1394,7 +1394,7 @@ uint32_t CreateRealRandomWaveFunction(WaveFunctionType * const psi, uint32_t con
   sprintf(psi->Name, "WaveFunction");
   for (idet = 0; idet < 50; idet++)
   {
-    Determinant = calloc(psi->NWord, sizeof(uint8_t));
+    Determinant = (uint8_t*)calloc(psi->NWord, sizeof(uint8_t));
     iofset = 0;
     for (ielec = 0; ielec < nelectrons; ielec++)
     {

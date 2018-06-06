@@ -3289,7 +3289,7 @@ uint32_t LanczosTriDiagonalizeKrylovRRNonOrtho(const OperatorType H, WaveFunctio
   uint32_t i;
   double temp, errorestimate = 1.0;
   /* Allocate memory for *PsiBasis */
-  if ((PsiBasis = calloc(M->N + 1, sizeof(WaveFunctionType))) == NULL)
+  if ((PsiBasis = (WaveFunctionType*)calloc(M->N + 1, sizeof(WaveFunctionType))) == NULL)
   {
     printf("calloc failed in LanczosTriDiagonalizeKrylovRR 00\n");
     fflush(stdout);
@@ -5918,7 +5918,7 @@ uint32_t LanczosTriDiagonalizeDysonFullLowMem(OperatorType const O, uint32_t nma
     fflush(stdout);
     return 1;
   };
-  if ((VMat = calloc(NV, sizeof(MatrixType))) == NULL)
+  if ((VMat = (MatrixType*)calloc(NV, sizeof(MatrixType))) == NULL)
   {
     printf("calloc failed in LanczosTriDiagonalizeDyson\n");
     fflush(stdout);
@@ -5927,7 +5927,7 @@ uint32_t LanczosTriDiagonalizeDysonFullLowMem(OperatorType const O, uint32_t nma
   /* Create Krylov basis of O */
   OKrylov.N = NKrylov;
   InitTriDiagonalMatrix(&OKrylov);
-  if ((PsiKrylov = calloc(NKrylov, sizeof(WaveFunctionType))) == NULL)
+  if ((PsiKrylov = (WaveFunctionType*)calloc(NKrylov, sizeof(WaveFunctionType))) == NULL)
   {
     printf("calloc failed in LanczosTriDiagonalizeDyson\n");
     fflush(stdout);
@@ -6077,7 +6077,7 @@ uint32_t LanczosTriDiagonalizeDysonLowMem(OperatorType const O, WaveFunctionType
     fflush(stdout);
     return 1;
   };
-  if ((VMat = calloc(NV, sizeof(MatrixType))) == NULL)
+  if ((VMat = (MatrixType*)calloc(NV, sizeof(MatrixType))) == NULL)
   {
     printf("calloc failed in LanczosTriDiagonalizeDyson\n");
     fflush(stdout);
@@ -6086,7 +6086,7 @@ uint32_t LanczosTriDiagonalizeDysonLowMem(OperatorType const O, WaveFunctionType
   /* Create Krylov basis of O */
   OKrylov.N = NKrylov;
   InitTriDiagonalMatrix(&OKrylov);
-  if ((PsiKrylov = calloc(NKrylov, sizeof(WaveFunctionType))) == NULL)
+  if ((PsiKrylov = (WaveFunctionType*)calloc(NKrylov, sizeof(WaveFunctionType))) == NULL)
   {
     printf("calloc failed in LanczosTriDiagonalizeDyson\n");
     fflush(stdout);
@@ -6223,13 +6223,13 @@ uint32_t LanczosTriDiagonalizeDysonSecondOrderALowMem(OperatorType const O, Wave
     fflush(stdout);
     return 1;
   };
-  if ((VMat = calloc(NV, sizeof(MatrixType))) == NULL)
+  if ((VMat = (MatrixType*)calloc(NV, sizeof(MatrixType))) == NULL)
   {
     printf("calloc failed in LanczosTriDiagonalizeDyson\n");
     fflush(stdout);
     return 1;
   };
-  if ((TMat = calloc(NV, sizeof(MatrixType))) == NULL)
+  if ((TMat = (MatrixType*)calloc(NV, sizeof(MatrixType))) == NULL)
   {
     printf("calloc failed in LanczosTriDiagonalizeDyson\n");
     fflush(stdout);
@@ -6244,7 +6244,7 @@ uint32_t LanczosTriDiagonalizeDysonSecondOrderALowMem(OperatorType const O, Wave
     fflush(stdout);
     return 1;
   };
-  if ((VMat2 = calloc((NV * NV - NV), sizeof(MatrixType))) == NULL)
+  if ((VMat2 = (MatrixType*)calloc((NV * NV - NV), sizeof(MatrixType))) == NULL)
   {
     printf("calloc failed in LanczosTriDiagonalizeDyson\n");
     fflush(stdout);
@@ -6253,7 +6253,7 @@ uint32_t LanczosTriDiagonalizeDysonSecondOrderALowMem(OperatorType const O, Wave
   /* Create Krylov basis of O */
   OKrylov.N = NKrylov;
   InitTriDiagonalMatrix(&OKrylov);
-  if ((PsiKrylov = calloc(NKrylov, sizeof(WaveFunctionType))) == NULL)
+  if ((PsiKrylov = (WaveFunctionType*)calloc(NKrylov, sizeof(WaveFunctionType))) == NULL)
   {
     printf("calloc failed in LanczosTriDiagonalizeDyson\n");
     fflush(stdout);
@@ -6389,7 +6389,7 @@ uint32_t LanczosTriDiagonalizeDyson(OperatorType const O, WaveFunctionType psi, 
   /* Create Krylov basis of O */
   OKrylov.N = NKrylov;
   InitTriDiagonalMatrix(&OKrylov);
-  if ((PsiKrylov = calloc(NKrylov, sizeof(WaveFunctionType))) == NULL)
+  if ((PsiKrylov = (WaveFunctionType*)calloc(NKrylov, sizeof(WaveFunctionType))) == NULL)
   {
     printf("calloc failed in LanczosTriDiagonalizeDyson\n");
     fflush(stdout);
@@ -6397,7 +6397,7 @@ uint32_t LanczosTriDiagonalizeDyson(OperatorType const O, WaveFunctionType psi, 
   };
   LanczosTriDiagonalizeKrylov(O, psi, epsilon, &OKrylov, PsiKrylov);
   /* Create extended matrices initiallize */
-  if ((VPsiKrylov = calloc(NKrylov, sizeof(WaveFunctionType))) == NULL)
+  if ((VPsiKrylov = (WaveFunctionType*)calloc(NKrylov, sizeof(WaveFunctionType))) == NULL)
   {
     printf("calloc failed in LanczosTriDiagonalizeDyson\n");
     fflush(stdout);
@@ -6434,7 +6434,7 @@ uint32_t LanczosTriDiagonalizeDyson(OperatorType const O, WaveFunctionType psi, 
     fflush(stdout);
     return 1;
   };
-  if ((VMat = calloc(NV, sizeof(MatrixType))) == NULL)
+  if ((VMat = (MatrixType*)calloc(NV, sizeof(MatrixType))) == NULL)
   {
     printf("calloc failed in LanczosTriDiagonalizeDyson\n");
     fflush(stdout);

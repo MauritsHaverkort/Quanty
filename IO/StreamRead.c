@@ -14,7 +14,7 @@ uint32_t StreamReadAtom(AtomType * O, FILE * stream)
          &(O->Position[2]));
   fgets(comments, 1000, stream);
   fscanf(stream, "%i", &(O->Nshell));
-  if ((O->shelldegeneracy = malloc(O->Nshell * sizeof(int))) == NULL)
+  if ((O->shelldegeneracy = (int*)malloc(O->Nshell * sizeof(int))) == NULL)
   {
     printf("malloc failed for O->shelldegeneracy in StreamReadAtom\n");
     fflush(stdout);
@@ -26,15 +26,15 @@ uint32_t StreamReadAtom(AtomType * O, FILE * stream)
   }
   fgets(comments, 1000, stream);
 
-  O->ShellName = malloc(O->Nshell * sizeof(char*));
-  O->OrbitalName = malloc(O->Nshell * sizeof(char**));
+  O->ShellName = (char**)malloc(O->Nshell * sizeof(char*));
+  O->OrbitalName = (char***)malloc(O->Nshell * sizeof(char**));
   for (i=0; i < O->Nshell; i++)
   {
-    O->ShellName[i] = malloc(MAXStrLength*sizeof(char));
-    O->OrbitalName[i] = malloc(O->shelldegeneracy[i]*sizeof(char*));
+    O->ShellName[i] = (char*)malloc(MAXStrLength*sizeof(char));
+    O->OrbitalName[i] = (char**)malloc(O->shelldegeneracy[i]*sizeof(char*));
     for (j=0; j < O->shelldegeneracy[i]; j++)
     {
-      O->OrbitalName[i][j] = malloc(MAXStrLength*sizeof(char));
+      O->OrbitalName[i][j] = (char*)malloc(MAXStrLength*sizeof(char));
     }
   }
 
@@ -57,7 +57,7 @@ uint32_t StreamReadCrystalStructure(CrystalStructureType * O, FILE * stream)
   fgets(comments, 1000, stream);
   fscanf(stream, "%i", &(O->NAtoms));
   fgets(comments, 1000, stream);
-  O->Atom = malloc(O->NAtoms * sizeof(AtomType));
+  O->Atom = (AtomType*)malloc(O->NAtoms * sizeof(AtomType));
   for (i = 0; i < O->NAtoms; i++)
   {
     StreamReadAtom(&(O->Atom[i]), stream);
@@ -262,7 +262,7 @@ uint32_t StreamReadWaveFunctionPlain(WaveFunctionType * psi, FILE * stream)
     return 1;
   };
   strcpy(psi->Name, WaveName);
-  det = malloc(sizeof(uint8_t) * psi->NWord);
+  det = (uint8_t*)malloc(sizeof(uint8_t) * psi->NWord);
   if (det == NULL)
   {
     WaveFunctionFree(psi);
@@ -333,7 +333,7 @@ uint32_t StreamReadWaveFunctionPlainBinary(WaveFunctionType * psi, FILE * stream
     return 1;
   };
   strcpy(psi->Name, WaveName);
-  det = malloc(sizeof(uint8_t) * psi->NWord);
+  det = (uint8_t*)malloc(sizeof(uint8_t) * psi->NWord);
   if (det == NULL)
   {
     WaveFunctionFree(psi);
@@ -647,7 +647,7 @@ uint32_t StreamReadTightBindingDef(TightBindingDef * O, FILE * stream)
   StreamReadCrystalStructure(&(O->Cell), stream);
   fscanf(stream, "%i", &(O->nH));
   fgets(comments, 1000, stream);
-  if ((O->H = malloc(O->nH * sizeof(TightBindingDefHopping))) == NULL)
+  if ((O->H = (TightBindingDefHopping*)malloc(O->nH * sizeof(TightBindingDefHopping))) == NULL)
   {
     printf("malloc failed for TightBindingDefHopping in StreamReadTightBindingDef\n");
     fflush(stdout);
@@ -670,7 +670,7 @@ uint32_t StreamReadTightBindingDefNoCrystalStructure(TightBindingDef * O, FILE *
   fgets(comments, 1000, stream);
   fscanf(stream, "%i", &(O->nH));
   fgets(comments, 1000, stream);
-  if ((O->H = malloc(O->nH * sizeof(TightBindingDefHopping))) == NULL)
+  if ((O->H = (TightBindingDefHopping*)malloc(O->nH * sizeof(TightBindingDefHopping))) == NULL)
   {
     printf("malloc failed for TightBindingDefHopping in StreamReadTightBindingDef\n");
     fflush(stdout);
@@ -736,13 +736,13 @@ uint32_t StreamReadHubbardModelSettings(HubbardModelSettings * O, FILE * stream)
   CreateTightBindingSuperCell(O->TightBinding, &(O->TightBindingSuperCell), O->SuperCell);
   StreamReadOperatorType(&(O->U), stream);
   CreateUSuperCell(O->U, &(O->USuperCell), O->SuperCell);
-  O->NElectron = malloc(O->SuperCell.Crystal.NAtoms * sizeof(uint32_t **));
+  O->NElectron = (uint32_t ***)malloc(O->SuperCell.Crystal.NAtoms * sizeof(uint32_t **));
   for (iatom = 0; iatom < O->SuperCell.Crystal.NAtoms; iatom++)
   {
-    O->NElectron[iatom] = malloc(O->SuperCell.Crystal.Atom[iatom].Nshell * sizeof(uint32_t *));
+    O->NElectron[iatom] = (uint32_t **)malloc(O->SuperCell.Crystal.Atom[iatom].Nshell * sizeof(uint32_t *));
     for (ishell = 0; ishell < O->SuperCell.Crystal.Atom[iatom].Nshell; ishell++)
     {
-      O->NElectron[iatom][ishell] = malloc(O->SuperCell.Crystal.Atom[iatom].shelldegeneracy[ishell] * sizeof(uint32_t));
+      O->NElectron[iatom][ishell] = (uint32_t*)malloc(O->SuperCell.Crystal.Atom[iatom].shelldegeneracy[ishell] * sizeof(uint32_t));
       for (ifermion = 0; ifermion < O->SuperCell.Crystal.Atom[iatom].shelldegeneracy[ishell]; ifermion++)
       {
         fscanf(stream, "%i", &(O->NElectron[iatom][ishell][ifermion]));
@@ -864,7 +864,7 @@ uint32_t StreamReadDMFTSettings(DMFTSettings * O, FILE * stream)
   if ((O->Spectra) & 240)
   {
     fscanf(stream, "%d", &(O->NQ));
-    O->Q = malloc(O->NQ * sizeof(double));
+    O->Q = (double*)malloc(O->NQ * sizeof(double));
     for (i = 0; i < O->NQ; i++)
     {
       fscanf(stream, "%lf", &(O->Q[i]));

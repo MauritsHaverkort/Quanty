@@ -59,28 +59,28 @@ void TestSpec()
   Gamma=0.2;
   DE=(Emax-Emin)/((double)N);
 
-  specOrig=calloc(2*(N+1),sizeof(double));
-  specGaus=calloc(2*(N+1),sizeof(double));
-  specTmp =calloc(2*(N+1),sizeof(double));
-  spec01  =calloc(2*(N+1),sizeof(double));
-  spec02  =calloc(2*(N+1),sizeof(double));
-  spec02V =calloc(2*(N+1),sizeof(double));
-  spec02C =calloc(2*(N+1),sizeof(double));
-  spec03  =calloc(2*(N+1),sizeof(double));
-  spec04  =calloc(2*(N+1),sizeof(double));
-  spec05  =calloc(2*(N+1),sizeof(double));
-  spec06  =calloc(2*(N+1),sizeof(double));
+  specOrig= (double*)calloc(2*(N+1),sizeof(double));
+  specGaus= (double*)calloc(2*(N+1),sizeof(double));
+  specTmp = (double*)calloc(2*(N+1),sizeof(double));
+  spec01  = (double*)calloc(2*(N+1),sizeof(double));
+  spec02  = (double*)calloc(2*(N+1),sizeof(double));
+  spec02V = (double*)calloc(2*(N+1),sizeof(double));
+  spec02C = (double*)calloc(2*(N+1),sizeof(double));
+  spec03  = (double*)calloc(2*(N+1),sizeof(double));
+  spec04  = (double*)calloc(2*(N+1),sizeof(double));
+  spec05  = (double*)calloc(2*(N+1),sizeof(double));
+  spec06  = (double*)calloc(2*(N+1),sizeof(double));
 
-  M.a=calloc(N+2,sizeof(double));
-  M.b=calloc(N+2,sizeof(double));
-  MV.a=calloc(200,sizeof(double));
-  MV.b=calloc(200,sizeof(double));
-  MC.a=calloc(200,sizeof(double));
-  MC.b=calloc(200,sizeof(double));
-  MVs.a=calloc(N+2,sizeof(double));
-  MVs.b=calloc(N+2,sizeof(double));
-  MCs.a=calloc(N+2,sizeof(double));
-  MCs.b=calloc(N+2,sizeof(double));
+  M.a= (double*)calloc(N+2,sizeof(double));
+  M.b= (double*)calloc(N+2,sizeof(double));
+  MV.a= (double*)calloc(200,sizeof(double));
+  MV.b= (double*)calloc(200,sizeof(double));
+  MC.a= (double*)calloc(200,sizeof(double));
+  MC.b= (double*)calloc(200,sizeof(double));
+  MVs.a= (double*)calloc(N+2,sizeof(double));
+  MVs.b= (double*)calloc(N+2,sizeof(double));
+  MCs.a= (double*)calloc(N+2,sizeof(double));
+  MCs.b= (double*)calloc(N+2,sizeof(double));
 
   Lorentzian(Emin,Emax,N,Gamma,E0+hc,specOrig);
   for(i=1;i<=100;i++)

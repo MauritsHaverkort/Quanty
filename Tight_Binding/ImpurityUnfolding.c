@@ -22,7 +22,7 @@ int TightBindingImpurityUnfolding1Impurity3D(int Nsupercell, double Vpot, char *
   SetSuper.H[0].Hop.VRe[0][0] = Vpot;
 //  PrintTightBindingDef(SetSuper);
   QPath.NQ = 5;
-  QPath.Q = malloc(QPath.NQ * sizeof(BandstructurePointType));
+  QPath.Q = (BandstructurePointType*)malloc(QPath.NQ * sizeof(BandstructurePointType));
   QPath.Q[0].Nq = 142;
   QPath.Q[0].label = 'G';
   QPath.Q[0].q[0] = 0.0 * Pi;
@@ -50,7 +50,7 @@ int TightBindingImpurityUnfolding1Impurity3D(int Nsupercell, double Vpot, char *
   QPath.Q[4].q[2] = 1.0 * Pi;
 
   EigenFunctionToCharactersOnsiteEnergyPhaseSetNCharacter(SetSuper, &Ncharacter);
-  Character = malloc(Ncharacter * sizeof(MatrixType));
+  Character = (MatrixType*)malloc(Ncharacter * sizeof(MatrixType));
   TightBindingBANDSCharacter(SetSuper, QPath, &BANDS, Ncharacter, Character,
                              &EigenFunctionToCharactersOnsiteEnergyPhase);
   sprintf(CharFileName, "%s.energy", filename);
@@ -122,7 +122,7 @@ int TightBindingImpurityUnfolding1Impurity2D(int Nsupercell, double Vpot, char *
   SetSuper.H[0].Hop.VRe[0][0] = Vpot;
   PrintTightBindingDef(SetSuper);
   QPath.NQ = 4;
-  QPath.Q = malloc(QPath.NQ * sizeof(BandstructurePointType));
+  QPath.Q = (BandstructurePointType*)malloc(QPath.NQ * sizeof(BandstructurePointType));
   QPath.Q[0].Nq = 213;
   QPath.Q[0].label = 'G';
   QPath.Q[0].q[0] = 0.0 * Pi;
@@ -145,7 +145,7 @@ int TightBindingImpurityUnfolding1Impurity2D(int Nsupercell, double Vpot, char *
   QPath.Q[3].q[2] = 0.0 * Pi;
 
   EigenFunctionToCharactersOnsiteEnergyPhaseSetNCharacter(SetSuper, &Ncharacter);
-  Character = malloc(Ncharacter * sizeof(MatrixType));
+  Character = (MatrixType*)malloc(Ncharacter * sizeof(MatrixType));
   TightBindingBANDSCharacter(SetSuper, QPath, &BANDS, Ncharacter, Character,
                              &EigenFunctionToCharactersOnsiteEnergyPhase);
   sprintf(CharFileName, "%s.energy", filename);
@@ -219,7 +219,7 @@ int TightBindingImpurityUnfolding1Impurity1D(int Nsupercell, double Vpot, char *
   SetSuper.H[0].Hop.VRe[0][0] = Vpot;
   PrintTightBindingDef(SetSuper);
   QPath.NQ = 2;
-  QPath.Q = malloc(QPath.NQ * sizeof(BandstructurePointType));
+  QPath.Q = (BandstructurePointType*)malloc(QPath.NQ * sizeof(BandstructurePointType));
   QPath.Q[0].Nq = 500;
   QPath.Q[0].label = 'G';
   QPath.Q[0].q[0] = 0.0 * Pi;
@@ -232,7 +232,7 @@ int TightBindingImpurityUnfolding1Impurity1D(int Nsupercell, double Vpot, char *
   QPath.Q[1].q[2] = 0.0 * Pi;
 
   EigenFunctionToCharactersOnsiteEnergyPhaseSetNCharacter(SetSuper, &Ncharacter);
-  Character = malloc(Ncharacter * sizeof(MatrixType));
+  Character = (MatrixType*)malloc(Ncharacter * sizeof(MatrixType));
   TightBindingBANDSCharacter(SetSuper, QPath, &BANDS, Ncharacter, Character,
                              &EigenFunctionToCharactersOnsiteEnergyPhase);
   sprintf(CharFileName, "%s.energy", filename);
@@ -323,7 +323,7 @@ int TightBindingImpurityUnfoldingRandomImpurity3D(int Nsupercell, double Rho, do
   printf("Rho average (input) : %22.15E\n", Rho);
 //  PrintTightBindingDef(SetSuper);
   QPath.NQ = 5;
-  QPath.Q = malloc(QPath.NQ * sizeof(BandstructurePointType));
+  QPath.Q = (BandstructurePointType*)malloc(QPath.NQ * sizeof(BandstructurePointType));
   QPath.Q[0].Nq = 284;
   QPath.Q[0].label = 'G';
   QPath.Q[0].q[0] = 0.0 * Pi;
@@ -351,7 +351,7 @@ int TightBindingImpurityUnfoldingRandomImpurity3D(int Nsupercell, double Rho, do
   QPath.Q[4].q[2] = 1.0 * Pi;
 
   EigenFunctionToCharactersOnsiteEnergyPhaseSetNCharacter(SetSuper, &Ncharacter);
-  Character = malloc(Ncharacter * sizeof(MatrixType));
+  Character = (MatrixType*)malloc(Ncharacter * sizeof(MatrixType));
   TightBindingBANDSCharacter(SetSuper, QPath, &BANDS, Ncharacter, Character,
                              &EigenFunctionToCharactersOnsiteEnergyPhase);
   sprintf(CharFileName, "%s.energy", filename);
@@ -478,7 +478,7 @@ int TightBindingImpurityUnfoldingRandomImpurity2D(int Nsupercell, double Rho, do
   printf("Rho average (input) : %22.15E\n", Rho);
 //  PrintTightBindingDef(SetSuper);
   QPath.NQ = 4;
-  QPath.Q = malloc(QPath.NQ * sizeof(BandstructurePointType));
+  QPath.Q = (BandstructurePointType*)malloc(QPath.NQ * sizeof(BandstructurePointType));
   QPath.Q[0].Nq = 284;
   QPath.Q[0].label = 'G';
   QPath.Q[0].q[0] = 0.0 * Pi;
@@ -501,7 +501,7 @@ int TightBindingImpurityUnfoldingRandomImpurity2D(int Nsupercell, double Rho, do
   QPath.Q[3].q[2] = 0.0 * Pi;
 
   EigenFunctionToCharactersOnsiteEnergyPhaseSetNCharacter(SetSuper, &Ncharacter);
-  Character = malloc(Ncharacter * sizeof(MatrixType));
+  Character = (MatrixType*)malloc(Ncharacter * sizeof(MatrixType));
   TightBindingBANDSCharacter(SetSuper, QPath, &BANDS, Ncharacter, Character,
                              &EigenFunctionToCharactersOnsiteEnergyPhase);
   sprintf(CharFileName, "%s.energy", filename);
@@ -633,7 +633,7 @@ int TightBindingImpurityUnfoldingRandomImpurity1D(int Nsupercell, double Rho, do
   printf("Rho average (input) : %22.15E\n", Rho);
 //  PrintTightBindingDef(SetSuper);
   QPath.NQ = 2;
-  QPath.Q = malloc(QPath.NQ * sizeof(BandstructurePointType));
+  QPath.Q = (BandstructurePointType*)malloc(QPath.NQ * sizeof(BandstructurePointType));
   QPath.Q[0].Nq = 500;
   QPath.Q[0].label = 'G';
   QPath.Q[0].q[0] = 0.0 * Pi;
@@ -646,7 +646,7 @@ int TightBindingImpurityUnfoldingRandomImpurity1D(int Nsupercell, double Rho, do
   QPath.Q[1].q[2] = 0.0 * Pi;
 
   EigenFunctionToCharactersOnsiteEnergyPhaseSetNCharacter(SetSuper, &Ncharacter);
-  Character = malloc(Ncharacter * sizeof(MatrixType));
+  Character = (MatrixType*)malloc(Ncharacter * sizeof(MatrixType));
   TightBindingBANDSCharacter(SetSuper, QPath, &BANDS, Ncharacter, Character,
                              &EigenFunctionToCharactersOnsiteEnergyPhase);
   sprintf(CharFileName, "%s.energy", filename);

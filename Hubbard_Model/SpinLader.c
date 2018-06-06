@@ -258,9 +258,9 @@ uint32_t CreateSpinLaderHamiltonian(SpinLaderSettings Set, OperatorType * H)
   OperatorType *Sz, *Splus, *Smin;
   OperatorType Hrung, Hleg, Hcyc;
   OperatorType OtempA, OtempB;
-  Sz = malloc(Set.NSite * 2 * sizeof(OperatorType));
-  Splus = malloc(Set.NSite * 2 * sizeof(OperatorType));
-  Smin = malloc(Set.NSite * 2 * sizeof(OperatorType));
+  Sz = (OperatorType*)malloc(Set.NSite * 2 * sizeof(OperatorType));
+  Splus = (OperatorType*)malloc(Set.NSite * 2 * sizeof(OperatorType));
+  Smin = (OperatorType*)malloc(Set.NSite * 2 * sizeof(OperatorType));
   CreateSpinLaderSpinOperatorsSz(Set, Sz);
   CreateSpinLaderSpinOperatorsSplus(Set, Splus);
   CreateSpinLaderSpinOperatorsSminus(Set, Smin);
@@ -403,19 +403,19 @@ uint32_t CreateSpinLaderStartWaveFunction(const SpinLaderSettings Set, WaveFunct
   psi->NWord = Min(psi->NFermion, 1 + (psi->NFermion - 1) / 8);
   psi->N = 0;
   psi->NBlok = 1;
-  psi->KeyList = calloc((uint32_t) 1 << (psi->NBitsKey), sizeof(uint32_t));
-  psi->ValueRe = malloc(psi->NBlok * sizeof(double *));
-  psi->Next = malloc(psi->NBlok * sizeof(uint32_t *));
-  psi->Determinant = malloc(psi->NBlok * sizeof(uint8_t *));
+  psi->KeyList = (uint32_t*)calloc((uint32_t) 1 << (psi->NBitsKey), sizeof(uint32_t));
+  psi->ValueRe = (double **)malloc(psi->NBlok * sizeof(double *));
+  psi->Next = (uint32_t **)malloc(psi->NBlok * sizeof(uint32_t *));
+  psi->Determinant = (uint8_t **)malloc(psi->NBlok * sizeof(uint8_t *));
   if ((psi->ValueRe == NULL) || (psi->Next == NULL) || (psi->Determinant == NULL))
     AllocFailed();
-  psi->ValueRe[psi->NBlok - 1] = malloc(BlokSize * sizeof(double));
-  psi->Next[psi->NBlok - 1] = malloc(BlokSize * sizeof(uint32_t));
-  psi->Determinant[psi->NBlok - 1] = malloc(BlokSize * psi->NWord * sizeof(uint8_t));
+  psi->ValueRe[psi->NBlok - 1] = (double*)malloc(BlokSize * sizeof(double));
+  psi->Next[psi->NBlok - 1] = (uint32_t*)malloc(BlokSize * sizeof(uint32_t));
+  psi->Determinant[psi->NBlok - 1] = (uint8_t*)malloc(BlokSize * psi->NWord * sizeof(uint8_t));
   if ((psi->ValueRe[psi->NBlok - 1] == NULL) || (psi->Next[psi->NBlok - 1] == NULL)
       || (psi->Determinant[psi->NBlok - 1] == NULL))
     AllocFailed();
-  Determinant = calloc(psi->NWord, sizeof(uint8_t));
+  Determinant = (uint8_t*)calloc(psi->NWord, sizeof(uint8_t));
 
   for (i = 0; i < psi->NFermion; i += 4)
   {
@@ -541,8 +541,8 @@ int main(int argc, const char *argv[])
   BeginTiming("Create Transition Matrix", &Time);
   s.N = Set.NTriDiag;
   InitTriDiagonalMatrix(&s);
-  T = malloc(Set.NSite * 4 * sizeof(OperatorType));
-  Spec = malloc(Set.NSite * 4 * sizeof(SpectraType));
+  T = (OperatorType*)malloc(Set.NSite * 4 * sizeof(OperatorType));
+  Spec = (SpectraType*)malloc(Set.NSite * 4 * sizeof(SpectraType));
   Spec[0].N = Set.NE;
   Spec[0].Emin = Set.Emin;
   Spec[0].Emax = Set.Emax;
@@ -560,9 +560,9 @@ int main(int argc, const char *argv[])
   {
     PrintOperatorReadable(T[i]);
   }
-  PsiList = malloc(Set.NPsi * sizeof(WaveFunctionType));
-  EnergyList = malloc(Set.NPsi * sizeof(double));
-  WaveFunctionQuality = malloc(Set.NPsi * sizeof(double));
+  PsiList = (WaveFunctionType*)malloc(Set.NPsi * sizeof(WaveFunctionType));
+  EnergyList = (double*)malloc(Set.NPsi * sizeof(double));
+  WaveFunctionQuality = (double*)malloc(Set.NPsi * sizeof(double));
   for (jpsi = 0; jpsi < Set.NPsi; jpsi++)
   {
     CreateSpinLaderStartWaveFunction(Set, &PsiList[jpsi]);

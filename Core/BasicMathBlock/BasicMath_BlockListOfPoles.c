@@ -11,7 +11,7 @@ uint32_t InitBlockListOfPoles(BlockListOfPoles *const A)
   strcpy(A->Name, "Block List Of Poles");
   if(A->QComplex)
   {
-    A->V=calloc((A->N+1)*(1+A->BlockSize*A->BlockSize)-1,sizeof(Complex16));
+    A->V= (Complex16*)calloc((A->N+1)*(1+A->BlockSize*A->BlockSize)-1,sizeof(Complex16));
     if(A->V==NULL)
     {
       printf("malloc failed in InitBlockListOfPoles\n");
@@ -21,7 +21,7 @@ uint32_t InitBlockListOfPoles(BlockListOfPoles *const A)
   }
   else
   {
-    A->VRe=calloc((A->N+1)*(1+A->BlockSize*A->BlockSize)-1,sizeof(double));
+    A->VRe= (double*)calloc((A->N+1)*(1+A->BlockSize*A->BlockSize)-1,sizeof(double));
     if(A->VRe==NULL)
     {
       printf("malloc failed in InitBlockListOfPoles\n");
@@ -179,7 +179,7 @@ uint32_t MakeRealBlockListOfPolesComplex(BlockListOfPoles *A)
   Complex16 *temp;
   uint32_t i;
   if(A->QComplex) return 0;
-  temp=calloc((A->N+1)*(1+A->BlockSize*A->BlockSize)-1,sizeof(Complex16));
+  temp= (Complex16*)calloc((A->N+1)*(1+A->BlockSize*A->BlockSize)-1,sizeof(Complex16));
   if(temp==NULL)
   {
     printf("malloc failed in MakeRealBlockListOfPolesComplex\n");
@@ -205,7 +205,7 @@ uint32_t MakeComplexBlockListOfPolesReal(BlockListOfPoles *A)
   double *temp;
   uint32_t i;
   if(A->QComplex==0) return 0;
-  temp=calloc((A->N+1)*(1+A->BlockSize*A->BlockSize)-1,sizeof(double));
+  temp= (double*)calloc((A->N+1)*(1+A->BlockSize*A->BlockSize)-1,sizeof(double));
   if(temp==NULL)
   {
     printf("malloc failed in MakeComplexBlockListOfPolesReal\n");
@@ -272,16 +272,16 @@ uint32_t AddBlockListOfPoles(BlockListOfPoles * const A, BlockListOfPoles const 
   }
   if(A->QComplex)
   {
-    temp=realloc(A->V, ((A->N+B.N+1)*(1+A->BlockSize*A->BlockSize)-1)*sizeof(Complex16));
+    temp= realloc(A->V, ((A->N+B.N+1)*(1+A->BlockSize*A->BlockSize)-1)*sizeof(Complex16));
   }
   else if(B.QComplex)
   {
     if(MakeRealBlockListOfPolesComplex(A)){printf("MakeRealBlockListOfPolesComplex failed in AddBlockListOfPoles\n");return 1;}
-    temp=realloc(A->V, (A->N+B.N+1)*A->BlockSize*A->BlockSize*sizeof(Complex16));
+    temp= realloc(A->V, (A->N+B.N+1)*A->BlockSize*A->BlockSize*sizeof(Complex16));
   }
   else
   {
-    temp=realloc(A->VRe, ((A->N+B.N+1)*(1+A->BlockSize*A->BlockSize)-1)*sizeof(double));
+    temp= (double*)realloc(A->VRe, ((A->N+B.N+1)*(1+A->BlockSize*A->BlockSize)-1)*sizeof(double));
   }
   if(temp==NULL)
   {
@@ -290,7 +290,7 @@ uint32_t AddBlockListOfPoles(BlockListOfPoles * const A, BlockListOfPoles const 
   }
   if(A->QComplex)
   {
-    A->V=temp;
+    A->V=(Complex16*)temp;
     A->a0=&(A->V[A->N*(1+A->BlockSize*A->BlockSize)]);
     memcpy(&(A->V[(A->N+B.N)*(1+A->BlockSize*A->BlockSize)]), A->a0, A->BlockSize*A->BlockSize*sizeof(Complex16));
     A->a0=&(A->V[(A->N+B.N)*(1+A->BlockSize*A->BlockSize)]);
@@ -318,7 +318,7 @@ uint32_t AddBlockListOfPoles(BlockListOfPoles * const A, BlockListOfPoles const 
   }
   else
   {
-    A->VRe=temp;
+    A->VRe=(double*)temp;
     A->a0Re=&(A->VRe[A->N*(1+A->BlockSize*A->BlockSize)]);
     memcpy(&(A->VRe[(A->N+B.N)*(1+A->BlockSize*A->BlockSize)]), A->a0Re, A->BlockSize*A->BlockSize*sizeof(double));
     A->a0Re=&(A->VRe[(A->N+B.N)*(1+A->BlockSize*A->BlockSize)]);
@@ -372,11 +372,11 @@ uint32_t SymmetrizeBlockListOfPoles(BlockListOfPoles * const A)
   uint32_t i;
   if(A->QComplex)
   {
-    temp=realloc(A->V, ((2*A->N+1)*(1+A->BlockSize*A->BlockSize)-1)*sizeof(Complex16));
+    temp= realloc(A->V, ((2*A->N+1)*(1+A->BlockSize*A->BlockSize)-1)*sizeof(Complex16));
   }
   else
   {
-    temp=realloc(A->VRe, ((2*A->N+1)*(1+A->BlockSize*A->BlockSize)-1)*sizeof(double));
+    temp= realloc(A->VRe, ((2*A->N+1)*(1+A->BlockSize*A->BlockSize)-1)*sizeof(double));
   }
   if(temp==NULL)
   {
@@ -385,7 +385,7 @@ uint32_t SymmetrizeBlockListOfPoles(BlockListOfPoles * const A)
   }
   if(A->QComplex)
   {
-    A->V=temp;
+    A->V=(Complex16*)temp;
     memcpy(&(A->V[(2*A->N)*(1+A->BlockSize*A->BlockSize)]), A->a0, A->BlockSize*A->BlockSize*sizeof(Complex16));
     A->a0=&(A->V[(2*A->N)*(1+A->BlockSize*A->BlockSize)]);
     memcpy(&(A->V[A->N*(1+A->BlockSize*A->BlockSize)]), A->V, A->N*(1+A->BlockSize*A->BlockSize)*sizeof(Complex16));
@@ -401,7 +401,7 @@ uint32_t SymmetrizeBlockListOfPoles(BlockListOfPoles * const A)
   }
   else
   {
-    A->VRe=temp;
+    A->VRe=(double*)temp;
     memcpy(&(A->VRe[(2*A->N)*(1+A->BlockSize*A->BlockSize)]), A->a0, A->BlockSize*A->BlockSize*sizeof(double));
     A->a0Re=&(A->VRe[(2*A->N)*(1+A->BlockSize*A->BlockSize)]);
     memcpy(&(A->VRe[A->N*(1+A->BlockSize*A->BlockSize)]), A->VRe, A->N*(1+A->BlockSize*A->BlockSize)*sizeof(double));
@@ -651,7 +651,7 @@ uint32_t ReduceBlockListOfPoles(BlockListOfPoles * const A, uint32_t N, double c
       memmove(&(A->V[iSmallestNorm*(A->BlockSize*A->BlockSize+1)]), &(A->V[(iSmallestNorm+1)*(A->BlockSize*A->BlockSize+1)]),((A->N-iSmallestNorm)*(A->BlockSize*A->BlockSize+1)-1)*sizeof(Complex16));
       A->N--;
     }
-    A->V=realloc(A->V, ((A->N+1)*(1+A->BlockSize*A->BlockSize)-1)*sizeof(Complex16));
+    A->V= (Complex16*)realloc(A->V, ((A->N+1)*(1+A->BlockSize*A->BlockSize)-1)*sizeof(Complex16));
     A->a0=&(A->V[A->N*(1+A->BlockSize*A->BlockSize)]);
   }
   else /* Real */
@@ -783,7 +783,7 @@ uint32_t ReduceBlockListOfPoles(BlockListOfPoles * const A, uint32_t N, double c
       memmove(&(A->VRe[iSmallestNorm*(A->BlockSize*A->BlockSize+1)]), &(A->VRe[(iSmallestNorm+1)*(A->BlockSize*A->BlockSize+1)]),((A->N-iSmallestNorm)*(A->BlockSize*A->BlockSize+1)-1)*sizeof(double));
       A->N--;
     }
-    A->VRe=realloc(A->VRe, ((A->N+1)*(1+A->BlockSize*A->BlockSize)-1)*sizeof(double));
+    A->VRe= (double*)realloc(A->VRe, ((A->N+1)*(1+A->BlockSize*A->BlockSize)-1)*sizeof(double));
     A->a0Re=&(A->VRe[A->N*(1+A->BlockSize*A->BlockSize)]);
   }
   return 0;
@@ -826,7 +826,7 @@ uint32_t BlockListOfPolesPlaceOnMesh(BlockListOfPoles * const A, double const *m
 
   if(A->QComplex)
   {
-    temp = calloc((NE+1)*bs-1,sizeof(Complex16));
+    temp = (Complex16*)calloc((NE+1)*bs-1,sizeof(Complex16));
     if(temp==NULL)
     {
       printf("malloc failed in BlockListOfPolesPlaceOnMesh\n");
@@ -839,7 +839,7 @@ uint32_t BlockListOfPolesPlaceOnMesh(BlockListOfPoles * const A, double const *m
   }
   else
   {
-    tempRe = calloc((NE+1)*bs-1,sizeof(double));
+    tempRe = (double*)calloc((NE+1)*bs-1,sizeof(double));
     if(tempRe==NULL)
     {
       printf("malloc failed in BlockListOfPolesPlaceOnMesh\n");
@@ -988,7 +988,7 @@ uint32_t SubtractBlockListOfPoles(BlockListOfPoles * const A, BlockListOfPoles c
   }
   OrderBlockListOfPoles(A);
 
-  mesh = malloc(A->N*sizeof(double));
+  mesh = (double*)malloc(A->N*sizeof(double));
   if(A->QComplex)
   {
     for(i=0;i<A->N;i++) mesh[i]=A->V[i*bs].Re;
@@ -1006,7 +1006,7 @@ uint32_t SubtractBlockListOfPoles(BlockListOfPoles * const A, BlockListOfPoles c
     }
   }
 
-  Bsub = malloc(sizeof(BlockListOfPoles));
+  Bsub = (BlockListOfPoles*)malloc(sizeof(BlockListOfPoles));
   CopyBlockListOfPoles(B, Bsub);
   BlockListOfPolesPlaceOnMesh(Bsub, mesh, A->N);
 
@@ -1350,7 +1350,7 @@ uint32_t BlockListOfPolesG0plusSigmaToGFixedEGrid(BlockListOfPoles const *G0, Bl
     printf("Trying to add a self energy of dimensions %i to a bare Green's function of dimensions %i\n",Sigma->BlockSize,G0->BlockSize);
     return 1;
   }
-  val=malloc((Sigma->N+1)*Sigma->BlockSize*sizeof(double));
+  val= (double*)malloc((Sigma->N+1)*Sigma->BlockSize*sizeof(double));
   Char.Ni=Sigma->BlockSize;
   Char.Nj=Sigma->BlockSize;
   Char.QComplex=0;

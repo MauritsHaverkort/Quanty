@@ -151,7 +151,7 @@ uint32_t OrderAndCheckStuttgartCTRL(StuttgartCTRL * O)
   /* TO DO */
 
   /* set values of ICLASS */
-  O->SITE.ICLASS=malloc(O->SITE.N*sizeof(int));
+  O->SITE.ICLASS= (int*)malloc(O->SITE.N*sizeof(int));
   for(i=0;i<O->SITE.N;i++)
   {
     O->SITE.ICLASS[i]=-1;
@@ -180,7 +180,7 @@ uint32_t OrderAndCheckStuttgartCTRL(StuttgartCTRL * O)
     }
   }
   /* set SITE.Nactive and SITE.ActiveAtomMap */
-  O->SITE.ActiveAtomMap=malloc(O->SITE.N*sizeof(int));
+  O->SITE.ActiveAtomMap= (int*)malloc(O->SITE.N*sizeof(int));
   O->SITE.Nactive=0;
   for(i=0;i<O->SITE.N;i++)
   {
@@ -478,42 +478,42 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
           {
             if(O->CLASS.N==-1)
             {
-              O->CLASS.NEWNAM=malloc(64*sizeof(Bool));
-              O->CLASS.ATOM=malloc(64*sizeof(char*));
-              O->CLASS.Z=malloc(64*sizeof(double));
-              O->CLASS.R=malloc(64*sizeof(double));
-              O->CLASS.LMX=malloc(64*sizeof(int));
-              O->CLASS.IDXDN=malloc(64*sizeof(int*));
-              O->CLASS.CONF=malloc(64*sizeof(int*));
-              O->CLASS.IDMOD=malloc(64*sizeof(int*));
+              O->CLASS.NEWNAM= (Bool*)malloc(64*sizeof(Bool));
+              O->CLASS.ATOM= (char**)malloc(64*sizeof(char*));
+              O->CLASS.Z= (double*)malloc(64*sizeof(double));
+              O->CLASS.R= (double*)malloc(64*sizeof(double));
+              O->CLASS.LMX= (int*)malloc(64*sizeof(int));
+              O->CLASS.IDXDN= (int**)malloc(64*sizeof(int*));
+              O->CLASS.CONF= (int**)malloc(64*sizeof(int*));
+              O->CLASS.IDMOD= (int**)malloc(64*sizeof(int*));
               for(i=0;i<64;i++)
               {
                 O->CLASS.LMX[i]=-1;
-                O->CLASS.ATOM[i]=malloc(16*sizeof(char));
-                O->CLASS.IDXDN[i]=calloc(4,sizeof(int));
-                O->CLASS.CONF[i]=calloc(4,sizeof(int));
-                O->CLASS.IDMOD[i]=calloc(4,sizeof(int));
+                O->CLASS.ATOM[i]= (char*)malloc(16*sizeof(char));
+                O->CLASS.IDXDN[i]= (int*)calloc(4,sizeof(int));
+                O->CLASS.CONF[i]= (int*)calloc(4,sizeof(int));
+                O->CLASS.IDMOD[i]= (int*)calloc(4,sizeof(int));
               }
               O->CLASS.N=0;
             }
             O->CLASS.N++;
             if((O->CLASS.N%64)==0)
             {
-              O->CLASS.NEWNAM=realloc(O->CLASS.NEWNAM, (O->CLASS.N+64)*sizeof(Bool));
-              O->CLASS.ATOM=realloc(O->CLASS.ATOM, (O->CLASS.N+64)*sizeof(char*));
-              O->CLASS.Z=realloc(O->CLASS.Z, (O->CLASS.N+64)*sizeof(double));
-              O->CLASS.R=realloc(O->CLASS.R, (O->CLASS.N+64)*sizeof(double));
-              O->CLASS.LMX=realloc(O->CLASS.LMX, (O->CLASS.N+64)*sizeof(int));
-              O->CLASS.IDXDN=realloc(O->CLASS.IDXDN, (O->CLASS.N+64)*sizeof(int*));
-              O->CLASS.CONF=realloc(O->CLASS.CONF, (O->CLASS.N+64)*sizeof(int*));
-              O->CLASS.IDMOD=realloc(O->CLASS.IDMOD, (O->CLASS.N+64)*sizeof(int*));
+              O->CLASS.NEWNAM= (Bool*)realloc(O->CLASS.NEWNAM, (O->CLASS.N+64)*sizeof(Bool));
+              O->CLASS.ATOM= (char**)realloc(O->CLASS.ATOM, (O->CLASS.N+64)*sizeof(char*));
+              O->CLASS.Z= (double*)realloc(O->CLASS.Z, (O->CLASS.N+64)*sizeof(double));
+              O->CLASS.R= (double*)realloc(O->CLASS.R, (O->CLASS.N+64)*sizeof(double));
+              O->CLASS.LMX= (int*)realloc(O->CLASS.LMX, (O->CLASS.N+64)*sizeof(int));
+              O->CLASS.IDXDN= (int**)realloc(O->CLASS.IDXDN, (O->CLASS.N+64)*sizeof(int*));
+              O->CLASS.CONF= (int**)realloc(O->CLASS.CONF, (O->CLASS.N+64)*sizeof(int*));
+              O->CLASS.IDMOD= (int**)realloc(O->CLASS.IDMOD, (O->CLASS.N+64)*sizeof(int*));
               for(i=O->CLASS.N;i<O->CLASS.N+64;i++)
               {
                 O->CLASS.LMX[i]=-1;
-                O->CLASS.ATOM[i]=malloc(16*sizeof(char));
-                O->CLASS.IDXDN[i]=calloc(4,sizeof(int));
-                O->CLASS.CONF[i]=calloc(4,sizeof(int));
-                O->CLASS.IDMOD[i]=calloc(4,sizeof(int));
+                O->CLASS.ATOM[i]= (char*)malloc(16*sizeof(char));
+                O->CLASS.IDXDN[i]= (int*)calloc(4,sizeof(int));
+                O->CLASS.CONF[i]= (int*)calloc(4,sizeof(int));
+                O->CLASS.IDMOD[i]= (int*)calloc(4,sizeof(int));
               }
             }
             StreamReadStuttgartCTRLchar(stream, O->CLASS.ATOM[O->CLASS.N-1]);
@@ -574,32 +574,32 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
           {
             if(O->SITE.N==-1)
             {
-              O->SITE.ATOM=malloc(64*sizeof(char*));
-              O->SITE.POS=malloc(64*sizeof(double*));
-              O->SITE.X=malloc(64*sizeof(double*));
-              O->SITE.IDXDN_M=malloc(64*sizeof(int*));
+              O->SITE.ATOM= (char**)malloc(64*sizeof(char*));
+              O->SITE.POS= (double**)malloc(64*sizeof(double*));
+              O->SITE.X= (double**)malloc(64*sizeof(double*));
+              O->SITE.IDXDN_M= (int**)malloc(64*sizeof(int*));
               for(i=0;i<64;i++)
               {
-                O->SITE.ATOM[i]=malloc(16*sizeof(char));
-                O->SITE.POS[i]=malloc(3*sizeof(double));
-                O->SITE.X[i]=malloc(3*sizeof(double));
-                O->SITE.IDXDN_M[i]=calloc(16,sizeof(double));
+                O->SITE.ATOM[i]= (char*)malloc(16*sizeof(char));
+                O->SITE.POS[i]= (double*)malloc(3*sizeof(double));
+                O->SITE.X[i]= (double*)malloc(3*sizeof(double));
+                O->SITE.IDXDN_M[i]= (double*)calloc(16,sizeof(double));
               }
               O->SITE.N=0;
             }
             O->SITE.N++;
             if((O->SITE.N%64)==0)
             {
-              O->SITE.ATOM=realloc(O->SITE.ATOM,(O->SITE.N+64)*sizeof(char*));
-              O->SITE.POS=realloc(O->SITE.POS,(O->SITE.N+64)*sizeof(double*));
-              O->SITE.X=realloc(O->SITE.X,(O->SITE.N+64)*sizeof(double*));
-              O->SITE.IDXDN_M=realloc(O->SITE.IDXDN_M,(O->SITE.N+64)*sizeof(int*));
+              O->SITE.ATOM= (char**)realloc(O->SITE.ATOM,(O->SITE.N+64)*sizeof(char*));
+              O->SITE.POS= (double**)realloc(O->SITE.POS,(O->SITE.N+64)*sizeof(double*));
+              O->SITE.X= (double**)realloc(O->SITE.X,(O->SITE.N+64)*sizeof(double*));
+              O->SITE.IDXDN_M= (int**)realloc(O->SITE.IDXDN_M,(O->SITE.N+64)*sizeof(int*));
               for(i=O->SITE.N;i<O->SITE.N+64;i++)
               {
-                O->SITE.ATOM[i]=malloc(16*sizeof(char));
-                O->SITE.POS[i]=malloc(3*sizeof(double));
-                O->SITE.X[i]=malloc(3*sizeof(double));
-                O->SITE.IDXDN_M[i]=calloc(16,sizeof(double));
+                O->SITE.ATOM[i]= (char*)malloc(16*sizeof(char));
+                O->SITE.POS[i]= (double*)malloc(3*sizeof(double));
+                O->SITE.X[i]= (double*)malloc(3*sizeof(double));
+                O->SITE.IDXDN_M[i]= (double*)calloc(16,sizeof(double));
               }
             }
             StreamReadStuttgartCTRLchar(stream, O->SITE.ATOM[O->SITE.N-1]);
@@ -784,24 +784,24 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
           {
             if(O->STR.N==-1)
             {
-              O->STR.ATOM=malloc(64*sizeof(char*));
-              O->STR.SIGMA=malloc(64*sizeof(double*));
+              O->STR.ATOM= (char**)malloc(64*sizeof(char*));
+              O->STR.SIGMA= (double**)malloc(64*sizeof(double*));
               for(i=0;i<64;i++)
               {
-                O->STR.ATOM[i]=malloc(16*sizeof(char));
-                O->STR.SIGMA[i]=malloc(4*sizeof(double));
+                O->STR.ATOM[i]= (char*)malloc(16*sizeof(char));
+                O->STR.SIGMA[i]= (double*)malloc(4*sizeof(double));
               }
               O->STR.N=0;
             }
             O->STR.N++;
             if((O->STR.N%64)==0)
             {
-              O->STR.ATOM=realloc(O->STR.ATOM, (O->STR.N+64)*sizeof(char*));
-              O->STR.SIGMA=realloc(O->STR.SIGMA, (O->STR.N+64)*sizeof(double*));
+              O->STR.ATOM= (char**)realloc(O->STR.ATOM, (O->STR.N+64)*sizeof(char*));
+              O->STR.SIGMA= (double**)realloc(O->STR.SIGMA, (O->STR.N+64)*sizeof(double*));
               for(i=O->STR.N;i<O->STR.N+64;i++)
               {
-                O->STR.ATOM[i]=malloc(16*sizeof(char));
-                O->STR.SIGMA[i]=malloc(4*sizeof(double));
+                O->STR.ATOM[i]= (char*)malloc(16*sizeof(char));
+                O->STR.SIGMA[i]= (double*)malloc(4*sizeof(double));
               }
             }
             StreamReadStuttgartCTRLchar(stream, O->STR.ATOM[O->STR.N-1]);
@@ -917,34 +917,34 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
           {
             if(O->SYML.N==-1)
             {
-              O->SYML.NQ=malloc(64*sizeof(double));
-              O->SYML.Q1=malloc(64*sizeof(double*));
-              O->SYML.Q2=malloc(64*sizeof(double*));
-              O->SYML.LAB1=malloc(64*sizeof(char*));
-              O->SYML.LAB2=malloc(64*sizeof(char*));
+              O->SYML.NQ= (double*)malloc(64*sizeof(double));
+              O->SYML.Q1= (double**)malloc(64*sizeof(double*));
+              O->SYML.Q2= (double**)malloc(64*sizeof(double*));
+              O->SYML.LAB1= (char**)malloc(64*sizeof(char*));
+              O->SYML.LAB2= (char**)malloc(64*sizeof(char*));
               for(i=0;i<64;i++)
               {
-                O->SYML.Q1[i]=malloc(3*sizeof(double));
-                O->SYML.Q2[i]=malloc(3*sizeof(double));
-                O->SYML.LAB1[i]=malloc(32*sizeof(char));
-                O->SYML.LAB2[i]=malloc(32*sizeof(char));
+                O->SYML.Q1[i]= (double*)malloc(3*sizeof(double));
+                O->SYML.Q2[i]= (double*)malloc(3*sizeof(double));
+                O->SYML.LAB1[i]= (char*)malloc(32*sizeof(char));
+                O->SYML.LAB2[i]= (char*)malloc(32*sizeof(char));
               }
               O->SYML.N=0;
             }
             O->SYML.N++;
             if((O->SYML.N%64)==0)
             {
-              O->SYML.NQ=realloc(O->SYML.NQ, (O->SYML.N+64)*sizeof(double));
-              O->SYML.Q1=realloc(O->SYML.Q1, (O->SYML.N+64)*sizeof(double*));
-              O->SYML.Q2=realloc(O->SYML.Q2, (O->SYML.N+64)*sizeof(double*));
-              O->SYML.LAB1=realloc(O->SYML.LAB1, (O->SYML.N+64)*sizeof(char*));
-              O->SYML.LAB2=realloc(O->SYML.LAB2, (O->SYML.N+64)*sizeof(char*));
+              O->SYML.NQ= (double*)realloc(O->SYML.NQ, (O->SYML.N+64)*sizeof(double));
+              O->SYML.Q1= (double**)realloc(O->SYML.Q1, (O->SYML.N+64)*sizeof(double*));
+              O->SYML.Q2= (double**)realloc(O->SYML.Q2, (O->SYML.N+64)*sizeof(double*));
+              O->SYML.LAB1= (char**)realloc(O->SYML.LAB1, (O->SYML.N+64)*sizeof(char*));
+              O->SYML.LAB2= (char**)realloc(O->SYML.LAB2, (O->SYML.N+64)*sizeof(char*));
               for(i=O->SYML.N;i<O->SYML.N+64;i++)
               {
-                O->SYML.Q1[i]=malloc(3*sizeof(double));
-                O->SYML.Q2[i]=malloc(3*sizeof(double));
-                O->SYML.LAB1[i]=malloc(32*sizeof(char));
-                O->SYML.LAB2[i]=malloc(32*sizeof(char));
+                O->SYML.Q1[i]= (double*)malloc(3*sizeof(double));
+                O->SYML.Q2[i]= (double*)malloc(3*sizeof(double));
+                O->SYML.LAB1[i]= (char*)malloc(32*sizeof(char));
+                O->SYML.LAB2[i]= (char*)malloc(32*sizeof(char));
               }
             }
             StreamReadStuttgartCTRLint(stream, 1, &(O->SYML.NQ[O->SYML.N-1]));
@@ -1025,48 +1025,48 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
           {
             if(O->START.N==-1)
             {
-              O->START.ATOM=malloc(64*sizeof(char*));
-              O->START.P=malloc(64*sizeof(double*));
-              O->START.Q=malloc(64*sizeof(double*));
-              O->START.enu=malloc(64*sizeof(double*));
-              O->START.c=malloc(64*sizeof(double*));
-              O->START.sqrdel=malloc(64*sizeof(double*));
-              O->START.p=malloc(64*sizeof(double*));
-              O->START.gamma=malloc(64*sizeof(double*));
+              O->START.ATOM= (char**)malloc(64*sizeof(char*));
+              O->START.P= (double**)malloc(64*sizeof(double*));
+              O->START.Q= (double**)malloc(64*sizeof(double*));
+              O->START.enu= (double**)malloc(64*sizeof(double*));
+              O->START.c= (double**)malloc(64*sizeof(double*));
+              O->START.sqrdel= (double**)malloc(64*sizeof(double*));
+              O->START.p= (double**)malloc(64*sizeof(double*));
+              O->START.gamma= (double**)malloc(64*sizeof(double*));
               for(i=0;i<64;i++)
               {
-                O->START.ATOM[i]=malloc(16*sizeof(char));
-                O->START.P[i]=malloc(4*sizeof(double));
-                O->START.Q[i]=malloc(12*sizeof(double));
-                O->START.enu[i]=malloc(4*sizeof(double));
-                O->START.c[i]=malloc(4*sizeof(double));
-                O->START.sqrdel[i]=malloc(4*sizeof(double));
-                O->START.p[i]=malloc(4*sizeof(double));
-                O->START.gamma[i]=malloc(4*sizeof(double));
+                O->START.ATOM[i]= (char*)malloc(16*sizeof(char));
+                O->START.P[i]= (double*)malloc(4*sizeof(double));
+                O->START.Q[i]= (double*)malloc(12*sizeof(double));
+                O->START.enu[i]= (double*)malloc(4*sizeof(double));
+                O->START.c[i]= (double*)malloc(4*sizeof(double));
+                O->START.sqrdel[i]= (double*)malloc(4*sizeof(double));
+                O->START.p[i]= (double*)malloc(4*sizeof(double));
+                O->START.gamma[i]= (double*)malloc(4*sizeof(double));
               }
               O->START.N=0;
             }
             O->START.N++;
             if((O->START.N%64)==0)
             {
-              O->START.ATOM=realloc(O->START.ATOM, (O->START.N+64)*sizeof(char*));
-              O->START.P=realloc(O->START.P, (O->START.N+64)*sizeof(double*));
-              O->START.Q=realloc(O->START.Q, (O->START.N+64)*sizeof(double*));
-              O->START.enu=realloc(O->START.enu, (O->START.N+64)*sizeof(double*));
-              O->START.c=realloc(O->START.c, (O->START.N+64)*sizeof(double*));
-              O->START.sqrdel=realloc(O->START.sqrdel, (O->START.N+64)*sizeof(double*));
-              O->START.p=realloc(O->START.p, (O->START.N+64)*sizeof(double*));
-              O->START.gamma=realloc(O->START.gamma, (O->START.N+64)*sizeof(double*));
+              O->START.ATOM= (char**)realloc(O->START.ATOM, (O->START.N+64)*sizeof(char*));
+              O->START.P= (double**)realloc(O->START.P, (O->START.N+64)*sizeof(double*));
+              O->START.Q= (double**)realloc(O->START.Q, (O->START.N+64)*sizeof(double*));
+              O->START.enu= (double**)realloc(O->START.enu, (O->START.N+64)*sizeof(double*));
+              O->START.c= (double**)realloc(O->START.c, (O->START.N+64)*sizeof(double*));
+              O->START.sqrdel= (double**)realloc(O->START.sqrdel, (O->START.N+64)*sizeof(double*));
+              O->START.p= (double**)realloc(O->START.p, (O->START.N+64)*sizeof(double*));
+              O->START.gamma= (double**)realloc(O->START.gamma, (O->START.N+64)*sizeof(double*));
               for(i=O->START.N;i<O->START.N+64;i++)
               {
-                O->START.ATOM[i]=malloc(16*sizeof(char));
-                O->START.P[i]=malloc(4*sizeof(double));
-                O->START.Q[i]=malloc(12*sizeof(double));
-                O->START.enu[i]=malloc(4*sizeof(double));
-                O->START.c[i]=malloc(4*sizeof(double));
-                O->START.sqrdel[i]=malloc(4*sizeof(double));
-                O->START.p[i]=malloc(4*sizeof(double));
-                O->START.gamma[i]=malloc(4*sizeof(double));
+                O->START.ATOM[i]= (char*)malloc(16*sizeof(char));
+                O->START.P[i]= (double*)malloc(4*sizeof(double));
+                O->START.Q[i]= (double*)malloc(12*sizeof(double));
+                O->START.enu[i]= (double*)malloc(4*sizeof(double));
+                O->START.c[i]= (double*)malloc(4*sizeof(double));
+                O->START.sqrdel[i]= (double*)malloc(4*sizeof(double));
+                O->START.p[i]= (double*)malloc(4*sizeof(double));
+                O->START.gamma[i]= (double*)malloc(4*sizeof(double));
               }
             }
             StreamReadStuttgartCTRLchar(stream, O->START.ATOM[O->START.N-1]);
@@ -1294,28 +1294,28 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
           {
             if(O->RHOFIT.N==-1)
             {
-              O->RHOFIT.ATOM=malloc(64*sizeof(char*));
-              O->RHOFIT.LMXRHO=malloc(64*sizeof(int));
-              O->RHOFIT.SIGMA=malloc(64*sizeof(double*));
+              O->RHOFIT.ATOM= (char**)malloc(64*sizeof(char*));
+              O->RHOFIT.LMXRHO= (int*)malloc(64*sizeof(int));
+              O->RHOFIT.SIGMA= (double**)malloc(64*sizeof(double*));
               for(i=0;i<64;i++)
               {
                 O->RHOFIT.LMXRHO[i]=-1;
-                O->RHOFIT.ATOM[i]=malloc(16*sizeof(char));
-                O->RHOFIT.SIGMA[i]=malloc(4*sizeof(double));
+                O->RHOFIT.ATOM[i]= (char*)malloc(16*sizeof(char));
+                O->RHOFIT.SIGMA[i]= (double*)malloc(4*sizeof(double));
               }
               O->RHOFIT.N=0;
             }
             O->RHOFIT.N++;
             if((O->RHOFIT.N%64)==0)
             {
-              O->RHOFIT.ATOM=realloc(O->RHOFIT.ATOM, (O->RHOFIT.N+64)*sizeof(char*));
-              O->RHOFIT.LMXRHO=realloc(O->RHOFIT.LMXRHO, (O->RHOFIT.N+64)*sizeof(int));
-              O->RHOFIT.SIGMA=realloc(O->RHOFIT.SIGMA, (O->RHOFIT.N+64)*sizeof(double*));
+              O->RHOFIT.ATOM= (char**)realloc(O->RHOFIT.ATOM, (O->RHOFIT.N+64)*sizeof(char*));
+              O->RHOFIT.LMXRHO= (int*)realloc(O->RHOFIT.LMXRHO, (O->RHOFIT.N+64)*sizeof(int));
+              O->RHOFIT.SIGMA= (double**)realloc(O->RHOFIT.SIGMA, (O->RHOFIT.N+64)*sizeof(double*));
               for(i=O->RHOFIT.N;i<O->RHOFIT.N+64;i++)
               {
                 O->RHOFIT.LMXRHO[i]=-1;
-                O->RHOFIT.ATOM[i]=malloc(16*sizeof(char));
-                O->RHOFIT.SIGMA[i]=malloc(4*sizeof(double));
+                O->RHOFIT.ATOM[i]= (char*)malloc(16*sizeof(char));
+                O->RHOFIT.SIGMA[i]= (double*)malloc(4*sizeof(double));
               }
             }
             StreamReadStuttgartCTRLchar(stream, O->RHOFIT.ATOM[O->RHOFIT.N-1]);
@@ -1348,7 +1348,7 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
           if(strcmp(str, "NENU")==0)
           {
             StreamReadStuttgartCTRLint(stream, 1, &(O->NMTO.NENU));
-            O->NMTO.ENU=malloc(O->NMTO.NENU*sizeof(double));
+            O->NMTO.ENU= (double*)malloc(O->NMTO.NENU*sizeof(double));
           }
           else if(strcmp(str, "ENU")==0)
           {
@@ -1390,15 +1390,15 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
           if(strcmp(str, "Number_of_rotated_atoms")==0)
           {
             StreamReadStuttgartCTRLint(stream, 1, &(O->LOCALCS.Number_of_rotated_atoms));
-            O->LOCALCS.LOCAL_Z=malloc(O->LOCALCS.Number_of_rotated_atoms*sizeof(double*));
-            O->LOCALCS.LOCAL_X=malloc(O->LOCALCS.Number_of_rotated_atoms*sizeof(double*));
+            O->LOCALCS.LOCAL_Z= (double**)malloc(O->LOCALCS.Number_of_rotated_atoms*sizeof(double*));
+            O->LOCALCS.LOCAL_X= (double**)malloc(O->LOCALCS.Number_of_rotated_atoms*sizeof(double*));
             for(i=0;i<O->LOCALCS.Number_of_rotated_atoms;i++)
             {
-              O->LOCALCS.LOCAL_Z[i]=malloc(3*sizeof(double));
-              O->LOCALCS.LOCAL_X[i]=malloc(3*sizeof(double));
+              O->LOCALCS.LOCAL_Z[i]= (double*)malloc(3*sizeof(double));
+              O->LOCALCS.LOCAL_X[i]= (double*)malloc(3*sizeof(double));
             }
-            O->LOCALCS.ATOM=malloc(O->LOCALCS.Number_of_rotated_atoms*sizeof(int));
-            O->LOCALCS.L=malloc(O->LOCALCS.Number_of_rotated_atoms*sizeof(int));
+            O->LOCALCS.ATOM= (int*)malloc(O->LOCALCS.Number_of_rotated_atoms*sizeof(int));
+            O->LOCALCS.L= (int*)malloc(O->LOCALCS.Number_of_rotated_atoms*sizeof(int));
           }
           else if(strcmp(str, "Data_as")==0)
           {
@@ -1495,13 +1495,13 @@ uint32_t StreamReadStuttgartHAMR(StuttgartHAMR * O, FILE * stream)
       /* start of new element in HAMR make sure enough space allocated */
       if(O->Nelement==-1)
       {
-        O->element=malloc(64*sizeof(StuttgartHAMRelement));
+        O->element= (StuttgartHAMRelement*)malloc(64*sizeof(StuttgartHAMRelement));
         O->Nelement=0;
       }
       O->Nelement++;
       if((O->Nelement%64)==0)
       {
-        O->element=realloc(O->element, (O->Nelement+64)*sizeof(StuttgartHAMRelement));
+        O->element= (StuttgartHAMRelement*)realloc(O->element, (O->Nelement+64)*sizeof(StuttgartHAMRelement));
       }
       if(fgets(ReadLine, 1023, stream)==NULL){printf("ERROR 1 in reading HAMR file\n");return 1;}
       if(sscanf(ReadLine, "%s %s %i %s %s %i",buffer,O->element[O->Nelement-1].Atom1,&(O->element[O->Nelement-1].IndexAtom1),buffer,O->element[O->Nelement-1].Atom2,&(O->element[O->Nelement-1].IndexAtom2))!=6)

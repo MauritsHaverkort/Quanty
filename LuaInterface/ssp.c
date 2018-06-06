@@ -601,7 +601,7 @@ static int LuaNewOperator(lua_State * L)
     if(Options.Name!=NULL) strncpy(O->Name, Options.Name, MAXStrLength-1);
 
     O->Res=Options.DeterminantRestrictions;
-    oadd=malloc(sizeof(uint16_t)*O->MaxLength);
+    oadd= (uint16_t*)malloc(sizeof(uint16_t)*O->MaxLength);
     luaL_checktype(L, 3, LUA_TTABLE);
     lenopp = (uint32_t)lua_objlen(L, 3);
     for(i=1;i<=lenopp;i++)
@@ -1660,17 +1660,17 @@ static int LuaCreateSpectra(lua_State *L)
     }
     if(Sigma.NSigma==1)
     {
-      Sigma.V=malloc(Sigma.NSigma*sizeof(OperatorType*));
-      Sigma.SonGrid=malloc(Sigma.NSigma*sizeof(SpectraTypeArray*));
-      Sigma.SasMatrix=malloc(Sigma.NSigma*sizeof(ResponsefunctionType*));
+      Sigma.V= (OperatorType**)malloc(Sigma.NSigma*sizeof(OperatorType*));
+      Sigma.SonGrid= (SpectraTypeArray**)malloc(Sigma.NSigma*sizeof(SpectraTypeArray*));
+      Sigma.SasMatrix= (ResponsefunctionType**)malloc(Sigma.NSigma*sizeof(ResponsefunctionType*));
       LuaReadSingleSelfenergy(L, 4, Sigma.V[0], Sigma.SonGrid[0], Sigma.SasMatrix[0]);
     }
     else
     {
       Sigma.NSigma=(uint32_t)lua_objlen(L, 4);
-      Sigma.V=malloc(Sigma.NSigma*sizeof(OperatorType*));
-      Sigma.SonGrid=malloc(Sigma.NSigma*sizeof(SpectraTypeArray*));
-      Sigma.SasMatrix=malloc(Sigma.NSigma*sizeof(ResponsefunctionType*));
+      Sigma.V= (OperatorType**)malloc(Sigma.NSigma*sizeof(OperatorType*));
+      Sigma.SonGrid= (SpectraTypeArray**)malloc(Sigma.NSigma*sizeof(SpectraTypeArray*));
+      Sigma.SasMatrix= (ResponsefunctionType**)malloc(Sigma.NSigma*sizeof(ResponsefunctionType*));
       for(i=0;i<Sigma.NSigma;i++)
       {
         lua_rawgeti(L,4,i+1);
@@ -1705,7 +1705,7 @@ static int LuaCreateSpectra(lua_State *L)
     }
   }
   /* calculate groundstate energy */
-  psiEn=malloc(Options.Npsi*Options.NT*sizeof(double));
+  psiEn= (double*)malloc(Options.Npsi*Options.NT*sizeof(double));
   if(Options.E0==DBL_MAX)
   {
     for(ipsi=0;ipsi<Options.Npsi;ipsi++)
@@ -1730,7 +1730,7 @@ static int LuaCreateSpectra(lua_State *L)
   /* calculate Tpsi for all functions and transition operators 
      Tpsi is a single vector, the functions are stored at Tpsi[iT*Options.Npsi+ipsi] */
   /* different function calls with and without restrictions */
-  Tpsi=malloc((Options.NT*Options.Npsi)*sizeof(WaveFunctionType));
+  Tpsi= (WaveFunctionType*)malloc((Options.NT*Options.Npsi)*sizeof(WaveFunctionType));
   if(Options.Settings.restrictions.N==0)
   {
     /* loop over all Transition operators */
@@ -1853,7 +1853,7 @@ static int LuaCreateSpectra(lua_State *L)
     if(Options.Tensor==False)
     {
       ListOfPoles *SpecLP;
-      SpecLP=malloc(TpsiDense.Ni*sizeof(ListOfPoles));
+      SpecLP= (ListOfPoles*)malloc(TpsiDense.Ni*sizeof(ListOfPoles));
       if(Options.KrylovBasis==True)
       {
         HermitianCompactMatrixToListOfPolesWithEigenstates(&HDense, SpecLP, &TpsiDense, &EigenfunHDense);
@@ -1896,7 +1896,7 @@ static int LuaCreateSpectra(lua_State *L)
       Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
       luaL_setmetatable(L, "Spectra_Type");
       Spec->NSpectra=Options.NT*Options.Npsi;
-      Spec->Spec=malloc(Spec->NSpectra*sizeof(SpectraType));
+      Spec->Spec= (SpectraType*)malloc(Spec->NSpectra*sizeof(SpectraType));
       Spec->Spec[0].N=Options.Settings.NE;
       Spec->Spec[0].Emin=Options.Settings.Emin;
       Spec->Spec[0].Emax=Options.Settings.Emax;
@@ -1977,7 +1977,7 @@ static int LuaCreateSpectra(lua_State *L)
       Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
       luaL_setmetatable(L, "Spectra_Type");
       Spec->NSpectra=Sqr(Options.NT*Options.Npsi);
-      Spec->Spec=malloc(Spec->NSpectra*sizeof(SpectraType));
+      Spec->Spec= (SpectraType*)malloc(Spec->NSpectra*sizeof(SpectraType));
       BlockListOfPolesToSpectraWithBroadening(SpecLP, Spec->Spec, Options.Settings.Emin, Options.Settings.Emax, Options.Settings.NE, Options.Settings.Gamma);
       for(i=0;i<Spec->NSpectra;i++)
       {
@@ -2047,7 +2047,7 @@ static int LuaCreateSpectra(lua_State *L)
     {
       TriDiagonalMatrixType *GTri;
       /* calculate spectra in Tridiagonal form for each combination of operator and wave-function seperately*/
-      GTri = malloc(Options.NT*Options.Npsi*sizeof(TriDiagonalMatrixType));
+      GTri = (TriDiagonalMatrixType*)malloc(Options.NT*Options.Npsi*sizeof(TriDiagonalMatrixType));
       for(i=0;i<Options.NT*Options.Npsi;i++)
       {
         GTri[i].N=Options.Settings.NTri;
@@ -2057,10 +2057,10 @@ static int LuaCreateSpectra(lua_State *L)
       /* alocate memory for the krylov basis */
       if(Options.KrylovBasis==True)
       {
-        psiBasis=malloc(Options.NT*Options.Npsi*sizeof(WaveFunctionType*));
+        psiBasis= (WaveFunctionType**)malloc(Options.NT*Options.Npsi*sizeof(WaveFunctionType*));
         for(i=0;i<Options.NT*Options.Npsi;i++)
         {
-          psiBasis[i]=malloc(Options.Settings.NTri*sizeof(WaveFunctionType));
+          psiBasis[i]= (WaveFunctionType*)malloc(Options.Settings.NTri*sizeof(WaveFunctionType));
         }
       }
       /* loop over all Transition operators */
@@ -2109,7 +2109,7 @@ static int LuaCreateSpectra(lua_State *L)
       /* get eigenvalues of all Tri diagonal matrices and set smallest and largest eigenvalue */
       Eminpole=DBL_MAX;
       Emaxpole=-DBL_MAX;
-      val=malloc((Options.Settings.NTri)*sizeof(double));
+      val= (double*)malloc((Options.Settings.NTri)*sizeof(double));
       for(i=0;i<Options.NT*Options.Npsi;i++)
       {
         TriDiagonalMatrixToEigenvalues(GTri[i], val);
@@ -2144,7 +2144,7 @@ static int LuaCreateSpectra(lua_State *L)
       Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
       luaL_setmetatable(L, "Spectra_Type");
       Spec->NSpectra=Options.NT*Options.Npsi;
-      Spec->Spec=malloc(Spec->NSpectra*sizeof(SpectraType));
+      Spec->Spec= (SpectraType*)malloc(Spec->NSpectra*sizeof(SpectraType));
       Spec->Spec[0].N=Options.Settings.NE;
       Spec->Spec[0].Emin=Options.Settings.Emin;
       Spec->Spec[0].Emax=Options.Settings.Emax;
@@ -2245,8 +2245,8 @@ static int LuaCreateSpectra(lua_State *L)
       {
         if(Options.KrylovBasis==True)
         {
-          BlockSizeN=malloc(GTri.N*sizeof(uint32_t));
-          psiBasis=malloc(Options.Settings.NTri*sizeof(WaveFunctionType*));
+          BlockSizeN= (uint32_t*)malloc(GTri.N*sizeof(uint32_t));
+          psiBasis= (WaveFunctionType**)malloc(Options.Settings.NTri*sizeof(WaveFunctionType*));
           LanczosBlockTriDiagonalizeKrylov(*H, TpsiSameBasis, Options.Settings.epsilon, &GTri, psiBasis, BlockSizeN);
         }
         else
@@ -2258,8 +2258,8 @@ static int LuaCreateSpectra(lua_State *L)
       {
         if(Options.KrylovBasis==True)
         {
-          BlockSizeN=malloc(GTri.N*sizeof(uint32_t));
-          psiBasis=malloc(Options.Settings.NTri*sizeof(WaveFunctionType*));
+          BlockSizeN= (uint32_t*)malloc(GTri.N*sizeof(uint32_t));
+          psiBasis= (WaveFunctionType**)malloc(Options.Settings.NTri*sizeof(WaveFunctionType*));
           LanczosBlockTriDiagonalizeKrylovRestricted(*H, TpsiSameBasis, Options.Settings.restrictions, Options.Settings.epsilon, &GTri, psiBasis, BlockSizeN);
         }
         else
@@ -2272,7 +2272,7 @@ static int LuaCreateSpectra(lua_State *L)
       Eminpole = DBL_MAX;
       Emaxpole =-DBL_MAX;
       //set Eminpole and Emaxpole (they are in the output and I need them for auto range determination
-      val=malloc(GTri.N*GTri.BlockSize*sizeof(double));
+      val= (double*)malloc(GTri.N*GTri.BlockSize*sizeof(double));
       BlockTriDiagonalMatrixEigenValues(&GTri,val);
       Eminpole=val[0]-psiEn[0];
       Emaxpole=val[GTri.N*GTri.BlockSize-1]-psiEn[0];
@@ -2306,7 +2306,7 @@ static int LuaCreateSpectra(lua_State *L)
       Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
       luaL_setmetatable(L, "Spectra_Type");
       Spec->NSpectra=Sqr(Options.NT*Options.Npsi);
-      Spec->Spec=malloc(Spec->NSpectra*sizeof(SpectraType));
+      Spec->Spec= (SpectraType*)malloc(Spec->NSpectra*sizeof(SpectraType));
       BlockTriDiagonalMatrixToSpectra(psiEn[0], &GTri, Spec->Spec, Options.Settings.Emin, Options.Settings.Emax, Options.Settings.NE, Options.Settings.Gamma);
       for(i=0;i<Spec->NSpectra;i++)
       {
@@ -2660,7 +2660,7 @@ static int LuaCreateResonantSpectra(lua_State *L)
           SettingsNow = Options.Settings;
           ResonantSpectra(*H1, *H2, T1[iT], T2, Options.NT2, psi[ipsi], &SpecTri, &SpecT1psi, Options.E01, Options.E02, &(SettingsNow));
           Spec->NSpectra+=(SettingsNow.NE1+1)*Options.NT2;
-          Spec->Spec=realloc(Spec->Spec, Spec->NSpectra*sizeof(SpectraType));
+          Spec->Spec= (SpectraType*)realloc(Spec->Spec, Spec->NSpectra*sizeof(SpectraType));
           for(i=0;i<(SettingsNow.NE1+1)*Options.NT2;i++)
           {
             FreeTriDiagonalMatrix(&(SpecTri[i]));
@@ -2764,7 +2764,7 @@ static int LuaCreateFluorescenceYield(lua_State *L)
   Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
   luaL_setmetatable(L, "Spectra_Type");
   Spec->NSpectra=Options.NT1*Options.NT2*Options.Npsi;
-  Spec->Spec=malloc(Spec->NSpectra*sizeof(SpectraType));
+  Spec->Spec= (SpectraType*)malloc(Spec->NSpectra*sizeof(SpectraType));
   /* test if H is Hermitian */
   switch(QOperatorHermitian(*H, 0.0001*Options.Settings.zero))
   {
@@ -2791,7 +2791,7 @@ static int LuaCreateFluorescenceYield(lua_State *L)
     }
   }
   /* calculate groundstate energy */
-  psiEn=malloc(Options.Npsi*sizeof(double));
+  psiEn= (double*)malloc(Options.Npsi*sizeof(double));
   for(ipsi=0;ipsi<Options.Npsi;ipsi++)
   {
     PsiHermitianOperatorPsi(*H, psi[ipsi], &psiEn[ipsi]);
@@ -2902,7 +2902,7 @@ static int LuaOperatorToMatrix(lua_State *L)
   	if (H->MaxLength > 2 || H->l[0].N != 0 || H->l[1].N != 0)
   		VerbosityPrintf(0x0001,"\nWarning: Without a specified density the matrix representation can only be found for the quadratic part of an operator, all other parts will be ignored.\n");
     CompactMatrixType *Rho, HMat;
-    Rho=malloc(sizeof(CompactMatrixType));
+    Rho= (CompactMatrixType*)malloc(sizeof(CompactMatrixType));
     Rho->Ni=H->NFermion;
     Rho->Nj=H->NFermion;
     Rho->QComplex=0;
@@ -3208,7 +3208,7 @@ static int LuaEigensystem(lua_State * L)
     }
     else
     {
-      psi=malloc(Npsi*sizeof(WaveFunctionType));
+      psi= (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
     }
   }
   /* test if operator is Hermitian */
@@ -3496,7 +3496,7 @@ static int LuaOrthonormalize(lua_State *L)
   {
     CompactMatrixType *M, *MO;
     M = (CompactMatrixType *) luaL_checkCompactMatrix(L, 1);
-    MO = malloc(sizeof(CompactMatrixType));
+    MO = (CompactMatrixType*)malloc(sizeof(CompactMatrixType));
     if(CompactMatrixCopy(*M, MO))
     {
       if(L->l_G->gcrunning)lua_gc (L, LUA_GCEMERGENCYCOLLECT, 0);
@@ -3550,7 +3550,7 @@ static int LuaOrthonormalize(lua_State *L)
     WaveFunctionType *psilist,*psilistNew;
     uint32_t i,Npsi;
     psilist = luaL_checkarray_WaveFunctionType(L, 1, &Npsi);
-    psilistNew=malloc(Npsi*sizeof(WaveFunctionType));
+    psilistNew= (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
     if(psilistNew==NULL) return luaL_error(L, "Failure in Orthogonalize, not able to initialize pointers to list of orthogonal functions.\nOut of memory on a bad moment?\n");
     if(strcmp(Options.Method, "Lowdin")==0)
     {
@@ -3653,7 +3653,7 @@ static int LuaBlockBandDiagonalize(lua_State *L)
     }
     if(lua_type(L, 2)==LUA_TNUMBER)
     {
-      vec=malloc(sizeof(CompactMatrixType));
+      vec= (CompactMatrixType*)malloc(sizeof(CompactMatrixType));
       vec->QComplex=0;
       vec->Ni=(uint32_t)luaL_checkinteger(L, 2);
       vec->Nj=M->Nj;
@@ -3703,11 +3703,11 @@ static int LuaBlockBandDiagonalize(lua_State *L)
     else
     {
       Npsi=1;
-      orig =  malloc(sizeof(WaveFunctionType*));
+      orig = (WaveFunctionType**)malloc(sizeof(WaveFunctionType*));
       orig[0] = (WaveFunctionType *) luaL_checkudata(L, 2, "Wavefunction_Type");
     }
     // copy the original functions that each live on their own basis to a new array where all functions have the same basis
-    psilist = malloc(Npsi*sizeof(WaveFunctionType));
+    psilist = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
     if(psilist==NULL)
     {
       return luaL_error(L, "malloc failed. Out of memory during initialization in BlockBandDiagonalize\n");
@@ -3853,7 +3853,7 @@ static int LuaDensityMatrix(lua_State *L)
         {
           /* calcualte partial density tensor for a list of functions */
           psi=luaL_checkarray_WaveFunctionType(L, 1, &Npsi);
-          RhoMat=malloc(Npsi*Npsi*sizeof(MatrixType));
+          RhoMat= (MatrixType*)malloc(Npsi*Npsi*sizeof(MatrixType));
           CalculatePartialDensityMatrixWithOffDiagonals(RhoMat, Npsi, psi, Nparticles, jindex);
           lua_createtable(L,Npsi,0);
           for(i=0;i<Npsi;i++)
@@ -3925,7 +3925,7 @@ static int LuaDensityMatrix(lua_State *L)
             {
               /* calcualte density tensor for a list of functions */
               psi=luaL_checkarray_WaveFunctionType(L, 1, &Npsi);
-              RhoMat=malloc(Npsi*Npsi*sizeof(MatrixType));
+              RhoMat= (MatrixType*)malloc(Npsi*Npsi*sizeof(MatrixType));
               CalculateDensityMatrixWithOffDiagonals(RhoMat, Npsi, psi);
               lua_createtable(L,Npsi,0);
               for(i=0;i<Npsi;i++)
@@ -4031,7 +4031,7 @@ static int LuaStatistics(lua_State *L)
     WaveFunctionType *psi = (WaveFunctionType *) luaL_checkudata(L, 1, "Wavefunction_Type");
     double exp = (double) luaL_checknumber(L, 2);
     uint32_t N = (uint32_t) luaL_checkunsigned(L, 3);
-    Hist=malloc(N*sizeof(double));
+    Hist= (double*)malloc(N*sizeof(double));
     CalculatePrefactorHistogram(Hist, *psi, exp, N);
     LuaPushArray_double(L, Hist, N);
     return 1;

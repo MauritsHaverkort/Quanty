@@ -43,20 +43,20 @@ uint32_t AndersonMatrixToTriDiagonalMatrixNonOrthogonal(AndersonMatrixType const
 {
   uint32_t i;
   double *vec[3];
-  if ((vec[0] = malloc(M.N * sizeof(double))) == NULL)
+  if ((vec[0] = (double*)malloc(M.N * sizeof(double))) == NULL)
   {
     printf("malloc 1 failed in AndersonMatrixToTriDiagonalMatrixNonOrthogonal\n");
     fflush(stdout);
     return 1;
   };
-  if ((vec[1] = malloc(M.N * sizeof(double))) == NULL)
+  if ((vec[1] = (double*)malloc(M.N * sizeof(double))) == NULL)
   {
     printf("malloc 1 failed in AndersonMatrixToTriDiagonalMatrixNonOrthogonal\n");
     free(vec[0]);
     fflush(stdout);
     return 1;
   };
-  if ((vec[2] = malloc(M.N * sizeof(double))) == NULL)
+  if ((vec[2] = (double*)malloc(M.N * sizeof(double))) == NULL)
   {
     printf("malloc 1 failed in AndersonMatrixToTriDiagonalMatrixNonOrthogonal\n");
     free(vec[0]);
@@ -1127,13 +1127,13 @@ uint32_t TriDiagonalMatrixToEigenvalues(TriDiagonalMatrixType const M, double *v
   int    liwork = 3 + 5 * M.N;
   double *work,*Z=NULL;
   int   *iwork;
-  work = malloc(lwork * sizeof(double));
+  work = (double*)malloc(lwork * sizeof(double));
   if (work == NULL)
   {
     printf("malloc of work failed in TriDiagonalMatrixToEigensystem\n");
     return 1;
   };
-  iwork = malloc(liwork * sizeof(int));
+  iwork = (int*)malloc(liwork * sizeof(int));
   if (iwork == NULL)
   {
     printf("malloc of iwork failed in TriDiagonalMatrixToEigensystem\n");
@@ -1177,13 +1177,13 @@ uint32_t TriDiagonalMatrixToEigensystem(TriDiagonalMatrixType const M, MatrixTyp
   int    liwork = 3 + 5 * M.N;
   double *work;
   int   *iwork;
-  work = malloc(lwork * sizeof(double));
+  work = (double*)malloc(lwork * sizeof(double));
   if (work == NULL)
   {
     printf("malloc of work failed in TriDiagonalMatrixToEigensystem\n");
     return 1;
   };
-  iwork = malloc(liwork * sizeof(int));
+  iwork = (int*)malloc(liwork * sizeof(int));
   if (iwork == NULL)
   {
     printf("malloc of iwork failed in TriDiagonalMatrixToEigensystem\n");
@@ -1241,13 +1241,13 @@ uint32_t TriDiagonalMatrixToEigensystemCompact(const TriDiagonalMatrixType * con
   int    liwork = 3 + 5 * M->N;
   double *work;
   int   *iwork;
-  work = malloc(lwork * sizeof(double));
+  work = (double*)malloc(lwork * sizeof(double));
   if (work == NULL)
   {
     printf("malloc of work failed in TriDiagonalMatrixToEigensystem\n");
     return 1;
   };
-  iwork = malloc(liwork * sizeof(int));
+  iwork = (int*)malloc(liwork * sizeof(int));
   if (iwork == NULL)
   {
     printf("malloc of iwork failed in TriDiagonalMatrixToEigensystem\n");
@@ -1980,13 +1980,13 @@ uint32_t Eigensystem(MatrixType const M, MatrixType * const T, double *val)
   int    liwork = 3 + 5 * M.Ni;
   double *work;
   int   *iwork;
-  work = malloc(lwork * sizeof(double));
+  work = (double*)malloc(lwork * sizeof(double));
   if (work == NULL)
   {
     printf("malloc of work failed in Eigensystem\n");
     return 1;
   };
-  iwork = malloc(liwork * sizeof(int));
+  iwork = (int*)malloc(liwork * sizeof(int));
   if (iwork == NULL)
   {
     printf("malloc of iwork failed in Eigensystem\n");
@@ -2934,7 +2934,7 @@ uint32_t BlokTriDiagonalize(MatrixType const M, MatrixType * const T, BlokTriDia
         FreeBlokTriDiagonalMatrix(H);
         return 1;
       };
-      U = malloc(THT.Ni * THT.Ni * sizeof(double));
+      U = (double*)malloc(THT.Ni * THT.Ni * sizeof(double));
       if (U == NULL)
       {
         FreeMatrix(T);
@@ -3110,7 +3110,7 @@ uint32_t BlokTriDiagonalize(MatrixType const M, MatrixType * const T, BlokTriDia
         FreeBlokTriDiagonalMatrix(H);
         return 1;
       };
-      UC = malloc(THT.Ni * THT.Ni * sizeof(Complex16));
+      UC = (Complex16*)malloc(THT.Ni * THT.Ni * sizeof(Complex16));
       if (UC == NULL)
       {
         printf("Allocation of UC failed in BlokTriDiagonalize C 20\n");
@@ -3120,7 +3120,7 @@ uint32_t BlokTriDiagonalize(MatrixType const M, MatrixType * const T, BlokTriDia
         FreeBlokTriDiagonalMatrix(H);
         return 1;
       }
-      THTC = malloc(THT.Ni * THT.Nj * sizeof(Complex16));
+      THTC = (Complex16*)malloc(THT.Ni * THT.Nj * sizeof(Complex16));
       if (THTC == NULL)
       {
         printf("Allocation of THTC failed in BlokTriDiagonalize C 21\n");
@@ -3184,7 +3184,7 @@ uint32_t BlokTriDiagonalize(MatrixType const M, MatrixType * const T, BlokTriDia
           FreeBlokTriDiagonalMatrix(H);
           return 1;
         };
-        THTC = malloc(THT.Ni * THT.Nj * sizeof(Complex16));
+        THTC = (Complex16*)malloc(THT.Ni * THT.Nj * sizeof(Complex16));
         if (THTC == NULL)
         {
           printf("Allocation of THTC failed in BlokTriDiagonalize C 40\n");
@@ -3247,7 +3247,7 @@ uint32_t BlokTriDiagonalize(MatrixType const M, MatrixType * const T, BlokTriDia
           FreeBlokTriDiagonalMatrix(H);
           return 1;
         };
-        THTC = malloc(THT.Ni * THT.Nj * sizeof(Complex16));
+        THTC = (Complex16*)malloc(THT.Ni * THT.Nj * sizeof(Complex16));
         if (THTC == NULL)
         {
           printf("Allocation of THTC failed in BlokTriDiagonalize C 40\n");

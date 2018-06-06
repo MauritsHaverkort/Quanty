@@ -76,7 +76,7 @@ uint32_t InitIdentityAndersonMatrix(AndersonMatrixType * const M)
     fflush(stdout);
     return 1;
   };
-  M->b = calloc((M->N), sizeof(double));
+  M->b = (double*)calloc((M->N), sizeof(double));
   if (M->b == NULL)
   {
     free(M->a);

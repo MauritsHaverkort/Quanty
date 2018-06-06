@@ -447,7 +447,7 @@ uint32_t StreamPrintWaveFunctionPartialCorrelationTensor(WaveFunctionType const 
 {
   uint32_t i,j,k,l,m=0;
   Complex16 * Rho ;
-  Rho=calloc(NFermionIncluded*NFermionIncluded*NFermionIncluded*NFermionIncluded,sizeof(Complex16));
+  Rho= (Complex16*)calloc(NFermionIncluded*NFermionIncluded*NFermionIncluded*NFermionIncluded,sizeof(Complex16));
   if (Rho==NULL)
   {
     printf("Faild to allocate memory for Rho in StreamPrintWaveFunctionPartialCorrelationTensor\n");

@@ -52,7 +52,7 @@ void TestOppMultold()
     fflush(stdout);
     return;
   };
-  Determinant = calloc(psi.NWord, sizeof(uint8_t *));
+  Determinant = (uint8_t **)calloc(psi.NWord, sizeof(uint8_t *));
   sprintf(psi.Name, "psi test");
   OperatorCr(Determinant, 0, psi.NFermion);
   OperatorCr(Determinant, 1, psi.NFermion);

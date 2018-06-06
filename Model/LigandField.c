@@ -44,12 +44,12 @@ void CeLigandField()
   
   /* allocate space for restrictions */
   Restrictions.N=1;
-  Restrictions.Min=malloc(Restrictions.N*sizeof(uint32_t));
-  Restrictions.Max=malloc(Restrictions.N*sizeof(uint32_t));
-  Restrictions.Determinant=malloc(Restrictions.N*sizeof(uint8_t*));
+  Restrictions.Min= (uint32_t*)malloc(Restrictions.N*sizeof(uint32_t));
+  Restrictions.Max= (uint32_t*)malloc(Restrictions.N*sizeof(uint32_t));
+  Restrictions.Determinant= (uint8_t**)malloc(Restrictions.N*sizeof(uint8_t*));
   for(i=0;i<Restrictions.N;i++)
   {
-    Restrictions.Determinant[i]=malloc(5*sizeof(uint8_t)); /* we have 38 fermions in the basis, Determinants are coded per byte i.e. blocks of 8 fermions. 8*5=40 and can store the 38 fermions */
+    Restrictions.Determinant[i]= (uint8_t*)malloc(5*sizeof(uint8_t)); /* we have 38 fermions in the basis, Determinants are coded per byte i.e. blocks of 8 fermions. 8*5=40 and can store the 38 fermions */
   }
   
   printf("\n========================================================");

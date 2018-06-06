@@ -6,14 +6,14 @@
 uint32_t WaveFunctionPerturbationInit(WaveFunctionPerturbationType * Psi)
 {
   uint32_t i;
-  if ((Psi->psiOrder = malloc(Psi->order * sizeof(WaveFunctionType *))) == NULL)
+  if ((Psi->psiOrder = (WaveFunctionType **)malloc(Psi->order * sizeof(WaveFunctionType *))) == NULL)
   {
     printf("malloc failed in WaveFunctionPerturbationInit\n");
     return 1;
   };
   for (i = 0; i < Psi->order; i++)
   {
-    if ((Psi->psiOrder[i] = malloc(PerturbationOptions(Psi->NV, i) * sizeof(WaveFunctionType))) == NULL)
+    if ((Psi->psiOrder[i] = (WaveFunctionType*)malloc(PerturbationOptions(Psi->NV, i) * sizeof(WaveFunctionType))) == NULL)
     {
       printf("malloc failed in WaveFunctionPerturbationInit\n");
       return 1;
@@ -26,14 +26,14 @@ uint32_t WaveFunctionPerturbationInitAll(WaveFunctionPerturbationType * Psi, uin
                                          uint32_t QComplex, uint32_t NBitsKey)
 {
   uint32_t i, j;
-  if ((Psi->psiOrder = malloc(Psi->order * sizeof(WaveFunctionType *))) == NULL)
+  if ((Psi->psiOrder = (WaveFunctionType **)malloc(Psi->order * sizeof(WaveFunctionType *))) == NULL)
   {
     printf("malloc failed in WaveFunctionPerturbationInit\n");
     return 1;
   };
   for (i = 0; i < Psi->order; i++)
   {
-    if ((Psi->psiOrder[i] = malloc(PerturbationOptions(Psi->NV, i) * sizeof(WaveFunctionType))) == NULL)
+    if ((Psi->psiOrder[i] = (WaveFunctionType*)malloc(PerturbationOptions(Psi->NV, i) * sizeof(WaveFunctionType))) == NULL)
     {
       printf("malloc failed in WaveFunctionPerturbationInit\n");
       return 1;

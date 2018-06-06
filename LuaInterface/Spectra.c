@@ -39,10 +39,10 @@ static int LuaSpectraBroaden(lua_State * L)
     {
       if(FWHMList->VRe[i-1][0]>FWHMList->VRe[i][0]) return luaL_error(L, "List of variable Gaussian broadening at position 2 should be of the form {{Energy_1, FWHM_1},{Energy_2, FWHM_2},...,{Energy_n, FWHM_n}},\nwith Energy_1<Energh_2<...<Energh_n");
     }
-    GGausVar=malloc((res->Spec[0].N+1)*sizeof(double));
+    GGausVar= (double*)malloc((res->Spec[0].N+1)*sizeof(double));
     for(i=0;i<res->NSpectra;i++)
     {
-      GGausVar=realloc(GGausVar, (res->Spec[i].N+1)*sizeof(double));
+      GGausVar= (double*)realloc(GGausVar, (res->Spec[i].N+1)*sizeof(double));
       if(GGausVar==NULL) return luaL_error(L, "Fatal out of memory, intermediate allocation failed\n");
       jList=0;
       for(j=0;j<=res->Spec[i].N;j++)
@@ -83,10 +83,10 @@ static int LuaSpectraBroaden(lua_State * L)
     {
       if(FWHMList->VRe[i-1][0]>FWHMList->VRe[i][0]) return luaL_error(L, "List of variable Lorenzian broadening at position 3 should be of the form {{Energy_1, FWHM_1},{Energy_2, FWHM_2},...,{Energy_n, FWHM_n}},\nwith Energy_1<Energh_2<...<Energh_n");
     }
-    GLorentzVar=malloc((res->Spec[0].N+1)*sizeof(double));
+    GLorentzVar= (double*)malloc((res->Spec[0].N+1)*sizeof(double));
     for(i=0;i<res->NSpectra;i++)
     {
-      GLorentzVar=realloc(GLorentzVar, (res->Spec[i].N+1)*sizeof(double));
+      GLorentzVar= (double*)realloc(GLorentzVar, (res->Spec[i].N+1)*sizeof(double));
       if(GLorentzVar==NULL) return luaL_error(L, "Fatal out of memory, intermediate allocation failed\n");
       jList=0;
       for(j=0;j<=res->Spec[i].N;j++)
@@ -139,10 +139,10 @@ static int LuaSpectraBroadenMethod(lua_State * L)
     {
       if(FWHMList->VRe[i-1][0]>FWHMList->VRe[i][0]) return luaL_error(L, "List of variable Gaussian broadening at position 1 should be of the form {{Energy_1, FWHM_1},{Energy_2, FWHM_2},...,{Energy_n, FWHM_n}},\nwith Energy_1<Energh_2<...<Energh_n");
     }
-    GGausVar=malloc((res->Spec[0].N+1)*sizeof(double));
+    GGausVar= (double*)malloc((res->Spec[0].N+1)*sizeof(double));
     for(i=0;i<res->NSpectra;i++)
     {
-      GGausVar=realloc(GGausVar, (res->Spec[i].N+1)*sizeof(double));
+      GGausVar= (double*)realloc(GGausVar, (res->Spec[i].N+1)*sizeof(double));
       if(GGausVar==NULL) return luaL_error(L, "Fatal out of memory, intermediate allocation failed\n");
       jList=0;
       for(j=0;j<=res->Spec[i].N;j++)
@@ -183,10 +183,10 @@ static int LuaSpectraBroadenMethod(lua_State * L)
     {
       if(FWHMList->VRe[i-1][0]>FWHMList->VRe[i][0]) return luaL_error(L, "List of variable Lorenzian broadening at position 2 should be of the form {{Energy_1, FWHM_1},{Energy_2, FWHM_2},...,{Energy_n, FWHM_n}},\nwith Energy_1<Energh_2<...<Energh_n");
     }
-    GLorentzVar=malloc((res->Spec[0].N+1)*sizeof(double));
+    GLorentzVar= (double*)malloc((res->Spec[0].N+1)*sizeof(double));
     for(i=0;i<res->NSpectra;i++)
     {
-      GLorentzVar=realloc(GLorentzVar, (res->Spec[i].N+1)*sizeof(double));
+      GLorentzVar= (double*)realloc(GLorentzVar, (res->Spec[i].N+1)*sizeof(double));
       if(GLorentzVar==NULL) return luaL_error(L, "Fatal out of memory, intermediate allocation failed\n");
       jList=0;
       for(j=0;j<=res->Spec[i].N;j++)
@@ -345,7 +345,7 @@ static int LuaTableToSpectra(lua_State * L)
   res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
   luaL_setmetatable(L, "Spectra_Type");
   res->NSpectra = 0;
-  res->Spec=malloc(lua_objlen(L, 1)*sizeof(SpectraType));
+  res->Spec= (SpectraType*)malloc(lua_objlen(L, 1)*sizeof(SpectraType));
   for(i=0;i<(uint32_t)lua_objlen(L, 1);i++)
   {
     lua_rawgeti(L, 1, i+1);
@@ -353,8 +353,8 @@ static int LuaTableToSpectra(lua_State * L)
     res->Spec[i].N=(uint32_t)lua_objlen(L, -1);
     if(res->Spec[i].N==0) return luaL_error(L, "Error Spectra.FromTable the %d-th spectrum has no elements\n",i+1);
     res->Spec[i].N--;
-    res->Spec[i].Re=malloc((res->Spec[i].N+1)*sizeof(double));
-    res->Spec[i].Im=malloc((res->Spec[i].N+1)*sizeof(double));
+    res->Spec[i].Re= (double*)malloc((res->Spec[i].N+1)*sizeof(double));
+    res->Spec[i].Im= (double*)malloc((res->Spec[i].N+1)*sizeof(double));
     res->NSpectra++;
     // get Emin
     lua_rawgeti(L, -1, 1);
@@ -528,7 +528,7 @@ static int LuaSpectraSum(lua_State * L)
   res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
   luaL_setmetatable(L, "Spectra_Type");
   res->NSpectra = len-1;
-  res->Spec=malloc(res->NSpectra*sizeof(SpectraType));
+  res->Spec= (SpectraType*)malloc(res->NSpectra*sizeof(SpectraType));
   res->Spec[0].Emin    = a->Spec[0].Emin;
   res->Spec[0].Emax    = a->Spec[0].Emax;
   res->Spec[0].EminPole= a->Spec[0].EminPole;
@@ -609,7 +609,7 @@ static int LuaSpectraSumMethod(lua_State * L)
   res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
   luaL_setmetatable(L, "Spectra_Type");
   res->NSpectra = len;
-  res->Spec=malloc(res->NSpectra*sizeof(SpectraType));
+  res->Spec= (SpectraType*)malloc(res->NSpectra*sizeof(SpectraType));
   res->Spec[0].Emin    = a->Spec[0].Emin;
   res->Spec[0].Emax    = a->Spec[0].Emax;
   res->Spec[0].EminPole= a->Spec[0].EminPole;
@@ -711,7 +711,7 @@ static int LuaSpectraElement(lua_State * L)
       }
       res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
       res->NSpectra = 1;
-      res->Spec=malloc(res->NSpectra*sizeof(SpectraType));
+      res->Spec= (SpectraType*)malloc(res->NSpectra*sizeof(SpectraType));
       if(SpectrumAllocate(a->Spec[i-1], &(res->Spec[0])))
       {
         return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
@@ -756,7 +756,7 @@ static int LuaSpectraElement(lua_State * L)
       SpectraTypeArray *res;
       res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
       res->NSpectra = (uint32_t) lua_objlen(L, len);
-      res->Spec=malloc(res->NSpectra*sizeof(SpectraType));
+      res->Spec= (SpectraType*)malloc(res->NSpectra*sizeof(SpectraType));
       for(j=0;j<res->NSpectra;j++)
       {
         lua_rawgeti(L, len, j+1);
@@ -820,7 +820,7 @@ static int LuaSpectraElementMethod(lua_State * L)
         }
         res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
         res->NSpectra = 1;
-        res->Spec=malloc(res->NSpectra*sizeof(SpectraType));
+        res->Spec= (SpectraType*)malloc(res->NSpectra*sizeof(SpectraType));
         if(SpectrumAllocate(a->Spec[i-1], &(res->Spec[0])))
         {
           return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
@@ -865,7 +865,7 @@ static int LuaSpectraElementMethod(lua_State * L)
         SpectraTypeArray *res;
         res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
         res->NSpectra = (uint32_t) lua_objlen(L, len);
-        res->Spec=malloc(res->NSpectra*sizeof(SpectraType));
+        res->Spec= (SpectraType*)malloc(res->NSpectra*sizeof(SpectraType));
         for(j=0;j<res->NSpectra;j++)
         {
           lua_rawgeti(L, len, j+1);
@@ -1446,7 +1446,7 @@ static int LuaSpectraMul(lua_State * L)
             if(a->NSpectra!=b->NSpectra) return luaL_error(L, "Error: Multiplying to sets of spectra with different number of elements (%d) + (%d)\n",a->NSpectra,b->NSpectra);
             res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
             res->NSpectra = a->NSpectra;
-            res->Spec = malloc(res->NSpectra * sizeof(SpectraType));
+            res->Spec = (SpectraType*)malloc(res->NSpectra * sizeof(SpectraType));
             for(i=0;i<res->NSpectra;i++)
             {
               if((a->Spec[i].N==b->Spec[i].N)&&(a->Spec[i].Emin==b->Spec[i].Emin)&&(a->Spec[i].Emax==b->Spec[i].Emax))
@@ -1526,7 +1526,7 @@ static int LuaSpectraDiv(lua_State * L)
       b = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
       res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
       res->NSpectra = b->NSpectra;
-      res->Spec = malloc(res->NSpectra * sizeof(SpectraType));
+      res->Spec = (SpectraType*)malloc(res->NSpectra * sizeof(SpectraType));
       for(i=0;i<res->NSpectra;i++)
       {
         if(SpectrumAllocate(b->Spec[i], &(res->Spec[i])))
@@ -1646,7 +1646,7 @@ static int LuaSpectraDiv(lua_State * L)
             if(a->NSpectra!=b->NSpectra) return luaL_error(L, "Error: Dividing to sets of spectra with different number of elements (%d) + (%d)\n",a->NSpectra,b->NSpectra);
             res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
             res->NSpectra = a->NSpectra;
-            res->Spec = malloc(res->NSpectra * sizeof(SpectraType));
+            res->Spec = (SpectraType*)malloc(res->NSpectra * sizeof(SpectraType));
             for(i=0;i<res->NSpectra;i++)
             {
               if((a->Spec[i].N==b->Spec[i].N)&&(a->Spec[i].Emin==b->Spec[i].Emin)&&(a->Spec[i].Emax==b->Spec[i].Emax))
@@ -1774,7 +1774,7 @@ static int LuaSpectraPow(lua_State * L)
           b = luaL_checknumber(L, len);
           res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
           res->NSpectra = a->NSpectra;
-          res->Spec = malloc(res->NSpectra * sizeof(SpectraType));
+          res->Spec = (SpectraType*)malloc(res->NSpectra * sizeof(SpectraType));
           for(i=0;i<res->NSpectra;i++)
           {
             if(SpectrumAllocate(a->Spec[i], &(res->Spec[i])))
@@ -1811,7 +1811,7 @@ static int LuaSpectraPow(lua_State * L)
             b = (Complex16 *) luaL_checkudata(L, len, "Complex_Type");
             res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
             res->NSpectra = a->NSpectra;
-            res->Spec = malloc(res->NSpectra * sizeof(SpectraType));
+            res->Spec = (SpectraType*)malloc(res->NSpectra * sizeof(SpectraType));
             for(i=0;i<res->NSpectra;i++)
             {
               if(SpectrumAllocate(a->Spec[i], &(res->Spec[i])))

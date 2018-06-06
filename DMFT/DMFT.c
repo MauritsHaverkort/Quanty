@@ -72,8 +72,8 @@ int main(int argc, const char *argv[])
     printf("initializeDMFT failed in main\n");
     return 1;
   }
-  VPerturbation = malloc(2 * DMFTSet.NSite * sizeof(OperatorType));
-  gPerturbation = malloc(2 * DMFTSet.NSite * sizeof(TriDiagonalMatrixType));
+  VPerturbation = (OperatorType*)malloc(2 * DMFTSet.NSite * sizeof(OperatorType));
+  gPerturbation = (TriDiagonalMatrixType*)malloc(2 * DMFTSet.NSite * sizeof(TriDiagonalMatrixType));
   mu = DMFTSet.mu;
   Nelectron = DMFTSet.Nelectron;
   EndTiming("Init", &Time);

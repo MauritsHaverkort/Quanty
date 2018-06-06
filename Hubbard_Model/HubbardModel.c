@@ -68,11 +68,11 @@ OperatorType CreateSimpelHubbardModel(const HubbardModelSettings HSet)
   H.NBoson=0;
   InitOperator(&H);
   H.NCrCrAnAn=H.NFermion;
-  H.VCrCrAnAnRe=malloc(H.NFermion*sizeof(double));
-  H.iCrCrAnAn=malloc(H.NFermion*sizeof(uint32_t));
-  H.jCrCrAnAn=malloc(H.NFermion*sizeof(uint32_t));
-  H.kCrCrAnAn=malloc(H.NFermion*sizeof(uint32_t));
-  H.lCrCrAnAn=malloc(H.NFermion*sizeof(uint32_t));
+  H.VCrCrAnAnRe= (double*)malloc(H.NFermion*sizeof(double));
+  H.iCrCrAnAn= (uint32_t*)malloc(H.NFermion*sizeof(uint32_t));
+  H.jCrCrAnAn= (uint32_t*)malloc(H.NFermion*sizeof(uint32_t));
+  H.kCrCrAnAn= (uint32_t*)malloc(H.NFermion*sizeof(uint32_t));
+  H.lCrCrAnAn= (uint32_t*)malloc(H.NFermion*sizeof(uint32_t));
   for(i=0;i<H.NFermion;i++)
   {
     H.VCrCrAnAnRe[i]=HSet.U;
@@ -82,9 +82,9 @@ OperatorType CreateSimpelHubbardModel(const HubbardModelSettings HSet)
     H.lCrCrAnAn[i]=i;
   }
   H.NCrAn=0;
-  H.VCrAnRe=malloc(12*H.NFermion*sizeof(double));
-  H.iCrAn=malloc(12*H.NFermion*sizeof(uint32_t));
-  H.jCrAn=malloc(12*H.NFermion*sizeof(uint32_t));
+  H.VCrAnRe= (double*)malloc(12*H.NFermion*sizeof(double));
+  H.iCrAn= (uint32_t*)malloc(12*H.NFermion*sizeof(uint32_t));
+  H.jCrAn= (uint32_t*)malloc(12*H.NFermion*sizeof(uint32_t));
   for(i=0;i<H.NFermion;i++)
   {
     H.VCrAnRe[H.NCrAn]=-0.5*HSet.U;
@@ -130,9 +130,9 @@ OperatorType CreateSimpelHubbardModel(const HubbardModelSettings HSet)
       }
     }
   }
-  H.VCrAnRe=realloc(H.VCrAnRe,H.NCrAn*sizeof(double));
-  H.iCrAn=realloc(H.iCrAn,H.NCrAn*sizeof(uint32_t));
-  H.jCrAn=realloc(H.jCrAn,H.NCrAn*sizeof(uint32_t));
+  H.VCrAnRe= (double*)realloc(H.VCrAnRe,H.NCrAn*sizeof(double));
+  H.iCrAn= (uint32_t*)realloc(H.iCrAn,H.NCrAn*sizeof(uint32_t));
+  H.jCrAn= (uint32_t*)realloc(H.jCrAn,H.NCrAn*sizeof(uint32_t));
   H.NFermion*=2;
   H.NWord=Min(H.NFermion,1+(H.NFermion-1)/8);
   printf("\nHubbard Model Hamiltonian created\n");
@@ -224,12 +224,12 @@ OperatorType CreateSimpelTwistedHubbardModel(const HubbardModelSettings HSet, co
   }
   // setup memory for two electron part of the Hamiltonian //
   H.NCrCrAnAn=H.NFermion;
-  H.VCrCrAnAnRe=malloc(H.NFermion*sizeof(double));
-  H.VCrCrAnAnIm=malloc(H.NFermion*sizeof(double));
-  H.iCrCrAnAn=malloc(H.NFermion*sizeof(uint32_t));
-  H.jCrCrAnAn=malloc(H.NFermion*sizeof(uint32_t));
-  H.kCrCrAnAn=malloc(H.NFermion*sizeof(uint32_t));
-  H.lCrCrAnAn=malloc(H.NFermion*sizeof(uint32_t));
+  H.VCrCrAnAnRe= (double*)malloc(H.NFermion*sizeof(double));
+  H.VCrCrAnAnIm= (double*)malloc(H.NFermion*sizeof(double));
+  H.iCrCrAnAn= (uint32_t*)malloc(H.NFermion*sizeof(uint32_t));
+  H.jCrCrAnAn= (uint32_t*)malloc(H.NFermion*sizeof(uint32_t));
+  H.kCrCrAnAn= (uint32_t*)malloc(H.NFermion*sizeof(uint32_t));
+  H.lCrCrAnAn= (uint32_t*)malloc(H.NFermion*sizeof(uint32_t));
   // fill the two electron part of the Hamiltonian //
   for(i=0;i<H.NFermion;i++)
   {
@@ -242,10 +242,10 @@ OperatorType CreateSimpelTwistedHubbardModel(const HubbardModelSettings HSet, co
   }
   // setup memory fo the one electron part of the Hamiltonian //
   H.NCrAn=0;
-  H.VCrAnRe=malloc(12*H.NFermion*sizeof(double));
-  H.VCrAnIm=malloc(12*H.NFermion*sizeof(double));
-  H.iCrAn=malloc(12*H.NFermion*sizeof(uint32_t));
-  H.jCrAn=malloc(12*H.NFermion*sizeof(uint32_t));
+  H.VCrAnRe= (double*)malloc(12*H.NFermion*sizeof(double));
+  H.VCrAnIm= (double*)malloc(12*H.NFermion*sizeof(double));
+  H.iCrAn= (uint32_t*)malloc(12*H.NFermion*sizeof(uint32_t));
+  H.jCrAn= (uint32_t*)malloc(12*H.NFermion*sizeof(uint32_t));
   for(i=0;i<H.NFermion;i++)
   {
     // onsite energy equal to -0.5 U //
@@ -305,10 +305,10 @@ OperatorType CreateSimpelTwistedHubbardModel(const HubbardModelSettings HSet, co
       }
     }
   }
-  H.VCrAnRe=realloc(H.VCrAnRe,H.NCrAn*sizeof(double));
-  H.VCrAnIm=realloc(H.VCrAnIm,H.NCrAn*sizeof(double));
-  H.iCrAn=realloc(H.iCrAn,H.NCrAn*sizeof(uint32_t));
-  H.jCrAn=realloc(H.jCrAn,H.NCrAn*sizeof(uint32_t));
+  H.VCrAnRe= (double*)realloc(H.VCrAnRe,H.NCrAn*sizeof(double));
+  H.VCrAnIm= (double*)realloc(H.VCrAnIm,H.NCrAn*sizeof(double));
+  H.iCrAn= (uint32_t*)realloc(H.iCrAn,H.NCrAn*sizeof(uint32_t));
+  H.jCrAn= (uint32_t*)realloc(H.jCrAn,H.NCrAn*sizeof(uint32_t));
   H.NFermion*=2;
   H.NWord=Min(H.NFermion,1+(H.NFermion-1)/8);
   printf("\nHubbard Model Hamiltonian created\n");
@@ -399,9 +399,9 @@ void CreateSimpelHubbardModelOpticsT(const HubbardModelSettings HSet, OperatorTy
     }
   }
   H->NCrAn=0;
-  H->VCrAnRe=malloc(12*H->NFermion*sizeof(double));
-  H->iCrAn=malloc(12*H->NFermion*sizeof(uint32_t));
-  H->jCrAn=malloc(12*H->NFermion*sizeof(uint32_t));
+  H->VCrAnRe= (double*)malloc(12*H->NFermion*sizeof(double));
+  H->iCrAn= (uint32_t*)malloc(12*H->NFermion*sizeof(uint32_t));
+  H->jCrAn= (uint32_t*)malloc(12*H->NFermion*sizeof(uint32_t));
   for(i=0;i<H->NFermion;i++)
   {
     for(j=0;j<i;j++)
@@ -439,9 +439,9 @@ void CreateSimpelHubbardModelOpticsT(const HubbardModelSettings HSet, OperatorTy
       }
     }
   }
-  H->VCrAnRe=realloc(H->VCrAnRe,H->NCrAn*sizeof(double));
-  H->iCrAn=realloc(H->iCrAn,H->NCrAn*sizeof(uint32_t));
-  H->jCrAn=realloc(H->jCrAn,H->NCrAn*sizeof(uint32_t));
+  H->VCrAnRe= (double*)realloc(H->VCrAnRe,H->NCrAn*sizeof(double));
+  H->iCrAn= (uint32_t*)realloc(H->iCrAn,H->NCrAn*sizeof(uint32_t));
+  H->jCrAn= (uint32_t*)realloc(H->jCrAn,H->NCrAn*sizeof(uint32_t));
   H->NFermion*=2;
   H->NWord=Min(H->NFermion,1+(H->NFermion-1)/8);
   printf("\nHubbard Model Optical transition matrix created\n");
@@ -508,10 +508,10 @@ void CreateSimpelTwistedHubbardModelOpticsT(const HubbardModelSettings HSet, Ope
     }
   }
   H->NCrAn=0;
-  H->VCrAnRe=malloc(12*H->NFermion*sizeof(double));
-  H->VCrAnIm=malloc(12*H->NFermion*sizeof(double));
-  H->iCrAn=malloc(12*H->NFermion*sizeof(uint32_t));
-  H->jCrAn=malloc(12*H->NFermion*sizeof(uint32_t));
+  H->VCrAnRe= (double*)malloc(12*H->NFermion*sizeof(double));
+  H->VCrAnIm= (double*)malloc(12*H->NFermion*sizeof(double));
+  H->iCrAn= (uint32_t*)malloc(12*H->NFermion*sizeof(uint32_t));
+  H->jCrAn= (uint32_t*)malloc(12*H->NFermion*sizeof(uint32_t));
   for(i=0;i<H->NFermion;i++)
   {
     for(j=0;j<i;j++)
@@ -560,10 +560,10 @@ void CreateSimpelTwistedHubbardModelOpticsT(const HubbardModelSettings HSet, Ope
       }
     }
   }
-  H->VCrAnRe=realloc(H->VCrAnRe,H->NCrAn*sizeof(double));
-  H->VCrAnIm=realloc(H->VCrAnIm,H->NCrAn*sizeof(double));
-  H->iCrAn=realloc(H->iCrAn,H->NCrAn*sizeof(uint32_t));
-  H->jCrAn=realloc(H->jCrAn,H->NCrAn*sizeof(uint32_t));
+  H->VCrAnRe= (double*)realloc(H->VCrAnRe,H->NCrAn*sizeof(double));
+  H->VCrAnIm= (double*)realloc(H->VCrAnIm,H->NCrAn*sizeof(double));
+  H->iCrAn= (uint32_t*)realloc(H->iCrAn,H->NCrAn*sizeof(uint32_t));
+  H->jCrAn= (uint32_t*)realloc(H->jCrAn,H->NCrAn*sizeof(uint32_t));
   H->NFermion*=2;
   H->NWord=Min(H->NFermion,1+(H->NFermion-1)/8);
   printf("\nHubbard Model Optical transition matrix created\n");
@@ -634,16 +634,16 @@ WaveFunctionType CreateStartWaveFunitionNeelState(const HubbardModelSettings HSe
   psi.NWord=H.NWord;
   psi.N=0;
   psi.NBlok=1;
-  psi.KeyList=calloc((uint32_t)1<<(psi.NBitsKey),sizeof(uint32_t));
-  psi.ValueRe=malloc(psi.NBlok*sizeof(double *));
-  psi.Next=malloc(psi.NBlok*sizeof(uint32_t *));
-  psi.Determinant=malloc(psi.NBlok*sizeof(uint8_t *));
+  psi.KeyList= (uint32_t*)calloc((uint32_t)1<<(psi.NBitsKey),sizeof(uint32_t));
+  psi.ValueRe= (double **)malloc(psi.NBlok*sizeof(double *));
+  psi.Next= (uint32_t **)malloc(psi.NBlok*sizeof(uint32_t *));
+  psi.Determinant= (uint8_t **)malloc(psi.NBlok*sizeof(uint8_t *));
   if((psi.ValueRe==NULL)||(psi.Next==NULL)||(psi.Determinant==NULL)) AllocFailed();
-  psi.ValueRe[psi.NBlok-1]=malloc(BlokSize*sizeof(double));
-  psi.Next[psi.NBlok-1]=malloc(BlokSize*sizeof(uint32_t));
-  psi.Determinant[psi.NBlok-1]=malloc(BlokSize*psi.NWord*sizeof(uint8_t));
+  psi.ValueRe[psi.NBlok-1]= (double*)malloc(BlokSize*sizeof(double));
+  psi.Next[psi.NBlok-1]= (uint32_t*)malloc(BlokSize*sizeof(uint32_t));
+  psi.Determinant[psi.NBlok-1]= (uint8_t*)malloc(BlokSize*psi.NWord*sizeof(uint8_t));
   if((psi.ValueRe[psi.NBlok-1]==NULL)||(psi.Next[psi.NBlok-1]==NULL)||(psi.Determinant[psi.NBlok-1]==NULL)) AllocFailed();
-  Determinant=calloc(psi.NWord,sizeof(uint8_t));
+  Determinant= (uint8_t*)calloc(psi.NWord,sizeof(uint8_t));
   // Step one create a half filled Neel state //
   Nup=0;
   Ndn=0;
@@ -666,8 +666,8 @@ WaveFunctionType CreateStartWaveFunitionNeelState(const HubbardModelSettings HSe
   if(HSet.NelecUp<Nup)
   {
     T.NAn=H.NFermion/2.0;
-    T.iAn=malloc(T.NAn*sizeof(uint32_t));
-    T.VAnRe=malloc(T.NAn*sizeof(double));
+    T.iAn= (uint32_t*)malloc(T.NAn*sizeof(uint32_t));
+    T.VAnRe= (double*)malloc(T.NAn*sizeof(double));
     for(i=0;i<T.NAn;i++)
     {
       T.iAn[i]=i;
@@ -686,8 +686,8 @@ WaveFunctionType CreateStartWaveFunitionNeelState(const HubbardModelSettings HSe
   if(HSet.NelecDn<Ndn)
   {
     T.NAn=H.NFermion/2;
-    T.iAn=malloc(T.NAn*sizeof(uint32_t));
-    T.VAnRe=malloc(T.NAn*sizeof(double));
+    T.iAn= (uint32_t*)malloc(T.NAn*sizeof(uint32_t));
+    T.VAnRe= (double*)malloc(T.NAn*sizeof(double));
     for(i=0;i<T.NAn;i++)
     {
       T.iAn[i]=i+H.NFermion/2;
@@ -706,8 +706,8 @@ WaveFunctionType CreateStartWaveFunitionNeelState(const HubbardModelSettings HSe
   if(HSet.NelecUp>Nup)
   {
     T.NCr=H.NFermion/2.0;
-    T.iCr=malloc(T.NCr*sizeof(uint32_t));
-    T.VCrRe=malloc(T.NCr*sizeof(double));
+    T.iCr= (uint32_t*)malloc(T.NCr*sizeof(uint32_t));
+    T.VCrRe= (double*)malloc(T.NCr*sizeof(double));
     for(i=0;i<T.NCr;i++)
     {
       T.iCr[i]=i;
@@ -726,8 +726,8 @@ WaveFunctionType CreateStartWaveFunitionNeelState(const HubbardModelSettings HSe
   if(HSet.NelecDn>Ndn)
   {
     T.NCr=H.NFermion/2;
-    T.iCr=malloc(T.NCr*sizeof(uint32_t));
-    T.VCrRe=malloc(T.NCr*sizeof(double));
+    T.iCr= (uint32_t*)malloc(T.NCr*sizeof(uint32_t));
+    T.VCrRe= (double*)malloc(T.NCr*sizeof(double));
     for(i=0;i<T.NCr;i++)
     {
       T.iCr[i]=i+H.NFermion/2;
@@ -797,18 +797,18 @@ WaveFunctionType CreateStartComplexWaveFunitionNeelState(const HubbardModelSetti
   psi.NWord=Min(psi.NFermion,1+(psi.NFermion-1)/8);
   psi.N=0;
   psi.NBlok=1;
-  psi.KeyList=calloc((uint32_t)1<<(psi.NBitsKey),sizeof(uint32_t));
-  psi.ValueRe=malloc(psi.NBlok*sizeof(double *));
-  psi.ValueIm=malloc(psi.NBlok*sizeof(double *));
-  psi.Next=malloc(psi.NBlok*sizeof(uint32_t *));
-  psi.Determinant=malloc(psi.NBlok*sizeof(uint8_t *));
+  psi.KeyList= (uint32_t*)calloc((uint32_t)1<<(psi.NBitsKey),sizeof(uint32_t));
+  psi.ValueRe= (double **)malloc(psi.NBlok*sizeof(double *));
+  psi.ValueIm= (double **)malloc(psi.NBlok*sizeof(double *));
+  psi.Next= (uint32_t **)malloc(psi.NBlok*sizeof(uint32_t *));
+  psi.Determinant= (uint8_t **)malloc(psi.NBlok*sizeof(uint8_t *));
   if((psi.ValueRe==NULL)||(psi.ValueIm==NULL)||(psi.Next==NULL)||(psi.Determinant==NULL)) AllocFailed();
-  psi.ValueRe[psi.NBlok-1]=malloc(BlokSize*sizeof(double));
-  psi.ValueIm[psi.NBlok-1]=malloc(BlokSize*sizeof(double));
-  psi.Next[psi.NBlok-1]=malloc(BlokSize*sizeof(uint32_t));
-  psi.Determinant[psi.NBlok-1]=malloc(BlokSize*psi.NWord*sizeof(uint8_t));
+  psi.ValueRe[psi.NBlok-1]= (double*)malloc(BlokSize*sizeof(double));
+  psi.ValueIm[psi.NBlok-1]= (double*)malloc(BlokSize*sizeof(double));
+  psi.Next[psi.NBlok-1]= (uint32_t*)malloc(BlokSize*sizeof(uint32_t));
+  psi.Determinant[psi.NBlok-1]= (uint8_t*)malloc(BlokSize*psi.NWord*sizeof(uint8_t));
   if((psi.ValueRe[psi.NBlok-1]==NULL)||(psi.ValueIm[psi.NBlok-1]==NULL)||(psi.Next[psi.NBlok-1]==NULL)||(psi.Determinant[psi.NBlok-1]==NULL)) AllocFailed();
-  Determinant=calloc(psi.NWord,sizeof(uint8_t));
+  Determinant= (uint8_t*)calloc(psi.NWord,sizeof(uint8_t));
   // Step one create a half filled Neel state //
   Nup=0;
   Ndn=0;
@@ -831,9 +831,9 @@ WaveFunctionType CreateStartComplexWaveFunitionNeelState(const HubbardModelSetti
   if(HSet.NelecUp<Nup)
   {
     T.NAn=psi.NFermion/2.0;
-    T.iAn=malloc(T.NAn*sizeof(uint32_t));
-    T.VAnRe=malloc(T.NAn*sizeof(double));
-    T.VAnIm=malloc(T.NAn*sizeof(double));
+    T.iAn= (uint32_t*)malloc(T.NAn*sizeof(uint32_t));
+    T.VAnRe= (double*)malloc(T.NAn*sizeof(double));
+    T.VAnIm= (double*)malloc(T.NAn*sizeof(double));
     for(i=0;i<T.NAn;i++)
     {
       T.iAn[i]=i;
@@ -853,9 +853,9 @@ WaveFunctionType CreateStartComplexWaveFunitionNeelState(const HubbardModelSetti
   if(HSet.NelecDn<Ndn)
   {
     T.NAn=psi.NFermion/2;
-    T.iAn=malloc(T.NAn*sizeof(uint32_t));
-    T.VAnRe=malloc(T.NAn*sizeof(double));
-    T.VAnIm=malloc(T.NAn*sizeof(double));
+    T.iAn= (uint32_t*)malloc(T.NAn*sizeof(uint32_t));
+    T.VAnRe= (double*)malloc(T.NAn*sizeof(double));
+    T.VAnIm= (double*)malloc(T.NAn*sizeof(double));
     for(i=0;i<T.NAn;i++)
     {
       T.iAn[i]=i+psi.NFermion/2;
@@ -875,9 +875,9 @@ WaveFunctionType CreateStartComplexWaveFunitionNeelState(const HubbardModelSetti
   if(HSet.NelecUp>Nup)
   {
     T.NCr=psi.NFermion/2.0;
-    T.iCr=malloc(T.NCr*sizeof(uint32_t));
-    T.VCrRe=malloc(T.NCr*sizeof(double));
-    T.VCrIm=malloc(T.NCr*sizeof(double));
+    T.iCr= (uint32_t*)malloc(T.NCr*sizeof(uint32_t));
+    T.VCrRe= (double*)malloc(T.NCr*sizeof(double));
+    T.VCrIm= (double*)malloc(T.NCr*sizeof(double));
     for(i=0;i<T.NCr;i++)
     {
       T.iCr[i]=i;
@@ -897,9 +897,9 @@ WaveFunctionType CreateStartComplexWaveFunitionNeelState(const HubbardModelSetti
   if(HSet.NelecDn>Ndn)
   {
     T.NCr=psi.NFermion/2;
-    T.iCr=malloc(T.NCr*sizeof(uint32_t));
-    T.VCrRe=malloc(T.NCr*sizeof(double));
-    T.VCrIm=malloc(T.NCr*sizeof(double));
+    T.iCr= (uint32_t*)malloc(T.NCr*sizeof(uint32_t));
+    T.VCrRe= (double*)malloc(T.NCr*sizeof(double));
+    T.VCrIm= (double*)malloc(T.NCr*sizeof(double));
     for(i=0;i<T.NCr;i++)
     {
       T.iCr[i]=i+psi.NFermion/2;
@@ -931,16 +931,16 @@ WaveFunctionType CreateStartWaveFunctionSimpelHubbardModel(const HubbardModelSet
   psi.NWord=H.NWord;
   psi.N=0;
   psi.NBlok=1;
-  psi.KeyList=calloc((uint32_t)1<<(psi.NBitsKey),sizeof(uint32_t));
-  psi.ValueRe=malloc(psi.NBlok*sizeof(double *));
-  psi.Next=malloc(psi.NBlok*sizeof(uint32_t *));
-  psi.Determinant=malloc(psi.NBlok*sizeof(uint8_t *));
+  psi.KeyList= (uint32_t*)calloc((uint32_t)1<<(psi.NBitsKey),sizeof(uint32_t));
+  psi.ValueRe= (double **)malloc(psi.NBlok*sizeof(double *));
+  psi.Next= (uint32_t **)malloc(psi.NBlok*sizeof(uint32_t *));
+  psi.Determinant= (uint8_t **)malloc(psi.NBlok*sizeof(uint8_t *));
   if((psi.ValueRe==NULL)||(psi.Next==NULL)||(psi.Determinant==NULL)) AllocFailed();
-  psi.ValueRe[psi.NBlok-1]=malloc(BlokSize*sizeof(double));
-  psi.Next[psi.NBlok-1]=malloc(BlokSize*sizeof(uint32_t));
-  psi.Determinant[psi.NBlok-1]=malloc(BlokSize*psi.NWord*sizeof(uint8_t));
+  psi.ValueRe[psi.NBlok-1]= (double*)malloc(BlokSize*sizeof(double));
+  psi.Next[psi.NBlok-1]= (uint32_t*)malloc(BlokSize*sizeof(uint32_t));
+  psi.Determinant[psi.NBlok-1]= (uint8_t*)malloc(BlokSize*psi.NWord*sizeof(uint8_t));
   if((psi.ValueRe[psi.NBlok-1]==NULL)||(psi.Next[psi.NBlok-1]==NULL)||(psi.Determinant[psi.NBlok-1]==NULL)) AllocFailed();
-  Determinant=calloc(psi.NWord,sizeof(uint8_t));
+  Determinant= (uint8_t*)calloc(psi.NWord,sizeof(uint8_t));
   for(i=0;i<HSet.NelecUp;i++) OperatorCr(Determinant,i,psi.NFermion);
   for(i=psi.NFermion/2;i<(psi.NFermion/2+HSet.NelecDn);i++) OperatorCr(Determinant,i,psi.NFermion);
   RealWaveFunctionAddElement(&psi, Determinant, 5.0);
@@ -948,7 +948,7 @@ WaveFunctionType CreateStartWaveFunctionSimpelHubbardModel(const HubbardModelSet
   phase*=OperatorAn(Determinant,psi.NFermion/2,psi.NFermion);
   if(phase) RealWaveFunctionAddElement(&psi, Determinant, 3.0);
   free(Determinant);
-  Determinant=calloc(psi.NWord,sizeof(uint8_t));
+  Determinant= (uint8_t*)calloc(psi.NWord,sizeof(uint8_t));
   for(i=0;i<HSet.NelecUp;i++) OperatorCr(Determinant,i,psi.NFermion);
   for(i=psi.NFermion/2;i<(psi.NFermion/2+HSet.NelecDn);i++) OperatorCr(Determinant,i,psi.NFermion);
   phase=OperatorCr(Determinant,psi.NFermion/2-1,psi.NFermion);
@@ -984,10 +984,10 @@ void mainHubbardModel (HubbardModelSettings HSet)
   time(&t0);
 
   s.N=HSet.NTriDiag;
-  s.a=malloc(s.N*sizeof(double));
-  s.b=malloc(s.N*sizeof(double));
-  PsiList=malloc(HSet.NPsi*sizeof(WaveFunctionType));
-  EnergyList=malloc(HSet.NPsi*sizeof(double));
+  s.a= (double*)malloc(s.N*sizeof(double));
+  s.b= (double*)malloc(s.N*sizeof(double));
+  PsiList= (WaveFunctionType*)malloc(HSet.NPsi*sizeof(WaveFunctionType));
+  EnergyList= (double*)malloc(HSet.NPsi*sizeof(double));
 
 
 
@@ -1005,10 +1005,10 @@ void mainHubbardModel (HubbardModelSettings HSet)
   SpecOpt.Gamma=HSet.Gamma;
 
   SpectrumAllocate(SpecOpt,&SpecOpt);
-  SpecPES=malloc(H.NFermion/2*sizeof(SpectraType));
-  SpecIPES=malloc(H.NFermion/2*sizeof(SpectraType));
-  SpecSPINUp=malloc(H.NFermion/2*sizeof(SpectraType));
-  SpecSPINDn=malloc(H.NFermion/2*sizeof(SpectraType));
+  SpecPES= (SpectraType*)malloc(H.NFermion/2*sizeof(SpectraType));
+  SpecIPES= (SpectraType*)malloc(H.NFermion/2*sizeof(SpectraType));
+  SpecSPINUp= (SpectraType*)malloc(H.NFermion/2*sizeof(SpectraType));
+  SpecSPINDn= (SpectraType*)malloc(H.NFermion/2*sizeof(SpectraType));
   for(j=0;j<H.NFermion/2;++j)
   {
     SpectrumAllocate(SpecOpt,&SpecPES[j]);
@@ -1074,8 +1074,8 @@ void mainHubbardModel (HubbardModelSettings HSet)
 
       printf("\n\nPES\n\n");
       T.NAn=1;
-      T.iAn=malloc(2*sizeof(uint32_t));
-      T.VAnRe=malloc(2*sizeof(double));
+      T.iAn= (uint32_t*)malloc(2*sizeof(uint32_t));
+      T.VAnRe= (double*)malloc(2*sizeof(double));
       T.iAn[0]=0;
       T.VAnRe[0]=1.0;
       OperatorPsi(T,psi,&Opsi);
@@ -1105,8 +1105,8 @@ void mainHubbardModel (HubbardModelSettings HSet)
 
       printf("\n\nIPES\n\n");
       T.NCr=1;
-      T.iCr=malloc(2*sizeof(uint32_t));
-      T.VCrRe=malloc(2*sizeof(double));
+      T.iCr= (uint32_t*)malloc(2*sizeof(uint32_t));
+      T.VCrRe= (double*)malloc(2*sizeof(double));
       T.iCr[0]=0;
       T.VCrRe[0]=1.0;
       OperatorPsi(T,psi,&Opsi);
@@ -1135,9 +1135,9 @@ void mainHubbardModel (HubbardModelSettings HSet)
 
       printf("\n\nSPIN Up\n\n");
       T.NCrAn=1;
-      T.iCrAn=malloc(2*sizeof(uint32_t));
-      T.jCrAn=malloc(2*sizeof(uint32_t));
-      T.VCrAnRe=malloc(2*sizeof(double));
+      T.iCrAn= (uint32_t*)malloc(2*sizeof(uint32_t));
+      T.jCrAn= (uint32_t*)malloc(2*sizeof(uint32_t));
+      T.VCrAnRe= (double*)malloc(2*sizeof(double));
       T.iCrAn[0]=0;
       T.jCrAn[0]=H.NFermion/2;
       T.VCrAnRe[0]=1.0;
@@ -1169,9 +1169,9 @@ void mainHubbardModel (HubbardModelSettings HSet)
 
       printf("\n\nSPIN Dn\n\n");
       T.NCrAn=1;
-      T.iCrAn=malloc(2*sizeof(uint32_t));
-      T.jCrAn=malloc(2*sizeof(uint32_t));
-      T.VCrAnRe=malloc(2*sizeof(double));
+      T.iCrAn= (uint32_t*)malloc(2*sizeof(uint32_t));
+      T.jCrAn= (uint32_t*)malloc(2*sizeof(uint32_t));
+      T.VCrAnRe= (double*)malloc(2*sizeof(double));
       T.jCrAn[0]=0;
       T.iCrAn[0]=H.NFermion/2;
       T.VCrAnRe[0]=1.0;
@@ -1302,10 +1302,10 @@ void mainTwistedHubbardModel (HubbardModelSettings HSet)
 
   SpectrumAllocate(SpecOpt,&SpecOpt);
 
-  SpecPES=malloc(H.NFermion/2*sizeof(SpectraType));
-  SpecIPES=malloc(H.NFermion/2*sizeof(SpectraType));
-  SpecSPINUp=malloc(H.NFermion/2*sizeof(SpectraType));
-  SpecSPINDn=malloc(H.NFermion/2*sizeof(SpectraType));
+  SpecPES= (SpectraType*)malloc(H.NFermion/2*sizeof(SpectraType));
+  SpecIPES= (SpectraType*)malloc(H.NFermion/2*sizeof(SpectraType));
+  SpecSPINUp= (SpectraType*)malloc(H.NFermion/2*sizeof(SpectraType));
+  SpecSPINDn= (SpectraType*)malloc(H.NFermion/2*sizeof(SpectraType));
   for(j=0;j<H.NFermion;++j)
   {
     SpectrumAllocate(SpecOpt,&SpecPES[j]);
@@ -1314,10 +1314,10 @@ void mainTwistedHubbardModel (HubbardModelSettings HSet)
     SpectrumAllocate(SpecOpt,&SpecSPINDn[j]);
   }
 
-  s.a=malloc(s.N*sizeof(double));
-  s.b=malloc(s.N*sizeof(double));
-  PsiList=malloc(HSet.NPsi*sizeof(WaveFunctionType));
-  EnergyList=malloc(HSet.NPsi*sizeof(double));
+  s.a= (double*)malloc(s.N*sizeof(double));
+  s.b= (double*)malloc(s.N*sizeof(double));
+  PsiList= (WaveFunctionType*)malloc(HSet.NPsi*sizeof(WaveFunctionType));
+  EnergyList= (double*)malloc(HSet.NPsi*sizeof(double));
 
   for(jpsi=0;jpsi<HSet.NPsi;jpsi++)
   {
@@ -1388,9 +1388,9 @@ void mainTwistedHubbardModel (HubbardModelSettings HSet)
 
             printf("\n\nPES\n\n");
             T.NAn=HSet.NSite;
-            T.iAn=malloc(T.NAn*sizeof(uint32_t));
-            T.VAnRe=malloc(T.NAn*sizeof(double));
-            T.VAnIm=malloc(T.NAn*sizeof(double));
+            T.iAn= (uint32_t*)malloc(T.NAn*sizeof(uint32_t));
+            T.VAnRe= (double*)malloc(T.NAn*sizeof(double));
+            T.VAnIm= (double*)malloc(T.NAn*sizeof(double));
             for(j=0;j<psi.NFermion/2;j++)
             {
               for(i=0;i<psi.NFermion/2;i++)
@@ -1407,9 +1407,9 @@ void mainTwistedHubbardModel (HubbardModelSettings HSet)
 
             printf("\n\nIPES\n\n");
             T.NCr=HSet.NSite;
-            T.iCr=malloc(T.NCr*sizeof(uint32_t));
-            T.VCrRe=malloc(T.NCr*sizeof(double));
-            T.VCrIm=malloc(T.NCr*sizeof(double));
+            T.iCr= (uint32_t*)malloc(T.NCr*sizeof(uint32_t));
+            T.VCrRe= (double*)malloc(T.NCr*sizeof(double));
+            T.VCrIm= (double*)malloc(T.NCr*sizeof(double));
             for(j=0;j<psi.NFermion/2;j++)
             {
               for(i=0;i<psi.NFermion/2;i++)
@@ -1427,10 +1427,10 @@ void mainTwistedHubbardModel (HubbardModelSettings HSet)
 
             printf("\n\nSPIN Up\n\n");
             T.NCrAn=HSet.NSite;
-            T.iCrAn=malloc(T.NCrAn*sizeof(uint32_t));
-            T.jCrAn=malloc(T.NCrAn*sizeof(uint32_t));
-            T.VCrAnRe=malloc(T.NCrAn*sizeof(double));
-            T.VCrAnIm=malloc(T.NCrAn*sizeof(double));
+            T.iCrAn= (uint32_t*)malloc(T.NCrAn*sizeof(uint32_t));
+            T.jCrAn= (uint32_t*)malloc(T.NCrAn*sizeof(uint32_t));
+            T.VCrAnRe= (double*)malloc(T.NCrAn*sizeof(double));
+            T.VCrAnIm= (double*)malloc(T.NCrAn*sizeof(double));
             for(j=0;j<psi.NFermion/2;j++)
             {
               for(i=0;i<psi.NFermion/2;i++)
@@ -1449,10 +1449,10 @@ void mainTwistedHubbardModel (HubbardModelSettings HSet)
 
             printf("\n\nSPIN Dn\n\n");
             T.NCrAn=2*HSet.NSite;
-            T.iCrAn=malloc(T.NCrAn*sizeof(uint32_t));
-            T.jCrAn=malloc(T.NCrAn*sizeof(uint32_t));
-            T.VCrAnRe=malloc(T.NCrAn*sizeof(double));
-            T.VCrAnIm=malloc(T.NCrAn*sizeof(double));
+            T.iCrAn= (uint32_t*)malloc(T.NCrAn*sizeof(uint32_t));
+            T.jCrAn= (uint32_t*)malloc(T.NCrAn*sizeof(uint32_t));
+            T.VCrAnRe= (double*)malloc(T.NCrAn*sizeof(double));
+            T.VCrAnIm= (double*)malloc(T.NCrAn*sizeof(double));
             for(j=0;j<psi.NFermion/2;j++)
             {
               for(i=0;i<psi.NFermion/2;i++)
@@ -1552,19 +1552,19 @@ uint32_t HubbardModelCreateStartWaveFunction(HubbardModelSettings Set, WaveFunct
   psi->NWord = Set.USuperCell.NWord;
   psi->N = 0;
   psi->NBlok = 1;
-  psi->KeyList = calloc((uint32_t) 1 << (psi->NBitsKey), sizeof(uint32_t));
-  psi->ValueRe = malloc(psi->NBlok * sizeof(double *));
-  psi->Next = malloc(psi->NBlok * sizeof(uint32_t *));
-  psi->Determinant = malloc(psi->NBlok * sizeof(uint8_t *));
+  psi->KeyList = (uint32_t*)calloc((uint32_t) 1 << (psi->NBitsKey), sizeof(uint32_t));
+  psi->ValueRe = (double **)malloc(psi->NBlok * sizeof(double *));
+  psi->Next = (uint32_t **)malloc(psi->NBlok * sizeof(uint32_t *));
+  psi->Determinant = (uint8_t **)malloc(psi->NBlok * sizeof(uint8_t *));
   if ((psi->ValueRe == NULL) || (psi->Next == NULL) || (psi->Determinant == NULL))
     AllocFailed();
-  psi->ValueRe[psi->NBlok - 1] = malloc(BlokSize * sizeof(double));
-  psi->Next[psi->NBlok - 1] = malloc(BlokSize * sizeof(uint32_t));
-  psi->Determinant[psi->NBlok - 1] = malloc(BlokSize * psi->NWord * sizeof(uint8_t));
+  psi->ValueRe[psi->NBlok - 1] = (double*)malloc(BlokSize * sizeof(double));
+  psi->Next[psi->NBlok - 1] = (uint32_t*)malloc(BlokSize * sizeof(uint32_t));
+  psi->Determinant[psi->NBlok - 1] = (uint8_t*)malloc(BlokSize * psi->NWord * sizeof(uint8_t));
   if ((psi->ValueRe[psi->NBlok - 1] == NULL) || (psi->Next[psi->NBlok - 1] == NULL)
       || (psi->Determinant[psi->NBlok - 1] == NULL))
     AllocFailed();
-  Determinant = calloc(psi->NWord, sizeof(uint8_t));
+  Determinant = (uint8_t*)calloc(psi->NWord, sizeof(uint8_t));
   for (iatom = 0; iatom < Set.SuperCell.Crystal.NAtoms; iatom++)
   {
     for (ishell = 0; ishell < Set.SuperCell.Crystal.Atom[iatom].Nshell; ishell++)
@@ -1614,9 +1614,9 @@ int main(int argc, const char *argv[])
   HubbardModelSettings HSet;
   FileReadHubbardModelSettings(&HSet, argv[argc]);
   PrintHubbardModelSettings(HSet);
-  PsiList = malloc(HSet.NPsi * sizeof(WaveFunctionType));
-  EnergyList = malloc(HSet.NPsi * sizeof(double));
-  WaveFunctionQuality = malloc(HSet.NPsi * sizeof(double));
+  PsiList = (WaveFunctionType*)malloc(HSet.NPsi * sizeof(WaveFunctionType));
+  EnergyList = (double*)malloc(HSet.NPsi * sizeof(double));
+  WaveFunctionQuality = (double*)malloc(HSet.NPsi * sizeof(double));
   for (iq[0] = 0; iq[0] < HSet.Nq[0]; iq[0]++)
   {
     for (iq[1] = 0; iq[1] < HSet.Nq[1]; iq[1]++)

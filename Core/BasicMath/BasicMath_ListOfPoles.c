@@ -7,14 +7,14 @@ uint32_t InitListOfPoles(ListOfPoles * M)
     fflush(stdout);
     return 2;
   };
-  M->a = malloc((M->N) * sizeof(double));
+  M->a = (double*)malloc((M->N) * sizeof(double));
   if (M->a == NULL)
   {
     printf("malloc for M->a failed in ListOfPoles\n");
     fflush(stdout);
     return 1;
   };
-  M->b = malloc((M->N) * sizeof(double));
+  M->b = (double*)malloc((M->N) * sizeof(double));
   if (M->b == NULL)
   {
     free(M->a);
@@ -50,7 +50,7 @@ uint32_t AddListOfPoles(ListOfPoles * const A, ListOfPoles B)
 {
   double *temp;
   uint32_t i;
-  temp = realloc(A->a, (A->N + B.N) * sizeof(double));
+  temp = (double*)realloc(A->a, (A->N + B.N) * sizeof(double));
   if (temp == NULL)
   {
     printf("realloc of A->a failed in AddListOfPoles\n");
@@ -58,7 +58,7 @@ uint32_t AddListOfPoles(ListOfPoles * const A, ListOfPoles B)
     return 1;
   }
   A->a = temp;
-  temp = realloc(A->b, (A->N + B.N) * sizeof(double));
+  temp = (double*)realloc(A->b, (A->N + B.N) * sizeof(double));
   if (temp == NULL)
   {
     printf("realloc of A->b failed in AddListOfPoles\n");
@@ -84,7 +84,7 @@ uint32_t MixListOfPoles(ListOfPoles * const A, ListOfPoles const B, double const
 {
   double *temp;
   uint32_t i;
-  temp = realloc(A->a, (A->N + B.N) * sizeof(double));
+  temp = (double*)realloc(A->a, (A->N + B.N) * sizeof(double));
   if (temp == NULL)
   {
     printf("realloc of A->a failed in AddListOfPoles\n");
@@ -92,7 +92,7 @@ uint32_t MixListOfPoles(ListOfPoles * const A, ListOfPoles const B, double const
     return 1;
   }
   A->a = temp;
-  temp = realloc(A->b, (A->N + B.N) * sizeof(double));
+  temp = (double*)realloc(A->b, (A->N + B.N) * sizeof(double));
   if (temp == NULL)
   {
     printf("realloc of A->b failed in AddListOfPoles\n");
@@ -119,7 +119,7 @@ uint32_t SymmetrizeListOfPoles(ListOfPoles * const A)
 {
   double *temp;
   uint32_t i;
-  temp = realloc(A->a, (2 * A->N) * sizeof(double));
+  temp = (double*)realloc(A->a, (2 * A->N) * sizeof(double));
   if (temp == NULL)
   {
     printf("realloc of A->a failed in AddListOfPoles\n");
@@ -127,7 +127,7 @@ uint32_t SymmetrizeListOfPoles(ListOfPoles * const A)
     return 1;
   }
   A->a = temp;
-  temp = realloc(A->b, (2 * A->N) * sizeof(double));
+  temp = (double*)realloc(A->b, (2 * A->N) * sizeof(double));
   if (temp == NULL)
   {
     printf("realloc of A->b failed in AddListOfPoles\n");
@@ -156,7 +156,7 @@ int OrderListOfPolesCompare(double *elem1, double *elem2)
 
 void OrderListOfPoles(ListOfPoles * const M)
 {
-  double *Mab = malloc(2 * M->N * sizeof(double));
+  double *Mab = (double*)malloc(2 * M->N * sizeof(double));
   if (Mab == NULL)
   {
     printf("malloc for Mab failed in ListOfPoles\n");
@@ -947,14 +947,14 @@ uint32_t GaussianBroadenListOfPoles(ListOfPoles * const M, double const G, uint3
   uint32_t i, j, k;
   double Weight[Nmul + 1], sumWeight, dw = 3 * G / ((double)(2 * Nmul));
   double *temp;
-  temp = realloc(M->a, (2 * Nmul + 1) * M->N * sizeof(double));
+  temp = (double*)realloc(M->a, (2 * Nmul + 1) * M->N * sizeof(double));
   if (temp == NULL)
   {
     printf("realloc failed in GaussianBroadenListOfPoles\n");
     return 1;
   }
   M->a = temp;
-  temp = realloc(M->b, (2 * Nmul + 1) * M->N * sizeof(double));
+  temp = (double*)realloc(M->b, (2 * Nmul + 1) * M->N * sizeof(double));
   if (temp == NULL)
   {
     printf("realloc failed in GaussianBroadenListOfPoles\n");
@@ -1223,8 +1223,8 @@ uint32_t ShiftListOfPolesToMakeChemPotZeroMetal(ListOfPoles * const M, double co
   i--;
   occSumextra = occSum - occupation;
   Ef = M->a[i];
-  M->a = realloc(M->a, (M->N + 1) * sizeof(double));
-  M->b = realloc(M->b, (M->N + 1) * sizeof(double));
+  M->a = (double*)realloc(M->a, (M->N + 1) * sizeof(double));
+  M->b = (double*)realloc(M->b, (M->N + 1) * sizeof(double));
   M->a[M->N] = M->a[i] + 1000 * DBL_EPSILON * (M->b[i] - occSumextra) / (M->b[i] + DBL_MIN);
   M->a[i] -= 1000 * DBL_EPSILON * (occSumextra / (M->b[i] + DBL_MIN));
   M->b[M->N] = occSumextra;

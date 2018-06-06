@@ -1881,8 +1881,8 @@ int mainOld2(int argc, const char *argv[])
         {
           printf("Add %22.15E * S^2 to HAnd for the calculation of the ground-state wave-function\n", 1 + HSet.U);
           printf("This stabilizes the ground-state by enlarging the singlet triplet energy\n");
-          SpinUp = calloc(HAnd.NFermion / 2, sizeof(uint16_t));
-          SpinDn = calloc(HAnd.NFermion / 2, sizeof(uint16_t));
+          SpinUp = (uint16_t*)calloc(HAnd.NFermion / 2, sizeof(uint16_t));
+          SpinDn = (uint16_t*)calloc(HAnd.NFermion / 2, sizeof(uint16_t));
           SpinUp[0] = 0;
           SpinUp[1] = 2;
           SpinDn[0] = 1;
@@ -1917,7 +1917,7 @@ int mainOld2(int argc, const char *argv[])
         else
         {
           /* calculate cluster occupation */
-          PsiRho = calloc(Psi.NFermion, sizeof(double));
+          PsiRho = (double*)calloc(Psi.NFermion, sizeof(double));
           if (PsiRho == NULL)
           {
             printf("calloc failed in main for PsiRho\n Fatal Error\n");
@@ -2000,7 +2000,7 @@ int mainOld2(int argc, const char *argv[])
       printf("\n");
       printf("Energy                  <psi|H^2|psi>/(<psi|H|psi>^2)\n");
       printf("%22.15E  %22.15E\n", PsiEnergy, PsiQuality);
-      PsiRho = calloc(Psi.NFermion, sizeof(double));
+      PsiRho = (double*)calloc(Psi.NFermion, sizeof(double));
       if (PsiRho == NULL)
       {
         printf("calloc failed in main for PsiRho\n Fatal Error\n");
@@ -2693,8 +2693,8 @@ int mainOld(int argc, const char *argv[])
       {
         printf("Add %22.15E * S^2 to HAnd for the calculation of the ground-state wave-function\n", 1 + HSet.U);
         printf("This stabilizes the ground-state by enlarging the singlet triplet energy\n");
-        SpinUp = calloc(HAnd.NFermion / 2, sizeof(uint16_t));
-        SpinDn = calloc(HAnd.NFermion / 2, sizeof(uint16_t));
+        SpinUp = (uint16_t*)calloc(HAnd.NFermion / 2, sizeof(uint16_t));
+        SpinDn = (uint16_t*)calloc(HAnd.NFermion / 2, sizeof(uint16_t));
         SpinUp[0] = 0;
         SpinUp[1] = 2;
         SpinDn[0] = 1;
@@ -2729,7 +2729,7 @@ int mainOld(int argc, const char *argv[])
       else
       {
         /* calculate cluster occupation */
-        PsiRho = calloc(Psi.NFermion, sizeof(double));
+        PsiRho = (double*)calloc(Psi.NFermion, sizeof(double));
         if (PsiRho == NULL)
         {
           printf("calloc failed in main for PsiRho\n Fatal Error\n");
@@ -2812,7 +2812,7 @@ int mainOld(int argc, const char *argv[])
     printf("\n");
     printf("Energy                  <psi|H^2|psi>/(<psi|H|psi>^2)\n");
     printf("%22.15E  %22.15E\n", PsiEnergy, PsiQuality);
-    PsiRho = calloc(Psi.NFermion, sizeof(double));
+    PsiRho = (double*)calloc(Psi.NFermion, sizeof(double));
     if (PsiRho == NULL)
     {
       printf("calloc failed in main for PsiRho\n Fatal Error\n");
@@ -4378,7 +4378,7 @@ int OldmainWorkingDMFT(int argc, const char *argv[])
     printf("\n");
     printf("Energy                  <psi|H^2|psi>/(<psi|H|psi>^2)\n");
     printf("%22.15E  %22.15E\n", PsiEnergy, PsiQuality);
-    PsiRho = calloc(Psi.NFermion, sizeof(double));
+    PsiRho = (double*)calloc(Psi.NFermion, sizeof(double));
     if (PsiRho == NULL)
     {
       printf("calloc failed in main for PsiRho\n Fatal Error\n");
@@ -4970,7 +4970,7 @@ int oldmainDyson(DMFTSettings HSet, TimeType * Time)
     printf("\n");
     printf("Energy                  <psi|H^2|psi>/(<psi|H|psi>^2)\n");
     printf("%22.15E  %22.15E\n", PsiEnergy, PsiQuality);
-    PsiRho = calloc(Psi.NFermion, sizeof(double));
+    PsiRho = (double*)calloc(Psi.NFermion, sizeof(double));
     if (PsiRho == NULL)
     {
       printf("calloc failed in main for PsiRho\n Fatal Error\n");
@@ -5351,7 +5351,7 @@ int oldmainNoDyson(DMFTSettings HSet, TimeType * Time)
     printf("\n");
     printf("Energy                  <psi|H^2|psi>/(<psi|H|psi>^2)\n");
     printf("%22.15E  %22.15E\n", PsiEnergy, PsiQuality);
-    PsiRho = calloc(Psi.NFermion, sizeof(double));
+    PsiRho = (double*)calloc(Psi.NFermion, sizeof(double));
     if (PsiRho == NULL)
     {
       printf("calloc failed in main for PsiRho\n Fatal Error\n");
@@ -5796,7 +5796,7 @@ int old2mainDyson(DMFTSettings HSet, TimeType * Time)
     printf("\n");
     printf("Energy                  <psi|H^2|psi>/(<psi|H|psi>^2)\n");
     printf("%22.15E  %22.15E\n", PsiEnergy, PsiQuality);
-    PsiRho = calloc(Psi.NFermion, sizeof(double));
+    PsiRho = (double*)calloc(Psi.NFermion, sizeof(double));
     if (PsiRho == NULL)
     {
       printf("calloc failed in main for PsiRho\n Fatal Error\n");
@@ -6209,7 +6209,7 @@ int oldmainDysonRho(int argc, const char *argv[])
     printf("\n");
     printf("Energy                  <psi|H^2|psi>/(<psi|H|psi>^2)\n");
     printf("%22.15E  %22.15E\n", PsiEnergy, PsiQuality);
-    PsiRho = calloc(Psi.NFermion, sizeof(double));
+    PsiRho = (double*)calloc(Psi.NFermion, sizeof(double));
     if (PsiRho == NULL)
     {
       printf("calloc failed in main for PsiRho\n Fatal Error\n");
@@ -6646,7 +6646,7 @@ int old2mainNoDyson(DMFTSettings HSet, TimeType * Time)
     printf("\n");
     printf("Energy                  <psi|H^2|psi>/(<psi|H|psi>^2)\n");
     printf("%22.15E  %22.15E\n", PsiEnergy, PsiQuality);
-    PsiRho = calloc(Psi.NFermion, sizeof(double));
+    PsiRho = (double*)calloc(Psi.NFermion, sizeof(double));
     if (PsiRho == NULL)
     {
       printf("calloc failed in main for PsiRho\n Fatal Error\n");
@@ -7004,7 +7004,7 @@ int oldmainNoDysonSecond(DMFTSettings HSet, TimeType * Time)
     printf("\n");
     printf("Energy                  <psi|H^2|psi>/(<psi|H|psi>^2)\n");
     printf("%22.15E  %22.15E\n", PsiEnergy, PsiQuality);
-    PsiRho = calloc(Psi.NFermion, sizeof(double));
+    PsiRho = (double*)calloc(Psi.NFermion, sizeof(double));
     if (PsiRho == NULL)
     {
       printf("calloc failed in main for PsiRho\n Fatal Error\n");
@@ -7451,7 +7451,7 @@ int oldmainDysonSecond(DMFTSettings HSet, TimeType * Time)
     printf("\n");
     printf("Energy                  <psi|H^2|psi>/(<psi|H|psi>^2)\n");
     printf("%22.15E  %22.15E\n", PsiEnergy, PsiQuality);
-    PsiRho = calloc(Psi.NFermion, sizeof(double));
+    PsiRho = (double*)calloc(Psi.NFermion, sizeof(double));
     if (PsiRho == NULL)
     {
       printf("calloc failed in main for PsiRho\n Fatal Error\n");
@@ -7945,7 +7945,7 @@ int oldmainWorkingOnDoubleTriDiagonalBathFormat(int argc, const char *argv[])
     printf("\n");
     printf("Energy                  <psi|H^2|psi>/(<psi|H|psi>^2)\n");
     printf("%22.15E  %22.15E\n", PsiEnergy, PsiQuality);
-    PsiRho = calloc(Psi.NFermion, sizeof(double));
+    PsiRho = (double*)calloc(Psi.NFermion, sizeof(double));
     if (PsiRho == NULL)
     {
       printf("calloc failed in main for PsiRho\n Fatal Error\n");

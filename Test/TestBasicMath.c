@@ -401,13 +401,13 @@ void TestCompactMatrixVector()
   
   x.QComplex=0;
   x.Ni=3;
-  x.VRe=malloc(x.Ni*sizeof(double));
+  x.VRe= (double*)malloc(x.Ni*sizeof(double));
   x.VRe[0]=0.1;
   x.VRe[1]=0.2;
   x.VRe[2]=0.3;
   xcom.QComplex=1;
   xcom.Ni=3;
-  xcom.V=malloc(xcom.Ni*sizeof(Complex16));
+  xcom.V= (Complex16*)malloc(xcom.Ni*sizeof(Complex16));
   xcom.V[0].Re=0.1;
   xcom.V[1].Re=0.2;
   xcom.V[2].Re=0.3;
@@ -690,7 +690,7 @@ void TestCompactMatrixVector()
   CompactVectorType vec,vecout;
   vec.QComplex=1;
   vec.Ni=3;
-  vec.V=malloc(vec.Ni*sizeof(Complex16));
+  vec.V= (Complex16*)malloc(vec.Ni*sizeof(Complex16));
   
   
   CompactMatrixEigensystem(&AM, &BM, val);

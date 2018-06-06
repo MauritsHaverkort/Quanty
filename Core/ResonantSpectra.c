@@ -115,7 +115,7 @@ uint32_t ResonantSpectra(const OperatorType OppH1, const OperatorType OppH2, con
   }
   
   /* allocate SpecTri2 */
-  *SpecTri2 = malloc((settings->NE1+1)*NT2*sizeof(TriDiagonalMatrixType));
+  *SpecTri2 = (TriDiagonalMatrixType*)malloc((settings->NE1+1)*NT2*sizeof(TriDiagonalMatrixType));
   if(*SpecTri2==NULL)
   {
     printf("malloc of SpecTri2 failed in ResonantSpectra\n");
@@ -208,7 +208,7 @@ uint32_t ResonantSpectra(const OperatorType OppH1, const OperatorType OppH2, con
     WaveFunctionFree(&GTpsi);
   }
   /* create spectra from tridiagonal matrices */
-  *Spec = malloc(NT2 * (settings->NE1+1) * sizeof(SpectraType));
+  *Spec = (SpectraType*)malloc(NT2 * (settings->NE1+1) * sizeof(SpectraType));
   for(i=0; i<NT2 * (settings->NE1+1);i++)
   {
     /* determine min and max poles */
@@ -323,16 +323,16 @@ uint32_t ResonantSpectraDense(WaveFunctionType * H1psiBasis, WaveFunctionType * 
   CompactMatrixType MT1i, *MfT2m, Hm, Hf, Funm, Funf, A, B[NT2], C, D;
   WaveFunctionType Opsi;
   double *Valm, *Valf, energy1List[Npsi], energy2List[Npsi], wRes, wLoss, Norm, energy1ListMin, energy1ListMax, energy2ListMin, energy2ListMax;
-  MfT2m= malloc(NT2 * sizeof(CompactMatrixType));
-  Valm = malloc(H1psiBasis->N*sizeof(double));
-  Valf = malloc(H2psiBasis->N*sizeof(double));
+  MfT2m= (CompactMatrixType*)malloc(NT2 * sizeof(CompactMatrixType));
+  Valm = (double*)malloc(H1psiBasis->N*sizeof(double));
+  Valf = (double*)malloc(H2psiBasis->N*sizeof(double));
   uint32_t i,j,k,l,m,n,o;
   Complex16 Lorentz;
   
   VerbosityPrintf(0x0001,"Start of ResonantSpectra using Dense Methods\n");
   
   //
-  *Spec = malloc(NT1 * Npsi * NT2 * (settings->NE1+1) * sizeof(SpectraType));
+  *Spec = (SpectraType*)malloc(NT1 * Npsi * NT2 * (settings->NE1+1) * sizeof(SpectraType));
   if(Spec==NULL)
   {
     printf("ERROR: malloc failed in ResonantSpectraDense\n");
@@ -693,7 +693,7 @@ uint32_t ResonantSpectraPartialDense(const OperatorType OppH1, const OperatorTyp
     }
   }
   // 1. calculate T1|i>
-  Tpsi=malloc(NT1*Npsi*sizeof(WaveFunctionType));
+  Tpsi= (WaveFunctionType*)malloc(NT1*Npsi*sizeof(WaveFunctionType));
   for(ipsi=0;ipsi<Npsi;ipsi++)
   {
     for(iT1=0;iT1<NT1;iT1++)
@@ -729,7 +729,7 @@ uint32_t ResonantSpectraPartialDense(const OperatorType OppH1, const OperatorTyp
     LanczosBlockTriDiagonalizeKrylovRestricted(OppH1, Tpsi, settings->restrictions1, settings->epsilon, &H1T1psi, PsiBasis, &BlockSize[1]);
   }
   // 3.  Calculate eigen-states of Krylov basis (|m>) and eigen values Em
-  H1T1psival=malloc(H1T1psi.N*H1T1psi.BlockSize*sizeof(double));
+  H1T1psival= (double*)malloc(H1T1psi.N*H1T1psi.BlockSize*sizeof(double));
   BlockTriDiagonalMatrixEigenSystemWithDeflation(&H1T1psi, H1T1psival, &H1T1psifun, BlockSize);
   // 4.  Calculate matrix <m|T1|i>
   mKTpsi.Ni=Npsi*NT1;
@@ -923,7 +923,7 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
   }
   
   /* allocate SpecTri2 */
-  *SpecTri2 = malloc((settings->NE1+1)*NT2*sizeof(TriDiagonalMatrixType));
+  *SpecTri2 = (TriDiagonalMatrixType*)malloc((settings->NE1+1)*NT2*sizeof(TriDiagonalMatrixType));
   if(*SpecTri2==NULL)
   {
     printf("malloc of SpecTri2 failed in ResonantSpectra\n");
@@ -1016,7 +1016,7 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
     WaveFunctionFree(&GTpsi);
   }
   /* create spectra from tridiagonal matrices */
-  *Spec = malloc(NT2 * (settings->NE1+1) * sizeof(SpectraType));
+  *Spec = (SpectraType*)malloc(NT2 * (settings->NE1+1) * sizeof(SpectraType));
   for(i=0; i<NT2 * (settings->NE1+1);i++)
   {
     /* determine min and max poles */

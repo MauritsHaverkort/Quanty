@@ -227,12 +227,12 @@ static int LuaResponseFunctionEigensystem(lua_State *L)
     {
       if(M->Block==True)
       {
-        val = malloc(((BlockListOfPoles*)M->data)->N*((BlockListOfPoles*)M->data)->BlockSize*sizeof(double));
+        val = (double*)malloc(((BlockListOfPoles*)M->data)->N*((BlockListOfPoles*)M->data)->BlockSize*sizeof(double));
         BlockListOfPolesEigenSystem((BlockListOfPoles*)M->data, val, &fun);
       }
       else
       {
-        val = malloc(((ListOfPoles*)M->data)->N*sizeof(double));
+        val = (double*)malloc(((ListOfPoles*)M->data)->N*sizeof(double));
         ListOfPolesToEigensystemCompact((ListOfPoles*)(M->data), val, &fun);
       }
       break;
@@ -242,12 +242,12 @@ static int LuaResponseFunctionEigensystem(lua_State *L)
     {
       if(M->Block==True)
       {
-        val = malloc(((BlockAndersonMatrixType*)M->data)->N*((BlockAndersonMatrixType*)M->data)->BlockSize*sizeof(double));
+        val = (double*)malloc(((BlockAndersonMatrixType*)M->data)->N*((BlockAndersonMatrixType*)M->data)->BlockSize*sizeof(double));
         BlockAndersonMatrixEigenSystem((BlockAndersonMatrixType*)M->data, val, &fun);
       }
       else
       {
-        val = malloc(((AndersonMatrixType*)M->data)->N*sizeof(double));
+        val = (double*)malloc(((AndersonMatrixType*)M->data)->N*sizeof(double));
         AndersonMatrixToEigenSystemCompact((AndersonMatrixType*)M->data, val, &fun);
       }
       break;
@@ -257,12 +257,12 @@ static int LuaResponseFunctionEigensystem(lua_State *L)
     {
       if(M->Block==True)
       {
-        val = malloc(((BlockTriDiagonalMatrixType*)M->data)->N*((BlockTriDiagonalMatrixType*)M->data)->BlockSize*sizeof(double));
+        val = (double*)malloc(((BlockTriDiagonalMatrixType*)M->data)->N*((BlockTriDiagonalMatrixType*)M->data)->BlockSize*sizeof(double));
         BlockTriDiagonalMatrixEigenSystem((BlockTriDiagonalMatrixType*)M->data, val, &fun);
       }
       else
       {
-        val = malloc(((TriDiagonalMatrixType*)M->data)->N*sizeof(double));
+        val = (double*)malloc(((TriDiagonalMatrixType*)M->data)->N*sizeof(double));
         TriDiagonalMatrixToEigensystemCompact((TriDiagonalMatrixType*)M->data, val, &fun);
       }
       break;
@@ -272,12 +272,12 @@ static int LuaResponseFunctionEigensystem(lua_State *L)
     {
       if(M->Block==True)
       {
-        val = malloc((((BlockNaturalImpurityOrbitalMatrixType*)M->data)->val.N+ ((BlockNaturalImpurityOrbitalMatrixType*)M->data)->con.N )*((BlockNaturalImpurityOrbitalMatrixType*)M->data)->BlockSize*sizeof(double));
+        val = (double*)malloc((((BlockNaturalImpurityOrbitalMatrixType*)M->data)->val.N+ ((BlockNaturalImpurityOrbitalMatrixType*)M->data)->con.N )*((BlockNaturalImpurityOrbitalMatrixType*)M->data)->BlockSize*sizeof(double));
         BlockNaturalImpurityOrbitalMatrixEigenSystem((BlockNaturalImpurityOrbitalMatrixType*)M->data, val, &fun);
       }
       else
       {
-        val = malloc((((BADoubleTriDiagonalMatrixType*)M->data)->val.N+((BADoubleTriDiagonalMatrixType*)M->data)->con.N+1)*sizeof(double));
+        val = (double*)malloc((((BADoubleTriDiagonalMatrixType*)M->data)->val.N+((BADoubleTriDiagonalMatrixType*)M->data)->con.N+1)*sizeof(double));
         BADoubleTriDiagonalMatrixTypeToEigenSystemCompact((BADoubleTriDiagonalMatrixType*)M->data, val, &fun);
       }
       break;
@@ -309,7 +309,7 @@ static int LuaResponseFunctionUnm(lua_State * L)
   luaL_setmetatable(L, "ResponseFunction_Type");
   res->NSuggestedGridPoints = 0;
   res->type = 'L';
-  res->data = malloc(sizeof(BlockListOfPoles));
+  res->data = (BlockListOfPoles*)malloc(sizeof(BlockListOfPoles));
   CopyBlockListOfPoles(*(BlockListOfPoles*)(M->data),res->data);
   ScaleBlockListOfPoles(res->data, -1);
   LuaPush_ResponseFunction(L, res);
@@ -335,7 +335,7 @@ static int LuaResponseFunctionAdd(lua_State * L)
   luaL_setmetatable(L, "ResponseFunction_Type");
   res->NSuggestedGridPoints = 0;
   res->type = 'L';
-  res->data = malloc(sizeof(BlockListOfPoles));
+  res->data = (BlockListOfPoles*)malloc(sizeof(BlockListOfPoles));
   CopyBlockListOfPoles(*(BlockListOfPoles*)(Ma->data),res->data);
   LuaPush_ResponseFunction(L, res);
 
@@ -363,7 +363,7 @@ static int LuaResponseFunctionSub(lua_State * L)
   luaL_setmetatable(L, "ResponseFunction_Type");
   res->NSuggestedGridPoints = 0;
   res->type = 'L';
-  res->data = malloc(sizeof(BlockListOfPoles));
+  res->data = (BlockListOfPoles*)malloc(sizeof(BlockListOfPoles));
   CopyBlockListOfPoles(*(BlockListOfPoles*)(Ma->data),res->data);
   LuaPush_ResponseFunction(L, res);
 

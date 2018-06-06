@@ -115,7 +115,7 @@ ResponsefunctionType *ConvertBlockMatrix(ResponsefunctionType *M, const char typ
 {
   ResponsefunctionType *res;
   if(M->Block!=True) printf("ERROR: called ConvertBlockMatrix on a ResponsefunctionType that is not in Block Form.\n");
-  res = malloc(sizeof(ResponsefunctionType));
+  res = (ResponsefunctionType*)malloc(sizeof(ResponsefunctionType));
   res->NSuggestedGridPoints = 0;
   res->type = type;
   res->Block = True;
@@ -126,7 +126,7 @@ ResponsefunctionType *ConvertBlockMatrix(ResponsefunctionType *M, const char typ
   }
   else
   {
-    res->SuggestedGrid=malloc(res->NSuggestedGridPoints*sizeof(double));
+    res->SuggestedGrid= (double*)malloc(res->NSuggestedGridPoints*sizeof(double));
     memcpy(res->SuggestedGrid, M->SuggestedGrid, res->NSuggestedGridPoints*sizeof(double));
   }
   switch (M->type|32)      // original type

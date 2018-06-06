@@ -608,7 +608,7 @@ uint32_t CreatetJModelStartWaveFunction(tJModelSettings Set, WaveFunctionType * 
   f.NBoson = 0;
   f.NBitsKey = Set.NBitsKey;
   WaveFunctionInit(&f);
-  Determinant = calloc(f.NWord, sizeof(uint8_t));
+  Determinant = (uint8_t*)calloc(f.NWord, sizeof(uint8_t));
   WaveFunctionAddElement(&f, Determinant, 1.0);
   OperatorPsi(O, f, Psi);
   WaveFunctionRandomize(Psi);
@@ -667,7 +667,7 @@ uint32_t CreatetJModelStartWaveFunctionFM(tJModelSettings Set, WaveFunctionType 
   f.NBoson = 0;
   f.NBitsKey = Set.NBitsKey;
   WaveFunctionInit(&f);
-  Determinant = calloc(f.NWord, sizeof(uint8_t));
+  Determinant = (uint8_t*)calloc(f.NWord, sizeof(uint8_t));
   WaveFunctionAddElement(&f, Determinant, 1);
   OperatorPsi(O, f, Psi);
   WaveFunctionRandomize(Psi);
@@ -721,8 +721,8 @@ int main(int argc, const char *argv[])
   BeginTiming("Create Transition Matrix", &Time);
   s.N = Set.NTriDiag;
   InitTriDiagonalMatrix(&s);
-  T = malloc(Set.Cluster.NCell * sizeof(OperatorType));
-  Spec = malloc(Set.Cluster.NCell * sizeof(SpectraType));
+  T = (OperatorType*)malloc(Set.Cluster.NCell * sizeof(OperatorType));
+  Spec = (SpectraType*)malloc(Set.Cluster.NCell * sizeof(SpectraType));
   Spec[0].N = Set.NE;
   Spec[0].Emin = Set.Emin;
   Spec[0].Emax = Set.Emax;
@@ -753,9 +753,9 @@ int main(int argc, const char *argv[])
   {
     PrintOperatorReadable(T[i]);
   }
-  PsiList = malloc(Set.NPsi * sizeof(WaveFunctionType));
-  EnergyList = malloc(Set.NPsi * sizeof(double));
-  WaveFunctionQuality = malloc(Set.NPsi * sizeof(double));
+  PsiList = (WaveFunctionType*)malloc(Set.NPsi * sizeof(WaveFunctionType));
+  EnergyList = (double*)malloc(Set.NPsi * sizeof(double));
+  WaveFunctionQuality = (double*)malloc(Set.NPsi * sizeof(double));
   for (jpsi = 0; jpsi < Set.NPsi; jpsi++)
   {
     if (Set.J > 0)

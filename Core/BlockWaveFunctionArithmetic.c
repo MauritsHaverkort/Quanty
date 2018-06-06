@@ -37,7 +37,7 @@ uint32_t MakeComplexBlockWaveFunctionFromReal(WaveFunctionType *psi, const uint3
   uint32_t i,j,k;
   for(i=0;i<Npsi;i++)
   {
-    psi[i].ValueIm = malloc(psi[0].NBlok*sizeof(double*));
+    psi[i].ValueIm = (double**)malloc(psi[0].NBlok*sizeof(double*));
     if(psi[i].ValueIm==NULL)
     {
       for(j=0;j<i;j++)
@@ -52,7 +52,7 @@ uint32_t MakeComplexBlockWaveFunctionFromReal(WaveFunctionType *psi, const uint3
   {
     for(j=0;j<psi[0].NBlok;j++)
     {
-      psi[i].ValueIm[j] = calloc(BlokSize,sizeof(double));
+      psi[i].ValueIm[j] = (double*)calloc(BlokSize,sizeof(double));
       if(psi[i].ValueIm[j]==NULL)
       {
         for(k=0;k<j;k++)
@@ -100,7 +100,7 @@ uint32_t RealBlockWaveFunctionAddElement(WaveFunctionType * const psi, const uin
     /* test if one has to add a new block to psi in order to store the new element of psi */
     if (psi[0].N >= BlokSize * psi[0].NBlok)
     {                           /* add a new block to psi */
-      temp = realloc(psi[0].Next, (psi[0].NBlok+1) * sizeof(uint32_t *));
+      temp = (uint32_t **)realloc(psi[0].Next, (psi[0].NBlok+1) * sizeof(uint32_t *));
       if(temp==NULL)
       {                         /* Allocation failed */
         printf("alloc failed RealBlockWaveFunctionAddElement Next\n");
@@ -110,7 +110,7 @@ uint32_t RealBlockWaveFunctionAddElement(WaveFunctionType * const psi, const uin
         return 1;
       }
       for(j=0;j<Npsi;j++) psi[j].Next = temp;
-      temp = realloc(psi[0].Determinant, (psi[0].NBlok+1) * sizeof(uint32_t *));
+      temp = (uint32_t **)realloc(psi[0].Determinant, (psi[0].NBlok+1) * sizeof(uint32_t *));
       if(temp==NULL)
       {                         /* Allocation failed */
         printf("alloc failed RealBlockWaveFunctionAddElement Determinant\n");
@@ -122,7 +122,7 @@ uint32_t RealBlockWaveFunctionAddElement(WaveFunctionType * const psi, const uin
       for(j=0;j<Npsi;j++) psi[j].Determinant = temp;
       for(j=0;j<Npsi;j++)
       {
-        temp = realloc(psi[j].ValueRe, (psi[j].NBlok+1) * sizeof(double *));
+        temp = (double **)realloc(psi[j].ValueRe, (psi[j].NBlok+1) * sizeof(double *));
         if (temp == NULL)
         {                         /* Allocation failed */
           printf("alloc failed RealBlockWaveFunctionAddElement ValueRe %i\n",j);
@@ -133,7 +133,7 @@ uint32_t RealBlockWaveFunctionAddElement(WaveFunctionType * const psi, const uin
         }
         psi[j].ValueRe = temp;
       }
-      psi[0].Next[psi[0].NBlok] = malloc(BlokSize * sizeof(uint32_t));
+      psi[0].Next[psi[0].NBlok] = (uint32_t*)malloc(BlokSize * sizeof(uint32_t));
       if (psi[0].Next[psi[0].NBlok] == NULL)
       {                         /* Allocation failed */
         printf("alloc failed RealBlockWaveFunctionAddElement Next[-1]\n");
@@ -142,7 +142,7 @@ uint32_t RealBlockWaveFunctionAddElement(WaveFunctionType * const psi, const uin
         for(j=0;j<Npsi;j++) psi[j].N--;
         return (1);
       }
-      psi[0].Determinant[psi[0].NBlok] = malloc(BlokSize * psi[0].NWord * sizeof(uint8_t));
+      psi[0].Determinant[psi[0].NBlok] = (uint8_t*)malloc(BlokSize * psi[0].NWord * sizeof(uint8_t));
       if (psi[0].Determinant[psi[0].NBlok] == NULL)
       {                         /* Allocation failed */
         printf("alloc failed RealBlockWaveFunctionAddElement Determinant[-1]\n");
@@ -154,7 +154,7 @@ uint32_t RealBlockWaveFunctionAddElement(WaveFunctionType * const psi, const uin
       }
       for(j=0;j<Npsi;j++)
       {
-        psi[j].ValueRe[psi[0].NBlok] = malloc(BlokSize * sizeof(double));
+        psi[j].ValueRe[psi[0].NBlok] = (double*)malloc(BlokSize * sizeof(double));
         if(psi[j].ValueRe[psi[0].NBlok]==NULL)
         {
           printf("alloc failed RealBlockWaveFunctionAddElement ValueRe[%i]\n",j);
@@ -207,7 +207,7 @@ uint32_t RealBlockWaveFunctionAddElement(WaveFunctionType * const psi, const uin
           /* test if one has to add a new block to psi in order to store the new element of psi */
           if (psi[0].N >= BlokSize * psi[0].NBlok)
           {                           /* add a new block to psi */
-            temp = realloc(psi[0].Next, (psi[0].NBlok+1) * sizeof(uint32_t *));
+            temp = (uint32_t **)realloc(psi[0].Next, (psi[0].NBlok+1) * sizeof(uint32_t *));
             if(temp==NULL)
             {                         /* Allocation failed */
               printf("alloc failed RealBlockWaveFunctionAddElement Next\n");
@@ -217,7 +217,7 @@ uint32_t RealBlockWaveFunctionAddElement(WaveFunctionType * const psi, const uin
               return 1;
             }
             for(j=0;j<Npsi;j++) psi[j].Next = temp;
-            temp = realloc(psi[0].Determinant, (psi[0].NBlok+1) * sizeof(uint32_t *));
+            temp = (uint32_t **)realloc(psi[0].Determinant, (psi[0].NBlok+1) * sizeof(uint32_t *));
             if(temp==NULL)
             {                         /* Allocation failed */
               printf("alloc failed RealBlockWaveFunctionAddElement Determinant\n");
@@ -229,7 +229,7 @@ uint32_t RealBlockWaveFunctionAddElement(WaveFunctionType * const psi, const uin
             for(j=0;j<Npsi;j++) psi[j].Determinant = temp;
             for(j=0;j<Npsi;j++)
             {
-              temp = realloc(psi[j].ValueRe, (psi[j].NBlok+1) * sizeof(double *));
+              temp = (double **)realloc(psi[j].ValueRe, (psi[j].NBlok+1) * sizeof(double *));
               if (temp == NULL)
               {                         /* Allocation failed */
                 printf("alloc failed RealBlockWaveFunctionAddElement ValueRe %i\n",j);
@@ -240,7 +240,7 @@ uint32_t RealBlockWaveFunctionAddElement(WaveFunctionType * const psi, const uin
               }
               psi[j].ValueRe = temp;
             }
-            psi[0].Next[psi[0].NBlok] = malloc(BlokSize * sizeof(uint32_t));
+            psi[0].Next[psi[0].NBlok] = (uint32_t*)malloc(BlokSize * sizeof(uint32_t));
             if (psi[0].Next[psi[0].NBlok] == NULL)
             {                         /* Allocation failed */
               printf("alloc failed RealBlockWaveFunctionAddElement Next[-1]\n");
@@ -249,7 +249,7 @@ uint32_t RealBlockWaveFunctionAddElement(WaveFunctionType * const psi, const uin
               for(j=0;j<Npsi;j++) psi[j].N--;
               return (1);
             }
-            psi[0].Determinant[psi[0].NBlok] = malloc(BlokSize * psi[0].NWord * sizeof(uint8_t));
+            psi[0].Determinant[psi[0].NBlok] = (uint8_t*)malloc(BlokSize * psi[0].NWord * sizeof(uint8_t));
             if (psi[0].Determinant[psi[0].NBlok] == NULL)
             {                         /* Allocation failed */
               printf("alloc failed RealBlockWaveFunctionAddElement Determinant[-1]\n");
@@ -261,7 +261,7 @@ uint32_t RealBlockWaveFunctionAddElement(WaveFunctionType * const psi, const uin
             }
             for(j=0;j<Npsi;j++)
             {
-              psi[j].ValueRe[psi[0].NBlok] = malloc(BlokSize * sizeof(double));
+              psi[j].ValueRe[psi[0].NBlok] = (double*)malloc(BlokSize * sizeof(double));
               if(psi[j].ValueRe[psi[0].NBlok]==NULL)
               {
                 printf("alloc failed RealBlockWaveFunctionAddElement ValueRe[%i]\n",j);
@@ -307,7 +307,7 @@ uint32_t ComplexBlockWaveFunctionAddElement(WaveFunctionType * const psi, const 
     /* test if one has to add a new block to psi in order to store the new element of psi */
     if (psi[0].N >= BlokSize * psi[0].NBlok)
     {                           /* add a new block to psi */
-      temp = realloc(psi[0].Next, (psi[0].NBlok+1) * sizeof(uint32_t *));
+      temp = (uint32_t **)realloc(psi[0].Next, (psi[0].NBlok+1) * sizeof(uint32_t *));
       if(temp==NULL)
       {                         /* Allocation failed */
         printf("alloc failed ComplexBlockWaveFunctionAddElement Next\n");
@@ -317,7 +317,7 @@ uint32_t ComplexBlockWaveFunctionAddElement(WaveFunctionType * const psi, const 
         return 1;
       }
       for(j=0;j<Npsi;j++) psi[j].Next = temp;
-      temp = realloc(psi[0].Determinant, (psi[0].NBlok+1) * sizeof(uint32_t *));
+      temp = (uint32_t **)realloc(psi[0].Determinant, (psi[0].NBlok+1) * sizeof(uint32_t *));
       if(temp==NULL)
       {                         /* Allocation failed */
         printf("alloc failed ComplexBlockWaveFunctionAddElement Determinant\n");
@@ -329,7 +329,7 @@ uint32_t ComplexBlockWaveFunctionAddElement(WaveFunctionType * const psi, const 
       for(j=0;j<Npsi;j++) psi[j].Determinant = temp;
       for(j=0;j<Npsi;j++)
       {
-        temp = realloc(psi[j].ValueRe, (psi[j].NBlok+1) * sizeof(double *));
+        temp = (double **)realloc(psi[j].ValueRe, (psi[j].NBlok+1) * sizeof(double *));
         if (temp == NULL)
         {                         /* Allocation failed */
           printf("alloc failed ComplexBlockWaveFunctionAddElement ValueRe %i\n",j);
@@ -342,7 +342,7 @@ uint32_t ComplexBlockWaveFunctionAddElement(WaveFunctionType * const psi, const 
       }
       for(j=0;j<Npsi;j++)
       {
-        temp = realloc(psi[j].ValueIm, (psi[j].NBlok+1) * sizeof(double *));
+        temp = (double **)realloc(psi[j].ValueIm, (psi[j].NBlok+1) * sizeof(double *));
         if (temp == NULL)
         {                         /* Allocation failed */
           printf("alloc failed ComplexBlockWaveFunctionAddElement ValueIm %i\n",j);
@@ -353,7 +353,7 @@ uint32_t ComplexBlockWaveFunctionAddElement(WaveFunctionType * const psi, const 
         }
         psi[j].ValueIm = temp;
       }
-      psi[0].Next[psi[0].NBlok] = malloc(BlokSize * sizeof(uint32_t));
+      psi[0].Next[psi[0].NBlok] = (uint32_t*)malloc(BlokSize * sizeof(uint32_t));
       if (psi[0].Next[psi[0].NBlok] == NULL)
       {                         /* Allocation failed */
         printf("alloc failed ComplexBlockWaveFunctionAddElement Next[-1]\n");
@@ -362,7 +362,7 @@ uint32_t ComplexBlockWaveFunctionAddElement(WaveFunctionType * const psi, const 
         for(j=0;j<Npsi;j++) psi[j].N--;
         return (1);
       }
-      psi[0].Determinant[psi[0].NBlok] = malloc(BlokSize * psi[0].NWord * sizeof(uint8_t));
+      psi[0].Determinant[psi[0].NBlok] = (uint8_t*)malloc(BlokSize * psi[0].NWord * sizeof(uint8_t));
       if (psi[0].Determinant[psi[0].NBlok] == NULL)
       {                         /* Allocation failed */
         printf("alloc failed ComplexBlockWaveFunctionAddElement Determinant[-1]\n");
@@ -374,7 +374,7 @@ uint32_t ComplexBlockWaveFunctionAddElement(WaveFunctionType * const psi, const 
       }
       for(j=0;j<Npsi;j++)
       {
-        psi[j].ValueRe[psi[0].NBlok] = malloc(BlokSize * sizeof(double));
+        psi[j].ValueRe[psi[0].NBlok] = (double*)malloc(BlokSize * sizeof(double));
         if(psi[j].ValueRe[psi[0].NBlok]==NULL)
         {
           printf("alloc failed ComplexBlockWaveFunctionAddElement ValueRe[%i]\n",j);
@@ -389,7 +389,7 @@ uint32_t ComplexBlockWaveFunctionAddElement(WaveFunctionType * const psi, const 
       }
       for(j=0;j<Npsi;j++)
       {
-        psi[j].ValueIm[psi[0].NBlok] = malloc(BlokSize * sizeof(double));
+        psi[j].ValueIm[psi[0].NBlok] = (double*)malloc(BlokSize * sizeof(double));
         if(psi[j].ValueIm[psi[0].NBlok]==NULL)
         {
           printf("alloc failed ComplexBlockWaveFunctionAddElement ValueRe[%i]\n",j);
@@ -445,7 +445,7 @@ uint32_t ComplexBlockWaveFunctionAddElement(WaveFunctionType * const psi, const 
           /* test if one has to add a new block to psi in order to store the new element of psi */
           if (psi[0].N >= BlokSize * psi[0].NBlok)
           {                           /* add a new block to psi */
-            temp = realloc(psi[0].Next, (psi[0].NBlok+1) * sizeof(uint32_t *));
+            temp = (uint32_t **)realloc(psi[0].Next, (psi[0].NBlok+1) * sizeof(uint32_t *));
             if(temp==NULL)
             {                         /* Allocation failed */
               printf("alloc failed ComplexBlockWaveFunctionAddElement Next\n");
@@ -455,7 +455,7 @@ uint32_t ComplexBlockWaveFunctionAddElement(WaveFunctionType * const psi, const 
               return 1;
             }
             for(j=0;j<Npsi;j++) psi[j].Next = temp;
-            temp = realloc(psi[0].Determinant, (psi[0].NBlok+1) * sizeof(uint32_t *));
+            temp = (uint32_t **)realloc(psi[0].Determinant, (psi[0].NBlok+1) * sizeof(uint32_t *));
             if(temp==NULL)
             {                         /* Allocation failed */
               printf("alloc failed ComplexBlockWaveFunctionAddElement Determinant\n");
@@ -467,7 +467,7 @@ uint32_t ComplexBlockWaveFunctionAddElement(WaveFunctionType * const psi, const 
             for(j=0;j<Npsi;j++) psi[j].Determinant = temp;
             for(j=0;j<Npsi;j++)
             {
-              temp = realloc(psi[j].ValueRe, (psi[j].NBlok+1) * sizeof(double *));
+              temp = (double **)realloc(psi[j].ValueRe, (psi[j].NBlok+1) * sizeof(double *));
               if (temp == NULL)
               {                         /* Allocation failed */
                 printf("alloc failed ComplexBlockWaveFunctionAddElement ValueRe %i\n",j);
@@ -480,7 +480,7 @@ uint32_t ComplexBlockWaveFunctionAddElement(WaveFunctionType * const psi, const 
             }
             for(j=0;j<Npsi;j++)
             {
-              temp = realloc(psi[j].ValueIm, (psi[j].NBlok+1) * sizeof(double *));
+              temp = (double **)realloc(psi[j].ValueIm, (psi[j].NBlok+1) * sizeof(double *));
               if (temp == NULL)
               {                         /* Allocation failed */
                 printf("alloc failed ComplexBlockWaveFunctionAddElement ValueRe %i\n",j);
@@ -491,7 +491,7 @@ uint32_t ComplexBlockWaveFunctionAddElement(WaveFunctionType * const psi, const 
               }
               psi[j].ValueIm = temp;
             }
-            psi[0].Next[psi[0].NBlok] = malloc(BlokSize * sizeof(uint32_t));
+            psi[0].Next[psi[0].NBlok] = (uint32_t*)malloc(BlokSize * sizeof(uint32_t));
             if (psi[0].Next[psi[0].NBlok] == NULL)
             {                         /* Allocation failed */
               printf("alloc failed ComplexBlockWaveFunctionAddElement Next[-1]\n");
@@ -500,7 +500,7 @@ uint32_t ComplexBlockWaveFunctionAddElement(WaveFunctionType * const psi, const 
               for(j=0;j<Npsi;j++) psi[j].N--;
               return (1);
             }
-            psi[0].Determinant[psi[0].NBlok] = malloc(BlokSize * psi[0].NWord * sizeof(uint8_t));
+            psi[0].Determinant[psi[0].NBlok] = (uint8_t*)malloc(BlokSize * psi[0].NWord * sizeof(uint8_t));
             if (psi[0].Determinant[psi[0].NBlok] == NULL)
             {                         /* Allocation failed */
               printf("alloc failed ComplexBlockWaveFunctionAddElement Determinant[-1]\n");
@@ -512,7 +512,7 @@ uint32_t ComplexBlockWaveFunctionAddElement(WaveFunctionType * const psi, const 
             }
             for(j=0;j<Npsi;j++)
             {
-              psi[j].ValueRe[psi[0].NBlok] = malloc(BlokSize * sizeof(double));
+              psi[j].ValueRe[psi[0].NBlok] = (double*)malloc(BlokSize * sizeof(double));
               if(psi[j].ValueRe[psi[0].NBlok]==NULL)
               {
                 printf("alloc failed ComplexBlockWaveFunctionAddElement ValueRe[%i]\n",j);
@@ -527,7 +527,7 @@ uint32_t ComplexBlockWaveFunctionAddElement(WaveFunctionType * const psi, const 
             }
             for(j=0;j<Npsi;j++)
             {
-              psi[j].ValueIm[psi[0].NBlok] = malloc(BlokSize * sizeof(double));
+              psi[j].ValueIm[psi[0].NBlok] = (double*)malloc(BlokSize * sizeof(double));
               if(psi[j].ValueIm[psi[0].NBlok]==NULL)
               {
                 printf("alloc failed ComplexBlockWaveFunctionAddElement ValueRe[%i]\n",j);
@@ -1039,10 +1039,10 @@ void RealBlockWaveFunctionRestrict(WaveFunctionType * const a, const uint32_t Np
   for(i=0;i<Npsi;i++)
   {
     a[i].NBlok = 1 + (a[0].N >> NBitsBlok);
-    a[i].ValueRe = realloc(a[i].ValueRe, a[0].NBlok * sizeof(double *));
+    a[i].ValueRe = (double **)realloc(a[i].ValueRe, a[0].NBlok * sizeof(double *));
   }
-  a[0].Next = realloc(a[0].Next, a[0].NBlok * sizeof(uint32_t *));
-  a[0].Determinant = realloc(a[0].Determinant, a[0].NBlok * sizeof(uint8_t *));
+  a[0].Next = (uint32_t **)realloc(a[0].Next, a[0].NBlok * sizeof(uint32_t *));
+  a[0].Determinant = (uint8_t **)realloc(a[0].Determinant, a[0].NBlok * sizeof(uint8_t *));
 }
 void ComplexBlockWaveFunctionRestrict(WaveFunctionType * const a, const uint32_t Npsi, const DeterminantRestrictionType res)
 {
@@ -1104,10 +1104,10 @@ void ComplexBlockWaveFunctionRestrict(WaveFunctionType * const a, const uint32_t
   for(i=0;i<Npsi;i++)
   {
     a[i].NBlok = 1 + (a[0].N >> NBitsBlok);
-    a[i].ValueRe = realloc(a[i].ValueRe, a[0].NBlok * sizeof(double *));
+    a[i].ValueRe = (double **)realloc(a[i].ValueRe, a[0].NBlok * sizeof(double *));
   }
-  a[0].Next = realloc(a[0].Next, a[0].NBlok * sizeof(uint32_t *));
-  a[0].Determinant = realloc(a[0].Determinant, a[0].NBlok * sizeof(uint8_t *));
+  a[0].Next = (uint32_t **)realloc(a[0].Next, a[0].NBlok * sizeof(uint32_t *));
+  a[0].Determinant = (uint8_t **)realloc(a[0].Determinant, a[0].NBlok * sizeof(uint8_t *));
 }
 void BlockWaveFunctionRestrict(WaveFunctionType * const a, const uint32_t Npsi, const DeterminantRestrictionType res)
 {
@@ -2033,11 +2033,11 @@ void RealBlockWaveFunctionTruncateBasis(WaveFunctionType *const psi, uint32_t co
     }
   }
   psi[0].NBlok = 1 + (psi[0].N >> NBitsBlok);
-  psi[0].Next = realloc(psi[0].Next, psi[0].NBlok * sizeof(uint32_t *));
-  psi[0].Determinant = realloc(psi[0].Determinant, psi[0].NBlok * sizeof(uint8_t *));
+  psi[0].Next = (uint32_t **)realloc(psi[0].Next, psi[0].NBlok * sizeof(uint32_t *));
+  psi[0].Determinant = (uint8_t **)realloc(psi[0].Determinant, psi[0].NBlok * sizeof(uint8_t *));
   for(ipsi=0;ipsi<Npsi;ipsi++)
   {
-    psi[ipsi].ValueRe = realloc(psi[ipsi].ValueRe, psi[0].NBlok * sizeof(double *));
+    psi[ipsi].ValueRe = (double **)realloc(psi[ipsi].ValueRe, psi[0].NBlok * sizeof(double *));
   }
   for(ipsi=1;ipsi<Npsi;ipsi++)
   {
@@ -2130,12 +2130,12 @@ void ComplexBlockWaveFunctionTruncateBasis(WaveFunctionType *const psi, uint32_t
     }
   }
   psi[0].NBlok = 1 + (psi[0].N >> NBitsBlok);
-  psi[0].Next = realloc(psi[0].Next, psi[0].NBlok * sizeof(uint32_t *));
-  psi[0].Determinant = realloc(psi[0].Determinant, psi[0].NBlok * sizeof(uint8_t *));
+  psi[0].Next = (uint32_t **)realloc(psi[0].Next, psi[0].NBlok * sizeof(uint32_t *));
+  psi[0].Determinant = (uint8_t **)realloc(psi[0].Determinant, psi[0].NBlok * sizeof(uint8_t *));
   for(ipsi=0;ipsi<Npsi;ipsi++)
   {
-    psi[ipsi].ValueRe = realloc(psi[ipsi].ValueRe, psi[0].NBlok * sizeof(double *));
-    psi[ipsi].ValueIm = realloc(psi[ipsi].ValueIm, psi[0].NBlok * sizeof(double *));
+    psi[ipsi].ValueRe = (double **)realloc(psi[ipsi].ValueRe, psi[0].NBlok * sizeof(double *));
+    psi[ipsi].ValueIm = (double **)realloc(psi[ipsi].ValueIm, psi[0].NBlok * sizeof(double *));
   }
   for(ipsi=1;ipsi<Npsi;ipsi++)
   {
@@ -2164,7 +2164,7 @@ uint32_t RealBlockWaveFunctionResetKeylist(WaveFunctionType * const a, const uin
   const uint32_t startN=a[0].N;
   double aval[Npsi];
   // wipeout old keylist and replace it by a new one
-  if((tempKeyList=calloc((1<<NBitsKey), sizeof(uint32_t)))==NULL)
+  if((tempKeyList= (uint32_t*)calloc((1<<NBitsKey), sizeof(uint32_t)))==NULL)
   {
     printf("realloc failed in RealWaveFunctionResetKeylist\n");
     return 1;
@@ -2212,7 +2212,7 @@ uint32_t ComplexBlockWaveFunctionResetKeylist(WaveFunctionType * const a, const 
   const uint32_t startN=a[0].N;
   double avalRe[Npsi],avalIm[Npsi];
   // wipeout old keylist and replace it by a new one
-  if((tempKeyList=calloc((1<<NBitsKey), sizeof(uint32_t)))==NULL)
+  if((tempKeyList= (uint32_t*)calloc((1<<NBitsKey), sizeof(uint32_t)))==NULL)
   {
     printf("realloc failed in RealWaveFunctionResetKeylist\n");
     return 1;

@@ -1611,7 +1611,7 @@ int ImpurityModel3d(uint32_t Z, uint32_t dCount)
   epsilon = 1.0e-4; zero = 1.0e-4;
 
   NBitsKey=16;
-  CreateString=calloc(6+10+10*NBathv, sizeof(uint16_t));
+  CreateString= (uint16_t*)calloc(6+10+10*NBathv, sizeof(uint16_t));
   
   /*2p electrons*/
   for (i=0; i<6; i++)
@@ -1700,8 +1700,8 @@ int ImpurityModel3d(uint32_t Z, uint32_t dCount)
   //star, easier so try first
   if(star)
   {
-    OppNv=malloc(NBathv*sizeof(OperatorType));
-    OppHybv=malloc(NBathv*sizeof(OperatorType));
+    OppNv= (OperatorType*)malloc(NBathv*sizeof(OperatorType));
+    OppHybv= (OperatorType*)malloc(NBathv*sizeof(OperatorType));
 
     for(j=0;j<NBathv;j++)
     {

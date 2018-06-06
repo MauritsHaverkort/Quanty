@@ -61,12 +61,12 @@ void CeImpurity()
   
   /* allocate space for restrictions */
   Restrictions.N=1;
-  Restrictions.Min=malloc(Restrictions.N*sizeof(uint32_t));
-  Restrictions.Max=malloc(Restrictions.N*sizeof(uint32_t));
-  Restrictions.Determinant=malloc(Restrictions.N*sizeof(uint8_t*));
+  Restrictions.Min= (uint32_t*)malloc(Restrictions.N*sizeof(uint32_t));
+  Restrictions.Max= (uint32_t*)malloc(Restrictions.N*sizeof(uint32_t));
+  Restrictions.Determinant= (uint8_t**)malloc(Restrictions.N*sizeof(uint8_t*));
   for(i=0;i<Restrictions.N;i++)
   {
-    Restrictions.Determinant[i]=malloc(16*sizeof(uint8_t)); /* we have 38+? fermions in the basis, Determinants are coded per byte i.e. blocks of 8 fermions. 8*16=128 and can store the fermions (note that after transformation the number of sites is less than Nbath) */
+    Restrictions.Determinant[i]= (uint8_t*)malloc(16*sizeof(uint8_t)); /* we have 38+? fermions in the basis, Determinants are coded per byte i.e. blocks of 8 fermions. 8*16=128 and can store the fermions (note that after transformation the number of sites is less than Nbath) */
   }
   
   
@@ -152,7 +152,7 @@ void CeImpurity()
   
   NFermion=10+14+14+14*(NBathv+NBathc);
   
-  CreateString=calloc(10+14+14*NBathv, sizeof(uint16_t));
+  CreateString= (uint16_t*)calloc(10+14+14*NBathv, sizeof(uint16_t));
   for(i=0;i<10;i++)
   {
     CreateString[i]=(uint16_t)i;
@@ -164,21 +164,21 @@ void CeImpurity()
   
   if(NBathc!=0)
   {
-    OppHybc=malloc(NBathc*sizeof(OperatorType));
-    OppHybc52=malloc(NBathc*sizeof(OperatorType));
-    OppHybc72=malloc(NBathc*sizeof(OperatorType));
-    OppNc=malloc(NBathc*sizeof(OperatorType));
-    OppNc52=malloc(NBathc*sizeof(OperatorType));
-    OppNc72=malloc(NBathc*sizeof(OperatorType));
+    OppHybc= (OperatorType*)malloc(NBathc*sizeof(OperatorType));
+    OppHybc52= (OperatorType*)malloc(NBathc*sizeof(OperatorType));
+    OppHybc72= (OperatorType*)malloc(NBathc*sizeof(OperatorType));
+    OppNc= (OperatorType*)malloc(NBathc*sizeof(OperatorType));
+    OppNc52= (OperatorType*)malloc(NBathc*sizeof(OperatorType));
+    OppNc72= (OperatorType*)malloc(NBathc*sizeof(OperatorType));
   }
   if(NBathv!=0)
   {
-    OppHybv=malloc(NBathv*sizeof(OperatorType));
-    OppHybv52=malloc(NBathv*sizeof(OperatorType));
-    OppHybv72=malloc(NBathv*sizeof(OperatorType));
-    OppNv=malloc(NBathv*sizeof(OperatorType));
-    OppNv52=malloc(NBathv*sizeof(OperatorType));
-    OppNv72=malloc(NBathv*sizeof(OperatorType));
+    OppHybv= (OperatorType*)malloc(NBathv*sizeof(OperatorType));
+    OppHybv52= (OperatorType*)malloc(NBathv*sizeof(OperatorType));
+    OppHybv72= (OperatorType*)malloc(NBathv*sizeof(OperatorType));
+    OppNv= (OperatorType*)malloc(NBathv*sizeof(OperatorType));
+    OppNv52= (OperatorType*)malloc(NBathv*sizeof(OperatorType));
+    OppNv72= (OperatorType*)malloc(NBathv*sizeof(OperatorType));
   }
   
   PotentialExpandedOnC("C1",3,&t,&SphericalAkm); /* the hybridization is taken to be spherical */

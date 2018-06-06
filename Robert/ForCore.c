@@ -194,7 +194,7 @@ uint32_t LanczosTriDiagonalizeDysonLowMemBLAS(OperatorType const O, WaveFunction
     fflush(stdout);
     return 1;
   };
-  if ((VMat = calloc(NV, sizeof(MatrixType))) == NULL)
+  if ((VMat = (MatrixType*)calloc(NV, sizeof(MatrixType))) == NULL)
   {
     printf("calloc failed in LanczosTriDiagonalizeDyson\n");
     fflush(stdout);
@@ -203,7 +203,7 @@ uint32_t LanczosTriDiagonalizeDysonLowMemBLAS(OperatorType const O, WaveFunction
   //Create Krylov basis of O
   OKrylov.N = NKrylov;
   InitTriDiagonalMatrix(&OKrylov);
-  if ((PsiKrylov = calloc(NKrylov, sizeof(WaveFunctionType))) == NULL)
+  if ((PsiKrylov = (WaveFunctionType*)calloc(NKrylov, sizeof(WaveFunctionType))) == NULL)
   {
     printf("calloc failed in LanczosTriDiagonalizeDyson\n");
     fflush(stdout);

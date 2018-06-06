@@ -127,19 +127,19 @@ void TestWaveFunctionArithmetic()
   psi.NBoson = 0;
   psi.NWord = 3;
   psi.NBitsKey = 10;
-  psi.KeyList = calloc((uint32_t) 1 << (psi.NBitsKey), sizeof(uint32_t));
-  psi.ValueRe = malloc(psi.NBlok * sizeof(double *));
-  psi.Next = malloc(psi.NBlok * sizeof(uint32_t *));
-  psi.Determinant = malloc(psi.NBlok * sizeof(uint8_t *));
+  psi.KeyList = (uint32_t*)calloc((uint32_t) 1 << (psi.NBitsKey), sizeof(uint32_t));
+  psi.ValueRe = (double **)malloc(psi.NBlok * sizeof(double *));
+  psi.Next = (uint32_t **)malloc(psi.NBlok * sizeof(uint32_t *));
+  psi.Determinant = (uint8_t **)malloc(psi.NBlok * sizeof(uint8_t *));
   if ((psi.ValueRe == NULL) || (psi.Next == NULL) || (psi.Determinant == NULL))
     AllocFailed();
-  psi.ValueRe[psi.NBlok - 1] = malloc(BlokSize * sizeof(double));
-  psi.Next[psi.NBlok - 1] = malloc(BlokSize * sizeof(uint32_t));
-  psi.Determinant[psi.NBlok - 1] = malloc(BlokSize * psi.NWord * sizeof(uint8_t));
+  psi.ValueRe[psi.NBlok - 1] = (double*)malloc(BlokSize * sizeof(double));
+  psi.Next[psi.NBlok - 1] = (uint32_t*)malloc(BlokSize * sizeof(uint32_t));
+  psi.Determinant[psi.NBlok - 1] = (uint8_t*)malloc(BlokSize * psi.NWord * sizeof(uint8_t));
   if ((psi.ValueRe[psi.NBlok - 1] == NULL) || (psi.Next[psi.NBlok - 1] == NULL)
       || (psi.Determinant[psi.NBlok - 1] == NULL))
     AllocFailed();
-  Determinant = calloc(psi.NWord, sizeof(uint8_t));
+  Determinant = (uint8_t*)calloc(psi.NWord, sizeof(uint8_t));
   Determinant[0] = 255;
   Determinant[1] = 64;
   Determinant[2] = 0;
@@ -188,15 +188,15 @@ void TestWaveFunctionArithmetic()
   psi.NBoson = 0;
   psi.NWord = 3;
   psi.NBitsKey = 10;
-  psi.KeyList = calloc((uint32_t) 1 << (psi.NBitsKey), sizeof(uint32_t));
-  psi.ValueRe = malloc(psi.NBlok * sizeof(double *));
-  psi.Next = malloc(psi.NBlok * sizeof(uint32_t *));
-  psi.Determinant = malloc(psi.NBlok * sizeof(uint8_t *));
+  psi.KeyList = (uint32_t*)calloc((uint32_t) 1 << (psi.NBitsKey), sizeof(uint32_t));
+  psi.ValueRe = (double **)malloc(psi.NBlok * sizeof(double *));
+  psi.Next = (uint32_t **)malloc(psi.NBlok * sizeof(uint32_t *));
+  psi.Determinant = (uint8_t **)malloc(psi.NBlok * sizeof(uint8_t *));
   if ((psi.ValueRe == NULL) || (psi.Next == NULL) || (psi.Determinant == NULL))
     AllocFailed();
-  psi.ValueRe[psi.NBlok - 1] = malloc(BlokSize * sizeof(double));
-  psi.Next[psi.NBlok - 1] = malloc(BlokSize * sizeof(uint32_t));
-  psi.Determinant[psi.NBlok - 1] = malloc(BlokSize * psi.NWord * sizeof(uint8_t));
+  psi.ValueRe[psi.NBlok - 1] = (double*)malloc(BlokSize * sizeof(double));
+  psi.Next[psi.NBlok - 1] = (uint32_t*)malloc(BlokSize * sizeof(uint32_t));
+  psi.Determinant[psi.NBlok - 1] = (uint8_t*)malloc(BlokSize * psi.NWord * sizeof(uint8_t));
   if ((psi.ValueRe[psi.NBlok - 1] == NULL) || (psi.Next[psi.NBlok - 1] == NULL)
       || (psi.Determinant[psi.NBlok - 1] == NULL))
     AllocFailed();
@@ -499,19 +499,19 @@ void TestVectorMatrixParallel()
   psi.NBoson = 0;
   psi.NWord = 3;
   psi.NBitsKey = 10;
-  psi.KeyList = calloc((uint32_t) 1 << (psi.NBitsKey), sizeof(uint32_t));
-  psi.ValueRe = malloc(psi.NBlok * sizeof(double *));
-  psi.Next = malloc(psi.NBlok * sizeof(uint32_t *));
-  psi.Determinant = malloc(psi.NBlok * sizeof(uint8_t *));
+  psi.KeyList = (uint32_t*)calloc((uint32_t) 1 << (psi.NBitsKey), sizeof(uint32_t));
+  psi.ValueRe = (double **)malloc(psi.NBlok * sizeof(double *));
+  psi.Next = (uint32_t **)malloc(psi.NBlok * sizeof(uint32_t *));
+  psi.Determinant = (uint8_t **)malloc(psi.NBlok * sizeof(uint8_t *));
   if ((psi.ValueRe == NULL) || (psi.Next == NULL) || (psi.Determinant == NULL))
     AllocFailed();
-  psi.ValueRe[psi.NBlok - 1] = malloc(BlokSize * sizeof(double));
-  psi.Next[psi.NBlok - 1] = malloc(BlokSize * sizeof(uint32_t));
-  psi.Determinant[psi.NBlok - 1] = malloc(BlokSize * psi.NWord * sizeof(uint8_t));
+  psi.ValueRe[psi.NBlok - 1] = (double*)malloc(BlokSize * sizeof(double));
+  psi.Next[psi.NBlok - 1] = (uint32_t*)malloc(BlokSize * sizeof(uint32_t));
+  psi.Determinant[psi.NBlok - 1] = (uint8_t*)malloc(BlokSize * psi.NWord * sizeof(uint8_t));
   if ((psi.ValueRe[psi.NBlok - 1] == NULL) || (psi.Next[psi.NBlok - 1] == NULL)
       || (psi.Determinant[psi.NBlok - 1] == NULL))
     AllocFailed();
-  Determinant = calloc(psi.NWord, sizeof(uint8_t));
+  Determinant = (uint8_t*)calloc(psi.NWord, sizeof(uint8_t));
   Determinant[0] = 255;
   Determinant[1] = 64;
   Determinant[2] = 0;
@@ -567,15 +567,15 @@ void TestVectorMatrixParallel()
   psi.NBoson = 0;
   psi.NWord = 3;
   psi.NBitsKey = 10;
-  psi.KeyList = calloc((uint32_t) 1 << (psi.NBitsKey), sizeof(uint32_t));
-  psi.ValueRe = malloc(psi.NBlok * sizeof(double *));
-  psi.Next = malloc(psi.NBlok * sizeof(uint32_t *));
-  psi.Determinant = malloc(psi.NBlok * sizeof(uint8_t *));
+  psi.KeyList = (uint32_t*)calloc((uint32_t) 1 << (psi.NBitsKey), sizeof(uint32_t));
+  psi.ValueRe = (double **)malloc(psi.NBlok * sizeof(double *));
+  psi.Next = (uint32_t **)malloc(psi.NBlok * sizeof(uint32_t *));
+  psi.Determinant = (uint8_t **)malloc(psi.NBlok * sizeof(uint8_t *));
   if ((psi.ValueRe == NULL) || (psi.Next == NULL) || (psi.Determinant == NULL))
     AllocFailed();
-  psi.ValueRe[psi.NBlok - 1] = malloc(BlokSize * sizeof(double));
-  psi.Next[psi.NBlok - 1] = malloc(BlokSize * sizeof(uint32_t));
-  psi.Determinant[psi.NBlok - 1] = malloc(BlokSize * psi.NWord * sizeof(uint8_t));
+  psi.ValueRe[psi.NBlok - 1] = (double*)malloc(BlokSize * sizeof(double));
+  psi.Next[psi.NBlok - 1] = (uint32_t*)malloc(BlokSize * sizeof(uint32_t));
+  psi.Determinant[psi.NBlok - 1] = (uint8_t*)malloc(BlokSize * psi.NWord * sizeof(uint8_t));
   if ((psi.ValueRe[psi.NBlok - 1] == NULL) || (psi.Next[psi.NBlok - 1] == NULL)
       || (psi.Determinant[psi.NBlok - 1] == NULL))
     AllocFailed();
@@ -621,19 +621,19 @@ void TestLanczos()
   psi.NBoson = 0;
   psi.NWord = Min(psi.NFermion, 1 + (psi.NFermion - 1) / 8);
   psi.NBitsKey = 10;
-  psi.KeyList = calloc((uint32_t) 1 << (psi.NBitsKey), sizeof(uint32_t));
-  psi.ValueRe = malloc(psi.NBlok * sizeof(double *));
-  psi.Next = malloc(psi.NBlok * sizeof(uint32_t *));
-  psi.Determinant = malloc(psi.NBlok * sizeof(uint8_t *));
+  psi.KeyList = (uint32_t*)calloc((uint32_t) 1 << (psi.NBitsKey), sizeof(uint32_t));
+  psi.ValueRe = (double **)malloc(psi.NBlok * sizeof(double *));
+  psi.Next = (uint32_t **)malloc(psi.NBlok * sizeof(uint32_t *));
+  psi.Determinant = (uint8_t **)malloc(psi.NBlok * sizeof(uint8_t *));
   if ((psi.ValueRe == NULL) || (psi.Next == NULL) || (psi.Determinant == NULL))
     AllocFailed();
-  psi.ValueRe[psi.NBlok - 1] = malloc(BlokSize * sizeof(double));
-  psi.Next[psi.NBlok - 1] = malloc(BlokSize * sizeof(uint32_t));
-  psi.Determinant[psi.NBlok - 1] = malloc(BlokSize * psi.NWord * sizeof(uint8_t));
+  psi.ValueRe[psi.NBlok - 1] = (double*)malloc(BlokSize * sizeof(double));
+  psi.Next[psi.NBlok - 1] = (uint32_t*)malloc(BlokSize * sizeof(uint32_t));
+  psi.Determinant[psi.NBlok - 1] = (uint8_t*)malloc(BlokSize * psi.NWord * sizeof(uint8_t));
   if ((psi.ValueRe[psi.NBlok - 1] == NULL) || (psi.Next[psi.NBlok - 1] == NULL)
       || (psi.Determinant[psi.NBlok - 1] == NULL))
     AllocFailed();
-  Determinant = calloc(psi.NWord, sizeof(uint8_t));
+  Determinant = (uint8_t*)calloc(psi.NWord, sizeof(uint8_t));
   for (i = 0; i < psi.NWord; i++)
   {
     Determinant[i] = 15;
@@ -881,7 +881,7 @@ void TestBlockLanczos()
   psi[0].QComplex=0;
   psi[0].NBitsKey=16;
   WaveFunctionInit(&(psi[0]));
-  det=calloc(psi[0].NWord,sizeof(uint8_t));
+  det= (uint8_t*)calloc(psi[0].NWord,sizeof(uint8_t));
   for(i=0;i<NFermion;i++)
   {
     det[i>>3]=128>>(i&7);
@@ -934,7 +934,7 @@ void TestBlockLanczos()
   printf("\n\n\n\n\n================= Band Lanczos ================\n\n\n");
   
   WaveFunctionType *v;
-  v=malloc((2*Npsi+100)*sizeof(WaveFunctionType));
+  v= (WaveFunctionType*)malloc((2*Npsi+100)*sizeof(WaveFunctionType));
   
   
   for(i=0;i<Npsi;i++)

@@ -408,7 +408,7 @@ void TestLanczosDyson2()
   psi.NBoson = 0;
   psi.NBitsKey = 16;
   WaveFunctionInit(&psi);
-  Determinant = calloc(psi.NWord, sizeof(uint8_t));
+  Determinant = (uint8_t*)calloc(psi.NWord, sizeof(uint8_t));
   for (i = 0; i < psi.NWord; i++)
   {
     Determinant[i] = 0;
@@ -444,7 +444,7 @@ void TestLanczosDyson2()
   printf("\n");
   printf("Energy                  <psi|H^2|psi>/(<psi|H|psi>^2)\n");
   printf("%22.15E  %22.15E\n", PsiEnergy, PsiQuality);
-  PsiRho = calloc(psi.NFermion, sizeof(double));
+  PsiRho = (double*)calloc(psi.NFermion, sizeof(double));
   if (PsiRho == NULL)
   {
     printf("calloc failed in main for PsiRho\n Fatal Error\n");
@@ -562,7 +562,7 @@ void TestLanczosDyson()
   psi.NBoson = 0;
   psi.NBitsKey = 16;
   WaveFunctionInit(&psi);
-  Determinant = calloc(psi.NWord, sizeof(uint8_t));
+  Determinant = (uint8_t*)calloc(psi.NWord, sizeof(uint8_t));
   for (i = 0; i < psi.NWord; i++)
   {
     Determinant[i] = 0;
@@ -649,7 +649,7 @@ void TestLanczosDyson()
   printf("\n");
   printf("Energy                  <psi|H^2|psi>/(<psi|H|psi>^2)\n");
   printf("%22.15E  %22.15E\n", PsiEnergy, PsiQuality);
-  PsiRho = calloc(psi.NFermion, sizeof(double));
+  PsiRho = (double*)calloc(psi.NFermion, sizeof(double));
   if (PsiRho == NULL)
   {
     printf("calloc failed in main for PsiRho\n Fatal Error\n");
@@ -681,7 +681,7 @@ void TestLanczosDyson()
   GKrylov.N = NTriDiag;
 
   /* Allocate memory for *PsiBasis */
-  if ((PsiKrylov = calloc(NTriDiag, sizeof(WaveFunctionType))) == NULL)
+  if ((PsiKrylov = (WaveFunctionType*)calloc(NTriDiag, sizeof(WaveFunctionType))) == NULL)
   {
     printf("calloc failed in main\n");
     fflush(stdout);
@@ -713,7 +713,7 @@ void TestLanczosDyson()
   printf("Start creation of aditional basis given by h12 PsiKrylov\n");
 
 
-  if ((PsiKrylovExtended = calloc(NTriDiag, sizeof(WaveFunctionType))) == NULL)
+  if ((PsiKrylovExtended = (WaveFunctionType*)calloc(NTriDiag, sizeof(WaveFunctionType))) == NULL)
   {
     printf("calloc failed in main\n");
     fflush(stdout);
@@ -741,7 +741,7 @@ void TestLanczosDyson()
 
   PsiOperatorPsiMatrix(O, PsiKrylovExtended, &OMatrixExdended);
 
-  OMatrixExtendedEigenVal = malloc(sizeof(double) * NTriDiag);
+  OMatrixExtendedEigenVal = (double*)malloc(sizeof(double) * NTriDiag);
 
   Eigensystem(OMatrixExdended, &OMatrixExtendedEigenFun, OMatrixExtendedEigenVal);
 
@@ -851,7 +851,7 @@ void TestLanczosDysonOld()
     fflush(stdout);
     return;
   };
-  Determinant = calloc(psi.NWord, sizeof(uint8_t));
+  Determinant = (uint8_t*)calloc(psi.NWord, sizeof(uint8_t));
   for (i = 0; i < psi.NWord; i++)
   {
     Determinant[i] = 0;
@@ -934,7 +934,7 @@ void TestLanczosDysonOld()
   printf("\n");
   printf("Energy                  <psi|H^2|psi>/(<psi|H|psi>^2)\n");
   printf("%22.15E  %22.15E\n", PsiEnergy, PsiQuality);
-  PsiRho = calloc(psi.NFermion, sizeof(double));
+  PsiRho = (double*)calloc(psi.NFermion, sizeof(double));
   if (PsiRho == NULL)
   {
     printf("calloc failed in main for PsiRho\n Fatal Error\n");
@@ -973,7 +973,7 @@ void TestLanczosDysonOld()
   printf("\n");
   printf("Energy                  <psi|H^2|psi>/(<psi|H|psi>^2)\n");
   printf("%22.15E  %22.15E\n", PsiEnergy, PsiQuality);
-  PsiRho = calloc(psi.NFermion, sizeof(double));
+  PsiRho = (double*)calloc(psi.NFermion, sizeof(double));
   if (PsiRho == NULL)
   {
     printf("calloc failed in main for PsiRho\n Fatal Error\n");
@@ -1003,7 +1003,7 @@ void TestLanczosDysonOld()
   GKrylov.N = G.N;
 
   /* Allocate memory for *PsiBasis */
-  if ((PsiKrylov = calloc(GKrylov.N, sizeof(WaveFunctionType))) == NULL)
+  if ((PsiKrylov = (WaveFunctionType*)calloc(GKrylov.N, sizeof(WaveFunctionType))) == NULL)
   {
     printf("calloc failed in main\n");
     fflush(stdout);
@@ -1057,7 +1057,7 @@ void TestLanczosDysonOld()
   PrintOperatorReadable(OplusG);
 
   /* Allocate memory for *PsiBasis */
-  if ((PsiKrylovAr = calloc(GKrylovNonHer.Ni, sizeof(WaveFunctionType))) == NULL)
+  if ((PsiKrylovAr = (WaveFunctionType*)calloc(GKrylovNonHer.Ni, sizeof(WaveFunctionType))) == NULL)
   {
     printf("calloc failed in main\n");
     fflush(stdout);

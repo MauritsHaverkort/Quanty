@@ -248,7 +248,7 @@ uint32_t CreateStartingFunctions(const OperatorType H, uint32_t const Npsi, Dete
   }
   else
   {
-    Determinant = calloc(psi0.NWord, sizeof(uint8_t));
+    Determinant = (uint8_t*)calloc(psi0.NWord, sizeof(uint8_t));
     // strategy based on randomness and occupations
     avvOcc = 0.5;
     for(i=0;i<Min(300+100*Npsi,5000);i++)
@@ -644,9 +644,9 @@ uint32_t LanczosBlockTriDiagonalizeRestrictedRC(const OperatorType H, WaveFuncti
     M->b[i+i*M->BlockSize].Re=0;
   }
   v[0] = psi;
-  v[1] = malloc(Npsi*sizeof(WaveFunctionType));
-  v[2] = malloc(Npsi*sizeof(WaveFunctionType));
-  v[3] = malloc(Npsi*sizeof(WaveFunctionType));
+  v[1] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
+  v[2] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
+  v[3] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
   Mab.Ni=M->BlockSize;
   Mab.Nj=M->BlockSize;
   Mab.QComplex=1;
@@ -864,9 +864,9 @@ uint32_t LanczosBlockTriDiagonalizeRestrictedMC(const OperatorType H, WaveFuncti
     M->b[i+i*M->BlockSize].Re=0;
   }
   v[0] = psi;
-  v[1] = malloc(Npsi*sizeof(WaveFunctionType));
-  v[2] = malloc(Npsi*sizeof(WaveFunctionType));
-  v[3] = malloc(Npsi*sizeof(WaveFunctionType));
+  v[1] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
+  v[2] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
+  v[3] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
   Mab.Ni=M->BlockSize;
   Mab.Nj=M->BlockSize;
   Mab.QComplex=1;
@@ -1084,9 +1084,9 @@ uint32_t LanczosBlockTriDiagonalizeRestrictedCC(const OperatorType H, WaveFuncti
     M->b[i+i*M->BlockSize].Re=0;
   }
   v[0] = psi;
-  v[1] = malloc(Npsi*sizeof(WaveFunctionType));
-  v[2] = malloc(Npsi*sizeof(WaveFunctionType));
-  v[3] = malloc(Npsi*sizeof(WaveFunctionType));
+  v[1] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
+  v[2] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
+  v[3] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
   Mab.Ni=M->BlockSize;
   Mab.Nj=M->BlockSize;
   Mab.QComplex=1;
@@ -1304,9 +1304,9 @@ uint32_t LanczosBlockTriDiagonalizeRestrictedRR(const OperatorType H, WaveFuncti
     M->bRe[i+i*M->BlockSize]=0;
   }
   v[0] = psi;
-  v[1] = malloc(Npsi*sizeof(WaveFunctionType));
-  v[2] = malloc(Npsi*sizeof(WaveFunctionType));
-  v[3] = malloc(Npsi*sizeof(WaveFunctionType));
+  v[1] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
+  v[2] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
+  v[3] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
   Mab.Ni=M->BlockSize;
   Mab.Nj=M->BlockSize;
   Mab.QComplex=0;
@@ -1568,9 +1568,9 @@ uint32_t LanczosBlockTriDiagonalizeRC(const OperatorType H, WaveFunctionType * c
     M->b[i+i*M->BlockSize].Re=0;
   }
   v[0] = psi;
-  v[1] = malloc(Npsi*sizeof(WaveFunctionType));
-  v[2] = malloc(Npsi*sizeof(WaveFunctionType));
-  v[3] = malloc(Npsi*sizeof(WaveFunctionType));
+  v[1] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
+  v[2] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
+  v[3] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
   Mab.Ni=M->BlockSize;
   Mab.Nj=M->BlockSize;
   Mab.QComplex=1;
@@ -1788,9 +1788,9 @@ uint32_t LanczosBlockTriDiagonalizeMC(const OperatorType H, WaveFunctionType * c
     M->b[i+i*M->BlockSize].Re=0;
   }
   v[0] = psi;
-  v[1] = malloc(Npsi*sizeof(WaveFunctionType));
-  v[2] = malloc(Npsi*sizeof(WaveFunctionType));
-  v[3] = malloc(Npsi*sizeof(WaveFunctionType));
+  v[1] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
+  v[2] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
+  v[3] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
   Mab.Ni=M->BlockSize;
   Mab.Nj=M->BlockSize;
   Mab.QComplex=1;
@@ -2008,9 +2008,9 @@ uint32_t LanczosBlockTriDiagonalizeCC(const OperatorType H, WaveFunctionType * c
     M->b[i+i*M->BlockSize].Re=0;
   }
   v[0] = psi;
-  v[1] = malloc(Npsi*sizeof(WaveFunctionType));
-  v[2] = malloc(Npsi*sizeof(WaveFunctionType));
-  v[3] = malloc(Npsi*sizeof(WaveFunctionType));
+  v[1] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
+  v[2] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
+  v[3] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
   Mab.Ni=M->BlockSize;
   Mab.Nj=M->BlockSize;
   Mab.QComplex=1;
@@ -2228,9 +2228,9 @@ uint32_t LanczosBlockTriDiagonalizeRR(const OperatorType H, WaveFunctionType * c
     M->bRe[i+i*M->BlockSize]=0;
   }
   v[0] = psi;
-  v[1] = malloc(Npsi*sizeof(WaveFunctionType));
-  v[2] = malloc(Npsi*sizeof(WaveFunctionType));
-  v[3] = malloc(Npsi*sizeof(WaveFunctionType));
+  v[1] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
+  v[2] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
+  v[3] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
   Mab.Ni=M->BlockSize;
   Mab.Nj=M->BlockSize;
   Mab.QComplex=0;
@@ -2493,12 +2493,12 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedRC(const OperatorType H, Wave
     M->b[i+i*M->BlockSize].Im=0;
   }
   v[0] = psi;
-  v[3] = malloc(Npsi*sizeof(WaveFunctionType));
+  v[3] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
   
   Mab.Ni=M->BlockSize;
   Mab.Nj=M->BlockSize;
   Mab.QComplex=1;
-  v[1] = malloc(Npsi*sizeof(WaveFunctionType));
+  v[1] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
   ComplexWaveFunctionListSVDOrthogonalize(v[0], v[1], &Npsi, epsilon, True); // v[1] = orthonormal[v0]
   BlockSize[0]=Npsi;
   psiBasis[0]=v[1];
@@ -2536,7 +2536,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedRC(const OperatorType H, Wave
   for(k=1;k<M->N;k++)
   {
     // v[vip] = H v[vi]^T
-    v[vip] = malloc(Npsivi*sizeof(WaveFunctionType));
+    v[vip] = (WaveFunctionType*)malloc(Npsivi*sizeof(WaveFunctionType));
     while(BlockOperatorPsiRestrictedRC(H, v[vi], v[vip], Restrictions, Npsivi))
     {
       printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeRC for the function BlockOperatorPsiRR\n");
@@ -2708,12 +2708,12 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedMC(const OperatorType H, Wave
     M->b[i+i*M->BlockSize].Im=0;
   }
   v[0] = psi;
-  v[3] = malloc(Npsi*sizeof(WaveFunctionType));
+  v[3] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
   
   Mab.Ni=M->BlockSize;
   Mab.Nj=M->BlockSize;
   Mab.QComplex=1;
-  v[1] = malloc(Npsi*sizeof(WaveFunctionType));
+  v[1] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
   ComplexWaveFunctionListSVDOrthogonalize(v[0], v[1], &Npsi, epsilon, True); // v[1] = orthonormal[v0]
   BlockSize[0]=Npsi;
   psiBasis[0]=v[1];
@@ -2751,7 +2751,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedMC(const OperatorType H, Wave
   for(k=1;k<M->N;k++)
   {
     // v[vip] = H v[vi]^T
-    v[vip] = malloc(Npsivi*sizeof(WaveFunctionType));
+    v[vip] = (WaveFunctionType*)malloc(Npsivi*sizeof(WaveFunctionType));
     while(BlockOperatorPsiRestrictedMC(H, v[vi], v[vip], Restrictions, Npsivi))
     {
       printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeMC for the function BlockOperatorPsiRR\n");
@@ -2923,12 +2923,12 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedCC(const OperatorType H, Wave
     M->b[i+i*M->BlockSize].Im=0;
   }
   v[0] = psi;
-  v[3] = malloc(Npsi*sizeof(WaveFunctionType));
+  v[3] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
   
   Mab.Ni=M->BlockSize;
   Mab.Nj=M->BlockSize;
   Mab.QComplex=1;
-  v[1] = malloc(Npsi*sizeof(WaveFunctionType));
+  v[1] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
   ComplexWaveFunctionListSVDOrthogonalize(v[0], v[1], &Npsi, epsilon, True); // v[1] = orthonormal[v0]
   BlockSize[0]=Npsi;
   psiBasis[0]=v[1];
@@ -2966,7 +2966,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedCC(const OperatorType H, Wave
   for(k=1;k<M->N;k++)
   {
     // v[vip] = H v[vi]^T
-    v[vip] = malloc(Npsivi*sizeof(WaveFunctionType));
+    v[vip] = (WaveFunctionType*)malloc(Npsivi*sizeof(WaveFunctionType));
     while(BlockOperatorPsiRestrictedCC(H, v[vi], v[vip], Restrictions, Npsivi))
     {
       printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeCC for the function BlockOperatorPsiRR\n");
@@ -3137,12 +3137,12 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedRR(const OperatorType H, Wave
     M->bRe[i+i*M->BlockSize]=0;
   }
   v[0] = psi;
-  v[3] = malloc(Npsi*sizeof(WaveFunctionType));
+  v[3] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
   
   Mab.Ni=M->BlockSize;
   Mab.Nj=M->BlockSize;
   Mab.QComplex=0;
-  v[1] = malloc(Npsi*sizeof(WaveFunctionType));
+  v[1] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
   RealWaveFunctionListSVDOrthogonalize(v[0], v[1], &Npsi, epsilon, True); // v[1] = orthonormal[v0]
   BlockSize[0]=Npsi;
   psiBasis[0]=v[1];
@@ -3178,7 +3178,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedRR(const OperatorType H, Wave
   for(k=1;k<M->N;k++)
   {
     // v[vip] = H v[vi]^T
-    v[vip] = malloc(Npsivi*sizeof(WaveFunctionType));
+    v[vip] = (WaveFunctionType*)malloc(Npsivi*sizeof(WaveFunctionType));
     while(BlockOperatorPsiRestrictedRR(H, v[vi], v[vip], Restrictions, Npsivi))
     {
       printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeRR for the function BlockOperatorPsiRR\n");
@@ -3391,12 +3391,12 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRC(const OperatorType H, WaveFunctionTy
     M->b[i+i*M->BlockSize].Im=0;
   }
   v[0] = psi;
-  v[3] = malloc(Npsi*sizeof(WaveFunctionType));
+  v[3] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
   
   Mab.Ni=M->BlockSize;
   Mab.Nj=M->BlockSize;
   Mab.QComplex=1;
-  v[1] = malloc(Npsi*sizeof(WaveFunctionType));
+  v[1] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
   ComplexWaveFunctionListSVDOrthogonalize(v[0], v[1], &Npsi, epsilon, True); // v[1] = orthonormal[v0]
   BlockSize[0]=Npsi;
   psiBasis[0]=v[1];
@@ -3434,7 +3434,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRC(const OperatorType H, WaveFunctionTy
   for(k=1;k<M->N;k++)
   {
     // v[vip] = H v[vi]^T
-    v[vip] = malloc(Npsivi*sizeof(WaveFunctionType));
+    v[vip] = (WaveFunctionType*)malloc(Npsivi*sizeof(WaveFunctionType));
     while(BlockOperatorPsiRC(H, v[vi], v[vip], Npsivi))
     {
       printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeRC for the function BlockOperatorPsiRR\n");
@@ -3606,12 +3606,12 @@ uint32_t LanczosBlockTriDiagonalizeKrylovMC(const OperatorType H, WaveFunctionTy
     M->b[i+i*M->BlockSize].Im=0;
   }
   v[0] = psi;
-  v[3] = malloc(Npsi*sizeof(WaveFunctionType));
+  v[3] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
   
   Mab.Ni=M->BlockSize;
   Mab.Nj=M->BlockSize;
   Mab.QComplex=1;
-  v[1] = malloc(Npsi*sizeof(WaveFunctionType));
+  v[1] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
   ComplexWaveFunctionListSVDOrthogonalize(v[0], v[1], &Npsi, epsilon, True); // v[1] = orthonormal[v0]
   BlockSize[0]=Npsi;
   psiBasis[0]=v[1];
@@ -3649,7 +3649,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovMC(const OperatorType H, WaveFunctionTy
   for(k=1;k<M->N;k++)
   {
     // v[vip] = H v[vi]^T
-    v[vip] = malloc(Npsivi*sizeof(WaveFunctionType));
+    v[vip] = (WaveFunctionType*)malloc(Npsivi*sizeof(WaveFunctionType));
     while(BlockOperatorPsiMC(H, v[vi], v[vip], Npsivi))
     {
       printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeMC for the function BlockOperatorPsiRR\n");
@@ -3821,12 +3821,12 @@ uint32_t LanczosBlockTriDiagonalizeKrylovCC(const OperatorType H, WaveFunctionTy
     M->b[i+i*M->BlockSize].Im=0;
   }
   v[0] = psi;
-  v[3] = malloc(Npsi*sizeof(WaveFunctionType));
+  v[3] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
   
   Mab.Ni=M->BlockSize;
   Mab.Nj=M->BlockSize;
   Mab.QComplex=1;
-  v[1] = malloc(Npsi*sizeof(WaveFunctionType));
+  v[1] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
   ComplexWaveFunctionListSVDOrthogonalize(v[0], v[1], &Npsi, epsilon, True); // v[1] = orthonormal[v0]
   BlockSize[0]=Npsi;
   psiBasis[0]=v[1];
@@ -3864,7 +3864,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovCC(const OperatorType H, WaveFunctionTy
   for(k=1;k<M->N;k++)
   {
     // v[vip] = H v[vi]^T
-    v[vip] = malloc(Npsivi*sizeof(WaveFunctionType));
+    v[vip] = (WaveFunctionType*)malloc(Npsivi*sizeof(WaveFunctionType));
     while(BlockOperatorPsiCC(H, v[vi], v[vip], Npsivi))
     {
       printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeCC for the function BlockOperatorPsiRR\n");
@@ -4035,12 +4035,12 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRR(const OperatorType H, WaveFunctionTy
     M->bRe[i+i*M->BlockSize]=0;
   }
   v[0] = psi;
-  v[3] = malloc(Npsi*sizeof(WaveFunctionType));
+  v[3] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
   
   Mab.Ni=M->BlockSize;
   Mab.Nj=M->BlockSize;
   Mab.QComplex=0;
-  v[1] = malloc(Npsi*sizeof(WaveFunctionType));
+  v[1] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
   RealWaveFunctionListSVDOrthogonalize(v[0], v[1], &Npsi, epsilon, True); // v[1] = orthonormal[v0]
   BlockSize[0]=Npsi;
   psiBasis[0]=v[1];
@@ -4076,7 +4076,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRR(const OperatorType H, WaveFunctionTy
   for(k=1;k<M->N;k++)
   {
     // v[vip] = H v[vi]^T
-    v[vip] = malloc(Npsivi*sizeof(WaveFunctionType));
+    v[vip] = (WaveFunctionType*)malloc(Npsivi*sizeof(WaveFunctionType));
     while(BlockOperatorPsiRR(H, v[vi], v[vip], Npsivi))
     {
       printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeRR for the function BlockOperatorPsiRR\n");
@@ -4587,15 +4587,15 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylovReal(OperatorType * H, WaveFu
     HE0 = H->l[0].V[0].Re;
   }
   // init several matrices
-  val=malloc((Npsi+Settings->NKrylovMax)*sizeof(double));
-  iwork = malloc(liwork*sizeof(int));
+  val= (double*)malloc((Npsi+Settings->NKrylovMax)*sizeof(double));
+  iwork = (int*)malloc(liwork*sizeof(int));
   if(iwork==NULL)
   {
     printf("malloc for iwork failed in BlockLanczosGroundStateConserveBasisKrylovReal\n");
     free(val);
     return 1;
   }
-  work = malloc(lwork*sizeof(double));
+  work = (double*)malloc(lwork*sizeof(double));
   if(work==NULL)
   {
     printf("malloc for work failed in BlockLanczosGroundStateConserveBasisKrylovReal\n");
@@ -4822,15 +4822,15 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylovComplex(OperatorType * H, Wav
     HE0 = H->l[0].V[0].Re;
   }
   // init several matrices
-  val=malloc((Npsi+Settings->NKrylovMax)*sizeof(double));
-  iwork = malloc(liwork*sizeof(int));
+  val= (double*)malloc((Npsi+Settings->NKrylovMax)*sizeof(double));
+  iwork = (int*)malloc(liwork*sizeof(int));
   if(iwork==NULL)
   {
     printf("malloc for iwork failed in BlockLanczosGroundStateConserveBasisKrylovComplex\n");
     free(val);
     return 1;
   }
-  work = malloc(lwork*sizeof(double));
+  work = (double*)malloc(lwork*sizeof(double));
   if(work==NULL)
   {
     printf("malloc for work failed in BlockLanczosGroundStateConserveBasisKrylovComplex\n");
@@ -4838,7 +4838,7 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylovComplex(OperatorType * H, Wav
     free(iwork);
     return 1;
   }
-  cwork = malloc(lcwork*sizeof(Complex16));
+  cwork = (Complex16*)malloc(lcwork*sizeof(Complex16));
   if(cwork==NULL)
   {
     printf("malloc for cwork failed in BlockLanczosGroundStateConserveBasisKrylovComplex\n");
@@ -5121,7 +5121,7 @@ uint32_t BlockLanczosGroundStateConserveBasis(OperatorType * H, WaveFunctionType
   //   if all 2*Npsi+NKrylovMax are created return BlockLanczosGroundStateConserveBasisKrylov
   //   if only 2*Npsi+1 states can be created return BlockLanczosGroundStateConserveBasisKrylovRecalculate
   //   if less then 2*Npsi+1 states can be created return 1
-  v=malloc(MaxAlloc*sizeof(WaveFunctionType));
+  v= (WaveFunctionType*)malloc(MaxAlloc*sizeof(WaveFunctionType));
   if(v==NULL)
   {
     printf("malloc failed in BlockLanczosGroundStateConserveBasis\n");

@@ -150,7 +150,7 @@ uint32_t StreamReadModelSettings(ModelSettings * O, FILE * stream)
       pch = strchr(tmpbuff,':');
       token = strtok(pch+1,delim); //stores the number of eshifts now
       O->numIEShifts = atoi(token);
-      O->IEShifts = calloc(O->numIEShifts,sizeof(double));
+      O->IEShifts = (double*)calloc(O->numIEShifts,sizeof(double));
 
       for(i=0; i < O->numIEShifts; i++)
       {
@@ -163,7 +163,7 @@ uint32_t StreamReadModelSettings(ModelSettings * O, FILE * stream)
       pch = strchr(tmpbuff,':');
       token = strtok(pch+1,delim); //stores the number of eshifts now
       O->numLEShifts = atoi(token);
-      O->LEShifts = calloc(O->numLEShifts,sizeof(double));
+      O->LEShifts = (double*)calloc(O->numLEShifts,sizeof(double));
 
       for(i=0; i < O->numLEShifts; i++)
       {
@@ -176,7 +176,7 @@ uint32_t StreamReadModelSettings(ModelSettings * O, FILE * stream)
       pch = strchr(tmpbuff,':');
       token = strtok(pch+1,delim); //stores the number of eshifts now
       O->numHopping = atoi(token);
-      O->Hopping = calloc(O->numHopping,sizeof(double));
+      O->Hopping = (double*)calloc(O->numHopping,sizeof(double));
 
       for(i=0; i < O->numHopping; i++)
       {
@@ -670,7 +670,7 @@ uint32_t InitNaturalImpurityWavefunctionRandom(WaveFunctionType * const psi, uin
         bLig[j] = 1;
       }
     }
-    Determinant = calloc(psi->NWord, sizeof(uint8_t));
+    Determinant = (uint8_t*)calloc(psi->NWord, sizeof(uint8_t));
     for (j = 0; j < NFermionShift; j++)
       OperatorCr(Determinant, j, psi->NFermion);
   
@@ -696,7 +696,7 @@ uint32_t InitNaturalImpurityWavefunctionRandom(WaveFunctionType * const psi, uin
       inittwiddle(NImpOrb-i, NImpOrb, pLig);
       while(!twiddle(&xLig, &yLig, &zLig, pLig))
       {
-        Determinant = calloc(psi->NWord, sizeof(uint8_t));
+        Determinant = (uint8_t*)calloc(psi->NWord, sizeof(uint8_t));
         bLig[xLig] = 1;
         bLig[yLig] = 0;
         for (j = 0; j < NFermionShift; j++)
@@ -1202,7 +1202,7 @@ uint32_t ImpurityHFromTB(OperatorType *const Himp, ModelSettings O)
     TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles(TB, O.NkPoints, Sigma, &G, O.DOSMin, O.DOSMax, O.NPoles);
     EndTiming("TightBindingHamiltonianToBlockListOfPoles", &Time);   
     
-    GSpec = malloc(rawBlockSize*rawBlockSize*sizeof(SpectraType));
+    GSpec = (SpectraType*)malloc(rawBlockSize*rawBlockSize*sizeof(SpectraType));
     BeginTiming("BlockListOfPolesToSpectra", &Time);
     BlockListOfPolesToSpectra(G, GSpec, O.DOSMin, O.DOSMax, O.NPoles);
     EndTiming("BlockListOfPolesToSpectra", &Time);
@@ -1233,7 +1233,7 @@ uint32_t ImpurityHFromTB(OperatorType *const Himp, ModelSettings O)
       BlockListOfPolesToBlockTridiagonalMatrix(G, &GTri, O.NPoles, DBL_EPSILON);
       EndTiming("BlockListOfPolesToBlockTridiagonalMatrix", &Time);
 
-      GTriSpec = malloc(rawBlockSize*rawBlockSize*sizeof(SpectraType));
+      GTriSpec = (SpectraType*)malloc(rawBlockSize*rawBlockSize*sizeof(SpectraType));
       BeginTiming("BlockTriDiagonalMatrixToSpectra", &Time);
       BlockTriDiagonalMatrixToSpectra(&GTri, GTriSpec, O.DOSMin, O.DOSMax, O.NPoles, 0.05);
       EndTiming("BlockTriDiagonalMatrixToSpectra", &Time);
@@ -1247,7 +1247,7 @@ uint32_t ImpurityHFromTB(OperatorType *const Himp, ModelSettings O)
   
       PrintBlockTriDiagonalMatrix(GTriReduced);
       
-      GTriSpecReduced = malloc(impBlockSize*impBlockSize*sizeof(SpectraType));
+      GTriSpecReduced = (SpectraType*)malloc(impBlockSize*impBlockSize*sizeof(SpectraType));
       BeginTiming("BlockTriDiagonalMatrixToSpectra", &Time);
       BlockTriDiagonalMatrixToSpectra(&GTriReduced, GTriSpecReduced, O.DOSMin, O.DOSMax, O.NPoles, 0.05);
       EndTiming("BlockTriDiagonalMatrixToSpectra", &Time);
@@ -1266,7 +1266,7 @@ uint32_t ImpurityHFromTB(OperatorType *const Himp, ModelSettings O)
       BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(Himp, &GNat, O.NBathV, O.NBathC, 1, O.NFermionShift, O.NFermion);  
       OperatorChop(Himp, 1000*DBL_EPSILON);
       PrintOperatorReadable(*Himp);
-      SpecNat = malloc(rawBlockSize*rawBlockSize*sizeof(SpectraType));
+      SpecNat = (SpectraType*)malloc(rawBlockSize*rawBlockSize*sizeof(SpectraType));
       BlockNaturalImpurityOrbitalToSpectra(&GNat, SpecNat, O.DOSMin, O.DOSMax, O.NPoles, 0.1);
       FilePrintSpectra(SpecNat, impBlockSize*impBlockSize, "SpecNat", "w");
       free(SpecNat);
@@ -1737,7 +1737,7 @@ uint32_t RunModelCalculation(ModelSettings MSet)
     Nelectrons = 6 + 10*(MSet.NBathV+1);
     MSet.NFermion = 6 + 10 + 10*(MSet.NBathV) + 10 + 10*MSet.NBathC;
     /* Create a starting wavefunction. */
-    CreateString=calloc(6+10+10*MSet.NBathV+10, sizeof(uint16_t));
+    CreateString= (uint16_t*)calloc(6+10+10*MSet.NBathV+10, sizeof(uint16_t));
     /*Core electrons*/
     for (i=0; i<MSet.NFermionShift; i++)
       CreateString[i] = i;
@@ -1764,7 +1764,7 @@ uint32_t RunModelCalculation(ModelSettings MSet)
       Nelectrons = 6 + MSet.Nd + 10*MSet.NCellV;
       MSet.NFermion = 6 + 10 + 10*MSet.NCellV;
       /* Create a starting wavefunction. */
-      CreateString=calloc(6+10+10*MSet.NCellV, sizeof(uint16_t));
+      CreateString= (uint16_t*)calloc(6+10+10*MSet.NCellV, sizeof(uint16_t));
       
       
     }
@@ -1774,7 +1774,7 @@ uint32_t RunModelCalculation(ModelSettings MSet)
       Nelectrons = 6 + MSet.Nd + 10*MSet.NBathV;
       MSet.NFermion = 6 + 10 + 10*(MSet.NBathV);
       /* Create a starting wavefunction. */
-      CreateString=calloc(6+10+10*MSet.NBathV, sizeof(uint16_t));
+      CreateString= (uint16_t*)calloc(6+10+10*MSet.NBathV, sizeof(uint16_t));
     }
       
     /*Core electrons*/
@@ -2114,12 +2114,12 @@ uint32_t RunModelCalculation(ModelSettings MSet)
   {
     // In order to help convergence, first require 10 electrons spread between impurity and separate ligand site.
     Restrictions.N=1;
-    Restrictions.Min=malloc(Restrictions.N*sizeof(uint32_t));
-    Restrictions.Max=malloc(Restrictions.N*sizeof(uint32_t));
-    Restrictions.Determinant=malloc(Restrictions.N*sizeof(uint8_t*));
+    Restrictions.Min= (uint32_t*)malloc(Restrictions.N*sizeof(uint32_t));
+    Restrictions.Max= (uint32_t*)malloc(Restrictions.N*sizeof(uint32_t));
+    Restrictions.Determinant= (uint8_t**)malloc(Restrictions.N*sizeof(uint8_t*));
     for(i=0;i<Restrictions.N;i++)
     {
-      Restrictions.Determinant[i]=calloc(psi.NWord,sizeof(uint8_t));
+      Restrictions.Determinant[i]= (uint8_t*)calloc(psi.NWord,sizeof(uint8_t));
     }
     Restrictions.Min[0]=10;
     Restrictions.Max[0]=10;

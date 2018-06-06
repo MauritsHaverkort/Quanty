@@ -286,7 +286,7 @@ uint32_t CreateHeisenbergModelStartWaveFunction(HeisenbergModelSettings Set, Wav
   f.NBoson = 0;
   f.NBitsKey = Set.NBitsKey;
   WaveFunctionInit(&f);
-  Determinant = calloc(f.NWord, sizeof(uint8_t));
+  Determinant = (uint8_t*)calloc(f.NWord, sizeof(uint8_t));
   WaveFunctionAddElement(&f, Determinant, 1);
   OperatorPsi(O, f, Psi);
   FreeOperator(&O);
@@ -320,7 +320,7 @@ uint32_t CreateHeisenbergModelStartWaveFunctionFM(HeisenbergModelSettings Set, W
   f.NBoson = 0;
   f.NBitsKey = Set.NBitsKey;
   WaveFunctionInit(&f);
-  Determinant = calloc(f.NWord, sizeof(uint8_t));
+  Determinant = (uint8_t*)calloc(f.NWord, sizeof(uint8_t));
   WaveFunctionAddElement(&f, Determinant, 1);
   OperatorPsi(O, f, Psi);
   FreeOperator(&O);
@@ -355,8 +355,8 @@ int main(int argc, const char *argv[])
   EndTiming("Create Hamiltonian", &Time);
   PrintOperatorReadable(H);
   TotEmax = fabs(Set.Cluster.NCell * Set.J * 8);
-  PsiList = malloc(Set.NPsi * sizeof(WaveFunctionType));
-  EnergyList = malloc(Set.NPsi * sizeof(double));
+  PsiList = (WaveFunctionType*)malloc(Set.NPsi * sizeof(WaveFunctionType));
+  EnergyList = (double*)malloc(Set.NPsi * sizeof(double));
   for (jpsi = 0; jpsi < Set.NPsi; jpsi++)
   {
     if (Set.J > 0)
@@ -400,8 +400,8 @@ int main(int argc, const char *argv[])
   }
   s.N = Set.NTriDiag;
   InitTriDiagonalMatrix(&s);
-  T = malloc(Set.Cluster.NCell * sizeof(OperatorType));
-  Spec = malloc(Set.Cluster.NCell * sizeof(SpectraType));
+  T = (OperatorType*)malloc(Set.Cluster.NCell * sizeof(OperatorType));
+  Spec = (SpectraType*)malloc(Set.Cluster.NCell * sizeof(SpectraType));
   Spec[0].N = Set.NE;
   Spec[0].Emin = Set.Emin;
   Spec[0].Emax = Set.Emax;

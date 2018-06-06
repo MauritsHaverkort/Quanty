@@ -49,7 +49,7 @@ void TestGFBA()
   printf("\n");
   printf("Energy                  <psi|H^2|psi>/(<psi|H|psi>^2)\n");
   printf("%22.15E  %22.15E\n", PsiEnergy, PsiQuality);
-  PsiRho = calloc(Psi.NFermion, sizeof(double));
+  PsiRho = (double*)calloc(Psi.NFermion, sizeof(double));
   if (PsiRho == NULL)
   {
     printf("calloc failed in main for PsiRho\n Fatal Error\n");

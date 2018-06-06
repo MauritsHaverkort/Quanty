@@ -86,10 +86,10 @@ int SetNFermionIndexTightBindingDef(TightBindingDef * A)
 {
   int    i, j;
   A->NFermion = 0;
-  A->FermionIndex = malloc(A->Cell.NAtoms * sizeof(int *));
+  A->FermionIndex = (int **)malloc(A->Cell.NAtoms * sizeof(int *));
   for (i = 0; i < A->Cell.NAtoms; i++)
   {
-    A->FermionIndex[i] = malloc(A->Cell.Atom[i].Nshell * sizeof(int));
+    A->FermionIndex[i] = (int*)malloc(A->Cell.Atom[i].Nshell * sizeof(int));
     for (j = 0; j < A->Cell.Atom[i].Nshell; j++)
     {
       A->FermionIndex[i][j] = A->NFermion;
@@ -115,23 +115,23 @@ int CreateOneBandCubicLaticeTightBindingDef(TightBindingDef * A)
   A->Cell.Units = 1;
   ReciprocalLatticeVector(A->Cell.rUnitCell, A->Cell.gUnitCell,A->Cell.Units);
   A->Cell.NAtoms = 1;
-  A->Cell.Atom = malloc(1 * sizeof(AtomType));
+  A->Cell.Atom = (AtomType*)malloc(1 * sizeof(AtomType));
   strncpy(A->Cell.Atom[0].Name, "s", 3);
   A->Cell.Atom[0].Position[0] = 0.00000;
   A->Cell.Atom[0].Position[1] = 0.00000;
   A->Cell.Atom[0].Position[2] = 0.00000;
   A->Cell.Atom[0].Nshell = 1;
-  A->Cell.Atom[0].shelldegeneracy = malloc(1 * sizeof(int));
+  A->Cell.Atom[0].shelldegeneracy = (int*)malloc(1 * sizeof(int));
   A->Cell.Atom[0].shelldegeneracy[0] = 1;
-  A->Cell.Atom[0].ShellName = malloc(1*sizeof(char*));
-  A->Cell.Atom[0].ShellName[0] = malloc(1*sizeof(char));
+  A->Cell.Atom[0].ShellName = (char**)malloc(1*sizeof(char*));
+  A->Cell.Atom[0].ShellName[0] = (char*)malloc(1*sizeof(char));
   strncpy(A->Cell.Atom[0].ShellName[0], "s", 3);
-  A->Cell.Atom[0].OrbitalName=malloc(1*sizeof(char**));
-  A->Cell.Atom[0].OrbitalName[0]=malloc(1*sizeof(char*));
-  A->Cell.Atom[0].OrbitalName[0][0]=malloc(1*sizeof(char));
+  A->Cell.Atom[0].OrbitalName= (char***)malloc(1*sizeof(char**));
+  A->Cell.Atom[0].OrbitalName[0]= (char**)malloc(1*sizeof(char*));
+  A->Cell.Atom[0].OrbitalName[0][0]= (char*)malloc(1*sizeof(char));
   strncpy(A->Cell.Atom[0].OrbitalName[0][0], "s", 3);
   A->nH = 7;
-  A->H = malloc(A->nH * sizeof(TightBindingDefHopping));
+  A->H = (TightBindingDefHopping*)malloc(A->nH * sizeof(TightBindingDefHopping));
   for (i = 0; i < 7; i++)
   {
     A->H[i].Atompos1 = 0;
@@ -171,23 +171,23 @@ int CreateOneBandSquareLaticeTightBindingDef(TightBindingDef * A)
   A->Cell.Units = 1;
   ReciprocalLatticeVector(A->Cell.rUnitCell, A->Cell.gUnitCell,A->Cell.Units);
   A->Cell.NAtoms = 1;
-  A->Cell.Atom = malloc(1 * sizeof(AtomType));
+  A->Cell.Atom = (AtomType*)malloc(1 * sizeof(AtomType));
   strncpy(A->Cell.Atom[0].Name, "s", 3);
   A->Cell.Atom[0].Position[0] = 0.00000;
   A->Cell.Atom[0].Position[1] = 0.00000;
   A->Cell.Atom[0].Position[2] = 0.00000;
   A->Cell.Atom[0].Nshell = 1;
-  A->Cell.Atom[0].shelldegeneracy = malloc(1 * sizeof(int));
+  A->Cell.Atom[0].shelldegeneracy = (int*)malloc(1 * sizeof(int));
   A->Cell.Atom[0].shelldegeneracy[0] = 1;
-  A->Cell.Atom[0].ShellName = malloc(1*sizeof(char*));
-  A->Cell.Atom[0].ShellName[0] = malloc(1*sizeof(char));
+  A->Cell.Atom[0].ShellName = (char**)malloc(1*sizeof(char*));
+  A->Cell.Atom[0].ShellName[0] = (char*)malloc(1*sizeof(char));
   strncpy(A->Cell.Atom[0].ShellName[0], "s", 3);
-  A->Cell.Atom[0].OrbitalName=malloc(1*sizeof(char**));
-  A->Cell.Atom[0].OrbitalName[0]=malloc(1*sizeof(char*));
-  A->Cell.Atom[0].OrbitalName[0][0]=malloc(1*sizeof(char));
+  A->Cell.Atom[0].OrbitalName= (char***)malloc(1*sizeof(char**));
+  A->Cell.Atom[0].OrbitalName[0]= (char**)malloc(1*sizeof(char*));
+  A->Cell.Atom[0].OrbitalName[0][0]= (char*)malloc(1*sizeof(char));
   strncpy(A->Cell.Atom[0].OrbitalName[0][0], "s", 3);
   A->nH = 5;
-  A->H = malloc(A->nH * sizeof(TightBindingDefHopping));
+  A->H = (TightBindingDefHopping*)malloc(A->nH * sizeof(TightBindingDefHopping));
   for (i = 0; i < 5; i++)
   {
     A->H[i].Atompos1 = 0;
@@ -228,23 +228,23 @@ int CreateOneBandChainLaticeTightBindingDef(TightBindingDef * A)
   A->Cell.Units = 1;
   ReciprocalLatticeVector(A->Cell.rUnitCell, A->Cell.gUnitCell,A->Cell.Units);
   A->Cell.NAtoms = 1;
-  A->Cell.Atom = malloc(1 * sizeof(AtomType));
+  A->Cell.Atom = (AtomType*)malloc(1 * sizeof(AtomType));
   strncpy(A->Cell.Atom[0].Name, "s", 3);
   A->Cell.Atom[0].Position[0] = 0.00000;
   A->Cell.Atom[0].Position[1] = 0.00000;
   A->Cell.Atom[0].Position[2] = 0.00000;
   A->Cell.Atom[0].Nshell = 1;
-  A->Cell.Atom[0].shelldegeneracy = malloc(1 * sizeof(int));
+  A->Cell.Atom[0].shelldegeneracy = (int*)malloc(1 * sizeof(int));
   A->Cell.Atom[0].shelldegeneracy[0] = 1;
-  A->Cell.Atom[0].ShellName = malloc(1*sizeof(char*));
-  A->Cell.Atom[0].ShellName[0] = malloc(1*sizeof(char));
+  A->Cell.Atom[0].ShellName = (char**)malloc(1*sizeof(char*));
+  A->Cell.Atom[0].ShellName[0] = (char*)malloc(1*sizeof(char));
   strncpy(A->Cell.Atom[0].ShellName[0], "s", 3);
-  A->Cell.Atom[0].OrbitalName=malloc(1*sizeof(char**));
-  A->Cell.Atom[0].OrbitalName[0]=malloc(1*sizeof(char*));
-  A->Cell.Atom[0].OrbitalName[0][0]=malloc(1*sizeof(char));
+  A->Cell.Atom[0].OrbitalName= (char***)malloc(1*sizeof(char**));
+  A->Cell.Atom[0].OrbitalName[0]= (char**)malloc(1*sizeof(char*));
+  A->Cell.Atom[0].OrbitalName[0][0]= (char*)malloc(1*sizeof(char));
   strncpy(A->Cell.Atom[0].OrbitalName[0][0], "s", 3);
   A->nH = 3;
-  A->H = malloc(A->nH * sizeof(TightBindingDefHopping));
+  A->H = (TightBindingDefHopping*)malloc(A->nH * sizeof(TightBindingDefHopping));
   for (i = 0; i < 3; i++)
   {
     A->H[i].Atompos1 = 0;
@@ -1511,7 +1511,7 @@ uint32_t CreateUSuperCell(OperatorType U, OperatorType * USuperCell, CrystalStru
 {
   int    iCell, il, iN, io;
   uint16_t *oadd;
-  if ((oadd = malloc(U.MaxLength * sizeof(uint16_t))) == NULL)
+  if ((oadd = (uint16_t*)malloc(U.MaxLength * sizeof(uint16_t))) == NULL)
   {
     printf("malloc for oadd failed in CreateUSuperCell\n");
     fflush(stdout);
@@ -1582,7 +1582,7 @@ int CreateCrystalStructureFromCrystalStructureSuperCell(CrystalStructureSuperCel
   Cell->rUnitCell[2][2] = SuperCell.rSuperCell[2][0] * SuperCell.Crystal.rUnitCell[0][2] + SuperCell.rSuperCell[2][1] * SuperCell.Crystal.rUnitCell[1][2] + SuperCell.rSuperCell[2][2] * SuperCell.Crystal.rUnitCell[2][2];
   ReciprocalLatticeVector(Cell->rUnitCell, Cell->gUnitCell,Cell->Units);
   Cell->NAtoms = SuperCell.NCell * SuperCell.Crystal.NAtoms;
-  Cell->Atom = malloc(Cell->NAtoms * sizeof(AtomType));
+  Cell->Atom = (AtomType*)malloc(Cell->NAtoms * sizeof(AtomType));
   iAtomsuper = 0;
   for (iCell = 0; iCell < SuperCell.NCell; iCell++)
   {
@@ -1600,18 +1600,18 @@ int CreateCrystalStructureFromCrystalStructureSuperCell(CrystalStructureSuperCel
       Cell->Atom[iAtomsuper].Position[1] = transvec[1] + SuperCell.Crystal.Atom[iAtom].Position[1];
       Cell->Atom[iAtomsuper].Position[2] = transvec[2] + SuperCell.Crystal.Atom[iAtom].Position[2];
       Cell->Atom[iAtomsuper].Nshell = SuperCell.Crystal.Atom[iAtom].Nshell;
-      Cell->Atom[iAtomsuper].ShellName = malloc(SuperCell.Crystal.Atom[iAtom].Nshell * sizeof(char*));
-      Cell->Atom[iAtomsuper].shelldegeneracy = malloc(SuperCell.Crystal.Atom[iAtom].Nshell * sizeof(int));
-      Cell->Atom[iAtomsuper].OrbitalName = malloc(SuperCell.Crystal.Atom[iAtom].Nshell * sizeof(char**));
+      Cell->Atom[iAtomsuper].ShellName = (char**)malloc(SuperCell.Crystal.Atom[iAtom].Nshell * sizeof(char*));
+      Cell->Atom[iAtomsuper].shelldegeneracy = (int*)malloc(SuperCell.Crystal.Atom[iAtom].Nshell * sizeof(int));
+      Cell->Atom[iAtomsuper].OrbitalName = (char***)malloc(SuperCell.Crystal.Atom[iAtom].Nshell * sizeof(char**));
       for (ishell = 0; ishell < SuperCell.Crystal.Atom[iAtom].Nshell; ishell++)
       {
-        Cell->Atom[iAtomsuper].ShellName[ishell] = malloc(32 * sizeof(char));
+        Cell->Atom[iAtomsuper].ShellName[ishell] = (char*)malloc(32 * sizeof(char));
         strncpy(Cell->Atom[iAtomsuper].ShellName[ishell], SuperCell.Crystal.Atom[iAtom].ShellName[ishell], 32);
         Cell->Atom[iAtomsuper].shelldegeneracy[ishell] = SuperCell.Crystal.Atom[iAtom].shelldegeneracy[ishell];
-        Cell->Atom[iAtomsuper].OrbitalName[ishell] = malloc(Cell->Atom[iAtomsuper].shelldegeneracy[ishell] * sizeof(char*));
+        Cell->Atom[iAtomsuper].OrbitalName[ishell] = (char**)malloc(Cell->Atom[iAtomsuper].shelldegeneracy[ishell] * sizeof(char*));
         for(iorb = 0; iorb < Cell->Atom[iAtomsuper].shelldegeneracy[ishell]; iorb++)
         {
-          Cell->Atom[iAtomsuper].OrbitalName[ishell][iorb] = malloc(32 * sizeof(char));
+          Cell->Atom[iAtomsuper].OrbitalName[ishell][iorb] = (char*)malloc(32 * sizeof(char));
           strncpy(Cell->Atom[iAtomsuper].OrbitalName[ishell][iorb], SuperCell.Crystal.Atom[iAtom].OrbitalName[ishell][iorb], 32);
         }
       }
@@ -1658,9 +1658,9 @@ int CreateTightBindingSuperCell(TightBindingDef A, TightBindingDef * ASuper, Cry
     SuperCell.rSuperCell[2][2] * A.Cell.rUnitCell[2][2];
   ReciprocalLatticeVector(ASuper->Cell.rUnitCell, ASuper->Cell.gUnitCell,A.Cell.Units);
   ASuper->Cell.NAtoms = SuperCell.NCell * A.Cell.NAtoms;
-  ASuper->Cell.Atom = malloc(ASuper->Cell.NAtoms * sizeof(AtomType));
+  ASuper->Cell.Atom = (AtomType*)malloc(ASuper->Cell.NAtoms * sizeof(AtomType));
   ASuper->nH = SuperCell.NCell * A.nH;
-  ASuper->H = malloc(ASuper->nH * sizeof(TightBindingDefHopping));
+  ASuper->H = (TightBindingDefHopping*)malloc(ASuper->nH * sizeof(TightBindingDefHopping));
   iAtomsuper = 0;
   iHsuper = 0;
   for (iCell = 0; iCell < SuperCell.NCell; iCell++)
@@ -1679,15 +1679,15 @@ int CreateTightBindingSuperCell(TightBindingDef A, TightBindingDef * ASuper, Cry
       ASuper->Cell.Atom[iAtomsuper].Position[1] = transvec[1] + A.Cell.Atom[iAtom].Position[1];
       ASuper->Cell.Atom[iAtomsuper].Position[2] = transvec[2] + A.Cell.Atom[iAtom].Position[2];
       ASuper->Cell.Atom[iAtomsuper].Nshell = A.Cell.Atom[iAtom].Nshell;
-      ASuper->Cell.Atom[iAtomsuper].shelldegeneracy = malloc(ASuper->Cell.Atom[iAtomsuper].Nshell * sizeof(int));
-      ASuper->Cell.Atom[iAtomsuper].ShellName=malloc(ASuper->Cell.Atom[iAtomsuper].Nshell*sizeof(char*));
-      ASuper->Cell.Atom[iAtomsuper].OrbitalName=malloc(ASuper->Cell.Atom[iAtomsuper].Nshell*sizeof(char*));
+      ASuper->Cell.Atom[iAtomsuper].shelldegeneracy = (int*)malloc(ASuper->Cell.Atom[iAtomsuper].Nshell * sizeof(int));
+      ASuper->Cell.Atom[iAtomsuper].ShellName= (char**)malloc(ASuper->Cell.Atom[iAtomsuper].Nshell*sizeof(char*));
+      ASuper->Cell.Atom[iAtomsuper].OrbitalName= (char**)malloc(ASuper->Cell.Atom[iAtomsuper].Nshell*sizeof(char*));
       for (ishell = 0; ishell < ASuper->Cell.Atom[iAtomsuper].Nshell; ishell++)
       {
         ASuper->Cell.Atom[iAtomsuper].ShellName[ishell]=malloc(MAXStrLength);
         strncpy(ASuper->Cell.Atom[iAtomsuper].ShellName[ishell], A.Cell.Atom[iAtom].ShellName[ishell], MAXStrLength);
         ASuper->Cell.Atom[iAtomsuper].shelldegeneracy[ishell] = A.Cell.Atom[iAtom].shelldegeneracy[ishell];
-        ASuper->Cell.Atom[iAtomsuper].OrbitalName[ishell]=malloc(A.Cell.Atom[iAtom].shelldegeneracy[ishell]*sizeof(char*));
+        ASuper->Cell.Atom[iAtomsuper].OrbitalName[ishell]= (char**)malloc(A.Cell.Atom[iAtom].shelldegeneracy[ishell]*sizeof(char*));
         for(iorb=0; iorb<A.Cell.Atom[iAtom].shelldegeneracy[ishell]; iorb++)
         {
           ASuper->Cell.Atom[iAtomsuper].OrbitalName[ishell][iorb]=malloc(MAXStrLength);
@@ -1797,9 +1797,9 @@ int CreateTightBindingSquareSuperCell(TightBindingDef A, TightBindingDef * ASupe
   ASuper->Cell.rUnitCell[2][2] = N[2] * A.Cell.rUnitCell[2][2];
   ReciprocalLatticeVector(ASuper->Cell.rUnitCell, ASuper->Cell.gUnitCell,A.Cell.Units);
   ASuper->Cell.NAtoms = N[0] * N[1] * N[2] * A.Cell.NAtoms;
-  ASuper->Cell.Atom = malloc(ASuper->Cell.NAtoms * sizeof(AtomType));
+  ASuper->Cell.Atom = (AtomType*)malloc(ASuper->Cell.NAtoms * sizeof(AtomType));
   ASuper->nH = N[0] * N[1] * N[2] * A.nH;
-  ASuper->H = malloc(ASuper->nH * sizeof(TightBindingDefHopping));
+  ASuper->H = (TightBindingDefHopping*)malloc(ASuper->nH * sizeof(TightBindingDefHopping));
   iAtomsuper = 0;
   iHsuper = 0;
   for (ia = 0; ia < N[0]; ia++)
@@ -1819,7 +1819,7 @@ int CreateTightBindingSquareSuperCell(TightBindingDef A, TightBindingDef * ASupe
           ASuper->Cell.Atom[iAtomsuper].Position[1] = transvec[1] + A.Cell.Atom[iAtom].Position[1];
           ASuper->Cell.Atom[iAtomsuper].Position[2] = transvec[2] + A.Cell.Atom[iAtom].Position[2];
           ASuper->Cell.Atom[iAtomsuper].Nshell = A.Cell.Atom[iAtom].Nshell;
-          ASuper->Cell.Atom[iAtomsuper].shelldegeneracy = malloc(ASuper->Cell.Atom[iAtomsuper].Nshell * sizeof(int));
+          ASuper->Cell.Atom[iAtomsuper].shelldegeneracy = (int*)malloc(ASuper->Cell.Atom[iAtomsuper].Nshell * sizeof(int));
           for (ishell = 0; ishell < ASuper->Cell.Atom[iAtomsuper].Nshell; ishell++)
           {
             ASuper->Cell.Atom[iAtomsuper].shelldegeneracy[ishell] = A.Cell.Atom[iAtom].shelldegeneracy[ishell];

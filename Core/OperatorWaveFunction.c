@@ -130,7 +130,7 @@ uint32_t OperatorDeterminantPreAllocatedRR(const OperatorType *O, uint8_t *DetIn
       Opsi->ValueRe[i][j] = 0;
     }
   }
-  Det = malloc(Opsi->NWord * sizeof(uint8_t));
+  Det = (uint8_t*)malloc(Opsi->NWord * sizeof(uint8_t));
   if (Det == NULL) AllocFailed();
   for (l = 0; l <= O->MaxLength; l++)
   {                         /* act with a lader operator of length l on Determinant */
@@ -158,7 +158,7 @@ uint32_t OperatorDeterminantPreAllocatedRC(const OperatorType *O, uint8_t *DetIn
       Opsi->ValueIm[i][j] = 0;
     }
   }
-  Det = malloc(Opsi->NWord * sizeof(uint8_t));
+  Det = (uint8_t*)malloc(Opsi->NWord * sizeof(uint8_t));
   if (Det == NULL) AllocFailed();
   for (l = 0; l <= O->MaxLength; l++)
   {                         /* act with a lader operator of length l on Determinant */
@@ -186,7 +186,7 @@ uint32_t OperatorDeterminantPreAllocatedMC(const OperatorType *O, uint8_t *DetIn
       Opsi->ValueIm[i][j] = 0;
     }
   }
-  Det = malloc(Opsi->NWord * sizeof(uint8_t));
+  Det = (uint8_t*)malloc(Opsi->NWord * sizeof(uint8_t));
   if (Det == NULL) AllocFailed();
   for (l = 0; l <= O->MaxLength; l++)
   {                         /* act with a lader operator of length l on Determinant */
@@ -226,7 +226,7 @@ uint32_t OperatorDeterminantPreAllocatedCC(const OperatorType *O, uint8_t *DetIn
       Opsi->ValueIm[i][j] = 0;
     }
   }
-  Det = malloc(Opsi->NWord * sizeof(uint8_t));
+  Det = (uint8_t*)malloc(Opsi->NWord * sizeof(uint8_t));
   if (Det == NULL) AllocFailed();
   for (l = 0; l <= O->MaxLength; l++)
   {                         /* act with a lader operator of length l on Determinant */
@@ -258,7 +258,7 @@ uint32_t OperatorPsiConserveBasisCC(const OperatorType O, const WaveFunctionType
   Opsi->NBitsKey = psi.NBitsKey;
   Opsi->KeyList = psi.KeyList;
   Opsi->QComplex = psi.QComplex;
-  Opsi->ValueRe = malloc(Opsi->NBlok * sizeof(double *));
+  Opsi->ValueRe = (double **)malloc(Opsi->NBlok * sizeof(double *));
   if (Opsi->ValueRe == NULL)
   {                             /* Allocation Failed */
     printf("alloc failed OperatorPsiConserveBasis 01Re\n");
@@ -267,7 +267,7 @@ uint32_t OperatorPsiConserveBasisCC(const OperatorType O, const WaveFunctionType
     Opsi->NBlok = 0;
     return 1;
   }
-  Opsi->ValueIm = malloc(Opsi->NBlok * sizeof(double *));
+  Opsi->ValueIm = (double **)malloc(Opsi->NBlok * sizeof(double *));
   if (Opsi->ValueIm == NULL)
   {                             /* Allocation Failed */
     printf("alloc failed OperatorPsiConserveBasis 01Im\n");
@@ -279,8 +279,8 @@ uint32_t OperatorPsiConserveBasisCC(const OperatorType O, const WaveFunctionType
   }
   for (i = 0; i < Opsi->NBlok; i++)
   {
-    Opsi->ValueRe[i] = calloc(BlokSize, sizeof(double));
-    Opsi->ValueIm[i] = calloc(BlokSize, sizeof(double));
+    Opsi->ValueRe[i] = (double*)calloc(BlokSize, sizeof(double));
+    Opsi->ValueIm[i] = (double*)calloc(BlokSize, sizeof(double));
     if (Opsi->ValueIm[i] == NULL)
     {                           /* Allocation Failed */
       printf("alloc failed OperatorPsiConserveBasis 02\n");
@@ -301,7 +301,7 @@ uint32_t OperatorPsiConserveBasisCC(const OperatorType O, const WaveFunctionType
   }
 #pragma omp parallel private(Det,i,j,k,l,ii,ij,ik,phase,iOMP)
   {
-    Det = malloc(Opsi->NWord * sizeof(uint8_t));
+    Det = (uint8_t*)malloc(Opsi->NWord * sizeof(uint8_t));
     if (Det == NULL)
       AllocFailed();
 #pragma omp for
@@ -348,7 +348,7 @@ uint32_t OperatorPsiConserveBasisCR(const OperatorType O, const WaveFunctionType
   Opsi->NBitsKey = psi.NBitsKey;
   Opsi->KeyList = psi.KeyList;
   Opsi->QComplex = 1;
-  Opsi->ValueRe = malloc(Opsi->NBlok * sizeof(double *));
+  Opsi->ValueRe = (double **)malloc(Opsi->NBlok * sizeof(double *));
   if (Opsi->ValueRe == NULL)
   {                             /* Allocation Failed */
     printf("alloc failed OperatorPsiConserveBasis 01Re\n");
@@ -357,7 +357,7 @@ uint32_t OperatorPsiConserveBasisCR(const OperatorType O, const WaveFunctionType
     Opsi->NBlok = 0;
     return 1;
   }
-  Opsi->ValueIm = malloc(Opsi->NBlok * sizeof(double *));
+  Opsi->ValueIm = (double **)malloc(Opsi->NBlok * sizeof(double *));
   {                             /* Allocation Failed */
     printf("alloc failed OperatorPsiConserveBasis 01Im\n");
     fflush(stdout);
@@ -368,8 +368,8 @@ uint32_t OperatorPsiConserveBasisCR(const OperatorType O, const WaveFunctionType
   }
   for (i = 0; i < Opsi->NBlok; i++)
   {
-    Opsi->ValueRe[i] = calloc(BlokSize, sizeof(double));
-    Opsi->ValueIm[i] = calloc(BlokSize, sizeof(double));
+    Opsi->ValueRe[i] = (double*)calloc(BlokSize, sizeof(double));
+    Opsi->ValueIm[i] = (double*)calloc(BlokSize, sizeof(double));
     if (Opsi->ValueIm[i] == NULL)
     {                           /* Allocation Failed */
       printf("alloc failed OperatorPsiConserveBasis 02\n");
@@ -390,7 +390,7 @@ uint32_t OperatorPsiConserveBasisCR(const OperatorType O, const WaveFunctionType
   }
 #pragma omp parallel private(Det,i,j,k,l,ii,ij,ik,phase,iOMP)
   {
-    Det = malloc(Opsi->NWord * sizeof(uint8_t));
+    Det = (uint8_t*)malloc(Opsi->NWord * sizeof(uint8_t));
     if (Det == NULL)
       AllocFailed();
 #pragma omp for
@@ -434,7 +434,7 @@ uint32_t OperatorPsiConserveBasisRC(const OperatorType O, const WaveFunctionType
   Opsi->NBitsKey = psi.NBitsKey;
   Opsi->KeyList = psi.KeyList;
   Opsi->QComplex = psi.QComplex;
-  Opsi->ValueRe = malloc(Opsi->NBlok * sizeof(double *));
+  Opsi->ValueRe = (double **)malloc(Opsi->NBlok * sizeof(double *));
   if (Opsi->ValueRe == NULL)
   {                             /* Allocation Failed */
     printf("alloc failed OperatorPsiConserveBasis 01Re\n");
@@ -443,7 +443,7 @@ uint32_t OperatorPsiConserveBasisRC(const OperatorType O, const WaveFunctionType
     Opsi->NBlok = 0;
     return 1;
   }
-  Opsi->ValueIm = malloc(Opsi->NBlok * sizeof(double *));
+  Opsi->ValueIm = (double **)malloc(Opsi->NBlok * sizeof(double *));
   {                             /* Allocation Failed */
     printf("alloc failed OperatorPsiConserveBasis 01Im\n");
     fflush(stdout);
@@ -454,8 +454,8 @@ uint32_t OperatorPsiConserveBasisRC(const OperatorType O, const WaveFunctionType
   }
   for (i = 0; i < Opsi->NBlok; i++)
   {
-    Opsi->ValueRe[i] = calloc(BlokSize, sizeof(double));
-    Opsi->ValueIm[i] = calloc(BlokSize, sizeof(double));
+    Opsi->ValueRe[i] = (double*)calloc(BlokSize, sizeof(double));
+    Opsi->ValueIm[i] = (double*)calloc(BlokSize, sizeof(double));
     if (Opsi->ValueIm[i] == NULL)
     {                           /* Allocation Failed */
       printf("alloc failed OperatorPsiConserveBasis 02\n");
@@ -476,7 +476,7 @@ uint32_t OperatorPsiConserveBasisRC(const OperatorType O, const WaveFunctionType
   }
 #pragma omp parallel private(Det,i,j,k,l,ii,ij,ik,phase,iOMP)
   {
-    Det = malloc(Opsi->NWord * sizeof(uint8_t));
+    Det = (uint8_t*)malloc(Opsi->NWord * sizeof(uint8_t));
     if (Det == NULL)
       AllocFailed();
 #pragma omp for
@@ -520,7 +520,7 @@ uint32_t OperatorPsiConserveBasisRR(const OperatorType O, const WaveFunctionType
   Opsi->NBitsKey = psi.NBitsKey;
   Opsi->KeyList = psi.KeyList;
   Opsi->QComplex = psi.QComplex;
-  Opsi->ValueRe = malloc(Opsi->NBlok * sizeof(double *));
+  Opsi->ValueRe = (double **)malloc(Opsi->NBlok * sizeof(double *));
   if (Opsi->ValueRe == NULL)
   {                             /* Allocation Failed */
     printf("alloc failed OperatorPsiConserveBasis 01\n");
@@ -531,7 +531,7 @@ uint32_t OperatorPsiConserveBasisRR(const OperatorType O, const WaveFunctionType
   }
   for (i = 0; i < Opsi->NBlok; i++)
   {
-    Opsi->ValueRe[i] = calloc(BlokSize, sizeof(double));
+    Opsi->ValueRe[i] = (double*)calloc(BlokSize, sizeof(double));
     if (Opsi->ValueRe[i] == NULL)
     {                           /* Allocation Failed */
       printf("alloc failed OperatorPsiConserveBasis 02\n");
@@ -547,7 +547,7 @@ uint32_t OperatorPsiConserveBasisRR(const OperatorType O, const WaveFunctionType
   }
 #pragma omp parallel private(Det,i,j,k,l,ii,ij,ik,phase,iOMP)
   {
-    Det = malloc(Opsi->NWord * sizeof(uint8_t));
+    Det = (uint8_t*)malloc(Opsi->NWord * sizeof(uint8_t));
     if (Det == NULL)
       AllocFailed();
 #pragma omp for
@@ -590,7 +590,7 @@ uint32_t OperatorPsiConserveBasisMC(const OperatorType O, const WaveFunctionType
   Opsi->NBitsKey = psi.NBitsKey;
   Opsi->KeyList = psi.KeyList;
   Opsi->QComplex = psi.QComplex;
-  Opsi->ValueRe = malloc(Opsi->NBlok * sizeof(double *));
+  Opsi->ValueRe = (double **)malloc(Opsi->NBlok * sizeof(double *));
   if (Opsi->ValueRe == NULL)
   {                             /* Allocation Failed */
     printf("alloc failed OperatorPsiConserveBasis 01Re\n");
@@ -599,7 +599,7 @@ uint32_t OperatorPsiConserveBasisMC(const OperatorType O, const WaveFunctionType
     Opsi->NBlok = 0;
     return 1;
   }
-  Opsi->ValueIm = malloc(Opsi->NBlok * sizeof(double *));
+  Opsi->ValueIm = (double **)malloc(Opsi->NBlok * sizeof(double *));
   if (Opsi->ValueIm == NULL)
   {                             /* Allocation Failed */
     printf("alloc failed OperatorPsiConserveBasis 01Im\n");
@@ -611,8 +611,8 @@ uint32_t OperatorPsiConserveBasisMC(const OperatorType O, const WaveFunctionType
   }
   for (i = 0; i < Opsi->NBlok; i++)
   {
-    Opsi->ValueRe[i] = calloc(BlokSize, sizeof(double));
-    Opsi->ValueIm[i] = calloc(BlokSize, sizeof(double));
+    Opsi->ValueRe[i] = (double*)calloc(BlokSize, sizeof(double));
+    Opsi->ValueIm[i] = (double*)calloc(BlokSize, sizeof(double));
     if (Opsi->ValueIm[i] == NULL)
     {                           /* Allocation Failed */
       printf("alloc failed OperatorPsiConserveBasis 02\n");
@@ -633,7 +633,7 @@ uint32_t OperatorPsiConserveBasisMC(const OperatorType O, const WaveFunctionType
   }
 #pragma omp parallel private(Det,i,j,k,l,ii,ij,ik,phase,iOMP)
   {
-    Det = malloc(Opsi->NWord * sizeof(uint8_t));
+    Det = (uint8_t*)malloc(Opsi->NWord * sizeof(uint8_t));
     if (Det == NULL)
       AllocFailed();
 #pragma omp for
@@ -696,7 +696,7 @@ uint32_t OperatorPsiConserveBasisMR(const OperatorType O, const WaveFunctionType
   Opsi->NBitsKey = psi.NBitsKey;
   Opsi->KeyList = psi.KeyList;
   Opsi->QComplex = 1;
-  Opsi->ValueRe = malloc(Opsi->NBlok * sizeof(double *));
+  Opsi->ValueRe = (double **)malloc(Opsi->NBlok * sizeof(double *));
   if (Opsi->ValueRe == NULL)
   {                             /* Allocation Failed */
     printf("alloc failed OperatorPsiConserveBasis 01Re\n");
@@ -705,7 +705,7 @@ uint32_t OperatorPsiConserveBasisMR(const OperatorType O, const WaveFunctionType
     Opsi->NBlok = 0;
     return 1;
   }
-  Opsi->ValueIm = malloc(Opsi->NBlok * sizeof(double *));
+  Opsi->ValueIm = (double **)malloc(Opsi->NBlok * sizeof(double *));
   {                             /* Allocation Failed */
     printf("alloc failed OperatorPsiConserveBasis 01Im\n");
     fflush(stdout);
@@ -716,8 +716,8 @@ uint32_t OperatorPsiConserveBasisMR(const OperatorType O, const WaveFunctionType
   }
   for (i = 0; i < Opsi->NBlok; i++)
   {
-    Opsi->ValueRe[i] = calloc(BlokSize, sizeof(double));
-    Opsi->ValueIm[i] = calloc(BlokSize, sizeof(double));
+    Opsi->ValueRe[i] = (double*)calloc(BlokSize, sizeof(double));
+    Opsi->ValueIm[i] = (double*)calloc(BlokSize, sizeof(double));
     if (Opsi->ValueIm[i] == NULL)
     {                           /* Allocation Failed */
       printf("alloc failed OperatorPsiConserveBasis 02\n");
@@ -738,7 +738,7 @@ uint32_t OperatorPsiConserveBasisMR(const OperatorType O, const WaveFunctionType
   }
 #pragma omp parallel private(Det,i,j,k,l,ii,ij,ik,phase,iOMP)
   {
-    Det = malloc(Opsi->NWord * sizeof(uint8_t));
+    Det = (uint8_t*)malloc(Opsi->NWord * sizeof(uint8_t));
     if (Det == NULL)
       AllocFailed();
 #pragma omp for
@@ -806,7 +806,7 @@ uint32_t OperatorPsiConserveBasisPreAllocatedCC(const OperatorType *O, const Wav
   }
 #pragma omp parallel private(Det,i,j,k,l,ii,ij,ik,phase,iOMP)
   {
-    Det = malloc(Opsi->NWord * sizeof(uint8_t));
+    Det = (uint8_t*)malloc(Opsi->NWord * sizeof(uint8_t));
     if (Det == NULL)
       AllocFailed();
 #pragma omp for
@@ -862,7 +862,7 @@ uint32_t OperatorPsiConserveBasisPreAllocatedCR(const OperatorType *O, const Wav
   }
 #pragma omp parallel private(Det,i,j,k,l,ii,ij,ik,phase,iOMP)
   {
-    Det = malloc(Opsi->NWord * sizeof(uint8_t));
+    Det = (uint8_t*)malloc(Opsi->NWord * sizeof(uint8_t));
     if (Det == NULL)
       AllocFailed();
 #pragma omp for
@@ -915,7 +915,7 @@ uint32_t OperatorPsiConserveBasisPreAllocatedRC(const OperatorType *O, const Wav
   }
 #pragma omp parallel private(Det,i,j,k,l,ii,ij,ik,phase,iOMP)
   {
-    Det = malloc(Opsi->NWord * sizeof(uint8_t));
+    Det = (uint8_t*)malloc(Opsi->NWord * sizeof(uint8_t));
     if (Det == NULL)
       AllocFailed();
 #pragma omp for
@@ -961,7 +961,7 @@ uint32_t OperatorPsiConserveBasisPreAllocatedRR(const OperatorType *O, const Wav
   }
 #pragma omp parallel private(Det,i,j,k,l,ii,ij,ik,phase,iOMP)
   {
-    Det = malloc(Opsi->NWord * sizeof(uint8_t));
+    Det = (uint8_t*)malloc(Opsi->NWord * sizeof(uint8_t));
     if (Det == NULL)
       AllocFailed();
 #pragma omp for
@@ -1012,7 +1012,7 @@ uint32_t OperatorPsiConserveBasisPreAllocatedMC(const OperatorType *O, const Wav
   }
 #pragma omp parallel private(Det,i,j,k,l,ii,ij,ik,phase,iOMP)
   {
-    Det = malloc(Opsi->NWord * sizeof(uint8_t));
+    Det = (uint8_t*)malloc(Opsi->NWord * sizeof(uint8_t));
     if (Det == NULL)
       AllocFailed();
 #pragma omp for
@@ -1082,7 +1082,7 @@ uint32_t OperatorPsiConserveBasisPreAllocatedMR(const OperatorType *O, const Wav
   }
 #pragma omp parallel private(Det,i,j,k,l,ii,ij,ik,phase,iOMP)
   {
-    Det = malloc(Opsi->NWord * sizeof(uint8_t));
+    Det = (uint8_t*)malloc(Opsi->NWord * sizeof(uint8_t));
     if (Det == NULL)
       AllocFailed();
 #pragma omp for
@@ -2239,7 +2239,7 @@ uint32_t PsiOperatorPsiCC(const OperatorType O, const WaveFunctionType psi, doub
   double aRe, aIm;
 #pragma omp parallel private(aRe,aIm,Det,i,j,k,l,ii,ij,ik,phase,iOMP) reduction(+ : ExpecValueRe, ExpecValueIm)
   {
-    Det = malloc(psi.NWord * sizeof(uint8_t));
+    Det = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (Det == NULL)
       AllocFailed();
 #pragma omp for
@@ -2286,7 +2286,7 @@ uint32_t PsiOperatorPsiCR(const OperatorType O, const WaveFunctionType psi, doub
   double ExpecValueIm = 0;
 #pragma omp parallel private(Det,i,j,k,l,ii,ij,ik,phase,iOMP) reduction(+ : ExpecValueRe, ExpecValueIm)
   {
-    Det = malloc(psi.NWord * sizeof(uint8_t));
+    Det = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (Det == NULL)
       AllocFailed();
 #pragma omp for
@@ -2329,7 +2329,7 @@ uint32_t PsiOperatorPsiRC(const OperatorType O, const WaveFunctionType psi, doub
   double aRe, aIm;
 #pragma omp parallel private(aRe,aIm,Det,i,j,k,l,ii,ij,ik,phase,iOMP) reduction(+ : ExpecValueRe, ExpecValueIm)
   {
-    Det = malloc(psi.NWord * sizeof(uint8_t));
+    Det = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (Det == NULL)
       AllocFailed();
 #pragma omp for
@@ -2375,7 +2375,7 @@ uint32_t PsiOperatorPsiRR(const OperatorType O, const WaveFunctionType psi, doub
   c = 0;
 #pragma omp parallel firstprivate(c) private(Det,i,j,k,l,ii,ij,ik,phase,iOMP,t,y) reduction(+ : ExpecValue)
   {
-    Det = malloc(psi.NWord * sizeof(uint8_t));
+    Det = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (Det == NULL)
       AllocFailed();
 #pragma omp for
@@ -2420,7 +2420,7 @@ uint32_t PsiOperatorPsiMC(const OperatorType O, const WaveFunctionType psi, doub
   double aRe, aIm;
 #pragma omp parallel private(aRe,aIm,Det,i,j,k,l,ii,ij,ik,phase,iOMP) reduction(+ : ExpecValueRe, ExpecValueIm)
   {
-    Det = malloc(psi.NWord * sizeof(uint8_t));
+    Det = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (Det == NULL)
       AllocFailed();
 #pragma omp for
@@ -2487,7 +2487,7 @@ uint32_t PsiOperatorPsiMR(const OperatorType O, const WaveFunctionType psi, doub
   double ExpecValueIm = 0;
 #pragma omp parallel private(Det,i,j,k,l,ii,ij,ik,phase,iOMP) reduction(+ : ExpecValueRe, ExpecValueIm)
   {
-    Det = malloc(psi.NWord * sizeof(uint8_t));
+    Det = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (Det == NULL)
       AllocFailed();
 #pragma omp for
@@ -2543,7 +2543,7 @@ uint32_t PsiOperatorPsiCHC(const OperatorType O, const WaveFunctionType psi, dou
   double aRe, aIm;
 #pragma omp parallel private(aRe,aIm,Det,i,j,k,l,ii,ij,ik,phase,iOMP) reduction(+ : ExpecValueRe)
   {
-    Det = malloc(psi.NWord * sizeof(uint8_t));
+    Det = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (Det == NULL)
       AllocFailed();
 #pragma omp for
@@ -2585,7 +2585,7 @@ uint32_t PsiOperatorPsiCHR(const OperatorType O, const WaveFunctionType psi, dou
   double ExpecValueRe = 0;
 #pragma omp parallel private(Det,i,j,k,l,ii,ij,ik,phase,iOMP) reduction(+ : ExpecValueRe)
   {
-    Det = malloc(psi.NWord * sizeof(uint8_t));
+    Det = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (Det == NULL)
       AllocFailed();
 #pragma omp for
@@ -2625,7 +2625,7 @@ uint32_t PsiOperatorPsiRHC(const OperatorType O, const WaveFunctionType psi, dou
   double aRe, aIm;
 #pragma omp parallel private(aRe,aIm,Det,i,j,k,l,ii,ij,ik,phase,iOMP) reduction(+ : ExpecValueRe)
   {
-    Det = malloc(psi.NWord * sizeof(uint8_t));
+    Det = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (Det == NULL)
       AllocFailed();
 #pragma omp for
@@ -2666,7 +2666,7 @@ uint32_t PsiOperatorPsiRHR(const OperatorType O, const WaveFunctionType psi, dou
   double ExpecValue = 0;
 #pragma omp parallel private(Det,i,j,k,l,ii,ij,ik,phase,iOMP) reduction(+ : ExpecValue)
   {
-    Det = malloc(psi.NWord * sizeof(uint8_t));
+    Det = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (Det == NULL)
       AllocFailed();
 #pragma omp for
@@ -2704,7 +2704,7 @@ uint32_t PsiOperatorPsiMHC(const OperatorType O, const WaveFunctionType psi, dou
   double aRe, aIm;
 #pragma omp parallel private(aRe,aIm,Det,i,j,k,l,ii,ij,ik,phase,iOMP) reduction(+ : ExpecValueRe)
   {
-    Det = malloc(psi.NWord * sizeof(uint8_t));
+    Det = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (Det == NULL)
       AllocFailed();
 #pragma omp for
@@ -2764,7 +2764,7 @@ uint32_t PsiOperatorPsiMHR(const OperatorType O, const WaveFunctionType psi, dou
   double ExpecValueRe = 0;
 #pragma omp parallel private(Det,i,j,k,l,ii,ij,ik,phase,iOMP) reduction(+ : ExpecValueRe)
   {
-    Det = malloc(psi.NWord * sizeof(uint8_t));
+    Det = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (Det == NULL)
       AllocFailed();
 #pragma omp for
@@ -2819,10 +2819,10 @@ uint32_t PsiOperatorSqrPsiCC(const OperatorType O, const WaveFunctionType psi, d
   double aRe, aIm, temp;
 #pragma omp parallel private(temp,aRe,aIm,Det,DetSqr,i,j,k,l,lS,jS,ii,ij,ik,phase,phaseS,iOMP) reduction(+ : ExpecValueRe, ExpecValueIm)
   {
-    Det = malloc(psi.NWord * sizeof(uint8_t));
+    Det = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (Det == NULL)
       AllocFailed();
-    DetSqr = malloc(psi.NWord * sizeof(uint8_t));
+    DetSqr = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (DetSqr == NULL)
       AllocFailed();
 #pragma omp for
@@ -2886,10 +2886,10 @@ uint32_t PsiOperatorSqrPsiCR(const OperatorType O, const WaveFunctionType psi, d
   double ExpecValueIm = 0;
 #pragma omp parallel private(Det,DetSqr,i,j,k,l,lS,jS,ii,ij,ik,phase,phaseS,iOMP) reduction(+ : ExpecValueRe, ExpecValueIm)
   {
-    Det = malloc(psi.NWord * sizeof(uint8_t));
+    Det = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (Det == NULL)
       AllocFailed();
-    DetSqr = malloc(psi.NWord * sizeof(uint8_t));
+    DetSqr = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (DetSqr == NULL)
       AllocFailed();
 #pragma omp for
@@ -2953,10 +2953,10 @@ uint32_t PsiOperatorSqrPsiRC(const OperatorType O, const WaveFunctionType psi, d
   double aRe, aIm;
 #pragma omp parallel private(aRe,aIm,Det,DetSqr,i,j,k,l,lS,jS,ii,ij,ik,phase,phaseS,iOMP) reduction(+ : ExpecValueRe, ExpecValueIm)
   {
-    Det = malloc(psi.NWord * sizeof(uint8_t));
+    Det = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (Det == NULL)
       AllocFailed();
-    DetSqr = malloc(psi.NWord * sizeof(uint8_t));
+    DetSqr = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (DetSqr == NULL)
       AllocFailed();
 #pragma omp for
@@ -3013,10 +3013,10 @@ uint32_t PsiOperatorSqrPsiRR(const OperatorType O, const WaveFunctionType psi, d
   double ExpecValue = 0;
 #pragma omp parallel private(Det,DetSqr,i,j,k,l,lS,jS,ii,ij,ik,phase,phaseS,iOMP) reduction(+ : ExpecValue)
   {
-    Det = malloc(psi.NWord * sizeof(uint8_t));
+    Det = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (Det == NULL)
       AllocFailed();
-    DetSqr = malloc(psi.NWord * sizeof(uint8_t));
+    DetSqr = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (DetSqr == NULL)
       AllocFailed();
 #pragma omp for
@@ -3069,10 +3069,10 @@ uint32_t PsiOperatorSqrPsiMC(const OperatorType O, const WaveFunctionType psi, d
   double aRe, aIm, temp;
 #pragma omp parallel private(temp,aRe,aIm,Det,DetSqr,i,j,k,l,lS,jS,ii,ij,ik,phase,phaseS,iOMP) reduction(+ : ExpecValueRe, ExpecValueIm)
   {
-    Det = malloc(psi.NWord * sizeof(uint8_t));
+    Det = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (Det == NULL)
       AllocFailed();
-    DetSqr = malloc(psi.NWord * sizeof(uint8_t));
+    DetSqr = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (DetSqr == NULL)
       AllocFailed();
 #pragma omp for
@@ -3222,10 +3222,10 @@ uint32_t PsiOperatorSqrPsiMR(const OperatorType O, const WaveFunctionType psi, d
   double ExpecValueIm = 0;
 #pragma omp parallel private(Det,DetSqr,i,j,k,l,lS,jS,ii,ij,ik,phase,phaseS,iOMP) reduction(+ : ExpecValueRe, ExpecValueIm)
   {
-    Det = malloc(psi.NWord * sizeof(uint8_t));
+    Det = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (Det == NULL)
       AllocFailed();
-    DetSqr = malloc(psi.NWord * sizeof(uint8_t));
+    DetSqr = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (DetSqr == NULL)
       AllocFailed();
 #pragma omp for
@@ -3363,10 +3363,10 @@ uint32_t PsiOperatorSqrPsiCHC(const OperatorType O, const WaveFunctionType psi, 
   double aRe, aIm, temp;
 #pragma omp parallel private(temp,aRe,aIm,Det,DetSqr,i,j,k,l,lS,jS,ii,ij,ik,phase,phaseS,iOMP) reduction(+ : ExpecValueRe)
   {
-    Det = malloc(psi.NWord * sizeof(uint8_t));
+    Det = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (Det == NULL)
       AllocFailed();
-    DetSqr = malloc(psi.NWord * sizeof(uint8_t));
+    DetSqr = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (DetSqr == NULL)
       AllocFailed();
 #pragma omp for
@@ -3426,10 +3426,10 @@ uint32_t PsiOperatorSqrPsiCHR(const OperatorType O, const WaveFunctionType psi, 
   double ExpecValueRe = 0;
 #pragma omp parallel private(Det,DetSqr,i,j,k,l,lS,jS,ii,ij,ik,phase,phaseS,iOMP) reduction(+ : ExpecValueRe)
   {
-    Det = malloc(psi.NWord * sizeof(uint8_t));
+    Det = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (Det == NULL)
       AllocFailed();
-    DetSqr = malloc(psi.NWord * sizeof(uint8_t));
+    DetSqr = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (DetSqr == NULL)
       AllocFailed();
 #pragma omp for
@@ -3485,10 +3485,10 @@ uint32_t PsiOperatorSqrPsiRHC(const OperatorType O, const WaveFunctionType psi, 
   double aRe, aIm;
 #pragma omp parallel private(aRe,aIm,Det,DetSqr,i,j,k,l,lS,jS,ii,ij,ik,phase,phaseS,iOMP) reduction(+ : ExpecValueRe)
   {
-    Det = malloc(psi.NWord * sizeof(uint8_t));
+    Det = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (Det == NULL)
       AllocFailed();
-    DetSqr = malloc(psi.NWord * sizeof(uint8_t));
+    DetSqr = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (DetSqr == NULL)
       AllocFailed();
 #pragma omp for
@@ -3541,10 +3541,10 @@ uint32_t PsiOperatorSqrPsiRHR(const OperatorType O, const WaveFunctionType psi, 
   double ExpecValue = 0;
 #pragma omp parallel private(Det,DetSqr,i,j,k,l,lS,jS,ii,ij,ik,phase,phaseS,iOMP) reduction(+ : ExpecValue)
   {
-    Det = malloc(psi.NWord * sizeof(uint8_t));
+    Det = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (Det == NULL)
       AllocFailed();
-    DetSqr = malloc(psi.NWord * sizeof(uint8_t));
+    DetSqr = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (DetSqr == NULL)
       AllocFailed();
 #pragma omp for
@@ -3596,10 +3596,10 @@ uint32_t PsiOperatorSqrPsiMHC(const OperatorType O, const WaveFunctionType psi, 
   double aRe, aIm, temp;
 #pragma omp parallel private(temp,aRe,aIm,Det,DetSqr,i,j,k,l,lS,jS,ii,ij,ik,phase,phaseS,iOMP) reduction(+ : ExpecValueRe)
   {
-    Det = malloc(psi.NWord * sizeof(uint8_t));
+    Det = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (Det == NULL)
       AllocFailed();
-    DetSqr = malloc(psi.NWord * sizeof(uint8_t));
+    DetSqr = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (DetSqr == NULL)
       AllocFailed();
 #pragma omp for
@@ -3738,10 +3738,10 @@ uint32_t PsiOperatorSqrPsiMHR(const OperatorType O, const WaveFunctionType psi, 
   double ExpecValueRe = 0;
 #pragma omp parallel private(Det,DetSqr,i,j,k,l,lS,jS,ii,ij,ik,phase,phaseS,iOMP) reduction(+ : ExpecValueRe)
   {
-    Det = malloc(psi.NWord * sizeof(uint8_t));
+    Det = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (Det == NULL)
       AllocFailed();
-    DetSqr = malloc(psi.NWord * sizeof(uint8_t));
+    DetSqr = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (DetSqr == NULL)
       AllocFailed();
 #pragma omp for
@@ -3865,10 +3865,10 @@ uint32_t PsiOperatorSqrPsiRestrictedCC(const OperatorType O, const WaveFunctionT
   double aRe, aIm, temp;
 #pragma omp parallel private(temp,aRe,aIm,Det,DetSqr,i,j,k,l,lS,jS,ii,ij,ik,phase,phaseS,iOMP) reduction(+ : ExpecValueRe, ExpecValueIm)
   {
-    Det = malloc(psi.NWord * sizeof(uint8_t));
+    Det = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (Det == NULL)
       AllocFailed();
-    DetSqr = malloc(psi.NWord * sizeof(uint8_t));
+    DetSqr = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (DetSqr == NULL)
       AllocFailed();
 #pragma omp for
@@ -3932,10 +3932,10 @@ uint32_t PsiOperatorSqrPsiRestrictedCR(const OperatorType O, const WaveFunctionT
   double ExpecValueIm = 0;
 #pragma omp parallel private(Det,DetSqr,i,j,k,l,lS,jS,ii,ij,ik,phase,phaseS,iOMP) reduction(+ : ExpecValueRe, ExpecValueIm)
   {
-    Det = malloc(psi.NWord * sizeof(uint8_t));
+    Det = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (Det == NULL)
       AllocFailed();
-    DetSqr = malloc(psi.NWord * sizeof(uint8_t));
+    DetSqr = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (DetSqr == NULL)
       AllocFailed();
 #pragma omp for
@@ -3999,10 +3999,10 @@ uint32_t PsiOperatorSqrPsiRestrictedRC(const OperatorType O, const WaveFunctionT
   double aRe, aIm;
 #pragma omp parallel private(aRe,aIm,Det,DetSqr,i,j,k,l,lS,jS,ii,ij,ik,phase,phaseS,iOMP) reduction(+ : ExpecValueRe, ExpecValueIm)
   {
-    Det = malloc(psi.NWord * sizeof(uint8_t));
+    Det = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (Det == NULL)
       AllocFailed();
-    DetSqr = malloc(psi.NWord * sizeof(uint8_t));
+    DetSqr = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (DetSqr == NULL)
       AllocFailed();
 #pragma omp for
@@ -4059,10 +4059,10 @@ uint32_t PsiOperatorSqrPsiRestrictedRR(const OperatorType O, const WaveFunctionT
   double ExpecValue = 0;
 #pragma omp parallel private(Det,DetSqr,i,j,k,l,lS,jS,ii,ij,ik,phase,phaseS,iOMP) reduction(+ : ExpecValue)
   {
-    Det = malloc(psi.NWord * sizeof(uint8_t));
+    Det = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (Det == NULL)
       AllocFailed();
-    DetSqr = malloc(psi.NWord * sizeof(uint8_t));
+    DetSqr = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (DetSqr == NULL)
       AllocFailed();
 #pragma omp for
@@ -4115,10 +4115,10 @@ uint32_t PsiOperatorSqrPsiRestrictedMC(const OperatorType O, const WaveFunctionT
   double aRe, aIm, temp;
 #pragma omp parallel private(temp,aRe,aIm,Det,DetSqr,i,j,k,l,lS,jS,ii,ij,ik,phase,phaseS,iOMP) reduction(+ : ExpecValueRe, ExpecValueIm)
   {
-    Det = malloc(psi.NWord * sizeof(uint8_t));
+    Det = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (Det == NULL)
       AllocFailed();
-    DetSqr = malloc(psi.NWord * sizeof(uint8_t));
+    DetSqr = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (DetSqr == NULL)
       AllocFailed();
 #pragma omp for
@@ -4268,10 +4268,10 @@ uint32_t PsiOperatorSqrPsiRestrictedMR(const OperatorType O, const WaveFunctionT
   double ExpecValueIm = 0;
 #pragma omp parallel private(Det,DetSqr,i,j,k,l,lS,jS,ii,ij,ik,phase,phaseS,iOMP) reduction(+ : ExpecValueRe, ExpecValueIm)
   {
-    Det = malloc(psi.NWord * sizeof(uint8_t));
+    Det = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (Det == NULL)
       AllocFailed();
-    DetSqr = malloc(psi.NWord * sizeof(uint8_t));
+    DetSqr = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (DetSqr == NULL)
       AllocFailed();
 #pragma omp for
@@ -4409,10 +4409,10 @@ uint32_t PsiOperatorSqrPsiRestrictedCHC(const OperatorType O, const WaveFunction
   double aRe, aIm, temp;
 #pragma omp parallel private(temp,aRe,aIm,Det,DetSqr,i,j,k,l,lS,jS,ii,ij,ik,phase,phaseS,iOMP) reduction(+ : ExpecValueRe)
   {
-    Det = malloc(psi.NWord * sizeof(uint8_t));
+    Det = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (Det == NULL)
       AllocFailed();
-    DetSqr = malloc(psi.NWord * sizeof(uint8_t));
+    DetSqr = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (DetSqr == NULL)
       AllocFailed();
 #pragma omp for
@@ -4472,10 +4472,10 @@ uint32_t PsiOperatorSqrPsiRestrictedCHR(const OperatorType O, const WaveFunction
   double ExpecValueRe = 0;
 #pragma omp parallel private(Det,DetSqr,i,j,k,l,lS,jS,ii,ij,ik,phase,phaseS,iOMP) reduction(+ : ExpecValueRe)
   {
-    Det = malloc(psi.NWord * sizeof(uint8_t));
+    Det = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (Det == NULL)
       AllocFailed();
-    DetSqr = malloc(psi.NWord * sizeof(uint8_t));
+    DetSqr = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (DetSqr == NULL)
       AllocFailed();
 #pragma omp for
@@ -4531,10 +4531,10 @@ uint32_t PsiOperatorSqrPsiRestrictedRHC(const OperatorType O, const WaveFunction
   double aRe, aIm;
 #pragma omp parallel private(aRe,aIm,Det,DetSqr,i,j,k,l,lS,jS,ii,ij,ik,phase,phaseS,iOMP) reduction(+ : ExpecValueRe)
   {
-    Det = malloc(psi.NWord * sizeof(uint8_t));
+    Det = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (Det == NULL)
       AllocFailed();
-    DetSqr = malloc(psi.NWord * sizeof(uint8_t));
+    DetSqr = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (DetSqr == NULL)
       AllocFailed();
 #pragma omp for
@@ -4587,10 +4587,10 @@ uint32_t PsiOperatorSqrPsiRestrictedRHR(const OperatorType O, const WaveFunction
   double ExpecValue = 0;
 #pragma omp parallel private(Det,DetSqr,i,j,k,l,lS,jS,ii,ij,ik,phase,phaseS,iOMP) reduction(+ : ExpecValue)
   {
-    Det = malloc(psi.NWord * sizeof(uint8_t));
+    Det = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (Det == NULL)
       AllocFailed();
-    DetSqr = malloc(psi.NWord * sizeof(uint8_t));
+    DetSqr = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (DetSqr == NULL)
       AllocFailed();
 #pragma omp for
@@ -4642,10 +4642,10 @@ uint32_t PsiOperatorSqrPsiRestrictedMHC(const OperatorType O, const WaveFunction
   double aRe, aIm, temp;
 #pragma omp parallel private(temp,aRe,aIm,Det,DetSqr,i,j,k,l,lS,jS,ii,ij,ik,phase,phaseS,iOMP) reduction(+ : ExpecValueRe)
   {
-    Det = malloc(psi.NWord * sizeof(uint8_t));
+    Det = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (Det == NULL)
       AllocFailed();
-    DetSqr = malloc(psi.NWord * sizeof(uint8_t));
+    DetSqr = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (DetSqr == NULL)
       AllocFailed();
 #pragma omp for
@@ -4784,10 +4784,10 @@ uint32_t PsiOperatorSqrPsiRestrictedMHR(const OperatorType O, const WaveFunction
   double ExpecValueRe = 0;
 #pragma omp parallel private(Det,DetSqr,i,j,k,l,lS,jS,ii,ij,ik,phase,phaseS,iOMP) reduction(+ : ExpecValueRe)
   {
-    Det = malloc(psi.NWord * sizeof(uint8_t));
+    Det = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (Det == NULL)
       AllocFailed();
-    DetSqr = malloc(psi.NWord * sizeof(uint8_t));
+    DetSqr = (uint8_t*)malloc(psi.NWord * sizeof(uint8_t));
     if (DetSqr == NULL)
       AllocFailed();
 #pragma omp for

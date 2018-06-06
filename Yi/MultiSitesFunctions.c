@@ -96,7 +96,7 @@ uint32_t StreamReadMultiSitesDMFTSettings(MultiSitesDMFTSettings * O, FILE *stre
   if((O->Spectra)&240)
   {
     fscanf(stream,"%i",&(O->NQ));
-    O->Q=malloc(O->NQ*sizeof(double));
+    O->Q= (double*)malloc(O->NQ*sizeof(double));
     for(i=0;i<O->NQ;i++)
     {
       fscanf(stream,"%lf",&(O->Q[i]));
@@ -477,7 +477,7 @@ uint32_t CreateWaveFunctionMultiSitesDMFT(WaveFunctionType *Psi, uint32_t NSite,
   }
   sprintf(Psi->Name, "%s", Buffer);
 
-  Determinant=calloc(Psi->NWord, sizeof(uint8_t));
+  Determinant= (uint8_t*)calloc(Psi->NWord, sizeof(uint8_t));
   for (i=0; i<2*NSite; i++)
   {
     // fill impurity site up and dn
@@ -1259,8 +1259,8 @@ uint32_t MultiSitesFindGroundStateFromG0andSigma(MultiSitesDMFTSettings *const O
     {
       printf("Add %22.15E * S^2 to HAnd for the calculation of the ground-state wave-function\n", 1+O->U);
       printf("This stabilizes the ground-state by enlarging the singlet triplet energy\n");
-      SpinUp=calloc(HAnd.NFermion/2, sizeof(uint16_t));
-      SpinDn=calloc(HAnd.NFermion/2, sizeof(uint16_t));
+      SpinUp= (uint16_t*)calloc(HAnd.NFermion/2, sizeof(uint16_t));
+      SpinDn= (uint16_t*)calloc(HAnd.NFermion/2, sizeof(uint16_t));
       for (i=0; i<2*O->NSite; i++)
       {
         SpinUp[i] = 2*i;

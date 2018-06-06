@@ -19,7 +19,7 @@ char LToShellName(int l)
 
 int LMToOrbitalName(int l, int m, char **name)
 {
-  *name = malloc(16*sizeof(char));
+  *name = (char*)malloc(16*sizeof(char));
   switch (l*l+l+m)
   {
     case 0:
@@ -106,7 +106,7 @@ uint32_t CrystalStructureFromDresdenFPLO(DresdenFPLO FPLO, CrystalStructureType 
   ReciprocalLatticeVector(Cell->rUnitCell, Cell->gUnitCell, Cell->Units);
 
   Cell->NAtoms = FPLO.Wannier.NActAtom;
-  Cell->Atom   = malloc(Cell->NAtoms*sizeof(AtomType));
+  Cell->Atom   = (AtomType*)malloc(Cell->NAtoms*sizeof(AtomType));
   for(allatom=0;allatom<FPLO.Atoms.Natom;allatom++)
   {
     iatom = FPLO.Wannier.ActMap[allatom];
@@ -151,14 +151,14 @@ uint32_t CrystalStructureFromDresdenFPLO(DresdenFPLO FPLO, CrystalStructureType 
       // Determine properties of each shell.
       if(Cell->Atom[iatom].Nshell!=0)
       {
-        Cell->Atom[iatom].ShellName      = malloc(Cell->Atom[iatom].Nshell*sizeof(char*));
-        Cell->Atom[iatom].shelldegeneracy= malloc(Cell->Atom[iatom].Nshell*sizeof(int  ));
-        Cell->Atom[iatom].OrbitalName    = malloc(Cell->Atom[iatom].Nshell*sizeof(char*));
+        Cell->Atom[iatom].ShellName      = (char**)malloc(Cell->Atom[iatom].Nshell*sizeof(char*));
+        Cell->Atom[iatom].shelldegeneracy= (int  *)malloc(Cell->Atom[iatom].Nshell*sizeof(int  ));
+        Cell->Atom[iatom].OrbitalName    = (char**)malloc(Cell->Atom[iatom].Nshell*sizeof(char*));
 
         // shell degeneracy
         for(i=0;i<Cell->Atom[iatom].Nshell;i++)
         {
-          Cell->Atom[iatom].ShellName[i] = malloc(4*sizeof(char));
+          Cell->Atom[iatom].ShellName[i] = (char*)malloc(4*sizeof(char));
           Cell->Atom[iatom].ShellName[i][0] = (char)(nlIndex[iatom][i]/10+'0');
           Cell->Atom[iatom].ShellName[i][1] = LToShellName(nlIndex[iatom][i]%10);
           Cell->Atom[iatom].ShellName[i][2] = 0;
@@ -173,7 +173,7 @@ uint32_t CrystalStructureFromDresdenFPLO(DresdenFPLO FPLO, CrystalStructureType 
           }
 
           // orbital names in each shell
-          Cell->Atom[iatom].OrbitalName[i] = malloc(Cell->Atom[iatom].shelldegeneracy[i]*sizeof(char*));
+          Cell->Atom[iatom].OrbitalName[i] = (char**)malloc(Cell->Atom[iatom].shelldegeneracy[i]*sizeof(char*));
           k = 0;
           for(j=0;j<is;j++)
           {
@@ -212,7 +212,7 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
     Nshell += HTB->Cell.Atom[iatom].Nshell;
   }
 
-  ShellLabel  = calloc(Nwandef, sizeof(int));
+  ShellLabel  = (int*)calloc(Nwandef, sizeof(int));
   for(i=0;i<Nwandef;i++)
   {
     // Compress the shell indicies {site, n, l, l+m} to one number
@@ -221,13 +221,13 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
   }
 
   // Index the sites by number [0, 1, 2, ...]
-  SiteInd = calloc(Nwandef, sizeof(int));
-  SiteName= malloc(FPLO.Wannier.NActAtom*sizeof(char*));
-  SiteName[0] = malloc(16*sizeof(char));
+  SiteInd = (int*)calloc(Nwandef, sizeof(int));
+  SiteName= (char**)malloc(FPLO.Wannier.NActAtom*sizeof(char*));
+  SiteName[0] = (char*)malloc(16*sizeof(char));
   strcpy(SiteName[0], FPLO.Atoms.Atom[FPLO.Wannier.Site[0]-1]); //FPLO prints site starting from 1.
-  SitePos = malloc(FPLO.Wannier.NActAtom*sizeof(double*));
+  SitePos = (double**)malloc(FPLO.Wannier.NActAtom*sizeof(double*));
   for(i=0;i<FPLO.Wannier.NActAtom;i++)
-    SitePos[i] = calloc(3, sizeof(double));
+    SitePos[i] = (double*)calloc(3, sizeof(double));
   for(k=0;k<3;k++)
           SitePos[0][k] = FPLO.Wannier.PosCenter[0][k];
 
@@ -243,7 +243,7 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
       }
       else if(j+1==i)
       {
-        SiteName[l] = malloc(MAXStrLength*sizeof(char));
+        SiteName[l] = (char*)malloc(MAXStrLength*sizeof(char));
         strcpy(SiteName[l], FPLO.Atoms.Atom[FPLO.Wannier.Site[i]-1]);
         for(k=0;k<3;k++)
           SitePos[l][k] = FPLO.Wannier.PosCenter[i][k];
@@ -253,9 +253,9 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
   }
 
   // Index the l values of Wannier orbitals by numbers [0, 1, ..., Nshell-1]
-  ShellInd    = calloc(Nwandef, sizeof(int));
-  ShellName   = malloc(Nshell*sizeof(char*));
-  ShellName[0]=malloc(4*sizeof(char));
+  ShellInd    = (int*)calloc(Nwandef, sizeof(int));
+  ShellName   = (char**)malloc(Nshell*sizeof(char*));
+  ShellName[0]= (char*)malloc(4*sizeof(char));
   ShellName[0][0]=(char)(FPLO.Wannier.Orbital[0][0]+'0');
   ShellName[0][1]=LToShellName(FPLO.Wannier.Orbital[0][1]);
   ShellName[0][2]=0;
@@ -272,7 +272,7 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
       }
       else if(j+1==i)
       {
-        ShellName[l]=malloc(4*sizeof(char));
+        ShellName[l]= (char*)malloc(4*sizeof(char));
         ShellName[l][0]=(char)(FPLO.Wannier.Orbital[i][0]+'0');
         ShellName[l][1]=LToShellName(FPLO.Wannier.Orbital[i][1]);
         ShellName[l][2]=0;
@@ -283,11 +283,11 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
 
   // Shell degeneracy of each site.
   // Map shell ish to the j-th shell of i-th atom.
-  NshellOfSite = calloc(Nshell, sizeof(int));
-  ShellOfSite  = malloc(Nshell*sizeof(int*));
+  NshellOfSite = (int*)calloc(Nshell, sizeof(int));
+  ShellOfSite  = (int**)malloc(Nshell*sizeof(int*));
   for(ish=0;ish<Nshell;ish++)
   {
-    ShellOfSite[ish] = calloc(2, sizeof(int));
+    ShellOfSite[ish] = (int*)calloc(2, sizeof(int));
     ShellOfSite[ish][1] = -1;
   }
   ShellOfSite[ ShellInd[0] ][0] = SiteInd[0]; // i-th atom
@@ -308,7 +308,7 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
   }
 
   // Orbital egeneracy of each shell.
-  Norb  = calloc(Nshell, sizeof(int));
+  Norb  = (int*)calloc(Nshell, sizeof(int));
   Norb[0]  = 1;
   for(i=1;i<Nwandef;i++)
   {
@@ -322,7 +322,7 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
   }
 
   // Orbital index within each shell.
-  OrbInd = calloc(Nwandef, sizeof(int));
+  OrbInd = (int*)calloc(Nwandef, sizeof(int));
   for(i=1;i<Nwandef;i++)
   {
     for(j=0;j<i;j++)
@@ -332,14 +332,14 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
     }
   }
 
-  NVecShell = malloc(Nshell*sizeof(int*));
-  HopVec    = malloc(Nshell*Nshell*sizeof(double**));
+  NVecShell = (int**)malloc(Nshell*sizeof(int*));
+  HopVec    = (double***)malloc(Nshell*Nshell*sizeof(double**));
   for(i=0;i<Nshell;i++)
   {
-    NVecShell[i] = calloc(Nshell, sizeof(int));
+    NVecShell[i] = (int*)calloc(Nshell, sizeof(int));
     for(j=0;j<Nshell;j++)
     {
-      HopVec[i*Nshell+j] = malloc(NhopMax*sizeof(double*));
+      HopVec[i*Nshell+j] = (double**)malloc(NhopMax*sizeof(double*));
     }
   }
 
@@ -357,7 +357,7 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
       {
         if(NVecShell[ish][jsh]==0)
         {
-          HopVec[indsh][0]    = malloc(3*sizeof(double));
+          HopVec[indsh][0]    = (double*)malloc(3*sizeof(double));
           HopVec[indsh][0][0] = FPLO.Wannier.HopVec[indwan][k][0];
           HopVec[indsh][0][1] = FPLO.Wannier.HopVec[indwan][k][1];
           HopVec[indsh][0][2] = FPLO.Wannier.HopVec[indwan][k][2];
@@ -377,7 +377,7 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
 
           if(l==NVecShell[ish][jsh] && diffQ)
           {
-            HopVec[indsh][l]    = malloc(3*sizeof(double));
+            HopVec[indsh][l]    = (double*)malloc(3*sizeof(double));
             HopVec[indsh][l][0] = FPLO.Wannier.HopVec[indwan][k][0];
             HopVec[indsh][l][1] = FPLO.Wannier.HopVec[indwan][k][1];
             HopVec[indsh][l][2] = FPLO.Wannier.HopVec[indwan][k][2];
@@ -389,10 +389,10 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
     }
   }
 
-  NHopStart = malloc(Nshell*sizeof(int*));
+  NHopStart = (int**)malloc(Nshell*sizeof(int*));
   for(ish=0;ish<Nshell;ish++)
   {
-    NHopStart[ish] = calloc(Nshell, sizeof(int));
+    NHopStart[ish] = (int*)calloc(Nshell, sizeof(int));
   }
 
   HTB->nH = 0;
@@ -407,7 +407,7 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
         NHopStart[ish][jsh+1] = NHopStart[ish][jsh] + NVecShell[ish][jsh];
     }
   }
-  HTB->H=malloc(HTB->nH*sizeof(TightBindingDefHopping));
+  HTB->H= (TightBindingDefHopping*)malloc(HTB->nH*sizeof(TightBindingDefHopping));
 
 
   // Fill in the HTB list.

@@ -46,10 +46,10 @@ uint32_t InitBlokAndersonMatrix(BlokAndersonMatrixType * const M, uint32_t bloks
   strcpy(M->Name, "Matrix");
   if (M->N == 0)
     return 2;
-  M->a = malloc(M->N * sizeof(MatrixType));
+  M->a = (MatrixType*)malloc(M->N * sizeof(MatrixType));
   if (M->a == NULL)
     return 1;
-  M->b = malloc((M->N - 1) * sizeof(MatrixType));
+  M->b = (MatrixType*)malloc((M->N - 1) * sizeof(MatrixType));
   if (M->b == NULL)
   {
     free(M->a);
@@ -107,10 +107,10 @@ uint32_t InitFrameBlokAndersonMatrix(BlokAndersonMatrixType * const M)
   strcpy(M->Name, "Matrix");
   if (M->N == 0)
     return 2;
-  M->a = malloc(M->N * sizeof(MatrixType));
+  M->a = (MatrixType*)malloc(M->N * sizeof(MatrixType));
   if (M->a == NULL)
     return 1;
-  M->b = malloc((M->N - 1) * sizeof(MatrixType));
+  M->b = (MatrixType*)malloc((M->N - 1) * sizeof(MatrixType));
   if (M->b == NULL)
   {
     free(M->a);
@@ -129,10 +129,10 @@ uint32_t InitIdentityBlokAndersonMatrix(BlokAndersonMatrixType * const M, uint32
   strcpy(M->Name, "I_Matrix");
   if (M->N == 0)
     return 2;
-  M->a = malloc(M->N * sizeof(MatrixType));
+  M->a = (MatrixType*)malloc(M->N * sizeof(MatrixType));
   if (M->a == NULL)
     return 1;
-  M->b = malloc((M->N - 1) * sizeof(MatrixType));
+  M->b = (MatrixType*)malloc((M->N - 1) * sizeof(MatrixType));
   if (M->b == NULL)
   {
     free(M->a);

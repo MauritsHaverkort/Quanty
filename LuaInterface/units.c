@@ -15,7 +15,7 @@ static int AllPhysicalConstantsToString (lua_State *L)
   {
     buffsize+=strlen(PhysicalConstants[i].name)+strlen(PhysicalConstants[i].units)+strlen(PhysicalConstants[i].description)+50;
   }
-  buff=malloc(buffsize*sizeof(char));
+  buff= (char*)malloc(buffsize*sizeof(char));
   strcpy(buff, "PhysicalConstants:\n\n");
   for(i=0;i<nelements;i++)
   {
@@ -53,7 +53,7 @@ static int PhysicalConstantsToString (lua_State *L)
   lua_rawget(L, -2);
   description = (char*)luaL_checkstring(L, -1);
   lua_pop(L, 1);
-  buff=malloc((strlen(description)+strlen(units)+50)*sizeof(char));
+  buff= (char*)malloc((strlen(description)+strlen(units)+50)*sizeof(char));
   sprintf(buff, "-- %s\n%22.15E --[[ %s ]]--",description,value,units);
   lua_pushstring(L, buff);
   free(buff);

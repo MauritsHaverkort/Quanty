@@ -156,7 +156,7 @@ char * QuantyVariableToValidFilename(const char * str)
   {
     if((str[i]>='A')&&(str[i]<='Z')) upper++;
   }
-  retchar = malloc(sizeof(char)*Min(MaxLength+1,1+len+upper));
+  retchar = (char*)malloc(sizeof(char)*Min(MaxLength+1,1+len+upper));
   retchar[Min(MaxLength,len+upper)]='\0';
   for(i=0;i<Min(MaxLength,len+upper);i++)
   {
@@ -180,7 +180,7 @@ uint32_t LuaGetASCII(lua_State *L, const char * const DirName, const char * cons
   char *FileName;
   char *FullName;
   FileName = QuantyVariableToValidFilename(VariableName);
-  FullName = malloc(sizeof(char)*(strlen(FileName)+strlen(DirName)+2+7));
+  FullName = (char*)malloc(sizeof(char)*(strlen(FileName)+strlen(DirName)+2+7));
   sprintf(FullName, "%s/%s.Quanty",DirName,FileName);
   lua_pop(L, 2);
   lua_pushstring(L, FullName);
@@ -560,7 +560,7 @@ uint32_t LuaPutASCII(lua_State *L, const char * const DirName, const char * cons
   char *FileName;
   char *FullName;
   FileName = QuantyVariableToValidFilename(VariableName);
-  FullName = malloc(sizeof(char)*(strlen(FileName)+strlen(DirName)+2+7));
+  FullName = (char*)malloc(sizeof(char)*(strlen(FileName)+strlen(DirName)+2+7));
   sprintf(FullName, "%s/%s.Quanty",DirName,FileName);
   free(FileName);
   fp=fopen(FullName, "w");

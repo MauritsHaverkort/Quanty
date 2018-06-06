@@ -620,7 +620,7 @@ static int LuaWavefunctionExpand(lua_State * L)
   psi = (WaveFunctionType *) luaL_checkudata(L, 1, "Wavefunction_Type");
   index = luaL_checkarray_unit16_t(L, 2, &Ndet);
   if(Ndet>24) luaL_error(L, "Error in Expand(psi,index). Expanding a wavefunction in determinants yields 2^N new functions for N=%d this would not fit in your memory\n",psi->N);
-  psilist = malloc((1<<Ndet)*sizeof(WaveFunctionType));
+  psilist = (WaveFunctionType*)malloc((1<<Ndet)*sizeof(WaveFunctionType));
   if(psilist==NULL)
   {
     luaL_error(L, "Error in Expand(psi,index). Out off memory when expanding a function with %d determinants for % determinants into %d seperate functions\n",psi->N,Ndet,(1<<Ndet));
@@ -644,7 +644,7 @@ static int LuaWaveFunctionToDeterminantBasis(lua_State *L)
   WaveFunctionType *psi,*psilist;
   if(lua_gettop(L)!=1) luaL_error(L, "Error in ExpandToBasis(psi) one argument expected, recieved (%d)\n",lua_gettop(L));
   psi = (WaveFunctionType *) luaL_checkudata(L, 1, "Wavefunction_Type");
-  psilist = malloc((psi->N)*sizeof(WaveFunctionType));
+  psilist = (WaveFunctionType*)malloc((psi->N)*sizeof(WaveFunctionType));
   if(psilist==NULL)
   {
     luaL_error(L, "Error in ExpandToBasis(psi). Out off memory when expanding a function with %d determinants into seperate functions\n",psi->N);

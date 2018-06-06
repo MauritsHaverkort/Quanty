@@ -83,7 +83,7 @@ uint32_t InitOperator(OperatorType * const O)
   O->NWord = 0;
   O->MaxLength = 0;
   O->Res.N=0;
-  if ((O->l = malloc(sizeof(OperatorFixedLengthType))) == NULL)
+  if ((O->l = (OperatorFixedLengthType*)malloc(sizeof(OperatorFixedLengthType))) == NULL)
   {
     printf("Could not allocate OperatorFixedLengthType in InitOperator\n");
     return 1;
@@ -196,7 +196,7 @@ uint32_t MakeRealOperatorFixedLengthComplex(OperatorType * const O, const uint32
     SetQComplexOperator(O);
     return 0;
   }
-  if ((O->l[length].V = malloc(O->l[length].NAloc * sizeof(Complex16))) == NULL)
+  if ((O->l[length].V = (Complex16*)malloc(O->l[length].NAloc * sizeof(Complex16))) == NULL)
   {
     printf("Cloud not allocate memory for O-l[%i].V in MakeRealOperatorFixedLengthComplex\n", length);
     return 1;
@@ -225,7 +225,7 @@ uint32_t InitOperatorFixedLength(OperatorType * const O, const uint32_t length, 
   if (length == 0) return 0;
   if (length > O->MaxLength)
   {                             /* allongate the vector O->l */
-    if ((O->l = realloc(O->l, (length + 1) * sizeof(OperatorFixedLengthType))) == NULL)
+    if ((O->l = (OperatorFixedLengthType*)realloc(O->l, (length + 1) * sizeof(OperatorFixedLengthType))) == NULL)
     {
       printf("could not allocate memory for OperatorFixedLengthType of length %i in InitOperatorFixedLength\n", length);
       return 1;
@@ -236,9 +236,9 @@ uint32_t InitOperatorFixedLength(OperatorType * const O, const uint32_t length, 
       O->l[l].NBitsKey = 0;
       O->l[l].NAloc = 0;
       O->l[l].QComplex = 0;
-      if ((O->l[l].KeyList = calloc(1, sizeof(uint32_t))) == NULL) return 1;
+      if ((O->l[l].KeyList = (uint32_t*)calloc(1, sizeof(uint32_t))) == NULL) return 1;
     }
-    if ((O->l[length].KeyList = calloc((uint32_t) 1 << NBitsKey, sizeof(uint32_t))) == NULL)
+    if ((O->l[length].KeyList = (uint32_t*)calloc((uint32_t) 1 << NBitsKey, sizeof(uint32_t))) == NULL)
     {
       printf("could not allocate memory for O->[length=%i].Keylist in InitOperatorFixedLength\n", length);
       return 1;
@@ -262,7 +262,7 @@ uint32_t InitOperatorFixedLength(OperatorType * const O, const uint32_t length, 
     }
   }
   free(O->l[length].KeyList);
-  if ((O->l[length].KeyList = calloc((uint32_t) 1 << NBitsKey, sizeof(uint32_t))) == NULL)
+  if ((O->l[length].KeyList = (uint32_t*)calloc((uint32_t) 1 << NBitsKey, sizeof(uint32_t))) == NULL)
   {
     printf("could not allocate memory for O->[length=%i].Keylist in InitOperatorFixedLength\n", length);
     return 1;
@@ -289,14 +289,14 @@ uint32_t InitOperatorCopySettings(OperatorType * const O, const OperatorType Ose
   O->NBoson = Oset.NBoson;
   O->NWord = Oset.NWord;
   O->Res.N = Oset.Res.N;
-  O->Res.Min = malloc(Oset.Res.N*sizeof(uint32_t));
-  O->Res.Max = malloc(Oset.Res.N*sizeof(uint32_t));
-  O->Res.Determinant = malloc(Oset.Res.N*sizeof(uint8_t*));
+  O->Res.Min = (uint32_t*)malloc(Oset.Res.N*sizeof(uint32_t));
+  O->Res.Max = (uint32_t*)malloc(Oset.Res.N*sizeof(uint32_t));
+  O->Res.Determinant = (uint8_t**)malloc(Oset.Res.N*sizeof(uint8_t*));
   for(i=0;i<Oset.Res.N;i++)
   {
     O->Res.Min[i]=Oset.Res.Min[i];
     O->Res.Max[i]=Oset.Res.Max[i];
-    O->Res.Determinant[i]=malloc(Oset.NWord*sizeof(uint8_t));
+    O->Res.Determinant[i]= (uint8_t*)malloc(Oset.NWord*sizeof(uint8_t));
     memcpy(O->Res.Determinant[i], Oset.Res.Determinant[i], Oset.NWord);
   }
   
@@ -333,7 +333,7 @@ uint32_t RealOperatorAddLader(OperatorType * const O, const uint16_t * const oad
     {
       if (O->l[0].NAloc == 0)
       {
-        if ((O->l[0].VRe = malloc(sizeof(double))) == NULL)
+        if ((O->l[0].VRe = (double*)malloc(sizeof(double))) == NULL)
         {
           printf("could not allocate memory for O->l[0].VRe in RealOperatorAddLader\n");
           return 1;
@@ -361,12 +361,12 @@ uint32_t RealOperatorAddLader(OperatorType * const O, const uint16_t * const oad
       temp = O->l[length].o;
       if (FirstAlloc)
       {
-        O->l[length].o = malloc(length * O->l[length].NAloc * sizeof(uint16_t));
+        O->l[length].o = (uint16_t*)malloc(length * O->l[length].NAloc * sizeof(uint16_t));
         SetQComplexOperator(O);
       }
       else
       {
-        O->l[length].o = realloc(O->l[length].o, length * O->l[length].NAloc * sizeof(uint16_t));
+        O->l[length].o = (uint16_t*)realloc(O->l[length].o, length * O->l[length].NAloc * sizeof(uint16_t));
       }
       if (O->l[length].o == NULL)
       {                         /* realloc failed */
@@ -380,11 +380,11 @@ uint32_t RealOperatorAddLader(OperatorType * const O, const uint16_t * const oad
       temp = O->l[length].Next;
       if (FirstAlloc)
       {
-        O->l[length].Next = malloc(O->l[length].NAloc * sizeof(uint32_t));
+        O->l[length].Next = (uint32_t*)malloc(O->l[length].NAloc * sizeof(uint32_t));
       }
       else
       {
-        O->l[length].Next = realloc(O->l[length].Next, O->l[length].NAloc * sizeof(uint32_t));
+        O->l[length].Next = (uint32_t*)realloc(O->l[length].Next, O->l[length].NAloc * sizeof(uint32_t));
       }
       if (O->l[length].Next == NULL)
       {                         /* realloc failed */
@@ -393,17 +393,17 @@ uint32_t RealOperatorAddLader(OperatorType * const O, const uint16_t * const oad
         /* restore O and return 1 */
         O->l[length].Next = temp;
         O->l[length].NAloc -= O->NFermion + O->NBoson;
-        O->l[length].o = realloc(O->l[length].o, length * O->l[length].NAloc * sizeof(uint16_t));
+        O->l[length].o = (uint16_t*)realloc(O->l[length].o, length * O->l[length].NAloc * sizeof(uint16_t));
         return 1;
       }
       temp = O->l[length].VRe;
       if (FirstAlloc)
       {
-        O->l[length].VRe = malloc(O->l[length].NAloc * sizeof(double));
+        O->l[length].VRe = (double*)malloc(O->l[length].NAloc * sizeof(double));
       }
       else
       {
-        O->l[length].VRe = realloc(O->l[length].VRe, O->l[length].NAloc * sizeof(double));
+        O->l[length].VRe = (double*)realloc(O->l[length].VRe, O->l[length].NAloc * sizeof(double));
       }
       if (O->l[length].VRe == NULL)
       {                         /* realloc failed */
@@ -412,8 +412,8 @@ uint32_t RealOperatorAddLader(OperatorType * const O, const uint16_t * const oad
         /* restore O and return 1 */
         O->l[length].VRe = temp;
         O->l[length].NAloc -= O->NFermion + O->NBoson;
-        O->l[length].o = realloc(O->l[length].o, length * O->l[length].NAloc * sizeof(uint16_t));
-        O->l[length].Next = realloc(O->l[length].Next, O->l[length].NAloc * sizeof(uint32_t));
+        O->l[length].o = (uint16_t*)realloc(O->l[length].o, length * O->l[length].NAloc * sizeof(uint16_t));
+        O->l[length].Next = (uint32_t*)realloc(O->l[length].Next, O->l[length].NAloc * sizeof(uint32_t));
         return 1;
       }
     }                           /* finished reallocating O if needed */
@@ -452,7 +452,7 @@ uint32_t RealOperatorAddLader(OperatorType * const O, const uint16_t * const oad
           {
             O->l[length].NAloc += O->NFermion + O->NBoson;
             temp = O->l[length].o;
-            O->l[length].o = realloc(O->l[length].o, length * O->l[length].NAloc * sizeof(uint16_t));
+            O->l[length].o = (uint16_t*)realloc(O->l[length].o, length * O->l[length].NAloc * sizeof(uint16_t));
             if (O->l[length].o == NULL)
             {                   /* realloc failed */
               printf("alloc failed OperatorAddLader 11\n");
@@ -463,7 +463,7 @@ uint32_t RealOperatorAddLader(OperatorType * const O, const uint16_t * const oad
               return 1;
             }
             temp = O->l[length].Next;
-            O->l[length].Next = realloc(O->l[length].Next, O->l[length].NAloc * sizeof(uint32_t));
+            O->l[length].Next = (uint32_t*)realloc(O->l[length].Next, O->l[length].NAloc * sizeof(uint32_t));
             if (O->l[length].Next == NULL)
             {                   /* realloc failed */
               printf("alloc failed OperatorAddLader 12\n");
@@ -471,11 +471,11 @@ uint32_t RealOperatorAddLader(OperatorType * const O, const uint16_t * const oad
               /* restore O and return 1 */
               O->l[length].Next = temp;
               O->l[length].NAloc -= O->NFermion + O->NBoson;
-              O->l[length].o = realloc(O->l[length].o, length * O->l[length].NAloc * sizeof(uint16_t));
+              O->l[length].o = (uint16_t*)realloc(O->l[length].o, length * O->l[length].NAloc * sizeof(uint16_t));
               return 1;
             }
             temp = O->l[length].VRe;
-            O->l[length].VRe = realloc(O->l[length].VRe, O->l[length].NAloc * sizeof(double));
+            O->l[length].VRe = (double*)realloc(O->l[length].VRe, O->l[length].NAloc * sizeof(double));
             if (O->l[length].VRe == NULL)
             {                   /* realloc failed */
               printf("alloc failed OperatorAddLader 13\n");
@@ -483,8 +483,8 @@ uint32_t RealOperatorAddLader(OperatorType * const O, const uint16_t * const oad
               /* restore O and return 1 */
               O->l[length].VRe = temp;
               O->l[length].NAloc -= O->NFermion + O->NBoson;
-              O->l[length].o = realloc(O->l[length].o, length * O->l[length].NAloc * sizeof(uint16_t));
-              O->l[length].Next = realloc(O->l[length].Next, O->l[length].NAloc * sizeof(uint32_t));
+              O->l[length].o = (uint16_t*)realloc(O->l[length].o, length * O->l[length].NAloc * sizeof(uint16_t));
+              O->l[length].Next = (uint32_t*)realloc(O->l[length].Next, O->l[length].NAloc * sizeof(uint32_t));
               return 1;
             }
           }
@@ -698,7 +698,7 @@ uint32_t ComplexOperatorAddLader(OperatorType * const O, const uint16_t * const 
     {
       if (O->l[0].NAloc == 0)
       {
-        if ((O->l[0].V = malloc(sizeof(Complex16))) == NULL)
+        if ((O->l[0].V = (Complex16*)malloc(sizeof(Complex16))) == NULL)
           return 1;
         O->l[0].NAloc = 1;
       }
@@ -724,11 +724,11 @@ uint32_t ComplexOperatorAddLader(OperatorType * const O, const uint16_t * const 
       temp = O->l[length].o;
       if (FirstAlloc)
       {
-        O->l[length].o = malloc(length * O->l[length].NAloc * sizeof(uint16_t));
+        O->l[length].o = (uint16_t*)malloc(length * O->l[length].NAloc * sizeof(uint16_t));
       }
       else
       {
-        O->l[length].o = realloc(O->l[length].o, length * O->l[length].NAloc * sizeof(uint16_t));
+        O->l[length].o = (uint16_t*)realloc(O->l[length].o, length * O->l[length].NAloc * sizeof(uint16_t));
       }
       if (O->l[length].o == NULL)
       {                         /* realloc failed */
@@ -742,11 +742,11 @@ uint32_t ComplexOperatorAddLader(OperatorType * const O, const uint16_t * const 
       temp = O->l[length].Next;
       if (FirstAlloc)
       {
-        O->l[length].Next = malloc(O->l[length].NAloc * sizeof(uint32_t));
+        O->l[length].Next = (uint32_t*)malloc(O->l[length].NAloc * sizeof(uint32_t));
       }
       else
       {
-        O->l[length].Next = realloc(O->l[length].Next, O->l[length].NAloc * sizeof(uint32_t));
+        O->l[length].Next = (uint32_t*)realloc(O->l[length].Next, O->l[length].NAloc * sizeof(uint32_t));
       }
       if (O->l[length].Next == NULL)
       {                         /* realloc failed */
@@ -755,13 +755,13 @@ uint32_t ComplexOperatorAddLader(OperatorType * const O, const uint16_t * const 
         /* restore O and return 1 */
         O->l[length].Next = temp;
         O->l[length].NAloc -= O->NFermion + O->NBoson;
-        O->l[length].o = realloc(O->l[length].o, length * O->l[length].NAloc * sizeof(uint16_t));
+        O->l[length].o = (uint16_t*)realloc(O->l[length].o, length * O->l[length].NAloc * sizeof(uint16_t));
         return (1);
       }
       temp = O->l[length].V;
       if (FirstAlloc)
       {
-        O->l[length].V = malloc(O->l[length].NAloc * sizeof(Complex16));
+        O->l[length].V = (Complex16*)malloc(O->l[length].NAloc * sizeof(Complex16));
         O->l[length].QComplex = 1;
         O->l[length].N = 1;
         SetQComplexOperator(O);
@@ -769,7 +769,7 @@ uint32_t ComplexOperatorAddLader(OperatorType * const O, const uint16_t * const 
       }
       else
       {
-        O->l[length].V = realloc(O->l[length].V, O->l[length].NAloc * sizeof(Complex16));
+        O->l[length].V = (Complex16*)realloc(O->l[length].V, O->l[length].NAloc * sizeof(Complex16));
       }
       if (O->l[length].V == NULL)
       {                         /* realloc failed */
@@ -778,8 +778,8 @@ uint32_t ComplexOperatorAddLader(OperatorType * const O, const uint16_t * const 
         /* restore O and return 1 */
         O->l[length].V = temp;
         O->l[length].NAloc -= O->NFermion + O->NBoson;
-        O->l[length].o = realloc(O->l[length].o, length * O->l[length].NAloc * sizeof(uint16_t));
-        O->l[length].Next = realloc(O->l[length].Next, O->l[length].NAloc * sizeof(uint32_t));
+        O->l[length].o = (uint16_t*)realloc(O->l[length].o, length * O->l[length].NAloc * sizeof(uint16_t));
+        O->l[length].Next = (uint32_t*)realloc(O->l[length].Next, O->l[length].NAloc * sizeof(uint32_t));
         return (1);
       }
     }                           /* finished reallocating O if needed */
@@ -820,7 +820,7 @@ uint32_t ComplexOperatorAddLader(OperatorType * const O, const uint16_t * const 
           {
             O->l[length].NAloc += O->NFermion + O->NBoson;
             temp = O->l[length].o;
-            O->l[length].o = realloc(O->l[length].o, length * O->l[length].NAloc * sizeof(uint16_t));
+            O->l[length].o = (uint16_t*)realloc(O->l[length].o, length * O->l[length].NAloc * sizeof(uint16_t));
             if (O->l[length].o == NULL)
             {                   /* realloc failed */
               printf("alloc failed OperatorAddLader 11\n");
@@ -831,7 +831,7 @@ uint32_t ComplexOperatorAddLader(OperatorType * const O, const uint16_t * const 
               return (1);
             }
             temp = O->l[length].Next;
-            O->l[length].Next = realloc(O->l[length].Next, O->l[length].NAloc * sizeof(uint32_t));
+            O->l[length].Next = (uint32_t*)realloc(O->l[length].Next, O->l[length].NAloc * sizeof(uint32_t));
             if (O->l[length].Next == NULL)
             {                   /* realloc failed */
               printf("alloc failed OperatorAddLader 12\n");
@@ -839,11 +839,11 @@ uint32_t ComplexOperatorAddLader(OperatorType * const O, const uint16_t * const 
               /* restore O and return 1 */
               O->l[length].Next = temp;
               O->l[length].NAloc -= O->NFermion + O->NBoson;
-              O->l[length].o = realloc(O->l[length].o, length * O->l[length].NAloc * sizeof(uint16_t));
+              O->l[length].o = (uint16_t*)realloc(O->l[length].o, length * O->l[length].NAloc * sizeof(uint16_t));
               return (1);
             }
             temp = O->l[length].V;
-            O->l[length].V = realloc(O->l[length].V, O->l[length].NAloc * sizeof(Complex16));
+            O->l[length].V = (Complex16*)realloc(O->l[length].V, O->l[length].NAloc * sizeof(Complex16));
             if (O->l[length].V == NULL)
             {                   /* realloc failed */
               printf("alloc failed OperatorAddLader 13\n");
@@ -851,8 +851,8 @@ uint32_t ComplexOperatorAddLader(OperatorType * const O, const uint16_t * const 
               /* restore O and return 1 */
               O->l[length].V = temp;
               O->l[length].NAloc -= O->NFermion + O->NBoson;
-              O->l[length].o = realloc(O->l[length].o, length * O->l[length].NAloc * sizeof(uint16_t));
-              O->l[length].Next = realloc(O->l[length].Next, O->l[length].NAloc * sizeof(uint32_t));
+              O->l[length].o = (uint16_t*)realloc(O->l[length].o, length * O->l[length].NAloc * sizeof(uint16_t));
+              O->l[length].Next = (uint32_t*)realloc(O->l[length].Next, O->l[length].NAloc * sizeof(uint32_t));
               return (1);
             }
           }
@@ -1145,7 +1145,7 @@ uint32_t OperatorFixedLengthCopy(OperatorFixedLengthType * const Ocopy, Operator
   {
     if (Ocopy->QComplex)
     {
-      if ((Ocopy->V = malloc(Ocopy->NAloc * sizeof(Complex16))) == NULL)
+      if ((Ocopy->V = (Complex16*)malloc(Ocopy->NAloc * sizeof(Complex16))) == NULL)
       {
         printf("malloc failed for V in OperatorFixedLengthCopy\n");
         return 1;
@@ -1154,7 +1154,7 @@ uint32_t OperatorFixedLengthCopy(OperatorFixedLengthType * const Ocopy, Operator
     }
     else
     {
-      if ((Ocopy->VRe = malloc(Ocopy->NAloc * sizeof(double))) == NULL)
+      if ((Ocopy->VRe = (double*)malloc(Ocopy->NAloc * sizeof(double))) == NULL)
       {
         printf("malloc failed for VRe in OperatorFixedLengthCopy\n");
         return 1;
@@ -1163,13 +1163,13 @@ uint32_t OperatorFixedLengthCopy(OperatorFixedLengthType * const Ocopy, Operator
     }
     if (length)
     {
-      if ((Ocopy->o = malloc(length * Ocopy->NAloc * sizeof(uint16_t))) == NULL)
+      if ((Ocopy->o = (uint16_t*)malloc(length * Ocopy->NAloc * sizeof(uint16_t))) == NULL)
       {
         printf("malloc failed for o in OperatorFixedLengthCopy\n");
         return 1;
       }
       memcpy(Ocopy->o, O.o, length * Ocopy->NAloc * sizeof(uint16_t));
-      if ((Ocopy->Next = malloc(Ocopy->NAloc * sizeof(uint32_t))) == NULL)
+      if ((Ocopy->Next = (uint32_t*)malloc(Ocopy->NAloc * sizeof(uint32_t))) == NULL)
       {
         printf("malloc failed for Next in OperatorFixedLengthCopy\n");
         return 1;
@@ -1240,7 +1240,7 @@ uint32_t OperatorRemoveSmallValues(OperatorType * const O, const double epsilon)
         }
         else
         {                       /* Im part can be removed, real part not */
-          if ((O->l[0].VRe = malloc(sizeof(double))) == NULL)
+          if ((O->l[0].VRe = (double*)malloc(sizeof(double))) == NULL)
           {
             printf("could not allocate memory for O->l[0].VRe in OperatorRemoveSmallValues\n");
             return 1;
@@ -1292,7 +1292,7 @@ uint32_t OperatorRemoveSmallValues(OperatorType * const O, const double epsilon)
         }
         if (MakeComplexReal)
         {
-          if ((O->l[j].VRe = malloc(O->l[j].N * sizeof(double))) == NULL)
+          if ((O->l[j].VRe = (double*)malloc(O->l[j].N * sizeof(double))) == NULL)
           {
             printf
               ("allocating memory for real part of operator failed. Continue with complex operator with Im entries that are zero.\n");
@@ -1307,7 +1307,7 @@ uint32_t OperatorRemoveSmallValues(OperatorType * const O, const double epsilon)
             SetQComplexOperator(O);
           }
         }
-        if ((O->l[j].V = realloc(O->l[j].V, O->l[j].N * sizeof(Complex16))) == NULL)
+        if ((O->l[j].V = (Complex16*)realloc(O->l[j].V, O->l[j].N * sizeof(Complex16))) == NULL)
           if (O->l[j].N != 0)
           {
             printf
@@ -1328,20 +1328,20 @@ uint32_t OperatorRemoveSmallValues(OperatorType * const O, const double epsilon)
               AllocFailed();
             }
         }
-        if ((O->l[j].VRe = realloc(O->l[j].VRe, O->l[j].N * sizeof(double))) == NULL)
+        if ((O->l[j].VRe = (double*)realloc(O->l[j].VRe, O->l[j].N * sizeof(double))) == NULL)
           if (O->l[j].N != 0)
           {
             printf("realloc failed for O->l[j=%i].VRe in OperatorRemoveSmallValues\n This should not happen\n No clue how to recover\n",j);
             AllocFailed();
           }
       }
-      if ((O->l[j].Next = realloc(O->l[j].Next, O->l[j].N * sizeof(uint32_t))) == NULL)
+      if ((O->l[j].Next = (uint32_t*)realloc(O->l[j].Next, O->l[j].N * sizeof(uint32_t))) == NULL)
         if (O->l[j].N != 0)
         {
           printf("realloc failed for O->l[j=%i].Next in OperatorRemoveSmallValues\n This should not happen\n No clue how to recover\n",j);
           AllocFailed();
         }
-      if ((O->l[j].o = realloc(O->l[j].o, O->l[j].N * j * sizeof(uint16_t))) == NULL)
+      if ((O->l[j].o = (uint16_t*)realloc(O->l[j].o, O->l[j].N * j * sizeof(uint16_t))) == NULL)
         if (O->l[j].N != 0)
         {
           printf("realloc failed for O->l[j=%i].o in OperatorRemoveSmallValues\n This should not happen\n No clue how to recover\n",j);
@@ -5458,12 +5458,12 @@ uint32_t MappedOperatorFixedLengthAtLevel(OperatorFixedLengthType * const OA, co
     if (U.QComplex)
     {                           /* OB and U complex */
       OA->QComplex = 1;
-      if ((OA->V = malloc(OA->NAloc * sizeof(Complex16))) == NULL)
+      if ((OA->V = (Complex16*)malloc(OA->NAloc * sizeof(Complex16))) == NULL)
       {
         printf("Could not allocate memory for OA->V in MappedOperatorFixedLengthAtLevel\n");
         return 1;
       }
-      if ((OA->o = malloc(OA->NAloc * length * sizeof(uint16_t))) == NULL)
+      if ((OA->o = (uint16_t*)malloc(OA->NAloc * length * sizeof(uint16_t))) == NULL)
       {
         printf("Could not allocate memory for OA->o in MappedOperatorFixedLengthAtLevel\n");
         return 1;
@@ -5479,12 +5479,12 @@ uint32_t MappedOperatorFixedLengthAtLevel(OperatorFixedLengthType * const OA, co
             if (OA->N == OA->NAloc)
             {
               OA->NAloc *= 2;
-              if ((OA->V = realloc(OA->V, OA->NAloc * sizeof(Complex16))) == NULL)
+              if ((OA->V = (Complex16*)realloc(OA->V, OA->NAloc * sizeof(Complex16))) == NULL)
               {
                 printf("Could not reallocate memory for OA->V in MappedOperatorFixedLengthAtLevel\n");
                 return 1;
               }
-              if ((OA->o = realloc(OA->o, OA->NAloc * length * sizeof(uint16_t))) == NULL)
+              if ((OA->o = (uint16_t*)realloc(OA->o, OA->NAloc * length * sizeof(uint16_t))) == NULL)
               {
                 printf("Could not reallocate memory for OA->o in MappedOperatorFixedLengthAtLevel\n");
                 return 1;
@@ -5522,12 +5522,12 @@ uint32_t MappedOperatorFixedLengthAtLevel(OperatorFixedLengthType * const OA, co
     else
     {                           /* OB complex U real */
       OA->QComplex = 1;
-      if ((OA->V = malloc(OA->NAloc * sizeof(Complex16))) == NULL)
+      if ((OA->V = (Complex16*)malloc(OA->NAloc * sizeof(Complex16))) == NULL)
       {
         printf("Could not allocate memory for OA->V in MappedOperatorFixedLengthAtLevel\n");
         return 1;
       }
-      if ((OA->o = malloc(OA->NAloc * length * sizeof(uint16_t))) == NULL)
+      if ((OA->o = (uint16_t*)malloc(OA->NAloc * length * sizeof(uint16_t))) == NULL)
       {
         printf("Could not allocate memory for OA->o in MappedOperatorFixedLengthAtLevel\n");
         return 1;
@@ -5542,12 +5542,12 @@ uint32_t MappedOperatorFixedLengthAtLevel(OperatorFixedLengthType * const OA, co
             if (OA->N == OA->NAloc)
             {
               OA->NAloc *= 2;
-              if ((OA->V = realloc(OA->V, OA->NAloc * sizeof(Complex16))) == NULL)
+              if ((OA->V = (Complex16*)realloc(OA->V, OA->NAloc * sizeof(Complex16))) == NULL)
               {
                 printf("Could not reallocate memory for OA->V in MappedOperatorFixedLengthAtLevel\n");
                 return 1;
               }
-              if ((OA->o = realloc(OA->o, OA->NAloc * length * sizeof(uint16_t))) == NULL)
+              if ((OA->o = (uint16_t*)realloc(OA->o, OA->NAloc * length * sizeof(uint16_t))) == NULL)
               {
                 printf("Could not reallocate memory for OA->o in MappedOperatorFixedLengthAtLevel\n");
                 return 1;
@@ -5572,12 +5572,12 @@ uint32_t MappedOperatorFixedLengthAtLevel(OperatorFixedLengthType * const OA, co
     if (U.QComplex)
     {                           /* OB real U complex */
       OA->QComplex = 1;
-      if ((OA->V = malloc(OA->NAloc * sizeof(Complex16))) == NULL)
+      if ((OA->V = (Complex16*)malloc(OA->NAloc * sizeof(Complex16))) == NULL)
       {
         printf("Could not allocate memory for OA->V in MappedOperatorFixedLengthAtLevel\n");
         return 1;
       }
-      if ((OA->o = malloc(OA->NAloc * length * sizeof(uint16_t))) == NULL)
+      if ((OA->o = (uint16_t*)malloc(OA->NAloc * length * sizeof(uint16_t))) == NULL)
       {
         printf("Could not allocate memory for OA->o in MappedOperatorFixedLengthAtLevel\n");
         return 1;
@@ -5592,12 +5592,12 @@ uint32_t MappedOperatorFixedLengthAtLevel(OperatorFixedLengthType * const OA, co
             if (OA->N == OA->NAloc)
             {
               OA->NAloc *= 2;
-              if ((OA->V = realloc(OA->V, OA->NAloc * sizeof(Complex16))) == NULL)
+              if ((OA->V = (Complex16*)realloc(OA->V, OA->NAloc * sizeof(Complex16))) == NULL)
               {
                 printf("Could not reallocate memory for OA->V in MappedOperatorFixedLengthAtLevel\n");
                 return 1;
               }
-              if ((OA->o = realloc(OA->o, OA->NAloc * length * sizeof(uint16_t))) == NULL)
+              if ((OA->o = (uint16_t*)realloc(OA->o, OA->NAloc * length * sizeof(uint16_t))) == NULL)
               {
                 printf("Could not allocate memory for OA->o in MappedOperatorFixedLengthAtLevel\n");
                 return 1;
@@ -5627,12 +5627,12 @@ uint32_t MappedOperatorFixedLengthAtLevel(OperatorFixedLengthType * const OA, co
     else
     {                           /* OB and U real */
       OA->QComplex = 0;
-      if ((OA->VRe = malloc(OA->NAloc * sizeof(double))) == NULL)
+      if ((OA->VRe = (double*)malloc(OA->NAloc * sizeof(double))) == NULL)
       {
         printf("Could not allocate memory for OA->VRe in MappedOperatorFixedLengthAtLevel\n");
         return 1;
       }
-      if ((OA->o = malloc(OA->NAloc * length * sizeof(uint16_t))) == NULL)
+      if ((OA->o = (uint16_t*)malloc(OA->NAloc * length * sizeof(uint16_t))) == NULL)
       {
         printf("Could not allocate memory for OA->o in MappedOperatorFixedLengthAtLevel\n");
         return 1;
@@ -5646,12 +5646,12 @@ uint32_t MappedOperatorFixedLengthAtLevel(OperatorFixedLengthType * const OA, co
             if (OA->N == OA->NAloc)
             {
               OA->NAloc *= 2;
-              if ((OA->VRe = realloc(OA->VRe, OA->NAloc * sizeof(double))) == NULL)
+              if ((OA->VRe = (double*)realloc(OA->VRe, OA->NAloc * sizeof(double))) == NULL)
               {
                 printf("Could not reallocate memory for OA->VRe in MappedOperatorFixedLengthAtLevel\n");
                 return 1;
               }
-              if ((OA->o = realloc(OA->o, OA->NAloc * length * sizeof(uint16_t))) == NULL)
+              if ((OA->o = (uint16_t*)realloc(OA->o, OA->NAloc * length * sizeof(uint16_t))) == NULL)
               {
                 printf("Could not reallocate memory for OA->o in MappedOperatorFixedLengthAtLevel\n");
                 return 1;
@@ -5692,16 +5692,16 @@ uint32_t MappedOperatorAdd(OperatorType * const OA, const OperatorType OB, const
       FA.N = 1;
       FA.NAloc = 1;
       FA.QComplex = OB.l[length].QComplex;
-      FA.o = malloc((length + 1) * sizeof(uint16_t));
+      FA.o = (uint16_t*)malloc((length + 1) * sizeof(uint16_t));
       if (FA.QComplex)
       {
-        FA.V = malloc(sizeof(Complex16));
+        FA.V = (Complex16*)malloc(sizeof(Complex16));
         FA.V[0].Re = OB.l[length].V[i].Re;
         FA.V[0].Im = OB.l[length].V[i].Im;
       }
       else
       {
-        FA.VRe = malloc(sizeof(double));
+        FA.VRe = (double*)malloc(sizeof(double));
         FA.VRe[0] = OB.l[length].VRe[i];
       }
       for (level = 0; level < length; level++)
@@ -5812,16 +5812,16 @@ uint32_t MappedOperatorAddNormalOrder(OperatorType * const OA, const OperatorTyp
       FA.N = 1;
       FA.NAloc = 1;
       FA.QComplex = OB.l[length].QComplex;
-      FA.o = malloc((length + 1) * sizeof(uint16_t));
+      FA.o = (uint16_t*)malloc((length + 1) * sizeof(uint16_t));
       if (FA.QComplex)
       {
-        FA.V = malloc(sizeof(Complex16));
+        FA.V = (Complex16*)malloc(sizeof(Complex16));
         FA.V[0].Re = OB.l[length].V[i].Re;
         FA.V[0].Im = OB.l[length].V[i].Im;
       }
       else
       {
-        FA.VRe = malloc(sizeof(double));
+        FA.VRe = (double*)malloc(sizeof(double));
         FA.VRe[0] = OB.l[length].VRe[i];
       }
       for (level = 0; level < length; level++)

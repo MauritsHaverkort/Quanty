@@ -137,7 +137,7 @@ static int LuaCalculateDOS(lua_State *L)
     double Emax;
     uint32_t NE;
   } Options;
-  Options.Nk = malloc(3*sizeof(int));
+  Options.Nk = (int*)malloc(3*sizeof(int));
   Options.Nk[0]=40;
   Options.Nk[1]=40;
   Options.Nk[2]=40;
@@ -175,7 +175,7 @@ static int LuaCalculateDOS(lua_State *L)
   if(strcicmp(Options.Character, "Full")==0)
   {
     DOS->NSpectra = 1;
-    DOS->Spec=malloc(DOS->NSpectra*sizeof(SpectraType));
+    DOS->Spec= (SpectraType*)malloc(DOS->NSpectra*sizeof(SpectraType));
     DOS->Spec[0].N    = Options.NE;
     DOS->Spec[0].Emin = Options.Emin;
     DOS->Spec[0].Emax = Options.Emax;
@@ -192,7 +192,7 @@ static int LuaCalculateDOS(lua_State *L)
     printf("Warning CalculateDOS: character-resolved DOS only outputs the -Im part of the spectra to the real part.");
     DOS->NSpectra = (*a).NFermion+1;
     printf("%d\n", DOS->NSpectra);
-    DOS->Spec=malloc(DOS->NSpectra*sizeof(SpectraType));
+    DOS->Spec= (SpectraType*)malloc(DOS->NSpectra*sizeof(SpectraType));
     DOS->Spec[0].N    = Options.NE;
     DOS->Spec[0].Emin = Options.Emin;
     DOS->Spec[0].Emax = Options.Emax;
@@ -283,7 +283,7 @@ static int LuaCalculateG(lua_State *L)
     uint32_t NE;
     char* Type;
   } Options;
-  Options.Nk = malloc(3*sizeof(int));
+  Options.Nk = (int*)malloc(3*sizeof(int));
   Options.Nk[0]=40;
   Options.Nk[1]=40;
   Options.Nk[2]=40;
@@ -351,7 +351,7 @@ static int LuaCalculateRho(lua_State *L)
     double kbT;
     //char* Method;   //only method implemented is the mesh/grid.
   } Options;
-  Options.Nk = malloc(3*sizeof(int));
+  Options.Nk = (int*)malloc(3*sizeof(int));
   Options.Nk[0]=40;
   Options.Nk[1]=40;
   Options.Nk[2]=40;
@@ -413,7 +413,7 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
   MatrixType U;
   k.Ni=3;
   k.QComplex=0;
-  k.VRe=calloc(3,sizeof(double));
+  k.VRe= (double*)calloc(3,sizeof(double));
   LuaOptionsType LuaCreateClusterHamiltonianOptions[]={
     {"AddSpin", "bool", &AddSpin},
     {"ReturnTBSuperCell", "bool", &ReturnTBSuperCell},
@@ -667,9 +667,9 @@ static int LuaReadAtom(lua_State *L, int narg, AtomType *a)
     lua_rawgeti(L, narg, 3);
     if(lua_type(L,-1)!=LUA_TTABLE) return luaL_error(L, "Error ReadAtom shells of atom %s should be a list of shells\n",a->Name);
     a->Nshell = (int)lua_objlen(L, -1);
-    a->ShellName = malloc(a->Nshell*sizeof(char*));
-    a->shelldegeneracy = malloc(a->Nshell*sizeof(int));
-    a->OrbitalName = malloc(a->Nshell*sizeof(char**));
+    a->ShellName = (char**)malloc(a->Nshell*sizeof(char*));
+    a->shelldegeneracy = (int*)malloc(a->Nshell*sizeof(int));
+    a->OrbitalName = (char***)malloc(a->Nshell*sizeof(char**));
     for(i=0;i<a->Nshell;i++)
     {
       lua_rawgeti(L, -1, i+1);
@@ -677,17 +677,17 @@ static int LuaReadAtom(lua_State *L, int narg, AtomType *a)
       len = (uint32_t)lua_objlen(L, -1);
       if(len!=2) return luaL_error(L, "Error ReadAtom shell %d of atom %s should be a list containing the name and a list of orbitals\n",i+1,a->Name);
       lua_rawgeti(L, -1, 1);
-      a->ShellName[i]=malloc(MAXStrLength*sizeof(char));
+      a->ShellName[i]= (char*)malloc(MAXStrLength*sizeof(char));
       strncpy(a->ShellName[i], luaL_checkstring(L, -1), MAXStrLength-1);
       lua_pop(L, 1);
       lua_rawgeti(L, -1, 2);
       if(lua_type(L,-1)!=LUA_TTABLE) return luaL_error(L, "Error ReadAtom shell %s(%d) of atom %s should be a list containing the name and a list of orbitals\n",a->ShellName[i],i+1,a->Name);
       a->shelldegeneracy[i] = (uint32_t)lua_objlen(L, -1);
-      a->OrbitalName[i] = malloc(a->shelldegeneracy[i]*sizeof(char*));
+      a->OrbitalName[i] = (char**)malloc(a->shelldegeneracy[i]*sizeof(char*));
       for(j=0;j<a->shelldegeneracy[i];j++)
       {
         lua_rawgeti(L, -1, j+1);
-        a->OrbitalName[i][j]=malloc(MAXStrLength*sizeof(char));
+        a->OrbitalName[i][j]= (char*)malloc(MAXStrLength*sizeof(char));
         strncpy(a->OrbitalName[i][j], luaL_checkstring(L, -1), MAXStrLength-1);
         lua_pop(L, 1);
       }
@@ -1083,7 +1083,7 @@ static int LuaTightBindingNewIndex(lua_State * L)
     {
       len = (uint32_t)lua_objlen(L, 3);
       a->Cell.NAtoms=len;
-      a->Cell.Atom=malloc(len*sizeof(AtomType));
+      a->Cell.Atom= (AtomType*)malloc(len*sizeof(AtomType));
       for(i=0;i<len;i++)
       {
         lua_rawgeti(L, 3, i+1);
@@ -1175,7 +1175,7 @@ static int LuaTightBindingNewIndex(lua_State * L)
     //
     if((lua_type(L,3)!=LUA_TTABLE)) return luaL_error(L, "Error TightBinding.Hopping should be a list of hopping definitions {{def1}, {def2}, ...}\n");
     a->nH = (uint32_t)lua_objlen(L, 3);
-    a->H=malloc(a->nH*sizeof(TightBindingDefHopping));
+    a->H= (TightBindingDefHopping*)malloc(a->nH*sizeof(TightBindingDefHopping));
     for(i=0;i<a->nH;i++)
     {
       lua_rawgeti(L, 3, i+1);

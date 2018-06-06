@@ -15,7 +15,7 @@ uint32_t CreateWaveFunctionDMFT(WaveFunctionType * psi, uint32_t nBathV, uint32_
     return 1;
   };
   sprintf(psi->Name, "DMFT %i %i", nBathV, nBathC);
-  Determinant = calloc(psi->NWord, sizeof(uint8_t));
+  Determinant = (uint8_t*)calloc(psi->NWord, sizeof(uint8_t));
   OperatorCr(Determinant, 1, psi->NFermion);
   for (i = 2; i < nBathV + 2; i++)
     OperatorCr(Determinant, i, psi->NFermion);
@@ -41,7 +41,7 @@ uint32_t CreateWaveFunctionDMFTSecond(WaveFunctionType * psi, uint32_t nBathV, u
     return 1;
   };
   sprintf(psi->Name, "DMFT %i %i", nBathV, nBathC);
-  Determinant = calloc(psi->NWord, sizeof(uint8_t));
+  Determinant = (uint8_t*)calloc(psi->NWord, sizeof(uint8_t));
   OperatorCr(Determinant, 0, psi->NFermion);
   OperatorCr(Determinant, 1, psi->NFermion);
   for (i = 4; i < nBathV + 4; i++)
@@ -695,8 +695,8 @@ uint32_t FindGroundStateFromG0andSigma(DMFTSettings const O, AndersonMatrixType 
     {
       printf("Add %22.15E * S^2 to HAnd for the calculation of the ground-state wave-function\n", 1 + O.U);
       printf("This stabilizes the ground-state by enlarging the singlet triplet energy\n");
-      SpinUp = calloc(HAnd.NFermion / 2, sizeof(uint16_t));
-      SpinDn = calloc(HAnd.NFermion / 2, sizeof(uint16_t));
+      SpinUp = (uint16_t*)calloc(HAnd.NFermion / 2, sizeof(uint16_t));
+      SpinDn = (uint16_t*)calloc(HAnd.NFermion / 2, sizeof(uint16_t));
       SpinUp[0] = 0;
       SpinUp[1] = 2;
       SpinDn[0] = 1;
@@ -865,8 +865,8 @@ uint32_t FindGroundStateFromG0andSigmaDoubleLoop(DMFTSettings const O, AndersonM
     {
       printf("Add %22.15E * S^2 to HAnd for the calculation of the ground-state wave-function\n", 1 + O.U);
       printf("This stabilizes the ground-state by enlarging the singlet triplet energy\n");
-      SpinUp = calloc(HAnd.NFermion / 2, sizeof(uint16_t));
-      SpinDn = calloc(HAnd.NFermion / 2, sizeof(uint16_t));
+      SpinUp = (uint16_t*)calloc(HAnd.NFermion / 2, sizeof(uint16_t));
+      SpinDn = (uint16_t*)calloc(HAnd.NFermion / 2, sizeof(uint16_t));
       SpinUp[0] = 0;
       SpinUp[1] = 2;
       SpinDn[0] = 1;
@@ -978,8 +978,8 @@ uint32_t FindGroundStateandMu(DMFTSettings const O, BADoubleTriDiagonalMatrixTyp
     {
       printf("Add %22.15E * S^2 to HAnd for the calculation of the ground-state wave-function\n", 1 + O.U);
       printf("This stabilizes the ground-state by enlarging the singlet triplet energy\n");
-      SpinUp = calloc(HAnd->NFermion / 2, sizeof(uint16_t));
-      SpinDn = calloc(HAnd->NFermion / 2, sizeof(uint16_t));
+      SpinUp = (uint16_t*)calloc(HAnd->NFermion / 2, sizeof(uint16_t));
+      SpinDn = (uint16_t*)calloc(HAnd->NFermion / 2, sizeof(uint16_t));
       SpinUp[0] = 0;
       SpinUp[1] = 2;
       SpinDn[0] = 1;
@@ -1014,7 +1014,7 @@ uint32_t FindGroundStateandMu(DMFTSettings const O, BADoubleTriDiagonalMatrixTyp
     else
     {
       /* calculate cluster occupation */
-      PsiRho = calloc(Psi->NFermion, sizeof(double));
+      PsiRho = (double*)calloc(Psi->NFermion, sizeof(double));
       if (PsiRho == NULL)
       {
         printf("calloc failed in main for PsiRho\n Fatal Error\n");
@@ -1092,7 +1092,7 @@ uint32_t FindGroundStateandMu(DMFTSettings const O, BADoubleTriDiagonalMatrixTyp
   printf("\n");
   printf("Energy                  <psi|H^2|psi>/(<psi|H|psi>^2)\n");
   printf("%22.15E  %22.15E\n", PsiEnergy, PsiQuality);
-  PsiRho = calloc(Psi->NFermion, sizeof(double));
+  PsiRho = (double*)calloc(Psi->NFermion, sizeof(double));
   if (PsiRho == NULL)
   {
     printf("calloc failed in main for PsiRho\n Fatal Error\n");

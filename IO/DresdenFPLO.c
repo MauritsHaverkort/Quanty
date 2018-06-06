@@ -118,15 +118,15 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
     }
     if(strstr(ReadLine, "No.  Element WPS CPA-Block") != NULL)
     {
-      O->Atoms.Atom = malloc(O->Atoms.Natom*sizeof(char*));
-      O->Atoms.Pos  = malloc(O->Atoms.Natom*sizeof(double*));
+      O->Atoms.Atom = (char**)malloc(O->Atoms.Natom*sizeof(char*));
+      O->Atoms.Pos  = (double**)malloc(O->Atoms.Natom*sizeof(double*));
       for(i=0;i<O->Atoms.Natom;i++)
       {
         fgets(ReadLine, 1023, stream);
         Nphrase = SplitStringToArray(phrase, ReadLine, " \n");
-        O->Atoms.Atom[i] = malloc(16*sizeof(char));
+        O->Atoms.Atom[i] = (char*)malloc(16*sizeof(char));
         strcpy(O->Atoms.Atom[i], phrase[1]);
-        O->Atoms.Pos[i] = malloc(3*sizeof(double));
+        O->Atoms.Pos[i] = (double*)malloc(3*sizeof(double));
         for(j=0;j<3;j++)
         {
           O->Atoms.Pos[i][j] = strtod(phrase[4+j],NULL);
@@ -140,16 +140,16 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
       Nwandef = atoi(phrase[Nphrase-1]);
       O->Wannier.Nwandef   = Nwandef;
       O->Wannier.NActAtom  = 1;
-      O->Wannier.Name      = malloc(Nwandef*sizeof(char*));
-      O->Wannier.Site      = malloc(Nwandef*sizeof(int));
-      O->Wannier.Orbital   = malloc(Nwandef*sizeof(int*));
-      O->Wannier.PosCenter = malloc(Nwandef*sizeof(double*));
+      O->Wannier.Name      = (char**)malloc(Nwandef*sizeof(char*));
+      O->Wannier.Site      = (int*)malloc(Nwandef*sizeof(int));
+      O->Wannier.Orbital   = (int**)malloc(Nwandef*sizeof(int*));
+      O->Wannier.PosCenter = (double**)malloc(Nwandef*sizeof(double*));
       i = 0;
       while((fgets(ReadLine, 1023, stream)!=NULL) && (!strstr(ReadLine, "START calculating WF")))
       {
         if(strstr(ReadLine, "name") != NULL)
         {
-          O->Wannier.Name[i] = malloc(16*sizeof(char));
+          O->Wannier.Name[i] = (char*)malloc(16*sizeof(char));
           Nphrase = SplitStringToArray(phrase, ReadLine, " :\n");
           strcpy(O->Wannier.Name[i], phrase[1]);
           for(j=2;j<Nphrase;j++)
@@ -158,7 +158,7 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
           {
             if(strstr(ReadLine, "center") != NULL)
             {
-              O->Wannier.PosCenter[i] = malloc(3*sizeof(double));
+              O->Wannier.PosCenter[i] = (double*)malloc(3*sizeof(double));
               Nphrase = SplitStringToArray(phrase, ReadLine, " :\n");
               for(j=0;j<3;j++)
               {
@@ -176,7 +176,7 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
             }
             if(strstr(ReadLine, "orbital") != NULL)
             {
-              O->Wannier.Orbital[i] = malloc(3*sizeof(int));
+              O->Wannier.Orbital[i] = (int*)malloc(3*sizeof(int));
               Nphrase = SplitStringToArray(phrase, ReadLine, " :\n");
               O->Wannier.Orbital[i][0] = atoi(&(phrase[1][0]));
               O->Wannier.Orbital[i][1] = ShellNameToL(phrase[1][1]);
@@ -196,9 +196,9 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
       }
 
       // Read the hopping matrix.
-      O->Wannier.Nhop   =  malloc(Nwandef*Nwandef*sizeof(int));
-      O->Wannier.HopVec =  malloc(Nwandef*Nwandef*sizeof(double**));
-      O->Wannier.HopVal =  malloc(Nwandef*Nwandef*sizeof(double*));
+      O->Wannier.Nhop   = (int*)malloc(Nwandef*Nwandef*sizeof(int));
+      O->Wannier.HopVec = (double***)malloc(Nwandef*Nwandef*sizeof(double**));
+      O->Wannier.HopVal = (double**)malloc(Nwandef*Nwandef*sizeof(double*));
       i = -1;
       while((fgets(ReadLine, 1023, stream)!=NULL) && (!strstr(ReadLine, "END   calculating WF")))
       {
@@ -209,14 +209,14 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
             printf("\nError: The length of hoppings is not compatible with the number of Wannier orbitals.\n");
             return 1;
           }
-          O->Wannier.HopVec[i] = malloc(NhopMax*sizeof(double*));
-          O->Wannier.HopVal[i] = malloc(NhopMax*sizeof(double));
+          O->Wannier.HopVec[i] = (double**)malloc(NhopMax*sizeof(double*));
+          O->Wannier.HopVal[i] = (double*)malloc(NhopMax*sizeof(double));
           ihop = 0;
         }
         if(strncmp(ReadLine, "T=", 2) ==0)
         {
           Nphrase = SplitStringToArray(phrase, ReadLine, " \n");
-          O->Wannier.HopVec[i][ihop] = malloc(3*sizeof(double));
+          O->Wannier.HopVec[i][ihop] = (double*)malloc(3*sizeof(double));
           for(j=0;j<3;j++)
           {
             tmpvec[j] = strtod(phrase[1+j], NULL);
@@ -248,7 +248,7 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
     }
   }
 
-  O->Wannier.ActMap = malloc(O->Atoms.Natom*sizeof(int));
+  O->Wannier.ActMap = (int*)malloc(O->Atoms.Natom*sizeof(int));
   iatom = 0;
   for(i=0;i<O->Atoms.Natom;i++)
   {

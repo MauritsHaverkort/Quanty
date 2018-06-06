@@ -114,7 +114,7 @@ uint32_t CopyCrystalStructure(CrystalStructureType A, CrystalStructureType * B)
     }
   }
   B->NAtoms = A.NAtoms;
-  if ((B->Atom = malloc(B->NAtoms * sizeof(AtomType))) == NULL)
+  if ((B->Atom = (AtomType*)malloc(B->NAtoms * sizeof(AtomType))) == NULL)
   {
     printf("malloc failed for B->Atom in CopyCrystalStructure\n");
     fflush(stdout);
@@ -128,7 +128,7 @@ uint32_t CopyCrystalStructure(CrystalStructureType A, CrystalStructureType * B)
     B->Atom[i].Position[1] = A.Atom[i].Position[1];
     B->Atom[i].Position[2] = A.Atom[i].Position[2];
     B->Atom[i].Nshell = A.Atom[i].Nshell;
-    if ((B->Atom[i].shelldegeneracy = malloc(B->Atom[i].Nshell * sizeof(int))) == NULL)
+    if ((B->Atom[i].shelldegeneracy = (int*)malloc(B->Atom[i].Nshell * sizeof(int))) == NULL)
     {
       printf("malloc failed for B->Atom[%i].shelldegeneracy in CopyCrystalStructure\n", i);
       fflush(stdout);

@@ -309,13 +309,13 @@ uint32_t CompactMatrixRemoveRow(CompactMatrixType * const A, uint32_t row)
   {
     if(!(row+1==A->Ni)) memmove(&(A->V[row*A->Nj]), &(A->V[(row+1)*A->Nj]), (A->Ni-row-1)*A->Nj*sizeof(Complex16));
     A->Ni--;
-    A->V=realloc(A->V, A->Ni*A->Nj*sizeof(Complex16));
+    A->V= (Complex16*)realloc(A->V, A->Ni*A->Nj*sizeof(Complex16));
   }
   else
   {
     if(!(row+1==A->Ni)) memmove(&(A->VRe[row*A->Nj]), &(A->VRe[(row+1)*A->Nj]), (A->Ni-row-1)*A->Nj*sizeof(double));
     A->Ni--;
-    A->VRe=realloc(A->VRe, A->Ni*A->Nj*sizeof(double));
+    A->VRe= (double*)realloc(A->VRe, A->Ni*A->Nj*sizeof(double));
   }
   return 0;
 }
@@ -334,7 +334,7 @@ uint32_t CompactMatrixVector(CompactMatrixType const *A, CompactVectorType *x, C
     Complex16 ALPHA,BETA;
     ALPHA.Re=1; ALPHA.Im=0;
     BETA.Re=0;  BETA.Im=0;
-    y->V=malloc(A->Ni*sizeof(Complex16));
+    y->V= (Complex16*)malloc(A->Ni*sizeof(Complex16));
     if(y==NULL){printf("malloc failed in CompactMatrixVector\n");return 1;}
     zgemv(&TransA,&(A->Nj),&(A->Ni),&ALPHA,A->V,&(A->Nj),x->V,&INC,&BETA,y->V,&INC);
   }
@@ -350,7 +350,7 @@ uint32_t CompactMatrixVector(CompactMatrixType const *A, CompactVectorType *x, C
     }
     ALPHA.Re=1; ALPHA.Im=0;
     BETA.Re=0;  BETA.Im=0;
-    y->V=malloc(A->Ni*sizeof(Complex16));
+    y->V= (Complex16*)malloc(A->Ni*sizeof(Complex16));
     if(y==NULL){printf("malloc failed in CompactMatrixVector\n");return 1;}
     zgemv(&TransA,&(A->Nj),&(A->Ni),&ALPHA,A->V,&(A->Nj),&xtemp,&INC,&BETA,y->V,&INC);
   }
@@ -366,14 +366,14 @@ uint32_t CompactMatrixVector(CompactMatrixType const *A, CompactVectorType *x, C
     }
     ALPHA.Re=1; ALPHA.Im=0;
     BETA.Re=0;  BETA.Im=0;
-    y->V=malloc(A->Ni*sizeof(Complex16));
+    y->V= (Complex16*)malloc(A->Ni*sizeof(Complex16));
     if(y==NULL){printf("malloc failed in CompactMatrixVector\n");return 1;}
     zgemv(&TransA,&(A->Nj),&(A->Ni),&ALPHA,Atemp,&(A->Nj),x->V,&INC,&BETA,y->V,&INC);
   }
   else
   {
     double ALPHA=1,BETA=0;
-    y->VRe=malloc(A->Ni*sizeof(double));
+    y->VRe= (double*)malloc(A->Ni*sizeof(double));
     y->Ni=A->Ni;
     if(y==NULL){printf("malloc failed in CompactMatrixVector\n");return 1;}
     dgemv(&TransA,&(A->Nj),&(A->Ni),&ALPHA,A->VRe,&(A->Nj),x->VRe,&INC,&BETA,y->VRe,&INC);
@@ -992,7 +992,7 @@ uint32_t CompactMatrixAddMultiply(char const TransA, char const TransB, CompactM
   Cp=C;
   if((Cp->QComplex)&&(A->QComplex==0))
   {
-    Ap=malloc(sizeof(CompactMatrixType));
+    Ap= (CompactMatrixType*)malloc(sizeof(CompactMatrixType));
     Ap->Ni=A->Ni;
     Ap->Nj=A->Nj;
     Ap->QComplex=1;
@@ -1004,7 +1004,7 @@ uint32_t CompactMatrixAddMultiply(char const TransA, char const TransB, CompactM
   }
   if((Cp->QComplex)&&(B->QComplex==0))
   {
-    Bp=malloc(sizeof(CompactMatrixType));
+    Bp= (CompactMatrixType*)malloc(sizeof(CompactMatrixType));
     Bp->Ni=B->Ni;
     Bp->Nj=B->Nj;
     Bp->QComplex=1;
@@ -1344,7 +1344,7 @@ uint32_t CompactMatrixTranspose(CompactMatrixType * const M)
     if(M->QComplex) /* transpose a complex rectangular matrix */
     {
       Complex16 *swap;
-      swap=malloc(M->Ni*M->Nj*sizeof(Complex16));
+      swap= (Complex16*)malloc(M->Ni*M->Nj*sizeof(Complex16));
       if(swap==NULL)
       {
         printf("malloc failed in CompactMatrixTranspose\n");
@@ -1370,7 +1370,7 @@ uint32_t CompactMatrixTranspose(CompactMatrixType * const M)
     else /* transpose a real rectangular matrix */
     {
       double *swap;
-      swap=malloc(M->Ni*M->Nj*sizeof(double));
+      swap= (double*)malloc(M->Ni*M->Nj*sizeof(double));
       if(swap==NULL)
       {
         printf("malloc failed in CompactMatrixTranspose\n");
@@ -1433,7 +1433,7 @@ double CompactMatrixInverse(CompactMatrixType * const M)
     printf("In CompactMatrixInverse tried to inverse a rectangular matrix Ni=%i, Nj=%i\n",M->Ni,M->Nj);
     return -1;
   }
-  IPIV = malloc((M->Ni+1)*sizeof(int));
+  IPIV = (int*)malloc((M->Ni+1)*sizeof(int));
   if(M->QComplex)
   {
     Complex16 *WORK;
@@ -1443,7 +1443,7 @@ double CompactMatrixInverse(CompactMatrixType * const M)
       printf("zgetrf failed in CompactMatrixInverse with INFO %i\n",INFO);
       return 1;
     }
-    WORK = malloc(LWORK*sizeof(Complex16));
+    WORK = (Complex16*)malloc(LWORK*sizeof(Complex16));
     zgetri(&M->Ni,M->V,&M->Ni,IPIV,WORK,&LWORK,&INFO);
     if(INFO!=0)
     {
@@ -1462,7 +1462,7 @@ double CompactMatrixInverse(CompactMatrixType * const M)
       printf("dgetrf failed in CompactMatrixInverse with INFO %i\n",INFO);
       return 1;
     }
-    WORK = malloc(LWORK*sizeof(double));
+    WORK = (double*)malloc(LWORK*sizeof(double));
     dgetri(&M->Ni,M->VRe,&M->Ni,IPIV,WORK,&LWORK,&INFO);
     if(INFO!=0)
     {
@@ -1705,18 +1705,18 @@ uint32_t CompactMatrixSVDOrthogonalizeRow(CompactMatrixType * A, const double Si
   }
   V.Ni=A->Ni;
   V.Nj=A->Ni;
-  S=calloc(A->Ni,sizeof(double));
+  S= (double*)calloc(A->Ni,sizeof(double));
   V.QComplex=A->QComplex;
   InitCompactMatrix(&V);
   if(A->QComplex)
   {
-    WORK = malloc(5*Min(A->Ni,A->Nj)*sizeof(double));
+    WORK = (double*)malloc(5*Min(A->Ni,A->Nj)*sizeof(double));
     if(WORK==NULL)
     {
       printf("malloc failed in CompactMatrixSVDOrthogonalize\n");
       return 1;
     }
-    WORKIM = malloc(LWORK*sizeof(Complex16));
+    WORKIM = (Complex16*)malloc(LWORK*sizeof(Complex16));
     if(WORKIM==NULL)
     {
       free(WORK);
@@ -1793,7 +1793,7 @@ uint32_t CompactMatrixSVDOrthogonalizeRow(CompactMatrixType * A, const double Si
   }
   else
   {
-    WORK = malloc(LWORK*sizeof(double));
+    WORK = (double*)malloc(LWORK*sizeof(double));
     if(WORK==NULL)
     {
       printf("malloc failed in CompactMatrixSVDOrthogonalize\n");
@@ -2212,7 +2212,7 @@ uint32_t NonHermitianEigensystemOrder(Complex16 * val, CompactMatrixType * const
     if(funR->QComplex==0)
     { //  all functions real
       // fill data
-      data = malloc((2+funL->Nj+funR->Nj)*funL->Ni*sizeof(double));
+      data = (double*)malloc((2+funL->Nj+funR->Nj)*funL->Ni*sizeof(double));
       if(data==NULL)
       {
         printf("malloc failed in NonHermitianEigensystemOrder\n");
@@ -2263,7 +2263,7 @@ uint32_t NonHermitianEigensystemOrder(Complex16 * val, CompactMatrixType * const
     else
     {  // L real R complex
       // fill data
-      data = malloc((2+funL->Nj+2*funR->Nj)*funL->Ni*sizeof(double));
+      data = (double*)malloc((2+funL->Nj+2*funR->Nj)*funL->Ni*sizeof(double));
       if(data==NULL)
       {
         printf("malloc failed in NonHermitianEigensystemOrder\n");
@@ -2321,7 +2321,7 @@ uint32_t NonHermitianEigensystemOrder(Complex16 * val, CompactMatrixType * const
     if(funR->QComplex==0)
     { // L complex R real
       // fill data
-      data = malloc((2+2*funL->Nj+funR->Nj)*funL->Ni*sizeof(double));
+      data = (double*)malloc((2+2*funL->Nj+funR->Nj)*funL->Ni*sizeof(double));
       if(data==NULL)
       {
         printf("malloc failed in NonHermitianEigensystemOrder\n");
@@ -2376,7 +2376,7 @@ uint32_t NonHermitianEigensystemOrder(Complex16 * val, CompactMatrixType * const
     else
     { // all functions complex
       // fill data
-      data = malloc((2+2*funL->Nj+2*funR->Nj)*funL->Ni*sizeof(double));
+      data = (double*)malloc((2+2*funL->Nj+2*funR->Nj)*funL->Ni*sizeof(double));
       if(data==NULL)
       {
         printf("malloc failed in NonHermitianEigensystemOrder\n");
@@ -2489,7 +2489,7 @@ uint32_t NonHermitianCompactMatrixEigensystem(CompactMatrixType const *A, Compac
   {                             /* Real */
     double *work,*valRe,*valIm;
     double *Vl, *Vr, *Acopy;
-    work = malloc(lwork*sizeof(double));
+    work = (double*)malloc(lwork*sizeof(double));
     if(work==NULL)
     {
       printf("malloc for work failed in CompactMatrixEigensystem\n");
@@ -2497,7 +2497,7 @@ uint32_t NonHermitianCompactMatrixEigensystem(CompactMatrixType const *A, Compac
       FreeCompactMatrix(funR);
       return 1;
     }
-    valRe=malloc(A->Ni*sizeof(double));
+    valRe= (double*)malloc(A->Ni*sizeof(double));
     if(valRe==NULL)
     {
       printf("malloc failed in NonHermitianCompactMatrixEigensystem\n");
@@ -2506,7 +2506,7 @@ uint32_t NonHermitianCompactMatrixEigensystem(CompactMatrixType const *A, Compac
       FreeCompactMatrix(funR);
       return 1;
     }
-    valIm=malloc(A->Ni*sizeof(double));
+    valIm= (double*)malloc(A->Ni*sizeof(double));
     if(valIm==NULL)
     {
       printf("malloc failed in NonHermitianCompactMatrixEigensystem\n");
@@ -2516,7 +2516,7 @@ uint32_t NonHermitianCompactMatrixEigensystem(CompactMatrixType const *A, Compac
       FreeCompactMatrix(funR);
       return 1;
     }
-    Acopy=malloc(A->Ni*A->Ni*sizeof(double));
+    Acopy= (double*)malloc(A->Ni*A->Ni*sizeof(double));
     if(Acopy==NULL)
     {
       printf("malloc failed in NonHermitianCompactMatrixEigensystem\n");
@@ -2527,7 +2527,7 @@ uint32_t NonHermitianCompactMatrixEigensystem(CompactMatrixType const *A, Compac
       FreeCompactMatrix(funR);
       return 1;
     }
-    Vl=malloc(A->Ni*A->Ni*sizeof(double));
+    Vl= (double*)malloc(A->Ni*A->Ni*sizeof(double));
     if(Vl==NULL)
     {
       printf("malloc failed in NonHermitianCompactMatrixEigensystem\n");
@@ -2539,7 +2539,7 @@ uint32_t NonHermitianCompactMatrixEigensystem(CompactMatrixType const *A, Compac
       FreeCompactMatrix(funR);
       return 1;
     }
-    Vr=malloc(A->Ni*A->Ni*sizeof(double));
+    Vr= (double*)malloc(A->Ni*A->Ni*sizeof(double));
     if(Vr==NULL)
     {
       printf("malloc failed in NonHermitianCompactMatrixEigensystem\n");
@@ -2608,20 +2608,20 @@ uint32_t NonHermitianCompactMatrixEigensystem(CompactMatrixType const *A, Compac
   {                             /* Complex */
     Complex16 *Acopy,*work;
     double *rwork;
-    Acopy = malloc(A->Ni*A->Nj*sizeof(Complex16));
+    Acopy = (Complex16*)malloc(A->Ni*A->Nj*sizeof(Complex16));
     if(Acopy==NULL)
     {
       printf("malloc failed in NonHermitianCompactMatrixEigensystem\n");
       return 1;
     }
-    work  = malloc(lwork*sizeof(Complex16));
+    work  = (Complex16*)malloc(lwork*sizeof(Complex16));
     if(work==NULL)
     {
       free(Acopy);
       printf("malloc failed in NonHermitianCompactMatrixEigensystem\n");
       return 1;
     }
-    rwork = malloc(2*A->Ni*sizeof(double));
+    rwork = (double*)malloc(2*A->Ni*sizeof(double));
     if(rwork==NULL)
     {
       free(Acopy);
@@ -2664,13 +2664,13 @@ uint32_t CompactMatrixEigensystem(CompactMatrixType const *A, CompactMatrixType 
   int    *iwork;
   double *work;
   
-  iwork = malloc(liwork*sizeof(int));
+  iwork = (int*)malloc(liwork*sizeof(int));
   if(iwork==NULL)
   {
     printf("malloc for iwork failed in CompactMatrixEigensystem\n");
     return 1;
   }
-  work = malloc(lwork*sizeof(double));
+  work = (double*)malloc(lwork*sizeof(double));
   if(work==NULL)
   {
     printf("malloc for work failed in CompactMatrixEigensystem\n");
@@ -2719,7 +2719,7 @@ uint32_t CompactMatrixEigensystem(CompactMatrixType const *A, CompactMatrixType 
   {                             /* complex */
     int    lcwork = 2 * A->Ni + Sqr(A->Ni);
     Complex16 *cwork;
-    cwork =malloc(lcwork*sizeof(Complex16));
+    cwork = (Complex16*)malloc(lcwork*sizeof(Complex16));
     if(cwork==NULL)
     {
       printf("malloc for cwork failed in CompactMatrixEigensystem\n");
@@ -2999,7 +2999,7 @@ uint32_t CompactMatrixToSpectra(CompactMatrixType const *A, SpectraType * const 
     printf("CompactMatrixToSpectra want more spectra (%i) then elements in matrix Ni=Nj=%i\n",BlockSize,A->Nj);
     return 1;
   }
-  val=malloc(A->Ni*sizeof(double));
+  val= (double*)malloc(A->Ni*sizeof(double));
   if(val==NULL)
   {
     printf("malloc failed in CompactMatrixToSpectra\n");
@@ -3023,7 +3023,7 @@ uint32_t CompactMatrixToSpectra(CompactMatrixType const *A, SpectraType * const 
   }
   if(A->QComplex)
   {
-    Gtemp=malloc(BlockSize*BlockSize*sizeof(SpectraType));
+    Gtemp= (SpectraType*)malloc(BlockSize*BlockSize*sizeof(SpectraType));
     for(i=0;i<BlockSize*BlockSize;i++)
     {
       SpectrumAllocate(G[0], &(Gtemp[i]));
@@ -3162,7 +3162,7 @@ uint32_t HermitianCompactMatrixToListOfPoles(CompactMatrixType const *A, ListOfP
   uint32_t i,j;
   CompactMatrixType fun,funvec;
   double *val;
-  val=malloc(A->Ni*sizeof(double));
+  val= (double*)malloc(A->Ni*sizeof(double));
   CompactMatrixEigensystem(A, &fun, val);
   CompactMatrixMultiply('N', 'C', vec, &fun, &funvec);
   FreeCompactMatrix(&fun);
@@ -3198,7 +3198,7 @@ uint32_t HermitianCompactMatrixToListOfPolesWithEigenstates(CompactMatrixType co
   uint32_t i,j;
   CompactMatrixType funvec;
   double *val;
-  val=malloc(A->Ni*sizeof(double));
+  val= (double*)malloc(A->Ni*sizeof(double));
   CompactMatrixEigensystem(A, fun, val);
   CompactMatrixMultiply('N', 'C', vec, fun, &funvec);
   for(i=0;i<vec->Ni;i++)
@@ -3237,7 +3237,7 @@ uint32_t HermitianCompactMatrixToBlockListOfPoles(CompactMatrixType const *A, Bl
   uint32_t k,l,i,j,ifunvec;
   CompactMatrixType fun,funvec;
   double *val;
-  val=malloc(A->Ni*sizeof(double));
+  val= (double*)malloc(A->Ni*sizeof(double));
   CompactMatrixEigensystem(A, &fun, val);
   CompactMatrixMultiply('*', 'T', &fun, vec, &funvec);
   FreeCompactMatrix(&fun);
@@ -3292,7 +3292,7 @@ uint32_t HermitianCompactMatrixToBlockListOfPolesWithEigenstates(CompactMatrixTy
   uint32_t k,l,i,j,ifunvec;
   CompactMatrixType funvec;
   double *val;
-  val=malloc(A->Ni*sizeof(double));
+  val= (double*)malloc(A->Ni*sizeof(double));
   CompactMatrixEigensystem(A, fun, val);
   CompactMatrixMultiply('*', 'T', fun, vec, &funvec);
   L->BlockSize=vec->Ni;
@@ -3835,7 +3835,7 @@ uint32_t CompactMatrixBlockBandDiagonalizeReal(CompactMatrixType const * const A
   strncpy(B->Name, A->Name, MAXStrLength);
   b=B->bRe;
   a=B->aRe;
-  veclist=malloc((B->N+1)*sizeof(CompactMatrixType));
+  veclist= (CompactMatrixType*)malloc((B->N+1)*sizeof(CompactMatrixType));
   veclist[0]=*vec;
   CompactMatrixCopy(veclist[0], &veclist[1]);
   CompactMatrixSVDOrthogonalizeRow(&veclist[1], SingularValue, True);
@@ -3946,7 +3946,7 @@ uint32_t CompactMatrixBlockBandDiagonalizeComplex(CompactMatrixType const * cons
   strncpy(B->Name, A->Name, MAXStrLength);
   b=B->b;
   a=B->a;
-  veclist=malloc((B->N+1)*sizeof(CompactMatrixType));
+  veclist= (CompactMatrixType*)malloc((B->N+1)*sizeof(CompactMatrixType));
   veclist[0]=*vec;
   CompactMatrixCopy(veclist[0], &veclist[1]);
   CompactMatrixSVDOrthogonalizeRow(&veclist[1], SingularValue, True);

@@ -10,7 +10,7 @@ uint32_t BandstructurePathFromStuttgartCTRL(StuttgartCTRL CTRL, BandstructurePat
     if(!(strcmp(CTRL.SYML.LAB2[i],CTRL.SYML.LAB1[i+1])==0))QPathBrakes++;
   }
   Path->NQ=1+CTRL.SYML.N+QPathBrakes;
-  Path->Q=malloc(Path->NQ*sizeof(BandstructurePointType));
+  Path->Q= (BandstructurePointType*)malloc(Path->NQ*sizeof(BandstructurePointType));
   QPathBrakes=0;
   for(i=0;i<CTRL.SYML.N-1;i++)
   {
@@ -59,7 +59,7 @@ uint32_t CrystalStructureFromStuttgartCTRL(StuttgartCTRL CTRL, CrystalStructureT
   ReciprocalLatticeVector(Cell->rUnitCell, Cell->gUnitCell,Cell->Units);
   /* determine number of atoms */
   Cell->NAtoms=CTRL.SITE.Nactive;
-  Cell->Atom=malloc(Cell->NAtoms*sizeof(AtomType));
+  Cell->Atom= (AtomType*)malloc(Cell->NAtoms*sizeof(AtomType));
   iatom=0;
   for(i=0;i<CTRL.SITE.N;i++) /**** Rewrite using CTRL.SITE.ActiveAtomMap ****/
   {
@@ -87,12 +87,12 @@ uint32_t CrystalStructureFromStuttgartCTRL(StuttgartCTRL CTRL, CrystalStructureT
     /* allocate space for shells */
     if(Cell->Atom[iatom].Nshell!=0)
     {
-      Cell->Atom[iatom].ShellName=malloc(Cell->Atom[iatom].Nshell*sizeof(char*));
-      Cell->Atom[iatom].shelldegeneracy=malloc(Cell->Atom[iatom].Nshell*sizeof(int));
-      Cell->Atom[iatom].OrbitalName=malloc(Cell->Atom[iatom].Nshell*sizeof(char*));
+      Cell->Atom[iatom].ShellName= (char**)malloc(Cell->Atom[iatom].Nshell*sizeof(char*));
+      Cell->Atom[iatom].shelldegeneracy= (int*)malloc(Cell->Atom[iatom].Nshell*sizeof(int));
+      Cell->Atom[iatom].OrbitalName= (char**)malloc(Cell->Atom[iatom].Nshell*sizeof(char*));
       for(j=0;j<Cell->Atom[iatom].Nshell;j++)
       {
-        Cell->Atom[iatom].ShellName[j]=malloc(4*sizeof(char));
+        Cell->Atom[iatom].ShellName[j]= (char*)malloc(4*sizeof(char));
       }
     }
     /* set name of shells, shell multiplicity, allocate space for orbital names and set orbital names */
@@ -162,10 +162,10 @@ uint32_t CrystalStructureFromStuttgartCTRL(StuttgartCTRL CTRL, CrystalStructureT
         /* set shell multiplicity */
         Cell->Atom[iatom].shelldegeneracy[j]=k;
         /* allocate space for orbital names */
-        Cell->Atom[iatom].OrbitalName[j]=malloc(k*sizeof(char*));
+        Cell->Atom[iatom].OrbitalName[j]= (char**)malloc(k*sizeof(char*));
         for(m=0;m<k;m++)
         {
-          Cell->Atom[iatom].OrbitalName[j][m]=malloc(16*sizeof(char));
+          Cell->Atom[iatom].OrbitalName[j][m]= (char*)malloc(16*sizeof(char));
         }
         /* set orbital names */
         k=0;
@@ -253,7 +253,7 @@ uint32_t TightBindingDefFromStuttgartCTRLHAMR(StuttgartCTRL CTRL, StuttgartHAMR 
   {
     HTB->nH+=HTB->Cell.Atom[ CTRL.SITE.ActiveAtomMap[ HAMR.element[iHAMRelement].IndexAtom1-1]].Nshell * HTB->Cell.Atom[ CTRL.SITE.ActiveAtomMap[ HAMR.element[iHAMRelement].IndexAtom2-1]].Nshell;
   }
-  HTB->H=malloc(HTB->nH*sizeof(TightBindingDefHopping));
+  HTB->H= (TightBindingDefHopping*)malloc(HTB->nH*sizeof(TightBindingDefHopping));
   /* set ConnectingVectors, TransVecs and elements of HTB */
   iHTBelement=0;
   for(iHAMRelement=0;iHAMRelement<HAMR.Nelement;iHAMRelement++)

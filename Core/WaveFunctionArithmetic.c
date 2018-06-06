@@ -37,7 +37,7 @@ uint8_t *StringToDet(uint32_t const NFermion, uint32_t const NBoson, char *s)
   uint32_t i, nspaces=0;
   uint8_t *det;
   uint32_t NWord=NBoson + Min(NFermion, 1 + (NFermion - 1) / 8);
-  det = calloc(NWord,sizeof(uint8_t));
+  det = (uint8_t*)calloc(NWord,sizeof(uint8_t));
   if(strlen(s)<NFermion+2*NBoson)
   {
     printf("Error in StringToDet, length of string(%lu) different from NFermion(%d)+2*NBoson(%d)\n",strlen(s),NFermion,NBoson);
@@ -85,7 +85,7 @@ char *DetToString(uint32_t const NFermion, uint32_t const NBoson, uint8_t * det)
   int z;
   uint32_t i,pos=0;
   uint32_t NWord=NBoson + Min(NFermion, 1 + (NFermion - 1) / 8);
-  ret = malloc((NFermion+NBoson+4)*sizeof(char));
+  ret = (char*)malloc((NFermion+NBoson+4)*sizeof(char));
   ret[0]='"';
   pos++;
   for(i=0;i<NWord-NBoson;i++)
@@ -129,7 +129,7 @@ uint32_t WaveFunctionInit(WaveFunctionType * Psi)
   Psi->N = 0;
   Psi->NBlok = 1;
   Psi->NWord = Psi->NBoson + Min(Psi->NFermion, 1 + (Psi->NFermion - 1) / 8);
-  if ((Psi->KeyList = calloc((uint32_t) 1 << (Psi->NBitsKey), sizeof(uint32_t))) == NULL)
+  if ((Psi->KeyList = (uint32_t*)calloc((uint32_t) 1 << (Psi->NBitsKey), sizeof(uint32_t))) == NULL)
   {
     printf("calloc failed in WaveFunctionInit 00\n");
     fflush(stdout);
@@ -137,7 +137,7 @@ uint32_t WaveFunctionInit(WaveFunctionType * Psi)
     Psi->NWord = 0;
     return 1;
   };
-  if ((Psi->ValueRe = malloc(Psi->NBlok * sizeof(double *))) == NULL)
+  if ((Psi->ValueRe = (double **)malloc(Psi->NBlok * sizeof(double *))) == NULL)
   {
     printf("malloc failed in WaveFunctionInit 01\n");
     fflush(stdout);
@@ -148,7 +148,7 @@ uint32_t WaveFunctionInit(WaveFunctionType * Psi)
   };
   Psi->ValueIm = NULL;
   if (Psi->QComplex)
-    if ((Psi->ValueIm = malloc(Psi->NBlok * sizeof(double *))) == NULL)
+    if ((Psi->ValueIm = (double **)malloc(Psi->NBlok * sizeof(double *))) == NULL)
     {
       printf("malloc failed in WaveFunctionInit 02\n");
       fflush(stdout);
@@ -158,7 +158,7 @@ uint32_t WaveFunctionInit(WaveFunctionType * Psi)
       Psi->NWord = 0;
       return 1;
     };
-  if ((Psi->Next = malloc(Psi->NBlok * sizeof(uint32_t *))) == NULL)
+  if ((Psi->Next = (uint32_t **)malloc(Psi->NBlok * sizeof(uint32_t *))) == NULL)
   {
     printf("malloc failed in WaveFunctionInit 03\n");
     fflush(stdout);
@@ -170,7 +170,7 @@ uint32_t WaveFunctionInit(WaveFunctionType * Psi)
     Psi->NWord = 0;
     return 1;
   };
-  if ((Psi->Determinant = malloc(Psi->NBlok * sizeof(uint8_t *))) == NULL)
+  if ((Psi->Determinant = (uint8_t **)malloc(Psi->NBlok * sizeof(uint8_t *))) == NULL)
   {
     printf("malloc failed in WaveFunctionInit 04\n");
     fflush(stdout);
@@ -183,7 +183,7 @@ uint32_t WaveFunctionInit(WaveFunctionType * Psi)
     Psi->NWord = 0;
     return 1;
   };
-  if ((Psi->ValueRe[Psi->NBlok - 1] = malloc(BlokSize * sizeof(double))) == NULL)
+  if ((Psi->ValueRe[Psi->NBlok - 1] = (double*)malloc(BlokSize * sizeof(double))) == NULL)
   {
     printf("malloc failed in WaveFunctionInit 05\n");
     fflush(stdout);
@@ -199,7 +199,7 @@ uint32_t WaveFunctionInit(WaveFunctionType * Psi)
   };
   Psi->ValueRe[0][0] = 0.0;
   if (Psi->QComplex)
-    if ((Psi->ValueIm[Psi->NBlok - 1] = malloc(BlokSize * sizeof(double))) == NULL)
+    if ((Psi->ValueIm[Psi->NBlok - 1] = (double*)malloc(BlokSize * sizeof(double))) == NULL)
     {
       printf("malloc failed in WaveFunctionInit 06\n");
       fflush(stdout);
@@ -215,7 +215,7 @@ uint32_t WaveFunctionInit(WaveFunctionType * Psi)
       return 1;
     };
   if (Psi->QComplex) Psi->ValueIm[0][0] = 0.0;
-  if ((Psi->Next[Psi->NBlok - 1] = malloc(BlokSize * sizeof(uint32_t))) == NULL)
+  if ((Psi->Next[Psi->NBlok - 1] = (uint32_t*)malloc(BlokSize * sizeof(uint32_t))) == NULL)
   {
     printf("malloc failed in WaveFunctionInit 07\n");
     fflush(stdout);
@@ -232,7 +232,7 @@ uint32_t WaveFunctionInit(WaveFunctionType * Psi)
     Psi->NWord = 0;
     return 1;
   };
-  if ((Psi->Determinant[Psi->NBlok - 1] = malloc(BlokSize * Psi->NWord * sizeof(uint8_t))) == NULL)
+  if ((Psi->Determinant[Psi->NBlok - 1] = (uint8_t*)malloc(BlokSize * Psi->NWord * sizeof(uint8_t))) == NULL)
   {
     printf("malloc failed in WaveFunctionInit 08\n");
     fflush(stdout);
@@ -278,7 +278,7 @@ uint32_t WaveFunctionInitCopyBasis(WaveFunctionType * Psi, WaveFunctionType cons
   Psi->QComplex = PsiOrig.QComplex;
   strcpy(Psi->Name, PsiOrig.Name);
   
-  Psi->ValueRe = malloc(Psi->NBlok * sizeof(double *));
+  Psi->ValueRe = (double **)malloc(Psi->NBlok * sizeof(double *));
   if (Psi->ValueRe == NULL)
   {                             /* Allocation Failed */
     printf("alloc failed WaveFunctionInitCopyBasis 01 Re\n");
@@ -288,7 +288,7 @@ uint32_t WaveFunctionInitCopyBasis(WaveFunctionType * Psi, WaveFunctionType cons
   }
   for (i = 0; i < Psi->NBlok; i++)
   {
-    Psi->ValueRe[i] = calloc(BlokSize, sizeof(double));
+    Psi->ValueRe[i] = (double*)calloc(BlokSize, sizeof(double));
     if (Psi->ValueRe[i] == NULL)
     {                           /* Allocation Failed */
       printf("alloc failed WaveFunctionInitCopyBasis 02 Re\n");
@@ -304,7 +304,7 @@ uint32_t WaveFunctionInitCopyBasis(WaveFunctionType * Psi, WaveFunctionType cons
   }
   if(Psi->QComplex)
   {
-    Psi->ValueIm = malloc(Psi->NBlok * sizeof(double *));
+    Psi->ValueIm = (double **)malloc(Psi->NBlok * sizeof(double *));
     if (Psi->ValueIm == NULL)
     {                             /* Allocation Failed */
       for (j = 0; j < Psi->NBlok; j++)
@@ -317,7 +317,7 @@ uint32_t WaveFunctionInitCopyBasis(WaveFunctionType * Psi, WaveFunctionType cons
     }
     for (i = 0; i < Psi->NBlok; i++)
     {
-      Psi->ValueIm[i] = calloc(BlokSize, sizeof(double));
+      Psi->ValueIm[i] = (double*)calloc(BlokSize, sizeof(double));
       if (Psi->ValueIm[i] == NULL)
       {                           /* Allocation Failed */
         printf("alloc failed WaveFunctionInitCopyBasis 02 Im\n");
@@ -371,7 +371,7 @@ uint32_t MakeComplexWaveFunctionFromReal(WaveFunctionType * Cpsi, WaveFunctionTy
   Cpsi->Determinant = psi.Determinant;
   Cpsi->NBitsKey = psi.NBitsKey;
   Cpsi->KeyList = psi.KeyList;
-  Cpsi->ValueIm = malloc(Cpsi->NBlok * sizeof(double *));
+  Cpsi->ValueIm = (double **)malloc(Cpsi->NBlok * sizeof(double *));
   if (Cpsi->ValueIm == NULL)
   {
     printf("could not allocate memory in MakeComplexWaveFunctionFromReal 00\n");
@@ -379,7 +379,7 @@ uint32_t MakeComplexWaveFunctionFromReal(WaveFunctionType * Cpsi, WaveFunctionTy
   }
   for (i = 0; i < Cpsi->NBlok; i++)
   {
-    Cpsi->ValueIm[i] = calloc(BlokSize, sizeof(double));
+    Cpsi->ValueIm[i] = (double*)calloc(BlokSize, sizeof(double));
     if (Cpsi->ValueIm[i] == NULL)
     {
       for (j = 0; j < i; j++)

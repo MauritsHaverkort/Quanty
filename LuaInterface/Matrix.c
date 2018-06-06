@@ -116,7 +116,7 @@ static int LuaMatrixSqrt(lua_State * L)
     //remove the line above
     if (luaL_testudata(L, 1, "Matrix_Type") == NULL)
     { // matrix on stack as table
-      B=malloc(sizeof(CompactMatrixType));
+      B= (CompactMatrixType*)malloc(sizeof(CompactMatrixType));
       if(NonHermitianCompactMatrixSqrt(A,B)) return luaL_error(L,"Matrix Sqrt failed\n");
       LuaPushTable_CompactMatrixType(L, B);
       FreeCompactMatrix(A);
@@ -135,7 +135,7 @@ static int LuaMatrixSqrt(lua_State * L)
   {
     if (luaL_testudata(L, 1, "Matrix_Type") == NULL)
     { // matrix on stack as table
-      B=malloc(sizeof(CompactMatrixType));
+      B= (CompactMatrixType*)malloc(sizeof(CompactMatrixType));
       if(CompactMatrixSqrt(A,B)) return luaL_error(L,"Matrix Sqrt failed\n");
       LuaPushTable_CompactMatrixType(L, B);
       FreeCompactMatrix(A);
@@ -167,7 +167,7 @@ static int LuaMatrixEigensystem(lua_State * L)
     {
       CompactMatrixType funL, funR;
       Complex16 *val;
-      val=malloc(H->Ni*sizeof(Complex16));
+      val= (Complex16*)malloc(H->Ni*sizeof(Complex16));
       NonHermitianCompactMatrixEigensystem(H,&funL, &funR,val);
       LuaPushArray_Complex16(L, val, funL.Ni);
       free(val);
@@ -181,7 +181,7 @@ static int LuaMatrixEigensystem(lua_State * L)
     {
       CompactMatrixType *funL, *funR;
       Complex16 *val;
-      val=malloc(H->Ni*sizeof(Complex16));
+      val= (Complex16*)malloc(H->Ni*sizeof(Complex16));
       funL = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
       luaL_setmetatable(L, "Matrix_Type");
       funR = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
@@ -198,7 +198,7 @@ static int LuaMatrixEigensystem(lua_State * L)
     {
       CompactMatrixType fun;
       double *val;
-      val=malloc(H->Ni*sizeof(double));
+      val= (double*)malloc(H->Ni*sizeof(double));
       CompactMatrixEigensystem(H,&fun,val);
       LuaPushArray_double(L, val, fun.Ni);
       free(val);
@@ -210,7 +210,7 @@ static int LuaMatrixEigensystem(lua_State * L)
     {
       CompactMatrixType *fun,funtemp;
       double *val;
-      val=malloc(H->Ni*sizeof(double));
+      val= (double*)malloc(H->Ni*sizeof(double));
       CompactMatrixEigensystem(H,&funtemp,val);
       LuaPushArray_double(L, val, funtemp.Ni);
       free(val);
@@ -302,7 +302,7 @@ static int LuaMatrixRandom(lua_State * L)
   }
   else
   {
-    res = malloc(sizeof(CompactMatrixType));
+    res = (CompactMatrixType*)malloc(sizeof(CompactMatrixType));
   }
   minmax = luaL_checkarray_complex16(L, 1, &len);
   res->QComplex=0;
@@ -375,7 +375,7 @@ static int LuaMatrixZero(lua_State * L)
   }
   else
   {
-    res = malloc(sizeof(CompactMatrixType));
+    res = (CompactMatrixType*)malloc(sizeof(CompactMatrixType));
   }
   res->QComplex=0;
   res->Ni = (uint32_t)luaL_checkinteger(L, 1);
@@ -417,7 +417,7 @@ static int LuaMatrixIdentity(lua_State * L)
   }
   else
   {
-    res = malloc(sizeof(CompactMatrixType));
+    res = (CompactMatrixType*)malloc(sizeof(CompactMatrixType));
   }
   res->QComplex=0;
   res->Ni = (uint32_t)luaL_checkinteger(L, 1);
@@ -460,7 +460,7 @@ static int LuaMatrixDiagonal(lua_State * L)
   }
   else
   {
-    res = malloc(sizeof(CompactMatrixType));
+    res = (CompactMatrixType*)malloc(sizeof(CompactMatrixType));
   }
   diag = luaL_checkarray_complex16(L, 1, &len);
   res->QComplex=0;
@@ -1099,7 +1099,7 @@ static int LuaMatrixPow(lua_State * L)
   if(A->Ni!=A->Nj) return luaL_error(L,"Matrix power only works on square matrices\n");
   if (luaL_testudata(L, 1, "Matrix_Type") == NULL)
   { // matrix on stack as table
-    B=malloc(sizeof(CompactMatrixType));
+    B= (CompactMatrixType*)malloc(sizeof(CompactMatrixType));
     if(CompactMatrixPow(A,B,(int)n)) return luaL_error(L,"Matrix power failed\n");
     LuaPushTable_CompactMatrixType(L, B);
     FreeCompactMatrix(A);

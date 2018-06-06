@@ -344,7 +344,7 @@ uint32_t BlockListOfPolesToSpectra(BlockListOfPoles const A, SpectraType *G, dou
   }
   if(A.QComplex)
   {
-    Gtemp=malloc(A.BlockSize*A.BlockSize*sizeof(SpectraType));
+    Gtemp= (SpectraType*)malloc(A.BlockSize*A.BlockSize*sizeof(SpectraType));
     for(i=0;i<A.BlockSize*A.BlockSize;i++)
     {
       SpectrumAllocate(G[0], &(Gtemp[i]));
@@ -606,7 +606,7 @@ uint32_t BlockListOfPolesToBlockTridiagonalMatrix(BlockListOfPoles const A, Bloc
   beta.Nj=A.BlockSize;
   InitCompactMatrix(&beta);
   
-  alpha=malloc(A.N*A.BlockSize*sizeof(double));
+  alpha= (double*)malloc(A.N*A.BlockSize*sizeof(double));
   ialpha=0;
   iN=0;
   /* create the starting vectors beta as the square root of the spectral weight (DOS) in list of poles */
@@ -675,7 +675,7 @@ uint32_t BlockListOfPolesToBlockTridiagonalMatrixReduceDimension(BlockListOfPole
   beta.Nj=A.BlockSize;
   InitCompactMatrix(&beta);
   
-  alpha=malloc(A.N*A.BlockSize*sizeof(double));
+  alpha= (double*)malloc(A.N*A.BlockSize*sizeof(double));
   ialpha=0;
   iN=0;
   if(A.QComplex)
@@ -1033,13 +1033,13 @@ uint32_t BlockTriDiagonalMatrixEigenValues(const BlockTriDiagonalMatrixType * co
   {
     double * AB;
     double *WORK;
-    AB=calloc(LDAB*N,sizeof(double));
+    AB= (double*)calloc(LDAB*N,sizeof(double));
     if(AB==NULL)
     {
       printf("ERROR: malloc failed in BlockTriDiagonalMatrixEigenValues\n");
       return 1;
     }
-    WORK=malloc((N+1)*sizeof(double));
+    WORK= (double*)malloc((N+1)*sizeof(double));
     if(WORK==NULL)
     {
       free(AB);
@@ -1078,13 +1078,13 @@ uint32_t BlockTriDiagonalMatrixEigenValues(const BlockTriDiagonalMatrixType * co
   {
     Complex16 * AB;
     Complex16 *WORK;
-    AB=malloc(LDAB*N*sizeof(Complex16));
+    AB= (Complex16*)malloc(LDAB*N*sizeof(Complex16));
     if(AB==NULL)
     {
       printf("ERROR: malloc failed in BlockTriDiagonalMatrixEigenValues\n");
       return 1;
     }
-    WORK=malloc(N*sizeof(Complex16));
+    WORK= (Complex16*)malloc(N*sizeof(Complex16));
     if(WORK==NULL)
     {
       free(AB);
@@ -1150,13 +1150,13 @@ uint32_t BlockTriDiagonalMatrixEigenSystem(const BlockTriDiagonalMatrixType * co
   {
     double * AB;
     double *WORK;
-    AB=calloc(LDAB*N,sizeof(double));
+    AB= (double*)calloc(LDAB*N,sizeof(double));
     if(AB==NULL)
     {
       printf("ERROR: malloc failed in BlockTriDiagonalMatrixEigenSystem\n");
       return 1;
     }
-    WORK=malloc(N*(N+1)*sizeof(double));
+    WORK= (double*)malloc(N*(N+1)*sizeof(double));
     if(WORK==NULL)
     {
       free(AB);
@@ -1207,13 +1207,13 @@ uint32_t BlockTriDiagonalMatrixEigenSystem(const BlockTriDiagonalMatrixType * co
   {
     Complex16 * AB;
     Complex16 *WORK;
-    AB=calloc(LDAB*N,sizeof(Complex16));
+    AB= (Complex16*)calloc(LDAB*N,sizeof(Complex16));
     if(AB==NULL)
     {
       printf("ERROR: malloc failed in BlockTriDiagonalMatrixEigenSystem\n");
       return 1;
     }
-    WORK=malloc(N*sizeof(Complex16));
+    WORK= (Complex16*)malloc(N*sizeof(Complex16));
     if(WORK==NULL)
     {
       free(AB);
@@ -1302,13 +1302,13 @@ uint32_t BlockTriDiagonalMatrixEigenSystemWithDeflation(const BlockTriDiagonalMa
   {
     double * AB;
     double *WORK;
-    AB=calloc(LDAB*N,sizeof(double));
+    AB= (double*)calloc(LDAB*N,sizeof(double));
     if(AB==NULL)
     {
       printf("ERROR: malloc failed in BlockTriDiagonalMatrixEigenSystem\n");
       return 1;
     }
-    WORK=malloc(N*(N+1)*sizeof(double));
+    WORK= (double*)malloc(N*(N+1)*sizeof(double));
     if(WORK==NULL)
     {
       free(AB);
@@ -1362,13 +1362,13 @@ uint32_t BlockTriDiagonalMatrixEigenSystemWithDeflation(const BlockTriDiagonalMa
   {
     Complex16 * AB;
     Complex16 *WORK;
-    AB=malloc(LDAB*N*sizeof(Complex16));
+    AB= (Complex16*)malloc(LDAB*N*sizeof(Complex16));
     if(AB==NULL)
     {
       printf("ERROR: malloc failed in BlockTriDiagonalMatrixEigenSystem\n");
       return 1;
     }
-    WORK=malloc(N*sizeof(Complex16));
+    WORK= (Complex16*)malloc(N*sizeof(Complex16));
     if(WORK==NULL)
     {
       free(AB);
@@ -1459,7 +1459,7 @@ uint32_t BlockTriDiagonalMatrixToBlockListOfPolesFixedGrid(BlockTriDiagonalMatri
     return 1;
   }
   /* calcualte the eigen vectors and eigen values */
-  Aval=malloc(A->BlockSize*A->N*sizeof(double));
+  Aval= (double*)malloc(A->BlockSize*A->N*sizeof(double));
   if(CompactMatrixEigensystem(&Afull, &Afun, Aval))
   {
     printf("CompactMatrixEigensystem failed in BlockTriDiagonalMatrixToBlockListOfPolesFixedGrid\n");
@@ -1731,7 +1731,7 @@ uint32_t BlockTriDiagonalMatrixToBlockAndersonMatrix(BlockTriDiagonalMatrixType 
   }
   
   /* Diagonalize compact matrix */
-  Aval=malloc(ATri.BlockSize*(ATri.N-1)*sizeof(double));
+  Aval= (double*)malloc(ATri.BlockSize*(ATri.N-1)*sizeof(double));
   if(CompactMatrixEigensystem(&Afull, &Afun, Aval))
   {
     printf("CompactMatrixEigensystem failed in BlockTriDiagonalMatrixToBlockAndersonMatrix\n");

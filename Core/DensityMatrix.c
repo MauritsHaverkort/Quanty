@@ -26,7 +26,7 @@ uint32_t CalculateDensityMatrix(MatrixType * const Rho, const WaveFunctionType p
   O.NWord = psi.NWord;
   O.MaxLength = 2;
   O.Res.N=0;
-  O.l = malloc(3 * sizeof(OperatorFixedLengthType));
+  O.l = (OperatorFixedLengthType*)malloc(3 * sizeof(OperatorFixedLengthType));
   if (O.l == NULL)
   {
     printf("alloc of O.l failed in CalculateDensityMatrix\n");
@@ -45,7 +45,7 @@ uint32_t CalculateDensityMatrix(MatrixType * const Rho, const WaveFunctionType p
   O.l[2].NBitsKey = 0;
   O.l[2].NAloc = 1;
   O.l[2].QComplex = 0;
-  O.l[2].VRe = malloc(sizeof(double));
+  O.l[2].VRe = (double*)malloc(sizeof(double));
   O.l[2].VRe[0] = 1;
   if (O.l[2].VRe == NULL)
   {
@@ -53,7 +53,7 @@ uint32_t CalculateDensityMatrix(MatrixType * const Rho, const WaveFunctionType p
     fflush(stdout);
     return 1;
   }
-  O.l[2].o = malloc(2 * sizeof(uint16_t));
+  O.l[2].o = (uint16_t*)malloc(2 * sizeof(uint16_t));
   if (O.l[2].o == NULL)
   {
     printf("alloc of O.l[2].o failed in CalculateDensityMatrix\n");
@@ -123,7 +123,7 @@ uint32_t CalculatePartialDensityMatrixWithOffDiagonals(MatrixType * const Rho, u
   O.NWord = psi[0].NWord;
   O.MaxLength = 2;
   O.Res.N=0;
-  O.l = malloc(3 * sizeof(OperatorFixedLengthType));
+  O.l = (OperatorFixedLengthType*)malloc(3 * sizeof(OperatorFixedLengthType));
   if (O.l == NULL)
   {
     printf("alloc of O.l failed in CalculateDensityMatrix\n");
@@ -142,7 +142,7 @@ uint32_t CalculatePartialDensityMatrixWithOffDiagonals(MatrixType * const Rho, u
   O.l[2].NBitsKey = 0;
   O.l[2].NAloc = 1;
   O.l[2].QComplex = 0;
-  O.l[2].VRe = malloc(sizeof(double));
+  O.l[2].VRe = (double*)malloc(sizeof(double));
   O.l[2].VRe[0] = 1;
   if (O.l[2].VRe == NULL)
   {
@@ -150,7 +150,7 @@ uint32_t CalculatePartialDensityMatrixWithOffDiagonals(MatrixType * const Rho, u
     fflush(stdout);
     return 1;
   }
-  O.l[2].o = malloc(2 * sizeof(uint16_t));
+  O.l[2].o = (uint16_t*)malloc(2 * sizeof(uint16_t));
   if (O.l[2].o == NULL)
   {
     printf("alloc of O.l[2].o failed in CalculateDensityMatrix\n");
@@ -219,7 +219,7 @@ uint32_t CalculateDensityCorrelationMatrix(MatrixType * const Rho, const WaveFun
   O.NWord = psi.NWord;
   O.MaxLength = 4;
   O.Res.N=0;
-  O.l = malloc(5 * sizeof(OperatorFixedLengthType));
+  O.l = (OperatorFixedLengthType*)malloc(5 * sizeof(OperatorFixedLengthType));
   if (O.l == NULL)
   {
     printf("alloc of O.l failed in CalculateDensityMatrix\n");
@@ -246,7 +246,7 @@ uint32_t CalculateDensityCorrelationMatrix(MatrixType * const Rho, const WaveFun
   O.l[4].NBitsKey = 0;
   O.l[4].NAloc = 1;
   O.l[4].QComplex = 0;
-  O.l[4].VRe = malloc(sizeof(double));
+  O.l[4].VRe = (double*)malloc(sizeof(double));
   O.l[4].VRe[0] = 1;
   if (O.l[4].VRe == NULL)
   {
@@ -254,7 +254,7 @@ uint32_t CalculateDensityCorrelationMatrix(MatrixType * const Rho, const WaveFun
     fflush(stdout);
     return 1;
   }
-  O.l[4].o = malloc(4 * sizeof(uint16_t));
+  O.l[4].o = (uint16_t*)malloc(4 * sizeof(uint16_t));
   if (O.l[4].o == NULL)
   {
     printf("alloc of O.l[4].o failed in CalculateDensityCorrelationMatrix\n");
@@ -328,7 +328,7 @@ uint32_t CalculatePartialDensityCorrelationTensor(Complex16 * Rho, const WaveFun
   O.NWord = psi.NWord;
   O.MaxLength = 4;
   O.Res.N=0;
-  O.l = malloc(5 * sizeof(OperatorFixedLengthType));
+  O.l = (OperatorFixedLengthType*)malloc(5 * sizeof(OperatorFixedLengthType));
   if (O.l == NULL)
   {
     printf("alloc of O.l failed in CalculatePartialDensityCorrelationTensor\n");
@@ -349,7 +349,7 @@ uint32_t CalculatePartialDensityCorrelationTensor(Complex16 * Rho, const WaveFun
   O.l[4].Next = (uint32_t*)malloc(sizeof(uint32_t));
   O.l[4].KeyList = (uint32_t*)malloc(0);
   O.l[4].QComplex = 0;
-  O.l[4].VRe = malloc(sizeof(double));
+  O.l[4].VRe = (double*)malloc(sizeof(double));
   O.l[4].VRe[0] = 1;
   if (O.l[4].VRe == NULL)
   {
@@ -357,7 +357,7 @@ uint32_t CalculatePartialDensityCorrelationTensor(Complex16 * Rho, const WaveFun
     fflush(stdout);
     return 1;
   }
-  O.l[4].o = malloc(4 * sizeof(uint16_t));
+  O.l[4].o = (uint16_t*)malloc(4 * sizeof(uint16_t));
   if (O.l[4].o == NULL)
   {
     printf("alloc of O.l[4].o failed in CalculatePartialDensityCorrelationTensor\n");
@@ -438,7 +438,7 @@ uint32_t CalculateSpinCorrelationMatrix(MatrixType * const Rho, const WaveFuncti
   O.NWord = psi.NWord;
   O.MaxLength = 4;
   O.Res.N=0;
-  O.l = malloc(5 * sizeof(OperatorFixedLengthType));
+  O.l = (OperatorFixedLengthType*)malloc(5 * sizeof(OperatorFixedLengthType));
   if (O.l == NULL)
   {
     printf("alloc of O.l failed in CalculateSpinCorrelationMatrix\n");
@@ -465,7 +465,7 @@ uint32_t CalculateSpinCorrelationMatrix(MatrixType * const Rho, const WaveFuncti
   O.l[4].NBitsKey = 0;
   O.l[2].NAloc = 6;
   O.l[4].QComplex = 0;
-  O.l[4].VRe = malloc(6 * sizeof(double));
+  O.l[4].VRe = (double*)malloc(6 * sizeof(double));
   if (O.l[4].VRe == NULL)
   {
     printf("alloc of O.l[4].VRe failed in CalculateSpinCorrelationMatrix\n");
@@ -478,7 +478,7 @@ uint32_t CalculateSpinCorrelationMatrix(MatrixType * const Rho, const WaveFuncti
   O.l[4].VRe[3] = 0.25;
   O.l[4].VRe[4] = 0.5;
   O.l[4].VRe[5] = 0.5;
-  O.l[4].o = malloc(6 * 4 * sizeof(uint16_t));
+  O.l[4].o = (uint16_t*)malloc(6 * 4 * sizeof(uint16_t));
   if (O.l[4].o == NULL)
   {
     printf("alloc of O.l[4].o failed in CalculateDensityMatrix\n");
@@ -589,7 +589,7 @@ uint32_t CalculatePartialDensityMatrix(MatrixType * const Rho, const WaveFunctio
   O.NWord = psi.NWord;
   O.MaxLength = 2;
   O.Res.N=0;
-  O.l = malloc(3 * sizeof(OperatorFixedLengthType));
+  O.l = (OperatorFixedLengthType*)malloc(3 * sizeof(OperatorFixedLengthType));
   if (O.l == NULL)
   {
     printf("alloc of O.l failed in CalculateDensityMatrix\n");
@@ -608,7 +608,7 @@ uint32_t CalculatePartialDensityMatrix(MatrixType * const Rho, const WaveFunctio
   O.l[2].NBitsKey = 0;
   O.l[2].NAloc = 1;
   O.l[2].QComplex = 0;
-  O.l[2].VRe = malloc(sizeof(double));
+  O.l[2].VRe = (double*)malloc(sizeof(double));
   O.l[2].VRe[0] = 1;
   if (O.l[2].VRe == NULL)
   {
@@ -616,7 +616,7 @@ uint32_t CalculatePartialDensityMatrix(MatrixType * const Rho, const WaveFunctio
     fflush(stdout);
     return 1;
   }
-  O.l[2].o = malloc(2 * sizeof(uint16_t));
+  O.l[2].o = (uint16_t*)malloc(2 * sizeof(uint16_t));
   if (O.l[2].o == NULL)
   {
     printf("alloc of O.l[2].o failed in CalculateDensityMatrix\n");
@@ -770,7 +770,7 @@ uint32_t CalculatePrefactorHistogram(double *const Hist, const WaveFunctionType 
   {
 #pragma omp parallel private(HistPrivate, iElement, iBlok, i)
     {
-      HistPrivate = malloc(N * sizeof(double));
+      HistPrivate = (double*)malloc(N * sizeof(double));
       if (HistPrivate == NULL)
         AllocFailed();
       for (i = 0; i < N; i++)
@@ -815,7 +815,7 @@ uint32_t CalculatePrefactorHistogram(double *const Hist, const WaveFunctionType 
   {
 #pragma omp parallel private(HistPrivate, iElement, iBlok, i)
     {
-      HistPrivate = malloc(N * sizeof(double));
+      HistPrivate = (double*)malloc(N * sizeof(double));
       if (HistPrivate == NULL)
         AllocFailed();
       for (i = 0; i < N; i++)

@@ -11,13 +11,13 @@ uint32_t InitBlockTridiagonalMatrix(BlockTriDiagonalMatrixType *const A)
   strcpy(A->Name, "Block Tridiagonal Matrix");
   if(A->QComplex)
   {
-    A->a=calloc((A->N+1)*(A->BlockSize*A->BlockSize),sizeof(Complex16));
+    A->a= (Complex16*)calloc((A->N+1)*(A->BlockSize*A->BlockSize),sizeof(Complex16));
     if(A->a==NULL)
     {
       printf("malloc failed in InitBlockTridiagonalMatrix\n");
       return 1;
     }
-    A->b=calloc((A->N)*(A->BlockSize*A->BlockSize),sizeof(Complex16));
+    A->b= (Complex16*)calloc((A->N)*(A->BlockSize*A->BlockSize),sizeof(Complex16));
     if(A->b==NULL)
     {
       free(A->a);
@@ -31,13 +31,13 @@ uint32_t InitBlockTridiagonalMatrix(BlockTriDiagonalMatrixType *const A)
   }
   else
   {
-    A->aRe=calloc((A->N+1)*(A->BlockSize*A->BlockSize),sizeof(double));
+    A->aRe= (double*)calloc((A->N+1)*(A->BlockSize*A->BlockSize),sizeof(double));
     if(A->aRe==NULL)
     {
       printf("malloc failed in InitBlockTridiagonalMatrix\n");
       return 1;
     }
-    A->bRe=calloc((A->N)*(A->BlockSize*A->BlockSize),sizeof(double));
+    A->bRe= (double*)calloc((A->N)*(A->BlockSize*A->BlockSize),sizeof(double));
     if(A->bRe==NULL)
     {
       free(A->aRe);
@@ -83,8 +83,8 @@ uint32_t ComplexBlockTridiagonalMatrixToReal(BlockTriDiagonalMatrixType *const A
   {
     A->bRe[i]=A->b[i].Re;
   }
-  A->aRe=realloc(A->aRe, A->BlockSize*A->BlockSize*(1+A->N)*sizeof(double));
-  A->bRe=realloc(A->bRe, A->BlockSize*A->BlockSize*(A->N)*sizeof(double));
+  A->aRe= (double*)realloc(A->aRe, A->BlockSize*A->BlockSize*(1+A->N)*sizeof(double));
+  A->bRe= (double*)realloc(A->bRe, A->BlockSize*A->BlockSize*(A->N)*sizeof(double));
   A->QComplex=0;
   return 0;
 }
@@ -169,14 +169,14 @@ uint32_t CopyBlockTridiagonalMatrix(BlockTriDiagonalMatrixType A, BlockTriDiagon
   *B=A;
   if(B->QComplex==0)
   {
-    B->aRe = malloc((B->N+1)*B->BlockSize*B->BlockSize*sizeof(double));
+    B->aRe = (double*)malloc((B->N+1)*B->BlockSize*B->BlockSize*sizeof(double));
     if(B->aRe==NULL)
     {
       printf("malloc failed in CopyBlockTridiagonalMatrix");
       return 1;
     }
     memcpy(B->aRe, A.aRe, (B->N+1)*B->BlockSize*B->BlockSize*sizeof(double));
-    B->bRe = malloc((B->N)*B->BlockSize*B->BlockSize*sizeof(double));
+    B->bRe = (double*)malloc((B->N)*B->BlockSize*B->BlockSize*sizeof(double));
     if(B->bRe==NULL)
     {
       free(B->aRe);
@@ -187,14 +187,14 @@ uint32_t CopyBlockTridiagonalMatrix(BlockTriDiagonalMatrixType A, BlockTriDiagon
   }
   else
   {
-    B->a = malloc((B->N+1)*B->BlockSize*B->BlockSize*sizeof(Complex16));
+    B->a = (Complex16*)malloc((B->N+1)*B->BlockSize*B->BlockSize*sizeof(Complex16));
     if(B->a==NULL)
     {
       printf("malloc failed in CopyBlockTridiagonalMatrix");
       return 1;
     }
     memcpy(B->a, A.a, (B->N+1)*B->BlockSize*B->BlockSize*sizeof(Complex16));
-    B->b = malloc((B->N)*B->BlockSize*B->BlockSize*sizeof(Complex16));
+    B->b = (Complex16*)malloc((B->N)*B->BlockSize*B->BlockSize*sizeof(Complex16));
     if(B->b==NULL)
     {
       free(B->a);

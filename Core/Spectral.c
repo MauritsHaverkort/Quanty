@@ -32,13 +32,13 @@ int SpectrumAllocate(const SpectraType Settings, SpectraType * const G)
   G->b[3] = 0;
   G->b[4] = 0;
   strcpy(G->Name, Settings.Name);
-  G->Re = calloc(G->N + 1, sizeof(double));
+  G->Re = (double*)calloc(G->N + 1, sizeof(double));
   if (G->Re == NULL)
   {
     printf("\nERROR\nSpectrumAllocate failed 01\n");
     return 1;
   }
-  G->Im = calloc(G->N + 1, sizeof(double));
+  G->Im = (double*)calloc(G->N + 1, sizeof(double));
   if (G->Im == NULL)
   {
     free(G->Re);
@@ -110,7 +110,7 @@ uint32_t CopySpectraArray(SpectraTypeArray *In, SpectraTypeArray *Out)
 {
   uint32_t i;
   Out->NSpectra=In->NSpectra;
-  Out->Spec = malloc(In->NSpectra*sizeof(SpectraType));
+  Out->Spec = (SpectraType*)malloc(In->NSpectra*sizeof(SpectraType));
   if(Out->Spec==NULL){printf("malloc failed in CopySpectraArray\n");return 1;}
   for(i=0;i<In->NSpectra;i++)
   {
@@ -725,8 +725,8 @@ void ReplaceLorentzianByGaussian(const double Emin, const double Emax, const uin
   kmax = 3.0 / Gamma;
   Nk = (uint32_t) (18 * (Emax - Emin) / Gamma);
   Dk = (kmax - kmin) / ((double)Nk);
-  FspecRe = malloc((Nk + 1) * sizeof(double));
-  FspecIm = malloc((Nk + 1) * sizeof(double));
+  FspecRe = (double*)malloc((Nk + 1) * sizeof(double));
+  FspecIm = (double*)malloc((Nk + 1) * sizeof(double));
 #pragma omp parallel for private(k,iw,w)
   for (ik = 0; ik <= Nk; ik++)
   {

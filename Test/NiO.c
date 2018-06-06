@@ -279,7 +279,7 @@ void TestNiO()
     // We need to define how many electrons there are in the system
     // The current algorithm that finds the ground-state is not so nice and needs a reasonable starting point
     NParticle = (NBlockVal+1)*10;
-    CreateString = malloc(NParticle*sizeof(uint16_t));
+    CreateString = (uint16_t*)malloc(NParticle*sizeof(uint16_t));
     for(i=0;i<10;i++)
     {
       CreateString[i]=i;
@@ -296,12 +296,12 @@ void TestNiO()
     // I know that in the end the conduction and valence orbitals are eiter completely filled or empty.
     // In order to help convergence I first require this to be true.
     Restrictions.N=1;
-    Restrictions.Min=malloc(Restrictions.N*sizeof(uint32_t));
-    Restrictions.Max=malloc(Restrictions.N*sizeof(uint32_t));
-    Restrictions.Determinant=malloc(Restrictions.N*sizeof(uint8_t*));
+    Restrictions.Min= (uint32_t*)malloc(Restrictions.N*sizeof(uint32_t));
+    Restrictions.Max= (uint32_t*)malloc(Restrictions.N*sizeof(uint32_t));
+    Restrictions.Determinant= (uint8_t**)malloc(Restrictions.N*sizeof(uint8_t*));
     for(i=0;i<Restrictions.N;i++)
     {
-      Restrictions.Determinant[i]=calloc(psi.NWord,sizeof(uint8_t));
+      Restrictions.Determinant[i]= (uint8_t*)calloc(psi.NWord,sizeof(uint8_t));
     }
     Restrictions.Min[0]=10;
     Restrictions.Max[0]=10;

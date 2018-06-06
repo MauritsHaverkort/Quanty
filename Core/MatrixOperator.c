@@ -653,7 +653,7 @@ uint32_t OperatorToDeterminantMatrix(const OperatorType * const O, const WaveFun
   }
   if(InitCompactMatrix(M)) return 1;
   strcpy(M->Name, O->Name);
-  Det = malloc(psi->NWord * sizeof(uint8_t));
+  Det = (uint8_t*)malloc(psi->NWord * sizeof(uint8_t));
   if (Det == NULL) AllocFailed();
   for(i=1;i<=psi->N;i++)
   {
@@ -743,7 +743,7 @@ uint32_t OperatorToDeterminantMatrix2(const OperatorType * const O, const WaveFu
   }
   if(InitCompactMatrix(M)) return 1;
   strcpy(M->Name, O->Name);
-  Det = malloc(Max(psi_i->NWord,psi_j->NWord) * sizeof(uint8_t));
+  Det = (uint8_t*)malloc(Max(psi_i->NWord,psi_j->NWord) * sizeof(uint8_t));
   if (Det == NULL) AllocFailed();
   for(i=1;i<=psi_j->N;i++)
   {
@@ -826,7 +826,7 @@ uint32_t OperatorToDeterminantMatrixWithPrefactorsInPsi(const OperatorType * con
   }
   InitCompactMatrix(M);
   strcpy(M->Name, O->Name);
-  Det = malloc(psi->NWord * sizeof(uint8_t));
+  Det = (uint8_t*)malloc(psi->NWord * sizeof(uint8_t));
   if (Det == NULL) AllocFailed();
   if(psi->QComplex==0)
   {

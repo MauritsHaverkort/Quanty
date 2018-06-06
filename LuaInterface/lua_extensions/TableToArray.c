@@ -125,7 +125,7 @@ CompactVectorType luaL_checkVector(lua_State *L, int narg)
   }
   if(buff.QComplex==0)
   {
-    double *VRe = malloc(buff.Ni*sizeof(double));
+    double *VRe = (double*)malloc(buff.Ni*sizeof(double));
     for(i=0;i<buff.Ni;i++)
     {
       VRe[i]=buff.V[i].Re;
@@ -154,7 +154,7 @@ CompactMatrixType* luaL_checkCompactMatrix(lua_State *L, int narg)
   }
   luaL_checktype(L, narg, LUA_TTABLE);
   len = (uint32_t)lua_objlen(L, narg);
-  buff=malloc(sizeof(CompactMatrixType));
+  buff= (CompactMatrixType*)malloc(sizeof(CompactMatrixType));
   buff->QComplex=1;
   buff->Ni=len;
   for(i=0;i<len;i++)
@@ -190,7 +190,7 @@ MatrixType* luaL_checkMatrix(lua_State *L, int narg)
   Complex16 * row;
   luaL_checktype(L, narg, LUA_TTABLE);
   uint32_t len = (uint32_t)lua_objlen(L, narg);
-  buff=malloc(sizeof(MatrixType));
+  buff= (MatrixType*)malloc(sizeof(MatrixType));
   buff->QComplex=1;
   buff->Ni=len;
   buff->a0=0;
@@ -311,7 +311,7 @@ TriDiagonalMatrixType* luaL_checkTriDiagonalMatrixType(lua_State *L, int narg)
   if(strcmp(type, "Tri")==0)
   {
     lua_pop(L, 1);
-    buff = malloc(sizeof(TriDiagonalMatrixType));
+    buff = (TriDiagonalMatrixType*)malloc(sizeof(TriDiagonalMatrixType));
     if(lua_objlen(L,narg)!=2)
     {
       luaL_error(L, "Error a Green's function represented as a tri-diagonal matrix should be a list of two lists {{a0,a1,a2,...,an},{b0,b1,b2,...,bn-1}}");
@@ -362,7 +362,7 @@ TriDiagonalMatrixType* luaL_checkTriDiagonalMatrixType(lua_State *L, int narg)
     AndersonMatrixType *temp;
     lua_pop(L, 1);
     temp = luaL_checkAndersonMatrixType(L, narg);
-    buff = malloc(sizeof(TriDiagonalMatrixType));
+    buff = (TriDiagonalMatrixType*)malloc(sizeof(TriDiagonalMatrixType));
     AndersonMatrixToTriDiagonalMatrix(*temp, buff,temp->N);
     FreeAndersonMatrix(temp);
     free(temp);
@@ -373,7 +373,7 @@ TriDiagonalMatrixType* luaL_checkTriDiagonalMatrixType(lua_State *L, int narg)
     BADoubleTriDiagonalMatrixType *temp;
     lua_pop(L, 1);
     temp = luaL_checkNatrualImpurityOrbitalMatrixType(L, narg);
-    buff = malloc(sizeof(TriDiagonalMatrixType));
+    buff = (TriDiagonalMatrixType*)malloc(sizeof(TriDiagonalMatrixType));
     BADoubleTriDiagonalMatrixToTriDiagonalMatrix(*temp, buff);
     FreeBADoubleTriDiagonalMatrix(temp);
     free(temp);
@@ -384,7 +384,7 @@ TriDiagonalMatrixType* luaL_checkTriDiagonalMatrixType(lua_State *L, int narg)
     ListOfPoles *temp;
     lua_pop(L, 1);
     temp = luaL_checkListOfPoles(L, narg);
-    buff = malloc(sizeof(TriDiagonalMatrixType));
+    buff = (TriDiagonalMatrixType*)malloc(sizeof(TriDiagonalMatrixType));
     ListOfPolesToTridiagonalMatrix(*temp, buff,temp->N);
     FreeListOfPoles(temp);
     free(temp);
@@ -421,7 +421,7 @@ BlockTriDiagonalMatrixType* luaL_checkBlockTriDiagonalMatrixType(lua_State *L, i
   if(strcmp(type, "Tri")==0)
   {
     lua_pop(L, 1);
-    buff = malloc(sizeof(BlockTriDiagonalMatrixType));
+    buff = (BlockTriDiagonalMatrixType*)malloc(sizeof(BlockTriDiagonalMatrixType));
     if(lua_objlen(L,narg)!=2)
     {
       luaL_error(L, "Error a tridiagonal matrix should be a list of two lists {{A0,A1,...,An+1},{B0,B1,...,Bn}}, with A and B matrices and A Hermitian");
@@ -568,7 +568,7 @@ BlockTriDiagonalMatrixType* luaL_checkBlockTriDiagonalMatrixType(lua_State *L, i
     BlockAndersonMatrixType *temp;
     lua_pop(L, 1);
     temp = luaL_checkBlockAndersonMatrixType(L, narg);
-    buff = malloc(sizeof(BlockTriDiagonalMatrixType));
+    buff = (BlockTriDiagonalMatrixType*)malloc(sizeof(BlockTriDiagonalMatrixType));
     BlockAndersonMatrixToBlockTridiagonalMatrix(*temp, buff);
     FreeBlockAndersonMatrix(temp);
     free(temp);
@@ -579,7 +579,7 @@ BlockTriDiagonalMatrixType* luaL_checkBlockTriDiagonalMatrixType(lua_State *L, i
     BlockNaturalImpurityOrbitalMatrixType *temp;
     lua_pop(L, 1);
     temp = luaL_checkBlockNatrualImpurityOrbitalMatrixType(L, narg);
-    buff = malloc(sizeof(BlockTriDiagonalMatrixType));
+    buff = (BlockTriDiagonalMatrixType*)malloc(sizeof(BlockTriDiagonalMatrixType));
     BlockNaturalImpurityOrbitalMatrixToBlockTridiagonalMatrix(*temp, buff);
     FreeBlockNaturalImpurityOrbitalMatrix(temp);
     free(temp);
@@ -590,7 +590,7 @@ BlockTriDiagonalMatrixType* luaL_checkBlockTriDiagonalMatrixType(lua_State *L, i
     BlockListOfPoles *temp;
     lua_pop(L, 1);
     temp = luaL_checkBlockListOfPoles(L, narg);
-    buff = malloc(sizeof(BlockTriDiagonalMatrixType));
+    buff = (BlockTriDiagonalMatrixType*)malloc(sizeof(BlockTriDiagonalMatrixType));
     BlockListOfPolesToBlockTridiagonalMatrix(*temp, buff, temp->N, 100*DBL_EPSILON);
     FreeBlockListOfPoles(temp);
     free(temp);
@@ -628,7 +628,7 @@ AndersonMatrixType* luaL_checkAndersonMatrixType(lua_State *L, int narg)
     TriDiagonalMatrixType *temp;
     lua_pop(L, 1);
     temp = luaL_checkTriDiagonalMatrixType(L, narg);
-    buff = malloc(sizeof(AndersonMatrixType));
+    buff = (AndersonMatrixType*)malloc(sizeof(AndersonMatrixType));
     TriDiagonalMatrixToAndersonMatrix(*temp, buff);
     FreeTriDiagonalMatrix(temp);
     free(temp);
@@ -637,7 +637,7 @@ AndersonMatrixType* luaL_checkAndersonMatrixType(lua_State *L, int narg)
   if(strcmp(type, "And")==0)
   {
     lua_pop(L, 1);
-    buff = malloc(sizeof(AndersonMatrixType));
+    buff = (AndersonMatrixType*)malloc(sizeof(AndersonMatrixType));
     if(lua_objlen(L,narg)!=2)
     {
       luaL_error(L, "Error a Green's function represented as a Anderson matrix should be a list of two lists {{a0,a1,a2,...,an},{b0,b1,b2,...,bn-1}}");
@@ -688,7 +688,7 @@ AndersonMatrixType* luaL_checkAndersonMatrixType(lua_State *L, int narg)
     BADoubleTriDiagonalMatrixType *temp;
     lua_pop(L, 1);
     temp = luaL_checkNatrualImpurityOrbitalMatrixType(L, narg);
-    buff = malloc(sizeof(AndersonMatrixType));
+    buff = (AndersonMatrixType*)malloc(sizeof(AndersonMatrixType));
     BADoubleTriDiagonalMatrixToAndersonMatrix(*temp, buff);
     FreeBADoubleTriDiagonalMatrix(temp);
     free(temp);
@@ -699,7 +699,7 @@ AndersonMatrixType* luaL_checkAndersonMatrixType(lua_State *L, int narg)
     ListOfPoles *temp;
     lua_pop(L, 1);
     temp = luaL_checkListOfPoles(L, narg);
-    buff = malloc(sizeof(AndersonMatrixType));
+    buff = (AndersonMatrixType*)malloc(sizeof(AndersonMatrixType));
     ListOfPolesToAndersonMatrix(*temp, buff);
     FreeListOfPoles(temp);
     free(temp);
@@ -737,7 +737,7 @@ BlockAndersonMatrixType* luaL_checkBlockAndersonMatrixType(lua_State *L, int nar
     BlockTriDiagonalMatrixType *temp;
     lua_pop(L, 1);
     temp = luaL_checkBlockTriDiagonalMatrixType(L, narg);
-    buff = malloc(sizeof(BlockAndersonMatrixType));
+    buff = (BlockAndersonMatrixType*)malloc(sizeof(BlockAndersonMatrixType));
     BlockTriDiagonalMatrixToBlockAndersonMatrix(*temp, buff);
     FreeBlockTridiagonalMatrix(temp);
     free(temp);
@@ -746,7 +746,7 @@ BlockAndersonMatrixType* luaL_checkBlockAndersonMatrixType(lua_State *L, int nar
   if(strcmp(type, "And")==0)
   {
     lua_pop(L, 1);
-    buff = malloc(sizeof(BlockAndersonMatrixType));
+    buff = (BlockAndersonMatrixType*)malloc(sizeof(BlockAndersonMatrixType));
     if(lua_objlen(L,narg)!=2)
     {
       luaL_error(L, "Error an Anderson matrix should be a list of two lists {{A0,A1,...,An+1},{B0,B1,...,Bn}}, with A and B matrices and A Hermitian");
@@ -893,7 +893,7 @@ BlockAndersonMatrixType* luaL_checkBlockAndersonMatrixType(lua_State *L, int nar
     BlockNaturalImpurityOrbitalMatrixType *temp;
     lua_pop(L, 1);
     temp = luaL_checkBlockNatrualImpurityOrbitalMatrixType(L, narg);
-    buff = malloc(sizeof(BlockAndersonMatrixType));
+    buff = (BlockAndersonMatrixType*)malloc(sizeof(BlockAndersonMatrixType));
     BlockNaturalImpurityOrbitalMatrixToBlockAndersonMatrix(*temp, buff);
     FreeBlockNaturalImpurityOrbitalMatrix(temp);
     free(temp);
@@ -904,7 +904,7 @@ BlockAndersonMatrixType* luaL_checkBlockAndersonMatrixType(lua_State *L, int nar
     BlockListOfPoles *temp;
     lua_pop(L, 1);
     temp = luaL_checkBlockListOfPoles(L, narg);
-    buff = malloc(sizeof(BlockAndersonMatrixType));
+    buff = (BlockAndersonMatrixType*)malloc(sizeof(BlockAndersonMatrixType));
     BlockListOfPolesToBlockAndersonMatrix(*temp, buff, temp->N);
     FreeBlockListOfPoles(temp);
     free(temp);
@@ -939,7 +939,7 @@ BADoubleTriDiagonalMatrixType * luaL_checkNatrualImpurityOrbitalMatrixType(lua_S
     TriDiagonalMatrixType *temp;
     lua_pop(L, 1);
     temp = luaL_checkTriDiagonalMatrixType(L, narg);
-    buff = malloc(sizeof(BADoubleTriDiagonalMatrixType));
+    buff = (BADoubleTriDiagonalMatrixType*)malloc(sizeof(BADoubleTriDiagonalMatrixType));
     TriDiagonalMatrixToBADoubleTriDiagonalMatrix(*temp, buff, temp->N, temp->N, temp->mu, 1000*DBL_MIN);
     FreeTriDiagonalMatrix(temp);
     free(temp);
@@ -950,7 +950,7 @@ BADoubleTriDiagonalMatrixType * luaL_checkNatrualImpurityOrbitalMatrixType(lua_S
     AndersonMatrixType *temp;
     lua_pop(L, 1);
     temp = luaL_checkAndersonMatrixType(L, narg);
-    buff = malloc(sizeof(BADoubleTriDiagonalMatrixType));
+    buff = (BADoubleTriDiagonalMatrixType*)malloc(sizeof(BADoubleTriDiagonalMatrixType));
     AndersonMatrixToBADoubleTriDiagonalMatrixSimple(*temp, buff);
     FreeAndersonMatrix(temp);
     free(temp);
@@ -959,7 +959,7 @@ BADoubleTriDiagonalMatrixType * luaL_checkNatrualImpurityOrbitalMatrixType(lua_S
   if((strcmp(type, "NaturalImpurityOrbital")==0)||(strcmp(type, "Nat")==0))
   {
     TriDiagonalMatrixType *temp;
-    buff = malloc(sizeof(BADoubleTriDiagonalMatrixType));
+    buff = (BADoubleTriDiagonalMatrixType*)malloc(sizeof(BADoubleTriDiagonalMatrixType));
     lua_pop(L,1);
     /* read val */
     lua_getfield(L, narg, "val");
@@ -1045,7 +1045,7 @@ BADoubleTriDiagonalMatrixType * luaL_checkNatrualImpurityOrbitalMatrixType(lua_S
     ListOfPoles *temp;
     lua_pop(L, 1);
     temp = luaL_checkListOfPoles(L, narg);
-    buff = malloc(sizeof(BADoubleTriDiagonalMatrixType));
+    buff = (BADoubleTriDiagonalMatrixType*)malloc(sizeof(BADoubleTriDiagonalMatrixType));
     ListOfPolesToBADoubleTridiagonalMatrix(*temp, buff,temp->N,temp->N,temp->mu,1000*DBL_MIN);
     FreeListOfPoles(temp);
     free(temp);
@@ -1077,7 +1077,7 @@ BlockNaturalImpurityOrbitalMatrixType * luaL_checkBlockNatrualImpurityOrbitalMat
     BlockTriDiagonalMatrixType *temp;
     lua_pop(L, 1);
     temp = luaL_checkBlockTriDiagonalMatrixType(L, narg);
-    buff = malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
+    buff = (BlockNaturalImpurityOrbitalMatrixType*)malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
     BlockTriDiagonalMatrixToBlockNaturalImpurityMatrix(*temp, buff);
     FreeBlockTridiagonalMatrix(temp);
     free(temp);
@@ -1088,7 +1088,7 @@ BlockNaturalImpurityOrbitalMatrixType * luaL_checkBlockNatrualImpurityOrbitalMat
     BlockAndersonMatrixType *temp;
     lua_pop(L, 1);
     temp = luaL_checkBlockAndersonMatrixType(L, narg);
-    buff = malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
+    buff = (BlockNaturalImpurityOrbitalMatrixType*)malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
     BlockAndersonMatrixToBlockNaturalImpurityOrbitalMatrix(*temp, buff);
     FreeBlockAndersonMatrix(temp);
     free(temp);
@@ -1099,7 +1099,7 @@ BlockNaturalImpurityOrbitalMatrixType * luaL_checkBlockNatrualImpurityOrbitalMat
     BlockTriDiagonalMatrixType *temp;
     CompactMatrixType *tempM;
     lua_pop(L, 1);
-    buff = malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
+    buff = (BlockNaturalImpurityOrbitalMatrixType*)malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
     lua_getfield(L, narg, "val");
     if(lua_istable(L,-1)==0)
     {
@@ -1148,7 +1148,7 @@ BlockNaturalImpurityOrbitalMatrixType * luaL_checkBlockNatrualImpurityOrbitalMat
     BlockListOfPoles *temp;
     lua_pop(L, 1);
     temp = luaL_checkBlockListOfPoles(L, narg);
-    buff = malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
+    buff = (BlockNaturalImpurityOrbitalMatrixType*)malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
     BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(temp, buff, 1000 * DBL_MIN, temp->N, temp->N);
     FreeBlockListOfPoles(temp);
     free(temp);
@@ -1192,7 +1192,7 @@ ListOfPoles * luaL_checkListOfPoles(lua_State *L, int narg)
     TriDiagonalMatrixType *temp;
     lua_pop(L, 1);
     temp = luaL_checkTriDiagonalMatrixType(L, narg);
-    buff = malloc(sizeof(ListOfPoles));
+    buff = (ListOfPoles*)malloc(sizeof(ListOfPoles));
     TriDiagonalMatrixToListOfPoles(*temp, buff);
     FreeTriDiagonalMatrix(temp);
     free(temp);
@@ -1203,7 +1203,7 @@ ListOfPoles * luaL_checkListOfPoles(lua_State *L, int narg)
     AndersonMatrixType *temp;
     lua_pop(L, 1);
     temp = luaL_checkAndersonMatrixType(L, narg);
-    buff = malloc(sizeof(ListOfPoles));
+    buff = (ListOfPoles*)malloc(sizeof(ListOfPoles));
     AndersonMatrixToListOfPoles(*temp, buff);
     FreeAndersonMatrix(temp);
     free(temp);
@@ -1214,7 +1214,7 @@ ListOfPoles * luaL_checkListOfPoles(lua_State *L, int narg)
     BADoubleTriDiagonalMatrixType *temp;
     lua_pop(L, 1);
     temp = luaL_checkNatrualImpurityOrbitalMatrixType(L, narg);
-    buff = malloc(sizeof(ListOfPoles));
+    buff = (ListOfPoles*)malloc(sizeof(ListOfPoles));
     BADoubleTriDiagonalMatrixToListOfPoles(*temp, buff);
     FreeBADoubleTriDiagonalMatrix(temp);
     free(temp);
@@ -1222,7 +1222,7 @@ ListOfPoles * luaL_checkListOfPoles(lua_State *L, int narg)
   }
   if(strcmp(type, "ListOfPoles")==0)
   {
-    buff=malloc(sizeof(ListOfPoles));
+    buff= (ListOfPoles*)malloc(sizeof(ListOfPoles));
     lua_pop(L, 1);
     if(lua_objlen(L,narg)!=2)
     {
@@ -1325,7 +1325,7 @@ BlockListOfPoles * luaL_checkBlockListOfPoles(lua_State *L, int narg)
     BlockTriDiagonalMatrixType *temp;
     lua_pop(L, 1);
     temp = luaL_checkBlockTriDiagonalMatrixType(L, narg);
-    buff = malloc(sizeof(BlockListOfPoles));
+    buff = (BlockListOfPoles*)malloc(sizeof(BlockListOfPoles));
     BlockTriDiagonalMatrixToBlockListOfPoles(temp, buff);
     FreeBlockTridiagonalMatrix(temp);
     free(temp);
@@ -1336,7 +1336,7 @@ BlockListOfPoles * luaL_checkBlockListOfPoles(lua_State *L, int narg)
     BlockAndersonMatrixType *temp;
     lua_pop(L, 1);
     temp = luaL_checkBlockAndersonMatrixType(L, narg);
-    buff = malloc(sizeof(BlockListOfPoles));
+    buff = (BlockListOfPoles*)malloc(sizeof(BlockListOfPoles));
     BlockAndersonMatrixToBlockListOfPoles(*temp, buff);
     FreeBlockAndersonMatrix(temp);
     free(temp);
@@ -1347,7 +1347,7 @@ BlockListOfPoles * luaL_checkBlockListOfPoles(lua_State *L, int narg)
     BlockNaturalImpurityOrbitalMatrixType *temp;
     lua_pop(L, 1);
     temp = luaL_checkBlockNatrualImpurityOrbitalMatrixType(L, narg);
-    buff = malloc(sizeof(BlockListOfPoles));
+    buff = (BlockListOfPoles*)malloc(sizeof(BlockListOfPoles));
     BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles(*temp, buff);
     FreeBlockNaturalImpurityOrbitalMatrix(temp);
     free(temp);
@@ -1356,7 +1356,7 @@ BlockListOfPoles * luaL_checkBlockListOfPoles(lua_State *L, int narg)
   if(strcmp(type, "ListOfPoles")==0)
   {
     lua_pop(L, 1);
-    buff=malloc(sizeof(BlockListOfPoles));
+    buff= (BlockListOfPoles*)malloc(sizeof(BlockListOfPoles));
     if(lua_objlen(L,narg)!=2)
     {
       luaL_error(L, "Error a list of poles should be a list of two lists {{a1,a2,...,an+1},{b1^2,b2^2,...,bn^2}}, with b matrices and a1 optionally a matrix");
@@ -1560,7 +1560,7 @@ BlockListOfPoles * luaL_checkBlockListOfPolesVariableGrid(lua_State *L, int narg
   {
     BlockTriDiagonalMatrixType *temp;
     temp = luaL_checkBlockTriDiagonalMatrixType(L, narg);
-    buff = malloc(sizeof(BlockListOfPoles));
+    buff = (BlockListOfPoles*)malloc(sizeof(BlockListOfPoles));
     BlockTriDiagonalMatrixToBlockListOfPolesVariableGrid(temp, buff, Grid, NGridPoints);
     FreeBlockTridiagonalMatrix(temp);
     free(temp);
@@ -1570,7 +1570,7 @@ BlockListOfPoles * luaL_checkBlockListOfPolesVariableGrid(lua_State *L, int narg
   {
     BlockAndersonMatrixType *temp;
     temp = luaL_checkBlockAndersonMatrixType(L, narg);
-    buff = malloc(sizeof(BlockListOfPoles));
+    buff = (BlockListOfPoles*)malloc(sizeof(BlockListOfPoles));
     BlockAndersonMatrixToBlockListOfPolesVariableGrid(*temp, buff, Grid, NGridPoints);
     FreeBlockAndersonMatrix(temp);
     free(temp);
@@ -1580,7 +1580,7 @@ BlockListOfPoles * luaL_checkBlockListOfPolesVariableGrid(lua_State *L, int narg
   {
     BlockNaturalImpurityOrbitalMatrixType *temp;
     temp = luaL_checkBlockNatrualImpurityOrbitalMatrixType(L, narg);
-    buff = malloc(sizeof(BlockListOfPoles));
+    buff = (BlockListOfPoles*)malloc(sizeof(BlockListOfPoles));
     BlockNaturalImpurityOrbitalMatrixToBlockListOfPolesVariableGrid(*temp, buff, Grid, NGridPoints);
     FreeBlockNaturalImpurityOrbitalMatrix(temp);
     free(temp);
@@ -1620,7 +1620,7 @@ ResponsefunctionType * luaL_checkResponsefunction(lua_State *L, int narg)
   {
     luaL_error(L, "Error Green's function should be represented by a table");
   }
-  buff=malloc(sizeof(ResponsefunctionType));
+  buff= (ResponsefunctionType*)malloc(sizeof(ResponsefunctionType));
   // test if there is a suggested grid present. If present Stored in field SuggestedGrid
   lua_getfield(L, narg, "SuggestedGrid");
   if(lua_isnil(L, -1)==1)
@@ -1815,9 +1815,9 @@ void luaL_setarray_DeterminatRestrictionType(lua_State *L, int narg, Determinant
   len = (uint32_t)lua_objlen(L, narg);
   if(len<3) luaL_error(L, "Restrictions should be given in the format {NFermion,NBoson,{\"determinant1\",minocc,maxocc},{\"determinant2\",minocc,maxocc},...}");
   buff->N=len-2;
-  buff->Min=malloc(buff->N*sizeof(uint32_t));
-  buff->Max=malloc(buff->N*sizeof(uint32_t));
-  buff->Determinant=malloc(buff->N*sizeof(uint8_t*));
+  buff->Min= (uint32_t*)malloc(buff->N*sizeof(uint32_t));
+  buff->Max= (uint32_t*)malloc(buff->N*sizeof(uint32_t));
+  buff->Determinant= (uint8_t**)malloc(buff->N*sizeof(uint8_t*));
   lua_rawgeti(L, narg, 1);
   NFermion=(uint32_t)luaL_checkunsigned(L, -1);
   lua_pop(L, 1);
@@ -1869,7 +1869,7 @@ void luaL_setarray_DeterminatRestrictionType(lua_State *L, int narg, Determinant
 DeterminantRestrictionType* luaL_checkarray_DeterminantRestrictionType(lua_State *L, int narg)
 {
   DeterminantRestrictionType *buff;
-  buff = malloc(sizeof(DeterminantRestrictionType));
+  buff = (DeterminantRestrictionType*)malloc(sizeof(DeterminantRestrictionType));
   luaL_setarray_DeterminatRestrictionType(L, narg, buff);
   return buff;
 }
@@ -1881,13 +1881,13 @@ HarmonicsExpansion* luaL_checkarray_HarmonicsExpansion(lua_State *L, int narg)
   Complex16 temp;
   luaL_checktype(L, narg, LUA_TTABLE);
   uint32_t len = (uint32_t)lua_objlen(L, narg);
-  HarmonicsExpansion *buff = malloc(sizeof(HarmonicsExpansion));
+  HarmonicsExpansion *buff = (HarmonicsExpansion*)malloc(sizeof(HarmonicsExpansion));
   buff->N=len;
   buff->QComplex=0;
-  buff->Im = malloc(len*sizeof(double));
-  buff->Re = malloc(len*sizeof(double));
-  buff->l = malloc(len*sizeof(int));
-  buff->m = malloc(len*sizeof(int));
+  buff->Im = (double*)malloc(len*sizeof(double));
+  buff->Re = (double*)malloc(len*sizeof(double));
+  buff->l = (int*)malloc(len*sizeof(int));
+  buff->m = (int*)malloc(len*sizeof(int));
   for(i=0;i<len;i++)
   {
     lua_rawgeti(L, narg, i+1);
@@ -2707,38 +2707,38 @@ void * LuaReturnVariableType(lua_State * L, int narg, char * type)
   }
   if (strcmp(type, "int") == 0)
   {
-    buffint = malloc(sizeof(int));
+    buffint = (int*)malloc(sizeof(int));
     *buffint = (int)luaL_checkint(L, narg);
     return (void*) buffint;
   }
   if (strcmp(type, "uint32_t") == 0)
   {
-    buffint = malloc(sizeof(uint32_t));
+    buffint = (uint32_t*)malloc(sizeof(uint32_t));
     *buffint = (uint32_t)luaL_checkint(L, narg);
     return (void*) buffint;
   }
   if (strcmp(type, "uint16_t") == 0)
   {
-    buffint = malloc(sizeof(uint16_t));
+    buffint = (uint16_t*)malloc(sizeof(uint16_t));
     *buffint = (uint16_t)luaL_checkint(L, narg);
     return (void*) buffint;
   }
   if (strcmp(type, "uint8_t") == 0)
   {
-    buffint = malloc(sizeof(uint8_t));
+    buffint = (uint8_t*)malloc(sizeof(uint8_t));
     *buffint = (uint8_t)luaL_checkint(L, narg);
     return (void*) buffint;
   }
   if (strcmp(type, "double") == 0)
   {
-    buffdouble = malloc(sizeof(double));
+    buffdouble = (double*)malloc(sizeof(double));
     *buffdouble = (double)luaL_checknumber(L, narg);
     return (void*) buffdouble;
   }
   if (strcmp(type, "bool") == 0)
   {
-    buffint = malloc(sizeof(int));
-    buffBoolean = malloc(sizeof(Bool));
+    buffint = (int*)malloc(sizeof(int));
+    buffBoolean = (Bool*)malloc(sizeof(Bool));
     *buffint = (int)lua_toboolean(L, narg);
     *buffBoolean= ((*buffint==1)? True: False);
     free(buffint);
@@ -2753,7 +2753,7 @@ void * LuaReturnVariableType(lua_State * L, int narg, char * type)
   }
   if (strcmp(type, "Vector") ==0)
   {
-    buffVector = malloc(sizeof(CompactVectorType));
+    buffVector = (CompactVectorType*)malloc(sizeof(CompactVectorType));
     *buffVector = (CompactVectorType)luaL_checkVector(L,narg);
     return (void*) buffVector;
   }

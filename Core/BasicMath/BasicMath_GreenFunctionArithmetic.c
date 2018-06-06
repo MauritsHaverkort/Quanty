@@ -183,14 +183,14 @@ uint32_t SymmetrizeAndersonMatrix(AndersonMatrixType * const M)
 {
   uint32_t i;
   double *tmp;
-  tmp = realloc(M->a, (2 * M->N) * sizeof(double));
+  tmp = (double*)realloc(M->a, (2 * M->N) * sizeof(double));
   if (tmp == NULL)
   {
     printf("realloc failed in SymmetrizeAndersonMatrix\n");
     return 1;
   }
   M->a = tmp;
-  tmp = realloc(M->b, (Max(0, 2 * M->N - 1)) * sizeof(double));
+  tmp = (double*)realloc(M->b, (Max(0, 2 * M->N - 1)) * sizeof(double));
   if (tmp == NULL)
   {
     printf("realloc failed in SymmetrizeAndersonMatrix\n");
@@ -1846,7 +1846,7 @@ ResponsefunctionType *ConvertResponsefunction(ResponsefunctionType *M, const cha
 {
   ResponsefunctionType *res;
   if(M->Block==True) return ConvertBlockMatrix(M,type,T);
-  res = malloc(sizeof(ResponsefunctionType));
+  res = (ResponsefunctionType*)malloc(sizeof(ResponsefunctionType));
   res->NSuggestedGridPoints = 0;
   res->type = type;
   res->Block = False;
@@ -1857,7 +1857,7 @@ ResponsefunctionType *ConvertResponsefunction(ResponsefunctionType *M, const cha
   }
   else
   {
-    res->SuggestedGrid=malloc(res->NSuggestedGridPoints*sizeof(double));
+    res->SuggestedGrid= (double*)malloc(res->NSuggestedGridPoints*sizeof(double));
     memcpy(res->SuggestedGrid, M->SuggestedGrid, res->NSuggestedGridPoints*sizeof(double));
   }
   switch (M->type|32)      // original type

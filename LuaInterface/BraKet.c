@@ -73,7 +73,7 @@ static int LuaBraKet(lua_State * L)
         psiA = luaL_checkarray_WaveFunctionType(L, 1, &(res.Ni));
         psiB = (WaveFunctionType*) luaL_checkudata(L, 2, "Wavefunction_Type");
         res.QComplex=1;
-        res.V=malloc(res.Ni*sizeof(Complex16));
+        res.V= (Complex16*)malloc(res.Ni*sizeof(Complex16));
         for(i=0;i<res.Ni;i++)
         {
           if(QWaveFunctionSame(&(psiA[i]), psiB))
@@ -106,7 +106,7 @@ static int LuaBraKet(lua_State * L)
         psiA = (WaveFunctionType*) luaL_checkudata(L, 1, "Wavefunction_Type");
         psiB = luaL_checkarray_WaveFunctionType(L, 2, &(res.Ni));
         res.QComplex=1;
-        res.V=malloc(res.Ni*sizeof(Complex16));
+        res.V= (Complex16*)malloc(res.Ni*sizeof(Complex16));
         for(i=0;i<res.Ni;i++)
         {
           if(QWaveFunctionSame(psiA, &(psiB[i])))
@@ -220,7 +220,7 @@ static int LuaBraKet(lua_State * L)
         O    = (OperatorType*)     luaL_checkudata(L, 2, "Operator_Type");
         psiB = (WaveFunctionType*) luaL_checkudata(L, 3, "Wavefunction_Type");
         res.QComplex=1;
-        res.V=malloc(res.Ni*sizeof(Complex16));
+        res.V= (Complex16*)malloc(res.Ni*sizeof(Complex16));
         for(i=0;i<res.Ni;i++)
         {
           if(QWaveFunctionSame(&(psiA[i]),psiB))
@@ -250,7 +250,7 @@ static int LuaBraKet(lua_State * L)
         O    = (OperatorType*)     luaL_checkudata(L, 2, "Operator_Type");
         psiB = luaL_checkarray_WaveFunctionType(L, 3, &(res.Ni));
         res.QComplex=1;
-        res.V=malloc(res.Ni*sizeof(Complex16));
+        res.V= (Complex16*)malloc(res.Ni*sizeof(Complex16));
         for(i=0;i<res.Ni;i++)
         {
           if(QWaveFunctionSame(psiA, &(psiB[i])))
