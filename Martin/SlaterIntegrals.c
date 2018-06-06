@@ -21,20 +21,17 @@ SSlaterIntegral *GetSlaterIntegrals(double **basisfuns, unsigned int NBasisFuns,
 {
         
     SSlaterIntegral *si;
-    unsigned int kMax, n;
+    unsigned int kMax, n, i;
     double **kernels, **dualfuns;
     
     n = 2* NGridPoints;
     
     
-    
     dualfuns = CreateDualFunctions(NBasisFuns, NGridPoints, basisfuns,x);
-    
+
     si = InitializeIntegrals(tupel, NIntegrals,&kMax);
 
-    
     kernels = CreateAllKernels(kMax, NGridPoints, x); 
-    
    
     CalculateSlaterIntegrals(NIntegrals, si,n,kernels,basisfuns,dualfuns);
 /*
@@ -49,10 +46,23 @@ SSlaterIntegral *GetSlaterIntegrals(double **basisfuns, unsigned int NBasisFuns,
     }
     fclose(f);
 */
+    for ( i = 0; i <= kMax; i++)
+    {
+    	free(kernels[i]);
+    }
+    free(kernels);
+    for ( i = 0; i < NBasisFuns; i++)
+    {
+    	free(dualfuns[i]);
+    }
+    free(dualfuns);
+
+
+    printf("return GetSlater\n");
+    fflush(stdout);
+
     return si;
 }
-
-
 
 void CalculateSlaterIntegrals(const int NIntegrals, SSlaterIntegral *integrals, const int dim,
                               double **kernels, double **basisfuns, double **dualfuns)
@@ -88,7 +98,6 @@ void vecMul(const int n, const double *f, const double *g, double *fout)
     }
 }
   
-
 double SlaterIntegral(const int n, const double *f1, const double *f2, const double *f3, 
                       const double *f4, const double *Mr1r2)
 {
@@ -101,6 +110,7 @@ double SlaterIntegral(const int n, const double *f1, const double *f2, const dou
   f13 = (double *) malloc(n*sizeof(double));
   f24 = (double *) malloc(n*sizeof(double));
   Mf = (double *) malloc(n*sizeof(double));
+  if (!Mf || !f24 || !f13) printf("malloc fail in SlaterIntegral. size = %d",n);
     
   vecMul(n, f1, f3, f13);
   vecMul(n, f2, f4, f24);
@@ -120,11 +130,13 @@ double ** CreateAllKernels(const unsigned int kMax, const unsigned int NGridPoin
     double ** kernels;
     
     kernels = (double **) malloc((kMax+1)*sizeof(double *));
+    if (!kernels) printf("malloc fail at kernels in CreateAllKernels. size = %d\n",kMax+1);
     n = 2 * NGridPoints;
     
     for ( k = 0; k <= kMax; k++ )
     {
-        kernels[k] = (double *) malloc(n*n*sizeof(double));
+    	kernels[k] = (double *) malloc(n*n*sizeof(double));
+    	if (!(kernels[k])) printf("malloc fail at kernels[%d] in CreateAllKernels. size = %d\n",k,n*n);
         CreateKernel(NGridPoints, x, kernels[k], k);
     }
     return kernels;
@@ -150,23 +162,32 @@ void CreateKernel(const unsigned int NGridPoints, const double *x, double *kerne
             {
                 val = pow(x[i],k)/pow(x[j],k+1);
             }
+            //printf("i = %d\tj = %d\n",i,j);
+            //fflush(stdout);
         
             kernel[j+2*n*i] = val;
             kernel[i+2*n*j] = val;
             
+            //printf("[a] = %d\n",i+2*n*(j+n));
+            //fflush(stdout);
+
             kernel[(j+n)+2*n*i] = val;
             kernel[i+2*n*(j+n)] = val;
             
+            //printf("[b] = %d\n",(i+n)+2*n*j);
+            //fflush(stdout);
+
             kernel[j+2*n*(i+n)] = val;
             kernel[(i+n)+2*n*j] = val;
 
+            //printf("[c] = %d\n",(j+n)+2*n*(i+n));
+            //fflush(stdout);
             kernel[(j+n)+2*n*(i+n)] = val;
+            //printf("[d] = %d\n",(i+n)+2*n*(j+n));
+            //fflush(stdout);
             kernel[(i+n)+2*n*(j+n)] = val;            
         }
     }
-    
-    
-    
     
 }
 
@@ -175,6 +196,7 @@ double *CreateWeights(const unsigned int NGridPoints, const double *x)
     int i;
     double x0 = 0;
     double *weights = (double *) malloc(NGridPoints*2*sizeof(double));
+    if (!weights) printf("malloc fail at weights in CreateWeights. size = %d\n",2*NGridPoints);
     
     for( i = 0; i < NGridPoints-1; i++)
     {
@@ -195,9 +217,11 @@ double **CreateDualFunctions(const unsigned int NBasisFuns, const unsigned int N
     
     weights = CreateWeights(NGridPoints,x);
     dualfuns = (double **) malloc(NBasisFuns*sizeof(double *));
+    if (!dualfuns) printf("malloc fail at dualfuns in CreateDualFunctions. size = %d\n",NBasisFuns);
     for ( i = 0; i < NBasisFuns; i++ )
     {
         dualfuns[i] = (double *) malloc(2*NGridPoints*sizeof(double));
+        if (!dualfuns[i]) printf("malloc fail at dualfuns[%d] in CreateDualFunctions. size = %d\n",i,2*NGridPoints);
         Dual(2*NGridPoints, basisfuns[i], weights, dualfuns[i]);
     }
     free(weights);
