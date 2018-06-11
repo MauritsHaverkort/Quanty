@@ -373,7 +373,7 @@ uint32_t RealOperatorAddLader(OperatorType * const O, const uint16_t * const oad
         printf("alloc failed OperatorAddLader 01\n");
         fflush(stdout);
         /* restore O and return 1 */
-        O->l[length].o = temp;
+        O->l[length].o = (uint16_t*)temp;
         O->l[length].NAloc -= O->NFermion + O->NBoson;
         return 1;
       }
@@ -391,7 +391,7 @@ uint32_t RealOperatorAddLader(OperatorType * const O, const uint16_t * const oad
         printf("alloc failed OperatorAddLader 02\n");
         fflush(stdout);
         /* restore O and return 1 */
-        O->l[length].Next = temp;
+        O->l[length].Next = (uint32_t*)temp;
         O->l[length].NAloc -= O->NFermion + O->NBoson;
         O->l[length].o = (uint16_t*)realloc(O->l[length].o, length * O->l[length].NAloc * sizeof(uint16_t));
         return 1;
@@ -410,7 +410,7 @@ uint32_t RealOperatorAddLader(OperatorType * const O, const uint16_t * const oad
         printf("alloc failed OperatorAddLader 03\n");
         fflush(stdout);
         /* restore O and return 1 */
-        O->l[length].VRe = temp;
+        O->l[length].VRe = (double*)temp;
         O->l[length].NAloc -= O->NFermion + O->NBoson;
         O->l[length].o = (uint16_t*)realloc(O->l[length].o, length * O->l[length].NAloc * sizeof(uint16_t));
         O->l[length].Next = (uint32_t*)realloc(O->l[length].Next, O->l[length].NAloc * sizeof(uint32_t));
@@ -458,7 +458,7 @@ uint32_t RealOperatorAddLader(OperatorType * const O, const uint16_t * const oad
               printf("alloc failed OperatorAddLader 11\n");
               fflush(stdout);
               /* restore O and return 1 */
-              O->l[length].o = temp;
+              O->l[length].o = (uint16_t*)temp;
               O->l[length].NAloc -= O->NFermion + O->NBoson;
               return 1;
             }
@@ -469,7 +469,7 @@ uint32_t RealOperatorAddLader(OperatorType * const O, const uint16_t * const oad
               printf("alloc failed OperatorAddLader 12\n");
               fflush(stdout);
               /* restore O and return 1 */
-              O->l[length].Next = temp;
+              O->l[length].Next = (uint32_t*)temp;
               O->l[length].NAloc -= O->NFermion + O->NBoson;
               O->l[length].o = (uint16_t*)realloc(O->l[length].o, length * O->l[length].NAloc * sizeof(uint16_t));
               return 1;
@@ -481,7 +481,7 @@ uint32_t RealOperatorAddLader(OperatorType * const O, const uint16_t * const oad
               printf("alloc failed OperatorAddLader 13\n");
               fflush(stdout);
               /* restore O and return 1 */
-              O->l[length].VRe = temp;
+              O->l[length].VRe = (double*)temp;
               O->l[length].NAloc -= O->NFermion + O->NBoson;
               O->l[length].o = (uint16_t*)realloc(O->l[length].o, length * O->l[length].NAloc * sizeof(uint16_t));
               O->l[length].Next = (uint32_t*)realloc(O->l[length].Next, O->l[length].NAloc * sizeof(uint32_t));
@@ -735,7 +735,7 @@ uint32_t ComplexOperatorAddLader(OperatorType * const O, const uint16_t * const 
         printf("alloc failed OperatorAddLader 01\n");
         fflush(stdout);
         /* restore O and return 1 */
-        O->l[length].o = temp;
+        O->l[length].o = (uint16_t*)temp;
         O->l[length].NAloc -= O->NFermion + O->NBoson;
         return (1);
       }
@@ -753,7 +753,7 @@ uint32_t ComplexOperatorAddLader(OperatorType * const O, const uint16_t * const 
         printf("alloc failed OperatorAddLader 02\n");
         fflush(stdout);
         /* restore O and return 1 */
-        O->l[length].Next = temp;
+        O->l[length].Next = (uint32_t*)temp;
         O->l[length].NAloc -= O->NFermion + O->NBoson;
         O->l[length].o = (uint16_t*)realloc(O->l[length].o, length * O->l[length].NAloc * sizeof(uint16_t));
         return (1);
@@ -776,7 +776,7 @@ uint32_t ComplexOperatorAddLader(OperatorType * const O, const uint16_t * const 
         printf("alloc failed OperatorAddLader 03\n");
         fflush(stdout);
         /* restore O and return 1 */
-        O->l[length].V = temp;
+        O->l[length].V = (Complex16*)temp;
         O->l[length].NAloc -= O->NFermion + O->NBoson;
         O->l[length].o = (uint16_t*)realloc(O->l[length].o, length * O->l[length].NAloc * sizeof(uint16_t));
         O->l[length].Next = (uint32_t*)realloc(O->l[length].Next, O->l[length].NAloc * sizeof(uint32_t));
@@ -826,7 +826,7 @@ uint32_t ComplexOperatorAddLader(OperatorType * const O, const uint16_t * const 
               printf("alloc failed OperatorAddLader 11\n");
               fflush(stdout);
               /* restore O and return 1 */
-              O->l[length].o = temp;
+              O->l[length].o = (uint16_t*)temp;
               O->l[length].NAloc -= O->NFermion + O->NBoson;
               return (1);
             }
@@ -837,7 +837,7 @@ uint32_t ComplexOperatorAddLader(OperatorType * const O, const uint16_t * const 
               printf("alloc failed OperatorAddLader 12\n");
               fflush(stdout);
               /* restore O and return 1 */
-              O->l[length].Next = temp;
+              O->l[length].Next = (uint32_t*)temp;
               O->l[length].NAloc -= O->NFermion + O->NBoson;
               O->l[length].o = (uint16_t*)realloc(O->l[length].o, length * O->l[length].NAloc * sizeof(uint16_t));
               return (1);
@@ -849,7 +849,7 @@ uint32_t ComplexOperatorAddLader(OperatorType * const O, const uint16_t * const 
               printf("alloc failed OperatorAddLader 13\n");
               fflush(stdout);
               /* restore O and return 1 */
-              O->l[length].V = temp;
+              O->l[length].V = (Complex16*)temp;
               O->l[length].NAloc -= O->NFermion + O->NBoson;
               O->l[length].o = (uint16_t*)realloc(O->l[length].o, length * O->l[length].NAloc * sizeof(uint16_t));
               O->l[length].Next = (uint32_t*)realloc(O->l[length].Next, O->l[length].NAloc * sizeof(uint32_t));

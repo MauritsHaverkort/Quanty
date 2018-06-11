@@ -82,7 +82,7 @@ uint32_t ComplexWaveFunctionAddElement(WaveFunctionType * const psi, const uint8
         printf("alloc failed RealWaveFunctionAddElement 01 Re\n");
         fflush(stdout);
         /* restore psi and return 0 */
-        psi->ValueRe = temp;
+        psi->ValueRe = (double**)temp;
         psi->NBlok--;
         return (1);
       }
@@ -93,7 +93,7 @@ uint32_t ComplexWaveFunctionAddElement(WaveFunctionType * const psi, const uint8
         printf("alloc failed RealWaveFunctionAddElement 01 Im\n");
         fflush(stdout);
         /* restore psi and return 0 */
-        psi->ValueIm = temp;
+        psi->ValueIm = (double**)temp;
         psi->NBlok--;
         psi->ValueRe = (double **)realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
         return (1);
@@ -105,7 +105,7 @@ uint32_t ComplexWaveFunctionAddElement(WaveFunctionType * const psi, const uint8
         printf("alloc failed RealWaveFunctionAddElement 02\n");
         fflush(stdout);
         /* restore psi and return 0 */
-        psi->Next = temp;
+        psi->Next = (uint32_t**)temp;
         psi->NBlok--;
         psi->ValueRe = (double **)realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
         psi->ValueIm = (double **)realloc(psi->ValueIm, psi->NBlok * sizeof(double *));
@@ -118,7 +118,7 @@ uint32_t ComplexWaveFunctionAddElement(WaveFunctionType * const psi, const uint8
         printf("alloc failed RealWaveFunctionAddElement 03\n");
         fflush(stdout);
         /* restore psi and return 0 */
-        psi->Determinant = temp;
+        psi->Determinant = (uint8_t**)temp;
         psi->NBlok--;
         psi->ValueRe = (double **)realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
         psi->ValueIm = (double **)realloc(psi->ValueIm, psi->NBlok * sizeof(double *));
@@ -227,7 +227,7 @@ uint32_t ComplexWaveFunctionAddElement(WaveFunctionType * const psi, const uint8
               printf("alloc failed RealWaveFunctionAddElement 11 Re\n");
               fflush(stdout);
               /* restore psi and return 1 */
-              psi->ValueRe = temp;
+              psi->ValueRe = (double**)temp;
               psi->NBlok--;
               return (1);
             }
@@ -238,7 +238,7 @@ uint32_t ComplexWaveFunctionAddElement(WaveFunctionType * const psi, const uint8
               printf("alloc failed RealWaveFunctionAddElement 11 Im\n");
               fflush(stdout);
               /* restore psi and return 1 */
-              psi->ValueIm = temp;
+              psi->ValueIm = (double**)temp;
               psi->NBlok--;
               psi->ValueRe = (double **)realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
               return (1);
@@ -250,7 +250,7 @@ uint32_t ComplexWaveFunctionAddElement(WaveFunctionType * const psi, const uint8
               printf("alloc failed RealWaveFunctionAddElement 12\n");
               fflush(stdout);
               /* restore psi and return 1 */
-              psi->Next = temp;
+              psi->Next = (uint32_t**)temp;
               psi->NBlok--;
               psi->ValueRe = (double **)realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
               psi->ValueIm = (double **)realloc(psi->ValueIm, psi->NBlok * sizeof(double *));
@@ -263,7 +263,7 @@ uint32_t ComplexWaveFunctionAddElement(WaveFunctionType * const psi, const uint8
               printf("alloc failed RealWaveFunctionAddElement 13\n");
               fflush(stdout);
               /* restore psi and return 1 */
-              psi->Determinant = temp;
+              psi->Determinant = (uint8_t**)temp;
               psi->NBlok--;
               psi->ValueRe = (double **)realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
               psi->ValueIm = (double **)realloc(psi->ValueIm, psi->NBlok * sizeof(double *));

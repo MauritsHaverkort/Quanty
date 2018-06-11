@@ -12,7 +12,7 @@ int sprintfAdd(char ** A, char *fmt, ...)
   va_start ( args, fmt );
   lenA=strlen(*A);
   lenAlocA = 2024 * ((lenA/2024)+2);
-  Atemp = realloc(*A, lenAlocA);
+  Atemp = (char*)realloc(*A, lenAlocA);
   if(Atemp==NULL)
   {
     printf("ERROR: realloc failed in sprintfAdd\n");
@@ -32,7 +32,7 @@ int sprintfAdd(char ** A, char *fmt, ...)
 uint32_t StringPrintOperatorReadable(OperatorType O, char **Buffer)
 {
   int32_t i, j, k;
-  *Buffer = malloc(4048);
+  *Buffer = (char*)malloc(4048);
   if(*Buffer==NULL)
   {
     printf("ERROR: malloc failed in StringPrintOperatorReadable\n");
@@ -73,7 +73,7 @@ uint32_t StringPrintOperatorReadable(OperatorType O, char **Buffer)
 uint32_t StringPrintWaveFunctionReadable(WaveFunctionType psi, char **Buffer)
 {
   uint32_t i, j;
-  *Buffer = malloc(4048);
+  *Buffer = (char*)malloc(4048);
   if(*Buffer==NULL)
   {
     printf("ERROR: malloc failed in StringPrintOperatorReadable\n");
@@ -139,7 +139,7 @@ uint32_t StringPrintWaveFunctionReadable(WaveFunctionType psi, char **Buffer)
 uint32_t StringPrintSpectra(SpectraType * const Spec, const uint32_t NSpec, char **Buffer)
 {
   uint32_t i, j, NE;
-  *Buffer = malloc(4048);
+  *Buffer = (char*)malloc(4048);
   if(*Buffer==NULL)
   {
     printf("ERROR: malloc failed in StringPrintSpectra\n");
@@ -262,7 +262,7 @@ uint32_t StringPrintAddMatrix(MatrixType M, char **Buffer)
  */
 uint32_t StringPrintMatrix(MatrixType M, char **Buffer)
 {
-  *Buffer = malloc(4048);
+  *Buffer = (char*)malloc(4048);
   if(*Buffer==NULL)
   {
     printf("ERROR: malloc failed in StringPrintTightBindingDef\n");
@@ -319,7 +319,7 @@ uint32_t StringPrintAddCrystalStructure(CrystalStructureType O, char **Buffer)
  */
 uint32_t StringPrintCrystalStructure(CrystalStructureType O, char **Buffer)
 {
-  *Buffer = malloc(4048);
+  *Buffer = (char*)malloc(4048);
   if(*Buffer==NULL)
   {
     printf("ERROR: malloc failed in StringPrintTightBindingDef\n");
@@ -335,7 +335,7 @@ uint32_t StringPrintCrystalStructure(CrystalStructureType O, char **Buffer)
 uint32_t StringPrintTightBindingDef(TightBindingDef O, char **Buffer)
 {
   int    i;
-  *Buffer = malloc(4048);
+  *Buffer = (char*)malloc(4048);
   if(*Buffer==NULL)
   {
     printf("ERROR: malloc failed in StringPrintTightBindingDef\n");

@@ -76,7 +76,7 @@ uint32_t RealWaveFunctionAddElement(WaveFunctionType * const psi, const uint8_t 
         printf("alloc failed RealWaveFunctionAddElement 01\n");
         fflush(stdout);
         /* restore psi and return 0 */
-        psi->ValueRe = temp;
+        psi->ValueRe = (double**)temp;
         psi->NBlok--;
         psi->N--;
         return (1);
@@ -88,7 +88,7 @@ uint32_t RealWaveFunctionAddElement(WaveFunctionType * const psi, const uint8_t 
         printf("alloc failed RealWaveFunctionAddElement 02\n");
         fflush(stdout);
         /* restore psi and return 0 */
-        psi->Next = temp;
+        psi->Next = (uint32_t**)temp;
         psi->NBlok--;
         psi->N--;
         psi->ValueRe = (double **)realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
@@ -101,7 +101,7 @@ uint32_t RealWaveFunctionAddElement(WaveFunctionType * const psi, const uint8_t 
         printf("alloc failed RealWaveFunctionAddElement 03\n");
         fflush(stdout);
         /* restore psi and return 0 */
-        psi->Determinant = temp;
+        psi->Determinant = (uint8_t**)temp;
         psi->NBlok--;
         psi->N--;
         psi->ValueRe = (double **)realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
@@ -192,7 +192,7 @@ uint32_t RealWaveFunctionAddElement(WaveFunctionType * const psi, const uint8_t 
               printf("alloc failed RealWaveFunctionAddElement 11\n");
               fflush(stdout);
               /* restore psi and return 1 */
-              psi->ValueRe = temp;
+              psi->ValueRe = (double**)temp;
               psi->NBlok--;
               psi->N--;
               return (1);
@@ -204,7 +204,7 @@ uint32_t RealWaveFunctionAddElement(WaveFunctionType * const psi, const uint8_t 
               printf("alloc failed RealWaveFunctionAddElement 12\n");
               fflush(stdout);
               /* restore psi and return 1 */
-              psi->Next = temp;
+              psi->Next = (uint32_t**)temp;
               psi->NBlok--;
               psi->N--;
               psi->ValueRe = (double **)realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
@@ -217,7 +217,7 @@ uint32_t RealWaveFunctionAddElement(WaveFunctionType * const psi, const uint8_t 
               printf("alloc failed RealWaveFunctionAddElement 13\n");
               fflush(stdout);
               /* restore psi and return 1 */
-              psi->Determinant = temp;
+              psi->Determinant = ( uint8_t**)temp;
               psi->NBlok--;
               psi->N--;
               psi->ValueRe = (double **)realloc(psi->ValueRe, psi->NBlok * sizeof(double *));
