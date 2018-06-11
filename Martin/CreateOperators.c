@@ -237,7 +237,7 @@ void PrintArray(double* a, int n)
 	}
 }
 
-double* CreateBaseForContinuum( int NBasisFuns,double **basisfuns,double **derivfuns,double *x,uint32_t NGridpoints,SKappaGroup *groups,int NGroups,int Ncont,
+double* CreateBaseForContinuum( int NBasisFuns,double **basisfuns,double **derivfuns,double *x,uint32_t NGridpoints,SKappaGroup group,int Ncont,
 								double **contfuns, double w)
 {
 	int l,k,dim,info;
@@ -253,88 +253,60 @@ double* CreateBaseForContinuum( int NBasisFuns,double **basisfuns,double **deriv
 
 	double *T,*g, **dualfuns, **dualcont, *Tsub, *tau,*d,*e;
 
-	k = -1;
+	k = group.kappa;
 	l = 0;
 
-	dim = Ncont + groups->n;
+	dim = Ncont + group.n;
 
-//	printf("dualf\n");
-//	fflush(stdout);
+
 	dualfuns = CreateDualFunctions(NBasisFuns,NGridpoints,basisfuns,x);
-//	printf("dualc\n");
-//	fflush(stdout);
+
 	dualcont = CreateDualFunctions(Ncont,NGridpoints,contfuns,x);
-	//printf("w: %f\n",w);
-//	printf("Kin: %d\n",Ncont + groups->n);
-//	fflush(stdout);
-	T = KineticEnergyCB(basisfuns,derivfuns, dualfuns,dualcont, Ncont,groups->indices, groups->n,x,NGridpoints,k,w);
 
-	//PrintMartix(T,dim);
-//	printf("Metric: %d\t%d\n",Ncont + NBasisFuns,dim);
-//	fflush(stdout);
-	g = MetricCB(basisfuns,dualfuns,groups->indices, groups->n,dualcont,Ncont,NGridpoints);
+	T = KineticEnergyCB(basisfuns,derivfuns, dualfuns,dualcont, Ncont,group.indices, group.n,x,NGridpoints,k,w);
 
-	//PrintMartix(g,dim);
-//	printf("Lapack\n");
-//	fflush(stdout);
+	g = MetricCB(basisfuns,dualfuns,group.indices, group.n,dualcont,Ncont,NGridpoints);
+
 	LAPACKE_dpotrf(LAPACK_ROW_MAJOR,'U',dim,g,dim);
 	LAPACKE_dtrtri(LAPACK_ROW_MAJOR,'U','N',dim,g,dim);
 	cblas_dtrmm(CblasRowMajor,CblasLeft,CblasUpper,CblasTrans,CblasNonUnit,dim,dim,1.,g,dim,T,dim);
 	cblas_dtrmm(CblasRowMajor,CblasRight,CblasUpper,CblasNoTrans,CblasNonUnit,dim,dim,1.,g,dim,T,dim);
 
-//	printf("Tsub\n");
-//	fflush(stdout);
-	//PrintMartix(g,dim);
-	//printf("%d\t%d\t%d\n",dim,NBasisFuns,Ncont);
-	Tsub = SubMatrix(T,dim,groups->n,dim-1,groups->n,dim-1);
-	//PrintMartix(Tsub,Ncont);
-//	printf("alloc\n");
-//	fflush(stdout);
+	Tsub = SubMatrix(T,dim,group.n,dim-1,group.n,dim-1);
+
 	d = (double *) malloc(Ncont*sizeof(double));
 	if (!d) printf("malloc fail at d in CreateBaseForContinuum. size = %d\n",Ncont);
 	e = (double *) malloc((Ncont-1)*sizeof(double));
 	if (!e) printf("malloc fail at e in CreateBaseForContinuum. size = %d\n",Ncont-1);
 	tau = (double *) malloc(Ncont*sizeof(double));
 	if (!tau) printf("malloc fail at tau in CreateBaseForContinuum. size = %d\n",Ncont);
-//	printf("Lapack2\n");
+
 	info = LAPACKE_dsytrd(LAPACK_ROW_MAJOR, 'U',Ncont,Tsub,Ncont,d,e,tau);
 	if ( 0 != info) printf("error: argument %d of LAPACKE_dsytrd",-info);
 	info = LAPACKE_dorgtr(LAPACK_ROW_MAJOR,'U',Ncont,Tsub,Ncont,tau);
 	if ( 0 != info) printf("error: argument %d of LAPACKE_dorgtr",-info);
 	info = LAPACKE_dsteqr(LAPACK_ROW_MAJOR,'V',Ncont,d,e,Tsub,Ncont);
 	if ( 0 != info) printf("error: argument %d of LAPACKE_dsteqr",-info);
-//	printf("ContWFs\n");
-//	fflush(stdout);
-	CalcContinuumWFs(basisfuns, groups->indices, groups->n, contfuns, Ncont, NGridpoints, g, Tsub);
 
-	//PrintMartix(T,dim);
-	//PrintArray(d,Ncont);
-//	printf("T\n");
-//	fflush(stdout);
+	CalcContinuumWFs(basisfuns, group.indices, group.n, contfuns, Ncont, NGridpoints, g, Tsub);
+
 	free(T);
-//	printf("g\n");
-//	fflush(stdout);
 	free(g);
-//	printf("dualfuns\t");
 	int i;
 	for ( i = 0; i < NBasisFuns; i++)
 	{
 		free(dualfuns[i]);
 	}
 	free(dualfuns);
-//	printf("dualcont\t");
 	for ( i = 0; i < Ncont; i++)
 	{
 		free(dualcont[i]);
 	}
 	free(dualcont);
-//	printf("Tsub\t");
 	free(Tsub);
-//	printf("tau\t");
 	free(tau);
-//	printf("e\t");
 	free(e);
-//	printf("done\n");
+
 
 	return d;
 

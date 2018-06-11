@@ -179,8 +179,21 @@ FYSpectra.Print({{"file","RIXSL23M45_FY.dat"}})
 -- specify two Hamiltonians.
 -- These calculations can be lengthy and one should think that for each incoming energy
 -- (E1) one needs to a new calculation. In this case there are thus 120 calculations
-RIXSSpectra = CreateResonantSpectra(XASHamiltonian, Hamiltonian, TXASx, TXASydag, psiList[1], {{"Emin1",-10}, {"Emax1",20}, {"NE1",120}, {"Gamma1",1.0}, {"Emin2",-0.5}, {"Emax2",7.5}, {"NE2",8000}, {"Gamma2",0.05}})
-RIXSSpectra.Print({{"file", "RIXSL23M45.dat"}})
+TimeStart("RIXS Dense")
+RIXSSpectraD = CreateResonantSpectra(XASHamiltonian, Hamiltonian, TXASx, TXASydag, psiList[1], {{"Emin1",-10}, {"Emax1",20}, {"NE1",120}, {"Gamma1",1.0}, {"Emin2",-0.5}, {"Emax2",7.5}, {"NE2",8000}, {"Gamma2",0.05}})
+TimeEnd("RIXS Dense")
+TimeStart("RIXS Sparse")
+RIXSSpectraS = CreateResonantSpectra(XASHamiltonian, Hamiltonian, TXASx, TXASydag, psiList[1], {{"Emin1",-10}, {"Emax1",20}, {"NE1",120}, {"Gamma1",1.0}, {"Emin2",-0.5}, {"Emax2",7.5}, {"NE2",8000}, {"Gamma2",0.05}, {"DenseBorder",0}})
+TimeEnd("RIXS Sparse")
+
+TimePrint()
+
+RIXSSpectraD.Print({{"file", "RIXSL23M45.dat"}})
+RIXSSpectraD.Print({{"file", "RIXSL23M45Dense.dat"}})
+RIXSSpectraS.Print({{"file", "RIXSL23M45Sparse.dat"}})
+
+
+
 
 print("Finished calculating the spectra now start plotting.\nThis might take more time than the calculation");
 

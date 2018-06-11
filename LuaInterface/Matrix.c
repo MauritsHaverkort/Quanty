@@ -208,14 +208,15 @@ static int LuaMatrixEigensystem(lua_State * L)
     }
     else
     {
-      CompactMatrixType *fun;
+      CompactMatrixType *fun,funtemp;
       double *val;
       val=malloc(H->Ni*sizeof(double));
-      fun = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
-      luaL_setmetatable(L, "Matrix_Type");
-      CompactMatrixEigensystem(H,fun,val);
-      LuaPushArray_double(L, val, fun->Ni);
+      CompactMatrixEigensystem(H,&funtemp,val);
+      LuaPushArray_double(L, val, funtemp.Ni);
       free(val);
+      fun = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+      *fun=funtemp;
+      luaL_setmetatable(L, "Matrix_Type");
     }
     return 2;
   }

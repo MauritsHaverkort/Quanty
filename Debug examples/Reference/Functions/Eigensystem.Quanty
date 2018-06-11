@@ -581,12 +581,6 @@ if(converged) then
   print("NOT CONVERGED\n")
 end
 
-
-
-os.exit()
-
-
-
 ------------------------------------------------------------
 -- test for a large hilbert space the lowest eigen-states --
 ------------------------------------------------------------

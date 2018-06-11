@@ -4565,8 +4565,8 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylovReal(OperatorType * H, WaveFu
   int    info;
   const char *jobz = "V";
   const char *uplo = "U";
-  int    lwork = 1 + 6 * (Npsi+Settings->NKrylovMax) + 2 * Sqr((Npsi+Settings->NKrylovMax));
-  int    liwork = 3 + 5 * (Npsi+Settings->NKrylovMax);
+  uint32_t    lwork = 1 + 6 * (Npsi+Settings->NKrylovMax) + 2 * Sqr((Npsi+Settings->NKrylovMax));
+  uint32_t    liwork = 3 + 5 * (Npsi+Settings->NKrylovMax);
   int    *iwork;
   double *work;
   double *val;
@@ -4798,9 +4798,9 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylovComplex(OperatorType * H, Wav
   int    info;
   const char *jobz = "V";
   const char *uplo = "U";
-  int    lwork  = 1 + 6 * (Npsi+Settings->NKrylovMax) + 2 * Sqr((Npsi+Settings->NKrylovMax));
-  int    lcwork = 2 * (Npsi+Settings->NKrylovMax) + Sqr((Npsi+Settings->NKrylovMax));
-  int    liwork = 3 + 5 * (Npsi+Settings->NKrylovMax);
+  uint32_t    lwork  = 1 + 6 * (Npsi+Settings->NKrylovMax) + 2 * Sqr((Npsi+Settings->NKrylovMax));
+  uint32_t    lcwork = 2 * (Npsi+Settings->NKrylovMax) + Sqr((Npsi+Settings->NKrylovMax));
+  uint32_t    liwork = 3 + 5 * (Npsi+Settings->NKrylovMax);
   int    *iwork;
   double *work;
   Complex16 *cwork;

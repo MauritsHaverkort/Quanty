@@ -57,10 +57,6 @@ SSlaterIntegral *GetSlaterIntegrals(double **basisfuns, unsigned int NBasisFuns,
     }
     free(dualfuns);
 
-
-    printf("return GetSlater\n");
-    fflush(stdout);
-
     return si;
 }
 

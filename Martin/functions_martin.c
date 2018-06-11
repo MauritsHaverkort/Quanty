@@ -158,7 +158,7 @@ static int LuaOperatorNewDirac(lua_State *L)
 static int LuaCreateBaseForContinuum(lua_State *L)
 {
 	uint32_t NF, i, NGroups, NGridpoints, NIndices, NBasisFuns, temp;
-	SKappaGroup *groups;
+	SKappaGroup group;
 	MatrixType *basisfuns, *derivfuns, *contfuns;
 	double w;
 	double *x;
@@ -167,7 +167,7 @@ static int LuaCreateBaseForContinuum(lua_State *L)
 	derivfuns = luaL_checkMatrix(L,1);
 	x = luaL_checkarray_double(L,3,&NGridpoints);
 	luaL_checktype(L, 4, LUA_TTABLE);
-	NGroups = (uint32_t)lua_objlen(L,4);
+	/*NGroups = (uint32_t)lua_objlen(L,4);
 
 	groups = (SKappaGroup *) malloc(NGroups * sizeof(SKappaGroup));
 	if (!groups) printf("malloc fail at groups in LuaCreateBaseForContinuum. size = %d\n",NGroups);
@@ -183,6 +183,13 @@ static int LuaCreateBaseForContinuum(lua_State *L)
 	   	lua_pop(L,1);
 	   	lua_pop(L,1);
 	}
+	*/
+	lua_rawgeti(L, 4, 1);
+	group.kappa = (int) luaL_checkunsigned(L, -1);
+	lua_pop(L,1);
+	lua_rawgeti(L, 4, 2);
+	group.indices = luaL_checkarray_unit32_t(L,-1,&(group.n));
+	lua_pop(L,1);
 	w = luaL_checknumber(L, 5);
 	luaL_checktype(L, 6, LUA_TTABLE);
 
@@ -192,7 +199,7 @@ static int LuaCreateBaseForContinuum(lua_State *L)
 	double *eigenval;
 //	printf("CreateCont\n");
 //	fflush(stdout);
-	eigenval = CreateBaseForContinuum(basisfuns->Ni, basisfuns->VRe,derivfuns->VRe,x,NGridpoints,groups,NGroups,contfuns->Ni,contfuns->VRe,w);
+	eigenval = CreateBaseForContinuum(basisfuns->Ni, basisfuns->VRe,derivfuns->VRe,x,NGridpoints,group,contfuns->Ni,contfuns->VRe,w);
 //	printf("Push\n");
 //	fflush(stdout);
 	LuaPushArray_double(L,&(eigenval[contfuns->Ni/2]), contfuns->Ni/2);
@@ -207,7 +214,7 @@ static int LuaCreateBaseForContinuum(lua_State *L)
 	FreeMatrix(derivfuns);
 
 	free(x);
-	free(groups);
+	//free(groups);
 
 	return 2;
 }

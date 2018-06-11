@@ -1329,9 +1329,9 @@ uint32_t ComplexWaveFunctionListSVDOrthogonalizeSameBasis(WaveFunctionType * con
   int    info;
   const char *jobz = "V";
   const char *uplo = "U";
-  int    lwork = 1024 + 6 * (*Npsi) + 2 * Sqr((*Npsi));
-  int    lcwork = 1024 + 2 * (*Npsi) + Sqr((*Npsi));
-  int    liwork = 1024 + 5 * (*Npsi);
+  uint32_t    lwork = 1024 + 6 * (*Npsi) + 2 * Sqr((*Npsi));
+  uint32_t    lcwork = 1024 + 2 * (*Npsi) + Sqr((*Npsi));
+  uint32_t    liwork = 1024 + 5 * (*Npsi);
   int    *iwork;
   double *work;
   Complex16 *cwork;
@@ -1469,9 +1469,9 @@ uint32_t ComplexWaveFunctionListSVDOrthogonalize(WaveFunctionType * const psilis
   int    info;
   const char *jobz = "V";
   const char *uplo = "U";
-  int    lwork = 1024 + 6 * (*Npsi) + 2 * Sqr((*Npsi));
-  int    lcwork = 1024 + 2 * (*Npsi) + Sqr((*Npsi));
-  int    liwork = 1024 + 5 * (*Npsi);
+  uint32_t    lwork = 1024 + 6 * (*Npsi) + 2 * Sqr((*Npsi));
+  uint32_t    lcwork = 1024 + 2 * (*Npsi) + Sqr((*Npsi));
+  uint32_t    liwork = 1024 + 5 * (*Npsi);
   int    *iwork;
   double *work;
   Complex16 *cwork;

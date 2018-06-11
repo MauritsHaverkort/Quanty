@@ -19,7 +19,7 @@
                        printf("====    written by Maurits W. Haverkort                  ====\n");\
                        printf("====    with contributions from:                         ====\n");\
                        printf("====    Yi Lu, Robert Green, Sebastian Macke             ====\n");\
-                       printf("====    Martin Brass, and Simon Heinze                   ====\n");\
+                       printf("====    Marius Retegan, Martin Brass, and Simon Heinze   ====\n");\
                        printf("====    (C) 1995-2018   All rights reserved              ====\n");\
                        printf("====    www.quanty.org                                   ====\n");\
                        printf("====    Beta version, be critical and report errors!!!   ====\n");\

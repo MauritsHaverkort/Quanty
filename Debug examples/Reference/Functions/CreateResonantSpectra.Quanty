@@ -60,24 +60,79 @@ rotmat = {{  t,  0, 0, 0, -t,  0},
 {  0,  0, 0, 1,  0,  0}}
 
 -- define an Hamiltonian (in this case a magnetic field of 6 tesla in the z direction)
-H = 6 * EnergyUnits.Tesla.value * (2*OppSz + OppLz)
+H = 0.5 * (2*OppSz + OppLz)
 -- define a transition operator (in this case a pulsed magnetic field of 20 tesla in the x or y direction)
-Tx = 20 * EnergyUnits.Tesla.value * (2*OppSx + OppLx)
-Ty = 20 * EnergyUnits.Tesla.value * (2*OppSy + OppLy)
+Tx = 20  * (2*OppSx + OppLx)
+Ty = 20  * (2*OppSy + OppLy)
 -- define a ground-state (in this case a p electron with spin and angular momentum down)
 psigrd = psim1dn
 psilist = {psigrd,2*psigrd,4*psigrd}
 T1List = {Tx,3*Tx}
 T2List = {Tx,10*Tx,100*Tx}
 
-Gres = CreateResonantSpectra(H,H,T1List,T2List,psilist,{{"Emin1",0},{"Emax1",1},{"NE1",5},{"Gamma1",5},{"Emin2",-1},{"Emax2",2},{"NE2",15},{"Gamma2",3}})
+
+print(psilist)
+print(T1List)
+print(T2List)
+print(H)
+print(T1List[1]*psilist)
+print(T1List[2]*psilist)
 
 
-GresTable = Spectra.ToTable(Gres)
+
+--GresDense  = CreateResonantSpectra(H,H,T1List,T2List,psilist,{{"Emin1",0},{"Emax1",1},{"NE1",5},{"Gamma1",5},{"Emin2",-1},{"Emax2",2},{"NE2",20},{"Gamma2",3},{"DenseBorder",1000}})
+--GresSparse = CreateResonantSpectra(H,H,T1List,T2List,psilist,{{"Emin1",0},{"Emax1",1},{"NE1",5},{"Gamma1",5},{"Emin2",-1},{"Emax2",2},{"NE2",20},{"Gamma2",3},{"DenseBorder",0}})
+
+
+GresDense  = CreateResonantSpectra(H,H,T1List,T2List,psilist,{{"Emin1",0},{"Emax1",1},{"NE1",5},{"Gamma1",5},{"NE2",15},{"DenseBorder",1000}})
+GresSparse = CreateResonantSpectra(H,H,T1List,T2List,psilist,{{"Emin1",0},{"Emax1",1},{"NE1",5},{"Gamma1",5},{"NE2",15},{"DenseBorder",0}})
+
+GresDenseTable  = Spectra.ToTable(GresDense)
+GresSparseTable = Spectra.ToTable(GresSparse)
 
 for i=1,108 do
-  print(GresTable[i].Integral/GresTable[1+(i-1)%6].Integral, GresTable[i].Name, GresTable[i].ResonantEnergy)
+  print(GresDenseTable[i].Integral/GresDenseTable[1+(i-1)%6].Integral,   " - ", GresDenseTable[i].Integral,  GresDenseTable[i].Name,  GresDenseTable[i].ResonantEnergy)
+  print(GresSparseTable[i].Integral/GresSparseTable[1+(i-1)%6].Integral, " - ", GresSparseTable[i].Integral, GresSparseTable[i].Name, GresSparseTable[i].ResonantEnergy)
+  print("")
 end
+
+
+print(GresDenseTable[108])
+print(GresSparseTable[108])
+
+GresDense.Print({{"file","RIXSDense.dat"}})
+GresSparse.Print({{"file","RIXSSparse.dat"}})
+
+gnuplotInput = [[
+set autoscale
+set xtic auto
+set ytic auto
+set style line  1 lt 1 lw 3 lc rgb "#000000"
+set style line  2 lt 1 lw 1 lc rgb "#FF0000"
+set style line  3 lt 1 lw 3 lc rgb "#000000"
+
+set xlabel "E (eV)" font "Times,12"
+set ylabel "Intensity (arb. units)" font "Times,12"
+
+set out 'RIXSCompare.ps'
+set size 1.0, 1.0
+set terminal postscript portrait enhanced color  "Times" 12
+
+do for [i=3:217:2] {
+  plot "RIXSDense.dat"  u 1:i title 'Dense'  with lines ls  1,\
+       "RIXSSparse.dat" u 1:i title 'Sparse' with lines ls  2
+}
+]]
+
+-- next we save this string to a file
+file = io.open("RIXSCompare.gnuplot", "w")
+file:write(gnuplotInput)
+file:close()
+
+-- and finally call gnuplot to execute the script
+os.execute("gnuplot RIXSCompare.gnuplot")
+-- as I like pdf to view and eps to include in the manuel I transform the format
+os.execute(" ps2pdf RIXSCompare.ps ")
 
 
 --print(GresTable)
