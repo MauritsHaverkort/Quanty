@@ -42,8 +42,8 @@ double DiracH(double *basisfun,double *dualfun,double *derivfun,const double *x,
 		H21G[i] = kappa/r * basisfun[i] + derivfun[i];
 		i++;
 	}
-	result = ddot(&NGridPoints,dualfun,&eins,H11G,&eins) + speedoflight * ddot(&NGridPoints,dualfun,&eins,H12F,&eins)
-			+ddot(&NGridPoints,&(dualfun[NGridPoints]),&eins,H22F,&eins) + speedoflight * ddot(&NGridPoints,&(dualfun[NGridPoints]),&eins,H21G,&eins);
+	result = ddot((uint32_t*)&NGridPoints,dualfun,(uint32_t*)&eins,H11G,(uint32_t*)&eins) + speedoflight * ddot((uint32_t*)&NGridPoints,dualfun,(uint32_t*)&eins,H12F,(uint32_t*)&eins)
+			+ddot((uint32_t*)&NGridPoints,&(dualfun[NGridPoints]),(uint32_t*)&eins,H22F,(uint32_t*)&eins) + speedoflight * ddot((uint32_t*)&NGridPoints,&(dualfun[NGridPoints]),(uint32_t*)&eins,H21G,(uint32_t*)&eins);
 	free(H11G);
 	free(H12F);
 	free(H21G);

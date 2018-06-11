@@ -1,4 +1,5 @@
 Verbosity(0xFFFF)
+os.exit()
 
 
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Reference/Functions/Eigensystem.Quanty")

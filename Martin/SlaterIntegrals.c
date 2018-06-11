@@ -98,12 +98,11 @@ void vecMul(const int n, const double *f, const double *g, double *fout)
     }
 }
   
-double SlaterIntegral(const int n, const double *f1, const double *f2, const double *f3, 
-                      const double *f4, const double *Mr1r2)
+double SlaterIntegral(const int n, const double *f1, const double *f2, const double *f3, const double *f4, const double *Mr1r2)
 {
   const char UPLO='L';
   const double alpha=1.0;
-  const int INCXY=1;
+  const uint32_t INCXY=1;
   const double beta=0;
   double *f13, *f24, *Mf, result;
     
@@ -115,8 +114,8 @@ double SlaterIntegral(const int n, const double *f1, const double *f2, const dou
   vecMul(n, f1, f3, f13);
   vecMul(n, f2, f4, f24);
     
-  dsymv(&UPLO, &n, &alpha, Mr1r2, &n, f24, &INCXY, &beta, Mf, &INCXY);
-  result = ddot(&n, f13, &INCXY, Mf, &INCXY);
+  dsymv(&UPLO, (uint32_t*)&n, &alpha, Mr1r2, (uint32_t*)&n, f24, &INCXY, &beta, Mf, &INCXY);
+  result = ddot((uint32_t*)&n, f13, &INCXY, Mf, &INCXY);
   
   free(f13);
   free(f24);

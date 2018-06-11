@@ -1022,9 +1022,9 @@ uint32_t BlockTriDiagonalMatrixEigenValues(const BlockTriDiagonalMatrixType * co
   uint32_t i,j,k,iBlock,jBlock;
   char *UPLO="U";
   char *VECT="N";
-  const int N=A->N*A->BlockSize;
-  const int KD = A->BlockSize-1;
-  const int LDAB = A->BlockSize;
+  const uint32_t N=A->N*A->BlockSize;
+  const uint32_t KD = A->BlockSize-1;
+  const uint32_t LDAB = A->BlockSize;
   TriDiagonalMatrixType M;
   int INFO=0;
   M.N=N;
@@ -1065,7 +1065,7 @@ uint32_t BlockTriDiagonalMatrixEigenValues(const BlockTriDiagonalMatrixType * co
       }
     }
     // Tridiagonalize the Block tridiagonal matrix
-    dsbtrd(VECT, UPLO, &N, &KD, AB, &LDAB, &(M.a[1]), &(M.b[1]), NULL, &INFO, WORK, &INFO);
+    dsbtrd(VECT, UPLO, &N, &KD, AB, &LDAB, &(M.a[1]), &(M.b[1]), NULL, &N, WORK, &INFO);
     free(AB);
     free(WORK);
     if(INFO!=0)
@@ -1110,7 +1110,7 @@ uint32_t BlockTriDiagonalMatrixEigenValues(const BlockTriDiagonalMatrixType * co
       }
     }
     // Tridiagonalize the Block tridiagonal matrix
-    zhbtrd(VECT, UPLO, &N, &KD, AB, &LDAB, &(M.a[1]), &(M.b[1]), NULL, &INFO, WORK, &INFO);
+    zhbtrd(VECT, UPLO, &N, &KD, AB, &LDAB, &(M.a[1]), &(M.b[1]), NULL, &N, WORK, &INFO);
     free(AB);
     free(WORK);
     if(INFO!=0)
@@ -1131,9 +1131,9 @@ uint32_t BlockTriDiagonalMatrixEigenSystem(const BlockTriDiagonalMatrixType * co
   //TODO: rewrite for UPLO=U such that we can use A*B^T aftwerwards (faster) Needs new filling of matrix AB
   char *VECT="V";
   CompactMatrixType Q, funQ;
-  const int N=A->N*A->BlockSize;
-  const int KD = 2*A->BlockSize-1;
-  const int LDAB = 2*A->BlockSize;
+  const uint32_t N=A->N*A->BlockSize;
+  const uint32_t KD = 2*A->BlockSize-1;
+  const uint32_t LDAB = 2*A->BlockSize;
   TriDiagonalMatrixType M;
   int INFO=0;
   M.N=N;
@@ -1279,9 +1279,9 @@ uint32_t BlockTriDiagonalMatrixEigenSystemWithDeflation(const BlockTriDiagonalMa
   //TODO: rewrite for UPLO=U such that we can use A*B^T aftwerwards (faster) Needs new filling of matrix AB
   char *VECT="V";
   CompactMatrixType Q, funQ;
-  int N=0;
-  const int KD = 2*A->BlockSize-1;
-  const int LDAB = 2*A->BlockSize;
+  uint32_t N=0;
+  const uint32_t KD = 2*A->BlockSize-1;
+  const uint32_t LDAB = 2*A->BlockSize;
   TriDiagonalMatrixType M;
   int INFO=0;
   for(j=1;j<=A->N;j++)
@@ -3566,7 +3566,7 @@ uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType co
     Tnow.Nj=psi->Nj;
     /* orthonormalize Tnow */
     CompactMatrixGramSchmidtOrthogonalizeRow(&Tnow, SingularValue, True);
-    zgemm(charC,charN,&ABlock->BlockSize,&ABlock->BlockSize,&psi->Nj,&one,Tnow.VRe,&psi->Nj,psi->VRe,&psi->Nj,&zero,ABlock->b,&ABlock->BlockSize);
+    zgemm(charC,charN,&ABlock->BlockSize,&ABlock->BlockSize,&psi->Nj,&one,Tnow.V,&psi->Nj,psi->V,&psi->Nj,&zero,ABlock->b,&ABlock->BlockSize);
     /* loop over psi_{n+1} = A psi_{n} and orthonormalization */
     oldindex=0;
     newindex=psi->Ni*psi->Nj;
