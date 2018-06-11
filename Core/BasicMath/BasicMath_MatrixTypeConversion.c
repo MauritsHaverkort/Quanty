@@ -1123,8 +1123,8 @@ uint32_t TriDiagonalMatrixToEigenvalues(TriDiagonalMatrixType const M, double *v
   int    i, info;
   const char *jobz = "N";
   double e[M.N];
-  int    lwork = (1 + 4 * M.N + Sqr(M.N));
-  int    liwork = 3 + 5 * M.N;
+  uint32_t    lwork = (1 + 4 * M.N + Sqr(M.N));
+  uint32_t    liwork = 3 + 5 * M.N;
   double *work,*Z=NULL;
   int   *iwork;
   work = malloc(lwork * sizeof(double));
@@ -1173,8 +1173,8 @@ uint32_t TriDiagonalMatrixToEigensystem(TriDiagonalMatrixType const M, MatrixTyp
   int    i, info;
   const char *jobz = "V";
   double e[M.N];
-  int    lwork = (1 + 4 * M.N + Sqr(M.N));
-  int    liwork = 3 + 5 * M.N;
+  uint32_t    lwork = (1 + 4 * M.N + Sqr(M.N));
+  uint32_t    liwork = 3 + 5 * M.N;
   double *work;
   int   *iwork;
   work = malloc(lwork * sizeof(double));
@@ -1237,8 +1237,8 @@ uint32_t TriDiagonalMatrixToEigensystemCompact(const TriDiagonalMatrixType * con
   int    i, info;
   const char *jobz = "V";
   double e[M->N];
-  int    lwork = (1 + 4 * M->N + Sqr(M->N));
-  int    liwork = 3 + 5 * M->N;
+  uint32_t    lwork = (1 + 4 * M->N + Sqr(M->N));
+  uint32_t    liwork = 3 + 5 * M->N;
   double *work;
   int   *iwork;
   work = malloc(lwork * sizeof(double));
@@ -1976,8 +1976,8 @@ uint32_t Eigensystem(MatrixType const M, MatrixType * const T, double *val)
   int    info;
   const char *jobz = "V";
   const char *uplo = "U";
-  int    lwork = 1 + 6 * M.Ni + 2 * Sqr(M.Ni);
-  int    liwork = 3 + 5 * M.Ni;
+  uint32_t    lwork = 1 + 6 * M.Ni + 2 * Sqr(M.Ni);
+  uint32_t    liwork = 3 + 5 * M.Ni;
   double *work;
   int   *iwork;
   work = malloc(lwork * sizeof(double));
@@ -2037,7 +2037,7 @@ uint32_t Eigensystem(MatrixType const M, MatrixType * const T, double *val)
   else
   {                             /* complex */
     Complex16 MReIm[M.Ni * M.Ni];
-    int    lcwork = 2 * M.Ni + Sqr(M.Ni);
+    uint32_t    lcwork = 2 * M.Ni + Sqr(M.Ni);
     Complex16 cwork[lcwork];
     int    i;
     T->Ni = M.Ni;
@@ -2105,8 +2105,8 @@ uint32_t EigensystemToCompact(MatrixType const M, CompactMatrixType * const T, d
   int    info;
   const char *jobz = "V";
   const char *uplo = "U";
-  int    lwork = 1 + 6 * M.Ni + 2 * Sqr(M.Ni);
-  int    liwork = 3 + 5 * M.Ni;
+  uint32_t    lwork = 1 + 6 * M.Ni + 2 * Sqr(M.Ni);
+  uint32_t    liwork = 3 + 5 * M.Ni;
   int    iwork[liwork];
   double work[lwork];
   if (M.Ni != M.Nj)
@@ -2145,7 +2145,7 @@ uint32_t EigensystemToCompact(MatrixType const M, CompactMatrixType * const T, d
   }
   else
   {                             /* complex */
-    int    lcwork = 2 * M.Ni + Sqr(M.Ni);
+    uint32_t  lcwork = 2 * M.Ni + Sqr(M.Ni);
     Complex16 cwork[lcwork];
     int    i;
     if (MatrixCopyToCompact(T, M)) return 1;
@@ -2190,11 +2190,12 @@ uint32_t EigensystemToCompact(MatrixType const M, CompactMatrixType * const T, d
 uint32_t GeneralizedEigensystem(MatrixType const M, MatrixType const S, MatrixType * const T, MatrixType * const Sroot,  double *val)
 {
   //TODO: H = T . M . T^dag seems wrong should be H = T^* . M . T^T
-  int    info, itype = 1;
+  int    info;
+  uint32_t itype = 1;
   const char *jobz = "V";
   const char *uplo = "U";
-  int    lwork = 1 + 6 * M.Ni + 2 * Sqr(M.Ni);
-  int    liwork = 3 + 5 * M.Ni;
+  uint32_t   lwork = 1 + 6 * M.Ni + 2 * Sqr(M.Ni);
+  uint32_t   liwork = 3 + 5 * M.Ni;
   int    iwork[liwork];
   double work[lwork];
   uint32_t i, j;
@@ -2259,8 +2260,7 @@ uint32_t GeneralizedEigensystem(MatrixType const M, MatrixType const S, MatrixTy
       }
       strcpy(T->Name, "Eigenvectors of ");
       strncat(T->Name, M.Name, Max(0, MAXStrLength - 16));
-      dsygvd(&itype, jobz, uplo, &M.Ni, T->VRe[0], &M.Ni, Sroot->VRe[0], &M.Ni, val, work, &lwork, iwork, &liwork,
-             &info);
+      dsygvd(&itype, jobz, uplo, &M.Ni, T->VRe[0], &M.Ni, Sroot->VRe[0], &M.Ni, val, work, &lwork, iwork, &liwork, &info);
       if (info)
       {
         printf("also dsygvd failed in Eigensystem with info value %i\n", info);
@@ -2279,7 +2279,7 @@ uint32_t GeneralizedEigensystem(MatrixType const M, MatrixType const S, MatrixTy
   {                             /* complex */
     Complex16 MReIm[M.Ni * M.Ni];
     Complex16 SReIm[M.Ni * M.Ni];
-    int    lcwork = 2 * M.Ni + Sqr(M.Ni);
+    uint32_t  lcwork = 2 * M.Ni + Sqr(M.Ni);
     Complex16 cwork[lcwork];
     T->Ni = M.Ni;
     T->Nj = M.Nj;
@@ -2316,8 +2316,7 @@ uint32_t GeneralizedEigensystem(MatrixType const M, MatrixType const S, MatrixTy
         SReIm[i].Re = S.VRe[0][i];
         SReIm[i].Im = S.VIm[0][i];
       }
-      zhegvd(&itype, jobz, uplo, &M.Ni, MReIm, &M.Ni, SReIm, &M.Ni, val, cwork, &lcwork, work, &lwork, iwork, &liwork,
-             &info);
+      zhegvd(&itype, jobz, uplo, &M.Ni, MReIm, &M.Ni, SReIm, &M.Ni, val, cwork, &lcwork, work, &lwork, iwork, &liwork, &info);
       if (info != 0)
       {
         printf("also zhegvd failed in Generalized Eigensystem with info value %i\n", info);
@@ -2370,11 +2369,12 @@ uint32_t MatrixToGeneralizedEigensystem(MatrixType const M, MatrixType const S, 
 uint32_t GeneralizedEigenvalues(MatrixType const M, MatrixType const S, double *val)
 {
   //TODO: H = T . M . T^dag seems wrong should be H = T^* . M . T^T
-  int    info, itype = 1;
+  int    info;
+  uint32_t itype = 1;
   const char *jobz = "N";
   const char *uplo = "U";
-  int    lwork = 1 + 6 * M.Ni + 2 * Sqr(M.Ni);
-  int    liwork = 3 + 5 * M.Ni;
+  uint32_t lwork = 1 + 6 * M.Ni + 2 * Sqr(M.Ni);
+  uint32_t liwork = 3 + 5 * M.Ni;
   int    iwork[liwork];
   double work[lwork];
   uint32_t i, j;
@@ -2461,7 +2461,7 @@ uint32_t GeneralizedEigenvalues(MatrixType const M, MatrixType const S, double *
   {                             /* complex */
     Complex16 MReIm[M.Ni * M.Ni];
     Complex16 SReIm[M.Ni * M.Ni];
-    int    lcwork = 2 * M.Ni + Sqr(M.Ni);
+    uint32_t  lcwork = 2 * M.Ni + Sqr(M.Ni);
     Complex16 cwork[lcwork];
     T.Ni = M.Ni;
     T.Nj = M.Nj;
@@ -2710,11 +2710,12 @@ uint32_t RemoveStatesWithNegligibleNorm(MatrixType * const H, MatrixType * const
 uint32_t MatrixToAndersonMatrix(MatrixType const M, MatrixType * const T, AndersonMatrixType * const H)
 {
   //TODO: M=T.H.T^dag does not seem right, should be H=T^*.M.T^T
-  int    i, j, info;
+  int    info;
+  uint32_t i,j;
   const char *jobz = "V";
   const char *uplo = "U";
-  int    lwork = 1 + 6 * M.Ni + 2 * Sqr(M.Ni);
-  int    liwork = 3 + 5 * M.Ni;
+  const uint32_t lwork = 1 + 6 * M.Ni + 2 * Sqr(M.Ni);
+  const uint32_t liwork = 3 + 5 * M.Ni;
   int    iwork[liwork];
   double work[lwork];
   MatrixType U;
@@ -2782,7 +2783,7 @@ uint32_t MatrixToAndersonMatrix(MatrixType const M, MatrixType * const T, Anders
   {                             /* Complex */
     Complex16 MReIm[M.Ni * M.Ni];
     Complex16 phase;
-    int    lcwork = 2 * M.Ni + Sqr(M.Ni);
+    uint32_t  lcwork = 2 * M.Ni + Sqr(M.Ni);
     Complex16 cwork[lcwork];
     T->Ni = M.Ni;
     T->Nj = M.Nj;
@@ -2881,9 +2882,9 @@ uint32_t BlokTriDiagonalize(MatrixType const M, MatrixType * const T, BlokTriDia
   const char *uplo = "U";
   double SingularVal[M.Ni], val[M.Ni];
   double *U;
-  const int lwork = 1 + 6 * M.Ni + 2 * Sqr(M.Ni);
+  const uint32_t lwork = 1 + 6 * M.Ni + 2 * Sqr(M.Ni);
   double work[lwork];
-  const int liwork = 3 + 5 * M.Ni;
+  const uint32_t liwork = 3 + 5 * M.Ni;
   int    iwork[liwork];
   double diagval[BlokDim];
   int    info;
@@ -3082,7 +3083,7 @@ uint32_t BlokTriDiagonalize(MatrixType const M, MatrixType * const T, BlokTriDia
   }                             /* end Real */
   else
   {                             /* Complex */
-    const int Clwork = 1 + 2 * M.Ni + Sqr(M.Ni);
+    const uint32_t Clwork = 1 + 2 * M.Ni + Sqr(M.Ni);
     Complex16 Cwork[Clwork];
     CurrentDim = BlokDim;
     for (i = BlokDim; i < M.Ni - CurrentDim; i += CurrentDim)
@@ -3136,8 +3137,7 @@ uint32_t BlokTriDiagonalize(MatrixType const M, MatrixType * const T, BlokTriDia
         THTC[j].Re = THT.VRe[0][j];
         THTC[j].Im = THT.VIm[0][j];
       }
-      zgesvd(jobu, jobvt, &(THT.Nj), &(THT.Ni), THTC, &(THT.Nj), SingularVal, UC, &(THT.Ni), UC, &(THT.Ni), Cwork,
-             &Clwork, work, &info);
+      zgesvd(jobu, jobvt, &(THT.Nj), &(THT.Ni), THTC, &(THT.Nj), SingularVal, UC, &(THT.Ni), UC, &(THT.Ni), Cwork, &Clwork, work, &info);
       FreeMatrix(&THT);
       free(THTC);
       if (info)
@@ -3341,11 +3341,12 @@ uint32_t MatrixToBlokTriDiagonalMatrix(MatrixType const M, MatrixType * const T,
 uint32_t MatrixToBlokAndersonMatrix(MatrixType const M, MatrixType * const T, BlokAndersonMatrixType * const H, const uint32_t BlokDim)
 {
   //M=T.H.T^Dag does not seem right, should be H=T^*.M.T^T
-  int    i, j, info, NBlok;
+  uint32_t i, j, NBlok;
+  int info;
   const char *jobz = "V";
   const char *uplo = "U";
-  int    lwork = 1 + 6 * M.Ni + 2 * Sqr(M.Ni);
-  int    liwork = 3 + 5 * M.Ni;
+  uint32_t    lwork = 1 + 6 * M.Ni + 2 * Sqr(M.Ni);
+  uint32_t    liwork = 3 + 5 * M.Ni;
   int    iwork[liwork];
   double work[lwork];
   double val[M.Ni];
@@ -3420,7 +3421,7 @@ uint32_t MatrixToBlokAndersonMatrix(MatrixType const M, MatrixType * const T, Bl
   else
   {                             /* Complex */
     Complex16 MReIm[M.Ni * M.Ni];
-    int    lcwork = 2 * M.Ni + Sqr(M.Ni);
+    uint32_t  lcwork = 2 * M.Ni + Sqr(M.Ni);
     Complex16 cwork[lcwork];
     T->Ni = M.Ni;
     T->Nj = M.Nj;

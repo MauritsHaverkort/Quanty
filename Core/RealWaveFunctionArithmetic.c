@@ -1031,8 +1031,8 @@ uint32_t RealWaveFunctionListSVDOrthogonalizeSameBasis(WaveFunctionType * const 
   int    info;
   const char *jobz = "V";
   const char *uplo = "U";
-  int    lwork = 1024 + 6 * (*Npsi) + 2 * Sqr((*Npsi));
-  int    liwork = 1024 + 5 * (*Npsi);
+  uint32_t    lwork = 1024 + 6 * (*Npsi) + 2 * Sqr((*Npsi));
+  uint32_t    liwork = 1024 + 5 * (*Npsi);
   int    *iwork;
   double *work;
   // shortcut for zero dimensional vectors
@@ -1171,8 +1171,8 @@ uint32_t RealWaveFunctionListSVDOrthogonalize(WaveFunctionType * const psilist, 
   int    info;
   const char *jobz = "V";
   const char *uplo = "U";
-  int    lwork = 1024 + 6 * (*Npsi) + 2 * Sqr((*Npsi));
-  int    liwork = 1024 + 5 * (*Npsi);
+  uint32_t    lwork = 1024 + 6 * (*Npsi) + 2 * Sqr((*Npsi));
+  uint32_t    liwork = 1024 + 5 * (*Npsi);
   int    *iwork;
   double *work;
   // shortcut for zero dimensional vectors

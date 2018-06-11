@@ -170,7 +170,7 @@ double *KineticEnergyCB(double **basisfuns, double **derivativefuns, double **du
 
 double *MetricCB(double **basisfuns, double **dualfuns,const int NBasisFuns, double **dualcont, const int NcontFuns, unsigned int NGridPoints)
 {
-	int dim,i,j,n,eins;
+	uint32_t dim,i,j,n,eins;
 	eins = 1;
 	n = 2* NGridPoints;
 	dim = NBasisFuns + NcontFuns;

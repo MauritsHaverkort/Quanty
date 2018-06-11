@@ -326,7 +326,7 @@ uint32_t CompactMatrixRemoveRow(CompactMatrixType * const A, uint32_t row)
  */
 uint32_t CompactMatrixVector(CompactMatrixType const *A, CompactVectorType *x, CompactVectorType *y)
 {
-  int INC=1;
+  uint32_t INC=1;
   char TransA='T';
   if(A->Nj!=x->Ni){printf("CompactMatrixVector incompatible matrix (%i by %i) vector (%i) dimensions",A->Ni,A->Nj,x->Ni);return 1;}
   if(A->QComplex&&x->QComplex)
@@ -352,7 +352,7 @@ uint32_t CompactMatrixVector(CompactMatrixType const *A, CompactVectorType *x, C
     BETA.Re=0;  BETA.Im=0;
     y->V=malloc(A->Ni*sizeof(Complex16));
     if(y==NULL){printf("malloc failed in CompactMatrixVector\n");return 1;}
-    zgemv(&TransA,&(A->Nj),&(A->Ni),&ALPHA,A->V,&(A->Nj),&xtemp,&INC,&BETA,y->V,&INC);
+    zgemv(&TransA,&(A->Nj),&(A->Ni),&ALPHA,A->V,&(A->Nj),xtemp,&INC,&BETA,y->V,&INC);
   }
   else if(x->QComplex)
   {
@@ -970,7 +970,7 @@ uint32_t CompactMatrixAddMultiply(char const TransA, char const TransB, CompactM
 {
   CompactMatrixType *Ap,*Bp,*Cp;
   char TransAp=TransA, TransBp=TransB;
-  int Nk,LDA,LDB,LDC,i;
+  uint32_t Nk,LDA,LDB,LDC,i;
   Complex16 ALPHA,BETA;
   ALPHA.Re=alphaRe; ALPHA.Im=alphaIm;
   BETA.Re =betaRe;  BETA.Im =betaIm;
@@ -1426,7 +1426,7 @@ uint32_t CompactMatrixConjugateTranspose(CompactMatrixType * const M)
 double CompactMatrixInverse(CompactMatrixType * const M)
 {
   int *IPIV;
-  int LWORK = M->Ni*M->Nj;
+  uint32_t LWORK = M->Ni*M->Nj;
   int INFO;
   if(M->Ni!=M->Nj)
   {
@@ -1689,12 +1689,13 @@ uint32_t CompactMatrixSVDOrthogonalizeRow(CompactMatrixType * A, const double Si
   Complex16 ALPHA,BETA;
   ALPHA.Re=1; ALPHA.Im=0;
   BETA.Re =0; BETA.Im =0;
-  int M,N,K,LDA,LDB,LDC;
-  int LWORK, INFO;
+  uint32_t M,N,K,LDA,LDB,LDC,LWORK;
+  int INFO;
   LWORK = Max(5,A->Ni)*Max(5,A->Nj);
   double *WORK;
   Complex16 *WORKIM;
   double *U=NULL;
+  Complex16 *Uc=NULL;
   double *S;
   CompactMatrixType V;
   if(A->Ni==0) return 0;
@@ -1723,7 +1724,7 @@ uint32_t CompactMatrixSVDOrthogonalizeRow(CompactMatrixType * A, const double Si
       printf("malloc failed in CompactMatrixSVDOrthogonalize\n");
       return 1;
     }
-    zgesvd(JOBU, JOBVT, &A->Nj, &A->Ni, A->V, &A->Nj,S,U, &A->Ni,V.V, &A->Ni, WORKIM, &LWORK, WORK, &INFO);
+    zgesvd(JOBU, JOBVT, &A->Nj, &A->Ni, A->V, &A->Nj,S,Uc, &A->Ni,V.V, &A->Ni, WORKIM, &LWORK, WORK, &INFO);
     if(INFO)
     {
       printf("zgesvd failed in CompactMatrixSVDOrthogonalize with INFO %i\n",INFO);
@@ -1747,7 +1748,7 @@ uint32_t CompactMatrixSVDOrthogonalizeRow(CompactMatrixType * A, const double Si
     LDB=V.Nj; //ok
     LDC=A->Nj;//ok
     
-    zgemm(TRANSA,TRANSB,&M,&N,&K,&ALPHA.Re,A->V,&LDA,V.V,&LDB,&BETA.Re,WORKIM,&LDC);
+    zgemm(TRANSA,TRANSB,&M,&N,&K,&ALPHA,A->V,&LDA,V.V,&LDB,&BETA,WORKIM,&LDC);
     
     free(A->V);
     A->V=WORKIM;
@@ -2016,7 +2017,7 @@ uint32_t CompactMatrixGramSchmidtOrthogonalizeRow(CompactMatrixType * A, double 
 uint32_t CompactMatrixGramSchmidtOrthogonalizeRowplusT(CompactMatrixType const * A, CompactMatrixType *const Anew, CompactMatrixType *const T, CompactMatrixType *const Tinv, double const SingularValue, Bool const ReduceDimension)
 {
   //TODO: add ReduceDimension + debug
-  int i,ii,ipos,iipos, one=1;
+  uint32_t i,ii,ipos,iipos, one=1;
   CompactMatrixCopy(*A, Anew);
   T->Ni=A->Ni;
   T->Nj=A->Ni;
@@ -2448,7 +2449,7 @@ uint32_t NonHermitianCompactMatrixEigensystem(CompactMatrixType const *A, Compac
   int    info;
   const char *jobvl = "V";
   const char *jobvr = "V";
-  int    lwork = 1 + 6 * A->Ni + 2 * Sqr(A->Ni);
+  uint32_t    lwork = 1 + 6 * A->Ni + 2 * Sqr(A->Ni);
   uint32_t i,k;
   
   if (A->Ni != A->Nj)
@@ -2659,8 +2660,8 @@ uint32_t CompactMatrixEigensystem(CompactMatrixType const *A, CompactMatrixType 
   int    info;
   const char *jobz = "V";
   const char *uplo = "U";
-  int    lwork = 1 + 6 * A->Ni + 2 * Sqr(A->Ni);
-  int    liwork = 3 + 5 * A->Ni;
+  uint32_t    lwork = 1 + 6 * A->Ni + 2 * Sqr(A->Ni);
+  uint32_t    liwork = 3 + 5 * A->Ni;
   int    *iwork;
   double *work;
   
@@ -2717,7 +2718,7 @@ uint32_t CompactMatrixEigensystem(CompactMatrixType const *A, CompactMatrixType 
   }
   else
   {                             /* complex */
-    int    lcwork = 2 * A->Ni + Sqr(A->Ni);
+    uint32_t    lcwork = 2 * A->Ni + Sqr(A->Ni);
     Complex16 *cwork;
     cwork =malloc(lcwork*sizeof(Complex16));
     if(cwork==NULL)
