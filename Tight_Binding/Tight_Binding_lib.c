@@ -520,7 +520,7 @@ uint32_t CalculateChemicalPotentialFromListOfEigenvalues(const double * const va
     }
     if(Abs(NEmu-NE)<100*DBL_EPSILON)
     {
-      Converged=1;
+      Converged=True;
     }
     if(iloop==64)
     {
@@ -1681,16 +1681,16 @@ int CreateTightBindingSuperCell(TightBindingDef A, TightBindingDef * ASuper, Cry
       ASuper->Cell.Atom[iAtomsuper].Nshell = A.Cell.Atom[iAtom].Nshell;
       ASuper->Cell.Atom[iAtomsuper].shelldegeneracy = (int*)malloc(ASuper->Cell.Atom[iAtomsuper].Nshell * sizeof(int));
       ASuper->Cell.Atom[iAtomsuper].ShellName= (char**)malloc(ASuper->Cell.Atom[iAtomsuper].Nshell*sizeof(char*));
-      ASuper->Cell.Atom[iAtomsuper].OrbitalName= (char**)malloc(ASuper->Cell.Atom[iAtomsuper].Nshell*sizeof(char*));
+      ASuper->Cell.Atom[iAtomsuper].OrbitalName= (char***)malloc(ASuper->Cell.Atom[iAtomsuper].Nshell*sizeof(char**));
       for (ishell = 0; ishell < ASuper->Cell.Atom[iAtomsuper].Nshell; ishell++)
       {
-        ASuper->Cell.Atom[iAtomsuper].ShellName[ishell]=malloc(MAXStrLength);
+        ASuper->Cell.Atom[iAtomsuper].ShellName[ishell]=(char*)malloc(MAXStrLength);
         strncpy(ASuper->Cell.Atom[iAtomsuper].ShellName[ishell], A.Cell.Atom[iAtom].ShellName[ishell], MAXStrLength);
         ASuper->Cell.Atom[iAtomsuper].shelldegeneracy[ishell] = A.Cell.Atom[iAtom].shelldegeneracy[ishell];
         ASuper->Cell.Atom[iAtomsuper].OrbitalName[ishell]= (char**)malloc(A.Cell.Atom[iAtom].shelldegeneracy[ishell]*sizeof(char*));
         for(iorb=0; iorb<A.Cell.Atom[iAtom].shelldegeneracy[ishell]; iorb++)
         {
-          ASuper->Cell.Atom[iAtomsuper].OrbitalName[ishell][iorb]=malloc(MAXStrLength);
+          ASuper->Cell.Atom[iAtomsuper].OrbitalName[ishell][iorb]=(char*)malloc(MAXStrLength);
           strncpy(ASuper->Cell.Atom[iAtomsuper].OrbitalName[ishell][iorb], A.Cell.Atom[iAtom].OrbitalName[ishell][iorb], MAXStrLength);
         }
       }

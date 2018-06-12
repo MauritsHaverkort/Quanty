@@ -2145,6 +2145,12 @@ void LuaPushTable_TriDiagonalMatrixType(lua_State* L, TriDiagonalMatrixType cons
   lua_setmetatable(L, -2);
 }
 
+void LuaPushTable_TriDiagonalMatrixType(lua_State* L, void const * const M)
+{
+	TriDiagonalMatrixType *MTypecast = (TriDiagonalMatrixType*) M;
+	LuaPushTable_TriDiagonalMatrixType(L, MTypecast);
+}
+
 void LuaPushTable_BlockTriDiagonalMatrixType(lua_State* L, BlockTriDiagonalMatrixType const * const M)
 {
   uint32_t k,i,MNtrunc=M->N;
@@ -2255,6 +2261,12 @@ void LuaPushTable_BlockTriDiagonalMatrixType(lua_State* L, BlockTriDiagonalMatri
   lua_setmetatable(L, -2);
 }
 
+void LuaPushTable_BlockTriDiagonalMatrixType(lua_State* L, void const * const M)
+{
+	BlockTriDiagonalMatrixType *MTypecast = (BlockTriDiagonalMatrixType*) M;
+	LuaPushTable_BlockTriDiagonalMatrixType(L, MTypecast);
+}
+
 void LuaPushTable_AndersonMatrixType(lua_State* L, AndersonMatrixType const * const M)
 {
   lua_createtable(L, 2, 3);
@@ -2276,6 +2288,12 @@ void LuaPushTable_AndersonMatrixType(lua_State* L, AndersonMatrixType const * co
   /* set metatable */
   lua_getglobal(L, "ResponseFunctionMeta");
   lua_setmetatable(L, -2);
+}
+
+void LuaPushTable_AndersonMatrixType(lua_State* L, void const * const M)
+{
+	AndersonMatrixType *MTypecast = (AndersonMatrixType*) M;
+	LuaPushTable_AndersonMatrixType(L, MTypecast);
 }
 
 void LuaPushTable_BlockAndersonMatrixType(lua_State* L, BlockAndersonMatrixType const * const M)
@@ -2355,6 +2373,12 @@ void LuaPushTable_BlockAndersonMatrixType(lua_State* L, BlockAndersonMatrixType 
   lua_setmetatable(L, -2);
 }
 
+void LuaPushTable_BlockAndersonMatrixType(lua_State* L, void const * const M)
+{
+	BlockAndersonMatrixType *MTypecast = (BlockAndersonMatrixType*) M;
+	LuaPushTable_BlockAndersonMatrixType(L, MTypecast);
+}
+
 void LuaPushTable_ListOfPoles(lua_State* L, ListOfPoles const * const M)
 {
   uint32_t i;
@@ -2384,6 +2408,12 @@ void LuaPushTable_ListOfPoles(lua_State* L, ListOfPoles const * const M)
   /* set metatable */
   lua_getglobal(L, "ResponseFunctionMeta");
   lua_setmetatable(L, -2);
+}
+
+void LuaPushTable_ListOfPoles(lua_State* L, void const * const M)
+{
+	ListOfPoles *MTypecast = (ListOfPoles*) M;
+	LuaPushTable_ListOfPoles(L, MTypecast);
 }
 
 void LuaPushTable_BlockListOfPoles(lua_State* L, BlockListOfPoles const * const M)
@@ -2465,6 +2495,12 @@ void LuaPushTable_BlockListOfPoles(lua_State* L, BlockListOfPoles const * const 
   lua_setmetatable(L, -2);
 }
 
+void LuaPushTable_BlockListOfPoles(lua_State* L, void const * const M)
+{
+	BlockListOfPoles *MTypecast = (BlockListOfPoles*) M;
+	LuaPushTable_BlockListOfPoles(L, MTypecast);
+}
+
 void LuaPushTable_NaturalImpurityOrbital(lua_State* L, BADoubleTriDiagonalMatrixType * const M)
 {
   lua_createtable(L, 1, 3);
@@ -2496,6 +2532,12 @@ void LuaPushTable_NaturalImpurityOrbital(lua_State* L, BADoubleTriDiagonalMatrix
   /* set metatable */
   lua_getglobal(L, "ResponseFunctionMeta");
   lua_setmetatable(L, -2);
+}
+
+void LuaPushTable_NaturalImpurityOrbital(lua_State* L, void * const M)
+{
+	BADoubleTriDiagonalMatrixType *MTypecast = (BADoubleTriDiagonalMatrixType*) M;
+	LuaPushTable_NaturalImpurityOrbital(L, MTypecast);
 }
 
 
@@ -2530,6 +2572,12 @@ void LuaPushTable_BlockNaturalImpurityOrbital(lua_State* L, BlockNaturalImpurity
   /* set metatable */
   lua_getglobal(L, "ResponseFunctionMeta");
   lua_setmetatable(L, -2);
+}
+
+void LuaPushTable_BlockNaturalImpurityOrbital(lua_State* L, void * const M)
+{
+	BlockNaturalImpurityOrbitalMatrixType *MTypecast = (BlockNaturalImpurityOrbitalMatrixType*) M;
+	LuaPushTable_BlockNaturalImpurityOrbital(L, MTypecast);
 }
 
 
@@ -2693,77 +2741,71 @@ void shallowtablecopy(lua_State* L, int index)
 
 void * LuaReturnVariableType(lua_State * L, int narg, char * type)
 {
-  int *buffint;
-  uint32_t *buffuint, len;
-  double *buffdouble;
-  Bool *buffBoolean;
-  DeterminantRestrictionType *buffDeterimantRestrictionType;
-  void *buff;
-  CompactVectorType *buffVector;
   if (strcmp(type, "char*") == 0)
   {
-    buff = (void*) luaL_checkstring(L, narg);
+    void *buff = (void*) luaL_checkstring(L, narg);
     return  buff;
   }
-  if (strcmp(type, "int") == 0)
+  else if (strcmp(type, "int") == 0)
   {
-    buffint = (int*)malloc(sizeof(int));
+    int *buffint = (int*)malloc(sizeof(int));
     *buffint = (int)luaL_checkint(L, narg);
     return (void*) buffint;
   }
-  if (strcmp(type, "uint32_t") == 0)
+  else if (strcmp(type, "uint32_t") == 0)
   {
-    buffint = (uint32_t*)malloc(sizeof(uint32_t));
-    *buffint = (uint32_t)luaL_checkint(L, narg);
-    return (void*) buffint;
+    uint32_t *buffuint = (uint32_t*)malloc(sizeof(uint32_t));
+    *buffuint = (uint32_t)luaL_checkint(L, narg);
+    return (void*) buffuint;
   }
-  if (strcmp(type, "uint16_t") == 0)
+  else if (strcmp(type, "uint16_t") == 0)
   {
-    buffint = (uint16_t*)malloc(sizeof(uint16_t));
-    *buffint = (uint16_t)luaL_checkint(L, narg);
-    return (void*) buffint;
+    uint16_t *buffuint = (uint16_t*)malloc(sizeof(uint16_t));
+    *buffuint = (uint16_t)luaL_checkint(L, narg);
+    return (void*) buffuint;
   }
-  if (strcmp(type, "uint8_t") == 0)
+  else if (strcmp(type, "uint8_t") == 0)
   {
-    buffint = (uint8_t*)malloc(sizeof(uint8_t));
-    *buffint = (uint8_t)luaL_checkint(L, narg);
-    return (void*) buffint;
+    uint8_t *buffuint = (uint8_t*)malloc(sizeof(uint8_t));
+    *buffuint = (uint8_t)luaL_checkint(L, narg);
+    return (void*) buffuint;
   }
-  if (strcmp(type, "double") == 0)
+  else if (strcmp(type, "double") == 0)
   {
-    buffdouble = (double*)malloc(sizeof(double));
+    double *buffdouble = (double*)malloc(sizeof(double));
     *buffdouble = (double)luaL_checknumber(L, narg);
     return (void*) buffdouble;
   }
-  if (strcmp(type, "bool") == 0)
+  else if (strcmp(type, "bool") == 0)
   {
-    buffint = (int*)malloc(sizeof(int));
-    buffBoolean = (Bool*)malloc(sizeof(Bool));
+    int *buffint = (int*)malloc(sizeof(int));
+    Bool *buffBoolean = (Bool*)malloc(sizeof(Bool));
     *buffint = (int)lua_toboolean(L, narg);
     *buffBoolean= ((*buffint==1)? True: False);
     free(buffint);
     return (void*) buffBoolean;
   }
-  if (strcmp(type, "array-uint32_t-3") ==0)
+  else if (strcmp(type, "array-uint32_t-3") ==0)
   {
-    buffuint = luaL_checkarray_unit32_t(L, narg, &len);
+  	uint32_t len;
+    uint32_t *buffuint = luaL_checkarray_unit32_t(L, narg, &len);
     if(len!=3)
       buffuint=NULL;
     return buffuint;
   }
-  if (strcmp(type, "Vector") ==0)
+  else if (strcmp(type, "Vector") ==0)
   {
-    buffVector = (CompactVectorType*)malloc(sizeof(CompactVectorType));
+    CompactVectorType *buffVector = (CompactVectorType*)malloc(sizeof(CompactVectorType));
     *buffVector = (CompactVectorType)luaL_checkVector(L,narg);
     return (void*) buffVector;
   }
-  if (strcmp(type, "DeterminantRestrictionType") == 0)
+  else if (strcmp(type, "DeterminantRestrictionType") == 0)
   {
-    buffDeterimantRestrictionType = (DeterminantRestrictionType*)luaL_checkarray_DeterminantRestrictionType(L, narg);
+    DeterminantRestrictionType *buffDeterimantRestrictionType = (DeterminantRestrictionType*)luaL_checkarray_DeterminantRestrictionType(L, narg);
     return (void*) buffDeterimantRestrictionType;
   }
   luaL_error (L, "Error while reading variable type from stack. Type \"%s\" not recognized\n",type);
-  buff=NULL;
+  void *buff=NULL;
   return buff;
 }
 
@@ -2961,7 +3003,7 @@ int32_t LuaCheckOptions(lua_State *L, int narg, LuaOptionsType *Options)
     }
     if(!tokenfound)
     {
-      Buffer = malloc(4048);
+      Buffer = (char*)malloc(4048);
       if(Buffer==NULL)
       {
         printf("ERROR: malloc failed in LuaCheckOptions\n");

@@ -480,7 +480,7 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
             {
               O->CLASS.NEWNAM= (Bool*)malloc(64*sizeof(Bool));
               O->CLASS.ATOM= (char**)malloc(64*sizeof(char*));
-              O->CLASS.Z= (double*)malloc(64*sizeof(double));
+              O->CLASS.Z= (int*)malloc(64*sizeof(int));
               O->CLASS.R= (double*)malloc(64*sizeof(double));
               O->CLASS.LMX= (int*)malloc(64*sizeof(int));
               O->CLASS.IDXDN= (int**)malloc(64*sizeof(int*));
@@ -501,7 +501,7 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
             {
               O->CLASS.NEWNAM= (Bool*)realloc(O->CLASS.NEWNAM, (O->CLASS.N+64)*sizeof(Bool));
               O->CLASS.ATOM= (char**)realloc(O->CLASS.ATOM, (O->CLASS.N+64)*sizeof(char*));
-              O->CLASS.Z= (double*)realloc(O->CLASS.Z, (O->CLASS.N+64)*sizeof(double));
+              O->CLASS.Z= (int*)realloc(O->CLASS.Z, (O->CLASS.N+64)*sizeof(int));
               O->CLASS.R= (double*)realloc(O->CLASS.R, (O->CLASS.N+64)*sizeof(double));
               O->CLASS.LMX= (int*)realloc(O->CLASS.LMX, (O->CLASS.N+64)*sizeof(int));
               O->CLASS.IDXDN= (int**)realloc(O->CLASS.IDXDN, (O->CLASS.N+64)*sizeof(int*));
@@ -583,7 +583,7 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
                 O->SITE.ATOM[i]= (char*)malloc(16*sizeof(char));
                 O->SITE.POS[i]= (double*)malloc(3*sizeof(double));
                 O->SITE.X[i]= (double*)malloc(3*sizeof(double));
-                O->SITE.IDXDN_M[i]= (double*)calloc(16,sizeof(double));
+                O->SITE.IDXDN_M[i]= (int*)calloc(16,sizeof(int));
               }
               O->SITE.N=0;
             }
@@ -599,7 +599,7 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
                 O->SITE.ATOM[i]= (char*)malloc(16*sizeof(char));
                 O->SITE.POS[i]= (double*)malloc(3*sizeof(double));
                 O->SITE.X[i]= (double*)malloc(3*sizeof(double));
-                O->SITE.IDXDN_M[i]= (double*)calloc(16,sizeof(double));
+                O->SITE.IDXDN_M[i]= (int*)calloc(16,sizeof(int));
               }
             }
             StreamReadStuttgartCTRLchar(stream, O->SITE.ATOM[O->SITE.N-1]);
@@ -917,7 +917,7 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
           {
             if(O->SYML.N==-1)
             {
-              O->SYML.NQ= (double*)malloc(64*sizeof(double));
+              O->SYML.NQ= (int*)malloc(64*sizeof(int));
               O->SYML.Q1= (double**)malloc(64*sizeof(double*));
               O->SYML.Q2= (double**)malloc(64*sizeof(double*));
               O->SYML.LAB1= (char**)malloc(64*sizeof(char*));
@@ -934,7 +934,7 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
             O->SYML.N++;
             if((O->SYML.N%64)==0)
             {
-              O->SYML.NQ= (double*)realloc(O->SYML.NQ, (O->SYML.N+64)*sizeof(double));
+              O->SYML.NQ= (int*)realloc(O->SYML.NQ, (O->SYML.N+64)*sizeof(int));
               O->SYML.Q1= (double**)realloc(O->SYML.Q1, (O->SYML.N+64)*sizeof(double*));
               O->SYML.Q2= (double**)realloc(O->SYML.Q2, (O->SYML.N+64)*sizeof(double*));
               O->SYML.LAB1= (char**)realloc(O->SYML.LAB1, (O->SYML.N+64)*sizeof(char*));

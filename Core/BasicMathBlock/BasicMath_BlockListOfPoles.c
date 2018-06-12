@@ -69,6 +69,12 @@ uint32_t CopyBlockListOfPoles(BlockListOfPoles A, BlockListOfPoles *B)
   return 0;
 }
 
+uint32_t CopyBlockListOfPoles(BlockListOfPoles A, void *B)
+{
+	BlockListOfPoles *BTypecast = (BlockListOfPoles*) B;
+	return CopyBlockListOfPoles(A, BTypecast);
+}
+
 uint32_t CopyBlockListOfPolesCon(BlockListOfPoles A, BlockListOfPoles *B, double const mu, double const T)
 {
   uint32_t k,i,kindex=0;
@@ -168,6 +174,12 @@ uint32_t ScaleBlockListOfPoles(BlockListOfPoles *const A, double const scale)
     }
   }
   return 0;
+}
+
+uint32_t ScaleBlockListOfPoles(void *const A, double const scale)
+{
+	BlockListOfPoles *ATypecast = (BlockListOfPoles*) A;
+	return ScaleBlockListOfPoles(ATypecast, scale);
 }
 
 /*  QComplex changes from 0 to 1

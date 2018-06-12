@@ -75,6 +75,12 @@ uint32_t EvaluateBlockListOfPoles(BlockListOfPoles const *A, CompactMatrixType *
   return 0;
 }
 
+uint32_t EvaluateBlockListOfPoles(void const *A, CompactMatrixType * Gw, const double omega, const double Gamma)
+{
+	BlockListOfPoles *ATypecast = (BlockListOfPoles*) A;
+	return EvaluateBlockListOfPoles(ATypecast, Gw, omega, Gamma);
+}
+
 
 /*
  *  G(w) = A0 + B0^* ( 1 / ( w - A1 - \sum_i ( B_i 1 / ( w - A_{i+1} ) . B_i^+ ) ) ) . B0^T
@@ -169,6 +175,12 @@ uint32_t EvaluateBlockAndersonMatrix(BlockAndersonMatrixType const *A, CompactMa
 
 }
 
+uint32_t EvaluateBlockAndersonMatrix(void const *A, CompactMatrixType * Gw, const double omega, const double Gamma)
+{
+	BlockAndersonMatrixType *ATypecast = (BlockAndersonMatrixType*) A;
+	return EvaluateBlockAndersonMatrix(ATypecast, Gw, omega, Gamma);
+}
+
 /*  Transform a BlockTriDiagonalMatrix representation of G to a spectral representation of G at one specific energy.
  *
  *  On entry:
@@ -258,6 +270,12 @@ uint32_t EvaluateBlockTriDiagonalMatrix(BlockTriDiagonalMatrixType const * A, Co
   return 0;
 }
 
+uint32_t EvaluateBlockTriDiagonalMatrix(void const * A, CompactMatrixType * Gw, const double omega, const double Gamma)
+{
+	BlockTriDiagonalMatrixType *ATypecast = (BlockTriDiagonalMatrixType*) A;
+	return EvaluateBlockTriDiagonalMatrix(ATypecast, Gw, omega, Gamma);
+}
+
 /*
  *
  */
@@ -266,6 +284,12 @@ uint32_t EvaluateBlockNaturalImpurityOrbital(BlockNaturalImpurityOrbitalMatrixTy
   //TODO: all
   printf("Not implemented EvaluateBlockaturalImpurityOrbital\n");
   return 0;
+}
+
+uint32_t EvaluateBlockNaturalImpurityOrbital(void const *A, CompactMatrixType * Gw, const double omega, const double Gamma)
+{
+	BlockNaturalImpurityOrbitalMatrixType *ATypecast = (BlockNaturalImpurityOrbitalMatrixType*) A;
+	return EvaluateBlockNaturalImpurityOrbital(ATypecast, Gw, omega, Gamma);
 }
 
 uint32_t EvaluateBlockResponsefunctionType(ResponsefunctionType const *A, CompactMatrixType * Gw, const double omega, const double Gamma)

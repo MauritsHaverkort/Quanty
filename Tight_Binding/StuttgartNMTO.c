@@ -89,7 +89,7 @@ uint32_t CrystalStructureFromStuttgartCTRL(StuttgartCTRL CTRL, CrystalStructureT
     {
       Cell->Atom[iatom].ShellName= (char**)malloc(Cell->Atom[iatom].Nshell*sizeof(char*));
       Cell->Atom[iatom].shelldegeneracy= (int*)malloc(Cell->Atom[iatom].Nshell*sizeof(int));
-      Cell->Atom[iatom].OrbitalName= (char**)malloc(Cell->Atom[iatom].Nshell*sizeof(char*));
+      Cell->Atom[iatom].OrbitalName= (char***)malloc(Cell->Atom[iatom].Nshell*sizeof(char**));
       for(j=0;j<Cell->Atom[iatom].Nshell;j++)
       {
         Cell->Atom[iatom].ShellName[j]= (char*)malloc(4*sizeof(char));

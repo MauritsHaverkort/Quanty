@@ -267,7 +267,7 @@ ConvergenceSettingsType InitConvergenceSettings()
     ShiftScheme             /* shift according to variance (options Automatic, Variance, None*/
   };
   return ret;
-};
+}
 
 typedef struct TimeType
 {

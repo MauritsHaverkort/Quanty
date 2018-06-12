@@ -153,7 +153,7 @@ uint32_t CrystalStructureFromDresdenFPLO(DresdenFPLO FPLO, CrystalStructureType 
       {
         Cell->Atom[iatom].ShellName      = (char**)malloc(Cell->Atom[iatom].Nshell*sizeof(char*));
         Cell->Atom[iatom].shelldegeneracy= (int  *)malloc(Cell->Atom[iatom].Nshell*sizeof(int  ));
-        Cell->Atom[iatom].OrbitalName    = (char**)malloc(Cell->Atom[iatom].Nshell*sizeof(char*));
+        Cell->Atom[iatom].OrbitalName    = (char***)malloc(Cell->Atom[iatom].Nshell*sizeof(char**));
 
         // shell degeneracy
         for(i=0;i<Cell->Atom[iatom].Nshell;i++)

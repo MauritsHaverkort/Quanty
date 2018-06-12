@@ -1750,6 +1750,12 @@ Complex16 EvaluateTriDiagonalMatrix(TriDiagonalMatrixType const * A, const doubl
   return res;
 }
 
+Complex16 EvaluateTriDiagonalMatrix(void const * A, const double omega, const double Gamma)
+{
+	TriDiagonalMatrixType *ATypecast = (TriDiagonalMatrixType*) A;
+	return EvaluateTriDiagonalMatrix(ATypecast, omega, Gamma);
+}
+
 Complex16 EvaluateListOfPoles(ListOfPoles const * A, const double omega, const double Gamma)
 {
   Complex16 res;
@@ -1771,6 +1777,12 @@ Complex16 EvaluateListOfPoles(ListOfPoles const * A, const double omega, const d
   return res;
 }
 
+Complex16 EvaluateListOfPoles(void const * A, const double omega, const double Gamma)
+{
+	ListOfPoles *ATypecast = (ListOfPoles*) A;
+	return EvaluateListOfPoles(ATypecast, omega, Gamma);
+}
+
 Complex16 EvaluateAndersonMatrix(AndersonMatrixType const * A, const double omega, const double Gamma)
 {
   Complex16 res;
@@ -1790,6 +1802,12 @@ Complex16 EvaluateAndersonMatrix(AndersonMatrixType const * A, const double omeg
   return res;
 }
 
+Complex16 EvaluateAndersonMatrix(void const * A, const double omega, const double Gamma)
+{
+	AndersonMatrixType *ATypecast = (AndersonMatrixType*) A;
+	return EvaluateAndersonMatrix(ATypecast, omega, Gamma);
+}
+
 Complex16 EvaluateBADoubleTriDiagonalMatrix(BADoubleTriDiagonalMatrixType const * A, const double omega, const double Gamma)
 {
   Complex16 res,rescon;
@@ -1801,6 +1819,12 @@ Complex16 EvaluateBADoubleTriDiagonalMatrix(BADoubleTriDiagonalMatrixType const 
   res.Im *= Sqr(A->b0);
   res.Re += A->a0;
   return res;
+}
+
+Complex16 EvaluateBADoubleTriDiagonalMatrix(void const * A, const double omega, const double Gamma)
+{
+	BADoubleTriDiagonalMatrixType *Atypecast = (BADoubleTriDiagonalMatrixType*) A;
+	return EvaluateBADoubleTriDiagonalMatrix(Atypecast, omega, Gamma);
 }
 
 
