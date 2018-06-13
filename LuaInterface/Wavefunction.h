@@ -1,1 +1,20 @@
-
+static int LuaWavefunctionAdd(lua_State * L);
+static int LuaWavefunctionSubMin(lua_State * L);
+static int LuaWavefunctionSub(lua_State * L);
+static int LuaWavefunctionDiv(lua_State * L);
+static int LuaWavefunctionMul(lua_State * L);
+static int LuaWavefunctionUnm(lua_State * L);
+static int LuaWavefunctionPrint(lua_State * L);
+static int LuaWavefunctionChop(lua_State * L);
+static int LuaWavefunctionConjugate(lua_State * L);
+static int LuaWavefunctionNorm(lua_State * L);
+static int LuaWavefunctionRandomize(lua_State * L);
+static int LuaWavefunctionDet(lua_State *L);
+static int LuaWavefunctionPrefactorDet(lua_State *L);
+static int LuaWavefunctionExpand(lua_State * L);
+static int LuaWaveFunctionToDeterminantBasis(lua_State *L);
+static int LuaWavefunctionIndex(lua_State * L);
+static int LuaWavefunctionNewIndex(lua_State * L);
+static int LuaWavefunctionToString(lua_State * L);
+static int LuaWavefunctionDestroy(lua_State * L);
+;

@@ -1,8 +1,5 @@
-
-int SetNFermionIndexTightBindingDef(TightBindingDef *A);
-uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO,TightBindingDef *HTB);
-uint32_t AtomNameToNumber(const char *Name);
-uint32_t CrystalStructureFromDresdenFPLO(DresdenFPLO FPLO,CrystalStructureType *Cell);
-int EqualFloat(double a,double b);
-int LMToOrbitalName(int l,int m,char **name);
 char LToShellName(int l);
+int LMToOrbitalName(int l, int m, char **name);
+int EqualFloat(double a, double b);
+uint32_t CrystalStructureFromDresdenFPLO(DresdenFPLO FPLO, CrystalStructureType *Cell);
+uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB);

@@ -1,4 +1,2 @@
-
-void TestBlockToOperator();
-extern const double a;
 void TestBasicMathBlock();
+void TestBlockToOperator();

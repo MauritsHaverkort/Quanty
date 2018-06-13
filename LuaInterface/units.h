@@ -6,4 +6,4 @@ static int EnergyUnitsNewIndex (lua_State *L);
 static int EnergyUnitsIndex (lua_State *L);
 static int AllEnergyUnitsToString (lua_State *L);
 int RegisterEnergyUnits(lua_State *L, char* EnUnits);
-int luaopen_units(lua_State *L);
+int luaopen_units(lua_State * L);
