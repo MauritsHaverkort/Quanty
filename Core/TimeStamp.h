@@ -1,4 +1,4 @@
-printf("====    written by Maurits W. Haverkort                  ====\n");
+void MWHgethostname(char * MWHHostName, size_t len);
 uint32_t InitializeTiming(TimeType * T);
 uint32_t EnlargeTimingStructure(TimeType * T);
 void FreeTiming(TimeType * T);

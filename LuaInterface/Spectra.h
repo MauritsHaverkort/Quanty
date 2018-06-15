@@ -21,5 +21,3 @@ static int LuaSpectraPow(lua_State * L);
 static int LuaSpectraIndex(lua_State * L);
 static int LuaSpectraToString(lua_State * L);
 static int LuaSpectraDestroy(lua_State * L);
-;
-;

@@ -17,4 +17,3 @@ static int LuaWavefunctionIndex(lua_State * L);
 static int LuaWavefunctionNewIndex(lua_State * L);
 static int LuaWavefunctionToString(lua_State * L);
 static int LuaWavefunctionDestroy(lua_State * L);
-;

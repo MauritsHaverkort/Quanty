@@ -14,5 +14,3 @@ static int LuaOrbToMultiplicity(lua_State * L);
 static int LuaSimontest(lua_State * L);
 static int LuaPrintExpectationValues(lua_State * L);
 static int LuaMatrixFlatten(lua_State * L);
-;
-;

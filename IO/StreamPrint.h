@@ -44,4 +44,3 @@ uint32_t StreamPrintPlainAndersonMatrix(AndersonMatrixType M, FILE * stream);
 uint32_t StreamPrintPlainListOfPoles(ListOfPoles M, FILE * stream);
 uint32_t StreamPrintBlockNaturalImpurityOrbitalMatrix(BlockNaturalImpurityOrbitalMatrixType M, FILE * stream);
 uint32_t StreamPrintHarmonicsExpansion(HarmonicsExpansion M, FILE * stream);
-uint32_t StreamPrintBandstructurePath(BandstructurePathType M, FILE * stream);

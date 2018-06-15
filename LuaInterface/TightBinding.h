@@ -18,7 +18,3 @@ static int LuaTightBindingIndex(lua_State * L);
 static int LuaTightBindingNewIndex(lua_State * L);
 static int LuaTightBindingToString(lua_State * L);
 static int LuaTightBindingDestroy(lua_State * L);
-;
-;
-;
-;

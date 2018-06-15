@@ -51,4 +51,3 @@ static int LuaOperatorIndex(lua_State * L);
 static int LuaOperatorNewIndex(lua_State * L);
 static int LuaOperatorToString(lua_State * L);
 static int LuaOperatorDestroy(lua_State * L);
-;

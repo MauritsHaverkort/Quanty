@@ -33,5 +33,4 @@ uint32_t FilePrintAndersonMatrix(AndersonMatrixType M, const char *const flname,
 uint32_t FilePrintAndersonMatrixEssentials(AndersonMatrixType M, const char *const flname, const char *const mode);
 uint32_t FilePrintListOfPoles(ListOfPoles M, const char *const flname, const char *const mode);
 uint32_t FilePrintListOfPolesEssentials(ListOfPoles M, const char *const flname, const char *const mode);
-uint32_t FilePrintBandstructurePath(BandstructurePathType M, const char *const flname, const char *const mode);
 uint32_t FilePrintBlockNaturalImpurityOrbitalMatrix(BlockNaturalImpurityOrbitalMatrixType M, const char *const flname, const char *const mode);

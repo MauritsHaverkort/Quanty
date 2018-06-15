@@ -44,5 +44,4 @@ uint32_t PrintBlockAndersonMatrix(BlockAndersonMatrixType M);
 uint32_t PrintListOfPoles(ListOfPoles M);
 uint32_t PrintListOfPolesEssentials(ListOfPoles M);
 uint32_t PrintHarmonicsExpansion(HarmonicsExpansion M);
-uint32_t PrintBandstructurePath(BandstructurePathType M);
 uint32_t PrintBlockNaturalImpurityOrbitalMatrix(BlockNaturalImpurityOrbitalMatrixType M);
