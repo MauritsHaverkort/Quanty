@@ -220,7 +220,7 @@ Complex16 Cerf(const Complex16 z)
   else if (z.Re == 0) // handle separately for speed & handling of y = Inf or NaN
   {
     ret.Re = z.Re;
-    ret.Im = z.Im*z.Im > 720 ? (z.Im > 0 ? INFINITY : -INFINITY) : exp(z.Im*z.Im) * FaddeevaW_Im(z.Im);// preserve sign of 0 handle y -> Inf limit manually, since exp(y^2) -> Inf but Im[w(y)] -> 0, so IEEE will give us a NaN when it should be Inf */
+    ret.Im = z.Im*z.Im > 720 ? (z.Im > 0 ? INFINITY : -INFINITY) : exp(z.Im*z.Im) * FaddeevaW_Im(z.Im);// preserve sign of 0 handle y -> Inf limit manually, since exp(y^2) -> Inf but Im[w(y)] -> 0, so IEEE will give us a NaN when it should be Inf
     return ret;
   }
   else
