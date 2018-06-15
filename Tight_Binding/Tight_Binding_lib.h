@@ -14,6 +14,7 @@ uint32_t CalculateTotalEnergyFromListOfEigenvalues(const double * const val, con
 uint32_t CalculateChemicalPotentialFromListOfEigenvalues(const double * const val, const uint32_t NVal, const double kbT, const double NE, double * const mu, double *Etot);
 int TightBindingFermi(TightBindingDef A, double Emin, double Emax, int NE, double k0[3], double k1[3], double k2[3],MatrixType Fermi[]);
 int TightBindingDOS(TightBindingDef A, int Nk[3], SpectraType * DOS);
+int TightBindingBANDS(TightBindingDef A, BandstructurePathType kList, MatrixType * BANDS);
 void RealEigenFunctionToCharacter(double const * EigenFun, MatrixType *Char);
 void RealEigenFunctionToCompactCharacter(double const * EigenFun, CompactMatrixType *Char);
 void ComplexEigenFunctionToCharacter(Complex16 const * EigenFun, MatrixType *Char);
@@ -36,9 +37,11 @@ int EigenFunctionToCharactersOnsiteEnergyPhaseRGBkshifted(TightBindingDef A, Mat
 int TightBindingFermiCharacter(TightBindingDef A, double Emin, double Emax, int NE, double k0[3], double k1[3],double k2[3], MatrixType Fermi[], int Ncharacter,int (*EigenFunctionToCharacters);
 int TightBindingFermiCharacterUnfolding(TightBindingDef A, double Emin, double Emax, int NE, double k0[3], double k1[3],double k2[3], int Nk1, int Nk2, MatrixType Fermi[], int Ncharacter,int (*EigenFunctionToCharacters);
 int TightBindingDOSCharacter(TightBindingDef A, int Nk[3], SpectraType * DOS, int Ncharacter, int (*EigenFunctionToCharacters);
+int TightBindingBANDSCharacter(TightBindingDef A, BandstructurePathType kList, MatrixType * BANDS, int Ncharacter, MatrixType Character[], int (*EigenFunctionToCharacters);
 uint32_t CreateUSuperCell(OperatorType U, OperatorType * USuperCell, CrystalStructureSuperCellType SuperCell);
 int CreateCrystalStructureFromCrystalStructureSuperCell(CrystalStructureSuperCellType SuperCell, CrystalStructureType * Cell);
 int CreateTightBindingSuperCell(TightBindingDef A, TightBindingDef * ASuper, CrystalStructureSuperCellType SuperCell);
 int CreateTightBindingSquareSuperCell(TightBindingDef A, TightBindingDef * ASuper, int N[3]);
 int TightBindingBANDSToMatrix(double Emin, double Emax, int NEpoints, MatrixType BANDS, MatrixType * BWValue);
 int TightBindingBANDSCharacterToMatrix(double Emin, double Emax, int NEpoints, MatrixType BANDS, MatrixType Character,MatrixType * BWValue);
+int TightBindingAddAxesToMatrix(double Emin, double Emax, int NELines, double *Elines, BandstructurePathType kList,MatrixType * RGBValue);
