@@ -13,4 +13,4 @@ static int LuaComplexExp(lua_State * L);
 static int LuaComplexRe(lua_State * L);
 static int LuaComplexIm(lua_State * L);
 static int LuaComplexToString(lua_State * L);
-;int luaopen_Complex(lua_State * L);
+int luaopen_Complex(lua_State * L);

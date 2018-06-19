@@ -34,10 +34,10 @@ int EigenFunctionToCharactersOnsiteEnergyPhaseRGBSetNCharacter(TightBindingDef A
 int EigenFunctionToCharactersOnsiteEnergyPhaseRGB(TightBindingDef A, MatrixType H, double *extra, MatrixType EigenFun,MatrixType * Character);
 int EigenFunctionToCharactersOnsiteEnergyPhaseRGBkshiftedSetNCharacter(TightBindingDef A, int *NCharacter);
 int EigenFunctionToCharactersOnsiteEnergyPhaseRGBkshifted(TightBindingDef A, MatrixType H, double kshift[3],MatrixType EigenFun, MatrixType * Character);
-int TightBindingFermiCharacter(TightBindingDef A, double Emin, double Emax, int NE, double k0[3], double k1[3],double k2[3], MatrixType Fermi[], int Ncharacter,int (*EigenFunctionToCharacters);
-int TightBindingFermiCharacterUnfolding(TightBindingDef A, double Emin, double Emax, int NE, double k0[3], double k1[3],double k2[3], int Nk1, int Nk2, MatrixType Fermi[], int Ncharacter,int (*EigenFunctionToCharacters);
-int TightBindingDOSCharacter(TightBindingDef A, int Nk[3], SpectraType * DOS, int Ncharacter, int (*EigenFunctionToCharacters);
-int TightBindingBANDSCharacter(TightBindingDef A, BandstructurePathType kList, MatrixType * BANDS, int Ncharacter, MatrixType Character[], int (*EigenFunctionToCharacters);
+int TightBindingFermiCharacter(TightBindingDef A, double Emin, double Emax, int NE, double k0[3], double k1[3],double k2[3], MatrixType Fermi[], int Ncharacter,int (*EigenFunctionToCharacters) (TightBindingDef, MatrixType, double *, MatrixType,MatrixType *));
+int TightBindingFermiCharacterUnfolding(TightBindingDef A, double Emin, double Emax, int NE, double k0[3], double k1[3],double k2[3], int Nk1, int Nk2, MatrixType Fermi[], int Ncharacter,int (*EigenFunctionToCharacters) (TightBindingDef, MatrixType, double *,MatrixType, MatrixType *));
+int TightBindingDOSCharacter(TightBindingDef A, int Nk[3], SpectraType * DOS, int Ncharacter, int (*EigenFunctionToCharacters) (TightBindingDef, MatrixType, double *, MatrixType, MatrixType *));
+int TightBindingBANDSCharacter(TightBindingDef A, BandstructurePathType kList, MatrixType * BANDS, int Ncharacter, MatrixType Character[], int (*EigenFunctionToCharacters) (TightBindingDef, MatrixType, double *, MatrixType, MatrixType *));
 uint32_t CreateUSuperCell(OperatorType U, OperatorType * USuperCell, CrystalStructureSuperCellType SuperCell);
 int CreateCrystalStructureFromCrystalStructureSuperCell(CrystalStructureSuperCellType SuperCell, CrystalStructureType * Cell);
 int CreateTightBindingSuperCell(TightBindingDef A, TightBindingDef * ASuper, CrystalStructureSuperCellType SuperCell);

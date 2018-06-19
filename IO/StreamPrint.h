@@ -1,6 +1,6 @@
 uint32_t StreamPrintSpectra(SpectraType * const Spec, const uint32_t NSpec, FILE * stream);
-uint32_t StreamPrintRIXSSpectra(const uint32_t numwRes, SpectraType (*Spec);
-uint32_t StreamPrintRIXSSpectrum(const uint32_t numwRes, SpectraType (*Spec);
+uint32_t StreamPrintRIXSSpectra(const uint32_t numwRes, SpectraType (*Spec)[numwRes], double *wRes, const uint32_t NSpec, FILE * stream);
+uint32_t StreamPrintRIXSSpectrum(const uint32_t numwRes, SpectraType (*Spec)[numwRes], double *wRes, int printReal, const uint32_t iSpec, FILE * stream);
 uint32_t StreamPrintWaveFunctionPlain(WaveFunctionType psi, FILE * stream);
 uint32_t StreamPrintWaveFunctionPlainBinary(WaveFunctionType psi, FILE * stream);
 uint32_t StreamPrintWaveFunctionReadable(WaveFunctionType psi, FILE * stream);
