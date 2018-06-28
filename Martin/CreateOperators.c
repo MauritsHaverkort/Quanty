@@ -280,10 +280,10 @@ double* CreateBaseForContinuum( int NBasisFuns,double **basisfuns,double **deriv
 	char cV = 'V';
 	double EINS = 1;
 	//int info;
-	dpotrf(&cU,&dim,g,&dim,&info);
-	dtrtri(&cU,&cN,&dim,g,&dim,&info);
-	dtrmm(&blasLeft,&blasUpper,&blasTrans,&blasNonUnit,&dim,&dim,&EINS,g,&dim,T,&dim);
-	dtrmm(&blasRight,&blasUpper,&blasNoTrans,&blasNonUnit,&dim,&dim,&EINS,g,&dim,T,&dim);
+	dpotrf(&cU,(unsigned int *) &dim,g,(unsigned int *) &dim,&info);
+	dtrtri(&cU,&cN,(unsigned int *) &dim,g,(unsigned int *) &dim,&info);
+	dtrmm(&blasLeft,&blasUpper,&blasTrans,&blasNonUnit,(unsigned int *) &dim,(unsigned int *) &dim,&EINS,g,(unsigned int *) &dim,T,(unsigned int *) &dim);
+	dtrmm(&blasRight,&blasUpper,&blasNoTrans,&blasNonUnit,(unsigned int *) &dim, (unsigned int *) &dim,&EINS,g,(unsigned int *) &dim,T,(unsigned int *) &dim);
 /*	LAPACKE_dpotrf(LAPACK_ROW_MAJOR,'U',dim,g,dim);
 	LAPACKE_dtrtri(LAPACK_ROW_MAJOR,'U','N',dim,g,dim);
 	cblas_dtrmm(CblasRowMajor,CblasLeft,CblasUpper,CblasTrans,CblasNonUnit,dim,dim,1.,g,dim,T,dim);
@@ -299,13 +299,13 @@ double* CreateBaseForContinuum( int NBasisFuns,double **basisfuns,double **deriv
 	if (!tau) printf("malloc fail at tau in CreateBaseForContinuum. size = %d\n",Ncont);
 
 	double *work = (double *) malloc(Ncont*sizeof(double));
-	int lwork = Ncont;
+	unsigned int lwork = (unsigned int) Ncont;
 
-	dsytrd(&cU,&Ncont,Tsub,&Ncont,d,e,tau,work,&lwork,&info);
+	dsytrd(&cU,&Ncont,Tsub,(unsigned int *) &Ncont,d,e,tau,work, &lwork,&info);
 	if ( 0 != info) printf("error: argument %d of LAPACKE_dsytrd",-info);
-	dorgtr(&cU,&Ncont,Tsub,&Ncont,tau,work,&lwork,&info);
+	dorgtr(&cU,(unsigned int *) &Ncont,Tsub,(unsigned int *) &Ncont,tau,work,&lwork,&info);
 	if ( 0 != info) printf("error: argument %d of LAPACKE_dorgtr",-info);
-	dsteqr(&cV,&Ncont,d,e,Tsub,&Ncont,work,&info);
+	dsteqr(&cV,(unsigned int *) &Ncont,d,e,Tsub,(unsigned int *) &Ncont,work,&info);
 	if ( 0 != info) printf("error: argument %d of LAPACKE_dsteqr",-info);
 /*	info = LAPACKE_dsytrd(LAPACK_ROW_MAJOR, 'U',Ncont,Tsub,Ncont,d,e,tau);
 	if ( 0 != info) printf("error: argument %d of LAPACKE_dsytrd",-info);
