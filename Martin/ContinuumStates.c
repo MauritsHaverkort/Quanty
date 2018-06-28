@@ -312,8 +312,8 @@ double *KineticEnergyCB(double **basisfuns, double **derivativefuns, double **du
 double *MetricCB(double **basisfuns, double **dualfuns, const unsigned int *indices,
 		const unsigned int Nindices, double **dualcont, const int NcontFuns, unsigned int NGridPoints)
 {
-	int dim,i,j,n,eins;
-	eins = 1;
+	int dim,i,j,n;
+	unsigned int eins = 1;
 	n = 2* NGridPoints;
 	dim = Nindices + NcontFuns;
 	double *g = (double *) malloc(dim*dim*sizeof(double));
