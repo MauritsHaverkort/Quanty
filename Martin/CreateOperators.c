@@ -301,7 +301,7 @@ double* CreateBaseForContinuum( int NBasisFuns,double **basisfuns,double **deriv
 	double *work = (double *) malloc(Ncont*sizeof(double));
 	unsigned int lwork = (unsigned int) Ncont;
 
-	dsytrd(&cU,&Ncont,Tsub,(unsigned int *) &Ncont,d,e,tau,work, &lwork,&info);
+	dsytrd(&cU,(unsigned int *) &Ncont,Tsub,(unsigned int *) &Ncont,d,e,tau,work, &lwork,&info);
 	if ( 0 != info) printf("error: argument %d of LAPACKE_dsytrd",-info);
 	dorgtr(&cU,(unsigned int *) &Ncont,Tsub,(unsigned int *) &Ncont,tau,work,&lwork,&info);
 	if ( 0 != info) printf("error: argument %d of LAPACKE_dorgtr",-info);
