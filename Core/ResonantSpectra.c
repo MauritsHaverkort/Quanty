@@ -1083,7 +1083,7 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
 /*  Calculate < psi | Texc^+ G TDec[i] G2 TDec[i]^+ G Texc | psi >
  *  Input expects TDec^+
  */
-uint32_t ResonantSpectraOrig(const OperatorType OppH, const OperatorType OppH2, const OperatorType Texc, const OperatorType *TDec, uint32_t NDec,  const WaveFunctionType psi, double energy, double epsilon, uint32_t numwRes, SpectraType (*spectra)[numwRes], double *wRes, double gammaRes, double gamma, double Gfwhm, uint32_t NKrylov1, uint32_t NKrylov2)
+uint32_t ResonantSpectraOrig(const OperatorType OppH, const OperatorType OppH2, const OperatorType Texc, const OperatorType *TDec, uint32_t NDec,  const WaveFunctionType psi, double energy, double epsilon, uint32_t numwRes, SpectraType **spectra, double *wRes, double gammaRes, double gamma, double Gfwhm, uint32_t NKrylov1, uint32_t NKrylov2)
 {
   /*Given wavefunction psi (usually ground state, but could be excited)*/
   

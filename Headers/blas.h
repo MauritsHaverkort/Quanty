@@ -154,6 +154,8 @@
 
 #endif
 
+extern "C"
+{
 double dasum(const uint32_t * const n,double *dx,const uint32_t * const incx);
 void daxpy(const uint32_t * const n,double *da,double *dx,const uint32_t * const incx,double *dy,const uint32_t * const incy);
 double dcabs1(double *z);
@@ -229,3 +231,4 @@ void ztrmm(const char * const side,const char * const uplo,const char * const tr
 void ztrmv(const char * const uplo,const char * const trans,const char * const diag,const uint32_t * const n,Complex16 *a,const uint32_t * const lda,Complex16 *x,const uint32_t * const incx);
 void ztrsm(const char * const side,const char * const uplo,const char * const transa,const char * const diag,const uint32_t * const m,const uint32_t * const n,Complex16 *alpha,Complex16 *a,const uint32_t * const lda,Complex16 *b,const uint32_t * const ldb);
 void ztrsv(const char * const uplo,const char * const trans,const char * const diag,const uint32_t * const n,Complex16 *a,const uint32_t * const lda,Complex16 *x,const uint32_t * const incx);
+}

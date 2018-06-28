@@ -1547,6 +1547,8 @@
 
 #endif
 
+extern "C"
+{
 char chla_transtype(uint32_t *trans);
 void dbbcsd(const char * const jobu1, const char * const jobu2, const char * const jobv1t, const char * const jobv2t, const char * const trans, uint32_t *m, uint32_t *p, uint32_t *q, double *theta, double *phi, double *u1, const uint32_t * const ldu1, double *u2, const uint32_t * const ldu2, double *v1t, const uint32_t * const ldv1t, double *v2t, const uint32_t * const ldv2t, double *b11d, double *b11e, double *b12d, double *b12e, double *b21d, double *b21e, double *b22d, double *b22e, double *work, const uint32_t * const lwork, int *info);
 void dbdsdc(const char * const uplo, const char * const compq, const uint32_t * const n, double *d, double *e, double *u, const uint32_t * const ldu, double *vt, const uint32_t * const ldvt, double *q, uint32_t *iq, double *work, int *iwork, int *info);
@@ -2317,3 +2319,4 @@ void zunmrz(const char * const side, const char * const trans, uint32_t *m, cons
 void zunmtr(const char * const side, const char * const uplo, const char * const trans, uint32_t *m, const uint32_t * const n, Complex16 *a, const uint32_t * const lda, Complex16 *tau, Complex16 *c, const uint32_t * const ldc, Complex16 *work, const uint32_t * const lwork, int *info);
 void zupgtr(const char * const uplo, const uint32_t * const n, Complex16 *ap, Complex16 *tau, Complex16 *q, const uint32_t * const ldq, Complex16 *work, int *info);
 void zupmtr(const char * const side, const char * const uplo, const char * const trans, uint32_t *m, const uint32_t * const n, Complex16 *ap, Complex16 *tau, Complex16 *c, const uint32_t * const ldc, Complex16 *work, int *info);
+}

@@ -76,7 +76,7 @@ uint32_t StreamPrintSpectra(SpectraType * const Spec, const uint32_t NSpec, FILE
 /*  by Robert
  *
  */
-uint32_t StreamPrintRIXSSpectra(const uint32_t numwRes, SpectraType (*Spec)[numwRes], double *wRes, const uint32_t NSpec, FILE * stream)
+uint32_t StreamPrintRIXSSpectra(const uint32_t numwRes, SpectraType **Spec, double *wRes, const uint32_t NSpec, FILE * stream)
 {
   uint32_t i, j, p, NE;
   fprintf(stream, "Energy           ");
@@ -132,7 +132,7 @@ uint32_t StreamPrintRIXSSpectra(const uint32_t numwRes, SpectraType (*Spec)[numw
 /*  by Robert
  *
  */
-uint32_t StreamPrintRIXSSpectrum(const uint32_t numwRes, SpectraType (*Spec)[numwRes], double *wRes, int printReal, const uint32_t iSpec, FILE * stream)
+uint32_t StreamPrintRIXSSpectrum(const uint32_t numwRes, SpectraType **Spec, double *wRes, int printReal, const uint32_t iSpec, FILE * stream)
 {
   //printReal == 1 : print the real part to the file
   //printReal == other : print the imaginary part

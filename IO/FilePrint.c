@@ -22,7 +22,7 @@ uint32_t FilePrintSpectra(SpectraType * const Spec, const uint32_t NSpec, const 
 }
 
 /* by Robert */
-uint32_t FilePrintRIXSSpectra(const uint32_t numwRes, SpectraType (*Spec)[numwRes], double *wRes, const uint32_t NSpec, const char *const flname, const char *const mode)
+uint32_t FilePrintRIXSSpectra(const uint32_t numwRes, SpectraType **Spec, double *wRes, const uint32_t NSpec, const char *const flname, const char *const mode)
 {
   FILE  *stream;
   uint32_t retval;
@@ -43,7 +43,7 @@ uint32_t FilePrintRIXSSpectra(const uint32_t numwRes, SpectraType (*Spec)[numwRe
   return retval;
 }
 
-uint32_t FilePrintRIXSSpectrum(const uint32_t numwRes, SpectraType (*Spec)[numwRes], double *wRes, int printReal, const uint32_t iSpec, const char *const flname, const char *const mode)
+uint32_t FilePrintRIXSSpectrum(const uint32_t numwRes, SpectraType **Spec, double *wRes, int printReal, const uint32_t iSpec, const char *const flname, const char *const mode)
 {
   //iSpec is index of the spectrum you want to print (e.g xx might 0, xy 1, xz 2, etc)
   FILE  *stream;

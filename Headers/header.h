@@ -122,7 +122,7 @@ uint32_t GlobalVerbosity=0xF;
 #include "../LuaInterface/lua_extensions/TableToArray.h"
 #include "../LuaInterface/lua_extensions/get_put.h"
 #include "../LuaInterface/lua_extensions/tools.h"
-#include "../LuaInterface/main.h"
+// #include "../LuaInterface/main.h"
 #include "../LuaInterface/ssp.h"
 #include "../LuaInterface/units.h"
 

@@ -1,6 +1,6 @@
 uint32_t FilePrintSpectra(SpectraType * const Spec, const uint32_t NSpec, const char *const flname, const char *const mode);
-uint32_t FilePrintRIXSSpectra(const uint32_t numwRes, SpectraType (*Spec)[numwRes], double *wRes, const uint32_t NSpec, const char *const flname, const char *const mode);
-uint32_t FilePrintRIXSSpectrum(const uint32_t numwRes, SpectraType (*Spec)[numwRes], double *wRes, int printReal, const uint32_t iSpec, const char *const flname, const char *const mode);
+uint32_t FilePrintRIXSSpectra(const uint32_t numwRes, SpectraType **Spec, double *wRes, const uint32_t NSpec, const char *const flname, const char *const mode);
+uint32_t FilePrintRIXSSpectrum(const uint32_t numwRes, SpectraType **Spec, double *wRes, int printReal, const uint32_t iSpec, const char *const flname, const char *const mode);
 uint32_t FilePrintWaveFunctionPlain(WaveFunctionType psi, const char *const flname, const char *const mode);
 uint32_t FilePrintWaveFunctionPlainBinary(WaveFunctionType psi, const char *const flname, const char *const mode);
 uint32_t FilePrintWaveFunctionReadable(WaveFunctionType psi, const char *const flname, const char *const mode);

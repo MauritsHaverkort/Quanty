@@ -32,12 +32,12 @@ uint32_t PrintSpectra(SpectraType * const Spec, const uint32_t NSpec)
   return StreamPrintSpectra(Spec, NSpec, stdout);
 }
 
-uint32_t PrintRIXSSpectrum(const uint32_t numwRes, SpectraType (*Spec)[numwRes], double *wRes, int printReal, const uint32_t iSpec)
+uint32_t PrintRIXSSpectrum(const uint32_t numwRes, SpectraType **Spec, double *wRes, int printReal, const uint32_t iSpec)
 {
   return StreamPrintRIXSSpectrum(numwRes, Spec, wRes, printReal, iSpec, stdout);
 }
 
-uint32_t PrintRIXSSpectra(const uint32_t numwRes, SpectraType (*Spec)[numwRes], double *wRes, const uint32_t NSpec)
+uint32_t PrintRIXSSpectra(const uint32_t numwRes, SpectraType **Spec, double *wRes, const uint32_t NSpec)
 {
   return StreamPrintRIXSSpectra(numwRes, Spec, wRes, NSpec, stdout);
 }
