@@ -99,7 +99,7 @@ double SlaterIntegral(const int n, const double *f1, const double *f2, const dou
 {
   const char UPLO='L';
   const double alpha=1.0;
-  const int INCXY=1;
+  const unsigned int INCXY=1;
   const double beta=0;
   double *f13, *f24, *Mf, result;
     
@@ -111,8 +111,8 @@ double SlaterIntegral(const int n, const double *f1, const double *f2, const dou
   vecMul(n, f1, f3, f13);
   vecMul(n, f2, f4, f24);
     
-  dsymv(&UPLO, &n, &alpha, Mr1r2, &n, f24, &INCXY, &beta, Mf, &INCXY);
-  result = ddot(&n, f13, &INCXY, Mf, &INCXY);
+  dsymv(&UPLO,(unsigned int *) &n, &alpha, Mr1r2,(unsigned int *) &n, f24, &INCXY, &beta, Mf, &INCXY);
+  result = ddot((unsigned int *) &n, f13, &INCXY, Mf, &INCXY);
   
   free(f13);
   free(f24);
