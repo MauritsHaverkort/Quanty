@@ -15,7 +15,7 @@ double DiracH(double *basisfun,double *dualfun,double *derivfun,const double *x,
 {
 	double *H11G, *H22F,*H12F, *H21G, result, r;
 	//const double speedoflight = 137;
-	int i, eins;
+	unsigned int i, eins;
 	eins = 1;
 
 	H11G = (double *) malloc(NGridPoints * sizeof(double));
@@ -44,8 +44,8 @@ double DiracH(double *basisfun,double *dualfun,double *derivfun,const double *x,
 		H21G[i] = kappa/r * basisfun[i] + derivfun[i];
 		i++;
 	}
-	result = ddot(&NGridPoints,dualfun,&eins,H11G,&eins) + speedoflight * ddot(&NGridPoints,dualfun,&eins,H12F,&eins)
-			+ddot(&NGridPoints,&(dualfun[NGridPoints]),&eins,H22F,&eins) + speedoflight * ddot(&NGridPoints,&(dualfun[NGridPoints]),&eins,H21G,&eins);
+	result = ddot((unsigned int *) &NGridPoints,dualfun,&eins,H11G,&eins) + speedoflight * ddot((unsigned int *) &NGridPoints,dualfun,&eins,H12F,&eins)
+			+ddot((unsigned int *) &NGridPoints,&(dualfun[NGridPoints]),&eins,H22F,&eins) + speedoflight * ddot((unsigned int *) &NGridPoints,&(dualfun[NGridPoints]),&eins,H21G,&eins);
 	free(H11G);
 	free(H12F);
 	free(H21G);
