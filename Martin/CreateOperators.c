@@ -242,14 +242,21 @@ double* CreateBaseForContinuum( int NBasisFuns,double **basisfuns,double **deriv
 {
 	int l,k,dim,info;
 
-	const int LAPACK_ROW_MAJOR = 101;
+/*	const int LAPACK_ROW_MAJOR = 101;
 	const int CblasRowMajor= 101;
-	const int CblasLeft = 141;
+	const int blasLeft = 141;
 	const int CblasRight = 142;
 	const int CblasUpper = 121;
 	const int CblasNoTrans = 111;
 	const int CblasTrans = 112;
 	const int CblasNonUnit = 131;
+*/
+	char blasRight = 'R';
+	char blasLeft  = 'L';
+	char blasUpper = 'U';
+	char blasTrans = 'T';
+	char blasNoTrans = 'N';
+	char blasNonUnit = 'N';
 
 	double *T,*g, **dualfuns, **dualcont, *Tsub, *tau,*d,*e;
 
@@ -267,11 +274,20 @@ double* CreateBaseForContinuum( int NBasisFuns,double **basisfuns,double **deriv
 
 	g = MetricCB(basisfuns,dualfuns,group.indices, group.n,dualcont,Ncont,NGridpoints);
 
-	LAPACKE_dpotrf(LAPACK_ROW_MAJOR,'U',dim,g,dim);
+	char cU = 'U';
+	char cN = 'N';
+	char cV = 'V';
+	double EINS = 1;
+	//int info;
+	dpotrf(&cU,&dim,g,&dim,&info);
+	dtrtri(&cU,&cN,&dim,g,&dim,&info);
+	dtrmm(&blasLeft,&blasUpper,&blasTrans,&blasNonUnit,&dim,&dim,&EINS,g,&dim,T,&dim);
+	dtrmm(&blasRight,&blasUpper,&blasNoTrans,&blasNonUnit,&dim,&dim,&EINS,g,&dim,T,&dim);
+/*	LAPACKE_dpotrf(LAPACK_ROW_MAJOR,'U',dim,g,dim);
 	LAPACKE_dtrtri(LAPACK_ROW_MAJOR,'U','N',dim,g,dim);
 	cblas_dtrmm(CblasRowMajor,CblasLeft,CblasUpper,CblasTrans,CblasNonUnit,dim,dim,1.,g,dim,T,dim);
 	cblas_dtrmm(CblasRowMajor,CblasRight,CblasUpper,CblasNoTrans,CblasNonUnit,dim,dim,1.,g,dim,T,dim);
-
+*/
 	Tsub = SubMatrix(T,dim,group.n,dim-1,group.n,dim-1);
 
 	d = (double *) malloc(Ncont*sizeof(double));
@@ -281,17 +297,27 @@ double* CreateBaseForContinuum( int NBasisFuns,double **basisfuns,double **deriv
 	tau = (double *) malloc(Ncont*sizeof(double));
 	if (!tau) printf("malloc fail at tau in CreateBaseForContinuum. size = %d\n",Ncont);
 
-	info = LAPACKE_dsytrd(LAPACK_ROW_MAJOR, 'U',Ncont,Tsub,Ncont,d,e,tau);
+	double *work = (double *) malloc(Ncont*sizeof(double));
+	int lwork = Ncont;
+
+	dsytrd(&cU,&Ncont,Tsub,&Ncont,d,e,tau,work,&lwork,&info);
+	if ( 0 != info) printf("error: argument %d of LAPACKE_dsytrd",-info);
+	dorgtr(&cU,&Ncont,Tsub,&Ncont,tau,work,&lwork,&info);
+	if ( 0 != info) printf("error: argument %d of LAPACKE_dorgtr",-info);
+	dsteqr(&cV,&Ncont,d,e,Tsub,&Ncont,work,&info);
+	if ( 0 != info) printf("error: argument %d of LAPACKE_dsteqr",-info);
+/*	info = LAPACKE_dsytrd(LAPACK_ROW_MAJOR, 'U',Ncont,Tsub,Ncont,d,e,tau);
 	if ( 0 != info) printf("error: argument %d of LAPACKE_dsytrd",-info);
 	info = LAPACKE_dorgtr(LAPACK_ROW_MAJOR,'U',Ncont,Tsub,Ncont,tau);
 	if ( 0 != info) printf("error: argument %d of LAPACKE_dorgtr",-info);
 	info = LAPACKE_dsteqr(LAPACK_ROW_MAJOR,'V',Ncont,d,e,Tsub,Ncont);
 	if ( 0 != info) printf("error: argument %d of LAPACKE_dsteqr",-info);
-
+*/
 	CalcContinuumWFs(basisfuns, group.indices, group.n, contfuns, Ncont, NGridpoints, g, Tsub);
 
 	free(T);
 	free(g);
+	free(work);
 	int i;
 	for ( i = 0; i < NBasisFuns; i++)
 	{
