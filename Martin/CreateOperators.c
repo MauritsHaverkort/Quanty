@@ -251,6 +251,7 @@ double* CreateBaseForContinuum( int NBasisFuns,double **basisfuns,double **deriv
 	const int CblasTrans = 112;
 	const int CblasNonUnit = 131;
 */
+	/* Fuer Simon*/
 	char blasRight = 'R';
 	char blasLeft  = 'L';
 	char blasUpper = 'U';
