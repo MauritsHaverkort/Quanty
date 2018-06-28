@@ -334,7 +334,7 @@ double *MetricCB(double **basisfuns, double **dualfuns, const unsigned int *indi
 		for (j = 0; j < Nindices; j++)
 		{
 
-			y = ddot(&n,dualcont[i-Nindices],&eins,basisfuns[indices[j]],&eins);
+			y = ddot((unsigned int *) &n,dualcont[i-Nindices],&eins,basisfuns[indices[j]],&eins);
 			g[i*dim + j] = y;
 			g[j*dim + i] = y;
 		}
