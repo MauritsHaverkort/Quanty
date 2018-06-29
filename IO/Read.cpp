@@ -1,6 +1,6 @@
 #include "Read.h"
-#include "StreamRead.c"
-#include "FileRead.c"
+#include "StreamRead.cpp"
+#include "FileRead.cpp"
 
 /*  Functions come in three variants
 *   StreamRead***

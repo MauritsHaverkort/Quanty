@@ -1,8 +1,8 @@
 #include "WaveFunctionArithmetic.h"
-#include "RealWaveFunctionArithmetic.c"
-#include "ComplexWaveFunctionArithmetic.c"
-#include "RealComplexWaveFunctionArithmetic.c"
-#include "ComplexRealWaveFunctionArithmetic.c"
+#include "RealWaveFunctionArithmetic.cpp"
+#include "ComplexWaveFunctionArithmetic.cpp"
+#include "RealComplexWaveFunctionArithmetic.cpp"
+#include "ComplexRealWaveFunctionArithmetic.cpp"
 
 
 

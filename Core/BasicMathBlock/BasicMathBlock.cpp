@@ -1,10 +1,10 @@
 #include "BasicMathBlock.h"
-#include "BasicMath_BlockListOfPoles.c"
-#include "BasicMath_BlockAndersonMatrix.c"
-#include "BasicMath_BlockTridiagonalMatrix.c"
-#include "BasicMath_BlockNaturalImpurityOrbital.c"
-#include "BasicMath_BlockTypeConversion.c"
-#include "BasicMath_BlockMatrixToOperator.c"
+#include "BasicMath_BlockListOfPoles.cpp"
+#include "BasicMath_BlockAndersonMatrix.cpp"
+#include "BasicMath_BlockTridiagonalMatrix.cpp"
+#include "BasicMath_BlockNaturalImpurityOrbital.cpp"
+#include "BasicMath_BlockTypeConversion.cpp"
+#include "BasicMath_BlockMatrixToOperator.cpp"
 
 /* Free the BlockMatrix, independent if the type is capital or small */
 /* Block types read from the lua stack need different freeing depending on capital or small cap */
