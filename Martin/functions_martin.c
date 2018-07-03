@@ -1,5 +1,6 @@
 /* Some makeshift functions */
 
+#include "SlaterTuple.cpp"
 #include "CreateOperators.c"
 
 static int LuaOperatorNewFullCoulomb (lua_State *L)
