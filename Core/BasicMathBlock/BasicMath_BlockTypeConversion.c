@@ -1207,7 +1207,7 @@ uint32_t BlockTriDiagonalMatrixEigenSystem(const BlockTriDiagonalMatrixType * co
   {
     Complex16 * AB;
     Complex16 *WORK;
-    AB=malloc(LDAB*N*sizeof(Complex16));
+    AB=calloc(LDAB*N,sizeof(Complex16));
     if(AB==NULL)
     {
       printf("ERROR: malloc failed in BlockTriDiagonalMatrixEigenSystem\n");
@@ -1247,6 +1247,164 @@ uint32_t BlockTriDiagonalMatrixEigenSystem(const BlockTriDiagonalMatrixType * co
         AB[j]=A->a[k*A->BlockSize*A->BlockSize + iBlock*A->BlockSize + jBlock];
         j++;
       }
+      j+=A->BlockSize+iBlock;
+    }
+    // Tridiagonalize the Block tridiagonal matrix
+    zhbtrd(VECT, UPLO, &N, &KD, AB, &LDAB, &(M.a[1]), &(M.b[1]), Q.V, &N, WORK, &INFO);
+    free(AB);
+    free(WORK);
+    if(INFO!=0)
+    {
+      printf("ERROR: zhbtrd failed in BlockTriDiagonalMatrixEigenSystem with INFO %i\n",INFO);
+      return 1;
+    }
+  }
+  
+  
+  
+  
+  TriDiagonalMatrixToEigensystemCompact(&M, val, &funQ);
+  CompactMatrixMultiply('N', 'N', &funQ, &Q, fun);
+  CompactMatrixConjugate(fun);
+  FreeCompactMatrix(&Q);
+  FreeCompactMatrix(&funQ);
+  FreeTriDiagonalMatrix(&M);
+  return 0;
+}
+
+uint32_t BlockTriDiagonalMatrixEigenSystemWithDeflation(const BlockTriDiagonalMatrixType * const A, double * val, CompactMatrixType * fun, const uint32_t * const BlockSize)
+{
+  uint32_t j,k,iBlock,jBlock;
+  char *UPLO="L";
+  //TODO: rewrite for UPLO=U such that we can use A*B^T aftwerwards (faster) Needs new filling of matrix AB
+  char *VECT="V";
+  CompactMatrixType Q, funQ;
+  int N=0;
+  const int KD = 2*A->BlockSize-1;
+  const int LDAB = 2*A->BlockSize;
+  TriDiagonalMatrixType M;
+  int INFO=0;
+  for(j=1;j<=A->N;j++)
+  {
+    N+=BlockSize[j];
+  }
+  M.N=N;
+  InitTriDiagonalMatrix(&M);
+  Q.Ni=N;
+  Q.Nj=N;
+  Q.QComplex=A->QComplex;
+  if(InitCompactMatrix(&Q))
+  {
+    printf("ERROR: InitCompactMatrix failed in BlockTriDiagonalMatrixEigenSystem\n");
+    return 1;
+  }
+  if(A->QComplex==0)
+  {
+    double * AB;
+    double *WORK;
+    AB=calloc(LDAB*N,sizeof(double));
+    if(AB==NULL)
+    {
+      printf("ERROR: malloc failed in BlockTriDiagonalMatrixEigenSystem\n");
+      return 1;
+    }
+    WORK=malloc(N*(N+1)*sizeof(double));
+    if(WORK==NULL)
+    {
+      free(AB);
+      printf("ERROR: malloc failed in BlockTriDiagonalMatrixEigenSystem\n");
+      return 1;
+    }
+    // use dsbtrd to transform A into a tri diagonal form
+    //fill matrix AB
+    j=0;
+    for(k=1;k<A->N;k++)
+    {
+      for(iBlock=0;iBlock<BlockSize[k];iBlock++)
+      {
+        for(jBlock=iBlock;jBlock<BlockSize[k];jBlock++)
+        {
+          AB[j]=A->aRe[k*A->BlockSize*A->BlockSize + iBlock*A->BlockSize + jBlock];
+          j++;
+        }
+        j+=A->BlockSize-BlockSize[k];
+        for(jBlock=0;jBlock<BlockSize[k+1];jBlock++)
+        {
+          AB[j]=A->bRe[k*A->BlockSize*A->BlockSize + iBlock*A->BlockSize + jBlock];
+          j++;
+        }
+        j+=A->BlockSize-BlockSize[k+1];
+        j+=iBlock;
+      }
+    }
+    k=A->N;
+    for(iBlock=0;iBlock<BlockSize[A->N];iBlock++)
+    {
+      for(jBlock=iBlock;jBlock<BlockSize[A->N];jBlock++)
+      {
+        AB[j]=A->aRe[k*A->BlockSize*A->BlockSize + iBlock*A->BlockSize + jBlock];
+        j++;
+      }
+      j+=A->BlockSize-BlockSize[A->N];
+      j+=A->BlockSize+iBlock;
+    }
+    // Tridiagonalize the Block tridiagonal matrix
+    dsbtrd(VECT, UPLO, &N, &KD, AB, &LDAB, &(M.a[1]), &(M.b[1]), Q.VRe, &N, WORK, &INFO);
+    free(AB);
+    free(WORK);
+    if(INFO!=0)
+    {
+      printf("ERROR: dsbtrd failed in BlockTriDiagonalMatrixEigenSystem with INFO %i\n",INFO);
+      return 1;
+    }
+  }
+  else
+  {
+    Complex16 * AB;
+    Complex16 *WORK;
+    AB=malloc(LDAB*N*sizeof(Complex16));
+    if(AB==NULL)
+    {
+      printf("ERROR: malloc failed in BlockTriDiagonalMatrixEigenSystem\n");
+      return 1;
+    }
+    WORK=malloc(N*sizeof(Complex16));
+    if(WORK==NULL)
+    {
+      free(AB);
+      printf("ERROR: malloc failed in BlockTriDiagonalMatrixEigenSystem\n");
+      return 1;
+    }
+    //fill matrix AB
+    j=0;
+    for(k=1;k<A->N;k++)
+    {
+      for(iBlock=0;iBlock<BlockSize[k];iBlock++)
+      {
+        for(jBlock=iBlock;jBlock<BlockSize[k];jBlock++)
+        {
+          AB[j]=A->a[k*A->BlockSize*A->BlockSize + iBlock*A->BlockSize + jBlock];
+          j++;
+        }
+        j+=A->BlockSize-BlockSize[k];
+        for(jBlock=0;jBlock<BlockSize[k+1];jBlock++)
+        {
+          AB[j]=A->b[k*A->BlockSize*A->BlockSize + iBlock*A->BlockSize + jBlock];
+          j++;
+        }
+        j+=A->BlockSize-BlockSize[k+1];
+        j+=iBlock;
+      }
+    }
+    k=A->N;
+    for(iBlock=0;iBlock<BlockSize[A->N];iBlock++)
+    {
+      for(jBlock=iBlock;jBlock<BlockSize[A->N];jBlock++)
+      {
+        AB[j]=A->a[k*A->BlockSize*A->BlockSize + iBlock*A->BlockSize + jBlock];
+        j++;
+      }
+      j+=A->BlockSize-BlockSize[A->N];
       j+=A->BlockSize+iBlock;
     }
     // Tridiagonalize the Block tridiagonal matrix

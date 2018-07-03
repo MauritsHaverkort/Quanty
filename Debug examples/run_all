@@ -22,19 +22,15 @@ mkdir ../../quantyDebug/History/$dir
 rm -f ../../quantyDebug/History/current
 ln -s ../../quantyDebug/History/$dir ../../quantyDebug/History/current 
 
-echo "Copying all exmples to ../../quantyDebug/History/current"
-cp -r Examples ../../quantyDebug/History/current
 echo "Copying all references to ../../quantyDebug/History/current"
 cp -r Reference ../../quantyDebug/History/current
 echo "Copying all tutorials to ../../quantyDebug/History/current"
 cp -r Tutorials ../../quantyDebug/History/current
-cp create_Examples ../../quantyDebug
 cp create_Reference ../../quantyDebug
 cp create_Tutorials ../../quantyDebug
 cp compare ../../quantyDebug
 
 cd ../../quantyDebug/
-./create_Examples
 ./create_Reference
 ./create_Tutorials
 ./compare

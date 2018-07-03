@@ -1,5 +1,40 @@
 Verbosity(0xFFFF)
 
+
+M = Matrix.Random({0,3},{5,5})
+M = M + Transpose(M)
+
+print("M:")
+print(M)
+
+print("\n\n\nEigensystem with a Matrix")
+D, U  = Eigensystem(M)
+
+print("D")
+print(D)
+print("U")
+print(U)
+print("U*M*Transpose(U)")
+print(Chop( U*M*Transpose(U) , 1E-10))
+
+print("\n\n\nEigensystem with Userdata")
+M = Matrix.ToUserdata(M)
+
+D, U  = Eigensystem(M)
+
+
+print("D")
+print(D)
+print("U")
+print(Matrix.ToTable(U))
+print("D*M*Transpose(D)")
+print(Chop(  Matrix.ToTable(U)*Matrix.ToTable(M)*Transpose( Matrix.ToTable(U) ) , 1E-10))
+
+
+
+
+
+
 local H = {}
 
 N = 2000 --size of H. On my computer, >357 crashes. (problem solved)
