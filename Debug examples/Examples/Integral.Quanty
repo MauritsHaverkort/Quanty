@@ -1,0 +1,250 @@
+Verbosity(0x0)
+
+-- some functions
+
+function IntegrateSpectrumByHand(G)
+  local GTable = Spectra.ToTable(G)
+  local result={}
+  for i, Gi in ipairs(GTable) do
+    result[i]=0
+    for j=1,#Gi,1 do
+      result[i]=result[i]+Gi[j][2]
+    end
+    result[i]=-Complex.Im(result[i])*(Gi[2][1]-Gi[1][1])/pi
+  end
+  print(result)
+end
+
+
+function DefineOperators()
+
+OppSx   =NewOperator("Sx"   ,NF, IndexUp_valence, IndexDn_valence)
+OppSy   =NewOperator("Sy"   ,NF, IndexUp_valence, IndexDn_valence)
+OppSz   =NewOperator("Sz"   ,NF, IndexUp_valence, IndexDn_valence)
+OppSsqr =NewOperator("Ssqr" ,NF, IndexUp_valence, IndexDn_valence)
+OppSplus=NewOperator("Splus",NF, IndexUp_valence, IndexDn_valence)
+OppSmin =NewOperator("Smin" ,NF, IndexUp_valence, IndexDn_valence)
+
+OppLx   =NewOperator("Lx"   ,NF, IndexUp_valence, IndexDn_valence)
+OppLy   =NewOperator("Ly"   ,NF, IndexUp_valence, IndexDn_valence)
+OppLz   =NewOperator("Lz"   ,NF, IndexUp_valence, IndexDn_valence)
+OppLsqr =NewOperator("Lsqr" ,NF, IndexUp_valence, IndexDn_valence)
+OppLplus=NewOperator("Lplus",NF, IndexUp_valence, IndexDn_valence)
+OppLmin =NewOperator("Lmin" ,NF, IndexUp_valence, IndexDn_valence)
+
+OppJx   =NewOperator("Jx"   ,NF, IndexUp_valence, IndexDn_valence)
+OppJy   =NewOperator("Jy"   ,NF, IndexUp_valence, IndexDn_valence)
+OppJz   =NewOperator("Jz"   ,NF, IndexUp_valence, IndexDn_valence)
+OppJsqr =NewOperator("Jsqr" ,NF, IndexUp_valence, IndexDn_valence)
+OppJplus=NewOperator("Jplus",NF, IndexUp_valence, IndexDn_valence)
+OppJmin =NewOperator("Jmin" ,NF, IndexUp_valence, IndexDn_valence)
+
+Oppldots=NewOperator("ldots",NF, IndexUp_valence, IndexDn_valence)
+
+Oppcldots= NewOperator("ldots", NF, IndexUp_core, IndexDn_core)
+
+if #IndexUp_valence==3 then
+  OppF0 =NewOperator("U", NF, IndexUp_valence, IndexDn_valence, {1,0})
+  OppF2 =NewOperator("U", NF, IndexUp_valence, IndexDn_valence, {0,1})
+  
+  OppUcvF0 = NewOperator("U", NF, IndexUp_core, IndexDn_core, IndexUp_valence, IndexDn_valence, {1}, {0})
+  OppUcvG1 = NewOperator("U", NF, IndexUp_core, IndexDn_core, IndexUp_valence, IndexDn_valence, {0}, {1})
+end
+
+if #IndexUp_valence==5 then
+  OppF0 =NewOperator("U", NF, IndexUp_valence, IndexDn_valence, {1,0,0})
+  OppF2 =NewOperator("U", NF, IndexUp_valence, IndexDn_valence, {0,1,0})
+  OppF4 =NewOperator("U", NF, IndexUp_valence, IndexDn_valence, {0,0,1})
+
+  OppUcvF0 = NewOperator("U", NF, IndexUp_core, IndexDn_core, IndexUp_valence, IndexDn_valence, {1,0}, {0,0})
+  OppUcvF2 = NewOperator("U", NF, IndexUp_core, IndexDn_core, IndexUp_valence, IndexDn_valence, {0,1}, {0,0})
+  OppUcvG1 = NewOperator("U", NF, IndexUp_core, IndexDn_core, IndexUp_valence, IndexDn_valence, {0,0}, {1,0})
+  OppUcvG3 = NewOperator("U", NF, IndexUp_core, IndexDn_core, IndexUp_valence, IndexDn_valence, {0,0}, {0,1})
+end
+
+if #IndexUp_valence==7 then
+  OppF0 =NewOperator("U", NF, IndexUp_valence, IndexDn_valence, {1,0,0,0})
+  OppF2 =NewOperator("U", NF, IndexUp_valence, IndexDn_valence, {0,1,0,0})
+  OppF4 =NewOperator("U", NF, IndexUp_valence, IndexDn_valence, {0,0,1,0})
+  OppF6 =NewOperator("U", NF, IndexUp_valence, IndexDn_valence, {0,0,0,1})
+  
+  OppUcvF0 = NewOperator("U", NF, IndexUp_core, IndexDn_core, IndexUp_valence, IndexDn_valence, {1,0,0}, {0,0,0})
+  OppUcvF2 = NewOperator("U", NF, IndexUp_core, IndexDn_core, IndexUp_valence, IndexDn_valence, {0,1,0}, {0,0,0})
+  OppUcvF4 = NewOperator("U", NF, IndexUp_core, IndexDn_core, IndexUp_valence, IndexDn_valence, {0,0,1}, {0,0,0})
+  OppUcvG1 = NewOperator("U", NF, IndexUp_core, IndexDn_core, IndexUp_valence, IndexDn_valence, {0,0,0}, {1,0,0})
+  OppUcvG3 = NewOperator("U", NF, IndexUp_core, IndexDn_core, IndexUp_valence, IndexDn_valence, {0,0,0}, {0,1,0})
+  OppUcvG5 = NewOperator("U", NF, IndexUp_core, IndexDn_core, IndexUp_valence, IndexDn_valence, {0,0,0}, {0,0,1})
+end
+
+-- x polarized light is defined as x = Cos[phi]Sin[theta] = sqrt(1/2) ( C_1^{(-1)} - C_1^{(1)})
+Akm = {{1,-1,sqrt(1/2)},{1, 1,-sqrt(1/2)}}
+TXASx = NewOperator("CF", NF, IndexUp_valence, IndexDn_valence, IndexUp_core, IndexDn_core, Akm)
+-- y polarized light is defined as y = Sin[phi]Sin[theta] = sqrt(1/2) I ( C_1^{(-1)} + C_1^{(1)})
+Akm = {{1,-1,sqrt(1/2)*I},{1, 1,sqrt(1/2)*I}}
+TXASy = NewOperator("CF", NF, IndexUp_valence, IndexDn_valence, IndexUp_core, IndexDn_core, Akm)
+-- z polarized light is defined as z = Cos[theta] = C_1^{(0)}
+Akm = {{1,0,1}}
+TXASz = NewOperator("CF", NF, IndexUp_valence, IndexDn_valence, IndexUp_core, IndexDn_core, Akm)
+
+-- besides linear polarized light one can define circular polarized light as the sum of
+-- x and y polarizations with complex prefactors
+TXASr = sqrt(1/2)*(TXASx - I * TXASy)
+TXASl =-sqrt(1/2)*(TXASx + I * TXASy)
+
+end
+
+
+function CalculateGroundstateAndSpectra()
+  Npsi=3
+  if #IndexUp_valence==3 then
+    StartRestrictions = {NF, NB, {"11 000000",2,2}, {"00 111111",4,4}}
+  end
+  if #IndexUp_valence==5 then
+    StartRestrictions = {NF, NB, {"111111 0000000000",6,6}, {"000000 1111111111",8,8}}
+  end
+  if #IndexUp_valence==7 then
+    StartRestrictions = {NF, NB, {"1111111111 00000000000000",10,10}, {"0000000000 11111111111111",12,12}}
+  end
+  psiList = Eigensystem(Hamiltonian, StartRestrictions, Npsi)
+  
+  -- In order to get some information on these eigenstates it is good to plot expectation values
+  -- We first define a list of all the operators we would like to calculate the expectation value of
+  oppList={Hamiltonian, OppSsqr, OppLsqr, OppJsqr, OppSz, OppLz, OppJz, Oppldots, ConjugateTranspose(TXASz)*TXASz, ConjugateTranspose(TXASr)*TXASr, ConjugateTranspose(TXASl)*TXASl};
+  
+  -- next we loop over all operators and all states and print the expectation value
+  print(" <E>      <S^2>    <L^2>    <J^2>    <S_z>    <L_z>    <J_z>    <l.s>    <OzOz>   <OrOr>   <OlOl>");
+  for i = 1,#psiList do
+    for j = 1,#oppList do
+      expectationvalue = Chop(psiList[i]*oppList[j]*psiList[i])
+      io.write(string.format("%8.5f ",expectationvalue))
+    end
+    io.write("\n")
+  end
+  XASSpectraDense  = CreateSpectra(XASHamiltonian, {TXASz,TXASr,TXASl}, psiList, {{"Emin",-20}, {"Emax",30}, {"NE",5000}, {"Gamma",0.1}, {"DenseBorder",100000}})
+  XASSpectraSparse = CreateSpectra(XASHamiltonian, {TXASz,TXASr,TXASl}, psiList, {{"Emin",-20}, {"Emax",30}, {"NE",5000}, {"Gamma",0.1}, {"DenseBorder",0}})
+  
+  print("All Integrals calculate as (-1/pi Int_{-inf}^{inf} Im[G(w)] dw")
+  
+  print("Spectra.Integral calculated with Dense  methods")
+  print(XASSpectraDense.Integral)
+  print("Same integrated by hand")
+  IntegrateSpectrumByHand(XASSpectraDense)
+  print("Spectra.Integral calculated with Sparse methods")
+  print(XASSpectraSparse.Integral)
+  print("Same integrated by hand")
+  IntegrateSpectrumByHand(XASSpectraSparse)
+
+end
+
+-- s to p excitation
+
+print("\n\n===========================================================")
+print("==================    s to p transitions    ===============")
+print("===========================================================")
+
+NF=8
+NB=0
+IndexDn_core={0}
+IndexUp_core={1}
+IndexDn_valence={2,4,6}
+IndexUp_valence={3,5,7}
+
+F2pp    = 10
+F0pp    = F2pp * 2/25
+
+G1sp    =  5.0
+F0sp    =  G1sp*1/6
+
+zeta_valence =  0.1
+
+zeta_core = 10
+
+Bz      = 0.000001
+
+
+DefineOperators()
+
+Hamiltonian = F0pp*OppF0 + F2pp*OppF2 + zeta_valence*Oppldots + Bz*(2*OppSz+OppLz)
+
+XASHamiltonian = Hamiltonian + zeta_core * Oppcldots + F0sp * OppUcvF0 + G1sp * OppUcvG1
+
+CalculateGroundstateAndSpectra()
+
+
+
+-- p to d excitation
+print("\n\n===========================================================")
+print("==================    p to d transitions    ===============")
+print("===========================================================")
+
+NF=16
+NB=0
+IndexDn_core={0,2,4}
+IndexUp_core={1,3,5}
+IndexDn_valence={6,8,10,12,14}
+IndexUp_valence={7,9,11,13,15}
+
+F2dd    = 10
+F4dd    =  6.25
+F0dd    = (F2dd+F4dd)*2/63
+
+F2pd    =  7.0
+G1pd    =  5.0
+G3pd    =  2.5
+F0pd    =  G1pd*1/15 + G3pd*3/70
+
+zeta_valence =  0.1
+
+zeta_core = 10
+
+Bz      = 0.000001
+
+
+DefineOperators()
+
+Hamiltonian = F0dd*OppF0 + F2dd*OppF2 + F4dd*OppF4 + zeta_valence*Oppldots + Bz*(2*OppSz+OppLz)
+
+XASHamiltonian = Hamiltonian + zeta_core * Oppcldots + F0pd * OppUcvF0 + F2pd * OppUcvF2 + G1pd * OppUcvG1 + G3pd * OppUcvG3
+
+CalculateGroundstateAndSpectra()
+
+
+-- d to f excitation
+print("\n\n===========================================================")
+print("==================    d to f transitions    ===============")
+print("===========================================================")
+NF=24
+NB=0
+IndexDn_core={0,2,4,6,8}
+IndexUp_core={1,3,5,7,9}
+IndexDn_valence={10,12,14,16,18,20,22}
+IndexUp_valence={11,13,15,17,19,21,23}
+
+F2ff    = 10
+F4ff    =  6.25
+F6ff    =  4
+F0ff    = F2ff * (4/195) + F4ff * (2/143) + F6ff * (100/5577)
+
+F2df    =  7.0
+F4df    =  4.0
+G1df    =  5.0
+G3df    =  2.5
+G5df    =  1.0
+F0df    =  G1df * 3/70 + G3df * 2/105 + G5df * 5/231
+
+zeta_valence =  0.1
+
+zeta_core = 10
+
+Bz      = 0.000001
+
+
+DefineOperators()
+
+Hamiltonian = F0ff*OppF0 + F2ff*OppF2 + F4ff*OppF4 + F6ff*OppF6 + zeta_valence*Oppldots + Bz*(2*OppSz+OppLz)
+
+XASHamiltonian = Hamiltonian + zeta_core * Oppcldots + F0df * OppUcvF0 + F2df * OppUcvF2 + F4df * OppUcvF4 + G1df * OppUcvG1 + G3df * OppUcvG3 + G5df * OppUcvG5
+
+CalculateGroundstateAndSpectra()
+
+

@@ -1,0 +1,92 @@
+
+Verbosity(0x0)
+
+Nsite = 6
+Nelectron = 6
+Occupation = Nelectron / (2*Nsite)
+
+
+
+TB = NewTightBinding()
+
+TB.Name = "1D Hubbard"
+TB.Cell = {{1,0,0},{0,1,0},{0,0,1}}
+TB.Atoms = { {"Cu",
+  {0,0,0},
+  { {"d",{"x^2-y^2"}} }
+} }
+TB.Hopping = { {"Cu.d","Cu.d", { 1,0,0}, {{1}} },
+{"Cu.d","Cu.d", {-1,0,0}, {{1}} } }
+
+NFloc = 2
+NBloc = 0
+U=1000
+Hloc   = NewOperator(NFloc, NBloc, {{0,-0,1,-1,   1}})
+HlocMF = NewOperator(NFloc, NBloc, {{0,-0,   1},{1,-1,   1}})
+
+NCell = Nsite
+NF    = 2*NCell
+NB    = 0
+
+
+HFull  = CreateClusterHamiltonian(TB, {"periodic", {{NCell,0,0},{0,1,0},{0,0,1}}}, U*Hloc, {{"AddSpin",true}})
+HKin   = CreateClusterHamiltonian(TB, {"periodic", {{NCell,0,0},{0,1,0},{0,0,1}}}, {{"AddSpin",true}})
+HImpMF = CreateClusterHamiltonian(TB, {"periodic", {{NCell,0,0},{0,1,0},{0,0,1}}}, HlocMF, {{"AddSpin",true}}) - HKin - NewOperator(Nsite * NFloc, 0, {{0,-0,   1},{1,-1,   1}})
+Hlocal = NewOperator(Nsite * NFloc, NBloc, {{0,-0,1,-1,   1}})
+
+
+OppNup = NewOperator(Nsite * NFloc, 0, {{1,-1,   1}})
+OppNdn = NewOperator(Nsite * NFloc, 0, {{0,-0,   1}})
+OppN   = OppNup + OppNdn
+
+strdn = ""
+strup = ""
+for i=1,NCell do
+  strdn = strdn .. "10"
+  strup = strup .. "01"
+end
+
+StartRestrictions = {NF, NB,  {strdn,Nelectron/2,Nelectron/2}, {strup,Nelectron/2,Nelectron/2}}
+
+
+
+-- full
+Hamiltonian = HFull
+
+
+psi = Eigensystem(Hamiltonian,StartRestrictions,1)
+
+E = psi*Hamiltonian*psi
+VarE = psi*Hamiltonian*Hamiltonian*psi - E*E
+Nup  = psi * OppNup * psi
+Ndn  = psi * OppNdn * psi
+Ntot = psi * OppN * psi
+VarNup  = psi * OppNup*OppNup * psi - Nup*Nup
+VarNdn  = psi * OppNdn*OppNdn * psi - Ndn*Ndn
+VarNtot = psi * OppN*OppN * psi - Ntot*Ntot
+
+print("Energy ",E,   " Variance ",VarE)
+print("Nup    ",Nup, " Variance ",VarNup)
+print("Ndn    ",Ndn, " Variance ",VarNdn)
+print("Ntot   ",Ntot," Variance ",VarNtot)
+
+
+-- Impurity MF
+V =  U
+Hamiltonian = U * Hlocal + V * HImpMF * Occupation + HKin
+
+psi = Eigensystem(Hamiltonian,StartRestrictions,1)
+
+E = psi*Hamiltonian*psi
+VarE = psi*Hamiltonian*Hamiltonian*psi - E*E
+Nup  = psi * OppNup * psi
+Ndn  = psi * OppNdn * psi
+Ntot = psi * OppN * psi
+VarNup  = psi * OppNup*OppNup * psi - Nup*Nup
+VarNdn  = psi * OppNdn*OppNdn * psi - Ndn*Ndn
+VarNtot = psi * OppN*OppN * psi - Ntot*Ntot
+
+print("Energy ",E,   " Variance ",VarE)
+print("Nup    ",Nup, " Variance ",VarNup)
+print("Ndn    ",Ndn, " Variance ",VarNdn)
+print("Ntot   ",Ntot," Variance ",VarNtot)
