@@ -37,9 +37,9 @@ uint32_t GlobalVerbosity=0xF;
 
 #define PrintDebugInfo
 
-#include "../Core/StructDef.c"
+#include "../Core/StructDef.cpp"
 
-#include "../Core/BasicMath/BasicMath_Constants.c"
+#include "../Core/BasicMath/BasicMath_Constants.cpp"
 #include "../Core/BasicMath.h"
 #include "../Core/BasicMath/BasicMath_AndersonMatrixVector.h"
 #include "../Core/BasicMath/BasicMath_BADoubleTriDiagonalMatrixVector.h"
