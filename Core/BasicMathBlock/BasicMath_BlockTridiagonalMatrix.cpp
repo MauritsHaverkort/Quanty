@@ -1,5 +1,3 @@
-#include "BasicMath_BlockTridiagonalMatrix.h"
-
 /*
  *   Initialize a struct of BlockTridiagonalMatrix type
  *   malloc the space for storing N+1 matrices of dimension BlockSize * BlockSize storing a0 to aN

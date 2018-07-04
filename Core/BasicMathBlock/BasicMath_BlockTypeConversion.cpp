@@ -1,5 +1,3 @@
-#include "BasicMath_BlockTypeConversion.h"
-
 /*  These functions convert one type of representation to an other
  *
  *  Conversions are:
@@ -1044,8 +1042,8 @@ uint32_t BlockTriDiagonalMatrixToSpectra(const double Energy, BlockTriDiagonalMa
 uint32_t BlockTriDiagonalMatrixEigenValues(const BlockTriDiagonalMatrixType * const A, double * val)
 {
   uint32_t i,j,k,iBlock,jBlock;
-  char *UPLO="U";
-  char *VECT="N";
+  char const *UPLO="U";
+  char const *VECT="N";
   const uint32_t N=A->N*A->BlockSize;
   const uint32_t KD = A->BlockSize-1;
   const uint32_t LDAB = A->BlockSize;
@@ -1151,9 +1149,9 @@ uint32_t BlockTriDiagonalMatrixEigenValues(const BlockTriDiagonalMatrixType * co
 uint32_t BlockTriDiagonalMatrixEigenSystem(const BlockTriDiagonalMatrixType * const A, double * val, CompactMatrixType * fun)
 {
   uint32_t j,k,iBlock,jBlock;
-  char *UPLO="L";
+  char const *UPLO="L";
   //TODO: rewrite for UPLO=U such that we can use A*B^T aftwerwards (faster) Needs new filling of matrix AB
-  char *VECT="V";
+  char const *VECT="V";
   CompactMatrixType Q, funQ;
   const uint32_t N=A->N*A->BlockSize;
   const uint32_t KD = 2*A->BlockSize-1;
@@ -1299,9 +1297,9 @@ uint32_t BlockTriDiagonalMatrixEigenSystem(const BlockTriDiagonalMatrixType * co
 uint32_t BlockTriDiagonalMatrixEigenSystemWithDeflation(const BlockTriDiagonalMatrixType * const A, double * val, CompactMatrixType * fun, const uint32_t * const BlockSize)
 {
   uint32_t j,k,iBlock,jBlock;
-  char *UPLO="L";
+  char const *UPLO="L";
   //TODO: rewrite for UPLO=U such that we can use A*B^T aftwerwards (faster) Needs new filling of matrix AB
-  char *VECT="V";
+  char const *VECT="V";
   CompactMatrixType Q, funQ;
   uint32_t N=0;
   const uint32_t KD = 2*A->BlockSize-1;
@@ -3549,8 +3547,8 @@ uint32_t TightBindingHamiltonianAddSpinPlusSelfEnergyMultiSiteToBlockListOfPoles
  */
 uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType const *psi, CompactMatrixType *const T, BlockTriDiagonalMatrixType *const ABlock, double NBlock, double SingularValue)
 {
-  char *charC="C";
-  char *charN="N";
+  char const *charC="C";
+  char const *charN="N";
   int i,ii,j,k,oldindex,newindex,ipos,iipos,ia,ib,jcol,icol,allzero;
   double norm,dot,dotRe,dotIm;
   CompactMatrixType Tnow;

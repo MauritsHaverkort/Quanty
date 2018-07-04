@@ -1,5 +1,3 @@
-#include "get_put.h"
-
 /*  test if a string is a valid lua variable name
  *
  */

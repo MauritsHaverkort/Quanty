@@ -1,5 +1,3 @@
-#include "DensityMatrix.h"
-
 /*
  *  Calculate the density matrix of a wave-function
  *  On input psi contains a wave-function and Rho points to a not allocated matrix

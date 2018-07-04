@@ -1,4 +1,3 @@
-#include "WaveFunctionArithmetic.h"
 #include "RealWaveFunctionArithmetic.cpp"
 #include "ComplexWaveFunctionArithmetic.cpp"
 #include "RealComplexWaveFunctionArithmetic.cpp"

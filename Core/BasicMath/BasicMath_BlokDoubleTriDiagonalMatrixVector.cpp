@@ -1,5 +1,3 @@
-#include "BasicMath_BlokDoubleTriDiagonalMatrixVector.h"
-
 /*
 *     ( A[0][0]=acv0  | A[0][1]=bv0   | 0             | 0           | A[0][4]=bc0   | 0             | 0           )
 *   A=( A[1][0]=bv0^+ | A[1][1]=av1   | A[1][2]=bv1   | 0           | 0             | 0             | 0           )

@@ -1,11 +1,10 @@
-#include "Print.h"
 #include "StreamPrint.cpp"
 #include "FilePrint.cpp"
 #include "PrintMathematicaExpression.cpp"
 #include "StringPrint.cpp"
 
 
-void VerbosityPrintf(const uint32_t verbosity, char *fmt, ...)
+void VerbosityPrintf(const uint32_t verbosity, const char * const fmt, ...)
 {
   va_list args;
   va_start ( args, fmt );

@@ -3131,7 +3131,7 @@ static int LuaEigensystem(lua_State * L)
     {"restrictions", "DeterminantRestrictionType", &(Options.DeterminantRestrictions)},
     {"Restrictions", "DeterminantRestrictionType", &(Options.DeterminantRestrictions)},
     {"ExpandBasis", "bool",&(Options.ExpandBasis)},
-    {"ShiftScheme", "char*",Options.Settings.ShiftScheme},
+    {"ShiftScheme", "char*",(void*)Options.Settings.ShiftScheme},
     {NULL, NULL, NULL}};
   VerbosityPrintf(0x10000000,"Start of LuaEigensystem\n");
   /* check number of input parameters */
@@ -3440,8 +3440,8 @@ static int LuaOrthonormalize(lua_State *L)
   uint32_t len;
   struct
   {
-    char* Method;
-    char* Order;
+    const char* Method;
+    const char* Order;
     double SingularValue;
     Bool ReduceDimension;
   } Options;
@@ -4140,7 +4140,7 @@ int relAngularMomentumZNumbers(char * orb)
 
 
 
-void lua_groupOrbitals(lua_State *L, int indTablePos, char* groupKey, char** groupMembers, uint32_t groupLen)
+void lua_groupOrbitals(lua_State *L, int indTablePos, const char* groupKey, char** groupMembers, uint32_t groupLen)
 {
 	int j,k,l;
 	k = 1;

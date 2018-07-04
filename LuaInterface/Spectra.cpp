@@ -1769,7 +1769,7 @@ static int LuaSpectraPow(lua_State * L)
           // (original variable) operator (number)
           uint32_t i,j;
           double b;
-          double complex za, zb, zr;
+          Complex16 c, ac;
           SpectraTypeArray *res;
           b = luaL_checknumber(L, len);
           res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
@@ -1783,11 +1783,11 @@ static int LuaSpectraPow(lua_State * L)
             }
             for(j=0;j<=res->Spec[i].N;j++)
             {
-              za = a->Spec[i].Re[j] + I * a->Spec[i].Im[j];
-              zb = b;
-              zr = cpow(za, zb);
-              res->Spec[i].Re[j]= creal(zr);
-              res->Spec[i].Im[j]= cimag(zr);
+              c.Re = a->Spec[i].Re[j];
+              c.Im = a->Spec[i].Im[j];
+              ac = Cpowd(c, b);
+              res->Spec[i].Re[j]= ac.Re;
+              res->Spec[i].Im[j]= ac.Im;
             }
           }
           luaL_setmetatable(L, "Spectra_Type");
@@ -1805,8 +1805,7 @@ static int LuaSpectraPow(lua_State * L)
           {
             // (original variable) operator (user data - complex)
             uint32_t i,j;
-            Complex16 *b;
-            double complex za, zb, zr;
+            Complex16 *b,c,ac;
             SpectraTypeArray *res;
             b = (Complex16 *) luaL_checkudata(L, len, "Complex_Type");
             res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
@@ -1820,11 +1819,11 @@ static int LuaSpectraPow(lua_State * L)
               }
               for(j=0;j<=res->Spec[i].N;j++)
               {
-                za = a->Spec[i].Re[j] + I * a->Spec[i].Im[j];
-                zb = b->Re + I * b->Im;
-                zr = cpow(za, zb);
-                res->Spec[i].Re[j]= creal(zr);
-                res->Spec[i].Im[j]= cimag(zr);
+                c.Re = a->Spec[i].Re[j];
+                c.Im = a->Spec[i].Im[j];
+                ac = Cpow(c, *b);
+                res->Spec[i].Re[j]= ac.Re;
+                res->Spec[i].Im[j]= ac.Im;
               }
             }
             luaL_setmetatable(L, "Spectra_Type");

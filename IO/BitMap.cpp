@@ -1,5 +1,3 @@
-#include "BitMap.h"
-
 typedef struct                       /**** BMP file header structure ****/
 {
   unsigned short bfType;        /* Magic number for file */

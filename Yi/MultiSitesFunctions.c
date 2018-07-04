@@ -1,5 +1,3 @@
-#include "MultiSitesFunctions.h"
-
 /* Settings of DMFT calculation */
 
 #define NSiteMax 16

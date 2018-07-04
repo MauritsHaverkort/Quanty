@@ -1,5 +1,3 @@
-#include "eval.h"
-
 static int LuaEval(lua_State * L)
 {
   printf("LuaEval\n");

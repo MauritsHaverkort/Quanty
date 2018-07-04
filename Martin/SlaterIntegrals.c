@@ -1,20 +1,4 @@
-typedef struct
-{
-    unsigned int n[4];
-    int kappa[4];
-    
-}SQuantumNumbers;
 
-typedef struct
-{
-    double *val;
-    int Nval;
-    unsigned int *k;
-    SQuantumNumbers tau;
-    
-}SSlaterIntegral;
-
-#include "SlaterIntegrals.h"
 
 SSlaterIntegral *GetSlaterIntegrals(double **basisfuns, unsigned int NBasisFuns, const double *x,
                                     unsigned int NGridPoints,const int **tupel, unsigned int NIntegrals)

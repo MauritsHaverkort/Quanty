@@ -54,8 +54,8 @@ void LuaInsertTable_CompactMatrixType(lua_State*L, int len, CompactMatrixType co
 void LuaPushTable_SpectraTypeArray(lua_State* L, SpectraTypeArray const * const M);
 void LuaPush_ResponseFunction(lua_State *L, ResponsefunctionType const * const M);
 void shallowtablecopy(lua_State* L, int index);
-void * LuaReturnVariableType(lua_State * L, int narg, char * type);
-void * LuaFindOptionsInTable(lua_State * L, int narg, char* token, char* type);
+void * LuaReturnVariableType(lua_State * L, int narg, const char * type);
+void * LuaFindOptionsInTable(lua_State * L, int narg, const char* token, const char* type);
 int32_t LuaTestOptionsList(lua_State *L, int narg);
 int strcicmp(char const *a, char const *b);
 int32_t LuaCheckOptions(lua_State *L, int narg, LuaOptionsType *Options);

@@ -4,7 +4,6 @@ Adepted from:
 lookup3.c, by Bob Jenkins, May 2006, Public Domain.
 */
 
-#include "Hash.h"
 #include <sys/param.h>          /* attempt to define endianness */
 #ifdef linux
 #include <endian.h>             /* attempt to define endianness */

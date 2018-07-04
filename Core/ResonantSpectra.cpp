@@ -1,5 +1,3 @@
-#include "ResonantSpectra.h"
-
 //  Functions originated by Robert Green
 //
 

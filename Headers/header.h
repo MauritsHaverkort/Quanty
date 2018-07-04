@@ -38,8 +38,8 @@ uint32_t GlobalVerbosity=0xF;
 #define PrintDebugInfo
 
 #include "../Core/StructDef.cpp"
-
 #include "../Core/BasicMath/BasicMath_Constants.cpp"
+
 #include "../Core/BasicMath.h"
 #include "../Core/BasicMath/BasicMath_AndersonMatrixVector.h"
 #include "../Core/BasicMath/BasicMath_BADoubleTriDiagonalMatrixVector.h"
@@ -139,6 +139,8 @@ uint32_t GlobalVerbosity=0xF;
 #include "../Tight_Binding/Tight_Binding.h"
 #include "../Tight_Binding/Tight_Binding_lib.h"
 #include "../Tools/TemperatureAvverage.h"
+
+#include "../Martin/SlaterIntegrals.h"
 
 #include "blas.h"
 #include "lapack.h"

@@ -1,5 +1,3 @@
-#include "BasicMath_BlockMatrixToOperator.h"
-
 /*  Starting from a BlockTridiagonalMatrix creates an impurity Hamiltonian
  *  H on input not initiallized
  *  NBlockMax the maximal number of blocks in the Hamiltonian, this includes the impurity.

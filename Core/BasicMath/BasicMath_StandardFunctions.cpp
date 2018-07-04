@@ -1,5 +1,3 @@
-#include "BasicMath_StandardFunctions.h"
-
 /*  Chebyshev polinomials
 *   first kind T
 *   T0 (x) = 1
@@ -1097,7 +1095,7 @@ double CubicHarmonicK(const int k, const int m, const double t, const double p)
  *       l == 1    - {t1u}
  *       l == 2    - {hg}
  */
-uint32_t PotentialExpandedOnC(char *s, uint32_t const l, double const *EigenEnergies, HarmonicsExpansion * const Akm)
+uint32_t PotentialExpandedOnC(char const *s, uint32_t const l, double const *EigenEnergies, HarmonicsExpansion * const Akm)
 {
   if (strcmp(s, "C1") == 0)
   {

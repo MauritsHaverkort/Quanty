@@ -1,5 +1,3 @@
-#include "OperatorArithmetic.h"
-
 /* format of a lader operator
  * stored as uint16_t
  *  if(o[i]&CrAnMask) then creation operator
@@ -98,7 +96,7 @@ uint32_t InitOperator(OperatorType * const O)
 /*  Initialize the Operator structure
  *  Allocate space for O.l
  */
-uint32_t InitNamedOperator(OperatorType * const O, char *name)
+uint32_t InitNamedOperator(OperatorType * const O, const char * const name)
 {
   int ret = InitOperator(O);
   strcpy(O->Name, name);

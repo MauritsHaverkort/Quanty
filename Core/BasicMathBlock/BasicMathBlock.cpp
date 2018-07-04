@@ -1,4 +1,3 @@
-#include "BasicMathBlock.h"
 #include "BasicMath_BlockListOfPoles.cpp"
 #include "BasicMath_BlockAndersonMatrix.cpp"
 #include "BasicMath_BlockTridiagonalMatrix.cpp"

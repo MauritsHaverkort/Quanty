@@ -866,14 +866,9 @@ static int LuaComplexPow(lua_State * L)
           // (original variable) operator (number)
           double b;
           Complex16 *res;
-          double complex za, zb, zc;
           b = luaL_checknumber(L, len);
           res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
-          za = a->Re + a->Im * I;
-          zb = b;
-          zc = cpow(za,zb);
-          res->Re=creal(zc);
-          res->Im=cimag(zc);
+          *res=Cpowd(*a,b);
           luaL_setmetatable(L, "Complex_Type");
           return 1;
         }
@@ -889,14 +884,9 @@ static int LuaComplexPow(lua_State * L)
           {
             // (original variable) operator (user data - complex)
             Complex16 *res, *b;
-            double complex za, zb, zc;
             b = (Complex16 *) luaL_checkudata(L, len, "Complex_Type");
             res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
-            za = a->Re + a->Im * I;
-            zb = b->Re + b->Im * I;
-            zc = cpow(za,zb);
-            res->Re=creal(zc);
-            res->Im=cimag(zc);
+            *res=Cpow(*a,*b);
             luaL_setmetatable(L, "Complex_Type");
             return 1;
           }

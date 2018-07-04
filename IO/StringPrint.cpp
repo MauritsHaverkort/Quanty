@@ -1,9 +1,7 @@
-#include "StringPrint.h"
-
 /*
  *
  */
-int sprintfAdd(char ** A, char *fmt, ...)
+int sprintfAdd(char ** A, const char *fmt, ...)
 {
   char * Atemp;
   int retval;
