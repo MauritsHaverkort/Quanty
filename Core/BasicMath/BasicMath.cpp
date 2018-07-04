@@ -24,25 +24,24 @@
 #define ComplexTimes7Im(x1,y1,x2,y2,x3,y3,x4,y4,x5,y5,x6,y6,x7,y7) (ComplexTimes2Im(x1,y1,x2,y2)*ComplexTimes5Re(x3,y3,x4,y4,x5,y5,x6,y6,x7,y7)+ComplexTimes2Im(x1,y1,x2,y2)*ComplexTimes5Re(x3,y3,x4,y4,x5,y5,x6,y6,x7,y7))
 #define ParallelalPipedVolumeMatrix(a) Abs(a[0][0]*Crossx(a[1],a[2])+a[0][1]*Crossy(a[1],a[2])+a[0][2]*Crossz(a[1],a[2]))
 
-#include "BasicMath/BasicMath_Constants.cpp"
-#include "BasicMath/BasicMath_Complex.cpp"
-#include "BasicMath/BasicMath_StandardFunctions.cpp"
-#include "BasicMath/BasicMath_Combinatorial.cpp"
-#include "BasicMath/BasicMath_VectorLinearAlgabra.cpp"
-#include "BasicMath/BasicMath_MatrixVector.cpp"
-#include "BasicMath/BasicMath_CompactMatrixVector.cpp"
-#include "BasicMath/BasicMath_SparseMatrixVector.cpp"
-#include "BasicMath/BasicMath_TriDiagonalMatrixVector.cpp"
-#include "BasicMath/BasicMath_DoubleTriDiagonalMatrixVector.cpp"
-#include "BasicMath/BasicMath_BADoubleTriDiagonalMatrixVector.cpp"
-#include "BasicMath/BasicMath_BlokTriDiagonalMatrixVector.cpp"
-#include "BasicMath/BasicMath_BlokDoubleTriDiagonalMatrixVector.cpp"
-#include "BasicMath/BasicMath_AndersonMatrixVector.cpp"
-#include "BasicMath/BasicMath_BlokAndersonMatrixVector.cpp"
-#include "BasicMath/BasicMath_ListOfPoles.cpp"
-#include "BasicMath/BasicMath_MatrixTypeConversion.cpp"
-#include "BasicMath/BasicMath_GreenFunctionArithmetic.cpp"
-#include "BasicMathBlock/BasicMathBlock.cpp"
+// #include "BasicMath_Constants.cpp" not included here, but before all other functions
+#include "BasicMath_Complex.cpp"
+#include "BasicMath_StandardFunctions.cpp"
+#include "BasicMath_Combinatorial.cpp"
+#include "BasicMath_VectorLinearAlgabra.cpp"
+#include "BasicMath_MatrixVector.cpp"
+#include "BasicMath_CompactMatrixVector.cpp"
+#include "BasicMath_SparseMatrixVector.cpp"
+#include "BasicMath_TriDiagonalMatrixVector.cpp"
+#include "BasicMath_DoubleTriDiagonalMatrixVector.cpp"
+#include "BasicMath_BADoubleTriDiagonalMatrixVector.cpp"
+#include "BasicMath_BlokTriDiagonalMatrixVector.cpp"
+#include "BasicMath_BlokDoubleTriDiagonalMatrixVector.cpp"
+#include "BasicMath_AndersonMatrixVector.cpp"
+#include "BasicMath_BlokAndersonMatrixVector.cpp"
+#include "BasicMath_ListOfPoles.cpp"
+#include "BasicMath_MatrixTypeConversion.cpp"
+#include "BasicMath_GreenFunctionArithmetic.cpp"
 
 /*
  *   x^a with both x and a integers

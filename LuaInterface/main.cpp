@@ -1,47 +1,10 @@
-#include <stdio.h>
-#include <time.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <string.h>
-#include <math.h>
-#include <float.h>
-#include <limits.h>
-#include <unistd.h>
-#include <stdarg.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 
-#ifdef _OPENMP
-#include <omp.h>
-#else
-#define omp_get_thread_num() 0
-#define omp_get_num_procs() 0
-#define omp_get_max_threads() 0
-#endif
 
 #include "../Headers/header.h"
-#include "../Core/TimeStamp.cpp"
-#include "../Core/Hash.cpp"
-#include "../Core/BasicMath.cpp"
-#include "../IO/Print.cpp"
-#include "../IO/Read.cpp"
-#include "../IO/BitMap.cpp"
-#include "../Core/Error.cpp"
-#include "../Core/WaveFunctionArithmetic.cpp"
-#include "../Core/WaveFunctionPerturbationArithmetic.cpp"
-#include "../Core/OperatorArithmetic.cpp"
-#include "../Core/OperatorWaveFunction.cpp"
-#include "../Core/OperatorWaveFunctionPerturbation.cpp"
-#include "../Core/BlockWaveFunctionArithmetic.cpp"
-#include "../Core/Lanczos.cpp"
-#include "../Core/BlockLanczos.cpp"
-#include "../Core/MeanField.cpp"
-#include "../Core/Spectral.cpp"
-#include "../Core/ResonantSpectra.cpp"
-#include "../Core/DensityMatrix.cpp"
-#include "../Core/Random.cpp"
-#include "../Core/MatrixOperator.cpp"
-#include "../Core/ImpurityLanczos.cpp"
+
+#include "../Core/Core.cpp"
+#include "../IO/IO.cpp"
+
 #include "../Model/StandardOperators.cpp"
 #include "../Hubbard_Model/CellFunctions.cpp"
 #include "../Tight_Binding/Tight_Binding_lib.cpp"
@@ -50,8 +13,6 @@
 #include "../Tight_Binding/StuttgartNMTO.cpp"
 #include "../Tight_Binding/DresdenFPLO.cpp"
 #include "../DMFT/SingleSiteFunctions.cpp"
-#include "../IO/StuttgartNMTO.cpp"
-#include "../IO/DresdenFPLO.cpp"
 
 #include "lua/includeLua.c"
 static void *currentudata = NULL;

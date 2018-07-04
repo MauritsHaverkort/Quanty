@@ -3823,7 +3823,7 @@ uint32_t CompactMatrixBlockBandDiagonalizeReal(CompactMatrixType const * const A
   double *b,*a,work[vec->Ni*vec->Ni];
   CompactMatrixType *veclist;
   B->BlockSize=vec->Ni;
-  B->N=MIN(A->Ni,NTri);
+  B->N=Min(A->Ni,NTri);
   B->QComplex=0;
   InitBlockTridiagonalMatrix(B);
   for(i=0;i<B->BlockSize;i++)
@@ -3902,19 +3902,19 @@ uint32_t CompactMatrixBlockBandDiagonalizeReal(CompactMatrixType const * const A
   if(ReturnT==True)
   {
     Ni=0;
-    for(j=1;j<=MIN(i+1,NTri);j++)
+    for(j=1;j<=Min(i+1,NTri);j++)
     {
       Ni=Ni+veclist[j].Ni;
     }
     ResizeCompactMatrix(vec, Ni, vec->Nj);
     Ni=0;
-    for(j=1;j<=MIN(i+1,NTri);j++)
+    for(j=1;j<=Min(i+1,NTri);j++)
     {
       memcpy(&(vec->VRe[Ni*vec->Nj]),veclist[j].VRe,veclist[j].Ni*veclist[j].Nj*sizeof(double));
       Ni=Ni+veclist[j].Ni;
     }
   }
-  for(j=1;j<=MIN(i+1,NTri);j++)
+  for(j=1;j<=Min(i+1,NTri);j++)
   {
     FreeCompactMatrix(&veclist[j]);
   }
@@ -3934,7 +3934,7 @@ uint32_t CompactMatrixBlockBandDiagonalizeComplex(CompactMatrixType const * cons
   Complex16 *b,*a,work[vec->Ni*vec->Ni];
   CompactMatrixType *veclist;
   B->BlockSize=vec->Ni;
-  B->N=MIN(A->Ni,NTri);
+  B->N=Min(A->Ni,NTri);
   B->QComplex=1;
   InitBlockTridiagonalMatrix(B);
   for(i=0;i<B->BlockSize;i++)
@@ -4021,19 +4021,19 @@ uint32_t CompactMatrixBlockBandDiagonalizeComplex(CompactMatrixType const * cons
   if(ReturnT==True)
   {
     Ni=0;
-    for(j=1;j<=MIN(i+1,NTri);j++)
+    for(j=1;j<=Min(i+1,NTri);j++)
     {
       Ni=Ni+veclist[j].Ni;
     }
     ResizeCompactMatrix(vec, Ni, vec->Nj);
     Ni=0;
-    for(j=1;j<=MIN(i+1,NTri);j++)
+    for(j=1;j<=Min(i+1,NTri);j++)
     {
       memcpy(&(vec->VRe[Ni*vec->Nj]),veclist[j].VRe,veclist[j].Ni*veclist[j].Nj*sizeof(double));
       Ni=Ni+veclist[j].Ni;
     }
   }
-  for(j=1;j<=MIN(i+1,NTri);j++)
+  for(j=1;j<=Min(i+1,NTri);j++)
   {
     FreeCompactMatrix(&veclist[j]);
   }

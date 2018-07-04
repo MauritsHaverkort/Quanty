@@ -1,7 +1,5 @@
 /* Some makeshift functions */
 
-#include "functions_simon.h"
-
 
 
 

@@ -1,4 +1,6 @@
 Verbosity(0xFFFF)
+
+print("boo")
 os.exit()
 
 

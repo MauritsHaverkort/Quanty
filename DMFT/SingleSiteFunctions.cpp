@@ -1,5 +1,3 @@
-#include "SingleSiteFunctions.h"
-
 uint32_t CreateWaveFunctionDMFT(WaveFunctionType * psi, uint32_t nBathV, uint32_t nBathC, uint32_t NBitsKey)
 {
   uint32_t i;

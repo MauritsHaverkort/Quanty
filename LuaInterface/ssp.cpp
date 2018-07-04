@@ -3666,7 +3666,7 @@ static int LuaBlockBandDiagonalize(lua_State *L)
       if(vec->Ni>vec->Nj) return luaL_error(L, "Block size (%d) should be smaller than dimension of matrix (%d)",vec->Ni,vec->Nj);
       if(vec->Nj!=M->Nj) return luaL_error(L, "Length of starting vector (%d) should be equivalent to dimension of matrix (%d).\n",vec->Nj,M->Nj);
     }
-    Options.NTri=MIN(Options.NTri, M->Ni);
+    Options.NTri=Min(Options.NTri, M->Ni);
     if(CompactMatrixBlockBandDiagonalize(M, vec, &B, Options.SingularValue, Options.NTri, Options.NOrtho, Options.ReOrthogonalize, Options.ReturnT))
     {
       return luaL_error(L, "CompactMatrixBlockBandDiagonalize failed that should not happen\n");

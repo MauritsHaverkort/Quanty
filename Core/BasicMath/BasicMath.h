@@ -1,3 +1,25 @@
+// #include "BasicMath_Constants.h" no header file for constants, only defines
+#include "BasicMath_Complex.h"
+#include "BasicMath_StandardFunctions.h"
+#include "BasicMath_Combinatorial.h"
+#include "BasicMath_VectorLinearAlgabra.h"
+#include "BasicMath_MatrixVector.h"
+#include "BasicMath_CompactMatrixVector.h"
+#include "BasicMath_SparseMatrixVector.h"
+#include "BasicMath_TriDiagonalMatrixVector.h"
+#include "BasicMath_DoubleTriDiagonalMatrixVector.h"
+#include "BasicMath_BADoubleTriDiagonalMatrixVector.h"
+#include "BasicMath_BlokTriDiagonalMatrixVector.h"
+#include "BasicMath_BlokDoubleTriDiagonalMatrixVector.h"
+#include "BasicMath_AndersonMatrixVector.h"
+#include "BasicMath_BlokAndersonMatrixVector.h"
+#include "BasicMath_ListOfPoles.h"
+#include "BasicMath_MatrixTypeConversion.h"
+#include "BasicMath_GreenFunctionArithmetic.h"
+
+
+
+
 uint32_t PowerInt(uint32_t x, uint32_t a);
 double PowerDoubleInt(double x, uint32_t a);
 void Cross(const double x[], const double y[], double z[]);

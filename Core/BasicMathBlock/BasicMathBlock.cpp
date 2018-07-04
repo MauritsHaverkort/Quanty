@@ -1,9 +1,9 @@
-#include "BasicMath_BlockListOfPoles.cpp"
 #include "BasicMath_BlockAndersonMatrix.cpp"
-#include "BasicMath_BlockTridiagonalMatrix.cpp"
-#include "BasicMath_BlockNaturalImpurityOrbital.cpp"
-#include "BasicMath_BlockTypeConversion.cpp"
+#include "BasicMath_BlockListOfPoles.cpp"
 #include "BasicMath_BlockMatrixToOperator.cpp"
+#include "BasicMath_BlockNaturalImpurityOrbital.cpp"
+#include "BasicMath_BlockTridiagonalMatrix.cpp"
+#include "BasicMath_BlockTypeConversion.cpp"
 
 /* Free the BlockMatrix, independent if the type is capital or small */
 /* Block types read from the lua stack need different freeing depending on capital or small cap */

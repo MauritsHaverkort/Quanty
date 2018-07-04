@@ -1,10 +1,3 @@
-#include "RealWaveFunctionArithmetic.cpp"
-#include "ComplexWaveFunctionArithmetic.cpp"
-#include "RealComplexWaveFunctionArithmetic.cpp"
-#include "ComplexRealWaveFunctionArithmetic.cpp"
-
-
-
 /*
  *  checks if det has occupation in states larger then NFermion
  */

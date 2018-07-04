@@ -2543,7 +2543,7 @@ uint32_t NiImpurity(SpectraSettings SpecSet)
       PsiHermitianOperatorPsi(OppH, psi, &egrd[igrd]);
     }
     printf("The ground-state energies are:\n");
-    for (i=0; i<MIN(igrd+1, maxgrd); i++)
+    for (i=0; i<Min(igrd+1, maxgrd); i++)
     {
       printf("%i  %22.15E\n", i, egrd[i]);
     }
@@ -2852,7 +2852,7 @@ uint32_t NiImpurity(SpectraSettings SpecSet)
         PsiHermitianOperatorPsi(OppH, psi, &egrd[igrd]);
       }
       printf("The ground-state energies are:\n");
-      for (i=0; i<MIN(igrd+1, maxgrd); i++)
+      for (i=0; i<Min(igrd+1, maxgrd); i++)
       {
         printf("%i  %22.15E\n", i, egrd[i]);
       }

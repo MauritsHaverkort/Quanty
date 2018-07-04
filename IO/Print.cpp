@@ -1,8 +1,3 @@
-#include "StreamPrint.cpp"
-#include "FilePrint.cpp"
-#include "PrintMathematicaExpression.cpp"
-#include "StringPrint.cpp"
-
 
 void VerbosityPrintf(const uint32_t verbosity, const char * const fmt, ...)
 {
