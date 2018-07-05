@@ -1,6 +1,7 @@
 #include "../Martin/SlaterIntegrals.c"
 #include "../Martin/DiracHamiltonian.c"
 #include "../Martin/ContinuumStates.c"
+//#include "mkl.h"
 
 void CreateOperatorCoulombRelativisticOneIntegral(uint32_t const NFermion,int const kappa1,int const kappa2, int const kappa3,int const kappa4,uint16_t const *Jindex1,
                                                   uint16_t const *Jindex2,uint16_t const *Jindex3, uint16_t const *Jindex4,double const *Fk, const unsigned int n1,
@@ -59,17 +60,12 @@ uint32_t CreateOperatorFastCoulombRelativistic(uint32_t const NFermion,double **
 
     OperatorType optemp;
     SSlaterIntegral *integrals;
-    //double t;
 
-    //t = dsecnd();
     integrals = GetSlaterIntegrals(basisfuns,NbasisFuns,grid, NGridpoints, (const int **) tuple, NIntegrals);
-    //printf("%f\n",dsecnd()-t);
 
     int *k, i;
     unsigned int *n;
     double *Fk;
-
-    //t = dsecnd();
 
     k = integrals[0].tau.kappa;
     n = integrals[0].tau.n;
@@ -87,7 +83,13 @@ uint32_t CreateOperatorFastCoulombRelativistic(uint32_t const NFermion,double **
         OperatorAdd(op, optemp, 1., 0.);
 
     }
-    //printf("%f\n",dsecnd()-t);
+    for ( i = 0; i < NIntegrals; i++)
+    {
+    	free(integrals[i].val);
+    	free(integrals[i].k);
+    }
+    free(integrals);
+
     return 0;
 }
 
@@ -100,19 +102,19 @@ uint32_t CreateOperatorFullCoulombRelativistic(uint32_t const NFermion,double **
     //double t;
   
   
-  BeginTiming("GetSlaterIntegrals", &GlobalTime);
-    //t = dsecnd();
+    BeginTiming("GetSlaterIntegrals", &GlobalTime);
+
     integrals = GetSlaterIntegrals(basisfuns,NbasisFuns,grid, NGridpoints, (const int **) tuple, NIntegrals);
-    //printf("%f\n",dsecnd()-t);
-  EndTiming("GetSlaterIntegrals", &GlobalTime);
+
+    EndTiming("GetSlaterIntegrals", &GlobalTime);
   
     int *k, i;
     unsigned int *n;
     double *Fk;
     
-    //t = dsecnd();
+
   
-  BeginTiming("CreateOperatorCoulomb", &GlobalTime);
+    BeginTiming("CreateOperatorCoulomb", &GlobalTime);
     k = integrals[0].tau.kappa;
     n = integrals[0].tau.n;
     Fk = integrals[0].val;
@@ -128,8 +130,14 @@ uint32_t CreateOperatorFullCoulombRelativistic(uint32_t const NFermion,double **
         OperatorAdd(op, optemp, 1., 0.);
     
     }
-  EndTiming("CreateOperatorCoulomb", &GlobalTime);
-  PrintTiming(GlobalTime);
+    EndTiming("CreateOperatorCoulomb", &GlobalTime);
+    PrintTiming(GlobalTime);
+    for ( i = 0; i < NIntegrals; i++)
+    {
+    	free(integrals[i].val);
+    	free(integrals[i].k);
+    }
+    free(integrals);
     return 0;
 }
 
@@ -157,6 +165,7 @@ uint32_t CreateOperatorDirac(uint32_t const NFermion,const unsigned int NBasisFu
 	for ( n = 0; n < Ngroups; n++)
 	{
 		diracElements = CalculateDiracMatrixElements(basisfuns,derivfuns,dualfuns,groups[n].indices,groups[n].n,x,NGridpoints,groups[n].kappa,Z);
+		//PrintMartix2(diracElements,groups[n].n);
 
 		for ( i = 0; i < groups[n].n; i++)
 		{
@@ -205,6 +214,20 @@ void PrintMartix(double *M, int n)
 	fflush(stdout);
 }
 
+void PrintMartix2(double **M, int n)
+{
+	int i,j;
+	for ( i = 0; i < n; i++)
+	{
+		for ( j = 0; j < n; j++)
+		{
+			printf("%f\t",M[i][j]);
+		}
+		printf("\n");
+	}
+	fflush(stdout);
+}
+
 void PrintArray(double* a, int n)
 {
 	int i;
@@ -214,62 +237,88 @@ void PrintArray(double* a, int n)
 	}
 }
 
-double* CreateBaseForContinuum( int NBasisFuns,double **basisfuns,double **derivfuns,double *x,uint32_t NGridpoints,SKappaGroup *groups,int NGroups,int Ncont,double **contfuns)
+double* CreateBaseForContinuum( int NBasisFuns,double **basisfuns,double **derivfuns,double *x,uint32_t NGridpoints,SKappaGroup group,int Ncont,
+								double **contfuns, double w)
 {
-	int n,l,k,dim;
-  // TODO: unused variables
-	//const int LAPACK_ROW_MAJOR = 101;
-	//const int CblasRowMajor= 101;
-	//const int CblasLeft = 141;
-	//const int CblasRight = 142;
-	//const int CblasUpper = 121;
-	//const int CblasNoTrans = 111;
-	//const int CblasTrans = 112;
-	//const int CblasNonUnit = 131;
+	int l,k,dim,info;
 
-	double w, *T,*g, **dualfuns, **dualcont, *Tsub, *tau,*d,*e;
+/*	const int LAPACK_ROW_MAJOR = 101;
+	const int CblasRowMajor= 101;
+	const int blasLeft = 141;
+	const int CblasRight = 142;
+	const int CblasUpper = 121;
+	const int CblasNoTrans = 111;
+	const int CblasTrans = 112;
+	const int CblasNonUnit = 131;
+*/
+	/* Fuer Simon*/
+	char blasRight = 'R';
+	char blasLeft  = 'L';
+	char blasUpper = 'U';
+	char blasTrans = 'T';
+	char blasNoTrans = 'N';
+	char blasNonUnit = 'N';
 
-	k = -1;
-	n = 1;
+	double *T,*g, **dualfuns, **dualcont, *Tsub, *tau,*d,*e;
+
+	k = group.kappa;
 	l = 0;
-	w = 2.;
 
-	dim = Ncont + NBasisFuns;
+	dim = Ncont + group.n;
+
 
 	dualfuns = CreateDualFunctions(NBasisFuns,NGridpoints,basisfuns,x);
 
 	dualcont = CreateDualFunctions(Ncont,NGridpoints,contfuns,x);
 
-	T = KineticEnergyCB(basisfuns,derivfuns, dualfuns,dualcont, Ncont,groups->indices, groups->n,x,NGridpoints,k,w);
+	T = KineticEnergyCB(basisfuns,derivfuns, dualfuns,dualcont, Ncont,group.indices, group.n,x,NGridpoints,k,w);
 
-	g = MetricCB(basisfuns,dualfuns,NBasisFuns,dualcont,Ncont,NGridpoints);
-  //TODO: please use plain blas and lapack here so that one can compile on windows, sigwin, mac and older linux distributions
-	//LAPACKE_dpotrf(LAPACK_ROW_MAJOR,'U',dim,g,dim);
-	//LAPACKE_dtrtri(LAPACK_ROW_MAJOR,'U','N',dim,g,dim);
-	//cblas_dtrmm(CblasRowMajor,CblasLeft,CblasUpper,CblasTrans,CblasNonUnit,dim,dim,1.,g,dim,T,dim);
-	//cblas_dtrmm(CblasRowMajor,CblasRight,CblasUpper,CblasNoTrans,CblasNonUnit,dim,dim,1.,g,dim,T,dim);
+	g = MetricCB(basisfuns,dualfuns,group.indices, group.n,dualcont,Ncont,NGridpoints);
 
-	//PrintMartix(T,Ncont+NBasisFuns);
-	//printf("\n\n");
-	Tsub = SubMatrix(T,dim,NBasisFuns,dim-1,NBasisFuns,dim-1);
-	//PrintMartix(Tsub,Ncont);
+	char cU = 'U';
+	char cN = 'N';
+	char cV = 'V';
+	double EINS = 1;
+	//int info;
+	dpotrf(&cU,(unsigned int *) &dim,g,(unsigned int *) &dim,&info);
+	dtrtri(&cU,&cN,(unsigned int *) &dim,g,(unsigned int *) &dim,&info);
+	dtrmm(&blasLeft,&blasUpper,&blasTrans,&blasNonUnit,(unsigned int *) &dim,(unsigned int *) &dim,&EINS,g,(unsigned int *) &dim,T,(unsigned int *) &dim);
+	dtrmm(&blasRight,&blasUpper,&blasNoTrans,&blasNonUnit,(unsigned int *) &dim, (unsigned int *) &dim,&EINS,g,(unsigned int *) &dim,T,(unsigned int *) &dim);
+/*	LAPACKE_dpotrf(LAPACK_ROW_MAJOR,'U',dim,g,dim);
+	LAPACKE_dtrtri(LAPACK_ROW_MAJOR,'U','N',dim,g,dim);
+	cblas_dtrmm(CblasRowMajor,CblasLeft,CblasUpper,CblasTrans,CblasNonUnit,dim,dim,1.,g,dim,T,dim);
+	cblas_dtrmm(CblasRowMajor,CblasRight,CblasUpper,CblasNoTrans,CblasNonUnit,dim,dim,1.,g,dim,T,dim);
+*/
+	Tsub = SubMatrix(T,dim,group.n,dim-1,group.n,dim-1);
 
 	d = (double *) malloc(Ncont*sizeof(double));
+	if (!d) printf("malloc fail at d in CreateBaseForContinuum. size = %d\n",Ncont);
 	e = (double *) malloc((Ncont-1)*sizeof(double));
-  tau = (double *) malloc(Ncont*sizeof(double));
-  //TODO: please use plain blas and lapack here so that one can compile on windows, sigwin, mac and older linux distributions
-	//LAPACKE_dsytrd(LAPACK_ROW_MAJOR, 'U',Ncont,Tsub,Ncont,d,e,tau);
-	//LAPACKE_dorgtr(LAPACK_ROW_MAJOR,'U',Ncont,Tsub,Ncont,tau);
-	//LAPACKE_dsteqr(LAPACK_ROW_MAJOR,'V',Ncont,d,e,Tsub,Ncont);
+	if (!e) printf("malloc fail at e in CreateBaseForContinuum. size = %d\n",Ncont-1);
+	tau = (double *) malloc(Ncont*sizeof(double));
+	if (!tau) printf("malloc fail at tau in CreateBaseForContinuum. size = %d\n",Ncont);
 
-	CalcContinuumWFs(basisfuns, NBasisFuns, contfuns, Ncont, NGridpoints, g, Tsub);
+	double *work = (double *) malloc(Ncont*sizeof(double));
+	unsigned int lwork = (unsigned int) Ncont;
 
-	//PrintMartix(Tsub,Ncont);
-	//PrintArray(contfuns[0],2*NGridpoints);
+	dsytrd(&cU,(unsigned int *) &Ncont,Tsub,(unsigned int *) &Ncont,d,e,tau,work, &lwork,&info);
+	if ( 0 != info) printf("error: argument %d of LAPACKE_dsytrd",-info);
+	dorgtr(&cU,(unsigned int *) &Ncont,Tsub,(unsigned int *) &Ncont,tau,work,&lwork,&info);
+	if ( 0 != info) printf("error: argument %d of LAPACKE_dorgtr",-info);
+	dsteqr(&cV,(unsigned int *) &Ncont,d,e,Tsub,(unsigned int *) &Ncont,work,&info);
+	if ( 0 != info) printf("error: argument %d of LAPACKE_dsteqr",-info);
+/*	info = LAPACKE_dsytrd(LAPACK_ROW_MAJOR, 'U',Ncont,Tsub,Ncont,d,e,tau);
+	if ( 0 != info) printf("error: argument %d of LAPACKE_dsytrd",-info);
+	info = LAPACKE_dorgtr(LAPACK_ROW_MAJOR,'U',Ncont,Tsub,Ncont,tau);
+	if ( 0 != info) printf("error: argument %d of LAPACKE_dorgtr",-info);
+	info = LAPACKE_dsteqr(LAPACK_ROW_MAJOR,'V',Ncont,d,e,Tsub,Ncont);
+	if ( 0 != info) printf("error: argument %d of LAPACKE_dsteqr",-info);
+*/
+	CalcContinuumWFs(basisfuns, group.indices, group.n, contfuns, Ncont, NGridpoints, g, Tsub);
 
 	free(T);
 	free(g);
-
+	free(work);
 	int i;
 	for ( i = 0; i < NBasisFuns; i++)
 	{
@@ -284,6 +333,7 @@ double* CreateBaseForContinuum( int NBasisFuns,double **basisfuns,double **deriv
 	free(Tsub);
 	free(tau);
 	free(e);
+
 
 	return d;
 

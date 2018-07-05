@@ -1,4 +1,25 @@
 
+#include <stdio.h>
+#include <time.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
+#include <math.h>
+#include <float.h>
+#include <limits.h>
+#include <unistd.h>
+#include <stdarg.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+
+#ifdef _OPENMP
+#include <omp.h>
+#else
+#define omp_get_thread_num() 0
+#define omp_get_num_procs() 0
+#define omp_get_max_threads() 0
+#endif
+
 uint32_t GlobalTimeOn=0xF;
 /*      1111 1111 1111 1111 - 0xFFFF - print all timings
  *      0000 0000 0000 0001 - 0x0001 - main specific
@@ -37,76 +58,20 @@ uint32_t GlobalVerbosity=0xF;
 
 #define PrintDebugInfo
 
-#include "../Core/StructDef.c"
 
-#include "../Core/BasicMath/BasicMath_Constants.c"
-#include "../Core/BasicMath.h"
-#include "../Core/BasicMath/BasicMath_AndersonMatrixVector.h"
-#include "../Core/BasicMath/BasicMath_BADoubleTriDiagonalMatrixVector.h"
-#include "../Core/BasicMath/BasicMath_BlokAndersonMatrixVector.h"
-#include "../Core/BasicMath/BasicMath_BlokDoubleTriDiagonalMatrixVector.h"
-#include "../Core/BasicMath/BasicMath_BlokTriDiagonalMatrixVector.h"
-#include "../Core/BasicMath/BasicMath_Combinatorial.h"
-#include "../Core/BasicMath/BasicMath_CompactMatrixVector.h"
-#include "../Core/BasicMath/BasicMath_Complex.h"
-#include "../Core/BasicMath/BasicMath_DoubleTriDiagonalMatrixVector.h"
-#include "../Core/BasicMath/BasicMath_GreenFunctionArithmetic.h"
-#include "../Core/BasicMath/BasicMath_ListOfPoles.h"
-#include "../Core/BasicMath/BasicMath_MatrixTypeConversion.h"
-#include "../Core/BasicMath/BasicMath_MatrixVector.h"
-#include "../Core/BasicMath/BasicMath_SparseMatrixVector.h"
-#include "../Core/BasicMath/BasicMath_StandardFunctions.h"
-#include "../Core/BasicMath/BasicMath_TriDiagonalMatrixVector.h"
-#include "../Core/BasicMath/BasicMath_VectorLinearAlgabra.h"
+#include "../Core/StructDef.cpp"
+#include "../Core/BasicMath/BasicMath_Constants.cpp"
+#include "../Core/TimeStamp.cpp"
 
-#include "../Core/BasicMathBlock/BasicMathBlock.h"
-#include "../Core/BasicMathBlock/BasicMath_BlockAndersonMatrix.h"
-#include "../Core/BasicMathBlock/BasicMath_BlockListOfPoles.h"
-#include "../Core/BasicMathBlock/BasicMath_BlockMatrixToOperator.h"
-#include "../Core/BasicMathBlock/BasicMath_BlockNaturalImpurityOrbital.h"
-#include "../Core/BasicMathBlock/BasicMath_BlockTridiagonalMatrix.h"
-#include "../Core/BasicMathBlock/BasicMath_BlockTypeConversion.h"
-
-#include "../Core/BlockLanczos.h"
-#include "../Core/BlockWaveFunctionArithmetic.h"
-#include "../Core/ComplexRealWaveFunctionArithmetic.h"
-#include "../Core/ComplexWaveFunctionArithmetic.h"
-#include "../Core/DensityMatrix.h"
-#include "../Core/Error.h"
-#include "../Core/Hash.h"
-#include "../Core/ImpurityLanczos.h"
-#include "../Core/Lanczos.h"
-#include "../Core/MatrixOperator.h"
-#include "../Core/MeanField.h"
-#include "../Core/OperatorArithmetic.h"
-#include "../Core/OperatorWaveFunction.h"
-#include "../Core/OperatorWaveFunctionPerturbation.h"
-#include "../Core/Random.h"
-#include "../Core/RealComplexWaveFunctionArithmetic.h"
-#include "../Core/RealWaveFunctionArithmetic.h"
-#include "../Core/ResonantSpectra.h"
-#include "../Core/Spectral.h"
-#include "../Core/TimeStamp.h"
-#include "../Core/WaveFunctionArithmetic.h"
-#include "../Core/WaveFunctionPerturbationArithmetic.h"
+#include "../Core/Core.h"
+#include "../IO/IO.h"
+#include "../Tight_Binding/Tight_Binding.h"
 
 #include "../DMFT/SingleSiteFunctions.h"
-
 #include "../Hubbard_Model/CellFunctions.h"
-
-#include "../IO/BitMap.h"
-#include "../IO/DresdenFPLO.h"
-#include "../IO/FilePrint.h"
-#include "../IO/FileRead.h"
-#include "../IO/Print.h"
-#include "../IO/PrintMathematicaExpression.h"
-#include "../IO/Read.h"
-#include "../IO/StreamPrint.h"
-#include "../IO/StreamRead.h"
-#include "../IO/StringPrint.h"
-#include "../IO/StuttgartNMTO.h"
-
 #include "../Ligand_Field_Theory/OperatorDeffinitions.h"
+#include "../Model/StandardOperators.h"
+#include "../Tools/TemperatureAvverage.h"
 
 #include "../LuaInterface/lua/includeLua.h"
 #include "../LuaInterface/BraKet.h"
@@ -122,104 +87,14 @@ uint32_t GlobalVerbosity=0xF;
 #include "../LuaInterface/lua_extensions/TableToArray.h"
 #include "../LuaInterface/lua_extensions/get_put.h"
 #include "../LuaInterface/lua_extensions/tools.h"
-#include "../LuaInterface/main.h"
+// #include "../LuaInterface/main.h"
 #include "../LuaInterface/ssp.h"
 #include "../LuaInterface/units.h"
 
-#include "../Model/AndersonImpurity.h"
-#include "../Model/CrystalField.h"
-#include "../Model/LigandField.h"
-#include "../Model/OneDBand.h"
-#include "../Model/StandardOperators.h"
 
-#include "../Tight_Binding/DresdenFPLO.h"
-#include "../Tight_Binding/ImpurityUnfolding.h"
-#include "../Tight_Binding/StuttgartNMTO.h"
-#include "../Tight_Binding/TightBindingToG.h"
-#include "../Tight_Binding/Tight_Binding.h"
-#include "../Tight_Binding/Tight_Binding_lib.h"
-#include "../Tools/TemperatureAvverage.h"
+#include "../Martin/SlaterIntegrals.h"
+#include "../Simon/functions_simon.h"
+#include "../Yi/functions_yi.h"
 
-/**********************************************************/
-/*****************       blas/lapack      *****************/
-/**********************************************************/
-#ifdef BLASunderscore
-#define daxpb daxpb_
-#define daxpy daxpy_
-#define dcopy dcopy_
-#define ddot ddot_
-#define dgemm dgemm_
-#define dgemv dgemv_
-#define dgeqrf dgeqrf_
-#define dgesvd dgesvd_
-#define dgeev dgeev_
-#define dgetrf dgetrf_
-#define dgetri dgetri_
-#define dsymv dsymv_
-#define dsyrk dsyrk_
-#define dpotrf dpotrf_
-#define dsbtrd dsbtrd_
-#define dstev dstev_
-#define dscal dscal_
-#define dstevd dstevd_
-#define dsyev dsyev_
-#define dsyevd dsyevd_
-#define dsygv dsygv_
-#define dsygvd dsygvd_
-#define dtrsm dtrsm_
-#define zaxpb zaxpb_
-#define zaxpy zaxpy_
-#define zgeev zgeev_
-#define zgemm zgemm_
-#define zgemv zgemv_
-#define zgetrf zgetrf_
-#define zgetri zgetri_
-#define zhbtrd zhbtrd_
-#define zherk zherk_
-#define zheev zheev_
-#define zheevd zheevd_
-#define zgesvd zgesvd_
-#define zhegv zhegv_
-#define zhegvd zhegvd_
-#define zdotc zdotc_
-#define zscal zscal_
-#endif
-
-
-int    daxpy();
-int    dcopy();
-double ddot();
-int    dgeev();
-int    dgemm();
-int    dgemv();
-int    dgeqrf();
-int    dgesvd();
-void   dgetrf();
-void   dgetri();
-int    dpotrf();
-int    dsbtrd();
-int    dscal();
-int    dsyrk();
-int    dstev();
-int    dstevd();
-void   dsymv();
-int    dsyev();
-int    dsyevd();
-int    dsygv();
-int    dsygvd();
-int    dtrsm();
-int    zgeev();
-int    zscal();
-int    zaxpy();
-int    zgemm();
-int    zgemv();
-void   zgetrf();
-void   zgetri();
-int    zhbtrd();
-int    zherk();
-int    zheev();
-int    zheevd();
-int    zgesvd();
-int    zhegv();
-int    zhegvd();
-void   zdotc();
+#include "blas.h"
+#include "lapack.h"

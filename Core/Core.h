@@ -1,0 +1,28 @@
+#include "BasicMath/BasicMath.h"
+
+#include "BasicMathBlock/BasicMathBlock.h"
+
+#include "BlockLanczos.h"
+#include "BlockWaveFunctionArithmetic.h"
+#include "ComplexRealWaveFunctionArithmetic.h"
+#include "ComplexWaveFunctionArithmetic.h"
+#include "DensityMatrix.h"
+#include "Error.h"
+#include "Hash.h"
+#include "ImpurityLanczos.h"
+#include "Lanczos.h"
+#include "MatrixOperator.h"
+#include "MeanField.h"
+#include "OperatorArithmetic.h"
+#include "OperatorWaveFunction.h"
+#include "OperatorWaveFunctionPerturbation.h"
+#include "Random.h"
+#include "RealComplexWaveFunctionArithmetic.h"
+#include "RealWaveFunctionArithmetic.h"
+#include "ResonantSpectra.h"
+#include "Spectral.h"
+// #include "StructDef.h" no header file for structdef as it only defines structures and no functions. i.e. StructDef.cpp is a header file...
+#include "TimeStamp.h"
+#include "WaveFunctionArithmetic.h"
+#include "WaveFunctionPerturbationArithmetic.h"
+

@@ -1,15 +1,11 @@
-
-void TestBlockLanczos();
-void TestBlockLanczos();
-void TestMeanField();
-void TestLanczos();
-void TestVectorMatrixParallel();
-void TestCreate();
-uint32_t OperatorMultiply(OperatorType *const AB,OperatorType const A,OperatorType const B);
-void TestOperatorArithmetic();
-void TestOperatorArithmeticNormalOrder();
-void TestWaveFunctionArithmetic();
-void TestAddFermion();
-void TestHash();
-extern const double a;
 void TestStruct();
+;void TestHash();
+;void TestAddFermion();
+void TestWaveFunctionArithmetic();
+;void TestOperatorArithmeticNormalOrder();
+void TestOperatorArithmetic();
+;void TestCreate();
+;void TestVectorMatrixParallel();
+void TestLanczos();
+void TestMeanField();
+void TestBlockLanczos();

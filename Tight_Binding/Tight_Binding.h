@@ -1,4 +1,5 @@
-int TightBindingImpurityUnfoldingRandomImpuritySeries(int Dimension,int Nsupercell,double Rho,double Vpot,int repetitions,char *filename);
-int TightBindingImpurityUnfolding1Impurity3D(int Nsupercell,double Vpot,char *filename);
-int TightBindingImpurityUnfolding1Impurity2D(int Nsupercell,double Vpot,char *filename);
-int TightBindingImpurityUnfolding1Impurity1D(int Nsupercell,double Vpot,char *filename);
+#include "../Tight_Binding/Tight_Binding_lib.h"
+#include "../Tight_Binding/TightBindingToG.h"
+#include "../Tight_Binding/ImpurityUnfolding.h"
+#include "../Tight_Binding/StuttgartNMTO.h"
+#include "../Tight_Binding/DresdenFPLO.h"
