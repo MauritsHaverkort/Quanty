@@ -491,7 +491,7 @@ static int LuaOperatorNewLx(lua_State * L)
 {
   struct
   {
-    char *basis;
+    const char *basis;
     uint32_t ibasis;   //  0  000 SphericalHarmonicY, alternating dn,up from m=-l to m=l
                        //  1  001 TesseralHarmonicZ,  alternating dn,up sin first, than cos
                        //  2  010 KubicHarmonicK,     alternatind dn,up order according to irep a,b,e,t

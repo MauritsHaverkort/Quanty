@@ -2739,7 +2739,7 @@ void shallowtablecopy(lua_State* L, int index)
   }
 }
 
-void * LuaReturnVariableType(lua_State * L, int narg, char * type)
+void * LuaReturnVariableType(lua_State * L, int narg, const char * type)
 {
   if (strcmp(type, "char*") == 0)
   {

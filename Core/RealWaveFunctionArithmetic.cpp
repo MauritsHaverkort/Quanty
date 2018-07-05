@@ -1,5 +1,3 @@
-#include "RealWaveFunctionArithmetic.h"
-
 /*  Remove Wave function from memory
 *   On entry psi contains a wave function with psi.NBlok alocations
 *   On excit all allocate memory is freed

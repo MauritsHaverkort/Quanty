@@ -1,5 +1,3 @@
-#include "TimeStamp.h"
-
 #ifndef __TIMESTAMP__
 # define __TIMESTAMP__ "???"
 #endif

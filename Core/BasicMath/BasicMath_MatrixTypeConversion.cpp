@@ -1,5 +1,3 @@
-#include "BasicMath_MatrixTypeConversion.h"
-
 /*
 *   MatrixToSparseMatrix         (MatrixType const M, SparseMatrixType * const U, double const epsilon)          M=U for M[i,j]>epsilon
 *   MatrixToTriDiagonalMatrix    (MatrixType const M, MatrixType *const T, TriDiagonalMatrixType *const H)       M=T H T^{\dag}

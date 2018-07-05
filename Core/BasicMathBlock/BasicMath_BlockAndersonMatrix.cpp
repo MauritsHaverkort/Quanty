@@ -1,5 +1,3 @@
-#include "BasicMath_BlockAndersonMatrix.h"
-
 /*
  *   Initialize a struct of BlockAndersonMatrix type
  *   malloc the space for storing N+1 matrices of dimension BlockSize * BlockSize storing a0 to aN

@@ -1,5 +1,3 @@
-#include "TightBinding.h"
-
 /*  push a new TightBinding object to the lua stack
  *  the tight binding object is empty as its properties need to be set via its ellements
  */
@@ -130,8 +128,8 @@ static int LuaCalculateDOS(lua_State *L)
   {
     int *Nk;
     //char* Method;   //only method implemented is the mesh/grid.
-    char* Character;
-    char* Broadening;
+    const char* Character;
+    const char* Broadening;
     double FWHM;
     double Emin;
     double Emax;
@@ -281,7 +279,7 @@ static int LuaCalculateG(lua_State *L)
     double Emin;
     double Emax;
     uint32_t NE;
-    char* Type;
+    const char* Type;
   } Options;
   Options.Nk = (int*)malloc(3*sizeof(int));
   Options.Nk[0]=40;

@@ -1,5 +1,3 @@
-#include "FilePrint.h"
-
 uint32_t FilePrintSpectra(SpectraType * const Spec, const uint32_t NSpec, const char *const flname, const char *const mode)
 {
   FILE  *stream;

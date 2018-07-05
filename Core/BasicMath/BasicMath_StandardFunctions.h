@@ -10,7 +10,7 @@ double TesseralHarmonicZ(const int k, const int m, const double t, const double 
 double ReSphericalHarmonicY(const int k, const int m, const double t, const double p);
 double ImSphericalHarmonicY(const int k, const int m, const double t, const double p);
 double CubicHarmonicK(const int k, const int m, const double t, const double p);
-uint32_t PotentialExpandedOnC(char *s, uint32_t const l, double const *EigenEnergies, HarmonicsExpansion * const Akm);
+uint32_t PotentialExpandedOnC(const char *s, uint32_t const l, double const *EigenEnergies, HarmonicsExpansion * const Akm);
 void FreeHarmonicsExpansion(HarmonicsExpansion * Akm);
 uint32_t SphericalHarmonicYToZ(uint32_t l, CompactMatrixType *U);
 uint32_t SphericalHarmonicZToY(uint32_t l, CompactMatrixType *U);

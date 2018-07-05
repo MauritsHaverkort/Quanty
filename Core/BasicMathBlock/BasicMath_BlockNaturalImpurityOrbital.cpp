@@ -1,5 +1,3 @@
-#include "BasicMath_BlockNaturalImpurityOrbital.h"
-
 /*
  *     ( A[0][0]=Ai    | A[0][1]=Bib   | A[0][2]=Biv   | 0             | 0           | A[0][5]=Bic   | 0             | 0           )
  *     ( A[1][0]=Bib^+ | A[1][1]=Ab    | A[1][2]=Bbv   | 0             | 0           | A[0][5]=Bbc   | 0             | 0           )

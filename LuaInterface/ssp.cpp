@@ -3131,7 +3131,7 @@ static int LuaEigensystem(lua_State * L)
     {"restrictions", "DeterminantRestrictionType", &(Options.DeterminantRestrictions)},
     {"Restrictions", "DeterminantRestrictionType", &(Options.DeterminantRestrictions)},
     {"ExpandBasis", "bool",&(Options.ExpandBasis)},
-    {"ShiftScheme", "char*",Options.Settings.ShiftScheme},
+    {"ShiftScheme", "char*",(void*)Options.Settings.ShiftScheme},
     {NULL, NULL, NULL}};
   VerbosityPrintf(0x10000000,"Start of LuaEigensystem\n");
   /* check number of input parameters */
@@ -3440,8 +3440,8 @@ static int LuaOrthonormalize(lua_State *L)
   uint32_t len;
   struct
   {
-    char* Method;
-    char* Order;
+    const char* Method;
+    const char* Order;
     double SingularValue;
     Bool ReduceDimension;
   } Options;
@@ -3666,7 +3666,7 @@ static int LuaBlockBandDiagonalize(lua_State *L)
       if(vec->Ni>vec->Nj) return luaL_error(L, "Block size (%d) should be smaller than dimension of matrix (%d)",vec->Ni,vec->Nj);
       if(vec->Nj!=M->Nj) return luaL_error(L, "Length of starting vector (%d) should be equivalent to dimension of matrix (%d).\n",vec->Nj,M->Nj);
     }
-    Options.NTri=MIN(Options.NTri, M->Ni);
+    Options.NTri=Min(Options.NTri, M->Ni);
     if(CompactMatrixBlockBandDiagonalize(M, vec, &B, Options.SingularValue, Options.NTri, Options.NOrtho, Options.ReOrthogonalize, Options.ReturnT))
     {
       return luaL_error(L, "CompactMatrixBlockBandDiagonalize failed that should not happen\n");
@@ -4150,7 +4150,7 @@ int relAngularMomentumZNumbers(char * orb)
 
 
 
-void lua_groupOrbitals(lua_State *L, int indTablePos, char* groupKey, char** groupMembers, uint32_t groupLen)
+void lua_groupOrbitals(lua_State *L, int indTablePos, const char* groupKey, char** groupMembers, uint32_t groupLen)
 {
 	int j,k,l;
 	k = 1;

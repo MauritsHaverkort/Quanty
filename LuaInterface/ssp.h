@@ -31,7 +31,7 @@ int isIntElementOf(const uint16_t element, const uint16_t * const set, const uin
 static int LuaDeterminantString(lua_State *L);
 int nonRelAngularMomentumZNumbers(char * orb);
 int relAngularMomentumZNumbers(char * orb);
-void lua_groupOrbitals(lua_State *L, int indTablePos, char* groupKey, char** groupMembers, uint32_t groupLen);
+void lua_groupOrbitals(lua_State *L, int indTablePos, const char* groupKey, char** groupMembers, uint32_t groupLen);
 void lua_setNonRelAtomicOrbitalIndices(lua_State *L, char* orb, int momZNumbers, int * NF, int indTablePos, int isDict);
 void lua_setRelAtomicOrbitalIndices(lua_State *L, char* orb, int momZNumbers, int * NF, int indTablePos, int isDict);
 void lua_setAtomicOrbitalIndices(lua_State *L, char* orb, int * NF, int indTablePos, int isDict);

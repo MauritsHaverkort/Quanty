@@ -1,5 +1,3 @@
-#include "Wavefunction.h"
-
 static int LuaWavefunctionAdd(lua_State * L)
 {
   uint32_t len = (uint32_t)lua_gettop(L);

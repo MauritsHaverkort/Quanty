@@ -60,7 +60,7 @@ typedef enum { False, True } Bool;
 /*
  *
  */
-const struct { char *name; double value; char * units; char * description;} PhysicalConstants[] =
+const struct { char const *name; double value; char const *units; char const *description;} PhysicalConstants[] =
 {
   // Particles
   {"malpha",     6.644657230E-27,     "kg",              "alpha particle mass in kilogram"},
@@ -120,7 +120,7 @@ const struct { char *name; double value; char * units; char * description;} Phys
 /*
  *
  */
-const struct { char *namelong; char *nameshort; double value; char * units; char * description;} EnergyUnits[] =
+const struct { char const *namelong; char const *nameshort; double value; char const * units; char const * description;} EnergyUnits[] =
 {
   // energy units in Joule
   {"Joule",         "J",     1,                          "J",               "Energy transferred (or work done) to an object when a force of one newton acts on that object in the direction of its motion through a distance of one meter"},
@@ -237,13 +237,13 @@ typedef struct ConvergenceSettingsType
   double Emax2;
   uint32_t NE2;
   double Gamma2;
-  char   *ShiftScheme;
+  char   const *ShiftScheme;
 }
 ConvergenceSettingsType;
 
 ConvergenceSettingsType InitConvergenceSettings()
 {
-  char *ShiftScheme = "Variance";
+  char const *ShiftScheme = "Variance";
   ConvergenceSettingsType ret=
   {
     1513 /*DenseBorder*/,
@@ -823,8 +823,8 @@ ResponsefunctionType;
  */
 typedef struct LuaOptionsType
 {
-  char * name;
-  char * type;
+  const char * name;
+  const char * type;
   void * variable;
 }
 LuaOptionsType;
@@ -1619,3 +1619,4 @@ typedef struct TemperatureSettings
   uint32_t Nq[3];               /* Number of twisted boundary phases */
 }
 TemperatureSettings;
+

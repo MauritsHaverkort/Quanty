@@ -1,5 +1,3 @@
-#include "PrintMathematicaExpression.h"
-
 /*  Prints a matrix
  */
 uint32_t StreamPrintSparseMatrixMathematica(SparseMatrixType M, FILE * stream)
