@@ -1,19 +1,23 @@
 
-
+// Include the header files for all functions including the definitions of constants, global variables and structures
 #include "../Headers/header.h"
 
+// Include the main libraries
 #include "../Core/Core.cpp"
 #include "../IO/IO.cpp"
+#include "../Tight_Binding/Tight_Binding.cpp"
 
+// Include files that should be reoredered into the main libraries
 #include "../Model/StandardOperators.cpp"
 #include "../Hubbard_Model/CellFunctions.cpp"
-#include "../Tight_Binding/Tight_Binding_lib.cpp"
-#include "../Tight_Binding/TightBindingToG.cpp"
-#include "../Tight_Binding/ImpurityUnfolding.cpp"
-#include "../Tight_Binding/StuttgartNMTO.cpp"
-#include "../Tight_Binding/DresdenFPLO.cpp"
 #include "../DMFT/SingleSiteFunctions.cpp"
 
+// Include personal functions that are under development and candidates for inclusion in the main program
+#include "../Yi/functions_yi.cpp"
+#include "../Martin/functions_martin.cpp"
+#include "../Simon/functions_simon.cpp"
+
+// Include the Lua interface
 #include "lua/includeLua.c"
 static void *currentudata = NULL;
 #include "lua_extensions/tools.cpp"
@@ -30,10 +34,8 @@ static void *currentudata = NULL;
 #include "Plot.cpp"
 #include "BraKet.cpp"
 #include "eval.cpp"
-#include "../Yi/functions_yi.cpp"
-#include "../Martin/functions_martin.cpp"
-#include "../Simon/functions_simon.cpp"
 #include "ssp.cpp"
+
 
 
 

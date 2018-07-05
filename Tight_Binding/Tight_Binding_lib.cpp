@@ -1,5 +1,3 @@
-#include "Tight_Binding_lib.h"
-
 uint32_t AtomNameToNumber(const char* Name)
 {
   uint32_t i;

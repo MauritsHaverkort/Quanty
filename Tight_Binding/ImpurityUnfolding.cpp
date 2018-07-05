@@ -1,6 +1,3 @@
-#include "ImpurityUnfolding.h"
-
-
 int TightBindingImpurityUnfolding1Impurity3D(int Nsupercell, double Vpot, char *filename)
 {
   TightBindingDef Set, SetSuper;

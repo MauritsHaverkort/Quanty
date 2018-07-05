@@ -64,14 +64,14 @@ uint32_t GlobalVerbosity=0xF;
 #include "../Core/TimeStamp.cpp"
 
 #include "../Core/Core.h"
+#include "../IO/IO.h"
+#include "../Tight_Binding/Tight_Binding.h"
 
 #include "../DMFT/SingleSiteFunctions.h"
-
 #include "../Hubbard_Model/CellFunctions.h"
-
-#include "../IO/IO.h"
-
 #include "../Ligand_Field_Theory/OperatorDeffinitions.h"
+#include "../Model/StandardOperators.h"
+#include "../Tools/TemperatureAvverage.h"
 
 #include "../LuaInterface/lua/includeLua.h"
 #include "../LuaInterface/BraKet.h"
@@ -91,20 +91,10 @@ uint32_t GlobalVerbosity=0xF;
 #include "../LuaInterface/ssp.h"
 #include "../LuaInterface/units.h"
 
-#include "../Model/StandardOperators.h"
-
-#include "../Tight_Binding/DresdenFPLO.h"
-#include "../Tight_Binding/ImpurityUnfolding.h"
-#include "../Tight_Binding/StuttgartNMTO.h"
-#include "../Tight_Binding/TightBindingToG.h"
-#include "../Tight_Binding/Tight_Binding.h"
-#include "../Tight_Binding/Tight_Binding_lib.h"
-
-#include "../Tools/TemperatureAvverage.h"
 
 #include "../Martin/SlaterIntegrals.h"
-
-#include "functions_simon.h"
+#include "../Simon/functions_simon.h"
+#include "../Yi/functions_yi.h"
 
 #include "blas.h"
 #include "lapack.h"
