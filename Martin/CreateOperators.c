@@ -8,12 +8,13 @@ void CreateOperatorCoulombRelativisticOneIntegral(uint32_t const NFermion,int co
 												  const unsigned int n2, const unsigned int n3, const unsigned int n4, OperatorType *const op)
 {
     OperatorType optemp;
-    
+
     CreateOperatorCoulombFourRelativisticShells(NFermion,kappa1,kappa2,kappa3,kappa4, Jindex1,Jindex2,Jindex3,Jindex4,Fk,op);
     
     if (n1 != n3)
     {
         CreateOperatorCoulombFourRelativisticShells(NFermion,kappa3,kappa2,kappa1,kappa4, Jindex3,Jindex2,Jindex1,Jindex4,Fk,&optemp);
+        //printf("optemp.l[4].N: \t %d\n", optemp.l[4].N);
         OperatorAdd(op, optemp, 1., 0.);
     }
     
@@ -70,8 +71,10 @@ uint32_t CreateOperatorFastCoulombRelativistic(uint32_t const NFermion,double **
     k = integrals[0].tau.kappa;
     n = integrals[0].tau.n;
     Fk = integrals[0].val;
+    //printf("Fk[0]: \t %e\n",Fk[0]);
 
     CreateOperatorCoulombRelativisticOneIntegral(NFermion,k[0],k[1],k[2],k[3],indices[n[0]],indices[n[1]],indices[n[2]],indices[n[3]],Fk,n[0],n[1],n[2],n[3],op);
+    //printf("op.l[4]: %p\t %d\n",&(op->l[4]),op->l[4].N);
 
     for( i = 1; i < NIntegrals; i++)
     {
@@ -80,6 +83,7 @@ uint32_t CreateOperatorFastCoulombRelativistic(uint32_t const NFermion,double **
         Fk = integrals[i].val;
 
         CreateOperatorCoulombRelativisticOneIntegral(NFermion,k[0],k[1],k[2],k[3],indices[n[0]],indices[n[1]],indices[n[2]],indices[n[3]],Fk,n[0],n[1],n[2],n[3],&optemp);
+
         OperatorAdd(op, optemp, 1., 0.);
 
     }
@@ -279,7 +283,7 @@ double* CreateBaseForContinuum( int NBasisFuns,double **basisfuns,double **deriv
 	char cN = 'N';
 	char cV = 'V';
 	double EINS = 1;
-	//int info;
+	info = 0;
 	dpotrf(&cU,(unsigned int *) &dim,g,(unsigned int *) &dim,&info);
 	dtrtri(&cU,&cN,(unsigned int *) &dim,g,(unsigned int *) &dim,&info);
 	dtrmm(&blasLeft,&blasUpper,&blasTrans,&blasNonUnit,(unsigned int *) &dim,(unsigned int *) &dim,&EINS,g,(unsigned int *) &dim,T,(unsigned int *) &dim);
@@ -299,6 +303,7 @@ double* CreateBaseForContinuum( int NBasisFuns,double **basisfuns,double **deriv
 	if (!tau) printf("malloc fail at tau in CreateBaseForContinuum. size = %d\n",Ncont);
 
 	double *work = (double *) malloc(Ncont*sizeof(double));
+	if (!work) printf("malloc fail at work in CreateBaseForContinuum. size = %d\n",Ncont);
 	unsigned int lwork = (unsigned int) Ncont;
 
 	dsytrd(&cU,(unsigned int *) &Ncont,Tsub,(unsigned int *) &Ncont,d,e,tau,work, &lwork,&info);
