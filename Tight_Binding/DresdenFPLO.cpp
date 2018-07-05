@@ -195,7 +195,7 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
   int Nshell, *Norb, *NshellOfSite, *ShellLabel, *SiteInd, *ShellInd, **ShellOfSite, *OrbInd, **NVecShell, **NHopStart;
   char **SiteName, **ShellName;
   double ***HopVec, **SitePos;
-  const int NhopMax=256;
+  const int NhopMax=1024;
 
   strncpy(HTB->Name, FPLO.Compound, 15);
   HTB->Name[15]=0;

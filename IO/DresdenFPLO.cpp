@@ -55,7 +55,7 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
   char *phrase[1024] = {NULL}, tmpstr[1024];
   double tmpvec[3];
   uint32_t Nphrase, Nwandef, Nimag=0, i, j, ihop=0, iatom;
-  const int NhopMax=256;
+  const int NhopMax=1024;
 
   ReadLine[1023] = '\0';
 
@@ -221,7 +221,7 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
           }
           TransVecNorm(tmpvec, O->Lattice.gLattVec, O->Wannier.HopVec[i][ihop]);
           O->Wannier.HopVal[i][ihop] = strtod(phrase[5], NULL);
-          if(strtod(phrase[Nphrase-1], NULL)!=0.0) Nimag+=1;
+          if(Abs(strtod(phrase[Nphrase-1], NULL))>(1000*DBL_MIN)) Nimag+=1;
 
           ihop = ihop+1;
           if(ihop > NhopMax)

@@ -1344,6 +1344,12 @@ uint32_t ListOfPolesToSpectrum(const double Energy, const ListOfPoles P, Spectra
   uint32_t i;
   double omega,denom;
   if(GlobalTimeOn&0x40) BeginTiming("ListOfPolesToSpectrum", &GlobalTime);
+  G->b[0]=0;
+  for(i=0;i<P.N;i++)
+  {
+    G->b[0]+=P.b[i];
+  }
+  G->b[0]=sqrt( G->b[0]);
 #pragma omp parallel for private(i,omega,denom)
   for(iE=0;iE<=G->N;iE++)
   {

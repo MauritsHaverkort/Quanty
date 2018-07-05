@@ -2235,8 +2235,10 @@ uint32_t TightBindingHamiltonianToBlockListOfPoles(TightBindingDef const A, int 
         q[2] = diq[0] * A.Cell.gUnitCell[0][2] + diq[1] * A.Cell.gUnitCell[1][2] + diq[2] * A.Cell.gUnitCell[2][2];
         CreateHamiltonianFromTightBindingDefConstantPhaseInUnitCell(A, q, &H);
         EigensystemToCompact(H, &T, val);
+        //printf("\n");
         for(ival=0;ival<A.NFermion;ival++)
         {
+          //printf("%f ",val[ival]);
           /* calculate matrix B for eigen-value ival */
           if(H.QComplex)
           {
@@ -2249,7 +2251,7 @@ uint32_t TightBindingHamiltonianToBlockListOfPoles(TightBindingDef const A, int 
           /* determine the position of the pole in the list of poles */
           rest = (val[ival] - Emin) / dE;
           iE = (int)(floor(rest));
-          if (iE >= NE)
+          if (iE >= (int)NE)
           {
             totnow=0;
             for(i=0;i<A.NFermion;i++)
