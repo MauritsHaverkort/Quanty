@@ -4315,7 +4315,7 @@ void lua_setAtomicOrbitalIndices(lua_State *L, char* orb, int * NF, int indTable
 //Optional Input is a grouping of orbitals, like { {"unexcitedStates",{"1s","2s"} } , {"excitedStates",{"2p","3s"} } }
 //Output 1 is a list {"1s"={0,1},"2s"={2,3},"2p"={4,5,6,7,8,9},"3s"={10,11},"unexcitedStates"={0,1,2,3},"All"={0,1,2,3,4,5,6,7,8,9,10,11},"1s_Dn"={0},"1s_Up"={1}, ...}
 //Output 2 is the number of fermionic modes NF.
-static int lua_createAtomicIndices(lua_State *L, int isDict)
+static int lua_createAtomicIndices(lua_State *L, Bool isDict)
 {
 	char** orbitals;
 	uint32_t orbListLen;
@@ -4426,13 +4426,13 @@ static int lua_createAtomicIndices(lua_State *L, int isDict)
 
 static int LuaCreateAtomicIndicesDict(lua_State *L)
 {
-	return lua_createAtomicIndices(L,1);
+	return lua_createAtomicIndices(L,True);
 }
 
 
 static int LuaCreateAtomicIndicesList(lua_State *L)
 {
-	return lua_createAtomicIndices(L,0);
+	return lua_createAtomicIndices(L,False);
 }
 
 
