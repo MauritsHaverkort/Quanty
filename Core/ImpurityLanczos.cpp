@@ -1,5 +1,3 @@
-#include "ImpurityLanczos.h"
-
 /*  Given an impurity Hamiltonian and a Hybridization function
  *  Whereby the impurity Hamiltonian has dimensions NF+NB and the Hybridization funciton has dimensions NH=NF+NB
  *

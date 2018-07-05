@@ -1,6 +1,3 @@
-#include "BasicMath_Combinatorial.h"
-
-
 double Factorial(int a)
 {
   int    i;

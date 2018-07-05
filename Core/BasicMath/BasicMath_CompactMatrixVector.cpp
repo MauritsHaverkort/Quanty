@@ -1,5 +1,3 @@
-#include "BasicMath_CompactMatrixVector.h"
-
 /*   Multiplication and other algorithms accept the following transformations as string
  *   'T' Transpose M^T(i,j) = M(j,i)
  *   'N' Do nothing
@@ -1682,10 +1680,10 @@ uint32_t CompactMatrixAddShifted(CompactMatrixType * const M, const CompactMatri
 uint32_t CompactMatrixSVDOrthogonalizeRow(CompactMatrixType * A, const double SingularValue, const Bool ReduceDimension)
 {
   uint32_t i,j,k,NSingular;
-  char *JOBU ="O";  /* in SVD A = U S V^T return the first min(Ni,Nj) collumns of U in matrix A, which is over written */
-  char *JOBVT="A";  /* in SVD A = U S V^T return full array VT */
-  char *TRANSA="N";
-  char *TRANSB="N";
+  char const *JOBU ="O";  /* in SVD A = U S V^T return the first min(Ni,Nj) collumns of U in matrix A, which is over written */
+  char const *JOBVT="A";  /* in SVD A = U S V^T return full array VT */
+  char const *TRANSA="N";
+  char const *TRANSB="N";
   Complex16 ALPHA,BETA;
   ALPHA.Re=1; ALPHA.Im=0;
   BETA.Re =0; BETA.Im =0;
@@ -3816,8 +3814,8 @@ uint32_t CompactMatrixBlockBandTridiagonalizeHermitianNoReorthogonalization(Comp
 uint32_t CompactMatrixBlockBandDiagonalizeReal(CompactMatrixType const * const A, CompactMatrixType * vec, BlockTriDiagonalMatrixType *const B, double const SingularValue, uint32_t const NTri, uint32_t const NOrtho, Bool const ReOrthogonalize, Bool const ReturnT)
 {
   uint32_t i,j,Ni;
-  char *charN="N";
-  char *charT="T";
+  char const *charN="N";
+  char const *charT="T";
   double one=1;
   double minusone=-1;
   double zero=0;
@@ -3825,7 +3823,7 @@ uint32_t CompactMatrixBlockBandDiagonalizeReal(CompactMatrixType const * const A
   double *b,*a,work[vec->Ni*vec->Ni];
   CompactMatrixType *veclist;
   B->BlockSize=vec->Ni;
-  B->N=MIN(A->Ni,NTri);
+  B->N=Min(A->Ni,NTri);
   B->QComplex=0;
   InitBlockTridiagonalMatrix(B);
   for(i=0;i<B->BlockSize;i++)
@@ -3904,19 +3902,19 @@ uint32_t CompactMatrixBlockBandDiagonalizeReal(CompactMatrixType const * const A
   if(ReturnT==True)
   {
     Ni=0;
-    for(j=1;j<=MIN(i+1,NTri);j++)
+    for(j=1;j<=Min(i+1,NTri);j++)
     {
       Ni=Ni+veclist[j].Ni;
     }
     ResizeCompactMatrix(vec, Ni, vec->Nj);
     Ni=0;
-    for(j=1;j<=MIN(i+1,NTri);j++)
+    for(j=1;j<=Min(i+1,NTri);j++)
     {
       memcpy(&(vec->VRe[Ni*vec->Nj]),veclist[j].VRe,veclist[j].Ni*veclist[j].Nj*sizeof(double));
       Ni=Ni+veclist[j].Ni;
     }
   }
-  for(j=1;j<=MIN(i+1,NTri);j++)
+  for(j=1;j<=Min(i+1,NTri);j++)
   {
     FreeCompactMatrix(&veclist[j]);
   }
@@ -3926,9 +3924,9 @@ uint32_t CompactMatrixBlockBandDiagonalizeReal(CompactMatrixType const * const A
 uint32_t CompactMatrixBlockBandDiagonalizeComplex(CompactMatrixType const * const A, CompactMatrixType * vec, BlockTriDiagonalMatrixType *const B, double const SingularValue, uint32_t const NTri, uint32_t const NOrtho, Bool const ReOrthogonalize,Bool const ReturnT)
 {
   uint32_t i,j,Ni;
-  char *charN="N";
-  char *charT="T";
-  char *charC="C";
+  char const *charN="N";
+  char const *charT="T";
+  char const *charC="C";
   Complex16 one={1,0};
   Complex16 minusone={-1,0};
   Complex16 zero={0,0};
@@ -3936,7 +3934,7 @@ uint32_t CompactMatrixBlockBandDiagonalizeComplex(CompactMatrixType const * cons
   Complex16 *b,*a,work[vec->Ni*vec->Ni];
   CompactMatrixType *veclist;
   B->BlockSize=vec->Ni;
-  B->N=MIN(A->Ni,NTri);
+  B->N=Min(A->Ni,NTri);
   B->QComplex=1;
   InitBlockTridiagonalMatrix(B);
   for(i=0;i<B->BlockSize;i++)
@@ -4023,19 +4021,19 @@ uint32_t CompactMatrixBlockBandDiagonalizeComplex(CompactMatrixType const * cons
   if(ReturnT==True)
   {
     Ni=0;
-    for(j=1;j<=MIN(i+1,NTri);j++)
+    for(j=1;j<=Min(i+1,NTri);j++)
     {
       Ni=Ni+veclist[j].Ni;
     }
     ResizeCompactMatrix(vec, Ni, vec->Nj);
     Ni=0;
-    for(j=1;j<=MIN(i+1,NTri);j++)
+    for(j=1;j<=Min(i+1,NTri);j++)
     {
       memcpy(&(vec->VRe[Ni*vec->Nj]),veclist[j].VRe,veclist[j].Ni*veclist[j].Nj*sizeof(double));
       Ni=Ni+veclist[j].Ni;
     }
   }
-  for(j=1;j<=MIN(i+1,NTri);j++)
+  for(j=1;j<=Min(i+1,NTri);j++)
   {
     FreeCompactMatrix(&veclist[j]);
   }

@@ -1,5 +1,3 @@
-#include "WaveFunctionPerturbationArithmetic.h"
-
 /*  NV and order must be set.
  *  The operators of order order and perturbation NV are not initiallized
  */

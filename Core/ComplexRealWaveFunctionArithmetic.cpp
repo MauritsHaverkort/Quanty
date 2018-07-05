@@ -1,5 +1,3 @@
-#include "ComplexRealWaveFunctionArithmetic.h"
-
 /*
 *   calculate <a|b>
 */

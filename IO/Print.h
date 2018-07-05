@@ -1,4 +1,4 @@
-void VerbosityPrintf(const uint32_t verbosity, char *fmt, ...);
+void VerbosityPrintf(const uint32_t verbosity, const char * const fmt, ...);
 uint32_t PrintSpectra(SpectraType * const Spec, const uint32_t NSpec);
 uint32_t PrintRIXSSpectrum(const uint32_t numwRes, SpectraType **Spec, double *wRes, int printReal, const uint32_t iSpec);
 uint32_t PrintRIXSSpectra(const uint32_t numwRes, SpectraType **Spec, double *wRes, const uint32_t NSpec);

@@ -1,3 +1,15 @@
+#include "../Tight_Binding/Tight_Binding_lib.cpp"
+#include "../Tight_Binding/TightBindingToG.cpp"
+#include "../Tight_Binding/ImpurityUnfolding.cpp"
+#include "../Tight_Binding/StuttgartNMTO.cpp"
+#include "../Tight_Binding/DresdenFPLO.cpp"
+
+
+
+
+/*
+  c program to calculate self energy of disordered tight binding model
+
 #include "Tight_Binding.h"
 
 #include <stdio.h>
@@ -108,3 +120,4 @@ int main(int argc, const char *argv[])
 
   return 0;
 }
+ */

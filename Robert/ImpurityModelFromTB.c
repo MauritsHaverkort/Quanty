@@ -1,4 +1,3 @@
-#include "ImpurityModelFromTB.h"
 
 #include "../Yi/AtomicFunctions.c"
 

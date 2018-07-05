@@ -1,6 +1,6 @@
 uint32_t FreeOperator(OperatorType * const H);
 uint32_t InitOperator(OperatorType * const O);
-uint32_t InitNamedOperator(OperatorType * const O, char *name);
+uint32_t InitNamedOperator(OperatorType * const O, const char * const name);
 void OperatorSetName(OperatorType * const O, const char * const name);
 void InitOperatorForMult(OperatorType *prod, int count, const OperatorType *l, ...);
 uint32_t SetQComplexOperator(OperatorType * const O);
