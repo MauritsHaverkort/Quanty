@@ -1,3 +1,2 @@
-
-void mwhsrand(unsigned int seed);
 double mwhdrand();
+void mwhsrand(unsigned int seed);

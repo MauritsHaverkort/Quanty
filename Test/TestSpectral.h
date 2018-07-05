@@ -1,5 +1,4 @@
-
-void TestSpecSelf();
-void TestKKTrans();
-void TestSpec();
 void TestGreenFunctionCreation();
+void TestSpec();
+void TestKKTrans();
+void TestSpecSelf();

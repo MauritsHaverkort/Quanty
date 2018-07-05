@@ -1,27 +1,10 @@
+#include "BasicMath_BlockAndersonMatrix.h"
+#include "BasicMath_BlockListOfPoles.h"
+#include "BasicMath_BlockMatrixToOperator.h"
+#include "BasicMath_BlockNaturalImpurityOrbital.h"
+#include "BasicMath_BlockTridiagonalMatrix.h"
+#include "BasicMath_BlockTypeConversion.h"
 
-uint32_t CopyBlockNaturalImpurityOrbitalMatrix(BlockNaturalImpurityOrbitalMatrixType A,BlockNaturalImpurityOrbitalMatrixType *B);
-uint32_t BlockNaturalImpurityOrbitalMatrixToBlockAndersonMatrix(BlockNaturalImpurityOrbitalMatrixType const AAnd,BlockAndersonMatrixType *const B);
-uint32_t BlockNaturalImpurityOrbitalMatrixToBlockTridiagonalMatrix(BlockNaturalImpurityOrbitalMatrixType const AAnd,BlockTriDiagonalMatrixType *const B);
-uint32_t BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles(BlockNaturalImpurityOrbitalMatrixType const AAnd,BlockListOfPoles *const B);
-uint32_t BlockNaturalImpurityOrbitalMatrixToBlockListOfPolesVariableGrid(BlockNaturalImpurityOrbitalMatrixType const AAnd,BlockListOfPoles *const B,const double *const Grid,const uint32_t NGridPoints);
-uint32_t BlockAndersonMatrixToBlockNaturalImpurityOrbitalMatrix(BlockAndersonMatrixType const AAnd,BlockNaturalImpurityOrbitalMatrixType *const B);
-uint32_t CopyBlockAndersonMatrix(BlockAndersonMatrixType A,BlockAndersonMatrixType *B);
-uint32_t BlockAndersonMatrixToBlockTridiagonalMatrix(BlockAndersonMatrixType const AAnd,BlockTriDiagonalMatrixType *const B);
-uint32_t BlockAndersonMatrixToBlockListOfPoles(BlockAndersonMatrixType const AAnd,BlockListOfPoles *const B);
-uint32_t BlockAndersonMatrixToBlockListOfPolesVariableGrid(BlockAndersonMatrixType const AAnd,BlockListOfPoles *const B,const double *const Grid,const uint32_t NGridPoints);
-uint32_t BlockTriDiagonalMatrixToBlockNaturalImpurityMatrix(BlockTriDiagonalMatrixType const ATri,BlockNaturalImpurityOrbitalMatrixType *const B);
-uint32_t BlockTriDiagonalMatrixToBlockAndersonMatrix(BlockTriDiagonalMatrixType const ATri,BlockAndersonMatrixType *const B);
-uint32_t CopyBlockTridiagonalMatrix(BlockTriDiagonalMatrixType A,BlockTriDiagonalMatrixType *B);
-uint32_t BlockTriDiagonalMatrixToBlockListOfPoles(BlockTriDiagonalMatrixType const *A,BlockListOfPoles *const G);
-uint32_t BlockTriDiagonalMatrixToBlockListOfPolesVariableGrid(BlockTriDiagonalMatrixType const *A,BlockListOfPoles *const G,const double *const Grid,const uint32_t NGridPoints);
-uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(BlockListOfPoles const *A,BlockNaturalImpurityOrbitalMatrixType *const B,double const kbT,uint32_t const NBlockMaxVal,uint32_t const NBlockMaxCon);
-uint32_t BlockListOfPolesToBlockAndersonMatrix(BlockListOfPoles const A,BlockAndersonMatrixType *const B,int const NBlockMax);
-uint32_t BlockListOfPolesToBlockTridiagonalMatrix(BlockListOfPoles const A,BlockTriDiagonalMatrixType *const B,int const NBlockMax,double const SingularValue);
-uint32_t CopyBlockListOfPoles(BlockListOfPoles A,BlockListOfPoles *B);
-ResponsefunctionType *ConvertBlockMatrix(ResponsefunctionType *M,const char type,double T);
-uint32_t FreeBlockMatrixFromLua(ResponsefunctionType *M);
-uint32_t FreeBlockNaturalImpurityOrbitalMatrix(BlockNaturalImpurityOrbitalMatrixType *const A);
-uint32_t FreeBlockTridiagonalMatrix(BlockTriDiagonalMatrixType *A);
-uint32_t FreeBlockAndersonMatrix(BlockAndersonMatrixType *A);
-uint32_t FreeBlockListOfPoles(BlockListOfPoles *A);
 uint32_t FreeBlockMatrix(ResponsefunctionType *M);
+uint32_t FreeBlockMatrixFromLua(ResponsefunctionType *M);
+ResponsefunctionType *ConvertBlockMatrix(ResponsefunctionType *M, const char type, double T);

@@ -11,6 +11,27 @@ then
 fi
 
 dir=`date +%Y.%m.%d`
+
+if [ "$1" != "$dir" ]
+then
+  ./run_all $dir | tee ../../quantyDebug/History/$dir."out"
+  mv ../../quantyDebug/History/$dir."out" ../../quantyDebug/History/$dir/std."out"
+  
+  ./compare
+
+  if [ $? -ne 0 ]
+  then
+    echo "comparison failed"
+    echo "in order to update link to latest finished set of calculations"
+    echo "update manuel \" ln -s $dir History/include \" "
+    exit 1
+  fi
+
+  ln -s $dir History/include
+  
+  exit 0
+fi
+
 if [ -e ../../quantyDebug/History/$dir ]
 then
   echo "File $dir exists"
@@ -33,14 +54,5 @@ cp compare ../../quantyDebug
 cd ../../quantyDebug/
 ./create_Reference
 ./create_Tutorials
-./compare
 
-if [ $? -ne 0 ]
-then
-  echo "comparison failed"
-  echo "in order to update link to latest finished set of calculations"
-  echo "update manuel \" ln -s $dir History/include \" "
-  exit 1
-fi
 
-ln -s $dir History/include

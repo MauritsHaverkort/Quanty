@@ -1,9 +1,6 @@
-
-void TestHarmonicOscillator();
-void SolveLanczos();
+double complex PsiFun(double x, int i);
+double complex IntegrateKinetic(int i, int j);
+double complex IntegratePotential(int i, int j);
 void SolveBLAS();
-double complex IntegratePotential(int i,int j);
-double complex IntegrateKinetic(int i,int j);
-double complex PsiFun(double x,int i);
-extern const double dxint;
-extern const double a;
+void SolveLanczos();
+void TestHarmonicOscillator();

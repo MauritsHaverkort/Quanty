@@ -1,5 +1,3 @@
-#include "AtomicFunctions.h"
-
 /*******************************
             Math
  *******************************/
@@ -108,70 +106,70 @@ uint32_t InitRadMEList(RadMEList * M)
     return 2;
   };
   
-  M->n1 = malloc((M->N) * sizeof(int));
+  M->n1 = (int*)malloc((M->N) * sizeof(int));
   if (M->n1 == NULL)
   {
     printf("malloc for M->n1 failed in ListOfRadMEList\n");
     fflush(stdout);
     return 1;
   };
-  M->l1 = malloc((M->N) * sizeof(int));
+  M->l1 = (int*)malloc((M->N) * sizeof(int));
   if (M->l1 == NULL)
   {
     printf("malloc for M->l1 failed in ListOfRadMEList\n");
     fflush(stdout);
     return 1;
   };
-  M->n2 = malloc((M->N) * sizeof(int));
+  M->n2 = (int*)malloc((M->N) * sizeof(int));
   if (M->n2 == NULL)
   {
     printf("malloc for M->n2 failed in ListOfRadMEList\n");
     fflush(stdout);
     return 1;
   };
-  M->l2 = malloc((M->N) * sizeof(int));
+  M->l2 = (int*)malloc((M->N) * sizeof(int));
   if (M->l2 == NULL)
   {
     printf("malloc for M->l2 failed in ListOfRadMEList\n");
     fflush(stdout);
     return 1;
   };
-  M->n3 = malloc((M->N) * sizeof(int));
+  M->n3 = (int*)malloc((M->N) * sizeof(int));
   if (M->n3 == NULL)
   {
     printf("malloc for M->n3 failed in ListOfRadMEList\n");
     fflush(stdout);
     return 1;
   };
-  M->l3 = malloc((M->N) * sizeof(int));
+  M->l3 = (int*)malloc((M->N) * sizeof(int));
   if (M->l3 == NULL)
   {
     printf("malloc for M->l3 failed in ListOfRadMEList\n");
     fflush(stdout);
     return 1;
   };
-  M->n4 = malloc((M->N) * sizeof(int));
+  M->n4 = (int*)malloc((M->N) * sizeof(int));
   if (M->n4 == NULL)
   {
     printf("malloc for M->n4 failed in ListOfRadMEList\n");
     fflush(stdout);
     return 1;
   };
-  M->l4 = malloc((M->N) * sizeof(int));
+  M->l4 = (int*)malloc((M->N) * sizeof(int));
   if (M->l4 == NULL)
   {
     printf("malloc for M->l4 failed in ListOfRadMEList\n");
     fflush(stdout);
     return 1;
   };
-  M->ll = malloc((M->N) * sizeof(int));
+  M->ll = (int*)malloc((M->N) * sizeof(int));
   if (M->ll == NULL)
   {
     printf("malloc for M->ll failed in ListOfRadMEList\n");
     fflush(stdout);
     return 1;
   };
-  M->radme = malloc((M->N) * sizeof(double));
+  M->radme = (double*)malloc((M->N) * sizeof(double));
   if (M->radme == NULL)
   {
     printf("malloc for M->radme failed in ListOfRadMEList\n");
@@ -277,7 +275,7 @@ uint32_t InitWavefunctionRandom(WaveFunctionType * const psi,
   {
     b[i++] = 1;
   }
-  Determinant = calloc(psi->NWord, sizeof(uint8_t));
+  Determinant = (uint8_t*)calloc(psi->NWord, sizeof(uint8_t));
   for (i = 0; i < NFermions; i++)
   {
     if (b[i])
@@ -290,7 +288,7 @@ uint32_t InitWavefunctionRandom(WaveFunctionType * const psi,
   
   while(!twiddle(&x, &y, &z, p))
   {
-    Determinant = calloc(psi->NWord, sizeof(uint8_t));
+    Determinant = (uint8_t*)calloc(psi->NWord, sizeof(uint8_t));
     b[x] = 1;
     b[y] = 0;
     for (i = 0; i < NFermions; i++)

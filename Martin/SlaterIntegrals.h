@@ -1,3 +1,22 @@
+
+/* structures from Martin */
+
+typedef struct SQuantumNumbers
+{
+  unsigned int n[4];
+  int kappa[4];
+  
+}SQuantumNumbers;
+
+typedef struct SSlaterIntegral
+{
+  double *val;
+  int Nval;
+  unsigned int *k;
+  SQuantumNumbers tau;
+  
+}SSlaterIntegral;
+
 /* This file was automatically generated.  Do not edit! */
 int Sign(const int x);
 unsigned int *GetK(const int *kappa,int *n);
