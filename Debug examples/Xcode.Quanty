@@ -1,8 +1,5 @@
 Verbosity(0xFFFF)
 
-print("boo")
-os.exit()
-
 
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Examples/Integral.Quanty")
 os.exit()
