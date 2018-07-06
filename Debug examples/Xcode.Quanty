@@ -1,7 +1,7 @@
 Verbosity(0xFFFF)
 
 
-dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Examples/Integral.Quanty")
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Reference/Functions/Eigensystem_atom_d0.Quanty")
 os.exit()
 
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Examples/EigensystemDense.Quanty")
