@@ -1,5 +1,6 @@
 /* Some makeshift functions */
 
+//#include "SlaterTuple.cpp"
 #include "CreateOperators.c"
 
 static int LuaOperatorNewFullCoulomb (lua_State *L)
@@ -62,6 +63,7 @@ static int LuaOperatorNewFullCoulomb (lua_State *L)
 
     op = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
 
+
     if ( len == 5)
     {
     	CreateOperatorFullCoulombRelativistic(NF,wavefunctions->VRe,wavefunctions->Ni,x,NGridpoints,tuple, NIntegrals,indices, op);
@@ -73,6 +75,14 @@ static int LuaOperatorNewFullCoulomb (lua_State *L)
 
     luaL_setmetatable(L,"Operator_Type");
 
+    /*printf("Operaotor op: %p\n",op);
+    printf("op.l: %p\t %d\n",op->l,op->MaxLength);
+    printf("op.l[4]: %p\t %d\n",&(op->l[4]),op->l[4].N);
+    printf("WF: %p\n",wavefunctions);
+    printf("x: %p\n", x);
+    printf("indices: %p \n",indices);
+    printf("tuple: %p\n",tuple);
+    printf("\n");*/
 	FreeMatrix(wavefunctions);
 	free(x);
 
@@ -86,7 +96,7 @@ static int LuaOperatorNewFullCoulomb (lua_State *L)
 		free(tuple[i]);
 	}
 	free(tuple);
-
+	/**/
 
     return 1;
 }
@@ -157,12 +167,13 @@ static int LuaOperatorNewDirac(lua_State *L)
 
 static int LuaCreateBaseForContinuum(lua_State *L)
 {
-	uint32_t NF, i, NGroups, NGridpoints, NIndices, NBasisFuns, temp;
+	uint32_t NGridpoints = 0;
 	SKappaGroup group;
 	MatrixType *basisfuns, *derivfuns, *contfuns;
 	double w;
 	double *x;
 
+	printf("w%e\n",w);
 	basisfuns = luaL_checkMatrix(L,1);
 	derivfuns = luaL_checkMatrix(L,1);
 	x = luaL_checkarray_double(L,3,&NGridpoints);
