@@ -5277,7 +5277,7 @@ uint32_t BlockGroundState(OperatorType *H, uint32_t const Npsi, ConvergenceSetti
     // set Qconverged
     for(i=0;i<Npsi;i++)
     {
-      if(EnergySqr[0][i]-Sqr(Energy[0][i])>=(totESqr*Settings->zero/Npsi)) Qconverged=0;
+      if(EnergySqr[0][i]-Sqr(Energy[0][i])>(DBL_MIN+totESqr*Settings->zero/Npsi)) Qconverged=0;
     }
     VerbosityPrintf(0x0100,"\n");
     VerbosityPrintf(0x10000000,"Converged %i\n",Qconverged);
