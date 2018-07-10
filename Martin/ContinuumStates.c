@@ -282,6 +282,8 @@ double *KineticEnergyCB(double **basisfuns, double **derivativefuns, double **du
 		{
 			T[i*dim + j] = Tbb[i][j];
 			T[j*dim + i] = Tbb[i][j];
+	        //printf("T %d\t%d\n",dim*dim-1-(i*dim+j),dim*dim-1-(j*dim+i));
+	        //fflush(stdout);
 		}
 	}
 	for ( i = Nindices; i < dim; i++)
@@ -290,10 +292,14 @@ double *KineticEnergyCB(double **basisfuns, double **derivativefuns, double **du
 		{
 			T[i*dim + j] = Tcb[i-Nindices][j];
 			T[j*dim + i] = Tcb[i-Nindices][j];
+	        //printf("T %d\t%d\n",dim*dim-1-(i*dim+j),dim*dim-1-(j*dim+i));
+	        //fflush(stdout);
 		}
 		for ( j = Nindices; j < dim; j++)
 		{
-			T[i*dim + j] = EKinDO(i-Nindices+1,j-Nindices+1,kappa,l,w);
+			T[i*dim + j] = EKinDO(i-Nindices+1,j-Nindices+1,kappa,l,w);//TODO check transpose
+	        //printf("T %d\n",dim*dim-1-i*dim+j);
+	        //fflush(stdout);
 		}
 	}
 	for ( i = 0; i < Nindices; i++)
@@ -327,6 +333,8 @@ double *MetricCB(double **basisfuns, double **dualfuns, const unsigned int *indi
 			y = i==j ? 1. : 0.;
 			g[i*dim +j] = y;
 			g[j*dim +i] = y;
+	        //printf("g %d\t%d\n",dim*dim-1-(i*dim+j),dim*dim-1-(j*dim+i));
+	        //fflush(stdout);
 		}
 	}
 	for ( i = Nindices; i < dim; i++)
@@ -337,12 +345,16 @@ double *MetricCB(double **basisfuns, double **dualfuns, const unsigned int *indi
 			y = ddot((unsigned int *) &n,dualcont[i-Nindices],&eins,basisfuns[indices[j]],&eins);
 			g[i*dim + j] = y;
 			g[j*dim + i] = y;
+	        //printf("g %d\t%d\n",dim*dim-1-(i*dim+j),dim*dim-1-(j*dim+i));
+	        //fflush(stdout);
 		}
 		for ( j = Nindices; j < dim; j++)
 		{
 			y = i==j ? 1. : 0.;
 			g[i*dim +j] = y;
 			g[j*dim +i] = y;
+	        //printf("g %d\t%d\n",dim*dim-1-(i*dim+j),dim*dim-1-(j*dim+i));
+	        //fflush(stdout);
 		}
 	}
 	return g;
@@ -358,6 +370,8 @@ double *SubMatrix(double *M, int dim, int n1, int n2, int m1, int m2 )
 		for ( j = 0; j < m2-m1+1; j++)
 		{
 			Msub[i*(m2-m1+1) + j] = M[(i+n1)*dim + (j+m1)];
+	        //printf("Msub %d\n",(n2-n1+1)*(m2-m1+1)-1-(i*(m2-m1+1) + j));
+	        //fflush(stdout);
 		}
 	}
 	return Msub;
@@ -389,14 +403,18 @@ void CalcContinuumWFs(double **basisfuns, const unsigned int *indices, const uns
 	int i,j,dim,n, iU,jU;
 
 	double **retfuns;
-//	printf("retfuns\n");
+	printf("retfuns\t%d\n",Ncont*sizeof(double *));
+	fflush(stdout);
 	retfuns = (double **) malloc(Ncont*sizeof(double *));
+	printf("check retfuns\n");
+	fflush(stdout);
 	if (!retfuns) printf("malloc fail at retfuns in CalcContinuumWFs. size = %d\n",Ncont);
 
 	n = NGridpoints * 2;
 	dim = Ncont + Nindices;
 
-//	printf("loop1\n");
+	printf("loop1\n");
+	fflush(stdout);
 	for ( i = Ncont-1; i >= 0; i--)
 	{
 		iU = i + Nindices;
@@ -414,7 +432,8 @@ void CalcContinuumWFs(double **basisfuns, const unsigned int *indices, const uns
 	//PrintMartix(R,Ncont);
 	//PrintArray(contfuns[0],n);
 	//printf("start Rotating\n");
-//	printf("loop2\n");
+	printf("loop2\n");
+	fflush(stdout);
 	for ( i = 0; i < Ncont; i++)
 	{
 		retfuns[i] = (double *) malloc(n*sizeof(double));
@@ -428,7 +447,8 @@ void CalcContinuumWFs(double **basisfuns, const unsigned int *indices, const uns
 			vAdd(contfuns[j],R[j*Ncont + i],retfuns[i],n);
 		}
 	}
-//	printf("loop3\n");
+	printf("loop3\n");
+	fflush(stdout);
 	for ( i = 0; i < Ncont; i++)
 	{
 		//free(contfuns[i]);

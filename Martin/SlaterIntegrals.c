@@ -178,6 +178,7 @@ double *CreateWeights(const unsigned int NGridPoints, const double *x)
 {
     int i;
     double x0 = 0;
+
     double *weights = (double *) malloc(NGridPoints*2*sizeof(double));
     if (!weights) printf("malloc fail at weights in CreateWeights. size = %d\n",2*NGridPoints);
     
@@ -187,6 +188,8 @@ double *CreateWeights(const unsigned int NGridPoints, const double *x)
         weights[i+NGridPoints] = 2 * (x[i] - x0);
         //printf("weights[%d]: %f\n",i,weights[i]);
         x0 = x[i] + weights[i] / 2;
+        //printf("weights %d\n",NGridPoints*2-(i+NGridPoints)-1);
+        //fflush(stdout);
     }
     weights[NGridPoints-2] += x[i]-x0;
     weights[2*NGridPoints-2] += x[i]-x0;

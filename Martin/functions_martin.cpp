@@ -2,6 +2,7 @@
 
 //#include "SlaterTuple.cpp"
 #include "CreateOperators.c"
+#include "MartinsLittleHelper.cpp"
 
 static int LuaOperatorNewFullCoulomb (lua_State *L)
 {
@@ -172,11 +173,20 @@ static int LuaCreateBaseForContinuum(lua_State *L)
 	MatrixType *basisfuns, *derivfuns, *contfuns;
 	double w;
 	double *x;
+	vector<double> vx;
+	vector<vector<double> > vbasf, vderf,vcontf;
 
-	printf("w%e\n",w);
 	basisfuns = luaL_checkMatrix(L,1);
+	vbasf = ConvertMatrix(basisfuns->VRe,basisfuns->Ni,basisfuns->Nj);
+	/*for (int i = 0; i < vbasf.size(); i++)
+		for (int j = 0; j < vbasf[i].size(); j++)
+			printf("%e\n",vbasf[i][j]-basisfuns->VRe[i][j]);*/
 	derivfuns = luaL_checkMatrix(L,1);
+	vderf = ConvertMatrix(derivfuns->VRe,derivfuns->Ni,derivfuns->Nj);
 	x = luaL_checkarray_double(L,3,&NGridpoints);
+	vx = ConvertArray(x,NGridpoints);
+	//for (int i = 0; i < vx.size(); i++)
+		//printf("%f\n",vx[i]);
 	luaL_checktype(L, 4, LUA_TTABLE);
 	/*NGroups = (uint32_t)lua_objlen(L,4);
 
@@ -205,27 +215,28 @@ static int LuaCreateBaseForContinuum(lua_State *L)
 	luaL_checktype(L, 6, LUA_TTABLE);
 
 	contfuns = luaL_checkMatrix(L,6);
+	vcontf = ConvertMatrix(contfuns->VRe,contfuns->Ni,contfuns->Nj);
 
 
 	double *eigenval;
-//	printf("CreateCont\n");
-//	fflush(stdout);
+
+
 	eigenval = CreateBaseForContinuum(basisfuns->Ni, basisfuns->VRe,derivfuns->VRe,x,NGridpoints,group,contfuns->Ni,contfuns->VRe,w);
-//	printf("Push\n");
-//	fflush(stdout);
+
+
+
 	LuaPushArray_double(L,&(eigenval[contfuns->Ni/2]), contfuns->Ni/2);
 	contfuns->VRe = &(contfuns->VRe[contfuns->Ni/2]);
 	contfuns->Ni = contfuns->Ni/2;
 	LuaPushTable_MatrixType(L,contfuns);
 
-//	printf("Free\n");
-//	fflush(stdout);
+
 
 	FreeMatrix(basisfuns);
 	FreeMatrix(derivfuns);
 
 	free(x);
-	//free(groups);
+
 
 	return 2;
 }

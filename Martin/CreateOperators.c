@@ -1,3 +1,7 @@
+#include <vector>
+
+using namespace std;
+
 #include "../Martin/SlaterIntegrals.c"
 #include "../Martin/DiracHamiltonian.c"
 #include "../Martin/ContinuumStates.c"
@@ -255,7 +259,7 @@ double* CreateBaseForContinuum( int NBasisFuns,double **basisfuns,double **deriv
 	const int CblasTrans = 112;
 	const int CblasNonUnit = 131;
 */
-	/* Fuer Simon*/
+
 	char blasRight = 'R';
 	char blasLeft  = 'L';
 	char blasUpper = 'U';
@@ -283,7 +287,7 @@ double* CreateBaseForContinuum( int NBasisFuns,double **basisfuns,double **deriv
 	char cN = 'N';
 	char cV = 'V';
 	double EINS = 1;
-	info = 0;
+	info = 1;
 	dpotrf(&cU,(unsigned int *) &dim,g,(unsigned int *) &dim,&info);
 	dtrtri(&cU,&cN,(unsigned int *) &dim,g,(unsigned int *) &dim,&info);
 	dtrmm(&blasLeft,&blasUpper,&blasTrans,&blasNonUnit,(unsigned int *) &dim,(unsigned int *) &dim,&EINS,g,(unsigned int *) &dim,T,(unsigned int *) &dim);
@@ -299,8 +303,8 @@ double* CreateBaseForContinuum( int NBasisFuns,double **basisfuns,double **deriv
 	if (!d) printf("malloc fail at d in CreateBaseForContinuum. size = %d\n",Ncont);
 	e = (double *) malloc((Ncont-1)*sizeof(double));
 	if (!e) printf("malloc fail at e in CreateBaseForContinuum. size = %d\n",Ncont-1);
-	tau = (double *) malloc(Ncont*sizeof(double));
-	if (!tau) printf("malloc fail at tau in CreateBaseForContinuum. size = %d\n",Ncont);
+	tau = (double *) malloc((Ncont-1)*sizeof(double));
+	if (!tau) printf("malloc fail at tau in CreateBaseForContinuum. size = %d\n",Ncont-1);
 
 	double *work = (double *) malloc(Ncont*sizeof(double));
 	if (!work) printf("malloc fail at work in CreateBaseForContinuum. size = %d\n",Ncont);
