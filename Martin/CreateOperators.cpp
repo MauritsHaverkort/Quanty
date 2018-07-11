@@ -401,7 +401,6 @@ double *CreateBaseForContinuum( int NBasisFuns, vector<vector<double> > basisfun
 	dtrmm(&blasRight,&blasUpper,&blasNoTrans,&blasNonUnit,(unsigned int *) &dim, (unsigned int *) &dim,&EINS,&(g[0]),(unsigned int *) &dim,&(T[0]),(unsigned int *) &dim);
 
 	Tsub = SubMatrix(T,dim,group.n,dim-1,group.n,dim-1);
-	printf("%d\t%d\n",Tsub.size(),Ncont);
 
 	d = (double *) malloc(Ncont*sizeof(double));
 	if (!d) printf("malloc fail at d in CreateBaseForContinuum. size = %d\n",Ncont);
