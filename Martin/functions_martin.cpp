@@ -1,7 +1,7 @@
 /* Some makeshift functions */
 
 //#include "SlaterTuple.cpp"
-#include "CreateOperators.c"
+#include "CreateOperators.cpp"
 #include "MartinsLittleHelper.cpp"
 
 static int LuaOperatorNewFullCoulomb (lua_State *L)
@@ -219,15 +219,23 @@ static int LuaCreateBaseForContinuum(lua_State *L)
 
 
 	double *eigenval;
+/*
+	vector<double> vw = CreateWeights(NGridpoints,vx);
+	double * ww = CreateWeights(NGridpoints,x);
+	for (int i = 0; i < NGridpoints; i++)
+		printf("%e\n",ww[i]-vw[i]);
+*/
+
+	eigenval = CreateBaseForContinuum(vbasf.size(), vbasf,vderf,vx,NGridpoints,group,vcontf.size(),vcontf,w);
 
 
-	eigenval = CreateBaseForContinuum(basisfuns->Ni, basisfuns->VRe,derivfuns->VRe,x,NGridpoints,group,contfuns->Ni,contfuns->VRe,w);
 
-
-
-	LuaPushArray_double(L,&(eigenval[contfuns->Ni/2]), contfuns->Ni/2);
-	contfuns->VRe = &(contfuns->VRe[contfuns->Ni/2]);
-	contfuns->Ni = contfuns->Ni/2;
+	LuaPushArray_double(L,&(eigenval[vcontf.size()/2]), vcontf.size()/2);
+	for (int i = 0; i < vcontf.size()/2; i++)
+	{
+		contfuns->VRe[i] = &(vcontf[vcontf.size()/2+i][0]);
+	}
+	contfuns->Ni = vcontf.size()/2;
 	LuaPushTable_MatrixType(L,contfuns);
 
 

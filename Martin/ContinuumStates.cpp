@@ -252,6 +252,28 @@ double **CalculateContinuumBoundDiracElements(double **basisfuns, double **deriv
 	return result;
 
 }
+vector<vector<double> > CalculateContinuumBoundDiracElements(vector<vector<double> > basisfuns, vector<vector<double> > derivativefuns,
+		vector<vector<double> > dualcont, const int NcontFuns, const unsigned int *indices,
+		const unsigned int Nindices, vector<double> x, unsigned int NGridPoints, const int kappa, const int Z)
+{
+	vector<vector<double> > result ;
+	vector<double> help;
+
+	unsigned int i, j, m;
+	for ( i = 0; i < NcontFuns; i++ )
+	{
+		result.insert(result.end(),help);
+		for ( j = 0; j < Nindices; j++)
+		{
+			m = indices[j];
+			result[i].insert(result[i].end(), DiracH(basisfuns[m],dualcont[i],derivativefuns[m], x, NGridPoints, kappa, Z));
+		}
+	}
+
+
+	return result;
+
+}
 
 double *KineticEnergyCB(double **basisfuns, double **derivativefuns, double **dualfuns,double **dualcont, const int NcontFuns, const unsigned int *indices,
 		const unsigned int Nindices, const double *x, unsigned int NGridPoints, const int kappa,double w)
@@ -314,6 +336,63 @@ double *KineticEnergyCB(double **basisfuns, double **derivativefuns, double **du
 	free(Tcb);
 	return T;
 }
+vector<double> KineticEnergyCB(vector<vector<double> > basisfuns, vector<vector<double> > derivativefuns, vector<vector<double> > dualfuns,
+		vector<vector<double> > dualcont, const int NcontFuns, const unsigned int *indices,
+		const unsigned int Nindices, vector<double> x, unsigned int NGridPoints, const int kappa,double w)
+{
+	vector<vector<double> >  Tbb;
+	vector<vector<double> >  Tcb;
+	vector<double> T;
+	int i,j, dim, l;
+
+	const int Z = 0;
+
+	if ( kappa > 0 )
+	{
+		l = kappa;
+	}
+	else
+	{
+		l = -kappa -1;
+	}
+	Tbb = CalculateDiracMatrixElements(basisfuns,derivativefuns,dualfuns,indices,Nindices,x,NGridPoints,kappa,Z);
+	Tcb = CalculateContinuumBoundDiracElements(basisfuns,derivativefuns,dualcont,NcontFuns,indices,Nindices,x,NGridPoints,kappa,Z);
+
+	dim = Nindices + NcontFuns;
+	for ( i = 0; i < dim*dim; i++)
+	{
+		T.insert(T.end(),0.); //TODO that could be better
+	}
+	for ( i = 0; i < Nindices; i++)
+	{
+
+		for ( j = i; j < Nindices; j++)
+		{
+			T[i*dim + j] = Tbb[i][j];
+			T[j*dim + i] = Tbb[i][j];
+	        //printf("T %d\t%d\n",dim*dim-1-(i*dim+j),dim*dim-1-(j*dim+i));
+	        //fflush(stdout);
+		}
+	}
+	for ( i = Nindices; i < dim; i++)
+	{
+		for ( j = 0; j < Nindices; j++)
+		{
+			T[i*dim + j] = Tcb[i-Nindices][j];
+			T[j*dim + i] = Tcb[i-Nindices][j];
+	        //printf("T %d\t%d\n",dim*dim-1-(i*dim+j),dim*dim-1-(j*dim+i));
+	        //fflush(stdout);
+		}
+		for ( j = Nindices; j < dim; j++)
+		{
+			T[i*dim + j] = EKinDO(i-Nindices+1,j-Nindices+1,kappa,l,w);//TODO check transpose
+	        //printf("T %d\n",dim*dim-1-i*dim+j);
+	        //fflush(stdout);
+		}
+	}
+
+	return T;
+}
 
 double *MetricCB(double **basisfuns, double **dualfuns, const unsigned int *indices,
 		const unsigned int Nindices, double **dualcont, const int NcontFuns, unsigned int NGridPoints)
@@ -359,6 +438,53 @@ double *MetricCB(double **basisfuns, double **dualfuns, const unsigned int *indi
 	}
 	return g;
 }
+vector<double> MetricCB(vector<vector<double> > basisfuns, vector<vector<double> > dualfuns, const unsigned int *indices,
+		const unsigned int Nindices, vector<vector<double> > dualcont, const int NcontFuns, unsigned int NGridPoints)
+{
+	int dim,i,j,n;
+	unsigned int eins = 1;
+	n = 2* NGridPoints;
+	dim = Nindices + NcontFuns;
+	vector<double> g;
+	for ( i = 0; i < dim*dim; i++)
+	{
+		g.insert(g.end(),0.);
+	}
+	double y;
+
+	for ( i = 0; i < Nindices; i++)
+	{
+		for ( j = i; j < Nindices; j++)
+		{
+			y = i==j ? 1. : 0.;
+			g[i*dim +j] = y;
+			g[j*dim +i] = y;
+	        //printf("g %d\t%d\n",dim*dim-1-(i*dim+j),dim*dim-1-(j*dim+i));
+	        //fflush(stdout);
+		}
+	}
+	for ( i = Nindices; i < dim; i++)
+	{
+		for (j = 0; j < Nindices; j++)
+		{
+
+			y = ddot((unsigned int *) &n,&(dualcont[i-Nindices][0]),&eins,&(basisfuns[indices[j]][0]),&eins);
+			g[i*dim + j] = y;
+			g[j*dim + i] = y;
+	        //printf("g %d\t%d\n",dim*dim-1-(i*dim+j),dim*dim-1-(j*dim+i));
+	        //fflush(stdout);
+		}
+		for ( j = Nindices; j < dim; j++)
+		{
+			y = i==j ? 1. : 0.;
+			g[i*dim +j] = y;
+			g[j*dim +i] = y;
+	        //printf("g %d\t%d\n",dim*dim-1-(i*dim+j),dim*dim-1-(j*dim+i));
+	        //fflush(stdout);
+		}
+	}
+	return g;
+}
 
 double *SubMatrix(double *M, int dim, int n1, int n2, int m1, int m2 )
 {
@@ -376,6 +502,23 @@ double *SubMatrix(double *M, int dim, int n1, int n2, int m1, int m2 )
 	}
 	return Msub;
 }
+vector<double> SubMatrix(vector<double> M, int dim, int n1, int n2, int m1, int m2 )
+{
+	vector<double> Msub;
+
+	int i,j;
+
+	for ( i = 0; i < n2-n1+1; i++)
+	{
+		for ( j = 0; j < m2-m1+1; j++)
+		{
+			Msub.insert(Msub.end(),M[(i+n1)*dim + (j+m1)]);
+	        //printf("Msub %d\n",(n2-n1+1)*(m2-m1+1)-1-(i*(m2-m1+1) + j));
+	        //fflush(stdout);
+		}
+	}
+	return Msub;
+}
 
 void vAdd(const double *a,const double aleph, double* b,const int n)
 {
@@ -385,11 +528,27 @@ void vAdd(const double *a,const double aleph, double* b,const int n)
 		b[i] += aleph * a[i];
 	}
 }
+void vAdd(vector<double> a,const double aleph, vector<double> &b)
+{
+	int i;
+	for ( i = 0; i < b.size(); i++)
+	{
+		b[i] += aleph * a[i];
+	}
+}
 
 void svMul(const double aleph, double *a, const int n)
 {
 	int i;
 	for(i = 0; i < n; i++)
+	{
+		a[i] *= aleph;
+	}
+}
+void svMul(const double aleph, vector<double> &a)
+{
+	int i;
+	for(i = 0; i < a.size(); i++)
 	{
 		a[i] *= aleph;
 	}
@@ -455,6 +614,56 @@ void CalcContinuumWFs(double **basisfuns, const unsigned int *indices, const uns
 		contfuns[i] = retfuns[i];
 	}
 	//free(contfuns);*/
+}
+
+void CalcContinuumWFs(vector<vector<double> > basisfuns, const unsigned int *indices, const unsigned int Nindices,
+		vector<vector<double> > &contfuns, const int Ncont,const int NGridpoints, vector<double> U, vector<double> R)
+{
+	int i,j,dim,n, iU,jU;
+
+	vector<vector<double> > retfuns;
+	vector<double> help;
+
+	//retfuns = (double **) malloc(Ncont*sizeof(double *));
+
+	n = NGridpoints * 2;
+	dim = Ncont + Nindices;
+
+	for ( i = Ncont-1; i >= 0; i--)
+	{
+		iU = i + Nindices;
+		svMul(U[iU*dim+ iU],contfuns[i]);
+		for ( j = i-1; j >= 0; j--)
+		{
+			jU = j + Nindices;
+			vAdd(contfuns[j],U[jU*dim + iU],contfuns[i]);
+		}
+		for( j = 0; j < Nindices; j++)
+		{
+			vAdd(basisfuns[indices[j]],U[j*dim + iU],contfuns[i]);
+		}
+	}
+	//PrintMartix(R,Ncont);
+	//PrintArray(contfuns[0],n);
+	//printf("start Rotating\n");
+	for ( i = 0; i < Ncont; i++)
+	{
+		retfuns.insert(retfuns.end(),help);
+
+		for( j = 0; j < n; j++)
+		{
+			retfuns[i].insert(retfuns[i].end(),0.);
+		}
+		for ( j = 0; j < Ncont; j++)
+		{
+			vAdd(contfuns[j],R[j*Ncont + i],retfuns[i]);
+		}
+	}
+
+	for ( i = 0; i < Ncont; i++)
+	{
+		contfuns[i] = retfuns[i];
+	}
 }
 
 
