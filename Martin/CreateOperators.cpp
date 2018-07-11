@@ -1,6 +1,10 @@
-#include "../Martin/SlaterIntegrals.c"
-#include "../Martin/DiracHamiltonian.c"
-#include "../Martin/ContinuumStates.c"
+#include <vector>
+
+using namespace std;
+
+#include "SlaterIntegrals.cpp"
+#include "DiracHamiltonian.cpp"
+#include "ContinuumStates.cpp"
 //#include "mkl.h"
 
 void CreateOperatorCoulombRelativisticOneIntegral(uint32_t const NFermion,int const kappa1,int const kappa2, int const kappa3,int const kappa4,uint16_t const *Jindex1,
@@ -241,8 +245,10 @@ void PrintArray(double* a, int n)
 	}
 }
 
+/*double* CreateBaseForContinuum( int NBasisFuns, vector<vector<double> > basisfuns,vector<vector<double> > derivfuns,vector<double> x,
+		uint32_t NGridpoints,SKappaGroup group,int Ncont, vector<vector<double> > contfuns, double w)*/
 double* CreateBaseForContinuum( int NBasisFuns,double **basisfuns,double **derivfuns,double *x,uint32_t NGridpoints,SKappaGroup group,int Ncont,
-								double **contfuns, double w)
+                                                                double **contfuns, double w)
 {
 	int l,k,dim,info;
 
@@ -255,7 +261,7 @@ double* CreateBaseForContinuum( int NBasisFuns,double **basisfuns,double **deriv
 	const int CblasTrans = 112;
 	const int CblasNonUnit = 131;
 */
-	/* Fuer Simon*/
+
 	char blasRight = 'R';
 	char blasLeft  = 'L';
 	char blasUpper = 'U';
@@ -283,7 +289,7 @@ double* CreateBaseForContinuum( int NBasisFuns,double **basisfuns,double **deriv
 	char cN = 'N';
 	char cV = 'V';
 	double EINS = 1;
-	info = 0;
+	info = 1;
 	dpotrf(&cU,(unsigned int *) &dim,g,(unsigned int *) &dim,&info);
 	dtrtri(&cU,&cN,(unsigned int *) &dim,g,(unsigned int *) &dim,&info);
 	dtrmm(&blasLeft,&blasUpper,&blasTrans,&blasNonUnit,(unsigned int *) &dim,(unsigned int *) &dim,&EINS,g,(unsigned int *) &dim,T,(unsigned int *) &dim);
@@ -299,8 +305,8 @@ double* CreateBaseForContinuum( int NBasisFuns,double **basisfuns,double **deriv
 	if (!d) printf("malloc fail at d in CreateBaseForContinuum. size = %d\n",Ncont);
 	e = (double *) malloc((Ncont-1)*sizeof(double));
 	if (!e) printf("malloc fail at e in CreateBaseForContinuum. size = %d\n",Ncont-1);
-	tau = (double *) malloc(Ncont*sizeof(double));
-	if (!tau) printf("malloc fail at tau in CreateBaseForContinuum. size = %d\n",Ncont);
+	tau = (double *) malloc((Ncont-1)*sizeof(double));
+	if (!tau) printf("malloc fail at tau in CreateBaseForContinuum. size = %d\n",Ncont-1);
 
 	double *work = (double *) malloc(Ncont*sizeof(double));
 	if (!work) printf("malloc fail at work in CreateBaseForContinuum. size = %d\n",Ncont);
@@ -336,6 +342,88 @@ double* CreateBaseForContinuum( int NBasisFuns,double **basisfuns,double **deriv
 	}
 	free(dualcont);
 	free(Tsub);
+	free(tau);
+	free(e);
+
+
+	return d;
+
+}
+
+double *CreateBaseForContinuum( int NBasisFuns, vector<vector<double> > basisfuns,vector<vector<double> > derivfuns,vector<double> x,
+		uint32_t NGridpoints,SKappaGroup group,int Ncont, vector<vector<double> > &contfuns, double w)
+{
+	int l,k,dim,info;
+
+/*	const int LAPACK_ROW_MAJOR = 101;
+	const int CblasRowMajor= 101;
+	const int blasLeft = 141;
+	const int CblasRight = 142;
+	const int CblasUpper = 121;
+	const int CblasNoTrans = 111;
+	const int CblasTrans = 112;
+	const int CblasNonUnit = 131;
+*/
+
+	char blasRight = 'R';
+	char blasLeft  = 'L';
+	char blasUpper = 'U';
+	char blasTrans = 'T';
+	char blasNoTrans = 'N';
+	char blasNonUnit = 'N';
+
+	double *tau,*d,*e;
+	vector<double> T, g, Tsub;
+	vector<vector<double> > dualfuns, dualcont;
+
+	k = group.kappa;
+	l = 0;
+
+	dim = Ncont + group.n;
+
+
+	dualfuns = CreateDualFunctions(NBasisFuns,NGridpoints,basisfuns,x);
+
+	dualcont = CreateDualFunctions(Ncont,NGridpoints,contfuns,x);
+
+	T = KineticEnergyCB(basisfuns,derivfuns, dualfuns,dualcont, Ncont,group.indices, group.n,x,NGridpoints,k,w);
+
+	g = MetricCB(basisfuns,dualfuns,group.indices, group.n,dualcont,Ncont,NGridpoints);
+
+	char cU = 'U';
+	char cN = 'N';
+	char cV = 'V';
+	double EINS = 1;
+	info = 1;
+	dpotrf(&cU,(unsigned int *) &dim,&(g[0]),(unsigned int *) &dim,&info);
+	dtrtri(&cU,&cN,(unsigned int *) &dim,&(g[0]),(unsigned int *) &dim,&info);
+	dtrmm(&blasLeft,&blasUpper,&blasTrans,&blasNonUnit,(unsigned int *) &dim,(unsigned int *) &dim,&EINS,&(g[0]),(unsigned int *) &dim,&(T[0]),(unsigned int *) &dim);
+	dtrmm(&blasRight,&blasUpper,&blasNoTrans,&blasNonUnit,(unsigned int *) &dim, (unsigned int *) &dim,&EINS,&(g[0]),(unsigned int *) &dim,&(T[0]),(unsigned int *) &dim);
+
+	Tsub = SubMatrix(T,dim,group.n,dim-1,group.n,dim-1);
+
+	d = (double *) malloc(Ncont*sizeof(double));
+	if (!d) printf("malloc fail at d in CreateBaseForContinuum. size = %d\n",Ncont);
+	e = (double *) malloc((Ncont-1)*sizeof(double));
+	if (!e) printf("malloc fail at e in CreateBaseForContinuum. size = %d\n",Ncont-1);
+	tau = (double *) malloc((Ncont-1)*sizeof(double));
+	if (!tau) printf("malloc fail at tau in CreateBaseForContinuum. size = %d\n",Ncont-1);
+
+	double *work = (double *) malloc(Ncont*sizeof(double));
+	if (!work) printf("malloc fail at work in CreateBaseForContinuum. size = %d\n",Ncont);
+	unsigned int lwork = (unsigned int) Ncont;
+
+	dsytrd(&cU,(unsigned int *) &Ncont,&(Tsub[0]),(unsigned int *) &Ncont,d,e,tau,work, &lwork,&info);
+	if ( 0 != info) printf("error: argument %d of LAPACKE_dsytrd",-info);
+	dorgtr(&cU,(unsigned int *) &Ncont,&(Tsub[0]),(unsigned int *) &Ncont,tau,work,&lwork,&info);
+	if ( 0 != info) printf("error: argument %d of LAPACKE_dorgtr",-info);
+	dsteqr(&cV,(unsigned int *) &Ncont,d,e,&(Tsub[0]),(unsigned int *) &Ncont,work,&info);
+	if ( 0 != info) printf("error: argument %d of LAPACKE_dsteqr",-info);
+
+	CalcContinuumWFs(basisfuns, group.indices, group.n, contfuns, Ncont, NGridpoints, g, Tsub);
+
+
+	free(work);
 	free(tau);
 	free(e);
 

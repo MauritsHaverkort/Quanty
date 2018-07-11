@@ -178,6 +178,7 @@ double *CreateWeights(const unsigned int NGridPoints, const double *x)
 {
     int i;
     double x0 = 0;
+
     double *weights = (double *) malloc(NGridPoints*2*sizeof(double));
     if (!weights) printf("malloc fail at weights in CreateWeights. size = %d\n",2*NGridPoints);
     
@@ -187,11 +188,43 @@ double *CreateWeights(const unsigned int NGridPoints, const double *x)
         weights[i+NGridPoints] = 2 * (x[i] - x0);
         //printf("weights[%d]: %f\n",i,weights[i]);
         x0 = x[i] + weights[i] / 2;
+        //printf("weights %d\n",NGridPoints*2-(i+NGridPoints)-1);
+        //fflush(stdout);
     }
     weights[NGridPoints-2] += x[i]-x0;
     weights[2*NGridPoints-2] += x[i]-x0;
     weights[2*NGridPoints-1] = 0.;
     weights[NGridPoints-1] = 0.;
+
+    return weights;
+}
+
+vector<double> CreateWeights(const unsigned int NGridPoints, vector<double> x)
+{
+    int i;
+    double x0 = 0;
+
+    vector<double> weights;
+
+    for( i = 0; i < NGridPoints-1; i++)
+    {
+        weights.insert(weights.end(), 2 * (x[i] - x0));
+        x0 = x[i] + weights[i] / 2;
+        //printf("weights %d\n",NGridPoints*2-(i+NGridPoints)-1);
+        //fflush(stdout);
+    }
+    weights.insert(weights.end(), 0.);
+    weights[NGridPoints-2] += x[i]-x0;
+    for( i = 0; i < NGridPoints-1; i++)
+    {
+        weights.insert(weights.end(), 2 * (x[i] - x0));
+        x0 = x[i] + weights[i] / 2;
+        //printf("weights %d\n",NGridPoints*2-(i+NGridPoints)-1);
+        //fflush(stdout);
+    }
+    weights[2*NGridPoints-2] += x[i]-x0;
+    weights.insert(weights.end(), 0.);
+
 
     return weights;
 }
@@ -215,6 +248,34 @@ double **CreateDualFunctions(const unsigned int NBasisFuns, const unsigned int N
     free(weights);
     return dualfuns;
 }
+vector<double> Dual(vector<double> f, vector<double> w)
+{
+	vector<double> g;
+	if (f.size() != w.size()) printf("error in Dual: %d = size(f) != size(w) = %d", f.size(),w.size());
+	for (int i = 0; i < f.size(); i++)
+	{
+		g.insert(g.end(), f[i]*w[i]);
+	}
+	return g;
+}
+vector<vector<double> > CreateDualFunctions(const unsigned int NBasisFuns, const unsigned int NGridPoints,
+		vector<vector<double> > basisfuns, vector<double> x)
+{
+    int i;
+    vector<vector<double> > dualfuns;
+    vector<double> weights;
+
+    weights = CreateWeights(NGridPoints,x);
+
+
+    for ( i = 0; i < NBasisFuns; i++ )
+    {
+        dualfuns.insert(dualfuns.end(),Dual(basisfuns[i], weights));
+    }
+    return dualfuns;
+
+}
+
 
 void Dual(const int n, const double *f, const double *weights, double *fdual)
 {
