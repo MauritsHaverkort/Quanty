@@ -401,6 +401,7 @@ double *CreateBaseForContinuum( int NBasisFuns, vector<vector<double> > basisfun
 	dtrmm(&blasRight,&blasUpper,&blasNoTrans,&blasNonUnit,(unsigned int *) &dim, (unsigned int *) &dim,&EINS,&(g[0]),(unsigned int *) &dim,&(T[0]),(unsigned int *) &dim);
 
 	Tsub = SubMatrix(T,dim,group.n,dim-1,group.n,dim-1);
+	printf("%d\t%d\n",Tsub.size(),Ncont);
 
 	d = (double *) malloc(Ncont*sizeof(double));
 	if (!d) printf("malloc fail at d in CreateBaseForContinuum. size = %d\n",Ncont);
@@ -409,9 +410,9 @@ double *CreateBaseForContinuum( int NBasisFuns, vector<vector<double> > basisfun
 	tau = (double *) malloc((Ncont-1)*sizeof(double));
 	if (!tau) printf("malloc fail at tau in CreateBaseForContinuum. size = %d\n",Ncont-1);
 
-	double *work = (double *) malloc(Ncont*sizeof(double));
+	double *work = (double *) malloc((2*Ncont-2)*sizeof(double));
 	if (!work) printf("malloc fail at work in CreateBaseForContinuum. size = %d\n",Ncont);
-	unsigned int lwork = (unsigned int) Ncont;
+	unsigned int lwork = (unsigned int) (2*Ncont-2);
 
 	dsytrd(&cU,(unsigned int *) &Ncont,&(Tsub[0]),(unsigned int *) &Ncont,d,e,tau,work, &lwork,&info);
 	if ( 0 != info) printf("error: argument %d of LAPACKE_dsytrd",-info);
