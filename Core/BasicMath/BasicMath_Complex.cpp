@@ -1,3 +1,100 @@
+Complex16 operator+( Complex16 const& lhs, Complex16 const& rhs)
+{
+  Complex16 res;
+  res.Re = lhs.Re+rhs.Re;
+  res.Im = lhs.Im+rhs.Im;
+  return res;
+}
+Complex16 operator+( Complex16 const& lhs, double const& rhs)
+{
+  Complex16 res;
+  res.Re = lhs.Re+rhs;
+  res.Im = lhs.Im;
+  return res;
+}
+Complex16 operator+( double const& lhs, Complex16 const& rhs)
+{
+  Complex16 res;
+  res.Re = lhs+rhs.Re;
+  res.Im = rhs.Im;
+  return res;
+}
+void operator+=( Complex16 & lhs, Complex16 const& rhs)
+{
+  lhs.Re+=rhs.Re;
+  lhs.Im+=rhs.Im;
+}
+void operator+=( Complex16 & lhs, double const& rhs)
+{
+  lhs.Re+=rhs;
+}
+
+Complex16 operator-( Complex16 const& lhs, Complex16 const& rhs)
+{
+  Complex16 res;
+  res.Re = lhs.Re-rhs.Re;
+  res.Im = lhs.Im-rhs.Im;
+  return res;
+}
+Complex16 operator-( Complex16 const& lhs, double const& rhs)
+{
+  Complex16 res;
+  res.Re = lhs.Re-rhs;
+  res.Im = lhs.Im;
+  return res;
+}
+Complex16 operator-( double const& lhs, Complex16 const& rhs)
+{
+  Complex16 res;
+  res.Re = lhs-rhs.Re;
+  res.Im = -rhs.Im;
+  return res;
+}
+void operator-=( Complex16 & lhs, Complex16 const& rhs)
+{
+  lhs.Re-=rhs.Re;
+  lhs.Im-=rhs.Im;
+}
+void operator-=( Complex16 & lhs, double const& rhs)
+{
+  lhs.Re-=rhs;
+}
+
+Complex16 operator*( Complex16 const& lhs, Complex16 const& rhs)
+{
+  Complex16 res;
+  res.Re = lhs.Re*rhs.Re - lhs.Im+rhs.Im;
+  res.Im = lhs.Im+rhs.Re + lhs.Re+rhs.Im;
+  return res;
+}
+Complex16 operator*( Complex16 const& lhs, double const& rhs)
+{
+  Complex16 res;
+  res.Re = lhs.Re*rhs;
+  res.Im = lhs.Im*rhs;
+  return res;
+}
+Complex16 operator*( double const& lhs, Complex16 const& rhs)
+{
+  Complex16 res;
+  res.Re = lhs*rhs.Re;
+  res.Im = lhs*rhs.Im;
+  return res;
+}
+void operator*=( Complex16 & lhs, Complex16 const& rhs)
+{
+  Complex16 res;
+  res.Re = lhs.Re*rhs.Re - lhs.Im+rhs.Im;
+  res.Im = lhs.Im+rhs.Re + lhs.Re+rhs.Im;
+  lhs = res;
+}
+void operator*=( Complex16 & lhs, double const& rhs)
+{
+  lhs.Re*=rhs;
+  lhs.Im*=rhs;
+}
+
+
 /*abs*/
 double Cabs(const Complex16 z)
 {

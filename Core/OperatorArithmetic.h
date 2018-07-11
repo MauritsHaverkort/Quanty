@@ -9,8 +9,10 @@ uint32_t InitOperatorFixedLength(OperatorType * const O, const uint32_t length, 
 uint32_t InitOperatorCopySettings(OperatorType * const O, const OperatorType Oset);
 uint32_t RealOperatorAddLader(OperatorType * const O, const uint16_t * const oadd, const uint32_t length, const double VRe);
 uint32_t RealOperatorAddLaderNormalOrder(OperatorType * const O, const uint16_t * const oadd, const uint32_t length, const double VRe, uint32_t(*QDetNotOrdered) (uint16_t, uint16_t, uint32_t));
+double RealOperatorPrefactorLader(OperatorType * const O, const uint16_t * const oadd, const uint32_t length);
 uint32_t ComplexOperatorAddLader(OperatorType * const O, const uint16_t * const oadd, const uint32_t length, const double VRe, const double VIm);
 uint32_t ComplexOperatorAddLaderNormalOrder(OperatorType * const O, const uint16_t * const oadd, const uint32_t length, const double VRe, const double VIm, uint32_t(*QDetNotOrdered) (uint16_t,uint16_t,uint32_t));
+Complex16 ComplexOperatorPrefactorLader(OperatorType * const O, const uint16_t * const oadd, const uint32_t length);
 uint32_t OperatorAddLader(OperatorType * const O, const uint16_t * const oadd, const uint32_t length, const double VRe, const double VIm);
 uint32_t OperatorAddLaderNormalOrder(OperatorType * const O, const uint16_t * const oadd, const uint32_t length,const double VRe, const double VIm, uint32_t(*QDetNotOrdered) (uint16_t, uint16_t, uint32_t));
 uint32_t OperatorFixedLengthCopy(OperatorFixedLengthType * const Ocopy, OperatorFixedLengthType const O, uint32_t const length);

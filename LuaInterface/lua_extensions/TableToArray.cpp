@@ -139,7 +139,7 @@ CompactVectorType luaL_checkVector(lua_State *L, int narg)
 CompactMatrixType* luaL_checkCompactMatrix(lua_State *L, int narg)
 {
   uint32_t len_row;
-  int i,j;
+  int i,j, makereal=1;
   CompactMatrixType *buff;
   Complex16 * row;
   uint32_t len;
@@ -175,9 +175,11 @@ CompactMatrixType* luaL_checkCompactMatrix(lua_State *L, int narg)
     {
       buff->V[i*buff->Nj+j].Re=row[j].Re;
       buff->V[i*buff->Nj+j].Im=row[j].Im;
+      if(Abs(row[j].Im)>Abs(DBL_EPSILON*row[j].Re)) makereal=0;
     }
     free(row);
   }
+  if(makereal==1) MakeCompactComplexMatrixReal(buff);
   return buff;
 }
 

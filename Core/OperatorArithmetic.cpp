@@ -683,6 +683,17 @@ uint32_t RealOperatorAddLaderNormalOrder(OperatorType * const O, const uint16_t 
   return RealOperatorAddLader(O, oaddordered, length, phase * VRe);
 }
 
+/*
+ *
+ */
+double RealOperatorPrefactorLader(OperatorType * const O, const uint16_t * const oadd, const uint32_t length)
+{
+  double ret=0;
+  //TODO: all
+  return ret;
+}
+
+
 /*  add a single lader operator string to the operator O
  *  O at the given length must be complex or it must be the first element added.
  */
@@ -1092,6 +1103,15 @@ uint32_t ComplexOperatorAddLaderNormalOrder(OperatorType * const O, const uint16
   return ComplexOperatorAddLader(O, oaddordered, length, phase * VRe, phase * VIm);
 }
 
+/*
+ *
+ */
+Complex16 ComplexOperatorPrefactorLader(OperatorType * const O, const uint16_t * const oadd, const uint32_t length)
+{
+  Complex16 ret={0,0};
+  //TODO: all
+  return ret;
+}
 
 /*  add a single lader operator string to the operator O
  *  if VIm is zero and O.l[lenght].QComplex=0 then a real is added

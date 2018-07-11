@@ -480,7 +480,374 @@ uint32_t MeanFieldOperatorOneElectronMatrix(const OperatorType * const O, Compac
   FreeOperator(&Oo);
   return 0;
 }
-
+/*  In DFT electrons interact with themselves. We here add this spurious interaction to the mean-field HF equations as well.
+ *  i.e. sum_{ijkl} U_{ijkl} a^dag_i a^dag_j a_k a_l ->
+ *  sum_{ijkl} U_{ijkl}
+ *  ( -  a^dag_i a_k  < a^dag_j a_l >
+ *    +  a^dag_i a_l  < a^dag_j a_k >
+ *    +  a^dag_j a_k  < a^dag_i a_l >
+ *    -  a^dag_j a_l  < a^dag_i a_k >
+ *    -< a^dag_i a_l >< a^dag_j a_k >
+ *    +< a^dag_i a_k >< a^dag_j a_l > )
+ *
+ *    + sum_{i} (sum_{mn}^{NN} (U_{mnnm} - U_{mnmn}) )/(N(N-1)) a^dag_i a_i  < a^dag_i a_i >
+ */
+uint32_t MeanFieldOperatorOneElectronMatrixWithDFTInteraction(const OperatorType * const O, CompactMatrixType * const MO, const CompactMatrixType Rho)
+{
+  uint32_t i,j,k,l,m,n;
+  uint16_t oadd[4];
+  double HFRe, HFIm;
+  Complex16 Nelec={0,0}, U={0,0};
+  OperatorType Oo;
+  if((O->MaxLength>4)||((O->MaxLength>0)&&(O->l[1].N!=0))||((O->MaxLength>2)&&(O->l[3].N!=0)))
+  {
+    printf("ERROR: MeanFieldOperator only implemented to reduce a 2, 1 and 0 particle operator to a 1 particle operator\n");
+    return 1;
+  }
+  if(Rho.Ni!=Rho.Nj)
+  {
+    printf("ERROR: Density matrix should be a square matrix in MeanFieldOperatorOneElectronMatrixWithDFTInteraction\n");
+    return 1;
+  }
+  if(Rho.Ni!=O->NFermion)
+  {
+    printf("ERROR: Density matrix should have dimensions of NFermion by NFermion of operator in MeanFieldOperatorOneElectronMatrixWithDFTInteraction\n");
+    return 1;
+  }
+  /* initiallize */
+  InitOperatorCopySettings(&Oo, *O);
+  NormalOrderOperator(*O, &Oo, &QDetNotOrderedFcFaBcBa);
+  MO->Ni=O->NFermion;
+  MO->Nj=O->NFermion;
+  MO->QComplex=Rho.QComplex;
+  if(O->QComplex) MO->QComplex=1;
+  InitCompactMatrix(MO);
+  strncpy(MO->Name, O->Name, MAXStrLength);
+  MO->Name[MAXStrLength-1]='\0';
+  /* calculate number of electrons */
+  if(Rho.QComplex)
+  {
+    for(i=0;i<Rho.Ni;i++)
+    {
+      Nelec.Re+=Rho.V[i*Rho.Nj+i].Re;
+      Nelec.Im+=Rho.V[i*Rho.Nj+i].Im;
+    }
+  }
+  else
+  {
+    for(i=0;i<Rho.Ni;i++)
+    {
+      Nelec.Re+=Rho.VRe[i*Rho.Nj+i];
+    }
+  }
+  if(Abs(Nelec.Im)<Abs(DBL_EPSILON*10*Nelec.Re)) Nelec.Im=0;
+  /* length 0 */
+  if((Sqr(Nelec.Re)+Sqr(Nelec.Im))>DBL_EPSILON)
+  {
+    if(MO->QComplex)
+    {
+      for(i=0;i<MO->Ni;i++)
+      {
+        if(Oo.l[0].QComplex)
+        {
+          for(j=0;j<Oo.l[0].N;j++)
+          {
+            MO->V[i*MO->Nj+i].Re+=(Oo.l[0].V[j].Re*Nelec.Re+Oo.l[0].V[j].Im*Nelec.Im)/(Sqr(Nelec.Re)+Sqr(Nelec.Im));
+            MO->V[i*MO->Nj+i].Im+=(Oo.l[0].V[j].Im*Nelec.Re-Oo.l[0].V[j].Re*Nelec.Im)/(Sqr(Nelec.Re)+Sqr(Nelec.Im));
+          }
+        }
+        else
+        {
+          for(j=0;j<Oo.l[0].N;j++)
+          {
+            MO->V[i*MO->Nj+i].Re+=(Oo.l[0].VRe[j]*Nelec.Re)/(Sqr(Nelec.Re)+Sqr(Nelec.Im));
+            MO->V[i*MO->Nj+i].Im-=(Oo.l[0].VRe[j]*Nelec.Im)/(Sqr(Nelec.Re)+Sqr(Nelec.Im));
+          }
+        }
+      }
+    }
+    else // all real
+    {
+      for(i=0;i<MO->Ni;i++)
+      {
+        for(j=0;j<Oo.l[0].N;j++)
+        {
+          MO->VRe[i*MO->Nj+i]+=(Oo.l[0].VRe[0])/(Nelec.Re);
+        }
+      }
+    }
+  }
+  if(Oo.MaxLength==0)
+  {
+    FreeOperator(&Oo);
+    return 0;
+  }
+  /* length 2 */
+  if(Oo.l[2].QComplex)
+  {
+    for(k=0;k<Oo.l[2].N;k++)
+    {
+      i=(uint32_t)(NotCrAnMask & Oo.l[2].o[2*k+1]);
+      j=(uint32_t)(Oo.l[2].o[2*k]);
+      MO->V[i*MO->Nj+j].Re+=Oo.l[2].V[k].Re;
+      MO->V[i*MO->Nj+j].Im+=Oo.l[2].V[k].Im;
+    }
+  }
+  else
+  {
+    if(MO->QComplex)
+    {
+      for(k=0;k<Oo.l[2].N;k++)
+      {
+        i=(uint32_t)(NotCrAnMask & Oo.l[2].o[2*k+1]);
+        j=(uint32_t)(Oo.l[2].o[2*k]);
+        MO->V[i*MO->Nj+j].Re+=Oo.l[2].VRe[k];
+      }
+    }
+    else
+    {
+      for(k=0;k<Oo.l[2].N;k++)
+      {
+        i=(uint32_t)(NotCrAnMask & Oo.l[2].o[2*k+1]);
+        j=(uint32_t)(Oo.l[2].o[2*k]);
+        MO->VRe[i*MO->Nj+j]+=Oo.l[2].VRe[k];
+      }
+    }
+  }
+  if(Oo.MaxLength==2)
+  {
+    FreeOperator(&Oo);
+    return 0;
+  }
+  /* length 4 */
+  // Cr_i Cr_j An_k An_l ->
+  //  -  a^dag_i a_k  < a^dag_j a_l >
+  //  +  a^dag_i a_l  < a^dag_j a_k >
+  //  +  a^dag_j a_k  < a^dag_i a_l >
+  //  -  a^dag_j a_l  < a^dag_i a_k >
+  //  -< a^dag_i a_l >< a^dag_j a_k >
+  //  +< a^dag_i a_k >< a^dag_j a_l >
+  if(Oo.l[4].QComplex)
+  {
+    /* calcualte U as the average between all electrons needed for the DFT correction */
+    for(m=0;m<Oo.NFermion;m++)
+    {
+      for(n=0;m<Oo.NFermion;m++)
+      {
+        oadd[3] = CrAnMask + (uint16_t)m;
+        oadd[2] = CrAnMask + (uint16_t)n;
+        oadd[1] =            (uint16_t)n;
+        oadd[0] =            (uint16_t)m;
+        U += ComplexOperatorPrefactorLader(&Oo,oadd,4);
+        oadd[3] = CrAnMask + (uint16_t)m;
+        oadd[2] = CrAnMask + (uint16_t)n;
+        oadd[1] =            (uint16_t)m;
+        oadd[0] =            (uint16_t)n;
+        U -= ComplexOperatorPrefactorLader(&Oo,oadd,4);
+      }
+    }
+    if(Rho.QComplex)
+    {
+      for(m=0;m<Oo.l[4].N;m++)
+      {
+        i=(uint32_t)(NotCrAnMask & Oo.l[4].o[4*m+3]);
+        j=(uint32_t)(NotCrAnMask & Oo.l[4].o[4*m+2]);
+        k=(uint32_t)(Oo.l[4].o[4*m+1]);
+        l=(uint32_t)(Oo.l[4].o[4*m]);
+        MO->V[i*MO->Nj+k].Re-= Oo.l[4].V[m].Re * Rho.V[j*Rho.Nj+l].Re - Oo.l[4].V[m].Im * Rho.V[j*Rho.Nj+l].Im;
+        MO->V[i*MO->Nj+l].Re+= Oo.l[4].V[m].Re * Rho.V[j*Rho.Nj+k].Re - Oo.l[4].V[m].Im * Rho.V[j*Rho.Nj+k].Im;
+        MO->V[j*MO->Nj+k].Re+= Oo.l[4].V[m].Re * Rho.V[i*Rho.Nj+l].Re - Oo.l[4].V[m].Im * Rho.V[i*Rho.Nj+l].Im;
+        MO->V[j*MO->Nj+l].Re-= Oo.l[4].V[m].Re * Rho.V[i*Rho.Nj+k].Re - Oo.l[4].V[m].Im * Rho.V[i*Rho.Nj+k].Im;
+        MO->V[i*MO->Nj+k].Im-= Oo.l[4].V[m].Im * Rho.V[j*Rho.Nj+l].Re + Oo.l[4].V[m].Re * Rho.V[j*Rho.Nj+l].Im;
+        MO->V[i*MO->Nj+l].Im+= Oo.l[4].V[m].Im * Rho.V[j*Rho.Nj+k].Re + Oo.l[4].V[m].Re * Rho.V[j*Rho.Nj+k].Im;
+        MO->V[j*MO->Nj+k].Im+= Oo.l[4].V[m].Im * Rho.V[i*Rho.Nj+l].Re + Oo.l[4].V[m].Re * Rho.V[i*Rho.Nj+l].Im;
+        MO->V[j*MO->Nj+l].Im-= Oo.l[4].V[m].Im * Rho.V[i*Rho.Nj+k].Re + Oo.l[4].V[m].Re * Rho.V[i*Rho.Nj+k].Im;
+        
+        HFRe = ( Rho.V[i*Rho.Nj+k].Re * Rho.V[j*Rho.Nj+l].Re
+                -Rho.V[i*Rho.Nj+l].Re * Rho.V[j*Rho.Nj+k].Re
+                -Rho.V[i*Rho.Nj+k].Im * Rho.V[j*Rho.Nj+l].Im
+                +Rho.V[i*Rho.Nj+l].Im * Rho.V[j*Rho.Nj+k].Im ) * Oo.l[4].V[m].Re
+        -( Rho.V[i*Rho.Nj+k].Im * Rho.V[j*Rho.Nj+l].Re
+          -Rho.V[i*Rho.Nj+l].Im * Rho.V[j*Rho.Nj+k].Re
+          +Rho.V[i*Rho.Nj+k].Re * Rho.V[j*Rho.Nj+l].Im
+          -Rho.V[i*Rho.Nj+l].Re * Rho.V[j*Rho.Nj+k].Im ) * Oo.l[4].V[m].Im;
+        HFIm = ( Rho.V[i*Rho.Nj+k].Re * Rho.V[j*Rho.Nj+l].Re
+                -Rho.V[i*Rho.Nj+l].Re * Rho.V[j*Rho.Nj+k].Re
+                -Rho.V[i*Rho.Nj+k].Im * Rho.V[j*Rho.Nj+l].Im
+                +Rho.V[i*Rho.Nj+l].Im * Rho.V[j*Rho.Nj+k].Im ) * Oo.l[4].V[m].Im
+        +( Rho.V[i*Rho.Nj+k].Im * Rho.V[j*Rho.Nj+l].Re
+          -Rho.V[i*Rho.Nj+l].Im * Rho.V[j*Rho.Nj+k].Re
+          +Rho.V[i*Rho.Nj+k].Re * Rho.V[j*Rho.Nj+l].Im
+          -Rho.V[i*Rho.Nj+l].Re * Rho.V[j*Rho.Nj+k].Im ) * Oo.l[4].V[m].Re;
+        
+        if((Sqr(Nelec.Re)+Sqr(Nelec.Im))>DBL_EPSILON)
+        {
+          for (n=0; n<MO->Ni; n++)
+          {
+            MO->V[n*MO->Nj+n].Re += (HFRe*Nelec.Re+HFIm*Nelec.Im)/(Sqr(Nelec.Re)+Sqr(Nelec.Im));
+            MO->V[n*MO->Nj+n].Im += (HFIm*Nelec.Re-HFRe*Nelec.Im)/(Sqr(Nelec.Re)+Sqr(Nelec.Im));
+          }
+        }
+      }
+      for(i=0;i<O->NFermion;i++)
+      {
+        MO->V[i+i*O->NFermion]+=U*Rho.V[i+i*O->NFermion];
+      }
+    }
+    else // Rho real Oo complex MO complex
+    {
+      for(m=0;m<Oo.l[4].N;m++)
+      {
+        i=(uint32_t)(NotCrAnMask & Oo.l[4].o[4*m+3]);
+        j=(uint32_t)(NotCrAnMask & Oo.l[4].o[4*m+2]);
+        k=(uint32_t)(Oo.l[4].o[4*m+1]);
+        l=(uint32_t)(Oo.l[4].o[4*m]);
+        MO->V[i*MO->Nj+k].Re-= Oo.l[4].V[m].Re * Rho.VRe[j*Rho.Nj+l];
+        MO->V[i*MO->Nj+l].Re+= Oo.l[4].V[m].Re * Rho.VRe[j*Rho.Nj+k];
+        MO->V[j*MO->Nj+k].Re+= Oo.l[4].V[m].Re * Rho.VRe[i*Rho.Nj+l];
+        MO->V[j*MO->Nj+l].Re-= Oo.l[4].V[m].Re * Rho.VRe[i*Rho.Nj+k];
+        MO->V[i*MO->Nj+k].Im-= Oo.l[4].V[m].Im * Rho.VRe[j*Rho.Nj+l];
+        MO->V[i*MO->Nj+l].Im+= Oo.l[4].V[m].Im * Rho.VRe[j*Rho.Nj+k];
+        MO->V[j*MO->Nj+k].Im+= Oo.l[4].V[m].Im * Rho.VRe[i*Rho.Nj+l];
+        MO->V[j*MO->Nj+l].Im-= Oo.l[4].V[m].Im * Rho.VRe[i*Rho.Nj+k];
+        HFRe = ( Rho.VRe[i*Rho.Nj+k] * Rho.VRe[j*Rho.Nj+l]
+                -Rho.VRe[i*Rho.Nj+l] * Rho.VRe[j*Rho.Nj+k]) * Oo.l[4].V[m].Re;
+        HFIm = ( Rho.VRe[i*Rho.Nj+k] * Rho.VRe[j*Rho.Nj+l]
+                -Rho.VRe[i*Rho.Nj+l] * Rho.VRe[j*Rho.Nj+k]) * Oo.l[4].V[m].Im;
+        
+        if((Sqr(Nelec.Re)+Sqr(Nelec.Im))>DBL_EPSILON)
+        {
+          for (n=0; n<MO->Ni; n++)
+          {
+            MO->V[n*MO->Nj+n].Re += (HFRe*Nelec.Re+HFIm*Nelec.Im)/(Sqr(Nelec.Re)+Sqr(Nelec.Im));
+            MO->V[n*MO->Nj+n].Im += (HFIm*Nelec.Re-HFRe*Nelec.Im)/(Sqr(Nelec.Re)+Sqr(Nelec.Im));
+          }
+        }
+      }
+      for(i=0;i<O->NFermion;i++)
+      {
+        MO->V[i+i*O->NFermion]+=U*Rho.VRe[i+i*O->NFermion];
+      }
+    }
+  }
+  else // Oo real
+  {
+    /* calcualte U as the average between all electrons needed for the DFT correction */
+    for(m=0;m<Oo.NFermion;m++)
+    {
+      for(n=0;m<Oo.NFermion;m++)
+      {
+        oadd[3] = CrAnMask + (uint16_t)m;
+        oadd[2] = CrAnMask + (uint16_t)n;
+        oadd[1] =            (uint16_t)n;
+        oadd[0] =            (uint16_t)m;
+        U.Re += RealOperatorPrefactorLader(&Oo,oadd,4);
+        oadd[3] = CrAnMask + (uint16_t)m;
+        oadd[2] = CrAnMask + (uint16_t)n;
+        oadd[1] =            (uint16_t)m;
+        oadd[0] =            (uint16_t)n;
+        U.Re -= RealOperatorPrefactorLader(&Oo,oadd,4);
+      }
+    }
+    if(MO->QComplex)
+    {
+      if(Rho.QComplex)
+      {
+        for(m=0;m<Oo.l[4].N;m++)
+        {
+          i=(uint32_t)(NotCrAnMask & Oo.l[4].o[4*m+3]);
+          j=(uint32_t)(NotCrAnMask & Oo.l[4].o[4*m+2]);
+          k=(uint32_t)(Oo.l[4].o[4*m+1]);
+          l=(uint32_t)(Oo.l[4].o[4*m]);
+          MO->V[i*MO->Nj+k].Re-= Oo.l[4].VRe[m] * Rho.V[j*Rho.Nj+l].Re;
+          MO->V[i*MO->Nj+l].Re+= Oo.l[4].VRe[m] * Rho.V[j*Rho.Nj+k].Re;
+          MO->V[j*MO->Nj+k].Re+= Oo.l[4].VRe[m] * Rho.V[i*Rho.Nj+l].Re;
+          MO->V[j*MO->Nj+l].Re-= Oo.l[4].VRe[m] * Rho.V[i*Rho.Nj+k].Re;
+          MO->V[i*MO->Nj+k].Im-= Oo.l[4].VRe[m] * Rho.V[j*Rho.Nj+l].Im;
+          MO->V[i*MO->Nj+l].Im+= Oo.l[4].VRe[m] * Rho.V[j*Rho.Nj+k].Im;
+          MO->V[j*MO->Nj+k].Im+= Oo.l[4].VRe[m] * Rho.V[i*Rho.Nj+l].Im;
+          MO->V[j*MO->Nj+l].Im-= Oo.l[4].VRe[m] * Rho.V[i*Rho.Nj+k].Im;
+          HFRe = ( Rho.V[i*Rho.Nj+k].Re * Rho.V[j*Rho.Nj+l].Re
+                  -Rho.V[i*Rho.Nj+l].Re * Rho.V[j*Rho.Nj+k].Re
+                  -Rho.V[i*Rho.Nj+k].Im * Rho.V[j*Rho.Nj+l].Im
+                  +Rho.V[i*Rho.Nj+l].Im * Rho.V[j*Rho.Nj+k].Im ) * Oo.l[4].VRe[m];
+          HFIm = ( Rho.V[i*Rho.Nj+k].Im * Rho.V[j*Rho.Nj+l].Re
+                  -Rho.V[i*Rho.Nj+l].Im * Rho.V[j*Rho.Nj+k].Re
+                  +Rho.V[i*Rho.Nj+k].Re * Rho.V[j*Rho.Nj+l].Im
+                  -Rho.V[i*Rho.Nj+l].Re * Rho.V[j*Rho.Nj+k].Im ) * Oo.l[4].VRe[m];
+          if((Sqr(Nelec.Re)+Sqr(Nelec.Im))>DBL_EPSILON)
+          {
+            for (n=0; n<MO->Ni; n++)
+            {
+              MO->V[n*MO->Nj+n].Re += (HFRe*Nelec.Re+HFIm*Nelec.Im)/(Sqr(Nelec.Re)+Sqr(Nelec.Im));
+              MO->V[n*MO->Nj+n].Im += (HFIm*Nelec.Re-HFRe*Nelec.Im)/(Sqr(Nelec.Re)+Sqr(Nelec.Im));
+            }
+          }
+        }
+        for(i=0;i<O->NFermion;i++)
+        {
+          MO->V[i+i*O->NFermion]+=U.Re*Rho.V[i+i*O->NFermion];
+        }
+      }
+      else // Rho real Oo real MO complex
+      {
+        for(m=0;m<Oo.l[4].N;m++)
+        {
+          i=(uint32_t)(NotCrAnMask & Oo.l[4].o[4*m+3]);
+          j=(uint32_t)(NotCrAnMask & Oo.l[4].o[4*m+2]);
+          k=(uint32_t)(Oo.l[4].o[4*m+1]);
+          l=(uint32_t)(Oo.l[4].o[4*m]);
+          MO->V[i*MO->Nj+k].Re-= Oo.l[4].VRe[m] * Rho.VRe[j*Rho.Nj+l];
+          MO->V[i*MO->Nj+l].Re+= Oo.l[4].VRe[m] * Rho.VRe[j*Rho.Nj+k];
+          MO->V[j*MO->Nj+k].Re+= Oo.l[4].VRe[m] * Rho.VRe[i*Rho.Nj+l];
+          MO->V[j*MO->Nj+l].Re-= Oo.l[4].VRe[m] * Rho.VRe[i*Rho.Nj+k];
+          
+          HFRe = ( Rho.VRe[i*Rho.Nj+k] * Rho.VRe[j*Rho.Nj+l]
+                  -Rho.VRe[i*Rho.Nj+l] * Rho.VRe[j*Rho.Nj+k]) * Oo.l[4].VRe[m];
+          if((Sqr(Nelec.Re)+Sqr(Nelec.Im))>DBL_EPSILON)
+          {
+            for (n=0; n<MO->Ni; n++)
+            {
+              MO->V[n*MO->Nj+n].Re += HFRe*Nelec.Re/(Sqr(Nelec.Re)+Sqr(Nelec.Im));
+              MO->V[n*MO->Nj+n].Im -= HFRe*Nelec.Im/(Sqr(Nelec.Re)+Sqr(Nelec.Im));
+            }
+          }
+        }
+        for(i=0;i<O->NFermion;i++)
+        {
+          MO->V[i+i*O->NFermion]+=U.Re*Rho.VRe[i+i*O->NFermion];
+        }
+      }
+    }
+    else // all real
+    {
+      for(m=0;m<Oo.l[4].N;m++)
+      {
+        i=(uint32_t)(NotCrAnMask & Oo.l[4].o[4*m+3]);
+        j=(uint32_t)(NotCrAnMask & Oo.l[4].o[4*m+2]);
+        k=(uint32_t)(Oo.l[4].o[4*m+1]);
+        l=(uint32_t)(Oo.l[4].o[4*m]);
+        MO->VRe[i*MO->Nj+k]-= Oo.l[4].VRe[m] * Rho.VRe[j*Rho.Nj+l];
+        MO->VRe[i*MO->Nj+l]+= Oo.l[4].VRe[m] * Rho.VRe[j*Rho.Nj+k];
+        MO->VRe[j*MO->Nj+k]+= Oo.l[4].VRe[m] * Rho.VRe[i*Rho.Nj+l];
+        MO->VRe[j*MO->Nj+l]-= Oo.l[4].VRe[m] * Rho.VRe[i*Rho.Nj+k];
+        if(Sqr(Nelec.Re)>DBL_EPSILON)
+        {
+          for (n=0; n<MO->Ni; n++)
+          {
+            MO->VRe[n*MO->Nj+n] += ( Rho.VRe[i*Rho.Nj+k] * Rho.VRe[j*Rho.Nj+l] -Rho.VRe[i*Rho.Nj+l] * Rho.VRe[j*Rho.Nj+k]) * Oo.l[4].VRe[m]/(Nelec.Re);
+          }
+        }
+      }
+      for(i=0;i<O->NFermion;i++)
+      {
+        MO->VRe[i+i*O->NFermion]+=U.Re*Rho.VRe[i+i*O->NFermion];
+      }
+    }
+  }
+  FreeOperator(&Oo);
+  return 0;
+}
 
 /*
  *
@@ -489,6 +856,14 @@ uint32_t MeanFieldOperator(const OperatorType * const O, OperatorType * const MO
 {
   CompactMatrixType Omat;
   MeanFieldOperatorOneElectronMatrix(O, &Omat, Rho);
+  CompactMatrixToOneParticleOperator(&Omat, MO);
+  FreeCompactMatrix(&Omat);
+  return 0;
+}
+uint32_t MeanFieldOperatorWithDFTInteraction(const OperatorType * const O, OperatorType * const MO, const CompactMatrixType Rho)
+{
+  CompactMatrixType Omat;
+  MeanFieldOperatorOneElectronMatrixWithDFTInteraction(O, &Omat, Rho);
   CompactMatrixToOneParticleOperator(&Omat, MO);
   FreeCompactMatrix(&Omat);
   return 0;
