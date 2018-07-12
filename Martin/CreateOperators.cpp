@@ -443,9 +443,6 @@ double *CreateBaseForContinuum( int NBasisFuns, vector<vector<double> > basisfun
 	dsteqr(&cV,(unsigned int *) &Ncont,d,e,&(Tsub[0]),(unsigned int *) &Ncont,work,&info);
 	if ( 0 != info) printf("error: argument %d of LAPACKE_dsteqr",-info);
 
-	printf("\n");
-	PrintMartix(&(Tsub[0]),Ncont);
-	printf("\n");
 /*
 	printf("\n");
 	PrintMartix(&(g[0]),dim);
