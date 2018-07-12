@@ -368,6 +368,7 @@ double *CreateBaseForContinuum( int NBasisFuns, vector<vector<double> > basisfun
 	char blasRight = 'R';
 	char blasLeft  = 'L';
 	char blasUpper = 'U';
+	char blasLower = 'L';
 	char blasTrans = 'T';
 	char blasNoTrans = 'N';
 	char blasNonUnit = 'N';
@@ -390,19 +391,40 @@ double *CreateBaseForContinuum( int NBasisFuns, vector<vector<double> > basisfun
 
 	g = MetricCB(basisfuns,dualfuns,group.indices, group.n,dualcont,Ncont,NGridpoints);
 
+	//PrintMartix(&(T[0]),dim);
+/*
+	printf("\n");
+	PrintMartix(&(g[0]),dim);
+	printf("\n");
+*/
 	char cU = 'U';
+	char cL = 'L';
 	char cN = 'N';
 	char cV = 'V';
 	double EINS = 1;
 	info = 1;
-	dpotrf(&cU,(unsigned int *) &dim,&(g[0]),(unsigned int *) &dim,&info);
-	dtrtri(&cU,&cN,(unsigned int *) &dim,&(g[0]),(unsigned int *) &dim,&info);
-	dtrmm(&blasLeft,&blasUpper,&blasTrans,&blasNonUnit,(unsigned int *) &dim,(unsigned int *) &dim,&EINS,&(g[0]),(unsigned int *) &dim,&(T[0]),(unsigned int *) &dim);
-	dtrmm(&blasRight,&blasUpper,&blasNoTrans,&blasNonUnit,(unsigned int *) &dim, (unsigned int *) &dim,&EINS,&(g[0]),(unsigned int *) &dim,&(T[0]),(unsigned int *) &dim);
+	dpotrf(&cL,(unsigned int *) &dim,&(g[0]),(unsigned int *) &dim,&info);
+	dtrtri(&cL,&cN,(unsigned int *) &dim,&(g[0]),(unsigned int *) &dim,&info);
+	//dtrmm(&blasLeft,&blasUpper,&blasTrans,&blasNonUnit,(unsigned int *) &dim,(unsigned int *) &dim,&EINS,&(g[0]),(unsigned int *) &dim,&(T[0]),(unsigned int *) &dim);
+	//dtrmm(&blasRight,&blasUpper,&blasNoTrans,&blasNonUnit,(unsigned int *) &dim, (unsigned int *) &dim,&EINS,&(g[0]),(unsigned int *) &dim,&(T[0]),(unsigned int *) &dim);
+	dtrmm(&blasLeft,&blasLower,&blasNoTrans,&blasNonUnit,(unsigned int *) &dim,(unsigned int *) &dim,&EINS,&(g[0]),(unsigned int *) &dim,&(T[0]),(unsigned int *) &dim);
+	dtrmm(&blasRight,&blasLower,&blasTrans,&blasNonUnit,(unsigned int *) &dim, (unsigned int *) &dim,&EINS,&(g[0]),(unsigned int *) &dim,&(T[0]),(unsigned int *) &dim);
 
+/*
+	printf("\n");
+	PrintMartix(&(T[0]),dim);
+	printf("\n");
+*/
 	Tsub = SubMatrix(T,dim,group.n,dim-1,group.n,dim-1);
-	printf("%d\t%d\n",Tsub.size(),Ncont);
 
+/*	printf("\n");
+	PrintMartix(&(Tsub[0]),Ncont);
+	printf("\n");
+*/
+/*	printf("\n");
+	PrintMartix(&(g[0]),dim);
+	printf("\n");
+*/
 	d = (double *) malloc(Ncont*sizeof(double));
 	if (!d) printf("malloc fail at d in CreateBaseForContinuum. size = %d\n",Ncont);
 	e = (double *) malloc((Ncont-1)*sizeof(double));
@@ -414,13 +436,21 @@ double *CreateBaseForContinuum( int NBasisFuns, vector<vector<double> > basisfun
 	if (!work) printf("malloc fail at work in CreateBaseForContinuum. size = %d\n",Ncont);
 	unsigned int lwork = (unsigned int) (2*Ncont-2);
 
-	dsytrd(&cU,(unsigned int *) &Ncont,&(Tsub[0]),(unsigned int *) &Ncont,d,e,tau,work, &lwork,&info);
+	dsytrd(&cL,(unsigned int *) &Ncont,&(Tsub[0]),(unsigned int *) &Ncont,d,e,tau,work, &lwork,&info);
 	if ( 0 != info) printf("error: argument %d of LAPACKE_dsytrd",-info);
-	dorgtr(&cU,(unsigned int *) &Ncont,&(Tsub[0]),(unsigned int *) &Ncont,tau,work,&lwork,&info);
+	dorgtr(&cL,(unsigned int *) &Ncont,&(Tsub[0]),(unsigned int *) &Ncont,tau,work,&lwork,&info);
 	if ( 0 != info) printf("error: argument %d of LAPACKE_dorgtr",-info);
 	dsteqr(&cV,(unsigned int *) &Ncont,d,e,&(Tsub[0]),(unsigned int *) &Ncont,work,&info);
 	if ( 0 != info) printf("error: argument %d of LAPACKE_dsteqr",-info);
 
+	printf("\n");
+	PrintMartix(&(Tsub[0]),Ncont);
+	printf("\n");
+/*
+	printf("\n");
+	PrintMartix(&(g[0]),dim);
+	printf("\n");
+*/
 	CalcContinuumWFs(basisfuns, group.indices, group.n, contfuns, Ncont, NGridpoints, g, Tsub);
 
 

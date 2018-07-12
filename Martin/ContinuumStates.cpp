@@ -656,7 +656,7 @@ void CalcContinuumWFs(vector<vector<double> > basisfuns, const unsigned int *ind
 		}
 		for ( j = 0; j < Ncont; j++)
 		{
-			vAdd(contfuns[j],R[j*Ncont + i],retfuns[i]);
+			vAdd(contfuns[j],R[i*Ncont + j],retfuns[i]);
 		}
 	}
 
