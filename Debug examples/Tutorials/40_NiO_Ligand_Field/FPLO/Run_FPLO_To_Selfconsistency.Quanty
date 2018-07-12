@@ -1,4 +1,4 @@
--- This script runs FPLO to create an LDA calculation of NiO and subsequently downfold the solution
+  -- This script runs FPLO to create an LDA calculation of NiO and subsequently downfold the solution
 -- to a basis of Ni-d and O-p orbitals
 
 -- The name of the program and version

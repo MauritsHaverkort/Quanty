@@ -1,20 +1,3 @@
--- calcualted M . M^T
--- ( A . B   ) [i,j] = sum_k A[i,k] B[k,j]
--- ( A . M^T ) [i,j] = sum_k M[i,k] M[j,k]
-function MatrixSqr(M)
-  local ret={}
-  for i=1,#M do
-    ret[i]={}
-    for j=1,#M do
-      ret[i][j]=0
-      for k=1,#M do
-        ret[i][j] = ret[i][j] + M[i][k] * M[j][k]
-      end
-    end
-  end
-  return ret
-end
-
 -- read the output of FPLO
 -- note that these functions are work in progress, i.e. the exact format might change, the basic idea not
 
@@ -25,27 +8,8 @@ FPLOOut = FileReadDresdenFPLO("LDApMLFT/FPLO/out.wan")
 TB = TightBindingDefFromDresdenFPLO(FPLOOut)
 
 
-
-
-
--- from a tight binding Hamiltonian we can calculate the Green's function  sum_k 1/(w-H_k)
--- The imaginary part is the DOS
-
-G = CalculateG(TB)
-
--- we need to get the density matrix, here I go via a transformation of the Green's function to a natural orbital representation
-GBA = ChangeType(G,"Nat")
--- Transform it from an internal user type to a table
-GBAT = ToTable(GBA)
--- The electron occupation is the square of element [2][1] of the valence Green's function (Gval = A0 + B0^* 1/(w - A1 - ... ) B0^T
-print("============")
-rhoNoSpin = Chop(MatrixSqr(GBAT.val[2][1]))
-print(rhoNoSpin)
--- we now have the density matrix (you'll get a single function for this)
-print("============")
-rhoSec = Chop(CalculateRho(TB),1E-10);
-print(Matrix.ToTable(rhoSec))
-os.exit()
+rhoNoSpin = Chop(CalculateRho(TB))
+print(Matrix.ToTable(rhoNoSpin))
 
 
 -- the FPLO basis is without spin and contains both the Ni-d and O-p orbitals
@@ -66,93 +30,38 @@ for i=1,5 do
   end
 end
 
-print(rho)
-
 -- define coulomb repulsion operator on basis of tesseral harmonics
 NF=10
 IndexDn = {0,2,4,6,8}
 IndexUp = {1,3,5,7,9}
 rotmat = {{-0.7071067811865475*I, 0, 0, 0, 0, 0, 0, 0, 0.7071067811865475*I, 0},
-          {0, -0.7071067811865475*I, 0, 0, 0, 0, 0, 0, 0, 0.7071067811865475*I},
-          {0, 0, -0.7071067811865475*I, 0, 0, 0, -0.7071067811865475*I, 0, 0, 0},
-          {0, 0, 0, -0.7071067811865475*I, 0, 0, 0, -0.7071067811865475*I, 0, 0},
-          {0, 0, 0, 0, 1.000000000000000, 0, 0, 0, 0, 0},
-          {0, 0, 0, 0, 0, 1.000000000000000, 0, 0, 0, 0},
-          {0, 0, 0.7071067811865475, 0, 0, 0, -0.7071067811865475, 0, 0, 0},
-          {0, 0, 0, 0.7071067811865475, 0, 0, 0, -0.7071067811865475, 0, 0},
-          {0.7071067811865475, 0, 0, 0, 0, 0, 0, 0, 0.7071067811865475, 0},
-          {0, 0.7071067811865475, 0, 0, 0, 0, 0, 0, 0, 0.7071067811865475}}
+  {0, -0.7071067811865475*I, 0, 0, 0, 0, 0, 0, 0, 0.7071067811865475*I},
+  {0, 0, -0.7071067811865475*I, 0, 0, 0, -0.7071067811865475*I, 0, 0, 0},
+  {0, 0, 0, -0.7071067811865475*I, 0, 0, 0, -0.7071067811865475*I, 0, 0},
+  {0, 0, 0, 0, 1.000000000000000, 0, 0, 0, 0, 0},
+  {0, 0, 0, 0, 0, 1.000000000000000, 0, 0, 0, 0},
+  {0, 0, 0.7071067811865475, 0, 0, 0, -0.7071067811865475, 0, 0, 0},
+  {0, 0, 0, 0.7071067811865475, 0, 0, 0, -0.7071067811865475, 0, 0},
+  {0.7071067811865475, 0, 0, 0, 0, 0, 0, 0, 0.7071067811865475, 0},
+{0, 0.7071067811865475, 0, 0, 0, 0, 0, 0, 0, 0.7071067811865475}}
 
--- In DFT electrons interact with themselves. I'll create the HF operator to correct a DFT interaction
--- I thus need the aditional interaction of electrons with themselves (a^dag_i a_j <a^dag_i a_j>)
--- +index creates an electron -index annihilates an electron
--- note that +0 and -0 are different (and that 0.01 - 0.01 can be +0 or -0, or even sligthly different from 0)
-oppstring={}
-oi = 1
-for i=0,9 do
-  for j=0,9 do
-    oppstring[oi] = {i,-j,rho[i+1][j+1]}
-    oi = oi + 1
-  end
-end
-OppF0HFtoDFT = NewOperator(10,0,oppstring)
+
 
 -- create the Coulomb operators on a basis of tesseral harmonics
-OppF0 = Rotate(NewOperator("U", NF, IndexUp, IndexDn, {1,0,0}),rotmat)
-OppF0DFT = OppF0 + OppF0HFtoDFT
-OppF2 = Rotate(NewOperator("U", NF, IndexUp, IndexDn, {0,1,0}),rotmat)
-OppF4 = Rotate(NewOperator("U", NF, IndexUp, IndexDn, {0,0,1}),rotmat)
+OppF0 = Chop(Rotate(NewOperator("U", NF, IndexUp, IndexDn, {1,0,0}),rotmat))
+OppF2 = Chop(Rotate(NewOperator("U", NF, IndexUp, IndexDn, {0,1,0}),rotmat))
+OppF4 = Chop(Rotate(NewOperator("U", NF, IndexUp, IndexDn, {0,0,1}),rotmat))
 
--- calcualte potential due to Coulomb interaction between d electrons
--- Operator to matrix takes an operator and transforms it to a potential using the HF approximation
-VF0DFT = Chop(OperatorToMatrix(OppF0DFT, rho))
-VF2 = Chop(OperatorToMatrix(OppF2, rho))
-VF4 = Chop(OperatorToMatrix(OppF4, rho))
+OppF0MFDFT = MeanFieldOperator(OppF0,rho,{{"AddDFTSelfInteraction",true}})
+OppF2MFDFT = MeanFieldOperator(OppF2,rho,{{"AddDFTSelfInteraction",true}})
+OppF4MFDFT = MeanFieldOperator(OppF4,rho,{{"AddDFTSelfInteraction",true}})
+OppF0MF = MeanFieldOperator(OppF0,rho,{{"AddDFTSelfInteraction",false}})
+OppF2MF = MeanFieldOperator(OppF2,rho,{{"AddDFTSelfInteraction",false}})
+OppF4MF = MeanFieldOperator(OppF4,rho,{{"AddDFTSelfInteraction",false}})
 
---print the potentials due to F0, F2 and F4
-print("===== F0DFT")
-print(VF0DFT)
-print("===== F2")
-print(VF2)
-print("===== F4")
-print(VF4)
-
--- insert the Slater integrals of Ni
-F2dd    = 11.14
-F4dd    =  6.87
-VU = Chop(OperatorToMatrix(F2dd * OppF2 + F4dd * OppF4, rho))
-print("===== VU")
-print(VU)
-
--- We want to keep the center of gravity at 0
-center=0
-for i=1,10 do
-  center = center + VU[i][i]
-end
-center = center/10
-
-VUshifted = Copy(VU)
-for i=1,10 do
-  VUshifted[i][i] = VUshifted[i][i] -center
-end
-print("===== VU shifted")
-print(VUshifted)
-
--- the matrix VU should be subtracted as a potential from the d-shell
--- we can create an operator
-oppstring={}
-oi = 1
-for i=0,9 do
-  for j=0,9 do
-    oppstring[oi] = {i,-j,VUshifted[i+1][j+1]}
-    oi = oi + 1
-  end
-end
-OppDFTPotentialNonSpherical = Chop(NewOperator(10,0,oppstring))
-
--- if you want the operator on a basis of Y instead of Z use
--- Chop(Rotate(NewOperator(10,0,oppstring),ConjugateTranspose(rotmat)))
-
-print(OppDFTPotentialNonSpherical)
-
-
+print(OppF0MFDFT)
+print(OppF0MF)
+print(OppF2MFDFT)
+print(OppF2MF)
+print(OppF4MFDFT)
+print(OppF4MF)
