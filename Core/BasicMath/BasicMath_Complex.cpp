@@ -94,6 +94,47 @@ void operator*=( Complex16 & lhs, double const& rhs)
   lhs.Im*=rhs;
 }
 
+Complex16 operator/( Complex16 const& lhs, Complex16 const& rhs)
+{
+  Complex16 res;
+  res.Re = (lhs.Re*rhs.Re + lhs.Im*rhs.Im)/(Sqr(rhs.Re)+Sqr(rhs.Im));
+  res.Im = (lhs.Im*rhs.Re - lhs.Re*rhs.Im)/(Sqr(rhs.Re)+Sqr(rhs.Im));
+  return res;
+}
+Complex16 operator/( Complex16 const& lhs, double const& rhs)
+{
+  Complex16 res;
+  res.Re = lhs.Re/rhs;
+  res.Im = lhs.Im/rhs;
+  return res;
+}
+Complex16 operator/( double const& lhs, Complex16 const& rhs)
+{
+  Complex16 res;
+  res.Re = (  lhs*rhs.Re)/(Sqr(rhs.Re)+Sqr(rhs.Im));
+  res.Im = (- lhs*rhs.Im)/(Sqr(rhs.Re)+Sqr(rhs.Im));
+  return res;
+}
+void operator/=( Complex16 & lhs, Complex16 const& rhs)
+{
+  Complex16 res;
+  res.Re = (lhs.Re*rhs.Re + lhs.Im*rhs.Im)/(Sqr(rhs.Re)+Sqr(rhs.Im));
+  res.Im = (lhs.Im*rhs.Re - lhs.Re*rhs.Im)/(Sqr(rhs.Re)+Sqr(rhs.Im));
+  lhs = res;
+}
+void operator/=( Complex16 & lhs, double const& rhs)
+{
+  lhs.Re/=rhs;
+  lhs.Im/=rhs;
+}
+
+
+
+
+
+
+
+
 
 /*abs*/
 double Cabs(const Complex16 z)

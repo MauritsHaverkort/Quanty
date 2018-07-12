@@ -646,6 +646,7 @@ uint32_t MeanFieldOperatorOneElectronMatrixWithDFTInteraction(const OperatorType
         U -= ComplexOperatorPrefactorLader(&Oo,oadd,4);
       }
     }
+    if(Oo.NFermion!=1) U/=(Oo.NFermion*(Oo.NFermion-1));
     if(Rho.QComplex)
     {
       for(m=0;m<Oo.l[4].N;m++)
@@ -749,6 +750,7 @@ uint32_t MeanFieldOperatorOneElectronMatrixWithDFTInteraction(const OperatorType
         U.Re -= RealOperatorPrefactorLader(&Oo,oadd,4);
       }
     }
+    if(Oo.NFermion!=1) U.Re/=(Oo.NFermion*(Oo.NFermion-1));
     if(MO->QComplex)
     {
       if(Rho.QComplex)
