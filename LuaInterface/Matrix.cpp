@@ -1108,6 +1108,7 @@ static int LuaMatrixPow(lua_State * L)
   else
   { // matrix on stack as userdata
     B = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+    luaL_setmetatable(L, "Matrix_Type");
     if(CompactMatrixPow(A,B,(int)n)) return luaL_error(L,"Matrix power failed\n");
   }
   return 1;
@@ -1120,6 +1121,63 @@ static int LuaMatrixPow(lua_State * L)
 static int LuaMatrixToString(lua_State * L)
 {
   lua_pushfstring(L, "Matrix in userdata format use ToTable() in order to get a table form");
+  return 1;
+}
+
+
+/*
+ *
+ */
+static int LuaMatrixIndex(lua_State * L)
+{
+  uint32_t i,j;
+  double n;
+  CompactMatrixType *A, *B;
+  Complex16 * res;
+  A = (CompactMatrixType *) luaL_checkCompactMatrix(L, 1);
+  n =  luaL_checknumber(L, 2);
+  i = (uint32_t) n;
+  if(Abs(n-(double)i)>(1+Abs(n))*DBL_EPSILON*10) return luaL_error(L, "Index of an Array should be an integer\n");
+  if(i==0) return luaL_error(L, "Index of an Array should be positive (non-zero)\n");
+  if(A->Ni==1)
+  {
+    if(i>A->Nj) luaL_error(L, "Index %i larger then size of Array %i\n",i,A->Nj);
+    if(A->QComplex==0)
+    {
+      lua_pushnumber(L, A->VRe[i-1]);
+    }
+    else
+    {
+      res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
+      res->Re=A->V[i-1].Re;
+      res->Im=A->V[i-1].Im;
+      luaL_setmetatable(L, "Complex_Type");
+    }
+  }
+  else
+  {
+    if(i>A->Ni) luaL_error(L, "Index %i larger then size of Array %i\n",i,A->Ni);
+    B = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+    luaL_setmetatable(L, "Matrix_Type");
+    B->Ni=1;
+    B->Nj=A->Nj;
+    B->QComplex=A->QComplex;
+    InitCompactMatrix(B);
+    if(A->QComplex==0)
+    {
+      for(j=0;j<A->Nj;j++)
+      {
+        B->VRe[j]=A->VRe[(i-1)*A->Nj+j];
+      }
+    }
+    else
+    {
+      for(j=0;j<A->Nj;j++)
+      {
+        B->V[j]=A->V[(i-1)*A->Nj+j];
+      }
+    }
+  }
   return 1;
 }
 
@@ -1159,6 +1217,7 @@ static const struct luaL_Reg Matrix_meta[] = {
   {"__div", LuaMatrixDiv},
   {"__pow", LuaMatrixPow},
   {"__tostring", LuaMatrixToString},
+  {"__index", LuaMatrixIndex},
   {"__gc", LuaMatrixDestroy},
   {NULL, NULL}
 };

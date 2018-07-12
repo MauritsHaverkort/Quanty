@@ -683,6 +683,53 @@ uint32_t RealOperatorAddLaderNormalOrder(OperatorType * const O, const uint16_t 
   return RealOperatorAddLader(O, oaddordered, length, phase * VRe);
 }
 
+/*
+ *
+ */
+double RealOperatorPrefactorLader(OperatorType * const O, const uint16_t * const oadd, const uint32_t length)
+{
+  double ret=0;
+  uint32_t NextIndex, ThereIsANext,i,j;
+  /* test if the key that belongs to oadd already excists */
+  if ((O->l[length].KeyList[hash(oadd, length * 2, O->l[length].NBitsKey)]) == 0)
+  {
+    ret = 0;
+  }
+  else
+  {                             /* the key is already taken, test if this is due to a collision or if oadd is already in the opperator */
+    ThereIsANext = 1;
+    NextIndex = O->l[length].KeyList[hash(oadd, length * 2, O->l[length].NBitsKey)] - 1;
+    while (ThereIsANext)
+    {
+      j = 1;
+      for (i = 0; i < length; i++)
+      {
+        if (O->l[length].o[NextIndex * length + i] != oadd[i])
+          j = 0;
+      }
+      if (j == 1)
+      {                         /* lader operator string already in the opperator, set ret and leave the loop */
+        ThereIsANext = 0;
+        ret = O->l[length].VRe[NextIndex];
+      }
+      else
+      {                         /* oadd not equal to the O->l[length].o found which has the same index in the keylist, if there is a next continue, otherwise return 0 */
+        if (!(O->l[length].Next[NextIndex]))
+        {                       /* no more elements with same key and element not foud - return 0 and leave the loop*/
+          ret = 0;
+          ThereIsANext = 0;
+        }
+        else
+        {                       /* The key is in use and there are more opperators with this key */
+          NextIndex = O->l[length].Next[NextIndex] - 1;
+        }
+      }
+    }
+  }
+  return ret;
+}
+
+
 /*  add a single lader operator string to the operator O
  *  O at the given length must be complex or it must be the first element added.
  */
@@ -1092,6 +1139,50 @@ uint32_t ComplexOperatorAddLaderNormalOrder(OperatorType * const O, const uint16
   return ComplexOperatorAddLader(O, oaddordered, length, phase * VRe, phase * VIm);
 }
 
+/*
+ *
+ */
+Complex16 ComplexOperatorPrefactorLader(OperatorType * const O, const uint16_t * const oadd, const uint32_t length)
+{
+  Complex16 ret={0,0};
+  uint32_t NextIndex, ThereIsANext,i,j;
+  /* test if the key that belongs to oadd already excists */
+  if ((O->l[length].KeyList[hash(oadd, length * 2, O->l[length].NBitsKey)]) == 0)
+  {
+    ret = {0,0};
+  }
+  else
+  {                             /* the key is already taken, test if this is due to a collision or if oadd is already in the opperator */
+    ThereIsANext = 1;
+    NextIndex = O->l[length].KeyList[hash(oadd, length * 2, O->l[length].NBitsKey)] - 1;
+    while (ThereIsANext)
+    {
+      j = 1;
+      for (i = 0; i < length; i++)
+      {
+        if (O->l[length].o[NextIndex * length + i] != oadd[i]) j = 0;
+      }
+      if (j == 1)
+      {                         /* lader operator string already in the opperator, set ret and leave the loop */
+        ThereIsANext = 0;
+        ret = O->l[length].V[NextIndex];
+      }
+      else
+      {                         /* oadd not equal to the O->l[length].o found which has the same index in the keylist, if there is a next continue, otherwise return 0 */
+        if (!(O->l[length].Next[NextIndex]))
+        {                       /* no more elements with same key and element not foud - return 0 and leave the loop*/
+          ret = {0,0};
+          ThereIsANext = 0;
+        }
+        else
+        {                       /* The key is in use and there are more opperators with this key */
+          NextIndex = O->l[length].Next[NextIndex] - 1;
+        }
+      }
+    }
+  }
+  return ret;
+}
 
 /*  add a single lader operator string to the operator O
  *  if VIm is zero and O.l[lenght].QComplex=0 then a real is added

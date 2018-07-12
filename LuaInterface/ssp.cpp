@@ -2864,10 +2864,21 @@ static int LuaMeanFieldOperator(lua_State *L)
 {
   OperatorType *H, *HMF;
   CompactMatrixType *Rho;
-  uint32_t len = (uint32_t)lua_gettop(L);
-  if(len<2 || len>2)
+  struct
   {
-    return luaL_error(L, "MeanFieldOperator called with %d arguments. Exactly two expected, Operator and Density Matrix.\n",len);
+    Bool AddDFTSelfInteraction=False;
+  } Options;
+  uint32_t len = (uint32_t)lua_gettop(L);
+  LuaOptionsType LuaOptions[]={
+    {"AddDFTSelfInteraction","bool",&(Options.AddDFTSelfInteraction)},
+    {NULL, NULL, NULL}};
+  if(len<2 || len>3)
+  {
+    return luaL_error(L, "MeanFieldOperator called with %d arguments. Two or three expected, Operator, Density Matrix and optional Options.\n",len);
+  }
+  if(len==3)
+  {
+    LuaCheckOptions(L, -1, LuaOptions);
   }
   H = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
   Rho = (CompactMatrixType *) luaL_checkCompactMatrix(L, 2);
@@ -2876,7 +2887,14 @@ static int LuaMeanFieldOperator(lua_State *L)
     return luaL_error(L, "Error in MeanFieldGroundstate, length of operator (NF %i NB %i) is not equal to length of density matrix (%i)\n",H->NFermion,H->NBoson,Rho->Ni);
   }
   HMF = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-  MeanFieldOperator(H, HMF, *Rho);
+  if(Options.AddDFTSelfInteraction==True)
+  {
+    MeanFieldOperatorWithDFTInteraction(H, HMF, *Rho);
+  }
+  else
+  {
+    MeanFieldOperator(H, HMF, *Rho);
+  }
   luaL_setmetatable(L, "Operator_Type");
   strncpy(HMF->Name, "", MAXStrLength-1); //An appropriate Name can be given in Lua.
   FreeCompactMatrix(Rho);
@@ -2893,8 +2911,15 @@ static int LuaMeanFieldOperator(lua_State *L)
  */
 static int LuaOperatorToMatrix(lua_State *L)
 {
+  struct
+  {
+    Bool AddDFTSelfInteraction=False;
+  } Options;
   OperatorType *H;
   uint32_t len;
+  LuaOptionsType LuaOptions[]={
+    {"AddDFTSelfInteraction","bool",&(Options.AddDFTSelfInteraction)},
+    {NULL, NULL, NULL}};
   len = (uint32_t)lua_gettop(L);
   H = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
   if(len==1)
@@ -2914,8 +2939,12 @@ static int LuaOperatorToMatrix(lua_State *L)
     free(Rho);
     return 1;
   }
-  else if (len==2)
+  else if ((len==2)||(len==3))
   {
+    if(len==3)
+    {
+      LuaCheckOptions(L, -1, LuaOptions);
+    }
     switch (lua_type(L,2))
     {
       case LUA_TUSERDATA:
@@ -2956,7 +2985,14 @@ static int LuaOperatorToMatrix(lua_State *L)
           lua_pop(L,1);
           CompactMatrixType *Rho, HMat;
           Rho = (CompactMatrixType *) luaL_checkCompactMatrix(L, 2);
-          MeanFieldOperatorOneElectronMatrix(H, &HMat, *Rho);
+          if(Options.AddDFTSelfInteraction==True)
+          {
+            MeanFieldOperatorOneElectronMatrixWithDFTInteraction(H, &HMat, *Rho);
+          }
+          else
+          {
+            MeanFieldOperatorOneElectronMatrix(H, &HMat, *Rho);
+          }
           LuaPushTable_CompactMatrixType(L, &HMat);
           FreeCompactMatrix(Rho);
           FreeCompactMatrix(&HMat);
@@ -2966,7 +3002,7 @@ static int LuaOperatorToMatrix(lua_State *L)
       }
       default:
       {
-        return luaL_error(L, "Error in OperatorToMatrix, expected one (Operator) or two (Operator, Wavefunction / List of functions / DensityMatrix) input parameters, not (%d)\n",len);
+        return luaL_error(L, "Error in OperatorToMatrix, expected an Wavefunction, List of functions, or DensityMatrix on position two\n");
       }
     }
   }

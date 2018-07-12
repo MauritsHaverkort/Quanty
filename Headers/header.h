@@ -1,5 +1,5 @@
 
-#include <stdio.h>
+#include <iostream>
 #include <time.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -11,6 +11,7 @@
 #include <stdarg.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <vector>
 
 #ifdef _OPENMP
 #include <omp.h>
