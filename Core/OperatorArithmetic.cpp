@@ -686,7 +686,7 @@ uint32_t RealOperatorAddLaderNormalOrder(OperatorType * const O, const uint16_t 
 /*
  *
  */
-double RealOperatorPrefactorLader(OperatorType * const O, const uint16_t * const oadd, const uint32_t length)
+double RealOperatorPrefactorLader(const OperatorType * const O, const uint16_t * const oadd, const uint32_t length)
 {
   double ret=0;
   uint32_t NextIndex, ThereIsANext,i,j;
@@ -1142,7 +1142,7 @@ uint32_t ComplexOperatorAddLaderNormalOrder(OperatorType * const O, const uint16
 /*
  *
  */
-Complex16 ComplexOperatorPrefactorLader(OperatorType * const O, const uint16_t * const oadd, const uint32_t length)
+Complex16 ComplexOperatorPrefactorLader(const OperatorType * const O, const uint16_t * const oadd, const uint32_t length)
 {
   Complex16 ret={0,0};
   uint32_t NextIndex, ThereIsANext,i,j;
