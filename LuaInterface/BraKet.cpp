@@ -21,7 +21,7 @@ static int LuaBraKet(lua_State * L)
           InitCompactMatrix(&res);
           for(i=0;i<res.Ni;i++)
           {
-            WaveFunctionCalculateNorm(psiA[i], &(res.V[i+i*res.Nj].Re));
+            WaveFunctionCalculateNormSqr(psiA[i], &(res.V[i+i*res.Nj].Re));
             res.V[i+i*res.Nj].Im=0;
             for(j=i+1;j<res.Nj;j++)
             {
