@@ -5454,6 +5454,11 @@ uint32_t OperatorAdd(OperatorType * const OA, const OperatorType OB, const doubl
   return 0;
 }
 
+uint32_t OperatorAdd(OperatorType * const OA, const OperatorType OB)
+{
+	return OperatorAdd(OA, OB, 1.0, 0.0);
+}
+
 
 /*  OA <- OA + alpha NormalOrder[OB]
  *  if OB.Maxlength > OA.Maxlength then OA is extended

@@ -1273,7 +1273,7 @@ uint32_t MeanFieldGroundstate(const OperatorType *const O, CompactMatrixType * c
   return 0;
 }
 
-uint32_t partialMeanFieldOperator(const OperatorType * const O, OperatorType * const OPartialMF, const MatrixType Rho, const uint16_t * const indices, const uint32_t indSetSize)
+uint32_t partialMeanFieldOperator(const OperatorType * const O, OperatorType * const OPartialMF, const MatrixType Rho, const uint16_t * const indices, const uint32_t indSetSize, bool AddDFTSelfInteraction = false)
 {
 	OperatorCopy(OPartialMF, *O);
 	if (O->MaxLength < 3 || indSetSize < 1)
@@ -1288,8 +1288,8 @@ uint32_t partialMeanFieldOperator(const OperatorType * const O, OperatorType * c
 	extractPartialOperatorFixedLength(OPartialMF, &MeanFieldPartTmp, indices, indSetSize, 4);
 	if (MeanFieldPartTmp.l[length].N != 0)
 	{
-		MeanFieldOperator(&MeanFieldPartTmp, &MeanFieldPart, Rho);
-		OperatorAdd(OPartialMF, MeanFieldPart, 1.0, 0.0); //TODO: In C++, overload the Add Operator so that it accepts arguments (OperatorType *, OperatorType)
+		MeanFieldOperator(&MeanFieldPartTmp, &MeanFieldPart, Rho, AddDFTSelfInteraction);
+		OperatorAdd(OPartialMF, MeanFieldPart);
 		OperatorChop(OPartialMF, 0);
 	}
 	FreeOperator(&MeanFieldPartTmp);

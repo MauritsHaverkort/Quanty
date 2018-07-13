@@ -41,6 +41,7 @@ uint32_t HermitianOperatorNormalOrderExponent(OperatorType const O, Complex16 al
 uint32_t OperatorScale(OperatorType * const O, const double alphaRe, const double alphaIm);
 uint32_t OperatorMultiplyScaledNormalOrder(OperatorType * const O, OperatorType const B, OperatorType const A,const double alphaRe, const double alphaIm,uint32_t(*QDetNotOrdered) (uint16_t, uint16_t, uint32_t));
 uint32_t OperatorAdd(OperatorType * const OA, const OperatorType OB, const double alphaRe, const double alphaIm);
+uint32_t OperatorAdd(OperatorType * const OA, const OperatorType OB);
 uint32_t OperatorAddNormalOrder(OperatorType * const OA, const OperatorType OB, const double alphaRe, const double alphaIm, uint32_t(*QDetNotOrdered) (uint16_t, uint16_t, uint32_t));
 uint32_t MappedOperatorFixedLengthAtLevel(OperatorFixedLengthType * const OA, const OperatorFixedLengthType OB, const MatrixType U, const uint32_t level, const uint32_t length);
 uint32_t MappedOperatorAdd(OperatorType * const OA, const OperatorType OB, const MatrixType U);

@@ -4426,16 +4426,26 @@ static int LuaPartialMeanFieldOperator(lua_State *L)
 	Rho = (MatrixType *) luaL_checkMatrix(L, 2);
 	indices = luaL_checkarray_unit16_t(L, 3, &indSetSize);
 	uint32_t len = (uint32_t) lua_gettop(L);
-	if (len < 3 || len > 3)
-		return luaL_error(L, "MeanFieldOperator called with %d arguments. Operator, Density Matrix and List of Indices expected.\n", len);
-	int i;
-	for (i = 0; i < indSetSize; i++)
+	struct
+	{
+		Bool AddDFTSelfInteraction = False;
+	} Options;
+	LuaOptionsType LuaOptions[] = {
+			{ "AddDFTSelfInteraction", "bool", &(Options.AddDFTSelfInteraction) },
+			{ NULL, NULL, NULL } };
+	if (len < 3 || len > 4)
+		return luaL_error(L, "MeanFieldOperator called with %d arguments. Three or four expected, Operator, Density Matrix, List of Indices and optional Options expected.\n", len);
+  if(len==4)
+  {
+    LuaCheckOptions(L, -1, LuaOptions);
+  }
+	for (int i = 0; i < indSetSize; i++)
 	{
 		if (indices[i] < 0 || indices[i] >= O->NFermion)
 			printf("\nWarning: Index %d is not within [0,NF-1]=[0,%d].\n", indices[i], O->NFermion - 1);
 	}
 	OMF = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-	partialMeanFieldOperator(O, OMF, *Rho, indices, indSetSize);
+	partialMeanFieldOperator(O, OMF, *Rho, indices, indSetSize, Options.AddDFTSelfInteraction);
 	luaL_setmetatable(L, "Operator_Type");
 	strncpy(OMF->Name, "", MAXStrLength - 1); //An appropriate Name can be given in Lua.
 	return 1;
