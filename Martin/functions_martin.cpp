@@ -249,6 +249,12 @@ static int LuaCreateBaseForContinuum(lua_State *L)
 	return 2;
 }
 
+static int LuaPropagator(lua_State *L)
+{
+	Complex16 a;
+	return 1;
+}
+
 static const struct luaL_Reg Martin_meta[] = {
   {NULL, NULL}
 };
@@ -286,5 +292,6 @@ static const struct luaL_Reg Martin_func[] = {
   {"NewCoulomb", LuaOperatorNewFullCoulomb},
   {"NewDirac", LuaOperatorNewDirac},
   {"ContinuumBase",LuaCreateBaseForContinuum},
+  {"Propagator",LuaPropagator},
   {NULL, NULL}
 };
