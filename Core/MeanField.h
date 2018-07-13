@@ -2,6 +2,10 @@ uint32_t CompactMatrixToOneParticleOperator(const CompactMatrixType * const Omat
 uint32_t OperatorToOneElectronMatrix(const OperatorType * const O, MatrixType * const Oone);
 uint32_t OperatorCrAnLength2ToOneElectronCompactMatrix(const OperatorType * const O, CompactMatrixType * const Oone);
 uint32_t MeanFieldOperatorOneElectronMatrix(const OperatorType * const O, CompactMatrixType * const MO, const CompactMatrixType Rho);
-uint32_t MeanFieldOperator(const OperatorType * const O, OperatorType * const MO, const CompactMatrixType Rho);
+uint32_t MeanFieldOperatorOneElectronMatrixWithDFTInteraction(const OperatorType * const O, CompactMatrixType * const MO, const CompactMatrixType Rho);
+uint32_t MeanFieldOperator(const OperatorType * const O, OperatorType * const OMF, const MatrixType Rho, bool AddDFTSelfInteraction);
+uint32_t MeanFieldOperator(const OperatorType * const O, OperatorType * const OMF, const CompactMatrixType Rho, bool AddDFTSelfInteraction);
+uint32_t MeanFieldOperatorOld(const OperatorType * const O, OperatorType * const MO, const CompactMatrixType Rho);
+uint32_t MeanFieldOperatorWithDFTInteractionOld(const OperatorType * const O, OperatorType * const MO, const CompactMatrixType Rho);
 uint32_t CalculateDensityMatrixFromOneElectronEigensystem(const CompactMatrixType * const fun, double *val, CompactMatrixType *Rho, const double kbT, const double Nelec, double *Etot);
 uint32_t MeanFieldGroundstate(const OperatorType *const O, CompactMatrixType * const Rho, const double kbT, double * Etot);

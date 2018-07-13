@@ -2863,7 +2863,7 @@ static int LuaMeanFieldGroundstate(lua_State *L)
 static int LuaMeanFieldOperator(lua_State *L)
 {
   OperatorType *H, *HMF;
-  CompactMatrixType *Rho;
+  MatrixType *Rho;
   struct
   {
     Bool AddDFTSelfInteraction=False;
@@ -2881,23 +2881,16 @@ static int LuaMeanFieldOperator(lua_State *L)
     LuaCheckOptions(L, -1, LuaOptions);
   }
   H = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
-  Rho = (CompactMatrixType *) luaL_checkCompactMatrix(L, 2);
+  Rho = (MatrixType *) luaL_checkMatrix(L, 2);
   if((H->NFermion+H->NBoson)!=Rho->Ni)
   {
     return luaL_error(L, "Error in MeanFieldGroundstate, length of operator (NF %i NB %i) is not equal to length of density matrix (%i)\n",H->NFermion,H->NBoson,Rho->Ni);
   }
   HMF = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-  if(Options.AddDFTSelfInteraction==True)
-  {
-    MeanFieldOperatorWithDFTInteraction(H, HMF, *Rho);
-  }
-  else
-  {
-    MeanFieldOperator(H, HMF, *Rho);
-  }
+  MeanFieldOperator(H, HMF, *Rho, Options.AddDFTSelfInteraction);
   luaL_setmetatable(L, "Operator_Type");
   strncpy(HMF->Name, "", MAXStrLength-1); //An appropriate Name can be given in Lua.
-  FreeCompactMatrix(Rho);
+  FreeMatrix(Rho);
   return 1;
 }
 
