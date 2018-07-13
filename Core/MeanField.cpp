@@ -1272,3 +1272,27 @@ uint32_t MeanFieldGroundstate(const OperatorType *const O, CompactMatrixType * c
   }
   return 0;
 }
+
+uint32_t partialMeanFieldOperator(const OperatorType * const O, OperatorType * const OPartialMF, const MatrixType Rho, const uint16_t * const indices, const uint32_t indSetSize)
+{
+	OperatorCopy(OPartialMF, *O);
+	if (O->MaxLength < 3 || indSetSize < 1)
+	{
+		return 0;
+	}
+	OperatorType MeanFieldPartTmp, MeanFieldPart;
+	int length = 4; //If ever we can apply mean field to operators of length unequal to 4, this needs to be changed.
+	InitOperator(&MeanFieldPartTmp);
+	MeanFieldPartTmp.NFermion = OPartialMF->NFermion;
+	MeanFieldPartTmp.NBoson = OPartialMF->NBoson;
+	extractPartialOperatorFixedLength(OPartialMF, &MeanFieldPartTmp, indices, indSetSize, 4);
+	if (MeanFieldPartTmp.l[length].N != 0)
+	{
+		MeanFieldOperator(&MeanFieldPartTmp, &MeanFieldPart, Rho);
+		OperatorAdd(OPartialMF, MeanFieldPart, 1.0, 0.0); //TODO: In C++, overload the Add Operator so that it accepts arguments (OperatorType *, OperatorType)
+		OperatorChop(OPartialMF, 0);
+	}
+	FreeOperator(&MeanFieldPartTmp);
+	FreeOperator(&MeanFieldPart);
+	return 0;
+}

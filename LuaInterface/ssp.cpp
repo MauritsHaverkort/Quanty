@@ -4487,7 +4487,30 @@ static int LuaPartialOperator(lua_State *L)
 	return 1;
 }
 
-
+static int LuaPartialMeanFieldOperator(lua_State *L)
+{
+	OperatorType *O, *OMF;
+	MatrixType *Rho;
+	uint16_t * indices;
+	uint32_t indSetSize;
+	O = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
+	Rho = (MatrixType *) luaL_checkMatrix(L, 2);
+	indices = luaL_checkarray_unit16_t(L, 3, &indSetSize);
+	uint32_t len = (uint32_t) lua_gettop(L);
+	if (len < 3 || len > 3)
+		return luaL_error(L, "MeanFieldOperator called with %d arguments. Operator, Density Matrix and List of Indices expected.\n", len);
+	int i;
+	for (i = 0; i < indSetSize; i++)
+	{
+		if (indices[i] < 0 || indices[i] >= O->NFermion)
+			printf("\nWarning: Index %d is not within [0,NF-1]=[0,%d].\n", indices[i], O->NFermion - 1);
+	}
+	OMF = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+	partialMeanFieldOperator(O, OMF, *Rho, indices, indSetSize);
+	luaL_setmetatable(L, "Operator_Type");
+	strncpy(OMF->Name, "", MAXStrLength - 1); //An appropriate Name can be given in Lua.
+	return 1;
+}
 
 
 static const struct luaL_Reg global_functions[] = {
@@ -4528,6 +4551,7 @@ static const struct luaL_Reg global_functions[] = {
   {"NewWavefunction", LuaNewWaveFunction},
   {"OperatorToMatrix", LuaOperatorToMatrix},
   {"Orthonormalize", LuaOrthonormalize},
+	{"PartialMeanFieldOperator",LuaPartialMeanFieldOperator},
 	{"PartialOperator",LuaPartialOperator},
   {"PotentialExpandedOnClm", LuaPotentialExpandedOnClm},
   {"PlotBands", LuaPlotBands},

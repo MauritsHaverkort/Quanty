@@ -1,7 +1,4 @@
 void debug(char* debugMessage);
-uint32_t partialMeanFieldOperator(const OperatorType * const O, OperatorType * const OPartialMF, const MatrixType Rho, const uint16_t * const indices, const uint32_t indSetSize, bool AddDFTSelfInteraction);
-static int LuaPartialMeanFieldOperator(lua_State *L);
-static int LuaMeanFieldOperatorSimon(lua_State *L);
 void PartialMeanFieldEigensystem();
 void EigensystemSimon();
 static int LuaPartialMeanFieldEigensystem(lua_State *L);

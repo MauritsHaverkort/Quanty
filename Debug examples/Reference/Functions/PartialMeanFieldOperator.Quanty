@@ -36,7 +36,7 @@ for key1,op in pairs(OpList) do
             print("\nIndices:")
             print(inds)
             print("\nPartialMeanFieldOperator")
-            print( Simon.PartialMeanFieldOperator(op, rho, inds) )
+            print( PartialMeanFieldOperator(op, rho, inds) )
         end
     end
 end

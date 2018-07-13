@@ -10,85 +10,6 @@ void debug(char* debugMessage)
 
 
 
-
-
-//should go to MeanField.c
-uint32_t partialMeanFieldOperator(const OperatorType * const O, OperatorType * const OPartialMF, const MatrixType Rho, const uint16_t * const indices, const uint32_t indSetSize, bool AddDFTSelfInteraction)
-{
-	OperatorCopy(OPartialMF, *O);
-	if (O->MaxLength < 3 || indSetSize < 1)
-	{
-		return 0;
-	}
-	OperatorType MeanFieldPartTmp, MeanFieldPart;
-	int length = 4; //If ever we can apply mean field to operators of length unequal to 4, this needs to be changed.
-	InitOperator(&MeanFieldPartTmp);
-	MeanFieldPartTmp.NFermion = OPartialMF->NFermion;
-	MeanFieldPartTmp.NBoson = OPartialMF->NBoson;
-	extractPartialOperatorFixedLength(OPartialMF, &MeanFieldPartTmp, indices, indSetSize, 4);
-	if (MeanFieldPartTmp.l[length].N != 0)
-	{
-		MeanFieldOperator(&MeanFieldPartTmp, &MeanFieldPart, Rho, AddDFTSelfInteraction);
-		OperatorAdd(OPartialMF, MeanFieldPart, 1.0, 0.0); //TODO: In C++, overload the Add Operator so that it accepts arguments (OperatorType *, OperatorType)
-		OperatorChop(OPartialMF, 0);
-	}
-	FreeOperator(&MeanFieldPartTmp);
-	FreeOperator(&MeanFieldPart);
-	return 0;
-}
-
-//should go to ssp.c
-static int LuaPartialMeanFieldOperator(lua_State *L)
-{
-	OperatorType *O, *OMF;
-	MatrixType *Rho;
-	uint16_t * indices;
-	uint32_t indSetSize;
-	O = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
-	Rho = (MatrixType *) luaL_checkMatrix(L, 2);
-	indices = luaL_checkarray_unit16_t(L, 3, &indSetSize);
-	//TODO: Option AddDFTSelfInteraction auslesen.
-	bool AddDFTSelfInteraction = false;
-	uint32_t len = (uint32_t) lua_gettop(L);
-	if (len < 3 || len > 3)
-		return luaL_error(L, "MeanFieldOperator called with %d arguments. Operator, Density Matrix and List of Indices expected.\n", len);
-	int i;
-	for (i = 0; i < indSetSize; i++)
-	{
-		if (indices[i] < 0 || indices[i] >= O->NFermion)
-			printf("\nWarning: Index %d is not within [0,NF-1]=[0,%d].\n", indices[i], O->NFermion - 1);
-	}
-	OMF = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-	partialMeanFieldOperator(O, OMF, *Rho, indices, indSetSize, AddDFTSelfInteraction);
-	luaL_setmetatable(L, "Operator_Type");
-	strncpy(OMF->Name, "", MAXStrLength - 1); //An appropriate Name can be given in Lua.
-	return 1;
-}
-
-//TODO: nur zu Testzwecken, sollte bald wieder gelöscht werden.
-static int LuaMeanFieldOperatorSimon(lua_State *L)
-{
-	OperatorType *H, *HMF;
-	MatrixType *Rho;
-	uint32_t len = (uint32_t) lua_gettop(L);
-	if (len < 2 || len > 2)
-	{
-		return luaL_error(L, "MeanFieldOperator called with %d arguments. Exactly two expected, Operator and Density Matrix.\n", len);
-	}
-	H = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
-	Rho = (MatrixType *) luaL_checkMatrix(L, 2);
-	if ((H->NFermion + H->NBoson) != Rho->Ni)
-	{
-		return luaL_error(L, "Error in MeanFieldGroundstate, length of operator (NF %i NB %i) is not equal to length of density matrix (%i)\n", H->NFermion, H->NBoson, Rho->Ni);
-	}
-	HMF = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-	MeanFieldOperator(H, HMF, *Rho, false);
-	luaL_setmetatable(L, "Operator_Type");
-	strncpy(HMF->Name, "", MAXStrLength - 1); //An appropriate Name can be given in Lua.
-	FreeMatrix(Rho);
-	return 1;
-}
-
 void PartialMeanFieldEigensystem()
 {
 	//TODO
@@ -434,7 +355,6 @@ static const struct luaL_Reg Simon_func[] = {
 	{"MatrixFlatten",LuaMatrixFlatten},
 	{"OrbToMultiplicity",LuaOrbToMultiplicity},
 	{"PartialMeanFieldEigensystem",LuaPartialMeanFieldEigensystem},
-	{"PartialMeanFieldOperator",LuaPartialMeanFieldOperator},
 	{"PrintExpectationValues",LuaPrintExpectationValues},
   {NULL, NULL}
 };

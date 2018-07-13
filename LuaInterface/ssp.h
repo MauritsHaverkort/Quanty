@@ -41,5 +41,6 @@ static int lua_createAtomicIndices(lua_State *L, Bool isDict);
 static int LuaCreateAtomicIndicesDict(lua_State *L);
 static int LuaCreateAtomicIndicesList(lua_State *L);
 static int LuaPartialOperator(lua_State *L);
+static int LuaPartialMeanFieldOperator(lua_State *L);
 void luaconstants(lua_State *L);
 int luaopen_ssp(lua_State * L);
