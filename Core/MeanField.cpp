@@ -632,7 +632,7 @@ uint32_t MeanFieldOperatorOneElectronMatrixWithDFTInteraction(const OperatorType
     /* calcualte U as the average between all electrons needed for the DFT correction */
     for(m=0;m<Oo.NFermion;m++)
     {
-      for(n=0;m<Oo.NFermion;m++)
+      for(n=0;n<Oo.NFermion;n++)
       {
         oadd[3] = CrAnMask + (uint16_t)m;
         oadd[2] = CrAnMask + (uint16_t)n;
@@ -736,7 +736,7 @@ uint32_t MeanFieldOperatorOneElectronMatrixWithDFTInteraction(const OperatorType
     /* calcualte U as the average between all electrons needed for the DFT correction */
     for(m=0;m<Oo.NFermion;m++)
     {
-      for(n=0;m<Oo.NFermion;m++)
+      for(n=0;n<Oo.NFermion;n++)
       {
         oadd[3] = CrAnMask + (uint16_t)m;
         oadd[2] = CrAnMask + (uint16_t)n;

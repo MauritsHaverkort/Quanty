@@ -734,7 +734,7 @@ static int LuaPushAtom(lua_State *L, AtomType const *a)
           lua_createtable(L,a->shelldegeneracy[i],0);
           for(j=0;j<a->shelldegeneracy[i];j++)
           {
-            lua_pushstring(L, &(a->ShellName[i][j]));
+            lua_pushstring(L, a->OrbitalName[i][j]);
             lua_rawseti(L, -2, j+1);
           }
           lua_rawseti(L, -2, 2); // set a table with a list of the orbitals to the second position

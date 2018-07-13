@@ -1,0 +1,74 @@
+-- read the output of FPLO
+-- note that these functions are work in progress, i.e. the exact format might change, the basic idea not
+
+FPLOOut = FileReadDresdenFPLO("LDApMLFT/FPLO/out.wan")
+
+-- from the DFT output we can create a tight binding Hamiltonian
+
+TB = TightBindingDefFromDresdenFPLO(FPLOOut)
+
+print(TB)
+print(TB.Cell)
+print(TB.Atoms)
+
+rhoNoSpin = Chop(CalculateRho(TB))
+
+-- the FPLO basis is without spin and contains both the Ni-d and O-p orbitals
+-- in order to calculate the coulomb repulsion of the d electrons on the d electrons I need the density matrix of the d shell with spin
+
+-- add spin to the density matrix representing the d shell
+rho={}
+for i=1,10 do
+  rho[i]={}
+  for j=1,10 do
+    rho[i][j]=0
+  end
+end
+for i=1,5 do
+  for j=1,5 do
+    rho[2*i-1][2*j-1] = rhoNoSpin[i][j]
+    rho[2*i-0][2*j-0] = rhoNoSpin[i][j]
+  end
+end
+
+-- define coulomb repulsion operator on basis of tesseral harmonics
+NF=10
+IndexDn = {0,2,4,6,8}
+IndexUp = {1,3,5,7,9}
+rotmat = {{-0.7071067811865475*I, 0, 0, 0, 0, 0, 0, 0, 0.7071067811865475*I, 0},
+  {0, -0.7071067811865475*I, 0, 0, 0, 0, 0, 0, 0, 0.7071067811865475*I},
+  {0, 0, -0.7071067811865475*I, 0, 0, 0, -0.7071067811865475*I, 0, 0, 0},
+  {0, 0, 0, -0.7071067811865475*I, 0, 0, 0, -0.7071067811865475*I, 0, 0},
+  {0, 0, 0, 0, 1.000000000000000, 0, 0, 0, 0, 0},
+  {0, 0, 0, 0, 0, 1.000000000000000, 0, 0, 0, 0},
+  {0, 0, 0.7071067811865475, 0, 0, 0, -0.7071067811865475, 0, 0, 0},
+  {0, 0, 0, 0.7071067811865475, 0, 0, 0, -0.7071067811865475, 0, 0},
+  {0.7071067811865475, 0, 0, 0, 0, 0, 0, 0, 0.7071067811865475, 0},
+{0, 0.7071067811865475, 0, 0, 0, 0, 0, 0, 0, 0.7071067811865475}}
+
+-- create the Coulomb operators on a basis of tesseral harmonics
+OppF0 = Chop(Rotate(NewOperator("U", NF, IndexUp, IndexDn, {1,0,0}),rotmat))
+OppF2 = Chop(Rotate(NewOperator("U", NF, IndexUp, IndexDn, {0,1,0}),rotmat))
+OppF4 = Chop(Rotate(NewOperator("U", NF, IndexUp, IndexDn, {0,0,1}),rotmat))
+
+OppF0MFDFT = MeanFieldOperator(OppF0,rho,{{"AddDFTSelfInteraction",true}})
+OppF2MFDFT = MeanFieldOperator(OppF2,rho,{{"AddDFTSelfInteraction",true}})
+OppF4MFDFT = MeanFieldOperator(OppF4,rho,{{"AddDFTSelfInteraction",true}})
+
+-- create a cluster Hamiltonian
+
+-- parameters from experiment (core level PES)
+U       =  7.30
+-- parameters obtained from DFT (PRB 85, 165113 (2012))
+F2dd    = 11.142
+F4dd    =  6.8740
+F0dd    = U+(F2dd+F4dd)*2/63
+
+Hloc = F0dd * (OppF0-OppF0MFDFT) + F2dd * (OppF0-OppF0MFDFT) + F4dd * (OppF4-OppF4MFDFT)
+Hloc.NF = 16
+Hamiltonian, xpos, kvec = CreateClusterHamiltonian(TB, {"periodic", {{1,0,0},{0,1,0},{0,0,1}}}, Hloc, {{"AddSpin",true}, {"ReturnTBCellPositions",true}, {"ReturnTBKVectors",true}})
+
+print(Hamiltonian)
+print(xpos)
+print(kvec)
+
