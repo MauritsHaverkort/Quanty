@@ -8,71 +8,9 @@ void debug(char* debugMessage)
 	fflush(stdout);
 }
 
-//should go to MeanField.c
 
 
-void extractPartialOperatorFixedLength(const OperatorType * const O, OperatorType * const OPartial, const uint16_t * const indices, const uint32_t indSetSize, const int length)
-{
-	uint16_t oadd[length];
-	int firstIndexOfBlock;
-	int i, j;
-	InitOperatorFixedLength(OPartial, length, 8);
-	for (i = 0; i < length * (O->l[length].N); i++)
-	{
-		if (isIntElementOf(NotCrAnMask & O->l[length].o[i], indices, indSetSize))
-		{
-			firstIndexOfBlock = i - (i % length);
-			for (j = 0; j < length; j++)
-			{
-				oadd[j] = O->l[length].o[firstIndexOfBlock + j];
-			}
-			if (O->l[length].QComplex)
-			{
-				ComplexOperatorAddLaderNormalOrder(OPartial, oadd, length, O->l[length].V[firstIndexOfBlock / length].Re, O->l[length].V[firstIndexOfBlock / length].Im, &QDetNotOrderedFcFaBcBa);
-				O->l[length].V[firstIndexOfBlock / length].Re = 0;
-				O->l[length].V[firstIndexOfBlock / length].Im = 0;
-			} else
-			{
-				RealOperatorAddLaderNormalOrder(OPartial, oadd, length, O->l[length].VRe[firstIndexOfBlock / length], &QDetNotOrderedFcFaBcBa);
-				O->l[length].VRe[firstIndexOfBlock / length] = 0;
-			}
-			i = firstIndexOfBlock + length - 1; //I don't want to count that block again in case the index appears several times.
-		}
-	}
-}
 
-void extractPartialOperator(const OperatorType * const O, OperatorType * const OPartial, const uint16_t * const indices, const uint32_t indSetSize)
-{
-	InitOperator(OPartial);
-	OPartial->NFermion = O->NFermion;
-	OPartial->NBoson = O->NBoson;
-	int length;
-	for (length = 0; length <= O->MaxLength; ++length)
-		extractPartialOperatorFixedLength(O, OPartial, indices, indSetSize, length);
-}
-
-static int LuaPartialOperator(lua_State *L)
-{
-	OperatorType *O, *OPartial;
-	uint16_t * indices;
-	uint32_t indSetSize;
-	O = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
-	indices = luaL_checkarray_unit16_t(L, 2, &indSetSize);
-	uint32_t len = (uint32_t) lua_gettop(L);
-	if (len != 2)
-		return luaL_error(L, "PartialOperator called with %d arguments. Operator and List of Indices expected.\n", len);
-	int i;
-	for (i = 0; i < indSetSize; i++)
-	{
-		if (indices[i] < 0 || indices[i] >= O->NFermion)
-			printf("\nWarning: Index %d is not within [0,NF-1]=[0,%d].\n", indices[i], O->NFermion - 1);
-	}
-	OPartial = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-	extractPartialOperator(O, OPartial, indices, indSetSize);
-	luaL_setmetatable(L, "Operator_Type");
-	strncpy(OPartial->Name, "", MAXStrLength - 1); //An appropriate Name can be given in Lua.
-	return 1;
-}
 
 //should go to MeanField.c
 uint32_t partialMeanFieldOperator(const OperatorType * const O, OperatorType * const OPartialMF, const MatrixType Rho, const uint16_t * const indices, const uint32_t indSetSize, bool AddDFTSelfInteraction)
@@ -494,11 +432,9 @@ static const struct luaL_Reg Simon_meta[] = {
 static const struct luaL_Reg Simon_func[] = {
   {"test", LuaSimontest},
 	{"MatrixFlatten",LuaMatrixFlatten},
-	{"MeanFieldOperatorSimon",LuaMeanFieldOperatorSimon},
 	{"OrbToMultiplicity",LuaOrbToMultiplicity},
 	{"PartialMeanFieldEigensystem",LuaPartialMeanFieldEigensystem},
 	{"PartialMeanFieldOperator",LuaPartialMeanFieldOperator},
-	{"PartialOperator",LuaPartialOperator},
 	{"PrintExpectationValues",LuaPrintExpectationValues},
   {NULL, NULL}
 };

@@ -6381,3 +6381,43 @@ uint32_t OperatorChangeNFandNB(OperatorType *O, uint32_t NFnew, uint32_t NBnew)
   O->NWord = Min(O->NFermion, 1 + (O->NFermion - 1) / 8) + O->NBoson;
   return 0;
 }
+
+void extractPartialOperatorFixedLength(const OperatorType * const O, OperatorType * const OPartial, const uint16_t * const indices, const uint32_t indSetSize, const int length)
+{
+	uint16_t oadd[length];
+	int firstIndexOfBlock;
+	int i, j;
+	InitOperatorFixedLength(OPartial, length, 8);
+	for (i = 0; i < length * (O->l[length].N); i++)
+	{
+		if (isIntElementOf(NotCrAnMask & O->l[length].o[i], indices, indSetSize))
+		{
+			firstIndexOfBlock = i - (i % length);
+			for (j = 0; j < length; j++)
+			{
+				oadd[j] = O->l[length].o[firstIndexOfBlock + j];
+			}
+			if (O->l[length].QComplex)
+			{
+				ComplexOperatorAddLaderNormalOrder(OPartial, oadd, length, O->l[length].V[firstIndexOfBlock / length].Re, O->l[length].V[firstIndexOfBlock / length].Im, &QDetNotOrderedFcFaBcBa);
+				O->l[length].V[firstIndexOfBlock / length].Re = 0;
+				O->l[length].V[firstIndexOfBlock / length].Im = 0;
+			} else
+			{
+				RealOperatorAddLaderNormalOrder(OPartial, oadd, length, O->l[length].VRe[firstIndexOfBlock / length], &QDetNotOrderedFcFaBcBa);
+				O->l[length].VRe[firstIndexOfBlock / length] = 0;
+			}
+			i = firstIndexOfBlock + length - 1; //I don't want to count that block again in case the index appears several times.
+		}
+	}
+}
+
+void extractPartialOperator(const OperatorType * const O, OperatorType * const OPartial, const uint16_t * const indices, const uint32_t indSetSize)
+{
+	InitOperator(OPartial);
+	OPartial->NFermion = O->NFermion;
+	OPartial->NBoson = O->NBoson;
+	int length;
+	for (length = 0; length <= O->MaxLength; ++length)
+		extractPartialOperatorFixedLength(O, OPartial, indices, indSetSize, length);
+}

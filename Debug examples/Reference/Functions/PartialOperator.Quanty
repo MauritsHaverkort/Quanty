@@ -26,6 +26,6 @@ for key1,op in pairs(OpList) do
         print("\nIndices:")
         print(inds)
         print("\nPartialOperator")
-        print( Simon.PartialOperator(op, inds) )
+        print( PartialOperator(op, inds) )
     end
 end

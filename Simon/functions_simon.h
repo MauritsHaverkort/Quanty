@@ -1,7 +1,4 @@
 void debug(char* debugMessage);
-void extractPartialOperatorFixedLength(const OperatorType * const O, OperatorType * const OPartial, const uint16_t * const indices, const uint32_t indSetSize, const int length);
-void extractPartialOperator(const OperatorType * const O, OperatorType * const OPartial, const uint16_t * const indices, const uint32_t indSetSize);
-static int LuaPartialOperator(lua_State *L);
 uint32_t partialMeanFieldOperator(const OperatorType * const O, OperatorType * const OPartialMF, const MatrixType Rho, const uint16_t * const indices, const uint32_t indSetSize, bool AddDFTSelfInteraction);
 static int LuaPartialMeanFieldOperator(lua_State *L);
 static int LuaMeanFieldOperatorSimon(lua_State *L);
