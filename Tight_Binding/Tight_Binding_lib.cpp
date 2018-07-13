@@ -2022,3 +2022,75 @@ int TightBindingAddAxesToMatrix(double Emin, double Emax, int NELines, double *E
   }
   return 0;
 }
+
+int nonRelAngularMomentumZNumbers(char * orb)
+{
+	if (strlen(orb)<1)
+		return -1;
+	char lastChar = orb[strlen(orb)-1];
+	switch (lastChar) {
+		case 's':
+			return 2*0+1;
+		case 'p':
+			return 2*1+1;
+		case 'd':
+			return 2*2+1;
+		case 'f':
+			return 2*3+1;
+		case 'g':
+			return 2*4+1;
+		case 'h':
+			return 2*5+1;
+		default:
+			return -1;
+	}
+}
+
+int relAngularMomentumZNumbers(char * orb, int * significantCharPos)
+{
+	if (strlen(orb)<3)
+		return -1;
+	char lastChar, significantChar;
+	lastChar = orb[strlen(orb)-1];
+	if (lastChar != '2')
+		return -1;
+	*significantCharPos = strlen(orb)-2;
+	significantChar = orb[*significantCharPos];
+	if (significantChar == '/')
+	{
+		*significantCharPos = strlen(orb)-3;
+		significantChar = orb[*significantCharPos];
+	}
+	switch (significantChar) {
+			case '1':
+				return 1+1;
+			case '3':
+				return 3+1;
+			case '5':
+				return 5+1;
+			case '7':
+				return 7+1;
+			case '9':
+				return 9+1;
+			default:
+				return -1;
+		}
+}
+
+int relAngularMomentumZNumbers(char * orb)
+{
+	int significantCharPos;
+	return relAngularMomentumZNumbers(orb,&significantCharPos);
+}
+
+//TODO: Anyone have a better idea where to put this function?
+int isIntElementOf(const uint16_t element, const uint16_t * const set, const uint32_t setSize)
+{
+	int i;
+	for (i=0;i<setSize;i++)
+	{
+		if (element == set[i])
+			return 1;
+	}
+	return 0;
+}

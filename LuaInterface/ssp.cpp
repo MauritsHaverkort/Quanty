@@ -4072,17 +4072,6 @@ static int LuaStatistics(lua_State *L)
 }
 
 
-int isIntElementOf(const uint16_t element, const uint16_t * const set, const uint32_t setSize)
-{
-	int i;
-	for (i=0;i<setSize;i++)
-	{
-		if (element == set[i])
-			return 1;
-	}
-	return 0;
-}
-
 
 static int LuaDeterminantString(lua_State *L)
 {
@@ -4114,66 +4103,6 @@ static int LuaDeterminantString(lua_State *L)
 	}
 	lua_pushstring(L,det);
 	return 1;
-}
-
-int nonRelAngularMomentumZNumbers(char * orb)
-{
-	if (strlen(orb)<1)
-		return -1;
-	char lastChar = orb[strlen(orb)-1];
-	switch (lastChar) {
-		case 's':
-			return 2*0+1;
-		case 'p':
-			return 2*1+1;
-		case 'd':
-			return 2*2+1;
-		case 'f':
-			return 2*3+1;
-		case 'g':
-			return 2*4+1;
-		case 'h':
-			return 2*5+1;
-		default:
-			return -1;
-	}
-}
-
-int relAngularMomentumZNumbers(char * orb, int * significantCharPos)
-{
-	if (strlen(orb)<3)
-		return -1;
-	char lastChar, significantChar;
-	lastChar = orb[strlen(orb)-1];
-	if (lastChar != '2')
-		return -1;
-	*significantCharPos = strlen(orb)-2;
-	significantChar = orb[*significantCharPos];
-	if (significantChar == '/')
-	{
-		*significantCharPos = strlen(orb)-3;
-		significantChar = orb[*significantCharPos];
-	}
-	switch (significantChar) {
-			case '1':
-				return 1+1;
-			case '3':
-				return 3+1;
-			case '5':
-				return 5+1;
-			case '7':
-				return 7+1;
-			case '9':
-				return 9+1;
-			default:
-				return -1;
-		}
-}
-
-int relAngularMomentumZNumbers(char * orb)
-{
-	int significantCharPos;
-	return relAngularMomentumZNumbers(orb,&significantCharPos);
 }
 
 
@@ -4512,6 +4441,30 @@ static int LuaPartialMeanFieldOperator(lua_State *L)
 	return 1;
 }
 
+static int LuaOrbToMultiplicity(lua_State * L)
+{
+	char * orb;
+	int multiplicity;
+	uint32_t len = (uint32_t) lua_gettop(L);
+	if (len != 1)
+	{
+		return luaL_error(L, "OrbToMultiplicity called with %d arguments. Only name of the orbital expected.\n", len);
+	}
+	orb = (char*) luaL_checkstring(L, 1);
+	lua_pop(L, 1);
+	multiplicity = nonRelAngularMomentumZNumbers(orb);
+	if (multiplicity < 0)
+		multiplicity = relAngularMomentumZNumbers(orb);
+	if (multiplicity < 0)
+	{
+		printf("\nCould not interpret orbital \"");
+		printf("%s", orb);
+		printf("\" as either relativistic or non-relativistic atomic orbital, returning %d.\n", multiplicity);
+	}
+	lua_pushnumber(L, multiplicity);
+	return 1;
+}
+
 
 static const struct luaL_Reg global_functions[] = {
   {"BlockBandDiagonalize", LuaBlockBandDiagonalize},
@@ -4550,6 +4503,7 @@ static const struct luaL_Reg global_functions[] = {
   {"NewTightBinding", LuaNewTightBinding},
   {"NewWavefunction", LuaNewWaveFunction},
   {"OperatorToMatrix", LuaOperatorToMatrix},
+	{"OrbToMultiplicity",LuaOrbToMultiplicity},
   {"Orthonormalize", LuaOrthonormalize},
 	{"PartialMeanFieldOperator",LuaPartialMeanFieldOperator},
 	{"PartialOperator",LuaPartialOperator},

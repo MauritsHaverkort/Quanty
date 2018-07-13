@@ -45,29 +45,7 @@ void mandatoryMeanFieldList(uint16_t **indices, int * const indSetSize, const De
 	}
 }
 
-static int LuaOrbToMultiplicity(lua_State * L)
-{
-	char * orb;
-	int multiplicity;
-	uint32_t len = (uint32_t) lua_gettop(L);
-	if (len != 1)
-	{
-		return luaL_error(L, "OrbToMultiplicity called with %d arguments. Only name of the orbital expected.\n", len);
-	}
-	orb = (char*) luaL_checkstring(L, 1);
-	lua_pop(L, 1);
-	multiplicity = nonRelAngularMomentumZNumbers(orb);
-	if (multiplicity < 0)
-		multiplicity = relAngularMomentumZNumbers(orb);
-	if (multiplicity < 0)
-	{
-		printf("\nCould not interpret orbital \"");
-		printf("%s", orb);
-		printf("\" as either relativistic or non-relativistic atomic orbital, returning %d.", multiplicity);
-	}
-	lua_pushnumber(L, multiplicity);
-	return 1;
-}
+
 
 static int LuaSimontest(lua_State * L)
 {
@@ -353,7 +331,6 @@ static const struct luaL_Reg Simon_meta[] = {
 static const struct luaL_Reg Simon_func[] = {
   {"test", LuaSimontest},
 	{"MatrixFlatten",LuaMatrixFlatten},
-	{"OrbToMultiplicity",LuaOrbToMultiplicity},
 	{"PartialMeanFieldEigensystem",LuaPartialMeanFieldEigensystem},
 	{"PrintExpectationValues",LuaPrintExpectationValues},
   {NULL, NULL}

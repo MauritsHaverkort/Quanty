@@ -45,3 +45,7 @@ int CreateTightBindingSquareSuperCell(TightBindingDef A, TightBindingDef * ASupe
 int TightBindingBANDSToMatrix(double Emin, double Emax, int NEpoints, MatrixType BANDS, MatrixType * BWValue);
 int TightBindingBANDSCharacterToMatrix(double Emin, double Emax, int NEpoints, MatrixType BANDS, MatrixType Character,MatrixType * BWValue);
 int TightBindingAddAxesToMatrix(double Emin, double Emax, int NELines, double *Elines, BandstructurePathType kList,MatrixType * RGBValue);
+int nonRelAngularMomentumZNumbers(char * orb);
+int relAngularMomentumZNumbers(char * orb, int * significantCharPos);
+int relAngularMomentumZNumbers(char * orb);
+int isIntElementOf(const uint16_t element, const uint16_t * const set, const uint32_t setSize);
