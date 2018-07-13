@@ -21,6 +21,27 @@
 #define omp_get_max_threads() 0
 #endif
 
+#include <stdio.h>
+#include <time.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
+#include <math.h>
+#include <float.h>
+#include <limits.h>
+#include <unistd.h>
+#include <stdarg.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+
+#ifdef _OPENMP
+#include <omp.h>
+#else
+#define omp_get_thread_num() 0
+#define omp_get_num_procs() 0
+#define omp_get_max_threads() 0
+#endif
+
 uint32_t GlobalTimeOn=0xF;
 /*      1111 1111 1111 1111 - 0xFFFF - print all timings
  *      0000 0000 0000 0001 - 0x0001 - main specific
@@ -60,9 +81,11 @@ uint32_t GlobalVerbosity=0xF;
 #define PrintDebugInfo
 
 
+
 #include "../Core/StructDef.cpp"
 #include "../Core/BasicMath/BasicMath_Constants.cpp"
 #include "../Core/TimeStamp.cpp"
+
 
 #include "../Core/Core.h"
 #include "../IO/IO.h"

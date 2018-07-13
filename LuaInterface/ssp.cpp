@@ -4146,7 +4146,7 @@ int nonRelAngularMomentumZNumbers(char * orb)
 	}
 }
 
-int relAngularMomentumZNumbers(char * orb)
+int relAngularMomentumZNumbers(char * orb, int * significantCharPos)
 {
 	if (strlen(orb)<3)
 		return -1;
@@ -4154,9 +4154,13 @@ int relAngularMomentumZNumbers(char * orb)
 	lastChar = orb[strlen(orb)-1];
 	if (lastChar != '2')
 		return -1;
-	significantChar = orb[strlen(orb)-2];
+	*significantCharPos = strlen(orb)-2;
+	significantChar = orb[*significantCharPos];
 	if (significantChar == '/')
-		significantChar = orb[strlen(orb)-3];
+	{
+		*significantCharPos = strlen(orb)-3;
+		significantChar = orb[*significantCharPos];
+	}
 	switch (significantChar) {
 			case '1':
 				return 1+1;
@@ -4171,6 +4175,12 @@ int relAngularMomentumZNumbers(char * orb)
 			default:
 				return -1;
 		}
+}
+
+int relAngularMomentumZNumbers(char * orb)
+{
+	int significantCharPos;
+	return relAngularMomentumZNumbers(orb,&significantCharPos);
 }
 
 
@@ -4216,6 +4226,32 @@ void lua_groupOrbitals(lua_State *L, int indTablePos, const char* groupKey, char
 		}
 	}
 	lua_settable(L, indTablePos);
+}
+
+int kappa(char * orb)
+{
+	int jzNumbers, lzNumbers, significantCharPos;
+	jzNumbers = relAngularMomentumZNumbers(orb,&significantCharPos);
+	if (jzNumbers < 0)
+	{
+		printf("\nWarning: Key \"");
+		printf("%s",orb);
+		printf("\" could not be interpreted as a relativistic orbital, kappa is set to 0.\n");
+		return 0;
+	}
+	orb[significantCharPos] = '\0'; //TODO: Do this with substr.
+	lzNumbers = nonRelAngularMomentumZNumbers(orb);
+	if (lzNumbers < 0)
+	{
+		printf("\nWarning: Remainder of key \"");
+		printf("%s",orb);
+		printf("\" could not be interpreted as a non-relativistic orbital, kappa is set to 0.\n");
+		return 0;
+	}
+	if (jzNumbers > lzNumbers)
+		return - jzNumbers/2;
+	else
+		return jzNumbers/2;
 }
 
 void lua_setNonRelAtomicOrbitalIndices(lua_State *L, char* orb, int momZNumbers, int * NF, int indTablePos, int isDict)
@@ -4302,7 +4338,7 @@ void lua_setAtomicOrbitalIndices(lua_State *L, char* orb, int * NF, int indTable
 	{
 		printf("\nWarning: Key \"");
 		printf("%s",orb);
-		printf("\" could not be interpreted as an orbital\n");
+		printf("\" could not be interpreted as an orbital.\n");
 		return;
 	}
 }
@@ -4325,11 +4361,32 @@ static int lua_createAtomicIndices(lua_State *L, int isDict)
 	char* groupKey;
 	uint32_t groupLen;
 	char** groupMembers;
+	int numberOfRedundantOrbitals = 0;
 	int i;
+  struct
+  {
+    Bool kappas;
+  } Options;
+  LuaOptionsType LuaCreateAtomicIndicesOptions[]={
+    {"kappas",          "bool",  &(Options.kappas)},
+    {NULL, NULL, NULL}};
+  Options.kappas=False;
 	orbitals = luaL_checkarray_string(L,1,&orbListLen);
 	uint32_t numberOfInputs = (uint32_t) lua_gettop(L);
-	if (numberOfInputs < 1 || numberOfInputs > 2 || (numberOfInputs > 1 && !isDict))
-		return luaL_error(L, "CreateAtomicIndices called with %d arguments. List of Orbitals and (in case of a dictionary) optional parameter List of Groups of Orbitals expected.\n", numberOfInputs);
+	if (numberOfInputs < 1 || numberOfInputs > 2)
+		return luaL_error(L, "CreateAtomicIndices called with %d arguments. List of Orbitals and (in case of a dictionary) optional parameter List of Groups of Orbitals expected, or (in case of a list) possible List of Options.\n", numberOfInputs);
+  if(numberOfInputs==2   && !isDict )
+  {
+    if(LuaTestOptionsList(L, -1))
+    {
+      LuaCheckOptions(L, -1, LuaCreateAtomicIndicesOptions); //TODO: muss ich hier noch testen obs sich um einen Bool handelt?
+    }
+    else
+    {
+      return luaL_error(L, "Second argument of CreateAtomicIndicesList is optional but iff given should be a list of options.\n");
+    }
+  }
+  int kappas[orbListLen];
 	lua_newtable(L);
 	indTablePos  = (int) lua_gettop(L);
 	for (i=0;i<orbListLen;i++)
@@ -4339,13 +4396,31 @@ static int lua_createAtomicIndices(lua_State *L, int isDict)
 		{
 			lua_pop(L, 1);
 			lua_setAtomicOrbitalIndices(L, orbitals[i], &NF, indTablePos, isDict);
+			if (Options.kappas)
+			{
+				kappas[i - numberOfRedundantOrbitals] = kappa(orbitals[i]);
+			}
 		} else
 		{
 			lua_pop(L,1);
 			printf("\nWarning: Orbital with name \"");
 			printf("%s",orbitals[i]);
 			printf("\" already exists and cannot be included a second time.\n");
+			++numberOfRedundantOrbitals;
 		}
+	}
+	if (Options.kappas)
+	{
+		lua_pushstring(L,"kappas");
+		lua_newtable(L);
+		int top = (int) lua_gettop(L);
+		for (i=0; i< orbListLen-numberOfRedundantOrbitals; ++i)
+		{
+			lua_pushnumber(L,i+1);
+			lua_pushnumber(L,kappas[i]);
+			lua_settable(L,top);
+		}
+		lua_settable(L,indTablePos);
 	}
 	if (isDict)
 	{
