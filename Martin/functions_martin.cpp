@@ -1,6 +1,8 @@
 /* Some makeshift functions */
 
-#include "CreateOperators.c"
+//#include "SlaterTuple.cpp"
+#include "CreateOperators.cpp"
+#include "MartinsLittleHelper.cpp"
 
 static int LuaOperatorNewFullCoulomb (lua_State *L)
 {
@@ -62,6 +64,7 @@ static int LuaOperatorNewFullCoulomb (lua_State *L)
 
     op = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
 
+
     if ( len == 5)
     {
     	CreateOperatorFullCoulombRelativistic(NF,wavefunctions->VRe,wavefunctions->Ni,x,NGridpoints,tuple, NIntegrals,indices, op);
@@ -73,6 +76,14 @@ static int LuaOperatorNewFullCoulomb (lua_State *L)
 
     luaL_setmetatable(L,"Operator_Type");
 
+    /*printf("Operaotor op: %p\n",op);
+    printf("op.l: %p\t %d\n",op->l,op->MaxLength);
+    printf("op.l[4]: %p\t %d\n",&(op->l[4]),op->l[4].N);
+    printf("WF: %p\n",wavefunctions);
+    printf("x: %p\n", x);
+    printf("indices: %p \n",indices);
+    printf("tuple: %p\n",tuple);
+    printf("\n");*/
 	FreeMatrix(wavefunctions);
 	free(x);
 
@@ -86,7 +97,7 @@ static int LuaOperatorNewFullCoulomb (lua_State *L)
 		free(tuple[i]);
 	}
 	free(tuple);
-
+	/**/
 
     return 1;
 }
@@ -157,15 +168,25 @@ static int LuaOperatorNewDirac(lua_State *L)
 
 static int LuaCreateBaseForContinuum(lua_State *L)
 {
-	uint32_t NF, i, NGroups, NGridpoints, NIndices, NBasisFuns, temp;
+	uint32_t NGridpoints = 0;
 	SKappaGroup group;
 	MatrixType *basisfuns, *derivfuns, *contfuns;
 	double w;
 	double *x;
+	vector<double> vx;
+	vector<vector<double> > vbasf, vderf,vcontf;
 
 	basisfuns = luaL_checkMatrix(L,1);
+	vbasf = ConvertMatrix(basisfuns->VRe,basisfuns->Ni,basisfuns->Nj);
+	/*for (int i = 0; i < vbasf.size(); i++)
+		for (int j = 0; j < vbasf[i].size(); j++)
+			printf("%e\n",vbasf[i][j]-basisfuns->VRe[i][j]);*/
 	derivfuns = luaL_checkMatrix(L,1);
+	vderf = ConvertMatrix(derivfuns->VRe,derivfuns->Ni,derivfuns->Nj);
 	x = luaL_checkarray_double(L,3,&NGridpoints);
+	vx = ConvertArray(x,NGridpoints);
+	//for (int i = 0; i < vx.size(); i++)
+		//printf("%f\n",vx[i]);
 	luaL_checktype(L, 4, LUA_TTABLE);
 	/*NGroups = (uint32_t)lua_objlen(L,4);
 
@@ -194,29 +215,44 @@ static int LuaCreateBaseForContinuum(lua_State *L)
 	luaL_checktype(L, 6, LUA_TTABLE);
 
 	contfuns = luaL_checkMatrix(L,6);
+	vcontf = ConvertMatrix(contfuns->VRe,contfuns->Ni,contfuns->Nj);
 
 
 	double *eigenval;
-//	printf("CreateCont\n");
-//	fflush(stdout);
-	eigenval = CreateBaseForContinuum(basisfuns->Ni, basisfuns->VRe,derivfuns->VRe,x,NGridpoints,group,contfuns->Ni,contfuns->VRe,w);
-//	printf("Push\n");
-//	fflush(stdout);
-	LuaPushArray_double(L,&(eigenval[contfuns->Ni/2]), contfuns->Ni/2);
-	contfuns->VRe = &(contfuns->VRe[contfuns->Ni/2]);
-	contfuns->Ni = contfuns->Ni/2;
+/*
+	vector<double> vw = CreateWeights(NGridpoints,vx);
+	double * ww = CreateWeights(NGridpoints,x);
+	for (int i = 0; i < NGridpoints; i++)
+		printf("%e\n",ww[i]-vw[i]);
+*/
+
+	eigenval = CreateBaseForContinuum(vbasf.size(), vbasf,vderf,vx,NGridpoints,group,vcontf.size(),vcontf,w);
+
+
+
+	LuaPushArray_double(L,&(eigenval[vcontf.size()/2]), vcontf.size()/2);
+	for (int i = 0; i < vcontf.size()/2; i++)
+	{
+		contfuns->VRe[i] = &(vcontf[vcontf.size()/2+i][0]);
+	}
+	contfuns->Ni = vcontf.size()/2;
 	LuaPushTable_MatrixType(L,contfuns);
 
-//	printf("Free\n");
-//	fflush(stdout);
+
 
 	FreeMatrix(basisfuns);
 	FreeMatrix(derivfuns);
 
 	free(x);
-	//free(groups);
+
 
 	return 2;
+}
+
+static int LuaPropagator(lua_State *L)
+{
+	Complex16 a;
+	return 1;
 }
 
 static const struct luaL_Reg Martin_meta[] = {
@@ -256,5 +292,6 @@ static const struct luaL_Reg Martin_func[] = {
   {"NewCoulomb", LuaOperatorNewFullCoulomb},
   {"NewDirac", LuaOperatorNewDirac},
   {"ContinuumBase",LuaCreateBaseForContinuum},
+  {"Propagator",LuaPropagator},
   {NULL, NULL}
 };

@@ -9,8 +9,7 @@ SSlaterIntegral *GetSlaterIntegrals(double **basisfuns, unsigned int NBasisFuns,
     double **kernels, **dualfuns;
     
     n = 2* NGridPoints;
-    
-    
+
     dualfuns = CreateDualFunctions(NBasisFuns, NGridPoints, basisfuns,x);
 
     si = InitializeIntegrals(tupel, NIntegrals,&kMax);
@@ -30,6 +29,7 @@ SSlaterIntegral *GetSlaterIntegrals(double **basisfuns, unsigned int NBasisFuns,
     }
     fclose(f);
 */
+
     for ( i = 0; i <= kMax; i++)
     {
     	free(kernels[i]);
@@ -62,6 +62,7 @@ void CalculateSlaterIntegrals(const int NIntegrals, SSlaterIntegral *integrals, 
             k = integrals[i].k[j];
             Fk = SlaterIntegral(dim, dualfuns[n[0]], dualfuns[n[1]],
                                 basisfuns[n[2]],basisfuns[n[3]],kernels[k]);
+            //printf("Fk:\t%e\n",Fk);
             integrals[i].val[j] = Fk;
             
         }
@@ -74,7 +75,8 @@ void vecMul(const int n, const double *f, const double *g, double *fout)
 
     for ( i = 0; i < n; i++)
     {
-        fout[i] = f[i] * g[i];
+        //printf("f g i:\t%e\t%e\t%d",f[i],g[i],i);
+    	fout[i] = f[i] * g[i];
     }
 }
   
@@ -86,7 +88,7 @@ double SlaterIntegral(const int n, const double *f1, const double *f2, const dou
   const unsigned int INCXY=1;
   const double beta=0;
   double *f13, *f24, *Mf, result;
-    
+  //printf("f1 f2 f3 f4 M:\t%e\t%e\t%e\t%e\t%e\n",f1[1],f2[2],f3[3],f4[4],Mr1r2[2503]);
   f13 = (double *) malloc(n*sizeof(double));
   f24 = (double *) malloc(n*sizeof(double));
   Mf = (double *) malloc(n*sizeof(double));
@@ -94,6 +96,7 @@ double SlaterIntegral(const int n, const double *f1, const double *f2, const dou
     
   vecMul(n, f1, f3, f13);
   vecMul(n, f2, f4, f24);
+  //printf("f13 f24:\t%e\t%e\t n = %d\n",f13[2499],f24[2500],n);
     
   dsymv(&UPLO,(unsigned int *) &n, &alpha, Mr1r2,(unsigned int *) &n, f24, &INCXY, &beta, Mf, &INCXY);
   result = ddot((unsigned int *) &n, f13, &INCXY, Mf, &INCXY);
@@ -175,6 +178,7 @@ double *CreateWeights(const unsigned int NGridPoints, const double *x)
 {
     int i;
     double x0 = 0;
+
     double *weights = (double *) malloc(NGridPoints*2*sizeof(double));
     if (!weights) printf("malloc fail at weights in CreateWeights. size = %d\n",2*NGridPoints);
     
@@ -182,10 +186,46 @@ double *CreateWeights(const unsigned int NGridPoints, const double *x)
     {
         weights[i] = 2 * (x[i] - x0);
         weights[i+NGridPoints] = 2 * (x[i] - x0);
+        //printf("weights[%d]: %f\n",i,weights[i]);
         x0 = x[i] + weights[i] / 2;
+        //printf("weights %d\n",NGridPoints*2-(i+NGridPoints)-1);
+        //fflush(stdout);
     }
     weights[NGridPoints-2] += x[i]-x0;
     weights[2*NGridPoints-2] += x[i]-x0;
+    weights[2*NGridPoints-1] = 0.;
+    weights[NGridPoints-1] = 0.;
+
+    return weights;
+}
+
+vector<double> CreateWeights(const unsigned int NGridPoints, vector<double> x)
+{
+    int i;
+    double x0 = 0;
+
+    vector<double> weights;
+
+    for( i = 0; i < NGridPoints-1; i++)
+    {
+        weights.insert(weights.end(), 2 * (x[i] - x0));
+        x0 = x[i] + weights[i] / 2;
+        //printf("weights %d\n",NGridPoints*2-(i+NGridPoints)-1);
+        //fflush(stdout);
+    }
+    weights.insert(weights.end(), 0.);
+    weights[NGridPoints-2] += x[i]-x0;
+    for( i = 0; i < NGridPoints-1; i++)
+    {
+        weights.insert(weights.end(), 2 * (x[i] - x0));
+        x0 = x[i] + weights[i] / 2;
+        //printf("weights %d\n",NGridPoints*2-(i+NGridPoints)-1);
+        //fflush(stdout);
+    }
+    weights[2*NGridPoints-2] += x[i]-x0;
+    weights.insert(weights.end(), 0.);
+
+
     return weights;
 }
 
@@ -196,6 +236,7 @@ double **CreateDualFunctions(const unsigned int NBasisFuns, const unsigned int N
     double **dualfuns, *weights;
     
     weights = CreateWeights(NGridPoints,x);
+    //printf("%e\t%e\n",weights[2499],weights[4999]);
     dualfuns = (double **) malloc(NBasisFuns*sizeof(double *));
     if (!dualfuns) printf("malloc fail at dualfuns in CreateDualFunctions. size = %d\n",NBasisFuns);
     for ( i = 0; i < NBasisFuns; i++ )
@@ -207,6 +248,34 @@ double **CreateDualFunctions(const unsigned int NBasisFuns, const unsigned int N
     free(weights);
     return dualfuns;
 }
+vector<double> Dual(vector<double> f, vector<double> w)
+{
+	vector<double> g;
+	if (f.size() != w.size()) printf("error in Dual: %d = size(f) != size(w) = %d", f.size(),w.size());
+	for (int i = 0; i < f.size(); i++)
+	{
+		g.insert(g.end(), f[i]*w[i]);
+	}
+	return g;
+}
+vector<vector<double> > CreateDualFunctions(const unsigned int NBasisFuns, const unsigned int NGridPoints,
+		vector<vector<double> > basisfuns, vector<double> x)
+{
+    int i;
+    vector<vector<double> > dualfuns;
+    vector<double> weights;
+
+    weights = CreateWeights(NGridPoints,x);
+
+
+    for ( i = 0; i < NBasisFuns; i++ )
+    {
+        dualfuns.insert(dualfuns.end(),Dual(basisfuns[i], weights));
+    }
+    return dualfuns;
+
+}
+
 
 void Dual(const int n, const double *f, const double *weights, double *fdual)
 {
