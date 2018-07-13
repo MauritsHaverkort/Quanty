@@ -1,21 +1,25 @@
 AReal = {{1,1},{1,1}}
 ACompl = {{1+I,1+I},{1+I,1+I}}
 AIm = {{I,I},{I,I}}
+A0 = 0
 BReal = {{2,2,2},{2,2,2}}
 BCompl = {{2+I,2+I,2+I},{2+I,2+I,2+I}}
 BIm = {{2*I,2*I,2*I},{2*I,2*I,2*I}}
+B0 = 0
 CReal = {{3,3},{3,3},{3,3},{3,3}}
 CCompl = {{3+I,3+I},{3+I,3+I},{3+I,3+I},{3+I,3+I}}
+C0 = 0
 CIm = {{3*I,3*I},{3*I,3*I},{3*I,3*I},{3*I,3*I}}
 DReal = {{4,4,4},{4,4,4},{4,4,4},{4,4,4}}
 DCompl = {{4+I,4+I,4+I},{4+I,4+I,4+I},{4+I,4+I,4+I},{4+I,4+I,4+I}}
 DIm = {{4*I,4*I,4*I},{4*I,4*I,4*I},{4*I,4*I,4*I},{4*I,4*I,4*I}}
+D0 = 0
 
 
-for keyA,A in pairs({AReal,ACompl,AIm}) do
-    for  keyB,B in pairs({BReal,BCompl,BIm}) do
-        for  keyC,C in pairs({CReal,CCompl,CIm}) do
-            for keyD,D in pairs({DReal,DCompl,DIm}) do
+for keyA,A in pairs({AReal,ACompl,AIm,A0}) do
+    for  keyB,B in pairs({BReal,BCompl,BIm,B0}) do
+        for  keyC,C in pairs({CReal,CCompl,CIm,C0}) do
+            for keyD,D in pairs({DReal,DCompl,DIm,D0}) do
                 print("\n\n\n")
                 print("A =")
                 print(A)
@@ -27,7 +31,7 @@ for keyA,A in pairs({AReal,ACompl,AIm}) do
                 print(D)
                 M = {{A,B},{C,D}}
                 print("M = {{A,B},{C,D}} =")
-                print( Simon.MatrixFlatten(M) ) 
+                print( Matrix.Flatten(M) ) 
             end
         end
     end
@@ -43,7 +47,7 @@ for i=1,12 do
 end
 print("\n\n\n")
 print("Composition of many real matrices:")
-print( Simon.MatrixFlatten(E) ) 
+print( Matrix.Flatten(E) ) 
 
 F = {}
 for i=1,6 do
@@ -54,7 +58,8 @@ for i=1,6 do
 end
 print("\n\n\n")
 print("Composition of many complex matrices:")
-print( Simon.MatrixFlatten(F) ) 
+print( Matrix.Flatten(F) ) 
+
 
 --[[
 largeNumber = 100

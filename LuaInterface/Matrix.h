@@ -18,4 +18,6 @@ static int LuaMatrixMul(lua_State * L);
 static int LuaMatrixDiv(lua_State * L);
 static int LuaMatrixPow(lua_State * L);
 static int LuaMatrixToString(lua_State * L);
+static int LuaMatrixIndex(lua_State * L);
 static int LuaMatrixDestroy(lua_State * L);
+static int LuaMatrixFlatten(lua_State * L);

@@ -1192,11 +1192,55 @@ static int LuaMatrixDestroy(lua_State * L)
   return 0;
 }
 
+//Feed it a table of tables of tables of tables of numbers, and it will return a table of tables.
+static int LuaMatrixFlatten(lua_State * L)
+{
+	int len = lua_gettop(L);
+	if (len != 1)
+		return luaL_error(L, "MatrixFlatten called with %d arguments. 1 expected, Table of tables of tables of tables of numbers.\n", len);
+	luaL_checktype(L, 1, LUA_TTABLE);
+	int numOfRowsOuter, numOfColsOuter;
+	numOfRowsOuter = (int) lua_objlen(L, 1);
+	lua_rawgeti(L, 1, 1);
+	luaL_checktype(L, -1, LUA_TTABLE);
+	numOfColsOuter = (int) lua_objlen(L, -1);
+	lua_pop(L, 1);
+	std::vector<std::vector<MatrixType> > allMs(numOfRowsOuter);
+//	MatrixType allMs[numOfRowsOuter][numOfColsOuter];
+	for (int i = 0; i < numOfRowsOuter; ++i)
+	{
+		lua_rawgeti(L, 1, i + 1);
+		luaL_checktype(L, -1, LUA_TTABLE);
+		std::vector<MatrixType> col (numOfColsOuter);
+		allMs[i] = col;
+		for (int j = 0; j < numOfColsOuter; ++j)
+		{
+			lua_rawgeti(L, -1, j + 1);
+			if (lua_isnumber(L, -1))
+			{
+				if (luaL_checknumber(L, -1) == 0)
+					allMs[i][j] = nullMatrix();
+				else
+					return luaL_error(L, "MatrixFlatten called with entry %d. Matrix or 0 expected.\n", luaL_checknumber(L, -1));
+			} else
+			{
+				allMs[i][j]  = *luaL_checkMatrix(L, -1);
+			}
+			lua_pop(L, 1);
+		}
+		lua_pop(L, 1);
+	}
+	MatrixType fullM = MatrixFlatten(allMs);
+	LuaPushTable_MatrixType(L, &fullM);
+	return 1;
+}
+
 
 static const struct luaL_Reg Matrix_func[] = {
   {"Transpose", LuaMatrixTranspose},
   {"ConjugateTranspose", LuaMatrixConjugateTranspose},
   {"Conjugate", LuaMatrixConjugate},
+	{"Flatten",LuaMatrixFlatten},
   {"Inverse", LuaMatrixInverse},
   {"Sqrt", LuaMatrixSqrt},
   {"Exp", LuaMatrixExp},

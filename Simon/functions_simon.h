@@ -5,8 +5,3 @@ static int LuaPartialMeanFieldEigensystem(lua_State *L);
 void mandatoryMeanFieldList(uint16_t **indices, int * const indSetSize, const DeterminantRestrictionType det, int NFermion, int NBoson) ;
 static int LuaSimontest(lua_State * L);
 static int LuaPrintExpectationValues(lua_State * L);
-MatrixType zeroMatrix(int Ni, int Nj);
-MatrixType nullMatrix();
-bool isNullMatrix(MatrixType M);
-MatrixType MatrixFlatten(std::vector<std::vector<MatrixType> > allMs);
-static int LuaMatrixFlatten(lua_State * L);
