@@ -208,43 +208,6 @@ uint32_t CreateOperatorDirac(uint32_t const NFermion,const unsigned int NBasisFu
 	return 0;
 }
 
-void PrintMartix(double *M, int n)
-{
-	int i,j;
-	for ( i = 0; i < n; i++)
-	{
-		for ( j = 0; j < n; j++)
-		{
-			printf("%f\t",M[i*n + j]);
-		}
-		printf("\n");
-	}
-	fflush(stdout);
-}
-
-void PrintMartix2(double **M, int n)
-{
-	int i,j;
-	for ( i = 0; i < n; i++)
-	{
-		for ( j = 0; j < n; j++)
-		{
-			printf("%f\t",M[i][j]);
-		}
-		printf("\n");
-	}
-	fflush(stdout);
-}
-
-void PrintArray(double* a, int n)
-{
-	int i;
-	for ( i = 0; i < n; i++)
-	{
-		printf("%.15e\n", a[i]);
-	}
-}
-
 /*double* CreateBaseForContinuum( int NBasisFuns, vector<vector<double> > basisfuns,vector<vector<double> > derivfuns,vector<double> x,
 		uint32_t NGridpoints,SKappaGroup group,int Ncont, vector<vector<double> > contfuns, double w)*/
 double* CreateBaseForContinuum( int NBasisFuns,double **basisfuns,double **derivfuns,double *x,uint32_t NGridpoints,SKappaGroup group,int Ncont,

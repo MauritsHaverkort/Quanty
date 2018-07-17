@@ -251,8 +251,61 @@ static int LuaCreateBaseForContinuum(lua_State *L)
 
 static int LuaPropagator(lua_State *L)
 {
-	Complex16 a;
-	return 1;
+	uint32_t n0, n1, nU, nE,n, nv;
+	vector<CompactMatrixType *> U;
+	CompactMatrixType Sigma, zd1U, SigmaAdd;
+	vector<Complex16> Uhelp;
+	vector<double> w, spec;
+
+	Complex16 z0, z1, *v, *SigV;
+	double  *d0, *d1, *Econt;
+
+	z0.Re = 5.;
+	z0.Im = 0.5;
+	z1.Re = z0.Re;
+	z1.Im = z0.Im;
+	//	z1.Re = 5.;
+//	z1.Im = 1.;
+
+
+	d0 = luaL_checkarray_double(L,1,&n0);
+	d1 = luaL_checkarray_double(L,2,&n1);
+	nU = (uint32_t)lua_objlen(L,3);
+	for (int i = 0; i < nU; i++)
+	{
+	   	lua_rawgeti(L, 3, i+1);
+	   	U.insert(U.end(),(CompactMatrixType *) luaL_checkCompactMatrix(L, -1));
+	   	lua_pop(L,1);
+	}
+
+	Econt = luaL_checkarray_double(L,4,&nE);
+	if (nE != nU)
+	{
+		printf("errror in LuaPropagator: %d = nE != nU = %d\n",nE,nU);
+		return -1;
+	}
+	v = luaL_checkarray_complex16(L,5,&nv);
+	if (nv != n0)
+	{
+		printf("error in LuaPropagator: %d = nv != d0 = %d\n",nv,d0);
+		return -1;
+	}
+	double Q = 2833;
+	double ww = 0;
+	double g0 = 0.;
+	double g1 = 2.;
+	while (ww < Q)
+	{
+		w.insert(w.end(),ww);
+		ww += g1/5.;
+	}
+	spec = CalcSpectrumContinuum(w,g0,g1,Q,d0,Econt,d1,U,v);
+	//Complex16 retval = CalcPropagatorContinuum(z0,z1,d0,Econt,d1,U,v);
+	//printf("result c++\t%e + I %e\n",retval.Re,retval.Im);
+	//PrintArray(&spec[0],spec.size());
+	LuaPushArray_double(L,&w[0],w.size());
+	LuaPushArray_double(L,&spec[0],spec.size());
+	return 2;
 }
 
 static const struct luaL_Reg Martin_meta[] = {
