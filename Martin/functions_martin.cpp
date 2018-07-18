@@ -300,9 +300,6 @@ static int LuaPropagator(lua_State *L)
 		ww += g1/5.;
 	}
 	spec = CalcSpectrumContinuum(w,g0,g1,Q,d0,Econt,d1,U,v);
-	//Complex16 retval = CalcPropagatorContinuum(z0,z1,d0,Econt,d1,U,v);
-	//printf("result c++\t%e + I %e\n",retval.Re,retval.Im);
-	//PrintArray(&spec[0],spec.size());
 	LuaPushArray_double(L,&w[0],w.size());
 	LuaPushArray_double(L,&spec[0],spec.size());
 	return 2;

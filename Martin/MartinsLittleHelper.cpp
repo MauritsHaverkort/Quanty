@@ -144,12 +144,12 @@ Complex16 CalcPropagatorContinuum(Complex16 z0, Complex16 z1, double *d0, double
 
 vector<double> CalcSpectrumContinuum(vector<double> w, double g0, double g1, double Q, double *d0, double *Econt, double *d1, vector<CompactMatrixType *> U, Complex16 *v)
 {
-	vector<double> spec;
+	vector<double> spec = vector<double>(w.size());
 	Complex16 z0,z1,val;
 	z0.Im = g0/2;
 	z1.Im = g1/2;
 
-	spec.reserve(w.size());
+
 	#pragma omp parallel for
 	for (int i = 0; i < w.size(); i++)
 	{
@@ -158,6 +158,7 @@ vector<double> CalcSpectrumContinuum(vector<double> w, double g0, double g1, dou
 		val = CalcPropagatorContinuum(z0,z1,d0,Econt,d1,U,v);
 		spec[i] = val.Im*(Q-w[i])*(Q-w[i]);
 	}
+	//PrintArray(&spec[0],w.size());
 	return spec;
 }
 
