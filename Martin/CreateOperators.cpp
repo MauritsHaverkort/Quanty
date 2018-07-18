@@ -101,6 +101,49 @@ uint32_t CreateOperatorFastCoulombRelativistic(uint32_t const NFermion,double **
     return 0;
 }
 
+uint32_t CreateOperatorFastCoulombRelativistic(uint32_t const NFermion,double **basisfuns, uint32_t NbasisFuns, const double *grid, uint32_t NGridpoints,vector<int> indToK
+                                               ,uint16_t **indices, OperatorType *op)
+{
+
+    OperatorType optemp;
+    SSlaterIntegral *integrals;
+    uint32_t NIntegrals;
+
+    integrals = GetSlaterIntegrals(basisfuns,NbasisFuns,grid, NGridpoints, indToK, NIntegrals);
+
+    int *k, i;
+    unsigned int *n;
+    double *Fk;
+
+    k = integrals[0].tau.kappa;
+    n = integrals[0].tau.n;
+    Fk = integrals[0].val;
+    //printf("Fk[0]: \t %e\n",Fk[0]);
+
+    CreateOperatorCoulombRelativisticOneIntegral(NFermion,k[0],k[1],k[2],k[3],indices[n[0]],indices[n[1]],indices[n[2]],indices[n[3]],Fk,n[0],n[1],n[2],n[3],op);
+    //printf("op.l[4]: %p\t %d\n",&(op->l[4]),op->l[4].N);
+
+    for( i = 1; i < NIntegrals; i++)
+    {
+        k = integrals[i].tau.kappa;
+        n = integrals[i].tau.n;
+        Fk = integrals[i].val;
+
+        CreateOperatorCoulombRelativisticOneIntegral(NFermion,k[0],k[1],k[2],k[3],indices[n[0]],indices[n[1]],indices[n[2]],indices[n[3]],Fk,n[0],n[1],n[2],n[3],&optemp);
+
+        OperatorAdd(op, optemp, 1., 0.);
+
+    }
+    for ( i = 0; i < NIntegrals; i++)
+    {
+    	free(integrals[i].val);
+    	free(integrals[i].k);
+    }
+    free(integrals);
+
+    return 0;
+}
+
 uint32_t CreateOperatorFullCoulombRelativistic(uint32_t const NFermion,double **basisfuns, uint32_t NbasisFuns, const double *grid, uint32_t NGridpoints, uint32_t **tuple,
                                                uint32_t NIntegrals,uint16_t **indices, OperatorType *op)
 {

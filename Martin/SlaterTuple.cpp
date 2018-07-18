@@ -9,8 +9,7 @@
 #include <cmath>
 #include <map>
 #include <vector>
-#include <initializer_list>
-
+//#include "myarray.h"
 
 using namespace std;
 
@@ -22,17 +21,27 @@ public:
 
 	myarray()
 	{
-		;
+		val = vector<int>(4);
 	}
-	myarray(initializer_list<int> l) : val(l)
+/*	myarray(initializer_list<int> l) : val(l)
 	{
 		;
 	}
+*/
 	virtual ~myarray()
 	{
 		;
 	}
-
+	void Assign(int n1,int n2,int n3,int n4)
+	{
+		if (val.size()==4)
+		{
+			val[0] = n1;
+			val[1] = n2;
+			val[2] = n3;
+			val[3] = n4;
+		}
+	}
 
 	int &operator[](int i)
 	{
@@ -85,7 +94,7 @@ vector<myarray> CreateKappaTuple(vector<int> kappas)
 			for ( m = 0; m < kappas.size(); m++)
 				for ( l = 0; l < kappas.size(); l++)
 				{
-					k = {kappas[i],kappas[j],kappas[m],kappas[l]};
+					k.Assign(kappas[i],kappas[j],kappas[m],kappas[l]);
 					if (TupleContributes(k))
 					{
 						result.insert(result.end(),k);
@@ -94,10 +103,10 @@ vector<myarray> CreateKappaTuple(vector<int> kappas)
 	return result;
 }
 
-int NotContains(array<myarray,8> tau,map<myarray,myarray> tuple)
+int NotContains(vector<myarray> tau,map<myarray,myarray> tuple)
 {
 	int i;
-	for ( i = 0; i < 8; i++)
+	for ( i = 0; i < tau.size(); i++)
 	{
 		if (tuple.find(tau[i]) != tuple.end())
 		{
@@ -111,7 +120,7 @@ map<myarray,myarray> CreateSlaterTuple(vector<int> indToK)
 {
 	int i,j,m,l;
 	myarray k;
-	array<myarray,8> tau;
+	vector<myarray> tau = vector<myarray>(8);
 	map<myarray,myarray> result;
 
 	for ( i = 0; i < indToK.size(); i++)
@@ -119,20 +128,20 @@ map<myarray,myarray> CreateSlaterTuple(vector<int> indToK)
 			for ( m = 0; m < indToK.size(); m++)
 				for ( l = 0; l < indToK.size(); l++)
 				{
-					k = {indToK[i],indToK[j],indToK[m],indToK[l]};
+					k.Assign(indToK[i],indToK[j],indToK[m],indToK[l]);
 					//if (i==0 && j == 0 && m ==18 && l==19)
 						//cout << indToK[i]<< "\t" <<indToK[j]<< "\t" <<indToK[m]<< "\t" <<indToK[l]<<endl;
 					if (TupleContributes(k))
 					{
 
-						tau[0] = {i, j, m, l};
-						tau[1] = {m, j, i, l};
-						tau[2] = {i, l, m, j};
-						tau[3] = {m, l, i, j};
-						tau[4] = {j, i, l, m};
-						tau[5] = {j, m, l, i};
-						tau[6] = {l, i, j, m};
-						tau[7] = {l, m, j, i};
+						tau[0].Assign(i, j, m, l);
+						tau[1].Assign(m, j, i, l);
+						tau[2].Assign(i, l, m, j);
+						tau[3].Assign(m, l, i, j);
+						tau[4].Assign(j, i, l, m);
+						tau[5].Assign(j, m, l, i);
+						tau[6].Assign(l, i, j, m);
+						tau[7].Assign(l, m, j, i);
 
 						/*if (i==0 && j == 0 && m ==18 && l==19)
 						{
@@ -149,35 +158,3 @@ map<myarray,myarray> CreateSlaterTuple(vector<int> indToK)
 
 	return result;
 }
-
-
-
-/*
-
-int main(int argc, char **argv)
-{
-
-	vector<myarray> tuple;
-	vector<int> kappas = {-1,1,-2,2,-3,3,-4};
-
-	tuple = CreateKappaTuple(kappas);
-
-	map<int, vector<int>> indices;
-	indices[-1] = {0,1,2};
-	indices[1] = {3,4,5};
-	myarray k = {-1,1,3,-4};
-	//cout << TupleContributes(k) << endl;
-
-	map<myarray,myarray> st;
-	vector<int> indToK = {-1,-1,-1,-1,-1,-1,1,1,1,1,-2,-2,-2,-2,2,2,-3,-3,3,-4};
-	st = CreateSlaterTuple(indToK);
-	for (auto it : st)
-	{
-		cout << it.first.val[0] << "\t"<< it.first.val[1] << "\t"<< it.first.val[2] << "\t"<< it.first.val[3] << endl;
-	}
-
-
-}
-*/
-
-

@@ -57,6 +57,14 @@ void PrintArray(double* a, int n)
 		printf("%.15e\n", a[i]);
 	}
 }
+void PrintArray(vector<int> a)
+{
+	int i;
+	for ( i = 0; i < a.size(); i++)
+	{
+		printf("%d\n", a[i]);
+	}
+}
 void PrintArray(Complex16* a, int n)
 {
 	int i;
