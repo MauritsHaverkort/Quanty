@@ -32,3 +32,5 @@ MatrixType zeroMatrix(int Ni, int Nj);
 MatrixType nullMatrix();
 bool isNullMatrix(MatrixType M);
 MatrixType MatrixFlatten(std::vector<std::vector<MatrixType> > allMs);
+MatrixType ExpandNumberToMatrix(int size, double Re, double Im);
+MatrixType MatrixExpand(MatrixType M, int size);

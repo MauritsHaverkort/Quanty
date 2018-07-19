@@ -1,12 +1,28 @@
 /* Some makeshift functions */
 
-void debug(char* debugMessage)
+
+void debug(string debugMessage = "")
 {
-	printf("\n\nDEBUG: ");
-	printf("%s", debugMessage);
-	printf("\n\n");
+	cout << endl << endl << "DEBUG:" << debugMessage << endl << endl;
 	fflush(stdout);
 }
+
+void debug(char * debugMessage)
+{
+	printf("\n\nDEBUG:");
+	printf("%s", debugMessage);
+	printf("\n\n");
+}
+
+//void debug(int i)
+//{
+//	debug(std::to_string(i));
+//}
+//
+//void debug(double d)
+//{
+//	debug(std::to_string(d));
+//}
 
 
 

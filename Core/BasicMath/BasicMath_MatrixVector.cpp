@@ -1577,3 +1577,37 @@ MatrixType MatrixFlatten(std::vector<std::vector<MatrixType> > allMs)
 	}
 	return fullM;
 }
+
+
+MatrixType ExpandNumberToMatrix(int size, double Re, double Im = 0)
+{
+	MatrixType M;
+	M.QComplex = (Im != 0);
+	M.Ni = size;
+	M.Nj = size;
+	InitMatrix(&M);
+	for (int i = 0; i < size; ++i)
+		M.VRe[i][i] = Re;
+	if (M.QComplex)
+		for (int i = 0; i < size; ++i)
+			M.VIm[i][i] = Im;
+	return M;
+}
+
+MatrixType MatrixExpand(MatrixType M, int size)
+{
+	vector < vector<MatrixType> > fullM(M.Ni);
+	for (int i = 0; i < M.Ni; ++i)
+	{
+		vector < MatrixType > col(M.Nj);
+		fullM[i] = col;
+		for (int j = 0; j < M.Nj; ++j)
+		{
+			if (M.QComplex)
+				fullM[i][j] = ExpandNumberToMatrix(size, M.VRe[i][j], M.VIm[i][j]);
+			else
+				fullM[i][j] = ExpandNumberToMatrix(size, M.VRe[i][j]);
+		}
+	}
+	return MatrixFlatten(fullM);
+}
