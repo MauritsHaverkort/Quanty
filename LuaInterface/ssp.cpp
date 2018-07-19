@@ -4108,30 +4108,26 @@ static int LuaDeterminantString(lua_State *L)
 
 
 
-void lua_groupOrbitals(lua_State *L, int indTablePos, const char* groupKey, char** groupMembers, uint32_t groupLen)
+void lua_groupOrbitals(lua_State *L, int indTablePos, const string groupKey, const vector<string> groupMembers)
 {
 	int j,k,l;
 	k = 1;
 	lua_getfield(L,indTablePos,groupKey);
 	if (!lua_isnil(L,-1))
 	{
-		printf("\nWarning: Group with name \"");
-		printf("%s",groupKey);
-		printf("\" already exists and cannot be included a second time.\n");
+		cout << "\nWarning: Group with name \"" << groupKey << "\" already exists and cannot be included a second time.\n";
 		return;
 	}
 	lua_pop(L, 1);
 	lua_pushstring(L, groupKey);
 	lua_newtable(L);
 	int groupTablePos = (int) lua_gettop(L);
-	for (j = 0; j < groupLen; j++)
+	for (j = 0; j < groupMembers.size(); j++)
 	{
 		lua_getfield(L, indTablePos, groupMembers[j]);
 		if (lua_isnil(L, -1))
 		{
-			printf("\nWarning: Orbital with name \"");
-			printf("%s",groupMembers[j]);
-			printf("\" was not found and thus cannot be included in any grouping.\n");
+			cout << "\nWarning: Orbital with name \"" << groupMembers[j] << "\" was not found and thus cannot be included in any grouping.\n";
 			lua_pop(L, 1);
 		} else
 		{
@@ -4150,43 +4146,14 @@ void lua_groupOrbitals(lua_State *L, int indTablePos, const char* groupKey, char
 	lua_settable(L, indTablePos);
 }
 
-int kappa(char * orb)
-{
-	int jzNumbers, lzNumbers, significantCharPos;
-	jzNumbers = relAngularMomentumZNumbers(orb,&significantCharPos);
-	if (jzNumbers < 0)
-	{
-		printf("\nWarning: Key \"");
-		printf("%s",orb);
-		printf("\" could not be interpreted as a relativistic orbital, kappa is set to 0.\n");
-		return 0;
-	}
-	orb[significantCharPos] = '\0'; //TODO: Do this with substr.
-	lzNumbers = nonRelAngularMomentumZNumbers(orb);
-	if (lzNumbers < 0)
-	{
-		printf("\nWarning: Remainder of key \"");
-		printf("%s",orb);
-		printf("\" could not be interpreted as a non-relativistic orbital, kappa is set to 0.\n");
-		return 0;
-	}
-	if (jzNumbers > lzNumbers)
-		return - jzNumbers/2;
-	else
-		return jzNumbers/2;
-}
-
-void lua_setNonRelAtomicOrbitalIndices(lua_State *L, char* orb, int momZNumbers, int * NF, int indTablePos, int isDict)
+void lua_setNonRelAtomicOrbitalIndices(lua_State *L, string orb, int momZNumbers, int * NF, int indTablePos, int isDict)
 {
 	int i,top, start;
 	start = *NF;
-	char * orbDn = (char*) malloc(strlen(orb) + strlen("_Dn"));
-	strcpy(orbDn, orb);
-	strcat(orbDn, "_Dn");
-	char * orbUp = (char*) malloc(strlen(orb) + strlen("_Up"));
-	strcpy(orbUp, orb);
-	strcat(orbUp, "_Up");
-	char * orbs[2] = { orbDn, orbUp };
+	string orbDn = orb + "_Dn", orbUp = orb + "_Up";
+	vector<string> orbs;
+	orbs.push_back(orbDn);
+	orbs.push_back(orbUp);
 	if (isDict)
 		lua_pushstring(L, orbDn);
 	else
@@ -4214,11 +4181,11 @@ void lua_setNonRelAtomicOrbitalIndices(lua_State *L, char* orb, int momZNumbers,
 	}
 	lua_settable(L, indTablePos);
 	if (isDict)
-		lua_groupOrbitals(L, indTablePos, orb, orbs, 2);
+		lua_groupOrbitals(L, indTablePos, orb, orbs);
 	*NF += 2 * momZNumbers;
 }
 
-void lua_setRelAtomicOrbitalIndices(lua_State *L, char* orb, int momZNumbers, int * NF, int indTablePos, int isDict)
+void lua_setRelAtomicOrbitalIndices(lua_State *L, string orb, int momZNumbers, int * NF, int indTablePos, int isDict)
 {
 	int i, top, start;
 	start = *NF;
@@ -4242,7 +4209,7 @@ void lua_setRelAtomicOrbitalIndices(lua_State *L, char* orb, int momZNumbers, in
 
 
 
-void lua_setAtomicOrbitalIndices(lua_State *L, char* orb, int * NF, int indTablePos, int isDict)
+void lua_setAtomicOrbitalIndices(lua_State *L, string orb, int * NF, int indTablePos, int isDict)
 {
 	luaL_checktype(L, indTablePos, LUA_TTABLE);
 	int momZNumbers = nonRelAngularMomentumZNumbers(orb);
@@ -4258,9 +4225,7 @@ void lua_setAtomicOrbitalIndices(lua_State *L, char* orb, int * NF, int indTable
 		return;
 	}	else
 	{
-		printf("\nWarning: Key \"");
-		printf("%s",orb);
-		printf("\" could not be interpreted as an orbital.\n");
+		cout << "\nWarning: Key \"" << orb << "\" could not be interpreted as an orbital.\n";
 		return;
 	}
 }
@@ -4275,14 +4240,14 @@ void lua_setAtomicOrbitalIndices(lua_State *L, char* orb, int * NF, int indTable
 //Output 2 is the number of fermionic modes NF.
 static int lua_createAtomicIndices(lua_State *L, Bool isDict)
 {
-	char** orbitals;
+	vector<string> orbitals;
 	uint32_t orbListLen;
 	int indTablePos;
 	int NF = 0;
 	uint32_t groupListLen;
-	char* groupKey;
+	string groupKey;
 	uint32_t groupLen;
-	char** groupMembers;
+	vector<string> groupMembers;
 	int numberOfRedundantOrbitals = 0;
 	int i;
   struct
@@ -4293,7 +4258,8 @@ static int lua_createAtomicIndices(lua_State *L, Bool isDict)
     {"kappas",          "bool",  &(Options.kappas)},
     {NULL, NULL, NULL}};
   Options.kappas=False;
-	orbitals = luaL_checkarray_string(L,1,&orbListLen);
+	orbitals = luaL_checkvector_string(L,1);
+	orbListLen = orbitals.size();
 	uint32_t numberOfInputs = (uint32_t) lua_gettop(L);
 	if (numberOfInputs < 1 || numberOfInputs > 2)
 		return luaL_error(L, "CreateAtomicIndices called with %d arguments. List of Orbitals and (in case of a dictionary) optional parameter List of Groups of Orbitals expected, or (in case of a list) possible List of Options.\n", numberOfInputs);
@@ -4325,9 +4291,7 @@ static int lua_createAtomicIndices(lua_State *L, Bool isDict)
 		} else
 		{
 			lua_pop(L,1);
-			printf("\nWarning: Orbital with name \"");
-			printf("%s",orbitals[i]);
-			printf("\" already exists and cannot be included a second time.\n");
+			cout << "\nWarning: Orbital with name \"" << orbitals[i] << "\" already exists and cannot be included a second time.\n";
 			++numberOfRedundantOrbitals;
 		}
 	}
@@ -4346,8 +4310,8 @@ static int lua_createAtomicIndices(lua_State *L, Bool isDict)
 	}
 	if (isDict)
 	{
-		lua_groupOrbitals(L, indTablePos, "All", orbitals, orbListLen);
-		lua_groupOrbitals(L, indTablePos, "all", orbitals, orbListLen);
+		lua_groupOrbitals(L, indTablePos, "All", orbitals);
+		lua_groupOrbitals(L, indTablePos, "all", orbitals);
 		if (numberOfInputs == 2)
 		{
 			//grouping of orbitals
@@ -4366,12 +4330,12 @@ static int lua_createAtomicIndices(lua_State *L, Bool isDict)
 				if ((int) lua_objlen(L, -1) >= 2)
 				{
 					lua_rawgeti(L, -1, 1);
-					groupKey = (char*) luaL_checkstring(L, -1); //"unexcited"
+					groupKey = luaL_checkstring(L, -1); //"unexcited"
 					lua_pop(L, 1);
 					lua_rawgeti(L, -1, 2);
 					luaL_checktype(L, -1, LUA_TTABLE); //{"1s","2s"}
-					groupMembers = luaL_checkarray_string(L, -1, &groupLen);
-					lua_groupOrbitals(L, indTablePos, groupKey, groupMembers, groupLen);
+					groupMembers = luaL_checkvector_string(L, -1);
+					lua_groupOrbitals(L, indTablePos, groupKey, groupMembers);
 				}
 			}
 			lua_pop(L, (int) lua_gettop(L) - indTablePos);

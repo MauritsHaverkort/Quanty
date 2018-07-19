@@ -99,3 +99,9 @@ uint32_t GlobalVerbosity=0xF;
 
 #include "blas.h"
 #include "lapack.h"
+
+
+using std::cout;
+using std::endl;
+using std::string;
+using std::vector;

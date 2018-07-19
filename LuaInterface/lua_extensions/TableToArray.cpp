@@ -113,6 +113,30 @@ char** luaL_checkarray_string(lua_State *L, int narg, uint32_t *len_out)
   return buff;
 }
 
+vector<string> luaL_checkvector_string(lua_State *L, int narg)
+{
+	luaL_checktype(L, narg, LUA_TTABLE);
+	uint32_t len = (uint32_t)lua_objlen(L, narg);
+	vector<string> buff(len);
+  for(int i=0;i<len;i++)
+  {
+    lua_rawgeti(L, narg, i+1);
+    buff[i] = (string)luaL_checkstring(L,-1);
+    lua_pop(L, 1);
+  }
+  return buff;
+}
+
+LUA_API void lua_getfield (lua_State *L, int idx, const string str)
+{
+	return lua_getfield(L, idx,str.c_str());
+}
+
+LUA_API const char *lua_pushstring (lua_State *L, const string str)
+{
+	return lua_pushstring(L,str.c_str());
+}
+
 CompactVectorType luaL_checkVector(lua_State *L, int narg)
 {
   uint32_t i;

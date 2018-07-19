@@ -2023,11 +2023,11 @@ int TightBindingAddAxesToMatrix(double Emin, double Emax, int NELines, double *E
   return 0;
 }
 
-int nonRelAngularMomentumZNumbers(char * orb)
+int nonRelAngularMomentumZNumbers(string orb)
 {
-	if (strlen(orb)<1)
+	if (orb.length()<1)
 		return -1;
-	char lastChar = orb[strlen(orb)-1];
+	char lastChar = orb.at(orb.length()-1);
 	switch (lastChar) {
 		case 's':
 			return 2*0+1;
@@ -2046,19 +2046,19 @@ int nonRelAngularMomentumZNumbers(char * orb)
 	}
 }
 
-int relAngularMomentumZNumbers(char * orb, int * significantCharPos)
+int relAngularMomentumZNumbers(string orb, int * significantCharPos)
 {
-	if (strlen(orb)<3)
+	if (orb.length()<3)
 		return -1;
 	char lastChar, significantChar;
-	lastChar = orb[strlen(orb)-1];
+	lastChar = orb.at(orb.length()-1);
 	if (lastChar != '2')
 		return -1;
-	*significantCharPos = strlen(orb)-2;
+	*significantCharPos = orb.length()-2;
 	significantChar = orb[*significantCharPos];
 	if (significantChar == '/')
 	{
-		*significantCharPos = strlen(orb)-3;
+		*significantCharPos = orb.length()-3;
 		significantChar = orb[*significantCharPos];
 	}
 	switch (significantChar) {
@@ -2077,11 +2077,35 @@ int relAngularMomentumZNumbers(char * orb, int * significantCharPos)
 		}
 }
 
-int relAngularMomentumZNumbers(char * orb)
+int relAngularMomentumZNumbers(string orb)
 {
 	int significantCharPos;
 	return relAngularMomentumZNumbers(orb,&significantCharPos);
 }
+
+
+int kappa(string orb)
+{
+	int jzNumbers, lzNumbers, significantCharPos;
+	jzNumbers = relAngularMomentumZNumbers(orb,&significantCharPos);
+	if (jzNumbers < 0)
+	{
+		cout << "\nWarning: Key \"" << orb << "\" could not be interpreted as a relativistic orbital, kappa is set to 0.\n";
+		return 0;
+	}
+	orb = orb.substr(0,significantCharPos);
+	lzNumbers = nonRelAngularMomentumZNumbers(orb);
+	if (lzNumbers < 0)
+	{
+		cout << "\nWarning: Remainder of key \"" << orb << "\" could not be interpreted as a non-relativistic orbital, kappa is set to 0.\n";
+		return 0;
+	}
+	if (jzNumbers > lzNumbers)
+		return - jzNumbers/2;
+	else
+		return jzNumbers/2;
+}
+
 
 //TODO: Anyone have a better idea where to put this function?
 int isIntElementOf(const uint16_t element, const uint16_t * const set, const uint32_t setSize)
