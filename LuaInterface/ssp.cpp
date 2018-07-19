@@ -4521,6 +4521,7 @@ static const struct luaL_Reg global_functions[] = {
   {"NewWavefunction", LuaNewWaveFunction},
   {"OperatorToMatrix", LuaOperatorToMatrix},
   {"OperatorSetTrace", LuaOperatorSetTrace},
+  {"OrbToMultiplicity",LuaOrbToMultiplicity},
   {"Orthonormalize", LuaOrthonormalize},
 	{"PartialMeanFieldOperator",LuaPartialMeanFieldOperator},
 	{"PartialOperator",LuaPartialOperator},
