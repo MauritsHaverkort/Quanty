@@ -24,6 +24,11 @@ uint32_t QDetNotOrderedFcFaBcBa(const uint16_t A, const uint16_t B, const uint32
 uint32_t QDetNotOrderedFcFaBaBc(const uint16_t A, const uint16_t B, const uint32_t NFermion);
 uint32_t QDetNotOrderedFaFcBcBa(const uint16_t A, const uint16_t B, const uint32_t NFermion);
 uint32_t NormalOrderOperator(const OperatorType O, OperatorType * const Oo, uint32_t(*QDetNotOrdered) (uint16_t, uint16_t, uint32_t));
+double RealOperatorTrace(const OperatorType O, uint16_t *Orbitals, int NOrbitals);
+Complex16 ComplexOperatorTrace(const OperatorType O, uint16_t *Orbitals, int NOrbitals);
+Complex16 OperatorTrace(const OperatorType O, uint16_t *Orbitals, int NOrbitals);
+uint32_t RealOperatorAddTrace(OperatorType *O, uint16_t *Orbitals, int NOrbitals, double Trace);
+uint32_t ComplexOperatorAddTrace(OperatorType *O, uint16_t *Orbitals, int NOrbitals, Complex16 Trace);
 uint32_t OperatorMultiply2(OperatorType * const O, OperatorType const B, OperatorType const A, char const Bset, char const Aset);
 uint32_t OperatorMultiply(OperatorType * const O, OperatorType const B, OperatorType const A);
 uint32_t OperatorMultiplyInline(OperatorType * const O, OperatorType const B);

@@ -2901,6 +2901,49 @@ static int LuaMeanFieldOperator(lua_State *L)
   return 1;
 }
 
+static int LuaOperatorSetTrace(lua_State *L)
+{
+  OperatorType *O;
+  double NewTrace=0;
+  Complex16 OldTrace={0,0};
+  uint16_t *OrbitalsToInclude=NULL;
+  uint32_t len,i;
+  
+  O = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
+  if(O->MaxLength<2) return 0;
+  if(lua_gettop(L)>1)
+  {
+    NewTrace = (double)luaL_checknumber(L, 2);
+  }
+  if(lua_gettop(L)>2)
+  {
+    OrbitalsToInclude = luaL_checkarray_unit16_t(L, 3, &len);
+  }
+  else
+  {
+    OrbitalsToInclude = (uint16_t*)malloc(O->NFermion*sizeof(uint16_t));
+    for(i=0;i<O->NFermion;i++)
+    {
+      OrbitalsToInclude[i]=(uint16_t)i;
+    }
+    len=O->NFermion;
+  }
+  OldTrace = OperatorTrace(*O,OrbitalsToInclude,len);
+  OldTrace*=-1;
+  OldTrace.Re+=NewTrace;
+  if(O->l[2].QComplex==0)
+  {
+    RealOperatorAddTrace(O, OrbitalsToInclude, len, OldTrace.Re);
+  }
+  else
+  {
+    ComplexOperatorAddTrace(O, OrbitalsToInclude, len, OldTrace);
+  }
+  
+  return 0;
+}
+
+
 /*  transform an operator to a table
  *  on stack an operator 
  *  and optional either a wave-function, a list of wave functions or a density matrix
@@ -4436,6 +4479,7 @@ static const struct luaL_Reg global_functions[] = {
   {"NewTightBinding", LuaNewTightBinding},
   {"NewWavefunction", LuaNewWaveFunction},
   {"OperatorToMatrix", LuaOperatorToMatrix},
+  {"OperatorSetTrace", LuaOperatorSetTrace},
   {"Orthonormalize", LuaOrthonormalize},
   {"PotentialExpandedOnClm", LuaPotentialExpandedOnClm},
   {"PlotBands", LuaPlotBands},

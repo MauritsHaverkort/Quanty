@@ -142,8 +142,7 @@ uint32_t CopyCrystalStructure(CrystalStructureType A, CrystalStructureType * B)
   return 0;
 }
 
-uint32_t ShortesConnectingVectorPeriodicSuperCell(const int32_t A[], const int32_t B[],
-                                                  const CrystalStructureSuperCellType SC, int32_t C[])
+uint32_t ShortesConnectingVectorPeriodicSuperCell(const int32_t A[], const int32_t B[], const CrystalStructureSuperCellType SC, int32_t C[])
 {
   int32_t imin, jmin, kmin, i, j, k, Ctest[3];
   double UnitCellDoubleA[3], UnitCellDoubleB[3], UnitCellDoubleC[3];

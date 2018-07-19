@@ -78,7 +78,7 @@ int LMToOrbitalName(int l, int m, char **name)
 
 int EqualFloat(double a, double b)
 {
-  if(fabs(a-b)<0.00001) // pricision defined by the fplo output (coordinates).
+  if(fabs(a-b)<0.0001) // pricision defined by the fplo output (coordinates).
     return 1;
   else
     return 0;
@@ -224,10 +224,8 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
   SiteName[0] = (char*)malloc(16*sizeof(char));
   strcpy(SiteName[0], FPLO.Atoms.Atom[FPLO.Wannier.Site[0]-1]); //FPLO prints site starting from 1.
   SitePos = (double**)malloc(FPLO.Wannier.NActAtom*sizeof(double*));
-  for(i=0;i<FPLO.Wannier.NActAtom;i++)
-    SitePos[i] = (double*)calloc(3, sizeof(double));
-  for(k=0;k<3;k++)
-          SitePos[0][k] = FPLO.Wannier.PosCenter[0][k];
+  for(i=0;i<FPLO.Wannier.NActAtom;i++) SitePos[i] = (double*)calloc(3, sizeof(double));
+  for(k=0;k<3;k++) SitePos[0][k] = FPLO.Wannier.PosCenter[0][k];
 
   l = 1;
   for(i=1;i<Nwandef;i++)
@@ -305,7 +303,7 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
     }
   }
 
-  // Orbital egeneracy of each shell.
+  // Orbital degeneracy of each shell.
   Norb  = (int*)calloc(Nshell, sizeof(int));
   Norb[0]  = 1;
   for(i=1;i<Nwandef;i++)
@@ -343,6 +341,7 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
 
   // Determine the unique translational vectors for each shell.
   // The vectors will be used to label the HTB list.
+  // Hopvec in units of lattice parameters
   for(i=0;i<Nwandef;i++)
   {
     for(j=0;j<Nwandef;j++)
@@ -420,14 +419,23 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
         HTB->H[ihtb].Shellpos1 = ShellOfSite[ish][1];
         HTB->H[ihtb].Atompos2  = ShellOfSite[jsh][0];
         HTB->H[ihtb].Shellpos2 = ShellOfSite[jsh][1];
+        
+        if(HTB->Cell.Units&8)
+        {
+          HTB->H[ihtb].ConnectingVector[0] = HopVec[indsh][ihtb-NHopStart[ish][jsh]][0];
+          HTB->H[ihtb].ConnectingVector[1] = HopVec[indsh][ihtb-NHopStart[ish][jsh]][1];
+          HTB->H[ihtb].ConnectingVector[2] = HopVec[indsh][ihtb-NHopStart[ish][jsh]][2];
+        }
+        else
+        {
+          HTB->H[ihtb].ConnectingVector[0] = HopVec[indsh][ihtb-NHopStart[ish][jsh]][0]*HTB->Cell.rUnitCell[0][0] + HopVec[indsh][ihtb-NHopStart[ish][jsh]][1]*HTB->Cell.rUnitCell[1][0] + HopVec[indsh][ihtb-NHopStart[ish][jsh]][2]*HTB->Cell.rUnitCell[2][0];
+          HTB->H[ihtb].ConnectingVector[1] = HopVec[indsh][ihtb-NHopStart[ish][jsh]][0]*HTB->Cell.rUnitCell[0][1] + HopVec[indsh][ihtb-NHopStart[ish][jsh]][1]*HTB->Cell.rUnitCell[1][1] + HopVec[indsh][ihtb-NHopStart[ish][jsh]][2]*HTB->Cell.rUnitCell[2][1];
+          HTB->H[ihtb].ConnectingVector[2] = HopVec[indsh][ihtb-NHopStart[ish][jsh]][0]*HTB->Cell.rUnitCell[0][2] + HopVec[indsh][ihtb-NHopStart[ish][jsh]][1]*HTB->Cell.rUnitCell[1][2] + HopVec[indsh][ihtb-NHopStart[ish][jsh]][2]*HTB->Cell.rUnitCell[2][2];
+        }
 
-        HTB->H[ihtb].ConnectingVector[0] = SitePos[ ShellOfSite[jsh][0] ][0]-SitePos[ ShellOfSite[ish][0] ][0];
-        HTB->H[ihtb].ConnectingVector[1] = SitePos[ ShellOfSite[jsh][0] ][1]-SitePos[ ShellOfSite[ish][0] ][1];
-        HTB->H[ihtb].ConnectingVector[2] = SitePos[ ShellOfSite[jsh][0] ][2]-SitePos[ ShellOfSite[ish][0] ][2];
-
-        HTB->H[ihtb].TransVecs[0] = HopVec[indsh][ihtb-NHopStart[ish][jsh]][0] - HTB->H[ihtb].ConnectingVector[0];
-        HTB->H[ihtb].TransVecs[1] = HopVec[indsh][ihtb-NHopStart[ish][jsh]][1] - HTB->H[ihtb].ConnectingVector[1];
-        HTB->H[ihtb].TransVecs[2] = HopVec[indsh][ihtb-NHopStart[ish][jsh]][2] - HTB->H[ihtb].ConnectingVector[2];
+        HTB->H[ihtb].TransVecs[0] = HopVec[indsh][ihtb-NHopStart[ish][jsh]][0] - (SitePos[ ShellOfSite[jsh][0] ][0]-SitePos[ ShellOfSite[ish][0] ][0]);
+        HTB->H[ihtb].TransVecs[1] = HopVec[indsh][ihtb-NHopStart[ish][jsh]][1] - (SitePos[ ShellOfSite[jsh][0] ][1]-SitePos[ ShellOfSite[ish][0] ][1]);
+        HTB->H[ihtb].TransVecs[2] = HopVec[indsh][ihtb-NHopStart[ish][jsh]][2] - (SitePos[ ShellOfSite[jsh][0] ][2]-SitePos[ ShellOfSite[ish][0] ][2]);
 
         HTB->H[ihtb].Hop.QComplex = 0;
         HTB->H[ihtb].Hop.Ni = Norb[ish];
@@ -464,6 +472,5 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
       }
     }
   }
-
   return 0;
 }

@@ -866,6 +866,213 @@ uint32_t MatrixTransform(MatrixType * const M, MatrixType const A, MatrixType co
 }
 
 
+/* M = L^* A R^{transpose}
+ * M[i][j]=\sum_k,l L[i][l]^* A[l][k] R[j][k]
+ * (A.Ni==L.Nj)  (A.Nj==R.Nj)
+ * (M.Ni==L.Ni)  (M.Nj==R.Ni)
+ * M on entrance not initiallized
+ */
+uint32_t MatrixTransformLeftRight(MatrixType * const M, MatrixType const A, MatrixType const L, MatrixType const R)
+{
+  if ((A.Ni!=L.Nj) || (A.Nj!=R.Nj) )
+  {
+    printf("Invallid dimensions for matrix transformation L^* * A * R^T\n");
+    printf("A.Ni=%i A.Nj=%i L.Ni=%i L.Nj=%i R.Ni=%i R.Nj=%i \n", A.Ni, A.Nj, L.Ni, L.Nj, R.Ni, R.Nj);
+    return 1;
+  }
+  uint32_t i, j, k, l;
+  M->Ni = L.Ni;
+  M->Nj = R.Ni;
+  M->QComplex = 1;
+  if ((A.QComplex == 0) && (L.QComplex == 0) && (R.QComplex == 0)) M->QComplex = 0;
+  if (InitMatrix(M)) return 1;
+  strcpy(M->Name, "L^* A R^T A=(");
+  strncat(M->Name, A.Name, Max(0, (int)((int)MAXStrLength - (int)24)));
+  strcat(M->Name, ")");
+  if(A.QComplex)
+  {                             /* A Complex */
+    if(L.QComplex)
+    {
+      if(R.QComplex)
+      {                         /* A Complex L Complex R Complex */
+        for (i = 0; i < M->Ni; i++)
+        {
+          for (j = 0; j < M->Nj; j++)
+          {
+            M->VRe[i][j] = 0;
+            M->VIm[i][j] = 0;
+            for (k = 0; k < A.Nj; k++)
+            {
+              for (l = 0; l < A.Ni; l++)
+              {
+                M->VRe[i][j] += L.VRe[i][l] * A.VRe[l][k] * R.VRe[j][k]
+                              + L.VIm[i][l] * A.VIm[l][k] * R.VRe[j][k]
+                              + L.VIm[i][l] * A.VRe[l][k] * R.VIm[j][k]
+                              - L.VRe[i][l] * A.VIm[l][k] * R.VIm[j][k];
+                M->VIm[i][j] += L.VIm[i][l] * A.VIm[l][k] * R.VIm[j][k]
+                              + L.VRe[i][l] * A.VRe[l][k] * R.VIm[j][k]
+                              + L.VRe[i][l] * A.VIm[l][k] * R.VRe[j][k]
+                              - L.VIm[i][l] * A.VRe[l][k] * R.VRe[j][k];
+              }
+            }
+          }
+        }
+      }
+      else
+      {                         /* A Complex L Complex R Real    */
+        for (i = 0; i < M->Ni; i++)
+        {
+          for (j = 0; j < M->Nj; j++)
+          {
+            M->VRe[i][j] = 0;
+            M->VIm[i][j] = 0;
+            for (k = 0; k < A.Nj; k++)
+            {
+              for (l = 0; l < A.Ni; l++)
+              {
+                M->VRe[i][j] += L.VRe[i][l] * A.VRe[l][k] * R.VRe[j][k]
+                              + L.VIm[i][l] * A.VIm[l][k] * R.VRe[j][k];
+                M->VIm[i][j] += L.VRe[i][l] * A.VIm[l][k] * R.VRe[j][k]
+                              - L.VIm[i][l] * A.VRe[l][k] * R.VRe[j][k];
+              }
+            }
+          }
+        }
+      }
+    }
+    else
+    {
+      if(R.QComplex)
+      {                         /* A Complex L Real    R Complex */
+        for (i = 0; i < M->Ni; i++)
+        {
+          for (j = 0; j < M->Nj; j++)
+          {
+            M->VRe[i][j] = 0;
+            M->VIm[i][j] = 0;
+            for (k = 0; k < A.Nj; k++)
+            {
+              for (l = 0; l < A.Ni; l++)
+              {
+                M->VRe[i][j] += L.VRe[i][l] * A.VRe[l][k] * R.VRe[j][k]
+                              - L.VRe[i][l] * A.VIm[l][k] * R.VIm[j][k];
+                M->VIm[i][j] += L.VRe[i][l] * A.VRe[l][k] * R.VIm[j][k]
+                              + L.VRe[i][l] * A.VIm[l][k] * R.VRe[j][k];
+              }
+            }
+          }
+        }
+      }
+      else
+      {                         /* A Complex L Real    R Real    */
+        for (i = 0; i < M->Ni; i++)
+        {
+          for (j = 0; j < M->Nj; j++)
+          {
+            M->VRe[i][j] = 0;
+            M->VIm[i][j] = 0;
+            for (k = 0; k < A.Nj; k++)
+            {
+              for (l = 0; l < A.Ni; l++)
+              {
+                M->VRe[i][j] += L.VRe[i][l] * A.VRe[l][k] * R.VRe[j][k];
+                M->VIm[i][j] += L.VRe[i][l] * A.VIm[l][k] * R.VRe[j][k];
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  else
+  {                             /* A real */
+    if(L.QComplex)
+    {
+      if(R.QComplex)
+      {                         /* A Real    L Complex R Complex */
+        for (i = 0; i < M->Ni; i++)
+        {
+          for (j = 0; j < M->Nj; j++)
+          {
+            M->VRe[i][j] = 0;
+            M->VIm[i][j] = 0;
+            for (k = 0; k < A.Nj; k++)
+            {
+              for (l = 0; l < A.Ni; l++)
+              {
+                M->VRe[i][j] += L.VRe[i][l] * A.VRe[l][k] * R.VRe[j][k]
+                              + L.VIm[i][l] * A.VRe[l][k] * R.VIm[j][k];
+                M->VIm[i][j] += L.VRe[i][l] * A.VRe[l][k] * R.VIm[j][k]
+                              - L.VIm[i][l] * A.VRe[l][k] * R.VRe[j][k];
+              }
+            }
+          }
+        }
+      }
+      else
+      {                         /* A Real    L Complex R Real    */
+        for (i = 0; i < M->Ni; i++)
+        {
+          for (j = 0; j < M->Nj; j++)
+          {
+            M->VRe[i][j] = 0;
+            M->VIm[i][j] = 0;
+            for (k = 0; k < A.Nj; k++)
+            {
+              for (l = 0; l < A.Ni; l++)
+              {
+                M->VRe[i][j] += L.VRe[i][l] * A.VRe[l][k] * R.VRe[j][k];
+                M->VIm[i][j] -= L.VIm[i][l] * A.VRe[l][k] * R.VRe[j][k];
+              }
+            }
+          }
+        }
+      }
+    }
+    else
+    {
+      if(R.QComplex)
+      {                         /* A Real    L Real    R Complex */
+        for (i = 0; i < M->Ni; i++)
+        {
+          for (j = 0; j < M->Nj; j++)
+          {
+            M->VRe[i][j] = 0;
+            M->VIm[i][j] = 0;
+            for (k = 0; k < A.Nj; k++)
+            {
+              for (l = 0; l < A.Ni; l++)
+              {
+                M->VRe[i][j] += L.VRe[i][l] * A.VRe[l][k] * R.VRe[j][k];
+                M->VIm[i][j] += L.VRe[i][l] * A.VRe[l][k] * R.VIm[j][k];
+              }
+            }
+          }
+        }
+      }
+      else
+      {                         /* A Real    L Real    R Real    */
+        for (i = 0; i < M->Ni; i++)
+        {
+          for (j = 0; j < M->Nj; j++)
+          {
+            M->VRe[i][j] = 0;
+            for (k = 0; k < A.Nj; k++)
+            {
+              for (l = 0; l < A.Ni; l++)
+              {
+                M->VRe[i][j] += L.VRe[i][l] * A.VRe[l][k] * R.VRe[j][k];
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  return 0;
+}
+
+
 /* M = T^* A T^{transpose}
  * M[i][j]=\sum_k,l T[i][l]^* A[l][k] T[j][k]
  * (A.Ni==A.Nj==T.Nj)

@@ -1651,6 +1651,101 @@ uint32_t NormalOrderOperator(const OperatorType O, OperatorType * const Oo, uint
   return 0;
 }
 
+/*
+ *
+ */
+double RealOperatorTrace(const OperatorType O, uint16_t *Orbitals, int NOrbitals)
+{
+  double trace=0;
+  uint32_t i,j;
+  if(O.MaxLength<2) return trace;
+  for(i=0;i<O.l[2].N;i++)
+  {
+    if((O.l[2].o[2*i]&NotCrAnMask)==O.l[2].o[2*i+1])
+    {
+      for(j=0;j<NOrbitals;j++)
+      {
+        if(O.l[2].o[2*i+1]==Orbitals[j]) trace -= O.l[2].VRe[i];
+      }
+    }
+    else if((O.l[2].o[2*i+1]&NotCrAnMask)==O.l[2].o[2*i])
+    {
+      for(j=0;j<NOrbitals;j++)
+      {
+        if(O.l[2].o[2*i]==Orbitals[j]) trace += O.l[2].VRe[i];
+      }
+    }
+  }
+  return trace/NOrbitals;
+}
+Complex16 ComplexOperatorTrace(const OperatorType O, uint16_t *Orbitals, int NOrbitals)
+{
+  Complex16 trace={0,0};
+  uint32_t i,j;
+  if(O.MaxLength<2) return trace;
+  for(i=0;i<O.l[2].N;i++)
+  {
+    if((O.l[2].o[2*i]&NotCrAnMask)==O.l[2].o[2*i+1])
+    {
+      for(j=0;j<NOrbitals;j++)
+      {
+        if(O.l[2].o[2*i+1]==Orbitals[j]) trace -= O.l[2].V[i];
+      }
+    }
+    else if((O.l[2].o[2*i+1]&NotCrAnMask)==O.l[2].o[2*i])
+    {
+      for(j=0;j<NOrbitals;j++)
+      {
+        if(O.l[2].o[2*i]==Orbitals[j]) trace += O.l[2].V[i];
+      }
+    }
+  }
+  return trace/NOrbitals;
+}
+Complex16 OperatorTrace(const OperatorType O, uint16_t *Orbitals, int NOrbitals)
+{
+  Complex16 trace={0,0};
+  if(O.MaxLength<2) return trace;
+  if(O.l[2].QComplex==0)
+  {
+    trace.Re = RealOperatorTrace(O,Orbitals,NOrbitals);
+  }
+  else
+  {
+    trace = ComplexOperatorTrace(O,Orbitals,NOrbitals);
+  }
+  return trace;
+}
+
+uint32_t RealOperatorAddTrace(OperatorType *O, uint16_t *Orbitals, int NOrbitals, double Trace)
+{
+  uint32_t i;
+  uint16_t oadd[2];
+  for(i=0;i<NOrbitals;i++)
+  {
+    oadd[1]=CrAnMask + Orbitals[i];
+    oadd[0]=Orbitals[i];
+    RealOperatorAddLader(O, oadd, 2, Trace);
+  }
+  return 0;
+}
+
+uint32_t ComplexOperatorAddTrace(OperatorType *O, uint16_t *Orbitals, int NOrbitals, Complex16 Trace)
+{
+  uint32_t i;
+  uint16_t oadd[2];
+  for(i=0;i<NOrbitals;i++)
+  {
+    oadd[1]=CrAnMask + Orbitals[i];
+    oadd[0]=Orbitals[i];
+    ComplexOperatorAddLader(O, oadd, 2, Trace.Re, Trace.Im);
+  }
+  return 0;
+}
+
+
+
+
 /*  Depending on Aset and Bset
  *    O <- O + B^'Bset' A^'Aset'
  *    whereby set can be

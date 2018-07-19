@@ -11,6 +11,7 @@ static int LuaCalculateG(lua_State *L);
 static int LuaCalculateRho(lua_State *L);
 static int LuaCreateClusterHamiltonian(lua_State *L);
 static int LuaReadAtom(lua_State *L, int narg, AtomType *a);
+static int LuaReadAtomWithDefault(lua_State *L, int narg, AtomType *a, CrystalStructureType *def);
 static int LuaPushAtom(lua_State *L, AtomType const *a);
 static int LuaReadHopping(lua_State *L, int narg, CrystalStructureType *Cell, TightBindingDefHopping *H);
 static int LuaPushHopping(lua_State *L, CrystalStructureType const *Cell, TightBindingDefHopping const *H);
