@@ -851,10 +851,284 @@ uint32_t MeanFieldOperatorOneElectronMatrixWithDFTInteraction(const OperatorType
   return 0;
 }
 
+uint32_t MeanFieldOperator(const OperatorType * const O, OperatorType * const OMF, const MatrixType Rho, bool AddDFTSelfInteraction = false)
+{
+	uint32_t i, j, k, l, m;
+	double OVRe, OVIm, OMFVRe, OMFVIm;
+	uint16_t oadd[2] = { 0, 0 };
+	if ((O->MaxLength > 4) || ((O->MaxLength > 0) && (O->l[1].N != 0)) || ((O->MaxLength > 2) && (O->l[3].N != 0)))
+	{
+		printf("ERROR: MeanFieldOperator only implemented to reduce a 2, 1 and 0 particle operator to a 1 particle operator\n");
+		return 1;
+	}
+	if (Rho.Ni != Rho.Nj)
+	{
+		printf("ERROR: Density matrix should be a square matrix in MeanFieldOperatorOneElectronMatrix\n");
+		return 1;
+	}
+	if (Rho.Ni != O->NFermion)
+	{
+		printf("ERROR: Density matrix should have dimensions of NFermion by NFermion of operator in MeanFieldOperatorOneElectronMatrix\n");
+		return 1;
+	}
+	if (O->MaxLength < 3)
+	{
+		OperatorCopy(OMF, *O);
+		return 0;
+	}
+	/* initiallize */
+	InitOperatorCopySettings(OMF, *O);
+	OperatorFixedLengthCopy(&(OMF->l[0]), O->l[0], 0);
+	OperatorFixedLengthCopy(&(OMF->l[2]), O->l[2], 2);
+	strncpy(OMF->Name, O->Name, MAXStrLength); //TODO: In C++, add "Mean Field" to the name.
+	OMF->Name[MAXStrLength - 1] = '\0';
+	//TODO: should I check if it is indeed a Creation-Annihilation pair?
+	if (O->l[4].QComplex)
+	{
+		Complex16 U;
+		U.Re = 0;
+		U.Im = 0;
+		if (AddDFTSelfInteraction)
+		{
+			uint16_t otmp[4];
+			for (uint16_t m = 0; m < O->NFermion; m++)
+			{
+				for (uint16_t n = 0; n < O->NFermion; n++)
+				{
+					otmp[3] = CrAnMask + (uint16_t) m;
+					otmp[2] = CrAnMask + (uint16_t) n;
+					otmp[1] = (uint16_t) n;
+					otmp[0] = (uint16_t) m;
+					U += ComplexOperatorPrefactorLader(O, otmp, 4);
+					otmp[3] = CrAnMask + (uint16_t) m;
+					otmp[2] = CrAnMask + (uint16_t) n;
+					otmp[1] = (uint16_t) m;
+					otmp[0] = (uint16_t) n;
+					U -= ComplexOperatorPrefactorLader(O, otmp, 4);
+				}
+			}
+			if (O->NFermion != 1)
+				U /= (0.5 * O->NFermion * (O->NFermion - 1));
+		}
+		if (Rho.QComplex)
+		{
+			for (m = 0; m < O->l[4].N; m++)
+			{
+				i = NotCrAnMask & O->l[4].o[4 * m + 3];
+				j = NotCrAnMask & O->l[4].o[4 * m + 2];
+				k = O->l[4].o[4 * m + 1];
+				l = O->l[4].o[4 * m];
+				OVRe = O->l[4].V[m].Re;
+				OVIm = O->l[4].V[m].Im;
+
+				oadd[0] = CrAnMask | i;
+				oadd[1] = k;
+				OMFVRe = -(OVRe * Rho.VRe[j][l] - OVIm * Rho.VIm[j][l]);
+				OMFVIm = -(OVIm * Rho.VRe[j][l] + OVRe * Rho.VIm[j][l]);
+				OperatorAddLaderNormalOrder(OMF, oadd, 2, OMFVRe, OMFVIm, &QDetNotOrderedFcFaBcBa);
+
+				oadd[0] = CrAnMask | i;
+				oadd[1] = l;
+				OMFVRe = (OVRe * Rho.VRe[j][k] - OVIm * Rho.VIm[j][k]);
+				OMFVIm = (OVIm * Rho.VRe[j][k] + OVRe * Rho.VIm[j][k]);
+				OperatorAddLaderNormalOrder(OMF, oadd, 2, OMFVRe, OMFVIm, &QDetNotOrderedFcFaBcBa);
+
+				oadd[0] = CrAnMask | j;
+				oadd[1] = k;
+				OMFVRe = (OVRe * Rho.VRe[i][l] - OVIm * Rho.VIm[i][l]);
+				OMFVIm = (OVIm * Rho.VRe[i][l] + OVRe * Rho.VIm[i][l]);
+				OperatorAddLaderNormalOrder(OMF, oadd, 2, OMFVRe, OMFVIm, &QDetNotOrderedFcFaBcBa);
+
+				oadd[0] = CrAnMask | j;
+				oadd[1] = l;
+				OMFVRe = -(OVRe * Rho.VRe[i][k] - OVIm * Rho.VIm[i][k]);
+				OMFVIm = -(OVIm * Rho.VRe[i][k] + OVRe * Rho.VIm[i][k]);
+				OperatorAddLaderNormalOrder(OMF, oadd, 2, OMFVRe, OMFVIm, &QDetNotOrderedFcFaBcBa);
+
+				OMFVRe = (Rho.VRe[i][k] * Rho.VRe[j][l] - Rho.VRe[i][l] * Rho.VRe[j][k] - Rho.VIm[i][k] * Rho.VIm[j][l] + Rho.VIm[i][l] * Rho.VIm[j][k]) * OVRe
+						- (Rho.VIm[i][k] * Rho.VRe[j][l] - Rho.VIm[i][l] * Rho.VRe[j][k] + Rho.VRe[i][k] * Rho.VIm[j][l] - Rho.VRe[i][l] * Rho.VIm[j][k]) * OVIm;
+				OMFVIm = (Rho.VRe[i][k] * Rho.VRe[j][l] - Rho.VRe[i][l] * Rho.VRe[j][k] - Rho.VIm[i][k] * Rho.VIm[j][l] + Rho.VIm[i][l] * Rho.VIm[j][k]) * OVIm
+						+ (Rho.VIm[i][k] * Rho.VRe[j][l] - Rho.VIm[i][l] * Rho.VRe[j][k] + Rho.VRe[i][k] * Rho.VIm[j][l] - Rho.VRe[i][l] * Rho.VIm[j][k]) * OVRe;
+				OperatorAddLaderNormalOrder(OMF, NULL, 0, OMFVRe, OMFVIm, &QDetNotOrderedFcFaBcBa);
+			}
+			for (m = 0; m < O->NFermion; ++m)
+			{
+				oadd[1] = CrAnMask | m;
+				oadd[0] = NotCrAnMask & m;
+				OperatorAddLaderNormalOrder(OMF, oadd, 2, U.Re * Rho.VRe[i][i] - U.Im * Rho.VIm[i][i], U.Re * Rho.VIm[i][i] + U.Im * Rho.VRe[i][i], &QDetNotOrderedFcFaBcBa);
+			}
+		} else // Rho real O complex OMF complex
+		{
+			for (m = 0; m < O->l[4].N; m++)
+			{
+				i = NotCrAnMask & O->l[4].o[4 * m + 3];
+				j = NotCrAnMask & O->l[4].o[4 * m + 2];
+				k = O->l[4].o[4 * m + 1];
+				l = O->l[4].o[4 * m];
+				OVRe = O->l[4].V[m].Re;
+				OVIm = O->l[4].V[m].Im;
+
+				oadd[0] = CrAnMask || i;
+				oadd[1] = k;
+				OMFVRe = -(OVRe * Rho.VRe[j][l]);
+				OMFVIm = -(OVIm * Rho.VRe[j][l]);
+				OperatorAddLaderNormalOrder(OMF, oadd, 2, OMFVRe, OMFVIm, &QDetNotOrderedFcFaBcBa);
+
+				oadd[0] = CrAnMask | i;
+				oadd[1] = l;
+				OMFVRe = (OVRe * Rho.VRe[j][k]);
+				OMFVIm = (OVIm * Rho.VRe[j][k]);
+				OperatorAddLaderNormalOrder(OMF, oadd, 2, OMFVRe, OMFVIm, &QDetNotOrderedFcFaBcBa);
+
+				oadd[0] = CrAnMask | j;
+				oadd[1] = k;
+				OMFVRe = (OVRe * Rho.VRe[i][l]);
+				OMFVIm = (OVIm * Rho.VRe[i][l]);
+				OperatorAddLaderNormalOrder(OMF, oadd, 2, OMFVRe, OMFVIm, &QDetNotOrderedFcFaBcBa);
+
+				oadd[0] = CrAnMask | j;
+				oadd[1] = l;
+				OMFVRe = -(OVRe * Rho.VRe[i][k]);
+				OMFVIm = -(OVIm * Rho.VRe[i][k]);
+				OperatorAddLaderNormalOrder(OMF, oadd, 2, OMFVRe, OMFVIm, &QDetNotOrderedFcFaBcBa);
+
+				OMFVRe = (Rho.VRe[i][k] * Rho.VRe[j][l] - Rho.VRe[i][l] * Rho.VRe[j][k]) * OVRe;
+				OMFVIm = (Rho.VRe[i][k] * Rho.VRe[j][l] - Rho.VRe[i][l] * Rho.VRe[j][k]) * OVIm;
+				OperatorAddLaderNormalOrder(OMF, NULL, 0, OMFVRe, OMFVIm, &QDetNotOrderedFcFaBcBa);
+			}
+			for (m = 0; m < O->NFermion; ++m)
+			{
+				oadd[1] = CrAnMask | m;
+				oadd[0] = NotCrAnMask & m;
+				OperatorAddLaderNormalOrder(OMF, oadd, 2, U.Re * Rho.VRe[i][i], U.Im * Rho.VRe[i][i], &QDetNotOrderedFcFaBcBa);
+			}
+		}
+	} else // O->l[4] real
+	{
+		double U = 0;
+		if (AddDFTSelfInteraction)
+		{
+			uint16_t otmp[4];
+			for (uint16_t m = 0; m < O->NFermion; m++)
+			{
+				for (uint16_t n = 0; n < O->NFermion; n++)
+				{
+					otmp[3] = CrAnMask + (uint16_t) m;
+					otmp[2] = CrAnMask + (uint16_t) n;
+					otmp[1] = (uint16_t) n;
+					otmp[0] = (uint16_t) m;
+					U += RealOperatorPrefactorLader(O, otmp, 4);
+					otmp[3] = CrAnMask + (uint16_t) m;
+					otmp[2] = CrAnMask + (uint16_t) n;
+					otmp[1] = (uint16_t) m;
+					otmp[0] = (uint16_t) n;
+					U -= RealOperatorPrefactorLader(O, otmp, 4);
+				}
+			}
+			if (O->NFermion != 1)
+				U /= (0.5 * O->NFermion * (O->NFermion - 1));
+		}
+		if (Rho.QComplex)
+		{
+			for (m = 0; m < O->l[4].N; m++)
+			{
+				i = NotCrAnMask & O->l[4].o[4 * m + 3];
+				j = NotCrAnMask & O->l[4].o[4 * m + 2];
+				k = O->l[4].o[4 * m + 1];
+				l = O->l[4].o[4 * m];
+				OVRe = O->l[4].VRe[m];
+
+				oadd[0] = CrAnMask | i;
+				oadd[1] = k;
+				OMFVRe = -(OVRe * Rho.VRe[j][l]);
+				OMFVIm = -(OVRe * Rho.VIm[j][l]);
+				OperatorAddLaderNormalOrder(OMF, oadd, 2, OMFVRe, OMFVIm, &QDetNotOrderedFcFaBcBa);
+
+				oadd[0] = CrAnMask | i;
+				oadd[1] = l;
+				OMFVRe = (OVRe * Rho.VRe[j][k]);
+				OMFVIm = (OVRe * Rho.VIm[j][k]);
+				OperatorAddLaderNormalOrder(OMF, oadd, 2, OMFVRe, OMFVIm, &QDetNotOrderedFcFaBcBa);
+
+				oadd[0] = CrAnMask | j;
+				oadd[1] = k;
+				OMFVRe = (OVRe * Rho.VRe[i][l]);
+				OMFVIm = (OVRe * Rho.VIm[i][l]);
+				OperatorAddLaderNormalOrder(OMF, oadd, 2, OMFVRe, OMFVIm, &QDetNotOrderedFcFaBcBa);
+
+				oadd[0] = CrAnMask | j;
+				oadd[1] = l;
+				OMFVRe = -(OVRe * Rho.VRe[i][k]);
+				OMFVIm = -(OVRe * Rho.VIm[i][k]);
+				OperatorAddLaderNormalOrder(OMF, oadd, 2, OMFVRe, OMFVIm, &QDetNotOrderedFcFaBcBa);
+
+				OMFVRe = (Rho.VRe[i][k] * Rho.VRe[j][l] - Rho.VRe[i][l] * Rho.VRe[j][k] - Rho.VIm[i][k] * Rho.VIm[j][l] + Rho.VIm[i][l] * Rho.VIm[j][k]) * OVRe;
+				OMFVIm = (Rho.VIm[i][k] * Rho.VRe[j][l] - Rho.VIm[i][l] * Rho.VRe[j][k] + Rho.VRe[i][k] * Rho.VIm[j][l] - Rho.VRe[i][l] * Rho.VIm[j][k]) * OVRe;
+				OperatorAddLaderNormalOrder(OMF, NULL, 0, OMFVRe, OMFVIm, &QDetNotOrderedFcFaBcBa);
+			}
+			for (m = 0; m < O->NFermion; ++m)
+			{
+				oadd[1] = CrAnMask | m;
+				oadd[0] = NotCrAnMask & m;
+				OperatorAddLaderNormalOrder(OMF, oadd, 2, U * Rho.VRe[i][i], U * Rho.VIm[i][i], &QDetNotOrderedFcFaBcBa);
+			}
+		} else // Rho real O->l[4] real
+		{
+			for (m = 0; m < O->l[4].N; m++)
+			{
+				i = NotCrAnMask & O->l[4].o[4 * m + 3];
+				j = NotCrAnMask & O->l[4].o[4 * m + 2];
+				k = O->l[4].o[4 * m + 1];
+				l = O->l[4].o[4 * m];
+				OVRe = O->l[4].VRe[m];
+				OMFVIm = 0;
+
+				oadd[0] = CrAnMask | i;
+				oadd[1] = k;
+				OMFVRe = -(OVRe * Rho.VRe[j][l]);
+				OperatorAddLaderNormalOrder(OMF, oadd, 2, OMFVRe, OMFVIm, &QDetNotOrderedFcFaBcBa);
+
+				oadd[0] = CrAnMask | i;
+				oadd[1] = l;
+				OMFVRe = (OVRe * Rho.VRe[j][k]);
+				OperatorAddLaderNormalOrder(OMF, oadd, 2, OMFVRe, OMFVIm, &QDetNotOrderedFcFaBcBa);
+
+				oadd[0] = CrAnMask | j;
+				oadd[1] = k;
+				OMFVRe = (OVRe * Rho.VRe[i][l]);
+				OperatorAddLaderNormalOrder(OMF, oadd, 2, OMFVRe, OMFVIm, &QDetNotOrderedFcFaBcBa);
+
+				oadd[0] = CrAnMask | j;
+				oadd[1] = l;
+				OMFVRe = -(OVRe * Rho.VRe[i][k]);
+				OperatorAddLaderNormalOrder(OMF, oadd, 2, OMFVRe, OMFVIm, &QDetNotOrderedFcFaBcBa);
+
+				OMFVRe = (Rho.VRe[i][k] * Rho.VRe[j][l] - Rho.VRe[i][l] * Rho.VRe[j][k]) * OVRe;
+				OperatorAddLaderNormalOrder(OMF, NULL, 0, OMFVRe, OMFVIm, &QDetNotOrderedFcFaBcBa);
+			}
+			for (m = 0; m < O->NFermion; ++m)
+			{
+				oadd[1] = CrAnMask | m;
+				oadd[0] = NotCrAnMask & m;
+				OperatorAddLaderNormalOrder(OMF, oadd, 2, U * Rho.VRe[i][i], 0, &QDetNotOrderedFcFaBcBa);
+			}
+		}
+	}
+	OperatorChop(OMF, 0);
+	return 0;
+}
+
+uint32_t MeanFieldOperator(const OperatorType * const O, OperatorType * const OMF, const CompactMatrixType Rho, bool AddDFTSelfInteraction = false)
+{
+	MatrixType RhoMT;
+	CompactMatrixCopyToMatrix(&RhoMT,Rho);
+	return MeanFieldOperator(O, OMF, RhoMT, AddDFTSelfInteraction);
+}
+
 /*
  *
  */
-uint32_t MeanFieldOperator(const OperatorType * const O, OperatorType * const MO, const CompactMatrixType Rho)
+uint32_t MeanFieldOperatorOld(const OperatorType * const O, OperatorType * const MO, const CompactMatrixType Rho)
 {
   CompactMatrixType Omat;
   MeanFieldOperatorOneElectronMatrix(O, &Omat, Rho);
@@ -862,7 +1136,7 @@ uint32_t MeanFieldOperator(const OperatorType * const O, OperatorType * const MO
   FreeCompactMatrix(&Omat);
   return 0;
 }
-uint32_t MeanFieldOperatorWithDFTInteraction(const OperatorType * const O, OperatorType * const MO, const CompactMatrixType Rho)
+uint32_t MeanFieldOperatorWithDFTInteractionOld(const OperatorType * const O, OperatorType * const MO, const CompactMatrixType Rho)
 {
   CompactMatrixType Omat;
   MeanFieldOperatorOneElectronMatrixWithDFTInteraction(O, &Omat, Rho);
@@ -997,4 +1271,28 @@ uint32_t MeanFieldGroundstate(const OperatorType *const O, CompactMatrixType * c
     }
   }
   return 0;
+}
+
+uint32_t partialMeanFieldOperator(const OperatorType * const O, OperatorType * const OPartialMF, const MatrixType Rho, const uint16_t * const indices, const uint32_t indSetSize, bool AddDFTSelfInteraction = false)
+{
+	OperatorCopy(OPartialMF, *O);
+	if (O->MaxLength < 3 || indSetSize < 1)
+	{
+		return 0;
+	}
+	OperatorType MeanFieldPartTmp, MeanFieldPart;
+	int length = 4; //If ever we can apply mean field to operators of length unequal to 4, this needs to be changed.
+	InitOperator(&MeanFieldPartTmp);
+	MeanFieldPartTmp.NFermion = OPartialMF->NFermion;
+	MeanFieldPartTmp.NBoson = OPartialMF->NBoson;
+	extractPartialOperatorFixedLength(OPartialMF, &MeanFieldPartTmp, indices, indSetSize, 4);
+	if (MeanFieldPartTmp.l[length].N != 0)
+	{
+		MeanFieldOperator(&MeanFieldPartTmp, &MeanFieldPart, Rho, AddDFTSelfInteraction);
+		OperatorAdd(OPartialMF, MeanFieldPart);
+		OperatorChop(OPartialMF, 0);
+	}
+	FreeOperator(&MeanFieldPartTmp);
+	FreeOperator(&MeanFieldPart);
+	return 0;
 }

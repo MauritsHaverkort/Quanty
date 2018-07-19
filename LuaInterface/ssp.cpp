@@ -2863,7 +2863,7 @@ static int LuaMeanFieldGroundstate(lua_State *L)
 static int LuaMeanFieldOperator(lua_State *L)
 {
   OperatorType *H, *HMF;
-  CompactMatrixType *Rho;
+  MatrixType *Rho;
   struct
   {
     Bool AddDFTSelfInteraction=False;
@@ -2881,23 +2881,16 @@ static int LuaMeanFieldOperator(lua_State *L)
     LuaCheckOptions(L, -1, LuaOptions);
   }
   H = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
-  Rho = (CompactMatrixType *) luaL_checkCompactMatrix(L, 2);
+  Rho = (MatrixType *) luaL_checkMatrix(L, 2);
   if((H->NFermion+H->NBoson)!=Rho->Ni)
   {
     return luaL_error(L, "Error in MeanFieldGroundstate, length of operator (NF %i NB %i) is not equal to length of density matrix (%i)\n",H->NFermion,H->NBoson,Rho->Ni);
   }
   HMF = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-  if(Options.AddDFTSelfInteraction==True)
-  {
-    MeanFieldOperatorWithDFTInteraction(H, HMF, *Rho);
-  }
-  else
-  {
-    MeanFieldOperator(H, HMF, *Rho);
-  }
+  MeanFieldOperator(H, HMF, *Rho, Options.AddDFTSelfInteraction);
   luaL_setmetatable(L, "Operator_Type");
   strncpy(HMF->Name, "", MAXStrLength-1); //An appropriate Name can be given in Lua.
-  FreeCompactMatrix(Rho);
+  FreeMatrix(Rho);
   return 1;
 }
 
@@ -4122,17 +4115,6 @@ static int LuaStatistics(lua_State *L)
 }
 
 
-int isIntElementOf(const uint16_t element, const uint16_t * const set, const uint32_t setSize)
-{
-	int i;
-	for (i=0;i<setSize;i++)
-	{
-		if (element == set[i])
-			return 1;
-	}
-	return 0;
-}
-
 
 static int LuaDeterminantString(lua_State *L)
 {
@@ -4166,83 +4148,29 @@ static int LuaDeterminantString(lua_State *L)
 	return 1;
 }
 
-int nonRelAngularMomentumZNumbers(char * orb)
-{
-	if (strlen(orb)<1)
-		return -1;
-	char lastChar = orb[strlen(orb)-1];
-	switch (lastChar) {
-		case 's':
-			return 2*0+1;
-		case 'p':
-			return 2*1+1;
-		case 'd':
-			return 2*2+1;
-		case 'f':
-			return 2*3+1;
-		case 'g':
-			return 2*4+1;
-		case 'h':
-			return 2*5+1;
-		default:
-			return -1;
-	}
-}
-
-int relAngularMomentumZNumbers(char * orb)
-{
-	if (strlen(orb)<3)
-		return -1;
-	char lastChar, significantChar;
-	lastChar = orb[strlen(orb)-1];
-	if (lastChar != '2')
-		return -1;
-	significantChar = orb[strlen(orb)-2];
-	if (significantChar == '/')
-		significantChar = orb[strlen(orb)-3];
-	switch (significantChar) {
-			case '1':
-				return 1+1;
-			case '3':
-				return 3+1;
-			case '5':
-				return 5+1;
-			case '7':
-				return 7+1;
-			case '9':
-				return 9+1;
-			default:
-				return -1;
-		}
-}
 
 
 
-
-void lua_groupOrbitals(lua_State *L, int indTablePos, const char* groupKey, char** groupMembers, uint32_t groupLen)
+void lua_groupOrbitals(lua_State *L, int indTablePos, const string groupKey, const vector<string> groupMembers)
 {
 	int j,k,l;
 	k = 1;
 	lua_getfield(L,indTablePos,groupKey);
 	if (!lua_isnil(L,-1))
 	{
-		printf("\nWarning: Group with name \"");
-		printf("%s",groupKey);
-		printf("\" already exists and cannot be included a second time.\n");
+		cout << "\nWarning: Group with name \"" << groupKey << "\" already exists and cannot be included a second time.\n";
 		return;
 	}
 	lua_pop(L, 1);
 	lua_pushstring(L, groupKey);
 	lua_newtable(L);
 	int groupTablePos = (int) lua_gettop(L);
-	for (j = 0; j < groupLen; j++)
+	for (j = 0; j < groupMembers.size(); j++)
 	{
 		lua_getfield(L, indTablePos, groupMembers[j]);
 		if (lua_isnil(L, -1))
 		{
-			printf("\nWarning: Orbital with name \"");
-			printf("%s",groupMembers[j]);
-			printf("\" was not found and thus cannot be included in any grouping.\n");
+			cout << "\nWarning: Orbital with name \"" << groupMembers[j] << "\" was not found and thus cannot be included in any grouping.\n";
 			lua_pop(L, 1);
 		} else
 		{
@@ -4261,17 +4189,14 @@ void lua_groupOrbitals(lua_State *L, int indTablePos, const char* groupKey, char
 	lua_settable(L, indTablePos);
 }
 
-void lua_setNonRelAtomicOrbitalIndices(lua_State *L, char* orb, int momZNumbers, int * NF, int indTablePos, int isDict)
+void lua_setNonRelAtomicOrbitalIndices(lua_State *L, string orb, int momZNumbers, int * NF, int indTablePos, int isDict)
 {
 	int i,top, start;
 	start = *NF;
-	char * orbDn = (char*) malloc(strlen(orb) + strlen("_Dn"));
-	strcpy(orbDn, orb);
-	strcat(orbDn, "_Dn");
-	char * orbUp = (char*) malloc(strlen(orb) + strlen("_Up"));
-	strcpy(orbUp, orb);
-	strcat(orbUp, "_Up");
-	char * orbs[2] = { orbDn, orbUp };
+	string orbDn = orb + "_Dn", orbUp = orb + "_Up";
+	vector<string> orbs;
+	orbs.push_back(orbDn);
+	orbs.push_back(orbUp);
 	if (isDict)
 		lua_pushstring(L, orbDn);
 	else
@@ -4299,11 +4224,11 @@ void lua_setNonRelAtomicOrbitalIndices(lua_State *L, char* orb, int momZNumbers,
 	}
 	lua_settable(L, indTablePos);
 	if (isDict)
-		lua_groupOrbitals(L, indTablePos, orb, orbs, 2);
+		lua_groupOrbitals(L, indTablePos, orb, orbs);
 	*NF += 2 * momZNumbers;
 }
 
-void lua_setRelAtomicOrbitalIndices(lua_State *L, char* orb, int momZNumbers, int * NF, int indTablePos, int isDict)
+void lua_setRelAtomicOrbitalIndices(lua_State *L, string orb, int momZNumbers, int * NF, int indTablePos, int isDict)
 {
 	int i, top, start;
 	start = *NF;
@@ -4327,7 +4252,7 @@ void lua_setRelAtomicOrbitalIndices(lua_State *L, char* orb, int momZNumbers, in
 
 
 
-void lua_setAtomicOrbitalIndices(lua_State *L, char* orb, int * NF, int indTablePos, int isDict)
+void lua_setAtomicOrbitalIndices(lua_State *L, string orb, int * NF, int indTablePos, int isDict)
 {
 	luaL_checktype(L, indTablePos, LUA_TTABLE);
 	int momZNumbers = nonRelAngularMomentumZNumbers(orb);
@@ -4343,9 +4268,7 @@ void lua_setAtomicOrbitalIndices(lua_State *L, char* orb, int * NF, int indTable
 		return;
 	}	else
 	{
-		printf("\nWarning: Key \"");
-		printf("%s",orb);
-		printf("\" could not be interpreted as an orbital\n");
+		cout << "\nWarning: Key \"" << orb << "\" could not be interpreted as an orbital.\n";
 		return;
 	}
 }
@@ -4358,21 +4281,43 @@ void lua_setAtomicOrbitalIndices(lua_State *L, char* orb, int * NF, int indTable
 //Optional Input is a grouping of orbitals, like { {"unexcitedStates",{"1s","2s"} } , {"excitedStates",{"2p","3s"} } }
 //Output 1 is a list {"1s"={0,1},"2s"={2,3},"2p"={4,5,6,7,8,9},"3s"={10,11},"unexcitedStates"={0,1,2,3},"All"={0,1,2,3,4,5,6,7,8,9,10,11},"1s_Dn"={0},"1s_Up"={1}, ...}
 //Output 2 is the number of fermionic modes NF.
-static int lua_createAtomicIndices(lua_State *L, int isDict)
+static int lua_createAtomicIndices(lua_State *L, Bool isDict)
 {
-	char** orbitals;
+	vector<string> orbitals;
 	uint32_t orbListLen;
 	int indTablePos;
 	int NF = 0;
 	uint32_t groupListLen;
-	char* groupKey;
+	string groupKey;
 	uint32_t groupLen;
-	char** groupMembers;
+	vector<string> groupMembers;
+	int numberOfRedundantOrbitals = 0;
 	int i;
-	orbitals = luaL_checkarray_string(L,1,&orbListLen);
+  struct
+  {
+    Bool kappas;
+  } Options;
+  LuaOptionsType LuaCreateAtomicIndicesOptions[]={
+    {"kappas",          "bool",  &(Options.kappas)},
+    {NULL, NULL, NULL}};
+  Options.kappas=False;
+	orbitals = luaL_checkvector_string(L,1);
+	orbListLen = orbitals.size();
 	uint32_t numberOfInputs = (uint32_t) lua_gettop(L);
-	if (numberOfInputs < 1 || numberOfInputs > 2 || (numberOfInputs > 1 && !isDict))
-		return luaL_error(L, "CreateAtomicIndices called with %d arguments. List of Orbitals and (in case of a dictionary) optional parameter List of Groups of Orbitals expected.\n", numberOfInputs);
+	if (numberOfInputs < 1 || numberOfInputs > 2)
+		return luaL_error(L, "CreateAtomicIndices called with %d arguments. List of Orbitals and (in case of a dictionary) optional parameter List of Groups of Orbitals expected, or (in case of a list) possible List of Options.\n", numberOfInputs);
+  if(numberOfInputs==2   && !isDict )
+  {
+    if(LuaTestOptionsList(L, -1))
+    {
+      LuaCheckOptions(L, -1, LuaCreateAtomicIndicesOptions); //TODO: muss ich hier noch testen obs sich um einen Bool handelt?
+    }
+    else
+    {
+      return luaL_error(L, "Second argument of CreateAtomicIndicesList is optional but iff given should be a list of options.\n");
+    }
+  }
+  int kappas[orbListLen];
 	lua_newtable(L);
 	indTablePos  = (int) lua_gettop(L);
 	for (i=0;i<orbListLen;i++)
@@ -4382,18 +4327,34 @@ static int lua_createAtomicIndices(lua_State *L, int isDict)
 		{
 			lua_pop(L, 1);
 			lua_setAtomicOrbitalIndices(L, orbitals[i], &NF, indTablePos, isDict);
+			if (Options.kappas)
+			{
+				kappas[i - numberOfRedundantOrbitals] = kappa(orbitals[i]);
+			}
 		} else
 		{
 			lua_pop(L,1);
-			printf("\nWarning: Orbital with name \"");
-			printf("%s",orbitals[i]);
-			printf("\" already exists and cannot be included a second time.\n");
+			cout << "\nWarning: Orbital with name \"" << orbitals[i] << "\" already exists and cannot be included a second time.\n";
+			++numberOfRedundantOrbitals;
 		}
+	}
+	if (Options.kappas)
+	{
+		lua_pushstring(L,"kappas");
+		lua_newtable(L);
+		int top = (int) lua_gettop(L);
+		for (i=0; i< orbListLen-numberOfRedundantOrbitals; ++i)
+		{
+			lua_pushnumber(L,i+1);
+			lua_pushnumber(L,kappas[i]);
+			lua_settable(L,top);
+		}
+		lua_settable(L,indTablePos);
 	}
 	if (isDict)
 	{
-		lua_groupOrbitals(L, indTablePos, "All", orbitals, orbListLen);
-		lua_groupOrbitals(L, indTablePos, "all", orbitals, orbListLen);
+		lua_groupOrbitals(L, indTablePos, "All", orbitals);
+		lua_groupOrbitals(L, indTablePos, "all", orbitals);
 		if (numberOfInputs == 2)
 		{
 			//grouping of orbitals
@@ -4412,12 +4373,12 @@ static int lua_createAtomicIndices(lua_State *L, int isDict)
 				if ((int) lua_objlen(L, -1) >= 2)
 				{
 					lua_rawgeti(L, -1, 1);
-					groupKey = (char*) luaL_checkstring(L, -1); //"unexcited"
+					groupKey = luaL_checkstring(L, -1); //"unexcited"
 					lua_pop(L, 1);
 					lua_rawgeti(L, -1, 2);
 					luaL_checktype(L, -1, LUA_TTABLE); //{"1s","2s"}
-					groupMembers = luaL_checkarray_string(L, -1, &groupLen);
-					lua_groupOrbitals(L, indTablePos, groupKey, groupMembers, groupLen);
+					groupMembers = luaL_checkvector_string(L, -1);
+					lua_groupOrbitals(L, indTablePos, groupKey, groupMembers);
 				}
 			}
 			lua_pop(L, (int) lua_gettop(L) - indTablePos);
@@ -4430,16 +4391,96 @@ static int lua_createAtomicIndices(lua_State *L, int isDict)
 
 static int LuaCreateAtomicIndicesDict(lua_State *L)
 {
-	return lua_createAtomicIndices(L,1);
+	return lua_createAtomicIndices(L,True);
 }
 
 
 static int LuaCreateAtomicIndicesList(lua_State *L)
 {
-	return lua_createAtomicIndices(L,0);
+	return lua_createAtomicIndices(L,False);
 }
 
+static int LuaPartialOperator(lua_State *L)
+{
+	OperatorType *O, *OPartial;
+	uint16_t * indices;
+	uint32_t indSetSize;
+	O = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
+	indices = luaL_checkarray_unit16_t(L, 2, &indSetSize);
+	uint32_t len = (uint32_t) lua_gettop(L);
+	if (len != 2)
+		return luaL_error(L, "PartialOperator called with %d arguments. Operator and List of Indices expected.\n", len);
+	int i;
+	for (i = 0; i < indSetSize; i++)
+	{
+		if (indices[i] < 0 || indices[i] >= O->NFermion)
+			printf("\nWarning: Index %d is not within [0,NF-1]=[0,%d].\n", indices[i], O->NFermion - 1);
+	}
+	OPartial = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+	extractPartialOperator(O, OPartial, indices, indSetSize);
+	luaL_setmetatable(L, "Operator_Type");
+	strncpy(OPartial->Name, "", MAXStrLength - 1); //An appropriate Name can be given in Lua.
+	return 1;
+}
 
+static int LuaPartialMeanFieldOperator(lua_State *L)
+{
+	OperatorType *O, *OMF;
+	MatrixType *Rho;
+	uint16_t * indices;
+	uint32_t indSetSize;
+	O = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
+	Rho = (MatrixType *) luaL_checkMatrix(L, 2);
+	indices = luaL_checkarray_unit16_t(L, 3, &indSetSize);
+	uint32_t len = (uint32_t) lua_gettop(L);
+	struct
+	{
+		Bool AddDFTSelfInteraction = False;
+	} Options;
+	LuaOptionsType LuaOptions[] = {
+			{ "AddDFTSelfInteraction", "bool", &(Options.AddDFTSelfInteraction) },
+			{ NULL, NULL, NULL } };
+	if (len < 3 || len > 4)
+		return luaL_error(L, "MeanFieldOperator called with %d arguments. Three or four expected, Operator, Density Matrix, List of Indices and optional Options expected.\n", len);
+  if(len==4)
+  {
+    LuaCheckOptions(L, -1, LuaOptions);
+  }
+	for (int i = 0; i < indSetSize; i++)
+	{
+		if (indices[i] < 0 || indices[i] >= O->NFermion)
+			printf("\nWarning: Index %d is not within [0,NF-1]=[0,%d].\n", indices[i], O->NFermion - 1);
+	}
+	OMF = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+	partialMeanFieldOperator(O, OMF, *Rho, indices, indSetSize, Options.AddDFTSelfInteraction);
+	luaL_setmetatable(L, "Operator_Type");
+	strncpy(OMF->Name, "", MAXStrLength - 1); //An appropriate Name can be given in Lua.
+	return 1;
+}
+
+static int LuaOrbToMultiplicity(lua_State * L)
+{
+	char * orb;
+	int multiplicity;
+	uint32_t len = (uint32_t) lua_gettop(L);
+	if (len != 1)
+	{
+		return luaL_error(L, "OrbToMultiplicity called with %d arguments. Only name of the orbital expected.\n", len);
+	}
+	orb = (char*) luaL_checkstring(L, 1);
+	lua_pop(L, 1);
+	multiplicity = nonRelAngularMomentumZNumbers(orb);
+	if (multiplicity < 0)
+		multiplicity = relAngularMomentumZNumbers(orb);
+	if (multiplicity < 0)
+	{
+		printf("\nCould not interpret orbital \"");
+		printf("%s", orb);
+		printf("\" as either relativistic or non-relativistic atomic orbital, returning %d.\n", multiplicity);
+	}
+	lua_pushnumber(L, multiplicity);
+	return 1;
+}
 
 
 static const struct luaL_Reg global_functions[] = {
@@ -4481,6 +4522,8 @@ static const struct luaL_Reg global_functions[] = {
   {"OperatorToMatrix", LuaOperatorToMatrix},
   {"OperatorSetTrace", LuaOperatorSetTrace},
   {"Orthonormalize", LuaOrthonormalize},
+	{"PartialMeanFieldOperator",LuaPartialMeanFieldOperator},
+	{"PartialOperator",LuaPartialOperator},
   {"PotentialExpandedOnClm", LuaPotentialExpandedOnClm},
   {"PlotBands", LuaPlotBands},
   {"PlotBandsAndDOS", LuaPlotBandsAndDOS},
