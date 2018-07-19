@@ -4,6 +4,9 @@ uint32_t* luaL_checkarray_unit32_t(lua_State *L, int narg, uint32_t *len_out);
 double* luaL_checkarray_double(lua_State *L, int narg, uint32_t *len_out);
 Complex16* luaL_checkarray_complex16(lua_State *L, int narg, uint32_t *len_out);
 char** luaL_checkarray_string(lua_State *L, int narg, uint32_t *len_out);
+vector<string> luaL_checkvector_string(lua_State *L, int narg);
+LUA_API void lua_getfield (lua_State *L, int idx, const string str);
+LUA_API const char *lua_pushstring (lua_State *L, const string str);
 CompactVectorType luaL_checkVector(lua_State *L, int narg);
 CompactMatrixType* luaL_checkCompactMatrix(lua_State *L, int narg);
 MatrixType* luaL_checkMatrix(lua_State *L, int narg);
@@ -55,7 +58,7 @@ void LuaPushTable_SpectraTypeArray(lua_State* L, SpectraTypeArray const * const 
 void LuaPush_ResponseFunction(lua_State *L, ResponsefunctionType const * const M);
 void shallowtablecopy(lua_State* L, int index);
 void * LuaReturnVariableType(lua_State * L, int narg, const char * type);
-void * LuaFindOptionsInTable(lua_State * L, int narg, const char* token, const char* type);
+void * LuaFindOptionsInTable(lua_State * L, int narg, char* token, char* type);
 int32_t LuaTestOptionsList(lua_State *L, int narg);
 int strcicmp(char const *a, char const *b);
 int32_t LuaCheckOptions(lua_State *L, int narg, LuaOptionsType *Options);

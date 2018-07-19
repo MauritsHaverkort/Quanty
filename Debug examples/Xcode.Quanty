@@ -1,8 +1,6 @@
 Verbosity(0xFFFF)
 
 dofile("/Users/haverkort/Documents/Materials/Ni/LDApp/Calculate_Double_Counting_Potential.Quanty")
-
-
 os.exit()
 
 

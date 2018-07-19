@@ -59,6 +59,11 @@ uint32_t GlobalVerbosity=0xF;
 
 #define PrintDebugInfo
 
+using std::cout;
+using std::endl;
+using std::string;
+using std::vector;
+
 
 #include "../Core/StructDef.cpp"
 #include "../Core/BasicMath/BasicMath_Constants.cpp"
