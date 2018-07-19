@@ -104,3 +104,9 @@ using std::vector;
 
 #include "blas.h"
 #include "lapack.h"
+
+
+using std::cout;
+using std::endl;
+using std::string;
+using std::vector;
