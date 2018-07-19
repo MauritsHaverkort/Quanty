@@ -1,4 +1,4 @@
-
+SSlaterIntegral *InitializeIntegrals(vector<int> indToK, unsigned int &NIntegrals, unsigned int *kMax);
 
 SSlaterIntegral *GetSlaterIntegrals(double **basisfuns, unsigned int NBasisFuns, const double *x,
                                     unsigned int NGridPoints,const int **tupel, unsigned int NIntegrals)
@@ -30,6 +30,49 @@ SSlaterIntegral *GetSlaterIntegrals(double **basisfuns, unsigned int NBasisFuns,
     fclose(f);
 */
 
+    for ( i = 0; i <= kMax; i++)
+    {
+    	free(kernels[i]);
+    }
+    free(kernels);
+    for ( i = 0; i < NBasisFuns; i++)
+    {
+    	free(dualfuns[i]);
+    }
+    free(dualfuns);
+
+    return si;
+}
+
+SSlaterIntegral *GetSlaterIntegrals(double **basisfuns, unsigned int NBasisFuns, const double *x,
+                                    unsigned int NGridPoints,vector<int> indToK, unsigned int &NIntegrals)
+{
+
+    SSlaterIntegral *si;
+    unsigned int kMax, n, i;
+    double **kernels, **dualfuns;
+
+    n = 2* NGridPoints;
+
+    dualfuns = CreateDualFunctions(NBasisFuns, NGridPoints, basisfuns,x);
+
+    si = InitializeIntegrals(indToK, NIntegrals,&kMax);
+
+    kernels = CreateAllKernels(kMax, NGridPoints, x);
+
+    CalculateSlaterIntegrals(NIntegrals, si,n,kernels,basisfuns,dualfuns);
+/*
+  	int i,j;
+    FILE *f = fopen("slaterout4","w");
+    for ( i = 0; i < NIntegrals; i++)
+    {
+    	for ( j = 0; j < si[i].Nval; j++)
+    	{
+    		fprintf(f,"%.16e\n",si[i].val[j]);
+    	}
+    }
+    fclose(f);
+*/
     for ( i = 0; i <= kMax; i++)
     {
     	free(kernels[i]);
@@ -315,6 +358,46 @@ SSlaterIntegral *InitializeIntegrals(const int **tupel, unsigned int NIntegrals,
         integrals[i].val = (double *) malloc(integrals[i].Nval*sizeof(double));
     }
     
+    return integrals;
+}
+
+SSlaterIntegral *InitializeIntegrals(vector<int> indToK, unsigned int &NIntegrals, unsigned int *kMax)
+{
+    unsigned int i, k;
+    SSlaterIntegral *integrals;
+
+    map<myarray,myarray> tupel = CreateSlaterTuple(indToK);
+    NIntegrals = tupel.size();
+
+    integrals = (SSlaterIntegral *) malloc((NIntegrals)*sizeof(SSlaterIntegral));
+    i = 0;
+    for( map<myarray,myarray>::iterator it = tupel.begin(); it != tupel.end(); ++it)
+    {
+    	integrals[i].tau.n[0] = it->first.val[0];
+    	integrals[i].tau.n[1] = it->first.val[1];
+    	integrals[i].tau.n[2] = it->first.val[2];
+    	integrals[i].tau.n[3] = it->first.val[3];
+
+    	integrals[i].tau.kappa[0] = it->second.val[0];
+    	integrals[i].tau.kappa[1] = it->second.val[1];
+    	integrals[i].tau.kappa[2] = it->second.val[2];
+    	integrals[i].tau.kappa[3] = it->second.val[3];
+
+    	i++;
+    }
+    printf("i -> %d\t NIntegrals %d\n",i,NIntegrals);
+    *kMax = 0;
+    for( i = 0; i < NIntegrals; i++ )
+    {
+        integrals[i].k = GetK(integrals[i].tau.kappa, &integrals[i].Nval);
+        k = integrals[i].k[integrals[i].Nval-1];
+        if (k > *kMax)
+        {
+            *kMax = k;
+        }
+        integrals[i].val = (double *) malloc(integrals[i].Nval*sizeof(double));
+    }
+
     return integrals;
 }
 

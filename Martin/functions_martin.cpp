@@ -1,6 +1,6 @@
 /* Some makeshift functions */
 
-//#include "SlaterTuple.cpp"
+#include "SlaterTuple.cpp"
 #include "CreateOperators.cpp"
 #include "MartinsLittleHelper.cpp"
 
@@ -15,9 +15,9 @@ static int LuaOperatorNewFullCoulomb (lua_State *L)
 
     len = (uint32_t)lua_gettop(L);
 
-    if ( len != 5 && len != 6)
+    if ( len < 4 ||  len > 6)
     {
-    	printf("Error in Martin.NewCoulomb: 5 or 6 arguments expected; got %d",len);
+    	printf("Error in Martin.NewCoulomb: 4, 5 or 6 arguments expected; got %d",len);
     	return -1;
     }
 
@@ -32,46 +32,73 @@ static int LuaOperatorNewFullCoulomb (lua_State *L)
     	return -1;
     }
 
-    NIntegrals = (uint32_t)lua_objlen(L,4);
-    tuple = (uint32_t **) malloc(NIntegrals*sizeof(uint32_t *));
-    if(!tuple) printf("malloc fail at tuple in LuaOperatorNewFullCoulomb. size = %d\n",NIntegrals);
-    for ( i = 0; i < NIntegrals; i++)
+    if (len == 4)
     {
-    	lua_rawgeti(L, 4, i+1);
-    	tuple[i] = luaL_checkarray_unit32_t(L,-1,&temp);
-    	if ( temp != 8)
+    	vector<int> indToK;
+    	Nindices = (uint32_t)lua_objlen(L,4);
+    	indices = (uint16_t **) malloc(Nindices * sizeof(uint16_t *));
+    	for( i = 0; i < Nindices; i++ )
     	{
-    		printf("Error in Martin.NewCoulomb: Length of tuple[%d] (%d) != 8",i,temp);
-    		return -1;
+    		lua_rawgeti(L, 4, i+1);
+    		lua_rawgeti(L,-1,1);
+    		indToK.push_back((int) luaL_checkunsigned(L, -1));
+    		lua_pop(L,1);
+    		lua_rawgeti(L,-1,2);
+    		indices[i] = luaL_checkarray_unit16_t(L,-1,&temp);
+    		lua_pop(L,1);
+    		lua_pop(L,1);
     	}
-    	lua_pop(L,1);
-    }
-
-    luaL_checktype(L, 5, LUA_TTABLE);
-    Nindices = (uint32_t)lua_objlen(L,5);
-
-    indices = (uint16_t **) malloc(Nindices * sizeof(uint16_t *));
-    if(!indices) printf("malloc fail at indices in LuaOperatorNewFullCoulomb. size = %d\n",Nindices);
-
-    for( i = 0; i < Nindices; i++ )
-    {
-    	lua_rawgeti(L, 5, i+1);
-    	indices[i] = luaL_checkarray_unit16_t(L,-1,&temp);
-    	lua_pop(L,1);
-    }
-
-
-
-    op = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
-
-
-    if ( len == 5)
-    {
-    	CreateOperatorFullCoulombRelativistic(NF,wavefunctions->VRe,wavefunctions->Ni,x,NGridpoints,tuple, NIntegrals,indices, op);
+    	op = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
+    	CreateOperatorFastCoulombRelativistic(NF,wavefunctions->VRe,wavefunctions->Ni,x,NGridpoints,indToK,indices, op);
     }
     else
     {
-    	CreateOperatorFastCoulombRelativistic(NF,wavefunctions->VRe,wavefunctions->Ni,x,NGridpoints,tuple, NIntegrals,indices, op);
+    	NIntegrals = (uint32_t)lua_objlen(L,4);
+    	tuple = (uint32_t **) malloc(NIntegrals*sizeof(uint32_t *));
+    	if(!tuple) printf("malloc fail at tuple in LuaOperatorNewFullCoulomb. size = %d\n",NIntegrals);
+    	for ( i = 0; i < NIntegrals; i++)
+    	{
+    		lua_rawgeti(L, 4, i+1);
+    		tuple[i] = luaL_checkarray_unit32_t(L,-1,&temp);
+    		if ( temp != 8)
+    		{
+    			printf("Error in Martin.NewCoulomb: Length of tuple[%d] (%d) != 8",i,temp);
+    			return -1;
+    		}
+    		lua_pop(L,1);
+    	}
+
+    	luaL_checktype(L, 5, LUA_TTABLE);
+    	Nindices = (uint32_t)lua_objlen(L,5);
+
+    	indices = (uint16_t **) malloc(Nindices * sizeof(uint16_t *));
+    	if(!indices) printf("malloc fail at indices in LuaOperatorNewFullCoulomb. size = %d\n",Nindices);
+
+    	for( i = 0; i < Nindices; i++ )
+    	{
+    		lua_rawgeti(L, 5, i+1);
+    		indices[i] = luaL_checkarray_unit16_t(L,-1,&temp);
+    		lua_pop(L,1);
+    	}
+
+
+
+    	op = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
+
+
+    	if ( len == 5)
+    	{
+    		CreateOperatorFullCoulombRelativistic(NF,wavefunctions->VRe,wavefunctions->Ni,x,NGridpoints,tuple, NIntegrals,indices, op);
+    	}
+    	else
+    	{
+    		CreateOperatorFastCoulombRelativistic(NF,wavefunctions->VRe,wavefunctions->Ni,x,NGridpoints,tuple, NIntegrals,indices, op);
+    	}
+    	for( i = 0; i < NIntegrals; i++ )
+    	{
+    		free(tuple[i]);
+    	}
+    	free(tuple);
     }
 
     luaL_setmetatable(L,"Operator_Type");
@@ -92,12 +119,6 @@ static int LuaOperatorNewFullCoulomb (lua_State *L)
 		free(indices[i]);
 	}
 	free(indices);
-	for( i = 0; i < NIntegrals; i++ )
-	{
-		free(tuple[i]);
-	}
-	free(tuple);
-	/**/
 
     return 1;
 }
@@ -249,6 +270,54 @@ static int LuaCreateBaseForContinuum(lua_State *L)
 	return 2;
 }
 
+static int LuaPropagator(lua_State *L)
+{
+	uint32_t n0, n1, nU, nE,n, nv;
+	vector<CompactMatrixType *> U;
+	CompactMatrixType Sigma, zd1U, SigmaAdd;
+	vector<Complex16> Uhelp;
+	vector<double> w, spec;
+
+	Complex16 z0, z1, *v, *SigV;
+	double  *d0, *d1, *Econt;
+
+	d0 = luaL_checkarray_double(L,1,&n0);
+	d1 = luaL_checkarray_double(L,2,&n1);
+	nU = (uint32_t)lua_objlen(L,3);
+	for (int i = 0; i < nU; i++)
+	{
+	   	lua_rawgeti(L, 3, i+1);
+	   	U.insert(U.end(),(CompactMatrixType *) luaL_checkCompactMatrix(L, -1));
+	   	lua_pop(L,1);
+	}
+
+	Econt = luaL_checkarray_double(L,4,&nE);
+	if (nE != nU)
+	{
+		printf("errror in LuaPropagator: %d = nE != nU = %d\n",nE,nU);
+		return -1;
+	}
+	v = luaL_checkarray_complex16(L,5,&nv);
+	if (nv != n0)
+	{
+		printf("error in LuaPropagator: %d = nv != d0 = %d\n",nv,d0);
+		return -1;
+	}
+	double Q = 2833;
+	double ww = 0;
+	double g0 = 1.;
+	double g1 = 2.;
+	while (ww < Q)
+	{
+		w.insert(w.end(),ww);
+		ww += g1/5.;
+	}
+	spec = CalcSpectrumContinuum(w,g0,g1,Q,d0,Econt,d1,U,v);
+	LuaPushArray_double(L,&w[0],w.size());
+	LuaPushArray_double(L,&spec[0],spec.size());
+	return 2;
+}
+
 static const struct luaL_Reg Martin_meta[] = {
   {NULL, NULL}
 };
@@ -286,5 +355,6 @@ static const struct luaL_Reg Martin_func[] = {
   {"NewCoulomb", LuaOperatorNewFullCoulomb},
   {"NewDirac", LuaOperatorNewDirac},
   {"ContinuumBase",LuaCreateBaseForContinuum},
+  {"Propagator",LuaPropagator},
   {NULL, NULL}
 };
