@@ -1,6 +1,7 @@
 #include <vector>
 
-using namespace std;
+//using namespace std;
+// inclusion of namespace std leads to conflicts with function atomic in lua
 
 #include "SlaterIntegrals.cpp"
 #include "DiracHamiltonian.cpp"

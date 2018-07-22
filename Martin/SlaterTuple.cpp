@@ -11,7 +11,8 @@
 #include <vector>
 //#include "myarray.h"
 
-using namespace std;
+//using namespace std;
+// inclusion of namespace std leads to conflicts with function atomic in lua
 
 class myarray
 {
@@ -103,7 +104,7 @@ vector<myarray> CreateKappaTuple(vector<int> kappas)
 	return result;
 }
 
-int NotContains(vector<myarray> tau,map<myarray,myarray> tuple)
+int NotContains(vector<myarray> tau,std::map<myarray,myarray> tuple)
 {
 	int i;
 	for ( i = 0; i < tau.size(); i++)
@@ -116,12 +117,12 @@ int NotContains(vector<myarray> tau,map<myarray,myarray> tuple)
 	return 1;
 }
 
-map<myarray,myarray> CreateSlaterTuple(vector<int> indToK)
+std::map<myarray,myarray> CreateSlaterTuple(vector<int> indToK)
 {
 	int i,j,m,l;
 	myarray k;
 	vector<myarray> tau = vector<myarray>(8);
-	map<myarray,myarray> result;
+  std::map<myarray,myarray> result;
 
 	for ( i = 0; i < indToK.size(); i++)
 		for ( j = 0; j < indToK.size(); j++)

@@ -2054,11 +2054,11 @@ int relAngularMomentumZNumbers(string orb, int * significantCharPos)
 	lastChar = orb.at(orb.length()-1);
 	if (lastChar != '2')
 		return -1;
-	*significantCharPos = orb.length()-2;
+	*significantCharPos = (int)orb.length()-2;
 	significantChar = orb[*significantCharPos];
 	if (significantChar == '/')
 	{
-		*significantCharPos = orb.length()-3;
+		*significantCharPos = (int)orb.length()-3;
 		significantChar = orb[*significantCharPos];
 	}
 	switch (significantChar) {
