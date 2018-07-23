@@ -4284,12 +4284,11 @@ void lua_setAtomicOrbitalIndices(lua_State *L, string orb, int * NF, int indTabl
 static int lua_createAtomicIndices(lua_State *L, Bool isDict)
 {
 	vector<string> orbitals;
-	uint32_t orbListLen;
+	vector<string>::size_type orbListLen;
 	int indTablePos;
 	int NF = 0;
 	uint32_t groupListLen;
 	string groupKey;
-	uint32_t groupLen;
 	vector<string> groupMembers;
 	int numberOfRedundantOrbitals = 0;
 	int i;

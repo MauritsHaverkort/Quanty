@@ -1258,7 +1258,7 @@ static int LuaMatrixExpand(lua_State * L)
 		return luaL_error(L, "MatrixExpand called with %d arguments. 2 expected, a matrix and the factor by which it is to be expanded.\n", len);
 	}
 	M = *luaL_checkMatrix(L, 1);
-	factor = luaL_checkinteger(L, 2);
+	factor = (int)luaL_checkinteger(L, 2);
 	MatrixType fullM = MatrixExpand(M, factor);
 	LuaPushTable_MatrixType(L, &fullM);
 	return 1;
