@@ -686,7 +686,7 @@ uint32_t RealOperatorAddLaderNormalOrder(OperatorType * const O, const uint16_t 
 /*
  *
  */
-double RealOperatorPrefactorLader(OperatorType * const O, const uint16_t * const oadd, const uint32_t length)
+double RealOperatorPrefactorLader(const OperatorType * const O, const uint16_t * const oadd, const uint32_t length)
 {
   double ret=0;
   uint32_t NextIndex, ThereIsANext,i,j;
@@ -1142,7 +1142,7 @@ uint32_t ComplexOperatorAddLaderNormalOrder(OperatorType * const O, const uint16
 /*
  *
  */
-Complex16 ComplexOperatorPrefactorLader(OperatorType * const O, const uint16_t * const oadd, const uint32_t length)
+Complex16 ComplexOperatorPrefactorLader(const OperatorType * const O, const uint16_t * const oadd, const uint32_t length)
 {
   Complex16 ret={0,0};
   uint32_t NextIndex, ThereIsANext,i,j;
@@ -1650,6 +1650,101 @@ uint32_t NormalOrderOperator(const OperatorType O, OperatorType * const Oo, uint
   SetQComplexOperator(Oo);
   return 0;
 }
+
+/*
+ *
+ */
+double RealOperatorTrace(const OperatorType O, uint16_t *Orbitals, int NOrbitals)
+{
+  double trace=0;
+  uint32_t i,j;
+  if(O.MaxLength<2) return trace;
+  for(i=0;i<O.l[2].N;i++)
+  {
+    if((O.l[2].o[2*i]&NotCrAnMask)==O.l[2].o[2*i+1])
+    {
+      for(j=0;j<NOrbitals;j++)
+      {
+        if(O.l[2].o[2*i+1]==Orbitals[j]) trace -= O.l[2].VRe[i];
+      }
+    }
+    else if((O.l[2].o[2*i+1]&NotCrAnMask)==O.l[2].o[2*i])
+    {
+      for(j=0;j<NOrbitals;j++)
+      {
+        if(O.l[2].o[2*i]==Orbitals[j]) trace += O.l[2].VRe[i];
+      }
+    }
+  }
+  return trace/NOrbitals;
+}
+Complex16 ComplexOperatorTrace(const OperatorType O, uint16_t *Orbitals, int NOrbitals)
+{
+  Complex16 trace={0,0};
+  uint32_t i,j;
+  if(O.MaxLength<2) return trace;
+  for(i=0;i<O.l[2].N;i++)
+  {
+    if((O.l[2].o[2*i]&NotCrAnMask)==O.l[2].o[2*i+1])
+    {
+      for(j=0;j<NOrbitals;j++)
+      {
+        if(O.l[2].o[2*i+1]==Orbitals[j]) trace -= O.l[2].V[i];
+      }
+    }
+    else if((O.l[2].o[2*i+1]&NotCrAnMask)==O.l[2].o[2*i])
+    {
+      for(j=0;j<NOrbitals;j++)
+      {
+        if(O.l[2].o[2*i]==Orbitals[j]) trace += O.l[2].V[i];
+      }
+    }
+  }
+  return trace/NOrbitals;
+}
+Complex16 OperatorTrace(const OperatorType O, uint16_t *Orbitals, int NOrbitals)
+{
+  Complex16 trace={0,0};
+  if(O.MaxLength<2) return trace;
+  if(O.l[2].QComplex==0)
+  {
+    trace.Re = RealOperatorTrace(O,Orbitals,NOrbitals);
+  }
+  else
+  {
+    trace = ComplexOperatorTrace(O,Orbitals,NOrbitals);
+  }
+  return trace;
+}
+
+uint32_t RealOperatorAddTrace(OperatorType *O, uint16_t *Orbitals, int NOrbitals, double Trace)
+{
+  uint32_t i;
+  uint16_t oadd[2];
+  for(i=0;i<NOrbitals;i++)
+  {
+    oadd[1]=CrAnMask + Orbitals[i];
+    oadd[0]=Orbitals[i];
+    RealOperatorAddLader(O, oadd, 2, Trace);
+  }
+  return 0;
+}
+
+uint32_t ComplexOperatorAddTrace(OperatorType *O, uint16_t *Orbitals, int NOrbitals, Complex16 Trace)
+{
+  uint32_t i;
+  uint16_t oadd[2];
+  for(i=0;i<NOrbitals;i++)
+  {
+    oadd[1]=CrAnMask + Orbitals[i];
+    oadd[0]=Orbitals[i];
+    ComplexOperatorAddLader(O, oadd, 2, Trace.Re, Trace.Im);
+  }
+  return 0;
+}
+
+
+
 
 /*  Depending on Aset and Bset
  *    O <- O + B^'Bset' A^'Aset'
@@ -5454,6 +5549,11 @@ uint32_t OperatorAdd(OperatorType * const OA, const OperatorType OB, const doubl
   return 0;
 }
 
+uint32_t OperatorAdd(OperatorType * const OA, const OperatorType OB)
+{
+	return OperatorAdd(OA, OB, 1.0, 0.0);
+}
+
 
 /*  OA <- OA + alpha NormalOrder[OB]
  *  if OB.Maxlength > OA.Maxlength then OA is extended
@@ -6380,4 +6480,44 @@ uint32_t OperatorChangeNFandNB(OperatorType *O, uint32_t NFnew, uint32_t NBnew)
   O->NBoson=NBnew;
   O->NWord = Min(O->NFermion, 1 + (O->NFermion - 1) / 8) + O->NBoson;
   return 0;
+}
+
+void extractPartialOperatorFixedLength(const OperatorType * const O, OperatorType * const OPartial, const uint16_t * const indices, const uint32_t indSetSize, const int length)
+{
+	uint16_t oadd[length];
+	int firstIndexOfBlock;
+	int i, j;
+	InitOperatorFixedLength(OPartial, length, 8);
+	for (i = 0; i < length * (O->l[length].N); i++)
+	{
+		if (isIntElementOf(NotCrAnMask & O->l[length].o[i], indices, indSetSize))
+		{
+			firstIndexOfBlock = i - (i % length);
+			for (j = 0; j < length; j++)
+			{
+				oadd[j] = O->l[length].o[firstIndexOfBlock + j];
+			}
+			if (O->l[length].QComplex)
+			{
+				ComplexOperatorAddLaderNormalOrder(OPartial, oadd, length, O->l[length].V[firstIndexOfBlock / length].Re, O->l[length].V[firstIndexOfBlock / length].Im, &QDetNotOrderedFcFaBcBa);
+				O->l[length].V[firstIndexOfBlock / length].Re = 0;
+				O->l[length].V[firstIndexOfBlock / length].Im = 0;
+			} else
+			{
+				RealOperatorAddLaderNormalOrder(OPartial, oadd, length, O->l[length].VRe[firstIndexOfBlock / length], &QDetNotOrderedFcFaBcBa);
+				O->l[length].VRe[firstIndexOfBlock / length] = 0;
+			}
+			i = firstIndexOfBlock + length - 1; //I don't want to count that block again in case the index appears several times.
+		}
+	}
+}
+
+void extractPartialOperator(const OperatorType * const O, OperatorType * const OPartial, const uint16_t * const indices, const uint32_t indSetSize)
+{
+	InitOperator(OPartial);
+	OPartial->NFermion = O->NFermion;
+	OPartial->NBoson = O->NBoson;
+	int length;
+	for (length = 0; length <= O->MaxLength; ++length)
+		extractPartialOperatorFixedLength(O, OPartial, indices, indSetSize, length);
 }

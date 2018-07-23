@@ -357,9 +357,9 @@ int CreateHamiltonianOperatorFromTightBindingDef(TightBindingDef A, double k[3],
     vector[0] = A.Cell.Atom[A.H[iH].Atompos1].Position[0] - A.Cell.Atom[A.H[iH].Atompos2].Position[0];
     vector[1] = A.Cell.Atom[A.H[iH].Atompos1].Position[1] - A.Cell.Atom[A.H[iH].Atompos2].Position[1];
     vector[2] = A.Cell.Atom[A.H[iH].Atompos1].Position[2] - A.Cell.Atom[A.H[iH].Atompos2].Position[2];
-    vector[0] += A.Cell.rUnitCell[0][0] * A.H[iH].TransVecs[0] + A.Cell.rUnitCell[1][0] * A.H[iH].TransVecs[1] + A.Cell.rUnitCell[2][0] * A.H[iH].TransVecs[2];
-    vector[1] += A.Cell.rUnitCell[0][1] * A.H[iH].TransVecs[0] + A.Cell.rUnitCell[1][1] * A.H[iH].TransVecs[1] + A.Cell.rUnitCell[2][1] * A.H[iH].TransVecs[2];
-    vector[2] += A.Cell.rUnitCell[0][2] * A.H[iH].TransVecs[0] + A.Cell.rUnitCell[1][2] * A.H[iH].TransVecs[1] + A.Cell.rUnitCell[2][2] * A.H[iH].TransVecs[2];
+    vector[0] += ((A.H[iH].TransVecs[0]==0) ? (0) : (A.Cell.rUnitCell[0][0] * A.H[iH].TransVecs[0])) + ((A.H[iH].TransVecs[1]==0) ? (0) : (A.Cell.rUnitCell[1][0] * A.H[iH].TransVecs[1])) + ((A.H[iH].TransVecs[2]==0) ? (0) : (A.Cell.rUnitCell[2][0] * A.H[iH].TransVecs[2]));
+    vector[1] += ((A.H[iH].TransVecs[0]==0) ? (0) : (A.Cell.rUnitCell[0][1] * A.H[iH].TransVecs[0])) + ((A.H[iH].TransVecs[1]==0) ? (0) : (A.Cell.rUnitCell[1][1] * A.H[iH].TransVecs[1])) + ((A.H[iH].TransVecs[2]==0) ? (0) : (A.Cell.rUnitCell[2][1] * A.H[iH].TransVecs[2]));
+    vector[2] += ((A.H[iH].TransVecs[0]==0) ? (0) : (A.Cell.rUnitCell[0][2] * A.H[iH].TransVecs[0])) + ((A.H[iH].TransVecs[1]==0) ? (0) : (A.Cell.rUnitCell[1][2] * A.H[iH].TransVecs[1])) + ((A.H[iH].TransVecs[2]==0) ? (0) : (A.Cell.rUnitCell[2][2] * A.H[iH].TransVecs[2]));
     alphaRe = cos(Dot(k, vector));
     alphaIm = sin(Dot(k, vector));
     if (Sqr(alphaIm) < Sqr(alphaRe) * DBL_EPSILON * 100) alphaIm = 0;
@@ -418,9 +418,9 @@ int CreateHamiltonianOperatorFromTightBindingDefPlusSpin(TightBindingDef A, doub
     vector[0] = A.Cell.Atom[A.H[iH].Atompos1].Position[0] - A.Cell.Atom[A.H[iH].Atompos2].Position[0];
     vector[1] = A.Cell.Atom[A.H[iH].Atompos1].Position[1] - A.Cell.Atom[A.H[iH].Atompos2].Position[1];
     vector[2] = A.Cell.Atom[A.H[iH].Atompos1].Position[2] - A.Cell.Atom[A.H[iH].Atompos2].Position[2];
-    vector[0] += A.Cell.rUnitCell[0][0] * A.H[iH].TransVecs[0] + A.Cell.rUnitCell[1][0] * A.H[iH].TransVecs[1] + A.Cell.rUnitCell[2][0] * A.H[iH].TransVecs[2];
-    vector[1] += A.Cell.rUnitCell[0][1] * A.H[iH].TransVecs[0] + A.Cell.rUnitCell[1][1] * A.H[iH].TransVecs[1] + A.Cell.rUnitCell[2][1] * A.H[iH].TransVecs[2];
-    vector[2] += A.Cell.rUnitCell[0][2] * A.H[iH].TransVecs[0] + A.Cell.rUnitCell[1][2] * A.H[iH].TransVecs[1] + A.Cell.rUnitCell[2][2] * A.H[iH].TransVecs[2];
+    vector[0] += ((A.H[iH].TransVecs[0]==0) ? (0) : (A.Cell.rUnitCell[0][0] * A.H[iH].TransVecs[0])) + ((A.H[iH].TransVecs[1]==0) ? (0) : (A.Cell.rUnitCell[1][0] * A.H[iH].TransVecs[1])) + ((A.H[iH].TransVecs[2]==0) ? (0) : (A.Cell.rUnitCell[2][0] * A.H[iH].TransVecs[2]));
+    vector[1] += ((A.H[iH].TransVecs[0]==0) ? (0) : (A.Cell.rUnitCell[0][1] * A.H[iH].TransVecs[0])) + ((A.H[iH].TransVecs[1]==0) ? (0) : (A.Cell.rUnitCell[1][1] * A.H[iH].TransVecs[1])) + ((A.H[iH].TransVecs[2]==0) ? (0) : (A.Cell.rUnitCell[2][1] * A.H[iH].TransVecs[2]));
+    vector[2] += ((A.H[iH].TransVecs[0]==0) ? (0) : (A.Cell.rUnitCell[0][2] * A.H[iH].TransVecs[0])) + ((A.H[iH].TransVecs[1]==0) ? (0) : (A.Cell.rUnitCell[1][2] * A.H[iH].TransVecs[1])) + ((A.H[iH].TransVecs[2]==0) ? (0) : (A.Cell.rUnitCell[2][2] * A.H[iH].TransVecs[2]));
     alphaRe = cos(Dot(k, vector));
     alphaIm = sin(Dot(k, vector));
     if (Sqr(alphaIm) < Sqr(alphaRe) * DBL_EPSILON * 100) alphaIm = 0;
@@ -2021,4 +2021,100 @@ int TightBindingAddAxesToMatrix(double Emin, double Emax, int NELines, double *E
     }
   }
   return 0;
+}
+
+int nonRelAngularMomentumZNumbers(string orb)
+{
+	if (orb.length()<1)
+		return -1;
+	char lastChar = orb.at(orb.length()-1);
+	switch (lastChar) {
+		case 's':
+			return 2*0+1;
+		case 'p':
+			return 2*1+1;
+		case 'd':
+			return 2*2+1;
+		case 'f':
+			return 2*3+1;
+		case 'g':
+			return 2*4+1;
+		case 'h':
+			return 2*5+1;
+		default:
+			return -1;
+	}
+}
+
+int relAngularMomentumZNumbers(string orb, int * significantCharPos)
+{
+	if (orb.length()<3)
+		return -1;
+	char lastChar, significantChar;
+	lastChar = orb.at(orb.length()-1);
+	if (lastChar != '2')
+		return -1;
+	*significantCharPos = (int)orb.length()-2;
+	significantChar = orb[*significantCharPos];
+	if (significantChar == '/')
+	{
+		*significantCharPos = (int)orb.length()-3;
+		significantChar = orb[*significantCharPos];
+	}
+	switch (significantChar) {
+			case '1':
+				return 1+1;
+			case '3':
+				return 3+1;
+			case '5':
+				return 5+1;
+			case '7':
+				return 7+1;
+			case '9':
+				return 9+1;
+			default:
+				return -1;
+		}
+}
+
+int relAngularMomentumZNumbers(string orb)
+{
+	int significantCharPos;
+	return relAngularMomentumZNumbers(orb,&significantCharPos);
+}
+
+
+int kappa(string orb)
+{
+	int jzNumbers, lzNumbers, significantCharPos;
+	jzNumbers = relAngularMomentumZNumbers(orb,&significantCharPos);
+	if (jzNumbers < 0)
+	{
+		cout << "\nWarning: Key \"" << orb << "\" could not be interpreted as a relativistic orbital, kappa is set to 0.\n";
+		return 0;
+	}
+	orb = orb.substr(0,significantCharPos);
+	lzNumbers = nonRelAngularMomentumZNumbers(orb);
+	if (lzNumbers < 0)
+	{
+		cout << "\nWarning: Remainder of key \"" << orb << "\" could not be interpreted as a non-relativistic orbital, kappa is set to 0.\n";
+		return 0;
+	}
+	if (jzNumbers > lzNumbers)
+		return - jzNumbers/2;
+	else
+		return jzNumbers/2;
+}
+
+
+//TODO: Anyone have a better idea where to put this function?
+int isIntElementOf(const uint16_t element, const uint16_t * const set, const uint32_t setSize)
+{
+	int i;
+	for (i=0;i<setSize;i++)
+	{
+		if (element == set[i])
+			return 1;
+	}
+	return 0;
 }

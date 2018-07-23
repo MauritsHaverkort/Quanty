@@ -609,7 +609,7 @@ uint32_t StreamPrintCrystalStructure(CrystalStructureType O, FILE * stream)
   if((O.Units&6)==4) fprintf(stream, "nm       ");
   if((O.Units&8)==0) fprintf(stream, "Absolute atom positions");
   if((O.Units&8)==8) fprintf(stream, "Relative atom positions");
-  fprintf(stream, "Unit cell parameters:\n");
+  fprintf(stream, "\nUnit cell parameters:\n");
   fprintf(stream, "a: %15.7F %15.7F %15.7F\n", O.rUnitCell[0][0], O.rUnitCell[0][1], O.rUnitCell[0][2]);
   fprintf(stream, "b: %15.7F %15.7F %15.7F\n", O.rUnitCell[1][0], O.rUnitCell[1][1], O.rUnitCell[1][2]);
   fprintf(stream, "c: %15.7F %15.7F %15.7F\n", O.rUnitCell[2][0], O.rUnitCell[2][1], O.rUnitCell[2][2]);
@@ -812,7 +812,7 @@ uint32_t StreamPrintTightBindingDef(TightBindingDef O, FILE * stream)
   fprintf(stream, "Hopping definitions ( %i )\n", O.nH);
   for (i = 0; i < O.nH; i++)
   {
-    fprintf(stream, "Hopping from %i : %s - %s to %i : %s - %s with translation vector in unit cells: { %i , %i , %i }\n", O.H[i].Atompos1, O.Cell.Atom[O.H[i].Atompos1].Name,O.Cell.Atom[O.H[i].Atompos1].ShellName[O.H[i].Shellpos1], O.H[i].Atompos2, O.Cell.Atom[O.H[i].Atompos2].Name, O.Cell.Atom[O.H[i].Atompos2].ShellName[O.H[i].Shellpos2], O.H[i].TransVecs[0], O.H[i].TransVecs[1], O.H[i].TransVecs[2]);
+    fprintf(stream, "Hopping from %i : %s - %s to %i : %s - %s with translation vector in unit cells: { %i , %i , %i } ({%15.8f %15.8f %15.8f })\n", O.H[i].Atompos1, O.Cell.Atom[O.H[i].Atompos1].Name,O.Cell.Atom[O.H[i].Atompos1].ShellName[O.H[i].Shellpos1], O.H[i].Atompos2, O.Cell.Atom[O.H[i].Atompos2].Name, O.Cell.Atom[O.H[i].Atompos2].ShellName[O.H[i].Shellpos2], O.H[i].TransVecs[0], O.H[i].TransVecs[1], O.H[i].TransVecs[2], O.H[i].ConnectingVector[0], O.H[i].ConnectingVector[1], O.H[i].ConnectingVector[2]);
     StreamPrintMatrix(O.H[i].Hop, stream);
   }
   fprintf(stream, "\n");

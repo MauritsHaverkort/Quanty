@@ -866,6 +866,213 @@ uint32_t MatrixTransform(MatrixType * const M, MatrixType const A, MatrixType co
 }
 
 
+/* M = L^* A R^{transpose}
+ * M[i][j]=\sum_k,l L[i][l]^* A[l][k] R[j][k]
+ * (A.Ni==L.Nj)  (A.Nj==R.Nj)
+ * (M.Ni==L.Ni)  (M.Nj==R.Ni)
+ * M on entrance not initiallized
+ */
+uint32_t MatrixTransformLeftRight(MatrixType * const M, MatrixType const A, MatrixType const L, MatrixType const R)
+{
+  if ((A.Ni!=L.Nj) || (A.Nj!=R.Nj) )
+  {
+    printf("Invallid dimensions for matrix transformation L^* * A * R^T\n");
+    printf("A.Ni=%i A.Nj=%i L.Ni=%i L.Nj=%i R.Ni=%i R.Nj=%i \n", A.Ni, A.Nj, L.Ni, L.Nj, R.Ni, R.Nj);
+    return 1;
+  }
+  uint32_t i, j, k, l;
+  M->Ni = L.Ni;
+  M->Nj = R.Ni;
+  M->QComplex = 1;
+  if ((A.QComplex == 0) && (L.QComplex == 0) && (R.QComplex == 0)) M->QComplex = 0;
+  if (InitMatrix(M)) return 1;
+  strcpy(M->Name, "L^* A R^T A=(");
+  strncat(M->Name, A.Name, Max(0, (int)((int)MAXStrLength - (int)24)));
+  strcat(M->Name, ")");
+  if(A.QComplex)
+  {                             /* A Complex */
+    if(L.QComplex)
+    {
+      if(R.QComplex)
+      {                         /* A Complex L Complex R Complex */
+        for (i = 0; i < M->Ni; i++)
+        {
+          for (j = 0; j < M->Nj; j++)
+          {
+            M->VRe[i][j] = 0;
+            M->VIm[i][j] = 0;
+            for (k = 0; k < A.Nj; k++)
+            {
+              for (l = 0; l < A.Ni; l++)
+              {
+                M->VRe[i][j] += L.VRe[i][l] * A.VRe[l][k] * R.VRe[j][k]
+                              + L.VIm[i][l] * A.VIm[l][k] * R.VRe[j][k]
+                              + L.VIm[i][l] * A.VRe[l][k] * R.VIm[j][k]
+                              - L.VRe[i][l] * A.VIm[l][k] * R.VIm[j][k];
+                M->VIm[i][j] += L.VIm[i][l] * A.VIm[l][k] * R.VIm[j][k]
+                              + L.VRe[i][l] * A.VRe[l][k] * R.VIm[j][k]
+                              + L.VRe[i][l] * A.VIm[l][k] * R.VRe[j][k]
+                              - L.VIm[i][l] * A.VRe[l][k] * R.VRe[j][k];
+              }
+            }
+          }
+        }
+      }
+      else
+      {                         /* A Complex L Complex R Real    */
+        for (i = 0; i < M->Ni; i++)
+        {
+          for (j = 0; j < M->Nj; j++)
+          {
+            M->VRe[i][j] = 0;
+            M->VIm[i][j] = 0;
+            for (k = 0; k < A.Nj; k++)
+            {
+              for (l = 0; l < A.Ni; l++)
+              {
+                M->VRe[i][j] += L.VRe[i][l] * A.VRe[l][k] * R.VRe[j][k]
+                              + L.VIm[i][l] * A.VIm[l][k] * R.VRe[j][k];
+                M->VIm[i][j] += L.VRe[i][l] * A.VIm[l][k] * R.VRe[j][k]
+                              - L.VIm[i][l] * A.VRe[l][k] * R.VRe[j][k];
+              }
+            }
+          }
+        }
+      }
+    }
+    else
+    {
+      if(R.QComplex)
+      {                         /* A Complex L Real    R Complex */
+        for (i = 0; i < M->Ni; i++)
+        {
+          for (j = 0; j < M->Nj; j++)
+          {
+            M->VRe[i][j] = 0;
+            M->VIm[i][j] = 0;
+            for (k = 0; k < A.Nj; k++)
+            {
+              for (l = 0; l < A.Ni; l++)
+              {
+                M->VRe[i][j] += L.VRe[i][l] * A.VRe[l][k] * R.VRe[j][k]
+                              - L.VRe[i][l] * A.VIm[l][k] * R.VIm[j][k];
+                M->VIm[i][j] += L.VRe[i][l] * A.VRe[l][k] * R.VIm[j][k]
+                              + L.VRe[i][l] * A.VIm[l][k] * R.VRe[j][k];
+              }
+            }
+          }
+        }
+      }
+      else
+      {                         /* A Complex L Real    R Real    */
+        for (i = 0; i < M->Ni; i++)
+        {
+          for (j = 0; j < M->Nj; j++)
+          {
+            M->VRe[i][j] = 0;
+            M->VIm[i][j] = 0;
+            for (k = 0; k < A.Nj; k++)
+            {
+              for (l = 0; l < A.Ni; l++)
+              {
+                M->VRe[i][j] += L.VRe[i][l] * A.VRe[l][k] * R.VRe[j][k];
+                M->VIm[i][j] += L.VRe[i][l] * A.VIm[l][k] * R.VRe[j][k];
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  else
+  {                             /* A real */
+    if(L.QComplex)
+    {
+      if(R.QComplex)
+      {                         /* A Real    L Complex R Complex */
+        for (i = 0; i < M->Ni; i++)
+        {
+          for (j = 0; j < M->Nj; j++)
+          {
+            M->VRe[i][j] = 0;
+            M->VIm[i][j] = 0;
+            for (k = 0; k < A.Nj; k++)
+            {
+              for (l = 0; l < A.Ni; l++)
+              {
+                M->VRe[i][j] += L.VRe[i][l] * A.VRe[l][k] * R.VRe[j][k]
+                              + L.VIm[i][l] * A.VRe[l][k] * R.VIm[j][k];
+                M->VIm[i][j] += L.VRe[i][l] * A.VRe[l][k] * R.VIm[j][k]
+                              - L.VIm[i][l] * A.VRe[l][k] * R.VRe[j][k];
+              }
+            }
+          }
+        }
+      }
+      else
+      {                         /* A Real    L Complex R Real    */
+        for (i = 0; i < M->Ni; i++)
+        {
+          for (j = 0; j < M->Nj; j++)
+          {
+            M->VRe[i][j] = 0;
+            M->VIm[i][j] = 0;
+            for (k = 0; k < A.Nj; k++)
+            {
+              for (l = 0; l < A.Ni; l++)
+              {
+                M->VRe[i][j] += L.VRe[i][l] * A.VRe[l][k] * R.VRe[j][k];
+                M->VIm[i][j] -= L.VIm[i][l] * A.VRe[l][k] * R.VRe[j][k];
+              }
+            }
+          }
+        }
+      }
+    }
+    else
+    {
+      if(R.QComplex)
+      {                         /* A Real    L Real    R Complex */
+        for (i = 0; i < M->Ni; i++)
+        {
+          for (j = 0; j < M->Nj; j++)
+          {
+            M->VRe[i][j] = 0;
+            M->VIm[i][j] = 0;
+            for (k = 0; k < A.Nj; k++)
+            {
+              for (l = 0; l < A.Ni; l++)
+              {
+                M->VRe[i][j] += L.VRe[i][l] * A.VRe[l][k] * R.VRe[j][k];
+                M->VIm[i][j] += L.VRe[i][l] * A.VRe[l][k] * R.VIm[j][k];
+              }
+            }
+          }
+        }
+      }
+      else
+      {                         /* A Real    L Real    R Real    */
+        for (i = 0; i < M->Ni; i++)
+        {
+          for (j = 0; j < M->Nj; j++)
+          {
+            M->VRe[i][j] = 0;
+            for (k = 0; k < A.Nj; k++)
+            {
+              for (l = 0; l < A.Ni; l++)
+              {
+                M->VRe[i][j] += L.VRe[i][l] * A.VRe[l][k] * R.VRe[j][k];
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  return 0;
+}
+
+
 /* M = T^* A T^{transpose}
  * M[i][j]=\sum_k,l T[i][l]^* A[l][k] T[j][k]
  * (A.Ni==A.Nj==T.Nj)
@@ -1466,4 +1673,148 @@ uint32_t MatrixBasisOrthonormalize(MatrixType const S, MatrixType * const T)
 {
   printf("To DO\n");
   return 0;
+}
+
+MatrixType zeroMatrix(int Ni, int Nj)
+{
+	MatrixType zeroMat;
+	zeroMat.Ni = Ni;
+	zeroMat.Nj = Nj;
+	if (Ni != 0 && Nj != 0)
+		InitMatrix(&zeroMat);
+	return zeroMat;
+}
+
+MatrixType nullMatrix()
+{
+	return zeroMatrix(0,0);
+}
+
+bool isNullMatrix(MatrixType M)
+{
+	return (M.Ni == 0 && M.Nj == 0);
+}
+
+MatrixType MatrixFlatten(std::vector<std::vector<MatrixType> > allMs)
+{
+	uint32_t QComplex = 0;
+	MatrixType fullM;
+	int numOfRowsOuter = allMs.size();
+	int numOfColsOuter = allMs[0].size();
+	int numOfRowsInner[numOfRowsOuter], numOfColsInner[numOfColsOuter], numOfAllRows = 0, numOfAllCols = 0;
+	for (int i = 0; i < numOfRowsOuter; ++i)
+	{
+		numOfRowsInner[i] = 0;
+		for (int j = 0; j < numOfColsOuter; ++j)
+		{
+			if (!isNullMatrix(allMs[i][j]))
+			{
+				numOfRowsInner[i] = allMs[i][j].Ni;
+				break;
+			}
+		}
+		if (numOfRowsInner[i] == 0)
+			printf("\nWarning: Row %d of matrix is empty and will be ignored.\n",i+1);
+		numOfAllRows += numOfRowsInner[i];
+	}
+	for (int j = 0; j < numOfColsOuter; ++j)
+	{
+		numOfColsInner[j] = 0;
+		for (int i = 0; i < numOfRowsOuter; ++i)
+		{
+			if (!isNullMatrix(allMs[i][j]))
+			{
+				numOfColsInner[j] = allMs[i][j].Nj;
+				break;
+			}
+		}
+		if (numOfColsInner[j] == 0)
+			printf("\nWarning: Column %d of matrix is empty and will be ignored.\n",j+1);
+		numOfAllCols += numOfColsInner[j];
+	}
+	for (int i = 0; i < numOfRowsOuter; ++i)
+	{
+		for (int j = 0; j < numOfColsOuter; ++j)
+		{
+			if (isNullMatrix(allMs[i][j]))
+			{
+				allMs[i][j] = zeroMatrix(numOfRowsInner[i],numOfColsInner[j]);
+			}
+			if (allMs[i][j].Nj != numOfColsInner[j])
+			{
+				printf("Matrix at position %d,%d has a different number of columns than it should have.", i + 1, j + 1);
+				return nullMatrix();
+			}
+			if (allMs[i][j].Ni != numOfRowsInner[i])
+			{
+				printf("Matrix at position %d,%d has a different number of rows than it should have.", i + 1, j + 1);
+				return nullMatrix();
+			}
+			if (!QComplex && allMs[i][j].QComplex)
+				QComplex = allMs[i][j].QComplex;
+		}
+	}
+	fullM.QComplex = QComplex;
+	fullM.Ni = numOfAllRows;
+	fullM.Nj = numOfAllCols;
+	InitMatrix(&fullM);
+	int rowOffset = 0, colOffset = 0;
+	for (int i = 0; i < numOfRowsOuter; ++i)
+	{
+		colOffset = 0;
+		for (int j = 0; j < numOfColsOuter; ++j)
+		{
+			for (int k = 0; k < allMs[i][j].Ni; ++k)
+			{
+				for (int l = 0; l < allMs[i][j].Nj; ++l)
+				{
+					fullM.VRe[rowOffset + k][colOffset + l] = allMs[i][j].VRe[k][l];
+					if (QComplex)
+					{
+						if (allMs[i][j].QComplex)
+							fullM.VIm[rowOffset + k][colOffset + l] = allMs[i][j].VIm[k][l];
+						else
+							fullM.VIm[rowOffset + k][colOffset + l] = 0;
+					}
+				}
+			}
+			colOffset += allMs[i][j].Nj;
+		}
+		rowOffset += allMs[i][0].Ni;
+	}
+	return fullM;
+}
+
+
+MatrixType ExpandNumberToMatrix(int size, double Re, double Im = 0)
+{
+	MatrixType M;
+	M.QComplex = (Im != 0);
+	M.Ni = size;
+	M.Nj = size;
+	InitMatrix(&M);
+	for (int i = 0; i < size; ++i)
+		M.VRe[i][i] = Re;
+	if (M.QComplex)
+		for (int i = 0; i < size; ++i)
+			M.VIm[i][i] = Im;
+	return M;
+}
+
+MatrixType MatrixExpand(MatrixType M, int size)
+{
+	vector < vector<MatrixType> > fullM(M.Ni);
+	for (int i = 0; i < M.Ni; ++i)
+	{
+		vector < MatrixType > col(M.Nj);
+		fullM[i] = col;
+		for (int j = 0; j < M.Nj; ++j)
+		{
+			if (M.QComplex)
+				fullM[i][j] = ExpandNumberToMatrix(size, M.VRe[i][j], M.VIm[i][j]);
+			else
+				fullM[i][j] = ExpandNumberToMatrix(size, M.VRe[i][j]);
+		}
+	}
+	return MatrixFlatten(fullM);
 }

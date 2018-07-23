@@ -1,0 +1,17 @@
+Mats = {}
+Mats[#Mats + 1] = {{1,2,3},{4,5,6},{7,8,9}}
+Mats[#Mats + 1] = {{1,2,3},{4,5,6}}
+Mats[#Mats + 1] = {{1,2,3*I},{4,5,6+I}}
+
+Sizes = {0,1,2,10}
+
+for key,mat in pairs(Mats) do
+    for key2, size in pairs(Sizes) do
+        print("\nMatrix:")
+        print(mat)
+        print("\nExpansion Factor:")
+        print(size)
+        print("\nExpanded Matrix:")
+        print( Matrix.Expand(mat,size) )
+    end
+end

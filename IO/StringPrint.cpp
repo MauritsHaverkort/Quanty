@@ -347,7 +347,7 @@ uint32_t StringPrintTightBindingDef(TightBindingDef O, char **Buffer)
   sprintfAdd(Buffer, "Hopping definitions ( %i )\n", O.nH);
   for (i = 0; i < O.nH; i++)
   {
-    sprintfAdd(Buffer, "Hopping from %s - %s to %s - %s with translation vector in unit cells: { %i , %i , %i }\n", O.Cell.Atom[O.H[i].Atompos1].Name, O.Cell.Atom[O.H[i].Atompos1].ShellName[O.H[i].Shellpos1], O.Cell.Atom[O.H[i].Atompos2].Name, O.Cell.Atom[O.H[i].Atompos2].ShellName[O.H[i].Shellpos2], O.H[i].TransVecs[0], O.H[i].TransVecs[1], O.H[i].TransVecs[2]);
+    sprintfAdd(Buffer, "Hopping from %i : %s - %s to %i : %s - %s with translation vector in unit cells: { %i , %i , %i } ({%15.8E %15.8E %15.8E })\n", O.H[i].Atompos1, O.Cell.Atom[O.H[i].Atompos1].Name,O.Cell.Atom[O.H[i].Atompos1].ShellName[O.H[i].Shellpos1], O.H[i].Atompos2, O.Cell.Atom[O.H[i].Atompos2].Name, O.Cell.Atom[O.H[i].Atompos2].ShellName[O.H[i].Shellpos2], O.H[i].TransVecs[0], O.H[i].TransVecs[1], O.H[i].TransVecs[2], O.H[i].ConnectingVector[0], O.H[i].ConnectingVector[1], O.H[i].ConnectingVector[2]);
     StringPrintAddMatrix(O.H[i].Hop, Buffer);
 
   }

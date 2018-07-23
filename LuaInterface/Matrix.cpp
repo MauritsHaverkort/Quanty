@@ -1192,20 +1192,95 @@ static int LuaMatrixDestroy(lua_State * L)
   return 0;
 }
 
+//Feed it a table of tables of tables of tables of numbers, and it will return a table of tables.
+static int LuaMatrixFlatten(lua_State * L)
+{
+	int len = lua_gettop(L);
+	if (len != 1)
+		return luaL_error(L, "MatrixFlatten called with %d arguments. 1 expected, Table of tables of tables of tables of numbers.\n", len);
+	luaL_checktype(L, 1, LUA_TTABLE);
+	int numOfRowsOuter, numOfColsOuter;
+	numOfRowsOuter = (int) lua_objlen(L, 1);
+	lua_rawgeti(L, 1, 1);
+	luaL_checktype(L, -1, LUA_TTABLE);
+	numOfColsOuter = (int) lua_objlen(L, -1);
+	lua_pop(L, 1);
+	vector<vector<MatrixType> > allMs(numOfRowsOuter);
+	for (int i = 0; i < numOfRowsOuter; ++i)
+	{
+		lua_rawgeti(L, 1, i + 1);
+		luaL_checktype(L, -1, LUA_TTABLE);
+		vector<MatrixType> col (numOfColsOuter);
+		allMs[i] = col;
+		for (int j = 0; j < numOfColsOuter; ++j)
+		{
+			lua_rawgeti(L, -1, j + 1);
+			if (lua_isnumber(L, -1))
+			{
+				if (luaL_checknumber(L, -1) == 0)
+					allMs[i][j] = nullMatrix();
+				else
+					return luaL_error(L, "MatrixFlatten called with entry %d. Matrix or 0 expected.\n", luaL_checknumber(L, -1));
+			} else
+			{
+				allMs[i][j]  = *luaL_checkMatrix(L, -1);
+			}
+			lua_pop(L, 1);
+		}
+		lua_pop(L, 1);
+	}
+	MatrixType fullM = MatrixFlatten(allMs);
+	LuaPushTable_MatrixType(L, &fullM);
+	return 1;
+}
+
+static int LuaMatrixAddSpin(lua_State * L)
+{
+	MatrixType M;
+	uint32_t len = (uint32_t) lua_gettop(L);
+	if (len != 1)
+	{
+		return luaL_error(L, "MatrixAddSpin called with %d arguments. 1 expected, a matrix.\n", len);
+	}
+	M = *luaL_checkMatrix(L, 1);
+	MatrixType fullM = MatrixExpand(M, 2);
+	LuaPushTable_MatrixType(L, &fullM);
+	return 1;
+}
+
+static int LuaMatrixExpand(lua_State * L)
+{
+	MatrixType M;
+	int factor;
+	uint32_t len = (uint32_t) lua_gettop(L);
+	if (len != 2)
+	{
+		return luaL_error(L, "MatrixExpand called with %d arguments. 2 expected, a matrix and the factor by which it is to be expanded.\n", len);
+	}
+	M = *luaL_checkMatrix(L, 1);
+	factor = luaL_checkinteger(L, 2);
+	MatrixType fullM = MatrixExpand(M, factor);
+	LuaPushTable_MatrixType(L, &fullM);
+	return 1;
+}
+
 
 static const struct luaL_Reg Matrix_func[] = {
-  {"Transpose", LuaMatrixTranspose},
-  {"ConjugateTranspose", LuaMatrixConjugateTranspose},
+	{"AddSpin", LuaMatrixAddSpin},
   {"Conjugate", LuaMatrixConjugate},
-  {"Inverse", LuaMatrixInverse},
-  {"Sqrt", LuaMatrixSqrt},
-  {"Exp", LuaMatrixExp},
-  {"Random", LuaMatrixRandom},
-  {"Zero", LuaMatrixZero},
-  {"Identity", LuaMatrixIdentity},
+  {"ConjugateTranspose", LuaMatrixConjugateTranspose},
   {"Diagonal", LuaMatrixDiagonal},
+  {"Exp", LuaMatrixExp},
+	{"Expand", LuaMatrixExpand},
+	{"Flatten",LuaMatrixFlatten},
+  {"Identity", LuaMatrixIdentity},
+  {"Inverse", LuaMatrixInverse},
+  {"Random", LuaMatrixRandom},
+  {"Sqrt", LuaMatrixSqrt},
   {"ToTable", LuaMatrixToTable},
   {"ToUserdata", LuaMatrixToUserdata},
+  {"Transpose", LuaMatrixTranspose},
+  {"Zero", LuaMatrixZero},
   {NULL, NULL}
 };
 

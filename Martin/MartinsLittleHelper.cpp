@@ -6,7 +6,8 @@
  */
 #include <vector>
 
-using namespace std;
+//using namespace std;
+// inclusion of namespace std leads to conflicts with function atomic in lua
 
 void PrintMartix(double *M, int n)
 {

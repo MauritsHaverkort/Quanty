@@ -23,8 +23,10 @@ for key1,op in pairs(OpList) do
         print(op)
         print("\nDensity:")
         print(rho)
-        print("\nMeanFieldOperator")
+        print("\nMeanFieldOperator:")
         print( MeanFieldOperator(op, rho) )
+        print("\nMeanFieldOperator with electron self-interaction:")
+        print( MeanFieldOperator(op, rho, {{"AddDFTSelfInteraction",true}}) )
     end
 end
  

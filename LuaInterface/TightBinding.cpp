@@ -390,15 +390,18 @@ static int LuaCalculateRho(lua_State *L)
  *    A tight binding Definition
  *    A cluster definition
  *       Possible formats:
- *         {"periodic", {a,b,c}, atoms_to_include_optional}
+ *         {"periodic", {a,b,c}}
  *         {"open", atoms_to_include}
+ *            atoms_to_include can have the following formats
+ *              {Atom.Name, Atom.Position, {Atom.Shells}}   with Atom.Shells is an option. If not given all shells of this atom are included. (same for orbitals per shell)
  *    Aditional Operator to add (optional)
  *         Fermion index should follow the definition in the original tight binding Hamiltonian, when spin is added it is added in the form down/up, down/up, ...
  *    Options (optional)
  */
 static int LuaCreateClusterHamiltonian(lua_State *L)
 {
-  uint32_t len, lenclusterdef,i,j,nreturn=1;
+  MatrixType **AtomShellOrbitalMap;
+  uint32_t len, lenclusterdef,i,j,ishell,jshell,iorb,jorb,l,nreturn=1;
   char *tokenread;
   TightBindingDef *a, aSuper, *aSuperReturn;
   CrystalStructureSuperCellType SuperCell;
@@ -427,7 +430,7 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
   }
   /* read the tight binding defintion from the first place on the lua stack */
   a = (TightBindingDef *) luaL_checkudata(L, 1, "TightBinding_Type");
-  /* read the cluster defintion from the second position on the stack */
+  /* check the cluster defintion from the second position on the stack */
   if(lua_type(L,2)!=LUA_TTABLE)
   {
     return luaL_error(L, "Error CreateClusterHamiltonian second argument should be a table of the form {\"periodic\", {a,b,c}, (optional)atoms_to_include } or {\"open\", atoms_to_include}\n");
@@ -625,12 +628,202 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
   }
   else
   { // open systems, i.e. finite size cluster
+    TightBindingDef* ClusterDef;
+    // place return values on stack
+    H=(OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+    luaL_setmetatable(L, "Operator_Type");
+    ClusterDef=(TightBindingDef*) lua_newuserdata(L, sizeof(TightBindingDef));
+    luaL_setmetatable(L, "TightBinding_Type");
+    // set name
+    strcpy(ClusterDef->Name, a->Name);
+    // read moleclar structure
+    lua_rawgeti(L, 2, 2);
+    if(lua_type(L,-1)!=LUA_TTABLE)
+    {
+      return luaL_error(L, "Error CreateClusterHamiltonian for open clusters expects a list of atoms to include after the token \"open\"\n");
+    }
+    ClusterDef->Cell.rUnitCell[0][0]=INFINITY;
+    ClusterDef->Cell.rUnitCell[0][1]=0;
+    ClusterDef->Cell.rUnitCell[0][2]=0;
+    ClusterDef->Cell.rUnitCell[1][0]=0;
+    ClusterDef->Cell.rUnitCell[1][1]=INFINITY;
+    ClusterDef->Cell.rUnitCell[1][2]=0;
+    ClusterDef->Cell.rUnitCell[2][0]=0;
+    ClusterDef->Cell.rUnitCell[2][1]=0;
+    ClusterDef->Cell.rUnitCell[2][2]=INFINITY;
+    ClusterDef->Cell.gUnitCell[0][0]=0;
+    ClusterDef->Cell.gUnitCell[0][1]=0;
+    ClusterDef->Cell.gUnitCell[0][2]=0;
+    ClusterDef->Cell.gUnitCell[1][0]=0;
+    ClusterDef->Cell.gUnitCell[1][1]=0;
+    ClusterDef->Cell.gUnitCell[1][2]=0;
+    ClusterDef->Cell.gUnitCell[2][0]=0;
+    ClusterDef->Cell.gUnitCell[2][1]=0;
+    ClusterDef->Cell.gUnitCell[2][2]=0;
+    ClusterDef->Cell.Units=a->Cell.Units;
+    // set atomic units to absolute, as there is no unit cell
+    ClusterDef->Cell.Units &= ~(((uint32_t)1)<<3);
+    ClusterDef->Cell.NAtoms=(uint32_t)lua_objlen(L, -1);
+    ClusterDef->Cell.Atom=(AtomType*)malloc(ClusterDef->Cell.NAtoms*sizeof(AtomType));
+    for(i=0;i<ClusterDef->Cell.NAtoms;i++)
+    {
+      lua_rawgeti(L, -1, i+1);
+      LuaReadAtomWithDefault(L, -1, &(ClusterDef->Cell.Atom[i]), &(a->Cell));
+      lua_pop(L, 1);
+    }
+    lua_pop(L, 1);
+    SetNFermionIndexTightBindingDef(ClusterDef);
+    // read options
+    /* deterimine if there are aditional operators or aditional options */
+    if(len==2)
+    {
+      QOperators=False;
+      QOptions=False;
+    }
+    else
+    {
+      if(len==4)
+      {
+        QOperators=True;
+        QOptions=True;
+      }
+      /* read additional operators from the stack */
+      if (luaL_testudata(L, 3, "Operator_Type") != NULL)
+      {
+        QOperators=True;
+        AditionalOperator = (OperatorType *) luaL_checkudata(L, 3, "Operator_Type");
+        if(len==3)
+        {
+          QOptions=False;
+        }
+      }
+      else
+      {
+        QOperators=False;
+        QOptions=True;
+        if(len==4)
+        {
+          return luaL_error(L, "Error CreateClusterHamiltonian third argument should be an operator defining aditional interactions within the unit cell\n");
+        }
+      }
+    }
+    /* read options */
+    if(QOptions==True)
+    {
+      LuaCheckOptions(L, len, LuaCreateClusterHamiltonianOptions);
+    }
+    // loop over all atoms and shells for creation and annihilation site
+    // search for connecting vector in TD definition
+    // set Operator as matrix
+    ClusterDef->nH = 0;
+    AtomShellOrbitalMap=(MatrixType**)malloc(ClusterDef->Cell.NAtoms*sizeof(MatrixType*));
+    for(i=0;i<ClusterDef->Cell.NAtoms;i++)
+    {
+      for(j=0;j<a->Cell.NAtoms;j++)
+      {
+        if(strcmp(ClusterDef->Cell.Atom[i].Name,a->Cell.Atom[j].Name)==0)
+        {
+          ClusterDef->nH+=ClusterDef->Cell.Atom[i].Nshell;
+          AtomShellOrbitalMap[i]=(MatrixType*)malloc(ClusterDef->Cell.Atom[i].Nshell*sizeof(MatrixType));
+          // set the matrix AtomShellOrbitalMap[i][ishell] such that it maps the order of the orbitals in the TB structure to the order in the Cluster structure
+          for(ishell=0;ishell<ClusterDef->Cell.Atom[i].Nshell;ishell++)
+          {
+            AtomShellOrbitalMap[i][ishell].QComplex=0;
+            AtomShellOrbitalMap[i][ishell].Ni=ClusterDef->Cell.Atom[i].shelldegeneracy[ishell];
+            // find the position of Atom ClusterDef->Cell.Atom[i].Name and shell ClusterDef->Cell.Atom[i].ShellName[ishell] in a->Cell
+            for(jshell=0;jshell<a->Cell.Atom[j].Nshell;j++)
+            {
+              if(strcmp(ClusterDef->Cell.Atom[i].ShellName[ishell],a->Cell.Atom[j].ShellName[jshell])==0)
+              {
+                AtomShellOrbitalMap[i][ishell].Nj=a->Cell.Atom[j].shelldegeneracy[jshell];
+                InitMatrix(&(AtomShellOrbitalMap[i][ishell]));
+                for(iorb=0;iorb<AtomShellOrbitalMap[i][ishell].Ni;iorb++)
+                {
+                  for(jorb=0;jorb<AtomShellOrbitalMap[i][ishell].Nj;jorb++)
+                  {
+                    if(strcmp(ClusterDef->Cell.Atom[i].OrbitalName[ishell][iorb],a->Cell.Atom[j].OrbitalName[jshell][jorb])==0)
+                    {
+                      AtomShellOrbitalMap[i][ishell].VRe[iorb][jorb]=1;
+                      goto orbfound;
+                    }
+                  }
+                  luaL_error(L, "Orbital %s not found in tight binding definition for shell %s of atom %s\n",ClusterDef->Cell.Atom[i].OrbitalName[ishell][iorb],ClusterDef->Cell.Atom[i].ShellName[ishell],ClusterDef->Cell.Atom[i].Name);
+                  orbfound:;
+                }
+                goto shellfound;
+              }
+            }
+            luaL_error(L, "Shell %s not found in tight binding definition for shell %s of atom %s\n",ClusterDef->Cell.Atom[i].ShellName[ishell],ClusterDef->Cell.Atom[i].ShellName[ishell],ClusterDef->Cell.Atom[i].Name);
+            shellfound:;
+          }
+          goto atomfound;
+        }
+      }
+      luaL_error(L, "Atom not found in tight binding definition for atom %s\n",ClusterDef->Cell.Atom[i].Name);
+      atomfound:;
+    }
+    ClusterDef->nH*=ClusterDef->nH;
+    ClusterDef->H=(TightBindingDefHopping*)malloc(ClusterDef->nH * sizeof(TightBindingDefHopping));
+    ClusterDef->nH=0;
+    for(i=0;i<ClusterDef->Cell.NAtoms;i++)
+    {
+      for(ishell=0;ishell<ClusterDef->Cell.Atom[i].Nshell;ishell++)
+      {
+        for(j=0;j<ClusterDef->Cell.NAtoms;j++)
+        {
+          for(jshell=0;jshell<ClusterDef->Cell.Atom[j].Nshell;jshell++)
+          {
+            for(l=0;l<a->nH;l++)
+            {
+              if(  (strcmp(a->Cell.Atom[a->H[l].Atompos1].Name,ClusterDef->Cell.Atom[i].Name)==0)
+                 &&(strcmp(a->Cell.Atom[a->H[l].Atompos1].ShellName[a->H[l].Shellpos1],ClusterDef->Cell.Atom[i].ShellName[ishell])==0)
+                 &&(strcmp(a->Cell.Atom[a->H[l].Atompos2].Name,ClusterDef->Cell.Atom[j].Name)==0)
+                 &&(strcmp(a->Cell.Atom[a->H[l].Atompos2].ShellName[a->H[l].Shellpos2],ClusterDef->Cell.Atom[j].ShellName[jshell])==0)
+                 &&(EqualFloat(a->H[l].ConnectingVector[0], ClusterDef->Cell.Atom[i].Position[0]-ClusterDef->Cell.Atom[j].Position[0])==1)
+                 &&(EqualFloat(a->H[l].ConnectingVector[1], ClusterDef->Cell.Atom[i].Position[1]-ClusterDef->Cell.Atom[j].Position[1])==1)
+                 &&(EqualFloat(a->H[l].ConnectingVector[2], ClusterDef->Cell.Atom[i].Position[2]-ClusterDef->Cell.Atom[j].Position[2])==1) )
+              {
+                ClusterDef->H[ClusterDef->nH].Atompos1=i;
+                ClusterDef->H[ClusterDef->nH].Shellpos1=ishell;
+                ClusterDef->H[ClusterDef->nH].Atompos2=j;
+                ClusterDef->H[ClusterDef->nH].Shellpos2=jshell;
+                ClusterDef->H[ClusterDef->nH].TransVecs[0]=0;
+                ClusterDef->H[ClusterDef->nH].TransVecs[1]=0;
+                ClusterDef->H[ClusterDef->nH].TransVecs[2]=0;
+                ClusterDef->H[ClusterDef->nH].ConnectingVector[0]=ClusterDef->Cell.Atom[i].Position[0]-ClusterDef->Cell.Atom[j].Position[0];
+                ClusterDef->H[ClusterDef->nH].ConnectingVector[1]=ClusterDef->Cell.Atom[i].Position[1]-ClusterDef->Cell.Atom[j].Position[1];
+                ClusterDef->H[ClusterDef->nH].ConnectingVector[2]=ClusterDef->Cell.Atom[i].Position[2]-ClusterDef->Cell.Atom[j].Position[2];
+                MatrixTransformLeftRight(&(ClusterDef->H[ClusterDef->nH].Hop), a->H[l].Hop, AtomShellOrbitalMap[i][ishell], AtomShellOrbitalMap[j][jshell]);
+                ClusterDef->nH++;
+              }
+            }
+          }
+        }
+      }
+    }
+    // build Hamiltonian from cluster tight binding definition
+    if(AddSpin==True)
+    {
+      CreateHamiltonianOperatorFromTightBindingDefPlusSpin(*ClusterDef, k.VRe, H);
+    }
+    else
+    {
+      CreateHamiltonianOperatorFromTightBindingDef(*ClusterDef, k.VRe, H);
+    }
+    // add additional operator
+    if(QOperators==True)
+    {
+      if(H->NFermion==AditionalOperator->NFermion)
+      {
+        OperatorAddNormalOrder(H, *AditionalOperator, 1, 0, &QDetNotOrderedFcFaBcBa);
+      }
+      else
+      {
+        return luaL_error(L, "Number of Fermions in tight binding Hamiltonian (%i) not equal to number of Fermions in additional operator (%i)\n",H->NFermion,AditionalOperator->NFermion);
+      }
+    }
     
-    
-    
-    
-    //TODO:
-    return luaL_error(L, "Error in CreateClusterHamiltonian open boundary conditions not yet implemented \n");
+    return 2;
   }
 }
 
@@ -701,6 +894,132 @@ static int LuaReadAtom(lua_State *L, int narg, AtomType *a)
   return 0;
 }
 
+static int LuaReadAtomWithDefault(lua_State *L, int narg, AtomType *a, CrystalStructureType *def)
+{
+  uint32_t i,j,k,l,len;
+  double *arr;
+  if(lua_type(L,narg)==LUA_TTABLE)
+  {
+    len = (uint32_t)lua_objlen(L, narg);
+    if(!((len==3)||(len==2))) return luaL_error(L, "Error ReadAtom expects a list of the form {Name, Position, {Shell1, Shell2, ...}} or {Name, Position}\n");
+    // get the name of the atom
+    lua_rawgeti(L, narg, 1);
+    strncpy(a->Name, luaL_checkstring(L, -1), MAXStrLength-1);
+    lua_pop(L, 1);
+    // set the atom number
+    a->AtomNumber=AtomNameToNumber(a->Name);
+    // get the position of the atom
+    lua_rawgeti(L, narg, 2);
+    arr=luaL_checkarray_double(L,-1,&len);
+    if(len!=3) return luaL_error(L, "Error ReadAtom position of atom %s should be a list of 3 numbers\n",a->Name);
+    a->Position[0]=arr[0];a->Position[1]=arr[1];a->Position[2]=arr[2];
+    free(arr);
+    lua_pop(L, 1);
+    // get the list with shells
+    len = (uint32_t)lua_objlen(L, narg);
+    if(len==3)
+    {
+      lua_rawgeti(L, narg, 3);
+      if(lua_type(L,-1)!=LUA_TTABLE) return luaL_error(L, "Error ReadAtom shells of atom %s should be a list of shells\n",a->Name);
+      a->Nshell = (int)lua_objlen(L, -1);
+      a->ShellName = (char**)malloc(a->Nshell*sizeof(char*));
+      a->shelldegeneracy = (int*)malloc(a->Nshell*sizeof(int));
+      a->OrbitalName = (char***)malloc(a->Nshell*sizeof(char**));
+      for(i=0;i<a->Nshell;i++)
+      {
+        lua_rawgeti(L, -1, i+1);
+        if(lua_type(L,-1)==LUA_TTABLE)
+        {
+          // shell given by a table of the form {"shellname", {"orb1name", "orb2name", ...}}
+          len = (uint32_t)lua_objlen(L, -1);
+          if(len!=2) return luaL_error(L, "Error ReadAtom shell %d of atom %s should be a list containing the name and a list of orbitals\n",i+1,a->Name);
+          lua_rawgeti(L, -1, 1);
+          a->ShellName[i]= (char*)malloc(MAXStrLength*sizeof(char));
+          strncpy(a->ShellName[i], luaL_checkstring(L, -1), MAXStrLength-1);
+          lua_pop(L, 1);
+          lua_rawgeti(L, -1, 2);
+          if(lua_type(L,-1)!=LUA_TTABLE) return luaL_error(L, "Error ReadAtom shell %s(%d) of atom %s should be a list containing the name and a list of orbitals\n",a->ShellName[i],i+1,a->Name);
+          a->shelldegeneracy[i] = (uint32_t)lua_objlen(L, -1);
+          a->OrbitalName[i] = (char**)malloc(a->shelldegeneracy[i]*sizeof(char*));
+          for(j=0;j<a->shelldegeneracy[i];j++)
+          {
+            lua_rawgeti(L, -1, j+1);
+            a->OrbitalName[i][j]= (char*)malloc(MAXStrLength*sizeof(char));
+            strncpy(a->OrbitalName[i][j], luaL_checkstring(L, -1), MAXStrLength-1);
+            lua_pop(L, 1);
+          }
+          lua_pop(L, 1);
+        }
+        else
+        {
+          // shell given by a string specifing its name, all orbitals taken from def
+          strncpy(a->ShellName[i], luaL_checkstring(L, -1), MAXStrLength-1);
+          // find atom and shell in def and set the list of orbitals
+          for(j=0;j<def->NAtoms;j++)
+          {
+            if(strcmp(a->Name, def->Atom[j].Name)==0)
+            {
+              for(k=0;k<def->Atom[j].Nshell;k++)
+              {
+                if(strcmp(a->ShellName[i], def->Atom[j].ShellName[k])==0)
+                {
+                  a->shelldegeneracy[i] = def->Atom[j].shelldegeneracy[k];
+                  a->OrbitalName[i] = (char**)malloc(a->shelldegeneracy[k]*sizeof(char*));
+                  for(l=0;l<a->shelldegeneracy[k];l++)
+                  {
+                    a->OrbitalName[k][l]= (char*)malloc(MAXStrLength*sizeof(char));
+                    strncpy(a->OrbitalName[k][l], def->Atom[j].OrbitalName[k][l], MAXStrLength-1);
+                  }
+                  goto FoundShell;
+                }
+              }
+              return luaL_error(L, "Found atom with label %s and shell with label %s but without a definition of orbitals\n Shell of atom is not in the refference structure so I can't set the shells and orbitals to default\n", a->Name, a->ShellName[i]);
+            }
+          }
+          return luaL_error(L, "Found atom with label %s but without a definition of shells and orbitals\n Atom is not in the refference structure so I can't set the shells and orbitals to default\n", a->Name);
+          FoundShell:;
+        }
+        lua_pop(L, 1);
+      }
+      lua_pop(L, 1);
+    }
+    else
+    {
+      // find atom in def and set the list with shells
+      for(i=0;i<def->NAtoms;i++)
+      {
+        if(strcmp(a->Name, def->Atom[i].Name)==0)
+        {
+          a->Nshell = def->Atom[i].Nshell;
+          a->ShellName = (char**)malloc(a->Nshell*sizeof(char*));
+          a->shelldegeneracy = (int*)malloc(a->Nshell*sizeof(int));
+          a->OrbitalName = (char***)malloc(a->Nshell*sizeof(char**));
+          for(j=0;j<a->Nshell;j++)
+          {
+            a->ShellName[j]= (char*)malloc(MAXStrLength*sizeof(char));
+            strncpy(a->ShellName[j], def->Atom[i].ShellName[j], MAXStrLength-1);
+            a->shelldegeneracy[j] = def->Atom[i].shelldegeneracy[j];
+            a->OrbitalName[j] = (char**)malloc(a->shelldegeneracy[j]*sizeof(char*));
+            for(k=0;k<a->shelldegeneracy[j];k++)
+            {
+              a->OrbitalName[j][k]= (char*)malloc(MAXStrLength*sizeof(char));
+              strncpy(a->OrbitalName[j][k], def->Atom[i].OrbitalName[j][k], MAXStrLength-1);
+            }
+          }
+          goto FoundAtom;
+        }
+      }
+      return luaL_error(L, "Found atom with label %s but without a definition of shells and orbitals\n Atom is not in the refference structure so I can't set the shells and orbitals to default\n", a->Name);
+      FoundAtom:;
+    }
+  }
+  else
+  {
+    return luaL_error(L, "Error ReadAtom expects a list of the form {Name, Position, {Shell1, Shell2, ...}} or {Name, Position}\n");
+  }
+  return 0;
+}
+
 /*
  * push a definition of an atom to the stack as list
  * format:
@@ -734,7 +1053,7 @@ static int LuaPushAtom(lua_State *L, AtomType const *a)
           lua_createtable(L,a->shelldegeneracy[i],0);
           for(j=0;j<a->shelldegeneracy[i];j++)
           {
-            lua_pushstring(L, &(a->ShellName[i][j]));
+            lua_pushstring(L, a->OrbitalName[i][j]);
             lua_rawseti(L, -2, j+1);
           }
           lua_rawseti(L, -2, 2); // set a table with a list of the orbitals to the second position

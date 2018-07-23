@@ -28,3 +28,9 @@ uint32_t RealVectorMatrixVector(MatrixType const M, const double *const a, doubl
 uint32_t ComplexVectorMatrixVector(MatrixType const M, const double *const aRe, const double *const aIm, double *const bRe, double *const bIm);
 void MatrixOrthonormalize(MatrixType * const M);
 uint32_t MatrixBasisOrthonormalize(MatrixType const S, MatrixType * const T);
+MatrixType zeroMatrix(int Ni, int Nj);
+MatrixType nullMatrix();
+bool isNullMatrix(MatrixType M);
+MatrixType MatrixFlatten(std::vector<std::vector<MatrixType> > allMs);
+MatrixType ExpandNumberToMatrix(int size, double Re, double Im);
+MatrixType MatrixExpand(MatrixType M, int size);

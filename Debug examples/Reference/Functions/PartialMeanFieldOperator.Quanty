@@ -35,8 +35,10 @@ for key1,op in pairs(OpList) do
             print(rho)
             print("\nIndices:")
             print(inds)
-            print("\nPartialMeanFieldOperator")
-            print( Simon.PartialMeanFieldOperator(op, rho, inds) )
+            print("\nPartialMeanFieldOperator:")
+            print( PartialMeanFieldOperator(op, rho, inds) )
+            print("\nPartialMeanFieldOperator with electron self-interaction:")
+            print( PartialMeanFieldOperator(op, rho, inds, {{"AddDFTSelfInteraction",true}}) )
         end
     end
 end

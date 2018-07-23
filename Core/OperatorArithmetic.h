@@ -9,10 +9,10 @@ uint32_t InitOperatorFixedLength(OperatorType * const O, const uint32_t length, 
 uint32_t InitOperatorCopySettings(OperatorType * const O, const OperatorType Oset);
 uint32_t RealOperatorAddLader(OperatorType * const O, const uint16_t * const oadd, const uint32_t length, const double VRe);
 uint32_t RealOperatorAddLaderNormalOrder(OperatorType * const O, const uint16_t * const oadd, const uint32_t length, const double VRe, uint32_t(*QDetNotOrdered) (uint16_t, uint16_t, uint32_t));
-double RealOperatorPrefactorLader(OperatorType * const O, const uint16_t * const oadd, const uint32_t length);
+double RealOperatorPrefactorLader(const OperatorType * const O, const uint16_t * const oadd, const uint32_t length);
 uint32_t ComplexOperatorAddLader(OperatorType * const O, const uint16_t * const oadd, const uint32_t length, const double VRe, const double VIm);
 uint32_t ComplexOperatorAddLaderNormalOrder(OperatorType * const O, const uint16_t * const oadd, const uint32_t length, const double VRe, const double VIm, uint32_t(*QDetNotOrdered) (uint16_t,uint16_t,uint32_t));
-Complex16 ComplexOperatorPrefactorLader(OperatorType * const O, const uint16_t * const oadd, const uint32_t length);
+Complex16 ComplexOperatorPrefactorLader(const OperatorType * const O, const uint16_t * const oadd, const uint32_t length);
 uint32_t OperatorAddLader(OperatorType * const O, const uint16_t * const oadd, const uint32_t length, const double VRe, const double VIm);
 uint32_t OperatorAddLaderNormalOrder(OperatorType * const O, const uint16_t * const oadd, const uint32_t length,const double VRe, const double VIm, uint32_t(*QDetNotOrdered) (uint16_t, uint16_t, uint32_t));
 uint32_t OperatorFixedLengthCopy(OperatorFixedLengthType * const Ocopy, OperatorFixedLengthType const O, uint32_t const length);
@@ -24,6 +24,11 @@ uint32_t QDetNotOrderedFcFaBcBa(const uint16_t A, const uint16_t B, const uint32
 uint32_t QDetNotOrderedFcFaBaBc(const uint16_t A, const uint16_t B, const uint32_t NFermion);
 uint32_t QDetNotOrderedFaFcBcBa(const uint16_t A, const uint16_t B, const uint32_t NFermion);
 uint32_t NormalOrderOperator(const OperatorType O, OperatorType * const Oo, uint32_t(*QDetNotOrdered) (uint16_t, uint16_t, uint32_t));
+double RealOperatorTrace(const OperatorType O, uint16_t *Orbitals, int NOrbitals);
+Complex16 ComplexOperatorTrace(const OperatorType O, uint16_t *Orbitals, int NOrbitals);
+Complex16 OperatorTrace(const OperatorType O, uint16_t *Orbitals, int NOrbitals);
+uint32_t RealOperatorAddTrace(OperatorType *O, uint16_t *Orbitals, int NOrbitals, double Trace);
+uint32_t ComplexOperatorAddTrace(OperatorType *O, uint16_t *Orbitals, int NOrbitals, Complex16 Trace);
 uint32_t OperatorMultiply2(OperatorType * const O, OperatorType const B, OperatorType const A, char const Bset, char const Aset);
 uint32_t OperatorMultiply(OperatorType * const O, OperatorType const B, OperatorType const A);
 uint32_t OperatorMultiplyInline(OperatorType * const O, OperatorType const B);
@@ -41,6 +46,7 @@ uint32_t HermitianOperatorNormalOrderExponent(OperatorType const O, Complex16 al
 uint32_t OperatorScale(OperatorType * const O, const double alphaRe, const double alphaIm);
 uint32_t OperatorMultiplyScaledNormalOrder(OperatorType * const O, OperatorType const B, OperatorType const A,const double alphaRe, const double alphaIm,uint32_t(*QDetNotOrdered) (uint16_t, uint16_t, uint32_t));
 uint32_t OperatorAdd(OperatorType * const OA, const OperatorType OB, const double alphaRe, const double alphaIm);
+uint32_t OperatorAdd(OperatorType * const OA, const OperatorType OB);
 uint32_t OperatorAddNormalOrder(OperatorType * const OA, const OperatorType OB, const double alphaRe, const double alphaIm, uint32_t(*QDetNotOrdered) (uint16_t, uint16_t, uint32_t));
 uint32_t MappedOperatorFixedLengthAtLevel(OperatorFixedLengthType * const OA, const OperatorFixedLengthType OB, const MatrixType U, const uint32_t level, const uint32_t length);
 uint32_t MappedOperatorAdd(OperatorType * const OA, const OperatorType OB, const MatrixType U);
@@ -54,3 +60,5 @@ uint32_t OperatorConjugateTranspose(OperatorType O, OperatorType * OT);
 uint32_t OperatorConjugateTransposeNormalOrder(OperatorType O, OperatorType * OT, uint32_t(*QDetNotOrdered) (uint16_t, uint16_t, uint32_t));
 uint32_t QOperatorHermitian(OperatorType O, const double epsilon);
 uint32_t OperatorChangeNFandNB(OperatorType *O, uint32_t NFnew, uint32_t NBnew);
+void extractPartialOperatorFixedLength(const OperatorType * const O, OperatorType * const OPartial, const uint16_t * const indices, const uint32_t indSetSize, const int length);
+void extractPartialOperator(const OperatorType * const O, OperatorType * const OPartial, const uint16_t * const indices, const uint32_t indSetSize);

@@ -1,14 +1,13 @@
 Verbosity(0xFFFF)
 
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Tutorials/40_NiO_Ligand_Field/FPLO/Open_Cluster.Quanty")
+os.exit()
+
 dofile("/Users/haverkort/Documents/Materials/Ni/LDApp/Calculate_Double_Counting_Potential.Quanty")
-
-
-
 os.exit()
 
 
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Reference/Functions/Eigensystem_atom_d0.Quanty")
-
 os.exit()
 
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Examples/EigensystemDense.Quanty")

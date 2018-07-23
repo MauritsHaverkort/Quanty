@@ -73,7 +73,6 @@ SSlaterIntegral *GetSlaterIntegrals(double **basisfuns, unsigned int NBasisFuns,
     }
     fclose(f);
 */
-
     for ( i = 0; i <= kMax; i++)
     {
     	free(kernels[i]);
@@ -367,12 +366,12 @@ SSlaterIntegral *InitializeIntegrals(vector<int> indToK, unsigned int &NIntegral
     unsigned int i, k;
     SSlaterIntegral *integrals;
 
-    map<myarray,myarray> tupel = CreateSlaterTuple(indToK);
-    NIntegrals = tupel.size();
+  std::map<myarray,myarray> tupel = CreateSlaterTuple(indToK);
+    NIntegrals = (unsigned int)tupel.size();
 
     integrals = (SSlaterIntegral *) malloc((NIntegrals)*sizeof(SSlaterIntegral));
     i = 0;
-    for( map<myarray,myarray>::iterator it = tupel.begin(); it != tupel.end(); ++it)
+  for( std::map<myarray,myarray>::iterator it = tupel.begin(); it != tupel.end(); ++it)
     {
     	integrals[i].tau.n[0] = it->first.val[0];
     	integrals[i].tau.n[1] = it->first.val[1];
