@@ -294,7 +294,7 @@ double **CreateDualFunctions(const unsigned int NBasisFuns, const unsigned int N
 vector<double> Dual(vector<double> f, vector<double> w)
 {
 	vector<double> g;
-	if (f.size() != w.size()) printf("error in Dual: %d = size(f) != size(w) = %d", f.size(),w.size());
+	if (f.size() != w.size()) printf("error in Dual: %lu = size(f) != size(w) = %lu", f.size(),w.size());
 	for (int i = 0; i < f.size(); i++)
 	{
 		g.insert(g.end(), f[i]*w[i]);

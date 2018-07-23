@@ -374,7 +374,7 @@ double *CreateBaseForContinuum( int NBasisFuns, vector<vector<double> > basisfun
 
 	char blasRight = 'R';
 	char blasLeft  = 'L';
-	char blasUpper = 'U';
+	//char blasUpper = 'U';
 	char blasLower = 'L';
 	char blasTrans = 'T';
 	char blasNoTrans = 'N';
@@ -404,7 +404,7 @@ double *CreateBaseForContinuum( int NBasisFuns, vector<vector<double> > basisfun
 	PrintMartix(&(g[0]),dim);
 	printf("\n");
 */
-	char cU = 'U';
+	//char cU = 'U';
 	char cL = 'L';
 	char cN = 'N';
 	char cV = 'V';
