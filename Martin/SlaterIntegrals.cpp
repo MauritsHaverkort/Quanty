@@ -386,7 +386,7 @@ SSlaterIntegral *InitializeIntegrals(vector<int> indToK, unsigned int &NIntegral
 
     	i++;
     }
-    printf("i -> %d\t NIntegrals %d\n",i,NIntegrals);
+    //printf("i -> %d\t NIntegrals %d\n",i,NIntegrals);
     *kMax = 0;
     for( i = 0; i < NIntegrals; i++ )
     {

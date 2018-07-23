@@ -83,6 +83,15 @@ vector<double> ConvertArray(double *a, const int n)
 	}
 	return res;
 }
+vector<int> ConvertArray(uint16_t *a, const int n)
+{
+	vector<int> res = vector<int>(n);
+	for (int i = 0; i < n; i++)
+	{
+		res[i] = (short) a[i];
+	}
+	return res;
+}
 
 vector<vector<double> > ConvertMatrix(double **m, const int n1, const int n2)
 {
@@ -147,6 +156,8 @@ Complex16 CalcPropagatorContinuum(Complex16 z0, Complex16 z1, double *d0, double
 	SigV = (Complex16 *) malloc(Sigma.Ni * sizeof(Complex16));
 	zgemv(&NTRANS,&(Sigma.Ni),&(Sigma.Ni),&aleph,Sigma.V,&(Sigma.Ni),v,&eins,&beth,SigV,&eins);
 	zdotc(&retval,&(Sigma.Ni),v,&eins,SigV,&eins);
+	free(Sigma.V);
+	free(SigV);
 	return retval;
 }
 
@@ -158,7 +169,7 @@ vector<double> CalcSpectrumContinuum(vector<double> w, double g0, double g1, dou
 	z1.Im = g1/2;
 
 
-	#pragma omp parallel for
+	//#pragma omp parallel for
 	for (int i = 0; i < w.size(); i++)
 	{
 		z0.Re = w[i];

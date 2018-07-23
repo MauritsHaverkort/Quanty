@@ -35,18 +35,42 @@ static int LuaOperatorNewFullCoulomb (lua_State *L)
     if (len == 4)
     {
     	vector<int> indToK;
-    	Nindices = (uint32_t)lua_objlen(L,4);
-    	indices = (uint16_t **) malloc(Nindices * sizeof(uint16_t *));
-    	for( i = 0; i < Nindices; i++ )
+    	lua_getfield(L,4,"kappas");
+    	if (lua_isnil(L,-1))
     	{
-    		lua_rawgeti(L, 4, i+1);
-    		lua_rawgeti(L,-1,1);
-    		indToK.push_back((int) luaL_checkunsigned(L, -1));
     		lua_pop(L,1);
-    		lua_rawgeti(L,-1,2);
-    		indices[i] = luaL_checkarray_unit16_t(L,-1,&temp);
+    		Nindices = (uint32_t)lua_objlen(L,4);
+    		indices = (uint16_t **) malloc(Nindices * sizeof(uint16_t *));
+    		for( i = 0; i < Nindices; i++ )
+    		{
+    			lua_rawgeti(L, 4, i+1);
+    			lua_rawgeti(L,-1,1);
+    			indToK.push_back((int) luaL_checkunsigned(L, -1));
+    			lua_pop(L,1);
+    			lua_rawgeti(L,-1,2);
+    			indices[i] = luaL_checkarray_unit16_t(L,-1,&temp);
+    			lua_pop(L,1);
+    			lua_pop(L,1);
+    		}
+    	}
+    	else
+    	{
+    		uint16_t *foo = luaL_checkarray_unit16_t(L,-1,&temp);
+    		indToK = ConvertArray(foo,temp);
+    		free(foo);
+    		PrintArray(indToK);
     		lua_pop(L,1);
-    		lua_pop(L,1);
+    		Nindices = (uint32_t)lua_objlen(L,4);
+
+    		indices = (uint16_t **) malloc(Nindices * sizeof(uint16_t *));
+    		if(!indices) printf("malloc fail at indices in LuaOperatorNewFullCoulomb. size = %d\n",Nindices);
+
+    		for( i = 0; i < Nindices; i++ )
+    		{
+    			lua_rawgeti(L, 4, i+1);
+    			indices[i] = luaL_checkarray_unit16_t(L,-1,&temp);
+    			lua_pop(L,1);
+    		}
     	}
     	op = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
     	CreateOperatorFastCoulombRelativistic(NF,wavefunctions->VRe,wavefunctions->Ni,x,NGridpoints,indToK,indices, op);
@@ -315,6 +339,15 @@ static int LuaPropagator(lua_State *L)
 	spec = CalcSpectrumContinuum(w,g0,g1,Q,d0,Econt,d1,U,v);
 	LuaPushArray_double(L,&w[0],w.size());
 	LuaPushArray_double(L,&spec[0],spec.size());
+
+	free(d0);
+	free(d1);
+	free(Econt);
+	free(v);
+	for (int i = 0; i < U.size(); i++)
+	{
+		FreeCompactMatrix(U[i]);
+	}
 	return 2;
 }
 
