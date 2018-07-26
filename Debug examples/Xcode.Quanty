@@ -1,6 +1,6 @@
 Verbosity(0xFFFF)
 
-dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Reference/Objects/Wavefunction/psi.NF.Quanty")
+dofile("/Users/haverkort/Documents/Materials/acac/Co/FPLO/ReadFPLO.Quanty")
 os.exit()
 
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Tutorials/40_NiO_Ligand_Field/FPLO/Open_Cluster.Quanty")

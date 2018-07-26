@@ -134,8 +134,7 @@ uint32_t CrystalStructureFromDresdenFPLO(DresdenFPLO FPLO, CrystalStructureType 
           {
             for(j=0;j<inl;j++)
             {
-              if( (10*FPLO.Wannier.Orbital[i][0]+FPLO.Wannier.Orbital[i][1])==nlIndex[iatom][j] )
-                  break;
+              if( (10*FPLO.Wannier.Orbital[i][0]+FPLO.Wannier.Orbital[i][1])==nlIndex[iatom][j] ) break;
             }
             if(j==inl)
             {
@@ -241,8 +240,7 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
       {
         SiteName[l] = (char*)malloc(MAXStrLength*sizeof(char));
         strcpy(SiteName[l], FPLO.Atoms.Atom[FPLO.Wannier.Site[i]-1]);
-        for(k=0;k<3;k++)
-          SitePos[l][k] = FPLO.Wannier.PosCenter[i][k];
+        for(k=0;k<3;k++) SitePos[l][k] = FPLO.Wannier.PosCenter[i][k];
         SiteInd[i] = l++;
       }
     }
@@ -419,8 +417,7 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
         HTB->H[ihtb].Shellpos1 = ShellOfSite[ish][1];
         HTB->H[ihtb].Atompos2  = ShellOfSite[jsh][0];
         HTB->H[ihtb].Shellpos2 = ShellOfSite[jsh][1];
-        
-        if(HTB->Cell.Units&8)
+        if((HTB->Cell.Units&8)==0)
         {
           HTB->H[ihtb].ConnectingVector[0] = HopVec[indsh][ihtb-NHopStart[ish][jsh]][0];
           HTB->H[ihtb].ConnectingVector[1] = HopVec[indsh][ihtb-NHopStart[ish][jsh]][1];
