@@ -161,6 +161,38 @@ Complex16 CalcPropagatorContinuum(Complex16 z0, Complex16 z1, double *d0, double
 	return retval;
 }
 
+Complex16 CalcPropagatorContinuum(Complex16 z0, Complex16 z1, double *d0, double *Econt, vector<double *> d1, vector<CompactMatrixType *> U, Complex16 *v)
+{
+	CompactMatrixType Sigma, SigmaAdd;
+	//char UPLO = 'U';
+	char NTRANS = 'N';
+	uint32_t eins = 1;
+	Complex16 aleph, beth, *SigV, retval;
+	aleph.Im = 0.;
+	aleph.Re = 1.;
+	beth.Im = 0.;
+	beth.Re = 0.;
+
+	Sigma = CalcSigmaContinuum(z1,Econt[0],d1[0],U[0]);
+	for (int n = 1; n < U.size(); n++)
+	{
+		SigmaAdd = CalcSigmaContinuum(z1,Econt[n],d1[n],U[n]);
+		CompactMatrixAdd(&Sigma,&SigmaAdd);
+		free(SigmaAdd.V);
+	}
+	for (int i = 0; i < Sigma.Ni; i++)
+	{
+		Sigma.V[i*Sigma.Nj + i] += d0[i] -z0;
+	}
+	CompactMatrixInverse(&Sigma);
+	SigV = (Complex16 *) malloc(Sigma.Ni * sizeof(Complex16));
+	zgemv(&NTRANS,&(Sigma.Ni),&(Sigma.Ni),&aleph,Sigma.V,&(Sigma.Ni),v,&eins,&beth,SigV,&eins);
+	zdotc(&retval,&(Sigma.Ni),v,&eins,SigV,&eins);
+	free(Sigma.V);
+	free(SigV);
+	return retval;
+}
+
 vector<double> CalcSpectrumContinuum(vector<double> w, double g0, double g1, double Q, double *d0, double *Econt, double *d1, vector<CompactMatrixType *> U, Complex16 *v)
 {
 	vector<double> spec = vector<double>(w.size());
@@ -175,13 +207,31 @@ vector<double> CalcSpectrumContinuum(vector<double> w, double g0, double g1, dou
 		z0.Re = w[i];
 		z1.Re = w[i];
 		val = CalcPropagatorContinuum(z0,z1,d0,Econt,d1,U,v);
-		spec[i] = val.Im*(Q-w[i])*(Q-w[i]);
+		spec[i] = val.Im;//*(Q-w[i])*(Q-w[i]); //TODO uncomment this
 	}
 	//PrintArray(&spec[0],w.size());
 	return spec;
 }
 
+vector<double> CalcSpectrumContinuum(vector<double> w, double g0, double g1, double Q, double *d0, double *Econt,vector<double *> d1, vector<CompactMatrixType *> U, Complex16 *v)
+{
+	vector<double> spec = vector<double>(w.size());
+	Complex16 z0,z1,val;
+	z0.Im = g0/2;
+	z1.Im = g1/2;
 
+
+	//#pragma omp parallel for
+	for (int i = 0; i < w.size(); i++)
+	{
+		z0.Re = w[i];
+		z1.Re = w[i];
+		val = CalcPropagatorContinuum(z0,z1,d0,Econt,d1,U,v);
+		spec[i] = val.Im;//*(Q-w[i])*(Q-w[i]); //TODO uncomment this
+	}
+	//PrintArray(&spec[0],w.size());
+	return spec;
+}
 
 
 

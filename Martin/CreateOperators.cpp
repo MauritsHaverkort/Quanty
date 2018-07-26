@@ -315,7 +315,7 @@ double* CreateBaseForContinuum( int NBasisFuns,double **basisfuns,double **deriv
 	tau = (double *) malloc((Ncont-1)*sizeof(double));
 	if (!tau) printf("malloc fail at tau in CreateBaseForContinuum. size = %d\n",Ncont-1);
 
-	double *work = (double *) malloc(Ncont*sizeof(double));
+	double *work = (double *) malloc((2*Ncont-2)*sizeof(double));
 	if (!work) printf("malloc fail at work in CreateBaseForContinuum. size = %d\n",Ncont);
 	unsigned int lwork = (unsigned int) Ncont;
 
@@ -332,6 +332,8 @@ double* CreateBaseForContinuum( int NBasisFuns,double **basisfuns,double **deriv
 	info = LAPACKE_dsteqr(LAPACK_ROW_MAJOR,'V',Ncont,d,e,Tsub,Ncont);
 	if ( 0 != info) printf("error: argument %d of LAPACKE_dsteqr",-info);
 */
+	PrintMartix(Tsub,Ncont);
+	PrintMartix(g,dim);
 	CalcContinuumWFs(basisfuns, group.indices, group.n, contfuns, Ncont, NGridpoints, g, Tsub);
 
 	free(T);
@@ -352,6 +354,7 @@ double* CreateBaseForContinuum( int NBasisFuns,double **basisfuns,double **deriv
 	free(tau);
 	free(e);
 
+	printf("no-vector\n");
 
 	return d;
 
@@ -391,13 +394,26 @@ double *CreateBaseForContinuum( int NBasisFuns, vector<vector<double> > basisfun
 
 
 	dualfuns = CreateDualFunctions(NBasisFuns,NGridpoints,basisfuns,x);
-
+/*	printf("\n");
+	PrintArray(&dualfuns[0][0],6);
+	printf("\n");
+	printf("\n");
+	PrintArray(&basisfuns[0][0],6);
+	printf("\n");
+	printf("\n");
+	PrintArray(&derivfuns[0][0],6);
+	printf("\n");
+*/
 	dualcont = CreateDualFunctions(Ncont,NGridpoints,contfuns,x);
 
 	T = KineticEnergyCB(basisfuns,derivfuns, dualfuns,dualcont, Ncont,group.indices, group.n,x,NGridpoints,k,w);
 
 	g = MetricCB(basisfuns,dualfuns,group.indices, group.n,dualcont,Ncont,NGridpoints);
-
+/*
+	printf("\n");
+	PrintMartix(&(T[0]),dim);
+	printf("\n");
+*/
 	//PrintMartix(&(T[0]),dim);
 /*
 	printf("\n");
@@ -425,10 +441,6 @@ double *CreateBaseForContinuum( int NBasisFuns, vector<vector<double> > basisfun
 	Tsub = SubMatrix(T,dim,group.n,dim-1,group.n,dim-1);
 
 /*	printf("\n");
-	PrintMartix(&(Tsub[0]),Ncont);
-	printf("\n");
-*/
-/*	printf("\n");
 	PrintMartix(&(g[0]),dim);
 	printf("\n");
 */
@@ -450,17 +462,21 @@ double *CreateBaseForContinuum( int NBasisFuns, vector<vector<double> > basisfun
 	dsteqr(&cV,(unsigned int *) &Ncont,d,e,&(Tsub[0]),(unsigned int *) &Ncont,work,&info);
 	if ( 0 != info) printf("error: argument %d of LAPACKE_dsteqr",-info);
 
-/*
+
 	printf("\n");
-	PrintMartix(&(g[0]),dim);
-	printf("\n");
-*/
+	//PrintMartix(&(g[0]),dim);
+
 	CalcContinuumWFs(basisfuns, group.indices, group.n, contfuns, Ncont, NGridpoints, g, Tsub);
 
+/*	printf("\n");
+	PrintMartix(&(Tsub[0]),Ncont);
+	printf("\n");
+*/
 
 	free(work);
 	free(tau);
 	free(e);
+
 
 
 	return d;
