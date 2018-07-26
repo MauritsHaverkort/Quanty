@@ -1,8 +1,43 @@
-﻿dofile("../../definitions.Quanty")
+﻿
+Nf=6
+Nb=0
+
+psi1 = NewWavefunction(Nf,Nb,{{"100010",sqrt(7/10)},{"110000",sqrt(2/10)},{"010000",sqrt(1/10)}})
+psi2 = NewWavefunction(Nf,Nb,{{"010010",1}})
 
 print(psi1)
 print(psi1.NF)
 psi1.NF=3
 print(psi1)
+psi1.NF=17
+print(psi1)
+psi1.NF=8
+print(psi1)
+
+print("=====================")
+psi1 = NewWavefunction(10,0,{{"1000101111",sqrt(7/10)},{"1100001111",sqrt(2/10)},{"0100001111",sqrt(1/10)}})
+print(psi1)
+psi1.NF=10
+print(psi1)
 psi1.NF=9
+print(psi1)
+psi1.NF=8
+print(psi1)
+psi1.NF=7
+print(psi1)
+psi1.NF=6
+print(psi1)
+psi1.NF=5
+print(psi1)
+psi1.NF=4
+print(psi1)
+psi1.NF=3
+print(psi1)
+psi1.NF=2
+print(psi1)
+psi1.NF=1
+print(psi1)
+psi1.NF=0
+print(psi1)
+psi1.NF=8
 print(psi1)
