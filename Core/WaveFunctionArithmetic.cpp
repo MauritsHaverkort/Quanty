@@ -1609,7 +1609,7 @@ uint32_t WaveFunctionChangeNFandNB(WaveFunctionType *psi, uint32_t NFnew, uint32
     for(i=1;i<=psiOld.N;i++)
     {
       memcpy(det, &(psiOld.Determinant[BlokElementDet(i,psiOld.NWord,0)]), detleng);
-      det[detleng-1]&=detleft;
+      if(detleng!=0)det[detleng-1]&=detleft;
       memcpy(&(det[psi->NWord-psi->NBoson]), &(psiOld.Determinant[BlokElementDet(i,psiOld.NWord,psi->NWord-psi->NBoson)]), psi->NBoson);
       if(ComplexWaveFunctionAddElement(psi, det, psiOld.ValueRe[BlokElement(i)], psiOld.ValueIm[BlokElement(i)]))
       {

@@ -51,6 +51,7 @@ void TransVecNorm(const double vec[3], double gUC[3][3], double vecnorm[3])
 // Only reads information necessary for creating a TB Hamiltonian.
 uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
 {
+  bool Molecule=false;
   char ReadLine[1024];
   char *phrase[1024] = {NULL}, tmpstr[1024];
   double tmpvec[3];
@@ -58,10 +59,23 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
   const int NhopMax=1024;
 
   ReadLine[1023] = '\0';
-
+  for(i=0;i<3;i++)
+  {
+    for(j=0;j<3;j++)
+    {
+      O->Lattice.LattVec[i][j]=0;
+      O->Lattice.gLattVec[i][j] = 0;
+    }
+    O->Lattice.LattVec[i][i]=INFINITY;
+    O->Lattice.LattConst[i]=INFINITY;
+  }
   while(fgets(ReadLine, 1023, stream) != NULL)
   {
     // Read structure information.
+    if(strstr(ReadLine, "Structure type: Molecule") != NULL)
+    {
+      Molecule = true;
+    }
     if(strstr(ReadLine, "Compound:") != NULL)
     {
       Nphrase = SplitStringToArray(phrase, ReadLine, " :\n");
@@ -260,7 +274,19 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
       }
     }
   }
-
+  if(Molecule==true)
+  {
+    for(i=0;i<3;i++)
+    {
+      for(j=0;j<3;j++)
+      {
+        O->Lattice.LattVec[i][j]=0;
+        O->Lattice.gLattVec[i][j] = 0;
+      }
+      O->Lattice.LattVec[i][i]=INFINITY;
+      O->Lattice.LattConst[i]=INFINITY;
+    }
+  }
   return 0;
 }
 
