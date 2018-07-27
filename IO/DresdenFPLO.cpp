@@ -56,12 +56,25 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
   double tmpvec[3];
   uint32_t Nphrase, Nwandef, Nimag=0, i, j, ihop=0, iatom;
   const int NhopMax=1024;
-
+  O->Lattice.Molecule=false;
   ReadLine[1023] = '\0';
-
+  for(i=0;i<3;i++)
+  {
+    for(j=0;j<3;j++)
+    {
+      O->Lattice.LattVec[i][j]=0;
+      O->Lattice.gLattVec[i][j] = 0;
+    }
+    O->Lattice.LattVec[i][i]=INFINITY;
+    O->Lattice.LattConst[i]=INFINITY;
+  }
   while(fgets(ReadLine, 1023, stream) != NULL)
   {
     // Read structure information.
+    if(strstr(ReadLine, "Structure type: Molecule") != NULL)
+    {
+      O->Lattice.Molecule = true;
+    }
     if(strstr(ReadLine, "Compound:") != NULL)
     {
       Nphrase = SplitStringToArray(phrase, ReadLine, " :\n");
@@ -260,7 +273,19 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
       }
     }
   }
-
+  if(O->Lattice.Molecule==true)
+  {
+    for(i=0;i<3;i++)
+    {
+      for(j=0;j<3;j++)
+      {
+        O->Lattice.LattVec[i][j]=0;
+        O->Lattice.gLattVec[i][j] = 0;
+      }
+      O->Lattice.LattVec[i][i]=INFINITY;
+      O->Lattice.LattConst[i]=INFINITY;
+    }
+  }
   return 0;
 }
 

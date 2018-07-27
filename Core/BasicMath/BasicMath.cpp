@@ -350,21 +350,36 @@ double FindSelfconsistentnumber(double const *valin, double const *valout, uint3
 
 void ReciprocalLatticeVector(double r[3][3], double g[3][3], uint32_t const Units)
 {
-  double V;
-  Cross(r[1], r[2], g[0]);
-  Cross(r[2], r[0], g[1]);
-  Cross(r[0], r[1], g[2]);
-  V = 1.0/Dot(r[0], g[0]);
-  if (Units&1) V*=(2*Pi);
-  g[0][0] *= V;
-  g[0][1] *= V;
-  g[0][2] *= V;
-  g[1][0] *= V;
-  g[1][1] *= V;
-  g[1][2] *= V;
-  g[2][0] *= V;
-  g[2][1] *= V;
-  g[2][2] *= V;
+  if(isinf(r[0][0])&&isinf(r[1][1])&&isinf(r[2][2]))
+  {
+    g[0][0] =0;
+    g[0][1] =0;
+    g[0][2] =0;
+    g[1][0] =0;
+    g[1][1] =0;
+    g[1][2] =0;
+    g[2][0] =0;
+    g[2][1] =0;
+    g[2][2] =0;
+  }
+  else
+  {
+    double V;
+    Cross(r[1], r[2], g[0]);
+    Cross(r[2], r[0], g[1]);
+    Cross(r[0], r[1], g[2]);
+    V = 1.0/Dot(r[0], g[0]);
+    if (Units&1) V*=(2*Pi);
+    g[0][0] *= V;
+    g[0][1] *= V;
+    g[0][2] *= V;
+    g[1][0] *= V;
+    g[1][1] *= V;
+    g[1][2] *= V;
+    g[2][0] *= V;
+    g[2][1] *= V;
+    g[2][2] *= V;
+  }
 }
 
 

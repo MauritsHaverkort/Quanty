@@ -370,6 +370,10 @@ static int LuaCalculateRho(lua_State *L)
     return luaL_error(L, "Error CalculateRho: called with %d arguments, 1 or 2 expected (TightBindingDef, and options).\n",len);
   }
   a = (TightBindingDef*) luaL_checkudata(L, 1, "TightBinding_Type");
+  // if the reciprocal lattice is zero set Nk to zero
+  if((Abs(a->Cell.gUnitCell[0][0])+Abs(a->Cell.gUnitCell[0][1])+Abs(a->Cell.gUnitCell[0][2]))==0) Options.Nk[0]=1;
+  if((Abs(a->Cell.gUnitCell[1][0])+Abs(a->Cell.gUnitCell[1][1])+Abs(a->Cell.gUnitCell[1][2]))==0) Options.Nk[1]=1;
+  if((Abs(a->Cell.gUnitCell[2][0])+Abs(a->Cell.gUnitCell[2][1])+Abs(a->Cell.gUnitCell[2][2]))==0) Options.Nk[2]=1;
   if(len==2)
   {
     LuaCheckOptions(L, 2, LuaCalculateGOptions);
@@ -383,6 +387,277 @@ static int LuaCalculateRho(lua_State *L)
   return 1;
 }
 
+static int LuaPushIndicesDictFromTBWithoutSpin(lua_State *L, TightBindingDef *TB)
+{
+  uint32_t i, j,iAtom, iShell, iOrb, index[TB->NFermion], indexAtom[TB->NFermion], indexShell[TB->NFermion],AtomLength=0,ndigits=1;
+  char tempchar[4*MAXStrLength];
+  // set print formatting
+  if(TB->Cell.NAtoms>999999)
+  {
+    ndigits=10;
+  }
+  else if(TB->Cell.NAtoms>99999)
+  {
+    ndigits=6;
+  }
+  else if(TB->Cell.NAtoms>9999)
+  {
+    ndigits=5;
+  }
+  else if(TB->Cell.NAtoms>999)
+  {
+    ndigits=4;
+  }
+  else if(TB->Cell.NAtoms>99)
+  {
+    ndigits=3;
+  }
+  else if(TB->Cell.NAtoms>9)
+  {
+    ndigits=2;
+  }
+  // All
+  j=0;
+  for(i=0;i<TB->NFermion;i++)
+  {
+    index[i]=i;
+  }
+  lua_createtable(L, TB->NFermion, TB->NFermion);
+  lua_pushstring(L, "All");
+  lua_rawseti(L,-2,++j);
+  lua_pushstring(L, "All");
+  LuaPushArray_uint32_t(L, index, TB->NFermion);
+  lua_settable(L, -3);
+  i=0;
+  for(iAtom=0;iAtom<TB->Cell.NAtoms;iAtom++)
+  {
+    for(iShell=0;iShell<TB->Cell.Atom[iAtom].Nshell;iShell++)
+    {
+      for(iOrb=0;iOrb<TB->Cell.Atom[iAtom].shelldegeneracy[iShell];iOrb++)
+      {
+        //AtomName_ShellName_OrbitalName index
+        snprintf(tempchar, sizeof(tempchar), "%0*d%s%s%s%s%s%s",ndigits,iAtom,"_",TB->Cell.Atom[iAtom].Name,"_",TB->Cell.Atom[iAtom].ShellName[iShell],"_",TB->Cell.Atom[iAtom].OrbitalName[iShell][iOrb]);
+        lua_pushstring(L,tempchar);
+        lua_rawseti(L,-2,++j);
+        lua_pushstring(L,tempchar);
+        LuaPushArray_uint32_t(L,&i,1);
+        lua_settable(L, -3);
+        indexShell[iOrb]=i;
+        indexAtom[AtomLength]=i;
+        AtomLength++;
+        i++;
+      }
+      //AtomName_ShellName index
+      snprintf(tempchar, sizeof(tempchar), "%0*d%s%s%s%s",ndigits,iAtom,"_",TB->Cell.Atom[iAtom].Name,"_",TB->Cell.Atom[iAtom].ShellName[iShell]);
+      lua_pushstring(L,tempchar);
+      lua_rawseti(L,-2,++j);
+      lua_pushstring(L,tempchar);
+      LuaPushArray_uint32_t(L, indexShell, TB->Cell.Atom[iAtom].shelldegeneracy[iShell]);
+      lua_settable(L, -3);
+    }
+    // AtomName index
+    snprintf(tempchar, sizeof(tempchar), "%0*d%s%s",ndigits,iAtom,"_",TB->Cell.Atom[iAtom].Name);
+    lua_pushstring(L,tempchar);
+    lua_rawseti(L,-2,++j);
+    lua_pushstring(L,tempchar);
+    LuaPushArray_uint32_t(L, indexAtom, AtomLength);
+    lua_settable(L, -3);
+    AtomLength=0;
+  }
+  return 1;
+}
+
+
+static int LuaPushIndicesDictFromTBWithSpin(lua_State *L, TightBindingDef *TB)
+{
+  uint32_t i, j,iAtom, iShell, iOrb, index[2*TB->NFermion], indexAtom[2*TB->NFermion], indexShell[2*TB->NFermion], indexOrb[2], AtomLength=0,ndigits=1;
+  char tempchar[4*MAXStrLength];
+  // set print formatting
+  if(TB->Cell.NAtoms>999999)
+  {
+    ndigits=10;
+  }
+  else if(TB->Cell.NAtoms>99999)
+  {
+    ndigits=6;
+  }
+  else if(TB->Cell.NAtoms>9999)
+  {
+    ndigits=5;
+  }
+  else if(TB->Cell.NAtoms>999)
+  {
+    ndigits=4;
+  }
+  else if(TB->Cell.NAtoms>99)
+  {
+    ndigits=3;
+  }
+  else if(TB->Cell.NAtoms>9)
+  {
+    ndigits=2;
+  }
+  lua_createtable(L, 2*TB->NFermion, 2*TB->NFermion);
+  j=0;
+  // All
+  for(i=0;i<2*TB->NFermion;i++)
+  {
+    index[i]=i;
+  }
+  lua_pushstring(L, "All");
+  lua_rawseti(L,-2,++j);
+  lua_pushstring(L, "All");
+  LuaPushArray_uint32_t(L, index, 2*TB->NFermion);
+  lua_settable(L, -3);
+  for(i=0;i<TB->NFermion;i++)
+  {
+    index[i]=2*i;
+  }
+  lua_pushstring(L, "All_Dn");
+  lua_rawseti(L,-2,++j);
+  lua_pushstring(L, "All_Dn");
+  LuaPushArray_uint32_t(L, index, TB->NFermion);
+  lua_settable(L, -3);
+  for(i=0;i<TB->NFermion;i++)
+  {
+    index[i]=2*i+1;
+  }
+  lua_pushstring(L, "All_Up");
+  lua_rawseti(L,-2,++j);
+  lua_pushstring(L, "All_Up");
+  LuaPushArray_uint32_t(L, index, TB->NFermion);
+  lua_settable(L, -3);
+  i=0;
+  for(iAtom=0;iAtom<TB->Cell.NAtoms;iAtom++)
+  {
+    for(iShell=0;iShell<TB->Cell.Atom[iAtom].Nshell;iShell++)
+    {
+      for(iOrb=0;iOrb<TB->Cell.Atom[iAtom].shelldegeneracy[iShell];iOrb++)
+      {
+        //AtomName_ShellName_OrbitalName index
+        snprintf(tempchar, sizeof(tempchar), "%0*d%s%s%s%s%s%s",ndigits,iAtom,"_",TB->Cell.Atom[iAtom].Name,"_",TB->Cell.Atom[iAtom].ShellName[iShell],"_",TB->Cell.Atom[iAtom].OrbitalName[iShell][iOrb]);
+        lua_pushstring(L,tempchar);
+        lua_rawseti(L,-2,++j);
+        lua_pushstring(L,tempchar);
+        indexOrb[0]=2*i;
+        indexOrb[1]=2*i+1;
+        LuaPushArray_uint32_t(L,indexOrb,2);
+        lua_settable(L, -3);
+        indexShell[2*iOrb]=2*i;
+        indexShell[2*iOrb+1]=2*i+1;
+        indexAtom[2*AtomLength]=2*i;
+        indexAtom[2*AtomLength+1]=2*i+1;
+        AtomLength++;
+        i++;
+      }
+      //AtomName_ShellName index
+      snprintf(tempchar, sizeof(tempchar), "%0*d%s%s%s%s",ndigits,iAtom,"_",TB->Cell.Atom[iAtom].Name,"_",TB->Cell.Atom[iAtom].ShellName[iShell]);
+      lua_pushstring(L,tempchar);
+      lua_rawseti(L,-2,++j);
+      lua_pushstring(L,tempchar);
+      LuaPushArray_uint32_t(L, indexShell, 2*TB->Cell.Atom[iAtom].shelldegeneracy[iShell]);
+      lua_settable(L, -3);
+    }
+    // AtomName index
+    snprintf(tempchar, sizeof(tempchar), "%0*d%s%s",ndigits,iAtom,"_",TB->Cell.Atom[iAtom].Name);
+    lua_pushstring(L,tempchar);
+    lua_rawseti(L,-2,++j);
+    lua_pushstring(L,tempchar);
+    LuaPushArray_uint32_t(L, indexAtom, 2*AtomLength);
+    lua_settable(L, -3);
+    AtomLength=0;
+  }
+  
+  i=0;
+  for(iAtom=0;iAtom<TB->Cell.NAtoms;iAtom++)
+  {
+    for(iShell=0;iShell<TB->Cell.Atom[iAtom].Nshell;iShell++)
+    {
+      for(iOrb=0;iOrb<TB->Cell.Atom[iAtom].shelldegeneracy[iShell];iOrb++)
+      {
+        //AtomName_ShellName_OrbitalName index
+        snprintf(tempchar, sizeof(tempchar), "%0*d%s%s%s%s%s%s_Dn",ndigits,iAtom,"_",TB->Cell.Atom[iAtom].Name,"_",TB->Cell.Atom[iAtom].ShellName[iShell],"_",TB->Cell.Atom[iAtom].OrbitalName[iShell][iOrb]);
+        lua_pushstring(L,tempchar);
+        lua_rawseti(L,-2,++j);
+        lua_pushstring(L,tempchar);
+        indexOrb[0]=2*i;
+        LuaPushArray_uint32_t(L,indexOrb,1);
+        lua_settable(L, -3);
+        indexShell[iOrb]=2*i;
+        indexAtom[AtomLength]=2*i;
+        AtomLength++;
+        i++;
+      }
+      //AtomName_ShellName index
+      snprintf(tempchar, sizeof(tempchar), "%0*d%s%s%s%s_Dn",ndigits,iAtom,"_",TB->Cell.Atom[iAtom].Name,"_",TB->Cell.Atom[iAtom].ShellName[iShell]);
+      lua_pushstring(L,tempchar);
+      lua_rawseti(L,-2,++j);
+      lua_pushstring(L,tempchar);
+      LuaPushArray_uint32_t(L, indexShell, TB->Cell.Atom[iAtom].shelldegeneracy[iShell]);
+      lua_settable(L, -3);
+    }
+    // AtomName index
+    snprintf(tempchar, sizeof(tempchar), "%0*d%s%s_Dn",ndigits,iAtom,"_",TB->Cell.Atom[iAtom].Name);
+    lua_pushstring(L,tempchar);
+    lua_rawseti(L,-2,++j);
+    lua_pushstring(L,tempchar);
+    LuaPushArray_uint32_t(L, indexAtom, AtomLength);
+    lua_settable(L, -3);
+    AtomLength=0;
+  }
+  
+  i=0;
+  for(iAtom=0;iAtom<TB->Cell.NAtoms;iAtom++)
+  {
+    for(iShell=0;iShell<TB->Cell.Atom[iAtom].Nshell;iShell++)
+    {
+      for(iOrb=0;iOrb<TB->Cell.Atom[iAtom].shelldegeneracy[iShell];iOrb++)
+      {
+        //AtomName_ShellName_OrbitalName index
+        snprintf(tempchar, sizeof(tempchar), "%0*d%s%s%s%s%s%s_Up",ndigits,iAtom,"_",TB->Cell.Atom[iAtom].Name,"_",TB->Cell.Atom[iAtom].ShellName[iShell],"_",TB->Cell.Atom[iAtom].OrbitalName[iShell][iOrb]);
+        lua_pushstring(L,tempchar);
+        lua_rawseti(L,-2,++j);
+        lua_pushstring(L,tempchar);
+        indexOrb[0]=2*i+1;
+        LuaPushArray_uint32_t(L,indexOrb,1);
+        lua_settable(L, -3);
+        indexShell[iOrb]=2*i+1;
+        indexAtom[AtomLength]=2*i+1;
+        AtomLength++;
+        i++;
+      }
+      //AtomName_ShellName index
+      snprintf(tempchar, sizeof(tempchar), "%0*d%s%s%s%s_Up",ndigits,iAtom,"_",TB->Cell.Atom[iAtom].Name,"_",TB->Cell.Atom[iAtom].ShellName[iShell]);
+      lua_pushstring(L,tempchar);
+      lua_rawseti(L,-2,++j);
+      lua_pushstring(L,tempchar);
+      LuaPushArray_uint32_t(L, indexShell, TB->Cell.Atom[iAtom].shelldegeneracy[iShell]);
+      lua_settable(L, -3);
+    }
+    // AtomName index
+    snprintf(tempchar, sizeof(tempchar), "%0*d%s%s_Up",ndigits,iAtom,"_",TB->Cell.Atom[iAtom].Name);
+    lua_pushstring(L,tempchar);
+    lua_rawseti(L,-2,++j);
+    lua_pushstring(L,tempchar);
+    LuaPushArray_uint32_t(L, indexAtom, AtomLength);
+    lua_settable(L, -3);
+    AtomLength=0;
+  }
+  return 1;
+}
+
+
+static int LuaPushIndicesDictFromTB(lua_State *L, TightBindingDef *TB, Bool AddSpin)
+{
+  if(AddSpin==True)
+  {
+    return LuaPushIndicesDictFromTBWithSpin(L, TB);
+  }
+  else
+  {
+    return LuaPushIndicesDictFromTBWithoutSpin(L, TB);
+  }
+}
 
 
 /*  Creates an Hamiltonian representing a real space cluster
@@ -409,7 +684,7 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
   OperatorType *H;
   CompactVectorType k;
   Bool AddSpin=False;
-  Bool QOperators=False, QOptions=False, ReturnTBSuperCell=False, ReturnTBCellPositions=False, ReturnTBKVectors=False;
+  Bool QOperators=False, QOptions=False, ReturnTBSuperCell=False, ReturnTBCellPositions=False, ReturnTBKVectors=False, ReturnTBIndicesDict=False;
   OperatorType *AditionalOperator=NULL;
   MatrixType U;
   k.Ni=3;
@@ -420,6 +695,7 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
     {"ReturnTBSuperCell", "bool", &ReturnTBSuperCell},
     {"ReturnTBCellPositions", "bool", &ReturnTBCellPositions},
     {"ReturnTBKVectors", "bool", &ReturnTBKVectors},
+    {"ReturnTBIndicesDict", "bool", &ReturnTBIndicesDict},
     {"k", "Vector", &k},
     {NULL, NULL, NULL}};
   /* check number of input parameters */
@@ -588,10 +864,6 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
       *aSuperReturn=aSuper;
       nreturn++;
     }
-    else
-    {
-      FreeTightBindingDef(&aSuper);
-    }
     if(ReturnTBCellPositions)
     {
       lua_createtable(L, SuperCell.NCell, 0);
@@ -624,10 +896,20 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
       }
       nreturn++;
     }
+    if(ReturnTBIndicesDict)
+    {
+      LuaPushIndicesDictFromTB(L, &aSuper, AddSpin);
+      nreturn++;
+    }
+    if(ReturnTBSuperCell==False)
+    {
+      FreeTightBindingDef(&aSuper);
+    }
     return nreturn;
   }
   else
   { // open systems, i.e. finite size cluster
+    nreturn=2;
     TightBindingDef* ClusterDef;
     // place return values on stack
     H=(OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
@@ -719,6 +1001,7 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
     AtomShellOrbitalMap=(MatrixType**)malloc(ClusterDef->Cell.NAtoms*sizeof(MatrixType*));
     for(i=0;i<ClusterDef->Cell.NAtoms;i++)
     {
+      AtomShellOrbitalMap[i]=NULL;
       for(j=0;j<a->Cell.NAtoms;j++)
       {
         if(strcmp(ClusterDef->Cell.Atom[i].Name,a->Cell.Atom[j].Name)==0)
@@ -822,8 +1105,20 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
         return luaL_error(L, "Number of Fermions in tight binding Hamiltonian (%i) not equal to number of Fermions in additional operator (%i)\n",H->NFermion,AditionalOperator->NFermion);
       }
     }
+    for(i=0;i<ClusterDef->Cell.NAtoms;i++)
+    {
+      if(AtomShellOrbitalMap[i]!=NULL) free(AtomShellOrbitalMap[i]);
+    }
+    free(AtomShellOrbitalMap);
     
-    return 2;
+    
+    if(ReturnTBIndicesDict)
+    {
+      LuaPushIndicesDictFromTB(L, ClusterDef, AddSpin);
+      nreturn++;
+    }
+    
+    return nreturn;
   }
 }
 

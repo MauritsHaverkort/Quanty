@@ -16,7 +16,7 @@ print(TB.Units)
 print(TB.Cell)
 print(TB.Atoms)
 
-Hamiltonian, ClusterTB, IndexName = CreateClusterHamiltonian(TB, {"open", { {"Ni",{0,0,0}}, {"O",{3.9476379,0,0}}, {"O",{-3.9476379,0,0}}, {"O",{0,3.9476379,0}}, {"O",{0,-3.9476379,0}}, {"O",{0,0,3.9476379}}, {"O",{0,0,-3.9476379}}}},  {{"AddSpin",false}})
+Hamiltonian, ClusterTB, IndexName = CreateClusterHamiltonian(TB, {"open", { {"Ni",{0,0,0}}, {"O",{3.9476379,0,0}}, {"O",{-3.9476379,0,0}}, {"O",{0,3.9476379,0}}, {"O",{0,-3.9476379,0}}, {"O",{0,0,3.9476379}}, {"O",{0,0,-3.9476379}}}},  {{"AddSpin",true}, {"ReturnTBIndicesDict",true}})
 
 print("blabla")
 
@@ -25,3 +25,10 @@ print(ClusterTB)
 print("blabla2")
 
 print(Hamiltonian)
+
+print("blabla3")
+
+print(IndexName)
+
+print("There are ",#IndexName," elements in the dictionary")
+print("The first element is ",IndexName[1]," and it refers to", IndexName[IndexName[1]])
