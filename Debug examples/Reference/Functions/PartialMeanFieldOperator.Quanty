@@ -29,6 +29,7 @@ for key1,op in pairs(OpList) do
     for key2,rho in pairs(RhoList) do
         for key3,inds in pairs(IndList) do
             print("\n\n\n\n\n")
+            local opTmp = Copy(op)
             print("Full Operator:")
             print(op)
             print("\nDensity:")
@@ -39,6 +40,8 @@ for key1,op in pairs(OpList) do
             print( PartialMeanFieldOperator(op, rho, inds) )
             print("\nPartialMeanFieldOperator with electron self-interaction:")
             print( PartialMeanFieldOperator(op, rho, inds, {{"AddDFTSelfInteraction",true}}) )
+            print("Test that nothing has changed (should be zero):")
+            print( Chop(opTmp - op) )
         end
     end
 end

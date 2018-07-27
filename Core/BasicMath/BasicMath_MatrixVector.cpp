@@ -1699,9 +1699,9 @@ MatrixType MatrixFlatten(std::vector<std::vector<MatrixType> > allMs)
 {
 	uint32_t QComplex = 0;
 	MatrixType fullM;
-	int numOfRowsOuter = allMs.size();
-	int numOfColsOuter = allMs[0].size();
-	int numOfRowsInner[numOfRowsOuter], numOfColsInner[numOfColsOuter], numOfAllRows = 0, numOfAllCols = 0;
+	vector<MatrixType>::size_type numOfRowsOuter = allMs.size();
+	vector<MatrixType>::size_type numOfColsOuter = allMs[0].size();
+	vector<MatrixType>::size_type numOfRowsInner[numOfRowsOuter], numOfColsInner[numOfColsOuter], numOfAllRows = 0, numOfAllCols = 0;
 	for (int i = 0; i < numOfRowsOuter; ++i)
 	{
 		numOfRowsInner[i] = 0;

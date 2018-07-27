@@ -955,7 +955,7 @@ uint32_t MeanFieldOperator(const OperatorType * const O, OperatorType * const OM
 			{
 				oadd[1] = CrAnMask | m;
 				oadd[0] = NotCrAnMask & m;
-				OperatorAddLaderNormalOrder(OMF, oadd, 2, U.Re * Rho.VRe[i][i] - U.Im * Rho.VIm[i][i], U.Re * Rho.VIm[i][i] + U.Im * Rho.VRe[i][i], &QDetNotOrderedFcFaBcBa);
+				OperatorAddLaderNormalOrder(OMF, oadd, 2, U.Re * Rho.VRe[m][m] - U.Im * Rho.VIm[m][m], U.Re * Rho.VIm[m][m] + U.Im * Rho.VRe[m][m], &QDetNotOrderedFcFaBcBa);
 			}
 		} else // Rho real O complex OMF complex
 		{
@@ -1000,7 +1000,7 @@ uint32_t MeanFieldOperator(const OperatorType * const O, OperatorType * const OM
 			{
 				oadd[1] = CrAnMask | m;
 				oadd[0] = NotCrAnMask & m;
-				OperatorAddLaderNormalOrder(OMF, oadd, 2, U.Re * Rho.VRe[i][i], U.Im * Rho.VRe[i][i], &QDetNotOrderedFcFaBcBa);
+				OperatorAddLaderNormalOrder(OMF, oadd, 2, U.Re * Rho.VRe[m][m], U.Im * Rho.VRe[m][m], &QDetNotOrderedFcFaBcBa);
 			}
 		}
 	} else // O->l[4] real
@@ -1070,7 +1070,7 @@ uint32_t MeanFieldOperator(const OperatorType * const O, OperatorType * const OM
 			{
 				oadd[1] = CrAnMask | m;
 				oadd[0] = NotCrAnMask & m;
-				OperatorAddLaderNormalOrder(OMF, oadd, 2, U * Rho.VRe[i][i], U * Rho.VIm[i][i], &QDetNotOrderedFcFaBcBa);
+				OperatorAddLaderNormalOrder(OMF, oadd, 2, U * Rho.VRe[m][m], U * Rho.VIm[m][m], &QDetNotOrderedFcFaBcBa);
 			}
 		} else // Rho real O->l[4] real
 		{
@@ -1110,7 +1110,7 @@ uint32_t MeanFieldOperator(const OperatorType * const O, OperatorType * const OM
 			{
 				oadd[1] = CrAnMask | m;
 				oadd[0] = NotCrAnMask & m;
-				OperatorAddLaderNormalOrder(OMF, oadd, 2, U * Rho.VRe[i][i], 0, &QDetNotOrderedFcFaBcBa);
+				OperatorAddLaderNormalOrder(OMF, oadd, 2, U * Rho.VRe[m][m], 0, &QDetNotOrderedFcFaBcBa);
 			}
 		}
 	}

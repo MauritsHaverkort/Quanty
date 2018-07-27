@@ -618,7 +618,7 @@ static int LuaNewOperator(lua_State * L)
         if(Abs(oaddtemp)>O->NFermion+O->NBoson-1) return luaL_error(L, "ERROR: Opperator %d at position %d adding particle with index %d but there are only %d (%d Fermions + %d Bosons in the basis)\n)\n",i,j,(int)oaddtemp,O->NFermion+O->NBoson,O->NFermion,O->NBoson);
         if(Abs((Abs(oaddtemp)-(uint16_t)(Abs(oaddtemp))))>10*DBL_EPSILON) return luaL_error(L, "ERROR: Opperator %d at position %d addign particle with index %f should be integer",i,j,oaddtemp);
         // negative numbers annihilate, positive create, but we also have to capture negative and postive zero
-        if(std::signbit(oaddtemp))
+        if(signbit(oaddtemp))
         {
           oadd[l-j]=(uint16_t)(-oaddtemp);
         }
@@ -4284,12 +4284,11 @@ void lua_setAtomicOrbitalIndices(lua_State *L, string orb, int * NF, int indTabl
 static int lua_createAtomicIndices(lua_State *L, Bool isDict)
 {
 	vector<string> orbitals;
-	uint32_t orbListLen;
+	vector<string>::size_type orbListLen;
 	int indTablePos;
 	int NF = 0;
 	uint32_t groupListLen;
 	string groupKey;
-	uint32_t groupLen;
 	vector<string> groupMembers;
 	int numberOfRedundantOrbitals = 0;
 	int i;
@@ -4410,8 +4409,7 @@ static int LuaPartialOperator(lua_State *L)
 	uint32_t len = (uint32_t) lua_gettop(L);
 	if (len != 2)
 		return luaL_error(L, "PartialOperator called with %d arguments. Operator and List of Indices expected.\n", len);
-	int i;
-	for (i = 0; i < indSetSize; i++)
+	for (int i = 0; i < indSetSize; i++)
 	{
 		if (indices[i] < 0 || indices[i] >= O->NFermion)
 			printf("\nWarning: Index %d is not within [0,NF-1]=[0,%d].\n", indices[i], O->NFermion - 1);
