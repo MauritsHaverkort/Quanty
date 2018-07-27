@@ -1,5 +1,5 @@
 #include <vector>
-
+#include <cmath>
 //using namespace std;
 // inclusion of namespace std leads to conflicts with function atomic in lua
 
@@ -68,6 +68,7 @@ uint32_t CreateOperatorFastCoulombRelativistic(uint32_t const NFermion,double **
     SSlaterIntegral *integrals;
 
     integrals = GetSlaterIntegrals(basisfuns,NbasisFuns,grid, NGridpoints, (const int **) tuple, NIntegrals);
+    //PrintMaxSlaterIntegral(integrals,NIntegrals);
 
     int *k, i;
     unsigned int *n;
@@ -354,7 +355,7 @@ double* CreateBaseForContinuum( int NBasisFuns,double **basisfuns,double **deriv
 	free(tau);
 	free(e);
 
-	printf("no-vector\n");
+	printf("you should not see this message...\n");
 
 	return d;
 
@@ -463,9 +464,9 @@ double *CreateBaseForContinuum( int NBasisFuns, vector<vector<double> > basisfun
 	if ( 0 != info) printf("error: argument %d of LAPACKE_dsteqr",-info);
 
 
-	printf("\n");
-	//PrintMartix(&(g[0]),dim);
-
+/*	printf("\n");
+	PrintMartix(&(g[0]),dim);
+*/
 	CalcContinuumWFs(basisfuns, group.indices, group.n, contfuns, Ncont, NGridpoints, g, Tsub);
 
 /*	printf("\n");
@@ -482,6 +483,87 @@ double *CreateBaseForContinuum( int NBasisFuns, vector<vector<double> > basisfun
 	return d;
 
 }
+
+uint32_t CreateOperatorSingleCoulombRelativistic(uint32_t const NFermion,double **basisfuns, uint32_t NbasisFuns, const double *grid, uint32_t NGridpoints, uint32_t **tuple,
+                                               uint32_t NIntegrals,uint16_t **indices, OperatorType *op)
+{
+
+    OperatorType optemp;
+    SSlaterIntegral *integrals;
+
+    integrals = GetSlaterIntegrals(basisfuns,NbasisFuns,grid, NGridpoints, (const int **) tuple, NIntegrals);
+    int index = GetIndexMaxSlaterIntegral(integrals,NIntegrals);
+    double cutoff = std::abs(integrals[index].val[0])/10.;
+    vector<int> indexes = GetMaxSlaterIntegrals(integrals,NIntegrals,cutoff);
+    //printf("%d\t%d\n",NIntegrals,indexes.size());
+
+    int *k, i;
+    unsigned int *n;
+    double *Fk;
+
+    k = integrals[indexes[0]].tau.kappa;
+    n = integrals[indexes[0]].tau.n;
+    Fk = integrals[indexes[0]].val;
+    //printf("Fk[0]: \t %e\n",Fk[0]);
+
+    CreateOperatorCoulombRelativisticOneIntegral(NFermion,k[0],k[1],k[2],k[3],indices[n[0]],indices[n[1]],indices[n[2]],indices[n[3]],Fk,n[0],n[1],n[2],n[3],op);
+
+    for( i = 1; i < indexes.size(); i++)
+        {
+            k = integrals[indexes[i]].tau.kappa;
+            n = integrals[indexes[i]].tau.n;
+            Fk = integrals[indexes[i]].val;
+
+            CreateOperatorCoulombRelativisticOneIntegral(NFermion,k[0],k[1],k[2],k[3],indices[n[0]],indices[n[1]],indices[n[2]],indices[n[3]],Fk,n[0],n[1],n[2],n[3],&optemp);
+
+            OperatorAdd(op, optemp, 1., 0.);
+
+        }
+
+    for ( i = 0; i < NIntegrals; i++)
+    {
+    	free(integrals[i].val);
+    	free(integrals[i].k);
+    }
+    free(integrals);
+
+    return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /*
 	printf("%f\n",NormDO(n,k,l,w));

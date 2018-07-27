@@ -117,7 +117,15 @@ static int LuaOperatorNewFullCoulomb (lua_State *L)
     	}
     	else
     	{
-    		CreateOperatorFastCoulombRelativistic(NF,wavefunctions->VRe,wavefunctions->Ni,x,NGridpoints,tuple, NIntegrals,indices, op);
+    		uint32_t test = (uint32_t)luaL_checkunsigned(L, 6);
+    		if (test == 2)
+    		{
+    			CreateOperatorSingleCoulombRelativistic(NF,wavefunctions->VRe,wavefunctions->Ni,x,NGridpoints,tuple, NIntegrals,indices, op);
+    		}
+    		else
+    		{
+    			CreateOperatorFastCoulombRelativistic(NF,wavefunctions->VRe,wavefunctions->Ni,x,NGridpoints,tuple, NIntegrals,indices, op);
+    		}
     	}
     	for( i = 0; i < NIntegrals; i++ )
     	{
