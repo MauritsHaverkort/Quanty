@@ -1,8 +1,9 @@
 /* Some makeshift functions */
 
+#include "MartinsLittleHelper.cpp"
 #include "SlaterTuple.cpp"
 #include "CreateOperators.cpp"
-#include "MartinsLittleHelper.cpp"
+
 
 static int LuaOperatorNewFullCoulomb (lua_State *L)
 {
@@ -35,18 +36,42 @@ static int LuaOperatorNewFullCoulomb (lua_State *L)
     if (len == 4)
     {
     	vector<int> indToK;
-    	Nindices = (uint32_t)lua_objlen(L,4);
-    	indices = (uint16_t **) malloc(Nindices * sizeof(uint16_t *));
-    	for( i = 0; i < Nindices; i++ )
+    	lua_getfield(L,4,"kappas");
+    	if (lua_isnil(L,-1))
     	{
-    		lua_rawgeti(L, 4, i+1);
-    		lua_rawgeti(L,-1,1);
-    		indToK.push_back((int) luaL_checkunsigned(L, -1));
     		lua_pop(L,1);
-    		lua_rawgeti(L,-1,2);
-    		indices[i] = luaL_checkarray_unit16_t(L,-1,&temp);
+    		Nindices = (uint32_t)lua_objlen(L,4);
+    		indices = (uint16_t **) malloc(Nindices * sizeof(uint16_t *));
+    		for( i = 0; i < Nindices; i++ )
+    		{
+    			lua_rawgeti(L, 4, i+1);
+    			lua_rawgeti(L,-1,1);
+    			indToK.push_back((int) luaL_checkunsigned(L, -1));
+    			lua_pop(L,1);
+    			lua_rawgeti(L,-1,2);
+    			indices[i] = luaL_checkarray_unit16_t(L,-1,&temp);
+    			lua_pop(L,1);
+    			lua_pop(L,1);
+    		}
+    	}
+    	else
+    	{
+    		uint16_t *help = luaL_checkarray_unit16_t(L,-1,&temp);
+    		indToK = ConvertArray(help,temp);
+    		free(help);
+    		//PrintArray(indToK);
     		lua_pop(L,1);
-    		lua_pop(L,1);
+    		Nindices = (uint32_t)lua_objlen(L,4);
+
+    		indices = (uint16_t **) malloc(Nindices * sizeof(uint16_t *));
+    		if(!indices) printf("malloc fail at indices in LuaOperatorNewFullCoulomb. size = %d\n",Nindices);
+
+    		for( i = 0; i < Nindices; i++ )
+    		{
+    			lua_rawgeti(L, 4, i+1);
+    			indices[i] = luaL_checkarray_unit16_t(L,-1,&temp);
+    			lua_pop(L,1);
+    		}
     	}
     	op = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
     	CreateOperatorFastCoulombRelativistic(NF,wavefunctions->VRe,wavefunctions->Ni,x,NGridpoints,indToK,indices, op);
@@ -103,14 +128,6 @@ static int LuaOperatorNewFullCoulomb (lua_State *L)
 
     luaL_setmetatable(L,"Operator_Type");
 
-    /*printf("Operaotor op: %p\n",op);
-    printf("op.l: %p\t %d\n",op->l,op->MaxLength);
-    printf("op.l[4]: %p\t %d\n",&(op->l[4]),op->l[4].N);
-    printf("WF: %p\n",wavefunctions);
-    printf("x: %p\n", x);
-    printf("indices: %p \n",indices);
-    printf("tuple: %p\n",tuple);
-    printf("\n");*/
 	FreeMatrix(wavefunctions);
 	free(x);
 
@@ -127,7 +144,7 @@ static int LuaOperatorNewDirac(lua_State *L)
 {
 	OperatorType *op;
 	uint32_t **indices;
-	uint32_t NF, i, NGroups, NGridpoints, NIndices, NBasisFuns, temp;
+	uint32_t NF, i, NGroups, NGridpoints, NIndices, temp;
 	SKappaGroup *groups;
 	MatrixType *basisfuns, *derivfuns;
 	int Z;
@@ -182,8 +199,6 @@ static int LuaOperatorNewDirac(lua_State *L)
 	}
 	free(indices);
 
-	//Todo free Memory !!!!! same for Slaters
-
 	return 1;
 }
 
@@ -199,15 +214,12 @@ static int LuaCreateBaseForContinuum(lua_State *L)
 
 	basisfuns = luaL_checkMatrix(L,1);
 	vbasf = ConvertMatrix(basisfuns->VRe,basisfuns->Ni,basisfuns->Nj);
-	/*for (int i = 0; i < vbasf.size(); i++)
-		for (int j = 0; j < vbasf[i].size(); j++)
-			printf("%e\n",vbasf[i][j]-basisfuns->VRe[i][j]);*/
-	derivfuns = luaL_checkMatrix(L,1);
+
+	derivfuns = luaL_checkMatrix(L,2);
 	vderf = ConvertMatrix(derivfuns->VRe,derivfuns->Ni,derivfuns->Nj);
 	x = luaL_checkarray_double(L,3,&NGridpoints);
 	vx = ConvertArray(x,NGridpoints);
-	//for (int i = 0; i < vx.size(); i++)
-		//printf("%f\n",vx[i]);
+
 	luaL_checktype(L, 4, LUA_TTABLE);
 	/*NGroups = (uint32_t)lua_objlen(L,4);
 
@@ -240,12 +252,6 @@ static int LuaCreateBaseForContinuum(lua_State *L)
 
 
 	double *eigenval;
-/*
-	vector<double> vw = CreateWeights(NGridpoints,vx);
-	double * ww = CreateWeights(NGridpoints,x);
-	for (int i = 0; i < NGridpoints; i++)
-		printf("%e\n",ww[i]-vw[i]);
-*/
 
 	eigenval = CreateBaseForContinuum(vbasf.size(), vbasf,vderf,vx,NGridpoints,group,vcontf.size(),vcontf,w);
 
@@ -272,13 +278,11 @@ static int LuaCreateBaseForContinuum(lua_State *L)
 
 static int LuaPropagator(lua_State *L)
 {
-	uint32_t n0, n1, nU, nE,n, nv;
+	uint32_t n0, n1, nU, nE, nv;
 	vector<CompactMatrixType *> U;
-	CompactMatrixType Sigma, zd1U, SigmaAdd;
-	vector<Complex16> Uhelp;
 	vector<double> w, spec;
 
-	Complex16 z0, z1, *v, *SigV;
+	Complex16 *v;
 	double  *d0, *d1, *Econt;
 
 	d0 = luaL_checkarray_double(L,1,&n0);
@@ -300,21 +304,96 @@ static int LuaPropagator(lua_State *L)
 	v = luaL_checkarray_complex16(L,5,&nv);
 	if (nv != n0)
 	{
-		printf("error in LuaPropagator: %d = nv != d0 = %d\n",nv,d0);
+		printf("error in LuaPropagator: %d = nv != n0 = %d\n",nv,n0);
 		return -1;
 	}
-	double Q = 2833;
+	double Q = luaL_checknumber(L, 6);
 	double ww = 0;
-	double g0 = 1.;
-	double g1 = 2.;
+	double g0 = luaL_checknumber(L, 7);
+	double g1 = luaL_checknumber(L, 8);
 	while (ww < Q)
 	{
 		w.insert(w.end(),ww);
-		ww += g1/5.;
+		ww += g1/8.; //TODO adjust
 	}
 	spec = CalcSpectrumContinuum(w,g0,g1,Q,d0,Econt,d1,U,v);
 	LuaPushArray_double(L,&w[0],w.size());
 	LuaPushArray_double(L,&spec[0],spec.size());
+
+	free(d0);
+	free(d1);
+	free(Econt);
+	free(v);
+	for (int i = 0; i < U.size(); i++)
+	{
+		FreeCompactMatrix(U[i]);
+	}
+	return 2;
+}
+
+static int LuaPropagator2(lua_State *L)
+{
+	uint32_t n0, n1, nd1, nU, nE, nv;
+	vector<CompactMatrixType *> U;
+	vector<double> w, spec;
+
+	Complex16 *v;
+	double  *d0, *Econt;
+	vector<double *> d1;
+
+	d0 = luaL_checkarray_double(L,1,&n0);
+	nd1 = (uint32_t)lua_objlen(L,2);
+	d1 = vector<double *>(nd1);
+	for (int i = 0; i < nd1; i++)
+	{
+		lua_rawgeti(L, 2, i+1);
+		d1[i] = luaL_checkarray_double(L,-1,&n1);
+		lua_pop(L,1);
+	}
+	nU = (uint32_t)lua_objlen(L,3);
+	for (int i = 0; i < nU; i++)
+	{
+	   	lua_rawgeti(L, 3, i+1);
+	   	U.insert(U.end(),(CompactMatrixType *) luaL_checkCompactMatrix(L, -1));
+	   	lua_pop(L,1);
+	}
+
+	Econt = luaL_checkarray_double(L,4,&nE);
+	if (nE != nU)
+	{
+		printf("errror in LuaPropagator: %d = nE != nU = %d\n",nE,nU);
+		return -1;
+	}
+	v = luaL_checkarray_complex16(L,5,&nv);
+	if (nv != n0)
+	{
+		printf("error in LuaPropagator: %d = nv != n0 = %d\n",nv,n0);
+		return -1;
+	}
+	double Q = luaL_checknumber(L, 6);
+	double ww = 0;
+	double g0 = luaL_checknumber(L, 7);
+	double g1 = luaL_checknumber(L, 8);
+	while (ww < Q)
+	{
+		w.insert(w.end(),ww);
+		ww += g1/8.; //TODO adjust
+	}
+	spec = CalcSpectrumContinuum(w,g0,g1,Q,d0,Econt,d1,U,v);
+	LuaPushArray_double(L,&w[0],w.size());
+	LuaPushArray_double(L,&spec[0],spec.size());
+
+	free(d0);
+	for (int i = 0; i < nd1; i++)
+	{
+		free(d1[i]);
+	}
+	free(Econt);
+	free(v);
+	for (int i = 0; i < U.size(); i++)
+	{
+		FreeCompactMatrix(U[i]);
+	}
 	return 2;
 }
 
@@ -356,5 +435,6 @@ static const struct luaL_Reg Martin_func[] = {
   {"NewDirac", LuaOperatorNewDirac},
   {"ContinuumBase",LuaCreateBaseForContinuum},
   {"Propagator",LuaPropagator},
+  {"Propagator2",LuaPropagator2},
   {NULL, NULL}
 };

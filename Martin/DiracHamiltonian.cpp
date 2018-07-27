@@ -92,7 +92,7 @@ double DiracH(vector<double> basisfun,vector<double> dualfun,vector<double> deri
 	free(H12F);
 	free(H21G);
 	free(H22F);
-
+	//printf("result = %f\n",result);
 	return result;
 }
 void PrintMartix2();
