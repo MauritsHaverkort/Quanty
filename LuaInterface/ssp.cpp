@@ -4409,8 +4409,7 @@ static int LuaPartialOperator(lua_State *L)
 	uint32_t len = (uint32_t) lua_gettop(L);
 	if (len != 2)
 		return luaL_error(L, "PartialOperator called with %d arguments. Operator and List of Indices expected.\n", len);
-	int i;
-	for (i = 0; i < indSetSize; i++)
+	for (int i = 0; i < indSetSize; i++)
 	{
 		if (indices[i] < 0 || indices[i] >= O->NFermion)
 			printf("\nWarning: Index %d is not within [0,NF-1]=[0,%d].\n", indices[i], O->NFermion - 1);

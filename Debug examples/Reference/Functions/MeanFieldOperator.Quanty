@@ -19,6 +19,7 @@ RhoList[#RhoList+1] = {{1,I,0,0},{0,1,0,0},{0,0,1,0},{0,0,0,1}}
 for key1,op in pairs(OpList) do
     for key2,rho in pairs(RhoList) do
         print("\n\n\n\n\n")
+        local opTmp = Copy(op)
         print("Full Operator:")
         print(op)
         print("\nDensity:")
@@ -27,6 +28,8 @@ for key1,op in pairs(OpList) do
         print( MeanFieldOperator(op, rho) )
         print("\nMeanFieldOperator with electron self-interaction:")
         print( MeanFieldOperator(op, rho, {{"AddDFTSelfInteraction",true}}) )
+        print("Test that nothing has changed (should be zero):")
+        print( Chop(opTmp - op) )
     end
 end
  
