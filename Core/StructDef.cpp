@@ -1471,6 +1471,7 @@ typedef struct DresdenFPLO
     double Angles[3];
     double LattVec[3][3];
     double gLattVec[3][3];
+    bool Molecule;
   }
   Lattice;
 

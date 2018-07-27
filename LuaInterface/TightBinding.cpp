@@ -370,6 +370,10 @@ static int LuaCalculateRho(lua_State *L)
     return luaL_error(L, "Error CalculateRho: called with %d arguments, 1 or 2 expected (TightBindingDef, and options).\n",len);
   }
   a = (TightBindingDef*) luaL_checkudata(L, 1, "TightBinding_Type");
+  // if the reciprocal lattice is zero set Nk to zero
+  if((Abs(a->Cell.gUnitCell[0][0])+Abs(a->Cell.gUnitCell[0][1])+Abs(a->Cell.gUnitCell[0][2]))==0) Options.Nk[0]=1;
+  if((Abs(a->Cell.gUnitCell[1][0])+Abs(a->Cell.gUnitCell[1][1])+Abs(a->Cell.gUnitCell[1][2]))==0) Options.Nk[1]=1;
+  if((Abs(a->Cell.gUnitCell[2][0])+Abs(a->Cell.gUnitCell[2][1])+Abs(a->Cell.gUnitCell[2][2]))==0) Options.Nk[2]=1;
   if(len==2)
   {
     LuaCheckOptions(L, 2, LuaCalculateGOptions);
