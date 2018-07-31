@@ -270,6 +270,7 @@ double* CreateBaseForContinuum( int NBasisFuns,double **basisfuns,double **deriv
 	const int CblasNonUnit = 131;
 */
 
+	printf("This code shouldn't run...\n");
 	char blasRight = 'R';
 	char blasLeft  = 'L';
 	char blasUpper = 'U';
@@ -493,9 +494,9 @@ uint32_t CreateOperatorSingleCoulombRelativistic(uint32_t const NFermion,double 
 
     integrals = GetSlaterIntegrals(basisfuns,NbasisFuns,grid, NGridpoints, (const int **) tuple, NIntegrals);
     int index = GetIndexMaxSlaterIntegral(integrals,NIntegrals);
-    double cutoff = std::abs(integrals[index].val[0])/10.;
+    double cutoff = abs(integrals[index].val[0])/5.;
     vector<int> indexes = GetMaxSlaterIntegrals(integrals,NIntegrals,cutoff);
-    //printf("%d\t%d\n",NIntegrals,indexes.size());
+    printf("NIntegrals %d\t%d\n",NIntegrals,indexes.size());
 
     int *k, i;
     unsigned int *n;

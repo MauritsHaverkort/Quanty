@@ -240,7 +240,7 @@ void PrintMaxSlaterIntegral(SSlaterIntegral *integrals,const uint32_t NIntegrals
 	int index = 0;
 	for (int i = 0; i < NIntegrals; i++)
 	{
-		m = std::max(m,std::abs(integrals[i].val[0]));
+		m = Max(m,abs(integrals[i].val[0]));
 		if (m != mold)
 		{
 			index = i;
@@ -258,7 +258,7 @@ int GetIndexMaxSlaterIntegral(SSlaterIntegral *integrals,const uint32_t NIntegra
 	int index = 0;
 	for (int i = 0; i < NIntegrals; i++)
 	{
-		m = std::max(m,std::abs(integrals[i].val[0]));
+		m = Max(m,abs(integrals[i].val[0]));
 		if (m != mold)
 		{
 			index = i;
@@ -276,7 +276,7 @@ vector<int> GetMaxSlaterIntegrals(SSlaterIntegral *integrals,const uint32_t NInt
 	for (int i = 0; i < NIntegrals; i++)
 	{
 
-		if (std::abs(integrals[i].val[0]) >= cutoff)
+		if (abs(integrals[i].val[0]) >= cutoff)
 		{
 			index.push_back(i);
 		}
