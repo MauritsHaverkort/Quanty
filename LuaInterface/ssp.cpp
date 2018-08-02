@@ -4467,7 +4467,7 @@ static int LuaOrbToMultiplicity(lua_State * L)
 	}
 	orb = (char*) luaL_checkstring(L, 1);
 	lua_pop(L, 1);
-	multiplicity = nonRelAngularMomentumZNumbers(orb);
+	multiplicity = 2*nonRelAngularMomentumZNumbers(orb);
 	if (multiplicity < 0)
 		multiplicity = relAngularMomentumZNumbers(orb);
 	if (multiplicity < 0)
