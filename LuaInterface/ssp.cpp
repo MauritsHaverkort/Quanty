@@ -4119,15 +4119,14 @@ static int LuaStatistics(lua_State *L)
 static int LuaDeterminantString(lua_State *L)
 {
 	int NF;
-	uint16_t * indices;
-	uint32_t indSetSize;
+	vector<uint16_t> indices;
 	uint32_t len = (uint32_t)lua_gettop(L);
 	if (len < 2 || len > 2)
 		return luaL_error(L, "DeterminantString called with %d arguments. List of Indices and Number of Fermions expected.\n",len);
-	indices = luaL_checkarray_unit16_t(L,1,&indSetSize);
+	indices = luaL_checkvector_unit16_t(L,1);
 	NF = luaL_checknumber(L,2);
 	int i;
-	for (i=0;i<indSetSize;i++)
+	for (i=0;i<indices.size();i++)
 	{
 		if (indices[i]<0 || indices[i]>=NF)
 			printf("\nWarning: Index %d is not within [0,NF-1]=[0,%d].\n", indices[i], NF-1);
@@ -4136,7 +4135,7 @@ static int LuaDeterminantString(lua_State *L)
 	det[NF] = '\0';
 	for (i=0;i<NF;i++)
 	{
-		if (isIntElementOf(i,indices,indSetSize))
+		if (isIntElementOf(i,indices))
 		{
 			det[i] = '1';
 		} else
@@ -4402,20 +4401,19 @@ static int LuaCreateAtomicIndicesList(lua_State *L)
 static int LuaPartialOperator(lua_State *L)
 {
 	OperatorType *O, *OPartial;
-	uint16_t * indices;
-	uint32_t indSetSize;
+	vector < uint16_t > indices;
 	O = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
-	indices = luaL_checkarray_unit16_t(L, 2, &indSetSize);
+	indices = luaL_checkvector_unit16_t(L, 2);
 	uint32_t len = (uint32_t) lua_gettop(L);
 	if (len != 2)
 		return luaL_error(L, "PartialOperator called with %d arguments. Operator and List of Indices expected.\n", len);
-	for (int i = 0; i < indSetSize; i++)
+	for (int i = 0; i < indices.size(); i++)
 	{
 		if (indices[i] < 0 || indices[i] >= O->NFermion)
 			printf("\nWarning: Index %d is not within [0,NF-1]=[0,%d].\n", indices[i], O->NFermion - 1);
 	}
 	OPartial = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-	extractPartialOperator(O, OPartial, indices, indSetSize);
+	extractPartialOperator(O, OPartial, indices);
 	luaL_setmetatable(L, "Operator_Type");
 	strncpy(OPartial->Name, "", MAXStrLength - 1); //An appropriate Name can be given in Lua.
 	return 1;
@@ -4424,12 +4422,11 @@ static int LuaPartialOperator(lua_State *L)
 static int LuaPartialMeanFieldOperator(lua_State *L)
 {
 	OperatorType *O, *OMF;
-	MatrixType *Rho;
-	uint16_t * indices;
-	uint32_t indSetSize;
+	MatrixType Rho;
+	vector < uint16_t > indices;
 	O = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
-	Rho = (MatrixType *) luaL_checkMatrix(L, 2);
-	indices = luaL_checkarray_unit16_t(L, 3, &indSetSize);
+	Rho = *(MatrixType *) luaL_checkMatrix(L, 2);
+	indices = luaL_checkvector_unit16_t(L, 3);
 	uint32_t len = (uint32_t) lua_gettop(L);
 	struct
 	{
@@ -4440,17 +4437,17 @@ static int LuaPartialMeanFieldOperator(lua_State *L)
 			{ NULL, NULL, NULL } };
 	if (len < 3 || len > 4)
 		return luaL_error(L, "MeanFieldOperator called with %d arguments. Three or four expected, Operator, Density Matrix, List of Indices and optional Options expected.\n", len);
-  if(len==4)
-  {
-    LuaCheckOptions(L, -1, LuaOptions);
-  }
-	for (int i = 0; i < indSetSize; i++)
+	if (len == 4)
+	{
+		LuaCheckOptions(L, -1, LuaOptions);
+	}
+	for (int i = 0; i < indices.size(); i++)
 	{
 		if (indices[i] < 0 || indices[i] >= O->NFermion)
 			printf("\nWarning: Index %d is not within [0,NF-1]=[0,%d].\n", indices[i], O->NFermion - 1);
 	}
 	OMF = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-	partialMeanFieldOperator(O, OMF, *Rho, indices, indSetSize, Options.AddDFTSelfInteraction);
+	partialMeanFieldOperator(O, OMF, Rho, indices, Options.AddDFTSelfInteraction);
 	luaL_setmetatable(L, "Operator_Type");
 	strncpy(OMF->Name, "", MAXStrLength - 1); //An appropriate Name can be given in Lua.
 	return 1;

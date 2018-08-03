@@ -19,6 +19,20 @@ uint8_t* luaL_checkarray_unit8_t(lua_State *L, int narg, uint32_t *len_out)
   return buff;
 }
 
+vector<uint16_t> luaL_checkvector_unit16_t(lua_State *L, int narg)
+{
+	luaL_checktype(L, narg, LUA_TTABLE);
+	uint32_t len = (uint32_t) lua_objlen(L, narg);
+	vector < uint16_t > buff(len);
+	for (int i = 0; i < len; i++)
+	{
+		lua_rawgeti(L, narg, i + 1);
+		buff[i] = (uint16_t) luaL_checkunsigned(L, -1);
+		lua_pop(L, 1);
+	}
+	return buff;
+}
+
 uint16_t* luaL_checkarray_unit16_t(lua_State *L, int narg, uint32_t *len_out)
 {
   int i;

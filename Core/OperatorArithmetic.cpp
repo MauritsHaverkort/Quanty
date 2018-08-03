@@ -6482,14 +6482,14 @@ uint32_t OperatorChangeNFandNB(OperatorType *O, uint32_t NFnew, uint32_t NBnew)
   return 0;
 }
 
-void extractPartialOperatorFixedLength(OperatorType * const O, OperatorType * const OPartial, const uint16_t * const indices, const uint32_t indSetSize, const int length, bool changeInput)
+void extractPartialOperatorFixedLength(OperatorType * const O, OperatorType * const OPartial, const vector<uint16_t> indices, const int length, bool changeInput)
 {
 	uint16_t oadd[length];
 	int firstIndexOfBlock;
 	InitOperatorFixedLength(OPartial, length, 8);
 	for (int i = 0; i < length * (O->l[length].N); i++)
 	{
-		if (isIntElementOf(NotCrAnMask & O->l[length].o[i], indices, indSetSize))
+		if (isIntElementOf(NotCrAnMask & O->l[length].o[i], indices))
 		{
 			firstIndexOfBlock = i - (i % length);
 			for (int j = 0; j < length; j++)
@@ -6515,21 +6515,21 @@ void extractPartialOperatorFixedLength(OperatorType * const O, OperatorType * co
 	}
 }
 
-void extractPartialOperatorFixedLength(OperatorType * const O, OperatorType * const OPartial, const uint16_t * const indices, const uint32_t indSetSize, const int length)
+void extractPartialOperatorFixedLength(OperatorType * const O, OperatorType * const OPartial, const vector<uint16_t> indices, const int length)
 {
-	extractPartialOperatorFixedLength(O, OPartial, indices, indSetSize, length, false);
+	extractPartialOperatorFixedLength(O, OPartial, indices, length, false);
 }
 
-void extractPartialOperator(OperatorType * const O, OperatorType * const OPartial, const uint16_t * const indices, const uint32_t indSetSize, bool changeInput)
+void extractPartialOperator(OperatorType * const O, OperatorType * const OPartial, const vector<uint16_t> indices, bool changeInput)
 {
 	InitOperator(OPartial);
 	OPartial->NFermion = O->NFermion;
 	OPartial->NBoson = O->NBoson;
 	for (int length = 0; length <= O->MaxLength; ++length)
-		extractPartialOperatorFixedLength(O, OPartial, indices, indSetSize, length, changeInput);
+		extractPartialOperatorFixedLength(O, OPartial, indices, length, changeInput);
 }
 
-void extractPartialOperator(OperatorType * const O, OperatorType * const OPartial, const uint16_t * const indices, const uint32_t indSetSize)
+void extractPartialOperator(OperatorType * const O, OperatorType * const OPartial, const vector<uint16_t> indices)
 {
-	extractPartialOperator(O, OPartial, indices, indSetSize, false);
+	extractPartialOperator(O, OPartial, indices, false);
 }

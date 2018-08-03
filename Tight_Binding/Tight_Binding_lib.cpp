@@ -2108,10 +2108,10 @@ int kappa(string orb)
 
 
 //TODO: Anyone have a better idea where to put this function?
-int isIntElementOf(const uint16_t element, const uint16_t * const set, const uint32_t setSize)
+int isIntElementOf(const uint16_t element, const vector<uint16_t> set)
 {
 	int i;
-	for (i=0;i<setSize;i++)
+	for (i = 0; i < set.size(); i++)
 	{
 		if (element == set[i])
 			return 1;

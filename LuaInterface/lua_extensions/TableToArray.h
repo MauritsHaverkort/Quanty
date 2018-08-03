@@ -1,4 +1,5 @@
 uint8_t* luaL_checkarray_unit8_t(lua_State *L, int narg, uint32_t *len_out);
+vector< uint16_t > luaL_checkvector_unit16_t(lua_State *L, int narg);
 uint16_t* luaL_checkarray_unit16_t(lua_State *L, int narg, uint32_t *len_out);
 uint32_t* luaL_checkarray_unit32_t(lua_State *L, int narg, uint32_t *len_out);
 double* luaL_checkarray_double(lua_State *L, int narg, uint32_t *len_out);

@@ -49,4 +49,4 @@ int nonRelAngularMomentumZNumbers(string orb);
 int relAngularMomentumZNumbers(string orb, int * significantCharPos);
 int relAngularMomentumZNumbers(string orb);
 int kappa(string orb);
-int isIntElementOf(const uint16_t element, const uint16_t * const set, const uint32_t setSize);
+int isIntElementOf(const uint16_t element, const vector<uint16_t> set);
