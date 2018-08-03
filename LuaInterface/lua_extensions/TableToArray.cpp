@@ -1980,6 +1980,17 @@ void LuaPushArray_double(lua_State *L, double const * const val, int const N)
   }
 }
 
+void LuaPushArray_uint32_t(lua_State *L, uint32_t const * const val, int const N)
+{
+  uint32_t i;
+  lua_createtable(L, N, 0);
+  for(i=0;i<N;i++)
+  {
+    lua_pushnumber(L, val[i]);
+    lua_rawseti(L, -2, i+1);
+  }
+}
+
 void LuaPushArray_Complex16(lua_State *L, Complex16 const * const val, int const N)
 {
   uint32_t i;

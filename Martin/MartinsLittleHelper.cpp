@@ -6,7 +6,7 @@
  */
 #include <vector>
 
-//using namespace std;
+using std::vector;
 // inclusion of namespace std leads to conflicts with function atomic in lua
 
 void PrintMartix(double *M, int n)
@@ -233,9 +233,57 @@ vector<double> CalcSpectrumContinuum(vector<double> w, double g0, double g1, dou
 	return spec;
 }
 
+void PrintMaxSlaterIntegral(SSlaterIntegral *integrals,const uint32_t NIntegrals)
+{
+	double m = 0;
+	double mold = 0;
+	int index = 0;
+	for (int i = 0; i < NIntegrals; i++)
+	{
+		m = Max(m,abs(integrals[i].val[0]));
+		if (m != mold)
+		{
+			index = i;
+			mold = m;
+		}
+		printf("%e\n",integrals[i].val[0]);
+	}
+	printf("%e\t%d\n",m,index);
+}
 
+int GetIndexMaxSlaterIntegral(SSlaterIntegral *integrals,const uint32_t NIntegrals)
+{
+	double m = 0;
+	double mold = 0;
+	int index = 0;
+	for (int i = 0; i < NIntegrals; i++)
+	{
+		m = Max(m,abs(integrals[i].val[0]));
+		if (m != mold)
+		{
+			index = i;
+			mold = m;
+		}
 
+	}
+	return index;
+}
 
+vector<int> GetMaxSlaterIntegrals(SSlaterIntegral *integrals,const uint32_t NIntegrals, const double cutoff)
+{
+
+	vector<int> index;
+	for (int i = 0; i < NIntegrals; i++)
+	{
+
+		if (abs(integrals[i].val[0]) >= cutoff)
+		{
+			index.push_back(i);
+		}
+
+	}
+	return index;
+}
 
 
 

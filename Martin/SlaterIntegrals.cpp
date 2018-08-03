@@ -382,7 +382,7 @@ SSlaterIntegral *InitializeIntegrals(vector<int> indToK, unsigned int &NIntegral
     	integrals[i].tau.kappa[1] = it->second.val[1];
     	integrals[i].tau.kappa[2] = it->second.val[2];
     	integrals[i].tau.kappa[3] = it->second.val[3];
-
+    													// TODO i could be larger than NIntegrals ???
     	i++;
     }
     //printf("i -> %d\t NIntegrals %d\n",i,NIntegrals);

@@ -42,6 +42,7 @@ static int LuaOperatorNewFullCoulomb (lua_State *L)
     		lua_pop(L,1);
     		Nindices = (uint32_t)lua_objlen(L,4);
     		indices = (uint16_t **) malloc(Nindices * sizeof(uint16_t *));
+    		if(!indices) printf("malloc fail at indices in LuaOperatorNewFullCoulomb. size = %d\n",Nindices);
     		for( i = 0; i < Nindices; i++ )
     		{
     			lua_rawgeti(L, 4, i+1);
@@ -73,6 +74,8 @@ static int LuaOperatorNewFullCoulomb (lua_State *L)
     			lua_pop(L,1);
     		}
     	}
+    	if (wavefunctions->Ni != Nindices) printf("Warning: Martin.Coulomb() number of basis funs (%d) != number of indices (%d)\n",wavefunctions->Ni , Nindices);
+    	if (indToK.size() != Nindices) printf("Warning: Martin.Coulomb() number of kappas (%d) != number of indices (%d)\n",indToK.size() , Nindices);
     	op = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
     	CreateOperatorFastCoulombRelativistic(NF,wavefunctions->VRe,wavefunctions->Ni,x,NGridpoints,indToK,indices, op);
     }
@@ -117,7 +120,15 @@ static int LuaOperatorNewFullCoulomb (lua_State *L)
     	}
     	else
     	{
-    		CreateOperatorFastCoulombRelativistic(NF,wavefunctions->VRe,wavefunctions->Ni,x,NGridpoints,tuple, NIntegrals,indices, op);
+    		uint32_t test = (uint32_t)luaL_checkunsigned(L, 6);
+    		if (test == 2)
+    		{
+    			CreateOperatorSingleCoulombRelativistic(NF,wavefunctions->VRe,wavefunctions->Ni,x,NGridpoints,tuple, NIntegrals,indices, op);
+    		}
+    		else
+    		{
+    			CreateOperatorFastCoulombRelativistic(NF,wavefunctions->VRe,wavefunctions->Ni,x,NGridpoints,tuple, NIntegrals,indices, op);
+    		}
     	}
     	for( i = 0; i < NIntegrals; i++ )
     	{
