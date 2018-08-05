@@ -15,6 +15,7 @@ uint32_t MatrixAddShiftedConjugateTranspose(MatrixType * const M, const MatrixTy
 uint32_t MatrixAdd(MatrixType * const M, const MatrixType B, double const alphaRe, double const alphaIm);
 uint32_t MatrixScalarMultiply(MatrixType * const M, double const alphaRe, double const alphaIm);
 uint32_t MatrixTransform(MatrixType * const M, MatrixType const A, MatrixType const T);
+uint32_t MatrixTransformByCompactMatrix(MatrixType * const M, MatrixType const A, CompactMatrixType * T);
 uint32_t MatrixTransformPart(MatrixType * const M, MatrixType const A, MatrixType const T, const uint32_t MNiMin, const uint32_t MNiMax, const uint32_t MNjMin, const uint32_t MNjMax);
 uint32_t MatrixMultiply(MatrixType * const M, MatrixType const A, MatrixType const B);
 uint32_t MatrixPart(MatrixType * const M, MatrixType const A, const uint32_t iStart, const uint32_t iEnd, const uint32_t jStart, const uint32_t jEnd);

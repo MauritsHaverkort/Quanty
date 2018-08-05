@@ -1497,12 +1497,13 @@ static int Luarotate(lua_State *L)
   uint32_t len = (uint32_t)lua_gettop(L);
   if(len<2)
   {
-    return luaL_error(L, "Rotate called with %d arguments, 2 expected\n",len);
+    return luaL_error(L, "Rotate called with %d arguments, at least 2 expected\n",len);
   }
-  if (luaL_testudata(L, len-1, "Wavefunction_Type") != NULL)
+  if (luaL_testudata(L, 1, "Wavefunction_Type") != NULL)
   {
-    U = luaL_checkMatrix(L, len);
-    WaveFunctionType *psi = (WaveFunctionType*) luaL_checkudata(L, len-1, "Wavefunction_Type");
+    if(len!=2)luaL_error(L, "Rotate for a wavefunction called with %d arguments, 2 expected\n",len);
+    U = luaL_checkMatrix(L, 2);
+    WaveFunctionType *psi = (WaveFunctionType*) luaL_checkudata(L, 1, "Wavefunction_Type");
     if(U->Ni!=U->Nj) luaL_error(L, "Error while rotating wavefunction. Rotation matrix should be square (Ni=%d Nj=%d)",U->Ni,U->Nj);
     if(U->Ni!=psi->NFermion+psi->NBoson) luaL_error(L, "Error while rotating wavefunction. Rotation matrix should have dimension (%d) of number of fermions (%d) + bosons (%d) of wavefunction",U->Ni,psi->NFermion,psi->NBoson);
     WaveFunctionType *psiNew;
@@ -1512,10 +1513,11 @@ static int Luarotate(lua_State *L)
     WaveFunctionTruncateBasis(psiNew, Options.zero);
     return 1;
   }
-  if (luaL_testudata(L, len-1, "Operator_Type") != NULL)
+  if (luaL_testudata(L, 1, "Operator_Type") != NULL)
   {
-    U = luaL_checkMatrix(L, len);
-    OperatorType *O = (OperatorType*) luaL_checkudata(L, len-1, "Operator_Type");
+    if(len!=2)luaL_error(L, "Rotate for an operator called with %d arguments, 2 expected\n",len);
+    U = luaL_checkMatrix(L, 2);
+    OperatorType *O = (OperatorType*) luaL_checkudata(L, 1, "Operator_Type");
     if(U->Ni!=U->Nj) luaL_error(L, "Error while rotating operator. Rotation matrix should be square (Ni=%d Nj=%d)",U->Ni,U->Nj);
     if(U->Ni!=O->NFermion+O->NBoson) luaL_error(L, "Error while rotating operator. Rotation matrix should have dimension (%d) of number of fermions (%d) + bosons (%d) of operator",U->Ni,O->NFermion,O->NBoson);
     OperatorType *ONew;
@@ -1525,13 +1527,44 @@ static int Luarotate(lua_State *L)
     OperatorChop(ONew, Options.zero);
     return 1;
   }
-  if(lua_type(L,len-1)==LUA_TTABLE)
+  if (luaL_testudata(L, 1, "TightBinding_Type") != NULL)
   {
-    return luaL_error(L, "Rotate called with a table, not yet implemented\n");
-
-    return 0;
+    uint32_t i;
+    TightBindingDef *RTB;    if(len!=3)luaL_error(L, "Rotate for a tight binding object called with %d arguments, 3 expected\n",len);
+    CompactMatrixType *RotMat;
+    RotMat = luaL_checkCompactMatrix(L, 2);
+    TightBindingDef *TB = (TightBindingDef*) luaL_checkudata(L, 1, "TightBinding_Type");
+    RTB=(TightBindingDef*) lua_newuserdata(L, sizeof(TightBindingDef));
+    luaL_setmetatable(L, "TightBinding_Type");
+    // set name
+    strcpy(RTB->Name, TB->Name);
+    // read moleclar structure
+    if(lua_type(L,3)!=LUA_TTABLE)
+    {
+      return luaL_error(L, "Error Rotate for Tightbinding objects expects on position 3 a new list of atom names, shell names and orbital names\n");
+    }
+    RTB->Cell.rUnitCell[0][0]=TB->Cell.rUnitCell[0][0]; RTB->Cell.rUnitCell[0][1]=TB->Cell.rUnitCell[0][1]; RTB->Cell.rUnitCell[0][2]=TB->Cell.rUnitCell[0][2];
+    RTB->Cell.rUnitCell[1][0]=TB->Cell.rUnitCell[1][0]; RTB->Cell.rUnitCell[1][1]=TB->Cell.rUnitCell[1][1]; RTB->Cell.rUnitCell[1][2]=TB->Cell.rUnitCell[1][2];
+    RTB->Cell.rUnitCell[2][0]=TB->Cell.rUnitCell[2][0]; RTB->Cell.rUnitCell[2][1]=TB->Cell.rUnitCell[2][1]; RTB->Cell.rUnitCell[2][2]=TB->Cell.rUnitCell[2][2];
+    RTB->Cell.gUnitCell[0][0]=TB->Cell.gUnitCell[0][0]; RTB->Cell.gUnitCell[0][1]=TB->Cell.gUnitCell[0][1]; RTB->Cell.gUnitCell[0][2]=TB->Cell.gUnitCell[0][2];
+    RTB->Cell.gUnitCell[1][0]=TB->Cell.gUnitCell[1][0]; RTB->Cell.gUnitCell[1][1]=TB->Cell.gUnitCell[1][1]; RTB->Cell.gUnitCell[1][2]=TB->Cell.gUnitCell[1][2];
+    RTB->Cell.gUnitCell[2][0]=TB->Cell.gUnitCell[2][0]; RTB->Cell.gUnitCell[2][1]=TB->Cell.gUnitCell[2][1]; RTB->Cell.gUnitCell[2][2]=TB->Cell.gUnitCell[2][2];
+    RTB->Cell.Units=TB->Cell.Units;
+    RTB->Cell.NAtoms=(uint32_t)lua_objlen(L, 3);
+    RTB->Cell.Atom=(AtomType*)malloc(RTB->Cell.NAtoms*sizeof(AtomType));
+    for(i=0;i<RTB->Cell.NAtoms;i++)
+    {
+      lua_rawgeti(L, 3, i+1);
+      LuaReadAtomWithDefault(L, -1, &(RTB->Cell.Atom[i]), &(TB->Cell));
+      lua_pop(L, 1);
+    }
+    SetNFermionIndexTightBindingDef(RTB);
+    RTB->nH=0;
+    RTB->H=NULL;
+    RotateTightBinding(TB, RotMat, RTB);
+    return 1;
   }
-  return luaL_error(L, "Rotate called unrecognized type. Can only rotate wavefunctions operators and tables of these\n");
+  return luaL_error(L, "Rotate called unrecognized type. Can only rotate wavefunctions operators and tight binding objects\n");
 }
 
 

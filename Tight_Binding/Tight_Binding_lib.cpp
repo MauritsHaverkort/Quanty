@@ -2,13 +2,13 @@ uint32_t AtomNameToNumber(const char* Name)
 {
   uint32_t i;
   const char *PeriodicTable[] = {"H" ,                                                                                                                                                          "He",
-                           "Li","Be",                                                                                                                            "B", "C", "N", "O", "F", "Ne",
-                           "Na","Mg",                                                                                                                           "Al","Si", "P", "S","Cl", "Ar",
-                            "K","Ca",                                                                        "Sc","Ti", "V","Cr","Mn","Fe","Co","Ni","Cu","Zn", "Ga","Ge","As","Se","Br", "Kr",
-                           "Rb","Sr",                                                                         "Y","Zr","Nb","Mo","Tc","Ru","Rh","Pd","Ag","Cd", "In","Sn","Sb","Te", "I", "Xe",
-                           "Cs","Ba", "La","Ce","Pr","Nd","Pm","Sm","Eu","Gd","Tb","Dy","Ho","Er","Tm","Yb", "Lu","Hf","Ta", "W","Re","Os","Ir","Pt","Au","Hg", "Tl","Pb","Bi","Po","At", "Rn",
-                           "Fr","Ra", "Ac","Th","Pa", "U","Np","Pu","Am","Cm","Bk","Cf","Es","Fm","Md","No", "Lr","Rf","Db","Sg","Bh","Hs","Mt","Ds","Rg","Cn"};
-  for(i=0;i<36;i++)
+                                 "Li","Be",                                                                                                                            "B", "C", "N", "O", "F", "Ne",
+                                 "Na","Mg",                                                                                                                           "Al","Si", "P", "S","Cl", "Ar",
+                                 "K", "Ca",                                                                        "Sc","Ti", "V","Cr","Mn","Fe","Co","Ni","Cu","Zn", "Ga","Ge","As","Se","Br", "Kr",
+                                 "Rb","Sr",                                                                         "Y","Zr","Nb","Mo","Tc","Ru","Rh","Pd","Ag","Cd", "In","Sn","Sb","Te", "I", "Xe",
+                                 "Cs","Ba", "La","Ce","Pr","Nd","Pm","Sm","Eu","Gd","Tb","Dy","Ho","Er","Tm","Yb", "Lu","Hf","Ta", "W","Re","Os","Ir","Pt","Au","Hg", "Tl","Pb","Bi","Po","At", "Rn",
+                                 "Fr","Ra", "Ac","Th","Pa", "U","Np","Pu","Am","Cm","Bk","Cf","Es","Fm","Md","No", "Lr","Rf","Db","Sg","Bh","Hs","Mt","Ds","Rg","Cn"};
+  for(i=0;i<112;i++)
   {
     if(strcmp(Name, PeriodicTable[i] )==0) return i+1;
   }
@@ -1931,8 +1931,7 @@ int TightBindingBANDSToMatrix(double Emin, double Emax, int NEpoints, MatrixType
   return 0;
 }
 
-int TightBindingBANDSCharacterToMatrix(double Emin, double Emax, int NEpoints, MatrixType BANDS, MatrixType Character,
-                                       MatrixType * BWValue)
+int TightBindingBANDSCharacterToMatrix(double Emin, double Emax, int NEpoints, MatrixType BANDS, MatrixType Character,  MatrixType * BWValue)
 {
   int    iq, jBand, jE;
   double Enrescale, frac;
@@ -1992,8 +1991,7 @@ int TightBindingBANDSCharacterToMatrix(double Emin, double Emax, int NEpoints, M
   return 0;
 }
 
-int TightBindingAddAxesToMatrix(double Emin, double Emax, int NELines, double *Elines, BandstructurePathType kList,
-                                MatrixType * RGBValue)
+int TightBindingAddAxesToMatrix(double Emin, double Emax, int NELines, double *Elines, BandstructurePathType kList, MatrixType * RGBValue)
 {
   int    iQ, i, j, jE;
   i = 0;
@@ -2118,3 +2116,267 @@ int isIntElementOf(const uint16_t element, const uint16_t * const set, const uin
 	}
 	return 0;
 }
+
+/*  On input TB contains a normal TB object
+ *  StripedTB points to a TB object that is uninitialized and has no pointera allocated
+ *  On access StripedTB contains a TB object that specifies the same Hamiltonian, albeit with all atoms in TB moved to position {0,0,0} in StripedTB and merged into one big "atom" with one "shell"
+ */
+uint32_t RemoveCrystalInformationFromTightBinding(TightBindingDef *TB, TightBindingDef *StripedTB)
+{
+  uint32_t i,j,iHop,jHop;
+  StripedTB->NFermion = TB->NFermion;
+  strcpy(StripedTB->Name, TB->Name);
+  StripedTB->Cell=TB->Cell;
+  StripedTB->Cell.NAtoms=1;
+  StripedTB->Cell.Atom=(AtomType*)malloc(sizeof(AtomType));
+  strcpy(StripedTB->Cell.Atom[0].Name, "All");
+  StripedTB->Cell.Atom[0].AtomNumber=0;
+  StripedTB->Cell.Atom[0].Position[0]=0;
+  StripedTB->Cell.Atom[0].Position[1]=0;
+  StripedTB->Cell.Atom[0].Position[2]=0;
+  StripedTB->Cell.Atom[0].Nshell=1;
+  StripedTB->Cell.Atom[0].ShellName=(char**)malloc(sizeof(char*));
+  StripedTB->Cell.Atom[0].ShellName[0]=(char*)malloc(5*sizeof(char));
+  strcpy(StripedTB->Cell.Atom[0].ShellName[0], "All");
+  StripedTB->Cell.Atom[0].shelldegeneracy=(int*)malloc(sizeof(int));
+  StripedTB->Cell.Atom[0].shelldegeneracy[0]=StripedTB->NFermion;
+  StripedTB->Cell.Atom[0].OrbitalName=(char***)malloc(sizeof(char**));
+  StripedTB->Cell.Atom[0].OrbitalName[0]=(char**)malloc(StripedTB->Cell.Atom[0].shelldegeneracy[0]*sizeof(char*));
+  for(i=0;i<StripedTB->Cell.Atom[0].shelldegeneracy[0];i++)
+  {
+    StripedTB->Cell.Atom[0].OrbitalName[0][i]=(char*)malloc(12*sizeof(char));
+    sprintf(StripedTB->Cell.Atom[0].OrbitalName[0][i], "%i",i);
+  }
+  SetNFermionIndexTightBindingDef(StripedTB);
+  StripedTB->nH=0;
+  StripedTB->H=NULL;
+  for(i=0;i<TB->nH;i++)
+  {
+    for(j=0;j<StripedTB->nH;j++)
+    {
+      if((TB->H[i].TransVecs[0]==StripedTB->H[j].TransVecs[0])&&(TB->H[i].TransVecs[1]==StripedTB->H[j].TransVecs[1])&&(TB->H[i].TransVecs[2]==StripedTB->H[j].TransVecs[2]))
+      {
+        // hopping between two atoms at this distance is already in the new TB operator add here
+        for(iHop=0;iHop<TB->H[i].Hop.Ni;iHop++)
+        {
+          for(jHop=0;jHop<TB->H[i].Hop.Nj;jHop++)
+          {
+            StripedTB->H[j].Hop.VRe[TB->FermionIndex[TB->H[i].Atompos1][TB->H[i].Shellpos1]+iHop][TB->FermionIndex[TB->H[i].Atompos2][TB->H[i].Shellpos2]+jHop] = TB->H[i].Hop.VRe[iHop][jHop];
+            if(TB->H[i].Hop.QComplex)
+            {
+              StripedTB->H[j].Hop.VIm[TB->FermionIndex[TB->H[i].Atompos1][TB->H[i].Shellpos1]+iHop][TB->FermionIndex[TB->H[i].Atompos2][TB->H[i].Shellpos2]+jHop]=TB->H[i].Hop.VIm[iHop][jHop];
+            }
+          }
+        }
+        goto TBElementFound;
+      }
+    }
+    // new element
+    if((StripedTB->nH&15)==0)
+    {
+      StripedTB->H=(TightBindingDefHopping*)realloc(StripedTB->H, (StripedTB->nH+17)*sizeof(TightBindingDefHopping));
+      if((StripedTB->H)==NULL)
+      {
+        printf("Error in RemoveCrystalInformationFromTightBinding\nrealloc failed for StripedTB->H\nI will crash soon\n");
+        return 1;
+      }
+    }
+    StripedTB->H[StripedTB->nH].Atompos1=0;
+    StripedTB->H[StripedTB->nH].Shellpos1=0;
+    StripedTB->H[StripedTB->nH].Atompos2=0;
+    StripedTB->H[StripedTB->nH].Shellpos2=0;
+    StripedTB->H[StripedTB->nH].TransVecs[0]=TB->H[i].TransVecs[0];
+    StripedTB->H[StripedTB->nH].TransVecs[1]=TB->H[i].TransVecs[1];
+    StripedTB->H[StripedTB->nH].TransVecs[2]=TB->H[i].TransVecs[2];
+    // set ConnectingVector depending on Units
+    if((StripedTB->Cell.Units&8)==0)
+    {
+      // absolute positions
+      StripedTB->H[StripedTB->nH].ConnectingVector[0] = ((StripedTB->H[StripedTB->nH].TransVecs[0]==0)?0:(StripedTB->H[StripedTB->nH].TransVecs[0] * StripedTB->Cell.rUnitCell[0][0])) + ((StripedTB->H[StripedTB->nH].TransVecs[1]==0)?0:(StripedTB->H[StripedTB->nH].TransVecs[1] * StripedTB->Cell.rUnitCell[1][0])) + ((StripedTB->H[StripedTB->nH].TransVecs[2]==0)?0:(StripedTB->H[StripedTB->nH].TransVecs[2] * StripedTB->Cell.rUnitCell[2][0]));
+      StripedTB->H[StripedTB->nH].ConnectingVector[0] = ((StripedTB->H[StripedTB->nH].TransVecs[0]==0)?0:(StripedTB->H[StripedTB->nH].TransVecs[0] * StripedTB->Cell.rUnitCell[0][1])) + ((StripedTB->H[StripedTB->nH].TransVecs[1]==0)?0:(StripedTB->H[StripedTB->nH].TransVecs[1] * StripedTB->Cell.rUnitCell[1][1])) + ((StripedTB->H[StripedTB->nH].TransVecs[2]==0)?0:(StripedTB->H[StripedTB->nH].TransVecs[2] * StripedTB->Cell.rUnitCell[2][1]));
+      StripedTB->H[StripedTB->nH].ConnectingVector[0] = ((StripedTB->H[StripedTB->nH].TransVecs[0]==0)?0:(StripedTB->H[StripedTB->nH].TransVecs[0] * StripedTB->Cell.rUnitCell[0][2])) + ((StripedTB->H[StripedTB->nH].TransVecs[1]==0)?0:(StripedTB->H[StripedTB->nH].TransVecs[1] * StripedTB->Cell.rUnitCell[1][2])) + ((StripedTB->H[StripedTB->nH].TransVecs[2]==0)?0:(StripedTB->H[StripedTB->nH].TransVecs[2] * StripedTB->Cell.rUnitCell[2][2]));
+    }
+    else
+    {
+      // positions in terms of unit cells
+      StripedTB->H[StripedTB->nH].ConnectingVector[0] = StripedTB->H[StripedTB->nH].TransVecs[0];
+      StripedTB->H[StripedTB->nH].ConnectingVector[1] = StripedTB->H[StripedTB->nH].TransVecs[1];
+      StripedTB->H[StripedTB->nH].ConnectingVector[2] = StripedTB->H[StripedTB->nH].TransVecs[2];
+    }
+    StripedTB->H[StripedTB->nH].Hop.Ni=StripedTB->NFermion;
+    StripedTB->H[StripedTB->nH].Hop.Nj=StripedTB->NFermion;
+    StripedTB->H[StripedTB->nH].Hop.QComplex=1;
+    InitMatrix(&(StripedTB->H[StripedTB->nH].Hop));
+    // hopping between two atoms this distance has not been added before
+    for(iHop=0;iHop<TB->H[i].Hop.Ni;iHop++)
+    {
+      for(jHop=0;jHop<TB->H[i].Hop.Nj;jHop++)
+      {
+        StripedTB->H[StripedTB->nH].Hop.VRe[TB->FermionIndex[TB->H[i].Atompos1][TB->H[i].Shellpos1]+iHop][TB->FermionIndex[TB->H[i].Atompos2][TB->H[i].Shellpos2]+jHop] = TB->H[i].Hop.VRe[iHop][jHop];
+        if(TB->H[i].Hop.QComplex)
+        {
+          StripedTB->H[StripedTB->nH].Hop.VIm[TB->FermionIndex[TB->H[i].Atompos1][TB->H[i].Shellpos1]+iHop][TB->FermionIndex[TB->H[i].Atompos2][TB->H[i].Shellpos2]+jHop]=TB->H[i].Hop.VIm[iHop][jHop];
+        }
+      }
+    }
+    StripedTB->nH++;
+    TBElementFound:;
+  }
+  // remove complex parts of matrices that are real
+  for(i=0;i<StripedTB->nH;i++)
+  {
+    MatrixChop(&(StripedTB->H[i].Hop), DBL_MIN);
+  }
+  return 0;
+}
+/*  Undo that what RemoveCrystalInformationFromTightBinding did with a TB object
+ *  On entry StripedTB contains a TB object with a single atom with single shell per unit cell
+ *  On entry TB contains a TB object with TB->nH=0 and TB->H=NULL
+ *  TB->NFermion must be equal to StripedTB->NFermion
+ *
+ *  The single matrix for StripedTB is broken into pieces acording to the atomic shells in the Cell definition of TB
+ */
+uint32_t AddCrystalInformationFromTightBinding(TightBindingDef *StripedTB, TightBindingDef *TB)
+{
+  uint32_t iH,iAtom,iShell,jAtom,jShell,iHop,jHop;
+  
+  for(iH=0;iH<StripedTB->nH;iH++)
+  {
+    for(iAtom=0;iAtom<TB->Cell.NAtoms;iAtom++)
+    {
+      for(iShell=0;iShell<TB->Cell.Atom[iAtom].Nshell;iShell++)
+      {
+        for(jAtom=0;jAtom<TB->Cell.NAtoms;jAtom++)
+        {
+          for(jShell=0;jShell<TB->Cell.Atom[jAtom].Nshell;jShell++)
+          {
+            if((TB->nH&15)==0)
+            {
+              TB->H=(TightBindingDefHopping*)realloc(TB->H, (TB->nH+17)*sizeof(TightBindingDefHopping));
+              if((TB->H)==NULL)
+              {
+                printf("Error in AddCrystalInformationFromTightBinding\nrealloc failed for TB->H\nI will crash soon\n");
+                return 1;
+              }
+            }
+            TB->H[TB->nH].Atompos1=iAtom;
+            TB->H[TB->nH].Atompos2=jAtom;
+            TB->H[TB->nH].Shellpos1=iShell;
+            TB->H[TB->nH].Shellpos2=jShell;
+            TB->H[TB->nH].TransVecs[0]=StripedTB->H[iH].TransVecs[0];
+            TB->H[TB->nH].TransVecs[1]=StripedTB->H[iH].TransVecs[1];
+            TB->H[TB->nH].TransVecs[2]=StripedTB->H[iH].TransVecs[2];
+            if((TB->Cell.Units&8)==0)
+            { // position in absolute units
+              TB->H[TB->nH].ConnectingVector[0]=TB->Cell.Atom[iAtom].Position[0] + ((TB->H[TB->nH].TransVecs[0]==0)?0:TB->H[TB->nH].TransVecs[0]*TB->Cell.rUnitCell[0][0]) + ((TB->H[TB->nH].TransVecs[1]==0)?0:TB->H[TB->nH].TransVecs[1]*TB->Cell.rUnitCell[1][0]) + ((TB->H[TB->nH].TransVecs[2]==0)?0:TB->H[TB->nH].TransVecs[2]*TB->Cell.rUnitCell[2][0]) ;
+              TB->H[TB->nH].ConnectingVector[1]=TB->Cell.Atom[iAtom].Position[1] + ((TB->H[TB->nH].TransVecs[0]==0)?0:TB->H[TB->nH].TransVecs[0]*TB->Cell.rUnitCell[0][1]) + ((TB->H[TB->nH].TransVecs[1]==0)?0:TB->H[TB->nH].TransVecs[1]*TB->Cell.rUnitCell[1][1]) + ((TB->H[TB->nH].TransVecs[2]==0)?0:TB->H[TB->nH].TransVecs[2]*TB->Cell.rUnitCell[2][1]) ;
+              TB->H[TB->nH].ConnectingVector[2]=TB->Cell.Atom[iAtom].Position[2] + ((TB->H[TB->nH].TransVecs[0]==0)?0:TB->H[TB->nH].TransVecs[0]*TB->Cell.rUnitCell[0][2]) + ((TB->H[TB->nH].TransVecs[1]==0)?0:TB->H[TB->nH].TransVecs[1]*TB->Cell.rUnitCell[1][2]) + ((TB->H[TB->nH].TransVecs[2]==0)?0:TB->H[TB->nH].TransVecs[2]*TB->Cell.rUnitCell[2][2]) ;
+            }
+            else
+            { // positioin in terms of lattice vectors
+              TB->H[TB->nH].ConnectingVector[0]=TB->Cell.Atom[iAtom].Position[0] + TB->H[TB->nH].TransVecs[0];
+              TB->H[TB->nH].ConnectingVector[1]=TB->Cell.Atom[iAtom].Position[1] + TB->H[TB->nH].TransVecs[1];
+              TB->H[TB->nH].ConnectingVector[2]=TB->Cell.Atom[iAtom].Position[2] + TB->H[TB->nH].TransVecs[2];
+            }
+            TB->H[TB->nH].Hop.Ni=TB->Cell.Atom[iAtom].shelldegeneracy[iShell];
+            TB->H[TB->nH].Hop.Nj=TB->Cell.Atom[jAtom].shelldegeneracy[jShell];
+            TB->H[TB->nH].Hop.QComplex=StripedTB->H[iH].Hop.QComplex;
+            InitMatrix(&(TB->H[TB->nH].Hop)); //TODO: set name
+            for(iHop=0;iHop<TB->H[TB->nH].Hop.Ni;iHop++)
+            {
+              for(jHop=0;jHop<TB->H[TB->nH].Hop.Nj;jHop++)
+              {
+                TB->H[TB->nH].Hop.VRe[iHop][jHop]=StripedTB->H[iH].Hop.VRe[TB->FermionIndex[TB->H[TB->nH].Atompos1][TB->H[TB->nH].Shellpos1]+iHop][TB->FermionIndex[TB->H[TB->nH].Atompos2][TB->H[TB->nH].Shellpos2]+jHop];
+              }
+            }
+            if(TB->H[TB->nH].Hop.QComplex)
+            {
+              for(iHop=0;iHop<TB->H[TB->nH].Hop.Ni;iHop++)
+              {
+                for(jHop=0;jHop<TB->H[TB->nH].Hop.Nj;jHop++)
+                {
+                  TB->H[TB->nH].Hop.VIm[iHop][jHop]=StripedTB->H[iH].Hop.VIm[TB->FermionIndex[TB->H[TB->nH].Atompos1][TB->H[TB->nH].Shellpos1]+iHop][TB->FermionIndex[TB->H[TB->nH].Atompos2][TB->H[TB->nH].Shellpos2]+jHop];
+                }
+              }
+            }
+            TB->nH++;
+          }
+        }
+      }
+    }
+  }
+  SetNFermionIndexTightBindingDef(StripedTB);
+  return 0;
+}
+/*  Rotate the basis of a tight binding Hamiltonian
+ *  TB is a fully defined TB opject with only one atom with one shell per unit cell
+ *  RTB has RTB->Cell, RTB->NFermion, and RTB->NFermionIndex defined
+ *  RTB has only one atom with one shell per unit cell
+ *  Rotmat is a matrix of dimension Rotmat.Ni=RTB->NFermion and Rotmat.Nj=TB->NFermion
+ *  Returned is a tight binding Operator on a transformed basis
+ */
+uint32_t RotateStripedTightBinding(TightBindingDef * TB, CompactMatrixType * rotmat, TightBindingDef * RTB)
+{
+  double AbsAverage;
+  uint32_t iH;
+  if(TB->Cell.NAtoms!=1)
+  {
+    printf("Error in RotateStripedTightBinding\nOne one atom per unit cell allowed if one rotates the basis");
+    return 1;
+  }
+  if(TB->Cell.Atom[0].Nshell!=1)
+  {
+    printf("Error in RotateStripedTightBinding\nOne one shell for the single atom in the unit cell allowed if one rotates the basis");
+    return 1;
+  }
+  if(TB->NFermion!=rotmat->Nj)
+  {
+    printf("Error in RotateStripedTightBinding\nSize of rotation matrix (number of columns, %i) not equal to the number of Fermions in the original tight binding Hamiltonian (%i)\n",rotmat->Nj,TB->NFermion);
+    return 1;
+  }
+  
+  if(RTB->NFermion!=rotmat->Ni)
+  {
+    printf("Error in RotateStripedTightBinding\nSize of rotation matrix (number of rows, %i) not equal to the number of Fermions in the rotated tight binding Hamiltonian (%i)\n",rotmat->Ni,RTB->NFermion);
+    return 1;
+  }
+  RTB->nH=TB->nH;
+  RTB->H=(TightBindingDefHopping*)malloc(RTB->nH*sizeof(TightBindingDefHopping));
+  for(iH=0;iH<TB->nH;iH++)
+  {
+    RTB->H[iH].Atompos1=TB->H[iH].Atompos1;
+    RTB->H[iH].Shellpos1=TB->H[iH].Shellpos1;
+    RTB->H[iH].Atompos2=TB->H[iH].Atompos2;
+    RTB->H[iH].Shellpos2=TB->H[iH].Shellpos2;
+    RTB->H[iH].TransVecs[0]=TB->H[iH].TransVecs[0];
+    RTB->H[iH].TransVecs[1]=TB->H[iH].TransVecs[1];
+    RTB->H[iH].TransVecs[2]=TB->H[iH].TransVecs[2];
+    RTB->H[iH].ConnectingVector[0]=TB->H[iH].ConnectingVector[0];
+    RTB->H[iH].ConnectingVector[1]=TB->H[iH].ConnectingVector[1];
+    RTB->H[iH].ConnectingVector[2]=TB->H[iH].ConnectingVector[2];
+    MatrixTransformByCompactMatrix(&(RTB->H[iH].Hop), TB->H[iH].Hop, rotmat);
+    MatrixAbsAverage(RTB->H[iH].Hop,&AbsAverage);
+    MatrixChop(&(RTB->H[iH].Hop), AbsAverage*DBL_EPSILON*RTB->H[iH].Hop.Ni*10);
+    
+  }
+  SetNFermionIndexTightBindingDef(RTB);
+  return 0;
+}
+/*  Rotate the basis of a tight binding Hamiltonian
+ *  TB is a fully defined TB opject
+ *  RTB has RTB->Cell, RTB->NFermion, and RTB->NFermionIndex defined
+ *  Rotmat is a matrix of dimension Rotmat.Ni=RTB->NFermion and Rotmat.Nj=TB->NFermion
+ *  Returned is a tight binding Operator on a transformed basis
+ */
+uint32_t RotateTightBinding(TightBindingDef * TB, CompactMatrixType * rotmat, TightBindingDef * RTB)
+{
+  TightBindingDef StripedTB, StripedRTB;
+  RemoveCrystalInformationFromTightBinding(TB, &StripedTB);
+  RemoveCrystalInformationFromTightBinding(RTB,&StripedRTB);
+  RotateStripedTightBinding(&StripedTB,rotmat,&StripedRTB);
+  AddCrystalInformationFromTightBinding(&StripedRTB,RTB);
+  FreeTightBindingDef(&StripedRTB);
+  FreeTightBindingDef(&StripedTB);
+  return 0;
+}
+
