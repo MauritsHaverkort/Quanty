@@ -762,7 +762,7 @@ LUALIB_API const char *luaL_tolstring (lua_State *L, int idx, size_t *len) {
       case LUA_TTABLE:
         //TODO: handle the printout of tables correctly, based on global settings for maximum depth and size
         {
-          Bool FirstElement=False;
+          bool FirstElement=false;
           size_t i,tablelen = lua_objlen(L, idx);
           lua_pushstring(L, "{ ");
           /* array elements */
@@ -790,7 +790,7 @@ LUALIB_API const char *luaL_tolstring (lua_State *L, int idx, size_t *len) {
             lua_concat(L, 4);
           }
           /* hash ellements */
-          if(tablelen==0) FirstElement=True;
+          if(tablelen==0) FirstElement=true;
           lua_pushnil(L);
           while (lua_next(L,idx)!=0)
           {
@@ -806,7 +806,7 @@ LUALIB_API const char *luaL_tolstring (lua_State *L, int idx, size_t *len) {
                 if(FirstElement)
                 {
                   lua_pushstring(L, "");
-                  FirstElement=False;
+                  FirstElement=false;
                 }
                 else
                 {
@@ -820,7 +820,7 @@ LUALIB_API const char *luaL_tolstring (lua_State *L, int idx, size_t *len) {
                 if(FirstElement)
                 {
                   lua_pushstring(L, "[");
-                  FirstElement=False;
+                  FirstElement=false;
                 }
                 else
                 {

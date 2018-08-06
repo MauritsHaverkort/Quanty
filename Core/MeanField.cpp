@@ -1206,7 +1206,7 @@ uint32_t MeanFieldGroundstate(const OperatorType *const O, CompactMatrixType * c
   CompactMatrixType HMF, fun, RhoNew;
   double val[O->NFermion],Etotlist[Maxit],mix=0.8;
   double Nelec=0;
-  Bool Converged=False;
+  bool Converged=false;
   // calculate the number of electrons - assuming Rho is hermitian (diagonal is real)
   if(Rho->QComplex)
   {
@@ -1249,7 +1249,7 @@ uint32_t MeanFieldGroundstate(const OperatorType *const O, CompactMatrixType * c
       {
         if(somemore==3)
         {
-          Converged=True;
+          Converged=true;
         }
         else
         {

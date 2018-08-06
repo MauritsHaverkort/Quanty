@@ -865,6 +865,109 @@ uint32_t MatrixTransform(MatrixType * const M, MatrixType const A, MatrixType co
   return 0;
 }
 
+uint32_t MatrixTransformByCompactMatrix(MatrixType * const M, MatrixType const A, CompactMatrixType * T)
+{
+  if ((A.Ni != A.Nj) || (A.Ni != T->Nj))
+  {
+    printf("Invallid dimensions for matrix transformation A.Ni should be T->Nj and A should be square\n");
+    printf("A.Ni=%i A.Nj=%i T->Ni=%i T->Nj=%i \n", A.Ni, A.Nj, T->Ni, T->Nj);
+    return 1;
+  }
+  uint32_t i, j, k, l;
+  M->Ni = T->Ni;
+  M->Nj = T->Ni;
+  M->QComplex = 1;
+  if ((A.QComplex == 0) && (T->QComplex == 0))
+    M->QComplex = 0;
+  if (InitMatrix(M))
+    return 1;
+  strcpy(M->Name, "U^* A U^T U=(");
+  strncat(M->Name, T->Name, Max(0, (int)((int)MAXStrLength - (int)24)) / 2);
+  strcat(M->Name, ") A=(");
+  strncat(M->Name, A.Name, Max(0, (int)((int)MAXStrLength - (int)24)) / 2);
+  strcat(M->Name, ")");
+  if ((A.QComplex) && (T->QComplex))
+  {                             /* all complex */
+    for (i = 0; i < M->Ni; i++)
+    {
+      for (j = 0; j < M->Nj; j++)
+      {
+        M->VRe[i][j] = 0;
+        M->VIm[i][j] = 0;
+        for (k = 0; k < A.Nj; k++)
+        {
+          for (l = 0; l < A.Ni; l++)
+          {
+            M->VRe[i][j] +=
+            T->V[i*T->Nj+l].Re * A.VRe[l][k] * T->V[j*T->Nj+k].Re + T->V[i*T->Nj+l].Im * A.VIm[l][k] * T->V[j*T->Nj+k].Re +
+            T->V[i*T->Nj+l].Im * A.VRe[l][k] * T->V[j*T->Nj+k].Im - T->V[i*T->Nj+l].Re * A.VIm[l][k] * T->V[j*T->Nj+k].Im;
+            M->VIm[i][j] +=
+            T->V[i*T->Nj+l].Im * A.VIm[l][k] * T->V[j*T->Nj+k].Im + T->V[i*T->Nj+l].Re * A.VRe[l][k] * T->V[j*T->Nj+k].Im +
+            T->V[i*T->Nj+l].Re * A.VIm[l][k] * T->V[j*T->Nj+k].Re - T->V[i*T->Nj+l].Im * A.VRe[l][k] * T->V[j*T->Nj+k].Re;
+          }
+        }
+      }
+    }
+    return 0;
+  }
+  if (A.QComplex)
+  {                             /* A complex, T real */
+    for (i = 0; i < M->Ni; i++)
+    {
+      for (j = 0; j < M->Nj; j++)
+      {
+        M->VRe[i][j] = 0;
+        M->VIm[i][j] = 0;
+        for (k = 0; k < A.Nj; k++)
+        {
+          for (l = 0; l < A.Ni; l++)
+          {
+            M->VRe[i][j] += T->VRe[i*T->Nj+l] * A.VRe[l][k] * T->VRe[j*T->Nj+k];
+            M->VIm[i][j] += T->VRe[i*T->Nj+l] * A.VIm[l][k] * T->VRe[j*T->Nj+k];
+          }
+        }
+      }
+    }
+    return 0;
+  }
+  if (T->QComplex)
+  {                             /* T complex, A real */
+    for (i = 0; i < M->Ni; i++)
+    {
+      for (j = 0; j < M->Nj; j++)
+      {
+        M->VRe[i][j] = 0;
+        M->VIm[i][j] = 0;
+        for (k = 0; k < A.Nj; k++)
+        {
+          for (l = 0; l < A.Ni; l++)
+          {
+            M->VRe[i][j] += T->V[i*T->Nj+l].Re * A.VRe[l][k] * T->V[j*T->Nj+k].Re + T->V[i*T->Nj+l].Im * A.VRe[l][k] * T->V[j*T->Nj+k].Im;
+            M->VIm[i][j] += T->V[i*T->Nj+l].Re * A.VRe[l][k] * T->V[j*T->Nj+k].Im - T->V[i*T->Nj+l].Im * A.VRe[l][k] * T->V[j*T->Nj+k].Re;
+          }
+        }
+      }
+    }
+    return 0;
+  }
+  /* all real */
+  //TODO: matrix multiplication for real by blass
+  for (i = 0; i < M->Ni; i++)
+  {
+    for (j = 0; j < M->Nj; j++)
+    {
+      M->VRe[i][j] = 0;
+      for (k = 0; k < A.Nj; k++)
+      {
+        for (l = 0; l < A.Ni; l++)
+        {
+          M->VRe[i][j] += T->VRe[i*T->Nj+l] * A.VRe[l][k] * T->VRe[j*T->Nj+k];
+        }
+      }
+    }
+  }
+  return 0;
+}
 
 /* M = L^* A R^{transpose}
  * M[i][j]=\sum_k,l L[i][l]^* A[l][k] R[j][k]
@@ -1817,4 +1920,31 @@ MatrixType MatrixExpand(MatrixType M, int size)
 		}
 	}
 	return MatrixFlatten(fullM);
+}
+
+void MatrixAbsAverage(MatrixType M, double *AbsAverage)
+{
+  uint32_t i,j;
+  *AbsAverage=0;
+  if(M.QComplex==0)
+  {
+    for(i=0;i<M.Ni;i++)
+    {
+      for(j=0;j<M.Nj;j++)
+      {
+        *AbsAverage+=Abs(M.VRe[i][j]);
+      }
+    }
+  }
+  else
+  {
+    for(i=0;i<M.Ni;i++)
+    {
+      for(j=0;j<M.Nj;j++)
+      {
+        *AbsAverage+=Abs(M.VRe[i][j])+Abs(M.VIm[i][j]);
+      }
+    }
+  }
+  *AbsAverage/=(M.Ni*M.Nj);
 }

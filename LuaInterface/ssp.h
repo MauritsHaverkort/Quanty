@@ -33,7 +33,7 @@ void lua_groupOrbitals(lua_State *L, int indTablePos, const string groupKey, con
 void lua_setNonRelAtomicOrbitalIndices(lua_State *L, string orb, int momZNumbers, int * NF, int indTablePos, int isDict);
 void lua_setRelAtomicOrbitalIndices(lua_State *L, string orb, int momZNumbers, int * NF, int indTablePos, int isDict);
 void lua_setAtomicOrbitalIndices(lua_State *L, string orb, int * NF, int indTablePos, int isDict);
-static int lua_createAtomicIndices(lua_State *L, Bool isDict);
+static int lua_createAtomicIndices(lua_State *L, bool isDict);
 static int LuaCreateAtomicIndicesDict(lua_State *L);
 static int LuaCreateAtomicIndicesList(lua_State *L);
 static int LuaPartialOperator(lua_State *L);

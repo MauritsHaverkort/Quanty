@@ -996,7 +996,7 @@ uint32_t WaveFunctionOrthogonalize(WaveFunctionType * const psi, const WaveFunct
  *
  *  This function changes the functions in psilist
  */
-uint32_t WaveFunctionListSVDOrthogonalizeSameBasis(WaveFunctionType * const psilist, WaveFunctionType * const psilistOrtho, uint32_t * const Npsi, const double SingularValue, const Bool ReduceDimension)
+uint32_t WaveFunctionListSVDOrthogonalizeSameBasis(WaveFunctionType * const psilist, WaveFunctionType * const psilistOrtho, uint32_t * const Npsi, const double SingularValue, const bool ReduceDimension)
 {
   uint32_t i,QComplex=0;
   for(i=0;i<*Npsi;i++)
@@ -1026,7 +1026,7 @@ uint32_t WaveFunctionListSVDOrthogonalizeSameBasis(WaveFunctionType * const psil
     return ComplexWaveFunctionListSVDOrthogonalizeSameBasis(psilist, psilistOrtho, Npsi, SingularValue, ReduceDimension);
   }
 }
-uint32_t WaveFunctionListSVDOrthogonalizeDifferentBasis(WaveFunctionType * const psilist, WaveFunctionType * const psilistOrtho, uint32_t * const Npsi, const double SingularValue, const Bool ReduceDimension)
+uint32_t WaveFunctionListSVDOrthogonalizeDifferentBasis(WaveFunctionType * const psilist, WaveFunctionType * const psilistOrtho, uint32_t * const Npsi, const double SingularValue, const bool ReduceDimension)
 {
   uint32_t i,QComplex=0;
   for(i=0;i<*Npsi;i++)
@@ -1065,7 +1065,7 @@ uint32_t WaveFunctionListSVDOrthogonalizeDifferentBasis(WaveFunctionType * const
     return 0;
   }
 }
-uint32_t WaveFunctionListSVDOrthogonalize(WaveFunctionType * const psilist, WaveFunctionType * const psilistOrtho, uint32_t * const Npsi, const double SingularValue, const Bool ReduceDimension)
+uint32_t WaveFunctionListSVDOrthogonalize(WaveFunctionType * const psilist, WaveFunctionType * const psilistOrtho, uint32_t * const Npsi, const double SingularValue, const bool ReduceDimension)
 {
   uint32_t i,j,samebasis=0,QComplex=0;
   if(*Npsi==0) return 0;
@@ -1144,7 +1144,7 @@ uint32_t WaveFunctionListSVDOrthogonalize(WaveFunctionType * const psilist, Wave
  *
  *  This function changes the functions in psilist
  */
-uint32_t WaveFunctionListOrthogonalizeSameBasis(WaveFunctionType * const psilist, uint32_t * const Npsi, const double SingularValue, const Bool ReduceDimension)
+uint32_t WaveFunctionListOrthogonalizeSameBasis(WaveFunctionType * const psilist, uint32_t * const Npsi, const double SingularValue, const bool ReduceDimension)
 {
   uint32_t i,QComplex=0;
   for(i=0;i<*Npsi;i++)
@@ -1174,7 +1174,7 @@ uint32_t WaveFunctionListOrthogonalizeSameBasis(WaveFunctionType * const psilist
     return ComplexWaveFunctionListOrthogonalizeSameBasis(psilist, Npsi, SingularValue, ReduceDimension);
   }
 }
-uint32_t WaveFunctionListOrthogonalizeDifferentBasis(WaveFunctionType * const psilist, uint32_t * const Npsi, const double SingularValue, const Bool ReduceDimension)
+uint32_t WaveFunctionListOrthogonalizeDifferentBasis(WaveFunctionType * const psilist, uint32_t * const Npsi, const double SingularValue, const bool ReduceDimension)
 {
   uint32_t i,QComplex=0;
   for(i=0;i<*Npsi;i++)
@@ -1213,7 +1213,7 @@ uint32_t WaveFunctionListOrthogonalizeDifferentBasis(WaveFunctionType * const ps
     return 0;
   }
 }
-uint32_t WaveFunctionListOrthogonalize(WaveFunctionType * const psilist, uint32_t * const Npsi, const double SingularValue, const Bool ReduceDimension)
+uint32_t WaveFunctionListOrthogonalize(WaveFunctionType * const psilist, uint32_t * const Npsi, const double SingularValue, const bool ReduceDimension)
 {
   uint32_t i,j,samebasis=0,QComplex=0;
   if(*Npsi==0) return 0;
@@ -1787,7 +1787,7 @@ uint32_t WaveFunctionExpand(const WaveFunctionType * const psi, const uint16_t *
   const uint32_t Nout=(1<<Ndet);
   uint32_t j,k,retval;
   int i;
-  Bool add;
+  bool add;
   char detname[Ndet+1];
   detname[Ndet]='\0';
   for(i=0;i<Nout;i++)
@@ -1818,16 +1818,16 @@ uint32_t WaveFunctionExpand(const WaveFunctionType * const psi, const uint16_t *
       if(retval)break;
       for(j=1;j<=psi->N;j++)
       {
-        add=True;
+        add=true;
         for(k=0;k<Ndet;k++)
         {
           if(((psi->Determinant[BlokElementDet(j,psi->NWord,index[k]>>7)]>>(7-(index[k]&255)))&1)!=((i>>k)&1))
           {
-            add=False;
+            add=false;
             break;
           }
         }
-        if(add==True)
+        if(add==true)
         {
           if(ComplexWaveFunctionAddElement(&(psilist[i]), &psi->Determinant[BlokElementDet(j,psi->NWord,0)], psi->ValueRe[BlokElement(j)], psi->ValueIm[BlokElement(j)]))
           {
@@ -1846,16 +1846,16 @@ uint32_t WaveFunctionExpand(const WaveFunctionType * const psi, const uint16_t *
       if(retval)break;
       for(j=1;j<=psi->N;j++)
       {
-        add=True;
+        add=true;
         for(k=0;k<Ndet;k++)
         {
           if(((psi->Determinant[BlokElementDet(j,psi->NWord,index[k]>>3)]>>(7-(index[k]&7)))&1)!=((i>>k)&1))
           {
-            add=False;
+            add=false;
             break;
           }
         }
-        if(add==True)
+        if(add==true)
         {
           if(RealWaveFunctionAddElement(&(psilist[i]), &psi->Determinant[BlokElementDet(j,psi->NWord,0)], psi->ValueRe[BlokElement(j)]))
           {

@@ -213,8 +213,7 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
   for(i=0;i<Nwandef;i++)
   {
     // Compress the shell indicies {site, n, l, l+m} to one number
-    ShellLabel[i] = 1000*FPLO.Wannier.Site[i] + 100*FPLO.Wannier.Orbital[i][0]
-                  + 11*FPLO.Wannier.Orbital[i][1] + FPLO.Wannier.Orbital[i][2];
+    ShellLabel[i] = 1000*FPLO.Wannier.Site[i] + 100*FPLO.Wannier.Orbital[i][0] + 11*FPLO.Wannier.Orbital[i][1] + FPLO.Wannier.Orbital[i][2];
   }
 
   // Index the sites by number [0, 1, 2, ...]
@@ -406,6 +405,8 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
 
 
   // Fill in the HTB list.
+  // TransVecs distance between the unit cells of the involved atoms in units of unit cells
+  // ConnectingVector Distance between the atoms involved in untis of Cell.Units.
   for(ish=0;ish<Nshell;ish++)
   {
     for(jsh=0;jsh<Nshell;jsh++)
@@ -419,17 +420,16 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
         HTB->H[ihtb].Shellpos2 = ShellOfSite[jsh][1];
         if((HTB->Cell.Units&8)==0)
         {
-          HTB->H[ihtb].ConnectingVector[0] = HopVec[indsh][ihtb-NHopStart[ish][jsh]][0];
-          HTB->H[ihtb].ConnectingVector[1] = HopVec[indsh][ihtb-NHopStart[ish][jsh]][1];
-          HTB->H[ihtb].ConnectingVector[2] = HopVec[indsh][ihtb-NHopStart[ish][jsh]][2];
-        }
-        else
-        {
           HTB->H[ihtb].ConnectingVector[0] = HopVec[indsh][ihtb-NHopStart[ish][jsh]][0]*HTB->Cell.rUnitCell[0][0] + HopVec[indsh][ihtb-NHopStart[ish][jsh]][1]*HTB->Cell.rUnitCell[1][0] + HopVec[indsh][ihtb-NHopStart[ish][jsh]][2]*HTB->Cell.rUnitCell[2][0];
           HTB->H[ihtb].ConnectingVector[1] = HopVec[indsh][ihtb-NHopStart[ish][jsh]][0]*HTB->Cell.rUnitCell[0][1] + HopVec[indsh][ihtb-NHopStart[ish][jsh]][1]*HTB->Cell.rUnitCell[1][1] + HopVec[indsh][ihtb-NHopStart[ish][jsh]][2]*HTB->Cell.rUnitCell[2][1];
           HTB->H[ihtb].ConnectingVector[2] = HopVec[indsh][ihtb-NHopStart[ish][jsh]][0]*HTB->Cell.rUnitCell[0][2] + HopVec[indsh][ihtb-NHopStart[ish][jsh]][1]*HTB->Cell.rUnitCell[1][2] + HopVec[indsh][ihtb-NHopStart[ish][jsh]][2]*HTB->Cell.rUnitCell[2][2];
         }
-
+        else
+        {
+          HTB->H[ihtb].ConnectingVector[0] = HopVec[indsh][ihtb-NHopStart[ish][jsh]][0];
+          HTB->H[ihtb].ConnectingVector[1] = HopVec[indsh][ihtb-NHopStart[ish][jsh]][1];
+          HTB->H[ihtb].ConnectingVector[2] = HopVec[indsh][ihtb-NHopStart[ish][jsh]][2];
+        }
         HTB->H[ihtb].TransVecs[0] = HopVec[indsh][ihtb-NHopStart[ish][jsh]][0] - (SitePos[ ShellOfSite[jsh][0] ][0]-SitePos[ ShellOfSite[ish][0] ][0]);
         HTB->H[ihtb].TransVecs[1] = HopVec[indsh][ihtb-NHopStart[ish][jsh]][1] - (SitePos[ ShellOfSite[jsh][0] ][1]-SitePos[ ShellOfSite[ish][0] ][1]);
         HTB->H[ihtb].TransVecs[2] = HopVec[indsh][ihtb-NHopStart[ish][jsh]][2] - (SitePos[ ShellOfSite[jsh][0] ][2]-SitePos[ ShellOfSite[ish][0] ][2]);

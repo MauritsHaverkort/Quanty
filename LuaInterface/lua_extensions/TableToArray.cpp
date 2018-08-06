@@ -446,7 +446,7 @@ BlockTriDiagonalMatrixType* luaL_checkBlockTriDiagonalMatrixType(lua_State *L, i
 {
   const char *type;
   uint32_t len,i,j,k;
-  Bool MakeReal=True;
+  bool MakeReal=true;
   BlockTriDiagonalMatrixType *buff;
   if(lua_istable(L, narg)==0)
   {
@@ -504,7 +504,7 @@ BlockTriDiagonalMatrixType* luaL_checkBlockTriDiagonalMatrixType(lua_State *L, i
                   }
                   else if (luaL_testudata(L, -1, "Complex_Type") != NULL)
                   {
-                    MakeReal=False;
+                    MakeReal=false;
                     buff->b[i*(Sqr(buff->BlockSize))+k+j*buff->BlockSize] = *(Complex16 *)luaL_checkudata(L, -1, "Complex_Type");
                   }
                   else
@@ -554,7 +554,7 @@ BlockTriDiagonalMatrixType* luaL_checkBlockTriDiagonalMatrixType(lua_State *L, i
                   }
                   else if (luaL_testudata(L, -1, "Complex_Type") != NULL)
                   {
-                    MakeReal=False;
+                    MakeReal=false;
                     buff->a[i*(Sqr(buff->BlockSize))+k+j*buff->BlockSize] = *(Complex16 *)luaL_checkudata(L, -1, "Complex_Type");
                   }
                   else
@@ -572,7 +572,7 @@ BlockTriDiagonalMatrixType* luaL_checkBlockTriDiagonalMatrixType(lua_State *L, i
       }
     }
     lua_pop(L, 1);
-    if(MakeReal==True)
+    if(MakeReal==true)
     {
       ComplexBlockTridiagonalMatrixToReal(buff);
     }
@@ -760,7 +760,7 @@ BlockAndersonMatrixType* luaL_checkBlockAndersonMatrixType(lua_State *L, int nar
 {
   const char *type;
   uint32_t len,i,j,k;
-  Bool MakeReal=True;
+  bool MakeReal=true;
   BlockAndersonMatrixType *buff;
   if(lua_istable(L, narg)==0)
   {
@@ -829,7 +829,7 @@ BlockAndersonMatrixType* luaL_checkBlockAndersonMatrixType(lua_State *L, int nar
                   }
                   else if (luaL_testudata(L, -1, "Complex_Type") != NULL)
                   {
-                    MakeReal=False;
+                    MakeReal=false;
                     buff->b[i*(Sqr(buff->BlockSize))+k+j*buff->BlockSize] = *(Complex16 *)luaL_checkudata(L, -1, "Complex_Type");
                   }
                   else
@@ -879,7 +879,7 @@ BlockAndersonMatrixType* luaL_checkBlockAndersonMatrixType(lua_State *L, int nar
                   }
                   else if (luaL_testudata(L, -1, "Complex_Type") != NULL)
                   {
-                    MakeReal=False;
+                    MakeReal=false;
                     buff->a[i*(Sqr(buff->BlockSize))+k+j*buff->BlockSize] = *(Complex16 *)luaL_checkudata(L, -1, "Complex_Type");
                   }
                   else
@@ -897,7 +897,7 @@ BlockAndersonMatrixType* luaL_checkBlockAndersonMatrixType(lua_State *L, int nar
       }
     }
     lua_pop(L, 1);
-    if(MakeReal==True)
+    if(MakeReal==true)
     {
       ComplexBlockAndersonMatrixToReal(buff);
     }
@@ -1346,7 +1346,7 @@ ListOfPoles * luaL_checkListOfPolesVariableGrid(lua_State *L, int narg, const do
  */
 BlockListOfPoles * luaL_checkBlockListOfPoles(lua_State *L, int narg)
 {
-  Bool MakeReal=True;
+  bool MakeReal=true;
   uint32_t i,j,k,len;
   const char *type;
   BlockListOfPoles *buff;
@@ -1439,7 +1439,7 @@ BlockListOfPoles * luaL_checkBlockListOfPoles(lua_State *L, int narg)
                   }
                   else if (luaL_testudata(L, -1, "Complex_Type") != NULL)
                   {
-                    MakeReal=False;
+                    MakeReal=false;
                     buff->V[i*(1+Sqr(buff->BlockSize))+1+k+j*buff->BlockSize] = *(Complex16 *)luaL_checkudata(L, -1, "Complex_Type");
                   }
                   else
@@ -1482,7 +1482,7 @@ BlockListOfPoles * luaL_checkBlockListOfPoles(lua_State *L, int narg)
         }
         else if (luaL_testudata(L, -1, "Complex_Type") != NULL)
         {
-          MakeReal=False;
+          MakeReal=false;
           for(i=0;i<Sqr(buff->BlockSize);i++)
           {
             buff->a0[i].Re=0;
@@ -1519,7 +1519,7 @@ BlockListOfPoles * luaL_checkBlockListOfPoles(lua_State *L, int narg)
                   }
                   else if (luaL_testudata(L, -1, "Complex_Type") != NULL)
                   {
-                    MakeReal=False;
+                    MakeReal=false;
                     buff->a0[k+j*buff->BlockSize] = *(Complex16 *)luaL_checkudata(L, -1, "Complex_Type");
                   }
                   else
@@ -1546,7 +1546,7 @@ BlockListOfPoles * luaL_checkBlockListOfPoles(lua_State *L, int narg)
       }
     }
     lua_pop(L, 1);
-    if(MakeReal==True)
+    if(MakeReal==true)
     {
       MakeComplexBlockListOfPolesReal(buff);
     }
@@ -1682,8 +1682,8 @@ ResponsefunctionType * luaL_checkResponsefunction(lua_State *L, int narg)
   lua_rawgeti(L, narg, 1); // puts table a on the stack
   if(lua_objlen(L,-1)==0) luaL_error(L,"Error reading Green's function the length of the table is 0");
   lua_rawgeti(L,-1,1); // puts element A0 or a0 or the stack
-  buff->Block = False;
-  if(lua_istable(L,-1)) buff->Block = True;
+  buff->Block = false;
+  if(lua_istable(L,-1)) buff->Block = true;
   lua_pop(L,2);
   // read type
   lua_getfield(L, narg, "type");
@@ -1696,7 +1696,7 @@ ResponsefunctionType * luaL_checkResponsefunction(lua_State *L, int narg)
   {
     lua_pop(L, 1);
     buff->type='T';
-    if(buff->Block==True)
+    if(buff->Block==true)
     {
       buff->data=(void*)luaL_checkBlockTriDiagonalMatrixType(L, narg);
     }
@@ -1710,7 +1710,7 @@ ResponsefunctionType * luaL_checkResponsefunction(lua_State *L, int narg)
   {
     lua_pop(L, 1);
     buff->type='A';
-    if(buff->Block==True)
+    if(buff->Block==true)
     {
       buff->data = (void*)luaL_checkBlockAndersonMatrixType(L, narg);
     }
@@ -1724,7 +1724,7 @@ ResponsefunctionType * luaL_checkResponsefunction(lua_State *L, int narg)
   {
     lua_pop(L, 1);
     buff->type='N';
-    if(buff->Block==True)
+    if(buff->Block==true)
     {
       buff->data = (void*)luaL_checkBlockNatrualImpurityOrbitalMatrixType(L, narg);
     }
@@ -1738,7 +1738,7 @@ ResponsefunctionType * luaL_checkResponsefunction(lua_State *L, int narg)
   {
     lua_pop(L, 1);
     buff->type='L';
-    if(buff->Block==True)
+    if(buff->Block==true)
     {
       if(buff->NSuggestedGridPoints==0)
       {
@@ -2707,7 +2707,7 @@ void LuaPush_ResponseFunction(lua_State *L, ResponsefunctionType const * const M
   {
     case 'T':
     {
-      if(M->Block==True)
+      if(M->Block==true)
       {
         LuaPushTable_BlockTriDiagonalMatrixType(L, M->data);
       }
@@ -2719,7 +2719,7 @@ void LuaPush_ResponseFunction(lua_State *L, ResponsefunctionType const * const M
     }
     case 'A':
     {
-      if(M->Block==True)
+      if(M->Block==true)
       {
         LuaPushTable_BlockAndersonMatrixType(L, M->data);
       }
@@ -2731,7 +2731,7 @@ void LuaPush_ResponseFunction(lua_State *L, ResponsefunctionType const * const M
     }
     case 'L':
     {
-      if(M->Block==True)
+      if(M->Block==true)
       {
         LuaPushTable_BlockListOfPoles(L, M->data);
       }
@@ -2743,7 +2743,7 @@ void LuaPush_ResponseFunction(lua_State *L, ResponsefunctionType const * const M
     }
     case 'N':
     {
-      if(M->Block==True)
+      if(M->Block==true)
       {
         LuaPushTable_BlockNaturalImpurityOrbital(L, M->data);
       }
@@ -2830,11 +2830,11 @@ void * LuaReturnVariableType(lua_State * L, int narg, const char * type)
   else if (strcmp(type, "bool") == 0)
   {
     int *buffint = (int*)malloc(sizeof(int));
-    Bool *buffBoolean = (Bool*)malloc(sizeof(Bool));
+    bool *buffboolean = (bool*)malloc(sizeof(bool));
     *buffint = (int)lua_toboolean(L, narg);
-    *buffBoolean= ((*buffint==1)? True: False);
+    *buffboolean= ((*buffint==1)? true: false);
     free(buffint);
-    return (void*) buffBoolean;
+    return (void*) buffboolean;
   }
   else if (strcmp(type, "array-uint32_t-3") ==0)
   {
@@ -3019,7 +3019,7 @@ int32_t LuaCheckOptions(lua_State *L, int narg, LuaOptionsType *Options)
         }
         else if(strcmp(Options[j].type, "bool") == 0)
         {
-          *(Bool*)Options[j].variable=*(Bool*)LuaReturnVariableType(L, -1, Options[j].type);
+          *(bool*)Options[j].variable=*(bool*)LuaReturnVariableType(L, -1, Options[j].type);
         }
         else if(strcmp(Options[j].type, "array-uint32_t-3") == 0)
         {

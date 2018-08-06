@@ -160,7 +160,7 @@ int RegisterEnergyUnits(lua_State *L, const char* EnUnits)
   const uint32_t nelements=sizeof(EnergyUnits)/sizeof(EnergyUnits[0]);
   uint32_t i,iEnUnits=0;
   double conversion=1;
-  Bool found=False;
+  bool found=false;
   i=0;
   while(!found)
   {
@@ -170,7 +170,7 @@ int RegisterEnergyUnits(lua_State *L, const char* EnUnits)
     }
     if((strcmp(EnergyUnits[i].namelong, EnUnits)==0)||(strcmp(EnergyUnits[i].nameshort, EnUnits)==0))
     {
-      found=True;
+      found=true;
       conversion=1/EnergyUnits[i].value;
       iEnUnits=i;
     }
