@@ -45,3 +45,7 @@ uint32_t StreamPrintPlainListOfPoles(ListOfPoles M, FILE * stream);
 uint32_t StreamPrintBlockNaturalImpurityOrbitalMatrix(BlockNaturalImpurityOrbitalMatrixType M, FILE * stream);
 uint32_t StreamPrintHarmonicsExpansion(HarmonicsExpansion M, FILE * stream);
 uint32_t StreamPrintBandstructurePath(BandstructurePathType M, FILE * stream);
+void numberOutMaxWidth(double num, int maxWidth, int minPrecision);
+void numberOutMaxWidth(double num, int maxWidth);
+void printExpectationValues(const vector < WaveFunctionType >  psiList, const OperatorType  hamil, const vector < OperatorType >  opList, bool hasHamiltonian, bool sortByEnergy, bool printSigma, double zero, int printHeaderEvery);
+void printExpectationValuesHeader(const vector < OperatorType > opList, bool hasHamiltonian, bool printSigma);

@@ -5114,6 +5114,13 @@ uint32_t PsiHermitianOperatorPsi(const OperatorType O, const WaveFunctionType ps
   return PsiOperatorPsiMHR(O, psi, VRe);
 }
 
+double PsiHermitianOperatorPsi(const OperatorType O, const WaveFunctionType psi)
+{
+	double res;
+	PsiHermitianOperatorPsi(O, psi, &res);
+	return res;
+}
+
 /*  Calcualtes <psi|OO|psi>
 *
 */
@@ -5169,6 +5176,13 @@ uint32_t PsiHermitianOperatorSqrPsi(const OperatorType O, const WaveFunctionType
     return PsiOperatorSqrPsiMHC(O, psi, VRe);
   }
   return PsiOperatorSqrPsiMHR(O, psi, VRe);
+}
+
+double PsiHermitianOperatorSqrPsi(const OperatorType O, const WaveFunctionType psi)
+{
+	double res;
+	PsiHermitianOperatorSqrPsi(O, psi, &res);
+	return res;
 }
 
 /*  Calcualtes <psi|OO|psi>
@@ -5227,6 +5241,13 @@ uint32_t PsiHermitianOperatorSqrPsiRestricted(const OperatorType O, const WaveFu
     return PsiOperatorSqrPsiRestrictedMHC(O, psi, VRe, Restrictions);
   }
   return PsiOperatorSqrPsiRestrictedMHR(O, psi, VRe, Restrictions);
+}
+
+double PsiHermitianOperatorSqrPsiRestricted(const OperatorType O, const WaveFunctionType psi, DeterminantRestrictionType const Restrictions)
+{
+	double res;
+	PsiHermitianOperatorSqrPsiRestricted(O, psi, &res, Restrictions);
+	return res;
 }
 
 /*  Calcualtes the matrix of dimensions [i,j] <psiPrime_i|O|psi_j>

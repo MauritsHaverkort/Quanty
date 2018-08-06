@@ -6366,6 +6366,12 @@ uint32_t QOperatorHermitian(OperatorType O, const double epsilon)
   return 0;
 }
 
+bool isOperatorAlmostHermitian(OperatorType O, const double epsilon)
+{
+	int q = QOperatorHermitian(O, epsilon);
+	return (q == 1 || q == 2);
+}
+
 
 /*
  *

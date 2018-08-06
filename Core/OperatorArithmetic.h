@@ -59,6 +59,7 @@ uint32_t OperatorComplexConjugate(OperatorType * O);
 uint32_t OperatorConjugateTranspose(OperatorType O, OperatorType * OT);
 uint32_t OperatorConjugateTransposeNormalOrder(OperatorType O, OperatorType * OT, uint32_t(*QDetNotOrdered) (uint16_t, uint16_t, uint32_t));
 uint32_t QOperatorHermitian(OperatorType O, const double epsilon);
+bool isOperatorAlmostHermitian(OperatorType O, const double epsilon);
 uint32_t OperatorChangeNFandNB(OperatorType *O, uint32_t NFnew, uint32_t NBnew);
 void extractPartialOperatorFixedLength(OperatorType * const O, OperatorType * const OPartial, const vector<uint16_t> indices, const int length, bool changeInput);
 void extractPartialOperatorFixedLength(OperatorType * const O, OperatorType * const OPartial, const vector<uint16_t> indices, const int length);

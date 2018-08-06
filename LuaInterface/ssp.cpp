@@ -4510,6 +4510,91 @@ static int LuaOrbToMultiplicity(lua_State * L)
 	return 1;
 }
 
+// accepts a list of Wave Functions as well as the Hamiltonian and a list of other operators. The Hamiltonian is special here because it can be used to calculate the Deviance. It is optional.
+static int LuaPrintExpectationValues(lua_State * L)
+{
+	vector < WaveFunctionType > psiList;
+	OperatorType hamil;
+	vector < OperatorType > opList;
+	uint32_t numberOfOperators;
+	uint32_t len = (uint32_t) lua_gettop(L);
+	bool hasHamiltonian;
+	bool hasOptions;
+
+  struct
+  {
+		int printHeaderEvery = 0;
+		bool printSigma = false;
+		bool sortByEnergy = true;
+    double zero = 1E-10;
+  } Options;
+  LuaOptionsType LuaPrintExpectationValuesOptions[]={
+		{"printHeaderEvery",   "int",  &(Options.printHeaderEvery)},
+		{"printSigma",         "bool",  &(Options.printSigma)},
+		{"sortByEnergy",       "bool",  &(Options.sortByEnergy)},
+		{"zero",          			"double",  &(Options.zero)},
+    {NULL, NULL, NULL}};
+
+	if (len < 2 || len > 4)
+		return luaL_error(L, "PrintExpectationValues called with %d arguments. 2 or 3 expected, List of Wavefunctions, optional Hamiltonian, list of other operators, and optional list of Options.\n", len);
+
+	if (len == 2)
+	{
+//		Input: Psi, Operators;
+		hasHamiltonian = false;
+		hasOptions = false;
+	} else if (len == 3)
+	{
+		if (lua_istable(L, -1))
+		{
+			lua_rawgeti(L, -1, 1);
+			if (lua_istable(L, -1))
+			{
+//		Input: Psi, Operators, Options;
+				hasHamiltonian = false;
+				hasOptions = true;
+			} else
+			{
+//		Input: Psi, Hamiltonian, Operators;
+				hasHamiltonian = true;
+				hasOptions = false;
+			}
+			lua_pop(L, 1);
+		} else
+		{
+			//		Input: Psi, Hamiltonian, a single Operator;
+			hasHamiltonian = true;
+			hasOptions = false;
+		}
+	} else if (len == 4)
+	{
+//		Input: Psi, Hamiltonian; Operators, Options;
+		hasHamiltonian = true;
+		hasOptions = true;
+	}
+
+	psiList = luaL_checkvector_WaveFunctionType(L, 1);
+	if (hasHamiltonian)
+		hamil = *(OperatorType*) luaL_checkudata(L, 2, "Operator_Type");
+	if (hasOptions)
+	{
+		opList = luaL_checkvector_OperatorType(L, -2);
+		if (LuaTestOptionsList(L, -1))
+		{
+			LuaCheckOptions(L, -1, LuaPrintExpectationValuesOptions);
+		} else
+		{
+			return luaL_error(L, "Last argument of PrintExpectationValues should either be a single operator, a list of operators, or a list of options. It's not.\n");
+		}
+	} else
+	{
+		opList = luaL_checkvector_OperatorType(L, -1);
+	}
+
+	printExpectationValues(psiList, hamil, opList, hasHamiltonian, Options.sortByEnergy, Options.printSigma, Options.zero, Options.printHeaderEvery);
+	return 0;
+}
+
 
 static const struct luaL_Reg global_functions[] = {
   {"BlockBandDiagonalize", LuaBlockBandDiagonalize},
@@ -4558,6 +4643,7 @@ static const struct luaL_Reg global_functions[] = {
   {"PlotBandsAndDOS", LuaPlotBandsAndDOS},
   {"PlotDOS", LuaPlotDOS},
   {"PlotFermi", LuaPlotFermi},
+	{"PrintExpectationValues",LuaPrintExpectationValues},
   {"Rotate", Luarotate},
   {"Statistics",LuaStatistics},
   {"TimeEnd",LuaTimeEnd},

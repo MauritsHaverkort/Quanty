@@ -1571,4 +1571,157 @@ uint32_t StreamPrintBandstructurePath(BandstructurePathType M, FILE * stream)
   return 0;
 }
 
+void numberOutMaxWidth(double num, int maxWidth, int minPrecision)
+{
+	int old_precision = cout.precision();
+	int power = findPower(num);
+	int powerDigits = findPower(power) + 1;
+	if (power < 0)
+		++powerDigits;
+	if (num < 0)
+		--maxWidth;
+	if (abs(num) < 1)
+	{
+		if (maxWidth + power - 1 >= minPrecision)
+		{
+			if (maxWidth + power - 1 > 0)
+				cout.precision(maxWidth + power - 1);
+			else
+				cout.precision(1);
+			cout << num;
+		} else
+		{
+			if (maxWidth - powerDigits - 2 > 0)
+				cout.precision(maxWidth - powerDigits - 2);
+			else
+				cout.precision(1);
+			cout << num * pow(10, -power) << "e" << power;
+		}
+	} else if (abs(num) > pow(10, maxWidth - 1))
+	{
+		if (maxWidth - powerDigits - 2 > 0)
+			cout.precision(maxWidth - powerDigits - 2);
+		else
+			cout.precision(1);
+		cout << num * pow(10, -power) << "e" << power;
+	} else
+	{
+		if (maxWidth - 1 > 0)
+			cout.precision(maxWidth - 1);
+		else
+			cout.precision(1);
+		cout << num;
+	}
+	cout.precision(old_precision);
+}
+
+void numberOutMaxWidth(double num, int maxWidth)
+{
+	numberOutMaxWidth(num,maxWidth,2);
+}
+
+void printExpectationValues(const vector < WaveFunctionType >  psiList, const OperatorType  hamil, const vector < OperatorType >  opList, bool hasHamiltonian, bool sortByEnergy, bool printSigma, double zero, int printHeaderEvery)
+{
+	vector<double> EValues(psiList.size());
+	vector<double> sigmaValues(psiList.size());
+	vector<vector<double> > expValues(psiList.size());
+	int hamilAddition = 0, sigmaAddition = 0;
+	bool opHermetian = false, opRestricted = false;
+	if (hasHamiltonian)
+	{
+		hamilAddition = 1;
+		opHermetian = isOperatorAlmostHermitian(hamil, zero);
+		opRestricted = (hamil.Res.N > 0);
+		if (!opHermetian)
+		{
+			cout << "PrintExpectationValues not yet implemented for non-Hermitian operators, the reults will probably be rubbish." << endl;
+		}
+		if (opRestricted)
+		{
+			for (int i = 0; i < psiList.size(); ++i)
+			{
+				EValues[i] = PsiHermitianOperatorPsi(hamil, psiList[i]); //TODO: es gibt das noch nicht mit Restrictions.
+			}
+		} else
+		{
+			for (int i = 0; i < psiList.size(); ++i)
+			{
+				EValues[i] = PsiHermitianOperatorPsi(hamil, psiList[i]);
+			}
+		}
+		if (printSigma)
+		{
+			sigmaAddition = 1;
+//			TODO: make this possible for non-hermetian operators
+			if (opRestricted)
+			{
+				for (int i = 0; i < psiList.size(); ++i)
+					sigmaValues[i] = sqrt(abs(EValues[i] * EValues[i] - PsiHermitianOperatorSqrPsiRestricted(hamil, psiList[i], hamil.Res)));
+			} else
+			{
+				for (int i = 0; i < psiList.size(); ++i)
+					sigmaValues[i] = sqrt(abs(EValues[i] * EValues[i] - PsiHermitianOperatorSqrPsi(hamil, psiList[i])));
+			}
+		}
+	}
+
+	for (int i = 0; i < psiList.size(); ++i)
+	{
+
+		expValues[i] = vector<double>(opList.size() + hamilAddition + sigmaAddition);
+		if (hasHamiltonian)
+		{
+			expValues[i][0] = EValues[i];
+			if (printSigma)
+				expValues[i][expValues[i].size() - 1] = sigmaValues[i];
+		}
+		for (int j = 0; j < opList.size(); ++j)
+			expValues[i][j + hamilAddition] = PsiHermitianOperatorPsi(opList[j], psiList[i]); //TODO: If Abfrage auf Restrictions. Leider ändern Restrictions an dieser Stelle auch nichts.
+	}
+
+	if (hasHamiltonian && sortByEnergy)
+		sort(expValues.begin(), expValues.end(), matrixSorterByFirstValue);
+
+	for (int i = 0; i < psiList.size(); ++i)
+	{
+		if (i == 0 || (printHeaderEvery > 0 && i % printHeaderEvery == 0))
+			printExpectationValuesHeader(opList, hasHamiltonian, printSigma);
+		cout.width(5);
+		cout << (i + 1) << "\t";
+		for (int j = 0; j < opList.size() + hamilAddition; ++j)
+		{
+			double out = expValues[i][j];
+			if (out <= zero)
+				out = 0;
+			numberOutMaxWidth(out, 7);
+			cout << "\t";
+		}
+		if (hasHamiltonian && printSigma)
+		{
+			double out = expValues[i][expValues[i].size()-1];
+			numberOutMaxWidth(out, 14);
+		}
+		cout << endl;
+	}
+}
+
+void printExpectationValuesHeader(const vector < OperatorType > opList, bool hasHamiltonian, bool printSigma)
+{
+	cout << endl;
+	cout << "\t";
+	if (hasHamiltonian)
+		cout << "E\t";
+	for (int i = 0; i < opList.size(); ++i)
+	{
+		string name(opList[i].Name);
+		if (name.length() > 7)
+		{
+			name = name.substr(0,7);
+		}
+		cout << name << "\t";
+	}
+	if (hasHamiltonian && printSigma)
+		cout << "std-dev";
+	cout << endl;
+}
 
