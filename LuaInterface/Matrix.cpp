@@ -276,7 +276,7 @@ static int LuaMatrixRandom(lua_State * L)
   uint32_t i,j,k,*Nij;
   CompactMatrixType *res;
   Complex16 *minmax;
-  Bool Userdata=False;
+  bool Userdata=false;
   uint32_t len = (uint32_t)lua_gettop(L);
   LuaOptionsType LuaFunctionOptions[]={
     {"Userdata","bool",&(Userdata)},
@@ -293,7 +293,7 @@ static int LuaMatrixRandom(lua_State * L)
   if(lua_objlen(L, 1)!=2) luaL_error(L,"Matrix Random called with table of length %d at posittion 1, expected {min,max}\n",lua_objlen(L, 1));
   luaL_checktype(L, 2, LUA_TTABLE);
   if(lua_objlen(L, 2)!=2) luaL_error(L,"Matrix Random called with table of length %d at posittion 2, expected {Ni,Nj}\n",lua_objlen(L, 2));
-  if(Userdata==True)
+  if(Userdata==true)
   {
     res = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
     luaL_setmetatable(L, "Matrix_Type");
@@ -336,7 +336,7 @@ static int LuaMatrixRandom(lua_State * L)
     }
   }
   free(minmax);
-  if(Userdata==False)
+  if(Userdata==false)
   {
     LuaPushTable_CompactMatrixType(L, res);
     FreeCompactMatrix(res);
@@ -353,7 +353,7 @@ static int LuaMatrixRandom(lua_State * L)
 static int LuaMatrixZero(lua_State * L)
 {
   CompactMatrixType *res;
-  Bool Userdata=False;
+  bool Userdata=false;
   uint32_t len = (uint32_t)lua_gettop(L);
   LuaOptionsType LuaFunctionOptions[]={
     {"Userdata","bool",&(Userdata)},
@@ -366,7 +366,7 @@ static int LuaMatrixZero(lua_State * L)
   {
     return luaL_error(L,"Matrix Identity called with %d arguments, 1 or 2 arguments expected\n");
   }
-  if(Userdata==True)
+  if(Userdata==true)
   {
     res = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
     luaL_setmetatable(L, "Matrix_Type");
@@ -379,7 +379,7 @@ static int LuaMatrixZero(lua_State * L)
   res->Ni = (uint32_t)luaL_checkinteger(L, 1);
   res->Nj = res->Ni;
   InitCompactMatrix(res);
-  if(Userdata==False)
+  if(Userdata==false)
   {
     LuaPushTable_CompactMatrixType(L, res);
     FreeCompactMatrix(res);
@@ -395,7 +395,7 @@ static int LuaMatrixZero(lua_State * L)
 static int LuaMatrixIdentity(lua_State * L)
 {
   CompactMatrixType *res;
-  Bool Userdata=False;
+  bool Userdata=false;
   uint32_t len = (uint32_t)lua_gettop(L);
   LuaOptionsType LuaFunctionOptions[]={
     {"Userdata","bool",&(Userdata)},
@@ -408,7 +408,7 @@ static int LuaMatrixIdentity(lua_State * L)
   {
     return luaL_error(L,"Matrix Identity called with %d arguments, 1 or 2 arguments expected\n");
   }
-  if(Userdata==True)
+  if(Userdata==true)
   {
     res = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
     luaL_setmetatable(L, "Matrix_Type");
@@ -421,7 +421,7 @@ static int LuaMatrixIdentity(lua_State * L)
   res->Ni = (uint32_t)luaL_checkinteger(L, 1);
   res->Nj = res->Ni;
   InitCompactIdentityMatrix(res);
-  if(Userdata==False)
+  if(Userdata==false)
   {
     LuaPushTable_CompactMatrixType(L, res);
     FreeCompactMatrix(res);
@@ -438,7 +438,7 @@ static int LuaMatrixDiagonal(lua_State * L)
 {
   Complex16 *diag;
   CompactMatrixType *res;
-  Bool Userdata=False;
+  bool Userdata=false;
   uint32_t i,k,len = (uint32_t)lua_gettop(L);
   LuaOptionsType LuaFunctionOptions[]={
     {"Userdata","bool",&(Userdata)},
@@ -451,7 +451,7 @@ static int LuaMatrixDiagonal(lua_State * L)
   {
     return luaL_error(L,"Matrix Diagonal called with %d arguments, 1 or 2 arguments expected\n");
   }
-  if(Userdata==True)
+  if(Userdata==true)
   {
     res = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
     luaL_setmetatable(L, "Matrix_Type");
@@ -491,7 +491,7 @@ static int LuaMatrixDiagonal(lua_State * L)
       k+=res->Ni+1;
     }
   }
-  if(Userdata==False)
+  if(Userdata==false)
   {
     LuaPushTable_CompactMatrixType(L, res);
     FreeCompactMatrix(res);

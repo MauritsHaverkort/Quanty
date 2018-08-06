@@ -491,7 +491,7 @@ uint32_t CalculateChemicalPotentialFromListOfEigenvalues(const double * const va
 {
   double musmaler, mularger;
   double NEmu,NEmusmaler=0,NEmularger=0;
-  Bool Converged=False;
+  bool Converged=false;
   uint32_t i,iloop=0;
   musmaler=val[0];
   mularger=val[0];
@@ -518,7 +518,7 @@ uint32_t CalculateChemicalPotentialFromListOfEigenvalues(const double * const va
     }
     if(Abs(NEmu-NE)<100*DBL_EPSILON)
     {
-      Converged=True;
+      Converged=true;
     }
     if(iloop==64)
     {

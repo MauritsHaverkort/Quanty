@@ -386,33 +386,33 @@ void ReciprocalLatticeVector(double r[3][3], double g[3][3], uint32_t const Unit
 
 
 
-Bool Test_uint8_t_array_in_range(const uint8_t min, const uint8_t max, uint8_t *l, const uint32_t N)
+bool Test_uint8_t_array_in_range(const uint8_t min, const uint8_t max, uint8_t *l, const uint32_t N)
 {
   uint32_t i;
   for(i=0;i<N;i++)
   {
-    if(l[i]<min) return False;
-    if(l[i]>max) return False;
+    if(l[i]<min) return false;
+    if(l[i]>max) return false;
   }
-  return True;
+  return true;
 }
-Bool Test_uint16_t_array_in_range(const uint16_t min, const uint16_t max, uint16_t *l, const uint32_t N)
+bool Test_uint16_t_array_in_range(const uint16_t min, const uint16_t max, uint16_t *l, const uint32_t N)
 {
   uint32_t i;
   for(i=0;i<N;i++)
   {
-    if(l[i]<min) return False;
-    if(l[i]>max) return False;
+    if(l[i]<min) return false;
+    if(l[i]>max) return false;
   }
-  return True;
+  return true;
 }
-Bool Test_uint32_t_array_in_range(const uint32_t min, const uint32_t max, uint32_t *l, const uint32_t N)
+bool Test_uint32_t_array_in_range(const uint32_t min, const uint32_t max, uint32_t *l, const uint32_t N)
 {
   uint32_t i;
   for(i=0;i<N;i++)
   {
-    if(l[i]<min) return False;
-    if(l[i]>max) return False;
+    if(l[i]<min) return false;
+    if(l[i]>max) return false;
   }
-  return True;
+  return true;
 }

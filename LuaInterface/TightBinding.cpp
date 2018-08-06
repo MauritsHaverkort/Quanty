@@ -315,7 +315,7 @@ static int LuaCalculateG(lua_State *L)
   luaL_setmetatable(L, "ResponseFunction_Type");
   G->NSuggestedGridPoints = 0;
   G->type = 'l';
-  G->Block = True;
+  G->Block = true;
   G->data = (void*) malloc(sizeof(BlockListOfPoles));
   TightBindingHamiltonianToBlockListOfPoles(*a, Options.Nk, (BlockListOfPoles*)G->data, Options.Emin, Options.Emax, Options.NE);
   ChopBlockListOfPoles((BlockListOfPoles*)G->data, 1000*DBL_EPSILON);
@@ -647,9 +647,9 @@ static int LuaPushIndicesDictFromTBWithSpin(lua_State *L, TightBindingDef *TB)
 }
 
 
-static int LuaPushIndicesDictFromTB(lua_State *L, TightBindingDef *TB, Bool AddSpin)
+static int LuaPushIndicesDictFromTB(lua_State *L, TightBindingDef *TB, bool AddSpin)
 {
-  if(AddSpin==True)
+  if(AddSpin==true)
   {
     return LuaPushIndicesDictFromTBWithSpin(L, TB);
   }
@@ -683,8 +683,8 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
   uint32_t periodic;
   OperatorType *H;
   CompactVectorType k;
-  Bool AddSpin=False;
-  Bool QOperators=False, QOptions=False, ReturnTBSuperCell=False, ReturnTBCellPositions=False, ReturnTBKVectors=False, ReturnTBIndicesDict=False;
+  bool AddSpin=false;
+  bool QOperators=false, QOptions=false, ReturnTBSuperCell=false, ReturnTBCellPositions=false, ReturnTBKVectors=false, ReturnTBIndicesDict=false;
   OperatorType *AditionalOperator=NULL;
   MatrixType U;
   k.Ni=3;
@@ -774,30 +774,30 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
     /* deterimine if there are aditional operators or aditional options */
     if(len==2)
     {
-      QOperators=False;
-      QOptions=False;
+      QOperators=false;
+      QOptions=false;
     }
     else
     {
       if(len==4)
       {
-        QOperators=True;
-        QOptions=True;
+        QOperators=true;
+        QOptions=true;
       }
       /* read additional operators from the stack */
       if (luaL_testudata(L, 3, "Operator_Type") != NULL)
       {
-        QOperators=True;
+        QOperators=true;
         AditionalOperator = (OperatorType *) luaL_checkudata(L, 3, "Operator_Type");
         if(len==3)
         {
-          QOptions=False;
+          QOptions=false;
         }
       }
       else
       {
-        QOperators=False;
-        QOptions=True;
+        QOperators=false;
+        QOptions=true;
         if(len==4)
         {
           return luaL_error(L, "Error CreateClusterHamiltonian third argument should be an operator defining aditional interactions within the unit cell\n");
@@ -805,7 +805,7 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
       }
     }
     /* read options */
-    if(QOptions==True)
+    if(QOptions==true)
     {
       LuaCheckOptions(L, -1, LuaCreateClusterHamiltonianOptions);
       if(k.Ni!=3)
@@ -821,7 +821,7 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
     CreateTightBindingSuperCell(*a, &aSuper, SuperCell);
     H=(OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
     luaL_setmetatable(L, "Operator_Type");
-    if(AddSpin==True)
+    if(AddSpin==true)
     {
       CreateHamiltonianOperatorFromTightBindingDefPlusSpin(aSuper, k.VRe, H);
     }
@@ -901,7 +901,7 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
       LuaPushIndicesDictFromTB(L, &aSuper, AddSpin);
       nreturn++;
     }
-    if(ReturnTBSuperCell==False)
+    if(ReturnTBSuperCell==false)
     {
       FreeTightBindingDef(&aSuper);
     }
@@ -959,30 +959,30 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
     /* deterimine if there are aditional operators or aditional options */
     if(len==2)
     {
-      QOperators=False;
-      QOptions=False;
+      QOperators=false;
+      QOptions=false;
     }
     else
     {
       if(len==4)
       {
-        QOperators=True;
-        QOptions=True;
+        QOperators=true;
+        QOptions=true;
       }
       /* read additional operators from the stack */
       if (luaL_testudata(L, 3, "Operator_Type") != NULL)
       {
-        QOperators=True;
+        QOperators=true;
         AditionalOperator = (OperatorType *) luaL_checkudata(L, 3, "Operator_Type");
         if(len==3)
         {
-          QOptions=False;
+          QOptions=false;
         }
       }
       else
       {
-        QOperators=False;
-        QOptions=True;
+        QOperators=false;
+        QOptions=true;
         if(len==4)
         {
           return luaL_error(L, "Error CreateClusterHamiltonian third argument should be an operator defining aditional interactions within the unit cell\n");
@@ -990,7 +990,7 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
       }
     }
     /* read options */
-    if(QOptions==True)
+    if(QOptions==true)
     {
       LuaCheckOptions(L, len, LuaCreateClusterHamiltonianOptions);
     }
@@ -1085,7 +1085,7 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
       }
     }
     // build Hamiltonian from cluster tight binding definition
-    if(AddSpin==True)
+    if(AddSpin==true)
     {
       CreateHamiltonianOperatorFromTightBindingDefPlusSpin(*ClusterDef, k.VRe, H);
     }
@@ -1094,7 +1094,7 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
       CreateHamiltonianOperatorFromTightBindingDef(*ClusterDef, k.VRe, H);
     }
     // add additional operator
-    if(QOperators==True)
+    if(QOperators==true)
     {
       if(H->NFermion==AditionalOperator->NFermion)
       {

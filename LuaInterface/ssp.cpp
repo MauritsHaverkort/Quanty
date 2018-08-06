@@ -1243,7 +1243,7 @@ static int Luaconjugate(lua_State * L)
 
 static int Luaconjugatetranspose(lua_State * L)
 {
-  Bool matrix=True,Warning=False;
+  bool matrix=true,Warning=false;
   uint32_t Ni=0,i,Nj=0,j;
   uint32_t len = (uint32_t)lua_gettop(L);
   switch (lua_type(L,len))
@@ -1303,7 +1303,7 @@ static int Luaconjugatetranspose(lua_State * L)
         lua_rawgeti(L, len, i+1);
         if(lua_type(L,-1)==LUA_TTABLE)
         {
-          Warning=True;
+          Warning=true;
           if(i==0)
           {
             Nj=(uint32_t)lua_objlen(L,-1);
@@ -1312,13 +1312,13 @@ static int Luaconjugatetranspose(lua_State * L)
           {
             if(Nj!=(uint32_t)lua_objlen(L,-1))
             {
-              matrix=False;
+              matrix=false;
             }
           }
         }
         else
         {
-          matrix=False;
+          matrix=false;
         }
         lua_pop(L,1);
       }
@@ -1365,7 +1365,7 @@ static int Luaconjugatetranspose(lua_State * L)
 
 static int Luatranspose(lua_State * L)
 {
-  Bool matrix=True,Warning=False;
+  bool matrix=true,Warning=false;
   uint32_t Ni=0,i,Nj=0,j;
   uint32_t len = (uint32_t)lua_gettop(L);
   switch (lua_type(L,len))
@@ -1424,7 +1424,7 @@ static int Luatranspose(lua_State * L)
         lua_rawgeti(L, len, i+1);
         if(lua_type(L,-1)==LUA_TTABLE)
         {
-          Warning=True;
+          Warning=true;
           if(i==0)
           {
             Nj=(uint32_t)lua_objlen(L,-1);
@@ -1433,13 +1433,13 @@ static int Luatranspose(lua_State * L)
           {
             if(Nj!=(uint32_t)lua_objlen(L,-1))
             {
-              matrix=False;
+              matrix=false;
             }
           }
         }
         else
         {
-          matrix=False;
+          matrix=false;
         }
         lua_pop(L,1);
       }
@@ -1584,17 +1584,17 @@ static int LuaCreateSpectra(lua_State *L)
     uint32_t NT;
     ConvergenceSettingsType Settings;
     char *stream;
-    Bool Tensor;
-    Bool Sigma;
-    Bool KrylovBasis;
-    Bool DenseMethod;
+    bool Tensor;
+    bool Sigma;
+    bool KrylovBasis;
+    bool DenseMethod;
   } Options;
   Options.Settings=InitConvergenceSettings();
   Options.stream=NULL;
-  Options.Tensor=False;
-  Options.Sigma=False;
-  Options.DenseMethod=False;
-  Options.KrylovBasis=False;
+  Options.Tensor=false;
+  Options.Sigma=false;
+  Options.DenseMethod=false;
+  Options.KrylovBasis=false;
   Options.E0=DBL_MAX;
   CompactMatrixType HDense, TpsiDense, EigenfunHDense;
   SpectraTypeArray *Spec;
@@ -1632,10 +1632,10 @@ static int LuaCreateSpectra(lua_State *L)
     return luaL_error(L, "Error CreateSpectra called with %d arguments, 3,4 or 5 expected\n",len);
   }
   /* check if a self energy is given */
-  if(len==5) Options.Sigma=True;
+  if(len==5) Options.Sigma=true;
   if(len==4)
   {
-    if(LuaTestOptionsList(L, 4)==0) Options.Sigma=True;
+    if(LuaTestOptionsList(L, 4)==0) Options.Sigma=true;
   }
   /* read operator and wavefunctions */
   H = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
@@ -1660,12 +1660,12 @@ static int LuaCreateSpectra(lua_State *L)
     psi = (WaveFunctionType *) luaL_checkudata(L, 3, "Wavefunction_Type");
   }
   /* read options */
-  if((len==5)||((len==4)&&(Options.Sigma==False)))
+  if((len==5)||((len==4)&&(Options.Sigma==false)))
   {
     LuaCheckOptions(L, -1, LuaCreateSpectraOptions);
   }
   /* read self energy */
-  if(Options.Sigma==True)
+  if(Options.Sigma==true)
   {
     /* read self energy */
     /* the self energy can be */
@@ -1799,7 +1799,7 @@ static int LuaCreateSpectra(lua_State *L)
   WaveFunctionCopy(Tpsi[0], &psiDenseBasis);
   for(i=1;i<Options.NT*Options.Npsi;i++)
   {
-    if((Options.DenseMethod==False)&&(psiDenseBasis.N>Options.Settings.DenseBorder))
+    if((Options.DenseMethod==false)&&(psiDenseBasis.N>Options.Settings.DenseBorder))
     {
       WaveFunctionFree(&psiDenseBasis);
       break;
@@ -1811,7 +1811,7 @@ static int LuaCreateSpectra(lua_State *L)
   }
   /* expand psiBasis to represent H^n psiBasis for all n */
   len=0;
-  if((Options.DenseMethod==True)||(psiDenseBasis.N<=Options.Settings.DenseBorder))
+  if((Options.DenseMethod==true)||(psiDenseBasis.N<=Options.Settings.DenseBorder))
   {
     while(len!=psiDenseBasis.N)
     {
@@ -1820,7 +1820,7 @@ static int LuaCreateSpectra(lua_State *L)
       {
         luaL_error(L, "OperatorPsi failed in calculation of spectra\n Out of memory?\nTry to split the call to several calls for different wave-functions or transition operators\n");
       }
-      if((Options.DenseMethod==False)&&(OpsiDenseBasis.N>Options.Settings.DenseBorder))
+      if((Options.DenseMethod==false)&&(OpsiDenseBasis.N>Options.Settings.DenseBorder))
       {
         WaveFunctionFree(&OpsiDenseBasis);
         WaveFunctionFree(&psiDenseBasis);
@@ -1832,16 +1832,16 @@ static int LuaCreateSpectra(lua_State *L)
         luaL_error(L, "WaveFunctionAddUnionBasis failed in calculation of spectra\n Out of memory?\nTry to split the call to several calls for different wave-functions or transition operators\n");
       }
       WaveFunctionFree(&OpsiDenseBasis);
-      if((Options.DenseMethod==False)&&(psiDenseBasis.N>Options.Settings.DenseBorder))
+      if((Options.DenseMethod==false)&&(psiDenseBasis.N>Options.Settings.DenseBorder))
       {
         WaveFunctionFree(&psiDenseBasis);
         break;
       }
-      if(len==psiDenseBasis.N) Options.DenseMethod=True;
+      if(len==psiDenseBasis.N) Options.DenseMethod=true;
     }
   }
   /* If DenseMethod is true calculate spectra using dense methods */
-  if(Options.DenseMethod==True)
+  if(Options.DenseMethod==true)
   {
     /* create HDense */
     OperatorToDeterminantMatrix(H, &psiDenseBasis, &HDense);
@@ -1878,16 +1878,16 @@ static int LuaCreateSpectra(lua_State *L)
       }
     }
     free(Tpsi);
-    if(Options.KrylovBasis==False)
+    if(Options.KrylovBasis==false)
     {
       WaveFunctionFree(&psiDenseBasis);
     }
     /* create spectra using dense methods */
-    if(Options.Tensor==False)
+    if(Options.Tensor==false)
     {
       ListOfPoles *SpecLP;
       SpecLP= (ListOfPoles*)malloc(TpsiDense.Ni*sizeof(ListOfPoles));
-      if(Options.KrylovBasis==True)
+      if(Options.KrylovBasis==true)
       {
         HermitianCompactMatrixToListOfPolesWithEigenstates(&HDense, SpecLP, &TpsiDense, &EigenfunHDense);
       }
@@ -1962,10 +1962,10 @@ static int LuaCreateSpectra(lua_State *L)
       free(SpecLP);
       free(psiEn);
     }
-    else //Dense methods with tensor True
+    else //Dense methods with tensor true
     {
       BlockListOfPoles SpecLP;
-      if(Options.KrylovBasis==True)
+      if(Options.KrylovBasis==true)
       {
         HermitianCompactMatrixToBlockListOfPolesWithEigenstates(&HDense, &SpecLP, &TpsiDense, &EigenfunHDense);
       }
@@ -2025,7 +2025,7 @@ static int LuaCreateSpectra(lua_State *L)
       free(psiEn);
     }
     /* create WaveFunction Basis for output if needed and put this on stack and return 2 or 3*/
-    if(Options.KrylovBasis==True)
+    if(Options.KrylovBasis==true)
     {
       WaveFunctionType *buff;
       WaveFunctionMultiply(&psiDenseBasis, 0, 0);
@@ -2076,7 +2076,7 @@ static int LuaCreateSpectra(lua_State *L)
   else
   {
     /* start calculating the spectra using Lanczos */
-    if(Options.Tensor==False)
+    if(Options.Tensor==false)
     {
       TriDiagonalMatrixType *GTri;
       /* calculate spectra in Tridiagonal form for each combination of operator and wave-function seperately*/
@@ -2088,7 +2088,7 @@ static int LuaCreateSpectra(lua_State *L)
         GTri[i].mu=0; // we have no knowlede on the chemical potential at this point
       }
       /* alocate memory for the krylov basis */
-      if(Options.KrylovBasis==True)
+      if(Options.KrylovBasis==true)
       {
         psiBasis= (WaveFunctionType**)malloc(Options.NT*Options.Npsi*sizeof(WaveFunctionType*));
         for(i=0;i<Options.NT*Options.Npsi;i++)
@@ -2104,7 +2104,7 @@ static int LuaCreateSpectra(lua_State *L)
         {
           if(Options.Settings.restrictions.N==0)
           {
-            if(Options.KrylovBasis==True)
+            if(Options.KrylovBasis==true)
             {
               LanczosTriDiagonalizeKrylov(*H, Tpsi[iT*Options.Npsi+ipsi], Options.Settings.epsilon, &GTri[iT*Options.Npsi+ipsi], psiBasis[iT*Options.Npsi+ipsi]);
             }
@@ -2115,7 +2115,7 @@ static int LuaCreateSpectra(lua_State *L)
           }
           else
           {
-            if(Options.KrylovBasis==True)
+            if(Options.KrylovBasis==true)
             {
               LanczosTriDiagonalizeKrylovRestricted(*H, Tpsi[iT*Options.Npsi+ipsi],  Options.Settings.restrictions, Options.Settings.epsilon, &GTri[iT*Options.Npsi+ipsi], psiBasis[iT*Options.Npsi+ipsi]);
             }
@@ -2213,7 +2213,7 @@ static int LuaCreateSpectra(lua_State *L)
       free(psiEn);
       free(Tpsi);
       /* return KrylovBasis if asked for and number of elements pushed on stack */
-      if(Options.KrylovBasis==True)
+      if(Options.KrylovBasis==true)
       {
         if(Options.NT*Options.Npsi==1)
         {
@@ -2276,7 +2276,7 @@ static int LuaCreateSpectra(lua_State *L)
       
       if(Options.Settings.restrictions.N==0)
       {
-        if(Options.KrylovBasis==True)
+        if(Options.KrylovBasis==true)
         {
           BlockSizeN= (uint32_t*)malloc(GTri.N*sizeof(uint32_t));
           psiBasis= (WaveFunctionType**)malloc(Options.Settings.NTri*sizeof(WaveFunctionType*));
@@ -2289,7 +2289,7 @@ static int LuaCreateSpectra(lua_State *L)
       }
       else
       {
-        if(Options.KrylovBasis==True)
+        if(Options.KrylovBasis==true)
         {
           BlockSizeN= (uint32_t*)malloc(GTri.N*sizeof(uint32_t));
           psiBasis= (WaveFunctionType**)malloc(Options.Settings.NTri*sizeof(WaveFunctionType*));
@@ -2350,7 +2350,7 @@ static int LuaCreateSpectra(lua_State *L)
       ShiftBlockTridiagonalMatrix(&GTri, -psiEn[0]);
       LuaPushTable_BlockTriDiagonalMatrixType(L, &GTri);
       /* push Krylov basis to stack */
-      if(Options.KrylovBasis==True)
+      if(Options.KrylovBasis==true)
       {
         /* push a table to L containing the krylov basis */
         lua_createtable(L,GTri.N,0);
@@ -2368,7 +2368,7 @@ static int LuaCreateSpectra(lua_State *L)
       /* free tridiagonal representation in memory */
       FreeBlockTridiagonalMatrix(&GTri);
       
-      if(Options.KrylovBasis==True)
+      if(Options.KrylovBasis==true)
       {
         return 3;
       }
@@ -2408,15 +2408,15 @@ static int LuaCreateResonantSpectra(lua_State *L)
     uint32_t Npsi;
     uint32_t NT1;
     uint32_t NT2;
-    Bool Tensor;
-    Bool DenseMethod;
+    bool Tensor;
+    bool DenseMethod;
   } Options;
   Options.Settings=InitConvergenceSettings();
   Options.E0=DBL_MAX;
   Options.E01=DBL_MAX;
   Options.E02=DBL_MAX;
-  Options.Tensor=False;
-  Options.DenseMethod=False;
+  Options.Tensor=false;
+  Options.DenseMethod=false;
   ConvergenceSettingsType SettingsNow;
   SpectraTypeArray *Spec;
   SpectraType *SpecT1psi;
@@ -2558,12 +2558,12 @@ static int LuaCreateResonantSpectra(lua_State *L)
   // HfDenseBasis       : on which the Matrix fo rthe final states can be represented
   {
     // psi
-    if (Options.DenseMethod==False) if(psi[0].N>Options.Settings.DenseBorder) goto EndOfUseDenseTest;
+    if (Options.DenseMethod==false) if(psi[0].N>Options.Settings.DenseBorder) goto EndOfUseDenseTest;
     WaveFunctionCopy(psi[0], &HTpsiDenseBasis);
     for(i=1;i<Options.Npsi;i++)
     {
       WaveFunctionAddUnionBasis(&HTpsiDenseBasis, psi[i]);
-      if (Options.DenseMethod==False) if(HTpsiDenseBasis.N>Options.Settings.DenseBorder)
+      if (Options.DenseMethod==false) if(HTpsiDenseBasis.N>Options.Settings.DenseBorder)
       {
         WaveFunctionFree(&HTpsiDenseBasis);
         goto EndOfUseDenseTest;
@@ -2585,7 +2585,7 @@ static int LuaCreateResonantSpectra(lua_State *L)
       }
       WaveFunctionAddUnionBasis(&TpsiSum, Opsi);
       WaveFunctionFree(&Opsi);
-      if (Options.DenseMethod==False) if(TpsiSum.N>Options.Settings.DenseBorder)
+      if (Options.DenseMethod==false) if(TpsiSum.N>Options.Settings.DenseBorder)
       {
         WaveFunctionFree(&TpsiSum);
         WaveFunctionFree(&HTpsiDenseBasis);
@@ -2606,7 +2606,7 @@ static int LuaCreateResonantSpectra(lua_State *L)
         goto EndOfUseDenseTest;
       }
       WaveFunctionFree(&HTpsiDenseBasis);
-      if (Options.DenseMethod==False) if(Opsi.N>Options.Settings.DenseBorder)
+      if (Options.DenseMethod==false) if(Opsi.N>Options.Settings.DenseBorder)
       {
         WaveFunctionFree(&Opsi);
         goto EndOfUseDenseTest;
@@ -2633,7 +2633,7 @@ static int LuaCreateResonantSpectra(lua_State *L)
       }
       WaveFunctionAddUnionBasis(&TpsiSum, Opsi);
       WaveFunctionFree(&Opsi);
-      if (Options.DenseMethod==False) if(TpsiSum.N>Options.Settings.DenseBorder)
+      if (Options.DenseMethod==false) if(TpsiSum.N>Options.Settings.DenseBorder)
       {
         WaveFunctionFree(&TpsiSum);
         WaveFunctionFree(&HTHTpsiDenseBasis);
@@ -2656,7 +2656,7 @@ static int LuaCreateResonantSpectra(lua_State *L)
         goto EndOfUseDenseTest;
       }
       WaveFunctionFree(&HTHTpsiDenseBasis);
-      if (Options.DenseMethod==False) if(Opsi.N>Options.Settings.DenseBorder)
+      if (Options.DenseMethod==false) if(Opsi.N>Options.Settings.DenseBorder)
       {
         WaveFunctionFree(&Opsi);
         WaveFunctionFree(&HTpsiDenseBasis);
@@ -2666,12 +2666,12 @@ static int LuaCreateResonantSpectra(lua_State *L)
       HTHTpsiDenseBasis=Opsi;
     }
     // finsihed all tests and psiDenseBasis still fits
-    Options.DenseMethod=True;
+    Options.DenseMethod=true;
   EndOfUseDenseTest:;
   }
-  if(Options.DenseMethod==True)
+  if(Options.DenseMethod==true)
   {
-    if(Options.Tensor==False)
+    if(Options.Tensor==false)
     {
       ResonantSpectraDense(&HTpsiDenseBasis,&HTHTpsiDenseBasis,*H1, *H2, T1, Options.NT1, T2, Options.NT2, psi, Options.Npsi, &(Spec->Spec), Options.E01, Options.E02, &(Options.Settings));
       Spec->NSpectra=Options.NT1*Options.NT2*Options.Npsi*(Options.Settings.NE1+1);
@@ -2684,7 +2684,7 @@ static int LuaCreateResonantSpectra(lua_State *L)
   else
   {
     // use sparse methods
-    if(Options.Tensor==False)
+    if(Options.Tensor==false)
     {
       for(ipsi=0;ipsi<Options.Npsi;ipsi++)
       {
@@ -2899,7 +2899,7 @@ static int LuaMeanFieldOperator(lua_State *L)
   MatrixType *Rho;
   struct
   {
-    Bool AddDFTSelfInteraction=False;
+    bool AddDFTSelfInteraction=false;
   } Options;
   uint32_t len = (uint32_t)lua_gettop(L);
   LuaOptionsType LuaOptions[]={
@@ -2982,7 +2982,7 @@ static int LuaOperatorToMatrix(lua_State *L)
 {
   struct
   {
-    Bool AddDFTSelfInteraction=False;
+    bool AddDFTSelfInteraction=false;
   } Options;
   OperatorType *H;
   uint32_t len;
@@ -3054,7 +3054,7 @@ static int LuaOperatorToMatrix(lua_State *L)
           lua_pop(L,1);
           CompactMatrixType *Rho, HMat;
           Rho = (CompactMatrixType *) luaL_checkCompactMatrix(L, 2);
-          if(Options.AddDFTSelfInteraction==True)
+          if(Options.AddDFTSelfInteraction==true)
           {
             MeanFieldOperatorOneElectronMatrixWithDFTInteraction(H, &HMat, *Rho);
           }
@@ -3088,12 +3088,12 @@ static int LuaEvolveToGroundstate(lua_State * L)
     uint32_t Npsi;
     double zero;
     double epsilon;
-    Bool restrictions;
+    bool restrictions;
     DeterminantRestrictionType DeterminantRestrictions;
   } Options;
   Options.zero=100*DBL_EPSILON;
   Options.epsilon=10000*DBL_EPSILON;
-  Options.restrictions=False;
+  Options.restrictions=false;
   OperatorType *Opp;
   WaveFunctionType *psi,*temp;
   uint32_t i,len;
@@ -3126,7 +3126,7 @@ static int LuaEvolveToGroundstate(lua_State * L)
   if(len==3)
   {
     LuaCheckOptions(L, -1, LuaEvolveToGroundStateOptions);
-    if(Options.DeterminantRestrictions.N!=0)Options.restrictions=True;
+    if(Options.DeterminantRestrictions.N!=0)Options.restrictions=true;
   }
   /* calculate groundstate */
   for (i = 0; i < Options.Npsi; i++)
@@ -3205,14 +3205,14 @@ static int LuaEigensystem(lua_State * L)
   struct
   {
     ConvergenceSettingsType Settings;
-    Bool restrictions;
-    Bool ExpandBasis;
+    bool restrictions;
+    bool ExpandBasis;
     uint32_t NBitsKey;
     DeterminantRestrictionType DeterminantRestrictions;
   } Options;
   Options.Settings=InitConvergenceSettings();
-  Options.restrictions=False;
-  Options.ExpandBasis=True;
+  Options.restrictions=false;
+  Options.ExpandBasis=true;
   Options.DeterminantRestrictions.N=0;
   OperatorType *Opp;
   DeterminantRestrictionType StartRestrictions;
@@ -3299,7 +3299,7 @@ static int LuaEigensystem(lua_State * L)
   if((len==4)||((len==3)&&(!(QStartRestrictions))))
   {
     LuaCheckOptions(L, -1, LuaEigensystemOptions);
-    if(Options.DeterminantRestrictions.N!=0)Options.restrictions=True;
+    if(Options.DeterminantRestrictions.N!=0)Options.restrictions=true;
     Options.Settings.DenseBorder = Max(Options.Settings.DenseBorder,Npsi);
   }
   if(QStartRestrictions)
@@ -3342,7 +3342,7 @@ static int LuaEigensystem(lua_State * L)
     }
   }
   /* calculate groundstate */
-  if(Options.ExpandBasis==True)
+  if(Options.ExpandBasis==true)
   {
     BlockGroundState(Opp, Npsi, &(Options.Settings) , StartRestrictions, Options.DeterminantRestrictions, psi, Options.Settings.NBitsKey);
   }
@@ -3420,24 +3420,24 @@ static int LuaImpurityGreensFunction(lua_State * L)
   {
     ConvergenceSettingsType Settings;
     uint32_t NT;
-    Bool Tensor;
+    bool Tensor;
     uint32_t OrderV;
     uint32_t LevelCon;
     uint32_t LevelVal;
     WaveFunctionType *psi;
     uint32_t Npsi;
-    Bool RecalculatePsi;
-    Bool RecalculateNIO;
+    bool RecalculatePsi;
+    bool RecalculateNIO;
   } Options;
   Options.Settings=InitConvergenceSettings();
-  Options.Tensor=False;
+  Options.Tensor=false;
   Options.OrderV=1;
   Options.LevelCon=1;
   Options.LevelVal=1;
   Options.psi=NULL;
   Options.Npsi=1;
-  Options.RecalculatePsi=True;
-  Options.RecalculateNIO=True;
+  Options.RecalculatePsi=true;
+  Options.RecalculateNIO=true;
   LuaOptionsType LuaImpurityGreensFunctionOptions[]={
     {"NTri","uint32_t",&(Options.Settings.NTri)},
     {"NBitsKey","uint32_t",&(Options.Settings.NBitsKey)},
@@ -3490,10 +3490,10 @@ static int LuaImpurityGreensFunction(lua_State * L)
   {
     LuaCheckOptions(L, 5, LuaImpurityGreensFunctionOptions);
   }
-  if((Options.RecalculatePsi==False)&&(psi==NULL)) return luaL_error(L, "Error ImpurityGreensFunction called option RecalculatePsi = false but without a wave-function\n");
-  if((Options.RecalculateNIO==False)&&((DeltaBath->type|32)!='n')) return luaL_error(L, "Error ImpurityGreensFunction called option RecalculateNIO = false but without a hybridization function in natural impurity basis format\n");
+  if((Options.RecalculatePsi==false)&&(psi==NULL)) return luaL_error(L, "Error ImpurityGreensFunction called option RecalculatePsi = false but without a wave-function\n");
+  if((Options.RecalculateNIO==false)&&((DeltaBath->type|32)!='n')) return luaL_error(L, "Error ImpurityGreensFunction called option RecalculateNIO = false but without a hybridization function in natural impurity basis format\n");
   // calculate ground-state and natural impurity orbital representation
-  if((Options.RecalculatePsi==True)&&(Options.RecalculateNIO==True))
+  if((Options.RecalculatePsi==true)&&(Options.RecalculateNIO==true))
   {
     if(ImpurityGroundState(H, DeltaBath, Options.Npsi, &Options.Settings, psi, DeltaBathNIO))
     {
@@ -3504,7 +3504,7 @@ static int LuaImpurityGreensFunction(lua_State * L)
 
 
   // calculate Greens function
-  if(Options.Tensor==True)
+  if(Options.Tensor==true)
   {
     // call tensor form
 
@@ -3548,7 +3548,7 @@ static int LuaOrthonormalize(lua_State *L)
     const char* Method;
     const char* Order;
     double SingularValue;
-    Bool ReduceDimension;
+    bool ReduceDimension;
   } Options;
   LuaOptionsType LuaOrthonormalizeOptions[]={
     {"Method",          "char*",  &(Options.Method)},
@@ -3559,7 +3559,7 @@ static int LuaOrthonormalize(lua_State *L)
   Options.Method="Lowdin";
   Options.Order="Row";
   Options.SingularValue=1E-12;
-  Options.ReduceDimension=True;
+  Options.ReduceDimension=true;
   /* free garbage full cycle*/
   if(L->l_G->gcrunning) lua_gc(L, LUA_GCCOLLECT, 0);
   // get options when defined
@@ -3711,8 +3711,8 @@ static int LuaBlockBandDiagonalize(lua_State *L)
     double SingularValue;
     uint32_t NTri;
     uint32_t NOrtho;
-    Bool ReOrthogonalize;
-    Bool ReturnT;
+    bool ReOrthogonalize;
+    bool ReturnT;
   } Options;
   LuaOptionsType LuaBlockBandDiagonalizeOptions[]={
     {"SingularValue",   "char*",    &(Options.SingularValue)},
@@ -3724,8 +3724,8 @@ static int LuaBlockBandDiagonalize(lua_State *L)
   Options.SingularValue=1E-6;
   Options.NTri  =200;
   Options.NOrtho=UINT32_MAX;
-  Options.ReOrthogonalize=True;
-  Options.ReturnT=True;
+  Options.ReOrthogonalize=true;
+  Options.ReturnT=true;
   // get options when defined
   len = (uint32_t)lua_gettop(L);
   if(len>3)
@@ -3780,7 +3780,7 @@ static int LuaBlockBandDiagonalize(lua_State *L)
     FreeBlockTridiagonalMatrix(&B);
     FreeCompactMatrix(M);
     free(M);
-    if(Options.ReturnT==True)
+    if(Options.ReturnT==true)
     {
       LuaPushTable_CompactMatrixType(L, vec);
       FreeCompactMatrix(vec);
@@ -3892,7 +3892,7 @@ static int LuaDensityMatrix(lua_State *L)
   uint16_t *jindex;
   WaveFunctionType *psi,**psiList;
   MatrixType Rho, *RhoMat;
-  Bool tensor=False;
+  bool tensor=false;
   LuaOptionsType LuaDensityMatrixOptions[]={
     {"Tensor", "bool", &(tensor)},
     {NULL, NULL, NULL}};
@@ -3940,7 +3940,7 @@ static int LuaDensityMatrix(lua_State *L)
     {
       case LUA_TTABLE:
       {
-        if(tensor==False)
+        if(tensor==false)
         {
           psiList=luaL_checkarray_PointerWaveFunctionType(L, 1, &Npsi);
           lua_createtable(L,Npsi,0);
@@ -3979,7 +3979,7 @@ static int LuaDensityMatrix(lua_State *L)
       }
       case LUA_TUSERDATA:
       {
-        if(tensor==False)
+        if(tensor==false)
         {
           if (luaL_testudata(L, 1, "Wavefunction_Type") != NULL)
           {
@@ -3991,7 +3991,7 @@ static int LuaDensityMatrix(lua_State *L)
           }
           return luaL_error(L, "Error: DensityMatrix expects a function or a list of functions on the first position\n");
         }
-        return luaL_error(L, "Error: DensityMatrix expects a list of functions on the first position when the option {\"Tensor\",True} is set\n");
+        return luaL_error(L, "Error: DensityMatrix expects a list of functions on the first position when the option {\"Tensor\",true} is set\n");
       }
     }
     return luaL_error(L, "Error: DensityMatrix expects a function or a list of functions on the first position\n");
@@ -4012,7 +4012,7 @@ static int LuaDensityMatrix(lua_State *L)
         {
           case LUA_TTABLE:
           {
-            if(tensor==False)
+            if(tensor==false)
             {
               psiList=luaL_checkarray_PointerWaveFunctionType(L, 1, &Npsi);
               lua_createtable(L,Npsi,0);
@@ -4051,7 +4051,7 @@ static int LuaDensityMatrix(lua_State *L)
           }
           case LUA_TUSERDATA:
           {
-            if(tensor==False)
+            if(tensor==false)
             {
               if (luaL_testudata(L, 1, "Wavefunction_Type") != NULL)
               {
@@ -4063,7 +4063,7 @@ static int LuaDensityMatrix(lua_State *L)
               }
               return luaL_error(L, "Error: DensityMatrix expects a function or a list of functions on the first position\n");
             }
-            return luaL_error(L, "Error: DensityMatrix expects a list of functions on the first position when the option {\"Tensor\",True} is set\n");
+            return luaL_error(L, "Error: DensityMatrix expects a list of functions on the first position when the option {\"Tensor\",true} is set\n");
           }
         }
         return luaL_error(L, "Error: DensityMatrix expects a function or a list of functions on the first position\n");
@@ -4090,7 +4090,7 @@ static int LuaDensityMatrix(lua_State *L)
           }
           case LUA_TUSERDATA:
           {
-            if(tensor==False)
+            if(tensor==false)
             {
               if (luaL_testudata(L, 1, "Wavefunction_Type") != NULL)
               {
@@ -4102,7 +4102,7 @@ static int LuaDensityMatrix(lua_State *L)
               }
               return luaL_error(L, "Error: DensityMatrix expects a function or a list of functions on the first position\n");
             }
-            return luaL_error(L, "Error: DensityMatrix expects a list of functions on the first position when the option {\"Tensor\",True} is set\n");
+            return luaL_error(L, "Error: DensityMatrix expects a list of functions on the first position when the option {\"Tensor\",true} is set\n");
           }
         }
         return luaL_error(L, "Error: DensityMatrix expects a function or a list of functions on the first position\n");
@@ -4314,7 +4314,7 @@ void lua_setAtomicOrbitalIndices(lua_State *L, string orb, int * NF, int indTabl
 //Optional Input is a grouping of orbitals, like { {"unexcitedStates",{"1s","2s"} } , {"excitedStates",{"2p","3s"} } }
 //Output 1 is a list {"1s"={0,1},"2s"={2,3},"2p"={4,5,6,7,8,9},"3s"={10,11},"unexcitedStates"={0,1,2,3},"All"={0,1,2,3,4,5,6,7,8,9,10,11},"1s_Dn"={0},"1s_Up"={1}, ...}
 //Output 2 is the number of fermionic modes NF.
-static int lua_createAtomicIndices(lua_State *L, Bool isDict)
+static int lua_createAtomicIndices(lua_State *L, bool isDict)
 {
 	vector<string> orbitals;
 	uint32_t orbListLen;
@@ -4328,12 +4328,12 @@ static int lua_createAtomicIndices(lua_State *L, Bool isDict)
 	int i;
   struct
   {
-    Bool kappas;
+    bool kappas;
   } Options;
   LuaOptionsType LuaCreateAtomicIndicesOptions[]={
     {"kappas",          "bool",  &(Options.kappas)},
     {NULL, NULL, NULL}};
-  Options.kappas=False;
+  Options.kappas=false;
 	orbitals = luaL_checkvector_string(L,1);
 	orbListLen = orbitals.size();
 	uint32_t numberOfInputs = (uint32_t) lua_gettop(L);
@@ -4343,7 +4343,7 @@ static int lua_createAtomicIndices(lua_State *L, Bool isDict)
   {
     if(LuaTestOptionsList(L, -1))
     {
-      LuaCheckOptions(L, -1, LuaCreateAtomicIndicesOptions); //TODO: muss ich hier noch testen obs sich um einen Bool handelt?
+      LuaCheckOptions(L, -1, LuaCreateAtomicIndicesOptions); //TODO: muss ich hier noch testen obs sich um einen bool handelt?
     }
     else
     {
@@ -4424,13 +4424,13 @@ static int lua_createAtomicIndices(lua_State *L, Bool isDict)
 
 static int LuaCreateAtomicIndicesDict(lua_State *L)
 {
-	return lua_createAtomicIndices(L,True);
+	return lua_createAtomicIndices(L,true);
 }
 
 
 static int LuaCreateAtomicIndicesList(lua_State *L)
 {
-	return lua_createAtomicIndices(L,False);
+	return lua_createAtomicIndices(L,false);
 }
 
 static int LuaPartialOperator(lua_State *L)
@@ -4468,7 +4468,7 @@ static int LuaPartialMeanFieldOperator(lua_State *L)
 	uint32_t len = (uint32_t) lua_gettop(L);
 	struct
 	{
-		Bool AddDFTSelfInteraction = False;
+		bool AddDFTSelfInteraction = false;
 	} Options;
 	LuaOptionsType LuaOptions[] = {
 			{ "AddDFTSelfInteraction", "bool", &(Options.AddDFTSelfInteraction) },

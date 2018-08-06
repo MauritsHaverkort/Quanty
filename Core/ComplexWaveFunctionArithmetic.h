@@ -32,10 +32,10 @@ void MakeComplexFunctionRealWhenNormSmall(WaveFunctionType * const a, const doub
 void ComplexWaveFunctionOrthogonalizeSameBasis(WaveFunctionType * const psi, const WaveFunctionType * const OtherPsi, const uint32_t Npsi);
 void ComplexWaveFunctionOrthogonalizeConserveBasis(WaveFunctionType * const psi, const WaveFunctionType * const OtherPsi, const uint32_t Npsi);
 uint32_t ComplexWaveFunctionOrthogonalize(WaveFunctionType * const psi, const WaveFunctionType * const OtherPsi, const uint32_t Npsi);
-uint32_t ComplexWaveFunctionListSVDOrthogonalizeSameBasis(WaveFunctionType * const psilist, WaveFunctionType * const psilistOrtho, uint32_t * const Npsi, const double SingularValue, const Bool ReduceDimension);
-uint32_t ComplexWaveFunctionListSVDOrthogonalize(WaveFunctionType * const psilist, WaveFunctionType * const psilistOrtho, uint32_t * const Npsi, const double SingularValue, const Bool ReduceDimension);
-uint32_t ComplexWaveFunctionListOrthogonalizeSameBasis(WaveFunctionType * const psilist, uint32_t * const Npsi, const double SingularValue, const Bool ReduceDimension);
-uint32_t ComplexWaveFunctionListOrthogonalize(WaveFunctionType * const psilist, uint32_t * const Npsi, const double SingularValue, const Bool ReduceDimension);
+uint32_t ComplexWaveFunctionListSVDOrthogonalizeSameBasis(WaveFunctionType * const psilist, WaveFunctionType * const psilistOrtho, uint32_t * const Npsi, const double SingularValue, const bool ReduceDimension);
+uint32_t ComplexWaveFunctionListSVDOrthogonalize(WaveFunctionType * const psilist, WaveFunctionType * const psilistOrtho, uint32_t * const Npsi, const double SingularValue, const bool ReduceDimension);
+uint32_t ComplexWaveFunctionListOrthogonalizeSameBasis(WaveFunctionType * const psilist, uint32_t * const Npsi, const double SingularValue, const bool ReduceDimension);
+uint32_t ComplexWaveFunctionListOrthogonalize(WaveFunctionType * const psilist, uint32_t * const Npsi, const double SingularValue, const bool ReduceDimension);
 uint32_t ComplexMappedDetToWaveFunction(WaveFunctionType * const A, uint8_t *Det, MatrixType const U);
 uint32_t MappedWaveFunctionAddCCC(WaveFunctionType * const A, WaveFunctionType const B, MatrixType const U);
 uint32_t MappedWaveFunctionAddCCR(WaveFunctionType * const A, WaveFunctionType const B, MatrixType const U);

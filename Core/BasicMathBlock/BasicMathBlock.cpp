@@ -113,11 +113,11 @@ uint32_t FreeBlockMatrixFromLua(ResponsefunctionType *M)
 ResponsefunctionType *ConvertBlockMatrix(ResponsefunctionType *M, const char type, double T)
 {
   ResponsefunctionType *res;
-  if(M->Block!=True) printf("ERROR: called ConvertBlockMatrix on a ResponsefunctionType that is not in Block Form.\n");
+  if(M->Block!=true) printf("ERROR: called ConvertBlockMatrix on a ResponsefunctionType that is not in Block Form.\n");
   res = (ResponsefunctionType*)malloc(sizeof(ResponsefunctionType));
   res->NSuggestedGridPoints = 0;
   res->type = type;
-  res->Block = True;
+  res->Block = true;
   res->NSuggestedGridPoints=M->NSuggestedGridPoints;
   if(res->NSuggestedGridPoints==0)
   {

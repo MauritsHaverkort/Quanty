@@ -23,12 +23,12 @@ int StringReplace(char * String, char in, char out)
  *  scans the next value category or token from a CTRL file
  *  the character "=" is treated the same as the space (" ") and enter ("\n") characters
  */
-int fscanfCTRL(FILE * stream, char * str, Bool * token)
+int fscanfCTRL(FILE * stream, char * str, bool * token)
 {
   char strlong[1024];
   int i,imax,retval;
   long irest;
-  *token=False;
+  *token=false;
   retval=fscanf(stream, "%s", strlong);
   if(retval==1)
   {
@@ -37,7 +37,7 @@ int fscanfCTRL(FILE * stream, char * str, Bool * token)
     {
       if(strlong[i]=='=')
       {
-        *token=True;
+        *token=true;
         strlong[i]='\0';
         irest=(long)(i-imax+1);
         fseek(stream, irest, SEEK_CUR);
@@ -201,7 +201,7 @@ uint32_t OrderAndCheckStuttgartCTRL(StuttgartCTRL * O)
   return 0;
 }
 
-uint32_t StreamReadStuttgartCTRLBool(FILE * stream, uint32_t N, Bool * out)
+uint32_t StreamReadStuttgartCTRLbool(FILE * stream, uint32_t N, bool * out)
 {
   char inbool;
   uint32_t i;
@@ -213,8 +213,8 @@ uint32_t StreamReadStuttgartCTRLBool(FILE * stream, uint32_t N, Bool * out)
       printf("Error while reading boolean from CTRL file\n");
       return 1;
     }
-    if(inbool=='T'){out[i]=True;}
-    else if(inbool=='F'){out[i]=False;}
+    if(inbool=='T'){out[i]=true;}
+    else if(inbool=='F'){out[i]=false;}
     else
     {
       printf("Error while reading boolean from CTRL file, expected T or F, found %c\n",inbool);
@@ -272,7 +272,7 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
   const char * const Categories[] = StuttgartCTRLCategories;
   char str[128];
   int Continue=1, ContinueCategory, iCategory, i,LMXnow;
-  Bool ForSureAToken;
+  bool ForSureAToken;
   int Nlocalcs=-1;
   InitializeStuttgartCTRL(O);
   if(fscanfCTRL(stream, str, &ForSureAToken)!=1) return 0;
@@ -293,7 +293,7 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
         Continue=0;
         break;
       }
-      if((ForSureAToken==False)&&(QStuttgartCategory(str)))
+      if((ForSureAToken==false)&&(QStuttgartCategory(str)))
       {
         ContinueCategory=0;
         break;
@@ -311,7 +311,7 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
         case 3: /* IO */
           if(strcmp(str, "HELP")==0)
           {
-            StreamReadStuttgartCTRLBool(stream, 1, &(O->IO.HELP));
+            StreamReadStuttgartCTRLbool(stream, 1, &(O->IO.HELP));
           }
           else if(strcmp(str, "VERBOS")==0)
           {
@@ -319,11 +319,11 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
           }
           else if(strcmp(str, "WKP")==0)
           {
-            StreamReadStuttgartCTRLBool(stream, 1, &(O->IO.WKP));
+            StreamReadStuttgartCTRLbool(stream, 1, &(O->IO.WKP));
           }
           else if(strcmp(str, "IACTIV")==0)
           {
-            StreamReadStuttgartCTRLBool(stream, 1, &(O->IO.IACTIV));
+            StreamReadStuttgartCTRLbool(stream, 1, &(O->IO.IACTIV));
           }
           else if(strcmp(str, "ERRTOL")==0)
           {
@@ -387,7 +387,7 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
           }
           else if(strcmp(str, "FIXLAT")==0)
           {
-            StreamReadStuttgartCTRLBool(stream, 1, &(O->STRUC.FIXLAT));
+            StreamReadStuttgartCTRLbool(stream, 1, &(O->STRUC.FIXLAT));
           }
           else
           {
@@ -397,55 +397,55 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
         case 6: /* OPTIONS */
           if(strcmp(str, "REL")==0)
           {
-            StreamReadStuttgartCTRLBool(stream, 1, &(O->OPTIONS.REL));
+            StreamReadStuttgartCTRLbool(stream, 1, &(O->OPTIONS.REL));
           }
           else if(strcmp(str, "CCOR")==0)
           {
-            StreamReadStuttgartCTRLBool(stream, 1, &(O->OPTIONS.CCOR));
+            StreamReadStuttgartCTRLbool(stream, 1, &(O->OPTIONS.CCOR));
           }
           else if(strcmp(str, "NONLOC")==0)
           {
-            StreamReadStuttgartCTRLBool(stream, 1, &(O->OPTIONS.NONLOC));
+            StreamReadStuttgartCTRLbool(stream, 1, &(O->OPTIONS.NONLOC));
           }
           else if(strcmp(str, "CORDRD")==0)
           {
-            StreamReadStuttgartCTRLBool(stream, 1, &(O->OPTIONS.CORDRD));
+            StreamReadStuttgartCTRLbool(stream, 1, &(O->OPTIONS.CORDRD));
           }
           else if(strcmp(str, "CARTESIAN")==0)
           {
-            StreamReadStuttgartCTRLBool(stream, 1, &(O->OPTIONS.CARTESIAN));
+            StreamReadStuttgartCTRLbool(stream, 1, &(O->OPTIONS.CARTESIAN));
           }
           else if(strcmp(str, "CHARGE")==0)
           {
-            StreamReadStuttgartCTRLBool(stream, 1, &(O->OPTIONS.CHARGE));
+            StreamReadStuttgartCTRLbool(stream, 1, &(O->OPTIONS.CHARGE));
           }
           else if(strcmp(str, "FATBAND")==0)
           {
-            StreamReadStuttgartCTRLBool(stream, 1, &(O->OPTIONS.FATBAND));
+            StreamReadStuttgartCTRLbool(stream, 1, &(O->OPTIONS.FATBAND));
           }
           else if(strcmp(str, "AFM")==0)
           {
-            StreamReadStuttgartCTRLBool(stream, 1, &(O->OPTIONS.AFM));
+            StreamReadStuttgartCTRLbool(stream, 1, &(O->OPTIONS.AFM));
           }
           else if(strcmp(str, "FS")==0)
           {
-            StreamReadStuttgartCTRLBool(stream, 1, &(O->OPTIONS.FS));
+            StreamReadStuttgartCTRLbool(stream, 1, &(O->OPTIONS.FS));
           }
           else if(strcmp(str, "OVLCOR")==0)
           {
-            StreamReadStuttgartCTRLBool(stream, 1, &(O->OPTIONS.OVLCOR));
+            StreamReadStuttgartCTRLbool(stream, 1, &(O->OPTIONS.OVLCOR));
           }
           else if(strcmp(str, "WRIBAS")==0)
           {
-            StreamReadStuttgartCTRLBool(stream, 1, &(O->OPTIONS.WRIBAS));
+            StreamReadStuttgartCTRLbool(stream, 1, &(O->OPTIONS.WRIBAS));
           }
           else if(strcmp(str, "SEWALD")==0)
           {
-            StreamReadStuttgartCTRLBool(stream, 1, &(O->OPTIONS.SEWALD));
+            StreamReadStuttgartCTRLbool(stream, 1, &(O->OPTIONS.SEWALD));
           }
           else if(strcmp(str, "LOCALCS")==0)
           {
-            StreamReadStuttgartCTRLBool(stream, 1, &(O->OPTIONS.LOCALCS));
+            StreamReadStuttgartCTRLbool(stream, 1, &(O->OPTIONS.LOCALCS));
           }
           else if(strcmp(str, "NRXC")==0)
           {
@@ -477,7 +477,7 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
           {
             if(O->CLASS.N==-1)
             {
-              O->CLASS.NEWNAM= (Bool*)malloc(64*sizeof(Bool));
+              O->CLASS.NEWNAM= (bool*)malloc(64*sizeof(bool));
               O->CLASS.ATOM= (char**)malloc(64*sizeof(char*));
               O->CLASS.Z= (int*)malloc(64*sizeof(int));
               O->CLASS.R= (double*)malloc(64*sizeof(double));
@@ -498,7 +498,7 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
             O->CLASS.N++;
             if((O->CLASS.N%64)==0)
             {
-              O->CLASS.NEWNAM= (Bool*)realloc(O->CLASS.NEWNAM, (O->CLASS.N+64)*sizeof(Bool));
+              O->CLASS.NEWNAM= (bool*)realloc(O->CLASS.NEWNAM, (O->CLASS.N+64)*sizeof(bool));
               O->CLASS.ATOM= (char**)realloc(O->CLASS.ATOM, (O->CLASS.N+64)*sizeof(char*));
               O->CLASS.Z= (int*)realloc(O->CLASS.Z, (O->CLASS.N+64)*sizeof(int));
               O->CLASS.R= (double*)realloc(O->CLASS.R, (O->CLASS.N+64)*sizeof(double));
@@ -523,7 +523,7 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
           }
           else if(strcmp(str, "NEWNAM")==0)
           {
-            StreamReadStuttgartCTRLBool(stream, 1, &(O->CLASS.NEWNAM[O->CLASS.N-1]));
+            StreamReadStuttgartCTRLbool(stream, 1, &(O->CLASS.NEWNAM[O->CLASS.N-1]));
           }
           else if(strcmp(str, "Z")==0)
           {
@@ -655,7 +655,7 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
         case 9: /* SYMGRP */
           if(strcmp(str, "USESYM")==0)
           {
-            StreamReadStuttgartCTRLBool(stream, 1, &(O->SYMGRP.USESYM));
+            StreamReadStuttgartCTRLbool(stream, 1, &(O->SYMGRP.USESYM));
           }
           else if(strcmp(str, "NGEN")==0)
           {
@@ -691,7 +691,7 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
         case 10: /* SCALE */
           if(strcmp(str, "SCLWSR")==0)
           {
-            StreamReadStuttgartCTRLBool(stream, 1, &(O->SCALE.SCLWSR));
+            StreamReadStuttgartCTRLbool(stream, 1, &(O->SCALE.SCLWSR));
           }
           else if(strcmp(str, "FACVOL")==0)
           {
@@ -717,15 +717,15 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
         case 11: /* STR */
           if(strcmp(str, "DOWATS")==0)
           {
-            StreamReadStuttgartCTRLBool(stream, 1, &(O->STR.DOWATS));
+            StreamReadStuttgartCTRLbool(stream, 1, &(O->STR.DOWATS));
           }
           else if(strcmp(str, "DONALP")==0)
           {
-            StreamReadStuttgartCTRLBool(stream, 1, &(O->STR.DONALP));
+            StreamReadStuttgartCTRLbool(stream, 1, &(O->STR.DONALP));
           }
           else if(strcmp(str, "NOCALC")==0)
           {
-            StreamReadStuttgartCTRLBool(stream, 1, &(O->STR.NOCALC));
+            StreamReadStuttgartCTRLbool(stream, 1, &(O->STR.NOCALC));
           }
           else if(strcmp(str, "IALPHA")==0)
           {
@@ -836,11 +836,11 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
         case 12: /* BZ */
           if(strcmp(str, "TETRA")==0)
           {
-            StreamReadStuttgartCTRLBool(stream, 1, &(O->BZ.TETRA));
+            StreamReadStuttgartCTRLbool(stream, 1, &(O->BZ.TETRA));
           }
           else if(strcmp(str, "METAL")==0)
           {
-            StreamReadStuttgartCTRLBool(stream, 1, &(O->BZ.METAL));
+            StreamReadStuttgartCTRLbool(stream, 1, &(O->BZ.METAL));
           }
           else if(strcmp(str, "NKABC")==0)
           {
@@ -972,19 +972,19 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
         case 16: /* START */
           if(strcmp(str, "BROY")==0)
           {
-            StreamReadStuttgartCTRLBool(stream, 1, &(O->START.BROY));
+            StreamReadStuttgartCTRLbool(stream, 1, &(O->START.BROY));
           }
           else if(strcmp(str, "FREE")==0)
           {
-            StreamReadStuttgartCTRLBool(stream, 1, &(O->START.FREE));
+            StreamReadStuttgartCTRLbool(stream, 1, &(O->START.FREE));
           }
           else if(strcmp(str, "BEGMOM")==0)
           {
-            StreamReadStuttgartCTRLBool(stream, 1, &(O->START.BEGMOM));
+            StreamReadStuttgartCTRLbool(stream, 1, &(O->START.BEGMOM));
           }
           else if(strcmp(str, "CNTROL")==0)
           {
-            StreamReadStuttgartCTRLBool(stream, 1, &(O->START.CNTROL));
+            StreamReadStuttgartCTRLbool(stream, 1, &(O->START.CNTROL));
           }
           else if(strcmp(str, "NIT")==0)
           {
@@ -1125,7 +1125,7 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
         case 17: /* HARTREE */
           if(strcmp(str, "BEGATOM")==0)
           {
-            StreamReadStuttgartCTRLBool(stream, 1, &(O->HARTREE.BEGATOM));
+            StreamReadStuttgartCTRLbool(stream, 1, &(O->HARTREE.BEGATOM));
           }
           else if(strcmp(str, "LT1")==0)
           {
@@ -1201,23 +1201,23 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
         case 19: /* CHARGE */
           if(strcmp(str, "LMTODAT")==0)
           {
-            StreamReadStuttgartCTRLBool(stream, 1, &(O->CHARGE.LMTODAT));
+            StreamReadStuttgartCTRLbool(stream, 1, &(O->CHARGE.LMTODAT));
           }
           else if(strcmp(str, "CHARWIN")==0)
           {
-            StreamReadStuttgartCTRLBool(stream, 1, &(O->CHARGE.LMTODAT));
+            StreamReadStuttgartCTRLbool(stream, 1, &(O->CHARGE.LMTODAT));
           }
           else if(strcmp(str, "ELF")==0)
           {
-            StreamReadStuttgartCTRLBool(stream, 1, &(O->CHARGE.LMTODAT));
+            StreamReadStuttgartCTRLbool(stream, 1, &(O->CHARGE.LMTODAT));
           }
           else if(strcmp(str, "ADDCOR")==0)
           {
-            StreamReadStuttgartCTRLBool(stream, 1, &(O->CHARGE.LMTODAT));
+            StreamReadStuttgartCTRLbool(stream, 1, &(O->CHARGE.LMTODAT));
           }
           else if(strcmp(str, "SPINDENS")==0)
           {
-            StreamReadStuttgartCTRLBool(stream, 1, &(O->CHARGE.LMTODAT));
+            StreamReadStuttgartCTRLbool(stream, 1, &(O->CHARGE.LMTODAT));
           }
           else if(strcmp(str, "EMIN")==0)
           {
@@ -1257,7 +1257,7 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
         case 21: /* SCELL */
           if(strcmp(str, "EQUIV")==0)
           {
-            StreamReadStuttgartCTRLBool(stream, 1, &(O->SCELL.EQUIV));
+            StreamReadStuttgartCTRLbool(stream, 1, &(O->SCELL.EQUIV));
           }
           else if(strcmp(str, "PLAT")==0)
           {
@@ -1271,7 +1271,7 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
         case 22: /* RHOFIT */
           if(strcmp(str, "FIT")==0)
           {
-            StreamReadStuttgartCTRLBool(stream, 1, &(O->RHOFIT.FIT));
+            StreamReadStuttgartCTRLbool(stream, 1, &(O->RHOFIT.FIT));
           }
           else if(strcmp(str, "OUTPUT")==0)
           {
@@ -1374,11 +1374,11 @@ uint32_t StreamReadStuttgartCTRL(StuttgartCTRL * O, FILE * stream)
           }
           else if(strcmp(str, "eV")==0)
           {
-            StreamReadStuttgartCTRLBool(stream, 1, &(O->NMTO.eV));
+            StreamReadStuttgartCTRLbool(stream, 1, &(O->NMTO.eV));
           }
           else if(strcmp(str, "ORTHO")==0)
           {
-            StreamReadStuttgartCTRLBool(stream, 1, &(O->NMTO.ORTHO));
+            StreamReadStuttgartCTRLbool(stream, 1, &(O->NMTO.ORTHO));
           }
           else
           {
@@ -1485,10 +1485,10 @@ uint32_t StreamReadStuttgartHAMR(StuttgartHAMR * O, FILE * stream)
     printf("In function StreamReadStuttgartHAMR initial reading of file failed\n");
     return 1;
   }
-  O->eV=False;
+  O->eV=false;
   while (ContinueLine)
   {
-    if(!(strstr(ReadLine, "eV")==NULL))O->eV=True;
+    if(!(strstr(ReadLine, "eV")==NULL))O->eV=true;
     if(strncmp(ReadLine,"INT",3)==0)
     {
       /* start of new element in HAMR make sure enough space allocated */

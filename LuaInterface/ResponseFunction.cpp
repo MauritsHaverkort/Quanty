@@ -60,7 +60,7 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
   {
     return luaL_error(L, "Error in ChangeType, second argument needs to be a string containgin either: \"And\", \"Tri\", \"ListOfPoles\", \"NaturalImpurityOrbital\", \"Userdata\", \"Table\" and not %s\n",convert);
   }
-  if(Min->Block==True)
+  if(Min->Block==true)
   {
     Mout = ConvertBlockMatrix(Min, type, T);
   }
@@ -104,7 +104,7 @@ static int LuaResponseFunctionToTable(lua_State *L)
     case 'L':
     case 'l':
     {
-      if(M->Block==True)
+      if(M->Block==true)
       {
         LuaPushTable_BlockListOfPoles(L, (BlockListOfPoles*)M->data);
       }
@@ -117,7 +117,7 @@ static int LuaResponseFunctionToTable(lua_State *L)
     case 'A':
     case 'a':
     {
-      if(M->Block==True)
+      if(M->Block==true)
       {
         LuaPushTable_BlockAndersonMatrixType(L, M->data);
       }
@@ -130,7 +130,7 @@ static int LuaResponseFunctionToTable(lua_State *L)
     case 'T':
     case 't':
     {
-      if(M->Block==True)
+      if(M->Block==true)
       {
         LuaPushTable_BlockTriDiagonalMatrixType(L, M->data);
       }
@@ -143,7 +143,7 @@ static int LuaResponseFunctionToTable(lua_State *L)
     case 'N':
     case 'n':
     {
-      if(M->Block==True)
+      if(M->Block==true)
       {
         LuaPushTable_BlockNaturalImpurityOrbital(L, M->data);
       }
@@ -225,7 +225,7 @@ static int LuaResponseFunctionEigensystem(lua_State *L)
     case 'L':
     case 'l':
     {
-      if(M->Block==True)
+      if(M->Block==true)
       {
         val = (double*)malloc(((BlockListOfPoles*)M->data)->N*((BlockListOfPoles*)M->data)->BlockSize*sizeof(double));
         BlockListOfPolesEigenSystem((BlockListOfPoles*)M->data, val, &fun);
@@ -240,7 +240,7 @@ static int LuaResponseFunctionEigensystem(lua_State *L)
     case 'A':
     case 'a':
     {
-      if(M->Block==True)
+      if(M->Block==true)
       {
         val = (double*)malloc(((BlockAndersonMatrixType*)M->data)->N*((BlockAndersonMatrixType*)M->data)->BlockSize*sizeof(double));
         BlockAndersonMatrixEigenSystem((BlockAndersonMatrixType*)M->data, val, &fun);
@@ -255,7 +255,7 @@ static int LuaResponseFunctionEigensystem(lua_State *L)
     case 'T':
     case 't':
     {
-      if(M->Block==True)
+      if(M->Block==true)
       {
         val = (double*)malloc(((BlockTriDiagonalMatrixType*)M->data)->N*((BlockTriDiagonalMatrixType*)M->data)->BlockSize*sizeof(double));
         BlockTriDiagonalMatrixEigenSystem((BlockTriDiagonalMatrixType*)M->data, val, &fun);
@@ -270,7 +270,7 @@ static int LuaResponseFunctionEigensystem(lua_State *L)
     case 'N':
     case 'n':
     {
-      if(M->Block==True)
+      if(M->Block==true)
       {
         val = (double*)malloc((((BlockNaturalImpurityOrbitalMatrixType*)M->data)->val.N+ ((BlockNaturalImpurityOrbitalMatrixType*)M->data)->con.N )*((BlockNaturalImpurityOrbitalMatrixType*)M->data)->BlockSize*sizeof(double));
         BlockNaturalImpurityOrbitalMatrixEigenSystem((BlockNaturalImpurityOrbitalMatrixType*)M->data, val, &fun);
@@ -488,7 +488,7 @@ static int LuaResponseFunctionCall(lua_State * L)
   res = luaL_checkResponsefunction(L,1);
   omega = (double)luaL_checknumber(L, 2);
   gamma = (double)luaL_checknumber(L, 3);
-  if(res->Block==True)
+  if(res->Block==true)
   {
     CompactMatrixType out;
     EvaluateBlockResponsefunctionType(res, &out, omega, gamma);

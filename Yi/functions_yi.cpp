@@ -7,7 +7,7 @@ static int LuaFileReadWavefunction(lua_State * L)
   struct
   {
     uint32_t NBitsKey;
-    Bool Binary;
+    bool Binary;
   } Options;
   uint32_t len = (uint32_t)lua_gettop(L);
   LuaOptionsType LuaFileReadWavefunctionOptions[]={
@@ -15,7 +15,7 @@ static int LuaFileReadWavefunction(lua_State * L)
     {"Binary",  "bool",  &(Options.Binary)},
     {NULL, NULL, NULL}};
   Options.NBitsKey = 16;
-  Options.Binary = False;
+  Options.Binary = false;
   
   if (!((len==1)||(len==2)))
     return luaL_error(L, "Error in FileReadWaveFunction(arg).\n The arguments should at least contain the file name.");
@@ -27,7 +27,7 @@ static int LuaFileReadWavefunction(lua_State * L)
   WaveFunctionType *psi = NULL;
   psi = (WaveFunctionType*) lua_newuserdata(L, sizeof(WaveFunctionType));
   psi->NBitsKey = Options.NBitsKey;
-  if (Options.Binary==True)
+  if (Options.Binary==true)
     FileReadWaveFunctionPlainBinary(psi, flname);
   else
     FileReadWaveFunctionPlain(psi, flname);

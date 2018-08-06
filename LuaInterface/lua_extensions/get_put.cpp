@@ -262,7 +262,7 @@ uint32_t LuaASCIIStreamPrint(lua_State *L, int narg, FILE * stream)
   }
   if(lua_type(L,narg)==LUA_TTABLE)
   {
-    Bool FirstElement=False;
+    bool FirstElement=false;
     size_t i,tablelen = lua_objlen(L, narg);
     fprintf(stream, "{ ");
     /* array elements */
@@ -275,7 +275,7 @@ uint32_t LuaASCIIStreamPrint(lua_State *L, int narg, FILE * stream)
       if(i!=(tablelen-1)) fprintf(stream, " , ");                        // unless it is the last element print a ,
     }
     /* hash ellements */
-    if(tablelen==0) FirstElement=True;
+    if(tablelen==0) FirstElement=true;
     lua_pushnil(L);
     while (lua_next(L,narg)!=0)
     {
@@ -287,7 +287,7 @@ uint32_t LuaASCIIStreamPrint(lua_State *L, int narg, FILE * stream)
       {
         if(FirstElement)
         {
-          FirstElement=False;
+          FirstElement=false;
         }
         else
         {
@@ -357,11 +357,11 @@ uint32_t LuaASCIIStreamPrint(lua_State *L, int narg, FILE * stream)
     }
     if (luaL_testudata(L, narg, "Operator_Type") != NULL)
     {
-      Bool komma;
+      bool komma;
       int32_t i,j,l;
       OperatorType *a = (OperatorType *) luaL_checkudata(L, narg, "Operator_Type");
       fprintf(stream, "NewOperator( %d, %d,{\n",a->NFermion,a->NBoson);
-      komma=False;
+      komma=false;
       if(a->QComplex)
       {
         for(l=0;l<=a->MaxLength;l++)
@@ -374,7 +374,7 @@ uint32_t LuaASCIIStreamPrint(lua_State *L, int narg, FILE * stream)
             }
             else
             {
-              komma=True;
+              komma=true;
               fprintf(stream," {");
             }
             for(j=l-1;j>=0;j--)
@@ -406,7 +406,7 @@ uint32_t LuaASCIIStreamPrint(lua_State *L, int narg, FILE * stream)
             }
             else
             {
-              komma=True;
+              komma=true;
               fprintf(stream," {");
             }
             for(j=l-1;j>=0;j--)

@@ -419,8 +419,8 @@ static int LuaWavefunctionPrint(lua_State * L)
   struct
   {
     char *stream;
-    Bool Full;
-    Bool Binary;
+    bool Full;
+    bool Binary;
   } Options;
   uint32_t len = (uint32_t)lua_gettop(L);
   LuaOptionsType LuaWavefunctionPrintOptions[]={
@@ -437,15 +437,15 @@ static int LuaWavefunctionPrint(lua_State * L)
     PrintWaveFunctionReadable(*(WaveFunctionType *) currentudata);
     return 0;
   }
-  Options.Full=False;
-  Options.Binary=False;
+  Options.Full=false;
+  Options.Binary=false;
   Options.stream=NULL;
   LuaCheckOptions(L, -1, LuaWavefunctionPrintOptions);
-  if((Options.Binary==True)&&(Options.Full==True)) return luaL_error(L, "Error in .Print(arg) Binary and full text format are exclusive\n");
-  if((Options.Binary==True)&&(Options.stream==NULL)) return luaL_error(L, "Error in .Print(arg) Binary mode only allowed for printing to file\n");
+  if((Options.Binary==true)&&(Options.Full==true)) return luaL_error(L, "Error in .Print(arg) Binary and full text format are exclusive\n");
+  if((Options.Binary==true)&&(Options.stream==NULL)) return luaL_error(L, "Error in .Print(arg) Binary mode only allowed for printing to file\n");
   if(Options.stream==NULL)
   {
-    if(Options.Full==True)
+    if(Options.Full==true)
     {
       PrintWaveFunctionFullReadable(*(WaveFunctionType *) currentudata);
     }
@@ -456,11 +456,11 @@ static int LuaWavefunctionPrint(lua_State * L)
   }
   else
   {
-    if(Options.Full==True)
+    if(Options.Full==true)
     {
       FilePrintWaveFunctionFullReadable(*(WaveFunctionType *) currentudata, Options.stream, "w");
     }
-    else if(Options.Binary==True)
+    else if(Options.Binary==true)
     {
       FilePrintWaveFunctionPlainBinary(*(WaveFunctionType *) currentudata, Options.stream, "w");
     }

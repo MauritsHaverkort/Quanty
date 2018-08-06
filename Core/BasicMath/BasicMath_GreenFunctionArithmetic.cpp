@@ -1867,11 +1867,11 @@ Complex16 EvaluateResponsefunctionType(ResponsefunctionType const *A, const doub
 ResponsefunctionType *ConvertResponsefunction(ResponsefunctionType *M, const char type, double T)
 {
   ResponsefunctionType *res;
-  if(M->Block==True) return ConvertBlockMatrix(M,type,T);
+  if(M->Block==true) return ConvertBlockMatrix(M,type,T);
   res = (ResponsefunctionType*)malloc(sizeof(ResponsefunctionType));
   res->NSuggestedGridPoints = 0;
   res->type = type;
-  res->Block = False;
+  res->Block = false;
   res->NSuggestedGridPoints=M->NSuggestedGridPoints;
   if(res->NSuggestedGridPoints==0)
   {
@@ -2071,7 +2071,7 @@ ResponsefunctionType *ResponsefunctionCopy(ResponsefunctionType *M)
  */
 uint32_t FreeResponsefunction(ResponsefunctionType *M)
 {
-  if(M->Block==True) return FreeBlockMatrixFromLua(M);
+  if(M->Block==true) return FreeBlockMatrixFromLua(M);
   if((M->type>='A') && (M->type<='Z') && (M->NSuggestedGridPoints!=0))
   {
     free(M->SuggestedGrid);

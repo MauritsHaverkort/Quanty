@@ -1020,7 +1020,7 @@ uint32_t RealWaveFunctionOrthogonalize(WaveFunctionType * const psi, const WaveF
   return 0;
 }
 
-uint32_t RealWaveFunctionListSVDOrthogonalizeSameBasis(WaveFunctionType * const psilist, WaveFunctionType * const psilistOrtho, uint32_t * const Npsi, const double SingularValue, const Bool ReduceDimension)
+uint32_t RealWaveFunctionListSVDOrthogonalizeSameBasis(WaveFunctionType * const psilist, WaveFunctionType * const psilistOrtho, uint32_t * const Npsi, const double SingularValue, const bool ReduceDimension)
 {
   uint32_t i,j,NSingular=0;
   double val[2*(*Npsi)];
@@ -1112,9 +1112,9 @@ uint32_t RealWaveFunctionListSVDOrthogonalizeSameBasis(WaveFunctionType * const 
     }
   }
   FreeCompactMatrix(&SvS);
-  // no singular values or ReduceDimension = False
+  // no singular values or ReduceDimension = false
   // return 0
-  if((NSingular==0)||(ReduceDimension==False)) return 0;
+  if((NSingular==0)||(ReduceDimension==false)) return 0;
   // singular values and reduce dimension
   // normlist = psilist[[i]]^* . psilist[[i]]
   for(i=0;i<*Npsi;i++)
@@ -1148,7 +1148,7 @@ uint32_t RealWaveFunctionListSVDOrthogonalizeSameBasis(WaveFunctionType * const 
   }
   
   // call RealWaveFunctionListSVDOrthogonalize again
-  if(RealWaveFunctionListSVDOrthogonalizeSameBasis(psilisttemp, psilistOrtho, Npsi, SingularValue, False))
+  if(RealWaveFunctionListSVDOrthogonalizeSameBasis(psilisttemp, psilistOrtho, Npsi, SingularValue, false))
   {
     printf("RealWaveFunctionListSVDOrthogonalizeSameBasis failed in RealWaveFunctionListSVDOrthogonalizeSameBasis\n");
     return 1;
@@ -1160,7 +1160,7 @@ uint32_t RealWaveFunctionListSVDOrthogonalizeSameBasis(WaveFunctionType * const 
   return 0;
 }
 
-uint32_t RealWaveFunctionListSVDOrthogonalize(WaveFunctionType * const psilist, WaveFunctionType * const psilistOrtho, uint32_t * const Npsi, const double SingularValue, const Bool ReduceDimension)
+uint32_t RealWaveFunctionListSVDOrthogonalize(WaveFunctionType * const psilist, WaveFunctionType * const psilistOrtho, uint32_t * const Npsi, const double SingularValue, const bool ReduceDimension)
 {
   uint32_t i,j,NSingular=0;
   double val[2*(*Npsi)];
@@ -1256,9 +1256,9 @@ uint32_t RealWaveFunctionListSVDOrthogonalize(WaveFunctionType * const psilist, 
     }
   }
   FreeCompactMatrix(&SvS);
-  // no singular values or ReduceDimension = False
+  // no singular values or ReduceDimension = false
   // return 0
-  if((NSingular==0)||(ReduceDimension==False)) return 0;
+  if((NSingular==0)||(ReduceDimension==false)) return 0;
   // singular values and reduce dimension
   // normlist = psilist[[i]]^* . psilist[[i]]
   for(i=0;i<*Npsi;i++)
@@ -1279,7 +1279,7 @@ uint32_t RealWaveFunctionListSVDOrthogonalize(WaveFunctionType * const psilist, 
   }
   *Npsi-=NSingular;
   // call RealWaveFunctionListSVDOrthogonalize again
-  if(RealWaveFunctionListSVDOrthogonalize(psilisttemp, psilistOrtho, Npsi, SingularValue, False))
+  if(RealWaveFunctionListSVDOrthogonalize(psilisttemp, psilistOrtho, Npsi, SingularValue, false))
   {
     printf("RealWaveFunctionListSVDOrthogonalize failed in RealWaveFunctionListSVDOrthogonalize\n");
     return 1;
@@ -1291,7 +1291,7 @@ uint32_t RealWaveFunctionListSVDOrthogonalize(WaveFunctionType * const psilist, 
   return 0;
 }
 
-uint32_t RealWaveFunctionListOrthogonalizeSameBasis(WaveFunctionType * const psilist, uint32_t * const Npsi, const double SingularValue, const Bool ReduceDimension)
+uint32_t RealWaveFunctionListOrthogonalizeSameBasis(WaveFunctionType * const psilist, uint32_t * const Npsi, const double SingularValue, const bool ReduceDimension)
 {
   uint32_t i,j;
   double Norm;
@@ -1301,7 +1301,7 @@ uint32_t RealWaveFunctionListOrthogonalizeSameBasis(WaveFunctionType * const psi
     // normalize psi[i] if norm smaller than Singular value set psi[i] to zero or remove psi[i] from basis
     while((Norm=RealWaveFunctionCalculateNorm(psilist[i]))<=SingularValue)
     {
-      if(ReduceDimension==True)
+      if(ReduceDimension==true)
       {
         RealWaveFunctionFreeValues(&(psilist[i]));
         for(j=i+1;j<*Npsi;j++)
@@ -1328,7 +1328,7 @@ uint32_t RealWaveFunctionListOrthogonalizeSameBasis(WaveFunctionType * const psi
   return 0;
 }
 
-uint32_t RealWaveFunctionListOrthogonalize(WaveFunctionType * const psilist, uint32_t * const Npsi, const double SingularValue, const Bool ReduceDimension)
+uint32_t RealWaveFunctionListOrthogonalize(WaveFunctionType * const psilist, uint32_t * const Npsi, const double SingularValue, const bool ReduceDimension)
 {
   uint32_t i,j;
   double Norm;
@@ -1339,7 +1339,7 @@ uint32_t RealWaveFunctionListOrthogonalize(WaveFunctionType * const psilist, uin
     // normalize psi[i] if norm smaller than Singular value set psi[i] to zero or remove psi[i] from basis
     while((Norm=RealWaveFunctionCalculateNorm(psilist[i]))<=SingularValue)
     {
-      if(ReduceDimension==True)
+      if(ReduceDimension==true)
       {
         RealWaveFunctionFree(&(psilist[i]));
         for(j=i+1;j<*Npsi;j++)
