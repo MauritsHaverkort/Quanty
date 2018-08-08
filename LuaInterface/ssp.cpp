@@ -4523,12 +4523,14 @@ static int LuaPrintExpectationValues(lua_State * L)
 
   struct
   {
+		int colWidth = 8;
 		int printHeaderEvery = 0;
 		bool printSigma = false;
 		bool sortByEnergy = true;
     double zero = 1E-10;
   } Options;
   LuaOptionsType LuaPrintExpectationValuesOptions[]={
+  	{"colWidth",   "int",  &(Options.colWidth)},
 		{"printHeaderEvery",   "int",  &(Options.printHeaderEvery)},
 		{"printSigma",         "bool",  &(Options.printSigma)},
 		{"sortByEnergy",       "bool",  &(Options.sortByEnergy)},
@@ -4591,7 +4593,7 @@ static int LuaPrintExpectationValues(lua_State * L)
 		opList = luaL_checkvector_OperatorType(L, -1);
 	}
 
-	printExpectationValues(psiList, hamil, opList, hasHamiltonian, Options.sortByEnergy, Options.printSigma, Options.zero, Options.printHeaderEvery);
+	printExpectationValues(psiList, hamil, opList, hasHamiltonian, Options.sortByEnergy, Options.printSigma, Options.zero, Options.printHeaderEvery, Options.colWidth);
 	return 0;
 }
 

@@ -83,3 +83,5 @@ print("\n\n\nPrintExpectationValues(psiEigenlistRestr,opList,{{\"printHeaderEver
 PrintExpectationValues(psiEigenlistRestr,opList,{{"printHeaderEvery",10},{"zero",1E-2}})
 print("\n\n\nPrintExpectationValues(psiEigenlistRestr,Hamil,opList,{{\"printHeaderEvery\",10},{\"printSigma\",true},{\"zero\",1E-2}}):")
 PrintExpectationValues(psiEigenlistRestr,Hamil,opList,{{"printHeaderEvery",10},{"printSigma",true},{"zero",1E-2}})
+print("PrintExpectationValues(psiEigenlistRestr,Hamil,opList,{{\"colWidth\",10}}):")
+PrintExpectationValues(psiEigenlistRestr,Hamil,opList,{{"colWidth",10}})

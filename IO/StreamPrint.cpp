@@ -1568,12 +1568,13 @@ uint32_t StreamPrintBandstructurePath(BandstructurePathType M, FILE * stream)
   {
     fprintf(stream, "%c     %4i     %11.8lf %11.8lf %11.8lf\n",M.Q[i].label,M.Q[i].Nq,M.Q[i].q[0],M.Q[i].q[1],M.Q[i].q[2]);
   }
-  return 0;
+	return 0;
 }
 
-void numberOutMaxWidth(double num, int maxWidth, int minPrecision)
+string numberToStringMaxWidth(double num, int maxWidth)
 {
-	int old_precision = cout.precision();
+	std::stringstream sstr;
+	int old_precision = sstr.precision();
 	int power = findPower(num);
 	int powerDigits = findPower(power) + 1;
 	if (power < 0)
@@ -1582,45 +1583,66 @@ void numberOutMaxWidth(double num, int maxWidth, int minPrecision)
 		--maxWidth;
 	if (abs(num) < 1)
 	{
-		if (maxWidth + power - 1 >= minPrecision)
+		if (abs(num) > pow(10,-powerDigits-2) || num == 0)
 		{
 			if (maxWidth + power - 1 > 0)
-				cout.precision(maxWidth + power - 1);
+				sstr.precision(maxWidth + power - 1);
 			else
-				cout.precision(1);
-			cout << num;
+				sstr.precision(1);
+			sstr << num;
 		} else
 		{
 			if (maxWidth - powerDigits - 2 > 0)
-				cout.precision(maxWidth - powerDigits - 2);
+				sstr.precision(maxWidth - powerDigits - 2);
 			else
-				cout.precision(1);
-			cout << num * pow(10, -power) << "e" << power;
+				sstr.precision(1);
+			sstr << num * pow(10, -power) << "e" << power;
 		}
 	} else if (abs(num) > pow(10, maxWidth - 1))
 	{
 		if (maxWidth - powerDigits - 2 > 0)
-			cout.precision(maxWidth - powerDigits - 2);
+			sstr.precision(maxWidth - powerDigits - 2);
 		else
-			cout.precision(1);
-		cout << num * pow(10, -power) << "e" << power;
+			sstr.precision(1);
+		sstr << num * pow(10, -power) << "e" << power;
 	} else
 	{
 		if (maxWidth - 1 > 0)
-			cout.precision(maxWidth - 1);
+			sstr.precision(maxWidth - 1);
 		else
-			cout.precision(1);
-		cout << num;
+			sstr.precision(1);
+		sstr << num;
 	}
-	cout.precision(old_precision);
+	sstr.precision(old_precision);
+	string out;
+	sstr >> out;
+	return out;
 }
+
 
 void numberOutMaxWidth(double num, int maxWidth)
 {
-	numberOutMaxWidth(num,maxWidth,2);
+	cout << numberToStringMaxWidth(num,maxWidth);
 }
 
-void printExpectationValues(const vector < WaveFunctionType >  psiList, const OperatorType  hamil, const vector < OperatorType >  opList, bool hasHamiltonian, bool sortByEnergy, bool printSigma, double zero, int printHeaderEvery)
+void fillWithBlank(int width, int occupiedSpace)
+{
+	if (occupiedSpace >= width)
+	{
+		cout << " ";
+	} else
+	{
+		for (int i = 0; i < width - occupiedSpace; ++i)
+			cout << " ";
+	}
+}
+
+void fillWithBlank(int width)
+{
+	fillWithBlank(width,0);
+}
+
+void printExpectationValues(const vector < WaveFunctionType >  psiList, const OperatorType  hamil, const vector < OperatorType >  opList, bool hasHamiltonian, bool sortByEnergy, bool printSigma, double zero, int printHeaderEvery, int colWidth)
 {
 	vector<double> EValues(psiList.size());
 	vector<double> sigmaValues(psiList.size());
@@ -1685,40 +1707,49 @@ void printExpectationValues(const vector < WaveFunctionType >  psiList, const Op
 	for (int i = 0; i < psiList.size(); ++i)
 	{
 		if (i == 0 || (printHeaderEvery > 0 && i % printHeaderEvery == 0))
-			printExpectationValuesHeader(opList, hasHamiltonian, printSigma);
-		cout.width(5);
-		cout << (i + 1) << "\t";
+			printExpectationValuesHeader(opList, hasHamiltonian, printSigma, colWidth);
+		int maxISize = findPower(psiList.size()) + 1;
+		fillWithBlank(colWidth - 2, maxISize);
+		cout.width(maxISize);
+		cout << (i + 1);
+		cout << "  ";
 		for (int j = 0; j < opList.size() + hamilAddition; ++j)
 		{
 			double out = expValues[i][j];
 			if (out <= zero)
 				out = 0;
-			numberOutMaxWidth(out, 7);
-			cout << "\t";
+			string outStr = numberToStringMaxWidth(out, colWidth - 1);
+			cout << outStr;
+			fillWithBlank(colWidth, outStr.length());
 		}
 		if (hasHamiltonian && printSigma)
 		{
-			double out = expValues[i][expValues[i].size()-1];
-			numberOutMaxWidth(out, 14);
+			double out = expValues[i][expValues[i].size() - 1];
+			string outStr = numberToStringMaxWidth(out, colWidth);
+			cout << outStr;
 		}
 		cout << endl;
 	}
 }
 
-void printExpectationValuesHeader(const vector < OperatorType > opList, bool hasHamiltonian, bool printSigma)
+void printExpectationValuesHeader(const vector < OperatorType > opList, bool hasHamiltonian, bool printSigma, int colWidth)
 {
 	cout << endl;
-	cout << "\t";
+	fillWithBlank(colWidth);
 	if (hasHamiltonian)
-		cout << "E\t";
+	{
+		cout << "E";
+		fillWithBlank(colWidth,1);
+	}
 	for (int i = 0; i < opList.size(); ++i)
 	{
 		string name(opList[i].Name);
-		if (name.length() > 7)
+		if (name.length() > colWidth-1)
 		{
-			name = name.substr(0,7);
+			name = name.substr(0,colWidth-1);
 		}
-		cout << name << "\t";
+		cout << name;
+		fillWithBlank(colWidth, name.length());
 	}
 	if (hasHamiltonian && printSigma)
 		cout << "std-dev";

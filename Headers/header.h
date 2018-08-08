@@ -12,7 +12,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <vector>
-#include<algorithm>
+#include <algorithm>
+#include <sstream>
 
 #ifdef _OPENMP
 #include <omp.h>
