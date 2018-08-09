@@ -16,6 +16,7 @@ uint32_t MatrixAdd(MatrixType * const M, const MatrixType B, double const alphaR
 uint32_t MatrixScalarMultiply(MatrixType * const M, double const alphaRe, double const alphaIm);
 uint32_t MatrixTransform(MatrixType * const M, MatrixType const A, MatrixType const T);
 uint32_t MatrixTransformByCompactMatrix(MatrixType * const M, MatrixType const A, CompactMatrixType * T);
+uint32_t MatrixTransformLeftRight(MatrixType * const M, MatrixType const A, MatrixType const L, MatrixType const R);
 uint32_t MatrixTransformPart(MatrixType * const M, MatrixType const A, MatrixType const T, const uint32_t MNiMin, const uint32_t MNiMax, const uint32_t MNjMin, const uint32_t MNjMax);
 uint32_t MatrixMultiply(MatrixType * const M, MatrixType const A, MatrixType const B);
 uint32_t MatrixPart(MatrixType * const M, MatrixType const A, const uint32_t iStart, const uint32_t iEnd, const uint32_t jStart, const uint32_t jEnd);
@@ -32,6 +33,7 @@ uint32_t MatrixBasisOrthonormalize(MatrixType const S, MatrixType * const T);
 MatrixType zeroMatrix(int Ni, int Nj);
 MatrixType nullMatrix();
 bool isNullMatrix(MatrixType M);
-MatrixType MatrixFlatten(std::vector<std::vector<MatrixType> > allMs);
+MatrixType MatrixFlatten(vector<vector<MatrixType> > allMs);
 MatrixType ExpandNumberToMatrix(int size, double Re, double Im);
 MatrixType MatrixExpand(MatrixType M, int size);
+void MatrixAbsAverage(MatrixType M, double *AbsAverage);

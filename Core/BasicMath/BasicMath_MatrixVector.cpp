@@ -1790,15 +1790,15 @@ MatrixType zeroMatrix(int Ni, int Nj)
 
 MatrixType nullMatrix()
 {
-	return zeroMatrix(0,0);
+	return zeroMatrix(1,0);
 }
 
 bool isNullMatrix(MatrixType M)
 {
-	return (M.Ni == 0 && M.Nj == 0);
+	return (M.Ni == 0 || M.Nj == 0);
 }
 
-MatrixType MatrixFlatten(std::vector<std::vector<MatrixType> > allMs)
+MatrixType MatrixFlatten(vector<vector<MatrixType> > allMs)
 {
 	uint32_t QComplex = 0;
 	MatrixType fullM;
