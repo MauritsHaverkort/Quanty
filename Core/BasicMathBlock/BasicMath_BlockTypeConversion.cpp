@@ -3838,6 +3838,201 @@ uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType co
 
 
 
+/*  =========================================================================
+ *  ... to TigthBinding
+ *  ========================================================================= */
 
+/* transform a Block matrix into a tight binding Hamiltonian, such that the one particle Green's function 
+ * is equal to the response function represented by the Block matrix
+ * This is only possible when A0=0 and B0=1
+ *
+ * The tight binding contains N Atoms labeled from 1 to N
+ * Each atom has M->BlockSize orbitals
+ */
 
+uint32_t BlockMatrixToTightBinding(BlockListOfPoles const * const M, TightBindingDef * TB)
+{
+  //TODO: BlockListOfPoles to TB
+  return 0;
+}
+/* The onsite energy of each atom is given by A_i
+ * The hopping between atom i and i+1 is given by B_i
+ */
+uint32_t BlockMatrixToTightBinding(BlockTriDiagonalMatrixType const * const M, TightBindingDef * TB)
+{
+  uint32_t i,iH,j,iorb,jorb;
+  strcpy(TB->Name,M->Name);
+  TB->Cell.rUnitCell[0][0]=INFINITY; TB->Cell.rUnitCell[0][1]=0;        TB->Cell.rUnitCell[0][2]=0;
+  TB->Cell.rUnitCell[1][0]=0;        TB->Cell.rUnitCell[1][1]=INFINITY; TB->Cell.rUnitCell[1][2]=0;
+  TB->Cell.rUnitCell[2][0]=0;        TB->Cell.rUnitCell[2][1]=0;        TB->Cell.rUnitCell[2][2]=INFINITY;
+  TB->Cell.gUnitCell[0][0]=0;        TB->Cell.gUnitCell[0][1]=0;        TB->Cell.gUnitCell[0][2]=0;
+  TB->Cell.gUnitCell[1][0]=0;        TB->Cell.gUnitCell[1][1]=0;        TB->Cell.gUnitCell[1][2]=0;
+  TB->Cell.gUnitCell[2][0]=0;        TB->Cell.gUnitCell[2][1]=0;        TB->Cell.gUnitCell[2][2]=0;
+  TB->Cell.NAtoms=M->N;
+  TB->Cell.Atom=(AtomType*)malloc(TB->Cell.NAtoms*sizeof(AtomType));
+  j=1;
+  if(M->N>9)
+  {
+    j=2;
+    if(M->N>99)
+    {
+      j=3;
+      if(M->N>999)
+      {
+        j=4;
+        if(M->N>9999)
+        {
+          j=5;
+          if(M->N>99999)
+          {
+            j=6;
+            if(M->N>999999)
+            {
+              j=10;
+            }
+          }
+        }
+      }
+    }
+  }
+  jorb=1;
+  if(M->BlockSize>9)
+  {
+    jorb=2;
+    if(M->BlockSize>99)
+    {
+      jorb=3;
+      if(M->BlockSize>999)
+      {
+        jorb=4;
+        if(M->BlockSize>9999)
+        {
+          jorb=5;
+          if(M->BlockSize>99999)
+          {
+            jorb=6;
+            if(M->BlockSize>999999)
+            {
+              jorb=10;
+            }
+          }
+        }
+      }
+    }
+  }
+  for(i=0;i<TB->Cell.NAtoms;i++)
+  {
+    sprintf(TB->Cell.Atom[i].Name, "%0*d",j,i);
+    TB->Cell.Atom[i].AtomNumber=0;
+    TB->Cell.Atom[i].Position[0]=0;  TB->Cell.Atom[i].Position[1]=0;  TB->Cell.Atom[i].Position[2]=0;
+    TB->Cell.Atom[i].Nshell=1;
+    TB->Cell.Atom[i].ShellName=(char**)(malloc(sizeof(char*)));
+    TB->Cell.Atom[i].ShellName[0]=(char*)(malloc(2*sizeof(char)));
+    TB->Cell.Atom[i].ShellName[0][0]='x';
+    TB->Cell.Atom[i].ShellName[0][1]='\0';
+    TB->Cell.Atom[i].shelldegeneracy=(int*)(malloc(sizeof(int)));
+    TB->Cell.Atom[i].shelldegeneracy[0]=M->BlockSize;
+    TB->Cell.Atom[i].OrbitalName=(char***)(malloc(sizeof(char**)));
+    TB->Cell.Atom[i].OrbitalName[0]=(char**)(malloc(TB->Cell.Atom[i].shelldegeneracy[0]*sizeof(char*)));
+    for(iorb=0;iorb<M->BlockSize;iorb++)
+    {
+      TB->Cell.Atom[i].OrbitalName[0][iorb]=(char*)malloc((j+1)*sizeof(char));
+      sprintf(TB->Cell.Atom[i].OrbitalName[0][iorb], "%0*d",jorb,iorb);
+    }
+  }
+  TB->Cell.Units=0;
+  
+  if(M->N==0)
+  {
+    TB->nH=0;
+  }
+  else
+  {
+    TB->nH=2*M->N-1;
+  }
+  TB->H=(TightBindingDefHopping*)malloc(TB->nH*sizeof(TightBindingDefHopping));
+  TB->NFermion=M->N*M->BlockSize;
+  SetNFermionIndexTightBindingDef(TB);
+  iH=0;
+  // onsite energy
+  for(i=1;i<=M->N;i++)
+  {
+    TB->H[iH].Atompos1=i-1;
+    TB->H[iH].Shellpos1=0;
+    TB->H[iH].Atompos2=i-1;
+    TB->H[iH].Shellpos2=0;
+    TB->H[iH].TransVecs[0]=0;
+    TB->H[iH].TransVecs[1]=0;
+    TB->H[iH].TransVecs[2]=0;
+    TB->H[iH].ConnectingVector[0]=0;
+    TB->H[iH].ConnectingVector[1]=0;
+    TB->H[iH].ConnectingVector[2]=0;
+    TB->H[iH].Hop.Ni=M->BlockSize;
+    TB->H[iH].Hop.Nj=M->BlockSize;
+    TB->H[iH].Hop.QComplex=M->QComplex;
+    InitMatrix(&(TB->H[iH].Hop));
+    if(M->QComplex==0)
+    {
+      for(j=0;j<Sqr(M->BlockSize);j++)
+      {
+        TB->H[iH].Hop.VRe[0][j]=M->aRe[(i)*Sqr(M->BlockSize)+j];
+      }
+    }
+    else
+    {
+      for(j=0;j<Sqr(M->BlockSize);j++)
+      {
+        TB->H[iH].Hop.VRe[0][j]=M->a[(i)*Sqr(M->BlockSize)+j].Re;
+        TB->H[iH].Hop.VIm[0][j]=M->a[(i)*Sqr(M->BlockSize)+j].Im;
+      }
+    }
+    iH++;
+  }
+  // hopping
+  for(i=1;i<M->N;i++)
+  {
+    TB->H[iH].Atompos1=i-1;
+    TB->H[iH].Shellpos1=0;
+    TB->H[iH].Atompos2=i;
+    TB->H[iH].Shellpos2=0;
+    TB->H[iH].TransVecs[0]=0;
+    TB->H[iH].TransVecs[1]=0;
+    TB->H[iH].TransVecs[2]=0;
+    TB->H[iH].ConnectingVector[0]=0;
+    TB->H[iH].ConnectingVector[1]=0;
+    TB->H[iH].ConnectingVector[2]=0;
+    TB->H[iH].Hop.Ni=M->BlockSize;
+    TB->H[iH].Hop.Nj=M->BlockSize;
+    TB->H[iH].Hop.QComplex=M->QComplex;
+    InitMatrix(&(TB->H[iH].Hop));
+    if(M->QComplex==0)
+    {
+      for(j=0;j<Sqr(M->BlockSize);j++)
+      {
+        TB->H[iH].Hop.VRe[0][j]=M->bRe[(i)*Sqr(M->BlockSize)+j];
+      }
+    }
+    else
+    {
+      for(j=0;j<Sqr(M->BlockSize);j++)
+      {
+        TB->H[iH].Hop.VRe[0][j]=M->b[(i)*Sqr(M->BlockSize)+j].Re;
+        TB->H[iH].Hop.VIm[0][j]=M->b[(i)*Sqr(M->BlockSize)+j].Im;
+      }
+    }
+    iH++;
+  }
+  return 0;
+}
 
+uint32_t BlockMatrixToTightBinding(BlockAndersonMatrixType const * const M, TightBindingDef * TB)
+{
+  //TODO: BlockAndersonMatrixType to TB
+  return 0;
+}
+
+uint32_t BlockMatrixToTightBinding(BlockNaturalImpurityOrbitalMatrixType const * const M, TightBindingDef * TB)
+{
+  //TODO: BlockNaturalImpurityOrbitalMatrixType to TB
+  return 0;
+}
