@@ -514,6 +514,81 @@ static int LuaResponseFunctionToString(lua_State * L)
   return 1;
 }
 
+
+/*
+ *
+ */
+static int LuaResponseFunctionToTightBinding(lua_State * L)
+{
+  TightBindingDef *TB;
+  ResponsefunctionType *M;
+  TB = (TightBindingDef*) lua_newuserdata(L, sizeof(TightBindingDef));
+  luaL_setmetatable(L, "TightBinding_Type");
+  M = luaL_checkResponsefunction(L,1);
+  switch(M->type)
+  {
+    case 'L':
+    case 'l':
+    {
+      if(M->Block==true)
+      {
+        BlockMatrixToTightBinding((BlockListOfPoles *)(M->data),TB);
+      }
+      else
+      {
+        //TODO: listofpoles to TB
+      }
+      break;
+    }
+    case 'A':
+    case 'a':
+    {
+      if(M->Block==true)
+      {
+        BlockMatrixToTightBinding((BlockAndersonMatrixType *)(M->data),TB);
+      }
+      else
+      {
+        //TODO: andersonmatrixToTightbinding
+      }
+      break;
+    }
+    case 'T':
+    case 't':
+    {
+      if(M->Block==true)
+      {
+        BlockMatrixToTightBinding((BlockTriDiagonalMatrixType *)(M->data),TB);
+      }
+      else
+      {
+        //TODO: tridiagonal matrix to TB
+      }
+      break;
+    }
+    case 'N':
+    case 'n':
+    {
+      if(M->Block==true)
+      {
+        BlockMatrixToTightBinding((BlockNaturalImpurityOrbitalMatrixType *)(M->data),TB);
+      }
+      else
+      {
+        //TODO: NatrualImpuritiOrbitalMatrixType to TB
+      }
+      break;
+    }
+    default:
+    {
+      return luaL_error(L, "Error in Responsefunction.ToTightbinding() unrecognized type for conversion (%s)\n",M->type);
+      return 0;
+    }
+  }
+  FreeResponsefunction(M);
+  return 1;
+}
+
 /*
  *
  */
@@ -532,6 +607,7 @@ static const struct luaL_Reg ResponseFunction_func[] = {
   {"PlaceOnMesh", LuaPlaceOnMeshResponseFunction},
   {"ToTable", LuaResponseFunctionToTable},
   {"ToUserdata", LuaResponseFunctionToUserdata},
+  {"ToTightBinding", LuaResponseFunctionToTightBinding},
   {NULL, NULL}
 };
 
