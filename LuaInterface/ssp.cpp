@@ -4626,6 +4626,35 @@ static int LuaOrbitalRotationMatrix(lua_State * L)
 	return 1;
 }
 
+static int LuaYtoJJZMatrix(lua_State * L)
+{
+	uint32_t len = (uint32_t) lua_gettop(L);
+	bool isInputInteger;
+	MatrixType returnMat;
+	if (len != 1)
+		return luaL_error(L, "YtoJJZMatrix called with %d arguments. Exactly 1 expected, multiplicity of orbital, or list of multiplicities, or orbital name, or list of orbital names.\n", len);
+	if (!lua_istable(L, 1))
+	{
+		isInputInteger = lua_isnumber(L, 1);
+	} else
+	{
+		lua_rawgeti(L, 1, 1);
+		isInputInteger = lua_isnumber(L, -1);
+		lua_pop(L, 1);
+	}
+	if (isInputInteger)
+	{
+		vector<int> multiplicities = luaL_checkvector_int(L, 1);
+		returnMat = LargeRotationMatrix(multiplicities, YToJJzMatrix, true);
+	} else
+	{
+		vector < string > orbs = luaL_checkvector_string(L, 1);
+		returnMat = LargeRotationMatrix(orbs, YToJJzMatrix, true);
+	}
+	LuaPushTable_MatrixType(L, &returnMat);
+	return 1;
+}
+
 
 static const struct luaL_Reg global_functions[] = {
   {"BlockBandDiagonalize", LuaBlockBandDiagonalize},
@@ -4687,6 +4716,7 @@ static const struct luaL_Reg global_functions[] = {
   {"TightBindingDefFromDresdenFPLO", LuaTightBindingDefFromDresdenFPLO},
   {"Transpose", Luatranspose},
   {"Verbosity",LuaVerbosity},
+	{"YtoJJZMatrix",LuaYtoJJZMatrix},
   {NULL, NULL}
 };
 

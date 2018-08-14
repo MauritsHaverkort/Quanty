@@ -2615,6 +2615,16 @@ vector<int> permutationVector(const vector<T> oldVec, const vector<T> newVec)
 
 MatrixType YToJJzMatrix(const int size)
 {
+	return YToJJzMatrix(size, true);
+}
+
+MatrixType YToJJzMatrix(const int size, const bool addSpin)
+{
+	if (!addSpin)
+	{
+//		The bool is needed for compability with other code.
+		cout << "YToJJzMatrix called with addSpin = false. Since spin is obligatory this request will be ignored." << endl;
+	}
 	MatrixType out;
 	out.QComplex = false;
 	out.Ni = size;
@@ -2786,4 +2796,20 @@ MatrixType RelToNonRelRotationMatrix(const vector<string> mixedOrbs, const vecto
 	MatrixType tmp = NonRelToRelRotationMatrix(nonRelOrbs, mixedOrbs);
 	MatrixTranspose(&tmp);
 	return tmp;
+}
+
+MatrixType LargeRotationMatrix(vector<int> multiplicities, MatrixType (*mat)(int, bool), bool addSpin)
+{
+	vector<vector<MatrixType> > fullM = nullMatrixMatrix(multiplicities.size(), multiplicities.size());
+	for (int i = 0; i < multiplicities.size(); ++i)
+		fullM[i][i] = mat(multiplicities[i], addSpin);
+	return MatrixFlatten(fullM);
+}
+
+MatrixType LargeRotationMatrix(vector<string> orbitals, MatrixType (*mat)(int, bool), bool addSpin)
+{
+	vector<int> multiplicities(orbitals.size());
+	for (int i = 0; i < orbitals.size(); ++i)
+		multiplicities[i] = orbToMultiplicity(orbitals[i]);
+	return LargeRotationMatrix(multiplicities, mat, addSpin);
 }

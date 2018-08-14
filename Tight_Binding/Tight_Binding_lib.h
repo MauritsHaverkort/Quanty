@@ -66,8 +66,11 @@ MatrixType OrbitalRotationMatrix(vector<string> orbsOld, vector<string> orbsNew)
 template<typename T>bool hasIdenticalEntries(const vector<T> vec);
 template<typename T>vector<int> permutationVector(const vector<T> oldVec, const vector<T> newVec);
 MatrixType YToJJzMatrix(const int size);
+MatrixType YToJJzMatrix(const int size, const bool addSpin);
 MatrixType orbitalPermutationMatrix(const vector<string> oldVec, const vector<string> newVec);
 bool QChangeFromRelToNonRel(const vector<string> orbs1, const vector<string> orbs2);
 int NumberOfFermionicStates(const vector<string> orbs);
 MatrixType NonRelToRelRotationMatrix(const vector<string> nonRelOrbs, const vector<string> mixedOrbs);
 MatrixType RelToNonRelRotationMatrix(const vector<string> mixedOrbs, const vector<string> nonRelOrbs);
+MatrixType LargeRotationMatrix(vector<int> multiplicities, MatrixType (*mat)(int, bool), bool addSpin);
+MatrixType LargeRotationMatrix(vector<string> orbitals, MatrixType (*mat)(int, bool), bool addSpin);

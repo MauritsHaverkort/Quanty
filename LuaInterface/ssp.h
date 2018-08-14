@@ -43,5 +43,6 @@ static int LuaPrintExpectationValues(lua_State * L);
 static int LuaRelToNonRelOrbitals(lua_State * L);
 static int LuaNonRelToRelOrbitals(lua_State * L);
 static int LuaOrbitalRotationMatrix(lua_State * L);
+static int LuaYtoJJZMatrix(lua_State * L);
 void luaconstants(lua_State *L);
 int luaopen_ssp(lua_State * L);

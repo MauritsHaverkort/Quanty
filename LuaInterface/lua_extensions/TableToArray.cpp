@@ -19,6 +19,28 @@ uint8_t* luaL_checkarray_unit8_t(lua_State *L, int narg, uint32_t *len_out)
   return buff;
 }
 
+vector<int> luaL_checkvector_int(lua_State *L, int narg)
+{
+	if (lua_istable(L, narg))
+	{
+		luaL_checktype(L, narg, LUA_TTABLE);
+		uint32_t len = (uint32_t) lua_objlen(L, narg);
+		vector<int> buff(len);
+		for (int i = 0; i < len; i++)
+		{
+			lua_rawgeti(L, narg, i + 1);
+			buff[i] = (int) luaL_checkinteger(L, -1);
+			lua_pop(L, 1);
+		}
+		return buff;
+	} else
+	{
+		vector<int> buff(1);
+		buff[0] = (int) luaL_checkinteger(L, narg);
+		return buff;
+	}
+}
+
 vector<uint16_t> luaL_checkvector_unit16_t(lua_State *L, int narg)
 {
 	luaL_checktype(L, narg, LUA_TTABLE);
@@ -129,16 +151,24 @@ char** luaL_checkarray_string(lua_State *L, int narg, uint32_t *len_out)
 
 vector<string> luaL_checkvector_string(lua_State *L, int narg)
 {
-	luaL_checktype(L, narg, LUA_TTABLE);
-	uint32_t len = (uint32_t)lua_objlen(L, narg);
-	vector<string> buff(len);
-  for(int i=0;i<len;i++)
-  {
-    lua_rawgeti(L, narg, i+1);
-    buff[i] = (string)luaL_checkstring(L,-1);
-    lua_pop(L, 1);
-  }
-  return buff;
+	if (lua_istable(L, narg))
+	{
+		luaL_checktype(L, narg, LUA_TTABLE);
+		uint32_t len = (uint32_t) lua_objlen(L, narg);
+		vector < string > buff(len);
+		for (int i = 0; i < len; i++)
+		{
+			lua_rawgeti(L, narg, i + 1);
+			buff[i] = (string) luaL_checkstring(L, -1);
+			lua_pop(L, 1);
+		}
+		return buff;
+	} else
+	{
+		vector < string > buff(1);
+		buff[0] = (string) luaL_checkstring(L, narg);
+		return buff;
+	}
 }
 
 void LuaPushVector_string(lua_State *L, const vector<string> in)
@@ -1816,7 +1846,7 @@ WaveFunctionType* luaL_checkarray_WaveFunctionType(lua_State *L, int narg, uint3
 const vector<WaveFunctionType> luaL_checkvector_WaveFunctionType(lua_State *L, int narg)
 {
 //	luaL_checktype(L, narg, LUA_TTABLE);
-	if (lua_istable(L, narg)) //TODO: Ist diese Variante ok? Maybe a verbosity warning?
+	if (lua_istable(L, narg))
 	{
 		uint32_t len = (uint32_t) lua_objlen(L, narg);
 		vector < WaveFunctionType > buff(len);
@@ -1877,7 +1907,7 @@ OperatorType* luaL_checkarray_OperatorType(lua_State *L, int narg, uint32_t *len
 const vector<OperatorType> luaL_checkvector_OperatorType(lua_State *L, int narg)
 {
 //	luaL_checktype(L, narg, LUA_TTABLE);
-	if (lua_istable(L, narg)) //TODO: Ist diese Variante ok? Maybe a verbosity warning?
+	if (lua_istable(L, narg))
 	{
 		uint32_t len = (uint32_t) lua_objlen(L, narg);
 		vector < OperatorType > buff(len);
