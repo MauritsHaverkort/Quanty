@@ -4645,6 +4645,8 @@ static int LuaYtoJJZMatrix(lua_State * L)
 	if (isInputInteger)
 	{
 		vector<int> multiplicities = luaL_checkvector_int(L, 1);
+		for (int i = 0; i < multiplicities.size(); ++i)
+			multiplicities[i] = 2 * (2 * multiplicities[i] + 1);
 		returnMat = LargeRotationMatrix(multiplicities, YToJJzMatrix, true);
 	} else
 	{

@@ -2671,11 +2671,11 @@ MatrixType YToJJzMatrix(const int size, const bool addSpin)
 		out.VRe[9][9] = 1;
 	} else if ((size - 2) % 4 == 0)
 	{
-		cout << "lToJMatrix not yet implemented for an atomic shell of size " << size << ", sorry!" << endl;
+		cout << "YToJJzMatrix not yet implemented for an atomic shell of multiplicity " << size << ", sorry!" << endl;
 		return nullMatrix();
 	} else
 	{
-		cout << "lToJMatrix only defined for size 2*(2*l+1), with integer l, not for size " << size << "!" << endl;
+		cout << "YToJJzMatrix only defined for multiplicity 2*(2*l+1), with integer l, not for multiplicity " << size << "!" << endl;
 		return nullMatrix();
 	}
 	return out;
