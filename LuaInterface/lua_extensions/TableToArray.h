@@ -6,6 +6,7 @@ double* luaL_checkarray_double(lua_State *L, int narg, uint32_t *len_out);
 Complex16* luaL_checkarray_complex16(lua_State *L, int narg, uint32_t *len_out);
 char** luaL_checkarray_string(lua_State *L, int narg, uint32_t *len_out);
 vector<string> luaL_checkvector_string(lua_State *L, int narg);
+void LuaPushVector_string(lua_State *L, const vector<string> in);
 LUA_API void lua_getfield (lua_State *L, int idx, const string str);
 LUA_API const char *lua_pushstring (lua_State *L, const string str);
 CompactVectorType luaL_checkVector(lua_State *L, int narg);

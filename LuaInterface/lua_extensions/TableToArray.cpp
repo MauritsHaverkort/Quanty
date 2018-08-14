@@ -141,6 +141,16 @@ vector<string> luaL_checkvector_string(lua_State *L, int narg)
   return buff;
 }
 
+void LuaPushVector_string(lua_State *L, const vector<string> in)
+{
+	lua_createtable(L, in.size(), 0);
+	for (uint32_t i = 0; i < in.size(); i++)
+	{
+		lua_pushstring(L, in[i]);
+		lua_rawseti(L, -2, i + 1);
+	}
+}
+
 LUA_API void lua_getfield (lua_State *L, int idx, const string str)
 {
 	return lua_getfield(L, idx,str.c_str());
