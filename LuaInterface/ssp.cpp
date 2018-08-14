@@ -4587,6 +4587,31 @@ static int LuaPrintExpectationValues(lua_State * L)
 	return 0;
 }
 
+static int LuaRelToNonRelOrbitals(lua_State * L)
+{
+	uint32_t len = (uint32_t) lua_gettop(L);
+	if (len != 1)
+	{
+		return luaL_error(L, "RelToNonRelOrbitals called with %d arguments. Only list of orbitals expected.\n", len);
+	}
+	vector<string> orbs = luaL_checkvector_string(L,1);
+	orbs = groupedRelOrbitals(orbs);
+	LuaPushVector_string(L,relToNonRelOrbs(orbs));
+	return 1;
+}
+
+static int LuaNonRelToRelOrbitals(lua_State * L)
+{
+	uint32_t len = (uint32_t) lua_gettop(L);
+	if (len != 1)
+	{
+		return luaL_error(L, "NonRelToRelOrbitals called with %d arguments. Only list of orbitals expected.\n", len);
+	}
+	vector<string> orbs = luaL_checkvector_string(L,1);
+	LuaPushVector_string(L,nonRelToRelOrbs(orbs));
+	return 1;
+}
+
 
 static const struct luaL_Reg global_functions[] = {
   {"BlockBandDiagonalize", LuaBlockBandDiagonalize},
@@ -4624,6 +4649,7 @@ static const struct luaL_Reg global_functions[] = {
   {"NewOperator", LuaNewOperator},
   {"NewTightBinding", LuaNewTightBinding},
   {"NewWavefunction", LuaNewWaveFunction},
+	{"NonRelToRelOrbitals",LuaNonRelToRelOrbitals},
   {"OperatorToMatrix", LuaOperatorToMatrix},
   {"OperatorSetTrace", LuaOperatorSetTrace},
   {"OrbToMultiplicity",LuaOrbToMultiplicity},
@@ -4636,6 +4662,7 @@ static const struct luaL_Reg global_functions[] = {
   {"PlotDOS", LuaPlotDOS},
   {"PlotFermi", LuaPlotFermi},
 	{"PrintExpectationValues",LuaPrintExpectationValues},
+	{"RelToNonRelOrbitals", LuaRelToNonRelOrbitals},
   {"Rotate", Luarotate},
   {"Statistics",LuaStatistics},
   {"TimeEnd",LuaTimeEnd},

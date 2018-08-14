@@ -2128,6 +2128,16 @@ bool isIntElementOf(const uint16_t element, const vector<uint16_t> set)
 	return false;
 }
 
+bool isIntElementOf(const int element, const vector<int> set)
+{
+	for (int i = 0; i < set.size(); i++)
+	{
+		if (element == set[i])
+			return true;
+	}
+	return false;
+}
+
 /*  On input TB contains a normal TB object
  *  StripedTB points to a TB object that is uninitialized and has no pointera allocated
  *  On access StripedTB contains a TB object that specifies the same Hamiltonian, albeit with all atoms in TB moved to position {0,0,0} in StripedTB and merged into one big "atom" with one "shell"
@@ -2391,3 +2401,106 @@ uint32_t RotateTightBinding(TightBindingDef * TB, CompactMatrixType * rotmat, Ti
   return 0;
 }
 
+vector<string> groupedRelOrbitals(const vector<string> in)
+{
+	vector < string > out;
+	vector<int> blackList;
+	for (int i = 0; i < in.size(); ++i)
+	{
+		if (!isIntElementOf(i, blackList))
+		{
+			out.push_back(in[i]);
+			if (isRelOrbital(in[i]) && (kappa(in[i]) != -1))
+			{
+				for (int j = i + 1; j < in.size(); ++j)
+				{
+					if (QOrbsBelongTogether(in[i], in[j]))
+					{
+						out.push_back(in[j]);
+						blackList.push_back(j);
+						if (orbToMultiplicity(out[out.size()-1]) < orbToMultiplicity(out[out.size()-2]) )
+							std::swap(out[out.size()-1],out[out.size()-2]);
+						break;
+					}
+				}
+			}
+		}
+	}
+	return out;
+}
+
+bool isRelOrbital(const string orb)
+{
+	return (relAngularMomentumZNumbers(orb) > 0);
+}
+
+bool QOrbsBelongTogether(string orb1, string orb2)
+{
+	if (isRelOrbital(orb1))
+		orb1 = cutRelPart(orb1);
+	if (isRelOrbital(orb2))
+		orb2 = cutRelPart(orb2);
+	return orb1 == orb2;
+}
+
+string cutRelPart(const string orb)
+{
+	int significantCharPos;
+	relAngularMomentumZNumbers(orb,&significantCharPos);
+	return orb.substr(0,significantCharPos);
+}
+
+vector<string> relToNonRelOrbs(const vector<string> in)
+{
+	vector < string > out;
+	for (int i = 0; i < in.size(); ++i)
+	{
+		if (isRelOrbital(in[i]))
+		{
+			if (kappa(in[i]) == -1)
+			{
+				out.push_back(cutRelPart(in[i]));
+			} else if (i + 1 < in.size() && QOrbsBelongTogether(in[i], in[i + 1]))
+			{
+				out.push_back(cutRelPart(in[i]));
+				++i;
+			} else
+			{
+				cout << "Error: Need a pair of relativistic orbitals to convert them to a non-relativistic one, unless l=0." << endl;
+				vector < string > errorVec;
+				return errorVec;
+			}
+		} else
+		{
+			out.push_back(in[i]);
+		}
+	}
+	return out;
+}
+
+vector<string> nonRelToRelOrbs(const vector<string> in)
+{
+	vector < string > out;
+	for (int i = 0; i < in.size(); ++i)
+	{
+		if (isRelOrbital(in[i]))
+		{
+			out.push_back(in[i]);
+		} else
+		{
+			int mult = orbToMultiplicity(in[i]);
+			if (mult == 2)
+			{
+				string relOrb = in[i] + "1/2";
+				out.push_back(relOrb);
+			} else
+			{
+				string relOrb1 = in[i] + to_string(mult / 2) + "/2";
+				string relOrb2 = in[i] + to_string(mult / 2 - 2) + "/2";
+				out.push_back(relOrb1);
+				out.push_back(relOrb2);
+			}
+		}
+	}
+	return out;
+}

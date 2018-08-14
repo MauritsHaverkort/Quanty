@@ -40,5 +40,7 @@ static int LuaPartialOperator(lua_State *L);
 static int LuaPartialMeanFieldOperator(lua_State *L);
 static int LuaOrbToMultiplicity(lua_State * L);
 static int LuaPrintExpectationValues(lua_State * L);
+static int LuaRelToNonRelOrbitals(lua_State * L);
+static int LuaNonRelToRelOrbitals(lua_State * L);
 void luaconstants(lua_State *L);
 int luaopen_ssp(lua_State * L);
