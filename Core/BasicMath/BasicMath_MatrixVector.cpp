@@ -1798,7 +1798,7 @@ bool isNullMatrix(MatrixType M)
 	return (M.Ni == 0 || M.Nj == 0);
 }
 
-MatrixType MatrixFlatten(vector<vector<MatrixType> > allMs)
+MatrixType MatrixFlatten(vector<vector<MatrixType> > allMs, bool printWarnings)
 {
 	uint32_t QComplex = 0;
 	MatrixType fullM;
@@ -1816,7 +1816,7 @@ MatrixType MatrixFlatten(vector<vector<MatrixType> > allMs)
 				break;
 			}
 		}
-		if (numOfRowsInner[i] == 0)
+		if (printWarnings && numOfRowsInner[i] == 0)
 			printf("\nWarning: Row %d of matrix is empty and will be ignored.\n",i+1);
 		numOfAllRows += numOfRowsInner[i];
 	}
@@ -1831,7 +1831,7 @@ MatrixType MatrixFlatten(vector<vector<MatrixType> > allMs)
 				break;
 			}
 		}
-		if (numOfColsInner[j] == 0)
+		if (printWarnings && numOfColsInner[j] == 0)
 			printf("\nWarning: Column %d of matrix is empty and will be ignored.\n",j+1);
 		numOfAllCols += numOfColsInner[j];
 	}
@@ -1888,6 +1888,11 @@ MatrixType MatrixFlatten(vector<vector<MatrixType> > allMs)
 	return fullM;
 }
 
+MatrixType MatrixFlatten(vector<vector<MatrixType> > allMs)
+{
+	return MatrixFlatten(allMs, false);
+}
+
 
 MatrixType ExpandNumberToMatrix(int size, double Re, double Im = 0)
 {
@@ -1904,7 +1909,7 @@ MatrixType ExpandNumberToMatrix(int size, double Re, double Im = 0)
 	return M;
 }
 
-MatrixType MatrixExpand(MatrixType M, int size)
+MatrixType MatrixEnlarge(MatrixType M, int size)
 {
 	vector < vector<MatrixType> > fullM(M.Ni);
 	for (int i = 0; i < M.Ni; ++i)
@@ -1920,6 +1925,34 @@ MatrixType MatrixExpand(MatrixType M, int size)
 		}
 	}
 	return MatrixFlatten(fullM);
+}
+
+MatrixType MatrixExpand(const MatrixType M, const int size, const Complex16 newEntries)
+{
+	if (size < M.Ni || size < M.Nj)
+	{
+		cout << "Error in MatrixExpand: New size " << size << "x" << size << " of expanded matrix must be larger than or equal to old size " << M.Ni << "x" << M.Ni << ".\n";
+		return nullMatrix();
+	}
+	if (M.Ni != M.Nj)
+	{
+		cout << "Error in MatrixExpand: Input of nono-quadratic Matrix (size " << M.Ni << "x" << M.Ni << ".\n";
+		return nullMatrix();
+	}
+	vector < vector<MatrixType> > matMat = nullMatrixMatrix(2, 2);
+	matMat[0][0] = M;
+	MatrixType identityMat = identityMatrix(size - M.Ni);
+	MatrixScalarMultiply(&identityMat, newEntries.Re, newEntries.Im);
+	matMat[1][1] = identityMat;
+	return MatrixFlatten(matMat);
+}
+
+MatrixType MatrixExpand(const MatrixType M, const int size)
+{
+	Complex16 z;
+	z.Re = 1;
+	z.Im = 0;
+	return MatrixExpand(M, size, z);
 }
 
 void MatrixAbsAverage(MatrixType M, double *AbsAverage)
@@ -1947,4 +1980,32 @@ void MatrixAbsAverage(MatrixType M, double *AbsAverage)
     }
   }
   *AbsAverage/=(M.Ni*M.Nj);
+}
+
+vector<vector<MatrixType> > nullMatrixMatrix(const int rows, const int cols)
+{
+	vector < vector<MatrixType> > matMat(rows);
+	for (int i = 0; i < rows; ++i)
+	{
+		vector < MatrixType > col(cols);
+		matMat[i] = col;
+		for (int j = 0; j < cols; ++j)
+			matMat[i][j] = nullMatrix();
+	}
+	return matMat;
+}
+
+MatrixType identityMatrix(const int rowSize, const int colSize)
+{
+	MatrixType identityMat;
+	identityMat.QComplex = false;
+	identityMat.Ni = rowSize;
+	identityMat.Nj = colSize;
+	InitIdentityMatrix(&identityMat);
+	return identityMat;
+}
+
+MatrixType identityMatrix(const int size)
+{
+	return identityMatrix(size, size);
 }

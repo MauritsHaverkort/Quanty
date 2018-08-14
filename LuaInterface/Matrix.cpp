@@ -1229,7 +1229,7 @@ static int LuaMatrixFlatten(lua_State * L)
 		}
 		lua_pop(L, 1);
 	}
-	MatrixType fullM = MatrixFlatten(allMs);
+	MatrixType fullM = MatrixFlatten(allMs, true);
 	LuaPushTable_MatrixType(L, &fullM);
 	return 1;
 }
@@ -1243,7 +1243,23 @@ static int LuaMatrixAddSpin(lua_State * L)
 		return luaL_error(L, "MatrixAddSpin called with %d arguments. 1 expected, a matrix.\n", len);
 	}
 	M = *luaL_checkMatrix(L, 1);
-	MatrixType fullM = MatrixExpand(M, 2);
+	MatrixType fullM = MatrixEnlarge(M, 2);
+	LuaPushTable_MatrixType(L, &fullM);
+	return 1;
+}
+
+static int LuaMatrixEnlarge(lua_State * L)
+{
+	MatrixType M;
+	int factor;
+	uint32_t len = (uint32_t) lua_gettop(L);
+	if (len != 2)
+	{
+		return luaL_error(L, "MatrixEnlarge called with %d arguments. 2 expected, a matrix and the factor by which it is to be expanded.\n", len);
+	}
+	M = *luaL_checkMatrix(L, 1);
+	factor = (int)luaL_checkinteger(L, 2);
+	MatrixType fullM = MatrixEnlarge(M, factor);
 	LuaPushTable_MatrixType(L, &fullM);
 	return 1;
 }
@@ -1251,15 +1267,29 @@ static int LuaMatrixAddSpin(lua_State * L)
 static int LuaMatrixExpand(lua_State * L)
 {
 	MatrixType M;
-	int factor;
+	int newSize;
+	Complex16 newEntries;
 	uint32_t len = (uint32_t) lua_gettop(L);
-	if (len != 2)
+	if (len < 2 || len > 3)
 	{
-		return luaL_error(L, "MatrixExpand called with %d arguments. 2 expected, a matrix and the factor by which it is to be expanded.\n", len);
+		return luaL_error(L, "MatrixEnlarge called with %d arguments. 2 or 3 expected, a matrix, the new matrix size, and possibly a value for the entries on the new diagonal.\n", len);
 	}
 	M = *luaL_checkMatrix(L, 1);
-	factor = (int)luaL_checkinteger(L, 2);
-	MatrixType fullM = MatrixExpand(M, factor);
+	newSize = (int) luaL_checkinteger(L, 2);
+	if (len == 3)
+	{
+		if (luaL_testudata(L, 3, "Complex_Type") != NULL)
+		{
+			newEntries = *(Complex16 *) luaL_checkudata(L, 3, "Complex_Type");
+		} else
+		{
+			newEntries.Re = luaL_checknumber(L, 3);
+			newEntries.Im = 0;
+		}
+	}
+	MatrixType fullM = MatrixExpand(M, newSize, newEntries);
+	if (isNullMatrix(fullM))
+		return luaL_error(L, "Could not expand matrix.");
 	LuaPushTable_MatrixType(L, &fullM);
 	return 1;
 }
@@ -1270,6 +1300,7 @@ static const struct luaL_Reg Matrix_func[] = {
   {"Conjugate", LuaMatrixConjugate},
   {"ConjugateTranspose", LuaMatrixConjugateTranspose},
   {"Diagonal", LuaMatrixDiagonal},
+	{"Enlarge", LuaMatrixEnlarge},
   {"Exp", LuaMatrixExp},
 	{"Expand", LuaMatrixExpand},
 	{"Flatten",LuaMatrixFlatten},
