@@ -4657,6 +4657,70 @@ static int LuaYtoJJZMatrix(lua_State * L)
 	return 1;
 }
 
+static int LuaYtoKMatrix(lua_State * L)
+{
+	uint32_t len = (uint32_t) lua_gettop(L);
+	bool isInputInteger;
+	MatrixType returnMat;
+	if (len != 1)
+		return luaL_error(L, "YtoKMatrix called with %d arguments. 1 or 2 expected, multiplicity of orbital, or list of multiplicities, or orbital name, or list of orbital names, and an optional list of options.\n", len);
+	if (!lua_istable(L, 1))
+	{
+		isInputInteger = lua_isnumber(L, 1);
+	} else
+	{
+		lua_rawgeti(L, 1, 1);
+		isInputInteger = lua_isnumber(L, -1);
+		lua_pop(L, 1);
+	}
+//	TODO: Options.
+	if (isInputInteger)
+	{
+		vector<int> multiplicities = luaL_checkvector_int(L, 1);
+		for (int i = 0; i < multiplicities.size(); ++i)
+			multiplicities[i] = 2 * (2 * multiplicities[i] + 1);
+		returnMat = LargeRotationMatrix(multiplicities, YToKMatrix, true);
+	} else
+	{
+		vector < string > orbs = luaL_checkvector_string(L, 1);
+		returnMat = LargeRotationMatrix(orbs, YToKMatrix, true);
+	}
+	LuaPushTable_MatrixType(L, &returnMat);
+	return 1;
+}
+
+static int LuaYtoZMatrix(lua_State * L)
+{
+	uint32_t len = (uint32_t) lua_gettop(L);
+	bool isInputInteger;
+	MatrixType returnMat;
+	if (len != 1)
+		return luaL_error(L, "YtoZMatrix called with %d arguments. 1 or 2 expected, multiplicity of orbital, or list of multiplicities, or orbital name, or list of orbital names, and an optional list of options.\n", len);
+	if (!lua_istable(L, 1))
+	{
+		isInputInteger = lua_isnumber(L, 1);
+	} else
+	{
+		lua_rawgeti(L, 1, 1);
+		isInputInteger = lua_isnumber(L, -1);
+		lua_pop(L, 1);
+	}
+//	TODO: Options.
+	if (isInputInteger)
+	{
+		vector<int> multiplicities = luaL_checkvector_int(L, 1);
+		for (int i = 0; i < multiplicities.size(); ++i)
+			multiplicities[i] = 2 * (2 * multiplicities[i] + 1);
+		returnMat = LargeRotationMatrix(multiplicities, YToZMatrix, true);
+	} else
+	{
+		vector < string > orbs = luaL_checkvector_string(L, 1);
+		returnMat = LargeRotationMatrix(orbs, YToZMatrix, true);
+	}
+	LuaPushTable_MatrixType(L, &returnMat);
+	return 1;
+}
+
 
 static const struct luaL_Reg global_functions[] = {
   {"BlockBandDiagonalize", LuaBlockBandDiagonalize},
@@ -4719,6 +4783,8 @@ static const struct luaL_Reg global_functions[] = {
   {"Transpose", Luatranspose},
   {"Verbosity",LuaVerbosity},
 	{"YtoJJZMatrix",LuaYtoJJZMatrix},
+	{"YtoKMatrix",LuaYtoKMatrix},
+	{"YtoZMatrix",LuaYtoZMatrix},
   {NULL, NULL}
 };
 

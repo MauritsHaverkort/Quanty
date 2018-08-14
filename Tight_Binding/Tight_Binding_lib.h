@@ -65,6 +65,8 @@ vector<string> nonRelToRelOrbs(const vector<string> in);
 MatrixType OrbitalRotationMatrix(vector<string> orbsOld, vector<string> orbsNew);
 template<typename T>bool hasIdenticalEntries(const vector<T> vec);
 template<typename T>vector<int> permutationVector(const vector<T> oldVec, const vector<T> newVec);
+MatrixType YToKMatrix(const int multiplicity, const bool addSpin);
+MatrixType YToZMatrix(const int multiplicity, const bool addSpin);
 MatrixType YToJJzMatrix(const int size);
 MatrixType YToJJzMatrix(const int size, const bool addSpin);
 MatrixType orbitalPermutationMatrix(const vector<string> oldVec, const vector<string> newVec);
