@@ -4612,6 +4612,20 @@ static int LuaNonRelToRelOrbitals(lua_State * L)
 	return 1;
 }
 
+static int LuaOrbitalRotationMatrix(lua_State * L)
+{
+	uint32_t len = (uint32_t) lua_gettop(L);
+	if (len != 2)
+		return luaL_error(L, "RotationMatrix called with %d arguments. Exactly 2 expected, list of old orbitals and list of new orbitals.\n", len);
+	vector<string> orbsOld = luaL_checkvector_string(L,1);
+	vector<string> orbsNew = luaL_checkvector_string(L,2);
+	MatrixType rotMat = OrbitalRotationMatrix(orbsOld,orbsNew);
+	if (isNullMatrix(rotMat))
+		return luaL_error(L, "Could not create rotation matrix.\n");
+	LuaPushTable_MatrixType(L, &rotMat);
+	return 1;
+}
+
 
 static const struct luaL_Reg global_functions[] = {
   {"BlockBandDiagonalize", LuaBlockBandDiagonalize},
@@ -4652,6 +4666,7 @@ static const struct luaL_Reg global_functions[] = {
 	{"NonRelToRelOrbitals",LuaNonRelToRelOrbitals},
   {"OperatorToMatrix", LuaOperatorToMatrix},
   {"OperatorSetTrace", LuaOperatorSetTrace},
+	{"OrbitalRotationMatrix",LuaOrbitalRotationMatrix},
   {"OrbToMultiplicity",LuaOrbToMultiplicity},
   {"Orthonormalize", LuaOrthonormalize},
 	{"PartialMeanFieldOperator",LuaPartialMeanFieldOperator},

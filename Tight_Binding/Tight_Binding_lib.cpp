@@ -2504,3 +2504,286 @@ vector<string> nonRelToRelOrbs(const vector<string> in)
 	}
 	return out;
 }
+
+// input e.g. {"2p32","2s12","2p12"}, {"2s","2p"}
+MatrixType OrbitalRotationMatrix(vector<string> orbsOld, vector<string> orbsNew)
+{
+	if (hasIdenticalEntries(orbsOld))
+	{
+		cout << "Error: RotationMatrix called with identical entries in the list of old orbitals." << endl;
+		return nullMatrix();
+	}
+	if (hasIdenticalEntries(orbsNew))
+	{
+		cout << "Error: RotationMatrix called with identical entries in the list of new orbitals." << endl;
+		return nullMatrix();
+	}
+	int NFOld = NumberOfFermionicStates(orbsOld);
+	int NFNew = NumberOfFermionicStates(orbsNew);
+	int NF = 0;
+	if (NFOld != NFNew)
+	{
+		cout << "Error in RotationMatrix: Old and new orbitals must have the same number of fermionic states." << endl;
+		return nullMatrix();
+	} else
+	{
+		NF = NFOld;
+	}
+	vector < string > orbsTmp;
+//	{"2p12","2s12","2p32"} -> {"2p12","2p32","2s12"}
+	orbsTmp = orbsOld;
+	orbsOld = groupedRelOrbitals(orbsOld);
+	MatrixType TGroupingRight = orbitalPermutationMatrix(orbsTmp, orbsOld);
+	orbsTmp = orbsNew;
+	orbsNew = groupedRelOrbitals(orbsNew);
+	MatrixType TGroupingLeft = orbitalPermutationMatrix(orbsNew, orbsTmp);
+	if (isNullMatrix(TGroupingRight) || isNullMatrix(TGroupingLeft))
+	{
+		cout << "Error in RotationMatrix: Grouping of orbitals failed." << endl;
+		return nullMatrix();
+	}
+	MatrixType TRelNonRelLeft, TRelNonRelRight;
+//	{"2p12","2p32","2s12"} -> {"2p","2s"}
+	if (QChangeFromRelToNonRel(orbsOld, orbsNew))
+	{
+		orbsTmp = orbsOld;
+		orbsOld = relToNonRelOrbs(orbsOld);
+		TRelNonRelRight = RelToNonRelRotationMatrix(orbsTmp, orbsOld);
+		orbsTmp = orbsNew;
+		orbsNew = relToNonRelOrbs(orbsNew);
+		TRelNonRelLeft = NonRelToRelRotationMatrix(orbsNew, orbsTmp);
+		if (isNullMatrix(TRelNonRelLeft) || isNullMatrix(TRelNonRelRight))
+		{
+			cout << "Error in RotationMatrix: Rotation from relativistic to non-relativistic orbitals or vice versa failed." << endl;
+			return nullMatrix();
+		}
+	} else
+	{
+		TRelNonRelLeft = identityMatrix(NF);
+		TRelNonRelRight = identityMatrix(NF);
+	}
+//	{"2p","2s"} -> {"2s","2p"}
+	MatrixType TPerm = orbitalPermutationMatrix(orbsOld, orbsNew);
+	if (isNullMatrix(TPerm))
+	{
+		cout << "Error in RotationMatrix: Permutation of orbitals failed." << endl;
+		return nullMatrix();
+	}
+	MatrixType rotMat = identityMatrix(NF);
+	MatrixMultiply(&rotMat, TGroupingRight, rotMat);
+	MatrixMultiply(&rotMat, TRelNonRelRight, rotMat);
+	MatrixMultiply(&rotMat, TPerm, rotMat);
+	MatrixMultiply(&rotMat, TRelNonRelLeft, rotMat);
+	MatrixMultiply(&rotMat, TGroupingLeft, rotMat);
+	MatrixChop(&rotMat, 10 * DBL_EPSILON);
+	return rotMat;
+}
+
+//TODO: Anyone have a better idea where to put this?
+template<typename T>
+bool hasIdenticalEntries(const vector<T> vec)
+{
+	for (int i = 0; i < vec.size() - 1; ++i)
+		for (int j = i + 1; j < vec.size(); ++j)
+			if (vec[i] == vec[j])
+				return true;
+	return false;
+}
+
+//TODO: Anyone have a better idea where to put this?
+template<typename T>
+vector<int> permutationVector(const vector<T> oldVec, const vector<T> newVec)
+{
+	if (oldVec.size() != newVec.size())
+	{
+		cout << "Error: PermutationVector called with two vectors of different size." << endl;
+		vector<int> errorVec(0);
+		return errorVec;
+	}
+	vector<int> permVec(newVec.size());
+	for (int i = 0; i < newVec.size(); ++i)
+		for (int j = 0; j < oldVec.size(); ++j)
+		{
+			if (newVec[i] == oldVec[j])
+			{
+				permVec[i] = j;
+				break;
+			}
+		}
+	return permVec;
+}
+
+MatrixType YToJJzMatrix(const int size)
+{
+	MatrixType out;
+	out.QComplex = false;
+	out.Ni = size;
+	out.Nj = size;
+	InitMatrix(&out);
+	if (size == 2)
+	{
+//		s-shell
+		out.VRe[0][0] = 1;
+		out.VRe[1][1] = 1;
+	} else if (size == 6)
+	{
+//		p-shell
+		out.VRe[0][1] = -sqrt(2. / 3.);
+		out.VRe[0][2] = 1 / sqrt(3);
+		out.VRe[1][3] = -1 / sqrt(3);
+		out.VRe[1][4] = sqrt(2. / 3.);
+		out.VRe[2][0] = 1;
+		out.VRe[3][1] = 1 / sqrt(3);
+		out.VRe[3][2] = sqrt(2. / 3.);
+		out.VRe[4][3] = sqrt(2. / 3.);
+		out.VRe[4][4] = 1 / sqrt(3);
+		out.VRe[5][5] = 1;
+	} else if (size == 10)
+	{
+//		d-shell
+		out.VRe[0][1] = -sqrt(4. / 5.);
+		out.VRe[0][2] = 1 / sqrt(5);
+		out.VRe[1][3] = -sqrt(3. / 5.);
+		out.VRe[1][4] = sqrt(2. / 5.);
+		out.VRe[2][5] = -sqrt(2. / 5.);
+		out.VRe[2][6] = sqrt(3. / 5.);
+		out.VRe[3][7] = -1 / sqrt(5);
+		out.VRe[3][8] = sqrt(4. / 5.);
+		out.VRe[4][0] = 1;
+		out.VRe[5][1] = 1 / sqrt(5);
+		out.VRe[5][2] = sqrt(4. / 5.);
+		out.VRe[6][3] = sqrt(2. / 5.);
+		out.VRe[6][4] = sqrt(3. / 5.);
+		out.VRe[7][5] = sqrt(3. / 5.);
+		out.VRe[7][6] = sqrt(2. / 5.);
+		out.VRe[8][7] = sqrt(4. / 5.);
+		out.VRe[8][8] = 1 / sqrt(5);
+		out.VRe[9][9] = 1;
+	} else if ((size - 2) % 4 == 0)
+	{
+		cout << "lToJMatrix not yet implemented for an atomic shell of size " << size << ", sorry!" << endl;
+		return nullMatrix();
+	} else
+	{
+		cout << "lToJMatrix only defined for size 2*(2*l+1), with integer l, not for size " << size << "!" << endl;
+		return nullMatrix();
+	}
+	return out;
+}
+
+MatrixType orbitalPermutationMatrix(const vector<string> oldVec, const vector<string> newVec)
+{
+	vector<int> permVec = permutationVector(oldVec, newVec);
+	if (permVec.size() == 0)
+		return nullMatrix();
+	vector < vector<MatrixType> > matMat = nullMatrixMatrix(newVec.size(), oldVec.size());
+	for (int i = 0; i < permVec.size(); ++i)
+	{
+		MatrixType identityMat = identityMatrix(orbToMultiplicity(newVec[i]));
+		matMat[i][permVec[i]] = identityMat;
+	}
+	return MatrixFlatten(matMat);
+}
+
+bool QChangeFromRelToNonRel(const vector<string> orbs1, const vector<string> orbs2)
+{
+	for (int i = 0; i < orbs1.size(); ++i)
+	{
+		for (int j = 0; j < orbs2.size(); ++j)
+		{
+			if (orbs1[i] == orbs2[j])
+			{
+				break;
+			} else if (QOrbsBelongTogether(orbs1[i], orbs2[j]))
+			{
+				if (isRelOrbital(orbs1[i]) && !isRelOrbital(orbs2[j]))
+				{
+					return true;
+				} else if (!isRelOrbital(orbs1[i]) && isRelOrbital(orbs2[j]))
+				{
+					return true;
+				}
+			}
+		}
+	}
+	return false;
+}
+
+int NumberOfFermionicStates(const vector<string> orbs)
+{
+	int NF = 0;
+	int mult;
+	for (int i = 0; i < orbs.size(); ++i)
+	{
+		mult = orbToMultiplicity(orbs[i]);
+		if (mult > 0)
+		{
+			NF += mult;
+		} else
+		{
+			cout << "Error during calculation of NF: Orbital " << orbs[i] << " could not be interpreted as an atomic orbital.\n";
+			return -1;
+		}
+	}
+	return NF;
+}
+
+MatrixType NonRelToRelRotationMatrix(const vector<string> nonRelOrbs, const vector<string> mixedOrbs)
+{
+	vector < vector<MatrixType> > blockMat = nullMatrixMatrix(nonRelOrbs.size(), nonRelOrbs.size());
+	int offset = 0;
+	for (int i = 0; i < nonRelOrbs.size(); ++i)
+	{
+		string oldOrb = nonRelOrbs[i];
+		string newOrb = mixedOrbs[i + offset];
+		if (i + offset >= mixedOrbs.size())
+			break;
+		if (isRelOrbital(oldOrb))
+		{
+			cout << "Error in NonRelToRelRotationMatrix: Encountered relativistic orbital \"" << oldOrb << "\" in list of non-relativistic orbitals." << endl;
+			return nullMatrix();
+		}
+		if (QOrbsBelongTogether(oldOrb, newOrb))
+		{
+			if (isRelOrbital(newOrb))
+			{
+				if (kappa(newOrb) == -1)
+				{
+					blockMat[i][i] = YToJJzMatrix(2);
+				} else
+				{
+					if (i + offset + 1 >= mixedOrbs.size())
+					{
+						cout << "Error in NonRelToRelRotationMatrix: List of new orbitals is missing the second entry belonging to \"" << oldOrb << "\"." << endl;
+						return nullMatrix();
+					}
+					string newOrb2 = mixedOrbs[i + offset + 1];
+					if (QOrbsBelongTogether(oldOrb, newOrb2))
+					{
+						blockMat[i][i] = YToJJzMatrix(orbToMultiplicity(oldOrb));
+						++offset;
+					} else
+					{
+						cout << "Error in NonRelToRelRotationMatrix: Could not connect \"" << oldOrb << "\" with \"" << newOrb2 << "\"." << endl;
+						return nullMatrix();
+					}
+				}
+			} else
+			{
+				blockMat[i][i] = identityMatrix(orbToMultiplicity(oldOrb));
+			}
+		} else
+		{
+			cout << "Error in NonRelToRelRotationMatrix: Could not connect \"" << oldOrb << "\" with \"" << newOrb << "\"." << endl;
+			return nullMatrix();
+		}
+	}
+	return MatrixFlatten(blockMat, true);
+}
+
+MatrixType RelToNonRelRotationMatrix(const vector<string> mixedOrbs, const vector<string> nonRelOrbs)
+{
+	MatrixType tmp = NonRelToRelRotationMatrix(nonRelOrbs, mixedOrbs);
+	MatrixTranspose(&tmp);
+	return tmp;
+}
