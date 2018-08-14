@@ -4158,7 +4158,7 @@ static int LuaDeterminantString(lua_State *L)
 		return luaL_error(L, "DeterminantString called with %d arguments. List of Indices and Number of Fermions expected.\n",len);
 	indices = luaL_checkvector_unit16_t(L,1);
 	NF = luaL_checknumber(L,2);
-	int i;
+	uint16_t i;
 	for (i=0;i<indices.size();i++)
 	{
 		if (indices[i]<0 || indices[i]>=NF)

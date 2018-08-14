@@ -2118,8 +2118,7 @@ int orbToMultiplicity(string orb)
 
 
 //TODO: Anyone have a better idea where to put this function?
-template <typename T>
-bool isIntElementOf(const T element, const vector<T> set)
+bool isIntElementOf(const uint16_t element, const vector<uint16_t> set)
 {
 	for (int i = 0; i < set.size(); i++)
 	{
