@@ -2104,17 +2104,28 @@ int kappa(string orb)
 		return jzNumbers/2;
 }
 
+int orbToMultiplicity(string orb)
+{
+	int multiplicity = 2 * nonRelAngularMomentumZNumbers(orb);
+	if (multiplicity < 0)
+		multiplicity = relAngularMomentumZNumbers(orb);
+	if (multiplicity < 0)
+	{
+		cout << "\nCould not interpret orbital \"" << orb << "\" as either relativistic or non-relativistic atomic orbital, returning " << multiplicity << endl;
+	}
+	return multiplicity;
+}
+
 
 //TODO: Anyone have a better idea where to put this function?
-int isIntElementOf(const uint16_t element, const vector<uint16_t> set)
+bool isIntElementOf(const uint16_t element, const vector<uint16_t> set)
 {
-	int i;
-	for (i = 0; i < set.size(); i++)
+	for (int i = 0; i < set.size(); i++)
 	{
 		if (element == set[i])
-			return 1;
+			return true;
 	}
-	return 0;
+	return false;
 }
 
 /*  On input TB contains a normal TB object

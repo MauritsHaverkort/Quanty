@@ -43,10 +43,15 @@ int CreateCrystalStructureFromCrystalStructureSuperCell(CrystalStructureSuperCel
 int CreateTightBindingSuperCell(TightBindingDef A, TightBindingDef * ASuper, CrystalStructureSuperCellType SuperCell);
 int CreateTightBindingSquareSuperCell(TightBindingDef A, TightBindingDef * ASuper, int N[3]);
 int TightBindingBANDSToMatrix(double Emin, double Emax, int NEpoints, MatrixType BANDS, MatrixType * BWValue);
-int TightBindingBANDSCharacterToMatrix(double Emin, double Emax, int NEpoints, MatrixType BANDS, MatrixType Character,MatrixType * BWValue);
-int TightBindingAddAxesToMatrix(double Emin, double Emax, int NELines, double *Elines, BandstructurePathType kList,MatrixType * RGBValue);
+int TightBindingBANDSCharacterToMatrix(double Emin, double Emax, int NEpoints, MatrixType BANDS, MatrixType Character,  MatrixType * BWValue);
+int TightBindingAddAxesToMatrix(double Emin, double Emax, int NELines, double *Elines, BandstructurePathType kList, MatrixType * RGBValue);
 int nonRelAngularMomentumZNumbers(string orb);
 int relAngularMomentumZNumbers(string orb, int * significantCharPos);
 int relAngularMomentumZNumbers(string orb);
 int kappa(string orb);
-int isIntElementOf(const uint16_t element, const vector<uint16_t> set);
+int orbToMultiplicity(string orb);
+bool isIntElementOf(const uint16_t element, const vector<uint16_t> set);
+uint32_t RemoveCrystalInformationFromTightBinding(TightBindingDef *TB, TightBindingDef *StripedTB);
+uint32_t AddCrystalInformationFromTightBinding(TightBindingDef *StripedTB, TightBindingDef *TB);
+uint32_t RotateStripedTightBinding(TightBindingDef * TB, CompactMatrixType * rotmat, TightBindingDef * RTB);
+uint32_t RotateTightBinding(TightBindingDef * TB, CompactMatrixType * rotmat, TightBindingDef * RTB);

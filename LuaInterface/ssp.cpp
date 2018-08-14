@@ -4341,7 +4341,7 @@ static int lua_createAtomicIndices(lua_State *L, bool isDict)
   {
     if(LuaTestOptionsList(L, -1))
     {
-      LuaCheckOptions(L, -1, LuaCreateAtomicIndicesOptions); //TODO: muss ich hier noch testen obs sich um einen bool handelt?
+      LuaCheckOptions(L, -1, LuaCreateAtomicIndicesOptions);
     }
     else
     {
@@ -4489,7 +4489,6 @@ static int LuaPartialMeanFieldOperator(lua_State *L)
 static int LuaOrbToMultiplicity(lua_State * L)
 {
 	char * orb;
-	int multiplicity;
 	uint32_t len = (uint32_t) lua_gettop(L);
 	if (len != 1)
 	{
@@ -4497,16 +4496,7 @@ static int LuaOrbToMultiplicity(lua_State * L)
 	}
 	orb = (char*) luaL_checkstring(L, 1);
 	lua_pop(L, 1);
-	multiplicity = 2*nonRelAngularMomentumZNumbers(orb);
-	if (multiplicity < 0)
-		multiplicity = relAngularMomentumZNumbers(orb);
-	if (multiplicity < 0)
-	{
-		printf("\nCould not interpret orbital \"");
-		printf("%s", orb);
-		printf("\" as either relativistic or non-relativistic atomic orbital, returning %d.\n", multiplicity);
-	}
-	lua_pushnumber(L, multiplicity);
+	lua_pushnumber(L, orbToMultiplicity(orb));
 	return 1;
 }
 
