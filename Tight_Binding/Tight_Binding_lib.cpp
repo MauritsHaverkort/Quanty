@@ -2711,8 +2711,8 @@ MatrixType YToZMatrix(const int multiplicity, const bool addSpin)
 		out.VRe[2][2] = 1;
 		out.VRe[3][1] = 1 / sqrt(2.);
 		out.VRe[3][3] = -1 / sqrt(2.);
-		out.VRe[3][0] = 1 / sqrt(2.);
-		out.VRe[3][3] = 1 / sqrt(2.);
+		out.VRe[4][0] = 1 / sqrt(2.);
+		out.VRe[4][4] = 1 / sqrt(2.);
 	} else if ((multiplicity - 2) % 4 == 0)
 	{
 		cout << "YToZMatrix not yet implemented for an atomic shell of multiplicity " << multiplicity << ", sorry!" << endl;
