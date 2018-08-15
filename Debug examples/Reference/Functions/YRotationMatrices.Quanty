@@ -1,0 +1,18 @@
+inputs = {}
+inputs[#inputs + 1] = 1
+inputs[#inputs + 1] = {0,1,2}
+inputs[#inputs + 1] = {0,1,2,3,4,5}
+inputs[#inputs + 1] = "3p"
+inputs[#inputs + 1] = {"3s","3p","3d"}
+inputs[#inputs + 1] = {"7s","7p","7d","7f","7g","7h"}
+
+for key, input in pairs(inputs) do
+    print("\n\n\nInput:")
+    print(input)
+    print("\nYtoJJZMatrix:")
+    print( YtoJJZMatrix(input) )
+    print("\nYtoKMatrix:")
+    print( YtoKMatrix(input) )
+    print("\nYtoZMatrix:")
+    print( YtoZMatrix(input) )
+end
