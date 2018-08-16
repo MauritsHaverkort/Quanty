@@ -2629,8 +2629,8 @@ MatrixType YToKMatrix(const int multiplicity, const bool addSpin)
 //		p-shell
 		out.VRe[0][0] = 1 / sqrt(2.);
 		out.VRe[0][2] = -1 / sqrt(2.);
-		out.VIm[1][0] = -1 / sqrt(2.);
-		out.VIm[1][2] = -1 / sqrt(2.);
+		out.VIm[1][0] = 1 / sqrt(2.);
+		out.VIm[1][2] = 1 / sqrt(2.);
 		out.VRe[2][1] = 1;
 	} else if (multiplicity == 10)
 	{
@@ -2638,34 +2638,34 @@ MatrixType YToKMatrix(const int multiplicity, const bool addSpin)
 		out.VRe[0][0] = 1 / sqrt(2.);
 		out.VRe[0][4] = 1 / sqrt(2.);
 		out.VRe[1][2] = 1;
-		out.VIm[2][1] = -1 / sqrt(2.);
-		out.VIm[2][3] = -1 / sqrt(2.);
+		out.VIm[2][1] = 1 / sqrt(2.);
+		out.VIm[2][3] = 1 / sqrt(2.);
 		out.VRe[3][1] = 1 / sqrt(2.);
 		out.VRe[3][3] = -1 / sqrt(2.);
-		out.VIm[4][0] = -1 / sqrt(2.);
-		out.VIm[4][4] = 1 / sqrt(2.);
+		out.VIm[4][0] = 1 / sqrt(2.);
+		out.VIm[4][4] = -1 / sqrt(2.);
 	} else if (multiplicity == 14)
 	{
 //		f-shell
-		out.VIm[0][1] = -1/sqrt(2.);
-		out.VIm[0][5] = 1/sqrt(2.);
+		out.VIm[0][1] = 1/sqrt(2.);
+		out.VIm[0][5] = -1/sqrt(2.);
 		out.VRe[1][0] = sqrt(5.)/4;
 		out.VRe[1][2] = -sqrt(3.)/4;
 		out.VRe[1][4] = sqrt(3.)/4;
 		out.VRe[1][6] = -sqrt(5.)/4;
-		out.VIm[2][0] = sqrt(5.)/4;
-		out.VIm[2][2] = sqrt(3.)/4;
-		out.VIm[2][4] = sqrt(3.)/4;
-		out.VIm[2][6] = sqrt(5.)/4;
+		out.VIm[2][0] = -sqrt(5.)/4;
+		out.VIm[2][2] = -sqrt(3.)/4;
+		out.VIm[2][4] = -sqrt(3.)/4;
+		out.VIm[2][6] = -sqrt(5.)/4;
 		out.VRe[3][3] = 1;
 		out.VRe[4][0] = -sqrt(3.)/4;
 		out.VRe[4][2] = -sqrt(5.)/4;
 		out.VRe[4][4] = sqrt(5.)/4;
 		out.VRe[4][6] = sqrt(3.)/4;
-		out.VIm[5][0] = sqrt(3.)/4;
-		out.VIm[5][2] = -sqrt(5.)/4;
-		out.VIm[5][4] = -sqrt(5.)/4;
-		out.VIm[5][6] = sqrt(3.)/4;
+		out.VIm[5][0] = -sqrt(3.)/4;
+		out.VIm[5][2] = sqrt(5.)/4;
+		out.VIm[5][4] = sqrt(5.)/4;
+		out.VIm[5][6] = -sqrt(3.)/4;
 		out.VRe[6][1] = 1/sqrt(2.);
 		out.VRe[6][5] = 1/sqrt(2.);
 	} else if ((multiplicity - 2) % 4 == 0)
@@ -2696,18 +2696,18 @@ MatrixType YToZMatrix(const int multiplicity, const bool addSpin)
 	} else if (multiplicity == 6)
 	{
 //		p-shell
-		out.VIm[0][0] = -1 / sqrt(2.);
-		out.VIm[0][2] = -1 / sqrt(2.);
+		out.VIm[0][0] = 1 / sqrt(2.);
+		out.VIm[0][2] = 1 / sqrt(2.);
 		out.VRe[1][1] = 1;
 		out.VRe[2][0] = 1 / sqrt(2.);
 		out.VRe[2][2] = -1 / sqrt(2.);
 	} else if (multiplicity == 10)
 	{
 //		d-shell
-		out.VIm[0][0] = -1 / sqrt(2.);
-		out.VIm[0][4] = 1 / sqrt(2.);
-		out.VIm[1][1] = -1 / sqrt(2.);
-		out.VIm[1][3] = -1 / sqrt(2.);
+		out.VIm[0][0] = 1 / sqrt(2.);
+		out.VIm[0][4] = -1 / sqrt(2.);
+		out.VIm[1][1] = 1 / sqrt(2.);
+		out.VIm[1][3] = 1 / sqrt(2.);
 		out.VRe[2][2] = 1;
 		out.VRe[3][1] = 1 / sqrt(2.);
 		out.VRe[3][3] = -1 / sqrt(2.);
