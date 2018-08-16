@@ -43,3 +43,6 @@ void MatrixAbsAverage(MatrixType M, double *AbsAverage);
 vector<vector<MatrixType> > nullMatrixMatrix(const int rows, const int cols);
 MatrixType identityMatrix(const int rowSize, const int colSize);
 MatrixType identityMatrix(const int size);
+MatrixType Submatrix(MatrixType M, int rowStart, int rows, int colStart, int cols);
+MatrixType Submatrix(MatrixType M, int rows, int cols);
+MatrixType Submatrix(MatrixType M, int size);

@@ -2009,3 +2009,39 @@ MatrixType identityMatrix(const int size)
 {
 	return identityMatrix(size, size);
 }
+
+MatrixType Submatrix(MatrixType M, int rowStart, int rows, int colStart, int cols)
+{
+	if (rowStart < 0 || rows <= 0 || colStart < 0 || cols <= 0 || rowStart + rows > M.Ni || colStart + cols > M.Nj)
+	{
+		cout << "Error in Submatrix: Invalid parameters:" << endl;
+		cout << "rowStart = " << rowStart << ", rows = " << rows << ", colStart = " << colStart << " and cols = " << cols << " is incompatible with a matrix of size " << M.Ni << "x" << M.Nj << "."
+				<< endl;
+		return nullMatrix();
+	}
+	MatrixType Msub;
+	Msub.Ni = rows;
+	Msub.Nj = cols;
+	Msub.QComplex = M.QComplex;
+	InitMatrix(&Msub);
+	for (int i = 0; i < rows; ++i)
+	{
+		for (int j = 0; j < cols; ++j)
+		{
+			Msub.VRe[i][j] = M.VRe[rowStart + i][colStart + j];
+			if (M.QComplex)
+				Msub.VIm[i][j] = M.VIm[rowStart + i][colStart + j];
+		}
+	}
+	return Msub;
+}
+
+MatrixType Submatrix(MatrixType M, int rows, int cols)
+{
+	return Submatrix(M, 0, rows, 0, cols);
+}
+
+MatrixType Submatrix(MatrixType M, int size)
+{
+	return Submatrix(M, size, size);
+}
