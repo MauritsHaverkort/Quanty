@@ -1273,19 +1273,18 @@ uint32_t MeanFieldGroundstate(const OperatorType *const O, CompactMatrixType * c
   return 0;
 }
 
-uint32_t partialMeanFieldOperator(const OperatorType * const O, OperatorType * const OPartialMF, const MatrixType Rho, const uint16_t * const indices, const uint32_t indSetSize, bool AddDFTSelfInteraction = false)
+uint32_t partialMeanFieldOperator(const OperatorType * const O, OperatorType * const OPartialMF, const MatrixType Rho, const vector<uint16_t> indices, bool AddDFTSelfInteraction = false)
 {
 	OperatorCopy(OPartialMF, *O);
-	if (O->MaxLength < 3 || indSetSize < 1)
+	if (O->MaxLength < 3 || indices.size() < 1)
 	{
 		return 0;
 	}
 	OperatorType MeanFieldPartTmp, MeanFieldPart;
 	int length = 4; //If ever we can apply mean field to operators of length unequal to 4, this needs to be changed.
-	InitOperator(&MeanFieldPartTmp);
-	MeanFieldPartTmp.NFermion = OPartialMF->NFermion;
-	MeanFieldPartTmp.NBoson = OPartialMF->NBoson;
-	extractPartialOperatorFixedLength(OPartialMF, &MeanFieldPartTmp, indices, indSetSize, 4);
+	InitOperatorCopySettings(&MeanFieldPart,*OPartialMF);
+	InitOperatorCopySettings(&MeanFieldPartTmp,*OPartialMF);
+	extractPartialOperatorFixedLength(OPartialMF, &MeanFieldPartTmp, indices, 4, true);
 	if (MeanFieldPartTmp.l[length].N != 0)
 	{
 		MeanFieldOperator(&MeanFieldPartTmp, &MeanFieldPart, Rho, AddDFTSelfInteraction);

@@ -1,4 +1,5 @@
 int sprintfAdd(char ** A, const char *fmt, ...);
+template <typename T>string to_string(const T value);
 uint32_t StringPrintOperatorReadable(OperatorType O, char **Buffer);
 uint32_t StringPrintWaveFunctionReadable(WaveFunctionType psi, char **Buffer);
 uint32_t StringPrintSpectra(SpectraType * const Spec, const uint32_t NSpec, char **Buffer);

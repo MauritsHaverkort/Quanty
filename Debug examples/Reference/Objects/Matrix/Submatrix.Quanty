@@ -1,0 +1,44 @@
+MReal = {}
+MComplex = {}
+for i = 1,20 do
+    MReal[i] = {}
+    MComplex[i] = {}
+    for j = 1,20 do
+        MReal[i][j] = i + 12/j
+        MComplex[i][j] = (i + 12/j)*I
+    end
+end
+
+print("Real Matrix:")
+print(MReal)
+print("Complex Matrix:")
+print(MComplex)
+
+starts = {1, 5}
+sizes = {1,3,10}
+for key1,rowStart in pairs(starts) do
+    for key2,rows in pairs(sizes) do
+        for key3,colStart in pairs(starts) do
+            for key4, cols in pairs(sizes) do
+                print("\n\n\nRowStart = "..rowStart)
+                print("Rows = "..rows)
+                print("ColStart = "..colStart)
+                print("Cols = "..cols)
+                print("Real submatrix (2 arguments):")
+                print(Matrix.Sub(MReal, rows))
+                print("Complex submatrix (2 arguments):")
+                print(Matrix.Sub(MComplex, rows))
+                
+                print("Real submatrix (3 arguments):")
+                print(Matrix.Sub(MReal, rows, cols))
+                print("Complex submatrix (3 arguments):")
+                print(Matrix.Sub(MComplex, rows, cols))
+                
+                print("Real submatrix (5 arguments):")
+                print(Matrix.Sub(MReal, rowStart, rows, colStart, cols))
+                print("Complex submatrix (5 arguments):")
+                print(Matrix.Sub(MComplex, rowStart, rows, colStart, cols))
+            end
+        end
+    end
+end

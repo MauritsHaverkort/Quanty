@@ -73,10 +73,13 @@ uint32_t OperatorPsiRestricted(const OperatorType O, const WaveFunctionType psi,
 uint32_t OperatorPsi(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi);
 uint32_t PsiOperatorPsi(const OperatorType O, const WaveFunctionType psi, double *VRe, double *VIm);
 uint32_t PsiHermitianOperatorPsi(const OperatorType O, const WaveFunctionType psi, double *VRe);
+double PsiHermitianOperatorPsi(const OperatorType O, const WaveFunctionType psi);
 uint32_t PsiOperatorSqrPsi(const OperatorType O, const WaveFunctionType psi, double *VRe, double *VIm);
 uint32_t PsiHermitianOperatorSqrPsi(const OperatorType O, const WaveFunctionType psi, double *VRe);
+double PsiHermitianOperatorSqrPsi(const OperatorType O, const WaveFunctionType psi);
 uint32_t PsiOperatorSqrPsiRestricted(const OperatorType O, const WaveFunctionType psi, double *VRe, double *VIm, DeterminantRestrictionType const Restrictions);
 uint32_t PsiHermitianOperatorSqrPsiRestricted(const OperatorType O, const WaveFunctionType psi, double *VRe, DeterminantRestrictionType const Restrictions);
+double PsiHermitianOperatorSqrPsiRestricted(const OperatorType O, const WaveFunctionType psi, DeterminantRestrictionType const Restrictions);
 uint32_t PsiPrimeOperatorPsiMatrix(const OperatorType O, const WaveFunctionType * psiPrime, const WaveFunctionType * psi, MatrixType * const V);
 uint32_t PsiOperatorPsiMatrix(const OperatorType O, const WaveFunctionType * psi, MatrixType * const V);
 uint32_t PsiPrimeOperatorPsi(const OperatorType O, const WaveFunctionType psiPrime, const WaveFunctionType psi, double *VRe, double *VIm);

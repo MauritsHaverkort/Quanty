@@ -19,6 +19,7 @@ RhoList[#RhoList+1] = {{1,I,0,0},{0,1,0,0},{0,0,1,0},{0,0,0,1}}
 IndList={}
 IndList[#IndList+1] = {}
 IndList[#IndList+1] = {0}
+IndList[#IndList+1] = {3}
 IndList[#IndList+1] = {1,2}
 IndList[#IndList+1] = {0,2,4}
 IndList[#IndList+1] = {0,1,2,3}

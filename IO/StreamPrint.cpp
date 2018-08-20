@@ -1568,7 +1568,191 @@ uint32_t StreamPrintBandstructurePath(BandstructurePathType M, FILE * stream)
   {
     fprintf(stream, "%c     %4i     %11.8lf %11.8lf %11.8lf\n",M.Q[i].label,M.Q[i].Nq,M.Q[i].q[0],M.Q[i].q[1],M.Q[i].q[2]);
   }
-  return 0;
+	return 0;
 }
 
+string numberToStringMaxWidth(double num, int maxWidth)
+{
+	std::stringstream sstr;
+	int old_precision = sstr.precision();
+	int power = findPower(num);
+	int powerDigits = findPower(power) + 1;
+	if (power < 0)
+		++powerDigits;
+	if (num < 0)
+		--maxWidth;
+	if (abs(num) < 1)
+	{
+		if (abs(num) > pow(10,-powerDigits-2) || num == 0)
+		{
+			if (maxWidth + power - 1 > 0)
+				sstr.precision(maxWidth + power - 1);
+			else
+				sstr.precision(1);
+			sstr << num;
+		} else
+		{
+			if (maxWidth - powerDigits - 2 > 0)
+				sstr.precision(maxWidth - powerDigits - 2);
+			else
+				sstr.precision(1);
+			sstr << num * pow(10, -power) << "e" << power;
+		}
+	} else if (abs(num) > pow(10, maxWidth - 1))
+	{
+		if (maxWidth - powerDigits - 2 > 0)
+			sstr.precision(maxWidth - powerDigits - 2);
+		else
+			sstr.precision(1);
+		sstr << num * pow(10, -power) << "e" << power;
+	} else
+	{
+		if (maxWidth - 1 > 0)
+			sstr.precision(maxWidth - 1);
+		else
+			sstr.precision(1);
+		sstr << num;
+	}
+	sstr.precision(old_precision);
+	string out;
+	sstr >> out;
+	return out;
+}
+
+
+void numberOutMaxWidth(double num, int maxWidth)
+{
+	cout << numberToStringMaxWidth(num,maxWidth);
+}
+
+void fillWithBlank(int width, int occupiedSpace)
+{
+	if (occupiedSpace >= width)
+	{
+		cout << " ";
+	} else
+	{
+		for (int i = 0; i < width - occupiedSpace; ++i)
+			cout << " ";
+	}
+}
+
+void fillWithBlank(int width)
+{
+	fillWithBlank(width,0);
+}
+
+void printExpectationValues(const vector < WaveFunctionType >  psiList, const OperatorType  hamil, const vector < OperatorType >  opList, bool hasHamiltonian, bool sortByEnergy, bool printSigma, double zero, int printHeaderEvery, int colWidth)
+{
+	vector<double> EValues(psiList.size());
+	vector<double> sigmaValues(psiList.size());
+	vector<vector<double> > expValues(psiList.size());
+	int hamilAddition = 0, sigmaAddition = 0;
+	bool opHermetian = false, opRestricted = false;
+	if (hasHamiltonian)
+	{
+		hamilAddition = 1;
+		opHermetian = isOperatorAlmostHermitian(hamil, zero);
+		opRestricted = (hamil.Res.N > 0);
+		if (!opHermetian)
+		{
+			cout << "PrintExpectationValues not yet implemented for non-Hermitian operators, the reults will probably be rubbish." << endl;
+		}
+		if (opRestricted)
+		{
+			for (int i = 0; i < psiList.size(); ++i)
+			{
+				EValues[i] = PsiHermitianOperatorPsi(hamil, psiList[i]); //TODO: es gibt das noch nicht mit Restrictions.
+			}
+		} else
+		{
+			for (int i = 0; i < psiList.size(); ++i)
+			{
+				EValues[i] = PsiHermitianOperatorPsi(hamil, psiList[i]);
+			}
+		}
+		if (printSigma)
+		{
+			sigmaAddition = 1;
+//			TODO: make this possible for non-hermetian operators
+			if (opRestricted)
+			{
+				for (int i = 0; i < psiList.size(); ++i)
+					sigmaValues[i] = sqrt(abs(EValues[i] * EValues[i] - PsiHermitianOperatorSqrPsiRestricted(hamil, psiList[i], hamil.Res)));
+			} else
+			{
+				for (int i = 0; i < psiList.size(); ++i)
+					sigmaValues[i] = sqrt(abs(EValues[i] * EValues[i] - PsiHermitianOperatorSqrPsi(hamil, psiList[i])));
+			}
+		}
+	}
+
+	for (int i = 0; i < psiList.size(); ++i)
+	{
+
+		expValues[i] = vector<double>(opList.size() + hamilAddition + sigmaAddition);
+		if (hasHamiltonian)
+		{
+			expValues[i][0] = EValues[i];
+			if (printSigma)
+				expValues[i][expValues[i].size() - 1] = sigmaValues[i];
+		}
+		for (int j = 0; j < opList.size(); ++j)
+			expValues[i][j + hamilAddition] = PsiHermitianOperatorPsi(opList[j], psiList[i]); //TODO: If Abfrage auf Restrictions. Leider ändern Restrictions an dieser Stelle auch nichts.
+	}
+
+	if (hasHamiltonian && sortByEnergy)
+		sort(expValues.begin(), expValues.end(), matrixSorterByFirstValue);
+
+	for (int i = 0; i < psiList.size(); ++i)
+	{
+		if (i == 0 || (printHeaderEvery > 0 && i % printHeaderEvery == 0))
+			printExpectationValuesHeader(opList, hasHamiltonian, printSigma, colWidth);
+		int maxISize = findPower(psiList.size()) + 1;
+		fillWithBlank(colWidth - 2, maxISize);
+		cout.width(maxISize);
+		cout << (i + 1);
+		cout << "  ";
+		for (int j = 0; j < opList.size() + hamilAddition; ++j)
+		{
+			double out = expValues[i][j];
+			if (out <= zero)
+				out = 0;
+			string outStr = numberToStringMaxWidth(out, colWidth - 1);
+			cout << outStr;
+			fillWithBlank(colWidth, outStr.length());
+		}
+		if (hasHamiltonian && printSigma)
+		{
+			double out = expValues[i][expValues[i].size() - 1];
+			string outStr = numberToStringMaxWidth(out, colWidth);
+			cout << outStr;
+		}
+		cout << endl;
+	}
+}
+
+void printExpectationValuesHeader(const vector < OperatorType > opList, bool hasHamiltonian, bool printSigma, int colWidth)
+{
+	cout << endl;
+	fillWithBlank(colWidth);
+	if (hasHamiltonian)
+	{
+		cout << "E";
+		fillWithBlank(colWidth,1);
+	}
+	for (int i = 0; i < opList.size(); ++i)
+	{
+		string name(opList[i].Name);
+		if (name.length() > colWidth-1)
+		{
+			name = name.substr(0,colWidth-1);
+		}
+		cout << name;
+		fillWithBlank(colWidth, name.length());
+	}
+	if (hasHamiltonian && printSigma)
+		cout << "std-dev";
+	cout << endl;
+}
 
