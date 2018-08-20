@@ -923,7 +923,7 @@ void TestCompactMatrixVector()
   
   printf("original matrix\n");
   PrintCompactMatrixMinimal(AM);
-  CompactMatrixSVDOrthogonalizeRowplusT(&AM, &EM, &BM, &CM, 10000*DBL_EPSILON, True);
+  CompactMatrixSVDOrthogonalizeRowplusT(&AM, &EM, &BM, &CM, 10000*DBL_EPSILON, true);
   
   
   printf("Orthogonalized\n");
@@ -985,7 +985,7 @@ void TestCompactMatrixVector()
   
   printf("original matrix\n");
   PrintCompactMatrixMinimal(AM);
-  CompactMatrixSVDOrthogonalizeRowplusT(&AM, &EM, &BM, &CM, 10000*DBL_EPSILON, True);
+  CompactMatrixSVDOrthogonalizeRowplusT(&AM, &EM, &BM, &CM, 10000*DBL_EPSILON, true);
   
   
   printf("Orthogonalized\n");
@@ -1048,7 +1048,7 @@ void TestCompactMatrixVector()
   
   printf("original matrix\n");
   PrintCompactMatrixMinimal(AM);
-  CompactMatrixSVDOrthogonalizeRowplusT(&AM, &EM, &BM, &CM, 10000*DBL_EPSILON, True);
+  CompactMatrixSVDOrthogonalizeRowplusT(&AM, &EM, &BM, &CM, 10000*DBL_EPSILON, true);
   
   
   printf("Orthogonalized\n");
@@ -1106,7 +1106,7 @@ void TestCompactMatrixVector()
   
   printf("Original\n");
   PrintCompactMatrixMinimal(AM);
-  CompactMatrixGramSchmidtOrthogonalizeRow(&AM, DBL_EPSILON, True);
+  CompactMatrixGramSchmidtOrthogonalizeRow(&AM, DBL_EPSILON, true);
   printf("Orhtonormal\n");
   PrintCompactMatrixMinimal(AM);
   CompactMatrixMultiply('N', 'C', &AM, &AM, &BM);
@@ -1132,7 +1132,7 @@ void TestCompactMatrixVector()
   AM.VRe[1]+=0.1;
   AM.VRe[0]+=12;
   
-  CompactMatrixGramSchmidtOrthogonalizeRowplusT(&AM, &BM, &CM, &DM, DBL_EPSILON, True);
+  CompactMatrixGramSchmidtOrthogonalizeRowplusT(&AM, &BM, &CM, &DM, DBL_EPSILON, true);
   
   printf("Original\n");
   PrintCompactMatrixMinimal(AM);
@@ -1188,7 +1188,7 @@ void TestCompactMatrixVector()
   
   printf("Original\n");
   PrintCompactMatrixMinimal(AM);
-  CompactMatrixGramSchmidtOrthogonalizeRow(&AM, DBL_EPSILON, True);
+  CompactMatrixGramSchmidtOrthogonalizeRow(&AM, DBL_EPSILON, true);
   printf("Orhtonormal\n");
   PrintCompactMatrixMinimal(AM);
   CompactMatrixMultiply('N', 'C', &AM, &AM, &BM);
@@ -1210,7 +1210,7 @@ void TestCompactMatrixVector()
   AM.V[1].Re+=0.1;
   AM.V[0].Im+=12;
   
-  CompactMatrixGramSchmidtOrthogonalizeRowplusT(&AM, &BM, &CM, &DM, DBL_EPSILON, True);
+  CompactMatrixGramSchmidtOrthogonalizeRowplusT(&AM, &BM, &CM, &DM, DBL_EPSILON, true);
   
   printf("Original\n");
   PrintCompactMatrixMinimal(AM);

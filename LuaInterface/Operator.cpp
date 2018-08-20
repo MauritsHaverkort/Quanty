@@ -6,19 +6,19 @@ static int LuaOperatorNewCoulomb(lua_State * L)
 {
   OperatorType *op;
   uint32_t Ntemp,NShell,l,lA,lB,lC,lD;
-  Bool jbasis=False;
+  bool jbasis=false;
   uint32_t NFermion = (uint32_t)luaL_checkunsigned(L, 1);
   uint32_t len = (uint32_t)lua_gettop(L);
-  if(lua_isnumber(L,3)) jbasis=True;
+  if(lua_isnumber(L,3)) jbasis=true;
   if(NFermion==0) return luaL_error(L, "Coulomb operator acting on zero fermions is not defined");
-  if ((len==4)&&(jbasis==False)) /* creates the coulomb operator in a single shell of angular momentum L */
+  if ((len==4)&&(jbasis==false)) /* creates the coulomb operator in a single shell of angular momentum L */
   {
     uint16_t *LindexUp, *LindexDn;
     double *F;
     LindexDn = luaL_checkarray_unit16_t(L, 2, &NShell);
     LindexUp = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==False) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==False) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
+    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
+    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
     if(NShell!=Ntemp)
     {
       return luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
@@ -41,14 +41,14 @@ static int LuaOperatorNewCoulomb(lua_State * L)
     free(F);
     return 1;
   }
-  else if ((len==7)&&(jbasis==False)) /* creates the coulomb operator between two shells with LA and LB conserving the occupation of the A and B shell */
+  else if ((len==7)&&(jbasis==false)) /* creates the coulomb operator between two shells with LA and LB conserving the occupation of the A and B shell */
   {
     uint16_t *LindexUpA, *LindexDnA, *LindexUpB, *LindexDnB;
     double *F,*G;
     LindexDnA = luaL_checkarray_unit16_t(L, 2, &NShell);
     LindexUpA = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUpA, NShell)==False) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDnA, Ntemp )==False) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
+    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUpA, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
+    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDnA, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
     if(NShell!=Ntemp)
     {
       return luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
@@ -60,8 +60,8 @@ static int LuaOperatorNewCoulomb(lua_State * L)
     }
     LindexDnB = luaL_checkarray_unit16_t(L, 4, &NShell);
     LindexUpB = luaL_checkarray_unit16_t(L, 5, &Ntemp);
-    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUpB, NShell)==False) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDnB, Ntemp )==False) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
+    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUpB, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
+    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDnB, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
     if(NShell!=Ntemp)
     {
       return luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
@@ -92,14 +92,14 @@ static int LuaOperatorNewCoulomb(lua_State * L)
     free(G);
     return 1;
   }
-  else if ((len==10)&&(jbasis==False)) /* creates the general coulomb operator between four shels with LA, LB, LC and LD */
+  else if ((len==10)&&(jbasis==false)) /* creates the general coulomb operator between four shels with LA, LB, LC and LD */
   {
     uint16_t *LindexUpA, *LindexDnA, *LindexUpB, *LindexDnB, *LindexUpC, *LindexDnC, *LindexUpD, *LindexDnD;
     double *R;
     LindexDnA = luaL_checkarray_unit16_t(L, 2, &NShell);
     LindexUpA = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUpA, NShell)==False) return luaL_error(L, "Index up of first shell contains a refference outside the range [0,%d]",NFermion-1);
-    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDnA, Ntemp )==False) return luaL_error(L, "Index dn of first shell contains a refference outside the range [0,%d]",NFermion-1);
+    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUpA, NShell)==false) return luaL_error(L, "Index up of first shell contains a refference outside the range [0,%d]",NFermion-1);
+    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDnA, Ntemp )==false) return luaL_error(L, "Index dn of first shell contains a refference outside the range [0,%d]",NFermion-1);
     if(NShell!=Ntemp)
     {
       return luaL_error(L, "Error in LuaOperatorNewCoulomb, For first shell lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
@@ -111,8 +111,8 @@ static int LuaOperatorNewCoulomb(lua_State * L)
     }
     LindexDnB = luaL_checkarray_unit16_t(L, 4, &NShell);
     LindexUpB = luaL_checkarray_unit16_t(L, 5, &Ntemp);
-    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUpB, NShell)==False) return luaL_error(L, "Index up of second shell contains a refference outside the range [0,%d]",NFermion-1);
-    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDnB, Ntemp )==False) return luaL_error(L, "Index dn of second shell contains a refference outside the range [0,%d]",NFermion-1);
+    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUpB, NShell)==false) return luaL_error(L, "Index up of second shell contains a refference outside the range [0,%d]",NFermion-1);
+    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDnB, Ntemp )==false) return luaL_error(L, "Index dn of second shell contains a refference outside the range [0,%d]",NFermion-1);
     if(NShell!=Ntemp)
     {
       return luaL_error(L, "Error in LuaOperatorNewCoulomb, For second shell lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
@@ -124,8 +124,8 @@ static int LuaOperatorNewCoulomb(lua_State * L)
     }
     LindexDnC = luaL_checkarray_unit16_t(L, 6, &NShell);
     LindexUpC = luaL_checkarray_unit16_t(L, 7, &Ntemp);
-    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUpC, NShell)==False) return luaL_error(L, "Index up of third shell contains a refference outside the range [0,%d]",NFermion-1);
-    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDnC, Ntemp )==False) return luaL_error(L, "Index dn of third shell contains a refference outside the range [0,%d]",NFermion-1);
+    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUpC, NShell)==false) return luaL_error(L, "Index up of third shell contains a refference outside the range [0,%d]",NFermion-1);
+    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDnC, Ntemp )==false) return luaL_error(L, "Index dn of third shell contains a refference outside the range [0,%d]",NFermion-1);
     if(NShell!=Ntemp)
     {
       return luaL_error(L, "Error in LuaOperatorNewCoulomb, For third shell lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
@@ -137,8 +137,8 @@ static int LuaOperatorNewCoulomb(lua_State * L)
     }
     LindexDnD = luaL_checkarray_unit16_t(L, 8, &NShell);
     LindexUpD = luaL_checkarray_unit16_t(L, 9, &Ntemp);
-    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUpD, NShell)==False) return luaL_error(L, "Index up of forth shell contains a refference outside the range [0,%d]",NFermion-1);
-    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDnD, Ntemp )==False) return luaL_error(L, "Index dn of forth shell contains a refference outside the range [0,%d]",NFermion-1);
+    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUpD, NShell)==false) return luaL_error(L, "Index up of forth shell contains a refference outside the range [0,%d]",NFermion-1);
+    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDnD, Ntemp )==false) return luaL_error(L, "Index dn of forth shell contains a refference outside the range [0,%d]",NFermion-1);
     if(NShell!=Ntemp)
     {
       return luaL_error(L, "Error in LuaOperatorNewCoulomb, For forth shell lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
@@ -183,7 +183,7 @@ static int LuaOperatorNewCoulomb(lua_State * L)
     int kappa;
     double *F;
     Jindex = luaL_checkarray_unit16_t(L, 2, &NShell);
-    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), Jindex, NShell)==False) return luaL_error(L, "Index of Jshell contains a refference outside the range [0,%d]",NFermion-1);
+    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), Jindex, NShell)==false) return luaL_error(L, "Index of Jshell contains a refference outside the range [0,%d]",NFermion-1);
     twoj=(NShell-1);
     if(NShell&1)
     {
@@ -220,7 +220,7 @@ static int LuaOperatorNewCoulomb(lua_State * L)
     uint16_t *JindexA,*JindexB;
     double *F, *G;
     JindexA = luaL_checkarray_unit16_t(L, 2, &NShell);
-    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), JindexA, NShell)==False) return luaL_error(L, "Index of first J shell contains a refference outside the range [0,%d]",NFermion-1);
+    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), JindexA, NShell)==false) return luaL_error(L, "Index of first J shell contains a refference outside the range [0,%d]",NFermion-1);
     twojA   = NShell-1;
     if(NShell&1)
     {
@@ -232,7 +232,7 @@ static int LuaOperatorNewCoulomb(lua_State * L)
       return luaL_error(L, "Error in LuaOperatorNewCoulomb, for first shell: j (%d/2) is not equal to |kappa|-1/2 (kappa = %d)\n",twojA,kappaA);
     }
     JindexB = luaL_checkarray_unit16_t(L, 4, &NShell);
-    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), JindexB, NShell)==False) return luaL_error(L, "Index of second J shell contains a refference outside the range [0,%d]",NFermion-1);
+    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), JindexB, NShell)==false) return luaL_error(L, "Index of second J shell contains a refference outside the range [0,%d]",NFermion-1);
     twojB   = NShell-1;
     if(NShell&1)
     {
@@ -274,7 +274,7 @@ static int LuaOperatorNewCoulomb(lua_State * L)
     uint16_t *JindexA,*JindexB,*JindexC,*JindexD;
     double *R;
     JindexA = luaL_checkarray_unit16_t(L, 2, &NShell);
-    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), JindexA, NShell)==False) return luaL_error(L, "Index of first J shell contains a refference outside the range [0,%d]",NFermion-1);
+    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), JindexA, NShell)==false) return luaL_error(L, "Index of first J shell contains a refference outside the range [0,%d]",NFermion-1);
     twojA   = NShell-1;
     if(NShell&1)
     {
@@ -286,7 +286,7 @@ static int LuaOperatorNewCoulomb(lua_State * L)
       return luaL_error(L, "Error in LuaOperatorNewCoulomb, for first shell: j (%d/2) is not equal to |kappa|-1/2 (kappa = %d)\n",twojA,kappaA);
     }
     JindexB = luaL_checkarray_unit16_t(L, 4, &NShell);
-    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), JindexB, NShell)==False) return luaL_error(L, "Index of second J shell contains a refference outside the range [0,%d]",NFermion-1);
+    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), JindexB, NShell)==false) return luaL_error(L, "Index of second J shell contains a refference outside the range [0,%d]",NFermion-1);
     twojB   = NShell-1;
     if(NShell&1)
     {
@@ -298,7 +298,7 @@ static int LuaOperatorNewCoulomb(lua_State * L)
       return luaL_error(L, "Error in LuaOperatorNewCoulomb, for second shell: j (%d/2) is not equal to |kappa|-1/2 (kappa = %d)\n",twojB,kappaB);
     }
     JindexC = luaL_checkarray_unit16_t(L, 6, &NShell);
-    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), JindexC, NShell)==False) return luaL_error(L, "Index of third J shell contains a refference outside the range [0,%d]",NFermion-1);
+    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), JindexC, NShell)==false) return luaL_error(L, "Index of third J shell contains a refference outside the range [0,%d]",NFermion-1);
     twojC   = NShell-1;
     if(NShell&1)
     {
@@ -310,7 +310,7 @@ static int LuaOperatorNewCoulomb(lua_State * L)
       return luaL_error(L, "Error in LuaOperatorNewCoulomb, for third shell: j (%d/2) is not equal to |kappa|-1/2 (kappa = %d)\n",twojC,kappaC);
     }
     JindexD = luaL_checkarray_unit16_t(L, 8, &NShell);
-    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), JindexD, NShell)==False) return luaL_error(L, "Index of forth J shell contains a refference outside the range [0,%d]",NFermion-1);
+    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), JindexD, NShell)==false) return luaL_error(L, "Index of forth J shell contains a refference outside the range [0,%d]",NFermion-1);
     twojD   = NShell-1;
     if(NShell&1)
     {
@@ -353,8 +353,8 @@ static int LuaOperatorNewSx(lua_State * L)
   if(NFermion==0) return luaL_error(L, "Spin operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==False) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==False) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
   if(NShell!=Ntemp)
   {
     return luaL_error(L, "Error in LuaOperatorNewSx, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
@@ -377,8 +377,8 @@ static int LuaOperatorNewSy(lua_State * L)
   if(NFermion==0) return luaL_error(L, "Spin operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==False) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==False) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
   if(NShell!=Ntemp)
   {
     return luaL_error(L, "Error in LuaOperatorNewSy, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
@@ -401,8 +401,8 @@ static int LuaOperatorNewSz(lua_State * L)
   if(NFermion==0) return luaL_error(L, "Spin operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==False) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==False) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
   if(NShell!=Ntemp)
   {
     return luaL_error(L, "Error in LuaOperatorNewSz, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
@@ -425,8 +425,8 @@ static int LuaOperatorNewSsqr(lua_State * L)
   if(NFermion==0) return luaL_error(L, "Spin operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==False) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==False) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
   if(NShell!=Ntemp)
   {
     return luaL_error(L, "Error in LuaOperatorNewSsqr, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
@@ -449,8 +449,8 @@ static int LuaOperatorNewSplus(lua_State * L)
   if(NFermion==0) return luaL_error(L, "Spin operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==False) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==False) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
   if(NShell!=Ntemp)
   {
     return luaL_error(L, "Error in LuaOperatorNewSplus, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
@@ -473,8 +473,8 @@ static int LuaOperatorNewSmin(lua_State * L)
   if(NFermion==0) return luaL_error(L, "Spin operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==False) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==False) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
   if(NShell!=Ntemp)
   {
     return luaL_error(L, "Error in LuaOperatorNewSmin, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
@@ -534,8 +534,8 @@ static int LuaOperatorNewLx(lua_State * L)
   }
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==False) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==False) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
   if(Options.ibasis==3)
   {
     if((NShell+2)!=Ntemp)
@@ -592,8 +592,8 @@ static int LuaOperatorNewLy(lua_State * L)
   if(NFermion==0) return luaL_error(L, "Angular momentum operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==False) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==False) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
   if(NShell!=Ntemp)
   {
     return luaL_error(L, "Error in LuaOperatorNewLy, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
@@ -621,8 +621,8 @@ static int LuaOperatorNewLz(lua_State * L)
   if(NFermion==0) return luaL_error(L, "Angular momentum operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==False) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==False) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
   if(NShell!=Ntemp)
   {
     return luaL_error(L, "Error in LuaOperatorNewLz, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
@@ -650,8 +650,8 @@ static int LuaOperatorNewLplus(lua_State * L)
   if(NFermion==0) return luaL_error(L, "Angular momentum operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==False) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==False) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
   if(NShell!=Ntemp)
   {
     return luaL_error(L, "Error in LuaOperatorNewLplus, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
@@ -679,8 +679,8 @@ static int LuaOperatorNewLmin(lua_State * L)
   if(NFermion==0) return luaL_error(L, "Angular momentum operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==False) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==False) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
   if(NShell!=Ntemp)
   {
     return luaL_error(L, "Error in LuaOperatorNewLmin, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
@@ -708,8 +708,8 @@ static int LuaOperatorNewLsqr(lua_State * L)
   if(NFermion==0) return luaL_error(L, "Angular momentum operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==False) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==False) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
   if(NShell!=Ntemp)
   {
     return luaL_error(L, "Error in LuaOperatorNewLsqr, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
@@ -737,8 +737,8 @@ static int LuaOperatorNewJx(lua_State * L)
   if(NFermion==0) return luaL_error(L, "Total Angular momentum operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==False) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==False) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
   if(NShell!=Ntemp)
   {
     return luaL_error(L, "Error in LuaOperatorNewJx, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
@@ -766,8 +766,8 @@ static int LuaOperatorNewJy(lua_State * L)
   if(NFermion==0) return luaL_error(L, "Total Angular momentum operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==False) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==False) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
   if(NShell!=Ntemp)
   {
     return luaL_error(L, "Error in LuaOperatorNewJy, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
@@ -795,8 +795,8 @@ static int LuaOperatorNewJz(lua_State * L)
   if(NFermion==0) return luaL_error(L, "Total Angular momentum operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==False) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==False) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
   if(NShell!=Ntemp)
   {
     return luaL_error(L, "Error in LuaOperatorNewJz, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
@@ -824,8 +824,8 @@ static int LuaOperatorNewJplus(lua_State * L)
   if(NFermion==0) return luaL_error(L, "Total Angular momentum operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==False) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==False) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
   if(NShell!=Ntemp)
   {
     return luaL_error(L, "Error in LuaOperatorNewJplus, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
@@ -853,8 +853,8 @@ static int LuaOperatorNewJmin(lua_State * L)
   if(NFermion==0) return luaL_error(L, "Total Angular momentum operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==False) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==False) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
   if(NShell!=Ntemp)
   {
     return luaL_error(L, "Error in LuaOperatorNewJmin, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
@@ -882,8 +882,8 @@ static int LuaOperatorNewJsqr(lua_State * L)
   if(NFermion==0) return luaL_error(L, "Total Angular momentum operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==False) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==False) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
   if(NShell!=Ntemp)
   {
     return luaL_error(L, "Error in LuaOperatorNewJsqr, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
@@ -911,8 +911,8 @@ static int LuaOperatorNewTx(lua_State * L)
   if(NFermion==0) return luaL_error(L, "Magnetic dipole operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==False) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==False) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
   if(NShell!=Ntemp)
   {
     return luaL_error(L, "Error in LuaOperatorNewTx, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
@@ -940,8 +940,8 @@ static int LuaOperatorNewTy(lua_State * L)
   if(NFermion==0) return luaL_error(L, "Magnetic dipole operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==False) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==False) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
   if(NShell!=Ntemp)
   {
     return luaL_error(L, "Error in LuaOperatorNewTy, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
@@ -969,8 +969,8 @@ static int LuaOperatorNewTz(lua_State * L)
   if(NFermion==0) return luaL_error(L, "Magnetic dipole operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==False) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==False) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
   if(NShell!=Ntemp)
   {
     return luaL_error(L, "Error in LuaOperatorNewTz, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
@@ -998,8 +998,8 @@ static int LuaOperatorNewTplus(lua_State * L)
   if(NFermion==0) return luaL_error(L, "Magnetic dipole operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==False) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==False) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
   if(NShell!=Ntemp)
   {
     return luaL_error(L, "Error in LuaOperatorNewTplus, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
@@ -1027,8 +1027,8 @@ static int LuaOperatorNewTmin(lua_State * L)
   if(NFermion==0) return luaL_error(L, "Magnetic dipole operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==False) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==False) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
   if(NShell!=Ntemp)
   {
     return luaL_error(L, "Error in LuaOperatorNewTmin, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
@@ -1056,8 +1056,8 @@ static int LuaOperatorNewTsqr(lua_State * L)
   if(NFermion==0) return luaL_error(L, "Magnetic dipole operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==False) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==False) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
   if(NShell!=Ntemp)
   {
     return luaL_error(L, "Error in LuaOperatorNewTsqr, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
@@ -1085,8 +1085,8 @@ static int LuaOperatorNewQxx(lua_State * L)
   if(NFermion==0) return luaL_error(L, "Quadrupole operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==False) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==False) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
   if(NShell!=Ntemp)
   {
     return luaL_error(L, "Error in LuaOperatorNewQxx, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
@@ -1114,8 +1114,8 @@ static int LuaOperatorNewQyy(lua_State * L)
   if(NFermion==0) return luaL_error(L, "Quadrupole operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==False) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==False) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
   if(NShell!=Ntemp)
   {
     return luaL_error(L, "Error in LuaOperatorNewQyy, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
@@ -1143,8 +1143,8 @@ static int LuaOperatorNewQzz(lua_State * L)
   if(NFermion==0) return luaL_error(L, "Quadrupole operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==False) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==False) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
   if(NShell!=Ntemp)
   {
     return luaL_error(L, "Error in LuaOperatorNewQzz, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
@@ -1172,8 +1172,8 @@ static int LuaOperatorNewQxy(lua_State * L)
   if(NFermion==0) return luaL_error(L, "Quadrupole operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==False) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==False) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
   if(NShell!=Ntemp)
   {
     return luaL_error(L, "Error in LuaOperatorNewQxy, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
@@ -1201,8 +1201,8 @@ static int LuaOperatorNewQxz(lua_State * L)
   if(NFermion==0) return luaL_error(L, "Quadrupole operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==False) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==False) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
   if(NShell!=Ntemp)
   {
     return luaL_error(L, "Error in LuaOperatorNewQxz, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
@@ -1230,8 +1230,8 @@ static int LuaOperatorNewQyz(lua_State * L)
   if(NFermion==0) return luaL_error(L, "Quadrupole operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==False) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==False) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
   if(NShell!=Ntemp)
   {
     return luaL_error(L, "Error in LuaOperatorNewQyz, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
@@ -1259,8 +1259,8 @@ static int LuaOperatorNewldots(lua_State * L)
   if(NFermion==0) return luaL_error(L, "Spin-orbit operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==False) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==False) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
   if(NShell!=Ntemp)
   {
     return luaL_error(L, "Error in LuaOperatorNewldots, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
@@ -1291,7 +1291,7 @@ static int LuaOperatorNewCF(lua_State * L)
   if(len==3)
   {
     LindexUpCr = luaL_checkarray_unit16_t(L, 2, &NShell);
-    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUpCr, NShell)==False) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
+    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUpCr, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
     LindexUpAn = LindexUpCr;
     LindexDnAn = LindexUpCr;
     LindexDnCr = LindexUpCr;
@@ -1308,8 +1308,8 @@ static int LuaOperatorNewCF(lua_State * L)
     LindexUpAn = LindexUpCr;
     LindexDnCr = luaL_checkarray_unit16_t(L, 3, &Ntemp);
     LindexDnAn = LindexDnCr;
-    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUpCr, NShell)==False) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDnCr, Ntemp )==False) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
+    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUpCr, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
+    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDnCr, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
     lCr=(NShell-1)/2;
     lAn=lCr;
     if(NShell!=Ntemp)
@@ -1325,8 +1325,8 @@ static int LuaOperatorNewCF(lua_State * L)
   {
     LindexUpCr = luaL_checkarray_unit16_t(L, 2, &NShell);
     LindexDnCr = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUpCr, NShell)==False) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDnCr, Ntemp )==False) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
+    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUpCr, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
+    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDnCr, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
     lCr=(NShell-1)/2;
     if(NShell!=Ntemp)
     {
@@ -1338,8 +1338,8 @@ static int LuaOperatorNewCF(lua_State * L)
     }
     LindexUpAn = luaL_checkarray_unit16_t(L, 4, &NShell);
     LindexDnAn = luaL_checkarray_unit16_t(L, 5, &Ntemp);
-    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUpAn, NShell)==False) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDnAn, Ntemp )==False) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
+    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUpAn, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
+    if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDnAn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
     lAn=(NShell-1)/2;
     if(NShell!=Ntemp)
     {
@@ -1885,7 +1885,7 @@ static int LuaOperatorPrint(lua_State * L)
   struct
   {
     char *stream;
-    Bool Full;
+    bool Full;
   } Options;
   uint32_t len = (uint32_t)lua_gettop(L);
   LuaOptionsType LuaOperatorPrintOptions[]={
@@ -1901,12 +1901,12 @@ static int LuaOperatorPrint(lua_State * L)
     PrintOperatorReadable(*((OperatorType *) currentudata));
     return 0;
   }
-  Options.Full=False;
+  Options.Full=false;
   Options.stream=NULL;
   LuaCheckOptions(L, -1, LuaOperatorPrintOptions);
   if(Options.stream==NULL)
   {
-    if(Options.Full==False)
+    if(Options.Full==false)
     {
       PrintOperatorReadable(*((OperatorType *) currentudata));
     }
@@ -1917,7 +1917,7 @@ static int LuaOperatorPrint(lua_State * L)
   }
   else
   {
-    if(Options.Full==False)
+    if(Options.Full==false)
     {
       FilePrintOperatorReadable(*((OperatorType *) currentudata), Options.stream, "w");
     }

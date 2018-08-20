@@ -36,6 +36,6 @@ void InterpolateRoot2D(double const *x1, double const *x2, double const *y1, dou
 void InterpolateRoot2DOfset(double const *x1, double const *x2, double const *y1, double const *y2, uint32_t N, double const ofsety1, double const ofsety2, double *const x1next, double *const x2next);
 double FindSelfconsistentnumber(double const *valin, double const *valout, uint32_t N);
 void ReciprocalLatticeVector(double r[3][3], double g[3][3], uint32_t const Units);
-Bool Test_uint8_t_array_in_range(const uint8_t min, const uint8_t max, uint8_t *l, const uint32_t N);
-Bool Test_uint16_t_array_in_range(const uint16_t min, const uint16_t max, uint16_t *l, const uint32_t N);
-Bool Test_uint32_t_array_in_range(const uint32_t min, const uint32_t max, uint32_t *l, const uint32_t N);
+bool Test_uint8_t_array_in_range(const uint8_t min, const uint8_t max, uint8_t *l, const uint32_t N);
+bool Test_uint16_t_array_in_range(const uint16_t min, const uint16_t max, uint16_t *l, const uint32_t N);
+bool Test_uint32_t_array_in_range(const uint32_t min, const uint32_t max, uint32_t *l, const uint32_t N);

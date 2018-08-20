@@ -1178,7 +1178,7 @@ void ComplexWaveFunctionRestrict(WaveFunctionType * const a, const DeterminantRe
 void ComplexWaveFunctionTruncateBasisAllowReal(WaveFunctionType * const a, const double epsilon)
 {
   const double Sqrepsilon = Sqr(epsilon);
-  Bool keepcomplex=False;
+  bool keepcomplex=false;
   uint32_t startN, iBlok, iElement;
   a->ValueRe[0][0] = 0;
   a->ValueIm[0][0] = 0;
@@ -1196,7 +1196,7 @@ void ComplexWaveFunctionTruncateBasisAllowReal(WaveFunctionType * const a, const
       if (Sqr(a->ValueRe[iBlok][iElement]) + Sqr(a->ValueIm[iBlok][iElement]) > Sqrepsilon)
       {
         if (ComplexWaveFunctionAddElement(a, &a->Determinant[iBlok][iElement * a->NWord], a->ValueRe[iBlok][iElement], a->ValueIm[iBlok][iElement]) != 0) AllocFailed();
-        if (Sqr(a->ValueIm[iBlok][iElement]) > Sqrepsilon) keepcomplex = True;
+        if (Sqr(a->ValueIm[iBlok][iElement]) > Sqrepsilon) keepcomplex = true;
       }
     }
   }
@@ -1207,7 +1207,7 @@ void ComplexWaveFunctionTruncateBasisAllowReal(WaveFunctionType * const a, const
     if (Sqr(a->ValueRe[iBlok][iElement]) + Sqr(a->ValueIm[iBlok][iElement]) > Sqrepsilon)
     {
       if (ComplexWaveFunctionAddElement(a, &a->Determinant[iBlok][iElement * a->NWord], a->ValueRe[iBlok][iElement], a->ValueIm[iBlok][iElement]) != 0) AllocFailed();
-      if (Sqr(a->ValueIm[iBlok][iElement]) > Sqrepsilon) keepcomplex = True;
+      if (Sqr(a->ValueIm[iBlok][iElement]) > Sqrepsilon) keepcomplex = true;
     }
   }
   for (iBlok = 1 + (a->N >> NBitsBlok); iBlok < a->NBlok; iBlok++)
@@ -1317,7 +1317,7 @@ uint32_t ComplexWaveFunctionOrthogonalize(WaveFunctionType * const psi, const Wa
 
 
 
-uint32_t ComplexWaveFunctionListSVDOrthogonalizeSameBasis(WaveFunctionType * const psilist, WaveFunctionType * const psilistOrtho, uint32_t * const Npsi, const double SingularValue, const Bool ReduceDimension)
+uint32_t ComplexWaveFunctionListSVDOrthogonalizeSameBasis(WaveFunctionType * const psilist, WaveFunctionType * const psilistOrtho, uint32_t * const Npsi, const double SingularValue, const bool ReduceDimension)
 {
   
   uint32_t i,j,NSingular=0;
@@ -1423,9 +1423,9 @@ uint32_t ComplexWaveFunctionListSVDOrthogonalizeSameBasis(WaveFunctionType * con
     }
   }
   FreeCompactMatrix(&SvS);
-  // no singular values or ReduceDimension = False
+  // no singular values or ReduceDimension = false
   // return 0
-  if((NSingular==0)||(ReduceDimension==False)) return 0;
+  if((NSingular==0)||(ReduceDimension==false)) return 0;
   // singular values and reduce dimension
   // normlist = psilist[[i]]^* . psilist[[i]]
   for(i=0;i<*Npsi;i++)
@@ -1446,7 +1446,7 @@ uint32_t ComplexWaveFunctionListSVDOrthogonalizeSameBasis(WaveFunctionType * con
   }
   *Npsi-=NSingular;
   // call RealWaveFunctionListSVDOrthogonalize again
-  if(ComplexWaveFunctionListSVDOrthogonalizeSameBasis(psilisttemp, psilistOrtho, Npsi, SingularValue, False))
+  if(ComplexWaveFunctionListSVDOrthogonalizeSameBasis(psilisttemp, psilistOrtho, Npsi, SingularValue, false))
   {
     printf("ComplexWaveFunctionListSVDOrthogonalizeSameBasis failed in ComplexWaveFunctionListSVDOrthogonalizeSameBasis\n");
     return 1;
@@ -1458,7 +1458,7 @@ uint32_t ComplexWaveFunctionListSVDOrthogonalizeSameBasis(WaveFunctionType * con
   return 0;
 }
 
-uint32_t ComplexWaveFunctionListSVDOrthogonalize(WaveFunctionType * const psilist, WaveFunctionType * const psilistOrtho, uint32_t * const Npsi, const double SingularValue, const Bool ReduceDimension)
+uint32_t ComplexWaveFunctionListSVDOrthogonalize(WaveFunctionType * const psilist, WaveFunctionType * const psilistOrtho, uint32_t * const Npsi, const double SingularValue, const bool ReduceDimension)
 {
   uint32_t i,j,NSingular=0;
   double val[2*(*Npsi)];
@@ -1569,9 +1569,9 @@ uint32_t ComplexWaveFunctionListSVDOrthogonalize(WaveFunctionType * const psilis
     }
   }
   FreeCompactMatrix(&SvS);
-  // no singular values or ReduceDimension = False
+  // no singular values or ReduceDimension = false
   // return 0
-  if((NSingular==0)||(ReduceDimension==False)) return 0;
+  if((NSingular==0)||(ReduceDimension==false)) return 0;
   // singular values and reduce dimension
   // normlist = psilist[[i]]^* . psilist[[i]]
   for(i=0;i<*Npsi;i++)
@@ -1592,7 +1592,7 @@ uint32_t ComplexWaveFunctionListSVDOrthogonalize(WaveFunctionType * const psilis
   }
   *Npsi-=NSingular;
   // call RealWaveFunctionListSVDOrthogonalize again
-  if(ComplexWaveFunctionListSVDOrthogonalize(psilisttemp, psilistOrtho, Npsi, SingularValue, True))
+  if(ComplexWaveFunctionListSVDOrthogonalize(psilisttemp, psilistOrtho, Npsi, SingularValue, true))
   {
     printf("ComplexWaveFunctionListSVDOrthogonalize failed in ComplexWaveFunctionListSVDOrthogonalize\n");
     return 1;
@@ -1604,7 +1604,7 @@ uint32_t ComplexWaveFunctionListSVDOrthogonalize(WaveFunctionType * const psilis
   return 0;
 }
 
-uint32_t ComplexWaveFunctionListOrthogonalizeSameBasis(WaveFunctionType * const psilist, uint32_t * const Npsi, const double SingularValue, const Bool ReduceDimension)
+uint32_t ComplexWaveFunctionListOrthogonalizeSameBasis(WaveFunctionType * const psilist, uint32_t * const Npsi, const double SingularValue, const bool ReduceDimension)
 {
   uint32_t i,j;
   double Norm,DotRe,DotIm;
@@ -1614,7 +1614,7 @@ uint32_t ComplexWaveFunctionListOrthogonalizeSameBasis(WaveFunctionType * const 
     // normalize psi[i] if norm smaller than Singular value set psi[i] to zero or remove psi[i] from basis
     while((Norm=ComplexWaveFunctionCalculateNorm(psilist[i]))<SingularValue)
     {
-      if(ReduceDimension==True)
+      if(ReduceDimension==true)
       {
         ComplexWaveFunctionFreeValues(&(psilist[i]));
         for(j=i+1;j<*Npsi;j++)
@@ -1641,7 +1641,7 @@ uint32_t ComplexWaveFunctionListOrthogonalizeSameBasis(WaveFunctionType * const 
   return 0;
 }
 
-uint32_t ComplexWaveFunctionListOrthogonalize(WaveFunctionType * const psilist, uint32_t * const Npsi, const double SingularValue, const Bool ReduceDimension)
+uint32_t ComplexWaveFunctionListOrthogonalize(WaveFunctionType * const psilist, uint32_t * const Npsi, const double SingularValue, const bool ReduceDimension)
 {
   uint32_t i,j;
   double Norm,DotRe,DotIm;
@@ -1652,7 +1652,7 @@ uint32_t ComplexWaveFunctionListOrthogonalize(WaveFunctionType * const psilist, 
     // normalize psi[i] if norm smaller than Singular value set psi[i] to zero or remove psi[i] from basis
     while((Norm=ComplexWaveFunctionCalculateNorm(psilist[i]))<SingularValue)
     {
-      if(ReduceDimension==True)
+      if(ReduceDimension==true)
       {
         ComplexWaveFunctionFree(&(psilist[i]));
         for(j=i+1;j<*Npsi;j++)

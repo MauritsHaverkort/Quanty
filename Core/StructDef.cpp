@@ -55,8 +55,6 @@ typedef struct Complex16
 }
 Complex16;
 
-typedef enum { False, True } Bool;
-
 /*
  *
  */
@@ -783,7 +781,7 @@ BlockNaturalImpurityOrbitalMatrixType;
  *  t or T for (Block)TridiagonalMatrix
  *  n or N for (Block)NaturalMatrix
  *
- *  Boolean Block is true for block matrtices, false for non-block matrices
+ *  boolean Block is true for block matrtices, false for non-block matrices
  *
  *  the difference between small and captical is used for a container pointing to a unique object (capital)
  *  or to a container pointing to a shared object (small)
@@ -809,7 +807,7 @@ BlockNaturalImpurityOrbitalMatrixType;
 typedef struct ResponsefunctionType
 {
   char type;                               // l,a,t,n or L,A,T,N
-  Bool Block;
+  bool Block;
   void * data;
   double *SuggestedGrid;
   uint32_t NSuggestedGridPoints;
@@ -1174,9 +1172,9 @@ typedef struct StuttgartCTRL
   char VERS[64];
   struct
   {
-    Bool HELP;
-    Bool WKP;
-    Bool IACTIV;
+    bool HELP;
+    bool WKP;
+    bool IACTIV;
     int VERBOS;
     int ERRTOL;
     char OUTPUT[MAXStrLength];
@@ -1198,24 +1196,24 @@ typedef struct StuttgartCTRL
   {
     double ALAT;
     double PLAT[3][3];
-    Bool FIXLAT;
+    bool FIXLAT;
   }
   STRUC;
   struct
   {
-    Bool REL;
-    Bool CCOR;
-    Bool NONLOC;
-    Bool CORDRD;
-    Bool CARTESIAN;
-    Bool CHARGE;
-    Bool FATBAND;
-    Bool AFM;
-    Bool FS;
-    Bool OVLCOR;
-    Bool WRIBAS;
-    Bool SEWALD;
-    Bool LOCALCS;
+    bool REL;
+    bool CCOR;
+    bool NONLOC;
+    bool CORDRD;
+    bool CARTESIAN;
+    bool CHARGE;
+    bool FATBAND;
+    bool AFM;
+    bool FS;
+    bool OVLCOR;
+    bool WRIBAS;
+    bool SEWALD;
+    bool LOCALCS;
     int NRXC;
     int NITATOM;
     int NSPIN;
@@ -1226,7 +1224,7 @@ typedef struct StuttgartCTRL
   struct
   {
     int N;           /* not in control file - number of clases */
-    Bool *NEWNAM;
+    bool *NEWNAM;
     char **ATOM;
     int *Z;
     double *R;
@@ -1250,7 +1248,7 @@ typedef struct StuttgartCTRL
   SITE;
   struct
   {
-    Bool USESYM;
+    bool USESYM;
     int NGEN;
     int IORIGIN;
     char SPCGRP[64];
@@ -1259,7 +1257,7 @@ typedef struct StuttgartCTRL
   SYMGRP;
   struct
   {
-    Bool SCLWSR;
+    bool SCLWSR;
     double FACVOL;
     double OMMAX1[3];
     double OMMAX2[3];
@@ -1268,9 +1266,9 @@ typedef struct StuttgartCTRL
   SCALE;
   struct
   {
-    Bool DOWATS;
-    Bool DONALP;
-    Bool NOCALC;
+    bool DOWATS;
+    bool DONALP;
+    bool NOCALC;
     int N;            /* not in control file - number of ATOMS for wich SIGMA is defined */
     int IALPHA;
     int LMAXW;
@@ -1291,8 +1289,8 @@ typedef struct StuttgartCTRL
   STR;
   struct
   {
-    Bool TETRA;
-    Bool METAL;
+    bool TETRA;
+    bool METAL;
     int NKABC[3];
     int MAXKP;
     int N;
@@ -1328,10 +1326,10 @@ typedef struct StuttgartCTRL
   SYML;
   struct
   {
-    Bool BROY;
-    Bool FREE;
-    Bool BEGMOM;
-    Bool CNTROL;
+    bool BROY;
+    bool FREE;
+    bool BEGMOM;
+    bool CNTROL;
     int N;            /* not in control file - number of ATOMS for settings are defined */
     int NIT;
     int NMIX;
@@ -1353,7 +1351,7 @@ typedef struct StuttgartCTRL
   START;
   struct
   {
-    Bool BEGATOM;
+    bool BEGATOM;
     int LT1;
     int LT2;
     int LT3;
@@ -1377,11 +1375,11 @@ typedef struct StuttgartCTRL
   PLOT;
   struct
   {
-    Bool LMTODAT;
-    Bool CHARWIN;
-    Bool ELF;
-    Bool ADDCOR;
-    Bool SPINDENS;
+    bool LMTODAT;
+    bool CHARWIN;
+    bool ELF;
+    bool ADDCOR;
+    bool SPINDENS;
     double EMIN;
     double EMAX;
   }
@@ -1396,13 +1394,13 @@ typedef struct StuttgartCTRL
   FINDES;
   struct
   {
-    Bool EQUIV;
+    bool EQUIV;
     double PLAT[3][3];
   }
   SCELL;
   struct
   {
-    Bool FIT;
+    bool FIT;
     int N;         /* not in control file - number of ATOMS - should be the same as in CLASS */
     int OUTPUT;
     double KAPPA2;
@@ -1420,8 +1418,8 @@ typedef struct StuttgartCTRL
     int ORBITAL;
     double RMAXHR;
     double *ENU;
-    Bool eV;
-    Bool ORTHO;
+    bool eV;
+    bool ORTHO;
   }
   NMTO;
   struct
@@ -1456,7 +1454,7 @@ StuttgartHAMRelement;
 
 typedef struct StuttgartHAMR
 {
-  Bool eV;
+  bool eV;
   int Nelement;
   StuttgartHAMRelement *element;
 }

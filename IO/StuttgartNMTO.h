@@ -1,12 +1,12 @@
 int StringReplace(char * String, char in, char out);
-int fscanfCTRL(FILE * stream, char * str, Bool * token);
+int fscanfCTRL(FILE * stream, char * str, bool * token);
 int fscanfRemoveEqualSign(FILE * stream);
 uint32_t StuttgartCategoryToIndex(char *str);
 uint32_t QStuttgartCategory(char *str);
 uint32_t IndexToStuttgartCategory(uint32_t i, char *str);
 uint32_t InitializeStuttgartCTRL(StuttgartCTRL * O);
 uint32_t OrderAndCheckStuttgartCTRL(StuttgartCTRL * O);
-uint32_t StreamReadStuttgartCTRLBool(FILE * stream, uint32_t N, Bool * out);
+uint32_t StreamReadStuttgartCTRLbool(FILE * stream, uint32_t N, bool * out);
 uint32_t StreamReadStuttgartCTRLint(FILE * stream, uint32_t N, int * out);
 uint32_t StreamReadStuttgartCTRLdouble(FILE * stream, uint32_t N, double * out);
 uint32_t StreamReadStuttgartCTRLchar(FILE * stream, char * out);

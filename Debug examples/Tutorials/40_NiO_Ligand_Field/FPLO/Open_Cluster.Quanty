@@ -10,8 +10,6 @@ FPLOOut = FileReadDresdenFPLO("LDApMLFT/FPLO/out.wan")
 print("Create Tight binding Hamiltonian\n")
 TB = TightBindingDefFromDresdenFPLO(FPLOOut)
 
-print(TB)
-
 print(TB.Units)
 print(TB.Cell)
 print(TB.Atoms)
@@ -32,3 +30,23 @@ print(IndexName)
 
 print("There are ",#IndexName," elements in the dictionary")
 print("The first element is ",IndexName[1]," and it refers to", IndexName[IndexName[1]])
+
+t=1/2;
+q=sqrt(1/12);
+p=sqrt(4/12);
+
+rotmat = {{1,0,0,0,0,  0, 0, 0,  0, 0, 0,  0, 0, 0,  0, 0, 0,  0, 0, 0,  0, 0, 0},
+          {0,1,0,0,0,  0, 0, 0,  0, 0, 0,  0, 0, 0,  0, 0, 0,  0, 0, 0,  0, 0, 0},
+          {0,0,1,0,0,  0, 0, 0,  0, 0, 0,  0, 0, 0,  0, 0, 0,  0, 0, 0,  0, 0, 0},
+          {0,0,0,1,0,  0, 0, 0,  0, 0, 0,  0, 0, 0,  0, 0, 0,  0, 0, 0,  0, 0, 0},
+          {0,0,0,0,1,  0, 0, 0,  0, 0, 0,  0, 0, 0,  0, 0, 0,  0, 0, 0,  0, 0, 0},
+          
+          {0,0,0,0,0,  t, 0, 0, -t, 0, 0,  0, 0, t,  0, 0,-t,  0, 0, 0,  0, 0, 0},
+          {0,0,0,0,0,  0, 0, 0,  0, 0, 0,  0, t, 0,  0,-t, 0,  t, 0, 0, -t, 0, 0},
+          {0,0,0,0,0,  0, 0, q,  0, 0,-q,  q, 0, 0, -q, 0, 0,  0,-p, 0,  0, p, 0},
+          {0,0,0,0,0,  0, t, 0,  0,-t, 0,  0, 0, 0,  0, 0, 0,  0, 0, t,  0, 0,-t},
+          {0,0,0,0,0,  0, 0,-t,  0, 0, t,  t, 0, 0, -t, 0, 0,  0, 0, 0,  0, 0, 0}}
+
+RTB = Rotate(ClusterTB, rotmat, {{"Ni",{0,0,0},{{"d",{"xy","yz","z^2","xz","x^2-y^2"}}}}, {"Ligand",{0,0,0},{{"d",{"xy","yz","z^2","xz","x^2-y^2"}}}}})
+
+print(RTB)

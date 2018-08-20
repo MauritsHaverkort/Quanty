@@ -363,7 +363,7 @@ uint32_t SetTMTFromValandConInBlockNaturalImpurityOrbitalMatrixType(BlockNatural
       }
     }
   }
-  CompactMatrixGramSchmidtOrthogonalizeRow(&T, 1000*DBL_EPSILON, True);
+  CompactMatrixGramSchmidtOrthogonalizeRow(&T, 1000*DBL_EPSILON, true);
   CompactMatrixMultiply3('N', 'N', 'C', &T, &M, &T, &(B->TMT));
   FreeCompactMatrix(&T);
   FreeCompactMatrix(&M);
