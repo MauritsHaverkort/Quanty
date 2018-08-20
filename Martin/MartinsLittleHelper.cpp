@@ -4,9 +4,16 @@
  *  Created on: Jul 10, 2018
  *      Author: brass
  */
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <string>
 #include <vector>
+#include <stdlib.h>
 
 using std::vector;
+using std::string;
+using std::ifstream;
 // inclusion of namespace std leads to conflicts with function atomic in lua
 
 void PrintMartix(double *M, int n)
@@ -240,7 +247,7 @@ void PrintMaxSlaterIntegral(SSlaterIntegral *integrals,const uint32_t NIntegrals
 	int index = 0;
 	for (int i = 0; i < NIntegrals; i++)
 	{
-		m = Max(m,abs(integrals[i].val[0]));
+		m = Max(m,Abs(integrals[i].val[0]));
 		if (m != mold)
 		{
 			index = i;
@@ -258,7 +265,7 @@ int GetIndexMaxSlaterIntegral(SSlaterIntegral *integrals,const uint32_t NIntegra
 	int index = 0;
 	for (int i = 0; i < NIntegrals; i++)
 	{
-		m = Max(m,abs(integrals[i].val[0]));
+		m = Max(m,Abs(integrals[i].val[0]));
 		if (m != mold)
 		{
 			index = i;
@@ -276,7 +283,7 @@ vector<int> GetMaxSlaterIntegrals(SSlaterIntegral *integrals,const uint32_t NInt
 	for (int i = 0; i < NIntegrals; i++)
 	{
 
-		if (abs(integrals[i].val[0]) >= cutoff)
+		if (Abs(integrals[i].val[0]) >= cutoff)
 		{
 			index.push_back(i);
 		}
@@ -285,7 +292,55 @@ vector<int> GetMaxSlaterIntegrals(SSlaterIntegral *integrals,const uint32_t NInt
 	return index;
 }
 
+vector<double> ReadBasisfunction(ifstream &file, vector<double> &x)
+{
+	double val;
+	vector<double> y;
+	string word;
 
+	file >> word;
+	while (word != "#")
+	{
+		val = atof(word.c_str());
+		if(x.size() == y.size())
+			x.push_back(val);
+		file >> word;
+		val = atof(word.c_str());
+		y.push_back(val);
+		file >> word;
+	}
+	while ((word != "<start") && !(file.eof()))
+		file >> word;
+	return y;
+}
+
+string GetOrbitalName(ifstream &file)
+{
+	string word, name;
+	while ( file >> word)
+	{
+		if (word == "function")
+		{
+			file >> word;
+			file >> word;
+			file >> word;
+			file >> name;
+			file >> word;
+			name.append(word);
+			name.erase(name.length()-1);
+			return name;
+		}
+	}
+	return "";
+}
+
+void VectorJoin(vector<double> &a, vector<double> b)
+{
+	for (int i = 0; i < b.size(); i++)
+	{
+		a.push_back(b[i]);
+	}
+}
 
 
 

@@ -287,6 +287,8 @@ static int LuaCreateBaseForContinuum(lua_State *L)
 	return 2;
 }
 
+
+
 static int LuaPropagator(lua_State *L)
 {
 	uint32_t n0, n1, nU, nE, nv;
@@ -408,6 +410,52 @@ static int LuaPropagator2(lua_State *L)
 	return 2;
 }
 
+static int LuaReadFPLOBasis(lua_State *L)
+{
+	ifstream file1,file2;
+
+	const char *name1 = luaL_checkstring(L,1);
+	const char *name2 = luaL_checkstring(L,2);
+	file1.open(name1);
+	file2.open(name2);
+	string line, word, name;
+	vector<string> orbitals;
+	vector<double> x, y1,y2;
+	vector<vector<double> > funs;
+
+	while (!file1.eof())
+	{
+		orbitals.push_back(GetOrbitalName(file1));
+		GetOrbitalName(file2);
+		y1 = ReadBasisfunction(file1,x);
+		y2 = ReadBasisfunction(file2,x);
+		VectorJoin(y1,y2);
+		funs.push_back(y1);
+	}
+	file1.close();
+	file2.close();
+
+	MatrixType *basisfuns = (MatrixType*)malloc(sizeof(MatrixType));
+	basisfuns->Ni = funs.size();
+	basisfuns->QComplex = 0;
+	basisfuns->VRe = (double **) malloc(sizeof(double*)*funs.size());
+	for (int i = 0; i < funs.size(); i++)
+	{
+		basisfuns->Nj = funs[i].size();
+		basisfuns->VRe[i] = (double *) malloc(sizeof(double)*funs[i].size());
+		for (int j = 0; j < funs[i].size(); j++)
+		{
+			basisfuns->VRe[i][j] = funs[i][j];
+		}
+
+	}
+
+	LuaPushTable_MatrixType(L,basisfuns);
+	LuaPushArray_double(L,&x[0],x.size());
+
+	return 2;
+}
+
 static const struct luaL_Reg Martin_meta[] = {
   {NULL, NULL}
 };
@@ -445,6 +493,7 @@ static const struct luaL_Reg Martin_func[] = {
   {"NewCoulomb", LuaOperatorNewFullCoulomb},
   {"NewDirac", LuaOperatorNewDirac},
   {"ContinuumBase",LuaCreateBaseForContinuum},
+  {"ReadFPLOBasis",LuaReadFPLOBasis},
   {"Propagator",LuaPropagator},
   {"Propagator2",LuaPropagator2},
   {NULL, NULL}

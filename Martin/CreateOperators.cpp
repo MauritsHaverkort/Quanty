@@ -1,5 +1,5 @@
 #include <vector>
-#include <cmath>
+//#include <cmath>
 //using namespace std;
 // inclusion of namespace std leads to conflicts with function atomic in lua
 
@@ -494,7 +494,10 @@ uint32_t CreateOperatorSingleCoulombRelativistic(uint32_t const NFermion,double 
 
     integrals = GetSlaterIntegrals(basisfuns,NbasisFuns,grid, NGridpoints, (const int **) tuple, NIntegrals);
     int index = GetIndexMaxSlaterIntegral(integrals,NIntegrals);
-    double cutoff = abs(integrals[index].val[0])/5.;
+    double cutoff = Abs(integrals[index].val[0])/5.;
+    printf("int = %e\n",integrals[index].val[0]);
+    printf("int = %e\n",integrals[30].val[0]);
+    printf("ind = %d\n",index);
     vector<int> indexes = GetMaxSlaterIntegrals(integrals,NIntegrals,cutoff);
     printf("NIntegrals %d\t%d\n",NIntegrals,indexes.size());
 
