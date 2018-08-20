@@ -2046,33 +2046,48 @@ int nonRelAngularMomentumZNumbers(string orb)
 
 int relAngularMomentumZNumbers(string orb, int * significantCharPos)
 {
-	if (orb.length()<3)
-		return -1;
-	char lastChar, significantChar;
-	lastChar = orb.at(orb.length()-1);
-	if (lastChar != '2')
-		return -1;
-	*significantCharPos = (int)orb.length()-2;
-	significantChar = orb[*significantCharPos];
-	if (significantChar == '/')
+	char c;
+	*significantCharPos = orb.length() - 1;
+	c = orb.at(*significantCharPos);
+	while (c == ' ' || c == '\t')
 	{
-		*significantCharPos = (int)orb.length()-3;
-		significantChar = orb[*significantCharPos];
+		*significantCharPos = *significantCharPos - 1;
+		if (*significantCharPos < 0)
+			return -1;
+		c = orb.at(*significantCharPos);
 	}
-	switch (significantChar) {
-			case '1':
-				return 1+1;
-			case '3':
-				return 3+1;
-			case '5':
-				return 5+1;
-			case '7':
-				return 7+1;
-			case '9':
-				return 9+1;
-			default:
-				return -1;
-		}
+	if (c != '2')
+	{
+		return -1;
+	} else
+	{
+		*significantCharPos = *significantCharPos - 1;
+		if (*significantCharPos < 0)
+			return -1;
+		c = orb.at(*significantCharPos);
+	}
+	while (c == ' ' || c == '\t' || c == '/')
+	{
+		*significantCharPos = *significantCharPos - 1;
+		if (*significantCharPos < 0)
+			return -1;
+		c = orb.at(*significantCharPos);
+	}
+	switch (c)
+	{
+	case '1':
+		return 1 + 1;
+	case '3':
+		return 3 + 1;
+	case '5':
+		return 5 + 1;
+	case '7':
+		return 7 + 1;
+	case '9':
+		return 9 + 1;
+	default:
+		return -1;
+	}
 }
 
 int relAngularMomentumZNumbers(string orb)

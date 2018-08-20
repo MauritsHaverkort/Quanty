@@ -71,7 +71,7 @@ rotMatRelToNonRel = OrbitalRotationMatrix(orbsOld, orbsNew)
 print(rotMatRelToNonRel)
 
 orbsOld = {"2s","2p"}
-orbsNew = {"2p32","2s12","2p12"}
+orbsNew = {"2p32","2s12","2p1 2"}
 print("\n\n\n")
 print("orbsOld:")
 print(orbsOld)
