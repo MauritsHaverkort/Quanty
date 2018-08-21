@@ -493,6 +493,7 @@ static int LuaResponseFunctionCall(lua_State * L)
     CompactMatrixType out;
     EvaluateBlockResponsefunctionType(res, &out, omega, gamma);
     LuaPushTable_CompactMatrixType(L, &out);
+    FreeCompactMatrix(&out);
   }
   else
   {
