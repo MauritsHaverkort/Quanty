@@ -176,7 +176,7 @@ static int LuaBraKet(lua_State * L)
     {
       if(lua_type(L,3)==LUA_TTABLE)
       { // table times table
-        if(lua_rawequal(L, 1, 2))
+        if(lua_rawequal(L, 1, 3))
         { // same table left and right
           WaveFunctionType *psiA;
           OperatorType *O;
