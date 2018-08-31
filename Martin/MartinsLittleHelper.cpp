@@ -342,8 +342,48 @@ void VectorJoin(vector<double> &a, vector<double> b)
 	}
 }
 
+vector<vector<double> > CreateDualFunctions(const unsigned int NBasisFuns, const unsigned int NGridPoints,
+		vector<vector<double> > basisfuns, vector<double> x);
 
+vector<double> CalcMetric(vector<vector<double> > basisfuns, vector<vector<double> > funs2, vector<double> x)
+{
+	int dim1, dim2,i,j,n;
+	unsigned int eins = 1;
+	n = 2* x.size();
+	dim1 = basisfuns.size();
+	dim2 = funs2.size();
+	vector<double> g = vector<double>(dim1*dim2);
+	vector<vector<double> > dualfuns = CreateDualFunctions(dim2,x.size(),funs2,x);
 
+	double y;
+
+	for ( i = 0; i < dim1; i++)
+	{
+		for (j = 0; j < dim2; j++)
+		{
+
+			y = ddot((unsigned int *) &n,&(dualfuns[j][0]),&eins,&(basisfuns[i][0]),&eins);
+			g[i*dim2 + j] = y;
+
+		}
+	}
+	return g;
+}
+
+vector<double> luaL_checkarray_double(lua_State *L, int narg)
+{
+  luaL_checktype(L, narg, LUA_TTABLE);
+  uint32_t len = (uint32_t)lua_objlen(L, narg);
+
+  vector<double> buff = vector<double>(len);
+  for(int i=0;i<len;i++)
+  {
+    lua_rawgeti(L, narg, i+1);
+    buff[i]=(double)luaL_checknumber(L, -1);
+    lua_pop(L, 1);
+  }
+  return buff;
+}
 
 
 

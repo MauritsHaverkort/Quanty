@@ -252,6 +252,7 @@ double **CalculateContinuumBoundDiracElements(double **basisfuns, double **deriv
 	return result;
 
 }
+
 vector<vector<double> > CalculateContinuumBoundDiracElements(vector<vector<double> > basisfuns, vector<vector<double> > derivativefuns,
 		vector<vector<double> > dualcont, const int NcontFuns, const unsigned int *indices,
 		const unsigned int Nindices, vector<double> x, unsigned int NGridPoints, const int kappa, const int Z)
@@ -336,6 +337,7 @@ double *KineticEnergyCB(double **basisfuns, double **derivativefuns, double **du
 	free(Tcb);
 	return T;
 }
+
 vector<double> KineticEnergyCB(vector<vector<double> > basisfuns, vector<vector<double> > derivativefuns, vector<vector<double> > dualfuns,
 		vector<vector<double> > dualcont, const int NcontFuns, const unsigned int *indices,
 		const unsigned int Nindices, vector<double> x, unsigned int NGridPoints, const int kappa,double w)

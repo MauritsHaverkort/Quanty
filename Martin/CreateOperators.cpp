@@ -57,6 +57,7 @@ void CreateOperatorCoulombRelativisticOneIntegral(uint32_t const NFermion,int co
             }
         }
     }
+    //FreeOperator(&optemp);
 
 }
 
@@ -99,7 +100,7 @@ uint32_t CreateOperatorFastCoulombRelativistic(uint32_t const NFermion,double **
     	free(integrals[i].k);
     }
     free(integrals);
-
+    //FreeOperator(&optemp);
     return 0;
 }
 
@@ -142,7 +143,7 @@ uint32_t CreateOperatorFastCoulombRelativistic(uint32_t const NFermion,double **
     	free(integrals[i].k);
     }
     free(integrals);
-
+    //FreeOperator(&optemp);
     return 0;
 }
 
@@ -191,6 +192,7 @@ uint32_t CreateOperatorFullCoulombRelativistic(uint32_t const NFermion,double **
     	free(integrals[i].k);
     }
     free(integrals);
+    //FreeOperator(&optemp);
     return 0;
 }
 
@@ -530,7 +532,7 @@ uint32_t CreateOperatorSingleCoulombRelativistic(uint32_t const NFermion,double 
     	free(integrals[i].k);
     }
     free(integrals);
-
+    //FreeOperator(&optemp);
     return 0;
 }
 

@@ -291,6 +291,7 @@ double **CreateDualFunctions(const unsigned int NBasisFuns, const unsigned int N
     free(weights);
     return dualfuns;
 }
+
 vector<double> Dual(vector<double> f, vector<double> w)
 {
 	vector<double> g;
@@ -301,6 +302,7 @@ vector<double> Dual(vector<double> f, vector<double> w)
 	}
 	return g;
 }
+
 vector<vector<double> > CreateDualFunctions(const unsigned int NBasisFuns, const unsigned int NGridPoints,
 		vector<vector<double> > basisfuns, vector<double> x)
 {

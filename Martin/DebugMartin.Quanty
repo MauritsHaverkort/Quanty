@@ -7,17 +7,21 @@ w = 1/50
 ind, NF = CreateAtomicIndicesList({"1s12","2s12","3s12","4s12"})
 groups = {{-1,{0,1,2,3}}}
 
-
+print("D")
 H0 = Martin.NewDirac(NF,basisfuns,derivfuns,x,groups,67,ind)
+print("U")
+print( #basisfuns,#basisfuns[1],#x)
+print(ind)
+
 U  = Martin.NewCoulomb(NF,basisfuns,x,tuple,ind,1)
 
 --ind = Transpose({{-1,-1,-1,-1},ind})
 --U  = Martin.NewCoulomb(NF,basisfuns,x,ind)
 
 --print(#basisfuns,#x,#derivfuns,#DOBase)
-
+print("dobase",#DOBase)
 hexcited, BaseContinuum = Martin.ContinuumBase(basisfuns,derivfuns,x,groups[1],w,DOBase)
-
+print("s")
 s1 = 0
 s2 = 0
 for i = 1, #x do
@@ -69,3 +73,6 @@ print("Deviation HDirac:")
 print("\n")
 print(dh)
 print("\n")
+print(hexcited)
+print("\n")
+print(#BaseContinuum)
