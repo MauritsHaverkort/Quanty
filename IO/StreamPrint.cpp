@@ -1642,7 +1642,7 @@ void fillWithBlank(int width)
 	fillWithBlank(width,0);
 }
 
-void printExpectationValues(const vector < WaveFunctionType >  psiList, const OperatorType  hamil, const vector < OperatorType >  opList, bool hasHamiltonian, bool sortByEnergy, bool printSigma, double zero, int printHeaderEvery, int colWidth)
+void printExpectationValues(const vector < WaveFunctionType >  psiList, OperatorType  hamil, const vector < OperatorType >  opList, bool hasHamiltonian, bool sortByEnergy, bool printSigma, double zero, int printHeaderEvery, int colWidth)
 {
 	vector<double> EValues(psiList.size());
 	vector<double> sigmaValues(psiList.size());
@@ -1652,6 +1652,7 @@ void printExpectationValues(const vector < WaveFunctionType >  psiList, const Op
 	if (hasHamiltonian)
 	{
 		hamilAddition = 1;
+		OperatorChop(&hamil, sqrt(zero));
 		opHermetian = isOperatorAlmostHermitian(hamil, zero);
 		opRestricted = (hamil.Res.N > 0);
 		if (!opHermetian)
