@@ -196,12 +196,6 @@ uint32_t CreateOperatorFullCoulombRelativistic(uint32_t const NFermion,double **
     return 0;
 }
 
-typedef struct{
-	unsigned int *indices;
-	uint32_t n;
-	int kappa;
-}SKappaGroup;
-
 uint32_t CreateOperatorDirac(uint32_t const NFermion,const unsigned int NBasisFuns, double **basisfuns, double **derivfuns, const double *x, uint32_t NGridpoints,
 		SKappaGroup *groups,uint32_t Ngroups,uint32_t **indices, int Z, OperatorType *op)
 {
@@ -255,8 +249,6 @@ uint32_t CreateOperatorDirac(uint32_t const NFermion,const unsigned int NBasisFu
 	return 0;
 }
 
-/*double* CreateBaseForContinuum( int NBasisFuns, vector<vector<double> > basisfuns,vector<vector<double> > derivfuns,vector<double> x,
-		uint32_t NGridpoints,SKappaGroup group,int Ncont, vector<vector<double> > contfuns, double w)*/
 double* CreateBaseForContinuum( int NBasisFuns,double **basisfuns,double **derivfuns,double *x,uint32_t NGridpoints,SKappaGroup group,int Ncont,
                                                                 double **contfuns, double w)
 {

@@ -5,8 +5,8 @@
  *      Author: brass
  */
 
+#include "ContinuumStates.h"
 
-#define speedoflight 137.0
 /*
 double DiracH2(double *basisfun,double *dualfun,double *derivfun,const double *x, int NGridPoints, const int kappa, const int Z)
 {
@@ -88,7 +88,7 @@ double Gamma(double const x){ // Martin Brass copied this from Martin Sundermann
   return y;
 }
 
-double Phi(double n, double a, double b);
+//double Phi(double n, double a, double b);
 
 double Binomial(double x, double y)
 {
@@ -440,6 +440,7 @@ double *MetricCB(double **basisfuns, double **dualfuns, const unsigned int *indi
 	}
 	return g;
 }
+
 vector<double> MetricCB(vector<vector<double> > basisfuns, vector<vector<double> > dualfuns, const unsigned int *indices,
 		const unsigned int Nindices, vector<vector<double> > dualcont, const int NcontFuns, unsigned int NGridPoints)
 {
@@ -504,6 +505,7 @@ double *SubMatrix(double *M, int dim, int n1, int n2, int m1, int m2 )
 	}
 	return Msub;
 }
+
 vector<double> SubMatrix(vector<double> M, int dim, int n1, int n2, int m1, int m2 )
 {
 	vector<double> Msub;
@@ -530,6 +532,7 @@ void vAdd(const double *a,const double aleph, double* b,const int n)
 		b[i] += aleph * a[i];
 	}
 }
+
 void vAdd(vector<double> a,const double aleph, vector<double> &b)
 {
 	int i;
@@ -547,6 +550,7 @@ void svMul(const double aleph, double *a, const int n)
 		a[i] *= aleph;
 	}
 }
+
 void svMul(const double aleph, vector<double> &a)
 {
 	int i;
@@ -555,9 +559,6 @@ void svMul(const double aleph, vector<double> &a)
 		a[i] *= aleph;
 	}
 }
-
-void PrintArray();
-void PrintMartix();
 
 void CalcContinuumWFs(double **basisfuns, const unsigned int *indices, const unsigned int Nindices, double **contfuns, const int Ncont,const int NGridpoints, double *U, double *R)
 {
@@ -658,10 +659,160 @@ void CalcContinuumWFs(vector<vector<double> > basisfuns, const unsigned int *ind
 	}
 }
 
+double *CreateBaseForContinuum(vector<vector<double> > basisfuns,vector<vector<double> > derivfuns,vector<double> x,
+		SKappaGroup group, vector<vector<double> > &contfuns, vector<vector<double> > h0Cont)
+{
+	int l,k,dim,info;
+
+	int NBasisFuns = basisfuns.size();
+	int Ncont = contfuns.size();
+	uint32_t NGridpoints = x.size();
+
+	char blasRight = 'R';
+	char blasLeft  = 'L';
+	//char blasUpper = 'U';
+	char blasLower = 'L';
+	char blasTrans = 'T';
+	char blasNoTrans = 'N';
+	char blasNonUnit = 'N';
+
+	double *tau,*d,*e;
+	vector<double> T, g, Tsub;
+	vector<vector<double> > dualfuns, dualcont;
+
+	k = group.kappa;
+	l = 0;
+
+	dim = Ncont + group.n;
 
 
+	dualfuns = CreateDualFunctions(NBasisFuns,NGridpoints,basisfuns,x);
 
+	dualcont = CreateDualFunctions(Ncont,NGridpoints,contfuns,x);
 
+	T = CreateEKinCB(basisfuns,derivfuns, dualfuns,dualcont, group.indices, group.n,x,k,h0Cont);
+
+	g = MetricCB(basisfuns,dualfuns,group.indices, group.n,dualcont,Ncont,NGridpoints);
+
+	//char cU = 'U';
+	char cL = 'L';
+	char cN = 'N';
+	char cV = 'V';
+	double EINS = 1;
+	info = 1;
+	dpotrf(&cL,(unsigned int *) &dim,&(g[0]),(unsigned int *) &dim,&info);
+	dtrtri(&cL,&cN,(unsigned int *) &dim,&(g[0]),(unsigned int *) &dim,&info);
+	//dtrmm(&blasLeft,&blasUpper,&blasTrans,&blasNonUnit,(unsigned int *) &dim,(unsigned int *) &dim,&EINS,&(g[0]),(unsigned int *) &dim,&(T[0]),(unsigned int *) &dim);
+	//dtrmm(&blasRight,&blasUpper,&blasNoTrans,&blasNonUnit,(unsigned int *) &dim, (unsigned int *) &dim,&EINS,&(g[0]),(unsigned int *) &dim,&(T[0]),(unsigned int *) &dim);
+	dtrmm(&blasLeft,&blasLower,&blasNoTrans,&blasNonUnit,(unsigned int *) &dim,(unsigned int *) &dim,&EINS,&(g[0]),(unsigned int *) &dim,&(T[0]),(unsigned int *) &dim);
+	dtrmm(&blasRight,&blasLower,&blasTrans,&blasNonUnit,(unsigned int *) &dim, (unsigned int *) &dim,&EINS,&(g[0]),(unsigned int *) &dim,&(T[0]),(unsigned int *) &dim);
+
+	Tsub = SubMatrix(T,dim,group.n,dim-1,group.n,dim-1);
+
+	d = (double *) malloc(Ncont*sizeof(double));
+	if (!d) printf("malloc fail at d in CreateBaseForContinuum. size = %d\n",Ncont);
+	e = (double *) malloc((Ncont-1)*sizeof(double));
+	if (!e) printf("malloc fail at e in CreateBaseForContinuum. size = %d\n",Ncont-1);
+	tau = (double *) malloc((Ncont-1)*sizeof(double));
+	if (!tau) printf("malloc fail at tau in CreateBaseForContinuum. size = %d\n",Ncont-1);
+
+	double *work = (double *) malloc((2*Ncont-2)*sizeof(double));
+	if (!work) printf("malloc fail at work in CreateBaseForContinuum. size = %d\n",Ncont);
+	unsigned int lwork = (unsigned int) (2*Ncont-2);
+
+	dsytrd(&cL,(unsigned int *) &Ncont,&(Tsub[0]),(unsigned int *) &Ncont,d,e,tau,work, &lwork,&info);
+	if ( 0 != info) printf("error: argument %d of LAPACKE_dsytrd",-info);
+	dorgtr(&cL,(unsigned int *) &Ncont,&(Tsub[0]),(unsigned int *) &Ncont,tau,work,&lwork,&info);
+	if ( 0 != info) printf("error: argument %d of LAPACKE_dorgtr",-info);
+	dsteqr(&cV,(unsigned int *) &Ncont,d,e,&(Tsub[0]),(unsigned int *) &Ncont,work,&info);
+	if ( 0 != info) printf("error: argument %d of LAPACKE_dsteqr",-info);
+
+	CalcContinuumWFs(basisfuns, group.indices, group.n, contfuns, Ncont, NGridpoints, g, Tsub);
+
+	free(work);
+	free(tau);
+	free(e);
+
+	return d;
+
+}
+
+vector<double> CreateEKinCB(vector<vector<double> > basisfuns, vector<vector<double> > derivativefuns, vector<vector<double> > dualfuns,
+		vector<vector<double> > dualcont, const unsigned int *indices, const unsigned int Nindices, vector<double> x, const int kappa,vector<vector<double> > h0cont)
+{
+	const int NcontFuns = dualcont.size();
+	unsigned int NGridPoints = x.size();
+
+	vector<vector<double> >  Tbb;
+	vector<vector<double> >  Tcb;
+	vector<double> T;
+	int i,j, dim, l;
+
+	const int Z = 0;
+
+	if ( kappa > 0 )
+	{
+		l = kappa;
+	}
+	else
+	{
+		l = -kappa -1;
+	}
+	Tbb = CalculateDiracMatrixElements(basisfuns,derivativefuns,dualfuns,indices,Nindices,x,NGridPoints,kappa,Z);
+	Tcb = CalculateContinuumBoundDiracElements(basisfuns,derivativefuns,dualcont,NcontFuns,indices,Nindices,x,NGridPoints,kappa,Z);
+
+	dim = Nindices + NcontFuns;
+	T = vector<double>(dim*dim);
+
+	for ( i = 0; i < Nindices; i++)
+	{
+
+		for ( j = i; j < Nindices; j++)
+		{
+			T[i*dim + j] = Tbb[i][j];
+			T[j*dim + i] = Tbb[i][j];
+		}
+	}
+	for ( i = Nindices; i < dim; i++)
+	{
+		for ( j = 0; j < Nindices; j++)
+		{
+			T[i*dim + j] = Tcb[i-Nindices][j];
+			T[j*dim + i] = Tcb[i-Nindices][j];
+		}
+		for ( j = Nindices; j < dim; j++)
+		{
+			T[i*dim + j] = h0cont[i-Nindices][j-Nindices];
+		}
+	}
+
+	return T;
+}
+
+vector<vector<double> > CreateEigenDifferentialEnergies(int n, double Emin, double dE)
+{
+	vector<vector<double> > h0;
+	double q1,q2;
+	h0 = vector<vector<double> >(n);
+	for (int i = 0; i < n; i++)
+	{
+		h0[i] = vector<double>(n);
+		for ( int j = 0; j < n; j++)
+		{
+			if ( i != j)
+			{
+				h0[i][j] = 0;
+			}
+			else
+			{
+				q1 = sqrt(2*(Emin +  i    * dE));
+				q2 = sqrt(2*(Emin + (i+1) * dE));
+				h0[i][j] = (q1*q1 + q2*q2 +q1*q2)/6;
+			}
+		}
+	}
+	return h0;
+}
 
 
 

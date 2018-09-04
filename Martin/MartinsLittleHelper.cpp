@@ -385,8 +385,46 @@ vector<double> luaL_checkarray_double(lua_State *L, int narg)
   return buff;
 }
 
+vector<vector<double> > luaL_check2DArray_double(lua_State *L, int narg)
+{
+  vector<vector<double> > buff;
 
+  luaL_checktype(L, narg, LUA_TTABLE);
+  uint32_t dimRow = (uint32_t)lua_objlen(L, narg);
 
+  buff = vector<vector<double> >(dimRow);
+  for(int i=0;i<dimRow;i++)
+  {
+    lua_rawgeti(L, narg, i+1);
+    buff[i] = luaL_checkarray_double(L, -1);
+    lua_pop(L, 1);
+
+  }
+  return buff;
+}
+
+vector<vector<double> > CreateTmatrixHDO(int N, int kappa, double w)
+{
+	vector<vector<double> > T = vector<vector<double> >(N);
+	int l;
+	if ( kappa > 0 )
+	{
+		l = kappa;
+	}
+	else
+	{
+		l = -kappa -1;
+	}
+	for (int i = 0; i < N; i++)
+	{
+		T[i] = vector<double>(N);
+		for (int j = 0; j < N; j++)
+		{
+			T[i][j] = EKinDO(i+1,j+1,kappa,l,w);
+		}
+	}
+	return T;
+}
 
 
 

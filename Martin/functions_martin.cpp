@@ -1,8 +1,13 @@
 /* Some makeshift functions */
 
+#include "MartinHeaders.h"
+
+#include "Quadrature.cpp"
+#include "Eigendifferential.cpp"
 #include "MartinsLittleHelper.cpp"
 #include "SlaterTuple.cpp"
 #include "CreateOperators.cpp"
+
 
 
 static int LuaOperatorNewFullCoulomb (lua_State *L)
@@ -243,14 +248,14 @@ static int LuaCreateBaseForContinuum(lua_State *L)
 	SKappaGroup group;
 	MatrixType *basisfuns, *derivfuns, *contfuns;
 	double w;
-	double *x;
-	vector<double> vx;
+	//double *x;
+	vector<double> x;
 	vector<vector<double> > vbasf, vderf,vcontf;
 
 	uint32_t len = (uint32_t)lua_gettop(L);
-	if ( len < 6 )
+	if ( len < 5 )
 	{
-		std::cout << "Error in LuaCreateBaseForContinuum: Wrong number of arguments. Expected 6 or 7, but got " << len << std::endl;
+		std::cout << "Error in LuaCreateBaseForContinuum: Wrong number of arguments. Expected 5, 6 or 7, but got " << len << std::endl;
 		return 0;
 	}
 
@@ -259,73 +264,187 @@ static int LuaCreateBaseForContinuum(lua_State *L)
 
 	derivfuns = luaL_checkMatrix(L,2);
 	vderf = ConvertMatrix(derivfuns->VRe,derivfuns->Ni,derivfuns->Nj);
-	x = luaL_checkarray_double(L,3,&NGridpoints);
-	vx = ConvertArray(x,NGridpoints);
+
+	x = luaL_checkarray_double(L,3);
+	NGridpoints = x.size();
 
 	luaL_checktype(L, 4, LUA_TTABLE);
-	/*NGroups = (uint32_t)lua_objlen(L,4);
-
-	groups = (SKappaGroup *) malloc(NGroups * sizeof(SKappaGroup));
-	if (!groups) printf("malloc fail at groups in LuaCreateBaseForContinuum. size = %d\n",NGroups);
-
-	for( i = 0; i < NGroups; i++ )
-	{
-		lua_rawgeti(L, 4, i+1);
-	   	lua_rawgeti(L, -1, 1);
-	   	groups[i].kappa = (int) luaL_checkunsigned(L, -1);
-	   	lua_pop(L,1);
-	   	lua_rawgeti(L, -1, 2);
-		groups[i].indices = luaL_checkarray_unit32_t(L,-1,&(groups[i].n));
-	   	lua_pop(L,1);
-	   	lua_pop(L,1);
-	}
-	*/
 	lua_rawgeti(L, 4, 1);
 	group.kappa = (int) luaL_checkunsigned(L, -1);
 	lua_pop(L,1);
 	lua_rawgeti(L, 4, 2);
 	group.indices = luaL_checkarray_unit32_t(L,-1,&(group.n));
 	lua_pop(L,1);
-	w = luaL_checknumber(L, 5);
-	luaL_checktype(L, 6, LUA_TTABLE);
 
-	contfuns = luaL_checkMatrix(L,6);
-	vcontf = ConvertMatrix(contfuns->VRe,contfuns->Ni,contfuns->Nj);
+	double *eigenval;
+	vector<vector<double> > energiesCont;
 
+	if (len == 5)
+	{
 
-	double *eigenval, *energiesCont;
+		contfuns = luaL_checkMatrix(L,5);
+		vcontf = ConvertMatrix(contfuns->VRe,contfuns->Ni,contfuns->Nj);
 
+		double dE = 1/2./13.6;
+		double Emin = dE;
+		energiesCont = CreateEigenDifferentialEnergies(vcontf.size(),Emin,dE);
+
+		eigenval = CreateBaseForContinuum(vbasf,vderf,x,group,vcontf,energiesCont);
+
+		LuaPushArray_double(L,&(eigenval[0]), vcontf.size());
+		for (int i = 0; i < vcontf.size(); i++)
+		{
+			contfuns->VRe[i] = &(vcontf[i][0]);
+		}
+		contfuns->Ni = vcontf.size();
+		LuaPushTable_MatrixType(L,contfuns);
+	}
 	if (len == 6)
 	{
-		eigenval = CreateBaseForContinuum(vbasf.size(), vbasf,vderf,vx,NGridpoints,group,vcontf.size(),vcontf,w);
+		w = luaL_checknumber(L, 5);
+		luaL_checktype(L, 6, LUA_TTABLE);
+
+		contfuns = luaL_checkMatrix(L,6);
+		vcontf = ConvertMatrix(contfuns->VRe,contfuns->Ni,contfuns->Nj);
+
+		eigenval = CreateBaseForContinuum(vbasf.size(), vbasf,vderf,x,NGridpoints,group,vcontf.size(),vcontf,w);
+
+		LuaPushArray_double(L,&(eigenval[vcontf.size()/2]), vcontf.size()/2);
+		for (int i = 0; i < vcontf.size()/2; i++)
+		{
+			contfuns->VRe[i] = &(vcontf[vcontf.size()/2+i][0]);
+		}
+		contfuns->Ni = vcontf.size()/2;
+		LuaPushTable_MatrixType(L,contfuns);
 	}
-	else
+	if (len == 7)
 	{
-		;
+		double Emin = luaL_checknumber(L, 5);
+		double dE   = luaL_checknumber(L, 6);
+		int NeigenDiffs = (int) luaL_checkunsigned(L, 7);
+
+		contfuns = (MatrixType*)malloc(sizeof(MatrixType));
+		contfuns->QComplex=0;
+		contfuns->a0=0;
+		contfuns->b0=0;
+		contfuns->mu=0;
+		vcontf = CreateEigenDiffsOnGrid(x,group.kappa,Emin,dE,NeigenDiffs);
+		energiesCont = CreateEigenDifferentialEnergies(vcontf.size(),Emin,dE);
+
+		eigenval = CreateBaseForContinuum(vbasf,vderf,x,group,vcontf,energiesCont);
+
+		contfuns->Ni=vcontf.size();
+		contfuns->Nj=vcontf[0].size();
+		contfuns->VRe = (double**) malloc(contfuns->Ni * sizeof(double*));
+
+		LuaPushArray_double(L,&(eigenval[0]), vcontf.size());
+		for (int i = 0; i < vcontf.size(); i++)
+		{
+			contfuns->VRe[i] = &(vcontf[i][0]);
+		}
+		LuaPushTable_MatrixType(L,contfuns);
+
+
 	}
-
-
-
-	LuaPushArray_double(L,&(eigenval[vcontf.size()/2]), vcontf.size()/2);
-	for (int i = 0; i < vcontf.size()/2; i++)
-	{
-		contfuns->VRe[i] = &(vcontf[vcontf.size()/2+i][0]);
-	}
-	contfuns->Ni = vcontf.size()/2;
-	LuaPushTable_MatrixType(L,contfuns);
-
 
 
 	FreeMatrix(basisfuns);
 	FreeMatrix(derivfuns);
 
-	free(x);
+	//free(x);
 
 
 	return 2;
 }
 
+static int LuaReadFPLOBasis(lua_State *L)
+{
+	ifstream file1,file2;
 
+	const char *name1 = luaL_checkstring(L,1);
+	const char *name2 = luaL_checkstring(L,2);
+	unsigned int Norbitals;
+	char** orbitalNames = luaL_checkarray_string(L, 3, &Norbitals); //TODO free
+	file1.open(name1);
+	file2.open(name2);
+	string line, word, name;
+	vector<string> orbitals;
+	vector<double> x, y1,y2;
+	std::map<string,vector<double> > funs;
+
+	while (!file1.eof())
+	{
+		name = GetOrbitalName(file1);
+		GetOrbitalName(file2);
+		y1 = ReadBasisfunction(file1,x);
+		y2 = ReadBasisfunction(file2,x);
+		VectorJoin(y1,y2);
+		funs[name] = y1;
+	}
+	file1.close();
+	file2.close();
+
+	MatrixType *basisfuns = (MatrixType*)malloc(sizeof(MatrixType));
+	basisfuns->Ni = Norbitals;
+	basisfuns->QComplex = 0;
+	basisfuns->VRe = (double **) malloc(sizeof(double*)*Norbitals);
+	for (int i = 0; i < Norbitals; i++)
+	{
+		string charTostring(orbitalNames[i]);
+		if (funs.find(charTostring) != funs.end())
+		{
+			basisfuns->Nj = funs[charTostring].size();
+			basisfuns->VRe[i] = (double *) malloc(sizeof(double)*basisfuns->Nj);
+			for (int j = 0; j < basisfuns->Nj; j++)
+			{
+				basisfuns->VRe[i][j] = funs[charTostring][j];
+			}
+		}
+		else
+		{
+			printf("LuaReadFPLOBasis: Couldn't find ");
+			printf(orbitalNames[i]);
+			printf("\n");
+			fflush(stdout);
+		}
+
+	}
+
+	LuaPushTable_MatrixType(L,basisfuns);
+	LuaPushArray_double(L,&x[0],x.size());
+
+	return 2;
+}
+
+static int LuaMetricWaveFuns(lua_State *L)
+{
+	uint32_t NGridpoints = 0;
+
+	MatrixType *basisfuns, *funs2;
+
+	double *x;
+	vector<double> vx, metric;
+	vector<vector<double> > vbasf, vfuns2;
+
+	basisfuns = luaL_checkMatrix(L,1);
+	vbasf = ConvertMatrix(basisfuns->VRe,basisfuns->Ni,basisfuns->Nj);
+
+	funs2 = luaL_checkMatrix(L,2);
+	vfuns2 = ConvertMatrix(funs2->VRe,funs2->Ni,funs2->Nj);
+	x = luaL_checkarray_double(L,3,&NGridpoints);
+	vx = ConvertArray(x,NGridpoints);
+
+	metric = CalcMetric(vbasf,vfuns2,vx);
+
+	LuaPushArray_double(L,&(metric[0]),metric.size());
+
+	FreeMatrix(basisfuns);
+	FreeMatrix(funs2);
+
+	free(x);
+
+	return 1;
+}
 
 static int LuaPropagator(lua_State *L)
 {
@@ -448,94 +567,6 @@ static int LuaPropagator2(lua_State *L)
 	return 2;
 }
 
-static int LuaReadFPLOBasis(lua_State *L)
-{
-	ifstream file1,file2;
-
-	const char *name1 = luaL_checkstring(L,1);
-	const char *name2 = luaL_checkstring(L,2);
-	unsigned int Norbitals;
-	char** orbitalNames = luaL_checkarray_string(L, 3, &Norbitals); //TODO free
-	file1.open(name1);
-	file2.open(name2);
-	string line, word, name;
-	vector<string> orbitals;
-	vector<double> x, y1,y2;
-	std::map<string,vector<double> > funs;
-
-	while (!file1.eof())
-	{
-		name = GetOrbitalName(file1);
-		GetOrbitalName(file2);
-		y1 = ReadBasisfunction(file1,x);
-		y2 = ReadBasisfunction(file2,x);
-		VectorJoin(y1,y2);
-		funs[name] = y1;
-	}
-	file1.close();
-	file2.close();
-
-	MatrixType *basisfuns = (MatrixType*)malloc(sizeof(MatrixType));
-	basisfuns->Ni = Norbitals;
-	basisfuns->QComplex = 0;
-	basisfuns->VRe = (double **) malloc(sizeof(double*)*Norbitals);
-	for (int i = 0; i < Norbitals; i++)
-	{
-		string charTostring(orbitalNames[i]);
-		if (funs.find(charTostring) != funs.end())
-		{
-			basisfuns->Nj = funs[charTostring].size();
-			basisfuns->VRe[i] = (double *) malloc(sizeof(double)*basisfuns->Nj);
-			for (int j = 0; j < basisfuns->Nj; j++)
-			{
-				basisfuns->VRe[i][j] = funs[charTostring][j];
-			}
-		}
-		else
-		{
-			printf("LuaReadFPLOBasis: Couldn't find ");
-			printf(orbitalNames[i]);
-			printf("\n");
-			fflush(stdout);
-		}
-
-	}
-
-	LuaPushTable_MatrixType(L,basisfuns);
-	LuaPushArray_double(L,&x[0],x.size());
-
-	return 2;
-}
-
-static int LuaMetricWaveFuns(lua_State *L)
-{
-	uint32_t NGridpoints = 0;
-	
-	MatrixType *basisfuns, *funs2;
-	
-	double *x;
-	vector<double> vx, metric;
-	vector<vector<double> > vbasf, vfuns2;
-
-	basisfuns = luaL_checkMatrix(L,1);
-	vbasf = ConvertMatrix(basisfuns->VRe,basisfuns->Ni,basisfuns->Nj);
-
-	funs2 = luaL_checkMatrix(L,2);
-	vfuns2 = ConvertMatrix(funs2->VRe,funs2->Ni,funs2->Nj);
-	x = luaL_checkarray_double(L,3,&NGridpoints);
-	vx = ConvertArray(x,NGridpoints);
-
-	metric = CalcMetric(vbasf,vfuns2,vx);
-
-	LuaPushArray_double(L,&(metric[0]),metric.size());
-
-	FreeMatrix(basisfuns);
-	FreeMatrix(funs2);
-
-	free(x);
-
-	return 1;
-}
 
 static const struct luaL_Reg Martin_meta[] = {
   {NULL, NULL}

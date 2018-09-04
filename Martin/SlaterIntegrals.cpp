@@ -1,4 +1,4 @@
-SSlaterIntegral *InitializeIntegrals(vector<int> indToK, unsigned int &NIntegrals, unsigned int *kMax);
+#include "SlaterIntegrals.h"
 
 SSlaterIntegral *GetSlaterIntegrals(double **basisfuns, unsigned int NBasisFuns, const double *x,
                                     unsigned int NGridPoints,const int **tupel, unsigned int NIntegrals)
@@ -320,7 +320,6 @@ vector<vector<double> > CreateDualFunctions(const unsigned int NBasisFuns, const
     return dualfuns;
 
 }
-
 
 void Dual(const int n, const double *f, const double *weights, double *fdual)
 {
