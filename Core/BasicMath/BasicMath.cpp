@@ -42,6 +42,8 @@
 #include "BasicMath_ListOfPoles.cpp"
 #include "BasicMath_MatrixTypeConversion.cpp"
 #include "BasicMath_GreenFunctionArithmetic.cpp"
+#include "BasicMath_InterpolatingFunction.cpp"
+#include "BasicMath_Spline.cpp"
 
 /*
  *   x^a with both x and a integers
