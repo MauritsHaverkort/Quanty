@@ -2046,33 +2046,48 @@ int nonRelAngularMomentumZNumbers(string orb)
 
 int relAngularMomentumZNumbers(string orb, int * significantCharPos)
 {
-	if (orb.length()<3)
-		return -1;
-	char lastChar, significantChar;
-	lastChar = orb.at(orb.length()-1);
-	if (lastChar != '2')
-		return -1;
-	*significantCharPos = (int)orb.length()-2;
-	significantChar = orb[*significantCharPos];
-	if (significantChar == '/')
+	char c;
+	*significantCharPos = orb.length() - 1;
+	c = orb.at(*significantCharPos);
+	while (c == ' ' || c == '\t')
 	{
-		*significantCharPos = (int)orb.length()-3;
-		significantChar = orb[*significantCharPos];
+		*significantCharPos = *significantCharPos - 1;
+		if (*significantCharPos < 0)
+			return -1;
+		c = orb.at(*significantCharPos);
 	}
-	switch (significantChar) {
-			case '1':
-				return 1+1;
-			case '3':
-				return 3+1;
-			case '5':
-				return 5+1;
-			case '7':
-				return 7+1;
-			case '9':
-				return 9+1;
-			default:
-				return -1;
-		}
+	if (c != '2')
+	{
+		return -1;
+	} else
+	{
+		*significantCharPos = *significantCharPos - 1;
+		if (*significantCharPos < 0)
+			return -1;
+		c = orb.at(*significantCharPos);
+	}
+	while (c == ' ' || c == '\t' || c == '/')
+	{
+		*significantCharPos = *significantCharPos - 1;
+		if (*significantCharPos < 0)
+			return -1;
+		c = orb.at(*significantCharPos);
+	}
+	switch (c)
+	{
+	case '1':
+		return 1 + 1;
+	case '3':
+		return 3 + 1;
+	case '5':
+		return 5 + 1;
+	case '7':
+		return 7 + 1;
+	case '9':
+		return 9 + 1;
+	default:
+		return -1;
+	}
 }
 
 int relAngularMomentumZNumbers(string orb)
@@ -2104,17 +2119,38 @@ int kappa(string orb)
 		return jzNumbers/2;
 }
 
+int orbToMultiplicity(string orb)
+{
+	int multiplicity = 2 * nonRelAngularMomentumZNumbers(orb);
+	if (multiplicity < 0)
+		multiplicity = relAngularMomentumZNumbers(orb);
+	if (multiplicity < 0)
+	{
+		cout << "\nCould not interpret orbital \"" << orb << "\" as either relativistic or non-relativistic atomic orbital, returning " << multiplicity << endl;
+	}
+	return multiplicity;
+}
+
 
 //TODO: Anyone have a better idea where to put this function?
-int isIntElementOf(const uint16_t element, const uint16_t * const set, const uint32_t setSize)
+bool isIntElementOf(const uint16_t element, const vector<uint16_t> set)
 {
-	int i;
-	for (i=0;i<setSize;i++)
+	for (int i = 0; i < set.size(); i++)
 	{
 		if (element == set[i])
-			return 1;
+			return true;
 	}
-	return 0;
+	return false;
+}
+
+bool isIntElementOf(const int element, const vector<int> set)
+{
+	for (int i = 0; i < set.size(); i++)
+	{
+		if (element == set[i])
+			return true;
+	}
+	return false;
 }
 
 /*  On input TB contains a normal TB object
@@ -2380,3 +2416,529 @@ uint32_t RotateTightBinding(TightBindingDef * TB, CompactMatrixType * rotmat, Ti
   return 0;
 }
 
+vector<string> groupedRelOrbitals(const vector<string> in)
+{
+	vector < string > out;
+	vector<int> blackList;
+	for (int i = 0; i < in.size(); ++i)
+	{
+		if (!isIntElementOf(i, blackList))
+		{
+			out.push_back(in[i]);
+			if (isRelOrbital(in[i]) && (kappa(in[i]) != -1))
+			{
+				for (int j = i + 1; j < in.size(); ++j)
+				{
+					if (QOrbsBelongTogether(in[i], in[j]))
+					{
+						out.push_back(in[j]);
+						blackList.push_back(j);
+						if (orbToMultiplicity(out[out.size()-1]) < orbToMultiplicity(out[out.size()-2]) )
+							std::swap(out[out.size()-1],out[out.size()-2]);
+						break;
+					}
+				}
+			}
+		}
+	}
+	return out;
+}
+
+bool isRelOrbital(const string orb)
+{
+	return (relAngularMomentumZNumbers(orb) > 0);
+}
+
+bool QOrbsBelongTogether(string orb1, string orb2)
+{
+	if (isRelOrbital(orb1))
+		orb1 = cutRelPart(orb1);
+	if (isRelOrbital(orb2))
+		orb2 = cutRelPart(orb2);
+	return orb1 == orb2;
+}
+
+string cutRelPart(const string orb)
+{
+	int significantCharPos;
+	relAngularMomentumZNumbers(orb,&significantCharPos);
+	return orb.substr(0,significantCharPos);
+}
+
+vector<string> relToNonRelOrbs(const vector<string> in)
+{
+	vector < string > out;
+	for (int i = 0; i < in.size(); ++i)
+	{
+		if (isRelOrbital(in[i]))
+		{
+			if (kappa(in[i]) == -1)
+			{
+				out.push_back(cutRelPart(in[i]));
+			} else if (i + 1 < in.size() && QOrbsBelongTogether(in[i], in[i + 1]))
+			{
+				out.push_back(cutRelPart(in[i]));
+				++i;
+			} else
+			{
+				cout << "Error: Need a pair of relativistic orbitals to convert them to a non-relativistic one, unless l=0." << endl;
+				vector < string > errorVec;
+				return errorVec;
+			}
+		} else
+		{
+			out.push_back(in[i]);
+		}
+	}
+	return out;
+}
+
+vector<string> nonRelToRelOrbs(const vector<string> in)
+{
+	vector < string > out;
+	for (int i = 0; i < in.size(); ++i)
+	{
+		if (isRelOrbital(in[i]))
+		{
+			out.push_back(in[i]);
+		} else
+		{
+			int mult = orbToMultiplicity(in[i]);
+			if (mult == 2)
+			{
+				string relOrb = in[i] + "1/2";
+				out.push_back(relOrb);
+			} else
+			{
+				string relOrb1 = in[i] + to_string(mult / 2) + "/2";
+				string relOrb2 = in[i] + to_string(mult / 2 - 2) + "/2";
+				out.push_back(relOrb1);
+				out.push_back(relOrb2);
+			}
+		}
+	}
+	return out;
+}
+
+// input e.g. {"2p32","2s12","2p12"}, {"2s","2p"}
+MatrixType OrbitalRotationMatrix(vector<string> orbsOld, vector<string> orbsNew)
+{
+	if (hasIdenticalEntries(orbsOld))
+	{
+		cout << "Error: RotationMatrix called with identical entries in the list of old orbitals." << endl;
+		return nullMatrix();
+	}
+	if (hasIdenticalEntries(orbsNew))
+	{
+		cout << "Error: RotationMatrix called with identical entries in the list of new orbitals." << endl;
+		return nullMatrix();
+	}
+	int NFOld = NumberOfFermionicStates(orbsOld);
+	int NFNew = NumberOfFermionicStates(orbsNew);
+	int NF = 0;
+	if (NFOld != NFNew)
+	{
+		cout << "Error in RotationMatrix: Old and new orbitals must have the same number of fermionic states." << endl;
+		return nullMatrix();
+	} else
+	{
+		NF = NFOld;
+	}
+	vector < string > orbsTmp;
+//	{"2p12","2s12","2p32"} -> {"2p12","2p32","2s12"}
+	orbsTmp = orbsOld;
+	orbsOld = groupedRelOrbitals(orbsOld);
+	MatrixType TGroupingRight = orbitalPermutationMatrix(orbsTmp, orbsOld);
+	orbsTmp = orbsNew;
+	orbsNew = groupedRelOrbitals(orbsNew);
+	MatrixType TGroupingLeft = orbitalPermutationMatrix(orbsNew, orbsTmp);
+	if (isNullMatrix(TGroupingRight) || isNullMatrix(TGroupingLeft))
+	{
+		cout << "Error in RotationMatrix: Grouping of orbitals failed." << endl;
+		return nullMatrix();
+	}
+	MatrixType TRelNonRelLeft, TRelNonRelRight;
+//	{"2p12","2p32","2s12"} -> {"2p","2s"}
+	if (QChangeFromRelToNonRel(orbsOld, orbsNew))
+	{
+		orbsTmp = orbsOld;
+		orbsOld = relToNonRelOrbs(orbsOld);
+		TRelNonRelRight = RelToNonRelRotationMatrix(orbsTmp, orbsOld);
+		orbsTmp = orbsNew;
+		orbsNew = relToNonRelOrbs(orbsNew);
+		TRelNonRelLeft = NonRelToRelRotationMatrix(orbsNew, orbsTmp);
+		if (isNullMatrix(TRelNonRelLeft) || isNullMatrix(TRelNonRelRight))
+		{
+			cout << "Error in RotationMatrix: Rotation from relativistic to non-relativistic orbitals or vice versa failed." << endl;
+			return nullMatrix();
+		}
+	} else
+	{
+		TRelNonRelLeft = identityMatrix(NF);
+		TRelNonRelRight = identityMatrix(NF);
+	}
+//	{"2p","2s"} -> {"2s","2p"}
+	MatrixType TPerm = orbitalPermutationMatrix(orbsOld, orbsNew);
+	if (isNullMatrix(TPerm))
+	{
+		cout << "Error in RotationMatrix: Permutation of orbitals failed." << endl;
+		return nullMatrix();
+	}
+	MatrixType rotMat = identityMatrix(NF);
+	MatrixMultiply(&rotMat, TGroupingRight, rotMat);
+	MatrixMultiply(&rotMat, TRelNonRelRight, rotMat);
+	MatrixMultiply(&rotMat, TPerm, rotMat);
+	MatrixMultiply(&rotMat, TRelNonRelLeft, rotMat);
+	MatrixMultiply(&rotMat, TGroupingLeft, rotMat);
+	MatrixChop(&rotMat, 10 * DBL_EPSILON);
+	return rotMat;
+}
+
+//TODO: Anyone have a better idea where to put this?
+template<typename T>
+bool hasIdenticalEntries(const vector<T> vec)
+{
+	for (int i = 0; i < vec.size() - 1; ++i)
+		for (int j = i + 1; j < vec.size(); ++j)
+			if (vec[i] == vec[j])
+				return true;
+	return false;
+}
+
+//TODO: Anyone have a better idea where to put this?
+template<typename T>
+vector<int> permutationVector(const vector<T> oldVec, const vector<T> newVec)
+{
+	if (oldVec.size() != newVec.size())
+	{
+		cout << "Error: PermutationVector called with two vectors of different size." << endl;
+		vector<int> errorVec(0);
+		return errorVec;
+	}
+	vector<int> permVec(newVec.size());
+	for (int i = 0; i < newVec.size(); ++i)
+		for (int j = 0; j < oldVec.size(); ++j)
+		{
+			if (newVec[i] == oldVec[j])
+			{
+				permVec[i] = j;
+				break;
+			}
+		}
+	return permVec;
+}
+
+MatrixType YToKMatrix(const int multiplicity, const bool addSpin)
+{
+	MatrixType out;
+	out.QComplex = true;
+	out.Ni = multiplicity / 2;
+	out.Nj = multiplicity / 2;
+	InitMatrix(&out);
+	if (multiplicity == 2)
+	{
+//		s-shell
+		out.VRe[0][0] = 1;
+	} else if (multiplicity == 6)
+	{
+//		p-shell
+		out.VRe[0][0] = 1 / sqrt(2.);
+		out.VRe[0][2] = -1 / sqrt(2.);
+		out.VIm[1][0] = 1 / sqrt(2.);
+		out.VIm[1][2] = 1 / sqrt(2.);
+		out.VRe[2][1] = 1;
+	} else if (multiplicity == 10)
+	{
+//		d-shell
+		out.VRe[0][0] = 1 / sqrt(2.);
+		out.VRe[0][4] = 1 / sqrt(2.);
+		out.VRe[1][2] = 1;
+		out.VIm[2][1] = 1 / sqrt(2.);
+		out.VIm[2][3] = 1 / sqrt(2.);
+		out.VRe[3][1] = 1 / sqrt(2.);
+		out.VRe[3][3] = -1 / sqrt(2.);
+		out.VIm[4][0] = 1 / sqrt(2.);
+		out.VIm[4][4] = -1 / sqrt(2.);
+	} else if (multiplicity == 14)
+	{
+//		f-shell
+		out.VIm[0][1] = 1/sqrt(2.);
+		out.VIm[0][5] = -1/sqrt(2.);
+		out.VRe[1][0] = sqrt(5.)/4;
+		out.VRe[1][2] = -sqrt(3.)/4;
+		out.VRe[1][4] = sqrt(3.)/4;
+		out.VRe[1][6] = -sqrt(5.)/4;
+		out.VIm[2][0] = -sqrt(5.)/4;
+		out.VIm[2][2] = -sqrt(3.)/4;
+		out.VIm[2][4] = -sqrt(3.)/4;
+		out.VIm[2][6] = -sqrt(5.)/4;
+		out.VRe[3][3] = 1;
+		out.VRe[4][0] = -sqrt(3.)/4;
+		out.VRe[4][2] = -sqrt(5.)/4;
+		out.VRe[4][4] = sqrt(5.)/4;
+		out.VRe[4][6] = sqrt(3.)/4;
+		out.VIm[5][0] = -sqrt(3.)/4;
+		out.VIm[5][2] = sqrt(5.)/4;
+		out.VIm[5][4] = sqrt(5.)/4;
+		out.VIm[5][6] = -sqrt(3.)/4;
+		out.VRe[6][1] = 1/sqrt(2.);
+		out.VRe[6][5] = 1/sqrt(2.);
+	} else if ((multiplicity - 2) % 4 == 0)
+	{
+		cout << "YToKMatrix not yet implemented for an atomic shell of multiplicity " << multiplicity << ", sorry!" << endl;
+		return nullMatrix();
+	} else
+	{
+		cout << "YToKMatrix only defined for multiplicity (2*l+1), with integer l, not for multiplicity " << multiplicity << "!" << endl;
+		return nullMatrix();
+	}
+	if (addSpin)
+		out = MatrixEnlarge(out, 2);
+	return out;
+}
+
+MatrixType YToZMatrix(const int multiplicity, const bool addSpin)
+{
+	MatrixType out;
+	out.QComplex = true;
+	out.Ni = multiplicity / 2;
+	out.Nj = multiplicity / 2;
+	InitMatrix(&out);
+	if (multiplicity == 2)
+	{
+//		s-shell
+		out.VRe[0][0] = 1;
+	} else if (multiplicity == 6)
+	{
+//		p-shell
+		out.VIm[0][0] = 1 / sqrt(2.);
+		out.VIm[0][2] = 1 / sqrt(2.);
+		out.VRe[1][1] = 1;
+		out.VRe[2][0] = 1 / sqrt(2.);
+		out.VRe[2][2] = -1 / sqrt(2.);
+	} else if (multiplicity == 10)
+	{
+//		d-shell
+		out.VIm[0][0] = 1 / sqrt(2.);
+		out.VIm[0][4] = -1 / sqrt(2.);
+		out.VIm[1][1] = 1 / sqrt(2.);
+		out.VIm[1][3] = 1 / sqrt(2.);
+		out.VRe[2][2] = 1;
+		out.VRe[3][1] = 1 / sqrt(2.);
+		out.VRe[3][3] = -1 / sqrt(2.);
+		out.VRe[4][0] = 1 / sqrt(2.);
+		out.VRe[4][4] = 1 / sqrt(2.);
+	} else if ((multiplicity - 2) % 4 == 0)
+	{
+		cout << "YToZMatrix not yet implemented for an atomic shell of multiplicity " << multiplicity << ", sorry!" << endl;
+		return nullMatrix();
+	} else
+	{
+		cout << "YToZMatrix only defined for multiplicity (2*l+1), with integer l, not for multiplicity " << multiplicity << "!" << endl;
+		return nullMatrix();
+	}
+	if (addSpin)
+		out = MatrixEnlarge(out, 2);
+	return out;
+}
+
+MatrixType YToJJzMatrix(const int size)
+{
+	return YToJJzMatrix(size, true);
+}
+
+MatrixType YToJJzMatrix(const int size, const bool addSpin)
+{
+	if (!addSpin)
+	{
+//		The bool is needed for compability with other code.
+		cout << "YToJJzMatrix called with addSpin = false. Since spin is obligatory this request will be ignored." << endl;
+	}
+	MatrixType out;
+	out.QComplex = false;
+	out.Ni = size;
+	out.Nj = size;
+	InitMatrix(&out);
+	if (size == 2)
+	{
+//		s-shell
+		out.VRe[0][0] = 1;
+		out.VRe[1][1] = 1;
+	} else if (size == 6)
+	{
+//		p-shell
+		out.VRe[0][1] = -sqrt(2. / 3.);
+		out.VRe[0][2] = 1 / sqrt(3);
+		out.VRe[1][3] = -1 / sqrt(3);
+		out.VRe[1][4] = sqrt(2. / 3.);
+		out.VRe[2][0] = 1;
+		out.VRe[3][1] = 1 / sqrt(3);
+		out.VRe[3][2] = sqrt(2. / 3.);
+		out.VRe[4][3] = sqrt(2. / 3.);
+		out.VRe[4][4] = 1 / sqrt(3);
+		out.VRe[5][5] = 1;
+	} else if (size == 10)
+	{
+//		d-shell
+		out.VRe[0][1] = -sqrt(4. / 5.);
+		out.VRe[0][2] = 1 / sqrt(5);
+		out.VRe[1][3] = -sqrt(3. / 5.);
+		out.VRe[1][4] = sqrt(2. / 5.);
+		out.VRe[2][5] = -sqrt(2. / 5.);
+		out.VRe[2][6] = sqrt(3. / 5.);
+		out.VRe[3][7] = -1 / sqrt(5);
+		out.VRe[3][8] = sqrt(4. / 5.);
+		out.VRe[4][0] = 1;
+		out.VRe[5][1] = 1 / sqrt(5);
+		out.VRe[5][2] = sqrt(4. / 5.);
+		out.VRe[6][3] = sqrt(2. / 5.);
+		out.VRe[6][4] = sqrt(3. / 5.);
+		out.VRe[7][5] = sqrt(3. / 5.);
+		out.VRe[7][6] = sqrt(2. / 5.);
+		out.VRe[8][7] = sqrt(4. / 5.);
+		out.VRe[8][8] = 1 / sqrt(5);
+		out.VRe[9][9] = 1;
+	} else if ((size - 2) % 4 == 0)
+	{
+		cout << "YToJJzMatrix not yet implemented for an atomic shell of multiplicity " << size << ", sorry!" << endl;
+		return nullMatrix();
+	} else
+	{
+		cout << "YToJJzMatrix only defined for multiplicity 2*(2*l+1), with integer l, not for multiplicity " << size << "!" << endl;
+		return nullMatrix();
+	}
+	return out;
+}
+
+MatrixType orbitalPermutationMatrix(const vector<string> oldVec, const vector<string> newVec)
+{
+	vector<int> permVec = permutationVector(oldVec, newVec);
+	if (permVec.size() == 0)
+		return nullMatrix();
+	vector < vector<MatrixType> > matMat = nullMatrixMatrix(newVec.size(), oldVec.size());
+	for (int i = 0; i < permVec.size(); ++i)
+	{
+		MatrixType identityMat = identityMatrix(orbToMultiplicity(newVec[i]));
+		matMat[i][permVec[i]] = identityMat;
+	}
+	return MatrixFlatten(matMat);
+}
+
+bool QChangeFromRelToNonRel(const vector<string> orbs1, const vector<string> orbs2)
+{
+	for (int i = 0; i < orbs1.size(); ++i)
+	{
+		for (int j = 0; j < orbs2.size(); ++j)
+		{
+			if (orbs1[i] == orbs2[j])
+			{
+				break;
+			} else if (QOrbsBelongTogether(orbs1[i], orbs2[j]))
+			{
+				if (isRelOrbital(orbs1[i]) && !isRelOrbital(orbs2[j]))
+				{
+					return true;
+				} else if (!isRelOrbital(orbs1[i]) && isRelOrbital(orbs2[j]))
+				{
+					return true;
+				}
+			}
+		}
+	}
+	return false;
+}
+
+int NumberOfFermionicStates(const vector<string> orbs)
+{
+	int NF = 0;
+	int mult;
+	for (int i = 0; i < orbs.size(); ++i)
+	{
+		mult = orbToMultiplicity(orbs[i]);
+		if (mult > 0)
+		{
+			NF += mult;
+		} else
+		{
+			cout << "Error during calculation of NF: Orbital " << orbs[i] << " could not be interpreted as an atomic orbital.\n";
+			return -1;
+		}
+	}
+	return NF;
+}
+
+MatrixType NonRelToRelRotationMatrix(const vector<string> nonRelOrbs, const vector<string> mixedOrbs)
+{
+	vector < vector<MatrixType> > blockMat = nullMatrixMatrix(nonRelOrbs.size(), nonRelOrbs.size());
+	int offset = 0;
+	for (int i = 0; i < nonRelOrbs.size(); ++i)
+	{
+		string oldOrb = nonRelOrbs[i];
+		string newOrb = mixedOrbs[i + offset];
+		if (i + offset >= mixedOrbs.size())
+			break;
+		if (isRelOrbital(oldOrb))
+		{
+			cout << "Error in NonRelToRelRotationMatrix: Encountered relativistic orbital \"" << oldOrb << "\" in list of non-relativistic orbitals." << endl;
+			return nullMatrix();
+		}
+		if (QOrbsBelongTogether(oldOrb, newOrb))
+		{
+			if (isRelOrbital(newOrb))
+			{
+				if (kappa(newOrb) == -1)
+				{
+					blockMat[i][i] = YToJJzMatrix(2);
+				} else
+				{
+					if (i + offset + 1 >= mixedOrbs.size())
+					{
+						cout << "Error in NonRelToRelRotationMatrix: List of new orbitals is missing the second entry belonging to \"" << oldOrb << "\"." << endl;
+						return nullMatrix();
+					}
+					string newOrb2 = mixedOrbs[i + offset + 1];
+					if (QOrbsBelongTogether(oldOrb, newOrb2))
+					{
+						blockMat[i][i] = YToJJzMatrix(orbToMultiplicity(oldOrb));
+						++offset;
+					} else
+					{
+						cout << "Error in NonRelToRelRotationMatrix: Could not connect \"" << oldOrb << "\" with \"" << newOrb2 << "\"." << endl;
+						return nullMatrix();
+					}
+				}
+			} else
+			{
+				blockMat[i][i] = identityMatrix(orbToMultiplicity(oldOrb));
+			}
+		} else
+		{
+			cout << "Error in NonRelToRelRotationMatrix: Could not connect \"" << oldOrb << "\" with \"" << newOrb << "\"." << endl;
+			return nullMatrix();
+		}
+	}
+	return MatrixFlatten(blockMat, true);
+}
+
+MatrixType RelToNonRelRotationMatrix(const vector<string> mixedOrbs, const vector<string> nonRelOrbs)
+{
+	MatrixType tmp = NonRelToRelRotationMatrix(nonRelOrbs, mixedOrbs);
+	MatrixTranspose(&tmp);
+	return tmp;
+}
+
+MatrixType LargeRotationMatrix(vector<int> multiplicities, MatrixType (*mat)(int, bool), bool addSpin)
+{
+	vector<vector<MatrixType> > fullM = nullMatrixMatrix(multiplicities.size(), multiplicities.size());
+	for (int i = 0; i < multiplicities.size(); ++i)
+		fullM[i][i] = mat(multiplicities[i], addSpin);
+	return MatrixFlatten(fullM);
+}
+
+MatrixType LargeRotationMatrix(vector<string> orbitals, MatrixType (*mat)(int, bool), bool addSpin)
+{
+	vector<int> multiplicities(orbitals.size());
+	for (int i = 0; i < orbitals.size(); ++i)
+		multiplicities[i] = orbToMultiplicity(orbitals[i]);
+	return LargeRotationMatrix(multiplicities, mat, addSpin);
+}

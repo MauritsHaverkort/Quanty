@@ -1,0 +1,87 @@
+orbsOld = {"1s","2s","2p"}
+orbsNew = {"1s","2s","2p"}
+print("\n\n\n")
+print("orbsOld:")
+print(orbsOld)
+print("orbsNew:")
+print(orbsNew)
+print("OrbitalRotationMatrix:")
+print(OrbitalRotationMatrix(orbsOld, orbsNew))
+
+orbsOld = {"1s","2s"}
+orbsNew = {"2s","1s"}
+print("\n\n\n")
+print("orbsOld:")
+print(orbsOld)
+print("orbsNew:")
+print(orbsNew)
+print("OrbitalRotationMatrix:")
+print(OrbitalRotationMatrix(orbsOld, orbsNew))
+
+orbsOld = {"1s","2s","2p","3d"}
+orbsNew = {"2s","3d","1s","2p"}
+print("\n\n\n")
+print("orbsOld:")
+print(orbsOld)
+print("orbsNew:")
+print(orbsNew)
+print("OrbitalRotationMatrix:")
+print(OrbitalRotationMatrix(orbsOld, orbsNew))
+
+orbsOld = {"2p12","2s12", "2p32"}
+orbsNew = {"2p12","2s12", "2p32"}
+print("\n\n\n")
+print("orbsOld:")
+print(orbsOld)
+print("orbsNew:")
+print(orbsNew)
+print("OrbitalRotationMatrix:")
+print(OrbitalRotationMatrix(orbsOld, orbsNew))
+
+orbsOld = {"2p12","2p32","3p"}
+orbsNew = {"2p","3p12","3p32"}
+print("\n\n\n")
+print("orbsOld:")
+print(orbsOld)
+print("orbsNew:")
+print(orbsNew)
+print("OrbitalRotationMatrix:")
+print(OrbitalRotationMatrix(orbsOld, orbsNew))
+
+orbsOld = {"1s","2s","2p","3s","3p","3d"}
+orbsNew = {"1s12","2s12","3s12","2p12","2p32","3p12","3p32","3d32","3d52"}
+print("\n\n\n")
+print("orbsOld:")
+print(orbsOld)
+print("orbsNew:")
+print(orbsNew)
+print("OrbitalRotationMatrix:")
+print(OrbitalRotationMatrix(orbsOld, orbsNew))
+
+--TODO: Das als Code Example für die Website
+orbsOld = {"2p32","2s12","2p12"}
+orbsNew = {"2s","2p"}
+print("\n\n\n")
+print("orbsOld:")
+print(orbsOld)
+print("orbsNew:")
+print(orbsNew)
+print("OrbitalRotationMatrix:")
+rotMatRelToNonRel = OrbitalRotationMatrix(orbsOld, orbsNew)
+print(rotMatRelToNonRel)
+
+orbsOld = {"2s","2p"}
+orbsNew = {"2p32","2s12","2p1 2"}
+print("\n\n\n")
+print("orbsOld:")
+print(orbsOld)
+print("orbsNew:")
+print(orbsNew)
+print("OrbitalRotationMatrix:")
+rotMatNonRelToRel = OrbitalRotationMatrix(orbsOld, orbsNew)
+print(rotMatNonRelToRel)
+
+print("\n\nrotMatRelToNonRel*rotMatNonRelToRel:")
+print(Chop(rotMatRelToNonRel*rotMatNonRelToRel))
+print("\n\nrotMatNonRelToRel*rotMatRelToNonRel:")
+print(Chop(rotMatNonRelToRel*rotMatRelToNonRel))

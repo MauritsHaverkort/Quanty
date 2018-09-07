@@ -618,7 +618,7 @@ static int LuaNewOperator(lua_State * L)
         if(Abs(oaddtemp)>O->NFermion+O->NBoson-1) return luaL_error(L, "ERROR: Opperator %d at position %d adding particle with index %d but there are only %d (%d Fermions + %d Bosons in the basis)\n)\n",i,j,(int)oaddtemp,O->NFermion+O->NBoson,O->NFermion,O->NBoson);
         if(Abs((Abs(oaddtemp)-(uint16_t)(Abs(oaddtemp))))>10*DBL_EPSILON) return luaL_error(L, "ERROR: Opperator %d at position %d addign particle with index %f should be integer",i,j,oaddtemp);
         // negative numbers annihilate, positive create, but we also have to capture negative and postive zero
-        if(std::signbit(oaddtemp))
+        if(signbit(oaddtemp))
         {
           oadd[l-j]=(uint16_t)(-oaddtemp);
         }
@@ -4152,15 +4152,14 @@ static int LuaStatistics(lua_State *L)
 static int LuaDeterminantString(lua_State *L)
 {
 	int NF;
-	uint16_t * indices;
-	uint32_t indSetSize;
+	vector<uint16_t> indices;
 	uint32_t len = (uint32_t)lua_gettop(L);
 	if (len < 2 || len > 2)
 		return luaL_error(L, "DeterminantString called with %d arguments. List of Indices and Number of Fermions expected.\n",len);
-	indices = luaL_checkarray_unit16_t(L,1,&indSetSize);
+	indices = luaL_checkvector_unit16_t(L,1);
 	NF = luaL_checknumber(L,2);
-	int i;
-	for (i=0;i<indSetSize;i++)
+	uint16_t i;
+	for (i=0;i<indices.size();i++)
 	{
 		if (indices[i]<0 || indices[i]>=NF)
 			printf("\nWarning: Index %d is not within [0,NF-1]=[0,%d].\n", indices[i], NF-1);
@@ -4169,7 +4168,7 @@ static int LuaDeterminantString(lua_State *L)
 	det[NF] = '\0';
 	for (i=0;i<NF;i++)
 	{
-		if (isIntElementOf(i,indices,indSetSize))
+		if (isIntElementOf(i,indices))
 		{
 			det[i] = '1';
 		} else
@@ -4317,12 +4316,11 @@ void lua_setAtomicOrbitalIndices(lua_State *L, string orb, int * NF, int indTabl
 static int lua_createAtomicIndices(lua_State *L, bool isDict)
 {
 	vector<string> orbitals;
-	uint32_t orbListLen;
+	vector<string>::size_type orbListLen;
 	int indTablePos;
 	int NF = 0;
 	uint32_t groupListLen;
 	string groupKey;
-	uint32_t groupLen;
 	vector<string> groupMembers;
 	int numberOfRedundantOrbitals = 0;
 	int i;
@@ -4343,7 +4341,7 @@ static int lua_createAtomicIndices(lua_State *L, bool isDict)
   {
     if(LuaTestOptionsList(L, -1))
     {
-      LuaCheckOptions(L, -1, LuaCreateAtomicIndicesOptions); //TODO: muss ich hier noch testen obs sich um einen bool handelt?
+      LuaCheckOptions(L, -1, LuaCreateAtomicIndicesOptions);
     }
     else
     {
@@ -4436,21 +4434,19 @@ static int LuaCreateAtomicIndicesList(lua_State *L)
 static int LuaPartialOperator(lua_State *L)
 {
 	OperatorType *O, *OPartial;
-	uint16_t * indices;
-	uint32_t indSetSize;
+	vector < uint16_t > indices;
 	O = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
-	indices = luaL_checkarray_unit16_t(L, 2, &indSetSize);
+	indices = luaL_checkvector_unit16_t(L, 2);
 	uint32_t len = (uint32_t) lua_gettop(L);
 	if (len != 2)
 		return luaL_error(L, "PartialOperator called with %d arguments. Operator and List of Indices expected.\n", len);
-	int i;
-	for (i = 0; i < indSetSize; i++)
+	for (int i = 0; i < indices.size(); i++)
 	{
 		if (indices[i] < 0 || indices[i] >= O->NFermion)
 			printf("\nWarning: Index %d is not within [0,NF-1]=[0,%d].\n", indices[i], O->NFermion - 1);
 	}
 	OPartial = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-	extractPartialOperator(O, OPartial, indices, indSetSize);
+	extractPartialOperator(O, OPartial, indices);
 	luaL_setmetatable(L, "Operator_Type");
 	strncpy(OPartial->Name, "", MAXStrLength - 1); //An appropriate Name can be given in Lua.
 	return 1;
@@ -4459,12 +4455,11 @@ static int LuaPartialOperator(lua_State *L)
 static int LuaPartialMeanFieldOperator(lua_State *L)
 {
 	OperatorType *O, *OMF;
-	MatrixType *Rho;
-	uint16_t * indices;
-	uint32_t indSetSize;
+	MatrixType Rho;
+	vector < uint16_t > indices;
 	O = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
-	Rho = (MatrixType *) luaL_checkMatrix(L, 2);
-	indices = luaL_checkarray_unit16_t(L, 3, &indSetSize);
+	Rho = *(MatrixType *) luaL_checkMatrix(L, 2);
+	indices = luaL_checkvector_unit16_t(L, 3);
 	uint32_t len = (uint32_t) lua_gettop(L);
 	struct
 	{
@@ -4475,17 +4470,17 @@ static int LuaPartialMeanFieldOperator(lua_State *L)
 			{ NULL, NULL, NULL } };
 	if (len < 3 || len > 4)
 		return luaL_error(L, "MeanFieldOperator called with %d arguments. Three or four expected, Operator, Density Matrix, List of Indices and optional Options expected.\n", len);
-  if(len==4)
-  {
-    LuaCheckOptions(L, -1, LuaOptions);
-  }
-	for (int i = 0; i < indSetSize; i++)
+	if (len == 4)
+	{
+		LuaCheckOptions(L, -1, LuaOptions);
+	}
+	for (int i = 0; i < indices.size(); i++)
 	{
 		if (indices[i] < 0 || indices[i] >= O->NFermion)
 			printf("\nWarning: Index %d is not within [0,NF-1]=[0,%d].\n", indices[i], O->NFermion - 1);
 	}
 	OMF = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-	partialMeanFieldOperator(O, OMF, *Rho, indices, indSetSize, Options.AddDFTSelfInteraction);
+	partialMeanFieldOperator(O, OMF, Rho, indices, Options.AddDFTSelfInteraction);
 	luaL_setmetatable(L, "Operator_Type");
 	strncpy(OMF->Name, "", MAXStrLength - 1); //An appropriate Name can be given in Lua.
 	return 1;
@@ -4494,7 +4489,6 @@ static int LuaPartialMeanFieldOperator(lua_State *L)
 static int LuaOrbToMultiplicity(lua_State * L)
 {
 	char * orb;
-	int multiplicity;
 	uint32_t len = (uint32_t) lua_gettop(L);
 	if (len != 1)
 	{
@@ -4502,16 +4496,260 @@ static int LuaOrbToMultiplicity(lua_State * L)
 	}
 	orb = (char*) luaL_checkstring(L, 1);
 	lua_pop(L, 1);
-	multiplicity = nonRelAngularMomentumZNumbers(orb);
-	if (multiplicity < 0)
-		multiplicity = relAngularMomentumZNumbers(orb);
-	if (multiplicity < 0)
+	lua_pushnumber(L, orbToMultiplicity(orb));
+	return 1;
+}
+
+// accepts a list of Wave Functions as well as the Hamiltonian and a list of other operators. The Hamiltonian is special here because it can be used to calculate the Deviance. It is optional.
+static int LuaPrintExpectationValues(lua_State * L)
+{
+	vector < WaveFunctionType > psiList;
+	OperatorType hamil;
+	vector < OperatorType > opList;
+	uint32_t numberOfOperators;
+	uint32_t len = (uint32_t) lua_gettop(L);
+	bool hasHamiltonian;
+	bool hasOptions;
+
+  struct
+  {
+		int colWidth = 8;
+		int printHeaderEvery = 0;
+		bool printSigma = false;
+		bool sortByEnergy = true;
+    double zero = 1E-10;
+  } Options;
+  LuaOptionsType LuaPrintExpectationValuesOptions[]={
+  	{"colWidth",   "int",  &(Options.colWidth)},
+		{"printHeaderEvery",   "int",  &(Options.printHeaderEvery)},
+		{"printSigma",         "bool",  &(Options.printSigma)},
+		{"sortByEnergy",       "bool",  &(Options.sortByEnergy)},
+		{"zero",          			"double",  &(Options.zero)},
+    {NULL, NULL, NULL}};
+
+	if (len < 2 || len > 4)
+		return luaL_error(L, "PrintExpectationValues called with %d arguments. 2 or 3 expected, List of Wavefunctions, optional Hamiltonian, list of other operators, and optional list of Options.\n", len);
+
+	if (len == 2)
 	{
-		printf("\nCould not interpret orbital \"");
-		printf("%s", orb);
-		printf("\" as either relativistic or non-relativistic atomic orbital, returning %d.\n", multiplicity);
+//		Input: Psi, Operators;
+		hasHamiltonian = false;
+		hasOptions = false;
+	} else if (len == 3)
+	{
+		if (lua_istable(L, -1))
+		{
+			lua_rawgeti(L, -1, 1);
+			if (lua_istable(L, -1))
+			{
+//		Input: Psi, Operators, Options;
+				hasHamiltonian = false;
+				hasOptions = true;
+			} else
+			{
+//		Input: Psi, Hamiltonian, Operators;
+				hasHamiltonian = true;
+				hasOptions = false;
+			}
+			lua_pop(L, 1);
+		} else
+		{
+			//		Input: Psi, Hamiltonian, a single Operator;
+			hasHamiltonian = true;
+			hasOptions = false;
+		}
+	} else if (len == 4)
+	{
+//		Input: Psi, Hamiltonian; Operators, Options;
+		hasHamiltonian = true;
+		hasOptions = true;
 	}
-	lua_pushnumber(L, multiplicity);
+
+	psiList = luaL_checkvector_WaveFunctionType(L, 1);
+	if (hasHamiltonian)
+		hamil = *(OperatorType*) luaL_checkudata(L, 2, "Operator_Type");
+	if (hasOptions)
+	{
+		opList = luaL_checkvector_OperatorType(L, -2);
+		if (LuaTestOptionsList(L, -1))
+		{
+			LuaCheckOptions(L, -1, LuaPrintExpectationValuesOptions);
+		} else
+		{
+			return luaL_error(L, "Last argument of PrintExpectationValues should either be a single operator, a list of operators, or a list of options. It's not.\n");
+		}
+	} else
+	{
+		opList = luaL_checkvector_OperatorType(L, -1);
+	}
+
+	printExpectationValues(psiList, hamil, opList, hasHamiltonian, Options.sortByEnergy, Options.printSigma, Options.zero, Options.printHeaderEvery, Options.colWidth);
+	return 0;
+}
+
+static int LuaRelToNonRelOrbitals(lua_State * L)
+{
+	uint32_t len = (uint32_t) lua_gettop(L);
+	if (len != 1)
+	{
+		return luaL_error(L, "RelToNonRelOrbitals called with %d arguments. Only list of orbitals expected.\n", len);
+	}
+	vector<string> orbs = luaL_checkvector_string(L,1);
+	orbs = groupedRelOrbitals(orbs);
+	LuaPushVector_string(L,relToNonRelOrbs(orbs));
+	return 1;
+}
+
+static int LuaNonRelToRelOrbitals(lua_State * L)
+{
+	uint32_t len = (uint32_t) lua_gettop(L);
+	if (len != 1)
+	{
+		return luaL_error(L, "NonRelToRelOrbitals called with %d arguments. Only list of orbitals expected.\n", len);
+	}
+	vector<string> orbs = luaL_checkvector_string(L,1);
+	LuaPushVector_string(L,nonRelToRelOrbs(orbs));
+	return 1;
+}
+
+static int LuaOrbitalRotationMatrix(lua_State * L)
+{
+	uint32_t len = (uint32_t) lua_gettop(L);
+	if (len != 2)
+		return luaL_error(L, "RotationMatrix called with %d arguments. Exactly 2 expected, list of old orbitals and list of new orbitals.\n", len);
+	vector<string> orbsOld = luaL_checkvector_string(L,1);
+	vector<string> orbsNew = luaL_checkvector_string(L,2);
+	MatrixType rotMat = OrbitalRotationMatrix(orbsOld,orbsNew);
+	if (isNullMatrix(rotMat))
+		return luaL_error(L, "Could not create rotation matrix.\n");
+	LuaPushTable_MatrixType(L, &rotMat);
+	return 1;
+}
+
+static int LuaYtoJJZMatrix(lua_State * L)
+{
+	uint32_t len = (uint32_t) lua_gettop(L);
+	bool isInputInteger;
+	MatrixType returnMat;
+	if (len != 1)
+		return luaL_error(L, "YtoJJZMatrix called with %d arguments. Exactly 1 expected, multiplicity of orbital, or list of multiplicities, or orbital name, or list of orbital names.\n", len);
+	if (!lua_istable(L, 1))
+	{
+		isInputInteger = lua_isnumber(L, 1);
+	} else
+	{
+		lua_rawgeti(L, 1, 1);
+		isInputInteger = lua_isnumber(L, -1);
+		lua_pop(L, 1);
+	}
+	if (isInputInteger)
+	{
+		vector<int> multiplicities = luaL_checkvector_int(L, 1);
+		for (int i = 0; i < multiplicities.size(); ++i)
+			multiplicities[i] = 2 * (2 * multiplicities[i] + 1);
+		returnMat = LargeRotationMatrix(multiplicities, YToJJzMatrix, true);
+	} else
+	{
+		vector < string > orbs = luaL_checkvector_string(L, 1);
+		returnMat = LargeRotationMatrix(orbs, YToJJzMatrix, true);
+	}
+	LuaPushTable_MatrixType(L, &returnMat);
+	return 1;
+}
+
+static int LuaYtoKMatrix(lua_State * L)
+{
+	uint32_t len = (uint32_t) lua_gettop(L);
+	bool isInputInteger;
+	MatrixType returnMat;
+	if (len < 1 || len > 2)
+		return luaL_error(L, "YtoKMatrix called with %d arguments. 1 or 2 expected, multiplicity of orbital, or list of multiplicities, or orbital name, or list of orbital names, and an optional list of options.\n", len);
+	if (!lua_istable(L, 1))
+	{
+		isInputInteger = lua_isnumber(L, 1);
+	} else
+	{
+		lua_rawgeti(L, 1, 1);
+		isInputInteger = lua_isnumber(L, -1);
+		lua_pop(L, 1);
+	}
+	struct
+	{
+		bool addSpin = true;
+	} Options;
+	LuaOptionsType LuaYtoKMatrixOptions[] = {
+			{ "addSpin", "bool", &(Options.addSpin) },
+			{ NULL, NULL, NULL } };
+	if (len == 2)
+	{
+		if (LuaTestOptionsList(L, -1))
+		{
+			LuaCheckOptions(L, -1, LuaYtoKMatrixOptions);
+		} else
+		{
+			return luaL_error(L, "Second argument of YtoKMatrix is optional but iff given should be a list of options.\n");
+		}
+	}
+	if (isInputInteger)
+	{
+		vector<int> multiplicities = luaL_checkvector_int(L, 1);
+		for (int i = 0; i < multiplicities.size(); ++i)
+			multiplicities[i] = 2 * (2 * multiplicities[i] + 1);
+		returnMat = LargeRotationMatrix(multiplicities, YToKMatrix, Options.addSpin);
+	} else
+	{
+		vector < string > orbs = luaL_checkvector_string(L, 1);
+		returnMat = LargeRotationMatrix(orbs, YToKMatrix, Options.addSpin);
+	}
+	LuaPushTable_MatrixType(L, &returnMat);
+	return 1;
+}
+
+static int LuaYtoZMatrix(lua_State * L)
+{
+	uint32_t len = (uint32_t) lua_gettop(L);
+	bool isInputInteger;
+	MatrixType returnMat;
+	if (len < 1 || len > 2)
+		return luaL_error(L, "YtoZMatrix called with %d arguments. 1 or 2 expected, multiplicity of orbital, or list of multiplicities, or orbital name, or list of orbital names, and an optional list of options.\n", len);
+	if (!lua_istable(L, 1))
+	{
+		isInputInteger = lua_isnumber(L, 1);
+	} else
+	{
+		lua_rawgeti(L, 1, 1);
+		isInputInteger = lua_isnumber(L, -1);
+		lua_pop(L, 1);
+	}
+	struct
+	{
+		bool addSpin = true;
+	} Options;
+	LuaOptionsType LuaYtoZMatrixOptions[] = {
+			{ "addSpin", "bool", &(Options.addSpin) },
+			{ NULL, NULL, NULL } };
+	if (len == 2)
+	{
+		if (LuaTestOptionsList(L, -1))
+		{
+			LuaCheckOptions(L, -1, LuaYtoZMatrixOptions);
+		} else
+		{
+			return luaL_error(L, "Second argument of YtoZMatrix is optional but iff given should be a list of options.\n");
+		}
+	}
+	if (isInputInteger)
+	{
+		vector<int> multiplicities = luaL_checkvector_int(L, 1);
+		for (int i = 0; i < multiplicities.size(); ++i)
+			multiplicities[i] = 2 * (2 * multiplicities[i] + 1);
+		returnMat = LargeRotationMatrix(multiplicities, YToZMatrix, Options.addSpin);
+	} else
+	{
+		vector < string > orbs = luaL_checkvector_string(L, 1);
+		returnMat = LargeRotationMatrix(orbs, YToZMatrix, Options.addSpin);
+	}
+	LuaPushTable_MatrixType(L, &returnMat);
 	return 1;
 }
 
@@ -4552,8 +4790,10 @@ static const struct luaL_Reg global_functions[] = {
   {"NewOperator", LuaNewOperator},
   {"NewTightBinding", LuaNewTightBinding},
   {"NewWavefunction", LuaNewWaveFunction},
+	{"NonRelToRelOrbitals",LuaNonRelToRelOrbitals},
   {"OperatorToMatrix", LuaOperatorToMatrix},
   {"OperatorSetTrace", LuaOperatorSetTrace},
+	{"OrbitalRotationMatrix",LuaOrbitalRotationMatrix},
   {"OrbToMultiplicity",LuaOrbToMultiplicity},
   {"Orthonormalize", LuaOrthonormalize},
 	{"PartialMeanFieldOperator",LuaPartialMeanFieldOperator},
@@ -4563,6 +4803,8 @@ static const struct luaL_Reg global_functions[] = {
   {"PlotBandsAndDOS", LuaPlotBandsAndDOS},
   {"PlotDOS", LuaPlotDOS},
   {"PlotFermi", LuaPlotFermi},
+	{"PrintExpectationValues",LuaPrintExpectationValues},
+	{"RelToNonRelOrbitals", LuaRelToNonRelOrbitals},
   {"Rotate", Luarotate},
   {"Statistics",LuaStatistics},
   {"TimeEnd",LuaTimeEnd},
@@ -4572,6 +4814,9 @@ static const struct luaL_Reg global_functions[] = {
   {"TightBindingDefFromDresdenFPLO", LuaTightBindingDefFromDresdenFPLO},
   {"Transpose", Luatranspose},
   {"Verbosity",LuaVerbosity},
+	{"YtoJJZMatrix",LuaYtoJJZMatrix},
+	{"YtoKMatrix",LuaYtoKMatrix},
+	{"YtoZMatrix",LuaYtoZMatrix},
   {NULL, NULL}
 };
 

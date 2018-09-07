@@ -1,5 +1,5 @@
 #include <vector>
-
+#include <cmath>
 //using namespace std;
 // inclusion of namespace std leads to conflicts with function atomic in lua
 
@@ -68,6 +68,7 @@ uint32_t CreateOperatorFastCoulombRelativistic(uint32_t const NFermion,double **
     SSlaterIntegral *integrals;
 
     integrals = GetSlaterIntegrals(basisfuns,NbasisFuns,grid, NGridpoints, (const int **) tuple, NIntegrals);
+    //PrintMaxSlaterIntegral(integrals,NIntegrals);
 
     int *k, i;
     unsigned int *n;
@@ -269,6 +270,7 @@ double* CreateBaseForContinuum( int NBasisFuns,double **basisfuns,double **deriv
 	const int CblasNonUnit = 131;
 */
 
+	printf("This code shouldn't run...\n");
 	char blasRight = 'R';
 	char blasLeft  = 'L';
 	char blasUpper = 'U';
@@ -315,7 +317,7 @@ double* CreateBaseForContinuum( int NBasisFuns,double **basisfuns,double **deriv
 	tau = (double *) malloc((Ncont-1)*sizeof(double));
 	if (!tau) printf("malloc fail at tau in CreateBaseForContinuum. size = %d\n",Ncont-1);
 
-	double *work = (double *) malloc(Ncont*sizeof(double));
+	double *work = (double *) malloc((2*Ncont-2)*sizeof(double));
 	if (!work) printf("malloc fail at work in CreateBaseForContinuum. size = %d\n",Ncont);
 	unsigned int lwork = (unsigned int) Ncont;
 
@@ -332,6 +334,8 @@ double* CreateBaseForContinuum( int NBasisFuns,double **basisfuns,double **deriv
 	info = LAPACKE_dsteqr(LAPACK_ROW_MAJOR,'V',Ncont,d,e,Tsub,Ncont);
 	if ( 0 != info) printf("error: argument %d of LAPACKE_dsteqr",-info);
 */
+	PrintMartix(Tsub,Ncont);
+	PrintMartix(g,dim);
 	CalcContinuumWFs(basisfuns, group.indices, group.n, contfuns, Ncont, NGridpoints, g, Tsub);
 
 	free(T);
@@ -352,6 +356,7 @@ double* CreateBaseForContinuum( int NBasisFuns,double **basisfuns,double **deriv
 	free(tau);
 	free(e);
 
+	printf("you should not see this message...\n");
 
 	return d;
 
@@ -374,7 +379,7 @@ double *CreateBaseForContinuum( int NBasisFuns, vector<vector<double> > basisfun
 
 	char blasRight = 'R';
 	char blasLeft  = 'L';
-	char blasUpper = 'U';
+	//char blasUpper = 'U';
 	char blasLower = 'L';
 	char blasTrans = 'T';
 	char blasNoTrans = 'N';
@@ -391,20 +396,33 @@ double *CreateBaseForContinuum( int NBasisFuns, vector<vector<double> > basisfun
 
 
 	dualfuns = CreateDualFunctions(NBasisFuns,NGridpoints,basisfuns,x);
-
+/*	printf("\n");
+	PrintArray(&dualfuns[0][0],6);
+	printf("\n");
+	printf("\n");
+	PrintArray(&basisfuns[0][0],6);
+	printf("\n");
+	printf("\n");
+	PrintArray(&derivfuns[0][0],6);
+	printf("\n");
+*/
 	dualcont = CreateDualFunctions(Ncont,NGridpoints,contfuns,x);
 
 	T = KineticEnergyCB(basisfuns,derivfuns, dualfuns,dualcont, Ncont,group.indices, group.n,x,NGridpoints,k,w);
 
 	g = MetricCB(basisfuns,dualfuns,group.indices, group.n,dualcont,Ncont,NGridpoints);
-
+/*
+	printf("\n");
+	PrintMartix(&(T[0]),dim);
+	printf("\n");
+*/
 	//PrintMartix(&(T[0]),dim);
 /*
 	printf("\n");
 	PrintMartix(&(g[0]),dim);
 	printf("\n");
 */
-	char cU = 'U';
+	//char cU = 'U';
 	char cL = 'L';
 	char cN = 'N';
 	char cV = 'V';
@@ -424,10 +442,6 @@ double *CreateBaseForContinuum( int NBasisFuns, vector<vector<double> > basisfun
 */
 	Tsub = SubMatrix(T,dim,group.n,dim-1,group.n,dim-1);
 
-/*	printf("\n");
-	PrintMartix(&(Tsub[0]),Ncont);
-	printf("\n");
-*/
 /*	printf("\n");
 	PrintMartix(&(g[0]),dim);
 	printf("\n");
@@ -450,22 +464,107 @@ double *CreateBaseForContinuum( int NBasisFuns, vector<vector<double> > basisfun
 	dsteqr(&cV,(unsigned int *) &Ncont,d,e,&(Tsub[0]),(unsigned int *) &Ncont,work,&info);
 	if ( 0 != info) printf("error: argument %d of LAPACKE_dsteqr",-info);
 
-/*
-	printf("\n");
+
+/*	printf("\n");
 	PrintMartix(&(g[0]),dim);
-	printf("\n");
 */
 	CalcContinuumWFs(basisfuns, group.indices, group.n, contfuns, Ncont, NGridpoints, g, Tsub);
 
+/*	printf("\n");
+	PrintMartix(&(Tsub[0]),Ncont);
+	printf("\n");
+*/
 
 	free(work);
 	free(tau);
 	free(e);
 
 
+
 	return d;
 
 }
+
+uint32_t CreateOperatorSingleCoulombRelativistic(uint32_t const NFermion,double **basisfuns, uint32_t NbasisFuns, const double *grid, uint32_t NGridpoints, uint32_t **tuple,
+                                               uint32_t NIntegrals,uint16_t **indices, OperatorType *op)
+{
+
+    OperatorType optemp;
+    SSlaterIntegral *integrals;
+
+    integrals = GetSlaterIntegrals(basisfuns,NbasisFuns,grid, NGridpoints, (const int **) tuple, NIntegrals);
+    int index = GetIndexMaxSlaterIntegral(integrals,NIntegrals);
+    double cutoff = abs(integrals[index].val[0])/5.;
+    vector<int> indexes = GetMaxSlaterIntegrals(integrals,NIntegrals,cutoff);
+    printf("NIntegrals %d\t%d\n",NIntegrals,indexes.size());
+
+    int *k, i;
+    unsigned int *n;
+    double *Fk;
+
+    k = integrals[indexes[0]].tau.kappa;
+    n = integrals[indexes[0]].tau.n;
+    Fk = integrals[indexes[0]].val;
+    //printf("Fk[0]: \t %e\n",Fk[0]);
+
+    CreateOperatorCoulombRelativisticOneIntegral(NFermion,k[0],k[1],k[2],k[3],indices[n[0]],indices[n[1]],indices[n[2]],indices[n[3]],Fk,n[0],n[1],n[2],n[3],op);
+
+    for( i = 1; i < indexes.size(); i++)
+        {
+            k = integrals[indexes[i]].tau.kappa;
+            n = integrals[indexes[i]].tau.n;
+            Fk = integrals[indexes[i]].val;
+
+            CreateOperatorCoulombRelativisticOneIntegral(NFermion,k[0],k[1],k[2],k[3],indices[n[0]],indices[n[1]],indices[n[2]],indices[n[3]],Fk,n[0],n[1],n[2],n[3],&optemp);
+
+            OperatorAdd(op, optemp, 1., 0.);
+
+        }
+
+    for ( i = 0; i < NIntegrals; i++)
+    {
+    	free(integrals[i].val);
+    	free(integrals[i].k);
+    }
+    free(integrals);
+
+    return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /*
 	printf("%f\n",NormDO(n,k,l,w));
