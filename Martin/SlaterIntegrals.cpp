@@ -294,7 +294,7 @@ double **CreateDualFunctions(const unsigned int NBasisFuns, const unsigned int N
 vector<double> Dual(vector<double> f, vector<double> w)
 {
 	vector<double> g;
-	if (f.size() != w.size()) printf("error in Dual: %d = size(f) != size(w) = %d", f.size(),w.size());
+	if (f.size() != w.size()) printf("error in Dual: %lu = size(f) != size(w) = %lu", f.size(),w.size());
 	for (int i = 0; i < f.size(); i++)
 	{
 		g.insert(g.end(), f[i]*w[i]);
@@ -382,10 +382,10 @@ SSlaterIntegral *InitializeIntegrals(vector<int> indToK, unsigned int &NIntegral
     	integrals[i].tau.kappa[1] = it->second.val[1];
     	integrals[i].tau.kappa[2] = it->second.val[2];
     	integrals[i].tau.kappa[3] = it->second.val[3];
-
+    													// TODO i could be larger than NIntegrals ???
     	i++;
     }
-    printf("i -> %d\t NIntegrals %d\n",i,NIntegrals);
+    //printf("i -> %d\t NIntegrals %d\n",i,NIntegrals);
     *kMax = 0;
     for( i = 0; i < NIntegrals; i++ )
     {

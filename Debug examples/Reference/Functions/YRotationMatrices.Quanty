@@ -1,0 +1,45 @@
+function unitarityTest(mat)
+    print("\nUnitarity Test (M*M^dag - 1):")
+    setmetatable(mat, MatrixMeta)
+    MatMatDag = mat*ConjugateTranspose(mat)
+--     print( Chop( MatMatDag - Matrix.Identity(#mat) ) == Matrix.Zero(#mat) )
+    print(Chop( MatMatDag - Matrix.Identity(#mat) ))
+end
+
+inputs = {}
+inputs[#inputs + 1] = 1
+inputs[#inputs + 1] = {0,1,2}
+inputs[#inputs + 1] = {0,1,2,3,4,5}
+inputs[#inputs + 1] = "3p"
+inputs[#inputs + 1] = {"3s","3p","3d"}
+inputs[#inputs + 1] = {"7s","7p","7d","7f","7g","7h"}
+
+for key, input in pairs(inputs) do
+    print("\n\n\nInput:")
+    print(input)
+    
+    print("\nYtoJJZMatrix:")
+    rotMat = YtoJJZMatrix(input)
+    print( rotMat )
+    unitarityTest(rotMat)
+    
+    print("\nYtoKMatrix:")
+    rotMat = YtoKMatrix(input)
+    print( rotMat )
+    unitarityTest(rotMat)
+    
+    print("\nYtoKMatrix without Spin:")
+    rotMat = YtoKMatrix(input, {{"addSpin",false}})
+    print( rotMat )
+    unitarityTest(rotMat)
+    
+    print("\nYtoZMatrix:")
+    rotMat = YtoZMatrix(input)
+    print( rotMat )
+    unitarityTest(rotMat)
+    
+    print("\nYtoZMatrix without Spin:")
+    rotMat = YtoZMatrix(input, {{"addSpin",false}})
+    print( rotMat )
+    unitarityTest(rotMat)
+end

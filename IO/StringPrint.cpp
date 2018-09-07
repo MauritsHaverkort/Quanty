@@ -22,6 +22,14 @@ int sprintfAdd(char ** A, const char *fmt, ...)
   return retval;
 }
 
+//TODO: Anyone have a better idea where to put this?
+template <typename T>
+string to_string(const T value)
+{
+	std::ostringstream os ;
+	os << value ;
+	return os.str() ;
+}
 
 /*
  *   Prints the values of the operator.

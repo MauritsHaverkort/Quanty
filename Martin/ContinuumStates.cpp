@@ -562,18 +562,12 @@ void CalcContinuumWFs(double **basisfuns, const unsigned int *indices, const uns
 	int i,j,dim,n, iU,jU;
 
 	double **retfuns;
-	printf("retfuns\t%d\n",Ncont*sizeof(double *));
-	fflush(stdout);
 	retfuns = (double **) malloc(Ncont*sizeof(double *));
-	printf("check retfuns\n");
-	fflush(stdout);
 	if (!retfuns) printf("malloc fail at retfuns in CalcContinuumWFs. size = %d\n",Ncont);
 
 	n = NGridpoints * 2;
 	dim = Ncont + Nindices;
 
-	printf("loop1\n");
-	fflush(stdout);
 	for ( i = Ncont-1; i >= 0; i--)
 	{
 		iU = i + Nindices;
@@ -591,8 +585,6 @@ void CalcContinuumWFs(double **basisfuns, const unsigned int *indices, const uns
 	//PrintMartix(R,Ncont);
 	//PrintArray(contfuns[0],n);
 	//printf("start Rotating\n");
-	printf("loop2\n");
-	fflush(stdout);
 	for ( i = 0; i < Ncont; i++)
 	{
 		retfuns[i] = (double *) malloc(n*sizeof(double));
@@ -606,8 +598,6 @@ void CalcContinuumWFs(double **basisfuns, const unsigned int *indices, const uns
 			vAdd(contfuns[j],R[j*Ncont + i],retfuns[i],n);
 		}
 	}
-	printf("loop3\n");
-	fflush(stdout);
 	for ( i = 0; i < Ncont; i++)
 	{
 		//free(contfuns[i]);
