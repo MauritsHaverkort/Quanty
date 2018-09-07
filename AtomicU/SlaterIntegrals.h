@@ -1,5 +1,5 @@
-#ifndef MARTIN_SLATERINTEGRALS_H_
-#define MARTIN_SLATERINTEGRALS_H_
+#ifndef ATOMICU_SLATERINTEGRALS_H_
+#define ATOMICU_SLATERINTEGRALS_H_
 
 SSlaterIntegral *GetSlaterIntegrals(double **basisfuns, unsigned int NBasisFuns, const double *x,
                                     unsigned int NGridPoints,const int **tupel, unsigned int NIntegrals);
@@ -7,8 +7,13 @@ SSlaterIntegral *GetSlaterIntegrals(double **basisfuns, unsigned int NBasisFuns,
 SSlaterIntegral *GetSlaterIntegrals(double **basisfuns, unsigned int NBasisFuns, const double *x,
                                     unsigned int NGridPoints,vector<int> indToK, unsigned int &NIntegrals);
 
+SSlaterIntegral *GetSlaterIntegrals(vector<vector<double> > basisfuns, vector<double> x,vector<int> indToK, unsigned int &NIntegrals);
+
 void CalculateSlaterIntegrals(const int NIntegrals, SSlaterIntegral *integrals, const int dim,
                               double **kernels, double **basisfuns, double **dualfuns);
+
+void CalculateSlaterIntegrals(const int NIntegrals, SSlaterIntegral *integrals, const int dim,
+                              double **kernels, vector<vector<double> > basisfuns, vector<vector<double> > dualfuns);
 
 void vecMul(const int n, const double *f, const double *g, double *fout);
 

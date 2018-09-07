@@ -18,6 +18,23 @@ H0 = Martin.NewDirac(NF,basisfuns,derivfuns,x,groups,67,ind)
 ki = Transpose({{-1,-1,-1,-1},ind})
 U  = Martin.NewCoulomb(NF,basisfuns,x,ind)
 
+funsG = {}
+funsF = {}
+G = {}
+F = {}
+for i = 1, #basisfuns do
+    funsG[i] = {}
+    funsF[i] = {}
+    for j = 1, #x do
+        funsG[i][j] = basisfuns[i][j]
+        funsF[i][j] = basisfuns[i][j+#x]
+    end
+    G[i] = InterpolatingFunction.Spline(x,funsG[i])
+    F[i] = InterpolatingFunction.Spline(x,funsF[i])
+end
+print(#F,#G)
+U  = NewOperator("AU",NF,ind,G,F)
+
 --print(#basisfuns,#x,#derivfuns,#DOBase)
 --print("dobase",#DOBase)
 hexcited, BaseContinuum = Martin.ContinuumBase(basisfuns,derivfuns,x,groups[1],w,DOBase)

@@ -3,7 +3,6 @@
 //using namespace std;
 // inclusion of namespace std leads to conflicts with function atomic in lua
 
-#include "SlaterIntegrals.cpp"
 #include "DiracHamiltonian.cpp"
 #include "ContinuumStates.cpp"
 //#include "mkl.h"
@@ -146,6 +145,7 @@ uint32_t CreateOperatorFastCoulombRelativistic(uint32_t const NFermion,double **
     //FreeOperator(&optemp);
     return 0;
 }
+
 
 uint32_t CreateOperatorFullCoulombRelativistic(uint32_t const NFermion,double **basisfuns, uint32_t NbasisFuns, const double *grid, uint32_t NGridpoints, uint32_t **tuple,
                                                uint32_t NIntegrals,uint16_t **indices, OperatorType *op)

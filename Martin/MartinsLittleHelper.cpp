@@ -82,25 +82,6 @@ void PrintArray(Complex16* a, int n)
 	}
 }
 
-vector<double> ConvertArray(double *a, const int n)
-{
-	vector<double> res = vector<double>(n);
-	for (int i = 0; i < n; i++)
-	{
-		res[i] = a[i];
-	}
-	return res;
-}
-vector<int> ConvertArray(uint16_t *a, const int n)
-{
-	vector<int> res = vector<int>(n);
-	for (int i = 0; i < n; i++)
-	{
-		res[i] = (short) a[i];
-	}
-	return res;
-}
-
 vector<vector<double> > ConvertMatrix(double **m, const int n1, const int n2)
 {
 	vector<vector<double> > res = vector<vector<double> >(n1);
@@ -292,47 +273,7 @@ vector<int> GetMaxSlaterIntegrals(SSlaterIntegral *integrals,const uint32_t NInt
 	return index;
 }
 
-vector<double> ReadBasisfunction(ifstream &file, vector<double> &x)
-{
-	double val;
-	vector<double> y;
-	string word;
 
-	file >> word;
-	while (word != "#")
-	{
-		val = atof(word.c_str());
-		if(x.size() == y.size())
-			x.push_back(val);
-		file >> word;
-		val = atof(word.c_str());
-		y.push_back(val);
-		file >> word;
-	}
-	while ((word != "<start") && !(file.eof()))
-		file >> word;
-	return y;
-}
-
-string GetOrbitalName(ifstream &file)
-{
-	string word, name;
-	while ( file >> word)
-	{
-		if (word == "function")
-		{
-			file >> word;
-			file >> word;
-			file >> word;
-			file >> name;
-			file >> word;
-			name.append(word);
-			name.erase(name.length()-1);
-			return name;
-		}
-	}
-	return "";
-}
 
 void VectorJoin(vector<double> &a, vector<double> b)
 {

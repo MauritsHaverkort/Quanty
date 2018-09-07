@@ -18,6 +18,9 @@ uint32_t CreateOperatorFastCoulombRelativistic(uint32_t const NFermion,double **
 uint32_t CreateOperatorFastCoulombRelativistic(uint32_t const NFermion,double **basisfuns, uint32_t NbasisFuns, const double *grid, uint32_t NGridpoints,vector<int> indToK
                                                ,uint16_t **indices, OperatorType *op);
 
+uint32_t CreateOperatorFastCoulombRelativistic(uint32_t const NFermion,vector<vector<double> >basisfuns, vector<double> grid,vector<int> indToK
+                                               ,uint16_t **indices, OperatorType *op);
+
 uint32_t CreateOperatorFullCoulombRelativistic(uint32_t const NFermion,double **basisfuns, uint32_t NbasisFuns, const double *grid, uint32_t NGridpoints, uint32_t **tuple,
                                                uint32_t NIntegrals,uint16_t **indices, OperatorType *op);
 

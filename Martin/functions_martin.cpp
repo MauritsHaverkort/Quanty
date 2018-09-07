@@ -5,7 +5,7 @@
 #include "Quadrature.cpp"
 #include "Eigendifferential.cpp"
 #include "MartinsLittleHelper.cpp"
-#include "SlaterTuple.cpp"
+
 #include "CreateOperators.cpp"
 
 
@@ -567,7 +567,6 @@ static int LuaPropagator2(lua_State *L)
 	return 2;
 }
 
-
 static const struct luaL_Reg Martin_meta[] = {
   {NULL, NULL}
 };
@@ -606,6 +605,7 @@ static const struct luaL_Reg Martin_func[] = {
   {"NewDirac", LuaOperatorNewDirac},
   {"ContinuumBase",LuaCreateBaseForContinuum},
   {"ReadFPLOBasis",LuaReadFPLOBasis},
+  {"RB",LuaReadFPLOBasisFunctions},
   {"Propagator",LuaPropagator},
   {"Propagator2",LuaPropagator2},
   {"Metric",LuaMetricWaveFuns},

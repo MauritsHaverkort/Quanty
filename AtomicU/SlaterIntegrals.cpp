@@ -1,4 +1,4 @@
-#include "SlaterIntegrals.h"
+#include "../AtomicU/SlaterIntegrals.h"
 
 SSlaterIntegral *GetSlaterIntegrals(double **basisfuns, unsigned int NBasisFuns, const double *x,
                                     unsigned int NGridPoints,const int **tupel, unsigned int NIntegrals)
@@ -87,6 +87,35 @@ SSlaterIntegral *GetSlaterIntegrals(double **basisfuns, unsigned int NBasisFuns,
     return si;
 }
 
+SSlaterIntegral *GetSlaterIntegrals(vector<vector<double> > basisfuns, vector<double> x,vector<int> indToK, unsigned int &NIntegrals)
+{
+
+    SSlaterIntegral *si;
+    unsigned int kMax, n, i;
+    double **kernels;
+    vector<vector<double> > dualfuns;
+    unsigned int NGridPoints = x.size();
+
+
+    n = 2* NGridPoints;
+
+    dualfuns = CreateDualFunctions(basisfuns.size(), NGridPoints, basisfuns,x);
+
+    si = InitializeIntegrals(indToK, NIntegrals,&kMax);
+
+    kernels = CreateAllKernels(kMax, NGridPoints, &x[0]);
+
+    CalculateSlaterIntegrals(NIntegrals, si,n,kernels,basisfuns,dualfuns);
+
+    for ( i = 0; i <= kMax; i++)
+    {
+    	free(kernels[i]);
+    }
+    free(kernels);
+
+    return si;
+}
+
 void CalculateSlaterIntegrals(const int NIntegrals, SSlaterIntegral *integrals, const int dim,
                               double **kernels, double **basisfuns, double **dualfuns)
 {
@@ -108,6 +137,31 @@ void CalculateSlaterIntegrals(const int NIntegrals, SSlaterIntegral *integrals, 
             //printf("Fk:\t%e\n",Fk);
             integrals[i].val[j] = Fk;
             
+        }
+    }
+};
+
+void CalculateSlaterIntegrals(const int NIntegrals, SSlaterIntegral *integrals, const int dim,
+                              double **kernels, vector<vector<double> > basisfuns, vector<vector<double> > dualfuns)
+{
+
+    int i,j, k;
+    unsigned int *n;
+    double Fk;
+
+    for( i = 0; i < NIntegrals; i++)
+    {
+
+        n = integrals[i].tau.n;
+        for( j = 0; j < integrals[i].Nval; j++)
+        {
+
+            k = integrals[i].k[j];
+            Fk = SlaterIntegral(dim, &(dualfuns[n[0]][0]), &(dualfuns[n[1]][0]),
+                                &(basisfuns[n[2]][0]),&(basisfuns[n[3]][0]),kernels[k]);
+            //printf("Fk:\t%e\n",Fk);
+            integrals[i].val[j] = Fk;
+
         }
     }
 };
