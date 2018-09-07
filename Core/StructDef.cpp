@@ -1619,3 +1619,26 @@ typedef struct TemperatureSettings
 }
 TemperatureSettings;
 
+
+/*
+ *
+ */
+typedef struct CubicSplineType
+{
+  double *x;                    /* list of x values */
+  double *y;                    /* list of y values */
+  double *y2;                   /* list of second derivatives */
+  uint32_t N;                   /* number of points in list */
+}
+CubicSplineType;
+
+/*
+ *
+ */
+typedef struct InterpolatingFunctionType
+{
+  char type;                    /* Character determining the type of interpolation (i.e. pointer type) */
+                                /*   C  Cubic spline */
+  void *f;                      /* Pointer to struct of type type */
+}
+InterpolatingFunctionType;

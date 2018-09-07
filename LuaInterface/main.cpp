@@ -25,6 +25,7 @@ static void *currentudata = NULL;
 #include "lua_extensions/get_put.cpp"
 #include "units.cpp"
 #include "Complex.cpp"
+#include "Interpolate.cpp"
 #include "Operator.cpp"
 #include "Wavefunction.cpp"
 #include "Spectra.cpp"

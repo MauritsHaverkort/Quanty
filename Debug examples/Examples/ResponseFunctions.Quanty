@@ -155,3 +155,10 @@ print(ATri(1,2))
 
 TB = ToTightBinding(ATri)
 print(TB)
+
+AAnd = ChangeType(MListOfPoles,"And")
+print(AAnd)
+print(AAnd(1,2))
+
+TB = ToTightBinding(AAnd)
+print(TB)

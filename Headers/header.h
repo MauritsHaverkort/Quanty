@@ -83,6 +83,7 @@ using std::vector;
 #include "../Tools/TemperatureAvverage.h"
 
 #include "../LuaInterface/lua/includeLua.h"
+#include "../LuaInterface/Interpolate.h"
 #include "../LuaInterface/BraKet.h"
 #include "../LuaInterface/ComplexHeader.h"
 #include "../LuaInterface/Matrix.h"

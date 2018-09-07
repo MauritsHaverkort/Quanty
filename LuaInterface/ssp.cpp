@@ -4850,7 +4850,12 @@ int luaopen_ssp(lua_State * L)
   luaL_setfuncs(L, Spectra_meta, 0);
   luaL_newlib(L, Spectra_func);
   lua_setglobal(L, "Spectra");
-
+  
+  luaL_newmetatable(L, "InterpolatingFunction_Type");
+  luaL_setfuncs(L, InterpolatingFunction_meta, 0);
+  luaL_newlib(L, InterpolatingFunction_func);
+  lua_setglobal(L, "InterpolatingFunction");
+  
   luaL_newmetatable(L, "TightBinding_Type");
   luaL_setfuncs(L, TightBinding_meta, 0);
 

@@ -1,6 +1,9 @@
 Verbosity(0xFFFF)
 
 
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Reference/Objects/InterpolatingFunction/Spline.Quanty")
+os.exit()
+
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Examples/ResponseFunctions.Quanty")
 os.exit()
 
