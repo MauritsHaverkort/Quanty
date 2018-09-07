@@ -87,7 +87,6 @@ uint32_t FreeBlockMatrixFromLua(ResponsefunctionType *M)
     {
       FreeBlockTridiagonalMatrix((BlockTriDiagonalMatrixType *)M->data);
       free((BlockTriDiagonalMatrixType *)(M->data));
-      //free(M); // added by Martin - otherwise heap is lost but could be dangerous - TODO talk to Maurits
       return 0;
     }
     case 'n':
