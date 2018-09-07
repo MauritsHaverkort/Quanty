@@ -1,4 +1,11 @@
 
+int qsortcomparedoubles(const void *a, const void *b)
+{
+  if(*((double*)a)>*((double*)b)) return -1;
+  return 1;
+}
+
+
 /*
  *
  */
@@ -6,7 +13,7 @@ static int LuaSplineInterpolate(lua_State * L)
 {
   uint32_t i;
   InterpolatingFunctionType *fun;
-  double yp1,ypn;
+  double yp1,ypn,*xy;
   uint32_t len = (uint32_t)lua_gettop(L);;
   if(len<2)
   {
@@ -18,22 +25,31 @@ static int LuaSplineInterpolate(lua_State * L)
   {
     return luaL_error(L, "Error, the length of the first table with x values (%d) needs to be the same as the length of the second table with y values (%d)",lua_objlen(L, 1),lua_objlen(L, 2));
   }
-  
+  // we need to sort the input list acording to x
+  xy=(double*)malloc(2*lua_objlen(L, 1)*sizeof(double));
+  for(i=0;i<lua_objlen(L, 1);i++)
+  {
+    lua_rawgeti(L, 1, i+1);
+    xy[2*i]=(double)luaL_checknumber(L, -1);
+    lua_pop(L, 1);
+  }
+  for(i=0;i<lua_objlen(L, 1);i++)
+  {
+    lua_rawgeti(L, 2, i+1);
+    xy[2*i+1]=(double)luaL_checknumber(L, -1);
+    lua_pop(L, 1);
+  }
+  qsort(xy, lua_objlen(L, 1), 2*sizeof(double), &qsortcomparedoubles);
+  // add the values to an Interpolating function type
   fun = (InterpolatingFunctionType*) lua_newuserdata(L, sizeof(InterpolatingFunctionType));
   luaL_setmetatable(L, "InterpolatingFunction_Type");
   InitInterpolatingFunctionAsCubicSpline(fun, (uint32_t)lua_objlen(L, 1));
   for(i=0;i<((CubicSplineType*)(fun->f))->N;i++)
   {
-    lua_rawgeti(L, 1, i+1);
-    ((CubicSplineType*)(fun->f))->x[i]=(double)luaL_checknumber(L, -1);
-    lua_pop(L, 1);
+    ((CubicSplineType*)(fun->f))->x[i]=xy[2*i];
+    ((CubicSplineType*)(fun->f))->y[i]=xy[2*i+1];
   }
-  for(i=0;i<((CubicSplineType*)(fun->f))->N;i++)
-  {
-    lua_rawgeti(L, 2, i+1);
-    ((CubicSplineType*)(fun->f))->y[i]=(double)luaL_checknumber(L, -1);
-    lua_pop(L, 1);
-  }
+  free(xy);
   if(len==2)
   {
     CreateCubicSpline((CubicSplineType*)(fun->f), NAN, NAN);
