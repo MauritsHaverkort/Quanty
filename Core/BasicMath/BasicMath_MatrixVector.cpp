@@ -1778,7 +1778,7 @@ uint32_t MatrixBasisOrthonormalize(MatrixType const S, MatrixType * const T)
   return 0;
 }
 
-MatrixType zeroMatrix(int Ni, int Nj)
+MatrixType zeroMatrix(const uint32_t Ni, const uint32_t Nj)
 {
 	MatrixType zeroMat;
 	zeroMat.Ni = Ni;
@@ -1793,7 +1793,7 @@ MatrixType nullMatrix()
 	return zeroMatrix(1,0);
 }
 
-bool isNullMatrix(MatrixType M)
+bool isNullMatrix(const MatrixType M)
 {
 	return (M.Ni == 0 || M.Nj == 0);
 }
@@ -1802,9 +1802,9 @@ MatrixType MatrixFlatten(vector<vector<MatrixType> > allMs, bool printWarnings)
 {
 	uint32_t QComplex = 0;
 	MatrixType fullM;
-	vector<MatrixType>::size_type numOfRowsOuter = allMs.size();
-	vector<MatrixType>::size_type numOfColsOuter = allMs[0].size();
-	vector<MatrixType>::size_type numOfRowsInner[numOfRowsOuter], numOfColsInner[numOfColsOuter], numOfAllRows = 0, numOfAllCols = 0;
+	uint32_t numOfRowsOuter = allMs.size();
+	uint32_t numOfColsOuter = allMs[0].size();
+	uint32_t numOfRowsInner[numOfRowsOuter], numOfColsInner[numOfColsOuter], numOfAllRows = 0, numOfAllCols = 0;
 	for (int i = 0; i < numOfRowsOuter; ++i)
 	{
 		numOfRowsInner[i] = 0;
@@ -1982,7 +1982,7 @@ void MatrixAbsAverage(MatrixType M, double *AbsAverage)
   *AbsAverage/=(M.Ni*M.Nj);
 }
 
-vector<vector<MatrixType> > nullMatrixMatrix(const int rows, const int cols)
+vector<vector<MatrixType> > nullMatrixMatrix(const uint32_t rows, const uint32_t cols)
 {
 	vector < vector<MatrixType> > matMat(rows);
 	for (int i = 0; i < rows; ++i)

@@ -173,7 +173,7 @@ vector<string> luaL_checkvector_string(lua_State *L, int narg)
 
 void LuaPushVector_string(lua_State *L, const vector<string> in)
 {
-	lua_createtable(L, in.size(), 0);
+	lua_createtable(L, (int) in.size(), 0);
 	for (uint32_t i = 0; i < in.size(); i++)
 	{
 		lua_pushstring(L, in[i]);
