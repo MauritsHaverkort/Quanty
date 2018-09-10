@@ -493,6 +493,7 @@ static int LuaResponseFunctionCall(lua_State * L)
     CompactMatrixType out;
     EvaluateBlockResponsefunctionType(res, &out, omega, gamma);
     LuaPushTable_CompactMatrixType(L, &out);
+    FreeCompactMatrix(&out);  // added by Martin - otherwise heap is lost.
   }
   else
   {
@@ -502,6 +503,7 @@ static int LuaResponseFunctionCall(lua_State * L)
     luaL_setmetatable(L, "Complex_Type");
   }
   FreeResponsefunction(res);
+  free(res); // added by Martin - otherwise heap is lost becomes obsolete if included in FreeResponsefunction
   return 1;
 }
 

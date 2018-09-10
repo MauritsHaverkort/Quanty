@@ -61,6 +61,7 @@ uint32_t GlobalVerbosity=0xF;
 
 #define PrintDebugInfo
 
+using std::abs;
 using std::cout;
 using std::endl;
 //using std::signbit;
@@ -102,7 +103,7 @@ using std::vector;
 #include "../LuaInterface/units.h"
 
 
-#include "../Martin/SlaterIntegrals.h"
+#include "../Martin/MartinHeaders.h"
 #include "../Simon/functions_simon.h"
 #include "../Yi/functions_yi.h"
 

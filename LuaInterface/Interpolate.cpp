@@ -1,7 +1,7 @@
 
 int qsortcomparedoubles(const void *a, const void *b)
 {
-  if(*((double*)a)>*((double*)b)) return -1;
+  if(*((double*)a)<*((double*)b)) return -1;
   return 1;
 }
 

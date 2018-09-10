@@ -1307,21 +1307,21 @@ static int LuaSubmatrix(lua_State * L)
 	M = *luaL_checkMatrix(L, 1);
 	if (len == 2)
 	{
-		int size = luaL_checkinteger(L, 2);
+		int size = (int) luaL_checkinteger(L, 2);
 		Msub = Submatrix(M, size);
 	} else if (len == 3)
 	{
-		int rows = luaL_checkinteger(L, 2);
-		int cols = luaL_checkinteger(L, 3);
+		int rows = (int) luaL_checkinteger(L, 2);
+		int cols = (int) luaL_checkinteger(L, 3);
 		Msub = Submatrix(M, rows, cols);
 	} else if (len == 5)
 	{
-		int rowStart = luaL_checkinteger(L, 2);
+		int rowStart = (int) luaL_checkinteger(L, 2);
 		--rowStart;
-		int rows = luaL_checkinteger(L, 3);
-		int colStart = luaL_checkinteger(L, 4);
+		int rows = (int) luaL_checkinteger(L, 3);
+		int colStart = (int) luaL_checkinteger(L, 4);
 		--colStart;
-		int cols = luaL_checkinteger(L, 5);
+		int cols = (int) luaL_checkinteger(L, 5);
 		Msub = Submatrix(M, rowStart, rows, colStart, cols);
 	}
 	if (isNullMatrix(Msub))

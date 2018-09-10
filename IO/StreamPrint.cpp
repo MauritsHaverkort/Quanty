@@ -1574,7 +1574,7 @@ uint32_t StreamPrintBandstructurePath(BandstructurePathType M, FILE * stream)
 string numberToStringMaxWidth(double num, int maxWidth)
 {
 	std::stringstream sstr;
-	int old_precision = sstr.precision();
+	std::streamsize old_precision = sstr.precision();
 	int power = findPower(num);
 	int powerDigits = findPower(power) + 1;
 	if (power < 0)
@@ -1625,7 +1625,7 @@ void numberOutMaxWidth(double num, int maxWidth)
 	cout << numberToStringMaxWidth(num,maxWidth);
 }
 
-void fillWithBlank(int width, int occupiedSpace)
+void fillWithBlank(int width, string::size_type occupiedSpace)
 {
 	if (occupiedSpace >= width)
 	{
