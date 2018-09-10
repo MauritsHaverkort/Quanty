@@ -1,9 +1,8 @@
 #include <vector>
-#include <cmath>
+//#include <cmath>
 //using namespace std;
 // inclusion of namespace std leads to conflicts with function atomic in lua
 
-#include "SlaterIntegrals.cpp"
 #include "DiracHamiltonian.cpp"
 #include "ContinuumStates.cpp"
 //#include "mkl.h"
@@ -57,6 +56,7 @@ void CreateOperatorCoulombRelativisticOneIntegral(uint32_t const NFermion,int co
             }
         }
     }
+    //FreeOperator(&optemp);
 
 }
 
@@ -99,7 +99,7 @@ uint32_t CreateOperatorFastCoulombRelativistic(uint32_t const NFermion,double **
     	free(integrals[i].k);
     }
     free(integrals);
-
+    //FreeOperator(&optemp);
     return 0;
 }
 
@@ -142,9 +142,10 @@ uint32_t CreateOperatorFastCoulombRelativistic(uint32_t const NFermion,double **
     	free(integrals[i].k);
     }
     free(integrals);
-
+    //FreeOperator(&optemp);
     return 0;
 }
+
 
 uint32_t CreateOperatorFullCoulombRelativistic(uint32_t const NFermion,double **basisfuns, uint32_t NbasisFuns, const double *grid, uint32_t NGridpoints, uint32_t **tuple,
                                                uint32_t NIntegrals,uint16_t **indices, OperatorType *op)
@@ -191,14 +192,9 @@ uint32_t CreateOperatorFullCoulombRelativistic(uint32_t const NFermion,double **
     	free(integrals[i].k);
     }
     free(integrals);
+    //FreeOperator(&optemp);
     return 0;
 }
-
-typedef struct{
-	unsigned int *indices;
-	uint32_t n;
-	int kappa;
-}SKappaGroup;
 
 uint32_t CreateOperatorDirac(uint32_t const NFermion,const unsigned int NBasisFuns, double **basisfuns, double **derivfuns, const double *x, uint32_t NGridpoints,
 		SKappaGroup *groups,uint32_t Ngroups,uint32_t **indices, int Z, OperatorType *op)
@@ -253,8 +249,6 @@ uint32_t CreateOperatorDirac(uint32_t const NFermion,const unsigned int NBasisFu
 	return 0;
 }
 
-/*double* CreateBaseForContinuum( int NBasisFuns, vector<vector<double> > basisfuns,vector<vector<double> > derivfuns,vector<double> x,
-		uint32_t NGridpoints,SKappaGroup group,int Ncont, vector<vector<double> > contfuns, double w)*/
 double* CreateBaseForContinuum( int NBasisFuns,double **basisfuns,double **derivfuns,double *x,uint32_t NGridpoints,SKappaGroup group,int Ncont,
                                                                 double **contfuns, double w)
 {
@@ -494,7 +488,10 @@ uint32_t CreateOperatorSingleCoulombRelativistic(uint32_t const NFermion,double 
 
     integrals = GetSlaterIntegrals(basisfuns,NbasisFuns,grid, NGridpoints, (const int **) tuple, NIntegrals);
     int index = GetIndexMaxSlaterIntegral(integrals,NIntegrals);
-    double cutoff = abs(integrals[index].val[0])/5.;
+    double cutoff = Abs(integrals[index].val[0])/5.;
+    printf("int = %e\n",integrals[index].val[0]);
+    printf("int = %e\n",integrals[30].val[0]);
+    printf("ind = %d\n",index);
     vector<int> indexes = GetMaxSlaterIntegrals(integrals,NIntegrals,cutoff);
     printf("NIntegrals %d\t%d\n",NIntegrals,indexes.size());
 
@@ -527,7 +524,7 @@ uint32_t CreateOperatorSingleCoulombRelativistic(uint32_t const NFermion,double 
     	free(integrals[i].k);
     }
     free(integrals);
-
+    //FreeOperator(&optemp);
     return 0;
 }
 

@@ -656,6 +656,11 @@ static int LuaNewOperator(lua_State * L)
     lua_remove(L, 1);
     return LuaOperatorNewCoulomb(L);
   }
+  if ((strcmp(OT, "AtomicU") == 0)||(strcmp(OT, "AU") == 0))
+  {
+    lua_remove(L, 1);
+    return LuaOperatorNewAtomicU(L);
+  }
   if (strcmp(OT, "Sx") == 0)
   {
     lua_remove(L, 1);
@@ -4803,6 +4808,7 @@ static const struct luaL_Reg global_functions[] = {
   {"PlotDOS", LuaPlotDOS},
   {"PlotFermi", LuaPlotFermi},
 	{"PrintExpectationValues",LuaPrintExpectationValues},
+	{"ReadFPLOBasisFunctions",LuaReadFPLOBasisFunctions},
 	{"RelToNonRelOrbitals", LuaRelToNonRelOrbitals},
   {"Rotate", Luarotate},
   {"Statistics",LuaStatistics},
