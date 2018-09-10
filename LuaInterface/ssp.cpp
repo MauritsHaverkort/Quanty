@@ -4516,10 +4516,9 @@ static int LuaPrintExpectationValues(lua_State * L)
 	vector < WaveFunctionType > psiList;
 	OperatorType hamil;
 	vector < OperatorType > opList;
-	uint32_t numberOfOperators;
 	uint32_t len = (uint32_t) lua_gettop(L);
-	bool hasHamiltonian;
-	bool hasOptions;
+	bool hasHamiltonian = false;
+	bool hasOptions = false;
 
   struct
   {
@@ -4568,7 +4567,7 @@ static int LuaPrintExpectationValues(lua_State * L)
 			hasHamiltonian = true;
 			hasOptions = false;
 		}
-	} else if (len == 4)
+	} else
 	{
 //		Input: Psi, Hamiltonian; Operators, Options;
 		hasHamiltonian = true;

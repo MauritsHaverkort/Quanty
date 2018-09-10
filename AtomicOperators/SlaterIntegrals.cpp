@@ -94,12 +94,12 @@ SSlaterIntegral *GetSlaterIntegrals(vector<vector<double> > basisfuns, vector<do
     unsigned int kMax, n, i;
     double **kernels;
     vector<vector<double> > dualfuns;
-    unsigned int NGridPoints = x.size();
+    unsigned int NGridPoints = (unsigned int)x.size();
 
 
     n = 2* NGridPoints;
 
-    dualfuns = CreateDualFunctions(basisfuns.size(), NGridPoints, basisfuns,x);
+    dualfuns = CreateDualFunctions((unsigned int)basisfuns.size(), NGridPoints, basisfuns,x);
 
     si = InitializeIntegrals(indToK, NIntegrals,&kMax);
 

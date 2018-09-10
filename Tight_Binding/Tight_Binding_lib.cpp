@@ -2047,7 +2047,7 @@ int nonRelAngularMomentumZNumbers(string orb)
 int relAngularMomentumZNumbers(string orb, int * significantCharPos)
 {
 	char c;
-	*significantCharPos = orb.length() - 1;
+	*significantCharPos = (int)orb.length() - 1;
 	c = orb.at(*significantCharPos);
 	while (c == ' ' || c == '\t')
 	{
@@ -2815,7 +2815,7 @@ MatrixType orbitalPermutationMatrix(const vector<string> oldVec, const vector<st
 	vector<int> permVec = permutationVector(oldVec, newVec);
 	if (permVec.size() == 0)
 		return nullMatrix();
-	vector < vector<MatrixType> > matMat = nullMatrixMatrix(newVec.size(), oldVec.size());
+	vector < vector<MatrixType> > matMat = nullMatrixMatrix((uint32_t)newVec.size(), (uint32_t)oldVec.size());
 	for (int i = 0; i < permVec.size(); ++i)
 	{
 		MatrixType identityMat = identityMatrix(orbToMultiplicity(newVec[i]));
@@ -2869,7 +2869,7 @@ int NumberOfFermionicStates(const vector<string> orbs)
 
 MatrixType NonRelToRelRotationMatrix(const vector<string> nonRelOrbs, const vector<string> mixedOrbs)
 {
-	vector < vector<MatrixType> > blockMat = nullMatrixMatrix(nonRelOrbs.size(), nonRelOrbs.size());
+	vector < vector<MatrixType> > blockMat = nullMatrixMatrix((uint32_t) nonRelOrbs.size(), (uint32_t) nonRelOrbs.size());
 	int offset = 0;
 	for (int i = 0; i < nonRelOrbs.size(); ++i)
 	{
@@ -2929,7 +2929,7 @@ MatrixType RelToNonRelRotationMatrix(const vector<string> mixedOrbs, const vecto
 
 MatrixType LargeRotationMatrix(vector<int> multiplicities, MatrixType (*mat)(int, bool), bool addSpin)
 {
-	vector<vector<MatrixType> > fullM = nullMatrixMatrix(multiplicities.size(), multiplicities.size());
+	vector < vector<MatrixType> > fullM = nullMatrixMatrix((uint32_t) multiplicities.size(), (uint32_t) multiplicities.size());
 	for (int i = 0; i < multiplicities.size(); ++i)
 		fullM[i][i] = mat(multiplicities[i], addSpin);
 	return MatrixFlatten(fullM);
