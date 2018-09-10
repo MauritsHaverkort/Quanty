@@ -1,5 +1,5 @@
-#ifndef ATOMICU_SLATERINTEGRALS_H_
-#define ATOMICU_SLATERINTEGRALS_H_
+#ifndef ATOMICOPERATORS_SLATERINTEGRALS_H_
+#define ATOMICOPERATORS_SLATERINTEGRALS_H_
 
 SSlaterIntegral *GetSlaterIntegrals(double **basisfuns, unsigned int NBasisFuns, const double *x,
                                     unsigned int NGridPoints,const int **tupel, unsigned int NIntegrals);

@@ -1,4 +1,3 @@
-
 int qsortcomparedoubles(const void *a, const void *b)
 {
   if(*((double*)a)<*((double*)b)) return -1;
@@ -12,7 +11,7 @@ int qsortcomparedoubles(const void *a, const void *b)
 static int LuaSplineInterpolate(lua_State * L)
 {
   uint32_t i;
-  InterpolatingFunctionType *fun;
+  Interpolation::CubicSpline *fun;
   double yp1,ypn,*xy;
   uint32_t len = (uint32_t)lua_gettop(L);;
   if(len<2)
@@ -41,25 +40,28 @@ static int LuaSplineInterpolate(lua_State * L)
   }
   qsort(xy, lua_objlen(L, 1), 2*sizeof(double), &qsortcomparedoubles);
   // add the values to an Interpolating function type
-  fun = (InterpolatingFunctionType*) lua_newuserdata(L, sizeof(InterpolatingFunctionType));
+  void* memory = lua_newuserdata(L, sizeof(Interpolation::CubicSpline));
+  fun = new(memory)Interpolation::CubicSpline;
   luaL_setmetatable(L, "InterpolatingFunction_Type");
-  InitInterpolatingFunctionAsCubicSpline(fun, (uint32_t)lua_objlen(L, 1));
-  for(i=0;i<((CubicSplineType*)(fun->f))->N;i++)
+
+  std::vector<double> u = std::vector<double>(lua_objlen(L, 1));
+  std::vector<double> v = std::vector<double>(lua_objlen(L, 1));
+  for(i=0;i<lua_objlen(L, 1);i++)
   {
-    ((CubicSplineType*)(fun->f))->x[i]=xy[2*i];
-    ((CubicSplineType*)(fun->f))->y[i]=xy[2*i+1];
+    u[i]=xy[2*i];
+    v[i]=xy[2*i+1];
   }
   free(xy);
   if(len==2)
   {
-    CreateCubicSpline((CubicSplineType*)(fun->f), NAN, NAN);
+    fun->Create(u,v);
     return 1;
   }
   if(len==4)
   {
     yp1 = (double)luaL_checknumber(L, 3);
     ypn = (double)luaL_checknumber(L, 4);
-    CreateCubicSpline((CubicSplineType*)(fun->f), yp1, ypn);
+    fun->Create(u,v); // TODO implement that whatever it does
     return 1;
     
   }
@@ -148,9 +150,9 @@ static int LuaInterpolateMode(lua_State * L)
  */
 static int LuaInterpolateCall(lua_State * L)
 {
-  InterpolatingFunctionType *fun = (InterpolatingFunctionType *) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
+  Interpolation::InterpolatingFunction *fun = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
   double x=luaL_checknumber(L, 2);
-  lua_pushnumber(L, EvaluateInterpolatingFunction(fun, x));
+  lua_pushnumber(L, (*fun)(x));
   return 1;
 }
 /*
@@ -166,8 +168,8 @@ static int LuaInterpolateToString(lua_State * L)
  */
 static int LuaInterpolateDestroy(lua_State * L)
 {
-  InterpolatingFunctionType *fun = (InterpolatingFunctionType *) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
-  FreeInterpolatingFunction(fun);
+  Interpolation::InterpolatingFunction *fun = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
+  fun->~InterpolatingFunction();
   return 0;
 }
 

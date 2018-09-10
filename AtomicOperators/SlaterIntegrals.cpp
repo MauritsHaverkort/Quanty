@@ -1,4 +1,4 @@
-#include "../AtomicU/SlaterIntegrals.h"
+#include "../AtomicOperators/SlaterIntegrals.h"
 
 SSlaterIntegral *GetSlaterIntegrals(double **basisfuns, unsigned int NBasisFuns, const double *x,
                                     unsigned int NGridPoints,const int **tupel, unsigned int NIntegrals)

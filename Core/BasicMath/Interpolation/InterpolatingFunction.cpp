@@ -5,8 +5,6 @@
  *      Author: brass
  */
 
-#include "InterpolatingFunction.h"
-
 namespace Interpolation {
 
 InterpolatingFunction::InterpolatingFunction() {
@@ -20,11 +18,28 @@ InterpolatingFunction::~InterpolatingFunction() {
 
 double InterpolatingFunction::operator()(double t)
 {
-	return 0;
+	printf("error: call of virtual InterpolatingFunction::operator()\n");
+	return NAN;
 }
 double InterpolatingFunction::operator()(double t, unsigned int n)
 {
-	return 0;
+	printf("error: call of virtual InterpolatingFunction::operator()\n");
+	return NAN;
+}
+
+void InterpolatingFunction::Create(std::vector<double>, std::vector<double>)
+{
+
+}
+
+std::vector<double> InterpolatingFunction::GetX()
+{
+	return x;
+}
+
+std::vector<double> InterpolatingFunction::GetY()
+{
+	return y;
 }
 
 } /* namespace Interpolation */

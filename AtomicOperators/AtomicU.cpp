@@ -5,20 +5,7 @@
  *      Author: brass
  */
 
-#include "../AtomicU/AtomicU.h"
-#include "SlaterIntegrals.h"
-
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <string>
-#include <vector>
-#include <stdlib.h>
-#include <map>
-
-#include "SlaterTuple.cpp"
-#include "SlaterIntegrals.cpp"
-
+#include "../AtomicOperators/AtomicU.h"
 
 using std::vector;
 using std::string;
@@ -98,11 +85,11 @@ static int LuaOperatorNewAtomicU (lua_State *L)
 	}
 	if (indToK.size() != Nindices) printf("Warning: Martin.Coulomb() number of kappas (%d) != number of indices (%d)\n",indToK.size() , Nindices);
 
-	vector<InterpolatingFunctionType *> funsG = vector<InterpolatingFunctionType *>(NfunsG);
+	vector<Interpolation::InterpolatingFunction *> funsG = vector<Interpolation::InterpolatingFunction *>(NfunsG);
 	for(int i = 0; i < NfunsG; i++)
 	{
 		lua_rawgeti(L, 3, i+1);
-		funsG[i] = (InterpolatingFunctionType *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
+		funsG[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
 		lua_pop(L,1);
 	}
 
@@ -115,18 +102,18 @@ static int LuaOperatorNewAtomicU (lua_State *L)
     		printf("Error in LuaOperatorNewCoulombFull: number of functions small part (%d) != large part (%d)\n",NfunsF,NfunsG);
     		return -1;
     	}
-    	vector<InterpolatingFunctionType *> funsF = vector<InterpolatingFunctionType *>(NfunsF);
+    	vector<Interpolation::InterpolatingFunction *> funsF = vector<Interpolation::InterpolatingFunction *>(NfunsF);
     	for(int i = 0; i < NfunsF; i++)
     	{
     		lua_rawgeti(L, 4, i+1);
-    		funsF[i] = (InterpolatingFunctionType *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
+    		funsF[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
     		lua_pop(L,1);
     	}
 
-    	NGridpoints = ((CubicSplineType*)funsG[0]->f)->N;
-    	x = ConvertArray(((CubicSplineType*)funsG[0]->f)->x,NGridpoints);
+    	x = funsG[0]->GetX();
+    	NGridpoints = x.size();
 
-    	vector<vector<double> > wavefuns = PutRelativisticSplineOnGrid(funsG,funsF,NGridpoints);
+    	vector<vector<double> > wavefuns = PutRelativisticSplineOnGrid(funsG,funsF,x,0);
 
     	op = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
     	CreateOperatorAtomicURelativistic(NF,wavefuns,x,indToK,indices, op);
@@ -156,8 +143,6 @@ uint32_t CreateOperatorAtomicURelativistic(uint32_t const NFermion,vector<vector
     OperatorType optemp;
     SSlaterIntegral *integrals;
     uint32_t NIntegrals;
-
-    printf("%e\n",basisfuns[0][1]);
 
     integrals = GetSlaterIntegrals(basisfuns,grid, indToK, NIntegrals);
 
@@ -240,188 +225,8 @@ void CreateOperatorAtomicURelativisticOneIntegral(uint32_t const NFermion,int co
             }
         }
     }
-    //FreeOperator(&optemp);
+    //FreeOperator(&optemp);  //TODO if i uncomment this I get an invalid free - otherwhise heap is lost
 
 }
 
-vector<double> ConvertArray(double *a, const int n)
-{
-	vector<double> res = vector<double>(n);
-	for (int i = 0; i < n; i++)
-	{
-		res[i] = a[i];
-	}
-	return res;
-}
 
-vector<vector<double> > PutRelativisticSplineOnGrid(vector<InterpolatingFunctionType *> funsG, vector<InterpolatingFunctionType *> funsF, uint32_t NGridPoints)
-{
-	vector<vector<double> > funsCombined = vector<vector<double> >(funsG.size());
-	for (int i = 0; i < funsG.size(); i++)
-	{
-		if (((CubicSplineType *)funsG[i]->f)->N != NGridPoints)
-		{
-			printf("error: Interpolating functions are on different Grids, which is not allowed, but will be allowed in the future\n");
-			fflush(stdout);
-			//TODO return NULL;
-		}
-		funsCombined[i] = vector<double>(2*NGridPoints);
-		for (int j = 0; j < NGridPoints; j++)
-		{
-			funsCombined[i][j            ] = ((CubicSplineType *)funsG[i]->f)->y[j];
-			funsCombined[i][j+NGridPoints] = ((CubicSplineType *)funsF[i]->f)->y[j];
-		}
-	}
-	return funsCombined;
-
-}
-
-vector<int> ConvertArray(uint16_t *a, const int n)
-{
-	vector<int> res = vector<int>(n);
-	for (int i = 0; i < n; i++)
-	{
-		res[i] = (short) a[i];
-	}
-	return res;
-}
-
-vector<double> ReadBasisfunction(ifstream &file, vector<double> &x)
-{
-	double val;
-	vector<double> y;
-	string word;
-
-	file >> word;
-	while (word != "#")
-	{
-		val = atof(word.c_str());
-		if(x.size() == y.size())
-			x.push_back(val);
-		file >> word;
-		val = atof(word.c_str());
-		y.push_back(val);
-		file >> word;
-	}
-	while ((word != "<start") && !(file.eof()))
-		file >> word;
-	return y;
-}
-
-string GetOrbitalName(ifstream &file)
-{
-	string word, name;
-	while ( file >> word)
-	{
-		if (word == "function")
-		{
-			file >> word;
-			file >> word;
-			file >> word;
-			file >> name;
-			file >> word;
-			name.append(word);
-			name.erase(name.length()-1);
-			return name;
-		}
-	}
-	return "";
-}
-
-static int LuaReadFPLOBasisFunctions(lua_State *L)
-{
-	ifstream file1,file2;
-
-	const char *name1 = luaL_checkstring(L,1);
-	const char *name2 = luaL_checkstring(L,2);
-	unsigned int Norbitals;
-	char** orbitalNames = luaL_checkarray_string(L, 3, &Norbitals); //TODO free
-	file1.open(name1);
-	file2.open(name2);
-	string line, word, name;
-	vector<string> orbitals;
-	vector<double> x, y1,y2;
-	std::map<string,vector<double> > funsG, funsF;
-	vector<InterpolatingFunctionType*> splinesG, splinesF;
-
-	// Read raw data
-	while (!file1.eof())
-	{
-		name = GetOrbitalName(file1);
-		GetOrbitalName(file2);
-		y1 = ReadBasisfunction(file1,x);
-		y2 = ReadBasisfunction(file2,x);
-
-		funsG[name] = y1;
-		funsF[name] = y2;
-	}
-	file1.close();
-	file2.close();
-
-	splinesG = vector<InterpolatingFunctionType*>(Norbitals);
-	splinesF = vector<InterpolatingFunctionType*>(Norbitals);
-
-	// Push large part on stack
-	lua_createtable(L,0,Norbitals);
-	for (int i = 0; i < Norbitals; i++)
-	{
-		string charTostring(orbitalNames[i]);
-		if (funsG.find(charTostring) != funsG.end())
-		{
-
-			splinesG[i] = (InterpolatingFunctionType*) lua_newuserdata(L, sizeof(InterpolatingFunctionType));
-			luaL_setmetatable(L, "InterpolatingFunction_Type");
-			lua_rawseti(L,-2,i+1);
-
-			InitInterpolatingFunctionAsCubicSpline(splinesG[i], x.size());
-			for(int j=0;j<((CubicSplineType*)(splinesG[i]->f))->N;j++)
-			{
-				((CubicSplineType*)(splinesG[i]->f))->x[j]=x[j];
-				((CubicSplineType*)(splinesG[i]->f))->y[j]=funsG[charTostring][j];
-			}
-			CreateCubicSpline((CubicSplineType*)(splinesG[i]->f), NAN, NAN);
-
-		}
-		else
-		{
-			printf("LuaReadFPLOBasis: Couldn't find ");
-			printf(orbitalNames[i]);
-			printf("\n");
-			fflush(stdout);
-		}
-
-	}
-	// Push small part on stack
-	lua_createtable(L,0,Norbitals);
-	for (int i = 0; i < Norbitals; i++)
-	{
-		string charTostring(orbitalNames[i]);
-		if (funsF.find(charTostring) != funsF.end())
-		{
-
-			splinesF[i] = (InterpolatingFunctionType*) lua_newuserdata(L, sizeof(InterpolatingFunctionType));
-			luaL_setmetatable(L, "InterpolatingFunction_Type");
-			lua_rawseti(L,-2,i+1);
-
-			InitInterpolatingFunctionAsCubicSpline(splinesF[i], x.size());
-			for(int j=0;j<((CubicSplineType*)(splinesF[i]->f))->N;j++)
-			{
-				((CubicSplineType*)(splinesF[i]->f))->x[j]=x[j];
-				((CubicSplineType*)(splinesF[i]->f))->y[j]=funsF[charTostring][j];
-			}
-			CreateCubicSpline((CubicSplineType*)(splinesF[i]->f), NAN, NAN);
-
-		}
-		else
-		{
-			printf("LuaReadFPLOBasis: Couldn't find ");
-			printf(orbitalNames[i]);
-			printf("\n");
-			fflush(stdout);
-		}
-
-	}
-
-
-	return 2;
-}

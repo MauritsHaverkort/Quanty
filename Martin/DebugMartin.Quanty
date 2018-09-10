@@ -1,5 +1,5 @@
 dofile("DebugMartin.res")
-
+dofile("log")
 tuple = {{0, -1, 3, -1, 2, -1, 3, -1}}
 
 w = 1/50
@@ -33,7 +33,7 @@ for i = 1, #basisfuns do
     F[i] = InterpolatingFunction.Spline(x,funsF[i])
 end
 print(#F,#G)
-U  = NewOperator("AU",NF,ind,G,F)
+--U  = NewOperator("AU",NF,ind,G,F)
 
 --print(#basisfuns,#x,#derivfuns,#DOBase)
 --print("dobase",#DOBase)
@@ -66,9 +66,9 @@ psi9 = (H0+U) * psi8;
 psi = {psi0,psi1,psi2,psi3,psi4,psi5,psi6,psi7,psi8,psi9}
 
 u = Braket(psi,U ,psi)
---io.put("./","uold")
+io.put("./","u")
 h = Braket(psi,H0,psi)
---io.put("./","hold")
+io.put("./","h")
 
 du = {}
 dh = {}
