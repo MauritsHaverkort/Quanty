@@ -669,6 +669,7 @@ static int LuaPushIndicesDictFromTB(lua_State *L, TightBindingDef *TB, bool AddS
  *         {"open", atoms_to_include}
  *            atoms_to_include can have the following formats
  *              {Atom.Name, Atom.Position, {Atom.Shells}}   with Atom.Shells is an option. If not given all shells of this atom are included. (same for orbitals per shell)
+ *              {"All in Sphere", sphere center, sphere radius} 
  *    Aditional Operator to add (optional)
  *         Fermion index should follow the definition in the original tight binding Hamiltonian, when spin is added it is added in the form down/up, down/up, ...
  *    Options (optional)
