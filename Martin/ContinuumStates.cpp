@@ -664,9 +664,9 @@ double *CreateBaseForContinuum(vector<vector<double> > basisfuns,vector<vector<d
 {
 	int l,k,dim,info;
 
-	int NBasisFuns = basisfuns.size();
-	int Ncont = contfuns.size();
-	uint32_t NGridpoints = x.size();
+	unsigned int NBasisFuns = (unsigned int) basisfuns.size();
+	unsigned int Ncont = (unsigned int) contfuns.size();
+	uint32_t NGridpoints = (uint32_t) x.size();
 
 	char blasRight = 'R';
 	char blasLeft  = 'L';
@@ -740,8 +740,8 @@ double *CreateBaseForContinuum(vector<vector<double> > basisfuns,vector<vector<d
 vector<double> CreateEKinCB(vector<vector<double> > basisfuns, vector<vector<double> > derivativefuns, vector<vector<double> > dualfuns,
 		vector<vector<double> > dualcont, const unsigned int *indices, const unsigned int Nindices, vector<double> x, const int kappa,vector<vector<double> > h0cont)
 {
-	const int NcontFuns = dualcont.size();
-	unsigned int NGridPoints = x.size();
+	const int NcontFuns = (int) dualcont.size();
+	unsigned int NGridPoints = (unsigned int) x.size();
 
 	vector<vector<double> >  Tbb;
 	vector<vector<double> >  Tcb;
@@ -789,15 +789,15 @@ vector<double> CreateEKinCB(vector<vector<double> > basisfuns, vector<vector<dou
 	return T;
 }
 
-vector<vector<double> > CreateEigenDifferentialEnergies(int n, double Emin, double dE)
+vector<vector<double> > CreateEigenDifferentialEnergies(uint32_t n, double Emin, double dE)
 {
 	vector<vector<double> > h0;
 	double q1,q2;
 	h0 = vector<vector<double> >(n);
-	for (int i = 0; i < n; i++)
+	for (uint32_t i = 0; i < n; i++)
 	{
 		h0[i] = vector<double>(n);
-		for ( int j = 0; j < n; j++)
+		for (uint32_t j = 0; j < n; j++)
 		{
 			if ( i != j)
 			{

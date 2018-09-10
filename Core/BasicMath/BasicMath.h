@@ -19,6 +19,9 @@
 #include "BasicMath_MatrixTypeConversion.h"
 #include "BasicMath_GreenFunctionArithmetic.h"
 
+#include "Interpolation/InterpolatingFunction.h"
+#include "Interpolation/CubicSpline.h"
+
 
 
 uint32_t PowerInt(uint32_t x, uint32_t a);

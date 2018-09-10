@@ -102,6 +102,8 @@ using std::vector;
 #include "../LuaInterface/ssp.h"
 #include "../LuaInterface/units.h"
 
+#include "../AtomicOperators/AtomicAux.h"
+#include "../AtomicOperators/AtomicU.h"
 
 #include "../Martin/MartinHeaders.h"
 #include "../Simon/functions_simon.h"

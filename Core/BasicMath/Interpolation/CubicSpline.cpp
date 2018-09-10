@@ -5,7 +5,6 @@
  *      Author: brass
  */
 
-#include "CubicSpline.h"
 #include <iostream>
 
 namespace Interpolation {
@@ -21,10 +20,15 @@ CubicSpline::~CubicSpline() {
 
 CubicSpline::CubicSpline(std::vector<double> u, std::vector<double> v)
 {
+	Create(u,v);
+}
+
+void CubicSpline::Create(std::vector<double> u, std::vector<double> v)
+{
 	x = u;
 	y = v;
 	int n = x.size()-1;
-	y2 = std::vector<double>(n);
+	y2 = std::vector<double>(n+1);
 	std::vector<double> cc,dd;
 	cc = std::vector<double>(n-1);
 	dd = std::vector<double>(n-1);
@@ -53,7 +57,7 @@ CubicSpline::CubicSpline(std::vector<double> u, std::vector<double> v)
 	{
 		y2[i] = dd[i-1] - cc[i-1] * y2[i+1];
 	}
-
+	y2[n] = 0;
 }
 
 double CubicSpline::operator()(double t)
@@ -67,6 +71,7 @@ double CubicSpline::operator()(double t)
 			h = x[i] - x[i-1];
 			b = y2[i-1];
 			a = (y2[i] -y2[i-1]) / h / 3.;
+			printf("%.8E\t%e\n",b-3*x[i-1]*a,a);
 			c = (y[i]-y[i-1])/h -h/3. * (y2[i] + 2*y2[i-1]);
 
 			return y[i-1] + xx*(c +xx*(b + xx * a));
@@ -74,7 +79,7 @@ double CubicSpline::operator()(double t)
 	}
 
 	std::cout << "error: value out of interpolation range" << std::endl;
-	return 666;
+	return NAN;
 }
 
 double CubicSpline::operator()(double t,unsigned int k)
@@ -101,7 +106,7 @@ double CubicSpline::operator()(double t,unsigned int k)
 					break;
 				default:
 					std::cout << "error: order of derivative of interpolated function at most 2" << std::endl;
-					return 666;
+					return NAN;
 					break;
 			}
 
