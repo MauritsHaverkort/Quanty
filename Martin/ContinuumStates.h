@@ -68,6 +68,6 @@ double *CreateBaseForContinuum(vector<vector<double> > basisfuns,vector<vector<d
 vector<double> CreateEKinCB(vector<vector<double> > basisfuns, vector<vector<double> > derivativefuns, vector<vector<double> > dualfuns,
 		vector<vector<double> > dualcont, const unsigned int *indices, const unsigned int Nindices, vector<double> x, const int kappa,vector<vector<double> > h0cont);
 
-vector<vector<double> > CreateEigenDifferentialEnergies(int n, double Emin, double dE);
+vector<vector<double> > CreateEigenDifferentialEnergies(uint32_t n, double Emin, double dE);
 
 #endif /* MARTIN_CONTINUUMSTATES_H_ */

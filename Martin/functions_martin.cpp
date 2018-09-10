@@ -91,7 +91,8 @@ static int LuaOperatorNewFullCoulomb (lua_State *L)
     			return luaL_error(L, "Errorr: Martin.Coulomb() number of basis funs (%d) < number of indices (%d)\n",wavefunctions->Ni , Nindices);
     		}
     	}
-    	if (indToK.size() != Nindices) printf("Warning: Martin.Coulomb() number of kappas (%d) != number of indices (%d)\n",(unsigned int)indToK.size() , Nindices);
+
+    	if (indToK.size() != Nindices) printf("Warning: Martin.Coulomb() number of kappas (%d) != number of indices (%d)\n",(int) indToK.size() , (int) Nindices);
     	op = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
     	CreateOperatorFastCoulombRelativistic(NF,wavefunctions->VRe,wavefunctions->Ni,x,NGridpoints,indToK,indices, op);
     }
@@ -266,7 +267,7 @@ static int LuaCreateBaseForContinuum(lua_State *L)
 	vderf = ConvertMatrix(derivfuns->VRe,derivfuns->Ni,derivfuns->Nj);
 
 	x = luaL_checkarray_double(L,3);
-	NGridpoints = x.size();
+	NGridpoints = (uint32_t) x.size();
 
 	luaL_checktype(L, 4, LUA_TTABLE);
 	lua_rawgeti(L, 4, 1);
@@ -287,7 +288,7 @@ static int LuaCreateBaseForContinuum(lua_State *L)
 
 		double dE = 1/2./13.6;
 		double Emin = dE;
-		energiesCont = CreateEigenDifferentialEnergies(vcontf.size(),Emin,dE);
+		energiesCont = CreateEigenDifferentialEnergies((uint32_t) vcontf.size(),Emin,dE);
 
 		eigenval = CreateBaseForContinuum(vbasf,vderf,x,group,vcontf,energiesCont);
 
@@ -296,7 +297,7 @@ static int LuaCreateBaseForContinuum(lua_State *L)
 		{
 			contfuns->VRe[i] = &(vcontf[i][0]);
 		}
-		contfuns->Ni = vcontf.size();
+		contfuns->Ni = (uint32_t) vcontf.size();
 		LuaPushTable_MatrixType(L,contfuns);
 	}
 	if (len == 6)
@@ -307,14 +308,14 @@ static int LuaCreateBaseForContinuum(lua_State *L)
 		contfuns = luaL_checkMatrix(L,6);
 		vcontf = ConvertMatrix(contfuns->VRe,contfuns->Ni,contfuns->Nj);
 
-		eigenval = CreateBaseForContinuum(vbasf.size(), vbasf,vderf,x,NGridpoints,group,vcontf.size(),vcontf,w);
+		eigenval = CreateBaseForContinuum((uint32_t) vbasf.size(), vbasf,vderf,x,NGridpoints,group, (uint32_t) vcontf.size(),vcontf,w);
 
-		LuaPushArray_double(L,&(eigenval[vcontf.size()/2]), vcontf.size()/2);
-		for (int i = 0; i < vcontf.size()/2; i++)
+		LuaPushArray_double(L,&(eigenval[vcontf.size()/2]), (int) vcontf.size()/2);
+		for (uint32_t i = 0; i < vcontf.size()/2; i++)
 		{
 			contfuns->VRe[i] = &(vcontf[vcontf.size()/2+i][0]);
 		}
-		contfuns->Ni = vcontf.size()/2;
+		contfuns->Ni = (uint32_t) vcontf.size()/2;
 		LuaPushTable_MatrixType(L,contfuns);
 	}
 	if (len == 7)
@@ -329,16 +330,16 @@ static int LuaCreateBaseForContinuum(lua_State *L)
 		contfuns->b0=0;
 		contfuns->mu=0;
 		vcontf = CreateEigenDiffsOnGrid(x,group.kappa,Emin,dE,NeigenDiffs);
-		energiesCont = CreateEigenDifferentialEnergies(vcontf.size(),Emin,dE);
+		energiesCont = CreateEigenDifferentialEnergies((uint32_t) vcontf.size(),Emin,dE);
 
 		eigenval = CreateBaseForContinuum(vbasf,vderf,x,group,vcontf,energiesCont);
 
-		contfuns->Ni=vcontf.size();
-		contfuns->Nj=vcontf[0].size();
+		contfuns->Ni=(uint32_t) vcontf.size();
+		contfuns->Nj=(uint32_t) vcontf[0].size();
 		contfuns->VRe = (double**) malloc(contfuns->Ni * sizeof(double*));
 
-		LuaPushArray_double(L,&(eigenval[0]), vcontf.size());
-		for (int i = 0; i < vcontf.size(); i++)
+		LuaPushArray_double(L,&(eigenval[0]), (int) vcontf.size());
+		for (uint32_t i = 0; i < vcontf.size(); i++)
 		{
 			contfuns->VRe[i] = &(vcontf[i][0]);
 		}
@@ -393,7 +394,7 @@ static int LuaReadFPLOBasis(lua_State *L)
 		string charTostring(orbitalNames[i]);
 		if (funs.find(charTostring) != funs.end())
 		{
-			basisfuns->Nj = funs[charTostring].size();
+			basisfuns->Nj = (uint32_t) funs[charTostring].size();
 			basisfuns->VRe[i] = (double *) malloc(sizeof(double)*basisfuns->Nj);
 			for (int j = 0; j < basisfuns->Nj; j++)
 			{
@@ -402,15 +403,13 @@ static int LuaReadFPLOBasis(lua_State *L)
 		}
 		else
 		{
-			printf("LuaReadFPLOBasis: Couldn't find ");
-      printf("%s\n",orbitalNames[i]);
-			fflush(stdout);
+			std::cout << "LuaReadFPLOBasis: Couldn't find " << orbitalNames[i] << std::endl;
 		}
 
 	}
 
 	LuaPushTable_MatrixType(L,basisfuns);
-	LuaPushArray_double(L,&x[0],x.size());
+	LuaPushArray_double(L,&x[0],(int) x.size());
 
 	return 2;
 }
@@ -435,7 +434,7 @@ static int LuaMetricWaveFuns(lua_State *L)
 
 	metric = CalcMetric(vbasf,vfuns2,vx);
 
-	LuaPushArray_double(L,&(metric[0]),metric.size());
+	LuaPushArray_double(L,&(metric[0]),(int) metric.size());
 
 	FreeMatrix(basisfuns);
 	FreeMatrix(funs2);
@@ -486,8 +485,8 @@ static int LuaPropagator(lua_State *L)
 		ww += g1/8.; //TODO adjust
 	}
 	spec = CalcSpectrumContinuum(w,g0,g1,Q,d0,Econt,d1,U,v);
-	LuaPushArray_double(L,&w[0],w.size());
-	LuaPushArray_double(L,&spec[0],spec.size());
+	LuaPushArray_double(L,&w[0],(int) w.size());
+	LuaPushArray_double(L,&spec[0],(int) spec.size());
 
 	free(d0);
 	free(d1);
@@ -549,8 +548,8 @@ static int LuaPropagator2(lua_State *L)
 		ww += g1/8.; //TODO adjust
 	}
 	spec = CalcSpectrumContinuum(w,g0,g1,Q,d0,Econt,d1,U,v);
-	LuaPushArray_double(L,&w[0],w.size());
-	LuaPushArray_double(L,&spec[0],spec.size());
+	LuaPushArray_double(L,&w[0],(int) w.size());
+	LuaPushArray_double(L,&spec[0],(int) spec.size());
 
 	free(d0);
 	for (int i = 0; i < nd1; i++)
