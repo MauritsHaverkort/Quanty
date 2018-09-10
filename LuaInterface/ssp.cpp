@@ -656,6 +656,11 @@ static int LuaNewOperator(lua_State * L)
     lua_remove(L, 1);
     return LuaOperatorNewCoulomb(L);
   }
+  if ((strcmp(OT, "AtomicU") == 0)||(strcmp(OT, "AU") == 0))
+  {
+    lua_remove(L, 1);
+    return LuaOperatorNewAtomicU(L);
+  }
   if (strcmp(OT, "Sx") == 0)
   {
     lua_remove(L, 1);
@@ -4506,10 +4511,9 @@ static int LuaPrintExpectationValues(lua_State * L)
 	vector < WaveFunctionType > psiList;
 	OperatorType hamil;
 	vector < OperatorType > opList;
-	uint32_t numberOfOperators;
 	uint32_t len = (uint32_t) lua_gettop(L);
-	bool hasHamiltonian;
-	bool hasOptions;
+	bool hasHamiltonian = false;
+	bool hasOptions = false;
 
   struct
   {
@@ -4558,7 +4562,7 @@ static int LuaPrintExpectationValues(lua_State * L)
 			hasHamiltonian = true;
 			hasOptions = false;
 		}
-	} else if (len == 4)
+	} else
 	{
 //		Input: Psi, Hamiltonian; Operators, Options;
 		hasHamiltonian = true;
@@ -4804,6 +4808,7 @@ static const struct luaL_Reg global_functions[] = {
   {"PlotDOS", LuaPlotDOS},
   {"PlotFermi", LuaPlotFermi},
 	{"PrintExpectationValues",LuaPrintExpectationValues},
+	{"ReadFPLOBasisFunctions",LuaReadFPLOBasisFunctions},
 	{"RelToNonRelOrbitals", LuaRelToNonRelOrbitals},
   {"Rotate", Luarotate},
   {"Statistics",LuaStatistics},

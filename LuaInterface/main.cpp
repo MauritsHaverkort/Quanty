@@ -11,6 +11,7 @@
 #include "../Model/StandardOperators.cpp"
 #include "../Hubbard_Model/CellFunctions.cpp"
 #include "../DMFT/SingleSiteFunctions.cpp"
+#include "../AtomicU/AtomicU.cpp"
 
 // Include personal functions that are under development and candidates for inclusion in the main program
 #include "../Yi/functions_yi.cpp"

@@ -47,7 +47,7 @@ uint32_t StreamPrintHarmonicsExpansion(HarmonicsExpansion M, FILE * stream);
 uint32_t StreamPrintBandstructurePath(BandstructurePathType M, FILE * stream);
 string numberToStringMaxWidth(double num, int maxWidth);
 void numberOutMaxWidth(double num, int maxWidth);
-void fillWithBlank(int width, int occupiedSpace);
+void fillWithBlank(int width, string::size_type occupiedSpace);
 void fillWithBlank(int width);
 void printExpectationValues(const vector < WaveFunctionType >  psiList, OperatorType  hamil, const vector < OperatorType >  opList, bool hasHamiltonian, bool sortByEnergy, bool printSigma, double zero, int printHeaderEvery, int colWidth);
 void printExpectationValuesHeader(const vector < OperatorType > opList, bool hasHamiltonian, bool printSigma, int colWidth);

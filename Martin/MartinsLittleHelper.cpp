@@ -4,9 +4,16 @@
  *  Created on: Jul 10, 2018
  *      Author: brass
  */
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <string>
 #include <vector>
+#include <stdlib.h>
 
 using std::vector;
+using std::string;
+using std::ifstream;
 // inclusion of namespace std leads to conflicts with function atomic in lua
 
 void PrintMartix(double *M, int n)
@@ -73,25 +80,6 @@ void PrintArray(Complex16* a, int n)
 	{
 		printf("%.15e + I %.15e\n", a[i].Re, a[i].Im);
 	}
-}
-
-vector<double> ConvertArray(double *a, const int n)
-{
-	vector<double> res = vector<double>(n);
-	for (int i = 0; i < n; i++)
-	{
-		res[i] = a[i];
-	}
-	return res;
-}
-vector<int> ConvertArray(uint16_t *a, const int n)
-{
-	vector<int> res = vector<int>(n);
-	for (int i = 0; i < n; i++)
-	{
-		res[i] = (short) a[i];
-	}
-	return res;
 }
 
 vector<vector<double> > ConvertMatrix(double **m, const int n1, const int n2)
@@ -240,7 +228,7 @@ void PrintMaxSlaterIntegral(SSlaterIntegral *integrals,const uint32_t NIntegrals
 	int index = 0;
 	for (int i = 0; i < NIntegrals; i++)
 	{
-		m = Max(m,abs(integrals[i].val[0]));
+		m = Max(m,Abs(integrals[i].val[0]));
 		if (m != mold)
 		{
 			index = i;
@@ -258,7 +246,7 @@ int GetIndexMaxSlaterIntegral(SSlaterIntegral *integrals,const uint32_t NIntegra
 	int index = 0;
 	for (int i = 0; i < NIntegrals; i++)
 	{
-		m = Max(m,abs(integrals[i].val[0]));
+		m = Max(m,Abs(integrals[i].val[0]));
 		if (m != mold)
 		{
 			index = i;
@@ -276,7 +264,7 @@ vector<int> GetMaxSlaterIntegrals(SSlaterIntegral *integrals,const uint32_t NInt
 	for (int i = 0; i < NIntegrals; i++)
 	{
 
-		if (abs(integrals[i].val[0]) >= cutoff)
+		if (Abs(integrals[i].val[0]) >= cutoff)
 		{
 			index.push_back(i);
 		}
@@ -287,11 +275,97 @@ vector<int> GetMaxSlaterIntegrals(SSlaterIntegral *integrals,const uint32_t NInt
 
 
 
+void VectorJoin(vector<double> &a, vector<double> b)
+{
+	for (int i = 0; i < b.size(); i++)
+	{
+		a.push_back(b[i]);
+	}
+}
 
+vector<vector<double> > CreateDualFunctions(const unsigned int NBasisFuns, const unsigned int NGridPoints,
+		vector<vector<double> > basisfuns, vector<double> x);
 
+vector<double> CalcMetric(vector<vector<double> > basisfuns, vector<vector<double> > funs2, vector<double> x)
+{
+	int dim1, dim2,i,j,n;
+	unsigned int eins = 1;
+	n = 2* x.size();
+	dim1 = basisfuns.size();
+	dim2 = funs2.size();
+	vector<double> g = vector<double>(dim1*dim2);
+	vector<vector<double> > dualfuns = CreateDualFunctions(dim2,x.size(),funs2,x);
 
+	double y;
 
+	for ( i = 0; i < dim1; i++)
+	{
+		for (j = 0; j < dim2; j++)
+		{
 
+			y = ddot((unsigned int *) &n,&(dualfuns[j][0]),&eins,&(basisfuns[i][0]),&eins);
+			g[i*dim2 + j] = y;
+
+		}
+	}
+	return g;
+}
+
+vector<double> luaL_checkarray_double(lua_State *L, int narg)
+{
+  luaL_checktype(L, narg, LUA_TTABLE);
+  uint32_t len = (uint32_t)lua_objlen(L, narg);
+
+  vector<double> buff = vector<double>(len);
+  for(int i=0;i<len;i++)
+  {
+    lua_rawgeti(L, narg, i+1);
+    buff[i]=(double)luaL_checknumber(L, -1);
+    lua_pop(L, 1);
+  }
+  return buff;
+}
+
+vector<vector<double> > luaL_check2DArray_double(lua_State *L, int narg)
+{
+  vector<vector<double> > buff;
+
+  luaL_checktype(L, narg, LUA_TTABLE);
+  uint32_t dimRow = (uint32_t)lua_objlen(L, narg);
+
+  buff = vector<vector<double> >(dimRow);
+  for(int i=0;i<dimRow;i++)
+  {
+    lua_rawgeti(L, narg, i+1);
+    buff[i] = luaL_checkarray_double(L, -1);
+    lua_pop(L, 1);
+
+  }
+  return buff;
+}
+
+vector<vector<double> > CreateTmatrixHDO(int N, int kappa, double w)
+{
+	vector<vector<double> > T = vector<vector<double> >(N);
+	int l;
+	if ( kappa > 0 )
+	{
+		l = kappa;
+	}
+	else
+	{
+		l = -kappa -1;
+	}
+	for (int i = 0; i < N; i++)
+	{
+		T[i] = vector<double>(N);
+		for (int j = 0; j < N; j++)
+		{
+			T[i][j] = EKinDO(i+1,j+1,kappa,l,w);
+		}
+	}
+	return T;
+}
 
 
 
