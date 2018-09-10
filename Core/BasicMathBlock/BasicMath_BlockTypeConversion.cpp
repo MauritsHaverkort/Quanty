@@ -149,6 +149,31 @@ uint32_t EvaluateBlockAndersonMatrix(BlockAndersonMatrixType const *A, CompactMa
     TransformCompactMatrixInlineNC(&Gwi, &b); /* Gwi <- b Gw b^dag */
     CompactMatrixAdd(Gw, &Gwi);
   }
+  // add a1
+  iblock = 1;
+  if(A->QComplex)
+  {
+    a.V=&(A->a[iblock    *A->BlockSize*A->BlockSize]);
+  }
+  else
+  {
+    a.VRe=&(A->aRe[iblock    *A->BlockSize*A->BlockSize]);
+  }
+  CompactMatrixAdd(Gw, &a);
+  // multipli by -1
+  for(i=0;i<A->BlockSize*A->BlockSize;i++)
+  {
+    Gw->V[i].Re*=-1;
+    Gw->V[i].Im*=-1;
+  }
+  // add w
+  for(i=0;i<A->BlockSize*A->BlockSize;i+=A->BlockSize+1)
+  {
+    Gw->V[i].Re+=omega;
+    Gw->V[i].Im+=Gamma/2.0;
+  }
+  // inverse
+  CompactMatrixInverse(Gw);
   // multiply by b0
   if(A->QComplex)
   {
@@ -669,6 +694,20 @@ uint32_t BlockListOfPolesToBlockTridiagonalMatrix(BlockListOfPoles const A, Bloc
   B->mu=A.mu;
   free(alpha);
   FreeCompactMatrix(&beta);
+  if(B->QComplex)
+  {
+    for(i=0;i<A.BlockSize*A.BlockSize;i++)
+    {
+      B->a[i]=A.a0[i];
+    }
+  }
+  else
+  {
+    for(i=0;i<A.BlockSize*A.BlockSize;i++)
+    {
+      B->aRe[i]=A.a0Re[i];
+    }
+  }
   return 0;
 }
 
@@ -1737,10 +1776,6 @@ uint32_t BlockTriDiagonalMatrixToBlockListOfPolesFixedGrid(BlockTriDiagonalMatri
  */
 uint32_t BlockTriDiagonalMatrixToBlockAndersonMatrix(BlockTriDiagonalMatrixType const ATri, BlockAndersonMatrixType * const B)
 {
-  //TODO: test
-  printf("Don't use BlockTriDiagonalMatrixToBlockAndersonMatrix\n");
-  //exit(1);
-  
   int i,j,bpos,cpos,k;
   CompactMatrixType Afull, Afun, C,D,E;
   double *Aval;
@@ -1751,7 +1786,6 @@ uint32_t BlockTriDiagonalMatrixToBlockAndersonMatrix(BlockTriDiagonalMatrixType 
     printf("BlockTriDiagonalMatrixPartToCompactMatrix failed in BlockTriDiagonalMatrixToBlockAndersonMatrix\n");
     return 1;
   }
-  
   /* Diagonalize compact matrix */
   Aval= (double*)malloc(ATri.BlockSize*(ATri.N-1)*sizeof(double));
   if(CompactMatrixEigensystem(&Afull, &Afun, Aval))
@@ -1759,14 +1793,25 @@ uint32_t BlockTriDiagonalMatrixToBlockAndersonMatrix(BlockTriDiagonalMatrixType 
     printf("CompactMatrixEigensystem failed in BlockTriDiagonalMatrixToBlockAndersonMatrix\n");
     return 1;
   }
-  
   B->QComplex = ATri.QComplex;
   B->N = ATri.N;
   B->BlockSize = ATri.BlockSize;
   InitBlockAndersonMatrix(B);
-  
   if(ATri.QComplex)
   {
+    /* copy A0 and B0 */
+    bpos = 0;
+    for(i = 0; i < B->BlockSize; i++)
+    {
+      for(j = 0; j < B->BlockSize; j++)
+      {
+        B->a[bpos].Re = ATri.a[bpos].Re;
+        B->a[bpos].Im = ATri.a[bpos].Im;
+        B->b[bpos].Re = ATri.b[bpos].Re;
+        B->b[bpos].Im = ATri.b[bpos].Im;
+        bpos++;
+      }
+    }
     /* First diagonal block is same as ATri first diagonal block */
     bpos = B->BlockSize*B->BlockSize;
     for(i = 0; i < B->BlockSize; i++)
@@ -1774,10 +1819,10 @@ uint32_t BlockTriDiagonalMatrixToBlockAndersonMatrix(BlockTriDiagonalMatrixType 
       for(j = 0; j < B->BlockSize; j++)
       {
         B->a[bpos].Re = ATri.a[bpos].Re;
+        B->a[bpos].Im = ATri.a[bpos].Im;
         bpos++;
       }
     }
-    
     /* Set diagonals to eigenvalues */
     cpos = 0;
     for(k = 1; k < ATri.N; k++)
@@ -1787,7 +1832,6 @@ uint32_t BlockTriDiagonalMatrixToBlockAndersonMatrix(BlockTriDiagonalMatrixType 
         B->a[(k+1)*B->BlockSize*B->BlockSize + i*B->BlockSize + i].Re = Aval[cpos++];
       }
     }
-    
     /* Transform first block of ATri using eigenfunctions from diagonalization */
     C.QComplex = B->QComplex;
     C.Ni = B->BlockSize;
@@ -1799,34 +1843,31 @@ uint32_t BlockTriDiagonalMatrixToBlockAndersonMatrix(BlockTriDiagonalMatrixType 
       C.V[i].Re = ATri.b[bpos++].Re;
       C.V[i].Im = ATri.b[bpos++].Im;
     }
-    
     D.QComplex = B->QComplex;
-    D.Nj = B->BlockSize;
-    D.Ni = B->BlockSize*(B->N-1);
+    D.Ni = B->BlockSize;
+    D.Nj = B->BlockSize*(B->N-1);
     InitCompactMatrix(&D);
     for(i = 0; i < B->BlockSize; i++)
     {
       for(j = 0; j < B->BlockSize*(B->N-1); j++)
       {
-        D.V[i*B->BlockSize*(B->N-1)+ j].Re = Afun.V[i*B->BlockSize*(B->N-1)+j].Re;
-        D.V[i*B->BlockSize*(B->N-1) + j].Im = Afun.V[i*B->BlockSize*(B->N-1)+j].Im;
+        D.V[i*B->BlockSize*(B->N-1)+ j].Re = Afun.V[j*B->BlockSize*(B->N-1)+i].Re;
+        D.V[i*B->BlockSize*(B->N-1) + j].Im = Afun.V[j*B->BlockSize*(B->N-1)+i].Im;
       }
     }
-    
     /* Transform the block that coupled impurity to chain into a row of blocks
-     coupling impurity to anderson bath
-     */
+     coupling impurity to anderson bath */
     CompactMatrixMultiply('N', 'N', &C, &D, &E);
     /* Now copy E into the beta values of block matrix*/
     bpos = B->BlockSize*B->BlockSize;
-    for(k = 1; k < B->BlockSize; k++)
+    for(k = 0; k < B->N-1; k++)
     {
       for(i = 0; i < B->BlockSize; i++)
       {
         for(j = 0; j < B->BlockSize; j++)
         {
-          B->b[bpos].Re = E.V[j*B->BlockSize*(B->N-1)+(k-1)*B->BlockSize+i].Re;
-          B->b[bpos++].Im = E.V[j*B->BlockSize*(B->N-1)+(k-1)*B->BlockSize+i].Im;
+          B->b[bpos].Re   = E.V[i*B->BlockSize*(B->N-1)+k*B->BlockSize+j].Re;
+          B->b[bpos++].Im = E.V[i*B->BlockSize*(B->N-1)+k*B->BlockSize+j].Im;
         }
       }
     }
@@ -1834,6 +1875,17 @@ uint32_t BlockTriDiagonalMatrixToBlockAndersonMatrix(BlockTriDiagonalMatrixType 
   else
   {
     /* Real */
+    /* copy A0 and B0 */
+    bpos = 0;
+    for(i = 0; i < B->BlockSize; i++)
+    {
+      for(j = 0; j < B->BlockSize; j++)
+      {
+        B->aRe[bpos] = ATri.aRe[bpos];
+        B->bRe[bpos] = ATri.bRe[bpos];
+        bpos++;
+      }
+    }
     /* First diagonal block is same as ATri first diagonal block */
     bpos = B->BlockSize*B->BlockSize;
     for(i = 0; i < B->BlockSize; i++)
@@ -1844,7 +1896,6 @@ uint32_t BlockTriDiagonalMatrixToBlockAndersonMatrix(BlockTriDiagonalMatrixType 
         bpos++;
       }
     }
-    
     /* Set diagonals to eigenvalues */
     cpos = 0;
     for(k = 1; k < ATri.N; k++)
@@ -1854,7 +1905,6 @@ uint32_t BlockTriDiagonalMatrixToBlockAndersonMatrix(BlockTriDiagonalMatrixType 
         B->aRe[(k+1)*B->BlockSize*B->BlockSize + i*B->BlockSize + i] = Aval[cpos++];
       }
     }
-    
     /* Transform first block of ATri using eigenfunctions from diagonalization */
     C.QComplex = B->QComplex;
     C.Ni = B->BlockSize;
@@ -1865,44 +1915,39 @@ uint32_t BlockTriDiagonalMatrixToBlockAndersonMatrix(BlockTriDiagonalMatrixType 
     {
       C.VRe[i] = ATri.bRe[bpos++];
     }
-    
     D.QComplex = B->QComplex;
-    D.Nj = B->BlockSize;
-    D.Ni = B->BlockSize*(B->N-1);
+    D.Ni = B->BlockSize;
+    D.Nj = B->BlockSize*(B->N-1);
     InitCompactMatrix(&D);
     for(i = 0; i < B->BlockSize; i++)
     {
       for(j = 0; j < B->BlockSize*(B->N-1); j++)
       {
-        D.VRe[i*B->BlockSize*(B->N-1) + j] = Afun.VRe[i*B->BlockSize*(B->N-1)+j];
+        D.VRe[i*B->BlockSize*(B->N-1) + j] = Afun.VRe[j*B->BlockSize*(B->N-1)+i];
       }
     }
-    
     /* Transform the block that coupled impurity to chain into a row of blocks
      coupling impurity to anderson bath */
     CompactMatrixMultiply('N', 'N', &C, &D, &E);
-    
     /* Now copy E into the beta values of anderson block matrix*/
     bpos = B->BlockSize*B->BlockSize;
-    for(k = 1; k < B->N; k++)
+    for(k = 0; k < B->N-1; k++)
     {
       for(i = 0; i < B->BlockSize; i++)
       {
         for(j = 0; j < B->BlockSize; j++)
         {
-          B->bRe[bpos++] = E.VRe[j*B->BlockSize*(B->N-1)+(k-1)*B->BlockSize+i];
+          B->bRe[bpos++] = E.VRe[i*(B->N-1)*B->BlockSize+k*B->BlockSize+j];
         }
       }
     }
   }
-  
   FreeCompactMatrix(&C);
   FreeCompactMatrix(&D);
   FreeCompactMatrix(&E);
   FreeCompactMatrix(&Afun);
   FreeCompactMatrix(&Afull);
   free(Aval);
-  
   return 0;
 }
 
@@ -3555,15 +3600,17 @@ uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType co
   double norm,dot,dotRe,dotIm;
   CompactMatrixType Tnow;
 
-  /*
+  
   printf("In DiagonalMatrixBlockTridiagonalize\n");
-  PrintCompactMatrixMinimal(psi);
+  PrintCompactMatrixMinimal(*psi);
   for(i=0;i<psi->Nj;i++)
   {
     printf("A[%2i] = %22.15E\n",i,A[i]);
   }
-  printf("\n\n\n");
-  */
+  printf("\n\n\n %g \n",NBlock);
+  
+  
+  
   ABlock->N=NBlock;
   ABlock->BlockSize=psi->Ni;
   ABlock->QComplex=psi->QComplex;
@@ -3657,19 +3704,20 @@ uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType co
         ABlock->N=k;
       }
     }
-
-    //printf("transformation matrix T\n");
-    //PrintCompactMatrixMinimal(T);
-    //CompactMatrixType test1, test2;
-    //CompactMatrixMultiply('N', 'C', T, T, &test1);
-    //CompactMatrixChop(&test1, 1000*DBL_EPSILON);
-    //printf("matrix T T^C = test1 should be identity matrix\n");
-    //PrintCompactMatrixMinimal(test1);
-    //TransformDiagonalMatrixByCompactMatrixTconATtran(A, T, &test2);
-    //CompactMatrixChop(&test2, 1000*DBL_EPSILON);
-    //printf("matrix T^C A T = test2\n");
-    //PrintCompactMatrixMinimal(test2);
-
+    
+    
+    printf("transformation matrix T\n");
+    PrintCompactMatrixMinimal(*T);
+    CompactMatrixType test1, test2;
+    CompactMatrixMultiply('N', 'C', T, T, &test1);
+    CompactMatrixChop(&test1, 1000*DBL_EPSILON);
+    printf("matrix T T^C = test1 should be identity matrix\n");
+    PrintCompactMatrixMinimal(test1);
+    TransformDiagonalMatrixByCompactMatrixTconATtran(A, T, &test2);
+    CompactMatrixChop(&test2, 1000*DBL_EPSILON);
+    printf("matrix T^C A T = test2\n");
+    PrintCompactMatrixMinimal(test2);
+    
 
     /*  calculate ABlock = T^dag A T
      *  ABlock(i,j) = sum_k T(k,i)^* A(k,k) T(k,j)
