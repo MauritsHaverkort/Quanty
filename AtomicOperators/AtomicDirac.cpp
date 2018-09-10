@@ -42,17 +42,17 @@ void CreateOperatorDirac(uint32_t const NFermion,vector<vector<double> > basisfu
 
 				mj1 = indices[groups[n].indices[i]];
 				mj2 = indices[groups[n].indices[j]];
-				for ( k = 0; k < 2*abs(groups[n].kappa); k++)
+				for ( k = 0; k < (unsigned int) 2*abs(groups[n].kappa); k++)
 				{
 
-					oadd[1] = CrAnMask +  mj2[k];
-					oadd[0] = mj1[k];
+					oadd[1] = CrAnMask +  (uint16_t)mj2[k];
+					oadd[0] = (uint16_t) mj1[k];
 					RealOperatorAddLaderNormalOrder(op, oadd, 2, diracElements[i][j], &QDetNotOrderedFcFaBcBa);
 
 					if ( i != j)
 					{
-						oadd[1] = CrAnMask +  mj1[k];
-						oadd[0] = mj2[k];
+						oadd[1] = CrAnMask +  (uint16_t) mj1[k];
+						oadd[0] = (uint16_t) mj2[k];
 						RealOperatorAddLaderNormalOrder(op, oadd, 2, diracElements[i][j], &QDetNotOrderedFcFaBcBa);
 					}
 				}
@@ -66,7 +66,7 @@ static int LuaOperatorNewAtomicDirac(lua_State *L)
 {
 	OperatorType *op;
 	uint32_t **indices;
-	uint32_t NF, NGroups, NGridpoints, NIndices, temp;
+	uint32_t NF, NGroups, NIndices, temp;
 	SKappaGroup *groups;
 	int Z;
 
@@ -78,30 +78,30 @@ static int LuaOperatorNewAtomicDirac(lua_State *L)
 
 	if (NfunsG > NIndices)
 	{
-		printf("Warning: in AtomicDirac.cpp number of basis funs (%d) != number of indices (%d)\n",NfunsG , NIndices);
+		printf("Warning: in AtomicDirac.cpp number of basis funs (%u) != number of indices (%u)\n",NfunsG , NIndices);
 		fflush(stdout);
 	}
 	else
 	{
 		if (NfunsG < NIndices)
 		{
-			return luaL_error(L, "Errorr: in AtomicDirac.cpp number of basis funs (%d) < number of indices (%d)\n",NfunsG , NIndices);
+			return luaL_error(L, "Errorr: in AtomicDirac.cpp number of basis funs (%u) < number of indices (%u)\n",NfunsG , NIndices);
 		}
 	}
 	if (NfunsF != NfunsG)
 	{
-		printf("Error in AtomicDirac.cpp: number of functions small part (%d) != large part (%d)\n",NfunsF,NfunsG);
+		printf("Error in AtomicDirac.cpp: number of functions small part (%u) != large part (%u)\n",NfunsF,NfunsG);
 		return -1;
 	}
 	vector<Interpolation::InterpolatingFunction *> funsG = vector<Interpolation::InterpolatingFunction *>(NfunsG);
-	for(int i = 0; i < NfunsG; i++)
+	for(uint32_t i = 0; i < NfunsG; i++)
 	{
 		lua_rawgeti(L, 4, i+1);
 		funsG[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
 		lua_pop(L,1);
 	}
 	vector<Interpolation::InterpolatingFunction *> funsF = vector<Interpolation::InterpolatingFunction *>(NfunsF);
-	for(int i = 0; i < NfunsF; i++)
+	for(uint32_t i = 0; i < NfunsF; i++)
 	{
 		lua_rawgeti(L, 5, i+1);
 		funsF[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
@@ -112,9 +112,9 @@ static int LuaOperatorNewAtomicDirac(lua_State *L)
 	NGroups = (uint32_t)lua_objlen(L,6);
 
 	groups = (SKappaGroup *) malloc(NGroups * sizeof(SKappaGroup));
-	if (!groups) printf("malloc fail at groups in LuaOperatorNewDirac. size = %d\n",NGroups);
+	if (!groups) printf("malloc fail at groups in LuaOperatorNewDirac. size = %u\n",NGroups);
 
-	for(int i = 0; i < NGroups; i++ )
+	for(uint32_t i = 0; i < NGroups; i++ )
 	{
 		lua_rawgeti(L, 6, i+1);
 	   	lua_rawgeti(L, -1, 1);
@@ -128,8 +128,8 @@ static int LuaOperatorNewAtomicDirac(lua_State *L)
 
 	luaL_checktype(L, 3, LUA_TTABLE);
 	indices = (uint32_t **) malloc(NIndices * sizeof(uint32_t *));
-	if(!indices) printf("malloc fail at indices in LuaOperatorNewDirac. size = %d\n",NIndices);
-	for(int i = 0; i < NIndices; i++ )
+	if(!indices) printf("malloc fail at indices in LuaOperatorNewDirac. size = %u\n",NIndices);
+	for(uint32_t i = 0; i < NIndices; i++ )
 	{
 	   	lua_rawgeti(L, 3, i+1);
 	   	indices[i] = luaL_checkarray_unit32_t(L,-1,&temp);
@@ -160,12 +160,12 @@ static int LuaOperatorNewAtomicDirac(lua_State *L)
 
 	luaL_setmetatable(L,"Operator_Type");
 
-	for (int i = 0;i < NGroups; i++ )
+	for (uint32_t i = 0;i < NGroups; i++ )
 	{
 		free(groups[i].indices);
 	}
 	free(groups);
-	for(int i = 0; i < NIndices; i++ )
+	for(uint32_t i = 0; i < NIndices; i++ )
 	{
 		free(indices[i]);
 	}

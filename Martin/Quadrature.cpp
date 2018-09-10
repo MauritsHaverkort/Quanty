@@ -115,7 +115,7 @@ vector<double> Quadrature::GetKnots(int numberOfKnots,double a, double b)
 
 double Quadrature::Integrate(vector<double> f)
 {
-	int n = f.size();
+	unsigned long n = f.size();
 	if (n > NKnotsMax)
 	{
 		cout << "error: in Quadrature::Integrate: numberOfKnots too big" << endl;
@@ -124,7 +124,7 @@ double Quadrature::Integrate(vector<double> f)
 	else
 	{
 		double result = 0;
-		for (int i = 0; i < n; i++)
+		for (unsigned long i = 0; i < n; i++)
 		{
 			result += weights[n-1][i]*f[i];
 		}
@@ -136,7 +136,7 @@ double Quadrature::Integrate(vector<double> f,double a, double b)
 {
 	if ( a == b)
 		return 0.;
-	int n = f.size();
+	unsigned long n = f.size();
 	if (n > NKnotsMax)
 	{
 		cout << "error: in Quadrature::Integrate: numberOfKnots too big" << endl;
@@ -145,7 +145,7 @@ double Quadrature::Integrate(vector<double> f,double a, double b)
 	else
 	{
 		double result = 0;
-		for (int i = 0; i < n; i++)
+		for (unsigned long i = 0; i < n; i++)
 		{
 			result += (b-a)/2*weights[n-1][i]*f[i];
 		}

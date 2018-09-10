@@ -139,7 +139,7 @@ void CalculateSlaterIntegrals(const int NIntegrals, SSlaterIntegral *integrals, 
             
         }
     }
-};
+}
 
 void CalculateSlaterIntegrals(const int NIntegrals, SSlaterIntegral *integrals, const int dim,
                               double **kernels, vector<vector<double> > basisfuns, vector<vector<double> > dualfuns)
@@ -164,7 +164,7 @@ void CalculateSlaterIntegrals(const int NIntegrals, SSlaterIntegral *integrals, 
 
         }
     }
-};
+}
 
 void vecMul(const int n, const double *f, const double *g, double *fout)
 {
@@ -210,13 +210,13 @@ double ** CreateAllKernels(const unsigned int kMax, const unsigned int NGridPoin
     double ** kernels;
     
     kernels = (double **) malloc((kMax+1)*sizeof(double *));
-    if (!kernels) printf("malloc fail at kernels in CreateAllKernels. size = %d\n",kMax+1);
+    if (!kernels) printf("malloc fail at kernels in CreateAllKernels. size = %u\n",(int) kMax+1);
     n = 2 * NGridPoints;
     
     for ( k = 0; k <= kMax; k++ )
     {
     	kernels[k] = (double *) malloc(n*n*sizeof(double));
-    	if (!(kernels[k])) printf("malloc fail at kernels[%d] in CreateAllKernels. size = %d\n",k,n*n);
+    	if (!(kernels[k])) printf("malloc fail at kernels[%u] in CreateAllKernels. size = %u\n",k,n*n);
         CreateKernel(NGridPoints, x, kernels[k], k);
     }
     return kernels;
@@ -224,7 +224,7 @@ double ** CreateAllKernels(const unsigned int kMax, const unsigned int NGridPoin
 
 void CreateKernel(const unsigned int NGridPoints, const double *x, double *kernel, const unsigned int k)
 {
-    int i, j, n;
+    uint32_t i, j, n;
     double val;
     
     n = NGridPoints;
@@ -273,11 +273,11 @@ void CreateKernel(const unsigned int NGridPoints, const double *x, double *kerne
 
 double *CreateWeights(const unsigned int NGridPoints, const double *x)
 {
-    int i;
-    double x0 = 0;
+	uint32_t i;
+	double x0 = 0;
 
     double *weights = (double *) malloc(NGridPoints*2*sizeof(double));
-    if (!weights) printf("malloc fail at weights in CreateWeights. size = %d\n",2*NGridPoints);
+    if (!weights) printf("malloc fail at weights in CreateWeights. size = %u\n",2*NGridPoints);
     
     for( i = 0; i < NGridPoints-1; i++)
     {
@@ -298,7 +298,7 @@ double *CreateWeights(const unsigned int NGridPoints, const double *x)
 
 vector<double> CreateWeights(const unsigned int NGridPoints, vector<double> x)
 {
-    int i;
+	uint32_t i;
     double x0 = 0;
 
     vector<double> weights;
@@ -329,17 +329,17 @@ vector<double> CreateWeights(const unsigned int NGridPoints, vector<double> x)
 double **CreateDualFunctions(const unsigned int NBasisFuns, const unsigned int NGridPoints,
                              double **basisfuns, const double *x)
 {
-    int i;
+	uint32_t i;
     double **dualfuns, *weights;
     
     weights = CreateWeights(NGridPoints,x);
     //printf("%e\t%e\n",weights[2499],weights[4999]);
     dualfuns = (double **) malloc(NBasisFuns*sizeof(double *));
-    if (!dualfuns) printf("malloc fail at dualfuns in CreateDualFunctions. size = %d\n",NBasisFuns);
+    if (!dualfuns) printf("malloc fail at dualfuns in CreateDualFunctions. size = %u\n",NBasisFuns);
     for ( i = 0; i < NBasisFuns; i++ )
     {
         dualfuns[i] = (double *) malloc(2*NGridPoints*sizeof(double));
-        if (!dualfuns[i]) printf("malloc fail at dualfuns[%d] in CreateDualFunctions. size = %d\n",i,2*NGridPoints);
+        if (!dualfuns[i]) printf("malloc fail at dualfuns[%d] in CreateDualFunctions. size = %u\n",i,2*NGridPoints);
         Dual(2*NGridPoints, basisfuns[i], weights, dualfuns[i]);
     }
     free(weights);
@@ -350,7 +350,7 @@ vector<double> Dual(vector<double> f, vector<double> w)
 {
 	vector<double> g;
 	if (f.size() != w.size()) printf("error in Dual: %lu = size(f) != size(w) = %lu", f.size(),w.size());
-	for (int i = 0; i < f.size(); i++)
+	for (uint32_t i = 0; i < (uint32_t) f.size(); i++)
 	{
 		g.insert(g.end(), f[i]*w[i]);
 	}
@@ -360,7 +360,7 @@ vector<double> Dual(vector<double> f, vector<double> w)
 vector<vector<double> > CreateDualFunctions(const unsigned int NBasisFuns, const unsigned int NGridPoints,
 		vector<vector<double> > basisfuns, vector<double> x)
 {
-    int i;
+	uint32_t i;
     vector<vector<double> > dualfuns;
     vector<double> weights;
 
@@ -421,7 +421,7 @@ SSlaterIntegral *InitializeIntegrals(vector<int> indToK, unsigned int &NIntegral
     unsigned int i, k;
     SSlaterIntegral *integrals;
 
-  std::map<myarray,myarray> tupel = CreateSlaterTuple(indToK);
+    std::map<myarray,myarray> tupel = CreateSlaterTuple(indToK);
     NIntegrals = (unsigned int)tupel.size();
 
     integrals = (SSlaterIntegral *) malloc((NIntegrals)*sizeof(SSlaterIntegral));
@@ -458,11 +458,11 @@ SSlaterIntegral *InitializeIntegrals(vector<int> indToK, unsigned int &NIntegral
 
 unsigned int *GetK(const int *kappa, int *n)
 {
-    unsigned int k0=0, k1=0, i, *k;
+    unsigned int k0=0, k1=0, *k;
     
     
-    k0 = fmax( abs( abs(kappa[0])-abs(kappa[2]) ), abs( abs(kappa[1])-abs(kappa[3]) ) );
-    k1 = fmin( abs(kappa[0])+abs(kappa[2]), abs(kappa[1])+abs(kappa[3]) ) -1;
+    k0 = (unsigned int) fmax( abs( abs(kappa[0])-abs(kappa[2]) ), abs( abs(kappa[1])-abs(kappa[3]) ) );
+    k1 = (unsigned int) fmin( abs(kappa[0])+abs(kappa[2]), abs(kappa[1])+abs(kappa[3]) ) -1;
     
     if ( (abs(kappa[0])+abs(kappa[2]) + (Sign(kappa[0])+Sign(kappa[2]))/2 + k0) % 2 == 0)
     {
@@ -472,12 +472,12 @@ unsigned int *GetK(const int *kappa, int *n)
     if ( k0 > k1 )
     {
       k=NULL;
-      printf("Warning: k0(%d) > k1(%d)\n This has to be fixed...",k0,k1);
+      printf("Warning: k0(%u) > k1(%u)\n This has to be fixed...",k0,k1);
     }
     else
     {
         k = (unsigned int *) malloc((*n) * sizeof(unsigned int));
-        for( i = 0; i < *n; i++)
+        for(int i = 0; i < *n; i++)
         {
     
             k[i] = k0 + 2*i;

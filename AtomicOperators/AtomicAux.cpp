@@ -37,10 +37,10 @@ vector<vector<double> > PutRelativisticSplineOnGrid(vector<Interpolation::Interp
 {
 	vector<vector<double> > funsCombined = vector<vector<double> >(funsG.size());
 	unsigned int NGridPoints = x.size();
-	for (int i = 0; i < funsG.size(); i++)
+	for (uint32_t i = 0; i < funsG.size(); i++)
 	{
 		funsCombined[i] = vector<double>(2*NGridPoints);
-		for (int j = 0; j < NGridPoints; j++)
+		for (uint32_t j = 0; j < NGridPoints; j++)
 		{
 			funsCombined[i][j            ] = (*funsG[i])(x[j],k);
 			funsCombined[i][j+NGridPoints] = (*funsF[i])(x[j],k);
@@ -137,7 +137,7 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
 
 	// Push large part on stack
 	lua_createtable(L,0,Norbitals);
-	for (int i = 0; i < Norbitals; i++)
+	for (uint32_t i = 0; i < Norbitals; i++)
 	{
 		string charTostring(orbitalNames[i]);
 		if (funsG.find(charTostring) != funsG.end())
@@ -158,7 +158,7 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
 	}
 	// Push small part on stack
 	lua_createtable(L,0,Norbitals);
-	for (int i = 0; i < Norbitals; i++)
+	for (uint32_t i = 0; i < Norbitals; i++)
 	{
 		string charTostring(orbitalNames[i]);
 		if (funsF.find(charTostring) != funsF.end())

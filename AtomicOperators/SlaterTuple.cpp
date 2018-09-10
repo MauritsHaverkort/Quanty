@@ -52,7 +52,7 @@ public:
 };
 bool operator<(const myarray& a, const myarray& b)
 {
-	for(int i = 0; i < a.val.size(); i++)
+	for(uint32_t i = 0; i < (uint32_t) a.val.size(); i++)
 	{
 		if (a.val[i] != b.val[i])
 			return a.val[i] < b.val[i];
@@ -75,8 +75,8 @@ int TupleContributes(myarray k)
 	l4 = abs(k[3]) + (SSign(k[3])-1)/2;
 	lsum = l1 + l2 + l3 + l4;
 
-	k0 = fmax( abs( abs(k[0])-abs(k[2]) ), abs( abs(k[1])-abs(k[3]) ) );
-	k1 = fmin( abs(k[0])+abs(k[2]), abs(k[1])+abs(k[3]) ) -1;
+	k0 = (int) fmax( abs( abs(k[0])-abs(k[2]) ), abs( abs(k[1])-abs(k[3]) ) );
+	k1 = (int) fmin( abs(k[0])+abs(k[2]), abs(k[1])+abs(k[3]) ) -1;
 	if ( (abs(k[0])+abs(k[2]) + (SSign(k[0])+SSign(k[2]))/2 + k0) % 2 == 0)
 	{
 		k0++;
@@ -87,13 +87,13 @@ int TupleContributes(myarray k)
 
 vector<myarray> CreateKappaTuple(vector<int> kappas)
 {
-	int i,j,m,l;
+	uint32_t i,j,m,l;
 	myarray k;
 	vector<myarray> result;
-	for ( i = 0; i < kappas.size(); i++)
-		for ( j = 0; j < kappas.size(); j++)
-			for ( m = 0; m < kappas.size(); m++)
-				for ( l = 0; l < kappas.size(); l++)
+	for ( i = 0; i < (uint32_t) kappas.size(); i++)
+		for ( j = 0; j < (uint32_t) kappas.size(); j++)
+			for ( m = 0; m < (uint32_t) kappas.size(); m++)
+				for ( l = 0; l < (uint32_t) kappas.size(); l++)
 				{
 					k.Assign(kappas[i],kappas[j],kappas[m],kappas[l]);
 					if (TupleContributes(k))
@@ -106,8 +106,7 @@ vector<myarray> CreateKappaTuple(vector<int> kappas)
 
 int NotContains(vector<myarray> tau,std::map<myarray,myarray> tuple)
 {
-	int i;
-	for ( i = 0; i < tau.size(); i++)
+	for (uint32_t i = 0; i < (uint32_t) tau.size(); i++)
 	{
 		if (tuple.find(tau[i]) != tuple.end())
 		{
@@ -119,15 +118,15 @@ int NotContains(vector<myarray> tau,std::map<myarray,myarray> tuple)
 
 std::map<myarray,myarray> CreateSlaterTuple(vector<int> indToK)
 {
-	int i,j,m,l;
+	uint32_t i,j,m,l;
 	myarray k;
 	vector<myarray> tau = vector<myarray>(8);
   std::map<myarray,myarray> result;
 
-	for ( i = 0; i < indToK.size(); i++)
-		for ( j = 0; j < indToK.size(); j++)
-			for ( m = 0; m < indToK.size(); m++)
-				for ( l = 0; l < indToK.size(); l++)
+	for ( i = 0; i < (uint32_t) indToK.size(); i++)
+		for ( j = 0; j < (uint32_t) indToK.size(); j++)
+			for ( m = 0; m < (uint32_t) indToK.size(); m++)
+				for ( l = 0; l < (uint32_t) indToK.size(); l++)
 				{
 					k.Assign(indToK[i],indToK[j],indToK[m],indToK[l]);
 					//if (i==0 && j == 0 && m ==18 && l==19)

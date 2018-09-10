@@ -15,7 +15,7 @@ using std::map;
 static int LuaOperatorNewAtomicU (lua_State *L)
 {
     OperatorType *op;
-    uint32_t **tuple, NIntegrals, NGridpoints, Nindices, temp, len, NF;
+    uint32_t Nindices, temp, len, NF;
     uint16_t **indices;
     vector<double> x;
 
@@ -23,7 +23,7 @@ static int LuaOperatorNewAtomicU (lua_State *L)
 
     if ( len < 3 ||  len > 4)
     {
-    	printf("Error in Martin.NewCoulomb: 3 or 4 arguments expected; got %d",len);
+    	printf("Error in Martin.NewCoulomb: 3 or 4 arguments expected; got %u",len);
     	return -1;
     }
 
@@ -36,8 +36,8 @@ static int LuaOperatorNewAtomicU (lua_State *L)
 		lua_pop(L,1);
 		Nindices = (uint32_t)lua_objlen(L,2);
 		indices = (uint16_t **) malloc(Nindices * sizeof(uint16_t *));
-		if(!indices) printf("malloc fail at indices in LuaOperatorNewFullCoulomb. size = %d\n",Nindices);
-		for(int i = 0; i < Nindices; i++ )
+		if(!indices) printf("malloc fail at indices in LuaOperatorNewFullCoulomb. size = %u\n",Nindices);
+		for(uint32_t i = 0; i < Nindices; i++ )
 		{
 			lua_rawgeti(L, 2, i+1);
 			lua_rawgeti(L,-1,1);
@@ -59,9 +59,9 @@ static int LuaOperatorNewAtomicU (lua_State *L)
 		Nindices = (uint32_t)lua_objlen(L,2);
 
 		indices = (uint16_t **) malloc(Nindices * sizeof(uint16_t *));
-		if(!indices) printf("malloc fail at indices in LuaOperatorNewFullCoulomb. size = %d\n",Nindices);
+		if(!indices) printf("malloc fail at indices in LuaOperatorNewFullCoulomb. size = %u\n",Nindices);
 
-		for(int i = 0; i < Nindices; i++ )
+		for(uint32_t i = 0; i < Nindices; i++ )
 		{
 			lua_rawgeti(L, 2, i+1);
 			indices[i] = luaL_checkarray_unit16_t(L,-1,&temp);
@@ -73,20 +73,20 @@ static int LuaOperatorNewAtomicU (lua_State *L)
 
 	if (NfunsG > Nindices)
 	{
-		printf("Warning: Martin.Coulomb() number of basis funs (%d) != number of indices (%d)\n",NfunsG , Nindices);
+		printf("Warning: Martin.Coulomb() number of basis funs (%u) != number of indices (%u)\n",NfunsG , Nindices);
 		fflush(stdout);
 	}
 	else
 	{
 		if (NfunsG < Nindices)
 		{
-			return luaL_error(L, "Errorr: Martin.Coulomb() number of basis funs (%d) < number of indices (%d)\n",NfunsG , Nindices);
+			return luaL_error(L, "Errorr: Martin.Coulomb() number of basis funs (%u) < number of indices (%u)\n",NfunsG , Nindices);
 		}
 	}
-	if (indToK.size() != Nindices) printf("Warning: Martin.Coulomb() number of kappas (%d) != number of indices (%d)\n",indToK.size() , Nindices);
+	if (indToK.size() != Nindices) printf("Warning: Martin.Coulomb() number of kappas (%u) != number of indices (%u)\n",indToK.size() , Nindices);
 
 	vector<Interpolation::InterpolatingFunction *> funsG = vector<Interpolation::InterpolatingFunction *>(NfunsG);
-	for(int i = 0; i < NfunsG; i++)
+	for(uint32_t i = 0; i < NfunsG; i++)
 	{
 		lua_rawgeti(L, 3, i+1);
 		funsG[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
@@ -99,11 +99,11 @@ static int LuaOperatorNewAtomicU (lua_State *L)
     	uint32_t NfunsF = (uint32_t)lua_objlen(L,4);
     	if (NfunsF != NfunsG)
     	{
-    		printf("Error in LuaOperatorNewCoulombFull: number of functions small part (%d) != large part (%d)\n",NfunsF,NfunsG);
+    		printf("Error in LuaOperatorNewCoulombFull: number of functions small part (%u) != large part (%u)\n",NfunsF,NfunsG);
     		return -1;
     	}
     	vector<Interpolation::InterpolatingFunction *> funsF = vector<Interpolation::InterpolatingFunction *>(NfunsF);
-    	for(int i = 0; i < NfunsF; i++)
+    	for(uint32_t i = 0; i < NfunsF; i++)
     	{
     		lua_rawgeti(L, 4, i+1);
     		funsF[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
@@ -111,7 +111,6 @@ static int LuaOperatorNewAtomicU (lua_State *L)
     	}
 
     	x = funsG[0]->GetX();
-    	NGridpoints = x.size();
 
     	vector<vector<double> > wavefuns = PutRelativisticSplineOnGrid(funsG,funsF,x,0);
 
@@ -127,7 +126,7 @@ static int LuaOperatorNewAtomicU (lua_State *L)
     luaL_setmetatable(L,"Operator_Type");
 
 
-	for(int i = 0; i < Nindices; i++ )
+	for(uint32_t i = 0; i < Nindices; i++ )
 	{
 		free(indices[i]);
 	}
@@ -142,11 +141,11 @@ uint32_t CreateOperatorAtomicURelativistic(uint32_t const NFermion,vector<vector
 
     OperatorType optemp;
     SSlaterIntegral *integrals;
-    uint32_t NIntegrals;
+    uint32_t NIntegrals, i;
 
     integrals = GetSlaterIntegrals(basisfuns,grid, indToK, NIntegrals);
 
-    int *k, i;
+    int *k;
     unsigned int *n;
     double *Fk;
 
