@@ -61,7 +61,6 @@ uint32_t GlobalVerbosity=0xF;
 
 #define PrintDebugInfo
 
-using std::abs;
 using std::cout;
 using std::endl;
 //using std::signbit;
