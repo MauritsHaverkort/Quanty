@@ -3618,7 +3618,6 @@ uint32_t BlockTriDiagonalMatrixToCompactMatrix(BlockTriDiagonalMatrixType const 
  */
 uint32_t BlockTriDiagonalMatrixPartToCompactMatrix(BlockTriDiagonalMatrixType const * A, CompactMatrixType * const B, const uint32_t iStart, const uint32_t iEnd)
 {
-  //TODO: test after changing compat matrix order
   int i,j,k,apos,bpos,bposL,bposR;
   B->QComplex=A->QComplex;
   B->Ni=(iEnd - iStart +1)* A->BlockSize;
@@ -3648,8 +3647,8 @@ uint32_t BlockTriDiagonalMatrixPartToCompactMatrix(BlockTriDiagonalMatrixType co
       bpos+=A->BlockSize;
     }
     apos=(1+iStart)*A->BlockSize*A->BlockSize;
-    bposL=A->BlockSize;
-    bposR=A->BlockSize*B->Nj;
+    bposR=A->BlockSize;
+    bposL=A->BlockSize*B->Nj;
     for(k=iStart;k<iEnd;k++)
     {
       for(i=0;i<A->BlockSize;i++)
@@ -3688,8 +3687,8 @@ uint32_t BlockTriDiagonalMatrixPartToCompactMatrix(BlockTriDiagonalMatrixType co
       bpos+=A->BlockSize;
     }
     apos=(1+iStart)*A->BlockSize*A->BlockSize;
-    bposL=A->BlockSize;
-    bposR=A->BlockSize*B->Nj;
+    bposR=A->BlockSize;
+    bposL=A->BlockSize*B->Nj;
     for(k=iStart;k<iEnd;k++)
     {
       for(i=0;i<A->BlockSize;i++)

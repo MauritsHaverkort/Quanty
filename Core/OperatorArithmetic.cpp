@@ -6110,6 +6110,7 @@ uint32_t RotateOperator(OperatorType * const OA, const OperatorType OB, const Ma
     printf("InitOperatorCopySettings failed in RotateOperator\n");
     return 1;
   }
+  OperatorChangeNFandNB(OA, U.Ni, OA->NBoson);
   return MappedOperatorAdd(OA, OB, U);
 }
 uint32_t RotateOperatorNormalOrder(OperatorType * const OA, const OperatorType OB, const MatrixType U, uint32_t(*QDetNotOrdered) (uint16_t, uint16_t, uint32_t))
@@ -6119,6 +6120,7 @@ uint32_t RotateOperatorNormalOrder(OperatorType * const OA, const OperatorType O
     printf("InitOperatorCopySettings failed in RotateOperator\n");
     return 1;
   }
+  OperatorChangeNFandNB(OA, U.Ni, OA->NBoson);
   return MappedOperatorAddNormalOrder(OA, OB, U, QDetNotOrdered);
 }
 
@@ -6376,7 +6378,7 @@ bool isOperatorAlmostHermitian(OperatorType O, const double epsilon)
 /*
  *
  */
-uint32_t OperatorChangeNFandNB(OperatorType *O, uint32_t NFnew, uint32_t NBnew)
+uint32_t OperatorChangeNFandNB(OperatorType *O, const uint32_t NFnew, uint32_t NBnew)
 {
   uint32_t l,j;
   int i,shift;

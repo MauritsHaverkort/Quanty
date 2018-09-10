@@ -1518,8 +1518,8 @@ static int Luarotate(lua_State *L)
     if(len!=2)luaL_error(L, "Rotate for an operator called with %d arguments, 2 expected\n",len);
     U = luaL_checkMatrix(L, 2);
     OperatorType *O = (OperatorType*) luaL_checkudata(L, 1, "Operator_Type");
-    if(U->Ni!=U->Nj) luaL_error(L, "Error while rotating operator. Rotation matrix should be square (Ni=%d Nj=%d)",U->Ni,U->Nj);
-    if(U->Ni!=O->NFermion+O->NBoson) luaL_error(L, "Error while rotating operator. Rotation matrix should have dimension (%d) of number of fermions (%d) + bosons (%d) of operator",U->Ni,O->NFermion,O->NBoson);
+    //if(U->Ni!=U->Nj) luaL_error(L, "Error while rotating operator. Rotation matrix should be square (Ni=%d Nj=%d)",U->Ni,U->Nj);
+    if(U->Nj!=O->NFermion+O->NBoson) luaL_error(L, "Error while rotating operator. Rotation matrix should have dimension (%d) of number of fermions (%d) + bosons (%d) of operator",U->Nj,O->NFermion,O->NBoson);
     OperatorType *ONew;
     ONew = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
     RotateOperatorNormalOrder(ONew, *O, *U,&QDetNotOrderedFcFaBaBc);

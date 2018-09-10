@@ -50,3 +50,39 @@ rotmat = {{1,0,0,0,0,  0, 0, 0,  0, 0, 0,  0, 0, 0,  0, 0, 0,  0, 0, 0,  0, 0, 0
 RTB = Rotate(ClusterTB, rotmat, {{"Ni",{0,0,0},{{"d",{"xy","yz","z^2","xz","x^2-y^2"}}}}, {"Ligand",{0,0,0},{{"d",{"xy","yz","z^2","xz","x^2-y^2"}}}}})
 
 print(RTB)
+
+rotmatWithSpin = {}
+for i=1,10 do
+  rotmatWithSpin[2*i-1]={}
+  rotmatWithSpin[2*i-0]={}
+  for j=1,23 do
+    rotmatWithSpin[2*i-1][2*j-1]=rotmat[i][j]
+    rotmatWithSpin[2*i-0][2*j-1]=0
+    rotmatWithSpin[2*i-1][2*j-0]=0
+    rotmatWithSpin[2*i-0][2*j-0]=rotmat[i][j]
+  end
+end
+
+print(rotmatWithSpin)
+
+RH = Rotate(Hamiltonian, rotmatWithSpin )
+
+print(RH)
+
+
+print("Other option to get Operator")
+
+
+RHamiltonian, RClusterTB, RIndexName = CreateClusterHamiltonian(RTB, {"open", { {"Ni",{0,0,0}}, {"Ligand",{0,0,0}}}},  {{"AddSpin",true}, {"ReturnTBIndicesDict",true}})
+
+print("blabla")
+
+print(RClusterTB)
+
+print("blabla2")
+
+print(RHamiltonian)
+
+print("blabla3")
+
+print(RIndexName)
