@@ -919,12 +919,7 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
     luaL_setmetatable(L, "TightBinding_Type");
     // set name
     strcpy(ClusterDef->Name, a->Name);
-    // read moleclar structure
-    lua_rawgeti(L, 2, 2);
-    if(lua_type(L,-1)!=LUA_TTABLE)
-    {
-      return luaL_error(L, "Error CreateClusterHamiltonian for open clusters expects a list of atoms to include after the token \"open\"\n");
-    }
+    // set cell
     ClusterDef->Cell.rUnitCell[0][0]=INFINITY;
     ClusterDef->Cell.rUnitCell[0][1]=0;
     ClusterDef->Cell.rUnitCell[0][2]=0;
@@ -946,6 +941,13 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
     ClusterDef->Cell.Units=a->Cell.Units;
     // set atomic units to absolute, as there is no unit cell
     ClusterDef->Cell.Units &= ~(((uint32_t)1)<<3);
+    // read moleclar structure
+    lua_rawgeti(L, 2, 2);
+    if(lua_type(L,-1)!=LUA_TTABLE)
+    {
+      return luaL_error(L, "Error CreateClusterHamiltonian for open clusters expects a list of atoms to include after the token \"open\"\n");
+    }
+    // read the specific atoms
     ClusterDef->Cell.NAtoms=(uint32_t)lua_objlen(L, -1);
     ClusterDef->Cell.Atom=(AtomType*)malloc(ClusterDef->Cell.NAtoms*sizeof(AtomType));
     for(i=0;i<ClusterDef->Cell.NAtoms;i++)

@@ -86,3 +86,6 @@ print(RHamiltonian)
 print("blabla3")
 
 print(RIndexName)
+
+
+print(TB.Atoms)
