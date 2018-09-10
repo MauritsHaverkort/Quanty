@@ -493,7 +493,7 @@ uint32_t CreateOperatorSingleCoulombRelativistic(uint32_t const NFermion,double 
     printf("int = %e\n",integrals[30].val[0]);
     printf("ind = %d\n",index);
     vector<int> indexes = GetMaxSlaterIntegrals(integrals,NIntegrals,cutoff);
-    printf("NIntegrals %d\t%d\n",NIntegrals,indexes.size());
+    printf("NIntegrals %d\t%d\n",NIntegrals,(unsigned int)indexes.size());
 
     int *k, i;
     unsigned int *n;

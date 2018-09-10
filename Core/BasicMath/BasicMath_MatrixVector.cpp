@@ -1802,8 +1802,8 @@ MatrixType MatrixFlatten(vector<vector<MatrixType> > allMs, bool printWarnings)
 {
 	uint32_t QComplex = 0;
 	MatrixType fullM;
-	uint32_t numOfRowsOuter = allMs.size();
-	uint32_t numOfColsOuter = allMs[0].size();
+	uint32_t numOfRowsOuter = (uint32_t)allMs.size();
+	uint32_t numOfColsOuter = (uint32_t)allMs[0].size();
 	uint32_t numOfRowsInner[numOfRowsOuter], numOfColsInner[numOfColsOuter], numOfAllRows = 0, numOfAllCols = 0;
 	for (int i = 0; i < numOfRowsOuter; ++i)
 	{

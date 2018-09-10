@@ -2815,7 +2815,7 @@ MatrixType orbitalPermutationMatrix(const vector<string> oldVec, const vector<st
 	vector<int> permVec = permutationVector(oldVec, newVec);
 	if (permVec.size() == 0)
 		return nullMatrix();
-	vector < vector<MatrixType> > matMat = nullMatrixMatrix(newVec.size(), oldVec.size());
+	vector < vector<MatrixType> > matMat = nullMatrixMatrix((uint32_t)newVec.size(), (uint32_t)oldVec.size());
 	for (int i = 0; i < permVec.size(); ++i)
 	{
 		MatrixType identityMat = identityMatrix(orbToMultiplicity(newVec[i]));

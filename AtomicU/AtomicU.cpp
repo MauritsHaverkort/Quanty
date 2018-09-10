@@ -373,7 +373,7 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
 			luaL_setmetatable(L, "InterpolatingFunction_Type");
 			lua_rawseti(L,-2,i+1);
 
-			InitInterpolatingFunctionAsCubicSpline(splinesG[i], x.size());
+			InitInterpolatingFunctionAsCubicSpline(splinesG[i], (uint32_t)x.size());
 			for(int j=0;j<((CubicSplineType*)(splinesG[i]->f))->N;j++)
 			{
 				((CubicSplineType*)(splinesG[i]->f))->x[j]=x[j];
@@ -385,8 +385,7 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
 		else
 		{
 			printf("LuaReadFPLOBasis: Couldn't find ");
-			printf(orbitalNames[i]);
-			printf("\n");
+			printf("%s\n",orbitalNames[i]);
 			fflush(stdout);
 		}
 
@@ -403,7 +402,7 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
 			luaL_setmetatable(L, "InterpolatingFunction_Type");
 			lua_rawseti(L,-2,i+1);
 
-			InitInterpolatingFunctionAsCubicSpline(splinesF[i], x.size());
+			InitInterpolatingFunctionAsCubicSpline(splinesF[i], (uint32_t)x.size());
 			for(int j=0;j<((CubicSplineType*)(splinesF[i]->f))->N;j++)
 			{
 				((CubicSplineType*)(splinesF[i]->f))->x[j]=x[j];
@@ -414,9 +413,8 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
 		}
 		else
 		{
-			printf("LuaReadFPLOBasis: Couldn't find ");
-			printf(orbitalNames[i]);
-			printf("\n");
+      printf("LuaReadFPLOBasis: Couldn't find ");
+      printf("%s\n",orbitalNames[i]);
 			fflush(stdout);
 		}
 

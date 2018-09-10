@@ -91,7 +91,7 @@ static int LuaOperatorNewFullCoulomb (lua_State *L)
     			return luaL_error(L, "Errorr: Martin.Coulomb() number of basis funs (%d) < number of indices (%d)\n",wavefunctions->Ni , Nindices);
     		}
     	}
-    	if (indToK.size() != Nindices) printf("Warning: Martin.Coulomb() number of kappas (%d) != number of indices (%d)\n",indToK.size() , Nindices);
+    	if (indToK.size() != Nindices) printf("Warning: Martin.Coulomb() number of kappas (%d) != number of indices (%d)\n",(unsigned int)indToK.size() , Nindices);
     	op = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
     	CreateOperatorFastCoulombRelativistic(NF,wavefunctions->VRe,wavefunctions->Ni,x,NGridpoints,indToK,indices, op);
     }
@@ -403,8 +403,7 @@ static int LuaReadFPLOBasis(lua_State *L)
 		else
 		{
 			printf("LuaReadFPLOBasis: Couldn't find ");
-			printf(orbitalNames[i]);
-			printf("\n");
+      printf("%s\n",orbitalNames[i]);
 			fflush(stdout);
 		}
 
