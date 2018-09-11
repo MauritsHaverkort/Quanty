@@ -290,7 +290,7 @@ vector<double> CalcMetric(vector<vector<double> > basisfuns, vector<vector<doubl
 {
 	unsigned int dim1, dim2,i,j,n;
 	unsigned int eins = 1;
-	n = (int) 2* x.size();
+	n = 2* (int) x.size();
 	dim1 = (unsigned int) basisfuns.size();
 	dim2 = (unsigned int) funs2.size();
 	vector<double> g = vector<double>(dim1*dim2);

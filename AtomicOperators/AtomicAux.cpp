@@ -36,7 +36,7 @@ vector<double> ConvertArray(double *a, const int n)
 vector<vector<double> > PutRelativisticSplineOnGrid(vector<Interpolation::InterpolatingFunction *> funsG, vector<Interpolation::InterpolatingFunction *> funsF, vector<double> x,unsigned int k)
 {
 	vector<vector<double> > funsCombined = vector<vector<double> >(funsG.size());
-	unsigned int NGridPoints = x.size();
+	unsigned int NGridPoints = (unsigned int) x.size();
 	for (uint32_t i = 0; i < funsG.size(); i++)
 	{
 		funsCombined[i] = vector<double>(2*NGridPoints);
@@ -150,8 +150,7 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
 		else
 		{
 			printf("LuaReadFPLOBasis: Couldn't find ");
-			printf(orbitalNames[i]);
-			printf("\n");
+			printf("%s\n", orbitalNames[i]);
 			fflush(stdout);
 		}
 
@@ -171,8 +170,7 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
 		else
 		{
 			printf("LuaReadFPLOBasis: Couldn't find ");
-			printf(orbitalNames[i]);
-			printf("\n");
+			printf("%s\n", orbitalNames[i]);
 			fflush(stdout);
 		}
 

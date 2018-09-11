@@ -27,7 +27,7 @@ void CubicSpline::Create(std::vector<double> u, std::vector<double> v)
 {
 	x = u;
 	y = v;
-	int n = x.size()-1;
+	int n = (int)x.size()-1;
 	y2 = std::vector<double>(n+1);
 	std::vector<double> cc,dd;
 	cc = std::vector<double>(n-1);

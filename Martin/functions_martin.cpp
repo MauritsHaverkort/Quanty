@@ -292,7 +292,7 @@ static int LuaCreateBaseForContinuum(lua_State *L)
 
 		eigenval = CreateBaseForContinuum(vbasf,vderf,x,group,vcontf,energiesCont);
 
-		LuaPushArray_double(L,&(eigenval[0]), vcontf.size());
+		LuaPushArray_double(L,&(eigenval[0]), (int) vcontf.size());
 		for (int i = 0; i < vcontf.size(); i++)
 		{
 			contfuns->VRe[i] = &(vcontf[i][0]);

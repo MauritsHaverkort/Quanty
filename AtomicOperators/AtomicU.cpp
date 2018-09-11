@@ -83,7 +83,7 @@ static int LuaOperatorNewAtomicU (lua_State *L)
 			return luaL_error(L, "Errorr: Martin.Coulomb() number of basis funs (%u) < number of indices (%u)\n",NfunsG , Nindices);
 		}
 	}
-	if (indToK.size() != Nindices) printf("Warning: Martin.Coulomb() number of kappas (%u) != number of indices (%u)\n",indToK.size() , Nindices);
+	if (indToK.size() != Nindices) printf("Warning: Martin.Coulomb() number of kappas (%u) != number of indices (%u)\n",(uint32_t)indToK.size() , Nindices);
 
 	vector<Interpolation::InterpolatingFunction *> funsG = vector<Interpolation::InterpolatingFunction *>(NfunsG);
 	for(uint32_t i = 0; i < NfunsG; i++)
