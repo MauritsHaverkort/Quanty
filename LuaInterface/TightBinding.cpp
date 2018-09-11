@@ -667,9 +667,8 @@ static int LuaPushIndicesDictFromTB(lua_State *L, TightBindingDef *TB, bool AddS
  *       Possible formats:
  *         {"periodic", {a,b,c}}
  *         {"open", atoms_to_include}
- *            atoms_to_include can have the following formats
+ *            atoms_to_include can have the following format
  *              {Atom.Name, Atom.Position, {Atom.Shells}}   with Atom.Shells is an option. If not given all shells of this atom are included. (same for orbitals per shell)
- *              {"All in Sphere", sphere center, sphere radius} 
  *    Aditional Operator to add (optional)
  *         Fermion index should follow the definition in the original tight binding Hamiltonian, when spin is added it is added in the form down/up, down/up, ...
  *    Options (optional)
@@ -1124,6 +1123,93 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
     return nreturn;
   }
 }
+
+static int LuaFindAllAtomsInsideSphere(lua_State *L)
+{
+  char StdUnits[]="Absolute";
+  char* Units=StdUnits;
+  CrystalStructureType A, B;
+  double c[3],r;
+  A.Units=8;
+  uint32_t len,i,j;
+  LuaOptionsType LuaFindAllAtomsInsideSphereOptions[]={
+    {"Units","char*",Units},
+    {NULL, NULL, NULL}};
+  len = (uint32_t)lua_gettop(L);
+  if((len!=4)&&(len!=5))
+  {
+    return luaL_error(L, "Error FindAllAtomsInsideSphere expect 4 or 5 arguments and not %d\n",len);
+  }
+  if(lua_type(L,1)!=LUA_TTABLE)
+  {
+    return luaL_error(L, "Error FindAllAtomsInsideSphere expect a list of atoms on position 1\n");
+  }
+  if(lua_type(L,2)!=LUA_TTABLE)
+  {
+    return luaL_error(L, "Error FindAllAtomsInsideSphere expects a table (3 by 3) defining the unit cell on position 2\n");
+  }
+  if(lua_type(L,3)!=LUA_TTABLE)
+  {
+    return luaL_error(L, "Error FindAllAtomsInsideSphere expects a table length 3 defining the center of the sphere on position 3\n");
+  }
+  if(lua_type(L,4)!=LUA_TNUMBER)
+  {
+    return luaL_error(L, "Error FindAllAtomsInsideSphere expects a number on position 4 defining the sphere radius\n");
+  }
+  len = (uint32_t)lua_objlen(L, 1);
+  A.NAtoms=len;
+  A.Atom= (AtomType*)malloc(len*sizeof(AtomType));
+  for(i=0;i<len;i++)
+  {
+    lua_rawgeti(L, 1, i+1);
+    LuaReadAtom(L, -1, &(A.Atom[i]));
+    lua_pop(L, 1);
+  }
+  if(lua_objlen(L, 2)!=3)
+  {
+    return luaL_error(L, "Error FindAllAtomsInsideSphere expects unitcell definition on position 2\n");
+  }
+  for(i=0;i<3;i++)
+  {
+    lua_rawgeti(L, 2, i+1);
+    if(lua_type(L,-1)!=LUA_TTABLE)
+    {
+      return luaL_error(L, "Error FindAllAtomsInsideSphere expects unitcell definition on position 2\n");
+    }
+    for(j=0;j<3;j++)
+    {
+      lua_rawgeti(L, -1, j+1);
+      A.rUnitCell[i][j]=(double)luaL_checknumber(L, -1);
+      lua_pop(L,1);
+    }
+    lua_pop(L, 1);
+  }
+  len = (uint32_t)lua_gettop(L);
+  for(j=0;j<3;j++)
+  {
+    lua_rawgeti(L, 3, j+1);
+    c[j]=(double)luaL_checknumber(L, -1);
+    lua_pop(L,1);
+  }
+  r=(double)luaL_checknumber(L, 4);
+  if(len==5)
+  {
+    LuaCheckOptions(L, 5, LuaFindAllAtomsInsideSphereOptions);
+  }
+  if(strcmp(Units, "Absolute")==0) A.Units&=~8;
+  if(strcmp(Units, "Relative")==0) A.Units|=8;
+  FindAllAtomsInsideSphere(&A, c, r, &B);
+  lua_createtable(L, B.NAtoms, 0);
+  for(i=0;i<B.NAtoms;i++)
+  {
+    LuaPushAtom(L, &(B.Atom[i]));
+    lua_rawseti(L, -2, i+1);
+  }
+  FreeCrystalStructureType(&A);
+  FreeCrystalStructureType(&B);
+  return 1;
+}
+
 
 /*
  * reads a atom definition from the Lua stack

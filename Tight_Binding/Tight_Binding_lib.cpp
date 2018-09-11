@@ -71,6 +71,32 @@ int FreeTightBindingDef(TightBindingDef * A)
   return 0;
 }
 
+int CopyAtomType(const AtomType *const A, AtomType *B)
+{
+  int ishell,iorb;
+  strcpy(B->Name, A->Name);
+  B->AtomNumber=A->AtomNumber;
+  B->Position[0]=A->Position[0];
+  B->Position[1]=A->Position[1];
+  B->Position[2]=A->Position[2];
+  B->Nshell=A->Nshell;
+  B->ShellName=(char**)malloc(A->Nshell*sizeof(char*));
+  B->shelldegeneracy=(int*)malloc(A->Nshell*sizeof(int));
+  B->OrbitalName=(char***)malloc(A->Nshell*sizeof(char**));
+  for(ishell=0;ishell<B->Nshell;ishell++)
+  {
+    B->ShellName[ishell]=(char*)malloc((strlen(A->ShellName[ishell])+1)*sizeof(char));
+    strcpy(B->ShellName[ishell], A->ShellName[ishell]);
+    B->shelldegeneracy[ishell]=A->shelldegeneracy[ishell];
+    B->OrbitalName[ishell]=(char**)malloc(B->shelldegeneracy[ishell]*sizeof(char*));
+    for(iorb=0;iorb<B->shelldegeneracy[ishell];iorb++)
+    {
+      B->OrbitalName[ishell][iorb]=(char*)malloc((strlen(A->OrbitalName[ishell][iorb])+1)*sizeof(char));
+      strcpy(B->OrbitalName[ishell][iorb], A->OrbitalName[ishell][iorb]);
+    }
+  }
+  return 0;
+}
 
 
 
@@ -2015,6 +2041,177 @@ int TightBindingAddAxesToMatrix(double Emin, double Emax, int NELines, double *E
       for (i = 0; i < RGBValue->Ni; i++)
       {
         RGBValue->VRe[i][j] += 0.5;
+      }
+    }
+  }
+  return 0;
+}
+
+
+/*  Given a crystal structure A, a center c and a radius r
+ *  Finds all atoms i in A for which
+ *  |p_i - c| < r
+ *  here i can belong to different cells, i.e.
+ *  p_{i,j} = p0_j + alpha_i . A->Cell
+ *  where j enumerates the atoms within a unit cell and i enumerates the different cells
+ *
+ *
+ */
+int FindAllAtomsInsideSphere(const CrystalStructureType * const A, double *c, double r, CrystalStructureType *B)
+{
+  int Na,Nb,Nc,Na0,Nb0,Nc0,ia,ib,ic,iatom;
+  double V,O[3],rSqr=Sqr(r),CellPos[3],AtomPos[3];
+  // determine the number of unit cells one needs to test and the center around one needs to test
+  if(Norm(A->rUnitCell[0])==INFINITY)
+  {
+    Na=0;
+    Na0=0;
+    if(Norm(A->rUnitCell[1])==INFINITY)
+    {
+      Nb=0;
+      Nb0=0;
+      if(Norm(A->rUnitCell[2])==INFINITY)
+      { // a, b and c inf
+        Nc=0;
+        Nc0=0;
+      }
+      else
+      { // a and b inf c finite
+        Nc=(int)floor(fabs(r/Norm(A->rUnitCell[2])))+1;
+        Nc0=(int)round(Dot(c,A->rUnitCell[2])/Norm(A->rUnitCell[2]));
+      }
+    }
+    else
+    { // a inf b finite
+      if(Norm(A->rUnitCell[2])==INFINITY)
+      { //a and c inf b finite
+        Nc=0;
+        Nc0=0;
+        Nb=(int)floor(fabs(r/Norm(A->rUnitCell[1])))+1;
+        Nb0=(int)round(Dot(c,A->rUnitCell[1])/Norm(A->rUnitCell[1]));
+      }
+      else
+      { // a inf b and c finite
+        V=Dot(A->rUnitCell[1],A->rUnitCell[2]);
+        Nb=(int)(floor(fabs(r*Norm(A->rUnitCell[2])/V))+1);
+        Nc=(int)(floor(fabs(r*Norm(A->rUnitCell[1])/V))+1);
+        V=A->rUnitCell[1][1]*A->rUnitCell[2][2]-A->rUnitCell[1][2]*A->rUnitCell[2][1];
+        Nb0=(int)round((c[1]*A->rUnitCell[2][2]-c[2]*A->rUnitCell[2][1])/V);
+        Nc0=(int)round((c[2]*A->rUnitCell[1][1]-c[1]*A->rUnitCell[1][2])/V);
+      }
+    }
+  }
+  else
+  { // a finite
+    if(Norm(A->rUnitCell[1])==INFINITY)
+    { // b inf a finite
+      Nb=0;
+      Nb0=0;
+      if(Norm(A->rUnitCell[2])==INFINITY)
+      { // b and c inf a finite
+        Nc=0;
+        Nc0=0;
+        Na=(int)floor(fabs(r/Norm(A->rUnitCell[0])))+1;
+        Na0=(int)round(Dot(c,A->rUnitCell[0])/Norm(A->rUnitCell[0]));
+      }
+      else
+      { // b inf a and c finite
+        V=Dot(A->rUnitCell[0],A->rUnitCell[2]);
+        Na=(int)(floor(fabs(r*Norm(A->rUnitCell[2])/V))+1);
+        Nc=(int)(floor(fabs(r*Norm(A->rUnitCell[0])/V))+1);
+        V=A->rUnitCell[2][2]*A->rUnitCell[0][0]-A->rUnitCell[2][0]*A->rUnitCell[0][2];
+        Nc0=(int)round((c[2]*A->rUnitCell[0][0]-c[0]*A->rUnitCell[0][2])/V);
+        Na0=(int)round((c[0]*A->rUnitCell[2][2]-c[2]*A->rUnitCell[2][0])/V);
+      }
+    }
+    else
+    { // a and b finite
+      if(Norm(A->rUnitCell[2])==INFINITY)
+      { // c inf a and b finite
+        Nc=0;
+        Nc0=0;
+        V=Dot(A->rUnitCell[0],A->rUnitCell[1]);
+        Na=(int)(floor(fabs(r*Norm(A->rUnitCell[1])/V))+1);
+        Nb=(int)(floor(fabs(r*Norm(A->rUnitCell[0])/V))+1);
+        V=A->rUnitCell[0][0]*A->rUnitCell[1][1]-A->rUnitCell[0][1]*A->rUnitCell[1][0];
+        Na0=(int)round((c[0]*A->rUnitCell[1][1]-c[1]*A->rUnitCell[1][0])/V);
+        Nb0=(int)round((c[1]*A->rUnitCell[0][0]-c[0]*A->rUnitCell[0][1])/V);
+      }
+      else
+      { // a, b and c finite
+        V=ParallelalPipedVolume(A->rUnitCell[0], A->rUnitCell[1], A->rUnitCell[2]);
+        Cross(A->rUnitCell[1], A->rUnitCell[2], O);
+        Na=(int)floor(fabs(r*Norm(O)/V))+1;
+        Na0=(int)round(Dot(c,O)/V);
+        Cross(A->rUnitCell[2], A->rUnitCell[0], O);
+        Nb=(int)floor(fabs(r*Norm(O)/V))+1;
+        Nb0=(int)round(Dot(c,O)/V);
+        Cross(A->rUnitCell[0], A->rUnitCell[1], O);
+        Nc=(int)floor(fabs(r*Norm(O)/V))+1;
+        Nc0=(int)round(Dot(c,O)/V);
+      }
+    }
+  }
+  // set unit cells for open cluster
+  B->rUnitCell[0][0]=INFINITY; B->rUnitCell[0][1]=0; B->rUnitCell[0][2]=0;
+  B->rUnitCell[1][0]=0; B->rUnitCell[1][1]=INFINITY; B->rUnitCell[1][2]=0;
+  B->rUnitCell[2][0]=0; B->rUnitCell[2][1]=0; B->rUnitCell[2][2]=INFINITY;
+  B->gUnitCell[0][0]=0; B->gUnitCell[0][1]=0; B->gUnitCell[0][2]=0;
+  B->gUnitCell[1][0]=0; B->gUnitCell[1][1]=0; B->gUnitCell[1][2]=0;
+  B->gUnitCell[2][0]=0; B->gUnitCell[2][1]=0; B->gUnitCell[2][2]=0;
+  B->Units=A->Units;
+  B->NAtoms=0;
+  B->Atom=(AtomType*)malloc(64*sizeof(AtomType));
+  
+  printf("%d %d %d\n %d %d %d\n",Na0,Nb0,Nc0,Na,Nb,Nc);
+  
+  for(ia=Na0-Na;ia<=Na0+Na;ia++)
+  {
+    for(ib=Nb0-Nb;ib<=Nb0+Nb;ib++)
+    {
+      for(ic=Nc0-Nc;ic<=Nc0+Nc;ic++)
+      {
+        CellPos[0] = ((ia==0)?0:ia*A->rUnitCell[0][0]) + ((ib==0)?0:ib*A->rUnitCell[1][0]) + ((ic==0)?0:ic*A->rUnitCell[2][0]);
+        CellPos[1] = ((ia==0)?0:ia*A->rUnitCell[0][1]) + ((ib==0)?0:ib*A->rUnitCell[1][1]) + ((ic==0)?0:ic*A->rUnitCell[2][1]);
+        CellPos[2] = ((ia==0)?0:ia*A->rUnitCell[0][2]) + ((ib==0)?0:ib*A->rUnitCell[1][2]) + ((ic==0)?0:ic*A->rUnitCell[2][2]);
+        for(iatom=0;iatom<A->NAtoms;iatom++)
+        {
+          if((A->Units&8)==0)
+          {
+            AtomPos[0]=CellPos[0]-c[0]+A->Atom[iatom].Position[0];
+            AtomPos[1]=CellPos[1]-c[1]+A->Atom[iatom].Position[1];
+            AtomPos[2]=CellPos[2]-c[2]+A->Atom[iatom].Position[2];
+          }
+          else
+          {
+            AtomPos[0]=CellPos[0]-c[0] + ((A->Atom[iatom].Position[0]==0)?0:A->Atom[iatom].Position[0]*A->rUnitCell[0][0]) + ((A->Atom[iatom].Position[1]==0)?0:A->Atom[iatom].Position[1]*A->rUnitCell[1][0]) + ((A->Atom[iatom].Position[2]==0)?0:A->Atom[iatom].Position[2]*A->rUnitCell[2][0]);
+            AtomPos[1]=CellPos[1]-c[1] + ((A->Atom[iatom].Position[0]==0)?0:A->Atom[iatom].Position[0]*A->rUnitCell[0][1]) + ((A->Atom[iatom].Position[1]==0)?0:A->Atom[iatom].Position[1]*A->rUnitCell[1][1]) + ((A->Atom[iatom].Position[2]==0)?0:A->Atom[iatom].Position[2]*A->rUnitCell[2][1]);
+            AtomPos[2]=CellPos[2]-c[2] + ((A->Atom[iatom].Position[0]==0)?0:A->Atom[iatom].Position[0]*A->rUnitCell[0][2]) + ((A->Atom[iatom].Position[1]==0)?0:A->Atom[iatom].Position[1]*A->rUnitCell[1][2]) + ((A->Atom[iatom].Position[2]==0)?0:A->Atom[iatom].Position[2]*A->rUnitCell[2][2]);
+          }
+          if(Dot(AtomPos,AtomPos)<rSqr)
+          {
+            B->NAtoms++;
+            if((B->NAtoms&63)==0) B->Atom=(AtomType*)realloc(B->Atom,(B->NAtoms+64)*sizeof(AtomType));
+            CopyAtomType(&(A->Atom[iatom]), &(B->Atom[B->NAtoms-1]));
+            /*
+            if((A->Units&8)==0)
+            {
+              AtomPos[0]=CellPos[0]+A->Atom[iatom].Position[0];
+              AtomPos[1]=CellPos[1]+A->Atom[iatom].Position[1];
+              AtomPos[2]=CellPos[2]+A->Atom[iatom].Position[2];
+            }
+            else
+            {
+              AtomPos[0]=CellPos[0] + ((A->Atom[iatom].Position[0]==0)?0:A->Atom[iatom].Position[0]*A->rUnitCell[0][0]) + ((A->Atom[iatom].Position[1]==0)?0:A->Atom[iatom].Position[1]*A->rUnitCell[1][0]) + ((A->Atom[iatom].Position[2]==0)?0:A->Atom[iatom].Position[2]*A->rUnitCell[2][0]);
+              AtomPos[1]=CellPos[1] + ((A->Atom[iatom].Position[0]==0)?0:A->Atom[iatom].Position[0]*A->rUnitCell[0][1]) + ((A->Atom[iatom].Position[1]==0)?0:A->Atom[iatom].Position[1]*A->rUnitCell[1][1]) + ((A->Atom[iatom].Position[2]==0)?0:A->Atom[iatom].Position[2]*A->rUnitCell[2][1]);
+              AtomPos[2]=CellPos[2] + ((A->Atom[iatom].Position[0]==0)?0:A->Atom[iatom].Position[0]*A->rUnitCell[0][2]) + ((A->Atom[iatom].Position[1]==0)?0:A->Atom[iatom].Position[1]*A->rUnitCell[1][2]) + ((A->Atom[iatom].Position[2]==0)?0:A->Atom[iatom].Position[2]*A->rUnitCell[2][2]);
+            }
+             */
+            B->Atom[B->NAtoms-1].Position[0]=AtomPos[0];
+            B->Atom[B->NAtoms-1].Position[1]=AtomPos[1];
+            B->Atom[B->NAtoms-1].Position[2]=AtomPos[2];
+          }
+        }
       }
     }
   }
