@@ -7,6 +7,7 @@
 #define Sgn(x) ((x > 0) ? 1 : ((x < 0) ? -1 : 0))
 #define Cubed(a) ((a)*(a)*(a))
 #define Dot(a,b) ((a[0])*(b[0])+(a[1])*(b[1])+(a[2])*(b[2]))
+#define Norm(a) (sqrt((a[0])*(a[0])+(a[1])*(a[1])+(a[2])*(a[2])))
 #define Crossx(a,b) ((a[1])*(b[2])-(b[1])*(a[2]))
 #define Crossy(a,b) ((a[2])*(b[0])-(b[2])*(a[0]))
 #define Crossz(a,b) ((a[0])*(b[1])-(b[0])*(a[1]))
@@ -44,6 +45,9 @@
 #include "BasicMath_GreenFunctionArithmetic.cpp"
 #include "BasicMath_InterpolatingFunction.cpp"
 #include "BasicMath_Spline.cpp"
+
+#include "Interpolation/CubicSpline.cpp"
+#include "Interpolation/InterpolatingFunction.cpp"
 
 /*
  *   x^a with both x and a integers
@@ -89,7 +93,14 @@ double ParallelalPipedVolume(const double x[], const double y[], const double z[
   return Dot(z, t);
 }
 
-
+/*
+ *
+ */
+double Chop(const double x, const double epsilon)
+{
+  if(fabs(x)<epsilon) return 0;
+  return x;
+}
 
 void Swap(double *const a, double *const b)
 {

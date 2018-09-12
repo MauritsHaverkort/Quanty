@@ -288,13 +288,13 @@ vector<vector<double> > CreateDualFunctions(const unsigned int NBasisFuns, const
 
 vector<double> CalcMetric(vector<vector<double> > basisfuns, vector<vector<double> > funs2, vector<double> x)
 {
-	int dim1, dim2,i,j,n;
+	unsigned int dim1, dim2,i,j,n;
 	unsigned int eins = 1;
-	n = 2* x.size();
-	dim1 = basisfuns.size();
-	dim2 = funs2.size();
+	n = 2* (int) x.size();
+	dim1 = (unsigned int) basisfuns.size();
+	dim2 = (unsigned int) funs2.size();
 	vector<double> g = vector<double>(dim1*dim2);
-	vector<vector<double> > dualfuns = CreateDualFunctions(dim2,x.size(),funs2,x);
+	vector<vector<double> > dualfuns = CreateDualFunctions(dim2,(unsigned int) x.size(),funs2,x);
 
 	double y;
 

@@ -5,8 +5,8 @@
  *      Author: brass
  */
 
-#ifndef ATOMICU_ATOMICU_H_
-#define ATOMICU_ATOMICU_H_
+#ifndef ATOMICOPERATORS_ATOMICU_H_
+#define ATOMICOPERATORS_ATOMICU_H_
 
 static int LuaOperatorNewAtomicU (lua_State *L);
 
@@ -17,12 +17,8 @@ void CreateOperatorAtomicURelativisticOneIntegral(uint32_t const NFermion,int co
                                                   uint16_t const *Jindex2,uint16_t const *Jindex3, uint16_t const *Jindex4,double const *Fk, const unsigned int n1,
 												  const unsigned int n2, const unsigned int n3, const unsigned int n4, OperatorType *const op);
 
-vector<double> ConvertArray(double *a, const int n);
-
-vector<int> ConvertArray(uint16_t *a, const int n);
-
-vector<vector<double> > PutRelativisticSplineOnGrid(vector<InterpolatingFunctionType *> funsG, vector<InterpolatingFunctionType *> funsF, uint32_t NGridPoints);
 
 
 
-#endif /* ATOMICU_ATOMICU_H_ */
+
+#endif /* ATOMICOPERATORS_ATOMICU_H_ */

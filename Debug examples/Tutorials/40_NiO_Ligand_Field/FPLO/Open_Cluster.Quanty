@@ -14,7 +14,15 @@ print(TB.Units)
 print(TB.Cell)
 print(TB.Atoms)
 
+NewCluster = FindAllAtomsInsideSphere(TB.Atoms,TB.Cell,{0,0,0},4)
+
+print("===============\n===============\n")
+
+print(Chop(NewCluster,1E-12))
+
+
 Hamiltonian, ClusterTB, IndexName = CreateClusterHamiltonian(TB, {"open", { {"Ni",{0,0,0}}, {"O",{3.9476379,0,0}}, {"O",{-3.9476379,0,0}}, {"O",{0,3.9476379,0}}, {"O",{0,-3.9476379,0}}, {"O",{0,0,3.9476379}}, {"O",{0,0,-3.9476379}}}},  {{"AddSpin",true}, {"ReturnTBIndicesDict",true}})
+Hamiltonian, ClusterTB, IndexName = CreateClusterHamiltonian(TB, {"open", NewCluster},  {{"AddSpin",true}, {"ReturnTBIndicesDict",true}})
 
 print("blabla")
 
@@ -86,3 +94,6 @@ print(RHamiltonian)
 print("blabla3")
 
 print(RIndexName)
+
+
+print(TB.Atoms)

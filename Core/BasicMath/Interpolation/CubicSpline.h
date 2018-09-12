@@ -8,8 +8,6 @@
 #ifndef CUBICSPLINE_H_
 #define CUBICSPLINE_H_
 
-#include "InterpolatingFunction.h"
-
 namespace Interpolation {
 
 class CubicSpline: public InterpolatingFunction {
@@ -19,6 +17,8 @@ public:
 	CubicSpline();
 	CubicSpline(std::vector<double> u, std::vector<double> v);
 	virtual ~CubicSpline();
+
+	void Create(std::vector<double>, std::vector<double>);
 
 	double operator()(double t);
 	double operator()(double t, unsigned int k);

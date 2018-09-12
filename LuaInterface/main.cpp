@@ -6,17 +6,17 @@
 #include "../Core/Core.cpp"
 #include "../IO/IO.cpp"
 #include "../Tight_Binding/Tight_Binding.cpp"
+#include "../AtomicOperators/AtomicAux.cpp"
 
 // Include files that should be reoredered into the main libraries
 #include "../Model/StandardOperators.cpp"
 #include "../Hubbard_Model/CellFunctions.cpp"
 #include "../DMFT/SingleSiteFunctions.cpp"
-#include "../AtomicU/AtomicU.cpp"
-
-// Include personal functions that are under development and candidates for inclusion in the main program
 #include "../Yi/functions_yi.cpp"
 #include "../Martin/functions_martin.cpp"
 #include "../Simon/functions_simon.cpp"
+
+
 
 // Include the Lua interface
 #include "lua/includeLua.c"
@@ -26,7 +26,7 @@ static void *currentudata = NULL;
 #include "lua_extensions/get_put.cpp"
 #include "units.cpp"
 #include "Complex.cpp"
-#include "Interpolate.cpp"
+#include "Interpolate.cpp" // Interpolation using Polymorphism
 #include "Operator.cpp"
 #include "Wavefunction.cpp"
 #include "Spectra.cpp"

@@ -56,7 +56,7 @@ double WaveFunFreeParticleF(double x, int kappa, double q)
 
 vector<double> GetEigenDiffOnGrid(vector<double> x, int kappa, double q1, double q2)
 {
-	int NGridPoints = x.size();
+	int NGridPoints = (int) x.size();
 	vector<double> eigendiff = vector<double>(2*NGridPoints);
 	for (int i = 0; i < NGridPoints; i++)
 	{

@@ -356,8 +356,8 @@ double* CreateBaseForContinuum( int NBasisFuns,double **basisfuns,double **deriv
 
 }
 
-double *CreateBaseForContinuum( int NBasisFuns, vector<vector<double> > basisfuns,vector<vector<double> > derivfuns,vector<double> x,
-		uint32_t NGridpoints,SKappaGroup group,int Ncont, vector<vector<double> > &contfuns, double w)
+double *CreateBaseForContinuum( uint32_t NBasisFuns, vector<vector<double> > basisfuns,vector<vector<double> > derivfuns,vector<double> x,
+		uint32_t NGridpoints,SKappaGroup group, uint32_t Ncont, vector<vector<double> > &contfuns, double w)
 {
 	int l,k,dim,info;
 
@@ -489,11 +489,12 @@ uint32_t CreateOperatorSingleCoulombRelativistic(uint32_t const NFermion,double 
     integrals = GetSlaterIntegrals(basisfuns,NbasisFuns,grid, NGridpoints, (const int **) tuple, NIntegrals);
     int index = GetIndexMaxSlaterIntegral(integrals,NIntegrals);
     double cutoff = Abs(integrals[index].val[0])/5.;
-    printf("int = %e\n",integrals[index].val[0]);
-    printf("int = %e\n",integrals[30].val[0]);
-    printf("ind = %d\n",index);
+    //printf("int = %e\n",integrals[index].val[0]);
+    //printf("int = %e\n",integrals[30].val[0]);
+    //printf("ind = %d\n",index);
     vector<int> indexes = GetMaxSlaterIntegrals(integrals,NIntegrals,cutoff);
-    printf("NIntegrals %d\t%d\n",NIntegrals,indexes.size());
+
+    //printf("NIntegrals %d\t%d\n",NIntegrals,indexes.size());
 
     int *k, i;
     unsigned int *n;

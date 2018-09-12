@@ -1,0 +1,187 @@
+/*
+ * AtomicAux.cpp
+ *
+ *  Created on: Sep 10, 2018
+ *      Author: brass
+ */
+
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <vector>
+#include <stdlib.h>
+#include <map>
+
+#include "SlaterTuple.cpp"
+#include "SlaterIntegrals.cpp"
+#include "AtomicU.cpp"
+#include "AtomicDirac.cpp"
+
+using std::vector;
+using std::string;
+using std::ifstream;
+using std::map;
+
+vector<double> ConvertArray(double *a, const int n)
+{
+	vector<double> res = vector<double>(n);
+	for (int i = 0; i < n; i++)
+	{
+		res[i] = a[i];
+	}
+	return res;
+}
+
+vector<vector<double> > PutRelativisticSplineOnGrid(vector<Interpolation::InterpolatingFunction *> funsG, vector<Interpolation::InterpolatingFunction *> funsF, vector<double> x,unsigned int k)
+{
+	vector<vector<double> > funsCombined = vector<vector<double> >(funsG.size());
+	unsigned int NGridPoints = (unsigned int) x.size();
+	for (uint32_t i = 0; i < funsG.size(); i++)
+	{
+		funsCombined[i] = vector<double>(2*NGridPoints);
+		for (uint32_t j = 0; j < NGridPoints; j++)
+		{
+			funsCombined[i][j            ] = (*funsG[i])(x[j],k);
+			funsCombined[i][j+NGridPoints] = (*funsF[i])(x[j],k);
+		}
+	}
+	return funsCombined;
+
+}
+
+vector<int> ConvertArray(uint16_t *a, const int n)
+{
+	vector<int> res = vector<int>(n);
+	for (int i = 0; i < n; i++)
+	{
+		res[i] = (short) a[i];
+	}
+	return res;
+}
+
+vector<double> ReadBasisfunction(ifstream &file, vector<double> &x)
+{
+	double val;
+	vector<double> y;
+	string word;
+
+	file >> word;
+	while (word != "#")
+	{
+		val = atof(word.c_str());
+		if(x.size() == y.size())
+			x.push_back(val);
+		file >> word;
+		val = atof(word.c_str());
+		y.push_back(val);
+		file >> word;
+	}
+	while ((word != "<start") && !(file.eof()))
+		file >> word;
+	return y;
+}
+
+string GetOrbitalName(ifstream &file)
+{
+	string word, name;
+	while ( file >> word)
+	{
+		if (word == "function")
+		{
+			file >> word;
+			file >> word;
+			file >> word;
+			file >> name;
+			file >> word;
+			name.append(word);
+			name.erase(name.length()-1);
+			return name;
+		}
+	}
+	return "";
+}
+
+static int LuaReadFPLOBasisFunctions(lua_State *L)
+{
+	ifstream file1,file2;
+
+	const char *name1 = luaL_checkstring(L,1);
+	const char *name2 = luaL_checkstring(L,2);
+	unsigned int Norbitals;
+	char** orbitalNames = luaL_checkarray_string(L, 3, &Norbitals); //TODO free
+	file1.open(name1);
+	file2.open(name2);
+	string line, word, name;
+	vector<string> orbitals;
+	vector<double> x, y1,y2;
+	std::map<string,vector<double> > funsG, funsF;
+	vector<Interpolation::CubicSpline*> splinesG, splinesF;
+
+	// Read raw data
+	while (!file1.eof())
+	{
+		name = GetOrbitalName(file1);
+		GetOrbitalName(file2);
+		y1 = ReadBasisfunction(file1,x);
+		y2 = ReadBasisfunction(file2,x);
+
+		funsG[name] = y1;
+		funsF[name] = y2;
+	}
+	file1.close();
+	file2.close();
+
+	splinesG = vector<Interpolation::CubicSpline*>(Norbitals);
+	splinesF = vector<Interpolation::CubicSpline*>(Norbitals);
+
+	// Push large part on stack
+	lua_createtable(L,0,Norbitals);
+	for (uint32_t i = 0; i < Norbitals; i++)
+	{
+		string charTostring(orbitalNames[i]);
+		if (funsG.find(charTostring) != funsG.end())
+		{
+			void* memory = lua_newuserdata(L, sizeof(Interpolation::CubicSpline));
+			splinesG[i] = new(memory) Interpolation::CubicSpline(x,funsG[charTostring]);
+			luaL_setmetatable(L, "InterpolatingFunction_Type");
+			lua_rawseti(L,-2,i+1);
+		}
+		else
+		{
+			printf("LuaReadFPLOBasis: Couldn't find ");
+			printf("%s\n", orbitalNames[i]);
+			fflush(stdout);
+		}
+
+	}
+	// Push small part on stack
+	lua_createtable(L,0,Norbitals);
+	for (uint32_t i = 0; i < Norbitals; i++)
+	{
+		string charTostring(orbitalNames[i]);
+		if (funsF.find(charTostring) != funsF.end())
+		{
+			void* memory = lua_newuserdata(L, sizeof(Interpolation::CubicSpline));
+			splinesF[i] = new(memory) Interpolation::CubicSpline(x,funsF[charTostring]);
+			luaL_setmetatable(L, "InterpolatingFunction_Type");
+			lua_rawseti(L,-2,i+1);
+		}
+		else
+		{
+			printf("LuaReadFPLOBasis: Couldn't find ");
+			printf("%s\n", orbitalNames[i]);
+			fflush(stdout);
+		}
+
+	}
+/*	for( int i = 0; i < Norbitals; i++)
+	{
+		free(orbitalNames[i]);
+	}
+	free(orbitalNames);*/
+
+	return 2;
+}
+
+

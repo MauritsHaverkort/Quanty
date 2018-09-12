@@ -19,7 +19,12 @@ protected:
 public:
 	InterpolatingFunction();
 	virtual ~InterpolatingFunction();
-	InterpolatingFunction(std::vector<double>, std::vector<double>);
+	InterpolatingFunction(std::vector<double> u, std::vector<double> v);
+
+	std::vector<double> GetX();
+	std::vector<double> GetY();
+
+	virtual void Create(std::vector<double> u, std::vector<double> v);
 
 	virtual double operator()(double t);
 	virtual double operator()(double t, unsigned int k);
