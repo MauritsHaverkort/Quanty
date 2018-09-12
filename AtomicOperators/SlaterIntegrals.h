@@ -15,6 +15,9 @@ void CalculateSlaterIntegrals(const int NIntegrals, SSlaterIntegral *integrals, 
 void CalculateSlaterIntegrals(const int NIntegrals, SSlaterIntegral *integrals, const int dim,
                               double **kernels, vector<vector<double> > basisfuns, vector<vector<double> > dualfuns);
 
+void CalculateSlaterIntegrals(const int NIntegrals, SSlaterIntegral *integrals, uint32_t dim,
+                              vector<vector<double> >kernels, vector<vector<double> > basisfuns, vector<vector<double> > dualfuns);
+
 void vecMul(const int n, const double *f, const double *g, double *fout);
 
 double SlaterIntegral(const int n, const double *f1, const double *f2, const double *f3,
@@ -44,6 +47,10 @@ SSlaterIntegral *InitializeIntegrals(const int **tupel, unsigned int NIntegrals,
 SSlaterIntegral *InitializeIntegrals(vector<int> indToK, unsigned int &NIntegrals, unsigned int *kMax);
 
 unsigned int *GetK(const int *kappa, int *n);
+
+vector<double> GetNonRelKernel(vector<double> x, const uint32_t k);
+
+vector<vector<double> > CreateAllKernels(const unsigned int kMax, vector<double> x);
 
 int Sign(const int x);
 

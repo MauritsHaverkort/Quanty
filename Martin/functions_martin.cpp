@@ -8,7 +8,6 @@
 
 #include "CreateOperators.cpp"
 
-#include "GaussQuadrature.cpp"
 
 static int LuaOperatorNewFullCoulomb (lua_State *L)
 {
@@ -461,14 +460,23 @@ static int LuaMartinTest(lua_State *L)
 		funsF[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
 		lua_pop(L,1);
 	}
+
+	uint32_t k = 3;
 	vector<double> x = funsG[0]->GetX();
-	vector<double> knots = GaussQuad::GetKnots(3,x);
-	vector<double> val = (*funsG[0])(knots);
-	cout << "n  " << val.size() << endl;
-	for (int i = 0; i < 10; i++)
+	vector<double> knots = GaussQuad::GetKnots(k,x);
+	vector<double> g = (*funsG[0])(knots);
+	vector<double> f = (*funsF[0])(knots);
+	vector<double> w = GaussQuad::GetWeights(k,x);
+	vector<double> dg = w * g;
+	vector<double> df = w * f;
+	double res = 0;
+	for (uint32_t i = 0; i < g.size(); i++)
 	{
-		cout << val[i] << endl;
+		res += df[i]*f[i] +dg[i]*g[i];
+
 	}
+	printf("%.8E\n",res);
+
 	return 0;
 }
 

@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <map>
 
+#include "GaussQuadrature.cpp"
 #include "SlaterTuple.cpp"
 #include "SlaterIntegrals.cpp"
 #include "AtomicU.cpp"
@@ -197,6 +198,22 @@ vector<double> luaL_checkarray_double(lua_State *L, int narg)
     lua_pop(L, 1);
   }
   return buff;
+}
+
+vector<double> operator*(vector<double> a, vector<double> b)
+{
+	unsigned long n = a.size();
+	if (n != b.size())
+	{
+		printf("error in operator*(vector,vector) : vectors of unequal length\n");
+		fflush(stdout);
+	}
+	vector<double> c = vector<double>(n);
+	for(unsigned long i = 0; i < n; i++)
+	{
+		c[i] = a[i]*b[i];
+	}
+	return c;
 }
 
 
