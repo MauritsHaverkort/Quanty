@@ -4165,18 +4165,17 @@ static int LuaDeterminantString(lua_State *L)
 	vector<uint16_t> indices;
 	uint32_t len = (uint32_t)lua_gettop(L);
 	if (len < 2 || len > 2)
-		return luaL_error(L, "DeterminantString called with %d arguments. List of Indices and Number of Fermions expected.\n",len);
-	indices = luaL_checkvector_unit16_t(L,1);
-	NF = luaL_checknumber(L,2);
-	uint16_t i;
-	for (i=0;i<indices.size();i++)
+		return luaL_error(L, "DeterminantString called with %d arguments. Number of Fermions and List of Indices expected.\n",len);
+	NF = (int)luaL_checkinteger(L,1);
+	indices = luaL_checkvector_unit16_t(L,2);
+	for (uint16_t i=0;i<indices.size();i++)
 	{
 		if (indices[i]<0 || indices[i]>=NF)
 			printf("\nWarning: Index %d is not within [0,NF-1]=[0,%d].\n", indices[i], NF-1);
 	}
 	char det[NF+1];
 	det[NF] = '\0';
-	for (i=0;i<NF;i++)
+	for (uint16_t i=0;i<NF;i++)
 	{
 		if (isIntElementOf(i,indices))
 		{
