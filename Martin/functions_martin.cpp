@@ -8,7 +8,7 @@
 
 #include "CreateOperators.cpp"
 
-
+#include "GaussQuadrature.cpp"
 
 static int LuaOperatorNewFullCoulomb (lua_State *L)
 {
@@ -444,7 +444,82 @@ static int LuaMetricWaveFuns(lua_State *L)
 	return 1;
 }
 
-static int LuaPropagator(lua_State *L)
+static int LuaMartinTest(lua_State *L)
+{
+	uint32_t NfunsG = (uint32_t)lua_objlen(L,1);
+	vector<Interpolation::InterpolatingFunction *> funsG = vector<Interpolation::InterpolatingFunction *>(NfunsG);
+	for(uint32_t i = 0; i < NfunsG; i++)
+	{
+		lua_rawgeti(L, 1, i+1);
+		funsG[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
+		lua_pop(L,1);
+	}
+	vector<Interpolation::InterpolatingFunction *> funsF = vector<Interpolation::InterpolatingFunction *>(NfunsG);
+	for(uint32_t i = 0; i < NfunsG; i++)
+	{
+		lua_rawgeti(L, 2, i+1);
+		funsF[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
+		lua_pop(L,1);
+	}
+	vector<double> x = funsG[0]->GetX();
+	vector<double> knots = GaussQuad::GetKnots(3,x);
+	vector<double> val = (*funsG[0])(knots);
+	cout << "n  " << val.size() << endl;
+	for (int i = 0; i < 10; i++)
+	{
+		cout << val[i] << endl;
+	}
+	return 0;
+}
+
+static const struct luaL_Reg Martin_meta[] = {
+  {NULL, NULL}
+};
+
+/*
+ * Martin.NewCoulomb(NF, basisfuns,x,tuple,indices,...)
+ * 	creates all Coulomb terms specified by tupel and calculates
+ * 	the needed Slater integrals for the basisfuns on grid x,
+ *
+ * 		NF: number of fermionic modes
+ * 		x: list of points on which the radial wave functions are defined
+ *
+ * 		basisfuns: list of radial wave functions on x (let N be the number of points)
+ * 		basisfuns = { {G1(x0),...,G1(xN),F1(x0),...,F1(xN)},
+ * 					  {G2(x0),...,G2(xN),F2(x0),...,F2(xN)}, ...}
+ * 				where G (F) stands for the large (small) spinor component
+ *
+ * 		indices: indices of the mj orbitals corresponding to the basisfuns
+ * 		indices = { {m1(m=-j),...,m1(m=+j)}, {m2(m=-j),...,m2(m=+j)}, ... }
+ * 			where indices[i] corresponds to basisfuns[i]
+ * 		tuple: list of 4-tuple of quantum numbers for slater integrals to be used
+ * 		tuple = { {n1,k1,n2,k2,n3,k3,n4,k4}, ... }
+ *
+ * 		if a 6th argument "fast" is specified, tuple MUST NOT contain duplicates in
+ * 		the sense that two 4-tuple are equivalent if you can map one onto the other by
+ * 		using any combination of the following permutations: { (1,3), (2,4), (1,2)(3,4) }
+ * 		this assures that Slater integrals with the same value are calculated once only,
+ * 		which leads to an increase in speed.
+ *
+ *
+ *
+ */
+
+static const struct luaL_Reg Martin_func[] = {
+  {"NewCoulomb", LuaOperatorNewFullCoulomb},
+  {"NewDirac", LuaOperatorNewDirac},
+  {"ContinuumBase",LuaCreateBaseForContinuum},
+  {"ReadFPLOBasis",LuaReadFPLOBasis},
+  {"RB",LuaReadFPLOBasisFunctions},
+  {"Test",LuaMartinTest},
+  /*{"Propagator",LuaPropagator},
+  {"Propagator2",LuaPropagator2},*/
+  {"Metric",LuaMetricWaveFuns},
+  {NULL, NULL}
+};
+
+/*
+ * static int LuaPropagator(lua_State *L)
 {
 	uint32_t n0, n1, nU, nE, nv;
 	vector<CompactMatrixType *> U;
@@ -564,48 +639,4 @@ static int LuaPropagator2(lua_State *L)
 	}
 	return 2;
 }
-
-static const struct luaL_Reg Martin_meta[] = {
-  {NULL, NULL}
-};
-
-/*
- * Martin.NewCoulomb(NF, basisfuns,x,tuple,indices,...)
- * 	creates all Coulomb terms specified by tupel and calculates
- * 	the needed Slater integrals for the basisfuns on grid x,
- *
- * 		NF: number of fermionic modes
- * 		x: list of points on which the radial wave functions are defined
- *
- * 		basisfuns: list of radial wave functions on x (let N be the number of points)
- * 		basisfuns = { {G1(x0),...,G1(xN),F1(x0),...,F1(xN)},
- * 					  {G2(x0),...,G2(xN),F2(x0),...,F2(xN)}, ...}
- * 				where G (F) stands for the large (small) spinor component
- *
- * 		indices: indices of the mj orbitals corresponding to the basisfuns
- * 		indices = { {m1(m=-j),...,m1(m=+j)}, {m2(m=-j),...,m2(m=+j)}, ... }
- * 			where indices[i] corresponds to basisfuns[i]
- * 		tuple: list of 4-tuple of quantum numbers for slater integrals to be used
- * 		tuple = { {n1,k1,n2,k2,n3,k3,n4,k4}, ... }
- *
- * 		if a 6th argument "fast" is specified, tuple MUST NOT contain duplicates in
- * 		the sense that two 4-tuple are equivalent if you can map one onto the other by
- * 		using any combination of the following permutations: { (1,3), (2,4), (1,2)(3,4) }
- * 		this assures that Slater integrals with the same value are calculated once only,
- * 		which leads to an increase in speed.
- *
- *
- *
  */
-
-static const struct luaL_Reg Martin_func[] = {
-  {"NewCoulomb", LuaOperatorNewFullCoulomb},
-  {"NewDirac", LuaOperatorNewDirac},
-  {"ContinuumBase",LuaCreateBaseForContinuum},
-  {"ReadFPLOBasis",LuaReadFPLOBasis},
-  {"RB",LuaReadFPLOBasisFunctions},
-  {"Propagator",LuaPropagator},
-  {"Propagator2",LuaPropagator2},
-  {"Metric",LuaMetricWaveFuns},
-  {NULL, NULL}
-};

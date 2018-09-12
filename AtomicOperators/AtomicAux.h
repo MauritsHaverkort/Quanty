@@ -30,4 +30,6 @@ string GetOrbitalName(std::ifstream &file);
 
 static int LuaReadFPLOBasisFunctions(lua_State *L);
 
+std::vector<double> luaL_checkarray_double(lua_State *L, int narg);
+
 #endif /* ATOMICOPERATORS_ATOMICAUX_H_ */
