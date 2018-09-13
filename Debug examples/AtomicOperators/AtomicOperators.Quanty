@@ -12,7 +12,7 @@ Z = 67
 -- Simon's function that generates the quantum number labels
 indices, NF = CreateAtomicIndicesList(orbitalLabels,{{"Kappas",true}})
 -- G is the large, F the small component of the relativistic wavefunction obtained from FPLO
-G, F = ReadFPLOBasisFunctions("+fval.001.1", "+fval.001.2",orbitalLabels)
+G, F = ReadFPLOBasisFunctions(orbitalLabels,"+fval.001.1", "+fval.001.2")
 -- Create Dirac Hamiltonian
 H0 = NewOperator("Dirac",NF,Z,indices,G,F,groupingByKappa)
 -- Create Coulomb operator for all possible interactions between the chosen orbitals
