@@ -2927,7 +2927,7 @@ static int LuaMeanFieldOperator(lua_State *L)
   Rho = (MatrixType *) luaL_checkMatrix(L, 2);
   if((H->NFermion+H->NBoson)!=Rho->Ni)
   {
-    return luaL_error(L, "Error in MeanFieldGroundstate, length of operator (NF %i NB %i) is not equal to length of density matrix (%i)\n",H->NFermion,H->NBoson,Rho->Ni);
+    return luaL_error(L, "Error in MeanFieldGroundstate, length of operator (NF=%d, NB=%d) is not equal to length of density matrix (%d)\n",H->NFermion,H->NBoson,Rho->Ni);
   }
   HMF = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   MeanFieldOperator(H, HMF, *Rho, Options.AddDFTSelfInteraction);
