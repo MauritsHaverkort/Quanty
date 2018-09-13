@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <map>
 
+#include "GaussQuadrature.cpp"
 #include "SlaterTuple.cpp"
 #include "SlaterIntegrals.cpp"
 #include "AtomicU.cpp"
@@ -182,6 +183,37 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
 	free(orbitalNames);*/
 
 	return 2;
+}
+
+vector<double> luaL_checkarray_double(lua_State *L, int narg)
+{
+  luaL_checktype(L, narg, LUA_TTABLE);
+  uint32_t len = (uint32_t)lua_objlen(L, narg);
+
+  vector<double> buff = vector<double>(len);
+  for(int i=0;i<len;i++)
+  {
+    lua_rawgeti(L, narg, i+1);
+    buff[i]=(double)luaL_checknumber(L, -1);
+    lua_pop(L, 1);
+  }
+  return buff;
+}
+
+vector<double> operator*(vector<double> a, vector<double> b)
+{
+	unsigned long n = a.size();
+	if (n != b.size())
+	{
+		printf("error in operator*(vector,vector) : vectors of unequal length\n");
+		fflush(stdout);
+	}
+	vector<double> c = vector<double>(n);
+	for(unsigned long i = 0; i < n; i++)
+	{
+		c[i] = a[i]*b[i];
+	}
+	return c;
 }
 
 

@@ -116,6 +116,38 @@ SSlaterIntegral *GetSlaterIntegrals(vector<vector<double> > basisfuns, vector<do
     return si;
 }
 
+SSlaterIntegral *GetSlaterIntegrals(vector<Interpolation::InterpolatingFunction *> ipolfuns, vector<int> indToK, unsigned int &NIntegrals)
+{
+
+	uint32_t quadDegree = 3;
+	vector<double> x = ipolfuns[0]->GetX();
+	vector<double> knots = GaussQuad::GetKnots(quadDegree,x);
+	uint32_t Nknots = knots.size();
+	uint32_t Nfuns = ipolfuns.size();
+    vector<vector<double> > basisfuns = vector<vector<double> >(Nfuns);
+    vector<vector<double> > dualfuns  = vector<vector<double> >(Nfuns);
+    vector<double> weights = GaussQuad::GetWeights(quadDegree,x);
+    for (uint32_t i = 0; i < Nfuns; i++)
+    {
+    	basisfuns[i] = (*ipolfuns[i])(knots);
+    	dualfuns[i] = weights * basisfuns[i];
+    }
+
+
+	SSlaterIntegral *si;
+	unsigned int kMax;
+	vector<vector<double> > kernels;
+    unsigned int NGridPoints = (unsigned int)x.size();
+
+    si = InitializeIntegrals(indToK, NIntegrals,&kMax);
+
+    kernels = CreateAllKernels(kMax, x);
+
+    CalculateSlaterIntegrals(NIntegrals, si,Nknots,kernels,basisfuns,dualfuns);
+
+    return si;
+}
+
 void CalculateSlaterIntegrals(const int NIntegrals, SSlaterIntegral *integrals, const int dim,
                               double **kernels, double **basisfuns, double **dualfuns)
 {
@@ -166,13 +198,36 @@ void CalculateSlaterIntegrals(const int NIntegrals, SSlaterIntegral *integrals, 
     }
 }
 
+void CalculateSlaterIntegrals(const int NIntegrals, SSlaterIntegral *integrals, uint32_t dim,
+                              vector<vector<double> >kernels, vector<vector<double> > basisfuns, vector<vector<double> > dualfuns)
+{
+
+    int i,j, k;
+    unsigned int *n;
+    double Fk;
+
+    for( i = 0; i < NIntegrals; i++)
+    {
+
+        n = integrals[i].tau.n;
+        for( j = 0; j < integrals[i].Nval; j++)
+        {
+
+            k = integrals[i].k[j];
+            Fk = SlaterIntegral(dim, &(dualfuns[n[0]][0]), &(dualfuns[n[1]][0]),
+                                &(basisfuns[n[2]][0]),&(basisfuns[n[3]][0]),&(kernels[k][0]));
+            integrals[i].val[j] = Fk;
+
+        }
+    }
+}
+
 void vecMul(const int n, const double *f, const double *g, double *fout)
 {
     int i;
 
     for ( i = 0; i < n; i++)
     {
-        //printf("f g i:\t%e\t%e\t%d",f[i],g[i],i);
     	fout[i] = f[i] * g[i];
     }
 }
@@ -185,7 +240,7 @@ double SlaterIntegral(const int n, const double *f1, const double *f2, const dou
   const unsigned int INCXY=1;
   const double beta=0;
   double *f13, *f24, *Mf, result;
-  //printf("f1 f2 f3 f4 M:\t%e\t%e\t%e\t%e\t%e\n",f1[1],f2[2],f3[3],f4[4],Mr1r2[2503]);
+
   f13 = (double *) malloc(n*sizeof(double));
   f24 = (double *) malloc(n*sizeof(double));
   Mf = (double *) malloc(n*sizeof(double));
@@ -193,8 +248,7 @@ double SlaterIntegral(const int n, const double *f1, const double *f2, const dou
     
   vecMul(n, f1, f3, f13);
   vecMul(n, f2, f4, f24);
-  //printf("f13 f24:\t%e\t%e\t n = %d\n",f13[2499],f24[2500],n);
-    
+
   dsymv(&UPLO,(unsigned int *) &n, &alpha, Mr1r2,(unsigned int *) &n, f24, &INCXY, &beta, Mf, &INCXY);
   result = ddot((unsigned int *) &n, f13, &INCXY, Mf, &INCXY);
   
@@ -222,6 +276,21 @@ double ** CreateAllKernels(const unsigned int kMax, const unsigned int NGridPoin
     return kernels;
 }
 
+vector<vector<double> > CreateAllKernels(const unsigned int kMax, vector<double> x)
+{
+    vector<vector<double> > kernels;
+
+    kernels = vector<vector<double> >(kMax+1);
+
+    uint32_t n = x.size();
+
+    for (uint32_t k = 0; k <= kMax; k++ )
+    {
+    	kernels[k] = GetNonRelKernel(x, k);
+    }
+    return kernels;
+}
+
 void CreateKernel(const unsigned int NGridPoints, const double *x, double *kernel, const unsigned int k)
 {
     uint32_t i, j, n;
@@ -242,34 +311,51 @@ void CreateKernel(const unsigned int NGridPoints, const double *x, double *kerne
             {
                 val = pow(x[i],k)/pow(x[j],k+1);
             }
-            //printf("i = %d\tj = %d\n",i,j);
-            //fflush(stdout);
         
             kernel[j+2*n*i] = val;
             kernel[i+2*n*j] = val;
-            
-            //printf("[a] = %d\n",i+2*n*(j+n));
-            //fflush(stdout);
 
             kernel[(j+n)+2*n*i] = val;
             kernel[i+2*n*(j+n)] = val;
             
-            //printf("[b] = %d\n",(i+n)+2*n*j);
-            //fflush(stdout);
-
             kernel[j+2*n*(i+n)] = val;
             kernel[(i+n)+2*n*j] = val;
 
-            //printf("[c] = %d\n",(j+n)+2*n*(i+n));
-            //fflush(stdout);
             kernel[(j+n)+2*n*(i+n)] = val;
-            //printf("[d] = %d\n",(i+n)+2*n*(j+n));
-            //fflush(stdout);
             kernel[(i+n)+2*n*(j+n)] = val;            
         }
     }
     
 }
+
+vector<double> GetNonRelKernel(vector<double> x, const uint32_t k)
+{
+    double val;
+    uint32_t n = x.size();
+    vector<double> kernel = vector<double>(n*n);
+
+    for(uint32_t i = 0; i < n; i++)
+    {
+        for(uint32_t j = i; j < n; j++)
+        {
+            if (i == 0)
+            {
+                val = 0;
+            }
+            else
+            {
+                val = pow(x[i],k)/pow(x[j],k+1);
+            }
+
+            kernel[j+n*i] = val;
+            kernel[i+n*j] = val;
+        }
+    }
+    return kernel;
+
+}
+
+
 
 double *CreateWeights(const unsigned int NGridPoints, const double *x)
 {
@@ -440,7 +526,7 @@ SSlaterIntegral *InitializeIntegrals(vector<int> indToK, unsigned int &NIntegral
     													// TODO i could be larger than NIntegrals ???
     	i++;
     }
-    //printf("i -> %d\t NIntegrals %d\n",i,NIntegrals);
+
     *kMax = 0;
     for( i = 0; i < NIntegrals; i++ )
     {
