@@ -137,11 +137,10 @@ SSlaterIntegral *GetSlaterIntegrals(vector<Interpolation::InterpolatingFunction 
 	SSlaterIntegral *si;
 	unsigned int kMax;
 	vector<vector<double> > kernels;
-    unsigned int NGridPoints = (unsigned int)x.size();
 
     si = InitializeIntegrals(indToK, NIntegrals,&kMax);
 
-    kernels = CreateAllKernels(kMax, x);
+    kernels = CreateAllKernels(kMax, knots);
 
     CalculateSlaterIntegrals(NIntegrals, si,Nknots,kernels,basisfuns,dualfuns);
 
@@ -213,7 +212,7 @@ void CalculateSlaterIntegrals(const int NIntegrals, SSlaterIntegral *integrals, 
         for( j = 0; j < integrals[i].Nval; j++)
         {
 
-            k = integrals[i].k[j];
+        	k = integrals[i].k[j];
             Fk = SlaterIntegral(dim, &(dualfuns[n[0]][0]), &(dualfuns[n[1]][0]),
                                 &(basisfuns[n[2]][0]),&(basisfuns[n[3]][0]),&(kernels[k][0]));
             integrals[i].val[j] = Fk;

@@ -113,7 +113,7 @@ double CubicSpline::operator()(double t,unsigned int k)
 	}
 
 	std::cout << "error: value out of interpolation range" << std::endl;
-	return 666;
+	return NAN;
 }
 
 std::vector<double> CubicSpline::operator()(std::vector<double> t)
@@ -134,9 +134,12 @@ std::vector<double> CubicSpline::operator()(std::vector<double> t)
 		c = (y[i]-y[i-1])/h -h/3. * (y2[i] + 2*y2[i-1]);
 
 		val[j] = y[i-1] + xx*(c +xx*(b + xx * a));
-		if (t[j+1] < t[j])
+		if(j < t.size()-1) //TODO improve that
 		{
-			i = 1;
+			if (t[j+1] < t[j])
+			{
+				i = 1;
+			}
 		}
 	}
 	return val;
