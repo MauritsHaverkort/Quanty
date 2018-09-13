@@ -90,6 +90,7 @@ using std::vector;
 #include "../LuaInterface/Matrix.h"
 #include "../LuaInterface/Operator.h"
 #include "../LuaInterface/Plot.h"
+#include "../LuaInterface/PostScript.h"
 #include "../LuaInterface/ResponseFunction.h"
 #include "../LuaInterface/Spectra.h"
 #include "../LuaInterface/TightBinding.h"

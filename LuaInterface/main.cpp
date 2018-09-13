@@ -34,6 +34,7 @@ static void *currentudata = NULL;
 #include "TightBinding.cpp"
 #include "ResponseFunction.cpp"
 #include "Plot.cpp"
+#include "PostScript.cpp"
 #include "BraKet.cpp"
 #include "eval.cpp"
 #include "ssp.cpp"

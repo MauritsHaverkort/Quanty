@@ -1,3 +1,6 @@
+uint8_t Red(uint32_t RGB);
+uint8_t Green(uint32_t RGB);
+uint8_t Blue(uint32_t RGB);
 static unsigned short read_word(FILE * fp);
 static unsigned int read_dword(FILE * fp);
 static int read_long(FILE * fp);
