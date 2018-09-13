@@ -2162,9 +2162,6 @@ int FindAllAtomsInsideSphere(const CrystalStructureType * const A, double *c, do
   B->Units=A->Units;
   B->NAtoms=0;
   B->Atom=(AtomType*)malloc(64*sizeof(AtomType));
-  
-  printf("%d %d %d\n %d %d %d\n",Na0,Nb0,Nc0,Na,Nb,Nc);
-  
   for(ia=Na0-Na;ia<=Na0+Na;ia++)
   {
     for(ib=Nb0-Nb;ib<=Nb0+Nb;ib++)

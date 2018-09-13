@@ -1016,7 +1016,7 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
             AtomShellOrbitalMap[i][ishell].QComplex=0;
             AtomShellOrbitalMap[i][ishell].Ni=ClusterDef->Cell.Atom[i].shelldegeneracy[ishell];
             // find the position of Atom ClusterDef->Cell.Atom[i].Name and shell ClusterDef->Cell.Atom[i].ShellName[ishell] in a->Cell
-            for(jshell=0;jshell<a->Cell.Atom[j].Nshell;j++)
+            for(jshell=0;jshell<a->Cell.Atom[j].Nshell;jshell++)
             {
               if(strcmp(ClusterDef->Cell.Atom[i].ShellName[ishell],a->Cell.Atom[j].ShellName[jshell])==0)
               {
@@ -1062,11 +1062,14 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
             {
               if(  (strcmp(a->Cell.Atom[a->H[l].Atompos1].Name,ClusterDef->Cell.Atom[i].Name)==0)
                  &&(strcmp(a->Cell.Atom[a->H[l].Atompos1].ShellName[a->H[l].Shellpos1],ClusterDef->Cell.Atom[i].ShellName[ishell])==0)
+                 &&(EqualFloat(a->Cell.Atom[a->H[l].Atompos1].Position[0], ClusterDef->Cell.Atom[i].Position[0])==1)
+                 &&(EqualFloat(a->Cell.Atom[a->H[l].Atompos1].Position[1], ClusterDef->Cell.Atom[i].Position[1])==1)
+                 &&(EqualFloat(a->Cell.Atom[a->H[l].Atompos1].Position[2], ClusterDef->Cell.Atom[i].Position[2])==1)
                  &&(strcmp(a->Cell.Atom[a->H[l].Atompos2].Name,ClusterDef->Cell.Atom[j].Name)==0)
                  &&(strcmp(a->Cell.Atom[a->H[l].Atompos2].ShellName[a->H[l].Shellpos2],ClusterDef->Cell.Atom[j].ShellName[jshell])==0)
-                 &&(EqualFloat(a->H[l].ConnectingVector[0], ClusterDef->Cell.Atom[i].Position[0]-ClusterDef->Cell.Atom[j].Position[0])==1)
-                 &&(EqualFloat(a->H[l].ConnectingVector[1], ClusterDef->Cell.Atom[i].Position[1]-ClusterDef->Cell.Atom[j].Position[1])==1)
-                 &&(EqualFloat(a->H[l].ConnectingVector[2], ClusterDef->Cell.Atom[i].Position[2]-ClusterDef->Cell.Atom[j].Position[2])==1) )
+                 &&(EqualFloat(a->H[l].ConnectingVector[0], ClusterDef->Cell.Atom[j].Position[0]-ClusterDef->Cell.Atom[i].Position[0])==1)
+                 &&(EqualFloat(a->H[l].ConnectingVector[1], ClusterDef->Cell.Atom[j].Position[1]-ClusterDef->Cell.Atom[i].Position[1])==1)
+                 &&(EqualFloat(a->H[l].ConnectingVector[2], ClusterDef->Cell.Atom[j].Position[2]-ClusterDef->Cell.Atom[i].Position[2])==1) )
               {
                 ClusterDef->H[ClusterDef->nH].Atompos1=i;
                 ClusterDef->H[ClusterDef->nH].Shellpos1=ishell;
@@ -1075,9 +1078,9 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
                 ClusterDef->H[ClusterDef->nH].TransVecs[0]=0;
                 ClusterDef->H[ClusterDef->nH].TransVecs[1]=0;
                 ClusterDef->H[ClusterDef->nH].TransVecs[2]=0;
-                ClusterDef->H[ClusterDef->nH].ConnectingVector[0]=ClusterDef->Cell.Atom[i].Position[0]-ClusterDef->Cell.Atom[j].Position[0];
-                ClusterDef->H[ClusterDef->nH].ConnectingVector[1]=ClusterDef->Cell.Atom[i].Position[1]-ClusterDef->Cell.Atom[j].Position[1];
-                ClusterDef->H[ClusterDef->nH].ConnectingVector[2]=ClusterDef->Cell.Atom[i].Position[2]-ClusterDef->Cell.Atom[j].Position[2];
+                ClusterDef->H[ClusterDef->nH].ConnectingVector[0]=ClusterDef->Cell.Atom[j].Position[0]-ClusterDef->Cell.Atom[i].Position[0];
+                ClusterDef->H[ClusterDef->nH].ConnectingVector[1]=ClusterDef->Cell.Atom[j].Position[1]-ClusterDef->Cell.Atom[i].Position[1];
+                ClusterDef->H[ClusterDef->nH].ConnectingVector[2]=ClusterDef->Cell.Atom[j].Position[2]-ClusterDef->Cell.Atom[i].Position[2];
                 MatrixTransformLeftRight(&(ClusterDef->H[ClusterDef->nH].Hop), a->H[l].Hop, AtomShellOrbitalMap[i][ishell], AtomShellOrbitalMap[j][jshell]);
                 ClusterDef->nH++;
               }

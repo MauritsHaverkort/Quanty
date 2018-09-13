@@ -232,7 +232,16 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
           {
             tmpvec[j] = strtod(phrase[1+j], NULL);
           }
-          TransVecNorm(tmpvec, O->Lattice.gLattVec, O->Wannier.HopVec[i][ihop]);
+          if(O->Lattice.Molecule==true)
+          {
+            O->Wannier.HopVec[i][ihop][0]=tmpvec[0];
+            O->Wannier.HopVec[i][ihop][1]=tmpvec[1];
+            O->Wannier.HopVec[i][ihop][2]=tmpvec[2];
+          }
+          else
+          {
+            TransVecNorm(tmpvec, O->Lattice.gLattVec, O->Wannier.HopVec[i][ihop]);
+          }
           O->Wannier.HopVal[i][ihop] = strtod(phrase[5], NULL);
           if(Abs(strtod(phrase[Nphrase-1], NULL))>(1000*DBL_MIN)) Nimag+=1;
 

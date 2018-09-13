@@ -418,11 +418,11 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
         HTB->H[ihtb].Shellpos1 = ShellOfSite[ish][1];
         HTB->H[ihtb].Atompos2  = ShellOfSite[jsh][0];
         HTB->H[ihtb].Shellpos2 = ShellOfSite[jsh][1];
-        if((HTB->Cell.Units&8)==0)
+        if(((HTB->Cell.Units&8)==0)&&(FPLO.Lattice.Molecule==false))
         {
-          HTB->H[ihtb].ConnectingVector[0] = HopVec[indsh][ihtb-NHopStart[ish][jsh]][0]*HTB->Cell.rUnitCell[0][0] + HopVec[indsh][ihtb-NHopStart[ish][jsh]][1]*HTB->Cell.rUnitCell[1][0] + HopVec[indsh][ihtb-NHopStart[ish][jsh]][2]*HTB->Cell.rUnitCell[2][0];
-          HTB->H[ihtb].ConnectingVector[1] = HopVec[indsh][ihtb-NHopStart[ish][jsh]][0]*HTB->Cell.rUnitCell[0][1] + HopVec[indsh][ihtb-NHopStart[ish][jsh]][1]*HTB->Cell.rUnitCell[1][1] + HopVec[indsh][ihtb-NHopStart[ish][jsh]][2]*HTB->Cell.rUnitCell[2][1];
-          HTB->H[ihtb].ConnectingVector[2] = HopVec[indsh][ihtb-NHopStart[ish][jsh]][0]*HTB->Cell.rUnitCell[0][2] + HopVec[indsh][ihtb-NHopStart[ish][jsh]][1]*HTB->Cell.rUnitCell[1][2] + HopVec[indsh][ihtb-NHopStart[ish][jsh]][2]*HTB->Cell.rUnitCell[2][2];
+          HTB->H[ihtb].ConnectingVector[0] = ((HopVec[indsh][ihtb-NHopStart[ish][jsh]][0]==0)?0:HopVec[indsh][ihtb-NHopStart[ish][jsh]][0]*HTB->Cell.rUnitCell[0][0]) + ((HopVec[indsh][ihtb-NHopStart[ish][jsh]][1]==0)?0:HopVec[indsh][ihtb-NHopStart[ish][jsh]][1]*HTB->Cell.rUnitCell[1][0]) + ((HopVec[indsh][ihtb-NHopStart[ish][jsh]][2]==0)?0:HopVec[indsh][ihtb-NHopStart[ish][jsh]][2]*HTB->Cell.rUnitCell[2][0]);
+          HTB->H[ihtb].ConnectingVector[1] = ((HopVec[indsh][ihtb-NHopStart[ish][jsh]][0]==0)?0:HopVec[indsh][ihtb-NHopStart[ish][jsh]][0]*HTB->Cell.rUnitCell[0][1]) + ((HopVec[indsh][ihtb-NHopStart[ish][jsh]][1]==0)?0:HopVec[indsh][ihtb-NHopStart[ish][jsh]][1]*HTB->Cell.rUnitCell[1][1]) + ((HopVec[indsh][ihtb-NHopStart[ish][jsh]][2]==0)?0:HopVec[indsh][ihtb-NHopStart[ish][jsh]][2]*HTB->Cell.rUnitCell[2][1]);
+          HTB->H[ihtb].ConnectingVector[2] = ((HopVec[indsh][ihtb-NHopStart[ish][jsh]][0]==0)?0:HopVec[indsh][ihtb-NHopStart[ish][jsh]][0]*HTB->Cell.rUnitCell[0][2]) + ((HopVec[indsh][ihtb-NHopStart[ish][jsh]][1]==0)?0:HopVec[indsh][ihtb-NHopStart[ish][jsh]][1]*HTB->Cell.rUnitCell[1][2]) + ((HopVec[indsh][ihtb-NHopStart[ish][jsh]][2]==0)?0:HopVec[indsh][ihtb-NHopStart[ish][jsh]][2]*HTB->Cell.rUnitCell[2][2]);
         }
         else
         {
@@ -430,10 +430,18 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
           HTB->H[ihtb].ConnectingVector[1] = HopVec[indsh][ihtb-NHopStart[ish][jsh]][1];
           HTB->H[ihtb].ConnectingVector[2] = HopVec[indsh][ihtb-NHopStart[ish][jsh]][2];
         }
-        HTB->H[ihtb].TransVecs[0] = HopVec[indsh][ihtb-NHopStart[ish][jsh]][0] - (SitePos[ ShellOfSite[jsh][0] ][0]-SitePos[ ShellOfSite[ish][0] ][0]);
-        HTB->H[ihtb].TransVecs[1] = HopVec[indsh][ihtb-NHopStart[ish][jsh]][1] - (SitePos[ ShellOfSite[jsh][0] ][1]-SitePos[ ShellOfSite[ish][0] ][1]);
-        HTB->H[ihtb].TransVecs[2] = HopVec[indsh][ihtb-NHopStart[ish][jsh]][2] - (SitePos[ ShellOfSite[jsh][0] ][2]-SitePos[ ShellOfSite[ish][0] ][2]);
-
+        if(FPLO.Lattice.Molecule==false)
+        {
+          HTB->H[ihtb].TransVecs[0] = HopVec[indsh][ihtb-NHopStart[ish][jsh]][0] - (SitePos[ ShellOfSite[jsh][0] ][0]-SitePos[ ShellOfSite[ish][0] ][0]);
+          HTB->H[ihtb].TransVecs[1] = HopVec[indsh][ihtb-NHopStart[ish][jsh]][1] - (SitePos[ ShellOfSite[jsh][0] ][1]-SitePos[ ShellOfSite[ish][0] ][1]);
+          HTB->H[ihtb].TransVecs[2] = HopVec[indsh][ihtb-NHopStart[ish][jsh]][2] - (SitePos[ ShellOfSite[jsh][0] ][2]-SitePos[ ShellOfSite[ish][0] ][2]);
+        }
+        else
+        {
+          HTB->H[ihtb].TransVecs[0] = 0;
+          HTB->H[ihtb].TransVecs[1] = 0;
+          HTB->H[ihtb].TransVecs[2] = 0;
+        }
         HTB->H[ihtb].Hop.QComplex = 0;
         HTB->H[ihtb].Hop.Ni = Norb[ish];
         HTB->H[ihtb].Hop.Nj = Norb[jsh];
