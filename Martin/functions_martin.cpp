@@ -374,8 +374,8 @@ static int LuaReadFPLOBasis(lua_State *L)
 
 	while (!file1.eof())
 	{
-		name = GetOrbitalName(file1);
-		GetOrbitalName(file2);
+		name = GetOrbitalName(file1,3);
+		GetOrbitalName(file2,3);
 		y1 = ReadBasisfunction(file1,x);
 		y2 = ReadBasisfunction(file2,x);
 		VectorJoin(y1,y2);
@@ -464,6 +464,7 @@ static int LuaMartinTest(lua_State *L)
 	uint32_t k = 3;
 	vector<double> x = funsG[0]->GetX();
 	vector<double> knots = GaussQuad::GetKnots(k,x);
+	//PrintArray(&x[0],x.size());
 	vector<double> g = (*funsG[0])(knots);
 	vector<double> f = (*funsF[0])(knots);
 	vector<double> w = GaussQuad::GetWeights(k,x);
