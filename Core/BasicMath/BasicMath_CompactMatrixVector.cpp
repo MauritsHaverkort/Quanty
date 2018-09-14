@@ -11,6 +11,7 @@
  */
 void FreeCompactMatrix(CompactMatrixType * const M)
 {
+  if(M->OnLuaStack) return;
   free(M->Name);
   if(M->QComplex)
   {
@@ -53,6 +54,7 @@ uint32_t InitCompactMatrix(CompactMatrixType * const M)
       return 1;
     }
   }
+  M->OnLuaStack=false;
   return 0;
 }
 
@@ -202,6 +204,7 @@ uint32_t InitCompactIdentityMatrix(CompactMatrixType * const M)
       M->VRe[i*M->Nj+i]=1;
     }
   }
+  M->OnLuaStack=false;
   return 0;
 }
 

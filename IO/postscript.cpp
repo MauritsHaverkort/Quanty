@@ -3,32 +3,33 @@
  */
 int CreatePS(char ** res, int XSize, int YSize)
 {
-  *res = (char*)malloc(1024*sizeof(char));
+  *res = (char*)malloc(2024*sizeof(char));
   if(res==NULL) return 1;
-  sprintf(*res, "%%!PS-Adobe-2.0 EPSF-2.0\n");
-  sprintf(*res, "%%%%BoundingBox: 0 0 %5d %5d\n",XSize,YSize);
-  sprintf(*res, "%%%%Creator: Quanty (www.Quanty.org)\n");
-  sprintf(*res, "%%%%EndComments\n");
-  sprintf(*res, "%%%%BeginProlog\nsave\n");
-  sprintf(*res, "countdictstack\n");
-  sprintf(*res, "mark\n");
-  sprintf(*res, "newpath\n");
-  sprintf(*res, "/setpagedevice {pop} def\n");
-  sprintf(*res, "/p {newpath moveto} def\n");
-  sprintf(*res, "/m {moveto} def\n");
-  sprintf(*res, "/L {newpath setlinewidth setrgbcolor moveto} def\n");
-  sprintf(*res, "/l {lineto} def\n");
-  sprintf(*res, "/c {closepath} def\n");
-  sprintf(*res, "/s {stroke} def\n");
-  sprintf(*res, "/rightshow { dup stringwidth pop neg 0 rmoveto show} def\n");
-  sprintf(*res, "/centershow { dup stringwidth pop -2 div 0 rmoveto show} def\n");
-  sprintf(*res, "/lp {newpath moveto /Times-Roman findfont exch scalefont setfont 0 0 0 setrgbcolor show} def\n");        // (text) FontSize PositionX PositionY
-  sprintf(*res, "/rp {newpath moveto /Times-Roman findfont exch scalefont setfont 0 0 0 setrgbcolor rightshow} def\n");
-  sprintf(*res, "/cp {newpath moveto /Times-Roman findfont exch scalefont setfont 0 0 0 setrgbcolor centershow} def\n");
-  sprintf(*res, "/lgp {newpath moveto /Symbol findfont exch scalefont setfont 0 0 0 setrgbcolor show} def\n");        // (text) FontSize PositionX PositionY
-  sprintf(*res, "/rgp {newpath moveto /Symbol findfont exch scalefont setfont 0 0 0 setrgbcolor rightshow} def\n");
-  sprintf(*res, "/cgp {newpath moveto /Symbol findfont exch scalefont setfont 0 0 0 setrgbcolor centershow} def\n");
-  sprintf(*res, "%%%%EndProlog\n%%%%Page 1 1\n");
+  res[0][0]='\0';
+  sprintfAdd(res, "%%!PS-Adobe-2.0 EPSF-2.0\n");
+  sprintfAdd(res, "%%%%BoundingBox: 0 0 %5d %5d\n",XSize,YSize);
+  sprintfAdd(res, "%%%%Creator: Quanty (www.Quanty.org)\n");
+  sprintfAdd(res, "%%%%EndComments\n");
+  sprintfAdd(res, "%%%%BeginProlog\nsave\n");
+  sprintfAdd(res, "countdictstack\n");
+  sprintfAdd(res, "mark\n");
+  sprintfAdd(res, "newpath\n");
+  sprintfAdd(res, "/setpagedevice {pop} def\n");
+  sprintfAdd(res, "/p {newpath moveto} def\n");
+  sprintfAdd(res, "/m {moveto} def\n");
+  sprintfAdd(res, "/L {newpath setlinewidth setrgbcolor moveto} def\n");
+  sprintfAdd(res, "/l {lineto} def\n");
+  sprintfAdd(res, "/c {closepath} def\n");
+  sprintfAdd(res, "/s {stroke} def\n");
+  sprintfAdd(res, "/rightshow { dup stringwidth pop neg 0 rmoveto show} def\n");
+  sprintfAdd(res, "/centershow { dup stringwidth pop -2 div 0 rmoveto show} def\n");
+  sprintfAdd(res, "/lp {newpath moveto /Times-Roman findfont exch scalefont setfont 0 0 0 setrgbcolor show} def\n");        // (text) FontSize PositionX PositionY
+  sprintfAdd(res, "/rp {newpath moveto /Times-Roman findfont exch scalefont setfont 0 0 0 setrgbcolor rightshow} def\n");
+  sprintfAdd(res, "/cp {newpath moveto /Times-Roman findfont exch scalefont setfont 0 0 0 setrgbcolor centershow} def\n");
+  sprintfAdd(res, "/lgp {newpath moveto /Symbol findfont exch scalefont setfont 0 0 0 setrgbcolor show} def\n");        // (text) FontSize PositionX PositionY
+  sprintfAdd(res, "/rgp {newpath moveto /Symbol findfont exch scalefont setfont 0 0 0 setrgbcolor rightshow} def\n");
+  sprintfAdd(res, "/cgp {newpath moveto /Symbol findfont exch scalefont setfont 0 0 0 setrgbcolor centershow} def\n");
+  sprintfAdd(res, "%%%%EndProlog\n%%%%Page 1 1\n");
   return 0;
 }
 
@@ -130,7 +131,7 @@ int AddPolygonPS(char ** res, double *x, double *y, int N, uint32_t RGBColor, do
 /*  Place a bitmap with Nwidth and Nhight pixels on the rectangle from x to x+width and y to y+hight
  *  Use the array RGBColor with Nwidth*Nhight elements for the color
  */
-int AddBitmap(char ** res, double x, double y, double width, double heigth, uint32_t *RGBColor, uint32_t Nwidth, uint32_t Nheigth)
+int AddBitmapPS(char ** res, double x, double y, double width, double heigth, uint32_t *RGBColor, uint32_t Nwidth, uint32_t Nheigth)
 {
   int i;
   sprintfAdd(res, "%f %f translate\n",x,y);

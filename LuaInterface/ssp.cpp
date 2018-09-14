@@ -1150,6 +1150,7 @@ static int LuaChop(lua_State * L)
         CompactMatrixCopy(*M, Mnew);
         CompactMatrixChop(Mnew, epsilon);
         luaL_setmetatable(L, "Matrix_Type");
+        Mnew->OnLuaStack=true;
         return 1;
       }
       return luaL_error(L, "Error: Chop an object of unrecognised type\n");
@@ -4861,6 +4862,10 @@ int luaopen_ssp(lua_State * L)
   luaL_setfuncs(L, Spectra_meta, 0);
   luaL_newlib(L, Spectra_func);
   lua_setglobal(L, "Spectra");
+  
+  
+  luaL_newlib(L, PostScript_func);
+  lua_setglobal(L, "PostScript");
   
   luaL_newmetatable(L, "InterpolatingFunction_Type");
   luaL_setfuncs(L, InterpolatingFunction_meta, 0);

@@ -382,6 +382,7 @@ static int LuaCalculateRho(lua_State *L)
   lua_settop(L, 0);
   rho = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
   luaL_setmetatable(L, "Matrix_Type");
+  rho->OnLuaStack=true;
   TightBindingHamiltonianToDensityMatrix(a, Options.Nk, rho, Options.mu, Options.kbT);
   
   return 1;

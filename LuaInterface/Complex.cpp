@@ -558,6 +558,7 @@ static int LuaComplexMul(lua_State * L)
             B = (CompactMatrixType *) luaL_checkCompactMatrix(L, len);
             C = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
             luaL_setmetatable(L, "Matrix_Type");
+            C->OnLuaStack=true;
             CompactMatrixCopy(*B, C);
             CompactMatrixScaleComplex(C, *a);
             return 1;
@@ -735,6 +736,7 @@ static int LuaComplexDiv(lua_State * L)
             B = (CompactMatrixType *) luaL_checkCompactMatrix(L, len);
             C = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
             luaL_setmetatable(L, "Matrix_Type");
+            C->OnLuaStack=true;
             CompactMatrixCopy(*B, C);
             if(C->Nj!=C->Ni) return luaL_error(L,"Matrix inversion only works for square matrices dimensions are (%d %d)\n",C->Ni,C->Nj);
             if(CompactMatrixInverse(C)!=0) return luaL_error(L,"Matrix inversion failed, probably the matrix is singular\n");

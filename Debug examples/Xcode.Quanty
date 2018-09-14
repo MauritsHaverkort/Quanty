@@ -1,10 +1,11 @@
 Verbosity(0xFFFF)
 
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Reference/Objects/Postscript/Postscript.Quanty")
+os.exit()
+
 dofile("/Users/haverkort/Documents/Materials/CrF4/1_groundstate.Quanty")
 os.exit()
 
-dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Tutorials/40_NiO_Ligand_Field/FPLO/Open_Cluster.Quanty")
-os.exit()
 
 
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Tutorials/40_NiO_Ligand_Field/FPLO/Open_Cluster.Quanty")
