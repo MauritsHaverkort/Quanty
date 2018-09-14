@@ -9,3 +9,4 @@
 #include "StreamRead.h"
 #include "StringPrint.h"
 #include "StuttgartNMTO.h"
+#include "postscript.h"
