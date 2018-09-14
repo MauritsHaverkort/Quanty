@@ -1,3 +1,16 @@
+uint8_t Red(uint32_t RGB)
+{
+  return (uint8_t)(RGB>>16);
+}
+uint8_t Green(uint32_t RGB)
+{
+  return (uint8_t)(RGB>>8);
+}
+uint8_t Blue(uint32_t RGB)
+{
+  return (uint8_t)(RGB);
+}
+
 typedef struct                       /**** BMP file header structure ****/
 {
   unsigned short bfType;        /* Magic number for file */
