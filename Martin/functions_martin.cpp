@@ -461,13 +461,14 @@ static int LuaMartinTest(lua_State *L)
 		lua_pop(L,1);
 	}
 
-	uint32_t k = 3;
+	uint32_t k = 7;
 	vector<double> x = funsG[0]->GetX();
-	vector<double> knots = GaussQuad::GetKnots(k,x);
+	printf("x = %.8E\n",x[x.size()-1]);
+	vector<double> knots = Quad::GetKnots(k,x);
 	//PrintArray(&x[0],x.size());
 	vector<double> g = (*funsG[0])(knots);
 	vector<double> f = (*funsF[0])(knots);
-	vector<double> w = GaussQuad::GetWeights(k,x);
+	vector<double> w = Quad::GetWeights(k,x);
 	vector<double> dg = w * g;
 	vector<double> df = w * f;
 	double res = 0;
@@ -477,7 +478,13 @@ static int LuaMartinTest(lua_State *L)
 
 	}
 	printf("%.8E\n",res);
+	printf("%.8E\n",Quad::GetMultipoleIntegral(*(Interpolation::CubicSpline*)funsG[0],*(Interpolation::CubicSpline*)funsG[0],0));
+	printf("%.8E\n",Quad::GetMultipoleIntegral(*(Interpolation::CubicSpline*)funsG[0],*(Interpolation::CubicSpline*)funsG[0],1));
+	printf("%.8E\n\n",Quad::GetMultipoleIntegral(*(Interpolation::CubicSpline*)funsG[0],*(Interpolation::CubicSpline*)funsG[0],2));
 
+	printf("%.8E\n",Quad::GetMultipoleIntegral(*funsG[0],*funsG[0],0,k));
+	printf("%.8E\n",Quad::GetMultipoleIntegral(*funsG[0],*funsG[0],1,k));
+	printf("%.8E\n",Quad::GetMultipoleIntegral(*funsG[0],*funsG[0],2,k));
 	return 0;
 }
 

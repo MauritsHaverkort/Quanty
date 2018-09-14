@@ -145,4 +145,13 @@ std::vector<double> CubicSpline::operator()(std::vector<double> t)
 	return val;
 }
 
+std::vector<double> CubicSpline::GetY2()
+{
+	return y2;
+}
+double CubicSpline::GetY2(uint32_t i)
+{
+	return y2[i];
+}
+
 } /* namespace Interpolation */
