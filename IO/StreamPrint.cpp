@@ -1717,7 +1717,7 @@ void printExpectationValues(const vector < WaveFunctionType >  psiList, Operator
 		for (int j = 0; j < opList.size() + hamilAddition; ++j)
 		{
 			double out = expValues[i][j];
-			if (out <= zero)
+			if (Abs(out) <= zero)
 				out = 0;
 			string outStr = numberToStringMaxWidth(out, colWidth - 1);
 			cout << outStr;
