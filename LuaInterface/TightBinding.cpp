@@ -910,8 +910,9 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
   }
   else
   { // open systems, i.e. finite size cluster
-    nreturn=2;
     TightBindingDef* ClusterDef;
+    int *ClusterAtomPosInTB;
+    nreturn=2;
     // place return values on stack
     H=(OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
     luaL_setmetatable(L, "Operator_Type");
@@ -950,14 +951,17 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
     // read the specific atoms
     ClusterDef->Cell.NAtoms=(uint32_t)lua_objlen(L, -1);
     ClusterDef->Cell.Atom=(AtomType*)malloc(ClusterDef->Cell.NAtoms*sizeof(AtomType));
+    ClusterAtomPosInTB=(int*)malloc(ClusterDef->Cell.NAtoms*sizeof(int));
     for(i=0;i<ClusterDef->Cell.NAtoms;i++)
     {
       lua_rawgeti(L, -1, i+1);
-      LuaReadAtomWithDefault(L, -1, &(ClusterDef->Cell.Atom[i]), &(a->Cell));
+      LuaReadAtomWithDefault(L, -1, &(ClusterDef->Cell.Atom[i]), &(a->Cell),&(ClusterAtomPosInTB[i]));
       lua_pop(L, 1);
     }
     lua_pop(L, 1);
     SetNFermionIndexTightBindingDef(ClusterDef);
+    
+    
     // read options
     /* deterimine if there are aditional operators or aditional options */
     if(len==2)
@@ -1061,11 +1065,10 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
           {
             for(l=0;l<a->nH;l++)
             {
-              if(  (strcmp(a->Cell.Atom[a->H[l].Atompos1].Name,ClusterDef->Cell.Atom[i].Name)==0)
+              if(  (a->H[l].Atompos1==ClusterAtomPosInTB[i])
+                 &&(a->H[l].Atompos2==ClusterAtomPosInTB[j])
+                 &&(strcmp(a->Cell.Atom[a->H[l].Atompos1].Name,ClusterDef->Cell.Atom[i].Name)==0)
                  &&(strcmp(a->Cell.Atom[a->H[l].Atompos1].ShellName[a->H[l].Shellpos1],ClusterDef->Cell.Atom[i].ShellName[ishell])==0)
-                 &&(EqualFloat(a->Cell.Atom[a->H[l].Atompos1].Position[0], ClusterDef->Cell.Atom[i].Position[0])==1)
-                 &&(EqualFloat(a->Cell.Atom[a->H[l].Atompos1].Position[1], ClusterDef->Cell.Atom[i].Position[1])==1)
-                 &&(EqualFloat(a->Cell.Atom[a->H[l].Atompos1].Position[2], ClusterDef->Cell.Atom[i].Position[2])==1)
                  &&(strcmp(a->Cell.Atom[a->H[l].Atompos2].Name,ClusterDef->Cell.Atom[j].Name)==0)
                  &&(strcmp(a->Cell.Atom[a->H[l].Atompos2].ShellName[a->H[l].Shellpos2],ClusterDef->Cell.Atom[j].ShellName[jshell])==0)
                  &&(EqualFloat(a->H[l].ConnectingVector[0], ClusterDef->Cell.Atom[j].Position[0]-ClusterDef->Cell.Atom[i].Position[0])==1)
@@ -1116,7 +1119,7 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
       if(AtomShellOrbitalMap[i]!=NULL) free(AtomShellOrbitalMap[i]);
     }
     free(AtomShellOrbitalMap);
-    
+    free(ClusterAtomPosInTB);
     
     if(ReturnTBIndicesDict)
     {
@@ -1282,7 +1285,15 @@ static int LuaReadAtom(lua_State *L, int narg, AtomType *a)
   return 0;
 }
 
-static int LuaReadAtomWithDefault(lua_State *L, int narg, AtomType *a, CrystalStructureType *def)
+/*  Read atom name and position from lua stack
+ *  From name and position determine which atom one refers to in the CrystalStructure
+ *     Name must be equal
+ *     if G= 0
+ *     (Position_atom - Position_atom_in_structure) = 0
+ *     else
+ *     (Position_atom - Position_atom_in_structure) . G = n or n pi depending on units
+ */
+static int LuaReadAtomWithDefault(lua_State *L, int narg, AtomType *a, CrystalStructureType *def, int* AtomIndexInCrystalStructure)
 {
   uint32_t i,j,k,l,len;
   double *arr;
@@ -1303,6 +1314,8 @@ static int LuaReadAtomWithDefault(lua_State *L, int narg, AtomType *a, CrystalSt
     a->Position[0]=arr[0];a->Position[1]=arr[1];a->Position[2]=arr[2];
     free(arr);
     lua_pop(L, 1);
+    // determine AtomIndexInCrystalStructure
+    *AtomIndexInCrystalStructure = FindAtomPosModulusUnitCell(a, def, 0.0001);
     // get the list with shells
     len = (uint32_t)lua_objlen(L, narg);
     if(len==3)
@@ -1343,9 +1356,9 @@ static int LuaReadAtomWithDefault(lua_State *L, int narg, AtomType *a, CrystalSt
           // shell given by a string specifing its name, all orbitals taken from def
           strncpy(a->ShellName[i], luaL_checkstring(L, -1), MAXStrLength-1);
           // find atom and shell in def and set the list of orbitals
-          for(j=0;j<def->NAtoms;j++)
+          if(!isnan(*AtomIndexInCrystalStructure))
           {
-            if(strcmp(a->Name, def->Atom[j].Name)==0)
+            j=*AtomIndexInCrystalStructure;
             {
               for(k=0;k<def->Atom[j].Nshell;k++)
               {

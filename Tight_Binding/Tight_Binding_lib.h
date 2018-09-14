@@ -2,6 +2,7 @@ uint32_t AtomNameToNumber(const char* Name);
 int FreeAtomType(AtomType *A);
 int FreeCrystalStructureType(CrystalStructureType *A);
 int FreeTightBindingDef(TightBindingDef * A);
+int FindAtomPosModulusUnitCell(const AtomType *const Atom, const CrystalStructureType *const Cell, double epsilon);
 int SetNFermionIndexTightBindingDef(TightBindingDef * A);
 int CreateOneBandCubicLaticeTightBindingDef(TightBindingDef * A);
 int CreateOneBandSquareLaticeTightBindingDef(TightBindingDef * A);

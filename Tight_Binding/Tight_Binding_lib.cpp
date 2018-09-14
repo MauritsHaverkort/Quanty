@@ -98,6 +98,49 @@ int CopyAtomType(const AtomType *const A, AtomType *B)
   return 0;
 }
 
+bool QInteger(double x, double epsilon)
+{
+  if(fabs(x-round(x))>epsilon) return false;
+  return true;
+}
+
+int FindAtomPosModulusUnitCell(const AtomType *const Atom, const CrystalStructureType *const Cell, double epsilon)
+{
+  int i;
+  double vec[3],relvec[3];
+  for(i=0;i<Cell->NAtoms;i++)
+  {
+    if(strcmp(Atom->Name, Cell->Atom[i].Name)==0)
+    { // name is equal next test if position is compatible
+      vec[0]=Atom->Position[0]-Cell->Atom[i].Position[0];
+      vec[1]=Atom->Position[1]-Cell->Atom[i].Position[1];
+      vec[2]=Atom->Position[2]-Cell->Atom[i].Position[2];
+      if(Cell->Units&8)
+      { // position in units of lattice vectors vec must be integer in all elements
+        if(QInteger(vec[0],epsilon)&&QInteger(vec[1],epsilon)&&QInteger(vec[2],epsilon)) return i;
+      }
+      else
+      { // position in absolute units
+        if((fabs(vec[0])<epsilon)&&(fabs(vec[1])<epsilon)&&(fabs(vec[2])<epsilon)) return i;
+        if(fabs(ParallelalPipedVolume(Cell->gUnitCell[0], Cell->gUnitCell[1], Cell->gUnitCell[2]))>epsilon)
+        {
+          relvec[0]=Dot(vec,Cell->gUnitCell[0]);
+          relvec[1]=Dot(vec,Cell->gUnitCell[1]);
+          relvec[2]=Dot(vec,Cell->gUnitCell[2]);
+          if(Cell->Units&1)
+          {
+            relvec[0]/=(2*Pi);
+            relvec[1]/=(2*Pi);
+            relvec[2]/=(2*Pi);
+          }
+          if(QInteger(relvec[0],epsilon)&&QInteger(relvec[1],epsilon)&&QInteger(relvec[2],epsilon)) return i;
+        }
+      }
+    }
+  }
+  // atom not found
+  return NAN;
+}
 
 
 /*  The tight-binding structure defines a unit cell (CrystalStructureType) including a basis

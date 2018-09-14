@@ -1541,6 +1541,7 @@ static int Luarotate(lua_State *L)
   if (luaL_testudata(L, 1, "TightBinding_Type") != NULL)
   {
     uint32_t i;
+    int index;
     TightBindingDef *RTB;    if(len!=3)luaL_error(L, "Rotate for a tight binding object called with %d arguments, 3 expected\n",len);
     CompactMatrixType *RotMat;
     RotMat = luaL_checkCompactMatrix(L, 2);
@@ -1566,7 +1567,7 @@ static int Luarotate(lua_State *L)
     for(i=0;i<RTB->Cell.NAtoms;i++)
     {
       lua_rawgeti(L, 3, i+1);
-      LuaReadAtomWithDefault(L, -1, &(RTB->Cell.Atom[i]), &(TB->Cell));
+      LuaReadAtomWithDefault(L, -1, &(RTB->Cell.Atom[i]), &(TB->Cell),&index);
       lua_pop(L, 1);
     }
     SetNFermionIndexTightBindingDef(RTB);
