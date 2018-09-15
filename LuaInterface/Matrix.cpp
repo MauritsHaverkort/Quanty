@@ -515,6 +515,7 @@ static int LuaMatrixDiagonal(lua_State * L)
   return 1;
 }
 
+
 /*
  *
  */

@@ -3760,7 +3760,7 @@ static int LuaBlockBandDiagonalize(lua_State *L)
     }
   }
   // case 1 - dense matrices
-  if(lua_istable(L,1)==1)
+  if((lua_istable(L,1)==1)||(luaL_testudata(L, 1, "Matrix_Type") != NULL))
   {
     CompactMatrixType *M,*vec;
     M = (CompactMatrixType *) luaL_checkCompactMatrix(L, 1);
@@ -3790,8 +3790,11 @@ static int LuaBlockBandDiagonalize(lua_State *L)
     }
     LuaPushTable_BlockTriDiagonalMatrixType(L, &B);
     FreeBlockTridiagonalMatrix(&B);
-    FreeCompactMatrix(M);
-    free(M);
+    if(M->OnLuaStack==false)
+    {
+      FreeCompactMatrix(M);
+      free(M);
+    }
     if(Options.ReturnT==true)
     {
       LuaPushTable_CompactMatrixType(L, vec);
@@ -3856,7 +3859,16 @@ static int LuaBlockBandDiagonalize(lua_State *L)
     FreeBlockTridiagonalMatrix(&B);
     return 1;
   }
-  // error not case 1 or 2
+  // case 3 Tigth binding object and a list of atoms + position / orbitals / shells
+  else if ((lua_istable(L,1)==1)||(luaL_testudata(L, 1, "TightBinding_Type") != NULL))
+  {
+    //TODO: BlockBandDiagonalize caled on TB object
+    return luaL_error(L, "BlockBandDiagonalize caled on TB object not jet implemented\n");
+    
+    
+    
+  }
+  // error not case 1, 2 or 3
   else
   {
     return luaL_error(L, "BlockBandDiagonalize expects as a first argument either an operator or a square hermitian matrix (table of tables)\n");

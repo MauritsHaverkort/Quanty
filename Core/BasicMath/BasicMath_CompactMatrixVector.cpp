@@ -4031,7 +4031,7 @@ uint32_t CompactMatrixBlockBandDiagonalizeComplex(CompactMatrixType const * cons
     Ni=0;
     for(j=1;j<=Min(i+1,NTri);j++)
     {
-      memcpy(&(vec->VRe[Ni*vec->Nj]),veclist[j].VRe,veclist[j].Ni*veclist[j].Nj*sizeof(double));
+      memcpy(&(vec->V[Ni*vec->Nj]),veclist[j].V,veclist[j].Ni*veclist[j].Nj*sizeof(Complex16));
       Ni=Ni+veclist[j].Ni;
     }
   }
