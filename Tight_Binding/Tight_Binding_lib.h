@@ -8,7 +8,7 @@ int CreateOneBandCubicLaticeTightBindingDef(TightBindingDef * A);
 int CreateOneBandSquareLaticeTightBindingDef(TightBindingDef * A);
 int CreateOneBandChainLaticeTightBindingDef(TightBindingDef * A);
 int CreateHamiltonianFromTightBindingDef(TightBindingDef A, double k[3], MatrixType * H);
-int CreateHamiltonianFromTightBindingDefConstantPhaseInUnitCell(TightBindingDef A, double k[3], MatrixType * H);
+int CreateHamiltonianFromTightBindingDefConstantPhaseInUnitCell(TightBindingDef A, const double k[3], MatrixType * H);
 int CreateHamiltonianOperatorFromTightBindingDef(TightBindingDef A, double k[3], OperatorType * H);
 int CreateHamiltonianOperatorFromTightBindingDefPlusSpin(TightBindingDef A, double k[3], OperatorType * H);
 uint32_t CalculateTotalEnergyFromListOfEigenvalues(const double * const val, const uint32_t NVal, const double kbT, const double mu, double *Etot);

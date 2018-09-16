@@ -34,9 +34,15 @@ print(Chop(Matrix.Conjugate(T)*Mat*Matrix.Transpose(T)))
 print("Test BlockBandDiagonalize on Complex matrices");
 
 -- Define a random Hermitian real matrix
-Mat = Matrix.Random({-1-I,1+I},{5,5})
-Mat = Mat + Matrix.ConjugateTranspose(Mat)
+-- Mat = Matrix.Random({-1-I,1+I},{5,5})
+-- Mat = Mat + Matrix.ConjugateTranspose(Mat)
 -- use the same matrix each time to get reproducibility
+Mat = { {   1.0587472687749                        , (-1.7195074594205  + 0.72800391573832*I) , ( 0.10623417054593 - 0.65923722864093*I) , ( 0.12119831895512  - 0.69911118256818*I) , ( 1.1452918132512   + 0.80585826877777*I) } ,
+        { (-1.7195074594205  - 0.72800391573832*I) ,  -1.3189697057563                        , ( 0.76020621357495 - 0.11603794252315*I) , ( 0.25405246031194  - 0.61492585233176*I) , (-1.5036215938179   - 0.61483171890249*I) } ,
+        { ( 0.10623417054593 + 0.65923722864093*I) , ( 0.76020621357495 + 0.11603794252315*I) ,  -0.27936811292515                       , (-0.10835684282163  + 0.32159718234166*I) , ( 0.14408169786636  - 0.3360038028732 *I) } ,
+        { ( 0.12119831895512 + 0.69911118256818*I) , ( 0.25405246031194 + 0.61492585233176*I) , (-0.10835684282163 - 0.32159718234166*I) ,   0.7592625556324                         , ( 0.077847487329434 + 0.94035578004101*I) } ,
+        { ( 1.1452918132512  - 0.80585826877777*I) , (-1.5036215938179  + 0.61483171890249*I) , ( 0.14408169786636 + 0.3360038028732 *I) , ( 0.077847487329434 - 0.94035578004101*I) ,  -0.19218883206704                        } }
+
 
 print("The original matrix")
 print(Mat)
@@ -56,3 +62,5 @@ print(Chop(Matrix.Conjugate(T)*Matrix.Transpose(T)))
 
 print("The transition matrix transforms the original Matrix to a tridiagonal form")
 print(Chop(Matrix.Conjugate(T)*Mat*Matrix.Transpose(T)))
+
+
