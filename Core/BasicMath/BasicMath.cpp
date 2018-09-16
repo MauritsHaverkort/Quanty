@@ -398,9 +398,9 @@ void ReciprocalLatticeVector(double r[3][3], double g[3][3], uint32_t const Unit
 
 int findPower(double num, int power)
 {
-	if (fabs(num) < 1 && num != 0)
+	if (Abs(num) < 1 && num != 0)
 		return findPower(num * 10, power - 1);
-	else if (fabs(num) >= 10)
+	else if (Abs(num) >= 10)
 		return findPower(num / 10, power + 1);
 	else
 		return power;

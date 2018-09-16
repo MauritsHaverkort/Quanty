@@ -311,20 +311,7 @@ vector<double> CalcMetric(vector<vector<double> > basisfuns, vector<vector<doubl
 	return g;
 }
 
-vector<double> luaL_checkarray_double(lua_State *L, int narg)
-{
-  luaL_checktype(L, narg, LUA_TTABLE);
-  uint32_t len = (uint32_t)lua_objlen(L, narg);
 
-  vector<double> buff = vector<double>(len);
-  for(int i=0;i<len;i++)
-  {
-    lua_rawgeti(L, narg, i+1);
-    buff[i]=(double)luaL_checknumber(L, -1);
-    lua_pop(L, 1);
-  }
-  return buff;
-}
 
 vector<vector<double> > luaL_check2DArray_double(lua_State *L, int narg)
 {

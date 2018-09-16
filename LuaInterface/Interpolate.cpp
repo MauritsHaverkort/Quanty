@@ -151,8 +151,18 @@ static int LuaInterpolateMode(lua_State * L)
 static int LuaInterpolateCall(lua_State * L)
 {
   Interpolation::InterpolatingFunction *fun = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
-  double x=luaL_checknumber(L, 2);
-  lua_pushnumber(L, (*fun)(x));
+  if (lua_istable(L,2))
+  {
+	  vector<double> x = luaL_checkarray_double(L,2);
+	  vector<double> y = (*fun)(x);
+	  LuaPushArray_double(L, &y[0],y.size());
+  }
+  else
+  {
+	  double x=luaL_checknumber(L, 2);
+	  lua_pushnumber(L, (*fun)(x));
+  }
+
   return 1;
 }
 /*

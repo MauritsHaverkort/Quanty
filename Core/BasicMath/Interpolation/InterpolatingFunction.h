@@ -28,6 +28,7 @@ public:
 
 	virtual double operator()(double t);
 	virtual double operator()(double t, unsigned int k);
+	virtual std::vector<double> operator()(std::vector<double> t);
 
 };
 

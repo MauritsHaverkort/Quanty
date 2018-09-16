@@ -71,7 +71,6 @@ double CubicSpline::operator()(double t)
 			h = x[i] - x[i-1];
 			b = y2[i-1];
 			a = (y2[i] -y2[i-1]) / h / 3.;
-			printf("%.8E\t%e\n",b-3*x[i-1]*a,a);
 			c = (y[i]-y[i-1])/h -h/3. * (y2[i] + 2*y2[i-1]);
 
 			return y[i-1] + xx*(c +xx*(b + xx * a));
@@ -114,7 +113,36 @@ double CubicSpline::operator()(double t,unsigned int k)
 	}
 
 	std::cout << "error: value out of interpolation range" << std::endl;
-	return 666;
+	return NAN;
+}
+
+std::vector<double> CubicSpline::operator()(std::vector<double> t)
+{
+	std::vector<double> val = std::vector<double>(t.size());
+	uint32_t i = 1;
+	for (uint32_t j = 0; j < t.size(); j++)
+	{
+		while (t[j] > x[i] && i < x.size()-1)
+		{
+			i++;
+		}
+		double a,b,c,h, xx;
+		xx = t[j] - x[i-1];
+		h = x[i] - x[i-1];
+		b = y2[i-1];
+		a = (y2[i] -y2[i-1]) / h / 3.;
+		c = (y[i]-y[i-1])/h -h/3. * (y2[i] + 2*y2[i-1]);
+
+		val[j] = y[i-1] + xx*(c +xx*(b + xx * a));
+		if(j < t.size()-1) //TODO improve that
+		{
+			if (t[j+1] < t[j])
+			{
+				i = 1;
+			}
+		}
+	}
+	return val;
 }
 
 } /* namespace Interpolation */

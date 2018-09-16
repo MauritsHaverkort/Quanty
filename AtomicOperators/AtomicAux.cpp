@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <map>
 
+#include "GaussQuadrature.cpp"
 #include "SlaterTuple.cpp"
 #include "SlaterIntegrals.cpp"
 #include "AtomicU.cpp"
@@ -82,7 +83,7 @@ vector<double> ReadBasisfunction(ifstream &file, vector<double> &x)
 	return y;
 }
 
-string GetOrbitalName(ifstream &file)
+string GetOrbitalName(ifstream &file, uint32_t len)
 {
 	string word, name;
 	while ( file >> word)
@@ -93,8 +94,11 @@ string GetOrbitalName(ifstream &file)
 			file >> word;
 			file >> word;
 			file >> name;
-			file >> word;
-			name.append(word);
+			if (len == 3)
+			{
+				file >> word;
+				name.append(word);
+			}
 			name.erase(name.length()-1);
 			return name;
 		}
@@ -106,12 +110,13 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
 {
 	ifstream file1,file2;
 
-	const char *name1 = luaL_checkstring(L,1);
-	const char *name2 = luaL_checkstring(L,2);
-	unsigned int Norbitals;
-	char** orbitalNames = luaL_checkarray_string(L, 3, &Norbitals); //TODO free
+	uint32_t Norbitals;
+	uint32_t len = (uint32_t)lua_gettop(L);
+	char** orbitalNames = luaL_checkarray_string(L, 1, &Norbitals); //TODO free
+	const char *name1 = luaL_checkstring(L,2);
+	const char *name2;
+
 	file1.open(name1);
-	file2.open(name2);
 	string line, word, name;
 	vector<string> orbitals;
 	vector<double> x, y1,y2;
@@ -121,19 +126,14 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
 	// Read raw data
 	while (!file1.eof())
 	{
-		name = GetOrbitalName(file1);
-		GetOrbitalName(file2);
+		name = GetOrbitalName(file1,len);
 		y1 = ReadBasisfunction(file1,x);
-		y2 = ReadBasisfunction(file2,x);
 
 		funsG[name] = y1;
-		funsF[name] = y2;
 	}
 	file1.close();
-	file2.close();
 
 	splinesG = vector<Interpolation::CubicSpline*>(Norbitals);
-	splinesF = vector<Interpolation::CubicSpline*>(Norbitals);
 
 	// Push large part on stack
 	lua_createtable(L,0,Norbitals);
@@ -155,25 +155,44 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
 		}
 
 	}
-	// Push small part on stack
-	lua_createtable(L,0,Norbitals);
-	for (uint32_t i = 0; i < Norbitals; i++)
+	//Read small part
+	if (len == 3)
 	{
-		string charTostring(orbitalNames[i]);
-		if (funsF.find(charTostring) != funsF.end())
-		{
-			void* memory = lua_newuserdata(L, sizeof(Interpolation::CubicSpline));
-			splinesF[i] = new(memory) Interpolation::CubicSpline(x,funsF[charTostring]);
-			luaL_setmetatable(L, "InterpolatingFunction_Type");
-			lua_rawseti(L,-2,i+1);
-		}
-		else
-		{
-			printf("LuaReadFPLOBasis: Couldn't find ");
-			printf("%s\n", orbitalNames[i]);
-			fflush(stdout);
-		}
+		name2 = luaL_checkstring(L,3);
+		file2.open(name2);
 
+		while (!file2.eof())
+		{
+			name = GetOrbitalName(file2,len);
+			y2 = ReadBasisfunction(file2,x);
+
+			funsF[name] = y2;
+		}
+		file2.close();
+
+		splinesF = vector<Interpolation::CubicSpline*>(Norbitals);
+
+		// Push small part on stack
+		lua_createtable(L,0,Norbitals);
+		for (uint32_t i = 0; i < Norbitals; i++)
+		{
+			string charTostring(orbitalNames[i]);
+			if (funsF.find(charTostring) != funsF.end())
+			{
+				void* memory = lua_newuserdata(L, sizeof(Interpolation::CubicSpline));
+				splinesF[i] = new(memory) Interpolation::CubicSpline(x,funsF[charTostring]);
+				luaL_setmetatable(L, "InterpolatingFunction_Type");
+				lua_rawseti(L,-2,i+1);
+			}
+			else
+			{
+				printf("LuaReadFPLOBasis: Couldn't find ");
+				printf("%s\n", orbitalNames[i]);
+				fflush(stdout);
+			}
+
+		}
+		return 2;
 	}
 /*	for( int i = 0; i < Norbitals; i++)
 	{
@@ -181,7 +200,38 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
 	}
 	free(orbitalNames);*/
 
-	return 2;
+	return 1;
+}
+
+vector<double> luaL_checkarray_double(lua_State *L, int narg)
+{
+  luaL_checktype(L, narg, LUA_TTABLE);
+  uint32_t len = (uint32_t)lua_objlen(L, narg);
+
+  vector<double> buff = vector<double>(len);
+  for(int i=0;i<len;i++)
+  {
+    lua_rawgeti(L, narg, i+1);
+    buff[i]=(double)luaL_checknumber(L, -1);
+    lua_pop(L, 1);
+  }
+  return buff;
+}
+
+vector<double> operator*(vector<double> a, vector<double> b)
+{
+	unsigned long n = a.size();
+	if (n != b.size())
+	{
+		printf("error in operator*(vector,vector) : vectors of unequal length\n");
+		fflush(stdout);
+	}
+	vector<double> c = vector<double>(n);
+	for(unsigned long i = 0; i < n; i++)
+	{
+		c[i] = a[i]*b[i];
+	}
+	return c;
 }
 
 

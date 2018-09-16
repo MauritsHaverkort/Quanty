@@ -22,6 +22,7 @@ public:
 
 	double operator()(double t);
 	double operator()(double t, unsigned int k);
+	std::vector<double> operator()(std::vector<double> t);
 };
 
 } /* namespace Interpolation */

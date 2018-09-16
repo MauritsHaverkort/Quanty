@@ -5,11 +5,11 @@ psiList = {}
 for key1,orb1 in pairs(orbs) do
     for key2, orb2 in pairs(orbs) do
         if key1 == key2 then
-            det1 = DeterminantString(Ind[orb1],NF)
+            det1 = DeterminantString(NF, Ind[orb1])
             psiList[#psiList + 1] = NewWavefunction(NF, 0, {{det1,1}})
         elseif key1 < key2 then
-            det1 = DeterminantString(Ind[orb1],NF)
-            det2 = DeterminantString(Ind[orb2],NF)
+            det1 = DeterminantString(NF, Ind[orb1])
+            det2 = DeterminantString(NF, Ind[orb2])
             psiList[#psiList + 1] = NewWavefunction(NF, 0, {{det1,math.sqrt(1/2)}, {det2,math.sqrt(1/2)}})
         end
     end
@@ -28,6 +28,7 @@ Hamil = Hamil + NewOperator("Number",NF,Ind["2p"],Ind["2p"],{0.5,0.6,0.7,0.8,0.9
 Hamil = Hamil + NewOperator("U",NF,Ind["1s_Up"],Ind["1s_Dn"],Ind["2p_Up"],Ind["2p_Dn"],{0.6},{0.7})
 Hamil = Hamil + NewOperator("U",NF,Ind["2s_Up"],Ind["2s_Dn"],Ind["2p_Up"],Ind["2p_Dn"],{0.8},{0.9})
 Hamil = Hamil + NewOperator("U",NF,Ind["2p_Up"],Ind["2p_Dn"],{0.5,sqrt(2)})
+Hamil = Hamil - 4
 Hamil = Hamil/2
 Hamil = Hamil + ConjugateTranspose(Hamil)
 Hamil.Name = "H"
@@ -53,11 +54,11 @@ opList[#opList].Name = "Operator with a long name"
 
 
 StartRestrictions = {NF,0}
-StartRestrictions[3] = {DeterminantString(Ind["1s"],NF),2,2}
-StartRestrictions[4] = {DeterminantString(Ind["2s"],NF),2,2}
+StartRestrictions[3] = {DeterminantString(NF, Ind["1s"]),2,2}
+StartRestrictions[4] = {DeterminantString(NF, Ind["2s"]),2,2}
 
 Restrictions = {NF,0}
-Restrictions[3] = {DeterminantString(Ind["2p"],NF),0,1}
+Restrictions[3] = {DeterminantString(NF, Ind["2p"]),0,1}
 -- print("StartRestrictions")
 -- print(StartRestrictions)
 -- print("Restrictions")
@@ -83,5 +84,5 @@ print("\n\n\nPrintExpectationValues(psiEigenlistRestr,opList,{{\"printHeaderEver
 PrintExpectationValues(psiEigenlistRestr,opList,{{"printHeaderEvery",10},{"zero",1E-2}})
 print("\n\n\nPrintExpectationValues(psiEigenlistRestr,Hamil,opList,{{\"printHeaderEvery\",10},{\"printSigma\",true},{\"zero\",1E-2}}):")
 PrintExpectationValues(psiEigenlistRestr,Hamil,opList,{{"printHeaderEvery",10},{"printSigma",true},{"zero",1E-2}})
-print("PrintExpectationValues(psiEigenlistRestr,Hamil,opList,{{\"colWidth\",10}}):")
+print("\n\n\nPrintExpectationValues(psiEigenlistRestr,Hamil,opList,{{\"colWidth\",10}}):")
 PrintExpectationValues(psiEigenlistRestr,Hamil,opList,{{"colWidth",10}})
