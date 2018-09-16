@@ -155,7 +155,7 @@ static int LuaInterpolateCall(lua_State * L)
   {
 	  vector<double> x = luaL_checkarray_double(L,2);
 	  vector<double> y = (*fun)(x);
-	  LuaPushArray_double(L, &y[0],y.size());
+	  LuaPushArray_double(L, &y[0],(int)y.size());
   }
   else
   {

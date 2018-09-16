@@ -122,8 +122,8 @@ SSlaterIntegral *GetSlaterIntegrals(vector<Interpolation::InterpolatingFunction 
 	uint32_t quadDegree = 3;
 	vector<double> x = ipolfuns[0]->GetX();
 	vector<double> knots = Quad::GetKnots(quadDegree,x);
-	uint32_t Nknots = knots.size();
-	uint32_t Nfuns = ipolfuns.size();
+	uint32_t Nknots = (uint32_t)knots.size();
+	uint32_t Nfuns = (uint32_t)ipolfuns.size();
     vector<vector<double> > basisfuns = vector<vector<double> >(Nfuns);
     vector<vector<double> > dualfuns  = vector<vector<double> >(Nfuns);
     vector<double> weights = Quad::GetWeights(quadDegree,x);
@@ -281,7 +281,7 @@ vector<vector<double> > CreateAllKernels(const unsigned int kMax, vector<double>
 
     kernels = vector<vector<double> >(kMax+1);
 
-    uint32_t n = x.size();
+    //uint32_t n = (uint32_t)x.size(); mwh n not used
 
     for (uint32_t k = 0; k <= kMax; k++ )
     {
@@ -330,7 +330,7 @@ void CreateKernel(const unsigned int NGridPoints, const double *x, double *kerne
 vector<double> GetNonRelKernel(vector<double> x, const uint32_t k)
 {
     double val;
-    uint32_t n = x.size();
+    uint32_t n = (uint32_t)x.size();
     vector<double> kernel = vector<double>(n*n);
 
     for(uint32_t i = 0; i < n; i++)
