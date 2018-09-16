@@ -139,20 +139,7 @@ static int LuaOperatorNewAtomicDirac(lua_State *L)
 	vector<double> x = funsG[0]->GetX();
 	vector<vector<double> > basisfuns = PutRelativisticSplineOnGrid(funsG,funsF,x,0);
 	vector<vector<double> > derivfuns = PutRelativisticSplineOnGrid(funsG,funsF,x,1);
-/*
-	printf("%d\n",derivfuns.size());
-	printf("{");
-	for (int i = 0; i < derivfuns.size(); i++)
-	{
-		printf("{");
-		for(int j = 0; j < derivfuns[i].size()-1; j++)
-		{
-			printf("%.16E, ",derivfuns[i][j]);
-		}
-		printf("%.16E},\n",derivfuns[i][derivfuns[i].size()-1]);
-	}
-	printf("}\n");
-*/
+
 	op = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
 
 	//CreateOperatorDirac(NF, basisfuns,derivfuns,x,groups,NGroups,indices,Z,op);

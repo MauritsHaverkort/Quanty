@@ -47,4 +47,14 @@ std::vector<double> InterpolatingFunction::GetY()
 	return y;
 }
 
+double InterpolatingFunction::GetX(uint32_t i)
+{
+	return x[i];
+}
+
+double InterpolatingFunction::GetY(uint32_t i)
+{
+	return y[i];
+}
+
 } /* namespace Interpolation */

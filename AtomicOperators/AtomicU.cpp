@@ -234,9 +234,6 @@ uint32_t CreateOperatorAtomicUNonRel(uint32_t const NFermion,vector<Interpolatio
     l[3] = -k[3]-1;
     n = integrals[0].tau.n;
     Fk = integrals[0].val;
-    cout << integrals[0].Nval << endl;
-    double ha = 13.6*2;
-    cout << Fk[0]*ha << " " << Fk[1]*ha << " " << Fk[2]*ha << endl;
 
     CreateOperatorAtomicUNonRelOneIntegral(NFermion,l[0],l[1],l[2],l[3],indices[2*n[0]],indices[2*n[0]+1],indices[2*n[1]],indices[2*n[1]+1],indices[2*n[2]],indices[2*n[2]+1],indices[2*n[3]],indices[2*n[3]+1],Fk,n[0],n[1],n[2],n[3],op);
 

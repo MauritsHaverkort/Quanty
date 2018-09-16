@@ -59,7 +59,7 @@ double DiracH(double *basisfun,double *dualfun,double *derivfun,const double *x,
 double DiracH(vector<double> basisfun,vector<double> dualfun,vector<double> derivfun,vector<double> x, int NGridPoints, const int kappa, const int Z)
 {
 	double *H11G, *H22F,*H12F, *H21G, result, r;
-	//const double speedoflight = 137;
+
 	unsigned int i, eins;
 	eins = 1;
 
@@ -95,10 +95,10 @@ double DiracH(vector<double> basisfun,vector<double> dualfun,vector<double> deri
 	free(H12F);
 	free(H21G);
 	free(H22F);
-	//printf("result = %f\n",result);
+
 	return result;
 }
-//void PrintMartix2();
+
 double **CalculateDiracMatrixElements(double **basisfuns, double **derivativefuns, double **dualfuns, const unsigned int *indices, const unsigned int Nindices, const double *x,
 		unsigned int NGridPoints, const int kappa, const int Z)
 {
@@ -123,22 +123,14 @@ double **CalculateDiracMatrixElements(double **basisfuns, double **derivativefun
 vector<vector<double> > CalculateDiracMatrixElements(vector<vector<double> > basisfuns, vector<vector<double> > derivativefuns, vector<vector<double> > dualfuns,
 		const unsigned int *indices, const unsigned int Nindices, vector<double> x,	unsigned int NGridPoints, const int kappa, const int Z)
 {
-	vector<vector<double> > result;
-	vector<double> help;
+	uint32_t i, j, n, m;
+	vector<vector<double> > result = vector<vector<double> >(Nindices);
 
-	unsigned int i, j, n, m;
 	for ( i = 0; i < Nindices; i++ )
 	{
-		result.insert(result.end(),help);
-		for ( j = 0; j < Nindices; j++)
-		{
-			result[i].insert(result[i].end(),0.); //TODO make that better
-		}
-	}
-	for ( i = 0; i < result.size(); i++ )
-	{
+		result[i] = vector<double>(Nindices);
 		n = indices[i];
-		for ( j = i; j < result[i].size(); j++)
+		for ( j = i; j < Nindices; j++)
 		{
 			m = indices[j];
 			result[i][j] = DiracH(basisfuns[m],dualfuns[n],derivativefuns[m], x, NGridPoints, kappa, Z);

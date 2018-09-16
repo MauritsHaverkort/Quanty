@@ -121,12 +121,12 @@ SSlaterIntegral *GetSlaterIntegrals(vector<Interpolation::InterpolatingFunction 
 
 	uint32_t quadDegree = 3;
 	vector<double> x = ipolfuns[0]->GetX();
-	vector<double> knots = GaussQuad::GetKnots(quadDegree,x);
+	vector<double> knots = Quad::GetKnots(quadDegree,x);
 	uint32_t Nknots = knots.size();
 	uint32_t Nfuns = ipolfuns.size();
     vector<vector<double> > basisfuns = vector<vector<double> >(Nfuns);
     vector<vector<double> > dualfuns  = vector<vector<double> >(Nfuns);
-    vector<double> weights = GaussQuad::GetWeights(quadDegree,x);
+    vector<double> weights = Quad::GetWeights(quadDegree,x);
     for (uint32_t i = 0; i < Nfuns; i++)
     {
     	basisfuns[i] = (*ipolfuns[i])(knots);
@@ -511,12 +511,14 @@ SSlaterIntegral *InitializeIntegrals(vector<int> indToK, unsigned int &NIntegral
 
     integrals = (SSlaterIntegral *) malloc((NIntegrals)*sizeof(SSlaterIntegral));
     i = 0;
-  for( std::map<myarray,myarray>::iterator it = tupel.begin(); it != tupel.end(); ++it)
+    for( std::map<myarray,myarray>::iterator it = tupel.begin(); it != tupel.end(); ++it)
     {
     	integrals[i].tau.n[0] = it->first.val[0];
     	integrals[i].tau.n[1] = it->first.val[1];
     	integrals[i].tau.n[2] = it->first.val[2];
     	integrals[i].tau.n[3] = it->first.val[3];
+
+    	//printf("%u\t%u\t%u\t%u\n",integrals[i].tau.n[0],integrals[i].tau.n[1],integrals[i].tau.n[2],integrals[i].tau.n[3]);
 
     	integrals[i].tau.kappa[0] = it->second.val[0];
     	integrals[i].tau.kappa[1] = it->second.val[1];

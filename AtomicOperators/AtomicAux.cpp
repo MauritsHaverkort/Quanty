@@ -117,6 +117,11 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
 	const char *name2;
 
 	file1.open(name1);
+	if(!file1.is_open())
+	{
+		cout << "Error Could not open file: " << name1 << endl;
+		return 0;
+	}
 	string line, word, name;
 	vector<string> orbitals;
 	vector<double> x, y1,y2;
@@ -160,6 +165,11 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
 	{
 		name2 = luaL_checkstring(L,3);
 		file2.open(name2);
+		if(!file2.is_open())
+		{
+			cout << "Error Could not open file: " << name2 << endl;
+			return 0;
+		}
 
 		while (!file2.eof())
 		{
