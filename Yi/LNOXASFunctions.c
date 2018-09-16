@@ -1,5 +1,3 @@
-#include "LNOXASFunctions.h"
-
 /*******************************
               IO
  *******************************/
@@ -605,7 +603,7 @@ uint32_t InitXASWavefunctionRandom(WaveFunctionType * const psi,
   {
     b[i++] = 1;
   }
-  Determinant = calloc(psi->NWord, sizeof(uint8_t));
+  Determinant = (uint8_t*)calloc(psi->NWord, sizeof(uint8_t));
   for (i = 0; i < ncore; i++)
   {
     OperatorCr(Determinant, i, psi->NFermion);
@@ -622,7 +620,7 @@ uint32_t InitXASWavefunctionRandom(WaveFunctionType * const psi,
   
   while(!twiddle(&x, &y, &z, p))
   {
-    Determinant = calloc(psi->NWord, sizeof(uint8_t));
+    Determinant = (uint8_t*)calloc(psi->NWord, sizeof(uint8_t));
     b[x] = 1;
     b[y] = 0;
     for (i = 0; i < ncore; i++)
@@ -676,7 +674,7 @@ uint32_t InitXASWavefunctionRandom2(WaveFunctionType * const psi,
   {
     b[i++] = 1;
   }
-  Determinant = calloc(psi->NWord, sizeof(uint8_t));
+  Determinant = (uint8_t*)calloc(psi->NWord, sizeof(uint8_t));
   for (i = 0; i < ncore; i++)
   {
     OperatorCr(Determinant, i, psi->NFermion);
@@ -697,7 +695,7 @@ uint32_t InitXASWavefunctionRandom2(WaveFunctionType * const psi,
   
   while(!twiddle(&x, &y, &z, p))
   {
-    Determinant = calloc(psi->NWord, sizeof(uint8_t));
+    Determinant = (uint8_t*)calloc(psi->NWord, sizeof(uint8_t));
     b[x] = 1;
     b[y] = 0;
     for (i = 0; i < ncore; i++)
@@ -753,7 +751,7 @@ uint32_t LNOInitXASWavefunctionRandom(WaveFunctionType * const psi,
   {
     b[i++] = 1;
   }
-  Determinant = calloc(psi->NWord, sizeof(uint8_t));
+  Determinant = (uint8_t*)calloc(psi->NWord, sizeof(uint8_t));
   for (i = 0; i < 6; i++)
   {
     OperatorCr(Determinant, i, psi->NFermion);
@@ -774,7 +772,7 @@ uint32_t LNOInitXASWavefunctionRandom(WaveFunctionType * const psi,
   
   while(!twiddle(&x, &y, &z, p))
   {
-    Determinant = calloc(psi->NWord, sizeof(uint8_t));
+    Determinant = (uint8_t*)calloc(psi->NWord, sizeof(uint8_t));
     b[x] = 1;
     b[y] = 0;
     for (i = 0; i < 6; i++)
@@ -1736,27 +1734,27 @@ uint32_t NiImpurity(SpectraSettings SpecSet)
 
   if (NBathc != 0)
   {
-    OppHybca1g = malloc(NBathc*sizeof(OperatorType));
-    OppHybcb1g = malloc(NBathc*sizeof(OperatorType));
-    OppHybcb2g = malloc(NBathc*sizeof(OperatorType));
-    OppHybceg  = malloc(NBathc*sizeof(OperatorType));
-    OppNc = malloc(NBathc*sizeof(OperatorType));
-    OppNca1g = malloc(NBathc*sizeof(OperatorType));
-    OppNcb1g = malloc(NBathc*sizeof(OperatorType));
-    OppNcb2g = malloc(NBathc*sizeof(OperatorType));
-    OppNceg  = malloc(NBathc*sizeof(OperatorType));
+    OppHybca1g = (OperatorType*)malloc(NBathc*sizeof(OperatorType));
+    OppHybcb1g = (OperatorType*)malloc(NBathc*sizeof(OperatorType));
+    OppHybcb2g = (OperatorType*)malloc(NBathc*sizeof(OperatorType));
+    OppHybceg  = (OperatorType*)malloc(NBathc*sizeof(OperatorType));
+    OppNc = (OperatorType*)malloc(NBathc*sizeof(OperatorType));
+    OppNca1g = (OperatorType*)malloc(NBathc*sizeof(OperatorType));
+    OppNcb1g = (OperatorType*)malloc(NBathc*sizeof(OperatorType));
+    OppNcb2g = (OperatorType*)malloc(NBathc*sizeof(OperatorType));
+    OppNceg  = (OperatorType*)malloc(NBathc*sizeof(OperatorType));
   }
   if (NBathv != 0)
   {
-    OppHybva1g = malloc(NBathv*sizeof(OperatorType));
-    OppHybvb1g = malloc(NBathv*sizeof(OperatorType));
-    OppHybvb2g = malloc(NBathv*sizeof(OperatorType));
-    OppHybveg  = malloc(NBathv*sizeof(OperatorType));
-    OppNv = malloc(NBathv*sizeof(OperatorType));
-    OppNva1g = malloc(NBathv*sizeof(OperatorType));
-    OppNvb1g = malloc(NBathv*sizeof(OperatorType));
-    OppNvb2g = malloc(NBathv*sizeof(OperatorType));
-    OppNveg  = malloc(NBathv*sizeof(OperatorType));
+    OppHybva1g = (OperatorType*)malloc(NBathv*sizeof(OperatorType));
+    OppHybvb1g = (OperatorType*)malloc(NBathv*sizeof(OperatorType));
+    OppHybvb2g = (OperatorType*)malloc(NBathv*sizeof(OperatorType));
+    OppHybveg  = (OperatorType*)malloc(NBathv*sizeof(OperatorType));
+    OppNv = (OperatorType*)malloc(NBathv*sizeof(OperatorType));
+    OppNva1g = (OperatorType*)malloc(NBathv*sizeof(OperatorType));
+    OppNvb1g = (OperatorType*)malloc(NBathv*sizeof(OperatorType));
+    OppNvb2g = (OperatorType*)malloc(NBathv*sizeof(OperatorType));
+    OppNveg  = (OperatorType*)malloc(NBathv*sizeof(OperatorType));
   }
   
   /* build some potentials */
@@ -2519,7 +2517,7 @@ uint32_t NiImpurity(SpectraSettings SpecSet)
   BeginTiming("find groundstate", &Time);
   
   NBitsKey = SpecSet.NBitsKey;
-  CreateString = calloc(6+10+10*NBathv, sizeof(uint16_t));
+  CreateString = (uint16_t*)calloc(6+10+10*NBathv, sizeof(uint16_t));
   for (i=0; i<6; i++)
   {
     CreateString[i] = (uint16_t)i;
@@ -2545,7 +2543,7 @@ uint32_t NiImpurity(SpectraSettings SpecSet)
       PsiHermitianOperatorPsi(OppH, psi, &egrd[igrd]);
     }
     printf("The ground-state energies are:\n");
-    for (i=0; i<MIN(igrd+1, maxgrd); i++)
+    for (i=0; i<Min(igrd+1, maxgrd); i++)
     {
       printf("%i  %22.15E\n", i, egrd[i]);
     }
@@ -2854,7 +2852,7 @@ uint32_t NiImpurity(SpectraSettings SpecSet)
         PsiHermitianOperatorPsi(OppH, psi, &egrd[igrd]);
       }
       printf("The ground-state energies are:\n");
-      for (i=0; i<MIN(igrd+1, maxgrd); i++)
+      for (i=0; i<Min(igrd+1, maxgrd); i++)
       {
         printf("%i  %22.15E\n", i, egrd[i]);
       }
@@ -2966,8 +2964,8 @@ uint32_t NiImpurity(SpectraSettings SpecSet)
   
   if (SpecSet.Dyson)
   {
-    VPerturbation=malloc(20*sizeof(OperatorType));
-    gPerturbation=malloc(20*sizeof(TriDiagonalMatrixType));
+    VPerturbation= (OperatorType*)malloc(20*sizeof(OperatorType));
+    gPerturbation= (TriDiagonalMatrixType*)malloc(20*sizeof(TriDiagonalMatrixType));
     SpectraVPerturbation(SpecSet, GBathBAa1g, GBathBAb1g, GBathBAb2g, GBathBAeg, VPerturbation, gPerturbation);
   }
   

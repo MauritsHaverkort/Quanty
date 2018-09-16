@@ -60,8 +60,8 @@ int main()
   NOrb = 6;                                               /* see function AtomicCI for the ordering of orbitals */
   AtomicCI("RadMEListZ2.dat", Nelectron, NOrb, &NBasis, &AtomicHam);
 
-  IndexUp=malloc(NBasis*sizeof(uint16_t));
-  IndexDn=malloc(NBasis*sizeof(uint16_t));
+  IndexUp= (uint16_t*)malloc(NBasis*sizeof(uint16_t));
+  IndexDn= (uint16_t*)malloc(NBasis*sizeof(uint16_t));
   for (i=0; i<NBasis; i++)
   {
     IndexUp[i] = 2*i;

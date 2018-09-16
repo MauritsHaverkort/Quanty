@@ -1,1 +1,23 @@
-
+static int LuaSpectraCopy(lua_State * L);
+static int LuaSpectraBroaden(lua_State * L);
+static int LuaSpectraBroadenMethod(lua_State * L);
+static int LuaSpectraShift(lua_State * L);
+static int LuaSpectraShiftMethod(lua_State * L);
+static int LuaSpectraToTable(lua_State * L);
+static int LuaTableToSpectra(lua_State * L);
+static int LuaSpectraMultiplyByEnergy(lua_State * L);
+static int LuaSpectraMultiplyByEnergyMethod(lua_State * L);
+static int LuaSpectraSum(lua_State * L);
+static int LuaSpectraSumMethod(lua_State * L);
+static int LuaSpectraElement(lua_State * L);
+static int LuaSpectraElementMethod(lua_State * L);
+static int LuaSpectraToFunction(lua_State * L);
+static int LuaSpectraPrintMethod(lua_State * L);
+static int LuaSpectraAdd(lua_State * L);
+static int LuaSpectraSub(lua_State * L);
+static int LuaSpectraMul(lua_State * L);
+static int LuaSpectraDiv(lua_State * L);
+static int LuaSpectraPow(lua_State * L);
+static int LuaSpectraIndex(lua_State * L);
+static int LuaSpectraToString(lua_State * L);
+static int LuaSpectraDestroy(lua_State * L);

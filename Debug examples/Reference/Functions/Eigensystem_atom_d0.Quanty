@@ -1,0 +1,90 @@
+
+NF=10
+NB=0
+IndexDn_3d={0,2,4,6,8}
+IndexUp_3d={1,3,5,7,9}
+
+OppSx   =NewOperator("Sx"   ,NF, IndexUp_3d, IndexDn_3d)
+OppSy   =NewOperator("Sy"   ,NF, IndexUp_3d, IndexDn_3d)
+OppSz   =NewOperator("Sz"   ,NF, IndexUp_3d, IndexDn_3d)
+OppSsqr =NewOperator("Ssqr" ,NF, IndexUp_3d, IndexDn_3d)
+OppSplus=NewOperator("Splus",NF, IndexUp_3d, IndexDn_3d)
+OppSmin =NewOperator("Smin" ,NF, IndexUp_3d, IndexDn_3d)
+
+OppLx   =NewOperator("Lx"   ,NF, IndexUp_3d, IndexDn_3d)
+OppLy   =NewOperator("Ly"   ,NF, IndexUp_3d, IndexDn_3d)
+OppLz   =NewOperator("Lz"   ,NF, IndexUp_3d, IndexDn_3d)
+OppLsqr =NewOperator("Lsqr" ,NF, IndexUp_3d, IndexDn_3d)
+OppLplus=NewOperator("Lplus",NF, IndexUp_3d, IndexDn_3d)
+OppLmin =NewOperator("Lmin" ,NF, IndexUp_3d, IndexDn_3d)
+
+OppJx   =NewOperator("Jx"   ,NF, IndexUp_3d, IndexDn_3d)
+OppJy   =NewOperator("Jy"   ,NF, IndexUp_3d, IndexDn_3d)
+OppJz   =NewOperator("Jz"   ,NF, IndexUp_3d, IndexDn_3d)
+OppJsqr =NewOperator("Jsqr" ,NF, IndexUp_3d, IndexDn_3d)
+OppJplus=NewOperator("Jplus",NF, IndexUp_3d, IndexDn_3d)
+OppJmin =NewOperator("Jmin" ,NF, IndexUp_3d, IndexDn_3d)
+
+Oppldots=NewOperator("ldots",NF, IndexUp_3d, IndexDn_3d)
+
+OppF0 =NewOperator("U", NF, IndexUp_3d, IndexDn_3d, {1,0,0})
+OppF2 =NewOperator("U", NF, IndexUp_3d, IndexDn_3d, {0,1,0})
+OppF4 =NewOperator("U", NF, IndexUp_3d, IndexDn_3d, {0,0,1})
+
+Akm = PotentialExpandedOnClm("Oh",2,{0.6,-0.4});
+OpptenDq = NewOperator("CF", NF, IndexUp_3d, IndexDn_3d, Akm);
+
+Akm = PotentialExpandedOnClm("Oh",2,{1,0});
+OppNeg = NewOperator("CF", NF, IndexUp_3d, IndexDn_3d, Akm);
+Akm = PotentialExpandedOnClm("Oh",2,{0,1});
+OppNt2g = NewOperator("CF", NF, IndexUp_3d, IndexDn_3d, Akm);
+
+-- once all operators are defined we can set some parameter values.
+
+-- the value of U drops out of a crystal-field calculation as the total number of electrons
+-- is always the same
+U       =  0.000
+-- F2 and F4 are often referred to in the literature as J_{Hund}. They represent the energy
+-- differences between different multiplets. Numerical values can be found in the back of
+-- my PhD. thesis for example. http://arxiv.org/abs/cond-mat/0505214
+F2dd    = 11.142
+F4dd    =  6.874
+-- F0 is not the same as U, although they are related. Unimportant in crystal-field theory
+-- the difference between U and F0 is so important that I do include it here. (U=0 so F0 is not)
+F0dd    = U+(F2dd+F4dd)*2/63
+-- tenDq in NiO is 1.1 eV as can be seen in optics or using IXS to measure d-d excitations
+tenDq   = 0
+-- the Ni 3d spin-orbit is small but finite
+zeta_3d = 0*0.081
+-- we add a small magnetic field
+Bz      = 0.000001
+-- note that all energies are in units of electron volt. (tesla to eV is EnergyUnits.Tesla.value = 5.788.... E-5)
+
+-- the total Hamiltonian is the sum of the different operators multiplied with their prefactor
+Hamiltonian =  F0dd*OppF0 + F2dd*OppF2 + F4dd*OppF4 + tenDq*OpptenDq + zeta_3d*Oppldots + Bz*(2*OppSz + OppLz)
+
+-- we now can create the lowest Npsi eigenstates:
+Npsi=1;
+-- in order to make sure we have a filling of 8
+-- electrons we need to define some restrictions
+StartRestrictions = {NF, NB, {"1111111111",0,0}};
+
+-- we calculate the eigen system
+psiListDense  = Eigensystem(Hamiltonian, StartRestrictions, Npsi);
+psiListSparse = Eigensystem(Hamiltonian, StartRestrictions, Npsi,{{"DenseBorder",0}});
+
+psiList = {psiListDense,psiListSparse}
+
+-- In order to get some information on these eigenstates it is good to plot expectation values
+-- We first define a list of all the operators we would like to calculate the expectation value of
+oppList={Hamiltonian, OppSsqr, OppLsqr, OppJsqr, OppSz, OppLz, Oppldots, OppF2, OppF4, OppNeg, OppNt2g};
+
+-- next we loop over all operators and all states and print the expectation value
+print(" <E>    <S^2>  <L^2>  <J^2>  <S_z>  <L_z>  <l.s>  <F[2]> <F[4]> <Neg>  <Nt2g>");
+for i = 1,#psiList do
+  for j = 1,#oppList do
+    expectationvalue = Chop(psiList[i]*oppList[j]*psiList[i])
+    io.write(string.format("%6.3f ",expectationvalue))
+  end
+  io.write("\n")
+end

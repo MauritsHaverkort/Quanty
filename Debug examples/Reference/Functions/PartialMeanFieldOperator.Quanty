@@ -1,0 +1,48 @@
+NF = 4
+
+OpList={}
+OpList[#OpList+1] = Chop(NewOperator("Number",NF,{0},{0},{0}) + 17 + 5*I )
+OpList[#OpList+1] = NewOperator("Number",NF,{1},{1},{0.1})
+OpList[#OpList+1] = NewOperator("Number",NF,{1},{1},{0.1}) + 2
+OpList[#OpList+1] = NewOperator("U",NF,{0},{1},{5})
+OpList[#OpList+1] = NewOperator("U",NF,{0},{1},{5}) + 3
+OpList[#OpList+1] = NewOperator("Number",NF,{1},{1},{0.1+I}) + NewOperator("U",NF,{0},{1},{5}) + 3
+OpList[#OpList+1] = NewOperator("Number",NF,{1},{1},{0.00001 + I}) + NewOperator("Number",NF,{2},{2},{1}) + NewOperator("U",NF,{0},{1},{0},{1},{2},{3},{2},{3},{3}) + NewOperator("U",NF,{0},{1},{5})
+
+RhoList={}
+RhoList[#RhoList+1] = {{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0}}
+RhoList[#RhoList+1] = {{1,0,0,0},{0,1,0,0},{0,0,1,0},{0,0,0,1}}
+RhoList[#RhoList+1] = {{1,1,0,0},{1,1,0,0},{0,0,0,0},{0,0,0,0}}
+RhoList[#RhoList+1] = {{4,0.3+I,0,0},{0.3-I,3,0,0},{0,0,0,0},{0,0,0,0}}
+RhoList[#RhoList+1] = {{1,I,0,0},{0,1,0,0},{0,0,1,0},{0,0,0,1}}
+
+IndList={}
+IndList[#IndList+1] = {}
+IndList[#IndList+1] = {0}
+IndList[#IndList+1] = {3}
+IndList[#IndList+1] = {1,2}
+IndList[#IndList+1] = {0,2,4}
+IndList[#IndList+1] = {0,1,2,3}
+IndList[#IndList+1] = {0,9999}
+
+
+for key1,op in pairs(OpList) do
+    for key2,rho in pairs(RhoList) do
+        for key3,inds in pairs(IndList) do
+            print("\n\n\n\n\n")
+            local opTmp = Copy(op)
+            print("Full Operator:")
+            print(op)
+            print("\nDensity:")
+            print(rho)
+            print("\nIndices:")
+            print(inds)
+            print("\nPartialMeanFieldOperator:")
+            print( PartialMeanFieldOperator(op, rho, inds) )
+            print("\nPartialMeanFieldOperator with electron self-interaction:")
+            print( PartialMeanFieldOperator(op, rho, inds, {{"AddDFTSelfInteraction",true}}) )
+            print("Test that nothing has changed (should be zero):")
+            print( Chop(opTmp - op) )
+        end
+    end
+end

@@ -1,13 +1,10 @@
-
-uint32_t PsiPrimeOperatorPsiPerturbation(const OperatorPerturbationType O,const WaveFunctionPerturbationType psiPrime,WaveFunctionPerturbationType const psi,double *VRe,double *VIm);
-uint32_t PsiOperatorPsiPerturbationMatrix(const OperatorPerturbationType O,const WaveFunctionPerturbationType *psi,MatrixType *const V);
-uint32_t PsiPrimeOperatorPsiPerturbationMatrix(const OperatorPerturbationType O,const WaveFunctionPerturbationType *psiPrime,WaveFunctionPerturbationType *const psi,MatrixType *const V);
-uint32_t PsiHermitianOperatorSqrPsiPerturbation(const OperatorPerturbationType O,const WaveFunctionPerturbationType psi,double *VRe);
-uint32_t PsiOperatorSqrPsiPerturbation(const OperatorPerturbationType O,const WaveFunctionPerturbationType psi,double *VRe,double *VeIm);
-uint32_t PsiHermitianOperatorPsiPerturbation(const OperatorPerturbationType O,const WaveFunctionPerturbationType psi,double *VRe);
-uint32_t PsiOperatorPsiPerturbation(const OperatorPerturbationType O,const WaveFunctionPerturbationType psi,double *VRe,double *VeIm);
-uint32_t OperatorPsiPerturbation(const OperatorPerturbationType O,const WaveFunctionPerturbationType psi,WaveFunctionPerturbationType *const Opsi);
-uint32_t OperatorPsiPerturbationConserveBasisPreAllocated(const OperatorPerturbationType O,const WaveFunctionPerturbationType psi,WaveFunctionPerturbationType *const Opsi);
-uint32_t OperatorPsiConserveBasis(const OperatorType O,const WaveFunctionType psi,WaveFunctionType *const Opsi);
-uint32_t WaveFunctionPerturbationInit(WaveFunctionPerturbationType *Psi);
-uint32_t OperatorPsiPerturbationConserveBasis(const OperatorPerturbationType O,const WaveFunctionPerturbationType psi,WaveFunctionPerturbationType *const Opsi);
+uint32_t OperatorPsiPerturbationConserveBasis(const OperatorPerturbationType O, const WaveFunctionPerturbationType psi, WaveFunctionPerturbationType * const Opsi);
+uint32_t OperatorPsiPerturbationConserveBasisPreAllocated(const OperatorPerturbationType O, const WaveFunctionPerturbationType psi, WaveFunctionPerturbationType * const Opsi);
+uint32_t OperatorPsiPerturbation(const OperatorPerturbationType O, const WaveFunctionPerturbationType psi, WaveFunctionPerturbationType * const Opsi);
+uint32_t PsiOperatorPsiPerturbation(const OperatorPerturbationType O, const WaveFunctionPerturbationType psi, double *VRe, double *VeIm);
+uint32_t PsiHermitianOperatorPsiPerturbation(const OperatorPerturbationType O, const WaveFunctionPerturbationType psi, double *VRe);
+uint32_t PsiOperatorSqrPsiPerturbation(const OperatorPerturbationType O, const WaveFunctionPerturbationType psi, double *VRe, double *VeIm);
+uint32_t PsiHermitianOperatorSqrPsiPerturbation(const OperatorPerturbationType O, const WaveFunctionPerturbationType psi, double *VRe);
+uint32_t PsiPrimeOperatorPsiPerturbationMatrix(const OperatorPerturbationType O, const WaveFunctionPerturbationType * psiPrime, WaveFunctionPerturbationType * const psi, MatrixType * const V);
+uint32_t PsiOperatorPsiPerturbationMatrix(const OperatorPerturbationType O, const WaveFunctionPerturbationType * psi, MatrixType * const V);
+uint32_t PsiPrimeOperatorPsiPerturbation(const OperatorPerturbationType O, const WaveFunctionPerturbationType psiPrime, WaveFunctionPerturbationType const psi, double *VRe, double *VIm);

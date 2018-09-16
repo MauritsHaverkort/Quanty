@@ -1,4 +1,4 @@
-#include "../Martin/SlaterIntegrals.c"
+#include "../AtomicOperators/SlaterIntegrals.cpp"
 
 void CreateOperatorCoulombRelativisticOneIntegral(uint32_t const NFermion,int const kappa1,int const kappa2, int const kappa3,int const kappa4,uint16_t const *Jindex1,
                                                   uint16_t const *Jindex2,uint16_t const *Jindex3, uint16_t const *Jindex4,double const *Fk, const unsigned int n1,

@@ -1,0 +1,14 @@
+A = {{1,2},{3,4}}
+B = {{1 * I, 2*I},{3,4}}
+for key, M in pairs({A,B}) do
+    print("\n\n\nM:")
+    print(M)    
+    print( "\n\n\nMatrix.Expand(M,7):" )
+    print( Matrix.Expand(M,7) )
+    for key, val in pairs({1,0, I, 2+ 3*I}) do
+        print("\n\n\nEntries on new diagonal:")
+        print(val)
+        print( "\n\n\nMatrix.Expand(M,7,val):" )
+        print( Matrix.Expand(M,7,val) )
+    end
+end 

@@ -1,7 +1,4 @@
-
-double TestPotentialD4h(uint32_t i,uint32_t j);
-void BasisOptimization();
-void BasisOptimizationSmallD4h();
-void BasisOptimizationSmallD4h();
 void BasisOptimizationSmallLowSym();
+double TestPotentialD4h(uint32_t i, uint32_t j);
+void BasisOptimizationSmallD4h();
 void BasisOptimizationSmallLowSym();

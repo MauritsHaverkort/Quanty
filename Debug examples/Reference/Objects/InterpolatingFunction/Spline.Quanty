@@ -1,0 +1,8 @@
+A = InterpolatingFunction.Spline({1,2,3},{1,4,9})
+print(A(2.5))
+
+A = InterpolatingFunction.Spline({1,2,3},{1,4,9},2,18)
+print(2.5*2.5, A(2.5))
+
+A = InterpolatingFunction.Spline({1,3,2},{1,9,4})
+print(A(2.5))

@@ -1,5 +1,3 @@
-#include "CodeMartin.h"
-
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
@@ -332,7 +330,7 @@ uint32_t CreateRealWaveFunctionShellOccupacy(WaveFunctionType *const psi, uint32
   };
   sprintf(psi->Name,"WaveFunction");
   for(idet=0;idet<1;idet++){
-    Determinant=calloc(psi->NWord,sizeof(uint8_t));
+    Determinant= (uint8_t*)calloc(psi->NWord,sizeof(uint8_t));
 	  for(i=0;i<arraylength;i++){
       iofset=0;
       for(ielec=0;ielec<nelectrons[i];ielec++){
@@ -386,7 +384,7 @@ uint32_t CreateRealWaveFunctionNew(WaveFunctionType *const psi, uint32_t const N
   sprintf(psi->Name,"WaveFunction");
   for(idet=0;idet<NFermions-11;idet++)
     for(jdet=idet+1;jdet<NFermions-10;jdet++){
-      Determinant=calloc(psi->NWord,sizeof(uint8_t));
+      Determinant= (uint8_t*)calloc(psi->NWord,sizeof(uint8_t));
       for(ielec=0;ielec<nelectrons;ielec++){
         (ielec<10)?OperatorCr(Determinant,ielec,psi->NFermion):OperatorCr(Determinant,10+idet*(1-(ielec%2))+jdet*(ielec%2),psi->NFermion);
       }

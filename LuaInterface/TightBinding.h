@@ -1,1 +1,21 @@
-
+static int LuaNewTightBinding(lua_State * L);
+static int LuaFileReadStuttgartCTRL(lua_State * L);
+static int LuaFileReadStuttgartHAMR(lua_State * L);
+static int LuaFileReadDresdenFPLO(lua_State * L);
+static int LuaTightBindingDefFromStuttgartCTRLHAMR(lua_State * L);
+static int LuaTightBindingDefFromDresdenFPLO(lua_State * L);
+static int LuaCalculateDOS(lua_State *L);
+static int LuaCalculateBands(lua_State *L);
+static int LuaCalculateFermi(lua_State *L);
+static int LuaCalculateG(lua_State *L);
+static int LuaCalculateRho(lua_State *L);
+static int LuaCreateClusterHamiltonian(lua_State *L);
+static int LuaReadAtom(lua_State *L, int narg, AtomType *a);
+static int LuaReadAtomWithDefault(lua_State *L, int narg, AtomType *a, CrystalStructureType *def);
+static int LuaPushAtom(lua_State *L, AtomType const *a);
+static int LuaReadHopping(lua_State *L, int narg, CrystalStructureType *Cell, TightBindingDefHopping *H);
+static int LuaPushHopping(lua_State *L, CrystalStructureType const *Cell, TightBindingDefHopping const *H);
+static int LuaTightBindingIndex(lua_State * L);
+static int LuaTightBindingNewIndex(lua_State * L);
+static int LuaTightBindingToString(lua_State * L);
+static int LuaTightBindingDestroy(lua_State * L);
