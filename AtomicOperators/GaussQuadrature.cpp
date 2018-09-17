@@ -312,7 +312,7 @@ double GetMultipoleIntegral(Interpolation::CubicSpline f1, Interpolation::CubicS
 double GetMultipoleIntegral(Interpolation::CubicSpline f1, Interpolation::CubicSpline f2, int k)
 {
 	double result = 0;
-	uint32_t n = f1.GetX().size();
+	uint32_t n = (uint32_t)f1.GetX().size();
 	if (n != f2.GetX().size())
 	{
 		std::cout << "error in GetMultipoleIntegral: grids are not the same." << std::endl;

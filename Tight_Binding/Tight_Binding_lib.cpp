@@ -98,6 +98,49 @@ int CopyAtomType(const AtomType *const A, AtomType *B)
   return 0;
 }
 
+bool QInteger(double x, double epsilon)
+{
+  if(fabs(x-round(x))>epsilon) return false;
+  return true;
+}
+
+int FindAtomPosModulusUnitCell(const AtomType *const Atom, const CrystalStructureType *const Cell, double epsilon)
+{
+  int i;
+  double vec[3],relvec[3];
+  for(i=0;i<Cell->NAtoms;i++)
+  {
+    if(strcmp(Atom->Name, Cell->Atom[i].Name)==0)
+    { // name is equal next test if position is compatible
+      vec[0]=Atom->Position[0]-Cell->Atom[i].Position[0];
+      vec[1]=Atom->Position[1]-Cell->Atom[i].Position[1];
+      vec[2]=Atom->Position[2]-Cell->Atom[i].Position[2];
+      if(Cell->Units&8)
+      { // position in units of lattice vectors vec must be integer in all elements
+        if(QInteger(vec[0],epsilon)&&QInteger(vec[1],epsilon)&&QInteger(vec[2],epsilon)) return i;
+      }
+      else
+      { // position in absolute units
+        if((fabs(vec[0])<epsilon)&&(fabs(vec[1])<epsilon)&&(fabs(vec[2])<epsilon)) return i;
+        if(fabs(ParallelalPipedVolume(Cell->gUnitCell[0], Cell->gUnitCell[1], Cell->gUnitCell[2]))>epsilon)
+        {
+          relvec[0]=Dot(vec,Cell->gUnitCell[0]);
+          relvec[1]=Dot(vec,Cell->gUnitCell[1]);
+          relvec[2]=Dot(vec,Cell->gUnitCell[2]);
+          if(Cell->Units&1)
+          {
+            relvec[0]/=(2*Pi);
+            relvec[1]/=(2*Pi);
+            relvec[2]/=(2*Pi);
+          }
+          if(QInteger(relvec[0],epsilon)&&QInteger(relvec[1],epsilon)&&QInteger(relvec[2],epsilon)) return i;
+        }
+      }
+    }
+  }
+  // atom not found
+  return NAN;
+}
 
 
 /*  The tight-binding structure defines a unit cell (CrystalStructureType) including a basis
@@ -312,19 +355,12 @@ int CreateHamiltonianFromTightBindingDef(TightBindingDef A, double k[3], MatrixT
     vector[0] = A.Cell.Atom[A.H[iH].Atompos1].Position[0] - A.Cell.Atom[A.H[iH].Atompos2].Position[0];
     vector[1] = A.Cell.Atom[A.H[iH].Atompos1].Position[1] - A.Cell.Atom[A.H[iH].Atompos2].Position[1];
     vector[2] = A.Cell.Atom[A.H[iH].Atompos1].Position[2] - A.Cell.Atom[A.H[iH].Atompos2].Position[2];
-    vector[0] +=
-      A.Cell.rUnitCell[0][0] * A.H[iH].TransVecs[0] + A.Cell.rUnitCell[1][0] * A.H[iH].TransVecs[1] +
-      A.Cell.rUnitCell[2][0] * A.H[iH].TransVecs[2];
-    vector[1] +=
-      A.Cell.rUnitCell[0][1] * A.H[iH].TransVecs[0] + A.Cell.rUnitCell[1][1] * A.H[iH].TransVecs[1] +
-      A.Cell.rUnitCell[2][1] * A.H[iH].TransVecs[2];
-    vector[2] +=
-      A.Cell.rUnitCell[0][2] * A.H[iH].TransVecs[0] + A.Cell.rUnitCell[1][2] * A.H[iH].TransVecs[1] +
-      A.Cell.rUnitCell[2][2] * A.H[iH].TransVecs[2];
+    vector[0] += ((A.H[iH].TransVecs[0]==0) ? (0) : (A.Cell.rUnitCell[0][0] * A.H[iH].TransVecs[0])) + ((A.H[iH].TransVecs[1]==0) ? (0) : (A.Cell.rUnitCell[1][0] * A.H[iH].TransVecs[1])) + ((A.H[iH].TransVecs[2]==0) ? (0) : (A.Cell.rUnitCell[2][0] * A.H[iH].TransVecs[2]));
+    vector[1] += ((A.H[iH].TransVecs[0]==0) ? (0) : (A.Cell.rUnitCell[0][1] * A.H[iH].TransVecs[0])) + ((A.H[iH].TransVecs[1]==0) ? (0) : (A.Cell.rUnitCell[1][1] * A.H[iH].TransVecs[1])) + ((A.H[iH].TransVecs[2]==0) ? (0) : (A.Cell.rUnitCell[2][1] * A.H[iH].TransVecs[2]));
+    vector[2] += ((A.H[iH].TransVecs[0]==0) ? (0) : (A.Cell.rUnitCell[0][2] * A.H[iH].TransVecs[0])) + ((A.H[iH].TransVecs[1]==0) ? (0) : (A.Cell.rUnitCell[1][2] * A.H[iH].TransVecs[1])) + ((A.H[iH].TransVecs[2]==0) ? (0) : (A.Cell.rUnitCell[2][2] * A.H[iH].TransVecs[2]));
     alphaRe = cos(Dot(k, vector));
     alphaIm = sin(Dot(k, vector));
-    if (Sqr(alphaIm) < Sqr(alphaRe) * DBL_EPSILON * 100)
-      alphaIm = 0;
+    if (Sqr(alphaIm) < Sqr(alphaRe) * DBL_EPSILON * 100) alphaIm = 0;
     MatrixAddShifted(H, A.H[iH].Hop, alphaRe, alphaIm, i, j);
   }
   return 0;
@@ -336,7 +372,7 @@ int CreateHamiltonianFromTightBindingDef(TightBindingDef A, double k[3], MatrixT
  *  representing the Hamiltonian.
  *    two atoms at different positions in the unit cell hop with a constant phase 1
  */
-int CreateHamiltonianFromTightBindingDefConstantPhaseInUnitCell(TightBindingDef A, double k[3], MatrixType * H)
+int CreateHamiltonianFromTightBindingDefConstantPhaseInUnitCell(TightBindingDef A, const double k[3], MatrixType * H)
 {
   int    iH, i, j;
   double alphaRe, alphaIm;
@@ -1145,8 +1181,7 @@ int EigenFunctionToCharactersOnsiteEnergyPhaseRGBkshiftedSetNCharacter(TightBind
   return 0;
 }
 
-int EigenFunctionToCharactersOnsiteEnergyPhaseRGBkshifted(TightBindingDef A, MatrixType H, double kshift[3],
-                                                          MatrixType EigenFun, MatrixType * Character)
+int EigenFunctionToCharactersOnsiteEnergyPhaseRGBkshifted(TightBindingDef A, MatrixType H, double kshift[3], MatrixType EigenFun, MatrixType * Character)
 {
   int    i, j;
   double CharImTemp;
@@ -1243,10 +1278,7 @@ int EigenFunctionToCharactersOnsiteEnergyPhaseRGBkshifted(TightBindingDef A, Mat
  *  output:
  *     Fermi[Ncharacter*Ei+icharacter].Re[ki][kj] is incremented by the DOS at the given k-points and energies.
  */
-int TightBindingFermiCharacter(TightBindingDef A, double Emin, double Emax, int NE, double k0[3], double k1[3],
-                               double k2[3], MatrixType Fermi[], int Ncharacter,
-                               int (*EigenFunctionToCharacters) (TightBindingDef, MatrixType, double *, MatrixType,
-                                                                 MatrixType *))
+int TightBindingFermiCharacter(TightBindingDef A, double Emin, double Emax, int NE, double k0[3], double k1[3], double k2[3], MatrixType Fermi[], int Ncharacter, int (*EigenFunctionToCharacters) (TightBindingDef, MatrixType, double *, MatrixType, MatrixType *))
 {
   MatrixType H, T, TempChar;
   double q[3], val[A.NFermion];
@@ -1326,10 +1358,7 @@ int TightBindingFermiCharacter(TightBindingDef A, double Emin, double Emax, int 
  *  output:
  *     Fermi[Ncharacter*Ei+icharacter].Re[ki][kj] is incremented by the DOS at the given k-points and energies.
  */
-int TightBindingFermiCharacterUnfolding(TightBindingDef A, double Emin, double Emax, int NE, double k0[3], double k1[3],
-                                        double k2[3], int Nk1, int Nk2, MatrixType Fermi[], int Ncharacter,
-                                        int (*EigenFunctionToCharacters) (TightBindingDef, MatrixType, double *,
-                                                                          MatrixType, MatrixType *))
+int TightBindingFermiCharacterUnfolding(TightBindingDef A, double Emin, double Emax, int NE, double k0[3], double k1[3], double k2[3], int Nk1, int Nk2, MatrixType Fermi[], int Ncharacter, int (*EigenFunctionToCharacters) (TightBindingDef, MatrixType, double *, MatrixType, MatrixType *))
 {
   MatrixType H, T, TempChar;
   double q[3], val[A.NFermion], kshift[3];

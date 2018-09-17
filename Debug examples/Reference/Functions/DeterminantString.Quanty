@@ -20,10 +20,10 @@ IndList[#IndList+1] = AtomicIndices["excited"]
 for key1,inds in pairs(IndList) do
     for key2,NF in pairs(NFList) do
         print("\n\n\n")
+        print("\nNF =",NF)
         print("\nIndices:")
         print(inds)
-        print("\nNF =",NF)
         print("\nDeterminantString:")
-        print(DeterminantString(inds,NF))
+        print(DeterminantString(NF,inds))
     end
 end

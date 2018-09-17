@@ -1581,9 +1581,9 @@ string numberToStringMaxWidth(double num, int maxWidth)
 		++powerDigits;
 	if (num < 0)
 		--maxWidth;
-	if (fabs(num) < 1)
+	if (Abs(num) < 1)
 	{
-		if (fabs(num) > pow(10,-powerDigits-2) || num == 0)
+		if (Abs(num) > pow(10,-powerDigits-2) || num == 0)
 		{
 			if (maxWidth + power - 1 > 0)
 				sstr.precision(maxWidth + power - 1);
@@ -1598,7 +1598,7 @@ string numberToStringMaxWidth(double num, int maxWidth)
 				sstr.precision(1);
 			sstr << num * pow(10, -power) << "e" << power;
 		}
-	} else if (fabs(num) > pow(10, maxWidth - 1))
+	} else if (Abs(num) > pow(10, maxWidth - 1))
 	{
 		if (maxWidth - powerDigits - 2 > 0)
 			sstr.precision(maxWidth - powerDigits - 2);
@@ -1679,11 +1679,11 @@ void printExpectationValues(const vector < WaveFunctionType >  psiList, Operator
 			if (opRestricted)
 			{
 				for (int i = 0; i < psiList.size(); ++i)
-					sigmaValues[i] = sqrt(fabs(EValues[i] * EValues[i] - PsiHermitianOperatorSqrPsiRestricted(hamil, psiList[i], hamil.Res)));
+					sigmaValues[i] = sqrt(Abs(EValues[i] * EValues[i] - PsiHermitianOperatorSqrPsiRestricted(hamil, psiList[i], hamil.Res)));
 			} else
 			{
 				for (int i = 0; i < psiList.size(); ++i)
-					sigmaValues[i] = sqrt(fabs(EValues[i] * EValues[i] - PsiHermitianOperatorSqrPsi(hamil, psiList[i])));
+					sigmaValues[i] = sqrt(Abs(EValues[i] * EValues[i] - PsiHermitianOperatorSqrPsi(hamil, psiList[i])));
 			}
 		}
 	}
@@ -1717,7 +1717,7 @@ void printExpectationValues(const vector < WaveFunctionType >  psiList, Operator
 		for (int j = 0; j < opList.size() + hamilAddition; ++j)
 		{
 			double out = expValues[i][j];
-			if (out <= zero)
+			if (Abs(out) <= zero)
 				out = 0;
 			string outStr = numberToStringMaxWidth(out, colWidth - 1);
 			cout << outStr;

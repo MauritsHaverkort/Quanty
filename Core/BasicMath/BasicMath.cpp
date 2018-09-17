@@ -8,6 +8,7 @@
 #define Cubed(a) ((a)*(a)*(a))
 #define Dot(a,b) ((a[0])*(b[0])+(a[1])*(b[1])+(a[2])*(b[2]))
 #define Norm(a) (sqrt((a[0])*(a[0])+(a[1])*(a[1])+(a[2])*(a[2])))
+#define NormSqr(a) ((a[0])*(a[0])+(a[1])*(a[1])+(a[2])*(a[2]))
 #define Crossx(a,b) ((a[1])*(b[2])-(b[1])*(a[2]))
 #define Crossy(a,b) ((a[2])*(b[0])-(b[2])*(a[0]))
 #define Crossz(a,b) ((a[0])*(b[1])-(b[0])*(a[1]))
@@ -397,9 +398,9 @@ void ReciprocalLatticeVector(double r[3][3], double g[3][3], uint32_t const Unit
 
 int findPower(double num, int power)
 {
-	if (fabs(num) < 1 && num != 0)
+	if (Abs(num) < 1 && num != 0)
 		return findPower(num * 10, power - 1);
-	else if (fabs(num) >= 10)
+	else if (Abs(num) >= 10)
 		return findPower(num / 10, power + 1);
 	else
 		return power;

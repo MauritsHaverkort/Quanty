@@ -11,6 +11,7 @@
  */
 void FreeCompactMatrix(CompactMatrixType * const M)
 {
+  if(M->OnLuaStack) return;
   free(M->Name);
   if(M->QComplex)
   {
@@ -53,6 +54,7 @@ uint32_t InitCompactMatrix(CompactMatrixType * const M)
       return 1;
     }
   }
+  M->OnLuaStack=false;
   return 0;
 }
 
@@ -202,6 +204,7 @@ uint32_t InitCompactIdentityMatrix(CompactMatrixType * const M)
       M->VRe[i*M->Nj+i]=1;
     }
   }
+  M->OnLuaStack=false;
   return 0;
 }
 
@@ -4028,7 +4031,7 @@ uint32_t CompactMatrixBlockBandDiagonalizeComplex(CompactMatrixType const * cons
     Ni=0;
     for(j=1;j<=Min(i+1,NTri);j++)
     {
-      memcpy(&(vec->VRe[Ni*vec->Nj]),veclist[j].VRe,veclist[j].Ni*veclist[j].Nj*sizeof(double));
+      memcpy(&(vec->V[Ni*vec->Nj]),veclist[j].V,veclist[j].Ni*veclist[j].Nj*sizeof(Complex16));
       Ni=Ni+veclist[j].Ni;
     }
   }

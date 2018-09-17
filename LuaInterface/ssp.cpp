@@ -1150,6 +1150,7 @@ static int LuaChop(lua_State * L)
         CompactMatrixCopy(*M, Mnew);
         CompactMatrixChop(Mnew, epsilon);
         luaL_setmetatable(L, "Matrix_Type");
+        Mnew->OnLuaStack=true;
         return 1;
       }
       return luaL_error(L, "Error: Chop an object of unrecognised type\n");
@@ -1540,6 +1541,7 @@ static int Luarotate(lua_State *L)
   if (luaL_testudata(L, 1, "TightBinding_Type") != NULL)
   {
     uint32_t i;
+    int index;
     TightBindingDef *RTB;    if(len!=3)luaL_error(L, "Rotate for a tight binding object called with %d arguments, 3 expected\n",len);
     CompactMatrixType *RotMat;
     RotMat = luaL_checkCompactMatrix(L, 2);
@@ -1565,7 +1567,7 @@ static int Luarotate(lua_State *L)
     for(i=0;i<RTB->Cell.NAtoms;i++)
     {
       lua_rawgeti(L, 3, i+1);
-      LuaReadAtomWithDefault(L, -1, &(RTB->Cell.Atom[i]), &(TB->Cell));
+      LuaReadAtomWithDefault(L, -1, &(RTB->Cell.Atom[i]), &(TB->Cell),&index);
       lua_pop(L, 1);
     }
     SetNFermionIndexTightBindingDef(RTB);
@@ -2927,7 +2929,7 @@ static int LuaMeanFieldOperator(lua_State *L)
   Rho = (MatrixType *) luaL_checkMatrix(L, 2);
   if((H->NFermion+H->NBoson)!=Rho->Ni)
   {
-    return luaL_error(L, "Error in MeanFieldGroundstate, length of operator (NF %i NB %i) is not equal to length of density matrix (%i)\n",H->NFermion,H->NBoson,Rho->Ni);
+    return luaL_error(L, "Error in MeanFieldGroundstate, length of operator (NF=%d, NB=%d) is not equal to length of density matrix (%d)\n",H->NFermion,H->NBoson,Rho->Ni);
   }
   HMF = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   MeanFieldOperator(H, HMF, *Rho, Options.AddDFTSelfInteraction);
@@ -3705,7 +3707,10 @@ static int LuaOrthonormalize(lua_State *L)
  *     Case 2
  *         First argument on stack should be a hermitian operator
  *         Second argument should be a single wave-function or a list of wavefunctions
- *     In both cases:
+ *     Case 3
+ *         First argument on stack should be a tight binding object
+ *         Second argument is a list of atoms with positions, shells and orbitals used as the starting block
+ *     In all cases:
  *         Posible third argument specifies options
  *         - SingularValue:   double:  values equal or smaller than SignularValue are removed from basis (standard 10^-6)
  *         - NTri:            integer: Maximum number of blocks included (standard infinity)
@@ -3738,6 +3743,10 @@ static int LuaBlockBandDiagonalize(lua_State *L)
   Options.ReturnT=true;
   // get options when defined
   len = (uint32_t)lua_gettop(L);
+  if(len<2)
+  {
+    return luaL_error(L, "BlockBandDiagonalize called with %d arguments. Two or Three expected\n",len);
+  }
   if(len>3)
   {
     return luaL_error(L, "BlockBandDiagonalize called with %d arguments. Two or Three expected\n",len);
@@ -3758,7 +3767,7 @@ static int LuaBlockBandDiagonalize(lua_State *L)
     }
   }
   // case 1 - dense matrices
-  if(lua_istable(L,1)==1)
+  if((lua_istable(L,1)==1)||(luaL_testudata(L, 1, "Matrix_Type") != NULL))
   {
     CompactMatrixType *M,*vec;
     M = (CompactMatrixType *) luaL_checkCompactMatrix(L, 1);
@@ -3775,11 +3784,15 @@ static int LuaBlockBandDiagonalize(lua_State *L)
       if(vec->Ni>vec->Nj) return luaL_error(L, "Block size (%d) should be smaller than dimension of matrix (%d)\n",vec->Ni,vec->Nj);
       InitCompactIdentityMatrix(vec);
     }
-    else
+    else if(lua_type(L,2)==LUA_TTABLE)
     {
       vec = (CompactMatrixType *) luaL_checkCompactMatrix(L, 2);
       if(vec->Ni>vec->Nj) return luaL_error(L, "Block size (%d) should be smaller than dimension of matrix (%d)",vec->Ni,vec->Nj);
       if(vec->Nj!=M->Nj) return luaL_error(L, "Length of starting vector (%d) should be equivalent to dimension of matrix (%d).\n",vec->Nj,M->Nj);
+    }
+    else
+    {
+      return luaL_error(L, "BlockBandDiatonalize for matrices expects eitehr a number of vector of numbers on second position\n");
     }
     Options.NTri=Min(Options.NTri, M->Ni);
     if(CompactMatrixBlockBandDiagonalize(M, vec, &B, Options.SingularValue, Options.NTri, Options.NOrtho, Options.ReOrthogonalize, Options.ReturnT))
@@ -3788,8 +3801,11 @@ static int LuaBlockBandDiagonalize(lua_State *L)
     }
     LuaPushTable_BlockTriDiagonalMatrixType(L, &B);
     FreeBlockTridiagonalMatrix(&B);
-    FreeCompactMatrix(M);
-    free(M);
+    if(M->OnLuaStack==false)
+    {
+      FreeCompactMatrix(M);
+      free(M);
+    }
     if(Options.ReturnT==true)
     {
       LuaPushTable_CompactMatrixType(L, vec);
@@ -3854,7 +3870,275 @@ static int LuaBlockBandDiagonalize(lua_State *L)
     FreeBlockTridiagonalMatrix(&B);
     return 1;
   }
-  // error not case 1 or 2
+  // case 3 Tigth binding object and a list of atoms + position / orbitals / shells
+  else if (luaL_testudata(L, 1, "TightBinding_Type") != NULL)
+  {
+    TightBindingDef *TB, *RTB;
+    AtomType *AtomsInStartBlock;
+    int NAtomsInStartBlock;
+    int *AtomsInStartBlockPosInTB;
+    int i,j,l,m,n,i1,j1,l1;
+    const double k[3]={0,0,0};
+    int *BlockDimension;
+    MatrixType Htemp;
+    CompactMatrixType M,vec;
+    char NameTemp[MAXStrLength];
+    bool found;
+    /* read the tight binding defintion from the first place on the lua stack */
+    TB = (TightBindingDef *) luaL_checkudata(L, 1, "TightBinding_Type");
+    // read list of atoms from the second place on the lua stack
+    if(lua_type(L,2)!=LUA_TTABLE)
+    {
+      return luaL_error(L, "Error BlockBandDiagonalize expects a list of atoms to include for tight binding Hamiltonians\n");
+    }
+    // read the specific atoms
+    NAtomsInStartBlock=(uint32_t)lua_objlen(L, 2);
+    AtomsInStartBlock=(AtomType*)malloc(NAtomsInStartBlock*sizeof(AtomType));
+    AtomsInStartBlockPosInTB=(int*)malloc(NAtomsInStartBlock*sizeof(int));
+    for(i=0;i<NAtomsInStartBlock;i++)
+    {
+      lua_rawgeti(L, 2, i+1);
+      LuaReadAtomWithDefault(L, -1, &(AtomsInStartBlock[i]), &(TB->Cell),&(AtomsInStartBlockPosInTB[i]));
+      lua_pop(L, 1);
+    }
+    // test if TB object represents a molecule (lattice constants infinity)
+    if((NormSqr(TB->Cell.rUnitCell[0])<INFINITY)||(NormSqr(TB->Cell.rUnitCell[1])<INFINITY)||(NormSqr(TB->Cell.rUnitCell[2])<INFINITY))
+    {
+      return luaL_error(L, "Error BlockBandDiagonalize only implemented for non periodic structures |a|=|b|=|c|=INFINITY\n");
+    }
+    // create a matrix of the TB object
+    CreateHamiltonianFromTightBindingDefConstantPhaseInUnitCell(*TB, k, &Htemp);
+    MatrixCopyToCompact(&M, Htemp);
+    FreeMatrix(&Htemp);
+    // create a matrix for the starting block
+    vec.QComplex=0;
+    vec.Nj=M.Nj;
+    vec.Ni=0;
+    for(i=0;i<NAtomsInStartBlock;i++)
+    {
+      for(j=0;j<AtomsInStartBlock[i].Nshell;j++)
+      {
+        vec.Ni+=AtomsInStartBlock[i].shelldegeneracy[j];
+      }
+    }
+    InitCompactMatrix(&vec);
+    m=0;
+    for(i=0;i<NAtomsInStartBlock;i++)
+    {
+      for(j=0;j<AtomsInStartBlock[i].Nshell;j++)
+      {
+        for(l=0;l<AtomsInStartBlock[i].shelldegeneracy[j];l++)
+        {
+          n=0;
+          found=false;
+          for(i1=0;i1<TB->Cell.NAtoms;i1++)
+          {
+            for(j1=0;j1<TB->Cell.Atom[i1].Nshell;j1++)
+            {
+              for(l1=0;l1<TB->Cell.Atom[i1].shelldegeneracy[j1];l1++)
+              {
+                if((strcmp(TB->Cell.Atom[i1].Name, AtomsInStartBlock[i].Name)==0)
+                   &&(EqualFloat(TB->Cell.Atom[i1].Position[0], AtomsInStartBlock[i].Position[0]))
+                   &&(EqualFloat(TB->Cell.Atom[i1].Position[1], AtomsInStartBlock[i].Position[1]))
+                   &&(EqualFloat(TB->Cell.Atom[i1].Position[2], AtomsInStartBlock[i].Position[2]))
+                   &&(strcmp(TB->Cell.Atom[i1].ShellName[j1],AtomsInStartBlock[i].ShellName[j])==0)
+                   &&(strcmp(TB->Cell.Atom[i1].OrbitalName[j1][l1],AtomsInStartBlock[i].OrbitalName[j][l])==0) )
+                {
+                  vec.VRe[m*vec.Nj+n]=1;
+                  found=true;
+                  break;
+                }
+                n++;
+              }
+              if(found)break;
+            }
+            if(found)break;
+          }
+          if(!found)
+          {
+            luaL_error(L, "Error in BlockBandDiagonalize of TightBinding object:\n                         Atom, Shell and orbital at position %d not found in TB structure\n",m);
+          }
+          m++;
+        }
+      }
+    }
+    // Block band diagonalize the matrix
+    Options.NTri=Min(Options.NTri, M.Ni);
+    if(CompactMatrixBlockBandDiagonalize(&M, &vec, &B, Options.SingularValue, Options.NTri, Options.NOrtho, Options.ReOrthogonalize, true))
+    {
+      return luaL_error(L, "CompactMatrixBlockBandDiagonalize failed that should not happen\n");
+    }
+    
+    PrintCompactMatrixMinimal(vec);
+    PrintBlockTriDiagonalMatrix(B);
+    
+    
+    
+    // Determine the dimension of the different Blocks
+    BlockDimension = (int*)malloc(B.N*sizeof(int));
+    BlockDimension[0]=B.BlockSize;
+    if(B.QComplex==0)
+    {
+      for(i=1;i<B.N;i++)
+      {
+        BlockDimension[i]=BlockDimension[i-1];
+        for(j=0;j<BlockDimension[i-1];j++)
+        {
+          for(l=0;l<B.BlockSize;l++)
+          {
+            if(B.aRe[(i+1)*B.BlockSize*B.BlockSize+j*B.BlockSize+l]!=0)
+            {
+              break;
+            }
+            if(l==B.BlockSize-1)
+            {
+              BlockDimension[i]--;
+            }
+          }
+        }
+        if(BlockDimension[i]==0) B.N=i;
+      }
+    }
+    else
+    {
+      for(i=1;i<B.N;i++)
+      {
+        BlockDimension[i]=BlockDimension[i-1];
+        for(j=0;j<BlockDimension[i-1];j++)
+        {
+          for(l=0;l<B.BlockSize;l++)
+          {
+            if((B.a[(i+1)*B.BlockSize*B.BlockSize+j*B.BlockSize+l].Re!=0)||(B.a[(i+1)*B.BlockSize*B.BlockSize+j*B.BlockSize+l].Im!=0))
+            {
+              break;
+            }
+            if(l==B.BlockSize-1)
+            {
+              BlockDimension[i]--;
+            }
+          }
+        }
+        if(BlockDimension[i]==0) B.N=i;
+      }
+    }
+    // Push the pointer to the rotated TB operator to the Lua Stack
+    RTB=(TightBindingDef*) lua_newuserdata(L, sizeof(TightBindingDef));
+    luaL_setmetatable(L, "TightBinding_Type");
+    // set name
+    strcpy(RTB->Name, TB->Name);
+    // set the moleclar structure
+    // The first Block has the atoms, shells and orbitals according to AtomsInStartBlock
+    // If there has not been any deflation the next blocks have the same structure exept that the atom names are replaced by Ligand or Ligand_atomName or Ligand_i or Ligand_i_atomName
+    // If there has been deflation the name is Ligand or Ligand_i and the with one shell (named by an integer related to the degeneracy) and the orbitals labeled from 0 to Norb
+    RTB->Cell.rUnitCell[0][0]=TB->Cell.rUnitCell[0][0]; RTB->Cell.rUnitCell[0][1]=TB->Cell.rUnitCell[0][1]; RTB->Cell.rUnitCell[0][2]=TB->Cell.rUnitCell[0][2];
+    RTB->Cell.rUnitCell[1][0]=TB->Cell.rUnitCell[1][0]; RTB->Cell.rUnitCell[1][1]=TB->Cell.rUnitCell[1][1]; RTB->Cell.rUnitCell[1][2]=TB->Cell.rUnitCell[1][2];
+    RTB->Cell.rUnitCell[2][0]=TB->Cell.rUnitCell[2][0]; RTB->Cell.rUnitCell[2][1]=TB->Cell.rUnitCell[2][1]; RTB->Cell.rUnitCell[2][2]=TB->Cell.rUnitCell[2][2];
+    RTB->Cell.gUnitCell[0][0]=TB->Cell.gUnitCell[0][0]; RTB->Cell.gUnitCell[0][1]=TB->Cell.gUnitCell[0][1]; RTB->Cell.gUnitCell[0][2]=TB->Cell.gUnitCell[0][2];
+    RTB->Cell.gUnitCell[1][0]=TB->Cell.gUnitCell[1][0]; RTB->Cell.gUnitCell[1][1]=TB->Cell.gUnitCell[1][1]; RTB->Cell.gUnitCell[1][2]=TB->Cell.gUnitCell[1][2];
+    RTB->Cell.gUnitCell[2][0]=TB->Cell.gUnitCell[2][0]; RTB->Cell.gUnitCell[2][1]=TB->Cell.gUnitCell[2][1]; RTB->Cell.gUnitCell[2][2]=TB->Cell.gUnitCell[2][2];
+    RTB->Cell.Units=TB->Cell.Units;
+    RTB->Cell.NAtoms=0;
+    for(i=0;i<B.N;i++)
+    {
+      if(BlockDimension[i]==B.BlockSize)
+      {
+        RTB->Cell.NAtoms+=NAtomsInStartBlock;
+      }
+      else
+      {
+        RTB->Cell.NAtoms++;
+      }
+    }
+    RTB->Cell.Atom=(AtomType*)malloc(RTB->Cell.NAtoms*sizeof(AtomType));
+    j=0; // count the current atom
+    for(i=0;i<B.N;i++)
+    {
+      if(BlockDimension[i]==B.BlockSize)
+      {
+        for(l=0;l<NAtomsInStartBlock;l++)
+        {
+          CopyAtomType(&(AtomsInStartBlock[l]), &(RTB->Cell.Atom[j]));
+          // change names for ligands
+          if(i!=0)
+          {
+            // single atom
+            if(NAtomsInStartBlock==1)
+            {
+              // single atom, single ligand shell
+              if(B.N==2)
+              {
+                sprintf(RTB->Cell.Atom[j].Name, "Ligand");
+              }
+              // single atom, multiple ligand shell
+              else
+              {
+                sprintf(RTB->Cell.Atom[j].Name, "Ligand_%d",i);
+              }
+            }
+            // multiple atoms, single ligand shell
+            else if(B.N==2)
+            {
+              sprintf(NameTemp, "Ligand_");
+              strncat(NameTemp, RTB->Cell.Atom[j].Name,MAXStrLength-8);
+              strcpy(RTB->Cell.Atom[j].Name, NameTemp);
+            }
+            // multiple atoms, multiple ligand shells
+            else
+            {
+              sprintf(NameTemp, "Ligand_%d_",i);
+              strncat(NameTemp, RTB->Cell.Atom[j].Name,MAXStrLength-13);
+              strcpy(RTB->Cell.Atom[j].Name, NameTemp);
+            }
+          }
+          j++;
+        }
+      }
+      else
+      { // after deflation all atoms shells etc are mixed
+        RTB->Cell.Atom[j].AtomNumber=0;
+        sprintf(RTB->Cell.Atom[j].Name, "Ligand_%d",i);
+        RTB->Cell.Atom[j].Position[0]=0;
+        RTB->Cell.Atom[j].Position[1]=0;
+        RTB->Cell.Atom[j].Position[2]=0;
+        RTB->Cell.Atom[j].Nshell=1;
+        RTB->Cell.Atom[j].ShellName=(char**)malloc(sizeof(char*));
+        RTB->Cell.Atom[j].ShellName[0]=(char*)malloc(10*sizeof(char));
+        sprintf(RTB->Cell.Atom[j].ShellName[0], "X%d",BlockDimension[i]);
+        RTB->Cell.Atom[j].shelldegeneracy=(int*)malloc(sizeof(int));
+        RTB->Cell.Atom[j].shelldegeneracy[0]=BlockDimension[i];
+        RTB->Cell.Atom[j].OrbitalName=(char***)malloc(sizeof(char**));
+        RTB->Cell.Atom[j].OrbitalName[0]=(char**)malloc(BlockDimension[i]*sizeof(char*));
+        for(l=0;l<BlockDimension[i];i++)
+        {
+          RTB->Cell.Atom[j].OrbitalName[0][i]=(char*)malloc(10*sizeof(char));
+          sprintf(RTB->Cell.Atom[j].OrbitalName[0][i], "X%d",l);
+        }
+      }
+    }
+    SetNFermionIndexTightBindingDef(RTB);
+    RTB->nH=0;
+    RTB->H=NULL;
+    // free the list of atoms from memory
+    for(i=0;i<NAtomsInStartBlock;i++)
+    {
+      FreeAtomType(&(AtomsInStartBlock[i]));
+    }
+    free(AtomsInStartBlock);
+    free(AtomsInStartBlockPosInTB);
+    free(BlockDimension);
+    // do the actual rotation
+    RotateTightBinding(TB, &vec, RTB);
+    // push the rotation matrix to stack if needed
+    if(Options.ReturnT==true)
+    {
+      LuaPushTable_CompactMatrixType(L, &vec);
+      FreeCompactMatrix(&vec);
+      return 2;
+    }
+    FreeCompactMatrix(&vec);
+    return 1;
+  }
+  // error not case 1, 2 or 3
   else
   {
     return luaL_error(L, "BlockBandDiagonalize expects as a first argument either an operator or a square hermitian matrix (table of tables)\n");
@@ -4165,18 +4449,17 @@ static int LuaDeterminantString(lua_State *L)
 	vector<uint16_t> indices;
 	uint32_t len = (uint32_t)lua_gettop(L);
 	if (len < 2 || len > 2)
-		return luaL_error(L, "DeterminantString called with %d arguments. List of Indices and Number of Fermions expected.\n",len);
-	indices = luaL_checkvector_unit16_t(L,1);
-	NF = luaL_checknumber(L,2);
-	uint16_t i;
-	for (i=0;i<indices.size();i++)
+		return luaL_error(L, "DeterminantString called with %d arguments. Number of Fermions and List of Indices expected.\n",len);
+	NF = (int)luaL_checkinteger(L,1);
+	indices = luaL_checkvector_unit16_t(L,2);
+	for (uint16_t i=0;i<indices.size();i++)
 	{
 		if (indices[i]<0 || indices[i]>=NF)
 			printf("\nWarning: Index %d is not within [0,NF-1]=[0,%d].\n", indices[i], NF-1);
 	}
 	char det[NF+1];
 	det[NF] = '\0';
-	for (i=0;i<NF;i++)
+	for (uint16_t i=0;i<NF;i++)
 	{
 		if (isIntElementOf(i,indices))
 		{
@@ -4862,6 +5145,10 @@ int luaopen_ssp(lua_State * L)
   luaL_setfuncs(L, Spectra_meta, 0);
   luaL_newlib(L, Spectra_func);
   lua_setglobal(L, "Spectra");
+  
+  
+  luaL_newlib(L, PostScript_func);
+  lua_setglobal(L, "PostScript");
   
   luaL_newmetatable(L, "InterpolatingFunction_Type");
   luaL_setfuncs(L, InterpolatingFunction_meta, 0);
