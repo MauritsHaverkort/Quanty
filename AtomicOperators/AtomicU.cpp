@@ -177,6 +177,8 @@ static int LuaGetSlaterIntegrals (lua_State *L)
     vector<double> x;
     len = (uint32_t)lua_gettop(L);
     SSlaterIntegral *integrals;
+    vector<string> orbitalNames;
+    vector<int> indToK;
 
     if ( len < 2 ||  len > 3)
     {
@@ -184,8 +186,10 @@ static int LuaGetSlaterIntegrals (lua_State *L)
     	return -1;
     }
 
-    vector<int> indToK = luaL_checkarray_int(L,1);
-    if (len == 4)
+    orbitalNames = luaL_checkarray_string(L, 1);
+    indToK = NamesToKappa(orbitalNames);
+
+    if (len == 3)
 	{
 		uint32_t NfunsG = (uint32_t)lua_objlen(L,2);
 
@@ -232,10 +236,6 @@ static int LuaGetSlaterIntegrals (lua_State *L)
     }
     else
     {
-    	for (uint32_t i = 0; i < (uint32_t) indToK.size();i++)
-    	{
-    		indToK[i] = -(indToK[i] + 1); // Conversion from l to kappa
-    	}
 
 		uint32_t NfunsG = (uint32_t)lua_objlen(L,2);
 
@@ -266,16 +266,125 @@ static int LuaGetSlaterIntegrals (lua_State *L)
     lua_createtable(L,NIntegrals,0);
     for(uint32_t i = 0; i < NIntegrals; i++)
     {
-    	lua_createtable(L,2,0);
-    	LuaPushArray_double(L,integrals[i].val,integrals[i].Nval);
-    	lua_rawseti(L,-2,1);
-    	LuaPushArray_uint32_t(L,integrals[i].tau.n,4);
-    	lua_rawseti(L,-2,2);
-    	lua_rawseti(L,-2,i+1);
+
+    	uint32_t *n = integrals[i].tau.n;
+    	double *Rk = integrals[i].val;
+    	uint32_t N = integrals[i].Nval;
+    	uint32_t *k = integrals[i].k;
+
+    	string orb1 = orbitalNames[n[0]];
+    	string orb2 = orbitalNames[n[1]];
+    	string orb3 = orbitalNames[n[2]];
+    	string orb4 = orbitalNames[n[3]];
+
+    	Lua_Push_SlaterIntegral(L,Rk,k,N,orb1,orb2,orb3,orb4);
+    	Lua_Push_SlaterIntegral(L,Rk,k,N,orb3,orb2,orb1,orb4);
+    	Lua_Push_SlaterIntegral(L,Rk,k,N,orb1,orb4,orb3,orb2);
+    	Lua_Push_SlaterIntegral(L,Rk,k,N,orb3,orb4,orb1,orb2);
+
+    	Lua_Push_SlaterIntegral(L,Rk,k,N,orb2,orb1,orb4,orb3);
+		Lua_Push_SlaterIntegral(L,Rk,k,N,orb2,orb3,orb4,orb1);
+		Lua_Push_SlaterIntegral(L,Rk,k,N,orb4,orb1,orb2,orb3);
+		Lua_Push_SlaterIntegral(L,Rk,k,N,orb4,orb3,orb2,orb1);
+
+
     }
 
 
     return 1;
+}
+void Lua_Push_SlaterIntegral(lua_State *L, double *Rk, uint32_t *k, uint32_t N,string orb1,string orb2,string orb3,string orb4)
+{
+	string label = orb1;
+	label.insert(label.size()," ");
+	label.insert(label.size(),orb2);
+	label.insert(label.size()," ");
+	label.insert(label.size(),orb3);
+	label.insert(label.size()," ");
+	label.insert(label.size(),orb4);
+	lua_pushstring(L,label);
+	lua_createtable(L,0,0);
+	for(uint32_t j = 0; j < N; j++)
+	{
+		lua_pushnumber(L,Rk[j]);
+		lua_rawseti(L,-2,k[j]);
+	}
+	lua_settable(L,-3);
+}
+
+vector<int> NamesToKappa(vector<string> orbitalNames)
+{
+	vector<int> kappas = vector<int>(orbitalNames.size());
+	for(size_t i = 0; i < orbitalNames.size(); i++)
+	{
+		size_t idx = orbitalNames[i].find_first_of("spdfg");
+		if (idx == string::npos)
+		{
+			printf("Error: No valid name for an orbital\n");
+		}
+		else
+		{
+			if (idx == (orbitalNames[i].size()-1))
+			{
+				switch (orbitalNames[i][idx]) {
+					case 's':
+						kappas[i] = -1;
+						break;
+					case 'p':
+						kappas[i] = -2;
+						break;
+					case 'd':
+						kappas[i] = -3;
+						break;
+					case 'f':
+						kappas[i] = -4;
+						break;
+					case 'g':
+						kappas[i] = -5;
+						break;
+					default:
+						printf("Sorry, we only have spdfg orbitals\n");
+						break;
+				}
+			}
+			else
+			{
+				switch (orbitalNames[i][idx]) {
+					case 's':
+						kappas[i] = -1;
+						break;
+					case 'p':
+						if (orbitalNames[i][idx+1] == '1')
+							kappas[i] = 1;
+						else
+							kappas[i] = -2;
+						break;
+					case 'd':
+						if (orbitalNames[i][idx+1] == '3')
+							kappas[i] = 2;
+						else
+							kappas[i] = -3;
+						break;
+					case 'f':
+						if (orbitalNames[i][idx+1] == '5')
+							kappas[i] = 3;
+						else
+							kappas[i] = -4;
+						break;
+					case 'g':
+						if (orbitalNames[i][idx+1] == '7')
+							kappas[i] = 4;
+						else
+							kappas[i] = -5;
+						break;
+					default:
+						printf("Sorry, we only have spdfg orbitals\n");
+						break;
+				}
+			}
+		}
+	}
+	return kappas;
 }
 
 uint32_t CreateOperatorAtomicURelativistic(uint32_t const NFermion,vector<vector<double> >basisfuns, vector<double> grid,vector<int> indToK
