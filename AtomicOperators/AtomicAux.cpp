@@ -228,6 +228,21 @@ vector<double> luaL_checkarray_double(lua_State *L, int narg)
   return buff;
 }
 
+vector<int> luaL_checkarray_int(lua_State *L, int narg)
+{
+  luaL_checktype(L, narg, LUA_TTABLE);
+  uint32_t len = (uint32_t)lua_objlen(L, narg);
+
+  vector<int> buff = vector<int>(len);
+  for(uint32_t i=0;i<len;i++)
+  {
+    lua_rawgeti(L, narg, i+1);
+    buff[i]=(int)luaL_checkunsigned(L, -1);
+    lua_pop(L, 1);
+  }
+  return buff;
+}
+
 vector<double> operator*(vector<double> a, vector<double> b)
 {
 	unsigned long n = a.size();

@@ -32,6 +32,8 @@ static int LuaReadFPLOBasisFunctions(lua_State *L);
 
 std::vector<double> luaL_checkarray_double(lua_State *L, int narg);
 
+std::vector<int> luaL_checkarray_int(lua_State *L, int narg);
+
 std::vector<double> operator*(std::vector<double> a, std::vector<double> b);
 
 #endif /* ATOMICOPERATORS_ATOMICAUX_H_ */

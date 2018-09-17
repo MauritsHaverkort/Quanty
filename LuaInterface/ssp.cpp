@@ -4792,6 +4792,7 @@ static const struct luaL_Reg global_functions[] = {
   {"FileReadStuttgartHAMR", LuaFileReadStuttgartHAMR},
   {"FileReadDresdenFPLO", LuaFileReadDresdenFPLO},
   {"FindAllAtomsInsideSphere", LuaFindAllAtomsInsideSphere},
+  {"GetSlaterIntegrals",LuaGetSlaterIntegrals},
 //  {"Help", LuaHelp},
   {"ImpurityGreensFunction", LuaImpurityGreensFunction},
   {"Inverse", LuaInverse},
