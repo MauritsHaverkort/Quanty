@@ -171,6 +171,113 @@ static int LuaOperatorNewAtomicU (lua_State *L)
     return 1;
 }
 
+static int LuaGetSlaterIntegrals (lua_State *L)
+{
+    uint32_t len, NIntegrals;
+    vector<double> x;
+    len = (uint32_t)lua_gettop(L);
+    SSlaterIntegral *integrals;
+
+    if ( len < 2 ||  len > 3)
+    {
+    	printf("Error in LuaGetSlaterIntegrals: 2 or 3 arguments expected; got %u",len);
+    	return -1;
+    }
+
+    vector<int> indToK = luaL_checkarray_int(L,1);
+    if (len == 4)
+	{
+		uint32_t NfunsG = (uint32_t)lua_objlen(L,2);
+
+		if (NfunsG > (uint32_t) indToK.size())
+		{
+			printf("Warning: LuaGetSlaterIntegrals number of basis funs (%u) != number of indices (%u)\n",NfunsG , (uint32_t) indToK.size());
+			fflush(stdout);
+		}
+		else
+		{
+			if (NfunsG < (uint32_t) indToK.size())
+			{
+				return luaL_error(L, "Errorr: LuaGetSlaterIntegrals number of basis funs (%u) < number of indices (%u)\n",NfunsG , (uint32_t) indToK.size());
+			}
+		}
+
+		vector<Interpolation::InterpolatingFunction *> funsG = vector<Interpolation::InterpolatingFunction *>(NfunsG);
+		for(uint32_t i = 0; i < NfunsG; i++)
+		{
+			lua_rawgeti(L, 2, i+1);
+			funsG[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
+			lua_pop(L,1);
+		}
+
+		uint32_t NfunsF = (uint32_t)lua_objlen(L,3);
+		if (NfunsF != NfunsG)
+		{
+			printf("Error in LuaGetSlaterIntegrals: number of functions small part (%u) != large part (%u)\n",NfunsF,NfunsG);
+			return -1;
+		}
+		vector<Interpolation::InterpolatingFunction *> funsF = vector<Interpolation::InterpolatingFunction *>(NfunsF);
+		for(uint32_t i = 0; i < NfunsF; i++)
+		{
+			lua_rawgeti(L, 3, i+1);
+			funsF[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
+			lua_pop(L,1);
+		}
+
+		x = funsG[0]->GetX();
+
+		vector<vector<double> > wavefuns = PutRelativisticSplineOnGrid(funsG,funsF,x,0);
+
+		integrals = GetSlaterIntegrals(wavefuns,x, indToK, NIntegrals);
+    }
+    else
+    {
+    	for (uint32_t i = 0; i < (uint32_t) indToK.size();i++)
+    	{
+    		indToK[i] = -(indToK[i] + 1); // Conversion from l to kappa
+    	}
+
+		uint32_t NfunsG = (uint32_t)lua_objlen(L,2);
+
+		if (NfunsG > (uint32_t) indToK.size())
+		{
+			printf("Warning: LuaGetSlaterIntegrals number of basis funs (%u) != number of indices (%u)\n",NfunsG , (uint32_t) indToK.size());
+			fflush(stdout);
+		}
+		else
+		{
+			if (NfunsG < (uint32_t) indToK.size())
+			{
+				return luaL_error(L, "Errorr: LuaGetSlaterIntegrals number of basis funs (%u) < number of indices (%u)\n",NfunsG , (uint32_t) indToK.size());
+			}
+		}
+
+		vector<Interpolation::InterpolatingFunction *> funsG = vector<Interpolation::InterpolatingFunction *>(NfunsG);
+		for(uint32_t i = 0; i < NfunsG; i++)
+		{
+			lua_rawgeti(L, 2, i+1);
+			funsG[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
+			lua_pop(L,1);
+		}
+
+		integrals = GetSlaterIntegrals(funsG, indToK, NIntegrals);
+    }
+
+    lua_createtable(L,NIntegrals,0);
+    for(uint32_t i = 0; i < NIntegrals; i++)
+    {
+    	lua_createtable(L,2,0);
+    	LuaPushArray_double(L,integrals[i].val,integrals[i].Nval);
+    	lua_rawseti(L,-2,1);
+    	LuaPushArray_uint32_t(L,integrals[i].tau.n,4);
+    	lua_rawseti(L,-2,2);
+    	lua_rawseti(L,-2,i+1);
+    }
+
+
+    return 1;
+}
+
 uint32_t CreateOperatorAtomicURelativistic(uint32_t const NFermion,vector<vector<double> >basisfuns, vector<double> grid,vector<int> indToK
                                                ,uint16_t **indices, OperatorType *op)
 {
