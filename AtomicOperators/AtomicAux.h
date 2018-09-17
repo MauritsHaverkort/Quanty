@@ -34,6 +34,8 @@ std::vector<double> luaL_checkarray_double(lua_State *L, int narg);
 
 std::vector<int> luaL_checkarray_int(lua_State *L, int narg);
 
+vector<string> luaL_checkarray_string(lua_State *L, int narg);
+
 std::vector<double> operator*(std::vector<double> a, std::vector<double> b);
 
 #endif /* ATOMICOPERATORS_ATOMICAUX_H_ */

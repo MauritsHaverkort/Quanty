@@ -24,6 +24,10 @@ void CreateOperatorAtomicUNonRelOneIntegral(uint32_t const NFermion,int const l1
 		uint16_t const *Lindex3Up, uint16_t const *Lindex3Dn, uint16_t const *Lindex4Up, uint16_t const *Lindex4Dn,
 		double const *Fk, const unsigned int n1, const unsigned int n2, const unsigned int n3, const unsigned int n4, OperatorType *const op);
 
+vector<int> NamesToKappa(vector<string> orbitalNames);
+
+void Lua_Push_SlaterIntegral(lua_State *L, double *Rk, uint32_t *k, uint32_t N,string orb1,string orb2,string orb3,string orb4);
+
 
 
 #endif /* ATOMICOPERATORS_ATOMICU_H_ */
