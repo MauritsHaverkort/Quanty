@@ -81,3 +81,23 @@ uint32_t CompactMatrixBlockBandDiagonalizeReal(CompactMatrixType const * const A
 uint32_t CompactMatrixBlockBandDiagonalizeComplex(CompactMatrixType const * const A, CompactMatrixType * vec, BlockTriDiagonalMatrixType *const B, double const SingularValue, uint32_t const NTri, uint32_t const NOrtho, bool const ReOrthogonalize,bool const ReturnT);
 uint32_t CompactMatrixBlockBandDiagonalize(CompactMatrixType const * const A, CompactMatrixType * vec, BlockTriDiagonalMatrixType *const B, double const SingularValue, uint32_t const NTri, uint32_t const NOrtho, bool const ReOrthogonalize, bool const ReturnT);
 uint32_t QCompactMatrixHermitian(const CompactMatrixType O, const double epsilon);
+
+
+
+
+CompactMatrixType CompactzeroMatrix(const uint32_t Ni, const uint32_t Nj);
+CompactMatrixType CompactnullMatrix();
+bool isNullMatrix(const CompactMatrixType M);
+CompactMatrixType MatrixFlatten(vector<vector<CompactMatrixType> > allMs, bool printWarnings);
+CompactMatrixType MatrixFlatten(vector<vector<CompactMatrixType> > allMs);
+CompactMatrixType ExpandNumberToCompactMatrix(int size, double Re, double Im);
+CompactMatrixType MatrixEnlarge(CompactMatrixType M, int size);
+CompactMatrixType MatrixExpand(const CompactMatrixType M, const int size, const Complex16 newEntries);
+CompactMatrixType MatrixExpand(const CompactMatrixType M, const int size);
+void MatrixAbsAverage(CompactMatrixType M, double *AbsAverage);
+vector<vector<CompactMatrixType> > CompactnullMatrixMatrix(const uint32_t rows, const uint32_t cols);
+CompactMatrixType CompactidentityMatrix(const int rowSize, const int colSize);
+CompactMatrixType CompactidentityMatrix(const int size);
+CompactMatrixType Submatrix(CompactMatrixType M, int rowStart, int rows, int colStart, int cols);
+CompactMatrixType Submatrix(CompactMatrixType M, int rows, int cols);
+CompactMatrixType Submatrix(CompactMatrixType M, int size);
