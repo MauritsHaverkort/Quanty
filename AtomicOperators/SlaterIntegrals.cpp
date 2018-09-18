@@ -116,7 +116,7 @@ SSlaterIntegral *GetSlaterIntegrals(vector<vector<double> > basisfuns, vector<do
     return si;
 }
 
-SSlaterIntegral *GetSlaterIntegrals(vector<Interpolation::InterpolatingFunction *> ipolfuns, vector<int> indToK, unsigned int &NIntegrals)
+SSlaterIntegral *GetSlaterIntegrals(const vector<Interpolation::InterpolatingFunction *> &ipolfuns,const vector<int> &indToK, unsigned int &NIntegrals)
 {
 
 	uint32_t quadDegree = 3;
@@ -140,9 +140,12 @@ SSlaterIntegral *GetSlaterIntegrals(vector<Interpolation::InterpolatingFunction 
 
     si = InitializeIntegrals(indToK, NIntegrals,&kMax);
 
-    kernels = CreateAllKernels(kMax, knots);
-
+    //clock_t t = clock();
+    CreateAllKernels(kMax, knots,kernels);
+    //cout << "Kernels: " << (clock()-t)*1.0/CLOCKS_PER_SEC << endl;
+    //t = clock();
     CalculateSlaterIntegrals(NIntegrals, si,Nknots,kernels,basisfuns,dualfuns);
+    //cout << "CalcSlater: " << (clock()-t)*1.0/CLOCKS_PER_SEC << endl;
 
     return si;
 }
@@ -198,7 +201,7 @@ void CalculateSlaterIntegrals(const int NIntegrals, SSlaterIntegral *integrals, 
 }
 
 void CalculateSlaterIntegrals(const int NIntegrals, SSlaterIntegral *integrals, uint32_t dim,
-                              vector<vector<double> >kernels, vector<vector<double> > basisfuns, vector<vector<double> > dualfuns)
+                              vector<vector<double> > &kernels, vector<vector<double> > &basisfuns, vector<vector<double> > &dualfuns)
 {
 
     int i,j, k;
@@ -275,19 +278,16 @@ double ** CreateAllKernels(const unsigned int kMax, const unsigned int NGridPoin
     return kernels;
 }
 
-vector<vector<double> > CreateAllKernels(const unsigned int kMax, vector<double> x)
+void CreateAllKernels(const unsigned int kMax,const vector<double> &x, vector<vector<double> > &kernels)
 {
-    vector<vector<double> > kernels;
-
     kernels = vector<vector<double> >(kMax+1);
 
     //uint32_t n = (uint32_t)x.size(); mwh n not used
 
     for (uint32_t k = 0; k <= kMax; k++ )
     {
-    	kernels[k] = GetNonRelKernel(x, k);
+    	CreateNonRelKernel(x, k, kernels[k]);
     }
-    return kernels;
 }
 
 void CreateKernel(const unsigned int NGridPoints, const double *x, double *kernel, const unsigned int k)
@@ -327,11 +327,11 @@ void CreateKernel(const unsigned int NGridPoints, const double *x, double *kerne
     
 }
 
-vector<double> GetNonRelKernel(vector<double> x, const uint32_t k)
+void CreateNonRelKernel(const vector<double> &x, const uint32_t k,vector<double> &kernel)
 {
     double val;
     uint32_t n = (uint32_t)x.size();
-    vector<double> kernel = vector<double>(n*n);
+    kernel = vector<double>(n*n);
 
     for(uint32_t i = 0; i < n; i++)
     {
@@ -350,7 +350,6 @@ vector<double> GetNonRelKernel(vector<double> x, const uint32_t k)
             kernel[i+n*j] = val;
         }
     }
-    return kernel;
 
 }
 

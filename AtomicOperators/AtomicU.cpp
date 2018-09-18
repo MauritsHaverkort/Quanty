@@ -110,7 +110,6 @@ static int LuaOperatorNewAtomicU (lua_State *L)
 		x = funsG[0]->GetX();
 
 		vector<vector<double> > wavefuns = PutRelativisticSplineOnGrid(funsG,funsF,x,0);
-
 		op = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
 		CreateOperatorAtomicURelativistic(NF,wavefuns,x,indToK,indices, op);
     }
@@ -157,6 +156,7 @@ static int LuaOperatorNewAtomicU (lua_State *L)
 
 		op = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
 		CreateOperatorAtomicUNonRel(NF,funsG,indToK,indices,op);
+
     }
 
     luaL_setmetatable(L,"Operator_Type");
@@ -259,7 +259,6 @@ static int LuaGetSlaterIntegrals (lua_State *L)
 			funsG[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
 			lua_pop(L,1);
 		}
-
 		integrals = GetSlaterIntegrals(funsG, indToK, NIntegrals);
     }
 
@@ -312,7 +311,7 @@ void Lua_Push_SlaterIntegral(lua_State *L, double *Rk, uint32_t *k, uint32_t N,s
 	lua_settable(L,-3);
 }
 
-vector<int> NamesToKappa(vector<string> orbitalNames)
+vector<int> NamesToKappa(const vector<string> &orbitalNames)
 {
 	vector<int> kappas = vector<int>(orbitalNames.size());
 	for(size_t i = 0; i < orbitalNames.size(); i++)
@@ -387,7 +386,7 @@ vector<int> NamesToKappa(vector<string> orbitalNames)
 	return kappas;
 }
 
-uint32_t CreateOperatorAtomicURelativistic(uint32_t const NFermion,vector<vector<double> >basisfuns, vector<double> grid,vector<int> indToK
+uint32_t CreateOperatorAtomicURelativistic(uint32_t const NFermion,const vector<vector<double> > &basisfuns, const vector<double> &grid, const vector<int> &indToK
                                                ,uint16_t **indices, OperatorType *op)
 {
 
@@ -428,7 +427,7 @@ uint32_t CreateOperatorAtomicURelativistic(uint32_t const NFermion,vector<vector
     return 0;
 }
 
-uint32_t CreateOperatorAtomicUNonRel(uint32_t const NFermion,vector<Interpolation::InterpolatingFunction *> ipolfuns,vector<int> indToK
+uint32_t CreateOperatorAtomicUNonRel(uint32_t const NFermion,const vector<Interpolation::InterpolatingFunction *> &ipolfuns, const vector<int> &indToK
                                                ,uint16_t **indices, OperatorType *op)
 {
 

@@ -34,7 +34,7 @@ vector<double> ConvertArray(double *a, const int n)
 	return res;
 }
 
-vector<vector<double> > PutRelativisticSplineOnGrid(vector<Interpolation::InterpolatingFunction *> funsG, vector<Interpolation::InterpolatingFunction *> funsF, vector<double> x,unsigned int k)
+vector<vector<double> > PutRelativisticSplineOnGrid(const vector<Interpolation::InterpolatingFunction *> &funsG,const vector<Interpolation::InterpolatingFunction *> &funsF,const vector<double> &x,unsigned int k)
 {
 	vector<vector<double> > funsCombined = vector<vector<double> >(funsG.size());
 	unsigned int NGridPoints = (unsigned int) x.size();
@@ -213,6 +213,58 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
 	return 1;
 }
 
+static int LuaGetMultipoleBesselIntegral(lua_State *L)
+{
+	uint32_t len = (uint32_t)lua_gettop(L);
+	double q = (double) luaL_checknumber(L,1);
+	uint32_t k = (uint32_t) luaL_checkunsigned(L,2);
+
+	uint32_t NknotsPerInterval = 3;
+
+	if (!lua_istable(L,3))
+	{
+		Interpolation::InterpolatingFunction *f1 = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 3, "InterpolatingFunction_Type");
+		Interpolation::InterpolatingFunction *f2 = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 4, "InterpolatingFunction_Type");
+		if (len == 5)
+		{
+			NknotsPerInterval = (uint32_t) luaL_checkunsigned(L,5);
+		}
+		double result = Quad::GetMultipoleIntegral(*f1,*f2,k,q,NknotsPerInterval);
+		lua_pushnumber(L,result);
+		return 1;
+
+	}
+	else
+	{
+		return luaL_error(L,"GetMutlipoleIntegral not yet implemented for tables\n");
+	}
+}
+static int LuaGetMultipoleIntegral(lua_State *L)
+{
+	uint32_t len = (uint32_t)lua_gettop(L);
+	uint32_t k = (uint32_t) luaL_checkunsigned(L,1);
+
+	uint32_t NknotsPerInterval = 3;
+
+	if (!lua_istable(L,2))
+	{
+		Interpolation::InterpolatingFunction *f1 = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 2, "InterpolatingFunction_Type");
+		Interpolation::InterpolatingFunction *f2 = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 3, "InterpolatingFunction_Type");
+		if (len == 4)
+		{
+			NknotsPerInterval = (uint32_t) luaL_checkunsigned(L,5);
+		}
+		double result = Quad::GetMultipoleIntegral(*f1,*f2,k,NknotsPerInterval);
+		lua_pushnumber(L,result);
+		return 1;
+
+	}
+	else
+	{
+		return luaL_error(L,"GetMutlipoleIntegral not yet implemented for tables\n");
+	}
+}
+
 vector<double> luaL_checkarray_double(lua_State *L, int narg)
 {
   luaL_checktype(L, narg, LUA_TTABLE);
@@ -260,7 +312,7 @@ vector<string> luaL_checkarray_string(lua_State *L, int narg)
   return buff;
 }
 
-vector<double> operator*(vector<double> a, vector<double> b)
+vector<double> operator*(const vector<double> &a, const vector<double> &b)
 {
 	unsigned long n = a.size();
 	if (n != b.size())

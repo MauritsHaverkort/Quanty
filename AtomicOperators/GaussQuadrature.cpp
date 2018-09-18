@@ -340,6 +340,21 @@ double GetMultipoleIntegral(Interpolation::InterpolatingFunction &f1, Interpolat
 	return res;
 }
 
+double GetMultipoleIntegral(Interpolation::InterpolatingFunction &f1, Interpolation::InterpolatingFunction &f2, int k, double q, uint32_t NknotsPerInterval)
+{
+	double res = 0;
+	vector<double> x = f1.GetX();
+	vector<double> knots = Quad::GetKnots(NknotsPerInterval,x);
+	vector<double> w = Quad::GetWeights(NknotsPerInterval,x);
+	vector<double> f1val = f1(knots);
+	vector<double> f2val = f2(knots);
+	for (uint32_t i = 0; i < knots.size(); i++)
+	{
+		res += f1val[i] * f2val[i] * SphericalBesselJ(q*knots[i],k) * w[i];
+	}
+	return res;
+}
+
 } /* namespace Quad */
 
 

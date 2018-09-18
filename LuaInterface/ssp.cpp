@@ -5076,6 +5076,8 @@ static const struct luaL_Reg global_functions[] = {
   {"FileReadDresdenFPLO", LuaFileReadDresdenFPLO},
   {"FindAllAtomsInsideSphere", LuaFindAllAtomsInsideSphere},
   {"GetSlaterIntegrals",LuaGetSlaterIntegrals},
+  {"GetMultipoleBesselIntegral",LuaGetMultipoleBesselIntegral},
+  {"GetMultipoleIntegral",LuaGetMultipoleIntegral},
 //  {"Help", LuaHelp},
   {"ImpurityGreensFunction", LuaImpurityGreensFunction},
   {"Inverse", LuaInverse},
