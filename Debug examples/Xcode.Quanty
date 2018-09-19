@@ -1,5 +1,3 @@
-Verbosity(0xFFFF)
-
 
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Reference/Objects/Matrix/Matrix.Quanty")
 os.exit()
