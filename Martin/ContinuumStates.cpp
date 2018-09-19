@@ -686,9 +686,9 @@ double *CreateBaseForContinuum(vector<vector<double> > basisfuns,vector<vector<d
 	dim = Ncont + group.n;
 
 
-	dualfuns = CreateDualFunctions(NBasisFuns,NGridpoints,basisfuns,x);
+	CreateDualFunctions(basisfuns,x,dualfuns);
 
-	dualcont = CreateDualFunctions(Ncont,NGridpoints,contfuns,x);
+	CreateDualFunctions(contfuns,x,dualcont);
 
 	T = CreateEKinCB(basisfuns,derivfuns, dualfuns,dualcont, group.indices, group.n,x,k,h0Cont);
 

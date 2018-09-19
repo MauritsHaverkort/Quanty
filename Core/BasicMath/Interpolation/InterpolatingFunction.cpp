@@ -26,13 +26,13 @@ double InterpolatingFunction::operator()(double t, unsigned int n)
 	printf("error: call of virtual InterpolatingFunction::operator()\n");
 	return NAN;
 }
-std::vector<double> InterpolatingFunction::operator()(std::vector<double> t)
+std::vector<double> InterpolatingFunction::operator()(const std::vector<double> &t)
 {
 	printf("error: call of virtual InterpolatingFunction::operator()\n");
 	return std::vector<double>();
 }
 
-void InterpolatingFunction::Create(std::vector<double>, std::vector<double>)
+void InterpolatingFunction::Create(const std::vector<double> &u, const std::vector<double> &v)
 {
 
 }

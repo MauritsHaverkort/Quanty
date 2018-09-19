@@ -19,7 +19,7 @@ using std::map;
 #include "Typedefs_Martin.h"
 #include "Quadrature.h"
 #include "Eigendifferential.h"
-#include "../AtomicOperators/SlaterIntegrals.h"
+#include "Old_SlaterIntegrals.h"
 #include "ContinuumStates.h"
 #include "CreateOperators.h"
 #include "DiracHamiltonian.h"

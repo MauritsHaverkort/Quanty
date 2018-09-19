@@ -5,7 +5,7 @@
 #include "Quadrature.cpp"
 #include "Eigendifferential.cpp"
 #include "MartinsLittleHelper.cpp"
-
+#include "Old_SlaterIntegrals.cpp"
 #include "CreateOperators.cpp"
 
 
