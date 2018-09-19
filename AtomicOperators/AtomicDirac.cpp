@@ -18,7 +18,7 @@ void CreateOperatorDirac(uint32_t const NFermion,vector<vector<double> > basisfu
 {
 	vector<vector<double> > diracElements, dualfuns;
 
-	unsigned int NBasisFuns  = (unsigned int) basisfuns.size();
+	//unsigned int NBasisFuns  = (unsigned int) basisfuns.size();
 	unsigned int NGridpoints = (unsigned int) x.size();
 	unsigned int *mj1,*mj2,n,k,j,i;
 	uint16_t oadd[2] = { 0, 0 };

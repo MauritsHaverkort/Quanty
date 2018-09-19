@@ -664,7 +664,7 @@ double *CreateBaseForContinuum(vector<vector<double> > basisfuns,vector<vector<d
 {
 	int l,k,dim,info;
 
-	unsigned int NBasisFuns = (unsigned int) basisfuns.size();
+	//unsigned int NBasisFuns = (unsigned int) basisfuns.size();
 	unsigned int Ncont = (unsigned int) contfuns.size();
 	uint32_t NGridpoints = (uint32_t) x.size();
 
