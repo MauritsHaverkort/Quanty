@@ -16,16 +16,16 @@ private:
 public:
 
 	CubicSpline();
-	CubicSpline(std::vector<double> u, std::vector<double> v);
+	CubicSpline(const std::vector<double> &u, const std::vector<double> &v);
 	virtual ~CubicSpline();
 
-	void Create(std::vector<double>, std::vector<double>);
+	void Create(const std::vector<double> &u, const std::vector<double> &v);
 	std::vector<double> GetY2();
 	double GetY2(uint32_t i);
 
 	double operator()(double t);
 	double operator()(double t, unsigned int k);
-	std::vector<double> operator()(std::vector<double> t);
+	std::vector<double> operator()(const std::vector<double> &t);
 };
 
 } /* namespace Interpolation */
