@@ -1277,15 +1277,18 @@ static int LuaMatrixFlatten(lua_State * L)
 
 static int LuaMatrixAddSpin(lua_State * L)
 {
-	MatrixType M;
+	CompactMatrixType *M, *fullM;
 	uint32_t len = (uint32_t) lua_gettop(L);
 	if (len != 1)
 	{
 		return luaL_error(L, "MatrixAddSpin called with %d arguments. 1 expected, a matrix.\n", len);
 	}
-	M = *luaL_checkMatrix(L, 1);
-	MatrixType fullM = MatrixEnlarge(M, 2);
-	LuaPushTable_MatrixType(L, &fullM);
+  M = luaL_checkCompactMatrix(L, 1);
+  fullM = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+  luaL_setmetatable(L, "Matrix_Type");
+  *fullM = MatrixEnlarge(*M, 2);
+  fullM->OnLuaStack=true;
+  FreeCompactMatrix(M);
 	return 1;
 }
 
@@ -1337,7 +1340,7 @@ static int LuaMatrixExpand(lua_State * L)
 
 static int LuaSubmatrix(lua_State * L)
 {
-	MatrixType M, Msub;
+	CompactMatrixType *M, *Msub;
 	uint32_t len = (uint32_t) lua_gettop(L);
 	if (len != 2 && len != 3 && len != 5)
 	{
@@ -1345,17 +1348,24 @@ static int LuaSubmatrix(lua_State * L)
 				"Submatrix called with %d arguments. Expected either 2 (matrix and size of submatrix), 3 (matrix, number of rows and number of columns of submatrix) or 5 (matrix, first row index, number of rows, first column index, number of columns).\n",
 				len);
 	}
-	M = *luaL_checkMatrix(L, 1);
+  // read matrix from stack
+	M = luaL_checkCompactMatrix(L, 1);
+  // push sub matrix to stack as a usertype
+  Msub = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+  luaL_setmetatable(L, "Matrix_Type");
+  Msub->OnLuaStack=true;
 	if (len == 2)
 	{
 		int size = (int) luaL_checkinteger(L, 2);
-		Msub = Submatrix(M, size);
-	} else if (len == 3)
+		*Msub = Submatrix(*M, size);
+	}
+  else if (len == 3)
 	{
 		int rows = (int) luaL_checkinteger(L, 2);
 		int cols = (int) luaL_checkinteger(L, 3);
-		Msub = Submatrix(M, rows, cols);
-	} else if (len == 5)
+		*Msub = Submatrix(*M, rows, cols);
+	}
+  else if (len == 5)
 	{
 		int rowStart = (int) luaL_checkinteger(L, 2);
 		--rowStart;
@@ -1363,11 +1373,10 @@ static int LuaSubmatrix(lua_State * L)
 		int colStart = (int) luaL_checkinteger(L, 4);
 		--colStart;
 		int cols = (int) luaL_checkinteger(L, 5);
-		Msub = Submatrix(M, rowStart, rows, colStart, cols);
+		*Msub = Submatrix(*M, rowStart, rows, colStart, cols);
 	}
-	if (isNullMatrix(Msub))
-		return luaL_error(L, "Submatrix failed.");
-	LuaPushTable_MatrixType(L, &Msub);
+	if (isNullMatrix(*Msub)) return luaL_error(L, "Submatrix failed.");
+  FreeCompactMatrix(M);
 	return 1;
 }
 

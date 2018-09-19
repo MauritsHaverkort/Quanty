@@ -1,5 +1,17 @@
 Verbosity(0xFFFF)
 
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Tutorials/40_NiO_Ligand_Field/FPLO/Groundstate.Quanty")
+os.exit()
+
+
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Tutorials/40_NiO_Ligand_Field/FPLO/Calculate_Double_Counting_Potential.Quanty")
+os.exit()
+
+
+
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Reference/Functions/MeanFieldGroundState.Quanty")
+os.exit()
+
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Tutorials/40_NiO_Ligand_Field/FPLO/Open_Cluster.Quanty")
 os.exit()
 

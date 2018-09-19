@@ -1639,6 +1639,8 @@ static int LuaOperatorAdd(lua_State * L)
   {
     l = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
     r = (OperatorType *) luaL_checkudata(L, 2, "Operator_Type");
+    if(l->NFermion!=r->NFermion) return luaL_error(L, "Adding two operators with different number of Fermions (%d and %d)\n",l->NFermion,r->NFermion);
+    if(l->NBoson!=r->NBoson) return luaL_error(L, "Adding two operators with different number of Bosons (%d and %d)\n",l->NBoson,r->NBoson);
     res = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
     luaL_setmetatable(L, "Operator_Type");
     OperatorCopy(res, *l);
@@ -1697,6 +1699,8 @@ static int LuaOperatorSub(lua_State * L)
   {
     l = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
     r = (OperatorType *) luaL_checkudata(L, 2, "Operator_Type");
+    if(l->NFermion!=r->NFermion) return luaL_error(L, "Adding two operators with different number of Fermions (%d and %d)\n",l->NFermion,r->NFermion);
+    if(l->NBoson!=r->NBoson) return luaL_error(L, "Adding two operators with different number of Bosons (%d and %d)\n",l->NBoson,r->NBoson);
     res = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
     luaL_setmetatable(L, "Operator_Type");
     OperatorCopy(res, *l);
