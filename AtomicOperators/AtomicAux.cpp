@@ -112,6 +112,10 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
 
 	uint32_t Norbitals;
 	uint32_t len = (uint32_t)lua_gettop(L);
+	if (len < 2)
+	{
+		return luaL_error(L,"Error in ReadFPLOBasisFunctions: 2 or 3 arguments expected, got %u",len);
+	}
 	char** orbitalNames = luaL_checkarray_string(L, 1, &Norbitals); //TODO free
 	const char *name1 = luaL_checkstring(L,2);
 	const char *name2;
@@ -119,8 +123,7 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
 	file1.open(name1);
 	if(!file1.is_open())
 	{
-		cout << "Error Could not open file: " << name1 << endl;
-		return 0;
+		return luaL_error(L,"Error Could not open file: %s\n", name1);
 	}
 	string line, word, name;
 	vector<string> orbitals;
@@ -167,8 +170,7 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
 		file2.open(name2);
 		if(!file2.is_open())
 		{
-			cout << "Error Could not open file: " << name2 << endl;
-			return 0;
+			return luaL_error(L,"Error Could not open file: %s\n", name2);
 		}
 
 		while (!file2.eof())
@@ -202,20 +204,20 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
 			}
 
 		}
+		free(orbitalNames);
 		return 2;
 	}
-/*	for( int i = 0; i < Norbitals; i++)
-	{
-		free(orbitalNames[i]);
-	}
-	free(orbitalNames);*/
-
+	free(orbitalNames);
 	return 1;
 }
 
 static int LuaGetMultipoleBesselIntegral(lua_State *L)
 {
 	uint32_t len = (uint32_t)lua_gettop(L);
+	if (len < 3)
+	{
+		return luaL_error(L,"Error in GetMultipoleBesselIntegral: expected 3 to 5 arguments, got %u\n",len);
+	}
 	double q = (double) luaL_checknumber(L,1);
 	uint32_t k = (uint32_t) luaL_checkunsigned(L,2);
 
@@ -236,12 +238,17 @@ static int LuaGetMultipoleBesselIntegral(lua_State *L)
 	}
 	else
 	{
-		return luaL_error(L,"GetMutlipoleIntegral not yet implemented for tables\n");
+		return luaL_error(L,"GetMutlipoleBesselIntegral not yet implemented for tables\n");
 	}
 }
+
 static int LuaGetMultipoleIntegral(lua_State *L)
 {
 	uint32_t len = (uint32_t)lua_gettop(L);
+	if (len < 2)
+	{
+		return luaL_error(L,"Error in GetMultipoleBesselIntegral: expected 2 to 4 arguments, got %u\n",len);
+	}
 	uint32_t k = (uint32_t) luaL_checkunsigned(L,1);
 
 	uint32_t NknotsPerInterval = 3;

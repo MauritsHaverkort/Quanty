@@ -90,8 +90,7 @@ static int LuaOperatorNewAtomicDirac(lua_State *L)
 	}
 	if (NfunsF != NfunsG)
 	{
-		printf("Error in AtomicDirac.cpp: number of functions small part (%u) != large part (%u)\n",NfunsF,NfunsG);
-		return -1;
+		return luaL_error(L,"Error in AtomicDirac.cpp: number of functions small part (%u) != large part (%u)\n",NfunsF,NfunsG);
 	}
 	vector<Interpolation::InterpolatingFunction *> funsG = vector<Interpolation::InterpolatingFunction *>(NfunsG);
 	for(uint32_t i = 0; i < NfunsG; i++)

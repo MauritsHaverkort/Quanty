@@ -22,8 +22,7 @@ static int LuaOperatorNewAtomicU (lua_State *L)
 
     if ( len < 3 ||  len > 4)
     {
-    	printf("Error in Martin.NewCoulomb: 3 or 4 arguments expected; got %u",len);
-    	return -1;
+    	return luaL_error(L,"Error in Martin.NewCoulomb: 3 or 4 arguments expected; got %u",len);
     }
 
     NF = (uint32_t)luaL_checkunsigned(L, 1);
@@ -96,8 +95,7 @@ static int LuaOperatorNewAtomicU (lua_State *L)
 		uint32_t NfunsF = (uint32_t)lua_objlen(L,4);
 		if (NfunsF != NfunsG)
 		{
-			printf("Error in LuaOperatorNewCoulombFull: number of functions small part (%u) != large part (%u)\n",NfunsF,NfunsG);
-			return -1;
+			return luaL_error(L,"Error in LuaOperatorNewCoulombFull: number of functions small part (%u) != large part (%u)\n",NfunsF,NfunsG);
 		}
 		vector<Interpolation::InterpolatingFunction *> funsF = vector<Interpolation::InterpolatingFunction *>(NfunsF);
 		for(uint32_t i = 0; i < NfunsF; i++)
@@ -182,8 +180,7 @@ static int LuaGetSlaterIntegrals (lua_State *L)
 
     if ( len < 2 ||  len > 3)
     {
-    	printf("Error in LuaGetSlaterIntegrals: 2 or 3 arguments expected; got %u",len);
-    	return -1;
+    	return luaL_error(L,"Error in LuaGetSlaterIntegrals: 2 or 3 arguments expected; got %u",len);
     }
 
     orbitalNames = luaL_checkarray_string(L, 1);
@@ -217,8 +214,7 @@ static int LuaGetSlaterIntegrals (lua_State *L)
 		uint32_t NfunsF = (uint32_t)lua_objlen(L,3);
 		if (NfunsF != NfunsG)
 		{
-			printf("Error in LuaGetSlaterIntegrals: number of functions small part (%u) != large part (%u)\n",NfunsF,NfunsG);
-			return -1;
+			return luaL_error(L,"Error in LuaGetSlaterIntegrals: number of functions small part (%u) != large part (%u)\n",NfunsF,NfunsG);
 		}
 		vector<Interpolation::InterpolatingFunction *> funsF = vector<Interpolation::InterpolatingFunction *>(NfunsF);
 		for(uint32_t i = 0; i < NfunsF; i++)
