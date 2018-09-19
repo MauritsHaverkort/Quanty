@@ -2908,7 +2908,7 @@ static int LuaMeanFieldGroundstate(lua_State *L)
 static int LuaMeanFieldOperator(lua_State *L)
 {
   OperatorType *H, *HMF;
-  MatrixType *Rho;
+  CompactMatrixType *Rho;
   struct
   {
     bool AddDFTSelfInteraction=false;
@@ -2926,16 +2926,29 @@ static int LuaMeanFieldOperator(lua_State *L)
     LuaCheckOptions(L, -1, LuaOptions);
   }
   H = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
-  Rho = (MatrixType *) luaL_checkMatrix(L, 2);
+  Rho = luaL_checkCompactMatrix(L, 2);
   if((H->NFermion+H->NBoson)!=Rho->Ni)
   {
     return luaL_error(L, "Error in MeanFieldGroundstate, length of operator (NF=%d, NB=%d) is not equal to length of density matrix (%d)\n",H->NFermion,H->NBoson,Rho->Ni);
   }
   HMF = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-  MeanFieldOperator(H, HMF, *Rho, Options.AddDFTSelfInteraction);
+  //TODO: Why is MeanFieldOperator different from MeanFieldOperatorOld ...
+  //MeanFieldOperator(H, HMF, *Rho, Options.AddDFTSelfInteraction);
+  if(Options.AddDFTSelfInteraction==true)
+  {
+    MeanFieldOperatorWithDFTInteractionOld(H, HMF, *Rho);
+  }
+  else
+  {
+    MeanFieldOperatorOld(H, HMF, *Rho);
+  }
+  
+  
+  
+  
   luaL_setmetatable(L, "Operator_Type");
   strncpy(HMF->Name, "", MAXStrLength-1); //An appropriate Name can be given in Lua.
-  FreeMatrix(Rho);
+  FreeCompactMatrix(Rho);
   return 1;
 }
 
@@ -3968,12 +3981,6 @@ static int LuaBlockBandDiagonalize(lua_State *L)
     {
       return luaL_error(L, "CompactMatrixBlockBandDiagonalize failed that should not happen\n");
     }
-    
-    PrintCompactMatrixMinimal(vec);
-    PrintBlockTriDiagonalMatrix(B);
-    
-    
-    
     // Determine the dimension of the different Blocks
     BlockDimension = (int*)malloc(B.N*sizeof(int));
     BlockDimension[0]=B.BlockSize;

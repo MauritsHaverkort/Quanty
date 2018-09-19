@@ -4108,3 +4108,290 @@ uint32_t QCompactMatrixHermitian(const CompactMatrixType O, const double epsilon
 }
 
 
+CompactMatrixType CompactzeroMatrix(const uint32_t Ni, const uint32_t Nj)
+{
+  CompactMatrixType zeroMat;
+  zeroMat.Ni = Ni;
+  zeroMat.Nj = Nj;
+  zeroMat.QComplex=0;
+  if (Ni != 0 && Nj != 0) InitCompactMatrix(&zeroMat);
+  return zeroMat;
+}
+
+CompactMatrixType CompactnullMatrix()
+{
+  return CompactzeroMatrix(1,0);
+}
+
+bool isNullMatrix(const CompactMatrixType M)
+{
+  return (M.Ni == 0 || M.Nj == 0);
+}
+
+CompactMatrixType MatrixFlatten(vector<vector<CompactMatrixType> > allMs, bool printWarnings)
+{
+  uint32_t QComplex = 0;
+  CompactMatrixType fullM;
+  uint32_t numOfRowsOuter = (uint32_t)allMs.size();
+  uint32_t numOfColsOuter = (uint32_t)allMs[0].size();
+  uint32_t numOfRowsInner[numOfRowsOuter], numOfColsInner[numOfColsOuter], numOfAllRows = 0, numOfAllCols = 0;
+  for (int i = 0; i < numOfRowsOuter; ++i)
+  {
+    numOfRowsInner[i] = 0;
+    for (int j = 0; j < numOfColsOuter; ++j)
+    {
+      if (!isNullMatrix(allMs[i][j]))
+      {
+        numOfRowsInner[i] = allMs[i][j].Ni;
+        break;
+      }
+    }
+    if (printWarnings && numOfRowsInner[i] == 0) printf("\nWarning: Row %d of matrix is empty and will be ignored.\n",i+1);
+    numOfAllRows += numOfRowsInner[i];
+  }
+  for (int j = 0; j < numOfColsOuter; ++j)
+  {
+    numOfColsInner[j] = 0;
+    for (int i = 0; i < numOfRowsOuter; ++i)
+    {
+      if (!isNullMatrix(allMs[i][j]))
+      {
+        numOfColsInner[j] = allMs[i][j].Nj;
+        break;
+      }
+    }
+    if (printWarnings && numOfColsInner[j] == 0) printf("\nWarning: Column %d of matrix is empty and will be ignored.\n",j+1);
+    numOfAllCols += numOfColsInner[j];
+  }
+  for (int i = 0; i < numOfRowsOuter; ++i)
+  {
+    for (int j = 0; j < numOfColsOuter; ++j)
+    {
+      if (isNullMatrix(allMs[i][j]))
+      {
+        allMs[i][j] = CompactzeroMatrix(numOfRowsInner[i],numOfColsInner[j]);
+      }
+      if (allMs[i][j].Nj != numOfColsInner[j])
+      {
+        printf("Matrix at position %d,%d has a different number of columns than it should have.", i + 1, j + 1);
+        return CompactnullMatrix();
+      }
+      if (allMs[i][j].Ni != numOfRowsInner[i])
+      {
+        printf("Matrix at position %d,%d has a different number of rows than it should have.", i + 1, j + 1);
+        return CompactnullMatrix();
+      }
+      if (!QComplex && allMs[i][j].QComplex) QComplex = allMs[i][j].QComplex;
+    }
+  }
+  fullM.QComplex = QComplex;
+  fullM.Ni = numOfAllRows;
+  fullM.Nj = numOfAllCols;
+  InitCompactMatrix(&fullM);
+  int rowOffset = 0, colOffset = 0;
+  for (int i = 0; i < numOfRowsOuter; ++i)
+  {
+    colOffset = 0;
+    for (int j = 0; j < numOfColsOuter; ++j)
+    {
+      for (int k = 0; k < allMs[i][j].Ni; ++k)
+      {
+        for (int l = 0; l < allMs[i][j].Nj; ++l)
+        {
+          if(fullM.QComplex==0)
+          {
+            fullM.VRe[(rowOffset + k)*fullM.Nj+(colOffset + l)] = allMs[i][j].VRe[k*allMs[i][j].Nj+l];
+          }
+          else
+          {
+            if(allMs[i][j].QComplex==0)
+            {
+              fullM.V[(rowOffset + k)*fullM.Nj+(colOffset + l)].Re = allMs[i][j].VRe[k*allMs[i][j].Nj+l];
+              fullM.V[(rowOffset + k)*fullM.Nj+(colOffset + l)].Im = 0;
+            }
+            else
+            {
+              fullM.V[(rowOffset + k)*fullM.Nj+(colOffset + l)] = allMs[i][j].V[k*allMs[i][j].Nj+l];
+            }
+          }
+        }
+      }
+      colOffset += allMs[i][j].Nj;
+    }
+    rowOffset += allMs[i][0].Ni;
+  }
+  return fullM;
+}
+
+CompactMatrixType MatrixFlatten(vector<vector<CompactMatrixType> > allMs)
+{
+  return MatrixFlatten(allMs, false);
+}
+
+
+CompactMatrixType ExpandNumberToCompactMatrix(int size, double Re, double Im = 0)
+{
+  CompactMatrixType M;
+  M.QComplex = (Im != 0);
+  M.Ni = size;
+  M.Nj = size;
+  InitCompactMatrix(&M);
+  if(M.QComplex==0)
+  {
+    for (int i = 0; i < size; ++i)
+    {
+      M.VRe[i*M.Nj+i] = Re;
+    }
+  }
+  else
+  {
+    for (int i = 0; i < size; ++i)
+    {
+      M.V[i*M.Nj+i].Re = Re;
+      M.V[i*M.Nj+i].Im = Im;
+    }
+  }
+  return M;
+}
+
+CompactMatrixType MatrixEnlarge(CompactMatrixType M, int size)
+{
+  vector < vector<CompactMatrixType> > fullM(M.Ni);
+  for (int i = 0; i < M.Ni; ++i)
+  {
+    vector < CompactMatrixType > col(M.Nj);
+    fullM[i] = col;
+    for (int j = 0; j < M.Nj; ++j)
+    {
+      if (M.QComplex)
+        fullM[i][j] = ExpandNumberToCompactMatrix(size, M.V[i*M.Nj+j].Re, M.V[i*M.Nj+j].Im);
+      else
+        fullM[i][j] = ExpandNumberToCompactMatrix(size, M.VRe[i*M.Nj+j]);
+    }
+  }
+  return MatrixFlatten(fullM);
+}
+
+CompactMatrixType MatrixExpand(const CompactMatrixType M, const int size, const Complex16 newEntries)
+{
+  if (size < M.Ni || size < M.Nj)
+  {
+    cout << "Error in MatrixExpand: New size " << size << "x" << size << " of expanded matrix must be larger than or equal to old size " << M.Ni << "x" << M.Ni << ".\n";
+    return CompactnullMatrix();
+  }
+  if (M.Ni != M.Nj)
+  {
+    cout << "Error in MatrixExpand: Input of nono-quadratic Matrix (size " << M.Ni << "x" << M.Ni << ".\n";
+    return CompactnullMatrix();
+  }
+  vector < vector<CompactMatrixType> > matMat = CompactnullMatrixMatrix(2, 2);
+  matMat[0][0] = M;
+  CompactMatrixType identityMat = CompactidentityMatrix(size - M.Ni);
+  CompactMatrixScaleComplex(&identityMat, newEntries);
+  matMat[1][1] = identityMat;
+  return MatrixFlatten(matMat);
+}
+
+CompactMatrixType MatrixExpand(const CompactMatrixType M, const int size)
+{
+  Complex16 z;
+  z.Re = 1;
+  z.Im = 0;
+  return MatrixExpand(M, size, z);
+}
+
+void MatrixAbsAverage(CompactMatrixType M, double *AbsAverage)
+{
+  uint32_t i,j;
+  *AbsAverage=0;
+  if(M.QComplex==0)
+  {
+    for(i=0;i<M.Ni;i++)
+    {
+      for(j=0;j<M.Nj;j++)
+      {
+        *AbsAverage+=Abs(M.VRe[i*M.Nj+j]);
+      }
+    }
+  }
+  else
+  {
+    for(i=0;i<M.Ni;i++)
+    {
+      for(j=0;j<M.Nj;j++)
+      {
+        *AbsAverage+=Abs(M.V[i*M.Nj+j].Re)+Abs(M.V[i*M.Nj+j].Im);
+      }
+    }
+  }
+  *AbsAverage/=(M.Ni*M.Nj);
+}
+
+vector<vector<CompactMatrixType> > CompactnullMatrixMatrix(const uint32_t rows, const uint32_t cols)
+{
+  vector < vector<CompactMatrixType> > matMat(rows);
+  for (int i = 0; i < rows; ++i)
+  {
+    vector < CompactMatrixType > col(cols);
+    matMat[i] = col;
+    for (int j = 0; j < cols; ++j)
+      matMat[i][j] = CompactnullMatrix();
+  }
+  return matMat;
+}
+
+CompactMatrixType CompactidentityMatrix(const int rowSize, const int colSize)
+{
+  CompactMatrixType identityMat;
+  identityMat.QComplex = false;
+  identityMat.Ni = rowSize;
+  identityMat.Nj = colSize;
+  InitCompactIdentityMatrix(&identityMat);
+  return identityMat;
+}
+
+CompactMatrixType CompactidentityMatrix(const int size)
+{
+  return CompactidentityMatrix(size, size);
+}
+
+
+CompactMatrixType Submatrix(CompactMatrixType M, int rowStart, int rows, int colStart, int cols)
+{
+  if (rowStart < 0 || rows <= 0 || colStart < 0 || cols <= 0 || rowStart + rows > M.Ni || colStart + cols > M.Nj)
+  {
+    cout << "Error in Submatrix: Invalid parameters:" << endl;
+    cout << "rowStart = " << rowStart << ", rows = " << rows << ", colStart = " << colStart << " and cols = " << cols << " is incompatible with a matrix of size " << M.Ni << "x" << M.Nj << "." << endl;
+    return CompactnullMatrix();
+  }
+  CompactMatrixType Msub;
+  Msub.Ni = rows;
+  Msub.Nj = cols;
+  Msub.QComplex = M.QComplex;
+  InitCompactMatrix(&Msub);
+  for (int i = 0; i < rows; ++i)
+  {
+    for (int j = 0; j < cols; ++j)
+    {
+      if(M.QComplex==0)
+      {
+        Msub.VRe[i*Msub.Nj+j] = M.VRe[(rowStart + i)*M.Nj+(colStart + j)];
+      }
+      else
+      {
+        Msub.V[i*Msub.Nj+j] = M.V[(rowStart + i)*M.Nj+(colStart + j)];
+      }
+    }
+  }
+  return Msub;
+}
+
+CompactMatrixType Submatrix(CompactMatrixType M, int rows, int cols)
+{
+  return Submatrix(M, 0, rows, 0, cols);
+}
+
+CompactMatrixType Submatrix(CompactMatrixType M, int size)
+{
+  return Submatrix(M, size, size);
+}
