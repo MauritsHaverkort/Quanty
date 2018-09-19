@@ -23,7 +23,7 @@ void CreateOperatorDirac(uint32_t const NFermion,vector<vector<double> > basisfu
 	unsigned int *mj1,*mj2,n,k,j,i;
 	uint16_t oadd[2] = { 0, 0 };
 
-	dualfuns = CreateDualFunctions(NBasisFuns, NGridpoints,basisfuns,x);
+	CreateDualFunctions(basisfuns,x,dualfuns);
 
 	InitOperator(op);
 	InitOperatorFixedLength(op,2,8);

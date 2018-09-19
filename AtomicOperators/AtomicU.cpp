@@ -485,17 +485,20 @@ void CreateOperatorAtomicURelativisticOneIntegral(uint32_t const NFermion,int co
     {
         CreateOperatorCoulombFourRelativisticShells(NFermion,kappa3,kappa2,kappa1,kappa4, Jindex3,Jindex2,Jindex1,Jindex4,Fk,&optemp);
         OperatorAdd(op, optemp, 1., 0.);
+        FreeOperator(&optemp);
     }
 
     if (n2 != n4)
     {
         CreateOperatorCoulombFourRelativisticShells(NFermion,kappa1,kappa4,kappa3,kappa2, Jindex1,Jindex4,Jindex3,Jindex2,Fk,&optemp);
         OperatorAdd(op, optemp, 1., 0.);
+        FreeOperator(&optemp);
 
         if (n1 != n3)
         {
             CreateOperatorCoulombFourRelativisticShells(NFermion,kappa3,kappa4,kappa1,kappa2, Jindex3,Jindex4,Jindex1,Jindex2,Fk,&optemp);
             OperatorAdd(op, optemp, 1., 0.);
+            FreeOperator(&optemp);
         }
     }
 
@@ -503,21 +506,25 @@ void CreateOperatorAtomicURelativisticOneIntegral(uint32_t const NFermion,int co
     {
         CreateOperatorCoulombFourRelativisticShells(NFermion,kappa2,kappa1,kappa4,kappa3, Jindex2,Jindex1,Jindex4,Jindex3,Fk,&optemp);
         OperatorAdd(op, optemp, 1., 0.);
+        FreeOperator(&optemp);
 
         if (n1 != n3)
         {
             CreateOperatorCoulombFourRelativisticShells(NFermion,kappa2,kappa3,kappa4,kappa1, Jindex2,Jindex3,Jindex4,Jindex1,Fk,&optemp);
             OperatorAdd(op, optemp, 1., 0.);
+            FreeOperator(&optemp);
         }
 
         if (n2 != n4)
         {
             CreateOperatorCoulombFourRelativisticShells(NFermion,kappa4,kappa1,kappa2,kappa3, Jindex4,Jindex1,Jindex2,Jindex3,Fk,&optemp);
             OperatorAdd(op, optemp, 1., 0.);
+            FreeOperator(&optemp);
             if (n1 != n3)
             {
                 CreateOperatorCoulombFourRelativisticShells(NFermion,kappa4,kappa3,kappa2,kappa1, Jindex4,Jindex3,Jindex2,Jindex1,Fk,&optemp);
                 OperatorAdd(op, optemp, 1., 0.);
+                FreeOperator(&optemp);
             }
         }
     }
