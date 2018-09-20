@@ -3981,6 +3981,8 @@ static int LuaBlockBandDiagonalize(lua_State *L)
     {
       return luaL_error(L, "CompactMatrixBlockBandDiagonalize failed that should not happen\n");
     }
+    // chop vec
+    CompactMatrixChop(&vec, 1E-14);
     // Determine the dimension of the different Blocks
     BlockDimension = (int*)malloc(B.N*sizeof(int));
     BlockDimension[0]=B.BlockSize;

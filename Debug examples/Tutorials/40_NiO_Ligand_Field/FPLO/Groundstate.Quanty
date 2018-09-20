@@ -20,6 +20,10 @@ RTB, T = BlockBandDiagonalize(ClusterTB,{{"Ni",{0,0,0}}})
 -- from the rotated TB output we can create a Cluster Hamiltonian (Operator instead of TB object)
 print("Create Cluster Hamiltonian after rotation\n")
 HDFT, ClusterTB, Index = CreateClusterHamiltonian(RTB, {"open", RTB.Atoms},  {{"AddSpin",true}, {"ReturnTBIndicesDict",true}})
+HDFT = HDFT/2
+HDFT = (HDFT + ConjugateTranspose(HDFT))
+
+
 
 -- Next we need to correct for the double counting (i.e. subtract the DFT Mean-field approximation of the Coulomb interaction)
 print("Subtract the DFT Mean-field Coulomb interaction between the d electrons from the tight-binding Hamiltonian\n")
