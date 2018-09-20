@@ -3919,6 +3919,11 @@ static int LuaBlockBandDiagonalize(lua_State *L)
     {
       return luaL_error(L, "Error BlockBandDiagonalize only implemented for non periodic structures |a|=|b|=|c|=INFINITY\n");
     }
+    // test if TB object is Hermitian
+    // TODO: QHermitian of TB
+      // if TB not Hermitian through error
+      // if TB almost Hermitian make it Hermitian and show warning
+    
     // create a matrix of the TB object
     CreateHamiltonianFromTightBindingDefConstantPhaseInUnitCell(*TB, k, &Htemp);
     MatrixCopyToCompact(&M, Htemp);
@@ -4117,10 +4122,10 @@ static int LuaBlockBandDiagonalize(lua_State *L)
         RTB->Cell.Atom[j].shelldegeneracy[0]=BlockDimension[i];
         RTB->Cell.Atom[j].OrbitalName=(char***)malloc(sizeof(char**));
         RTB->Cell.Atom[j].OrbitalName[0]=(char**)malloc(BlockDimension[i]*sizeof(char*));
-        for(l=0;l<BlockDimension[i];i++)
+        for(l=0;l<BlockDimension[i];l++)
         {
-          RTB->Cell.Atom[j].OrbitalName[0][i]=(char*)malloc(10*sizeof(char));
-          sprintf(RTB->Cell.Atom[j].OrbitalName[0][i], "X%d",l);
+          RTB->Cell.Atom[j].OrbitalName[0][l]=(char*)malloc(10*sizeof(char));
+          sprintf(RTB->Cell.Atom[j].OrbitalName[0][l], "X%d",l);
         }
       }
     }
@@ -4137,6 +4142,12 @@ static int LuaBlockBandDiagonalize(lua_State *L)
     free(BlockDimension);
     // do the actual rotation
     RotateTightBinding(TB, &vec, RTB);
+    // test if RTB is Hermitian
+    // TODO: QHermitian of RTB
+      // if RTB not Hermitian through error
+      // if RTB almost Hermitian make it Hermitian and show warning
+    
+    
     // push the rotation matrix to stack if needed
     if(Options.ReturnT==true)
     {

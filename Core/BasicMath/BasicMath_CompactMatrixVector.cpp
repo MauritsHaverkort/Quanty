@@ -1833,8 +1833,8 @@ uint32_t CompactMatrixSVDOrthogonalizeRow(CompactMatrixType * A, const double Si
     
     if((NSingular!=0)&&(ReduceDimension==true))
     {
-      uint32_t Spos[NSingular];
-      double Smin[NSingular],Snow;
+      uint32_t Spos[NSingular]; // position of sigular vectors
+      double Smin[NSingular],Snow; // norm that gives boundary between singular and non-singular
       for(i=0;i<NSingular;i++)
       {
         Smin[i]=DBL_MAX;
@@ -1850,7 +1850,7 @@ uint32_t CompactMatrixSVDOrthogonalizeRow(CompactMatrixType * A, const double Si
         {
           if(Snow<Smin[j])
           {
-            for(k=NSingular-1;k>j+1;k--)
+            for(k=NSingular-1;k>j;k--)
             {
               Smin[k]=Smin[k-1];
               Spos[k]=Spos[k-1];
