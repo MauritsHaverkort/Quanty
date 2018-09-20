@@ -310,8 +310,8 @@ void CreateDualFunctions(const vector<vector<double> > &basisfuns,const vector<d
 {
 	uint32_t i;
     vector<double> weights;
-    unsigned int NBasisFuns = basisfuns.size();
-    unsigned int NGridPoints = x.size();
+    unsigned int NBasisFuns = (unsigned int )basisfuns.size();
+    unsigned int NGridPoints = (unsigned int )x.size();
 
     weights = CreateWeights(NGridPoints,x);
 

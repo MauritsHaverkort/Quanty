@@ -339,6 +339,8 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
   // Determine the unique translational vectors for each shell.
   // The vectors will be used to label the HTB list.
   // Hopvec in units of lattice parameters
+  // NVecShell[i][j] sets the number of vectors that connect shell i to shell j
+  // Hopvec[i*Nj+j][k] contains the k-th vector connecting shell i to shell j
   for(i=0;i<Nwandef;i++)
   {
     for(j=0;j<Nwandef;j++)
@@ -383,6 +385,8 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
     }
   }
 
+  // set the values of NHopStart
+  // NHopStart[i][j] contains the index in HTB where the hopping from shell i to shell j starts
   NHopStart = (int**)malloc(Nshell*sizeof(int*));
   for(ish=0;ish<Nshell;ish++)
   {
@@ -395,14 +399,20 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
     for(jsh=0;jsh<Nshell;jsh++)
     {
       HTB->nH += NVecShell[ish][jsh];
-      if(ish<Nshell-1 && jsh==Nshell-1)
-        NHopStart[ish+1][0] = NHopStart[ish][jsh] + NVecShell[ish][jsh];
+      if(jsh==Nshell-1)
+      { // at the end of hopping from i to j (i.e. j=max) we need to set the starting point of the next i
+        if(ish!=Nshell-1)
+        { // but only if there is a next i
+          NHopStart[ish+1][0] = NHopStart[ish][jsh] + NVecShell[ish][jsh];
+        }
+      }
       else
+      { // set the starting point of the next j (which is available due to the test before)
         NHopStart[ish][jsh+1] = NHopStart[ish][jsh] + NVecShell[ish][jsh];
+      }
     }
   }
   HTB->H= (TightBindingDefHopping*)malloc(HTB->nH*sizeof(TightBindingDefHopping));
-
 
   // Fill in the HTB list.
   // TransVecs distance between the unit cells of the involved atoms in units of unit cells
