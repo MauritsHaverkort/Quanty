@@ -349,14 +349,8 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
       jsh    = ShellInd[j];
       indsh  = ish*Nshell+jsh;
       indwan = i*Nwandef+j;
-      
-      printf("%d %d\n",indwan,FPLO.Wannier.Nhop[indwan]);
-      
       for(k=0;k<FPLO.Wannier.Nhop[indwan];k++)
       {
-        
-        printf("i %2d j %2d k %2d ish %2d jsh %2d indsh %2d indwan %2d\n",i,j,k,ish,jsh,indsh,indwan);
-        
         if(NVecShell[ish][jsh]==0)
         {
           HopVec[indsh][0]    = (double*)malloc(3*sizeof(double));
