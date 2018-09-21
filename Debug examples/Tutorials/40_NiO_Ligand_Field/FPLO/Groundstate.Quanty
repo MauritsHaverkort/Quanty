@@ -8,10 +8,15 @@ FPLOOut = FileReadDresdenFPLO("LDApMLFT/FPLO/out.wan")
 print("Create Tight binding Hamiltonian\n")
 TB = TightBindingDefFromDresdenFPLO(FPLOOut)
 
+print(TB)
+
 -- from the TB output of a crystal we can create a TB object of a Cluster
 print("Create Cluster Hamiltonian\n")
 NewCluster = FindAllAtomsInsideSphere(TB.Atoms,TB.Cell,{0,0,0},4)
 Hamiltonian, ClusterTB, IndexName = CreateClusterHamiltonian(TB, {"open", NewCluster},  {{"AddSpin",false}, {"ReturnTBIndicesDict",true}})
+
+print(ClusterTB)
+os.exit()
 
 -- For the NiO6 cluster we can rotate the ligand orbitals
 print("Rotate the Ligand orbitals\n")

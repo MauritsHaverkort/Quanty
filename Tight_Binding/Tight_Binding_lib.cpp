@@ -1724,6 +1724,7 @@ int CreateTightBindingSuperCell(TightBindingDef A, TightBindingDef * ASuper, Cry
     transvec[0] = ia * A.Cell.rUnitCell[0][0] + ib * A.Cell.rUnitCell[1][0] + ic * A.Cell.rUnitCell[2][0];
     transvec[1] = ia * A.Cell.rUnitCell[0][1] + ib * A.Cell.rUnitCell[1][1] + ic * A.Cell.rUnitCell[2][1];
     transvec[2] = ia * A.Cell.rUnitCell[0][2] + ib * A.Cell.rUnitCell[1][2] + ic * A.Cell.rUnitCell[2][2];
+    // set information about atoms in supercell
     for (iAtom = 0; iAtom < A.Cell.NAtoms; iAtom++)
     {
       strncpy(ASuper->Cell.Atom[iAtomsuper].Name, A.Cell.Atom[iAtom].Name, MAXStrLength);
@@ -1749,6 +1750,7 @@ int CreateTightBindingSuperCell(TightBindingDef A, TightBindingDef * ASuper, Cry
       }
       iAtomsuper++;
     }
+    // set information about hopping
     for (iH = 0; iH < A.nH; iH++)
     {
       atomvec[0] = ia + A.H[iH].TransVecs[0];
@@ -1826,6 +1828,10 @@ int CreateTightBindingSuperCell(TightBindingDef A, TightBindingDef * ASuper, Cry
       ASuper->H[iHsuper].Shellpos1 = A.H[iH].Shellpos1;
       ASuper->H[iHsuper].Shellpos2 = A.H[iH].Shellpos2;
       ASuper->H[iHsuper].Atompos1 = A.H[iH].Atompos1 + iCell * A.Cell.NAtoms;
+      // set Connecting Vector (redundant information, but usefull)
+      ASuper->H[iHsuper].ConnectingVector[0] = (ASuper->Cell.Atom[ASuper->H[iHsuper].Atompos2].Position[0]-ASuper->Cell.Atom[ASuper->H[iHsuper].Atompos1].Position[0]) + ASuper->H[iHsuper].TransVecs[0] * ASuper->Cell.rUnitCell[0][0] + ASuper->H[iHsuper].TransVecs[1] * ASuper->Cell.rUnitCell[1][0] + ASuper->H[iHsuper].TransVecs[2] * ASuper->Cell.rUnitCell[2][0] ;
+      ASuper->H[iHsuper].ConnectingVector[1] = (ASuper->Cell.Atom[ASuper->H[iHsuper].Atompos2].Position[1]-ASuper->Cell.Atom[ASuper->H[iHsuper].Atompos1].Position[1]) + ASuper->H[iHsuper].TransVecs[0] * ASuper->Cell.rUnitCell[0][1] + ASuper->H[iHsuper].TransVecs[1] * ASuper->Cell.rUnitCell[1][1] + ASuper->H[iHsuper].TransVecs[2] * ASuper->Cell.rUnitCell[2][1] ;
+      ASuper->H[iHsuper].ConnectingVector[2] = (ASuper->Cell.Atom[ASuper->H[iHsuper].Atompos2].Position[2]-ASuper->Cell.Atom[ASuper->H[iHsuper].Atompos1].Position[2]) + ASuper->H[iHsuper].TransVecs[0] * ASuper->Cell.rUnitCell[0][2] + ASuper->H[iHsuper].TransVecs[1] * ASuper->Cell.rUnitCell[1][2] + ASuper->H[iHsuper].TransVecs[2] * ASuper->Cell.rUnitCell[2][2] ;
       MatrixCopy(&(ASuper->H[iHsuper].Hop), A.H[iH].Hop);
       iHsuper++;
     }

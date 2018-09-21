@@ -59,7 +59,7 @@ static int LuaFileReadDresdenFPLO(lua_State * L)
 
   const char *flname = luaL_checkstring(L, 1);
   FPLO = (DresdenFPLO*) lua_newuserdata(L, sizeof(DresdenFPLO));
-  FileReadDresdenFPLO(FPLO, flname);
+  if(FileReadDresdenFPLO(FPLO, flname)) return luaL_error(L, "Error while reading or opening file %s in FileReadDresdenFPLO(arg).",flname);
   luaL_setmetatable(L, "DresdenFPLO_Type");
 
   return 1;
