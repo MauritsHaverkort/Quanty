@@ -4939,7 +4939,7 @@ static int LuaOrbitalRotationMatrix(lua_State * L)
 	return 1;
 }
 
-static int LuaYtoJJZMatrix(lua_State * L)
+static int LuaYtojjzMatrix(lua_State * L)
 {
 	uint32_t len = (uint32_t) lua_gettop(L);
 	bool isInputInteger;
@@ -5133,7 +5133,7 @@ static const struct luaL_Reg global_functions[] = {
   {"TightBindingDefFromDresdenFPLO", LuaTightBindingDefFromDresdenFPLO},
   {"Transpose", Luatranspose},
   {"Verbosity",LuaVerbosity},
-	{"YtoJJZMatrix",LuaYtoJJZMatrix},
+	{"YtojjzMatrix",LuaYtojjzMatrix},
 	{"YtoKMatrix",LuaYtoKMatrix},
 	{"YtoZMatrix",LuaYtoZMatrix},
   {NULL, NULL}
