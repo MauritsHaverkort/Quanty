@@ -1316,6 +1316,7 @@ static int LuaReadAtomWithDefault(lua_State *L, int narg, AtomType *a, CrystalSt
     lua_pop(L, 1);
     // determine AtomIndexInCrystalStructure
     *AtomIndexInCrystalStructure = FindAtomPosModulusUnitCell(a, def, 0.0001);
+    if(*AtomIndexInCrystalStructure==INT_MAX) luaL_error(L, "Error Atom %s not found at given position\n",a->Name);
     // get the list with shells
     len = (uint32_t)lua_objlen(L, narg);
     if(len==3)
@@ -1356,7 +1357,7 @@ static int LuaReadAtomWithDefault(lua_State *L, int narg, AtomType *a, CrystalSt
           // shell given by a string specifing its name, all orbitals taken from def
           strncpy(a->ShellName[i], luaL_checkstring(L, -1), MAXStrLength-1);
           // find atom and shell in def and set the list of orbitals
-          if(!isnan(*AtomIndexInCrystalStructure))
+          if(*AtomIndexInCrystalStructure!=INT_MAX)
           {
             j=*AtomIndexInCrystalStructure;
             {

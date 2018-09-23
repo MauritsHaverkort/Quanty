@@ -1,3 +1,7 @@
+
+dofile("/Users/haverkort/Documents/Materials/Sr2CuO3/LDApp/2_groundstate.Quanty")
+os.exit()
+
 dofile("/Users/haverkort/Documents/Posters and Talks/2018 09 Quanty workshop/Tutorial_Tuesday/NiO Crystal field theory/15 XAS L23 as conductivity tensor/15_XAS_L23_as_conductivity_tensor.Quanty")
 os.exit()
 

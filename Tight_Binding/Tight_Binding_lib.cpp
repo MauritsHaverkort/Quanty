@@ -139,7 +139,7 @@ int FindAtomPosModulusUnitCell(const AtomType *const Atom, const CrystalStructur
     }
   }
   // atom not found
-  return NAN;
+  return INT_MAX;
 }
 
 
