@@ -1,14 +1,54 @@
-Verbosity(0xFFFF)
+dofile("/Users/haverkort/Documents/Posters and Talks/2018 09 Quanty workshop/Tutorial_Tuesday/NiO Crystal field theory/15 XAS L23 as conductivity tensor/15_XAS_L23_as_conductivity_tensor.Quanty")
+os.exit()
+
+
+dofile("/Users/haverkort/Documents/Materials/Sr2CuO3/LDApp/2_groundstate.Quanty")
+os.exit()
+
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Tutorials/40_NiO_Ligand_Field/FPLO/Groundstate.Quanty")
+os.exit()
+
 
 dofile("/Users/haverkort/Documents/Materials/CrF4/1_groundstate.Quanty")
 os.exit()
 
-dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Tutorials/40_NiO_Ligand_Field/FPLO/Open_Cluster.Quanty")
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Tutorials/40_NiO_Ligand_Field/FPLO/Groundstate.Quanty")
 os.exit()
 
 
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Tutorials/40_NiO_Ligand_Field/FPLO/Groundstate.Quanty")
+os.exit()
+
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Reference/Objects/Matrix/Matrix.Quanty")
+os.exit()
+
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Tutorials/40_NiO_Ligand_Field/FPLO/Groundstate.Quanty")
+os.exit()
+
+
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Tutorials/40_NiO_Ligand_Field/FPLO/Calculate_Double_Counting_Potential.Quanty")
+os.exit()
+
+
+
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Reference/Functions/MeanFieldGroundState.Quanty")
+os.exit()
+
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Tutorials/40_NiO_Ligand_Field/FPLO/Open_Cluster.Quanty")
 os.exit()
+
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Reference/Functions/BlockBandDiagonalize.Quanty")
+os.exit()
+
+dofile("/Users/haverkort/Documents/Materials/CrF4/1_groundstate.Quanty")
+os.exit()
+
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Reference/Objects/Postscript/Postscript.Quanty")
+os.exit()
+
+
+
+
 
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Tutorials/40_NiO_Ligand_Field/FPLO/Calculate_Double_Counting_Potential.Quanty")
 os.exit()

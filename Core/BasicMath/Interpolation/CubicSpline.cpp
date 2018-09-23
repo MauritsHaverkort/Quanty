@@ -18,12 +18,12 @@ CubicSpline::~CubicSpline() {
 	// TODO Auto-generated destructor stub
 }
 
-CubicSpline::CubicSpline(std::vector<double> u, std::vector<double> v)
+CubicSpline::CubicSpline(const std::vector<double> &u, const std::vector<double> &v)
 {
 	Create(u,v);
 }
 
-void CubicSpline::Create(std::vector<double> u, std::vector<double> v)
+void CubicSpline::Create(const std::vector<double> &u, const std::vector<double> &v)
 {
 	x = u;
 	y = v;
@@ -116,7 +116,7 @@ double CubicSpline::operator()(double t,unsigned int k)
 	return NAN;
 }
 
-std::vector<double> CubicSpline::operator()(std::vector<double> t)
+std::vector<double> CubicSpline::operator()(const std::vector<double> &t)
 {
 	std::vector<double> val = std::vector<double>(t.size());
 	uint32_t i = 1;
@@ -143,6 +143,15 @@ std::vector<double> CubicSpline::operator()(std::vector<double> t)
 		}
 	}
 	return val;
+}
+
+std::vector<double> CubicSpline::GetY2()
+{
+	return y2;
+}
+double CubicSpline::GetY2(uint32_t i)
+{
+	return y2[i];
 }
 
 } /* namespace Interpolation */

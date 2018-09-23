@@ -39,6 +39,14 @@ print(IndexName)
 print("There are ",#IndexName," elements in the dictionary")
 print("The first element is ",IndexName[1]," and it refers to", IndexName[IndexName[1]])
 
+
+RTB, T = BlockBandDiagonalize(ClusterTB,{{"Ni",{0,0,0}}})
+
+print(RTB)
+print(T)
+os.exit()
+
+
 t=1/2;
 q=sqrt(1/12);
 p=sqrt(4/12);

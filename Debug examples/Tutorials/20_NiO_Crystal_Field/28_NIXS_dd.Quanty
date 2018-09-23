@@ -196,7 +196,7 @@ qphi=acos(sqrt(1/5))
 Tq123 = TnIXS_dd(q,qtheta,qphi)
 
 -- calculate the spectra
-nIXSSpectra = CreateSpectra(Hamiltonian, {Tq001, Tq110, Tq111, Tq123}, psiList, {{"Emin",-1}, {"Emax",6}, {"NE",3000}, {"Gamma",0.1}})
+nIXSSpectra = CreateSpectra(Hamiltonian, {Tq001, Tq111, Tq110, Tq123}, psiList, {{"Emin",-1}, {"Emax",6}, {"NE",3000}, {"Gamma",0.1}})
 
 -- print the spectra to a file
 nIXSSpectra.Print({{"file","NiOnIXS_dd.dat"}})
@@ -222,9 +222,9 @@ set terminal postscript portrait enhanced color  "Times" 12
 set yrange [0:6.5]
 
 plot "NiO_Experiment/NIXS_dd_JSR_16_469_2009" using 1:($2*0.01) title 'experiment' with filledcurves y1=0 ls 5 fs transparent solid 0.5,\
-     "NiOnIXS_dd.dat" using 1:(-$15 -$17 -$19 +3.25) title 'q // 111' with lines ls  3,\
      "NiOnIXS_dd.dat" using 1:(-$21 -$23 -$25 +2.50) title 'q // 123' with lines ls  4,\
-     "NiOnIXS_dd.dat" using 1:(-$9  -$11 -$13 +1.75) title 'q // 011' with lines ls  2,\
+     "NiOnIXS_dd.dat" using 1:(-$15 -$17 -$19 +3.25) title 'q // 011' with lines ls  3,\
+     "NiOnIXS_dd.dat" using 1:(-$9  -$11 -$13 +1.75) title 'q // 111' with lines ls  2,\
      "NiOnIXS_dd.dat" using 1:(-$3   -$5  -$7 +1.00) title 'q // 001' with lines ls  1
 ]]
 

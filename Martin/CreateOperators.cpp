@@ -389,7 +389,7 @@ double *CreateBaseForContinuum( uint32_t NBasisFuns, vector<vector<double> > bas
 	dim = Ncont + group.n;
 
 
-	dualfuns = CreateDualFunctions(NBasisFuns,NGridpoints,basisfuns,x);
+	CreateDualFunctions(basisfuns,x,dualfuns);
 /*	printf("\n");
 	PrintArray(&dualfuns[0][0],6);
 	printf("\n");
@@ -400,7 +400,7 @@ double *CreateBaseForContinuum( uint32_t NBasisFuns, vector<vector<double> > bas
 	PrintArray(&derivfuns[0][0],6);
 	printf("\n");
 */
-	dualcont = CreateDualFunctions(Ncont,NGridpoints,contfuns,x);
+	CreateDualFunctions(contfuns,x,dualcont);
 
 	T = KineticEnergyCB(basisfuns,derivfuns, dualfuns,dualcont, Ncont,group.indices, group.n,x,NGridpoints,k,w);
 

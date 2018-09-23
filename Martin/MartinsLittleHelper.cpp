@@ -283,9 +283,6 @@ void VectorJoin(vector<double> &a, vector<double> b)
 	}
 }
 
-vector<vector<double> > CreateDualFunctions(const unsigned int NBasisFuns, const unsigned int NGridPoints,
-		vector<vector<double> > basisfuns, vector<double> x);
-
 vector<double> CalcMetric(vector<vector<double> > basisfuns, vector<vector<double> > funs2, vector<double> x)
 {
 	unsigned int dim1, dim2,i,j,n;
@@ -294,7 +291,9 @@ vector<double> CalcMetric(vector<vector<double> > basisfuns, vector<vector<doubl
 	dim1 = (unsigned int) basisfuns.size();
 	dim2 = (unsigned int) funs2.size();
 	vector<double> g = vector<double>(dim1*dim2);
-	vector<vector<double> > dualfuns = CreateDualFunctions(dim2,(unsigned int) x.size(),funs2,x);
+	vector<vector<double> > dualfuns;
+
+	CreateDualFunctions(funs2,x,dualfuns);
 
 	double y;
 

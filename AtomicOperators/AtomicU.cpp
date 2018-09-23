@@ -22,8 +22,7 @@ static int LuaOperatorNewAtomicU (lua_State *L)
 
     if ( len < 3 ||  len > 4)
     {
-    	printf("Error in Martin.NewCoulomb: 3 or 4 arguments expected; got %u",len);
-    	return -1;
+    	return luaL_error(L,"Error in Martin.NewCoulomb: 3 or 4 arguments expected; got %u",len);
     }
 
     NF = (uint32_t)luaL_checkunsigned(L, 1);
@@ -96,8 +95,7 @@ static int LuaOperatorNewAtomicU (lua_State *L)
 		uint32_t NfunsF = (uint32_t)lua_objlen(L,4);
 		if (NfunsF != NfunsG)
 		{
-			printf("Error in LuaOperatorNewCoulombFull: number of functions small part (%u) != large part (%u)\n",NfunsF,NfunsG);
-			return -1;
+			return luaL_error(L,"Error in LuaOperatorNewCoulombFull: number of functions small part (%u) != large part (%u)\n",NfunsF,NfunsG);
 		}
 		vector<Interpolation::InterpolatingFunction *> funsF = vector<Interpolation::InterpolatingFunction *>(NfunsF);
 		for(uint32_t i = 0; i < NfunsF; i++)
@@ -110,7 +108,6 @@ static int LuaOperatorNewAtomicU (lua_State *L)
 		x = funsG[0]->GetX();
 
 		vector<vector<double> > wavefuns = PutRelativisticSplineOnGrid(funsG,funsF,x,0);
-
 		op = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
 		CreateOperatorAtomicURelativistic(NF,wavefuns,x,indToK,indices, op);
     }
@@ -157,6 +154,7 @@ static int LuaOperatorNewAtomicU (lua_State *L)
 
 		op = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
 		CreateOperatorAtomicUNonRel(NF,funsG,indToK,indices,op);
+
     }
 
     luaL_setmetatable(L,"Operator_Type");
@@ -171,7 +169,220 @@ static int LuaOperatorNewAtomicU (lua_State *L)
     return 1;
 }
 
-uint32_t CreateOperatorAtomicURelativistic(uint32_t const NFermion,vector<vector<double> >basisfuns, vector<double> grid,vector<int> indToK
+static int LuaGetSlaterIntegrals (lua_State *L)
+{
+    uint32_t len, NIntegrals;
+    vector<double> x;
+    len = (uint32_t)lua_gettop(L);
+    SSlaterIntegral *integrals;
+    vector<string> orbitalNames;
+    vector<int> indToK;
+
+    if ( len < 2 ||  len > 3)
+    {
+    	return luaL_error(L,"Error in LuaGetSlaterIntegrals: 2 or 3 arguments expected; got %u",len);
+    }
+
+    orbitalNames = luaL_checkarray_string(L, 1);
+    indToK = NamesToKappa(orbitalNames);
+
+    if (len == 3)
+	{
+		uint32_t NfunsG = (uint32_t)lua_objlen(L,2);
+
+		if (NfunsG > (uint32_t) indToK.size())
+		{
+			printf("Warning: LuaGetSlaterIntegrals number of basis funs (%u) != number of indices (%u)\n",NfunsG , (uint32_t) indToK.size());
+			fflush(stdout);
+		}
+		else
+		{
+			if (NfunsG < (uint32_t) indToK.size())
+			{
+				return luaL_error(L, "Errorr: LuaGetSlaterIntegrals number of basis funs (%u) < number of indices (%u)\n",NfunsG , (uint32_t) indToK.size());
+			}
+		}
+
+		vector<Interpolation::InterpolatingFunction *> funsG = vector<Interpolation::InterpolatingFunction *>(NfunsG);
+		for(uint32_t i = 0; i < NfunsG; i++)
+		{
+			lua_rawgeti(L, 2, i+1);
+			funsG[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
+			lua_pop(L,1);
+		}
+
+		uint32_t NfunsF = (uint32_t)lua_objlen(L,3);
+		if (NfunsF != NfunsG)
+		{
+			return luaL_error(L,"Error in LuaGetSlaterIntegrals: number of functions small part (%u) != large part (%u)\n",NfunsF,NfunsG);
+		}
+		vector<Interpolation::InterpolatingFunction *> funsF = vector<Interpolation::InterpolatingFunction *>(NfunsF);
+		for(uint32_t i = 0; i < NfunsF; i++)
+		{
+			lua_rawgeti(L, 3, i+1);
+			funsF[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
+			lua_pop(L,1);
+		}
+
+		x = funsG[0]->GetX();
+
+		vector<vector<double> > wavefuns = PutRelativisticSplineOnGrid(funsG,funsF,x,0);
+
+		integrals = GetSlaterIntegrals(wavefuns,x, indToK, NIntegrals);
+    }
+    else
+    {
+
+		uint32_t NfunsG = (uint32_t)lua_objlen(L,2);
+
+		if (NfunsG > (uint32_t) indToK.size())
+		{
+			printf("Warning: LuaGetSlaterIntegrals number of basis funs (%u) != number of indices (%u)\n",NfunsG , (uint32_t) indToK.size());
+			fflush(stdout);
+		}
+		else
+		{
+			if (NfunsG < (uint32_t) indToK.size())
+			{
+				return luaL_error(L, "Errorr: LuaGetSlaterIntegrals number of basis funs (%u) < number of indices (%u)\n",NfunsG , (uint32_t) indToK.size());
+			}
+		}
+
+		vector<Interpolation::InterpolatingFunction *> funsG = vector<Interpolation::InterpolatingFunction *>(NfunsG);
+		for(uint32_t i = 0; i < NfunsG; i++)
+		{
+			lua_rawgeti(L, 2, i+1);
+			funsG[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
+			lua_pop(L,1);
+		}
+		integrals = GetSlaterIntegrals(funsG, indToK, NIntegrals);
+    }
+
+    lua_createtable(L,NIntegrals,0);
+    for(uint32_t i = 0; i < NIntegrals; i++)
+    {
+
+    	uint32_t *n = integrals[i].tau.n;
+    	double *Rk = integrals[i].val;
+    	uint32_t N = integrals[i].Nval;
+    	uint32_t *k = integrals[i].k;
+
+    	string orb1 = orbitalNames[n[0]];
+    	string orb2 = orbitalNames[n[1]];
+    	string orb3 = orbitalNames[n[2]];
+    	string orb4 = orbitalNames[n[3]];
+
+    	Lua_Push_SlaterIntegral(L,Rk,k,N,orb1,orb2,orb3,orb4);
+    	Lua_Push_SlaterIntegral(L,Rk,k,N,orb3,orb2,orb1,orb4);
+    	Lua_Push_SlaterIntegral(L,Rk,k,N,orb1,orb4,orb3,orb2);
+    	Lua_Push_SlaterIntegral(L,Rk,k,N,orb3,orb4,orb1,orb2);
+
+    	Lua_Push_SlaterIntegral(L,Rk,k,N,orb2,orb1,orb4,orb3);
+		Lua_Push_SlaterIntegral(L,Rk,k,N,orb2,orb3,orb4,orb1);
+		Lua_Push_SlaterIntegral(L,Rk,k,N,orb4,orb1,orb2,orb3);
+		Lua_Push_SlaterIntegral(L,Rk,k,N,orb4,orb3,orb2,orb1);
+
+
+    }
+
+
+    return 1;
+}
+void Lua_Push_SlaterIntegral(lua_State *L, double *Rk, uint32_t *k, uint32_t N,string orb1,string orb2,string orb3,string orb4)
+{
+	string label = orb1;
+	label.insert(label.size()," ");
+	label.insert(label.size(),orb2);
+	label.insert(label.size()," ");
+	label.insert(label.size(),orb3);
+	label.insert(label.size()," ");
+	label.insert(label.size(),orb4);
+	lua_pushstring(L,label);
+	lua_createtable(L,0,0);
+	for(uint32_t j = 0; j < N; j++)
+	{
+		lua_pushnumber(L,Rk[j]);
+		lua_rawseti(L,-2,k[j]);
+	}
+	lua_settable(L,-3);
+}
+
+vector<int> NamesToKappa(const vector<string> &orbitalNames)
+{
+	vector<int> kappas = vector<int>(orbitalNames.size());
+	for(size_t i = 0; i < orbitalNames.size(); i++)
+	{
+		size_t idx = orbitalNames[i].find_first_of("spdfg");
+		if (idx == string::npos)
+		{
+			printf("Error: No valid name for an orbital\n");
+		}
+		else
+		{
+			if (idx == (orbitalNames[i].size()-1))
+			{
+				switch (orbitalNames[i][idx]) {
+					case 's':
+						kappas[i] = -1;
+						break;
+					case 'p':
+						kappas[i] = -2;
+						break;
+					case 'd':
+						kappas[i] = -3;
+						break;
+					case 'f':
+						kappas[i] = -4;
+						break;
+					case 'g':
+						kappas[i] = -5;
+						break;
+					default:
+						printf("Sorry, we only have spdfg orbitals\n");
+						break;
+				}
+			}
+			else
+			{
+				switch (orbitalNames[i][idx]) {
+					case 's':
+						kappas[i] = -1;
+						break;
+					case 'p':
+						if (orbitalNames[i][idx+1] == '1')
+							kappas[i] = 1;
+						else
+							kappas[i] = -2;
+						break;
+					case 'd':
+						if (orbitalNames[i][idx+1] == '3')
+							kappas[i] = 2;
+						else
+							kappas[i] = -3;
+						break;
+					case 'f':
+						if (orbitalNames[i][idx+1] == '5')
+							kappas[i] = 3;
+						else
+							kappas[i] = -4;
+						break;
+					case 'g':
+						if (orbitalNames[i][idx+1] == '7')
+							kappas[i] = 4;
+						else
+							kappas[i] = -5;
+						break;
+					default:
+						printf("Sorry, we only have spdfg orbitals\n");
+						break;
+				}
+			}
+		}
+	}
+	return kappas;
+}
+
+uint32_t CreateOperatorAtomicURelativistic(uint32_t const NFermion,const vector<vector<double> > &basisfuns, const vector<double> &grid, const vector<int> &indToK
                                                ,uint16_t **indices, OperatorType *op)
 {
 
@@ -212,7 +423,7 @@ uint32_t CreateOperatorAtomicURelativistic(uint32_t const NFermion,vector<vector
     return 0;
 }
 
-uint32_t CreateOperatorAtomicUNonRel(uint32_t const NFermion,vector<Interpolation::InterpolatingFunction *> ipolfuns,vector<int> indToK
+uint32_t CreateOperatorAtomicUNonRel(uint32_t const NFermion,const vector<Interpolation::InterpolatingFunction *> &ipolfuns, const vector<int> &indToK
                                                ,uint16_t **indices, OperatorType *op)
 {
 
@@ -234,9 +445,6 @@ uint32_t CreateOperatorAtomicUNonRel(uint32_t const NFermion,vector<Interpolatio
     l[3] = -k[3]-1;
     n = integrals[0].tau.n;
     Fk = integrals[0].val;
-    cout << integrals[0].Nval << endl;
-    double ha = 13.6*2;
-    cout << Fk[0]*ha << " " << Fk[1]*ha << " " << Fk[2]*ha << endl;
 
     CreateOperatorAtomicUNonRelOneIntegral(NFermion,l[0],l[1],l[2],l[3],indices[2*n[0]],indices[2*n[0]+1],indices[2*n[1]],indices[2*n[1]+1],indices[2*n[2]],indices[2*n[2]+1],indices[2*n[3]],indices[2*n[3]+1],Fk,n[0],n[1],n[2],n[3],op);
 
@@ -277,17 +485,20 @@ void CreateOperatorAtomicURelativisticOneIntegral(uint32_t const NFermion,int co
     {
         CreateOperatorCoulombFourRelativisticShells(NFermion,kappa3,kappa2,kappa1,kappa4, Jindex3,Jindex2,Jindex1,Jindex4,Fk,&optemp);
         OperatorAdd(op, optemp, 1., 0.);
+        FreeOperator(&optemp);
     }
 
     if (n2 != n4)
     {
         CreateOperatorCoulombFourRelativisticShells(NFermion,kappa1,kappa4,kappa3,kappa2, Jindex1,Jindex4,Jindex3,Jindex2,Fk,&optemp);
         OperatorAdd(op, optemp, 1., 0.);
+        FreeOperator(&optemp);
 
         if (n1 != n3)
         {
             CreateOperatorCoulombFourRelativisticShells(NFermion,kappa3,kappa4,kappa1,kappa2, Jindex3,Jindex4,Jindex1,Jindex2,Fk,&optemp);
             OperatorAdd(op, optemp, 1., 0.);
+            FreeOperator(&optemp);
         }
     }
 
@@ -295,21 +506,25 @@ void CreateOperatorAtomicURelativisticOneIntegral(uint32_t const NFermion,int co
     {
         CreateOperatorCoulombFourRelativisticShells(NFermion,kappa2,kappa1,kappa4,kappa3, Jindex2,Jindex1,Jindex4,Jindex3,Fk,&optemp);
         OperatorAdd(op, optemp, 1., 0.);
+        FreeOperator(&optemp);
 
         if (n1 != n3)
         {
             CreateOperatorCoulombFourRelativisticShells(NFermion,kappa2,kappa3,kappa4,kappa1, Jindex2,Jindex3,Jindex4,Jindex1,Fk,&optemp);
             OperatorAdd(op, optemp, 1., 0.);
+            FreeOperator(&optemp);
         }
 
         if (n2 != n4)
         {
             CreateOperatorCoulombFourRelativisticShells(NFermion,kappa4,kappa1,kappa2,kappa3, Jindex4,Jindex1,Jindex2,Jindex3,Fk,&optemp);
             OperatorAdd(op, optemp, 1., 0.);
+            FreeOperator(&optemp);
             if (n1 != n3)
             {
                 CreateOperatorCoulombFourRelativisticShells(NFermion,kappa4,kappa3,kappa2,kappa1, Jindex4,Jindex3,Jindex2,Jindex1,Fk,&optemp);
                 OperatorAdd(op, optemp, 1., 0.);
+                FreeOperator(&optemp);
             }
         }
     }

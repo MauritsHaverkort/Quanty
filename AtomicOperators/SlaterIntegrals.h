@@ -1,22 +1,15 @@
 #ifndef ATOMICOPERATORS_SLATERINTEGRALS_H_
 #define ATOMICOPERATORS_SLATERINTEGRALS_H_
 
-SSlaterIntegral *GetSlaterIntegrals(double **basisfuns, unsigned int NBasisFuns, const double *x,
-                                    unsigned int NGridPoints,const int **tupel, unsigned int NIntegrals);
+SSlaterIntegral *GetSlaterIntegrals(const vector<vector<double> > &basisfuns,const vector<double> &x,const vector<int> &indToK, unsigned int &NIntegrals);
 
-SSlaterIntegral *GetSlaterIntegrals(double **basisfuns, unsigned int NBasisFuns, const double *x,
-                                    unsigned int NGridPoints,vector<int> indToK, unsigned int &NIntegrals);
-
-SSlaterIntegral *GetSlaterIntegrals(vector<vector<double> > basisfuns, vector<double> x,vector<int> indToK, unsigned int &NIntegrals);
-
-void CalculateSlaterIntegrals(const int NIntegrals, SSlaterIntegral *integrals, const int dim,
-                              double **kernels, double **basisfuns, double **dualfuns);
+SSlaterIntegral *GetSlaterIntegrals(const vector<Interpolation::InterpolatingFunction *> &ipolfuns,const vector<int> &indToK, unsigned int &NIntegrals);
 
 void CalculateSlaterIntegrals(const int NIntegrals, SSlaterIntegral *integrals, const int dim,
                               double **kernels, vector<vector<double> > basisfuns, vector<vector<double> > dualfuns);
 
 void CalculateSlaterIntegrals(const int NIntegrals, SSlaterIntegral *integrals, uint32_t dim,
-                              vector<vector<double> >kernels, vector<vector<double> > basisfuns, vector<vector<double> > dualfuns);
+                              vector<vector<double> > &kernels, vector<vector<double> > &basisfuns, vector<vector<double> > &dualfuns);
 
 void vecMul(const int n, const double *f, const double *g, double *fout);
 
@@ -29,28 +22,19 @@ void CreateKernel(const unsigned int NGridPoints, const double *x, double *kerne
 
 double *CreateWeights(const unsigned int NGridPoints, const double *x);
 
-vector<double> CreateWeights(const unsigned int NGridPoints, vector<double> x);
+vector<double> CreateWeights(const unsigned int NGridPoints, const vector<double> &x);
 
-double **CreateDualFunctions(const unsigned int NBasisFuns, const unsigned int NGridPoints,
-                             double **basisfuns, const double *x);
+vector<double> Dual(const vector<double> &f, const vector<double> &w);
 
-vector<double> Dual(vector<double> f, vector<double> w);
+void CreateDualFunctions(const vector<vector<double> > &basisfuns,const vector<double> &x, vector<vector<double> > &dualfuns);
 
-vector<vector<double> > CreateDualFunctions(const unsigned int NBasisFuns, const unsigned int NGridPoints,
-		vector<vector<double> > basisfuns, vector<double> x);
-
-void Dual(const int n, const double *f, const double *weights, double *fdual);
-
-SSlaterIntegral *InitializeIntegrals(const int **tupel, unsigned int NIntegrals,
-                                     unsigned int *kMax);
-
-SSlaterIntegral *InitializeIntegrals(vector<int> indToK, unsigned int &NIntegrals, unsigned int *kMax);
+SSlaterIntegral *InitializeIntegrals(const vector<int> &indToK, unsigned int &NIntegrals, unsigned int *kMax);
 
 unsigned int *GetK(const int *kappa, int *n);
 
-vector<double> GetNonRelKernel(vector<double> x, const uint32_t k);
+void CreateNonRelKernel(const vector<double> &x, const uint32_t k,vector<double> &kernel);
 
-vector<vector<double> > CreateAllKernels(const unsigned int kMax, vector<double> x);
+void CreateAllKernels(const unsigned int kMax,const vector<double> &x, vector<vector<double> > &kernels);
 
 int Sign(const int x);
 

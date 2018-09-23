@@ -336,6 +336,7 @@ typedef struct CompactMatrixType
   double a0;                    /* storing a possible real shift if a continued fraction notation is used */
   double b0;                    /* storing a possilbe over-all scaling if a continued fraction notation is used */
   double mu;
+  bool   OnLuaStack;            /* if set to true a call to free will not relase the data as this is done by lua */
 }
 CompactMatrixType;
 

@@ -18,12 +18,12 @@ void CreateOperatorDirac(uint32_t const NFermion,vector<vector<double> > basisfu
 {
 	vector<vector<double> > diracElements, dualfuns;
 
-	unsigned int NBasisFuns  = (unsigned int) basisfuns.size();
+	//unsigned int NBasisFuns  = (unsigned int) basisfuns.size();
 	unsigned int NGridpoints = (unsigned int) x.size();
 	unsigned int *mj1,*mj2,n,k,j,i;
 	uint16_t oadd[2] = { 0, 0 };
 
-	dualfuns = CreateDualFunctions(NBasisFuns, NGridpoints,basisfuns,x);
+	CreateDualFunctions(basisfuns,x,dualfuns);
 
 	InitOperator(op);
 	InitOperatorFixedLength(op,2,8);
@@ -90,8 +90,7 @@ static int LuaOperatorNewAtomicDirac(lua_State *L)
 	}
 	if (NfunsF != NfunsG)
 	{
-		printf("Error in AtomicDirac.cpp: number of functions small part (%u) != large part (%u)\n",NfunsF,NfunsG);
-		return -1;
+		return luaL_error(L,"Error in AtomicDirac.cpp: number of functions small part (%u) != large part (%u)\n",NfunsF,NfunsG);
 	}
 	vector<Interpolation::InterpolatingFunction *> funsG = vector<Interpolation::InterpolatingFunction *>(NfunsG);
 	for(uint32_t i = 0; i < NfunsG; i++)
@@ -139,20 +138,7 @@ static int LuaOperatorNewAtomicDirac(lua_State *L)
 	vector<double> x = funsG[0]->GetX();
 	vector<vector<double> > basisfuns = PutRelativisticSplineOnGrid(funsG,funsF,x,0);
 	vector<vector<double> > derivfuns = PutRelativisticSplineOnGrid(funsG,funsF,x,1);
-/*
-	printf("%d\n",derivfuns.size());
-	printf("{");
-	for (int i = 0; i < derivfuns.size(); i++)
-	{
-		printf("{");
-		for(int j = 0; j < derivfuns[i].size()-1; j++)
-		{
-			printf("%.16E, ",derivfuns[i][j]);
-		}
-		printf("%.16E},\n",derivfuns[i][derivfuns[i].size()-1]);
-	}
-	printf("}\n");
-*/
+
 	op = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
 
 	//CreateOperatorDirac(NF, basisfuns,derivfuns,x,groups,NGroups,indices,Z,op);

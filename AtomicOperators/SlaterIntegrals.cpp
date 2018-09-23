@@ -1,93 +1,6 @@
 #include "../AtomicOperators/SlaterIntegrals.h"
 
-SSlaterIntegral *GetSlaterIntegrals(double **basisfuns, unsigned int NBasisFuns, const double *x,
-                                    unsigned int NGridPoints,const int **tupel, unsigned int NIntegrals)
-{
-        
-    SSlaterIntegral *si;
-    unsigned int kMax, n, i;
-    double **kernels, **dualfuns;
-    
-    n = 2* NGridPoints;
-
-    dualfuns = CreateDualFunctions(NBasisFuns, NGridPoints, basisfuns,x);
-
-    si = InitializeIntegrals(tupel, NIntegrals,&kMax);
-
-    kernels = CreateAllKernels(kMax, NGridPoints, x); 
-   
-    CalculateSlaterIntegrals(NIntegrals, si,n,kernels,basisfuns,dualfuns);
-/*
-  	int i,j;
-    FILE *f = fopen("slaterout4","w");
-    for ( i = 0; i < NIntegrals; i++)
-    {
-    	for ( j = 0; j < si[i].Nval; j++)
-    	{
-    		fprintf(f,"%.16e\n",si[i].val[j]);
-    	}
-    }
-    fclose(f);
-*/
-
-    for ( i = 0; i <= kMax; i++)
-    {
-    	free(kernels[i]);
-    }
-    free(kernels);
-    for ( i = 0; i < NBasisFuns; i++)
-    {
-    	free(dualfuns[i]);
-    }
-    free(dualfuns);
-
-    return si;
-}
-
-SSlaterIntegral *GetSlaterIntegrals(double **basisfuns, unsigned int NBasisFuns, const double *x,
-                                    unsigned int NGridPoints,vector<int> indToK, unsigned int &NIntegrals)
-{
-
-    SSlaterIntegral *si;
-    unsigned int kMax, n, i;
-    double **kernels, **dualfuns;
-
-    n = 2* NGridPoints;
-
-    dualfuns = CreateDualFunctions(NBasisFuns, NGridPoints, basisfuns,x);
-
-    si = InitializeIntegrals(indToK, NIntegrals,&kMax);
-
-    kernels = CreateAllKernels(kMax, NGridPoints, x);
-
-    CalculateSlaterIntegrals(NIntegrals, si,n,kernels,basisfuns,dualfuns);
-/*
-  	int i,j;
-    FILE *f = fopen("slaterout4","w");
-    for ( i = 0; i < NIntegrals; i++)
-    {
-    	for ( j = 0; j < si[i].Nval; j++)
-    	{
-    		fprintf(f,"%.16e\n",si[i].val[j]);
-    	}
-    }
-    fclose(f);
-*/
-    for ( i = 0; i <= kMax; i++)
-    {
-    	free(kernels[i]);
-    }
-    free(kernels);
-    for ( i = 0; i < NBasisFuns; i++)
-    {
-    	free(dualfuns[i]);
-    }
-    free(dualfuns);
-
-    return si;
-}
-
-SSlaterIntegral *GetSlaterIntegrals(vector<vector<double> > basisfuns, vector<double> x,vector<int> indToK, unsigned int &NIntegrals)
+SSlaterIntegral *GetSlaterIntegrals(const vector<vector<double> > &basisfuns,const vector<double> &x,const vector<int> &indToK, unsigned int &NIntegrals)
 {
 
     SSlaterIntegral *si;
@@ -99,7 +12,7 @@ SSlaterIntegral *GetSlaterIntegrals(vector<vector<double> > basisfuns, vector<do
 
     n = 2* NGridPoints;
 
-    dualfuns = CreateDualFunctions((unsigned int)basisfuns.size(), NGridPoints, basisfuns,x);
+    CreateDualFunctions(basisfuns,x,dualfuns);
 
     si = InitializeIntegrals(indToK, NIntegrals,&kMax);
 
@@ -116,17 +29,17 @@ SSlaterIntegral *GetSlaterIntegrals(vector<vector<double> > basisfuns, vector<do
     return si;
 }
 
-SSlaterIntegral *GetSlaterIntegrals(vector<Interpolation::InterpolatingFunction *> ipolfuns, vector<int> indToK, unsigned int &NIntegrals)
+SSlaterIntegral *GetSlaterIntegrals(const vector<Interpolation::InterpolatingFunction *> &ipolfuns,const vector<int> &indToK, unsigned int &NIntegrals)
 {
 
 	uint32_t quadDegree = 3;
 	vector<double> x = ipolfuns[0]->GetX();
-	vector<double> knots = GaussQuad::GetKnots(quadDegree,x);
-	uint32_t Nknots = knots.size();
-	uint32_t Nfuns = ipolfuns.size();
+	vector<double> knots = Quad::GetKnots(quadDegree,x);
+	uint32_t Nknots = (uint32_t)knots.size();
+	uint32_t Nfuns = (uint32_t)ipolfuns.size();
     vector<vector<double> > basisfuns = vector<vector<double> >(Nfuns);
     vector<vector<double> > dualfuns  = vector<vector<double> >(Nfuns);
-    vector<double> weights = GaussQuad::GetWeights(quadDegree,x);
+    vector<double> weights = Quad::GetWeights(quadDegree,x);
     for (uint32_t i = 0; i < Nfuns; i++)
     {
     	basisfuns[i] = (*ipolfuns[i])(knots);
@@ -140,36 +53,14 @@ SSlaterIntegral *GetSlaterIntegrals(vector<Interpolation::InterpolatingFunction 
 
     si = InitializeIntegrals(indToK, NIntegrals,&kMax);
 
-    kernels = CreateAllKernels(kMax, knots);
-
+    //clock_t t = clock();
+    CreateAllKernels(kMax, knots,kernels);
+    //cout << "Kernels: " << (clock()-t)*1.0/CLOCKS_PER_SEC << endl;
+    //t = clock();
     CalculateSlaterIntegrals(NIntegrals, si,Nknots,kernels,basisfuns,dualfuns);
+    //cout << "CalcSlater: " << (clock()-t)*1.0/CLOCKS_PER_SEC << endl;
 
     return si;
-}
-
-void CalculateSlaterIntegrals(const int NIntegrals, SSlaterIntegral *integrals, const int dim,
-                              double **kernels, double **basisfuns, double **dualfuns)
-{
-     
-    int i,j, k;
-    unsigned int *n;
-    double Fk;
-    
-    for( i = 0; i < NIntegrals; i++)
-    {
-        
-        n = integrals[i].tau.n;
-        for( j = 0; j < integrals[i].Nval; j++)
-        {
-            
-            k = integrals[i].k[j];
-            Fk = SlaterIntegral(dim, dualfuns[n[0]], dualfuns[n[1]],
-                                basisfuns[n[2]],basisfuns[n[3]],kernels[k]);
-            //printf("Fk:\t%e\n",Fk);
-            integrals[i].val[j] = Fk;
-            
-        }
-    }
 }
 
 void CalculateSlaterIntegrals(const int NIntegrals, SSlaterIntegral *integrals, const int dim,
@@ -190,7 +81,6 @@ void CalculateSlaterIntegrals(const int NIntegrals, SSlaterIntegral *integrals, 
             k = integrals[i].k[j];
             Fk = SlaterIntegral(dim, &(dualfuns[n[0]][0]), &(dualfuns[n[1]][0]),
                                 &(basisfuns[n[2]][0]),&(basisfuns[n[3]][0]),kernels[k]);
-            //printf("Fk:\t%e\n",Fk);
             integrals[i].val[j] = Fk;
 
         }
@@ -198,7 +88,7 @@ void CalculateSlaterIntegrals(const int NIntegrals, SSlaterIntegral *integrals, 
 }
 
 void CalculateSlaterIntegrals(const int NIntegrals, SSlaterIntegral *integrals, uint32_t dim,
-                              vector<vector<double> >kernels, vector<vector<double> > basisfuns, vector<vector<double> > dualfuns)
+                              vector<vector<double> > &kernels, vector<vector<double> > &basisfuns, vector<vector<double> > &dualfuns)
 {
 
     int i,j, k;
@@ -275,19 +165,16 @@ double ** CreateAllKernels(const unsigned int kMax, const unsigned int NGridPoin
     return kernels;
 }
 
-vector<vector<double> > CreateAllKernels(const unsigned int kMax, vector<double> x)
+void CreateAllKernels(const unsigned int kMax,const vector<double> &x, vector<vector<double> > &kernels)
 {
-    vector<vector<double> > kernels;
-
     kernels = vector<vector<double> >(kMax+1);
 
-    uint32_t n = x.size();
+    //uint32_t n = (uint32_t)x.size(); mwh n not used
 
     for (uint32_t k = 0; k <= kMax; k++ )
     {
-    	kernels[k] = GetNonRelKernel(x, k);
+    	CreateNonRelKernel(x, k, kernels[k]);
     }
-    return kernels;
 }
 
 void CreateKernel(const unsigned int NGridPoints, const double *x, double *kernel, const unsigned int k)
@@ -327,11 +214,11 @@ void CreateKernel(const unsigned int NGridPoints, const double *x, double *kerne
     
 }
 
-vector<double> GetNonRelKernel(vector<double> x, const uint32_t k)
+void CreateNonRelKernel(const vector<double> &x, const uint32_t k,vector<double> &kernel)
 {
     double val;
-    uint32_t n = x.size();
-    vector<double> kernel = vector<double>(n*n);
+    uint32_t n = (uint32_t)x.size();
+    kernel = vector<double>(n*n);
 
     for(uint32_t i = 0; i < n; i++)
     {
@@ -350,11 +237,8 @@ vector<double> GetNonRelKernel(vector<double> x, const uint32_t k)
             kernel[i+n*j] = val;
         }
     }
-    return kernel;
 
 }
-
-
 
 double *CreateWeights(const unsigned int NGridPoints, const double *x)
 {
@@ -381,7 +265,7 @@ double *CreateWeights(const unsigned int NGridPoints, const double *x)
     return weights;
 }
 
-vector<double> CreateWeights(const unsigned int NGridPoints, vector<double> x)
+vector<double> CreateWeights(const unsigned int NGridPoints, const vector<double> &x)
 {
 	uint32_t i;
     double x0 = 0;
@@ -411,97 +295,34 @@ vector<double> CreateWeights(const unsigned int NGridPoints, vector<double> x)
     return weights;
 }
 
-double **CreateDualFunctions(const unsigned int NBasisFuns, const unsigned int NGridPoints,
-                             double **basisfuns, const double *x)
+vector<double> Dual(const vector<double> &f, const vector<double> &w)
 {
-	uint32_t i;
-    double **dualfuns, *weights;
-    
-    weights = CreateWeights(NGridPoints,x);
-    //printf("%e\t%e\n",weights[2499],weights[4999]);
-    dualfuns = (double **) malloc(NBasisFuns*sizeof(double *));
-    if (!dualfuns) printf("malloc fail at dualfuns in CreateDualFunctions. size = %u\n",NBasisFuns);
-    for ( i = 0; i < NBasisFuns; i++ )
-    {
-        dualfuns[i] = (double *) malloc(2*NGridPoints*sizeof(double));
-        if (!dualfuns[i]) printf("malloc fail at dualfuns[%d] in CreateDualFunctions. size = %u\n",i,2*NGridPoints);
-        Dual(2*NGridPoints, basisfuns[i], weights, dualfuns[i]);
-    }
-    free(weights);
-    return dualfuns;
-}
-
-vector<double> Dual(vector<double> f, vector<double> w)
-{
-	vector<double> g;
+	vector<double> g = vector<double>(f.size());
 	if (f.size() != w.size()) printf("error in Dual: %lu = size(f) != size(w) = %lu", f.size(),w.size());
 	for (uint32_t i = 0; i < (uint32_t) f.size(); i++)
 	{
-		g.insert(g.end(), f[i]*w[i]);
+		g[i] = f[i]*w[i];
 	}
 	return g;
 }
 
-vector<vector<double> > CreateDualFunctions(const unsigned int NBasisFuns, const unsigned int NGridPoints,
-		vector<vector<double> > basisfuns, vector<double> x)
+void CreateDualFunctions(const vector<vector<double> > &basisfuns,const vector<double> &x, vector<vector<double> > &dualfuns)
 {
 	uint32_t i;
-    vector<vector<double> > dualfuns;
     vector<double> weights;
+    unsigned int NBasisFuns = (unsigned int )basisfuns.size();
+    unsigned int NGridPoints = (unsigned int )x.size();
 
     weights = CreateWeights(NGridPoints,x);
 
-
+    dualfuns = vector<vector<double> >(NBasisFuns);
     for ( i = 0; i < NBasisFuns; i++ )
     {
-        dualfuns.insert(dualfuns.end(),Dual(basisfuns[i], weights));
+        dualfuns[i] = Dual(basisfuns[i], weights);
     }
-    return dualfuns;
-
 }
 
-void Dual(const int n, const double *f, const double *weights, double *fdual)
-{
-    vecMul(n, f, weights, fdual);
-}
-
-SSlaterIntegral *InitializeIntegrals(const int **tupel, unsigned int NIntegrals,
-                                     unsigned int *kMax)
-{
-    unsigned int i, k;
-    SSlaterIntegral *integrals;
-    
-    integrals = (SSlaterIntegral *) malloc((NIntegrals)*sizeof(SSlaterIntegral));
-    for( i = 0; i < NIntegrals; i++)
-    {
-                
-    	integrals[i].tau.n[0] = tupel[i][0];
-    	integrals[i].tau.n[1] = tupel[i][2];
-    	integrals[i].tau.n[2] = tupel[i][4];
-    	integrals[i].tau.n[3] = tupel[i][6];
-
-    	integrals[i].tau.kappa[0] = tupel[i][1];
-    	integrals[i].tau.kappa[1] = tupel[i][3];
-    	integrals[i].tau.kappa[2] = tupel[i][5];
-    	integrals[i].tau.kappa[3] = tupel[i][7];
-
-    }
-    *kMax = 0;
-    for( i = 0; i < NIntegrals; i++ )
-    {
-        integrals[i].k = GetK(integrals[i].tau.kappa, &integrals[i].Nval);
-        k = integrals[i].k[integrals[i].Nval-1];
-        if (k > *kMax)
-        {
-            *kMax = k;
-        }
-        integrals[i].val = (double *) malloc(integrals[i].Nval*sizeof(double));
-    }
-    
-    return integrals;
-}
-
-SSlaterIntegral *InitializeIntegrals(vector<int> indToK, unsigned int &NIntegrals, unsigned int *kMax)
+SSlaterIntegral *InitializeIntegrals(const vector<int> &indToK, unsigned int &NIntegrals, unsigned int *kMax)
 {
     unsigned int i, k;
     SSlaterIntegral *integrals;
@@ -511,12 +332,14 @@ SSlaterIntegral *InitializeIntegrals(vector<int> indToK, unsigned int &NIntegral
 
     integrals = (SSlaterIntegral *) malloc((NIntegrals)*sizeof(SSlaterIntegral));
     i = 0;
-  for( std::map<myarray,myarray>::iterator it = tupel.begin(); it != tupel.end(); ++it)
+    for( std::map<myarray,myarray>::iterator it = tupel.begin(); it != tupel.end(); ++it)
     {
     	integrals[i].tau.n[0] = it->first.val[0];
     	integrals[i].tau.n[1] = it->first.val[1];
     	integrals[i].tau.n[2] = it->first.val[2];
     	integrals[i].tau.n[3] = it->first.val[3];
+
+    	//printf("%u\t%u\t%u\t%u\n",integrals[i].tau.n[0],integrals[i].tau.n[1],integrals[i].tau.n[2],integrals[i].tau.n[3]);
 
     	integrals[i].tau.kappa[0] = it->second.val[0];
     	integrals[i].tau.kappa[1] = it->second.val[1];

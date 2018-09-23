@@ -4,7 +4,9 @@
 static int LuaMatrixTranspose(lua_State * L)
 {
   CompactMatrixType *A;
+  uint32_t len = (uint32_t)lua_gettop(L);
   A = (CompactMatrixType *) luaL_checkCompactMatrix(L, 1);
+  if(len!=1) luaL_error(L, "Matrix.Transpose called with %d arguments, only one expected",len);
   if (luaL_testudata(L, 1, "Matrix_Type") == NULL)
   {
     CompactMatrixTranspose(A);
@@ -17,6 +19,7 @@ static int LuaMatrixTranspose(lua_State * L)
     CompactMatrixType *B;
     B = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
     luaL_setmetatable(L, "Matrix_Type");
+    B->OnLuaStack=true;
     CompactMatrixCopy(*A, B);
     CompactMatrixTranspose(B);
   }
@@ -29,7 +32,9 @@ static int LuaMatrixTranspose(lua_State * L)
 static int LuaMatrixConjugateTranspose(lua_State * L)
 {
   CompactMatrixType *A;
+  uint32_t len = (uint32_t)lua_gettop(L);
   A = (CompactMatrixType *) luaL_checkCompactMatrix(L, 1);
+  if(len!=1) luaL_error(L, "Matrix.ConjugateTranspose called with %d arguments, only one expected",len);
   if (luaL_testudata(L, 1, "Matrix_Type") == NULL)
   {
     CompactMatrixConjugateTranspose(A);
@@ -42,6 +47,7 @@ static int LuaMatrixConjugateTranspose(lua_State * L)
     CompactMatrixType *B;
     B = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
     luaL_setmetatable(L, "Matrix_Type");
+    B->OnLuaStack=true;
     CompactMatrixCopy(*A, B);
     CompactMatrixConjugateTranspose(B);
   }
@@ -54,7 +60,9 @@ static int LuaMatrixConjugateTranspose(lua_State * L)
 static int LuaMatrixConjugate(lua_State * L)
 {
   CompactMatrixType *A;
+  uint32_t len = (uint32_t)lua_gettop(L);
   A = (CompactMatrixType *) luaL_checkCompactMatrix(L, 1);
+  if(len!=1) luaL_error(L, "Matrix.Conjugate called with %d arguments, only one expected",len);
   if (luaL_testudata(L, 1, "Matrix_Type") == NULL)
   {
     CompactMatrixConjugate(A);
@@ -67,6 +75,7 @@ static int LuaMatrixConjugate(lua_State * L)
     CompactMatrixType *B;
     B = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
     luaL_setmetatable(L, "Matrix_Type");
+    B->OnLuaStack=true;
     CompactMatrixCopy(*A, B);
     CompactMatrixConjugate(B);
   }
@@ -79,7 +88,9 @@ static int LuaMatrixConjugate(lua_State * L)
 static int LuaMatrixInverse(lua_State * L)
 {
   CompactMatrixType *A;
+  uint32_t len = (uint32_t)lua_gettop(L);
   A = (CompactMatrixType *) luaL_checkCompactMatrix(L, 1);
+  if(len!=1) luaL_error(L, "Matrix.Inverse called with %d arguments, only one expected",len);
   if(A->Ni!=A->Nj) return luaL_error(L,"Matrix Inverse only works on square matrices\n");
   if (luaL_testudata(L, 1, "Matrix_Type") == NULL)
   {
@@ -93,6 +104,7 @@ static int LuaMatrixInverse(lua_State * L)
     CompactMatrixType *B;
     B = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
     luaL_setmetatable(L, "Matrix_Type");
+    B->OnLuaStack=true;
     CompactMatrixCopy(*A, B);
     CompactMatrixInverse(B);
   }
@@ -105,8 +117,10 @@ static int LuaMatrixInverse(lua_State * L)
 static int LuaMatrixSqrt(lua_State * L)
 {
   CompactMatrixType *A,*B;
+  uint32_t len = (uint32_t)lua_gettop(L);
   A = (CompactMatrixType *) luaL_checkCompactMatrix(L, 1);
   if(A->Ni!=A->Nj) return luaL_error(L,"Matrix sqrt only works on square matrices\n");
+  if(len!=1) luaL_error(L, "Matrix.Sqrt called with %d arguments, only one expected",len);
   if(QCompactMatrixHermitian(*A, DBL_EPSILON)==0)
   {
     //TODO: matrix sqrt on non hermitian matrices
@@ -126,6 +140,7 @@ static int LuaMatrixSqrt(lua_State * L)
     { // matrix on stack as userdata
       B = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
       luaL_setmetatable(L, "Matrix_Type");
+      B->OnLuaStack=true;
       if(NonHermitianCompactMatrixSqrt(A,B)) return luaL_error(L,"Matrix Sqrt failed\n");
     }
   }
@@ -145,6 +160,7 @@ static int LuaMatrixSqrt(lua_State * L)
     { // matrix on stack as userdata
       B = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
       luaL_setmetatable(L, "Matrix_Type");
+      B->OnLuaStack=true;
       if(CompactMatrixSqrt(A,B)) return luaL_error(L,"Matrix Sqrt failed\n");
     }
     return 1;
@@ -157,6 +173,8 @@ static int LuaMatrixSqrt(lua_State * L)
 static int LuaMatrixEigensystem(lua_State * L)
 {
   CompactMatrixType *H;
+  uint32_t len = (uint32_t)lua_gettop(L);
+  if(len!=1) luaL_error(L, "Matrix.Eigensystem called with %d arguments, only one expected",len);
   H=luaL_checkCompactMatrix(L, 1);
   if(H->Ni!=H->Nj) return luaL_error(L,"Matrix Eigensystem only works on square matrices\n");
   if(QCompactMatrixHermitian(*H, 10*DBL_EPSILON)==0)
@@ -182,8 +200,10 @@ static int LuaMatrixEigensystem(lua_State * L)
       val= (Complex16*)malloc(H->Ni*sizeof(Complex16));
       funL = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
       luaL_setmetatable(L, "Matrix_Type");
+      funL->OnLuaStack=true;
       funR = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
       luaL_setmetatable(L, "Matrix_Type");
+      funR->OnLuaStack=true;
       NonHermitianCompactMatrixEigensystem(H,funL, funR,val);
       LuaPushArray_Complex16(L, val, funL->Ni);
       free(val);
@@ -215,6 +235,7 @@ static int LuaMatrixEigensystem(lua_State * L)
       fun = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
       *fun=funtemp;
       luaL_setmetatable(L, "Matrix_Type");
+      fun->OnLuaStack=true;
     }
     return 2;
   }
@@ -226,6 +247,8 @@ static int LuaMatrixEigensystem(lua_State * L)
 static int LuaMatrixExp(lua_State * L)
 {
   CompactMatrixType *H;
+  uint32_t len = (uint32_t)lua_gettop(L);
+  if(len!=1) luaL_error(L, "Matrix.Exp called with %d arguments, only one expected",len);
   H=luaL_checkCompactMatrix(L, 1);
   if(H->Ni!=H->Nj) return luaL_error(L,"Matrix Exp only works on square matrices\n");
   if(QCompactMatrixHermitian(*H, 2*DBL_EPSILON)==0)
@@ -243,6 +266,7 @@ static int LuaMatrixExp(lua_State * L)
       CompactMatrixType *ExpA;
       ExpA = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
       luaL_setmetatable(L, "Matrix_Type");
+      ExpA->OnLuaStack=true;
       if(NonHermitianCompactMatrixExp(H, ExpA)) return luaL_error(L,"Matrix Exp failed (probably singular needs aditional algorithm to be implemented)\n");
     }
   }
@@ -261,6 +285,7 @@ static int LuaMatrixExp(lua_State * L)
       CompactMatrixType *ExpA;
       ExpA = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
       luaL_setmetatable(L, "Matrix_Type");
+      ExpA->OnLuaStack=true;
       if(HermitianCompactMatrixExp(H, ExpA)) return luaL_error(L,"Matrix Exp failed (should not happen for Hermitian matrices)\n");
     }
   }
@@ -297,6 +322,7 @@ static int LuaMatrixRandom(lua_State * L)
   {
     res = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
     luaL_setmetatable(L, "Matrix_Type");
+    res->OnLuaStack=true;
   }
   else
   {
@@ -370,6 +396,7 @@ static int LuaMatrixZero(lua_State * L)
   {
     res = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
     luaL_setmetatable(L, "Matrix_Type");
+    res->OnLuaStack=true;
   }
   else
   {
@@ -412,6 +439,7 @@ static int LuaMatrixIdentity(lua_State * L)
   {
     res = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
     luaL_setmetatable(L, "Matrix_Type");
+    res->OnLuaStack=true;
   }
   else
   {
@@ -455,6 +483,7 @@ static int LuaMatrixDiagonal(lua_State * L)
   {
     res = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
     luaL_setmetatable(L, "Matrix_Type");
+    res->OnLuaStack=true;
   }
   else
   {
@@ -500,6 +529,7 @@ static int LuaMatrixDiagonal(lua_State * L)
   return 1;
 }
 
+
 /*
  *
  */
@@ -534,6 +564,7 @@ static int LuaMatrixToUserdata(lua_State * L)
   {
     CompactMatrixCopy(*A, B);
   }
+  B->OnLuaStack=true;
   return 1;
 }
 
@@ -556,6 +587,7 @@ static int LuaMatrixUnm(lua_State * L)
     CompactMatrixType *B;
     B = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
     luaL_setmetatable(L, "Matrix_Type");
+    B->OnLuaStack=true;
     CompactMatrixCopy(*A, B);
     CompactMatrixScale(B, -1);
   }
@@ -590,6 +622,7 @@ static int LuaMatrixAdd(lua_State * L)
       C = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
       luaL_setmetatable(L, "Matrix_Type");
       *C=*A;
+      C->OnLuaStack=true;
       free(A);
     }
   }
@@ -599,12 +632,14 @@ static int LuaMatrixAdd(lua_State * L)
     C = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
     luaL_setmetatable(L, "Matrix_Type");
     *C=*B;
+    C->OnLuaStack=true;
     free(B);
   }
   else
   {
     C = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
     luaL_setmetatable(L, "Matrix_Type");
+    C->OnLuaStack=true;
     CompactMatrixCopy(*A, C);
     CompactMatrixAdd(C, B);
   }
@@ -639,6 +674,7 @@ static int LuaMatrixSub(lua_State * L)
       C = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
       luaL_setmetatable(L, "Matrix_Type");
       *C=*A;
+      C->OnLuaStack=true;
       free(A);
     }
   }
@@ -649,12 +685,14 @@ static int LuaMatrixSub(lua_State * L)
     C = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
     luaL_setmetatable(L, "Matrix_Type");
     *C=*B;
+    C->OnLuaStack=true;
     free(B);
   }
   else
   {
     C = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
     luaL_setmetatable(L, "Matrix_Type");
+    C->OnLuaStack=true;
     CompactMatrixCopy(*A, C);
     CompactMatrixSub(C, B);
   }
@@ -686,6 +724,7 @@ static int LuaMatrixMul(lua_State * L)
       { // Matrix on stack as userdata
         C = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
         luaL_setmetatable(L, "Matrix_Type");
+        C->OnLuaStack=true;
         CompactMatrixCopy(*B, C);
         CompactMatrixScale(C, a);
       }
@@ -711,6 +750,7 @@ static int LuaMatrixMul(lua_State * L)
         { // Matrix on stack as userdata
           C = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
           luaL_setmetatable(L, "Matrix_Type");
+          C->OnLuaStack=true;
           CompactMatrixCopy(*B, C);
           CompactMatrixScaleComplex(C, *a);
         }
@@ -730,6 +770,7 @@ static int LuaMatrixMul(lua_State * L)
             b = luaL_checknumber(L, 2);
             C = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
             luaL_setmetatable(L, "Matrix_Type");
+            C->OnLuaStack=true;
             CompactMatrixCopy(*A, C);
             CompactMatrixScale(C, b);
             return 1;
@@ -745,6 +786,7 @@ static int LuaMatrixMul(lua_State * L)
               b = (Complex16 *) luaL_checkudata(L, 2, "Complex_Type");
               C = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
               luaL_setmetatable(L, "Matrix_Type");
+              C->OnLuaStack=true;
               CompactMatrixCopy(*A, C);
               CompactMatrixScaleComplex(C, *b);
               return 1;
@@ -757,6 +799,7 @@ static int LuaMatrixMul(lua_State * L)
               B = (CompactMatrixType*)luaL_checkudata(L, 2, "Matrix_Type");
               C = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
               luaL_setmetatable(L, "Matrix_Type");
+              C->OnLuaStack=true;
               if(A->Nj!=B->Ni) return luaL_error(L,"Matrix multiplication requirs the number of columns of the left matrix (%d) to be equal to the number of rows (%d) of the right matrix\n",A->Nj,B->Ni);
               CompactMatrixMultiply('N', 'N', A, B, C);
               return 1;
@@ -770,6 +813,7 @@ static int LuaMatrixMul(lua_State * L)
             B = (CompactMatrixType *) luaL_checkCompactMatrix(L, 2);
             C = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
             luaL_setmetatable(L, "Matrix_Type");
+            C->OnLuaStack=true;
             if(A->Nj!=B->Ni) return luaL_error(L,"Matrix multiplication requirs the number of columns of the left matrix (%d) to be equal to the number of rows (%d) of the right matrix\n",A->Nj,B->Ni);
             CompactMatrixMultiply('N', 'N', A, B, C);
             FreeCompactMatrix(B);
@@ -825,6 +869,7 @@ static int LuaMatrixMul(lua_State * L)
             B = (CompactMatrixType *) (CompactMatrixType*)luaL_checkudata(L, 2, "Matrix_Type");
             C = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
             luaL_setmetatable(L, "Matrix_Type");
+            C->OnLuaStack=true;
             if(A->Nj!=B->Ni) return luaL_error(L,"Matrix multiplication requirs the number of columns of the left matrix (%d) to be equal to the number of rows (%d) of the right matrix\n",A->Nj,B->Ni);
             CompactMatrixMultiply('N', 'N', A, B, C);
             FreeCompactMatrix(A);
@@ -888,6 +933,7 @@ static int LuaMatrixDiv(lua_State * L)
       { // Matrix on stack as userdata
         C = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
         luaL_setmetatable(L, "Matrix_Type");
+        C->OnLuaStack=true;
         CompactMatrixCopy(*B, C);
         if(C->Nj!=C->Ni) return luaL_error(L,"Matrix inversion only works for square matrices dimensions are (%d %d)\n",C->Ni,C->Nj);
         if(CompactMatrixInverse(C)!=0) return luaL_error(L,"Matrix inversion failed, probably the matrix is singular\n");
@@ -917,6 +963,7 @@ static int LuaMatrixDiv(lua_State * L)
         { // Matrix on stack as userdata
           C = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
           luaL_setmetatable(L, "Matrix_Type");
+          C->OnLuaStack=true;
           CompactMatrixCopy(*B, C);
           if(C->Nj!=C->Ni) return luaL_error(L,"Matrix inversion only works for square matrices dimensions are (%d %d)\n",C->Ni,C->Nj);
           if(CompactMatrixInverse(C)!=0) return luaL_error(L,"Matrix inversion failed, probably the matrix is singular\n");
@@ -938,6 +985,7 @@ static int LuaMatrixDiv(lua_State * L)
             b = luaL_checknumber(L, 2);
             C = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
             luaL_setmetatable(L, "Matrix_Type");
+            C->OnLuaStack=true;
             CompactMatrixCopy(*A, C);
             CompactMatrixScale(C, 1/b);
             return 1;
@@ -953,6 +1001,7 @@ static int LuaMatrixDiv(lua_State * L)
               b = (Complex16 *) luaL_checkudata(L, 2, "Complex_Type");
               C = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
               luaL_setmetatable(L, "Matrix_Type");
+              C->OnLuaStack=true;
               CompactMatrixCopy(*A, C);
               binv.Re = b->Re / (Sqr(b->Re) + Sqr(b->Im));
               binv.Im = b->Im / (Sqr(b->Re) + Sqr(b->Im));
@@ -967,6 +1016,7 @@ static int LuaMatrixDiv(lua_State * L)
               B = (CompactMatrixType*)luaL_checkudata(L, 2, "Matrix_Type");
               C = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
               luaL_setmetatable(L, "Matrix_Type");
+              C->OnLuaStack=true;
               CompactMatrixCopy(*B, &Binv);
               if(Binv.Nj!=Binv.Ni) return luaL_error(L,"Matrix inversion only works for square matrices dimensions are (%d %d)\n",Binv.Ni,Binv.Nj);
               if(CompactMatrixInverse(&Binv)!=0) return luaL_error(L,"Matrix inversion failed, probably the matrix is singular\n");
@@ -984,6 +1034,7 @@ static int LuaMatrixDiv(lua_State * L)
             B = (CompactMatrixType *) luaL_checkCompactMatrix(L, 2);
             C = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
             luaL_setmetatable(L, "Matrix_Type");
+            C->OnLuaStack=true;
             if(B->Nj!=B->Ni) return luaL_error(L,"Matrix inversion only works for square matrices dimensions are (%d %d)\n",B->Ni,B->Nj);
             if(CompactMatrixInverse(B)!=0) return luaL_error(L,"Matrix inversion failed, probably the matrix is singular\n");
             if(A->Nj!=B->Ni) return luaL_error(L,"Matrix multiplication requirs the number of columns of the left matrix (%d) to be equal to the number of rows (%d) of the right matrix\n",A->Nj,B->Ni);
@@ -1042,6 +1093,7 @@ static int LuaMatrixDiv(lua_State * L)
             B = (CompactMatrixType *) (CompactMatrixType*)luaL_checkudata(L, 2, "Matrix_Type");
             C = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
             luaL_setmetatable(L, "Matrix_Type");
+            C->OnLuaStack=true;
             CompactMatrixCopy(*B, &Binv);
             if(Binv.Nj!=Binv.Ni) return luaL_error(L,"Matrix inversion only works for square matrices dimensions are (%d %d)\n",Binv.Ni,Binv.Nj);
             if(CompactMatrixInverse(&Binv)!=0) return luaL_error(L,"Matrix inversion failed, probably the matrix is singular\n");
@@ -1109,6 +1161,7 @@ static int LuaMatrixPow(lua_State * L)
   { // matrix on stack as userdata
     B = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
     luaL_setmetatable(L, "Matrix_Type");
+    B->OnLuaStack=true;
     if(CompactMatrixPow(A,B,(int)n)) return luaL_error(L,"Matrix power failed\n");
   }
   return 1;
@@ -1163,6 +1216,7 @@ static int LuaMatrixIndex(lua_State * L)
     B->Nj=A->Nj;
     B->QComplex=A->QComplex;
     InitCompactMatrix(B);
+    B->OnLuaStack=true;
     if(A->QComplex==0)
     {
       for(j=0;j<A->Nj;j++)
@@ -1188,6 +1242,7 @@ static int LuaMatrixDestroy(lua_State * L)
 {
   CompactMatrixType *A;
   A = (CompactMatrixType*)luaL_checkudata(L, 1, "Matrix_Type");
+  A->OnLuaStack=false; //give back the data
   FreeCompactMatrix(A);
   return 0;
 }
@@ -1196,107 +1251,177 @@ static int LuaMatrixDestroy(lua_State * L)
 static int LuaMatrixFlatten(lua_State * L)
 {
 	int len = lua_gettop(L);
-	if (len != 1)
-		return luaL_error(L, "MatrixFlatten called with %d arguments. 1 expected, Table of tables of tables of tables of numbers.\n", len);
+	if (len != 1) return luaL_error(L, "MatrixFlatten called with %d arguments. 1 expected, Table of tables of tables of tables of numbers.\n", len);
 	luaL_checktype(L, 1, LUA_TTABLE);
 	int numOfRowsOuter, numOfColsOuter;
+  int i,j;
+  bool ReturnAsUserdata = false;
 	numOfRowsOuter = (int) lua_objlen(L, 1);
 	lua_rawgeti(L, 1, 1);
 	luaL_checktype(L, -1, LUA_TTABLE);
 	numOfColsOuter = (int) lua_objlen(L, -1);
 	lua_pop(L, 1);
-	vector<vector<MatrixType> > allMs(numOfRowsOuter);
-	for (int i = 0; i < numOfRowsOuter; ++i)
+	vector<vector<CompactMatrixType*> > allMs(numOfRowsOuter);
+	for (i = 0; i < numOfRowsOuter; ++i)
 	{
 		lua_rawgeti(L, 1, i + 1);
 		luaL_checktype(L, -1, LUA_TTABLE);
-		vector<MatrixType> col (numOfColsOuter);
+		vector<CompactMatrixType*> col (numOfColsOuter);
 		allMs[i] = col;
-		for (int j = 0; j < numOfColsOuter; ++j)
+		for (j = 0; j < numOfColsOuter; ++j)
 		{
 			lua_rawgeti(L, -1, j + 1);
 			if (lua_isnumber(L, -1))
 			{
 				if (luaL_checknumber(L, -1) == 0)
-					allMs[i][j] = nullMatrix();
+        {
+          allMs[i][j] = (CompactMatrixType*)malloc(sizeof(CompactMatrixType));
+					*allMs[i][j] = CompactnullMatrix();
+        }
 				else
+        {
 					return luaL_error(L, "MatrixFlatten called with entry %d. Matrix or 0 expected.\n", luaL_checknumber(L, -1));
-			} else
+        }
+			}
+      else
 			{
-				allMs[i][j]  = *luaL_checkMatrix(L, -1);
+				allMs[i][j]  = luaL_checkCompactMatrix(L, -1);
+        if(allMs[i][j]->OnLuaStack==true) ReturnAsUserdata=true;
 			}
 			lua_pop(L, 1);
 		}
 		lua_pop(L, 1);
 	}
-	MatrixType fullM = MatrixFlatten(allMs, true);
-	LuaPushTable_MatrixType(L, &fullM);
-	return 1;
+  if (ReturnAsUserdata==false)
+  {
+    CompactMatrixType fullM;
+    fullM = MatrixFlatten(allMs, true);
+    LuaPushTable_CompactMatrixType(L, &fullM);
+    FreeCompactMatrix(&fullM);
+  }
+  else
+  {
+    CompactMatrixType *fullM;
+    fullM = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+    luaL_setmetatable(L, "Matrix_Type");
+    *fullM = MatrixFlatten(allMs, true);
+    fullM->OnLuaStack=true;
+  }
+  for (i = 0; i < numOfRowsOuter; ++i)
+  {
+    for (j = 0; j < numOfColsOuter; ++j)
+    {
+      if(allMs[i][j]->OnLuaStack==false)
+      {
+        FreeCompactMatrix(allMs[i][j]);
+        free(allMs[i][j]);
+      }
+    }
+  }
+  return 1;
 }
 
 static int LuaMatrixAddSpin(lua_State * L)
 {
-	MatrixType M;
+	CompactMatrixType *M;
 	uint32_t len = (uint32_t) lua_gettop(L);
 	if (len != 1)
 	{
 		return luaL_error(L, "MatrixAddSpin called with %d arguments. 1 expected, a matrix.\n", len);
 	}
-	M = *luaL_checkMatrix(L, 1);
-	MatrixType fullM = MatrixEnlarge(M, 2);
-	LuaPushTable_MatrixType(L, &fullM);
+  M = luaL_checkCompactMatrix(L, 1);
+  if (luaL_testudata(L, 1, "Matrix_Type") == NULL)
+  {
+    CompactMatrixType fullM;
+    fullM = MatrixEnlarge(*M, 2);
+    LuaPushTable_CompactMatrixType(L, &fullM);
+    FreeCompactMatrix(&fullM);
+  }
+  else
+  {
+    CompactMatrixType *fullM;
+    fullM = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+    luaL_setmetatable(L, "Matrix_Type");
+    *fullM = MatrixEnlarge(*M, 2);
+    fullM->OnLuaStack=true;
+  }
 	return 1;
 }
 
 static int LuaMatrixEnlarge(lua_State * L)
 {
-	MatrixType M;
+	CompactMatrixType *M;
 	int factor;
 	uint32_t len = (uint32_t) lua_gettop(L);
 	if (len != 2)
 	{
 		return luaL_error(L, "MatrixEnlarge called with %d arguments. 2 expected, a matrix and the factor by which it is to be expanded.\n", len);
 	}
-	M = *luaL_checkMatrix(L, 1);
-	factor = (int)luaL_checkinteger(L, 2);
-	MatrixType fullM = MatrixEnlarge(M, factor);
-	LuaPushTable_MatrixType(L, &fullM);
-	return 1;
+	M = luaL_checkCompactMatrix(L, 1);
+  factor = (int)luaL_checkinteger(L, 2);
+  if (luaL_testudata(L, 1, "Matrix_Type") == NULL)
+  {
+    CompactMatrixType fullM;
+    fullM = MatrixEnlarge(*M, factor);
+    LuaPushTable_CompactMatrixType(L, &fullM);
+    FreeCompactMatrix(&fullM);
+  }
+  else
+  {
+    CompactMatrixType *fullM;
+    fullM = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+    luaL_setmetatable(L, "Matrix_Type");
+    *fullM = MatrixEnlarge(*M, factor);
+    fullM->OnLuaStack=true;
+  }
+  return 1;
 }
 
 static int LuaMatrixExpand(lua_State * L)
 {
-	MatrixType M;
+	CompactMatrixType *M;
 	int newSize;
-	Complex16 newEntries;
+  Complex16 newEntries={0,0};
 	uint32_t len = (uint32_t) lua_gettop(L);
 	if (len < 2 || len > 3)
 	{
-		return luaL_error(L, "MatrixEnlarge called with %d arguments. 2 or 3 expected, a matrix, the new matrix size, and possibly a value for the entries on the new diagonal.\n", len);
+		return luaL_error(L, "MatrixExpand called with %d arguments. 2 or 3 expected, a matrix, the new matrix size, and possibly a value for the entries on the new diagonal.\n", len);
 	}
-	M = *luaL_checkMatrix(L, 1);
+	M = luaL_checkCompactMatrix(L, 1);
 	newSize = (int) luaL_checkinteger(L, 2);
 	if (len == 3)
 	{
 		if (luaL_testudata(L, 3, "Complex_Type") != NULL)
 		{
 			newEntries = *(Complex16 *) luaL_checkudata(L, 3, "Complex_Type");
-		} else
+		}
+    else
 		{
 			newEntries.Re = luaL_checknumber(L, 3);
 			newEntries.Im = 0;
 		}
 	}
-	MatrixType fullM = MatrixExpand(M, newSize, newEntries);
-	if (isNullMatrix(fullM))
-		return luaL_error(L, "Could not expand matrix.");
-	LuaPushTable_MatrixType(L, &fullM);
+  if (luaL_testudata(L, 1, "Matrix_Type") == NULL)
+  {
+    CompactMatrixType fullM;
+    fullM = MatrixExpand(*M, newSize, newEntries);
+    LuaPushTable_CompactMatrixType(L, &fullM);
+    FreeCompactMatrix(&fullM);
+  }
+  else
+  {
+    CompactMatrixType *fullM;
+    fullM = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+    luaL_setmetatable(L, "Matrix_Type");
+    *fullM = MatrixExpand(*M, newSize, newEntries);
+    fullM->OnLuaStack=true;
+  }
 	return 1;
 }
 
 static int LuaSubmatrix(lua_State * L)
 {
-	MatrixType M, Msub;
+	CompactMatrixType *M, *Msub;
 	uint32_t len = (uint32_t) lua_gettop(L);
 	if (len != 2 && len != 3 && len != 5)
 	{
@@ -1304,17 +1429,32 @@ static int LuaSubmatrix(lua_State * L)
 				"Submatrix called with %d arguments. Expected either 2 (matrix and size of submatrix), 3 (matrix, number of rows and number of columns of submatrix) or 5 (matrix, first row index, number of rows, first column index, number of columns).\n",
 				len);
 	}
-	M = *luaL_checkMatrix(L, 1);
+  // read matrix from stack
+	M = luaL_checkCompactMatrix(L, 1);
+  // push sub matrix to stack as a usertype or allocate memory
+  if(M->OnLuaStack==true)
+  {
+    Msub = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+    luaL_setmetatable(L, "Matrix_Type");
+    Msub->OnLuaStack=true;
+  }
+  else
+  {
+    Msub = (CompactMatrixType*)malloc(sizeof(CompactMatrixType));
+    Msub->OnLuaStack=false;
+  }
 	if (len == 2)
 	{
 		int size = (int) luaL_checkinteger(L, 2);
-		Msub = Submatrix(M, size);
-	} else if (len == 3)
+		*Msub = Submatrix(*M, size);
+	}
+  else if (len == 3)
 	{
 		int rows = (int) luaL_checkinteger(L, 2);
 		int cols = (int) luaL_checkinteger(L, 3);
-		Msub = Submatrix(M, rows, cols);
-	} else if (len == 5)
+		*Msub = Submatrix(*M, rows, cols);
+	}
+  else if (len == 5)
 	{
 		int rowStart = (int) luaL_checkinteger(L, 2);
 		--rowStart;
@@ -1322,12 +1462,16 @@ static int LuaSubmatrix(lua_State * L)
 		int colStart = (int) luaL_checkinteger(L, 4);
 		--colStart;
 		int cols = (int) luaL_checkinteger(L, 5);
-		Msub = Submatrix(M, rowStart, rows, colStart, cols);
+		*Msub = Submatrix(*M, rowStart, rows, colStart, cols);
 	}
-	if (isNullMatrix(Msub))
-		return luaL_error(L, "Submatrix failed.");
-	LuaPushTable_MatrixType(L, &Msub);
-	return 1;
+	if (isNullMatrix(*Msub)) return luaL_error(L, "Submatrix failed.");
+  FreeCompactMatrix(M);
+  if(Msub->OnLuaStack==false)
+  {
+    LuaPushTable_CompactMatrixType(L, Msub);
+    FreeCompactMatrix(Msub);
+  }
+  return 1;
 }
 
 

@@ -207,7 +207,7 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
       }
 
       // Read the hopping matrix.
-      O->Wannier.Nhop   = (int*)malloc(Nwandef*Nwandef*sizeof(int));
+      O->Wannier.Nhop   = (int*)calloc(Nwandef*Nwandef,sizeof(int));
       O->Wannier.HopVec = (double***)malloc(Nwandef*Nwandef*sizeof(double**));
       O->Wannier.HopVal = (double**)malloc(Nwandef*Nwandef*sizeof(double*));
       i = -1;

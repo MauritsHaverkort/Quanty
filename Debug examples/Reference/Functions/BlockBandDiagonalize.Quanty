@@ -1,0 +1,66 @@
+print("Test BlockBandDiagonalize on real matrices");
+
+-- Define a random Hermitian real matrix
+--Mat = Matrix.Random({-1,1},{7,7})
+--Mat = Mat + Matrix.ConjugateTranspose(Mat)
+-- use the same matrix each time to get reproducibility
+Mat = { { 1.2633028008339   , 0.81336953156319  , 1.0644829343373   , 1.5228468885286   , -0.91595731438881 , 0.12289270205558   , 0.31408613748573  } ,
+        { 0.81336953156319  , -0.62450642633462 , -0.27215533809371 , 0.43969902789206  , 1.5009873721288   , -0.99224375327688  , -0.40848119855322 } ,
+        { 1.0644829343373   , -0.27215533809371 , 0.051436391683033 , -0.59230307051554 , -0.1318109417948  , 0.32481485154704   , 1.0952867870663   } ,
+        { 1.5228468885286   , 0.43969902789206  , -0.59230307051554 , -1.2237385619542  , 0.60683089336698  , 0.77444516624065   , 0.51529120864127  } ,
+        { -0.91595731438881 , 1.5009873721288   , -0.1318109417948  , 0.60683089336698  , 1.0125719881675   , -1.3074172592291   , -0.43320723922607 } ,
+        { 0.12289270205558  , -0.99224375327688 , 0.32481485154704  , 0.77444516624065  , -1.3074172592291  , -0.011793480260202 , 0.72053831476743  } ,
+        { 0.31408613748573  , -0.40848119855322 , 1.0952867870663   , 0.51529120864127  , -0.43320723922607 , 0.72053831476743   , -1.5520104074627  } }
+
+print("The original matrix")
+print(Mat)
+
+print("Do the diagonalization")
+MTri, T = BlockBandDiagonalize(Mat, 2)
+MTri = Chop(MTri)
+T = Chop(T)
+
+print("The matrix in Block form")
+print(MTri)
+print("The transition matrix")
+print(T)
+
+print("The transition matrix is unitary")
+print(Chop(Matrix.Conjugate(T)*Matrix.Transpose(T)))
+
+print("The transition matrix transforms the original Matrix to a tridiagonal form")
+print(Chop(Matrix.Conjugate(T)*Mat*Matrix.Transpose(T)))
+
+print("Test BlockBandDiagonalize on Complex matrices");
+
+-- Define a random Hermitian real matrix
+-- Mat = Matrix.Random({-1-I,1+I},{5,5})
+-- Mat = Mat + Matrix.ConjugateTranspose(Mat)
+-- use the same matrix each time to get reproducibility
+Mat = { {   1.0587472687749                        , (-1.7195074594205  + 0.72800391573832*I) , ( 0.10623417054593 - 0.65923722864093*I) , ( 0.12119831895512  - 0.69911118256818*I) , ( 1.1452918132512   + 0.80585826877777*I) } ,
+        { (-1.7195074594205  - 0.72800391573832*I) ,  -1.3189697057563                        , ( 0.76020621357495 - 0.11603794252315*I) , ( 0.25405246031194  - 0.61492585233176*I) , (-1.5036215938179   - 0.61483171890249*I) } ,
+        { ( 0.10623417054593 + 0.65923722864093*I) , ( 0.76020621357495 + 0.11603794252315*I) ,  -0.27936811292515                       , (-0.10835684282163  + 0.32159718234166*I) , ( 0.14408169786636  - 0.3360038028732 *I) } ,
+        { ( 0.12119831895512 + 0.69911118256818*I) , ( 0.25405246031194 + 0.61492585233176*I) , (-0.10835684282163 - 0.32159718234166*I) ,   0.7592625556324                         , ( 0.077847487329434 + 0.94035578004101*I) } ,
+        { ( 1.1452918132512  - 0.80585826877777*I) , (-1.5036215938179  + 0.61483171890249*I) , ( 0.14408169786636 + 0.3360038028732 *I) , ( 0.077847487329434 - 0.94035578004101*I) ,  -0.19218883206704                        } }
+
+
+print("The original matrix")
+print(Mat)
+
+print("Do the diagonalization")
+MTri, T = BlockBandDiagonalize(Mat, 2)
+MTri = Chop(MTri)
+T = Chop(T)
+
+print("The matrix in Block form")
+print(MTri)
+print("The transition matrix")
+print(T)
+
+print("The transition matrix is unitary")
+print(Chop(Matrix.Conjugate(T)*Matrix.Transpose(T)))
+
+print("The transition matrix transforms the original Matrix to a tridiagonal form")
+print(Chop(Matrix.Conjugate(T)*Mat*Matrix.Transpose(T)))
+
+

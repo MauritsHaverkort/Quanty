@@ -34,7 +34,7 @@ vector<double> ConvertArray(double *a, const int n)
 	return res;
 }
 
-vector<vector<double> > PutRelativisticSplineOnGrid(vector<Interpolation::InterpolatingFunction *> funsG, vector<Interpolation::InterpolatingFunction *> funsF, vector<double> x,unsigned int k)
+vector<vector<double> > PutRelativisticSplineOnGrid(const vector<Interpolation::InterpolatingFunction *> &funsG,const vector<Interpolation::InterpolatingFunction *> &funsF,const vector<double> &x,unsigned int k)
 {
 	vector<vector<double> > funsCombined = vector<vector<double> >(funsG.size());
 	unsigned int NGridPoints = (unsigned int) x.size();
@@ -112,11 +112,19 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
 
 	uint32_t Norbitals;
 	uint32_t len = (uint32_t)lua_gettop(L);
+	if (len < 2)
+	{
+		return luaL_error(L,"Error in ReadFPLOBasisFunctions: 2 or 3 arguments expected, got %u",len);
+	}
 	char** orbitalNames = luaL_checkarray_string(L, 1, &Norbitals); //TODO free
 	const char *name1 = luaL_checkstring(L,2);
 	const char *name2;
 
 	file1.open(name1);
+	if(!file1.is_open())
+	{
+		return luaL_error(L,"Error Could not open file: %s\n", name1);
+	}
 	string line, word, name;
 	vector<string> orbitals;
 	vector<double> x, y1,y2;
@@ -160,6 +168,10 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
 	{
 		name2 = luaL_checkstring(L,3);
 		file2.open(name2);
+		if(!file2.is_open())
+		{
+			return luaL_error(L,"Error Could not open file: %s\n", name2);
+		}
 
 		while (!file2.eof())
 		{
@@ -192,15 +204,72 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
 			}
 
 		}
+		free(orbitalNames);
 		return 2;
 	}
-/*	for( int i = 0; i < Norbitals; i++)
-	{
-		free(orbitalNames[i]);
-	}
-	free(orbitalNames);*/
-
+	free(orbitalNames);
 	return 1;
+}
+
+static int LuaGetMultipoleBesselIntegral(lua_State *L)
+{
+	uint32_t len = (uint32_t)lua_gettop(L);
+	if (len < 3)
+	{
+		return luaL_error(L,"Error in GetMultipoleBesselIntegral: expected 3 to 5 arguments, got %u\n",len);
+	}
+	double q = (double) luaL_checknumber(L,1);
+	uint32_t k = (uint32_t) luaL_checkunsigned(L,2);
+
+	uint32_t NknotsPerInterval = 3;
+
+	if (!lua_istable(L,3))
+	{
+		Interpolation::InterpolatingFunction *f1 = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 3, "InterpolatingFunction_Type");
+		Interpolation::InterpolatingFunction *f2 = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 4, "InterpolatingFunction_Type");
+		if (len == 5)
+		{
+			NknotsPerInterval = (uint32_t) luaL_checkunsigned(L,5);
+		}
+		double result = Quad::GetMultipoleIntegral(*f1,*f2,k,q,NknotsPerInterval);
+		lua_pushnumber(L,result);
+		return 1;
+
+	}
+	else
+	{
+		return luaL_error(L,"GetMutlipoleBesselIntegral not yet implemented for tables\n");
+	}
+}
+
+static int LuaGetMultipoleIntegral(lua_State *L)
+{
+	uint32_t len = (uint32_t)lua_gettop(L);
+	if (len < 2)
+	{
+		return luaL_error(L,"Error in GetMultipoleBesselIntegral: expected 2 to 4 arguments, got %u\n",len);
+	}
+	uint32_t k = (uint32_t) luaL_checkunsigned(L,1);
+
+	uint32_t NknotsPerInterval = 3;
+
+	if (!lua_istable(L,2))
+	{
+		Interpolation::InterpolatingFunction *f1 = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 2, "InterpolatingFunction_Type");
+		Interpolation::InterpolatingFunction *f2 = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 3, "InterpolatingFunction_Type");
+		if (len == 4)
+		{
+			NknotsPerInterval = (uint32_t) luaL_checkunsigned(L,5);
+		}
+		double result = Quad::GetMultipoleIntegral(*f1,*f2,k,NknotsPerInterval);
+		lua_pushnumber(L,result);
+		return 1;
+
+	}
+	else
+	{
+		return luaL_error(L,"GetMutlipoleIntegral not yet implemented for tables\n");
+	}
 }
 
 vector<double> luaL_checkarray_double(lua_State *L, int narg)
@@ -218,7 +287,39 @@ vector<double> luaL_checkarray_double(lua_State *L, int narg)
   return buff;
 }
 
-vector<double> operator*(vector<double> a, vector<double> b)
+vector<int> luaL_checkarray_int(lua_State *L, int narg)
+{
+  luaL_checktype(L, narg, LUA_TTABLE);
+  uint32_t len = (uint32_t)lua_objlen(L, narg);
+
+  vector<int> buff = vector<int>(len);
+  for(uint32_t i=0;i<len;i++)
+  {
+    lua_rawgeti(L, narg, i+1);
+    buff[i]=(int)luaL_checkunsigned(L, -1);
+    lua_pop(L, 1);
+  }
+  return buff;
+}
+
+vector<string> luaL_checkarray_string(lua_State *L, int narg)
+{
+  int i;
+  luaL_checktype(L, narg, LUA_TTABLE);
+  uint32_t len = (uint32_t)lua_objlen(L, narg);
+
+  vector<string> buff = vector<string>(len);
+  for(i=0;i<len;i++)
+  {
+    lua_rawgeti(L, narg, i+1);
+    char *cstring = (char*)luaL_checkstring(L,-1);
+    buff[i] = string(cstring);
+    lua_pop(L, 1);
+  }
+  return buff;
+}
+
+vector<double> operator*(const vector<double> &a, const vector<double> &b)
 {
 	unsigned long n = a.size();
 	if (n != b.size())

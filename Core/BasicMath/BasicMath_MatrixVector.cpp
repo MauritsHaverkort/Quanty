@@ -1,3 +1,6 @@
+/*  Do not use MatrixType, use CompactMatrixType instead */
+
+
 /*
  *     ( A[0][0] | A[0][1] | A[0][2] )
  *   A=( A[1][0] | A[1][1] | A[1][2] )
@@ -18,6 +21,7 @@ double **MatrixMalloc(const int Ni, const int Nj)
 {
   double **M;
   int    i;
+  if((Ni==0)||(Nj==0)) return NULL;
   M = (double**)malloc(Ni * sizeof(double *));
   if (M == NULL)
   {
@@ -52,6 +56,7 @@ double **MatrixCalloc(const int Ni, const int Nj)
 {
   double **M;
   int    i;
+  if((Ni==0)||(Nj==0)) return NULL;
   M = (double**)malloc(Ni * sizeof(double *));
   if (M == NULL)
   {
@@ -84,6 +89,7 @@ double **MatrixCalloc(const int Ni, const int Nj)
  */
 void FreeMatrix(MatrixType * const M)
 {
+  if((M->Ni==0)||(M->Nj==0)) return;
   free(M->VRe[0]);
   free(M->VRe);
   if (M->QComplex)
@@ -103,7 +109,7 @@ uint32_t InitMatrix(MatrixType * const M)
   strcpy(M->Name, "Matrix");
   M->mu = 0.;
   M->VRe = MatrixCalloc(M->Ni, M->Nj);
-  if (M->VRe == NULL)
+  if ((M->VRe == NULL)&&(M->Ni!=0)&&(M->Nj!=0))
   {
     printf("MatrixCalloc failed in InitMatrix\n");
     fflush(stdout);
@@ -112,7 +118,7 @@ uint32_t InitMatrix(MatrixType * const M)
   if (M->QComplex)
   {
     M->VIm = MatrixCalloc(M->Ni, M->Nj);
-    if (M->VIm == NULL)
+    if ((M->VIm == NULL)&&(M->Ni!=0)&&(M->Nj!=0))
     {
       printf("MatrixCalloc failed in InitMatrix for complex allocation\n");
       fflush(stdout);
