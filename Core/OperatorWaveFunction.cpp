@@ -5068,6 +5068,7 @@ uint32_t PsiOperatorPsi(const OperatorType O, const WaveFunctionType psi, double
     {
       return PsiOperatorPsiRC(O, psi, VRe, VIm);
     }
+    *VIm=0;
     return PsiOperatorPsiRR(O, psi, VRe);
   }
   if (O.QComplex == 1)

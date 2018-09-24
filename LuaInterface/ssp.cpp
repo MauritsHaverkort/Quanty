@@ -2018,6 +2018,8 @@ static int LuaCreateSpectra(lua_State *L)
       if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin = Eminpole - 0.125 * (Emaxpole-Eminpole);
       if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax = Emaxpole + 0.125 * (Emaxpole-Eminpole);
       if(Options.Settings.Gamma==0) Options.Settings.Gamma = 10*(Options.Settings.Emax-Options.Settings.Emin)/((double)Options.Settings.NE);
+      // shift the list of poles by the ground-state energy
+      ShiftBlockListOfPoles(&SpecLP, -psiEn[0]);
       /* transform list of poles form to spectral form and push to stack */
       Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
       luaL_setmetatable(L, "Spectra_Type");
@@ -2030,7 +2032,6 @@ static int LuaCreateSpectra(lua_State *L)
         Spec->Spec[i].EmaxPole=Emaxpole;
       }
       /* push a table to L containing the spectra in Block list of poles form */
-      ShiftBlockListOfPoles(&SpecLP, -psiEn[0]);
       LuaPushTable_BlockListOfPoles(L, &SpecLP);
       /* free list of poles representation in memory */
       FreeBlockListOfPoles(&SpecLP);
@@ -4938,7 +4939,7 @@ static int LuaOrbitalRotationMatrix(lua_State * L)
 	return 1;
 }
 
-static int LuaYtoJJZMatrix(lua_State * L)
+static int LuaYtojjzMatrix(lua_State * L)
 {
 	uint32_t len = (uint32_t) lua_gettop(L);
 	bool isInputInteger;
@@ -5069,6 +5070,7 @@ static int LuaYtoZMatrix(lua_State * L)
 static const struct luaL_Reg global_functions[] = {
   {"BlockBandDiagonalize", LuaBlockBandDiagonalize},
   {"Braket", LuaBraKet},
+  {"BraketDiagonal", LuaBraKetDiagonal},
   {"CalculateBands", LuaCalculateBands},
   {"CalculateDOS", LuaCalculateDOS},
   {"CalculateFermi", LuaCalculateFermi},
@@ -5131,7 +5133,7 @@ static const struct luaL_Reg global_functions[] = {
   {"TightBindingDefFromDresdenFPLO", LuaTightBindingDefFromDresdenFPLO},
   {"Transpose", Luatranspose},
   {"Verbosity",LuaVerbosity},
-	{"YtoJJZMatrix",LuaYtoJJZMatrix},
+	{"YtojjzMatrix",LuaYtojjzMatrix},
 	{"YtoKMatrix",LuaYtoKMatrix},
 	{"YtoZMatrix",LuaYtoZMatrix},
   {NULL, NULL}

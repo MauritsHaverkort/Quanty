@@ -26,16 +26,24 @@ uint8_t *StringToDet(uint32_t const NFermion, uint32_t const NBoson, char *s)
 {
   char **endptr=NULL;
   char Boson[3];
-  uint32_t i, nspaces=0;
+  uint32_t i, j, nspaces=0;
   uint8_t *det;
   uint32_t NWord=NBoson + Min(NFermion, 1 + (NFermion - 1) / 8);
+  uint32_t strlens;
+  strlens = (uint32_t)strlen(s);
   det = (uint8_t*)calloc(NWord,sizeof(uint8_t));
-  if(strlen(s)<NFermion+2*NBoson)
+  if(strlens<NFermion+2*NBoson)
   {
     printf("Error in StringToDet, length of string(%lu) different from NFermion(%d)+2*NBoson(%d)\n",strlen(s),NFermion,NBoson);
   }
   for(i=0;i<NFermion;i++)
   {
+    if(i+nspaces==strlens)
+    {
+      printf("Error in String to Determinant, less elements in determinant then Fermions\n");
+      for(j=0;j<NWord;j++) det[j]=0;
+      return det;
+    }
     if(s[i+nspaces]=='1')
     {
       det[i>>3]+=(1<<(7-i%8));
@@ -64,6 +72,11 @@ uint8_t *StringToDet(uint32_t const NFermion, uint32_t const NBoson, char *s)
     Boson[0]=s[NFermion+nspaces+2*i  ];
     Boson[1]=s[NFermion+nspaces+2*i+1];
     det[NWord-NBoson+i]=(uint8_t)strtol(Boson, endptr, 16);
+  }
+  if(strlens != (NFermion+2*NBoson+nspaces))
+  {
+    printf("Error in String to Determinant, more elements in determinant then Fermions + Bosons\n");
+    for(j=0;j<NWord;j++) det[j]=0;
   }
   return det;
 }

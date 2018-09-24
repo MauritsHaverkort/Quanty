@@ -3277,8 +3277,8 @@ uint32_t HermitianCompactMatrixToBlockListOfPoles(CompactMatrixType const *A, Bl
       {
         for(j=0;j<L->BlockSize;j++)
         {
-          L->V[l].Re=funvec.V[ifunvec+j].Re*funvec.V[ifunvec+i].Re+funvec.V[ifunvec+j].Im*funvec.V[ifunvec+i].Im;
-          L->V[l].Im=funvec.V[ifunvec+j].Re*funvec.V[ifunvec+i].Im-funvec.V[ifunvec+j].Im*funvec.V[ifunvec+i].Re;
+          L->V[l].Re= funvec.V[ifunvec+j].Re*funvec.V[ifunvec+i].Re+funvec.V[ifunvec+j].Im*funvec.V[ifunvec+i].Im;
+          L->V[l].Im=-funvec.V[ifunvec+j].Re*funvec.V[ifunvec+i].Im+funvec.V[ifunvec+j].Im*funvec.V[ifunvec+i].Re;
           l++;
         }
       }
@@ -3331,8 +3331,8 @@ uint32_t HermitianCompactMatrixToBlockListOfPolesWithEigenstates(CompactMatrixTy
       {
         for(j=0;j<L->BlockSize;j++)
         {
-          L->V[l].Re=funvec.V[ifunvec+j].Re*funvec.V[ifunvec+i].Re+funvec.V[ifunvec+j].Im*funvec.V[ifunvec+i].Im;
-          L->V[l].Im=funvec.V[ifunvec+j].Re*funvec.V[ifunvec+i].Im-funvec.V[ifunvec+j].Im*funvec.V[ifunvec+i].Re;
+          L->V[l].Re= funvec.V[ifunvec+j].Re*funvec.V[ifunvec+i].Re+funvec.V[ifunvec+j].Im*funvec.V[ifunvec+i].Im;
+          L->V[l].Im=-funvec.V[ifunvec+j].Re*funvec.V[ifunvec+i].Im+funvec.V[ifunvec+j].Im*funvec.V[ifunvec+i].Re;
           l++;
         }
       }
