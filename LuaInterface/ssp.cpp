@@ -583,7 +583,7 @@ static int LuaNewOperator(lua_State * L)
     Options.Name=NULL;
     Options.NBitsKeyDouble.Ni=0;
     Options.NBitsKeyDouble.QComplex=0;
-    if((len!=3)&&(len!=4)) return luaL_error(L, "ERROR: LuaNewOperator called with %u arguments, expectd 3 or 4\n",len);
+    if((len!=3)&&(len!=4)) return luaL_error(L, "ERROR: LuaNewOperator called with %d arguments, expectd 3 or 4\n",len);
     if(len==4) LuaCheckOptions(L, -1, LuaNewOperatorOptions);
     O = (OperatorType*) lua_newuserdata(L, sizeof(OperatorType));
     luaL_setmetatable(L, "Operator_Type");
@@ -903,7 +903,7 @@ static int LuaNewWaveFunction(lua_State * L)
     return luaL_error(L, "Bosons not included in this version\n Sorry\n");
   }
 
-  if((len!=3)&&(len!=4)) return luaL_error(L, "ERROR: LuaNewWaveFunction called with %u arguments, expectd 3 or 4\n",len);
+  if((len!=3)&&(len!=4)) return luaL_error(L, "ERROR: LuaNewWaveFunction called with %d arguments, expectd 3 or 4\n",len);
   if(len==4)
   {
     if(lua_isnumber(L, 4))

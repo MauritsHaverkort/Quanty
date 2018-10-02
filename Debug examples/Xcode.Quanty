@@ -1,4 +1,12 @@
 
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Reference/Functions/GetSlaterIntegrals.Quanty")
+os.exit()
+
+
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Reference/Objects/Matrix/Matrix.Quanty")
+os.exit()
+
+
 dofile("/Users/haverkort/Documents/Materials/Sr2CuO3/LDApp/2_groundstate.Quanty")
 os.exit()
 

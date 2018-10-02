@@ -78,19 +78,19 @@ static int LuaOperatorNewAtomicDirac(lua_State *L)
 
 	if (NfunsG > NIndices)
 	{
-		printf("Warning: in AtomicDirac.cpp number of basis funs (%u) != number of indices (%u)\n",NfunsG , NIndices);
+		printf("Warning: in AtomicDirac.cpp number of basis funs (%d) != number of indices (%d)\n",NfunsG , NIndices);
 		fflush(stdout);
 	}
 	else
 	{
 		if (NfunsG < NIndices)
 		{
-			return luaL_error(L, "Errorr: in AtomicDirac.cpp number of basis funs (%u) < number of indices (%u)\n",NfunsG , NIndices);
+			return luaL_error(L, "Errorr: in AtomicDirac.cpp number of basis funs (%d) < number of indices (%d)\n",NfunsG , NIndices);
 		}
 	}
 	if (NfunsF != NfunsG)
 	{
-		return luaL_error(L,"Error in AtomicDirac.cpp: number of functions small part (%u) != large part (%u)\n",NfunsF,NfunsG);
+		return luaL_error(L,"Error in AtomicDirac.cpp: number of functions small part (%d) != large part (%d)\n",NfunsF,NfunsG);
 	}
 	vector<Interpolation::InterpolatingFunction *> funsG = vector<Interpolation::InterpolatingFunction *>(NfunsG);
 	for(uint32_t i = 0; i < NfunsG; i++)
