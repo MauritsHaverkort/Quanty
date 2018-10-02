@@ -2239,9 +2239,9 @@ int FindAllAtomsInsideSphere(const CrystalStructureType * const A, double *c, do
               AtomPos[2]=CellPos[2] + ((A->Atom[iatom].Position[0]==0)?0:A->Atom[iatom].Position[0]*A->rUnitCell[0][2]) + ((A->Atom[iatom].Position[1]==0)?0:A->Atom[iatom].Position[1]*A->rUnitCell[1][2]) + ((A->Atom[iatom].Position[2]==0)?0:A->Atom[iatom].Position[2]*A->rUnitCell[2][2]);
             }
              */
-            B->Atom[B->NAtoms-1].Position[0]=AtomPos[0];
-            B->Atom[B->NAtoms-1].Position[1]=AtomPos[1];
-            B->Atom[B->NAtoms-1].Position[2]=AtomPos[2];
+            B->Atom[B->NAtoms-1].Position[0]=AtomPos[0]+c[0];
+            B->Atom[B->NAtoms-1].Position[1]=AtomPos[1]+c[1];
+            B->Atom[B->NAtoms-1].Position[2]=AtomPos[2]+c[2];
           }
         }
       }
