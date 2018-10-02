@@ -1542,12 +1542,18 @@ static int Luarotate(lua_State *L)
   {
     uint32_t i;
     int index;
-    TightBindingDef *RTB;    if(len!=3)luaL_error(L, "Rotate for a tight binding object called with %d arguments, 3 expected\n",len);
+    TightBindingDef *RTB;
+    if(len!=3)luaL_error(L, "Rotate for a tight binding object called with %d arguments, 3 expected\n",len);
     CompactMatrixType *RotMat;
     RotMat = luaL_checkCompactMatrix(L, 2);
     TightBindingDef *TB = (TightBindingDef*) luaL_checkudata(L, 1, "TightBinding_Type");
     RTB=(TightBindingDef*) lua_newuserdata(L, sizeof(TightBindingDef));
     luaL_setmetatable(L, "TightBinding_Type");
+    //
+    RTB->NFermion=0;
+    RTB->FermionIndex=NULL;
+    RTB->nH=0;
+    RTB->H=NULL;
     // set name
     strcpy(RTB->Name, TB->Name);
     // read moleclar structure
@@ -1571,8 +1577,6 @@ static int Luarotate(lua_State *L)
       lua_pop(L, 1);
     }
     SetNFermionIndexTightBindingDef(RTB);
-    RTB->nH=0;
-    RTB->H=NULL;
     RotateTightBinding(TB, RotMat, RTB);
     return 1;
   }
@@ -4039,6 +4043,11 @@ static int LuaBlockBandDiagonalize(lua_State *L)
     // Push the pointer to the rotated TB operator to the Lua Stack
     RTB=(TightBindingDef*) lua_newuserdata(L, sizeof(TightBindingDef));
     luaL_setmetatable(L, "TightBinding_Type");
+    //
+    RTB->NFermion=0;
+    RTB->FermionIndex=NULL;
+    RTB->nH=0;
+    RTB->H=NULL;
     // set name
     strcpy(RTB->Name, TB->Name);
     // set the moleclar structure
@@ -4131,8 +4140,6 @@ static int LuaBlockBandDiagonalize(lua_State *L)
       }
     }
     SetNFermionIndexTightBindingDef(RTB);
-    RTB->nH=0;
-    RTB->H=NULL;
     // free the list of atoms from memory
     for(i=0;i<NAtomsInStartBlock;i++)
     {

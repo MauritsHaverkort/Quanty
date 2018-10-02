@@ -8,8 +8,6 @@ FPLOOut = FileReadDresdenFPLO("LDApMLFT/FPLO/out.wan")
 print("Create Tight binding Hamiltonian\n")
 TB = TightBindingDefFromDresdenFPLO(FPLOOut)
 
-print(TB)
-
 -- from the TB output of a crystal we can create a TB object of a Cluster
 print("Create Cluster Hamiltonian\n")
 NewCluster = FindAllAtomsInsideSphere(TB.Atoms,TB.Cell,{0,0,0},4)
@@ -17,6 +15,8 @@ NewCluster = FindAllAtomsInsideSphere(TB.Atoms,TB.Cell,{0,0,0},4)
 
 print("Create Cluster Hamiltonian\n")
 NewCluster = FindAllAtomsInsideSphere(TB.Atoms,TB.Cell,{7.895,0,0},4)
+
+print(NewCluster)
 
 
 Hamiltonian, ClusterTB, IndexName = CreateClusterHamiltonian(TB, {"open", NewCluster},  {{"AddSpin",false}, {"ReturnTBIndicesDict",true}})

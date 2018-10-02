@@ -916,8 +916,17 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
     // place return values on stack
     H=(OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
     luaL_setmetatable(L, "Operator_Type");
+    //
+    H->MaxLength=0;
+    H->l=NULL;
+    H->Res.N=0;
     ClusterDef=(TightBindingDef*) lua_newuserdata(L, sizeof(TightBindingDef));
     luaL_setmetatable(L, "TightBinding_Type");
+    //
+    ClusterDef->NFermion=0;
+    ClusterDef->FermionIndex=NULL;
+    ClusterDef->nH=0;
+    ClusterDef->H=NULL;
     // set name
     strcpy(ClusterDef->Name, a->Name);
     // set cell
@@ -1297,6 +1306,11 @@ static int LuaReadAtomWithDefault(lua_State *L, int narg, AtomType *a, CrystalSt
 {
   uint32_t i,j,k,l,len;
   double *arr;
+  a->Name[0]='\0';
+  a->Nshell=0;
+  //a->OrbitalName=NULL;
+  //a->shelldegeneracy=NULL;
+  //a->ShellName=NULL;
   if(lua_type(L,narg)==LUA_TTABLE)
   {
     len = (uint32_t)lua_objlen(L, narg);
@@ -1316,13 +1330,13 @@ static int LuaReadAtomWithDefault(lua_State *L, int narg, AtomType *a, CrystalSt
     lua_pop(L, 1);
     // determine AtomIndexInCrystalStructure
     *AtomIndexInCrystalStructure = FindAtomPosModulusUnitCell(a, def, 0.0001);
-    if(*AtomIndexInCrystalStructure==INT_MAX) luaL_error(L, "Error Atom %s not found at given position\n",a->Name);
+    if(*AtomIndexInCrystalStructure==INT_MAX) luaL_error(L, "Error Atom %s not found at position %f %f %f in tight binding object\n",a->Name,a->Position[0],a->Position[1],a->Position[2]);
     // get the list with shells
     len = (uint32_t)lua_objlen(L, narg);
     if(len==3)
     {
       lua_rawgeti(L, narg, 3);
-      if(lua_type(L,-1)!=LUA_TTABLE) return luaL_error(L, "Error ReadAtom shells of atom %s should be a list of shells\n",a->Name);
+      if(lua_type(L,-1)!=LUA_TTABLE) return luaL_error(L, "Error ReadAtom shells of atom %s at position %f %f %f, should be a list of shells\n",a->Name,a->Position[0],a->Position[1],a->Position[2]);
       a->Nshell = (int)lua_objlen(L, -1);
       a->ShellName = (char**)malloc(a->Nshell*sizeof(char*));
       a->shelldegeneracy = (int*)malloc(a->Nshell*sizeof(int));
@@ -1334,13 +1348,13 @@ static int LuaReadAtomWithDefault(lua_State *L, int narg, AtomType *a, CrystalSt
         {
           // shell given by a table of the form {"shellname", {"orb1name", "orb2name", ...}}
           len = (uint32_t)lua_objlen(L, -1);
-          if(len!=2) return luaL_error(L, "Error ReadAtom shell %d of atom %s should be a list containing the name and a list of orbitals\n",i+1,a->Name);
+          if(len!=2) return luaL_error(L, "Error ReadAtom shell %d of atom %s at position %f %f %f should be a list containing the name and a list of orbitals\n",i+1,a->Name,a->Position[0],a->Position[1],a->Position[2]);
           lua_rawgeti(L, -1, 1);
           a->ShellName[i]= (char*)malloc(MAXStrLength*sizeof(char));
           strncpy(a->ShellName[i], luaL_checkstring(L, -1), MAXStrLength-1);
           lua_pop(L, 1);
           lua_rawgeti(L, -1, 2);
-          if(lua_type(L,-1)!=LUA_TTABLE) return luaL_error(L, "Error ReadAtom shell %s(%d) of atom %s should be a list containing the name and a list of orbitals\n",a->ShellName[i],i+1,a->Name);
+          if(lua_type(L,-1)!=LUA_TTABLE) return luaL_error(L, "Error ReadAtom shell %s(%d) of atom %s at position %f %f %f should be a list containing the name and a list of orbitals\n",a->ShellName[i],i+1,a->Name,a->Position[0],a->Position[1],a->Position[2]);
           a->shelldegeneracy[i] = (uint32_t)lua_objlen(L, -1);
           a->OrbitalName[i] = (char**)malloc(a->shelldegeneracy[i]*sizeof(char*));
           for(j=0;j<a->shelldegeneracy[i];j++)
@@ -1411,7 +1425,7 @@ static int LuaReadAtomWithDefault(lua_State *L, int narg, AtomType *a, CrystalSt
           goto FoundAtom;
         }
       }
-      return luaL_error(L, "Found atom with label %s but without a definition of shells and orbitals\n Atom is not in the refference structure so I can't set the shells and orbitals to default\n", a->Name);
+      return luaL_error(L, "Found atom with label %s at position %f %f %f, but without a definition of shells and orbitals\n Atom is not in the refference structure so I can't set the shells and orbitals to default\n", a->Name,a->Position[0],a->Position[1],a->Position[2]);
       FoundAtom:;
     }
   }
