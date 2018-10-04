@@ -1929,7 +1929,7 @@ const vector<OperatorType> luaL_checkvector_OperatorType(lua_State *L, int narg)
 
 void luaL_setarray_DeterminatRestrictionType(lua_State *L, int narg, DeterminantRestrictionType * buff)
 {
-  uint32_t NFermion,NBoson,i,j;
+  uint32_t NFermion,NBoson,i;
   uint32_t len,len2,detleng,NWord;
   char * detchar;
   if(lua_isnil(L,narg))
