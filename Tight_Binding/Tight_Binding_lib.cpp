@@ -786,7 +786,7 @@ int TightBindingBANDS(TightBindingDef A, BandstructurePathType kList, MatrixType
 }
 
 
-/*  given an eigen function the character matrix is calculated as char_{i,j} = psi_i * psi_j^*
+/*  given an eigen function the character matrix is calculated as char_{i,j} = psi_i^* * psi_j
  *
  */
 void RealEigenFunctionToCharacter(double const * EigenFun, MatrixType *Char)
@@ -813,7 +813,7 @@ void RealEigenFunctionToCompactCharacter(double const * EigenFun, CompactMatrixT
   }
 }
 
-/*  given an eigen function the character matrix is calculated as char_{i,j} = psi_i * psi_j^*
+/*  given an eigen function the character matrix is calculated as char_{i,j} = psi_i^* * psi_j
  *
  */
 void ComplexEigenFunctionToCharacter(Complex16 const * EigenFun, MatrixType *Char)
@@ -824,7 +824,7 @@ void ComplexEigenFunctionToCharacter(Complex16 const * EigenFun, MatrixType *Cha
     for(j=0;j<Char->Nj;j++)
     {
       Char->VRe[i][j] = EigenFun[i].Re*EigenFun[j].Re+EigenFun[i].Im*EigenFun[j].Im;
-      Char->VIm[i][j] = EigenFun[i].Im*EigenFun[j].Re-EigenFun[i].Re*EigenFun[j].Im;
+      Char->VIm[i][j] = EigenFun[i].Re*EigenFun[j].Im-EigenFun[i].Im*EigenFun[j].Re;
     }
   }
 }
@@ -836,7 +836,7 @@ void ComplexEigenFunctionToCompactCharacter(Complex16 const * EigenFun, CompactM
     for(j=0;j<Char->Nj;j++)
     {
       Char->V[k].Re = EigenFun[i].Re*EigenFun[j].Re+EigenFun[i].Im*EigenFun[j].Im;
-      Char->V[k].Im = EigenFun[i].Im*EigenFun[j].Re-EigenFun[i].Re*EigenFun[j].Im;
+      Char->V[k].Im = EigenFun[i].Re*EigenFun[j].Im-EigenFun[i].Im*EigenFun[j].Re;
       k++;
     }
   }
@@ -884,7 +884,7 @@ void RealEigenFunctionToCharacterMultiSite(double const * EigenFun, MatrixType *
   }
 }
 
-/*  given an eigen function the character matrix is calculated as char_{i,j} = psi_i * psi_j
+/*  given an eigen function the character matrix is calculated as char_{i,j} = psi_i^* * psi_j
  *
  */
 void ComplexEigenFunctionToCharacterMultiSite(Complex16 const * EigenFun, MatrixType *Char, uint32_t const Nvec, int const *vec)
@@ -895,12 +895,12 @@ void ComplexEigenFunctionToCharacterMultiSite(Complex16 const * EigenFun, Matrix
     for(j=0;j<Char->Nj;j++)
     {
       Char->VRe[i][j] = EigenFun[i].Re*EigenFun[j].Re+EigenFun[i].Im*EigenFun[j].Im;
-      Char->VIm[i][j] = EigenFun[i].Im*EigenFun[j].Re-EigenFun[i].Re*EigenFun[j].Im;
+      Char->VIm[i][j] = EigenFun[i].Re*EigenFun[j].Im-EigenFun[i].Im*EigenFun[j].Re;
     }
   }
 }
 
-/*  given an eigen function the character matrix is calculated as char_{i,j} = psi_i * psi_j
+/*  given an eigen function the character matrix is calculated as char_{i,j} = psi_i^* * psi_j
  *
  */
 void EigenFunctionToCharacterMultiSite(void const * EigenFun, MatrixType *Char, uint32_t const Nvec, int const *vec)
@@ -922,8 +922,7 @@ int EigenFunctionToCharactersStandardSetNCharacter(TightBindingDef A, int *NChar
   return 0;
 }
 
-int EigenFunctionToCharactersStandard(TightBindingDef A, MatrixType H, double *extra, MatrixType EigenFun,
-                                      MatrixType * Character)
+int EigenFunctionToCharactersStandard(TightBindingDef A, MatrixType H, double *extra, MatrixType EigenFun, MatrixType * Character)
 {
   int    i, j;
   Character->Ni = A.NFermion;
@@ -970,8 +969,7 @@ int EigenFunctionToCharactersOnsiteEnergySetNCharacter(TightBindingDef A, int *N
   return 0;
 }
 
-int EigenFunctionToCharactersOnsiteEnergy(TightBindingDef A, MatrixType H, double *extra, MatrixType EigenFun,
-                                          MatrixType * Character)
+int EigenFunctionToCharactersOnsiteEnergy(TightBindingDef A, MatrixType H, double *extra, MatrixType EigenFun, MatrixType * Character)
 {
   int    i, j;
   Character->Ni = A.NFermion;
@@ -1027,8 +1025,7 @@ int EigenFunctionToCharactersOnsiteEnergyPhaseSetNCharacter(TightBindingDef A, i
   return 0;
 }
 
-int EigenFunctionToCharactersOnsiteEnergyPhase(TightBindingDef A, MatrixType H, double *extra, MatrixType EigenFun,
-                                               MatrixType * Character)
+int EigenFunctionToCharactersOnsiteEnergyPhase(TightBindingDef A, MatrixType H, double *extra, MatrixType EigenFun, MatrixType * Character)
 {
   int    i, j;
   Character->Ni = A.NFermion;
@@ -1104,8 +1101,7 @@ int EigenFunctionToCharactersOnsiteEnergyPhaseRGBSetNCharacter(TightBindingDef A
   return 0;
 }
 
-int EigenFunctionToCharactersOnsiteEnergyPhaseRGB(TightBindingDef A, MatrixType H, double *extra, MatrixType EigenFun,
-                                                  MatrixType * Character)
+int EigenFunctionToCharactersOnsiteEnergyPhaseRGB(TightBindingDef A, MatrixType H, double *extra, MatrixType EigenFun, MatrixType * Character)
 {
   int    i, j;
   Character->Ni = A.NFermion;
@@ -2533,15 +2529,15 @@ uint32_t AddCrystalInformationFromTightBinding(TightBindingDef *StripedTB, Tight
             TB->H[TB->nH].TransVecs[2]=StripedTB->H[iH].TransVecs[2];
             if((TB->Cell.Units&8)==0)
             { // position in absolute units
-              TB->H[TB->nH].ConnectingVector[0]=TB->Cell.Atom[iAtom].Position[0] + ((TB->H[TB->nH].TransVecs[0]==0)?0:TB->H[TB->nH].TransVecs[0]*TB->Cell.rUnitCell[0][0]) + ((TB->H[TB->nH].TransVecs[1]==0)?0:TB->H[TB->nH].TransVecs[1]*TB->Cell.rUnitCell[1][0]) + ((TB->H[TB->nH].TransVecs[2]==0)?0:TB->H[TB->nH].TransVecs[2]*TB->Cell.rUnitCell[2][0]) ;
-              TB->H[TB->nH].ConnectingVector[1]=TB->Cell.Atom[iAtom].Position[1] + ((TB->H[TB->nH].TransVecs[0]==0)?0:TB->H[TB->nH].TransVecs[0]*TB->Cell.rUnitCell[0][1]) + ((TB->H[TB->nH].TransVecs[1]==0)?0:TB->H[TB->nH].TransVecs[1]*TB->Cell.rUnitCell[1][1]) + ((TB->H[TB->nH].TransVecs[2]==0)?0:TB->H[TB->nH].TransVecs[2]*TB->Cell.rUnitCell[2][1]) ;
-              TB->H[TB->nH].ConnectingVector[2]=TB->Cell.Atom[iAtom].Position[2] + ((TB->H[TB->nH].TransVecs[0]==0)?0:TB->H[TB->nH].TransVecs[0]*TB->Cell.rUnitCell[0][2]) + ((TB->H[TB->nH].TransVecs[1]==0)?0:TB->H[TB->nH].TransVecs[1]*TB->Cell.rUnitCell[1][2]) + ((TB->H[TB->nH].TransVecs[2]==0)?0:TB->H[TB->nH].TransVecs[2]*TB->Cell.rUnitCell[2][2]) ;
+              TB->H[TB->nH].ConnectingVector[0]=TB->Cell.Atom[jAtom].Position[0] - TB->Cell.Atom[iAtom].Position[0] + ((TB->H[TB->nH].TransVecs[0]==0)?0:TB->H[TB->nH].TransVecs[0]*TB->Cell.rUnitCell[0][0]) + ((TB->H[TB->nH].TransVecs[1]==0)?0:TB->H[TB->nH].TransVecs[1]*TB->Cell.rUnitCell[1][0]) + ((TB->H[TB->nH].TransVecs[2]==0)?0:TB->H[TB->nH].TransVecs[2]*TB->Cell.rUnitCell[2][0]) ;
+              TB->H[TB->nH].ConnectingVector[1]=TB->Cell.Atom[jAtom].Position[1] - TB->Cell.Atom[iAtom].Position[1] + ((TB->H[TB->nH].TransVecs[0]==0)?0:TB->H[TB->nH].TransVecs[0]*TB->Cell.rUnitCell[0][1]) + ((TB->H[TB->nH].TransVecs[1]==0)?0:TB->H[TB->nH].TransVecs[1]*TB->Cell.rUnitCell[1][1]) + ((TB->H[TB->nH].TransVecs[2]==0)?0:TB->H[TB->nH].TransVecs[2]*TB->Cell.rUnitCell[2][1]) ;
+              TB->H[TB->nH].ConnectingVector[2]=TB->Cell.Atom[jAtom].Position[2] - TB->Cell.Atom[iAtom].Position[2] + ((TB->H[TB->nH].TransVecs[0]==0)?0:TB->H[TB->nH].TransVecs[0]*TB->Cell.rUnitCell[0][2]) + ((TB->H[TB->nH].TransVecs[1]==0)?0:TB->H[TB->nH].TransVecs[1]*TB->Cell.rUnitCell[1][2]) + ((TB->H[TB->nH].TransVecs[2]==0)?0:TB->H[TB->nH].TransVecs[2]*TB->Cell.rUnitCell[2][2]) ;
             }
             else
             { // positioin in terms of lattice vectors
-              TB->H[TB->nH].ConnectingVector[0]=TB->Cell.Atom[iAtom].Position[0] + TB->H[TB->nH].TransVecs[0];
-              TB->H[TB->nH].ConnectingVector[1]=TB->Cell.Atom[iAtom].Position[1] + TB->H[TB->nH].TransVecs[1];
-              TB->H[TB->nH].ConnectingVector[2]=TB->Cell.Atom[iAtom].Position[2] + TB->H[TB->nH].TransVecs[2];
+              TB->H[TB->nH].ConnectingVector[0]=TB->Cell.Atom[jAtom].Position[0] - TB->Cell.Atom[iAtom].Position[0] + TB->H[TB->nH].TransVecs[0];
+              TB->H[TB->nH].ConnectingVector[1]=TB->Cell.Atom[jAtom].Position[1] - TB->Cell.Atom[iAtom].Position[1] + TB->H[TB->nH].TransVecs[1];
+              TB->H[TB->nH].ConnectingVector[2]=TB->Cell.Atom[jAtom].Position[2] - TB->Cell.Atom[iAtom].Position[2] + TB->H[TB->nH].TransVecs[2];
             }
             TB->H[TB->nH].Hop.Ni=TB->Cell.Atom[iAtom].shelldegeneracy[iShell];
             TB->H[TB->nH].Hop.Nj=TB->Cell.Atom[jAtom].shelldegeneracy[jShell];
@@ -2564,6 +2560,7 @@ uint32_t AddCrystalInformationFromTightBinding(TightBindingDef *StripedTB, Tight
                 }
               }
             }
+            
             TB->nH++;
           }
         }

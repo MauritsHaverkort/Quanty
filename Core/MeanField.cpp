@@ -627,6 +627,8 @@ uint32_t MeanFieldOperatorOneElectronMatrixWithDFTInteraction(const OperatorType
   //  -  a^dag_j a_l  < a^dag_i a_k >
   //  -< a^dag_i a_l >< a^dag_j a_k >
   //  +< a^dag_i a_k >< a^dag_j a_l >
+  //
+  //  with the DFT correction being a^dag_i a_j <a^dag_j a_i>
   if(Oo.l[4].QComplex)
   {
     /* calcualte U as the average between all electrons needed for the DFT correction */
@@ -690,9 +692,13 @@ uint32_t MeanFieldOperatorOneElectronMatrixWithDFTInteraction(const OperatorType
           }
         }
       }
+      // DFT correction
       for(i=0;i<O->NFermion;i++)
       {
-        MO->V[i+i*O->NFermion]+=U*Rho.V[i+i*O->NFermion];
+        for(j=0;j<O->NFermion;j++)
+        {
+          MO->V[j+i*O->NFermion]+=U.Re*Rho.V[i+j*O->NFermion];
+        }
       }
     }
     else // Rho real Oo complex MO complex
@@ -725,9 +731,13 @@ uint32_t MeanFieldOperatorOneElectronMatrixWithDFTInteraction(const OperatorType
           }
         }
       }
+      // DFT correction
       for(i=0;i<O->NFermion;i++)
       {
-        MO->V[i+i*O->NFermion]+=U*Rho.VRe[i+i*O->NFermion];
+        for(j=0;j<O->NFermion;j++)
+        {
+          MO->V[j+i*O->NFermion]+=U*Rho.VRe[i+j*O->NFermion];
+        }
       }
     }
   }
@@ -786,9 +796,13 @@ uint32_t MeanFieldOperatorOneElectronMatrixWithDFTInteraction(const OperatorType
             }
           }
         }
+        // DFT correction
         for(i=0;i<O->NFermion;i++)
         {
-          MO->V[i+i*O->NFermion]+=U.Re*Rho.V[i+i*O->NFermion];
+          for(j=0;j<O->NFermion;j++)
+          {
+            MO->V[j+i*O->NFermion]+=U.Re*Rho.V[i+j*O->NFermion];
+          }
         }
       }
       else // Rho real Oo real MO complex
@@ -815,9 +829,13 @@ uint32_t MeanFieldOperatorOneElectronMatrixWithDFTInteraction(const OperatorType
             }
           }
         }
+        // DFT correction
         for(i=0;i<O->NFermion;i++)
         {
-          MO->V[i+i*O->NFermion]+=U.Re*Rho.VRe[i+i*O->NFermion];
+          for(j=0;j<O->NFermion;j++)
+          {
+            MO->V[j+i*O->NFermion]+=U.Re*Rho.VRe[i+j*O->NFermion];
+          }
         }
       }
     }
@@ -841,9 +859,13 @@ uint32_t MeanFieldOperatorOneElectronMatrixWithDFTInteraction(const OperatorType
           }
         }
       }
+      // DFT correction
       for(i=0;i<O->NFermion;i++)
       {
-        MO->VRe[i+i*O->NFermion]+=U.Re*Rho.VRe[i+i*O->NFermion];
+        for(j=0;j<O->NFermion;j++)
+        {
+          MO->VRe[j+i*O->NFermion]+=U.Re*Rho.VRe[i+j*O->NFermion];
+        }
       }
     }
   }

@@ -1,11 +1,65 @@
-﻿dofile("../definitions.Quanty")
+﻿print("The following file test the function rotate")
+print("Rotating the one particle basis of Wave-functions, Operators, Tight-binding objects or matrices")
+print("OPne way to test the correctness of Rotate is to rotate one object from one basis to an other")
+print("Transform it to a different object (matrix, Operator, Tight-binding) and rotate it back")
+print("The resulting Hamiltonian should be the same")
 
+print("\n------------------------------------------------------\n Rotate operators and wave-funcitons of a p-shell between a basis of spherical and Kubic Harmonics\n------------------------------------------------------\n")
+
+-- we define the basis of a p-shell
+Nf=6
+Nb=0
+IndexDn={0,2,4}
+IndexUp={1,3,5}
+
+-- and the Coulomb operator as well as an operator counting the number of px, py and pz orbitals on the basis of Y
+OppU     = NewOperator("U",    Nf,IndexUp,IndexDn,{0,10})
+Akm = PotentialExpandedOnClm("D2h",1,{0,0,1})
+Opppx = Chop(NewOperator("CF", Nf, IndexUp, IndexDn, Akm))
+Opppx.Name="Opp px"
+Akm = PotentialExpandedOnClm("D2h",1,{0,1,0})
+Opppy = Chop(NewOperator("CF", Nf, IndexUp, IndexDn, Akm))
+Opppy.Name="Opp py"
+Akm = PotentialExpandedOnClm("D2h",1,{1,0,0})
+Opppz = Chop(NewOperator("CF", Nf, IndexUp, IndexDn, Akm))
+Opppz.Name="Opp pz"
+
+-- define the Kubic Harmonic p orbitals on a basis of spherical Harmonics
+psixdn  = NewWavefunction(Nf,Nb,{{"100000",  sqrt(1/2)},{"000010", -sqrt(1/2)}})
+psiydn  = NewWavefunction(Nf,Nb,{{"100000",I*sqrt(1/2)},{"000010",I*sqrt(1/2)}})
+psizdn  = NewWavefunction(Nf,Nb,{{"001000",1}})
+psixup  = NewWavefunction(Nf,Nb,{{"010000",  sqrt(1/2)},{"000001", -sqrt(1/2)}})
+psiyup  = NewWavefunction(Nf,Nb,{{"010000",I*sqrt(1/2)},{"000001",I*sqrt(1/2)}})
+psizup  = NewWavefunction(Nf,Nb,{{"000100",1}})
+
+-- define a rotation matrix going from Y to K
+t = sqrt(1/2)
+rotmat = {{  t,  0, 0, 0, -t,  0},
+          {  0,  t, 0, 0,  0, -t},
+          {I*t,  0, 0, 0,I*t,  0},
+          {  0,I*t, 0, 0,  0,I*t},
+          {  0,  0, 1, 0,  0,  0},
+          {  0,  0, 0, 1,  0,  0}}
+
+
+rotmatReal = {{  t,  0, 0, 0, -t,  0},
+              {  0,  t, 0, 0,  0, -t},
+              {  t,  0, 0, 0,  t,  0},
+              {  0,  t, 0, 0,  0,  t},
+              {  0,  0, 1, 0,  0,  0},
+              {  0,  0, 0, 1,  0,  0}}
+
+print("The matrix rotating an operator on the basis of spherical harmonics with alternating spin to a basis of kubic harmonics with alternating spin for a p orbital is:")
+print(rotmat)
+print("This matrix can be obtained with the function YtoKMatrix")
+print(YtoKMatrix(1))
+
+-- rotate operators
 OpppxR = Chop(Rotate(Opppx,rotmat))
 OpppyR = Chop(Rotate(Opppy,rotmat))
 OpppzR = Chop(Rotate(Opppz,rotmat))
 
-print("The matrix rotating an operator on the basis of spherical harmonics with alternating spin to a basis of kubic harmonics with alternating spin for a p orbital is:")
-print(rotmat)
+
 print("The operator adding a potential to the px orbital on a basis of spherical harmonics is: ",Opppx)
 print("The operator adding a potential to the px orbital on a basis of kubic harmonics is: ",OpppxR)
 print("The operator adding a potential to the py orbital on a basis of spherical harmonics is: ",Opppy)
@@ -13,6 +67,7 @@ print("The operator adding a potential to the py orbital on a basis of kubic har
 print("The operator adding a potential to the pz orbital on a basis of spherical harmonics is: ",Opppz)
 print("The operator adding a potential to the pz orbital on a basis of kubic harmonics is: ",OpppzR)
 
+-- rotate wave-functions
 psixdnR = Chop(Rotate(psixdn,rotmat))
 psixupR = Chop(Rotate(psixup,rotmat))
 psiydnR = Chop(Rotate(psiydn,rotmat))
@@ -27,10 +82,355 @@ print("The py orbital with spin down on a basis of kubic harmonics is: ",psiydnR
 print("The pz orbital with spin down on a basis of spherical harmonics is: ",psizdn)
 print("The pz orbital with spin down on a basis of kubic harmonics is: ",psizdnR)
 
+-- expectation values on a basis of Y and K
 print("Counting the px orbital on a basis of spherical harmonics: ",psixdn *Opppx *psixdn)
 print("Counting the px orbital on a basis of kubic     harmonics: ",psixdnR*OpppxR*psixdnR)
 print("Counting the py orbital on a basis of spherical harmonics: ",psiydn *Opppy *psiydn)
 print("Counting the py orbital on a basis of kubic     harmonics: ",psiydnR*OpppyR*psiydnR)
 print("Counting the pz orbital on a basis of spherical harmonics: ",psizdn *Opppz *psizdn)
 print("Counting the pz orbital on a basis of kubic     harmonics: ",psizdnR*OpppzR*psizdnR)
+
+
+print("\n------------------------------------------------------\n Rotate a dense matrix and Operators in direct comparison\n------------------------------------------------------\n")
+
+-- define a general non Hermitian real matrix
+Oppind = NewOperator(6,0,{{0,-0, 1},{0,-1, 2},{0,-2, 3},{0,-3, 4},{0,-4, 5},{0,-5, 6},
+                          {1,-0,11},{1,-1,12},{1,-2,13},{1,-3,14},{1,-4,15},{1,-5,16},
+                          {2,-0,21},{2,-1,22},{2,-2,23},{2,-3,24},{2,-4,25},{2,-5,26},
+                          {3,-0,31},{3,-1,32},{3,-2,33},{3,-3,34},{3,-4,35},{3,-5,36},
+                          {4,-0,41},{4,-1,42},{4,-2,43},{4,-3,44},{4,-4,45},{4,-5,46},
+                          {5,-0,51},{5,-1,52},{5,-2,53},{5,-3,54},{5,-4,55},{5,-5,56}})
+
+print("We've defined a gernal non Hermitian Operator")
+print(Oppind)
+print("Which can be transformed to a matrix")
+print(OperatorToMatrix(Oppind))
+print("We've defined a rotation matrix")
+print(rotmatReal)
+
+print("And now we can test that rotating the operator and then transforming to a matrix yields the same result as transforming the operator to a matrix and rotating the matrix")
+print("Rotate(OperatorToMatrix(Opp)) - OperatorToMatrix(Rotate(Opp)) == 0 ?")
+print(Chop(Rotate(OperatorToMatrix(Oppind),rotmatReal) - OperatorToMatrix(Rotate(Oppind,rotmatReal)),1E-13))
+print("PS note the sever numberloss rotations (matrix multiplications in general) have, we choped at 10^-13")
+
+print("We can do the same with a complex rotation matrix")
+
+print("We've defined a rotation matrix")
+print(rotmat)
+
+print("And now we can test that rotating the operator and then transforming to a matrix yields the same result as transforming the operator to a matrix and rotating the matrix")
+print("Rotate(OperatorToMatrix(Opp)) - OperatorToMatrix(Rotate(Opp)) == 0 ?")
+print(Chop(Rotate(OperatorToMatrix(Oppind),rotmat) - OperatorToMatrix(Rotate(Oppind,rotmat)),1E-13))
+print("PS note the sever numberloss rotations (matrix multiplications in general) have, we choped at 10^-13")
+
+Oppind = Oppind * (0.5+I)
+
+print("We can do the same with a complex operator")
+
+print("The complex operator used is")
+print(Oppind)
+
+print("And now we can test that rotating the operator and then transforming to a matrix yields the same result as transforming the operator to a matrix and rotating the matrix")
+print("Rotate(OperatorToMatrix(Opp)) - OperatorToMatrix(Rotate(Opp)) == 0 ?")
+print(Chop(Rotate(OperatorToMatrix(Oppind),rotmat) - OperatorToMatrix(Rotate(Oppind,rotmat)),1E-13))
+print("PS note the sever numberloss rotations (matrix multiplications in general) have, we choped at 10^-13")
+
+
+print("Sofar we looked at rotations of one particle operators, letts do the same for a two particle operator")
+
+rotmat = {{0,0,0,1,0,0},
+          {0,0,0,0,1,0},
+          {0,0,0,0,0,1},
+          {0,0,1,0,0,0},
+          {0,1,0,0,0,0},
+          {1,0,0,0,0,0}}
+
+Opp4 = NewOperator(6,0,{{1,-2,1},{0,-3,2},{0,1,-2,-3,1}})
+
+print("The two particle operator we use")
+print(Opp4)
+print("The rotation matrix used")
+print(rotmat)
+print("The rotated two particle matrix (test correctness by hand. Result should be C5 C4 A3 A0")
+print(Rotate(Opp4,rotmat))
+
+
+
+print("\n------------------------------------------------------\n Rotation of an Operator and Tight binding objects in direct comparison\n------------------------------------------------------\n")
+
+
+TB = NewTightBinding()
+
+TB.Name = "molecule example"
+TB.Cell = {{inf,0,0},{0,inf,0},{0,0,inf}}
+TB.Atoms = { {"C", {0,0,-1/2}, { {"p",{"x","y","z"}} } },
+             {"C", {0,0, 1/2}, { {"p",{"x","y","z"}} } } }
+TB.Hopping = { {{"C.p",{0,0,-1/2}},{"C.p",{0,0, 1/2}}, { 0,0, 1}, {{1,0,0},{0,1,0},{0,0,2}} },
+               {{"C.p",{0,0, 1/2}},{"C.p",{0,0,-1/2}}, { 0,0,-1}, {{1,0,0},{0,1,0},{0,0,2}} } }
+
+Hamiltonian, ClusterTB, IndexName = CreateClusterHamiltonian(TB, {"open", TB.Atoms},  {{"ReturnTBIndicesDict",true}})
+
+print("We've defined the following tight binding object")
+print(ClusterTB)
+print("And the corresponding Hamiltonian")
+print(Hamiltonian)
+
+print("\n------------------------------------------------------\n Real rotation\n------------------------------------------------------\n")
+
+t=sqrt(1/2)
+d=sqrt(1/2)
+rotmat = {{1, 0, 0, 0, 0, 0},
+          {0, d, d, 0, 0, 0},
+          {0, t,-t, 0, 0, 0},
+          {0, 0, 0, 1, 0, 0},
+          {0, 0, 0, 0, sqrt(0.4), sqrt(0.6)},
+          {0, 0, 0, 0, sqrt(0.6),-sqrt(0.4)}}
+
+print("The rotation matrix used is")
+print(rotmat)
+
+RTB = Rotate(TB,rotmat,{{"C1",{0,0,-1/2},{{"p",{"x","y+z","y-z"}}}},{"C2",{0,0,1/2},{{"p",{"x","y+z","y-z"}}}}})
+RHamiltonian, RClusterTB, RIndexName = CreateClusterHamiltonian(RTB, {"open", RTB.Atoms},  {{"ReturnTBIndicesDict",true}})
+
+print("The rotated tight binding object is")
+print(RClusterTB)
+print("And the corresponding Hamiltonian")
+print(RHamiltonian)
+
+print("Rotating the rotated Hamiltonian and subtracting the original Hamiltonian should yield zero")
+print("Rotate^C(TBtoH(Rotate(TB))) - TBtoH(TB) == 0 ?")
+
+print(Chop(Rotate(RHamiltonian,ConjugateTranspose(rotmat)) - Hamiltonian));
+
+
+print("\n------------------------------------------------------\n Rotation of density matrices\n------------------------------------------------------\n")
+
+print("In order to test further we can create the density matrix (one particle) of the TB operator and Hamiltonian and see if this behaves correctly under rotation")
+
+print("The density matrix of the TB object is")
+rhoNoSpin = Chop(CalculateRho(TB))
+print(Matrix.ToTable(rhoNoSpin))
+print("The density matrix of the rotated TB object is")
+RrhoNoSpin = Chop(CalculateRho(RTB))
+print(Matrix.ToTable(RrhoNoSpin))
+print("The rotated density matrix of the rotated TB object minus the density matrix of the TB object should be zero")
+print("Rotate^C(CalcualteRho(Rotate(TB))) - CalculateRho(TB) == 0 ?")
+print(Matrix.ToTable(Chop(Rotate(RrhoNoSpin,ConjugateTranspose(rotmat)) - rhoNoSpin)))
+
+print("We can also create the density matrix from the Hamiltonian instead of from the TB object")
+print("In order to do so we calcualte the ground-state of the Hamiltonian and from this function the density matrix")
+fun  = Eigensystem(Hamiltonian,{6,0,{"111111",3,3}},1)
+Rfun = Eigensystem(RHamiltonian,{6,0,{"111111",3,3}},1)
+rhofun = Chop(DensityMatrix(fun))
+Rrhofun = Chop(DensityMatrix(Rfun))
+
+print("The density matrix of the ground-state of the Hamiltonian corresponding to the TB object is")
+print(rhofun)
+print("The density matrix of the ground-state of the Hamiltonian corresponding to the Rotated TB object is")
+print(Rrhofun)
+print("The density matrix of the unrotated TB object should be the same independent on how it is calculated")
+print(Matrix.ToTable(Chop(rhofun-rhoNoSpin,1E-14)))
+print("The density matrix of the rotated TB object should be the same independent on how it is calculated")
+print(Matrix.ToTable(Chop(Rrhofun-RrhoNoSpin,1E-14)))
+print("The rotated density matrix of the groundstate of the rotated Hamiltonina minus the density matrix of the groundstate of the unrotated Hamiltonian should be zero")
+print("Rotate^C(CalcualteRho(Eigensystem(Rotate(HTB)))) - CalculateRho(Eigensystem(HTB)) == 0 ?")
+print(Matrix.ToTable(Chop(Rotate(Rrhofun,ConjugateTranspose(rotmat)) - rhofun,1E-14)))
+
+print("We can do the same test for the mean-field approximated form of a two particle operator")
+
+OppF0 = NewOperator("U",6,{0,1,2},{3,4,5},{1,0});
+OppF2 = NewOperator("U",6,{0,1,2},{3,4,5},{0,1});
+ROppF0 = Rotate(OppF0,rotmat)
+ROppF2 = Rotate(OppF2,rotmat)
+
+print("The coulomb operator")
+print(OppF0)
+print(OppF2)
+print("And the coulomb operator on a rotated basis")
+print(ROppF0)
+print(ROppF2)
+
+OppF0MFDFT = Chop(MeanFieldOperator(OppF0,rhoNoSpin,{{"AddDFTSelfInteraction",false}}))
+OppF2MFDFT = Chop(MeanFieldOperator(OppF2,rhoNoSpin,{{"AddDFTSelfInteraction",false}}))
+ROppF0MFDFT = Chop(MeanFieldOperator(ROppF0,RrhoNoSpin,{{"AddDFTSelfInteraction",false}}))
+ROppF2MFDFT = Chop(MeanFieldOperator(ROppF2,RrhoNoSpin,{{"AddDFTSelfInteraction",false}}))
+
+print("The mean-field approximated Coulomb operator without DFT self interaction")
+print("\n---------\n")
+print("The rotation matrix")
+print(rotmat)
+print("The density matrix")
+print(Matrix.ToTable(rhoNoSpin))
+print("The mean-field approximation of F0")
+print(OperatorToMatrix(OppF0MFDFT))
+print("The mean-field approximation of F2")
+print(OperatorToMatrix(OppF2MFDFT))
+print("The Rotated density matrix")
+print(Matrix.ToTable(RrhoNoSpin))
+print("The Rotated mean-field approximation of F0")
+print(OperatorToMatrix(ROppF0MFDFT))
+print("The rotated mean-field approximation of F2")
+print(OperatorToMatrix(ROppF2MFDFT))
+print("The rotated operator of the mean-field approxiamtion of the rotated operator should be the same as the mean-field approximation of the operator")
+print("Rotate^C(MeanField(Rotate(H)) - MeanField(H) == 0 ?")
+print(Chop(Rotate(ROppF0MFDFT,ConjugateTranspose(rotmat)) - OppF0MFDFT))
+print(Chop(Rotate(ROppF2MFDFT,ConjugateTranspose(rotmat)) - OppF2MFDFT))
+
+OppF0MFDFT = Chop(MeanFieldOperator(OppF0,rhoNoSpin,{{"AddDFTSelfInteraction",true}}))
+OppF2MFDFT = Chop(MeanFieldOperator(OppF2,rhoNoSpin,{{"AddDFTSelfInteraction",true}}))
+ROppF0MFDFT = Chop(MeanFieldOperator(ROppF0,RrhoNoSpin,{{"AddDFTSelfInteraction",true}}))
+ROppF2MFDFT = Chop(MeanFieldOperator(ROppF2,RrhoNoSpin,{{"AddDFTSelfInteraction",true}}))
+
+print("The mean-field approximated Coulomb operator with DFT self interaction")
+print("\n---------\n")
+print("The rotation matrix")
+print(rotmat)
+print("The density matrix")
+print(Matrix.ToTable(rhoNoSpin))
+print("The mean-field approximation of F0")
+print(OperatorToMatrix(OppF0MFDFT))
+print("The mean-field approximation of F2")
+print(OperatorToMatrix(OppF2MFDFT))
+print("The Rotated density matrix")
+print(Matrix.ToTable(RrhoNoSpin))
+print("The Rotated mean-field approximation of F0")
+print(OperatorToMatrix(ROppF0MFDFT))
+print("The rotated mean-field approximation of F2")
+print(OperatorToMatrix(ROppF2MFDFT))
+print("The rotated operator of the mean-field approxiamtion of the rotated operator should be the same as the mean-field approximation of the operator")
+print("Rotate^C(MeanField(Rotate(H)) - MeanField(H) == 0 ?")
+print(Chop(Rotate(ROppF0MFDFT,ConjugateTranspose(rotmat)) - OppF0MFDFT))
+print(Chop(Rotate(ROppF2MFDFT,ConjugateTranspose(rotmat)) - OppF2MFDFT))
+
+
+
+print("\n------------------------------------------------------\n Complex rotation\n------------------------------------------------------\n")
+
+t=sqrt(1/2)
+d=I*sqrt(1/2)
+rotmat = {{1, 0, 0, 0, 0, 0},
+  {0, d, d, 0, 0, 0},
+  {0, t,-t, 0, 0, 0},
+  {0, 0, 0, 1, 0, 0},
+  {0, 0, 0, 0, sqrt(0.4), sqrt(0.6)},
+{0, 0, 0, 0, sqrt(0.6),-sqrt(0.4)}}
+
+print("The rotation matrix used is")
+print(rotmat)
+
+RTB = Rotate(TB,rotmat,{{"C1",{0,0,-1/2},{{"p",{"x","y+z","y-z"}}}},{"C2",{0,0,1/2},{{"p",{"x","y+z","y-z"}}}}})
+RHamiltonian, RClusterTB, RIndexName = CreateClusterHamiltonian(RTB, {"open", RTB.Atoms},  {{"ReturnTBIndicesDict",true}})
+
+print("The rotated tight binding object is")
+print(RClusterTB)
+print("And the corresponding Hamiltonian")
+print(RHamiltonian)
+
+print("Rotating the rotated Hamiltonian and subtracting the original Hamiltonian should yield zero")
+print("Rotate^C(TBtoH(Rotate(TB))) - TBtoH(TB) == 0 ?")
+
+print(Chop(Rotate(RHamiltonian,ConjugateTranspose(rotmat)) - Hamiltonian));
+
+
+print("\n------------------------------------------------------\n Rotation of density matrices\n------------------------------------------------------\n")
+
+print("In order to test further we can create the density matrix (one particle) of the TB operator and Hamiltonian and see if this behaves correctly under rotation")
+
+print("The density matrix of the TB object is")
+rhoNoSpin = Chop(CalculateRho(TB))
+print(Matrix.ToTable(rhoNoSpin))
+print("The density matrix of the rotated TB object is")
+RrhoNoSpin = Chop(CalculateRho(RTB))
+print(Matrix.ToTable(RrhoNoSpin))
+print("The rotated density matrix of the rotated TB object minus the density matrix of the TB object should be zero")
+print("Rotate^C(CalcualteRho(Rotate(TB))) - CalculateRho(TB) == 0 ?")
+print(Matrix.ToTable(Chop(Rotate(RrhoNoSpin,ConjugateTranspose(rotmat)) - rhoNoSpin)))
+
+print("We can also create the density matrix from the Hamiltonian instead of from the TB object")
+print("In order to do so we calcualte the ground-state of the Hamiltonian and from this function the density matrix")
+fun  = Eigensystem(Hamiltonian,{6,0,{"111111",3,3}},1)
+Rfun = Eigensystem(RHamiltonian,{6,0,{"111111",3,3}},1)
+rhofun = Chop(DensityMatrix(fun))
+Rrhofun = Chop(DensityMatrix(Rfun))
+
+print("The density matrix of the ground-state of the Hamiltonian corresponding to the TB object is")
+print(rhofun)
+print("The density matrix of the ground-state of the Hamiltonian corresponding to the Rotated TB object is")
+print(Rrhofun)
+print("The density matrix of the unrotated TB object should be the same independent on how it is calculated")
+print(Matrix.ToTable(Chop(rhofun-rhoNoSpin,1E-14)))
+print("The density matrix of the rotated TB object should be the same independent on how it is calculated")
+print(Matrix.ToTable(Chop(Rrhofun-RrhoNoSpin,1E-14)))
+print("The rotated density matrix of the groundstate of the rotated Hamiltonina minus the density matrix of the groundstate of the unrotated Hamiltonian should be zero")
+print("Rotate^C(CalcualteRho(Eigensystem(Rotate(HTB)))) - CalculateRho(Eigensystem(HTB)) == 0 ?")
+print(Matrix.ToTable(Chop(Rotate(Rrhofun,ConjugateTranspose(rotmat)) - rhofun,1E-14)))
+
+print("We can do the same test for the mean-field approximated form of a two particle operator")
+
+OppF0 = NewOperator("U",6,{0,1,2},{3,4,5},{1,0});
+OppF2 = NewOperator("U",6,{0,1,2},{3,4,5},{0,1});
+ROppF0 = Rotate(OppF0,rotmat)
+ROppF2 = Rotate(OppF2,rotmat)
+
+print("The coulomb operator")
+print(OppF0)
+print(OppF2)
+print("And the coulomb operator on a rotated basis")
+print(ROppF0)
+print(ROppF2)
+
+OppF0MFDFT = Chop(MeanFieldOperator(OppF0,rhoNoSpin,{{"AddDFTSelfInteraction",false}}))
+OppF2MFDFT = Chop(MeanFieldOperator(OppF2,rhoNoSpin,{{"AddDFTSelfInteraction",false}}))
+ROppF0MFDFT = Chop(MeanFieldOperator(ROppF0,RrhoNoSpin,{{"AddDFTSelfInteraction",false}}))
+ROppF2MFDFT = Chop(MeanFieldOperator(ROppF2,RrhoNoSpin,{{"AddDFTSelfInteraction",false}}))
+
+print("The mean-field approximated Coulomb operator without DFT self interaction")
+print("\n---------\n")
+print("The rotation matrix")
+print(rotmat)
+print("The density matrix")
+print(Matrix.ToTable(rhoNoSpin))
+print("The mean-field approximation of F0")
+print(OperatorToMatrix(OppF0MFDFT))
+print("The mean-field approximation of F2")
+print(OperatorToMatrix(OppF2MFDFT))
+print("The Rotated density matrix")
+print(Matrix.ToTable(RrhoNoSpin))
+print("The Rotated mean-field approximation of F0")
+print(OperatorToMatrix(ROppF0MFDFT))
+print("The rotated mean-field approximation of F2")
+print(OperatorToMatrix(ROppF2MFDFT))
+print("The rotated operator of the mean-field approxiamtion of the rotated operator should be the same as the mean-field approximation of the operator")
+print("Rotate^C(MeanField(Rotate(H)) - MeanField(H) == 0 ?")
+print(Chop(Rotate(ROppF0MFDFT,ConjugateTranspose(rotmat)) - OppF0MFDFT))
+print(Chop(Rotate(ROppF2MFDFT,ConjugateTranspose(rotmat)) - OppF2MFDFT))
+
+OppF0MFDFT = Chop(MeanFieldOperator(OppF0,rhoNoSpin,{{"AddDFTSelfInteraction",true}}))
+OppF2MFDFT = Chop(MeanFieldOperator(OppF2,rhoNoSpin,{{"AddDFTSelfInteraction",true}}))
+ROppF0MFDFT = Chop(MeanFieldOperator(ROppF0,RrhoNoSpin,{{"AddDFTSelfInteraction",true}}))
+ROppF2MFDFT = Chop(MeanFieldOperator(ROppF2,RrhoNoSpin,{{"AddDFTSelfInteraction",true}}))
+
+print("The mean-field approximated Coulomb operator with DFT self interaction")
+print("\n---------\n")
+print("The rotation matrix")
+print(rotmat)
+print("The density matrix")
+print(Matrix.ToTable(rhoNoSpin))
+print("The mean-field approximation of F0")
+print(OperatorToMatrix(OppF0MFDFT))
+print("The mean-field approximation of F2")
+print(OperatorToMatrix(OppF2MFDFT))
+print("The Rotated density matrix")
+print(Matrix.ToTable(RrhoNoSpin))
+print("The Rotated mean-field approximation of F0")
+print(OperatorToMatrix(ROppF0MFDFT))
+print("The rotated mean-field approximation of F2")
+print(OperatorToMatrix(ROppF2MFDFT))
+print("The rotated operator of the mean-field approxiamtion of the rotated operator should be the same as the mean-field approximation of the operator")
+print("Rotate^C(MeanField(Rotate(H)) - MeanField(H) == 0 ?")
+print(Chop(Rotate(ROppF0MFDFT,ConjugateTranspose(rotmat)) - OppF0MFDFT))
+print(Chop(Rotate(ROppF2MFDFT,ConjugateTranspose(rotmat)) - OppF2MFDFT))
+
+
+
 

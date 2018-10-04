@@ -12,17 +12,7 @@ TB = TightBindingDefFromDresdenFPLO(FPLOOut)
 print("Create Cluster Hamiltonian\n")
 NewCluster = FindAllAtomsInsideSphere(TB.Atoms,TB.Cell,{0,0,0},4)
 
-
-print("Create Cluster Hamiltonian\n")
-NewCluster = FindAllAtomsInsideSphere(TB.Atoms,TB.Cell,{7.895,0,0},4)
-
-print(NewCluster)
-
-
 Hamiltonian, ClusterTB, IndexName = CreateClusterHamiltonian(TB, {"open", NewCluster},  {{"AddSpin",false}, {"ReturnTBIndicesDict",true}})
-
-print(ClusterTB)
-os.exit()
 
 -- For the NiO6 cluster we can rotate the ligand orbitals
 print("Rotate the Ligand orbitals\n")
@@ -35,12 +25,14 @@ HDFT = HDFT/2
 HDFT = (HDFT + ConjugateTranspose(HDFT))
 
 
-
 -- Next we need to correct for the double counting (i.e. subtract the DFT Mean-field approximation of the Coulomb interaction)
 print("Subtract the DFT Mean-field Coulomb interaction between the d electrons from the tight-binding Hamiltonian\n")
 -- calculate DFT density Matrix in order to create double counting potential
 print("Calcualte the DFT 1-particle denisty matrix\n")
 rhoNoSpin = Chop(CalculateRho(TB))
+
+
+
 -- reduce the matrix to keep only the d shell
 rhoNoSpind = Matrix.Sub(rhoNoSpin,5)
 -- add spin
@@ -54,9 +46,63 @@ OppF4 = Rotate(NewOperator("U",10,Index["0_Ni_Up"],Index["0_Ni_Dn"],{0,0,1}),Yto
 
 -- create the Hartree-Fock mean-field approximation that needs to be substracted from the DFT results
 print("Create the Coulomb operator for the d-shell using the DFT approximation (needs the DFT density)\n")
-OppF0MFDFT = Chop(MeanFieldOperator(OppF0,rhod,{{"AddDFTSelfInteraction",true}}))
-OppF2MFDFT = Chop(MeanFieldOperator(OppF2,rhod,{{"AddDFTSelfInteraction",true}}))
-OppF4MFDFT = Chop(MeanFieldOperator(OppF4,rhod,{{"AddDFTSelfInteraction",true}}))
+OppF0MFDFT = Chop(MeanFieldOperator(OppF0,rhod,{{"AddDFTSelfInteraction",false}}))
+OppF2MFDFT = Chop(MeanFieldOperator(OppF2,rhod,{{"AddDFTSelfInteraction",false}}))
+OppF4MFDFT = Chop(MeanFieldOperator(OppF4,rhod,{{"AddDFTSelfInteraction",false}}))
+
+print("----")
+print(Matrix.ToTable(rhod))
+print("----")
+print(OperatorToMatrix(OppF0MFDFT))
+print("----")
+print(OperatorToMatrix(OppF2MFDFT))
+print("----")
+
+
+t=sqrt(1/2)
+d=I*sqrt(1/2)
+
+rotmat = {{ d, 0, 0, 0, 0, 0, 0, 0, d, 0},
+  { 0, d, 0, 0, 0, 0, 0, 0, 0, d},
+  { t, 0, 0, 0, 0, 0, 0, 0,-t, 0},
+  { 0, t, 0, 0, 0, 0, 0, 0, 0,-t},
+  { 0, 0, t, 0, 0, 0, t, 0, 0, 0},
+  { 0, 0, 0, t, 0, 0, 0, t, 0, 0},
+  { 0, 0, t, 0, 0, 0,-t, 0, 0, 0},
+  { 0, 0, 0, t, 0, 0, 0,-t, 0, 0},
+  { 0, 0, 0, 0, 1, 0, 0, 0, 0, 0},
+  { 0, 0, 0, 0, 0, 1, 0, 0, 0, 0}}
+
+
+rhod  = Rotate(rhod,rotmat)
+OppF0 = Rotate(OppF0,rotmat)
+OppF2 = Rotate(OppF2,rotmat)
+OppF4 = Rotate(OppF4,rotmat)
+
+
+print("Create the Coulomb operator for the d-shell using the DFT approximation (needs the DFT density)\n")
+OppF0MFDFT = Chop(MeanFieldOperator(OppF0,rhod,{{"AddDFTSelfInteraction",false}}))
+OppF2MFDFT = Chop(MeanFieldOperator(OppF2,rhod,{{"AddDFTSelfInteraction",false}}))
+OppF4MFDFT = Chop(MeanFieldOperator(OppF4,rhod,{{"AddDFTSelfInteraction",false}}))
+
+
+print("----")
+print(Chop(Matrix.ToTable(Rotate(rhod,Matrix.ConjugateTranspose(rotmat)))))
+print("----")
+print(Chop(Rotate(OperatorToMatrix(OppF0MFDFT),Matrix.ConjugateTranspose(rotmat))))
+print("----")
+print(Chop(Rotate(OperatorToMatrix(OppF2MFDFT),Matrix.ConjugateTranspose(rotmat))))
+print("----")
+
+print("----")
+print(Chop(Matrix.ToTable(rhod)))
+print("----")
+print(Chop(OperatorToMatrix(OppF0MFDFT)))
+print("----")
+print(Chop(OperatorToMatrix(OppF2MFDFT)))
+print("----")
+
+os.exit()
 
 -- change the dimension of the Coulomb operator the work on a space that includes both the d and the ligand orbitals
 OppF0.NF = 20
@@ -65,6 +111,10 @@ OppF4.NF = 20
 OppF0MFDFT.NF = 20
 OppF2MFDFT.NF = 20
 OppF4MFDFT.NF = 20
+
+
+
+
 
 -- set parameters
 print("Set the parameters\n")

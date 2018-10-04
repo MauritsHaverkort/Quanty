@@ -1580,6 +1580,10 @@ static int Luarotate(lua_State *L)
     RotateTightBinding(TB, RotMat, RTB);
     return 1;
   }
+  if ((luaL_testudata(L, 1, "Matrix_Type") != NULL) || (lua_istable(L, 1)==1))
+  {
+    return LuaMatrixRotate(L);
+  }
   return luaL_error(L, "Rotate called unrecognized type. Can only rotate wavefunctions operators and tight binding objects\n");
 }
 
@@ -5162,6 +5166,8 @@ void luaconstants(lua_State *L)
   lua_setglobal(L, "E");
   lua_pushnumber(L, 2.71828182845904523536028747135);
   lua_setglobal(L, "e");
+  lua_pushnumber(L, INFINITY);
+  lua_setglobal(L, "inf");
 }
 
 int luaopen_ssp(lua_State * L)
