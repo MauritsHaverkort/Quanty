@@ -1964,12 +1964,6 @@ void luaL_setarray_DeterminatRestrictionType(lua_State *L, int narg, Determinant
         {
           detchar = (char *) luaL_checkstring(L, -1);
           buff->Determinant[i] = StringToDet(NFermion, NBoson, detchar);
-          for(j=0;j<NWord;j++)
-          {
-            if(buff->Determinant[i][j]!=0) goto ValidDeterminantFound;
-          }
-          luaL_error(L, "Determinantstring in Restrictions is not correct\n");
-          ValidDeterminantFound:
           detleng = NWord;
         }
         else

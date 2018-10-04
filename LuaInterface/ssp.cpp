@@ -4852,7 +4852,7 @@ static int LuaPrintExpectationValues(lua_State * L)
     {NULL, NULL, NULL}};
 
 	if (len < 2 || len > 4)
-		return luaL_error(L, "PrintExpectationValues called with %d arguments. 2 or 3 expected, List of Wavefunctions, optional Hamiltonian, list of other operators, and optional list of Options.\n", len);
+		return luaL_error(L, "PrintExpectationValues called with %d arguments. 2, 3 or 4 expected, List of Wavefunctions, optional Hamiltonian, list of other operators, and optional list of Options.\n", len);
 
 	if (len == 2)
 	{
