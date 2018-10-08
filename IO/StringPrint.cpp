@@ -65,7 +65,7 @@ uint32_t StringPrintOperatorReadable(OperatorType O, char **Buffer)
           ((O.l[i].o[j * i + k]) & CrAnMask) ? sprintfAdd(Buffer, "C") : sprintfAdd(Buffer, "A");
           sprintfAdd(Buffer, "%3i ", (O.l[i].o[j * i + k]) & NotCrAnMask);
         }
-        (O.l[i].QComplex) ? sprintfAdd(Buffer, "| %22.15E %22.15E\n", O.l[i].V[j].Re, O.l[i].V[j].Im) : sprintfAdd(Buffer, "| %22.15E\n", O.l[i].VRe[j]);
+        (O.l[i].QComplex) ? sprintfAdd(Buffer, "| %21.14E %21.14E\n", O.l[i].V[j].Re, O.l[i].V[j].Im) : sprintfAdd(Buffer, "| %21.14E\n", O.l[i].VRe[j]);
       }
     }
   }

@@ -1929,7 +1929,7 @@ const vector<OperatorType> luaL_checkvector_OperatorType(lua_State *L, int narg)
 
 void luaL_setarray_DeterminatRestrictionType(lua_State *L, int narg, DeterminantRestrictionType * buff)
 {
-  uint32_t NFermion,NBoson,i,j;
+  uint32_t NFermion,NBoson,i;
   uint32_t len,len2,detleng,NWord;
   char * detchar;
   if(lua_isnil(L,narg))
@@ -1964,12 +1964,6 @@ void luaL_setarray_DeterminatRestrictionType(lua_State *L, int narg, Determinant
         {
           detchar = (char *) luaL_checkstring(L, -1);
           buff->Determinant[i] = StringToDet(NFermion, NBoson, detchar);
-          for(j=0;j<NWord;j++)
-          {
-            if(buff->Determinant[i][j]!=0) goto ValidDeterminantFound;
-          }
-          luaL_error(L, "Determinantstring in Restrictions is not correct\n");
-          ValidDeterminantFound:
           detleng = NWord;
         }
         else

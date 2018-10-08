@@ -114,7 +114,7 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
 	uint32_t len = (uint32_t)lua_gettop(L);
 	if (len < 2)
 	{
-		return luaL_error(L,"Error in ReadFPLOBasisFunctions: 2 or 3 arguments expected, got %u",len);
+		return luaL_error(L,"Error in ReadFPLOBasisFunctions: 2 or 3 arguments expected, got %d",len);
 	}
 	char** orbitalNames = luaL_checkarray_string(L, 1, &Norbitals); //TODO free
 	const char *name1 = luaL_checkstring(L,2);
@@ -216,7 +216,7 @@ static int LuaGetMultipoleBesselIntegral(lua_State *L)
 	uint32_t len = (uint32_t)lua_gettop(L);
 	if (len < 3)
 	{
-		return luaL_error(L,"Error in GetMultipoleBesselIntegral: expected 3 to 5 arguments, got %u\n",len);
+		return luaL_error(L,"Error in GetMultipoleBesselIntegral: expected 3 to 5 arguments, got %d\n",len);
 	}
 	double q = (double) luaL_checknumber(L,1);
 	uint32_t k = (uint32_t) luaL_checkunsigned(L,2);
@@ -247,7 +247,7 @@ static int LuaGetMultipoleIntegral(lua_State *L)
 	uint32_t len = (uint32_t)lua_gettop(L);
 	if (len < 2)
 	{
-		return luaL_error(L,"Error in GetMultipoleBesselIntegral: expected 2 to 4 arguments, got %u\n",len);
+		return luaL_error(L,"Error in GetMultipoleBesselIntegral: expected 2 to 4 arguments, got %d\n",len);
 	}
 	uint32_t k = (uint32_t) luaL_checkunsigned(L,1);
 

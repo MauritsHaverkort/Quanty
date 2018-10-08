@@ -1,0 +1,25 @@
+r={}
+R3dVal={}
+for i=1,5000 do
+  r[i] = (i-1)/50
+  R3dVal[i] = r[i] * 2/81 * sqrt(2/15) * r[i]^2 * exp(-r[i]/3)
+end
+
+R3d = InterpolatingFunction.Spline(r,R3dVal)
+
+norm = GetMultipoleIntegral(0,R3d,R3d)
+print(norm)
+
+
+
+-- calculate Slater integrals for 3d shell
+
+Fk = GetSlaterIntegrals({"3d"},{R3d})
+
+F0dd    =  Fk["3d 3d 3d 3d"][0]*EnergyUnits.Ha.value
+F2dd    =  Fk["3d 3d 3d 3d"][2]*EnergyUnits.Ha.value
+F4dd    =  Fk["3d 3d 3d 3d"][4]*EnergyUnits.Ha.value
+
+print(F0dd)
+print(F2dd)
+print(F4dd)

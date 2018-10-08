@@ -128,8 +128,14 @@ void operator/=( Complex16 & lhs, double const& rhs)
   lhs.Im/=rhs;
 }
 
-
-
+/* ComplexConjugate */
+Complex16 Conjugate(const Complex16 z)
+{
+  Complex16 ret;
+  ret.Re = z.Re;
+  ret.Im =-z.Im;
+  return ret;
+}
 
 
 
