@@ -241,6 +241,48 @@ static int LuaMatrixEigensystem(lua_State * L)
   }
 }
 
+/*  on stack Matrix A and Matrix B
+ *  computes B^* . A . B^T
+ *
+ */
+static int LuaMatrixRotate(lua_State * L)
+{
+  CompactMatrixType *A,*B;
+  uint32_t len = (uint32_t)lua_gettop(L);
+  if(len!=2) luaL_error(L, "Matrix.Rotate called with %d arguments, two arguments expected",len);
+  A=luaL_checkCompactMatrix(L, 1);
+  B=luaL_checkCompactMatrix(L, 2);
+  if(A->Ni!=A->Nj) return luaL_error(L, "Matrix.Rotate needs the first matrix to be square, at the moment Ni=%d and Nj=%d",A->Ni,A->Nj);
+  if(A->Ni!=B->Nj) return luaL_error(L, "Matrix.Rotate needs the first matrix to be of the same dimension (%d) as the number of Columns in the second matrix (%d)",A->Ni,B->Nj);
+  if ((luaL_testudata(L, 1, "Matrix_Type") == NULL)&&(luaL_testudata(L, 2, "Matrix_Type") == NULL))
+  { // matrices on stack as table
+    CompactMatrixType C;
+    if(TransformCompactMatrixcT(A, B, &C)==1) return luaL_error(L, "Error in Matrix.Rotate");
+    LuaPushTable_CompactMatrixType(L, &C);
+    FreeCompactMatrix(&C);
+  }
+  else
+  {
+    CompactMatrixType *C;
+    C = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+    luaL_setmetatable(L, "Matrix_Type");
+    if(TransformCompactMatrixcT(A, B, C)==1) return luaL_error(L, "Error in Matrix.Rotate");
+    C->OnLuaStack=true;
+  }
+  if(A->OnLuaStack==false)
+  {
+    FreeCompactMatrix(A);
+    free(A);
+  }
+  if(B->OnLuaStack==false)
+  {
+    FreeCompactMatrix(B);
+    free(B);
+  }
+  return 1;
+}
+
+
 /*
  *
  */
@@ -1486,6 +1528,7 @@ static const struct luaL_Reg Matrix_func[] = {
 	{"Flatten",LuaMatrixFlatten},
   {"Identity", LuaMatrixIdentity},
   {"Inverse", LuaMatrixInverse},
+  {"Rotate", LuaMatrixRotate},
   {"Random", LuaMatrixRandom},
   {"Sqrt", LuaMatrixSqrt},
 	{"Sub",LuaSubmatrix},

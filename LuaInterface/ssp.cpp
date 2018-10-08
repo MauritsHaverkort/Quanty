@@ -583,7 +583,7 @@ static int LuaNewOperator(lua_State * L)
     Options.Name=NULL;
     Options.NBitsKeyDouble.Ni=0;
     Options.NBitsKeyDouble.QComplex=0;
-    if((len!=3)&&(len!=4)) return luaL_error(L, "ERROR: LuaNewOperator called with %u arguments, expectd 3 or 4\n",len);
+    if((len!=3)&&(len!=4)) return luaL_error(L, "ERROR: LuaNewOperator called with %d arguments, expectd 3 or 4\n",len);
     if(len==4) LuaCheckOptions(L, -1, LuaNewOperatorOptions);
     O = (OperatorType*) lua_newuserdata(L, sizeof(OperatorType));
     luaL_setmetatable(L, "Operator_Type");
@@ -903,7 +903,7 @@ static int LuaNewWaveFunction(lua_State * L)
     return luaL_error(L, "Bosons not included in this version\n Sorry\n");
   }
 
-  if((len!=3)&&(len!=4)) return luaL_error(L, "ERROR: LuaNewWaveFunction called with %u arguments, expectd 3 or 4\n",len);
+  if((len!=3)&&(len!=4)) return luaL_error(L, "ERROR: LuaNewWaveFunction called with %d arguments, expectd 3 or 4\n",len);
   if(len==4)
   {
     if(lua_isnumber(L, 4))
@@ -1542,12 +1542,18 @@ static int Luarotate(lua_State *L)
   {
     uint32_t i;
     int index;
-    TightBindingDef *RTB;    if(len!=3)luaL_error(L, "Rotate for a tight binding object called with %d arguments, 3 expected\n",len);
+    TightBindingDef *RTB;
+    if(len!=3)luaL_error(L, "Rotate for a tight binding object called with %d arguments, 3 expected\n",len);
     CompactMatrixType *RotMat;
     RotMat = luaL_checkCompactMatrix(L, 2);
     TightBindingDef *TB = (TightBindingDef*) luaL_checkudata(L, 1, "TightBinding_Type");
     RTB=(TightBindingDef*) lua_newuserdata(L, sizeof(TightBindingDef));
     luaL_setmetatable(L, "TightBinding_Type");
+    //
+    RTB->NFermion=0;
+    RTB->FermionIndex=NULL;
+    RTB->nH=0;
+    RTB->H=NULL;
     // set name
     strcpy(RTB->Name, TB->Name);
     // read moleclar structure
@@ -1571,10 +1577,12 @@ static int Luarotate(lua_State *L)
       lua_pop(L, 1);
     }
     SetNFermionIndexTightBindingDef(RTB);
-    RTB->nH=0;
-    RTB->H=NULL;
     RotateTightBinding(TB, RotMat, RTB);
     return 1;
+  }
+  if ((luaL_testudata(L, 1, "Matrix_Type") != NULL) || (lua_istable(L, 1)==1))
+  {
+    return LuaMatrixRotate(L);
   }
   return luaL_error(L, "Rotate called unrecognized type. Can only rotate wavefunctions operators and tight binding objects\n");
 }
@@ -4039,6 +4047,11 @@ static int LuaBlockBandDiagonalize(lua_State *L)
     // Push the pointer to the rotated TB operator to the Lua Stack
     RTB=(TightBindingDef*) lua_newuserdata(L, sizeof(TightBindingDef));
     luaL_setmetatable(L, "TightBinding_Type");
+    //
+    RTB->NFermion=0;
+    RTB->FermionIndex=NULL;
+    RTB->nH=0;
+    RTB->H=NULL;
     // set name
     strcpy(RTB->Name, TB->Name);
     // set the moleclar structure
@@ -4131,8 +4144,6 @@ static int LuaBlockBandDiagonalize(lua_State *L)
       }
     }
     SetNFermionIndexTightBindingDef(RTB);
-    RTB->nH=0;
-    RTB->H=NULL;
     // free the list of atoms from memory
     for(i=0;i<NAtomsInStartBlock;i++)
     {
@@ -4841,7 +4852,7 @@ static int LuaPrintExpectationValues(lua_State * L)
     {NULL, NULL, NULL}};
 
 	if (len < 2 || len > 4)
-		return luaL_error(L, "PrintExpectationValues called with %d arguments. 2 or 3 expected, List of Wavefunctions, optional Hamiltonian, list of other operators, and optional list of Options.\n", len);
+		return luaL_error(L, "PrintExpectationValues called with %d arguments. 2, 3 or 4 expected, List of Wavefunctions, optional Hamiltonian, list of other operators, and optional list of Options.\n", len);
 
 	if (len == 2)
 	{
@@ -5155,6 +5166,8 @@ void luaconstants(lua_State *L)
   lua_setglobal(L, "E");
   lua_pushnumber(L, 2.71828182845904523536028747135);
   lua_setglobal(L, "e");
+  lua_pushnumber(L, INFINITY);
+  lua_setglobal(L, "inf");
 }
 
 int luaopen_ssp(lua_State * L)

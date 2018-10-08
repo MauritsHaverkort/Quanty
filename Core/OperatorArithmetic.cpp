@@ -46,7 +46,7 @@ uint32_t FreeOperator(OperatorType * const H)
     free(H->Res.Max);
     free(H->Res.Determinant);
   }
-  if (H->l[0].N) (H->l[0].QComplex) ? free(H->l[0].V) : free(H->l[0].VRe);
+  if ((H->l!=NULL)&&(H->l[0].N)) (H->l[0].QComplex) ? free(H->l[0].V) : free(H->l[0].VRe);
   for (i = 1; i <= H->MaxLength; i++)
   {
     free(H->l[i].KeyList);

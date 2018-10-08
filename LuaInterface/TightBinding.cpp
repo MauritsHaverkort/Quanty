@@ -916,8 +916,17 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
     // place return values on stack
     H=(OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
     luaL_setmetatable(L, "Operator_Type");
+    //
+    H->MaxLength=0;
+    H->l=NULL;
+    H->Res.N=0;
     ClusterDef=(TightBindingDef*) lua_newuserdata(L, sizeof(TightBindingDef));
     luaL_setmetatable(L, "TightBinding_Type");
+    //
+    ClusterDef->NFermion=0;
+    ClusterDef->FermionIndex=NULL;
+    ClusterDef->nH=0;
+    ClusterDef->H=NULL;
     // set name
     strcpy(ClusterDef->Name, a->Name);
     // set cell
@@ -1297,6 +1306,11 @@ static int LuaReadAtomWithDefault(lua_State *L, int narg, AtomType *a, CrystalSt
 {
   uint32_t i,j,k,l,len;
   double *arr;
+  a->Name[0]='\0';
+  a->Nshell=0;
+  //a->OrbitalName=NULL;
+  //a->shelldegeneracy=NULL;
+  //a->ShellName=NULL;
   if(lua_type(L,narg)==LUA_TTABLE)
   {
     len = (uint32_t)lua_objlen(L, narg);
@@ -1316,13 +1330,13 @@ static int LuaReadAtomWithDefault(lua_State *L, int narg, AtomType *a, CrystalSt
     lua_pop(L, 1);
     // determine AtomIndexInCrystalStructure
     *AtomIndexInCrystalStructure = FindAtomPosModulusUnitCell(a, def, 0.0001);
-    if(*AtomIndexInCrystalStructure==INT_MAX) luaL_error(L, "Error Atom %s not found at given position\n",a->Name);
+    if((len==2)&&(*AtomIndexInCrystalStructure==INT_MAX)) luaL_error(L, "Error Atom %s not found at position %f %f %f in tight binding object\n",a->Name,a->Position[0],a->Position[1],a->Position[2]);
     // get the list with shells
     len = (uint32_t)lua_objlen(L, narg);
     if(len==3)
     {
       lua_rawgeti(L, narg, 3);
-      if(lua_type(L,-1)!=LUA_TTABLE) return luaL_error(L, "Error ReadAtom shells of atom %s should be a list of shells\n",a->Name);
+      if(lua_type(L,-1)!=LUA_TTABLE) return luaL_error(L, "Error ReadAtom shells of atom %s at position %f %f %f, should be a list of shells\n",a->Name,a->Position[0],a->Position[1],a->Position[2]);
       a->Nshell = (int)lua_objlen(L, -1);
       a->ShellName = (char**)malloc(a->Nshell*sizeof(char*));
       a->shelldegeneracy = (int*)malloc(a->Nshell*sizeof(int));
@@ -1334,13 +1348,13 @@ static int LuaReadAtomWithDefault(lua_State *L, int narg, AtomType *a, CrystalSt
         {
           // shell given by a table of the form {"shellname", {"orb1name", "orb2name", ...}}
           len = (uint32_t)lua_objlen(L, -1);
-          if(len!=2) return luaL_error(L, "Error ReadAtom shell %d of atom %s should be a list containing the name and a list of orbitals\n",i+1,a->Name);
+          if(len!=2) return luaL_error(L, "Error ReadAtom shell %d of atom %s at position %f %f %f should be a list containing the name and a list of orbitals\n",i+1,a->Name,a->Position[0],a->Position[1],a->Position[2]);
           lua_rawgeti(L, -1, 1);
           a->ShellName[i]= (char*)malloc(MAXStrLength*sizeof(char));
           strncpy(a->ShellName[i], luaL_checkstring(L, -1), MAXStrLength-1);
           lua_pop(L, 1);
           lua_rawgeti(L, -1, 2);
-          if(lua_type(L,-1)!=LUA_TTABLE) return luaL_error(L, "Error ReadAtom shell %s(%d) of atom %s should be a list containing the name and a list of orbitals\n",a->ShellName[i],i+1,a->Name);
+          if(lua_type(L,-1)!=LUA_TTABLE) return luaL_error(L, "Error ReadAtom shell %s(%d) of atom %s at position %f %f %f should be a list containing the name and a list of orbitals\n",a->ShellName[i],i+1,a->Name,a->Position[0],a->Position[1],a->Position[2]);
           a->shelldegeneracy[i] = (uint32_t)lua_objlen(L, -1);
           a->OrbitalName[i] = (char**)malloc(a->shelldegeneracy[i]*sizeof(char*));
           for(j=0;j<a->shelldegeneracy[i];j++)
@@ -1411,7 +1425,7 @@ static int LuaReadAtomWithDefault(lua_State *L, int narg, AtomType *a, CrystalSt
           goto FoundAtom;
         }
       }
-      return luaL_error(L, "Found atom with label %s but without a definition of shells and orbitals\n Atom is not in the refference structure so I can't set the shells and orbitals to default\n", a->Name);
+      return luaL_error(L, "Found atom with label %s at position %f %f %f, but without a definition of shells and orbitals\n Atom is not in the refference structure so I can't set the shells and orbitals to default\n", a->Name,a->Position[0],a->Position[1],a->Position[2]);
       FoundAtom:;
     }
   }
@@ -1482,12 +1496,31 @@ static int LuaReadHopping(lua_State *L, int narg, CrystalStructureType *Cell, Ti
   char AtomShell1[2*MAXStrLength+1];
   char AtomShell2[2*MAXStrLength+1];
   char *Atom1,*Atom2,*Shell1,*Shell2;
+  bool comparepos=false;
   // test input
   if((lua_type(L,narg)!=LUA_TTABLE)) return luaL_error(L, "ReadHopping expects a table of the form {\"AtomName1.ShellName1\",\"AtomName2.ShellName2\",Vec,H}\n");
   if (lua_objlen(L, narg)!=4) return luaL_error(L, "ReadHopping expects a table with 4 elements of the form {\"AtomName1.ShellName1\",\"AtomName2.ShellName2\",Vec,H}\n");
   // read atom and shell 1
   lua_rawgeti(L, narg, 1);
-  strncpy(AtomShell1, luaL_checkstring(L, -1), 2*MAXStrLength);
+  if(lua_istable(L, -1))
+  {
+    comparepos=true;
+    lua_rawgeti(L, -1, 1);
+    strncpy(AtomShell1, luaL_checkstring(L, -1), 2*MAXStrLength);
+    lua_pop(L,1);
+    lua_rawgeti(L, -1, 2);
+    for(i=0;i<3;i++)
+    {
+      lua_rawgeti(L, -1, i+1);
+      idouble[i]=luaL_checknumber(L, -1);
+      lua_pop(L,1);
+    }
+    lua_pop(L,1);
+  }
+  else
+  {
+    strncpy(AtomShell1, luaL_checkstring(L, -1), 2*MAXStrLength);
+  }
   lua_pop(L, 1);
   Atom1=AtomShell1;
   Shell1=strchr(AtomShell1 , '.');
@@ -1499,8 +1532,11 @@ static int LuaReadHopping(lua_State *L, int narg, CrystalStructureType *Cell, Ti
   {
     if(strcmp(Cell->Atom[i].Name, Atom1)==0)
     {
-      H->Atompos1=i;
-      break;
+      if((comparepos==false)||(EqualFloat(Cell->Atom[i].Position[0], idouble[0])&&EqualFloat(Cell->Atom[i].Position[1], idouble[1])&&EqualFloat(Cell->Atom[i].Position[2], idouble[2])))
+      {
+        H->Atompos1=i;
+        break;
+      }
     }
   }
   if(H->Atompos1==Cell->NAtoms) return luaL_error(L, "Atom name %s in ReadHopping not found in Cell definition\n",Atom1);
@@ -1515,8 +1551,27 @@ static int LuaReadHopping(lua_State *L, int narg, CrystalStructureType *Cell, Ti
   }
   if(H->Shellpos1==Cell->Atom[H->Atompos1].Nshell) return luaL_error(L, "Shell name %s of Atom %s in ReadHopping not found in Cell definition\n",Shell1,Atom1);
   // read atom and shell 2
+  comparepos=false;
   lua_rawgeti(L, narg, 2);
-  strncpy(AtomShell2, luaL_checkstring(L, -1), 2*MAXStrLength);
+  if(lua_istable(L, -1))
+  {
+    comparepos=true;
+    lua_rawgeti(L, -1, 1);
+    strncpy(AtomShell2, luaL_checkstring(L, -1), 2*MAXStrLength);
+    lua_pop(L,1);
+    lua_rawgeti(L, -1, 2);
+    for(i=0;i<3;i++)
+    {
+      lua_rawgeti(L, -1, i+1);
+      idouble[i]=luaL_checknumber(L, -1);
+      lua_pop(L,1);
+    }
+    lua_pop(L,1);
+  }
+  else
+  {
+    strncpy(AtomShell2, luaL_checkstring(L, -1), 2*MAXStrLength);
+  }
   lua_pop(L, 1);
   Atom2=AtomShell2;
   Shell2=strchr(AtomShell2 , '.');
@@ -1528,8 +1583,11 @@ static int LuaReadHopping(lua_State *L, int narg, CrystalStructureType *Cell, Ti
   {
     if(strcmp(Cell->Atom[i].Name, Atom2)==0)
     {
-      H->Atompos2=i;
-      break;
+      if((comparepos==false)||(EqualFloat(Cell->Atom[i].Position[0], idouble[0])&&EqualFloat(Cell->Atom[i].Position[1], idouble[1])&&EqualFloat(Cell->Atom[i].Position[2], idouble[2])))
+      {
+        H->Atompos2=i;
+        break;
+      }
     }
   }
   if(H->Atompos2==Cell->NAtoms) return luaL_error(L, "Atom name %s in ReadHopping not found in Cell definition\n",Atom2);
@@ -1557,24 +1615,74 @@ static int LuaReadHopping(lua_State *L, int narg, CrystalStructureType *Cell, Ti
     }
     lua_pop(L,1);
     // create TransVec from connecting Vector
-    // {x,y,z} = i a + j b + k c + AtomPos2 - AtomPos1
-    // r = {x,y,z} - AtomPos2 + AtomPos1
-    // i = Cross[b,c] . r / (Cross[a,b].c)
-    // j = Cross[c,a] . r / (Cross[a,b].c)
-    // k = Cross[a,b] . r / (Cross[a,b].c)
-    CellVolume=ParallelalPipedVolume(Cell->rUnitCell[0], Cell->rUnitCell[1], Cell->rUnitCell[2]);
-    if(fabs(CellVolume)<100*sqrt(DBL_MIN)) return luaL_error(L, "ReadHopping called with a cell defined that has a zero volume:\n    a={%d %d %d}\n    b={%d %d %d}\n    c={%d %d %2d}\n",Cell->rUnitCell[0][0],Cell->rUnitCell[0][1],Cell->rUnitCell[0][2],Cell->rUnitCell[1][0],Cell->rUnitCell[1][1],Cell->rUnitCell[1][2],Cell->rUnitCell[2][0],Cell->rUnitCell[2][1],Cell->rUnitCell[2][2]);
-    r[0]=H->ConnectingVector[0]+Cell->Atom[H->Atompos1].Position[0]-Cell->Atom[H->Atompos2].Position[0];
-    r[1]=H->ConnectingVector[1]+Cell->Atom[H->Atompos1].Position[1]-Cell->Atom[H->Atompos2].Position[1];
-    r[2]=H->ConnectingVector[2]+Cell->Atom[H->Atompos1].Position[2]-Cell->Atom[H->Atompos2].Position[2];
-    idouble[0]=ParallelalPipedVolume(Cell->rUnitCell[1], Cell->rUnitCell[2], r)/CellVolume;
-    idouble[1]=ParallelalPipedVolume(Cell->rUnitCell[2], Cell->rUnitCell[0], r)/CellVolume;
-    idouble[2]=ParallelalPipedVolume(Cell->rUnitCell[0], Cell->rUnitCell[1], r)/CellVolume;
-    H->TransVecs[0]=(int)(idouble[0]+(idouble[0]>0?1:-1)*0.5);
-    H->TransVecs[1]=(int)(idouble[1]+(idouble[1]>0?1:-1)*0.5);
-    H->TransVecs[2]=(int)(idouble[2]+(idouble[2]>0?1:-1)*0.5);
-    if((fabs(idouble[0]-H->TransVecs[0])>0.0000001)||(fabs(idouble[1]-H->TransVecs[1])>0.0000001)||(fabs(idouble[2]-H->TransVecs[2])>0.0000001)) return luaL_error(L, "ReadHopping connecting vector given in absolute coordinates, but not an integer number of unit cells plus the distance in the unit cell between the atoms:\n   {x,y,z} = {%f %f %f} (%f %f %f)\n   {i,j,k} = {%f %f %f}\n",(double)H->ConnectingVector[0],(double)H->ConnectingVector[1],(double)H->ConnectingVector[2],(double)H->TransVecs[0],(double)H->TransVecs[1],(double)H->TransVecs[2],idouble[0],idouble[1],idouble[2]);
-
+    if(NormSqr(Cell->rUnitCell[0])==INFINITY)
+    {
+      if(NormSqr(Cell->rUnitCell[1])==INFINITY)
+      {
+        if(NormSqr(Cell->rUnitCell[2])==INFINITY)
+        {  // a, b and c infinite
+          H->TransVecs[0]=0;
+          H->TransVecs[1]=0;
+          H->TransVecs[2]=0;
+        }
+        else
+        {  // a and b infinite c finite
+          return luaL_error(L,"Sorry input for slabs not completed (setting of translation vector needs to be done");
+        }
+      }
+      else
+      {
+        if(NormSqr(Cell->rUnitCell[1])==INFINITY)
+        {  // a and c infinte b finite
+          return luaL_error(L,"Sorry input for slabs not completed (setting of translation vector needs to be done");
+        }
+        else
+        {  // a infinite b and c finite
+          return luaL_error(L,"Sorry input for slabs not completed (setting of translation vector needs to be done");
+        }
+      }
+    }
+    else
+    {
+      if(NormSqr(Cell->rUnitCell[1])==INFINITY)
+      {
+        if(NormSqr(Cell->rUnitCell[2])==INFINITY)
+        {  // a finite b and c infinite
+          return luaL_error(L,"Sorry input for slabs not completed (setting of translation vector needs to be done");
+        }
+        else
+        {  // a and c finite b infinite
+          return luaL_error(L,"Sorry input for slabs not completed (setting of translation vector needs to be done");
+        }
+      }
+      else
+      {
+        if(NormSqr(Cell->rUnitCell[2])==INFINITY)
+        {  // a and b finite c infinite
+          return luaL_error(L,"Sorry input for slabs not completed (setting of translation vector needs to be done");
+        }
+        else
+        {  // a, b and c finite
+          // {x,y,z} = i a + j b + k c + AtomPos2 - AtomPos1
+          // r = {x,y,z} - AtomPos2 + AtomPos1
+          // i = Cross[b,c] . r / (Cross[a,b].c)
+          // j = Cross[c,a] . r / (Cross[a,b].c)
+          // k = Cross[a,b] . r / (Cross[a,b].c)
+          CellVolume=ParallelalPipedVolume(Cell->rUnitCell[0], Cell->rUnitCell[1], Cell->rUnitCell[2]);
+          if(fabs(CellVolume)<100*sqrt(DBL_MIN)) return luaL_error(L, "ReadHopping called with a cell defined that has a zero volume:\n    a={%d %d %d}\n    b={%d %d %d}\n    c={%d %d %2d}\n",Cell->rUnitCell[0][0],Cell->rUnitCell[0][1],Cell->rUnitCell[0][2],Cell->rUnitCell[1][0],Cell->rUnitCell[1][1],Cell->rUnitCell[1][2],Cell->rUnitCell[2][0],Cell->rUnitCell[2][1],Cell->rUnitCell[2][2]);
+          r[0]=H->ConnectingVector[0]+Cell->Atom[H->Atompos1].Position[0]-Cell->Atom[H->Atompos2].Position[0];
+          r[1]=H->ConnectingVector[1]+Cell->Atom[H->Atompos1].Position[1]-Cell->Atom[H->Atompos2].Position[1];
+          r[2]=H->ConnectingVector[2]+Cell->Atom[H->Atompos1].Position[2]-Cell->Atom[H->Atompos2].Position[2];
+          idouble[0]=ParallelalPipedVolume(Cell->rUnitCell[1], Cell->rUnitCell[2], r)/CellVolume;
+          idouble[1]=ParallelalPipedVolume(Cell->rUnitCell[2], Cell->rUnitCell[0], r)/CellVolume;
+          idouble[2]=ParallelalPipedVolume(Cell->rUnitCell[0], Cell->rUnitCell[1], r)/CellVolume;
+          H->TransVecs[0]=(int)(idouble[0]+(idouble[0]>0?1:-1)*0.5);
+          H->TransVecs[1]=(int)(idouble[1]+(idouble[1]>0?1:-1)*0.5);
+          H->TransVecs[2]=(int)(idouble[2]+(idouble[2]>0?1:-1)*0.5);
+          if((fabs(idouble[0]-H->TransVecs[0])>0.0000001)||(fabs(idouble[1]-H->TransVecs[1])>0.0000001)||(fabs(idouble[2]-H->TransVecs[2])>0.0000001)) return luaL_error(L, "ReadHopping connecting vector given in absolute coordinates, but not an integer number of unit cells plus the distance in the unit cell between the atoms:\n   {x,y,z} = {%f %f %f} (%f %f %f)\n   {i,j,k} = {%f %f %f}\n",(double)H->ConnectingVector[0],(double)H->ConnectingVector[1],(double)H->ConnectingVector[2],(double)H->TransVecs[0],(double)H->TransVecs[1],(double)H->TransVecs[2],idouble[0],idouble[1],idouble[2]);
+        }
+      }
+    }
   }
   else // relative units
   {

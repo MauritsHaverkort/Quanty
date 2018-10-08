@@ -22,7 +22,7 @@ static int LuaOperatorNewAtomicU (lua_State *L)
 
     if ( len < 3 ||  len > 4)
     {
-    	return luaL_error(L,"Error in Martin.NewCoulomb: 3 or 4 arguments expected; got %u",len);
+    	return luaL_error(L,"Error in Martin.NewCoulomb: 3 or 4 arguments expected; got %d",len);
     }
 
     NF = (uint32_t)luaL_checkunsigned(L, 1);
@@ -72,17 +72,17 @@ static int LuaOperatorNewAtomicU (lua_State *L)
 
 		if (NfunsG > Nindices)
 		{
-			printf("Warning: Martin.Coulomb() number of basis funs (%u) != number of indices (%u)\n",NfunsG , Nindices);
+			printf("Warning: Martin.Coulomb() number of basis funs (%d) != number of indices (%d)\n",NfunsG , Nindices);
 			fflush(stdout);
 		}
 		else
 		{
 			if (NfunsG < Nindices)
 			{
-				return luaL_error(L, "Errorr: Martin.Coulomb() number of basis funs (%u) < number of indices (%u)\n",NfunsG , Nindices);
+				return luaL_error(L, "Errorr: Martin.Coulomb() number of basis funs (%d) < number of indices (%d)\n",NfunsG , Nindices);
 			}
 		}
-		if (indToK.size() != Nindices) printf("Warning: Martin.Coulomb() number of kappas (%u) != number of indices (%u)\n",(uint32_t)indToK.size() , Nindices);
+		if (indToK.size() != Nindices) printf("Warning: Martin.Coulomb() number of kappas (%d) != number of indices (%d)\n",(uint32_t)indToK.size() , Nindices);
 
 		vector<Interpolation::InterpolatingFunction *> funsG = vector<Interpolation::InterpolatingFunction *>(NfunsG);
 		for(uint32_t i = 0; i < NfunsG; i++)
@@ -95,7 +95,7 @@ static int LuaOperatorNewAtomicU (lua_State *L)
 		uint32_t NfunsF = (uint32_t)lua_objlen(L,4);
 		if (NfunsF != NfunsG)
 		{
-			return luaL_error(L,"Error in LuaOperatorNewCoulombFull: number of functions small part (%u) != large part (%u)\n",NfunsF,NfunsG);
+			return luaL_error(L,"Error in LuaOperatorNewCoulombFull: number of functions small part (%d) != large part (%d)\n",NfunsF,NfunsG);
 		}
 		vector<Interpolation::InterpolatingFunction *> funsF = vector<Interpolation::InterpolatingFunction *>(NfunsF);
 		for(uint32_t i = 0; i < NfunsF; i++)
@@ -133,14 +133,14 @@ static int LuaOperatorNewAtomicU (lua_State *L)
 
 		if (NfunsG > Nindices/2)
 		{
-			printf("Warning: Martin.Coulomb() number of basis funs (%u) != number of indices (%u)\n",NfunsG , Nindices/2);
+			printf("Warning: Martin.Coulomb() number of basis funs (%d) != number of indices (%d)\n",NfunsG , Nindices/2);
 			fflush(stdout);
 		}
 		else
 		{
 			if (NfunsG < Nindices/2)
 			{
-				return luaL_error(L, "Errorr: Martin.Coulomb() number of basis funs (%u) < number of indices (%u)\n",NfunsG , Nindices/2);
+				return luaL_error(L, "Errorr: Martin.Coulomb() number of basis funs (%d) < number of indices (%d)\n",NfunsG , Nindices/2);
 			}
 		}
 
@@ -180,7 +180,7 @@ static int LuaGetSlaterIntegrals (lua_State *L)
 
     if ( len < 2 ||  len > 3)
     {
-    	return luaL_error(L,"Error in LuaGetSlaterIntegrals: 2 or 3 arguments expected; got %u",len);
+    	return luaL_error(L,"Error in LuaGetSlaterIntegrals: 2 or 3 arguments expected; got %d",len);
     }
 
     orbitalNames = luaL_checkarray_string(L, 1);
@@ -192,14 +192,14 @@ static int LuaGetSlaterIntegrals (lua_State *L)
 
 		if (NfunsG > (uint32_t) indToK.size())
 		{
-			printf("Warning: LuaGetSlaterIntegrals number of basis funs (%u) != number of indices (%u)\n",NfunsG , (uint32_t) indToK.size());
+			printf("Warning: LuaGetSlaterIntegrals number of basis funs (%d) != number of indices (%d)\n",NfunsG , (uint32_t) indToK.size());
 			fflush(stdout);
 		}
 		else
 		{
 			if (NfunsG < (uint32_t) indToK.size())
 			{
-				return luaL_error(L, "Errorr: LuaGetSlaterIntegrals number of basis funs (%u) < number of indices (%u)\n",NfunsG , (uint32_t) indToK.size());
+				return luaL_error(L, "Errorr: LuaGetSlaterIntegrals number of basis funs (%d) < number of indices (%d)\n",NfunsG , (uint32_t) indToK.size());
 			}
 		}
 
@@ -214,7 +214,7 @@ static int LuaGetSlaterIntegrals (lua_State *L)
 		uint32_t NfunsF = (uint32_t)lua_objlen(L,3);
 		if (NfunsF != NfunsG)
 		{
-			return luaL_error(L,"Error in LuaGetSlaterIntegrals: number of functions small part (%u) != large part (%u)\n",NfunsF,NfunsG);
+			return luaL_error(L,"Error in LuaGetSlaterIntegrals: number of functions small part (%d) != large part (%d)\n",NfunsF,NfunsG);
 		}
 		vector<Interpolation::InterpolatingFunction *> funsF = vector<Interpolation::InterpolatingFunction *>(NfunsF);
 		for(uint32_t i = 0; i < NfunsF; i++)
@@ -237,14 +237,14 @@ static int LuaGetSlaterIntegrals (lua_State *L)
 
 		if (NfunsG > (uint32_t) indToK.size())
 		{
-			printf("Warning: LuaGetSlaterIntegrals number of basis funs (%u) != number of indices (%u)\n",NfunsG , (uint32_t) indToK.size());
+			printf("Warning: LuaGetSlaterIntegrals number of basis funs (%d) != number of indices (%d)\n",NfunsG , (uint32_t) indToK.size());
 			fflush(stdout);
 		}
 		else
 		{
 			if (NfunsG < (uint32_t) indToK.size())
 			{
-				return luaL_error(L, "Errorr: LuaGetSlaterIntegrals number of basis funs (%u) < number of indices (%u)\n",NfunsG , (uint32_t) indToK.size());
+				return luaL_error(L, "Errorr: LuaGetSlaterIntegrals number of basis funs (%d) < number of indices (%d)\n",NfunsG , (uint32_t) indToK.size());
 			}
 		}
 

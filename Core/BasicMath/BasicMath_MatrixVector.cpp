@@ -1942,7 +1942,7 @@ MatrixType MatrixExpand(const MatrixType M, const int size, const Complex16 newE
 	}
 	if (M.Ni != M.Nj)
 	{
-		cout << "Error in MatrixExpand: Input of nono-quadratic Matrix (size " << M.Ni << "x" << M.Ni << ".\n";
+		cout << "Error in MatrixExpand: Input of non-quadratic Matrix (size " << M.Ni << "x" << M.Ni << ".\n";
 		return nullMatrix();
 	}
 	vector < vector<MatrixType> > matMat = nullMatrixMatrix(2, 2);

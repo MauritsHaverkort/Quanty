@@ -8,6 +8,18 @@ B = {{ 10 , 1 , 3 },
      { 1 , 2 , 8}}
 setmetatable(B, MatrixMeta)
 
+Bdouble = Matrix.AddSpin(B)
+
+print(Bdouble)
+
+
+Bdouble = Matrix.AddSpin({{1,2},{1,2}})
+
+print(Bdouble)
+
+
+os.exit()
+
 BB = Matrix.Flatten({{B,B},{B,B}})
 
 Au = Matrix.ToUserdata(A)
