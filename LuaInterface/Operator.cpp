@@ -1950,7 +1950,8 @@ static int LuaOperatorChop(lua_State * L)
     break;
   }
   OperatorChop((OperatorType *) currentudata, border);
-  return 0;
+  OperatorSetMaxLength((OperatorType *) currentudata);
+  return 0;;
 }
 
 static int LuaOperatorSetName(lua_State * L)
