@@ -1139,6 +1139,7 @@ static int LuaChop(lua_State * L)
         ONew = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
         OperatorCopy(ONew, *O);
         OperatorChop(ONew, epsilon);
+        OperatorSetMaxLength(ONew);
         luaL_setmetatable(L, "Operator_Type");
         return 1;
       }
