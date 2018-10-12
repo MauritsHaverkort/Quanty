@@ -1443,6 +1443,22 @@ uint32_t OperatorRemoveSmallValues(OperatorType * const O, const double epsilon)
   return 0;
 }
 
+uint32_t OperatorSetMaxLength(OperatorType * const O)
+{
+  while((O->MaxLength!=0)&&(O->l[O->MaxLength].N==0))
+  {
+    free(O->l[O->MaxLength].KeyList);
+    if (O->l[O->MaxLength].NAloc)
+    {
+      free(O->l[O->MaxLength].o);
+      free(O->l[O->MaxLength].Next);
+      (O->l[O->MaxLength].QComplex) ? free(O->l[O->MaxLength].V) : free(O->l[O->MaxLength].VRe);
+    }
+    O->MaxLength--;
+  }
+  return 0;
+}
+
 /* Functions that determine if two particles are ordered or not.
  *  returns 0 if A is left of B
  *  returns 6 if A and B are fermions and A==B
