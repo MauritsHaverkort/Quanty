@@ -259,7 +259,7 @@ static int LuaGetMultipoleIntegral(lua_State *L)
 		Interpolation::InterpolatingFunction *f2 = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 3, "InterpolatingFunction_Type");
 		if (len == 4)
 		{
-			NknotsPerInterval = (uint32_t) luaL_checkunsigned(L,5);
+			NknotsPerInterval = (uint32_t) luaL_checkunsigned(L,4);
 		}
 		double result = Quad::GetMultipoleIntegral(*f1,*f2,k,NknotsPerInterval);
 		lua_pushnumber(L,result);
