@@ -69,6 +69,7 @@ uint32_t CreateOperatorFastCoulombRelativistic(uint32_t const NFermion,double **
 
     integrals = GetSlaterIntegrals(basisfuns,NbasisFuns,grid, NGridpoints, (const int **) tuple, NIntegrals);
     //PrintMaxSlaterIntegral(integrals,NIntegrals);
+    printf("%E\n",integrals[0].val[0]);
 
     int *k, i;
     unsigned int *n;
