@@ -18,12 +18,20 @@ IndList[#IndList+1] = AtomicIndices["unexcited"]
 IndList[#IndList+1] = AtomicIndices["excited"]
 
 for key1,inds in pairs(IndList) do
-    for key2,NF in pairs(NFList) do
+    for key2,N in pairs(NFList) do
         print("\n\n\n")
-        print("\nNF =",NF)
+        print("\nNF =",N)
         print("\nIndices:")
         print(inds)
         print("\nDeterminantString:")
-        print(DeterminantString(NF,inds))
+        print(DeterminantString(N,inds))
     end
 end
+
+print("\n\n\n")
+print("\nNF =",10)
+print("\nIndices:")
+print({1,2,3})
+print({5,6,7})
+print("\nDeterminantString:")
+print(DeterminantString(10,{1,2,3},{5,6,7}))

@@ -4479,22 +4479,27 @@ static int LuaStatistics(lua_State *L)
 static int LuaDeterminantString(lua_State *L)
 {
 	int NF;
-	vector<uint16_t> indices;
-	uint32_t len = (uint32_t)lua_gettop(L);
-	if (len < 2 || len > 2)
-		return luaL_error(L, "DeterminantString called with %d arguments. Number of Fermions and List of Indices expected.\n",len);
-	NF = (int)luaL_checkinteger(L,1);
-	indices = luaL_checkvector_unit16_t(L,2);
-	for (uint16_t i=0;i<indices.size();i++)
+	vector<uint16_t> indices, indTmp;
+	uint32_t len = (uint32_t) lua_gettop(L);
+	if (len < 2)
+		return luaL_error(L, "DeterminantString called with %d arguments. Number of Fermions and one or several Lists of Indices expected.\n", len);
+	NF = (int) luaL_checkinteger(L, 1);
+	for (int i = 2; i < len +1; ++i)
 	{
-		if (indices[i]<0 || indices[i]>=NF)
-			printf("\nWarning: Index %d is not within [0,NF-1]=[0,%d].\n", indices[i], NF-1);
+		indTmp = luaL_checkvector_unit16_t(L, i);
+		for (uint16_t i = 0; i < indTmp.size(); i++)
+		{
+			if (indTmp[i] < 0 || indTmp[i] >= NF)
+				printf("\nWarning: Index %d is not within [0,NF-1]=[0,%d].\n", indTmp[i], NF - 1);
+			else if (!isIntElementOf(indTmp[i], indices))
+				indices.push_back(indTmp[i]);
+		}
 	}
-	char det[NF+1];
+	char det[NF + 1];
 	det[NF] = '\0';
-	for (uint16_t i=0;i<NF;i++)
+	for (uint16_t i = 0; i < NF; i++)
 	{
-		if (isIntElementOf(i,indices))
+		if (isIntElementOf(i, indices))
 		{
 			det[i] = '1';
 		} else
@@ -4502,7 +4507,7 @@ static int LuaDeterminantString(lua_State *L)
 			det[i] = '0';
 		}
 	}
-	lua_pushstring(L,det);
+	lua_pushstring(L, det);
 	return 1;
 }
 
