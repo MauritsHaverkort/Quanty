@@ -4953,6 +4953,7 @@ static int LuaOrbitalRotationMatrix(lua_State * L)
 	if (isNullMatrix(rotMat))
 		return luaL_error(L, "Could not create rotation matrix.\n");
 	LuaPushTable_MatrixType(L, &rotMat);
+	FreeMatrix(&rotMat);
 	return 1;
 }
 
@@ -4984,6 +4985,7 @@ static int LuaYtojjzMatrix(lua_State * L)
 		returnMat = LargeRotationMatrix(orbs, YToJJzMatrix, true);
 	}
 	LuaPushTable_MatrixType(L, &returnMat);
+	FreeMatrix(&returnMat);
 	return 1;
 }
 
@@ -5032,6 +5034,7 @@ static int LuaYtoKMatrix(lua_State * L)
 		returnMat = LargeRotationMatrix(orbs, YToKMatrix, Options.addSpin);
 	}
 	LuaPushTable_MatrixType(L, &returnMat);
+	FreeMatrix(&returnMat);
 	return 1;
 }
 
@@ -5080,6 +5083,7 @@ static int LuaYtoZMatrix(lua_State * L)
 		returnMat = LargeRotationMatrix(orbs, YToZMatrix, Options.addSpin);
 	}
 	LuaPushTable_MatrixType(L, &returnMat);
+	FreeMatrix(&returnMat);
 	return 1;
 }
 
