@@ -48,7 +48,9 @@
 #include "BasicMath_Spline.cpp"
 
 #include "Interpolation/CubicSpline.cpp"
+#include "Interpolation/CubicHermiteSpline.cpp"
 #include "Interpolation/InterpolatingFunction.cpp"
+
 
 /*
  *   x^a with both x and a integers

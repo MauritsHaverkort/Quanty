@@ -68,6 +68,66 @@ static int LuaSplineInterpolate(lua_State * L)
   return luaL_error(L, "expected 2 or 4 arguments and not (%d)",len);
 }
 
+static int LuaCubicHermiteSplineInterpolate(lua_State * L)
+{
+	uint32_t i;
+	Interpolation::CubicHermiteSpline *fun;
+	double *xym;
+	uint32_t len = (uint32_t)lua_gettop(L);;
+	if(len<3)
+	{
+	return luaL_error(L, "Error in SplineInterpolate expected at least 3 arguments, not (%d)",len);
+	}
+	luaL_checktype(L, 1, LUA_TTABLE);
+	luaL_checktype(L, 2, LUA_TTABLE);
+	luaL_checktype(L, 3, LUA_TTABLE);
+	if(lua_objlen(L, 1)!=lua_objlen(L, 2))
+	{
+		return luaL_error(L, "Error, the length of the first table with x values (%d) needs to be the same as the length of the second table with y values (%d)",lua_objlen(L, 1),lua_objlen(L, 2));
+	}
+	if(lua_objlen(L, 1)!=lua_objlen(L, 3))
+	{
+		return luaL_error(L, "Error, the length of the first table with x values (%d) needs to be the same as the length of the third table with m values (%d)",lua_objlen(L, 1),lua_objlen(L, 3));
+	}
+	// we need to sort the input list acording to x
+	xym=(double*)malloc(3*lua_objlen(L, 1)*sizeof(double));
+	for(i=0;i<lua_objlen(L, 1);i++)
+	{
+		lua_rawgeti(L, 1, i+1);
+		xym[3*i]=(double)luaL_checknumber(L, -1);
+		lua_pop(L, 1);
+	}
+	for(i=0;i<lua_objlen(L, 1);i++)
+	{
+		lua_rawgeti(L, 2, i+1);
+		xym[3*i+1]=(double)luaL_checknumber(L, -1);
+		lua_pop(L, 1);
+	}
+	for(i=0;i<lua_objlen(L, 1);i++)
+	{
+		lua_rawgeti(L, 3, i+1);
+		xym[3*i+2]=(double)luaL_checknumber(L, -1);
+		lua_pop(L, 1);
+	}
+	qsort(xym, lua_objlen(L, 1), 3*sizeof(double), &qsortcomparedoubles);
+	// add the values to an Interpolating function type
+	void* memory = lua_newuserdata(L, sizeof(Interpolation::CubicHermiteSpline));
+	fun = new(memory)Interpolation::CubicHermiteSpline;
+	luaL_setmetatable(L, "InterpolatingFunction_Type");
+
+	std::vector<double> u = std::vector<double>(lua_objlen(L, 1));
+	std::vector<double> v = std::vector<double>(lua_objlen(L, 1));
+	std::vector<double> w = std::vector<double>(lua_objlen(L, 1));
+	for(i=0;i<lua_objlen(L, 1);i++)
+	{
+	u[i]=xym[3*i];
+	v[i]=xym[3*i+1];
+	w[i]=xym[3*i+2];
+	}
+	free(xym);
+	fun->Create(u,v,w);
+	return 1;
+}
 /*
  *
  */
@@ -185,6 +245,7 @@ static int LuaInterpolateDestroy(lua_State * L)
 
 static const struct luaL_Reg InterpolatingFunction_func[] = {
   {"Spline", LuaSplineInterpolate},
+  {"CubicHermiteSpline", LuaCubicHermiteSplineInterpolate},
   {NULL, NULL}
 };
 
