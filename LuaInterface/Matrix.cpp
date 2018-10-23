@@ -1468,7 +1468,7 @@ static int LuaSubmatrix(lua_State * L)
 	if (len != 2 && len != 3 && len != 5)
 	{
 		return luaL_error(L,
-				"Submatrix called with %d arguments. Expected either 2 (matrix and size of submatrix), 3 (matrix, number of rows and number of columns of submatrix) or 5 (matrix, first row index, number of rows, first column index, number of columns).\n",
+				"Submatrix called with %d arguments. Expected either 2 (matrix and size of submatrix), 3 (matrix, number of rows and number of columns of submatrix, or alternatively matrix, table with first and last index of row, table with first and last index of column) or 5 (matrix, first row index, number of rows, first column index, number of columns).\n",
 				len);
 	}
   // read matrix from stack
@@ -1492,9 +1492,31 @@ static int LuaSubmatrix(lua_State * L)
 	}
   else if (len == 3)
 	{
-		int rows = (int) luaL_checkinteger(L, 2);
-		int cols = (int) luaL_checkinteger(L, 3);
-		*Msub = Submatrix(*M, rows, cols);
+		if (lua_istable(L, 2) && lua_istable(L, 3))
+		{
+			if (lua_objlen(L, 2) != 2 || lua_objlen(L, 3) != 2)
+				return luaL_error(L, "Error, Submatrix expected input (M, {r0, rn}, {c0, cn}).");
+			lua_rawgeti(L, 2, 1);
+			int rowStart = (int) luaL_checkinteger(L, -1);
+			--rowStart;
+			lua_pop(L, 1);
+			lua_rawgeti(L, 2, 2);
+			int rows = (int) luaL_checkinteger(L, -1) - rowStart;
+			lua_pop(L, 1);
+			lua_rawgeti(L, 3, 1);
+			int colStart = (int) luaL_checkinteger(L, -1);
+			--colStart;
+			lua_pop(L, 1);
+			lua_rawgeti(L, 3, 2);
+			int cols = (int) luaL_checkinteger(L, -1) - colStart;
+			lua_pop(L, 1);
+			*Msub = Submatrix(*M, rowStart, rows, colStart, cols);
+		} else
+		{
+			int rows = (int) luaL_checkinteger(L, 2);
+			int cols = (int) luaL_checkinteger(L, 3);
+			*Msub = Submatrix(*M, rows, cols);
+		}
 	}
   else if (len == 5)
 	{
