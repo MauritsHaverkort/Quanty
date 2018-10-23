@@ -17,9 +17,11 @@ private:
 	std::vector<double> m;
 public:
 	CubicHermiteSpline();
+	CubicHermiteSpline(const std::vector<double> &u, const std::vector<double> &v);
 	CubicHermiteSpline(const std::vector<double> &u, const std::vector<double> &v, const std::vector<double> &w);
 	virtual ~CubicHermiteSpline();
 
+	void Create(const std::vector<double> &u, const std::vector<double> &v);
 	void Create(const std::vector<double> &u, const std::vector<double> &v, const std::vector<double> &w);
 
 	double operator()(double t);
