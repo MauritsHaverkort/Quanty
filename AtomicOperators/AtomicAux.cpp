@@ -204,11 +204,13 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
 			}
 
 		}
+		LuaPushArray_double(L,&x[0],x.size());
 		free(orbitalNames);
-		return 2;
+		return 3;
 	}
+	LuaPushArray_double(L,&x[0],x.size());
 	free(orbitalNames);
-	return 1;
+	return 2;
 }
 
 static int LuaGetMultipoleBesselIntegral(lua_State *L)
