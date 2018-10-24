@@ -1215,8 +1215,46 @@ static int LuaMatrixPow(lua_State * L)
  */
 static int LuaMatrixToString(lua_State * L)
 {
-  lua_pushfstring(L, "Matrix in userdata format use ToTable() in order to get a table form");
-  return 1;
+	CompactMatrixType *A;
+	A = (CompactMatrixType *) luaL_checkCompactMatrix(L, 1);
+	std::stringstream sstream;
+	int colWidth;
+	for (int i = 0; i < A->Ni; ++i)
+	{
+		if (i == 0)
+			sstream << "{ { ";
+		else
+			sstream << "  { ";
+		for (int j = 0; j < A->Nj; ++j)
+		{
+			if (j != 0)
+				sstream << ", ";
+			if (A->QComplex)
+			{
+				colWidth = 12;
+				string tmpStr = numberToStringMaxWidth(A->V[j + i * (A->Nj)].Re, colWidth / 2);
+				if (A->V[j + i * (A->Nj)].Im < 0)
+					tmpStr += " -";
+				else
+					tmpStr += " +";
+				tmpStr += numberToStringMaxWidth(Abs(A->V[j + i * (A->Nj)].Im), colWidth - tmpStr.length() - 1);
+				sstream << tmpStr << " i";
+				sstream << blankFill(colWidth, tmpStr.length());
+			} else
+			{
+				colWidth = 7;
+				string tmpStr = numberToStringMaxWidth(A->VRe[j + i * (A->Nj)], colWidth - 1);
+				sstream << tmpStr;
+				sstream << blankFill(colWidth, tmpStr.length());
+			}
+		}
+		if (i == A->Ni - 1)
+			sstream << "} }" << endl;
+		else
+			sstream << "} ," << endl;
+	}
+	lua_pushstring(L, sstream.str());
+	return 1;
 }
 
 

@@ -1583,12 +1583,9 @@ string numberToStringMaxWidth(double num, int maxWidth)
 		--maxWidth;
 	if (Abs(num) < 1)
 	{
-		if (Abs(num) > pow(10,-powerDigits-2) || num == 0)
+		if (Abs(num) > pow(10,-powerDigits-1) || num == 0)
 		{
-			if (maxWidth + power - 1 > 0)
-				sstr.precision(maxWidth + power - 1);
-			else
-				sstr.precision(1);
+			sstr.precision(maxWidth + power - 1);
 			sstr << num;
 		} else
 		{
@@ -1598,7 +1595,7 @@ string numberToStringMaxWidth(double num, int maxWidth)
 				sstr.precision(1);
 			sstr << num * pow(10, -power) << "e" << power;
 		}
-	} else if (Abs(num) > pow(10, maxWidth - 1))
+	} else if (Abs(num) >= pow(10, maxWidth -1))
 	{
 		if (maxWidth - powerDigits - 2 > 0)
 			sstr.precision(maxWidth - powerDigits - 2);
@@ -1608,7 +1605,7 @@ string numberToStringMaxWidth(double num, int maxWidth)
 	} else
 	{
 		if (maxWidth - 1 > 0)
-			sstr.precision(maxWidth - 1);
+			sstr.precision(maxWidth -1);
 		else
 			sstr.precision(1);
 		sstr << num;
@@ -1625,21 +1622,23 @@ void numberOutMaxWidth(double num, int maxWidth)
 	cout << numberToStringMaxWidth(num,maxWidth);
 }
 
-void fillWithBlank(int width, string::size_type occupiedSpace)
+string blankFill(int width, string::size_type occupiedSpace)
 {
+	std::stringstream sstream;
 	if (occupiedSpace >= width)
 	{
-		cout << " ";
+		sstream << " ";
 	} else
 	{
 		for (int i = 0; i < width - occupiedSpace; ++i)
-			cout << " ";
+			sstream << " ";
 	}
+	return sstream.str();
 }
 
-void fillWithBlank(int width)
+string blankFill(int width)
 {
-	fillWithBlank(width,0);
+	return blankFill(width,0);
 }
 
 void printExpectationValues(const vector < WaveFunctionType >  psiList, OperatorType  hamil, const vector < OperatorType >  opList, bool hasHamiltonian, bool sortByEnergy, bool printSigma, double zero, int printHeaderEvery, int colWidth)
@@ -1710,7 +1709,7 @@ void printExpectationValues(const vector < WaveFunctionType >  psiList, Operator
 		if (i == 0 || (printHeaderEvery > 0 && i % printHeaderEvery == 0))
 			printExpectationValuesHeader(opList, hasHamiltonian, printSigma, colWidth);
 		int maxISize = findPower(psiList.size()) + 1;
-		fillWithBlank(colWidth - 2, maxISize);
+		cout << blankFill(colWidth - 2, maxISize);
 		cout.width(maxISize);
 		cout << (i + 1);
 		cout << "  ";
@@ -1721,7 +1720,7 @@ void printExpectationValues(const vector < WaveFunctionType >  psiList, Operator
 				out = 0;
 			string outStr = numberToStringMaxWidth(out, colWidth - 1);
 			cout << outStr;
-			fillWithBlank(colWidth, outStr.length());
+			cout << blankFill(colWidth, outStr.length());
 		}
 		if (hasHamiltonian && printSigma)
 		{
@@ -1736,11 +1735,11 @@ void printExpectationValues(const vector < WaveFunctionType >  psiList, Operator
 void printExpectationValuesHeader(const vector < OperatorType > opList, bool hasHamiltonian, bool printSigma, int colWidth)
 {
 	cout << endl;
-	fillWithBlank(colWidth);
+	blankFill(colWidth);
 	if (hasHamiltonian)
 	{
 		cout << "E";
-		fillWithBlank(colWidth,1);
+		cout << blankFill(colWidth,1);
 	}
 	for (int i = 0; i < opList.size(); ++i)
 	{
@@ -1750,7 +1749,7 @@ void printExpectationValuesHeader(const vector < OperatorType > opList, bool has
 			name = name.substr(0,colWidth-1);
 		}
 		cout << name;
-		fillWithBlank(colWidth, name.length());
+		cout << blankFill(colWidth, name.length());
 	}
 	if (hasHamiltonian && printSigma)
 		cout << "std-dev";
