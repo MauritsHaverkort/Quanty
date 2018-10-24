@@ -250,20 +250,38 @@ static int LuaInterpolateMode(lua_State * L)
  */
 static int LuaInterpolateCall(lua_State * L)
 {
-  Interpolation::InterpolatingFunction *fun = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
-  if (lua_istable(L,2))
-  {
-	  vector<double> x = luaL_checkarray_double(L,2);
-	  vector<double> y = (*fun)(x);
-	  LuaPushArray_double(L, &y[0],(int)y.size());
-  }
-  else
-  {
-	  double x=luaL_checknumber(L, 2);
-	  lua_pushnumber(L, (*fun)(x));
-  }
+	uint32_t len = (uint32_t)lua_gettop(L);
+	Interpolation::InterpolatingFunction *fun = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
+	if (lua_istable(L,2))
+	{
+		vector<double> x = luaL_checkarray_double(L,2);
+		if (len == 3)
+		{
+			uint32_t k = luaL_checkunsigned(L,3);
+			vector<double> y = (*fun)(x,k);
+			LuaPushArray_double(L, &y[0],(int)y.size());
+		}
+		else
+		{
+			vector<double> y = (*fun)(x);
+			LuaPushArray_double(L, &y[0],(int)y.size());
+		}
+	}
+	else
+	{
+		double x=luaL_checknumber(L, 2);
+		if (len == 3)
+		{
+			uint32_t k = luaL_checkunsigned(L,3);
+			lua_pushnumber(L, (*fun)(x,k));
+		}
+		else
+		{
+			lua_pushnumber(L, (*fun)(x));
+		}
+	}
 
-  return 1;
+	return 1;
 }
 /*
  *

@@ -31,6 +31,7 @@ public:
 	virtual double operator()(double t);
 	virtual double operator()(double t, unsigned int k);
 	virtual std::vector<double> operator()(const std::vector<double> &t);
+	virtual std::vector<double> operator()(const std::vector<double> &t, unsigned int k);
 
 };
 
