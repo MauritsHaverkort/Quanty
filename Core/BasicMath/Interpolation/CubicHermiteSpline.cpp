@@ -105,7 +105,25 @@ double CubicHermiteSpline::operator()(double t, unsigned int k)
 }
 std::vector<double> CubicHermiteSpline::operator()(const std::vector<double> &t)
 {
-	std::vector<double> val;
+	std::vector<double> val = std::vector<double>(t.size());
+	uint32_t i = 1;
+	for (uint32_t j = 0; j < t.size(); j++)
+	{
+		while (t[j] > x[i] && i < x.size()-1)
+		{
+			i++;
+		}
+		double d  = x[i]-x[i-1];
+		double tx = (t[j]-x[i-1])/d;
+		val[j] = y[i-1]  + tx * (m[i-1]*d + tx * (3*(y[i]-y[i-1]) - d*(2*m[i-1]+m[i]) + tx * (2*(y[i-1]-y[i]) + d*(m[i-1]+m[i]))));
+		if(j < t.size()-1) //TODO improve that
+		{
+			if (t[j+1] < t[j])
+			{
+				i = 1;
+			}
+		}
+	}
 	return val;
 }
 
