@@ -7,6 +7,7 @@
 #include "MartinsLittleHelper.cpp"
 #include "Old_SlaterIntegrals.cpp"
 #include "CreateOperators.cpp"
+#include "PlotSpectrumWithSelfEnergy.cpp"
 
 
 static int LuaOperatorNewFullCoulomb (lua_State *L)
@@ -488,6 +489,67 @@ static int LuaMartinTest(lua_State *L)
 	return 0;
 }
 
+static int LuaPlotSpectrumWithSelfEnergy(lua_State *L)
+{
+	double wMin, wMax,dw, gH, gS;
+	std::vector<double> psi, H; // TODO make H generic: either Matrix, TriDiagonalMatrix or DiagonalMatrix
+	std::vector<ResponsefunctionType *> SigmaRes;
+	uint32_t len = lua_gettop(L);
+	if (len != 8)
+	{
+		return luaL_error(L,"PlotSpectrumWithSelfEnergy needs 8 arguments not %d\n",len);
+	}
+	H   = luaL_checkarray_double(L,1);
+	psi = luaL_checkarray_double(L,2);
+	if (H.size() != psi.size())
+	{
+		return luaL_error(L,"PlotSpectrumWithSelfEnergy: Hamiltonian and ground state do not have the same dimensions - dim(H) = %d and dim(psi) = %d\n",H.size(),psi.size());
+	}
+	luaL_checktype(L, 3, LUA_TTABLE);
+	uint32_t lenSigma = lua_objlen(L,3);
+	SigmaRes.reserve(lenSigma);
+	for(uint32_t i = 1; i <= lenSigma; i++)
+	{
+		lua_rawgeti(L,3,i);
+		SigmaRes.push_back(luaL_checkResponsefunction(L,-1));
+		lua_pop(L,1);
+	}
+	if (((BlockTriDiagonalMatrixType*)SigmaRes[0]->data)->BlockSize != H.size())
+	{
+		return luaL_error(L,"PlotSpectrumWithSelfEnergy: self energy and Hamiltonian do not have the same dimensions - dim(H) = %d and dim(Sigma) = %d\n",H.size(),((BlockTriDiagonalMatrixType*)SigmaRes[0]->data)->BlockSize);
+	}
+	gH   = luaL_checknumber(L,4);
+	gS   = luaL_checknumber(L,5);
+	wMin = luaL_checknumber(L,6);
+	wMax = luaL_checknumber(L,7);
+	dw   = luaL_checknumber(L,8);
+	if (wMin >= wMax || dw <= 0)
+	{
+		return luaL_error(L,"PlotSpectrumWithSelfEnergy: cannot plot range [%f,%f] in steps of %f\n",wMin,wMax,dw);
+	}
+
+	uint32_t lenW = floor((wMax-wMin)/dw) + 1;
+	std::vector<std::vector<double> > graph = std::vector<std::vector<double> >(lenW);
+	double w = wMin;
+	for (uint32_t i = 0; i < lenW; i++)
+	{
+		graph[i] = std::vector<double>(2);
+		graph[i][0] = w;
+		graph[i][1] = EvaluateResponseFunction(w,gH,gS,H,SigmaRes,psi);
+		//w += dw;
+		w = wMin + i*dw;
+	}
+
+	lua_createtable(L,graph.size(),0);
+	for (uint32_t i = 0; i < graph.size(); i++)
+	{
+		LuaPushArray_double(L,&(graph[i][0]),2);
+		lua_rawseti(L,-2,i+1);
+	}
+
+	return 1;
+}
+
 static const struct luaL_Reg Martin_meta[] = {
   {NULL, NULL}
 };
@@ -531,6 +593,7 @@ static const struct luaL_Reg Martin_func[] = {
   /*{"Propagator",LuaPropagator},
   {"Propagator2",LuaPropagator2},*/
   {"Metric",LuaMetricWaveFuns},
+  {"PlotSpectrumWithSelfEnergy",LuaPlotSpectrumWithSelfEnergy},
   {NULL, NULL}
 };
 
