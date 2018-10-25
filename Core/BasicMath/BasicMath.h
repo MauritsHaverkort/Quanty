@@ -42,6 +42,7 @@ double FindSelfconsistentnumber(double const *valin, double const *valout, uint3
 void ReciprocalLatticeVector(double r[3][3], double g[3][3], uint32_t const Units);
 int findPower(double num, int power);
 int findPower(double num);
+double round(double num, double precision);
 bool matrixSorterByFirstValue(vector<double> v1, vector<double> v2);
 bool Test_uint8_t_array_in_range(const uint8_t min, const uint8_t max, uint8_t *l, const uint32_t N);
 bool Test_uint16_t_array_in_range(const uint16_t min, const uint16_t max, uint16_t *l, const uint32_t N);
