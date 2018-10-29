@@ -4926,7 +4926,7 @@ static int LuaRelToNonRelOrbitals(lua_State * L)
 	}
 	vector<string> orbs = luaL_checkvector_string(L,1);
 	orbs = groupedRelOrbitals(orbs);
-	LuaPushVector_string(L,relToNonRelOrbs(orbs));
+	lua_push(L,relToNonRelOrbs(orbs));
 	return 1;
 }
 
@@ -4938,7 +4938,7 @@ static int LuaNonRelToRelOrbitals(lua_State * L)
 		return luaL_error(L, "NonRelToRelOrbitals called with %d arguments. Only list of orbitals expected.\n", len);
 	}
 	vector<string> orbs = luaL_checkvector_string(L,1);
-	LuaPushVector_string(L,nonRelToRelOrbs(orbs));
+	lua_push(L,nonRelToRelOrbs(orbs));
 	return 1;
 }
 

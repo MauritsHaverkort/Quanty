@@ -171,15 +171,15 @@ vector<string> luaL_checkvector_string(lua_State *L, int narg)
 	}
 }
 
-void LuaPushVector_string(lua_State *L, const vector<string> in)
-{
-	lua_createtable(L, (int) in.size(), 0);
-	for (uint32_t i = 0; i < in.size(); i++)
-	{
-		lua_pushstring(L, in[i]);
-		lua_rawseti(L, -2, i + 1);
-	}
-}
+//void LuaPushVector_string(lua_State *L, const vector<string> in)
+//{
+//	lua_createtable(L, (int) in.size(), 0);
+//	for (uint32_t i = 0; i < in.size(); i++)
+//	{
+//		lua_pushstring(L, in[i]);
+//		lua_rawseti(L, -2, i + 1);
+//	}
+//}
 
 LUA_API void lua_getfield (lua_State *L, int idx, const string str)
 {
@@ -3256,4 +3256,78 @@ uint32_t FreeSelfEnergyArrayFromLua(uint32_t NSigma, OperatorType **V, SpectraTy
   free(SonGrid);
   free(SasMatrix);
   return 0;
+}
+
+
+template<typename T>
+void lua_pushvector(lua_State *L, const vector<T> &pushkin)
+{
+	lua_createtable(L, (int)pushkin.size(), 0);
+	for (uint32_t i = 0; i < pushkin.size(); ++i)
+	{
+		lua_push(L, pushkin[i]);
+		lua_rawseti(L, -2, i + 1);
+	}
+}
+
+template<typename keyType, typename valType>
+void lua_pushmap(lua_State * L, const map<keyType, valType> &pushkin)
+{
+	lua_newtable(L);
+	int top = (int) lua_gettop(L);
+	typename map<keyType, valType>::const_iterator iter;
+	for (iter = pushkin.begin(); iter != pushkin.end(); ++iter)
+	{
+		lua_push(L, iter->first);
+		lua_push(L, iter->second);
+		lua_settable(L, top);
+	}
+}
+
+
+void lua_push(lua_State * L, const double pushkin)
+{
+	lua_pushnumber(L, pushkin);
+}
+
+void lua_push(lua_State * L, const lua_Integer pushkin)
+{
+	lua_pushinteger(L,pushkin);
+}
+
+void lua_push(lua_State * L, const int pushkin)
+{
+	lua_push(L, (lua_Integer)pushkin);
+}
+
+void lua_push(lua_State * L, const char * pushkin)
+{
+	lua_pushstring(L, pushkin);
+}
+
+void lua_push(lua_State * L, const string pushkin)
+{
+	lua_push(L, pushkin.c_str());
+}
+
+template <typename T>
+void lua_push(lua_State * L, const vector<T> &pushkin)
+{
+	lua_pushvector(L ,pushkin);
+}
+
+void lua_push(lua_State * L, const CompactMatrixType * pushkin)
+{
+	LuaPushTable_CompactMatrixType(L, pushkin);
+}
+
+void lua_push(lua_State * L, const MatrixType * pushkin)
+{
+	LuaPushTable_MatrixType(L, pushkin);
+}
+
+template<typename keyType, typename valType>
+void lua_push(lua_State * L, const map<keyType, valType> &pushkin)
+{
+	lua_pushmap(L, pushkin);
 }
