@@ -30,6 +30,7 @@ const vector<WaveFunctionType> luaL_checkvector_WaveFunctionType(lua_State *L, i
 WaveFunctionType** luaL_checkarray_PointerWaveFunctionType(lua_State *L, int narg, uint32_t *len_out);
 OperatorType* luaL_checkarray_OperatorType(lua_State *L, int narg, uint32_t *len_out);
 const vector<OperatorType> luaL_checkvector_OperatorType(lua_State *L, int narg);
+map<string, vector<string> > lua_checkGroupings(lua_State *L, const int pos);
 void luaL_setarray_DeterminatRestrictionType(lua_State *L, int narg, DeterminantRestrictionType * buff);
 DeterminantRestrictionType* luaL_checkarray_DeterminantRestrictionType(lua_State *L, int narg);
 HarmonicsExpansion* luaL_checkarray_HarmonicsExpansion(lua_State *L, int narg);
