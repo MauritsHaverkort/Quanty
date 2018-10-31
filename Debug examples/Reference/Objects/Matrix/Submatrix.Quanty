@@ -21,9 +21,12 @@ for key1,rowStart in pairs(starts) do
         for key3,colStart in pairs(starts) do
             for key4, cols in pairs(sizes) do
                 print("\n\n\nRowStart = "..rowStart)
+                print("RowStart + Rows - 1 = "..(rowStart + rows - 1))
                 print("Rows = "..rows)
                 print("ColStart = "..colStart)
+                print("ColStart + Cols - 1 = "..(colStart + cols - 1))
                 print("Cols = "..cols)
+                
                 print("Real submatrix (2 arguments):")
                 print(Matrix.Sub(MReal, rows))
                 print("Complex submatrix (2 arguments):")
@@ -38,6 +41,11 @@ for key1,rowStart in pairs(starts) do
                 print(Matrix.Sub(MReal, rowStart, rows, colStart, cols))
                 print("Complex submatrix (5 arguments):")
                 print(Matrix.Sub(MComplex, rowStart, rows, colStart, cols))
+                
+                print("Real submatrix (5 arguments, variant 2):")
+                print(Matrix.Sub(MReal, {rowStart, rowStart + rows - 1}, {colStart, colStart + cols - 1}))
+                print("Complex submatrix (5 arguments, variant 2):")
+                print(Matrix.Sub(MComplex, {rowStart, rowStart + rows - 1}, {colStart, colStart + cols - 1}))
             end
         end
     end

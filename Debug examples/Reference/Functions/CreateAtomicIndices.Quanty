@@ -3,7 +3,7 @@ OrbList[#OrbList+1] = {"1s"}
 OrbList[#OrbList+1] = {"1s","2s","2p"}
 OrbList[#OrbList+1] = {"13f"}
 OrbList[#OrbList+1] = {"Noodles","Mind the Gap","Barely Used","Stuff","Hug"}
-OrbList[#OrbList+1] = {"1s","13g","1s","Test"}
+OrbList[#OrbList+1] = {"1s","13g","Test"}
 OrbList[#OrbList+1] = {"1s","2s","2p","3s","3p","3d","4s","4p","4d","4f","5s","5p","5d","5f","5g","6s","6p","6d","6f","6g","6h","7s","7p","7d","7f","7g","8s","8p","8d","8f","9s","9p","9d","10s","10p","11s"}
 
 

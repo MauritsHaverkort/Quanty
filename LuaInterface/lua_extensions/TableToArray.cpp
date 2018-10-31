@@ -171,16 +171,6 @@ vector<string> luaL_checkvector_string(lua_State *L, int narg)
 	}
 }
 
-void LuaPushVector_string(lua_State *L, const vector<string> in)
-{
-	lua_createtable(L, (int) in.size(), 0);
-	for (uint32_t i = 0; i < in.size(); i++)
-	{
-		lua_pushstring(L, in[i]);
-		lua_rawseti(L, -2, i + 1);
-	}
-}
-
 LUA_API void lua_getfield (lua_State *L, int idx, const string str)
 {
 	return lua_getfield(L, idx,str.c_str());
@@ -1927,6 +1917,36 @@ const vector<OperatorType> luaL_checkvector_OperatorType(lua_State *L, int narg)
 	}
 }
 
+map<string, vector<string> > lua_checkGroupings(lua_State *L, const int pos)
+{
+	luaL_checktype(L, pos, LUA_TTABLE); //{{"unexcited",{"1s","2s"}},...}
+	map<string, vector<string> > groupings;
+	for (int i = 1; i < (int) lua_objlen(L, pos) + 1; i++)
+	{
+		lua_rawgeti(L, pos, i);
+		luaL_checktype(L, -1, LUA_TTABLE); //{"unexcited",{"1s","2s"}}
+		if ((int) lua_objlen(L, -1) > 0)
+		{
+			if ((int) lua_objlen(L, -1) != 2)
+			{
+				printf("\nWarning: Groupings of orbitals need to be 2-element tables in the format {groupName,{listOfOrbitals}}. Table %d has %d elements.\n", i, (int) lua_objlen(L, -1));
+			}
+
+			lua_rawgeti(L, -1, 1);
+			string groupKey = luaL_checkstring(L, -1); //"unexcited"
+			lua_pop(L, 1);
+
+			lua_rawgeti(L, -1, 2);
+			vector < string > groupMembers = luaL_checkvector_string(L, -1); //{"1s","2s"}
+			lua_pop(L, 1);
+
+			groupings.insert( { groupKey, groupMembers });
+			lua_pop(L, 1);
+		}
+	}
+	return groupings;
+}
+
 void luaL_setarray_DeterminatRestrictionType(lua_State *L, int narg, DeterminantRestrictionType * buff)
 {
   uint32_t NFermion,NBoson,i;
@@ -3256,4 +3276,78 @@ uint32_t FreeSelfEnergyArrayFromLua(uint32_t NSigma, OperatorType **V, SpectraTy
   free(SonGrid);
   free(SasMatrix);
   return 0;
+}
+
+
+template<typename T>
+void lua_pushvector(lua_State *L, const vector<T> &pushkin)
+{
+	lua_createtable(L, (int)pushkin.size(), 0);
+	for (uint32_t i = 0; i < pushkin.size(); ++i)
+	{
+		lua_push(L, pushkin[i]);
+		lua_rawseti(L, -2, i + 1);
+	}
+}
+
+template<typename keyType, typename valType>
+void lua_pushmap(lua_State * L, const map<keyType, valType> &pushkin)
+{
+	lua_newtable(L);
+	int top = (int) lua_gettop(L);
+	typename map<keyType, valType>::const_iterator iter;
+	for (iter = pushkin.begin(); iter != pushkin.end(); ++iter)
+	{
+		lua_push(L, iter->first);
+		lua_push(L, iter->second);
+		lua_settable(L, top);
+	}
+}
+
+
+void lua_push(lua_State * L, const double pushkin)
+{
+	lua_pushnumber(L, pushkin);
+}
+
+void lua_push(lua_State * L, const lua_Integer pushkin)
+{
+	lua_pushinteger(L,pushkin);
+}
+
+void lua_push(lua_State * L, const int pushkin)
+{
+	lua_push(L, (lua_Integer)pushkin);
+}
+
+void lua_push(lua_State * L, const char * pushkin)
+{
+	lua_pushstring(L, pushkin);
+}
+
+void lua_push(lua_State * L, const string pushkin)
+{
+	lua_push(L, pushkin.c_str());
+}
+
+template <typename T>
+void lua_push(lua_State * L, const vector<T> &pushkin)
+{
+	lua_pushvector(L ,pushkin);
+}
+
+void lua_push(lua_State * L, const CompactMatrixType * pushkin)
+{
+	LuaPushTable_CompactMatrixType(L, pushkin);
+}
+
+void lua_push(lua_State * L, const MatrixType * pushkin)
+{
+	LuaPushTable_MatrixType(L, pushkin);
+}
+
+template<typename keyType, typename valType>
+void lua_push(lua_State * L, const map<keyType, valType> &pushkin)
+{
+	lua_pushmap(L, pushkin);
 }

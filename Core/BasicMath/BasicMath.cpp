@@ -413,6 +413,11 @@ int findPower(double num)
 	return findPower(num, 0);
 }
 
+double round(double num, double precision)
+{
+	return round(num/precision)*precision;
+}
+
 bool matrixSorterByFirstValue(vector<double> v1, vector<double> v2)
 {
 	return (v1[0] < v2[0]);

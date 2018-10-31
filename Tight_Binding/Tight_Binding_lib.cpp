@@ -2344,6 +2344,14 @@ int kappa(string orb)
 		return jzNumbers/2;
 }
 
+vector<int> kappas(const vector<string> &orbs)
+{
+	vector<int> kappas(orbs.size());
+	for (int i = 0; i < kappas.size(); ++i)
+		kappas[i] = kappa(orbs[i]);
+	return kappas;
+}
+
 int orbToMultiplicity(string orb)
 {
 	int multiplicity = 2 * nonRelAngularMomentumZNumbers(orb);
@@ -3167,4 +3175,87 @@ MatrixType LargeRotationMatrix(vector<string> orbitals, MatrixType (*mat)(int, b
 	for (int i = 0; i < orbitals.size(); ++i)
 		multiplicities[i] = orbToMultiplicity(orbitals[i]);
 	return LargeRotationMatrix(multiplicities, mat, addSpin);
+}
+
+//TODO: Anyone have a better idea where to put this?
+template<typename T>
+vector<T> dictToList(const map<string, T> &dict, const vector<string> &keys)
+{
+	vector<T> list;
+	typename map<string, T>::const_iterator iter;
+	for (int i = 0; i < keys.size(); ++i)
+	{
+		iter = dict.find(keys[i]);
+		if (iter != dict.end())
+			list.push_back(iter->second);
+		else
+			cout << "Warning: No entry \"" << keys[i] << "\" was found in dictionary!" << endl;
+	}
+	return list;
+}
+
+
+map<string, vector<int> > createAtmoicIndicesDict(const vector<string> &orbitals)
+{
+	map<string, vector<int> > allIndices;
+	int offset = 0;
+	for (int i = 0; i < orbitals.size(); ++i)
+	{
+		string orb = orbitals[i];
+		int multiplicity = orbToMultiplicity(orb);
+		if (multiplicity > 0)
+		{
+			vector<int> orbIndices(multiplicity);
+			for (int j = 0; j < multiplicity; ++j)
+				orbIndices[j] = offset + j;
+			allIndices.insert( { orb, orbIndices });
+			if (!isRelOrbital(orb))
+			{
+				vector<int> orbIndicesDn(multiplicity / 2);
+				vector<int> orbIndicesUp(multiplicity / 2);
+				for (int j = 0; j < multiplicity / 2; ++j)
+				{
+					orbIndicesDn[j] = offset + 2 * j;
+					orbIndicesUp[j] = offset + 2 * j + 1;
+				}
+				allIndices.insert( { orb + "_Dn", orbIndicesDn });
+				allIndices.insert( { orb + "_Up", orbIndicesUp });
+			}
+			offset += multiplicity;
+		} else
+		{
+			cout << "\nWarning: Key \"" << orb << "\" could not be interpreted as an orbital.\n";
+		}
+	}
+	return allIndices;
+}
+
+
+void groupOrbitals(map<string, vector<int> > &allIndices, map<string, vector<string> > &groupings)
+{
+	map<string, vector<string> >::const_iterator iter;
+	for (iter = groupings.begin(); iter != groupings.end(); ++iter)
+	{
+		string groupKey = iter->first;
+		vector < string > groupMembers = iter->second;
+		vector<int> indices;
+		for (int i = 0; i < groupMembers.size(); ++i)
+		{
+			string groupMember = groupMembers[i];
+			map<string, vector<int> >::const_iterator groupMemberIter = allIndices.find(groupMember);
+			if (groupMemberIter != allIndices.end())
+			{
+				vector<int> groupMemberIndices = groupMemberIter->second;
+				for (int j = 0; j < groupMemberIndices.size(); ++j)
+				{
+					if (!isIntElementOf(groupMemberIndices[j], indices))
+						indices.push_back(groupMemberIndices[j]);
+				}
+			} else
+			{
+				cout << "Warning: Orbital \"" << groupMember << "\" could not be found." << endl;
+			}
+		}
+		allIndices.insert( { groupKey, indices });
+	}
 }
