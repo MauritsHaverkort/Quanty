@@ -1665,5 +1665,6 @@ static const struct luaL_Reg MatrixTable_meta[] = {
   {"__mul", LuaMatrixMul},
   {"__div", LuaMatrixDiv},
   {"__pow", LuaMatrixPow},
+	{"__eq", LuaMatrixEq},
   {NULL, NULL}
 };
