@@ -12,7 +12,7 @@ OptList[#OptList+1] = {}
 OptList[#OptList+1] = {{}}
 OptList[#OptList+1] = {{"unexcited",{"1s","2s"}}}
 OptList[#OptList+1] = {{"very special",{"1s_Dn","2s_Up"}}}
-OptList[#OptList+1] = {{"2s",{"1s"}} , {"unexcited",{"1s","2p"},"not supposed to be here"} , {"laser",{"2p","3s"}} }
+OptList[#OptList+1] = {{"2s",{"1s"}} , {"unexcited",{"1s","2p"}} , {"laser",{"2p","3s"}} }
 
 for key1,orbs in pairs(OrbList) do
     print("\n\n\n")
