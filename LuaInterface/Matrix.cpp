@@ -1576,6 +1576,51 @@ static int LuaSubmatrix(lua_State * L)
   return 1;
 }
 
+static int LuaMatrixEq(lua_State * L)
+{
+	CompactMatrixType *l, *r;
+	uint32_t elem;
+	// read matrix from stack
+	l = luaL_checkCompactMatrix(L, 1);
+	r = luaL_checkCompactMatrix(L, 2);
+	if ((l->Ni != r->Ni) || (l->Nj != r->Nj) || (l->QComplex != r->QComplex))
+	{
+		lua_push(L, false);
+		return 1;
+	}
+	if (l->QComplex)
+	{
+		for (uint32_t i = 0; i < l->Ni; ++i)
+		{
+			for (uint32_t j = 0; j < l->Nj; ++j)
+			{
+				elem = i * l->Nj + j;
+				if ((l->V[elem].Re != r->V[elem].Re) || (l->V[elem].Im != r->V[elem].Im))
+				{
+					lua_push(L, false);
+					return 1;
+				}
+			}
+		}
+	} else
+	{
+		for (uint32_t i = 0; i < l->Ni; ++i)
+		{
+			for (uint32_t j = 0; j < l->Nj; ++j)
+			{
+				elem = i * l->Nj + j;
+				if (l->VRe[elem] != r->VRe[elem])
+				{
+					lua_push(L, false);
+					return 1;
+				}
+			}
+		}
+	}
+	lua_push(L, true);
+	return 1;
+}
+
 
 static const struct luaL_Reg Matrix_func[] = {
 	{"AddSpin", LuaMatrixAddSpin},
@@ -1606,6 +1651,7 @@ static const struct luaL_Reg Matrix_meta[] = {
   {"__mul", LuaMatrixMul},
   {"__div", LuaMatrixDiv},
   {"__pow", LuaMatrixPow},
+	{"__eq", LuaMatrixEq},
   {"__tostring", LuaMatrixToString},
   {"__index", LuaMatrixIndex},
   {"__gc", LuaMatrixDestroy},

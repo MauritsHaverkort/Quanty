@@ -81,3 +81,4 @@ template <typename T>void lua_push(lua_State * L, const vector<T> &pushkin);
 void lua_push(lua_State * L, const CompactMatrixType * pushkin);
 void lua_push(lua_State * L, const MatrixType * pushkin);
 template<typename keyType, typename valType>void lua_push(lua_State * L, const map<keyType, valType> &pushkin);
+void lua_push(lua_State * L, const bool pushkin);

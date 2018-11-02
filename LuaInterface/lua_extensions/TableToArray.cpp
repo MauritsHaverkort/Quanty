@@ -3351,3 +3351,11 @@ void lua_push(lua_State * L, const map<keyType, valType> &pushkin)
 {
 	lua_pushmap(L, pushkin);
 }
+
+void lua_push(lua_State * L, const bool pushkin)
+{
+	if (pushkin)
+		lua_pushboolean (L, 1);
+	else
+		lua_pushboolean (L, 0);
+}
