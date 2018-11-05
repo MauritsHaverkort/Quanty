@@ -1513,7 +1513,7 @@ static int Luarotate(lua_State *L)
   }
   if (luaL_testudata(L, 1, "Wavefunction_Type") != NULL)
   {
-    if(len!=2)luaL_error(L, "Rotate for a wavefunction called with %d arguments, 2 expected\n",len);
+    if(len!=2)luaL_error(L, "Rotate for a wavefunction called with %d arguments, 2 expected, wavefunction and rotation matrix\n",len);
     U = luaL_checkMatrix(L, 2);
     WaveFunctionType *psi = (WaveFunctionType*) luaL_checkudata(L, 1, "Wavefunction_Type");
     if(U->Ni!=U->Nj) luaL_error(L, "Error while rotating wavefunction. Rotation matrix should be square (Ni=%d Nj=%d)",U->Ni,U->Nj);
@@ -1527,7 +1527,7 @@ static int Luarotate(lua_State *L)
   }
   if (luaL_testudata(L, 1, "Operator_Type") != NULL)
   {
-    if(len!=2)luaL_error(L, "Rotate for an operator called with %d arguments, 2 expected\n",len);
+    if(len!=2)luaL_error(L, "Rotate for an operator called with %d arguments, 2 expected, operator and rotation matrix\n",len);
     U = luaL_checkMatrix(L, 2);
     OperatorType *O = (OperatorType*) luaL_checkudata(L, 1, "Operator_Type");
     //if(U->Ni!=U->Nj) luaL_error(L, "Error while rotating operator. Rotation matrix should be square (Ni=%d Nj=%d)",U->Ni,U->Nj);
@@ -1544,7 +1544,7 @@ static int Luarotate(lua_State *L)
     uint32_t i;
     int index;
     TightBindingDef *RTB;
-    if(len!=3)luaL_error(L, "Rotate for a tight binding object called with %d arguments, 3 expected\n",len);
+    if(len!=3)luaL_error(L, "Rotate for a tight binding object called with %d arguments, 3 expected, tight binding object, rotation matrix, and list of new atom names, shell names and orbital names.\n",len);
     CompactMatrixType *RotMat;
     RotMat = luaL_checkCompactMatrix(L, 2);
     TightBindingDef *TB = (TightBindingDef*) luaL_checkudata(L, 1, "TightBinding_Type");
@@ -1560,7 +1560,7 @@ static int Luarotate(lua_State *L)
     // read moleclar structure
     if(lua_type(L,3)!=LUA_TTABLE)
     {
-      return luaL_error(L, "Error Rotate for Tightbinding objects expects on position 3 a new list of atom names, shell names and orbital names\n");
+      return luaL_error(L, "Error: Rotate for Tightbinding objects expects on position 3 a list of new atom names, shell names and orbital names.\n");
     }
     RTB->Cell.rUnitCell[0][0]=TB->Cell.rUnitCell[0][0]; RTB->Cell.rUnitCell[0][1]=TB->Cell.rUnitCell[0][1]; RTB->Cell.rUnitCell[0][2]=TB->Cell.rUnitCell[0][2];
     RTB->Cell.rUnitCell[1][0]=TB->Cell.rUnitCell[1][0]; RTB->Cell.rUnitCell[1][1]=TB->Cell.rUnitCell[1][1]; RTB->Cell.rUnitCell[1][2]=TB->Cell.rUnitCell[1][2];
