@@ -550,6 +550,65 @@ static int LuaPlotSpectrumWithSelfEnergy(lua_State *L)
 	return 1;
 }
 
+static int LuaEvaluateSelfEnergy(lua_State *L)
+{
+	double wMin, wMax,dw, gS;
+
+	std::vector<ResponsefunctionType *> SigmaRes;
+	uint32_t len = lua_gettop(L);
+	if (len != 5)
+	{
+		return luaL_error(L,"PlotSpectrumWithSelfEnergy needs 8 arguments not %d\n",len);
+	}
+	luaL_checktype(L, 1, LUA_TTABLE);
+	uint32_t lenSigma = lua_objlen(L,1);
+	SigmaRes.reserve(lenSigma);
+	for(uint32_t i = 1; i <= lenSigma; i++)
+	{
+		lua_rawgeti(L,1,i);
+		SigmaRes.push_back(luaL_checkResponsefunction(L,-1));
+		lua_pop(L,1);
+	}
+	gS   = luaL_checknumber(L,2);
+	wMin = luaL_checknumber(L,3);
+	wMax = luaL_checknumber(L,4);
+	dw   = luaL_checknumber(L,5);
+	if (wMin >= wMax || dw <= 0)
+	{
+		return luaL_error(L,"LuaEvaluateSelfEnergy: cannot plot range [%f,%f] in steps of %f\n",wMin,wMax,dw);
+	}
+
+	uint32_t lenW = floor((wMax-wMin)/dw) + 1;
+	std::vector<CompactMatrixType *> selfenergy = std::vector<CompactMatrixType *>(lenW);
+	double w = wMin;
+	for (uint32_t i = 0; i < lenW; i++)
+	{
+		selfenergy[i] = EvaluateSelfEnergy(w,gS,SigmaRes);
+		w = wMin + i*dw;
+	}
+/*
+	lua_createtable(L,graph.size(),0);
+	for (uint32_t i = 0; i < graph.size(); i++)
+	{
+		LuaPushArray_double(L,&(graph[i][0]),2);
+		lua_rawseti(L,-2,i+1);
+	}
+*/
+	return 1;
+}
+
+static int LuaReadDataFromFile(lua_State *L)
+{
+	const char *type = luaL_checkstring(L,1);
+
+	return 1;
+}
+
+static int LuaWriteDataToFile(lua_State *L)
+{
+	return 0;
+}
+
 static const struct luaL_Reg Martin_meta[] = {
   {NULL, NULL}
 };
@@ -593,6 +652,8 @@ static const struct luaL_Reg Martin_func[] = {
   /*{"Propagator",LuaPropagator},
   {"Propagator2",LuaPropagator2},*/
   {"Metric",LuaMetricWaveFuns},
+  {"ReadData",LuaReadDataFromFile},
+  {"WriteData",LuaWriteDataToFile},
   {"PlotSpectrumWithSelfEnergy",LuaPlotSpectrumWithSelfEnergy},
   {NULL, NULL}
 };
