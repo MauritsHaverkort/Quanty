@@ -43,6 +43,7 @@ double EvaluateResponseFunction(double w, double gH, double gS,const std::vector
 CompactMatrixType *EvaluateSelfEnergy(double w, double gS, const std::vector<ResponsefunctionType *> &SigmaRes)
 {
 	CompactMatrixType *sigma, temp;
+	sigma = (CompactMatrixType *)malloc(sizeof(CompactMatrixType));
 	EvaluateBlockResponsefunctionType(SigmaRes[0],sigma,w,gS);
 	for (uint32_t i = 1; i < SigmaRes.size(); i++)
 	{
@@ -69,6 +70,7 @@ void WriteDataToFile(CompactMatrixType * M, const char *filename)
 	{
 		fwrite(M->VRe,sizeof(double),M->Ni*M->Nj,f);
 	}
+	fclose(f);
 
 }
 
@@ -82,10 +84,70 @@ void ReadDataFromFile(CompactMatrixType * M, const char *filename)
 	fread(&(M->Nj),sizeof(uint32_t),1,f);
 	if (M->QComplex)
 	{
+		M->V = (Complex16 *) malloc(M->Ni*M->Nj*sizeof(Complex16));
 		fread(M->V,sizeof(Complex16),M->Ni*M->Nj,f);
 	}
 	else
 	{
+		M->VRe = (double *) malloc(M->Ni*M->Nj*sizeof(double));
 		fread(M->VRe,sizeof(double),M->Ni*M->Nj,f);
 	}
+	fclose(f);
+}
+
+void WriteDataToFile(std::vector<CompactMatrixType *> Ms, const char *filename)
+{
+	FILE *f = fopen(filename,"wb");
+	size_t N = Ms.size();
+	fwrite(&N,sizeof(size_t),1,f);
+	for (uint32_t i = 0; i < N; i++)
+	{
+		fwrite(&(Ms[i]->QComplex),sizeof(uint32_t),1,f);
+		fwrite(&(Ms[i]->Ni),sizeof(uint32_t),1,f);
+		fwrite(&(Ms[i]->Nj),sizeof(uint32_t),1,f);
+		if (Ms[i]->QComplex)
+		{
+			fwrite(Ms[i]->V,sizeof(Complex16),Ms[i]->Ni*Ms[i]->Nj,f);
+		}
+		else
+		{
+			fwrite(Ms[i]->VRe,sizeof(double),Ms[i]->Ni*Ms[i]->Nj,f);
+		}
+	}
+	fclose(f);
+}
+
+void ReadDataFromFile(std::vector<CompactMatrixType *> &Ms, const char *filename)
+{
+	FILE *f = fopen(filename,"rb");
+
+	size_t N;
+	fread(&N,sizeof(size_t),1,f);
+	if (Ms.size()!=0)
+	{
+		printf("Error: ReadDataFromFile: vector were data are stored is not empty\n");
+	}
+	else
+	{
+		Ms.reserve(N);
+
+		for (uint32_t i = 0; i < N; i++)
+		{
+			Ms.push_back((CompactMatrixType *) malloc(sizeof(CompactMatrixType)));
+			fread(&(Ms[i]->QComplex),sizeof(uint32_t),1,f);
+			fread(&(Ms[i]->Ni),sizeof(uint32_t),1,f);
+			fread(&(Ms[i]->Nj),sizeof(uint32_t),1,f);
+			if (Ms[i]->QComplex)
+			{
+				Ms[i]->V = (Complex16 *) malloc(Ms[i]->Ni*Ms[i]->Nj*sizeof(Complex16));
+				fread(Ms[i]->V,sizeof(Complex16),Ms[i]->Ni*Ms[i]->Nj,f);
+			}
+			else
+			{
+				Ms[i]->VRe = (double *) malloc(Ms[i]->Ni*Ms[i]->Nj*sizeof(double));
+				fread(Ms[i]->VRe,sizeof(double),Ms[i]->Ni*Ms[i]->Nj,f);
+			}
+		}
+	}
+	fclose(f);
 }

@@ -533,11 +533,12 @@ static int LuaPlotSpectrumWithSelfEnergy(lua_State *L)
 	double w = wMin;
 	for (uint32_t i = 0; i < lenW; i++)
 	{
+		//w += dw;
+		w = wMin + i*dw;
 		graph[i] = std::vector<double>(2);
 		graph[i][0] = w;
 		graph[i][1] = EvaluateResponseFunction(w,gH,gS,H,SigmaRes,psi);
-		//w += dw;
-		w = wMin + i*dw;
+
 	}
 
 	lua_createtable(L,graph.size(),0);
@@ -553,14 +554,15 @@ static int LuaPlotSpectrumWithSelfEnergy(lua_State *L)
 static int LuaEvaluateSelfEnergy(lua_State *L)
 {
 	double wMin, wMax,dw, gS;
+	const char *filename;
 
 	std::vector<ResponsefunctionType *> SigmaRes;
 	uint32_t len = lua_gettop(L);
-	if (len != 5)
+/*	if (len != 5)
 	{
 		return luaL_error(L,"PlotSpectrumWithSelfEnergy needs 8 arguments not %d\n",len);
 	}
-	luaL_checktype(L, 1, LUA_TTABLE);
+*/	luaL_checktype(L, 1, LUA_TTABLE);
 	uint32_t lenSigma = lua_objlen(L,1);
 	SigmaRes.reserve(lenSigma);
 	for(uint32_t i = 1; i <= lenSigma; i++)
@@ -583,8 +585,13 @@ static int LuaEvaluateSelfEnergy(lua_State *L)
 	double w = wMin;
 	for (uint32_t i = 0; i < lenW; i++)
 	{
-		selfenergy[i] = EvaluateSelfEnergy(w,gS,SigmaRes);
 		w = wMin + i*dw;
+		selfenergy[i] = EvaluateSelfEnergy(w,gS,SigmaRes);
+	}
+	if (len > 5)
+	{
+		filename = luaL_checkstring(L,6);
+		WriteDataToFile(selfenergy,filename);
 	}
 /*
 	lua_createtable(L,graph.size(),0);
@@ -594,14 +601,23 @@ static int LuaEvaluateSelfEnergy(lua_State *L)
 		lua_rawseti(L,-2,i+1);
 	}
 */
-	return 1;
+	return 0;
 }
 
 static int LuaReadDataFromFile(lua_State *L)
 {
 	const char *type = luaL_checkstring(L,1);
+	const char *filename = luaL_checkstring(L,2);
+	if (strcmp(type, "CompactMatrixType_Table") == 0)
+	{
+		std::vector<CompactMatrixType *> Ms;
+		ReadDataFromFile(Ms,filename);
+		lua_push(L,Ms);
+		return 1;
+	}
+	printf("Error: LuaReadDataFromFile: data type not recognized\n");
 
-	return 1;
+	return 0;
 }
 
 static int LuaWriteDataToFile(lua_State *L)
@@ -654,6 +670,7 @@ static const struct luaL_Reg Martin_func[] = {
   {"Metric",LuaMetricWaveFuns},
   {"ReadData",LuaReadDataFromFile},
   {"WriteData",LuaWriteDataToFile},
+  {"EvaluateSelfEnergy",LuaEvaluateSelfEnergy},
   {"PlotSpectrumWithSelfEnergy",LuaPlotSpectrumWithSelfEnergy},
   {NULL, NULL}
 };
