@@ -4654,7 +4654,6 @@ static int LuaPrintExpectationValues(lua_State * L)
 	OperatorType hamil;
 	vector < OperatorType > opList;
 	uint32_t len = (uint32_t) lua_gettop(L);
-	map<string, vector<double> > extraLists; //TODO: extra Lists einlesen.
 	bool hasHamiltonian = false;
 	bool hasOptions = false;
 
@@ -4731,7 +4730,7 @@ static int LuaPrintExpectationValues(lua_State * L)
 		opList = luaL_checkvector_OperatorType(L, -1);
 	}
 
-	printExpectationValues(psiList, hamil, opList, extraLists, hasHamiltonian, Options.sortByEnergy, Options.printSigma, Options.zero, Options.printHeaderEvery, Options.colWidth);
+	printExpectationValues(psiList, hamil, opList, hasHamiltonian, Options.sortByEnergy, Options.printSigma, Options.zero, Options.printHeaderEvery, Options.colWidth);
 	return 0;
 }
 
