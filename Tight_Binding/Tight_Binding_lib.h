@@ -49,7 +49,8 @@ int TightBindingBANDSToMatrix(double Emin, double Emax, int NEpoints, MatrixType
 int TightBindingBANDSCharacterToMatrix(double Emin, double Emax, int NEpoints, MatrixType BANDS, MatrixType Character,  MatrixType * BWValue);
 int TightBindingAddAxesToMatrix(double Emin, double Emax, int NELines, double *Elines, BandstructurePathType kList, MatrixType * RGBValue);
 int FindAllAtomsInsideSphere(const CrystalStructureType * const A, double *c, double r, CrystalStructureType *B);
-int nonRelAngularMomentumZNumbers(string orb);
+int artificialOrbitalMultiplicity(string orb);
+int nonRelAngularMomentumZNumbersWithSpin(string orb);
 int relAngularMomentumZNumbers(string orb, int * significantCharPos);
 int relAngularMomentumZNumbers(string orb);
 int kappa(string orb);

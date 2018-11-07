@@ -2246,26 +2246,49 @@ int FindAllAtomsInsideSphere(const CrystalStructureType * const A, double *c, do
   return 0;
 }
 
-int nonRelAngularMomentumZNumbers(string orb)
+int artificialOrbitalMultiplicity(string orb)
 {
-	if (orb.length()<1)
+	if (orb.at(orb.length() - 1) != 'a')
 		return -1;
-	char lastChar = orb.at(orb.length()-1);
-	switch (lastChar) {
-		case 's':
-			return 2*0+1;
-		case 'p':
-			return 2*1+1;
-		case 'd':
-			return 2*2+1;
-		case 'f':
-			return 2*3+1;
-		case 'g':
-			return 2*4+1;
-		case 'h':
-			return 2*5+1;
-		default:
-			return -1;
+	int firstNumberChar = 0;
+	while (orb.find('_', firstNumberChar) != (int) string::npos)
+		firstNumberChar = orb.find('_', firstNumberChar) + 1;
+	string multString = orb.substr(firstNumberChar, orb.length() - firstNumberChar - 1);
+//	Here's what I would like to do:
+//	try
+//	{
+//		return std::stoi(multString);
+//	} catch (const std::invalid_argument&)
+//	{
+//		cout << "Warning: Multiplicity " << multString << " could not be parsed as a number, will return -1." << endl;
+//		return -1;
+//	}
+
+//	And here's what I have to do, because stoi is a C++11 function:
+	return (int) strtol(multString.c_str(), NULL, 10);
+}
+
+int nonRelAngularMomentumZNumbersWithSpin(string orb)
+{
+	if (orb.length() < 1)
+		return -1;
+	char lastChar = orb.at(orb.length() - 1);
+	switch (lastChar)
+	{
+	case 's':
+		return 2 * (2 * 0 + 1);
+	case 'p':
+		return 2 * (2 * 1 + 1);
+	case 'd':
+		return 2 * (2 * 2 + 1);
+	case 'f':
+		return 2 * (2 * 3 + 1);
+	case 'g':
+		return 2 * (2 * 4 + 1);
+	case 'h':
+		return 2 * (2 * 5 + 1);
+	default:
+		return -1;
 	}
 }
 
@@ -2332,7 +2355,7 @@ int kappa(string orb)
 		return 0;
 	}
 	orb = orb.substr(0,significantCharPos);
-	lzNumbers = nonRelAngularMomentumZNumbers(orb);
+	lzNumbers = nonRelAngularMomentumZNumbersWithSpin(orb) / 2;
 	if (lzNumbers < 0)
 	{
 		cout << "\nWarning: Remainder of key \"" << orb << "\" could not be interpreted as a non-relativistic orbital, kappa is set to 0.\n";
@@ -2354,13 +2377,13 @@ vector<int> kappas(const vector<string> &orbs)
 
 int orbToMultiplicity(string orb)
 {
-	int multiplicity = 2 * nonRelAngularMomentumZNumbers(orb);
+	int multiplicity = artificialOrbitalMultiplicity(orb);
+	if (multiplicity < 0)
+		multiplicity = nonRelAngularMomentumZNumbersWithSpin(orb);
 	if (multiplicity < 0)
 		multiplicity = relAngularMomentumZNumbers(orb);
 	if (multiplicity < 0)
-	{
 		cout << "\nCould not interpret orbital \"" << orb << "\" as either relativistic or non-relativistic atomic orbital, returning " << multiplicity << endl;
-	}
 	return multiplicity;
 }
 
@@ -3209,7 +3232,7 @@ map<string, vector<int> > createAtmoicIndicesDict(const vector<string> &orbitals
 			for (int j = 0; j < multiplicity; ++j)
 				orbIndices[j] = offset + j;
 			allIndices.insert( { orb, orbIndices });
-			if (!isRelOrbital(orb))
+			if (!isRelOrbital(orb) && (multiplicity % 2 == 0))
 			{
 				vector<int> orbIndicesDn(multiplicity / 2);
 				vector<int> orbIndicesUp(multiplicity / 2);

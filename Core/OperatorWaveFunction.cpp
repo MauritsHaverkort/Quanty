@@ -242,7 +242,7 @@ uint32_t OperatorDeterminantPreAllocatedCC(const OperatorType *O, uint8_t *DetIn
 }
 
 
-uint32_t OperatorPsiConserveBasisCC(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi)
+uint32_t OperatorPsiConserveBasisCC(const OperatorType &O, const WaveFunctionType &psi, WaveFunctionType * const Opsi)
 {
   uint32_t i, ii, ij, ik, j, k, l;
   int    iOMP;
@@ -332,7 +332,7 @@ uint32_t OperatorPsiConserveBasisCC(const OperatorType O, const WaveFunctionType
   return 0;
 }
 
-uint32_t OperatorPsiConserveBasisCR(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi)
+uint32_t OperatorPsiConserveBasisCR(const OperatorType &O, const WaveFunctionType &psi, WaveFunctionType * const Opsi)
 {
   uint32_t i, ii, ij, ik, j, k, l;
   int    iOMP;
@@ -418,7 +418,7 @@ uint32_t OperatorPsiConserveBasisCR(const OperatorType O, const WaveFunctionType
   return 0;
 }
 
-uint32_t OperatorPsiConserveBasisRC(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi)
+uint32_t OperatorPsiConserveBasisRC(const OperatorType &O, const WaveFunctionType &psi, WaveFunctionType * const Opsi)
 {
   uint32_t i, ii, ij, ik, j, k, l;
   int    iOMP;
@@ -504,7 +504,7 @@ uint32_t OperatorPsiConserveBasisRC(const OperatorType O, const WaveFunctionType
   return 0;
 }
 
-uint32_t OperatorPsiConserveBasisRR(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi)
+uint32_t OperatorPsiConserveBasisRR(const OperatorType &O, const WaveFunctionType &psi, WaveFunctionType * const Opsi)
 {
   uint32_t i, ii, ij, ik, j, k, l;
   int    iOMP;
@@ -574,7 +574,7 @@ uint32_t OperatorPsiConserveBasisRR(const OperatorType O, const WaveFunctionType
   return 0;
 }
 
-uint32_t OperatorPsiConserveBasisMC(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi)
+uint32_t OperatorPsiConserveBasisMC(const OperatorType &O, const WaveFunctionType &psi, WaveFunctionType * const Opsi)
 {
   uint32_t i, ii, ij, ik, j, k, l;
   int    iOMP;
@@ -680,7 +680,7 @@ uint32_t OperatorPsiConserveBasisMC(const OperatorType O, const WaveFunctionType
   return 0;
 }
 
-uint32_t OperatorPsiConserveBasisMR(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi)
+uint32_t OperatorPsiConserveBasisMR(const OperatorType &O, const WaveFunctionType &psi, WaveFunctionType * const Opsi)
 {
   uint32_t i, ii, ij, ik, j, k, l;
   int    iOMP;
@@ -1124,7 +1124,7 @@ uint32_t OperatorPsiConserveBasisPreAllocatedMR(const OperatorType *O, const Wav
   return 0;
 }
 
-uint32_t OperatorPsiCC(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi)
+uint32_t OperatorPsiCC(const OperatorType &O, const WaveFunctionType &psi, WaveFunctionType * const Opsi)
 {
   uint32_t i, j, k, l, ii, ij, ik, OutOffMem;
   int    iOMP;
@@ -1205,7 +1205,7 @@ uint32_t OperatorPsiCC(const OperatorType O, const WaveFunctionType psi, WaveFun
   return 0;
 }
 
-uint32_t OperatorPsiCR(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi)
+uint32_t OperatorPsiCR(const OperatorType &O, const WaveFunctionType &psi, WaveFunctionType * const Opsi)
 {
   uint32_t i, j, k, l, ii, ij, ik, OutOffMem;
   int    iOMP;
@@ -1284,7 +1284,7 @@ uint32_t OperatorPsiCR(const OperatorType O, const WaveFunctionType psi, WaveFun
   return 0;
 }
 
-uint32_t OperatorPsiRC(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi)
+uint32_t OperatorPsiRC(const OperatorType &O, const WaveFunctionType &psi, WaveFunctionType * const Opsi)
 {
   uint32_t i, j, k, l, ii, ij, ik, OutOffMem;
   int    iOMP;
@@ -1362,7 +1362,7 @@ uint32_t OperatorPsiRC(const OperatorType O, const WaveFunctionType psi, WaveFun
   return 0;
 }
 
-uint32_t OperatorPsiRR(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi)
+uint32_t OperatorPsiRR(const OperatorType &O, const WaveFunctionType &psi, WaveFunctionType * const Opsi)
 {
   uint32_t i, j, k, l, ii, ij, ik, OutOffMem;
   int    iOMP;
@@ -1439,7 +1439,7 @@ uint32_t OperatorPsiRR(const OperatorType O, const WaveFunctionType psi, WaveFun
   return 0;
 }
 
-uint32_t OperatorPsiMC(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi)
+uint32_t OperatorPsiMC(const OperatorType &O, const WaveFunctionType &psi, WaveFunctionType * const Opsi)
 {
   uint32_t i, j, k, l, ii, ij, ik, OutOffMem;
   int    iOMP;
@@ -1550,7 +1550,7 @@ uint32_t OperatorPsiMC(const OperatorType O, const WaveFunctionType psi, WaveFun
   return 0;
 }
 
-uint32_t OperatorPsiMR(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi)
+uint32_t OperatorPsiMR(const OperatorType &O, const WaveFunctionType &psi, WaveFunctionType * const Opsi)
 {
   uint32_t i, j, k, l, ii, ij, ik, OutOffMem;
   int    iOMP;
@@ -1692,7 +1692,7 @@ uint32_t QDetNotRestricted(uint8_t const *det, uint32_t const NFermion, uint32_t
   return 1;
 }
 
-uint32_t OperatorPsiRestrictedCC(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi, DeterminantRestrictionType const Restrictions)
+uint32_t OperatorPsiRestrictedCC(const OperatorType &O, const WaveFunctionType &psi, WaveFunctionType * const Opsi, DeterminantRestrictionType const Restrictions)
 {
   uint32_t i, j, k, l, ii, ij, ik, OutOffMem;
   int    iOMP;
@@ -1773,7 +1773,7 @@ uint32_t OperatorPsiRestrictedCC(const OperatorType O, const WaveFunctionType ps
   return 0;
 }
 
-uint32_t OperatorPsiRestrictedCR(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi, DeterminantRestrictionType const Restrictions)
+uint32_t OperatorPsiRestrictedCR(const OperatorType &O, const WaveFunctionType &psi, WaveFunctionType * const Opsi, DeterminantRestrictionType const Restrictions)
 {
   uint32_t i, j, k, l, ii, ij, ik, OutOffMem;
   int    iOMP;
@@ -1852,7 +1852,7 @@ uint32_t OperatorPsiRestrictedCR(const OperatorType O, const WaveFunctionType ps
   return 0;
 }
 
-uint32_t OperatorPsiRestrictedRC(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi, DeterminantRestrictionType const Restrictions)
+uint32_t OperatorPsiRestrictedRC(const OperatorType &O, const WaveFunctionType &psi, WaveFunctionType * const Opsi, DeterminantRestrictionType const Restrictions)
 {
   uint32_t i, j, k, l, ii, ij, ik, OutOffMem;
   int    iOMP;
@@ -1931,7 +1931,7 @@ uint32_t OperatorPsiRestrictedRC(const OperatorType O, const WaveFunctionType ps
   return 0;
 }
 
-uint32_t OperatorPsiRestrictedRR(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi, DeterminantRestrictionType const Restrictions)
+uint32_t OperatorPsiRestrictedRR(const OperatorType &O, const WaveFunctionType &psi, WaveFunctionType * const Opsi, DeterminantRestrictionType const Restrictions)
 {
   uint32_t i, j, k, l, ii, ij, ik, OutOffMem;
   int    iOMP;
@@ -2007,7 +2007,7 @@ uint32_t OperatorPsiRestrictedRR(const OperatorType O, const WaveFunctionType ps
   return 0;
 }
 
-uint32_t OperatorPsiRestrictedMC(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi, DeterminantRestrictionType const Restrictions)
+uint32_t OperatorPsiRestrictedMC(const OperatorType &O, const WaveFunctionType &psi, WaveFunctionType * const Opsi, DeterminantRestrictionType const Restrictions)
 {
   uint32_t i, j, k, l, ii, ij, ik, OutOffMem;
   int    iOMP;
@@ -2118,7 +2118,7 @@ uint32_t OperatorPsiRestrictedMC(const OperatorType O, const WaveFunctionType ps
   return 0;
 }
 
-uint32_t OperatorPsiRestrictedMR(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi, DeterminantRestrictionType const Restrictions)
+uint32_t OperatorPsiRestrictedMR(const OperatorType &O, const WaveFunctionType &psi, WaveFunctionType * const Opsi, DeterminantRestrictionType const Restrictions)
 {
   uint32_t i, j, k, l, ii, ij, ik, OutOffMem;
   int    iOMP;
@@ -2228,7 +2228,7 @@ uint32_t OperatorPsiRestrictedMR(const OperatorType O, const WaveFunctionType ps
   return 0;
 }
 
-uint32_t PsiOperatorPsiCC(const OperatorType O, const WaveFunctionType psi, double *VRe, double *VIm)
+uint32_t PsiOperatorPsiCC(const OperatorType &O, const WaveFunctionType &psi, double *VRe, double *VIm)
 {
   uint32_t i, j, k, l, ii, ij, ik;
   double phase;
@@ -2276,7 +2276,7 @@ uint32_t PsiOperatorPsiCC(const OperatorType O, const WaveFunctionType psi, doub
   return 0;
 }
 
-uint32_t PsiOperatorPsiCR(const OperatorType O, const WaveFunctionType psi, double *VRe, double *VIm)
+uint32_t PsiOperatorPsiCR(const OperatorType &O, const WaveFunctionType &psi, double *VRe, double *VIm)
 {
   uint32_t i, j, k, l, ii, ij, ik;
   double phase;
@@ -2318,7 +2318,7 @@ uint32_t PsiOperatorPsiCR(const OperatorType O, const WaveFunctionType psi, doub
   return 0;
 }
 
-uint32_t PsiOperatorPsiRC(const OperatorType O, const WaveFunctionType psi, double *VRe, double *VIm)
+uint32_t PsiOperatorPsiRC(const OperatorType &O, const WaveFunctionType &psi, double *VRe, double *VIm)
 {
   uint32_t i, j, k, l, ii, ij, ik;
   double phase;
@@ -2364,7 +2364,7 @@ uint32_t PsiOperatorPsiRC(const OperatorType O, const WaveFunctionType psi, doub
   return 0;
 }
 
-uint32_t PsiOperatorPsiRR(const OperatorType O, const WaveFunctionType psi, double *VRe)
+uint32_t PsiOperatorPsiRR(const OperatorType &O, const WaveFunctionType &psi, double *VRe)
 {
   uint32_t i, j, k, l, ii, ij, ik;
   double phase;
@@ -2409,7 +2409,7 @@ uint32_t PsiOperatorPsiRR(const OperatorType O, const WaveFunctionType psi, doub
   return 0;
 }
 
-uint32_t PsiOperatorPsiMC(const OperatorType O, const WaveFunctionType psi, double *VRe, double *VIm)
+uint32_t PsiOperatorPsiMC(const OperatorType &O, const WaveFunctionType &psi, double *VRe, double *VIm)
 {
   uint32_t i, j, k, l, ii, ij, ik;
   double phase;
@@ -2477,7 +2477,7 @@ uint32_t PsiOperatorPsiMC(const OperatorType O, const WaveFunctionType psi, doub
   return 0;
 }
 
-uint32_t PsiOperatorPsiMR(const OperatorType O, const WaveFunctionType psi, double *VRe, double *VIm)
+uint32_t PsiOperatorPsiMR(const OperatorType &O, const WaveFunctionType &psi, double *VRe, double *VIm)
 {
   uint32_t i, j, k, l, ii, ij, ik;
   double phase;
@@ -2533,7 +2533,7 @@ uint32_t PsiOperatorPsiMR(const OperatorType O, const WaveFunctionType psi, doub
   return 0;
 }
 
-uint32_t PsiOperatorPsiCHC(const OperatorType O, const WaveFunctionType psi, double *VRe)
+uint32_t PsiOperatorPsiCHC(const OperatorType &O, const WaveFunctionType &psi, double *VRe)
 {
   uint32_t i, j, k, l, ii, ij, ik;
   double phase;
@@ -2576,7 +2576,7 @@ uint32_t PsiOperatorPsiCHC(const OperatorType O, const WaveFunctionType psi, dou
   return 0;
 }
 
-uint32_t PsiOperatorPsiCHR(const OperatorType O, const WaveFunctionType psi, double *VRe)
+uint32_t PsiOperatorPsiCHR(const OperatorType &O, const WaveFunctionType &psi, double *VRe)
 {
   uint32_t i, j, k, l, ii, ij, ik;
   double phase;
@@ -2615,7 +2615,7 @@ uint32_t PsiOperatorPsiCHR(const OperatorType O, const WaveFunctionType psi, dou
   return 0;
 }
 
-uint32_t PsiOperatorPsiRHC(const OperatorType O, const WaveFunctionType psi, double *VRe)
+uint32_t PsiOperatorPsiRHC(const OperatorType &O, const WaveFunctionType &psi, double *VRe)
 {
   uint32_t i, j, k, l, ii, ij, ik;
   double phase;
@@ -2657,7 +2657,7 @@ uint32_t PsiOperatorPsiRHC(const OperatorType O, const WaveFunctionType psi, dou
   return 0;
 }
 
-uint32_t PsiOperatorPsiRHR(const OperatorType O, const WaveFunctionType psi, double *VRe)
+uint32_t PsiOperatorPsiRHR(const OperatorType &O, const WaveFunctionType &psi, double *VRe)
 {
   uint32_t i, j, k, l, ii, ij, ik;
   double phase;
@@ -2694,7 +2694,7 @@ uint32_t PsiOperatorPsiRHR(const OperatorType O, const WaveFunctionType psi, dou
   return 0;
 }
 
-uint32_t PsiOperatorPsiMHC(const OperatorType O, const WaveFunctionType psi, double *VRe)
+uint32_t PsiOperatorPsiMHC(const OperatorType &O, const WaveFunctionType &psi, double *VRe)
 {
   uint32_t i, j, k, l, ii, ij, ik;
   double phase;
@@ -2755,7 +2755,7 @@ uint32_t PsiOperatorPsiMHC(const OperatorType O, const WaveFunctionType psi, dou
   return 0;
 }
 
-uint32_t PsiOperatorPsiMHR(const OperatorType O, const WaveFunctionType psi, double *VRe)
+uint32_t PsiOperatorPsiMHR(const OperatorType &O, const WaveFunctionType &psi, double *VRe)
 {
   uint32_t i, j, k, l, ii, ij, ik;
   double phase;
@@ -2808,7 +2808,7 @@ uint32_t PsiOperatorPsiMHR(const OperatorType O, const WaveFunctionType psi, dou
   return 0;
 }
 
-uint32_t PsiOperatorSqrPsiCC(const OperatorType O, const WaveFunctionType psi, double *VRe, double *VIm)
+uint32_t PsiOperatorSqrPsiCC(const OperatorType &O, const WaveFunctionType &psi, double *VRe, double *VIm)
 {
   uint32_t i, j, k, l, ii, ij, ik, lS, jS;
   double phase, phaseS;
@@ -2876,7 +2876,7 @@ uint32_t PsiOperatorSqrPsiCC(const OperatorType O, const WaveFunctionType psi, d
   return 0;
 }
 
-uint32_t PsiOperatorSqrPsiCR(const OperatorType O, const WaveFunctionType psi, double *VRe, double *VIm)
+uint32_t PsiOperatorSqrPsiCR(const OperatorType &O, const WaveFunctionType &psi, double *VRe, double *VIm)
 {
   uint32_t i, j, k, l, ii, ij, ik, lS, jS;
   double phase, phaseS;
@@ -2942,7 +2942,7 @@ uint32_t PsiOperatorSqrPsiCR(const OperatorType O, const WaveFunctionType psi, d
   return 0;
 }
 
-uint32_t PsiOperatorSqrPsiRC(const OperatorType O, const WaveFunctionType psi, double *VRe, double *VIm)
+uint32_t PsiOperatorSqrPsiRC(const OperatorType &O, const WaveFunctionType &psi, double *VRe, double *VIm)
 {
   uint32_t i, j, k, l, ii, ij, ik, lS, jS;
   double phase, phaseS;
@@ -3004,7 +3004,7 @@ uint32_t PsiOperatorSqrPsiRC(const OperatorType O, const WaveFunctionType psi, d
   return 0;
 }
 
-uint32_t PsiOperatorSqrPsiRR(const OperatorType O, const WaveFunctionType psi, double *VRe)
+uint32_t PsiOperatorSqrPsiRR(const OperatorType &O, const WaveFunctionType &psi, double *VRe)
 {
   uint32_t i, j, k, l, ii, ij, ik, lS, jS;
   double phase, phaseS;
@@ -3058,7 +3058,7 @@ uint32_t PsiOperatorSqrPsiRR(const OperatorType O, const WaveFunctionType psi, d
   return 0;
 }
 
-uint32_t PsiOperatorSqrPsiMC(const OperatorType O, const WaveFunctionType psi, double *VRe, double *VIm)
+uint32_t PsiOperatorSqrPsiMC(const OperatorType &O, const WaveFunctionType &psi, double *VRe, double *VIm)
 {
   uint32_t i, j, k, l, ii, ij, ik, lS, jS;
   double phase, phaseS;
@@ -3212,7 +3212,7 @@ uint32_t PsiOperatorSqrPsiMC(const OperatorType O, const WaveFunctionType psi, d
   return 0;
 }
 
-uint32_t PsiOperatorSqrPsiMR(const OperatorType O, const WaveFunctionType psi, double *VRe, double *VIm)
+uint32_t PsiOperatorSqrPsiMR(const OperatorType &O, const WaveFunctionType &psi, double *VRe, double *VIm)
 {
   uint32_t i, j, k, l, ii, ij, ik, lS, jS;
   double phase, phaseS;
@@ -3353,7 +3353,7 @@ uint32_t PsiOperatorSqrPsiMR(const OperatorType O, const WaveFunctionType psi, d
   return 0;
 }
 
-uint32_t PsiOperatorSqrPsiCHC(const OperatorType O, const WaveFunctionType psi, double *VRe)
+uint32_t PsiOperatorSqrPsiCHC(const OperatorType &O, const WaveFunctionType &psi, double *VRe)
 {
   uint32_t i, j, k, l, ii, ij, ik, lS, jS;
   double phase, phaseS;
@@ -3417,7 +3417,7 @@ uint32_t PsiOperatorSqrPsiCHC(const OperatorType O, const WaveFunctionType psi, 
   return 0;
 }
 
-uint32_t PsiOperatorSqrPsiCHR(const OperatorType O, const WaveFunctionType psi, double *VRe)
+uint32_t PsiOperatorSqrPsiCHR(const OperatorType &O, const WaveFunctionType &psi, double *VRe)
 {
   uint32_t i, j, k, l, ii, ij, ik, lS, jS;
   double phase, phaseS;
@@ -3475,7 +3475,7 @@ uint32_t PsiOperatorSqrPsiCHR(const OperatorType O, const WaveFunctionType psi, 
   return 0;
 }
 
-uint32_t PsiOperatorSqrPsiRHC(const OperatorType O, const WaveFunctionType psi, double *VRe)
+uint32_t PsiOperatorSqrPsiRHC(const OperatorType &O, const WaveFunctionType &psi, double *VRe)
 {
   uint32_t i, j, k, l, ii, ij, ik, lS, jS;
   double phase, phaseS;
@@ -3532,7 +3532,7 @@ uint32_t PsiOperatorSqrPsiRHC(const OperatorType O, const WaveFunctionType psi, 
   return 0;
 }
 
-uint32_t PsiOperatorSqrPsiRHR(const OperatorType O, const WaveFunctionType psi, double *VRe)
+uint32_t PsiOperatorSqrPsiRHR(const OperatorType &O, const WaveFunctionType &psi, double *VRe)
 {
   uint32_t i, j, k, l, ii, ij, ik, lS, jS;
   double phase, phaseS;
@@ -3586,7 +3586,7 @@ uint32_t PsiOperatorSqrPsiRHR(const OperatorType O, const WaveFunctionType psi, 
   return 0;
 }
 
-uint32_t PsiOperatorSqrPsiMHC(const OperatorType O, const WaveFunctionType psi, double *VRe)
+uint32_t PsiOperatorSqrPsiMHC(const OperatorType &O, const WaveFunctionType &psi, double *VRe)
 {
   uint32_t i, j, k, l, ii, ij, ik, lS, jS;
   double phase, phaseS;
@@ -3729,7 +3729,7 @@ uint32_t PsiOperatorSqrPsiMHC(const OperatorType O, const WaveFunctionType psi, 
   return 0;
 }
 
-uint32_t PsiOperatorSqrPsiMHR(const OperatorType O, const WaveFunctionType psi, double *VRe)
+uint32_t PsiOperatorSqrPsiMHR(const OperatorType &O, const WaveFunctionType &psi, double *VRe)
 {
   uint32_t i, j, k, l, ii, ij, ik, lS, jS;
   double phase, phaseS;
@@ -3854,7 +3854,7 @@ uint32_t PsiOperatorSqrPsiMHR(const OperatorType O, const WaveFunctionType psi, 
   return 0;
 }
 
-uint32_t PsiOperatorSqrPsiRestrictedCC(const OperatorType O, const WaveFunctionType psi, double *VRe, double *VIm, DeterminantRestrictionType const restrictions)
+uint32_t PsiOperatorSqrPsiRestrictedCC(const OperatorType &O, const WaveFunctionType &psi, double *VRe, double *VIm, DeterminantRestrictionType const restrictions)
 {
   uint32_t i, j, k, l, ii, ij, ik, lS, jS;
   double phase, phaseS;
@@ -3922,7 +3922,7 @@ uint32_t PsiOperatorSqrPsiRestrictedCC(const OperatorType O, const WaveFunctionT
   return 0;
 }
 
-uint32_t PsiOperatorSqrPsiRestrictedCR(const OperatorType O, const WaveFunctionType psi, double *VRe, double *VIm, DeterminantRestrictionType const restrictions)
+uint32_t PsiOperatorSqrPsiRestrictedCR(const OperatorType &O, const WaveFunctionType &psi, double *VRe, double *VIm, DeterminantRestrictionType const restrictions)
 {
   uint32_t i, j, k, l, ii, ij, ik, lS, jS;
   double phase, phaseS;
@@ -3988,7 +3988,7 @@ uint32_t PsiOperatorSqrPsiRestrictedCR(const OperatorType O, const WaveFunctionT
   return 0;
 }
 
-uint32_t PsiOperatorSqrPsiRestrictedRC(const OperatorType O, const WaveFunctionType psi, double *VRe, double *VIm, DeterminantRestrictionType const restrictions)
+uint32_t PsiOperatorSqrPsiRestrictedRC(const OperatorType &O, const WaveFunctionType &psi, double *VRe, double *VIm, DeterminantRestrictionType const restrictions)
 {
   uint32_t i, j, k, l, ii, ij, ik, lS, jS;
   double phase, phaseS;
@@ -4050,7 +4050,7 @@ uint32_t PsiOperatorSqrPsiRestrictedRC(const OperatorType O, const WaveFunctionT
   return 0;
 }
 
-uint32_t PsiOperatorSqrPsiRestrictedRR(const OperatorType O, const WaveFunctionType psi, double *VRe, DeterminantRestrictionType const restrictions)
+uint32_t PsiOperatorSqrPsiRestrictedRR(const OperatorType &O, const WaveFunctionType &psi, double *VRe, DeterminantRestrictionType const restrictions)
 {
   uint32_t i, j, k, l, ii, ij, ik, lS, jS;
   double phase, phaseS;
@@ -4104,7 +4104,7 @@ uint32_t PsiOperatorSqrPsiRestrictedRR(const OperatorType O, const WaveFunctionT
   return 0;
 }
 
-uint32_t PsiOperatorSqrPsiRestrictedMC(const OperatorType O, const WaveFunctionType psi, double *VRe, double *VIm, DeterminantRestrictionType const restrictions)
+uint32_t PsiOperatorSqrPsiRestrictedMC(const OperatorType &O, const WaveFunctionType &psi, double *VRe, double *VIm, DeterminantRestrictionType const restrictions)
 {
   uint32_t i, j, k, l, ii, ij, ik, lS, jS;
   double phase, phaseS;
@@ -4258,7 +4258,7 @@ uint32_t PsiOperatorSqrPsiRestrictedMC(const OperatorType O, const WaveFunctionT
   return 0;
 }
 
-uint32_t PsiOperatorSqrPsiRestrictedMR(const OperatorType O, const WaveFunctionType psi, double *VRe, double *VIm, DeterminantRestrictionType const restrictions)
+uint32_t PsiOperatorSqrPsiRestrictedMR(const OperatorType &O, const WaveFunctionType &psi, double *VRe, double *VIm, DeterminantRestrictionType const restrictions)
 {
   uint32_t i, j, k, l, ii, ij, ik, lS, jS;
   double phase, phaseS;
@@ -4399,7 +4399,7 @@ uint32_t PsiOperatorSqrPsiRestrictedMR(const OperatorType O, const WaveFunctionT
   return 0;
 }
 
-uint32_t PsiOperatorSqrPsiRestrictedCHC(const OperatorType O, const WaveFunctionType psi, double *VRe, DeterminantRestrictionType const restrictions)
+uint32_t PsiOperatorSqrPsiRestrictedCHC(const OperatorType &O, const WaveFunctionType &psi, double *VRe, DeterminantRestrictionType const restrictions)
 {
   uint32_t i, j, k, l, ii, ij, ik, lS, jS;
   double phase, phaseS;
@@ -4463,7 +4463,7 @@ uint32_t PsiOperatorSqrPsiRestrictedCHC(const OperatorType O, const WaveFunction
   return 0;
 }
 
-uint32_t PsiOperatorSqrPsiRestrictedCHR(const OperatorType O, const WaveFunctionType psi, double *VRe, DeterminantRestrictionType const restrictions)
+uint32_t PsiOperatorSqrPsiRestrictedCHR(const OperatorType &O, const WaveFunctionType &psi, double *VRe, DeterminantRestrictionType const restrictions)
 {
   uint32_t i, j, k, l, ii, ij, ik, lS, jS;
   double phase, phaseS;
@@ -4521,7 +4521,7 @@ uint32_t PsiOperatorSqrPsiRestrictedCHR(const OperatorType O, const WaveFunction
   return 0;
 }
 
-uint32_t PsiOperatorSqrPsiRestrictedRHC(const OperatorType O, const WaveFunctionType psi, double *VRe, DeterminantRestrictionType const restrictions)
+uint32_t PsiOperatorSqrPsiRestrictedRHC(const OperatorType &O, const WaveFunctionType &psi, double *VRe, DeterminantRestrictionType const restrictions)
 {
   uint32_t i, j, k, l, ii, ij, ik, lS, jS;
   double phase, phaseS;
@@ -4578,7 +4578,7 @@ uint32_t PsiOperatorSqrPsiRestrictedRHC(const OperatorType O, const WaveFunction
   return 0;
 }
 
-uint32_t PsiOperatorSqrPsiRestrictedRHR(const OperatorType O, const WaveFunctionType psi, double *VRe, DeterminantRestrictionType const restrictions)
+uint32_t PsiOperatorSqrPsiRestrictedRHR(const OperatorType &O, const WaveFunctionType &psi, double *VRe, DeterminantRestrictionType const restrictions)
 {
   uint32_t i, j, k, l, ii, ij, ik, lS, jS;
   double phase, phaseS;
@@ -4632,7 +4632,7 @@ uint32_t PsiOperatorSqrPsiRestrictedRHR(const OperatorType O, const WaveFunction
   return 0;
 }
 
-uint32_t PsiOperatorSqrPsiRestrictedMHC(const OperatorType O, const WaveFunctionType psi, double *VRe, DeterminantRestrictionType const restrictions)
+uint32_t PsiOperatorSqrPsiRestrictedMHC(const OperatorType &O, const WaveFunctionType &psi, double *VRe, DeterminantRestrictionType const restrictions)
 {
   uint32_t i, j, k, l, ii, ij, ik, lS, jS;
   double phase, phaseS;
@@ -4775,7 +4775,7 @@ uint32_t PsiOperatorSqrPsiRestrictedMHC(const OperatorType O, const WaveFunction
   return 0;
 }
 
-uint32_t PsiOperatorSqrPsiRestrictedMHR(const OperatorType O, const WaveFunctionType psi, double *VRe, DeterminantRestrictionType const restrictions)
+uint32_t PsiOperatorSqrPsiRestrictedMHR(const OperatorType &O, const WaveFunctionType &psi, double *VRe, DeterminantRestrictionType const restrictions)
 {
   uint32_t i, j, k, l, ii, ij, ik, lS, jS;
   double phase, phaseS;
@@ -4940,7 +4940,7 @@ uint32_t OperatorDeterminantPreAllocated(const OperatorType *O, uint8_t *DetIn, 
 *     Opsi.Determinant, Opsi.Next, Opsi.Keylist point to the same location as psi does
 *     This function conservse the values O and psi point to
 */
-uint32_t OperatorPsiConserveBasis(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi)
+uint32_t OperatorPsiConserveBasis(const OperatorType &O, const WaveFunctionType &psi, WaveFunctionType * const Opsi)
 {
   if (O.QComplex == 0)
   {
@@ -5006,7 +5006,7 @@ uint32_t OperatorPsiConserveBasisPreAllocated(const OperatorType *O, const WaveF
 *     Opsi points to completely newly assigned memory
 *     This function conservse the values O and psi point to
 */
-uint32_t OperatorPsiRestricted(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi, DeterminantRestrictionType const restrictions)
+uint32_t OperatorPsiRestricted(const OperatorType &O, const WaveFunctionType &psi, WaveFunctionType * const Opsi, DeterminantRestrictionType const restrictions)
 {
   if (O.QComplex == 0)
   {
@@ -5031,7 +5031,7 @@ uint32_t OperatorPsiRestricted(const OperatorType O, const WaveFunctionType psi,
   return OperatorPsiRestrictedMR(O, psi, Opsi, restrictions);
 }
 
-uint32_t OperatorPsi(const OperatorType O, const WaveFunctionType psi, WaveFunctionType * const Opsi)
+uint32_t OperatorPsi(const OperatorType &O, const WaveFunctionType &psi, WaveFunctionType * const Opsi)
 {
   if(O.Res.N!=0) return OperatorPsiRestricted(O, psi, Opsi, O.Res);
   if (O.QComplex == 0)
@@ -5060,7 +5060,7 @@ uint32_t OperatorPsi(const OperatorType O, const WaveFunctionType psi, WaveFunct
 /*  Calcualtes <psi|O|psi>
 *
 */
-uint32_t PsiOperatorPsi(const OperatorType O, const WaveFunctionType psi, double *VRe, double *VIm)
+uint32_t PsiOperatorPsi(const OperatorType &O, const WaveFunctionType &psi, double *VRe, double *VIm)
 {
   if (O.QComplex == 0)
   {
@@ -5090,7 +5090,7 @@ uint32_t PsiOperatorPsi(const OperatorType O, const WaveFunctionType psi, double
  *  Under the assumption that O^{\dag} = O
  *  O is Hermitian
  */
-uint32_t PsiHermitianOperatorPsi(const OperatorType O, const WaveFunctionType psi, double *VRe)
+uint32_t PsiHermitianOperatorPsi(const OperatorType &O, const WaveFunctionType &psi, double *VRe)
 {
   if (O.QComplex == 0)
   {
@@ -5115,7 +5115,7 @@ uint32_t PsiHermitianOperatorPsi(const OperatorType O, const WaveFunctionType ps
   return PsiOperatorPsiMHR(O, psi, VRe);
 }
 
-double PsiHermitianOperatorPsi(const OperatorType O, const WaveFunctionType psi)
+double PsiHermitianOperatorPsi(const OperatorType &O, const WaveFunctionType &psi)
 {
 	double res;
 	PsiHermitianOperatorPsi(O, psi, &res);
@@ -5125,7 +5125,7 @@ double PsiHermitianOperatorPsi(const OperatorType O, const WaveFunctionType psi)
 /*  Calcualtes <psi|OO|psi>
 *
 */
-uint32_t PsiOperatorSqrPsi(const OperatorType O, const WaveFunctionType psi, double *VRe, double *VIm)
+uint32_t PsiOperatorSqrPsi(const OperatorType &O, const WaveFunctionType &psi, double *VRe, double *VIm)
 {
   if (O.QComplex == 0)
   {
@@ -5154,7 +5154,7 @@ uint32_t PsiOperatorSqrPsi(const OperatorType O, const WaveFunctionType psi, dou
  *  Under the assumption that O^{\dag} = O
  *  O is Hermitian
  */
-uint32_t PsiHermitianOperatorSqrPsi(const OperatorType O, const WaveFunctionType psi, double *VRe)
+uint32_t PsiHermitianOperatorSqrPsi(const OperatorType &O, const WaveFunctionType &psi, double *VRe)
 {
   if (O.QComplex == 0)
   {
@@ -5179,7 +5179,7 @@ uint32_t PsiHermitianOperatorSqrPsi(const OperatorType O, const WaveFunctionType
   return PsiOperatorSqrPsiMHR(O, psi, VRe);
 }
 
-double PsiHermitianOperatorSqrPsi(const OperatorType O, const WaveFunctionType psi)
+double PsiHermitianOperatorSqrPsi(const OperatorType &O, const WaveFunctionType &psi)
 {
 	double res;
 	PsiHermitianOperatorSqrPsi(O, psi, &res);
@@ -5189,7 +5189,7 @@ double PsiHermitianOperatorSqrPsi(const OperatorType O, const WaveFunctionType p
 /*  Calcualtes <psi|OO|psi>
  *  using restrictions on O|psi>
  */
-uint32_t PsiOperatorSqrPsiRestricted(const OperatorType O, const WaveFunctionType psi, double *VRe, double *VIm, DeterminantRestrictionType const Restrictions)
+uint32_t PsiOperatorSqrPsiRestricted(const OperatorType &O, const WaveFunctionType &psi, double *VRe, double *VIm, DeterminantRestrictionType const Restrictions)
 {
   if (O.QComplex == 0)
   {
@@ -5219,7 +5219,7 @@ uint32_t PsiOperatorSqrPsiRestricted(const OperatorType O, const WaveFunctionTyp
  *  O is Hermitian
  *  using restrictions on O|psi>
  */
-uint32_t PsiHermitianOperatorSqrPsiRestricted(const OperatorType O, const WaveFunctionType psi, double *VRe, DeterminantRestrictionType const Restrictions)
+uint32_t PsiHermitianOperatorSqrPsiRestricted(const OperatorType &O, const WaveFunctionType &psi, double *VRe, DeterminantRestrictionType const Restrictions)
 {
   if (O.QComplex == 0)
   {
@@ -5244,7 +5244,7 @@ uint32_t PsiHermitianOperatorSqrPsiRestricted(const OperatorType O, const WaveFu
   return PsiOperatorSqrPsiRestrictedMHR(O, psi, VRe, Restrictions);
 }
 
-double PsiHermitianOperatorSqrPsiRestricted(const OperatorType O, const WaveFunctionType psi, DeterminantRestrictionType const Restrictions)
+double PsiHermitianOperatorSqrPsiRestricted(const OperatorType &O, const WaveFunctionType &psi, DeterminantRestrictionType const Restrictions)
 {
 	double res;
 	PsiHermitianOperatorSqrPsiRestricted(O, psi, &res, Restrictions);
@@ -5255,7 +5255,7 @@ double PsiHermitianOperatorSqrPsiRestricted(const OperatorType O, const WaveFunc
  *  On entry V.Ni contains the length of psiPrime
  *  On entry V.Nj contains the length of psi
  */
-uint32_t PsiPrimeOperatorPsiMatrix(const OperatorType O, const WaveFunctionType * psiPrime, const WaveFunctionType * psi, MatrixType * const V)
+uint32_t PsiPrimeOperatorPsiMatrix(const OperatorType &O, const WaveFunctionType * psiPrime, const WaveFunctionType * psi, MatrixType * const V)
 {
   uint32_t i, j;
   WaveFunctionType Opsi;
@@ -5283,7 +5283,7 @@ uint32_t PsiPrimeOperatorPsiMatrix(const OperatorType O, const WaveFunctionType 
  *  On entry V.Ni contains the length of psi
  *  On entry V.Nj contains the length of psi
  */
-uint32_t PsiOperatorPsiMatrix(const OperatorType O, const WaveFunctionType * psi, MatrixType * const V)
+uint32_t PsiOperatorPsiMatrix(const OperatorType &O, const WaveFunctionType * psi, MatrixType * const V)
 {
   return PsiPrimeOperatorPsiMatrix(O, psi, psi, V);
 }
@@ -5291,7 +5291,7 @@ uint32_t PsiOperatorPsiMatrix(const OperatorType O, const WaveFunctionType * psi
 /*  Calcualtes <psiPrime|O|psi>
  *
  */
-uint32_t PsiPrimeOperatorPsi(const OperatorType O, const WaveFunctionType psiPrime, const WaveFunctionType psi, double *VRe, double *VIm)
+uint32_t PsiPrimeOperatorPsi(const OperatorType &O, const WaveFunctionType &psiPrime, const WaveFunctionType &psi, double *VRe, double *VIm)
 {
   //TODO: use the fact that one does not need to store O * psi
   MatrixType V;

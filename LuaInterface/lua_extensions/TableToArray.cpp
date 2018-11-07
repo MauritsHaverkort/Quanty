@@ -19,42 +19,6 @@ uint8_t* luaL_checkarray_unit8_t(lua_State *L, int narg, uint32_t *len_out)
   return buff;
 }
 
-vector<int> luaL_checkvector_int(lua_State *L, int narg)
-{
-	if (lua_istable(L, narg))
-	{
-		luaL_checktype(L, narg, LUA_TTABLE);
-		uint32_t len = (uint32_t) lua_objlen(L, narg);
-		vector<int> buff(len);
-		for (int i = 0; i < len; i++)
-		{
-			lua_rawgeti(L, narg, i + 1);
-			buff[i] = (int) luaL_checkinteger(L, -1);
-			lua_pop(L, 1);
-		}
-		return buff;
-	} else
-	{
-		vector<int> buff(1);
-		buff[0] = (int) luaL_checkinteger(L, narg);
-		return buff;
-	}
-}
-
-vector<uint16_t> luaL_checkvector_unit16_t(lua_State *L, int narg)
-{
-	luaL_checktype(L, narg, LUA_TTABLE);
-	uint32_t len = (uint32_t) lua_objlen(L, narg);
-	vector < uint16_t > buff(len);
-	for (int i = 0; i < len; i++)
-	{
-		lua_rawgeti(L, narg, i + 1);
-		buff[i] = (uint16_t) luaL_checkunsigned(L, -1);
-		lua_pop(L, 1);
-	}
-	return buff;
-}
-
 uint16_t* luaL_checkarray_unit16_t(lua_State *L, int narg, uint32_t *len_out)
 {
   int i;
@@ -149,27 +113,6 @@ char** luaL_checkarray_string(lua_State *L, int narg, uint32_t *len_out)
   return buff;
 }
 
-vector<string> luaL_checkvector_string(lua_State *L, int narg)
-{
-	if (lua_istable(L, narg))
-	{
-		luaL_checktype(L, narg, LUA_TTABLE);
-		uint32_t len = (uint32_t) lua_objlen(L, narg);
-		vector < string > buff(len);
-		for (int i = 0; i < len; i++)
-		{
-			lua_rawgeti(L, narg, i + 1);
-			buff[i] = (string) luaL_checkstring(L, -1);
-			lua_pop(L, 1);
-		}
-		return buff;
-	} else
-	{
-		vector < string > buff(1);
-		buff[0] = (string) luaL_checkstring(L, narg);
-		return buff;
-	}
-}
 
 LUA_API void lua_getfield (lua_State *L, int idx, const string str)
 {
@@ -1917,36 +1860,6 @@ const vector<OperatorType> luaL_checkvector_OperatorType(lua_State *L, int narg)
 	}
 }
 
-map<string, vector<string> > lua_checkGroupings(lua_State *L, const int pos)
-{
-	luaL_checktype(L, pos, LUA_TTABLE); //{{"unexcited",{"1s","2s"}},...}
-	map<string, vector<string> > groupings;
-	for (int i = 1; i < (int) lua_objlen(L, pos) + 1; i++)
-	{
-		lua_rawgeti(L, pos, i);
-		luaL_checktype(L, -1, LUA_TTABLE); //{"unexcited",{"1s","2s"}}
-		if ((int) lua_objlen(L, -1) > 0)
-		{
-			if ((int) lua_objlen(L, -1) != 2)
-			{
-				printf("\nWarning: Groupings of orbitals need to be 2-element tables in the format {groupName,{listOfOrbitals}}. Table %d has %d elements.\n", i, (int) lua_objlen(L, -1));
-			}
-
-			lua_rawgeti(L, -1, 1);
-			string groupKey = luaL_checkstring(L, -1); //"unexcited"
-			lua_pop(L, 1);
-
-			lua_rawgeti(L, -1, 2);
-			vector < string > groupMembers = luaL_checkvector_string(L, -1); //{"1s","2s"}
-			lua_pop(L, 1);
-
-			groupings.insert( { groupKey, groupMembers });
-			lua_pop(L, 1);
-		}
-	}
-	return groupings;
-}
-
 void luaL_setarray_DeterminatRestrictionType(lua_State *L, int narg, DeterminantRestrictionType * buff)
 {
   uint32_t NFermion,NBoson,i;
@@ -2074,6 +1987,100 @@ HarmonicsExpansion* luaL_checkarray_HarmonicsExpansion(lua_State *L, int narg)
   }
   return buff;
 }
+
+
+void lua_check(lua_State * L, int arg, string &in)
+{
+	in = (string) luaL_checkstring(L, arg);
+}
+
+void lua_check(lua_State * L, int arg, double &in)
+{
+	in = (double) luaL_checknumber(L, arg);
+}
+
+void lua_check(lua_State * L, int arg, int &in)
+{
+	in = (int) luaL_checkinteger(L, arg);
+}
+
+void lua_check(lua_State * L, int arg, uint16_t &in)
+{
+	in = (uint16_t) luaL_checkunsigned(L, arg);
+}
+
+template<typename T>
+void lua_check(lua_State * L, int arg, vector<T> &in)
+{
+	T tmp;
+	if (lua_istable(L, arg))
+	{
+		luaL_checktype(L, arg, LUA_TTABLE);
+		uint32_t len = (uint32_t) lua_objlen(L, arg);
+		in = vector < T > (len);
+		for (int i = 0; i < len; i++)
+		{
+			lua_rawgeti(L, arg, i + 1);
+			lua_check(L, -1, tmp);
+			in[i] = tmp;
+			lua_pop(L, 1);
+		}
+	} else
+	{
+		in = vector < T > (1);
+		lua_check(L, arg, tmp);
+		in[0] = tmp;
+	}
+}
+
+// Format is { {key1, val1}, {key2, val2} } or, in case of a single value, {key, val}
+template<typename keyType, typename valType>
+void lua_check(lua_State * L, int arg, map<keyType, valType> &in)
+{
+	keyType tmpKey;
+	valType tmpVal;
+	luaL_checktype(L, arg, LUA_TTABLE);
+	lua_rawgeti(L, arg, 1);
+	bool isSinglePair = !((bool) lua_istable(L, -1));
+	lua_pop(L, 1);
+	if (isSinglePair)
+	{
+		int len = (int) lua_objlen(L, arg);
+		if (len != 0)
+		{
+			if (len != 2)
+				luaL_error(L, "Error: Map entries need to be 2-element tables in the format {key,value}. Entry has %d elements.\n", len);
+			lua_rawgeti(L, arg, 1);
+			lua_check(L, -1, tmpKey);
+			lua_pop(L, 1);
+			lua_rawgeti(L, arg, 2);
+			lua_check(L, -1, tmpVal);
+			lua_pop(L, 1);
+			in.insert( { tmpKey, tmpVal });
+		}
+	} else
+	{
+		int len = (int) lua_objlen(L, arg);
+		for (int i = 1; i < len + 1; ++i)
+		{
+			lua_rawgeti(L, arg, i);
+			if ((int) lua_objlen(L, -1) != 0)
+			{
+				if ((int) lua_objlen(L, -1) != 2)
+					luaL_error(L, "Error: Map entries need to be 2-element tables in the format {key,value}. Entry %d has %d elements.\n", i, (int) lua_objlen(L, -1));
+				lua_rawgeti(L, -1, 1);
+				lua_check(L, -1, tmpKey);
+				lua_pop(L, 1);
+				lua_rawgeti(L, -1, 2);
+				lua_check(L, -1, tmpVal);
+				lua_pop(L, 1);
+				in.insert( { tmpKey, tmpVal });
+			}
+			lua_pop(L, 1);
+		}
+	}
+}
+
 
 void LuaPushArray_double(lua_State *L, double const * const val, int const N)
 {
@@ -3350,4 +3357,12 @@ template<typename keyType, typename valType>
 void lua_push(lua_State * L, const map<keyType, valType> &pushkin)
 {
 	lua_pushmap(L, pushkin);
+}
+
+void lua_push(lua_State * L, const bool pushkin)
+{
+	if (pushkin)
+		lua_pushboolean (L, 1);
+	else
+		lua_pushboolean (L, 0);
 }
