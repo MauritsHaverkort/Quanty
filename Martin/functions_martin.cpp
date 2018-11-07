@@ -622,6 +622,19 @@ static int LuaReadDataFromFile(lua_State *L)
 
 static int LuaWriteDataToFile(lua_State *L)
 {
+	const char *type = luaL_checkstring(L,1);
+	const char *filename = luaL_checkstring(L,2);
+	if (strcmp(type, "CompactMatrixType_Table") == 0)
+	{
+		std::vector<CompactMatrixType *> Ms;
+		lua_check(L,3,Ms);
+		WriteDataToFile(Ms,filename);
+		printf("Table of compact matrices written to file %s\n",filename);
+
+		return 0;
+	}
+	printf("Error: LuaReadDataFromFile: data type not recognized\n");
+
 	return 0;
 }
 

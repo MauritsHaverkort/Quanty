@@ -2009,6 +2009,11 @@ void lua_check(lua_State * L, int arg, uint16_t &in)
 	in = (uint16_t) luaL_checkunsigned(L, arg);
 }
 
+void lua_check(lua_State *L, int arg, CompactMatrixType* &M)
+{
+	M = luaL_checkCompactMatrix(L, arg);
+}
+
 template<typename T>
 void lua_check(lua_State * L, int arg, vector<T> &in)
 {
