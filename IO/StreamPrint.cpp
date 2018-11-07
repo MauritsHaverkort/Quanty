@@ -1655,24 +1655,25 @@ string blankFill(int width)
 	return blankFill(width,0);
 }
 
-void printExpectationValues(const vector < WaveFunctionType >  psiList, OperatorType  hamil, const vector < OperatorType >  opList, bool hasHamiltonian, bool sortByEnergy, bool printSigma, double zero, int printHeaderEvery, int colWidth)
+void printExpectationValues(const vector < WaveFunctionType >  &psiList, OperatorType  hamil, const vector < OperatorType >  &opList, bool hasHamiltonian, bool sortByEnergy, bool printSigma, double zero, int printHeaderEvery, int colWidth)
 {
 	vector<double> EValues(psiList.size());
 	vector<double> sigmaValues(psiList.size());
 	vector<vector<double> > expValues(psiList.size());
 	int hamilAddition = 0, sigmaAddition = 0;
-	bool opHermetian = false, opRestricted = false;
+	bool isOpHermetian = false, isOpRestricted = false;
+
 	if (hasHamiltonian)
 	{
 		hamilAddition = 1;
 		OperatorChop(&hamil, sqrt(zero));
-		opHermetian = isOperatorAlmostHermitian(hamil, zero);
-		opRestricted = (hamil.Res.N > 0);
-		if (!opHermetian)
+		isOpHermetian = isOperatorAlmostHermitian(hamil, zero);
+		isOpRestricted = (hamil.Res.N > 0);
+		if (!isOpHermetian)
 		{
 			cout << "PrintExpectationValues not yet implemented for non-Hermitian operators, the reults will probably be rubbish." << endl;
 		}
-		if (opRestricted)
+		if (isOpRestricted)
 		{
 			for (int i = 0; i < psiList.size(); ++i)
 			{
@@ -1689,7 +1690,7 @@ void printExpectationValues(const vector < WaveFunctionType >  psiList, Operator
 		{
 			sigmaAddition = 1;
 //			TODO: make this possible for non-hermetian operators
-			if (opRestricted)
+			if (isOpRestricted)
 			{
 				for (int i = 0; i < psiList.size(); ++i)
 					sigmaValues[i] = sqrt(Abs(EValues[i] * EValues[i] - PsiHermitianOperatorSqrPsiRestricted(hamil, psiList[i], hamil.Res)));
@@ -1701,19 +1702,34 @@ void printExpectationValues(const vector < WaveFunctionType >  psiList, Operator
 		}
 	}
 
+	vector < string > headerNames(opList.size() + hamilAddition + sigmaAddition);
 	for (int i = 0; i < psiList.size(); ++i)
 	{
-
 		expValues[i] = vector<double>(opList.size() + hamilAddition + sigmaAddition);
 		if (hasHamiltonian)
 		{
 			expValues[i][0] = EValues[i];
+			headerNames[0] = "E";
 			if (printSigma)
+			{
 				expValues[i][expValues[i].size() - 1] = sigmaValues[i];
+				headerNames[headerNames.size() - 1] = "std-dev";
+			}
 		}
 		for (int j = 0; j < opList.size(); ++j)
+		{
 			expValues[i][j + hamilAddition] = PsiHermitianOperatorPsi(opList[j], psiList[i]); //TODO: If Abfrage auf Restrictions. Leider ändern Restrictions an dieser Stelle auch nichts.
+//		TODO: das wird viel zu oft gemacht, weil es in einer doppelten schleife steht
+			headerNames[j + hamilAddition] = opList[j].Name;
+		}
 	}
+
+//	for (map<string, vector<double> >::const_iterator iter = extraLists.begin(); iter != extraLists.end(); ++iter)
+//	{
+//		headerNames[] = iter->first;
+//
+//	}
+
 
 	if (hasHamiltonian && sortByEnergy)
 		sort(expValues.begin(), expValues.end(), matrixSorterByFirstValue);
@@ -1721,7 +1737,7 @@ void printExpectationValues(const vector < WaveFunctionType >  psiList, Operator
 	for (int i = 0; i < psiList.size(); ++i)
 	{
 		if (i == 0 || (printHeaderEvery > 0 && i % printHeaderEvery == 0))
-			printExpectationValuesHeader(opList, hasHamiltonian, printSigma, colWidth);
+			printExpectationValuesHeader(headerNames, colWidth);
 		int maxISize = findPower(psiList.size()) + 1;
 		cout << blankFill(colWidth - 2, maxISize);
 		cout.width(maxISize);
@@ -1746,27 +1762,18 @@ void printExpectationValues(const vector < WaveFunctionType >  psiList, Operator
 	}
 }
 
-void printExpectationValuesHeader(const vector < OperatorType > opList, bool hasHamiltonian, bool printSigma, int colWidth)
+void printExpectationValuesHeader(const vector < string > &headerNames, int colWidth)
 {
 	cout << endl;
-	blankFill(colWidth);
-	if (hasHamiltonian)
+	cout << blankFill(colWidth);
+	for (int i = 0; i < headerNames.size(); ++i)
 	{
-		cout << "E";
-		cout << blankFill(colWidth,1);
-	}
-	for (int i = 0; i < opList.size(); ++i)
-	{
-		string name(opList[i].Name);
+		string name(headerNames[i]);
 		if (name.length() > colWidth-1)
-		{
 			name = name.substr(0,colWidth-1);
-		}
 		cout << name;
 		cout << blankFill(colWidth, name.length());
 	}
-	if (hasHamiltonian && printSigma)
-		cout << "std-dev";
 	cout << endl;
 }
 
