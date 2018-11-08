@@ -2853,10 +2853,10 @@ MatrixType OrbitalRotationMatrix(vector<string> orbsOld, vector<string> orbsNew)
 
 //TODO: Anyone have a better idea where to put this?
 template<typename T>
-bool hasIdenticalEntries(const vector<T> vec)
+bool hasIdenticalEntries(const vector<T> &vec)
 {
-	for (int i = 0; i < vec.size() - 1; ++i)
-		for (int j = i + 1; j < vec.size(); ++j)
+	for (int i = 0; i < (int)vec.size() - 1; ++i)
+		for (int j = i + 1; j < (int)vec.size(); ++j)
 			if (vec[i] == vec[j])
 				return true;
 	return false;
