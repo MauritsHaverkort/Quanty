@@ -2934,7 +2934,7 @@ static int LuaMeanFieldOperator(lua_State *L)
   H = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
   Rho = luaL_checkCompactMatrix(L, 2);
   if((H->NFermion+H->NBoson)!=Rho->Ni)
-    return luaL_error(L, "Error in MeanFieldGroundstate, length of operator (NF=%d, NB=%d) is not equal to length of density matrix (%d)\n",H->NFermion,H->NBoson,Rho->Ni);
+    return luaL_error(L, "Error in MeanFieldOperator, length of operator (NF=%d, NB=%d) is not equal to length of density matrix (%d)\n",H->NFermion,H->NBoson,Rho->Ni);
   HMF = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   //TODO: Why is MeanFieldOperator different from MeanFieldOperatorOld ...
   //MeanFieldOperator(H, HMF, *Rho, Options.AddDFTSelfInteraction);
@@ -2956,11 +2956,11 @@ static int LuaMeanFieldOperator(lua_State *L)
   return 1;
 }
 
-static int LuaOperatorSetTrace(lua_State *L)
+static int LuaOperatorSetOnsiteEnergy(lua_State *L)
 {
   OperatorType *O;
-  double NewTrace=0;
-  Complex16 OldTrace={0,0};
+  double NewOnsiteEnergy=0;
+  Complex16 OldOnsiteEnergy={0,0};
   uint16_t *OrbitalsToInclude=NULL;
   uint32_t len,i;
   uint32_t luaStackLen = (uint32_t)lua_gettop(L);
@@ -2972,7 +2972,7 @@ static int LuaOperatorSetTrace(lua_State *L)
   if(O->MaxLength<2) return 0;
   if(luaStackLen>1)
   {
-    NewTrace = (double)luaL_checknumber(L, 2);
+    NewOnsiteEnergy = (double)luaL_checknumber(L, 2);
   }
   if(luaStackLen>2)
   {
@@ -2987,16 +2987,16 @@ static int LuaOperatorSetTrace(lua_State *L)
     }
     len=O->NFermion;
   }
-  OldTrace = OperatorTrace(*O,OrbitalsToInclude,len);
-  OldTrace*=-1;
-  OldTrace.Re+=NewTrace;
+  OldOnsiteEnergy = OperatorTraceAverage(*O,OrbitalsToInclude,len);
+  OldOnsiteEnergy*=-1;
+  OldOnsiteEnergy.Re+=NewOnsiteEnergy;
   if(O->l[2].QComplex==0)
   {
-    RealOperatorAddTrace(O, OrbitalsToInclude, len, OldTrace.Re);
+  	RealOperatorAddDiagonalOffset(O, OrbitalsToInclude, len, OldOnsiteEnergy.Re);
   }
   else
   {
-    ComplexOperatorAddTrace(O, OrbitalsToInclude, len, OldTrace);
+  	ComplexOperatorAddDiagonalOffset(O, OrbitalsToInclude, len, OldOnsiteEnergy);
   }
   
   return 0;
@@ -4957,7 +4957,8 @@ static const struct luaL_Reg global_functions[] = {
   {"NewWavefunction", LuaNewWaveFunction},
 	{"NonRelToRelOrbitals",LuaNonRelToRelOrbitals},
   {"OperatorToMatrix", LuaOperatorToMatrix},
-  {"OperatorSetTrace", LuaOperatorSetTrace},
+  {"OperatorSetOnsiteEnergy", LuaOperatorSetOnsiteEnergy},
+	{"OperatorSetTrace", LuaOperatorSetOnsiteEnergy},
 	{"OrbitalRotationMatrix",LuaOrbitalRotationMatrix},
   {"OrbToMultiplicity",LuaOrbToMultiplicity},
   {"Orthonormalize", LuaOrthonormalize},
