@@ -2251,7 +2251,6 @@ uint32_t LanczosBlockTriDiagonalizeRR(const OperatorType H, WaveFunctionType * c
   vip=2;
   Npsivi=Npsi;
   VerbosityPrintf(0x0100,"BasisSetSize: %12i ", v[1][0].N);
-  PrintWaveFunctionFullReadable(v[vi][0]); //TODO REMOVE ---------------------------------------------------------------------------------
   for(k=1;k<M->N;k++)
   {
 	  // v[vip] = H v[vi]^T
