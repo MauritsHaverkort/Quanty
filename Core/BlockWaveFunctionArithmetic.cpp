@@ -726,6 +726,7 @@ uint32_t RealBlockWaveFunctionAddElementOMPMiniFlush(WaveFunctionType * const ps
       }
       else
       {
+    	  printf("%e\n",MiniValue[i*Npsi]);
     	  RealBlockWaveFunctionAddElementConserveBasis(psi, &MiniDet[i * psi->NWord], &(MiniValue[i*Npsi]), Npsi);
       }
     }
