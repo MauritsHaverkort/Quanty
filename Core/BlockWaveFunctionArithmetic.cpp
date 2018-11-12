@@ -619,7 +619,8 @@ void RealBlockWaveFunctionAddElementConserveBasis(WaveFunctionType const *psi, c
   }
   else
   {                             /* The key is already taken, test if this is due to a collision, or if psi is already in the basis set */
-    while (1)
+	printf("key taken\n"); //TODO - REMOVE --------------------------------------------------------------------------------------------------
+	while (1)
     {
       PsiAIsPsiB = 1;
       for (i = 0; i < psi[0].NWord; i++)
@@ -633,7 +634,7 @@ void RealBlockWaveFunctionAddElementConserveBasis(WaveFunctionType const *psi, c
       {                         /* psi already in basis set add and leave loop  */
 
     	for(i=0;i<Npsi;i++)
-        { printf("add: %e\n",a[i]); //TODO - REMOVE --------------------------------------------------------------------------------------------------
+        {
 #pragma omp atomic
           psi[i].ValueRe[BlokElement(NextIndex)] += a[i];
         }
