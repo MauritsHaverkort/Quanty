@@ -2251,6 +2251,7 @@ uint32_t LanczosBlockTriDiagonalizeRR(const OperatorType H, WaveFunctionType * c
   vip=2;
   Npsivi=Npsi;
   VerbosityPrintf(0x0100,"BasisSetSize: %12i ", v[1][0].N);
+  PrintWaveFunctionFullReadable(v[vi][0]); //TODO REMOVE ---------------------------------------------------------------------------------
   for(k=1;k<M->N;k++)
   {
 	  // v[vip] = H v[vi]^T
@@ -2267,7 +2268,6 @@ uint32_t LanczosBlockTriDiagonalizeRR(const OperatorType H, WaveFunctionType * c
     VerbosityPrintf(0x0100,"| M.a[%3i] M.b[%3i]: %12.5E %12.5E | Err: %12.5E\n", i, i - 1, 0, 0);//TODO M->a[i], M->b[i - 1]);
     // a[k] = v[vi]^* . v[vip]^T  (v[vi]^* . H . v[vi]^T)
     Mab.VRe = &(M->aRe[k*Sqr(M->BlockSize)]);
-    PrintWaveFunctionFullReadable(v[vip][0]); //TODO REMOVE ---------------------------------------------------------------------------------
     RealBlockWaveFunctionDotProduct(v[vi], Npsi, v[vip], Npsi, &Mab); //Npsivi = Npsi - changes at Lowdin Orthonormalization
     if(k!=1)
     {
