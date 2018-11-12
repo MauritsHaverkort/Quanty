@@ -17,6 +17,18 @@ double ImExpectationValue(const CompactMatrixType &M, const std::vector<double> 
 	}
 	return result;
 }
+double ImExpectationValue(const CompactMatrixType *M, const std::vector<double> &v)
+{
+	double result = 0;
+	for(uint32_t i = 0; i < v.size(); i++)
+	{
+		for(uint32_t j = 0; j < v.size(); j++)
+		{
+			result += v[i] * M->V[i*M->Ni+j].Im * v[j];
+		}
+	}
+	return result;
+}
 
 double EvaluateResponseFunction(double w, double gH, double gS,const std::vector<double> &H, const std::vector<ResponsefunctionType *> &SigmaRes, const std::vector<double> psi)
 {
@@ -38,6 +50,20 @@ double EvaluateResponseFunction(double w, double gH, double gS,const std::vector
 	CompactMatrixInverse(&sigma);
 	//printf("%e %e I\n",sigma.V[0].Re,sigma.V[0].Im);
 	return ImExpectationValue(sigma,psi);
+}
+
+double EvaluateResponseFunction(double w, double gH, const std::vector<double> &H, CompactMatrixType * Sigma, const std::vector<double> psi)
+{
+	uint32_t N = Sigma->Nj;
+	for (uint32_t i = 0; i < N; i++)
+	{
+		Sigma->V[i*N +i].Re += H[i] - w;
+		Sigma->V[i*N +i].Im += -gH;
+	}
+
+	CompactMatrixInverse(Sigma);
+	//printf("%e %e I\n",sigma.V[0].Re,sigma.V[0].Im);
+	return ImExpectationValue(Sigma,psi);
 }
 
 CompactMatrixType *EvaluateSelfEnergy(double w, double gS, const std::vector<ResponsefunctionType *> &SigmaRes)

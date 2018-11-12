@@ -638,6 +638,49 @@ static int LuaWriteDataToFile(lua_State *L)
 	return 0;
 }
 
+static int LuaCalcSpectrumWithSelfEnergy(lua_State *L)
+{
+	double wMin, wMax,dw, gH;
+	std::vector<double> psi, H; // TODO make H generic: either Matrix, TriDiagonalMatrix or DiagonalMatrix
+	std::vector<CompactMatrixType *> Sigma;
+	uint32_t len = lua_gettop(L);
+
+	H   = luaL_checkarray_double(L,1);
+	psi = luaL_checkarray_double(L,2);
+	if (H.size() != psi.size())
+	{
+		return luaL_error(L,"CalcSpectrumWithSelfEnergy: Hamiltonian and ground state do not have the same dimensions - dim(H) = %d and dim(psi) = %d\n",H.size(),psi.size());
+	}
+	lua_check(L,3,Sigma);
+
+	gH   = luaL_checknumber(L,4);
+	wMin = luaL_checknumber(L,5);
+	wMax = luaL_checknumber(L,6);
+	dw   = luaL_checknumber(L,7);
+	if (wMin >= wMax || dw <= 0)
+	{
+		return luaL_error(L,"CalcSpectrumWithSelfEnergy: cannot plot range [%f,%f] in steps of %f\n",wMin,wMax,dw);
+	}
+	uint32_t lenW = floor((wMax-wMin)/dw) + 1;
+	if (lenW != Sigma.size())
+	{
+		return luaL_error(L,"CalcSpectrumWithSelfEnergy: Grids for Sigma and G do not match\n");
+	}
+	std::vector<std::vector<double> > graph = std::vector<std::vector<double> >(lenW);
+	double w = wMin;
+	for (uint32_t i = 0; i < lenW; i++)
+	{
+		//w += dw;
+		w = wMin + i*dw;
+		graph[i] = std::vector<double>(2);
+		graph[i][0] = w;
+		graph[i][1] = EvaluateResponseFunction(w,gH,H,Sigma[i],psi);
+
+	}
+	lua_push(L,graph);
+	return 1;
+}
+
 static const struct luaL_Reg Martin_meta[] = {
   {NULL, NULL}
 };
@@ -685,6 +728,7 @@ static const struct luaL_Reg Martin_func[] = {
   {"WriteData",LuaWriteDataToFile},
   {"EvaluateSelfEnergy",LuaEvaluateSelfEnergy},
   {"PlotSpectrumWithSelfEnergy",LuaPlotSpectrumWithSelfEnergy},
+  {"CalcSpectrumWithSelfEnergy",LuaCalcSpectrumWithSelfEnergy},
   {NULL, NULL}
 };
 
