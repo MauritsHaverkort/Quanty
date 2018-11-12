@@ -631,8 +631,9 @@ void RealBlockWaveFunctionAddElementConserveBasis(WaveFunctionType const *psi, c
       }
       if (PsiAIsPsiB)
       {                         /* psi already in basis set add and leave loop  */
-        for(i=0;i<Npsi;i++)
-        {
+
+    	for(i=0;i<Npsi;i++)
+        { printf("add: %e\n",a[i]); //TODO - REMOVE --------------------------------------------------------------------------------------------------
 #pragma omp atomic
           psi[i].ValueRe[BlokElement(NextIndex)] += a[i];
         }
@@ -726,7 +727,7 @@ uint32_t RealBlockWaveFunctionAddElementOMPMiniFlush(WaveFunctionType * const ps
       }
       else
       {
-    	  printf("%e\n",MiniValue[i*Npsi]);
+    	  //printf("%e\n",MiniValue[i*Npsi]); //TODO -REMOVE ----------------------------------------------------------------------------------
     	  RealBlockWaveFunctionAddElementConserveBasis(psi, &MiniDet[i * psi->NWord], &(MiniValue[i*Npsi]), Npsi);
       }
     }

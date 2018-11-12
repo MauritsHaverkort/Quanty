@@ -78,3 +78,8 @@ vector<vector<double> > CreateEigenDiffsOnGrid(vector<double> x, int kappa, doub
 	}
 	return eigendiffs;
 }
+
+void CreateEigenDiffs( int kappa, double Emin, double dE, int NeigenDiffs, vector<vector<Interpolation::InterpolatingFunction> > &eigendifferentials)
+{
+
+}
