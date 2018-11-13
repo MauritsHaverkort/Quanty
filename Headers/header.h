@@ -97,6 +97,7 @@ using std::vector;
 #include "../LuaInterface/TightBinding.h"
 #include "../LuaInterface/Wavefunction.h"
 #include "../LuaInterface/eval.h"
+#include "../LuaInterface/lua_extensions/luaInOut.h"
 #include "../LuaInterface/lua_extensions/TableToArray.h"
 #include "../LuaInterface/lua_extensions/get_put.h"
 #include "../LuaInterface/lua_extensions/tools.h"
