@@ -49,5 +49,6 @@ string numberToStringMaxWidth(double num, int maxWidth);
 void numberOutMaxWidth(double num, int maxWidth);
 string blankFill(int width, string::size_type occupiedSpace);
 string blankFill(int width);
-void printExpectationValues(const vector < WaveFunctionType >  &psiList, OperatorType  hamil, const vector < OperatorType >  &opList, bool hasHamiltonian, bool sortByEnergy, bool printSigma, double zero, int printHeaderEvery, int colWidth);
-void printExpectationValuesHeader(const vector < string > &headerNames, int colWidth);
+vector<double> expectationValuesSingleOperator(const vector<WaveFunctionType> &psiList, const OperatorType &op, const double zero);
+vector<double> sigmaValues(const vector<WaveFunctionType> &psiList, const OperatorType &hamil, const vector<double> energies);
+vector<double> sigmaValues(const vector<WaveFunctionType> &psiList, const OperatorType &hamil);

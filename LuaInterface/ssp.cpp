@@ -4657,15 +4657,16 @@ static int LuaPrintExpectationValues(lua_State * L)
 	OperatorType hamil;
 	vector < OperatorType > opList;
 	uint32_t len = (uint32_t) lua_gettop(L);
+	map<string, vector<double> > extraLists;
 	bool hasHamiltonian = false;
-	bool hasOptions = false;
+	bool hasExtraLists = false;
 
   struct
   {
-		int colWidth = 8;
-		int printHeaderEvery = 0;
+		uint colWidth = 8;
+		uint printHeaderEvery = 0;
 		bool printSigma = false;
-		bool sortByEnergy = true;
+		bool sortByEnergy = false;
     double zero = 1E-10;
   } Options;
   LuaOptionsType LuaPrintExpectationValuesOptions[]={
@@ -4676,64 +4677,34 @@ static int LuaPrintExpectationValues(lua_State * L)
 		{"zero",          			"double",  &(Options.zero)},
     {NULL, NULL, NULL}};
 
-//  TODO: Fehlermeldung anpassen
-	if (len < 2 || len > 4)
-		return luaL_error(L, "PrintExpectationValues called with %d arguments. 2, 3 or 4 expected, List of Wavefunctions, optional Hamiltonian, list of other operators, and optional list of Options.\n", len);
+	if (len < 2 || len > 5)
+		return luaL_error(L,
+				"PrintExpectationValues called with %d arguments. 2, 3, 4 or 5 expected, List of Wavefunctions, list of operators, optional Hamiltonian, optional map to other lists, and optional list of Options.\n",
+				len);
+//TODO: Lua_check für Wavefunction und Operator
 
-	if (len == 2)
-	{
-//		Input: Psi, Operators;
-		hasHamiltonian = false;
-		hasOptions = false;
-	} else if (len == 3)
-	{
-		if (lua_istable(L, -1))
-		{
-			lua_rawgeti(L, -1, 1);
-			if (lua_istable(L, -1))
-			{
-//		Input: Psi, Operators, Options;
-				hasHamiltonian = false;
-				hasOptions = true;
-			} else
-			{
-//		Input: Psi, Hamiltonian, Operators;
-				hasHamiltonian = true;
-				hasOptions = false;
-			}
-			lua_pop(L, 1);
-		} else
-		{
-			//		Input: Psi, Hamiltonian, a single Operator;
-			hasHamiltonian = true;
-			hasOptions = false;
-		}
-	} else
-	{
-//		Input: Psi, Hamiltonian; Operators, Options;
-		hasHamiltonian = true;
-		hasOptions = true;
-	}
-
+//		Possible Input: Psi, Operators, (opt)Hamiltonian, (opt)ExtraLists, (opt)Options.
 	psiList = luaL_checkvector_WaveFunctionType(L, 1);
-	if (hasHamiltonian)
-		hamil = *(OperatorType*) luaL_checkudata(L, 2, "Operator_Type");
-	if (hasOptions)
+	opList = luaL_checkvector_OperatorType(L, 2);
+	uint i = 3;
+	if (luaL_isType(L, i, hamil) && i <= len)
 	{
-		opList = luaL_checkvector_OperatorType(L, -2);
-		if (LuaTestOptionsList(L, -1))
-		{
-			LuaCheckOptions(L, -1, LuaPrintExpectationValuesOptions);
-		} else
-		{
-			return luaL_error(L, "Last argument of PrintExpectationValues should either be a single operator, a list of operators, or a list of options. It's not.\n");
-		}
-	} else
-	{
-		opList = luaL_checkvector_OperatorType(L, -1);
+		hasHamiltonian = true;
+		hamil = *(OperatorType*) luaL_checkudata(L, i, "Operator_Type");
+		++i;
 	}
-
-	printExpectationValues(psiList, hamil, opList, hasHamiltonian, Options.sortByEnergy, Options.printSigma, Options.zero, Options.printHeaderEvery, Options.colWidth);
+	if (luaL_isType(L, i, extraLists) && i <= len)
+	{
+		hasExtraLists = true;
+		lua_check(L, i, extraLists);
+		++i;
+	}
+	if (i <= len)
+	{
+		LuaCheckOptions(L, i, LuaPrintExpectationValuesOptions);
+	}
+	ExpectationValues expec = ExpectationValues(psiList, hamil, opList, extraLists, hasHamiltonian, Options.zero, Options.sortByEnergy, Options.printSigma);
+	expec.print(Options.colWidth, Options.printHeaderEvery);
 	return 0;
 }
 
