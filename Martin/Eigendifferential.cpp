@@ -39,7 +39,8 @@ double WaveFunFreeParticleG(double x, int kappa, double q)
 
 double WaveFunFreeParticleNonRelativistic(double x, int l, double q)
 {
-	return SphericalBesselJ(q*x,l);
+	double a = sqrt(2 * q*q / M_PI );
+	return a * SphericalBesselJ(q*x,l);
 }
 
 double WaveFunFreeParticleF(double x, int kappa, double q)
@@ -100,35 +101,35 @@ vector<vector<double> > CreateEigenDiffsOnGrid(const vector<double> &x, int kapp
 	return eigendiffs;
 }
 
-// Non Relativistic Eigen Differentials
-void CreateEigenDiffs(const vector<double> &x, int l, double Emin, double dE, int NeigenDiffs, vector<Interpolation::CubicSpline> &eigendifferentials)
+// Non Relativistic Eigen Differentials - eigendifferentials must be initialized on input
+void CreateEigenDiffs(const vector<double> &x, int l, double Emin, double dE, uint32_t NeigenDiffs, vector<Interpolation::CubicSpline*> &eigendifferentials)
 {
 	vector<double> vals = vector<double>(x.size());
-	eigendifferentials = vector<Interpolation::CubicSpline>(NeigenDiffs);
+	//eigendifferentials = vector<Interpolation::CubicSpline>(NeigenDiffs);
 	for (int i = 0; i < NeigenDiffs; i++)
 	{
 		double q1 = sqrt(2*(Emin +  i    * dE));//sqrt((Emin + i     * dE)*(Emin + i     * dE)/speedoflight/speedoflight - speedoflight*speedoflight);
 		double q2 = sqrt(2*(Emin + (i+1) * dE));//sqrt((Emin + (i+1) * dE)*(Emin + (i+1) * dE)/speedoflight/speedoflight - speedoflight*speedoflight);
 
 		GetEigenDiffOnGrid(x,l,q1,q2,&WaveFunFreeParticleNonRelativistic,vals);
-		eigendifferentials[i].Create(x,vals);
+		eigendifferentials[i]->Create(x,vals);
 	}
 }
 // Relativistic Eigen Differentials
-void CreateEigenDiffs(const vector<double> &x, int kappa, double Emin, double dE, int NeigenDiffs, vector<Interpolation::CubicSpline> &eigendifferentialsG, vector<Interpolation::CubicSpline> &eigendifferentialsF)
+void CreateEigenDiffs(const vector<double> &x, int kappa, double Emin, double dE, uint32_t NeigenDiffs, vector<Interpolation::CubicSpline*> &eigendifferentialsG, vector<Interpolation::CubicSpline*> &eigendifferentialsF)
 {
 	vector<double> vals = vector<double>(x.size());
-	eigendifferentialsG = vector<Interpolation::CubicSpline>(NeigenDiffs);
-	eigendifferentialsF = vector<Interpolation::CubicSpline>(NeigenDiffs);
+	//eigendifferentialsG = vector<Interpolation::CubicSpline>(NeigenDiffs);
+	//eigendifferentialsF = vector<Interpolation::CubicSpline>(NeigenDiffs);
 	for (int i = 0; i < NeigenDiffs; i++)
 	{
 		double q1 = sqrt(2*(Emin +  i    * dE));//sqrt((Emin + i     * dE)*(Emin + i     * dE)/speedoflight/speedoflight - speedoflight*speedoflight);
 		double q2 = sqrt(2*(Emin + (i+1) * dE));//sqrt((Emin + (i+1) * dE)*(Emin + (i+1) * dE)/speedoflight/speedoflight - speedoflight*speedoflight);
 
 		GetEigenDiffOnGrid(x,kappa,q1,q2,&WaveFunFreeParticleG,vals);
-		eigendifferentialsG[i].Create(x,vals);
+		eigendifferentialsG[i]->Create(x,vals);
 
 		GetEigenDiffOnGrid(x,kappa,q1,q2,&WaveFunFreeParticleF,vals);
-		eigendifferentialsF[i].Create(x,vals);
+		eigendifferentialsF[i]->Create(x,vals);
 	}
 }

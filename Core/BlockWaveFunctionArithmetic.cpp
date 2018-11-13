@@ -619,7 +619,7 @@ void RealBlockWaveFunctionAddElementConserveBasis(WaveFunctionType const *psi, c
   }
   else
   {                             /* The key is already taken, test if this is due to a collision, or if psi is already in the basis set */
-	printf("key taken\n"); //TODO - REMOVE --------------------------------------------------------------------------------------------------
+	//printf("key taken\n"); //TODO - REMOVE --------------------------------------------------------------------------------------------------
 	while (1)
     {
       PsiAIsPsiB = 1;
@@ -728,7 +728,6 @@ uint32_t RealBlockWaveFunctionAddElementOMPMiniFlush(WaveFunctionType * const ps
       }
       else
       {
-    	  //printf("%e\n",MiniValue[i*Npsi]); //TODO -REMOVE ----------------------------------------------------------------------------------
     	  RealBlockWaveFunctionAddElementConserveBasis(psi, &MiniDet[i * psi->NWord], &(MiniValue[i*Npsi]), Npsi);
       }
     }

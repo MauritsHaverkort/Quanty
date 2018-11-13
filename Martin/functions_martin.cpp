@@ -681,6 +681,68 @@ static int LuaCalcSpectrumWithSelfEnergy(lua_State *L)
 	return 1;
 }
 
+static int LuaCreateEigenDifferentials(lua_State *L)
+{
+	double Emin, dE;
+	uint32_t NeigenDiffs,Qrelativistic;
+	int kappa;
+	std::vector<double> grid;
+	std::vector<Interpolation::CubicSpline*> eigendifferentials;
+
+	uint32_t len = lua_gettop(L);
+	lua_check(L,1,Emin);
+	lua_check(L,2,dE);
+	lua_check(L,3,NeigenDiffs);
+	lua_check(L,4,kappa);
+	lua_check(L,5,grid);
+
+
+
+	if (len == 6)
+	{
+		lua_check(L,6,Qrelativistic);
+		if (Qrelativistic)
+		{
+			std::vector<Interpolation::CubicSpline*> eigendifferentialsG = std::vector<Interpolation::CubicSpline*>(NeigenDiffs);
+			lua_createtable(L,0,NeigenDiffs);
+			for (uint32_t i = 0; i < NeigenDiffs; i++)
+			{
+				void* memory = lua_newuserdata(L, sizeof(Interpolation::CubicSpline));
+				eigendifferentialsG[i] = new(memory) Interpolation::CubicSpline();
+				luaL_setmetatable(L, "InterpolatingFunction_Type");
+				lua_rawseti(L,-2,i+1);
+
+			}
+			std::vector<Interpolation::CubicSpline*> eigendifferentialsF = std::vector<Interpolation::CubicSpline*>(NeigenDiffs);
+			lua_createtable(L,0,NeigenDiffs);
+			for (uint32_t i = 0; i < NeigenDiffs; i++)
+			{
+				void* memory = lua_newuserdata(L, sizeof(Interpolation::CubicSpline));
+				eigendifferentialsF[i] = new(memory) Interpolation::CubicSpline();
+				luaL_setmetatable(L, "InterpolatingFunction_Type");
+				lua_rawseti(L,-2,i+1);
+
+			}
+			CreateEigenDiffs(grid,kappa,Emin,dE,NeigenDiffs,eigendifferentialsG,eigendifferentialsF);
+			return 2;
+		}
+	}
+
+	eigendifferentials = std::vector<Interpolation::CubicSpline*>(NeigenDiffs);
+	lua_createtable(L,0,NeigenDiffs);
+	for (uint32_t i = 0; i < NeigenDiffs; i++)
+	{
+		void* memory = lua_newuserdata(L, sizeof(Interpolation::CubicSpline));
+		eigendifferentials[i] = new(memory) Interpolation::CubicSpline();
+		luaL_setmetatable(L, "InterpolatingFunction_Type");
+		lua_rawseti(L,-2,i+1);
+
+	}
+	CreateEigenDiffs(grid,kappa,Emin,dE,NeigenDiffs,eigendifferentials);
+
+	return 1;
+}
+
 static const struct luaL_Reg Martin_meta[] = {
   {NULL, NULL}
 };
@@ -729,6 +791,7 @@ static const struct luaL_Reg Martin_func[] = {
   {"EvaluateSelfEnergy",LuaEvaluateSelfEnergy},
   {"PlotSpectrumWithSelfEnergy",LuaPlotSpectrumWithSelfEnergy},
   {"CalcSpectrumWithSelfEnergy",LuaCalcSpectrumWithSelfEnergy},
+  {"CreateEigenDifferentials",LuaCreateEigenDifferentials},
   {NULL, NULL}
 };
 

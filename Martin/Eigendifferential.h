@@ -15,8 +15,8 @@ vector<double> GetEigenDiffOnGrid(vector<double> x, int kappa, double q1, double
 vector<vector<double> > CreateEigenDiffsOnGrid(const vector<double> &x, int kappa, double Emin, double dE, int NeigenDiffs);
 
 void GetEigenDiffOnGrid(const vector<double> &x, int kappa, double q1, double q2,double (*f)(double, int, double),vector<double> &eigendiff);
-void CreateEigenDiffs(const vector<double> &x, int l, double Emin, double dE, int NeigenDiffs, vector<Interpolation::CubicSpline> &eigendifferentials);
-void CreateEigenDiffs(const vector<double> &x, int kappa, double Emin, double dE, int NeigenDiffs, vector<Interpolation::CubicSpline> &eigendifferentialsG, vector<Interpolation::CubicSpline> &eigendifferentialsF);
+void CreateEigenDiffs(const vector<double> &x, int l, double Emin, double dE, uint32_t NeigenDiffs, vector<Interpolation::CubicSpline*> &eigendifferentials);
+void CreateEigenDiffs(const vector<double> &x, int kappa, double Emin, double dE, uint32_t NeigenDiffs, vector<Interpolation::CubicSpline*> &eigendifferentialsG, vector<Interpolation::CubicSpline*> &eigendifferentialsF);
 
 
 
