@@ -34,6 +34,8 @@ void lua_check(lua_State * L, int arg, string &in);
 void lua_check(lua_State * L, int arg, double &in);
 void lua_check(lua_State * L, int arg, int &in);
 void lua_check(lua_State * L, int arg, uint16_t &in);
+void lua_check(lua_State * L, int arg, uint32_t &in);
+void lua_check(lua_State *L, int arg, CompactMatrixType* &M);
 template<typename T>void lua_check(lua_State * L, int arg, vector<T> &in);
 template<typename keyType, typename valType>void lua_check(lua_State * L, int arg, map<keyType, valType> &in);
 void LuaPushArray_double(lua_State *L, double const * const val, int const N);

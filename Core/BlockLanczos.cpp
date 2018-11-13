@@ -2213,7 +2213,7 @@ uint32_t LanczosBlockTriDiagonalizeCC(const OperatorType H, WaveFunctionType * c
   free(v[3]);
   return 0;
 }
-uint32_t LanczosBlockTriDiagonalizeRR(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
+uint32_t LanczosBlockTriDiagonalizeRR(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma, const bool ExpandBasis)
 {
   uint32_t i,j,k,vi,vip,vim;
   CompactMatrixType Mab;
@@ -2250,10 +2250,11 @@ uint32_t LanczosBlockTriDiagonalizeRR(const OperatorType H, WaveFunctionType * c
   vim=0;
   vip=2;
   Npsivi=Npsi;
+  VerbosityPrintf(0x0100,"BasisSetSize: %12i ", v[1][0].N);
   for(k=1;k<M->N;k++)
   {
-    // v[vip] = H v[vi]^T
-    while(BlockOperatorPsiRR(H, v[vi], v[vip], Npsivi))
+	  // v[vip] = H v[vi]^T
+    while(BlockOperatorPsiRR(H, v[vi], v[vip], Npsivi,ExpandBasis))
     {
       printf("Allocation of new memory failed in LanczosBlockTriDiagonalizeRR for the function BlockOperatorPsiRR\n");
       printf("reduce accuracy of the wave-function by a factor of two from %22.15E to %22.15E\n\n", epsilon, epsilon * 2.0);
@@ -2262,6 +2263,8 @@ uint32_t LanczosBlockTriDiagonalizeRR(const OperatorType H, WaveFunctionType * c
       if (v[vi][0].NBlok == 1) AllocFailed();
       RealBlockWaveFunctionTruncateBasis(v[vi], Npsivi, epsilon);
     }
+    VerbosityPrintf(0x0100,"%12i ", v[vi][0].N);
+    VerbosityPrintf(0x0100,"| M.a[%3i] M.b[%3i]: %12.5E %12.5E | Err: %12.5E\n", i, i - 1, 0, 0);//TODO M->a[i], M->b[i - 1]);
     // a[k] = v[vi]^* . v[vip]^T  (v[vi]^* . H . v[vi]^T)
     Mab.VRe = &(M->aRe[k*Sqr(M->BlockSize)]);
     RealBlockWaveFunctionDotProduct(v[vi], Npsi, v[vip], Npsi, &Mab); //Npsivi = Npsi - changes at Lowdin Orthonormalization
@@ -4331,7 +4334,7 @@ uint32_t LanczosBlockTriDiagonalizeRestricted(const OperatorType H, WaveFunction
   }
 }
 
-uint32_t LanczosBlockTriDiagonalize(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
+uint32_t LanczosBlockTriDiagonalize(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma, const bool ExpandBasis)
 {
   uint32_t i,psiComplex=0;
   VerbosityPrintf(0x0001,"Start of LanczosBlockTriDiagonalize\n");
@@ -4381,7 +4384,7 @@ uint32_t LanczosBlockTriDiagonalize(const OperatorType H, WaveFunctionType * con
   {
     if (H.QComplex == 0)
     {
-      return LanczosBlockTriDiagonalizeRR(H, psi, epsilon, M, Gamma);
+      return LanczosBlockTriDiagonalizeRR(H, psi, epsilon, M, Gamma,ExpandBasis);
     }
     else if (H.QComplex == 1)
     {
