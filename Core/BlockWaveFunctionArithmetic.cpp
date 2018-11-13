@@ -614,12 +614,11 @@ void RealBlockWaveFunctionAddElementConserveBasis(WaveFunctionType const *psi, c
   /* test if the key that belongs to psi already excists */
   NextIndex=psi[0].KeyList[hash(det, psi[0].NWord, psi[0].NBitsKey)];
   if (!NextIndex)
-  {                             /* det not in key, do nothing */
+  {                            /* det not in key, do nothing */
     return;
   }
   else
   {                             /* The key is already taken, test if this is due to a collision, or if psi is already in the basis set */
-	//printf("key taken\n"); //TODO - REMOVE --------------------------------------------------------------------------------------------------
 	while (1)
     {
       PsiAIsPsiB = 1;
@@ -627,12 +626,11 @@ void RealBlockWaveFunctionAddElementConserveBasis(WaveFunctionType const *psi, c
       {
         if (psi[0].Determinant[BlokElementDet(NextIndex, psi[0].NWord, i)] != det[i])
         {
-          PsiAIsPsiB = 0;
+        	PsiAIsPsiB = 0;
         }
       }
       if (PsiAIsPsiB)
       {                         /* psi already in basis set add and leave loop  */
-
     	for(i=0;i<Npsi;i++)
         {
 #pragma omp atomic
@@ -1298,11 +1296,18 @@ uint32_t BlockOperatorPsiRR(const OperatorType O, WaveFunctionType const * const
   Opsi[0].NFermion = psi[0].NFermion;
   Opsi[0].NBoson = psi[0].NBoson;
   Opsi[0].NBitsKey = psi[0].NBitsKey;
-  if (WaveFunctionInit(&(Opsi[0])))
+  if (!ExpandBasis)
   {
-    printf("Could not initialize Opsi[0] in BlockOperatorPsiRR\n");
-    return 1;
-  };
+	  WaveFunctionInitCopyBasis(&(Opsi[0]), psi[0]);
+  }
+  else
+  {
+	  if (WaveFunctionInit(&(Opsi[0])))
+	  {
+		printf("Could not initialize Opsi[0] in BlockOperatorPsiRR\n");
+		return 1;
+	  };
+  }
   for(i=1;i<Npsi;i++)
   {
     if(WaveFunctionInitCopyBasis(&(Opsi[i]), Opsi[0]))
