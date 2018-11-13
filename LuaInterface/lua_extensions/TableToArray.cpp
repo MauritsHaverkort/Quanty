@@ -3376,3 +3376,104 @@ void lua_push(lua_State * L, const bool pushkin)
 	else
 		lua_pushboolean (L, 0);
 }
+
+bool luaL_isudata(lua_State *L, int ud, const char *tname)
+{
+	return (luaL_testudata(L, ud, tname) != NULL);
+}
+
+bool luaL_isType(lua_State *L, int arg, const OperatorType &example)
+{
+	return luaL_isudata(L, arg, "Operator_Type");
+}
+
+bool luaL_isType(lua_State *L, int arg, const WaveFunctionType &example)
+{
+	return luaL_isudata(L, arg, "Wavefunction_Type");
+}
+
+bool luaL_isType(lua_State *L, int arg, const double &example)
+{
+	return (bool) lua_isnumber(L, arg);
+}
+
+bool luaL_isType(lua_State *L, int arg, const string &example)
+{
+	return (bool) lua_isstring(L, arg);
+}
+
+template<typename T>
+bool luaL_isType(lua_State *L, int arg, const vector<T> &example)
+{
+	if (lua_istable(L, arg))
+	{
+		uint len = (uint) lua_objlen(L, arg);
+		for (uint i = 1; i <= len; ++i)
+		{
+			lua_rawgeti(L, arg, i);
+			if (!luaL_isType(L, -1, T()))
+			{
+				lua_pop(L,1);
+				return false;
+			}
+			lua_pop(L,1);
+		}
+		return true;
+	} else
+	{
+		return luaL_isType(L, arg, T());
+	}
+}
+
+template<typename keyType, typename valType>
+bool luaL_isType(lua_State *L, int arg, const map<keyType, valType> &example)
+{
+	if (!lua_istable(L, arg))
+		return false;
+	lua_rawgeti(L, arg, 1);
+	bool isSinglePair = !((bool) lua_istable(L, -1));
+	lua_pop(L, 1);
+	if (isSinglePair)
+	{
+		lua_rawgeti(L, arg, 1);
+		if (!luaL_isType(L, -1, keyType()))
+		{
+			lua_pop(L, 1);
+			return false;
+		}
+		lua_pop(L, 1);
+		lua_rawgeti(L, arg, 2);
+		if (!luaL_isType(L, -1, valType()))
+		{
+			lua_pop(L, 1);
+			return false;
+		}
+		lua_pop(L, 1);
+		return true;
+	} else
+	{
+		uint len = (uint) lua_objlen(L, arg);
+		for (uint i = 1; i <= len; ++i)
+		{
+			lua_rawgeti(L, arg, i);
+
+			lua_rawgeti(L, -1, 1);
+			if (!luaL_isType(L, -1, keyType()))
+			{
+				lua_pop(L, 1);
+				return false;
+			}
+			lua_pop(L, 1);
+			lua_rawgeti(L, -1, 2);
+			if (!luaL_isType(L, -1, valType()))
+			{
+				lua_pop(L, 1);
+				return false;
+			}
+			lua_pop(L, 1);
+
+			lua_pop(L, 1);
+		}
+		return true;
+	}
+}
