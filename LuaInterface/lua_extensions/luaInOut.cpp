@@ -1,3 +1,5 @@
+//Begin of lua_push, which pushes an arbitrary object onto the stack.
+
 void lua_push(lua_State * L, const double pushkin)
 {
 	lua_pushnumber(L, pushkin);
@@ -13,6 +15,16 @@ void lua_push(lua_State * L, const int pushkin)
 	lua_push(L, (lua_Integer)pushkin);
 }
 
+void lua_push(lua_State * L, const uint pushkin)
+{
+	lua_push(L, (lua_Integer)pushkin);
+}
+
+void lua_push(lua_State * L, const uint16_t pushkin)
+{
+	lua_push(L, (lua_Integer)pushkin);
+}
+
 void lua_push(lua_State * L, const char * pushkin)
 {
 	lua_pushstring(L, pushkin);
@@ -21,6 +33,24 @@ void lua_push(lua_State * L, const char * pushkin)
 void lua_push(lua_State * L, const string pushkin)
 {
 	lua_push(L, pushkin.c_str());
+}
+
+void lua_push(lua_State *L, const OperatorType &pushkin)
+{
+	OperatorType * O = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+	InitOperatorCopySettings(O, pushkin);
+	O->QComplex = pushkin.QComplex;
+	O->l = pushkin.l;
+	luaL_setmetatable(L, "Operator_Type");
+}
+
+void lua_push(lua_State *L, const OperatorType* &pushkin)
+{
+	OperatorType * O = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+	InitOperatorCopySettings(O, *pushkin);
+	O->QComplex = pushkin->QComplex;
+	O->l = pushkin->l;
+	luaL_setmetatable(L, "Operator_Type");
 }
 
 template<typename T>
@@ -67,7 +97,7 @@ void lua_push(lua_State * L, const bool pushkin)
 }
 
 
-
+//Begin of lua_check, which sets the value of the third element to the object on the stack.
 
 void lua_check(lua_State * L, int arg, string &in)
 {
@@ -94,9 +124,36 @@ void lua_check(lua_State * L, int arg, uint32_t &in)
 	in = (uint32_t) luaL_checkunsigned(L, arg);
 }
 
-void lua_check(lua_State *L, int arg, CompactMatrixType* &M)
+void lua_check(lua_State *L, int arg, bool &in)
 {
-	M = luaL_checkCompactMatrix(L, arg);
+	if (!lua_isboolean(L,arg))
+		luaL_error(L,"Error: Expected a boolean at position %d",arg);
+	in = (bool) lua_toboolean(L,arg);
+}
+
+void lua_check(lua_State *L, int arg, CompactMatrixType* &in)
+{
+	in = luaL_checkCompactMatrix(L, arg);
+}
+
+void lua_check(lua_State *L, int arg, WaveFunctionType &in)
+{
+	in = *(WaveFunctionType *) luaL_checkudata(L, arg, "Wavefunction_Type");
+}
+
+void lua_check(lua_State *L, int arg, WaveFunctionType* &in)
+{
+	in = (WaveFunctionType *) luaL_checkudata(L, arg, "Wavefunction_Type");
+}
+
+void lua_check(lua_State *L, int arg, OperatorType &in)
+{
+	in = *(OperatorType *)luaL_checkudata(L, -1, "Operator_Type");
+}
+
+void lua_check(lua_State *L, int arg, OperatorType* &in)
+{
+	in = (OperatorType *)luaL_checkudata(L, -1, "Operator_Type");
 }
 
 template<typename T>
@@ -172,7 +229,7 @@ void lua_check(lua_State * L, int arg, map<keyType, valType> &in)
 }
 
 
-
+//Begin of luaL_isType, which checks if the type of an object on the stack is the same as that of the example given as reference, returning a bool without throwing an error.
 
 bool luaL_isudata(lua_State *L, int ud, const char *tname)
 {

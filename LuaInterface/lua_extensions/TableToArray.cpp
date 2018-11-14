@@ -1776,29 +1776,6 @@ WaveFunctionType* luaL_checkarray_WaveFunctionType(lua_State *L, int narg, uint3
   return buff;
 }
 
-const vector<WaveFunctionType> luaL_checkvector_WaveFunctionType(lua_State *L, int narg)
-{
-//	luaL_checktype(L, narg, LUA_TTABLE);
-	if (lua_istable(L, narg))
-	{
-		uint32_t len = (uint32_t) lua_objlen(L, narg);
-		vector < WaveFunctionType > buff(len);
-
-		for (int i = 0; i < len; i++)
-		{
-			lua_rawgeti(L, narg, i + 1);
-			buff[i] = *(WaveFunctionType *) luaL_checkudata(L, -1, "Wavefunction_Type");
-			lua_pop(L, 1);
-		}
-		return buff;
-	} else
-	{
-		vector < WaveFunctionType > buff(1);
-		buff[0] = *(WaveFunctionType *) luaL_checkudata(L, narg, "Wavefunction_Type");
-		return buff;
-	}
-}
-
 WaveFunctionType** luaL_checkarray_PointerWaveFunctionType(lua_State *L, int narg, uint32_t *len_out)
 {
   int i;
@@ -1835,29 +1812,6 @@ OperatorType* luaL_checkarray_OperatorType(lua_State *L, int narg, uint32_t *len
     }
   }
   return buff;
-}
-
-const vector<OperatorType> luaL_checkvector_OperatorType(lua_State *L, int narg)
-{
-//	luaL_checktype(L, narg, LUA_TTABLE);
-	if (lua_istable(L, narg))
-	{
-		uint32_t len = (uint32_t) lua_objlen(L, narg);
-		vector < OperatorType > buff(len);
-
-		for (int i = 0; i < len; i++)
-		{
-			lua_rawgeti(L, narg, i + 1);
-			buff[i] = *(OperatorType *) luaL_checkudata(L, -1, "Operator_Type");
-			lua_pop(L, 1);
-		}
-		return buff;
-	} else
-	{
-		vector < OperatorType > buff(1);
-		buff[0] = *(OperatorType *) luaL_checkudata(L, narg, "Operator_Type");
-		return buff;
-	}
 }
 
 void luaL_setarray_DeterminatRestrictionType(lua_State *L, int narg, DeterminantRestrictionType * buff)

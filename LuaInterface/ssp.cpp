@@ -4681,11 +4681,9 @@ static int LuaPrintExpectationValues(lua_State * L)
 		return luaL_error(L,
 				"PrintExpectationValues called with %d arguments. 2, 3, 4 or 5 expected, List of Wavefunctions, list of operators, optional Hamiltonian, optional map to other lists, and optional list of Options.\n",
 				len);
-//TODO: Lua_check für Wavefunction und Operator
-
 //		Possible Input: Psi, Operators, (opt)Hamiltonian, (opt)ExtraLists, (opt)Options.
-	psiList = luaL_checkvector_WaveFunctionType(L, 1);
-	opList = luaL_checkvector_OperatorType(L, 2);
+	lua_check(L,1,psiList);
+	lua_check(L,2,opList);
 	uint i = 3;
 	if (luaL_isType(L, i, hamil) && i <= len)
 	{
