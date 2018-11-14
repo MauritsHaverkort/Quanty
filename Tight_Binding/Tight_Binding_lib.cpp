@@ -3218,25 +3218,25 @@ vector<T> dictToList(const map<string, T> &dict, const vector<string> &keys)
 }
 
 
-map<string, vector<int> > createAtmoicIndicesDict(const vector<string> &orbitals)
+map<string, vector<uint16_t> > createAtmoicIndicesDict(const vector<string> &orbitals)
 {
-	map<string, vector<int> > allIndices;
-	int offset = 0;
-	for (int i = 0; i < orbitals.size(); ++i)
+	map<string, vector<uint16_t> > allIndices;
+	uint16_t offset = 0;
+	for (uint i = 0; i < (uint) orbitals.size(); ++i)
 	{
 		string orb = orbitals[i];
 		int multiplicity = orbToMultiplicity(orb);
 		if (multiplicity > 0)
 		{
-			vector<int> orbIndices(multiplicity);
-			for (int j = 0; j < multiplicity; ++j)
+			vector<uint16_t> orbIndices(multiplicity);
+			for (uint16_t j = 0; j < (uint16_t) multiplicity; ++j)
 				orbIndices[j] = offset + j;
 			allIndices.insert( { orb, orbIndices });
 			if (!isRelOrbital(orb) && (multiplicity % 2 == 0))
 			{
-				vector<int> orbIndicesDn(multiplicity / 2);
-				vector<int> orbIndicesUp(multiplicity / 2);
-				for (int j = 0; j < multiplicity / 2; ++j)
+				vector<uint16_t> orbIndicesDn(multiplicity / 2);
+				vector<uint16_t> orbIndicesUp(multiplicity / 2);
+				for (uint16_t j = 0; j < (uint16_t) multiplicity / 2; ++j)
 				{
 					orbIndicesDn[j] = offset + 2 * j;
 					orbIndicesUp[j] = offset + 2 * j + 1;
@@ -3253,23 +3253,22 @@ map<string, vector<int> > createAtmoicIndicesDict(const vector<string> &orbitals
 	return allIndices;
 }
 
-
-void groupOrbitals(map<string, vector<int> > &allIndices, map<string, vector<string> > &groupings)
+void groupOrbitals(map<string, vector<uint16_t> > &allIndices, const map<string, vector<string> > &groupings)
 {
 	map<string, vector<string> >::const_iterator iter;
 	for (iter = groupings.begin(); iter != groupings.end(); ++iter)
 	{
 		string groupKey = iter->first;
 		vector < string > groupMembers = iter->second;
-		vector<int> indices;
-		for (int i = 0; i < groupMembers.size(); ++i)
+		vector<uint16_t> indices;
+		for (uint i = 0; i < (uint) groupMembers.size(); ++i)
 		{
 			string groupMember = groupMembers[i];
-			map<string, vector<int> >::const_iterator groupMemberIter = allIndices.find(groupMember);
+			map<string, vector<uint16_t> >::const_iterator groupMemberIter = allIndices.find(groupMember);
 			if (groupMemberIter != allIndices.end())
 			{
-				vector<int> groupMemberIndices = groupMemberIter->second;
-				for (int j = 0; j < groupMemberIndices.size(); ++j)
+				vector<uint16_t> groupMemberIndices = groupMemberIter->second;
+				for (uint j = 0; j < (uint) groupMemberIndices.size(); ++j)
 				{
 					if (!isIntElementOf(groupMemberIndices[j], indices))
 						indices.push_back(groupMemberIndices[j]);
@@ -3281,4 +3280,11 @@ void groupOrbitals(map<string, vector<int> > &allIndices, map<string, vector<str
 		}
 		allIndices.insert( { groupKey, indices });
 	}
+}
+
+map<string, vector<uint16_t> > createAtmoicIndicesDict(const vector<string> &orbitals, const map<string, vector<string> > &groupings)
+{
+	map<string, vector<uint16_t> > allIndices = createAtmoicIndicesDict(orbitals);
+	groupOrbitals(allIndices, groupings);
+	return allIndices;
 }

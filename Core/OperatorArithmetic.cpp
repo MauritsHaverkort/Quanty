@@ -6557,3 +6557,13 @@ void extractPartialOperator(OperatorType * const O, OperatorType * const OPartia
 {
 	extractPartialOperator(O, OPartial, indices, false);
 }
+
+uint16_t Cr(const uint16_t i)
+{
+	return CrAnMask | i;
+}
+
+uint16_t An(const uint16_t i)
+{
+	return NotCrAnMask & i;
+}

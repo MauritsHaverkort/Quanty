@@ -42,5 +42,6 @@ static int LuaOrbitalRotationMatrix(lua_State * L);
 static int LuaYtojjzMatrix(lua_State * L);
 static int LuaYtoKMatrix(lua_State * L);
 static int LuaYtoZMatrix(lua_State * L);
+static int LuaNumberOperators(lua_State * L);
 void luaconstants(lua_State *L);
 int luaopen_ssp(lua_State * L);

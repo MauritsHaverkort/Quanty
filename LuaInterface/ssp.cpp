@@ -4548,20 +4548,20 @@ static int lua_createAtomicIndices(lua_State *L, bool isDict)
 	lua_check(L, 1, orbitals);
 	if (hasIdenticalEntries (orbitals))
 		return luaL_error(L, "Error: CreateAtomicIndices called with redundant orbitals.");
-	map <string, vector<int> > indicesDict = createAtmoicIndicesDict(orbitals);
+	map<string, vector<uint16_t> > indicesDict = createAtmoicIndicesDict(orbitals);
 	if (isDict)
 	{
-		map <string, vector<string> > groupings;
+		map<string, vector<string> > groupings;
 		if (numberOfInputs == 2)
 			lua_check(L, 2, groupings);
-		groupings.insert( {"all", orbitals} );
-		groupings.insert( {"All", orbitals} );
+		groupings.insert( { "all", orbitals });
+		groupings.insert( { "All", orbitals });
 		groupOrbitals(indicesDict, groupings);
 		lua_push(L, indicesDict);
 	} else
 	{
 		lua_push(L, dictToList(indicesDict, orbitals));
-		if(Options.kappas)
+		if (Options.kappas)
 		{
 			lua_push(L, "kappas");
 			lua_push(L, kappas(orbitals));
@@ -4886,6 +4886,23 @@ static int LuaYtoZMatrix(lua_State * L)
 }
 
 
+static int LuaNumberOperators(lua_State * L)
+{
+	uint32_t len = (uint32_t) lua_gettop(L);
+	if (len < 1 || len > 3)
+		return luaL_error(L, "NumberOperator called with %d arguments. 1 or 2 expected, list of orbitals, and optional list of groupings.\n", len);
+	vector < string > orbitals;
+	lua_check(L, 1, orbitals);
+	map<string, vector<string> > groupings;
+	if (len == 2)
+		lua_check(L, 2, groupings);
+	groupings.insert( { "all", orbitals });
+	groupings.insert( { "All", orbitals });
+	lua_push(L, NumberOperators(orbitals, groupings));
+	return 1;
+}
+
+
 static const struct luaL_Reg global_functions[] = {
   {"BlockBandDiagonalize", LuaBlockBandDiagonalize},
   {"Braket", LuaBraKet},
@@ -4928,6 +4945,7 @@ static const struct luaL_Reg global_functions[] = {
   {"NewTightBinding", LuaNewTightBinding},
   {"NewWavefunction", LuaNewWaveFunction},
 	{"NonRelToRelOrbitals",LuaNonRelToRelOrbitals},
+	{"NumberOperators", LuaNumberOperators},
   {"OperatorToMatrix", LuaOperatorToMatrix},
   {"OperatorSetOnsiteEnergy", LuaOperatorSetOnsiteEnergy},
 	{"OperatorSetTrace", LuaOperatorSetOnsiteEnergy},

@@ -83,5 +83,6 @@ MatrixType RelToNonRelRotationMatrix(const vector<string> mixedOrbs, const vecto
 MatrixType LargeRotationMatrix(vector<int> multiplicities, MatrixType (*mat)(int, bool), bool addSpin);
 MatrixType LargeRotationMatrix(vector<string> orbitals, MatrixType (*mat)(int, bool), bool addSpin);
 template<typename T>vector<T> dictToList(const map<string, T> &dict, const vector<string> &keys);
-map<string, vector<int> > createAtmoicIndicesDict(const vector<string> &orbitals);
-void groupOrbitals(map<string, vector<int> > &allIndices, map<string, vector<string> > &groupings);
+map<string, vector<uint16_t> > createAtmoicIndicesDict(const vector<string> &orbitals);
+void groupOrbitals(map<string, vector<uint16_t> > &allIndices, const map<string, vector<string> > &groupings);
+map<string, vector<uint16_t> > createAtmoicIndicesDict(const vector<string> &orbitals, const map<string, vector<string> > &groupings);

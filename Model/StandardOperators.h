@@ -56,6 +56,8 @@ uint32_t CreateOperatorAnnihilateList(uint32_t const NFermion, uint16_t const * 
 uint32_t CreateOperatorCreateAnnihilateList(uint32_t const NFermion, uint16_t const * Crindex, uint16_t const * Anindex, double const * VRe, double const * VIm, const uint32_t N, OperatorType * const OppCrAn);
 uint32_t CreateOperatorNumber(uint32_t const NFermion, uint16_t const Crindex, uint16_t const Anindex, OperatorType * const OppN);
 uint32_t CreateOperatorNumberShell(uint32_t const NFermion, uint32_t const Nelectron, const uint16_t * const index, OperatorType * const OppN);
+OperatorType NumberOperator(const vector<uint16_t> indices, uint NF);
+map<string, OperatorType> NumberOperators(const vector<string> &orbitals, const map<string, vector<string> > &groupings);
 uint32_t CreateOperatorIdentity(uint32_t const NFermion, OperatorType * const OppN);
 uint32_t CreateOperatorNumberShellSqr(uint32_t const NFermion, uint32_t const Nelectron, const uint16_t * const index, OperatorType * const OppNSqr);
 uint32_t CreateRandomTwoParticleOperator(uint32_t const NFermion, uint32_t const QComplex, OperatorType * const Opp);
