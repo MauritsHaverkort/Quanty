@@ -2314,7 +2314,7 @@ OperatorType NumberOperator(const vector<uint16_t> indices, uint NF)
 	return numOp;
 }
 
-map<string, OperatorType> NumberOperators(const vector<string> &orbitals, const map<string, vector<string> > &groupings)
+map<string, OperatorType> AtomicNumberOperators(const vector<string> &orbitals, const map<string, vector<string> > &groupings)
 {
 	map < string, OperatorType > numberOperators;
 	map<string, vector<uint16_t> > allIndices = createAtmoicIndicesDict(orbitals, groupings);
