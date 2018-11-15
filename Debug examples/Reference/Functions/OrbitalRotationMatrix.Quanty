@@ -58,7 +58,46 @@ print(orbsNew)
 print("OrbitalRotationMatrix:")
 print(OrbitalRotationMatrix(orbsOld, orbsNew))
 
---TODO: Das als Code Example für die Website
+orbsOld = {"3p"}
+orbsNew = {"3d","3p","3s"}
+print("\n\n\n")
+print("orbsOld:")
+print(orbsOld)
+print("orbsNew:")
+print(orbsNew)
+print("OrbitalRotationMatrix:")
+print(OrbitalRotationMatrix(orbsOld, orbsNew))
+
+orbsOld = {"3d","3p","3s"}
+orbsNew = {"3p"}
+print("\n\n\n")
+print("orbsOld:")
+print(orbsOld)
+print("orbsNew:")
+print(orbsNew)
+print("OrbitalRotationMatrix:")
+print(OrbitalRotationMatrix(orbsOld, orbsNew))
+
+orbsOld = {"3p12","3p32"}
+orbsNew = {"3d","3p","3s"}
+print("\n\n\n")
+print("orbsOld:")
+print(orbsOld)
+print("orbsNew:")
+print(orbsNew)
+print("OrbitalRotationMatrix:")
+print(OrbitalRotationMatrix(orbsOld, orbsNew))
+
+orbsOld = {"3d","3p","3s"}
+orbsNew = {"3p12","3p32"}
+print("\n\n\n")
+print("orbsOld:")
+print(orbsOld)
+print("orbsNew:")
+print(orbsNew)
+print("OrbitalRotationMatrix:")
+print(OrbitalRotationMatrix(orbsOld, orbsNew))
+
 orbsOld = {"2p32","2s12","2p12"}
 orbsNew = {"2s","2p"}
 print("\n\n\n")

@@ -6513,7 +6513,7 @@ void extractPartialOperatorFixedLength(OperatorType * const O, OperatorType * co
 	InitOperatorFixedLength(OPartial, length, 8);
 	for (int i = 0; i < length * (O->l[length].N); i++)
 	{
-		if (isIntElementOf(NotCrAnMask & O->l[length].o[i], indices))
+		if (isElementOf(An(O->l[length].o[i]), indices))
 		{
 			firstIndexOfBlock = i - (i % length);
 			for (int j = 0; j < length; j++)

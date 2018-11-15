@@ -2388,26 +2388,6 @@ int orbToMultiplicity(string orb)
 }
 
 
-//TODO: Anyone have a better idea where to put this function?
-bool isIntElementOf(const uint16_t element, const vector<uint16_t> set)
-{
-	for (int i = 0; i < set.size(); i++)
-	{
-		if (element == set[i])
-			return true;
-	}
-	return false;
-}
-
-bool isIntElementOf(const int element, const vector<int> set)
-{
-	for (int i = 0; i < set.size(); i++)
-	{
-		if (element == set[i])
-			return true;
-	}
-	return false;
-}
 
 /*  On input TB contains a normal TB object
  *  StripedTB points to a TB object that is uninitialized and has no pointera allocated
@@ -2673,13 +2653,13 @@ uint32_t RotateTightBinding(TightBindingDef * TB, CompactMatrixType * rotmat, Ti
   return 0;
 }
 
-vector<string> groupedRelOrbitals(const vector<string> in)
+vector<string> groupedRelOrbitals(const vector<string> &in)
 {
 	vector < string > out;
 	vector<int> blackList;
 	for (int i = 0; i < in.size(); ++i)
 	{
-		if (!isIntElementOf(i, blackList))
+		if (!isElementOf(i, blackList))
 		{
 			out.push_back(in[i]);
 			if (isRelOrbital(in[i]) && (kappa(in[i]) != -1))
@@ -2701,7 +2681,7 @@ vector<string> groupedRelOrbitals(const vector<string> in)
 	return out;
 }
 
-bool isRelOrbital(const string orb)
+bool isRelOrbital(const string &orb)
 {
 	return (relAngularMomentumZNumbers(orb) > 0);
 }
@@ -2715,14 +2695,14 @@ bool QOrbsBelongTogether(string orb1, string orb2)
 	return orb1 == orb2;
 }
 
-string cutRelPart(const string orb)
+string cutRelPart(const string &orb)
 {
 	int significantCharPos;
 	relAngularMomentumZNumbers(orb,&significantCharPos);
 	return orb.substr(0,significantCharPos);
 }
 
-vector<string> relToNonRelOrbs(const vector<string> in)
+vector<string> relToNonRelOrbs(const vector<string> &in)
 {
 	vector < string > out;
 	for (int i = 0; i < in.size(); ++i)
@@ -2750,7 +2730,7 @@ vector<string> relToNonRelOrbs(const vector<string> in)
 	return out;
 }
 
-vector<string> nonRelToRelOrbs(const vector<string> in)
+vector<string> nonRelToRelOrbs(const vector<string> &in)
 {
 	vector < string > out;
 	for (int i = 0; i < in.size(); ++i)
@@ -2777,6 +2757,15 @@ vector<string> nonRelToRelOrbs(const vector<string> in)
 	return out;
 }
 
+bool isOrbElementOf(const string &orb, vector<string> set)
+{
+	if (isRelOrbital(orb))
+		set = nonRelToRelOrbs(set);
+	else
+		set = relToNonRelOrbs(set);
+	return isElementOf(orb, set);
+}
+
 // input e.g. {"2p32","2s12","2p12"}, {"2s","2p"}
 MatrixType OrbitalRotationMatrix(vector<string> orbsOld, vector<string> orbsNew)
 {
@@ -2793,13 +2782,26 @@ MatrixType OrbitalRotationMatrix(vector<string> orbsOld, vector<string> orbsNew)
 	int NFOld = NumberOfFermionicStates(orbsOld);
 	int NFNew = NumberOfFermionicStates(orbsNew);
 	int NF = 0;
-	if (NFOld != NFNew)
+	if (NFOld < NFNew)
 	{
-		cout << "Error in RotationMatrix: Old and new orbitals must have the same number of fermionic states." << endl;
-		return nullMatrix();
+		for (uint i = 0; i < (uint) orbsNew.size(); ++i)
+			if (!isOrbElementOf(orbsNew[i], orbsOld))
+				orbsOld.push_back(orbsNew[i]);
+		NF = NFNew;
+	} else if (NFOld > NFNew)
+	{
+		for (uint i = 0; i < (uint) orbsOld.size(); ++i)
+			if (!isOrbElementOf(orbsOld[i], orbsNew))
+				orbsNew.push_back(orbsOld[i]);
+		NF = NFOld;
 	} else
 	{
 		NF = NFOld;
+	}
+	if (NumberOfFermionicStates(orbsOld) != NumberOfFermionicStates(orbsNew))
+	{
+		cout << "Error: RotationMatrix failed to make a connection between old and new orbitals." << endl;
+		return nullMatrix();
 	}
 	vector < string > orbsTmp;
 //	{"2p12","2s12","2p32"} -> {"2p12","2p32","2s12"}
@@ -2848,6 +2850,7 @@ MatrixType OrbitalRotationMatrix(vector<string> orbsOld, vector<string> orbsNew)
 	MatrixMultiply(&rotMat, TRelNonRelLeft, rotMat);
 	MatrixMultiply(&rotMat, TGroupingLeft, rotMat);
 	MatrixChop(&rotMat, 10 * DBL_EPSILON);
+	rotMat = Submatrix(rotMat, NFNew, NFOld);
 	return rotMat;
 }
 
@@ -2864,7 +2867,7 @@ bool hasIdenticalEntries(const vector<T> &vec)
 
 //TODO: Anyone have a better idea where to put this?
 template<typename T>
-vector<int> permutationVector(const vector<T> oldVec, const vector<T> newVec)
+vector<int> permutationVector(const vector<T> &oldVec, const vector<T> &newVec)
 {
 	if (oldVec.size() != newVec.size())
 	{
@@ -3067,7 +3070,7 @@ MatrixType YToJJzMatrix(const int size, const bool addSpin)
 	return out;
 }
 
-MatrixType orbitalPermutationMatrix(const vector<string> oldVec, const vector<string> newVec)
+MatrixType orbitalPermutationMatrix(const vector<string> &oldVec, const vector<string> &newVec)
 {
 	vector<int> permVec = permutationVector(oldVec, newVec);
 	if (permVec.size() == 0)
@@ -3081,7 +3084,7 @@ MatrixType orbitalPermutationMatrix(const vector<string> oldVec, const vector<st
 	return MatrixFlatten(matMat);
 }
 
-bool QChangeFromRelToNonRel(const vector<string> orbs1, const vector<string> orbs2)
+bool QChangeFromRelToNonRel(const vector<string> &orbs1, const vector<string> &orbs2)
 {
 	for (int i = 0; i < orbs1.size(); ++i)
 	{
@@ -3105,7 +3108,7 @@ bool QChangeFromRelToNonRel(const vector<string> orbs1, const vector<string> orb
 	return false;
 }
 
-int NumberOfFermionicStates(const vector<string> orbs)
+int NumberOfFermionicStates(const vector<string> &orbs)
 {
 	int NF = 0;
 	int mult;
@@ -3124,7 +3127,7 @@ int NumberOfFermionicStates(const vector<string> orbs)
 	return NF;
 }
 
-MatrixType NonRelToRelRotationMatrix(const vector<string> nonRelOrbs, const vector<string> mixedOrbs)
+MatrixType NonRelToRelRotationMatrix(const vector<string> &nonRelOrbs, const vector<string> &mixedOrbs)
 {
 	vector < vector<MatrixType> > blockMat = nullMatrixMatrix((uint32_t) nonRelOrbs.size(), (uint32_t) nonRelOrbs.size());
 	int offset = 0;
@@ -3177,14 +3180,14 @@ MatrixType NonRelToRelRotationMatrix(const vector<string> nonRelOrbs, const vect
 	return MatrixFlatten(blockMat, true);
 }
 
-MatrixType RelToNonRelRotationMatrix(const vector<string> mixedOrbs, const vector<string> nonRelOrbs)
+MatrixType RelToNonRelRotationMatrix(const vector<string> &mixedOrbs, const vector<string> &nonRelOrbs)
 {
 	MatrixType tmp = NonRelToRelRotationMatrix(nonRelOrbs, mixedOrbs);
 	MatrixTranspose(&tmp);
 	return tmp;
 }
 
-MatrixType LargeRotationMatrix(vector<int> multiplicities, MatrixType (*mat)(int, bool), bool addSpin)
+MatrixType LargeRotationMatrix(const vector<int> &multiplicities, MatrixType (*mat)(int, bool), bool addSpin)
 {
 	vector < vector<MatrixType> > fullM = nullMatrixMatrix((uint32_t) multiplicities.size(), (uint32_t) multiplicities.size());
 	for (int i = 0; i < multiplicities.size(); ++i)
@@ -3192,7 +3195,7 @@ MatrixType LargeRotationMatrix(vector<int> multiplicities, MatrixType (*mat)(int
 	return MatrixFlatten(fullM);
 }
 
-MatrixType LargeRotationMatrix(vector<string> orbitals, MatrixType (*mat)(int, bool), bool addSpin)
+MatrixType LargeRotationMatrix(const vector<string> &orbitals, MatrixType (*mat)(int, bool), bool addSpin)
 {
 	vector<int> multiplicities(orbitals.size());
 	for (int i = 0; i < orbitals.size(); ++i)
@@ -3270,7 +3273,7 @@ void groupOrbitals(map<string, vector<uint16_t> > &allIndices, const map<string,
 				vector<uint16_t> groupMemberIndices = groupMemberIter->second;
 				for (uint j = 0; j < (uint) groupMemberIndices.size(); ++j)
 				{
-					if (!isIntElementOf(groupMemberIndices[j], indices))
+					if (!isElementOf(groupMemberIndices[j], indices))
 						indices.push_back(groupMemberIndices[j]);
 				}
 			} else

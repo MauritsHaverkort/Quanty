@@ -4492,7 +4492,7 @@ static int LuaDeterminantString(lua_State *L)
 		{
 			if (indTmp[i] < 0 || indTmp[i] >= NF)
 				printf("\nWarning: Index %d is not within [0,NF-1]=[0,%d].\n", indTmp[i], NF - 1);
-			else if (!isIntElementOf(indTmp[i], indices))
+			else if (!isElementOf(indTmp[i], indices))
 				indices.push_back(indTmp[i]);
 		}
 	}
@@ -4500,7 +4500,7 @@ static int LuaDeterminantString(lua_State *L)
 	det[NF] = '\0';
 	for (uint16_t i = 0; i < NF; i++)
 	{
-		if (isIntElementOf(i, indices))
+		if (isElementOf(i, indices))
 		{
 			det[i] = '1';
 		} else
