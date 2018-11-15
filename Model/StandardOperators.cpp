@@ -2305,9 +2305,8 @@ OperatorType NumberOperator(const vector<uint16_t> indices, uint NF)
 	double ones[NOpp], zeroes[NOpp];
 	for (uint i = 0; i < NOpp; ++i)
 	{
-//		CrIndex[i] = Cr(indices[i]);
-		CrIndex[i] = An(indices[i]); //TODO: this line should be Cr() in my opinion.
-		AnIndex[i] = An(indices[i]);
+		CrIndex[i] = indices[i];
+		AnIndex[i] = indices[i];
 		ones[i] = 1.;
 		zeroes[i] = 0.;
 	}
