@@ -267,16 +267,25 @@ bool luaL_isType(lua_State *L, int arg, const vector<T> &example)
 			lua_rawgeti(L, arg, i);
 			if (!luaL_isType(L, -1, T()))
 			{
-				lua_pop(L,1);
+				lua_pop(L, 1);
 				return false;
 			}
-			lua_pop(L,1);
+			lua_pop(L, 1);
 		}
 		return true;
 	} else
 	{
 		return luaL_isType(L, arg, T());
 	}
+}
+
+template<typename T>
+bool luaL_isType(lua_State *L, int arg, const vector<T> &example, const uint vecsize)
+{
+	if (vecsize != (uint) lua_objlen(L, arg))
+		return false;
+	else
+		return luaL_isType(L, arg, example);
 }
 
 template<typename keyType, typename valType>
@@ -331,4 +340,41 @@ bool luaL_isType(lua_State *L, int arg, const map<keyType, valType> &example)
 		return true;
 	}
 }
- 
+
+template<typename keyType, typename valType>
+bool luaL_isType(lua_State *L, int arg, const map<keyType, vector<valType> > &example, const uint vecsize)
+{
+	if (!lua_istable(L, arg))
+		return false;
+	lua_rawgeti(L, arg, 1);
+	bool isSinglePair = !((bool) lua_istable(L, -1));
+	lua_pop(L, 1);
+	if (isSinglePair)
+	{
+		lua_rawgeti(L, arg, 2);
+		if (vecsize != (uint) lua_objlen(L, -1))
+		{
+			lua_pop(L, 1);
+			return false;
+		}
+		lua_pop(L, 1);
+	} else
+	{
+		uint len = (uint) lua_objlen(L, arg);
+		for (uint i = 1; i <= len; ++i)
+		{
+			lua_rawgeti(L, arg, i);
+
+			lua_rawgeti(L, -1, 2);
+			if (vecsize != (uint) lua_objlen(L, -1))
+			{
+				lua_pop(L, 1);
+				return false;
+			}
+			lua_pop(L, 1);
+
+			lua_pop(L, 1);
+		}
+	}
+	return luaL_isType(L, arg, example);
+}

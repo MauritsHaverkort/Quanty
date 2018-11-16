@@ -31,4 +31,6 @@ bool luaL_isType(lua_State *L, int arg, const WaveFunctionType &example);
 bool luaL_isType(lua_State *L, int arg, const double &example);
 bool luaL_isType(lua_State *L, int arg, const string &example);
 template<typename T>bool luaL_isType(lua_State *L, int arg, const vector<T> &example);
+template<typename T>bool luaL_isType(lua_State *L, int arg, const vector<T> &example, const uint vecsize);
 template<typename keyType, typename valType>bool luaL_isType(lua_State *L, int arg, const map<keyType, valType> &example);
+template<typename keyType, typename valType>bool luaL_isType(lua_State *L, int arg, const map<keyType, vector<valType> > &example, const uint vecsize);

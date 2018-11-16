@@ -63,7 +63,8 @@ for i = 1, NPsi do
 end
 extraLists = {extraList1, extraList2}
 
-Options = {{"colWidth",10},{"printHeaderEvery",10},{"printSigma",true},{"sortByEnergy",true},{"zero",1E-7}}
+Options1 = {{"colWidth",10},{"printHeaderEvery",10},{"printSigma",true},{"sortByEnergy",true},{"zero",1E-7}}
+Options2 = {{"colWidth",4},}
 
 print("\n\n\nPrintExpectationValues(psiList,opList):")
 PrintExpectationValues(psiList,opList)
@@ -71,13 +72,15 @@ print("\n\n\nPrintExpectationValues(psiList,opList,Hamil):")
 PrintExpectationValues(psiList,opList,Hamil)
 print("\n\n\nPrintExpectationValues(psiList,opList,extraLists):")
 PrintExpectationValues(psiList,opList,extraLists)
-print("\n\n\nPrintExpectationValues(psiList,opList,Options):")
-PrintExpectationValues(psiList,opList,Options)
+print("\n\n\nPrintExpectationValues(psiList,opList,Options1):")
+PrintExpectationValues(psiList,opList,Options1)
+print("\n\n\nPrintExpectationValues(psiList,opList,Options2):")
+PrintExpectationValues(psiList,opList,Options2)
 print("\n\n\nPrintExpectationValues(psiList,opList,Hamil,extraLists):")
 PrintExpectationValues(psiList,opList,Hamil,extraLists)
-print("\n\n\nPrintExpectationValues(psiList,opList,Hamil,Options):")
-PrintExpectationValues(psiList,opList,Hamil,Options)
-print("\n\n\nPrintExpectationValues(psiList,opList,Hamil,extraLists,Options):")
-PrintExpectationValues(psiList,opList,Hamil,extraLists,Options)
-print("\n\n\nPrintExpectationValues(psiList,opList,-Hamil,extraLists,Options):")
-PrintExpectationValues(psiList,opList,-Hamil,extraLists,Options)
+print("\n\n\nPrintExpectationValues(psiList,opList,Hamil,Options1):")
+PrintExpectationValues(psiList,opList,Hamil,Options1)
+print("\n\n\nPrintExpectationValues(psiList,opList,Hamil,extraLists,Options1):")
+PrintExpectationValues(psiList,opList,Hamil,extraLists,Options1)
+print("\n\n\nPrintExpectationValues(psiList,opList,-Hamil,extraLists,Options1):")
+PrintExpectationValues(psiList,opList,-Hamil,extraLists,Options1)
