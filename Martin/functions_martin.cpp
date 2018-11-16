@@ -743,6 +743,59 @@ static int LuaCreateEigenDifferentials(lua_State *L)
 	return 1;
 }
 
+static int LuaEigenDifferential(lua_State *L)
+{
+	uint32_t len = lua_gettop(L);
+	int kappa;
+	double x,q1,q2, result;
+	lua_check(L,1,x);
+	lua_check(L,2,kappa);
+	lua_check(L,3,q1);
+	lua_check(L,4,q2);
+	if (len == 5 )
+	{
+		struct
+		{
+			char *type;
+			uint32_t Nknots;
+		} Options;
+		LuaOptionsType LuaEDOptions[]={
+		    {"Type","char*",&(Options.type)},
+		    {"Nknots","uint32_t",&(Options.Nknots)},
+		    {NULL, NULL, NULL}};
+		Options.Nknots = 4;
+		Options.type = "N";
+		LuaCheckOptions(L, 5, LuaEDOptions);
+		if (strcmp(Options.type,"N")==0)
+		{
+			result = x * EvaluateEigendifferential(&WaveFunFreeParticleNonRelativistic,x,kappa,q1,q2,Options.Nknots);
+		}
+		else
+		{
+			if (strcmp(Options.type,"G")==0)
+			{
+				result = x * EvaluateEigendifferential(&WaveFunFreeParticleG,x,kappa,q1,q2,Options.Nknots);
+			}
+			else
+			{
+				if (strcmp(Options.type,"F")==0)
+				{
+					result = x * EvaluateEigendifferential(&WaveFunFreeParticleF,x,kappa,q1,q2,Options.Nknots);
+				}
+				else
+				{
+					return luaL_error(L,"Type of Eigendifferential not recognized. Possible types are N, G, or F\n");
+				}
+			}
+		}
+	}
+	else
+	{
+		result = x * EvaluateEigendifferential(&WaveFunFreeParticleNonRelativistic,x,kappa,q1,q2);
+	}
+	lua_push(L,result);
+	return 1;
+}
 static const struct luaL_Reg Martin_meta[] = {
   {NULL, NULL}
 };
@@ -773,7 +826,7 @@ static const struct luaL_Reg Martin_meta[] = {
  * 		which leads to an increase in speed.
  *
  *
- *
+ *;
  */
 
 static const struct luaL_Reg Martin_func[] = {
@@ -792,6 +845,8 @@ static const struct luaL_Reg Martin_func[] = {
   {"PlotSpectrumWithSelfEnergy",LuaPlotSpectrumWithSelfEnergy},
   {"CalcSpectrumWithSelfEnergy",LuaCalcSpectrumWithSelfEnergy},
   {"CreateEigenDifferentials",LuaCreateEigenDifferentials},
+  {"EigenDifferential",LuaEigenDifferential},
+  {"ED",LuaEigenDifferential},
   {NULL, NULL}
 };
 
