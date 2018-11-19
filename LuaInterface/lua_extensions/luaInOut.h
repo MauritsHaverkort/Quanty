@@ -29,6 +29,8 @@ bool luaL_isudata(lua_State *L, int ud, const char *tname);
 bool luaL_isType(lua_State *L, int arg, const OperatorType &example);
 bool luaL_isType(lua_State *L, int arg, const WaveFunctionType &example);
 bool luaL_isType(lua_State *L, int arg, const double &example);
+bool luaL_isType(lua_State *L, int arg, const Complex16 &example);
+bool luaL_isType(lua_State *L, int arg, const CompactMatrixType &example);
 bool luaL_isType(lua_State *L, int arg, const string &example);
 template<typename T>bool luaL_isType(lua_State *L, int arg, const vector<T> &example);
 template<typename T>bool luaL_isType(lua_State *L, int arg, const vector<T> &example, const uint vecsize);

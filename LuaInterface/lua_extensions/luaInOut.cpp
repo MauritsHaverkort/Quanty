@@ -251,6 +251,39 @@ bool luaL_isType(lua_State *L, int arg, const double &example)
 	return (bool) lua_isnumber(L, arg);
 }
 
+bool luaL_isType(lua_State *L, int arg, const Complex16 &example)
+{
+	return luaL_isudata(L, arg, "Complex_Type");
+}
+
+bool luaL_isType(lua_State *L, int arg, const CompactMatrixType &example)
+{
+	if (luaL_isudata(L, arg, "Matrix_Type"))
+		return true;
+	if (lua_istable(L, arg))
+	{
+		uint len = (uint) lua_objlen(L, arg);
+		if (len == 0)
+			return false;
+
+		lua_rawgeti(L, arg, 1);
+		uint len_row = (uint) lua_objlen(L, -1);
+		lua_pop(L, 1);
+
+		for (uint i = 1; i <= len; ++i)
+		{
+			lua_rawgeti(L, arg, 1);
+			if (!luaL_isType(L, -1, vector<double>(), len) && !luaL_isType(L, -1, vector<Complex16>(), len))
+			{
+				lua_pop(L, 1);
+				return false;
+			}
+			lua_pop(L, 1);
+		}
+		return true;
+	}
+}
+
 bool luaL_isType(lua_State *L, int arg, const string &example)
 {
 	return (bool) lua_isstring(L, arg);
