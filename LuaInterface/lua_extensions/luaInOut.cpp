@@ -46,11 +46,19 @@ void lua_push(lua_State *L, const OperatorType &pushkin)
 
 void lua_push(lua_State *L, const OperatorType* &pushkin)
 {
-	OperatorType * O = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-	InitOperatorCopySettings(O, *pushkin);
-	O->QComplex = pushkin->QComplex;
-	O->l = pushkin->l;
-	luaL_setmetatable(L, "Operator_Type");
+	lua_push(L, *pushkin);
+}
+
+void lua_push(lua_State *L, const TightBindingDef &pushkin)
+{
+	TightBindingDef * TB = (TightBindingDef *) lua_newuserdata(L, sizeof(TightBindingDef));
+	TightBindingCopy(pushkin,*TB);
+	luaL_setmetatable(L, "TightBinding_Type");
+}
+
+void lua_push(lua_State *L, const TightBindingDef* &pushkin)
+{
+	lua_push(L, *pushkin);
 }
 
 template<typename T>
@@ -64,14 +72,24 @@ void lua_push(lua_State * L, const vector<T> &pushkin)
 	}
 }
 
-void lua_push(lua_State * L, const CompactMatrixType * pushkin)
+void lua_push(lua_State * L, const CompactMatrixType * const pushkin)
 {
 	LuaPushTable_CompactMatrixType(L, pushkin);
 }
 
-void lua_push(lua_State * L, const MatrixType * pushkin)
+void lua_push(lua_State * L, const CompactMatrixType &pushkin)
+{
+	LuaPushTable_CompactMatrixType(L, &pushkin);
+}
+
+void lua_push(lua_State * L, const MatrixType * const pushkin)
 {
 	LuaPushTable_MatrixType(L, pushkin);
+}
+
+void lua_push(lua_State * L, const MatrixType &pushkin)
+{
+	LuaPushTable_MatrixType(L, &pushkin);
 }
 
 template<typename keyType, typename valType>
@@ -131,6 +149,11 @@ void lua_check(lua_State *L, int arg, bool &in)
 	in = (bool) lua_toboolean(L,arg);
 }
 
+void lua_check(lua_State *L, int arg, CompactMatrixType &in)
+{
+	in = *luaL_checkCompactMatrix(L, arg);
+}
+
 void lua_check(lua_State *L, int arg, CompactMatrixType* &in)
 {
 	in = luaL_checkCompactMatrix(L, arg);
@@ -154,6 +177,16 @@ void lua_check(lua_State *L, int arg, OperatorType &in)
 void lua_check(lua_State *L, int arg, OperatorType* &in)
 {
 	in = (OperatorType *)luaL_checkudata(L, -1, "Operator_Type");
+}
+
+void lua_check(lua_State *L, int arg, TightBindingDef &in)
+{
+	in = *(TightBindingDef *) luaL_checkudata(L, arg, "TightBinding_Type");
+}
+
+void lua_check(lua_State *L, int arg, TightBindingDef* &in)
+{
+	in = (TightBindingDef *) luaL_checkudata(L, arg, "TightBinding_Type");
 }
 
 template<typename T>
@@ -244,6 +277,11 @@ bool luaL_isType(lua_State *L, int arg, const OperatorType &example)
 bool luaL_isType(lua_State *L, int arg, const WaveFunctionType &example)
 {
 	return luaL_isudata(L, arg, "Wavefunction_Type");
+}
+
+bool luaL_isType(lua_State *L, int arg, const TightBindingDef &example)
+{
+	return luaL_isudata(L, arg, "TightBinding_Type");
 }
 
 bool luaL_isType(lua_State *L, int arg, const double &example)

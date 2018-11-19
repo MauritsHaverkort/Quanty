@@ -3816,7 +3816,7 @@ static int LuaBlockBandDiagonalize(lua_State *L)
     }
     else
     {
-      return luaL_error(L, "BlockBandDiatonalize for matrices expects eitehr a number of vector of numbers on second position\n");
+      return luaL_error(L, "BlockBandDiatonalize for matrices expects either a number or a vector of numbers on second position\n");
     }
     Options.NTri=Min(Options.NTri, M->Ni);
     if(CompactMatrixBlockBandDiagonalize(M, vec, &B, Options.SingularValue, Options.NTri, Options.NOrtho, Options.ReOrthogonalize, Options.ReturnT))
