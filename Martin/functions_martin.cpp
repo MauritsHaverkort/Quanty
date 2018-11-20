@@ -8,6 +8,8 @@
 #include "Old_SlaterIntegrals.cpp"
 #include "CreateOperators.cpp"
 #include "PlotSpectrumWithSelfEnergy.cpp"
+#include "CSRMatrix.cpp"
+#include "SparseOperator.cpp"
 
 
 static int LuaOperatorNewFullCoulomb (lua_State *L)
@@ -796,6 +798,18 @@ static int LuaEigenDifferential(lua_State *L)
 	lua_push(L,result);
 	return 1;
 }
+
+static int LuaSparseOperator(lua_State *L)
+{
+	OperatorType *H = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
+	WaveFunctionType *psi = (WaveFunctionType *) luaL_checkudata(L, 2, "Wavefunction_Type");
+	LinAlg::CSRMatrix<double> M;
+	OperatorToDeterminantMatrix(H,psi,M);
+	M.Print();
+	std::vector<double> vec;
+	WaveFunctionToVector(psi,vec,psi);
+}
+
 static const struct luaL_Reg Martin_meta[] = {
   {NULL, NULL}
 };
@@ -847,6 +861,7 @@ static const struct luaL_Reg Martin_func[] = {
   {"CreateEigenDifferentials",LuaCreateEigenDifferentials},
   {"EigenDifferential",LuaEigenDifferential},
   {"ED",LuaEigenDifferential},
+  {"SparseOperator",LuaSparseOperator},
   {NULL, NULL}
 };
 
