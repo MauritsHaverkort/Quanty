@@ -805,9 +805,10 @@ static int LuaSparseOperator(lua_State *L)
 	WaveFunctionType *psi = (WaveFunctionType *) luaL_checkudata(L, 2, "Wavefunction_Type");
 	LinAlg::CSRMatrix<double> M;
 	OperatorToDeterminantMatrix(H,psi,M);
-	M.Print();
+	//M.Print();
+	printf("Matrix created with %d nve\n",M.A.size());
 	std::vector<double> vec;
-	WaveFunctionToVector(psi,vec,psi);
+	//WaveFunctionToVector(psi,vec,psi);
 }
 
 static const struct luaL_Reg Martin_meta[] = {
