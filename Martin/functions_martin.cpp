@@ -804,7 +804,7 @@ static int LuaSparseOperator(lua_State *L)
 	OperatorType *H = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
 	WaveFunctionType *psi = (WaveFunctionType *) luaL_checkudata(L, 2, "Wavefunction_Type");
 	LinAlg::CSRMatrix<double> M;
-	OperatorToDeterminantMatrix(H,psi,M);
+	OperatorToSparseMatrix(H,psi,M);
 	//M.Print();
 	printf("Matrix created with %d nve\n",M.A.size());
 	std::vector<double> vec;

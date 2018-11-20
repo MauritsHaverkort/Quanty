@@ -80,35 +80,36 @@ void CSRMatrix<F>::AddRow(std::map<uint32_t,F> rowEntries)
 	}
 }
 
+
 template<typename F>
-void CSRMatrix<F>::MultiplyVector(const std::vector<F> &u, std::vector<F> &out)
+void CSRMatrix<F>::Evaluate(const std::vector<F> &x,std::vector<F> &y)
 {
-	uint32_t N = u.size();
+	uint32_t N = x.size();
 	uint32_t M = AI.size()-1;
 
-	out.reserve(M);
+	y.reserve(M);
 
 	for (uint32_t i = 0; i < M; i++)
 	{
-		out.push_back(0);
+		y.push_back(0);
 		for (uint32_t j = AI[i]; j < AI[i+1]; j++)
 		{
-			out[i] += A[j] * u[AJ[j]];
+			y[i] += A[j] * x[AJ[j]];
 		}
 	}
 }
 template<typename F>
-void CSRMatrix<F>::TransposeMultiplyVector(const std::vector<F> &u, std::vector<F> &out)
+void CSRMatrix<F>::AdjointEvaluate(const std::vector<F> &x,std::vector<F> &y)
 {
 	uint32_t M = AI.size()-1;
 
-	out = std::vector<F>(Ncol);
+	y = std::vector<F>(Ncol);
 
 	for (uint32_t i = 0; i < M; i++)
 	{
 		for (uint32_t j = AI[i]; j < AI[i+1]; j++)
 		{
-			out[AJ[j]] += A[j] * u[i];
+			y[AJ[j]] += A[j] * x[i];
 		}
 	}
 }

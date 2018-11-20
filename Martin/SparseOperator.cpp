@@ -5,7 +5,7 @@
  *      Author: brass
  */
 
-uint32_t OperatorToDeterminantMatrix(const OperatorType * const O, const WaveFunctionType * const psi, LinAlg::CSRMatrix<double> &M)
+uint32_t OperatorToSparseMatrix(const OperatorType * const O, const WaveFunctionType * const psi, LinAlg::CSRMatrix<double> &M)
 {
   std::vector<std::map<uint32_t,double> > entries = std::vector<std::map<uint32_t,double> >(psi->N);
   if((O->QComplex!=0))
