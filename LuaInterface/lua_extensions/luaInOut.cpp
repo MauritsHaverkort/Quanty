@@ -320,6 +320,7 @@ bool luaL_isType(lua_State *L, int arg, const CompactMatrixType &example)
 		}
 		return true;
 	}
+	return false;
 }
 
 bool luaL_isType(lua_State *L, int arg, const string &example)
