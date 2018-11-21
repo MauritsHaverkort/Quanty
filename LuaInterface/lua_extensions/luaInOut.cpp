@@ -61,6 +61,16 @@ void lua_push(lua_State *L, const TightBindingDef* &pushkin)
 	lua_push(L, *pushkin);
 }
 
+void lua_push(lua_State *L, const AtomType &pushkin)
+{
+	LuaPushAtom(L, &pushkin);
+}
+
+void lua_push(lua_State *L, const AtomType* &pushkin)
+{
+	LuaPushAtom(L, pushkin);
+}
+
 template<typename T>
 void lua_push(lua_State * L, const vector<T> &pushkin)
 {
@@ -187,6 +197,16 @@ void lua_check(lua_State *L, int arg, TightBindingDef &in)
 void lua_check(lua_State *L, int arg, TightBindingDef* &in)
 {
 	in = (TightBindingDef *) luaL_checkudata(L, arg, "TightBinding_Type");
+}
+
+void lua_check(lua_State *L, int arg, AtomType &in)
+{
+	LuaReadAtom(L, arg, &in);
+}
+
+void lua_check(lua_State *L, int arg, AtomType* &in)
+{
+	LuaReadAtom(L, arg, in);
 }
 
 template<typename T>
