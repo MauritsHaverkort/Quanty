@@ -179,12 +179,12 @@ void lua_check(lua_State *L, int arg, WaveFunctionType* &in)
 
 void lua_check(lua_State *L, int arg, OperatorType &in)
 {
-	in = *(OperatorType *)luaL_checkudata(L, -1, "Operator_Type");
+	in = *(OperatorType *)luaL_checkudata(L, arg, "Operator_Type");
 }
 
 void lua_check(lua_State *L, int arg, OperatorType* &in)
 {
-	in = (OperatorType *)luaL_checkudata(L, -1, "Operator_Type");
+	in = (OperatorType *)luaL_checkudata(L, arg, "Operator_Type");
 }
 
 void lua_check(lua_State *L, int arg, TightBindingDef &in)
