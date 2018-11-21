@@ -38,9 +38,7 @@ void lua_push(lua_State * L, const string pushkin)
 void lua_push(lua_State *L, const OperatorType &pushkin)
 {
 	OperatorType * O = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-	InitOperatorCopySettings(O, pushkin);
-	O->QComplex = pushkin.QComplex;
-	O->l = pushkin.l;
+	*O = pushkin;
 	luaL_setmetatable(L, "Operator_Type");
 }
 
@@ -52,7 +50,7 @@ void lua_push(lua_State *L, const OperatorType* &pushkin)
 void lua_push(lua_State *L, const TightBindingDef &pushkin)
 {
 	TightBindingDef * TB = (TightBindingDef *) lua_newuserdata(L, sizeof(TightBindingDef));
-	TightBindingCopy(pushkin,*TB);
+	*TB = pushkin;
 	luaL_setmetatable(L, "TightBinding_Type");
 }
 
