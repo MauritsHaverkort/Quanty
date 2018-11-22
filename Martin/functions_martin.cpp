@@ -807,8 +807,19 @@ static int LuaSparseOperator(lua_State *L)
 	OperatorToSparseMatrix(H,psi,M);
 	//M.Print();
 	printf("Matrix created with %d nve\n",M.A.size());
-	std::vector<double> vec;
-	//WaveFunctionToVector(psi,vec,psi);
+	std::vector<double> vec, a, b;
+	WaveFunctionToVector(psi,vec,psi);
+	std::vector<std::vector<double> > T;
+	Lanczos(M,SkalarProdukt,VectorAdd<double>,VectorMul<double>,vec,6,a,b,T);
+	for (uint32_t i = 0; i < a.size(); i++)
+	{
+		printf("%e\t",a[i]);
+	}
+	printf("\n");
+	for (uint32_t i = 0; i < b.size(); i++)
+	{
+		printf("%e\t",b[i]);
+	}
 }
 
 static const struct luaL_Reg Martin_meta[] = {

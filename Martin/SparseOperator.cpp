@@ -84,3 +84,98 @@ void WaveFunctionToVector(const WaveFunctionType * const psi,std::vector<double>
 
 	}
 }
+
+template<typename F, typename V>
+void OrthogonalizeVecWrtSet(F (&SkalarProd)(const V&,const V&), void (&VecAdd)(const V&, V&, F),V &x, const std::vector<V> &vecSet, uint32_t N)
+{
+	for(uint32_t i = 0; i < N; i++)
+	{
+		F olapp = SkalarProd(vecSet[i],x);
+		VecAdd(vecSet[i],x,-olapp);
+	}
+}
+
+template<typename F, typename V>
+void Lanczos(LinAlg::LinearMap<F, V, V> &LinMap,F (&SkalarProd)(const V&,const V&), void (&VecAdd)(const V&, V&, F), void (&VecMul)(V&, F),const V &startvec, const uint32_t N, std::vector<double> &a, std::vector<double> &b, std::vector<V> &T)
+{
+	if (a.size()+b.size()+T.size() != 0)
+	{
+		printf("Error in Lanczos: a, b or T non-empty\n");
+		return;
+	}
+	a.reserve(N);
+	b.reserve(N);
+	T = std::vector<V>(N+1);
+	T[0] = startvec;
+
+	b.push_back(sqrt(SkalarProd(T[0],T[0])));
+	VecMul(T[0],1/b[0]);
+	LinMap.Evaluate(T[0],T[1]);
+	a.push_back(SkalarProd(T[0],T[1]));
+	VecAdd(T[0],T[1],-a[0]);
+
+
+	for (uint32_t i = 1; i < N; i++)
+	{
+		b.push_back(sqrt(SkalarProd(T[i],T[i])));
+		if(b[i] > 100 * DBL_MIN + DBL_EPSILON * b[1])
+		{
+			VecMul(T[i],1/b[i]);
+		}
+		else
+		{
+			T.resize(i);
+			return;
+		}
+		LinMap.Evaluate(T[i],T[i+1]);
+		OrthogonalizeVecWrtSet(SkalarProd,VecAdd,T[i+1],T,i);
+		a.push_back(SkalarProd(T[i],T[i+1]));
+		VecAdd(T[i],T[i+1],-a[i]);
+		//OrthogonalizeVecWrtSet(SkalarProd,VecAdd,T[i+1],T,i+1);
+
+	}
+}
+
+double SkalarProdukt(const std::vector<double> &x, const std::vector<double> &y)
+{
+	if (x.size()!=y.size())
+	{
+		printf("Error: SkalarProdukt of vectors of unequal lengths %d and %d\n",x.size(),y.size());
+		return NAN;
+	}
+	else
+	{
+		double val = 0;
+		for (uint32_t i = 0; i < x.size(); i++)
+		{
+			val += x[i]*y[i];
+		}
+		return val;
+	}
+}
+
+template<typename F>
+void VectorMul(std::vector<F> &x, F a)
+{
+	for (uint32_t i = 0; i < x.size(); i++)
+	{
+		x[i] *= a;
+	}
+}
+
+template<typename F>
+void VectorAdd(const std::vector<F> & x, std::vector<F> & y, F a)
+{
+	if (x.size()!=y.size())
+	{
+		printf("Error: VectorAdd of vectors of unequal lengths %d and %d\n",x.size(),y.size());
+		return;
+	}
+	else
+	{
+		for (uint32_t i = 0; i < x.size(); i++)
+		{
+			y[i] += a * x[i];
+		}
+	}
+}
