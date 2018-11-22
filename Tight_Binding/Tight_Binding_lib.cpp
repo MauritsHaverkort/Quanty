@@ -3320,7 +3320,7 @@ void TightBindingDefHoppingCopy(const TightBindingDefHopping &HOld, TightBinding
 			HNew.TransVecs[i] = HOld.TransVecs[i];
 			HNew.ConnectingVector[i] = HOld.ConnectingVector[i];
 	}
-	HNew.Hop = HOld.Hop;
+	MatrixCopy(&HNew.Hop, HOld.Hop);
 }
 
 void TightBindingCopy(const TightBindingDef &TBOld, TightBindingDef &TBNew)
