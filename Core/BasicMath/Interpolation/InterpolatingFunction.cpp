@@ -31,6 +31,11 @@ std::vector<double> InterpolatingFunction::operator()(const std::vector<double> 
 	printf("error: call of virtual InterpolatingFunction::operator()\n");
 	return std::vector<double>();
 }
+std::vector<double> InterpolatingFunction::operator()(const std::vector<double> &t, unsigned int k)
+{
+	printf("error: call of virtual InterpolatingFunction::operator()\n");
+	return std::vector<double>();
+}
 
 void InterpolatingFunction::Create(const std::vector<double> &u, const std::vector<double> &v)
 {

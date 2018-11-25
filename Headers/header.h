@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <map>
 #include <math.h>
 #include <float.h>
 #include <limits.h>
@@ -63,6 +64,7 @@ uint32_t GlobalVerbosity=0xF;
 
 using std::cout;
 using std::endl;
+using std::map;
 //using std::signbit;
 using std::string;
 using std::vector;

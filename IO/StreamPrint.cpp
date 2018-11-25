@@ -1574,49 +1574,60 @@ uint32_t StreamPrintBandstructurePath(BandstructurePathType M, FILE * stream)
 string numberToStringMaxWidth(double num, int maxWidth)
 {
 	std::stringstream sstr;
-	std::streamsize old_precision = sstr.precision();
 	int power = findPower(num);
 	int powerDigits = findPower(power) + 1;
 	if (power < 0)
 		++powerDigits;
+	int availableDigits = maxWidth;
 	if (num < 0)
-		--maxWidth;
-	if (Abs(num) < 1)
+		--availableDigits;
+	double lastDigit;
+	bool isScientificNotation;
+
+	int minDisplayablePower = -pow(10, availableDigits - 3) + 1;
+	if (power < minDisplayablePower )
+		return "0";
+	int maxDisplayablaPower = pow(10, availableDigits - 2) - 1;
+	if (power > maxDisplayablaPower)
+		return "inf";
+
+	if (power < 0)
+		isScientificNotation = (Abs(power) > powerDigits + 1);
+	else
+		isScientificNotation = (power + 1 > availableDigits);
+
+	if (isScientificNotation)
 	{
-		if (Abs(num) > pow(10,-powerDigits-2) || num == 0)
+		if (power < 0)
+			lastDigit = pow(10, power + powerDigits + 2 - availableDigits);
+		else
+			lastDigit = pow(10, power + powerDigits + 3 - availableDigits);
+
+		if (lastDigit < 1 && lastDigit < pow(10, power))
+			lastDigit = 10 * lastDigit;
+		double tmp = round(num, lastDigit);
+		if (tmp > num && tmp == 10 * lastDigit)
 		{
-			if (maxWidth + power - 1 > 0)
-				sstr.precision(maxWidth + power - 1);
-			else
-				sstr.precision(1);
-			sstr << num;
+//	 rounding has changed the power
+			sstr << "1e" << power + 1;
 		} else
 		{
-			if (maxWidth - powerDigits - 2 > 0)
-				sstr.precision(maxWidth - powerDigits - 2);
-			else
-				sstr.precision(1);
-			sstr << num * pow(10, -power) << "e" << power;
+			sstr << tmp * pow(10, -power) << "e" << power;
 		}
-	} else if (Abs(num) > pow(10, maxWidth - 1))
-	{
-		if (maxWidth - powerDigits - 2 > 0)
-			sstr.precision(maxWidth - powerDigits - 2);
-		else
-			sstr.precision(1);
-		sstr << num * pow(10, -power) << "e" << power;
 	} else
 	{
-		if (maxWidth - 1 > 0)
-			sstr.precision(maxWidth - 1);
-		else
-			sstr.precision(1);
-		sstr << num;
+		if (power < 0)
+		{
+			lastDigit = pow(10, -availableDigits + 2);
+		} else
+		{
+			lastDigit = pow(10, -availableDigits + power + 1);
+			if (lastDigit < 1)
+				lastDigit = 10 * lastDigit;
+		}
+		sstr << round(num, lastDigit);
 	}
-	sstr.precision(old_precision);
-	string out;
-	sstr >> out;
-	return out;
+	return sstr.str();
 }
 
 
@@ -1625,41 +1636,44 @@ void numberOutMaxWidth(double num, int maxWidth)
 	cout << numberToStringMaxWidth(num,maxWidth);
 }
 
-void fillWithBlank(int width, string::size_type occupiedSpace)
+string blankFill(int width, string::size_type occupiedSpace)
 {
+	std::stringstream sstream;
 	if (occupiedSpace >= width)
 	{
-		cout << " ";
+		sstream << " ";
 	} else
 	{
 		for (int i = 0; i < width - occupiedSpace; ++i)
-			cout << " ";
+			sstream << " ";
 	}
+	return sstream.str();
 }
 
-void fillWithBlank(int width)
+string blankFill(int width)
 {
-	fillWithBlank(width,0);
+	return blankFill(width,0);
 }
 
-void printExpectationValues(const vector < WaveFunctionType >  psiList, OperatorType  hamil, const vector < OperatorType >  opList, bool hasHamiltonian, bool sortByEnergy, bool printSigma, double zero, int printHeaderEvery, int colWidth)
+void printExpectationValues(const vector < WaveFunctionType >  &psiList, OperatorType  hamil, const vector < OperatorType >  &opList, bool hasHamiltonian, bool sortByEnergy, bool printSigma, double zero, int printHeaderEvery, int colWidth)
 {
 	vector<double> EValues(psiList.size());
 	vector<double> sigmaValues(psiList.size());
 	vector<vector<double> > expValues(psiList.size());
 	int hamilAddition = 0, sigmaAddition = 0;
-	bool opHermetian = false, opRestricted = false;
+	bool isOpHermetian = false, isOpRestricted = false;
+
 	if (hasHamiltonian)
 	{
 		hamilAddition = 1;
 		OperatorChop(&hamil, sqrt(zero));
-		opHermetian = isOperatorAlmostHermitian(hamil, zero);
-		opRestricted = (hamil.Res.N > 0);
-		if (!opHermetian)
+		isOpHermetian = isOperatorAlmostHermitian(hamil, zero);
+		isOpRestricted = (hamil.Res.N > 0);
+		if (!isOpHermetian)
 		{
 			cout << "PrintExpectationValues not yet implemented for non-Hermitian operators, the reults will probably be rubbish." << endl;
 		}
-		if (opRestricted)
+		if (isOpRestricted)
 		{
 			for (int i = 0; i < psiList.size(); ++i)
 			{
@@ -1676,7 +1690,7 @@ void printExpectationValues(const vector < WaveFunctionType >  psiList, Operator
 		{
 			sigmaAddition = 1;
 //			TODO: make this possible for non-hermetian operators
-			if (opRestricted)
+			if (isOpRestricted)
 			{
 				for (int i = 0; i < psiList.size(); ++i)
 					sigmaValues[i] = sqrt(Abs(EValues[i] * EValues[i] - PsiHermitianOperatorSqrPsiRestricted(hamil, psiList[i], hamil.Res)));
@@ -1688,19 +1702,34 @@ void printExpectationValues(const vector < WaveFunctionType >  psiList, Operator
 		}
 	}
 
+	vector < string > headerNames(opList.size() + hamilAddition + sigmaAddition);
 	for (int i = 0; i < psiList.size(); ++i)
 	{
-
 		expValues[i] = vector<double>(opList.size() + hamilAddition + sigmaAddition);
 		if (hasHamiltonian)
 		{
 			expValues[i][0] = EValues[i];
+			headerNames[0] = "E";
 			if (printSigma)
+			{
 				expValues[i][expValues[i].size() - 1] = sigmaValues[i];
+				headerNames[headerNames.size() - 1] = "std-dev";
+			}
 		}
 		for (int j = 0; j < opList.size(); ++j)
+		{
 			expValues[i][j + hamilAddition] = PsiHermitianOperatorPsi(opList[j], psiList[i]); //TODO: If Abfrage auf Restrictions. Leider ändern Restrictions an dieser Stelle auch nichts.
+//		TODO: das wird viel zu oft gemacht, weil es in einer doppelten schleife steht
+			headerNames[j + hamilAddition] = opList[j].Name;
+		}
 	}
+
+//	for (map<string, vector<double> >::const_iterator iter = extraLists.begin(); iter != extraLists.end(); ++iter)
+//	{
+//		headerNames[] = iter->first;
+//
+//	}
+
 
 	if (hasHamiltonian && sortByEnergy)
 		sort(expValues.begin(), expValues.end(), matrixSorterByFirstValue);
@@ -1708,9 +1737,9 @@ void printExpectationValues(const vector < WaveFunctionType >  psiList, Operator
 	for (int i = 0; i < psiList.size(); ++i)
 	{
 		if (i == 0 || (printHeaderEvery > 0 && i % printHeaderEvery == 0))
-			printExpectationValuesHeader(opList, hasHamiltonian, printSigma, colWidth);
+			printExpectationValuesHeader(headerNames, colWidth);
 		int maxISize = findPower(psiList.size()) + 1;
-		fillWithBlank(colWidth - 2, maxISize);
+		cout << blankFill(colWidth - 2, maxISize);
 		cout.width(maxISize);
 		cout << (i + 1);
 		cout << "  ";
@@ -1721,7 +1750,7 @@ void printExpectationValues(const vector < WaveFunctionType >  psiList, Operator
 				out = 0;
 			string outStr = numberToStringMaxWidth(out, colWidth - 1);
 			cout << outStr;
-			fillWithBlank(colWidth, outStr.length());
+			cout << blankFill(colWidth, outStr.length());
 		}
 		if (hasHamiltonian && printSigma)
 		{
@@ -1733,27 +1762,18 @@ void printExpectationValues(const vector < WaveFunctionType >  psiList, Operator
 	}
 }
 
-void printExpectationValuesHeader(const vector < OperatorType > opList, bool hasHamiltonian, bool printSigma, int colWidth)
+void printExpectationValuesHeader(const vector < string > &headerNames, int colWidth)
 {
 	cout << endl;
-	fillWithBlank(colWidth);
-	if (hasHamiltonian)
+	cout << blankFill(colWidth);
+	for (int i = 0; i < headerNames.size(); ++i)
 	{
-		cout << "E";
-		fillWithBlank(colWidth,1);
-	}
-	for (int i = 0; i < opList.size(); ++i)
-	{
-		string name(opList[i].Name);
+		string name(headerNames[i]);
 		if (name.length() > colWidth-1)
-		{
 			name = name.substr(0,colWidth-1);
-		}
 		cout << name;
-		fillWithBlank(colWidth, name.length());
+		cout << blankFill(colWidth, name.length());
 	}
-	if (hasHamiltonian && printSigma)
-		cout << "std-dev";
 	cout << endl;
 }
 

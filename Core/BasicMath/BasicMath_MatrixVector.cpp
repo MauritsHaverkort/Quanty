@@ -1784,14 +1784,20 @@ uint32_t MatrixBasisOrthonormalize(MatrixType const S, MatrixType * const T)
   return 0;
 }
 
-MatrixType zeroMatrix(const uint32_t Ni, const uint32_t Nj)
+MatrixType zeroMatrix(const uint32_t Ni, const uint32_t Nj, bool QComplex)
 {
 	MatrixType zeroMat;
 	zeroMat.Ni = Ni;
 	zeroMat.Nj = Nj;
+	zeroMat.QComplex = QComplex;
 	if (Ni != 0 && Nj != 0)
 		InitMatrix(&zeroMat);
 	return zeroMat;
+}
+
+MatrixType zeroMatrix(const uint32_t Ni, const uint32_t Nj)
+{
+	return zeroMatrix(Ni, Nj, false);
 }
 
 MatrixType nullMatrix()
