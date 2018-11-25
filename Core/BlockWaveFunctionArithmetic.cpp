@@ -614,24 +614,24 @@ void RealBlockWaveFunctionAddElementConserveBasis(WaveFunctionType const *psi, c
   /* test if the key that belongs to psi already excists */
   NextIndex=psi[0].KeyList[hash(det, psi[0].NWord, psi[0].NBitsKey)];
   if (!NextIndex)
-  {                             /* det not in key, do nothing */
+  {                            /* det not in key, do nothing */
     return;
   }
   else
   {                             /* The key is already taken, test if this is due to a collision, or if psi is already in the basis set */
-    while (1)
+	while (1)
     {
       PsiAIsPsiB = 1;
       for (i = 0; i < psi[0].NWord; i++)
       {
         if (psi[0].Determinant[BlokElementDet(NextIndex, psi[0].NWord, i)] != det[i])
         {
-          PsiAIsPsiB = 0;
+        	PsiAIsPsiB = 0;
         }
       }
       if (PsiAIsPsiB)
       {                         /* psi already in basis set add and leave loop  */
-        for(i=0;i<Npsi;i++)
+    	for(i=0;i<Npsi;i++)
         {
 #pragma omp atomic
           psi[i].ValueRe[BlokElement(NextIndex)] += a[i];
@@ -706,20 +706,27 @@ void ComplexBlockWaveFunctionAddElementConserveBasis(WaveFunctionType const *psi
  *   return 0 if everything worked
  *   return 1 if out off memory
  */
-uint32_t RealBlockWaveFunctionAddElementOMPMiniFlush(WaveFunctionType * const psi, uint32_t * NMini, const uint8_t * const MiniDet, const double *const MiniValue, const uint32_t Npsi)
+uint32_t RealBlockWaveFunctionAddElementOMPMiniFlush(WaveFunctionType * const psi, uint32_t * NMini, const uint8_t * const MiniDet, const double *const MiniValue, const uint32_t Npsi, const bool ExpandBasis)
 {
   uint32_t i, NoMoreMem = 0;
 #pragma omp critical (AddToPsi)
   {
     for (i = 0; i < *NMini; i++)
     {
-      if (RealBlockWaveFunctionAddElement(psi, &MiniDet[i * psi->NWord], &(MiniValue[i*Npsi]), Npsi))
+      if (ExpandBasis)
       {
-        printf("RealBlockWaveFunctionAddElement failed in RealBlockWaveFunctionAddElementOMPMiniFlush\n");
-        fflush(stdout);
-        NoMoreMem = 1;
-        i = *NMini;
-        *NMini = 0;
+    	  if (RealBlockWaveFunctionAddElement(psi, &MiniDet[i * psi->NWord], &(MiniValue[i*Npsi]), Npsi))
+		  {
+			printf("RealBlockWaveFunctionAddElement failed in RealBlockWaveFunctionAddElementOMPMiniFlush\n");
+			fflush(stdout);
+			NoMoreMem = 1;
+			i = *NMini;
+			*NMini = 0;
+		  }
+      }
+      else
+      {
+    	  RealBlockWaveFunctionAddElementConserveBasis(psi, &MiniDet[i * psi->NWord], &(MiniValue[i*Npsi]), Npsi);
       }
     }
 #pragma omp flush
@@ -1279,7 +1286,7 @@ uint32_t BlockOperatorPsiRestricted(const OperatorType O, WaveFunctionType const
  *  on input all psi[i]'s are on the same basis
  *  on excit all Opsi[i]'s are on the same basis
  */
-uint32_t BlockOperatorPsiRR(const OperatorType O, WaveFunctionType const * const psi, WaveFunctionType * const Opsi, uint32_t const Npsi)
+uint32_t BlockOperatorPsiRR(const OperatorType O, WaveFunctionType const * const psi, WaveFunctionType * const Opsi, uint32_t const Npsi, const bool ExpandBasis)
 {
   uint32_t i, j, k, l, m, ii, ij, ik, OutOffMem;
   int    iOMP;
@@ -1289,11 +1296,18 @@ uint32_t BlockOperatorPsiRR(const OperatorType O, WaveFunctionType const * const
   Opsi[0].NFermion = psi[0].NFermion;
   Opsi[0].NBoson = psi[0].NBoson;
   Opsi[0].NBitsKey = psi[0].NBitsKey;
-  if (WaveFunctionInit(&(Opsi[0])))
+  if (!ExpandBasis)
   {
-    printf("Could not initialize Opsi[0] in BlockOperatorPsiRR\n");
-    return 1;
-  };
+	  WaveFunctionInitCopyBasis(&(Opsi[0]), psi[0]);
+  }
+  else
+  {
+	  if (WaveFunctionInit(&(Opsi[0])))
+	  {
+		printf("Could not initialize Opsi[0] in BlockOperatorPsiRR\n");
+		return 1;
+	  };
+  }
   for(i=1;i<Npsi;i++)
   {
     if(WaveFunctionInitCopyBasis(&(Opsi[i]), Opsi[0]))
@@ -1339,7 +1353,7 @@ uint32_t BlockOperatorPsiRR(const OperatorType O, WaveFunctionType const * const
               NMini++;
               if (NMini == MiniBlokSize)
               {                 /* flush Mini buffer */
-                if (RealBlockWaveFunctionAddElementOMPMiniFlush(Opsi, &NMini, MiniDet, MiniValue[0], Npsi))
+                if (RealBlockWaveFunctionAddElementOMPMiniFlush(Opsi, &NMini, MiniDet, MiniValue[0], Npsi, ExpandBasis))
                 {               /* Allocation failed */
                   printf("RealWaveFunctionAddElementOMPMiniFlush failed in BlockOperatorPsiRR\n 01");
                   fflush(stdout);
@@ -1354,7 +1368,7 @@ uint32_t BlockOperatorPsiRR(const OperatorType O, WaveFunctionType const * const
         }                       /* end of loop over operators of different length */
       }                         /* Out Off Mem test */
     }                           /* end of loop over elements of psi this loop runs parallel */
-    if (RealBlockWaveFunctionAddElementOMPMiniFlush(Opsi, &NMini, MiniDet, MiniValue[0], Npsi))
+    if (RealBlockWaveFunctionAddElementOMPMiniFlush(Opsi, &NMini, MiniDet, MiniValue[0], Npsi, ExpandBasis))
     {                           /* Allocation failed */
       printf("RealBlockWaveFunctionAddElementOMPMiniFlush failed in BlockOperatorPsiRR 02\n");
       fflush(stdout);

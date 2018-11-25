@@ -145,6 +145,45 @@ std::vector<double> CubicSpline::operator()(const std::vector<double> &t)
 	return val;
 }
 
+std::vector<double> CubicSpline::operator()(const std::vector<double> &t, unsigned int k)
+{
+	std::vector<double> val = std::vector<double>(t.size());
+	uint32_t i = 1;
+	for (uint32_t j = 0; j < t.size(); j++)
+	{
+		while (t[j] > x[i] && i < x.size()-1)
+		{
+			i++;
+		}
+		if (t[j] <= x[i])
+		{
+			double a,b,c,h, xx;
+			xx = t[j] - x[i-1];
+			h = x[i] - x[i-1];
+			b = y2[i-1];
+			a = (y2[i] -y2[i-1]) / h / 3.;
+			c = (y[i]-y[i-1])/h -h/3. * (y2[i] + 2*y2[i-1]);
+			switch (k) {
+				case 0:
+					val[j] = y[i-1] + xx*(c +xx*(b + xx * a));
+					break;
+				case 1:
+					val[j] = c +xx*(2*b + xx * a *3);
+					break;
+				case 2:
+					val[j] = 2*b + xx * a *6;
+					break;
+				default:
+					std::cout << "error: order of derivative of interpolated function at most 2" << std::endl;
+					val[j] = NAN;
+					break;
+			}
+
+		}
+	}
+	return val;
+}
+
 std::vector<double> CubicSpline::GetY2()
 {
 	return y2;

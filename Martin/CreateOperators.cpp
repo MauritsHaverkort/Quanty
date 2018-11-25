@@ -69,6 +69,7 @@ uint32_t CreateOperatorFastCoulombRelativistic(uint32_t const NFermion,double **
 
     integrals = GetSlaterIntegrals(basisfuns,NbasisFuns,grid, NGridpoints, (const int **) tuple, NIntegrals);
     //PrintMaxSlaterIntegral(integrals,NIntegrals);
+    printf("%E\n",integrals[0].val[0]);
 
     int *k, i;
     unsigned int *n;
@@ -488,7 +489,7 @@ uint32_t CreateOperatorSingleCoulombRelativistic(uint32_t const NFermion,double 
 
     integrals = GetSlaterIntegrals(basisfuns,NbasisFuns,grid, NGridpoints, (const int **) tuple, NIntegrals);
     int index = GetIndexMaxSlaterIntegral(integrals,NIntegrals);
-    double cutoff = Abs(integrals[index].val[0])/5.;
+    double cutoff = Abs(integrals[index].val[0])/2.;
     //printf("int = %e\n",integrals[index].val[0]);
     //printf("int = %e\n",integrals[30].val[0]);
     //printf("ind = %d\n",index);
@@ -506,8 +507,8 @@ uint32_t CreateOperatorSingleCoulombRelativistic(uint32_t const NFermion,double 
     //printf("Fk[0]: \t %e\n",Fk[0]);
 
     CreateOperatorCoulombRelativisticOneIntegral(NFermion,k[0],k[1],k[2],k[3],indices[n[0]],indices[n[1]],indices[n[2]],indices[n[3]],Fk,n[0],n[1],n[2],n[3],op);
-
-    for( i = 1; i < indexes.size(); i++)
+    printf("NSlater : %d\n",indexes.size());
+    for( i = 1; i < Min(100,indexes.size()); i++)
         {
             k = integrals[indexes[i]].tau.kappa;
             n = integrals[indexes[i]].tau.n;
