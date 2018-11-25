@@ -48,7 +48,9 @@
 #include "BasicMath_Spline.cpp"
 
 #include "Interpolation/CubicSpline.cpp"
+#include "Interpolation/CubicHermiteSpline.cpp"
 #include "Interpolation/InterpolatingFunction.cpp"
+
 
 /*
  *   x^a with both x and a integers
@@ -409,6 +411,11 @@ int findPower(double num, int power)
 int findPower(double num)
 {
 	return findPower(num, 0);
+}
+
+double round(double num, double precision)
+{
+	return round(num/precision)*precision;
 }
 
 bool matrixSorterByFirstValue(vector<double> v1, vector<double> v2)

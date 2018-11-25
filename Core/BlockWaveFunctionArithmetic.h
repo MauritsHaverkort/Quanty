@@ -5,7 +5,7 @@ uint32_t ComplexBlockWaveFunctionAddElement(WaveFunctionType * const psi, const 
 uint32_t BlockWaveFunctionAddElement(WaveFunctionType * const psi, const uint8_t * const det, const double * aRe, const double * aIm, const uint32_t Npsi);
 void RealBlockWaveFunctionAddElementConserveBasis(WaveFunctionType const *psi, const uint8_t * const det, const double * a, const uint32_t Npsi);
 void ComplexBlockWaveFunctionAddElementConserveBasis(WaveFunctionType const *psi, const uint8_t * const det, const double * aRe, const double * aIm, const uint32_t Npsi);
-uint32_t RealBlockWaveFunctionAddElementOMPMiniFlush(WaveFunctionType * const psi, uint32_t * NMini, const uint8_t * const MiniDet, const double *const MiniValue, const uint32_t Npsi);
+uint32_t RealBlockWaveFunctionAddElementOMPMiniFlush(WaveFunctionType * const psi, uint32_t * NMini, const uint8_t * const MiniDet, const double *const MiniValue, const uint32_t Npsi, const bool ExpandBasis=true);
 uint32_t ComplexBlockWaveFunctionAddElementOMPMiniFlush(WaveFunctionType * const psi, uint32_t * NMini, const uint8_t * const MiniDet, const double *const MiniValueRe, const double *const MiniValueIm, const uint32_t Npsi);
 uint32_t RealBlockWaveFunctionAddUnionBasis(WaveFunctionType * const a, const WaveFunctionType * const b, const uint32_t Npsi);
 uint32_t ComplexBlockWaveFunctionAddUnionBasis(WaveFunctionType * const a, const WaveFunctionType * const b, const uint32_t Npsi);
@@ -26,7 +26,7 @@ uint32_t BlockOperatorPsiRestrictedCC(const OperatorType O, WaveFunctionType con
 uint32_t BlockOperatorPsiRestrictedMR(const OperatorType O, WaveFunctionType const * const psi, WaveFunctionType * const Opsi, DeterminantRestrictionType const Restrictions, uint32_t const Npsi);
 uint32_t BlockOperatorPsiRestrictedMC(const OperatorType O, WaveFunctionType const * const psi, WaveFunctionType * const Opsi, DeterminantRestrictionType const Restrictions, uint32_t const Npsi);
 uint32_t BlockOperatorPsiRestricted(const OperatorType O, WaveFunctionType const * const psi, WaveFunctionType * const Opsi, DeterminantRestrictionType const Restrictions, uint32_t const Npsi);
-uint32_t BlockOperatorPsiRR(const OperatorType O, WaveFunctionType const * const psi, WaveFunctionType * const Opsi, uint32_t const Npsi);
+uint32_t BlockOperatorPsiRR(const OperatorType O, WaveFunctionType const * const psi, WaveFunctionType * const Opsi, uint32_t const Npsi, const bool ExpandBasis=true);
 uint32_t BlockOperatorPsiRC(const OperatorType O, WaveFunctionType const * const psi, WaveFunctionType * const Opsi, uint32_t const Npsi);
 uint32_t BlockOperatorPsiCR(const OperatorType O, WaveFunctionType const * const psi, WaveFunctionType * const Opsi, uint32_t const Npsi);
 uint32_t BlockOperatorPsiCC(const OperatorType O, WaveFunctionType const * const psi, WaveFunctionType * const Opsi, uint32_t const Npsi);

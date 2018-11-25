@@ -19,6 +19,7 @@ uint32_t OperatorFixedLengthCopy(OperatorFixedLengthType * const Ocopy, Operator
 uint32_t OperatorCopy(OperatorType * const Ocopy, OperatorType const O);
 uint32_t OperatorChop(OperatorType * const O, const double epsilon);
 uint32_t OperatorRemoveSmallValues(OperatorType * const O, const double epsilon);
+uint32_t OperatorSetMaxLength(OperatorType * const O);
 uint32_t QDetNotOrderedFaFcBaBc(const uint16_t A, const uint16_t B, const uint32_t NFermion);
 uint32_t QDetNotOrderedFcFaBcBa(const uint16_t A, const uint16_t B, const uint32_t NFermion);
 uint32_t QDetNotOrderedFcFaBaBc(const uint16_t A, const uint16_t B, const uint32_t NFermion);

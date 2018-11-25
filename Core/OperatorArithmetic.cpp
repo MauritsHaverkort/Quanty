@@ -297,10 +297,6 @@ uint32_t InitOperatorCopySettings(OperatorType * const O, const OperatorType Ose
     O->Res.Determinant[i]= (uint8_t*)malloc(Oset.NWord*sizeof(uint8_t));
     memcpy(O->Res.Determinant[i], Oset.Res.Determinant[i], Oset.NWord);
   }
-  
-  
-  
-  
   for (length = 1; length < Oset.MaxLength; length++)
   {
     if (Oset.l[length].NBitsKey)
@@ -1439,6 +1435,22 @@ uint32_t OperatorRemoveSmallValues(OperatorType * const O, const double epsilon)
       O->l[j].NAloc = O->l[j].N;
       if (O->l[j].N == 0) SetQComplexOperator(O);
     }
+  }
+  return 0;
+}
+
+uint32_t OperatorSetMaxLength(OperatorType * const O)
+{
+  while((O->MaxLength!=0)&&(O->l[O->MaxLength].N==0))
+  {
+    free(O->l[O->MaxLength].KeyList);
+    if (O->l[O->MaxLength].NAloc)
+    {
+      free(O->l[O->MaxLength].o);
+      free(O->l[O->MaxLength].Next);
+      (O->l[O->MaxLength].QComplex) ? free(O->l[O->MaxLength].V) : free(O->l[O->MaxLength].VRe);
+    }
+    O->MaxLength--;
   }
   return 0;
 }

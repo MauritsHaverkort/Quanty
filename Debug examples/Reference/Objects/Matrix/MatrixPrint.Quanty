@@ -1,0 +1,24 @@
+MReal = {}
+MComplex = {}
+for i = 1,7 do
+    MReal[i] = {}
+    MComplex[i] = {}
+    for j = 1,9 do
+        MReal[i][j] = (-1)^(i+j)*7/j*10^(i -j)
+        MComplex[i][j] = i - j + (-1)^(i+j)*7/j*10^(i -j)*I
+    end
+end
+
+setmetatable(MReal,MatrixMeta)
+setmetatable(MComplex,MatrixMeta)
+
+MRealU = Matrix.ToUserdata(MReal)
+MComplexU = Matrix.ToUserdata(MComplex)
+
+print(MReal)
+print("")
+print(MRealU)
+print("")
+print(MComplex)
+print("")
+print(MComplexU)

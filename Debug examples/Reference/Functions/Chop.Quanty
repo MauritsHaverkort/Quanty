@@ -1,9 +1,31 @@
-﻿dofile("../definitions.Quanty")
+﻿Nf=6
+Nb=0
+IndexDn={0,2,4}
+IndexUp={1,3,5}
+
+Opp1 = NewOperator("Lx",Nf,IndexUp,IndexDn)
+Opp2 = NewOperator("Ly",Nf,IndexUp,IndexDn)
+psi1 = NewWavefunction(Nf,Nb,{{"100010",sqrt(9/10)},{"110000",sqrt(1/10)}})
+psi2 = NewWavefunction(Nf,Nb,{{"010010",1}})
 
 Opp = Opp1 + 0.000001*Opp2
 print(Opp)
 Opp3 = Chop(Opp,0.001)
 print(Opp3)
+
+Opp4 = Opp1 - Opp1
+print(Opp4)
+Opp4.Chop()
+print(Opp4)
+Opp5 = ((Opp4 * Opp4) + (Opp1 * Opp4)) + Opp1
+print(Opp5)
+
+Opp4 = Opp1 - Opp1 + 2
+print(Opp4)
+Opp4.Chop()
+print(Opp4)
+Opp5 = ((Opp4 * Opp4) + (Opp1 * Opp4)) + Opp1
+print(Opp5)
 
 psi = psi1 + 0.00001 * psi2
 print(psi)
@@ -13,3 +35,5 @@ print(psi3)
 a = 0.000001 + 0.3 * I
 b = Chop(a,0.001)
 print("a = ",a,"\nChop(a) = ",b)
+
+

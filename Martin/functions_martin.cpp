@@ -7,6 +7,9 @@
 #include "MartinsLittleHelper.cpp"
 #include "Old_SlaterIntegrals.cpp"
 #include "CreateOperators.cpp"
+#include "PlotSpectrumWithSelfEnergy.cpp"
+#include "CSRMatrix.cpp"
+#include "SparseOperator.cpp"
 
 
 static int LuaOperatorNewFullCoulomb (lua_State *L)
@@ -488,6 +491,340 @@ static int LuaMartinTest(lua_State *L)
 	return 0;
 }
 
+static int LuaPlotSpectrumWithSelfEnergy(lua_State *L)
+{
+	double wMin, wMax,dw, gH, gS;
+	std::vector<double> psi, H; // TODO make H generic: either Matrix, TriDiagonalMatrix or DiagonalMatrix
+	std::vector<ResponsefunctionType *> SigmaRes;
+	uint32_t len = lua_gettop(L);
+	if (len != 8)
+	{
+		return luaL_error(L,"PlotSpectrumWithSelfEnergy needs 8 arguments not %d\n",len);
+	}
+	H   = luaL_checkarray_double(L,1);
+	psi = luaL_checkarray_double(L,2);
+	if (H.size() != psi.size())
+	{
+		return luaL_error(L,"PlotSpectrumWithSelfEnergy: Hamiltonian and ground state do not have the same dimensions - dim(H) = %d and dim(psi) = %d\n",H.size(),psi.size());
+	}
+	luaL_checktype(L, 3, LUA_TTABLE);
+	uint32_t lenSigma = lua_objlen(L,3);
+	SigmaRes.reserve(lenSigma);
+	for(uint32_t i = 1; i <= lenSigma; i++)
+	{
+		lua_rawgeti(L,3,i);
+		SigmaRes.push_back(luaL_checkResponsefunction(L,-1));
+		lua_pop(L,1);
+	}
+	if (((BlockTriDiagonalMatrixType*)SigmaRes[0]->data)->BlockSize != H.size())
+	{
+		return luaL_error(L,"PlotSpectrumWithSelfEnergy: self energy and Hamiltonian do not have the same dimensions - dim(H) = %d and dim(Sigma) = %d\n",H.size(),((BlockTriDiagonalMatrixType*)SigmaRes[0]->data)->BlockSize);
+	}
+	gH   = luaL_checknumber(L,4);
+	gS   = luaL_checknumber(L,5);
+	wMin = luaL_checknumber(L,6);
+	wMax = luaL_checknumber(L,7);
+	dw   = luaL_checknumber(L,8);
+	if (wMin >= wMax || dw <= 0)
+	{
+		return luaL_error(L,"PlotSpectrumWithSelfEnergy: cannot plot range [%f,%f] in steps of %f\n",wMin,wMax,dw);
+	}
+
+	uint32_t lenW = floor((wMax-wMin)/dw) + 1;
+	std::vector<std::vector<double> > graph = std::vector<std::vector<double> >(lenW);
+	double w = wMin;
+	for (uint32_t i = 0; i < lenW; i++)
+	{
+		//w += dw;
+		w = wMin + i*dw;
+		graph[i] = std::vector<double>(2);
+		graph[i][0] = w;
+		graph[i][1] = EvaluateResponseFunction(w,gH,gS,H,SigmaRes,psi);
+
+	}
+
+	lua_createtable(L,graph.size(),0);
+	for (uint32_t i = 0; i < graph.size(); i++)
+	{
+		LuaPushArray_double(L,&(graph[i][0]),2);
+		lua_rawseti(L,-2,i+1);
+	}
+
+	return 1;
+}
+
+static int LuaEvaluateSelfEnergy(lua_State *L)
+{
+	double wMin, wMax,dw, gS;
+	const char *filename;
+
+	std::vector<ResponsefunctionType *> SigmaRes;
+	uint32_t len = lua_gettop(L);
+/*	if (len != 5)
+	{
+		return luaL_error(L,"PlotSpectrumWithSelfEnergy needs 8 arguments not %d\n",len);
+	}
+*/	luaL_checktype(L, 1, LUA_TTABLE);
+	uint32_t lenSigma = lua_objlen(L,1);
+	SigmaRes.reserve(lenSigma);
+	for(uint32_t i = 1; i <= lenSigma; i++)
+	{
+		lua_rawgeti(L,1,i);
+		SigmaRes.push_back(luaL_checkResponsefunction(L,-1));
+		lua_pop(L,1);
+	}
+	gS   = luaL_checknumber(L,2);
+	wMin = luaL_checknumber(L,3);
+	wMax = luaL_checknumber(L,4);
+	dw   = luaL_checknumber(L,5);
+	if (wMin >= wMax || dw <= 0)
+	{
+		return luaL_error(L,"LuaEvaluateSelfEnergy: cannot plot range [%f,%f] in steps of %f\n",wMin,wMax,dw);
+	}
+
+	uint32_t lenW = floor((wMax-wMin)/dw) + 1;
+	std::vector<CompactMatrixType *> selfenergy = std::vector<CompactMatrixType *>(lenW);
+	double w = wMin;
+	for (uint32_t i = 0; i < lenW; i++)
+	{
+		w = wMin + i*dw;
+		selfenergy[i] = EvaluateSelfEnergy(w,gS,SigmaRes);
+	}
+	if (len > 5)
+	{
+		filename = luaL_checkstring(L,6);
+		WriteDataToFile(selfenergy,filename);
+	}
+/*
+	lua_createtable(L,graph.size(),0);
+	for (uint32_t i = 0; i < graph.size(); i++)
+	{
+		LuaPushArray_double(L,&(graph[i][0]),2);
+		lua_rawseti(L,-2,i+1);
+	}
+*/
+	return 0;
+}
+
+static int LuaReadDataFromFile(lua_State *L)
+{
+	const char *type = luaL_checkstring(L,1);
+	const char *filename = luaL_checkstring(L,2);
+	if (strcmp(type, "CompactMatrixType_Table") == 0)
+	{
+		std::vector<CompactMatrixType *> Ms;
+		ReadDataFromFile(Ms,filename);
+		lua_push(L,Ms);
+		return 1;
+	}
+	printf("Error: LuaReadDataFromFile: data type not recognized\n");
+
+	return 0;
+}
+
+static int LuaWriteDataToFile(lua_State *L)
+{
+	const char *type = luaL_checkstring(L,1);
+	const char *filename = luaL_checkstring(L,2);
+	if (strcmp(type, "CompactMatrixType_Table") == 0)
+	{
+		std::vector<CompactMatrixType *> Ms;
+		lua_check(L,3,Ms);
+		WriteDataToFile(Ms,filename);
+		printf("Table of compact matrices written to file %s\n",filename);
+
+		return 0;
+	}
+	printf("Error: LuaReadDataFromFile: data type not recognized\n");
+
+	return 0;
+}
+
+static int LuaCalcSpectrumWithSelfEnergy(lua_State *L)
+{
+	double wMin, wMax,dw, gH;
+	std::vector<double> psi, H; // TODO make H generic: either Matrix, TriDiagonalMatrix or DiagonalMatrix
+	std::vector<CompactMatrixType *> Sigma;
+	uint32_t len = lua_gettop(L);
+
+	H   = luaL_checkarray_double(L,1);
+	psi = luaL_checkarray_double(L,2);
+	if (H.size() != psi.size())
+	{
+		return luaL_error(L,"CalcSpectrumWithSelfEnergy: Hamiltonian and ground state do not have the same dimensions - dim(H) = %d and dim(psi) = %d\n",H.size(),psi.size());
+	}
+	lua_check(L,3,Sigma);
+
+	gH   = luaL_checknumber(L,4);
+	wMin = luaL_checknumber(L,5);
+	wMax = luaL_checknumber(L,6);
+	dw   = luaL_checknumber(L,7);
+	if (wMin >= wMax || dw <= 0)
+	{
+		return luaL_error(L,"CalcSpectrumWithSelfEnergy: cannot plot range [%f,%f] in steps of %f\n",wMin,wMax,dw);
+	}
+	uint32_t lenW = floor((wMax-wMin)/dw) + 1;
+	if (lenW != Sigma.size())
+	{
+		return luaL_error(L,"CalcSpectrumWithSelfEnergy: Grids for Sigma and G do not match\n");
+	}
+	std::vector<std::vector<double> > graph = std::vector<std::vector<double> >(lenW);
+	double w = wMin;
+	for (uint32_t i = 0; i < lenW; i++)
+	{
+		//w += dw;
+		w = wMin + i*dw;
+		graph[i] = std::vector<double>(2);
+		graph[i][0] = w;
+		graph[i][1] = EvaluateResponseFunction(w,gH,H,Sigma[i],psi);
+
+	}
+	lua_push(L,graph);
+	return 1;
+}
+
+static int LuaCreateEigenDifferentials(lua_State *L)
+{
+	double Emin, dE;
+	uint32_t NeigenDiffs,Qrelativistic;
+	int kappa;
+	std::vector<double> grid;
+	std::vector<Interpolation::CubicSpline*> eigendifferentials;
+
+	uint32_t len = lua_gettop(L);
+	lua_check(L,1,Emin);
+	lua_check(L,2,dE);
+	lua_check(L,3,NeigenDiffs);
+	lua_check(L,4,kappa);
+	lua_check(L,5,grid);
+
+
+
+	if (len == 6)
+	{
+		lua_check(L,6,Qrelativistic);
+		if (Qrelativistic)
+		{
+			std::vector<Interpolation::CubicSpline*> eigendifferentialsG = std::vector<Interpolation::CubicSpline*>(NeigenDiffs);
+			lua_createtable(L,0,NeigenDiffs);
+			for (uint32_t i = 0; i < NeigenDiffs; i++)
+			{
+				void* memory = lua_newuserdata(L, sizeof(Interpolation::CubicSpline));
+				eigendifferentialsG[i] = new(memory) Interpolation::CubicSpline();
+				luaL_setmetatable(L, "InterpolatingFunction_Type");
+				lua_rawseti(L,-2,i+1);
+
+			}
+			std::vector<Interpolation::CubicSpline*> eigendifferentialsF = std::vector<Interpolation::CubicSpline*>(NeigenDiffs);
+			lua_createtable(L,0,NeigenDiffs);
+			for (uint32_t i = 0; i < NeigenDiffs; i++)
+			{
+				void* memory = lua_newuserdata(L, sizeof(Interpolation::CubicSpline));
+				eigendifferentialsF[i] = new(memory) Interpolation::CubicSpline();
+				luaL_setmetatable(L, "InterpolatingFunction_Type");
+				lua_rawseti(L,-2,i+1);
+
+			}
+			CreateEigenDiffs(grid,kappa,Emin,dE,NeigenDiffs,eigendifferentialsG,eigendifferentialsF);
+			return 2;
+		}
+	}
+
+	eigendifferentials = std::vector<Interpolation::CubicSpline*>(NeigenDiffs);
+	lua_createtable(L,0,NeigenDiffs);
+	for (uint32_t i = 0; i < NeigenDiffs; i++)
+	{
+		void* memory = lua_newuserdata(L, sizeof(Interpolation::CubicSpline));
+		eigendifferentials[i] = new(memory) Interpolation::CubicSpline();
+		luaL_setmetatable(L, "InterpolatingFunction_Type");
+		lua_rawseti(L,-2,i+1);
+
+	}
+	CreateEigenDiffs(grid,kappa,Emin,dE,NeigenDiffs,eigendifferentials);
+
+	return 1;
+}
+
+static int LuaEigenDifferential(lua_State *L)
+{
+	uint32_t len = lua_gettop(L);
+	int kappa;
+	double x,q1,q2, result;
+	lua_check(L,1,x);
+	lua_check(L,2,kappa);
+	lua_check(L,3,q1);
+	lua_check(L,4,q2);
+	if (len == 5 )
+	{
+		struct
+		{
+			char *type;
+			uint32_t Nknots;
+		} Options;
+		LuaOptionsType LuaEDOptions[]={
+		    {"Type","char*",&(Options.type)},
+		    {"Nknots","uint32_t",&(Options.Nknots)},
+		    {NULL, NULL, NULL}};
+		Options.Nknots = 4;
+		Options.type = "N"; // mwh this is a real bug !!!
+		LuaCheckOptions(L, 5, LuaEDOptions);
+		if (strcmp(Options.type,"N")==0)
+		{
+			result = x * EvaluateEigendifferential(&WaveFunFreeParticleNonRelativistic,x,kappa,q1,q2,Options.Nknots);
+		}
+		else
+		{
+			if (strcmp(Options.type,"G")==0)
+			{
+				result = x * EvaluateEigendifferential(&WaveFunFreeParticleG,x,kappa,q1,q2,Options.Nknots);
+			}
+			else
+			{
+				if (strcmp(Options.type,"F")==0)
+				{
+					result = x * EvaluateEigendifferential(&WaveFunFreeParticleF,x,kappa,q1,q2,Options.Nknots);
+				}
+				else
+				{
+					return luaL_error(L,"Type of Eigendifferential not recognized. Possible types are N, G, or F\n");
+				}
+			}
+		}
+	}
+	else
+	{
+		result = x * EvaluateEigendifferential(&WaveFunFreeParticleNonRelativistic,x,kappa,q1,q2);
+	}
+	lua_push(L,result);
+	return 1;
+}
+
+static int LuaSparseOperator(lua_State *L)
+{
+	OperatorType *H = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
+	WaveFunctionType *psi = (WaveFunctionType *) luaL_checkudata(L, 2, "Wavefunction_Type");
+	LinAlg::CSRMatrix<double> M;
+	OperatorToSparseMatrix(H,psi,M);
+	//M.Print();
+	printf("Matrix created with %lu nve\n",M.A.size());
+	std::vector<double> vec, a, b;
+	WaveFunctionToVector(psi,vec,psi);
+	std::vector<std::vector<double> > T;
+	Lanczos(M,SkalarProdukt,VectorAdd<double>,VectorMul<double>,vec,6,a,b,T);
+	for (uint32_t i = 0; i < a.size(); i++)
+	{
+		printf("%e\t",a[i]);
+	}
+	printf("\n");
+	for (uint32_t i = 0; i < b.size(); i++)
+	{
+		printf("%e\t",b[i]);
+	}
+  // mwh one should osuh resutls to the stack and return the number of states pushed to the stack
+  // for now I add an return 0 in order to repair a bug that prevents compiling
+  return 0;
+}
+
 static const struct luaL_Reg Martin_meta[] = {
   {NULL, NULL}
 };
@@ -518,7 +855,7 @@ static const struct luaL_Reg Martin_meta[] = {
  * 		which leads to an increase in speed.
  *
  *
- *
+ *;
  */
 
 static const struct luaL_Reg Martin_func[] = {
@@ -531,6 +868,15 @@ static const struct luaL_Reg Martin_func[] = {
   /*{"Propagator",LuaPropagator},
   {"Propagator2",LuaPropagator2},*/
   {"Metric",LuaMetricWaveFuns},
+  {"ReadData",LuaReadDataFromFile},
+  {"WriteData",LuaWriteDataToFile},
+  {"EvaluateSelfEnergy",LuaEvaluateSelfEnergy},
+  {"PlotSpectrumWithSelfEnergy",LuaPlotSpectrumWithSelfEnergy},
+  {"CalcSpectrumWithSelfEnergy",LuaCalcSpectrumWithSelfEnergy},
+  {"CreateEigenDifferentials",LuaCreateEigenDifferentials},
+  {"EigenDifferential",LuaEigenDifferential},
+  {"ED",LuaEigenDifferential},
+  {"SparseOperator",LuaSparseOperator},
   {NULL, NULL}
 };
 

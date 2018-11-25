@@ -26,6 +26,7 @@ public:
 	double operator()(double t);
 	double operator()(double t, unsigned int k);
 	std::vector<double> operator()(const std::vector<double> &t);
+	std::vector<double> operator()(const std::vector<double> &t, unsigned int k);
 };
 
 } /* namespace Interpolation */

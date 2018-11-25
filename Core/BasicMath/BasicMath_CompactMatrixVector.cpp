@@ -3609,6 +3609,112 @@ uint32_t BlockTriDiagonalMatrixToCompactMatrix(BlockTriDiagonalMatrixType const 
   return 0;
 }
 
+/*  Turn a BlockTriDiagonalMatrix into a compact dense matrix
+ *  The array Blocksize contains the dimension of each Block used
+ *  A0 and B0 are neglected
+ *
+ */
+uint32_t BlockTriDiagonalMatrixToCompactMatrixWithDeflation(BlockTriDiagonalMatrixType const * A, CompactMatrixType * const B, uint32_t * Blocksize)
+{
+  uint32_t i,j,k,apos,bpos,bposL,bposR;
+  B->QComplex=A->QComplex;
+  B->Ni=0;
+  for(i=0;i<A->N;i++)
+  {
+    B->Ni+=Blocksize[i];
+  }
+  B->Nj=B->Ni;
+  if(InitCompactMatrix(B))
+  {
+    printf("InitCompactMatrix failed in BlockTriDiagonalMatrixToCompactMatrix\n");
+    return 1;
+  }
+  // set matrix A
+  bpos=0;
+  apos=A->BlockSize*A->BlockSize; // start A at position A.a[1]
+  if(A->QComplex)
+  {
+    for(k=0;k<A->N;k++)
+    {
+      for(i=0;i<Blocksize[k];i++)
+      {
+        for(j=0;j<Blocksize[k];j++) // loop i and j over the block with the correct size for the dense matrix
+        {
+          B->V[bpos]=A->a[apos];
+          bpos++;
+          apos++;
+        }
+        apos+=A->BlockSize-Blocksize[k]; // at the end of a row for the deflated block move A to the end of the row of the undeflated block
+        bpos+=B->Nj-Blocksize[k];        // move B to the begining of the next row
+      }
+      apos+=(A->BlockSize-Blocksize[k])*A->BlockSize; // at the end of the block (rows and columns) move A to the next block (skipe Ndeflated rows)
+      bpos+=Blocksize[k];  // move B to the begining of the next Block
+    }
+    // set matrix B
+    apos=A->BlockSize*A->BlockSize; // Start A at position A.b[1]
+    bposL=Blocksize[0]; // you must love this naming. Set bposL to the first right top block
+    bposR=Blocksize[0]*B->Nj; // Set bposR to the first left botom block
+    for(k=1;k<A->N;k++)
+    {
+      for(i=0;i<Blocksize[k-1];i++)  // the right top block has BlockSize[k-1] rows
+      {
+        for(j=0;j<Blocksize[k];j++)  // the right top block has BlockSize[k] columns
+        {
+          B->V[bposL].Re= A->b[apos].Re;
+          B->V[bposR].Re= A->b[apos].Re;
+          B->V[bposL].Im= A->b[apos].Im;
+          B->V[bposR].Im=-A->b[apos].Im;
+          bposL++;
+          bposR+=B->Nj;
+          apos++;
+        }
+        bposL+=B->Nj-A->BlockSize;
+        bposR+=(1-A->BlockSize*B->Nj);
+      }
+      bposL+=A->BlockSize;
+      bposR+=(A->BlockSize*B->Nj);
+    }
+  }
+  else
+  {
+    for(k=1;k<=A->N;k++)
+    {
+      for(i=0;i<A->BlockSize;i++)
+      {
+        for(j=0;j<A->BlockSize;j++)
+        {
+          B->VRe[bpos]=A->aRe[apos];
+          bpos++;
+          apos++;
+        }
+        bpos+=B->Nj-A->BlockSize;
+      }
+      bpos+=A->BlockSize;
+    }
+    apos=A->BlockSize*A->BlockSize;
+    bposL=A->BlockSize;
+    bposR=A->BlockSize*B->Nj;
+    for(k=1;k<A->N;k++)
+    {
+      for(i=0;i<A->BlockSize;i++)
+      {
+        for(j=0;j<A->BlockSize;j++)
+        {
+          B->VRe[bposL]=A->bRe[apos];
+          B->VRe[bposR]=A->bRe[apos];
+          bposL++;
+          bposR+=B->Nj;
+          apos++;
+        }
+        bposL+=B->Nj-A->BlockSize;
+        bposR+=(1-A->BlockSize*B->Nj);
+      }
+      bposL+=A->BlockSize;
+      bposR+=(A->BlockSize*B->Nj);
+    }
+  }
+  return 0;
+}
 
 /* Should go in BasicMath_CompactMatrixVector.c
  *
