@@ -1,4 +1,9 @@
 
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/External_tests/RIXS_segfault.Quanty")
+os.exit()
+
+
+
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Reference/Functions/Chop.Quanty")
 os.exit()
 

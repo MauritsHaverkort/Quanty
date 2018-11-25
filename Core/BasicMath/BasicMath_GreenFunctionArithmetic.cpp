@@ -1289,9 +1289,7 @@ uint32_t TriDiagonalMatrixDysonScalar(TriDiagonalMatrixType const G, TriDiagonal
 /*  This routine needs to be replaced by a standard lanczos from a library!!!!
  *
  */
-uint32_t TridiagonalizeImpurityCoupledToBathDyson(TriDiagonalMatrixType const O, MatrixType const *V,
-                                                  MatrixType const H, TriDiagonalMatrixType const *g, uint32_t N,
-                                                  TriDiagonalMatrixType * const gnew)
+uint32_t TridiagonalizeImpurityCoupledToBathDyson(TriDiagonalMatrixType const O, MatrixType const *V, MatrixType const H, TriDiagonalMatrixType const *g, uint32_t N, TriDiagonalMatrixType * const gnew)
 {
   SparseMatrixType Htot;
   MatrixType T;
@@ -1437,10 +1435,7 @@ uint32_t TridiagonalizeImpurityCoupledToBathDyson(TriDiagonalMatrixType const O,
  *
  *  Vi,Vii will be labeled V1 and V2 below.
  */
-uint32_t TridiagonalizeImpurityCoupledToBathDysonSecondOrderA(TriDiagonalMatrixType const O, MatrixType const *V1,
-                                                              MatrixType const *V2, MatrixType const H1,
-                                                              MatrixType const H2, TriDiagonalMatrixType const *g,
-                                                              uint32_t N, TriDiagonalMatrixType * const gnew)
+uint32_t TridiagonalizeImpurityCoupledToBathDysonSecondOrderA(TriDiagonalMatrixType const O, MatrixType const *V1, MatrixType const *V2, MatrixType const H1, MatrixType const H2, TriDiagonalMatrixType const *g, uint32_t N, TriDiagonalMatrixType * const gnew)
 {
   SparseMatrixType Htot;
   MatrixType T;

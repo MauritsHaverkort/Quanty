@@ -297,10 +297,6 @@ uint32_t InitOperatorCopySettings(OperatorType * const O, const OperatorType Ose
     O->Res.Determinant[i]= (uint8_t*)malloc(Oset.NWord*sizeof(uint8_t));
     memcpy(O->Res.Determinant[i], Oset.Res.Determinant[i], Oset.NWord);
   }
-  
-  
-  
-  
   for (length = 1; length < Oset.MaxLength; length++)
   {
     if (Oset.l[length].NBitsKey)

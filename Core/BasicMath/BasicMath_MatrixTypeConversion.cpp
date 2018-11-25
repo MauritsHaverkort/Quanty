@@ -2678,7 +2678,42 @@ uint32_t RotateDegenerateStates(CompactMatrixType *fun, double *val, double epsi
   return 0;
 }
 
-
+/*  turns a matrix into a compact matrix. The matrix A is destroyed (freed) on access
+ *
+ */
+uint32_t MatrixToCompactMatrix(MatrixType *A, CompactMatrixType *B)
+{
+  uint32_t i;
+  B->Ni=A->Ni;
+  B->Nj=A->Nj;
+  B->QComplex=A->QComplex;
+  if(A->QComplex==0)
+  {
+    B->VRe=A->VRe[0];
+    if((A->Ni!=0)&&(A->Nj!=0)) free(A->VRe);
+  }
+  else
+  {
+    InitCompactMatrix(B);
+    for(i=0;i<B->Ni*B->Nj;i++)
+    {
+      B->V[i].Re=A->VRe[0][i];
+      B->V[i].Im=A->VIm[0][i];
+    }
+    if((A->Ni!=0)&&(A->Nj!=0))
+    {
+      free(A->VRe);
+      free(A->VRe);
+    }
+  }
+  B->a0=A->a0;
+  B->b0=A->b0;
+  B->mu=A->mu;
+  B->OnLuaStack=0;
+  B->Name=(char*)malloc(MAXStrLength*sizeof(char));
+  strcpy(B->Name,A->Name);
+  return 0;
+}
 
 
 /*
