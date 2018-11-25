@@ -507,7 +507,7 @@ uint32_t CreateOperatorSingleCoulombRelativistic(uint32_t const NFermion,double 
     //printf("Fk[0]: \t %e\n",Fk[0]);
 
     CreateOperatorCoulombRelativisticOneIntegral(NFermion,k[0],k[1],k[2],k[3],indices[n[0]],indices[n[1]],indices[n[2]],indices[n[3]],Fk,n[0],n[1],n[2],n[3],op);
-    printf("NSlater : %d\n",indexes.size());
+    printf("NSlater : %lu\n",indexes.size());
     for( i = 1; i < Min(100,indexes.size()); i++)
         {
             k = integrals[indexes[i]].tau.kappa;

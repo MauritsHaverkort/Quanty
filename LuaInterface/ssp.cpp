@@ -2969,7 +2969,7 @@ static int LuaOperatorSetTrace(lua_State *L)
   uint32_t luaStackLen = (uint32_t)lua_gettop(L);
 
   if (luaStackLen < 1 || luaStackLen > 3)
-    return luaL_error(L, "OperatorSetTrace called with %d arguments. One, two or three expected, Operator, trace, and indices to be included.\n",len);
+    return luaL_error(L, "OperatorSetTrace called with %d arguments. One, two or three expected, Operator, trace, and indices to be included.\n",luaStackLen);
   
   O = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
   if(O->MaxLength<2) return 0;

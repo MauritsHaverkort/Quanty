@@ -140,7 +140,7 @@ double SkalarProdukt(const std::vector<double> &x, const std::vector<double> &y)
 {
 	if (x.size()!=y.size())
 	{
-		printf("Error: SkalarProdukt of vectors of unequal lengths %d and %d\n",x.size(),y.size());
+		printf("Error: SkalarProdukt of vectors of unequal lengths %lu and %lu\n",x.size(),y.size());
 		return NAN;
 	}
 	else
@@ -168,7 +168,7 @@ void VectorAdd(const std::vector<F> & x, std::vector<F> & y, F a)
 {
 	if (x.size()!=y.size())
 	{
-		printf("Error: VectorAdd of vectors of unequal lengths %d and %d\n",x.size(),y.size());
+		printf("Error: VectorAdd of vectors of unequal lengths %lu and %lu\n",x.size(),y.size());
 		return;
 	}
 	else
