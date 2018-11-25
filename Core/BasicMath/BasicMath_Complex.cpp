@@ -242,7 +242,7 @@ Complex16 Cexp(const Complex16 z)
 Complex16 Cpow(const Complex16 a, const Complex16 b)
 {
   Complex16 ret;
-  const double phase=atan2(a.Re, a.Im);
+  const double phase=atan2(a.Im, a.Re);
   const double theta=b.Re*phase + 0.5*b.Im*log(Sqr(a.Re)+Sqr(a.Im));
   ret.Re = exp(-b.Im*phase)*pow(Sqr(a.Re)+Sqr(a.Im), b.Re/2);
   ret.Im = ret.Re * sin(theta);
@@ -252,7 +252,7 @@ Complex16 Cpow(const Complex16 a, const Complex16 b)
 Complex16 Cpowd(const Complex16 a, const double b)
 {
   Complex16 ret;
-  const double phase=atan2(a.Re, a.Im);
+  const double phase=atan2(a.Im, a.Re);
   const double theta=b*phase;
   ret.Re = pow(Sqr(a.Re)+Sqr(a.Im), b/2);
   ret.Im = ret.Re * sin(theta);
