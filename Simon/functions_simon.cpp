@@ -1,5 +1,7 @@
 #include "CompactMatrix.h"
+#include "ReduceHilbertSpace.h"
 #include "CompactMatrix.cpp"
+#include "ReduceHilbertSpace.cpp"
 
 template<typename T>
 void debug(T debugMessage)
@@ -80,6 +82,7 @@ static const struct luaL_Reg Simon_meta[] = {
 
 static const struct luaL_Reg Simon_func[] = {
 	{"AtomicNumberOperators", LuaAtomicNumberOperators},
+	{"ReduceHilbertSpace", LuaReduceHilbertSpace},
   {"test", LuaSimontest},
   {NULL, NULL}
 };
