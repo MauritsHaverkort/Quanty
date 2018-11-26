@@ -109,7 +109,7 @@ using std::vector;
 #include "../AtomicOperators/AtomicU.h"
 
 #include "../Martin/MartinHeaders.h"
-#include "../Simon/functions_simon.h"
+#include "../Simon/Simon.h"
 #include "../Yi/functions_yi.h"
 
 #include "blas.h"

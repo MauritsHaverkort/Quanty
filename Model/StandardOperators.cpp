@@ -2297,40 +2297,6 @@ uint32_t CreateOperatorNumberShell(uint32_t const NFermion, uint32_t const Nelec
 	return 0;
 }
 
-OperatorType NumberOperator(const vector<uint16_t> &indices, uint NF, const string &name)
-{
-	OperatorType numOp;
-	uint NOpp = (uint) indices.size();
-	uint16_t CrIndex[NOpp], AnIndex[NOpp];
-	double ones[NOpp], zeroes[NOpp];
-	for (uint i = 0; i < NOpp; ++i)
-	{
-		CrIndex[i] = indices[i];
-		AnIndex[i] = indices[i];
-		ones[i] = 1.;
-		zeroes[i] = 0.;
-	}
-	CreateOperatorCreateAnnihilateList(NF, CrIndex, AnIndex, ones, zeroes, NOpp, &numOp);
-	strcpy(numOp.Name, name.c_str());
-	return numOp;
-}
-
-OperatorType NumberOperator(const vector<uint16_t> &indices, uint NF)
-{
-	return NumberOperator(indices, NF, "N");
-}
-
-map<string, OperatorType> AtomicNumberOperators(const vector<string> &orbitals, const map<string, vector<string> > &groupings)
-{
-	map < string, OperatorType > numberOperators;
-	map<string, vector<uint16_t> > allIndices = createAtmoicIndicesDict(orbitals, groupings);
-	uint NF = NumberOfFermionicStates(orbitals);
-	typedef map<string, vector<uint16_t> >::iterator iterType;
-	for (iterType iter = allIndices.begin(); iter != allIndices.end(); ++iter)
-		numberOperators.insert( { iter->first, NumberOperator(iter->second, NF, "N_" + iter->first) });
-	return numberOperators;
-}
-
 uint32_t CreateOperatorIdentity(uint32_t const NFermion, OperatorType * const OppN)
 {
   InitNamedOperator(OppN, "Identity operator");

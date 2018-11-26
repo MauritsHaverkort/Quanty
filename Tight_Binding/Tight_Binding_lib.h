@@ -85,6 +85,3 @@ template<typename T>vector<T> dictToList(const map<string, T> &dict, const vecto
 map<string, vector<uint16_t> > createAtmoicIndicesDict(const vector<string> &orbitals);
 void groupOrbitals(map<string, vector<uint16_t> > &allIndices, const map<string, vector<string> > &groupings);
 map<string, vector<uint16_t> > createAtmoicIndicesDict(const vector<string> &orbitals, const map<string, vector<string> > &groupings);
-void CrystalStructureCopy(const CrystalStructureType &CSOld, CrystalStructureType &CSNew);
-void TightBindingDefHoppingCopy(const TightBindingDefHopping &HOld, TightBindingDefHopping &HNew);
-void TightBindingCopy(const TightBindingDef &TBOld, TightBindingDef &TBNew);

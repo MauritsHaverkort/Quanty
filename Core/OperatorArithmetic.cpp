@@ -6511,9 +6511,10 @@ void extractPartialOperatorFixedLength(OperatorType * const O, OperatorType * co
 	uint16_t oadd[length];
 	int firstIndexOfBlock;
 	InitOperatorFixedLength(OPartial, length, 8);
-	for (int i = 0; i < length * (O->l[length].N); i++)
+	for (uint i = 0; i < length * (O->l[length].N); i++)
 	{
-		if (isElementOf(An(O->l[length].o[i]), indices))
+		uint16_t AnInd = NotCrAnMask & O->l[length].o[i];
+		if (isElementOf(AnInd, indices))
 		{
 			firstIndexOfBlock = i - (i % length);
 			for (int j = 0; j < length; j++)
@@ -6556,14 +6557,4 @@ void extractPartialOperator(OperatorType * const O, OperatorType * const OPartia
 void extractPartialOperator(OperatorType * const O, OperatorType * const OPartial, const vector<uint16_t> indices)
 {
 	extractPartialOperator(O, OPartial, indices, false);
-}
-
-uint16_t Cr(const uint16_t i)
-{
-	return CrAnMask | i;
-}
-
-uint16_t An(const uint16_t i)
-{
-	return NotCrAnMask & i;
 }

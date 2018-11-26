@@ -4886,25 +4886,8 @@ static int LuaYtoZMatrix(lua_State * L)
 }
 
 
-static int LuaAtomicNumberOperators(lua_State * L)
-{
-	uint32_t len = (uint32_t) lua_gettop(L);
-	if (len < 1 || len > 3)
-		return luaL_error(L, "NumberOperator called with %d arguments. 1 or 2 expected, list of orbitals, and optional list of groupings.\n", len);
-	vector < string > orbitals;
-	lua_check(L, 1, orbitals);
-	map<string, vector<string> > groupings;
-	if (len == 2)
-		lua_check(L, 2, groupings);
-	groupings.insert( { "all", orbitals });
-	groupings.insert( { "All", orbitals });
-	lua_push(L, AtomicNumberOperators(orbitals, groupings));
-	return 1;
-}
-
 
 static const struct luaL_Reg global_functions[] = {
-	{"AtomicNumberOperators", LuaAtomicNumberOperators},
   {"BlockBandDiagonalize", LuaBlockBandDiagonalize},
   {"Braket", LuaBraKet},
   {"BraketDiagonal", LuaBraKetDiagonal},

@@ -457,7 +457,7 @@ bool Test_uint32_t_array_in_range(const uint32_t min, const uint32_t max, uint32
 }
 
 template <typename T>
-bool isElementOf(const T element, const vector<T> set)
+bool isElementOf(const T element, const vector<T> &set)
 {
 	for (uint i = 0; i < (uint)set.size(); ++i)
 	{

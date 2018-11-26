@@ -66,5 +66,3 @@ void extractPartialOperatorFixedLength(OperatorType * const O, OperatorType * co
 void extractPartialOperatorFixedLength(OperatorType * const O, OperatorType * const OPartial, const vector<uint16_t> indices, const int length);
 void extractPartialOperator(OperatorType * const O, OperatorType * const OPartial, const vector<uint16_t> indices, bool changeInput);
 void extractPartialOperator(OperatorType * const O, OperatorType * const OPartial, const vector<uint16_t> indices);
-uint16_t Cr(const uint16_t i);
-uint16_t An(const uint16_t i);

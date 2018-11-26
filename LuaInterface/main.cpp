@@ -14,7 +14,7 @@
 #include "../DMFT/SingleSiteFunctions.cpp"
 #include "../Yi/functions_yi.cpp"
 #include "../Martin/functions_martin.cpp"
-#include "../Simon/functions_simon.cpp"
+#include "../Simon/Simon.cpp"
 
 
 
