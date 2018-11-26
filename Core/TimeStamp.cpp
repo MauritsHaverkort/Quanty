@@ -15,14 +15,14 @@
 #endif
 #define TimeStampAll() printf("=============================================================\n");\
                        printf("====    written by Maurits W. Haverkort                  ====\n");\
-                       printf("====    with contributions from:                         ====\n");\
                        printf("====    Yi Lu, Robert Green, Sebastian Macke             ====\n");\
                        printf("====    Marius Retegan, Martin Brass, and Simon Heinze   ====\n");\
                        printf("====    (C) 1995-2018   All rights reserved              ====\n");\
                        printf("====    www.quanty.org                                   ====\n");\
                        printf("====    Beta version, be critical and report errors!!!   ====\n");\
                        printf("=============================================================\n");\
-                       printf("====    Version compiled at: %s at %s     ====\n",__DATE__,__TIME__);\
+                       printf("====    Version 0.6 plus Development for next release    ====\n");\
+                       printf("====            compiled at: %s at %s     ====\n",__DATE__,__TIME__);\
                        printf("=============================================================\n");\
                        printf("====    When used in scientific publications please cite ====\n");\
                        printf("====    one of the following papers as appropriate with  ====\n");\

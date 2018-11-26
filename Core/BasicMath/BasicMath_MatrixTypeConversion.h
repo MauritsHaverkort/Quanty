@@ -52,6 +52,7 @@ uint32_t GeneralizedEigensystem(MatrixType const M, MatrixType const S, MatrixTy
 uint32_t MatrixToGeneralizedEigensystem(MatrixType const M, MatrixType const S, MatrixType * const T, MatrixType * const Sroot, double *val);
 uint32_t GeneralizedEigenvalues(MatrixType const M, MatrixType const S, double *val);
 uint32_t GeneralizedEigensystemSingular(MatrixType const M, MatrixType const S, MatrixType * const T, MatrixType * const Sroot, double *val);
+uint32_t MatrixToCompactMatrix(MatrixType *A, CompactMatrixType *B);
 uint32_t RotateStates(CompactMatrixType *fun, uint32_t start, uint32_t end, char *method);
 uint32_t RotateDegenerateStates(CompactMatrixType *fun, double *val, double epsilon, char *method);
 uint32_t RemoveStatesWithNegligibleNorm(MatrixType * const H, MatrixType * const S, MatrixType * const T);

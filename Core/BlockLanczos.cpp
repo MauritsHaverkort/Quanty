@@ -1508,6 +1508,8 @@ uint32_t LanczosBlockTriDiagonalizeRestrictedRR(const OperatorType H, WaveFuncti
   free(v[3]);
   return 0;
 }
+
+
 uint32_t LanczosBlockTriDiagonalizeRestrictedMR(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
 {
   // make psi complex, call MC
@@ -4521,6 +4523,184 @@ uint32_t LanczosBlockTriDiagonalizeKrylov(const OperatorType H, WaveFunctionType
   }
 }
 
+
+/* Given a set of wavefunctions psi_l and operator O a Block tridiagonal matrix and its Krylov basis is created of length M->N
+ * For each operator V[i], with i from 0 to NV-1 the following steps are taken
+ *   The extended basis is defined as V[i] PsiKrilov[k], but will never be calculated.
+ *   Stemp contains the overlap of the basis functions, representing the non-orthogonality of the basis
+ *   Htemp contains the Hamiltonian on this non-orthogonal basis
+ *   Calculate the matrix Stemp with elements stemp[j,k] = <PsiKrylov[j] | V[i]^dag   V[i] PsiKrilov[k]>
+ *   Calculate the matrix Htemp with elements htemp[j,k] = <PsiKrylov[j] | V[i]^dag ( O + HBplus[i] ) V[i] PsiKrilov[k]>
+ *   Diagonalize Htemp with respect to the overlap matrix Stemp and store eigenvalues in Hval[i], Eigenvectors in HtempEigenVec
+ *   Create Vmat[i] as Vmat[i] = Stemp . ConjuagetTranspose[HtempEigenVec]
+ *
+ *   HBplus is allowed to be NULL
+ *   The Basis is stored in psiBasis[i][j] with i the Block number going from 0 to M->N-1 and j the element in the Block going from 0 to BlockSize[i]
+ *   The vectors of wave-functions are alligned such that one can address all ellements as psiBasis[0][k] with k from 0 to NpsiBasis-1
+ */
+uint32_t LanczosBlockTriDiagonalizeDysonHABandHBRestricted(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, OperatorType const *V, OperatorType const *HBplus, uint32_t const NV, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize, CompactMatrixType * const MDense, CompactMatrixType ** HAB, CompactMatrixType * HB)
+{
+  uint32_t i,j,k,NpsiBasis;
+  MatrixType Stemp, Htemp, HtempEigenFun, StempRoot, VMat;
+  OperatorType Otemp;
+  // Block-Tridiagonalize H starting from psi[l] creating M->N Blocks of size M->BlockSize
+  if(Restrictions.N==0)
+  {
+    if(LanczosBlockTriDiagonalizeKrylov(H, psi, epsilon, M, psiBasis, BlockSize))
+    {
+      printf("LanczosBlockTriDiagonalizeKrylov failed in LanczosBlockTriDiagonalizeDysonHABandHBRestricted");
+      return 1;
+    }
+  }
+  else
+  {
+    if(LanczosBlockTriDiagonalizeKrylovRestricted(H, psi, Restrictions, epsilon, M, psiBasis, BlockSize))
+    {
+      printf("LanczosBlockTriDiagonalizeKrylovRestricted failed in LanczosBlockTriDiagonalizeDysonHABandHBRestricted");
+      return 1;
+    }
+  }
+  // Count the total number of functions in psiBasis, which might be smaller then M->N * M->BlockSize due to deflation
+  NpsiBasis=0;
+  for(i=0;i<M->N;i++)
+  {
+    NpsiBasis+=BlockSize[i];
+  }
+  /* create MDense */
+  //BlockTriDiagonalMatrixToCompactMatrix(<#const BlockTriDiagonalMatrixType *A#>, <#CompactMatrixType *const B#>)
+  
+  
+  // reorganize psiBasis such that psiBasis[0][k] for k=0 to NpsiBasis runs over all states
+  // psiBasis[i][j] still gives the j-th state of Block i and states within one Block are on the same basis
+  psiBasis[0]=(WaveFunctionType*)realloc(psiBasis[0],NpsiBasis*sizeof(WaveFunctionType));
+  if(psiBasis[0]==NULL)
+  {
+    printf("realloc of psiBasis failed in LanczosBlockTriDiagonalizeDysonHABandHBRestricted");
+    return 1;
+  }
+  k=BlockSize[0];
+  for(i=1;i<M->N;i++)
+  {
+    for(j=0;j<BlockSize[i];j++)
+    {
+      psiBasis[0][k]=psiBasis[i][j];
+      k++;
+    }
+    free(psiBasis[i]);
+    psiBasis[i]=psiBasis[i-1]+BlockSize[i];
+  }
+  /* initialize matrices */
+  Stemp.Ni=NpsiBasis;
+  Stemp.Nj=NpsiBasis;
+  Stemp.QComplex=0;
+  for(i=0;i<NpsiBasis;i++)
+  {
+    if(psiBasis[0][i].QComplex)
+    {
+      Stemp.QComplex=1;
+      break;
+    }
+  }
+  for(i=0;i<NV;i++)
+  {
+    if(V[i].QComplex)
+    {
+      Stemp.QComplex=1;
+      break;
+    }
+  }
+  if(InitMatrix(&Stemp))
+  {
+    printf("InitCompactMatrix failed for Stemp in LanczosBlockTriDiagonalizeDysonHABandHBRestricted\n");
+    fflush(stdout);
+    return 1;
+  };
+  Htemp.Ni=Stemp.Ni;
+  Htemp.Nj=Stemp.Nj;
+  Htemp.QComplex=(Stemp.QComplex||H.QComplex);
+  if(InitMatrix(&Htemp))
+  {
+    printf("InitCompactMatrix failed for Htemp in LanczosBlockTriDiagonalizeDysonHABandHBRestricted\n");
+    fflush(stdout);
+    return 1;
+  };
+  HB->Ni=NV;
+  HB->Nj=NpsiBasis;
+  HB->QComplex=0;
+  if(InitCompactMatrix(HB))
+  {
+    printf("InitCompactMatrix failed for HB in LanczosBlockTriDiagonalizeDysonHABandHBRestricted\n");
+    fflush(stdout);
+    return 1;
+  };
+  if ((*HAB = (CompactMatrixType*)calloc(NV, sizeof(CompactMatrixType))) == NULL)
+  {
+    printf("calloc failed in LanczosTriDiagonalizeDyson\n");
+    fflush(stdout);
+    return 1;
+  };
+  // loop over all V[i]
+  for(i=0;i<NV;i++)
+  {
+    /* create extended non orthonormal matrices on original basis */
+    /* initiallize Otemp for V^{\dag} V */
+    InitOperatorForMult(&Otemp, 2, &V[i], &V[i]);
+    /* create Stemp */
+    OperatorMultiply2NormalOrder(&Otemp, V[i], V[i], 'D', 'N', &QDetNotOrderedFcFaBcBa);
+    PsiOperatorPsiMatrix(Otemp, psiBasis[0], &Stemp);
+    FreeOperator(&Otemp);
+    /* initiallize Otemp for V^{\dag} O V */
+    InitOperatorForMult(&Otemp, 3, &V[i], &H, &V[i]);
+    /* create Htemp */
+    OperatorMultiply3NormalOrder(&Otemp, V[i], H, V[i], 'D', 'N', 'N', &QDetNotOrderedFcFaBcBa);
+    if((HBplus!=NULL)&&(!((HBplus[i].MaxLength==0)&&(HBplus[i].l[0].N==0))))
+    {
+      if(HBplus[i].MaxLength>H.MaxLength)
+      {
+        for (j = 0; j < HBplus[i].MaxLength-H.MaxLength; j++)
+        {
+          Otemp.MaxLength++;
+          InitOperatorFixedLength(&Otemp, Otemp.MaxLength, 8);
+        }
+      }
+      OperatorMultiply3NormalOrder(&Otemp, V[i], HBplus[i], V[i], 'D', 'N', 'N', &QDetNotOrderedFcFaBcBa);
+    }
+    PsiOperatorPsiMatrix(Otemp, psiBasis[0], &Htemp);
+    FreeOperator(&Otemp);
+    /* diagonalize Htemp with repsect to Stemp store eigenvalues in HB (i-th row stores the diagonal of the matrix) */
+    GeneralizedEigensystemSingular(Htemp, Stemp, &HtempEigenFun, &StempRoot, &(HB->VRe[i*HB->Nj]));
+    MatrixMultiply(&(VMat), HtempEigenFun, Stemp);
+    /* create HAB[i], the coupling between the Krylov basis and HB[i] due to V[i] */
+    MatrixToCompactMatrix(&VMat, &((*HAB)[i]));
+    /* Free HtempEigenFun */
+    FreeMatrix(&HtempEigenFun);
+  }
+  return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /*******************************************************************
  **************************** Ground-state *************************
  *******************************************************************/
@@ -5354,4 +5534,6 @@ uint32_t BlockGroundState(OperatorType *H, uint32_t const Npsi, ConvergenceSetti
   }
   return 0;
 }
+
+
 

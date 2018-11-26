@@ -766,7 +766,7 @@ static int LuaEigenDifferential(lua_State *L)
 		    {"Nknots","uint32_t",&(Options.Nknots)},
 		    {NULL, NULL, NULL}};
 		Options.Nknots = 4;
-		Options.type = "N";
+		Options.type = "N"; // mwh this is a real bug !!!
 		LuaCheckOptions(L, 5, LuaEDOptions);
 		if (strcmp(Options.type,"N")==0)
 		{
@@ -806,7 +806,7 @@ static int LuaSparseOperator(lua_State *L)
 	LinAlg::CSRMatrix<double> M;
 	OperatorToSparseMatrix(H,psi,M);
 	//M.Print();
-	printf("Matrix created with %d nve\n",M.A.size());
+	printf("Matrix created with %lu nve\n",M.A.size());
 	std::vector<double> vec, a, b;
 	WaveFunctionToVector(psi,vec,psi);
 	std::vector<std::vector<double> > T;
@@ -820,6 +820,9 @@ static int LuaSparseOperator(lua_State *L)
 	{
 		printf("%e\t",b[i]);
 	}
+  // mwh one should osuh resutls to the stack and return the number of states pushed to the stack
+  // for now I add an return 0 in order to repair a bug that prevents compiling
+  return 0;
 }
 
 static const struct luaL_Reg Martin_meta[] = {
