@@ -7,3 +7,7 @@
 *.plist
 .DS_Store
 Makefile
+.cproject
+.project
+Martin/QuickTest.cpp
+Martin/quicktest

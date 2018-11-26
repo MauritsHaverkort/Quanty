@@ -113,6 +113,15 @@ void CSRMatrix<F>::AdjointEvaluate(const std::vector<F> &x,std::vector<F> &y)
 		}
 	}
 }
+template<typename F>
+void CSRMatrix<F>::BlockEvaluate(const std::vector<F> &x,std::vector<F> &y, const uint32_t blocksize)
+{
+#pragma omp for
+	for (uint32_t k = 0; k < blocksize; k++)
+	{
+
+	}
+}
 
 template<typename F>
 void CSRMatrix<F>::Print()
