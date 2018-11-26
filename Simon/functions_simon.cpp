@@ -1,3 +1,6 @@
+#include "Kappa.h"
+#include "Kappa.cpp"
+
 template<typename T>
 void debug(T debugMessage)
 {
@@ -77,6 +80,7 @@ static const struct luaL_Reg Simon_meta[] = {
 
 static const struct luaL_Reg Simon_func[] = {
 	{"AtomicNumberOperators", LuaAtomicNumberOperators},
+	{"SortByKappa",LuaSortByKappa},
   {"test", LuaSimontest},
   {NULL, NULL}
 };
