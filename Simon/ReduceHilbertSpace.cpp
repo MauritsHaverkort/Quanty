@@ -13,9 +13,12 @@ OperatorType reduceHilbertSpaceForOperator(OperatorType &hamil, const uint uncha
 
 CompactMatrixType reducedHilbertSpaceMatrix(const CompactMatrixType &H, const CompactMatrixType &ligandRotMat, const uint unchangedStates, const uint ligandNum)
 {
+	CompactMatrixType out;
 	vector < vector<CompactMatrixType> > fullRotMatMat = CompactnullMatrixMatrix(2,2);
 	fullRotMatMat[0][0] = CompactidentityMatrix(unchangedStates);
-	fullRotMatMat[1][1] = ligandRotMat;
+	CompactMatrixType ligandRotMatCopy;
+	CompactMatrixCopy(ligandRotMat, &ligandRotMatCopy);
+	fullRotMatMat[1][1] = ligandRotMatCopy;
 	CompactMatrixType fullRotMat = MatrixFlatten(fullRotMatMat);
 	CompactMatrixType HReduced;
 	TransformCompactMatrixcT(&H,&fullRotMat, &HReduced);
@@ -26,7 +29,13 @@ CompactMatrixType reducedHilbertSpaceMatrix(const CompactMatrixType &H, const Co
 	InitCompactIdentityMatrix(&startBlock);
 	BlockTriDiagonalMatrixType HTriReduced;
 	CompactMatrixBlockBandDiagonalize(&HReduced, &startBlock, &HTriReduced, 1E-6, ligandNum + 2, UINT32_MAX, true, true);
-	return BlockTriDiagonalMatrixToCompactMatrix(HTriReduced, 100*DBL_EPSILON);
+	out = BlockTriDiagonalMatrixToCompactMatrix(HTriReduced, 100*DBL_EPSILON);
+	FreeCompactMatrixMatrix(fullRotMatMat);
+	FreeCompactMatrix(&fullRotMat);
+	FreeCompactMatrix(&HReduced);
+	FreeCompactMatrix(&startBlock);
+	FreeBlockTridiagonalMatrix(&HTriReduced);
+	return out;
 }
 
 
@@ -69,7 +78,7 @@ CompactMatrixType reduceHilbertSpaceForMatrix(const CompactMatrixType &H, const 
 			HReducedMatMat[2][0] = Submatrix(HReducedEmptyShells, unchangedStates, HReducedEmptyShells.Ni - unchangedStates, 0, unchangedStates);
 			HReducedMatMat[2][2] = Submatrix(HReducedEmptyShells, unchangedStates, HReducedEmptyShells.Ni - unchangedStates, unchangedStates, HReducedEmptyShells.Nj - unchangedStates);
 			out = MatrixFlatten(HReducedMatMat);
-//			TODO: FreeCompactMatrixMatrix
+			FreeCompactMatrixMatrix(HReducedMatMat);
 		} else
 		{
 			out = HReducedFilledShells;
