@@ -20,7 +20,7 @@ CompactMatrixType reducedHilbertSpaceMatrix(const CompactMatrixType &H, const Co
 	CompactMatrixType HReduced;
 	TransformCompactMatrixcT(&H,&fullRotMat, &HReduced);
 	CompactMatrixChop(&HReduced, 100*DBL_EPSILON);
-	CompactMatrixType startBlock;
+	CompactMatrixType startBlock = CompactMatrixType();
 	startBlock.Ni=unchangedStates;
 	startBlock.Nj=HReduced.Nj;
 	InitCompactIdentityMatrix(&startBlock);
@@ -29,17 +29,20 @@ CompactMatrixType reducedHilbertSpaceMatrix(const CompactMatrixType &H, const Co
 	return BlockTriDiagonalMatrixToCompactMatrix(HTriReduced, 100*DBL_EPSILON);
 }
 
+
+
+
+
 CompactMatrixType reduceHilbertSpaceForMatrix(const CompactMatrixType &H, const uint unchangedStates, const uint filledLigands, const uint emptyLigands)
 {
-	cout << "reduceHilbertSpace for Matrix not yet fully implemented." << endl;
-
-	uint subMatSize = H.Ni - unchangedStates;
-	CompactMatrixType HLigand = Submatrix(H, unchangedStates, subMatSize, unchangedStates, subMatSize);
-	CompactMatrixType eigenfuns;
-	double eigenvals[HLigand.Ni];
-	CompactMatrixEigensystem(&HLigand, &eigenfuns, eigenvals);
-	uint numNegVals = HLigand.Ni;
-	for (uint i = 0; i < (uint) HLigand.Ni; ++i)
+	CompactMatrixType out;
+	uint LigandMatSize = H.Ni - unchangedStates;
+	CompactMatrixType HLigand = Submatrix(H, unchangedStates, LigandMatSize, unchangedStates, LigandMatSize);
+	CompactMatrixType eigenfuns = CompactMatrixType();
+	vector<double> eigenvals = vector<double>(LigandMatSize, 0);
+	CompactMatrixEigensystem(&HLigand, &eigenfuns, &eigenvals[0]);
+	uint numNegVals = LigandMatSize;
+	for (uint i = 0; i < (uint) eigenvals.size(); ++i)
 	{
 		if (eigenvals[i] > 0)
 		{
@@ -47,13 +50,14 @@ CompactMatrixType reduceHilbertSpaceForMatrix(const CompactMatrixType &H, const 
 			break;
 		}
 	}
-	CompactMatrixType ligandRotMat = Submatrix(eigenfuns, 0, numNegVals, 0, eigenfuns.Ni);
-	CompactMatrixType HReducedFilledShells = reducedHilbertSpaceMatrix(H, ligandRotMat, unchangedStates, filledLigands);
+	CompactMatrixType filledLigandRotMat = Submatrix(eigenfuns, 0, numNegVals, 0, eigenfuns.Ni);
+	CompactMatrixType HReducedFilledShells = reducedHilbertSpaceMatrix(H, filledLigandRotMat, unchangedStates, filledLigands);
 	CompactMatrixChop(&HReducedFilledShells, 100 * DBL_EPSILON);
-	if (emptyLigands > 0 && numNegVals < HLigand.Ni)
+	if (emptyLigands > 0 && numNegVals < LigandMatSize)
 	{
-		ligandRotMat = Submatrix(eigenfuns, numNegVals, eigenfuns.Ni - numNegVals, 0, eigenfuns.Ni);
-		CompactMatrixType HReducedEmptyShells = reducedHilbertSpaceMatrix(H, ligandRotMat, unchangedStates, emptyLigands);
+		CompactMatrixType emptyLigandRotMat = Submatrix(eigenfuns, numNegVals, eigenfuns.Ni - numNegVals, 0, eigenfuns.Ni);
+		CompactMatrixType HReducedEmptyShells = reducedHilbertSpaceMatrix(H, emptyLigandRotMat, unchangedStates, emptyLigands);
+		CompactMatrixChop(&HReducedEmptyShells, 100 * DBL_EPSILON);
 		if (HReducedEmptyShells.Ni > unchangedStates)
 		{
 			vector < vector<CompactMatrixType> > HReducedMatMat = CompactnullMatrixMatrix(3, 3);
@@ -64,15 +68,23 @@ CompactMatrixType reduceHilbertSpaceForMatrix(const CompactMatrixType &H, const 
 			HReducedMatMat[0][2] = Submatrix(HReducedEmptyShells, 0, unchangedStates, unchangedStates, HReducedEmptyShells.Nj - unchangedStates);
 			HReducedMatMat[2][0] = Submatrix(HReducedEmptyShells, unchangedStates, HReducedEmptyShells.Ni - unchangedStates, 0, unchangedStates);
 			HReducedMatMat[2][2] = Submatrix(HReducedEmptyShells, unchangedStates, HReducedEmptyShells.Ni - unchangedStates, unchangedStates, HReducedEmptyShells.Nj - unchangedStates);
-			return MatrixFlatten(HReducedMatMat);
+			out = MatrixFlatten(HReducedMatMat);
+//			TODO: FreeCompactMatrixMatrix
 		} else
 		{
-			return HReducedFilledShells;
+			out = HReducedFilledShells;
 		}
+		FreeCompactMatrix(&emptyLigandRotMat);
+		FreeCompactMatrix(&HReducedEmptyShells);
 	} else
 	{
-		return HReducedFilledShells;
+		out = HReducedFilledShells;
 	}
+	FreeCompactMatrix(&HLigand);
+	FreeCompactMatrix(&eigenfuns);
+	FreeCompactMatrix(&filledLigandRotMat);
+	FreeCompactMatrix(&HReducedFilledShells);
+	return out;
 }
 
 
