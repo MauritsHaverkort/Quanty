@@ -5,4 +5,4 @@ bool isRowZero(const CompactMatrixType &M, const uint row);
 bool isColZero(const CompactMatrixType &M, const uint col, const double precision);
 bool isColZero(const CompactMatrixType &M, const uint col);
 bool isZeroMatrix(const CompactMatrixType &M, const double zero);
-void FreeCompactMatrixMatrix(vector<vector<CompactMatrixType> > matMat);
+void FreeCompactMatrixMatrix(vector<vector<CompactMatrixType> > &matMat);
