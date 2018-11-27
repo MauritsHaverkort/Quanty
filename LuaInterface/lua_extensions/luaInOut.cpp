@@ -197,6 +197,18 @@ void lua_check(lua_State *L, int arg, TightBindingDef* &in)
 	in = (TightBindingDef *) luaL_checkudata(L, arg, "TightBinding_Type");
 }
 
+void lua_check(lua_State *L, int arg, Complex16 &in)
+{
+	if (lua_isnumber(L, arg))
+	{
+		in.Re = (double) luaL_checknumber(L, -1);
+		in.Im = 0;
+	} else
+	{
+		in = *(Complex16 *) luaL_checkudata(L, -1, "Complex_Type");
+	}
+}
+
 void lua_check(lua_State *L, int arg, AtomType &in)
 {
 	LuaReadAtom(L, arg, &in);
@@ -309,7 +321,7 @@ bool luaL_isType(lua_State *L, int arg, const double &example)
 
 bool luaL_isType(lua_State *L, int arg, const Complex16 &example)
 {
-	return luaL_isudata(L, arg, "Complex_Type");
+	return (luaL_isudata(L, arg, "Complex_Type") || (bool) lua_isnumber(L, arg));
 }
 
 bool luaL_isType(lua_State *L, int arg, const CompactMatrixType &example)

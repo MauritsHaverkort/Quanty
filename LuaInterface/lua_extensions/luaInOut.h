@@ -32,6 +32,7 @@ void lua_check(lua_State *L, int arg, OperatorType &in);
 void lua_check(lua_State *L, int arg, OperatorType* &in);
 void lua_check(lua_State *L, int arg, TightBindingDef &in);
 void lua_check(lua_State *L, int arg, TightBindingDef* &in);
+void lua_check(lua_State *L, int arg, Complex16 &in);
 void lua_check(lua_State *L, int arg, AtomType &in);
 void lua_check(lua_State *L, int arg, AtomType* &in);
 template<typename T>void lua_check(lua_State * L, int arg, vector<T> &in);
