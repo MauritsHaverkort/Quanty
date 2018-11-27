@@ -121,3 +121,23 @@ void FreeCompactMatrixMatrix(vector<vector<CompactMatrixType> > &matMat)
 			if (!isNullMatrix(matMat[i][j]))
 				FreeCompactMatrix(&matMat[i][j]);
 }
+
+
+void CompactMatrixCutDimensions(CompactMatrixType &M)
+{
+	if (M.Ni != M.Nj)
+	{
+		cout << "Error in Cut Dimensions: Number of rows (" << M.Ni << ") not equal to number of colums (" << M.Ni << ")." << endl;
+		return;
+	}
+	uint newDim;
+	for (newDim = M.Ni; newDim > 0; --newDim)
+		if (!isRowZero(M, newDim-1) || !isColZero(M,newDim-1))
+			break;
+	CompactMatrixType pointerToGarbage = M;
+	M = Submatrix(M, newDim);
+	FreeCompactMatrix(&pointerToGarbage);
+}
+
+
+
