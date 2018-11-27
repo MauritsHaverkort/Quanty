@@ -77,6 +77,7 @@ static const struct luaL_Reg Simon_meta[] = {
 
 static const struct luaL_Reg Simon_func[] = {
 	{"AtomicNumberOperators", LuaAtomicNumberOperators},
+	{"MatrixToOperator", LuaMatrixToOperator},
   {"test", LuaSimontest},
   {NULL, NULL}
 };
