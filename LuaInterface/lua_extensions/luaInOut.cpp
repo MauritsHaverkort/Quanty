@@ -321,7 +321,7 @@ bool luaL_isType(lua_State *L, int arg, const double &example)
 
 bool luaL_isType(lua_State *L, int arg, const Complex16 &example)
 {
-	return (lua_isudata(L, arg, "Complex_Type") || (bool) lua_isnumber(L, arg));
+	return (luaL_isudata(L, arg, "Complex_Type") || (bool) lua_isnumber(L, arg));
 }
 
 bool luaL_isType(lua_State *L, int arg, const CompactMatrixType &example)
