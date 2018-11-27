@@ -6,3 +6,4 @@ bool isColZero(const CompactMatrixType &M, const uint col, const double precisio
 bool isColZero(const CompactMatrixType &M, const uint col);
 bool isZeroMatrix(const CompactMatrixType &M, const double zero);
 void FreeCompactMatrixMatrix(vector<vector<CompactMatrixType> > &matMat);
+void CompactMatrixCutDimensions(CompactMatrixType &M);
