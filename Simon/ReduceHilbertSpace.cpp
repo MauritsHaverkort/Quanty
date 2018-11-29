@@ -11,45 +11,91 @@ OperatorType reduceHilbertSpaceForOperator(OperatorType &hamil, const uint uncha
 	cout << "reduceHilbertSpace for Operator not yet fully implemented." << endl;
 }
 
-CompactMatrixType reducedHilbertSpaceMatrix(const CompactMatrixType &H, const CompactMatrixType &ligandRotMat, const uint unchangedStates, const uint ligandNum)
+CompactMatrixType reducedHilbertSpaceMatrix(const CompactMatrixType &H, const CompactMatrixType &ligandRotMat, CompactMatrixType &T, const uint unchangedStates, const uint ligandNum)
 {
-	CompactMatrixType out;
-	vector < vector<CompactMatrixType> > fullRotMatMat = CompactnullMatrixMatrix(2,2);
-	fullRotMatMat[0][0] = CompactidentityMatrix(unchangedStates);
-	CompactMatrixType ligandRotMatCopy;
-	CompactMatrixCopy(ligandRotMat, &ligandRotMatCopy);
-	fullRotMatMat[1][1] = ligandRotMatCopy;
-	CompactMatrixType fullRotMat = MatrixFlatten(fullRotMatMat);
-	CompactMatrixType HReduced;
-	TransformCompactMatrixcT(&H,&fullRotMat, &HReduced);
-	CompactMatrixChop(&HReduced, 100*DBL_EPSILON);
-	CompactMatrixType startBlock = CompactMatrixType();
-	startBlock.Ni=unchangedStates;
-	startBlock.Nj=HReduced.Nj;
-	InitCompactIdentityMatrix(&startBlock);
+	if (isNullMatrix(ligandRotMat))
+	{
+		T = CompactnullMatrix();
+		return CompactnullMatrix();
+	}
+
+	CompactMatrixType out, HReduced, BlockBandTrafo, BlockBandTrafoToDiag;
+	CompactMatrixType fullRotMat = SubspaceRotationMatrix(unchangedStates, ligandRotMat, 0);
+	TransformCompactMatrixcT(&H, &fullRotMat, &HReduced);
+	CompactMatrixChop(&HReduced, 100 * DBL_EPSILON);
+	BlockBandTrafo = CompactMatrixType();
+	BlockBandTrafo.Ni = unchangedStates;
+	BlockBandTrafo.Nj = HReduced.Nj;
+	InitCompactIdentityMatrix(&BlockBandTrafo);
 	BlockTriDiagonalMatrixType HTriReduced;
-	CompactMatrixBlockBandDiagonalize(&HReduced, &startBlock, &HTriReduced, 1E-6, ligandNum + 2, UINT32_MAX, true, true);
-	out = BlockTriDiagonalMatrixToCompactMatrix(HTriReduced, 100*DBL_EPSILON);
-	FreeCompactMatrixMatrix(fullRotMatMat);
-	FreeCompactMatrix(&fullRotMat);
+	CompactMatrixBlockBandDiagonalize(&HReduced, &BlockBandTrafo, &HTriReduced, 1E-6, ligandNum + 2, UINT32_MAX, true, true);
+	CompactMatrixMultiply('T', 'T', &fullRotMat, &BlockBandTrafo, &BlockBandTrafoToDiag);
+	CompactMatrixTranspose(&BlockBandTrafoToDiag);
+	out = BlockTriDiagonalMatrixToCompactMatrix(HTriReduced, 100 * DBL_EPSILON);
+	CompactMatrixCutDimensions(out);
+	CompactMatrixCopy(BlockBandTrafoToDiag, &T);
+	T = Submatrix(BlockBandTrafoToDiag, out.Ni, BlockBandTrafoToDiag.Nj);
 	FreeCompactMatrix(&HReduced);
-	FreeCompactMatrix(&startBlock);
+	FreeCompactMatrix(&BlockBandTrafo);
+	FreeCompactMatrix(&BlockBandTrafoToDiag);
+	FreeCompactMatrix(&fullRotMat);
 	FreeBlockTridiagonalMatrix(&HTriReduced);
 	return out;
 }
 
-
-
-
-
-CompactMatrixType reduceHilbertSpaceForMatrix(const CompactMatrixType &H, const uint unchangedStates, const uint filledLigands, const uint emptyLigands)
+CompactMatrixType reducedHilbertSpaceMatrixFilledAndEmpty(const CompactMatrixType &HRedFilled, const CompactMatrixType &HRedEmpty, const uint unchangedStates)
 {
 	CompactMatrixType out;
+	if (HRedFilled.Ni <= unchangedStates)
+	{
+		CompactMatrixCopy(HRedEmpty, &out);
+	} else if (HRedEmpty.Ni <= unchangedStates)
+	{
+		CompactMatrixCopy(HRedFilled, &out);
+	} else
+	{
+		vector < vector<CompactMatrixType> > HReducedMatMat = CompactnullMatrixMatrix(3, 3);
+		HReducedMatMat[0][0] = Submatrix(HRedFilled, 0, unchangedStates, 0, unchangedStates);
+		HReducedMatMat[0][1] = Submatrix(HRedFilled, 0, unchangedStates, unchangedStates, HRedFilled.Nj - unchangedStates);
+		HReducedMatMat[1][0] = Submatrix(HRedFilled, unchangedStates, HRedFilled.Ni - unchangedStates, 0, unchangedStates);
+		HReducedMatMat[1][1] = Submatrix(HRedFilled, unchangedStates, HRedFilled.Ni - unchangedStates, unchangedStates, HRedFilled.Nj - unchangedStates);
+		HReducedMatMat[0][2] = Submatrix(HRedEmpty, 0, unchangedStates, unchangedStates, HRedEmpty.Nj - unchangedStates);
+		HReducedMatMat[2][0] = Submatrix(HRedEmpty, unchangedStates, HRedEmpty.Ni - unchangedStates, 0, unchangedStates);
+		HReducedMatMat[2][2] = Submatrix(HRedEmpty, unchangedStates, HRedEmpty.Ni - unchangedStates, unchangedStates, HRedEmpty.Nj - unchangedStates);
+		out = MatrixFlatten(HReducedMatMat);
+		FreeCompactMatrixMatrix (HReducedMatMat);
+	}
+	return out;
+}
+
+CompactMatrixType reducedHilbertSpaceRotMatFilledAndEmpty(const CompactMatrixType &Tfilled, const CompactMatrixType &Tempty, const uint unchangedStates)
+{
+	CompactMatrixType out;
+	if (Tfilled.Ni <= unchangedStates)
+	{
+		CompactMatrixCopy(Tempty, &out);
+	} else if (Tempty.Ni <= unchangedStates)
+	{
+		CompactMatrixCopy(Tfilled, &out);
+	} else
+	{
+		vector < vector<CompactMatrixType> > TMatMat = CompactnullMatrixMatrix(2, 1);
+		TMatMat[0][0] = Submatrix(Tfilled, unchangedStates, Tfilled.Ni - unchangedStates, unchangedStates, Tfilled.Nj - unchangedStates);
+		TMatMat[1][0] = Submatrix(Tempty, unchangedStates, Tempty.Ni - unchangedStates, unchangedStates, Tempty.Nj - unchangedStates);
+		out = SubspaceRotationMatrix(unchangedStates, MatrixFlatten(TMatMat), 0);
+		FreeCompactMatrixMatrix (TMatMat);
+	}
+	return out;
+}
+
+CompactMatrixType reduceHilbertSpaceForMatrix(const CompactMatrixType &H, CompactMatrixType &T, const uint unchangedStates, const uint filledLigands, const uint emptyLigands)
+{
+	CompactMatrixType out, HLigand, eigenfunsLigand, HRedFilled, Tfilled, HRedEmpty, Tempty;
 	uint LigandMatSize = H.Ni - unchangedStates;
-	CompactMatrixType HLigand = Submatrix(H, unchangedStates, LigandMatSize, unchangedStates, LigandMatSize);
-	CompactMatrixType eigenfuns = CompactMatrixType();
+	HLigand = Submatrix(H, unchangedStates, LigandMatSize, unchangedStates, LigandMatSize);
+	eigenfunsLigand = CompactMatrixType();
 	vector<double> eigenvals = vector<double>(LigandMatSize, 0);
-	CompactMatrixEigensystem(&HLigand, &eigenfuns, &eigenvals[0]);
+	CompactMatrixEigensystem(&HLigand, &eigenfunsLigand, &eigenvals[0]);
 	uint numNegVals = LigandMatSize;
 	for (uint i = 0; i < (uint) eigenvals.size(); ++i)
 	{
@@ -59,40 +105,36 @@ CompactMatrixType reduceHilbertSpaceForMatrix(const CompactMatrixType &H, const 
 			break;
 		}
 	}
-	CompactMatrixType filledLigandRotMat = Submatrix(eigenfuns, 0, numNegVals, 0, eigenfuns.Ni);
-	CompactMatrixType HReducedFilledShells = reducedHilbertSpaceMatrix(H, filledLigandRotMat, unchangedStates, filledLigands);
-	CompactMatrixChop(&HReducedFilledShells, 100 * DBL_EPSILON);
-	if (emptyLigands > 0 && numNegVals < LigandMatSize)
+	if (numNegVals > 0 && filledLigands > 0)
 	{
-		CompactMatrixType emptyLigandRotMat = Submatrix(eigenfuns, numNegVals, eigenfuns.Ni - numNegVals, 0, eigenfuns.Ni);
-		CompactMatrixType HReducedEmptyShells = reducedHilbertSpaceMatrix(H, emptyLigandRotMat, unchangedStates, emptyLigands);
-		CompactMatrixChop(&HReducedEmptyShells, 100 * DBL_EPSILON);
-		if (HReducedEmptyShells.Ni > unchangedStates)
-		{
-			vector < vector<CompactMatrixType> > HReducedMatMat = CompactnullMatrixMatrix(3, 3);
-			HReducedMatMat[0][0] = Submatrix(HReducedFilledShells, 0, unchangedStates, 0, unchangedStates);
-			HReducedMatMat[0][1] = Submatrix(HReducedFilledShells, 0, unchangedStates, unchangedStates, HReducedFilledShells.Nj - unchangedStates);
-			HReducedMatMat[1][0] = Submatrix(HReducedFilledShells, unchangedStates, HReducedFilledShells.Ni - unchangedStates, 0, unchangedStates);
-			HReducedMatMat[1][1] = Submatrix(HReducedFilledShells, unchangedStates, HReducedFilledShells.Ni - unchangedStates, unchangedStates, HReducedFilledShells.Nj - unchangedStates);
-			HReducedMatMat[0][2] = Submatrix(HReducedEmptyShells, 0, unchangedStates, unchangedStates, HReducedEmptyShells.Nj - unchangedStates);
-			HReducedMatMat[2][0] = Submatrix(HReducedEmptyShells, unchangedStates, HReducedEmptyShells.Ni - unchangedStates, 0, unchangedStates);
-			HReducedMatMat[2][2] = Submatrix(HReducedEmptyShells, unchangedStates, HReducedEmptyShells.Ni - unchangedStates, unchangedStates, HReducedEmptyShells.Nj - unchangedStates);
-			out = MatrixFlatten(HReducedMatMat);
-			FreeCompactMatrixMatrix(HReducedMatMat);
-		} else
-		{
-			out = HReducedFilledShells;
-		}
-		FreeCompactMatrix(&emptyLigandRotMat);
-		FreeCompactMatrix(&HReducedEmptyShells);
+		CompactMatrixType filledLigRotMatToDiag = Submatrix(eigenfunsLigand, 0, numNegVals, 0, eigenfunsLigand.Ni);
+		HRedFilled = reducedHilbertSpaceMatrix(H, filledLigRotMatToDiag, Tfilled, unchangedStates, filledLigands);
+		CompactMatrixChop(&HRedFilled, 100 * DBL_EPSILON);
+		FreeCompactMatrix(&filledLigRotMatToDiag);
 	} else
 	{
-		out = HReducedFilledShells;
+		HRedFilled = CompactnullMatrix();
+		Tfilled = CompactnullMatrix();
 	}
+	if (numNegVals < eigenfunsLigand.Ni && emptyLigands > 0)
+	{
+		CompactMatrixType emptyLigRotMatToDiag = Submatrix(eigenfunsLigand, numNegVals, eigenfunsLigand.Ni - numNegVals, 0, eigenfunsLigand.Ni);
+		HRedEmpty = reducedHilbertSpaceMatrix(H, emptyLigRotMatToDiag, Tempty, unchangedStates, emptyLigands);
+		CompactMatrixChop(&HRedEmpty, 100 * DBL_EPSILON);
+		FreeCompactMatrix(&emptyLigRotMatToDiag);
+	} else
+	{
+		HRedEmpty = CompactnullMatrix();
+		Tempty = CompactnullMatrix();
+	}
+	out = reducedHilbertSpaceMatrixFilledAndEmpty(HRedFilled, HRedEmpty, unchangedStates);
+	T = reducedHilbertSpaceRotMatFilledAndEmpty(Tfilled, Tempty, unchangedStates);
 	FreeCompactMatrix(&HLigand);
-	FreeCompactMatrix(&eigenfuns);
-	FreeCompactMatrix(&filledLigandRotMat);
-	FreeCompactMatrix(&HReducedFilledShells);
+	FreeCompactMatrix(&eigenfunsLigand);
+	FreeCompactMatrix(&HRedFilled);
+	FreeCompactMatrix(&Tfilled);
+	FreeCompactMatrix(&HRedEmpty);
+	FreeCompactMatrix(&Tempty);
 	return out;
 }
 
@@ -154,11 +196,13 @@ static int LuaReduceHilbertSpace(lua_State * L)
 		lua_check(L, 2, unchangedStates);
 		if (unchangedStates >= mat.Ni)
 			return luaL_error(L,"Error: Number of unchanged states (%d) must be smaller than dimension of matrix (%d).",unchangedStates, mat.Ni);
-		lua_push(L, reduceHilbertSpaceForMatrix(mat, unchangedStates, Options.filledLigands, Options.emptyLigands));
+		CompactMatrixType T;
+		lua_push(L, reduceHilbertSpaceForMatrix(mat, T, unchangedStates, Options.filledLigands, Options.emptyLigands));
+		lua_push(L, T);
 	} else
 	{
 		return luaL_error(L, "Error: ReduceHilbertSpace only implemented for Tight-Binding Objects, Operators and Matrices.");
 	}
-	return 1;
+	return 2;
 }
 
