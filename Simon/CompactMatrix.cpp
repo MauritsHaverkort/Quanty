@@ -139,5 +139,23 @@ void CompactMatrixCutDimensions(CompactMatrixType &M)
 	FreeCompactMatrix(&pointerToGarbage);
 }
 
-
-
+CompactMatrixType SubspaceRotationMatrix(const uint dim1, const CompactMatrixType &T, const uint dim2)
+{
+	CompactMatrixType out, one1, one2;
+	one1.QComplex = 0;
+	one1.Ni = dim1;
+	one1.Nj = dim1;
+	one2.QComplex = 0;
+	one2.Ni = dim2;
+	one2.Nj = dim2;
+	InitCompactIdentityMatrix(&one1);
+	InitCompactIdentityMatrix(&one2);
+	vector < vector<CompactMatrixType> > outMatMat = CompactnullMatrixMatrix(3, 3);
+	outMatMat[0][0] = one1;
+	outMatMat[1][1] = T;
+	outMatMat[2][2] = one2;
+	out = MatrixFlatten(outMatMat);
+	FreeCompactMatrix(&one1);
+	FreeCompactMatrix(&one2);
+	return out;
+}
