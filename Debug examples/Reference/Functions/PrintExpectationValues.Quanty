@@ -1,3 +1,5 @@
+Verbosity(0)
+
 orbs = {"1s","2s","2p"}
 Ind, NF = CreateAtomicIndicesDict(orbs)
 
@@ -15,26 +17,17 @@ for key1,orb1 in pairs(orbs) do
     end
 end
 
--- for key,psi in pairs(psiList) do
---     print("Wavefunction:")
---     print(psi)
--- end
-
-
-
 Hamil = NewOperator("Number",NF,Ind["1s"],Ind["1s"],{0.1,0.2})
 Hamil = Hamil + NewOperator("Number",NF,Ind["2s"],Ind["2s"],{0.3,0.4})
 Hamil = Hamil + NewOperator("Number",NF,Ind["2p"],Ind["2p"],{0.5,0.6,0.7,0.8,0.9,1.0})
 Hamil = Hamil + NewOperator("U",NF,Ind["1s_Up"],Ind["1s_Dn"],Ind["2p_Up"],Ind["2p_Dn"],{0.6},{0.7})
 Hamil = Hamil + NewOperator("U",NF,Ind["2s_Up"],Ind["2s_Dn"],Ind["2p_Up"],Ind["2p_Dn"],{0.8},{0.9})
 Hamil = Hamil + NewOperator("U",NF,Ind["2p_Up"],Ind["2p_Dn"],{0.5,sqrt(2)})
+Hamil = Hamil + 1e-5*NewOperator("Lz",NF,Ind["2p_Up"],Ind["2p_Dn"])
 Hamil = Hamil - 4
 Hamil = Hamil/2
 Hamil = Hamil + ConjugateTranspose(Hamil)
 Hamil.Name = "H"
--- print("Hamiltonian:")
--- print(Hamil)
-
 
 opList = {}
 opList[#opList + 1] = NewOperator("Number",NF,Ind["1s"],Ind["1s"],{1,1})
@@ -49,9 +42,8 @@ opList[#opList + 1] = NewOperator("U",NF,Ind["2p_Up"],Ind["2p_Dn"],{0,1})
 opList[#opList].Name = "F2_2p"
 opList[#opList + 1] = NewOperator("U",NF,Ind["2p_Up"],Ind["2p_Dn"],{0,1})
 opList[#opList].Name = "Operator with a long name"
-
-
-
+opList[#opList + 1] = NewOperator("U",NF,Ind["2p_Up"],Ind["2p_Dn"],{0,1})
+opList[#opList].Name = "An Operator with small lexicographical value"
 
 StartRestrictions = {NF,0}
 StartRestrictions[3] = {DeterminantString(NF, Ind["1s"]),2,2}
@@ -59,30 +51,36 @@ StartRestrictions[4] = {DeterminantString(NF, Ind["2s"]),2,2}
 
 Restrictions = {NF,0}
 Restrictions[3] = {DeterminantString(NF, Ind["2p"]),0,1}
--- print("StartRestrictions")
--- print(StartRestrictions)
--- print("Restrictions")
--- print(Restrictions)
 
 NPsi = 15
-psiEigenlist = Eigensystem(Hamil,StartRestrictions,NPsi)
-psiEigenlistRestr = Eigensystem(Hamil,StartRestrictions,NPsi,{{"Restrictions",Restrictions}})
--- for i = 1, #psiEigenlist do
---     print(psiEigenlist[i]*Hamil*psiEigenlist[i])
--- end
+psiList = Eigensystem(Hamil,StartRestrictions,NPsi)
 
+extraList1 = {"Extra1",{}}
+extraList2 = {"Extra2",{}}
+for i = 1, NPsi do
+    extraList1[2][i] = 0.5*i
+    extraList2[2][i] = 5/i
+end
+extraLists = {extraList1, extraList2}
+
+Options1 = {{"colWidth",10},{"printHeaderEvery",10},{"printSigma",true},{"sortByEnergy",true},{"zero",1E-7}}
+Options2 = {{"colWidth",4},}
 
 print("\n\n\nPrintExpectationValues(psiList,opList):")
 PrintExpectationValues(psiList,opList)
-print("\n\n\nPrintExpectationValues(psiList[1],opList[1]):")
-PrintExpectationValues(psiList[1],opList[1])
-print("\n\n\nPrintExpectationValues(psiEigenlist,Hamil,opList):")
-PrintExpectationValues(psiEigenlist,Hamil,opList)
-print("\n\n\nPrintExpectationValues(psiEigenlist,Hamil,opList):")
-PrintExpectationValues(psiEigenlist,Hamil,opList)
-print("\n\n\nPrintExpectationValues(psiEigenlistRestr,opList,{{\"printHeaderEvery\",10},{\"zero\",1E-2}}):")
-PrintExpectationValues(psiEigenlistRestr,opList,{{"printHeaderEvery",10},{"zero",1E-2}})
-print("\n\n\nPrintExpectationValues(psiEigenlistRestr,Hamil,opList,{{\"printHeaderEvery\",10},{\"printSigma\",true},{\"zero\",1E-2}}):")
-PrintExpectationValues(psiEigenlistRestr,Hamil,opList,{{"printHeaderEvery",10},{"printSigma",true},{"zero",1E-2}})
-print("\n\n\nPrintExpectationValues(psiEigenlistRestr,Hamil,opList,{{\"colWidth\",10}}):")
-PrintExpectationValues(psiEigenlistRestr,Hamil,opList,{{"colWidth",10}})
+print("\n\n\nPrintExpectationValues(psiList,opList,Hamil):")
+PrintExpectationValues(psiList,opList,Hamil)
+print("\n\n\nPrintExpectationValues(psiList,opList,extraLists):")
+PrintExpectationValues(psiList,opList,extraLists)
+print("\n\n\nPrintExpectationValues(psiList,opList,Options1):")
+PrintExpectationValues(psiList,opList,Options1)
+print("\n\n\nPrintExpectationValues(psiList,opList,Options2):")
+PrintExpectationValues(psiList,opList,Options2)
+print("\n\n\nPrintExpectationValues(psiList,opList,Hamil,extraLists):")
+PrintExpectationValues(psiList,opList,Hamil,extraLists)
+print("\n\n\nPrintExpectationValues(psiList,opList,Hamil,Options1):")
+PrintExpectationValues(psiList,opList,Hamil,Options1)
+print("\n\n\nPrintExpectationValues(psiList,opList,Hamil,extraLists,Options1):")
+PrintExpectationValues(psiList,opList,Hamil,extraLists,Options1)
+print("\n\n\nPrintExpectationValues(psiList,opList,-Hamil,extraLists,Options1):")
+PrintExpectationValues(psiList,opList,-Hamil,extraLists,Options1)

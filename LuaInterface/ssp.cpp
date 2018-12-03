@@ -2937,7 +2937,7 @@ static int LuaMeanFieldOperator(lua_State *L)
   H = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
   Rho = luaL_checkCompactMatrix(L, 2);
   if((H->NFermion+H->NBoson)!=Rho->Ni)
-    return luaL_error(L, "Error in MeanFieldGroundstate, length of operator (NF=%d, NB=%d) is not equal to length of density matrix (%d)\n",H->NFermion,H->NBoson,Rho->Ni);
+    return luaL_error(L, "Error in MeanFieldOperator, length of operator (NF=%d, NB=%d) is not equal to length of density matrix (%d)\n",H->NFermion,H->NBoson,Rho->Ni);
   HMF = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   //TODO: Why is MeanFieldOperator different from MeanFieldOperatorOld ...
   //MeanFieldOperator(H, HMF, *Rho, Options.AddDFTSelfInteraction);
@@ -2959,11 +2959,11 @@ static int LuaMeanFieldOperator(lua_State *L)
   return 1;
 }
 
-static int LuaOperatorSetTrace(lua_State *L)
+static int LuaOperatorSetOnsiteEnergy(lua_State *L)
 {
   OperatorType *O;
-  double NewTrace=0;
-  Complex16 OldTrace={0,0};
+  double NewOnsiteEnergy=0;
+  Complex16 OldOnsiteEnergy={0,0};
   uint16_t *OrbitalsToInclude=NULL;
   uint32_t len,i;
   uint32_t luaStackLen = (uint32_t)lua_gettop(L);
@@ -2975,7 +2975,7 @@ static int LuaOperatorSetTrace(lua_State *L)
   if(O->MaxLength<2) return 0;
   if(luaStackLen>1)
   {
-    NewTrace = (double)luaL_checknumber(L, 2);
+    NewOnsiteEnergy = (double)luaL_checknumber(L, 2);
   }
   if(luaStackLen>2)
   {
@@ -2990,16 +2990,16 @@ static int LuaOperatorSetTrace(lua_State *L)
     }
     len=O->NFermion;
   }
-  OldTrace = OperatorTrace(*O,OrbitalsToInclude,len);
-  OldTrace*=-1;
-  OldTrace.Re+=NewTrace;
+  OldOnsiteEnergy = OperatorTraceAverage(*O,OrbitalsToInclude,len);
+  OldOnsiteEnergy*=-1;
+  OldOnsiteEnergy.Re+=NewOnsiteEnergy;
   if(O->l[2].QComplex==0)
   {
-    RealOperatorAddTrace(O, OrbitalsToInclude, len, OldTrace.Re);
+  	RealOperatorAddDiagonalOffset(O, OrbitalsToInclude, len, OldOnsiteEnergy.Re);
   }
   else
   {
-    ComplexOperatorAddTrace(O, OrbitalsToInclude, len, OldTrace);
+  	ComplexOperatorAddDiagonalOffset(O, OrbitalsToInclude, len, OldOnsiteEnergy);
   }
   
   return 0;
@@ -3816,7 +3816,7 @@ static int LuaBlockBandDiagonalize(lua_State *L)
     }
     else
     {
-      return luaL_error(L, "BlockBandDiatonalize for matrices expects eitehr a number of vector of numbers on second position\n");
+      return luaL_error(L, "BlockBandDiatonalize for matrices expects either a number or a vector of numbers on second position\n");
     }
     Options.NTri=Min(Options.NTri, M->Ni);
     if(CompactMatrixBlockBandDiagonalize(M, vec, &B, Options.SingularValue, Options.NTri, Options.NOrtho, Options.ReOrthogonalize, Options.ReturnT))
@@ -4492,7 +4492,7 @@ static int LuaDeterminantString(lua_State *L)
 		{
 			if (indTmp[i] < 0 || indTmp[i] >= NF)
 				printf("\nWarning: Index %d is not within [0,NF-1]=[0,%d].\n", indTmp[i], NF - 1);
-			else if (!isIntElementOf(indTmp[i], indices))
+			else if (!isElementOf(indTmp[i], indices))
 				indices.push_back(indTmp[i]);
 		}
 	}
@@ -4500,7 +4500,7 @@ static int LuaDeterminantString(lua_State *L)
 	det[NF] = '\0';
 	for (uint16_t i = 0; i < NF; i++)
 	{
-		if (isIntElementOf(i, indices))
+		if (isElementOf(i, indices))
 		{
 			det[i] = '1';
 		} else
@@ -4548,20 +4548,20 @@ static int lua_createAtomicIndices(lua_State *L, bool isDict)
 	lua_check(L, 1, orbitals);
 	if (hasIdenticalEntries (orbitals))
 		return luaL_error(L, "Error: CreateAtomicIndices called with redundant orbitals.");
-	map <string, vector<int> > indicesDict = createAtmoicIndicesDict(orbitals);
+	map<string, vector<uint16_t> > indicesDict = createAtmoicIndicesDict(orbitals);
 	if (isDict)
 	{
-		map <string, vector<string> > groupings;
+		map<string, vector<string> > groupings;
 		if (numberOfInputs == 2)
 			lua_check(L, 2, groupings);
-		groupings.insert( {"all", orbitals} );
-		groupings.insert( {"All", orbitals} );
+		groupings.insert( { "all", orbitals });
+		groupings.insert( { "All", orbitals });
 		groupOrbitals(indicesDict, groupings);
 		lua_push(L, indicesDict);
 	} else
 	{
 		lua_push(L, dictToList(indicesDict, orbitals));
-		if(Options.kappas)
+		if (Options.kappas)
 		{
 			lua_push(L, "kappas");
 			lua_push(L, kappas(orbitals));
@@ -4657,15 +4657,16 @@ static int LuaPrintExpectationValues(lua_State * L)
 	OperatorType hamil;
 	vector < OperatorType > opList;
 	uint32_t len = (uint32_t) lua_gettop(L);
+	map<string, vector<double> > extraLists;
 	bool hasHamiltonian = false;
-	bool hasOptions = false;
+	bool hasExtraLists = false;
 
   struct
   {
-		int colWidth = 8;
-		int printHeaderEvery = 0;
+		uint colWidth = 8;
+		uint printHeaderEvery = 0;
 		bool printSigma = false;
-		bool sortByEnergy = true;
+		bool sortByEnergy = false;
     double zero = 1E-10;
   } Options;
   LuaOptionsType LuaPrintExpectationValuesOptions[]={
@@ -4676,64 +4677,32 @@ static int LuaPrintExpectationValues(lua_State * L)
 		{"zero",          			"double",  &(Options.zero)},
     {NULL, NULL, NULL}};
 
-//  TODO: Fehlermeldung anpassen
-	if (len < 2 || len > 4)
-		return luaL_error(L, "PrintExpectationValues called with %d arguments. 2, 3 or 4 expected, List of Wavefunctions, optional Hamiltonian, list of other operators, and optional list of Options.\n", len);
-
-	if (len == 2)
+	if (len < 2 || len > 5)
+		return luaL_error(L,
+				"PrintExpectationValues called with %d arguments. 2, 3, 4 or 5 expected, List of Wavefunctions, list of operators, optional Hamiltonian, optional map to other lists, and optional list of Options.\n",
+				len);
+//		Possible Input: Psi, Operators, (opt)Hamiltonian, (opt)ExtraLists, (opt)Options.
+	lua_check(L,1,psiList);
+	lua_check(L,2,opList);
+	uint i = 3;
+	if (luaL_isType(L, i, hamil) && i <= len)
 	{
-//		Input: Psi, Operators;
-		hasHamiltonian = false;
-		hasOptions = false;
-	} else if (len == 3)
-	{
-		if (lua_istable(L, -1))
-		{
-			lua_rawgeti(L, -1, 1);
-			if (lua_istable(L, -1))
-			{
-//		Input: Psi, Operators, Options;
-				hasHamiltonian = false;
-				hasOptions = true;
-			} else
-			{
-//		Input: Psi, Hamiltonian, Operators;
-				hasHamiltonian = true;
-				hasOptions = false;
-			}
-			lua_pop(L, 1);
-		} else
-		{
-			//		Input: Psi, Hamiltonian, a single Operator;
-			hasHamiltonian = true;
-			hasOptions = false;
-		}
-	} else
-	{
-//		Input: Psi, Hamiltonian; Operators, Options;
 		hasHamiltonian = true;
-		hasOptions = true;
+		hamil = *(OperatorType*) luaL_checkudata(L, i, "Operator_Type");
+		++i;
 	}
-
-	psiList = luaL_checkvector_WaveFunctionType(L, 1);
-	if (hasHamiltonian)
-		hamil = *(OperatorType*) luaL_checkudata(L, 2, "Operator_Type");
-	if (hasOptions)
+	if (luaL_isType(L, i, extraLists, (uint) psiList.size()) && i <= len)
 	{
-		opList = luaL_checkvector_OperatorType(L, -2);
-		if (LuaTestOptionsList(L, -1))
-		{
-			LuaCheckOptions(L, -1, LuaPrintExpectationValuesOptions);
-		} else
-		{
-			return luaL_error(L, "Last argument of PrintExpectationValues should either be a single operator, a list of operators, or a list of options. It's not.\n");
-		}
-	} else
-	{
-		opList = luaL_checkvector_OperatorType(L, -1);
+		hasExtraLists = true;
+		lua_check(L, i, extraLists);
+		++i;
 	}
-
-	printExpectationValues(psiList, hamil, opList, hasHamiltonian, Options.sortByEnergy, Options.printSigma, Options.zero, Options.printHeaderEvery, Options.colWidth);
+	if (i <= len)
+	{
+		LuaCheckOptions(L, i, LuaPrintExpectationValuesOptions);
+	}
+	ExpectationValues expec = ExpectationValues(psiList, hamil, opList, extraLists, hasHamiltonian, Options.zero, Options.sortByEnergy, Options.printSigma);
+	expec.print(Options.colWidth, Options.printHeaderEvery);
 	return 0;
 }
 
@@ -4917,6 +4886,7 @@ static int LuaYtoZMatrix(lua_State * L)
 }
 
 
+
 static const struct luaL_Reg global_functions[] = {
   {"BlockBandDiagonalize", LuaBlockBandDiagonalize},
   {"Braket", LuaBraKet},
@@ -4960,7 +4930,8 @@ static const struct luaL_Reg global_functions[] = {
   {"NewWavefunction", LuaNewWaveFunction},
 	{"NonRelToRelOrbitals",LuaNonRelToRelOrbitals},
   {"OperatorToMatrix", LuaOperatorToMatrix},
-  {"OperatorSetTrace", LuaOperatorSetTrace},
+  {"OperatorSetOnsiteEnergy", LuaOperatorSetOnsiteEnergy},
+	{"OperatorSetTrace", LuaOperatorSetOnsiteEnergy},
 	{"OrbitalRotationMatrix",LuaOrbitalRotationMatrix},
   {"OrbToMultiplicity",LuaOrbToMultiplicity},
   {"Orthonormalize", LuaOrthonormalize},

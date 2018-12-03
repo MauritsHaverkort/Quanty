@@ -14,7 +14,7 @@
 #include "../DMFT/SingleSiteFunctions.cpp"
 #include "../Yi/functions_yi.cpp"
 #include "../Martin/functions_martin.cpp"
-#include "../Simon/functions_simon.cpp"
+#include "../Simon/Simon.cpp"
 
 
 
@@ -22,6 +22,7 @@
 #include "lua/includeLua.c"
 static void *currentudata = NULL;
 #include "lua_extensions/tools.cpp"
+#include "lua_extensions/luaInOut.cpp"
 #include "lua_extensions/TableToArray.cpp"
 #include "lua_extensions/get_put.cpp"
 #include "units.cpp"

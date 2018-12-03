@@ -97,6 +97,7 @@ using std::vector;
 #include "../LuaInterface/TightBinding.h"
 #include "../LuaInterface/Wavefunction.h"
 #include "../LuaInterface/eval.h"
+#include "../LuaInterface/lua_extensions/luaInOut.h"
 #include "../LuaInterface/lua_extensions/TableToArray.h"
 #include "../LuaInterface/lua_extensions/get_put.h"
 #include "../LuaInterface/lua_extensions/tools.h"
@@ -108,7 +109,7 @@ using std::vector;
 #include "../AtomicOperators/AtomicU.h"
 
 #include "../Martin/MartinHeaders.h"
-#include "../Simon/functions_simon.h"
+#include "../Simon/Simon.h"
 #include "../Yi/functions_yi.h"
 
 #include "blas.h"

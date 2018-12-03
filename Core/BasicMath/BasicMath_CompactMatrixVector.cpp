@@ -4563,7 +4563,7 @@ CompactMatrixType CompactidentityMatrix(const int size)
 }
 
 
-CompactMatrixType Submatrix(CompactMatrixType M, int rowStart, int rows, int colStart, int cols)
+CompactMatrixType Submatrix(const CompactMatrixType &M, int rowStart, int rows, int colStart, int cols)
 {
   if (rowStart < 0 || rows <= 0 || colStart < 0 || cols <= 0 || rowStart + rows > M.Ni || colStart + cols > M.Nj)
   {
@@ -4593,12 +4593,12 @@ CompactMatrixType Submatrix(CompactMatrixType M, int rowStart, int rows, int col
   return Msub;
 }
 
-CompactMatrixType Submatrix(CompactMatrixType M, int rows, int cols)
+CompactMatrixType Submatrix(const CompactMatrixType &M, int rows, int cols)
 {
   return Submatrix(M, 0, rows, 0, cols);
 }
 
-CompactMatrixType Submatrix(CompactMatrixType M, int size)
+CompactMatrixType Submatrix(const CompactMatrixType &M, int size)
 {
   return Submatrix(M, size, size);
 }
