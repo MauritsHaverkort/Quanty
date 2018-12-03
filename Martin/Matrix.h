@@ -19,6 +19,7 @@ public:
 	Matrix();
 	virtual ~Matrix();
 	Matrix(uint32_t Mrows, uint32_t Ncols,bool RowMajor);
+	Matrix(const Matrix<F> &A);
 	uint32_t M = 0;
 	uint32_t N = 0;
 	bool RowMajor = false;

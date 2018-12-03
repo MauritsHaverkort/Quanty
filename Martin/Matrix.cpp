@@ -14,7 +14,7 @@ Matrix<F>::Matrix() {
 }
 template<typename F>
 Matrix<F>::~Matrix() {
-	//TODO free(Entries);
+	free(Entries);
 	//printf("Ceterum censeo Carthaginem esse delendam.\n");
 }
 template<typename F>
@@ -26,6 +26,19 @@ Matrix<F>::Matrix(uint32_t Mrows,uint32_t Ncols,bool RowMajor = false)
 	Entries = (F*) malloc( sizeof(F)*M*N );
 	//printf("alloc constr\n");
 
+}
+
+template<typename F>
+Matrix<F>::Matrix(const Matrix<F> &A)
+{
+	M = A.M;
+	N = A.N;
+	RowMajor = A.RowMajor;
+	Entries = (F*) malloc( sizeof(F)*M*N );
+	for (uint32_t i = 0; i < M*N; i++)
+	{
+		Entries[i] = A.Entries[i];
+	}
 }
 template<typename F>
 void Matrix<F>::Evaluate(const std::vector<F> &x, std::vector<F> &y)

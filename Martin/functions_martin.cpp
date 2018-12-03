@@ -842,7 +842,7 @@ static int LuaSparseOperator(lua_State *L)
 		printf("\n");
 	}
 	printf("B:\n");
-	for (int i = 1; i < N; i++)
+	for (int i = 0; i < N; i++)
 	{
 		B[i].print();
 		printf("\n");

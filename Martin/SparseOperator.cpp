@@ -210,34 +210,36 @@ void LoewdinSVDOrthonormalize(LinAlg::Matrix<double> &A, double epsSV, uint32_t 
 		if (nSV == 0)
 		{
 			printf("LoewdinSVDOrthonormalize : Reduce Dimension from %u to %u\n",Ncol,nSV);
-			return;
 		}
-
-		char const *transN="N";
-		double one  = 1;
-		double zero = 0;
-
-		dgemm(transN,transN,&Mrow,&Ncol,&nSV,&one,U,&Mrow,VT,&nSV,&zero,A.Entries,&Mrow);
-		if(Ncol-nSV)
+		else
 		{
-			printf("LoewdinSVDOrthonormalize : Reduce Dimension from %u to %u\n",Ncol,nSV);
-			SortPair lostNorm[Ncol];
-			for (uint32_t i = 0; i < Ncol; i++)
+
+			char const *transN="N";
+			double one  = 1;
+			double zero = 0;
+
+			dgemm(transN,transN,&Mrow,&Ncol,&nSV,&one,U,&Mrow,VT,&nSV,&zero,A.Entries,&Mrow);
+			if(Ncol-nSV)
 			{
-				lostNorm[i].val = 0;
-				lostNorm[i].idx = i;
-				for (uint32_t j = nSV; j < Ncol; j++)
+				printf("LoewdinSVDOrthonormalize : Reduce Dimension from %u to %u\n",Ncol,nSV);
+				SortPair lostNorm[Ncol];
+				for (uint32_t i = 0; i < Ncol; i++)
 				{
-					lostNorm[i].val += VT[i*Ncol + j]*VT[i*Ncol + j];
+					lostNorm[i].val = 0;
+					lostNorm[i].idx = i;
+					for (uint32_t j = nSV; j < Ncol; j++)
+					{
+						lostNorm[i].val += VT[i*Ncol + j]*VT[i*Ncol + j];
+					}
 				}
+				qsort(lostNorm,Ncol,sizeof(SortPair),CompSortPair);
+				for (uint32_t i = 0; i < nSV; i++)
+				{
+					//printf("%.4f\t%u\n",lostNorm[i].val,lostNorm[i].idx);
+					A.RemoveCol(lostNorm[i].idx);
+				}
+				LoewdinSVDOrthonormalize(A,epsSV,nSV);
 			}
-			qsort(lostNorm,Ncol,sizeof(SortPair),CompSortPair);
-			for (uint32_t i = 0; i < nSV; i++)
-			{
-				//printf("%.4f\t%u\n",lostNorm[i].val,lostNorm[i].idx);
-				A.RemoveCol(lostNorm[i].idx);
-			}
-			LoewdinSVDOrthonormalize(A,epsSV,nSV);
 		}
 		free(U);
 		free(S);
