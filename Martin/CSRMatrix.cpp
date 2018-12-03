@@ -84,8 +84,7 @@ void CSRMatrix<F>::AddRow(std::map<uint32_t,F> rowEntries)
 template<typename F>
 void CSRMatrix<F>::Evaluate(const std::vector<F> &x,std::vector<F> &y)
 {
-	uint32_t N = x.size();
-	uint32_t M = AI.size()-1;
+	uint32_t M = (uint32_t) AI.size()-1;
 
 	y.reserve(M);
 
@@ -113,15 +112,68 @@ void CSRMatrix<F>::AdjointEvaluate(const std::vector<F> &x,std::vector<F> &y)
 		}
 	}
 }
-template<typename F>
-void CSRMatrix<F>::BlockEvaluate(const std::vector<F> &x,std::vector<F> &y, const uint32_t blocksize)
-{
-#pragma omp for
-	for (uint32_t k = 0; k < blocksize; k++)
-	{
 
+template<typename F>
+void CSRMatrix<F>::BlockEvaluate(const Matrix<F> &x, Matrix<F> &y)
+{
+	uint32_t Nvectors = x.N;
+	uint32_t M = (uint32_t) AI.size()-1;
+	for (uint32_t i = 0; i < y.M*y.N;i++)
+	{
+		y.Entries[i] = 0;
+		//printf("%u : %.4f\n",i,y.Entries[i]);
+	}
+	//y.print();
+//#pragma omp for
+	for (uint32_t k = 0; k < Nvectors; k++)
+	{
+		for (uint32_t i = 0; i < M; i++)
+		{
+			for (uint32_t j = AI[i]; j < AI[i+1]; j++)
+			{
+				y.Entries[k*M + i] += A[j] * x.Entries[k*x.M + AJ[j]];
+				//printf("y[%u]\t += %.2f * %.2f at k = %u, i = %u and AJ[j] = %u so y = %.2f\n",k*M + i,A[j],x.Entries[k*x.M + AJ[j]],k,i,AJ[j],y.Entries[k*M + i]);
+			}
+		}
 	}
 }
+template<typename F>
+void CSRMatrix<F>::BlockEvaluate(const std::vector<F> &x,std::vector<F> &y, const uint32_t Nvectors)
+{
+	uint32_t N = (uint32_t) x.size()/Nvectors;
+	uint32_t M = (uint32_t) AI.size()-1;
+	y = std::vector<F>(M*Nvectors);
+//#pragma omp for
+	for (uint32_t k = 0; k < Nvectors; k++)
+	{
+		for (uint32_t i = 0; i < M; i++)
+		{
+			for (uint32_t j = AI[i]; j < AI[i+1]; j++)
+			{
+				y[k*M + i] += A[j] * x[k*N + AJ[j]];
+			}
+		}
+	}
+}
+/*
+template<typename F>
+void CSRMatrix<F>::BlockEvaluate(const CompactMatrixType &x,CompactMatrixType &y)
+{
+	uint32_t N = (uint32_t) x.Ni;
+	uint32_t M = (uint32_t) AI.size()-1;
+#pragma omp for
+	for (uint32_t k = 0; k < N; k++)
+	{
+		for (uint32_t i = 0; i < M; i++)
+		{
+			for (uint32_t j = AI[i]; j < AI[i+1]; j++)
+			{
+				y[k*M + i] += A[j] * x[k*N + AJ[j]];
+			}
+		}
+	}
+}
+*/
 
 template<typename F>
 void CSRMatrix<F>::Print()

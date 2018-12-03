@@ -9,6 +9,7 @@
 #include "CreateOperators.cpp"
 #include "PlotSpectrumWithSelfEnergy.cpp"
 #include "CSRMatrix.cpp"
+#include "Matrix.cpp"
 #include "SparseOperator.cpp"
 
 
@@ -758,7 +759,7 @@ static int LuaEigenDifferential(lua_State *L)
 	{
 		struct
 		{
-			char *type;
+			const char *type;
 			uint32_t Nknots;
 		} Options;
 		LuaOptionsType LuaEDOptions[]={
@@ -766,7 +767,7 @@ static int LuaEigenDifferential(lua_State *L)
 		    {"Nknots","uint32_t",&(Options.Nknots)},
 		    {NULL, NULL, NULL}};
 		Options.Nknots = 4;
-		Options.type = "N"; // mwh this is a real bug !!!
+		Options.type = "N";
 		LuaCheckOptions(L, 5, LuaEDOptions);
 		if (strcmp(Options.type,"N")==0)
 		{
@@ -805,11 +806,108 @@ static int LuaSparseOperator(lua_State *L)
 	WaveFunctionType *psi = (WaveFunctionType *) luaL_checkudata(L, 2, "Wavefunction_Type");
 	LinAlg::CSRMatrix<double> M;
 	OperatorToSparseMatrix(H,psi,M);
-	//M.Print();
-	printf("Matrix created with %lu nve\n",M.A.size());
-	std::vector<double> vec, a, b;
+	M.Print();
+	//printf("Matrix created with %lu nve\n",M.A.size());
+	std::vector<double> vec, a, b, y;
 	WaveFunctionToVector(psi,vec,psi);
-	std::vector<std::vector<double> > T;
+	uint32_t Mrow = vec.size();
+	uint32_t Ncol = 2;
+	LinAlg::Matrix<double> startblock = LinAlg::Matrix<double>(Mrow,Ncol);
+	/*for(uint32_t i = 0; i < Mrow;i++)
+	{
+		startblock.Entries[i] = vec[i];
+		startblock.Entries[i+Mrow] = vec[i]+i;
+	}*/
+	startblock.Entries[0] = -1;
+	startblock.Entries[1] =  0;
+	startblock.Entries[2] =  3;
+	startblock.Entries[3] =  1;
+	startblock.Entries[4] =  1;
+	startblock.Entries[5] =  3;
+
+	startblock.Entries[6] =  2;
+	startblock.Entries[7] =  1;
+	startblock.Entries[8] =  1;
+	startblock.Entries[9] =  0;
+	startblock.Entries[10] = 0;
+	startblock.Entries[11] = 3;
+	std::vector<LinAlg::Matrix<double> > T,A,B;
+	double epsSV = 100*DBL_EPSILON;
+	uint32_t N = 4;
+	BlockLanczos(M,startblock,N,epsSV,A,B,T);
+	printf("A:\n");
+	for (int i = 0; i < N; i++)
+	{
+		A[i].print();
+		printf("\n");
+	}
+	printf("B:\n");
+	for (int i = 1; i < N; i++)
+	{
+		B[i].print();
+		printf("\n");
+	}
+	printf("T:\n");
+	for (int i = 0; i < N; i++)
+	{
+		T[i].print();
+		printf("\n");
+	}
+
+	return 0;
+/*	lua_push(L,A);
+	lua_push(L,B);
+	return 2;*/
+
+/*
+	uint32_t dim = 3;
+	LinAlg::Matrix<double> A = LinAlg::Matrix<double>(dim,dim,false);
+	A.Entries[0] = 1;
+	A.Entries[1] = 2;
+	A.Entries[2] = 1;
+	A.Entries[3] = 2;
+	A.Entries[4] = 4;
+	A.Entries[5] = 2;
+	A.Entries[6] = -1;
+	A.Entries[7] = -2;
+	A.Entries[8] = 3;
+	uint32_t nSV;
+
+	LinAlg::Matrix<double> AtA = LinAlg::Matrix<double>(dim,dim,false);
+	BlockSkalarProduct(A,A,AtA);
+
+	LoewdinSVDOrthonormalize(A,0.001,nSV);
+
+	printf("A\n");
+	A.print();
+
+	printf("\nSVD\n");
+	for (uint32_t i = 0; i < A.M; i++)
+	{
+		for (uint32_t j = 0; j < A.N; j++)
+		{
+			printf("%.4f\t",A.Entries[j*3 + i]);
+		}
+		printf("\n");
+
+	}
+*/
+/*	printf("\nBlockSkalar\n");
+	for (uint32_t i = 0; i < 3; i++)
+	{
+		for (uint32_t j = 0; j < 3; j++)
+		{
+			printf("%.4f\t",AtA.Entries[j*AtA.M + i]);
+		}
+		printf("\n");
+
+	}
+	AtA.print();
+*/
+/*
+
+
+/*
 	Lanczos(M,SkalarProdukt,VectorAdd<double>,VectorMul<double>,vec,6,a,b,T);
 	for (uint32_t i = 0; i < a.size(); i++)
 	{
@@ -820,9 +918,60 @@ static int LuaSparseOperator(lua_State *L)
 	{
 		printf("%e\t",b[i]);
 	}
-  // mwh one should osuh resutls to the stack and return the number of states pushed to the stack
-  // for now I add an return 0 in order to repair a bug that prevents compiling
-  return 0;
+	printf("\n");
+	size_t N = vec.size();
+	for (uint32_t i = 0; i < N; i++)
+	{
+		vec.push_back(2*vec[i]);
+	}
+	for (uint32_t i = 0; i < N; i++)
+	{
+		vec.push_back(3*vec[i]);
+	}
+	M.BlockEvaluate(vec,y,3);
+	for (uint32_t i = 0; i < N; i++)
+	{
+		printf("%.1f\t%.1f\t%.1f\n",y[i],y[i+N],y[i+2*N]);
+	}
+
+	std::vector<double> A = std::vector<double>(9);
+	A[0] = 1;
+	A[1] = 2;
+	A[2] = 1;
+	A[3] = 2;
+	A[4] = 4;
+	A[5] = 2;
+	A[6] = -1;
+	A[7] = -2;
+	A[8] = 3;
+	uint32_t nSV;
+
+	std::vector<double> AtA = std::vector<double>(6);
+	BlockSkalarProduct(A,A,AtA,3,2);
+
+	LoewdinSVDOrthonormalize(A,3,3,0.001,nSV);
+	printf("\nSVD\n");
+	for (uint32_t i = 0; i < 3; i++)
+	{
+		for (uint32_t j = 0; j < 3; j++)
+		{
+			printf("%.4f\t",A[j*3 + i]);
+		}
+		printf("\n");
+
+	}
+	printf("\nBlockSkalar\n");
+	for (uint32_t i = 0; i < 2; i++)
+	{
+		for (uint32_t j = 0; j < 2; j++)
+		{
+			printf("%.4f\t",AtA[j*2 + i]);
+		}
+		printf("\n");
+
+	}
+*/
+    return 0;
 }
 
 static const struct luaL_Reg Martin_meta[] = {

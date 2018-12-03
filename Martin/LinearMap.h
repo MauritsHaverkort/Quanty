@@ -9,6 +9,7 @@
 #define MARTIN_LINEARMAP_H_
 
 #include <stdio.h>
+#include "Matrix.h"
 
 namespace LinAlg {
 
@@ -30,6 +31,7 @@ public:
 	virtual void Evaluate(const V &x, W &y) = 0;
 	virtual void AdjointEvaluate(const W &x, V &y) = 0;
 	virtual void BlockEvaluate(const V &x, W &y, const uint32_t blocksize) = 0;
+	virtual void BlockEvaluate(const Matrix<F> &x, Matrix<F> &y) = 0;
 };
 
 } /* namespace LinAlg */
