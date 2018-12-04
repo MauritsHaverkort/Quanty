@@ -449,46 +449,16 @@ static int LuaMetricWaveFuns(lua_State *L)
 
 static int LuaMartinTest(lua_State *L)
 {
-	uint32_t NfunsG = (uint32_t)lua_objlen(L,1);
-	vector<Interpolation::InterpolatingFunction *> funsG = vector<Interpolation::InterpolatingFunction *>(NfunsG);
-	for(uint32_t i = 0; i < NfunsG; i++)
+	WaveFunctionType *dets;
+	lua_check(L,1,dets);
+	std::vector<double> psiTransformed;
+	WaveFunctionToVector(dets,psiTransformed,dets);
+	printf("GRoesser\t%u\t%u\n",psiTransformed.size(),dets->N);
+	for (uint32_t i = 0; i < psiTransformed.size(); i++)
 	{
-		lua_rawgeti(L, 1, i+1);
-		funsG[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
-		lua_pop(L,1);
+		printf("%.4e\n",psiTransformed[i]);
 	}
-	vector<Interpolation::InterpolatingFunction *> funsF = vector<Interpolation::InterpolatingFunction *>(NfunsG);
-	for(uint32_t i = 0; i < NfunsG; i++)
-	{
-		lua_rawgeti(L, 2, i+1);
-		funsF[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
-		lua_pop(L,1);
-	}
-
-	uint32_t k = 7;
-	vector<double> x = funsG[0]->GetX();
-	printf("x = %.8E\n",x[x.size()-1]);
-	vector<double> knots = Quad::GetKnots(k,x);
-	//PrintArray(&x[0],x.size());
-	vector<double> g = (*funsG[0])(knots);
-	vector<double> f = (*funsF[0])(knots);
-	vector<double> w = Quad::GetWeights(k,x);
-	vector<double> dg = w * g;
-	vector<double> df = w * f;
-	double res = 0;
-	for (uint32_t i = 0; i < g.size(); i++)
-	{
-		res += df[i]*f[i] +dg[i]*g[i];
-
-	}
-	printf("%.8E\n",res);
-	printf("%.8E\n",Quad::GetMultipoleIntegral(*(Interpolation::CubicSpline*)funsG[0],*(Interpolation::CubicSpline*)funsG[0],0));
-	printf("%.8E\n",Quad::GetMultipoleIntegral(*(Interpolation::CubicSpline*)funsG[0],*(Interpolation::CubicSpline*)funsG[0],1));
-	printf("%.8E\n\n",Quad::GetMultipoleIntegral(*(Interpolation::CubicSpline*)funsG[0],*(Interpolation::CubicSpline*)funsG[0],2));
-
-	printf("%.8E\n",Quad::GetMultipoleIntegral(*funsG[0],*funsG[0],0,k));
-	printf("%.8E\n",Quad::GetMultipoleIntegral(*funsG[0],*funsG[0],1,k));
-	printf("%.8E\n",Quad::GetMultipoleIntegral(*funsG[0],*funsG[0],2,k));
+	printf("GRoesser\t%u\t%u\n",psiTransformed.size(),dets->N);
 	return 0;
 }
 
@@ -1213,4 +1183,47 @@ static int LuaPropagator2(lua_State *L)
 	}
 	return 2;
 }
+ */
+
+/* DEBUG QUAD
+	uint32_t NfunsG = (uint32_t)lua_objlen(L,1);
+	vector<Interpolation::InterpolatingFunction *> funsG = vector<Interpolation::InterpolatingFunction *>(NfunsG);
+	for(uint32_t i = 0; i < NfunsG; i++)
+	{
+		lua_rawgeti(L, 1, i+1);
+		funsG[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
+		lua_pop(L,1);
+	}
+	vector<Interpolation::InterpolatingFunction *> funsF = vector<Interpolation::InterpolatingFunction *>(NfunsG);
+	for(uint32_t i = 0; i < NfunsG; i++)
+	{
+		lua_rawgeti(L, 2, i+1);
+		funsF[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
+		lua_pop(L,1);
+	}
+
+	uint32_t k = 7;
+	vector<double> x = funsG[0]->GetX();
+	printf("x = %.8E\n",x[x.size()-1]);
+	vector<double> knots = Quad::GetKnots(k,x);
+	//PrintArray(&x[0],x.size());
+	vector<double> g = (*funsG[0])(knots);
+	vector<double> f = (*funsF[0])(knots);
+	vector<double> w = Quad::GetWeights(k,x);
+	vector<double> dg = w * g;
+	vector<double> df = w * f;
+	double res = 0;
+	for (uint32_t i = 0; i < g.size(); i++)
+	{
+		res += df[i]*f[i] +dg[i]*g[i];
+
+	}
+	printf("%.8E\n",res);
+	printf("%.8E\n",Quad::GetMultipoleIntegral(*(Interpolation::CubicSpline*)funsG[0],*(Interpolation::CubicSpline*)funsG[0],0));
+	printf("%.8E\n",Quad::GetMultipoleIntegral(*(Interpolation::CubicSpline*)funsG[0],*(Interpolation::CubicSpline*)funsG[0],1));
+	printf("%.8E\n\n",Quad::GetMultipoleIntegral(*(Interpolation::CubicSpline*)funsG[0],*(Interpolation::CubicSpline*)funsG[0],2));
+
+	printf("%.8E\n",Quad::GetMultipoleIntegral(*funsG[0],*funsG[0],0,k));
+	printf("%.8E\n",Quad::GetMultipoleIntegral(*funsG[0],*funsG[0],1,k));
+	printf("%.8E\n",Quad::GetMultipoleIntegral(*funsG[0],*funsG[0],2,k));
  */

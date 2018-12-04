@@ -67,6 +67,7 @@ void WaveFunctionToVector(const WaveFunctionType * const psi,std::vector<double>
 		uint32_t ii = i >> NBitsBlok;
 		uint32_t ik = i & BlokMask;
 		uint32_t ij = psi->NWord * ik;
+		uint32_t im = i % (1 << NBitsBlok);
 
 		//uint8_t *Det = (uint8_t*)malloc(psi->NWord * sizeof(uint8_t));
 		if (Det == NULL) AllocFailed();
@@ -77,8 +78,8 @@ void WaveFunctionToVector(const WaveFunctionType * const psi,std::vector<double>
 		uint32_t m = WaveFunctionIndexDet(indexWavefunction, Det);
 		if (m!=0)
 		{
-			vecOut[m-1] = psi->ValueRe[ii][ij]; //TODO which element?
-			//printf("vecOut[%d] = %.1f\n",m-1,psi->ValueRe[ii][ij]);
+			vecOut[m-1] = psi->ValueRe[ii][im]; //TODO which element?
+			//printf("vecOut[%d] = %.4e\n",m-1,psi->ValueRe[ii][im]);
 		}
 		else
 		{
@@ -172,8 +173,8 @@ void LoewdinSVDOrthonormalize(LinAlg::Matrix<double> &A, double epsSV, uint32_t 
 	work = (double*) malloc(lwork 		    * sizeof(double));
 	iwork= (int   *) malloc(8*Min(Mrow,Ncol)* sizeof(int));
 
-	//dgesvd(JOBU, JOBVT,&Mrow,&Ncol,A.Entries,&Mrow,S,U,&Mrow,VT,&Ncol,work,&lwork,&info);
-	dgesdd(JOBU, &Mrow, &Ncol, A.Entries, &Mrow, S, U, &Mrow, VT, &Ncol, work, &lwork, iwork, &info);
+	dgesvd(JOBU, JOBVT,&Mrow,&Ncol,A.Entries,&Mrow,S,U,&Mrow,VT,&Ncol,work,&lwork,&info);
+	//dgesdd(JOBU, &Mrow, &Ncol, A.Entries, &Mrow, S, U, &Mrow, VT, &Ncol, work, &lwork, iwork, &info);
 /*	printf("Singular Values:\n");
 	for (uint32_t i = 0; i < nSV; i++)
 	{
