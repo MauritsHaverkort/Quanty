@@ -10,7 +10,7 @@
 namespace LinAlg {
 template<typename F>
 Matrix<F>::Matrix() {
-
+	//printf("let there be math\n");
 }
 template<typename F>
 Matrix<F>::~Matrix() {
@@ -29,16 +29,18 @@ Matrix<F>::Matrix(uint32_t Mrows,uint32_t Ncols,bool RowMajor = false)
 }
 
 template<typename F>
-Matrix<F>::Matrix(const Matrix<F> &A)
+void Matrix<F>::copy(const Matrix<F> &A)
 {
 	M = A.M;
 	N = A.N;
 	RowMajor = A.RowMajor;
+	free(Entries);
 	Entries = (F*) malloc( sizeof(F)*M*N );
 	for (uint32_t i = 0; i < M*N; i++)
 	{
 		Entries[i] = A.Entries[i];
 	}
+	//printf("zu Guttenberg-Function\n");
 }
 template<typename F>
 void Matrix<F>::Evaluate(const std::vector<F> &x, std::vector<F> &y)
@@ -122,6 +124,20 @@ F* &Matrix<F>::operator[](uint32_t i)
 	{
 		printf("Error: Matrix is stored in column major format, hence Matrix[i][j] is not yet defined\n");
 		return 0;
+	}
+}
+template<typename F>
+void Matrix<F>::reserve(uint32_t Mnew, uint32_t Nnew)
+{
+	M = Mnew;
+	N = Nnew;
+	if(Entries)
+	{
+		Entries = (F*) realloc(Entries,M*N*sizeof(F));
+	}
+	else
+	{
+		Entries = (F*) malloc (M*N*sizeof(F));
 	}
 }
 template<typename F>

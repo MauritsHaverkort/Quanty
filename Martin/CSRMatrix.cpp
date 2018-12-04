@@ -124,7 +124,7 @@ void CSRMatrix<F>::BlockEvaluate(const Matrix<F> &x, Matrix<F> &y)
 		//printf("%u : %.4f\n",i,y.Entries[i]);
 	}
 	//y.print();
-//#pragma omp for
+#pragma omp for
 	for (uint32_t k = 0; k < Nvectors; k++)
 	{
 		for (uint32_t i = 0; i < M; i++)
@@ -143,7 +143,7 @@ void CSRMatrix<F>::BlockEvaluate(const std::vector<F> &x,std::vector<F> &y, cons
 	uint32_t N = (uint32_t) x.size()/Nvectors;
 	uint32_t M = (uint32_t) AI.size()-1;
 	y = std::vector<F>(M*Nvectors);
-//#pragma omp for
+#pragma omp for
 	for (uint32_t k = 0; k < Nvectors; k++)
 	{
 		for (uint32_t i = 0; i < M; i++)

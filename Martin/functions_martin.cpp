@@ -800,6 +800,63 @@ static int LuaEigenDifferential(lua_State *L)
 	return 1;
 }
 
+static int LuaSparseTridiagonalize(lua_State *L)
+{
+	OperatorType *H = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
+	std::vector<WaveFunctionType*> psi;
+	WaveFunctionType *dets;
+	std::vector<double> psiTransformed;
+	LinAlg::CSRMatrix<double> Hsparse;
+	LinAlg::Matrix<double> startblock;
+	uint32_t N;
+	lua_check(L,2,psi);
+	lua_check(L,3,dets);
+	lua_check(L,4,N);
+	startblock.reserve(dets->N,psi.size());
+	OperatorToSparseMatrix(H,dets,Hsparse);
+	printf("Matrix created with %lu nve\n",Hsparse.A.size());
+	for(uint32_t i = 0; i < startblock.N; i++)
+	{
+		WaveFunctionToVector(psi[i],psiTransformed,dets);
+		for (uint32_t j = 0; j < startblock.M; j++)
+		{
+			startblock.Entries[i*startblock.M + j] = psiTransformed[j];
+		}
+	}
+	std::vector<LinAlg::Matrix<double> > T,A,B;
+	double epsSV = 100*DBL_EPSILON;
+	BlockLanczos(Hsparse,startblock,N,epsSV,A,B,T);
+	BlockTriDiagonalMatrixType GTri;
+	GTri.BlockSize = startblock.N;
+    GTri.N = N;
+    GTri.QComplex=0;
+    InitBlockTridiagonalMatrix(&GTri);
+    GTri.mu=0;
+    uint32_t bs = GTri.BlockSize;
+    for(uint32_t k = 0; k < N; k++)
+    {
+    	for (uint32_t i = 0; i < A[k].M; i++)
+    	{
+    		for (uint32_t j = 0; j < A[k].N; j++)
+    		{
+    			GTri.aRe[(k+1)*bs*bs + i*bs + j] = A[k].Entries[j*A[k].M +i];
+    		}
+    	}
+    	for (uint32_t i = 0; i < B[k].M; i++)
+		{
+			for (uint32_t j = 0; j < B[k].N; j++)
+			{
+				GTri.bRe[k*bs*bs + i*bs + j] = B[k].Entries[j*B[k].M +i];
+			}
+		}
+    }
+
+    LuaPushTable_BlockTriDiagonalMatrixType(L, &GTri);
+
+	return 1;
+
+}
+
 static int LuaSparseOperator(lua_State *L)
 {
 	OperatorType *H = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
@@ -1026,6 +1083,7 @@ static const struct luaL_Reg Martin_func[] = {
   {"EigenDifferential",LuaEigenDifferential},
   {"ED",LuaEigenDifferential},
   {"SparseOperator",LuaSparseOperator},
+  {"SparseTri",LuaSparseTridiagonalize},
   {NULL, NULL}
 };
 

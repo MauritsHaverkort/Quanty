@@ -19,7 +19,6 @@ public:
 	Matrix();
 	virtual ~Matrix();
 	Matrix(uint32_t Mrows, uint32_t Ncols,bool RowMajor);
-	Matrix(const Matrix<F> &A);
 	uint32_t M = 0;
 	uint32_t N = 0;
 	bool RowMajor = false;
@@ -33,6 +32,8 @@ public:
 	void resize(uint32_t Mnew, uint32_t Nnew);
 	void RemoveCol(uint32_t i);
 	void print();
+	void reserve(uint32_t Mnew, uint32_t Nnew);
+	void copy(const Matrix<F> &A);
 
 
 };

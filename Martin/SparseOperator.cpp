@@ -283,29 +283,30 @@ void BlockLanczos(LinAlg::LinearMap<double, std::vector<double>, std::vector<dou
 {
 	uint32_t nSV = startblock.N;
 
-	A.reserve(N  );
-	B.reserve(N  );
-	Q.reserve(N+1);
+	A = std::vector<LinAlg::Matrix<double> >(N  );
+	B = std::vector<LinAlg::Matrix<double> >(N  );
+	Q = std::vector<LinAlg::Matrix<double> >(N+1);
 
-	Q.push_back(startblock);
+	//Q[0] = LinAlg::Matrix<double>(startblock);
+	Q[0].copy(startblock);
 	LoewdinSVDOrthonormalize(Q[0],epsSV,nSV); 					// SVD Orthonormalize Q[0]
-	B.push_back(LinAlg::Matrix<double>(Q[0].N,Q[0].N));
+	B[0].reserve(Q[0].N,Q[0].N);
 	BlockSkalarProduct(Q[0],startblock,B[0]);					// B[0] = Q[0]^T.startblock
 
-	Q.push_back(LinAlg::Matrix<double>(Q[0].M,Q[0].N));
+	Q[1].reserve(Q[0].M,Q[0].N);
 	LinMap.BlockEvaluate(Q[0],Q[1]);							// Q[1] = LinMap(Q[0])
-	A.push_back(LinAlg::Matrix<double>(Q[0].N,Q[1].N));
+	A[0].reserve(Q[0].N,Q[1].N);
 	BlockSkalarProduct(Q[0],Q[1],A[0]);							// A[0] = Q[0]^T.Q[1]
 	SubtractMultipliedMatrix(Q[1],Q[0],A[0]);					// Q[1] = Q[1] - Q[0].A[0]
 	LoewdinSVDOrthonormalize(Q[1],epsSV,nSV); 					// SVD Orthonormalize Q[1]
 
 	for (uint32_t i = 1; i < N; i++)
 	{
-		Q.push_back(LinAlg::Matrix<double>(Q[i].M,Q[i].N));
+		Q[i+1].reserve(Q[i].M,Q[i].N);
 		LinMap.BlockEvaluate(Q[i],Q[i+1]);						// Q[i+1] = LinMap(Q[i])
-		A.push_back(LinAlg::Matrix<double>(Q[i].N,Q[i].N));
+		A[i].reserve(Q[i].N,Q[i].N);
 		BlockSkalarProduct(Q[i],Q[i+1],A[i]);					// A[i]   = Q[i]^T.Q[i+1]
-		B.push_back(LinAlg::Matrix<double>(Q[i-1].N,Q[i+1].N));
+		B[i].reserve(Q[i-1].N,Q[i+1].N);
 		BlockSkalarProduct(Q[i-1],Q[i+1],B[i]);					// B[i]   = Q[i-1]^T.Q[i+1]
 		SubtractMultipliedMatrix(Q[i+1],Q[i],A[i]);				// Q[i+1] = Q[i+1] - Q[i].A[i] - Q[i-1].B[i]
 		SubtractMultipliedMatrix(Q[i+1],Q[i-1],B[i]);
