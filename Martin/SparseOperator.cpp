@@ -156,6 +156,7 @@ int CompSortPair(const void* a,const void* b)
 void LoewdinSVDOrthonormalize(LinAlg::Matrix<double> &A, double epsSV, uint32_t &nSV)
 {
 	double *U, *S, *VT, *work;
+	int *iwork;
 	char const *JOBU ="S";  /* in SVD A = U S V^T return the first min(Ni,Nj) collumns of U in matrix A, which is over written */
 	char const *JOBVT="A";  /* in SVD A = U S V^T return full array VT */
 
@@ -165,12 +166,14 @@ void LoewdinSVDOrthonormalize(LinAlg::Matrix<double> &A, double epsSV, uint32_t 
 	int info;
 	uint32_t lwork = Max(5,Mrow)*Max(5,Ncol);
 	nSV  = Min(Mrow,Ncol);
-	U    = (double*) malloc(Mrow*Ncol      * sizeof(double));
-	S 	 = (double*) malloc(nSV            * sizeof(double));
-	VT 	 = (double*) malloc(Ncol * Ncol    * sizeof(double));
-	work = (double*) malloc(lwork 		   * sizeof(double));
+	U    = (double*) malloc(Mrow*Ncol       * sizeof(double));
+	S 	 = (double*) malloc(nSV             * sizeof(double));
+	VT 	 = (double*) malloc(Ncol * Ncol     * sizeof(double));
+	work = (double*) malloc(lwork 		    * sizeof(double));
+	iwork= (int   *) malloc(8*Min(Mrow,Ncol)* sizeof(int));
 
-	dgesvd(JOBU, JOBVT,&Mrow,&Ncol,A.Entries,&Mrow,S,U,&Mrow,VT,&Ncol,work,&lwork,&info);
+	//dgesvd(JOBU, JOBVT,&Mrow,&Ncol,A.Entries,&Mrow,S,U,&Mrow,VT,&Ncol,work,&lwork,&info);
+	dgesdd(JOBU, &Mrow, &Ncol, A.Entries, &Mrow, S, U, &Mrow, VT, &Ncol, work, &lwork, iwork, &info);
 /*	printf("Singular Values:\n");
 	for (uint32_t i = 0; i < nSV; i++)
 	{
@@ -197,7 +200,7 @@ void LoewdinSVDOrthonormalize(LinAlg::Matrix<double> &A, double epsSV, uint32_t 
 */
 	if (info)
 	{
-		printf("error in LoewdinSVDOrthonormalize : dgesvd info = %d\n",info);
+		printf("error in LoewdinSVDOrthonormalize : dgesdd info = %d\n",info);
 	}
 	else
 	{
@@ -241,11 +244,13 @@ void LoewdinSVDOrthonormalize(LinAlg::Matrix<double> &A, double epsSV, uint32_t 
 				LoewdinSVDOrthonormalize(A,epsSV,nSV);
 			}
 		}
-		free(U);
-		free(S);
-		free(VT);
-		free(work);
+
 	}
+	free(U);
+	free(S);
+	free(VT);
+	free(work);
+	free(iwork);
 
 
 }
