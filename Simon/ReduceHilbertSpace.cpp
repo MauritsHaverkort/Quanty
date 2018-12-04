@@ -1,14 +1,8 @@
  
-TightBindingDef reduceHilbertSpaceForTightBinding(const TightBindingDef &tb, const vector<AtomType> &consideredAtoms, const vector<AtomType> &unchangedAtoms, const uint filledLigands, const uint emptyLigands)
+TightBindingDef reduceHilbertSpaceForTightBinding(const TightBindingDef &tb, const CompactMatrixType &ligandRotMat, const vector<AtomType> &consideredAtoms, const vector<AtomType> &unchangedAtoms, const uint filledLigands, const uint emptyLigands)
 {
 //TODO
 	cout << "reduceHilbertSpace for TightBinding not yet fully implemented." << endl;
-}
-
-OperatorType reduceHilbertSpaceForOperator(OperatorType &hamil, const uint unchangedStates, const uint filledLigands, const uint emptyLigands)
-{
-//	TODO
-	cout << "reduceHilbertSpace for Operator not yet fully implemented." << endl;
 }
 
 CompactMatrixType reducedHilbertSpaceMatrix(const CompactMatrixType &H, const CompactMatrixType &ligandRotMat, CompactMatrixType &T, const uint unchangedStates, const uint ligandNum)
@@ -138,7 +132,24 @@ CompactMatrixType reduceHilbertSpaceForMatrix(const CompactMatrixType &H, Compac
 	return out;
 }
 
-
+OperatorType reduceHilbertSpaceForOperator(const OperatorType &hamil, CompactMatrixType &T, const uint unchangedStates, const uint filledLigands, const uint emptyLigands)
+{
+	CompactMatrixType Rho, HMat, HMatRed;
+	OperatorType out;
+	Rho = CompactMatrixType();
+	Rho.Ni = hamil.NFermion;
+	Rho.Nj = hamil.NFermion;
+	Rho.QComplex = 0;
+	InitCompactMatrix(&Rho);
+	HMat = CompactMatrixType();
+	MeanFieldOperatorOneElectronMatrix(&hamil, &HMat, Rho);
+	HMatRed = reduceHilbertSpaceForMatrix(HMat, T, unchangedStates, filledLigands, emptyLigands);
+	out = CompactMatrixToOperator(HMatRed);
+	FreeCompactMatrix(&Rho);
+	FreeCompactMatrix(&HMat);
+	FreeCompactMatrix(&HMatRed);
+	return out;
+}
 
 
 
@@ -150,7 +161,7 @@ static int LuaReduceHilbertSpace(lua_State * L)
 {
 	TightBindingDef tb;
 	OperatorType op;
-	CompactMatrixType mat;
+	CompactMatrixType mat, T;
   struct
   {
 		uint filledLigands = 200;
@@ -176,7 +187,7 @@ static int LuaReduceHilbertSpace(lua_State * L)
 		lua_check(L, 2, consideredAtoms);
 		vector<AtomType> unchangedAtoms;
 		lua_check(L, 3, unchangedAtoms);
-		lua_push(L, reduceHilbertSpaceForTightBinding(tb, consideredAtoms, unchangedAtoms, Options.filledLigands, Options.emptyLigands));
+		lua_push(L, reduceHilbertSpaceForTightBinding(tb, T, consideredAtoms, unchangedAtoms, Options.filledLigands, Options.emptyLigands));
 	} else if (luaL_isType(L, 1, op))
 	{
 		lua_check(L, 1, op);
@@ -184,7 +195,7 @@ static int LuaReduceHilbertSpace(lua_State * L)
 			return luaL_error(L,"Error: ReduceHilbertSpace expects a Hermitian operator as input.");
 		uint unchangedStates;
 		lua_check(L, 2, unchangedStates);
-		lua_push(L, reduceHilbertSpaceForOperator(op, unchangedStates, Options.filledLigands, Options.emptyLigands));
+		lua_push(L, reduceHilbertSpaceForOperator(op, T, unchangedStates, Options.filledLigands, Options.emptyLigands));
 	} else if (luaL_isType(L, 1, mat))
 	{
 		lua_check(L, 1, mat);
@@ -196,13 +207,12 @@ static int LuaReduceHilbertSpace(lua_State * L)
 		lua_check(L, 2, unchangedStates);
 		if (unchangedStates >= mat.Ni)
 			return luaL_error(L,"Error: Number of unchanged states (%d) must be smaller than dimension of matrix (%d).",unchangedStates, mat.Ni);
-		CompactMatrixType T;
 		lua_push(L, reduceHilbertSpaceForMatrix(mat, T, unchangedStates, Options.filledLigands, Options.emptyLigands));
-		lua_push(L, T);
 	} else
 	{
 		return luaL_error(L, "Error: ReduceHilbertSpace only implemented for Tight-Binding Objects, Operators and Matrices.");
 	}
+	lua_push(L, T);
 	return 2;
 }
 
