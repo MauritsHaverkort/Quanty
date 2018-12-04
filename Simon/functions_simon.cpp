@@ -18,6 +18,15 @@ void debug(vector<T> vec)
 		cout << "elem=" << i << ", vec[i]=" << vec[i] << endl;
 }
 
+template<typename keyType, typename valType>
+void debug(const map<keyType, valType> &m)
+{
+	debug();
+	typename map<keyType, valType>::const_iterator iter;
+	for (iter = m.begin(); iter != m.end(); ++iter)
+		cout << "Key=" << iter->first << ", Val=" << iter->second << endl;
+}
+
 void debug(CompactMatrixType M, string str)
 {
 	debug(str);
