@@ -782,7 +782,7 @@ static int LuaSparseTridiagonalize(lua_State *L)
 	LinAlg::Matrix<double> startblock;
 	uint32_t N;
 	lua_check(L,2,psi);
-	//lua_check(L,3,dets);
+	lua_check(L,5,dets);
 	lua_check(L,4,N);
 	OperatorType *OppT = (OperatorType *) luaL_checkudata(L, 3, "Operator_Type");
 	Opsi = std::vector<WaveFunctionType>(psi.size());
@@ -793,7 +793,7 @@ static int LuaSparseTridiagonalize(lua_State *L)
 	for(uint32_t i = 0; i < startblock.N; i++)
 	{
 		OperatorPsi(*OppT,*(psi[i]),&(Opsi[i]));
-		WaveFunctionToVector(&(Opsi[i]),psiTransformed,&(Opsi[0]));
+		WaveFunctionToVector(&(Opsi[i]),psiTransformed,dets);
 		//WaveFunctionToVector(psi[i],TEST[i],dets);
 		for (uint32_t j = 0; j < startblock.M; j++)
 		{
