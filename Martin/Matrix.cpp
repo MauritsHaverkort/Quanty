@@ -24,6 +24,10 @@ Matrix<F>::Matrix(uint32_t Mrows,uint32_t Ncols,bool RowMajor = false)
 	N = Ncols;
 	this->RowMajor = RowMajor;
 	Entries = (F*) malloc( sizeof(F)*M*N );
+	if(!Entries)
+	{
+		printf("Failed to allocate memory for %u by %u Matrix\n",M,N);
+	}
 	//printf("alloc constr\n");
 
 }
@@ -36,6 +40,10 @@ void Matrix<F>::copy(const Matrix<F> &A)
 	RowMajor = A.RowMajor;
 	free(Entries);
 	Entries = (F*) malloc( sizeof(F)*M*N );
+	if(!Entries)
+	{
+		printf("Failed to allocate memory for copying a %u by %u Matrix\n",M,N);
+	}
 	for (uint32_t i = 0; i < M*N; i++)
 	{
 		Entries[i] = A.Entries[i];
@@ -138,6 +146,11 @@ void Matrix<F>::reserve(uint32_t Mnew, uint32_t Nnew)
 	else
 	{
 		Entries = (F*) malloc (M*N*sizeof(F));
+
+	}
+	if(!Entries)
+	{
+		printf("Failed to reserve memory for %u by %u Matrix\n",M,N);
 	}
 }
 template<typename F>
