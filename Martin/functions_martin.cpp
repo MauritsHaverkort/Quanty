@@ -449,16 +449,54 @@ static int LuaMetricWaveFuns(lua_State *L)
 
 static int LuaMartinTest(lua_State *L)
 {
-	WaveFunctionType *dets;
-	lua_check(L,1,dets);
-	std::vector<double> psiTransformed;
-	WaveFunctionToVector(dets,psiTransformed,dets);
-	printf("GRoesser\t%u\t%u\n",psiTransformed.size(),dets->N);
-	for (uint32_t i = 0; i < psiTransformed.size(); i++)
+	LinAlg::CSRMatrix<double> *M = (LinAlg::CSRMatrix<double> *) luaL_checkudata(L, 1, "CSRMatrix_Type");
+	M->Print();
+	WaveFunctionType *psi = (WaveFunctionType *) luaL_checkudata(L, 2, "Wavefunction_Type");
+	std::vector<double> vec, a, b, y;
+	WaveFunctionToVector(psi,vec,psi);
+	uint32_t Mrow = vec.size();
+	uint32_t Ncol = 2;
+	LinAlg::Matrix<double> startblock = LinAlg::Matrix<double>(Mrow,Ncol);
+	/*for(uint32_t i = 0; i < Mrow;i++)
 	{
-		printf("%.4e\n",psiTransformed[i]);
+		startblock.Entries[i] = vec[i];
+		startblock.Entries[i+Mrow] = vec[i]+i;
+	}*/
+	startblock.Entries[0] = -1;
+	startblock.Entries[1] =  0;
+	startblock.Entries[2] =  3;
+	startblock.Entries[3] =  1;
+	startblock.Entries[4] =  1;
+	startblock.Entries[5] =  3;
+
+	startblock.Entries[6] =  2;
+	startblock.Entries[7] =  1;
+	startblock.Entries[8] =  1;
+	startblock.Entries[9] =  0;
+	startblock.Entries[10] = 0;
+	startblock.Entries[11] = 3;
+	std::vector<LinAlg::Matrix<double> > T,A,B;
+	double epsSV = 100*DBL_EPSILON;
+	uint32_t N = 4;
+	BlockLanczos(*M,startblock,N,epsSV,A,B,T);
+	printf("A:\n");
+	for (int i = 0; i < N; i++)
+	{
+		A[i].print();
+		printf("\n");
 	}
-	printf("GRoesser\t%u\t%u\n",psiTransformed.size(),dets->N);
+	printf("B:\n");
+	for (int i = 0; i < N; i++)
+	{
+		B[i].print();
+		printf("\n");
+	}
+	printf("T:\n");
+	for (int i = 0; i < N; i++)
+	{
+		T[i].print();
+		printf("\n");
+	}
 	return 0;
 }
 
@@ -556,10 +594,27 @@ static int LuaEvaluateSelfEnergy(lua_State *L)
 	uint32_t lenW = floor((wMax-wMin)/dw) + 1;
 	std::vector<CompactMatrixType *> selfenergy = std::vector<CompactMatrixType *>(lenW);
 	double w = wMin;
-	for (uint32_t i = 0; i < lenW; i++)
+	if (len == 7)
 	{
-		w = wMin + i*dw;
-		selfenergy[i] = EvaluateSelfEnergy(w,gS,SigmaRes);
+		std::vector<double> energyshift;
+		lua_check(L,7,energyshift);
+		if (energyshift.size() != SigmaRes.size())
+		{
+			return luaL_error(L,"LuaEvaluateSelfEnergy: %u = energyshift.size() != SigmaRes.size() = %u \n",energyshift.size() , SigmaRes.size());
+		}
+		for (uint32_t i = 0; i < lenW; i++)
+		{
+			w = wMin + i*dw;
+			selfenergy[i] = EvaluateSelfEnergy(w,gS,SigmaRes,energyshift);
+		}
+	}
+	else
+	{
+		for (uint32_t i = 0; i < lenW; i++)
+		{
+			w = wMin + i*dw;
+			selfenergy[i] = EvaluateSelfEnergy(w,gS,SigmaRes);
+		}
 	}
 	if (len > 5)
 	{
@@ -804,11 +859,72 @@ static int LuaSparseTridiagonalize(lua_State *L)
 	{
 		WaveFunctionFree(&(Opsi[i]));
 	}
-	//lua_push(L,TEST);
-	//return 1; // ----------------------------------------------------------TEST ENDE --------------
 	std::vector<LinAlg::Matrix<double> > T,A,B;
 	double epsSV = 100*DBL_EPSILON;
 	BlockLanczos(Hsparse,startblock,N,epsSV,A,B,T);
+	BlockTriDiagonalMatrixType GTri;
+	GTri.BlockSize = startblock.N;
+    GTri.N = N;
+    GTri.QComplex=0;
+    InitBlockTridiagonalMatrix(&GTri);
+    GTri.mu=0;
+    uint32_t bs = GTri.BlockSize;
+    for(uint32_t k = 0; k < N; k++)
+    {
+    	for (uint32_t i = 0; i < A[k].M; i++)
+    	{
+    		for (uint32_t j = 0; j < A[k].N; j++)
+    		{
+    			GTri.aRe[(k+1)*bs*bs + i*bs + j] = A[k].Entries[j*A[k].M +i];
+    		}
+    	}
+    	for (uint32_t i = 0; i < B[k].M; i++)
+		{
+			for (uint32_t j = 0; j < B[k].N; j++)
+			{
+				GTri.bRe[k*bs*bs + i*bs + j] = B[k].Entries[j*B[k].M +i];
+			}
+		}
+    }
+
+    LuaPushTable_BlockTriDiagonalMatrixType(L, &GTri);
+
+	return 1;
+
+}
+
+static int LuaCSRTridiagonalize(lua_State *L)
+{
+	LinAlg::CSRMatrix<double> *Hsparse = (LinAlg::CSRMatrix<double> *) luaL_checkudata(L, 1, "CSRMatrix_Type");
+	std::vector<WaveFunctionType*> psi;
+	std::vector<WaveFunctionType> Opsi;
+	WaveFunctionType *dets;
+	std::vector<double> psiTransformed;
+	LinAlg::Matrix<double> startblock;
+	uint32_t N;
+	lua_check(L,2,psi);
+	lua_check(L,5,dets);
+	lua_check(L,4,N);
+	OperatorType *OppT = (OperatorType *) luaL_checkudata(L, 3, "Operator_Type");
+	Opsi = std::vector<WaveFunctionType>(psi.size());
+	startblock.reserve(dets->N,psi.size());
+	printf("Matrix created with %lu nve\n",Hsparse->A.size());
+	for(uint32_t i = 0; i < startblock.N; i++)
+	{
+		OperatorPsi(*OppT,*(psi[i]),&(Opsi[i]));
+		WaveFunctionToVector(&(Opsi[i]),psiTransformed,dets);
+		for (uint32_t j = 0; j < startblock.M; j++)
+		{
+			startblock.Entries[i*startblock.M + j] = psiTransformed[j];
+		}
+	}
+	for (uint32_t i = 0; i < startblock.N; i++)
+	{
+		WaveFunctionFree(&(Opsi[i]));
+	}
+	std::vector<LinAlg::Matrix<double> > T,A,B;
+	double epsSV = 100*DBL_EPSILON;
+	BlockLanczos(*Hsparse,startblock,N,epsSV,A,B,T);
 	BlockTriDiagonalMatrixType GTri;
 	GTri.BlockSize = startblock.N;
     GTri.N = N;
@@ -844,9 +960,11 @@ static int LuaSparseOperator(lua_State *L)
 {
 	OperatorType *H = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
 	WaveFunctionType *psi = (WaveFunctionType *) luaL_checkudata(L, 2, "Wavefunction_Type");
-	LinAlg::CSRMatrix<double> M;
-	OperatorToSparseMatrix(H,psi,M);
-	M.Print();
+	void* memory = lua_newuserdata(L, sizeof(LinAlg::CSRMatrix<double>));
+	LinAlg::CSRMatrix<double> *M = new(memory) LinAlg::CSRMatrix<double>;
+	luaL_setmetatable(L,"CSRMatrix_Type");
+	OperatorToSparseMatrix(H,psi,*M);
+	M->Print();
 	//printf("Matrix created with %lu nve\n",M.A.size());
 	std::vector<double> vec, a, b, y;
 	WaveFunctionToVector(psi,vec,psi);
@@ -874,7 +992,7 @@ static int LuaSparseOperator(lua_State *L)
 	std::vector<LinAlg::Matrix<double> > T,A,B;
 	double epsSV = 100*DBL_EPSILON;
 	uint32_t N = 4;
-	BlockLanczos(M,startblock,N,epsSV,A,B,T);
+	BlockLanczos(*M,startblock,N,epsSV,A,B,T);
 	printf("A:\n");
 	for (int i = 0; i < N; i++)
 	{
@@ -894,7 +1012,7 @@ static int LuaSparseOperator(lua_State *L)
 		printf("\n");
 	}
 
-	return 0;
+	return 1;
 /*	lua_push(L,A);
 	lua_push(L,B);
 	return 2;*/
@@ -1014,6 +1132,19 @@ static int LuaSparseOperator(lua_State *L)
     return 0;
 }
 
+static int LuaOperatorToCSRMatrix(lua_State *L)
+{
+	OperatorType *H = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
+	WaveFunctionType *dets;
+	lua_check(L,2,dets);
+
+	void* memory = lua_newuserdata(L, sizeof(LinAlg::CSRMatrix<double>));
+	LinAlg::CSRMatrix<double> *Hsparse = new(memory) LinAlg::CSRMatrix<double>;
+	luaL_setmetatable(L,"CSRMatrix_Type");
+	OperatorToSparseMatrix(H,dets,*Hsparse);
+	return 1;
+}
+
 static const struct luaL_Reg Martin_meta[] = {
   {NULL, NULL}
 };
@@ -1067,6 +1198,8 @@ static const struct luaL_Reg Martin_func[] = {
   {"ED",LuaEigenDifferential},
   {"SparseOperator",LuaSparseOperator},
   {"SparseTri",LuaSparseTridiagonalize},
+  {"OperatorToCSRMatrix",LuaOperatorToCSRMatrix},
+  {"CSRTridiagonalize",LuaCSRTridiagonalize},
   {NULL, NULL}
 };
 

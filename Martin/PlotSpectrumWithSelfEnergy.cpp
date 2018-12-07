@@ -81,6 +81,21 @@ CompactMatrixType *EvaluateSelfEnergy(double w, double gS, const std::vector<Res
 	return sigma;
 }
 
+CompactMatrixType *EvaluateSelfEnergy(double w, double gS, const std::vector<ResponsefunctionType *> &SigmaRes, const std::vector<double> &energyshift)
+{
+	CompactMatrixType *sigma, temp;
+	sigma = (CompactMatrixType *)malloc(sizeof(CompactMatrixType));
+	EvaluateBlockResponsefunctionType(SigmaRes[0],sigma,w-energyshift[0],gS);
+	for (uint32_t i = 1; i < SigmaRes.size(); i++)
+	{
+		EvaluateBlockResponsefunctionType(SigmaRes[i],&temp,w-energyshift[i],gS);
+		CompactMatrixAdd(sigma,&temp);
+		FreeCompactMatrix(&temp);
+	}
+
+	return sigma;
+}
+
 void WriteDataToFile(CompactMatrixType * M, const char *filename)
 {
 	FILE *f = fopen(filename,"wb");
