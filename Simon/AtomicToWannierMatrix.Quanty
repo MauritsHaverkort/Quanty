@@ -1,0 +1,6 @@
+M, names = Simon.AtomicToWannierMatrix("CrF4_WFC")
+print( "\n\n\nMatrix:" )
+print( Matrix.ToUserdata( M ) )
+
+print("\n\n\nOrbital Names:")
+print(names)
