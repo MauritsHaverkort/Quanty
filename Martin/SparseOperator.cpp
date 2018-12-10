@@ -7,7 +7,11 @@
 
 uint32_t OperatorToSparseMatrix(const OperatorType * const O, const WaveFunctionType * const psi, LinAlg::CSRMatrix<double> &M)
 {
-  std::vector<std::map<uint32_t,double> > entries = std::vector<std::map<uint32_t,double> >(psi->N);
+  printf("OTSM 1\n");
+		  fflush(stdout);
+	std::vector<std::map<uint32_t,double> > entries = std::vector<std::map<uint32_t,double> >(psi->N);
+	printf("OTSM 2\n");
+			  fflush(stdout);
   if((O->QComplex!=0))
   {
 	  printf("error in OperatorToDeterminatMatrix: Sparse Matrix is real but Operator is complex\n");

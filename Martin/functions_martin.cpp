@@ -840,7 +840,11 @@ static int LuaSparseTridiagonalize(lua_State *L)
 	lua_check(L,5,dets);
 	lua_check(L,4,N);
 	OperatorType *OppT = (OperatorType *) luaL_checkudata(L, 3, "Operator_Type");
+	printf("psi.size = %u\t dets.N = %u\n",psi.size(),dets->N);
+			  fflush(stdout);
 	Opsi = std::vector<WaveFunctionType>(psi.size());
+	printf("reserve startblock\n");
+				fflush(stdout);
 	startblock.reserve(dets->N,psi.size());
 	OperatorToSparseMatrix(H,dets,Hsparse);
 	//TEST = std::vector<std::vector<double> >(psi.size());
