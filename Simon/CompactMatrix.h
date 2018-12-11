@@ -8,3 +8,4 @@ bool isZeroMatrix(const CompactMatrixType &M, const double zero);
 void FreeCompactMatrixMatrix(vector<vector<CompactMatrixType> > &matMat);
 void CompactMatrixCutDimensions(CompactMatrixType &M);
 CompactMatrixType SubspaceRotationMatrix(const uint dim1, const CompactMatrixType &T, const uint dim2);
+CompactMatrixType MatrixTypeToCompactMatrixType(const MatrixType &M);

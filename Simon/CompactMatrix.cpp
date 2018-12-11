@@ -159,3 +159,30 @@ CompactMatrixType SubspaceRotationMatrix(const uint dim1, const CompactMatrixTyp
 	FreeCompactMatrix(&one2);
 	return out;
 }
+
+CompactMatrixType MatrixTypeToCompactMatrixType(const MatrixType &M)
+{
+	CompactMatrixType out = CompactMatrixType();
+	out.Ni = M.Ni;
+	out.Nj = M.Nj;
+	out.QComplex = M.QComplex;
+	InitCompactMatrix(&out);
+	strcpy(out.Name, M.Name);
+	out.a0 = M.a0;
+	out.b0 = M.b0;
+	out.mu = M.mu;
+	for (uint i = 0; i < M.Ni; ++i)
+		for (uint j = 0; j < M.Nj; ++j)
+			if (M.QComplex == 0)
+			{
+				out.VRe[i * out.Nj + j] = M.VRe[i][j];
+			} else
+			{
+				out.V[i * out.Nj + j].Re = M.VRe[i][j];
+				out.V[i * out.Nj + j].Im = M.VIm[i][j];
+			}
+	return out;
+}
+
+
+
