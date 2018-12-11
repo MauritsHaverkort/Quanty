@@ -1,5 +1,7 @@
 #include "functions_simon.cpp" 
 #include "AtomicNumberOperators.cpp"
 #include "AtomicToWannierMatrix.cpp"
+#include "CompactMatrix.cpp"
 #include "MatrixToOperator.cpp"
+#include "ReduceHilbertSpace.cpp"
 #include "TightBindingCopy.cpp"

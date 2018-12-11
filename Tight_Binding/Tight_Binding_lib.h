@@ -74,6 +74,7 @@ MatrixType YToKMatrix(const int multiplicity, const bool addSpin);
 MatrixType YToZMatrix(const int multiplicity, const bool addSpin);
 MatrixType YToJJzMatrix(const int size);
 MatrixType YToJJzMatrix(const int size, const bool addSpin);
+MatrixType orbitalPermutationMatrix(const vector<string> &oldVec, const vector<string> &newVec, bool addSpin);
 MatrixType orbitalPermutationMatrix(const vector<string> &oldVec, const vector<string> &newVec);
 bool QChangeFromRelToNonRel(const vector<string> &orbs1, const vector<string> &orbs2);
 int NumberOfFermionicStates(const vector<string> &orbs);

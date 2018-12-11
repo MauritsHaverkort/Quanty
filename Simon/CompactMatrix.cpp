@@ -122,6 +122,13 @@ void FreeCompactMatrixMatrix(vector<vector<CompactMatrixType> > &matMat)
 				FreeCompactMatrix(&matMat[i][j]);
 }
 
+void FreeMatrixMatrix(vector<vector<MatrixType> > &matMat)
+{
+	for (uint i = 0; i < (uint) matMat.size(); ++i)
+		for (uint j = 0; j < (uint) matMat.size(); ++j)
+			if (!isNullMatrix(matMat[i][j]))
+				FreeMatrix(&matMat[i][j]);
+}
 
 void CompactMatrixCutDimensions(CompactMatrixType &M)
 {

@@ -1,7 +1,3 @@
-#include "CompactMatrix.h"
-#include "ReduceHilbertSpace.h"
-#include "CompactMatrix.cpp"
-#include "ReduceHilbertSpace.cpp"
 
 template<typename T>
 void debug(T debugMessage)
