@@ -3070,18 +3070,31 @@ MatrixType YToJJzMatrix(const int size, const bool addSpin)
 	return out;
 }
 
-MatrixType orbitalPermutationMatrix(const vector<string> &oldVec, const vector<string> &newVec)
+MatrixType orbitalPermutationMatrix(const vector<string> &oldVec, const vector<string> &newVec, bool addSpin)
 {
+	MatrixType out;
+	uint spinFac = 0;
+	if (addSpin)
+		spinFac = 1;
+	else
+		spinFac = 2;
 	vector<int> permVec = permutationVector(oldVec, newVec);
 	if (permVec.size() == 0)
 		return nullMatrix();
 	vector < vector<MatrixType> > matMat = nullMatrixMatrix((uint32_t)newVec.size(), (uint32_t)oldVec.size());
 	for (int i = 0; i < permVec.size(); ++i)
 	{
-		MatrixType identityMat = identityMatrix(orbToMultiplicity(newVec[i]));
+		MatrixType identityMat = identityMatrix(orbToMultiplicity(newVec[i])/spinFac);
 		matMat[i][permVec[i]] = identityMat;
 	}
-	return MatrixFlatten(matMat);
+	out = MatrixFlatten(matMat);
+	FreeMatrixMatrix(matMat);
+	return out;
+}
+
+MatrixType orbitalPermutationMatrix(const vector<string> &oldVec, const vector<string> &newVec)
+{
+	return orbitalPermutationMatrix(oldVec, newVec, true);
 }
 
 bool QChangeFromRelToNonRel(const vector<string> &orbs1, const vector<string> &orbs2)

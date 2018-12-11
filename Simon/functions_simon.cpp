@@ -1,6 +1,3 @@
-#include "CompactMatrix.h"
-#include "CompactMatrix.cpp"
-
 template<typename T>
 void debug(T debugMessage)
 {
