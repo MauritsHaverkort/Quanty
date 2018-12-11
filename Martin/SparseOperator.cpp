@@ -53,7 +53,7 @@ uint32_t OperatorToSparseMatrix(OperatorType * const O, const WaveFunctionType *
 } 				// end of parallel region
 	printf("OTSM 3\t entries.size = %u\n",entries.size());
 		  fflush(stdout);
-  FreeOperator(O);
+  //FreeOperator(O);
   for (uint32_t i = 0; i < entries.size(); i++)
   {
 	  M.AddRow(entries[i]);
@@ -92,7 +92,7 @@ void WaveFunctionToVector(const WaveFunctionType * const psi,std::vector<double>
 		}
 		else
 		{
-			printf("Warning in WaveFunctionToVector: Determinant not found in indexWavefunction; ignoring determinant\n");
+			//printf("Warning in WaveFunctionToVector: Determinant not found in indexWavefunction; ignoring determinant\n");
 		}
 
 	}
