@@ -3072,7 +3072,10 @@ MatrixType YToJJzMatrix(const int size, const bool addSpin)
 
 MatrixType orbitalPermutationMatrix(const vector<string> &oldVec, const vector<string> &newVec, bool addSpin)
 {
+<<<<<<< Updated upstream
 	MatrixType out;
+=======
+>>>>>>> Stashed changes
 	uint spinFac = 0;
 	if (addSpin)
 		spinFac = 1;
@@ -3087,6 +3090,7 @@ MatrixType orbitalPermutationMatrix(const vector<string> &oldVec, const vector<s
 		MatrixType identityMat = identityMatrix(orbToMultiplicity(newVec[i])/spinFac);
 		matMat[i][permVec[i]] = identityMat;
 	}
+<<<<<<< Updated upstream
 	out = MatrixFlatten(matMat);
 	FreeMatrixMatrix(matMat);
 	return out;
@@ -3097,6 +3101,15 @@ MatrixType orbitalPermutationMatrix(const vector<string> &oldVec, const vector<s
 	return orbitalPermutationMatrix(oldVec, newVec, true);
 }
 
+
+MatrixType orbitalPermutationMatrix(const vector<string> &oldVec, const vector<string> &newVec)
+{
+	return orbitalPermutationMatrix(oldVec, newVec, true);
+=======
+
+	return MatrixFlatten(matMat);
+>>>>>>> Stashed changes
+}
 
 MatrixType orbitalPermutationMatrix(const vector<string> &oldVec, const vector<string> &newVec)
 {
