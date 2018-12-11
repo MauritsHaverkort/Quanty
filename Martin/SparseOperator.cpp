@@ -5,7 +5,7 @@
  *      Author: brass
  */
 
-uint32_t OperatorToSparseMatrix(const OperatorType * const O, const WaveFunctionType * const psi, LinAlg::CSRMatrix<double> &M)
+uint32_t OperatorToSparseMatrix(OperatorType * const O, const WaveFunctionType * const psi, LinAlg::CSRMatrix<double> &M)
 {
   printf("OTSM 1\n");
 		  fflush(stdout);
@@ -51,11 +51,16 @@ uint32_t OperatorToSparseMatrix(const OperatorType * const O, const WaveFunction
   }
   free(Det);
 } 				// end of parallel region
-
+	printf("OTSM 3\t entries.size = %u\n",entries.size());
+		  fflush(stdout);
+  FreeOperator(O);
   for (uint32_t i = 0; i < entries.size(); i++)
   {
 	  M.AddRow(entries[i]);
+	  entries[i].clear();
   }
+	printf("OTSM 4\n");
+			  fflush(stdout);
   return 0;
 }
 
