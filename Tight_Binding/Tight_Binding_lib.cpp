@@ -3097,6 +3097,12 @@ MatrixType orbitalPermutationMatrix(const vector<string> &oldVec, const vector<s
 	return orbitalPermutationMatrix(oldVec, newVec, true);
 }
 
+
+MatrixType orbitalPermutationMatrix(const vector<string> &oldVec, const vector<string> &newVec)
+{
+	return orbitalPermutationMatrix(oldVec, newVec, true);
+}
+
 bool QChangeFromRelToNonRel(const vector<string> &orbs1, const vector<string> &orbs2)
 {
 	for (int i = 0; i < orbs1.size(); ++i)
