@@ -1,6 +1,6 @@
 
 template<typename T>
-void debug(T debugMessage)
+void debug(const T debugMessage)
 {
 	cout << endl << endl << "DEBUG: " << debugMessage << endl << endl;
 	fflush(stdout);
@@ -12,7 +12,7 @@ void debug()
 }
 
 template<typename T>
-void debug(vector<T> vec)
+void debug(const vector<T> &vec)
 {
 	debug();
 	for (int i = 0; i < vec.size(); ++i)
@@ -28,7 +28,7 @@ void debug(const map<keyType, valType> &m)
 		cout << "Key=" << iter->first << ", Val=" << iter->second << endl;
 }
 
-void debug(CompactMatrixType M, string str)
+void debug(const CompactMatrixType &M, const string &str)
 {
 	debug(str);
 	cout << "{" << endl;
@@ -50,7 +50,7 @@ void debug(CompactMatrixType M, string str)
 	cout << "}" << endl << endl;
 }
 
-void debug(MatrixType M, string str)
+void debug(const MatrixType &M, const string &str)
 {
 	debug(str);
 	cout << "{" << endl;
@@ -66,12 +66,12 @@ void debug(MatrixType M, string str)
 	cout << "}" << endl << endl;
 }
 
-void debug(CompactMatrixType M)
+void debug(const CompactMatrixType &M)
 {
 	debug(M, "Matrix-Print");
 }
 
-void debug(MatrixType M)
+void debug(const MatrixType &M)
 {
 	debug(M, "Matrix-Print");
 }
