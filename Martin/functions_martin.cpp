@@ -832,7 +832,6 @@ static int LuaSparseTridiagonalize(lua_State *L)
 	std::vector<WaveFunctionType> Opsi;
 	WaveFunctionType *dets;
 	std::vector<double> psiTransformed;
-	std::vector<std::vector<double> > TEST;
 	LinAlg::CSRMatrix<double> Hsparse;
 	LinAlg::Matrix<double> startblock;
 	uint32_t N;
@@ -840,20 +839,14 @@ static int LuaSparseTridiagonalize(lua_State *L)
 	lua_check(L,5,dets);
 	lua_check(L,4,N);
 	OperatorType *OppT = (OperatorType *) luaL_checkudata(L, 3, "Operator_Type");
-	printf("psi.size = %u\t dets.N = %u\n",psi.size(),dets->N);
-			  fflush(stdout);
 	Opsi = std::vector<WaveFunctionType>(psi.size());
-	printf("reserve startblock\n");
-				fflush(stdout);
 	startblock.reserve(dets->N,psi.size());
 	OperatorToSparseMatrix(H,dets,Hsparse);
-	//TEST = std::vector<std::vector<double> >(psi.size());
 	printf("Matrix created with %lu nve\n",Hsparse.A.size());
 	for(uint32_t i = 0; i < startblock.N; i++)
 	{
 		OperatorPsi(*OppT,*(psi[i]),&(Opsi[i]));
 		WaveFunctionToVector(&(Opsi[i]),psiTransformed,dets);
-		//WaveFunctionToVector(psi[i],TEST[i],dets);
 		for (uint32_t j = 0; j < startblock.M; j++)
 		{
 			startblock.Entries[i*startblock.M + j] = psiTransformed[j];
