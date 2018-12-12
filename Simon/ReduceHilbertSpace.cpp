@@ -1,9 +1,3 @@
- 
-TightBindingDef reduceHilbertSpaceForTightBinding(const TightBindingDef &tb, const CompactMatrixType &ligandRotMat, const vector<AtomType> &consideredAtoms, const vector<AtomType> &unchangedAtoms, const uint filledLigands, const uint emptyLigands)
-{
-//TODO
-	cout << "reduceHilbertSpace for TightBinding not yet fully implemented." << endl;
-}
 
 CompactMatrixType reducedHilbertSpaceMatrix(const CompactMatrixType &H, const CompactMatrixType &ligandRotMat, CompactMatrixType &T, const uint unchangedStates, const uint ligandNum)
 {
@@ -82,10 +76,47 @@ CompactMatrixType reducedHilbertSpaceRotMatFilledAndEmpty(const CompactMatrixTyp
 	return out;
 }
 
-CompactMatrixType reduceHilbertSpaceForMatrix(const CompactMatrixType &H, CompactMatrixType &T, const uint unchangedStates, const uint filledLigands, const uint emptyLigands)
+string multiplicityToNonRelOrb(const int mult)
+{
+	if (mult < 0)
+		return "Error";
+	switch (mult)
+	{
+	case 2:
+		return "s";
+	case 6:
+		return "p";
+	case 10:
+		return "d";
+	case 14:
+		return "f";
+	case 18:
+		return "g";
+	case 20:
+		return "h";
+	default:
+		return to_string(mult) + "a";
+	}
+}
+
+void addLigandNames(const CompactMatrixType &M, const string &nameBase, vector<string> &names, const uint unchangedStates)
+{
+	uint sameSymLigands = (uint) (M.Ni / unchangedStates) - 1;
+	uint i;
+	for (i = 0; i < sameSymLigands; ++i)
+		names.push_back(nameBase + "_" + to_string(i + 1) + "_" + multiplicityToNonRelOrb(2 * unchangedStates));
+	uint restLigandMult = M.Ni % unchangedStates;
+	if (restLigandMult > 0)
+		names.push_back(nameBase + "_" + to_string(i + 1) + "_" + multiplicityToNonRelOrb(2 * restLigandMult));
+}
+
+CompactMatrixType reduceHilbertSpaceForMatrix(const CompactMatrixType &H, CompactMatrixType &T, const uint unchangedStates, const uint filledLigands, const uint emptyLigands,
+		vector<string> orbNames)
 {
 	CompactMatrixType out, HLigand, eigenfunsLigand, HRedFilled, Tfilled, HRedEmpty, Tempty;
 	uint LigandMatSize = H.Ni - unchangedStates;
+	orbNames = vector<string>();
+	orbNames.push_back("unchanged_" + multiplicityToNonRelOrb(unchangedStates));
 	HLigand = Submatrix(H, unchangedStates, LigandMatSize, unchangedStates, LigandMatSize);
 	eigenfunsLigand = CompactMatrixType();
 	vector<double> eigenvals = vector<double>(LigandMatSize, 0);
@@ -104,6 +135,7 @@ CompactMatrixType reduceHilbertSpaceForMatrix(const CompactMatrixType &H, Compac
 		CompactMatrixType filledLigRotMatToDiag = Submatrix(eigenfunsLigand, 0, numNegVals, 0, eigenfunsLigand.Ni);
 		HRedFilled = reducedHilbertSpaceMatrix(H, filledLigRotMatToDiag, Tfilled, unchangedStates, filledLigands);
 		CompactMatrixChop(&HRedFilled, 100 * DBL_EPSILON);
+		addLigandNames(HRedFilled, "L_val", orbNames, unchangedStates);
 		FreeCompactMatrix(&filledLigRotMatToDiag);
 	} else
 	{
@@ -115,6 +147,7 @@ CompactMatrixType reduceHilbertSpaceForMatrix(const CompactMatrixType &H, Compac
 		CompactMatrixType emptyLigRotMatToDiag = Submatrix(eigenfunsLigand, numNegVals, eigenfunsLigand.Ni - numNegVals, 0, eigenfunsLigand.Ni);
 		HRedEmpty = reducedHilbertSpaceMatrix(H, emptyLigRotMatToDiag, Tempty, unchangedStates, emptyLigands);
 		CompactMatrixChop(&HRedEmpty, 100 * DBL_EPSILON);
+		addLigandNames(HRedEmpty, "L_con", orbNames, unchangedStates);
 		FreeCompactMatrix(&emptyLigRotMatToDiag);
 	} else
 	{
@@ -132,7 +165,20 @@ CompactMatrixType reduceHilbertSpaceForMatrix(const CompactMatrixType &H, Compac
 	return out;
 }
 
-OperatorType reduceHilbertSpaceForOperator(const OperatorType &hamil, CompactMatrixType &T, const uint unchangedStates, const uint filledLigands, const uint emptyLigands)
+CompactMatrixType reduceHilbertSpaceForMatrix(const CompactMatrixType &H, CompactMatrixType &T, const uint unchangedStates, const uint filledLigands, const uint emptyLigands)
+{
+	return reduceHilbertSpaceForMatrix(H, T, unchangedStates, filledLigands, emptyLigands, vector<string>());
+}
+
+CompactMatrixType reduceHilbertSpaceForMatrix(const CompactMatrixType &H, const uint unchangedStates, const uint filledLigands, const uint emptyLigands)
+{
+	CompactMatrixType T;
+	CompactMatrixType out = reduceHilbertSpaceForMatrix(H, T, unchangedStates, filledLigands, emptyLigands, vector<string>());
+	FreeCompactMatrix(&T);
+	return out;
+}
+
+OperatorType reduceHilbertSpaceForOperator(const OperatorType &hamil, CompactMatrixType &T, const uint unchangedStates, const uint filledLigands, const uint emptyLigands, vector<string> orbNames)
 {
 	CompactMatrixType Rho, HMat, HMatRed;
 	OperatorType out;
@@ -143,7 +189,7 @@ OperatorType reduceHilbertSpaceForOperator(const OperatorType &hamil, CompactMat
 	InitCompactMatrix(&Rho);
 	HMat = CompactMatrixType();
 	MeanFieldOperatorOneElectronMatrix(&hamil, &HMat, Rho);
-	HMatRed = reduceHilbertSpaceForMatrix(HMat, T, unchangedStates, filledLigands, emptyLigands);
+	HMatRed = reduceHilbertSpaceForMatrix(HMat, T, unchangedStates, filledLigands, emptyLigands, orbNames);
 	out = CompactMatrixToOperator(HMatRed);
 	FreeCompactMatrix(&Rho);
 	FreeCompactMatrix(&HMat);
@@ -151,6 +197,98 @@ OperatorType reduceHilbertSpaceForOperator(const OperatorType &hamil, CompactMat
 	return out;
 }
 
+OperatorType reduceHilbertSpaceForOperator(const OperatorType &H, CompactMatrixType &T, const uint unchangedStates, const uint filledLigands, const uint emptyLigands)
+{
+	return reduceHilbertSpaceForOperator(H, T, unchangedStates, filledLigands, emptyLigands, vector<string>());
+}
+
+OperatorType reduceHilbertSpaceForOperator(const OperatorType &H, const uint unchangedStates, const uint filledLigands, const uint emptyLigands)
+{
+	CompactMatrixType T;
+	OperatorType out = reduceHilbertSpaceForOperator(H, T, unchangedStates, filledLigands, emptyLigands, vector<string>());
+	FreeCompactMatrix(&T);
+	return out;
+}
+
+
+template<typename T>
+bool isElementOf(const T element, const vector<T> &set, bool (*eq)(const T&, const T&))
+{
+	for (uint i = 0; i < (uint) set.size(); ++i)
+	{
+		if (eq(element, set[i]))
+			return true;
+	}
+	return false;
+}
+
+//vector<string> AtomsToOrbs(const vector<AtomType> &atoms)
+//{
+//	vector < string > out;
+//	for (uint i = 0; i < (uint) atoms.size(); ++i)
+//		for (uint j = 0; j < atoms[i].Nshell; ++j)
+//			out.push_back(to_string(atoms[i].Name) + "_" + to_string(atoms[i].ShellName[j]));
+//	return out;
+//}
+
+
+bool QAtomsEqual(const AtomType &a1, const AtomType &a2)
+{
+	if (strcmp(a1.Name, a2.Name) != 0)
+		return false;
+	for (uint i = 0; i < 3; ++i)
+		if (a1.Position[i] != a2.Position[i])
+			return false;
+	return true;
+}
+
+
+
+void sortTbAtomToFirstPosition(TightBindingDef &tb, const AtomType &atom)
+{
+	MatrixType permMat;
+	vector<string> oldOrbs, newOrbs;
+	for (uint i = 0; i < (uint) tb.Cell.NAtoms; ++i)
+		for (uint j = 0; j < tb.Cell.Atom[i].Nshell; ++j)
+		{
+			oldOrbs.push_back(to_string(i + 1) + "_" + to_string(tb.Cell.Atom[i].Name) + "_" + to_string(tb.Cell.Atom[i].ShellName[j]));
+			if (QAtomsEqual(tb.Cell.Atom[i], atom))
+				newOrbs.push_back(oldOrbs[oldOrbs.size() - 1]);
+		}
+	for (uint i = 0; i < (uint) oldOrbs.size(); ++i)
+		if (!isElementOf(oldOrbs[i], newOrbs))
+			newOrbs.push_back(oldOrbs[i]);
+	permMat = orbitalPermutationMatrix(oldOrbs, newOrbs);
+
+//	TODO:
+	debug(oldOrbs);
+	debug(newOrbs);
+
+	debug(permMat);
+//	debug(atom.Name);
+//	debug(atom.AtomNumber);
+}
+
+TightBindingDef reduceHilbertSpaceForTightBinding(TightBindingDef &tb, const CompactMatrixType &T, const AtomType &unchangedAtom, const uint filledLigands, const uint emptyLigands)
+{
+	TightBindingDef out = TightBindingDef();
+	MatrixType hMat;
+	CompactMatrixType hMatCompact;
+//	TODO: Rotate unchanged atoms to beginning
+	if (!QAtomsEqual(unchangedAtom, tb.Cell.Atom[0]))
+		sortTbAtomToFirstPosition(tb, unchangedAtom);
+	double k[3] = {0.,0.,0.};
+	CreateHamiltonianFromTightBindingDefConstantPhaseInUnitCell(tb, k, &hMat);
+	hMatCompact = MatrixTypeToCompactMatrixType(hMat);
+
+
+
+//TODO
+	cout << "reduceHilbertSpace for TightBinding not yet fully implemented." << endl;
+	FreeMatrix(&hMat);
+	FreeCompactMatrix(&hMatCompact);
+	return out;
+}
 
 
 //Input variant 1: TB object, Atoms to be considered, Atoms to be left unchanged, options
@@ -183,36 +321,42 @@ static int LuaReduceHilbertSpace(lua_State * L)
 	{
 		lua_check(L, 1, tb);
 //		TODO: QTightBindingHermitian
-		vector<AtomType> consideredAtoms;
-		lua_check(L, 2, consideredAtoms);
-		vector<AtomType> unchangedAtoms;
-		lua_check(L, 3, unchangedAtoms);
-		lua_push(L, reduceHilbertSpaceForTightBinding(tb, T, consideredAtoms, unchangedAtoms, Options.filledLigands, Options.emptyLigands));
+		AtomType unchangedAtom;
+		lua_check(L, 2, unchangedAtom);
+		lua_push(L, reduceHilbertSpaceForTightBinding(tb, T, unchangedAtom, Options.filledLigands, Options.emptyLigands));
+		lua_push(L, T);
+		return 2;
 	} else if (luaL_isType(L, 1, op))
 	{
 		lua_check(L, 1, op);
-		if (!(bool)QOperatorHermitian(op, 10*DBL_EPSILON))
-			return luaL_error(L,"Error: ReduceHilbertSpace expects a Hermitian operator as input.");
+		if (!(bool) QOperatorHermitian(op, 10 * DBL_EPSILON))
+			return luaL_error(L, "Error: ReduceHilbertSpace expects a Hermitian operator as input.");
 		uint unchangedStates;
+		vector < string > orbNames;
 		lua_check(L, 2, unchangedStates);
-		lua_push(L, reduceHilbertSpaceForOperator(op, T, unchangedStates, Options.filledLigands, Options.emptyLigands));
+		lua_push(L, reduceHilbertSpaceForOperator(op, T, unchangedStates, Options.filledLigands, Options.emptyLigands, orbNames));
+		lua_push(L, T);
+		lua_push(L, orbNames);
+		return 3;
 	} else if (luaL_isType(L, 1, mat))
 	{
 		lua_check(L, 1, mat);
 		if (mat.Ni != mat.Nj)
-			return luaL_error(L,"Error: ReduceHilbertSpace expects a quadratic matrix as input.");
-		if (!(bool)QCompactMatrixHermitian(mat, 10*DBL_EPSILON))
-			return luaL_error(L,"Error: ReduceHilbertSpace expects a Hermitian matrix as input.");
+			return luaL_error(L, "Error: ReduceHilbertSpace expects a quadratic matrix as input.");
+		if (!(bool) QCompactMatrixHermitian(mat, 10 * DBL_EPSILON))
+			return luaL_error(L, "Error: ReduceHilbertSpace expects a Hermitian matrix as input.");
 		uint unchangedStates;
+		vector < string > orbNames;
 		lua_check(L, 2, unchangedStates);
 		if (unchangedStates >= mat.Ni)
-			return luaL_error(L,"Error: Number of unchanged states (%d) must be smaller than dimension of matrix (%d).",unchangedStates, mat.Ni);
-		lua_push(L, reduceHilbertSpaceForMatrix(mat, T, unchangedStates, Options.filledLigands, Options.emptyLigands));
+			return luaL_error(L, "Error: Number of unchanged states (%d) must be smaller than dimension of matrix (%d).", unchangedStates, mat.Ni);
+		lua_push(L, reduceHilbertSpaceForMatrix(mat, T, unchangedStates, Options.filledLigands, Options.emptyLigands, orbNames));
+		lua_push(L, T);
+		lua_push(L, orbNames);
+		return 3;
 	} else
 	{
 		return luaL_error(L, "Error: ReduceHilbertSpace only implemented for Tight-Binding Objects, Operators and Matrices.");
 	}
-	lua_push(L, T);
-	return 2;
 }
 
