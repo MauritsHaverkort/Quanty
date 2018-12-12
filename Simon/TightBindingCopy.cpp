@@ -43,10 +43,23 @@ void TightBindingCopy(const TightBindingDef &TBOld, TightBindingDef &TBNew)
 	SetNFermionIndexTightBindingDef(&TBNew);
 }
 
-void TightBindingReadyForRotate(const TightBindingDef &TBOld, TightBindingDef &TBNew)
+void TightBindingReadyForRotate(const TightBindingDef &TBOld, TightBindingDef &TBNew, const vector<AtomType> &newAtoms)
 {
 	strcpy(TBNew.Name, TBOld.Name);
 	CrystalStructureCopy(TBOld.Cell, TBNew.Cell);
+	for (uint i = 0; i < 3; ++i)
+	{
+		for (uint j = 0; j < 3; ++j)
+		{
+			TBNew.Cell.rUnitCell[i][j] = TBOld.Cell.rUnitCell[i][j];
+			TBNew.Cell.gUnitCell[i][j] = TBOld.Cell.gUnitCell[i][j];
+		}
+	}
+	TBNew.Cell.Units = TBOld.Cell.Units;
+	TBNew.Cell.NAtoms = (uint) newAtoms.size();
+	TBNew.Cell.Atom = (AtomType*) malloc(TBNew.Cell.NAtoms * sizeof(AtomType));
+	for (uint i = 0; i < (uint) newAtoms.size(); ++i)
+		TBNew.Cell.Atom[i] = newAtoms[i];
 	TBNew.nH = 0;
 	TBNew.H = NULL;
 	TBNew.NFermion = 0;
