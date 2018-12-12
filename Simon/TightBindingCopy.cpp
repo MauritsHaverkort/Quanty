@@ -42,3 +42,13 @@ void TightBindingCopy(const TightBindingDef &TBOld, TightBindingDef &TBNew)
 	TBNew.NFermion = 0;
 	SetNFermionIndexTightBindingDef(&TBNew);
 }
+
+void TightBindingReadyForRotate(const TightBindingDef &TBOld, TightBindingDef &TBNew)
+{
+	strcpy(TBNew.Name, TBOld.Name);
+	CrystalStructureCopy(TBOld.Cell, TBNew.Cell);
+	TBNew.nH = 0;
+	TBNew.H = NULL;
+	TBNew.NFermion = 0;
+	SetNFermionIndexTightBindingDef(&TBNew);
+}
