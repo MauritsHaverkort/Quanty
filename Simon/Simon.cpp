@@ -1,4 +1,5 @@
 #include "functions_simon.cpp" 
+#include "AtomicArithmetics.cpp"
 #include "AtomicNumberOperators.cpp"
 #include "AtomicToWannierMatrix.cpp"
 #include "CompactMatrix.cpp"
