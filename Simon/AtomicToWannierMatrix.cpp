@@ -20,34 +20,48 @@ string cutBorderSpaces(string in)
 	return cutTrailingSpaces(out);
 }
 
+void deconstructOrbname(const string &orb, uint &siteNum, string &atomName, uint &n, string &shell, int lz)
+{
+	//	Expects input like 2_Fe_3p1 or Fe_3p1
+	size_t pos;
+	pos = orb.find('_');
+	siteNum = (uint) strtol(orb.substr(0, pos).c_str(), NULL, 10);
+	if (siteNum == 0)
+	{
+		atomName = orb.substr(0, pos);
+	} else
+	{
+		size_t posOld = pos + 1;
+		pos = orb.find('_', posOld);
+		atomName = orb.substr(posOld, pos - posOld);
+	}
+	pos = orb.find_last_of('_') + 1;
+	n = (uint) strtol(orb.substr(pos, 1).c_str(), NULL, 10);
+	++pos;
+	shell = orb.substr(pos, 1);
+	++pos;
+	lz = (int) strtol(orb.substr(pos).c_str(), NULL, 10);
+}
+
 bool atomicStateSorter(string s1, string s2)
 {
-//	Expects input like 2_Fe_3p1 or Fe_3p1
-	size_t pos1, pos2;
-	pos1 = s1.find('_');
-	uint siteNum1 = (uint) strtol(s1.substr(0, pos1).c_str(), NULL, 10);
-	pos2 = s2.find('_');
-	uint siteNum2 = (uint) strtol(s2.substr(0, pos1).c_str(), NULL, 10);
+	uint siteNum1, siteNum2;
+	string atomName1, atomName2, shell1, shell2;
+	uint n1, n2, mult1, mult2;
+	int lz1, lz2;
+	deconstructOrbname(s1, siteNum1, atomName1, n1, shell1, lz1);
+	deconstructOrbname(s2, siteNum2, atomName2, n2, shell2, lz2);
 	if (siteNum1 != siteNum2 && siteNum1 != 0 && siteNum2 != 0)
 		return siteNum1 < siteNum2;
-	pos1 = s1.find_last_of('_');
-	++pos1;
-	pos2 = s2.find_last_of('_');
-	++pos2;
-	uint n1 = (uint) strtol(s1.substr(pos1, 1).c_str(), NULL, 10);
-	uint n2 = (uint) strtol(s2.substr(pos2, 1).c_str(), NULL, 10);
+//	TODO: this sorts lexicographically. Should we rather sort according to the periodic system?
+	if (strcmp(atomName1.c_str(), atomName2.c_str()) != 0)
+		return strcmp(atomName1.c_str(), atomName2.c_str()) < 0;
 	if (n1 != n2)
 		return n1 < n2;
-	++pos1;
-	++pos2;
-	uint mult1 = orbToMultiplicity(s1.substr(pos1, 1));
-	uint mult2 = orbToMultiplicity(s2.substr(pos2, 1));
+	mult1 = orbToMultiplicity(shell1);
+	mult2 = orbToMultiplicity(shell2);
 	if (mult1 != mult2)
 		return mult1 < mult2;
-	++pos1;
-	++pos2;
-	int lz1 = (int) strtol(s1.substr(pos1).c_str(), NULL, 10);
-	int lz2 = (int) strtol(s2.substr(pos2).c_str(), NULL, 10);
 	return lz1 < lz2;
 }
 
