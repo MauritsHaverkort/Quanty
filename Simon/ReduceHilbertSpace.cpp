@@ -76,29 +76,6 @@ CompactMatrixType reducedHilbertSpaceRotMatFilledAndEmpty(const CompactMatrixTyp
 	return out;
 }
 
-string multiplicityToNonRelOrb(const int mult)
-{
-	if (mult < 0)
-		return "Error";
-	switch (mult)
-	{
-	case 2:
-		return "s";
-	case 6:
-		return "p";
-	case 10:
-		return "d";
-	case 14:
-		return "f";
-	case 18:
-		return "g";
-	case 20:
-		return "h";
-	default:
-		return to_string(mult) + "a";
-	}
-}
-
 void addLigandNames(const CompactMatrixType &M, const string &nameBase, vector<string> &names, const uint unchangedStates)
 {
 	uint sameSymLigands = (uint) (M.Ni / unchangedStates) - 1;
@@ -210,83 +187,41 @@ OperatorType reduceHilbertSpaceForOperator(const OperatorType &H, const uint unc
 	return out;
 }
 
-
-template<typename T>
-bool isElementOf(const T element, const vector<T> &set, bool (*eq)(const T&, const T&))
+TightBindingDef reduceHilbertSpaceForTightBinding(TightBindingDef &tb, CompactMatrixType &T, const AtomType &unchangedAtom, const uint filledLigands, const uint emptyLigands)
 {
-	for (uint i = 0; i < (uint) set.size(); ++i)
-	{
-		if (eq(element, set[i]))
-			return true;
-	}
-	return false;
-}
-
-//vector<string> AtomsToOrbs(const vector<AtomType> &atoms)
-//{
-//	vector < string > out;
-//	for (uint i = 0; i < (uint) atoms.size(); ++i)
-//		for (uint j = 0; j < atoms[i].Nshell; ++j)
-//			out.push_back(to_string(atoms[i].Name) + "_" + to_string(atoms[i].ShellName[j]));
-//	return out;
-//}
-
-
-bool QAtomsEqual(const AtomType &a1, const AtomType &a2)
-{
-	if (strcmp(a1.Name, a2.Name) != 0)
-		return false;
-	for (uint i = 0; i < 3; ++i)
-		if (a1.Position[i] != a2.Position[i])
-			return false;
-	return true;
-}
-
-
-
-void sortTbAtomToFirstPosition(TightBindingDef &tb, const AtomType &atom)
-{
-	MatrixType permMat;
-	vector<string> oldOrbs, newOrbs;
-	for (uint i = 0; i < (uint) tb.Cell.NAtoms; ++i)
-		for (uint j = 0; j < tb.Cell.Atom[i].Nshell; ++j)
-		{
-			oldOrbs.push_back(to_string(i + 1) + "_" + to_string(tb.Cell.Atom[i].Name) + "_" + to_string(tb.Cell.Atom[i].ShellName[j]));
-			if (QAtomsEqual(tb.Cell.Atom[i], atom))
-				newOrbs.push_back(oldOrbs[oldOrbs.size() - 1]);
-		}
-	for (uint i = 0; i < (uint) oldOrbs.size(); ++i)
-		if (!isElementOf(oldOrbs[i], newOrbs))
-			newOrbs.push_back(oldOrbs[i]);
-	permMat = orbitalPermutationMatrix(oldOrbs, newOrbs);
-
-//	TODO:
-	debug(oldOrbs);
-	debug(newOrbs);
-
-	debug(permMat);
-//	debug(atom.Name);
-//	debug(atom.AtomNumber);
-}
-
-TightBindingDef reduceHilbertSpaceForTightBinding(TightBindingDef &tb, const CompactMatrixType &T, const AtomType &unchangedAtom, const uint filledLigands, const uint emptyLigands)
-{
-	TightBindingDef out = TightBindingDef();
+	TightBindingDef tbSorted, out = TightBindingDef();
 	MatrixType hMat;
-	CompactMatrixType hMatCompact;
-//	TODO: Rotate unchanged atoms to beginning
+	CompactMatrixType hMatCompact, permMat, rotMat;
 	if (!QAtomsEqual(unchangedAtom, tb.Cell.Atom[0]))
-		sortTbAtomToFirstPosition(tb, unchangedAtom);
-	double k[3] = {0.,0.,0.};
+	{
+		tbSorted = sortTbAtomToFirstPosition(tb, unchangedAtom, permMat);
+	}
+	else
+	{
+		TightBindingCopy(tb, tbSorted);
+		permMat = CompactidentityMatrix(tb.NFermion);
+	}
+	double k[3] = { 0., 0., 0. };
 	CreateHamiltonianFromTightBindingDefConstantPhaseInUnitCell(tb, k, &hMat);
 	hMatCompact = MatrixTypeToCompactMatrixType(hMat);
+	uint unchangedStates = orbToMultiplicity(to_string(unchangedAtom.ShellName[0])) / 2;
+	vector < string > newNames = vector<string>();
+	reduceHilbertSpaceForMatrix(hMatCompact, rotMat, unchangedStates, filledLigands, emptyLigands, newNames);
+	CompactMatrixMultiply('T', 'T', &permMat, &rotMat, &T);
+	TightBindingReadyForRotate(tb, out, OrbsToAtoms(newNames));
+//	TODO: weiter
 
+//	reduceHilbertSpaceForMatrix(const CompactMatrixType &H, CompactMatrixType &T, const uint unchangedStates, const uint filledLigands, const uint emptyLigands,
+//			vector<string> orbNames)
 
-
-//TODO
+//TODO DEBUGstuff
+	return tbSorted;
 	cout << "reduceHilbertSpace for TightBinding not yet fully implemented." << endl;
+	FreeTightBindingDef(&tbSorted);
 	FreeMatrix(&hMat);
 	FreeCompactMatrix(&hMatCompact);
+	FreeCompactMatrix(&permMat);
+	FreeCompactMatrix(&rotMat);
 	return out;
 }
 
@@ -323,6 +258,8 @@ static int LuaReduceHilbertSpace(lua_State * L)
 //		TODO: QTightBindingHermitian
 		AtomType unchangedAtom;
 		lua_check(L, 2, unchangedAtom);
+		if (unchangedAtom.Nshell != 1)
+			return luaL_error(L, "Error: RedceHilbertSpace only implemented for unchanged atoms with only one shell.");
 		lua_push(L, reduceHilbertSpaceForTightBinding(tb, T, unchangedAtom, Options.filledLigands, Options.emptyLigands));
 		lua_push(L, T);
 		return 2;
