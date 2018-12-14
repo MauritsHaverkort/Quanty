@@ -99,7 +99,7 @@ TightBindingDef sortTbAtomToFirstPosition(TightBindingDef &tb, const AtomType &a
 	return out;
 }
 
-void initAtom(AtomType &a, const vector<string> &shellNames, const vector<vector<string> > &orbitNames)
+void initAtom(AtomType &a, const vector<string> &shellNames, const vector<vector<string> > &orbitNames, const bool hasSpin)
 {
 	a.AtomNumber = AtomNameToNumber(a.Name);
 	for (uint i = 0; i < 3; ++i)
@@ -128,7 +128,7 @@ void initAtom(AtomType &a, const vector<string> &shellNames, const vector<vector
 				}
 			} else
 			{
-				a.shelldegeneracy[i] = (int) orbToMultiplicity(to_string(a.ShellName[i])) / 2;
+				a.shelldegeneracy[i] = (int) orbToMultiplicity(to_string(a.ShellName[i]), hasSpin);
 				if (a.shelldegeneracy[i] > 0)
 				{
 					a.OrbitalName[i] = (char**) malloc(a.shelldegeneracy[i] * sizeof(char*));
@@ -143,7 +143,12 @@ void initAtom(AtomType &a, const vector<string> &shellNames, const vector<vector
 	}
 }
 
-vector<AtomType> OrbsToAtoms(const vector<string> &orbs)
+void initAtom(AtomType &a, const vector<string> &shellNames, const vector<vector<string> > &orbitNames)
+{
+	initAtom(a, shellNames, orbitNames, false);
+}
+
+vector<AtomType> OrbsToAtoms(const vector<string> &orbs, const bool hasSpin)
 {
 	vector < AtomType > out = vector < AtomType > (orbs.size());
 	for (uint i = 0; i < (uint) orbs.size(); ++i)
@@ -154,7 +159,14 @@ vector<AtomType> OrbsToAtoms(const vector<string> &orbs)
 		int lz;
 		deconstructOrbname(orbs[i], atomNum, atomName, n, shell, lz);
 		strcpy(out[i].Name, atomName.c_str());
-		initAtom(out[i], vector < string > (1, to_string(n) + shell), vector<vector<string> >());
+		initAtom(out[i], vector < string > (1, to_string(n) + shell), vector<vector<string> >(), hasSpin);
 	}
 	return out;
 }
+
+vector<AtomType> OrbsToAtoms(const vector<string> &orbs)
+{
+	return OrbsToAtoms(orbs, false);
+}
+		}
+
