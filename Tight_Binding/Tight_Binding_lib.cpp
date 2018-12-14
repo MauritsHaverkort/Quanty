@@ -2378,9 +2378,11 @@ int orbToMultiplicity(const string &orb, const bool hasSpin)
 {
 	int multiplicity = artificialOrbitalMultiplicity(orb);
 	if (multiplicity < 0)
+	{
 		multiplicity = nonRelAngularMomentumZNumbersWithSpin(orb);
-	if (!hasSpin && multiplicity > 0)
-		return (int) multiplicity / 2;
+		if (!hasSpin)
+			multiplicity = (int) multiplicity / 2;
+	}
 	if (multiplicity < 0)
 		multiplicity = relAngularMomentumZNumbers(orb);
 	if (multiplicity < 0)
