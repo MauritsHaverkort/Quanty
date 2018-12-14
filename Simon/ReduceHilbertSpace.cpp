@@ -30,25 +30,25 @@ CompactMatrixType reducedHilbertSpaceMatrix(const CompactMatrixType &H, const Co
 	return out;
 }
 
-CompactMatrixType reducedHilbertSpaceMatrixFilledAndEmpty(const CompactMatrixType &HRedFilled, const CompactMatrixType &HRedEmpty, const uint constObrs)
+CompactMatrixType reducedHilbertSpaceMatrixFilledAndEmpty(const CompactMatrixType &HRedFilled, const CompactMatrixType &HRedEmpty, const uint constOrbs)
 {
 	CompactMatrixType out;
-	if (HRedFilled.Ni <= constObrs)
+	if (HRedFilled.Ni <= constOrbs)
 	{
 		CompactMatrixCopy(HRedEmpty, &out);
-	} else if (HRedEmpty.Ni <= constObrs)
+	} else if (HRedEmpty.Ni <= constOrbs)
 	{
 		CompactMatrixCopy(HRedFilled, &out);
 	} else
 	{
 		vector < vector<CompactMatrixType> > HReducedMatMat = CompactnullMatrixMatrix(3, 3);
-		HReducedMatMat[0][0] = Submatrix(HRedFilled, 0, constObrs, 0, constObrs);
-		HReducedMatMat[0][1] = Submatrix(HRedFilled, 0, constObrs, constObrs, HRedFilled.Nj - constObrs);
-		HReducedMatMat[1][0] = Submatrix(HRedFilled, constObrs, HRedFilled.Ni - constObrs, 0, constObrs);
-		HReducedMatMat[1][1] = Submatrix(HRedFilled, constObrs, HRedFilled.Ni - constObrs, constObrs, HRedFilled.Nj - constObrs);
-		HReducedMatMat[0][2] = Submatrix(HRedEmpty, 0, constObrs, constObrs, HRedEmpty.Nj - constObrs);
-		HReducedMatMat[2][0] = Submatrix(HRedEmpty, constObrs, HRedEmpty.Ni - constObrs, 0, constObrs);
-		HReducedMatMat[2][2] = Submatrix(HRedEmpty, constObrs, HRedEmpty.Ni - constObrs, constObrs, HRedEmpty.Nj - constObrs);
+		HReducedMatMat[0][0] = Submatrix(HRedFilled, 0, constOrbs, 0, constOrbs);
+		HReducedMatMat[0][1] = Submatrix(HRedFilled, 0, constOrbs, constOrbs, HRedFilled.Nj - constOrbs);
+		HReducedMatMat[1][0] = Submatrix(HRedFilled, constOrbs, HRedFilled.Ni - constOrbs, 0, constOrbs);
+		HReducedMatMat[1][1] = Submatrix(HRedFilled, constOrbs, HRedFilled.Ni - constOrbs, constOrbs, HRedFilled.Nj - constOrbs);
+		HReducedMatMat[0][2] = Submatrix(HRedEmpty, 0, constOrbs, constOrbs, HRedEmpty.Nj - constOrbs);
+		HReducedMatMat[2][0] = Submatrix(HRedEmpty, constOrbs, HRedEmpty.Ni - constOrbs, 0, constOrbs);
+		HReducedMatMat[2][2] = Submatrix(HRedEmpty, constOrbs, HRedEmpty.Ni - constOrbs, constOrbs, HRedEmpty.Nj - constOrbs);
 		out = MatrixFlatten(HReducedMatMat);
 		FreeCompactMatrixMatrix (HReducedMatMat);
 	}
@@ -141,22 +141,22 @@ CompactMatrixType reduceHilbertSpaceForMatrix(const CompactMatrixType &H, Compac
 	return out;
 }
 
-CompactMatrixType reduceHilbertSpaceForMatrix(const CompactMatrixType &H, CompactMatrixType &T, const uint constObrs, const uint filledLig, const uint emptyLig)
+CompactMatrixType reduceHilbertSpaceForMatrix(const CompactMatrixType &H, CompactMatrixType &T, const uint constOrbs, const uint filledLig, const uint emptyLig)
 {
 	vector < string > vec = vector<string>();
-	return reduceHilbertSpaceForMatrix(H, T, constObrs, filledLig, emptyLig, vec, true);
+	return reduceHilbertSpaceForMatrix(H, T, constOrbs, filledLig, emptyLig, vec, true);
 }
 
-CompactMatrixType reduceHilbertSpaceForMatrix(const CompactMatrixType &H, const uint constObrs, const uint filledLig, const uint emptyLig)
+CompactMatrixType reduceHilbertSpaceForMatrix(const CompactMatrixType &H, const uint constOrbs, const uint filledLig, const uint emptyLig)
 {
 	CompactMatrixType T;
 	vector < string > vec = vector<string>();
-	CompactMatrixType out = reduceHilbertSpaceForMatrix(H, T, constObrs, filledLig, emptyLig, vec, true);
+	CompactMatrixType out = reduceHilbertSpaceForMatrix(H, T, constOrbs, filledLig, emptyLig, vec, true);
 	FreeCompactMatrix(&T);
 	return out;
 }
 
-OperatorType reduceHilbertSpaceForOperator(const OperatorType &hamil, CompactMatrixType &T, const uint constObrs, const uint filledLig, const uint emptyLig, vector<string> orbNames,
+OperatorType reduceHilbertSpaceForOperator(const OperatorType &hamil, CompactMatrixType &T, const uint constOrbs, const uint filledLig, const uint emptyLig, vector<string> orbNames,
 		const bool hasSpin)
 {
 	CompactMatrixType Rho, HMat, HMatRed;
@@ -168,7 +168,7 @@ OperatorType reduceHilbertSpaceForOperator(const OperatorType &hamil, CompactMat
 	InitCompactMatrix(&Rho);
 	HMat = CompactMatrixType();
 	MeanFieldOperatorOneElectronMatrix(&hamil, &HMat, Rho);
-	HMatRed = reduceHilbertSpaceForMatrix(HMat, T, constObrs, filledLig, emptyLig, orbNames, hasSpin);
+	HMatRed = reduceHilbertSpaceForMatrix(HMat, T, constOrbs, filledLig, emptyLig, orbNames, hasSpin);
 	out = CompactMatrixToOperator(HMatRed);
 	FreeCompactMatrix(&Rho);
 	FreeCompactMatrix(&HMat);
@@ -182,11 +182,11 @@ OperatorType reduceHilbertSpaceForOperator(const OperatorType &H, CompactMatrixT
 	return reduceHilbertSpaceForOperator(H, T, constOrbs, filledLig, emptyLig, vec, true);
 }
 
-OperatorType reduceHilbertSpaceForOperator(const OperatorType &H, const uint constObrs, const uint filledLig, const uint emptyLig)
+OperatorType reduceHilbertSpaceForOperator(const OperatorType &H, const uint constOrbs, const uint filledLig, const uint emptyLig)
 {
 	CompactMatrixType T;
 	vector < string > vec = vector<string>();
-	OperatorType out = reduceHilbertSpaceForOperator(H, T, constObrs, filledLig, emptyLig, vec, true);
+	OperatorType out = reduceHilbertSpaceForOperator(H, T, constOrbs, filledLig, emptyLig, vec, true);
 	FreeCompactMatrix(&T);
 	return out;
 }

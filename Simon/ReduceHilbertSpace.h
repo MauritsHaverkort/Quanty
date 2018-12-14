@@ -1,12 +1,12 @@
 CompactMatrixType reducedHilbertSpaceMatrix(const CompactMatrixType &H, const CompactMatrixType &ligRotMat, CompactMatrixType &T, const uint constOrbs, const uint ligNum);
-CompactMatrixType reducedHilbertSpaceMatrixFilledAndEmpty(const CompactMatrixType &HRedFilled, const CompactMatrixType &HRedEmpty, const uint constObrs);
+CompactMatrixType reducedHilbertSpaceMatrixFilledAndEmpty(const CompactMatrixType &HRedFilled, const CompactMatrixType &HRedEmpty, const uint constOrbs);
 CompactMatrixType reducedHilbertSpaceRotMatFilledAndEmpty(const CompactMatrixType &Tfilled, const CompactMatrixType &Tempty, const uint constOrbs);
 void addLigandNames(const CompactMatrixType &M, const string &nameBase, vector<string> &names, const uint constOrbs, const bool hasSpin);
 CompactMatrixType reduceHilbertSpaceForMatrix(const CompactMatrixType &H, CompactMatrixType &T, const uint constOrbs, const uint filledLig, const uint emptyLig, vector<string> &orbNames,const bool hasSpin);
-CompactMatrixType reduceHilbertSpaceForMatrix(const CompactMatrixType &H, CompactMatrixType &T, const uint constObrs, const uint filledLig, const uint emptyLig);
-CompactMatrixType reduceHilbertSpaceForMatrix(const CompactMatrixType &H, const uint constObrs, const uint filledLig, const uint emptyLig);
-OperatorType reduceHilbertSpaceForOperator(const OperatorType &hamil, CompactMatrixType &T, const uint constObrs, const uint filledLig, const uint emptyLig, vector<string> orbNames,const bool hasSpin);
+CompactMatrixType reduceHilbertSpaceForMatrix(const CompactMatrixType &H, CompactMatrixType &T, const uint constOrbs, const uint filledLig, const uint emptyLig);
+CompactMatrixType reduceHilbertSpaceForMatrix(const CompactMatrixType &H, const uint constOrbs, const uint filledLig, const uint emptyLig);
+OperatorType reduceHilbertSpaceForOperator(const OperatorType &hamil, CompactMatrixType &T, const uint constOrbs, const uint filledLig, const uint emptyLig, vector<string> orbNames,const bool hasSpin);
 OperatorType reduceHilbertSpaceForOperator(const OperatorType &H, CompactMatrixType &T, const uint constOrbs, const uint filledLig, const uint emptyLig);
-OperatorType reduceHilbertSpaceForOperator(const OperatorType &H, const uint constObrs, const uint filledLig, const uint emptyLig);
+OperatorType reduceHilbertSpaceForOperator(const OperatorType &H, const uint constOrbs, const uint filledLig, const uint emptyLig);
 TightBindingDef reduceHilbertSpaceForTightBinding(TightBindingDef &tb, CompactMatrixType &T, const AtomType &constAtom, const uint filledLig, const uint emptyLig, const bool hasSpin);
 static int LuaReduceHilbertSpace(lua_State * L);
