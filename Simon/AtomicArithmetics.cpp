@@ -135,7 +135,18 @@ void initAtom(AtomType &a, const vector<string> &shellNames, const vector<vector
 					for (uint j = 0; j < a.shelldegeneracy[i]; ++j)
 					{
 						a.OrbitalName[i][j] = (char*) malloc(MAXStrLength * sizeof(char));
-						strcpy(a.OrbitalName[i][j], to_string(-(a.shelldegeneracy[i] - 1) / 2 + (int) j).c_str());
+						if (hasSpin)
+						{
+							string orbName;
+							if (j % 2 == 0)
+								orbName = to_string(-(double) (a.shelldegeneracy[i] / 2 - 1) / 2 + (int) j / 2) + "_Dn";
+							else
+								orbName = to_string(-(double) (a.shelldegeneracy[i] / 2 - 1) / 2 + (int) j / 2) + "_Up";
+							strcpy(a.OrbitalName[i][j], orbName.c_str());
+						} else
+						{
+							strcpy(a.OrbitalName[i][j], to_string(-(double) (a.shelldegeneracy[i] - 1) / 2 + (double) j).c_str());
+						}
 					}
 				}
 			}
