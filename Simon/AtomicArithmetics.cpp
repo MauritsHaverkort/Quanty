@@ -20,27 +20,54 @@ bool QAtomsEqual(const AtomType &a1, const AtomType &a2)
 	return true;
 }
 
-string multiplicityToNonRelOrb(const int mult)
+string multiplicityToNonRelOrb(const int mult, const bool hasSpin)
 {
 	if (mult < 0)
 		return "Error";
-	switch (mult)
+	if (hasSpin)
 	{
-	case 2:
-		return "s";
-	case 6:
-		return "p";
-	case 10:
-		return "d";
-	case 14:
-		return "f";
-	case 18:
-		return "g";
-	case 20:
-		return "h";
-	default:
-		return to_string(mult) + "a";
+		switch (mult)
+		{
+		case 2:
+			return "s";
+		case 6:
+			return "p";
+		case 10:
+			return "d";
+		case 14:
+			return "f";
+		case 18:
+			return "g";
+		case 22:
+			return "h";
+		default:
+			return to_string(mult) + "a";
+		}
+	} else
+	{
+		switch (mult)
+		{
+		case 1:
+			return "s";
+		case 3:
+			return "p";
+		case 5:
+			return "d";
+		case 7:
+			return "f";
+		case 9:
+			return "g";
+		case 11:
+			return "h";
+		default:
+			return to_string(mult) + "a";
+		}
 	}
+}
+
+string multiplicityToNonRelOrb(const int mult)
+{
+	return multiplicityToNonRelOrb(mult, true);
 }
 
 TightBindingDef sortTbAtomToFirstPosition(TightBindingDef &tb, const AtomType &atom, CompactMatrixType &R)

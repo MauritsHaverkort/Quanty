@@ -2246,7 +2246,7 @@ int FindAllAtomsInsideSphere(const CrystalStructureType * const A, double *c, do
   return 0;
 }
 
-int artificialOrbitalMultiplicity(string orb)
+int artificialOrbitalMultiplicity(const string &orb)
 {
 	if (orb.at(orb.length() - 1) != 'a')
 		return -1;
@@ -2268,7 +2268,7 @@ int artificialOrbitalMultiplicity(string orb)
 	return (int) strtol(multString.c_str(), NULL, 10);
 }
 
-int nonRelAngularMomentumZNumbersWithSpin(string orb)
+int nonRelAngularMomentumZNumbersWithSpin(const string &orb)
 {
 	if (orb.length() < 1)
 		return -1;
@@ -2292,10 +2292,10 @@ int nonRelAngularMomentumZNumbersWithSpin(string orb)
 	}
 }
 
-int relAngularMomentumZNumbers(string orb, int * significantCharPos)
+int relAngularMomentumZNumbers(const string &orb, int * significantCharPos)
 {
 	char c;
-	*significantCharPos = (int)orb.length() - 1;
+	*significantCharPos = (int) orb.length() - 1;
 	c = orb.at(*significantCharPos);
 	while (c == ' ' || c == '\t')
 	{
@@ -2338,33 +2338,32 @@ int relAngularMomentumZNumbers(string orb, int * significantCharPos)
 	}
 }
 
-int relAngularMomentumZNumbers(string orb)
+int relAngularMomentumZNumbers(const string &orb)
 {
 	int significantCharPos;
-	return relAngularMomentumZNumbers(orb,&significantCharPos);
+	return relAngularMomentumZNumbers(orb, &significantCharPos);
 }
 
-
-int kappa(string orb)
+int kappa(const string &orb)
 {
 	int jzNumbers, lzNumbers, significantCharPos;
-	jzNumbers = relAngularMomentumZNumbers(orb,&significantCharPos);
+	jzNumbers = relAngularMomentumZNumbers(orb, &significantCharPos);
 	if (jzNumbers < 0)
 	{
 		cout << "\nWarning: Key \"" << orb << "\" could not be interpreted as a relativistic orbital, kappa is set to 0.\n";
 		return 0;
 	}
-	orb = orb.substr(0,significantCharPos);
-	lzNumbers = nonRelAngularMomentumZNumbersWithSpin(orb) / 2;
+	string orbStripped = orb.substr(0, significantCharPos);
+	lzNumbers = nonRelAngularMomentumZNumbersWithSpin(orbStripped) / 2;
 	if (lzNumbers < 0)
 	{
-		cout << "\nWarning: Remainder of key \"" << orb << "\" could not be interpreted as a non-relativistic orbital, kappa is set to 0.\n";
+		cout << "\nWarning: Remainder of key \"" << orbStripped << "\" could not be interpreted as a non-relativistic orbital, kappa is set to 0.\n";
 		return 0;
 	}
 	if (jzNumbers > lzNumbers)
-		return - jzNumbers/2;
+		return -jzNumbers / 2;
 	else
-		return jzNumbers/2;
+		return jzNumbers / 2;
 }
 
 vector<int> kappas(const vector<string> &orbs)
@@ -2375,16 +2374,23 @@ vector<int> kappas(const vector<string> &orbs)
 	return kappas;
 }
 
-int orbToMultiplicity(string orb)
+int orbToMultiplicity(const string &orb, const bool hasSpin)
 {
 	int multiplicity = artificialOrbitalMultiplicity(orb);
 	if (multiplicity < 0)
 		multiplicity = nonRelAngularMomentumZNumbersWithSpin(orb);
+	if (!hasSpin && multiplicity > 0)
+		return (int) multiplicity / 2;
 	if (multiplicity < 0)
 		multiplicity = relAngularMomentumZNumbers(orb);
 	if (multiplicity < 0)
 		cout << "\nCould not interpret orbital \"" << orb << "\" as either relativistic or non-relativistic atomic orbital, returning " << multiplicity << endl;
 	return multiplicity;
+}
+
+int orbToMultiplicity(const string &orb)
+{
+	return orbToMultiplicity(orb, true);
 }
 
 
