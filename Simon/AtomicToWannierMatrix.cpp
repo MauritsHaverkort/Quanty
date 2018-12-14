@@ -36,11 +36,21 @@ void deconstructOrbname(const string &orb, uint &siteNum, string &atomName, uint
 		atomName = orb.substr(posOld, pos - posOld);
 	}
 	pos = orb.find_last_of('_') + 1;
-	n = (uint) strtol(orb.substr(pos, 1).c_str(), NULL, 10);
+	if (pos < orb.length())
+		n = (uint) strtol(orb.substr(pos, 1).c_str(), NULL, 10);
+	else
+		n = 0;
+	if (n > 0)
+		++pos;
+	if (pos < orb.length())
+		shell = orb.substr(pos, 1);
+	else
+		shell = "";
 	++pos;
-	shell = orb.substr(pos, 1);
-	++pos;
-	lz = (int) strtol(orb.substr(pos).c_str(), NULL, 10);
+	if (pos < orb.length())
+		lz = (int) strtol(orb.substr(pos).c_str(), NULL, 10);
+	else
+		lz = 0;
 }
 
 bool atomicStateSorter(string s1, string s2)
