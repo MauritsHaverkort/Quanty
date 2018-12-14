@@ -168,5 +168,4 @@ vector<AtomType> OrbsToAtoms(const vector<string> &orbs)
 {
 	return OrbsToAtoms(orbs, false);
 }
-		}
 
