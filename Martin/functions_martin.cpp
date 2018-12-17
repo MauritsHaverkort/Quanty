@@ -600,7 +600,7 @@ static int LuaEvaluateSelfEnergy(lua_State *L)
 		lua_check(L,7,energyshift);
 		if (energyshift.size() != SigmaRes.size())
 		{
-			return luaL_error(L,"LuaEvaluateSelfEnergy: %u = energyshift.size() != SigmaRes.size() = %u \n",energyshift.size() , SigmaRes.size());
+			return luaL_error(L,"LuaEvaluateSelfEnergy: %d = energyshift.size() != SigmaRes.size() = %d \n",energyshift.size() , SigmaRes.size());
 		}
 		for (uint32_t i = 0; i < lenW; i++)
 		{
