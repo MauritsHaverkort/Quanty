@@ -156,7 +156,9 @@ static int LuaOperatorNewFullCoulomb (lua_State *L)
     		uint32_t test = (uint32_t)luaL_checkunsigned(L, 6);
     		if (test == 2)
     		{
-    			CreateOperatorSingleCoulombRelativistic(NF,wavefunctions->VRe,wavefunctions->Ni,x,NGridpoints,tuple, NIntegrals,indices, op);
+    			double cutoff;
+    			lua_check(L,7,cutoff);
+    			CreateOperatorSingleCoulombRelativistic(NF,wavefunctions->VRe,wavefunctions->Ni,x,NGridpoints,tuple, NIntegrals,indices, op,cutoff);
     		}
     		else
     		{

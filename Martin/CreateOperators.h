@@ -34,6 +34,6 @@ double *CreateBaseForContinuum( int NBasisFuns, vector<vector<double> > basisfun
 		uint32_t NGridpoints,SKappaGroup group,int Ncont, vector<vector<double> > &contfuns, double w);
 
 uint32_t CreateOperatorSingleCoulombRelativistic(uint32_t const NFermion,double **basisfuns, uint32_t NbasisFuns, const double *grid, uint32_t NGridpoints, uint32_t **tuple,
-                                               uint32_t NIntegrals,uint16_t **indices, OperatorType *op);
+                                               uint32_t NIntegrals,uint16_t **indices, OperatorType *op, double cutoff);
 
 #endif /* MARTIN_CREATEOPERATORS_H_ */
