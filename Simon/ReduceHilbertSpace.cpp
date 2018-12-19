@@ -247,7 +247,7 @@ static int LuaReduceHilbertSpace(lua_State * L)
 
   uint32_t len = (uint32_t) lua_gettop(L);
   if (len < 2 || len > 4)
-  	return luaL_error(L,"Error: ReduceHilbertSpace called with %d elements, 2, 3 or 4 expected. \nVariant 1: Tight-Binding Object, list of Atoms to be considered, Atoms to be left unchanged, and optional Options. \nVariant 2: Operator, number of states to be left unchanged, and optional Options. \nVariant 3: Matrix Representation of Operator, number of states to be left unchanged, and optional Options.",len);
+  	return luaL_error(L,"Error: ReduceHilbertSpace called with %d elements, 2 or 3 expected. \nVariant 1: Tight-Binding Object, Single-Shell Atom to be left unchanged, and optional Options. \nVariant 2: Operator, number of states to be left unchanged, and optional Options. \nVariant 3: Matrix Representation of Operator, number of states to be left unchanged, and optional Options.",len);
 
   if (LuaTestOptionsList(L, -1))
   			LuaCheckOptions(L, -1, LuaReduceHilbertSpaceOptions);
