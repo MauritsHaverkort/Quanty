@@ -191,5 +191,46 @@ CompactMatrixType MatrixTypeToCompactMatrixType(const MatrixType &M)
 	return out;
 }
 
+CompactMatrixType removeSpin(const CompactMatrixType &M)
+{
+	CompactMatrixType out = CompactMatrixType();
+	out.Ni = M.Ni / 2;
+	out.Nj = M.Nj / 2;
+	out.QComplex = M.QComplex;
+	InitCompactMatrix(&out);
+	if (out.QComplex == 0)
+	{
+		for (uint i = 0; i < out.Ni; ++i)
+		{
+			for (uint j = 0; j < out.Nj; ++j)
+			{
+				out.VRe[i * out.Nj + j] = M.VRe[2 * i * M.Nj + 2 * j];
+			}
+		}
+	} else
+	{
+		for (uint i = 0; i < out.Ni; ++i)
+		{
+			for (uint j = 0; j < out.Nj; ++j)
+			{
+				out.V[i * out.Nj + j].Re = M.V[2 * i * M.Nj + 2 * j].Re;
+				out.V[i * out.Nj + j].Im = M.V[2 * i * M.Nj + 2 * j].Im;
+			}
+		}
+	}
+	return out;
+}
 
+static int LuaRemoveSpin(lua_State *L)
+{
+	CompactMatrixType M;
+	uint len = (uint) lua_gettop(L);
+	if (len != 1)
+		return luaL_error(L, "Error: LuaRemoveSpin called with %d argmuents, only 1 expected, a Matrix.", len);
+	lua_check(L, 1, M);
+	if (M.Ni % 2 != 0 || M.Nj % 2 != 0)
+		return luaL_error(L, "Error: LuaRemoveSpin called with a matrix of dimension %d times %d. Number of rows and columns must each be even.", M.Ni, M.Nj);
+	lua_push(L, removeSpin(M));
+	return 1;
+}
 
