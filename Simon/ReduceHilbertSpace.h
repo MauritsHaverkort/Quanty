@@ -5,7 +5,7 @@ void addLigandNames(const CompactMatrixType &M, const string &nameBase, vector<s
 CompactMatrixType reduceHilbertSpaceForMatrix(const CompactMatrixType &H, CompactMatrixType &T, const uint constOrbs, const uint filledLig, const uint emptyLig, vector<string> &orbNames,const bool hasSpin);
 CompactMatrixType reduceHilbertSpaceForMatrix(const CompactMatrixType &H, CompactMatrixType &T, const uint constOrbs, const uint filledLig, const uint emptyLig);
 CompactMatrixType reduceHilbertSpaceForMatrix(const CompactMatrixType &H, const uint constOrbs, const uint filledLig, const uint emptyLig);
-OperatorType reduceHilbertSpaceForOperator(const OperatorType &hamil, CompactMatrixType &T, const uint constOrbs, const uint filledLig, const uint emptyLig, vector<string> orbNames,const bool hasSpin);
+OperatorType reduceHilbertSpaceForOperator(const OperatorType &hamil, CompactMatrixType &T, const uint constOrbs, const uint filledLig, const uint emptyLig, vector<string> &orbNames,const bool hasSpin);
 OperatorType reduceHilbertSpaceForOperator(const OperatorType &H, CompactMatrixType &T, const uint constOrbs, const uint filledLig, const uint emptyLig);
 OperatorType reduceHilbertSpaceForOperator(const OperatorType &H, const uint constOrbs, const uint filledLig, const uint emptyLig);
 TightBindingDef reduceHilbertSpaceForTightBinding(TightBindingDef &tb, CompactMatrixType &T, const AtomType &constAtom, const uint filledLig, const uint emptyLig, const bool hasSpin);

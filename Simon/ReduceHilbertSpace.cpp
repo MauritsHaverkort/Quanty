@@ -156,7 +156,7 @@ CompactMatrixType reduceHilbertSpaceForMatrix(const CompactMatrixType &H, const 
 	return out;
 }
 
-OperatorType reduceHilbertSpaceForOperator(const OperatorType &hamil, CompactMatrixType &T, const uint constOrbs, const uint filledLig, const uint emptyLig, vector<string> orbNames,
+OperatorType reduceHilbertSpaceForOperator(const OperatorType &hamil, CompactMatrixType &T, const uint constOrbs, const uint filledLig, const uint emptyLig, vector<string> &orbNames,
 		const bool hasSpin)
 {
 	CompactMatrixType Rho, HMat, HMatRed;
