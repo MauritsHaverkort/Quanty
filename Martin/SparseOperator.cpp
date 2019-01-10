@@ -155,6 +155,14 @@ int CompSortPair(const void* a,const void* b)
 {
 	return ((SortPair*) a)->val > ((SortPair*) b)->val ? -1:1;
 }
+int CompSortPair2(const void* a,const void* b)
+{
+	return ((SortPair*) a)->val > ((SortPair*) b)->val ? 1:-1;
+}
+int CompSortPairIdx(const void* a,const void* b)
+{
+	return ((SortPair*) a)->idx > ((SortPair*) b)->idx ? -1:1;
+}
 
 void LoewdinSVDOrthonormalize(LinAlg::Matrix<double> &A, double epsSV, uint32_t &nSV)
 {
@@ -207,6 +215,7 @@ void LoewdinSVDOrthonormalize(LinAlg::Matrix<double> &A, double epsSV, uint32_t 
 	}
 	else
 	{
+		//for (int i = 0; i < nSV; i++) printf("S[%d] = %.4E\n",i,S[i]);
 		int idx = nSV-1;
 		while((idx >= 0 ) && (S[idx] <= epsSV) )
 		{
@@ -224,8 +233,11 @@ void LoewdinSVDOrthonormalize(LinAlg::Matrix<double> &A, double epsSV, uint32_t 
 			double one  = 1;
 			double zero = 0;
 
-			dgemm(transN,transN,&Mrow,&Ncol,&nSV,&one,U,&Mrow,VT,&nSV,&zero,A.Entries,&Mrow);
-			if(Ncol-nSV)
+			dgemm(transN,transN,&Mrow,&Ncol,&nSV,&one,U,&Mrow,VT,&Ncol/*&nSV*/,&zero,A.Entries,&Mrow);
+/*			printf("A = \n");
+			A.print();
+			printf("\n");
+*/			if(Ncol-nSV)
 			{
 				printf("LoewdinSVDOrthonormalize : Reduce Dimension from %u to %u\n",Ncol,nSV);
 				SortPair lostNorm[Ncol];
@@ -239,12 +251,28 @@ void LoewdinSVDOrthonormalize(LinAlg::Matrix<double> &A, double epsSV, uint32_t 
 					}
 				}
 				qsort(lostNorm,Ncol,sizeof(SortPair),CompSortPair);
-				for (uint32_t i = 0; i < nSV; i++)
+/*				for (uint32_t i = 0; i < Ncol; i++)
+				{
+					lostNorm[i].val = 0;
+					lostNorm[i].idx = i;
+					for (uint32_t j = 0; j < Mrow; j++)
+					{
+						lostNorm[i].val += A.Entries[i*Mrow + j]*A.Entries[i*Mrow + j];
+					}
+				}
+				qsort(lostNorm,Ncol,sizeof(SortPair),CompSortPair2);
+*/				qsort(lostNorm,Ncol-nSV,sizeof(SortPair),CompSortPairIdx);
+				//printf("Ncol-nSV = %d\n",Ncol-nSV);
+				//for (int i = 0; i < Ncol; i++) printf("lostNorm[%d].val = %.16E\t lostNorm[%d].idx = %d\n",i,lostNorm[i].val,i,lostNorm[i].idx);
+				for (uint32_t i = 0; i < Ncol-nSV; i++)
 				{
 					//printf("%.4f\t%u\n",lostNorm[i].val,lostNorm[i].idx);
 					A.RemoveCol(lostNorm[i].idx);
 				}
-				LoewdinSVDOrthonormalize(A,epsSV,nSV);
+/*				printf("A = \n");
+				A.print();
+				printf("\n");
+*/				LoewdinSVDOrthonormalize(A,epsSV,nSV);
 			}
 		}
 
@@ -254,8 +282,6 @@ void LoewdinSVDOrthonormalize(LinAlg::Matrix<double> &A, double epsSV, uint32_t 
 	free(VT);
 	free(work);
 	free(iwork);
-
-
 }
 
 inline void BlockSkalarProduct(const LinAlg::Matrix<double> &A,const LinAlg::Matrix<double> &B, LinAlg::Matrix<double> &C)
@@ -297,8 +323,11 @@ void BlockLanczos(LinAlg::LinearMap<double, std::vector<double>, std::vector<dou
 
 	//Q[0] = LinAlg::Matrix<double>(startblock);
 	Q[0].copy(startblock);
-	LoewdinSVDOrthonormalize(Q[0],epsSV,nSV); 					// SVD Orthonormalize Q[0]
-	B[0].reserve(Q[0].N,Q[0].N);
+/*	printf("Q[0] = \n");
+	Q[0].print();
+	printf("\n");
+*/	LoewdinSVDOrthonormalize(Q[0],epsSV,nSV); 					// SVD Orthonormalize Q[0]
+	B[0].reserve(Q[0].N,startblock.N);
 	BlockSkalarProduct(Q[0],startblock,B[0]);					// B[0] = Q[0]^T.startblock
 
 	Q[1].reserve(Q[0].M,Q[0].N);
@@ -307,7 +336,7 @@ void BlockLanczos(LinAlg::LinearMap<double, std::vector<double>, std::vector<dou
 	BlockSkalarProduct(Q[0],Q[1],A[0]);							// A[0] = Q[0]^T.Q[1]
 	SubtractMultipliedMatrix(Q[1],Q[0],A[0]);					// Q[1] = Q[1] - Q[0].A[0]
 	LoewdinSVDOrthonormalize(Q[1],epsSV,nSV); 					// SVD Orthonormalize Q[1]
-
+	//printf("nSV = %d\n",nSV);
 	for (uint32_t i = 1; i < N; i++)
 	{
 		Q[i+1].reserve(Q[i].M,Q[i].N);

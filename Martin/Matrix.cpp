@@ -90,7 +90,7 @@ void Matrix<F>::print()
 		{
 			for (uint32_t j = 0; j < N; j++)
 			{
-				printf("%.4f\t",Entries[i+j*M]);
+				printf("%.16E\t",Entries[i+j*M]);
 			}
 			printf("\n");
 		}
@@ -106,7 +106,7 @@ void Matrix<F>::RemoveCol(uint32_t i)
 	}
 	else
 	{
-		memmove(&Entries[i],&Entries[i+N],(N-i-1)*sizeof(F));
+		memmove(&(Entries[i*M]),&(Entries[(i+1)*M]),(N-i-1)*sizeof(F)*M);
 		N--;
 		Entries = (F*) realloc(Entries,M*N*sizeof(F));
 
