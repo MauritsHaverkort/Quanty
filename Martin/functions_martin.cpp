@@ -453,6 +453,7 @@ static int LuaMartinTest(lua_State *L)
 {
 	LinAlg::CSRMatrix<double> *M = (LinAlg::CSRMatrix<double> *) luaL_checkudata(L, 1, "CSRMatrix_Type");
 	M->Print();
+	return 0;
 	WaveFunctionType *psi = (WaveFunctionType *) luaL_checkudata(L, 2, "Wavefunction_Type");
 	std::vector<double> vec, a, b, y;
 	WaveFunctionToVector(psi,vec,psi);
@@ -645,6 +646,13 @@ static int LuaReadDataFromFile(lua_State *L)
 		lua_push(L,Ms);
 		return 1;
 	}
+	if (strcmp(type, "CSRMatrix_Type") == 0)
+	{
+		LinAlg::CSRMatrix<double> *M = (LinAlg::CSRMatrix<double> *)lua_newuserdata(L, sizeof(LinAlg::CSRMatrix<double>));
+		luaL_setmetatable(L,"CSRMatrix_Type");
+		ReadDataFromFile(M,filename);
+		return 1;
+	}
 	printf("Error: LuaReadDataFromFile: data type not recognized\n");
 
 	return 0;
@@ -661,6 +669,13 @@ static int LuaWriteDataToFile(lua_State *L)
 		WriteDataToFile(Ms,filename);
 		printf("Table of compact matrices written to file %s\n",filename);
 
+		return 0;
+	}
+	if (strcmp(type, "CSRMatrix_Type") == 0)
+	{
+		LinAlg::CSRMatrix<double> *M = (LinAlg::CSRMatrix<double> *) luaL_checkudata(L, 3, "CSRMatrix_Type");
+		WriteDataToFile(M,filename);
+		printf("CSRMatrix written to file %s\n",filename);
 		return 0;
 	}
 	printf("Error: LuaReadDataFromFile: data type not recognized\n");

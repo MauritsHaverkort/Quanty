@@ -5,6 +5,8 @@
  *      Author: brass
  */
 
+#include "CSRMatrix.h"
+
 double ImExpectationValue(const CompactMatrixType &M, const std::vector<double> &v)
 {
 	double result = 0;
@@ -110,6 +112,68 @@ void WriteDataToFile(CompactMatrixType * M, const char *filename)
 	else
 	{
 		fwrite(M->VRe,sizeof(double),M->Ni*M->Nj,f);
+	}
+	fclose(f);
+
+}
+
+template<typename F>
+void WriteDataToFile(LinAlg::CSRMatrix<F> *M, const char *filename)
+{
+	FILE *f = fopen(filename,"wb");
+
+	fwrite(&(M->Ncol), sizeof(uint32_t), 1, f);
+	size_t N = M->A.size();
+	fwrite(&N, sizeof(size_t), 1, f);
+	fwrite(&(M->A[0]), sizeof(F), N, f);
+	N = M->AI.size();
+	fwrite(&N, sizeof(size_t), 1, f);
+	fwrite(&(M->AI[0]), sizeof(uint32_t), N, f);
+	N = M->AJ.size();
+	fwrite(&N, sizeof(size_t), 1, f);
+	fwrite(&(M->AJ[0]), sizeof(uint32_t), N, f);
+	fclose(f);
+
+}
+// M has to be allocated at input as M = (LinAlg::CSRMatrix<F> *) malloc(sizeof(LinAlg::CSRMatrix<F>));
+template<typename F>
+void ReadDataFromFile(LinAlg::CSRMatrix<F> *M, const char *filename)
+{
+	if (!M)
+	{
+		printf("Error in ReadDataFromFile: CSRMatrix has to be allocated at input\n");
+		fflush(stdout);
+		return;
+	}
+
+	FILE *f = fopen(filename,"rb");
+
+	M = new(M) LinAlg::CSRMatrix<F> ;
+
+	fread(&(M->Ncol), sizeof(uint32_t), 1, f);
+	size_t N = 0;
+	fread(&N, sizeof(size_t), 1, f);
+	M->A.reserve(N);
+	F value;
+	for (size_t i = 0; i < N; i++)
+	{
+		fread(&value, sizeof(F), 1, f);
+		M->A.push_back(value);
+	}
+	fread(&N, sizeof(size_t), 1, f);
+	M->AI.reserve(N);
+	uint32_t idx;
+	for (size_t i = 0; i < N; i++)
+	{
+		fread(&idx, sizeof(uint32_t), 1, f);
+		M->AI.push_back(idx);
+	}
+	fread(&N, sizeof(size_t), 1, f);
+	M->AJ.reserve(N);
+	for (size_t i = 0; i < N; i++)
+	{
+		fread(&idx, sizeof(uint32_t), 1, f);
+		M->AJ.push_back(idx);
 	}
 	fclose(f);
 
