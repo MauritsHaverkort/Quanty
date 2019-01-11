@@ -80,6 +80,17 @@ void lua_push(lua_State * L, const vector<T> &pushkin)
 	}
 }
 
+template<typename T>
+void lua_push(lua_State * L, const T *pushkin, uint32_t n)
+{
+	lua_createtable(L, (int) n, 0);
+	for (uint32_t i = 0; i < n; ++i)
+	{
+		lua_push(L, pushkin[i]);
+		lua_rawseti(L, -2, i + 1);
+	}
+}
+
 void lua_push(lua_State * L, const CompactMatrixType * const pushkin)
 {
 	LuaPushTable_CompactMatrixType(L, pushkin);
