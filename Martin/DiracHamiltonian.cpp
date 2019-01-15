@@ -123,16 +123,16 @@ double **CalculateDiracMatrixElements(double **basisfuns, double **derivativefun
 vector<vector<double> > CalculateDiracMatrixElements(vector<vector<double> > basisfuns, vector<vector<double> > derivativefuns, vector<vector<double> > dualfuns,
 		const unsigned int *indices, const unsigned int Nindices, vector<double> x,	unsigned int NGridPoints, const int kappa, const int Z)
 {
-	uint32_t i, j, n, m;
 	vector<vector<double> > result = vector<vector<double> >(Nindices);
 
-	for ( i = 0; i < Nindices; i++ )
+#pragma omp parallel for
+	for (uint32_t i = 0; i < Nindices; i++ )
 	{
 		result[i] = vector<double>(Nindices);
-		n = indices[i];
-		for ( j = i; j < Nindices; j++)
+		uint32_t n = indices[i];
+		for (uint32_t j = i; j < Nindices; j++)
 		{
-			m = indices[j];
+			uint32_t m = indices[j];
 			result[i][j] = DiracH(basisfuns[m],dualfuns[n],derivativefuns[m], x, NGridPoints, kappa, Z);
 		}
 	}

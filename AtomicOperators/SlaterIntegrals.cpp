@@ -67,19 +67,16 @@ void CalculateSlaterIntegrals(const int NIntegrals, SSlaterIntegral *integrals, 
                               double **kernels, vector<vector<double> > basisfuns, vector<vector<double> > dualfuns)
 {
 
-    int i,j, k;
-    unsigned int *n;
-    double Fk;
-
-    for( i = 0; i < NIntegrals; i++)
+#pragma omp parallel for
+    for(int i = 0; i < NIntegrals; i++)
     {
 
-        n = integrals[i].tau.n;
-        for( j = 0; j < integrals[i].Nval; j++)
+    	unsigned int *n = integrals[i].tau.n;
+        for(int j = 0; j < integrals[i].Nval; j++)
         {
 
-            k = integrals[i].k[j];
-            Fk = SlaterIntegral(dim, &(dualfuns[n[0]][0]), &(dualfuns[n[1]][0]),
+            int k = integrals[i].k[j];
+            double Fk = SlaterIntegral(dim, &(dualfuns[n[0]][0]), &(dualfuns[n[1]][0]),
                                 &(basisfuns[n[2]][0]),&(basisfuns[n[3]][0]),kernels[k]);
             integrals[i].val[j] = Fk;
 
@@ -91,19 +88,16 @@ void CalculateSlaterIntegrals(const int NIntegrals, SSlaterIntegral *integrals, 
                               vector<vector<double> > &kernels, vector<vector<double> > &basisfuns, vector<vector<double> > &dualfuns)
 {
 
-    int i,j, k;
-    unsigned int *n;
-    double Fk;
-
-    for( i = 0; i < NIntegrals; i++)
+#pragma omp parallel for
+    for(int i = 0; i < NIntegrals; i++)
     {
 
-        n = integrals[i].tau.n;
-        for( j = 0; j < integrals[i].Nval; j++)
+    	unsigned int *n = integrals[i].tau.n;
+        for(int j = 0; j < integrals[i].Nval; j++)
         {
 
-        	k = integrals[i].k[j];
-            Fk = SlaterIntegral(dim, &(dualfuns[n[0]][0]), &(dualfuns[n[1]][0]),
+        	int k = integrals[i].k[j];
+            double Fk = SlaterIntegral(dim, &(dualfuns[n[0]][0]), &(dualfuns[n[1]][0]),
                                 &(basisfuns[n[2]][0]),&(basisfuns[n[3]][0]),&(kernels[k][0]));
             integrals[i].val[j] = Fk;
 
