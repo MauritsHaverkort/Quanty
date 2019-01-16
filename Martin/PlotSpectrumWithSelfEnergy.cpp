@@ -60,7 +60,7 @@ double EvaluateResponseFunction(double w, double gH, const std::vector<double> &
 	for (uint32_t i = 0; i < N; i++)
 	{
 		Sigma->V[i*N +i].Re += H[i] - w;
-		Sigma->V[i*N +i].Im += -gH;
+		Sigma->V[i*N +i].Im += -gH/2.0;
 	}
 
 	CompactMatrixInverse(Sigma);
