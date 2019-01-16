@@ -329,6 +329,7 @@ void BlockLanczos(LinAlg::LinearMap<double, std::vector<double>, std::vector<dou
 */	LoewdinSVDOrthonormalize(Q[0],epsSV,nSV); 					// SVD Orthonormalize Q[0]
 	B[0].reserve(Q[0].N,startblock.N);
 	BlockSkalarProduct(Q[0],startblock,B[0]);					// B[0] = Q[0]^T.startblock
+	//BlockSkalarProduct(startblock,Q[0],B[0]);					// B[0] = startblock^T.Q[0] since B[0] will be copied to B[0]^T
 
 	Q[1].reserve(Q[0].M,Q[0].N);
 	LinMap.BlockEvaluate(Q[0],Q[1]);							// Q[1] = LinMap(Q[0])
