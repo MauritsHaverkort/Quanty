@@ -883,6 +883,10 @@ static int LuaSparseTridiagonalize(lua_State *L)
     InitBlockTridiagonalMatrix(&GTri);
     GTri.mu=0;
     uint32_t bs = GTri.BlockSize;
+    for (uint32_t i = 0; i < bs; i++)
+	{
+		GTri.bRe[i*bs + i] = 0;
+	}
     for(uint32_t k = 0; k < N; k++)
     {
     	for (uint32_t i = 0; i < A[k].M; i++)
@@ -900,6 +904,16 @@ static int LuaSparseTridiagonalize(lua_State *L)
 			}
 		}
     }
+    // b0 correspond to B[0]^T since I am stupid and did not use the same convention...
+	for (uint32_t i = 0; i < bs; i++)
+	{
+		for (uint32_t j = i+1; j < bs; j++)
+		{
+			double help = GTri.bRe[i*bs + j];
+			GTri.bRe[i*bs + j] = GTri.bRe[j*bs + i];
+			GTri.bRe[j*bs + i] = help;
+		}
+	}
 
     LuaPushTable_BlockTriDiagonalMatrixType(L, &GTri);
 
