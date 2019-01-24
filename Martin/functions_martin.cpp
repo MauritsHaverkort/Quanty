@@ -1188,6 +1188,35 @@ static int LuaOperatorToCSRMatrix(lua_State *L)
 	return 1;
 }
 
+static int LuaExport(lua_State *L)
+{
+	std::vector<std::vector<double> > table;
+	std::vector<double> list;
+	const char *filename = luaL_checkstring(L,2);
+	FILE *f = fopen(filename,"w");
+	if (luaL_isType(L,1,table))
+	{
+		lua_check(L,1,table);
+		for (size_t i = 0; i < table.size(); i++)
+		{
+			for (size_t j = 0; j < table[i].size(); j++)
+			{
+				fprintf(f,"%E\t",table[i][j]);
+			}
+			fprintf(f,"\n");
+		}
+	}
+	else
+	{
+		lua_check(L,1,list);
+		for (size_t i = 0; i < list.size(); i++)
+		{
+			fprintf(f,"%E\n",list[i]);
+		}
+	}
+	return 0;
+}
+
 static const struct luaL_Reg Martin_meta[] = {
   {NULL, NULL}
 };
@@ -1243,6 +1272,7 @@ static const struct luaL_Reg Martin_func[] = {
   {"SparseTri",LuaSparseTridiagonalize},
   {"OperatorToCSRMatrix",LuaOperatorToCSRMatrix},
   {"CSRTridiagonalize",LuaCSRTridiagonalize},
+  {"Export",LuaExport},
   {NULL, NULL}
 };
 

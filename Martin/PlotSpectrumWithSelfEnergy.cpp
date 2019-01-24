@@ -147,6 +147,12 @@ void ReadDataFromFile(LinAlg::CSRMatrix<F> *M, const char *filename)
 	}
 
 	FILE *f = fopen(filename,"rb");
+	if(!f)
+	{
+		printf("error in ReadDataFromFile: could not open file %s",filename);
+		fflush(stdout);
+		return;
+	}
 
 	M = new(M) LinAlg::CSRMatrix<F> ;
 
@@ -182,6 +188,12 @@ void ReadDataFromFile(LinAlg::CSRMatrix<F> *M, const char *filename)
 void ReadDataFromFile(CompactMatrixType * M, const char *filename)
 {
 	FILE *f = fopen(filename,"rb");
+	if(!f)
+	{
+		printf("error in ReadDataFromFile: could not open file %s",filename);
+		fflush(stdout);
+		return;
+	}
 
 	M = (CompactMatrixType *) malloc(sizeof(CompactMatrixType));
 	fread(&(M->QComplex),sizeof(uint32_t),1,f);
@@ -225,6 +237,12 @@ void WriteDataToFile(std::vector<CompactMatrixType *> Ms, const char *filename)
 void ReadDataFromFile(std::vector<CompactMatrixType *> &Ms, const char *filename)
 {
 	FILE *f = fopen(filename,"rb");
+	if(!f)
+	{
+		printf("error in ReadDataFromFile: could not open file %s",filename);
+		fflush(stdout);
+		return;
+	}
 
 	size_t N;
 	fread(&N,sizeof(size_t),1,f);
