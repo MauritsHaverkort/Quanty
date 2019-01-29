@@ -11,6 +11,7 @@
 #include "CSRMatrix.cpp"
 #include "Matrix.cpp"
 #include "SparseOperator.cpp"
+#include "CouplingToEMField.cpp"
 
 
 static int LuaOperatorNewFullCoulomb (lua_State *L)
@@ -451,7 +452,23 @@ static int LuaMetricWaveFuns(lua_State *L)
 
 static int LuaMartinTest(lua_State *L)
 {
-	LinAlg::CSRMatrix<double> *M = (LinAlg::CSRMatrix<double> *) luaL_checkudata(L, 1, "CSRMatrix_Type");
+	const char *filename = "out.scf";
+	string orb = "4p";
+	string j = "3/2";
+
+	vector<string> orbitalLabels;
+	vector<double> energies;
+	lua_check(L,1,orbitalLabels);
+	energies.reserve(orbitalLabels.size());
+	for (size_t i = 0; i < orbitalLabels.size(); i++)
+	{
+		orb = orbitalLabels[i].substr(0,2);
+		j   = orbitalLabels[i].substr(2,3);
+		energies.push_back(ParseFPLOEnergies(filename,orb,j));
+	}
+	lua_push(L,energies);
+	return 1;
+/*	LinAlg::CSRMatrix<double> *M = (LinAlg::CSRMatrix<double> *) luaL_checkudata(L, 1, "CSRMatrix_Type");
 	M->Print();
 	return 0;
 	WaveFunctionType *psi = (WaveFunctionType *) luaL_checkudata(L, 2, "Wavefunction_Type");
@@ -465,7 +482,7 @@ static int LuaMartinTest(lua_State *L)
 		startblock.Entries[i] = vec[i];
 		startblock.Entries[i+Mrow] = vec[i]+i;
 	}*/
-	startblock.Entries[0] = -1;
+/*	startblock.Entries[0] = -1;
 	startblock.Entries[1] =  0;
 	startblock.Entries[2] =  3;
 	startblock.Entries[3] =  1;
@@ -499,7 +516,7 @@ static int LuaMartinTest(lua_State *L)
 	{
 		T[i].print();
 		printf("\n");
-	}
+	}*/
 	return 0;
 }
 
@@ -1217,6 +1234,27 @@ static int LuaExport(lua_State *L)
 	return 0;
 }
 
+static int LuaReadFPLOEnergies(lua_State *L)
+{
+	string filename; 	//  = "out.scf";
+	string orb; 			// = "4s"
+	string j;   			// = "1/2"
+
+	vector<string> orbitalLabels;
+	vector<double> energies;
+	lua_check(L,1,orbitalLabels);
+	lua_check(L,2,filename);
+	energies.reserve(orbitalLabels.size());
+	for (size_t i = 0; i < orbitalLabels.size(); i++)
+	{
+		orb = orbitalLabels[i].substr(0,2);
+		j   = orbitalLabels[i].substr(2,3);
+		energies.push_back(ParseFPLOEnergies(filename.c_str(),orb,j));
+	}
+	lua_push(L,energies);
+	return 1;
+}
+
 static const struct luaL_Reg Martin_meta[] = {
   {NULL, NULL}
 };
@@ -1273,6 +1311,7 @@ static const struct luaL_Reg Martin_func[] = {
   {"OperatorToCSRMatrix",LuaOperatorToCSRMatrix},
   {"CSRTridiagonalize",LuaCSRTridiagonalize},
   {"Export",LuaExport},
+  {"ReadFPLOEnergies",LuaReadFPLOEnergies},
   {NULL, NULL}
 };
 
