@@ -1255,6 +1255,39 @@ static int LuaReadFPLOEnergies(lua_State *L)
 	return 1;
 }
 
+static int LuaRelativisticDipoleOperator(lua_State *L)
+{
+	vector<Interpolation::InterpolatingFunction* > G, F;
+	vector<double> energies;
+	vector<int> indToK;
+	vector<vector<uint32_t> > indices;
+	uint32_t mu, NF;
+	lua_check(L,1,G);
+	lua_check(L,2,F);
+	lua_check(L,3,energies);
+	lua_check(L,4,mu);
+	lua_getfield(L,5,"kappas");
+	if (lua_isnil(L,-1))
+	{
+		return luaL_error(L,"Error in LuaRelativisticDipoleOperator: indices do not contain field \"kappas\"\n Please use the function CreateAtomicIndicesList to generate indices with option {{\"Kappas\",true}}\n");;
+	}
+	lua_check(L,-1,indToK);
+	lua_pop(L,1);
+	lua_check(L,5,indices);
+	lua_check(L,6,NF);
+	size_t Norbitals = G.size();
+	if (Norbitals != F.size() || Norbitals != energies.size() || Norbitals != indToK.size() || Norbitals != indices.size())
+	{
+		return luaL_error(L,"Error in LuaRelativisticDipoleOperator: Objects of unequal lenght: G : %d\n F : %d\n energies : %d\n indices: %d\n indices[kappas] : %d\n",Norbitals ,F.size(),energies.size(),indices.size(),indToK.size());
+	}
+
+	OperatorType *op = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
+	luaL_setmetatable(L,"Operator_Type");
+	CreateRelativisticDipoleOperator(op,G,F,energies,mu,indices,indToK,NF);
+
+	return 1;
+}
+
 static const struct luaL_Reg Martin_meta[] = {
   {NULL, NULL}
 };
@@ -1312,6 +1345,7 @@ static const struct luaL_Reg Martin_func[] = {
   {"CSRTridiagonalize",LuaCSRTridiagonalize},
   {"Export",LuaExport},
   {"ReadFPLOEnergies",LuaReadFPLOEnergies},
+  {"RelativisticDipoleOperator",LuaRelativisticDipoleOperator},
   {NULL, NULL}
 };
 

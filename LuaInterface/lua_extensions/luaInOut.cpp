@@ -302,6 +302,10 @@ void lua_check(lua_State * L, int arg, map<keyType, valType> &in)
 	}
 }
 
+void lua_check(lua_State *L, int arg, Interpolation::InterpolatingFunction* &in)
+{
+	in = (Interpolation::InterpolatingFunction*) luaL_checkudata(L, arg, "InterpolatingFunction_Type");
+}
 
 //Begin of luaL_isType, which checks if the type of an object on the stack is the same as that of the example given as reference, returning a bool without throwing an error.
 

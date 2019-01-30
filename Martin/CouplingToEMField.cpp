@@ -161,39 +161,22 @@ double ParseFPLOEnergies(const char *filename, const string &orbital, const stri
 	}
 }
 
-void GetFPLOEnergies(const char *filename, const std::vector<std::string> &orbitalnames, std::vector<double> &energies)
+void CreateRelativisticDipoleOperator(OperatorType *op,vector<Interpolation::InterpolatingFunction*> G,vector<Interpolation::InterpolatingFunction*> F,
+									  vector<double> energies, uint32_t mu, vector<vector<uint32_t> > indices, vector<int> indToK,uint32_t NF)
 {
-	std::map<std::string,double> dictEnergies;
-	std::ifstream file;
+	vector<double> grg, frf;
+	uint32_t N = (uint32_t) G.size();
+	grg = vector(N*N);
+	frf = vector(N*N);
+	for (uint32_t i = 0; i < N; i++)
+	{
 
-	file.open(filename);
-	if(!file.is_open())
-	{
-		printf("Error: could not open %s\n",filename);
-		fflush(stdout);
-	}
-	else
-	{
-		std::string word, appendix;
-		double val;
-		while(!file.eof() && word != "ENERGIES")
+		for (uint32_t j = i; j < N; j++)
 		{
-			file >> word;
+			grg.push_back(Quad::GetMultipoleIntegral(*G[i],*G[j],1,3));
+			frf.push_back(Quad::GetMultipoleIntegral(*F[i],*F[j],1,3));
 		}
-		file >> word;file >> word;file >> word;file >> word;file >> word;file >> word;file >> word;file >> word;file >> word;file >> word;file >> word;file >> word;file >> word;
-		file >> word;
-
-		file >> appendix;
-		word.append(appendix);
-		file >> appendix;
-		val = atof(appendix.c_str());
-		dictEnergies[word] = val;
-		file >> word;file >> word;file >> word;file >> word;file >> word;file >> word;file >> word;file >> word;file >> word;
-		cout << val << endl;
 	}
-
-
-
 }
 
 

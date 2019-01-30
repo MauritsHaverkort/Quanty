@@ -35,6 +35,7 @@ void lua_check(lua_State *L, int arg, TightBindingDef* &in);
 void lua_check(lua_State *L, int arg, Complex16 &in);
 void lua_check(lua_State *L, int arg, AtomType &in);
 void lua_check(lua_State *L, int arg, AtomType* &in);
+void lua_check(lua_State *L, int arg, Interpolation::InterpolatingFunction* &in);
 template<typename T>void lua_check(lua_State * L, int arg, vector<T> &in);
 template<typename keyType, typename valType>void lua_check(lua_State * L, int arg, map<keyType, valType> &in);
 bool luaL_isudata(lua_State *L, int ud, const char *tname);
