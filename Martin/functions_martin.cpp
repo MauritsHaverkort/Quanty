@@ -452,22 +452,21 @@ static int LuaMetricWaveFuns(lua_State *L)
 
 static int LuaMartinTest(lua_State *L)
 {
-	const char *filename = "out.scf";
-	string orb = "4p";
-	string j = "3/2";
-
-	vector<string> orbitalLabels;
-	vector<double> energies;
-	lua_check(L,1,orbitalLabels);
-	energies.reserve(orbitalLabels.size());
-	for (size_t i = 0; i < orbitalLabels.size(); i++)
-	{
-		orb = orbitalLabels[i].substr(0,2);
-		j   = orbitalLabels[i].substr(2,3);
-		energies.push_back(ParseFPLOEnergies(filename,orb,j));
-	}
-	lua_push(L,energies);
-	return 1;
+	uint32_t mu;
+	int kappa1;
+	int kappa2;
+	int twom1;
+	int twom2;
+	lua_check(L,1,mu);
+	lua_check(L,2,kappa1);
+	lua_check(L,3,kappa2);
+	lua_check(L,4,twom1);
+	lua_check(L,5,twom2);
+	printf("\nmu = %d\nkappa1 = %i\nkappa2 = %i\nm1 = %i/2\nm2 = %i/2\n",mu,kappa1,kappa2,twom1,twom2);
+	printf("\nYYY = %f\n",YYYintegral(0,0,1,1,1,-1));
+	printf("\nCGo = %f\n",ClebschHalf(2,0,1,1,3,1));
+	printf("\nDipole = %f\n",DipoleMatrixElement(1,1,1,mu,kappa1,kappa2,twom1,twom2));
+	return 0;
 /*	LinAlg::CSRMatrix<double> *M = (LinAlg::CSRMatrix<double> *) luaL_checkudata(L, 1, "CSRMatrix_Type");
 	M->Print();
 	return 0;
