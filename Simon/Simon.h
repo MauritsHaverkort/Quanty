@@ -3,6 +3,7 @@
 #include "AtomicNumberOperators.h"
 #include "AtomicToWannierMatrix.h"
 #include "CompactMatrix.h"
+#include "Kappa.h"
 #include "lsCouplingConstant.h"
 #include "MatrixToOperator.h"
 #include "ReduceHilbertSpace.h"

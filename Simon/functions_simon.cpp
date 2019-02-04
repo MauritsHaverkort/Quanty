@@ -92,6 +92,7 @@ static const struct luaL_Reg Simon_func[] = {
 	{"lsCouplingConstants", LuaLSCouplingConstants},
 	{"ReduceHilbertSpace", LuaReduceHilbertSpace},
 	{"RemoveSpin", LuaRemoveSpin},
-  {"test", LuaSimontest},
-  {NULL, NULL}
+	{"SortByKappa",LuaSortByKappa},
+	{"test", LuaSimontest},
+	{NULL, NULL}
 };
