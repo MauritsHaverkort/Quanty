@@ -170,6 +170,10 @@ void CreateRelativisticDipoleOperator(OperatorType *op,vector<Interpolation::Int
 	OperatorType optemp;
 	uint32_t N = (uint32_t) G.size();
 	CreateOperatorNumber(NF,0,0,op);
+	strcpy(op->Name, "Dipole operator");
+	//OperatorScale(op,0,0);
+	OperatorChop(op,2);
+	//InitOperatorFixedLength(op, 2, 8);
 
 	for (uint32_t i = 0; i < N; i++)
 	{
