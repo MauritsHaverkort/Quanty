@@ -63,6 +63,11 @@ void WaveFunctionToVector(const WaveFunctionType * const psi,std::vector<double>
 #pragma omp parallel
 {
 	uint8_t *Det = (uint8_t*)malloc(psi->NWord * sizeof(uint8_t));
+	if (!Det)
+	{
+		printf("malloc failed for Det in WaveFunctionToVector\n");
+		fflush(stdout);
+	}
 	#pragma omp for
 	for (uint32_t i = 1; i <= psi->N; i++)
 	{
@@ -181,7 +186,12 @@ void LoewdinSVDOrthonormalize(LinAlg::Matrix<double> &A, double epsSV, uint32_t 
 	S 	 = (double*) malloc(nSV             * sizeof(double));
 	VT 	 = (double*) malloc(Ncol * Ncol     * sizeof(double));
 	work = (double*) malloc(lwork 		    * sizeof(double));
-	iwork= (int   *) malloc(8*Min(Mrow,Ncol)* sizeof(int));
+	//iwork= (int   *) malloc(8*Min(Mrow,Ncol)* sizeof(int));
+	if(!U || !S || !VT || !work)
+	{
+		printf("malloc failed in LoewdinSVDOrthonormalize\n");
+		fflush(stdout);
+	}
 
 	dgesvd(JOBU, JOBVT,&Mrow,&Ncol,A.Entries,&Mrow,S,U,&Mrow,VT,&Ncol,work,&lwork,&info);
 	//dgesdd(JOBU, &Mrow, &Ncol, A.Entries, &Mrow, S, U, &Mrow, VT, &Ncol, work, &lwork, iwork, &info);
@@ -281,7 +291,7 @@ void LoewdinSVDOrthonormalize(LinAlg::Matrix<double> &A, double epsSV, uint32_t 
 	free(S);
 	free(VT);
 	free(work);
-	free(iwork);
+	//free(iwork);
 }
 
 inline void BlockSkalarProduct(const LinAlg::Matrix<double> &A,const LinAlg::Matrix<double> &B, LinAlg::Matrix<double> &C)
