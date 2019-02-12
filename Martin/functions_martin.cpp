@@ -12,6 +12,8 @@
 #include "Matrix.cpp"
 #include "SparseOperator.cpp"
 #include "CouplingToEMField.cpp"
+#include "AuxFunctions.cpp"
+#include "ResonantSpectraSelfEnergy.cpp"
 
 
 static int LuaOperatorNewFullCoulomb (lua_State *L)
@@ -450,74 +452,7 @@ static int LuaMetricWaveFuns(lua_State *L)
 	return 1;
 }
 
-static int LuaMartinTest(lua_State *L)
-{
-	uint32_t mu;
-	int kappa1;
-	int kappa2;
-	int twom1;
-	int twom2;
-	lua_check(L,1,mu);
-	lua_check(L,2,kappa1);
-	lua_check(L,3,kappa2);
-	lua_check(L,4,twom1);
-	lua_check(L,5,twom2);
-	printf("\nmu = %d\nkappa1 = %i\nkappa2 = %i\nm1 = %i/2\nm2 = %i/2\n",mu,kappa1,kappa2,twom1,twom2);
-	printf("\nYYY = %f\n",YYYintegral(0,0,1,1,1,-1));
-	printf("\nCGo = %f\n",ClebschHalf(2,0,1,1,3,1));
-	printf("\nDipole = %f\n",DipoleMatrixElement(1,1,1,mu,kappa1,kappa2,twom1,twom2));
-	return 0;
-/*	LinAlg::CSRMatrix<double> *M = (LinAlg::CSRMatrix<double> *) luaL_checkudata(L, 1, "CSRMatrix_Type");
-	M->Print();
-	return 0;
-	WaveFunctionType *psi = (WaveFunctionType *) luaL_checkudata(L, 2, "Wavefunction_Type");
-	std::vector<double> vec, a, b, y;
-	WaveFunctionToVector(psi,vec,psi);
-	uint32_t Mrow = vec.size();
-	uint32_t Ncol = 2;
-	LinAlg::Matrix<double> startblock = LinAlg::Matrix<double>(Mrow,Ncol);
-	/*for(uint32_t i = 0; i < Mrow;i++)
-	{
-		startblock.Entries[i] = vec[i];
-		startblock.Entries[i+Mrow] = vec[i]+i;
-	}*/
-/*	startblock.Entries[0] = -1;
-	startblock.Entries[1] =  0;
-	startblock.Entries[2] =  3;
-	startblock.Entries[3] =  1;
-	startblock.Entries[4] =  1;
-	startblock.Entries[5] =  3;
 
-	startblock.Entries[6] =  2;
-	startblock.Entries[7] =  1;
-	startblock.Entries[8] =  1;
-	startblock.Entries[9] =  0;
-	startblock.Entries[10] = 0;
-	startblock.Entries[11] = 3;
-	std::vector<LinAlg::Matrix<double> > T,A,B;
-	double epsSV = 100*DBL_EPSILON;
-	uint32_t N = 4;
-	BlockLanczos(*M,startblock,N,epsSV,A,B,T);
-	printf("A:\n");
-	for (int i = 0; i < N; i++)
-	{
-		A[i].print();
-		printf("\n");
-	}
-	printf("B:\n");
-	for (int i = 0; i < N; i++)
-	{
-		B[i].print();
-		printf("\n");
-	}
-	printf("T:\n");
-	for (int i = 0; i < N; i++)
-	{
-		T[i].print();
-		printf("\n");
-	}*/
-	return 0;
-}
 
 static int LuaPlotSpectrumWithSelfEnergy(lua_State *L)
 {
@@ -1285,6 +1220,107 @@ static int LuaRelativisticDipoleOperator(lua_State *L)
 	CreateRelativisticDipoleOperator(op,G,F,energies,mu,indices,indToK,NF);
 
 	return 1;
+}
+
+static int LuaMartinTest(lua_State *L)
+{
+	OperatorType *H, *T;
+	std::vector<WaveFunctionType> psi;
+	lua_check(L,1,H);
+	lua_check(L,2,T);
+	lua_check(L,3,psi);
+
+	BlockTriDiagonalMatrixType GTri;
+	CreateSpectrum(*H,*T,&psi[0],psi.size(),1E-16,GTri,4);
+	LuaPushTable_BlockTriDiagonalMatrixType(L, &GTri);
+	return 1;
+
+/*
+	MatrixType U;
+	std::vector<WaveFunctionType> psi;
+	WaveFunctionType *out;
+
+	lua_check(L,1,psi);
+	U = *luaL_checkMatrix(L,2);
+	RotateWaveFunctions(&psi[0],psi.size(),U,out);
+    char *Buffer;
+    lua_createtable(L,psi.size(),0);
+    for (int i = 0; i < psi.size(); i++)
+    {
+    	StringPrintWaveFunctionReadable(out[i], &Buffer);
+    	lua_pushstring(L, Buffer);
+    	lua_rawseti(L,-2,i+1);
+    }
+
+	return 1;
+*/
+	/*
+	uint32_t mu;
+	int kappa1;
+	int kappa2;
+	int twom1;
+	int twom2;
+	lua_check(L,1,mu);
+	lua_check(L,2,kappa1);
+	lua_check(L,3,kappa2);
+	lua_check(L,4,twom1);
+	lua_check(L,5,twom2);
+	printf("\nmu = %d\nkappa1 = %i\nkappa2 = %i\nm1 = %i/2\nm2 = %i/2\n",mu,kappa1,kappa2,twom1,twom2);
+	printf("\nYYY = %f\n",YYYintegral(0,0,1,1,1,-1));
+	printf("\nCGo = %f\n",ClebschHalf(2,0,1,1,3,1));
+	printf("\nDipole = %f\n",DipoleMatrixElement(1,1,1,mu,kappa1,kappa2,twom1,twom2));
+	return 0;
+	*/
+/*	LinAlg::CSRMatrix<double> *M = (LinAlg::CSRMatrix<double> *) luaL_checkudata(L, 1, "CSRMatrix_Type");
+	M->Print();
+	return 0;
+	WaveFunctionType *psi = (WaveFunctionType *) luaL_checkudata(L, 2, "Wavefunction_Type");
+	std::vector<double> vec, a, b, y;
+	WaveFunctionToVector(psi,vec,psi);
+	uint32_t Mrow = vec.size();
+	uint32_t Ncol = 2;
+	LinAlg::Matrix<double> startblock = LinAlg::Matrix<double>(Mrow,Ncol);
+	/*for(uint32_t i = 0; i < Mrow;i++)
+	{
+		startblock.Entries[i] = vec[i];
+		startblock.Entries[i+Mrow] = vec[i]+i;
+	}*/
+/*	startblock.Entries[0] = -1;
+	startblock.Entries[1] =  0;
+	startblock.Entries[2] =  3;
+	startblock.Entries[3] =  1;
+	startblock.Entries[4] =  1;
+	startblock.Entries[5] =  3;
+
+	startblock.Entries[6] =  2;
+	startblock.Entries[7] =  1;
+	startblock.Entries[8] =  1;
+	startblock.Entries[9] =  0;
+	startblock.Entries[10] = 0;
+	startblock.Entries[11] = 3;
+	std::vector<LinAlg::Matrix<double> > T,A,B;
+	double epsSV = 100*DBL_EPSILON;
+	uint32_t N = 4;
+	BlockLanczos(*M,startblock,N,epsSV,A,B,T);
+	printf("A:\n");
+	for (int i = 0; i < N; i++)
+	{
+		A[i].print();
+		printf("\n");
+	}
+	printf("B:\n");
+	for (int i = 0; i < N; i++)
+	{
+		B[i].print();
+		printf("\n");
+	}
+	printf("T:\n");
+	for (int i = 0; i < N; i++)
+	{
+		T[i].print();
+		printf("\n");
+	}*/
+	return 0;
 }
 
 static const struct luaL_Reg Martin_meta[] = {
