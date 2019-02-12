@@ -1,6 +1,7 @@
 string cutLeadingSpaces(string in);
 string cutTrailingSpaces(string in);
-string cutSpaces(string in);
+string cutBorderSpaces(string in);
+void deconstructOrbname(const string &orb, uint &siteNum, string &atomName, uint &n, string &shell, int lz);
 bool atomicStateSorter(string s1, string s2);
 vector<map<string, double> > getWF_coefficients_Filecontent(const string &filename, vector<string> &orbitalNames);
 CompactMatrixType AtomicToWannierMatrix(const string &filename, vector<string> &orbitalNames);

@@ -1,9 +1,9 @@
-template<typename T>void debug(T debugMessage);
+template<typename T>void debug(const T debugMessage);
 void debug();
-template<typename T>void debug(vector<T> vec);
+template<typename T>void debug(const vector<T> &vec);
 template<typename keyType, typename valType>void debug(const map<keyType, valType> &m);
-void debug(CompactMatrixType M, string str);
-void debug(MatrixType M, string str);
-void debug(CompactMatrixType M);
-void debug(MatrixType M);
+void debug(const CompactMatrixType &M, const string &str);
+void debug(const MatrixType &M, const string &str);
+void debug(const CompactMatrixType &M);
+void debug(const MatrixType &M);
 static int LuaSimontest(lua_State * L);
