@@ -1,6 +1,6 @@
 // Function copy pasetd from REsonantSpectra.cpp and self energy added
 
-uint32_t ResonantSpectraSelfEnergy(const OperatorType OppH1, const OperatorType OppH2, const OperatorType T1, const OperatorType *T2, const vector<OperatorType> &U, uint32_t NT2, const WaveFunctionType psi, TriDiagonalMatrixType **SpecTri2, SpectraType **Spec, double energy1, double energy2, ConvergenceSettingsType *settings, const vector<double> &EnergyContinuum)
+uint32_t ResonantSpectraSelfEnergy(const OperatorType OppH1, const OperatorType OppH2, const OperatorType T1, const OperatorType *T2, const vector<OperatorType*> &U, uint32_t NT2, const WaveFunctionType psi, TriDiagonalMatrixType **SpecTri2, SpectraType **Spec, double energy1, double energy2, ConvergenceSettingsType *settings, const vector<double> &EnergyContinuum, uint32_t NTriSE)
 {
   /*Given wavefunction psi (usually ground state, but could be excited)*/
 
@@ -21,7 +21,6 @@ uint32_t ResonantSpectraSelfEnergy(const OperatorType OppH1, const OperatorType 
    * epsilon
    */
 
-	uint32_t NTriSE = 4; // TODO paramter / options tsuff --------------------------------------------------------------------------------------------------------
 
   WaveFunctionType Tpsi,GTpsi,TGTpsi, PsiBasis[settings->NTri1],*EigenBasis;
   TriDiagonalMatrixType SpecTri1;
@@ -84,9 +83,9 @@ uint32_t ResonantSpectraSelfEnergy(const OperatorType OppH1, const OperatorType 
 
   RotateWaveFunctions(PsiBasis,settings->NTri1,EFun,EigenBasis);
   BlockTriDiagonalMatrixType SE[NSelfEnergy];
-  for (uint32_t i = 0; i < NSelfEnergy; i++)
+  for (i = 0; i < NSelfEnergy; i++)
   {
-	  CreateSpectrum(OppH1,U[i],EigenBasis,settings->NTri1,settings->epsilon,SE[i],NTriSE);
+	  CreateSpectrum(OppH1,*U[i],EigenBasis,settings->NTri1,settings->epsilon,SE[i],NTriSE);
   }
 
   /* determine Emin1, Emax1, NE1 and Gamma1 if not set */
@@ -154,7 +153,7 @@ uint32_t ResonantSpectraSelfEnergy(const OperatorType OppH1, const OperatorType 
 
     CompactMatrixType SEw, temp;
     EvaluateBlockTriDiagonalMatrix(&SE[0],&SEw,wRes-EnergyContinuum[0],settings->Gamma1);
-    for(uint32_t i = 1; i < NSelfEnergy; i++)
+    for(i = 1; i < NSelfEnergy; i++)
     {
     	EvaluateBlockTriDiagonalMatrix(&SE[i],&temp,wRes-EnergyContinuum[i],settings->Gamma1);
     	CompactMatrixAdd(&SEw,&temp);
@@ -167,7 +166,10 @@ uint32_t ResonantSpectraSelfEnergy(const OperatorType OppH1, const OperatorType 
 
     	//EValInvIm[i] = -(settings->Gamma1/2.0) / ((wRes - EVal[i])*(wRes - EVal[i])+(settings->Gamma1/2.0)*(settings->Gamma1/2.0));
     }
-    CompactMatrixInverse(SE.w);
+    CompactMatrixInverse(&SEw);
+    CompactMatrixType UTGdiag, Ueigen;
+    Ueigen = MatrixTypeToCompactMatrixType(EFun);
+    CompactMatrixMultiply('C','N',&Ueigen,&SEw,&UTGdiag);
 
     /* We are trying to calculate Q[0,:]A^(-1)Q^(-1).  Because A is diagonal, we were
      able to calculate B = Q[0,:]*I*Q^(-1) outside the loop. Now we calculate diag(A)*B */
@@ -190,25 +192,22 @@ uint32_t ResonantSpectraSelfEnergy(const OperatorType OppH1, const OperatorType 
       {
         for(k = 0; k < settings->NTri1; k++)
         {
-          tempDoubleRe += EValInvRe[k]*EFun.VRe[k][i]*EFun.VRe[k][0] -
-          EValInvIm[k]*EFun.VIm[k][i]*EFun.VRe[k][0] -
-          EValInvIm[k]*EFun.VRe[k][i]*EFun.VIm[k][0] -
-          EValInvRe[k]*EFun.VIm[k][i]*EFun.VIm[k][0];
-          tempDoubleIm += EValInvIm[k]*EFun.VRe[k][i]*EFun.VRe[k][0] +
-          EValInvRe[k]*EFun.VIm[k][i]*EFun.VRe[k][0] +
-          EValInvRe[k]*EFun.VRe[k][i]*EFun.VIm[k][0] -
-          EValInvIm[k]*EFun.VIm[k][i]*EFun.VIm[k][0];
+          tempDoubleRe += UTGdiag.V[i*UTGdiag.Nj + k].Re * Ueigen.V[k*Ueigen.Nj].Re
+        		  	    - UTGdiag.V[i*UTGdiag.Nj + k].Im * Ueigen.V[k*Ueigen.Nj].Im;
+          tempDoubleIm += UTGdiag.V[i*UTGdiag.Nj + k].Re * Ueigen.V[k*Ueigen.Nj].Im
+        		  	    + UTGdiag.V[i*UTGdiag.Nj + k].Im * Ueigen.V[k*Ueigen.Nj].Re;
         }
       }
       else
       {
         for(k = 0; k < settings->NTri1; k++)
         {
-          tempDoubleRe += EValInvRe[k]*EFun.VRe[k][i]*EFun.VRe[k][0];
-          tempDoubleIm += EValInvIm[k]*EFun.VRe[k][i]*EFun.VRe[k][0];
+          tempDoubleRe += UTGdiag.V[i*UTGdiag.Nj + k].Re * Ueigen.VRe[k*Ueigen.Nj];
+          tempDoubleIm += UTGdiag.V[i*UTGdiag.Nj + k].Im * Ueigen.VRe[k*Ueigen.Nj];
         }
       }
-      WaveFunctionAddComplexMultipliedUnionBasis(&GTpsi, PsiBasis[i],SpecTri1.b[0]*tempDoubleRe,SpecTri1.b[0]*tempDoubleIm);
+      // Here we correct for the missing minus sign (see above) by multiplying with -b0
+      WaveFunctionAddComplexMultipliedUnionBasis(&GTpsi, PsiBasis[i],-SpecTri1.b[0]*tempDoubleRe,-SpecTri1.b[0]*tempDoubleIm);
     }
     for(i = 0; i < NT2; i++)
     {

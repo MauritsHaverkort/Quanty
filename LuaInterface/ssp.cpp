@@ -661,6 +661,11 @@ static int LuaNewOperator(lua_State * L)
     lua_remove(L, 1);
     return LuaOperatorNewAtomicU(L);
   }
+  if ((strcmp(OT, "ContinuumU") == 0)||(strcmp(OT, "CU") == 0))
+  {
+    lua_remove(L, 1);
+    return LuaOperatorNewContinuumU(L);
+  }
   if ((strcmp(OT, "Dirac") == 0)) // ||(strcmp(OT, "H0") == 0)
   {
     lua_remove(L, 1);

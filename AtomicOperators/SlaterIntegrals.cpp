@@ -1,6 +1,6 @@
 #include "../AtomicOperators/SlaterIntegrals.h"
 
-SSlaterIntegral *GetSlaterIntegrals(const vector<vector<double> > &basisfuns,const vector<double> &x,const vector<int> &indToK, unsigned int &NIntegrals)
+SSlaterIntegral *GetSlaterIntegrals(const vector<vector<double> > &basisfuns,const vector<double> &x,const vector<int> &indToK, unsigned int &NIntegrals, bool Qcontinuum)
 {
 
     SSlaterIntegral *si;
@@ -14,7 +14,7 @@ SSlaterIntegral *GetSlaterIntegrals(const vector<vector<double> > &basisfuns,con
 
     CreateDualFunctions(basisfuns,x,dualfuns);
 
-    si = InitializeIntegrals(indToK, NIntegrals,&kMax);
+    si = InitializeIntegrals(indToK, NIntegrals,&kMax,Qcontinuum);
 
     kernels = CreateAllKernels(kMax, NGridPoints, &x[0]);
 
@@ -29,7 +29,7 @@ SSlaterIntegral *GetSlaterIntegrals(const vector<vector<double> > &basisfuns,con
     return si;
 }
 
-SSlaterIntegral *GetSlaterIntegrals(const vector<Interpolation::InterpolatingFunction *> &ipolfuns,const vector<int> &indToK, unsigned int &NIntegrals)
+SSlaterIntegral *GetSlaterIntegrals(const vector<Interpolation::InterpolatingFunction *> &ipolfuns,const vector<int> &indToK, unsigned int &NIntegrals, bool Qcontinuum)
 {
 
 	uint32_t quadDegree = 3;
@@ -51,7 +51,7 @@ SSlaterIntegral *GetSlaterIntegrals(const vector<Interpolation::InterpolatingFun
 	unsigned int kMax;
 	vector<vector<double> > kernels;
 
-    si = InitializeIntegrals(indToK, NIntegrals,&kMax);
+    si = InitializeIntegrals(indToK, NIntegrals,&kMax,Qcontinuum);
 
     //clock_t t = clock();
     CreateAllKernels(kMax, knots,kernels);
@@ -316,12 +316,20 @@ void CreateDualFunctions(const vector<vector<double> > &basisfuns,const vector<d
     }
 }
 
-SSlaterIntegral *InitializeIntegrals(const vector<int> &indToK, unsigned int &NIntegrals, unsigned int *kMax)
+SSlaterIntegral *InitializeIntegrals(const vector<int> &indToK, unsigned int &NIntegrals, unsigned int *kMax, bool Qcontinuum)
 {
     unsigned int i, k;
     SSlaterIntegral *integrals;
 
-    std::map<myarray,myarray> tupel = CreateSlaterTuple(indToK);
+    std::map<myarray,myarray> tupel;
+    if (Qcontinuum)
+    {
+    	tupel = CreateContinuumTuple(indToK);
+    }
+    else
+    {
+    	tupel = CreateSlaterTuple(indToK);
+    }
     NIntegrals = (unsigned int)tupel.size();
 
     integrals = (SSlaterIntegral *) malloc((NIntegrals)*sizeof(SSlaterIntegral));

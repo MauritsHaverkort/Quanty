@@ -169,6 +169,163 @@ static int LuaOperatorNewAtomicU (lua_State *L)
     return 1;
 }
 
+static int LuaOperatorNewContinuumU (lua_State *L)
+{
+    OperatorType *op;
+    uint32_t Nindices, temp, len, NF;
+    uint16_t **indices;
+    vector<double> x;
+    len = (uint32_t)lua_gettop(L);
+
+    if ( len < 3 ||  len > 4)
+    {
+    	return luaL_error(L,"Error in Martin.NewCoulomb: 3 or 4 arguments expected; got %d",len);
+    }
+
+    NF = (uint32_t)luaL_checkunsigned(L, 1);
+    vector<int> indToK;
+    if (len == 4)
+	{
+		lua_getfield(L,2,"kappas");
+		if (lua_isnil(L,-1))
+		{
+			lua_pop(L,1);
+			Nindices = (uint32_t)lua_objlen(L,2);
+			indices = (uint16_t **) malloc(Nindices * sizeof(uint16_t *));
+			if(!indices) printf("malloc fail at indices in LuaOperatorNewFullCoulomb. size = %u\n",Nindices);
+			for(uint32_t i = 0; i < Nindices; i++ )
+			{
+				lua_rawgeti(L, 2, i+1);
+				lua_rawgeti(L,-1,1);
+				indToK.push_back((int) luaL_checkunsigned(L, -1));
+				lua_pop(L,1);
+				lua_rawgeti(L,-1,2);
+				indices[i] = luaL_checkarray_unit16_t(L,-1,&temp);
+				lua_pop(L,1);
+				lua_pop(L,1);
+			}
+		}
+		else
+		{
+			uint16_t *help = luaL_checkarray_unit16_t(L,-1,&temp);
+			indToK = ConvertArray(help,temp);
+			free(help);
+
+			lua_pop(L,1);
+			Nindices = (uint32_t)lua_objlen(L,2);
+
+			indices = (uint16_t **) malloc(Nindices * sizeof(uint16_t *));
+			if(!indices) printf("malloc fail at indices in LuaOperatorNewFullCoulomb. size = %u\n",Nindices);
+
+			for(uint32_t i = 0; i < Nindices; i++ )
+			{
+				lua_rawgeti(L, 2, i+1);
+				indices[i] = luaL_checkarray_unit16_t(L,-1,&temp);
+				lua_pop(L,1);
+			}
+		}
+
+		uint32_t NfunsG = (uint32_t)lua_objlen(L,3);
+
+		if (NfunsG > Nindices)
+		{
+			printf("Warning: Martin.Coulomb() number of basis funs (%d) != number of indices (%d)\n",NfunsG , Nindices);
+			fflush(stdout);
+		}
+		else
+		{
+			if (NfunsG < Nindices)
+			{
+				return luaL_error(L, "Errorr: Martin.Coulomb() number of basis funs (%d) < number of indices (%d)\n",NfunsG , Nindices);
+			}
+		}
+		if (indToK.size() != Nindices) printf("Warning: Martin.Coulomb() number of kappas (%d) != number of indices (%d)\n",(uint32_t)indToK.size() , Nindices);
+
+		vector<Interpolation::InterpolatingFunction *> funsG = vector<Interpolation::InterpolatingFunction *>(NfunsG);
+		for(uint32_t i = 0; i < NfunsG; i++)
+		{
+			lua_rawgeti(L, 3, i+1);
+			funsG[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
+			lua_pop(L,1);
+		}
+
+		uint32_t NfunsF = (uint32_t)lua_objlen(L,4);
+		if (NfunsF != NfunsG)
+		{
+			return luaL_error(L,"Error in LuaOperatorNewCoulombFull: number of functions small part (%d) != large part (%d)\n",NfunsF,NfunsG);
+		}
+		vector<Interpolation::InterpolatingFunction *> funsF = vector<Interpolation::InterpolatingFunction *>(NfunsF);
+		for(uint32_t i = 0; i < NfunsF; i++)
+		{
+			lua_rawgeti(L, 4, i+1);
+			funsF[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
+			lua_pop(L,1);
+		}
+
+		x = funsG[0]->GetX();
+
+		vector<vector<double> > wavefuns = PutRelativisticSplineOnGrid(funsG,funsF,x,0);
+		op = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
+		CreateOperatorAtomicURelativistic(NF,wavefuns,x,indToK,indices, op, true);
+    }
+    else
+    {
+    	Nindices = (uint32_t)lua_objlen(L,2);
+
+		indices = (uint16_t **) malloc(Nindices * sizeof(uint16_t *));
+		if(!indices) printf("malloc fail at indices in LuaOperatorNewFullCoulomb. size = %u\n",Nindices);
+
+		for(uint32_t i = 0; i < Nindices; i++ )
+		{
+			lua_rawgeti(L, 2, i+1);
+			indices[i] = luaL_checkarray_unit16_t(L,-1,&temp);
+			if (i%2 == 0)
+			{
+				indToK.push_back(-(((int)temp-1)/2 + 1));
+			}
+			lua_pop(L,1);
+		}
+
+		uint32_t NfunsG = (uint32_t)lua_objlen(L,3);
+
+		if (NfunsG > Nindices/2)
+		{
+			printf("Warning: Martin.Coulomb() number of basis funs (%d) != number of indices (%d)\n",NfunsG , Nindices/2);
+			fflush(stdout);
+		}
+		else
+		{
+			if (NfunsG < Nindices/2)
+			{
+				return luaL_error(L, "Errorr: Martin.Coulomb() number of basis funs (%d) < number of indices (%d)\n",NfunsG , Nindices/2);
+			}
+		}
+
+		vector<Interpolation::InterpolatingFunction *> funsG = vector<Interpolation::InterpolatingFunction *>(NfunsG);
+		for(uint32_t i = 0; i < NfunsG; i++)
+		{
+			lua_rawgeti(L, 3, i+1);
+			funsG[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
+			lua_pop(L,1);
+		}
+
+		op = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
+		CreateOperatorAtomicUNonRel(NF,funsG,indToK,indices,op,true);
+
+    }
+
+    luaL_setmetatable(L,"Operator_Type");
+
+
+	for(uint32_t i = 0; i < Nindices; i++ )
+	{
+		free(indices[i]);
+	}
+	free(indices);
+
+    return 1;
+}
+
 static int LuaGetSlaterIntegrals (lua_State *L)
 {
     uint32_t len, NIntegrals;
@@ -383,14 +540,14 @@ vector<int> NamesToKappa(const vector<string> &orbitalNames)
 }
 
 uint32_t CreateOperatorAtomicURelativistic(uint32_t const NFermion,const vector<vector<double> > &basisfuns, const vector<double> &grid, const vector<int> &indToK
-                                               ,uint16_t **indices, OperatorType *op)
+                                               ,uint16_t **indices, OperatorType *op, bool Qcontinuum)
 {
 
     OperatorType optemp;
     SSlaterIntegral *integrals;
     uint32_t NIntegrals, i;
 
-    integrals = GetSlaterIntegrals(basisfuns,grid, indToK, NIntegrals);
+    integrals = GetSlaterIntegrals(basisfuns,grid, indToK, NIntegrals,Qcontinuum);
 
     int *k;
     unsigned int *n;
@@ -424,14 +581,14 @@ uint32_t CreateOperatorAtomicURelativistic(uint32_t const NFermion,const vector<
 }
 
 uint32_t CreateOperatorAtomicUNonRel(uint32_t const NFermion,const vector<Interpolation::InterpolatingFunction *> &ipolfuns, const vector<int> &indToK
-                                               ,uint16_t **indices, OperatorType *op)
+                                               ,uint16_t **indices, OperatorType *op, bool Qcontinuum)
 {
 
     OperatorType optemp;
     SSlaterIntegral *integrals;
     uint32_t NIntegrals, i;
 
-    integrals = GetSlaterIntegrals(ipolfuns, indToK, NIntegrals);
+    integrals = GetSlaterIntegrals(ipolfuns, indToK, NIntegrals,Qcontinuum);
 
     int *k;
     unsigned int *n;

@@ -158,3 +158,45 @@ std::map<myarray,myarray> CreateSlaterTuple(vector<int> indToK)
 
 	return result;
 }
+
+std::map<myarray,myarray> CreateContinuumTuple(vector<int> indToK)
+{
+	uint32_t i,j,m,l;
+	myarray k;
+	vector<myarray> tau = vector<myarray>(8);
+  std::map<myarray,myarray> result;
+
+	i = (uint32_t) indToK.size() - 1;
+	for ( j = 0; j < (uint32_t) indToK.size()-1; j++)
+		for ( m = 0; m < (uint32_t) indToK.size()-1; m++)
+			for ( l = 0; l < (uint32_t) indToK.size()-1; l++)
+			{
+				k.Assign(indToK[i],indToK[j],indToK[m],indToK[l]);
+				//if (i==0 && j == 0 && m ==18 && l==19)
+					//cout << indToK[i]<< "\t" <<indToK[j]<< "\t" <<indToK[m]<< "\t" <<indToK[l]<<endl;
+				if (TupleContributes(k) && (j != l) )
+				{
+
+					tau[0].Assign(i, j, m, l);
+					tau[1].Assign(m, j, i, l);
+					tau[2].Assign(i, l, m, j);
+					tau[3].Assign(m, l, i, j);
+					tau[4].Assign(j, i, l, m);
+					tau[5].Assign(j, m, l, i);
+					tau[6].Assign(l, i, j, m);
+					tau[7].Assign(l, m, j, i);
+
+					/*if (i==0 && j == 0 && m ==18 && l==19)
+					{
+						cout << NotContains(tau, result) << "\t" << result[tau[0]][1] << endl;
+					}*/
+
+					if (NotContains(tau, result))
+					{
+						result[tau[0]] = k;
+					}
+				}
+			}
+
+	return result;
+}

@@ -1222,6 +1222,351 @@ static int LuaRelativisticDipoleOperator(lua_State *L)
 	return 1;
 }
 
+/*  calculates <psi_i | T_1^+ G_1^+ T_2^+ G_2 T_2 G_1 T_1 | psi_i >
+ *  On stack:
+ *     H1
+ *     H2
+ *     T1  - allowed to be a table
+ *     T2  - allowed to be a table
+ *     psi - allowed to be a table
+ *     options
+ *        {E1min, E1max, N1, Gamma1}
+ *        {E2min, E2max, N2, Gamma2}
+ *        NTri1
+ *        NTri2
+ *        epsilon
+ *        restrictions1
+ *        restrictions2
+ *        E0 E0_1 E0_2
+ */
+static int LuaCreateResonantSpectraSE(lua_State *L)
+{
+  struct
+  {
+    ConvergenceSettingsType Settings;
+    double E0, E01, E02;
+    uint32_t Npsi;
+    uint32_t NT1;
+    uint32_t NT2;
+    uint32_t NTriSE;
+    bool Tensor;
+    bool DenseMethod;
+  } Options;
+  Options.Settings=InitConvergenceSettings();
+  Options.E0=DBL_MAX;
+  Options.E01=DBL_MAX;
+  Options.E02=DBL_MAX;
+  Options.Tensor=false;
+  Options.DenseMethod=false;
+  Options.NTriSE = 2;
+  ConvergenceSettingsType SettingsNow;
+  SpectraTypeArray *Spec;
+  SpectraType *SpecT1psi;
+  TriDiagonalMatrixType *SpecTri;
+  OperatorType *H1,*H2,*T1, *T2;
+  WaveFunctionType *psi, HTpsiDenseBasis,HTHTpsiDenseBasis,Opsi,TpsiSum;
+  uint32_t iT,ipsi,len,i;
+  LuaOptionsType LuaCreateResonantSpectraOptions[]={
+    {"NTri1","uint32_t",&(Options.Settings.NTri1)},
+    {"NTri2","uint32_t",&(Options.Settings.NTri2)},
+    {"Tensor","bool",&(Options.Tensor)},
+    {"restrictions1", "DeterminantRestrictionType", &(Options.Settings.restrictions1)},
+    {"restrictions2", "DeterminantRestrictionType", &(Options.Settings.restrictions2)},
+    {"Restrictions1", "DeterminantRestrictionType", &(Options.Settings.restrictions1)},
+    {"Restrictions2", "DeterminantRestrictionType", &(Options.Settings.restrictions2)},
+    {"epsilon","double",&(Options.Settings.epsilon)},
+    {"Epsilon","double",&(Options.Settings.epsilon)},
+    {"E0","double",&(Options.E0)},
+    {"E0_1","double",&(Options.E01)},
+    {"E0_2","double",&(Options.E02)},
+    {"Emin1","double",&(Options.Settings.Emin1)},
+    {"Emax1","double",&(Options.Settings.Emax1)},
+    {"NE1","uint32_t",&(Options.Settings.NE1)},
+    {"Gamma1","double",&(Options.Settings.Gamma1)},
+    {"Emin2","double",&(Options.Settings.Emin2)},
+    {"Emax2","double",&(Options.Settings.Emax2)},
+    {"NE2","uint32_t",&(Options.Settings.NE2)},
+    {"Gamma2","double",&(Options.Settings.Gamma2)},
+    {"DenseBorder","uint32_t",&(Options.Settings.DenseBorder)},
+    {"ForceDenseMethod","uint32_t",&(Options.DenseMethod)},
+	{"NTriSE","uint32_t",&(Options.NTriSE)},
+    {NULL, NULL, NULL}};
+  /* free garbage full cycle*/
+  if(L->l_G->gcrunning) lua_gc(L, LUA_GCCOLLECT, 0);
+  /* check number of input parameters */
+  len = (uint32_t)lua_gettop(L);
+  if(!((len==7)||(len==8)))
+  {
+    return luaL_error(L, "Error LuaCreateResonantSpectra called with %d arguments,8 or 7 expected (H1, H2, T1, T2^+, psi,U,EnergyContinuum {options})\n",len);
+  }
+  /* read operator and wavefunctions */
+  H1 = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
+  H2 = (OperatorType *) luaL_checkudata(L, 2, "Operator_Type");
+  if(lua_type(L,3)==LUA_TTABLE)
+  {
+    T1=luaL_checkarray_OperatorType(L, 3, &Options.NT1);
+    if(Options.NT1==0) return luaL_error(L, "Errof CreateResonantSpectra called with a table of transition operators (1) of length 0\n");
+  }
+  else
+  {
+    Options.NT1 = 1;
+    T1 = (OperatorType *) luaL_checkudata(L, 3, "Operator_Type");
+  }
+  if(lua_type(L,4)==LUA_TTABLE)
+  {
+    T2=luaL_checkarray_OperatorType(L, 4, &Options.NT2);
+    if(Options.NT2==0) return luaL_error(L, "Errof CreateResonantSpectra called with a table of transition operators (2) of length 0\n");
+  }
+  else
+  {
+    Options.NT2 = 1;
+    T2 = (OperatorType *) luaL_checkudata(L, 4, "Operator_Type");
+  }
+  if(lua_type(L,5)==LUA_TTABLE)
+  {
+    psi=luaL_checkarray_WaveFunctionType(L, 5, &Options.Npsi);
+    if(Options.Npsi==0) return luaL_error(L, "Errof CreateResonantSpectra called with a table of wave functions of length 0\n");
+  }
+  else
+  {
+    Options.Npsi = 1;
+    psi = (WaveFunctionType *) luaL_checkudata(L, 5, "Wavefunction_Type");
+  }
+  std::vector<OperatorType*> U;
+  lua_check(L,6,U);
+  std::vector<double> EnergyContinuum;
+  lua_check(L,7,EnergyContinuum);
+  /* read options */
+  if (len==8)
+  {
+    LuaCheckOptions(L, -1, LuaCreateResonantSpectraOptions);
+  }
+  if(Options.E01==DBL_MAX)Options.E01=Options.E0;
+  if(Options.E02==DBL_MAX)Options.E02=Options.E0;
+
+  /* test if operator is Hermitian */
+  switch(QOperatorHermitian(*H1, 0.0001*Options.Settings.zero))
+  {
+    case 3 :
+    {
+      printf("WARNING: QOperatorHermitian failed in LuaCreateResonantSpectra, this should not happen\n");
+      printf("my guess is that you are out of memory and will crash soon\n");
+      break;
+    }
+    case 2 :
+    {
+      luaL_warning(L, "CreateResonantSpectra called with an operator (H1) that is not fully Hermitian\nStrongly sugested to stop the calculation and repair this\n\n\n\nDo it\n\n\nReally Check this\n\n\nDid you?\n\n\n");
+      break;
+    }
+    case 1 :
+    {
+      // all fine H is Hermitian upto zero
+      break;
+    }
+    case 0 :
+    {
+      luaL_error(L, "CreateResonantSpectra called with an operator (H1) that is not Hermitian\n");
+      break;
+    }
+  }
+  switch(QOperatorHermitian(*H2, 0.0001*Options.Settings.zero))
+  {
+    case 3 :
+    {
+      printf("WARNING: QOperatorHermitian failed in LuaCreateResonantSpectra, this should not happen\n");
+      printf("my guess is that you are out of memory and will crash soon\n");
+      break;
+    }
+    case 2 :
+    {
+      luaL_warning(L, "CreateResonantSpectra called with an operator (H2) that is not fully Hermitian\nStrongly sugested to stop the calculation and repair this\n\n\n\nDo it\n\n\nReally Check this\n\n\nDid you?\n\n\n");
+      break;
+    }
+    case 1 :
+    {
+      // all fine H is Hermitian upto zero
+      break;
+    }
+    case 0 :
+    {
+      luaL_error(L, "CreateResonantSpectra called with an operator (H2) that is not Hermitian\n");
+      break;
+    }
+  }
+  /* allocate spectra and a pointer to return matrix on lua stack */
+  Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+  luaL_setmetatable(L, "Spectra_Type");
+  Spec->NSpectra=0;
+  Spec->Spec=NULL;
+  /* test if dense methods can be used */
+  // at the same time create the wave-functions that define the basis sets of the dense matrices used in the dense methods
+  // we need the vectors:
+  // HmDenseBasis       : on which the Matrix for the intermediate state can be represented
+  // HfDenseBasis       : on which the Matrix fo rthe final states can be represented
+		  {
+			// psi
+			Options.DenseMethod=false;
+			goto EndOfUseDenseTest; // TODO Implement DenseMethod
+			if (Options.DenseMethod==false) if(psi[0].N>Options.Settings.DenseBorder) goto EndOfUseDenseTest;
+			WaveFunctionCopy(psi[0], &HTpsiDenseBasis);
+			for(i=1;i<Options.Npsi;i++)
+			{
+			  WaveFunctionAddUnionBasis(&HTpsiDenseBasis, psi[i]);
+			  if (Options.DenseMethod==false) if(HTpsiDenseBasis.N>Options.Settings.DenseBorder)
+			  {
+				WaveFunctionFree(&HTpsiDenseBasis);
+				goto EndOfUseDenseTest;
+			  }
+			}
+			// T psi
+			if((Options.Settings.restrictions1.N==0)?(OperatorPsi(T1[0], HTpsiDenseBasis, &TpsiSum)):(OperatorPsiRestricted(T1[0], HTpsiDenseBasis, &TpsiSum, Options.Settings.restrictions1)))
+			{
+			  WaveFunctionFree(&HTpsiDenseBasis);
+			  goto EndOfUseDenseTest;
+			}
+			for(i=1;i<Options.NT1;i++)
+			{
+			  if((Options.Settings.restrictions1.N==0)?(OperatorPsi(T1[i], HTpsiDenseBasis, &Opsi)):(OperatorPsiRestricted(T1[i], HTpsiDenseBasis, &Opsi, Options.Settings.restrictions1)))
+			  {
+				WaveFunctionFree(&TpsiSum);
+				WaveFunctionFree(&HTpsiDenseBasis);
+				goto EndOfUseDenseTest;
+			  }
+			  WaveFunctionAddUnionBasis(&TpsiSum, Opsi);
+			  WaveFunctionFree(&Opsi);
+			  if (Options.DenseMethod==false) if(TpsiSum.N>Options.Settings.DenseBorder)
+			  {
+				WaveFunctionFree(&TpsiSum);
+				WaveFunctionFree(&HTpsiDenseBasis);
+				goto EndOfUseDenseTest;
+			  }
+			}
+			WaveFunctionFree(&HTpsiDenseBasis);
+			HTpsiDenseBasis=TpsiSum;
+			WaveFunctionNormalize(&HTpsiDenseBasis);
+			// H T psi
+			len=0;
+			while(len!=HTpsiDenseBasis.N)
+			{
+			  len=HTpsiDenseBasis.N;
+			  if((Options.Settings.restrictions1.N==0)?(OperatorPsi(*H1, HTpsiDenseBasis, &Opsi)):(OperatorPsiRestricted(*H1, HTpsiDenseBasis, &Opsi, Options.Settings.restrictions1)))
+			  {
+				WaveFunctionFree(&HTpsiDenseBasis);
+				goto EndOfUseDenseTest;
+			  }
+			  WaveFunctionFree(&HTpsiDenseBasis);
+			  if (Options.DenseMethod==false) if(Opsi.N>Options.Settings.DenseBorder)
+			  {
+				WaveFunctionFree(&Opsi);
+				goto EndOfUseDenseTest;
+			  }
+			  HTpsiDenseBasis=Opsi;
+			  WaveFunctionNormalize(&HTpsiDenseBasis);
+			}
+			// T H T psi
+			WaveFunctionCopy(HTpsiDenseBasis, &HTHTpsiDenseBasis);
+			if((Options.Settings.restrictions2.N==0)?(OperatorPsi(T2[0], HTHTpsiDenseBasis, &TpsiSum)):(OperatorPsiRestricted(T2[0], HTHTpsiDenseBasis, &TpsiSum, Options.Settings.restrictions2)))
+			{
+			  WaveFunctionFree(&HTHTpsiDenseBasis);
+			  WaveFunctionFree(&HTpsiDenseBasis);
+			  goto EndOfUseDenseTest;
+			}
+			for(i=1;i<Options.NT2;i++)
+			{
+			  if((Options.Settings.restrictions2.N==0)?(OperatorPsi(T2[i], HTHTpsiDenseBasis, &Opsi)):(OperatorPsiRestricted(T2[i], HTHTpsiDenseBasis, &Opsi, Options.Settings.restrictions2)))
+			  {
+				WaveFunctionFree(&TpsiSum);
+				WaveFunctionFree(&HTHTpsiDenseBasis);
+				WaveFunctionFree(&HTpsiDenseBasis);
+				goto EndOfUseDenseTest;
+			  }
+			  WaveFunctionAddUnionBasis(&TpsiSum, Opsi);
+			  WaveFunctionFree(&Opsi);
+			  if (Options.DenseMethod==false) if(TpsiSum.N>Options.Settings.DenseBorder)
+			  {
+				WaveFunctionFree(&TpsiSum);
+				WaveFunctionFree(&HTHTpsiDenseBasis);
+				WaveFunctionFree(&HTpsiDenseBasis);
+				goto EndOfUseDenseTest;
+			  }
+			}
+			WaveFunctionFree(&HTHTpsiDenseBasis);
+			HTHTpsiDenseBasis=TpsiSum;
+			WaveFunctionNormalize(&HTHTpsiDenseBasis);
+			// H T H T psi
+			len=0;
+			while(len!=HTHTpsiDenseBasis.N)
+			{
+			  len=HTHTpsiDenseBasis.N;
+			  if((Options.Settings.restrictions2.N==0)?(OperatorPsi(*H2, HTHTpsiDenseBasis, &Opsi)):(OperatorPsiRestricted(*H2, HTHTpsiDenseBasis, &Opsi, Options.Settings.restrictions2)))
+			  {
+				WaveFunctionFree(&HTHTpsiDenseBasis);
+				WaveFunctionFree(&HTpsiDenseBasis);
+				goto EndOfUseDenseTest;
+			  }
+			  WaveFunctionFree(&HTHTpsiDenseBasis);
+			  if (Options.DenseMethod==false) if(Opsi.N>Options.Settings.DenseBorder)
+			  {
+				WaveFunctionFree(&Opsi);
+				WaveFunctionFree(&HTpsiDenseBasis);
+				goto EndOfUseDenseTest;
+			  }
+			  WaveFunctionNormalize(&Opsi);
+			  HTHTpsiDenseBasis=Opsi;
+			}
+			// finsihed all tests and psiDenseBasis still fits
+			Options.DenseMethod=true;
+		  EndOfUseDenseTest:;
+		  }
+  if(Options.DenseMethod==true)
+  {
+    if(Options.Tensor==false)
+    {
+      ResonantSpectraDense(&HTpsiDenseBasis,&HTHTpsiDenseBasis,*H1, *H2, T1, Options.NT1, T2, Options.NT2, psi, Options.Npsi, &(Spec->Spec), Options.E01, Options.E02, &(Options.Settings));
+      Spec->NSpectra=Options.NT1*Options.NT2*Options.Npsi*(Options.Settings.NE1+1);
+    }
+    else
+    {
+      return luaL_error(L,"Tensor form for Resonant spectra not yet available");
+    }
+  }
+  else
+  {
+    // use sparse methods
+    if(Options.Tensor==false)
+    {
+      for(ipsi=0;ipsi<Options.Npsi;ipsi++)
+      {
+        for(iT=0;iT<Options.NT1;iT++)
+        {
+          SettingsNow = Options.Settings;
+          ResonantSpectraSelfEnergy(*H1, *H2, T1[iT], T2, U, Options.NT2, psi[ipsi], &SpecTri, &SpecT1psi, Options.E01, Options.E02, &(SettingsNow),EnergyContinuum,Options.NTriSE);
+          Spec->NSpectra+=(SettingsNow.NE1+1)*Options.NT2;
+          Spec->Spec= (SpectraType*)realloc(Spec->Spec, Spec->NSpectra*sizeof(SpectraType));
+          for(i=0;i<(SettingsNow.NE1+1)*Options.NT2;i++)
+          {
+            FreeTriDiagonalMatrix(&(SpecTri[i]));
+          }
+          free(SpecTri);
+          for(i=0;i<(SettingsNow.NE1+1)*Options.NT2;i++)
+          {
+            sprintf(SpecT1psi[i].Name, "%s T1 %i/%i psi %i/%i",SpecT1psi[i].Name,iT,Options.NT1,ipsi,Options.Npsi);
+            Spec->Spec[i+Spec->NSpectra-(SettingsNow.NE1+1)*Options.NT2] = SpecT1psi[i];
+          }
+          free(SpecT1psi);
+        }
+      }
+    }
+    else
+    {
+
+      //ResonantSpectraTensor(*H1, *H2, T1, Options.NT1, T2, Options.NT2, psi, Options.Npsi, &SpecTri, &(Spec->Spec[0]), Options.E01, Options.E02, &Options.Settings);
+      return luaL_error(L,"Tensor form for Resonant spectra not yet available");
+    }
+  }
+  return 1;
+}
+
 static int LuaMartinTest(lua_State *L)
 {
 	OperatorType *H, *T;
