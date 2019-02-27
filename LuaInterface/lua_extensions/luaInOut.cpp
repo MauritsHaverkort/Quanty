@@ -35,38 +35,38 @@ void lua_push(lua_State * L, const string pushkin)
 	lua_push(L, pushkin.c_str());
 }
 
-void lua_push(lua_State *L, const OperatorType &pushkin)
+void lua_push(lua_State *L, const OperatorType * const pushkin)
 {
 	OperatorType * O = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-	*O = pushkin;
+	*O = *pushkin;
 	luaL_setmetatable(L, "Operator_Type");
 }
 
-void lua_push(lua_State *L, const OperatorType* &pushkin)
+void lua_push(lua_State *L, const OperatorType &pushkin)
 {
-	lua_push(L, *pushkin);
+	lua_push(L, &pushkin);
+}
+
+void lua_push(lua_State *L, const TightBindingDef * const pushkin)
+{
+	TightBindingDef * TB = (TightBindingDef *) lua_newuserdata(L, sizeof(TightBindingDef));
+	*TB = *pushkin;
+	luaL_setmetatable(L, "TightBinding_Type");
 }
 
 void lua_push(lua_State *L, const TightBindingDef &pushkin)
 {
-	TightBindingDef * TB = (TightBindingDef *) lua_newuserdata(L, sizeof(TightBindingDef));
-	*TB = pushkin;
-	luaL_setmetatable(L, "TightBinding_Type");
+	lua_push(L, &pushkin);
 }
 
-void lua_push(lua_State *L, const TightBindingDef* &pushkin)
+void lua_push(lua_State *L, const AtomType * const pushkin)
 {
-	lua_push(L, *pushkin);
+	LuaPushAtom(L, pushkin);
 }
 
 void lua_push(lua_State *L, const AtomType &pushkin)
 {
 	LuaPushAtom(L, &pushkin);
-}
-
-void lua_push(lua_State *L, const AtomType* &pushkin)
-{
-	LuaPushAtom(L, pushkin);
 }
 
 template<typename T>
@@ -75,7 +75,7 @@ void lua_push(lua_State * L, const vector<T> &pushkin)
 	lua_createtable(L, (int) pushkin.size(), 0);
 	for (uint32_t i = 0; i < pushkin.size(); ++i)
 	{
-		lua_push(L, pushkin[i]);
+		lua_push(L, &pushkin[i]);
 		lua_rawseti(L, -2, i + 1);
 	}
 }
@@ -93,12 +93,20 @@ void lua_push(lua_State * L, const T *pushkin, uint32_t n)
 
 void lua_push(lua_State * L, const CompactMatrixType * const pushkin)
 {
-	LuaPushTable_CompactMatrixType(L, pushkin);
+	if (pushkin->OnLuaStack)
+	{
+		CompactMatrixType *B = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+		luaL_setmetatable(L, "Matrix_Type");
+		*B = *pushkin;
+	} else
+	{
+		LuaPushTable_CompactMatrixType(L, pushkin);
+	}
 }
 
 void lua_push(lua_State * L, const CompactMatrixType &pushkin)
 {
-	LuaPushTable_CompactMatrixType(L, &pushkin);
+	lua_push(L, &pushkin);
 }
 
 void lua_push(lua_State * L, const MatrixType * const pushkin)
