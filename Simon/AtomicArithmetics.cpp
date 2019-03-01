@@ -104,6 +104,7 @@ void initAtom(AtomType &a, const vector<string> &shellNames, const vector<vector
 	a.AtomNumber = AtomNameToNumber(a.Name);
 	for (uint i = 0; i < 3; ++i)
 		a.Position[i] = 0.;
+	a.Wyckoff = 0;
 	a.Nshell = (int) shellNames.size();
 	if (a.Nshell != 0)
 	{
