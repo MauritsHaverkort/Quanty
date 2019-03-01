@@ -80,8 +80,6 @@ void lua_push(lua_State * L, const vector<T> &pushkin)
 	lua_createtable(L, (int) pushkin.size(), 0);
 	for (uint32_t i = 0; i < pushkin.size(); ++i)
 	{
-		debug(pushkin[i]);
-
 		lua_push(L, &(pushkin[i]));
 		lua_rawseti(L, -2, i + 1);
 	}
