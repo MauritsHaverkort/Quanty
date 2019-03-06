@@ -398,7 +398,6 @@ double lspCouplingConstant(const string atom, const uint dShellOccupation)
 
 static int LuaLSCouplingConstants(lua_State * L)
 {
-//TODO: call lspconstant with dOccupation+1
 	uint32_t len = (uint32_t) lua_gettop(L);
 	if (len != 2)
 		return luaL_error(L, "lsCouplingConstants called with %d arguments, exactly 2 expected, Name of atom and intial d-shell occupation.", len);
@@ -406,7 +405,7 @@ static int LuaLSCouplingConstants(lua_State * L)
 	uint dOccupation;
 	lua_check(L, 1, atom);
 	lua_check(L, 2, dOccupation);
-	lua_push(L, lsdCouplingConstant(atom, dOccupation));
 	lua_push(L, lspCouplingConstant(atom, dOccupation + 1));
+	lua_push(L, lsdCouplingConstant(atom, dOccupation));
 	return 2;
 }
