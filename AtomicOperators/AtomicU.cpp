@@ -589,7 +589,8 @@ uint32_t CreateOperatorAtomicUNonRel(uint32_t const NFermion,const vector<Interp
     uint32_t NIntegrals, i;
 
     integrals = GetSlaterIntegrals(ipolfuns, indToK, NIntegrals,Qcontinuum);
-
+    //printf("NIntegrals: %d\nn1 = %d\tn2 = %d\tn3 = %d\tn4 = %d\n",NIntegrals,integrals[0].tau.n[0],integrals[0].tau.n[1],integrals[0].tau.n[2],integrals[0].tau.n[3]);
+    //printf("%.16f\t%.16f\t",integrals[0].val[0],integrals[0].val[1]);
     int *k;
     unsigned int *n;
     double *Fk;

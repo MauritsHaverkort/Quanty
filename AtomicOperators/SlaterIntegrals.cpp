@@ -52,7 +52,6 @@ SSlaterIntegral *GetSlaterIntegrals(const vector<Interpolation::InterpolatingFun
 	vector<vector<double> > kernels;
 
     si = InitializeIntegrals(indToK, NIntegrals,&kMax,Qcontinuum);
-
     //clock_t t = clock();
     CreateAllKernels(kMax, knots,kernels);
     //cout << "Kernels: " << (clock()-t)*1.0/CLOCKS_PER_SEC << endl;

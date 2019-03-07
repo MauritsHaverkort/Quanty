@@ -452,8 +452,6 @@ static int LuaMetricWaveFuns(lua_State *L)
 	return 1;
 }
 
-
-
 static int LuaPlotSpectrumWithSelfEnergy(lua_State *L)
 {
 	double wMin, wMax,dw, gH, gS;
@@ -1258,7 +1256,7 @@ static int LuaCreateResonantSpectraSE(lua_State *L)
   Options.E02=DBL_MAX;
   Options.Tensor=false;
   Options.DenseMethod=false;
-  Options.NTriSE = 2;
+  Options.NTriSE = 5;
   ConvergenceSettingsType SettingsNow;
   SpectraTypeArray *Spec;
   SpectraType *SpecT1psi;
@@ -1726,6 +1724,7 @@ static const struct luaL_Reg Martin_func[] = {
   {"Export",LuaExport},
   {"ReadFPLOEnergies",LuaReadFPLOEnergies},
   {"RelativisticDipoleOperator",LuaRelativisticDipoleOperator},
+  {"ResonantSpectrum",LuaCreateResonantSpectraSE},
   {NULL, NULL}
 };
 
