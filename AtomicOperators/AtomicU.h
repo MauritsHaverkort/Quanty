@@ -30,6 +30,7 @@ vector<int> NamesToKappa(const vector<string> &orbitalNames);
 
 void Lua_Push_SlaterIntegral(lua_State *L, double *Rk, uint32_t *k, uint32_t N,string orb1,string orb2,string orb3,string orb4);
 
-
+uint32_t CreateListOperatorAtomicURelativistic(uint32_t const NFermion,const vector<vector<double> > &basisfuns, const vector<double> &grid, const vector<int> &indToK
+                                               ,uint16_t **indices, bool Qcontinuum,lua_State *L);
 
 #endif /* ATOMICOPERATORS_ATOMICU_H_ */

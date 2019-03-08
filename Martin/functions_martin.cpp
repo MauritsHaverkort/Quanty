@@ -1565,6 +1565,115 @@ static int LuaCreateResonantSpectraSE(lua_State *L)
   return 1;
 }
 
+static int ListU(lua_State *L)
+{
+	uint32_t Nindices, temp, len, NF;
+	uint16_t **indices;
+	vector<double> x;
+	len = (uint32_t)lua_gettop(L);
+
+	if ( len < 3 ||  len > 4)
+	{
+		return luaL_error(L,"Error in Martin.ListU: 3 or 4 arguments expected; got %d",len);
+	}
+
+	NF = (uint32_t)luaL_checkunsigned(L, 1);
+	vector<int> indToK;
+	if (len == 4)
+	{
+		lua_getfield(L,2,"kappas");
+		if (lua_isnil(L,-1))
+		{
+			lua_pop(L,1);
+			Nindices = (uint32_t)lua_objlen(L,2);
+			indices = (uint16_t **) malloc(Nindices * sizeof(uint16_t *));
+			if(!indices) printf("malloc fail at indices in LuaOperatorNewFullCoulomb. size = %u\n",Nindices);
+			for(uint32_t i = 0; i < Nindices; i++ )
+			{
+				lua_rawgeti(L, 2, i+1);
+				lua_rawgeti(L,-1,1);
+				indToK.push_back((int) luaL_checkunsigned(L, -1));
+				lua_pop(L,1);
+				lua_rawgeti(L,-1,2);
+				indices[i] = luaL_checkarray_unit16_t(L,-1,&temp);
+				lua_pop(L,1);
+				lua_pop(L,1);
+			}
+		}
+		else
+		{
+			uint16_t *help = luaL_checkarray_unit16_t(L,-1,&temp);
+			indToK = ConvertArray(help,temp);
+			free(help);
+
+			lua_pop(L,1);
+			Nindices = (uint32_t)lua_objlen(L,2);
+
+			indices = (uint16_t **) malloc(Nindices * sizeof(uint16_t *));
+			if(!indices) printf("malloc fail at indices in LuaOperatorNewFullCoulomb. size = %u\n",Nindices);
+
+			for(uint32_t i = 0; i < Nindices; i++ )
+			{
+				lua_rawgeti(L, 2, i+1);
+				indices[i] = luaL_checkarray_unit16_t(L,-1,&temp);
+				lua_pop(L,1);
+			}
+		}
+
+		uint32_t NfunsG = (uint32_t)lua_objlen(L,3);
+
+		if (NfunsG > Nindices)
+		{
+			printf("Warning: Martin.Coulomb() number of basis funs (%d) != number of indices (%d)\n",NfunsG , Nindices);
+			fflush(stdout);
+		}
+		else
+		{
+			if (NfunsG < Nindices)
+			{
+				return luaL_error(L, "Errorr: Martin.Coulomb() number of basis funs (%d) < number of indices (%d)\n",NfunsG , Nindices);
+			}
+		}
+		if (indToK.size() != Nindices) printf("Warning: Martin.Coulomb() number of kappas (%d) != number of indices (%d)\n",(uint32_t)indToK.size() , Nindices);
+
+		vector<Interpolation::InterpolatingFunction *> funsG = vector<Interpolation::InterpolatingFunction *>(NfunsG);
+		for(uint32_t i = 0; i < NfunsG; i++)
+		{
+			lua_rawgeti(L, 3, i+1);
+			funsG[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
+			lua_pop(L,1);
+		}
+
+		uint32_t NfunsF = (uint32_t)lua_objlen(L,4);
+		if (NfunsF != NfunsG)
+		{
+			return luaL_error(L,"Error in LuaOperatorNewCoulombFull: number of functions small part (%d) != large part (%d)\n",NfunsF,NfunsG);
+		}
+		vector<Interpolation::InterpolatingFunction *> funsF = vector<Interpolation::InterpolatingFunction *>(NfunsF);
+		for(uint32_t i = 0; i < NfunsF; i++)
+		{
+			lua_rawgeti(L, 4, i+1);
+			funsF[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
+			lua_pop(L,1);
+		}
+
+		x = funsG[0]->GetX();
+
+		vector<vector<double> > wavefuns = PutRelativisticSplineOnGrid(funsG,funsF,x,0);
+
+		CreateListOperatorAtomicURelativistic(NF,wavefuns,x,indToK,indices,true,L);
+	}
+
+
+	for(uint32_t i = 0; i < Nindices; i++ )
+	{
+		free(indices[i]);
+	}
+	free(indices);
+
+	return 2;
+}
+
 static int LuaMartinTest(lua_State *L)
 {
 	OperatorType *H, *T;
@@ -1725,6 +1834,7 @@ static const struct luaL_Reg Martin_func[] = {
   {"ReadFPLOEnergies",LuaReadFPLOEnergies},
   {"RelativisticDipoleOperator",LuaRelativisticDipoleOperator},
   {"ResonantSpectrum",LuaCreateResonantSpectraSE},
+  {"ListU",ListU},
   {NULL, NULL}
 };
 
