@@ -88,6 +88,7 @@ static const struct luaL_Reg Simon_meta[] = {
 static const struct luaL_Reg Simon_func[] = {
 	{"AtomicNumberOperators", LuaAtomicNumberOperators},
 	{"AtomicToWannierMatrix", LuaAtomicToWannierMatrix},
+	{"Flatten", LuaFlatten},
 	{"MatrixToOperator", LuaMatrixToOperator},
 	{"lsCouplingConstants", LuaLSCouplingConstants},
 	{"ReduceHilbertSpace", LuaReduceHilbertSpace},
