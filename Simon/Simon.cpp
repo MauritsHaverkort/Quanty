@@ -3,6 +3,7 @@
 #include "AtomicNumberOperators.cpp"
 #include "AtomicToWannierMatrix.cpp"
 #include "CompactMatrix.cpp"
+#include "Flatten.cpp"
 #include "Kappa.cpp"
 #include "lsCouplingConstant.cpp"
 #include "MatrixToOperator.cpp"
