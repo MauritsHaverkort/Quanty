@@ -1,6 +1,6 @@
 CompactMatrixType reducedHilbertSpaceMatrix(const CompactMatrixType &H, const CompactMatrixType &ligRotMat, CompactMatrixType &T, const uint constOrbs, const uint ligNum);
 CompactMatrixType reducedHilbertSpaceMatrixFilledAndEmpty(const CompactMatrixType &HRedFilled, const CompactMatrixType &HRedEmpty, const uint constOrbs);
-CompactMatrixType reducedHilbertSpaceRotMatFilledAndEmpty(const CompactMatrixType &Tfilled, const CompactMatrixType &Tempty, const uint constOrbs);
+CompactMatrixType reducedHilbertSpaceRotMatFilledAndEmpty(const CompactMatrixType &Tfilled, const CompactMatrixType &Tempty, const uint constOrbs, const uint Nj);
 void addLigandNames(const CompactMatrixType &M, const string &nameBase, vector<string> &names, const uint constOrbs, const bool hasSpin);
 CompactMatrixType reduceHilbertSpaceForMatrix(const CompactMatrixType &H, CompactMatrixType &T, const uint constOrbs, const uint filledLig, const uint emptyLig, vector<string> &orbNames,const bool hasSpin);
 CompactMatrixType reduceHilbertSpaceForMatrix(const CompactMatrixType &H, CompactMatrixType &T, const uint constOrbs, const uint filledLig, const uint emptyLig);

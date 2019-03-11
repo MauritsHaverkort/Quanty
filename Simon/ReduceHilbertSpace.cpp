@@ -55,10 +55,16 @@ CompactMatrixType reducedHilbertSpaceMatrixFilledAndEmpty(const CompactMatrixTyp
 	return out;
 }
 
-CompactMatrixType reducedHilbertSpaceRotMatFilledAndEmpty(const CompactMatrixType &Tfilled, const CompactMatrixType &Tempty, const uint constOrbs)
+CompactMatrixType reducedHilbertSpaceRotMatFilledAndEmpty(const CompactMatrixType &Tfilled, const CompactMatrixType &Tempty, const uint constOrbs, const uint Nj)
 {
 	CompactMatrixType out;
-	if (Tfilled.Ni <= constOrbs)
+	if (Tfilled.Ni <= constOrbs && Tempty.Ni <= constOrbs)
+	{
+		out.Ni = constOrbs;
+		out.Nj = Nj;
+		out.QComplex = 0;
+		InitCompactIdentityMatrix(&out);
+	} else if (Tfilled.Ni <= constOrbs)
 	{
 		CompactMatrixCopy(Tempty, &out);
 	} else if (Tempty.Ni <= constOrbs)
@@ -131,7 +137,7 @@ CompactMatrixType reduceHilbertSpaceForMatrix(const CompactMatrixType &H, Compac
 		Tempty = CompactnullMatrix();
 	}
 	out = reducedHilbertSpaceMatrixFilledAndEmpty(HRedFilled, HRedEmpty, constOrbs);
-	T = reducedHilbertSpaceRotMatFilledAndEmpty(Tfilled, Tempty, constOrbs);
+	T = reducedHilbertSpaceRotMatFilledAndEmpty(Tfilled, Tempty, constOrbs, H.Nj);
 	FreeCompactMatrix(&HLigand);
 	FreeCompactMatrix(&eigenfunsLigand);
 	FreeCompactMatrix(&HRedFilled);
@@ -235,7 +241,7 @@ static int LuaReduceHilbertSpace(lua_State * L)
 	CompactMatrixType mat, T;
   struct
   {
-		uint filledLigands = 200;
+		uint filledLigands = 1;
 		uint emptyLigands = 0;
 		bool hasSpin = true;
   } Options;
