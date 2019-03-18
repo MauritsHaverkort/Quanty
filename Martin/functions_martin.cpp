@@ -14,6 +14,7 @@
 #include "CouplingToEMField.cpp"
 #include "AuxFunctions.cpp"
 #include "ResonantSpectraSelfEnergy.cpp"
+#include "Continuum-Diagonal-Method.cpp"
 
 
 static int LuaOperatorNewFullCoulomb (lua_State *L)
@@ -1565,21 +1566,21 @@ static int LuaCreateResonantSpectraSE(lua_State *L)
   return 1;
 }
 
-static int ListU(lua_State *L)
+static int LuaListU(lua_State *L)
 {
 	uint32_t Nindices, temp, len, NF;
 	uint16_t **indices;
 	vector<double> x;
 	len = (uint32_t)lua_gettop(L);
 
-	if ( len < 3 ||  len > 4)
+	if ( len < 3 ||  len > 5)
 	{
-		return luaL_error(L,"Error in Martin.ListU: 3 or 4 arguments expected; got %d",len);
+		return luaL_error(L,"Error in Martin.ListU: 3 to 5 arguments expected; got %d",len);
 	}
 
 	NF = (uint32_t)luaL_checkunsigned(L, 1);
 	vector<int> indToK;
-	if (len == 4)
+	if (len > 3)
 	{
 		lua_getfield(L,2,"kappas");
 		if (lua_isnil(L,-1))
@@ -1661,7 +1662,25 @@ static int ListU(lua_State *L)
 
 		vector<vector<double> > wavefuns = PutRelativisticSplineOnGrid(funsG,funsF,x,0);
 
-		CreateListOperatorAtomicURelativistic(NF,wavefuns,x,indToK,indices,true,L);
+		if (len == 4)
+		{
+			CreateListOperatorAtomicURelativistic(NF,wavefuns,x,indToK,indices,true,L,false);
+		}
+		else
+		{
+			CreateListOperatorAtomicURelativistic(NF,wavefuns,x,indToK,indices,true,L,true);
+			for(uint32_t i = 0; i < Nindices; i++ )
+			{
+				free(indices[i]);
+			}
+			free(indices);
+			return 1;
+		}
+	}
+	else
+	{
+		printf("error: nonrelativistic version of ListU not yet implmented\n");
+		return 0;
 	}
 
 
@@ -1672,6 +1691,39 @@ static int ListU(lua_State *L)
 	free(indices);
 
 	return 2;
+}
+
+static int LuaCDMPlot(lua_State *L)
+{
+	std::vector<double> poles, SlaterInts;
+	std::vector<mypoint> spectrum;
+	double wMin, wMax, dw, eps, gamma, shift;
+
+	CompactMatrixType *M;
+
+	lua_check(L,1,wMin);
+	lua_check(L,2,wMax);
+	lua_check(L,3,dw);
+	lua_check(L,4,eps);
+	lua_check(L,5,gamma);
+	lua_check(L,6,poles);
+	lua_check(L,7,SlaterInts);
+	lua_check(L,8,M);
+	lua_check(L,9,shift);
+
+	uint32_t Npoints = floor((wMax-wMin)/dw) + 1;
+	spectrum = std::vector<mypoint>(Npoints);
+	for (uint32_t i = 0; i < Npoints; i++)
+	{
+		spectrum[i].w = wMin + i * dw;
+		spectrum[i].y.Re = 0.;
+		spectrum[i].y.Im = 0.;
+	}
+	PlotSpectrumFromPoles(eps,gamma,shift,poles,SlaterInts,M,spectrum);
+
+	lua_push(L,spectrum);
+	return 1;
+
 }
 
 static int LuaMartinTest(lua_State *L)
@@ -1834,7 +1886,8 @@ static const struct luaL_Reg Martin_func[] = {
   {"ReadFPLOEnergies",LuaReadFPLOEnergies},
   {"RelativisticDipoleOperator",LuaRelativisticDipoleOperator},
   {"ResonantSpectrum",LuaCreateResonantSpectraSE},
-  {"ListU",ListU},
+  {"ListU",LuaListU},
+  {"PlotSpectrum",LuaCDMPlot},
   {NULL, NULL}
 };
 

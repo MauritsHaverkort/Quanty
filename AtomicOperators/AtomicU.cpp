@@ -592,7 +592,7 @@ uint32_t CreateOperatorAtomicURelativistic(uint32_t const NFermion,const vector<
 }
 
 uint32_t CreateListOperatorAtomicURelativistic(uint32_t const NFermion,const vector<vector<double> > &basisfuns, const vector<double> &grid, const vector<int> &indToK
-                                               ,uint16_t **indices, bool Qcontinuum,lua_State *L)
+                                               ,uint16_t **indices, bool Qcontinuum,lua_State *L, bool IntegralsOnly)
 {
 
     OperatorType *optemp;
@@ -611,6 +611,10 @@ uint32_t CreateListOperatorAtomicURelativistic(uint32_t const NFermion,const vec
     {
     	Lua_Push_SlaterIntegral(L,integrals[i].val,integrals[i].Nval);
     	lua_rawseti(L,-2,i+1);
+    }
+    if (IntegralsOnly)
+    {
+    	return 0;
     }
     lua_createtable(L,0,0);
     for( i = 0; i < NIntegrals; i++)
