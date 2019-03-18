@@ -5,6 +5,11 @@ void lua_push(lua_State * L, const double pushkin)
 	lua_pushnumber(L, pushkin);
 }
 
+void lua_push(lua_State * L, const double *pushkin)
+{
+	lua_pushnumber(L, *pushkin);
+}
+
 void lua_push(lua_State * L, const lua_Integer pushkin)
 {
 	lua_pushinteger(L,pushkin);

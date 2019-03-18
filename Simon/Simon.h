@@ -1,6 +1,7 @@
 #include "functions_simon.h" 
 #include "AtomicArithmetics.h"
 #include "AtomicNumberOperators.h"
+#include "AtomToMap.h"
 #include "AtomicToWannierMatrix.h"
 #include "CompactMatrix.h"
 #include "Flatten.h"

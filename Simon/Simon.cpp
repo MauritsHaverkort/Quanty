@@ -1,6 +1,7 @@
 #include "functions_simon.cpp" 
 #include "AtomicArithmetics.cpp"
 #include "AtomicNumberOperators.cpp"
+#include "AtomToMap.cpp"
 #include "AtomicToWannierMatrix.cpp"
 #include "CompactMatrix.cpp"
 #include "Flatten.cpp"
