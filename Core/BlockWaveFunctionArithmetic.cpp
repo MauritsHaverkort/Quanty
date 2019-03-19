@@ -2273,6 +2273,7 @@ uint32_t ComplexBlockWaveFunctionResetKeylist(WaveFunctionType * const a, const 
 uint32_t BlockWaveFunctionResetKeylist(WaveFunctionType * const a, const uint32_t NBitsKey, uint32_t const Npsi)
 {
   if(Npsi==0) return 0;
+  VerbosityPrintf(0x10000000,"Change size of keylist of function %s from %d to %d\n",a->Name,a->NBitsKey,NBitsKey);
   if (a->QComplex == 0)
   {
     return RealBlockWaveFunctionResetKeylist(a, NBitsKey, Npsi);

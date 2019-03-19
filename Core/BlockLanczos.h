@@ -35,7 +35,7 @@ uint32_t LanczosBlockTriDiagonalizeRestricted(const OperatorType H, WaveFunction
 uint32_t LanczosBlockTriDiagonalize(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma, const bool ExpandBasis=true);
 uint32_t LanczosBlockTriDiagonalizeKrylovRestricted(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize);
 uint32_t LanczosBlockTriDiagonalizeKrylov(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize);
-uint32_t TimeToDeflateInBlockLanczosKrylov(double Norm, double Zero, uint32_t i, uint32_t NpsiDeflated, CompactMatrixType *HKrylov);
+uint32_t TimeToDeflateInBlockLanczosKrylov(double Norm, double Zero, uint32_t i, uint32_t NpsiDeflated, CompactMatrixType *HKrylov, uint32_t irestart);
 uint32_t BlockLanczosGroundStateConserveBasisKrylovReal(OperatorType * H, WaveFunctionType * const v, uint32_t const Npsi, ConvergenceSettingsType * Settings);
 uint32_t BlockLanczosGroundStateConserveBasisKrylovComplex(OperatorType * H, WaveFunctionType * const v, uint32_t const Npsi, ConvergenceSettingsType * Settings);
 uint32_t BlockLanczosGroundStateConserveBasisKrylov(OperatorType *H, WaveFunctionType * const v, uint32_t const Npsi, ConvergenceSettingsType * Settings);
