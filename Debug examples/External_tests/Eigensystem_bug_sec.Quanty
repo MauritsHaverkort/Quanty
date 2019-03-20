@@ -1,0 +1,232 @@
+-- using inelastic x-ray scattering one can not only measure low energy excitations,
+-- but equally well core to core transitions. This allows one to probe for example
+-- 3p to 3d transitions using octupole operators.
+
+-- We set the output of the program to a minimum
+Verbosity(0xFFFFFFFF)
+
+-- we need a 2p and 3d shell
+NF=16
+NB=0
+IndexDn_2p={10,11,12}
+IndexUp_2p={13,14,15}
+IndexDn_3d={0,1,2,3,4}
+IndexUp_3d={5,6,7,8,9}
+
+OppSx   =NewOperator("Sx"   ,NF, IndexUp_3d, IndexDn_3d)
+OppSy   =NewOperator("Sy"   ,NF, IndexUp_3d, IndexDn_3d)
+OppSz   =NewOperator("Sz"   ,NF, IndexUp_3d, IndexDn_3d)
+OppSsqr =NewOperator("Ssqr" ,NF, IndexUp_3d, IndexDn_3d)
+OppSplus=NewOperator("Splus",NF, IndexUp_3d, IndexDn_3d)
+OppSmin =NewOperator("Smin" ,NF, IndexUp_3d, IndexDn_3d)
+
+OppLx   =NewOperator("Lx"   ,NF, IndexUp_3d, IndexDn_3d)
+OppLy   =NewOperator("Ly"   ,NF, IndexUp_3d, IndexDn_3d)
+OppLz   =NewOperator("Lz"   ,NF, IndexUp_3d, IndexDn_3d)
+OppLsqr =NewOperator("Lsqr" ,NF, IndexUp_3d, IndexDn_3d)
+OppLplus=NewOperator("Lplus",NF, IndexUp_3d, IndexDn_3d)
+OppLmin =NewOperator("Lmin" ,NF, IndexUp_3d, IndexDn_3d)
+
+OppJx   =NewOperator("Jx"   ,NF, IndexUp_3d, IndexDn_3d)
+OppJy   =NewOperator("Jy"   ,NF, IndexUp_3d, IndexDn_3d)
+OppJz   =NewOperator("Jz"   ,NF, IndexUp_3d, IndexDn_3d)
+OppJsqr =NewOperator("Jsqr" ,NF, IndexUp_3d, IndexDn_3d)
+OppJplus=NewOperator("Jplus",NF, IndexUp_3d, IndexDn_3d)
+OppJmin =NewOperator("Jmin" ,NF, IndexUp_3d, IndexDn_3d)
+
+Oppldots=NewOperator("ldots",NF, IndexUp_3d, IndexDn_3d)
+
+-- define the coulomb operator
+-- we here define the part depending on F0 seperately from the part depending on F2
+-- when summing we can put in the numerical values of the slater integrals
+OppF0 =NewOperator("U", NF, IndexUp_3d, IndexDn_3d, {1,0,0})
+OppF2 =NewOperator("U", NF, IndexUp_3d, IndexDn_3d, {0,1,0})
+OppF4 =NewOperator("U", NF, IndexUp_3d, IndexDn_3d, {0,0,1})
+
+Akm = PotentialExpandedOnClm("Oh", 2, {0.6,-0.4})
+OpptenDq = NewOperator("CF", NF, IndexUp_3d, IndexDn_3d, Akm)
+
+Akm = PotentialExpandedOnClm("Oh", 2, {1,0})
+OppNeg = NewOperator("CF", NF, IndexUp_3d, IndexDn_3d, Akm)
+Akm = PotentialExpandedOnClm("Oh", 2, {0,1})
+OppNt2g = NewOperator("CF", NF, IndexUp_3d, IndexDn_3d, Akm)
+
+Oppcldots= NewOperator("ldots", NF, IndexUp_2p, IndexDn_2p)
+OppUpdF0 = NewOperator("U", NF, IndexUp_2p, IndexDn_2p, IndexUp_3d, IndexDn_3d, {1,0}, {0,0})
+OppUpdF2 = NewOperator("U", NF, IndexUp_2p, IndexDn_2p, IndexUp_3d, IndexDn_3d, {0,1}, {0,0})
+OppUpdG1 = NewOperator("U", NF, IndexUp_2p, IndexDn_2p, IndexUp_3d, IndexDn_3d, {0,0}, {1,0})
+OppUpdG3 = NewOperator("U", NF, IndexUp_2p, IndexDn_2p, IndexUp_3d, IndexDn_3d, {0,0}, {0,1})
+
+-- in crystal field theory U drops out of the equation
+U       =  0.000
+F2dd    = 11.142
+F4dd    =  6.874
+F0dd    = U+(F2dd+F4dd)*2/63
+-- in crystal field theory U drops out of the equation
+Upd     =  0.000
+F2pd    =  6.667
+G1pd    =  4.922
+G3pd    =  2.796
+F0pd    =  Upd + G1pd*1/15 + G3pd*3/70
+tenDq   =  1.100
+zeta_3d =  0.081
+zeta_2p = 11.498
+Bz      = 0
+
+Hamiltonian =  F0dd*OppF0 + F2dd*OppF2 + F4dd*OppF4 + tenDq*OpptenDq + zeta_3d*Oppldots + Bz*(2*OppSz + OppLz)
+
+XASHamiltonian = Hamiltonian + zeta_2p * Oppcldots + F2pd * OppUpdF2 + G1pd * OppUpdG1 + G3pd * OppUpdG3
+
+-- we now can create the lowest Npsi eigenstates:
+Npsi=3
+-- in order to make sure we have a filling of 2 electrons we need to define some restrictions
+StartRestrictions = {NF, NB, {"111111 0000000000",6,6}, {"000000 1111111111",8,8}}
+-- Error in previous definition needs to be:
+StartRestrictions = {NF, NB, {"0000000000 111111",6,6}, {"1111111111 000000",8,8}}
+
+psiList = Eigensystem(Hamiltonian, StartRestrictions, Npsi, {{"DenseBorder",0}})
+
+oppList={Hamiltonian, OppSsqr, OppLsqr, OppJsqr, OppSz, OppLz, Oppldots, OppF2, OppF4, OppNeg, OppNt2g}
+
+print(" <E>    <S^2>  <L^2>  <J^2>  <S_z>  <L_z>  <l.s>  <F[2]> <F[4]> <Neg>  <Nt2g>");
+for key,psi in pairs(psiList) do
+  expvalue = psi * oppList * psi
+  for k,v in pairs(expvalue) do
+    io.write(string.format("%6.3f ",v))
+  end;
+  io.write("\n")
+end
+
+os.exit()
+
+-- in order to calculate nIXS we need to determine the intensity ratio for the different multipole intensities
+-- ( see PRL 99, 257401 (2007) for the formalism )
+-- in short the A^2 interaction is expanded on spherical harmonics and Bessel functions
+-- The 3d Wannier functions are expanded on spherical harmonics and a radial wave function
+-- For the radial wave-function we calculate <R(r) | j_k(q r) | R(r)>
+-- which defines the transition strength for the multipole of order k
+
+-- The radial functions here are calculated for a Ni 2+ atom and stored in the folder NiO_Radial
+-- more sophisticated methods can be used
+
+-- read the radial wave functions
+-- order of functions
+-- r	1S	2S	2P	3S	3P	3D
+file = io.open( "../../NiO Radial/RnlNi_Atomic_Hartree_Fock", "r")
+Rnl = {}
+for line in file:lines() do
+  RnlLine={}
+  for i in string.gmatch(line, "%S+") do
+    table.insert(RnlLine,i)
+  end
+  table.insert(Rnl,RnlLine)
+end
+
+-- some constants
+a0      = PhysicalConstants.a0.value * 1E10  -- 0.52917721092 Angstrom
+Rydberg = EnergyUnits.Ryd.value              -- 13.605693009454 eV
+Hartree = EnergyUnits.Hartree.value          -- 27.211386019 eV
+
+-- pd transitions from 2p (index 4 in Rnl) to 3d (index 7 in Rnl)
+-- <R(r) | j_k(q r) | R(r)>
+function RjRpd (q)
+  Rj1R = 0
+  Rj3R = 0
+  dr = Rnl[3][1]-Rnl[2][1]
+  r0 = Rnl[2][1]-2*dr
+  for ir = 2, #Rnl, 1 do
+    r = r0 + ir * dr
+    Rj1R = Rj1R + Rnl[ir][4] * math.SphericalBesselJ(1,q*r) * Rnl[ir][7] * dr
+    Rj3R = Rj3R + Rnl[ir][4] * math.SphericalBesselJ(3,q*r) * Rnl[ir][7] * dr
+  end
+  return Rj1R, Rj3R
+end
+
+-- the angular part is given as C(theta_q, phi_q)^* C(theta_r, phi_r)
+-- which is a potential expanded on spherical harmonics
+function ExpandOnClm(k,theta,phi,scale)
+  ret={}
+  for m=-k, k, 1 do
+    table.insert(ret,{k,m,scale * math.SphericalHarmonicC(k,m,theta,phi)})
+  end
+  return ret
+end
+
+-- define nIXS transition operators
+function TnIXS_pd(q, theta, phi)
+  Rj1R, Rj3R = RjRpd(q)
+  k=1
+  A1 = ExpandOnClm(k, theta, phi, I^k*(2*k+1)*Rj1R)
+  T1 = NewOperator("CF", NF, IndexUp_3d, IndexDn_3d, IndexUp_2p, IndexDn_2p, A1)
+  k=3
+  A3 = ExpandOnClm(k, theta, phi, I^k*(2*k+1)*Rj3R)
+  T3 = NewOperator("CF", NF, IndexUp_3d, IndexDn_3d, IndexUp_2p, IndexDn_2p, A3)
+  T = T1+T3
+  T.Chop()
+  return T
+end
+
+-- q in units per a0 (if you want in units per A take 5*a0 to have a q of 5 per A)
+q=9.0
+
+print("for q=",q," per a0 (",q / a0," per A) The ratio of k=1 and k=3 transition strength is:", RjRpd(q))
+
+-- define some transition operators
+qtheta=0
+qphi=0
+Tq001 = TnIXS_pd(q,qtheta,qphi)
+
+qtheta=Pi/2
+qphi=Pi/4
+Tq110 = TnIXS_pd(q,qtheta,qphi)
+
+qtheta=math.acos(math.sqrt(1/3))
+qphi=Pi/4
+Tq111 = TnIXS_pd(q,qtheta,qphi)
+
+qtheta=math.acos(math.sqrt(9/14))
+qphi=math.acos(math.sqrt(1/5))
+Tq123 = TnIXS_pd(q,qtheta,qphi)
+
+-- calculate the spectra
+nIXSSpectra = CreateSpectra(XASHamiltonian, {Tq001, Tq110, Tq111, Tq123}, {psiList[1],psiList[2],psiList[3]}, {{"Emin",-10}, {"Emax",20}, {"NE",6000}, {"Gamma",1.0}})
+
+-- print the spectra to a file
+nIXSSpectra.Print({{"file","NiOnIXS_L23.dat"}});
+
+-- a gnuplot script to make the plots
+gnuplotInput = [[
+set autoscale
+set xtic auto
+set ytic auto
+set style line  1 lt 1 lw 1 lc rgb "#FF0000"
+set style line  2 lt 1 lw 1 lc rgb "#0000FF"
+set style line  3 lt 1 lw 1 lc rgb "#00C000"
+set style line  4 lt 1 lw 1 lc rgb "#000000"
+set style line  5 lt 1 lw 3 lc rgb "#808080"
+
+set xlabel "E (eV)" font "Times,12"
+set ylabel "Intensity (arb. units)" font "Times,12"
+
+set out 'NiOnIXS_L23.ps'
+set size 1.0, 0.3
+set terminal postscript portrait enhanced color  "Times" 8
+
+energyshift=857.6
+
+plot "NiOnIXS_L23.dat" using ($1+energyshift):(-$9  -$11 -$13 +0.16) title '011' with lines ls  2,\
+     "NiOnIXS_L23.dat" using ($1+energyshift):(-$15 -$17 -$19 +0.11) title '111' with lines ls  3,\
+     "NiOnIXS_L23.dat" using ($1+energyshift):(-$21 -$23 -$25 +0.06) title '123' with lines ls  4,\
+     "NiOnIXS_L23.dat" using ($1+energyshift):(-$3   -$5  -$7 +0.01) title '001' with lines ls  1
+
+]]
+
+-- write the gnuplot script to a file
+file = io.open("NiOnIXS_L23.gnuplot", "w")
+file:write(gnuplotInput)
+file:close()
+
+-- call gnuplot to execute the script
+os.execute("gnuplot NiOnIXS_L23.gnuplot")
+-- transform to pdf and eps
+os.execute("ps2pdf NiOnIXS_L23.ps")
