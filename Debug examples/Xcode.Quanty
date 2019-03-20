@@ -1,5 +1,8 @@
 
 
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/External_tests/DensityPlot.Quanty")
+os.exit()
+
 
 
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Reference/Objects/Complex/complex.Quanty")
