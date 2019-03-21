@@ -78,10 +78,7 @@ void debug(const MatrixType &M)
 
 static int LuaSimontest(lua_State * L)
 {
-	AtomType A;
-	lua_check(L, 1, A);
-	lua_push_AtomMap(L, A);
-	return 1;
+	return 0;
 }
 
 static const struct luaL_Reg Simon_meta[] = {
