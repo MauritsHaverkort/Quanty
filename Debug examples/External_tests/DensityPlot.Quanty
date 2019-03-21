@@ -1,0 +1,413 @@
+function TableToMathematica(t)
+  Chop(t)
+  local ret = "{ "
+  for k,v in pairs(t) do
+    if k~=1 then
+      ret = ret.." , "
+    end
+    if (type(v) == "table") then
+      ret = ret..TableToMathematica(v)
+    else
+      if( Complex.Re(v) < 0) then
+        ret = ret..string.format("- %18.15f ",Abs(Complex.Re(v)))
+      else
+        ret = ret..string.format("+ %18.15f ",Abs(Complex.Re(v)))
+      end
+      if( Complex.Im(v) < 0) then
+        ret = ret..string.format("- I %18.15f ",Abs(Complex.Im(v)))
+      else
+        ret = ret..string.format("+ I %18.15f ",Abs(Complex.Im(v)))
+      end
+    end
+  end
+  ret = ret.." }"
+  return ret
+end
+
+NBosons = 0
+NFermions = 26
+
+NElectrons_2p = 6
+NElectrons_3d = 5
+NElectrons_Ld = 10
+
+IndexDn_2p = {0, 2, 4}
+IndexUp_2p = {1, 3, 5}
+IndexDn_3d = {6, 8, 10, 12, 14}
+IndexUp_3d = {7, 9, 11, 13, 15}
+IndexDn_Ld = {16, 18, 20, 22, 24}
+IndexUp_Ld = {17, 19, 21, 23, 25}
+
+
+--------------------------------------------------------------------------------
+-- Define the Coulomb term.
+--------------------------------------------------------------------------------
+OppF0_3d_3d = NewOperator('U', NFermions, IndexUp_3d, IndexDn_3d, {1, 0, 0})
+OppF2_3d_3d = NewOperator('U', NFermions, IndexUp_3d, IndexDn_3d, {0, 1, 0})
+OppF4_3d_3d = NewOperator('U', NFermions, IndexUp_3d, IndexDn_3d, {0, 0, 1})
+
+OppF0_2p_3d = NewOperator('U', NFermions, IndexUp_2p, IndexDn_2p, IndexUp_3d, IndexDn_3d, {1, 0}, {0, 0})
+OppF2_2p_3d = NewOperator('U', NFermions, IndexUp_2p, IndexDn_2p, IndexUp_3d, IndexDn_3d, {0, 1}, {0, 0})
+OppG1_2p_3d = NewOperator('U', NFermions, IndexUp_2p, IndexDn_2p, IndexUp_3d, IndexDn_3d, {0, 0}, {1, 0})
+OppG3_2p_3d = NewOperator('U', NFermions, IndexUp_2p, IndexDn_2p, IndexUp_3d, IndexDn_3d, {0, 0}, {0, 1})
+
+OppNUp_2p = NewOperator('Number', NFermions, IndexUp_2p, IndexUp_2p, {1, 1, 1})
+OppNDn_2p = NewOperator('Number', NFermions, IndexDn_2p, IndexDn_2p, {1, 1, 1})
+OppN_2p   = OppNUp_2p + OppNDn_2p
+
+OppNUp_3d = NewOperator('Number', NFermions, IndexUp_3d, IndexUp_3d, {1, 1, 1, 1, 1})
+OppNDn_3d = NewOperator('Number', NFermions, IndexDn_3d, IndexDn_3d, {1, 1, 1, 1, 1})
+OppN_3d   = OppNUp_3d + OppNDn_3d
+
+OppNUp_Ld = NewOperator('Number', NFermions, IndexUp_Ld, IndexUp_Ld, {1, 1, 1, 1, 1})
+OppNDn_Ld = NewOperator('Number', NFermions, IndexDn_Ld, IndexDn_Ld, {1, 1, 1, 1, 1})
+OppN_Ld   = OppNUp_Ld + OppNDn_Ld
+
+OppConfNd={}
+for i=0,10 do
+  OppConfNd[i] = NewOperator("Identity", NFermions)
+  OppConfNd[i].Restrictions = {NFermions,NBosons,{"000000 1111111111 0000000000",i,i}}
+end
+
+-- Fe3+ --
+
+Delta_sc    =          1.5*1
+U_3d_3d_sc  =          6.5*1
+F2_3d_3d_sc =       10.965*0.74
+F4_3d_3d_sc =        7.5351*0.74
+F0_3d_3d_sc = U_3d_3d_sc + 2 / 63 * F2_3d_3d_sc + 2 / 63 * F4_3d_3d_sc
+e_3d_sc     = (10 * Delta_sc - NElectrons_3d * (19 + NElectrons_3d) * U_3d_3d_sc / 2) / (10 + NElectrons_3d)
+e_Ld_sc     = NElectrons_3d * ((1 + NElectrons_3d) * U_3d_3d_sc / 2 - Delta_sc) / (10 + NElectrons_3d)
+
+Delta_ic    =          1.5*1
+U_3d_3d_ic  =          6.5*1
+F2_3d_3d_ic =       12.736*0.74 -- 0.74
+F4_3d_3d_ic =        7.963*0.74 -- 0.74
+F0_3d_3d_ic = U_3d_3d_ic + 2 / 63 * F2_3d_3d_ic + 2 / 63 * F4_3d_3d_ic
+U_2p_3d_ic  =          7.5*1
+F2_2p_3d_ic =        5.957*0.75 -- 0.75
+G1_2p_3d_ic =        4.453*0.75 -- 0.75
+G3_2p_3d_ic =        2.533*0.75 -- 0.75
+F0_2p_3d_ic = U_2p_3d_ic + 1 / 15 * G1_2p_3d_ic + 3 / 70 * G3_2p_3d_ic
+e_2p_ic    = (10 * Delta_ic + (1 + NElectrons_3d) * (NElectrons_3d * U_3d_3d_ic / 2 - (10 + NElectrons_3d) * U_2p_3d_ic)) / (16 + NElectrons_3d)
+e_3d_ic    = (10 * Delta_ic - NElectrons_3d * (31 + NElectrons_3d) * U_3d_3d_ic / 2 - 90 * U_2p_3d_ic) / (16 + NElectrons_3d)
+e_Ld_ic    = ((1 + NElectrons_3d) * (NElectrons_3d * U_3d_3d_ic / 2 + 6 * U_2p_3d_ic) - (6 + NElectrons_3d) * Delta_ic) / (16 + NElectrons_3d)
+
+Delta_fc    =          1.5*1
+U_3d_3d_fc  =          6.5*1
+F2_3d_3d_fc =       10.965*0.74
+F4_3d_3d_fc =        7.5351*0.74
+F0_3d_3d_fc = U_3d_3d_fc + 2 / 63 * F2_3d_3d_fc + 2 / 63 * F4_3d_3d_fc
+e_3d_fc     = (10 * Delta_fc - NElectrons_3d * (19 + NElectrons_3d) * U_3d_3d_fc / 2) / (10 + NElectrons_3d)
+e_Ld_fc     = NElectrons_3d * ((1 + NElectrons_3d) * U_3d_3d_fc / 2 - Delta_fc) / (10 + NElectrons_3d)
+
+H_coulomb_sc = F0_3d_3d_sc * OppF0_3d_3d
+             + F2_3d_3d_sc * OppF2_3d_3d
+             + F4_3d_3d_sc * OppF4_3d_3d
+             + e_3d_sc     * OppN_3d
+             + e_Ld_sc     * OppN_Ld
+
+H_coulomb_ic = F0_3d_3d_ic * OppF0_3d_3d
+             + F2_3d_3d_ic * OppF2_3d_3d
+             + F4_3d_3d_ic * OppF4_3d_3d
+             + F0_2p_3d_ic * OppF0_2p_3d
+             + F2_2p_3d_ic * OppF2_2p_3d
+             + G1_2p_3d_ic * OppG1_2p_3d
+             + G3_2p_3d_ic * OppG3_2p_3d
+             + e_2p_ic     * OppN_2p
+             + e_3d_ic     * OppN_3d
+             + e_Ld_ic     * OppN_Ld
+
+H_coulomb_fc = F0_3d_3d_fc * OppF0_3d_3d
+             + F2_3d_3d_fc * OppF2_3d_3d
+             + F4_3d_3d_fc * OppF4_3d_3d
+             + e_3d_fc     * OppN_3d
+             + e_Ld_fc     * OppN_Ld
+
+--------------------------------------------------------------------------------
+-- Define the spin-orbit coupling term.
+--------------------------------------------------------------------------------
+Oppldots_3d = NewOperator('ldots', NFermions, IndexUp_3d, IndexDn_3d)
+
+Oppldots_2p = NewOperator('ldots', NFermions, IndexUp_2p, IndexDn_2p)
+
+zeta_3d_sc =     0.059*1
+
+zeta_3d_ic =     0.075*1
+zeta_2p_ic =     8.199
+
+zeta_3d_fc =     zeta_3d_sc
+
+H_soc_sc = zeta_3d_sc * Oppldots_3d
+
+H_soc_ic = zeta_3d_ic * Oppldots_3d
+         + zeta_2p_ic * Oppldots_2p
+
+H_soc_fc = zeta_3d_fc * Oppldots_3d
+
+--------------------------------------------------------------------------------
+-- Define the ligand field term.
+
+Akm = {{4, 0,(21/10)},{4,-4,21/10*math.sqrt(5/14)},{4, 4,21/10*math.sqrt(5/14)}}
+OpptenDq_3d = NewOperator("CF", NFermions, IndexUp_3d, IndexDn_3d, Akm)
+OpptenDq_Ld = NewOperator("CF", NFermions, IndexUp_Ld, IndexDn_Ld, Akm)
+
+Akm = {{2, 0,-7}}
+OppDs_3d = NewOperator("CF", NFermions, IndexUp_3d, IndexDn_3d, Akm)
+OppDs_Ld = NewOperator("CF", NFermions, IndexUp_Ld, IndexDn_Ld, Akm)
+
+Akm = {{4, 0,-21}}
+OppDt_3d = NewOperator("CF", NFermions, IndexUp_3d, IndexDn_3d, Akm)
+OppDt_Ld = NewOperator("CF", NFermions, IndexUp_Ld, IndexDn_Ld, Akm)
+
+Akm = PotentialExpandedOnClm('D4h', 2, {0,0,0,1})
+OppVe  = NewOperator("CF", NFermions, IndexUp_3d, IndexDn_3d, IndexUp_Ld, IndexDn_Ld,Akm) +  NewOperator("CF", NFermions, IndexUp_Ld, IndexDn_Ld, IndexUp_3d, IndexDn_3d, Akm)
+Akm = PotentialExpandedOnClm('D4h', 2, {0,0,1,0})
+OppVb2 = NewOperator("CF", NFermions, IndexUp_3d, IndexDn_3d, IndexUp_Ld, IndexDn_Ld,Akm) +  NewOperator("CF", NFermions, IndexUp_Ld, IndexDn_Ld, IndexUp_3d, IndexDn_3d, Akm)
+Akm = PotentialExpandedOnClm('D4h', 2, {1,0,0,0})
+OppVa1 = NewOperator("CF", NFermions, IndexUp_3d, IndexDn_3d, IndexUp_Ld, IndexDn_Ld,Akm) +  NewOperator("CF", NFermions, IndexUp_Ld, IndexDn_Ld, IndexUp_3d, IndexDn_3d, Akm)
+Akm = PotentialExpandedOnClm('D4h', 2, {0,1,0,0})
+OppVb1 = NewOperator("CF", NFermions, IndexUp_3d, IndexDn_3d, IndexUp_Ld, IndexDn_Ld,Akm) +  NewOperator("CF", NFermions, IndexUp_Ld, IndexDn_Ld, IndexUp_3d, IndexDn_3d, Akm)
+
+Akm = PotentialExpandedOnClm('D4h', 2, {0,0,0,1})
+OppNe  = NewOperator("CF", NFermions, IndexUp_3d, IndexDn_3d, Akm)
+Akm = PotentialExpandedOnClm('D4h', 2, {0,0,1,0})
+OppNb2 = NewOperator("CF", NFermions, IndexUp_3d, IndexDn_3d,Akm)
+Akm = PotentialExpandedOnClm('D4h', 2, {1,0,0,0})
+OppNa1 = NewOperator("CF", NFermions, IndexUp_3d, IndexDn_3d,Akm)
+Akm = PotentialExpandedOnClm('D4h', 2, {0,1,0,0})
+OppNb1 = NewOperator("CF", NFermions, IndexUp_3d, IndexDn_3d, Akm)
+
+
+Ds_3d = 0.0
+Dt_3d = Ds_3d*0.15
+
+tenDq_3d_sc =          -0.6 + Dt_3d*10*7/12
+tenDq_Ld_sc =          tenDq_3d_sc/3--0.0
+Veg_sc      =          3.2*0
+Vt2g_sc     =          1.705 *0
+Ve			=		   Vt2g_sc
+Vb2			=		   Vt2g_sc
+Va1			=		   Veg_sc /1000
+Vb1			=		   Veg_sc
+
+tenDq_3d_ic =          tenDq_3d_sc
+tenDq_Ld_ic =          tenDq_Ld_sc
+Veg_ic      =          Veg_sc
+Vt2g_ic     =          Vt2g_sc
+
+tenDq_3d_fc =          tenDq_3d_sc
+tenDq_Ld_fc =          tenDq_Ld_sc
+Veg_fc      =          Veg_sc
+Vt2g_fc     =          Vt2g_sc
+
+H_lf_sc = tenDq_3d_sc * OpptenDq_3d
+        + tenDq_Ld_sc * OpptenDq_Ld
+		+ Ds_3d		  * OppDs_3d
+		+ Dt_3d	 	  * OppDt_3d
+		+ Ve * OppVe
+		+ Vb2 * OppVb2
+		+ Va1 * OppVa1
+		+ Vb1 * OppVb1
+		-- + Veg_sc      * OppVeg
+        -- + Vt2g_sc     * OppVt2g
+
+H_lf_ic = tenDq_3d_ic * OpptenDq_3d
+        + tenDq_Ld_ic * OpptenDq_Ld
+		+ Ds_3d		  * OppDs_3d
+		+ Dt_3d	 	  * OppDt_3d
+		+ Ve * OppVe
+		+ Vb2 * OppVb2
+		+ Va1 * OppVa1
+		+ Vb1 * OppVb1
+		-- + Veg_ic      * OppVeg
+        -- + Vt2g_ic     * OppVt2g
+
+H_lf_fc = tenDq_3d_fc * OpptenDq_3d
+        + tenDq_Ld_fc * OpptenDq_Ld
+		+ Ds_3d		  * OppDs_3d
+		+ Dt_3d	 	  * OppDt_3d
+		+ Ve * OppVe
+		+ Vb2 * OppVb2
+		+ Va1 * OppVa1
+		+ Vb1 * OppVb1
+		-- + Veg_fc      * OppVeg
+        -- + Vt2g_fc     * OppVt2g
+
+--------------------------------------------------------------------------------
+-- Define the magnetic field term.
+--------------------------------------------------------------------------------
+OppSx_3d    = NewOperator('Sx'   , NFermions, IndexUp_3d, IndexDn_3d)
+OppSy_3d    = NewOperator('Sy'   , NFermions, IndexUp_3d, IndexDn_3d)
+OppSz_3d    = NewOperator('Sz'   , NFermions, IndexUp_3d, IndexDn_3d)
+OppSsqr_3d  = NewOperator('Ssqr' , NFermions, IndexUp_3d, IndexDn_3d)
+OppSplus_3d = NewOperator('Splus', NFermions, IndexUp_3d, IndexDn_3d)
+OppSmin_3d  = NewOperator('Smin' , NFermions, IndexUp_3d, IndexDn_3d)
+
+OppLx_3d    = NewOperator('Lx'   , NFermions, IndexUp_3d, IndexDn_3d)
+OppLy_3d    = NewOperator('Ly'   , NFermions, IndexUp_3d, IndexDn_3d)
+OppLz_3d    = NewOperator('Lz'   , NFermions, IndexUp_3d, IndexDn_3d)
+OppLsqr_3d  = NewOperator('Lsqr' , NFermions, IndexUp_3d, IndexDn_3d)
+OppLplus_3d = NewOperator('Lplus', NFermions, IndexUp_3d, IndexDn_3d)
+OppLmin_3d  = NewOperator('Lmin' , NFermions, IndexUp_3d, IndexDn_3d)
+
+OppJx_3d    = NewOperator('Jx'   , NFermions, IndexUp_3d, IndexDn_3d)
+OppJy_3d    = NewOperator('Jy'   , NFermions, IndexUp_3d, IndexDn_3d)
+OppJz_3d    = NewOperator('Jz'   , NFermions, IndexUp_3d, IndexDn_3d)
+OppJsqr_3d  = NewOperator('Jsqr' , NFermions, IndexUp_3d, IndexDn_3d)
+OppJplus_3d = NewOperator('Jplus', NFermions, IndexUp_3d, IndexDn_3d)
+OppJmin_3d  = NewOperator('Jmin' , NFermions, IndexUp_3d, IndexDn_3d)
+
+OppSx_Ld    = NewOperator('Sx'   , NFermions, IndexUp_Ld, IndexDn_Ld)
+OppSy_Ld    = NewOperator('Sy'   , NFermions, IndexUp_Ld, IndexDn_Ld)
+OppSz_Ld    = NewOperator('Sz'   , NFermions, IndexUp_Ld, IndexDn_Ld)
+OppSsqr_Ld  = NewOperator('Ssqr' , NFermions, IndexUp_Ld, IndexDn_Ld)
+OppSplus_Ld = NewOperator('Splus', NFermions, IndexUp_Ld, IndexDn_Ld)
+OppSmin_Ld  = NewOperator('Smin' , NFermions, IndexUp_Ld, IndexDn_Ld)
+
+OppLx_Ld    = NewOperator('Lx'   , NFermions, IndexUp_Ld, IndexDn_Ld)
+OppLy_Ld    = NewOperator('Ly'   , NFermions, IndexUp_Ld, IndexDn_Ld)
+OppLz_Ld    = NewOperator('Lz'   , NFermions, IndexUp_Ld, IndexDn_Ld)
+OppLsqr_Ld  = NewOperator('Lsqr' , NFermions, IndexUp_Ld, IndexDn_Ld)
+OppLplus_Ld = NewOperator('Lplus', NFermions, IndexUp_Ld, IndexDn_Ld)
+OppLmin_Ld  = NewOperator('Lmin' , NFermions, IndexUp_Ld, IndexDn_Ld)
+
+OppJx_Ld    = NewOperator('Jx'   , NFermions, IndexUp_Ld, IndexDn_Ld)
+OppJy_Ld    = NewOperator('Jy'   , NFermions, IndexUp_Ld, IndexDn_Ld)
+OppJz_Ld    = NewOperator('Jz'   , NFermions, IndexUp_Ld, IndexDn_Ld)
+OppJsqr_Ld  = NewOperator('Jsqr' , NFermions, IndexUp_Ld, IndexDn_Ld)
+OppJplus_Ld = NewOperator('Jplus', NFermions, IndexUp_Ld, IndexDn_Ld)
+OppJmin_Ld  = NewOperator('Jmin' , NFermions, IndexUp_Ld, IndexDn_Ld)
+
+OppSx   = OppSx_3d + OppSx_Ld
+OppSy   = OppSy_3d + OppSy_Ld
+OppSz   = OppSz_3d + OppSz_Ld
+OppSsqr = OppSx * OppSx + OppSy * OppSy + OppSz * OppSz
+
+OppLx   = OppLx_3d + OppLx_Ld
+OppLy   = OppLy_3d + OppLy_Ld
+OppLz   = OppLz_3d + OppLz_Ld
+OppLsqr = OppLx * OppLx + OppLy * OppLy + OppLz * OppLz
+
+OppJx   = OppJx_3d + OppJx_Ld
+OppJy   = OppJy_3d + OppJy_Ld
+OppJz   = OppJz_3d + OppJz_Ld
+OppJsqr = OppJx * OppJx + OppJy * OppJy + OppJz * OppJz
+
+
+Jvec= {1,2,3}
+
+J0 = 1e-3 * 90
+B0 = 1e-4
+
+Bx = Jvec[1]*B0
+By = Jvec[2]*B0
+Bz = Jvec[3]*B0
+
+Jx = Jvec[1]*J0
+Jy = Jvec[2]*J0
+Jz = Jvec[3]*J0
+
+Jex = Jx * OppSx
+    + Jy * OppSy
+    + Jz * OppSz
+
+
+B = Bx * ( OppLx)
+  + By * ( OppLy)
+  + Bz * ( OppLz)
+
+
+--------------------------------------------------------------------------------
+-- Compose the total Hamiltonian.
+--------------------------------------------------------------------------------
+H_sc = 1 * H_coulomb_sc + 1 * H_soc_sc + 1 * H_lf_sc + B + Jex
+H_ic = 1 * H_coulomb_ic + 1 * H_soc_ic + 1 * H_lf_ic + B + Jex
+H_fc = 1 * H_coulomb_fc + 1 * H_soc_fc + 1 * H_lf_fc + B + Jex
+
+H_sc.Chop()
+H_ic.Chop()
+H_fc.Chop()
+--------------------------------------------------------------------------------
+-- Define the starting restrictions and set the number of initial states.
+--------------------------------------------------------------------------------
+StartingRestrictions = {NFermions, NBosons, {'111111 0000000000 0000000000', NElectrons_2p, NElectrons_2p},
+                                           {'000000 1111111111 0000000000', NElectrons_3d, NElectrons_3d},
+                                           {'000000 0000000000 1111111111', NElectrons_Ld, NElectrons_Ld}}
+
+
+NPsis = 6
+
+Restrictions = {NFermions, NBosons, {"000000 0000000000 1111111111",10,10}}
+Psis = Eigensystem(H_sc, StartingRestrictions, NPsis,{{"restrictions",Restrictions}})
+
+if not (type(Psis) == 'table') then
+    Psis = {Psis}
+end
+
+-- Plotting
+
+	mathematicaInput = [[
+	 Needs["Quanty`PlotTools`"];
+	 rho=%s;
+	 pl = Table[ Rasterize[ DensityMatrixPlot[ rho[ [i] ],QuantizationAxes->"x", PlotRange -> {{-1, 1}, {-1, 1}, {-1, 1}}] ], {i, 1, Length[rho]}];
+	 For[i = 1, i <= Length[pl], i++,
+	     Export[NotebookDirectory[] <> ToString[i] <> ".png", pl[ [i] ] ];
+	    ];
+	 Quit[];
+	 ]]
+	-- Plotting density plots:
+	rhoList1 = DensityMatrix(Psis, {6,7,8,9,10,11,12,13,14,15})
+	rhoListMathematicaForm1 = TableToMathematica(rhoList1)
+	file = io.open("./Densitymatrix2.nb", "w")
+	file:write( mathematicaInput:format(rhoListMathematicaForm1 ) )
+	file:close()
+	os.execute("/Applications/Mathematica.app/Contents/MacOS/MathKernel -run '<<".."Densitymatrix2.nb'")
+print('Finished the density matrix')
+
+-- Print some useful information about the calculated states.
+
+
+file = io.open("Expect2.txt", "w");
+OppSpar= Jvec[3]*OppSz_3d+Jvec[2]*OppSy_3d+Jvec[1]*OppSx_3d
+OppLpar= Jvec[3]*OppLz_3d+Jvec[2]*OppLy_3d+Jvec[1]*OppLx_3d
+
+OppList = {H_sc, OppSsqr, OppLsqr, OppJsqr, OppSpar, OppLpar, OppN_2p, OppN_3d, OppN_Ld}
+ConfNds={OppConfNd[6], OppConfNd[7], OppConfNd[8], OppConfNd[9], OppConfNd[10]}
+Psitemp={}
+
+print('  #   <E>    <S^2>    <L^2>    <J^2>    <S||>     <L||>     <Np>      <Nd>     <NL>');
+file:write('  #   <E>    <S^2>    <L^2>    <J^2>    <Sz>     <Lz>     <Np>      <Nd>     <NL>');
+file:write('\n')
+for key, Psi in pairs(Psis) do
+	expectationValues = Psi * OppList * Psi
+	file:write(string.format('%3d', key))
+
+	for key, expectationValue in pairs(expectationValues) do
+		io.write(string.format('%9.4f', Complex.Re(expectationValue)))
+		file:write(string.format('%9.4f', Complex.Re(expectationValue)))
+		--io.write(string.format('%9.4f', Complex.Re(expectationValue)))
+	end
+	-- for k=6,10 do
+		-- Psitemp = OppConfNd[k] * Psi
+		-- ConfNdValue = Psitemp * OppConfNd[k] * Psitemp
+		-- file:write(string.format('%9.4f', ConfNdValue))
+	-- end
+	io.write('\n')
+	file:write('\n')
+end
+file:close()
+
+
+OppList = {H_sc, OppNa1, OppNb1, OppNe, OppNb2}
+
+print('  #   <E>    <Na1>    <Nb1>    <Ne>    <Nb2> ');
+for key, Psi in pairs(Psis) do
+	expectationValues = Psi * OppList * Psi
+	for key, expectationValue in pairs(expectationValues) do
+		io.write(string.format('%9.4f', Complex.Re(expectationValue)))
+	end
+	io.write('\n')
+end
+
+os.exit()

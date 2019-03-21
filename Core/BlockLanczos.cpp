@@ -4705,7 +4705,7 @@ uint32_t LanczosBlockTriDiagonalizeDysonHABandHBRestricted(const OperatorType H,
  **************************** Ground-state *************************
  *******************************************************************/
 
-uint32_t TimeToDeflateInBlockLanczosKrylov(double Norm, double Zero, uint32_t i, uint32_t NpsiDeflated, CompactMatrixType *HKrylov)
+uint32_t TimeToDeflateInBlockLanczosKrylov(double Norm, double Zero, uint32_t i, uint32_t NpsiDeflated, CompactMatrixType *HKrylov, uint32_t irestart)
 {
   uint32_t j;
   double tot=sqrt(DBL_MIN);
@@ -4723,8 +4723,29 @@ uint32_t TimeToDeflateInBlockLanczosKrylov(double Norm, double Zero, uint32_t i,
       tot+=Sqr(HKrylov->V[j+j*HKrylov->Nj].Re);
     }
   }
-  
-  if(Sqr(Norm)<tot*Abs(Zero)) return 1;
+  VerbosityPrintf(0x10000000, "The deflation test yields Sqr(Norm) = %E < tot(%E) * Zero(%E) = %E\n",Sqr(Norm),tot,Zero,tot*Zero);
+  if(Sqr(Norm)<tot*Abs(Zero))
+  {
+    if(irestart!=1)
+    {
+      // after the first loop the number of possible states should not reduce
+      if(i<NpsiDeflated)
+      {
+        // but if the norm is realy small one still should deflate, although one should wonder how to get there
+        if(Norm<sqrt(DBL_MIN))
+        {
+          VerbosityPrintf(0x0100,"  Deflating below the number of states asked from %i to %i at level %i at loop %i\n",NpsiDeflated,NpsiDeflated-1,i,irestart);
+          return 1;
+        }
+        else
+        {
+          VerbosityPrintf(0x0100,"  According to the norm we should deflate, but we do not want to make the number of states asked %i smaller so we should not deflate at level %i at loop %i\n",NpsiDeflated,i,irestart);
+          return 0;
+        }
+      }
+    }
+    return 1;
+  }
   return 0;
 }
 
@@ -4811,9 +4832,9 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylovReal(OperatorType * H, WaveFu
       if(i==Npsi+1)VerbosityPrintf(0x0002,"  Restart loop %i with a Krylov basis of %i and a full basis of %i\n",irestart,NKrylovNow,v[0].N);
       // normalize v[i] and set <v[i] | H | v[i-NpsiDeflated]>
       Norm=RealWaveFunctionCalculateNorm(v[i]);
-      while(TimeToDeflateInBlockLanczosKrylov(Norm, Settings->zero, i, NpsiDeflated, &HKrylov))
+      while(TimeToDeflateInBlockLanczosKrylov(Norm, Settings->zero, i, NpsiDeflated, &HKrylov, irestart))
       {
-        VerbosityPrintf(0x0100,"      Deflating from %i to %i at level %i\n",NpsiDeflated,NpsiDeflated-1,i);
+        VerbosityPrintf(0x0100,"      Deflating from %i to %i at level %i in innerloop %i\n",NpsiDeflated,NpsiDeflated-1,i,irestart);
         // Need to deflate
         if(i>=NpsiDeflated)
         {
@@ -5056,7 +5077,7 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylovComplex(OperatorType * H, Wav
       // normalize v[i] and set <v[i] | H | v[i-NpsiDeflated]>
       Norm=ComplexWaveFunctionCalculateNorm(v[i]);
       //printf("i=%i Norm is %22.15E\n",i,Norm);
-      while(TimeToDeflateInBlockLanczosKrylov(Norm, Settings->zero, i, NpsiDeflated, &HKrylov))
+      while(TimeToDeflateInBlockLanczosKrylov(Norm, Settings->zero, i, NpsiDeflated, &HKrylov, irestart))
       {
         VerbosityPrintf(0x0100,"      Deflating from %i to %i at level %i\n",NpsiDeflated,NpsiDeflated-1,i);
         // Need to deflate
@@ -5420,7 +5441,7 @@ uint32_t BlockGroundState(OperatorType *H, uint32_t const Npsi, ConvergenceSetti
   {
     Energy[0][i]=1E+99;
   }
-  VerbosityPrintf(0x0002,"Start of BlockGroundState. Converge %i states to an energy with relative variance smaller than %22.15E\n\n",Npsi,Settings->zero);
+  VerbosityPrintf(0x0002,"Converge %i states to an energy with relative variance smaller than %22.15E\n\n",Npsi,Settings->zero);
   // loop until converged
   while((!Qconverged)&&(iloop<100))
   {
