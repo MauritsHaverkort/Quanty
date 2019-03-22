@@ -1726,6 +1726,41 @@ static int LuaCDMPlot(lua_State *L)
 
 }
 
+static int LuaBraketList(lua_State *L)
+{
+	WaveFunctionType * psi;
+	vector<OperatorType *> UList;
+	OperatorType *H;
+	CompactMatrixType *S, *M;
+
+	lua_check(L,1,psi);
+	lua_check(L,2,UList);
+	lua_check(L,3,H);
+
+	M = (CompactMatrixType*) lua_newuserdata(L,sizeof(CompactMatrixType));
+	luaL_setmetatable(L,"Matrix_Type");
+	M->QComplex = psi->QComplex || H->QComplex;
+	uint32_t i = 0;
+	while (!M->QComplex && i < (uint32_t) UList.size())
+	{
+		M->QComplex = UList[i]->QComplex;
+		i++;
+	}
+	M->Ni = (uint32_t) UList.size();
+	M->Nj = M->Ni;
+	InitCompactMatrix(M);
+	S = (CompactMatrixType*) lua_newuserdata(L,sizeof(CompactMatrixType));
+	luaL_setmetatable(L,"Matrix_Type");
+	S->QComplex = 0;
+	S->Ni = M->Ni;
+	S->Nj = M->Ni;
+	InitCompactMatrix(S);
+	PsiOppListOperatorOppListPsi(psi,UList,H,M);
+	PsiOppListOppListPsi(psi,UList,S);
+
+	return 2;
+}
+
 static int LuaMartinTest(lua_State *L)
 {
 	OperatorType *H, *T;
@@ -1888,6 +1923,7 @@ static const struct luaL_Reg Martin_func[] = {
   {"ResonantSpectrum",LuaCreateResonantSpectraSE},
   {"ListU",LuaListU},
   {"PlotSpectrum",LuaCDMPlot},
+  {"BraketList",LuaBraketList},
   {NULL, NULL}
 };
 

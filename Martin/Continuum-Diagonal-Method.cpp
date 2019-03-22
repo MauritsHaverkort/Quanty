@@ -11,6 +11,62 @@ typedef struct mypoint
 	Complex16 y;
 }mypoint;
 
+void PsiOppListOppListPsi(WaveFunctionType *psi, vector<OperatorType*> U, CompactMatrixType *M)
+{
+	OperatorType UU;
+	double Re, Im;
+	for (uint32_t i = 0; i < M->Ni; i++)
+	{
+		for (uint32_t j = i; j < M->Nj; j++)
+		{
+			InitOperatorForMult(&UU,2,U[i],U[j]);
+			OperatorMultiply2NormalOrder(&UU, *U[j], *U[i], 'D', 'N', &QDetNotOrderedFcFaBcBa);
+			PsiOperatorPsi(UU,*psi,&Re,&Im);
+			M->VRe[i*M->Nj + j] = Re;
+			M->VRe[j*M->Nj + i] = Re;
+			FreeOperator(&UU);
+		}
+	}
+}
+
+void PsiOppListOperatorOppListPsi(WaveFunctionType *psi, vector<OperatorType*> U, OperatorType *H, CompactMatrixType *M)
+{
+	OperatorType UHU;
+	double Re, Im;
+	if(M->QComplex)
+	{
+		for (uint32_t i = 0; i < M->Ni; i++)
+		{
+			for (uint32_t j = i; j < M->Nj; j++)
+			{
+				InitOperatorForMult(&UHU,3,U[i],U[j],H);
+				OperatorMultiply3NormalOrder(&UHU, *U[j], *H, *U[i], 'D', 'N', 'N', &QDetNotOrderedFcFaBcBa);
+				PsiOperatorPsi(UHU,*psi,&Re,&Im);
+				M->V[i*M->Nj + j].Re = Re;
+				M->V[i*M->Nj + j].Im = Im;
+				M->V[j*M->Nj + i] = M->V[i*M->Nj + j];
+				FreeOperator(&UHU);
+			}
+		}
+	}
+	else
+	{
+		for (uint32_t i = 0; i < M->Ni; i++)
+		{
+			for (uint32_t j = i; j < M->Nj; j++)
+			{
+				InitOperatorForMult(&UHU,3,U[i],U[j],H);
+				OperatorMultiply3NormalOrder(&UHU, *U[j], *H, *U[i], 'D', 'N', 'N', &QDetNotOrderedFcFaBcBa);
+				PsiOperatorPsi(UHU,*psi,&Re,&Im);
+				M->VRe[i*M->Nj + j] = Re;
+				M->VRe[j*M->Nj + i] = Re;
+				FreeOperator(&UHU);
+			}
+		}
+	}
+
+}
+
 uint32_t GetNumberOfPolesBelowCutoff(const std::vector<double> &poles, double cutoff)
 {
 	uint32_t i = 0;
