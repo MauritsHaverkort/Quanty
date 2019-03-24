@@ -31,22 +31,27 @@ void PsiOppListOppListPsi(WaveFunctionType *psi, vector<OperatorType*> U, Compac
 
 void PsiOppListOperatorOppListPsi(WaveFunctionType *psi, vector<OperatorType*> U, OperatorType *H, CompactMatrixType *M)
 {
-	OperatorType UHU;
+	OperatorType UHU, HU;
 	double Re, Im;
 	if(M->QComplex)
 	{
 		for (uint32_t i = 0; i < M->Ni; i++)
 		{
+			InitOperatorForMult(&HU,2,U[i],H);
+			OperatorMultiply2NormalOrder(&HU,*H,*U[i],'N','N',&QDetNotOrderedFcFaBcBa);
 			for (uint32_t j = i; j < M->Nj; j++)
 			{
-				InitOperatorForMult(&UHU,3,U[i],U[j],H);
-				OperatorMultiply3NormalOrder(&UHU, *U[j], *H, *U[i], 'D', 'N', 'N', &QDetNotOrderedFcFaBcBa);
+				//InitOperatorForMult(&UHU,3,U[i],U[j],H);
+				//OperatorMultiply3NormalOrder(&UHU, *U[j], *H, *U[i], 'D', 'N', 'N', &QDetNotOrderedFcFaBcBa);
+				InitOperatorForMult(&UHU,2,U[j],HU);
+				OperatorMultiply2NormalOrder(&UHU,*U[j],HU,'D','N',&QDetNotOrderedFcFaBcBa);
 				PsiOperatorPsi(UHU,*psi,&Re,&Im);
 				M->V[i*M->Nj + j].Re = Re;
 				M->V[i*M->Nj + j].Im = Im;
 				M->V[j*M->Nj + i] = M->V[i*M->Nj + j];
 				FreeOperator(&UHU);
 			}
+			FreeOperator(&HU);
 		}
 	}
 	else
