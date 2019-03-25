@@ -5,6 +5,7 @@
 #include "AtomicToWannierMatrix.cpp"
 #include "CompactMatrix.cpp"
 #include "Flatten.cpp"
+#include "Isosurface.cpp"
 #include "Kappa.cpp"
 #include "lsCouplingConstant.cpp"
 #include "MatrixToOperator.cpp"
