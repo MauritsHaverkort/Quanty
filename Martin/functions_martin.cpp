@@ -1756,7 +1756,9 @@ static int LuaBraketList(lua_State *L)
 	S->Nj = M->Ni;
 	InitCompactMatrix(S);
 	PsiOppListOperatorOppListPsi(psi,UList,H,M);
-	PsiOppListOppListPsi(psi,UList,S);
+	printf("Done\n");
+	fflush(stdout);
+	//PsiOppListOppListPsi(psi,UList,S);
 
 	return 2;
 }

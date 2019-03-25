@@ -56,17 +56,26 @@ void PsiOppListOperatorOppListPsi(WaveFunctionType *psi, vector<OperatorType*> U
 	}
 	else
 	{
+#pragma omp parallel for
 		for (uint32_t i = 0; i < M->Ni; i++)
 		{
+			OperatorType hu;
+			InitOperatorForMult(&hu,2,H,U[i]);
+			OperatorMultiply2NormalOrder(&hu,*H,*U[i],'N','N',&QDetNotOrderedFcFaBcBa);
 			for (uint32_t j = i; j < M->Nj; j++)
 			{
-				InitOperatorForMult(&UHU,3,U[i],U[j],H);
-				OperatorMultiply3NormalOrder(&UHU, *U[j], *H, *U[i], 'D', 'N', 'N', &QDetNotOrderedFcFaBcBa);
-				PsiOperatorPsi(UHU,*psi,&Re,&Im);
-				M->VRe[i*M->Nj + j] = Re;
-				M->VRe[j*M->Nj + i] = Re;
-				FreeOperator(&UHU);
+				//InitOperatorForMult(&UHU,3,U[i],U[j],H);
+				//OperatorMultiply3NormalOrder(&UHU, *U[j], *H, *U[i], 'D', 'N', 'N', &QDetNotOrderedFcFaBcBa);
+				OperatorType uhu;
+				InitOperatorForMult(&uhu,2,U[j],&hu);
+				OperatorMultiply2NormalOrder(&uhu,*U[j],hu,'D','N',&QDetNotOrderedFcFaBcBa);
+				double re, im;
+				PsiOperatorPsi(uhu,*psi,&re,&im);
+				M->VRe[i*M->Nj + j] = re;
+				M->VRe[j*M->Nj + i] = re;
+				FreeOperator(&uhu);
 			}
+			FreeOperator(&hu);
 		}
 	}
 
