@@ -1701,6 +1701,7 @@ static int LuaCDMPlot(lua_State *L)
 
 	CompactMatrixType *M;
 
+	uint32_t len = lua_gettop(L);
 	lua_check(L,1,wMin);
 	lua_check(L,2,wMax);
 	lua_check(L,3,dw);
@@ -1719,7 +1720,16 @@ static int LuaCDMPlot(lua_State *L)
 		spectrum[i].y.Re = 0.;
 		spectrum[i].y.Im = 0.;
 	}
-	PlotSpectrumFromPoles(eps,gamma,shift,poles,SlaterInts,M,spectrum);
+	if (len == 10)
+	{
+		vector<vector<Complex16> > selfenergy;
+		lua_check(L,10,selfenergy);
+		PlotSpectrumFromPoles(eps,gamma,shift,poles,SlaterInts,M,spectrum,selfenergy);
+	}
+	else
+	{
+		PlotSpectrumFromPoles(eps,gamma,shift,poles,SlaterInts,M,spectrum);
+	}
 
 	lua_push(L,spectrum);
 	return 1;

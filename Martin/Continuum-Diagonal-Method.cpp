@@ -153,6 +153,24 @@ Complex16 Resolvent(Complex16 z, const std::vector<double> &poles, const std::ve
 	return result;
 }
 
+Complex16 Resolvent(Complex16 z, const std::vector<double> &poles, const std::vector<double> &residues,const vector<Complex16> &selfenergy)
+{
+	Complex16 result;
+	result.Re = 0;
+	result.Im = 0;
+	if (poles.size() < residues.size() || poles.size() != selfenergy.size())
+	{
+		printf("error in Resolvent: poles.size() = %d < %d = residues.size()",poles.size(),residues.size());
+		fflush(stdout);
+		return result;
+	}
+	for (uint32_t i = 0; i < (uint32_t) residues.size(); i++)
+	{
+		result += residues[i]/(z - poles[i] - selfenergy[i]);
+	}
+	return result;
+}
+
 void PlotSpectrumFromPoles(double eps,double gamma, double shift, const std::vector<double> &poles, const std::vector<double> &v, CompactMatrixType *M, std::vector<mypoint> &spectrum)
 {
 
@@ -161,13 +179,33 @@ void PlotSpectrumFromPoles(double eps,double gamma, double shift, const std::vec
 	std::vector<double> residues, selectedPoles, selectedResidues;
 	CalculateResidues(v,M,Npoles,residues);
 	SelectDominantResiduesAndPoles(poles,residues,eps,selectedPoles,selectedResidues);
-	Complex16 z;
 #pragma omp parallel for
 	for (uint32_t i = 0; i < (uint32_t) spectrum.size(); i++)
 	{
+		Complex16 z;
 		z.Re = spectrum[i].w - shift;
 		z.Im = gamma/2;
 		spectrum[i].y = Resolvent(z,selectedPoles,selectedResidues);
+	}
+
+}
+
+void PlotSpectrumFromPoles(double eps,double gamma, double shift, const std::vector<double> &poles, const std::vector<double> &v, CompactMatrixType *M, std::vector<mypoint> &spectrum,const vector<vector<Complex16> > &selfenergy)
+{
+
+	double wMax = spectrum[spectrum.size()-1].w;
+	uint32_t Npoles = GetNumberOfPolesBelowCutoff(poles, wMax);
+	std::vector<double> residues, selectedPoles, selectedResidues;
+	CalculateResidues(v,M,Npoles,residues);
+	SelectDominantResiduesAndPoles(poles,residues,eps,selectedPoles,selectedResidues);
+
+#pragma omp parallel for
+	for (uint32_t i = 0; i < (uint32_t) spectrum.size(); i++)
+	{
+		Complex16 z;
+		z.Re = spectrum[i].w - shift;
+		z.Im = gamma/2;
+		spectrum[i].y = Resolvent(z,selectedPoles,selectedResidues,selfenergy[i]);
 	}
 
 }
