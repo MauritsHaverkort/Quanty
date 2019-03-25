@@ -18,28 +18,28 @@ for key, input in pairs(inputs) do
     print("\n\n\nInput:")
     print(input)
     
-    print("\nYtoJJZMatrix:")
-    rotMat = YtoJJZMatrix(input)
-    print( rotMat )
-    unitarityTest(rotMat)
-    
-    print("\nYtoKMatrix:")
-    rotMat = YtoKMatrix(input)
-    print( rotMat )
-    unitarityTest(rotMat)
-    
-    print("\nYtoKMatrix without Spin:")
-    rotMat = YtoKMatrix(input, {{"addSpin",false}})
-    print( rotMat )
-    unitarityTest(rotMat)
+--     print("\nYtojjzMatrix:")
+--     rotMat = YtojjzMatrix(input)
+--     print( rotMat )
+--     unitarityTest(rotMat)
+--     
+--     print("\nYtoKMatrix:")
+--     rotMat = YtoKMatrix(input)
+--     print( rotMat )
+--     unitarityTest(rotMat)
+--     
+--     print("\nYtoKMatrix without Spin:")
+--     rotMat = YtoKMatrix(input, {{"addSpin",false}})
+--     print( rotMat )
+--     unitarityTest(rotMat)
     
     print("\nYtoZMatrix:")
     rotMat = YtoZMatrix(input)
     print( rotMat )
     unitarityTest(rotMat)
     
-    print("\nYtoZMatrix without Spin:")
-    rotMat = YtoZMatrix(input, {{"addSpin",false}})
-    print( rotMat )
-    unitarityTest(rotMat)
+--     print("\nYtoZMatrix without Spin:")
+--     rotMat = YtoZMatrix(input, {{"addSpin",false}})
+--     print( rotMat )
+--     unitarityTest(rotMat)
 end
