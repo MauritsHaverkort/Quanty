@@ -4,6 +4,7 @@ void lua_push(lua_State * L, const lua_Integer pushkin);
 void lua_push(lua_State * L, const int pushkin);
 void lua_push(lua_State * L, const uint pushkin);
 void lua_push(lua_State * L, const uint16_t pushkin);
+void lua_push(lua_State * L, const Complex16 &pushkin);
 void lua_push(lua_State * L, const char * pushkin);
 void lua_push(lua_State * L, const string * const pushkin);
 void lua_push(lua_State * L, const string pushkin);
