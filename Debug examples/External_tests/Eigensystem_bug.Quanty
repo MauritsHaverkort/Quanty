@@ -1,0 +1,118 @@
+
+Verbosity(0xFFFFFFFF)
+
+TimeStart("all")
+--TODO: Note: With this setup, the problem usually appears in outer loop 4.
+--TODO: Note: The Problem does only appear if there is at least 1 empty Ligand shell invovled.
+--Setup
+--TODO: Note: The Problem seems to appear only for restrictions with exactly 3 excitable electrons. This observation might be wrong, my dataset is very small.
+max_excited_es = 3
+--TODO: Note: The problem seems not to appear for less than 5 Eigenstates
+Npsi=5
+
+nd = 3
+Bz = 0.1 * EnergyUnits.Tesla.value
+LzFac = 1e6
+
+NFermi = 30
+Cr_3d_Dn={ 0 , 2 , 4 , 6 , 8 }
+Cr_3d_Up={ 1 , 3 , 5 , 7 , 9 }
+
+dofile("pilesOfInput.Quanty")
+
+
+function MatrixToOperator(M)
+    Op = NewOperator("Number", #M, {0}, {0}, {0})
+    for i = 1, #M do
+        for j=1, #M do
+            Op = Op + NewOperator("Number", #M, {i - 1}, {j - 1}, {M[i][j]})
+        end
+    end
+    Op.Chop(1e-15)
+    return Op
+end
+
+
+
+HDFT = Copy( MatrixToOperator(HDFTFullMat) )
+
+OppSz    = Rotate(NewOperator("Sz",   NFermi,Cr_3d_Up,Cr_3d_Dn),YtoZFull)
+OppLz    = Rotate(NewOperator("Lz",   NFermi,Cr_3d_Up,Cr_3d_Dn),YtoZFull)
+
+-- define the Hamiltonian
+print("--Define Hamiltonian--\n")
+Hamiltonian = HDFT + Bz * (2*OppSz + LzFac*OppLz)
+HamiltonianReal = HDFT + Bz * (2*OppSz)
+
+-- print(Bz*OppSz )
+-- print(Bz*LzFac*OppLz)
+-- print(Hamiltonian)
+
+
+StartRestrictions = {NFermi, 0}
+Restrictions = {NFermi, 0}
+StartRestrictions[#StartRestrictions + 1] = {"11111 11111 00000 00000 00000 00000",nd,nd}
+
+StartRestrictions[#StartRestrictions + 1] = {"00000 00000 11111 11111 00000 00000",10,10}
+Restrictions[#Restrictions + 1] = {"00000 00000 11111 11111 00000 00000",10-max_excited_es,10}
+
+StartRestrictions[#StartRestrictions + 1] = {"00000 00000 00000 00000 11111 11111",0,0}
+Restrictions[#Restrictions + 1] = {"00000 00000 00000 00000 11111 11111",0,1}
+
+-- print("Start Restrictions:")
+-- print(StartRestrictions)
+-- print("Restrictions:")
+-- print(Restrictions)
+
+
+-- print of some expectation values
+Hamiltonian.Name = "E"
+OppSz.Name = "S_z_3d"
+OppLz.Name = "L_z_3d"
+oppList={Hamiltonian, OppSz, OppLz}
+
+
+function testEigensystem(ham)
+list = Eigensystem(ham, StartRestrictions, Npsi,{{"Restrictions", Restrictions}})
+
+
+
+    ham.Restrictions= Restrictions
+    hamSqrd = ham*ham
+--     hamSqrd.Restrictions = Restrictions
+
+    print("Wavefunction norms, and norm of H*psi-E*psi:")
+    for key,psi in pairs(list) do
+        eigen = ham*psi - Braket(psi,ham,psi)*psi
+--         print( key, Braket(psi,psi), Braket(psi,hamSqrd,psi)-Braket(psi,ham,psi)*Braket(psi,ham,psi) )
+        print( key, Braket(psi,psi), Braket(eigen,eigen) )
+    end
+
+    print("E\tS_z_3d\tL_z_3d")
+    Res={}
+    for i=1,#list do
+        for k=1,#oppList do
+            Res[k] = list[i] * oppList[k] * list[i]
+        end
+        print(Res)
+    end
+
+--     print("Eigenstate test: Chop( Ham*psi - E*psi , 0.1)")
+--     for key,psi in pairs(list) do
+--         print( key, Chop( ham*psi - Braket(psi,ham,psi)*psi, 1e-3 ) )
+--     end
+end
+
+print(Hamiltonian)
+
+print(Chop(Hamiltonian-ConjugateTranspose(Hamiltonian)))
+
+
+print("=== Broken Eigensystem ===")
+testEigensystem(Hamiltonian)
+
+--print("\n\n\n=== Working Eigensystem ===")
+--testEigensystem(HamiltonianReal)
+
+TimeEnd("all")
+TimePrint()
