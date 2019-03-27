@@ -134,7 +134,7 @@ void InitOperatorForMult(OperatorType *prod, int count, const OperatorType *l, .
   }
   for (j = 1; j <= MaxLength; j++)
   {
-    InitOperatorFixedLength(prod, j, 8);
+    InitOperatorFixedLength(prod, j, 24); //TODO 8
   }
   va_end(ap);
 }
