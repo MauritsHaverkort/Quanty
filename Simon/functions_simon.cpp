@@ -11,12 +11,25 @@ void debug()
 	debug("");
 }
 
+void debug(const Complex16 c)
+{
+	debug();
+	cout << c.Re << " + " << c.Im << endl;
+}
+
 template<typename T>
 void debug(const vector<T> &vec)
 {
 	debug();
 	for (int i = 0; i < vec.size(); ++i)
 		cout << "elem=" << i << ", vec[i]=" << vec[i] << endl;
+}
+
+void debug(const vector<Complex16> &vec)
+{
+	debug();
+	for (int i = 0; i < vec.size(); ++i)
+		cout << "elem=" << i << ", vec[i]=" << vec[i].Re << " + " << vec[i].Im << endl;
 }
 
 template<typename keyType, typename valType>
@@ -91,6 +104,7 @@ static const struct luaL_Reg Simon_func[] = {
 	{"Flatten", LuaFlatten},
 	{"MatrixToOperator", LuaMatrixToOperator},
 	{"lsCouplingConstants", LuaLSCouplingConstants},
+	{"RealspaceWavefunction", LuaRealspaceWavefunction},
 	{"ReduceHilbertSpace", LuaReduceHilbertSpace},
 	{"RemoveSpin", LuaRemoveSpin},
 	{"SortByKappa",LuaSortByKappa},
