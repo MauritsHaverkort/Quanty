@@ -1,3 +1,4 @@
+#include "Simon.class"
 #include "functions_simon.h" 
 #include "AtomicArithmetics.h"
 #include "AtomicNumberOperators.h"

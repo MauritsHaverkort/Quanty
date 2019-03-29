@@ -1,4 +1,14 @@
- 
+void lua_push(lua_State * L, const doubleVecValPair &pushkin)
+{
+	lua_newtable(L);
+	lua_push(L, 1);
+	lua_push(L, pushkin.vec);
+	lua_settable(L, -3);
+	lua_push(L, 2);
+	lua_push(L, pushkin.val);
+	lua_settable(L, -3);
+}
+
 double vecNorm(const vector<double> &v)
 {
 	double normSqrd = 0;
@@ -90,23 +100,26 @@ CompactMatrixType densityMatrixNoSpin(const CompactMatrixType &rho)
 	return rhoNoSpin;
 }
 
-map<vector<double>, double> realspaceWavefunction(const CompactMatrixType &rho, const vector<Interpolation::InterpolatingFunction*> &funs, const vector<string> &orbs,
-		const vector<vector<double> > &atomPos, const uint gridpoints, const double domainsize)
+vector<doubleVecValPair> realspaceWavefunction(const CompactMatrixType &rho, const vector<Interpolation::InterpolatingFunction*> &funs, const vector<string> &orbs, const vector<vector<double> > &atomPos,
+		const uint gridpoints, const double domainsize)
 {
 	CompactMatrixType rhoNoSpin = densityMatrixNoSpin(rho);
 
 	const vector<vector<uint16_t> > indices = dictToList(createAtmoicIndicesDict(orbs), orbs);
 	const vector<double> interRanges = interpolationRanges(funs);
 	double step = domainsize / (double) (gridpoints - 1);
-	map<vector<double>, double> result;
+	vector<doubleVecValPair> result(gridpoints * gridpoints * gridpoints);
 #pragma omp parallel for
 	for (uint xi = 0; xi <= gridpoints; ++xi)
 	{
 		double x = -domainsize / 2 + step * xi;
-		for (double y = -domainsize / 2; y <= domainsize / 2; y += step)
+		for (uint yi = 0; xi <= gridpoints; ++xi)
 		{
-			for (double z = -domainsize / 2; z <= domainsize / 2; z += step)
+			double y = -domainsize / 2 + step * yi;
+			for (uint zi = 0; xi <= gridpoints; ++xi)
 			{
+				double z = -domainsize / 2 + step * zi;
+				uint vecI = xi * gridpoints * gridpoints + yi * gridpoints + zi;
 				vector<double> v(3);
 				v[0] = x;
 				v[1] = y;
@@ -127,7 +140,10 @@ map<vector<double>, double> realspaceWavefunction(const CompactMatrixType &rho, 
 							}
 						}
 					}
-					result.insert( { v, WFval });
+					doubleVecValPair tmp;
+					tmp.vec = v;
+					tmp.val = WFval;
+					result[vecI] = tmp;
 				}
 			}
 		}
@@ -136,7 +152,7 @@ map<vector<double>, double> realspaceWavefunction(const CompactMatrixType &rho, 
 	return result;
 }
 
-map<vector<double>, double> realSpaceWavefunction(const CompactMatrixType &rho, const vector<Interpolation::InterpolatingFunction*> &funs, const vector<string> &orbs,
+vector<doubleVecValPair> realSpaceWavefunction(const CompactMatrixType &rho, const vector<Interpolation::InterpolatingFunction*> &funs, const vector<string> &orbs,
 		const vector<vector<double> > &atomPos, const uint gridpoints)
 {
 	double maxNorm = 0;
@@ -254,11 +270,10 @@ static int LuaRealspaceWavefunction(lua_State * L)
 		return luaL_error(L, "Error in RealspaceWavefunction: Number of fermionic states obtained from orbitals (%d) is unequal to size of density matrix (%d).", NF, rho.Ni);
 
 //	TODO: Warning if rho is not hermetian
-
 	if (Options.domain == 0)
-		lua_pushMapKeyValPair(L, realSpaceWavefunction(rho, funs, orbs, atomPos, Options.gridpoints));
+		lua_push(L, realSpaceWavefunction(rho, funs, orbs, atomPos, Options.gridpoints));
 	else
-		lua_pushMapKeyValPair(L, realspaceWavefunction(rho, funs, orbs, atomPos, Options.gridpoints, Options.domain));
+		lua_push(L, realspaceWavefunction(rho, funs, orbs, atomPos, Options.gridpoints, Options.domain));
 	FreeCompactMatrix(&rho);
 	return 1;
 }
