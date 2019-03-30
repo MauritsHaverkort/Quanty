@@ -9,6 +9,16 @@ void lua_push(lua_State * L, const doubleVecValPair &pushkin)
 	lua_settable(L, -3);
 }
 
+void lua_check(lua_State * L, int arg, doubleVecValPair &in)
+{
+	lua_rawgeti(L, arg, 1);
+	lua_check(L, -1, in.vec);
+	lua_pop(L, 1);
+	lua_rawgeti(L, arg, 2);
+	lua_check(L, -1, in.val);
+	lua_pop(L, 1);
+}
+
 double vecNorm(const vector<double> &v)
 {
 	double normSqrd = 0;
@@ -100,7 +110,7 @@ CompactMatrixType densityMatrixNoSpin(const CompactMatrixType &rho)
 	return rhoNoSpin;
 }
 
-vector<doubleVecValPair> realspaceWavefunction(const CompactMatrixType &rho, const vector<Interpolation::InterpolatingFunction*> &funs, const vector<string> &orbs, const vector<vector<double> > &atomPos,
+vector<doubleVecValPair> realspaceElectronDensity(const CompactMatrixType &rho, const vector<Interpolation::InterpolatingFunction*> &funs, const vector<string> &orbs, const vector<vector<double> > &atomPos,
 		const uint gridpoints, const double domainsize)
 {
 	CompactMatrixType rhoNoSpin = densityMatrixNoSpin(rho);
@@ -110,13 +120,13 @@ vector<doubleVecValPair> realspaceWavefunction(const CompactMatrixType &rho, con
 	double step = domainsize / (double) (gridpoints - 1);
 	vector<doubleVecValPair> result(gridpoints * gridpoints * gridpoints);
 #pragma omp parallel for
-	for (uint xi = 0; xi <= gridpoints; ++xi)
+	for (uint xi = 0; xi < gridpoints; ++xi)
 	{
 		double x = -domainsize / 2 + step * xi;
-		for (uint yi = 0; xi <= gridpoints; ++xi)
+		for (uint yi = 0; yi < gridpoints; ++yi)
 		{
 			double y = -domainsize / 2 + step * yi;
-			for (uint zi = 0; xi <= gridpoints; ++xi)
+			for (uint zi = 0; zi < gridpoints; ++zi)
 			{
 				double z = -domainsize / 2 + step * zi;
 				uint vecI = xi * gridpoints * gridpoints + yi * gridpoints + zi;
@@ -125,26 +135,23 @@ vector<doubleVecValPair> realspaceWavefunction(const CompactMatrixType &rho, con
 				v[1] = y;
 				v[2] = z;
 
-				if (vecNorm(v) <= domainsize / 2)
+				const vector<Complex16> psi = realspaceBasisValues(v, orbs, atomPos, interRanges, funs, indices, step);
+				double WFval = 0;
+				for (uint i = 0; i < (uint) rhoNoSpin.Ni; ++i)
 				{
-					const vector<Complex16> psi = realspaceBasisValues(v, orbs, atomPos, interRanges, funs, indices, step);
-					double WFval = 0;
-					for (uint i = 0; i < (uint) rhoNoSpin.Ni; ++i)
+					for (uint j = 0; j < (uint) rhoNoSpin.Nj; ++j)
 					{
-						for (uint j = 0; j < (uint) rhoNoSpin.Nj; ++j)
-						{
 //						Any off-diagonal imaginary parts cancel out because rho is hermetian.
-							if (rhoNoSpin.V[i * rhoNoSpin.Nj + j].Re != 0)
-							{
-								WFval += rhoNoSpin.V[i * rhoNoSpin.Nj + j].Re * (psi[i].Re * psi[j].Re + psi[i].Im * psi[j].Im);
-							}
+						if (rhoNoSpin.V[i * rhoNoSpin.Nj + j].Re != 0)
+						{
+							WFval += rhoNoSpin.V[i * rhoNoSpin.Nj + j].Re * (psi[i].Re * psi[j].Re + psi[i].Im * psi[j].Im);
 						}
 					}
-					doubleVecValPair tmp;
-					tmp.vec = v;
-					tmp.val = WFval;
-					result[vecI] = tmp;
 				}
+				doubleVecValPair tmp;
+				tmp.vec = v;
+				tmp.val = WFval;
+				result[vecI] = tmp;
 			}
 		}
 	}
@@ -152,7 +159,7 @@ vector<doubleVecValPair> realspaceWavefunction(const CompactMatrixType &rho, con
 	return result;
 }
 
-vector<doubleVecValPair> realSpaceWavefunction(const CompactMatrixType &rho, const vector<Interpolation::InterpolatingFunction*> &funs, const vector<string> &orbs,
+vector<doubleVecValPair> realspaceElectronDensity(const CompactMatrixType &rho, const vector<Interpolation::InterpolatingFunction*> &funs, const vector<string> &orbs,
 		const vector<vector<double> > &atomPos, const uint gridpoints)
 {
 	double maxNorm = 0;
@@ -166,7 +173,7 @@ vector<doubleVecValPair> realSpaceWavefunction(const CompactMatrixType &rho, con
 			maxX = xMax;
 	}
 	double domainsize = 2 * (maxNorm + maxX);
-	return realspaceWavefunction(rho, funs, orbs, atomPos, gridpoints, domainsize);
+	return realspaceElectronDensity(rho, funs, orbs, atomPos, gridpoints, domainsize);
 }
 
 template<typename keyType, typename valType>
@@ -192,7 +199,99 @@ void lua_pushMapKeyValPair(lua_State * L, const map<keyType, valType> &pushkin)
 	}
 }
 
-static int LuaRealspaceWavefunction(lua_State * L)
+vector<double> vecAverage(const vector<double> &v1, const vector<double> &v2)
+{
+	vector<double> result(v1.size());
+	for (uint i = 0; i < v1.size(); ++i)
+		result[i] = (v1[i] + v2[i]) / 2.;
+	return result;
+}
+
+vector<double> vecAverage(const vector<double> &v1, const vector<double> &v2, double val1, double val2, double valMiddle)
+{
+	vector<double> result(v1.size());
+	for (uint i = 0; i < v1.size(); ++i)
+		if (val1 != val2)
+			result[i] = v1[i] * (val2 - valMiddle) / (val2 - val1) + v2[i] * (valMiddle - val1) / (val2 - val1);
+		else
+			result[i] = (v1[i] + v2[i]) / 2.;
+	return result;
+}
+
+//TODO: Overloaded vecAverage with values 1,2,3, which linearly interpolates between 'em.
+
+double findIsosurfaceVal(const vector<doubleVecValPair> &density, double portion, double step)
+{
+	double fullSum = 0;
+	for (uint i = 0; i < (uint) density.size(); ++i)
+		fullSum += density[i].val;
+//	TODO: Verbosity Print for fullInt.
+	double threshold = 0;
+	double partialSum = 0;
+	while (partialSum < fullSum * portion)
+	{
+		threshold += step;
+		for (uint i = 0; i < (uint) density.size(); ++i)
+			if (density[i].val < threshold)
+				partialSum += density[i].val;
+	}
+	return threshold;
+}
+
+double findIsosurfaceVal(const vector<doubleVecValPair> &density, double portion)
+{
+	return findIsosurfaceVal(density, portion, 0.01);
+}
+
+vector<vector<double> > isosurface(const vector<doubleVecValPair> &density, double threshold)
+{
+	uint gridpoints = (uint) pow((double) density.size() + 1, 1 / 3.);
+	vector < vector<double> > result;
+	for (uint xi = 0; xi < gridpoints - 1; ++xi)
+	{
+		for (uint yi = 0; yi < gridpoints - 1; ++yi)
+		{
+			for (uint zi = 0; zi < gridpoints - 1; ++zi)
+			{
+				uint i0 = xi * gridpoints * gridpoints + yi * gridpoints + zi;
+				uint ixpp = (xi + 1) * gridpoints * gridpoints + yi * gridpoints + zi;
+				uint iypp = xi * gridpoints * gridpoints + (yi + 1) * gridpoints + zi;
+				uint izpp = xi * gridpoints * gridpoints + yi * gridpoints + (zi + 1);
+				double val0 = density[i0].val;
+				double valxpp = density[ixpp].val;
+				double valypp = density[iypp].val;
+				double valzpp = density[izpp].val;
+				if ((val0 < threshold && valxpp > threshold) || (val0 > threshold && valxpp < threshold))
+					result.push_back(vecAverage(density[i0].vec, density[ixpp].vec, density[i0].val, density[ixpp].val, threshold));
+				if ((val0 < threshold && valypp > threshold) || (val0 > threshold && valypp < threshold))
+					result.push_back(vecAverage(density[i0].vec, density[iypp].vec, density[i0].val, density[iypp].val, threshold));
+				if ((val0 < threshold && valzpp > threshold) || (val0 > threshold && valzpp < threshold))
+					result.push_back(vecAverage(density[i0].vec, density[izpp].vec, density[i0].val, density[izpp].val, threshold));
+			}
+		}
+	}
+//	TODO: do I need to sort the output vector?
+	return result;
+}
+
+static int LuaRealspaceDensitySecurityMeasures(lua_State * L, const CompactMatrixType &rho, const vector<Interpolation::InterpolatingFunction*> &funs, const vector<string> &orbs,
+		const vector<vector<double> > &atomPos)
+{
+	if (rho.Ni != rho.Nj)
+		return luaL_error(L, "Error in RealspaceDensity: Rho needs to be a quadratic matrix, but is of size %dx%d.", rho.Ni, rho.Nj);
+
+	if (funs.size() != orbs.size() || orbs.size() != atomPos.size())
+		return luaL_error(L, "Error in RealspaceDensity: List of functions (%d), list of orbitals (%d) and list of atom positions (%d) need to be of the same size.", (uint) funs.size(),
+				(uint) orbs.size(), (uint) atomPos.size());
+
+	uint NF = NumberOfFermionicStates(orbs);
+	if (NF != rho.Ni)
+		return luaL_error(L, "Error in RealspaceDensity: Number of fermionic states obtained from orbitals (%d) is unequal to size of density matrix (%d).", NF, rho.Ni);
+
+	//	TODO: Warning if rho is not hermetian
+}
+
+static int LuaRealspaceDensity(lua_State * L)
 {
 	CompactMatrixType rho;
 	vector<Interpolation::InterpolatingFunction*> funs;
@@ -204,17 +303,17 @@ static int LuaRealspaceWavefunction(lua_State * L)
 		uint gridpoints;
 		double domain;
 	} Options;
-	LuaOptionsType LuaRealspaceWavefunctionOptions[] =
+	LuaOptionsType LuaRealspaceDensityOptions[] =
 	{ { "gridpoints", "int", &(Options.gridpoints) },
 			{ "domain", "double", &(Options.domain) },
 			{ NULL, NULL, NULL } };
 	Options.gridpoints = 200;
-	double domain = 0;
+	Options.domain = 0;
 	bool hasOptions = false;
 
 	uint len = lua_gettop(L);
 	if (len < 3 || len > 5)
-		return luaL_error(L, "Error in RealspaceWavefunction: Expected 3, 4 or 5 arguments, density matrix, radial functions, orbitals, optional atom positions, and options.");
+		return luaL_error(L, "Error in RealspaceDensity: Expected 3, 4 or 5 arguments, density matrix, radial functions, orbitals, optional atom positions, and options.");
 
 	lua_check(L, 1, rho);
 	lua_check(L, 2, funs);
@@ -251,29 +350,54 @@ static int LuaRealspaceWavefunction(lua_State * L)
 	{
 		if (LuaTestOptionsList(L, -1))
 		{
-			LuaCheckOptions(L, -1, LuaRealspaceWavefunctionOptions);
+			LuaCheckOptions(L, -1, LuaRealspaceDensityOptions);
 		} else
 		{
-			return luaL_error(L, "Kind of expected a list of options as last argument of RealspaceWavefunction.\n");
+			return luaL_error(L, "Kind of expected a list of options as last argument of RealspaceDensity.\n");
 		}
 	}
 
-	if (rho.Ni != rho.Nj)
-		return luaL_error(L, "Error in RealspaceWavefunction: Rho needs to be a quadratic matrix, but is of size %dx%d.", rho.Ni, rho.Nj);
+	LuaRealspaceDensitySecurityMeasures(L, rho, funs, orbs, atomPos);
 
-	if (funs.size() != orbs.size() || orbs.size() != atomPos.size())
-		return luaL_error(L, "Error in RealspaceWavefunction: List of functions (%d), list of orbitals (%d) and list of atom positions (%d) need to be of the same size.", (uint) funs.size(),
-				(uint) orbs.size(), (uint) atomPos.size());
-
-	uint NF = NumberOfFermionicStates(orbs);
-	if (NF != rho.Ni)
-		return luaL_error(L, "Error in RealspaceWavefunction: Number of fermionic states obtained from orbitals (%d) is unequal to size of density matrix (%d).", NF, rho.Ni);
-
-//	TODO: Warning if rho is not hermetian
 	if (Options.domain == 0)
-		lua_push(L, realSpaceWavefunction(rho, funs, orbs, atomPos, Options.gridpoints));
+		lua_push(L, realspaceElectronDensity(rho, funs, orbs, atomPos, Options.gridpoints));
 	else
-		lua_push(L, realspaceWavefunction(rho, funs, orbs, atomPos, Options.gridpoints, Options.domain));
-	FreeCompactMatrix(&rho);
+		lua_push(L, realspaceElectronDensity(rho, funs, orbs, atomPos, Options.gridpoints, Options.domain));
 	return 1;
+}
+
+static int LuaIsosurface(lua_State * L, bool hasThreshold)
+{
+//	TODO: Sicherheitsabfragen, checken ob density erst noch berechnet werden muss.
+
+
+	vector<doubleVecValPair> density;
+	lua_check(L, 1, density);
+	if (hasThreshold)
+	{
+		double threshold;
+		lua_check(L, 2, threshold);
+		lua_push(L, isosurface(density, threshold));
+//	TODO: Life
+		return 1;
+	} else
+	{
+		double portion;
+		lua_check(L, 2, portion);
+		double threshold = findIsosurfaceVal(density, portion);
+		lua_push(L, isosurface(density, threshold));
+		lua_push(L, threshold);
+		//	TODO: Life
+		return 2;
+	}
+}
+
+static int LuaIsosurfaceFixedVal(lua_State * L)
+{
+	return LuaIsosurface(L, true);
+}
+
+static int LuaIsosurfaceFixedInt(lua_State * L)
+{
+	return LuaIsosurface(L, false);
 }

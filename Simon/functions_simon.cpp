@@ -89,6 +89,12 @@ void debug(const MatrixType &M)
 	debug(M, "Matrix-Print");
 }
 
+void debug(const doubleVecValPair &vp)
+{
+	debug(vp.vec);
+	debug(vp.val);
+}
+
 static int LuaSimontest(lua_State * L)
 {
 	return 0;
@@ -102,9 +108,11 @@ static const struct luaL_Reg Simon_func[] = {
 	{"AtomicNumberOperators", LuaAtomicNumberOperators},
 	{"AtomicToWannierMatrix", LuaAtomicToWannierMatrix},
 	{"Flatten", LuaFlatten},
+	{"IsosurfaceFixedInt", LuaIsosurfaceFixedInt},
+	{"IsosurfaceFixedVal", LuaIsosurfaceFixedVal},
 	{"MatrixToOperator", LuaMatrixToOperator},
 	{"lsCouplingConstants", LuaLSCouplingConstants},
-	{"RealspaceWavefunction", LuaRealspaceWavefunction},
+	{"RealspaceDensity", LuaRealspaceDensity},
 	{"ReduceHilbertSpace", LuaReduceHilbertSpace},
 	{"RemoveSpin", LuaRemoveSpin},
 	{"SortByKappa",LuaSortByKappa},

@@ -8,4 +8,5 @@ void debug(const CompactMatrixType &M, const string &str);
 void debug(const MatrixType &M, const string &str);
 void debug(const CompactMatrixType &M);
 void debug(const MatrixType &M);
+void debug(const doubleVecValPair &vp);
 static int LuaSimontest(lua_State * L);
