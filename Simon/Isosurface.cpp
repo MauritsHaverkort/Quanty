@@ -360,21 +360,38 @@ static int LuaRealspaceDensity(lua_State * L)
 	return 1;
 }
 
+void saveIsosurface(const vector<vector<double> > &iso, const char *file)
+{
+	std::ofstream writer;
+	writer.open(file);
+	writer << "# x\t\t\ty\t\t\tz\t\t\t" << endl;
+	for (uint i = 0; i < (uint) iso.size(); ++i)
+	{
+		for (uint j = 0; j < (uint) iso[j].size(); ++j)
+			writer << iso[i][j] << "\t";
+		writer << endl;
+	}
+	writer.close();
+}
+
 static int LuaIsosurface(lua_State * L, bool hasThreshold)
 {
 	struct
 	{
-		uint gridpoints;
 		double domain;
+		char* file;
+		uint gridpoints;
 		double stepsize;
 	} Options;
 	LuaOptionsType LuaIsosurfaceOptions[] = {
-			{ "gridpoints", "int", &(Options.gridpoints) },
 			{ "domain", "double", &(Options.domain) },
-			{ "stepsize", "double", &(Options.stepsize) },
-			{ NULL, NULL, NULL } };
-	Options.gridpoints = 200;
+			{ "file", "char*", &(Options.file) },
+			{ "gridpoints", "int", &(Options.gridpoints) },
+			{ "stepsize", "double",	&(Options.stepsize) },
+			{ NULL, NULL, NULL } }; //TODO: Calc Spin, bool;
 	Options.domain = 0;
+	Options.file = "";
+	Options.gridpoints = 200;
 	Options.stepsize = 0.01;
 	bool hasRealspaceDensity;
 	bool hasAtomPos;
@@ -461,16 +478,31 @@ static int LuaIsosurface(lua_State * L, bool hasThreshold)
 	{
 		double threshold;
 		lua_check(L, numberInputPos, threshold);
-		lua_push(L, isosurface(density, threshold));
-		return 1;
+		if (Options.file != "")
+		{
+			saveIsosurface(isosurface(density, threshold), Options.file);
+			return 0;
+		} else
+		{
+			lua_push(L, isosurface(density, threshold));
+			return 1;
+		}
 	} else
 	{
 		double portion;
 		lua_check(L, numberInputPos, portion);
 		double threshold = findIsosurfaceVal(density, portion, Options.stepsize);
-		lua_push(L, isosurface(density, threshold));
-		lua_push(L, threshold);
-		return 2;
+		if (Options.file != "")
+		{
+			saveIsosurface(isosurface(density, threshold), Options.file);
+			return 0;
+		} else
+		{
+			lua_push(L, isosurface(density, threshold));
+			lua_push(L, threshold);
+			return 2;
+		}
+
 	}
 }
 

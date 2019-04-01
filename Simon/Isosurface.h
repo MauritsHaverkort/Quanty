@@ -13,6 +13,7 @@ double findIsosurfaceVal(const vector<doubleVecValPair> &density, double portion
 vector<vector<double> > isosurface(const vector<doubleVecValPair> &density, double threshold);
 static int LuaRealspaceDensityCheckAndSecurityMeasures(lua_State * L, CompactMatrixType &rho, vector<Interpolation::InterpolatingFunction*> &funs, vector<string> &orbs,vector<vector<double> > &atomPos, bool hasAtomPos);
 static int LuaRealspaceDensity(lua_State * L);
+void saveIsosurface(const vector<vector<double> > &iso, const char *file);
 static int LuaIsosurface(lua_State * L, bool hasThreshold);
 static int LuaIsosurfaceFixedVal(lua_State * L);
 static int LuaIsosurfaceFixedInt(lua_State * L);
