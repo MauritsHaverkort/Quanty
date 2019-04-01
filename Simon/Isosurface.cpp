@@ -130,21 +130,22 @@ vector<doubleVecValPair> realspaceElectronDensity(const CompactMatrixType &rho, 
 				v[2] = z;
 
 				const vector<Complex16> psi = realspaceBasisValues(v, orbs, atomPos, interRanges, funs, indices, step);
-				double WFval = 0;
+				double denVal = 0;
 				for (uint i = 0; i < (uint) rhoNoSpin.Ni; ++i)
 				{
 					for (uint j = 0; j < (uint) rhoNoSpin.Nj; ++j)
 					{
-//						Any off-diagonal imaginary parts cancel out because rho is hermetian.
 						if (rhoNoSpin.V[i * rhoNoSpin.Nj + j].Re != 0)
 						{
-							WFval += rhoNoSpin.V[i * rhoNoSpin.Nj + j].Re * (psi[i].Re * psi[j].Re + psi[i].Im * psi[j].Im);
+//						Any off-diagonal imaginary parts cancel out because rho is hermetian.
+							denVal += rhoNoSpin.V[i * rhoNoSpin.Nj + j].Re * (psi[i].Re * psi[j].Re + psi[i].Im * psi[j].Im);
+							denVal += rhoNoSpin.V[i * rhoNoSpin.Nj + j].Im * (psi[i].Im * psi[j].Re - psi[i].Re * psi[j].Im);
 						}
 					}
 				}
 				doubleVecValPair tmp;
 				tmp.vec = v;
-				tmp.val = WFval;
+				tmp.val = denVal;
 				result[vecI] = tmp;
 			}
 		}
@@ -168,6 +169,109 @@ vector<doubleVecValPair> realspaceElectronDensity(const CompactMatrixType &rho, 
 	}
 	double domainsize = 2 * (maxNorm + maxX);
 	return realspaceElectronDensity(rho, funs, orbs, atomPos, gridpoints, domainsize);
+}
+
+CompactMatrixType densityMatrixSx(const CompactMatrixType &rho)
+{
+	CompactMatrixType rhoSx;
+	rhoSx.Ni = rho.Ni / 2;
+	rhoSx.Nj = rho.Nj / 2;
+	rhoSx.QComplex = (uint) true;
+	InitCompactMatrix(&rhoSx);
+	for (uint i = 0; i < rhoSx.Ni; ++i)
+		for (uint j = 0; j < rhoSx.Nj; ++j)
+			if (rho.QComplex)
+			{
+				rhoSx.V[i * rhoSx.Nj + j].Re = (rho.V[2 * i * rho.Nj + (2 * j + 1)].Re + rho.V[(2 * i + 1) * rho.Nj + 2 * j].Re) / 2.;
+				rhoSx.V[i * rhoSx.Nj + j].Im = (rho.V[2 * i * rho.Nj + (2 * j + 1)].Im + rho.V[(2 * i + 1) * rho.Nj + 2 * j].Im) / 2.;
+			} else
+			{
+				rhoSx.V[i * rhoSx.Nj + j].Re = (rho.VRe[2 * i * rho.Nj + (2 * j + 1)] + rho.VRe[(2 * i + 1) * rho.Nj + 2 * j]) / 2.;
+				rhoSx.V[i * rhoSx.Nj + j].Im = 0;
+			}
+	return rhoSx;
+}
+
+CompactMatrixType densityMatrixSy(const CompactMatrixType &rho)
+{
+	CompactMatrixType rhoSy;
+	rhoSy.Ni = rho.Ni / 2;
+	rhoSy.Nj = rho.Nj / 2;
+	rhoSy.QComplex = (uint) true;
+	InitCompactMatrix(&rhoSy);
+	for (uint i = 0; i < rhoSy.Ni; ++i)
+		for (uint j = 0; j < rhoSy.Nj; ++j)
+			if (rho.QComplex)
+			{
+				rhoSy.V[i * rhoSy.Nj + j].Re = -(rho.V[2 * i * rho.Nj + (2 * j + 1)].Im - rho.V[(2 * i + 1) * rho.Nj + 2 * j].Im) / 2.;
+				rhoSy.V[i * rhoSy.Nj + j].Im = (rho.V[2 * i * rho.Nj + (2 * j + 1)].Re - rho.V[(2 * i + 1) * rho.Nj + 2 * j].Re) / 2.;
+			} else
+			{
+				rhoSy.V[i * rhoSy.Nj + j].Re = 0;
+				rhoSy.V[i * rhoSy.Nj + j].Im = (rho.VRe[2 * i * rho.Nj + (2 * j + 1)] - rho.VRe[(2 * i + 1) * rho.Nj + 2 * j]) / 2.;
+			}
+	return rhoSy;
+}
+
+CompactMatrixType densityMatrixSz(const CompactMatrixType &rho)
+{
+	CompactMatrixType rhoSz;
+	rhoSz.Ni = rho.Ni / 2;
+	rhoSz.Nj = rho.Nj / 2;
+	rhoSz.QComplex = (uint) true;
+	InitCompactMatrix(&rhoSz);
+	for (uint i = 0; i < rhoSz.Ni; ++i)
+		for (uint j = 0; j < rhoSz.Nj; ++j)
+			if (rho.QComplex)
+			{
+				rhoSz.V[i * rhoSz.Nj + j].Re = (-rho.V[2 * i * rho.Nj + 2 * j].Re + rho.V[(2 * i + 1) * rho.Nj + (2 * j + 1)].Re) / 2.;
+				rhoSz.V[i * rhoSz.Nj + j].Im = (-rho.V[2 * i * rho.Nj + 2 * j].Im + rho.V[(2 * i + 1) * rho.Nj + (2 * j + 1)].Im) / 2.;
+			} else
+			{
+				rhoSz.V[i * rhoSz.Nj + j].Re = (-rho.VRe[2 * i * rho.Nj + 2 * j] + rho.VRe[(2 * i + 1) * rho.Nj + (2 * j + 1)]) / 2.;
+				rhoSz.V[i * rhoSz.Nj + j].Im = 0;
+			}
+	return rhoSz;
+}
+
+vector<vector<double> > realspaceSpinDensityValues(const CompactMatrixType &rho, const vector<Interpolation::InterpolatingFunction*> &funs, const vector<string> &orbs,
+		const vector<vector<double> > &atomPos, const vector<vector<double> > &points)
+{
+	vector < CompactMatrixType > densities(3);
+	densities[0] = densityMatrixSx(rho);
+	densities[1] = densityMatrixSy(rho);
+	densities[2] = densityMatrixSz(rho);
+	const vector<vector<uint16_t> > indices = dictToList(createAtmoicIndicesDict(orbs), orbs);
+	const vector<double> interRanges = interpolationRanges(funs);
+	vector < vector<double> > result(points.size());
+#pragma omp parallel for
+	for (uint p = 0; p < (uint) points.size(); ++p)
+	{
+		const vector<Complex16> psi = realspaceBasisValues(points[p], orbs, atomPos, interRanges, funs, indices, DBL_EPSILON * 1000);
+		vector<double> denVals(densities.size());
+		for (uint den = 0; den < (uint) densities.size(); ++den)
+		{
+			double denVal = 0;
+			for (uint i = 0; i < (uint) densities[den].Ni; ++i)
+			{
+				for (uint j = 0; j < (uint) densities[den].Nj; ++j)
+				{
+					if (densities[den].V[i * densities[den].Nj + j].Re != 0)
+					{
+					//						Any off-diagonal imaginary parts cancel out because rho is hermetian.
+						denVal += densities[den].V[i * densities[den].Nj + j].Re * (psi[i].Re * psi[j].Re + psi[i].Im * psi[j].Im);
+						denVal += densities[den].V[i * densities[den].Nj + j].Im * (psi[i].Im * psi[j].Re - psi[i].Re * psi[j].Im);
+					}
+				}
+			}
+			denVals[den] = denVal;
+		}
+		result[p] = denVals;
+	}
+	FreeCompactMatrix(&(densities[0]));
+	FreeCompactMatrix(&(densities[1]));
+	FreeCompactMatrix(&(densities[2]));
+	return result;
 }
 
 template<typename keyType, typename valType>
@@ -218,14 +322,14 @@ double findIsosurfaceVal(const vector<doubleVecValPair> &density, double portion
 	for (uint i = 0; i < (uint) density.size(); ++i)
 		fullSum += density[i].val;
 //	TODO: Verbosity Print for fullInt.
-	double threshold = 0;
+	double threshold = fullSum;
 	double partialSum = 0;
 	while (partialSum < fullSum * portion)
 	{
 		partialSum = 0;
-		threshold += step;
+		threshold -= step;
 		for (uint i = 0; i < (uint) density.size(); ++i)
-			if (density[i].val < threshold)
+			if (density[i].val > threshold)
 				partialSum += density[i].val;
 	}
 	return threshold;
@@ -360,16 +464,34 @@ static int LuaRealspaceDensity(lua_State * L)
 	return 1;
 }
 
-void saveIsosurface(const vector<vector<double> > &iso, const char *file)
+void saveIsosurface(const vector<vector<double> > &iso, const vector<vector<double> > &spinDensitiyVals, const char *file)
 {
+	int maxWidth = 10;
 	std::ofstream writer;
 	writer.open(file);
-	writer << "# x\t\t\ty\t\t\tz\t\t\t" << endl;
-	for (uint i = 0; i < (uint) iso.size(); ++i)
+	writer << "# x\t\t\ty\t\t\tz\t\t\t";
+	if (spinDensitiyVals.size() != 0)
+		writer << " Sx\t\t\tSy\t\t\tSz\t\t\t";
+	writer << endl;
+
+	if (spinDensitiyVals.size() != 0)
 	{
-		for (uint j = 0; j < (uint) iso[j].size(); ++j)
-			writer << iso[i][j] << "\t";
-		writer << endl;
+		for (uint i = 0; i < (uint) iso.size(); ++i)
+		{
+			for (uint j = 0; j < (uint) iso[j].size(); ++j)
+				writer << iso[i][j] << "\t";
+			for (uint j = 0; j < (uint) spinDensitiyVals[j].size(); ++j)
+				writer << spinDensitiyVals[i][j] << "\t";
+			writer << endl;
+		}
+	} else
+	{
+		for (uint i = 0; i < (uint) iso.size(); ++i)
+		{
+			for (uint j = 0; j < (uint) iso[j].size(); ++j)
+				writer << iso[i][j] << "\t";
+			writer << endl;
+		}
 	}
 	writer.close();
 }
@@ -378,17 +500,20 @@ static int LuaIsosurface(lua_State * L, bool hasThreshold)
 {
 	struct
 	{
+		bool calcSpin;
 		double domain;
 		char* file;
 		uint gridpoints;
 		double stepsize;
 	} Options;
 	LuaOptionsType LuaIsosurfaceOptions[] = {
+			{ "calcSpin", "bool", &(Options.calcSpin) },
 			{ "domain", "double", &(Options.domain) },
 			{ "file", "char*", &(Options.file) },
 			{ "gridpoints", "int", &(Options.gridpoints) },
 			{ "stepsize", "double",	&(Options.stepsize) },
 			{ NULL, NULL, NULL } }; //TODO: Calc Spin, bool;
+	Options.calcSpin = false;
 	Options.domain = 0;
 	Options.file = "";
 	Options.gridpoints = 200;
@@ -455,55 +580,67 @@ static int LuaIsosurface(lua_State * L, bool hasThreshold)
 		}
 	}
 
-	vector<doubleVecValPair> density;
+	if (hasRealspaceDensity && Options.calcSpin)
+	{
+		cout << "Warning: Calculating spin densities is only possible with the input to calculate the electron density (interpolating functions etc.)." << endl;
+		Options.calcSpin = false;
+	}
+
+	vector<doubleVecValPair> realspaceDensity;
+	vector < vector<double> > spinDensityVals;
+	CompactMatrixType rho;
+	vector<Interpolation::InterpolatingFunction*> funs;
+	vector < string > orbs;
+	vector < vector<double> > atomPos;
 	if (hasRealspaceDensity)
 	{
-		lua_check(L, 1, density);
+		lua_check(L, 1, realspaceDensity);
 	} else
 	{
-		CompactMatrixType rho;
-		vector<Interpolation::InterpolatingFunction*> funs;
-		vector < string > orbs;
-		vector < vector<double> > atomPos;
-
 		LuaRealspaceDensityCheckAndSecurityMeasures(L, rho, funs, orbs, atomPos, hasAtomPos);
 
 		if (Options.domain == 0)
-			density = realspaceElectronDensity(rho, funs, orbs, atomPos, Options.gridpoints);
+			realspaceDensity = realspaceElectronDensity(rho, funs, orbs, atomPos, Options.gridpoints);
 		else
-			density = realspaceElectronDensity(rho, funs, orbs, atomPos, Options.gridpoints, Options.domain);
+			realspaceDensity = realspaceElectronDensity(rho, funs, orbs, atomPos, Options.gridpoints, Options.domain);
 	}
 
+	double threshold;
+	int returnInt = 1;
 	if (hasThreshold)
 	{
-		double threshold;
 		lua_check(L, numberInputPos, threshold);
-		if (Options.file != "")
-		{
-			saveIsosurface(isosurface(density, threshold), Options.file);
-			return 0;
-		} else
-		{
-			lua_push(L, isosurface(density, threshold));
-			return 1;
-		}
 	} else
 	{
 		double portion;
 		lua_check(L, numberInputPos, portion);
-		double threshold = findIsosurfaceVal(density, portion, Options.stepsize);
-		if (Options.file != "")
-		{
-			saveIsosurface(isosurface(density, threshold), Options.file);
-			return 0;
-		} else
-		{
-			lua_push(L, isosurface(density, threshold));
-			lua_push(L, threshold);
-			return 2;
-		}
-
+		threshold = findIsosurfaceVal(realspaceDensity, portion, Options.stepsize);
+		returnInt++;
 	}
+
+	const vector<vector<double> > iso = isosurface(realspaceDensity, threshold);
+	vector < vector<double> > realspaceSpin(0);
+
+	if (Options.calcSpin)
+	{
+		realspaceSpin = realspaceSpinDensityValues(rho, funs, orbs, atomPos, iso); //TODO: Do I square this? do I devide it by the value of the density?
+		returnInt++;
+	}
+
+	if (Options.file != "")
+	{
+		saveIsosurface(iso, realspaceSpin, Options.file);
+		returnInt = 0;
+	} else
+	{
+		lua_push(L, iso);
+		if (Options.calcSpin)
+			lua_push(L, realspaceSpin);
+		if (!hasThreshold)
+			lua_push(L, threshold);
+	}
+
+	return returnInt;
 }
 
 static int LuaIsosurfaceFixedVal(lua_State * L)
