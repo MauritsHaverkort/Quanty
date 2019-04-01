@@ -27,12 +27,6 @@ double vecNorm(const vector<double> &v)
 	return sqrt(normSqrd);
 }
 
-double multicenterMultipoleIntegral(Interpolation::InterpolatingFunction &f1, Interpolation::InterpolatingFunction &f2, int k, uint32_t NknotsPerInterval)
-{
-//	TODO
-	return 0.;
-}
-
 vector<double> interpolationRanges(const vector<Interpolation::InterpolatingFunction*> &funs)
 {
 	vector<double> out(funs.size());
@@ -218,8 +212,6 @@ vector<double> vecAverage(const vector<double> &v1, const vector<double> &v2, do
 	return result;
 }
 
-//TODO: Overloaded vecAverage with values 1,2,3, which linearly interpolates between 'em.
-
 double findIsosurfaceVal(const vector<doubleVecValPair> &density, double portion, double step)
 {
 	double fullSum = 0;
@@ -230,6 +222,7 @@ double findIsosurfaceVal(const vector<doubleVecValPair> &density, double portion
 	double partialSum = 0;
 	while (partialSum < fullSum * portion)
 	{
+		partialSum = 0;
 		threshold += step;
 		for (uint i = 0; i < (uint) density.size(); ++i)
 			if (density[i].val < threshold)
@@ -270,25 +263,42 @@ vector<vector<double> > isosurface(const vector<doubleVecValPair> &density, doub
 			}
 		}
 	}
-//	TODO: do I need to sort the output vector?
 	return result;
 }
 
-static int LuaRealspaceDensitySecurityMeasures(lua_State * L, const CompactMatrixType &rho, const vector<Interpolation::InterpolatingFunction*> &funs, const vector<string> &orbs,
-		const vector<vector<double> > &atomPos)
+static int LuaRealspaceDensityCheckAndSecurityMeasures(lua_State * L, CompactMatrixType &rho, vector<Interpolation::InterpolatingFunction*> &funs, vector<string> &orbs,
+		vector<vector<double> > &atomPos, bool hasAtomPos)
 {
+	lua_check(L, 1, rho);
+	lua_check(L, 2, funs);
+	lua_check(L, 3, orbs);
+	if (hasAtomPos)
+	{
+		lua_check(L, 4, atomPos);
+	} else
+	{
+		vector<double> zeroVec(3);
+		zeroVec[0] = 0.;
+		zeroVec[1] = 0.;
+		zeroVec[2] = 0.;
+		for (uint i = 0; i < (uint) orbs.size(); ++i)
+			atomPos.push_back(zeroVec);
+	}
+
 	if (rho.Ni != rho.Nj)
-		return luaL_error(L, "Error in RealspaceDensity: Rho needs to be a quadratic matrix, but is of size %dx%d.", rho.Ni, rho.Nj);
+		return luaL_error(L, "Error in calculating RealspaceDensity: Rho needs to be a quadratic matrix, but is of size %dx%d.", rho.Ni, rho.Nj);
 
 	if (funs.size() != orbs.size() || orbs.size() != atomPos.size())
-		return luaL_error(L, "Error in RealspaceDensity: List of functions (%d), list of orbitals (%d) and list of atom positions (%d) need to be of the same size.", (uint) funs.size(),
+		return luaL_error(L, "Error in calculating RealspaceDensity: List of functions (%d), list of orbitals (%d) and list of atom positions (%d) need to be of the same size.", (uint) funs.size(),
 				(uint) orbs.size(), (uint) atomPos.size());
 
 	uint NF = NumberOfFermionicStates(orbs);
 	if (NF != rho.Ni)
-		return luaL_error(L, "Error in RealspaceDensity: Number of fermionic states obtained from orbitals (%d) is unequal to size of density matrix (%d).", NF, rho.Ni);
+		return luaL_error(L, "Error in calculating RealspaceDensity: Number of fermionic states obtained from orbitals (%d) is unequal to size of density matrix (%d).", NF, rho.Ni);
 
-	//	TODO: Warning if rho is not hermetian
+	if (!QCompactMatrixHermitian(rho, DBL_EPSILON * 10))
+		cout << "Warning: density matrix for calculating RealspaceDensity is not fully hermitian. The code will assume it to be." << endl;
+	return 0;
 }
 
 static int LuaRealspaceDensity(lua_State * L)
@@ -315,9 +325,6 @@ static int LuaRealspaceDensity(lua_State * L)
 	if (len < 3 || len > 5)
 		return luaL_error(L, "Error in RealspaceDensity: Expected 3, 4 or 5 arguments, density matrix, radial functions, orbitals, optional atom positions, and options.");
 
-	lua_check(L, 1, rho);
-	lua_check(L, 2, funs);
-	lua_check(L, 3, orbs);
 	if (len == 4)
 	{
 		if (luaL_isType(L, 4, atomPos))
@@ -333,19 +340,6 @@ static int LuaRealspaceDensity(lua_State * L)
 		hasOptions = true;
 	}
 
-	if (hasAtomPos)
-	{
-		lua_check(L, 4, atomPos);
-	} else
-	{
-		vector<double> zeroVec(3);
-		zeroVec[0] = 0.;
-		zeroVec[1] = 0.;
-		zeroVec[2] = 0.;
-		for (uint i = 0; i < (uint) orbs.size(); ++i)
-			atomPos.push_back(zeroVec);
-	}
-
 	if (hasOptions)
 	{
 		if (LuaTestOptionsList(L, -1))
@@ -357,7 +351,7 @@ static int LuaRealspaceDensity(lua_State * L)
 		}
 	}
 
-	LuaRealspaceDensitySecurityMeasures(L, rho, funs, orbs, atomPos);
+	LuaRealspaceDensityCheckAndSecurityMeasures(L, rho, funs, orbs, atomPos, hasAtomPos);
 
 	if (Options.domain == 0)
 		lua_push(L, realspaceElectronDensity(rho, funs, orbs, atomPos, Options.gridpoints));
@@ -368,26 +362,114 @@ static int LuaRealspaceDensity(lua_State * L)
 
 static int LuaIsosurface(lua_State * L, bool hasThreshold)
 {
-//	TODO: Sicherheitsabfragen, checken ob density erst noch berechnet werden muss.
+	struct
+	{
+		uint gridpoints;
+		double domain;
+		double stepsize;
+	} Options;
+	LuaOptionsType LuaIsosurfaceOptions[] = {
+			{ "gridpoints", "int", &(Options.gridpoints) },
+			{ "domain", "double", &(Options.domain) },
+			{ "stepsize", "double", &(Options.stepsize) },
+			{ NULL, NULL, NULL } };
+	Options.gridpoints = 200;
+	Options.domain = 0;
+	Options.stepsize = 0.01;
+	bool hasRealspaceDensity;
+	bool hasAtomPos;
+	bool hasOptions;
+	int numberInputPos;
 
+	uint len = lua_gettop(L);
+	switch (len)
+	{
+	case 2:
+		hasRealspaceDensity = true;
+		hasAtomPos = false;
+		hasOptions = false;
+		numberInputPos = 2;
+		break;
+	case 3:
+		hasRealspaceDensity = true;
+		hasAtomPos = false;
+		hasOptions = true;
+		numberInputPos = 2;
+		break;
+	case 4:
+		hasRealspaceDensity = false;
+		hasAtomPos = false;
+		hasOptions = false;
+		numberInputPos = 4;
+		break;
+	case 5:
+		hasRealspaceDensity = false;
+		if ((bool) lua_isnumber(L, 5))
+		{
+			hasAtomPos = true;
+			hasOptions = false;
+			numberInputPos = 5;
+		} else
+		{
+			hasAtomPos = false;
+			hasOptions = true;
+			numberInputPos = 4;
+		}
+		break;
+	case 6:
+		hasRealspaceDensity = false;
+		hasAtomPos = true;
+		hasOptions = true;
+		numberInputPos = 5;
+		break;
+	default:
+		return luaL_error(L,
+				"Error in Isosurface: Expected something between 2 and 6 arguments: \n2: Realspace density and isosurface value or integral encapsulated by isosurface. \n3: Realspace density, value or integral, and options. \n4: Density matrix, radial funtions, orbitals, and value or integral. \n5: Density matrix, radial functions, orbitals, and either atom positions and value or integral, or value or integral and options. \n6: Density matrix, radial functions, orbitals, atom positions, value or integral, and options.");
+	}
+
+	if (hasOptions)
+	{
+		if (LuaTestOptionsList(L, -1))
+		{
+			LuaCheckOptions(L, -1, LuaIsosurfaceOptions);
+		} else
+		{
+			return luaL_error(L, "Kind of expected a list of options as last argument of Isosurface.\n");
+		}
+	}
 
 	vector<doubleVecValPair> density;
-	lua_check(L, 1, density);
+	if (hasRealspaceDensity)
+	{
+		lua_check(L, 1, density);
+	} else
+	{
+		CompactMatrixType rho;
+		vector<Interpolation::InterpolatingFunction*> funs;
+		vector < string > orbs;
+		vector < vector<double> > atomPos;
+
+		LuaRealspaceDensityCheckAndSecurityMeasures(L, rho, funs, orbs, atomPos, hasAtomPos);
+
+		if (Options.domain == 0)
+			density = realspaceElectronDensity(rho, funs, orbs, atomPos, Options.gridpoints);
+		else
+			density = realspaceElectronDensity(rho, funs, orbs, atomPos, Options.gridpoints, Options.domain);
+	}
+
 	if (hasThreshold)
 	{
 		double threshold;
-		lua_check(L, 2, threshold);
+		lua_check(L, numberInputPos, threshold);
 		lua_push(L, isosurface(density, threshold));
-//	TODO: Life
 		return 1;
 	} else
 	{
 		double portion;
-		lua_check(L, 2, portion);
-		double threshold = findIsosurfaceVal(density, portion);
+		lua_check(L, numberInputPos, portion);
+		double threshold = findIsosurfaceVal(density, portion, Options.stepsize);
 		lua_push(L, isosurface(density, threshold));
 		lua_push(L, threshold);
-		//	TODO: Life
 		return 2;
 	}
 }
