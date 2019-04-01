@@ -1736,6 +1736,38 @@ static int LuaCDMPlot(lua_State *L)
 
 }
 
+static int LuaAugerMeitnerSelfEnergy(lua_State *L)
+{
+	WaveFunctionType * psi;
+	vector<OperatorType *> UList;
+	OperatorType *H;
+	vector<double> poles, SlaterInts, EnergiesUnbound;
+	vector<mypoint> spectrum;
+	double eps, gamma;
+	vector<Interpolation::InterpolatingFunction *> WavefunsBoundG,WavefunsBoundF,WavefunsUnboundG,WavefunsUnboundF;
+	uint32_t NF;
+	vector<int> indToK;
+	uint16_t **indices;
+	int arg = 1;
+
+	lua_check(L,arg++,WavefunsBoundG);
+	lua_check(L,arg++,WavefunsBoundF);
+	lua_check(L,arg++,WavefunsUnboundG);
+	lua_check(L,arg++,WavefunsUnboundF);
+	 NF = (uint32_t)luaL_checkunsigned(L, arg++);
+	 GetIndices(L,arg++,indToK,indices);
+	 lua_check(L,arg++,H);
+	 lua_check(L,arg++,psi);
+	 lua_check(L,arg++,eps);
+	 lua_check(L,arg++,gamma);
+	 lua_check(L,arg++,EnergiesUnbound);
+	 InitializeSpectrum(L,arg++,spectrum);
+
+	 AugerMeitnerSelfEnergy(WavefunsBoundG,WavefunsBoundF,WavefunsUnboundG,WavefunsUnboundF,indToK,indices,NF,H,psi,eps,gamma,EnergiesUnbound,spectrum);
+	 lua_push(L,spectrum);
+	 return 1;
+}
+
 static int LuaBraketList(lua_State *L)
 {
 	WaveFunctionType * psi;
@@ -1936,6 +1968,7 @@ static const struct luaL_Reg Martin_func[] = {
   {"ListU",LuaListU},
   {"PlotSpectrum",LuaCDMPlot},
   {"BraketList",LuaBraketList},
+  {"AMSel",LuaAugerMeitnerSelfEnergy},
   {NULL, NULL}
 };
 
