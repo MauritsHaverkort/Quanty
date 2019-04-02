@@ -63,7 +63,7 @@ SSlaterIntegral *GetSlaterIntegrals(const vector<Interpolation::InterpolatingFun
 }
 
 void CalculateSlaterIntegrals(const int NIntegrals, SSlaterIntegral *integrals, const int dim,
-                              double **kernels, vector<vector<double> > basisfuns, vector<vector<double> > dualfuns)
+                              double **kernels,const vector<vector<double> > &basisfuns,const vector<vector<double> > &dualfuns)
 {
 
 #pragma omp parallel for

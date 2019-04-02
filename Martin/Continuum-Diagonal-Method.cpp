@@ -282,6 +282,11 @@ void AugerMeitnerSelfEnergy(vector<Interpolation::InterpolatingFunction *> Wavef
 	FreeCompactMatrix(&T);
 }
 
+void InterpolateSlaterIntegrals()
+{
+
+}
+
 void FlattenSlaterIntegrals(const SSlaterIntegral *integrals, const uint32_t N, vector<double> &Fk)
 {
 	uint32_t count = 0;
@@ -332,7 +337,9 @@ void CalculateHermitianMatrixElements(const vector<WaveFunctionType> &basis,cons
 		{
 			if (M.QComplex)
 			{
-
+				WaveFunctionDotProduct(basis[j],Hpsi,&M.V[i*M.Nj+j].Re,&M.V[i*M.Nj+j].Im);
+				M.V[i*M.Nj+j].Re = M.V[j*M.Nj+i].Re;
+				M.V[i*M.Nj+j].Im = M.V[j*M.Nj+i].Im;
 			}
 			else
 			{

@@ -6,7 +6,7 @@ SSlaterIntegral *GetSlaterIntegrals(const vector<vector<double> > &basisfuns,con
 SSlaterIntegral *GetSlaterIntegrals(const vector<Interpolation::InterpolatingFunction *> &ipolfuns,const vector<int> &indToK, unsigned int &NIntegrals, bool Qcontinuum=false);
 
 void CalculateSlaterIntegrals(const int NIntegrals, SSlaterIntegral *integrals, const int dim,
-                              double **kernels, vector<vector<double> > basisfuns, vector<vector<double> > dualfuns);
+                              double **kernels,const vector<vector<double> > &basisfuns,const vector<vector<double> > &dualfuns);
 
 void CalculateSlaterIntegrals(const int NIntegrals, SSlaterIntegral *integrals, uint32_t dim,
                               vector<vector<double> > &kernels, vector<vector<double> > &basisfuns, vector<vector<double> > &dualfuns);
