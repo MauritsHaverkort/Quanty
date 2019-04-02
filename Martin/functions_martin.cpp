@@ -1761,9 +1761,13 @@ static int LuaAugerMeitnerSelfEnergy(lua_State *L)
 	 lua_check(L,arg++,eps);
 	 lua_check(L,arg++,gamma);
 	 lua_check(L,arg++,EnergiesUnbound);
-	 InitializeSpectrum(L,arg++,spectrum);
+	 InitializeSpectrum(L,arg,spectrum);
 
-	 AugerMeitnerSelfEnergy(WavefunsBoundG,WavefunsBoundF,WavefunsUnboundG,WavefunsUnboundF,indToK,indices,NF,H,psi,eps,gamma,EnergiesUnbound,spectrum);
+	 uint32_t NPointsToEvaluateInterpolation = 0;
+	 if (lua_gettop(L) == arg)
+		 lua_check(L,arg,NPointsToEvaluateInterpolation);
+
+	 AugerMeitnerSelfEnergy(WavefunsBoundG,WavefunsBoundF,WavefunsUnboundG,WavefunsUnboundF,indToK,indices,NF,H,psi,eps,gamma,EnergiesUnbound,spectrum,NPointsToEvaluateInterpolation);
 	 lua_push(L,spectrum);
 	 return 1;
 }

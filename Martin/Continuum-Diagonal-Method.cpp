@@ -239,14 +239,14 @@ void lua_push(lua_State * L, const mypoint p)
 void AugerMeitnerSelfEnergy(vector<Interpolation::InterpolatingFunction *> WavefunsBoundG,vector<Interpolation::InterpolatingFunction *> WavefunsBoundF,
 							vector<Interpolation::InterpolatingFunction *> WavefunsUnboundG,vector<Interpolation::InterpolatingFunction *> WavefunsUnboundF,
 							vector<int> indToK, uint16_t **indices, uint32_t NF, OperatorType *H, WaveFunctionType * psi, double eps, double gamma,
-							vector<double> &EnergiesUnbound, vector<mypoint> &spectrum)
+							vector<double> &EnergiesUnbound, vector<mypoint> &spectrum, const uint32_t NPointsToEvaluateInterpolation)
 {
 	SSlaterIntegral *si;
 	uint32_t kMax, n, NIntegrals, NBound, NUnbound;
 	double **kernels;
 	vector<vector<double> > dualfunsBound, dualfunsUnbound;
 	vector<OperatorType> UList;
-	vector<double> poles, Fk;
+	vector<double> poles;
 	CompactMatrixType T;
 
 
@@ -263,28 +263,100 @@ void AugerMeitnerSelfEnergy(vector<Interpolation::InterpolatingFunction *> Wavef
 	si = InitializeIntegrals(indToK, NIntegrals,&kMax,true);
 	kernels = CreateAllKernels(kMax, NGridPoints, &x[0]);
 	CreateAugerMeitnerOperators(si,NIntegrals,NF,indices,UList);
-	Fk = vector<double>(UList.size());
+
 	CalculateEnergyIndependentSelfEnergy(*H,*psi,UList,T,poles);
+
+	if (NPointsToEvaluateInterpolation)
+	{
+		vector<Interpolation::CubicSpline> Fk = vector<Interpolation::CubicSpline>(UList.size());
+		InterpolateSlaterIntegrals(NIntegrals,si,n,kernels,WavefunsBound,dualfunsBound,WavefunsUnbound,dualfunsUnbound,EnergiesUnbound,Fk);
+		double E0 = EnergiesUnbound[0];
+		double E1 = EnergiesUnbound[NUnbound-1];
+		double dE = (E1-E0)/(NPointsToEvaluateInterpolation + 1.);
+		vector<double> Fkval;
+		Fkval.reserve(UList.size());
+		for (uint32_t i = 0; i < UList.size(); i++)
+		{
+			Fkval.push_back(Fk[i](E0));
+		}
+		CalcSpectrumFromPolesAdd(eps,gamma,E0,poles,Fkval,&T,spectrum);
+		for (uint32_t i = 1; i <= NPointsToEvaluateInterpolation; i++)
+		{
+			double E = E0 + i * dE;
+			for(uint32_t j = 0; j < UList.size(); j++)
+			{
+				Fkval[j] = Fk[j](E);
+			}
+			CalcSpectrumFromPolesAdd(eps,gamma,E,poles,Fkval,&T,spectrum);
+		}
+		for(uint32_t j = 0; j < UList.size(); j++)
+		{
+			Fkval[j] = Fk[j](E1);
+		}
+		CalcSpectrumFromPolesAdd(eps,gamma,E1,poles,Fkval,&T,spectrum);
+	}
+	else
+	{
+		vector<double> Fk = vector<double>(UList.size());
+		WavefunsBound.push_back(WavefunsUnbound[0]);
+		dualfunsBound.push_back(dualfunsUnbound[0]);
+
+		//PrintArray(&poles[0],poles.size());
+		//printf("NUnbound = %d\n",NUnbound);
+		for (uint32_t i = 0; i < NUnbound; i++)
+		{
+			WavefunsBound[NBound] = WavefunsUnbound[i];
+			dualfunsBound[NBound] = dualfunsUnbound[i];
+			CalculateSlaterIntegrals(NIntegrals, si,n,kernels,WavefunsBound,dualfunsBound);
+			FlattenSlaterIntegrals(si,NIntegrals,Fk);
+			CalcSpectrumFromPolesAdd(eps,gamma,EnergiesUnbound[i],poles,Fk,&T,spectrum);
+		}
+	}
+	FreeCompactMatrix(&T);
+}
+
+void InterpolateSlaterIntegrals(const int NIntegrals, SSlaterIntegral *integrals, const int n,double **kernels,
+								vector<vector<double> > &WavefunsBound, vector<vector<double> > &dualfunsBound,
+								const vector<vector<double> > &WavefunsUnbound,const vector<vector<double> > &dualfunsUnbound,
+								const vector<double> &EnergiesUnbound, vector<Interpolation::CubicSpline> &FkInterpol)
+{
+	uint32_t NBound = WavefunsBound.size();
+	uint32_t NUnbound = WavefunsUnbound.size();
+	uint32_t NSlater = FkInterpol.size();
+	vector<vector<double> > FkList = vector<vector<double> >(NUnbound);
+	vector<vector<double> > FkTranspose;
 	WavefunsBound.push_back(WavefunsUnbound[0]);
 	dualfunsBound.push_back(dualfunsUnbound[0]);
 
-	//PrintArray(&poles[0],poles.size());
-	//printf("NUnbound = %d\n",NUnbound);
+
 	for (uint32_t i = 0; i < NUnbound; i++)
 	{
 		WavefunsBound[NBound] = WavefunsUnbound[i];
 		dualfunsBound[NBound] = dualfunsUnbound[i];
-		CalculateSlaterIntegrals(NIntegrals, si,n,kernels,WavefunsBound,dualfunsBound);
-		FlattenSlaterIntegrals(si,NIntegrals,Fk);
-		CalcSpectrumFromPolesAdd(eps,gamma,EnergiesUnbound[i],poles,Fk,&T,spectrum);
+		FkList[i] = vector<double>(NSlater);
+		CalculateSlaterIntegrals(NIntegrals, integrals,n,kernels,WavefunsBound,dualfunsBound);
+		FlattenSlaterIntegrals(integrals,NIntegrals,FkList[i]);
 	}
-
-	FreeCompactMatrix(&T);
+	Transpose(FkList,FkTranspose);
+	for (uint32_t i = 0; i < NSlater; i++)
+	{
+		FkInterpol[i].Create(EnergiesUnbound,FkTranspose[i]);
+	}
 }
 
-void InterpolateSlaterIntegrals()
+void Transpose(const vector<vector<double> > &A, vector<vector<double> > &AT)
 {
-
+	uint32_t M = (uint32_t) A[0].size();
+	uint32_t N = (uint32_t) A.size();
+	AT = vector<vector<double> >(M);
+	for (uint32_t i = 0; i < M; i++)
+	{
+		AT[i].reserve(N);
+		for (uint32_t j = 0; j < N; j++)
+		{
+			AT[i].push_back(A[j][i]);
+		}
+	}
 }
 
 void FlattenSlaterIntegrals(const SSlaterIntegral *integrals, const uint32_t N, vector<double> &Fk)
@@ -468,12 +540,12 @@ void CreateAugerMeitnerOperators(SSlaterIntegral *integrals, uint32_t NIntegrals
 	}
 }
 
-void InitializeSpectrum(lua_State *L, int arg, vector<mypoint> &spectrum)
+void InitializeSpectrum(lua_State *L, int &arg, vector<mypoint> &spectrum)
 {
 	double wMin, wMax, dw;
-	lua_check(L,arg-1+1,wMin);
-	lua_check(L,arg-1+2,wMax);
-	lua_check(L,arg-1+3,dw);
+	lua_check(L,arg++,wMin);
+	lua_check(L,arg++,wMax);
+	lua_check(L,arg++,dw);
 
 	uint32_t Npoints = floor((wMax-wMin)/dw) + 1;
 	spectrum = std::vector<mypoint>(Npoints);

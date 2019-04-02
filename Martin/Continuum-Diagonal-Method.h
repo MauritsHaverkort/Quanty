@@ -44,12 +44,19 @@ void lua_push(lua_State * L, const mypoint p);
 void AugerMeitnerSelfEnergy(vector<Interpolation::InterpolatingFunction *> WavefunsBoundG,vector<Interpolation::InterpolatingFunction *> WavefunsBoundF,
 							vector<Interpolation::InterpolatingFunction *> WavefunsUnboundG,vector<Interpolation::InterpolatingFunction *> WavefunsUnboundF,
 							vector<int> indToK, uint16_t **indices, uint32_t NF, OperatorType *H, WaveFunctionType * psi, double eps, double gamma,
-							vector<double> &EnergiesUnbound, vector<mypoint> &spectrum);
+							vector<double> &EnergiesUnbound, vector<mypoint> &spectrum, const uint32_t NPointsToEvaluateInterpolation = 0);
 
 void CreateAugerMeitnerOperators(SSlaterIntegral *integrals, uint32_t NIntegrals,uint32_t NF, uint16_t **indices, vector<OperatorType> &UList);
 
 void CalculateEnergyIndependentSelfEnergy(const OperatorType &H, const WaveFunctionType  &psi, const vector<OperatorType> &UList, CompactMatrixType &T, vector<double> &poles);
 
 void FlattenSlaterIntegrals(const SSlaterIntegral *integrals, const uint32_t N, vector<double> &Fk);
+
+void Transpose(const vector<vector<double> > &A, vector<vector<double> > &AT);
+
+void InterpolateSlaterIntegrals(const int NIntegrals, SSlaterIntegral *integrals, const int n,double **kernels,
+								vector<vector<double> > &WavefunsBound, vector<vector<double> > &dualfunsBound,
+								const vector<vector<double> > &WavefunsUnbound,const vector<vector<double> > &dualfunsUnbound,
+								const vector<double> &EnergiesUnbound, vector<Interpolation::CubicSpline> &FkInterpol);
 
 #endif /* MARTIN_CONTINUUM_DIAGONAL_METHOD_H_ */
