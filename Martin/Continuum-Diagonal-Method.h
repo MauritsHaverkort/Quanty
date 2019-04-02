@@ -50,6 +50,8 @@ void CreateAugerMeitnerOperators(SSlaterIntegral *integrals, uint32_t NIntegrals
 
 void CalculateEnergyIndependentSelfEnergy(const OperatorType &H, const WaveFunctionType  &psi, const vector<OperatorType> &UList, CompactMatrixType &T, vector<double> &poles);
 
+void BlockCalculateEnergyIndependentSelfEnergy(const OperatorType &H, const WaveFunctionType  &psi, const vector<OperatorType> &UList, CompactMatrixType &T, vector<double> &poles);
+
 void FlattenSlaterIntegrals(const SSlaterIntegral *integrals, const uint32_t N, vector<double> &Fk);
 
 void Transpose(const vector<vector<double> > &A, vector<vector<double> > &AT);

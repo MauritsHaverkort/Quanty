@@ -264,7 +264,7 @@ void AugerMeitnerSelfEnergy(vector<Interpolation::InterpolatingFunction *> Wavef
 	kernels = CreateAllKernels(kMax, NGridPoints, &x[0]);
 	CreateAugerMeitnerOperators(si,NIntegrals,NF,indices,UList);
 
-	CalculateEnergyIndependentSelfEnergy(*H,*psi,UList,T,poles);
+	BlockCalculateEnergyIndependentSelfEnergy(*H,*psi,UList,T,poles);
 
 	if (NPointsToEvaluateInterpolation)
 	{
@@ -294,6 +294,9 @@ void AugerMeitnerSelfEnergy(vector<Interpolation::InterpolatingFunction *> Wavef
 			Fkval[j] = Fk[j](E1);
 		}
 		CalcSpectrumFromPolesAdd(eps,gamma,E1,poles,Fkval,&T,spectrum);
+		double scale = NUnbound/(2. + NPointsToEvaluateInterpolation);
+		for (uint32_t i = 0; i < (uint32_t) spectrum.size(); i++)
+			spectrum[i].y *= scale;
 	}
 	else
 	{
@@ -385,6 +388,42 @@ void CalculateOverlapMatrix(const vector<WaveFunctionType> &psi, CompactMatrixTy
 			double muelleimer;
 			WaveFunctionDotProduct(psi[i],psi[j],&S.VRe[i*S.Nj + j],&muelleimer);
 			S.VRe[j*S.Nj + i] = S.VRe[i*S.Nj + j];
+		}
+	}
+}
+
+void CalculateBlockMatrixElements(const vector<WaveFunctionType> &basis,const OperatorType &H, CompactMatrixType &M)
+{
+	M.QComplex = 0;
+	M.Ni = (uint32_t) basis.size();
+	M.Nj = M.Ni;
+	InitCompactMatrix(&M);
+	for (uint32_t l0 = 0; l0 < H.MaxLength; l0++)
+	{
+		for (uint32_t l = 0; l < H.l[l0].N; l++)
+		{
+			for (uint32_t k = 0; k < basis[0].N; k++)
+			{
+				for (uint32_t i = 0; i < M.Ni; i++)
+				{
+					for (uint32_t j = 0; j < M.Ni; j++)
+					{
+						uint8_t Det[basis[0].NWord];
+						uint32_t ii = k >> NBitsBlok;
+						uint32_t ik = k & BlokMask;
+						uint32_t ij = basis[0].NWord * ik;
+						for (uint32_t d = 0; d < basis[0].NWord; d++)
+						{
+							Det[d] = basis[0].Determinant[ii][ij + d];
+						}
+						double phase = OperatorLader(Det, &(H.l[l0].o[l * l0]), l0, H.NFermion);
+						if (fabs(phase) > (10 * DBL_MIN))
+						{
+
+						}
+					}
+				}
+			}
 		}
 	}
 }
@@ -507,11 +546,44 @@ void CalculateEigensystemOnBasis(const vector<WaveFunctionType> &basis,const Ope
 void CalculateEnergyIndependentSelfEnergy(const OperatorType &H, const WaveFunctionType  &psi, const vector<OperatorType> &UList, CompactMatrixType &T, vector<double> &poles)
 {
 	vector<WaveFunctionType> Upsi = vector<WaveFunctionType>(UList.size());
-	for (uint32_t i = 0; i < UList.size(); i++)
+	for (uint32_t i = 0; i < (uint32_t) UList.size(); i++)
 	{
 		OperatorPsi(UList[i],psi,&Upsi[i]);
 	}
 	CalculateEigensystemOnBasis(Upsi,H,T,poles);
+	for (uint32_t i = 0; i < (uint32_t) UList.size(); i++)
+	{
+		WaveFunctionFree(&Upsi[i]);
+	}
+
+}
+
+void BlockCalculateEnergyIndependentSelfEnergy(const OperatorType &H, const WaveFunctionType  &psi, const vector<OperatorType> &UList, CompactMatrixType &T, vector<double> &poles)
+{
+	uint32_t N = (uint32_t) UList.size();
+	vector<WaveFunctionType> Upsi = vector<WaveFunctionType>(N);
+	WaveFunctionType temp;
+	OperatorPsi(UList[0],psi,&Upsi[0]);
+	for (uint32_t i = 1; i < N; i++)
+	{
+		WaveFunctionInitCopyBasis(&(Upsi[i]),Upsi[i-1]);
+		OperatorPsi(UList[i],psi,&temp);
+		WaveFunctionAddUnionBasis(&Upsi[i],temp);
+		WaveFunctionFree(&temp);
+	}
+	for (uint32_t i = 0; i < N-1; i++)
+	{
+		Upsi[i].NBitsKey = Upsi[N-1].NBitsKey;
+		Upsi[i].ValueRe = (double**) realloc(Upsi[i].ValueRe, Upsi[N-1].NBlok * sizeof(double *));
+		for (uint32_t j = Upsi[i].NBlok; j < Upsi[N-1].NBlok; j++)
+		{
+			Upsi[i].ValueRe[j] = (double*)calloc(BlokSize, sizeof(double));
+		}
+		Upsi[i].NBlok = Upsi[N-1].NBlok;
+	}
+	CalculateEigensystemOnBasis(Upsi,H,T,poles);
+	BlockWaveFunctionFree(&Upsi[0],N);
+
 
 
 }
