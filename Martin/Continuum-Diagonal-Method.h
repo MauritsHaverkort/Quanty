@@ -61,4 +61,10 @@ void InterpolateSlaterIntegrals(const int NIntegrals, SSlaterIntegral *integrals
 								const vector<vector<double> > &WavefunsUnbound,const vector<vector<double> > &dualfunsUnbound,
 								const vector<double> &EnergiesUnbound, vector<Interpolation::CubicSpline> &FkInterpol);
 
+uint32_t GetDeterminantIndex(const WaveFunctionType &b,const uint8_t *Det );
+
+void CalculateBlockMatrixElements(const vector<WaveFunctionType> &basis,const OperatorType &H, CompactMatrixType &M);
+
+void CalculateBlockEigensystemOnBasis(const vector<WaveFunctionType> &basis,const OperatorType &H, CompactMatrixType &T, vector<double> &eigenvals);
+
 #endif /* MARTIN_CONTINUUM_DIAGONAL_METHOD_H_ */

@@ -1811,17 +1811,21 @@ static int LuaBraketList(lua_State *L)
 
 static int LuaMartinTest(lua_State *L)
 {
-	OperatorType *H, *T;
-	std::vector<WaveFunctionType> psi;
-	lua_check(L,1,H);
-	lua_check(L,2,T);
+
+	WaveFunctionType *psi;
+	lua_check(L,1,psi);
+	for (uint32_t i = 1; i <= psi->N; i++)
+	{
+		PrintDeterminant(*psi,i);
+	}
+	/*
 	lua_check(L,3,psi);
 
 	BlockTriDiagonalMatrixType GTri;
 	CreateSpectrum(*H,*T,&psi[0],psi.size(),1E-16,GTri,4);
 	LuaPushTable_BlockTriDiagonalMatrixType(L, &GTri);
 	return 1;
-
+*/
 /*
 	MatrixType U;
 	std::vector<WaveFunctionType> psi;

@@ -394,38 +394,75 @@ void CalculateOverlapMatrix(const vector<WaveFunctionType> &psi, CompactMatrixTy
 
 void CalculateBlockMatrixElements(const vector<WaveFunctionType> &basis,const OperatorType &H, CompactMatrixType &M)
 {
+	//printf("Block\n");
+	uint32_t Nbas = (uint32_t) basis.size();
+	//printf("bas.N = %d %d\n",basis[0].N,basis[Nbas-1].N);
 	M.QComplex = 0;
 	M.Ni = (uint32_t) basis.size();
 	M.Nj = M.Ni;
 	InitCompactMatrix(&M);
-	for (uint32_t l0 = 0; l0 < H.MaxLength; l0++)
+	for (uint32_t l0 = 0; l0 <= H.MaxLength; l0++)
 	{
+#pragma omp parallel for
 		for (uint32_t l = 0; l < H.l[l0].N; l++)
 		{
-			for (uint32_t k = 0; k < basis[0].N; k++)
+			for (uint32_t k = 1; k <= basis[Nbas-1].N; k++)
 			{
 				for (uint32_t i = 0; i < M.Ni; i++)
 				{
 					for (uint32_t j = 0; j < M.Ni; j++)
 					{
-						uint8_t Det[basis[0].NWord];
+						uint8_t Det[basis[Nbas-1].NWord];
 						uint32_t ii = k >> NBitsBlok;
 						uint32_t ik = k & BlokMask;
-						uint32_t ij = basis[0].NWord * ik;
-						for (uint32_t d = 0; d < basis[0].NWord; d++)
+						uint32_t ij = basis[Nbas-1].NWord * ik;
+						for (uint32_t d = 0; d < basis[Nbas-1].NWord; d++)
 						{
-							Det[d] = basis[0].Determinant[ii][ij + d];
+							Det[d] = basis[Nbas-1].Determinant[ii][ij + d];
 						}
 						double phase = OperatorLader(Det, &(H.l[l0].o[l * l0]), l0, H.NFermion);
 						if (fabs(phase) > (10 * DBL_MIN))
 						{
+							uint32_t idxDet = GetDeterminantIndex(basis[Nbas-1],Det);
+							if (idxDet)
+							{
+								double val = phase * basis[i].ValueRe[BlokElement(k)]* basis[j].ValueRe[BlokElement(idxDet)]*H.l[l0].VRe[l];
+#pragma omp critical
+								M.VRe[i*M.Nj + j] += val;
+							}
 
 						}
+
 					}
 				}
 			}
 		}
 	}
+}
+
+uint32_t GetDeterminantIndex(const WaveFunctionType &b,const uint8_t *Det )
+{
+	uint32_t NextIndex = b.KeyList[hash(Det, b.NWord, b.NBitsKey)];
+	while (NextIndex)
+	{
+	  uint32_t PsiAIsPsiB = 1;
+	  for (uint32_t j = 0; j < b.NWord; j++)
+	  {
+		if (b.Determinant[BlokElementDet(NextIndex, b.NWord, j)] != Det[j])
+		{
+		  PsiAIsPsiB = 0;
+		}
+	  }
+	  if (PsiAIsPsiB)
+	  {
+		  return NextIndex;
+	  }
+	  else
+	  {
+		NextIndex = b.Next[BlokElement(NextIndex)];
+	  }
+	}
+	return NextIndex;
 }
 
 void CalculateHermitianMatrixElements(const vector<WaveFunctionType> &basis,const OperatorType &H, CompactMatrixType &M)
@@ -530,6 +567,26 @@ void CalculateEigensystemOnBasis(const vector<WaveFunctionType> &basis,const Ope
 {
 	CompactMatrixType M, S, S12, Hbasis, eigenfuns;
 	CalculateHermitianMatrixElements(basis,H,M);
+	PrintMartix(M.VRe,M.Ni);
+	CalculateOverlapMatrix(basis,S);
+	TransformMatrixToONB(S,M,S12,Hbasis);
+	eigenvals = vector<double>(M.Ni);
+	CompactMatrixEigensystem(&Hbasis,&eigenfuns,&eigenvals[0]); // TODO check if eigenvals row- or coll-major
+	CompactMatrixMultiply('N','N',&eigenfuns,&S12,&T);
+
+	FreeCompactMatrix(&M);
+	FreeCompactMatrix(&S);
+	FreeCompactMatrix(&S12);
+	FreeCompactMatrix(&Hbasis);
+	FreeCompactMatrix(&eigenfuns);
+}
+
+void CalculateBlockEigensystemOnBasis(const vector<WaveFunctionType> &basis,const OperatorType &H, CompactMatrixType &T, vector<double> &eigenvals)
+{
+	CompactMatrixType M, S, S12, Hbasis, eigenfuns;
+	CalculateBlockMatrixElements(basis,H,M);
+	//CalculateHermitianMatrixElements(basis,H,M);
+	//PrintMartix(M.VRe,M.Ni);
 	CalculateOverlapMatrix(basis,S);
 	TransformMatrixToONB(S,M,S12,Hbasis);
 	eigenvals = vector<double>(M.Ni);
@@ -580,8 +637,9 @@ void BlockCalculateEnergyIndependentSelfEnergy(const OperatorType &H, const Wave
 			Upsi[i].ValueRe[j] = (double*)calloc(BlokSize, sizeof(double));
 		}
 		Upsi[i].NBlok = Upsi[N-1].NBlok;
+		Upsi[i].N = Upsi[N-1].N;
 	}
-	CalculateEigensystemOnBasis(Upsi,H,T,poles);
+	CalculateBlockEigensystemOnBasis(Upsi,H,T,poles);
 	BlockWaveFunctionFree(&Upsi[0],N);
 
 
