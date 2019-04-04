@@ -401,34 +401,36 @@ void CalculateBlockMatrixElements(const vector<WaveFunctionType> &basis,const Op
 	M.Ni = (uint32_t) basis.size();
 	M.Nj = M.Ni;
 	InitCompactMatrix(&M);
-	for (uint32_t l0 = 0; l0 <= H.MaxLength; l0++)
-	{
 #pragma omp parallel for
-		for (uint32_t l = 0; l < H.l[l0].N; l++)
+	for (uint32_t k = 1; k <= basis[Nbas-1].N; k++)
+	{
+		uint8_t Det[basis[Nbas-1].NWord];
+		uint32_t ii = k >> NBitsBlok;
+		uint32_t ik = k & BlokMask;
+		uint32_t ij = basis[Nbas-1].NWord * ik;
+		for (uint32_t l0 = 0; l0 <= H.MaxLength; l0++)
 		{
-			for (uint32_t k = 1; k <= basis[Nbas-1].N; k++)
+			for (uint32_t l = 0; l < H.l[l0].N; l++)
 			{
-				for (uint32_t i = 0; i < M.Ni; i++)
+				for (uint32_t d = 0; d < basis[Nbas-1].NWord; d++)
 				{
-					for (uint32_t j = 0; j < M.Ni; j++)
+					Det[d] = basis[Nbas-1].Determinant[ii][ij + d];
+				}
+				double phase = OperatorLader(Det, &(H.l[l0].o[l * l0]), l0, H.NFermion);
+				if (fabs(phase) > (10 * DBL_MIN))
+				{
+					uint32_t idxDet = GetDeterminantIndex(basis[Nbas-1],Det);
+					if (idxDet)
 					{
-						uint8_t Det[basis[Nbas-1].NWord];
-						uint32_t ii = k >> NBitsBlok;
-						uint32_t ik = k & BlokMask;
-						uint32_t ij = basis[Nbas-1].NWord * ik;
-						for (uint32_t d = 0; d < basis[Nbas-1].NWord; d++)
+						for (uint32_t i = 0; i < M.Ni; i++)
 						{
-							Det[d] = basis[Nbas-1].Determinant[ii][ij + d];
-						}
-						double phase = OperatorLader(Det, &(H.l[l0].o[l * l0]), l0, H.NFermion);
-						if (fabs(phase) > (10 * DBL_MIN))
-						{
-							uint32_t idxDet = GetDeterminantIndex(basis[Nbas-1],Det);
-							if (idxDet)
+							double *pos = &M.VRe[i*M.Nj];
+							for (uint32_t j = 0; j < M.Ni; j++)
 							{
 								double val = phase * basis[i].ValueRe[BlokElement(k)]* basis[j].ValueRe[BlokElement(idxDet)]*H.l[l0].VRe[l];
-#pragma omp critical
-								M.VRe[i*M.Nj + j] += val;
+#pragma omp atomic update
+								pos[j] += val;
+								//M.VRe[i*M.Nj + j] += val;
 							}
 
 						}
