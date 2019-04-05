@@ -96,7 +96,7 @@ void CreateSpectrum(const OperatorType &H,const OperatorType &T, WaveFunctionTyp
 
 }
 
-void GetIndices(lua_State *L,int arg, vector<int> &indToK, uint16_t** &indices)
+uint32_t GetIndices(lua_State *L,int arg, vector<int> &indToK, uint16_t** &indices)
 {
 	lua_getfield(L,arg,"kappas");
 	lua_check(L,-1,indToK);
@@ -114,4 +114,5 @@ void GetIndices(lua_State *L,int arg, vector<int> &indToK, uint16_t** &indices)
 		indices[i] = luaL_checkarray_unit16_t(L,-1,&temp);
 		lua_pop(L,1);
 	}
+	return Nindices;
 }

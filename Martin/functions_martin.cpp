@@ -1755,7 +1755,7 @@ static int LuaAugerMeitnerSelfEnergy(lua_State *L)
 	lua_check(L,arg++,WavefunsUnboundG);
 	lua_check(L,arg++,WavefunsUnboundF);
 	 NF = (uint32_t)luaL_checkunsigned(L, arg++);
-	 GetIndices(L,arg++,indToK,indices);
+	 uint32_t Nindices = GetIndices(L,arg++,indToK,indices);
 	 lua_check(L,arg++,H);
 	 lua_check(L,arg++,psi);
 	 lua_check(L,arg++,eps);
@@ -1770,7 +1770,7 @@ static int LuaAugerMeitnerSelfEnergy(lua_State *L)
 	 AugerMeitnerSelfEnergy(WavefunsBoundG,WavefunsBoundF,WavefunsUnboundG,WavefunsUnboundF,indToK,indices,NF,H,psi,eps,gamma,EnergiesUnbound,spectrum,NPointsToEvaluateInterpolation);
 	 lua_push(L,spectrum);
 
-	 for (uint32_t i = 0; i < (uint32_t) WavefunsBoundG.size(); i++)
+	 for (uint32_t i = 0; i < Nindices; i++)
 	 {
 		 free(indices[i]);
 	 }

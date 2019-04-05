@@ -275,7 +275,7 @@ void AugerMeitnerSelfEnergy(vector<Interpolation::InterpolatingFunction *> Wavef
 		double dE = (E1-E0)/(NPointsToEvaluateInterpolation + 1.);
 		vector<double> Fkval;
 		Fkval.reserve(UList.size());
-		for (uint32_t i = 0; i < UList.size(); i++)
+		for (uint32_t i = 0; i < (uint32_t) UList.size(); i++)
 		{
 			Fkval.push_back(Fk[i](E0));
 		}
@@ -321,8 +321,16 @@ void AugerMeitnerSelfEnergy(vector<Interpolation::InterpolatingFunction *> Wavef
 		free(kernels[i]);
 	}
 	free(kernels);
-	//TODO free slater integrals
-	//TODO free UList
+    for (uint32_t i = 0; i < NIntegrals; i++)
+    {
+    	free(si[i].val);
+    	free(si[i].k);
+    }
+    free(si);
+    for (uint32_t i = 0; i < (uint32_t) UList.size(); i++)
+    {
+    	FreeOperator(&UList[i]);
+    }
 }
 
 void InterpolateSlaterIntegrals(const int NIntegrals, SSlaterIntegral *integrals, const int n,double **kernels,
