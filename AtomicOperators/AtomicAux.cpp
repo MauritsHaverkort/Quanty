@@ -86,7 +86,7 @@ vector<double> ReadBasisfunction(ifstream &file, vector<double> &x)
 string GetOrbitalName(ifstream &file, uint32_t len)
 {
 	string word, name;
-	while ( file >> word)
+	while (file >> word)
 	{
 		if (word == "function")
 		{
@@ -103,7 +103,7 @@ string GetOrbitalName(ifstream &file, uint32_t len)
 			return name;
 		}
 	}
-	return "";
+	return "empty";
 }
 
 static int LuaReadFPLOBasisFunctions(lua_State *L)
@@ -135,6 +135,11 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
 	while (!file1.eof())
 	{
 		name = GetOrbitalName(file1,len);
+		if(name == "empty")
+		{
+			return luaL_error(L,"Error in ReadFPLOBasisFunctions: empty or wrong file\n");
+
+		}
 		y1 = ReadBasisfunction(file1,x);
 
 		funsG[name] = y1;

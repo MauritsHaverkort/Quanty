@@ -645,6 +645,7 @@ void BlockCalculateEnergyIndependentSelfEnergy(const OperatorType &H, const Wave
 	OperatorPsi(UList[0],psi,&Upsi[0]);
 	printf("Upsi[0].N = %u\n",Upsi[0].N);
 	printf("Upsi[0].NBitsKey = %u\n",Upsi[0].NBitsKey);
+	printf("Upsi[0].NBlok = %u\n",Upsi[0].NBlok);
 	for (uint32_t i = 1; i < N; i++)
 	{
 		WaveFunctionInitCopyBasis(&(Upsi[i]),Upsi[i-1]);
@@ -656,6 +657,15 @@ void BlockCalculateEnergyIndependentSelfEnergy(const OperatorType &H, const Wave
 	{
 		Upsi[i].NBitsKey = Upsi[N-1].NBitsKey;
 		Upsi[i].ValueRe = (double**) realloc(Upsi[i].ValueRe, Upsi[N-1].NBlok * sizeof(double *));
+		if(Upsi[i].N % BlokSize)
+		{
+			printf("shit happens\n");
+			uint32_t rest = Upsi[i].N % BlokSize;
+			for(uint32_t k = 0; k < rest; k++)
+			{
+				Upsi[i].ValueRe[BlokElement(Upsi[i].N + k+1)] = 0;
+			}
+		}
 		for (uint32_t j = Upsi[i].NBlok; j < Upsi[N-1].NBlok; j++)
 		{
 			Upsi[i].ValueRe[j] = (double*)calloc(BlokSize, sizeof(double));
@@ -665,6 +675,7 @@ void BlockCalculateEnergyIndependentSelfEnergy(const OperatorType &H, const Wave
 	}
 	printf("Upsi[0].N = %u\n",Upsi[0].N);
 	printf("Upsi[0].NBitsKey = %u\n",Upsi[0].NBitsKey);
+	printf("Upsi[0].NBlok = %u\n",Upsi[0].NBlok);
 	CalculateBlockEigensystemOnBasis(Upsi,H,T,poles);
 	BlockWaveFunctionFree(&Upsi[0],N);
 

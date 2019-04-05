@@ -568,6 +568,7 @@ static int LuaMatrixDiagonal(lua_State * L)
     FreeCompactMatrix(res);
     free(res);
   }
+  free(diag);	//Added by Martin, otherwise heap is lost
   return 1;
 }
 
