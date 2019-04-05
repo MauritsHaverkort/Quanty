@@ -264,8 +264,11 @@ void AugerMeitnerSelfEnergy(vector<Interpolation::InterpolatingFunction *> Wavef
 	kernels = CreateAllKernels(kMax, NGridPoints, &x[0]);
 	CreateAugerMeitnerOperators(si,NIntegrals,NF,indices,UList);
 	printf("Opp created\n");
+	fflush(stdout);
 	BlockCalculateEnergyIndependentSelfEnergy(*H,*psi,UList,T,poles);
+	//return;
 	printf("SE calculated\n");
+	fflush(stdout);
 	if (NPointsToEvaluateInterpolation)
 	{
 		vector<Interpolation::CubicSpline> Fk = vector<Interpolation::CubicSpline>(UList.size());
@@ -400,8 +403,7 @@ void CalculateOverlapMatrix(const vector<WaveFunctionType> &psi, CompactMatrixTy
 	{
 		for (uint32_t j = i; j < S.Nj; j++)
 		{
-			double muelleimer;
-			WaveFunctionDotProduct(psi[i],psi[j],&S.VRe[i*S.Nj + j],&muelleimer);
+			S.VRe[i*S.Nj + j] = RealWaveFunctionDotProduct(&psi[i],&psi[j]);
 			S.VRe[j*S.Nj + i] = S.VRe[i*S.Nj + j];
 		}
 	}
@@ -643,9 +645,14 @@ void BlockCalculateEnergyIndependentSelfEnergy(const OperatorType &H, const Wave
 	vector<WaveFunctionType> Upsi = vector<WaveFunctionType>(N);
 	WaveFunctionType temp;
 	OperatorPsi(UList[0],psi,&Upsi[0]);
+/*	for(uint32_t i = 1; i <= Upsi[0].N; i++)
+	{
+		printf("%.2e\n",Upsi[0].ValueRe[BlokElement(i)]);
+	}*/
 	printf("Upsi[0].N = %u\n",Upsi[0].N);
 	printf("Upsi[0].NBitsKey = %u\n",Upsi[0].NBitsKey);
 	printf("Upsi[0].NBlok = %u\n",Upsi[0].NBlok);
+	fflush(stdout);
 	for (uint32_t i = 1; i < N; i++)
 	{
 		WaveFunctionInitCopyBasis(&(Upsi[i]),Upsi[i-1]);
@@ -659,8 +666,7 @@ void BlockCalculateEnergyIndependentSelfEnergy(const OperatorType &H, const Wave
 		Upsi[i].ValueRe = (double**) realloc(Upsi[i].ValueRe, Upsi[N-1].NBlok * sizeof(double *));
 		if(Upsi[i].N % BlokSize)
 		{
-			printf("shit happens\n");
-			uint32_t rest = Upsi[i].N % BlokSize;
+			uint32_t rest = (Upsi[i].NBlok == Upsi[N-1].NBlok ? Upsi[N-1].N - Upsi[i].N : BlokSize - Upsi[i].N % BlokSize);
 			for(uint32_t k = 0; k < rest; k++)
 			{
 				Upsi[i].ValueRe[BlokElement(Upsi[i].N + k+1)] = 0;
@@ -676,6 +682,13 @@ void BlockCalculateEnergyIndependentSelfEnergy(const OperatorType &H, const Wave
 	printf("Upsi[0].N = %u\n",Upsi[0].N);
 	printf("Upsi[0].NBitsKey = %u\n",Upsi[0].NBitsKey);
 	printf("Upsi[0].NBlok = %u\n",Upsi[0].NBlok);
+	fflush(stdout);
+/*	for(uint32_t j = 0; j < N; j++)
+	for(uint32_t i = 1; i <= Upsi[0].N; i++)
+	{
+		printf("%.2e\n",Upsi[j].ValueRe[BlokElement(i)]);
+	}
+	return;*/
 	CalculateBlockEigensystemOnBasis(Upsi,H,T,poles);
 	BlockWaveFunctionFree(&Upsi[0],N);
 
