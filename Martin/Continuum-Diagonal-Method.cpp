@@ -263,9 +263,9 @@ void AugerMeitnerSelfEnergy(vector<Interpolation::InterpolatingFunction *> Wavef
 	si = InitializeIntegrals(indToK, NIntegrals,&kMax,true);
 	kernels = CreateAllKernels(kMax, NGridPoints, &x[0]);
 	CreateAugerMeitnerOperators(si,NIntegrals,NF,indices,UList);
-
+	printf("Opp created\n");
 	BlockCalculateEnergyIndependentSelfEnergy(*H,*psi,UList,T,poles);
-
+	printf("SE calculated\n");
 	if (NPointsToEvaluateInterpolation)
 	{
 		vector<Interpolation::CubicSpline> Fk = vector<Interpolation::CubicSpline>(UList.size());
@@ -316,6 +316,13 @@ void AugerMeitnerSelfEnergy(vector<Interpolation::InterpolatingFunction *> Wavef
 		}
 	}
 	FreeCompactMatrix(&T);
+	for (uint32_t i = 0; i <= kMax; i++)
+	{
+		free(kernels[i]);
+	}
+	free(kernels);
+	//TODO free slater integrals
+	//TODO free UList
 }
 
 void InterpolateSlaterIntegrals(const int NIntegrals, SSlaterIntegral *integrals, const int n,double **kernels,
@@ -587,9 +594,11 @@ void CalculateBlockEigensystemOnBasis(const vector<WaveFunctionType> &basis,cons
 {
 	CompactMatrixType M, S, S12, Hbasis, eigenfuns;
 	CalculateBlockMatrixElements(basis,H,M);
+	printf("BlockElements calculated\n");
 	//CalculateHermitianMatrixElements(basis,H,M);
 	//PrintMartix(M.VRe,M.Ni);
 	CalculateOverlapMatrix(basis,S);
+	printf("Olap calculated\n");
 	TransformMatrixToONB(S,M,S12,Hbasis);
 	eigenvals = vector<double>(M.Ni);
 	CompactMatrixEigensystem(&Hbasis,&eigenfuns,&eigenvals[0]); // TODO check if eigenvals row- or coll-major
@@ -623,6 +632,8 @@ void BlockCalculateEnergyIndependentSelfEnergy(const OperatorType &H, const Wave
 	vector<WaveFunctionType> Upsi = vector<WaveFunctionType>(N);
 	WaveFunctionType temp;
 	OperatorPsi(UList[0],psi,&Upsi[0]);
+	printf("Upsi[0].N = %u\n",Upsi[0].N);
+	printf("Upsi[0].NBitsKey = %u\n",Upsi[0].NBitsKey);
 	for (uint32_t i = 1; i < N; i++)
 	{
 		WaveFunctionInitCopyBasis(&(Upsi[i]),Upsi[i-1]);
@@ -641,6 +652,8 @@ void BlockCalculateEnergyIndependentSelfEnergy(const OperatorType &H, const Wave
 		Upsi[i].NBlok = Upsi[N-1].NBlok;
 		Upsi[i].N = Upsi[N-1].N;
 	}
+	printf("Upsi[0].N = %u\n",Upsi[0].N);
+	printf("Upsi[0].NBitsKey = %u\n",Upsi[0].NBitsKey);
 	CalculateBlockEigensystemOnBasis(Upsi,H,T,poles);
 	BlockWaveFunctionFree(&Upsi[0],N);
 

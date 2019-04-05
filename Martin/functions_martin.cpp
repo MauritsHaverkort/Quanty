@@ -1769,6 +1769,12 @@ static int LuaAugerMeitnerSelfEnergy(lua_State *L)
 
 	 AugerMeitnerSelfEnergy(WavefunsBoundG,WavefunsBoundF,WavefunsUnboundG,WavefunsUnboundF,indToK,indices,NF,H,psi,eps,gamma,EnergiesUnbound,spectrum,NPointsToEvaluateInterpolation);
 	 lua_push(L,spectrum);
+
+	 for (uint32_t i = 0; i < (uint32_t) WavefunsBoundG.size(); i++)
+	 {
+		 free(indices[i]);
+	 }
+	 free(indices);
 	 return 1;
 }
 
