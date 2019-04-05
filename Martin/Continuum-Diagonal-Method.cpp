@@ -429,12 +429,14 @@ void CalculateBlockMatrixElements(const vector<WaveFunctionType> &basis,const Op
 					uint32_t idxDet = GetDeterminantIndex(basis[Nbas-1],Det);
 					if (idxDet)
 					{
+						double vH = H.l[l0].VRe[l];
 						for (uint32_t i = 0; i < M.Ni; i++)
 						{
+							double vi = basis[i].ValueRe[BlokElement(k)];
 							double *pos = &M.VRe[i*M.Nj];
 							for (uint32_t j = 0; j < M.Ni; j++)
 							{
-								double val = phase * basis[i].ValueRe[BlokElement(k)]* basis[j].ValueRe[BlokElement(idxDet)]*H.l[l0].VRe[l];
+								double val = phase * vi* basis[j].ValueRe[BlokElement(idxDet)]*vH;
 #pragma omp atomic update
 								pos[j] += val;
 								//M.VRe[i*M.Nj + j] += val;
@@ -460,6 +462,7 @@ uint32_t GetDeterminantIndex(const WaveFunctionType &b,const uint8_t *Det )
 		if (b.Determinant[BlokElementDet(NextIndex, b.NWord, j)] != Det[j])
 		{
 		  PsiAIsPsiB = 0;
+		  break;
 		}
 	  }
 	  if (PsiAIsPsiB)
