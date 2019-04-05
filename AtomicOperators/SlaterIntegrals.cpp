@@ -52,7 +52,6 @@ SSlaterIntegral *GetSlaterIntegrals(const vector<Interpolation::InterpolatingFun
 	vector<vector<double> > kernels;
 
     si = InitializeIntegrals(indToK, NIntegrals,&kMax,Qcontinuum);
-
     //clock_t t = clock();
     CreateAllKernels(kMax, knots,kernels);
     //cout << "Kernels: " << (clock()-t)*1.0/CLOCKS_PER_SEC << endl;
@@ -64,7 +63,7 @@ SSlaterIntegral *GetSlaterIntegrals(const vector<Interpolation::InterpolatingFun
 }
 
 void CalculateSlaterIntegrals(const int NIntegrals, SSlaterIntegral *integrals, const int dim,
-                              double **kernels, vector<vector<double> > basisfuns, vector<vector<double> > dualfuns)
+                              double **kernels,const vector<vector<double> > &basisfuns,const vector<vector<double> > &dualfuns)
 {
 
 #pragma omp parallel for

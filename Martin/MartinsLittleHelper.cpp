@@ -82,6 +82,19 @@ void PrintArray(Complex16* a, int n)
 	}
 }
 
+void PrintDeterminant(const WaveFunctionType &psi, uint32_t idx)
+{
+	printf("NWord = %u\n",psi.NWord);
+	double prefactor = psi.ValueRe[BlokElement(idx)];
+	uint8_t Det[psi.NWord];
+	for (uint32_t d = 0; d <psi.NWord; d++)
+	{
+		printf("%X",psi.Determinant[BlokElementDet(idx,psi.NWord,d)]);
+	}
+	printf("\t%.4e\n",prefactor);
+
+}
+
 vector<vector<double> > ConvertMatrix(double **m, const int n1, const int n2)
 {
 	vector<vector<double> > res = vector<vector<double> >(n1);

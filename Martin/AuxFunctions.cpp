@@ -96,4 +96,23 @@ void CreateSpectrum(const OperatorType &H,const OperatorType &T, WaveFunctionTyp
 
 }
 
+uint32_t GetIndices(lua_State *L,int arg, vector<int> &indToK, uint16_t** &indices)
+{
+	lua_getfield(L,arg,"kappas");
+	lua_check(L,-1,indToK);
+	lua_pop(L,1);
+	uint32_t Nindices = (uint32_t)lua_objlen(L,arg);
 
+	indices = (uint16_t **) malloc(Nindices * sizeof(uint16_t *));
+
+	if(!indices) printf("malloc fail at indices in GetIndices, size = %u\n",Nindices);
+
+	for(uint32_t i = 0; i < Nindices; i++ )
+	{
+		lua_rawgeti(L, arg, i+1);
+		uint32_t temp;
+		indices[i] = luaL_checkarray_unit16_t(L,-1,&temp);
+		lua_pop(L,1);
+	}
+	return Nindices;
+}

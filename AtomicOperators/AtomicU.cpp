@@ -445,6 +445,7 @@ static int LuaGetSlaterIntegrals (lua_State *L)
 
     return 1;
 }
+
 void Lua_Push_SlaterIntegral(lua_State *L, double *Rk, uint32_t *k, uint32_t N,string orb1,string orb2,string orb3,string orb4)
 {
 	string label = orb1;
@@ -462,6 +463,16 @@ void Lua_Push_SlaterIntegral(lua_State *L, double *Rk, uint32_t *k, uint32_t N,s
 		lua_rawseti(L,-2,k[j]);
 	}
 	lua_settable(L,-3);
+}
+
+void Lua_Push_SlaterIntegral(lua_State *L, double *Fk, uint32_t N)
+{
+	lua_createtable(L,0,0);
+	for (uint32_t i = 0; i < N; i++)
+	{
+		lua_push(L,Fk[i]);
+		lua_rawseti(L,-2,i+1);
+	}
 }
 
 vector<int> NamesToKappa(const vector<string> &orbitalNames)
@@ -580,6 +591,64 @@ uint32_t CreateOperatorAtomicURelativistic(uint32_t const NFermion,const vector<
     return 0;
 }
 
+uint32_t CreateListOperatorAtomicURelativistic(uint32_t const NFermion,const vector<vector<double> > &basisfuns, const vector<double> &grid, const vector<int> &indToK
+                                               ,uint16_t **indices, bool Qcontinuum,lua_State *L, bool IntegralsOnly)
+{
+
+    OperatorType *optemp;
+    SSlaterIntegral *integrals;
+    uint32_t NIntegrals, i;
+
+    integrals = GetSlaterIntegrals(basisfuns,grid, indToK, NIntegrals,Qcontinuum);
+
+    int *k;
+    unsigned int *n;
+    double *Fk;
+    uint32_t countTerms = 0;
+
+    lua_createtable(L,0,0);
+    for( i = 0; i < NIntegrals; i++)
+    {
+    	Lua_Push_SlaterIntegral(L,integrals[i].val,integrals[i].Nval);
+    	lua_rawseti(L,-2,i+1);
+    }
+    if (IntegralsOnly)
+    {
+    	return 0;
+    }
+    lua_createtable(L,0,0);
+    for( i = 0; i < NIntegrals; i++)
+    {
+    	k = integrals[i].tau.kappa;
+        n = integrals[i].tau.n;
+        Fk = integrals[i].val;
+        for (uint32_t j = 0; j < integrals[i].Nval; j++)
+        {
+        	Fk[j] = 0;
+        }
+        for (uint32_t j = 0; j < integrals[i].Nval; j++)
+        {
+        	optemp = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
+        	luaL_setmetatable(L,"Operator_Type");
+        	lua_rawseti(L,-2, countTerms +1);
+        	countTerms++;
+
+        	Fk[j] = 1;
+        	CreateOperatorAtomicURelativisticOneIntegral(NFermion,k[0],k[1],k[2],k[3],indices[n[0]],indices[n[1]],indices[n[2]],indices[n[3]],Fk,n[0],n[1],n[2],n[3],optemp);
+        	Fk[j] = 0;
+        }
+
+    }
+    for ( i = 0; i < NIntegrals; i++)
+    {
+    	free(integrals[i].val);
+    	free(integrals[i].k);
+    }
+    free(integrals);
+
+    return 0;
+}
+
 uint32_t CreateOperatorAtomicUNonRel(uint32_t const NFermion,const vector<Interpolation::InterpolatingFunction *> &ipolfuns, const vector<int> &indToK
                                                ,uint16_t **indices, OperatorType *op, bool Qcontinuum)
 {
@@ -589,7 +658,8 @@ uint32_t CreateOperatorAtomicUNonRel(uint32_t const NFermion,const vector<Interp
     uint32_t NIntegrals, i;
 
     integrals = GetSlaterIntegrals(ipolfuns, indToK, NIntegrals,Qcontinuum);
-
+    //printf("NIntegrals: %d\nn1 = %d\tn2 = %d\tn3 = %d\tn4 = %d\n",NIntegrals,integrals[0].tau.n[0],integrals[0].tau.n[1],integrals[0].tau.n[2],integrals[0].tau.n[3]);
+    //printf("%.16f\t%.16f\t",integrals[0].val[0],integrals[0].val[1]);
     int *k;
     unsigned int *n;
     double *Fk;

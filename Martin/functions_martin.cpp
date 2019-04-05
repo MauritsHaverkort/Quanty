@@ -14,6 +14,7 @@
 #include "CouplingToEMField.cpp"
 #include "AuxFunctions.cpp"
 #include "ResonantSpectraSelfEnergy.cpp"
+#include "Continuum-Diagonal-Method.cpp"
 
 
 static int LuaOperatorNewFullCoulomb (lua_State *L)
@@ -451,8 +452,6 @@ static int LuaMetricWaveFuns(lua_State *L)
 
 	return 1;
 }
-
-
 
 static int LuaPlotSpectrumWithSelfEnergy(lua_State *L)
 {
@@ -1258,7 +1257,7 @@ static int LuaCreateResonantSpectraSE(lua_State *L)
   Options.E02=DBL_MAX;
   Options.Tensor=false;
   Options.DenseMethod=false;
-  Options.NTriSE = 2;
+  Options.NTriSE = 5;
   ConvergenceSettingsType SettingsNow;
   SpectraTypeArray *Spec;
   SpectraType *SpecT1psi;
@@ -1567,19 +1566,272 @@ static int LuaCreateResonantSpectraSE(lua_State *L)
   return 1;
 }
 
+static int LuaListU(lua_State *L)
+{
+	uint32_t Nindices, temp, len, NF;
+	uint16_t **indices;
+	vector<double> x;
+	len = (uint32_t)lua_gettop(L);
+
+	if ( len < 3 ||  len > 5)
+	{
+		return luaL_error(L,"Error in Martin.ListU: 3 to 5 arguments expected; got %d",len);
+	}
+
+	NF = (uint32_t)luaL_checkunsigned(L, 1);
+	vector<int> indToK;
+	if (len > 3)
+	{
+		lua_getfield(L,2,"kappas");
+		if (lua_isnil(L,-1))
+		{
+			lua_pop(L,1);
+			Nindices = (uint32_t)lua_objlen(L,2);
+			indices = (uint16_t **) malloc(Nindices * sizeof(uint16_t *));
+			if(!indices) printf("malloc fail at indices in LuaOperatorNewFullCoulomb. size = %u\n",Nindices);
+			for(uint32_t i = 0; i < Nindices; i++ )
+			{
+				lua_rawgeti(L, 2, i+1);
+				lua_rawgeti(L,-1,1);
+				indToK.push_back((int) luaL_checkunsigned(L, -1));
+				lua_pop(L,1);
+				lua_rawgeti(L,-1,2);
+				indices[i] = luaL_checkarray_unit16_t(L,-1,&temp);
+				lua_pop(L,1);
+				lua_pop(L,1);
+			}
+		}
+		else
+		{
+			uint16_t *help = luaL_checkarray_unit16_t(L,-1,&temp);
+			indToK = ConvertArray(help,temp);
+			free(help);
+
+			lua_pop(L,1);
+			Nindices = (uint32_t)lua_objlen(L,2);
+
+			indices = (uint16_t **) malloc(Nindices * sizeof(uint16_t *));
+			if(!indices) printf("malloc fail at indices in LuaOperatorNewFullCoulomb. size = %u\n",Nindices);
+
+			for(uint32_t i = 0; i < Nindices; i++ )
+			{
+				lua_rawgeti(L, 2, i+1);
+				indices[i] = luaL_checkarray_unit16_t(L,-1,&temp);
+				lua_pop(L,1);
+			}
+		}
+
+		uint32_t NfunsG = (uint32_t)lua_objlen(L,3);
+
+		if (NfunsG > Nindices)
+		{
+			printf("Warning: Martin.Coulomb() number of basis funs (%d) != number of indices (%d)\n",NfunsG , Nindices);
+			fflush(stdout);
+		}
+		else
+		{
+			if (NfunsG < Nindices)
+			{
+				return luaL_error(L, "Errorr: Martin.Coulomb() number of basis funs (%d) < number of indices (%d)\n",NfunsG , Nindices);
+			}
+		}
+		if (indToK.size() != Nindices) printf("Warning: Martin.Coulomb() number of kappas (%d) != number of indices (%d)\n",(uint32_t)indToK.size() , Nindices);
+
+		vector<Interpolation::InterpolatingFunction *> funsG = vector<Interpolation::InterpolatingFunction *>(NfunsG);
+		for(uint32_t i = 0; i < NfunsG; i++)
+		{
+			lua_rawgeti(L, 3, i+1);
+			funsG[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
+			lua_pop(L,1);
+		}
+
+		uint32_t NfunsF = (uint32_t)lua_objlen(L,4);
+		if (NfunsF != NfunsG)
+		{
+			return luaL_error(L,"Error in LuaOperatorNewCoulombFull: number of functions small part (%d) != large part (%d)\n",NfunsF,NfunsG);
+		}
+		vector<Interpolation::InterpolatingFunction *> funsF = vector<Interpolation::InterpolatingFunction *>(NfunsF);
+		for(uint32_t i = 0; i < NfunsF; i++)
+		{
+			lua_rawgeti(L, 4, i+1);
+			funsF[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
+			lua_pop(L,1);
+		}
+
+		x = funsG[0]->GetX();
+
+		vector<vector<double> > wavefuns = PutRelativisticSplineOnGrid(funsG,funsF,x,0);
+
+		if (len == 4)
+		{
+			CreateListOperatorAtomicURelativistic(NF,wavefuns,x,indToK,indices,true,L,false);
+		}
+		else
+		{
+			CreateListOperatorAtomicURelativistic(NF,wavefuns,x,indToK,indices,true,L,true);
+			for(uint32_t i = 0; i < Nindices; i++ )
+			{
+				free(indices[i]);
+			}
+			free(indices);
+			return 1;
+		}
+	}
+	else
+	{
+		printf("error: nonrelativistic version of ListU not yet implmented\n");
+		return 0;
+	}
+
+
+	for(uint32_t i = 0; i < Nindices; i++ )
+	{
+		free(indices[i]);
+	}
+	free(indices);
+
+	return 2;
+}
+
+static int LuaCDMPlot(lua_State *L)
+{
+	std::vector<double> poles, SlaterInts;
+	std::vector<mypoint> spectrum;
+	double wMin, wMax, dw, eps, gamma, shift;
+
+	CompactMatrixType *M;
+
+	uint32_t len = lua_gettop(L);
+	lua_check(L,1,wMin);
+	lua_check(L,2,wMax);
+	lua_check(L,3,dw);
+	lua_check(L,4,eps);
+	lua_check(L,5,gamma);
+	lua_check(L,6,poles);
+	lua_check(L,7,SlaterInts);
+	lua_check(L,8,M);
+	lua_check(L,9,shift);
+
+	uint32_t Npoints = floor((wMax-wMin)/dw) + 1;
+	spectrum = std::vector<mypoint>(Npoints);
+	for (uint32_t i = 0; i < Npoints; i++)
+	{
+		spectrum[i].w = wMin + i * dw;
+		spectrum[i].y.Re = 0.;
+		spectrum[i].y.Im = 0.;
+	}
+	if (len == 10)
+	{
+		vector<vector<Complex16> > selfenergy;
+		lua_check(L,10,selfenergy);
+		PlotSpectrumFromPoles(eps,gamma,shift,poles,SlaterInts,M,spectrum,selfenergy);
+	}
+	else
+	{
+		PlotSpectrumFromPoles(eps,gamma,shift,poles,SlaterInts,M,spectrum);
+	}
+
+	lua_push(L,spectrum);
+	return 1;
+
+}
+
+static int LuaAugerMeitnerSelfEnergy(lua_State *L)
+{
+	WaveFunctionType * psi;
+	vector<OperatorType *> UList;
+	OperatorType *H;
+	vector<double> poles, SlaterInts, EnergiesUnbound;
+	vector<mypoint> spectrum;
+	double eps, gamma;
+	vector<Interpolation::InterpolatingFunction *> WavefunsBoundG,WavefunsBoundF,WavefunsUnboundG,WavefunsUnboundF;
+	uint32_t NF;
+	vector<int> indToK;
+	uint16_t **indices;
+	int arg = 1;
+
+	lua_check(L,arg++,WavefunsBoundG);
+	lua_check(L,arg++,WavefunsBoundF);
+	lua_check(L,arg++,WavefunsUnboundG);
+	lua_check(L,arg++,WavefunsUnboundF);
+	 NF = (uint32_t)luaL_checkunsigned(L, arg++);
+	 uint32_t Nindices = GetIndices(L,arg++,indToK,indices);
+	 lua_check(L,arg++,H);
+	 lua_check(L,arg++,psi);
+	 lua_check(L,arg++,eps);
+	 lua_check(L,arg++,gamma);
+	 lua_check(L,arg++,EnergiesUnbound);
+	 InitializeSpectrum(L,arg,spectrum);
+
+	 uint32_t NPointsToEvaluateInterpolation = 0;
+	 if (lua_gettop(L) == arg)
+		 lua_check(L,arg,NPointsToEvaluateInterpolation);
+
+	 AugerMeitnerSelfEnergy(WavefunsBoundG,WavefunsBoundF,WavefunsUnboundG,WavefunsUnboundF,indToK,indices,NF,H,psi,eps,gamma,EnergiesUnbound,spectrum,NPointsToEvaluateInterpolation);
+	 lua_push(L,spectrum);
+
+	 for (uint32_t i = 0; i < Nindices; i++)
+	 {
+		 free(indices[i]);
+	 }
+	 free(indices);
+	 return 1;
+}
+
+static int LuaBraketList(lua_State *L)
+{
+	WaveFunctionType * psi;
+	vector<OperatorType *> UList;
+	OperatorType *H;
+	CompactMatrixType *S, *M;
+
+	lua_check(L,1,psi);
+	lua_check(L,2,UList);
+	lua_check(L,3,H);
+
+	M = (CompactMatrixType*) lua_newuserdata(L,sizeof(CompactMatrixType));
+	luaL_setmetatable(L,"Matrix_Type");
+	M->QComplex = psi->QComplex || H->QComplex;
+	uint32_t i = 0;
+	while (!M->QComplex && i < (uint32_t) UList.size())
+	{
+		M->QComplex = UList[i]->QComplex;
+		i++;
+	}
+	M->Ni = (uint32_t) UList.size();
+	M->Nj = M->Ni;
+	InitCompactMatrix(M);
+	S = (CompactMatrixType*) lua_newuserdata(L,sizeof(CompactMatrixType));
+	luaL_setmetatable(L,"Matrix_Type");
+	S->QComplex = 0;
+	S->Ni = M->Ni;
+	S->Nj = M->Ni;
+	InitCompactMatrix(S);
+	PsiOppListOperatorOppListPsi(psi,UList,H,M);
+	printf("Done\n");
+	fflush(stdout);
+	//PsiOppListOppListPsi(psi,UList,S);
+
+	return 2;
+}
+
 static int LuaMartinTest(lua_State *L)
 {
-	OperatorType *H, *T;
-	std::vector<WaveFunctionType> psi;
-	lua_check(L,1,H);
-	lua_check(L,2,T);
+
+	WaveFunctionType *psi;
+	lua_check(L,1,psi);
+	for (uint32_t i = 1; i <= psi->N; i++)
+	{
+		PrintDeterminant(*psi,i);
+	}
+	/*
 	lua_check(L,3,psi);
 
 	BlockTriDiagonalMatrixType GTri;
 	CreateSpectrum(*H,*T,&psi[0],psi.size(),1E-16,GTri,4);
 	LuaPushTable_BlockTriDiagonalMatrixType(L, &GTri);
 	return 1;
-
+*/
 /*
 	MatrixType U;
 	std::vector<WaveFunctionType> psi;
@@ -1726,6 +1978,11 @@ static const struct luaL_Reg Martin_func[] = {
   {"Export",LuaExport},
   {"ReadFPLOEnergies",LuaReadFPLOEnergies},
   {"RelativisticDipoleOperator",LuaRelativisticDipoleOperator},
+  {"ResonantSpectrum",LuaCreateResonantSpectraSE},
+  {"ListU",LuaListU},
+  {"PlotSpectrum",LuaCDMPlot},
+  {"BraketList",LuaBraketList},
+  {"AMSel",LuaAugerMeitnerSelfEnergy},
   {NULL, NULL}
 };
 

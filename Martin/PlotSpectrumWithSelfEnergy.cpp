@@ -257,6 +257,7 @@ void ReadDataFromFile(std::vector<CompactMatrixType *> &Ms, const char *filename
 		for (uint32_t i = 0; i < N; i++)
 		{
 			Ms.push_back((CompactMatrixType *) malloc(sizeof(CompactMatrixType)));
+			Ms[i]->Name = (char*)malloc(MAXStrLength*sizeof(char));
 			fread(&(Ms[i]->QComplex),sizeof(uint32_t),1,f);
 			fread(&(Ms[i]->Ni),sizeof(uint32_t),1,f);
 			fread(&(Ms[i]->Nj),sizeof(uint32_t),1,f);

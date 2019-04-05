@@ -21,7 +21,7 @@ uint32_t ResonantSpectraSelfEnergy(const OperatorType OppH1, const OperatorType 
    * epsilon
    */
 
-
+//settings->NTri1 = 4; // TODO Remove that ---------------------------------------------------------------------------------------------------
   WaveFunctionType Tpsi,GTpsi,TGTpsi, PsiBasis[settings->NTri1],*EigenBasis;
   TriDiagonalMatrixType SpecTri1;
   MatrixType EFun;
@@ -81,13 +81,15 @@ uint32_t ResonantSpectraSelfEnergy(const OperatorType OppH1, const OperatorType 
    * 2) Calculate SelfEnergy SE on EigenBasis in tri-diagonal form
    */
 
+  printf("NumberOf stuff : %d\nEV[0] = %f\n",settings->NTri1, EVal[0]);
+  //PrintMatrix(EFun);
   RotateWaveFunctions(PsiBasis,settings->NTri1,EFun,EigenBasis);
   BlockTriDiagonalMatrixType SE[NSelfEnergy];
   for (i = 0; i < NSelfEnergy; i++)
   {
 	  CreateSpectrum(OppH1,*U[i],EigenBasis,settings->NTri1,settings->epsilon,SE[i],NTriSE);
   }
-
+  //PrintBlockTriDiagonalMatrix(SE[0]);
   /* determine Emin1, Emax1, NE1 and Gamma1 if not set */
   if(settings->Emin1>( 0.001*DBL_MAX) && (settings->Emax1<(-0.001*DBL_MAX)))
   {
@@ -153,6 +155,12 @@ uint32_t ResonantSpectraSelfEnergy(const OperatorType OppH1, const OperatorType 
 
     CompactMatrixType SEw, temp;
     EvaluateBlockTriDiagonalMatrix(&SE[0],&SEw,wRes-EnergyContinuum[0],settings->Gamma1);
+/*    if (p == 0)
+    {
+    	printf("wRes = %.16f\ngamma = %.16f\nSE[0].N = %d\n",wRes, settings->Gamma1,SE[0].N);
+    	PrintCompactMatrixMinimal(SEw);
+    }
+*/
     for(i = 1; i < NSelfEnergy; i++)
     {
     	EvaluateBlockTriDiagonalMatrix(&SE[i],&temp,wRes-EnergyContinuum[i],settings->Gamma1);
@@ -163,6 +171,7 @@ uint32_t ResonantSpectraSelfEnergy(const OperatorType OppH1, const OperatorType 
     {
     	// Note that SE - (w - H) is easier, so later we nedd to add a minus sign
     	SEw.V[i+SEw.Ni*i] -= (wRes - EVal[i]); // TODO Imaginary Part includes broadening,too (i0) - shall I use it????????????????????????????????????????????????????????????
+    	SEw.V[i+SEw.Ni*i].Im -= settings->Gamma1 /2.;
 
     	//EValInvIm[i] = -(settings->Gamma1/2.0) / ((wRes - EVal[i])*(wRes - EVal[i])+(settings->Gamma1/2.0)*(settings->Gamma1/2.0));
     }
@@ -170,7 +179,11 @@ uint32_t ResonantSpectraSelfEnergy(const OperatorType OppH1, const OperatorType 
     CompactMatrixType UTGdiag, Ueigen;
     Ueigen = MatrixTypeToCompactMatrixType(EFun);
     CompactMatrixMultiply('C','N',&Ueigen,&SEw,&UTGdiag);
-
+/*    if (p == 0)
+	{
+		PrintCompactMatrixMinimal(UTGdiag);
+	}-------------------------------------------------------------------------------------------------------------------- Debug below here
+*/
     /* We are trying to calculate Q[0,:]A^(-1)Q^(-1).  Because A is diagonal, we were
      able to calculate B = Q[0,:]*I*Q^(-1) outside the loop. Now we calculate diag(A)*B */
     /* Calculate Q*A^(-1)*Q^(-1)[:,0] */

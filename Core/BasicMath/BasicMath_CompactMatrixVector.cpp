@@ -2713,8 +2713,12 @@ uint32_t CompactMatrixEigensystem(CompactMatrixType const *A, CompactMatrixType 
         fflush(stdout);
         return 1;
       }
+      free(iwork);	// Added by Martin, otherwhise heap is lost TODO also for complex case
+      free(work);
       return 0;
     }
+    free(iwork);	// Added by Martin, otherwhise heap is lost
+    free(work);
     return 0;
   }
   else
