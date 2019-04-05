@@ -35,7 +35,7 @@ vector<double> interpolationRanges(const vector<Interpolation::InterpolatingFunc
 	return out;
 }
 
-vector<Complex16> realspaceBasisValues(const vector<double> &v, const vector<string> &orbs, const vector<vector<double> > &atomPos, const vector<double> &interRanges,
+vector<Complex16> realspaceBasisValuesNoSpin(const vector<double> &v, const vector<string> &orbs, const vector<vector<double> > &atomPos, const vector<double> &interRanges,
 		const vector<Interpolation::InterpolatingFunction*> &funs, const vector<vector<uint16_t> > indices, const double step)
 {
 	vector < Complex16 > psi;
@@ -50,11 +50,11 @@ vector<Complex16> realspaceBasisValues(const vector<double> &v, const vector<str
 		{
 			if (r > step / 2)
 			{
-				double theta = atan2(rVec[0], rVec[1]);
-				double phi = acos(rVec[2] / r);
+				double theta = acos(rVec[2] / r);
+				double phi = atan2(rVec[0], rVec[1]);
 				double psiR = (*funs[orb])(r) / r;
 				int l = ((int) indices[orb].size() / 2 - 1) / 2;
-				for (int m = -l - 1; m <= l + 1; ++m)
+				for (int m = -l; m <= l; ++m)
 				{
 					val.Re = psiR * ReSphericalHarmonicY(l, m, theta, phi);
 					val.Im = psiR * ImSphericalHarmonicY(l, m, theta, phi);
@@ -69,14 +69,14 @@ vector<Complex16> realspaceBasisValues(const vector<double> &v, const vector<str
 				}
 				val.Re = (*funs[orb])(r) / step / multicellFactor;
 				val.Im = 0;
-				for (uint m = 0; m < (uint) indices[orb].size(); ++m)
+				for (uint m = 0; m < (uint) indices[orb].size() / 2; ++m)
 					psi.push_back(val);
 			}
 		} else
 		{
 			val.Re = 0;
 			val.Im = 0;
-			for (uint m = 0; m < (uint) indices[orb].size(); ++m)
+			for (uint m = 0; m < (uint) indices[orb].size() / 2; ++m)
 				psi.push_back(val);
 		}
 	}
@@ -129,13 +129,13 @@ vector<doubleVecValPair> realspaceElectronDensity(const CompactMatrixType &rho, 
 				v[1] = y;
 				v[2] = z;
 
-				const vector<Complex16> psi = realspaceBasisValues(v, orbs, atomPos, interRanges, funs, indices, step);
+				const vector<Complex16> psi = realspaceBasisValuesNoSpin(v, orbs, atomPos, interRanges, funs, indices, step);
 				double denVal = 0;
 				for (uint i = 0; i < (uint) rhoNoSpin.Ni; ++i)
 				{
 					for (uint j = 0; j < (uint) rhoNoSpin.Nj; ++j)
 					{
-						if (rhoNoSpin.V[i * rhoNoSpin.Nj + j].Re != 0)
+						if (rhoNoSpin.V[i * rhoNoSpin.Nj + j].Re != 0 || rhoNoSpin.V[i * rhoNoSpin.Nj + j].Im != 0)
 						{
 //						Any off-diagonal imaginary parts cancel out because rho is hermetian.
 							denVal += rhoNoSpin.V[i * rhoNoSpin.Nj + j].Re * (psi[i].Re * psi[j].Re + psi[i].Im * psi[j].Im);
@@ -247,7 +247,7 @@ vector<vector<double> > realspaceSpinDensityValues(const CompactMatrixType &rho,
 #pragma omp parallel for
 	for (uint p = 0; p < (uint) points.size(); ++p)
 	{
-		const vector<Complex16> psi = realspaceBasisValues(points[p], orbs, atomPos, interRanges, funs, indices, DBL_EPSILON * 1000);
+		const vector<Complex16> psi = realspaceBasisValuesNoSpin(points[p], orbs, atomPos, interRanges, funs, indices, DBL_EPSILON * 1000);
 		vector<double> denVals(densities.size());
 		for (uint den = 0; den < (uint) densities.size(); ++den)
 		{
@@ -256,9 +256,9 @@ vector<vector<double> > realspaceSpinDensityValues(const CompactMatrixType &rho,
 			{
 				for (uint j = 0; j < (uint) densities[den].Nj; ++j)
 				{
-					if (densities[den].V[i * densities[den].Nj + j].Re != 0)
+					if (densities[den].V[i * densities[den].Nj + j].Re != 0 || densities[den].V[i * densities[den].Nj + j].Im != 0)
 					{
-					//						Any off-diagonal imaginary parts cancel out because rho is hermetian.
+						//						Any off-diagonal imaginary parts cancel out because rho is hermetian.
 						denVal += densities[den].V[i * densities[den].Nj + j].Re * (psi[i].Re * psi[j].Re + psi[i].Im * psi[j].Im);
 						denVal += densities[den].V[i * densities[den].Nj + j].Im * (psi[i].Im * psi[j].Re - psi[i].Re * psi[j].Im);
 					}
@@ -321,13 +321,12 @@ double findIsosurfaceVal(const vector<doubleVecValPair> &density, double portion
 	double fullSum = 0;
 	for (uint i = 0; i < (uint) density.size(); ++i)
 		fullSum += density[i].val;
-//	TODO: Verbosity Print for fullInt.
-	double threshold = fullSum;
-	double partialSum = 0;
-	while (partialSum < fullSum * portion)
+	double threshold = 0;
+	double partialSum = fullSum;
+	while (partialSum > fullSum * portion)
 	{
 		partialSum = 0;
-		threshold -= step;
+		threshold += step;
 		for (uint i = 0; i < (uint) density.size(); ++i)
 			if (density[i].val > threshold)
 				partialSum += density[i].val;
@@ -371,7 +370,7 @@ vector<vector<double> > isosurface(const vector<doubleVecValPair> &density, doub
 }
 
 static int LuaRealspaceDensityCheckAndSecurityMeasures(lua_State * L, CompactMatrixType &rho, vector<Interpolation::InterpolatingFunction*> &funs, vector<string> &orbs,
-		vector<vector<double> > &atomPos, bool hasAtomPos)
+		vector<vector<double> > &atomPos, bool hasAtomPos, int gridpoints, double domain)
 {
 	lua_check(L, 1, rho);
 	lua_check(L, 2, funs);
@@ -399,6 +398,12 @@ static int LuaRealspaceDensityCheckAndSecurityMeasures(lua_State * L, CompactMat
 	uint NF = NumberOfFermionicStates(orbs);
 	if (NF != rho.Ni)
 		return luaL_error(L, "Error in calculating RealspaceDensity: Number of fermionic states obtained from orbitals (%d) is unequal to size of density matrix (%d).", NF, rho.Ni);
+
+	if (gridpoints <= 1)
+		return luaL_error(L, "Error in calculating RealspaceDensity: Need at least 2 gridpoints. %d is just not enough.", gridpoints);
+
+	if (domain <= 0)
+		return luaL_error(L, "Error in calculating RealspaceDensity: Domain needs to be positive.");
 
 	if (!QCompactMatrixHermitian(rho, DBL_EPSILON * 10))
 		cout << "Warning: density matrix for calculating RealspaceDensity is not fully hermitian. The code will assume it to be." << endl;
@@ -455,7 +460,7 @@ static int LuaRealspaceDensity(lua_State * L)
 		}
 	}
 
-	LuaRealspaceDensityCheckAndSecurityMeasures(L, rho, funs, orbs, atomPos, hasAtomPos);
+	LuaRealspaceDensityCheckAndSecurityMeasures(L, rho, funs, orbs, atomPos, hasAtomPos, Options.gridpoints, Options.domain);
 
 	if (Options.domain == 0)
 		lua_push(L, realspaceElectronDensity(rho, funs, orbs, atomPos, Options.gridpoints));
@@ -597,7 +602,7 @@ static int LuaIsosurface(lua_State * L, bool hasThreshold)
 		lua_check(L, 1, realspaceDensity);
 	} else
 	{
-		LuaRealspaceDensityCheckAndSecurityMeasures(L, rho, funs, orbs, atomPos, hasAtomPos);
+		LuaRealspaceDensityCheckAndSecurityMeasures(L, rho, funs, orbs, atomPos, hasAtomPos, Options.gridpoints, Options.domain);
 
 		if (Options.domain == 0)
 			realspaceDensity = realspaceElectronDensity(rho, funs, orbs, atomPos, Options.gridpoints);
@@ -630,7 +635,14 @@ static int LuaIsosurface(lua_State * L, bool hasThreshold)
 	if (Options.file != "")
 	{
 		saveIsosurface(iso, realspaceSpin, Options.file);
-		returnInt = 0;
+		if (hasThreshold)
+		{
+			returnInt = 0;
+		} else
+		{
+			lua_push(L, threshold);
+			returnInt = 1;
+		}
 	} else
 	{
 		lua_push(L, iso);

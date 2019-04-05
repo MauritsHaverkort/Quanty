@@ -2,7 +2,7 @@ void lua_push(lua_State * L, const doubleVecValPair &pushkin);
 void lua_check(lua_State * L, int arg, doubleVecValPair &in);
 double vecNorm(const vector<double> &v);
 vector<double> interpolationRanges(const vector<Interpolation::InterpolatingFunction*> &funs);
-vector<Complex16> realspaceBasisValues(const vector<double> &v, const vector<string> &orbs, const vector<vector<double> > &atomPos, const vector<double> &interRanges,const vector<Interpolation::InterpolatingFunction*> &funs, const vector<vector<uint16_t> > indices, const double step);
+vector<Complex16> realspaceBasisValuesNoSpin(const vector<double> &v, const vector<string> &orbs, const vector<vector<double> > &atomPos, const vector<double> &interRanges,const vector<Interpolation::InterpolatingFunction*> &funs, const vector<vector<uint16_t> > indices, const double step);
 CompactMatrixType densityMatrixNoSpin(const CompactMatrixType &rho);
 vector<doubleVecValPair> realspaceElectronDensity(const CompactMatrixType &rho, const vector<Interpolation::InterpolatingFunction*> &funs, const vector<string> &orbs,const vector<vector<double> > &atomPos, const uint gridpoints);
 CompactMatrixType densityMatrixSx(const CompactMatrixType &rho);
@@ -15,7 +15,6 @@ vector<double> vecAverage(const vector<double> &v1, const vector<double> &v2, do
 double findIsosurfaceVal(const vector<doubleVecValPair> &density, double portion, double step);
 double findIsosurfaceVal(const vector<doubleVecValPair> &density, double portion);
 vector<vector<double> > isosurface(const vector<doubleVecValPair> &density, double threshold);
-static int LuaRealspaceDensityCheckAndSecurityMeasures(lua_State * L, CompactMatrixType &rho, vector<Interpolation::InterpolatingFunction*> &funs, vector<string> &orbs,vector<vector<double> > &atomPos, bool hasAtomPos);
 static int LuaRealspaceDensity(lua_State * L);
 void saveIsosurface(const vector<vector<double> > &iso, const vector<vector<double> > &spinDensitiyVals, const char *file);
 static int LuaIsosurface(lua_State * L, bool hasThreshold);
