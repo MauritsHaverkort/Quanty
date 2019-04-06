@@ -403,7 +403,7 @@ void CalculateOverlapMatrix(const vector<WaveFunctionType> &psi, CompactMatrixTy
 	{
 		for (uint32_t j = i; j < S.Nj; j++)
 		{
-			S.VRe[i*S.Nj + j] = RealWaveFunctionDotProduct(&psi[i],&psi[j]);
+			S.VRe[i*S.Nj + j] = RealWaveFunctionDotProductSameBasis(psi[i],psi[j]);
 			S.VRe[j*S.Nj + i] = S.VRe[i*S.Nj + j];
 		}
 	}
