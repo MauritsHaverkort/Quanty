@@ -1460,7 +1460,7 @@ static int LuaSpectraMul(lua_State * L)
                 for(j=0;j<=res->Spec[i].N;j++)
                 {
                   res->Spec[i].Re[j]= a->Spec[i].Re[j] * b->Spec[i].Re[j] - a->Spec[i].Im[j] * b->Spec[i].Im[j];
-                  res->Spec[i].Im[j]= a->Spec[i].Re[j] * b->Spec[i].Im[j] - a->Spec[i].Im[j] * b->Spec[i].Re[j];
+                  res->Spec[i].Im[j]= a->Spec[i].Re[j] * b->Spec[i].Im[j] + a->Spec[i].Im[j] * b->Spec[i].Re[j];
                 }
               }
               else
