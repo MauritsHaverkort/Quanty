@@ -63,7 +63,7 @@ double DipoleMatrixElement(double deltaE, double grg, double frf, uint32_t mu, i
 	//printf("Clebsh: %f\n",ClebschHalf(2*l1A,twom1-1,1, 1,twoj1,twom1) * ClebschHalf(2*l2A,twom2-1,1, 1,twoj2,twom2));
 	//printf("YYY: %f\n",YYYintegral(l1A,(twom1-1)/2,1,1,l2A,(twom2-1)/2));
 	//printf("\nmu = %d\nl1A = %i\nl2A = %i\nm1 = %i/2\nm2 = %i/2\n",mu,l1A,l2A,twom1,twom2);
-	double result, resultG,resultF;
+	double resultG,resultF;
 	switch (mu) {
 		case 0:
 
@@ -135,7 +135,6 @@ double ParseFPLOEnergies(const char *filename, const string &orbital, const stri
 	else
 	{
 		std::string word;
-		double val;
 		while(!file.eof() && word != "ENERGIES")
 		{
 			file >> word;

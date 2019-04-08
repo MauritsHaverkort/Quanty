@@ -25,7 +25,7 @@ uint32_t ResonantSpectraSelfEnergy(const OperatorType OppH1, const OperatorType 
   WaveFunctionType Tpsi,GTpsi,TGTpsi, PsiBasis[settings->NTri1],*EigenBasis;
   TriDiagonalMatrixType SpecTri1;
   MatrixType EFun;
-  double EVal[settings->NTri1], EValInvRe[settings->NTri1], EValInvIm[settings->NTri1],tempDoubleRe,tempDoubleIm, EVal2[settings->NTri2], Norm;
+  double EVal[settings->NTri1],  tempDoubleRe,tempDoubleIm, EVal2[settings->NTri2], Norm; // EValInvRe[settings->NTri1],EValInvIm[settings->NTri1],
   int i,p,k;
   double wRes;
   uint32_t NSelfEnergy = (uint32_t) U.size();

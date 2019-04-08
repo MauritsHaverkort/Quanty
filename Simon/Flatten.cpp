@@ -17,14 +17,14 @@ static int LuaFlatten(lua_State * L)
 		for (uint recDepth = 1; recDepth <= maxRecDepth; ++recDepth)
 		{
 			lua_newtable(L);
-			uint32_t size = lua_objlen(L, recDepth);
+			uint32_t size = (uint32_t)lua_objlen(L, recDepth);
 			uint ind = 1;
 			for (uint i = 1; i <= size; ++i)
 			{
 				lua_rawgeti(L, recDepth, i);
 				if (lua_istable(L, -1))
 				{
-					uint32_t size2 = lua_objlen(L, -1);
+					uint32_t size2 = (uint32_t)lua_objlen(L, -1);
 					for (uint j = 1; j <= size2; ++j)
 					{
 						lua_rawgeti(L, -1, j);

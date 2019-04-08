@@ -117,7 +117,7 @@ void SelectDominantResiduesAndPoles(const std::vector<double> &poles, const std:
 {
 	if (poles.size() < residues.size())
 	{
-		printf("error in SelectDominantResiduesAndPoles: poles.size() = %d < %d = residues.size()\n",poles.size(),residues.size());
+		printf("error in SelectDominantResiduesAndPoles: poles.size() = %u < %u = residues.size()\n",(uint32_t)poles.size(),(uint32_t)residues.size());
 		fflush(stdout);
 		return;
 	}
@@ -138,7 +138,7 @@ Complex16 Resolvent(Complex16 z, const std::vector<double> &poles, const std::ve
 	result.Im = 0;
 	if (poles.size() < residues.size())
 	{
-		printf("error in Resolvent: poles.size() = %d < %d = residues.size()",poles.size(),residues.size());
+		printf("error in Resolvent: poles.size() = %u < %u = residues.size()",(uint32_t)poles.size(),(uint32_t)residues.size());
 		fflush(stdout);
 		return result;
 	}
@@ -156,7 +156,7 @@ Complex16 Resolvent(Complex16 z, const std::vector<double> &poles, const std::ve
 	result.Im = 0;
 	if (poles.size() < residues.size() || poles.size() != selfenergy.size())
 	{
-		printf("error in Resolvent: poles.size() = %d < %d = residues.size()",poles.size(),residues.size());
+		printf("error in Resolvent: poles.size() = %u < %u = residues.size()",(uint32_t)poles.size(),(uint32_t)residues.size());
 		fflush(stdout);
 		return result;
 	}

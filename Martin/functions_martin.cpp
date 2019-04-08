@@ -470,7 +470,7 @@ static int LuaPlotSpectrumWithSelfEnergy(lua_State *L)
 		return luaL_error(L,"PlotSpectrumWithSelfEnergy: Hamiltonian and ground state do not have the same dimensions - dim(H) = %d and dim(psi) = %d\n",H.size(),psi.size());
 	}
 	luaL_checktype(L, 3, LUA_TTABLE);
-	uint32_t lenSigma = lua_objlen(L,3);
+	uint32_t lenSigma = (uint32_t)lua_objlen(L,3);
 	SigmaRes.reserve(lenSigma);
 	for(uint32_t i = 1; i <= lenSigma; i++)
 	{
@@ -505,7 +505,7 @@ static int LuaPlotSpectrumWithSelfEnergy(lua_State *L)
 
 	}
 
-	lua_createtable(L,graph.size(),0);
+	lua_createtable(L,(int)graph.size(),0);
 	for (uint32_t i = 0; i < graph.size(); i++)
 	{
 		LuaPushArray_double(L,&(graph[i][0]),2);
@@ -527,7 +527,7 @@ static int LuaEvaluateSelfEnergy(lua_State *L)
 		return luaL_error(L,"PlotSpectrumWithSelfEnergy needs 8 arguments not %d\n",len);
 	}
 */	luaL_checktype(L, 1, LUA_TTABLE);
-	uint32_t lenSigma = lua_objlen(L,1);
+	uint32_t lenSigma = (uint32_t) lua_objlen(L,1);
 	SigmaRes.reserve(lenSigma);
 	for(uint32_t i = 1; i <= lenSigma; i++)
 	{
@@ -638,7 +638,7 @@ static int LuaCalcSpectrumWithSelfEnergy(lua_State *L)
 	double wMin, wMax,dw, gH;
 	std::vector<double> psi, H; // TODO make H generic: either Matrix, TriDiagonalMatrix or DiagonalMatrix
 	std::vector<CompactMatrixType *> Sigma;
-	uint32_t len = lua_gettop(L);
+	//uint32_t len = lua_gettop(L);
 
 	H   = luaL_checkarray_double(L,1);
 	psi = luaL_checkarray_double(L,2);
@@ -807,7 +807,7 @@ static int LuaSparseTridiagonalize(lua_State *L)
 	lua_check(L,4,N);
 	OperatorType *OppT = (OperatorType *) luaL_checkudata(L, 3, "Operator_Type");
 	Opsi = std::vector<WaveFunctionType>(psi.size());
-	startblock.reserve(dets->N,psi.size());
+	startblock.reserve(dets->N,(uint32_t) psi.size());
 	OperatorToSparseMatrix(H,dets,Hsparse);
 	printf("Matrix created with %lu nve\n",Hsparse.A.size());
 	for(uint32_t i = 0; i < startblock.N; i++)
@@ -885,7 +885,7 @@ static int LuaCSRTridiagonalize(lua_State *L)
 	lua_check(L,4,N);
 	OperatorType *OppT = (OperatorType *) luaL_checkudata(L, 3, "Operator_Type");
 	Opsi = std::vector<WaveFunctionType>(psi.size());
-	startblock.reserve(dets->N,psi.size());
+	startblock.reserve(dets->N,(uint32_t)psi.size());
 	printf("Matrix created with %lu nve\n",Hsparse->A.size());
 	for(uint32_t i = 0; i < startblock.N; i++)
 	{
@@ -961,7 +961,7 @@ static int LuaSparseOperator(lua_State *L)
 	//printf("Matrix created with %lu nve\n",M.A.size());
 	std::vector<double> vec, a, b, y;
 	WaveFunctionToVector(psi,vec,psi);
-	uint32_t Mrow = vec.size();
+	uint32_t Mrow = (uint32_t) vec.size();
 	uint32_t Ncol = 2;
 	LinAlg::Matrix<double> startblock = LinAlg::Matrix<double>(Mrow,Ncol);
 	/*for(uint32_t i = 0; i < Mrow;i++)
@@ -1058,7 +1058,7 @@ static int LuaSparseOperator(lua_State *L)
 /*
 
 
-/*
+
 	Lanczos(M,SkalarProdukt,VectorAdd<double>,VectorMul<double>,vec,6,a,b,T);
 	for (uint32_t i = 0; i < a.size(); i++)
 	{
