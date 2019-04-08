@@ -664,6 +664,11 @@ void BlockCalculateEnergyIndependentSelfEnergy(const OperatorType &H, const Wave
 	{
 		Upsi[i].NBitsKey = Upsi[N-1].NBitsKey;
 		Upsi[i].ValueRe = (double**) realloc(Upsi[i].ValueRe, Upsi[N-1].NBlok * sizeof(double *));
+
+		for (uint32_t j = Upsi[i].NBlok; j < Upsi[N-1].NBlok; j++)
+		{
+			Upsi[i].ValueRe[j] = (double*)calloc(BlokSize, sizeof(double));
+		}
 		if(Upsi[i].N % BlokSize)
 		{
 			uint32_t rest = (Upsi[i].NBlok == Upsi[N-1].NBlok ? Upsi[N-1].N - Upsi[i].N : BlokSize - Upsi[i].N % BlokSize);
@@ -671,10 +676,6 @@ void BlockCalculateEnergyIndependentSelfEnergy(const OperatorType &H, const Wave
 			{
 				Upsi[i].ValueRe[BlokElement(Upsi[i].N + k+1)] = 0;
 			}
-		}
-		for (uint32_t j = Upsi[i].NBlok; j < Upsi[N-1].NBlok; j++)
-		{
-			Upsi[i].ValueRe[j] = (double*)calloc(BlokSize, sizeof(double));
 		}
 		Upsi[i].NBlok = Upsi[N-1].NBlok;
 		Upsi[i].N = Upsi[N-1].N;
