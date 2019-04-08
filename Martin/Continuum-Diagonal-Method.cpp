@@ -418,7 +418,7 @@ void CalculateBlockMatrixElements(const vector<WaveFunctionType> &basis,const Op
 	M.Ni = (uint32_t) basis.size();
 	M.Nj = M.Ni;
 	InitCompactMatrix(&M);
-#pragma omp parallel for
+//#pragma omp parallel for
 	for (uint32_t k = 1; k <= basis[Nbas-1].N; k++)
 	{
 		uint8_t Det[basis[Nbas-1].NWord];
@@ -447,7 +447,7 @@ void CalculateBlockMatrixElements(const vector<WaveFunctionType> &basis,const Op
 							for (uint32_t j = 0; j < M.Ni; j++)
 							{
 								double val = phase * vi* basis[j].ValueRe[BlokElement(idxDet)]*vH;
-#pragma omp atomic update
+//#pragma omp atomic update
 								pos[j] += val;
 								//M.VRe[i*M.Nj + j] += val;
 							}
