@@ -168,6 +168,11 @@ CompactMatrixType* luaL_checkCompactMatrix(lua_State *L, int narg)
   buff= (CompactMatrixType*)malloc(sizeof(CompactMatrixType));
   buff->QComplex=1;
   buff->Ni=len;
+	if (len == 0)
+	{
+		buff->Nj = 0;
+		InitCompactMatrix(buff);
+	}
   for(i=0;i<len;i++)
   {
     lua_rawgeti(L, narg, i+1);
