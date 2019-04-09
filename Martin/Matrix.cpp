@@ -18,7 +18,7 @@ Matrix<F>::~Matrix() {
 	//printf("Ceterum censeo Carthaginem esse delendam.\n");
 }
 template<typename F>
-Matrix<F>::Matrix(uint32_t Mrows,uint32_t Ncols,bool RowMajor = false)
+Matrix<F>::Matrix(uint32_t Mrows,uint32_t Ncols,bool RowMajor)
 {
 	M = Mrows;
 	N = Ncols;

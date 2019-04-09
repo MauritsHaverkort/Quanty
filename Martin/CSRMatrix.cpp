@@ -64,7 +64,7 @@ CSRMatrix<F>::CSRMatrix(std::vector<SparseTriple_t<F> > &M)
 template<typename F>
 void CSRMatrix<F>::AddRow(std::map<uint32_t,F> rowEntries)
 {
-	uint32_t M = AI.size();
+	uint32_t M = (uint32_t)AI.size();
 	if (M == 0)
 	{
 		AI.push_back(0);
@@ -100,7 +100,7 @@ void CSRMatrix<F>::Evaluate(const std::vector<F> &x,std::vector<F> &y)
 template<typename F>
 void CSRMatrix<F>::AdjointEvaluate(const std::vector<F> &x,std::vector<F> &y)
 {
-	uint32_t M = AI.size()-1;
+	uint32_t M = (uint32_t)AI.size()-1;
 
 	y = std::vector<F>(Ncol);
 

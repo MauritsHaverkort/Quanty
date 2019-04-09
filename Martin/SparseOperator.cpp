@@ -172,7 +172,7 @@ int CompSortPairIdx(const void* a,const void* b)
 void LoewdinSVDOrthonormalize(LinAlg::Matrix<double> &A, double epsSV, uint32_t &nSV)
 {
 	double *U, *S, *VT, *work;
-	int *iwork;
+	//int *iwork;
 	char const *JOBU ="S";  /* in SVD A = U S V^T return the first min(Ni,Nj) collumns of U in matrix A, which is over written */
 	char const *JOBVT="A";  /* in SVD A = U S V^T return full array VT */
 
