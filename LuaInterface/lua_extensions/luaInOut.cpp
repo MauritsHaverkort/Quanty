@@ -363,13 +363,13 @@ bool luaL_isType(lua_State *L, int arg, const CompactMatrixType &example)
 			return false;
 
 		lua_rawgeti(L, arg, 1);
-		// uint len_row = (uint) lua_objlen(L, -1); This variable is unused ... Bug or not?
+		uint len_row = (uint) lua_objlen(L, -1);
 		lua_pop(L, 1);
 
 		for (uint i = 1; i <= len; ++i)
 		{
 			lua_rawgeti(L, arg, 1);
-			if (!luaL_isType(L, -1, vector<double>(), len) && !luaL_isType(L, -1, vector<Complex16>(), len))
+			if (!luaL_isType(L, -1, vector<double>(), len_row) && !luaL_isType(L, -1, vector<Complex16>(), len_row))
 			{
 				lua_pop(L, 1);
 				return false;
