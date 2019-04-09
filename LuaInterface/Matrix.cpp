@@ -490,7 +490,10 @@ static int LuaMatrixIdentity(lua_State * L)
   res->QComplex=0;
   res->Ni = (uint32_t)luaL_checkinteger(L, 1);
   res->Nj = res->Ni;
-  InitCompactIdentityMatrix(res);
+	if (res->Ni != 0)
+		InitCompactIdentityMatrix(res);
+	else
+		InitCompactMatrix(res);
   if(Userdata==false)
   {
     LuaPushTable_CompactMatrixType(L, res);
@@ -1366,7 +1369,7 @@ static int LuaMatrixFlatten(lua_State * L)
 			}
       else
 			{
-				allMs[i][j]  = luaL_checkCompactMatrix(L, -1);
+				lua_check(L, -1, allMs[i][j]);
         if(allMs[i][j]->OnLuaStack==true) ReturnAsUserdata=true;
 			}
 			lua_pop(L, 1);
