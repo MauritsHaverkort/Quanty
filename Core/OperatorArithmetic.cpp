@@ -1666,7 +1666,7 @@ uint32_t NormalOrderOperator(const OperatorType O, OperatorType * const Oo, uint
 /*
  *
  */
-double RealOperatorTrace(const OperatorType O, uint16_t *Orbitals, int NOrbitals)
+double RealOperatorTraceAverage(const OperatorType O, uint16_t *Orbitals, int NOrbitals)
 {
   double trace=0;
   uint32_t i,j;
@@ -1690,7 +1690,7 @@ double RealOperatorTrace(const OperatorType O, uint16_t *Orbitals, int NOrbitals
   }
   return trace/NOrbitals;
 }
-Complex16 ComplexOperatorTrace(const OperatorType O, uint16_t *Orbitals, int NOrbitals)
+Complex16 ComplexOperatorTraceAverage(const OperatorType O, uint16_t *Orbitals, int NOrbitals)
 {
   Complex16 trace={0,0};
   uint32_t i,j;
@@ -1714,22 +1714,22 @@ Complex16 ComplexOperatorTrace(const OperatorType O, uint16_t *Orbitals, int NOr
   }
   return trace/NOrbitals;
 }
-Complex16 OperatorTrace(const OperatorType O, uint16_t *Orbitals, int NOrbitals)
+Complex16 OperatorTraceAverage(const OperatorType O, uint16_t *Orbitals, int NOrbitals)
 {
-  Complex16 trace={0,0};
-  if(O.MaxLength<2) return trace;
+  Complex16 traceAverage={0,0};
+  if(O.MaxLength<2) return traceAverage;
   if(O.l[2].QComplex==0)
   {
-    trace.Re = RealOperatorTrace(O,Orbitals,NOrbitals);
+    traceAverage.Re = RealOperatorTraceAverage(O,Orbitals,NOrbitals);
   }
   else
   {
-    trace = ComplexOperatorTrace(O,Orbitals,NOrbitals);
+    traceAverage = ComplexOperatorTraceAverage(O,Orbitals,NOrbitals);
   }
-  return trace;
+  return traceAverage;
 }
 
-uint32_t RealOperatorAddTrace(OperatorType *O, uint16_t *Orbitals, int NOrbitals, double Trace)
+uint32_t RealOperatorAddDiagonalOffset(OperatorType *O, uint16_t *Orbitals, int NOrbitals, double offset)
 {
   uint32_t i;
   uint16_t oadd[2];
@@ -1737,12 +1737,12 @@ uint32_t RealOperatorAddTrace(OperatorType *O, uint16_t *Orbitals, int NOrbitals
   {
     oadd[1]=CrAnMask + Orbitals[i];
     oadd[0]=Orbitals[i];
-    RealOperatorAddLader(O, oadd, 2, Trace);
+    RealOperatorAddLader(O, oadd, 2, offset);
   }
   return 0;
 }
 
-uint32_t ComplexOperatorAddTrace(OperatorType *O, uint16_t *Orbitals, int NOrbitals, Complex16 Trace)
+uint32_t ComplexOperatorAddDiagonalOffset(OperatorType *O, uint16_t *Orbitals, int NOrbitals, Complex16 offset)
 {
   uint32_t i;
   uint16_t oadd[2];
@@ -1750,7 +1750,7 @@ uint32_t ComplexOperatorAddTrace(OperatorType *O, uint16_t *Orbitals, int NOrbit
   {
     oadd[1]=CrAnMask + Orbitals[i];
     oadd[0]=Orbitals[i];
-    ComplexOperatorAddLader(O, oadd, 2, Trace.Re, Trace.Im);
+    ComplexOperatorAddLader(O, oadd, 2, offset.Re, offset.Im);
   }
   return 0;
 }
@@ -6380,7 +6380,7 @@ uint32_t QOperatorHermitian(OperatorType O, const double epsilon)
   return 0;
 }
 
-bool isOperatorAlmostHermitian(OperatorType O, const double epsilon)
+bool isOperatorAlmostHermitian(const OperatorType &O, const double epsilon)
 {
 	int q = QOperatorHermitian(O, epsilon);
 	return (q == 1 || q == 2);
@@ -6507,9 +6507,10 @@ void extractPartialOperatorFixedLength(OperatorType * const O, OperatorType * co
 	uint16_t oadd[length];
 	int firstIndexOfBlock;
 	InitOperatorFixedLength(OPartial, length, 8);
-	for (int i = 0; i < length * (O->l[length].N); i++)
+	for (uint i = 0; i < length * (O->l[length].N); i++)
 	{
-		if (isIntElementOf(NotCrAnMask & O->l[length].o[i], indices))
+		uint16_t AnInd = NotCrAnMask & O->l[length].o[i];
+		if (isElementOf(AnInd, indices))
 		{
 			firstIndexOfBlock = i - (i % length);
 			for (int j = 0; j < length; j++)

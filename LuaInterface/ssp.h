@@ -14,7 +14,7 @@ static int LuaCreateResonantSpectra(lua_State *L);
 static int LuaCreateFluorescenceYield(lua_State *L);
 static int LuaMeanFieldGroundstate(lua_State *L);
 static int LuaMeanFieldOperator(lua_State *L);
-static int LuaOperatorSetTrace(lua_State *L);
+static int LuaOperatorSetOnsiteEnergy(lua_State *L);
 static int LuaOperatorToMatrix(lua_State *L);
 static int LuaEvolveToGroundstate(lua_State * L);
 static int LuaEigensystemDenseTable(lua_State *L);

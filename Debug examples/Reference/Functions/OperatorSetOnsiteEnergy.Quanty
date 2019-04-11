@@ -1,0 +1,24 @@
+Orbitals = {"1s","2s"}
+Indices, NF = CreateAtomicIndicesDict(Orbitals)
+e1s = 1
+e2s = 2
+F0ss = 0.5
+O = NewOperator("Number", NF, Indices["1s"], Indices["1s"],{e1s, e1s})
+    + NewOperator("Number", NF, Indices["2s"], Indices["2s"],{e2s, e2s})
+    + NewOperator("U", NF, Indices["1s_Up"], Indices["1s_Dn"],{F0ss})
+    + NewOperator("U", NF, Indices["2s_Up"], Indices["2s_Dn"],{F0ss})  
+O.Name = "Operator"
+print(O)
+
+print("Set Operator trace average to 0")
+OperatorSetOnsiteEnergy(O)
+print(O)
+
+print("Set Operator trace average to 2")
+OperatorSetOnsiteEnergy(O,2)
+print(O)
+
+print("Set trace average of 1s orbitals to -1, and trace average of 2s orbitals to 15")
+OperatorSetOnsiteEnergy(O,-1,Indices["1s"])
+OperatorSetOnsiteEnergy(O,15,Indices["2s"])
+print(O)

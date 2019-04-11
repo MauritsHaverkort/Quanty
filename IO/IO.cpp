@@ -10,3 +10,4 @@
 #include "StringPrint.cpp"
 #include "StuttgartNMTO.cpp"
 #include "postscript.cpp"
+#include "IO.class"

@@ -1,12 +1,12 @@
 -- define the orbitals that shall be taken into account
---orbitalLabels = {"1s1/2","2s1/2","2p1/2","2p3/2"}
-orbitalLabels = {"1s1/2","2s1/2","3s1/2","4s1/2","5s1/2","6s1/2","2p1/2","3p1/2","4p1/2","5p1/2","2p3/2","3p3/2","4p3/2","5p3/2","3d3/2","4d3/2","3d5/2","4d5/2","4f5/2","4f7/2"}
+orbitalLabels = {"1s1/2","2s1/2","2p1/2","2p3/2"}
+--orbitalLabels = {"1s1/2","2s1/2","3s1/2","4s1/2","5s1/2","6s1/2","2p1/2","3p1/2","4p1/2","5p1/2","2p3/2","3p3/2","4p3/2","5p3/2","3d3/2","4d3/2","3d5/2","4d5/2","4f5/2","4f7/2"}
 -- group orbitals by kappa: (note that here indexing is used as in c++)
 --          orbitalLabels[0+1] and orbitalLabels[1+1] have kappa = -1
 --          orbitalLabels[2+1] has kappa =  1
 --          orbitalLabels[3+1] has kappa = -2
---groupingByKappa = {{-1,{0,1}},{1,{2}},{-2,{3}}}
-groupingByKappa = {{-1,{0,1,2,3,4,5}},{1,{6,7,8,9}},{-2,{10,11,12,13}},{2,{14,15}},{-3,{16,17}},{3,{18}},{-4,{19}}}
+groupingByKappa = {{-1,{0,1}},{1,{2}},{-2,{3}}}
+--groupingByKappa = {{-1,{0,1,2,3,4,5}},{1,{6,7,8,9}},{-2,{10,11,12,13}},{2,{14,15}},{-3,{16,17}},{3,{18}},{-4,{19}}}
 -- nuclear charge
 Z = 67
 -- Simon's function that generates the quantum number labels
@@ -17,7 +17,7 @@ G, F = ReadFPLOBasisFunctions(orbitalLabels,"+fval.001.1", "+fval.001.2")
 H0 = NewOperator("Dirac",NF,Z,indices,G,F,groupingByKappa)
 -- Create Coulomb operator for all possible interactions between the chosen orbitals
 U  = NewOperator("AtomicU",NF,indices,G,F)
---[[
+---[[
 H = H0 + U
 
 print(H)

@@ -9,7 +9,12 @@
 #include "CreateOperators.cpp"
 #include "PlotSpectrumWithSelfEnergy.cpp"
 #include "CSRMatrix.cpp"
+#include "Matrix.cpp"
 #include "SparseOperator.cpp"
+#include "CouplingToEMField.cpp"
+#include "AuxFunctions.cpp"
+#include "ResonantSpectraSelfEnergy.cpp"
+#include "Continuum-Diagonal-Method.cpp"
 
 
 static int LuaOperatorNewFullCoulomb (lua_State *L)
@@ -155,7 +160,9 @@ static int LuaOperatorNewFullCoulomb (lua_State *L)
     		uint32_t test = (uint32_t)luaL_checkunsigned(L, 6);
     		if (test == 2)
     		{
-    			CreateOperatorSingleCoulombRelativistic(NF,wavefunctions->VRe,wavefunctions->Ni,x,NGridpoints,tuple, NIntegrals,indices, op);
+    			double cutoff;
+    			lua_check(L,7,cutoff);
+    			CreateOperatorSingleCoulombRelativistic(NF,wavefunctions->VRe,wavefunctions->Ni,x,NGridpoints,tuple, NIntegrals,indices, op,cutoff);
     		}
     		else
     		{
@@ -446,51 +453,6 @@ static int LuaMetricWaveFuns(lua_State *L)
 	return 1;
 }
 
-static int LuaMartinTest(lua_State *L)
-{
-	uint32_t NfunsG = (uint32_t)lua_objlen(L,1);
-	vector<Interpolation::InterpolatingFunction *> funsG = vector<Interpolation::InterpolatingFunction *>(NfunsG);
-	for(uint32_t i = 0; i < NfunsG; i++)
-	{
-		lua_rawgeti(L, 1, i+1);
-		funsG[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
-		lua_pop(L,1);
-	}
-	vector<Interpolation::InterpolatingFunction *> funsF = vector<Interpolation::InterpolatingFunction *>(NfunsG);
-	for(uint32_t i = 0; i < NfunsG; i++)
-	{
-		lua_rawgeti(L, 2, i+1);
-		funsF[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
-		lua_pop(L,1);
-	}
-
-	uint32_t k = 7;
-	vector<double> x = funsG[0]->GetX();
-	printf("x = %.8E\n",x[x.size()-1]);
-	vector<double> knots = Quad::GetKnots(k,x);
-	//PrintArray(&x[0],x.size());
-	vector<double> g = (*funsG[0])(knots);
-	vector<double> f = (*funsF[0])(knots);
-	vector<double> w = Quad::GetWeights(k,x);
-	vector<double> dg = w * g;
-	vector<double> df = w * f;
-	double res = 0;
-	for (uint32_t i = 0; i < g.size(); i++)
-	{
-		res += df[i]*f[i] +dg[i]*g[i];
-
-	}
-	printf("%.8E\n",res);
-	printf("%.8E\n",Quad::GetMultipoleIntegral(*(Interpolation::CubicSpline*)funsG[0],*(Interpolation::CubicSpline*)funsG[0],0));
-	printf("%.8E\n",Quad::GetMultipoleIntegral(*(Interpolation::CubicSpline*)funsG[0],*(Interpolation::CubicSpline*)funsG[0],1));
-	printf("%.8E\n\n",Quad::GetMultipoleIntegral(*(Interpolation::CubicSpline*)funsG[0],*(Interpolation::CubicSpline*)funsG[0],2));
-
-	printf("%.8E\n",Quad::GetMultipoleIntegral(*funsG[0],*funsG[0],0,k));
-	printf("%.8E\n",Quad::GetMultipoleIntegral(*funsG[0],*funsG[0],1,k));
-	printf("%.8E\n",Quad::GetMultipoleIntegral(*funsG[0],*funsG[0],2,k));
-	return 0;
-}
-
 static int LuaPlotSpectrumWithSelfEnergy(lua_State *L)
 {
 	double wMin, wMax,dw, gH, gS;
@@ -508,7 +470,7 @@ static int LuaPlotSpectrumWithSelfEnergy(lua_State *L)
 		return luaL_error(L,"PlotSpectrumWithSelfEnergy: Hamiltonian and ground state do not have the same dimensions - dim(H) = %d and dim(psi) = %d\n",H.size(),psi.size());
 	}
 	luaL_checktype(L, 3, LUA_TTABLE);
-	uint32_t lenSigma = lua_objlen(L,3);
+	uint32_t lenSigma = (uint32_t)lua_objlen(L,3);
 	SigmaRes.reserve(lenSigma);
 	for(uint32_t i = 1; i <= lenSigma; i++)
 	{
@@ -543,7 +505,7 @@ static int LuaPlotSpectrumWithSelfEnergy(lua_State *L)
 
 	}
 
-	lua_createtable(L,graph.size(),0);
+	lua_createtable(L,(int)graph.size(),0);
 	for (uint32_t i = 0; i < graph.size(); i++)
 	{
 		LuaPushArray_double(L,&(graph[i][0]),2);
@@ -565,7 +527,7 @@ static int LuaEvaluateSelfEnergy(lua_State *L)
 		return luaL_error(L,"PlotSpectrumWithSelfEnergy needs 8 arguments not %d\n",len);
 	}
 */	luaL_checktype(L, 1, LUA_TTABLE);
-	uint32_t lenSigma = lua_objlen(L,1);
+	uint32_t lenSigma = (uint32_t) lua_objlen(L,1);
 	SigmaRes.reserve(lenSigma);
 	for(uint32_t i = 1; i <= lenSigma; i++)
 	{
@@ -585,10 +547,27 @@ static int LuaEvaluateSelfEnergy(lua_State *L)
 	uint32_t lenW = floor((wMax-wMin)/dw) + 1;
 	std::vector<CompactMatrixType *> selfenergy = std::vector<CompactMatrixType *>(lenW);
 	double w = wMin;
-	for (uint32_t i = 0; i < lenW; i++)
+	if (len == 7)
 	{
-		w = wMin + i*dw;
-		selfenergy[i] = EvaluateSelfEnergy(w,gS,SigmaRes);
+		std::vector<double> energyshift;
+		lua_check(L,7,energyshift);
+		if (energyshift.size() != SigmaRes.size())
+		{
+			return luaL_error(L,"LuaEvaluateSelfEnergy: %d = energyshift.size() != SigmaRes.size() = %d \n",energyshift.size() , SigmaRes.size());
+		}
+		for (uint32_t i = 0; i < lenW; i++)
+		{
+			w = wMin + i*dw;
+			selfenergy[i] = EvaluateSelfEnergy(w,gS,SigmaRes,energyshift);
+		}
+	}
+	else
+	{
+		for (uint32_t i = 0; i < lenW; i++)
+		{
+			w = wMin + i*dw;
+			selfenergy[i] = EvaluateSelfEnergy(w,gS,SigmaRes);
+		}
 	}
 	if (len > 5)
 	{
@@ -617,6 +596,13 @@ static int LuaReadDataFromFile(lua_State *L)
 		lua_push(L,Ms);
 		return 1;
 	}
+	if (strcmp(type, "CSRMatrix_Type") == 0)
+	{
+		LinAlg::CSRMatrix<double> *M = (LinAlg::CSRMatrix<double> *)lua_newuserdata(L, sizeof(LinAlg::CSRMatrix<double>));
+		luaL_setmetatable(L,"CSRMatrix_Type");
+		ReadDataFromFile(M,filename);
+		return 1;
+	}
 	printf("Error: LuaReadDataFromFile: data type not recognized\n");
 
 	return 0;
@@ -635,6 +621,13 @@ static int LuaWriteDataToFile(lua_State *L)
 
 		return 0;
 	}
+	if (strcmp(type, "CSRMatrix_Type") == 0)
+	{
+		LinAlg::CSRMatrix<double> *M = (LinAlg::CSRMatrix<double> *) luaL_checkudata(L, 3, "CSRMatrix_Type");
+		WriteDataToFile(M,filename);
+		printf("CSRMatrix written to file %s\n",filename);
+		return 0;
+	}
 	printf("Error: LuaReadDataFromFile: data type not recognized\n");
 
 	return 0;
@@ -645,7 +638,7 @@ static int LuaCalcSpectrumWithSelfEnergy(lua_State *L)
 	double wMin, wMax,dw, gH;
 	std::vector<double> psi, H; // TODO make H generic: either Matrix, TriDiagonalMatrix or DiagonalMatrix
 	std::vector<CompactMatrixType *> Sigma;
-	uint32_t len = lua_gettop(L);
+	//uint32_t len = lua_gettop(L);
 
 	H   = luaL_checkarray_double(L,1);
 	psi = luaL_checkarray_double(L,2);
@@ -758,7 +751,7 @@ static int LuaEigenDifferential(lua_State *L)
 	{
 		struct
 		{
-			char *type;
+			const char *type;
 			uint32_t Nknots;
 		} Options;
 		LuaOptionsType LuaEDOptions[]={
@@ -766,7 +759,7 @@ static int LuaEigenDifferential(lua_State *L)
 		    {"Nknots","uint32_t",&(Options.Nknots)},
 		    {NULL, NULL, NULL}};
 		Options.Nknots = 4;
-		Options.type = "N"; // mwh this is a real bug !!!
+		Options.type = "N";
 		LuaCheckOptions(L, 5, LuaEDOptions);
 		if (strcmp(Options.type,"N")==0)
 		{
@@ -799,17 +792,273 @@ static int LuaEigenDifferential(lua_State *L)
 	return 1;
 }
 
+static int LuaSparseTridiagonalize(lua_State *L)
+{
+	OperatorType *H = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
+	std::vector<WaveFunctionType*> psi;
+	std::vector<WaveFunctionType> Opsi;
+	WaveFunctionType *dets;
+	std::vector<double> psiTransformed;
+	LinAlg::CSRMatrix<double> Hsparse;
+	LinAlg::Matrix<double> startblock;
+	uint32_t N;
+	lua_check(L,2,psi);
+	lua_check(L,5,dets);
+	lua_check(L,4,N);
+	OperatorType *OppT = (OperatorType *) luaL_checkudata(L, 3, "Operator_Type");
+	Opsi = std::vector<WaveFunctionType>(psi.size());
+	startblock.reserve(dets->N,(uint32_t) psi.size());
+	OperatorToSparseMatrix(H,dets,Hsparse);
+	printf("Matrix created with %lu nve\n",Hsparse.A.size());
+	for(uint32_t i = 0; i < startblock.N; i++)
+	{
+		OperatorPsi(*OppT,*(psi[i]),&(Opsi[i]));
+		WaveFunctionToVector(&(Opsi[i]),psiTransformed,dets);
+		for (uint32_t j = 0; j < startblock.M; j++)
+		{
+			startblock.Entries[i*startblock.M + j] = psiTransformed[j];
+		}
+	}
+	for (uint32_t i = 0; i < startblock.N; i++)
+	{
+		WaveFunctionFree(&(Opsi[i]));
+	}
+	std::vector<LinAlg::Matrix<double> > T,A,B;
+	double epsSV = 100*DBL_EPSILON;
+	BlockLanczos(Hsparse,startblock,N,epsSV,A,B,T);
+	BlockTriDiagonalMatrixType GTri;
+	GTri.BlockSize = startblock.N;
+    GTri.N = N;
+    GTri.QComplex=0;
+    InitBlockTridiagonalMatrix(&GTri);
+    GTri.mu=0;
+    uint32_t bs = GTri.BlockSize;
+    for (uint32_t i = 0; i < bs; i++)
+	{
+		GTri.bRe[i*bs + i] = 0;
+	}
+    for(uint32_t k = 0; k < N; k++)
+    {
+    	for (uint32_t i = 0; i < A[k].M; i++)
+    	{
+    		for (uint32_t j = 0; j < A[k].N; j++)
+    		{
+    			GTri.aRe[(k+1)*bs*bs + i*bs + j] = A[k].Entries[j*A[k].M +i];
+    		}
+    	}
+    	for (uint32_t i = 0; i < B[k].M; i++)
+		{
+			for (uint32_t j = 0; j < B[k].N; j++)
+			{
+				GTri.bRe[k*bs*bs + i*bs + j] = B[k].Entries[j*B[k].M +i];
+			}
+		}
+    }
+    // b0 correspond to B[0]^T since I am stupid and did not use the same convention...
+	for (uint32_t i = 0; i < bs; i++)
+	{
+		for (uint32_t j = i+1; j < bs; j++)
+		{
+			double help = GTri.bRe[i*bs + j];
+			GTri.bRe[i*bs + j] = GTri.bRe[j*bs + i];
+			GTri.bRe[j*bs + i] = help;
+		}
+	}
+
+    LuaPushTable_BlockTriDiagonalMatrixType(L, &GTri);
+
+	return 1;
+
+}
+
+static int LuaCSRTridiagonalize(lua_State *L)
+{
+	LinAlg::CSRMatrix<double> *Hsparse = (LinAlg::CSRMatrix<double> *) luaL_checkudata(L, 1, "CSRMatrix_Type");
+	std::vector<WaveFunctionType*> psi;
+	std::vector<WaveFunctionType> Opsi;
+	WaveFunctionType *dets;
+	std::vector<double> psiTransformed;
+	LinAlg::Matrix<double> startblock;
+	uint32_t N;
+	lua_check(L,2,psi);
+	lua_check(L,5,dets);
+	lua_check(L,4,N);
+	OperatorType *OppT = (OperatorType *) luaL_checkudata(L, 3, "Operator_Type");
+	Opsi = std::vector<WaveFunctionType>(psi.size());
+	startblock.reserve(dets->N,(uint32_t)psi.size());
+	printf("Matrix created with %lu nve\n",Hsparse->A.size());
+	for(uint32_t i = 0; i < startblock.N; i++)
+	{
+		OperatorPsi(*OppT,*(psi[i]),&(Opsi[i]));
+		WaveFunctionToVector(&(Opsi[i]),psiTransformed,dets);
+		for (uint32_t j = 0; j < startblock.M; j++)
+		{
+			startblock.Entries[i*startblock.M + j] = psiTransformed[j];
+		}
+	}
+	for (uint32_t i = 0; i < startblock.N; i++)
+	{
+		WaveFunctionFree(&(Opsi[i]));
+	}
+	std::vector<LinAlg::Matrix<double> > T,A,B;
+	double epsSV = 100*DBL_EPSILON;
+	BlockLanczos(*Hsparse,startblock,N,epsSV,A,B,T);
+	BlockTriDiagonalMatrixType GTri;
+	GTri.BlockSize = startblock.N;
+    GTri.N = N;
+    GTri.QComplex=0;
+    InitBlockTridiagonalMatrix(&GTri);
+    GTri.mu=0;
+    uint32_t bs = GTri.BlockSize;
+    for (uint32_t i = 0; i < bs; i++)
+	{
+    	GTri.bRe[i*bs + i] = 0;
+	}
+    for(uint32_t k = 0; k < N; k++)
+    {
+    	for (uint32_t i = 0; i < A[k].M; i++)
+    	{
+    		for (uint32_t j = 0; j < A[k].N; j++)
+    		{
+    			GTri.aRe[(k+1)*bs*bs + i*bs + j] = A[k].Entries[j*A[k].M +i];
+    		}
+    	}
+    	for (uint32_t i = 0; i < B[k].M; i++)
+		{
+			for (uint32_t j = 0; j < B[k].N; j++)
+			{
+				GTri.bRe[k*bs*bs + i*bs + j] = B[k].Entries[j*B[k].M +i];
+			}
+		}
+
+    }
+    // b0 correspond to B[0]^T since I am stupid and did not use the same convention...
+    for (uint32_t i = 0; i < bs; i++)
+	{
+    	for (uint32_t j = i+1; j < bs; j++)
+    	{
+    		double help = GTri.bRe[i*bs + j];
+    		GTri.bRe[i*bs + j] = GTri.bRe[j*bs + i];
+    		GTri.bRe[j*bs + i] = help;
+    	}
+	}
+
+    LuaPushTable_BlockTriDiagonalMatrixType(L, &GTri);
+
+	return 1;
+
+}
+
 static int LuaSparseOperator(lua_State *L)
 {
 	OperatorType *H = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
 	WaveFunctionType *psi = (WaveFunctionType *) luaL_checkudata(L, 2, "Wavefunction_Type");
-	LinAlg::CSRMatrix<double> M;
-	OperatorToSparseMatrix(H,psi,M);
-	//M.Print();
-	printf("Matrix created with %lu nve\n",M.A.size());
-	std::vector<double> vec, a, b;
+	void* memory = lua_newuserdata(L, sizeof(LinAlg::CSRMatrix<double>));
+	LinAlg::CSRMatrix<double> *M = new(memory) LinAlg::CSRMatrix<double>;
+	luaL_setmetatable(L,"CSRMatrix_Type");
+	OperatorToSparseMatrix(H,psi,*M);
+	M->Print();
+	//printf("Matrix created with %lu nve\n",M.A.size());
+	std::vector<double> vec, a, b, y;
 	WaveFunctionToVector(psi,vec,psi);
-	std::vector<std::vector<double> > T;
+	uint32_t Mrow = (uint32_t) vec.size();
+	uint32_t Ncol = 2;
+	LinAlg::Matrix<double> startblock = LinAlg::Matrix<double>(Mrow,Ncol);
+	/*for(uint32_t i = 0; i < Mrow;i++)
+	{
+		startblock.Entries[i] = vec[i];
+		startblock.Entries[i+Mrow] = vec[i]+i;
+	}*/
+	startblock.Entries[0] = -1;
+	startblock.Entries[1] =  0;
+	startblock.Entries[2] =  3;
+	startblock.Entries[3] =  1;
+	startblock.Entries[4] =  1;
+	startblock.Entries[5] =  3;
+
+	startblock.Entries[6] =  2;
+	startblock.Entries[7] =  1;
+	startblock.Entries[8] =  1;
+	startblock.Entries[9] =  0;
+	startblock.Entries[10] = 0;
+	startblock.Entries[11] = 3;
+	std::vector<LinAlg::Matrix<double> > T,A,B;
+	double epsSV = 100*DBL_EPSILON;
+	uint32_t N = 4;
+	BlockLanczos(*M,startblock,N,epsSV,A,B,T);
+	printf("A:\n");
+	for (int i = 0; i < N; i++)
+	{
+		A[i].print();
+		printf("\n");
+	}
+	printf("B:\n");
+	for (int i = 0; i < N; i++)
+	{
+		B[i].print();
+		printf("\n");
+	}
+	printf("T:\n");
+	for (int i = 0; i < N; i++)
+	{
+		T[i].print();
+		printf("\n");
+	}
+
+	return 1;
+/*	lua_push(L,A);
+	lua_push(L,B);
+	return 2;*/
+
+/*
+	uint32_t dim = 3;
+	LinAlg::Matrix<double> A = LinAlg::Matrix<double>(dim,dim,false);
+	A.Entries[0] = 1;
+	A.Entries[1] = 2;
+	A.Entries[2] = 1;
+	A.Entries[3] = 2;
+	A.Entries[4] = 4;
+	A.Entries[5] = 2;
+	A.Entries[6] = -1;
+	A.Entries[7] = -2;
+	A.Entries[8] = 3;
+	uint32_t nSV;
+
+	LinAlg::Matrix<double> AtA = LinAlg::Matrix<double>(dim,dim,false);
+	BlockSkalarProduct(A,A,AtA);
+
+	LoewdinSVDOrthonormalize(A,0.001,nSV);
+
+	printf("A\n");
+	A.print();
+
+	printf("\nSVD\n");
+	for (uint32_t i = 0; i < A.M; i++)
+	{
+		for (uint32_t j = 0; j < A.N; j++)
+		{
+			printf("%.4f\t",A.Entries[j*3 + i]);
+		}
+		printf("\n");
+
+	}
+*/
+/*	printf("\nBlockSkalar\n");
+	for (uint32_t i = 0; i < 3; i++)
+	{
+		for (uint32_t j = 0; j < 3; j++)
+		{
+			printf("%.4f\t",AtA.Entries[j*AtA.M + i]);
+		}
+		printf("\n");
+
+	}
+	AtA.print();
+*/
+/*
+
+
+
 	Lanczos(M,SkalarProdukt,VectorAdd<double>,VectorMul<double>,vec,6,a,b,T);
 	for (uint32_t i = 0; i < a.size(); i++)
 	{
@@ -820,9 +1069,855 @@ static int LuaSparseOperator(lua_State *L)
 	{
 		printf("%e\t",b[i]);
 	}
-  // mwh one should osuh resutls to the stack and return the number of states pushed to the stack
-  // for now I add an return 0 in order to repair a bug that prevents compiling
-  return 0;
+	printf("\n");
+	size_t N = vec.size();
+	for (uint32_t i = 0; i < N; i++)
+	{
+		vec.push_back(2*vec[i]);
+	}
+	for (uint32_t i = 0; i < N; i++)
+	{
+		vec.push_back(3*vec[i]);
+	}
+	M.BlockEvaluate(vec,y,3);
+	for (uint32_t i = 0; i < N; i++)
+	{
+		printf("%.1f\t%.1f\t%.1f\n",y[i],y[i+N],y[i+2*N]);
+	}
+
+	std::vector<double> A = std::vector<double>(9);
+	A[0] = 1;
+	A[1] = 2;
+	A[2] = 1;
+	A[3] = 2;
+	A[4] = 4;
+	A[5] = 2;
+	A[6] = -1;
+	A[7] = -2;
+	A[8] = 3;
+	uint32_t nSV;
+
+	std::vector<double> AtA = std::vector<double>(6);
+	BlockSkalarProduct(A,A,AtA,3,2);
+
+	LoewdinSVDOrthonormalize(A,3,3,0.001,nSV);
+	printf("\nSVD\n");
+	for (uint32_t i = 0; i < 3; i++)
+	{
+		for (uint32_t j = 0; j < 3; j++)
+		{
+			printf("%.4f\t",A[j*3 + i]);
+		}
+		printf("\n");
+
+	}
+	printf("\nBlockSkalar\n");
+	for (uint32_t i = 0; i < 2; i++)
+	{
+		for (uint32_t j = 0; j < 2; j++)
+		{
+			printf("%.4f\t",AtA[j*2 + i]);
+		}
+		printf("\n");
+
+	}
+*/
+    return 0;
+}
+
+static int LuaOperatorToCSRMatrix(lua_State *L)
+{
+	OperatorType *H = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
+	WaveFunctionType *dets;
+	lua_check(L,2,dets);
+
+	void* memory = lua_newuserdata(L, sizeof(LinAlg::CSRMatrix<double>));
+	LinAlg::CSRMatrix<double> *Hsparse = new(memory) LinAlg::CSRMatrix<double>;
+	luaL_setmetatable(L,"CSRMatrix_Type");
+	OperatorToSparseMatrix(H,dets,*Hsparse);
+	return 1;
+}
+
+static int LuaExport(lua_State *L)
+{
+	std::vector<std::vector<double> > table;
+	std::vector<double> list;
+	const char *filename = luaL_checkstring(L,2);
+	FILE *f = fopen(filename,"w");
+	if (luaL_isType(L,1,table))
+	{
+		lua_check(L,1,table);
+		for (size_t i = 0; i < table.size(); i++)
+		{
+			for (size_t j = 0; j < table[i].size(); j++)
+			{
+				fprintf(f,"%E\t",table[i][j]);
+			}
+			fprintf(f,"\n");
+		}
+	}
+	else
+	{
+		lua_check(L,1,list);
+		for (size_t i = 0; i < list.size(); i++)
+		{
+			fprintf(f,"%E\n",list[i]);
+		}
+	}
+	return 0;
+}
+
+static int LuaReadFPLOEnergies(lua_State *L)
+{
+	string filename; 	//  = "out.scf";
+	string orb; 			// = "4s"
+	string j;   			// = "1/2"
+
+	vector<string> orbitalLabels;
+	vector<double> energies;
+	lua_check(L,1,orbitalLabels);
+	lua_check(L,2,filename);
+	energies.reserve(orbitalLabels.size());
+	for (size_t i = 0; i < orbitalLabels.size(); i++)
+	{
+		orb = orbitalLabels[i].substr(0,2);
+		j   = orbitalLabels[i].substr(2,3);
+		energies.push_back(ParseFPLOEnergies(filename.c_str(),orb,j));
+	}
+	lua_push(L,energies);
+	return 1;
+}
+
+static int LuaRelativisticDipoleOperator(lua_State *L)
+{
+	vector<Interpolation::InterpolatingFunction* > G, F;
+	vector<double> energies;
+	vector<int> indToK;
+	vector<vector<uint32_t> > indices;
+	uint32_t mu, NF;
+	lua_check(L,1,G);
+	lua_check(L,2,F);
+	lua_check(L,3,energies);
+	lua_check(L,4,mu);
+	lua_getfield(L,5,"kappas");
+	if (lua_isnil(L,-1))
+	{
+		return luaL_error(L,"Error in LuaRelativisticDipoleOperator: indices do not contain field \"kappas\"\n Please use the function CreateAtomicIndicesList to generate indices with option {{\"Kappas\",true}}\n");;
+	}
+	lua_check(L,-1,indToK);
+	lua_pop(L,1);
+	lua_check(L,5,indices);
+	lua_check(L,6,NF);
+	size_t Norbitals = G.size();
+	if (Norbitals != F.size() || Norbitals != energies.size() || Norbitals != indToK.size() || Norbitals != indices.size())
+	{
+		return luaL_error(L,"Error in LuaRelativisticDipoleOperator: Objects of unequal lenght: G : %d\n F : %d\n energies : %d\n indices: %d\n indices[kappas] : %d\n",Norbitals ,F.size(),energies.size(),indices.size(),indToK.size());
+	}
+
+	OperatorType *op = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
+	luaL_setmetatable(L,"Operator_Type");
+	CreateRelativisticDipoleOperator(op,G,F,energies,mu,indices,indToK,NF);
+
+	return 1;
+}
+
+/*  calculates <psi_i | T_1^+ G_1^+ T_2^+ G_2 T_2 G_1 T_1 | psi_i >
+ *  On stack:
+ *     H1
+ *     H2
+ *     T1  - allowed to be a table
+ *     T2  - allowed to be a table
+ *     psi - allowed to be a table
+ *     options
+ *        {E1min, E1max, N1, Gamma1}
+ *        {E2min, E2max, N2, Gamma2}
+ *        NTri1
+ *        NTri2
+ *        epsilon
+ *        restrictions1
+ *        restrictions2
+ *        E0 E0_1 E0_2
+ */
+static int LuaCreateResonantSpectraSE(lua_State *L)
+{
+  struct
+  {
+    ConvergenceSettingsType Settings;
+    double E0, E01, E02;
+    uint32_t Npsi;
+    uint32_t NT1;
+    uint32_t NT2;
+    uint32_t NTriSE;
+    bool Tensor;
+    bool DenseMethod;
+  } Options;
+  Options.Settings=InitConvergenceSettings();
+  Options.E0=DBL_MAX;
+  Options.E01=DBL_MAX;
+  Options.E02=DBL_MAX;
+  Options.Tensor=false;
+  Options.DenseMethod=false;
+  Options.NTriSE = 5;
+  ConvergenceSettingsType SettingsNow;
+  SpectraTypeArray *Spec;
+  SpectraType *SpecT1psi;
+  TriDiagonalMatrixType *SpecTri;
+  OperatorType *H1,*H2,*T1, *T2;
+  WaveFunctionType *psi, HTpsiDenseBasis,HTHTpsiDenseBasis,Opsi,TpsiSum;
+  uint32_t iT,ipsi,len,i;
+  LuaOptionsType LuaCreateResonantSpectraOptions[]={
+    {"NTri1","uint32_t",&(Options.Settings.NTri1)},
+    {"NTri2","uint32_t",&(Options.Settings.NTri2)},
+    {"Tensor","bool",&(Options.Tensor)},
+    {"restrictions1", "DeterminantRestrictionType", &(Options.Settings.restrictions1)},
+    {"restrictions2", "DeterminantRestrictionType", &(Options.Settings.restrictions2)},
+    {"Restrictions1", "DeterminantRestrictionType", &(Options.Settings.restrictions1)},
+    {"Restrictions2", "DeterminantRestrictionType", &(Options.Settings.restrictions2)},
+    {"epsilon","double",&(Options.Settings.epsilon)},
+    {"Epsilon","double",&(Options.Settings.epsilon)},
+    {"E0","double",&(Options.E0)},
+    {"E0_1","double",&(Options.E01)},
+    {"E0_2","double",&(Options.E02)},
+    {"Emin1","double",&(Options.Settings.Emin1)},
+    {"Emax1","double",&(Options.Settings.Emax1)},
+    {"NE1","uint32_t",&(Options.Settings.NE1)},
+    {"Gamma1","double",&(Options.Settings.Gamma1)},
+    {"Emin2","double",&(Options.Settings.Emin2)},
+    {"Emax2","double",&(Options.Settings.Emax2)},
+    {"NE2","uint32_t",&(Options.Settings.NE2)},
+    {"Gamma2","double",&(Options.Settings.Gamma2)},
+    {"DenseBorder","uint32_t",&(Options.Settings.DenseBorder)},
+    {"ForceDenseMethod","uint32_t",&(Options.DenseMethod)},
+	{"NTriSE","uint32_t",&(Options.NTriSE)},
+    {NULL, NULL, NULL}};
+  /* free garbage full cycle*/
+  if(L->l_G->gcrunning) lua_gc(L, LUA_GCCOLLECT, 0);
+  /* check number of input parameters */
+  len = (uint32_t)lua_gettop(L);
+  if(!((len==7)||(len==8)))
+  {
+    return luaL_error(L, "Error LuaCreateResonantSpectra called with %d arguments,8 or 7 expected (H1, H2, T1, T2^+, psi,U,EnergyContinuum {options})\n",len);
+  }
+  /* read operator and wavefunctions */
+  H1 = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
+  H2 = (OperatorType *) luaL_checkudata(L, 2, "Operator_Type");
+  if(lua_type(L,3)==LUA_TTABLE)
+  {
+    T1=luaL_checkarray_OperatorType(L, 3, &Options.NT1);
+    if(Options.NT1==0) return luaL_error(L, "Errof CreateResonantSpectra called with a table of transition operators (1) of length 0\n");
+  }
+  else
+  {
+    Options.NT1 = 1;
+    T1 = (OperatorType *) luaL_checkudata(L, 3, "Operator_Type");
+  }
+  if(lua_type(L,4)==LUA_TTABLE)
+  {
+    T2=luaL_checkarray_OperatorType(L, 4, &Options.NT2);
+    if(Options.NT2==0) return luaL_error(L, "Errof CreateResonantSpectra called with a table of transition operators (2) of length 0\n");
+  }
+  else
+  {
+    Options.NT2 = 1;
+    T2 = (OperatorType *) luaL_checkudata(L, 4, "Operator_Type");
+  }
+  if(lua_type(L,5)==LUA_TTABLE)
+  {
+    psi=luaL_checkarray_WaveFunctionType(L, 5, &Options.Npsi);
+    if(Options.Npsi==0) return luaL_error(L, "Errof CreateResonantSpectra called with a table of wave functions of length 0\n");
+  }
+  else
+  {
+    Options.Npsi = 1;
+    psi = (WaveFunctionType *) luaL_checkudata(L, 5, "Wavefunction_Type");
+  }
+  std::vector<OperatorType*> U;
+  lua_check(L,6,U);
+  std::vector<double> EnergyContinuum;
+  lua_check(L,7,EnergyContinuum);
+  /* read options */
+  if (len==8)
+  {
+    LuaCheckOptions(L, -1, LuaCreateResonantSpectraOptions);
+  }
+  if(Options.E01==DBL_MAX)Options.E01=Options.E0;
+  if(Options.E02==DBL_MAX)Options.E02=Options.E0;
+
+  /* test if operator is Hermitian */
+  switch(QOperatorHermitian(*H1, 0.0001*Options.Settings.zero))
+  {
+    case 3 :
+    {
+      printf("WARNING: QOperatorHermitian failed in LuaCreateResonantSpectra, this should not happen\n");
+      printf("my guess is that you are out of memory and will crash soon\n");
+      break;
+    }
+    case 2 :
+    {
+      luaL_warning(L, "CreateResonantSpectra called with an operator (H1) that is not fully Hermitian\nStrongly sugested to stop the calculation and repair this\n\n\n\nDo it\n\n\nReally Check this\n\n\nDid you?\n\n\n");
+      break;
+    }
+    case 1 :
+    {
+      // all fine H is Hermitian upto zero
+      break;
+    }
+    case 0 :
+    {
+      luaL_error(L, "CreateResonantSpectra called with an operator (H1) that is not Hermitian\n");
+      break;
+    }
+  }
+  switch(QOperatorHermitian(*H2, 0.0001*Options.Settings.zero))
+  {
+    case 3 :
+    {
+      printf("WARNING: QOperatorHermitian failed in LuaCreateResonantSpectra, this should not happen\n");
+      printf("my guess is that you are out of memory and will crash soon\n");
+      break;
+    }
+    case 2 :
+    {
+      luaL_warning(L, "CreateResonantSpectra called with an operator (H2) that is not fully Hermitian\nStrongly sugested to stop the calculation and repair this\n\n\n\nDo it\n\n\nReally Check this\n\n\nDid you?\n\n\n");
+      break;
+    }
+    case 1 :
+    {
+      // all fine H is Hermitian upto zero
+      break;
+    }
+    case 0 :
+    {
+      luaL_error(L, "CreateResonantSpectra called with an operator (H2) that is not Hermitian\n");
+      break;
+    }
+  }
+  /* allocate spectra and a pointer to return matrix on lua stack */
+  Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+  luaL_setmetatable(L, "Spectra_Type");
+  Spec->NSpectra=0;
+  Spec->Spec=NULL;
+  /* test if dense methods can be used */
+  // at the same time create the wave-functions that define the basis sets of the dense matrices used in the dense methods
+  // we need the vectors:
+  // HmDenseBasis       : on which the Matrix for the intermediate state can be represented
+  // HfDenseBasis       : on which the Matrix fo rthe final states can be represented
+		  {
+			// psi
+			Options.DenseMethod=false;
+			goto EndOfUseDenseTest; // TODO Implement DenseMethod
+			if (Options.DenseMethod==false) if(psi[0].N>Options.Settings.DenseBorder) goto EndOfUseDenseTest;
+			WaveFunctionCopy(psi[0], &HTpsiDenseBasis);
+			for(i=1;i<Options.Npsi;i++)
+			{
+			  WaveFunctionAddUnionBasis(&HTpsiDenseBasis, psi[i]);
+			  if (Options.DenseMethod==false) if(HTpsiDenseBasis.N>Options.Settings.DenseBorder)
+			  {
+				WaveFunctionFree(&HTpsiDenseBasis);
+				goto EndOfUseDenseTest;
+			  }
+			}
+			// T psi
+			if((Options.Settings.restrictions1.N==0)?(OperatorPsi(T1[0], HTpsiDenseBasis, &TpsiSum)):(OperatorPsiRestricted(T1[0], HTpsiDenseBasis, &TpsiSum, Options.Settings.restrictions1)))
+			{
+			  WaveFunctionFree(&HTpsiDenseBasis);
+			  goto EndOfUseDenseTest;
+			}
+			for(i=1;i<Options.NT1;i++)
+			{
+			  if((Options.Settings.restrictions1.N==0)?(OperatorPsi(T1[i], HTpsiDenseBasis, &Opsi)):(OperatorPsiRestricted(T1[i], HTpsiDenseBasis, &Opsi, Options.Settings.restrictions1)))
+			  {
+				WaveFunctionFree(&TpsiSum);
+				WaveFunctionFree(&HTpsiDenseBasis);
+				goto EndOfUseDenseTest;
+			  }
+			  WaveFunctionAddUnionBasis(&TpsiSum, Opsi);
+			  WaveFunctionFree(&Opsi);
+			  if (Options.DenseMethod==false) if(TpsiSum.N>Options.Settings.DenseBorder)
+			  {
+				WaveFunctionFree(&TpsiSum);
+				WaveFunctionFree(&HTpsiDenseBasis);
+				goto EndOfUseDenseTest;
+			  }
+			}
+			WaveFunctionFree(&HTpsiDenseBasis);
+			HTpsiDenseBasis=TpsiSum;
+			WaveFunctionNormalize(&HTpsiDenseBasis);
+			// H T psi
+			len=0;
+			while(len!=HTpsiDenseBasis.N)
+			{
+			  len=HTpsiDenseBasis.N;
+			  if((Options.Settings.restrictions1.N==0)?(OperatorPsi(*H1, HTpsiDenseBasis, &Opsi)):(OperatorPsiRestricted(*H1, HTpsiDenseBasis, &Opsi, Options.Settings.restrictions1)))
+			  {
+				WaveFunctionFree(&HTpsiDenseBasis);
+				goto EndOfUseDenseTest;
+			  }
+			  WaveFunctionFree(&HTpsiDenseBasis);
+			  if (Options.DenseMethod==false) if(Opsi.N>Options.Settings.DenseBorder)
+			  {
+				WaveFunctionFree(&Opsi);
+				goto EndOfUseDenseTest;
+			  }
+			  HTpsiDenseBasis=Opsi;
+			  WaveFunctionNormalize(&HTpsiDenseBasis);
+			}
+			// T H T psi
+			WaveFunctionCopy(HTpsiDenseBasis, &HTHTpsiDenseBasis);
+			if((Options.Settings.restrictions2.N==0)?(OperatorPsi(T2[0], HTHTpsiDenseBasis, &TpsiSum)):(OperatorPsiRestricted(T2[0], HTHTpsiDenseBasis, &TpsiSum, Options.Settings.restrictions2)))
+			{
+			  WaveFunctionFree(&HTHTpsiDenseBasis);
+			  WaveFunctionFree(&HTpsiDenseBasis);
+			  goto EndOfUseDenseTest;
+			}
+			for(i=1;i<Options.NT2;i++)
+			{
+			  if((Options.Settings.restrictions2.N==0)?(OperatorPsi(T2[i], HTHTpsiDenseBasis, &Opsi)):(OperatorPsiRestricted(T2[i], HTHTpsiDenseBasis, &Opsi, Options.Settings.restrictions2)))
+			  {
+				WaveFunctionFree(&TpsiSum);
+				WaveFunctionFree(&HTHTpsiDenseBasis);
+				WaveFunctionFree(&HTpsiDenseBasis);
+				goto EndOfUseDenseTest;
+			  }
+			  WaveFunctionAddUnionBasis(&TpsiSum, Opsi);
+			  WaveFunctionFree(&Opsi);
+			  if (Options.DenseMethod==false) if(TpsiSum.N>Options.Settings.DenseBorder)
+			  {
+				WaveFunctionFree(&TpsiSum);
+				WaveFunctionFree(&HTHTpsiDenseBasis);
+				WaveFunctionFree(&HTpsiDenseBasis);
+				goto EndOfUseDenseTest;
+			  }
+			}
+			WaveFunctionFree(&HTHTpsiDenseBasis);
+			HTHTpsiDenseBasis=TpsiSum;
+			WaveFunctionNormalize(&HTHTpsiDenseBasis);
+			// H T H T psi
+			len=0;
+			while(len!=HTHTpsiDenseBasis.N)
+			{
+			  len=HTHTpsiDenseBasis.N;
+			  if((Options.Settings.restrictions2.N==0)?(OperatorPsi(*H2, HTHTpsiDenseBasis, &Opsi)):(OperatorPsiRestricted(*H2, HTHTpsiDenseBasis, &Opsi, Options.Settings.restrictions2)))
+			  {
+				WaveFunctionFree(&HTHTpsiDenseBasis);
+				WaveFunctionFree(&HTpsiDenseBasis);
+				goto EndOfUseDenseTest;
+			  }
+			  WaveFunctionFree(&HTHTpsiDenseBasis);
+			  if (Options.DenseMethod==false) if(Opsi.N>Options.Settings.DenseBorder)
+			  {
+				WaveFunctionFree(&Opsi);
+				WaveFunctionFree(&HTpsiDenseBasis);
+				goto EndOfUseDenseTest;
+			  }
+			  WaveFunctionNormalize(&Opsi);
+			  HTHTpsiDenseBasis=Opsi;
+			}
+			// finsihed all tests and psiDenseBasis still fits
+			Options.DenseMethod=true;
+		  EndOfUseDenseTest:;
+		  }
+  if(Options.DenseMethod==true)
+  {
+    if(Options.Tensor==false)
+    {
+      ResonantSpectraDense(&HTpsiDenseBasis,&HTHTpsiDenseBasis,*H1, *H2, T1, Options.NT1, T2, Options.NT2, psi, Options.Npsi, &(Spec->Spec), Options.E01, Options.E02, &(Options.Settings));
+      Spec->NSpectra=Options.NT1*Options.NT2*Options.Npsi*(Options.Settings.NE1+1);
+    }
+    else
+    {
+      return luaL_error(L,"Tensor form for Resonant spectra not yet available");
+    }
+  }
+  else
+  {
+    // use sparse methods
+    if(Options.Tensor==false)
+    {
+      for(ipsi=0;ipsi<Options.Npsi;ipsi++)
+      {
+        for(iT=0;iT<Options.NT1;iT++)
+        {
+          SettingsNow = Options.Settings;
+          ResonantSpectraSelfEnergy(*H1, *H2, T1[iT], T2, U, Options.NT2, psi[ipsi], &SpecTri, &SpecT1psi, Options.E01, Options.E02, &(SettingsNow),EnergyContinuum,Options.NTriSE);
+          Spec->NSpectra+=(SettingsNow.NE1+1)*Options.NT2;
+          Spec->Spec= (SpectraType*)realloc(Spec->Spec, Spec->NSpectra*sizeof(SpectraType));
+          for(i=0;i<(SettingsNow.NE1+1)*Options.NT2;i++)
+          {
+            FreeTriDiagonalMatrix(&(SpecTri[i]));
+          }
+          free(SpecTri);
+          for(i=0;i<(SettingsNow.NE1+1)*Options.NT2;i++)
+          {
+            sprintf(SpecT1psi[i].Name, "%s T1 %i/%i psi %i/%i",SpecT1psi[i].Name,iT,Options.NT1,ipsi,Options.Npsi);
+            Spec->Spec[i+Spec->NSpectra-(SettingsNow.NE1+1)*Options.NT2] = SpecT1psi[i];
+          }
+          free(SpecT1psi);
+        }
+      }
+    }
+    else
+    {
+
+      //ResonantSpectraTensor(*H1, *H2, T1, Options.NT1, T2, Options.NT2, psi, Options.Npsi, &SpecTri, &(Spec->Spec[0]), Options.E01, Options.E02, &Options.Settings);
+      return luaL_error(L,"Tensor form for Resonant spectra not yet available");
+    }
+  }
+  return 1;
+}
+
+static int LuaListU(lua_State *L)
+{
+	uint32_t Nindices, temp, len, NF;
+	uint16_t **indices;
+	vector<double> x;
+	len = (uint32_t)lua_gettop(L);
+
+	if ( len < 3 ||  len > 5)
+	{
+		return luaL_error(L,"Error in Martin.ListU: 3 to 5 arguments expected; got %d",len);
+	}
+
+	NF = (uint32_t)luaL_checkunsigned(L, 1);
+	vector<int> indToK;
+	if (len > 3)
+	{
+		lua_getfield(L,2,"kappas");
+		if (lua_isnil(L,-1))
+		{
+			lua_pop(L,1);
+			Nindices = (uint32_t)lua_objlen(L,2);
+			indices = (uint16_t **) malloc(Nindices * sizeof(uint16_t *));
+			if(!indices) printf("malloc fail at indices in LuaOperatorNewFullCoulomb. size = %u\n",Nindices);
+			for(uint32_t i = 0; i < Nindices; i++ )
+			{
+				lua_rawgeti(L, 2, i+1);
+				lua_rawgeti(L,-1,1);
+				indToK.push_back((int) luaL_checkunsigned(L, -1));
+				lua_pop(L,1);
+				lua_rawgeti(L,-1,2);
+				indices[i] = luaL_checkarray_unit16_t(L,-1,&temp);
+				lua_pop(L,1);
+				lua_pop(L,1);
+			}
+		}
+		else
+		{
+			uint16_t *help = luaL_checkarray_unit16_t(L,-1,&temp);
+			indToK = ConvertArray(help,temp);
+			free(help);
+
+			lua_pop(L,1);
+			Nindices = (uint32_t)lua_objlen(L,2);
+
+			indices = (uint16_t **) malloc(Nindices * sizeof(uint16_t *));
+			if(!indices) printf("malloc fail at indices in LuaOperatorNewFullCoulomb. size = %u\n",Nindices);
+
+			for(uint32_t i = 0; i < Nindices; i++ )
+			{
+				lua_rawgeti(L, 2, i+1);
+				indices[i] = luaL_checkarray_unit16_t(L,-1,&temp);
+				lua_pop(L,1);
+			}
+		}
+
+		uint32_t NfunsG = (uint32_t)lua_objlen(L,3);
+
+		if (NfunsG > Nindices)
+		{
+			printf("Warning: Martin.Coulomb() number of basis funs (%d) != number of indices (%d)\n",NfunsG , Nindices);
+			fflush(stdout);
+		}
+		else
+		{
+			if (NfunsG < Nindices)
+			{
+				return luaL_error(L, "Errorr: Martin.Coulomb() number of basis funs (%d) < number of indices (%d)\n",NfunsG , Nindices);
+			}
+		}
+		if (indToK.size() != Nindices) printf("Warning: Martin.Coulomb() number of kappas (%d) != number of indices (%d)\n",(uint32_t)indToK.size() , Nindices);
+
+		vector<Interpolation::InterpolatingFunction *> funsG = vector<Interpolation::InterpolatingFunction *>(NfunsG);
+		for(uint32_t i = 0; i < NfunsG; i++)
+		{
+			lua_rawgeti(L, 3, i+1);
+			funsG[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
+			lua_pop(L,1);
+		}
+
+		uint32_t NfunsF = (uint32_t)lua_objlen(L,4);
+		if (NfunsF != NfunsG)
+		{
+			return luaL_error(L,"Error in LuaOperatorNewCoulombFull: number of functions small part (%d) != large part (%d)\n",NfunsF,NfunsG);
+		}
+		vector<Interpolation::InterpolatingFunction *> funsF = vector<Interpolation::InterpolatingFunction *>(NfunsF);
+		for(uint32_t i = 0; i < NfunsF; i++)
+		{
+			lua_rawgeti(L, 4, i+1);
+			funsF[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
+			lua_pop(L,1);
+		}
+
+		x = funsG[0]->GetX();
+
+		vector<vector<double> > wavefuns = PutRelativisticSplineOnGrid(funsG,funsF,x,0);
+
+		if (len == 4)
+		{
+			CreateListOperatorAtomicURelativistic(NF,wavefuns,x,indToK,indices,true,L,false);
+		}
+		else
+		{
+			CreateListOperatorAtomicURelativistic(NF,wavefuns,x,indToK,indices,true,L,true);
+			for(uint32_t i = 0; i < Nindices; i++ )
+			{
+				free(indices[i]);
+			}
+			free(indices);
+			return 1;
+		}
+	}
+	else
+	{
+		printf("error: nonrelativistic version of ListU not yet implmented\n");
+		return 0;
+	}
+
+
+	for(uint32_t i = 0; i < Nindices; i++ )
+	{
+		free(indices[i]);
+	}
+	free(indices);
+
+	return 2;
+}
+
+static int LuaCDMPlot(lua_State *L)
+{
+	std::vector<double> poles, SlaterInts;
+	std::vector<mypoint> spectrum;
+	double wMin, wMax, dw, eps, gamma, shift;
+
+	CompactMatrixType *M;
+
+	uint32_t len = lua_gettop(L);
+	lua_check(L,1,wMin);
+	lua_check(L,2,wMax);
+	lua_check(L,3,dw);
+	lua_check(L,4,eps);
+	lua_check(L,5,gamma);
+	lua_check(L,6,poles);
+	lua_check(L,7,SlaterInts);
+	lua_check(L,8,M);
+	lua_check(L,9,shift);
+
+	uint32_t Npoints = floor((wMax-wMin)/dw) + 1;
+	spectrum = std::vector<mypoint>(Npoints);
+	for (uint32_t i = 0; i < Npoints; i++)
+	{
+		spectrum[i].w = wMin + i * dw;
+		spectrum[i].y.Re = 0.;
+		spectrum[i].y.Im = 0.;
+	}
+	if (len == 10)
+	{
+		vector<vector<Complex16> > selfenergy;
+		lua_check(L,10,selfenergy);
+		PlotSpectrumFromPoles(eps,gamma,shift,poles,SlaterInts,M,spectrum,selfenergy);
+	}
+	else
+	{
+		PlotSpectrumFromPoles(eps,gamma,shift,poles,SlaterInts,M,spectrum);
+	}
+
+	lua_push(L,spectrum);
+	return 1;
+
+}
+
+static int LuaAugerMeitnerSelfEnergy(lua_State *L)
+{
+	WaveFunctionType * psi;
+	vector<OperatorType *> UList;
+	OperatorType *H;
+	vector<double> poles, SlaterInts, EnergiesUnbound;
+	vector<mypoint> spectrum;
+	double eps, gamma;
+	vector<Interpolation::InterpolatingFunction *> WavefunsBoundG,WavefunsBoundF,WavefunsUnboundG,WavefunsUnboundF;
+	uint32_t NF;
+	vector<int> indToK;
+	uint16_t **indices;
+	int arg = 1;
+
+	lua_check(L,arg++,WavefunsBoundG);
+	lua_check(L,arg++,WavefunsBoundF);
+	lua_check(L,arg++,WavefunsUnboundG);
+	lua_check(L,arg++,WavefunsUnboundF);
+	 NF = (uint32_t)luaL_checkunsigned(L, arg++);
+	 uint32_t Nindices = GetIndices(L,arg++,indToK,indices);
+	 lua_check(L,arg++,H);
+	 lua_check(L,arg++,psi);
+	 lua_check(L,arg++,eps);
+	 lua_check(L,arg++,gamma);
+	 lua_check(L,arg++,EnergiesUnbound);
+	 InitializeSpectrum(L,arg,spectrum);
+
+	 uint32_t NPointsToEvaluateInterpolation = 0;
+	 if (lua_gettop(L) == arg)
+		 lua_check(L,arg,NPointsToEvaluateInterpolation);
+
+	 AugerMeitnerSelfEnergy(WavefunsBoundG,WavefunsBoundF,WavefunsUnboundG,WavefunsUnboundF,indToK,indices,NF,H,psi,eps,gamma,EnergiesUnbound,spectrum,NPointsToEvaluateInterpolation);
+	 lua_push(L,spectrum);
+
+	 for (uint32_t i = 0; i < Nindices; i++)
+	 {
+		 free(indices[i]);
+	 }
+	 free(indices);
+	 return 1;
+}
+
+static int LuaBraketList(lua_State *L)
+{
+	WaveFunctionType * psi;
+	vector<OperatorType *> UList;
+	OperatorType *H;
+	CompactMatrixType *S, *M;
+
+	lua_check(L,1,psi);
+	lua_check(L,2,UList);
+	lua_check(L,3,H);
+
+	M = (CompactMatrixType*) lua_newuserdata(L,sizeof(CompactMatrixType));
+	luaL_setmetatable(L,"Matrix_Type");
+	M->QComplex = psi->QComplex || H->QComplex;
+	uint32_t i = 0;
+	while (!M->QComplex && i < (uint32_t) UList.size())
+	{
+		M->QComplex = UList[i]->QComplex;
+		i++;
+	}
+	M->Ni = (uint32_t) UList.size();
+	M->Nj = M->Ni;
+	InitCompactMatrix(M);
+	S = (CompactMatrixType*) lua_newuserdata(L,sizeof(CompactMatrixType));
+	luaL_setmetatable(L,"Matrix_Type");
+	S->QComplex = 0;
+	S->Ni = M->Ni;
+	S->Nj = M->Ni;
+	InitCompactMatrix(S);
+	PsiOppListOperatorOppListPsi(psi,UList,H,M);
+	printf("Done\n");
+	fflush(stdout);
+	//PsiOppListOppListPsi(psi,UList,S);
+
+	return 2;
+}
+
+static int LuaMartinTest(lua_State *L)
+{
+
+	WaveFunctionType *psi;
+	lua_check(L,1,psi);
+	for (uint32_t i = 1; i <= psi->N; i++)
+	{
+		PrintDeterminant(*psi,i);
+	}
+	/*
+	lua_check(L,3,psi);
+
+	BlockTriDiagonalMatrixType GTri;
+	CreateSpectrum(*H,*T,&psi[0],psi.size(),1E-16,GTri,4);
+	LuaPushTable_BlockTriDiagonalMatrixType(L, &GTri);
+	return 1;
+*/
+/*
+	MatrixType U;
+	std::vector<WaveFunctionType> psi;
+	WaveFunctionType *out;
+
+	lua_check(L,1,psi);
+	U = *luaL_checkMatrix(L,2);
+	RotateWaveFunctions(&psi[0],psi.size(),U,out);
+    char *Buffer;
+    lua_createtable(L,psi.size(),0);
+    for (int i = 0; i < psi.size(); i++)
+    {
+    	StringPrintWaveFunctionReadable(out[i], &Buffer);
+    	lua_pushstring(L, Buffer);
+    	lua_rawseti(L,-2,i+1);
+    }
+
+	return 1;
+*/
+	/*
+	uint32_t mu;
+	int kappa1;
+	int kappa2;
+	int twom1;
+	int twom2;
+	lua_check(L,1,mu);
+	lua_check(L,2,kappa1);
+	lua_check(L,3,kappa2);
+	lua_check(L,4,twom1);
+	lua_check(L,5,twom2);
+	printf("\nmu = %d\nkappa1 = %i\nkappa2 = %i\nm1 = %i/2\nm2 = %i/2\n",mu,kappa1,kappa2,twom1,twom2);
+	printf("\nYYY = %f\n",YYYintegral(0,0,1,1,1,-1));
+	printf("\nCGo = %f\n",ClebschHalf(2,0,1,1,3,1));
+	printf("\nDipole = %f\n",DipoleMatrixElement(1,1,1,mu,kappa1,kappa2,twom1,twom2));
+	return 0;
+	*/
+/*	LinAlg::CSRMatrix<double> *M = (LinAlg::CSRMatrix<double> *) luaL_checkudata(L, 1, "CSRMatrix_Type");
+	M->Print();
+	return 0;
+	WaveFunctionType *psi = (WaveFunctionType *) luaL_checkudata(L, 2, "Wavefunction_Type");
+	std::vector<double> vec, a, b, y;
+	WaveFunctionToVector(psi,vec,psi);
+	uint32_t Mrow = vec.size();
+	uint32_t Ncol = 2;
+	LinAlg::Matrix<double> startblock = LinAlg::Matrix<double>(Mrow,Ncol);
+	/*for(uint32_t i = 0; i < Mrow;i++)
+	{
+		startblock.Entries[i] = vec[i];
+		startblock.Entries[i+Mrow] = vec[i]+i;
+	}*/
+/*	startblock.Entries[0] = -1;
+	startblock.Entries[1] =  0;
+	startblock.Entries[2] =  3;
+	startblock.Entries[3] =  1;
+	startblock.Entries[4] =  1;
+	startblock.Entries[5] =  3;
+
+	startblock.Entries[6] =  2;
+	startblock.Entries[7] =  1;
+	startblock.Entries[8] =  1;
+	startblock.Entries[9] =  0;
+	startblock.Entries[10] = 0;
+	startblock.Entries[11] = 3;
+	std::vector<LinAlg::Matrix<double> > T,A,B;
+	double epsSV = 100*DBL_EPSILON;
+	uint32_t N = 4;
+	BlockLanczos(*M,startblock,N,epsSV,A,B,T);
+	printf("A:\n");
+	for (int i = 0; i < N; i++)
+	{
+		A[i].print();
+		printf("\n");
+	}
+	printf("B:\n");
+	for (int i = 0; i < N; i++)
+	{
+		B[i].print();
+		printf("\n");
+	}
+	printf("T:\n");
+	for (int i = 0; i < N; i++)
+	{
+		T[i].print();
+		printf("\n");
+	}*/
+	return 0;
 }
 
 static const struct luaL_Reg Martin_meta[] = {
@@ -877,6 +1972,17 @@ static const struct luaL_Reg Martin_func[] = {
   {"EigenDifferential",LuaEigenDifferential},
   {"ED",LuaEigenDifferential},
   {"SparseOperator",LuaSparseOperator},
+  {"SparseTri",LuaSparseTridiagonalize},
+  {"OperatorToCSRMatrix",LuaOperatorToCSRMatrix},
+  {"CSRTridiagonalize",LuaCSRTridiagonalize},
+  {"Export",LuaExport},
+  {"ReadFPLOEnergies",LuaReadFPLOEnergies},
+  {"RelativisticDipoleOperator",LuaRelativisticDipoleOperator},
+  {"ResonantSpectrum",LuaCreateResonantSpectraSE},
+  {"ListU",LuaListU},
+  {"PlotSpectrum",LuaCDMPlot},
+  {"BraketList",LuaBraketList},
+  {"AMSel",LuaAugerMeitnerSelfEnergy},
   {NULL, NULL}
 };
 
@@ -1001,4 +2107,47 @@ static int LuaPropagator2(lua_State *L)
 	}
 	return 2;
 }
+ */
+
+/* DEBUG QUAD
+	uint32_t NfunsG = (uint32_t)lua_objlen(L,1);
+	vector<Interpolation::InterpolatingFunction *> funsG = vector<Interpolation::InterpolatingFunction *>(NfunsG);
+	for(uint32_t i = 0; i < NfunsG; i++)
+	{
+		lua_rawgeti(L, 1, i+1);
+		funsG[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
+		lua_pop(L,1);
+	}
+	vector<Interpolation::InterpolatingFunction *> funsF = vector<Interpolation::InterpolatingFunction *>(NfunsG);
+	for(uint32_t i = 0; i < NfunsG; i++)
+	{
+		lua_rawgeti(L, 2, i+1);
+		funsF[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
+		lua_pop(L,1);
+	}
+
+	uint32_t k = 7;
+	vector<double> x = funsG[0]->GetX();
+	printf("x = %.8E\n",x[x.size()-1]);
+	vector<double> knots = Quad::GetKnots(k,x);
+	//PrintArray(&x[0],x.size());
+	vector<double> g = (*funsG[0])(knots);
+	vector<double> f = (*funsF[0])(knots);
+	vector<double> w = Quad::GetWeights(k,x);
+	vector<double> dg = w * g;
+	vector<double> df = w * f;
+	double res = 0;
+	for (uint32_t i = 0; i < g.size(); i++)
+	{
+		res += df[i]*f[i] +dg[i]*g[i];
+
+	}
+	printf("%.8E\n",res);
+	printf("%.8E\n",Quad::GetMultipoleIntegral(*(Interpolation::CubicSpline*)funsG[0],*(Interpolation::CubicSpline*)funsG[0],0));
+	printf("%.8E\n",Quad::GetMultipoleIntegral(*(Interpolation::CubicSpline*)funsG[0],*(Interpolation::CubicSpline*)funsG[0],1));
+	printf("%.8E\n\n",Quad::GetMultipoleIntegral(*(Interpolation::CubicSpline*)funsG[0],*(Interpolation::CubicSpline*)funsG[0],2));
+
+	printf("%.8E\n",Quad::GetMultipoleIntegral(*funsG[0],*funsG[0],0,k));
+	printf("%.8E\n",Quad::GetMultipoleIntegral(*funsG[0],*funsG[0],1,k));
+	printf("%.8E\n",Quad::GetMultipoleIntegral(*funsG[0],*funsG[0],2,k));
  */

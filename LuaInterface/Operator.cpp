@@ -1557,7 +1557,7 @@ static int LuaOperatorExp(lua_State * L)
   {
     if(HermitianOperatorNormalOrderExponent(*l, alpha, res, &QDetNotOrderedFcFaBcBa))
     {
-      return luaL_error(L, "Errorr, call to OperatorExp failed\n");
+      return luaL_error(L, "Error, call to OperatorExp failed\n");
     }
   }
   else if(len==2)
@@ -1573,16 +1573,16 @@ static int LuaOperatorExp(lua_State * L)
     }
     else
     {
-      return luaL_error(L, "Errorr, call to OperatorExp with 2 arguments, first should be an operator, second is an optional real or complex number. Type found at position two is %s\n",lua_typename(L,lua_type(L,2)));
+      return luaL_error(L, "Error, call to OperatorExp with 2 arguments, first should be an operator, second is an optional real or complex number. Type found at position two is %s\n",lua_typename(L,lua_type(L,2)));
     }
     if(HermitianOperatorNormalOrderExponent(*l, alpha, res, &QDetNotOrderedFcFaBcBa))
     {
-      return luaL_error(L, "Errorr, call to OperatorExp failed\n");
+      return luaL_error(L, "Error, call to OperatorExp failed\n");
     }
   }
   else
   {
-    return luaL_error(L, "Errorr, call to OperatorExp with %d arguments, expected 1 or 2\n",len);
+    return luaL_error(L, "Error, call to OperatorExp with %d arguments, expected 1 or 2\n",len);
   }
   return 1;
 }

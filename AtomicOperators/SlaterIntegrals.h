@@ -1,12 +1,12 @@
 #ifndef ATOMICOPERATORS_SLATERINTEGRALS_H_
 #define ATOMICOPERATORS_SLATERINTEGRALS_H_
 
-SSlaterIntegral *GetSlaterIntegrals(const vector<vector<double> > &basisfuns,const vector<double> &x,const vector<int> &indToK, unsigned int &NIntegrals);
+SSlaterIntegral *GetSlaterIntegrals(const vector<vector<double> > &basisfuns,const vector<double> &x,const vector<int> &indToK, unsigned int &NIntegrals, bool Qcontinuum=false);
 
-SSlaterIntegral *GetSlaterIntegrals(const vector<Interpolation::InterpolatingFunction *> &ipolfuns,const vector<int> &indToK, unsigned int &NIntegrals);
+SSlaterIntegral *GetSlaterIntegrals(const vector<Interpolation::InterpolatingFunction *> &ipolfuns,const vector<int> &indToK, unsigned int &NIntegrals, bool Qcontinuum=false);
 
 void CalculateSlaterIntegrals(const int NIntegrals, SSlaterIntegral *integrals, const int dim,
-                              double **kernels, vector<vector<double> > basisfuns, vector<vector<double> > dualfuns);
+                              double **kernels,const vector<vector<double> > &basisfuns,const vector<vector<double> > &dualfuns);
 
 void CalculateSlaterIntegrals(const int NIntegrals, SSlaterIntegral *integrals, uint32_t dim,
                               vector<vector<double> > &kernels, vector<vector<double> > &basisfuns, vector<vector<double> > &dualfuns);
@@ -28,7 +28,7 @@ vector<double> Dual(const vector<double> &f, const vector<double> &w);
 
 void CreateDualFunctions(const vector<vector<double> > &basisfuns,const vector<double> &x, vector<vector<double> > &dualfuns);
 
-SSlaterIntegral *InitializeIntegrals(const vector<int> &indToK, unsigned int &NIntegrals, unsigned int *kMax);
+SSlaterIntegral *InitializeIntegrals(const vector<int> &indToK, unsigned int &NIntegrals, unsigned int *kMax, bool Qcontinuum=false);
 
 unsigned int *GetK(const int *kappa, int *n);
 

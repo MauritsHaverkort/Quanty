@@ -14,7 +14,7 @@
 #include "../DMFT/SingleSiteFunctions.cpp"
 #include "../Yi/functions_yi.cpp"
 #include "../Martin/functions_martin.cpp"
-#include "../Simon/functions_simon.cpp"
+#include "../Simon/Simon.cpp"
 
 
 
@@ -22,6 +22,7 @@
 #include "lua/includeLua.c"
 static void *currentudata = NULL;
 #include "lua_extensions/tools.cpp"
+#include "lua_extensions/luaInOut.cpp"
 #include "lua_extensions/TableToArray.cpp"
 #include "lua_extensions/get_put.cpp"
 #include "units.cpp"
@@ -56,9 +57,9 @@ int main(int argc, char *argv[])
   TimeStampAll();
 
   int result;
-  if (argc != 2)
+  if (argc < 2)
   {
-    printf("Usage: %s luafile\n", argv[0]);
+    printf("Usage: %s luafile [list of arguments]\n", argv[0]);
     return 1;
   }
 
@@ -80,6 +81,11 @@ int main(int argc, char *argv[])
     printf("Error while loading the script:\n%s\n\n", lua_tostring(L, -1));
     lua_close(L);
     return 1;
+  }
+  if (argc > 2)
+  {
+    lua_push(L,&(argv[2]),argc-2);
+    lua_setglobal(L,"args");
   }
   result = lua_pcall(L, 0, 0, 0);
   if (result)

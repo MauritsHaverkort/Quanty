@@ -35,6 +35,9 @@ public:
 	void AddRow(std::map<uint32_t,F> rowEntries);
 	void Evaluate(const std::vector<F> &x,std::vector<F> &y);
 	void AdjointEvaluate(const std::vector<F> &x,std::vector<F> &y);
+	void BlockEvaluate(const std::vector<F> &x,std::vector<F> &y, const uint32_t blocksize);
+	void BlockEvaluate(const Matrix<F> &x, Matrix<F> &y);
+	//void BlockEvaluate(const CompactMatrixType &x,CompactMatrixType &y);
 
 };
 

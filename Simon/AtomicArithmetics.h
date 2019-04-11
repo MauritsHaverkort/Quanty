@@ -1,0 +1,9 @@
+template<typename T>bool isElementOf(const T element, const vector<T> &set, bool (*eq)(const T&, const T&));
+bool QAtomsEqual(const AtomType &a1, const AtomType &a2);
+string multiplicityToNonRelOrb(const int mult, const bool hasSpin);
+string multiplicityToNonRelOrb(const int mult);
+TightBindingDef sortTbAtomToFirstPosition(TightBindingDef &tb, const AtomType &atom, CompactMatrixType &R);
+void initAtom(AtomType &a, const vector<string> &shellNames, const vector<vector<string> > &orbitNames, const bool hasSpin);
+void initAtom(AtomType &a, const vector<string> &shellNames, const vector<vector<string> > &orbitNames);
+vector<AtomType> OrbsToAtoms(const vector<string> &orbs, const bool hasSpin);
+vector<AtomType> OrbsToAtoms(const vector<string> &orbs);

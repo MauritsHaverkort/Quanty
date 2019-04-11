@@ -1,6 +1,6 @@
 #include "../AtomicOperators/SlaterIntegrals.h"
 
-SSlaterIntegral *GetSlaterIntegrals(const vector<vector<double> > &basisfuns,const vector<double> &x,const vector<int> &indToK, unsigned int &NIntegrals)
+SSlaterIntegral *GetSlaterIntegrals(const vector<vector<double> > &basisfuns,const vector<double> &x,const vector<int> &indToK, unsigned int &NIntegrals, bool Qcontinuum)
 {
 
     SSlaterIntegral *si;
@@ -14,7 +14,7 @@ SSlaterIntegral *GetSlaterIntegrals(const vector<vector<double> > &basisfuns,con
 
     CreateDualFunctions(basisfuns,x,dualfuns);
 
-    si = InitializeIntegrals(indToK, NIntegrals,&kMax);
+    si = InitializeIntegrals(indToK, NIntegrals,&kMax,Qcontinuum);
 
     kernels = CreateAllKernels(kMax, NGridPoints, &x[0]);
 
@@ -29,7 +29,7 @@ SSlaterIntegral *GetSlaterIntegrals(const vector<vector<double> > &basisfuns,con
     return si;
 }
 
-SSlaterIntegral *GetSlaterIntegrals(const vector<Interpolation::InterpolatingFunction *> &ipolfuns,const vector<int> &indToK, unsigned int &NIntegrals)
+SSlaterIntegral *GetSlaterIntegrals(const vector<Interpolation::InterpolatingFunction *> &ipolfuns,const vector<int> &indToK, unsigned int &NIntegrals, bool Qcontinuum)
 {
 
 	uint32_t quadDegree = 3;
@@ -51,8 +51,7 @@ SSlaterIntegral *GetSlaterIntegrals(const vector<Interpolation::InterpolatingFun
 	unsigned int kMax;
 	vector<vector<double> > kernels;
 
-    si = InitializeIntegrals(indToK, NIntegrals,&kMax);
-
+    si = InitializeIntegrals(indToK, NIntegrals,&kMax,Qcontinuum);
     //clock_t t = clock();
     CreateAllKernels(kMax, knots,kernels);
     //cout << "Kernels: " << (clock()-t)*1.0/CLOCKS_PER_SEC << endl;
@@ -64,22 +63,19 @@ SSlaterIntegral *GetSlaterIntegrals(const vector<Interpolation::InterpolatingFun
 }
 
 void CalculateSlaterIntegrals(const int NIntegrals, SSlaterIntegral *integrals, const int dim,
-                              double **kernels, vector<vector<double> > basisfuns, vector<vector<double> > dualfuns)
+                              double **kernels,const vector<vector<double> > &basisfuns,const vector<vector<double> > &dualfuns)
 {
 
-    int i,j, k;
-    unsigned int *n;
-    double Fk;
-
-    for( i = 0; i < NIntegrals; i++)
+#pragma omp parallel for
+    for(int i = 0; i < NIntegrals; i++)
     {
 
-        n = integrals[i].tau.n;
-        for( j = 0; j < integrals[i].Nval; j++)
+    	unsigned int *n = integrals[i].tau.n;
+        for(int j = 0; j < integrals[i].Nval; j++)
         {
 
-            k = integrals[i].k[j];
-            Fk = SlaterIntegral(dim, &(dualfuns[n[0]][0]), &(dualfuns[n[1]][0]),
+            int k = integrals[i].k[j];
+            double Fk = SlaterIntegral(dim, &(dualfuns[n[0]][0]), &(dualfuns[n[1]][0]),
                                 &(basisfuns[n[2]][0]),&(basisfuns[n[3]][0]),kernels[k]);
             integrals[i].val[j] = Fk;
 
@@ -91,19 +87,16 @@ void CalculateSlaterIntegrals(const int NIntegrals, SSlaterIntegral *integrals, 
                               vector<vector<double> > &kernels, vector<vector<double> > &basisfuns, vector<vector<double> > &dualfuns)
 {
 
-    int i,j, k;
-    unsigned int *n;
-    double Fk;
-
-    for( i = 0; i < NIntegrals; i++)
+#pragma omp parallel for
+    for(int i = 0; i < NIntegrals; i++)
     {
 
-        n = integrals[i].tau.n;
-        for( j = 0; j < integrals[i].Nval; j++)
+    	unsigned int *n = integrals[i].tau.n;
+        for(int j = 0; j < integrals[i].Nval; j++)
         {
 
-        	k = integrals[i].k[j];
-            Fk = SlaterIntegral(dim, &(dualfuns[n[0]][0]), &(dualfuns[n[1]][0]),
+        	int k = integrals[i].k[j];
+            double Fk = SlaterIntegral(dim, &(dualfuns[n[0]][0]), &(dualfuns[n[1]][0]),
                                 &(basisfuns[n[2]][0]),&(basisfuns[n[3]][0]),&(kernels[k][0]));
             integrals[i].val[j] = Fk;
 
@@ -322,12 +315,20 @@ void CreateDualFunctions(const vector<vector<double> > &basisfuns,const vector<d
     }
 }
 
-SSlaterIntegral *InitializeIntegrals(const vector<int> &indToK, unsigned int &NIntegrals, unsigned int *kMax)
+SSlaterIntegral *InitializeIntegrals(const vector<int> &indToK, unsigned int &NIntegrals, unsigned int *kMax, bool Qcontinuum)
 {
     unsigned int i, k;
     SSlaterIntegral *integrals;
 
-    std::map<myarray,myarray> tupel = CreateSlaterTuple(indToK);
+    std::map<myarray,myarray> tupel;
+    if (Qcontinuum)
+    {
+    	tupel = CreateContinuumTuple(indToK);
+    }
+    else
+    {
+    	tupel = CreateSlaterTuple(indToK);
+    }
     NIntegrals = (unsigned int)tupel.size();
 
     integrals = (SSlaterIntegral *) malloc((NIntegrals)*sizeof(SSlaterIntegral));
