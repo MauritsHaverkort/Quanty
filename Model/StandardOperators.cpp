@@ -512,6 +512,34 @@ uint32_t CreateOperatorSx(uint32_t NFermion, uint32_t NSpin, uint16_t * SpinUp, 
   OperatorChop(Sx, 0.001);
   return 0;
 }
+uint32_t CreateOperatorSxY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Sx)
+{
+  return CreateOperatorSx(NFermion, L, LindexUp, LindexDn, Sx);
+}
+uint32_t CreateOperatorSxK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Sx)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorSxZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Sx)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorSxP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Sx)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorSxjjz(uint32_t NFermion, uint32_t L, uint16_t * Lindexjmin, uint16_t * Lindexjplus, OperatorType * const Sx)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
 
 uint32_t CreateOperatorSy(uint32_t NFermion, uint32_t NSpin, uint16_t * SpinUp, uint16_t * SpinDn, OperatorType * const Sy)
 {
@@ -535,6 +563,34 @@ uint32_t CreateOperatorSy(uint32_t NFermion, uint32_t NSpin, uint16_t * SpinUp, 
   OperatorChop(Sy, 0.001);
   return 0;
 }
+uint32_t CreateOperatorSyY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Sy)
+{
+  return CreateOperatorSy(NFermion, L, LindexUp, LindexDn, Sy);
+}
+uint32_t CreateOperatorSyK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Sy)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorSyZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Sy)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorSyP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Sy)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorSyjjz(uint32_t NFermion, uint32_t L, uint16_t * Lindexjmin, uint16_t * Lindexjplus, OperatorType * const Sy)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
 
 uint32_t CreateOperatorSz(uint32_t NFermion, uint32_t NSpin, uint16_t * SpinUp, uint16_t * SpinDn, OperatorType * const Sz)
 {
@@ -554,6 +610,34 @@ uint32_t CreateOperatorSz(uint32_t NFermion, uint32_t NSpin, uint16_t * SpinUp, 
     RealOperatorAddLaderNormalOrder(Sz, oadd, 2, -0.5, &QDetNotOrderedFcFaBcBa);
   }
   OperatorChop(Sz, 0.001);
+  return 0;
+}
+uint32_t CreateOperatorSzY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Sz)
+{
+  return CreateOperatorSz(NFermion, L, LindexUp, LindexDn, Sz);
+}
+uint32_t CreateOperatorSzK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Sz)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorSzZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Sz)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorSzP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Sz)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorSzjjz(uint32_t NFermion, uint32_t L, uint16_t * Lindexjmin, uint16_t * Lindexjplus, OperatorType * const Sz)
+{
+  printf("not yet implemented\n");
+  //TODO:
   return 0;
 }
 
@@ -606,6 +690,34 @@ uint32_t CreateOperatorSsqr(uint32_t NFermion, uint32_t NSpin, uint16_t * SpinUp
   OperatorChop(Ssqr, 0.001);
   return 0;
 }
+uint32_t CreateOperatorSsqrY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Ssqr)
+{
+  return CreateOperatorSsqr(NFermion, L, LindexUp, LindexDn, Ssqr);
+}
+uint32_t CreateOperatorSsqrK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Ssqr)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorSsqrZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Ssqr)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorSsqrP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Ssqr)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorSsqrjjz(uint32_t NFermion, uint32_t L, uint16_t * Lindexjmin, uint16_t * Lindexjplus, OperatorType * const Ssqr)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
 
 uint32_t CreateOperatorSplus(uint32_t NFermion, uint32_t NSpin, uint16_t * SpinUp, uint16_t * SpinDn, OperatorType * const Splus)
 {
@@ -624,6 +736,35 @@ uint32_t CreateOperatorSplus(uint32_t NFermion, uint32_t NSpin, uint16_t * SpinU
   OperatorChop(Splus, 0.001);
   return 0;
 }
+uint32_t CreateOperatorSplusY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Splus)
+{
+  return CreateOperatorSplus(NFermion, L, LindexUp, LindexDn, Splus);
+}
+uint32_t CreateOperatorSplusK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Splus)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorSplusZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Splus)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorSplusP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Splus)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorSplusjjz(uint32_t NFermion, uint32_t L, uint16_t * Lindexjmin, uint16_t * Lindexjplus, OperatorType * const Splus)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+
 
 uint32_t CreateOperatorSmin(uint32_t NFermion, uint32_t NSpin, uint16_t * SpinUp, uint16_t * SpinDn, OperatorType * const Smin)
 {
@@ -640,6 +781,34 @@ uint32_t CreateOperatorSmin(uint32_t NFermion, uint32_t NSpin, uint16_t * SpinUp
     RealOperatorAddLaderNormalOrder(Smin, oadd, 2, 1, &QDetNotOrderedFcFaBcBa);
   }
   OperatorChop(Smin, 0.001);
+  return 0;
+}
+uint32_t CreateOperatorSminY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Smin)
+{
+  return CreateOperatorSmin(NFermion, L, LindexUp, LindexDn, Smin);
+}
+uint32_t CreateOperatorSminK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Smin)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorSminZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Smin)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorSminP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Smin)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorSminjjz(uint32_t NFermion, uint32_t L, uint16_t * Lindexjmin, uint16_t * Lindexjplus, OperatorType * const Smin)
+{
+  printf("not yet implemented\n");
+  //TODO:
   return 0;
 }
 
@@ -901,14 +1070,26 @@ uint32_t CreateOperatorLxY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, u
 }
 uint32_t CreateOperatorLxK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Lx)
 {
+  printf("not yet implemented\n");
+  //TODO:
   return 0;
 }
 uint32_t CreateOperatorLxZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Lx)
 {
+  printf("not yet implemented\n");
+  //TODO:
   return 0;
 }
-uint32_t CreateOperatorLxjjz(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Lx)
+uint32_t CreateOperatorLxP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Lx)
 {
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorLxjjz(uint32_t NFermion, uint32_t L, uint16_t * Lindexjmin, uint16_t * Lindexjplus, OperatorType * const Lx)
+{
+  printf("not yet implemented\n");
+  //TODO:
   return 0;
 }
 
@@ -945,6 +1126,34 @@ uint32_t CreateOperatorLy(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, ui
   OperatorChop(Ly, 0.001);
   return 0;
 }
+uint32_t CreateOperatorLyY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Ly)
+{
+  return CreateOperatorLy(NFermion, L, LindexUp, LindexDn, Ly);
+}
+uint32_t CreateOperatorLyK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Ly)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorLyZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Ly)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorLyP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Ly)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorLyjjz(uint32_t NFermion, uint32_t L, uint16_t * Lindexjmin, uint16_t * Lindexjplus, OperatorType * const Ly)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
 
 uint32_t CreateOperatorLz(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Lz)
 {
@@ -968,9 +1177,36 @@ uint32_t CreateOperatorLz(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, ui
   OperatorChop(Lz, 0.001);
   return 0;
 }
+uint32_t CreateOperatorLzY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Lz)
+{
+  return CreateOperatorLz(NFermion, L, LindexUp, LindexDn, Lz);
+}
+uint32_t CreateOperatorLzK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Lz)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorLzZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Lz)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorLzP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Lz)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorLzjjz(uint32_t NFermion, uint32_t L, uint16_t * Lindexjmin, uint16_t * Lindexjplus, OperatorType * const Lz)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
 
-uint32_t CreateOperatorLsqr(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn,
-                            OperatorType * const Lsqr)
+uint32_t CreateOperatorLsqr(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Lsqr)
 {
   uint32_t i, j;
   double mi, mj, l;
@@ -1025,34 +1261,57 @@ uint32_t CreateOperatorLsqr(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, 
       oadd[2] = CrAnMask + LindexUp[j];
       oadd[1] = LindexUp[i];
       oadd[0] = LindexUp[j + 1];
-      RealOperatorAddLaderNormalOrder(Lsqr, oadd, 4, -sqrt(l + mi + 1) * sqrt(l - mi) * sqrt(l - mj) * sqrt(l + mj + 1),
-                                      &QDetNotOrderedFcFaBcBa);
+      RealOperatorAddLaderNormalOrder(Lsqr, oadd, 4, -sqrt(l + mi + 1) * sqrt(l - mi) * sqrt(l - mj) * sqrt(l + mj + 1), &QDetNotOrderedFcFaBcBa);
       oadd[3] = CrAnMask + LindexDn[i + 1];
       oadd[2] = CrAnMask + LindexDn[j];
       oadd[1] = LindexDn[i];
       oadd[0] = LindexDn[j + 1];
-      RealOperatorAddLaderNormalOrder(Lsqr, oadd, 4, -sqrt(l + mi + 1) * sqrt(l - mi) * sqrt(l - mj) * sqrt(l + mj + 1),
-                                      &QDetNotOrderedFcFaBcBa);
+      RealOperatorAddLaderNormalOrder(Lsqr, oadd, 4, -sqrt(l + mi + 1) * sqrt(l - mi) * sqrt(l - mj) * sqrt(l + mj + 1),  &QDetNotOrderedFcFaBcBa);
       oadd[3] = CrAnMask + LindexUp[i + 1];
       oadd[2] = CrAnMask + LindexDn[j];
       oadd[1] = LindexUp[i];
       oadd[0] = LindexDn[j + 1];
-      RealOperatorAddLaderNormalOrder(Lsqr, oadd, 4, -sqrt(l + mi + 1) * sqrt(l - mi) * sqrt(l - mj) * sqrt(l + mj + 1),
-                                      &QDetNotOrderedFcFaBcBa);
+      RealOperatorAddLaderNormalOrder(Lsqr, oadd, 4, -sqrt(l + mi + 1) * sqrt(l - mi) * sqrt(l - mj) * sqrt(l + mj + 1), &QDetNotOrderedFcFaBcBa);
       oadd[3] = CrAnMask + LindexDn[i + 1];
       oadd[2] = CrAnMask + LindexUp[j];
       oadd[1] = LindexDn[i];
       oadd[0] = LindexUp[j + 1];
-      RealOperatorAddLaderNormalOrder(Lsqr, oadd, 4, -sqrt(l + mi + 1) * sqrt(l - mi) * sqrt(l - mj) * sqrt(l + mj + 1),
-                                      &QDetNotOrderedFcFaBcBa);
+      RealOperatorAddLaderNormalOrder(Lsqr, oadd, 4, -sqrt(l + mi + 1) * sqrt(l - mi) * sqrt(l - mj) * sqrt(l + mj + 1), &QDetNotOrderedFcFaBcBa);
     }
   }
   OperatorChop(Lsqr, 0.001);
   return 0;
 }
+uint32_t CreateOperatorLsqrY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Lsqr)
+{
+  return CreateOperatorLsqr(NFermion, L, LindexUp, LindexDn, Lsqr);
+}
+uint32_t CreateOperatorLsqrK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Lsqr)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorLsqrZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Lsqr)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorLsqrP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Lsqr)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorLsqrjjz(uint32_t NFermion, uint32_t L, uint16_t * Lindexjmin, uint16_t * Lindexjplus, OperatorType * const Lsqr)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
 
-uint32_t CreateOperatorLplus(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn,
-                             OperatorType * const Lplus)
+uint32_t CreateOperatorLplus(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Lplus)
 {
   uint32_t i;
   double m, l;
@@ -1075,9 +1334,36 @@ uint32_t CreateOperatorLplus(uint32_t NFermion, uint32_t L, uint16_t * LindexUp,
   OperatorChop(Lplus, 0.001);
   return 0;
 }
+uint32_t CreateOperatorLplusY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Lplus)
+{
+  return CreateOperatorLplus(NFermion, L, LindexUp, LindexDn, Lplus);
+}
+uint32_t CreateOperatorLplusK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Lplus)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorLplusZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Lplus)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorLplusP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Lplus)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorLplusjjz(uint32_t NFermion, uint32_t L, uint16_t * Lindexjmin, uint16_t * Lindexjplus, OperatorType * const Lplus)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
 
-uint32_t CreateOperatorLmin(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn,
-                            OperatorType * const Lmin)
+uint32_t CreateOperatorLmin(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Lmin)
 {
   uint32_t i;
   double m, l;
@@ -1098,6 +1384,34 @@ uint32_t CreateOperatorLmin(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, 
     RealOperatorAddLaderNormalOrder(Lmin, oadd, 2, sqrt(l - m + 1) * sqrt(l + m), &QDetNotOrderedFcFaBcBa);
   }
   OperatorChop(Lmin, 0.001);
+  return 0;
+}
+uint32_t CreateOperatorLminY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Lmin)
+{
+  return CreateOperatorLmin(NFermion, L, LindexUp, LindexDn, Lmin);
+}
+uint32_t CreateOperatorLminK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Lmin)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorLminZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Lmin)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorLminP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Lmin)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorLminjjz(uint32_t NFermion, uint32_t L, uint16_t * Lindexjmin, uint16_t * Lindexjplus, OperatorType * const Lmin)
+{
+  printf("not yet implemented\n");
+  //TODO:
   return 0;
 }
 
@@ -1147,9 +1461,36 @@ uint32_t CreateOperatorJx(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, ui
   OperatorChop(Jx, 0.001);
   return 0;
 }
+uint32_t CreateOperatorJxY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jx)
+{
+  return CreateOperatorJx(NFermion, L, LindexUp, LindexDn, Jx);
+}
+uint32_t CreateOperatorJxK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jx)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorJxZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jx)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorJxP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jx)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorJxjjz(uint32_t NFermion, uint32_t L, uint16_t * Lindexjmin, uint16_t * Lindexjplus, OperatorType * const Jx)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
 
-uint32_t CreateOperatorJy(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn,
-                          OperatorType * const Jy)
+uint32_t CreateOperatorJy(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jy)
 {
   uint32_t i;
   double m, l;
@@ -1189,9 +1530,36 @@ uint32_t CreateOperatorJy(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, ui
   OperatorChop(Jy, 0.001);
   return 0;
 }
+uint32_t CreateOperatorJyY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jy)
+{
+  return CreateOperatorJy(NFermion, L, LindexUp, LindexDn, Jy);
+}
+uint32_t CreateOperatorJyK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jy)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorJyZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jy)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorJyP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jy)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorJyjjz(uint32_t NFermion, uint32_t L, uint16_t * Lindexjmin, uint16_t * Lindexjplus, OperatorType * const Jy)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
 
-uint32_t CreateOperatorJz(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn,
-                          OperatorType * const Jz)
+uint32_t CreateOperatorJz(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jz)
 {
   uint32_t i;
   uint16_t oadd[2];
@@ -1222,9 +1590,36 @@ uint32_t CreateOperatorJz(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, ui
   OperatorChop(Jz, 0.001);
   return 0;
 }
+uint32_t CreateOperatorJzY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jz)
+{
+  return CreateOperatorJz(NFermion, L, LindexUp, LindexDn, Jz);
+}
+uint32_t CreateOperatorJzK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jz)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorJzZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jz)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorJzP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jz)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorJzjjz(uint32_t NFermion, uint32_t L, uint16_t * Lindexjmin, uint16_t * Lindexjplus, OperatorType * const Jz)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
 
-uint32_t CreateOperatorJsqr(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn,
-                            OperatorType * const Jsqr)
+uint32_t CreateOperatorJsqr(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jsqr)
 {
   uint32_t i, j;
   double mi, mj, l;
@@ -1340,9 +1735,36 @@ uint32_t CreateOperatorJsqr(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, 
   OperatorChop(Jsqr, 0.001);
   return 0;
 }
+uint32_t CreateOperatorJsqrY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jsqr)
+{
+  return CreateOperatorJsqr(NFermion, L, LindexUp, LindexDn, Jsqr);
+}
+uint32_t CreateOperatorJsqrK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jsqr)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorJsqrZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jsqr)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorJsqrP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jsqr)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorJsqrjjz(uint32_t NFermion, uint32_t L, uint16_t * Lindexjmin, uint16_t * Lindexjplus, OperatorType * const Jsqr)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
 
-uint32_t CreateOperatorJplus(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn,
-                             OperatorType * const Jplus)
+uint32_t CreateOperatorJplus(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jplus)
 {
   uint32_t i;
   double m, l;
@@ -1371,9 +1793,36 @@ uint32_t CreateOperatorJplus(uint32_t NFermion, uint32_t L, uint16_t * LindexUp,
   OperatorChop(Jplus, 0.001);
   return 0;
 }
+uint32_t CreateOperatorJplusY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jplus)
+{
+  return CreateOperatorJplus(NFermion, L, LindexUp, LindexDn, Jplus);
+}
+uint32_t CreateOperatorJplusK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jplus)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorJplusZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jplus)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorJplusP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jplus)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorJplusjjz(uint32_t NFermion, uint32_t L, uint16_t * Lindexjmin, uint16_t * Lindexjplus, OperatorType * const Jplus)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
 
-uint32_t CreateOperatorJmin(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn,
-                            OperatorType * const Jmin)
+uint32_t CreateOperatorJmin(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jmin)
 {
   uint32_t i;
   double m, l;
@@ -1400,6 +1849,34 @@ uint32_t CreateOperatorJmin(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, 
     RealOperatorAddLaderNormalOrder(Jmin, oadd, 2, 1, &QDetNotOrderedFcFaBcBa);
   }
   OperatorChop(Jmin, 0.001);
+  return 0;
+}
+uint32_t CreateOperatorJminY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jmin)
+{
+  return CreateOperatorJmin(NFermion, L, LindexUp, LindexDn, Jmin);
+}
+uint32_t CreateOperatorJminK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jmin)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorJminZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jmin)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorJminP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jmin)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorJminjjz(uint32_t NFermion, uint32_t L, uint16_t * Lindexjmin, uint16_t * Lindexjplus, OperatorType * const Jmin)
+{
+  printf("not yet implemented\n");
+  //TODO:
   return 0;
 }
 
@@ -1500,6 +1977,34 @@ uint32_t CreateOperatorTx(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, ui
   }
   return 0;
 }
+uint32_t CreateOperatorTxY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Tx)
+{
+  return CreateOperatorTx(NFermion, L, LindexUp, LindexDn, Tx);
+}
+uint32_t CreateOperatorTxK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Tx)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorTxZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Tx)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorTxP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Tx)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorTxjjz(uint32_t NFermion, uint32_t L, uint16_t * Lindexjmin, uint16_t * Lindexjplus, OperatorType * const Tx)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
 
 uint32_t CreateOperatorTy(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Ty)
 {
@@ -1588,6 +2093,34 @@ uint32_t CreateOperatorTy(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, ui
   }
   return 0;
 }
+uint32_t CreateOperatorTyY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Ty)
+{
+  return CreateOperatorTy(NFermion, L, LindexUp, LindexDn, Ty);
+}
+uint32_t CreateOperatorTyK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Ty)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorTyZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Ty)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorTyP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Ty)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorTyjjz(uint32_t NFermion, uint32_t L, uint16_t * Lindexjmin, uint16_t * Lindexjplus, OperatorType * const Ty)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
 
 uint32_t CreateOperatorTz(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Tz)
 {
@@ -1643,6 +2176,34 @@ uint32_t CreateOperatorTz(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, ui
       RealOperatorAddLaderNormalOrder(Tz, oadd, 2,  0.5*sqrt(6.)*val, &QDetNotOrderedFcFaBcBa);
     }
   }
+  return 0;
+}
+uint32_t CreateOperatorTzY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Tz)
+{
+  return CreateOperatorTz(NFermion, L, LindexUp, LindexDn, Tz);
+}
+uint32_t CreateOperatorTzK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Tz)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorTzZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Tz)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorTzP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Tz)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorTzjjz(uint32_t NFermion, uint32_t L, uint16_t * Lindexjmin, uint16_t * Lindexjplus, OperatorType * const Tz)
+{
+  printf("not yet implemented\n");
+  //TODO:
   return 0;
 }
 
@@ -1702,6 +2263,34 @@ uint32_t CreateOperatorTplus(uint32_t NFermion, uint32_t L, uint16_t * LindexUp,
   }
   return 0;
 }
+uint32_t CreateOperatorTplusY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Tplus)
+{
+  return CreateOperatorTplus(NFermion, L, LindexUp, LindexDn, Tplus);
+}
+uint32_t CreateOperatorTplusK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Tplus)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorTplusZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Tplus)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorTplusP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Tplus)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorTplusjjz(uint32_t NFermion, uint32_t L, uint16_t * Lindexjmin, uint16_t * Lindexjplus, OperatorType * const Tplus)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
 
 uint32_t CreateOperatorTmin(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Tmin)
 {
@@ -1759,6 +2348,34 @@ uint32_t CreateOperatorTmin(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, 
   }
   return 0;
 }
+uint32_t CreateOperatorTminY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Tmin)
+{
+  return CreateOperatorTmin(NFermion, L, LindexUp, LindexDn, Tmin);
+}
+uint32_t CreateOperatorTminK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Tmin)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorTminZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Tmin)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorTminP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Tmin)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorTminjjz(uint32_t NFermion, uint32_t L, uint16_t * Lindexjmin, uint16_t * Lindexjplus, OperatorType * const Tmin)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
 
 uint32_t CreateOperatorTsqr(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Tsqr)
 {
@@ -1777,6 +2394,34 @@ uint32_t CreateOperatorTsqr(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, 
   CreateOperatorTz(NFermion,L,LindexUp,LindexDn,&Otemp);
   OperatorMultiplyNormalOrder(Tsqr, Otemp, Otemp, &QDetNotOrderedFcFaBcBa);
   FreeOperator(&Otemp);
+  return 0;
+}
+uint32_t CreateOperatorTsqrY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Tsqr)
+{
+  return CreateOperatorTsqr(NFermion, L, LindexUp, LindexDn, Tsqr);
+}
+uint32_t CreateOperatorTsqrK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Tsqr)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorTsqrZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Tsqr)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorTsqrP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Tsqr)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorTsqrjjz(uint32_t NFermion, uint32_t L, uint16_t * Lindexjmin, uint16_t * Lindexjplus, OperatorType * const Tsqr)
+{
+  printf("not yet implemented\n");
+  //TODO:
   return 0;
 }
 
@@ -1812,6 +2457,34 @@ uint32_t CreateOperatorldots(uint32_t NFermion, uint32_t L, uint16_t * LindexUp,
     RealOperatorAddLaderNormalOrder(ldots, oadd, 2, 0.5 * sqrt(l + mi + 1) * sqrt(l - mi), &QDetNotOrderedFcFaBcBa);
   }
   OperatorChop(ldots, 0.001);
+  return 0;
+}
+uint32_t CreateOperatorldotsY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const ldots)
+{
+  return CreateOperatorldots(NFermion, L, LindexUp, LindexDn, ldots);
+}
+uint32_t CreateOperatorldotsK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const ldots)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorldotsZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const ldots)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorldotsP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const ldots)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorldotsjjz(uint32_t NFermion, uint32_t L, uint16_t * Lindexjmin, uint16_t * Lindexjplus, OperatorType * const ldots)
+{
+  printf("not yet implemented\n");
+  //TODO:
   return 0;
 }
 
@@ -1865,7 +2538,34 @@ uint32_t CreateOperatorCF(uint32_t const NFermion, uint32_t LCr, uint32_t LAn, u
   }
   return 0;
 }
-
+uint32_t CreateOperatorCFY(uint32_t const NFermion, uint32_t LCr, uint32_t LAn, uint16_t * LCrindexUp, uint16_t * LCrindexDn, uint16_t * LAnindexUp, uint16_t * LAnindexDn, HarmonicsExpansion const Akm, OperatorType * const CF)
+{
+  return CreateOperatorCF(NFermion, LCr, LAn, LCrindexUp,LCrindexDn, LAnindexUp, LAnindexDn, Akm, CF);
+}
+uint32_t CreateOperatorCFK(uint32_t const NFermion, uint32_t LCr, uint32_t LAn, uint16_t * LCrindexUp, uint16_t * LCrindexDn, uint16_t * LAnindexUp, uint16_t * LAnindexDn, HarmonicsExpansion const Akm, OperatorType * const CF)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorCFZ(uint32_t const NFermion, uint32_t LCr, uint32_t LAn, uint16_t * LCrindexUp, uint16_t * LCrindexDn, uint16_t * LAnindexUp, uint16_t * LAnindexDn, HarmonicsExpansion const Akm, OperatorType * const CF)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorCFP(uint32_t const NFermion, uint32_t LCr, uint32_t LAn, uint16_t * LCrindexUp, uint16_t * LCrindexDn, uint16_t * LAnindexUp, uint16_t * LAnindexDn, HarmonicsExpansion const Akm, OperatorType * const CF)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorCFjjz(uint32_t const NFermion, uint32_t LCr, uint32_t LAn, uint16_t * LCrindexmin, uint16_t * LCrindexplus, uint16_t * LAnindexmin, uint16_t * LAnindexplus, HarmonicsExpansion const Akm, OperatorType * const CF)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
 
 
 /*  CreateOperatorQ*** creates the operators Qxx, Qyy, Qzz, Qxy, Qxz, Qyz as special cases of the Crystal-Field operator
@@ -1940,6 +2640,34 @@ uint32_t CreateOperatorQxx(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, u
   }
   return 0;
 }
+uint32_t CreateOperatorQxxY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qxx)
+{
+  return CreateOperatorldots(NFermion, L, LindexUp, LindexDn, Qxx);
+}
+uint32_t CreateOperatorQxxK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qxx)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorQxxZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qxx)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorQxxP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qxx)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorQxxjjz(uint32_t NFermion, uint32_t L, uint16_t * Lindexjmin, uint16_t * Lindexjplus, OperatorType * const Qxx)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
 
 uint32_t CreateOperatorQyy(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qyy)
 {
@@ -2003,6 +2731,34 @@ uint32_t CreateOperatorQyy(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, u
   }
   return 0;
 }
+uint32_t CreateOperatorQyyY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qyy)
+{
+  return CreateOperatorldots(NFermion, L, LindexUp, LindexDn, Qyy);
+}
+uint32_t CreateOperatorQyyK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qyy)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorQyyZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qyy)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorQyyP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qyy)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorQyyjjz(uint32_t NFermion, uint32_t L, uint16_t * Lindexjmin, uint16_t * Lindexjplus, OperatorType * const Qyy)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
 
 uint32_t CreateOperatorQzz(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qzz)
 {
@@ -2034,6 +2790,34 @@ uint32_t CreateOperatorQzz(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, u
       RealOperatorAddLaderNormalOrder(Qzz, oadd, 2, 2*val, &QDetNotOrderedFcFaBcBa);
     }
   }
+  return 0;
+}
+uint32_t CreateOperatorQzzY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qzz)
+{
+  return CreateOperatorQzz(NFermion, L, LindexUp, LindexDn, Qzz);
+}
+uint32_t CreateOperatorQzzK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qzz)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorQzzZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qzz)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorQzzP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qzz)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorQzzjjz(uint32_t NFermion, uint32_t L, uint16_t * Lindexjmin, uint16_t * Lindexjplus, OperatorType * const Qzz)
+{
+  printf("not yet implemented\n");
+  //TODO:
   return 0;
 }
 
@@ -2085,6 +2869,34 @@ uint32_t CreateOperatorQxy(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, u
   }
   return 0;
 }
+uint32_t CreateOperatorQxyY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qxy)
+{
+  return CreateOperatorQxy(NFermion, L, LindexUp, LindexDn, Qxy);
+}
+uint32_t CreateOperatorQxyK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qxy)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorQxyZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qxy)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorQxyP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qxy)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorQxyjjz(uint32_t NFermion, uint32_t L, uint16_t * Lindexjmin, uint16_t * Lindexjplus, OperatorType * const Qxy)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
 
 uint32_t CreateOperatorQxz(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qxz)
 {
@@ -2131,6 +2943,34 @@ uint32_t CreateOperatorQxz(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, u
       RealOperatorAddLaderNormalOrder(Qxz, oadd, 2, -sqrt(1.5)*val, &QDetNotOrderedFcFaBcBa);
     }
   }
+  return 0;
+}
+uint32_t CreateOperatorQxzY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qxz)
+{
+  return CreateOperatorQxz(NFermion, L, LindexUp, LindexDn, Qxz);
+}
+uint32_t CreateOperatorQxzK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qxz)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorQxzZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qxz)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorQxzP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qxz)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorQxzjjz(uint32_t NFermion, uint32_t L, uint16_t * Lindexjmin, uint16_t * Lindexjplus, OperatorType * const Qxz)
+{
+  printf("not yet implemented\n");
+  //TODO:
   return 0;
 }
 
@@ -2180,6 +3020,34 @@ uint32_t CreateOperatorQyz(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, u
       ComplexOperatorAddLaderNormalOrder(Qyz, oadd, 2, 0, sqrt(1.5)*val, &QDetNotOrderedFcFaBcBa);
     }
   }
+  return 0;
+}
+uint32_t CreateOperatorQyzY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qyz)
+{
+  return CreateOperatorQyz(NFermion, L, LindexUp, LindexDn, Qyz);
+}
+uint32_t CreateOperatorQyzK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qyz)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorQyzZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qyz)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorQyzP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qyz)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
+uint32_t CreateOperatorQyzjjz(uint32_t NFermion, uint32_t L, uint16_t * Lindexjmin, uint16_t * Lindexjplus, OperatorType * const Qyz)
+{
+  printf("not yet implemented\n");
+  //TODO:
   return 0;
 }
 

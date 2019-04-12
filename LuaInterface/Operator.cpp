@@ -494,8 +494,9 @@ static int LuaOperatorNewLx(lua_State * L)
     const char *basis;
     uint32_t ibasis;   //  0  000 SphericalHarmonicY, alternating dn,up from m=-l to m=l
                        //  1  001 TesseralHarmonicZ,  alternating dn,up sin first, than cos
-                       //  2  010 KubicHarmonicK,     alternatind dn,up order according to irep a,b,e,t
-                       //  3  011 jjz basis,          j=l-1/2 first, than j=l+1/2 from m=-j to m=j
+                       //  2  010 KubicHarmonicK,     alternating dn,up order according to irep a,b,e,t
+                       //  3  011 PyramidalHarmonicP, alternating dn,up order rotating around z axis
+                       //  4  100 jjz basis,          j=l-1/2 first, than j=l+1/2 from m=-j to m=j
   } Options;
   Options.ibasis=0;
   OperatorType *op;
@@ -506,8 +507,10 @@ static int LuaOperatorNewLx(lua_State * L)
   LuaOptionsType LuaOperatorOptions[]={
     {"basis","char*",&(Options.basis)},
     {NULL, NULL, NULL}};
-  Options.basis="SphericalHarmonicsY";
   if(NFermion==0) return luaL_error(L, "Angular momentum operator acting on zero fermions is not defined");
+  LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
+  LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
+  // set basis used
   if(LuaTestOptionsList(L, -1))
   {
     LuaCheckOptions(L, -1, LuaOperatorOptions);
@@ -523,24 +526,40 @@ static int LuaOperatorNewLx(lua_State * L)
     {
       Options.ibasis=2;
     }
-    else if((strcmp(Options.basis, "jjz")==0)||(strcmp(Options.basis, "Basisjjz")==0)||(strcmp(Options.basis, "Basisj")==0)||(strcmp(Options.basis, "j")==0))
+    else if((strcmp(Options.basis, "PyramidalHarmonicsP")==0)||(strcmp(Options.basis, "PyramidalHarmonics")==0)||(strcmp(Options.basis, "BasisP")==0)||(strcmp(Options.basis, "P")==0))
     {
       Options.ibasis=3;
+    }
+    else if((strcmp(Options.basis, "jjz")==0)||(strcmp(Options.basis, "Basisjjz")==0)||(strcmp(Options.basis, "Basisj")==0)||(strcmp(Options.basis, "j")==0))
+    {
+      Options.ibasis=4;
     }
     else
     {
       return luaL_error(L, "Unrecognized value for basis %s, use SphericalHarmonicsY, TesseralHarmonicsZ, KubicHarmonicsK, or jjz\n",Options.basis);
     }
   }
-  LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
-  LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
+  else // no options defined set the standard basis used for the orbitals: (j jz if NShell+2 == Ntemp otherwise l lz s sz)
+  {
+    if((NShell+2)==Ntemp)
+    {
+      Options.basis="jjz";
+      Options.ibasis=4;
+    }
+    else
+    {
+      Options.basis="SphericalHarmonicsY";
+      Options.ibasis=0;
+    }
+  }
+  // test if indices are physical ok
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "First index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Second index contains a refference outside the range [0,%d]",NFermion-1);
   if(Options.ibasis==3)
   {
     if((NShell+2)!=Ntemp)
     {
-      return luaL_error(L, "Error in LuaOperatorNewLx, Lenght of IndexJmin (%d) is not equal to lenght of IndexJplus-2 (%d)\n",NShell,Ntemp);
+      return luaL_error(L, "Error in LuaOperatorNewLx, 2 plus the lenght of IndexJmin (%d) is not equal to lenght of IndexJplus (%d)\n",NShell,Ntemp);
     }
     l=NShell/2;
     if((2*l)!=NShell)
@@ -560,6 +579,7 @@ static int LuaOperatorNewLx(lua_State * L)
       return luaL_error(L, "Error in LuaOperatorNewLx, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
     }
   }
+  // call function to create operator
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   switch (Options.ibasis)
   {
@@ -573,6 +593,9 @@ static int LuaOperatorNewLx(lua_State * L)
       CreateOperatorLxK(NFermion, l, LindexUp, LindexDn, op);
       break;
     case 3:
+      CreateOperatorLxP(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 4:
       CreateOperatorLxjjz(NFermion, l, LindexUp, LindexDn, op);
       break;
   }
