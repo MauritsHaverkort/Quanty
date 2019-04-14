@@ -189,7 +189,8 @@ TestCommutators(Opp.Basisjjzimplicit)
 TestCommutators(Opp.Basisjjz)
 print("================== Test equivalence of operators on different basises ")
 
-print(YtojjzMatrix(5))
+print(YtojjzMatrix(3))
+os.exit()
 
 TestEqual(Opp.BasisYimplicit,Opp.BasisY)
 TestEqual(Opp.Basisjjzimplicit,Opp.Basisjjz)
