@@ -3103,8 +3103,8 @@ MatrixType YToJJzMatrix(const int size, const bool addSpin)
     for(m=0;m<2*l;m++)
     {
       jz=(double)m-j;
-      out.VRe[m][2*m]   =-sqrt((1-jz/(j+1))*0.5); // spin down
-      out.VRe[m][2*m+1] = sqrt((1+jz/(j+1))*0.5); // spin up
+      out.VRe[m][2*m+1] =-sqrt((1-jz/(j+1))*0.5); // spin up
+      out.VRe[m][2*m+2] = sqrt((1+jz/(j+1))*0.5); // spin down
     }
     // j=l+1/2
     j=(double)l+0.5;
@@ -3113,8 +3113,8 @@ MatrixType YToJJzMatrix(const int size, const bool addSpin)
     for(m=1;m<2*l+1;m++)
     {
       jz=(double)m-j;
-      out.VRe[m+2*l][2*m]   = sqrt((1+jz/(j))*0.5); // spin down
-      out.VRe[m+2*l][2*m+1] = sqrt((1-jz/(j))*0.5); // spin up
+      out.VRe[m+2*l][2*m-1] = sqrt((1+jz/(j))*0.5); // spin up
+      out.VRe[m+2*l][2*m]   = sqrt((1-jz/(j))*0.5); // spin down
     }
 	}
   else
