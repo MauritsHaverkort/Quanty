@@ -1,7 +1,197 @@
-﻿Nf = 5
+Nf = 5
 Nb = 0
 O = NewOperator(Nf, Nb, {{             10},
                          {0,-0,         3},
                          {0,1,2,3,4,  1+I}},
                 {{"Name","Liberty"}})
-print(O)
+
+
+
+
+-- test angular momentum operators
+-- single shell l m s sz basis no explicit basis choice
+
+function IsNill(opp)
+  if (#opp.N~=0) then
+    return false
+  end
+  if (opp.N[0]==0) then
+    return true
+  end
+  return false
+end
+
+function IsEqual(oppA,oppB,message)
+  if IsNill(Chop(oppA-oppB,1e-13)) then
+    print("OK : ",message)
+  else
+    print("Wrong : ",message)
+    print(Chop(oppA-oppB,1e-13))
+    print(debug.traceback())
+    os.exit(1)
+  end
+  return true
+end
+
+function CreateOperators(Opp,Index_Up,Index_Dn,Basis)
+
+if(Basis==nill) then
+  print("======= No mentioning of basis")
+  options=nill
+else
+  print("======= Basis is ",Basis)
+  options={{"basis",Basis}}
+end
+print("======= Index_Dn",Index_Dn)
+print("======= Index_Up",Index_Up)
+
+--Opp.Sx    = NewOperator("Sx",   Nf,Index_Up,Index_Dn,options)
+--Opp.Sy    = NewOperator("Sy",   Nf,Index_Up,Index_Dn)
+--Opp.Sz    = NewOperator("Sz",   Nf,Index_Up,Index_Dn)
+--Opp.Splus = NewOperator("Splus",Nf,Index_Up,Index_Dn)
+--Opp.Smin  = NewOperator("Smin", Nf,Index_Up,Index_Dn)
+--Opp.Ssqr  = NewOperator("Ssqr", Nf,Index_Up,Index_Dn)
+
+--Opp.Lx    = NewOperator("Lx",   Nf,Index_Up,Index_Dn)
+--Opp.Ly    = NewOperator("Ly",   Nf,Index_Up,Index_Dn)
+--Opp.Lz    = NewOperator("Lz",   Nf,Index_Up,Index_Dn)
+--Opp.Lplus = NewOperator("Lplus",Nf,Index_Up,Index_Dn)
+--Opp.Lmin  = NewOperator("Lmin", Nf,Index_Up,Index_Dn)
+--Opp.Lsqr  = NewOperator("Lsqr", Nf,Index_Up,Index_Dn)
+
+Opp.Jx    = NewOperator("Jx",   Nf,Index_Up,Index_Dn)
+Opp.Jy    = NewOperator("Jy",   Nf,Index_Up,Index_Dn)
+Opp.Jz    = NewOperator("Jz",   Nf,Index_Up,Index_Dn)
+Opp.Jplus = NewOperator("Jplus",Nf,Index_Up,Index_Dn)
+Opp.Jmin  = NewOperator("Jmin", Nf,Index_Up,Index_Dn)
+Opp.Jsqr  = NewOperator("Jsqr", Nf,Index_Up,Index_Dn)
+
+--Opp.Tx    = NewOperator("Tx",   Nf,Index_Up,Index_Dn)
+--Opp.Ty    = NewOperator("Ty",   Nf,Index_Up,Index_Dn)
+--Opp.Tz    = NewOperator("Tz",   Nf,Index_Up,Index_Dn)
+--Opp.Tplus = NewOperator("Tplus",Nf,Index_Up,Index_Dn)
+--Opp.Tmin  = NewOperator("Tmin", Nf,Index_Up,Index_Dn)
+--Opp.Tsqr  = NewOperator("Tsqr", Nf,Index_Up,Index_Dn)
+
+Opp.ldots  = NewOperator("ldots", Nf,Index_Up,Index_Dn)
+
+end
+
+
+
+function TestCommutators(Opp)
+  print("===== test commuators for operators on basis ",Opp.name)
+
+  --IsEqual(Opp.Sx * Opp.Sy - Opp.Sy * Opp.Sx , I * Opp.Sz, "[Sx,Sy]==i Sz")
+  --IsEqual(Opp.Sy * Opp.Sz - Opp.Sz * Opp.Sy , I * Opp.Sx, "[Sy,Sz]==i Sx")
+  --IsEqual(Opp.Sz * Opp.Sx - Opp.Sx * Opp.Sz , I * Opp.Sy, "[Sz,Sx]==i Sy")
+  --IsEqual(Opp.Sx + I * Opp.Sy , Opp.Splus, "Sx + i Sy == S+")
+  --IsEqual(Opp.Sx - I * Opp.Sy , Opp.Smin,  "Sx - i Sy == S-")
+  --IsEqual(Opp.Sx*Opp.Sx + Opp.Sy*Opp.Sy + Opp.Sz*Opp.Sz , Opp.Ssqr, "Sx^2+Sy^2+Sz^2 == S^2" )
+  --IsEqual(Opp.Sx * Opp.Ssqr - Opp.Ssqr * Opp.Sx , 0, "[Sx,S^2]== 0")
+  --IsEqual(Opp.Sy * Opp.Ssqr - Opp.Ssqr * Opp.Sy , 0, "[Sy,S^2]== 0")
+  --IsEqual(Opp.Sz * Opp.Ssqr - Opp.Ssqr * Opp.Sz , 0, "[Sz,S^2]== 0")
+
+  --IsEqual(Opp.Lx * Opp.Ly - Opp.Ly * Opp.Lx , I * Opp.Lz, "[Lx,Ly]==i Lz")
+  --IsEqual(Opp.Ly * Opp.Lz - Opp.Lz * Opp.Ly , I * Opp.Lx, "[Ly,Lz]==i Lx")
+  --IsEqual(Opp.Lz * Opp.Lx - Opp.Lx * Opp.Lz , I * Opp.Ly, "[Lz,Lx]==i Ly")
+  --IsEqual(Opp.Lx + I * Opp.Ly , Opp.Lplus, "Lx + i Ly == L+")
+  --IsEqual(Opp.Lx - I * Opp.Ly , Opp.Lmin,  "Lx - i Ly == L-")
+  --IsEqual(Opp.Lx*Opp.Lx + Opp.Ly*Opp.Ly + Opp.Lz*Opp.Lz , Opp.Lsqr, "Lx^2+Ly^2+Lz^2 == L^2" )
+  --IsEqual(Opp.Lx * Opp.Lsqr - Opp.Lsqr * Opp.Lx , 0, "[Lx,L^2]== 0")
+  --IsEqual(Opp.Ly * Opp.Lsqr - Opp.Lsqr * Opp.Ly , 0, "[Ly,L^2]== 0")
+  --IsEqual(Opp.Lz * Opp.Lsqr - Opp.Lsqr * Opp.Lz , 0, "[Lz,L^2]== 0")
+
+  IsEqual(Opp.Jx * Opp.Jy - Opp.Jy * Opp.Jx , I * Opp.Jz, "[Jx,Jy]==i Jz")
+  IsEqual(Opp.Jy * Opp.Jz - Opp.Jz * Opp.Jy , I * Opp.Jx, "[Jy,Jz]==i Jx")
+  IsEqual(Opp.Jz * Opp.Jx - Opp.Jx * Opp.Jz , I * Opp.Jy, "[Jz,Jx]==i Jy")
+  IsEqual(Opp.Jx + I * Opp.Jy , Opp.Jplus, "Jx + i Jy == J+")
+  IsEqual(Opp.Jx - I * Opp.Jy , Opp.Jmin,  "Jx - i Jy == J-")
+  IsEqual(Opp.Jx*Opp.Jx + Opp.Jy*Opp.Jy + Opp.Jz*Opp.Jz , Opp.Jsqr, "Jx^2+Jy^2+Jz^2 == J^2" )
+  IsEqual(Opp.Jx * Opp.Jsqr - Opp.Jsqr * Opp.Jx , 0, "[Jx,J^2]== 0")
+  IsEqual(Opp.Jy * Opp.Jsqr - Opp.Jsqr * Opp.Jy , 0, "[Jy,J^2]== 0")
+  IsEqual(Opp.Jz * Opp.Jsqr - Opp.Jsqr * Opp.Jz , 0, "[Jz,J^2]== 0")
+
+  --IsEqual(Opp.Lx + Opp.Sx , Opp.Jx, "Lx+Sx == Jx")
+  --IsEqual(Opp.Ly + Opp.Sy , Opp.Jy, "Ly+Sy == Jy")
+  --IsEqual(Opp.Lz + Opp.Sz , Opp.Jz, "Lz+Sz == Jz")
+  --IsEqual(Opp.Lplus + Opp.Splus , Opp.Jplus, "Lplus+Splus==Jplus")
+  --IsEqual(Opp.Lmin + Opp.Smin , Opp.Jmin, "Lmin+Smin==Jmin")
+
+  IsEqual(Opp.Jx * Opp.ldots - Opp.ldots * Opp.Jx, 0, "[Jx,l.s]==0")
+  IsEqual(Opp.Jy * Opp.ldots - Opp.ldots * Opp.Jy, 0, "[Jy,l.s]==0")
+  IsEqual(Opp.Jz * Opp.ldots - Opp.ldots * Opp.Jz, 0, "[Jz,l.s]==0")
+  IsEqual(Opp.Jsqr * Opp.ldots - Opp.ldots * Opp.Jsqr, 0, "[J^2,l.s]==0")
+
+end
+
+
+function TestEqual(OppA,OppB,rotmat)
+  print("===== test if operators on basis ",OppA.name," are equal to operators on basis ",OppB.name)
+  if (rotmat==nill) then
+    print("===== without basis rotation")
+    for Oppname, Opp in pairs(OppA) do
+      if(Oppname~="name") then
+        IsEqual(OppA[Oppname],OppB[Oppname],Oppname)
+      end
+    end
+  else
+    print("===== with basis rotation for second operator")
+    for Oppname, Opp in pairs(OppA) do
+      if(Oppname~="name") then
+        IsEqual(OppA[Oppname],Rotate(OppB[Oppname],rotmat),Oppname)
+      end
+    end
+  end
+end
+
+print("================== Test for p shell ")
+
+l=1
+Nf = 6
+Index_Dn = {0,2,4}
+Index_Up = {1,3,5}
+Index_min = {0,1}
+Index_plus = {2,3,4,5}
+
+
+--Nf = 14
+--Index_Dn = {0,2,4,6,8,10,12}
+--Index_Up = {1,3,5,7,9,11,13}
+--Index_min = {0,1,2,3,4,5}
+--Index_plus = {6,7,8,9,10,11,12,13}
+
+
+Opp={}
+Opp.BasisYimplicit={name="BasisYimplicit"}
+Opp.BasisY={name="BasisY"}
+Opp.BasisZ={name="BasisZ"}
+Opp.BasisK={name="BasisK"}
+Opp.BasisP={name="BasisP"}
+Opp.Basisjjzimplicit={name="Basisjjzimplicit"}
+Opp.Basisjjz={name="Basisjjz"}
+
+
+print("================== Create Operators ")
+
+CreateOperators(Opp.BasisYimplicit,Index_Up,Index_Dn)
+CreateOperators(Opp.BasisY,Index_Up,Index_Dn,"SphericalHarmonicsY")
+CreateOperators(Opp.BasisZ,Index_Up,Index_Dn,"TesseralHarmonicsZ")
+CreateOperators(Opp.BasisK,Index_Up,Index_Dn,"KubicHarmonicsK")
+CreateOperators(Opp.BasisP,Index_Up,Index_Dn,"PyramidalHarmonicsP")
+CreateOperators(Opp.Basisjjzimplicit,Index_min,Index_plus)
+CreateOperators(Opp.Basisjjz,Index_min,Index_plus,"jjz")
+
+print("================== Test commutators ")
+TestCommutators(Opp.BasisYimplicit)
+TestCommutators(Opp.BasisY)
+TestCommutators(Opp.Basisjjzimplicit)
+TestCommutators(Opp.Basisjjz)
+print("================== Test equivalence of operators on different basises ")
+
+print(YtojjzMatrix(5))
+
+TestEqual(Opp.BasisYimplicit,Opp.BasisY)
+TestEqual(Opp.Basisjjzimplicit,Opp.Basisjjz)
+TestEqual(Opp.Basisjjz,Opp.BasisY,YtojjzMatrix(l))
+TestEqual(Opp.BasisY,Opp.Basisjjz,ConjugateTranspose(YtojjzMatrix(l)))

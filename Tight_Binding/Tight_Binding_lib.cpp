@@ -2908,7 +2908,8 @@ MatrixType YToKMatrix(const int multiplicity, const bool addSpin)
 	{
 //		s-shell
 		out.VRe[0][0] = 1;
-	} else if (multiplicity == 6)
+	}
+  else if (multiplicity == 6)
 	{
 //		p-shell
 		out.VRe[0][0] = 1 / sqrt(2.);
@@ -2916,7 +2917,8 @@ MatrixType YToKMatrix(const int multiplicity, const bool addSpin)
 		out.VIm[1][0] = 1 / sqrt(2.);
 		out.VIm[1][2] = 1 / sqrt(2.);
 		out.VRe[2][1] = 1;
-	} else if (multiplicity == 10)
+	}
+  else if (multiplicity == 10)
 	{
 //		d-shell
 		out.VRe[0][0] = 1 / sqrt(2.);
@@ -2928,7 +2930,8 @@ MatrixType YToKMatrix(const int multiplicity, const bool addSpin)
 		out.VRe[3][3] = -1 / sqrt(2.);
 		out.VIm[4][0] = 1 / sqrt(2.);
 		out.VIm[4][4] = -1 / sqrt(2.);
-	} else if (multiplicity == 14)
+	}
+  else if (multiplicity == 14)
 	{
 //		f-shell
 		out.VIm[0][1] = 1/sqrt(2.);
@@ -2952,7 +2955,8 @@ MatrixType YToKMatrix(const int multiplicity, const bool addSpin)
 		out.VIm[5][6] = -sqrt(3.)/4;
 		out.VRe[6][1] = 1/sqrt(2.);
 		out.VRe[6][5] = 1/sqrt(2.);
-	} else if ((multiplicity - 2) % 4 == 0)
+	}
+  else if ((multiplicity - 2) % 4 == 0)
 	{
 		cout << "YToKMatrix not yet implemented for an atomic shell of multiplicity " << multiplicity << ", sorry!" << endl;
 		return nullMatrix();
@@ -2977,7 +2981,8 @@ MatrixType YToZMatrix(const int multiplicity, const bool addSpin)
 	{
 //		s-shell
 		out.VRe[0][0] = 1;
-	} else if (multiplicity == 6)
+	}
+  else if (multiplicity == 6)
 	{
 //		p-shell
 		out.VIm[0][0] = 1 / sqrt(2.);
@@ -2985,7 +2990,8 @@ MatrixType YToZMatrix(const int multiplicity, const bool addSpin)
 		out.VRe[1][1] = 1;
 		out.VRe[2][0] = 1 / sqrt(2.);
 		out.VRe[2][2] = -1 / sqrt(2.);
-	} else if (multiplicity == 10)
+	}
+  else if (multiplicity == 10)
 	{
 //		d-shell
 		out.VIm[0][0] = 1 / sqrt(2.);
@@ -2997,11 +3003,13 @@ MatrixType YToZMatrix(const int multiplicity, const bool addSpin)
 		out.VRe[3][3] = -1 / sqrt(2.);
 		out.VRe[4][0] = 1 / sqrt(2.);
 		out.VRe[4][4] = 1 / sqrt(2.);
-	} else if ((multiplicity - 2) % 4 == 0)
+	}
+  else if ((multiplicity - 2) % 4 == 0)
 	{
 		cout << "YToZMatrix not yet implemented for an atomic shell of multiplicity " << multiplicity << ", sorry!" << endl;
 		return nullMatrix();
-	} else
+	}
+  else
 	{
 		cout << "YToZMatrix only defined for multiplicity (2*l+1), with integer l, not for multiplicity " << multiplicity << "!" << endl;
 		return nullMatrix();
@@ -3033,7 +3041,8 @@ MatrixType YToJJzMatrix(const int size, const bool addSpin)
 //		s-shell
 		out.VRe[0][0] = 1;
 		out.VRe[1][1] = 1;
-	} else if (size == 6)
+	}
+  else if (size == 6)
 	{
 //		p-shell
 		out.VRe[0][1] = -sqrt(2. / 3.);
@@ -3046,7 +3055,8 @@ MatrixType YToJJzMatrix(const int size, const bool addSpin)
 		out.VRe[4][3] = sqrt(2. / 3.);
 		out.VRe[4][4] = 1 / sqrt(3);
 		out.VRe[5][5] = 1;
-	} else if (size == 10)
+	}
+  else if (size == 10)
 	{
 //		d-shell
 		out.VRe[0][1] = -sqrt(4. / 5.);
@@ -3067,11 +3077,13 @@ MatrixType YToJJzMatrix(const int size, const bool addSpin)
 		out.VRe[8][7] = sqrt(4. / 5.);
 		out.VRe[8][8] = 1 / sqrt(5);
 		out.VRe[9][9] = 1;
-	} else if ((size - 2) % 4 == 0)
+	}
+  else if ((size - 2) % 4 == 0)
 	{
 		cout << "YToJJzMatrix not yet implemented for an atomic shell of multiplicity " << size << ", sorry!" << endl;
 		return nullMatrix();
-	} else
+	}
+  else
 	{
 		cout << "YToJJzMatrix only defined for multiplicity 2*(2*l+1), with integer l, not for multiplicity " << size << "!" << endl;
 		return nullMatrix();

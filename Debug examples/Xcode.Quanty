@@ -1,4 +1,6 @@
 
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Reference/Functions/NewOperator.Quanty")
+os.exit()
 
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/External_tests/Eigensystem_bug.Quanty")
 os.exit()

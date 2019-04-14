@@ -4,12 +4,64 @@
 
 static int LuaOperatorNewCoulomb(lua_State * L)
 {
+  struct
+  {
+    const char *basis;
+    uint32_t ibasis;   //  0  000 SphericalHarmonicY, alternating dn,up from m=-l to m=l
+    //  1  001 TesseralHarmonicZ,  alternating dn,up sin first, than cos
+    //  2  010 KubicHarmonicK,     alternating dn,up order according to irep a,b,e,t
+    //  3  011 PyramidalHarmonicP, alternating dn,up order rotating around z axis
+    //  4  100 jjz basis,          j=l-1/2 first, than j=l+1/2 from m=-j to m=j
+  } Options;
+  LuaOptionsType LuaOperatorOptions[]={
+    {"basis","char*",&(Options.basis)},
+    {NULL, NULL, NULL}};
   OperatorType *op;
   uint32_t Ntemp,NShell,l,lA,lB,lC,lD;
   bool jbasis=false;
   uint32_t NFermion = (uint32_t)luaL_checkunsigned(L, 1);
   uint32_t len = (uint32_t)lua_gettop(L);
-  if(lua_isnumber(L,3)) jbasis=true;
+  if(lua_isnumber(L,3))
+  {
+    jbasis=true;
+    Options.ibasis=4;
+    Options.basis="jjz";
+  }
+  else
+  {
+    Options.ibasis=0;
+    Options.basis="SphericalHarmonicsY";
+  }
+  // check if options are defined, if they are defined reduce the len by one to remove the options in the counting of len
+  if(LuaTestOptionsList(L, -1))
+  {
+    LuaCheckOptions(L, -1, LuaOperatorOptions);
+    len--;
+    if((strcmp(Options.basis, "SphericalHarmonicsY")==0)||(strcmp(Options.basis, "SphericalHarmonics")==0)||(strcmp(Options.basis, "BasisY")==0)||(strcmp(Options.basis, "Y")==0))
+    {
+      Options.ibasis=0;
+    }
+    else if((strcmp(Options.basis, "TesseralHarmonicsZ")==0)||(strcmp(Options.basis, "TesseralHarmonics")==0)||(strcmp(Options.basis, "BasisZ")==0)||(strcmp(Options.basis, "Z")==0))
+    {
+      Options.ibasis=1;
+    }
+    else if((strcmp(Options.basis, "KubicHarmonicsK")==0)||(strcmp(Options.basis, "KubicHarmonics")==0)||(strcmp(Options.basis, "BasisK")==0)||(strcmp(Options.basis, "K")==0)||(strcmp(Options.basis, "CubicHarmonicsK")==0)||(strcmp(Options.basis, "CubicHarmonics")==0))
+    {
+      Options.ibasis=2;
+    }
+    else if((strcmp(Options.basis, "PyramidalHarmonicsP")==0)||(strcmp(Options.basis, "PyramidalHarmonics")==0)||(strcmp(Options.basis, "BasisP")==0)||(strcmp(Options.basis, "P")==0))
+    {
+      Options.ibasis=3;
+    }
+    else if((strcmp(Options.basis, "jjz")==0)||(strcmp(Options.basis, "Basisjjz")==0)||(strcmp(Options.basis, "Basisj")==0)||(strcmp(Options.basis, "j")==0))
+    {
+      Options.ibasis=4;
+    }
+    else
+    {
+      return luaL_error(L, "Unrecognized value for basis %s, use SphericalHarmonicsY, TesseralHarmonicsZ, KubicHarmonicsK, PyramidalHarmonicsP, or jjz\n",Options.basis);
+    }
+  }
   if(NFermion==0) return luaL_error(L, "Coulomb operator acting on zero fermions is not defined");
   if ((len==4)&&(jbasis==false)) /* creates the coulomb operator in a single shell of angular momentum L */
   {
@@ -34,6 +86,7 @@ static int LuaOperatorNewCoulomb(lua_State * L)
       return luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of F (%d) is not equal to l+1\n",Ntemp);
     }
     op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+    //TODO: seperate Y,Z,K,P
     CreateOperatorCoulombSingleShell(NFermion, l, LindexUp, LindexDn, F, op);
     luaL_setmetatable(L, "Operator_Type");
     free(LindexUp);
@@ -82,6 +135,7 @@ static int LuaOperatorNewCoulomb(lua_State * L)
       return luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of G (%d) is not equal to (Min(lA,lB)+1)\n",Ntemp);
     }
     op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+    //TODO: seperate Y,Z,K,P
     CreateOperatorCoulombTwoShellsConstantOccupation(NFermion, lA, lB, LindexUpA, LindexDnA, LindexUpB, LindexDnB, F, G, op);
     luaL_setmetatable(L, "Operator_Type");
     free(LindexUpA);
@@ -158,6 +212,7 @@ static int LuaOperatorNewCoulomb(lua_State * L)
       return luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of R (%d) is not equal to (Min(lA+lC,lB+lD)-Max(Abs(lA-lC),Abs(lB-lD)))/2+1\n",Ntemp);
     }
     op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+    //TODO: seperate Y,Z,K,P
     CreateOperatorCoulombFourShells(NFermion, lA, lB, lC, lD, LindexUpA, LindexDnA, LindexUpB, LindexDnB, LindexUpC, LindexDnC, LindexUpD, LindexDnD, R, op);
     luaL_setmetatable(L, "Operator_Type");
     free(LindexUpA);
@@ -182,6 +237,10 @@ static int LuaOperatorNewCoulomb(lua_State * L)
     uint16_t *Jindex;
     int kappa;
     double *F;
+    if(Options.ibasis!=4)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Orbitals formatted according to l lz s sz basis, but options state it is a j jz basis\n");
+    }
     Jindex = luaL_checkarray_unit16_t(L, 2, &NShell);
     if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), Jindex, NShell)==false) return luaL_error(L, "Index of Jshell contains a refference outside the range [0,%d]",NFermion-1);
     twoj=(NShell-1);
@@ -219,6 +278,10 @@ static int LuaOperatorNewCoulomb(lua_State * L)
     uint32_t twojA,twojB;
     uint16_t *JindexA,*JindexB;
     double *F, *G;
+    if(Options.ibasis!=4)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Orbitals formatted according to l lz s sz basis, but options state it is a j jz basis\n");
+    }
     JindexA = luaL_checkarray_unit16_t(L, 2, &NShell);
     if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), JindexA, NShell)==false) return luaL_error(L, "Index of first J shell contains a refference outside the range [0,%d]",NFermion-1);
     twojA   = NShell-1;
@@ -273,6 +336,10 @@ static int LuaOperatorNewCoulomb(lua_State * L)
     uint32_t twojA,twojB,twojC,twojD;
     uint16_t *JindexA,*JindexB,*JindexC,*JindexD;
     double *R;
+    if(Options.ibasis!=4)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Orbitals formatted according to l lz s sz basis, but options state it is a j jz basis\n");
+    }
     JindexA = luaL_checkarray_unit16_t(L, 2, &NShell);
     if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), JindexA, NShell)==false) return luaL_error(L, "Index of first J shell contains a refference outside the range [0,%d]",NFermion-1);
     twojA   = NShell-1;
@@ -345,22 +412,111 @@ static int LuaOperatorNewCoulomb(lua_State * L)
 
 static int LuaOperatorNewSx(lua_State * L)
 {
+  struct
+  {
+    const char *basis;
+    uint32_t ibasis;   //  0  000 SphericalHarmonicY, alternating dn,up from m=-l to m=l
+    //  1  001 TesseralHarmonicZ,  alternating dn,up sin first, than cos
+    //  2  010 KubicHarmonicK,     alternating dn,up order according to irep a,b,e,t
+    //  3  011 PyramidalHarmonicP, alternating dn,up order rotating around z axis
+    //  4  100 jjz basis,          j=l-1/2 first, than j=l+1/2 from m=-j to m=j
+  } Options;
+  Options.ibasis=0;
   OperatorType *op;
   uint32_t Ntemp;
   uint32_t NFermion = (uint32_t)luaL_checkunsigned(L, 1);
-  uint32_t NShell;
+  uint32_t NShell,l=0;
   uint16_t *LindexUp, *LindexDn;
-  if(NFermion==0) return luaL_error(L, "Spin operator acting on zero fermions is not defined");
+  LuaOptionsType LuaOperatorOptions[]={
+    {"basis","char*",&(Options.basis)},
+    {NULL, NULL, NULL}};
+  if(NFermion==0) return luaL_error(L, "Angular momentum operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
-  if(NShell!=Ntemp)
+  // set basis used
+  if(LuaTestOptionsList(L, -1))
   {
-    return luaL_error(L, "Error in LuaOperatorNewSx, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    LuaCheckOptions(L, -1, LuaOperatorOptions);
+    if((strcmp(Options.basis, "SphericalHarmonicsY")==0)||(strcmp(Options.basis, "SphericalHarmonics")==0)||(strcmp(Options.basis, "BasisY")==0)||(strcmp(Options.basis, "Y")==0))
+    {
+      Options.ibasis=0;
+    }
+    else if((strcmp(Options.basis, "TesseralHarmonicsZ")==0)||(strcmp(Options.basis, "TesseralHarmonics")==0)||(strcmp(Options.basis, "BasisZ")==0)||(strcmp(Options.basis, "Z")==0))
+    {
+      Options.ibasis=1;
+    }
+    else if((strcmp(Options.basis, "KubicHarmonicsK")==0)||(strcmp(Options.basis, "KubicHarmonics")==0)||(strcmp(Options.basis, "BasisK")==0)||(strcmp(Options.basis, "K")==0)||(strcmp(Options.basis, "CubicHarmonicsK")==0)||(strcmp(Options.basis, "CubicHarmonics")==0))
+    {
+      Options.ibasis=2;
+    }
+    else if((strcmp(Options.basis, "PyramidalHarmonicsP")==0)||(strcmp(Options.basis, "PyramidalHarmonics")==0)||(strcmp(Options.basis, "BasisP")==0)||(strcmp(Options.basis, "P")==0))
+    {
+      Options.ibasis=3;
+    }
+    else if((strcmp(Options.basis, "jjz")==0)||(strcmp(Options.basis, "Basisjjz")==0)||(strcmp(Options.basis, "Basisj")==0)||(strcmp(Options.basis, "j")==0))
+    {
+      Options.ibasis=4;
+    }
+    else
+    {
+      return luaL_error(L, "Unrecognized value for basis %s, use SphericalHarmonicsY, TesseralHarmonicsZ, KubicHarmonicsK, PyramidalHarmonicsP, or jjz\n",Options.basis);
+    }
   }
+  else // no options defined set the standard basis used for the orbitals: (j jz if NShell+2 == Ntemp otherwise l lz s sz)
+  {
+    if((NShell+2)==Ntemp)
+    {
+      Options.basis="jjz";
+      Options.ibasis=4;
+    }
+    else
+    {
+      Options.basis="SphericalHarmonicsY";
+      Options.ibasis=0;
+    }
+  }
+  // test if indices are physical ok
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "First index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Second index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Options.ibasis==4)
+  {
+    if((NShell+2)!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewSx, 2 plus the lenght of IndexJmin (%d) is not equal to lenght of IndexJplus (%d)\n",NShell,Ntemp);
+    }
+    l=NShell/2;
+    if((2*l)!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewSx, Lenght of IndexJmin (%d) is not equal to 2l\n",NShell);
+    }
+  }
+  else
+  {
+    if(NShell!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewSx, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    }
+  }
+  // call function to create operator
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-  CreateOperatorSx(NFermion, NShell, LindexUp, LindexDn, op);
+  switch (Options.ibasis)
+  {
+    case 0:
+      CreateOperatorSx(NFermion, NShell, LindexUp, LindexDn, op);
+      break;
+    case 1:
+      CreateOperatorSxZ(NFermion, NShell, LindexUp, LindexDn, op);
+      break;
+    case 2:
+      CreateOperatorSxK(NFermion, NShell, LindexUp, LindexDn, op);
+      break;
+    case 3:
+      CreateOperatorSxP(NFermion, NShell, LindexUp, LindexDn, op);
+      break;
+    case 4:
+      CreateOperatorSxjjz(NFermion, l, LindexUp, LindexDn, op);
+      break;
+  }
   luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
@@ -369,22 +525,111 @@ static int LuaOperatorNewSx(lua_State * L)
 
 static int LuaOperatorNewSy(lua_State * L)
 {
+  struct
+  {
+    const char *basis;
+    uint32_t ibasis;   //  0  000 SphericalHarmonicY, alternating dn,up from m=-l to m=l
+    //  1  001 TesseralHarmonicZ,  alternating dn,up sin first, than cos
+    //  2  010 KubicHarmonicK,     alternating dn,up order according to irep a,b,e,t
+    //  3  011 PyramidalHarmonicP, alternating dn,up order rotating around z axis
+    //  4  100 jjz basis,          j=l-1/2 first, than j=l+1/2 from m=-j to m=j
+  } Options;
+  Options.ibasis=0;
   OperatorType *op;
   uint32_t Ntemp;
   uint32_t NFermion = (uint32_t)luaL_checkunsigned(L, 1);
-  uint32_t NShell;
+  uint32_t NShell,l=0;
   uint16_t *LindexUp, *LindexDn;
-  if(NFermion==0) return luaL_error(L, "Spin operator acting on zero fermions is not defined");
+  LuaOptionsType LuaOperatorOptions[]={
+    {"basis","char*",&(Options.basis)},
+    {NULL, NULL, NULL}};
+  if(NFermion==0) return luaL_error(L, "Angular momentum operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
-  if(NShell!=Ntemp)
+  // set basis used
+  if(LuaTestOptionsList(L, -1))
   {
-    return luaL_error(L, "Error in LuaOperatorNewSy, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    LuaCheckOptions(L, -1, LuaOperatorOptions);
+    if((strcmp(Options.basis, "SphericalHarmonicsY")==0)||(strcmp(Options.basis, "SphericalHarmonics")==0)||(strcmp(Options.basis, "BasisY")==0)||(strcmp(Options.basis, "Y")==0))
+    {
+      Options.ibasis=0;
+    }
+    else if((strcmp(Options.basis, "TesseralHarmonicsZ")==0)||(strcmp(Options.basis, "TesseralHarmonics")==0)||(strcmp(Options.basis, "BasisZ")==0)||(strcmp(Options.basis, "Z")==0))
+    {
+      Options.ibasis=1;
+    }
+    else if((strcmp(Options.basis, "KubicHarmonicsK")==0)||(strcmp(Options.basis, "KubicHarmonics")==0)||(strcmp(Options.basis, "BasisK")==0)||(strcmp(Options.basis, "K")==0)||(strcmp(Options.basis, "CubicHarmonicsK")==0)||(strcmp(Options.basis, "CubicHarmonics")==0))
+    {
+      Options.ibasis=2;
+    }
+    else if((strcmp(Options.basis, "PyramidalHarmonicsP")==0)||(strcmp(Options.basis, "PyramidalHarmonics")==0)||(strcmp(Options.basis, "BasisP")==0)||(strcmp(Options.basis, "P")==0))
+    {
+      Options.ibasis=3;
+    }
+    else if((strcmp(Options.basis, "jjz")==0)||(strcmp(Options.basis, "Basisjjz")==0)||(strcmp(Options.basis, "Basisj")==0)||(strcmp(Options.basis, "j")==0))
+    {
+      Options.ibasis=4;
+    }
+    else
+    {
+      return luaL_error(L, "Unrecognized value for basis %s, use SphericalHarmonicsY, TesseralHarmonicsZ, KubicHarmonicsK, PyramidalHarmonicsP, or jjz\n",Options.basis);
+    }
   }
+  else // no options defined set the standard basis used for the orbitals: (j jz if NShell+2 == Ntemp otherwise l lz s sz)
+  {
+    if((NShell+2)==Ntemp)
+    {
+      Options.basis="jjz";
+      Options.ibasis=4;
+    }
+    else
+    {
+      Options.basis="SphericalHarmonicsY";
+      Options.ibasis=0;
+    }
+  }
+  // test if indices are physical ok
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "First index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Second index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Options.ibasis==4)
+  {
+    if((NShell+2)!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewSy, 2 plus the lenght of IndexJmin (%d) is not equal to lenght of IndexJplus (%d)\n",NShell,Ntemp);
+    }
+    l=NShell/2;
+    if((2*l)!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewSy, Lenght of IndexJmin (%d) is not equal to 2l\n",NShell);
+    }
+  }
+  else
+  {
+    if(NShell!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewSy, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    }
+  }
+  // call function to create operator
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-  CreateOperatorSy(NFermion, NShell, LindexUp, LindexDn, op);
+  switch (Options.ibasis)
+  {
+    case 0:
+      CreateOperatorSy(NFermion, NShell, LindexUp, LindexDn, op);
+      break;
+    case 1:
+      CreateOperatorSyZ(NFermion, NShell, LindexUp, LindexDn, op);
+      break;
+    case 2:
+      CreateOperatorSyK(NFermion, NShell, LindexUp, LindexDn, op);
+      break;
+    case 3:
+      CreateOperatorSyP(NFermion, NShell, LindexUp, LindexDn, op);
+      break;
+    case 4:
+      CreateOperatorSyjjz(NFermion, l, LindexUp, LindexDn, op);
+      break;
+  }
   luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
@@ -393,22 +638,111 @@ static int LuaOperatorNewSy(lua_State * L)
 
 static int LuaOperatorNewSz(lua_State * L)
 {
+  struct
+  {
+    const char *basis;
+    uint32_t ibasis;   //  0  000 SphericalHarmonicY, alternating dn,up from m=-l to m=l
+    //  1  001 TesseralHarmonicZ,  alternating dn,up sin first, than cos
+    //  2  010 KubicHarmonicK,     alternating dn,up order according to irep a,b,e,t
+    //  3  011 PyramidalHarmonicP, alternating dn,up order rotating around z axis
+    //  4  100 jjz basis,          j=l-1/2 first, than j=l+1/2 from m=-j to m=j
+  } Options;
+  Options.ibasis=0;
   OperatorType *op;
   uint32_t Ntemp;
   uint32_t NFermion = (uint32_t)luaL_checkunsigned(L, 1);
-  uint32_t NShell;
+  uint32_t NShell,l=0;
   uint16_t *LindexUp, *LindexDn;
-  if(NFermion==0) return luaL_error(L, "Spin operator acting on zero fermions is not defined");
+  LuaOptionsType LuaOperatorOptions[]={
+    {"basis","char*",&(Options.basis)},
+    {NULL, NULL, NULL}};
+  if(NFermion==0) return luaL_error(L, "Angular momentum operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
-  if(NShell!=Ntemp)
+  // set basis used
+  if(LuaTestOptionsList(L, -1))
   {
-    return luaL_error(L, "Error in LuaOperatorNewSz, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    LuaCheckOptions(L, -1, LuaOperatorOptions);
+    if((strcmp(Options.basis, "SphericalHarmonicsY")==0)||(strcmp(Options.basis, "SphericalHarmonics")==0)||(strcmp(Options.basis, "BasisY")==0)||(strcmp(Options.basis, "Y")==0))
+    {
+      Options.ibasis=0;
+    }
+    else if((strcmp(Options.basis, "TesseralHarmonicsZ")==0)||(strcmp(Options.basis, "TesseralHarmonics")==0)||(strcmp(Options.basis, "BasisZ")==0)||(strcmp(Options.basis, "Z")==0))
+    {
+      Options.ibasis=1;
+    }
+    else if((strcmp(Options.basis, "KubicHarmonicsK")==0)||(strcmp(Options.basis, "KubicHarmonics")==0)||(strcmp(Options.basis, "BasisK")==0)||(strcmp(Options.basis, "K")==0)||(strcmp(Options.basis, "CubicHarmonicsK")==0)||(strcmp(Options.basis, "CubicHarmonics")==0))
+    {
+      Options.ibasis=2;
+    }
+    else if((strcmp(Options.basis, "PyramidalHarmonicsP")==0)||(strcmp(Options.basis, "PyramidalHarmonics")==0)||(strcmp(Options.basis, "BasisP")==0)||(strcmp(Options.basis, "P")==0))
+    {
+      Options.ibasis=3;
+    }
+    else if((strcmp(Options.basis, "jjz")==0)||(strcmp(Options.basis, "Basisjjz")==0)||(strcmp(Options.basis, "Basisj")==0)||(strcmp(Options.basis, "j")==0))
+    {
+      Options.ibasis=4;
+    }
+    else
+    {
+      return luaL_error(L, "Unrecognized value for basis %s, use SphericalHarmonicsY, TesseralHarmonicsZ, KubicHarmonicsK, PyramidalHarmonicsP, or jjz\n",Options.basis);
+    }
   }
+  else // no options defined set the standard basis used for the orbitals: (j jz if NShell+2 == Ntemp otherwise l lz s sz)
+  {
+    if((NShell+2)==Ntemp)
+    {
+      Options.basis="jjz";
+      Options.ibasis=4;
+    }
+    else
+    {
+      Options.basis="SphericalHarmonicsY";
+      Options.ibasis=0;
+    }
+  }
+  // test if indices are physical ok
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "First index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Second index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Options.ibasis==4)
+  {
+    if((NShell+2)!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewSz, 2 plus the lenght of IndexJmin (%d) is not equal to lenght of IndexJplus (%d)\n",NShell,Ntemp);
+    }
+    l=NShell/2;
+    if((2*l)!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewSz, Lenght of IndexJmin (%d) is not equal to 2l\n",NShell);
+    }
+  }
+  else
+  {
+    if(NShell!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewSz, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    }
+  }
+  // call function to create operator
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-  CreateOperatorSz(NFermion, NShell, LindexUp, LindexDn, op);
+  switch (Options.ibasis)
+  {
+    case 0:
+      CreateOperatorSz(NFermion, NShell, LindexUp, LindexDn, op);
+      break;
+    case 1:
+      CreateOperatorSzZ(NFermion, NShell, LindexUp, LindexDn, op);
+      break;
+    case 2:
+      CreateOperatorSzK(NFermion, NShell, LindexUp, LindexDn, op);
+      break;
+    case 3:
+      CreateOperatorSzP(NFermion, NShell, LindexUp, LindexDn, op);
+      break;
+    case 4:
+      CreateOperatorSzjjz(NFermion, l, LindexUp, LindexDn, op);
+      break;
+  }
   luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
@@ -417,22 +751,111 @@ static int LuaOperatorNewSz(lua_State * L)
 
 static int LuaOperatorNewSsqr(lua_State * L)
 {
+  struct
+  {
+    const char *basis;
+    uint32_t ibasis;   //  0  000 SphericalHarmonicY, alternating dn,up from m=-l to m=l
+    //  1  001 TesseralHarmonicZ,  alternating dn,up sin first, than cos
+    //  2  010 KubicHarmonicK,     alternating dn,up order according to irep a,b,e,t
+    //  3  011 PyramidalHarmonicP, alternating dn,up order rotating around z axis
+    //  4  100 jjz basis,          j=l-1/2 first, than j=l+1/2 from m=-j to m=j
+  } Options;
+  Options.ibasis=0;
   OperatorType *op;
   uint32_t Ntemp;
   uint32_t NFermion = (uint32_t)luaL_checkunsigned(L, 1);
-  uint32_t NShell;
+  uint32_t NShell,l=0;
   uint16_t *LindexUp, *LindexDn;
-  if(NFermion==0) return luaL_error(L, "Spin operator acting on zero fermions is not defined");
+  LuaOptionsType LuaOperatorOptions[]={
+    {"basis","char*",&(Options.basis)},
+    {NULL, NULL, NULL}};
+  if(NFermion==0) return luaL_error(L, "Angular momentum operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
-  if(NShell!=Ntemp)
+  // set basis used
+  if(LuaTestOptionsList(L, -1))
   {
-    return luaL_error(L, "Error in LuaOperatorNewSsqr, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    LuaCheckOptions(L, -1, LuaOperatorOptions);
+    if((strcmp(Options.basis, "SphericalHarmonicsY")==0)||(strcmp(Options.basis, "SphericalHarmonics")==0)||(strcmp(Options.basis, "BasisY")==0)||(strcmp(Options.basis, "Y")==0))
+    {
+      Options.ibasis=0;
+    }
+    else if((strcmp(Options.basis, "TesseralHarmonicsZ")==0)||(strcmp(Options.basis, "TesseralHarmonics")==0)||(strcmp(Options.basis, "BasisZ")==0)||(strcmp(Options.basis, "Z")==0))
+    {
+      Options.ibasis=1;
+    }
+    else if((strcmp(Options.basis, "KubicHarmonicsK")==0)||(strcmp(Options.basis, "KubicHarmonics")==0)||(strcmp(Options.basis, "BasisK")==0)||(strcmp(Options.basis, "K")==0)||(strcmp(Options.basis, "CubicHarmonicsK")==0)||(strcmp(Options.basis, "CubicHarmonics")==0))
+    {
+      Options.ibasis=2;
+    }
+    else if((strcmp(Options.basis, "PyramidalHarmonicsP")==0)||(strcmp(Options.basis, "PyramidalHarmonics")==0)||(strcmp(Options.basis, "BasisP")==0)||(strcmp(Options.basis, "P")==0))
+    {
+      Options.ibasis=3;
+    }
+    else if((strcmp(Options.basis, "jjz")==0)||(strcmp(Options.basis, "Basisjjz")==0)||(strcmp(Options.basis, "Basisj")==0)||(strcmp(Options.basis, "j")==0))
+    {
+      Options.ibasis=4;
+    }
+    else
+    {
+      return luaL_error(L, "Unrecognized value for basis %s, use SphericalHarmonicsY, TesseralHarmonicsZ, KubicHarmonicsK, PyramidalHarmonicsP, or jjz\n",Options.basis);
+    }
   }
+  else // no options defined set the standard basis used for the orbitals: (j jz if NShell+2 == Ntemp otherwise l lz s sz)
+  {
+    if((NShell+2)==Ntemp)
+    {
+      Options.basis="jjz";
+      Options.ibasis=4;
+    }
+    else
+    {
+      Options.basis="SphericalHarmonicsY";
+      Options.ibasis=0;
+    }
+  }
+  // test if indices are physical ok
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "First index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Second index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Options.ibasis==4)
+  {
+    if((NShell+2)!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewSsqr, 2 plus the lenght of IndexJmin (%d) is not equal to lenght of IndexJplus (%d)\n",NShell,Ntemp);
+    }
+    l=NShell/2;
+    if((2*l)!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewSsqr, Lenght of IndexJmin (%d) is not equal to 2l\n",NShell);
+    }
+  }
+  else
+  {
+    if(NShell!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewSsqr, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    }
+  }
+  // call function to create operator
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-  CreateOperatorSsqr(NFermion, NShell, LindexUp, LindexDn, op);
+  switch (Options.ibasis)
+  {
+    case 0:
+      CreateOperatorSsqr(NFermion, NShell, LindexUp, LindexDn, op);
+      break;
+    case 1:
+      CreateOperatorSsqrZ(NFermion, NShell, LindexUp, LindexDn, op);
+      break;
+    case 2:
+      CreateOperatorSsqrK(NFermion, NShell, LindexUp, LindexDn, op);
+      break;
+    case 3:
+      CreateOperatorSsqrP(NFermion, NShell, LindexUp, LindexDn, op);
+      break;
+    case 4:
+      CreateOperatorSsqrjjz(NFermion, l, LindexUp, LindexDn, op);
+      break;
+  }
   luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
@@ -441,22 +864,111 @@ static int LuaOperatorNewSsqr(lua_State * L)
 
 static int LuaOperatorNewSplus(lua_State * L)
 {
+  struct
+  {
+    const char *basis;
+    uint32_t ibasis;   //  0  000 SphericalHarmonicY, alternating dn,up from m=-l to m=l
+    //  1  001 TesseralHarmonicZ,  alternating dn,up sin first, than cos
+    //  2  010 KubicHarmonicK,     alternating dn,up order according to irep a,b,e,t
+    //  3  011 PyramidalHarmonicP, alternating dn,up order rotating around z axis
+    //  4  100 jjz basis,          j=l-1/2 first, than j=l+1/2 from m=-j to m=j
+  } Options;
+  Options.ibasis=0;
   OperatorType *op;
   uint32_t Ntemp;
   uint32_t NFermion = (uint32_t)luaL_checkunsigned(L, 1);
-  uint32_t NShell;
+  uint32_t NShell,l=0;
   uint16_t *LindexUp, *LindexDn;
-  if(NFermion==0) return luaL_error(L, "Spin operator acting on zero fermions is not defined");
+  LuaOptionsType LuaOperatorOptions[]={
+    {"basis","char*",&(Options.basis)},
+    {NULL, NULL, NULL}};
+  if(NFermion==0) return luaL_error(L, "Angular momentum operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
-  if(NShell!=Ntemp)
+  // set basis used
+  if(LuaTestOptionsList(L, -1))
   {
-    return luaL_error(L, "Error in LuaOperatorNewSplus, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    LuaCheckOptions(L, -1, LuaOperatorOptions);
+    if((strcmp(Options.basis, "SphericalHarmonicsY")==0)||(strcmp(Options.basis, "SphericalHarmonics")==0)||(strcmp(Options.basis, "BasisY")==0)||(strcmp(Options.basis, "Y")==0))
+    {
+      Options.ibasis=0;
+    }
+    else if((strcmp(Options.basis, "TesseralHarmonicsZ")==0)||(strcmp(Options.basis, "TesseralHarmonics")==0)||(strcmp(Options.basis, "BasisZ")==0)||(strcmp(Options.basis, "Z")==0))
+    {
+      Options.ibasis=1;
+    }
+    else if((strcmp(Options.basis, "KubicHarmonicsK")==0)||(strcmp(Options.basis, "KubicHarmonics")==0)||(strcmp(Options.basis, "BasisK")==0)||(strcmp(Options.basis, "K")==0)||(strcmp(Options.basis, "CubicHarmonicsK")==0)||(strcmp(Options.basis, "CubicHarmonics")==0))
+    {
+      Options.ibasis=2;
+    }
+    else if((strcmp(Options.basis, "PyramidalHarmonicsP")==0)||(strcmp(Options.basis, "PyramidalHarmonics")==0)||(strcmp(Options.basis, "BasisP")==0)||(strcmp(Options.basis, "P")==0))
+    {
+      Options.ibasis=3;
+    }
+    else if((strcmp(Options.basis, "jjz")==0)||(strcmp(Options.basis, "Basisjjz")==0)||(strcmp(Options.basis, "Basisj")==0)||(strcmp(Options.basis, "j")==0))
+    {
+      Options.ibasis=4;
+    }
+    else
+    {
+      return luaL_error(L, "Unrecognized value for basis %s, use SphericalHarmonicsY, TesseralHarmonicsZ, KubicHarmonicsK, PyramidalHarmonicsP, or jjz\n",Options.basis);
+    }
   }
+  else // no options defined set the standard basis used for the orbitals: (j jz if NShell+2 == Ntemp otherwise l lz s sz)
+  {
+    if((NShell+2)==Ntemp)
+    {
+      Options.basis="jjz";
+      Options.ibasis=4;
+    }
+    else
+    {
+      Options.basis="SphericalHarmonicsY";
+      Options.ibasis=0;
+    }
+  }
+  // test if indices are physical ok
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "First index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Second index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Options.ibasis==4)
+  {
+    if((NShell+2)!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewSplus, 2 plus the lenght of IndexJmin (%d) is not equal to lenght of IndexJplus (%d)\n",NShell,Ntemp);
+    }
+    l=NShell/2;
+    if((2*l)!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewSplus, Lenght of IndexJmin (%d) is not equal to 2l\n",NShell);
+    }
+  }
+  else
+  {
+    if(NShell!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewSplus, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    }
+  }
+  // call function to create operator
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-  CreateOperatorSplus(NFermion, NShell, LindexUp, LindexDn, op);
+  switch (Options.ibasis)
+  {
+    case 0:
+      CreateOperatorSplus(NFermion, NShell, LindexUp, LindexDn, op);
+      break;
+    case 1:
+      CreateOperatorSplusZ(NFermion, NShell, LindexUp, LindexDn, op);
+      break;
+    case 2:
+      CreateOperatorSplusK(NFermion, NShell, LindexUp, LindexDn, op);
+      break;
+    case 3:
+      CreateOperatorSplusP(NFermion, NShell, LindexUp, LindexDn, op);
+      break;
+    case 4:
+      CreateOperatorSplusjjz(NFermion, l, LindexUp, LindexDn, op);
+      break;
+  }
   luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
@@ -465,22 +977,111 @@ static int LuaOperatorNewSplus(lua_State * L)
 
 static int LuaOperatorNewSmin(lua_State * L)
 {
+  struct
+  {
+    const char *basis;
+    uint32_t ibasis;   //  0  000 SphericalHarmonicY, alternating dn,up from m=-l to m=l
+    //  1  001 TesseralHarmonicZ,  alternating dn,up sin first, than cos
+    //  2  010 KubicHarmonicK,     alternating dn,up order according to irep a,b,e,t
+    //  3  011 PyramidalHarmonicP, alternating dn,up order rotating around z axis
+    //  4  100 jjz basis,          j=l-1/2 first, than j=l+1/2 from m=-j to m=j
+  } Options;
+  Options.ibasis=0;
   OperatorType *op;
   uint32_t Ntemp;
   uint32_t NFermion = (uint32_t)luaL_checkunsigned(L, 1);
-  uint32_t NShell;
+  uint32_t NShell,l=0;
   uint16_t *LindexUp, *LindexDn;
-  if(NFermion==0) return luaL_error(L, "Spin operator acting on zero fermions is not defined");
+  LuaOptionsType LuaOperatorOptions[]={
+    {"basis","char*",&(Options.basis)},
+    {NULL, NULL, NULL}};
+  if(NFermion==0) return luaL_error(L, "Angular momentum operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
-  if(NShell!=Ntemp)
+  // set basis used
+  if(LuaTestOptionsList(L, -1))
   {
-    return luaL_error(L, "Error in LuaOperatorNewSmin, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    LuaCheckOptions(L, -1, LuaOperatorOptions);
+    if((strcmp(Options.basis, "SphericalHarmonicsY")==0)||(strcmp(Options.basis, "SphericalHarmonics")==0)||(strcmp(Options.basis, "BasisY")==0)||(strcmp(Options.basis, "Y")==0))
+    {
+      Options.ibasis=0;
+    }
+    else if((strcmp(Options.basis, "TesseralHarmonicsZ")==0)||(strcmp(Options.basis, "TesseralHarmonics")==0)||(strcmp(Options.basis, "BasisZ")==0)||(strcmp(Options.basis, "Z")==0))
+    {
+      Options.ibasis=1;
+    }
+    else if((strcmp(Options.basis, "KubicHarmonicsK")==0)||(strcmp(Options.basis, "KubicHarmonics")==0)||(strcmp(Options.basis, "BasisK")==0)||(strcmp(Options.basis, "K")==0)||(strcmp(Options.basis, "CubicHarmonicsK")==0)||(strcmp(Options.basis, "CubicHarmonics")==0))
+    {
+      Options.ibasis=2;
+    }
+    else if((strcmp(Options.basis, "PyramidalHarmonicsP")==0)||(strcmp(Options.basis, "PyramidalHarmonics")==0)||(strcmp(Options.basis, "BasisP")==0)||(strcmp(Options.basis, "P")==0))
+    {
+      Options.ibasis=3;
+    }
+    else if((strcmp(Options.basis, "jjz")==0)||(strcmp(Options.basis, "Basisjjz")==0)||(strcmp(Options.basis, "Basisj")==0)||(strcmp(Options.basis, "j")==0))
+    {
+      Options.ibasis=4;
+    }
+    else
+    {
+      return luaL_error(L, "Unrecognized value for basis %s, use SphericalHarmonicsY, TesseralHarmonicsZ, KubicHarmonicsK, PyramidalHarmonicsP, or jjz\n",Options.basis);
+    }
   }
+  else // no options defined set the standard basis used for the orbitals: (j jz if NShell+2 == Ntemp otherwise l lz s sz)
+  {
+    if((NShell+2)==Ntemp)
+    {
+      Options.basis="jjz";
+      Options.ibasis=4;
+    }
+    else
+    {
+      Options.basis="SphericalHarmonicsY";
+      Options.ibasis=0;
+    }
+  }
+  // test if indices are physical ok
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "First index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Second index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Options.ibasis==4)
+  {
+    if((NShell+2)!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewSmin, 2 plus the lenght of IndexJmin (%d) is not equal to lenght of IndexJplus (%d)\n",NShell,Ntemp);
+    }
+    l=NShell/2;
+    if((2*l)!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewSmin, Lenght of IndexJmin (%d) is not equal to 2l\n",NShell);
+    }
+  }
+  else
+  {
+    if(NShell!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewSmin, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    }
+  }
+  // call function to create operator
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-  CreateOperatorSmin(NFermion, NShell, LindexUp, LindexDn, op);
+  switch (Options.ibasis)
+  {
+    case 0:
+      CreateOperatorSmin(NFermion, NShell, LindexUp, LindexDn, op);
+      break;
+    case 1:
+      CreateOperatorSminZ(NFermion, NShell, LindexUp, LindexDn, op);
+      break;
+    case 2:
+      CreateOperatorSminK(NFermion, NShell, LindexUp, LindexDn, op);
+      break;
+    case 3:
+      CreateOperatorSminP(NFermion, NShell, LindexUp, LindexDn, op);
+      break;
+    case 4:
+      CreateOperatorSminjjz(NFermion, l, LindexUp, LindexDn, op);
+      break;
+  }
   luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
@@ -536,7 +1137,7 @@ static int LuaOperatorNewLx(lua_State * L)
     }
     else
     {
-      return luaL_error(L, "Unrecognized value for basis %s, use SphericalHarmonicsY, TesseralHarmonicsZ, KubicHarmonicsK, or jjz\n",Options.basis);
+      return luaL_error(L, "Unrecognized value for basis %s, use SphericalHarmonicsY, TesseralHarmonicsZ, KubicHarmonicsK, PyramidalHarmonicsP, or jjz\n",Options.basis);
     }
   }
   else // no options defined set the standard basis used for the orbitals: (j jz if NShell+2 == Ntemp otherwise l lz s sz)
@@ -555,7 +1156,7 @@ static int LuaOperatorNewLx(lua_State * L)
   // test if indices are physical ok
   if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "First index contains a refference outside the range [0,%d]",NFermion-1);
   if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Second index contains a refference outside the range [0,%d]",NFermion-1);
-  if(Options.ibasis==3)
+  if(Options.ibasis==4)
   {
     if((NShell+2)!=Ntemp)
     {
@@ -607,27 +1208,116 @@ static int LuaOperatorNewLx(lua_State * L)
 
 static int LuaOperatorNewLy(lua_State * L)
 {
+  struct
+  {
+    const char *basis;
+    uint32_t ibasis;   //  0  000 SphericalHarmonicY, alternating dn,up from m=-l to m=l
+    //  1  001 TesseralHarmonicZ,  alternating dn,up sin first, than cos
+    //  2  010 KubicHarmonicK,     alternating dn,up order according to irep a,b,e,t
+    //  3  011 PyramidalHarmonicP, alternating dn,up order rotating around z axis
+    //  4  100 jjz basis,          j=l-1/2 first, than j=l+1/2 from m=-j to m=j
+  } Options;
+  Options.ibasis=0;
   OperatorType *op;
   uint32_t Ntemp;
   uint32_t NFermion = (uint32_t)luaL_checkunsigned(L, 1);
   uint32_t NShell,l;
   uint16_t *LindexUp, *LindexDn;
+  LuaOptionsType LuaOperatorOptions[]={
+    {"basis","char*",&(Options.basis)},
+    {NULL, NULL, NULL}};
   if(NFermion==0) return luaL_error(L, "Angular momentum operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
-  if(NShell!=Ntemp)
+  // set basis used
+  if(LuaTestOptionsList(L, -1))
   {
-    return luaL_error(L, "Error in LuaOperatorNewLy, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    LuaCheckOptions(L, -1, LuaOperatorOptions);
+    if((strcmp(Options.basis, "SphericalHarmonicsY")==0)||(strcmp(Options.basis, "SphericalHarmonics")==0)||(strcmp(Options.basis, "BasisY")==0)||(strcmp(Options.basis, "Y")==0))
+    {
+      Options.ibasis=0;
+    }
+    else if((strcmp(Options.basis, "TesseralHarmonicsZ")==0)||(strcmp(Options.basis, "TesseralHarmonics")==0)||(strcmp(Options.basis, "BasisZ")==0)||(strcmp(Options.basis, "Z")==0))
+    {
+      Options.ibasis=1;
+    }
+    else if((strcmp(Options.basis, "KubicHarmonicsK")==0)||(strcmp(Options.basis, "KubicHarmonics")==0)||(strcmp(Options.basis, "BasisK")==0)||(strcmp(Options.basis, "K")==0)||(strcmp(Options.basis, "CubicHarmonicsK")==0)||(strcmp(Options.basis, "CubicHarmonics")==0))
+    {
+      Options.ibasis=2;
+    }
+    else if((strcmp(Options.basis, "PyramidalHarmonicsP")==0)||(strcmp(Options.basis, "PyramidalHarmonics")==0)||(strcmp(Options.basis, "BasisP")==0)||(strcmp(Options.basis, "P")==0))
+    {
+      Options.ibasis=3;
+    }
+    else if((strcmp(Options.basis, "jjz")==0)||(strcmp(Options.basis, "Basisjjz")==0)||(strcmp(Options.basis, "Basisj")==0)||(strcmp(Options.basis, "j")==0))
+    {
+      Options.ibasis=4;
+    }
+    else
+    {
+      return luaL_error(L, "Unrecognized value for basis %s, use SphericalHarmonicsY, TesseralHarmonicsZ, KubicHarmonicsK, PyramidalHarmonicsP, or jjz\n",Options.basis);
+    }
   }
-  l=(NShell-1)/2;
-  if(2*l+1!=NShell)
+  else // no options defined set the standard basis used for the orbitals: (j jz if NShell+2 == Ntemp otherwise l lz s sz)
   {
-    return luaL_error(L, "Error in LuaOperatorNewLy, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    if((NShell+2)==Ntemp)
+    {
+      Options.basis="jjz";
+      Options.ibasis=4;
+    }
+    else
+    {
+      Options.basis="SphericalHarmonicsY";
+      Options.ibasis=0;
+    }
   }
+  // test if indices are physical ok
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "First index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Second index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Options.ibasis==4)
+  {
+    if((NShell+2)!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewLy, 2 plus the lenght of IndexJmin (%d) is not equal to lenght of IndexJplus (%d)\n",NShell,Ntemp);
+    }
+    l=NShell/2;
+    if((2*l)!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewLy, Lenght of IndexJmin (%d) is not equal to 2l\n",NShell);
+    }
+  }
+  else
+  {
+    if(NShell!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewLy, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    }
+    l=(NShell-1)/2;
+    if(2*l+1!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewLy, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    }
+  }
+  // call function to create operator
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-  CreateOperatorLy(NFermion, l, LindexUp, LindexDn, op);
+  switch (Options.ibasis)
+  {
+    case 0:
+      CreateOperatorLy(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 1:
+      CreateOperatorLyZ(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 2:
+      CreateOperatorLyK(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 3:
+      CreateOperatorLyP(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 4:
+      CreateOperatorLyjjz(NFermion, l, LindexUp, LindexDn, op);
+      break;
+  }
   luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
@@ -636,27 +1326,116 @@ static int LuaOperatorNewLy(lua_State * L)
 
 static int LuaOperatorNewLz(lua_State * L)
 {
+  struct
+  {
+    const char *basis;
+    uint32_t ibasis;   //  0  000 SphericalHarmonicY, alternating dn,up from m=-l to m=l
+    //  1  001 TesseralHarmonicZ,  alternating dn,up sin first, than cos
+    //  2  010 KubicHarmonicK,     alternating dn,up order according to irep a,b,e,t
+    //  3  011 PyramidalHarmonicP, alternating dn,up order rotating around z axis
+    //  4  100 jjz basis,          j=l-1/2 first, than j=l+1/2 from m=-j to m=j
+  } Options;
+  Options.ibasis=0;
   OperatorType *op;
   uint32_t Ntemp;
   uint32_t NFermion = (uint32_t)luaL_checkunsigned(L, 1);
   uint32_t NShell,l;
   uint16_t *LindexUp, *LindexDn;
+  LuaOptionsType LuaOperatorOptions[]={
+    {"basis","char*",&(Options.basis)},
+    {NULL, NULL, NULL}};
   if(NFermion==0) return luaL_error(L, "Angular momentum operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
-  if(NShell!=Ntemp)
+  // set basis used
+  if(LuaTestOptionsList(L, -1))
   {
-    return luaL_error(L, "Error in LuaOperatorNewLz, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    LuaCheckOptions(L, -1, LuaOperatorOptions);
+    if((strcmp(Options.basis, "SphericalHarmonicsY")==0)||(strcmp(Options.basis, "SphericalHarmonics")==0)||(strcmp(Options.basis, "BasisY")==0)||(strcmp(Options.basis, "Y")==0))
+    {
+      Options.ibasis=0;
+    }
+    else if((strcmp(Options.basis, "TesseralHarmonicsZ")==0)||(strcmp(Options.basis, "TesseralHarmonics")==0)||(strcmp(Options.basis, "BasisZ")==0)||(strcmp(Options.basis, "Z")==0))
+    {
+      Options.ibasis=1;
+    }
+    else if((strcmp(Options.basis, "KubicHarmonicsK")==0)||(strcmp(Options.basis, "KubicHarmonics")==0)||(strcmp(Options.basis, "BasisK")==0)||(strcmp(Options.basis, "K")==0)||(strcmp(Options.basis, "CubicHarmonicsK")==0)||(strcmp(Options.basis, "CubicHarmonics")==0))
+    {
+      Options.ibasis=2;
+    }
+    else if((strcmp(Options.basis, "PyramidalHarmonicsP")==0)||(strcmp(Options.basis, "PyramidalHarmonics")==0)||(strcmp(Options.basis, "BasisP")==0)||(strcmp(Options.basis, "P")==0))
+    {
+      Options.ibasis=3;
+    }
+    else if((strcmp(Options.basis, "jjz")==0)||(strcmp(Options.basis, "Basisjjz")==0)||(strcmp(Options.basis, "Basisj")==0)||(strcmp(Options.basis, "j")==0))
+    {
+      Options.ibasis=4;
+    }
+    else
+    {
+      return luaL_error(L, "Unrecognized value for basis %s, use SphericalHarmonicsY, TesseralHarmonicsZ, KubicHarmonicsK, PyramidalHarmonicsP, or jjz\n",Options.basis);
+    }
   }
-  l=(NShell-1)/2;
-  if(2*l+1!=NShell)
+  else // no options defined set the standard basis used for the orbitals: (j jz if NShell+2 == Ntemp otherwise l lz s sz)
   {
-    return luaL_error(L, "Error in LuaOperatorNewLz, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    if((NShell+2)==Ntemp)
+    {
+      Options.basis="jjz";
+      Options.ibasis=4;
+    }
+    else
+    {
+      Options.basis="SphericalHarmonicsY";
+      Options.ibasis=0;
+    }
   }
+  // test if indices are physical ok
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "First index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Second index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Options.ibasis==4)
+  {
+    if((NShell+2)!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewLz, 2 plus the lenght of IndexJmin (%d) is not equal to lenght of IndexJplus (%d)\n",NShell,Ntemp);
+    }
+    l=NShell/2;
+    if((2*l)!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewLz, Lenght of IndexJmin (%d) is not equal to 2l\n",NShell);
+    }
+  }
+  else
+  {
+    if(NShell!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewLz, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    }
+    l=(NShell-1)/2;
+    if(2*l+1!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewLz, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    }
+  }
+  // call function to create operator
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-  CreateOperatorLz(NFermion, l, LindexUp, LindexDn, op);
+  switch (Options.ibasis)
+  {
+    case 0:
+      CreateOperatorLz(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 1:
+      CreateOperatorLzZ(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 2:
+      CreateOperatorLzK(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 3:
+      CreateOperatorLzP(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 4:
+      CreateOperatorLzjjz(NFermion, l, LindexUp, LindexDn, op);
+      break;
+  }
   luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
@@ -665,27 +1444,116 @@ static int LuaOperatorNewLz(lua_State * L)
 
 static int LuaOperatorNewLplus(lua_State * L)
 {
+  struct
+  {
+    const char *basis;
+    uint32_t ibasis;   //  0  000 SphericalHarmonicY, alternating dn,up from m=-l to m=l
+    //  1  001 TesseralHarmonicZ,  alternating dn,up sin first, than cos
+    //  2  010 KubicHarmonicK,     alternating dn,up order according to irep a,b,e,t
+    //  3  011 PyramidalHarmonicP, alternating dn,up order rotating around z axis
+    //  4  100 jjz basis,          j=l-1/2 first, than j=l+1/2 from m=-j to m=j
+  } Options;
+  Options.ibasis=0;
   OperatorType *op;
   uint32_t Ntemp;
   uint32_t NFermion = (uint32_t)luaL_checkunsigned(L, 1);
   uint32_t NShell,l;
   uint16_t *LindexUp, *LindexDn;
+  LuaOptionsType LuaOperatorOptions[]={
+    {"basis","char*",&(Options.basis)},
+    {NULL, NULL, NULL}};
   if(NFermion==0) return luaL_error(L, "Angular momentum operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
-  if(NShell!=Ntemp)
+  // set basis used
+  if(LuaTestOptionsList(L, -1))
   {
-    return luaL_error(L, "Error in LuaOperatorNewLplus, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    LuaCheckOptions(L, -1, LuaOperatorOptions);
+    if((strcmp(Options.basis, "SphericalHarmonicsY")==0)||(strcmp(Options.basis, "SphericalHarmonics")==0)||(strcmp(Options.basis, "BasisY")==0)||(strcmp(Options.basis, "Y")==0))
+    {
+      Options.ibasis=0;
+    }
+    else if((strcmp(Options.basis, "TesseralHarmonicsZ")==0)||(strcmp(Options.basis, "TesseralHarmonics")==0)||(strcmp(Options.basis, "BasisZ")==0)||(strcmp(Options.basis, "Z")==0))
+    {
+      Options.ibasis=1;
+    }
+    else if((strcmp(Options.basis, "KubicHarmonicsK")==0)||(strcmp(Options.basis, "KubicHarmonics")==0)||(strcmp(Options.basis, "BasisK")==0)||(strcmp(Options.basis, "K")==0)||(strcmp(Options.basis, "CubicHarmonicsK")==0)||(strcmp(Options.basis, "CubicHarmonics")==0))
+    {
+      Options.ibasis=2;
+    }
+    else if((strcmp(Options.basis, "PyramidalHarmonicsP")==0)||(strcmp(Options.basis, "PyramidalHarmonics")==0)||(strcmp(Options.basis, "BasisP")==0)||(strcmp(Options.basis, "P")==0))
+    {
+      Options.ibasis=3;
+    }
+    else if((strcmp(Options.basis, "jjz")==0)||(strcmp(Options.basis, "Basisjjz")==0)||(strcmp(Options.basis, "Basisj")==0)||(strcmp(Options.basis, "j")==0))
+    {
+      Options.ibasis=4;
+    }
+    else
+    {
+      return luaL_error(L, "Unrecognized value for basis %s, use SphericalHarmonicsY, TesseralHarmonicsZ, KubicHarmonicsK, PyramidalHarmonicsP, or jjz\n",Options.basis);
+    }
   }
-  l=(NShell-1)/2;
-  if(2*l+1!=NShell)
+  else // no options defined set the standard basis used for the orbitals: (j jz if NShell+2 == Ntemp otherwise l lz s sz)
   {
-    return luaL_error(L, "Error in LuaOperatorNewLplus, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    if((NShell+2)==Ntemp)
+    {
+      Options.basis="jjz";
+      Options.ibasis=4;
+    }
+    else
+    {
+      Options.basis="SphericalHarmonicsY";
+      Options.ibasis=0;
+    }
   }
+  // test if indices are physical ok
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "First index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Second index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Options.ibasis==4)
+  {
+    if((NShell+2)!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewLplus, 2 plus the lenght of IndexJmin (%d) is not equal to lenght of IndexJplus (%d)\n",NShell,Ntemp);
+    }
+    l=NShell/2;
+    if((2*l)!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewLplus, Lenght of IndexJmin (%d) is not equal to 2l\n",NShell);
+    }
+  }
+  else
+  {
+    if(NShell!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewLplus, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    }
+    l=(NShell-1)/2;
+    if(2*l+1!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewLplus, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    }
+  }
+  // call function to create operator
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-  CreateOperatorLplus(NFermion, l, LindexUp, LindexDn, op);
+  switch (Options.ibasis)
+  {
+    case 0:
+      CreateOperatorLplus(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 1:
+      CreateOperatorLplusZ(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 2:
+      CreateOperatorLplusK(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 3:
+      CreateOperatorLplusP(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 4:
+      CreateOperatorLplusjjz(NFermion, l, LindexUp, LindexDn, op);
+      break;
+  }
   luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
@@ -694,27 +1562,116 @@ static int LuaOperatorNewLplus(lua_State * L)
 
 static int LuaOperatorNewLmin(lua_State * L)
 {
+  struct
+  {
+    const char *basis;
+    uint32_t ibasis;   //  0  000 SphericalHarmonicY, alternating dn,up from m=-l to m=l
+    //  1  001 TesseralHarmonicZ,  alternating dn,up sin first, than cos
+    //  2  010 KubicHarmonicK,     alternating dn,up order according to irep a,b,e,t
+    //  3  011 PyramidalHarmonicP, alternating dn,up order rotating around z axis
+    //  4  100 jjz basis,          j=l-1/2 first, than j=l+1/2 from m=-j to m=j
+  } Options;
+  Options.ibasis=0;
   OperatorType *op;
   uint32_t Ntemp;
   uint32_t NFermion = (uint32_t)luaL_checkunsigned(L, 1);
   uint32_t NShell,l;
   uint16_t *LindexUp, *LindexDn;
+  LuaOptionsType LuaOperatorOptions[]={
+    {"basis","char*",&(Options.basis)},
+    {NULL, NULL, NULL}};
   if(NFermion==0) return luaL_error(L, "Angular momentum operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
-  if(NShell!=Ntemp)
+  // set basis used
+  if(LuaTestOptionsList(L, -1))
   {
-    return luaL_error(L, "Error in LuaOperatorNewLmin, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    LuaCheckOptions(L, -1, LuaOperatorOptions);
+    if((strcmp(Options.basis, "SphericalHarmonicsY")==0)||(strcmp(Options.basis, "SphericalHarmonics")==0)||(strcmp(Options.basis, "BasisY")==0)||(strcmp(Options.basis, "Y")==0))
+    {
+      Options.ibasis=0;
+    }
+    else if((strcmp(Options.basis, "TesseralHarmonicsZ")==0)||(strcmp(Options.basis, "TesseralHarmonics")==0)||(strcmp(Options.basis, "BasisZ")==0)||(strcmp(Options.basis, "Z")==0))
+    {
+      Options.ibasis=1;
+    }
+    else if((strcmp(Options.basis, "KubicHarmonicsK")==0)||(strcmp(Options.basis, "KubicHarmonics")==0)||(strcmp(Options.basis, "BasisK")==0)||(strcmp(Options.basis, "K")==0)||(strcmp(Options.basis, "CubicHarmonicsK")==0)||(strcmp(Options.basis, "CubicHarmonics")==0))
+    {
+      Options.ibasis=2;
+    }
+    else if((strcmp(Options.basis, "PyramidalHarmonicsP")==0)||(strcmp(Options.basis, "PyramidalHarmonics")==0)||(strcmp(Options.basis, "BasisP")==0)||(strcmp(Options.basis, "P")==0))
+    {
+      Options.ibasis=3;
+    }
+    else if((strcmp(Options.basis, "jjz")==0)||(strcmp(Options.basis, "Basisjjz")==0)||(strcmp(Options.basis, "Basisj")==0)||(strcmp(Options.basis, "j")==0))
+    {
+      Options.ibasis=4;
+    }
+    else
+    {
+      return luaL_error(L, "Unrecognized value for basis %s, use SphericalHarmonicsY, TesseralHarmonicsZ, KubicHarmonicsK, PyramidalHarmonicsP, or jjz\n",Options.basis);
+    }
   }
-  l=(NShell-1)/2;
-  if(2*l+1!=NShell)
+  else // no options defined set the standard basis used for the orbitals: (j jz if NShell+2 == Ntemp otherwise l lz s sz)
   {
-    return luaL_error(L, "Error in LuaOperatorNewLmin, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    if((NShell+2)==Ntemp)
+    {
+      Options.basis="jjz";
+      Options.ibasis=4;
+    }
+    else
+    {
+      Options.basis="SphericalHarmonicsY";
+      Options.ibasis=0;
+    }
   }
+  // test if indices are physical ok
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "First index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Second index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Options.ibasis==4)
+  {
+    if((NShell+2)!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewLmin, 2 plus the lenght of IndexJmin (%d) is not equal to lenght of IndexJplus (%d)\n",NShell,Ntemp);
+    }
+    l=NShell/2;
+    if((2*l)!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewLmin, Lenght of IndexJmin (%d) is not equal to 2l\n",NShell);
+    }
+  }
+  else
+  {
+    if(NShell!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewLmin, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    }
+    l=(NShell-1)/2;
+    if(2*l+1!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewLmin, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    }
+  }
+  // call function to create operator
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-  CreateOperatorLmin(NFermion, l, LindexUp, LindexDn, op);
+  switch (Options.ibasis)
+  {
+    case 0:
+      CreateOperatorLmin(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 1:
+      CreateOperatorLminZ(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 2:
+      CreateOperatorLminK(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 3:
+      CreateOperatorLminP(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 4:
+      CreateOperatorLminjjz(NFermion, l, LindexUp, LindexDn, op);
+      break;
+  }
   luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
@@ -723,27 +1680,116 @@ static int LuaOperatorNewLmin(lua_State * L)
 
 static int LuaOperatorNewLsqr(lua_State * L)
 {
+  struct
+  {
+    const char *basis;
+    uint32_t ibasis;   //  0  000 SphericalHarmonicY, alternating dn,up from m=-l to m=l
+    //  1  001 TesseralHarmonicZ,  alternating dn,up sin first, than cos
+    //  2  010 KubicHarmonicK,     alternating dn,up order according to irep a,b,e,t
+    //  3  011 PyramidalHarmonicP, alternating dn,up order rotating around z axis
+    //  4  100 jjz basis,          j=l-1/2 first, than j=l+1/2 from m=-j to m=j
+  } Options;
+  Options.ibasis=0;
   OperatorType *op;
   uint32_t Ntemp;
   uint32_t NFermion = (uint32_t)luaL_checkunsigned(L, 1);
   uint32_t NShell,l;
   uint16_t *LindexUp, *LindexDn;
+  LuaOptionsType LuaOperatorOptions[]={
+    {"basis","char*",&(Options.basis)},
+    {NULL, NULL, NULL}};
   if(NFermion==0) return luaL_error(L, "Angular momentum operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
-  if(NShell!=Ntemp)
+  // set basis used
+  if(LuaTestOptionsList(L, -1))
   {
-    return luaL_error(L, "Error in LuaOperatorNewLsqr, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    LuaCheckOptions(L, -1, LuaOperatorOptions);
+    if((strcmp(Options.basis, "SphericalHarmonicsY")==0)||(strcmp(Options.basis, "SphericalHarmonics")==0)||(strcmp(Options.basis, "BasisY")==0)||(strcmp(Options.basis, "Y")==0))
+    {
+      Options.ibasis=0;
+    }
+    else if((strcmp(Options.basis, "TesseralHarmonicsZ")==0)||(strcmp(Options.basis, "TesseralHarmonics")==0)||(strcmp(Options.basis, "BasisZ")==0)||(strcmp(Options.basis, "Z")==0))
+    {
+      Options.ibasis=1;
+    }
+    else if((strcmp(Options.basis, "KubicHarmonicsK")==0)||(strcmp(Options.basis, "KubicHarmonics")==0)||(strcmp(Options.basis, "BasisK")==0)||(strcmp(Options.basis, "K")==0)||(strcmp(Options.basis, "CubicHarmonicsK")==0)||(strcmp(Options.basis, "CubicHarmonics")==0))
+    {
+      Options.ibasis=2;
+    }
+    else if((strcmp(Options.basis, "PyramidalHarmonicsP")==0)||(strcmp(Options.basis, "PyramidalHarmonics")==0)||(strcmp(Options.basis, "BasisP")==0)||(strcmp(Options.basis, "P")==0))
+    {
+      Options.ibasis=3;
+    }
+    else if((strcmp(Options.basis, "jjz")==0)||(strcmp(Options.basis, "Basisjjz")==0)||(strcmp(Options.basis, "Basisj")==0)||(strcmp(Options.basis, "j")==0))
+    {
+      Options.ibasis=4;
+    }
+    else
+    {
+      return luaL_error(L, "Unrecognized value for basis %s, use SphericalHarmonicsY, TesseralHarmonicsZ, KubicHarmonicsK, PyramidalHarmonicsP, or jjz\n",Options.basis);
+    }
   }
-  l=(NShell-1)/2;
-  if(2*l+1!=NShell)
+  else // no options defined set the standard basis used for the orbitals: (j jz if NShell+2 == Ntemp otherwise l lz s sz)
   {
-    return luaL_error(L, "Error in LuaOperatorNewLsqr, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    if((NShell+2)==Ntemp)
+    {
+      Options.basis="jjz";
+      Options.ibasis=4;
+    }
+    else
+    {
+      Options.basis="SphericalHarmonicsY";
+      Options.ibasis=0;
+    }
   }
+  // test if indices are physical ok
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "First index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Second index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Options.ibasis==4)
+  {
+    if((NShell+2)!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewLsqr, 2 plus the lenght of IndexJmin (%d) is not equal to lenght of IndexJplus (%d)\n",NShell,Ntemp);
+    }
+    l=NShell/2;
+    if((2*l)!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewLsqr, Lenght of IndexJmin (%d) is not equal to 2l\n",NShell);
+    }
+  }
+  else
+  {
+    if(NShell!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewLsqr, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    }
+    l=(NShell-1)/2;
+    if(2*l+1!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewLsqr, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    }
+  }
+  // call function to create operator
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-  CreateOperatorLsqr(NFermion, l, LindexUp, LindexDn, op);
+  switch (Options.ibasis)
+  {
+    case 0:
+      CreateOperatorLsqr(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 1:
+      CreateOperatorLsqrZ(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 2:
+      CreateOperatorLsqrK(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 3:
+      CreateOperatorLsqrP(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 4:
+      CreateOperatorLsqrjjz(NFermion, l, LindexUp, LindexDn, op);
+      break;
+  }
   luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
@@ -752,27 +1798,116 @@ static int LuaOperatorNewLsqr(lua_State * L)
 
 static int LuaOperatorNewJx(lua_State * L)
 {
+  struct
+  {
+    const char *basis;
+    uint32_t ibasis;   //  0  000 SphericalHarmonicY, alternating dn,up from m=-l to m=l
+    //  1  001 TesseralHarmonicZ,  alternating dn,up sin first, than cos
+    //  2  010 KubicHarmonicK,     alternating dn,up order according to irep a,b,e,t
+    //  3  011 PyramidalHarmonicP, alternating dn,up order rotating around z axis
+    //  4  100 jjz basis,          j=l-1/2 first, than j=l+1/2 from m=-j to m=j
+  } Options;
+  Options.ibasis=0;
   OperatorType *op;
   uint32_t Ntemp;
   uint32_t NFermion = (uint32_t)luaL_checkunsigned(L, 1);
   uint32_t NShell,l;
   uint16_t *LindexUp, *LindexDn;
-  if(NFermion==0) return luaL_error(L, "Total Angular momentum operator acting on zero fermions is not defined");
+  LuaOptionsType LuaOperatorOptions[]={
+    {"basis","char*",&(Options.basis)},
+    {NULL, NULL, NULL}};
+  if(NFermion==0) return luaL_error(L, "Angular momentum operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
-  if(NShell!=Ntemp)
+  // set basis used
+  if(LuaTestOptionsList(L, -1))
   {
-    return luaL_error(L, "Error in LuaOperatorNewJx, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    LuaCheckOptions(L, -1, LuaOperatorOptions);
+    if((strcmp(Options.basis, "SphericalHarmonicsY")==0)||(strcmp(Options.basis, "SphericalHarmonics")==0)||(strcmp(Options.basis, "BasisY")==0)||(strcmp(Options.basis, "Y")==0))
+    {
+      Options.ibasis=0;
+    }
+    else if((strcmp(Options.basis, "TesseralHarmonicsZ")==0)||(strcmp(Options.basis, "TesseralHarmonics")==0)||(strcmp(Options.basis, "BasisZ")==0)||(strcmp(Options.basis, "Z")==0))
+    {
+      Options.ibasis=1;
+    }
+    else if((strcmp(Options.basis, "KubicHarmonicsK")==0)||(strcmp(Options.basis, "KubicHarmonics")==0)||(strcmp(Options.basis, "BasisK")==0)||(strcmp(Options.basis, "K")==0)||(strcmp(Options.basis, "CubicHarmonicsK")==0)||(strcmp(Options.basis, "CubicHarmonics")==0))
+    {
+      Options.ibasis=2;
+    }
+    else if((strcmp(Options.basis, "PyramidalHarmonicsP")==0)||(strcmp(Options.basis, "PyramidalHarmonics")==0)||(strcmp(Options.basis, "BasisP")==0)||(strcmp(Options.basis, "P")==0))
+    {
+      Options.ibasis=3;
+    }
+    else if((strcmp(Options.basis, "jjz")==0)||(strcmp(Options.basis, "Basisjjz")==0)||(strcmp(Options.basis, "Basisj")==0)||(strcmp(Options.basis, "j")==0))
+    {
+      Options.ibasis=4;
+    }
+    else
+    {
+      return luaL_error(L, "Unrecognized value for basis %s, use SphericalHarmonicsY, TesseralHarmonicsZ, KubicHarmonicsK, PyramidalHarmonicsP, or jjz\n",Options.basis);
+    }
   }
-  l=(NShell-1)/2;
-  if(2*l+1!=NShell)
+  else // no options defined set the standard basis used for the orbitals: (j jz if NShell+2 == Ntemp otherwise l lz s sz)
   {
-    return luaL_error(L, "Error in LuaOperatorNewJx, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    if((NShell+2)==Ntemp)
+    {
+      Options.basis="jjz";
+      Options.ibasis=4;
+    }
+    else
+    {
+      Options.basis="SphericalHarmonicsY";
+      Options.ibasis=0;
+    }
   }
+  // test if indices are physical ok
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "First index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Second index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Options.ibasis==4)
+  {
+    if((NShell+2)!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewJx, 2 plus the lenght of IndexJmin (%d) is not equal to lenght of IndexJplus (%d)\n",NShell,Ntemp);
+    }
+    l=NShell/2;
+    if((2*l)!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewJx, Lenght of IndexJmin (%d) is not equal to 2l\n",NShell);
+    }
+  }
+  else
+  {
+    if(NShell!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewJx, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    }
+    l=(NShell-1)/2;
+    if(2*l+1!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewJx, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    }
+  }
+  // call function to create operator
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-  CreateOperatorJx(NFermion, l, LindexUp, LindexDn, op);
+  switch (Options.ibasis)
+  {
+    case 0:
+      CreateOperatorJx(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 1:
+      CreateOperatorJxZ(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 2:
+      CreateOperatorJxK(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 3:
+      CreateOperatorJxP(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 4:
+      CreateOperatorJxjjz(NFermion, l, LindexUp, LindexDn, op);
+      break;
+  }
   luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
@@ -781,27 +1916,116 @@ static int LuaOperatorNewJx(lua_State * L)
 
 static int LuaOperatorNewJy(lua_State * L)
 {
+  struct
+  {
+    const char *basis;
+    uint32_t ibasis;   //  0  000 SphericalHarmonicY, alternating dn,up from m=-l to m=l
+    //  1  001 TesseralHarmonicZ,  alternating dn,up sin first, than cos
+    //  2  010 KubicHarmonicK,     alternating dn,up order according to irep a,b,e,t
+    //  3  011 PyramidalHarmonicP, alternating dn,up order rotating around z axis
+    //  4  100 jjz basis,          j=l-1/2 first, than j=l+1/2 from m=-j to m=j
+  } Options;
+  Options.ibasis=0;
   OperatorType *op;
   uint32_t Ntemp;
   uint32_t NFermion = (uint32_t)luaL_checkunsigned(L, 1);
   uint32_t NShell,l;
   uint16_t *LindexUp, *LindexDn;
-  if(NFermion==0) return luaL_error(L, "Total Angular momentum operator acting on zero fermions is not defined");
+  LuaOptionsType LuaOperatorOptions[]={
+    {"basis","char*",&(Options.basis)},
+    {NULL, NULL, NULL}};
+  if(NFermion==0) return luaL_error(L, "Angular momentum operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
-  if(NShell!=Ntemp)
+  // set basis used
+  if(LuaTestOptionsList(L, -1))
   {
-    return luaL_error(L, "Error in LuaOperatorNewJy, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    LuaCheckOptions(L, -1, LuaOperatorOptions);
+    if((strcmp(Options.basis, "SphericalHarmonicsY")==0)||(strcmp(Options.basis, "SphericalHarmonics")==0)||(strcmp(Options.basis, "BasisY")==0)||(strcmp(Options.basis, "Y")==0))
+    {
+      Options.ibasis=0;
+    }
+    else if((strcmp(Options.basis, "TesseralHarmonicsZ")==0)||(strcmp(Options.basis, "TesseralHarmonics")==0)||(strcmp(Options.basis, "BasisZ")==0)||(strcmp(Options.basis, "Z")==0))
+    {
+      Options.ibasis=1;
+    }
+    else if((strcmp(Options.basis, "KubicHarmonicsK")==0)||(strcmp(Options.basis, "KubicHarmonics")==0)||(strcmp(Options.basis, "BasisK")==0)||(strcmp(Options.basis, "K")==0)||(strcmp(Options.basis, "CubicHarmonicsK")==0)||(strcmp(Options.basis, "CubicHarmonics")==0))
+    {
+      Options.ibasis=2;
+    }
+    else if((strcmp(Options.basis, "PyramidalHarmonicsP")==0)||(strcmp(Options.basis, "PyramidalHarmonics")==0)||(strcmp(Options.basis, "BasisP")==0)||(strcmp(Options.basis, "P")==0))
+    {
+      Options.ibasis=3;
+    }
+    else if((strcmp(Options.basis, "jjz")==0)||(strcmp(Options.basis, "Basisjjz")==0)||(strcmp(Options.basis, "Basisj")==0)||(strcmp(Options.basis, "j")==0))
+    {
+      Options.ibasis=4;
+    }
+    else
+    {
+      return luaL_error(L, "Unrecognized value for basis %s, use SphericalHarmonicsY, TesseralHarmonicsZ, KubicHarmonicsK, PyramidalHarmonicsP, or jjz\n",Options.basis);
+    }
   }
-  l=(NShell-1)/2;
-  if(2*l+1!=NShell)
+  else // no options defined set the standard basis used for the orbitals: (j jz if NShell+2 == Ntemp otherwise l lz s sz)
   {
-    return luaL_error(L, "Error in LuaOperatorNewJy, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    if((NShell+2)==Ntemp)
+    {
+      Options.basis="jjz";
+      Options.ibasis=4;
+    }
+    else
+    {
+      Options.basis="SphericalHarmonicsY";
+      Options.ibasis=0;
+    }
   }
+  // test if indices are physical ok
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "First index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Second index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Options.ibasis==4)
+  {
+    if((NShell+2)!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewJy, 2 plus the lenght of IndexJmin (%d) is not equal to lenght of IndexJplus (%d)\n",NShell,Ntemp);
+    }
+    l=NShell/2;
+    if((2*l)!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewJy, Lenght of IndexJmin (%d) is not equal to 2l\n",NShell);
+    }
+  }
+  else
+  {
+    if(NShell!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewJy, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    }
+    l=(NShell-1)/2;
+    if(2*l+1!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewJy, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    }
+  }
+  // call function to create operator
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-  CreateOperatorJy(NFermion, l, LindexUp, LindexDn, op);
+  switch (Options.ibasis)
+  {
+    case 0:
+      CreateOperatorJy(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 1:
+      CreateOperatorJyZ(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 2:
+      CreateOperatorJyK(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 3:
+      CreateOperatorJyP(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 4:
+      CreateOperatorJyjjz(NFermion, l, LindexUp, LindexDn, op);
+      break;
+  }
   luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
@@ -810,27 +2034,116 @@ static int LuaOperatorNewJy(lua_State * L)
 
 static int LuaOperatorNewJz(lua_State * L)
 {
+  struct
+  {
+    const char *basis;
+    uint32_t ibasis;   //  0  000 SphericalHarmonicY, alternating dn,up from m=-l to m=l
+    //  1  001 TesseralHarmonicZ,  alternating dn,up sin first, than cos
+    //  2  010 KubicHarmonicK,     alternating dn,up order according to irep a,b,e,t
+    //  3  011 PyramidalHarmonicP, alternating dn,up order rotating around z axis
+    //  4  100 jjz basis,          j=l-1/2 first, than j=l+1/2 from m=-j to m=j
+  } Options;
+  Options.ibasis=0;
   OperatorType *op;
   uint32_t Ntemp;
   uint32_t NFermion = (uint32_t)luaL_checkunsigned(L, 1);
   uint32_t NShell,l;
   uint16_t *LindexUp, *LindexDn;
-  if(NFermion==0) return luaL_error(L, "Total Angular momentum operator acting on zero fermions is not defined");
+  LuaOptionsType LuaOperatorOptions[]={
+    {"basis","char*",&(Options.basis)},
+    {NULL, NULL, NULL}};
+  if(NFermion==0) return luaL_error(L, "Angular momentum operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
-  if(NShell!=Ntemp)
+  // set basis used
+  if(LuaTestOptionsList(L, -1))
   {
-    return luaL_error(L, "Error in LuaOperatorNewJz, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    LuaCheckOptions(L, -1, LuaOperatorOptions);
+    if((strcmp(Options.basis, "SphericalHarmonicsY")==0)||(strcmp(Options.basis, "SphericalHarmonics")==0)||(strcmp(Options.basis, "BasisY")==0)||(strcmp(Options.basis, "Y")==0))
+    {
+      Options.ibasis=0;
+    }
+    else if((strcmp(Options.basis, "TesseralHarmonicsZ")==0)||(strcmp(Options.basis, "TesseralHarmonics")==0)||(strcmp(Options.basis, "BasisZ")==0)||(strcmp(Options.basis, "Z")==0))
+    {
+      Options.ibasis=1;
+    }
+    else if((strcmp(Options.basis, "KubicHarmonicsK")==0)||(strcmp(Options.basis, "KubicHarmonics")==0)||(strcmp(Options.basis, "BasisK")==0)||(strcmp(Options.basis, "K")==0)||(strcmp(Options.basis, "CubicHarmonicsK")==0)||(strcmp(Options.basis, "CubicHarmonics")==0))
+    {
+      Options.ibasis=2;
+    }
+    else if((strcmp(Options.basis, "PyramidalHarmonicsP")==0)||(strcmp(Options.basis, "PyramidalHarmonics")==0)||(strcmp(Options.basis, "BasisP")==0)||(strcmp(Options.basis, "P")==0))
+    {
+      Options.ibasis=3;
+    }
+    else if((strcmp(Options.basis, "jjz")==0)||(strcmp(Options.basis, "Basisjjz")==0)||(strcmp(Options.basis, "Basisj")==0)||(strcmp(Options.basis, "j")==0))
+    {
+      Options.ibasis=4;
+    }
+    else
+    {
+      return luaL_error(L, "Unrecognized value for basis %s, use SphericalHarmonicsY, TesseralHarmonicsZ, KubicHarmonicsK, PyramidalHarmonicsP, or jjz\n",Options.basis);
+    }
   }
-  l=(NShell-1)/2;
-  if(2*l+1!=NShell)
+  else // no options defined set the standard basis used for the orbitals: (j jz if NShell+2 == Ntemp otherwise l lz s sz)
   {
-    return luaL_error(L, "Error in LuaOperatorNewJz, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    if((NShell+2)==Ntemp)
+    {
+      Options.basis="jjz";
+      Options.ibasis=4;
+    }
+    else
+    {
+      Options.basis="SphericalHarmonicsY";
+      Options.ibasis=0;
+    }
   }
+  // test if indices are physical ok
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "First index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Second index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Options.ibasis==4)
+  {
+    if((NShell+2)!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewJz, 2 plus the lenght of IndexJmin (%d) is not equal to lenght of IndexJplus (%d)\n",NShell,Ntemp);
+    }
+    l=NShell/2;
+    if((2*l)!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewJz, Lenght of IndexJmin (%d) is not equal to 2l\n",NShell);
+    }
+  }
+  else
+  {
+    if(NShell!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewJz, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    }
+    l=(NShell-1)/2;
+    if(2*l+1!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewJz, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    }
+  }
+  // call function to create operator
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-  CreateOperatorJz(NFermion, l, LindexUp, LindexDn, op);
+  switch (Options.ibasis)
+  {
+    case 0:
+      CreateOperatorJz(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 1:
+      CreateOperatorJzZ(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 2:
+      CreateOperatorJzK(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 3:
+      CreateOperatorJzP(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 4:
+      CreateOperatorJzjjz(NFermion, l, LindexUp, LindexDn, op);
+      break;
+  }
   luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
@@ -839,27 +2152,116 @@ static int LuaOperatorNewJz(lua_State * L)
 
 static int LuaOperatorNewJplus(lua_State * L)
 {
+  struct
+  {
+    const char *basis;
+    uint32_t ibasis;   //  0  000 SphericalHarmonicY, alternating dn,up from m=-l to m=l
+    //  1  001 TesseralHarmonicZ,  alternating dn,up sin first, than cos
+    //  2  010 KubicHarmonicK,     alternating dn,up order according to irep a,b,e,t
+    //  3  011 PyramidalHarmonicP, alternating dn,up order rotating around z axis
+    //  4  100 jjz basis,          j=l-1/2 first, than j=l+1/2 from m=-j to m=j
+  } Options;
+  Options.ibasis=0;
   OperatorType *op;
   uint32_t Ntemp;
   uint32_t NFermion = (uint32_t)luaL_checkunsigned(L, 1);
   uint32_t NShell,l;
   uint16_t *LindexUp, *LindexDn;
-  if(NFermion==0) return luaL_error(L, "Total Angular momentum operator acting on zero fermions is not defined");
+  LuaOptionsType LuaOperatorOptions[]={
+    {"basis","char*",&(Options.basis)},
+    {NULL, NULL, NULL}};
+  if(NFermion==0) return luaL_error(L, "Angular momentum operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
-  if(NShell!=Ntemp)
+  // set basis used
+  if(LuaTestOptionsList(L, -1))
   {
-    return luaL_error(L, "Error in LuaOperatorNewJplus, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    LuaCheckOptions(L, -1, LuaOperatorOptions);
+    if((strcmp(Options.basis, "SphericalHarmonicsY")==0)||(strcmp(Options.basis, "SphericalHarmonics")==0)||(strcmp(Options.basis, "BasisY")==0)||(strcmp(Options.basis, "Y")==0))
+    {
+      Options.ibasis=0;
+    }
+    else if((strcmp(Options.basis, "TesseralHarmonicsZ")==0)||(strcmp(Options.basis, "TesseralHarmonics")==0)||(strcmp(Options.basis, "BasisZ")==0)||(strcmp(Options.basis, "Z")==0))
+    {
+      Options.ibasis=1;
+    }
+    else if((strcmp(Options.basis, "KubicHarmonicsK")==0)||(strcmp(Options.basis, "KubicHarmonics")==0)||(strcmp(Options.basis, "BasisK")==0)||(strcmp(Options.basis, "K")==0)||(strcmp(Options.basis, "CubicHarmonicsK")==0)||(strcmp(Options.basis, "CubicHarmonics")==0))
+    {
+      Options.ibasis=2;
+    }
+    else if((strcmp(Options.basis, "PyramidalHarmonicsP")==0)||(strcmp(Options.basis, "PyramidalHarmonics")==0)||(strcmp(Options.basis, "BasisP")==0)||(strcmp(Options.basis, "P")==0))
+    {
+      Options.ibasis=3;
+    }
+    else if((strcmp(Options.basis, "jjz")==0)||(strcmp(Options.basis, "Basisjjz")==0)||(strcmp(Options.basis, "Basisj")==0)||(strcmp(Options.basis, "j")==0))
+    {
+      Options.ibasis=4;
+    }
+    else
+    {
+      return luaL_error(L, "Unrecognized value for basis %s, use SphericalHarmonicsY, TesseralHarmonicsZ, KubicHarmonicsK, PyramidalHarmonicsP, or jjz\n",Options.basis);
+    }
   }
-  l=(NShell-1)/2;
-  if(2*l+1!=NShell)
+  else // no options defined set the standard basis used for the orbitals: (j jz if NShell+2 == Ntemp otherwise l lz s sz)
   {
-    return luaL_error(L, "Error in LuaOperatorNewJplus, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    if((NShell+2)==Ntemp)
+    {
+      Options.basis="jjz";
+      Options.ibasis=4;
+    }
+    else
+    {
+      Options.basis="SphericalHarmonicsY";
+      Options.ibasis=0;
+    }
   }
+  // test if indices are physical ok
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "First index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Second index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Options.ibasis==4)
+  {
+    if((NShell+2)!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewJplus, 2 plus the lenght of IndexJmin (%d) is not equal to lenght of IndexJplus (%d)\n",NShell,Ntemp);
+    }
+    l=NShell/2;
+    if((2*l)!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewJplus, Lenght of IndexJmin (%d) is not equal to 2l\n",NShell);
+    }
+  }
+  else
+  {
+    if(NShell!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewJplus, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    }
+    l=(NShell-1)/2;
+    if(2*l+1!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewJplus, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    }
+  }
+  // call function to create operator
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-  CreateOperatorJplus(NFermion, l, LindexUp, LindexDn, op);
+  switch (Options.ibasis)
+  {
+    case 0:
+      CreateOperatorJplus(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 1:
+      CreateOperatorJplusZ(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 2:
+      CreateOperatorJplusK(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 3:
+      CreateOperatorJplusP(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 4:
+      CreateOperatorJplusjjz(NFermion, l, LindexUp, LindexDn, op);
+      break;
+  }
   luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
@@ -868,27 +2270,116 @@ static int LuaOperatorNewJplus(lua_State * L)
 
 static int LuaOperatorNewJmin(lua_State * L)
 {
+  struct
+  {
+    const char *basis;
+    uint32_t ibasis;   //  0  000 SphericalHarmonicY, alternating dn,up from m=-l to m=l
+    //  1  001 TesseralHarmonicZ,  alternating dn,up sin first, than cos
+    //  2  010 KubicHarmonicK,     alternating dn,up order according to irep a,b,e,t
+    //  3  011 PyramidalHarmonicP, alternating dn,up order rotating around z axis
+    //  4  100 jjz basis,          j=l-1/2 first, than j=l+1/2 from m=-j to m=j
+  } Options;
+  Options.ibasis=0;
   OperatorType *op;
   uint32_t Ntemp;
   uint32_t NFermion = (uint32_t)luaL_checkunsigned(L, 1);
   uint32_t NShell,l;
   uint16_t *LindexUp, *LindexDn;
-  if(NFermion==0) return luaL_error(L, "Total Angular momentum operator acting on zero fermions is not defined");
+  LuaOptionsType LuaOperatorOptions[]={
+    {"basis","char*",&(Options.basis)},
+    {NULL, NULL, NULL}};
+  if(NFermion==0) return luaL_error(L, "Angular momentum operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
-  if(NShell!=Ntemp)
+  // set basis used
+  if(LuaTestOptionsList(L, -1))
   {
-    return luaL_error(L, "Error in LuaOperatorNewJmin, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    LuaCheckOptions(L, -1, LuaOperatorOptions);
+    if((strcmp(Options.basis, "SphericalHarmonicsY")==0)||(strcmp(Options.basis, "SphericalHarmonics")==0)||(strcmp(Options.basis, "BasisY")==0)||(strcmp(Options.basis, "Y")==0))
+    {
+      Options.ibasis=0;
+    }
+    else if((strcmp(Options.basis, "TesseralHarmonicsZ")==0)||(strcmp(Options.basis, "TesseralHarmonics")==0)||(strcmp(Options.basis, "BasisZ")==0)||(strcmp(Options.basis, "Z")==0))
+    {
+      Options.ibasis=1;
+    }
+    else if((strcmp(Options.basis, "KubicHarmonicsK")==0)||(strcmp(Options.basis, "KubicHarmonics")==0)||(strcmp(Options.basis, "BasisK")==0)||(strcmp(Options.basis, "K")==0)||(strcmp(Options.basis, "CubicHarmonicsK")==0)||(strcmp(Options.basis, "CubicHarmonics")==0))
+    {
+      Options.ibasis=2;
+    }
+    else if((strcmp(Options.basis, "PyramidalHarmonicsP")==0)||(strcmp(Options.basis, "PyramidalHarmonics")==0)||(strcmp(Options.basis, "BasisP")==0)||(strcmp(Options.basis, "P")==0))
+    {
+      Options.ibasis=3;
+    }
+    else if((strcmp(Options.basis, "jjz")==0)||(strcmp(Options.basis, "Basisjjz")==0)||(strcmp(Options.basis, "Basisj")==0)||(strcmp(Options.basis, "j")==0))
+    {
+      Options.ibasis=4;
+    }
+    else
+    {
+      return luaL_error(L, "Unrecognized value for basis %s, use SphericalHarmonicsY, TesseralHarmonicsZ, KubicHarmonicsK, PyramidalHarmonicsP, or jjz\n",Options.basis);
+    }
   }
-  l=(NShell-1)/2;
-  if(2*l+1!=NShell)
+  else // no options defined set the standard basis used for the orbitals: (j jz if NShell+2 == Ntemp otherwise l lz s sz)
   {
-    return luaL_error(L, "Error in LuaOperatorNewJmin, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    if((NShell+2)==Ntemp)
+    {
+      Options.basis="jjz";
+      Options.ibasis=4;
+    }
+    else
+    {
+      Options.basis="SphericalHarmonicsY";
+      Options.ibasis=0;
+    }
   }
+  // test if indices are physical ok
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "First index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Second index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Options.ibasis==4)
+  {
+    if((NShell+2)!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewJmin, 2 plus the lenght of IndexJmin (%d) is not equal to lenght of IndexJplus (%d)\n",NShell,Ntemp);
+    }
+    l=NShell/2;
+    if((2*l)!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewJmin, Lenght of IndexJmin (%d) is not equal to 2l\n",NShell);
+    }
+  }
+  else
+  {
+    if(NShell!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewJmin, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    }
+    l=(NShell-1)/2;
+    if(2*l+1!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewJmin, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    }
+  }
+  // call function to create operator
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-  CreateOperatorJmin(NFermion, l, LindexUp, LindexDn, op);
+  switch (Options.ibasis)
+  {
+    case 0:
+      CreateOperatorJmin(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 1:
+      CreateOperatorJminZ(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 2:
+      CreateOperatorJminK(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 3:
+      CreateOperatorJminP(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 4:
+      CreateOperatorJminjjz(NFermion, l, LindexUp, LindexDn, op);
+      break;
+  }
   luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
@@ -897,27 +2388,116 @@ static int LuaOperatorNewJmin(lua_State * L)
 
 static int LuaOperatorNewJsqr(lua_State * L)
 {
+  struct
+  {
+    const char *basis;
+    uint32_t ibasis;   //  0  000 SphericalHarmonicY, alternating dn,up from m=-l to m=l
+    //  1  001 TesseralHarmonicZ,  alternating dn,up sin first, than cos
+    //  2  010 KubicHarmonicK,     alternating dn,up order according to irep a,b,e,t
+    //  3  011 PyramidalHarmonicP, alternating dn,up order rotating around z axis
+    //  4  100 jjz basis,          j=l-1/2 first, than j=l+1/2 from m=-j to m=j
+  } Options;
+  Options.ibasis=0;
   OperatorType *op;
   uint32_t Ntemp;
   uint32_t NFermion = (uint32_t)luaL_checkunsigned(L, 1);
   uint32_t NShell,l;
   uint16_t *LindexUp, *LindexDn;
-  if(NFermion==0) return luaL_error(L, "Total Angular momentum operator acting on zero fermions is not defined");
+  LuaOptionsType LuaOperatorOptions[]={
+    {"basis","char*",&(Options.basis)},
+    {NULL, NULL, NULL}};
+  if(NFermion==0) return luaL_error(L, "Angular momentum operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
-  if(NShell!=Ntemp)
+  // set basis used
+  if(LuaTestOptionsList(L, -1))
   {
-    return luaL_error(L, "Error in LuaOperatorNewJsqr, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    LuaCheckOptions(L, -1, LuaOperatorOptions);
+    if((strcmp(Options.basis, "SphericalHarmonicsY")==0)||(strcmp(Options.basis, "SphericalHarmonics")==0)||(strcmp(Options.basis, "BasisY")==0)||(strcmp(Options.basis, "Y")==0))
+    {
+      Options.ibasis=0;
+    }
+    else if((strcmp(Options.basis, "TesseralHarmonicsZ")==0)||(strcmp(Options.basis, "TesseralHarmonics")==0)||(strcmp(Options.basis, "BasisZ")==0)||(strcmp(Options.basis, "Z")==0))
+    {
+      Options.ibasis=1;
+    }
+    else if((strcmp(Options.basis, "KubicHarmonicsK")==0)||(strcmp(Options.basis, "KubicHarmonics")==0)||(strcmp(Options.basis, "BasisK")==0)||(strcmp(Options.basis, "K")==0)||(strcmp(Options.basis, "CubicHarmonicsK")==0)||(strcmp(Options.basis, "CubicHarmonics")==0))
+    {
+      Options.ibasis=2;
+    }
+    else if((strcmp(Options.basis, "PyramidalHarmonicsP")==0)||(strcmp(Options.basis, "PyramidalHarmonics")==0)||(strcmp(Options.basis, "BasisP")==0)||(strcmp(Options.basis, "P")==0))
+    {
+      Options.ibasis=3;
+    }
+    else if((strcmp(Options.basis, "jjz")==0)||(strcmp(Options.basis, "Basisjjz")==0)||(strcmp(Options.basis, "Basisj")==0)||(strcmp(Options.basis, "j")==0))
+    {
+      Options.ibasis=4;
+    }
+    else
+    {
+      return luaL_error(L, "Unrecognized value for basis %s, use SphericalHarmonicsY, TesseralHarmonicsZ, KubicHarmonicsK, PyramidalHarmonicsP, or jjz\n",Options.basis);
+    }
   }
-  l=(NShell-1)/2;
-  if(2*l+1!=NShell)
+  else // no options defined set the standard basis used for the orbitals: (j jz if NShell+2 == Ntemp otherwise l lz s sz)
   {
-    return luaL_error(L, "Error in LuaOperatorNewJsqr, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    if((NShell+2)==Ntemp)
+    {
+      Options.basis="jjz";
+      Options.ibasis=4;
+    }
+    else
+    {
+      Options.basis="SphericalHarmonicsY";
+      Options.ibasis=0;
+    }
   }
+  // test if indices are physical ok
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "First index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Second index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Options.ibasis==4)
+  {
+    if((NShell+2)!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewJsqr, 2 plus the lenght of IndexJmin (%d) is not equal to lenght of IndexJplus (%d)\n",NShell,Ntemp);
+    }
+    l=NShell/2;
+    if((2*l)!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewJsqr, Lenght of IndexJmin (%d) is not equal to 2l\n",NShell);
+    }
+  }
+  else
+  {
+    if(NShell!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewJsqr, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    }
+    l=(NShell-1)/2;
+    if(2*l+1!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewJsqr, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    }
+  }
+  // call function to create operator
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-  CreateOperatorJsqr(NFermion, l, LindexUp, LindexDn, op);
+  switch (Options.ibasis)
+  {
+    case 0:
+      CreateOperatorJsqr(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 1:
+      CreateOperatorJsqrZ(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 2:
+      CreateOperatorJsqrK(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 3:
+      CreateOperatorJsqrP(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 4:
+      CreateOperatorJsqrjjz(NFermion, l, LindexUp, LindexDn, op);
+      break;
+  }
   luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
@@ -926,27 +2506,116 @@ static int LuaOperatorNewJsqr(lua_State * L)
 
 static int LuaOperatorNewTx(lua_State * L)
 {
+  struct
+  {
+    const char *basis;
+    uint32_t ibasis;   //  0  000 SphericalHarmonicY, alternating dn,up from m=-l to m=l
+    //  1  001 TesseralHarmonicZ,  alternating dn,up sin first, than cos
+    //  2  010 KubicHarmonicK,     alternating dn,up order according to irep a,b,e,t
+    //  3  011 PyramidalHarmonicP, alternating dn,up order rotating around z axis
+    //  4  100 jjz basis,          j=l-1/2 first, than j=l+1/2 from m=-j to m=j
+  } Options;
+  Options.ibasis=0;
   OperatorType *op;
   uint32_t Ntemp;
   uint32_t NFermion = (uint32_t)luaL_checkunsigned(L, 1);
   uint32_t NShell,l;
   uint16_t *LindexUp, *LindexDn;
-  if(NFermion==0) return luaL_error(L, "Magnetic dipole operator acting on zero fermions is not defined");
+  LuaOptionsType LuaOperatorOptions[]={
+    {"basis","char*",&(Options.basis)},
+    {NULL, NULL, NULL}};
+  if(NFermion==0) return luaL_error(L, "Angular momentum operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
-  if(NShell!=Ntemp)
+  // set basis used
+  if(LuaTestOptionsList(L, -1))
   {
-    return luaL_error(L, "Error in LuaOperatorNewTx, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    LuaCheckOptions(L, -1, LuaOperatorOptions);
+    if((strcmp(Options.basis, "SphericalHarmonicsY")==0)||(strcmp(Options.basis, "SphericalHarmonics")==0)||(strcmp(Options.basis, "BasisY")==0)||(strcmp(Options.basis, "Y")==0))
+    {
+      Options.ibasis=0;
+    }
+    else if((strcmp(Options.basis, "TesseralHarmonicsZ")==0)||(strcmp(Options.basis, "TesseralHarmonics")==0)||(strcmp(Options.basis, "BasisZ")==0)||(strcmp(Options.basis, "Z")==0))
+    {
+      Options.ibasis=1;
+    }
+    else if((strcmp(Options.basis, "KubicHarmonicsK")==0)||(strcmp(Options.basis, "KubicHarmonics")==0)||(strcmp(Options.basis, "BasisK")==0)||(strcmp(Options.basis, "K")==0)||(strcmp(Options.basis, "CubicHarmonicsK")==0)||(strcmp(Options.basis, "CubicHarmonics")==0))
+    {
+      Options.ibasis=2;
+    }
+    else if((strcmp(Options.basis, "PyramidalHarmonicsP")==0)||(strcmp(Options.basis, "PyramidalHarmonics")==0)||(strcmp(Options.basis, "BasisP")==0)||(strcmp(Options.basis, "P")==0))
+    {
+      Options.ibasis=3;
+    }
+    else if((strcmp(Options.basis, "jjz")==0)||(strcmp(Options.basis, "Basisjjz")==0)||(strcmp(Options.basis, "Basisj")==0)||(strcmp(Options.basis, "j")==0))
+    {
+      Options.ibasis=4;
+    }
+    else
+    {
+      return luaL_error(L, "Unrecognized value for basis %s, use SphericalHarmonicsY, TesseralHarmonicsZ, KubicHarmonicsK, PyramidalHarmonicsP, or jjz\n",Options.basis);
+    }
   }
-  l=(NShell-1)/2;
-  if(2*l+1!=NShell)
+  else // no options defined set the standard basis used for the orbitals: (j jz if NShell+2 == Ntemp otherwise l lz s sz)
   {
-    return luaL_error(L, "Error in LuaOperatorNewTx, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    if((NShell+2)==Ntemp)
+    {
+      Options.basis="jjz";
+      Options.ibasis=4;
+    }
+    else
+    {
+      Options.basis="SphericalHarmonicsY";
+      Options.ibasis=0;
+    }
   }
+  // test if indices are physical ok
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "First index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Second index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Options.ibasis==4)
+  {
+    if((NShell+2)!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewTx, 2 plus the lenght of IndexJmin (%d) is not equal to lenght of IndexJplus (%d)\n",NShell,Ntemp);
+    }
+    l=NShell/2;
+    if((2*l)!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewTx, Lenght of IndexJmin (%d) is not equal to 2l\n",NShell);
+    }
+  }
+  else
+  {
+    if(NShell!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewTx, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    }
+    l=(NShell-1)/2;
+    if(2*l+1!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewTx, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    }
+  }
+  // call function to create operator
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-  CreateOperatorTx(NFermion, l, LindexUp, LindexDn, op);
+  switch (Options.ibasis)
+  {
+    case 0:
+      CreateOperatorTx(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 1:
+      CreateOperatorTxZ(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 2:
+      CreateOperatorTxK(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 3:
+      CreateOperatorTxP(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 4:
+      CreateOperatorTxjjz(NFermion, l, LindexUp, LindexDn, op);
+      break;
+  }
   luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
@@ -955,27 +2624,116 @@ static int LuaOperatorNewTx(lua_State * L)
 
 static int LuaOperatorNewTy(lua_State * L)
 {
+  struct
+  {
+    const char *basis;
+    uint32_t ibasis;   //  0  000 SphericalHarmonicY, alternating dn,up from m=-l to m=l
+    //  1  001 TesseralHarmonicZ,  alternating dn,up sin first, than cos
+    //  2  010 KubicHarmonicK,     alternating dn,up order according to irep a,b,e,t
+    //  3  011 PyramidalHarmonicP, alternating dn,up order rotating around z axis
+    //  4  100 jjz basis,          j=l-1/2 first, than j=l+1/2 from m=-j to m=j
+  } Options;
+  Options.ibasis=0;
   OperatorType *op;
   uint32_t Ntemp;
   uint32_t NFermion = (uint32_t)luaL_checkunsigned(L, 1);
   uint32_t NShell,l;
   uint16_t *LindexUp, *LindexDn;
-  if(NFermion==0) return luaL_error(L, "Magnetic dipole operator acting on zero fermions is not defined");
+  LuaOptionsType LuaOperatorOptions[]={
+    {"basis","char*",&(Options.basis)},
+    {NULL, NULL, NULL}};
+  if(NFermion==0) return luaL_error(L, "Angular momentum operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
-  if(NShell!=Ntemp)
+  // set basis used
+  if(LuaTestOptionsList(L, -1))
   {
-    return luaL_error(L, "Error in LuaOperatorNewTy, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    LuaCheckOptions(L, -1, LuaOperatorOptions);
+    if((strcmp(Options.basis, "SphericalHarmonicsY")==0)||(strcmp(Options.basis, "SphericalHarmonics")==0)||(strcmp(Options.basis, "BasisY")==0)||(strcmp(Options.basis, "Y")==0))
+    {
+      Options.ibasis=0;
+    }
+    else if((strcmp(Options.basis, "TesseralHarmonicsZ")==0)||(strcmp(Options.basis, "TesseralHarmonics")==0)||(strcmp(Options.basis, "BasisZ")==0)||(strcmp(Options.basis, "Z")==0))
+    {
+      Options.ibasis=1;
+    }
+    else if((strcmp(Options.basis, "KubicHarmonicsK")==0)||(strcmp(Options.basis, "KubicHarmonics")==0)||(strcmp(Options.basis, "BasisK")==0)||(strcmp(Options.basis, "K")==0)||(strcmp(Options.basis, "CubicHarmonicsK")==0)||(strcmp(Options.basis, "CubicHarmonics")==0))
+    {
+      Options.ibasis=2;
+    }
+    else if((strcmp(Options.basis, "PyramidalHarmonicsP")==0)||(strcmp(Options.basis, "PyramidalHarmonics")==0)||(strcmp(Options.basis, "BasisP")==0)||(strcmp(Options.basis, "P")==0))
+    {
+      Options.ibasis=3;
+    }
+    else if((strcmp(Options.basis, "jjz")==0)||(strcmp(Options.basis, "Basisjjz")==0)||(strcmp(Options.basis, "Basisj")==0)||(strcmp(Options.basis, "j")==0))
+    {
+      Options.ibasis=4;
+    }
+    else
+    {
+      return luaL_error(L, "Unrecognized value for basis %s, use SphericalHarmonicsY, TesseralHarmonicsZ, KubicHarmonicsK, PyramidalHarmonicsP, or jjz\n",Options.basis);
+    }
   }
-  l=(NShell-1)/2;
-  if(2*l+1!=NShell)
+  else // no options defined set the standard basis used for the orbitals: (j jz if NShell+2 == Ntemp otherwise l lz s sz)
   {
-    return luaL_error(L, "Error in LuaOperatorNewTy, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    if((NShell+2)==Ntemp)
+    {
+      Options.basis="jjz";
+      Options.ibasis=4;
+    }
+    else
+    {
+      Options.basis="SphericalHarmonicsY";
+      Options.ibasis=0;
+    }
   }
+  // test if indices are physical ok
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "First index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Second index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Options.ibasis==4)
+  {
+    if((NShell+2)!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewTy, 2 plus the lenght of IndexJmin (%d) is not equal to lenght of IndexJplus (%d)\n",NShell,Ntemp);
+    }
+    l=NShell/2;
+    if((2*l)!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewTy, Lenght of IndexJmin (%d) is not equal to 2l\n",NShell);
+    }
+  }
+  else
+  {
+    if(NShell!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewTy, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    }
+    l=(NShell-1)/2;
+    if(2*l+1!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewTy, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    }
+  }
+  // call function to create operator
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-  CreateOperatorTy(NFermion, l, LindexUp, LindexDn, op);
+  switch (Options.ibasis)
+  {
+    case 0:
+      CreateOperatorTy(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 1:
+      CreateOperatorTyZ(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 2:
+      CreateOperatorTyK(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 3:
+      CreateOperatorTyP(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 4:
+      CreateOperatorTyjjz(NFermion, l, LindexUp, LindexDn, op);
+      break;
+  }
   luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
@@ -984,27 +2742,116 @@ static int LuaOperatorNewTy(lua_State * L)
 
 static int LuaOperatorNewTz(lua_State * L)
 {
+  struct
+  {
+    const char *basis;
+    uint32_t ibasis;   //  0  000 SphericalHarmonicY, alternating dn,up from m=-l to m=l
+    //  1  001 TesseralHarmonicZ,  alternating dn,up sin first, than cos
+    //  2  010 KubicHarmonicK,     alternating dn,up order according to irep a,b,e,t
+    //  3  011 PyramidalHarmonicP, alternating dn,up order rotating around z axis
+    //  4  100 jjz basis,          j=l-1/2 first, than j=l+1/2 from m=-j to m=j
+  } Options;
+  Options.ibasis=0;
   OperatorType *op;
   uint32_t Ntemp;
   uint32_t NFermion = (uint32_t)luaL_checkunsigned(L, 1);
   uint32_t NShell,l;
   uint16_t *LindexUp, *LindexDn;
-  if(NFermion==0) return luaL_error(L, "Magnetic dipole operator acting on zero fermions is not defined");
+  LuaOptionsType LuaOperatorOptions[]={
+    {"basis","char*",&(Options.basis)},
+    {NULL, NULL, NULL}};
+  if(NFermion==0) return luaL_error(L, "Angular momentum operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
-  if(NShell!=Ntemp)
+  // set basis used
+  if(LuaTestOptionsList(L, -1))
   {
-    return luaL_error(L, "Error in LuaOperatorNewTz, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    LuaCheckOptions(L, -1, LuaOperatorOptions);
+    if((strcmp(Options.basis, "SphericalHarmonicsY")==0)||(strcmp(Options.basis, "SphericalHarmonics")==0)||(strcmp(Options.basis, "BasisY")==0)||(strcmp(Options.basis, "Y")==0))
+    {
+      Options.ibasis=0;
+    }
+    else if((strcmp(Options.basis, "TesseralHarmonicsZ")==0)||(strcmp(Options.basis, "TesseralHarmonics")==0)||(strcmp(Options.basis, "BasisZ")==0)||(strcmp(Options.basis, "Z")==0))
+    {
+      Options.ibasis=1;
+    }
+    else if((strcmp(Options.basis, "KubicHarmonicsK")==0)||(strcmp(Options.basis, "KubicHarmonics")==0)||(strcmp(Options.basis, "BasisK")==0)||(strcmp(Options.basis, "K")==0)||(strcmp(Options.basis, "CubicHarmonicsK")==0)||(strcmp(Options.basis, "CubicHarmonics")==0))
+    {
+      Options.ibasis=2;
+    }
+    else if((strcmp(Options.basis, "PyramidalHarmonicsP")==0)||(strcmp(Options.basis, "PyramidalHarmonics")==0)||(strcmp(Options.basis, "BasisP")==0)||(strcmp(Options.basis, "P")==0))
+    {
+      Options.ibasis=3;
+    }
+    else if((strcmp(Options.basis, "jjz")==0)||(strcmp(Options.basis, "Basisjjz")==0)||(strcmp(Options.basis, "Basisj")==0)||(strcmp(Options.basis, "j")==0))
+    {
+      Options.ibasis=4;
+    }
+    else
+    {
+      return luaL_error(L, "Unrecognized value for basis %s, use SphericalHarmonicsY, TesseralHarmonicsZ, KubicHarmonicsK, PyramidalHarmonicsP, or jjz\n",Options.basis);
+    }
   }
-  l=(NShell-1)/2;
-  if(2*l+1!=NShell)
+  else // no options defined set the standard basis used for the orbitals: (j jz if NShell+2 == Ntemp otherwise l lz s sz)
   {
-    return luaL_error(L, "Error in LuaOperatorNewTz, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    if((NShell+2)==Ntemp)
+    {
+      Options.basis="jjz";
+      Options.ibasis=4;
+    }
+    else
+    {
+      Options.basis="SphericalHarmonicsY";
+      Options.ibasis=0;
+    }
   }
+  // test if indices are physical ok
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "First index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Second index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Options.ibasis==4)
+  {
+    if((NShell+2)!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewTz, 2 plus the lenght of IndexJmin (%d) is not equal to lenght of IndexJplus (%d)\n",NShell,Ntemp);
+    }
+    l=NShell/2;
+    if((2*l)!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewTz, Lenght of IndexJmin (%d) is not equal to 2l\n",NShell);
+    }
+  }
+  else
+  {
+    if(NShell!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewTz, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    }
+    l=(NShell-1)/2;
+    if(2*l+1!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewTz, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    }
+  }
+  // call function to create operator
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-  CreateOperatorTz(NFermion, l, LindexUp, LindexDn, op);
+  switch (Options.ibasis)
+  {
+    case 0:
+      CreateOperatorTz(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 1:
+      CreateOperatorTzZ(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 2:
+      CreateOperatorTzK(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 3:
+      CreateOperatorTzP(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 4:
+      CreateOperatorTzjjz(NFermion, l, LindexUp, LindexDn, op);
+      break;
+  }
   luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
@@ -1013,27 +2860,116 @@ static int LuaOperatorNewTz(lua_State * L)
 
 static int LuaOperatorNewTplus(lua_State * L)
 {
+  struct
+  {
+    const char *basis;
+    uint32_t ibasis;   //  0  000 SphericalHarmonicY, alternating dn,up from m=-l to m=l
+    //  1  001 TesseralHarmonicZ,  alternating dn,up sin first, than cos
+    //  2  010 KubicHarmonicK,     alternating dn,up order according to irep a,b,e,t
+    //  3  011 PyramidalHarmonicP, alternating dn,up order rotating around z axis
+    //  4  100 jjz basis,          j=l-1/2 first, than j=l+1/2 from m=-j to m=j
+  } Options;
+  Options.ibasis=0;
   OperatorType *op;
   uint32_t Ntemp;
   uint32_t NFermion = (uint32_t)luaL_checkunsigned(L, 1);
   uint32_t NShell,l;
   uint16_t *LindexUp, *LindexDn;
-  if(NFermion==0) return luaL_error(L, "Magnetic dipole operator acting on zero fermions is not defined");
+  LuaOptionsType LuaOperatorOptions[]={
+    {"basis","char*",&(Options.basis)},
+    {NULL, NULL, NULL}};
+  if(NFermion==0) return luaL_error(L, "Angular momentum operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
-  if(NShell!=Ntemp)
+  // set basis used
+  if(LuaTestOptionsList(L, -1))
   {
-    return luaL_error(L, "Error in LuaOperatorNewTplus, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    LuaCheckOptions(L, -1, LuaOperatorOptions);
+    if((strcmp(Options.basis, "SphericalHarmonicsY")==0)||(strcmp(Options.basis, "SphericalHarmonics")==0)||(strcmp(Options.basis, "BasisY")==0)||(strcmp(Options.basis, "Y")==0))
+    {
+      Options.ibasis=0;
+    }
+    else if((strcmp(Options.basis, "TesseralHarmonicsZ")==0)||(strcmp(Options.basis, "TesseralHarmonics")==0)||(strcmp(Options.basis, "BasisZ")==0)||(strcmp(Options.basis, "Z")==0))
+    {
+      Options.ibasis=1;
+    }
+    else if((strcmp(Options.basis, "KubicHarmonicsK")==0)||(strcmp(Options.basis, "KubicHarmonics")==0)||(strcmp(Options.basis, "BasisK")==0)||(strcmp(Options.basis, "K")==0)||(strcmp(Options.basis, "CubicHarmonicsK")==0)||(strcmp(Options.basis, "CubicHarmonics")==0))
+    {
+      Options.ibasis=2;
+    }
+    else if((strcmp(Options.basis, "PyramidalHarmonicsP")==0)||(strcmp(Options.basis, "PyramidalHarmonics")==0)||(strcmp(Options.basis, "BasisP")==0)||(strcmp(Options.basis, "P")==0))
+    {
+      Options.ibasis=3;
+    }
+    else if((strcmp(Options.basis, "jjz")==0)||(strcmp(Options.basis, "Basisjjz")==0)||(strcmp(Options.basis, "Basisj")==0)||(strcmp(Options.basis, "j")==0))
+    {
+      Options.ibasis=4;
+    }
+    else
+    {
+      return luaL_error(L, "Unrecognized value for basis %s, use SphericalHarmonicsY, TesseralHarmonicsZ, KubicHarmonicsK, PyramidalHarmonicsP, or jjz\n",Options.basis);
+    }
   }
-  l=(NShell-1)/2;
-  if(2*l+1!=NShell)
+  else // no options defined set the standard basis used for the orbitals: (j jz if NShell+2 == Ntemp otherwise l lz s sz)
   {
-    return luaL_error(L, "Error in LuaOperatorNewTplus, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    if((NShell+2)==Ntemp)
+    {
+      Options.basis="jjz";
+      Options.ibasis=4;
+    }
+    else
+    {
+      Options.basis="SphericalHarmonicsY";
+      Options.ibasis=0;
+    }
   }
+  // test if indices are physical ok
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "First index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Second index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Options.ibasis==4)
+  {
+    if((NShell+2)!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewTplus, 2 plus the lenght of IndexJmin (%d) is not equal to lenght of IndexJplus (%d)\n",NShell,Ntemp);
+    }
+    l=NShell/2;
+    if((2*l)!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewTplus, Lenght of IndexJmin (%d) is not equal to 2l\n",NShell);
+    }
+  }
+  else
+  {
+    if(NShell!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewTplus, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    }
+    l=(NShell-1)/2;
+    if(2*l+1!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewTplus, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    }
+  }
+  // call function to create operator
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-  CreateOperatorTplus(NFermion, l, LindexUp, LindexDn, op);
+  switch (Options.ibasis)
+  {
+    case 0:
+      CreateOperatorTplus(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 1:
+      CreateOperatorTplusZ(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 2:
+      CreateOperatorTplusK(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 3:
+      CreateOperatorTplusP(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 4:
+      CreateOperatorTplusjjz(NFermion, l, LindexUp, LindexDn, op);
+      break;
+  }
   luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
@@ -1042,27 +2978,116 @@ static int LuaOperatorNewTplus(lua_State * L)
 
 static int LuaOperatorNewTmin(lua_State * L)
 {
+  struct
+  {
+    const char *basis;
+    uint32_t ibasis;   //  0  000 SphericalHarmonicY, alternating dn,up from m=-l to m=l
+    //  1  001 TesseralHarmonicZ,  alternating dn,up sin first, than cos
+    //  2  010 KubicHarmonicK,     alternating dn,up order according to irep a,b,e,t
+    //  3  011 PyramidalHarmonicP, alternating dn,up order rotating around z axis
+    //  4  100 jjz basis,          j=l-1/2 first, than j=l+1/2 from m=-j to m=j
+  } Options;
+  Options.ibasis=0;
   OperatorType *op;
   uint32_t Ntemp;
   uint32_t NFermion = (uint32_t)luaL_checkunsigned(L, 1);
   uint32_t NShell,l;
   uint16_t *LindexUp, *LindexDn;
-  if(NFermion==0) return luaL_error(L, "Magnetic dipole operator acting on zero fermions is not defined");
+  LuaOptionsType LuaOperatorOptions[]={
+    {"basis","char*",&(Options.basis)},
+    {NULL, NULL, NULL}};
+  if(NFermion==0) return luaL_error(L, "Angular momentum operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
-  if(NShell!=Ntemp)
+  // set basis used
+  if(LuaTestOptionsList(L, -1))
   {
-    return luaL_error(L, "Error in LuaOperatorNewTmin, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    LuaCheckOptions(L, -1, LuaOperatorOptions);
+    if((strcmp(Options.basis, "SphericalHarmonicsY")==0)||(strcmp(Options.basis, "SphericalHarmonics")==0)||(strcmp(Options.basis, "BasisY")==0)||(strcmp(Options.basis, "Y")==0))
+    {
+      Options.ibasis=0;
+    }
+    else if((strcmp(Options.basis, "TesseralHarmonicsZ")==0)||(strcmp(Options.basis, "TesseralHarmonics")==0)||(strcmp(Options.basis, "BasisZ")==0)||(strcmp(Options.basis, "Z")==0))
+    {
+      Options.ibasis=1;
+    }
+    else if((strcmp(Options.basis, "KubicHarmonicsK")==0)||(strcmp(Options.basis, "KubicHarmonics")==0)||(strcmp(Options.basis, "BasisK")==0)||(strcmp(Options.basis, "K")==0)||(strcmp(Options.basis, "CubicHarmonicsK")==0)||(strcmp(Options.basis, "CubicHarmonics")==0))
+    {
+      Options.ibasis=2;
+    }
+    else if((strcmp(Options.basis, "PyramidalHarmonicsP")==0)||(strcmp(Options.basis, "PyramidalHarmonics")==0)||(strcmp(Options.basis, "BasisP")==0)||(strcmp(Options.basis, "P")==0))
+    {
+      Options.ibasis=3;
+    }
+    else if((strcmp(Options.basis, "jjz")==0)||(strcmp(Options.basis, "Basisjjz")==0)||(strcmp(Options.basis, "Basisj")==0)||(strcmp(Options.basis, "j")==0))
+    {
+      Options.ibasis=4;
+    }
+    else
+    {
+      return luaL_error(L, "Unrecognized value for basis %s, use SphericalHarmonicsY, TesseralHarmonicsZ, KubicHarmonicsK, PyramidalHarmonicsP, or jjz\n",Options.basis);
+    }
   }
-  l=(NShell-1)/2;
-  if(2*l+1!=NShell)
+  else // no options defined set the standard basis used for the orbitals: (j jz if NShell+2 == Ntemp otherwise l lz s sz)
   {
-    return luaL_error(L, "Error in LuaOperatorNewTmin, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    if((NShell+2)==Ntemp)
+    {
+      Options.basis="jjz";
+      Options.ibasis=4;
+    }
+    else
+    {
+      Options.basis="SphericalHarmonicsY";
+      Options.ibasis=0;
+    }
   }
+  // test if indices are physical ok
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "First index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Second index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Options.ibasis==4)
+  {
+    if((NShell+2)!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewTmin, 2 plus the lenght of IndexJmin (%d) is not equal to lenght of IndexJplus (%d)\n",NShell,Ntemp);
+    }
+    l=NShell/2;
+    if((2*l)!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewTmin, Lenght of IndexJmin (%d) is not equal to 2l\n",NShell);
+    }
+  }
+  else
+  {
+    if(NShell!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewTmin, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    }
+    l=(NShell-1)/2;
+    if(2*l+1!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewTmin, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    }
+  }
+  // call function to create operator
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-  CreateOperatorTmin(NFermion, l, LindexUp, LindexDn, op);
+  switch (Options.ibasis)
+  {
+    case 0:
+      CreateOperatorTmin(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 1:
+      CreateOperatorTminZ(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 2:
+      CreateOperatorTminK(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 3:
+      CreateOperatorTminP(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 4:
+      CreateOperatorTminjjz(NFermion, l, LindexUp, LindexDn, op);
+      break;
+  }
   luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
@@ -1071,27 +3096,116 @@ static int LuaOperatorNewTmin(lua_State * L)
 
 static int LuaOperatorNewTsqr(lua_State * L)
 {
+  struct
+  {
+    const char *basis;
+    uint32_t ibasis;   //  0  000 SphericalHarmonicY, alternating dn,up from m=-l to m=l
+    //  1  001 TesseralHarmonicZ,  alternating dn,up sin first, than cos
+    //  2  010 KubicHarmonicK,     alternating dn,up order according to irep a,b,e,t
+    //  3  011 PyramidalHarmonicP, alternating dn,up order rotating around z axis
+    //  4  100 jjz basis,          j=l-1/2 first, than j=l+1/2 from m=-j to m=j
+  } Options;
+  Options.ibasis=0;
   OperatorType *op;
   uint32_t Ntemp;
   uint32_t NFermion = (uint32_t)luaL_checkunsigned(L, 1);
   uint32_t NShell,l;
   uint16_t *LindexUp, *LindexDn;
-  if(NFermion==0) return luaL_error(L, "Magnetic dipole operator acting on zero fermions is not defined");
+  LuaOptionsType LuaOperatorOptions[]={
+    {"basis","char*",&(Options.basis)},
+    {NULL, NULL, NULL}};
+  if(NFermion==0) return luaL_error(L, "Angular momentum operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
-  if(NShell!=Ntemp)
+  // set basis used
+  if(LuaTestOptionsList(L, -1))
   {
-    return luaL_error(L, "Error in LuaOperatorNewTsqr, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    LuaCheckOptions(L, -1, LuaOperatorOptions);
+    if((strcmp(Options.basis, "SphericalHarmonicsY")==0)||(strcmp(Options.basis, "SphericalHarmonics")==0)||(strcmp(Options.basis, "BasisY")==0)||(strcmp(Options.basis, "Y")==0))
+    {
+      Options.ibasis=0;
+    }
+    else if((strcmp(Options.basis, "TesseralHarmonicsZ")==0)||(strcmp(Options.basis, "TesseralHarmonics")==0)||(strcmp(Options.basis, "BasisZ")==0)||(strcmp(Options.basis, "Z")==0))
+    {
+      Options.ibasis=1;
+    }
+    else if((strcmp(Options.basis, "KubicHarmonicsK")==0)||(strcmp(Options.basis, "KubicHarmonics")==0)||(strcmp(Options.basis, "BasisK")==0)||(strcmp(Options.basis, "K")==0)||(strcmp(Options.basis, "CubicHarmonicsK")==0)||(strcmp(Options.basis, "CubicHarmonics")==0))
+    {
+      Options.ibasis=2;
+    }
+    else if((strcmp(Options.basis, "PyramidalHarmonicsP")==0)||(strcmp(Options.basis, "PyramidalHarmonics")==0)||(strcmp(Options.basis, "BasisP")==0)||(strcmp(Options.basis, "P")==0))
+    {
+      Options.ibasis=3;
+    }
+    else if((strcmp(Options.basis, "jjz")==0)||(strcmp(Options.basis, "Basisjjz")==0)||(strcmp(Options.basis, "Basisj")==0)||(strcmp(Options.basis, "j")==0))
+    {
+      Options.ibasis=4;
+    }
+    else
+    {
+      return luaL_error(L, "Unrecognized value for basis %s, use SphericalHarmonicsY, TesseralHarmonicsZ, KubicHarmonicsK, PyramidalHarmonicsP, or jjz\n",Options.basis);
+    }
   }
-  l=(NShell-1)/2;
-  if(2*l+1!=NShell)
+  else // no options defined set the standard basis used for the orbitals: (j jz if NShell+2 == Ntemp otherwise l lz s sz)
   {
-    return luaL_error(L, "Error in LuaOperatorNewTsqr, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    if((NShell+2)==Ntemp)
+    {
+      Options.basis="jjz";
+      Options.ibasis=4;
+    }
+    else
+    {
+      Options.basis="SphericalHarmonicsY";
+      Options.ibasis=0;
+    }
   }
+  // test if indices are physical ok
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "First index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Second index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Options.ibasis==4)
+  {
+    if((NShell+2)!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewTsqr, 2 plus the lenght of IndexJmin (%d) is not equal to lenght of IndexJplus (%d)\n",NShell,Ntemp);
+    }
+    l=NShell/2;
+    if((2*l)!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewTsqr, Lenght of IndexJmin (%d) is not equal to 2l\n",NShell);
+    }
+  }
+  else
+  {
+    if(NShell!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewTsqr, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    }
+    l=(NShell-1)/2;
+    if(2*l+1!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewTsqr, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    }
+  }
+  // call function to create operator
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-  CreateOperatorTsqr(NFermion, l, LindexUp, LindexDn, op);
+  switch (Options.ibasis)
+  {
+    case 0:
+      CreateOperatorTsqr(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 1:
+      CreateOperatorTsqrZ(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 2:
+      CreateOperatorTsqrK(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 3:
+      CreateOperatorTsqrP(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 4:
+      CreateOperatorTsqrjjz(NFermion, l, LindexUp, LindexDn, op);
+      break;
+  }
   luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
@@ -1100,27 +3214,116 @@ static int LuaOperatorNewTsqr(lua_State * L)
 
 static int LuaOperatorNewQxx(lua_State * L)
 {
+  struct
+  {
+    const char *basis;
+    uint32_t ibasis;   //  0  000 SphericalHarmonicY, alternating dn,up from m=-l to m=l
+    //  1  001 TesseralHarmonicZ,  alternating dn,up sin first, than cos
+    //  2  010 KubicHarmonicK,     alternating dn,up order according to irep a,b,e,t
+    //  3  011 PyramidalHarmonicP, alternating dn,up order rotating around z axis
+    //  4  100 jjz basis,          j=l-1/2 first, than j=l+1/2 from m=-j to m=j
+  } Options;
+  Options.ibasis=0;
   OperatorType *op;
   uint32_t Ntemp;
   uint32_t NFermion = (uint32_t)luaL_checkunsigned(L, 1);
   uint32_t NShell,l;
   uint16_t *LindexUp, *LindexDn;
-  if(NFermion==0) return luaL_error(L, "Quadrupole operator acting on zero fermions is not defined");
+  LuaOptionsType LuaOperatorOptions[]={
+    {"basis","char*",&(Options.basis)},
+    {NULL, NULL, NULL}};
+  if(NFermion==0) return luaL_error(L, "Angular momentum operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
-  if(NShell!=Ntemp)
+  // set basis used
+  if(LuaTestOptionsList(L, -1))
   {
-    return luaL_error(L, "Error in LuaOperatorNewQxx, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    LuaCheckOptions(L, -1, LuaOperatorOptions);
+    if((strcmp(Options.basis, "SphericalHarmonicsY")==0)||(strcmp(Options.basis, "SphericalHarmonics")==0)||(strcmp(Options.basis, "BasisY")==0)||(strcmp(Options.basis, "Y")==0))
+    {
+      Options.ibasis=0;
+    }
+    else if((strcmp(Options.basis, "TesseralHarmonicsZ")==0)||(strcmp(Options.basis, "TesseralHarmonics")==0)||(strcmp(Options.basis, "BasisZ")==0)||(strcmp(Options.basis, "Z")==0))
+    {
+      Options.ibasis=1;
+    }
+    else if((strcmp(Options.basis, "KubicHarmonicsK")==0)||(strcmp(Options.basis, "KubicHarmonics")==0)||(strcmp(Options.basis, "BasisK")==0)||(strcmp(Options.basis, "K")==0)||(strcmp(Options.basis, "CubicHarmonicsK")==0)||(strcmp(Options.basis, "CubicHarmonics")==0))
+    {
+      Options.ibasis=2;
+    }
+    else if((strcmp(Options.basis, "PyramidalHarmonicsP")==0)||(strcmp(Options.basis, "PyramidalHarmonics")==0)||(strcmp(Options.basis, "BasisP")==0)||(strcmp(Options.basis, "P")==0))
+    {
+      Options.ibasis=3;
+    }
+    else if((strcmp(Options.basis, "jjz")==0)||(strcmp(Options.basis, "Basisjjz")==0)||(strcmp(Options.basis, "Basisj")==0)||(strcmp(Options.basis, "j")==0))
+    {
+      Options.ibasis=4;
+    }
+    else
+    {
+      return luaL_error(L, "Unrecognized value for basis %s, use SphericalHarmonicsY, TesseralHarmonicsZ, KubicHarmonicsK, PyramidalHarmonicsP, or jjz\n",Options.basis);
+    }
   }
-  l=(NShell-1)/2;
-  if(2*l+1!=NShell)
+  else // no options defined set the standard basis used for the orbitals: (j jz if NShell+2 == Ntemp otherwise l lz s sz)
   {
-    return luaL_error(L, "Error in LuaOperatorNewQxx, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    if((NShell+2)==Ntemp)
+    {
+      Options.basis="jjz";
+      Options.ibasis=4;
+    }
+    else
+    {
+      Options.basis="SphericalHarmonicsY";
+      Options.ibasis=0;
+    }
   }
+  // test if indices are physical ok
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "First index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Second index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Options.ibasis==4)
+  {
+    if((NShell+2)!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewQxx, 2 plus the lenght of IndexJmin (%d) is not equal to lenght of IndexJplus (%d)\n",NShell,Ntemp);
+    }
+    l=NShell/2;
+    if((2*l)!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewQxx, Lenght of IndexJmin (%d) is not equal to 2l\n",NShell);
+    }
+  }
+  else
+  {
+    if(NShell!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewQxx, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    }
+    l=(NShell-1)/2;
+    if(2*l+1!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewQxx, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    }
+  }
+  // call function to create operator
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-  CreateOperatorQxx(NFermion, l, LindexUp, LindexDn, op);
+  switch (Options.ibasis)
+  {
+    case 0:
+      CreateOperatorQxx(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 1:
+      CreateOperatorQxxZ(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 2:
+      CreateOperatorQxxK(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 3:
+      CreateOperatorQxxP(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 4:
+      CreateOperatorQxxjjz(NFermion, l, LindexUp, LindexDn, op);
+      break;
+  }
   luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
@@ -1129,27 +3332,116 @@ static int LuaOperatorNewQxx(lua_State * L)
 
 static int LuaOperatorNewQyy(lua_State * L)
 {
+  struct
+  {
+    const char *basis;
+    uint32_t ibasis;   //  0  000 SphericalHarmonicY, alternating dn,up from m=-l to m=l
+    //  1  001 TesseralHarmonicZ,  alternating dn,up sin first, than cos
+    //  2  010 KubicHarmonicK,     alternating dn,up order according to irep a,b,e,t
+    //  3  011 PyramidalHarmonicP, alternating dn,up order rotating around z axis
+    //  4  100 jjz basis,          j=l-1/2 first, than j=l+1/2 from m=-j to m=j
+  } Options;
+  Options.ibasis=0;
   OperatorType *op;
   uint32_t Ntemp;
   uint32_t NFermion = (uint32_t)luaL_checkunsigned(L, 1);
   uint32_t NShell,l;
   uint16_t *LindexUp, *LindexDn;
-  if(NFermion==0) return luaL_error(L, "Quadrupole operator acting on zero fermions is not defined");
+  LuaOptionsType LuaOperatorOptions[]={
+    {"basis","char*",&(Options.basis)},
+    {NULL, NULL, NULL}};
+  if(NFermion==0) return luaL_error(L, "Angular momentum operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
-  if(NShell!=Ntemp)
+  // set basis used
+  if(LuaTestOptionsList(L, -1))
   {
-    return luaL_error(L, "Error in LuaOperatorNewQyy, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    LuaCheckOptions(L, -1, LuaOperatorOptions);
+    if((strcmp(Options.basis, "SphericalHarmonicsY")==0)||(strcmp(Options.basis, "SphericalHarmonics")==0)||(strcmp(Options.basis, "BasisY")==0)||(strcmp(Options.basis, "Y")==0))
+    {
+      Options.ibasis=0;
+    }
+    else if((strcmp(Options.basis, "TesseralHarmonicsZ")==0)||(strcmp(Options.basis, "TesseralHarmonics")==0)||(strcmp(Options.basis, "BasisZ")==0)||(strcmp(Options.basis, "Z")==0))
+    {
+      Options.ibasis=1;
+    }
+    else if((strcmp(Options.basis, "KubicHarmonicsK")==0)||(strcmp(Options.basis, "KubicHarmonics")==0)||(strcmp(Options.basis, "BasisK")==0)||(strcmp(Options.basis, "K")==0)||(strcmp(Options.basis, "CubicHarmonicsK")==0)||(strcmp(Options.basis, "CubicHarmonics")==0))
+    {
+      Options.ibasis=2;
+    }
+    else if((strcmp(Options.basis, "PyramidalHarmonicsP")==0)||(strcmp(Options.basis, "PyramidalHarmonics")==0)||(strcmp(Options.basis, "BasisP")==0)||(strcmp(Options.basis, "P")==0))
+    {
+      Options.ibasis=3;
+    }
+    else if((strcmp(Options.basis, "jjz")==0)||(strcmp(Options.basis, "Basisjjz")==0)||(strcmp(Options.basis, "Basisj")==0)||(strcmp(Options.basis, "j")==0))
+    {
+      Options.ibasis=4;
+    }
+    else
+    {
+      return luaL_error(L, "Unrecognized value for basis %s, use SphericalHarmonicsY, TesseralHarmonicsZ, KubicHarmonicsK, PyramidalHarmonicsP, or jjz\n",Options.basis);
+    }
   }
-  l=(NShell-1)/2;
-  if(2*l+1!=NShell)
+  else // no options defined set the standard basis used for the orbitals: (j jz if NShell+2 == Ntemp otherwise l lz s sz)
   {
-    return luaL_error(L, "Error in LuaOperatorNewQyy, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    if((NShell+2)==Ntemp)
+    {
+      Options.basis="jjz";
+      Options.ibasis=4;
+    }
+    else
+    {
+      Options.basis="SphericalHarmonicsY";
+      Options.ibasis=0;
+    }
   }
+  // test if indices are physical ok
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "First index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Second index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Options.ibasis==4)
+  {
+    if((NShell+2)!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewQyy, 2 plus the lenght of IndexJmin (%d) is not equal to lenght of IndexJplus (%d)\n",NShell,Ntemp);
+    }
+    l=NShell/2;
+    if((2*l)!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewQyy, Lenght of IndexJmin (%d) is not equal to 2l\n",NShell);
+    }
+  }
+  else
+  {
+    if(NShell!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewQyy, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    }
+    l=(NShell-1)/2;
+    if(2*l+1!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewQyy, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    }
+  }
+  // call function to create operator
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-  CreateOperatorQyy(NFermion, l, LindexUp, LindexDn, op);
+  switch (Options.ibasis)
+  {
+    case 0:
+      CreateOperatorQyy(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 1:
+      CreateOperatorQyyZ(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 2:
+      CreateOperatorQyyK(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 3:
+      CreateOperatorQyyP(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 4:
+      CreateOperatorQyyjjz(NFermion, l, LindexUp, LindexDn, op);
+      break;
+  }
   luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
@@ -1158,27 +3450,116 @@ static int LuaOperatorNewQyy(lua_State * L)
 
 static int LuaOperatorNewQzz(lua_State * L)
 {
+  struct
+  {
+    const char *basis;
+    uint32_t ibasis;   //  0  000 SphericalHarmonicY, alternating dn,up from m=-l to m=l
+    //  1  001 TesseralHarmonicZ,  alternating dn,up sin first, than cos
+    //  2  010 KubicHarmonicK,     alternating dn,up order according to irep a,b,e,t
+    //  3  011 PyramidalHarmonicP, alternating dn,up order rotating around z axis
+    //  4  100 jjz basis,          j=l-1/2 first, than j=l+1/2 from m=-j to m=j
+  } Options;
+  Options.ibasis=0;
   OperatorType *op;
   uint32_t Ntemp;
   uint32_t NFermion = (uint32_t)luaL_checkunsigned(L, 1);
   uint32_t NShell,l;
   uint16_t *LindexUp, *LindexDn;
-  if(NFermion==0) return luaL_error(L, "Quadrupole operator acting on zero fermions is not defined");
+  LuaOptionsType LuaOperatorOptions[]={
+    {"basis","char*",&(Options.basis)},
+    {NULL, NULL, NULL}};
+  if(NFermion==0) return luaL_error(L, "Angular momentum operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
-  if(NShell!=Ntemp)
+  // set basis used
+  if(LuaTestOptionsList(L, -1))
   {
-    return luaL_error(L, "Error in LuaOperatorNewQzz, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    LuaCheckOptions(L, -1, LuaOperatorOptions);
+    if((strcmp(Options.basis, "SphericalHarmonicsY")==0)||(strcmp(Options.basis, "SphericalHarmonics")==0)||(strcmp(Options.basis, "BasisY")==0)||(strcmp(Options.basis, "Y")==0))
+    {
+      Options.ibasis=0;
+    }
+    else if((strcmp(Options.basis, "TesseralHarmonicsZ")==0)||(strcmp(Options.basis, "TesseralHarmonics")==0)||(strcmp(Options.basis, "BasisZ")==0)||(strcmp(Options.basis, "Z")==0))
+    {
+      Options.ibasis=1;
+    }
+    else if((strcmp(Options.basis, "KubicHarmonicsK")==0)||(strcmp(Options.basis, "KubicHarmonics")==0)||(strcmp(Options.basis, "BasisK")==0)||(strcmp(Options.basis, "K")==0)||(strcmp(Options.basis, "CubicHarmonicsK")==0)||(strcmp(Options.basis, "CubicHarmonics")==0))
+    {
+      Options.ibasis=2;
+    }
+    else if((strcmp(Options.basis, "PyramidalHarmonicsP")==0)||(strcmp(Options.basis, "PyramidalHarmonics")==0)||(strcmp(Options.basis, "BasisP")==0)||(strcmp(Options.basis, "P")==0))
+    {
+      Options.ibasis=3;
+    }
+    else if((strcmp(Options.basis, "jjz")==0)||(strcmp(Options.basis, "Basisjjz")==0)||(strcmp(Options.basis, "Basisj")==0)||(strcmp(Options.basis, "j")==0))
+    {
+      Options.ibasis=4;
+    }
+    else
+    {
+      return luaL_error(L, "Unrecognized value for basis %s, use SphericalHarmonicsY, TesseralHarmonicsZ, KubicHarmonicsK, PyramidalHarmonicsP, or jjz\n",Options.basis);
+    }
   }
-  l=(NShell-1)/2;
-  if(2*l+1!=NShell)
+  else // no options defined set the standard basis used for the orbitals: (j jz if NShell+2 == Ntemp otherwise l lz s sz)
   {
-    return luaL_error(L, "Error in LuaOperatorNewQzz, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    if((NShell+2)==Ntemp)
+    {
+      Options.basis="jjz";
+      Options.ibasis=4;
+    }
+    else
+    {
+      Options.basis="SphericalHarmonicsY";
+      Options.ibasis=0;
+    }
   }
+  // test if indices are physical ok
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "First index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Second index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Options.ibasis==4)
+  {
+    if((NShell+2)!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewQzz, 2 plus the lenght of IndexJmin (%d) is not equal to lenght of IndexJplus (%d)\n",NShell,Ntemp);
+    }
+    l=NShell/2;
+    if((2*l)!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewQzz, Lenght of IndexJmin (%d) is not equal to 2l\n",NShell);
+    }
+  }
+  else
+  {
+    if(NShell!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewQzz, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    }
+    l=(NShell-1)/2;
+    if(2*l+1!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewQzz, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    }
+  }
+  // call function to create operator
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-  CreateOperatorQzz(NFermion, l, LindexUp, LindexDn, op);
+  switch (Options.ibasis)
+  {
+    case 0:
+      CreateOperatorQzz(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 1:
+      CreateOperatorQzzZ(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 2:
+      CreateOperatorQzzK(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 3:
+      CreateOperatorQzzP(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 4:
+      CreateOperatorQzzjjz(NFermion, l, LindexUp, LindexDn, op);
+      break;
+  }
   luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
@@ -1187,27 +3568,116 @@ static int LuaOperatorNewQzz(lua_State * L)
 
 static int LuaOperatorNewQxy(lua_State * L)
 {
+  struct
+  {
+    const char *basis;
+    uint32_t ibasis;   //  0  000 SphericalHarmonicY, alternating dn,up from m=-l to m=l
+    //  1  001 TesseralHarmonicZ,  alternating dn,up sin first, than cos
+    //  2  010 KubicHarmonicK,     alternating dn,up order according to irep a,b,e,t
+    //  3  011 PyramidalHarmonicP, alternating dn,up order rotating around z axis
+    //  4  100 jjz basis,          j=l-1/2 first, than j=l+1/2 from m=-j to m=j
+  } Options;
+  Options.ibasis=0;
   OperatorType *op;
   uint32_t Ntemp;
   uint32_t NFermion = (uint32_t)luaL_checkunsigned(L, 1);
   uint32_t NShell,l;
   uint16_t *LindexUp, *LindexDn;
-  if(NFermion==0) return luaL_error(L, "Quadrupole operator acting on zero fermions is not defined");
+  LuaOptionsType LuaOperatorOptions[]={
+    {"basis","char*",&(Options.basis)},
+    {NULL, NULL, NULL}};
+  if(NFermion==0) return luaL_error(L, "Angular momentum operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
-  if(NShell!=Ntemp)
+  // set basis used
+  if(LuaTestOptionsList(L, -1))
   {
-    return luaL_error(L, "Error in LuaOperatorNewQxy, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    LuaCheckOptions(L, -1, LuaOperatorOptions);
+    if((strcmp(Options.basis, "SphericalHarmonicsY")==0)||(strcmp(Options.basis, "SphericalHarmonics")==0)||(strcmp(Options.basis, "BasisY")==0)||(strcmp(Options.basis, "Y")==0))
+    {
+      Options.ibasis=0;
+    }
+    else if((strcmp(Options.basis, "TesseralHarmonicsZ")==0)||(strcmp(Options.basis, "TesseralHarmonics")==0)||(strcmp(Options.basis, "BasisZ")==0)||(strcmp(Options.basis, "Z")==0))
+    {
+      Options.ibasis=1;
+    }
+    else if((strcmp(Options.basis, "KubicHarmonicsK")==0)||(strcmp(Options.basis, "KubicHarmonics")==0)||(strcmp(Options.basis, "BasisK")==0)||(strcmp(Options.basis, "K")==0)||(strcmp(Options.basis, "CubicHarmonicsK")==0)||(strcmp(Options.basis, "CubicHarmonics")==0))
+    {
+      Options.ibasis=2;
+    }
+    else if((strcmp(Options.basis, "PyramidalHarmonicsP")==0)||(strcmp(Options.basis, "PyramidalHarmonics")==0)||(strcmp(Options.basis, "BasisP")==0)||(strcmp(Options.basis, "P")==0))
+    {
+      Options.ibasis=3;
+    }
+    else if((strcmp(Options.basis, "jjz")==0)||(strcmp(Options.basis, "Basisjjz")==0)||(strcmp(Options.basis, "Basisj")==0)||(strcmp(Options.basis, "j")==0))
+    {
+      Options.ibasis=4;
+    }
+    else
+    {
+      return luaL_error(L, "Unrecognized value for basis %s, use SphericalHarmonicsY, TesseralHarmonicsZ, KubicHarmonicsK, PyramidalHarmonicsP, or jjz\n",Options.basis);
+    }
   }
-  l=(NShell-1)/2;
-  if(2*l+1!=NShell)
+  else // no options defined set the standard basis used for the orbitals: (j jz if NShell+2 == Ntemp otherwise l lz s sz)
   {
-    return luaL_error(L, "Error in LuaOperatorNewQxy, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    if((NShell+2)==Ntemp)
+    {
+      Options.basis="jjz";
+      Options.ibasis=4;
+    }
+    else
+    {
+      Options.basis="SphericalHarmonicsY";
+      Options.ibasis=0;
+    }
   }
+  // test if indices are physical ok
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "First index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Second index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Options.ibasis==4)
+  {
+    if((NShell+2)!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewQxy, 2 plus the lenght of IndexJmin (%d) is not equal to lenght of IndexJplus (%d)\n",NShell,Ntemp);
+    }
+    l=NShell/2;
+    if((2*l)!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewQxy, Lenght of IndexJmin (%d) is not equal to 2l\n",NShell);
+    }
+  }
+  else
+  {
+    if(NShell!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewQxy, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    }
+    l=(NShell-1)/2;
+    if(2*l+1!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewQxy, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    }
+  }
+  // call function to create operator
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-  CreateOperatorQxy(NFermion, l, LindexUp, LindexDn, op);
+  switch (Options.ibasis)
+  {
+    case 0:
+      CreateOperatorQxy(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 1:
+      CreateOperatorQxyZ(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 2:
+      CreateOperatorQxyK(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 3:
+      CreateOperatorQxyP(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 4:
+      CreateOperatorQxyjjz(NFermion, l, LindexUp, LindexDn, op);
+      break;
+  }
   luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
@@ -1216,27 +3686,116 @@ static int LuaOperatorNewQxy(lua_State * L)
 
 static int LuaOperatorNewQxz(lua_State * L)
 {
+  struct
+  {
+    const char *basis;
+    uint32_t ibasis;   //  0  000 SphericalHarmonicY, alternating dn,up from m=-l to m=l
+    //  1  001 TesseralHarmonicZ,  alternating dn,up sin first, than cos
+    //  2  010 KubicHarmonicK,     alternating dn,up order according to irep a,b,e,t
+    //  3  011 PyramidalHarmonicP, alternating dn,up order rotating around z axis
+    //  4  100 jjz basis,          j=l-1/2 first, than j=l+1/2 from m=-j to m=j
+  } Options;
+  Options.ibasis=0;
   OperatorType *op;
   uint32_t Ntemp;
   uint32_t NFermion = (uint32_t)luaL_checkunsigned(L, 1);
   uint32_t NShell,l;
   uint16_t *LindexUp, *LindexDn;
-  if(NFermion==0) return luaL_error(L, "Quadrupole operator acting on zero fermions is not defined");
+  LuaOptionsType LuaOperatorOptions[]={
+    {"basis","char*",&(Options.basis)},
+    {NULL, NULL, NULL}};
+  if(NFermion==0) return luaL_error(L, "Angular momentum operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
-  if(NShell!=Ntemp)
+  // set basis used
+  if(LuaTestOptionsList(L, -1))
   {
-    return luaL_error(L, "Error in LuaOperatorNewQxz, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    LuaCheckOptions(L, -1, LuaOperatorOptions);
+    if((strcmp(Options.basis, "SphericalHarmonicsY")==0)||(strcmp(Options.basis, "SphericalHarmonics")==0)||(strcmp(Options.basis, "BasisY")==0)||(strcmp(Options.basis, "Y")==0))
+    {
+      Options.ibasis=0;
+    }
+    else if((strcmp(Options.basis, "TesseralHarmonicsZ")==0)||(strcmp(Options.basis, "TesseralHarmonics")==0)||(strcmp(Options.basis, "BasisZ")==0)||(strcmp(Options.basis, "Z")==0))
+    {
+      Options.ibasis=1;
+    }
+    else if((strcmp(Options.basis, "KubicHarmonicsK")==0)||(strcmp(Options.basis, "KubicHarmonics")==0)||(strcmp(Options.basis, "BasisK")==0)||(strcmp(Options.basis, "K")==0)||(strcmp(Options.basis, "CubicHarmonicsK")==0)||(strcmp(Options.basis, "CubicHarmonics")==0))
+    {
+      Options.ibasis=2;
+    }
+    else if((strcmp(Options.basis, "PyramidalHarmonicsP")==0)||(strcmp(Options.basis, "PyramidalHarmonics")==0)||(strcmp(Options.basis, "BasisP")==0)||(strcmp(Options.basis, "P")==0))
+    {
+      Options.ibasis=3;
+    }
+    else if((strcmp(Options.basis, "jjz")==0)||(strcmp(Options.basis, "Basisjjz")==0)||(strcmp(Options.basis, "Basisj")==0)||(strcmp(Options.basis, "j")==0))
+    {
+      Options.ibasis=4;
+    }
+    else
+    {
+      return luaL_error(L, "Unrecognized value for basis %s, use SphericalHarmonicsY, TesseralHarmonicsZ, KubicHarmonicsK, PyramidalHarmonicsP, or jjz\n",Options.basis);
+    }
   }
-  l=(NShell-1)/2;
-  if(2*l+1!=NShell)
+  else // no options defined set the standard basis used for the orbitals: (j jz if NShell+2 == Ntemp otherwise l lz s sz)
   {
-    return luaL_error(L, "Error in LuaOperatorNewQxz, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    if((NShell+2)==Ntemp)
+    {
+      Options.basis="jjz";
+      Options.ibasis=4;
+    }
+    else
+    {
+      Options.basis="SphericalHarmonicsY";
+      Options.ibasis=0;
+    }
   }
+  // test if indices are physical ok
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "First index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Second index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Options.ibasis==4)
+  {
+    if((NShell+2)!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewQxz, 2 plus the lenght of IndexJmin (%d) is not equal to lenght of IndexJplus (%d)\n",NShell,Ntemp);
+    }
+    l=NShell/2;
+    if((2*l)!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewQxz, Lenght of IndexJmin (%d) is not equal to 2l\n",NShell);
+    }
+  }
+  else
+  {
+    if(NShell!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewQxz, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    }
+    l=(NShell-1)/2;
+    if(2*l+1!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewQxz, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    }
+  }
+  // call function to create operator
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-  CreateOperatorQxz(NFermion, l, LindexUp, LindexDn, op);
+  switch (Options.ibasis)
+  {
+    case 0:
+      CreateOperatorQxz(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 1:
+      CreateOperatorQxzZ(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 2:
+      CreateOperatorQxzK(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 3:
+      CreateOperatorQxzP(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 4:
+      CreateOperatorQxzjjz(NFermion, l, LindexUp, LindexDn, op);
+      break;
+  }
   luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
@@ -1245,27 +3804,116 @@ static int LuaOperatorNewQxz(lua_State * L)
 
 static int LuaOperatorNewQyz(lua_State * L)
 {
+  struct
+  {
+    const char *basis;
+    uint32_t ibasis;   //  0  000 SphericalHarmonicY, alternating dn,up from m=-l to m=l
+    //  1  001 TesseralHarmonicZ,  alternating dn,up sin first, than cos
+    //  2  010 KubicHarmonicK,     alternating dn,up order according to irep a,b,e,t
+    //  3  011 PyramidalHarmonicP, alternating dn,up order rotating around z axis
+    //  4  100 jjz basis,          j=l-1/2 first, than j=l+1/2 from m=-j to m=j
+  } Options;
+  Options.ibasis=0;
   OperatorType *op;
   uint32_t Ntemp;
   uint32_t NFermion = (uint32_t)luaL_checkunsigned(L, 1);
   uint32_t NShell,l;
   uint16_t *LindexUp, *LindexDn;
-  if(NFermion==0) return luaL_error(L, "Quadrupole operator acting on zero fermions is not defined");
+  LuaOptionsType LuaOperatorOptions[]={
+    {"basis","char*",&(Options.basis)},
+    {NULL, NULL, NULL}};
+  if(NFermion==0) return luaL_error(L, "Angular momentum operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
-  if(NShell!=Ntemp)
+  // set basis used
+  if(LuaTestOptionsList(L, -1))
   {
-    return luaL_error(L, "Error in LuaOperatorNewQyz, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    LuaCheckOptions(L, -1, LuaOperatorOptions);
+    if((strcmp(Options.basis, "SphericalHarmonicsY")==0)||(strcmp(Options.basis, "SphericalHarmonics")==0)||(strcmp(Options.basis, "BasisY")==0)||(strcmp(Options.basis, "Y")==0))
+    {
+      Options.ibasis=0;
+    }
+    else if((strcmp(Options.basis, "TesseralHarmonicsZ")==0)||(strcmp(Options.basis, "TesseralHarmonics")==0)||(strcmp(Options.basis, "BasisZ")==0)||(strcmp(Options.basis, "Z")==0))
+    {
+      Options.ibasis=1;
+    }
+    else if((strcmp(Options.basis, "KubicHarmonicsK")==0)||(strcmp(Options.basis, "KubicHarmonics")==0)||(strcmp(Options.basis, "BasisK")==0)||(strcmp(Options.basis, "K")==0)||(strcmp(Options.basis, "CubicHarmonicsK")==0)||(strcmp(Options.basis, "CubicHarmonics")==0))
+    {
+      Options.ibasis=2;
+    }
+    else if((strcmp(Options.basis, "PyramidalHarmonicsP")==0)||(strcmp(Options.basis, "PyramidalHarmonics")==0)||(strcmp(Options.basis, "BasisP")==0)||(strcmp(Options.basis, "P")==0))
+    {
+      Options.ibasis=3;
+    }
+    else if((strcmp(Options.basis, "jjz")==0)||(strcmp(Options.basis, "Basisjjz")==0)||(strcmp(Options.basis, "Basisj")==0)||(strcmp(Options.basis, "j")==0))
+    {
+      Options.ibasis=4;
+    }
+    else
+    {
+      return luaL_error(L, "Unrecognized value for basis %s, use SphericalHarmonicsY, TesseralHarmonicsZ, KubicHarmonicsK, PyramidalHarmonicsP, or jjz\n",Options.basis);
+    }
   }
-  l=(NShell-1)/2;
-  if(2*l+1!=NShell)
+  else // no options defined set the standard basis used for the orbitals: (j jz if NShell+2 == Ntemp otherwise l lz s sz)
   {
-    return luaL_error(L, "Error in LuaOperatorNewQyz, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    if((NShell+2)==Ntemp)
+    {
+      Options.basis="jjz";
+      Options.ibasis=4;
+    }
+    else
+    {
+      Options.basis="SphericalHarmonicsY";
+      Options.ibasis=0;
+    }
   }
+  // test if indices are physical ok
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "First index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Second index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Options.ibasis==4)
+  {
+    if((NShell+2)!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewQyz, 2 plus the lenght of IndexJmin (%d) is not equal to lenght of IndexJplus (%d)\n",NShell,Ntemp);
+    }
+    l=NShell/2;
+    if((2*l)!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewQyz, Lenght of IndexJmin (%d) is not equal to 2l\n",NShell);
+    }
+  }
+  else
+  {
+    if(NShell!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewQyz, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    }
+    l=(NShell-1)/2;
+    if(2*l+1!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewQyz, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    }
+  }
+  // call function to create operator
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-  CreateOperatorQyz(NFermion, l, LindexUp, LindexDn, op);
+  switch (Options.ibasis)
+  {
+    case 0:
+      CreateOperatorQyz(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 1:
+      CreateOperatorQyzZ(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 2:
+      CreateOperatorQyzK(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 3:
+      CreateOperatorQyzP(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 4:
+      CreateOperatorQyzjjz(NFermion, l, LindexUp, LindexDn, op);
+      break;
+  }
   luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
@@ -1274,27 +3922,116 @@ static int LuaOperatorNewQyz(lua_State * L)
 
 static int LuaOperatorNewldots(lua_State * L)
 {
+  struct
+  {
+    const char *basis;
+    uint32_t ibasis;   //  0  000 SphericalHarmonicY, alternating dn,up from m=-l to m=l
+    //  1  001 TesseralHarmonicZ,  alternating dn,up sin first, than cos
+    //  2  010 KubicHarmonicK,     alternating dn,up order according to irep a,b,e,t
+    //  3  011 PyramidalHarmonicP, alternating dn,up order rotating around z axis
+    //  4  100 jjz basis,          j=l-1/2 first, than j=l+1/2 from m=-j to m=j
+  } Options;
+  Options.ibasis=0;
   OperatorType *op;
   uint32_t Ntemp;
   uint32_t NFermion = (uint32_t)luaL_checkunsigned(L, 1);
   uint32_t NShell,l;
   uint16_t *LindexUp, *LindexDn;
-  if(NFermion==0) return luaL_error(L, "Spin-orbit operator acting on zero fermions is not defined");
+  LuaOptionsType LuaOperatorOptions[]={
+    {"basis","char*",&(Options.basis)},
+    {NULL, NULL, NULL}};
+  if(NFermion==0) return luaL_error(L, "Angular momentum operator acting on zero fermions is not defined");
   LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
   LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
-  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
-  if(NShell!=Ntemp)
+  // set basis used
+  if(LuaTestOptionsList(L, -1))
   {
-    return luaL_error(L, "Error in LuaOperatorNewldots, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    LuaCheckOptions(L, -1, LuaOperatorOptions);
+    if((strcmp(Options.basis, "SphericalHarmonicsY")==0)||(strcmp(Options.basis, "SphericalHarmonics")==0)||(strcmp(Options.basis, "BasisY")==0)||(strcmp(Options.basis, "Y")==0))
+    {
+      Options.ibasis=0;
+    }
+    else if((strcmp(Options.basis, "TesseralHarmonicsZ")==0)||(strcmp(Options.basis, "TesseralHarmonics")==0)||(strcmp(Options.basis, "BasisZ")==0)||(strcmp(Options.basis, "Z")==0))
+    {
+      Options.ibasis=1;
+    }
+    else if((strcmp(Options.basis, "KubicHarmonicsK")==0)||(strcmp(Options.basis, "KubicHarmonics")==0)||(strcmp(Options.basis, "BasisK")==0)||(strcmp(Options.basis, "K")==0)||(strcmp(Options.basis, "CubicHarmonicsK")==0)||(strcmp(Options.basis, "CubicHarmonics")==0))
+    {
+      Options.ibasis=2;
+    }
+    else if((strcmp(Options.basis, "PyramidalHarmonicsP")==0)||(strcmp(Options.basis, "PyramidalHarmonics")==0)||(strcmp(Options.basis, "BasisP")==0)||(strcmp(Options.basis, "P")==0))
+    {
+      Options.ibasis=3;
+    }
+    else if((strcmp(Options.basis, "jjz")==0)||(strcmp(Options.basis, "Basisjjz")==0)||(strcmp(Options.basis, "Basisj")==0)||(strcmp(Options.basis, "j")==0))
+    {
+      Options.ibasis=4;
+    }
+    else
+    {
+      return luaL_error(L, "Unrecognized value for basis %s, use SphericalHarmonicsY, TesseralHarmonicsZ, KubicHarmonicsK, PyramidalHarmonicsP, or jjz\n",Options.basis);
+    }
   }
-  l=(NShell-1)/2;
-  if(2*l+1!=NShell)
+  else // no options defined set the standard basis used for the orbitals: (j jz if NShell+2 == Ntemp otherwise l lz s sz)
   {
-    return luaL_error(L, "Error in LuaOperatorNewldots, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    if((NShell+2)==Ntemp)
+    {
+      Options.basis="jjz";
+      Options.ibasis=4;
+    }
+    else
+    {
+      Options.basis="SphericalHarmonicsY";
+      Options.ibasis=0;
+    }
   }
+  // test if indices are physical ok
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "First index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Second index contains a refference outside the range [0,%d]",NFermion-1);
+  if(Options.ibasis==4)
+  {
+    if((NShell+2)!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewldots, 2 plus the lenght of IndexJmin (%d) is not equal to lenght of IndexJplus (%d)\n",NShell,Ntemp);
+    }
+    l=NShell/2;
+    if((2*l)!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewldots, Lenght of IndexJmin (%d) is not equal to 2l\n",NShell);
+    }
+  }
+  else
+  {
+    if(NShell!=Ntemp)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewldots, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
+    }
+    l=(NShell-1)/2;
+    if(2*l+1!=NShell)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewldots, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
+    }
+  }
+  // call function to create operator
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-  CreateOperatorldots(NFermion, l, LindexUp, LindexDn, op);
+  switch (Options.ibasis)
+  {
+    case 0:
+      CreateOperatorldots(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 1:
+      CreateOperatorldotsZ(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 2:
+      CreateOperatorldotsK(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 3:
+      CreateOperatorldotsP(NFermion, l, LindexUp, LindexDn, op);
+      break;
+    case 4:
+      CreateOperatorldotsjjz(NFermion, l, LindexUp, LindexDn, op);
+      break;
+  }
   luaL_setmetatable(L, "Operator_Type");
   free(LindexUp);
   free(LindexDn);
