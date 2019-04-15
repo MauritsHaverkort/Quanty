@@ -528,10 +528,11 @@ uint32_t CreateOperatorSxP(uint32_t NFermion, uint32_t NSpin, uint16_t * LindexU
 {
   return CreateOperatorSx(NFermion, NSpin, LindexUp, LindexDn, Sx);
 }
-uint32_t CreateOperatorSxjjz(uint32_t NFermion, uint32_t L, uint16_t * Lindexjmin, uint16_t * Lindexjplus, OperatorType * const Sx)
+uint32_t CreateOperatorSxjjz(uint32_t NFermion, uint32_t L, uint16_t * Indexjmin, uint16_t * Indexjplus, OperatorType * const Sx)
 {
-  printf("not yet implemented\n");
-  //TODO:
+  
+  
+  
   return 0;
 }
 
@@ -1457,7 +1458,7 @@ uint32_t CreateOperatorJxjjz(uint32_t NFermion, uint32_t L, uint16_t * Indexjmin
   InitOperatorFixedLength(Jx, 2, 8);
   // add terms for j=L-1/2
   j=(double)L-0.5;
-  for (i = 0; i < 2 * L - 1; i++)
+  if(L>0) for (i = 0; i < 2 * L - 1; i++)
   {
     m=(double)i - j;
     f=0.5*sqrt(j+m+1)*sqrt(j-m);
@@ -1560,7 +1561,7 @@ uint32_t CreateOperatorJyjjz(uint32_t NFermion, uint32_t L, uint16_t * Indexjmin
   Jy->QComplex = 1;
   // add terms for j=L-1/2
   j=(double)L-0.5;
-  for (i = 0; i < 2 * L - 1; i++)
+  if (L>0) for (i = 0; i < 2 * L - 1; i++)
   {
     m=(double)i - j;
     f=0.5*sqrt(j+m+1)*sqrt(j-m);
@@ -2033,7 +2034,7 @@ uint32_t CreateOperatorJplusjjz(uint32_t NFermion, uint32_t L, uint16_t * Indexj
   InitOperatorFixedLength(Jplus, 2, 8);
   // add terms for j=L-1/2
   j=(double)L-0.5;
-  for (i = 0; i < 2 * L - 1; i++)
+  if (L>0) for (i = 0; i < 2 * L - 1; i++)
   {
     m=(double)i - j;
     oadd[1] = CrAnMask + Indexjmin[i+1];
@@ -2115,7 +2116,7 @@ uint32_t CreateOperatorJminjjz(uint32_t NFermion, uint32_t L, uint16_t * Indexjm
   InitOperatorFixedLength(Jmin, 2, 8);
   // add terms for j=L-1/2
   j=(double)L-0.5;
-  for (i = 0; i < 2 * L - 1; i++)
+  if (L>0) for (i = 0; i < 2 * L - 1; i++)
   {
     m=(double)i - j;
     oadd[1] = CrAnMask + Indexjmin[i];
