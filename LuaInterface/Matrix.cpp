@@ -432,7 +432,7 @@ static int LuaMatrixZero(lua_State * L)
   }
   if(!((len==1)||(len==2)))
   {
-    return luaL_error(L,"Matrix Identity called with %d arguments, 1 or 2 arguments expected\n");
+    return luaL_error(L,"Matrix Zero called with %d arguments, 1 or 2 arguments expected\n", len);
   }
   if(Userdata==true)
   {
