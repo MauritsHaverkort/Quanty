@@ -117,7 +117,7 @@ bool isZeroMatrix(const CompactMatrixType &M, const double zero)
 void FreeCompactMatrixMatrix(vector<vector<CompactMatrixType> > &matMat)
 {
 	for (uint i = 0; i < (uint) matMat.size(); ++i)
-		for (uint j = 0; j < (uint) matMat.size(); ++j)
+		for (uint j = 0; j < (uint) matMat[i].size(); ++j)
 			if (!isNullMatrix(matMat[i][j]))
 				FreeCompactMatrix(&matMat[i][j]);
 }
