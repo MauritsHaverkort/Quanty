@@ -1,5 +1,7 @@
 for key,atom in pairs({"K", "Ca", "Sc", "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn"}) do
-    for occ=1,9 do
+    occMin = max(1, key-4)
+    occMax = min(9, key)
+    for occ = occMin, occMax do
         zeta_3d, zeta_2p = Simon.lsCouplingConstants(atom, occ)
         print("Atom=".. atom..", d-occ="..occ..", zeta_3d="..zeta_3d..", zeta_2p="..zeta_2p)
     end
