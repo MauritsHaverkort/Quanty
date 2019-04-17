@@ -1,0 +1,84 @@
+function errormessage(arg1, arg2)
+    local bar = "================================"
+    print(bar,bar,bar)
+    print()
+    print(bar,bar,bar)
+    print()
+    print(bar,bar,bar)
+    print()
+    print("Oh no! Something went seriously wrong here!!!")
+    print()
+    print(bar,bar,bar)
+    print()
+    print(bar,bar,bar)
+    print()
+    print(bar,bar,bar)
+    print( arg1 )
+    print("is unequal to")
+    print( arg2 )       
+    os.exit()
+end
+
+function testM(M1, M2)
+    MTable = Matrix.ToTable(M1)
+    zero = Matrix.Sub( Matrix.Zero( #(MTable[1]), { { "Userdata", true } } ), #MTable, #(MTable[1]) )
+    if Chop( M1 - M2 , 1e-13) == zero then
+        print("All fine.")
+    else
+        errormessage( M1, M2 )
+    end
+end
+
+function testOrb(orbs1, orbs2)
+    for key,orb in pairs(orbs1) do
+        if orb ~= orbs2[key] then
+            errormessage( orbs1, orbs2 )
+        end
+    end
+    print("All fine.")
+end
+
+systems = {"CrF4", "CoAcAc3"}
+
+for key,system in pairs(systems) do
+    print("Processing FPLO Input of "..system)
+    FPLOOut = FileReadDresdenFPLO( "DFT/"..system..".wan" )
+    TB = TightBindingDefFromDresdenFPLO( FPLOOut )
+    H = CreateClusterHamiltonian( TB, { "open", TB.Atoms } )
+    H = H / 2
+    H = H + ConjugateTranspose( H )
+    M = Matrix.ToUserdata( OperatorToMatrix( H ) )
+    print("(Part of the ) Matrix representation of the Hamiltonian on a basis of Wannier functions:")
+    if #M <= 20 then
+        print(M)
+    else
+        print( Matrix.Sub( M, 20 ) )
+    end
+    
+    for filled = 0, 2 do
+        for empty = 0,2 do
+            print( "\nCalculating extended ligand field system for "..filled.." conductance and "..empty.." valence ligands." )
+            
+            MELF, TM, orbNamesM = Simon.ExtendedLigandField( M, 5, { { "filledLigands", filled }, { "emptyLigands", empty } } )
+            print( "Extended ligand field version of the matrix representation:" )
+            print( MELF )
+            print( "Orbitals:" )
+            print( orbNamesM )
+            
+            print( "Testing if the Hamiltonian yields the same result..." )
+            HELF, TH, orbNamesH = Simon.ExtendedLigandField( H, 5, { { "filledLigands", filled }, { "emptyLigands", empty } } )
+            HELFM = OperatorToMatrix( HELF )
+            testM( MELF, HELFM )
+            testM( TM, TH )
+            testOrb( orbNamesM, orbNamesH )
+            
+            print( "Testing if the tight binding object yields the same result..." )
+            TBELF, TTB = Simon.ExtendedLigandField( TB, TB.Atoms[1], { { "filledLigands", filled }, { "emptyLigands", empty } } )
+            TBELFH = CreateClusterHamiltonian( TBELF, { "open", TBELF.Atoms } )
+            TBELFM = OperatorToMatrix( TBELFH )
+            testM( MELF, TBELFM )
+            testM( TM, TTB )
+        end
+    end
+end
+print("Everything worked! Hooray!")

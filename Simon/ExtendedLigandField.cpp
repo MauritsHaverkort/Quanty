@@ -136,7 +136,10 @@ CompactMatrixType extendedLigandFieldForMatrix(const CompactMatrixType &H, Compa
 		HRedEmpty = CompactnullMatrix();
 		Tempty = CompactnullMatrix();
 	}
-	out = extendedLigandFieldFilledAndEmpty(HRedFilled, HRedEmpty, constOrbs);
+	if (isNullMatrix(HRedFilled) && isNullMatrix(HRedEmpty))
+		out = Submatrix(H, constOrbs);
+	else
+		out = extendedLigandFieldFilledAndEmpty(HRedFilled, HRedEmpty, constOrbs);
 	T = extendedLigandFieldRotMatFilledAndEmpty(Tfilled, Tempty, constOrbs, H.Nj);
 	FreeCompactMatrix(&HLigand);
 	FreeCompactMatrix(&eigenfunsLigand);
@@ -144,6 +147,8 @@ CompactMatrixType extendedLigandFieldForMatrix(const CompactMatrixType &H, Compa
 	FreeCompactMatrix(&Tfilled);
 	FreeCompactMatrix(&HRedEmpty);
 	FreeCompactMatrix(&Tempty);
+	T.OnLuaStack = true;
+	out.OnLuaStack = true;
 	return out;
 }
 
@@ -238,14 +243,14 @@ static int LuaExtendedLigandField(lua_State * L)
 {
 	TightBindingDef tb;
 	OperatorType op;
-	CompactMatrixType mat, T;
+	CompactMatrixType mat, T, outMat;
   struct
   {
 		uint filledLigands = 1;
 		uint emptyLigands = 0;
 		bool hasSpin = true;
   } Options;
-  LuaOptionsType LuaReduceHilbertSpaceOptions[]={
+  LuaOptionsType LuaExtendedLigandFieldOptions[]={
   	{"filledLigands",  		 "int",  &(Options.filledLigands)},
 		{"emptyLigands",   "int", &(Options.emptyLigands)},
 		{"hasSpin",   "bool", &(Options.hasSpin)},
@@ -253,54 +258,65 @@ static int LuaExtendedLigandField(lua_State * L)
 
   uint32_t len = (uint32_t) lua_gettop(L);
   if (len < 2 || len > 4)
-  	return luaL_error(L,"Error: ReduceHilbertSpace called with %d elements, 2 or 3 expected. \nVariant 1: Tight-Binding Object, Single-Shell Atom to be left unchanged, and optional Options. \nVariant 2: Operator, number of states to be left unchanged, and optional Options. \nVariant 3: Matrix Representation of Operator, number of states to be left unchanged, and optional Options.",len);
+  	return luaL_error(L,"Error: ExtendedLigandField called with %d elements, 2 or 3 expected. \nVariant 1: Tight-Binding Object, Single-Shell Atom to be left unchanged, and optional Options. \nVariant 2: Operator, number of states to be left unchanged, and optional Options. \nVariant 3: Matrix Representation of Operator, number of states to be left unchanged, and optional Options.",len);
 
   if (LuaTestOptionsList(L, -1))
-  			LuaCheckOptions(L, -1, LuaReduceHilbertSpaceOptions);
+  			LuaCheckOptions(L, -1, LuaExtendedLigandFieldOptions);
 
 	if (luaL_isType(L, 1, tb))
 	{
 		Options.hasSpin = false;
 		lua_check(L, 1, tb);
 //		TODO: QTightBindingHermitian
+		if ((NormSqr(tb.Cell.rUnitCell[0]) < INFINITY) || (NormSqr(tb.Cell.rUnitCell[1]) < INFINITY) || (NormSqr(tb.Cell.rUnitCell[2]) < INFINITY))
+			return luaL_error(L, "Error: ExtendedLigandField only implemented for non periodic structures |a|=|b|=|c|=INFINITY\n");
 		AtomType unchangedAtom;
 		lua_check(L, 2, unchangedAtom);
 		if (unchangedAtom.Nshell != 1)
-			return luaL_error(L, "Error: RedceHilbertSpace only implemented for unchanged atoms with only one shell.");
+			return luaL_error(L, "Error: ExtendedLigandField only implemented for unchanged atoms with only one shell.");
 		lua_push(L, extendedLigandFieldForTightBinding(tb, T, unchangedAtom, Options.filledLigands, Options.emptyLigands, Options.hasSpin));
 		lua_push(L, T);
+		if (!T.OnLuaStack)
+			FreeCompactMatrix(&T);
 		return 2;
 	} else if (luaL_isType(L, 1, op))
 	{
 		lua_check(L, 1, op);
-		if (!(bool) QOperatorHermitian(op, 10 * DBL_EPSILON))
-			return luaL_error(L, "Error: ReduceHilbertSpace expects a Hermitian operator as input.");
+		if (!(bool) QOperatorHermitian(op, 100 * DBL_EPSILON))
+			return luaL_error(L, "Error: ExtendedLigandField expects a Hermitian operator as input.");
 		uint unchangedStates;
 		vector < string > orbNames;
 		lua_check(L, 2, unchangedStates);
 		lua_push(L, extendedLigandFieldForOperator(op, T, unchangedStates, Options.filledLigands, Options.emptyLigands, orbNames, Options.hasSpin));
 		lua_push(L, T);
 		lua_push(L, orbNames);
+		if (!T.OnLuaStack)
+			FreeCompactMatrix(&T);
 		return 3;
 	} else if (luaL_isType(L, 1, mat))
 	{
 		lua_check(L, 1, mat);
 		if (mat.Ni != mat.Nj)
-			return luaL_error(L, "Error: ReduceHilbertSpace expects a quadratic matrix as input.");
-		if (!(bool) QCompactMatrixHermitian(mat, 10 * DBL_EPSILON))
-			return luaL_error(L, "Error: ReduceHilbertSpace expects a Hermitian matrix as input.");
+			return luaL_error(L, "Error: ExtendedLigandField expects a quadratic matrix as input.");
+		if (!(bool) QCompactMatrixHermitian(mat, 100 * DBL_EPSILON))
+			return luaL_error(L, "Error: ExtendedLigandField expects a Hermitian matrix as input.");
 		uint unchangedStates;
 		vector < string > orbNames;
 		lua_check(L, 2, unchangedStates);
 		if (unchangedStates >= mat.Ni)
 			return luaL_error(L, "Error: Number of unchanged states (%d) must be smaller than dimension of matrix (%d).", unchangedStates, mat.Ni);
-		lua_push(L, extendedLigandFieldForMatrix(mat, T, unchangedStates, Options.filledLigands, Options.emptyLigands, orbNames, Options.hasSpin));
+		outMat = extendedLigandFieldForMatrix(mat, T, unchangedStates, Options.filledLigands, Options.emptyLigands, orbNames, Options.hasSpin);
+		lua_push(L, outMat);
 		lua_push(L, T);
 		lua_push(L, orbNames);
+		if (!outMat.OnLuaStack)
+			FreeCompactMatrix(&outMat);
+		if (!T.OnLuaStack)
+			FreeCompactMatrix(&T);
 		return 3;
 	} else
 	{
-		return luaL_error(L, "Error: ReduceHilbertSpace only implemented for Tight-Binding Objects, Operators and Matrices.");
+		return luaL_error(L, "Error: ExtendedLigandField only implemented for Tight-Binding Objects, Operators and Matrices.");
 	}
 }
 
