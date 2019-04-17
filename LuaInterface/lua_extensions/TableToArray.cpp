@@ -160,6 +160,7 @@ CompactMatrixType* luaL_checkCompactMatrix(lua_State *L, int narg)
     buff = (CompactMatrixType*)luaL_checkudata(L, narg, "Matrix_Type");
     if (buff!=NULL)
     {
+    	buff->OnLuaStack = true;
       return buff;
     }
   }
