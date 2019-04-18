@@ -63,7 +63,7 @@ for i = 1, NPsi do
 end
 extraLists = {extraList1, extraList2}
 
-Options1 = {{"colWidth",10},{"printHeaderEvery",10},{"printSigma",true},{"sortByEnergy",true},{"zero",1E-7}}
+Options1 = {{"colWidth",14},{"printHeaderEvery",10},{"printSigma",true},{"sortByEnergy",true},{"zero",1E-7}}
 Options2 = {{"colWidth",4},}
 
 print("\n\n\nPrintExpectationValues(psiList,opList):")
