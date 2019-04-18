@@ -1576,54 +1576,63 @@ string numberToStringMaxWidth(double num, int maxWidth)
 	std::stringstream sstr;
 	int power = findPower(num);
 	int powerDigits = findPower(power) + 1;
-	if (power < 0)
-		++powerDigits;
+	if (power < 0) ++powerDigits;
 	int availableDigits = maxWidth;
-	if (num < 0)
-		--availableDigits;
+	if (num < 0) --availableDigits;
 	double lastDigit;
 	bool isScientificNotation;
 
 	int minDisplayablePower = -pow(10, availableDigits - 3) + 1;
-	if (power < minDisplayablePower )
-		return "0";
+	if (power < minDisplayablePower ) return "0";
 	int maxDisplayablaPower = pow(10, availableDigits - 2) - 1;
-	if (power > maxDisplayablaPower)
-		return "inf";
+	if (power > maxDisplayablaPower) return "inf";
 
 	if (power < 0)
-		isScientificNotation = (Abs(power) > powerDigits + 1);
+  {
+    isScientificNotation = (Abs(power) > powerDigits + 1);
+  }
 	else
+  {
 		isScientificNotation = (power + 1 > availableDigits);
-
+  }
 	if (isScientificNotation)
 	{
 		if (power < 0)
+    {
 			lastDigit = pow(10, power + powerDigits + 2 - availableDigits);
+    }
 		else
+    {
 			lastDigit = pow(10, power + powerDigits + 3 - availableDigits);
-
+    }
 		if (lastDigit < 1 && lastDigit < pow(10, power))
+    {
 			lastDigit = 10 * lastDigit;
+    }
 		double tmp = round(num, lastDigit);
 		if (tmp > num && tmp == 10 * lastDigit)
 		{
 //	 rounding has changed the power
 			sstr << "1e" << power + 1;
-		} else
+		}
+    else
 		{
 			sstr << tmp * pow(10, -power) << "e" << power;
 		}
-	} else
+	}
+  else
 	{
 		if (power < 0)
 		{
 			lastDigit = pow(10, -availableDigits + 2);
-		} else
+		}
+    else
 		{
 			lastDigit = pow(10, -availableDigits + power + 1);
 			if (lastDigit < 1)
+      {
 				lastDigit = 10 * lastDigit;
+      }
 		}
 		sstr << round(num, lastDigit);
 	}

@@ -16,27 +16,31 @@ class ExpectationValues
 {
   //  Constructors:
 public:
-  ExpectationValues(const vector<WaveFunctionType> &psiList, OperatorType hamil, const vector<OperatorType> &opList, const map<string, vector<double> > &extraLists, bool hasHamiltonian, double zero =
-                    1E-10, bool sortByEnergy = false, bool calcSigma = false)
+  ExpectationValues(const vector<WaveFunctionType> &psiList, OperatorType hamil, const vector<OperatorType> &opList, const map<string, vector<double> > &extraLists, bool hasHamiltonian, double zero =1E-10, bool sortByEnergy = false, bool calcSigma = false)
   {
     this->hasHamiltonian = hasHamiltonian;
     for (uint i = 0; i < (uint) psiList.size(); ++i)
+    {
       values.push_back(vector<double>());
-    
+    }
     vector<double> energies;
     if (hasHamiltonian)
     {
       headers.push_back("E");
       energies = expectationValuesSingleOperator(psiList, hamil, zero);
       for (uint i = 0; i < (uint) values.size(); ++i)
+      {
         values[i].push_back(energies[i]);
+      }
     }
     for (uint j = 0; j < (uint) opList.size(); ++j)
     {
       headers.push_back(opList[j].Name);
       vector<double> tmp = expectationValuesSingleOperator(psiList, opList[j], zero);
       for (uint i = 0; i < (uint) values.size(); ++i)
+      {
         values[i].push_back(tmp[i]);
+      }
     }
     typedef map<string, vector<double> >::const_iterator iterType;
     for (iterType iter = extraLists.begin(); iter != extraLists.end(); ++iter)
@@ -71,7 +75,9 @@ public:
     for (uint i = 0; i < (uint) values.size(); ++i)
     {
       if (i == 0 || (printHeaderEvery > 0 && i % printHeaderEvery == 0))
+      {
         printHeader(colWidth);
+      }
       printLine(i, colWidth);
     }
   }
@@ -97,7 +103,7 @@ private:
   {
     string num = numberToStringMaxWidth(i + 1, colWidth);
     cout << num;
-    cout << blankFill(colWidth - num.length());
+    cout << blankFill(colWidth - (int)num.length());
     for (uint j = 0; j < (uint) values[i].size(); ++j)
     {
       num = numberToStringMaxWidth(values[i][j], colWidth - 1);
