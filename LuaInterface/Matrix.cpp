@@ -432,7 +432,7 @@ static int LuaMatrixZero(lua_State * L)
   }
   if(!((len==1)||(len==2)))
   {
-    return luaL_error(L,"Matrix Identity called with %d arguments, 1 or 2 arguments expected\n");
+    return luaL_error(L,"Matrix Zero called with %d arguments, 1 or 2 arguments expected\n", len);
   }
   if(Userdata==true)
   {
@@ -490,7 +490,10 @@ static int LuaMatrixIdentity(lua_State * L)
   res->QComplex=0;
   res->Ni = (uint32_t)luaL_checkinteger(L, 1);
   res->Nj = res->Ni;
-  InitCompactIdentityMatrix(res);
+	if (res->Ni != 0)
+		InitCompactIdentityMatrix(res);
+	else
+		InitCompactMatrix(res);
   if(Userdata==false)
   {
     LuaPushTable_CompactMatrixType(L, res);
@@ -1366,7 +1369,7 @@ static int LuaMatrixFlatten(lua_State * L)
 			}
       else
 			{
-				allMs[i][j]  = luaL_checkCompactMatrix(L, -1);
+				lua_check(L, -1, allMs[i][j]);
         if(allMs[i][j]->OnLuaStack==true) ReturnAsUserdata=true;
 			}
 			lua_pop(L, 1);
@@ -1622,6 +1625,14 @@ static int LuaMatrixEq(lua_State * L)
 	return 1;
 }
 
+static int LuaMatrixLen(lua_State * L)
+{
+	CompactMatrixType M;
+	lua_check(L, 1, M);
+	lua_push(L, M.Ni);
+	return 1;
+}
+
 
 static const struct luaL_Reg Matrix_func[] = {
 	{"AddSpin", LuaMatrixAddSpin},
@@ -1653,6 +1664,7 @@ static const struct luaL_Reg Matrix_meta[] = {
   {"__div", LuaMatrixDiv},
   {"__pow", LuaMatrixPow},
 	{"__eq", LuaMatrixEq},
+	{"__len", LuaMatrixLen},
   {"__tostring", LuaMatrixToString},
   {"__index", LuaMatrixIndex},
   {"__gc", LuaMatrixDestroy},

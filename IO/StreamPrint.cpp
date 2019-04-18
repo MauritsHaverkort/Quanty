@@ -1577,15 +1577,16 @@ string numberToStringMaxWidth(double num, int maxWidth)
 	int power = findPower(num);
 	int powerDigits = findPower(power) + 1;
 	if (power < 0) ++powerDigits;
-	int availableDigits = maxWidth;
-	if (num < 0) --availableDigits;
+	int availableDigits = maxWidth - 1;
+	if (num >= 0) sstr << " ";
+	if (powerDigits > availableDigits - 2)
+	{
+		if (abs(num) < 1) return "0";
+		if (abs(num) > 1) return "inf";
+	}
+
 	double lastDigit;
 	bool isScientificNotation;
-
-	int minDisplayablePower = -pow(10, availableDigits - 3) + 1;
-	if (power < minDisplayablePower ) return "0";
-	int maxDisplayablaPower = pow(10, availableDigits - 2) - 1;
-	if (power > maxDisplayablaPower) return "inf";
 
 	if (power < 0)
   {

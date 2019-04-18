@@ -1,0 +1,12 @@
+CompactMatrixType extendedLigandFieldMatrix(const CompactMatrixType &H, const CompactMatrixType &ligRotMat, CompactMatrixType &T, const uint constOrbs, const uint ligNum);
+CompactMatrixType extendedLigandFieldFilledAndEmpty(const CompactMatrixType &HRedFilled, const CompactMatrixType &HRedEmpty, const uint constOrbs);
+CompactMatrixType extendedLigandFieldRotMatFilledAndEmpty(const CompactMatrixType &Tfilled, const CompactMatrixType &Tempty, const uint constOrbs, const uint Nj);
+void addLigandNames(const CompactMatrixType &M, const string &nameBase, vector<string> &names, const uint constOrbs, const bool hasSpin);
+CompactMatrixType extendedLigandFieldForMatrix(const CompactMatrixType &H, CompactMatrixType &T, const uint constOrbs, const uint filledLig, const uint emptyLig, vector<string> &orbNames,const bool hasSpin);
+CompactMatrixType extendedLigandFieldForMatrix(const CompactMatrixType &H, CompactMatrixType &T, const uint constOrbs, const uint filledLig, const uint emptyLig);
+CompactMatrixType extendedLigandFieldForMatrix(const CompactMatrixType &H, const uint constOrbs, const uint filledLig, const uint emptyLig);
+OperatorType extendedLigandFieldForOperator(const OperatorType &hamil, CompactMatrixType &T, const uint constOrbs, const uint filledLig, const uint emptyLig, vector<string> &orbNames,const bool hasSpin);
+OperatorType extendedLigandFieldForOperator(const OperatorType &H, CompactMatrixType &T, const uint constOrbs, const uint filledLig, const uint emptyLig);
+OperatorType extendedLigandFieldForOperator(const OperatorType &H, const uint constOrbs, const uint filledLig, const uint emptyLig);
+TightBindingDef extendedLigandFieldForTightBinding(TightBindingDef &tb, CompactMatrixType &T, const AtomType &constAtom, const uint filledLig, const uint emptyLig, const bool hasSpin);
+static int LuaExtendedLigandField(lua_State * L);

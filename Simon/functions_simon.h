@@ -1,9 +1,12 @@
 template<typename T>void debug(const T debugMessage);
 void debug();
+void debug(const Complex16 c);
 template<typename T>void debug(const vector<T> &vec);
+void debug(const vector<Complex16> &vec);
 template<typename keyType, typename valType>void debug(const map<keyType, valType> &m);
 void debug(const CompactMatrixType &M, const string &str);
 void debug(const MatrixType &M, const string &str);
 void debug(const CompactMatrixType &M);
 void debug(const MatrixType &M);
+void debug(const doubleVecValPair &vp);
 static int LuaSimontest(lua_State * L);

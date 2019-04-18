@@ -5,6 +5,11 @@ void lua_push(lua_State * L, const double pushkin)
 	lua_pushnumber(L, pushkin);
 }
 
+void lua_push(lua_State * L, const double *pushkin)
+{
+	lua_pushnumber(L, *pushkin);
+}
+
 void lua_push(lua_State * L, const lua_Integer pushkin)
 {
 	lua_pushinteger(L,pushkin);
@@ -23,6 +28,20 @@ void lua_push(lua_State * L, const uint pushkin)
 void lua_push(lua_State * L, const uint16_t pushkin)
 {
 	lua_push(L, (lua_Integer)pushkin);
+}
+
+void lua_push(lua_State * L, const Complex16 &pushkin)
+{
+	if (pushkin.Im == 0)
+	{
+		lua_pushnumber(L, pushkin.Re);
+	} else
+	{
+		Complex16 *out = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
+		out->Re = pushkin.Re;
+		out->Im = pushkin.Im;
+		luaL_setmetatable(L, "Complex_Type");
+	}
 }
 
 void lua_push(lua_State * L, const char * pushkin)

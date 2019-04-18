@@ -11,12 +11,25 @@ void debug()
 	debug("");
 }
 
+void debug(const Complex16 c)
+{
+	debug();
+	cout << c.Re << " + " << c.Im << endl;
+}
+
 template<typename T>
 void debug(const vector<T> &vec)
 {
 	debug();
 	for (int i = 0; i < vec.size(); ++i)
 		cout << "elem=" << i << ", vec[i]=" << vec[i] << endl;
+}
+
+void debug(const vector<Complex16> &vec)
+{
+	debug();
+	for (int i = 0; i < vec.size(); ++i)
+		cout << "elem=" << i << ", vec[i]=" << vec[i].Re << " + " << vec[i].Im << endl;
 }
 
 template<typename keyType, typename valType>
@@ -76,6 +89,12 @@ void debug(const MatrixType &M)
 	debug(M, "Matrix-Print");
 }
 
+void debug(const doubleVecValPair &vp)
+{
+	debug(vp.vec);
+	debug(vp.val);
+}
+
 static int LuaSimontest(lua_State * L)
 {
 	return 0;
@@ -88,10 +107,13 @@ static const struct luaL_Reg Simon_meta[] = {
 static const struct luaL_Reg Simon_func[] = {
 	{"AtomicNumberOperators", LuaAtomicNumberOperators},
 	{"AtomicToWannierMatrix", LuaAtomicToWannierMatrix},
+	{"ExtendedLigandField", LuaExtendedLigandField},
 	{"Flatten", LuaFlatten},
+	{"IsosurfaceFixedInt", LuaIsosurfaceFixedInt},
+	{"IsosurfaceFixedVal", LuaIsosurfaceFixedVal},
 	{"MatrixToOperator", LuaMatrixToOperator},
 	{"lsCouplingConstants", LuaLSCouplingConstants},
-	{"ReduceHilbertSpace", LuaReduceHilbertSpace},
+	{"RealspaceDensity", LuaRealspaceDensity},
 	{"RemoveSpin", LuaRemoveSpin},
 	{"SortByKappa",LuaSortByKappa},
 	{"test", LuaSimontest},

@@ -1,0 +1,7 @@
+ 
+typedef struct doubleVecValPair
+{
+  vector<double> vec;
+  double val;
+}
+doubleVecValPair;

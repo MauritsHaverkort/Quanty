@@ -173,6 +173,7 @@ static int LuaCubicHermiteSplineInterpolate(lua_State * L)
  */
 static int LuaInterpolateUnm(lua_State * L)
 {
+	cout << endl << "Warning: Unary minus not yet implemented for interpolating functions." << endl;
   return 0;
 }
 /*
@@ -180,6 +181,7 @@ static int LuaInterpolateUnm(lua_State * L)
  */
 static int LuaInterpolateAdd(lua_State * L)
 {
+	cout << endl << "Warning: Addition not yet implemented for interpolating functions." << endl;
   return 0;
 }
 /*
@@ -187,6 +189,7 @@ static int LuaInterpolateAdd(lua_State * L)
  */
 static int LuaInterpolateSub(lua_State * L)
 {
+	cout << endl << "Warning: Subtraction not yet implemented for interpolating functions." << endl;
   return 0;
 }
 /*
@@ -194,6 +197,7 @@ static int LuaInterpolateSub(lua_State * L)
  */
 static int LuaInterpolateMul(lua_State * L)
 {
+	cout << endl << "Warning: Multiplication not yet implemented for interpolating functions." << endl;
   return 0;
 }
 /*
@@ -201,6 +205,7 @@ static int LuaInterpolateMul(lua_State * L)
  */
 static int LuaInterpolateDiv(lua_State * L)
 {
+	cout << endl << "Warning: Division not yet implemented for interpolating functions." << endl;
   return 0;
 }
 /*
@@ -208,6 +213,7 @@ static int LuaInterpolateDiv(lua_State * L)
  */
 static int LuaInterpolatePow(lua_State * L)
 {
+	cout << endl << "Warning: Power not yet implemented for interpolating functions." << endl;
   return 0;
 }
 /*
@@ -215,6 +221,7 @@ static int LuaInterpolatePow(lua_State * L)
  */
 static int LuaInterpolateConcat(lua_State * L)
 {
+	cout << endl << "Warning: Concatination not yet implemented for interpolating functions." << endl;
   return 0;
 }
 /*
@@ -222,6 +229,7 @@ static int LuaInterpolateConcat(lua_State * L)
  */
 static int LuaInterpolateEq(lua_State * L)
 {
+	cout << endl << "Warning: Equality comparison not yet implemented for interpolating functions." << endl;
   return 0;
 }
 /*
@@ -229,6 +237,7 @@ static int LuaInterpolateEq(lua_State * L)
  */
 static int LuaInterpolateLt(lua_State * L)
 {
+	cout << endl << "Warning: Lesser comparison not yet implemented for interpolating functions. Whatever that's supposed to be." << endl;
   return 0;
 }
 /*
@@ -236,6 +245,7 @@ static int LuaInterpolateLt(lua_State * L)
  */
 static int LuaInterpolateLe(lua_State * L)
 {
+	cout << endl << "Warning: Lesser or equal comparison not yet implemented for interpolating functions. Whatever that's supposed to be." << endl;
   return 0;
 }
 /*
