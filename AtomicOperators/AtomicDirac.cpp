@@ -62,12 +62,52 @@ void CreateOperatorDirac(uint32_t const NFermion,vector<vector<double> > basisfu
 
 }
 
+void AddIndex(const uint32_t idx, const int kappa, vector<SKappaGroup> &groups)
+{
+	for (uint32_t i = 0; i < (uint32_t) groups.size(); i++){
+		if (kappa == groups[i].kappa)
+		{
+			groups[i].n++;
+			groups[i].indices = (unsigned int*) realloc(groups[i].indices,sizeof(unsigned int) * groups[i].n);
+			groups[i].indices[groups[i].n - 1] = idx;
+			return;
+		}
+	}
+	SKappaGroup newgroup;
+	newgroup.kappa = kappa;
+	newgroup.n = 1;
+	newgroup.indices = (unsigned int*) malloc(sizeof(unsigned int));
+	newgroup.indices[0] = idx;
+	groups.push_back(newgroup);
+}
+
+void GroupIndicesAccordingToKappa(const vector<int> &ind, vector<SKappaGroup> &groups)
+{
+	for (uint32_t i = 0; i < (uint32_t) ind.size(); i++)
+	{
+		AddIndex(i, ind[i], groups);
+	}
+}
+
+void Print(const vector<SKappaGroup> &group)
+{
+	for (uint32_t i = 0; i < (uint32_t) group.size(); i++)
+	{
+		printf("kappa = %d\t",group[i].kappa);
+		for (uint32_t j = 0; j < group[i].n; j++)
+		{
+			printf("%u\t",group[i].indices[j]);
+		}
+		printf("\n");
+	}
+}
+
 static int LuaOperatorNewAtomicDirac(lua_State *L)
 {
 	OperatorType *op;
 	uint32_t **indices;
 	uint32_t NF, NGroups, NIndices, temp;
-	SKappaGroup *groups;
+	//SKappaGroup *groups;
 	int Z;
 
 	NF = (uint32_t)luaL_checkunsigned(L, 1);
@@ -107,7 +147,7 @@ static int LuaOperatorNewAtomicDirac(lua_State *L)
 		lua_pop(L,1);
 	}
 
-	luaL_checktype(L, 6, LUA_TTABLE);
+	/*	luaL_checktype(L, 6, LUA_TTABLE);
 	NGroups = (uint32_t)lua_objlen(L,6);
 
 	groups = (SKappaGroup *) malloc(NGroups * sizeof(SKappaGroup));
@@ -124,7 +164,7 @@ static int LuaOperatorNewAtomicDirac(lua_State *L)
 	   	lua_pop(L,1);
 	   	lua_pop(L,1);
 	}
-
+	*/
 	luaL_checktype(L, 3, LUA_TTABLE);
 	indices = (uint32_t **) malloc(NIndices * sizeof(uint32_t *));
 	if(!indices) printf("malloc fail at indices in LuaOperatorNewDirac. size = %u\n",NIndices);
@@ -134,6 +174,18 @@ static int LuaOperatorNewAtomicDirac(lua_State *L)
 	   	indices[i] = luaL_checkarray_unit32_t(L,-1,&temp);
 	   	lua_pop(L,1);
 	}
+	lua_getfield(L,3,"kappas");
+	if (lua_isnil(L,-1))
+	{
+		return luaL_error(L,"Error: NewOperator Dirac: indices have noc field kappa\n");
+	}
+	vector<int> indToK;
+	lua_check(L,-1,indToK);
+	lua_pop(L,1);
+
+	vector<SKappaGroup> groups;
+	GroupIndicesAccordingToKappa(indToK,groups);
+	//Print(groups2);
 
 	vector<double> x = funsG[0]->GetX();
 	vector<vector<double> > basisfuns = PutRelativisticSplineOnGrid(funsG,funsF,x,0);
@@ -142,15 +194,15 @@ static int LuaOperatorNewAtomicDirac(lua_State *L)
 	op = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
 
 	//CreateOperatorDirac(NF, basisfuns,derivfuns,x,groups,NGroups,indices,Z,op);
-	CreateOperatorDirac(NF, basisfuns,derivfuns,x,groups,NGroups,indices,Z,op);
+	CreateOperatorDirac(NF, basisfuns,derivfuns,x,&groups[0],(uint32_t)groups.size(),indices,Z,op);
 
 	luaL_setmetatable(L,"Operator_Type");
 
-	for (uint32_t i = 0;i < NGroups; i++ )
+	for (uint32_t i = 0;i < (uint32_t) groups.size(); i++ )
 	{
 		free(groups[i].indices);
 	}
-	free(groups);
+	//free(groups);
 	for(uint32_t i = 0; i < NIndices; i++ )
 	{
 		free(indices[i]);
@@ -159,3 +211,5 @@ static int LuaOperatorNewAtomicDirac(lua_State *L)
 
 	return 1;
 }
+
+

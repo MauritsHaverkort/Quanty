@@ -2908,7 +2908,8 @@ MatrixType YToKMatrix(const int multiplicity, const bool addSpin)
 	{
 //		s-shell
 		out.VRe[0][0] = 1;
-	} else if (multiplicity == 6)
+	}
+  else if (multiplicity == 6)
 	{
 //		p-shell
 		out.VRe[0][0] = 1 / sqrt(2.);
@@ -2916,7 +2917,8 @@ MatrixType YToKMatrix(const int multiplicity, const bool addSpin)
 		out.VIm[1][0] = 1 / sqrt(2.);
 		out.VIm[1][2] = 1 / sqrt(2.);
 		out.VRe[2][1] = 1;
-	} else if (multiplicity == 10)
+	}
+  else if (multiplicity == 10)
 	{
 //		d-shell
 		out.VRe[0][0] = 1 / sqrt(2.);
@@ -2928,7 +2930,8 @@ MatrixType YToKMatrix(const int multiplicity, const bool addSpin)
 		out.VRe[3][3] = -1 / sqrt(2.);
 		out.VIm[4][0] = 1 / sqrt(2.);
 		out.VIm[4][4] = -1 / sqrt(2.);
-	} else if (multiplicity == 14)
+	}
+  else if (multiplicity == 14)
 	{
 //		f-shell
 		out.VIm[0][1] = 1/sqrt(2.);
@@ -2952,7 +2955,8 @@ MatrixType YToKMatrix(const int multiplicity, const bool addSpin)
 		out.VIm[5][6] = -sqrt(3.)/4;
 		out.VRe[6][1] = 1/sqrt(2.);
 		out.VRe[6][5] = 1/sqrt(2.);
-	} else if ((multiplicity - 2) % 4 == 0)
+	}
+  else if ((multiplicity - 2) % 4 == 0)
 	{
 		cout << "YToKMatrix not yet implemented for an atomic shell of multiplicity " << multiplicity << ", sorry!" << endl;
 		return nullMatrix();
@@ -2966,18 +2970,23 @@ MatrixType YToKMatrix(const int multiplicity, const bool addSpin)
 	return out;
 }
 
+//TODO: should this function not have l as first argument. (Multiplicity is 4l+2 ???)
 MatrixType YToZMatrix(const int multiplicity, const bool addSpin)
 {
 	MatrixType out;
+  int l,m;
 	out.QComplex = true;
 	out.Ni = multiplicity / 2;
 	out.Nj = multiplicity / 2;
 	InitMatrix(&out);
+  l=(multiplicity-2)/4;
+/*
 	if (multiplicity == 2)
 	{
 //		s-shell
 		out.VRe[0][0] = 1;
-	} else if (multiplicity == 6)
+	}
+  else if (multiplicity == 6)
 	{
 //		p-shell
 		out.VIm[0][0] = 1 / sqrt(2.);
@@ -2985,7 +2994,8 @@ MatrixType YToZMatrix(const int multiplicity, const bool addSpin)
 		out.VRe[1][1] = 1;
 		out.VRe[2][0] = 1 / sqrt(2.);
 		out.VRe[2][2] = -1 / sqrt(2.);
-	} else if (multiplicity == 10)
+	}
+  else if (multiplicity == 10)
 	{
 //		d-shell
 		out.VIm[0][0] = 1 / sqrt(2.);
@@ -2997,15 +3007,25 @@ MatrixType YToZMatrix(const int multiplicity, const bool addSpin)
 		out.VRe[3][3] = -1 / sqrt(2.);
 		out.VRe[4][0] = 1 / sqrt(2.);
 		out.VRe[4][4] = 1 / sqrt(2.);
-	} else if ((multiplicity - 2) % 4 == 0)
+	}
+ */
+  if ((multiplicity - 2) % 4 == 0)
 	{
-		cout << "YToZMatrix not yet implemented for an atomic shell of multiplicity " << multiplicity << ", sorry!" << endl;
-		return nullMatrix();
-	} else
+    out.VRe[l][l]=1;
+    for(m=1;m<=l;m++)
+    {
+      out.VIm[l-m][l-m] = sqrt(0.5);
+      out.VIm[l-m][l+m] =-(1-2*(m%2))*sqrt(0.5);
+      out.VRe[l+m][l+m] = (1-2*(m%2))*sqrt(0.5);
+      out.VRe[l+m][l-m] = sqrt(0.5);
+    }
+	}
+  else
 	{
 		cout << "YToZMatrix only defined for multiplicity (2*l+1), with integer l, not for multiplicity " << multiplicity << "!" << endl;
 		return nullMatrix();
 	}
+
 	if (addSpin)
 		out = MatrixEnlarge(out, 2);
 	return out;
@@ -3016,6 +3036,7 @@ MatrixType YToJJzMatrix(const int size)
 	return YToJJzMatrix(size, true);
 }
 
+//TODO: should size not be replaced by l to make all consistent??
 MatrixType YToJJzMatrix(const int size, const bool addSpin)
 {
 	if (!addSpin)
@@ -3023,17 +3044,22 @@ MatrixType YToJJzMatrix(const int size, const bool addSpin)
 //		The bool is needed for compability with other code.
 		cout << "YToJJzMatrix called with addSpin = false. Since spin is obligatory this request will be ignored." << endl;
 	}
+  int l,m;
+  double j,jz;
 	MatrixType out;
 	out.QComplex = false;
 	out.Ni = size;
 	out.Nj = size;
+  l=(size-2)/4;
 	InitMatrix(&out);
+  /*
 	if (size == 2)
 	{
 //		s-shell
 		out.VRe[0][0] = 1;
 		out.VRe[1][1] = 1;
-	} else if (size == 6)
+	}
+  else if (size == 6)
 	{
 //		p-shell
 		out.VRe[0][1] = -sqrt(2. / 3.);
@@ -3046,7 +3072,8 @@ MatrixType YToJJzMatrix(const int size, const bool addSpin)
 		out.VRe[4][3] = sqrt(2. / 3.);
 		out.VRe[4][4] = 1 / sqrt(3);
 		out.VRe[5][5] = 1;
-	} else if (size == 10)
+	}
+  else if (size == 10)
 	{
 //		d-shell
 		out.VRe[0][1] = -sqrt(4. / 5.);
@@ -3067,11 +3094,30 @@ MatrixType YToJJzMatrix(const int size, const bool addSpin)
 		out.VRe[8][7] = sqrt(4. / 5.);
 		out.VRe[8][8] = 1 / sqrt(5);
 		out.VRe[9][9] = 1;
-	} else if ((size - 2) % 4 == 0)
+	}
+   */
+  if ((size - 2) % 4 == 0)
 	{
-		cout << "YToJJzMatrix not yet implemented for an atomic shell of multiplicity " << size << ", sorry!" << endl;
-		return nullMatrix();
-	} else
+    // j=l-1/2
+    j=(double)l-0.5;
+    for(m=0;m<2*l;m++)
+    {
+      jz=(double)m-j;
+      out.VRe[m][2*m+1] =-sqrt((1-jz/(j+1))*0.5); // spin up
+      out.VRe[m][2*m+2] = sqrt((1+jz/(j+1))*0.5); // spin down
+    }
+    // j=l+1/2
+    j=(double)l+0.5;
+    out.VRe[2*l][0]=1;
+    out.VRe[4*l+1][4*l+1]=1;
+    for(m=1;m<2*l+1;m++)
+    {
+      jz=(double)m-j;
+      out.VRe[m+2*l][2*m-1] = sqrt((1+jz/(j))*0.5); // spin up
+      out.VRe[m+2*l][2*m]   = sqrt((1-jz/(j))*0.5); // spin down
+    }
+	}
+  else
 	{
 		cout << "YToJJzMatrix only defined for multiplicity 2*(2*l+1), with integer l, not for multiplicity " << size << "!" << endl;
 		return nullMatrix();

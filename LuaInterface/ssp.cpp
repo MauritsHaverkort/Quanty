@@ -4764,7 +4764,8 @@ static int LuaYtojjzMatrix(lua_State * L)
 	if (!lua_istable(L, 1))
 	{
 		isInputInteger = lua_isnumber(L, 1);
-	} else
+	}
+  else
 	{
 		lua_rawgeti(L, 1, 1);
 		isInputInteger = lua_isnumber(L, -1);
@@ -4775,9 +4776,12 @@ static int LuaYtojjzMatrix(lua_State * L)
 		vector<int> multiplicities;
 		lua_check(L, 1, multiplicities);
 		for (int i = 0; i < multiplicities.size(); ++i)
+    {
 			multiplicities[i] = 2 * (2 * multiplicities[i] + 1);
+    }
 		returnMat = LargeRotationMatrix(multiplicities, YToJJzMatrix, true);
-	} else
+	}
+  else
 	{
 		vector < string > orbs;
 		lua_check(L, 1, orbs);

@@ -66,7 +66,10 @@ double DipoleMatrixElement(double deltaE, double grg, double frf, uint32_t mu, i
 	double resultG,resultF;
 	switch (mu) {
 		case 0:
-
+      //mwh
+      printf("Case 0 not yet implemented");
+      //TODO: implement mu=0
+      return NAN;
 			break;
 		case 1:
 			resultG  = ClebschHalf(2*l1A,twom1-1,1, 1,twoj1,twom1) * ClebschHalf(2*l2A,twom2-1,1, 1,twoj2,twom2)
