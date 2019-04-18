@@ -4280,7 +4280,7 @@ static int LuaOperatorNewNumber(lua_State * L)
     Complex16 *Prefactors = luaL_checkarray_complex16(L, 4, &NNum);
     if(NOppCr!=NOppAn)
     {
-      return luaL_error(L, "Error in LuaOperatorNewNumber, Lenght of Index for Createion (%d) is not equal to lenght of index for Annihilation (%d)\n",NOppCr,NOppAn);
+      return luaL_error(L, "Error in LuaOperatorNewNumber, Lenght of Index for Creation (%d) is not equal to lenght of index for Annihilation (%d)\n",NOppCr,NOppAn);
     }
     if(NOppCr!=NNum)
     {
@@ -4301,7 +4301,7 @@ static int LuaOperatorNewNumber(lua_State * L)
   }
   else
   {
-    return luaL_error(L, "Error in LuaOperatorNewAnnihilate, expected 3 or 4 arguments, not %d\n",len);
+    return luaL_error(L, "Error in LuaOperatorNewNumber, expected 3 or 4 arguments, not %d\n",len);
   }
   return 1;
 }
