@@ -1,0 +1,119 @@
+Verbosity(0xffffffff)
+
+Element = "Re"
+Valence = 39
+print(Element ..Valence .."\n")
+
+indir = ""
+
+orbitalLabels = {"1s1/2","2s1/2","2p1/2","2p3/2","3s1/2","3p1/2","3p3/2","4s1/2","3d3/2","3d5/2","4p1/2","4p3/2","4d3/2","4d5/2","5s1/2"}
+Z = 75
+NcoreOrbitals  = 10
+NvalOrbitals   =  5
+NvalElectrons = 6
+NEigenStates = 73
+NemptyMaxElectrons = 1
+MagicNumber = 458566-14760-14371
+
+ind, NF = CreateAtomicIndicesList(orbitalLabels,{{"Kappas",true}})
+NB = 0
+
+NcoreElectrons = ind[NcoreOrbitals][#ind[NcoreOrbitals]]+1
+NemptyOrbitals = #orbitalLabels - NcoreOrbitals - NvalOrbitals
+
+function TakeFlatten(list,n)
+local result = {}
+local k = 1
+if n > 0 then
+for i = 1, n do
+for j = 1, #list[i] do
+result[k] = list[i][j]
+k = k + 1
+end
+end
+else
+for i = -n, 1, -1 do
+for j = 1, #list[#list-i+1] do
+result[k] = list[#list-i+1][j]
+k = k + 1
+end
+end
+end
+return result
+end
+
+function ExtractFlatten(list,n,m)
+local result = {}
+local k = 1
+for i = n, m do
+for j = 1, #list[i] do
+result[k] = list[i][j]
+k = k + 1
+end
+end
+
+return result
+end
+
+G, F = ReadFPLOBasisFunctions(orbitalLabels,indir.."+fval.001.1", indir.."+fval.001.2")
+
+Restrictions = {NF, NB, {DeterminantString(NF,ExtractFlatten(ind,NcoreOrbitals+3,NcoreOrbitals+NvalOrbitals)), 0,1}}
+
+-- these Restrictions give states with 5s2
+StartRestrictions = {NF, NB, {DeterminantString(NF,TakeFlatten(ind,NcoreOrbitals)),NcoreElectrons,NcoreElectrons},
+{DeterminantString(NF,Simon.Flatten({ind[11],ind[12],ind[14]})), NvalElectrons,NvalElectrons},
+{DeterminantString(NF,Simon.Flatten({ind[13],ind[15]})), 0,0}}
+
+-- these Restrictions give a segfault
+--[[
+StartRestrictions = {NF, NB, {DeterminantString(NF,TakeFlatten(ind,NcoreOrbitals)),NcoreElectrons,NcoreElectrons},
+{DeterminantString(NF,Simon.Flatten({ind[11],ind[12],ind[13],ind[14],ind[15]})), NvalElectrons,NvalElectrons},
+{DeterminantString(NF,ExtractFlatten(ind,NcoreOrbitals+3,NcoreOrbitals+NvalOrbitals)), 0,1}}
+]]
+print("StartRestrictions")
+print(StartRestrictions)
+print("Restrictions")
+print(Restrictions)
+
+Jz = NewOperator("Jz",NF,{},ind[1])
+i = 2
+while i <= #ind do
+if string.find(orbitalLabels[i],"s") then
+Jz = Jz + NewOperator("Jz",NF,{},ind[i])
+else
+Jz = Jz + NewOperator("Jz",NF,ind[i],ind[i+1])
+
+i = i + 1
+end
+i = i + 1
+end
+
+H0 = NewOperator("Dirac",NF,Z,ind,G,F)
+U = NewOperator("AtomicU",NF,ind,G,F)
+
+H  = (H0 + U + 1E-6*Jz) * EnergyUnits.Ha.value + MagicNumber
+
+H = (H + ConjugateTranspose(H))/2
+
+psi = Eigensystem(H, StartRestrictions,NEigenStates,{{"Epsilon",1E-6},{"Restrictions",Restrictions},{"Zero",1E-4}})
+
+function CreateNumberOperators(orbitalLabels, orbitalIndices, NF)
+local Opp={}
+for key, orbname in pairs(orbitalLabels) do
+local ones={}
+for i = 1,#(orbitalIndices[key]) do
+ones[i]=1
+end
+Opp["N"..orbname] = NewOperator("Number",NF,orbitalIndices[key],orbitalIndices[key],ones)
+Opp["N"..orbname].Name="N"..orbname
+end
+return Opp
+end
+
+OppN = CreateNumberOperators(orbitalLabels, ind, NF)
+OppNlist={}
+for i=1,#orbitalLabels do
+OppNlist[i]=OppN["N"..orbitalLabels[i]]
+end
+
+PrintExpectationValues(psi,OppNlist)

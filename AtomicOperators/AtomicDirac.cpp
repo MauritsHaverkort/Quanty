@@ -106,15 +106,15 @@ static int LuaOperatorNewAtomicDirac(lua_State *L)
 {
 	OperatorType *op;
 	uint32_t **indices;
-	uint32_t NF, NGroups, NIndices, temp;
+	uint32_t NF, NIndices, NfunsG, NfunsF, temp;
 	//SKappaGroup *groups;
 	int Z;
 
 	NF = (uint32_t)luaL_checkunsigned(L, 1);
 	Z = (int) luaL_checkunsigned(L, 2);
 	NIndices = (uint32_t)lua_objlen(L,3);
-	uint32_t NfunsG = (uint32_t)lua_objlen(L,4);
-	uint32_t NfunsF = (uint32_t)lua_objlen(L,5);
+	NfunsG = (uint32_t)lua_objlen(L,4);
+	NfunsF = (uint32_t)lua_objlen(L,5);
 
 	if (NfunsG > NIndices)
 	{

@@ -3,6 +3,7 @@
 SSlaterIntegral *GetSlaterIntegrals(const vector<vector<double> > &basisfuns,const vector<double> &x,const vector<int> &indToK, unsigned int &NIntegrals, bool Qcontinuum)
 {
 
+  if(GlobalTimeOn&0x100) BeginTiming("Slater Integrals", &GlobalTime);
     SSlaterIntegral *si;
     unsigned int kMax, n, i;
     double **kernels;
@@ -26,6 +27,7 @@ SSlaterIntegral *GetSlaterIntegrals(const vector<vector<double> > &basisfuns,con
     }
     free(kernels);
 
+  if(GlobalTimeOn&0x100) EndTiming("Slater Integrals", &GlobalTime);
     return si;
 }
 
