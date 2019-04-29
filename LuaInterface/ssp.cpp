@@ -4599,18 +4599,29 @@ static int LuaPartialOperator(lua_State *L)
 {
 	OperatorType *O, *OPartial;
 	vector < uint16_t > indices;
+
+	struct
+	{
+		bool conserveSubspaceOccupation = false;
+	} Options;
+	LuaOptionsType LuaPartialOperatorOptions[] = {
+			{ "conserveSubspaceOccupation", "bool", &(Options.conserveSubspaceOccupation) },
+			{ NULL, NULL, NULL } };
+
+	uint32_t len = (uint32_t) lua_gettop(L);
+	if (len < 2 || len > 3)
+		return luaL_error(L, "PartialOperator called with %d arguments. Operator, List of Indices and optional Options expected.\n", len);
+
 	O = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
 	lua_check(L, 2, indices);
-	uint32_t len = (uint32_t) lua_gettop(L);
-	if (len != 2)
-		return luaL_error(L, "PartialOperator called with %d arguments. Operator and List of Indices expected.\n", len);
 	for (int i = 0; i < indices.size(); i++)
 	{
 		if (indices[i] < 0 || indices[i] >= O->NFermion)
 			printf("\nWarning: Index %d is not within [0,NF-1]=[0,%d].\n", indices[i], O->NFermion - 1);
 	}
+	if (len == 3) LuaCheckOptions(L, -1, LuaPartialOperatorOptions);
 	OPartial = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-	extractPartialOperator(O, OPartial, indices);
+	extractPartialOperator(O, OPartial, indices, false, Options.conserveSubspaceOccupation);
 	luaL_setmetatable(L, "Operator_Type");
 	strncpy(OPartial->Name, "", MAXStrLength - 1); //An appropriate Name can be given in Lua.
 	return 1;
@@ -4629,17 +4640,14 @@ static int LuaPartialMeanFieldOperator(lua_State *L)
 	{
 		bool AddDFTSelfInteraction = false;
 	} Options;
-	LuaOptionsType LuaOptions[] = {
+	LuaOptionsType LuaPartialMeanFieldOperatorOptions[] = {
 			{ "AddDFTSelfInteraction", "bool", &(Options.AddDFTSelfInteraction) },
 			{ NULL, NULL, NULL } };
-	if (len < 3 || len > 4)
-		return luaL_error(L, "MeanFieldOperator called with %d arguments. Three or four expected, Operator, Density Matrix, List of Indices and optional Options.\n", len);
-	if (len == 4)
-		LuaCheckOptions(L, -1, LuaOptions);
+	if (len < 3 || len > 4)	return luaL_error(L, "MeanFieldOperator called with %d arguments. Three or four expected, Operator, Density Matrix, List of Indices and optional Options.\n", len);
+	if (len == 4)	LuaCheckOptions(L, -1, LuaPartialMeanFieldOperatorOptions);
 	for (int i = 0; i < indices.size(); i++)
 	{
-		if (indices[i] < 0 || indices[i] >= O->NFermion)
-			printf("\nWarning: Index %d is not within [0,NF-1]=[0,%d].\n", indices[i], O->NFermion - 1);
+		if (indices[i] < 0 || indices[i] >= O->NFermion) printf("\nWarning: Index %d is not within [0,NF-1]=[0,%d].\n", indices[i], O->NFermion - 1);
 	}
 	OMF = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
 	partialMeanFieldOperator(O, OMF, Rho, indices, Options.AddDFTSelfInteraction);

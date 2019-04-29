@@ -6502,14 +6502,29 @@ uint32_t OperatorChangeNFandNB(OperatorType *O, const uint32_t NFnew, uint32_t N
   return 0;
 }
 
-void extractPartialOperatorFixedLength(OperatorType * const O, OperatorType * const OPartial, const vector<uint16_t> indices, const int length, bool changeInput)
+bool isCrAnConservesSubspaceOccupation(const uint16_t *const CrAn, const uint length, const vector<uint16_t> &subspace)
+{
+	int additionalSubspaceElectrons = 0;
+	for (uint i = 0; i < length; ++i)
+	{
+		const uint16_t AnInd = NotCrAnMask & CrAn[i];
+		if (isElementOf(AnInd, subspace))
+		{
+			if (AnInd == CrAn[i]) --additionalSubspaceElectrons;
+			else ++additionalSubspaceElectrons;
+		}
+	}
+	return additionalSubspaceElectrons == 0;
+}
+
+void extractPartialOperatorFixedLength(OperatorType * const O, OperatorType * const OPartial, const vector<uint16_t> &indices, const uint length, bool changeInput, bool conserveSubspaceOccupation)
 {
 	uint16_t oadd[length];
 	int firstIndexOfBlock;
 	InitOperatorFixedLength(OPartial, length, 8);
 	for (uint i = 0; i < length * (O->l[length].N); i++)
 	{
-		uint16_t AnInd = NotCrAnMask & O->l[length].o[i];
+		const uint16_t AnInd = NotCrAnMask & O->l[length].o[i];
 		if (isElementOf(AnInd, indices))
 		{
 			firstIndexOfBlock = i - (i % length);
@@ -6517,40 +6532,53 @@ void extractPartialOperatorFixedLength(OperatorType * const O, OperatorType * co
 			{
 				oadd[j] = O->l[length].o[firstIndexOfBlock + j];
 			}
-			if (O->l[length].QComplex)
+			if (!conserveSubspaceOccupation || isCrAnConservesSubspaceOccupation(oadd, length, indices))
 			{
-				ComplexOperatorAddLaderNormalOrder(OPartial, oadd, length, O->l[length].V[firstIndexOfBlock / length].Re, O->l[length].V[firstIndexOfBlock / length].Im, &QDetNotOrderedFcFaBcBa);
-				if (changeInput)
+				if (O->l[length].QComplex)
 				{
-					O->l[length].V[firstIndexOfBlock / length].Re = 0;
-					O->l[length].V[firstIndexOfBlock / length].Im = 0;
+					ComplexOperatorAddLaderNormalOrder(OPartial, oadd, length, O->l[length].V[firstIndexOfBlock / length].Re, O->l[length].V[firstIndexOfBlock / length].Im, &QDetNotOrderedFcFaBcBa);
+					if (changeInput)
+					{
+						O->l[length].V[firstIndexOfBlock / length].Re = 0;
+						O->l[length].V[firstIndexOfBlock / length].Im = 0;
+					}
 				}
-			} else
-			{
-				RealOperatorAddLaderNormalOrder(OPartial, oadd, length, O->l[length].VRe[firstIndexOfBlock / length], &QDetNotOrderedFcFaBcBa);
-				if (changeInput)
-					O->l[length].VRe[firstIndexOfBlock / length] = 0;
+				else
+				{
+					RealOperatorAddLaderNormalOrder(OPartial, oadd, length, O->l[length].VRe[firstIndexOfBlock / length], &QDetNotOrderedFcFaBcBa);
+					if (changeInput) O->l[length].VRe[firstIndexOfBlock / length] = 0;
+				}
 			}
 			i = firstIndexOfBlock + length - 1; //I don't want to count that block again in case the index appears several times.
 		}
 	}
 }
 
-void extractPartialOperatorFixedLength(OperatorType * const O, OperatorType * const OPartial, const vector<uint16_t> indices, const int length)
+void extractPartialOperatorFixedLength(OperatorType * const O, OperatorType * const OPartial, const vector<uint16_t> &indices, const uint length, bool changeInput)
 {
-	extractPartialOperatorFixedLength(O, OPartial, indices, length, false);
+	extractPartialOperatorFixedLength(O, OPartial, indices, length, changeInput, false);
 }
 
-void extractPartialOperator(OperatorType * const O, OperatorType * const OPartial, const vector<uint16_t> indices, bool changeInput)
+void extractPartialOperatorFixedLength(OperatorType * const O, OperatorType * const OPartial, const vector<uint16_t> &indices, const uint length)
+{
+	extractPartialOperatorFixedLength(O, OPartial, indices, length, false, false);
+}
+
+void extractPartialOperator(OperatorType * const O, OperatorType * const OPartial, const vector<uint16_t> &indices, bool changeInput, bool conserveSubspaceOccupation)
 {
 	InitOperator(OPartial);
 	OPartial->NFermion = O->NFermion;
 	OPartial->NBoson = O->NBoson;
-	for (int length = 0; length <= O->MaxLength; ++length)
-		extractPartialOperatorFixedLength(O, OPartial, indices, length, changeInput);
+	for (uint length = 0; length <= O->MaxLength; ++length)
+		extractPartialOperatorFixedLength(O, OPartial, indices, length, changeInput, conserveSubspaceOccupation);
 }
 
-void extractPartialOperator(OperatorType * const O, OperatorType * const OPartial, const vector<uint16_t> indices)
+void extractPartialOperator(OperatorType * const O, OperatorType * const OPartial, const vector<uint16_t> &indices, bool changeInput)
 {
-	extractPartialOperator(O, OPartial, indices, false);
+	extractPartialOperator(O, OPartial, indices, changeInput, false);
+}
+
+void extractPartialOperator(OperatorType * const O, OperatorType * const OPartial, const vector<uint16_t> &indices)
+{
+	extractPartialOperator(O, OPartial, indices, false, false);
 }
