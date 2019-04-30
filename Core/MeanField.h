@@ -9,4 +9,4 @@ uint32_t MeanFieldOperatorOld(const OperatorType * const O, OperatorType * const
 uint32_t MeanFieldOperatorWithDFTInteractionOld(const OperatorType * const O, OperatorType * const MO, const CompactMatrixType Rho);
 uint32_t CalculateDensityMatrixFromOneElectronEigensystem(const CompactMatrixType * const fun, double *val, CompactMatrixType *Rho, const double kbT, const double Nelec, double *Etot);
 uint32_t MeanFieldGroundstate(const OperatorType *const O, CompactMatrixType * const Rho, const double kbT, double * Etot);
-uint32_t partialMeanFieldOperator(const OperatorType * const O, OperatorType * const OPartialMF, const MatrixType Rho, const vector<uint16_t>  indices, bool AddDFTSelfInteraction);
+uint32_t partialMeanFieldOperator(const OperatorType * const O, OperatorType * const OPartialMF, const MatrixType &Rho, const vector<uint16_t> &indices, bool AddDFTSelfInteraction);
