@@ -4591,30 +4591,43 @@ static int LuaCreateAtomicIndicesList(lua_State *L)
 static int LuaPartialOperator(lua_State *L)
 {
 	OperatorType *O, *OPartial;
-	vector < uint16_t > indices;
+	vector<vector<uint16_t> > indices;
+	string mode;
 
-	struct
-	{
-		bool conserveSubspaceOccupation = false;
-	} Options;
-	LuaOptionsType LuaPartialOperatorOptions[] = {
-			{ "conserveSubspaceOccupation", "bool", &(Options.conserveSubspaceOccupation) },
-			{ NULL, NULL, NULL } };
+	const static string modes[] = {"include", "exclude", "conserve"};
 
 	uint32_t len = (uint32_t) lua_gettop(L);
-	if (len < 2 || len > 3)
-		return luaL_error(L, "PartialOperator called with %d arguments. Operator, List of Indices and optional Options expected.\n", len);
+	if (len != 3)
+		return luaL_error(L, "Error: PartialOperator called with %d arguments. Operator, List of (list of) Indices and mode expected.\n", len);
 
 	O = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
 	lua_check(L, 2, indices);
-	for (int i = 0; i < indices.size(); i++)
+	for (uint i = 0; i < (uint)indices.size(); i++)
 	{
-		if (indices[i] < 0 || indices[i] >= O->NFermion)
-			printf("\nWarning: Index %d is not within [0,NF-1]=[0,%d].\n", indices[i], O->NFermion - 1);
+		for (uint j = 0; j < (uint)indices[i].size(); ++j)
+		{
+			if (indices[i][j] < 0 || indices[i][j] >= O->NFermion)
+				printf("\nWarning: Index %d is not within [0,NF-1]=[0,%d].\n", indices[i][j], O->NFermion - 1);
+		}
 	}
-	if (len == 3) LuaCheckOptions(L, -1, LuaPartialOperatorOptions);
+	lua_check(L, 3, mode);
+	if (!isElementOf(mode, vector<string>(modes, modes + sizeof(modes))))
+	{
+		return luaL_error(L, "Error: PartialOperator called with unrecognised mode \"%s\".\n", mode.c_str());
+	}
+
 	OPartial = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-	extractPartialOperator(O, OPartial, indices, false, Options.conserveSubspaceOccupation);
+	if (mode == "include")
+	{
+		extractPartialOperator(O, OPartial, indices, isCrAnIncluded);
+	}
+	else if (mode == "exclude")
+	{
+		extractPartialOperator(O, OPartial, indices, isCrAnExcluded);
+	} else if (mode == "conserve")
+	{
+		extractPartialOperator(O, OPartial, indices, isCrAnConservesSubspaceOccupation);
+	}
 	luaL_setmetatable(L, "Operator_Type");
 	strncpy(OPartial->Name, "", MAXStrLength - 1); //An appropriate Name can be given in Lua.
 	return 1;

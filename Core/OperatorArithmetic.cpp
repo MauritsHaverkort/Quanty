@@ -6502,83 +6502,99 @@ uint32_t OperatorChangeNFandNB(OperatorType *O, const uint32_t NFnew, uint32_t N
   return 0;
 }
 
-bool isCrAnConservesSubspaceOccupation(const uint16_t *const CrAn, const uint length, const vector<uint16_t> &subspace)
+bool isCrAnIncluded(const uint16_t * const CrAn, const uint length, const vector<vector<uint16_t> > &subspace)
 {
-	int additionalSubspaceElectrons = 0;
-	for (uint i = 0; i < length; ++i)
+	for (uint i = 0; i < (uint) subspace.size(); ++i)
 	{
-		const uint16_t AnInd = NotCrAnMask & CrAn[i];
-		if (isElementOf(AnInd, subspace))
+		for (uint j = 0; j < length; ++j)
 		{
-			if (AnInd == CrAn[i]) --additionalSubspaceElectrons;
-			else ++additionalSubspaceElectrons;
+			const uint16_t AnInd = NotCrAnMask & CrAn[j];
+			if (isElementOf(AnInd, subspace[i])) return true;
 		}
 	}
-	return additionalSubspaceElectrons == 0;
+	return false;
 }
 
-void extractPartialOperatorFixedLength(OperatorType * const O, OperatorType * const OPartial, const vector<uint16_t> &indices, const uint length, bool changeInput, bool conserveSubspaceOccupation)
+bool isCrAnExcluded(const uint16_t * const CrAn, const uint length, const vector<vector<uint16_t> > &subspace)
+{
+	for (uint i = 0; i < (uint) subspace.size(); ++i)
+	{
+		for (uint j = 0; j < length; ++j)
+		{
+			const uint16_t AnInd = NotCrAnMask & CrAn[j];
+			if (isElementOf(AnInd, subspace[i])) return false;
+		}
+	}
+	return true;
+}
+
+bool isCrAnConservesSubspaceOccupation(const uint16_t * const CrAn, const uint length, const vector<vector<uint16_t> > &subspace)
+{
+	for (uint i = 0; i < (uint) subspace.size(); ++i)
+	{
+		int additionalSubspaceElectrons = 0;
+		for (uint j = 0; j < length; ++j)
+		{
+			const uint16_t AnInd = NotCrAnMask & CrAn[j];
+			if (isElementOf(AnInd, subspace[i]))
+			{
+				if (AnInd == CrAn[j])	--additionalSubspaceElectrons;
+				else ++additionalSubspaceElectrons;
+			}
+		}
+		if (additionalSubspaceElectrons != 0) return false;
+	}
+	return true;
+}
+
+void extractPartialOperatorFixedLength(OperatorType * const O, OperatorType * const OPartial, const vector<vector<uint16_t> > &indices,
+		bool (*criterion)(const uint16_t * const, const uint, const vector<vector<uint16_t> >&), const uint length, bool changeInput)
 {
 	uint16_t oadd[length];
 	int firstIndexOfBlock;
-	InitOperatorFixedLength(OPartial, length, 8);
-	for (uint i = 0; i < length * (O->l[length].N); i++)
+	InitOperatorFixedLength(OPartial, length, O->l[length].NBitsKey);
+	for (uint i = 0; i < (O->l[length].N); ++i)
 	{
-		const uint16_t AnInd = NotCrAnMask & O->l[length].o[i];
-		if (isElementOf(AnInd, indices))
+		uint firstIndexOfBlock = i * length;
+		for (uint j = 0; j < length; ++j)
 		{
-			firstIndexOfBlock = i - (i % length);
-			for (int j = 0; j < length; j++)
+			oadd[j] = O->l[length].o[firstIndexOfBlock + j];
+		}
+		if (criterion(oadd, length, indices))
+		{
+			if (O->l[length].QComplex)
 			{
-				oadd[j] = O->l[length].o[firstIndexOfBlock + j];
-			}
-			if (!conserveSubspaceOccupation || isCrAnConservesSubspaceOccupation(oadd, length, indices))
-			{
-				if (O->l[length].QComplex)
+				ComplexOperatorAddLader(OPartial, oadd, length, O->l[length].V[firstIndexOfBlock / length].Re, O->l[length].V[firstIndexOfBlock / length].Im);
+				if (changeInput)
 				{
-					ComplexOperatorAddLaderNormalOrder(OPartial, oadd, length, O->l[length].V[firstIndexOfBlock / length].Re, O->l[length].V[firstIndexOfBlock / length].Im, &QDetNotOrderedFcFaBcBa);
-					if (changeInput)
-					{
-						O->l[length].V[firstIndexOfBlock / length].Re = 0;
-						O->l[length].V[firstIndexOfBlock / length].Im = 0;
-					}
-				}
-				else
-				{
-					RealOperatorAddLaderNormalOrder(OPartial, oadd, length, O->l[length].VRe[firstIndexOfBlock / length], &QDetNotOrderedFcFaBcBa);
-					if (changeInput) O->l[length].VRe[firstIndexOfBlock / length] = 0;
+					O->l[length].V[firstIndexOfBlock / length].Re = 0;
+					O->l[length].V[firstIndexOfBlock / length].Im = 0;
 				}
 			}
-			i = firstIndexOfBlock + length - 1; //I don't want to count that block again in case the index appears several times.
+			else
+			{
+				RealOperatorAddLader(OPartial, oadd, length, O->l[length].VRe[firstIndexOfBlock / length]);
+				if (changeInput) O->l[length].VRe[firstIndexOfBlock / length] = 0;
+			}
 		}
 	}
 }
 
-void extractPartialOperatorFixedLength(OperatorType * const O, OperatorType * const OPartial, const vector<uint16_t> &indices, const uint length, bool changeInput)
+void extractPartialOperatorFixedLength(OperatorType * const O, OperatorType * const OPartial, const vector<vector<uint16_t> > &indices, bool (*criterion)(const uint16_t *const, const uint, const vector<vector<uint16_t> >&), const uint length)
 {
-	extractPartialOperatorFixedLength(O, OPartial, indices, length, changeInput, false);
+	extractPartialOperatorFixedLength(O, OPartial, indices, criterion, length, false);
 }
 
-void extractPartialOperatorFixedLength(OperatorType * const O, OperatorType * const OPartial, const vector<uint16_t> &indices, const uint length)
-{
-	extractPartialOperatorFixedLength(O, OPartial, indices, length, false, false);
-}
-
-void extractPartialOperator(OperatorType * const O, OperatorType * const OPartial, const vector<uint16_t> &indices, bool changeInput, bool conserveSubspaceOccupation)
+void extractPartialOperator(OperatorType * const O, OperatorType * const OPartial, const vector<vector<uint16_t> > &indices, bool (*criterion)(const uint16_t *const, const uint, const vector<vector<uint16_t> >&), bool changeInput)
 {
 	InitOperator(OPartial);
 	OPartial->NFermion = O->NFermion;
 	OPartial->NBoson = O->NBoson;
 	for (uint length = 0; length <= O->MaxLength; ++length)
-		extractPartialOperatorFixedLength(O, OPartial, indices, length, changeInput, conserveSubspaceOccupation);
+		extractPartialOperatorFixedLength(O, OPartial, indices, criterion, length, changeInput);
 }
 
-void extractPartialOperator(OperatorType * const O, OperatorType * const OPartial, const vector<uint16_t> &indices, bool changeInput)
+void extractPartialOperator(OperatorType * const O, OperatorType * const OPartial, const vector<vector<uint16_t> > &indices, bool (*criterion)(const uint16_t *const, const uint, const vector<vector<uint16_t> >&))
 {
-	extractPartialOperator(O, OPartial, indices, changeInput, false);
-}
-
-void extractPartialOperator(OperatorType * const O, OperatorType * const OPartial, const vector<uint16_t> &indices)
-{
-	extractPartialOperator(O, OPartial, indices, false, false);
+	extractPartialOperator(O, OPartial, indices, criterion, false);
 }
