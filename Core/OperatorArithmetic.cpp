@@ -6538,8 +6538,10 @@ bool isCrAnConservesSubspaceOccupation(const uint16_t * const CrAn, const uint l
 			const uint16_t AnInd = NotCrAnMask & CrAn[j];
 			if (isElementOf(AnInd, subspace[i]))
 			{
-				if (AnInd == CrAn[j])	--additionalSubspaceElectrons;
-				else ++additionalSubspaceElectrons;
+				if (AnInd == CrAn[j])
+					--additionalSubspaceElectrons;
+				else
+					++additionalSubspaceElectrons;
 			}
 		}
 		if (additionalSubspaceElectrons != 0) return false;
@@ -6580,12 +6582,14 @@ void extractPartialOperatorFixedLength(OperatorType * const O, OperatorType * co
 	}
 }
 
-void extractPartialOperatorFixedLength(OperatorType * const O, OperatorType * const OPartial, const vector<vector<uint16_t> > &indices, bool (*criterion)(const uint16_t *const, const uint, const vector<vector<uint16_t> >&), const uint length)
+void extractPartialOperatorFixedLength(OperatorType * const O, OperatorType * const OPartial, const vector<vector<uint16_t> > &indices,
+		bool (*criterion)(const uint16_t * const, const uint, const vector<vector<uint16_t> >&), const uint length)
 {
 	extractPartialOperatorFixedLength(O, OPartial, indices, criterion, length, false);
 }
 
-void extractPartialOperator(OperatorType * const O, OperatorType * const OPartial, const vector<vector<uint16_t> > &indices, bool (*criterion)(const uint16_t *const, const uint, const vector<vector<uint16_t> >&), bool changeInput)
+void extractPartialOperator(OperatorType * const O, OperatorType * const OPartial, const vector<vector<uint16_t> > &indices,
+		bool (*criterion)(const uint16_t * const, const uint, const vector<vector<uint16_t> >&), bool changeInput)
 {
 	InitOperator(OPartial);
 	OPartial->NFermion = O->NFermion;
@@ -6594,7 +6598,8 @@ void extractPartialOperator(OperatorType * const O, OperatorType * const OPartia
 		extractPartialOperatorFixedLength(O, OPartial, indices, criterion, length, changeInput);
 }
 
-void extractPartialOperator(OperatorType * const O, OperatorType * const OPartial, const vector<vector<uint16_t> > &indices, bool (*criterion)(const uint16_t *const, const uint, const vector<vector<uint16_t> >&))
+void extractPartialOperator(OperatorType * const O, OperatorType * const OPartial, const vector<vector<uint16_t> > &indices,
+		bool (*criterion)(const uint16_t * const, const uint, const vector<vector<uint16_t> >&))
 {
 	extractPartialOperator(O, OPartial, indices, criterion, false);
 }
