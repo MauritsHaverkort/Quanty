@@ -6594,7 +6594,12 @@ void extractPartialOperator(OperatorType * const O, OperatorType * const OPartia
 	InitOperator(OPartial);
 	OPartial->NFermion = O->NFermion;
 	OPartial->NBoson = O->NBoson;
-	for (uint length = 0; length <= O->MaxLength; ++length)
+	if (criterion(NULL, 0, indices) && O->l[0].N == 1)
+	{
+		if (O->l[0].QComplex) ComplexOperatorAddLader(OPartial, NULL, 0, O->l[0].V[0].Re, O->l[0].V[0].Im);
+		else RealOperatorAddLader(OPartial, NULL, 0, O->l[0].VRe[0]);
+	}
+	for (uint length = 1; length <= O->MaxLength; ++length)
 		extractPartialOperatorFixedLength(O, OPartial, indices, criterion, length, changeInput);
 }
 
