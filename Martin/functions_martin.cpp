@@ -15,6 +15,8 @@
 #include "AuxFunctions.cpp"
 #include "ResonantSpectraSelfEnergy.cpp"
 #include "Continuum-Diagonal-Method.cpp"
+#include "BSpline/BSpline.cpp"
+#include "ReduceOperator.cpp"
 
 
 static int LuaOperatorNewFullCoulomb (lua_State *L)
@@ -1815,6 +1817,20 @@ static int LuaBraketList(lua_State *L)
 	return 2;
 }
 
+static int LuaReduceOperator(lua_State *L)
+{
+	vector<uint16_t> ind;
+	OperatorType * Opp, *ReducedOpp;
+
+	lua_check(L,1,Opp);
+	lua_check(L,2,ind);
+
+	ReducedOpp = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+	luaL_setmetatable(L, "Operator_Type");
+	ReduceOperator(*Opp,ReducedOpp,ind);
+	return 1;
+}
+
 static int LuaMartinTest(lua_State *L)
 {
 
@@ -1983,6 +1999,7 @@ static const struct luaL_Reg Martin_func[] = {
   {"PlotSpectrum",LuaCDMPlot},
   {"BraketList",LuaBraketList},
   {"AMSel",LuaAugerMeitnerSelfEnergy},
+  {"ReduceOperator",LuaReduceOperator},
   {NULL, NULL}
 };
 
