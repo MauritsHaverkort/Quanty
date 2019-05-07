@@ -20,7 +20,7 @@ string cutBorderSpaces(string in)
 	return cutTrailingSpaces(out);
 }
 
-void deconstructOrbname(const string &orb, uint &siteNum, string &atomName, uint &n, string &shell, int lz)
+void deconstructOrbname(const string &orb, uint &siteNum, string &atomName, uint &n, string &shell, int &lz)
 {
 	//	Expects input like 2_Fe_3p1 or Fe_3p1
 	size_t pos;
@@ -29,7 +29,8 @@ void deconstructOrbname(const string &orb, uint &siteNum, string &atomName, uint
 	if (siteNum == 0)
 	{
 		atomName = orb.substr(0, pos);
-	} else
+	}
+  else
 	{
 		size_t posOld = pos + 1;
 		pos = orb.find('_', posOld);
@@ -86,7 +87,7 @@ vector<map<string, double> > getWF_coefficients_Filecontent(const string &filena
 		return out;
 	}
 	string line, site, orb, state;
-	uint oldWanNumber = 1, wanNumber, siteNum;
+	uint oldWanNumber = 1, wanNumber, siteNum = 0;
 	int lz;
 	double weight;
 	size_t pos1, pos2;
@@ -114,13 +115,16 @@ vector<map<string, double> > getWF_coefficients_Filecontent(const string &filena
 			pos1 = pos2 + 1;
 			pos2 = line.find(")", pos1);
 			siteNum = (uint) strtol(line.substr(pos1, pos2 - pos1).c_str(), NULL, 10);
-		} else if (line.find("vec=") != string::npos)
+		}
+    else if (line.find("vec=") != string::npos)
 		{
 //			Do nothing
-		} else if (line.length() <= 3 && line.length() >= 2)
+		}
+    else if (line.length() <= 3 && line.length() >= 2)
 		{
 			orb = line;
-		} else if (line.find(":") != string::npos)
+		}
+    else if (line.find(":") != string::npos)
 		{
 			pos1 = 0;
 			pos2 = line.find(":");
