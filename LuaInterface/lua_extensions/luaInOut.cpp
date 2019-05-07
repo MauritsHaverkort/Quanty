@@ -175,7 +175,10 @@ void lua_check(lua_State * L, int arg, string &in)
 
 void lua_check(lua_State * L, int arg, double &in)
 {
-	in = (double) luaL_checknumber(L, arg);
+	int isnum;
+	lua_Number infTest = lua_tonumberx (L, arg, &isnum);
+	if (infTest == HUGE_VAL) in = HUGE_VAL;
+	else in = (double) luaL_checknumber(L, arg);
 }
 
 void lua_check(lua_State * L, int arg, int &in)
@@ -363,7 +366,10 @@ bool luaL_isType(lua_State *L, int arg, const TightBindingDef &example)
 
 bool luaL_isType(lua_State *L, int arg, const double &example)
 {
-	return (bool) lua_isnumber(L, arg);
+	int isnum;
+	lua_Number infTest = lua_tonumberx (L, arg, &isnum);
+	if (infTest == HUGE_VAL) return true;
+	else return (bool) lua_isnumber(L, arg);
 }
 
 bool luaL_isType(lua_State *L, int arg, const Complex16 &example)
