@@ -2,7 +2,6 @@
 *.xccheckout
 *.xcuserstate
 *.xcworkspacedata
-*.pbxproj
 *.plist
 .DS_Store
 Makefile
