@@ -59,7 +59,7 @@ extraList1 = {"Extra1",{}}
 extraList2 = {"Extra2",{}}
 for i = 1, NPsi do
     extraList1[2][i] = 0.5*i
-    extraList2[2][i] = 5/i
+    extraList2[2][i] = 5/(i-1)
 end
 extraLists = {extraList1, extraList2}
 
