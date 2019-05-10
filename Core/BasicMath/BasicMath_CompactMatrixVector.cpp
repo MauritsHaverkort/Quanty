@@ -4575,9 +4575,10 @@ CompactMatrixType Submatrix(const CompactMatrixType &M, int rowStart, int rows, 
     cout << "rowStart = " << rowStart << ", rows = " << rows << ", colStart = " << colStart << " and cols = " << cols << " is incompatible with a matrix of size " << M.Ni << "x" << M.Nj << "." << endl;
     return CompactnullMatrix();
   }
-  CompactMatrixType Msub = M;
+  CompactMatrixType Msub;
   Msub.Ni = rows;
   Msub.Nj = cols;
+  Msub.QComplex = M.QComplex;
   InitCompactMatrix(&Msub);
   Msub.OnLuaStack = M.OnLuaStack;
   for (int i = 0; i < rows; ++i)

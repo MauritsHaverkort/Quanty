@@ -100,7 +100,6 @@ CompactMatrixType extendedLigandFieldForMatrix(const CompactMatrixType &H, Compa
 	orbNames = vector<string>();
 	orbNames.push_back("unchanged_" + multiplicityToNonRelOrb(constOrbs, hasSpin));
 	HLigand = Submatrix(H, constOrbs, LigandMatSize, constOrbs, LigandMatSize);
-	eigenfunsLigand = CompactMatrixType();
 	vector<double> eigenvals = vector<double>(LigandMatSize, 0);
 	CompactMatrixEigensystem(&HLigand, &eigenfunsLigand, &eigenvals[0]);
 	uint numNegVals = LigandMatSize;
