@@ -553,6 +553,13 @@ static int LuaVerbosity(lua_State * L)
   return 0;
 }
 
+
+static int LuaTimeSet(lua_State * L)
+{
+  GlobalTimeOn=(uint32_t)luaL_checkunsigned(L, -1);
+  return 0;
+}
+
 static int LuaNewOperator(lua_State * L)
 {
   if(lua_gettop(L)==0)
@@ -4979,6 +4986,7 @@ static const struct luaL_Reg global_functions[] = {
   {"Statistics",LuaStatistics},
   {"TimeEnd",LuaTimeEnd},
   {"TimePrint",LuaTimePrint},
+  {"TimeSet",LuaTimeSet},
   {"TimeStart",LuaTimeStart},
   {"TightBindingDefFromStuttgartCTRLHAMR", LuaTightBindingDefFromStuttgartCTRLHAMR},
   {"TightBindingDefFromDresdenFPLO", LuaTightBindingDefFromDresdenFPLO},

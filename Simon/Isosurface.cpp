@@ -520,7 +520,7 @@ static int LuaIsosurface(lua_State * L, bool hasThreshold)
 			{ NULL, NULL, NULL } }; //TODO: Calc Spin, bool;
 	Options.calcSpin = false;
 	Options.domain = 0;
-	Options.file = "";
+	Options.file = NULL;
 	Options.gridpoints = 200;
 	Options.stepsize = 0.01;
 	bool hasRealspaceDensity;
@@ -632,7 +632,7 @@ static int LuaIsosurface(lua_State * L, bool hasThreshold)
 		returnInt++;
 	}
 
-	if (Options.file != "")
+	if (Options.file != NULL)
 	{
 		saveIsosurface(iso, realspaceSpin, Options.file);
 		if (hasThreshold)

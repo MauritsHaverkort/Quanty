@@ -550,11 +550,10 @@ vector<int> NamesToKappa(const vector<string> &orbitalNames)
 	return kappas;
 }
 
-uint32_t CreateOperatorAtomicURelativistic(uint32_t const NFermion,const vector<vector<double> > &basisfuns, const vector<double> &grid, const vector<int> &indToK
-                                               ,uint16_t **indices, OperatorType *op, bool Qcontinuum)
+uint32_t CreateOperatorAtomicURelativistic(uint32_t const NFermion,const vector<vector<double> > &basisfuns, const vector<double> &grid, const vector<int> &indToK, uint16_t **indices, OperatorType *op, bool Qcontinuum)
 {
-
-    OperatorType optemp;
+  if(GlobalTimeOn&0x100) BeginTiming("Create Atomic U Relativistic", &GlobalTime);
+  OperatorType optemp;
     SSlaterIntegral *integrals;
     uint32_t NIntegrals, i;
 
@@ -588,7 +587,8 @@ uint32_t CreateOperatorAtomicURelativistic(uint32_t const NFermion,const vector<
     }
     free(integrals);
 
-    return 0;
+  if(GlobalTimeOn&0x100) EndTiming("Create Atomic U Relativistic", &GlobalTime);
+  return 0;
 }
 
 uint32_t CreateListOperatorAtomicURelativistic(uint32_t const NFermion,const vector<vector<double> > &basisfuns, const vector<double> &grid, const vector<int> &indToK
