@@ -1,4 +1,8 @@
 
+
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Reference/Functions/PartialOperator.Quanty")
+os.exit()
+
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/External_tests/Restrictions_bug.Quanty")
 os.exit()
 

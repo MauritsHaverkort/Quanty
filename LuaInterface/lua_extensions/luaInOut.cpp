@@ -278,7 +278,8 @@ void lua_check(lua_State * L, int arg, vector<T> &in)
 			in[i] = tmp;
 			lua_pop(L, 1);
 		}
-	} else
+	}
+  else
 	{
 		in = vector < T > (1);
 		lua_check(L, arg, tmp);

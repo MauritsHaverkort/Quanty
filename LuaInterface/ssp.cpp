@@ -4600,10 +4600,7 @@ static int LuaPartialOperator(lua_State *L)
 	OperatorType *O, *OPartial;
 	vector<vector<uint16_t> > indices;
 	string mode;
-
-	const static string modes[] = {"include", "exclude", "conserve"};
-
-	uint32_t len = (uint32_t) lua_gettop(L);
+  uint32_t len = (uint32_t) lua_gettop(L);
 	if (len != 3)
 		return luaL_error(L, "Error: PartialOperator called with %d arguments. Operator, List of (list of) Indices and mode expected.\n", len);
 
@@ -4618,9 +4615,9 @@ static int LuaPartialOperator(lua_State *L)
 		}
 	}
 	lua_check(L, 3, mode);
-	if (!isElementOf(mode, vector<string>(modes, modes + sizeof(modes))))
+  if (!((mode=="include")||(mode=="exclude")||(mode=="conserve")))
 	{
-		return luaL_error(L, "Error: PartialOperator called with unrecognised mode \"%s\".\n", mode.c_str());
+		return luaL_error(L, "Error: PartialOperator called with unrecognised mode \"%s\".\n Mode should be \"include\", \"exclude\", or \"conserve\"\n", mode.c_str());
 	}
 
 	OPartial = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
