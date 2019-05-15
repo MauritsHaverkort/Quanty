@@ -5391,7 +5391,7 @@ uint32_t BlockGroundState(OperatorType *H, uint32_t const Npsi, ConvergenceSetti
 {
   uint32_t i,Qconverged=0, AtLeastAnOtherLoop=0,iloop=0,NBitsKeyNew;
   WaveFunctionType Opsi[Npsi];
-  double Energy[2][Npsi],EnergySqr[2][Npsi],temp,shiftE,shiftVar,HE0,totESqr;
+  double Energy[2][Npsi],EnergySqr[2][Npsi],temp,shiftE,HE0,totESqr,Emin,Emax,varMax;
   // in order to allow shifts we need H.l[0].VRe[0]
   if(H->l[0].NAloc==0) OperatorAddLader(H, NULL, 0, 0, 0); // allocate the operator with length 0
   if(H->l[0].QComplex==0)
@@ -5416,6 +5416,9 @@ uint32_t BlockGroundState(OperatorType *H, uint32_t const Npsi, ConvergenceSetti
     }
     BlockGroundState(H, Npsi, Settings, StartingPoint, StartingPoint, psi, 0);
   }
+  // restrict the starting functions and orthonormalize them
+  BlockWaveFunctionRestrict(psi, Npsi, Restrictions);
+  BlockWaveFunctionOrthonormalizeSameBasis(psi, Npsi);
   VerbosityPrintf(0x20000,"\nStarting function 1 to Npsi=%i in BlockGroundState\n\n",Npsi);
   if(GlobalVerbosity&0x20000)
   {
@@ -5429,18 +5432,71 @@ uint32_t BlockGroundState(OperatorType *H, uint32_t const Npsi, ConvergenceSetti
   }
   NBitsKeyNew++;
   if(psi[0].NBitsKey!=NBitsKeyNew) BlockWaveFunctionResetKeylist(psi, NBitsKeyNew, Npsi);
-  // create some feeling for the energy of the state
-  WaveFunctionCopy(psi[0], &(Opsi[0]));
-  WaveFunctionRandomize(&(Opsi[0]));
-  WaveFunctionNormalize(&(Opsi[0]));
-  PsiHermitianOperatorPsi(*H, Opsi[0], &totESqr);
-  totESqr*=totESqr;
-  WaveFunctionFree(&(Opsi[0]));
   // set energy[0]
   for(i=0;i<Npsi;i++)
   {
-    Energy[0][i]=1E+99;
+    PsiHermitianOperatorPsi(*H, psi[0], &Energy[0][i]);
   }
+  // shift the initial Hamiltonian
+  shiftE=0;
+  if(!(strcmp("None", Settings->ShiftScheme)==0))
+  {
+    // we need to decide from the little information we have what the energy scale of the Hamiltonian is and where a usefull zero should be
+    if(Npsi!=1)
+    { // case several functions
+      // determine maximal energy and energy spread
+      Emin=Energy[0][0];
+      Emax=Energy[0][0];
+      for(i=1;i<Npsi;i++)
+      {
+        if(Energy[0][i]<Emin) Emin=Energy[0][i];
+        if(Energy[0][i]>Emax) Emin=Energy[0][i];
+      }
+      if(Emax-Emin>sqrt(DBL_MIN))
+      {
+        // shift H such that Emax becomes - (Emax-Emin) * 0.1
+        shiftE = Emax + (Emin-Emax)*0.1;
+        VerbosityPrintf(0x0002,"Starting shift determined from spread of starting state energies Emin=%22.15E, Emax=%22.15E\n",Emin,Emax);
+      }
+    }
+    if(shiftE==0)
+    { // previous test did not work
+      // create random state and calculate its energy
+      WaveFunctionCopy(psi[0], &(Opsi[0]));
+      WaveFunctionRandomize(&(Opsi[0]));
+      WaveFunctionNormalize(&(Opsi[0]));
+      PsiHermitianOperatorPsi(*H, Opsi[0], &Emax);
+      WaveFunctionFree(&(Opsi[0]));
+      Emin = Min(Emax,Energy[0][0]);
+      Emax = Max(Emax,Energy[0][0]);
+      if(Emax-Emin>sqrt(DBL_MIN))
+      {
+        // shift H such that Emax becomes - (Emax-Emin) * 0.1
+        shiftE = Emax + (Emin-Emax)*0.1;
+        VerbosityPrintf(0x0002,"Starting shift determined from spread of starting state energies at the same energy and an aditional random state Emin=%22.15E, Emax=%22.15E\n",Emin,Emax);
+      }
+    }
+    if(shiftE==0)
+    { // all states have the same energy
+      // a random state on the basis used for all states has the same energy
+      shiftE = Energy[0][0] + sqrt(DBL_EPSILON) * Abs(Energy[0][0]);
+      VerbosityPrintf(0x0002,"Starting shift determined from the energy of the starting state(s) %22.15E\n",Energy[0][0]);
+    }
+    if(shiftE==0)
+    { // all states on the basis including a random state have energy 0
+      shiftE = sqrt(DBL_EPSILON);
+      if(psi[0].N==1) shiftE = 1.1;
+      VerbosityPrintf(0x0002,"Starting shift set to a small value as all other methods failed\n");
+    }
+    VerbosityPrintf(0x0002,"Starting shift used %22.15E for a state with Energy %22.15E otherwise\n",shiftE,Energy[0][0]);
+  }
+  // shift the Hamiltonian and all previously determined energies
+  OperatorAddLader(H, NULL, 0, -shiftE, 0);
+  for(i=0;i<Npsi;i++)
+  {
+    Energy[0][i]-=shiftE;
+  }
+  //
   VerbosityPrintf(0x0002,"Converge %i states to an energy with relative variance smaller than %22.15E\n\n",Npsi,Settings->zero);
   // loop until converged
   while((!Qconverged)&&(iloop<100))
@@ -5464,21 +5520,23 @@ uint32_t BlockGroundState(OperatorType *H, uint32_t const Npsi, ConvergenceSetti
     {
       NBitsKeyNew++;
     }
+    NBitsKeyNew++;
     if(Opsi[0].NBitsKey!=NBitsKeyNew) BlockWaveFunctionResetKeylist(Opsi, NBitsKeyNew, Npsi);
     // calculate Energy and variance of Energy - these values are needed to test for convergence
-    Qconverged=1;
+    VerbosityPrintf(0x0100,"Shifted the Hamiltonian by %22.15E\n",shiftE);
     VerbosityPrintf(0x0100,"Number of determinants in basis %i (and basis of H psi %i) with size of lookuptable %i\n",psi[0].N,Opsi[0].N,1<<Opsi[0].NBitsKey);
     VerbosityPrintf(0x0100,"State # |   Energy               |  Variance of Energy    |  Energy change\n");
+    totESqr=0;
     for(i=0;i<Npsi;i++)
     {
       Energy[1][i]=Energy[0][i];
-      EnergySqr[1][i]=EnergySqr[0][i];
       WaveFunctionDotProduct(psi[i], Opsi[i], &Energy[0][i], &temp);
       WaveFunctionDotProductSameBasis(Opsi[i], Opsi[i], &EnergySqr[0][i], &temp);
       totESqr+=EnergySqr[0][i];
       VerbosityPrintf(0x0100,"%7i | %22.15E | %22.15E | %22.15E\n",i,Energy[0][i],EnergySqr[0][i]-Sqr(Energy[0][i]),Energy[0][i]-Energy[1][i]);
     }
     // set Qconverged
+    Qconverged=1;
     for(i=0;i<Npsi;i++)
     {
       if(EnergySqr[0][i]-Sqr(Energy[0][i])>(DBL_MIN+totESqr*Settings->zero/Npsi)) Qconverged=0;
@@ -5500,22 +5558,56 @@ uint32_t BlockGroundState(OperatorType *H, uint32_t const Npsi, ConvergenceSetti
     {
       if(!(strcmp("None", Settings->ShiftScheme)==0))
       {
-        // we shift the Hamiltonian by the largest energy of psi[i]
-        // and by ten times the largest variance of psi[i]
-        shiftE=-1E+99;
-        shiftVar=-1E+99;
-        for(i=0;i<Npsi;i++)
-        {
-          shiftE   = Max(shiftE,Energy[0][i]);
-          shiftVar = Max(shiftVar, EnergySqr[0][i] - Sqr(Energy[0][i]));
+        shiftE=0;
+        { // determine maximal energy and energy spread as well as the largest variance
+          Emin=Energy[0][0];
+          Emax=Energy[0][0];
+          varMax=EnergySqr[0][0]-Sqr(Energy[0][0]);
+          for(i=1;i<Npsi;i++)
+          {
+            if(Energy[0][i]<Emin) Emin=Energy[0][i];
+            if(Energy[0][i]>Emax) Emin=Energy[0][i];
+            if(EnergySqr[0][i]-Sqr(Energy[0][i])>varMax) varMax = EnergySqr[0][i]-Sqr(Energy[0][i]);
+          }
+          if(Emax-Emin+sqrt(abs(varMax))>sqrt(DBL_MIN))
+          {
+            // shift H such that Emax becomes - (Emax-Emin) * 0.1 - 10 * sqrt(varMax)
+            shiftE = Emax + (Emax-Emin)*0.1 + 10 * sqrt(abs(varMax));
+            VerbosityPrintf(0x0002,"shift determined from spread of state energies (Including the energies one loop ago) Emin=%22.15E, Emax=%22.15E\n      and the maximal variance %22.15E\n",Emin,Emax,varMax);
+          }
         }
-        shiftVar = sqrt(Abs(shiftVar)+1000*DBL_MIN);
-        // shift H
-        OperatorAddLader(H, NULL, 0, -shiftE-10*shiftVar, 0);
-        // appli this shift in retrospect for the calculation of Opsi = H psi
+        if(shiftE==0)
+        { // previous test did not work, all states have the same energy and no variance look at the energy one loop earlier as well
+          for(i=0;i<Npsi;i++)
+          {
+            if(Energy[1][i]<Emin) Emin=Energy[1][i];
+            if(Energy[1][i]>Emax) Emin=Energy[1][i];
+          }
+          if(Emax-Emin+sqrt(abs(varMax))>sqrt(DBL_MIN))
+          {
+            // shift H such that Emax becomes - (Emax-Emin) * 0.1 - 10 * sqrt(varMax)
+            shiftE = Emax + (Emax-Emin)*0.1 + 10 * sqrt(abs(varMax));
+            VerbosityPrintf(0x0002,"shift determined from spread of state energies (Including the energies one loop ago) Emin=%22.15E, Emax=%22.15E\n      and the maximal variance %22.15E\n",Emin,Emax,varMax);
+          }
+        }
+        if(shiftE==0)
+        { // previous test did not work, all states have the same energy and no variance and no change in the energy
+          // are you sure you are not converged already ... ?
+          shiftE = sqrt(DBL_EPSILON);
+          if(psi[0].N==1) shiftE = 1.1;
+          VerbosityPrintf(0x0002,"Shift set to a small value as all other methods failed\n");
+        }
+        // shift the Hamiltonian and all previously determined energies
+        OperatorAddLader(H, NULL, 0, -shiftE, 0);
         for(i=0;i<Npsi;i++)
         {
-          WaveFunctionAddMultipliedConserveBasis(&(Opsi[i]), psi[i], -shiftE-10*shiftVar);
+          Energy[0][i]-=shiftE;
+          Energy[1][i]-=shiftE;
+        }
+        // apply this shift in retrospect for the calculation of Opsi = H psi
+        for(i=0;i<Npsi;i++)
+        {
+          WaveFunctionAddMultipliedConserveBasis(&(Opsi[i]), psi[i], -shiftE);
         }
       }
       // print info
@@ -5527,6 +5619,7 @@ uint32_t BlockGroundState(OperatorType *H, uint32_t const Npsi, ConvergenceSetti
         psi[i]=Opsi[i];
       }
       // find ground-state in basis
+      VerbosityPrintf(0x0002,"Inner loop with shift %22.15E\n",shiftE);
       while(BlockLanczosGroundStateConserveBasis(H, psi, Npsi, Settings))
       {
         AtLeastAnOtherLoop=1;
@@ -5540,18 +5633,18 @@ uint32_t BlockGroundState(OperatorType *H, uint32_t const Npsi, ConvergenceSetti
         Settings->epsilon*=2;
         BlockWaveFunctionTruncateBasis(psi,Npsi,Settings->epsilon);
       }
-      // undo shift
-      if(H->l[0].QComplex==0)
-      {
-        H->l[0].VRe[0] = HE0;
-      }
-      else
-      {
-        H->l[0].V[0].Re = HE0;
-      }
       // truncate basis
       BlockWaveFunctionTruncateBasis(psi,Npsi,Settings->epsilon);
     }
+  }
+  // undo shift
+  if(H->l[0].QComplex==0)
+  {
+    H->l[0].VRe[0] = HE0;
+  }
+  else
+  {
+    H->l[0].V[0].Re = HE0;
   }
   return 0;
 }

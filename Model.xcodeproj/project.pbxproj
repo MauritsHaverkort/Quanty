@@ -578,6 +578,7 @@
 		4C2AAACF163266F900138620 /* liblapack.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = liblapack.dylib; path = usr/lib/liblapack.dylib; sourceTree = SDKROOT; };
 		4C2DFCB6188D80170023CA96 /* MultiSitesDMFT.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = MultiSitesDMFT.c; sourceTree = "<group>"; };
 		4C2DFCB7188D80170023CA96 /* MultiSitesFunctions.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = MultiSitesFunctions.c; sourceTree = "<group>"; };
+		4C3B0DCB228610870043B1F8 /* PartialOperator.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = PartialOperator.Quanty; sourceTree = "<group>"; };
 		4C426BCA2208241400A8AD88 /* DensityPlot.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; name = DensityPlot.Quanty; path = "Debug examples/External_tests/DensityPlot.Quanty"; sourceTree = "<group>"; };
 		4C426BCB2209C29600A8AD88 /* Eigensystem_bug.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; name = Eigensystem_bug.Quanty; path = "Debug examples/External_tests/Eigensystem_bug.Quanty"; sourceTree = "<group>"; };
 		4C426BCC220C4CD500A8AD88 /* Eigensystem_bug_sec.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; name = Eigensystem_bug_sec.Quanty; path = "Debug examples/External_tests/Eigensystem_bug_sec.Quanty"; sourceTree = "<group>"; };
@@ -1274,6 +1275,7 @@
 				4C203CF32087DE95001DCC25 /* NewTightBinding.Quanty */,
 				4C203CF52087DE95001DCC25 /* OperatorToMatrix.Quanty */,
 				4C203CF62087DE95001DCC25 /* Orthonormalize.Quanty */,
+				4C3B0DCB228610870043B1F8 /* PartialOperator.Quanty */,
 				4C203CF72087DE95001DCC25 /* PotentialExpandedOnClm.Quanty */,
 				4C203CF82087DE95001DCC25 /* Rotate.Quanty */,
 				4C203CF92087DE95001DCC25 /* Statistics.Quanty */,
