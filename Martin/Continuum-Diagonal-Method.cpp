@@ -91,7 +91,7 @@ void CalculateResidues(const std::vector<double> &v, CompactMatrixType *M, uint3
 {
 	if(M->Ni < Nresidues || M->Nj < (uint32_t) v.size())
 	{
-		printf("error in CalculateResidues: CompactMatrix has wrong dimensions: Ni = %d Nj = %d\n",M->Ni,M->Nj);
+		printf("error in CalculateResidues: CompactMatrix has wrong dimensions: Ni = %u Nj = %u\n v.size = %u\t Nresidues = %u\n",M->Ni,M->Nj,(uint32_t) v.size(),Nresidues);
 		fflush(stdout);
 		return;
 	}
