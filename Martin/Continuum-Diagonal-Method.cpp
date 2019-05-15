@@ -138,13 +138,14 @@ Complex16 Resolvent(Complex16 z, const std::vector<double> &poles, const std::ve
 	result.Im = 0;
 	if (poles.size() < residues.size())
 	{
-		printf("error in Resolvent: poles.size() = %u < %u = residues.size()",(uint32_t)poles.size(),(uint32_t)residues.size());
+		printf("error in Resolvent: poles.size() = %u < %u = residues.size()\n",(uint32_t)poles.size(),(uint32_t)residues.size());
 		fflush(stdout);
 		return result;
 	}
 	for (uint32_t i = 0; i < (uint32_t) residues.size(); i++)
 	{
 		result += residues[i]/(z - poles[i]);
+		//printf("res[%d] = %.2e\n",i,residues[i]);
 	}
 	return result;
 }
@@ -156,7 +157,7 @@ Complex16 Resolvent(Complex16 z, const std::vector<double> &poles, const std::ve
 	result.Im = 0;
 	if (poles.size() < residues.size() || poles.size() != selfenergy.size())
 	{
-		printf("error in Resolvent: poles.size() = %u < %u = residues.size()",(uint32_t)poles.size(),(uint32_t)residues.size());
+		printf("error in Resolvent: poles.size() = %u < %u = residues.size()\n",(uint32_t)poles.size(),(uint32_t)residues.size());
 		fflush(stdout);
 		return result;
 	}

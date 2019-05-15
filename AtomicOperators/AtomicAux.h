@@ -43,4 +43,6 @@ static int LuaGetMultipoleBesselIntegral(lua_State *L);
 
 static int LuaGetMultipoleIntegral(lua_State *L);
 
+bool InvolvesOrbital(uint32_t m, uint32_t *orbs, uint32_t N = 4);
+
 #endif /* ATOMICOPERATORS_ATOMICAUX_H_ */

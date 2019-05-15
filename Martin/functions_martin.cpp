@@ -15,8 +15,10 @@
 #include "AuxFunctions.cpp"
 #include "ResonantSpectraSelfEnergy.cpp"
 #include "Continuum-Diagonal-Method.cpp"
-#include "BSpline/BSpline.cpp"
+#include "Math/Quad.cpp"
+#include "Math/BSpline.cpp"
 #include "ReduceOperator.cpp"
+#include "Auger-Meitner_Selfenergy/Modules.cpp"
 
 
 static int LuaOperatorNewFullCoulomb (lua_State *L)
@@ -1834,12 +1836,54 @@ static int LuaReduceOperator(lua_State *L)
 static int LuaMartinTest(lua_State *L)
 {
 
-	WaveFunctionType *psi;
-	lua_check(L,1,psi);
-	for (uint32_t i = 1; i <= psi->N; i++)
+	double bla[] = {0., 0., 0., 0., 1., 2., 3., 4., 5., 5., 5., 5.};
+	vector<double> x,S;
+	for (int i =0; i < 12; i++)
 	{
-		PrintDeterminant(*psi,i);
+		x.push_back(bla[i]);
 	}
+	uint32_t N = (uint32_t) x.size();
+	uint32_t ks = 3;
+	uint32_t Nspline = N - ks-3;
+
+	BSpline::OverlapMatrix(ks,x,S);
+	uint32_t Nfuns = (uint32_t)lua_objlen(L,1);
+	vector<Interpolation::InterpolatingFunction *> funs = vector<Interpolation::InterpolatingFunction *>(Nfuns);
+	for(uint32_t i = 0; i < Nfuns; i++)
+	{
+		lua_rawgeti(L, 1, i+1);
+		funs[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
+		lua_pop(L,1);
+	}
+	/*for (uint32_t j = 0; j < ks+1;j++)
+	{
+		for (uint32_t i = 0; i < Nspline;i++)
+		{
+			//printf("%.4f\t",S[i + j*Nspline]);
+			printf("%.4f\t",S[i*(ks+1) + j]);
+			if (i >= j)
+				printf("%.4f\t",S[i + j*(ks+1)]);
+			else
+				printf("%.4f\t",0.);
+		}
+		printf("\n");
+	}*/
+	vector<double> c;
+	BSpline::Components(funs,ks,x,S,c);
+	lua_push(L,c);
+
+	return 1;
+
+	/*for (uint32_t i = 1; i < N - ks-2; i++)
+		{
+			for (uint32_t j = 1; j < N - ks-2; j++)
+			{
+				printf("%f\t",BSpline::Overlap(i,j,ks,x));
+			}
+			printf("\n");
+		}*/
+
+
 	/*
 	lua_check(L,3,psi);
 
@@ -2000,6 +2044,7 @@ static const struct luaL_Reg Martin_func[] = {
   {"BraketList",LuaBraketList},
   {"AMSel",LuaAugerMeitnerSelfEnergy},
   {"ReduceOperator",LuaReduceOperator},
+  {"CreateContinuumSlaterIntegrals",LuaCreateContinuumSlaterIntegrals},
   {NULL, NULL}
 };
 
