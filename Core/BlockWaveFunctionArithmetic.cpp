@@ -1117,6 +1117,7 @@ void ComplexBlockWaveFunctionRestrict(WaveFunctionType * const a, const uint32_t
 void BlockWaveFunctionRestrict(WaveFunctionType * const a, const uint32_t Npsi, const DeterminantRestrictionType res)
 {
   if(Npsi==0) return;
+  if(res.N==0) return;
   if(a[0].QComplex==0)
   {
     RealBlockWaveFunctionRestrict(a, Npsi, res);
