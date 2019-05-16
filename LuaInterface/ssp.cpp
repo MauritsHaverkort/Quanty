@@ -4600,13 +4600,8 @@ static int LuaPartialOperator(lua_State *L)
 	OperatorType *O, *OPartial;
 	vector<vector<uint16_t> > indices;
 	string mode;
-
-	const static string modes[] = {"include", "exclude", "conserve"};
-
-	uint32_t len = (uint32_t) lua_gettop(L);
-	if (len != 3)
-		return luaL_error(L, "Error: PartialOperator called with %d arguments. Operator, List of (list of) Indices and mode expected.\n", len);
-
+  uint32_t len = (uint32_t) lua_gettop(L);
+	if (len != 3) return luaL_error(L, "PartialOperator called with %d arguments. Operator, List of (list of) Indices and mode expected.\n", len);
 	O = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
 	lua_check(L, 2, indices);
 	for (uint i = 0; i < (uint)indices.size(); i++)
@@ -4614,15 +4609,14 @@ static int LuaPartialOperator(lua_State *L)
 		for (uint j = 0; j < (uint)indices[i].size(); ++j)
 		{
 			if (indices[i][j] < 0 || indices[i][j] >= O->NFermion)
-				printf("\nWarning: Index %d is not within [0,NF-1]=[0,%d].\n", indices[i][j], O->NFermion - 1);
+				luaL_warning(L, "Index %d is not within [0,NF-1]=[0,%d].\n", indices[i][j], O->NFermion - 1);
 		}
 	}
 	lua_check(L, 3, mode);
-	if (!isElementOf(mode, vector<string>(modes, modes + sizeof(modes))))
+  if (!((mode=="include")||(mode=="exclude")||(mode=="conserve")))
 	{
-		return luaL_error(L, "Error: PartialOperator called with unrecognised mode \"%s\".\n", mode.c_str());
+		return luaL_error(L, "PartialOperator called with unrecognised mode \"%s\".\n Mode should be \"include\", \"exclude\", or \"conserve\"\n", mode.c_str());
 	}
-
 	OPartial = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
 	if (mode == "include")
 	{
@@ -4660,7 +4654,7 @@ static int LuaPartialMeanFieldOperator(lua_State *L)
 	if (len == 4)	LuaCheckOptions(L, -1, LuaPartialMeanFieldOperatorOptions);
 	for (int i = 0; i < indices.size(); i++)
 	{
-		if (indices[i] < 0 || indices[i] >= O->NFermion) printf("\nWarning: Index %d is not within [0,NF-1]=[0,%d].\n", indices[i], O->NFermion - 1);
+		if (indices[i] < 0 || indices[i] >= O->NFermion) luaL_warning(L, "Index %d is not within [0,NF-1]=[0,%d].\n", indices[i], O->NFermion - 1);
 	}
 	OMF = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
 	partialMeanFieldOperator(O, OMF, Rho, indices, Options.AddDFTSelfInteraction);

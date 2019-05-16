@@ -184,7 +184,7 @@ typedef struct OperatorFixedLengthType
   uint32_t NAloc;               /* Number of allocated opperators */
   uint32_t QComplex;            /* 0 for Real functions 1 for complex */
   uint16_t *o;                  /* array of length NAloc*i operator consistent of single product of lader operators */
-  /* (o[j] & CrAnMask) determines creation (1) or annihilation (0) : (o[j] & NotCrAnMask) defines the index that has to be created or annihilated */
+                                /* (o[j] & CrAnMask) determines creation (1) or annihilation (0) : (o[j] & NotCrAnMask) defines the index that has to be created or annihilated */
   uint32_t *Next;               /* array of length NAloc */
   uint32_t *KeyList;            /* key list */
   double *VRe;                  /* Real values */

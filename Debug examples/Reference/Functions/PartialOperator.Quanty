@@ -1,3 +1,10 @@
+function QEmptyOperator(Opp)
+  if #Opp.N ~= 0 then return false end
+  if Opp.N[0] == 0 then return true end
+  if Opp.N[0] == nill then return true end
+  return false
+end
+
 NF = 4
 
 OpList={}
@@ -32,8 +39,10 @@ for key1,op in pairs(OpList) do
             print("Mode: "..mode)
             print("\nPartialOperator")
             print( PartialOperator(op, inds, mode) )
-            print("Test that the input has not changed (should be zero):")
-            print( Chop(opTmp - op) )
+            if QEmptyOperator(Chop(opTmp - op) ) == false then
+              print("The original operator acted upon by PartialOperator changed")
+              print(op)
+            end
         end
     end
 end
