@@ -4279,6 +4279,7 @@ CompactMatrixType MatrixFlatten(vector<vector<CompactMatrixType> > allMs, bool p
     {
       if (isNullMatrix(allMs[i][j]))
       {
+      	FreeCompactMatrix(&(allMs[i][j]));
         allMs[i][j] = CompactzeroMatrix(numOfRowsInner[i],numOfColsInner[j]);
       }
       if (allMs[i][j].Nj != numOfColsInner[j])
