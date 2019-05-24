@@ -76,9 +76,9 @@ int LMToOrbitalName(int l, int m, char **name)
   return 0;
 }
 
-int EqualFloat(double a, double b)
+int FPLOAtomPosEqual(double a, double b)
 {
-  if(fabs(a-b)<0.0001) // pricision defined by the fplo output (coordinates).
+  if(fabs(a-b)<0.001) // pricision defined by the fplo output (coordinates).
     return 1;
   else
     return 0;
@@ -367,9 +367,9 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
           diffQ = 0;
           while( l<NVecShell[ish][jsh] &&
                 (diffQ =
-                  !(EqualFloat(HopVec[indsh][l][0],FPLO.Wannier.HopVec[indwan][k][0])&&
-                    EqualFloat(HopVec[indsh][l][1],FPLO.Wannier.HopVec[indwan][k][1])&&
-                    EqualFloat(HopVec[indsh][l][2],FPLO.Wannier.HopVec[indwan][k][2]))) )
+                  !(FPLOAtomPosEqual(HopVec[indsh][l][0],FPLO.Wannier.HopVec[indwan][k][0])&&
+                    FPLOAtomPosEqual(HopVec[indsh][l][1],FPLO.Wannier.HopVec[indwan][k][1])&&
+                    FPLOAtomPosEqual(HopVec[indsh][l][2],FPLO.Wannier.HopVec[indwan][k][2]))) )
               l++;
 
           if(l==NVecShell[ish][jsh] && diffQ)
@@ -475,9 +475,9 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
             {
               for(k=0;k<FPLO.Wannier.Nhop[indwan];k++)
               {
-                if( EqualFloat(FPLO.Wannier.HopVec[indwan][k][0], HopVec[indsh][ihtb-NHopStart[ish][jsh]][0]) &&
-                    EqualFloat(FPLO.Wannier.HopVec[indwan][k][1], HopVec[indsh][ihtb-NHopStart[ish][jsh]][1]) &&
-                    EqualFloat(FPLO.Wannier.HopVec[indwan][k][2], HopVec[indsh][ihtb-NHopStart[ish][jsh]][2])   )
+                if( FPLOAtomPosEqual(FPLO.Wannier.HopVec[indwan][k][0], HopVec[indsh][ihtb-NHopStart[ish][jsh]][0]) &&
+                    FPLOAtomPosEqual(FPLO.Wannier.HopVec[indwan][k][1], HopVec[indsh][ihtb-NHopStart[ish][jsh]][1]) &&
+                    FPLOAtomPosEqual(FPLO.Wannier.HopVec[indwan][k][2], HopVec[indsh][ihtb-NHopStart[ish][jsh]][2])   )
                   {
                     HTB->H[ihtb].Hop.VRe[OrbInd[i]][OrbInd[j]] = FPLO.Wannier.HopVal[indwan][k];
                   }

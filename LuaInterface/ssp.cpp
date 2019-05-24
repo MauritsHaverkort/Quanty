@@ -3979,9 +3979,9 @@ static int LuaBlockBandDiagonalize(lua_State *L)
               for(l1=0;l1<TB->Cell.Atom[i1].shelldegeneracy[j1];l1++)
               {
                 if((strcmp(TB->Cell.Atom[i1].Name, AtomsInStartBlock[i].Name)==0)
-                   &&(EqualFloat(TB->Cell.Atom[i1].Position[0], AtomsInStartBlock[i].Position[0]))
-                   &&(EqualFloat(TB->Cell.Atom[i1].Position[1], AtomsInStartBlock[i].Position[1]))
-                   &&(EqualFloat(TB->Cell.Atom[i1].Position[2], AtomsInStartBlock[i].Position[2]))
+                   &&(FPLOAtomPosEqual(TB->Cell.Atom[i1].Position[0], AtomsInStartBlock[i].Position[0]))
+                   &&(FPLOAtomPosEqual(TB->Cell.Atom[i1].Position[1], AtomsInStartBlock[i].Position[1]))
+                   &&(FPLOAtomPosEqual(TB->Cell.Atom[i1].Position[2], AtomsInStartBlock[i].Position[2]))
                    &&(strcmp(TB->Cell.Atom[i1].ShellName[j1],AtomsInStartBlock[i].ShellName[j])==0)
                    &&(strcmp(TB->Cell.Atom[i1].OrbitalName[j1][l1],AtomsInStartBlock[i].OrbitalName[j][l])==0) )
                 {

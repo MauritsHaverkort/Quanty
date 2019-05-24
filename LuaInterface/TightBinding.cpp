@@ -1080,9 +1080,9 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
                  &&(strcmp(a->Cell.Atom[a->H[l].Atompos1].ShellName[a->H[l].Shellpos1],ClusterDef->Cell.Atom[i].ShellName[ishell])==0)
                  &&(strcmp(a->Cell.Atom[a->H[l].Atompos2].Name,ClusterDef->Cell.Atom[j].Name)==0)
                  &&(strcmp(a->Cell.Atom[a->H[l].Atompos2].ShellName[a->H[l].Shellpos2],ClusterDef->Cell.Atom[j].ShellName[jshell])==0)
-                 &&(EqualFloat(a->H[l].ConnectingVector[0], ClusterDef->Cell.Atom[j].Position[0]-ClusterDef->Cell.Atom[i].Position[0])==1)
-                 &&(EqualFloat(a->H[l].ConnectingVector[1], ClusterDef->Cell.Atom[j].Position[1]-ClusterDef->Cell.Atom[i].Position[1])==1)
-                 &&(EqualFloat(a->H[l].ConnectingVector[2], ClusterDef->Cell.Atom[j].Position[2]-ClusterDef->Cell.Atom[i].Position[2])==1) )
+                 &&(FPLOAtomPosEqual(a->H[l].ConnectingVector[0], ClusterDef->Cell.Atom[j].Position[0]-ClusterDef->Cell.Atom[i].Position[0])==1)
+                 &&(FPLOAtomPosEqual(a->H[l].ConnectingVector[1], ClusterDef->Cell.Atom[j].Position[1]-ClusterDef->Cell.Atom[i].Position[1])==1)
+                 &&(FPLOAtomPosEqual(a->H[l].ConnectingVector[2], ClusterDef->Cell.Atom[j].Position[2]-ClusterDef->Cell.Atom[i].Position[2])==1) )
               {
                 ClusterDef->H[ClusterDef->nH].Atompos1=i;
                 ClusterDef->H[ClusterDef->nH].Shellpos1=ishell;
@@ -1545,7 +1545,7 @@ static int LuaReadHopping(lua_State *L, int narg, CrystalStructureType *Cell, Ti
   {
     if(strcmp(Cell->Atom[i].Name, Atom1)==0)
     {
-      if((comparepos==false)||(EqualFloat(Cell->Atom[i].Position[0], idouble[0])&&EqualFloat(Cell->Atom[i].Position[1], idouble[1])&&EqualFloat(Cell->Atom[i].Position[2], idouble[2])))
+      if((comparepos==false)||(FPLOAtomPosEqual(Cell->Atom[i].Position[0], idouble[0])&&FPLOAtomPosEqual(Cell->Atom[i].Position[1], idouble[1])&&FPLOAtomPosEqual(Cell->Atom[i].Position[2], idouble[2])))
       {
         H->Atompos1=i;
         break;
@@ -1596,7 +1596,7 @@ static int LuaReadHopping(lua_State *L, int narg, CrystalStructureType *Cell, Ti
   {
     if(strcmp(Cell->Atom[i].Name, Atom2)==0)
     {
-      if((comparepos==false)||(EqualFloat(Cell->Atom[i].Position[0], idouble[0])&&EqualFloat(Cell->Atom[i].Position[1], idouble[1])&&EqualFloat(Cell->Atom[i].Position[2], idouble[2])))
+      if((comparepos==false)||(FPLOAtomPosEqual(Cell->Atom[i].Position[0], idouble[0])&&FPLOAtomPosEqual(Cell->Atom[i].Position[1], idouble[1])&&FPLOAtomPosEqual(Cell->Atom[i].Position[2], idouble[2])))
       {
         H->Atompos2=i;
         break;
