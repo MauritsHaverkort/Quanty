@@ -139,7 +139,7 @@
 		4C0279EC20F38CA5005AC105 /* TestStandardOperators.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = TestStandardOperators.cpp; sourceTree = "<group>"; };
 		4C0279ED20F38CA5005AC105 /* TestVectorMatrixParallel.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = TestVectorMatrixParallel.cpp; sourceTree = "<group>"; };
 		4C03B025186E376A004C2B7B /* TightBinding */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = TightBinding; sourceTree = BUILT_PRODUCTS_DIR; };
-		4C068D6A20AADB5100B86C84 /* Run SCF FPLO.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; name = "Run SCF FPLO.Quanty"; path = "Debug examples/Tutorials/Connection to DFT/FPLO/Run SCF FPLO.Quanty"; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.lua; };
+		4C068D6A20AADB5100B86C84 /* Run SCF FPLO.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; name = "Run SCF FPLO.Quanty"; path = "Debug examples/Tutorials/Connection to DFT/FPLO/Run SCF FPLO.Quanty"; sourceTree = "<group>"; };
 		4C0B553D196752C2000B8E97 /* Quanty */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Quanty; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C0B554719675377000B8E97 /* includeLua.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = includeLua.h; sourceTree = "<group>"; };
 		4C0B554819675377000B8E97 /* lapi.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = lapi.c; sourceTree = "<group>"; };
@@ -431,7 +431,7 @@
 		4C203CE52087DE95001DCC25 /* CreateResonantSpectra.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = CreateResonantSpectra.Quanty; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.lua; };
 		4C203CE62087DE95001DCC25 /* CreateSpectra.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = CreateSpectra.Quanty; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.lua; };
 		4C203CE72087DE95001DCC25 /* DensityMatrix.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = DensityMatrix.Quanty; sourceTree = "<group>"; };
-		4C203CE82087DE95001DCC25 /* Eigensystem.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = Eigensystem.Quanty; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.lua; };
+		4C203CE82087DE95001DCC25 /* Eigensystem.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = Eigensystem.Quanty; sourceTree = "<group>"; };
 		4C203CEC2087DE95001DCC25 /* Expand.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = Expand.Quanty; sourceTree = "<group>"; };
 		4C203CED2087DE95001DCC25 /* FileReadDresdenFPLO.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = FileReadDresdenFPLO.Quanty; sourceTree = "<group>"; };
 		4C203CEE2087DE95001DCC25 /* FIleReadStuttgartCTRL.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = FIleReadStuttgartCTRL.Quanty; sourceTree = "<group>"; };

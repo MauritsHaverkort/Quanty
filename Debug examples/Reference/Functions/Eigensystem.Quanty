@@ -5,6 +5,7 @@ Verbosity(0x0)
 --goto atom
 --goto mlft
 --goto hubbard
+goto shiftschemetest
 
 -- The function Eigensystem calculates a set of eigen vectors and eigen values for a given matrix or operator
 -- The function has several options related to the accuracy needed and methods used
@@ -1488,3 +1489,32 @@ io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr
 TimePrint()
 
 
+::shiftschemetest::
+
+-----------------------------------------------------------------------------
+--  1D tight binding with different onsite energies to test shift scheme   --
+-----------------------------------------------------------------------------
+
+print("============================================")
+print("        1D tight binding 1 electron         ")
+print("============================================")
+print("             start from psi                 ")
+print("============================================\n\n")
+
+
+funstart1  = NewWavefunction(20,0,{{"10000000000000000000",1}})
+
+Htb = NewTightBinding()
+Htb.Cell={{1,0,0},
+{0,1,0},
+{0,0,1}}
+Htb.Atoms={{"Cu",{0,0,0},{{"s",{"^{dn}","^{up}"}}}}}
+Htb.Hopping={{"Cu.s","Cu.s",{0,0, 1},{{1  ,0},{0,1  }}},
+{"Cu.s","Cu.s",{0,0,-1},{{1  ,0},{0,1  }}},
+{"Cu.s","Cu.s",{0,0, 2},{{0.1,0},{0,0.1}}},
+{"Cu.s","Cu.s",{0,0,-2},{{0.1,0},{0,0.1}}}}
+
+Hamiltonian1 = CreateClusterHamiltonian(Htb,{"periodic",{{1,0,0},{0,1,0},{0,0,10}}})
+
+print(Htb)
+print(Hamiltonian1)

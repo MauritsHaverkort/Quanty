@@ -893,7 +893,6 @@ typedef struct AtomType
   char  **ShellName;                 /* Name of the shells in the atom */
   int   *shelldegeneracy;            /* degeneracy of the shell */
   char  ***OrbitalName;              /* Name of the orbitals in the different shells */
-  int 	Wyckoff = 0;								 /* wyckoff position */
 }
 AtomType;
 
@@ -1480,7 +1479,6 @@ typedef struct DresdenFPLO
     int Natom;
     char **Atom;
     double **Pos;
-    int *Wyckoff;
   }
   Atoms;
 

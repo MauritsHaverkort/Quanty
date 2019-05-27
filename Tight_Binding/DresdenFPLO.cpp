@@ -116,7 +116,6 @@ uint32_t CrystalStructureFromDresdenFPLO(DresdenFPLO FPLO, CrystalStructureType 
       {
         Cell->Atom[iatom].Position[i] = FPLO.Atoms.Pos[allatom][i];
       }
-      Cell->Atom[iatom].Wyckoff = FPLO.Atoms.Wyckoff[allatom];
       // Determine number of shells on each site.
       Cell->Atom[iatom].Nshell = 0;
       inl = 0;

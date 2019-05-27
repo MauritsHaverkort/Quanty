@@ -1240,7 +1240,7 @@ static int LuaReadAtom(lua_State *L, int narg, AtomType *a)
   if(lua_type(L,narg)==LUA_TTABLE)
   {
     len = (uint32_t)lua_objlen(L, narg);
-    if(len!=4) return luaL_error(L, "Error ReadAtom expects a list of the form {Name, Position, {Shell1, Shell2, ...}, Wyckoffposition}\n");
+    if(len!=3) return luaL_error(L, "Error ReadAtom expects a list of the form {Name, Position, {Shell1, Shell2, ...}}\n");
     // get the name of the atom
     lua_rawgeti(L, narg, 1);
     strncpy(a->Name, luaL_checkstring(L, -1), MAXStrLength-1);
@@ -1286,10 +1286,6 @@ static int LuaReadAtom(lua_State *L, int narg, AtomType *a)
       lua_pop(L, 1);
     }
     lua_pop(L, 1);
-    // get the wyckoff position
-		lua_rawgeti(L, narg, 4);
-		lua_check(L, -1, a->Wyckoff);
-		lua_pop(L, 1);
   }
   else
   {
@@ -1318,7 +1314,7 @@ static int LuaReadAtomWithDefault(lua_State *L, int narg, AtomType *a, CrystalSt
   if(lua_type(L,narg)==LUA_TTABLE)
   {
     len = (uint32_t)lua_objlen(L, narg);
-		if (len < 2 || len > 4) return luaL_error(L, "Error ReadAtom expects a list of the form {Name, Position, {Shell1, Shell2, ...}, Wyckoffposition} or {Name, Position}\n");
+    if(!((len==3)||(len==2))) return luaL_error(L, "Error ReadAtom expects a list of the form {Name, Position, {Shell1, Shell2, ...}} or {Name, Position}\n");
     // get the name of the atom
     lua_rawgeti(L, narg, 1);
     strncpy(a->Name, luaL_checkstring(L, -1), MAXStrLength-1);
@@ -1337,7 +1333,7 @@ static int LuaReadAtomWithDefault(lua_State *L, int narg, AtomType *a, CrystalSt
     if((len==2)&&(*AtomIndexInCrystalStructure==INT_MAX)) luaL_error(L, "Error Atom %s not found at position %f %f %f in tight binding object\n",a->Name,a->Position[0],a->Position[1],a->Position[2]);
     // get the list with shells
     len = (uint32_t)lua_objlen(L, narg);
-    if(len>=3)
+    if(len==3)
     {
       lua_rawgeti(L, narg, 3);
       if(lua_type(L,-1)!=LUA_TTABLE) return luaL_error(L, "Error ReadAtom shells of atom %s at position %f %f %f, should be a list of shells\n",a->Name,a->Position[0],a->Position[1],a->Position[2]);
@@ -1402,13 +1398,6 @@ static int LuaReadAtomWithDefault(lua_State *L, int narg, AtomType *a, CrystalSt
         lua_pop(L, 1);
       }
       lua_pop(L, 1);
-      if (len >= 4)
-      {
-        // get the wyckoff position
-    		lua_rawgeti(L, narg, 4);
-    		lua_check(L, -1, a->Wyckoff);
-    		lua_pop(L, 1);
-      }
     }
     else
     {
@@ -1456,7 +1445,7 @@ static int LuaReadAtomWithDefault(lua_State *L, int narg, AtomType *a, CrystalSt
 static int LuaPushAtom(lua_State *L, AtomType const *a)
 {
   uint32_t i,j;
-  lua_createtable(L, 4, 0);
+  lua_createtable(L, 3, 0);
   {
     lua_pushstring(L, a->Name);
     lua_rawseti(L, -2, 1); // set name of atom to first position
@@ -1488,9 +1477,7 @@ static int LuaPushAtom(lua_State *L, AtomType const *a)
         lua_rawseti(L, -2, i+1); // set a table with the shell name and orbital definitions to position i+1
       }
     }
-		lua_rawseti(L, -2, 3); // set a table with the shell definitions to the third position
-		lua_push(L, a->Wyckoff);
-		lua_rawseti(L, -2, 4); // set the wyckoff position to the third position
+    lua_rawseti(L, -2, 3); // set a table with the shell definitions to the third position
   }
   return 1;
 }

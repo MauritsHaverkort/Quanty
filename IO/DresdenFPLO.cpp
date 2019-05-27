@@ -130,7 +130,6 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
     if(strstr(ReadLine, "No.  Element WPS CPA-Block") != NULL)
     {
       O->Atoms.Atom = (char**)malloc(O->Atoms.Natom*sizeof(char*));
-      O->Atoms.Wyckoff = (int*)malloc(O->Atoms.Natom*sizeof(int));
       O->Atoms.Pos  = (double**)malloc(O->Atoms.Natom*sizeof(double*));
       for(i=0;i<O->Atoms.Natom;i++)
       {
@@ -138,7 +137,6 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
         Nphrase = SplitStringToArray(phrase, ReadLine, " \n");
         O->Atoms.Atom[i] = (char*)malloc(16*sizeof(char));
         strcpy(O->Atoms.Atom[i], phrase[1]);
-        O->Atoms.Wyckoff[i] = strtod(phrase[2],NULL);
         O->Atoms.Pos[i] = (double*)malloc(3*sizeof(double));
         for(j=0;j<3;j++)
         {
