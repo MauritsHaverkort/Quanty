@@ -2,7 +2,7 @@ Verbosity(0x0)
 
 --goto dense
 --goto sparse
-goto atom
+--goto atom
 --goto mlft
 --goto hubbard
 --goto shiftschemetest

@@ -688,6 +688,7 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
   bool QOperators=false, QOptions=false, ReturnTBSuperCell=false, ReturnTBCellPositions=false, ReturnTBKVectors=false, ReturnTBIndicesDict=false;
   OperatorType *AditionalOperator=NULL;
   MatrixType U;
+  double AtomPositionAccuracy=0.001;
   k.Ni=3;
   k.QComplex=0;
   k.VRe= (double*)calloc(3,sizeof(double));
@@ -1080,9 +1081,9 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
                  &&(strcmp(a->Cell.Atom[a->H[l].Atompos1].ShellName[a->H[l].Shellpos1],ClusterDef->Cell.Atom[i].ShellName[ishell])==0)
                  &&(strcmp(a->Cell.Atom[a->H[l].Atompos2].Name,ClusterDef->Cell.Atom[j].Name)==0)
                  &&(strcmp(a->Cell.Atom[a->H[l].Atompos2].ShellName[a->H[l].Shellpos2],ClusterDef->Cell.Atom[j].ShellName[jshell])==0)
-                 &&(EqualFloat(a->H[l].ConnectingVector[0], ClusterDef->Cell.Atom[j].Position[0]-ClusterDef->Cell.Atom[i].Position[0])==1)
-                 &&(EqualFloat(a->H[l].ConnectingVector[1], ClusterDef->Cell.Atom[j].Position[1]-ClusterDef->Cell.Atom[i].Position[1])==1)
-                 &&(EqualFloat(a->H[l].ConnectingVector[2], ClusterDef->Cell.Atom[j].Position[2]-ClusterDef->Cell.Atom[i].Position[2])==1) )
+                 &&(EqualFloat(a->H[l].ConnectingVector[0], ClusterDef->Cell.Atom[j].Position[0]-ClusterDef->Cell.Atom[i].Position[0],AtomPositionAccuracy)==1)
+                 &&(EqualFloat(a->H[l].ConnectingVector[1], ClusterDef->Cell.Atom[j].Position[1]-ClusterDef->Cell.Atom[i].Position[1],AtomPositionAccuracy)==1)
+                 &&(EqualFloat(a->H[l].ConnectingVector[2], ClusterDef->Cell.Atom[j].Position[2]-ClusterDef->Cell.Atom[i].Position[2],AtomPositionAccuracy)==1) )
               {
                 ClusterDef->H[ClusterDef->nH].Atompos1=i;
                 ClusterDef->H[ClusterDef->nH].Shellpos1=ishell;
@@ -1497,6 +1498,7 @@ static int LuaReadHopping(lua_State *L, int narg, CrystalStructureType *Cell, Ti
   char AtomShell2[2*MAXStrLength+1];
   char *Atom1,*Atom2,*Shell1,*Shell2;
   bool comparepos=false;
+  double AtomPositionAccuracy=0.001;
   // test input
   if((lua_type(L,narg)!=LUA_TTABLE)) return luaL_error(L, "ReadHopping expects a table of the form {\"AtomName1.ShellName1\",\"AtomName2.ShellName2\",Vec,H}\n");
   if (lua_objlen(L, narg)!=4) return luaL_error(L, "ReadHopping expects a table with 4 elements of the form {\"AtomName1.ShellName1\",\"AtomName2.ShellName2\",Vec,H}\n");
@@ -1532,7 +1534,7 @@ static int LuaReadHopping(lua_State *L, int narg, CrystalStructureType *Cell, Ti
   {
     if(strcmp(Cell->Atom[i].Name, Atom1)==0)
     {
-      if((comparepos==false)||(EqualFloat(Cell->Atom[i].Position[0], idouble[0])&&EqualFloat(Cell->Atom[i].Position[1], idouble[1])&&EqualFloat(Cell->Atom[i].Position[2], idouble[2])))
+      if((comparepos==false)||(EqualFloat(Cell->Atom[i].Position[0], idouble[0],AtomPositionAccuracy)&&EqualFloat(Cell->Atom[i].Position[1], idouble[1],AtomPositionAccuracy)&&EqualFloat(Cell->Atom[i].Position[2], idouble[2],AtomPositionAccuracy)))
       {
         H->Atompos1=i;
         break;
@@ -1583,7 +1585,7 @@ static int LuaReadHopping(lua_State *L, int narg, CrystalStructureType *Cell, Ti
   {
     if(strcmp(Cell->Atom[i].Name, Atom2)==0)
     {
-      if((comparepos==false)||(EqualFloat(Cell->Atom[i].Position[0], idouble[0])&&EqualFloat(Cell->Atom[i].Position[1], idouble[1])&&EqualFloat(Cell->Atom[i].Position[2], idouble[2])))
+      if((comparepos==false)||(EqualFloat(Cell->Atom[i].Position[0], idouble[0],AtomPositionAccuracy)&&EqualFloat(Cell->Atom[i].Position[1], idouble[1],AtomPositionAccuracy)&&EqualFloat(Cell->Atom[i].Position[2], idouble[2],AtomPositionAccuracy)))
       {
         H->Atompos2=i;
         break;

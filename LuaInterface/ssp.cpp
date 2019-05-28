@@ -3920,6 +3920,7 @@ static int LuaBlockBandDiagonalize(lua_State *L)
     CompactMatrixType M,vec;
     char NameTemp[MAXStrLength];
     bool found;
+    double AtomPositionAccuracy = 0.001;
     /* read the tight binding defintion from the first place on the lua stack */
     TB = (TightBindingDef *) luaL_checkudata(L, 1, "TightBinding_Type");
     // read list of atoms from the second place on the lua stack
@@ -3979,9 +3980,9 @@ static int LuaBlockBandDiagonalize(lua_State *L)
               for(l1=0;l1<TB->Cell.Atom[i1].shelldegeneracy[j1];l1++)
               {
                 if((strcmp(TB->Cell.Atom[i1].Name, AtomsInStartBlock[i].Name)==0)
-                   &&(EqualFloat(TB->Cell.Atom[i1].Position[0], AtomsInStartBlock[i].Position[0]))
-                   &&(EqualFloat(TB->Cell.Atom[i1].Position[1], AtomsInStartBlock[i].Position[1]))
-                   &&(EqualFloat(TB->Cell.Atom[i1].Position[2], AtomsInStartBlock[i].Position[2]))
+                   &&(EqualFloat(TB->Cell.Atom[i1].Position[0], AtomsInStartBlock[i].Position[0],AtomPositionAccuracy))
+                   &&(EqualFloat(TB->Cell.Atom[i1].Position[1], AtomsInStartBlock[i].Position[1],AtomPositionAccuracy))
+                   &&(EqualFloat(TB->Cell.Atom[i1].Position[2], AtomsInStartBlock[i].Position[2],AtomPositionAccuracy))
                    &&(strcmp(TB->Cell.Atom[i1].ShellName[j1],AtomsInStartBlock[i].ShellName[j])==0)
                    &&(strcmp(TB->Cell.Atom[i1].OrbitalName[j1][l1],AtomsInStartBlock[i].OrbitalName[j][l])==0) )
                 {
