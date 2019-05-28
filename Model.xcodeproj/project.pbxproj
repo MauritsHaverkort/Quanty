@@ -115,7 +115,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		4C0279D720EF4183005AC105 /* Eigensystem_atom_d0.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = Eigensystem_atom_d0.Quanty; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.lua; };
+		4C0279D720EF4183005AC105 /* Eigensystem_atom_d0.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = Eigensystem_atom_d0.Quanty; sourceTree = "<group>"; };
 		4C0279D820F38CA5005AC105 /* BasisOptimization.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = BasisOptimization.cpp; sourceTree = "<group>"; };
 		4C0279D920F38CA5005AC105 /* CI.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = CI.cpp; sourceTree = "<group>"; };
 		4C0279DA20F38CA5005AC105 /* HarmonicOscillator.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = HarmonicOscillator.cpp; sourceTree = "<group>"; };
@@ -139,7 +139,7 @@
 		4C0279EC20F38CA5005AC105 /* TestStandardOperators.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = TestStandardOperators.cpp; sourceTree = "<group>"; };
 		4C0279ED20F38CA5005AC105 /* TestVectorMatrixParallel.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = TestVectorMatrixParallel.cpp; sourceTree = "<group>"; };
 		4C03B025186E376A004C2B7B /* TightBinding */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = TightBinding; sourceTree = BUILT_PRODUCTS_DIR; };
-		4C068D6A20AADB5100B86C84 /* Run SCF FPLO.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; name = "Run SCF FPLO.Quanty"; path = "Debug examples/Tutorials/Connection to DFT/FPLO/Run SCF FPLO.Quanty"; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.lua; };
+		4C068D6A20AADB5100B86C84 /* Run SCF FPLO.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; name = "Run SCF FPLO.Quanty"; path = "Debug examples/Tutorials/Connection to DFT/FPLO/Run SCF FPLO.Quanty"; sourceTree = "<group>"; };
 		4C0B553D196752C2000B8E97 /* Quanty */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Quanty; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C0B554719675377000B8E97 /* includeLua.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = includeLua.h; sourceTree = "<group>"; };
 		4C0B554819675377000B8E97 /* lapi.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = lapi.c; sourceTree = "<group>"; };
@@ -417,27 +417,27 @@
 		4C203CD52087DE95001DCC25 /* PhysicalConstants.me.value.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = PhysicalConstants.me.value.Quanty; sourceTree = "<group>"; };
 		4C203CD62087DE95001DCC25 /* PhysicalConstants.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = PhysicalConstants.Quanty; sourceTree = "<group>"; };
 		4C203CD82087DE95001DCC25 /* definitions.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = definitions.Quanty; sourceTree = "<group>"; };
-		4C203CDA2087DE95001DCC25 /* BlockBandDiagonalize.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = BlockBandDiagonalize.Quanty; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.lua; };
+		4C203CDA2087DE95001DCC25 /* BlockBandDiagonalize.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = BlockBandDiagonalize.Quanty; sourceTree = "<group>"; };
 		4C203CDB2087DE95001DCC25 /* Braket.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = Braket.Quanty; sourceTree = "<group>"; };
 		4C203CDC2087DE95001DCC25 /* Chop.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = Chop.Quanty; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.lua; };
 		4C203CDD2087DE95001DCC25 /* Clone.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = Clone.Quanty; sourceTree = "<group>"; };
 		4C203CDE2087DE95001DCC25 /* CloneAuto.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = CloneAuto.Quanty; sourceTree = "<group>"; };
-		4C203CDF2087DE95001DCC25 /* CloneNot.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = CloneNot.Quanty; sourceTree = "<group>"; };
+		4C203CDF2087DE95001DCC25 /* CloneNot.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = CloneNot.Quanty; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.css; };
 		4C203CE02087DE95001DCC25 /* Conjugate.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = Conjugate.Quanty; sourceTree = "<group>"; };
 		4C203CE12087DE95001DCC25 /* ConjugateTranspose.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = ConjugateTranspose.Quanty; sourceTree = "<group>"; };
 		4C203CE22087DE95001DCC25 /* Copy.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = Copy.Quanty; sourceTree = "<group>"; };
 		4C203CE32087DE95001DCC25 /* CreateClusterHamiltonian.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = CreateClusterHamiltonian.Quanty; sourceTree = "<group>"; };
 		4C203CE42087DE95001DCC25 /* CreateFluorescenceYield.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = CreateFluorescenceYield.Quanty; sourceTree = "<group>"; };
-		4C203CE52087DE95001DCC25 /* CreateResonantSpectra.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = CreateResonantSpectra.Quanty; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.lua; };
+		4C203CE52087DE95001DCC25 /* CreateResonantSpectra.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = CreateResonantSpectra.Quanty; sourceTree = "<group>"; };
 		4C203CE62087DE95001DCC25 /* CreateSpectra.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = CreateSpectra.Quanty; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.lua; };
 		4C203CE72087DE95001DCC25 /* DensityMatrix.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = DensityMatrix.Quanty; sourceTree = "<group>"; };
-		4C203CE82087DE95001DCC25 /* Eigensystem.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = Eigensystem.Quanty; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.lua; };
+		4C203CE82087DE95001DCC25 /* Eigensystem.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = Eigensystem.Quanty; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.simpleColoring; };
 		4C203CEC2087DE95001DCC25 /* Expand.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = Expand.Quanty; sourceTree = "<group>"; };
 		4C203CED2087DE95001DCC25 /* FileReadDresdenFPLO.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = FileReadDresdenFPLO.Quanty; sourceTree = "<group>"; };
 		4C203CEE2087DE95001DCC25 /* FIleReadStuttgartCTRL.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = FIleReadStuttgartCTRL.Quanty; sourceTree = "<group>"; };
 		4C203CEF2087DE95001DCC25 /* FileReadStuttgartHAMR.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = FileReadStuttgartHAMR.Quanty; sourceTree = "<group>"; };
 		4C203CF02087DE95001DCC25 /* Inverse.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = Inverse.Quanty; sourceTree = "<group>"; };
-		4C203CF12087DE95001DCC25 /* MeanFieldGroundState.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = MeanFieldGroundState.Quanty; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.lua; };
+		4C203CF12087DE95001DCC25 /* MeanFieldGroundState.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = MeanFieldGroundState.Quanty; sourceTree = "<group>"; };
 		4C203CF22087DE95001DCC25 /* NewOperator.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = NewOperator.Quanty; sourceTree = "<group>"; };
 		4C203CF32087DE95001DCC25 /* NewTightBinding.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = NewTightBinding.Quanty; sourceTree = "<group>"; };
 		4C203CF52087DE95001DCC25 /* OperatorToMatrix.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = OperatorToMatrix.Quanty; sourceTree = "<group>"; };
@@ -812,7 +812,7 @@
 		4CE77E9E2267179000547544 /* AtomicToWannierMatrix.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; name = AtomicToWannierMatrix.Quanty; path = Simon/AtomicToWannierMatrix.Quanty; sourceTree = "<group>"; };
 		4CE77E9F2267179000547544 /* AtomicArithmetics.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = AtomicArithmetics.cpp; path = Simon/AtomicArithmetics.cpp; sourceTree = "<group>"; };
 		4CE77EA12268CA6F00547544 /* Restrictions_bug.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; name = Restrictions_bug.Quanty; path = "Debug examples/External_tests/Restrictions_bug.Quanty"; sourceTree = "<group>"; };
-		4CF05D061E4A116F0068EA5A /* Xcode.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; name = Xcode.Quanty; path = "Debug examples/Xcode.Quanty"; sourceTree = "<group>"; };
+		4CF05D061E4A116F0068EA5A /* Xcode.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; name = Xcode.Quanty; path = "Debug examples/Xcode.Quanty"; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */

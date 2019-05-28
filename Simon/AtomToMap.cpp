@@ -10,10 +10,6 @@ void lua_push_AtomMap(lua_State * L, const AtomType &A)
 	lua_push(L, A.Position, (uint32_t) 3);
 	lua_settable(L, -3);
 
-	lua_push(L, "Wyckoff");
-	lua_push(L, A.Wyckoff);
-	lua_settable(L, -3);
-
 	lua_push(L, "Shells");
 	lua_newtable(L);
 	for (uint i = 0; i < (uint) A.Nshell; ++i)

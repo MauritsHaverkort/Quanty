@@ -2973,7 +2973,7 @@ int32_t LuaCheckOptions(lua_State *L, int narg, LuaOptionsType *Options)
       {
         tokenfound=1;
         lua_rawgeti(L, -2, 2);
-
+        // The next has memory loss the object LuaReturnVarialeType points to is allocated in that function, but not freed
         if (strcmp(Options[j].type, "char*") == 0)
         {
           *(char**)Options[j].variable=(char*)LuaReturnVariableType(L, -1, Options[j].type);
