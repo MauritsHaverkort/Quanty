@@ -1485,7 +1485,7 @@ static int LuaPushAtom(lua_State *L, AtomType const *a)
 /*
  * reads a Hopping definition from the Lua stack
  * format
- *          Hopping = {"AtomName1.ShellName1","AtomName2.ShellName2",Vec,H}
+ *        Hopping = {"AtomName1.ShellName1","AtomName2.ShellName2",Vec,H}
  *        with H a table of tables of real or complex numbers / matrix
  *
  */
@@ -1709,8 +1709,10 @@ static int LuaReadHopping(lua_State *L, int narg, CrystalStructureType *Cell, Ti
   lua_rawgeti(L, narg, 4);
   if((lua_type(L,-1)!=LUA_TTABLE)) return luaL_error(L, "ReadHopping expects a matrix for the definition of H between atom %s and %s\n",AtomShell1,AtomShell2);
   H->Hop = *luaL_checkMatrix(L, -1);
-
-
+  //TODO: check if dimension of H->Hop corresponds to the size of the atoms known in the structure
+  
+  
+  
   lua_pop(L,1);
   return 0;
 }

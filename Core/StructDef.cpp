@@ -241,7 +241,7 @@ ConvergenceSettingsType;
 
 ConvergenceSettingsType InitConvergenceSettings()
 {
-  char const *ShiftScheme = "Variance";
+  const char *ShiftScheme = "Variance";
   ConvergenceSettingsType ret=
   {
     1513 /*DenseBorder*/,

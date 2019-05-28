@@ -2,10 +2,10 @@ Verbosity(0x0)
 
 --goto dense
 --goto sparse
---goto atom
+goto atom
 --goto mlft
 --goto hubbard
-goto shiftschemetest
+--goto shiftschemetest
 
 -- The function Eigensystem calculates a set of eigen vectors and eigen values for a given matrix or operator
 -- The function has several options related to the accuracy needed and methods used
@@ -181,8 +181,6 @@ if(converged) then
   else
   print("NOT CONVERGED")
 end
-
-print(Hamiltonian)
 
 -- use Quanty to calculate the eigen system using wave-functions and operators, starting from a given set of states
 print("Eigensystem of operator starting from given states")
@@ -752,7 +750,7 @@ valgrd = Complex.Re(Braket(fun1s,Hamiltonian3,fun1s))
 print("      Energy           Energy-E0        Variance")
 for i=1,10 do
   Energy=Complex.Re(Braket(fun1[i],Hamiltonian3,fun1[i]))
-  Hfun=Hamiltonian2*fun1[i]
+  Hfun=Hamiltonian3*fun1[i]
   EnergySqr=Complex.Re(Braket(Hfun,Hfun))
   io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
 end
@@ -1501,20 +1499,53 @@ print("============================================")
 print("             start from psi                 ")
 print("============================================\n\n")
 
+Verbosity(0xFFFFFFFF)
 
 funstart1  = NewWavefunction(20,0,{{"10000000000000000000",1}})
+funstart2  = NewWavefunction(20,0,{{"10000000000000000000",1}})
+
 
 Htb = NewTightBinding()
 Htb.Cell={{1,0,0},
 {0,1,0},
 {0,0,1}}
-Htb.Atoms={{"Cu",{0,0,0},{{"s",{"^{dn}","^{up}"}}}}}
-Htb.Hopping={{"Cu.s","Cu.s",{0,0, 1},{{1  ,0},{0,1  }}},
-{"Cu.s","Cu.s",{0,0,-1},{{1  ,0},{0,1  }}},
-{"Cu.s","Cu.s",{0,0, 2},{{0.1,0},{0,0.1}}},
-{"Cu.s","Cu.s",{0,0,-2},{{0.1,0},{0,0.1}}}}
+Htb.Atoms={{"Cu",{0,0,0},{{"s",{""}}}}}
+Htb.Hopping={{"Cu.s","Cu.s",{0,0, 1},{{-1}}},
+{"Cu.s","Cu.s",{0,0,-1},{{-1}}}}
 
-Hamiltonian1 = CreateClusterHamiltonian(Htb,{"periodic",{{1,0,0},{0,1,0},{0,0,10}}})
+Hamiltonian1 = Chop(CreateClusterHamiltonian(Htb,{"periodic",{{1,0,0},{0,1,0},{0,0,20}}}) + NewOperator(20,0,{{0,-19,1},{19,-0,1}}))
+
+crtable = {}
+for i=0,19 do
+  crtable[i+1] = {i,-i, 20000-1*i}
+end
+Hamiltonian2 = NewOperator(20,0,crtable)
 
 print(Htb)
 print(Hamiltonian1)
+print(Hamiltonian2)
+
+Hamiltonian = Hamiltonian1 + Hamiltonian2
+
+Eigensystem(Hamiltonian,funstart1,{{"DenseBorder",1}})
+Eigensystem(Hamiltonian,funstart2,{{"ShiftScheme","None"}})
+
+Hpsi1 = Hamiltonian*funstart1
+Hpsi2 = Hamiltonian*funstart2
+
+print("The overlap between psi1 (with shift) and psi2 (without shift) is",funstart1*funstart2)
+
+print("======================== With shift")
+print("The energy of the state is    ",Braket(funstart1,Hpsi1))
+print("The variance of the energy is ",Braket(funstart1,Hpsi1)^2-Braket(Hpsi1,Hpsi1))
+
+print("======================== Without shift")
+print("The energy of the state is    ",Braket(funstart2,Hpsi2))
+print("The variance of the energy is ",Braket(funstart2,Hpsi2)^2-Braket(Hpsi2,Hpsi2))
+
+
+
+print("The density matrix is with shift")
+print(DensityMatrix(funstart1,{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19}))
+print("The density matrix is wihtout shift")
+print(DensityMatrix(funstart2,{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19}))
