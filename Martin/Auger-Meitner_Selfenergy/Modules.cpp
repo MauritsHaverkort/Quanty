@@ -372,6 +372,7 @@ Complex16 Resolvent(Complex16 z, const std::vector<double> &poles, const std::ve
 	for (uint32_t i = 0; i < (uint32_t) residues.size(); i++)
 	{
 		selfenergy[i][widx].y.Re = 0;	//TODO: Also add Re ??????????????????????????
+		//printf("SE = %.2E\n",selfenergy[i][widx].y.Im);
 		result += residues[i]/(z - poles[i] - selfenergy[i][widx].y);
 	}
 	return result;

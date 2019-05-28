@@ -694,7 +694,7 @@ uint32_t ResonantSpectrumWithSelfEnergy(const OperatorType OppH1, const Operator
 			(*Spec)[p + i*Nw1].dE   =(settings->Emax2-settings->Emin2)/settings->NE2;
 			(*Spec)[p + i*Nw1].Gamma=settings->Gamma2;
 			(*Spec)[p + i*Nw1].ResonantEnergy = settings->Emin1 + ((double)(p)/(settings->NE1)) * (settings->Emax1-settings->Emin1);
-			sprintf((*Spec)[i].Name, "Spectrum wres %i/%i T2 %i/%i",(int)(p),settings->NE1,(int)(i),NT2);
+			//sprintf((*Spec)[i].Name, "Spectrum wres %i/%i T2 %i/%i",(int)(p),settings->NE1,(int)(i),NT2);
 			SpectrumAllocate((*Spec)[p + i*Nw1], &(*Spec)[p + i*Nw1]);
 			ConvertSpectrum(&(*Spec)[p + i*Nw1],spectrum);
 	  }
