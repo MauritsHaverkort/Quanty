@@ -13,8 +13,14 @@ void SlaterIntegralsToList(const SSlaterIntegral *integrals, const uint32_t N, v
 void CreateContinuumSlaterIntegrals(vector<Interpolation::InterpolatingFunction *> &WavefunsBoundG, vector<Interpolation::InterpolatingFunction *> &WavefunsBoundF,
 							vector<Interpolation::InterpolatingFunction *> &WavefunsUnboundG, vector<Interpolation::InterpolatingFunction *> &WavefunsUnboundF,
 							vector<int> &indToK, const int kappa, vector<vector<double> > &Fks);
+void CreateContinuumSlaterIntegrals(vector<Interpolation::InterpolatingFunction *> &WavefunsBoundG, vector<Interpolation::InterpolatingFunction *> &WavefunsBoundF,
+							vector<Interpolation::InterpolatingFunction *> &WavefunsUnboundG, vector<Interpolation::InterpolatingFunction *> &WavefunsUnboundF,
+							vector<int> &indToK, const int kappa, vector<vector<vector<double> > > &Fks);
+
+void CreateAugerMeitnerU(vector<int> &indToK, uint32_t NF, uint16_t **indices, vector<OperatorType> &UList, bool QRelativistic=true);
 
 static int LuaCreateContinuumSlaterIntegrals (lua_State *L);
+static int LuaCreateAugerMeitnerU(lua_State *L);
 
 
 

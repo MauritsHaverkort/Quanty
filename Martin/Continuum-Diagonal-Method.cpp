@@ -97,8 +97,15 @@ void CalculateResidues(const std::vector<double> &v, CompactMatrixType *M, uint3
 	}
 	if(M->QComplex)
 	{
-		printf("error in CalculateResidues: CompactMatrix is complex. I should implement that\n");
-		fflush(stdout);
+		residues = std::vector<double>(Nresidues);
+		for (uint32_t i = 0; i < Nresidues; i++)
+		{
+			residues[i] = 0;
+			for (uint32_t j = 0; j < (uint32_t) v.size(); j++)
+			{
+				residues[i] += (M->V[i*M->Nj + j].Re * v[j] * M->V[i*M->Nj + j].Re * v[j]) + (M->V[i*M->Nj + j].Im * v[j] * M->V[i*M->Nj + j].Im * v[j]);
+			}
+		}
 		return;
 	}
 	residues = std::vector<double>(Nresidues);
@@ -590,8 +597,9 @@ void CalculateEigensystemOnBasis(const vector<WaveFunctionType> &basis,const Ope
 {
 	CompactMatrixType M, S, S12, Hbasis, eigenfuns;
 	CalculateHermitianMatrixElements(basis,H,M);
-	PrintMartix(M.VRe,M.Ni);
+//	PrintMartix(M.VRe,M.Ni);
 	CalculateOverlapMatrix(basis,S);
+//	PrintMartix(S.VRe,S.Ni);
 	TransformMatrixToONB(S,M,S12,Hbasis);
 	eigenvals = vector<double>(M.Ni);
 	CompactMatrixEigensystem(&Hbasis,&eigenfuns,&eigenvals[0]); // TODO check if eigenvals row- or coll-major

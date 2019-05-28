@@ -48,6 +48,7 @@ void ReduceOperator(const OperatorType &Opp, OperatorType* ReducedOpp, vector<ui
 	InitOperator(ReducedOpp);
 	ReducedOpp->NFermion = Opp.NFermion;
 	ReducedOpp->NBoson = Opp.NBoson;
+	ReducedOpp->NWord = Opp.NWord;
 	for (uint32_t l = 0; l <= Opp.MaxLength; l++)
 	{
 		InitOperatorFixedLength(ReducedOpp,l,Opp.l[l].NBitsKey);

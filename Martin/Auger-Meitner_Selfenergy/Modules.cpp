@@ -17,6 +17,18 @@ void SlaterIntegralsToList(const SSlaterIntegral *integrals, const uint32_t N, v
 		}
 	}
 }
+void SlaterIntegralsToList(const SSlaterIntegral *integrals, const uint32_t N, vector<vector<double> >&Fk)
+{
+	Fk = vector<vector<double> >(N);
+	for (uint32_t i = 0; i < N; i++)
+	{
+		Fk[i] = vector<double>(integrals[i].Nval);
+		for (uint32_t j = 0; j < integrals[i].Nval; j++)
+		{
+			Fk[i][j]=integrals[i].val[j];
+		}
+	}
+}
 
 void CreateContinuumSlaterIntegrals(vector<Interpolation::InterpolatingFunction *> &WavefunsBoundG, vector<Interpolation::InterpolatingFunction *> &WavefunsBoundF,
 							vector<Interpolation::InterpolatingFunction *> &WavefunsUnboundG, vector<Interpolation::InterpolatingFunction *> &WavefunsUnboundF,
@@ -26,10 +38,6 @@ void CreateContinuumSlaterIntegrals(vector<Interpolation::InterpolatingFunction 
 	uint32_t kMax, n, NIntegrals, NBound, NUnbound;
 	double **kernels;
 	vector<vector<double> > dualfunsBound, dualfunsUnbound;
-	vector<OperatorType> UList;
-	vector<double> poles;
-	CompactMatrixType T;
-
 
 	vector<double> x = WavefunsBoundG[0]->GetX();
 	vector<vector<double> > WavefunsBound = PutRelativisticSplineOnGrid(WavefunsBoundG,WavefunsBoundF,x,0);
@@ -56,16 +64,181 @@ void CreateContinuumSlaterIntegrals(vector<Interpolation::InterpolatingFunction 
 		SlaterIntegralsToList(si,NIntegrals,Fks[i]);
 	}
 	indToK.pop_back();
-	WavefunsBoundG.pop_back();
-	WavefunsBoundF.pop_back();
+//	WavefunsBoundG.pop_back();	 //TODO: delte if all test done - it is nonsense
+//	WavefunsBoundF.pop_back();
 
+	for (uint32_t i = 0; i <= kMax; i++)
+	{
+		free(kernels[i]);
+	}
+	free(kernels);
+	for (uint32_t i = 0; i < NIntegrals; i++)
+	{
+		free(si[i].val);
+		free(si[i].k);
+	}
+	free(si);
+
+}
+
+void CreateContinuumSlaterIntegrals(vector<Interpolation::InterpolatingFunction *> &WavefunsBoundG, vector<Interpolation::InterpolatingFunction *> &WavefunsBoundF,
+							vector<Interpolation::InterpolatingFunction *> &WavefunsUnboundG, vector<Interpolation::InterpolatingFunction *> &WavefunsUnboundF,
+							vector<int> &indToK, const int kappa, vector<vector<vector<double> > > &Fks)
+{
+	SSlaterIntegral *si;
+	uint32_t kMax, n, NIntegrals, NBound, NUnbound;
+	double **kernels;
+	vector<vector<double> > dualfunsBound, dualfunsUnbound;
+
+	vector<double> x = WavefunsBoundG[0]->GetX();
+	vector<vector<double> > WavefunsBound = PutRelativisticSplineOnGrid(WavefunsBoundG,WavefunsBoundF,x,0);
+	vector<vector<double> > WavefunsUnbound = PutRelativisticSplineOnGrid(WavefunsUnboundG,WavefunsUnboundF,x,0);
+	NUnbound = (uint32_t) WavefunsUnbound.size();
+	NBound = (uint32_t) WavefunsBound.size();
+
+	unsigned int NGridPoints = (unsigned int)x.size();
+	n = 2* NGridPoints;
+	CreateDualFunctions(WavefunsBound,x,dualfunsBound);
+	CreateDualFunctions(WavefunsUnbound,x,dualfunsUnbound);
+	indToK.push_back(kappa);
+	si = InitializeIntegrals(indToK, NIntegrals,&kMax,true);
+	kernels = CreateAllKernels(kMax, NGridPoints, &x[0]);
+	WavefunsBound.push_back(WavefunsUnbound[0]);
+	dualfunsBound.push_back(dualfunsUnbound[0]);
+
+	Fks = vector<vector<vector<double> > >(NUnbound);
+	for (uint32_t i = 0; i < NUnbound; i++)
+	{
+		WavefunsBound[NBound] = WavefunsUnbound[i];
+		dualfunsBound[NBound] = dualfunsUnbound[i];
+		CalculateSlaterIntegrals(NIntegrals, si,n,kernels,WavefunsBound,dualfunsBound);
+		SlaterIntegralsToList(si,NIntegrals,Fks[i]);
+	}
+	indToK.pop_back();
+//	WavefunsBoundG.pop_back(); //TODO: delte if all test done - it is nonsense
+//	WavefunsBoundF.pop_back();
+
+	for (uint32_t i = 0; i <= kMax; i++)
+	{
+		free(kernels[i]);
+	}
+	free(kernels);
+	for (uint32_t i = 0; i < NIntegrals; i++)
+	{
+		free(si[i].val);
+		free(si[i].k);
+	}
+	free(si);
+
+}
+
+void CreateContinuumSlaterIntegrals(vector<Interpolation::InterpolatingFunction *> &WavefunsBoundG,	vector<Interpolation::InterpolatingFunction *> &WavefunsUnboundG,
+									vector<int> &indToK, const int kappa, vector<vector<vector<double> > > &Fks)
+{
+	SSlaterIntegral *si;
+	uint32_t kMax, NIntegrals, NBound, NUnbound;
+	double **kernels;
+	vector<vector<double> > dualfunsBound, dualfunsUnbound;
+
+	NUnbound = (uint32_t) WavefunsUnboundG.size();
+	NBound = (uint32_t) WavefunsBoundG.size();
+
+	vector<double> x = WavefunsBoundG[0]->GetX();
+	vector<vector<double> > WavefunsBound = vector<vector<double> >(NBound);
+	for (uint32_t i = 0; i < NBound; i++)
+	{
+		WavefunsBound[i] = (*WavefunsBoundG[i])(x);
+	}
+	vector<vector<double> > WavefunsUnbound = vector<vector<double> >(NUnbound);
+	for (uint32_t i = 0; i < NUnbound; i++)
+	{
+		WavefunsUnbound[i] = (*WavefunsUnboundG[i])(x);
+	}
+
+
+	unsigned int NGridPoints = (unsigned int)x.size();
+	CreateDualFunctions(WavefunsBound,x,dualfunsBound,false);
+	CreateDualFunctions(WavefunsUnbound,x,dualfunsUnbound,false);
+	indToK.push_back(kappa);								//TODO: make this consistent
+	si = InitializeIntegrals(indToK, NIntegrals,&kMax,true);
+	kernels = CreateAllKernels(kMax, NGridPoints, &x[0]);
+	WavefunsBound.push_back(WavefunsUnbound[0]);
+	dualfunsBound.push_back(dualfunsUnbound[0]);
+
+	Fks = vector<vector<vector<double> > >(NUnbound);
+	for (uint32_t i = 0; i < NUnbound; i++)
+	{
+		WavefunsBound[NBound] = WavefunsUnbound[i];
+		dualfunsBound[NBound] = dualfunsUnbound[i];
+		CalculateSlaterIntegrals(NIntegrals, si,NGridPoints,kernels,WavefunsBound,dualfunsBound);
+		SlaterIntegralsToList(si,NIntegrals,Fks[i]);
+	}
+	indToK.pop_back();
+
+	for (uint32_t i = 0; i <= kMax; i++)
+	{
+		free(kernels[i]);
+	}
+	free(kernels);
+	for (uint32_t i = 0; i < NIntegrals; i++)
+	{
+		free(si[i].val);
+		free(si[i].k);
+	}
+	free(si);
+
+}
+
+void CreateAugerMeitnerU(vector<int> &indToK, uint32_t NF, uint16_t **indices, vector<OperatorType> &UList, bool QRelativistic)
+{
+	uint32_t kMax, NIntegrals;
+	SSlaterIntegral *integrals = InitializeIntegrals(indToK, NIntegrals,&kMax,true);
+
+	for(uint32_t i = 0; i < NIntegrals; i++)
+	{
+		int *k = integrals[i].tau.kappa;
+		uint32_t *n = integrals[i].tau.n;
+		double *Fk = integrals[i].val;
+		for (uint32_t j = 0; j < integrals[i].Nval; j++)
+		{
+			Fk[j] = 0;
+		}
+		for (uint32_t j = 0; j < integrals[i].Nval; j++)
+		{
+			OperatorType optemp;
+
+			Fk[j] = 1;
+			if (QRelativistic)
+			{
+				CreateOperatorAtomicURelativisticOneIntegral(NF,k[0],k[1],k[2],k[3],indices[n[0]],indices[n[1]],indices[n[2]],indices[n[3]],Fk,n[0],n[1],n[2],n[3],&optemp);
+			}
+			else
+			{
+			    int l[4];
+			    l[0] = -k[0]-1;
+			    l[1] = -k[1]-1;
+			    l[2] = -k[2]-1;
+			    l[3] = -k[3]-1;
+				CreateOperatorAtomicUNonRelOneIntegral(NF,l[0],l[1],l[2],l[3],indices[2*n[0]],indices[2*n[0]+1],indices[2*n[1]],indices[2*n[1]+1],indices[2*n[2]],indices[2*n[2]+1],indices[2*n[3]],indices[2*n[3]+1],Fk,n[0],n[1],n[2],n[3],&optemp);
+			}
+			UList.push_back(optemp);
+			Fk[j] = 0;
+		}
+
+	}
+	for (uint32_t i = 0; i < NIntegrals; i++)
+	{
+		free(integrals[i].val);
+		free(integrals[i].k);
+	}
+	free(integrals);
 }
 
 static int LuaCreateContinuumSlaterIntegrals (lua_State *L)
 {
 	vector<Interpolation::InterpolatingFunction *> WavefunsBoundG, WavefunsBoundF, WavefunsUnboundG,WavefunsUnboundF;
 	vector<int> indToK;
-	vector<vector<double> > Fks;
+	vector<vector<vector<double> > > Fks; //vector<vector<double> > Fks;
 	int kappa;
 
 	uint32_t len = (uint32_t)lua_gettop(L);
@@ -84,9 +257,15 @@ static int LuaCreateContinuumSlaterIntegrals (lua_State *L)
 		if (len == 4)
 		{
 			lua_check(L,1,WavefunsBoundG);
-			lua_check(L,2,indToK);
+			lua_check(L,2,indToK);										// read l of bound states
+			for (uint32_t i = 0; i < (uint32_t) indToK.size(); i++)
+			{
+				indToK[i] = -(indToK[i] + 1);							// transform l to kappa
+			}
 			lua_check(L,3,WavefunsUnboundG);
-			lua_check(L,4,kappa);
+			lua_check(L,4,kappa);			// read l of continuum
+			kappa = -(kappa +1);			// transform l to kappa
+			CreateContinuumSlaterIntegrals(WavefunsBoundG,WavefunsUnboundG,indToK,kappa,Fks);
 		}
 		else
 		{
@@ -97,4 +276,129 @@ static int LuaCreateContinuumSlaterIntegrals (lua_State *L)
 	return 1;
 }
 
+static int LuaCreateAugerMeitnerU(lua_State *L)
+{
+	vector<int> indToK;
+	int kappa;
+	uint32_t NF, Nindices, temp, numberofArgs;
+	uint16_t **indices;
+	vector<OperatorType> UList;
+	bool QRelativistic;
 
+	numberofArgs = (uint32_t)lua_gettop(L);
+	if (numberofArgs != 4)
+	{
+		return luaL_error(L,"error in LuaCreateAugerMeitnerU: expected 4, got %u",numberofArgs);
+	}
+	lua_check(L,1,NF);
+	if (!lua_istable(L,4)) // if last argument is not a table, then we are in the relavtivistic case
+	{
+		QRelativistic = true;
+		lua_getfield(L,2,"kappas");
+		if (lua_isnil(L,-1))
+		{
+			return luaL_error(L,"error in LuaCreateAugerMeitnerU: table of indices does not contain field kappas\n");
+		}
+		else
+		{
+			lua_check(L,-1,indToK);
+			lua_pop(L,1);
+
+			Nindices = (uint32_t)lua_objlen(L,2) + 1;
+
+			indices = (uint16_t **) malloc(Nindices * sizeof(uint16_t *));
+			if(!indices) printf("malloc fail at indices in LuaOperatorNewFullCoulomb. size = %u\n",Nindices);
+
+			for(uint32_t i = 0; i < Nindices-1; i++ )
+			{
+				lua_rawgeti(L, 2, i+1);
+				indices[i] = luaL_checkarray_unit16_t(L,-1,&temp);
+				lua_pop(L,1);
+			}
+			indices[Nindices-1] = luaL_checkarray_unit16_t(L,3,&temp);
+			lua_check(L,4,kappa);
+			indToK.push_back(kappa);
+
+		}
+	}
+	else // if last argument is a table, then we are in the non-relavtivistic case
+	{
+		QRelativistic = false;
+		Nindices = (uint32_t)lua_objlen(L,2) + 2;
+
+		indices = (uint16_t **) malloc(Nindices * sizeof(uint16_t *));
+		if(!indices) printf("malloc fail at indices in LuaOperatorNewFullCoulomb. size = %u\n",Nindices);
+
+		for(uint32_t i = 0; i < Nindices-2; i++ )
+		{
+			lua_rawgeti(L, 2, i+1);
+			indices[i] = luaL_checkarray_unit16_t(L,-1,&temp);
+			lua_pop(L,1);
+			if (i%2 == 0)
+			{
+				indToK.push_back(-(((int)temp-1)/2 + 1));
+			}
+		}
+		indices[Nindices-2] = luaL_checkarray_unit16_t(L,3,&temp);
+		indices[Nindices-1] = luaL_checkarray_unit16_t(L,4,&temp);
+		indToK.push_back(-(((int)temp-1)/2 + 1));
+
+
+	}
+
+	CreateAugerMeitnerU(indToK,NF,indices,UList,QRelativistic);
+	lua_push(L,UList);
+
+	for(uint32_t i = 0; i < Nindices; i++ )
+	{
+		free(indices[i]);
+	}
+	free(indices);
+	return 1;
+
+}
+
+Complex16 Resolvent(Complex16 z, const std::vector<double> &poles, const std::vector<double> &residues,vector<vector<mypoint> > &selfenergy, uint32_t widx)
+{
+	Complex16 result;
+	result.Re = 0;
+	result.Im = 0;
+	if (poles.size() < residues.size() || poles.size() != selfenergy.size())
+	{
+		printf("error in Resolvent: poles.size() = %u < %u = residues.size()\n",(uint32_t)poles.size(),(uint32_t)residues.size());
+		fflush(stdout);
+		return result;
+	}
+	for (uint32_t i = 0; i < (uint32_t) residues.size(); i++)
+	{
+		selfenergy[i][widx].y.Re = 0;	//TODO: Also add Re ??????????????????????????
+		result += residues[i]/(z - poles[i] - selfenergy[i][widx].y);
+	}
+	return result;
+}
+
+void ConvertSpectrum( SpectraType * const G, const vector<mypoint> &spectrum)
+{
+
+  for (uint32_t i = 0; i <= G->N; i++)
+  {
+    G->Re[i] = spectrum[i].y.Re;
+    G->Im[i] = spectrum[i].y.Im;
+  }
+  G->ZerothMoment = NAN;
+  G->FirstMoment = NAN;
+  for (uint32_t i = 0; i < 5; i++)
+  {
+    G->a[i] = NAN;
+    G->b[i] = NAN;
+  }
+}
+
+void PrintMySpectrum(const vector<mypoint> &spec)
+{
+	printf("Spectrum : \n");
+	for (uint32_t i = 0; i < (uint32_t) spec.size(); i++)
+	{
+		printf("%.12E\t%.12E\t%.12E\n",spec[i].w,spec[i].y.Re,spec[i].y.Im);
+	}
+}

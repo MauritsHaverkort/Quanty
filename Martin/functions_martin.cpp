@@ -19,6 +19,7 @@
 #include "Math/BSpline.cpp"
 #include "ReduceOperator.cpp"
 #include "Auger-Meitner_Selfenergy/Modules.cpp"
+#include "Auger-Meitner_Selfenergy/ResonantSpectrum_Selfenergy.cpp"
 
 
 static int LuaOperatorNewFullCoulomb (lua_State *L)
@@ -1836,7 +1837,26 @@ static int LuaReduceOperator(lua_State *L)
 static int LuaMartinTest(lua_State *L)
 {
 
-	double bla[] = {0., 0., 0., 0., 1., 2., 3., 4., 5., 5., 5., 5.};
+	vector<WaveFunctionType> wfs, out;
+	CompactMatrixType U;
+	lua_check(L,1,wfs);
+	lua_check(L,2,U);
+
+	out = vector<WaveFunctionType>(wfs.size());
+	RotateWaveFunctions(&wfs[0],(uint32_t)wfs.size(),U,&out[0]);
+
+	uint32_t Npsi = (uint32_t)wfs.size();
+	WaveFunctionType psi[Npsi];
+	for (uint32_t i = 0; i < Npsi; i++)
+	{
+		psi[i] = out[i];
+	}
+	LuaPushTable_WaveFunctionType(L,psi,Npsi);
+
+	return 1;
+
+
+	/*double bla[] = {0., 0., 0., 0., 1., 2., 3., 4., 5., 5., 5., 5.};
 	vector<double> x,S;
 	for (int i =0; i < 12; i++)
 	{
@@ -1854,7 +1874,7 @@ static int LuaMartinTest(lua_State *L)
 		lua_rawgeti(L, 1, i+1);
 		funs[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
 		lua_pop(L,1);
-	}
+	}*/
 	/*for (uint32_t j = 0; j < ks+1;j++)
 	{
 		for (uint32_t i = 0; i < Nspline;i++)
@@ -1868,11 +1888,11 @@ static int LuaMartinTest(lua_State *L)
 		}
 		printf("\n");
 	}*/
-	vector<double> c;
+	/*vector<double> c;
 	BSpline::Components(funs,ks,x,S,c);
 	lua_push(L,c);
 
-	return 1;
+	return 1;*/
 
 	/*for (uint32_t i = 1; i < N - ks-2; i++)
 		{
@@ -2038,13 +2058,15 @@ static const struct luaL_Reg Martin_func[] = {
   {"Export",LuaExport},
   {"ReadFPLOEnergies",LuaReadFPLOEnergies},
   {"RelativisticDipoleOperator",LuaRelativisticDipoleOperator},
-  {"ResonantSpectrum",LuaCreateResonantSpectraSE},
+  //{"ResonantSpectrum",LuaCreateResonantSpectraSE},
+  {"ResonantSpectrum",LuaCreateResonantSpectrum},
   {"ListU",LuaListU},
   {"PlotSpectrum",LuaCDMPlot},
   {"BraketList",LuaBraketList},
   {"AMSel",LuaAugerMeitnerSelfEnergy},
   {"ReduceOperator",LuaReduceOperator},
   {"CreateContinuumSlaterIntegrals",LuaCreateContinuumSlaterIntegrals},
+  {"CreateAugerMeitnerU",LuaCreateAugerMeitnerU},
   {NULL, NULL}
 };
 
