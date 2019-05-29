@@ -5418,8 +5418,8 @@ uint32_t BlockGroundState(OperatorType *H, uint32_t const Npsi, ConvergenceSetti
     BlockGroundState(H, Npsi, Settings, StartingPoint, StartingPoint, psi, 0);
   }
   // restrict the starting functions and orthonormalize them
-  BlockWaveFunctionRestrict(psi, Npsi, Restrictions);
-  BlockWaveFunctionOrthonormalizeSameBasis(psi, Npsi);
+  //BlockWaveFunctionRestrict(psi, Npsi, Restrictions);
+  //BlockWaveFunctionOrthonormalizeSameBasis(psi, Npsi);
   VerbosityPrintf(0x20000,"\nStarting function 1 to Npsi=%i in BlockGroundState\n\n",Npsi);
   if(GlobalVerbosity&0x20000)
   {
