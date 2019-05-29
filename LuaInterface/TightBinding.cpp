@@ -688,7 +688,6 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
   bool QOperators=false, QOptions=false, ReturnTBSuperCell=false, ReturnTBCellPositions=false, ReturnTBKVectors=false, ReturnTBIndicesDict=false;
   OperatorType *AditionalOperator=NULL;
   MatrixType U;
-  double AtomPositionAccuracy=0.001;
   k.Ni=3;
   k.QComplex=0;
   k.VRe= (double*)calloc(3,sizeof(double));
@@ -1081,9 +1080,9 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
                  &&(strcmp(a->Cell.Atom[a->H[l].Atompos1].ShellName[a->H[l].Shellpos1],ClusterDef->Cell.Atom[i].ShellName[ishell])==0)
                  &&(strcmp(a->Cell.Atom[a->H[l].Atompos2].Name,ClusterDef->Cell.Atom[j].Name)==0)
                  &&(strcmp(a->Cell.Atom[a->H[l].Atompos2].ShellName[a->H[l].Shellpos2],ClusterDef->Cell.Atom[j].ShellName[jshell])==0)
-                 &&(EqualFloat(a->H[l].ConnectingVector[0], ClusterDef->Cell.Atom[j].Position[0]-ClusterDef->Cell.Atom[i].Position[0],AtomPositionAccuracy)==1)
-                 &&(EqualFloat(a->H[l].ConnectingVector[1], ClusterDef->Cell.Atom[j].Position[1]-ClusterDef->Cell.Atom[i].Position[1],AtomPositionAccuracy)==1)
-                 &&(EqualFloat(a->H[l].ConnectingVector[2], ClusterDef->Cell.Atom[j].Position[2]-ClusterDef->Cell.Atom[i].Position[2],AtomPositionAccuracy)==1) )
+                 &&(EqualFloat(a->H[l].ConnectingVector[0], ClusterDef->Cell.Atom[j].Position[0]-ClusterDef->Cell.Atom[i].Position[0])==1)
+                 &&(EqualFloat(a->H[l].ConnectingVector[1], ClusterDef->Cell.Atom[j].Position[1]-ClusterDef->Cell.Atom[i].Position[1])==1)
+                 &&(EqualFloat(a->H[l].ConnectingVector[2], ClusterDef->Cell.Atom[j].Position[2]-ClusterDef->Cell.Atom[i].Position[2])==1) )
               {
                 ClusterDef->H[ClusterDef->nH].Atompos1=i;
                 ClusterDef->H[ClusterDef->nH].Shellpos1=ishell;
@@ -1241,7 +1240,7 @@ static int LuaReadAtom(lua_State *L, int narg, AtomType *a)
   if(lua_type(L,narg)==LUA_TTABLE)
   {
     len = (uint32_t)lua_objlen(L, narg);
-    if(len!=3) return luaL_error(L, "Error ReadAtom expects a list of the form {Name, Position, {Shell1, Shell2, ...}}\n");
+    if(len!=4) return luaL_error(L, "Error ReadAtom expects a list of the form {Name, Position, {Shell1, Shell2, ...}, Wyckoffposition}\n");
     // get the name of the atom
     lua_rawgeti(L, narg, 1);
     strncpy(a->Name, luaL_checkstring(L, -1), MAXStrLength-1);
@@ -1287,6 +1286,10 @@ static int LuaReadAtom(lua_State *L, int narg, AtomType *a)
       lua_pop(L, 1);
     }
     lua_pop(L, 1);
+    // get the wyckoff position
+		lua_rawgeti(L, narg, 4);
+		lua_check(L, -1, a->Wyckoff);
+		lua_pop(L, 1);
   }
   else
   {
@@ -1315,7 +1318,7 @@ static int LuaReadAtomWithDefault(lua_State *L, int narg, AtomType *a, CrystalSt
   if(lua_type(L,narg)==LUA_TTABLE)
   {
     len = (uint32_t)lua_objlen(L, narg);
-    if(!((len==3)||(len==2))) return luaL_error(L, "Error ReadAtom expects a list of the form {Name, Position, {Shell1, Shell2, ...}} or {Name, Position}\n");
+		if (len < 2 || len > 4) return luaL_error(L, "Error ReadAtom expects a list of the form {Name, Position, {Shell1, Shell2, ...}, Wyckoffposition} or {Name, Position}\n");
     // get the name of the atom
     lua_rawgeti(L, narg, 1);
     strncpy(a->Name, luaL_checkstring(L, -1), MAXStrLength-1);
@@ -1334,7 +1337,7 @@ static int LuaReadAtomWithDefault(lua_State *L, int narg, AtomType *a, CrystalSt
     if((len==2)&&(*AtomIndexInCrystalStructure==INT_MAX)) luaL_error(L, "Error Atom %s not found at position %f %f %f in tight binding object\n",a->Name,a->Position[0],a->Position[1],a->Position[2]);
     // get the list with shells
     len = (uint32_t)lua_objlen(L, narg);
-    if(len==3)
+    if(len>=3)
     {
       lua_rawgeti(L, narg, 3);
       if(lua_type(L,-1)!=LUA_TTABLE) return luaL_error(L, "Error ReadAtom shells of atom %s at position %f %f %f, should be a list of shells\n",a->Name,a->Position[0],a->Position[1],a->Position[2]);
@@ -1399,6 +1402,13 @@ static int LuaReadAtomWithDefault(lua_State *L, int narg, AtomType *a, CrystalSt
         lua_pop(L, 1);
       }
       lua_pop(L, 1);
+      if (len >= 4)
+      {
+        // get the wyckoff position
+    		lua_rawgeti(L, narg, 4);
+    		lua_check(L, -1, a->Wyckoff);
+    		lua_pop(L, 1);
+      }
     }
     else
     {
@@ -1446,7 +1456,7 @@ static int LuaReadAtomWithDefault(lua_State *L, int narg, AtomType *a, CrystalSt
 static int LuaPushAtom(lua_State *L, AtomType const *a)
 {
   uint32_t i,j;
-  lua_createtable(L, 3, 0);
+  lua_createtable(L, 4, 0);
   {
     lua_pushstring(L, a->Name);
     lua_rawseti(L, -2, 1); // set name of atom to first position
@@ -1478,7 +1488,9 @@ static int LuaPushAtom(lua_State *L, AtomType const *a)
         lua_rawseti(L, -2, i+1); // set a table with the shell name and orbital definitions to position i+1
       }
     }
-    lua_rawseti(L, -2, 3); // set a table with the shell definitions to the third position
+		lua_rawseti(L, -2, 3); // set a table with the shell definitions to the third position
+		lua_push(L, a->Wyckoff);
+		lua_rawseti(L, -2, 4); // set the wyckoff position to the third position
   }
   return 1;
 }
@@ -1486,7 +1498,7 @@ static int LuaPushAtom(lua_State *L, AtomType const *a)
 /*
  * reads a Hopping definition from the Lua stack
  * format
- *        Hopping = {"AtomName1.ShellName1","AtomName2.ShellName2",Vec,H}
+ *          Hopping = {"AtomName1.ShellName1","AtomName2.ShellName2",Vec,H}
  *        with H a table of tables of real or complex numbers / matrix
  *
  */
@@ -1498,7 +1510,6 @@ static int LuaReadHopping(lua_State *L, int narg, CrystalStructureType *Cell, Ti
   char AtomShell2[2*MAXStrLength+1];
   char *Atom1,*Atom2,*Shell1,*Shell2;
   bool comparepos=false;
-  double AtomPositionAccuracy=0.001;
   // test input
   if((lua_type(L,narg)!=LUA_TTABLE)) return luaL_error(L, "ReadHopping expects a table of the form {\"AtomName1.ShellName1\",\"AtomName2.ShellName2\",Vec,H}\n");
   if (lua_objlen(L, narg)!=4) return luaL_error(L, "ReadHopping expects a table with 4 elements of the form {\"AtomName1.ShellName1\",\"AtomName2.ShellName2\",Vec,H}\n");
@@ -1534,7 +1545,7 @@ static int LuaReadHopping(lua_State *L, int narg, CrystalStructureType *Cell, Ti
   {
     if(strcmp(Cell->Atom[i].Name, Atom1)==0)
     {
-      if((comparepos==false)||(EqualFloat(Cell->Atom[i].Position[0], idouble[0],AtomPositionAccuracy)&&EqualFloat(Cell->Atom[i].Position[1], idouble[1],AtomPositionAccuracy)&&EqualFloat(Cell->Atom[i].Position[2], idouble[2],AtomPositionAccuracy)))
+      if((comparepos==false)||(EqualFloat(Cell->Atom[i].Position[0], idouble[0])&&EqualFloat(Cell->Atom[i].Position[1], idouble[1])&&EqualFloat(Cell->Atom[i].Position[2], idouble[2])))
       {
         H->Atompos1=i;
         break;
@@ -1585,7 +1596,7 @@ static int LuaReadHopping(lua_State *L, int narg, CrystalStructureType *Cell, Ti
   {
     if(strcmp(Cell->Atom[i].Name, Atom2)==0)
     {
-      if((comparepos==false)||(EqualFloat(Cell->Atom[i].Position[0], idouble[0],AtomPositionAccuracy)&&EqualFloat(Cell->Atom[i].Position[1], idouble[1],AtomPositionAccuracy)&&EqualFloat(Cell->Atom[i].Position[2], idouble[2],AtomPositionAccuracy)))
+      if((comparepos==false)||(EqualFloat(Cell->Atom[i].Position[0], idouble[0])&&EqualFloat(Cell->Atom[i].Position[1], idouble[1])&&EqualFloat(Cell->Atom[i].Position[2], idouble[2])))
       {
         H->Atompos2=i;
         break;
@@ -1711,10 +1722,8 @@ static int LuaReadHopping(lua_State *L, int narg, CrystalStructureType *Cell, Ti
   lua_rawgeti(L, narg, 4);
   if((lua_type(L,-1)!=LUA_TTABLE)) return luaL_error(L, "ReadHopping expects a matrix for the definition of H between atom %s and %s\n",AtomShell1,AtomShell2);
   H->Hop = *luaL_checkMatrix(L, -1);
-  //TODO: check if dimension of H->Hop corresponds to the size of the atoms known in the structure
-  
-  
-  
+
+
   lua_pop(L,1);
   return 0;
 }

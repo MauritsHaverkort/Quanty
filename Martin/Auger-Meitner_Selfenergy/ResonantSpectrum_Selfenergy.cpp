@@ -669,6 +669,8 @@ uint32_t ResonantSpectrumWithSelfEnergy(const OperatorType OppH1, const Operator
 				  SelfEnergiesEvaluated[j][widx].y.Re = 0.;
 				  SelfEnergiesEvaluated[j][widx].y.Im = 0.;
 			  }
+			  //PrintArray(&poles2[i*Nw1 + p][0],poles2[i*Nw1 + p].size());
+			  //printf("w = %.2E\t%.2E\tenergy2 =%.2E\n",SelfEnergiesEvaluated[j][0].w,SelfEnergiesEvaluated[j][Npoints2-1].w,energy2);
 			  for (uint32_t k = 0; k < Nkappa; k++)
 			  {
 				  uint32_t NContStates = (uint32_t) Fk[k].size();
@@ -676,6 +678,7 @@ uint32_t ResonantSpectrumWithSelfEnergy(const OperatorType OppH1, const Operator
 				  {
 					  CalcSpectrumFromPolesAdd(0,gammaSE,ECont[k][e],polesSE[(p*NT2*Npoles2 + i*Npoles2 + j)*Nkappa + k],Fk[k][e],&(SelfEnergySMatrix[(p*NT2*Npoles2 + i*Npoles2 + j)*Nkappa + k]),SelfEnergiesEvaluated[j]);
 					  //PrintArray(&polesSE[(p*NT2*Npoles2 + i*Npoles2 + j)*Nkappa + k][0],polesSE[(p*NT2*Npoles2 + i*Npoles2 + j)*Nkappa + k].size());
+					  //int foo; std::cin >> foo;
 				  }
 			  }
 			}

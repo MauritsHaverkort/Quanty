@@ -1364,17 +1364,16 @@ uint32_t OperatorRemoveSmallValues(OperatorType * const O, const double epsilon)
         MakeComplexReal = 1;
         for (i = 0; i < Nold; i++)
         {
-          if (fabs(O->l[j].V[i].Im) > epsilon) MakeComplexReal = 0;
+          if (fabs(O->l[j].V[i].Im) > epsilon)
+            MakeComplexReal = 0;
           O->l[j].Next[i] = 0;
           if ((Sqr(O->l[j].V[i].Re) + Sqr(O->l[j].V[i].Im)) > epssqr)
-          {
             if (ComplexOperatorAddLader(O, &(O->l[j].o[j * i]), j, O->l[j].V[i].Re, O->l[j].V[i].Im))
             {
               printf
                 ("ComplexOperatorAddLader failed in OperatorRemoveSmallValues\n This should not happen\n No clue how to recover\n");
               AllocFailed();
             }
-          }
         }
         if (MakeComplexReal)
         {
@@ -6503,9 +6502,6 @@ uint32_t OperatorChangeNFandNB(OperatorType *O, const uint32_t NFnew, uint32_t N
   return 0;
 }
 
-/*  
- *
- */
 bool isCrAnIncluded(const uint16_t * const CrAn, const uint length, const vector<vector<uint16_t> > &subspace)
 {
 	for (uint i = 0; i < (uint) subspace.size(); ++i)
@@ -6553,70 +6549,62 @@ bool isCrAnConservesSubspaceOccupation(const uint16_t * const CrAn, const uint l
 	return true;
 }
 
-void extractPartialOperatorFixedLength(OperatorType * const O, OperatorType * const OPartial, const vector<vector<uint16_t> > &indices, bool (*criterion)(const uint16_t * const, const uint, const vector<vector<uint16_t> >&), const uint length, bool changeInput)
+void extractPartialOperatorFixedLength(OperatorType * const O, OperatorType * const OPartial, const vector<vector<uint16_t> > &indices,
+		bool (*criterion)(const uint16_t * const, const uint, const vector<vector<uint16_t> >&), const uint length, bool changeInput)
 {
-	uint16_t *oadd;
+	uint16_t oadd[length];
+	int firstIndexOfBlock;
 	InitOperatorFixedLength(OPartial, length, O->l[length].NBitsKey);
 	for (uint i = 0; i < (O->l[length].N); ++i)
 	{
-    oadd = &(O->l[length].o[i * length]);
+		uint firstIndexOfBlock = i * length;
+		for (uint j = 0; j < length; ++j)
+		{
+			oadd[j] = O->l[length].o[firstIndexOfBlock + j];
+		}
 		if (criterion(oadd, length, indices))
 		{
 			if (O->l[length].QComplex)
 			{
-				ComplexOperatorAddLader(OPartial, oadd, length, O->l[length].V[i].Re, O->l[length].V[i].Im);
+				ComplexOperatorAddLader(OPartial, oadd, length, O->l[length].V[firstIndexOfBlock / length].Re, O->l[length].V[firstIndexOfBlock / length].Im);
 				if (changeInput)
 				{
-					O->l[length].V[i].Re = 0;
-					O->l[length].V[i].Im = 0;
+					O->l[length].V[firstIndexOfBlock / length].Re = 0;
+					O->l[length].V[firstIndexOfBlock / length].Im = 0;
 				}
 			}
 			else
 			{
-				RealOperatorAddLader(OPartial, oadd, length, O->l[length].VRe[i]);
-				if (changeInput) O->l[length].VRe[i] = 0;
+				RealOperatorAddLader(OPartial, oadd, length, O->l[length].VRe[firstIndexOfBlock / length]);
+				if (changeInput) O->l[length].VRe[firstIndexOfBlock / length] = 0;
 			}
 		}
 	}
 }
 
-void extractPartialOperatorFixedLength(OperatorType * const O, OperatorType * const OPartial, const vector<vector<uint16_t> > &indices, bool (*criterion)(const uint16_t * const, const uint, const vector<vector<uint16_t> >&), const uint length)
+void extractPartialOperatorFixedLength(OperatorType * const O, OperatorType * const OPartial, const vector<vector<uint16_t> > &indices,
+		bool (*criterion)(const uint16_t * const, const uint, const vector<vector<uint16_t> >&), const uint length)
 {
 	extractPartialOperatorFixedLength(O, OPartial, indices, criterion, length, false);
 }
 
-
-/*  Input:
- *    Operator O
- *    bool changeInput: if true O+Opartial = O on input
- *                      if false O not changed
- *    indices: vector of vector of uint16 { {1,2}, {4,5}, {3,6,7,9}, ...} For each list the function criterion must yield true for the determinant to be included in Opartial
- *    criterion: Pointer to function with input:
- *                 Pointer to single determinant
- *                 length of determinant
- *                 indices
- *               Output true or false depending if the determinant needs to be included in Opartial or not
- *  Output Operator OPartial, not initialized on input
- *         Operator O, if change Input == true change O such that Oout + Opartial = Oin
- */
-void extractPartialOperator(OperatorType * const O, OperatorType * const OPartial, const vector<vector<uint16_t> > &indices, bool (*criterion)(const uint16_t * const, const uint, const vector<vector<uint16_t> >&), bool changeInput)
+void extractPartialOperator(OperatorType * const O, OperatorType * const OPartial, const vector<vector<uint16_t> > &indices,
+		bool (*criterion)(const uint16_t * const, const uint, const vector<vector<uint16_t> >&), bool changeInput)
 {
 	InitOperator(OPartial);
 	OPartial->NFermion = O->NFermion;
 	OPartial->NBoson = O->NBoson;
-  OPartial->NWord = O->NWord;
 	if (criterion(NULL, 0, indices) && O->l[0].N == 1)
 	{
 		if (O->l[0].QComplex) ComplexOperatorAddLader(OPartial, NULL, 0, O->l[0].V[0].Re, O->l[0].V[0].Im);
 		else RealOperatorAddLader(OPartial, NULL, 0, O->l[0].VRe[0]);
 	}
 	for (uint length = 1; length <= O->MaxLength; ++length)
-  {
 		extractPartialOperatorFixedLength(O, OPartial, indices, criterion, length, changeInput);
-  }
 }
 
-void extractPartialOperator(OperatorType * const O, OperatorType * const OPartial, const vector<vector<uint16_t> > &indices, bool (*criterion)(const uint16_t * const, const uint, const vector<vector<uint16_t> >&))
+void extractPartialOperator(OperatorType * const O, OperatorType * const OPartial, const vector<vector<uint16_t> > &indices,
+		bool (*criterion)(const uint16_t * const, const uint, const vector<vector<uint16_t> >&))
 {
 	extractPartialOperator(O, OPartial, indices, criterion, false);
 }

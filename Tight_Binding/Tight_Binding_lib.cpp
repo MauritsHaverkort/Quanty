@@ -79,6 +79,7 @@ int CopyAtomType(const AtomType *const A, AtomType *B)
   B->Position[0]=A->Position[0];
   B->Position[1]=A->Position[1];
   B->Position[2]=A->Position[2];
+  B->Wyckoff = A->Wyckoff;
   B->Nshell=A->Nshell;
   B->ShellName=(char**)malloc(A->Nshell*sizeof(char*));
   B->shelldegeneracy=(int*)malloc(A->Nshell*sizeof(int));
