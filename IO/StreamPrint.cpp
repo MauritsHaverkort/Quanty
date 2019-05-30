@@ -1571,6 +1571,7 @@ uint32_t StreamPrintBandstructurePath(BandstructurePathType M, FILE * stream)
 
 string numberToStringMaxWidth(double num, int maxWidth)
 {
+	if (num == HUGE_VAL) return "inf";
 	std::stringstream sstr;
 	int power = findPower(num);
 	int powerDigits = findPower(power) + 1;
