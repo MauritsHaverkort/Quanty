@@ -4,7 +4,8 @@ Verbosity(0x0)
 --goto sparse
 --goto atom
 --goto mlft
-goto hubbard
+--goto hubbard
+goto hubbardpsi
 --goto shiftschemetest
 
 -- The function Eigensystem calculates a set of eigen vectors and eigen values for a given matrix or operator
@@ -1235,6 +1236,8 @@ io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr
 TimePrint()
 
 
+::hubbardpsi::
+
 ------------------------------------------------------------
 --         Real Hubbard model strart from psi          --
 ------------------------------------------------------------
@@ -1260,9 +1263,6 @@ HlocU = NewOperator("Number",2,0,0)*NewOperator("Number",2,1,1)
 U=3.5
 Hamiltonian1 = CreateClusterHamiltonian(Htb,{"periodic",{{1,0,0},{0,1,0},{0,0,10}}},U*HlocU)
 
-print(Htb)
-print(Hamiltonian1)
-
 funstart10 = { NewWavefunction(20,0,{{"10011001100110011001",1}}),
   NewWavefunction(20,0,{{"01100110011001100110",1}}),
   NewWavefunction(20,0,{{"10010110011001100110",1}}),
@@ -1275,8 +1275,6 @@ funstart10 = { NewWavefunction(20,0,{{"10011001100110011001",1}}),
   NewWavefunction(20,0,{{"10011001011010011001",1}})}
 
 funstart1  = NewWavefunction(20,0,{{"10011001100110011001",sqrt(0.5)},{"01100110011001100110",sqrt(0.5)}})
-
-print(Htb)
 
 TimeStart("Hubbard psi Eigensystem 10 states")
 fun1 = Copy(funstart10)
@@ -1385,9 +1383,6 @@ HlocU = NewOperator("Number",2,0,0)*NewOperator("Number",2,1,1)
 
 U=3.5
 Hamiltonian1 = CreateClusterHamiltonian(Htb,{"periodic",{{1,0,0},{0,1,0},{0,0,10}}},U*HlocU,{{"k",{0,0,Pi/2}}})
-
-print(Htb)
-print(Hamiltonian1)
 
 funstart10 = { NewWavefunction(20,0,{{"10011001100110011001",1}}),
   NewWavefunction(20,0,{{"01100110011001100110",1}}),
