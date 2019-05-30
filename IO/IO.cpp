@@ -42,8 +42,7 @@ public:
         values[i].push_back(tmp[i]);
       }
     }
-    typedef map<string, vector<double> >::const_iterator iterType;
-    for (iterType iter = extraLists.begin(); iter != extraLists.end(); ++iter)
+    for (map<string, vector<double> >::const_iterator iter = extraLists.begin(); iter != extraLists.end(); ++iter)
     {
       headers.push_back(iter->first);
       if (iter->second.size() != psiList.size())
