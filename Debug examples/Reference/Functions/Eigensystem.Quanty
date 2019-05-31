@@ -5,7 +5,7 @@ Verbosity(0x0)
 --goto atom
 --goto mlft
 --goto hubbard
-goto hubbardpsi
+--goto hubbardpsi
 --goto shiftschemetest
 
 -- The function Eigensystem calculates a set of eigen vectors and eigen values for a given matrix or operator
