@@ -1,5 +1,5 @@
 
-dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Reference/Functions/Eigensystem.Quanty")
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Reference/Functions/NewOperator.Quanty")
 os.exit()
 
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Reference/Functions/PartialOperator.Quanty")

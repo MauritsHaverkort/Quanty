@@ -209,11 +209,11 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
 			}
 
 		}
-		LuaPushArray_double(L,&x[0],x.size());
+		LuaPushArray_double(L,&x[0],(int)x.size());
 		free(orbitalNames);
 		return 3;
 	}
-	LuaPushArray_double(L,&x[0],x.size());
+	LuaPushArray_double(L,&x[0],(int)x.size());
 	free(orbitalNames);
 	return 2;
 }

@@ -2252,7 +2252,7 @@ int artificialOrbitalMultiplicity(const string &orb)
 		return -1;
 	int firstNumberChar = 0;
 	while (orb.find('_', firstNumberChar) != (int) string::npos)
-		firstNumberChar = orb.find('_', firstNumberChar) + 1;
+		firstNumberChar = (int)orb.find('_', firstNumberChar) + 1;
 	string multString = orb.substr(firstNumberChar, orb.length() - firstNumberChar - 1);
 //	Here's what I would like to do:
 //	try
