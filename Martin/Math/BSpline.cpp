@@ -102,7 +102,7 @@ double Overlap(uint32_t i, uint32_t j, uint32_t ks, const vector<double> &x)
 
 void OverlapMatrix(uint32_t ks, vector<double> x, vector<double> &S)
 {
-	uint32_t Nspline = x.size() - ks - 1 -2;
+	uint32_t Nspline = (uint32_t)x.size() - ks - 1 -2;
 	S = vector<double>(Nspline*(ks+1));
 	//S = vector<double>(Nspline*Nspline);
 /*	for (int k = 0; k < Nspline*Nspline; k++)
