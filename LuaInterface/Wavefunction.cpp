@@ -794,6 +794,7 @@ static int LuaWavefunctionToString(lua_State * L)
   char *Buffer;
   StringPrintWaveFunctionReadable(*res, &Buffer);
   lua_pushstring(L, Buffer);
+  free(Buffer);
   return 1;
 }
 

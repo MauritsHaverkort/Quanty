@@ -3284,7 +3284,7 @@ static int LuaEigensystem(lua_State * L)
     {"restrictions", "DeterminantRestrictionType", &(Options.DeterminantRestrictions)},
     {"Restrictions", "DeterminantRestrictionType", &(Options.DeterminantRestrictions)},
     {"ExpandBasis", "bool",&(Options.ExpandBasis)},
-    {"ShiftScheme", "char*",(void*)Options.Settings.ShiftScheme},
+    {"ShiftScheme", "char*",&(Options.Settings.ShiftScheme)},
     {NULL, NULL, NULL}};
   VerbosityPrintf(0x10000000,"Start of LuaEigensystem\n");
   /* check number of input parameters */
@@ -3920,6 +3920,7 @@ static int LuaBlockBandDiagonalize(lua_State *L)
     CompactMatrixType M,vec;
     char NameTemp[MAXStrLength];
     bool found;
+    double AtomPositionAccuracy = 0.001;
     /* read the tight binding defintion from the first place on the lua stack */
     TB = (TightBindingDef *) luaL_checkudata(L, 1, "TightBinding_Type");
     // read list of atoms from the second place on the lua stack
@@ -3979,9 +3980,9 @@ static int LuaBlockBandDiagonalize(lua_State *L)
               for(l1=0;l1<TB->Cell.Atom[i1].shelldegeneracy[j1];l1++)
               {
                 if((strcmp(TB->Cell.Atom[i1].Name, AtomsInStartBlock[i].Name)==0)
-                   &&(EqualFloat(TB->Cell.Atom[i1].Position[0], AtomsInStartBlock[i].Position[0]))
-                   &&(EqualFloat(TB->Cell.Atom[i1].Position[1], AtomsInStartBlock[i].Position[1]))
-                   &&(EqualFloat(TB->Cell.Atom[i1].Position[2], AtomsInStartBlock[i].Position[2]))
+                   &&(EqualFloat(TB->Cell.Atom[i1].Position[0], AtomsInStartBlock[i].Position[0],AtomPositionAccuracy))
+                   &&(EqualFloat(TB->Cell.Atom[i1].Position[1], AtomsInStartBlock[i].Position[1],AtomPositionAccuracy))
+                   &&(EqualFloat(TB->Cell.Atom[i1].Position[2], AtomsInStartBlock[i].Position[2],AtomPositionAccuracy))
                    &&(strcmp(TB->Cell.Atom[i1].ShellName[j1],AtomsInStartBlock[i].ShellName[j])==0)
                    &&(strcmp(TB->Cell.Atom[i1].OrbitalName[j1][l1],AtomsInStartBlock[i].OrbitalName[j][l])==0) )
                 {
@@ -4601,9 +4602,7 @@ static int LuaPartialOperator(lua_State *L)
 	vector<vector<uint16_t> > indices;
 	string mode;
   uint32_t len = (uint32_t) lua_gettop(L);
-	if (len != 3)
-		return luaL_error(L, "PartialOperator called with %d arguments. Operator, List of (list of) Indices and mode expected.\n", len);
-
+	if (len != 3) return luaL_error(L, "PartialOperator called with %d arguments. Operator, List of (list of) Indices and mode expected.\n", len);
 	O = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
 	lua_check(L, 2, indices);
 	for (uint i = 0; i < (uint)indices.size(); i++)
@@ -4619,7 +4618,6 @@ static int LuaPartialOperator(lua_State *L)
 	{
 		return luaL_error(L, "PartialOperator called with unrecognised mode \"%s\".\n Mode should be \"include\", \"exclude\", or \"conserve\"\n", mode.c_str());
 	}
-
 	OPartial = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
 	if (mode == "include")
 	{

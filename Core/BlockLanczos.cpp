@@ -5419,7 +5419,7 @@ uint32_t BlockGroundState(OperatorType *H, uint32_t const Npsi, ConvergenceSetti
   VerbosityPrintf(0x20000,"\nStarting function 1 to Npsi=%i in BlockGroundState\n\n",Npsi);
   if(GlobalVerbosity&0x20000)
   {
-      for(i=0;i<Npsi;i++) PrintWaveFunctionReadable(psi[i]);
+    for(i=0;i<Npsi;i++) PrintWaveFunctionReadable(psi[i]);
   }
   // Change the size of the Hash lookuptable
   NBitsKeyNew = 8;
@@ -5441,7 +5441,9 @@ uint32_t BlockGroundState(OperatorType *H, uint32_t const Npsi, ConvergenceSetti
   {
     Energy[0][i]=1E+99;
   }
-  VerbosityPrintf(0x0002,"Converge %i states to an energy with relative variance smaller than %22.15E\n\n",Npsi,Settings->zero);
+
+  VerbosityPrintf(0x0002,"Start of BlockGroundState. Converge %i states to an energy with relative variance smaller than %22.15E\n\n",Npsi,Settings->zero);
+
   // loop until converged
   while((!Qconverged)&&(iloop<100))
   {

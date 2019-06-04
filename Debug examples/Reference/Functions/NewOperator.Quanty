@@ -1,3 +1,14 @@
+
+for i=1,100000 do
+  print(NewOperator(8,0,{{-1,1}}))
+  collectgarbage("collect")
+end
+os.exit()
+
+
+
+
+
 Nf = 5
 Nb = 0
 O = NewOperator(Nf, Nb, {{             10},

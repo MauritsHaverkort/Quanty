@@ -349,9 +349,9 @@ void InterpolateSlaterIntegrals(const int NIntegrals, SSlaterIntegral *integrals
 								const vector<vector<double> > &WavefunsUnbound,const vector<vector<double> > &dualfunsUnbound,
 								const vector<double> &EnergiesUnbound, vector<Interpolation::CubicSpline> &FkInterpol)
 {
-	uint32_t NBound = WavefunsBound.size();
-	uint32_t NUnbound = WavefunsUnbound.size();
-	uint32_t NSlater = FkInterpol.size();
+	uint32_t NBound = (uint32_t)WavefunsBound.size();
+	uint32_t NUnbound = (uint32_t)WavefunsUnbound.size();
+	uint32_t NSlater = (uint32_t)FkInterpol.size();
 	vector<vector<double> > FkList = vector<vector<double> >(NUnbound);
 	vector<vector<double> > FkTranspose;
 	WavefunsBound.push_back(WavefunsUnbound[0]);

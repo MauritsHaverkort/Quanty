@@ -76,9 +76,9 @@ int LMToOrbitalName(int l, int m, char **name)
   return 0;
 }
 
-int EqualFloat(double a, double b)
+int EqualFloat(double a, double b, double epsilon)
 {
-  if(fabs(a-b)<0.0001) // pricision defined by the fplo output (coordinates).
+  if(fabs(a-b)<epsilon) // pricision defined by the fplo output (coordinates).
     return 1;
   else
     return 0;
@@ -116,7 +116,6 @@ uint32_t CrystalStructureFromDresdenFPLO(DresdenFPLO FPLO, CrystalStructureType 
       {
         Cell->Atom[iatom].Position[i] = FPLO.Atoms.Pos[allatom][i];
       }
-      Cell->Atom[iatom].Wyckoff = FPLO.Atoms.Wyckoff[allatom];
       // Determine number of shells on each site.
       Cell->Atom[iatom].Nshell = 0;
       inl = 0;
@@ -195,7 +194,8 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
   int Nshell, *Norb, *NshellOfSite, *ShellLabel, *SiteInd, *ShellInd, **ShellOfSite, *OrbInd, **NVecShell, **NHopStart;
   char **SiteName, **ShellName;
   double ***HopVec, **SitePos;
-  const int NhopMax=1024;
+  const int NhopMax=2048;
+  double AtomPositionAccuracy = 0.001;
 
   strncpy(HTB->Name, FPLO.Compound, 15);
   HTB->Name[15]=0;
@@ -367,9 +367,9 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
           diffQ = 0;
           while( l<NVecShell[ish][jsh] &&
                 (diffQ =
-                  !(EqualFloat(HopVec[indsh][l][0],FPLO.Wannier.HopVec[indwan][k][0])&&
-                    EqualFloat(HopVec[indsh][l][1],FPLO.Wannier.HopVec[indwan][k][1])&&
-                    EqualFloat(HopVec[indsh][l][2],FPLO.Wannier.HopVec[indwan][k][2]))) )
+                  !(EqualFloat(HopVec[indsh][l][0],FPLO.Wannier.HopVec[indwan][k][0],AtomPositionAccuracy)&&
+                    EqualFloat(HopVec[indsh][l][1],FPLO.Wannier.HopVec[indwan][k][1],AtomPositionAccuracy)&&
+                    EqualFloat(HopVec[indsh][l][2],FPLO.Wannier.HopVec[indwan][k][2],AtomPositionAccuracy))) )
               l++;
 
           if(l==NVecShell[ish][jsh] && diffQ)
@@ -475,9 +475,9 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
             {
               for(k=0;k<FPLO.Wannier.Nhop[indwan];k++)
               {
-                if( EqualFloat(FPLO.Wannier.HopVec[indwan][k][0], HopVec[indsh][ihtb-NHopStart[ish][jsh]][0]) &&
-                    EqualFloat(FPLO.Wannier.HopVec[indwan][k][1], HopVec[indsh][ihtb-NHopStart[ish][jsh]][1]) &&
-                    EqualFloat(FPLO.Wannier.HopVec[indwan][k][2], HopVec[indsh][ihtb-NHopStart[ish][jsh]][2])   )
+                if( EqualFloat(FPLO.Wannier.HopVec[indwan][k][0], HopVec[indsh][ihtb-NHopStart[ish][jsh]][0],AtomPositionAccuracy) &&
+                    EqualFloat(FPLO.Wannier.HopVec[indwan][k][1], HopVec[indsh][ihtb-NHopStart[ish][jsh]][1],AtomPositionAccuracy) &&
+                    EqualFloat(FPLO.Wannier.HopVec[indwan][k][2], HopVec[indsh][ihtb-NHopStart[ish][jsh]][2],AtomPositionAccuracy)   )
                   {
                     HTB->H[ihtb].Hop.VRe[OrbInd[i]][OrbInd[j]] = FPLO.Wannier.HopVal[indwan][k];
                   }

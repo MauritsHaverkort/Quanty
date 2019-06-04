@@ -5,6 +5,7 @@ Verbosity(0x0)
 --goto atom
 --goto mlft
 --goto hubbard
+--goto hubbardpsi
 --goto shiftschemetest
 
 -- The function Eigensystem calculates a set of eigen vectors and eigen values for a given matrix or operator
@@ -1235,6 +1236,8 @@ io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr
 TimePrint()
 
 
+::hubbardpsi::
+
 ------------------------------------------------------------
 --         Real Hubbard model strart from psi          --
 ------------------------------------------------------------
@@ -1260,9 +1263,6 @@ HlocU = NewOperator("Number",2,0,0)*NewOperator("Number",2,1,1)
 U=3.5
 Hamiltonian1 = CreateClusterHamiltonian(Htb,{"periodic",{{1,0,0},{0,1,0},{0,0,10}}},U*HlocU)
 
-print(Htb)
-print(Hamiltonian1)
-
 funstart10 = { NewWavefunction(20,0,{{"10011001100110011001",1}}),
   NewWavefunction(20,0,{{"01100110011001100110",1}}),
   NewWavefunction(20,0,{{"10010110011001100110",1}}),
@@ -1275,8 +1275,6 @@ funstart10 = { NewWavefunction(20,0,{{"10011001100110011001",1}}),
   NewWavefunction(20,0,{{"10011001011010011001",1}})}
 
 funstart1  = NewWavefunction(20,0,{{"10011001100110011001",sqrt(0.5)},{"01100110011001100110",sqrt(0.5)}})
-
-print(Htb)
 
 TimeStart("Hubbard psi Eigensystem 10 states")
 fun1 = Copy(funstart10)
@@ -1386,9 +1384,6 @@ HlocU = NewOperator("Number",2,0,0)*NewOperator("Number",2,1,1)
 U=3.5
 Hamiltonian1 = CreateClusterHamiltonian(Htb,{"periodic",{{1,0,0},{0,1,0},{0,0,10}}},U*HlocU,{{"k",{0,0,Pi/2}}})
 
-print(Htb)
-print(Hamiltonian1)
-
 funstart10 = { NewWavefunction(20,0,{{"10011001100110011001",1}}),
   NewWavefunction(20,0,{{"01100110011001100110",1}}),
   NewWavefunction(20,0,{{"10010110011001100110",1}}),
@@ -1493,17 +1488,16 @@ TimePrint()
 --  1D tight binding with different onsite energies to test shift scheme   --
 -----------------------------------------------------------------------------
 
+TimeStart("1D tight binding")
+
 print("============================================")
 print("        1D tight binding 1 electron         ")
 print("============================================")
 print("             start from psi                 ")
 print("============================================\n\n")
 
-Verbosity(0xFFFFFFFF)
-
 funstart1  = NewWavefunction(20,0,{{"10000000000000000000",1}})
 funstart2  = NewWavefunction(20,0,{{"10000000000000000000",1}})
-
 
 Htb = NewTightBinding()
 Htb.Cell={{1,0,0},
@@ -1517,18 +1511,19 @@ Hamiltonian1 = Chop(CreateClusterHamiltonian(Htb,{"periodic",{{1,0,0},{0,1,0},{0
 
 crtable = {}
 for i=0,19 do
-  crtable[i+1] = {i,-i, 20000-1*i}
+  crtable[i+1] = {i,-i, 2000-1*i}
 end
 Hamiltonian2 = NewOperator(20,0,crtable)
 
-print(Htb)
-print(Hamiltonian1)
-print(Hamiltonian2)
-
 Hamiltonian = Hamiltonian1 + Hamiltonian2
 
+
+TimeStart("1D tight binding shifted")
 Eigensystem(Hamiltonian,funstart1,{{"DenseBorder",1}})
-Eigensystem(Hamiltonian,funstart2,{{"ShiftScheme","None"}})
+TimeEnd("1D tight binding shifted")
+TimeStart("1D tight binding non-shifted")
+Eigensystem(Hamiltonian,funstart2,{{"DenseBorder",1},{"ShiftScheme","None"}})
+TimeEnd("1D tight binding non-shifted")
 
 Hpsi1 = Hamiltonian*funstart1
 Hpsi2 = Hamiltonian*funstart2
@@ -1537,11 +1532,11 @@ print("The overlap between psi1 (with shift) and psi2 (without shift) is",funsta
 
 print("======================== With shift")
 print("The energy of the state is    ",Braket(funstart1,Hpsi1))
-print("The variance of the energy is ",Braket(funstart1,Hpsi1)^2-Braket(Hpsi1,Hpsi1))
+print("The variance of the energy is ",Braket(Hpsi1,Hpsi1)-(Braket(funstart1,Hpsi1)^2))
 
 print("======================== Without shift")
 print("The energy of the state is    ",Braket(funstart2,Hpsi2))
-print("The variance of the energy is ",Braket(funstart2,Hpsi2)^2-Braket(Hpsi2,Hpsi2))
+print("The variance of the energy is ",Braket(Hpsi2,Hpsi2)-(Braket(funstart2,Hpsi2)^2))
 
 
 
@@ -1549,3 +1544,8 @@ print("The density matrix is with shift")
 print(DensityMatrix(funstart1,{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19}))
 print("The density matrix is wihtout shift")
 print(DensityMatrix(funstart2,{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19}))
+
+
+TimeEnd("1D tight binding")
+
+TimePrint()

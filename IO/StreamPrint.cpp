@@ -405,9 +405,7 @@ uint32_t StreamPrintWaveFunctionFullReadable(WaveFunctionType psi, FILE * stream
     fprintf(stream, "\n  pre-factor            Pointer Addres  Next_Hash Hash_Value   Determinant\n");
     for (i = 1; i <= psi.N; i++)
     {
-      fprintf(stream, "%20.12E       %p %10i %10i   ", psi.ValueRe[BlokElement(i)], &psi.ValueRe[BlokElement(i)],
-              psi.Next[BlokElement(i)], hash(&psi.Determinant[BlokElementDet(i, psi.NWord, 0)], psi.NWord,
-                                             psi.NBitsKey));
+      fprintf(stream, "%20.12E       %p %10i %10i   ", psi.ValueRe[BlokElement(i)], &psi.ValueRe[BlokElement(i)], psi.Next[BlokElement(i)], hash(&psi.Determinant[BlokElementDet(i, psi.NWord, 0)], psi.NWord, psi.NBitsKey));
       for (j = 0; j < psi.NWord; j++)
       {
         fprintf(stream, "%2.2X", psi.Determinant[BlokElementDet(i, psi.NWord, j)]);
@@ -1573,6 +1571,7 @@ uint32_t StreamPrintBandstructurePath(BandstructurePathType M, FILE * stream)
 
 string numberToStringMaxWidth(double num, int maxWidth)
 {
+	if (num == HUGE_VAL) return "inf";
 	std::stringstream sstr;
 	int power = findPower(num);
 	int powerDigits = findPower(power) + 1;

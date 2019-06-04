@@ -1041,13 +1041,15 @@ void RealBlockWaveFunctionRestrict(WaveFunctionType * const a, const uint32_t Np
     free(a[0].Next[iBlok]);
     free(a[0].Determinant[iBlok]);
   }
+  a[0].Next = (uint32_t **)realloc(a[0].Next, a[0].NBlok * sizeof(uint32_t *));
+  a[0].Determinant = (uint8_t **)realloc(a[0].Determinant, a[0].NBlok * sizeof(uint8_t *));
   for(i=0;i<Npsi;i++)
   {
     a[i].NBlok = 1 + (a[0].N >> NBitsBlok);
     a[i].ValueRe = (double **)realloc(a[i].ValueRe, a[0].NBlok * sizeof(double *));
+    a[i].Next = a[0].Next;
+    a[i].Determinant = a[0].Determinant;
   }
-  a[0].Next = (uint32_t **)realloc(a[0].Next, a[0].NBlok * sizeof(uint32_t *));
-  a[0].Determinant = (uint8_t **)realloc(a[0].Determinant, a[0].NBlok * sizeof(uint8_t *));
 }
 void ComplexBlockWaveFunctionRestrict(WaveFunctionType * const a, const uint32_t Npsi, const DeterminantRestrictionType res)
 {
@@ -1106,17 +1108,20 @@ void ComplexBlockWaveFunctionRestrict(WaveFunctionType * const a, const uint32_t
     free(a[0].Next[iBlok]);
     free(a[0].Determinant[iBlok]);
   }
+  a[0].Next = (uint32_t **)realloc(a[0].Next, a[0].NBlok * sizeof(uint32_t *));
+  a[0].Determinant = (uint8_t **)realloc(a[0].Determinant, a[0].NBlok * sizeof(uint8_t *));
   for(i=0;i<Npsi;i++)
   {
     a[i].NBlok = 1 + (a[0].N >> NBitsBlok);
     a[i].ValueRe = (double **)realloc(a[i].ValueRe, a[0].NBlok * sizeof(double *));
+    a[i].Next = a[0].Next;
+    a[i].Determinant = a[0].Determinant;
   }
-  a[0].Next = (uint32_t **)realloc(a[0].Next, a[0].NBlok * sizeof(uint32_t *));
-  a[0].Determinant = (uint8_t **)realloc(a[0].Determinant, a[0].NBlok * sizeof(uint8_t *));
 }
 void BlockWaveFunctionRestrict(WaveFunctionType * const a, const uint32_t Npsi, const DeterminantRestrictionType res)
 {
   if(Npsi==0) return;
+  if(res.N==0) return;
   if(a[0].QComplex==0)
   {
     RealBlockWaveFunctionRestrict(a, Npsi, res);

@@ -79,7 +79,6 @@ int CopyAtomType(const AtomType *const A, AtomType *B)
   B->Position[0]=A->Position[0];
   B->Position[1]=A->Position[1];
   B->Position[2]=A->Position[2];
-  B->Wyckoff = A->Wyckoff;
   B->Nshell=A->Nshell;
   B->ShellName=(char**)malloc(A->Nshell*sizeof(char*));
   B->shelldegeneracy=(int*)malloc(A->Nshell*sizeof(int));
@@ -2253,7 +2252,7 @@ int artificialOrbitalMultiplicity(const string &orb)
 		return -1;
 	int firstNumberChar = 0;
 	while (orb.find('_', firstNumberChar) != (int) string::npos)
-		firstNumberChar = orb.find('_', firstNumberChar) + 1;
+		firstNumberChar = (int)orb.find('_', firstNumberChar) + 1;
 	string multString = orb.substr(firstNumberChar, orb.length() - firstNumberChar - 1);
 //	Here's what I would like to do:
 //	try

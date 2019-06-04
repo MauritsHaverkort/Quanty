@@ -4959,6 +4959,7 @@ static int LuaOperatorToString(lua_State * L)
   char *Buffer;
   StringPrintOperatorReadable(*res, &Buffer);
   lua_pushstring(L, Buffer);
+  free(Buffer);
   return 1;
 }
 

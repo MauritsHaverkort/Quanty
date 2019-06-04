@@ -1957,12 +1957,12 @@ static int LuaMartinTest(lua_State *L)
 	uint32_t Mrow = vec.size();
 	uint32_t Ncol = 2;
 	LinAlg::Matrix<double> startblock = LinAlg::Matrix<double>(Mrow,Ncol);
-	/*for(uint32_t i = 0; i < Mrow;i++)
+	for(uint32_t i = 0; i < Mrow;i++)
 	{
 		startblock.Entries[i] = vec[i];
 		startblock.Entries[i+Mrow] = vec[i]+i;
-	}*/
-/*	startblock.Entries[0] = -1;
+	}
+	startblock.Entries[0] = -1;
 	startblock.Entries[1] =  0;
 	startblock.Entries[2] =  3;
 	startblock.Entries[3] =  1;

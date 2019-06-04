@@ -5,10 +5,13 @@ CompactMatrixType BlockTriDiagonalMatrixToCompactMatrix(const BlockTriDiagonalMa
 	{
 		CompactMatrixType Atmp, Btmp, BtmpT;
 		Atmp.QComplex = M.QComplex;
+		Btmp.QComplex = M.QComplex;
 		Atmp.Ni = M.BlockSize;
-		Atmp.Nj = Atmp.Ni;
+		Atmp.Nj = M.BlockSize;
+		Btmp.Ni = M.BlockSize;
+		Btmp.Nj = M.BlockSize;
 		InitCompactMatrix(&Atmp);
-		CompactMatrixCopy(Atmp, &Btmp);
+		InitCompactMatrix(&Btmp);
 		for (uint k = 0; k < M.BlockSize; ++k)
 		{
 			for (uint l = 0; l < M.BlockSize; ++l)
@@ -28,23 +31,30 @@ CompactMatrixType BlockTriDiagonalMatrixToCompactMatrix(const BlockTriDiagonalMa
 				}
 			}
 		}
+		FreeCompactMatrix(&(outMatMat[i - 1][i - 1]));
 		outMatMat[i - 1][i - 1] = Atmp;
 		if (isZeroMatrix(Btmp, zero))
+		{
+			FreeCompactMatrix(&Btmp);
 			break;
+		}
 		if (i < M.N - 1)
 		{
+			FreeCompactMatrix(&(outMatMat[i - 1][i]));
 			outMatMat[i - 1][i] = Btmp;
 			CompactMatrixCopy(Btmp, &BtmpT);
 			if ((bool) Btmp.QComplex)
 				CompactMatrixConjugateTranspose(&BtmpT);
 			else
 				CompactMatrixTranspose(&BtmpT);
+			FreeCompactMatrix(&(outMatMat[i][i - 1]));
 			outMatMat[i][i - 1] = BtmpT;
 		}
 	}
 	CompactMatrixType out = MatrixFlatten(outMatMat);
 	strcpy(out.Name, M.Name);
 	out.mu = M.mu;
+	FreeCompactMatrixMatrix(outMatMat);
 	return out;
 }
 
@@ -117,9 +127,15 @@ bool isZeroMatrix(const CompactMatrixType &M, const double zero)
 void FreeCompactMatrixMatrix(vector<vector<CompactMatrixType> > &matMat)
 {
 	for (uint i = 0; i < (uint) matMat.size(); ++i)
+	{
 		for (uint j = 0; j < (uint) matMat[i].size(); ++j)
+		{
 			if (!isNullMatrix(matMat[i][j]))
+			{
 				FreeCompactMatrix(&matMat[i][j]);
+			}
+		}
+	}
 }
 
 void FreeMatrixMatrix(vector<vector<MatrixType> > &matMat)
@@ -158,12 +174,14 @@ CompactMatrixType SubspaceRotationMatrix(const uint dim1, const CompactMatrixTyp
 	InitCompactIdentityMatrix(&one1);
 	InitCompactIdentityMatrix(&one2);
 	vector < vector<CompactMatrixType> > outMatMat = CompactnullMatrixMatrix(3, 3);
+	FreeCompactMatrix(&(outMatMat[0][0]));
 	outMatMat[0][0] = one1;
-	outMatMat[1][1] = T;
+	FreeCompactMatrix(&(outMatMat[1][1]));
+	CompactMatrixCopy(T, &(outMatMat[1][1]));
+	FreeCompactMatrix(&(outMatMat[2][2]));
 	outMatMat[2][2] = one2;
 	out = MatrixFlatten(outMatMat);
-	FreeCompactMatrix(&one1);
-	FreeCompactMatrix(&one2);
+	FreeCompactMatrixMatrix(outMatMat);
 	return out;
 }
 

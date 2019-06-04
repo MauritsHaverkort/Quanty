@@ -2030,6 +2030,7 @@ static int LuaSpectraToString(lua_State * L)
   char *Buffer;
   StringPrintSpectra(spec->Spec, spec->NSpectra, &Buffer);
   lua_pushstring(L, Buffer);
+  free(Buffer);
   return 1;
 }
 
