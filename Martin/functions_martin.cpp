@@ -1837,166 +1837,27 @@ static int LuaReduceOperator(lua_State *L)
 static int LuaMartinTest(lua_State *L)
 {
 
-	vector<WaveFunctionType> wfs, out;
-	CompactMatrixType U;
-	lua_check(L,1,wfs);
-	lua_check(L,2,U);
+	int    info = 0;
+	const char *jobz = "V";
+	const char *uplo = "U";
+	uint32_t N = 10;
+	uint32_t    lwork = 1 + 6 * N + 2 * Sqr(N);
+	uint32_t    liwork = 3 + 5 * N;
 
-	out = vector<WaveFunctionType>(wfs.size());
-	RotateWaveFunctions(&wfs[0],(uint32_t)wfs.size(),U,&out[0]);
+	double *work = (double*)malloc(lwork*sizeof(double));
+	double *m = (double*) malloc(N*N*sizeof(double));
+	double *val = (double*) malloc(N*N*sizeof(double));
 
-	uint32_t Npsi = (uint32_t)wfs.size();
-	WaveFunctionType psi[Npsi];
-	for (uint32_t i = 0; i < Npsi; i++)
+	for (uint32_t i = 0; i < N*N; i++)
 	{
-		psi[i] = out[i];
+		m[i] = 1;
+		val[i] = 0;
 	}
-	LuaPushTable_WaveFunctionType(L,psi,Npsi);
-
-	return 1;
-
-
-	/*double bla[] = {0., 0., 0., 0., 1., 2., 3., 4., 5., 5., 5., 5.};
-	vector<double> x,S;
-	for (int i =0; i < 12; i++)
+	for (uint32_t i = 0; i < lwork; i++)
 	{
-		x.push_back(bla[i]);
+		work[i] = 0;
 	}
-	uint32_t N = (uint32_t) x.size();
-	uint32_t ks = 3;
-	uint32_t Nspline = N - ks-3;
-
-	BSpline::OverlapMatrix(ks,x,S);
-	uint32_t Nfuns = (uint32_t)lua_objlen(L,1);
-	vector<Interpolation::InterpolatingFunction *> funs = vector<Interpolation::InterpolatingFunction *>(Nfuns);
-	for(uint32_t i = 0; i < Nfuns; i++)
-	{
-		lua_rawgeti(L, 1, i+1);
-		funs[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
-		lua_pop(L,1);
-	}*/
-	/*for (uint32_t j = 0; j < ks+1;j++)
-	{
-		for (uint32_t i = 0; i < Nspline;i++)
-		{
-			//printf("%.4f\t",S[i + j*Nspline]);
-			printf("%.4f\t",S[i*(ks+1) + j]);
-			if (i >= j)
-				printf("%.4f\t",S[i + j*(ks+1)]);
-			else
-				printf("%.4f\t",0.);
-		}
-		printf("\n");
-	}*/
-	/*vector<double> c;
-	BSpline::Components(funs,ks,x,S,c);
-	lua_push(L,c);
-
-	return 1;*/
-
-	/*for (uint32_t i = 1; i < N - ks-2; i++)
-		{
-			for (uint32_t j = 1; j < N - ks-2; j++)
-			{
-				printf("%f\t",BSpline::Overlap(i,j,ks,x));
-			}
-			printf("\n");
-		}*/
-
-
-	/*
-	lua_check(L,3,psi);
-
-	BlockTriDiagonalMatrixType GTri;
-	CreateSpectrum(*H,*T,&psi[0],psi.size(),1E-16,GTri,4);
-	LuaPushTable_BlockTriDiagonalMatrixType(L, &GTri);
-	return 1;
-*/
-/*
-	MatrixType U;
-	std::vector<WaveFunctionType> psi;
-	WaveFunctionType *out;
-
-	lua_check(L,1,psi);
-	U = *luaL_checkMatrix(L,2);
-	RotateWaveFunctions(&psi[0],psi.size(),U,out);
-    char *Buffer;
-    lua_createtable(L,psi.size(),0);
-    for (int i = 0; i < psi.size(); i++)
-    {
-    	StringPrintWaveFunctionReadable(out[i], &Buffer);
-    	lua_pushstring(L, Buffer);
-    	lua_rawseti(L,-2,i+1);
-    }
-
-	return 1;
-*/
-	/*
-	uint32_t mu;
-	int kappa1;
-	int kappa2;
-	int twom1;
-	int twom2;
-	lua_check(L,1,mu);
-	lua_check(L,2,kappa1);
-	lua_check(L,3,kappa2);
-	lua_check(L,4,twom1);
-	lua_check(L,5,twom2);
-	printf("\nmu = %d\nkappa1 = %i\nkappa2 = %i\nm1 = %i/2\nm2 = %i/2\n",mu,kappa1,kappa2,twom1,twom2);
-	printf("\nYYY = %f\n",YYYintegral(0,0,1,1,1,-1));
-	printf("\nCGo = %f\n",ClebschHalf(2,0,1,1,3,1));
-	printf("\nDipole = %f\n",DipoleMatrixElement(1,1,1,mu,kappa1,kappa2,twom1,twom2));
-	return 0;
-	*/
-/*	LinAlg::CSRMatrix<double> *M = (LinAlg::CSRMatrix<double> *) luaL_checkudata(L, 1, "CSRMatrix_Type");
-	M->Print();
-	return 0;
-	WaveFunctionType *psi = (WaveFunctionType *) luaL_checkudata(L, 2, "Wavefunction_Type");
-	std::vector<double> vec, a, b, y;
-	WaveFunctionToVector(psi,vec,psi);
-	uint32_t Mrow = vec.size();
-	uint32_t Ncol = 2;
-	LinAlg::Matrix<double> startblock = LinAlg::Matrix<double>(Mrow,Ncol);
-	for(uint32_t i = 0; i < Mrow;i++)
-	{
-		startblock.Entries[i] = vec[i];
-		startblock.Entries[i+Mrow] = vec[i]+i;
-	}
-	startblock.Entries[0] = -1;
-	startblock.Entries[1] =  0;
-	startblock.Entries[2] =  3;
-	startblock.Entries[3] =  1;
-	startblock.Entries[4] =  1;
-	startblock.Entries[5] =  3;
-
-	startblock.Entries[6] =  2;
-	startblock.Entries[7] =  1;
-	startblock.Entries[8] =  1;
-	startblock.Entries[9] =  0;
-	startblock.Entries[10] = 0;
-	startblock.Entries[11] = 3;
-	std::vector<LinAlg::Matrix<double> > T,A,B;
-	double epsSV = 100*DBL_EPSILON;
-	uint32_t N = 4;
-	BlockLanczos(*M,startblock,N,epsSV,A,B,T);
-	printf("A:\n");
-	for (int i = 0; i < N; i++)
-	{
-		A[i].print();
-		printf("\n");
-	}
-	printf("B:\n");
-	for (int i = 0; i < N; i++)
-	{
-		B[i].print();
-		printf("\n");
-	}
-	printf("T:\n");
-	for (int i = 0; i < N; i++)
-	{
-		T[i].print();
-		printf("\n");
-	}*/
+	dsyev(jobz, uplo, &N, m, &N, val, work, &lwork, &info);
 	return 0;
 }
 
