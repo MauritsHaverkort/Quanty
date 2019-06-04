@@ -1139,7 +1139,8 @@ uint32_t BlockTriDiagonalMatrixEigenValues(const BlockTriDiagonalMatrixType * co
   {
     Complex16 * AB;
     Complex16 *WORK;
-    AB= (Complex16*)malloc(LDAB*N*sizeof(Complex16));
+    //AB= (Complex16*)malloc(LDAB*N*sizeof(Complex16));
+    AB= (Complex16*)calloc(LDAB*N,sizeof(Complex16));	// changed by Martin: initalize to zero
     if(AB==NULL)
     {
       printf("ERROR: malloc failed in BlockTriDiagonalMatrixEigenValues\n");
@@ -1167,7 +1168,14 @@ uint32_t BlockTriDiagonalMatrixEigenValues(const BlockTriDiagonalMatrixType * co
           i++;
           j++;
         }
-        j+=iBlock; // set the aditional values of the row to zero
+        j+=iBlock; // set the aditional values of the row to zero //Martin: either solution with calloc above, or solution below without this line
+/*        uint32_t jmax = j + iBlock;
+        while (j < jmax)
+        {
+        	AB[j].Re = 0;
+        	AB[j].Im = 0;
+        	j++;
+        }*/
       }
     }
     // Tridiagonalize the Block tridiagonal matrix

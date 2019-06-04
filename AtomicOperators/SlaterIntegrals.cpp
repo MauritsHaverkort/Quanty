@@ -290,6 +290,25 @@ vector<double> CreateWeights(const unsigned int NGridPoints, const vector<double
     return weights;
 }
 
+vector<double> CreateWeights(const vector<double> &x)
+{
+	uint32_t i;
+    double x0 = 0;
+    uint32_t NGridPoints = (uint32_t) x.size();
+    vector<double> weights;
+
+    for( i = 0; i < NGridPoints-1; i++)
+    {
+        weights.insert(weights.end(), 2 * (x[i] - x0));
+        x0 = x[i] + weights[i] / 2;
+        //printf("weights %d\n",NGridPoints*2-(i+NGridPoints)-1);
+        //fflush(stdout);
+    }
+    weights.insert(weights.end(), 0.);
+    weights[NGridPoints-2] += x[i]-x0;
+    return weights;
+}
+
 vector<double> Dual(const vector<double> &f, const vector<double> &w)
 {
 	vector<double> g = vector<double>(f.size());
@@ -301,14 +320,21 @@ vector<double> Dual(const vector<double> &f, const vector<double> &w)
 	return g;
 }
 
-void CreateDualFunctions(const vector<vector<double> > &basisfuns,const vector<double> &x, vector<vector<double> > &dualfuns)
+void CreateDualFunctions(const vector<vector<double> > &basisfuns,const vector<double> &x, vector<vector<double> > &dualfuns,bool QRelativistic)
 {
 	uint32_t i;
     vector<double> weights;
     unsigned int NBasisFuns = (unsigned int )basisfuns.size();
     unsigned int NGridPoints = (unsigned int )x.size();
 
-    weights = CreateWeights(NGridPoints,x);
+    if (QRelativistic)
+    {
+    	weights = CreateWeights(NGridPoints,x);
+    }
+    else
+    {
+    	weights = CreateWeights(x);
+    }
 
     dualfuns = vector<vector<double> >(NBasisFuns);
     for ( i = 0; i < NBasisFuns; i++ )

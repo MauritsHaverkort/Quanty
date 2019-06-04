@@ -26,7 +26,7 @@ vector<double> CreateWeights(const unsigned int NGridPoints, const vector<double
 
 vector<double> Dual(const vector<double> &f, const vector<double> &w);
 
-void CreateDualFunctions(const vector<vector<double> > &basisfuns,const vector<double> &x, vector<vector<double> > &dualfuns);
+void CreateDualFunctions(const vector<vector<double> > &basisfuns,const vector<double> &x, vector<vector<double> > &dualfuns,bool QRelativistic=true);
 
 SSlaterIntegral *InitializeIntegrals(const vector<int> &indToK, unsigned int &NIntegrals, unsigned int *kMax, bool Qcontinuum=false);
 

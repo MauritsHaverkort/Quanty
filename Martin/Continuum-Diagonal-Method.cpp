@@ -91,14 +91,21 @@ void CalculateResidues(const std::vector<double> &v, CompactMatrixType *M, uint3
 {
 	if(M->Ni < Nresidues || M->Nj < (uint32_t) v.size())
 	{
-		printf("error in CalculateResidues: CompactMatrix has wrong dimensions: Ni = %d Nj = %d\n",M->Ni,M->Nj);
+		printf("error in CalculateResidues: CompactMatrix has wrong dimensions: Ni = %u Nj = %u\n v.size = %u\t Nresidues = %u\n",M->Ni,M->Nj,(uint32_t) v.size(),Nresidues);
 		fflush(stdout);
 		return;
 	}
 	if(M->QComplex)
 	{
-		printf("error in CalculateResidues: CompactMatrix is complex. I should implement that\n");
-		fflush(stdout);
+		residues = std::vector<double>(Nresidues);
+		for (uint32_t i = 0; i < Nresidues; i++)
+		{
+			residues[i] = 0;
+			for (uint32_t j = 0; j < (uint32_t) v.size(); j++)
+			{
+				residues[i] += (M->V[i*M->Nj + j].Re * v[j] * M->V[i*M->Nj + j].Re * v[j]) + (M->V[i*M->Nj + j].Im * v[j] * M->V[i*M->Nj + j].Im * v[j]);
+			}
+		}
 		return;
 	}
 	residues = std::vector<double>(Nresidues);
@@ -138,13 +145,14 @@ Complex16 Resolvent(Complex16 z, const std::vector<double> &poles, const std::ve
 	result.Im = 0;
 	if (poles.size() < residues.size())
 	{
-		printf("error in Resolvent: poles.size() = %u < %u = residues.size()",(uint32_t)poles.size(),(uint32_t)residues.size());
+		printf("error in Resolvent: poles.size() = %u < %u = residues.size()\n",(uint32_t)poles.size(),(uint32_t)residues.size());
 		fflush(stdout);
 		return result;
 	}
 	for (uint32_t i = 0; i < (uint32_t) residues.size(); i++)
 	{
 		result += residues[i]/(z - poles[i]);
+		//printf("res[%d] = %.2e\n",i,residues[i]);
 	}
 	return result;
 }
@@ -156,7 +164,7 @@ Complex16 Resolvent(Complex16 z, const std::vector<double> &poles, const std::ve
 	result.Im = 0;
 	if (poles.size() < residues.size() || poles.size() != selfenergy.size())
 	{
-		printf("error in Resolvent: poles.size() = %u < %u = residues.size()",(uint32_t)poles.size(),(uint32_t)residues.size());
+		printf("error in Resolvent: poles.size() = %u < %u = residues.size()\n",(uint32_t)poles.size(),(uint32_t)residues.size());
 		fflush(stdout);
 		return result;
 	}
@@ -589,8 +597,9 @@ void CalculateEigensystemOnBasis(const vector<WaveFunctionType> &basis,const Ope
 {
 	CompactMatrixType M, S, S12, Hbasis, eigenfuns;
 	CalculateHermitianMatrixElements(basis,H,M);
-	PrintMartix(M.VRe,M.Ni);
+//	PrintMartix(M.VRe,M.Ni);
 	CalculateOverlapMatrix(basis,S);
+//	PrintMartix(S.VRe,S.Ni);
 	TransformMatrixToONB(S,M,S12,Hbasis);
 	eigenvals = vector<double>(M.Ni);
 	CompactMatrixEigensystem(&Hbasis,&eigenfuns,&eigenvals[0]); // TODO check if eigenvals row- or coll-major

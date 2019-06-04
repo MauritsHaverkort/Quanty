@@ -4723,7 +4723,7 @@ uint32_t TimeToDeflateInBlockLanczosKrylov(double Norm, double Zero, uint32_t i,
       tot+=Sqr(HKrylov->V[j+j*HKrylov->Nj].Re);
     }
   }
-  //VerbosityPrintf(0x10000000, "The deflation test yields Sqr(Norm) = %E < tot(%E) * Zero(%E) = %E\n",Sqr(Norm),tot,Zero,tot*Zero);
+  VerbosityPrintf(0x10000000, "The deflation test yields Sqr(Norm) = %E < tot(%E) * Zero(%E) = %E\n",Sqr(Norm),tot,Zero,tot*Zero);
   if(Sqr(Norm)<tot*Abs(Zero))
   {
     if(irestart!=1)
@@ -5441,7 +5441,9 @@ uint32_t BlockGroundState(OperatorType *H, uint32_t const Npsi, ConvergenceSetti
   {
     Energy[0][i]=1E+99;
   }
+
   VerbosityPrintf(0x0002,"Start of BlockGroundState. Converge %i states to an energy with relative variance smaller than %22.15E\n\n",Npsi,Settings->zero);
+
   // loop until converged
   while((!Qconverged)&&(iloop<100))
   {

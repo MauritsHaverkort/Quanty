@@ -607,10 +607,29 @@ uint32_t CreateListOperatorAtomicURelativistic(uint32_t const NFermion,const vec
     uint32_t countTerms = 0;
 
     lua_createtable(L,0,0);
-    for( i = 0; i < NIntegrals; i++)
+    if (IntegralsOnly && lua_istable(L,5))
     {
-    	Lua_Push_SlaterIntegral(L,integrals[i].val,integrals[i].Nval);
-    	lua_rawseti(L,-2,i+1);
+		vector<uint32_t> idxs;
+		lua_check(L,5,idxs);
+    	printf("{");
+		for( i = 0; i < NIntegrals; i++)
+		{
+			if (InvolvesOrbital(idxs[0]-1,integrals[i].tau.n) && (InvolvesOrbital(idxs[1]-1,integrals[i].tau.n) || InvolvesOrbital(idxs[2]-1,integrals[i].tau.n)) && (InvolvesOrbital(idxs[3]-1,integrals[i].tau.n) || InvolvesOrbital(idxs[4]-1,integrals[i].tau.n)))
+			{
+				printf("%u, ",i+1);
+			}
+			Lua_Push_SlaterIntegral(L,integrals[i].val,integrals[i].Nval);
+			lua_rawseti(L,-2,i+1);
+		}
+		printf("}\n");
+    }
+    else
+    {
+    	for( i = 0; i < NIntegrals; i++)
+		{
+			Lua_Push_SlaterIntegral(L,integrals[i].val,integrals[i].Nval);
+			lua_rawseti(L,-2,i+1);
+		}
     }
     if (IntegralsOnly)
     {
