@@ -46,5 +46,6 @@ static int LuaMatrixToOperator(lua_State * L)
 		return luaL_error(L, "MatrixToOperator called with an argument that is not a matrix.");
 	lua_check(L, 1, M);
 	lua_push(L, CompactMatrixToOperator(M));
+	FreeCompactMatrix(&M);
 	return 1;
 }

@@ -174,7 +174,9 @@ static int LuaAtomicToWannierMatrix(lua_State * L)
 	lua_check(L, 1, filepath);
 	if (!isFileAcccessible(filepath))
 		return luaL_error(L, "Error: Could not read file with path %s.", filepath.c_str());
-	lua_push(L, AtomicToWannierMatrix(filepath, orbitalNames));
+	CompactMatrixType out = AtomicToWannierMatrix(filepath, orbitalNames);
+	lua_push(L, out);
 	lua_push(L, orbitalNames);
+	FreeCompactMatrix(&out);
 	return 2;
 }
