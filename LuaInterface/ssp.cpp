@@ -568,7 +568,7 @@ static int LuaNewOperator(lua_State * L)
   }
   if(lua_type(L, 1)==LUA_TNUMBER)
   {
-    uint32_t i,j,lenopp,l;
+    uint32_t i,j,lenopp,l,maxl=4;
     uint16_t *oadd;
     Complex16 V;
     double oaddtemp;
@@ -608,7 +608,7 @@ static int LuaNewOperator(lua_State * L)
     if(Options.Name!=NULL) strncpy(O->Name, Options.Name, MAXStrLength-1);
 
     O->Res=Options.DeterminantRestrictions;
-    oadd= (uint16_t*)malloc(sizeof(uint16_t)*O->MaxLength);
+    oadd= (uint16_t*)malloc(sizeof(uint16_t)*maxl);
     luaL_checktype(L, 3, LUA_TTABLE);
     lenopp = (uint32_t)lua_objlen(L, 3);
     for(i=1;i<=lenopp;i++)
@@ -616,6 +616,12 @@ static int LuaNewOperator(lua_State * L)
       lua_rawgeti(L, 3, i);
       luaL_checktype(L, -1, LUA_TTABLE);
       l = (uint32_t)lua_objlen(L, -1);
+      if(l>maxl)
+      {
+        maxl=l;
+        oadd=(uint16_t*)realloc(oadd, sizeof(uint16_t)*maxl);
+        if(oadd==NULL) return luaL_error(L, "Out of memory on place where it should not happen\n");
+      }
       if(l==0) return luaL_error(L, "ERROR: LuaNewOperator called an empty table as operator at position %d\n",i);
       l--;
       for(j=1;j<=l;j++)
