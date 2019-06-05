@@ -1139,7 +1139,7 @@ uint32_t BlockTriDiagonalMatrixEigenValues(const BlockTriDiagonalMatrixType * co
   {
     Complex16 * AB;
     Complex16 *WORK;
-    AB= (Complex16*)malloc(LDAB*N*sizeof(Complex16));
+    AB= (Complex16*)calloc(LDAB*N,sizeof(Complex16));	// changed by Martin: initalize to zero bugfix 4.6.2019
     if(AB==NULL)
     {
       printf("ERROR: malloc failed in BlockTriDiagonalMatrixEigenValues\n");
@@ -1423,7 +1423,7 @@ uint32_t BlockTriDiagonalMatrixEigenSystemWithDeflation(const BlockTriDiagonalMa
   {
     Complex16 * AB;
     Complex16 *WORK;
-    AB= (Complex16*)malloc(LDAB*N*sizeof(Complex16));
+    AB= (Complex16*)calloc(LDAB*N,sizeof(Complex16));
     if(AB==NULL)
     {
       printf("ERROR: malloc failed in BlockTriDiagonalMatrixEigenSystem\n");

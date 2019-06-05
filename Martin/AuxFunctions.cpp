@@ -50,6 +50,51 @@ void RotateWaveFunctions(const WaveFunctionType* psi,const uint32_t N,const Matr
 	}
 }
 
+void RotateWaveFunctions(const WaveFunctionType* psi,const uint32_t N,const CompactMatrixType &U, WaveFunctionType* out)
+{
+	if (U.Ni != N || U.Nj != N)
+	{
+		printf("error in RotateWaveFunctions: Dimensions of U and psi do not match\n");
+		return;
+	}
+	//out = (WaveFunctionType*) malloc(N*sizeof(WaveFunctionType));
+	for (uint32_t i = 0; i < N; i++)
+	{
+		out[i].NFermion = psi[i].NFermion;
+		out[i].NBoson   = psi[i].NBoson;
+		out[i].NBitsKey = psi[i].NBitsKey;
+		if (U.QComplex)
+		{
+			out[i].QComplex = 1;
+			if(WaveFunctionInit(&(out[i])))
+			{
+				printf("WaveFunctionInit failed in ResonantSpectra 00\n");
+				return;
+			}
+			for (uint32_t j = 0; j < N; j++)
+			{
+				WaveFunctionAddComplexMultipliedUnionBasis(&(out[i]),psi[j],U.V[i*U.Nj + j].Re,U.V[i*U.Nj + j].Im);
+			}
+			WaveFunctionTruncateBasis(&(out[i]),DBL_EPSILON);
+
+		}
+		else
+		{
+			out[i].QComplex = psi[i].QComplex;
+			if(WaveFunctionInit(&(out[i])))
+			{
+				printf("WaveFunctionInit failed in ResonantSpectra 00");
+				return;
+			}
+			for (uint32_t j = 0; j < N; j++)
+			{
+				WaveFunctionAddMultipliedUnionBasis(&(out[i]),psi[j],U.VRe[i*U.Nj + j]);
+			}
+			WaveFunctionTruncateBasis(&(out[i]),DBL_EPSILON);
+		}
+	}
+}
+
 void CreateSpectrum(const OperatorType &H,const OperatorType &T, WaveFunctionType * const psi, const uint32_t Npsi, double epsilon, BlockTriDiagonalMatrixType &GTri, const uint32_t NTri)
 {
 	WaveFunctionType * Tpsi = (WaveFunctionType *) malloc(sizeof(WaveFunctionType) * Npsi) ;

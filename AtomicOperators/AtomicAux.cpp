@@ -342,4 +342,12 @@ vector<double> operator*(const vector<double> &a, const vector<double> &b)
 	return c;
 }
 
+bool InvolvesOrbital(uint32_t m, uint32_t *orbs, uint32_t N)
+{
+	for (uint32_t i = 0; i < N; i++)
+	{
+		if ( m == orbs[i]) return true;
+	}
+	return false;
+}
 
