@@ -31,9 +31,10 @@ void GaussianQuadratureWeights(uint32_t N, vector<double> &x, vector<double> &w,
 
 double LegendreP(double x, uint32_t n)			// Recursion formula for Legendre polynomials
 {
+	if (n == 0) return 0;
 	double p0 = 1;
 	double p1 = x;
-	double p=0;
+	double p = 1;
 	for (uint32_t i = 2; i <= n; i++)
 	{
 		p = ((2 * i - 1) * x * p1 - (i - 1) * p0 ) / i;

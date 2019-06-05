@@ -909,7 +909,7 @@ static int LuaSpectraPrintMethod(lua_State * L)
 {
   struct
   {
-    char *stream;
+    char *stream=NULL;
   } Options;
   uint32_t len = (uint32_t)lua_gettop(L);
   LuaOptionsType LuaSpectraPrintOptions[]={
