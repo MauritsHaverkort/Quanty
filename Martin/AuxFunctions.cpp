@@ -5,7 +5,7 @@
  *      Author: brass
  */
 
-void RotateWaveFunctions(const WaveFunctionType* psi,const uint32_t N,const MatrixType &U, WaveFunctionType* &out)
+void RotateWaveFunctions(const WaveFunctionType* psi,const uint32_t N,const MatrixType &U, WaveFunctionType* out)
 {
 	if (U.Ni != N || U.Nj != N)
 	{
