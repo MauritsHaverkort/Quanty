@@ -1,5 +1,5 @@
 
-for i=1,100000 do
+for i=1,1000 do
   print(NewOperator(8,0,{{-1,1}}))
   collectgarbage("collect")
 end

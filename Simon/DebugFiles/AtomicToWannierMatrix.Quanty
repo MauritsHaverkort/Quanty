@@ -1,4 +1,4 @@
-M, names = Simon.AtomicToWannierMatrix("CrF4_WFC")
+M, names = Simon.AtomicToWannierMatrix("DFT/CrF4_WFC")
 print( "\n\n\nMatrix:" )
 print( Matrix.ToUserdata( M ) )
 

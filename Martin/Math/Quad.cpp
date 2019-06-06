@@ -35,6 +35,7 @@ double LegendreP(double x, uint32_t n)			// Recursion formula for Legendre polyn
 	double p0 = 1;
 	double p1 = x;
 	double p = 1;
+
 	for (uint32_t i = 2; i <= n; i++)
 	{
 		p = ((2 * i - 1) * x * p1 - (i - 1) * p0 ) / i;
