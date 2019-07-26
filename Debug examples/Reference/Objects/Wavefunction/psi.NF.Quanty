@@ -1,4 +1,4 @@
-﻿
+
 Nf=6
 Nb=0
 
@@ -40,4 +40,39 @@ print(psi1)
 psi1.NF=0
 print(psi1)
 psi1.NF=8
+print(psi1)
+
+
+print("=====================")
+psi1 = NewWavefunction(10,0,{{"1000101111",sqrt(7/10)},{"1100001111",sqrt(2/10)},{"0100001111",sqrt(1/10)}})
+print(psi1)
+psi1.NF=7
+print(psi1)
+psi1.NF=8
+print(psi1)
+psi1.NF=9
+print(psi1)
+psi1.NF=10
+print(psi1)
+psi1.NF=11
+print(psi1)
+psi1.NF=12
+print(psi1)
+psi1.NF=13
+print(psi1)
+psi1.NF=14
+print(psi1)
+psi1.NF=15
+print(psi1)
+psi1.NF=16
+print(psi1)
+psi1.NF=17
+print(psi1)
+psi1.NF=18
+print(psi1)
+psi1.NF=19
+print(psi1)
+psi1.NF=20
+print(psi1)
+psi1.NF=21
 print(psi1)
