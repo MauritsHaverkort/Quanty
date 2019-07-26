@@ -1608,7 +1608,7 @@ uint32_t WaveFunctionChangeNFandNB(WaveFunctionType *psi, uint32_t NFnew, uint32
   WaveFunctionType psiOld;
   uint8_t det[NBnew + Min(NFnew, 1 + (NFnew - 1) / 8)];
   uint8_t detleft;
-  uint32_t i,NFermionWordMin,NFermionMin,itemp;
+  uint32_t i,NFermionWordMin,NFermionMin;
   if((NFnew==psi->NFermion)&&(NBnew==psi->NBoson))return 0;
   if(NFnew+NBnew>65536)
   {
