@@ -1,3 +1,30 @@
+bas = Chop(Yi.readwavefunction("basup1",{{"NBitsKey",16},{"Binary", "true"}}))
+
+print(bas.NF)
+
+psi = Clone(bas)
+psi.NF = bas.NF +3
+
+
+print(psi)
+print(bas)
+
+print(Chop(psi-bas))
+
+
+
+print(Chop(bas-psi))
+
+psi.NF = bas.NF
+
+
+print(bas)
+
+print(Chop(psi-bas))
+
+os.exit()
+
+
 
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Reference/Objects/Wavefunction/psi.NF.Quanty")
 os.exit()
