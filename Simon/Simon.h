@@ -11,4 +11,5 @@
 #include "Kappa.h"
 #include "lsCouplingConstant.h"
 #include "MatrixToOperator.h"
+#include "readORCA.h"
 #include "TightBindingCopy.h"

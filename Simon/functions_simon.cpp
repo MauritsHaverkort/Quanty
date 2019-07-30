@@ -113,6 +113,7 @@ static const struct luaL_Reg Simon_func[] = {
 	{"IsosurfaceFixedVal", LuaIsosurfaceFixedVal},
 	{"MatrixToOperator", LuaMatrixToOperator},
 	{"lsCouplingConstants", LuaLSCouplingConstants},
+	{"FileReadORCA", LuaFileReadORCA},
 	{"RealspaceDensity", LuaRealspaceDensity},
 	{"RemoveSpin", LuaRemoveSpin},
 	{"SortByKappa",LuaSortByKappa},
