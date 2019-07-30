@@ -23,6 +23,8 @@ static int LuaWavefunctionAdd(lua_State * L)
   }
   WaveFunctionType *l = (WaveFunctionType *) luaL_checkudata(L, 1, "Wavefunction_Type");
   WaveFunctionType *r = (WaveFunctionType *) luaL_checkudata(L, len, "Wavefunction_Type");
+  if(l->NFermion!=r->NFermion) return luaL_error(L, "Adding two wave-funcitons with different number of Fermions in the basis (%d) and (%d)",l->NFermion,r->NFermion);
+  if(l->NBoson!=r->NBoson) return luaL_error(L, "Adding two wave-funcitons with different number of Bosons in the basis (%d) and (%d)",l->NBoson,r->NBoson);
   WaveFunctionType *res = (WaveFunctionType *) lua_newuserdata(L, sizeof(WaveFunctionType));
   luaL_setmetatable(L, "Wavefunction_Type");
   if(WaveFunctionCopy(*l, res))
@@ -65,6 +67,8 @@ static int LuaWavefunctionSubMin(lua_State * L)
   }
   WaveFunctionType *l = (WaveFunctionType *) luaL_checkudata(L, 1, "Wavefunction_Type");
   WaveFunctionType *r = (WaveFunctionType *) luaL_checkudata(L, len, "Wavefunction_Type");
+  if(l->NFermion!=r->NFermion) return luaL_error(L, "Subtracting two wave-funcitons with different number of Fermions in the basis (%d) and (%d)",l->NFermion,r->NFermion);
+  if(l->NBoson!=r->NBoson) return luaL_error(L, "Subtracting two wave-funcitons with different number of Bosons in the basis (%d) and (%d)",l->NBoson,r->NBoson);
   WaveFunctionType *res = (WaveFunctionType *) lua_newuserdata(L, sizeof(WaveFunctionType));
   luaL_setmetatable(L, "Wavefunction_Type");
   WaveFunctionCopy(*r, res);
@@ -98,6 +102,8 @@ static int LuaWavefunctionSub(lua_State * L)
   }
   WaveFunctionType *l = (WaveFunctionType *) luaL_checkudata(L, 1, "Wavefunction_Type");
   WaveFunctionType *r = (WaveFunctionType *) luaL_checkudata(L, len, "Wavefunction_Type");
+  if(l->NFermion!=r->NFermion) return luaL_error(L, "Subtracting two wave-funcitons with different number of Fermions in the basis (%d) and (%d)",l->NFermion,r->NFermion);
+  if(l->NBoson!=r->NBoson) return luaL_error(L, "Subtracting two wave-funcitons with different number of Bosons in the basis (%d) and (%d)",l->NBoson,r->NBoson);
   WaveFunctionType *res = (WaveFunctionType *) lua_newuserdata(L, sizeof(WaveFunctionType));
   luaL_setmetatable(L, "Wavefunction_Type");
   if(WaveFunctionCopy(*l, res))

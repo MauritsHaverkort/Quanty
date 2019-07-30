@@ -1662,7 +1662,7 @@ static int LuaCreateSpectra(lua_State *L)
     {"E0","double",&(Options.E0)},
     {"DenseBorder","uint32_t",&(Options.Settings.DenseBorder)},
     {"ForceDenseMethod","uint32_t",&(Options.DenseMethod)},
-	{"ExpandBasis", "bool",&(Options.ExpandBasis)},
+    {"ExpandBasis", "bool",&(Options.ExpandBasis)},
     {"file","char*",&(Options.stream)}, // temporary undoccumented option
     {NULL, NULL, NULL}};
   /* free garbage full cycle*/

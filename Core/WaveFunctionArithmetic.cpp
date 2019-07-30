@@ -1588,13 +1588,27 @@ uint32_t WaveFunctionRemoveFermion(WaveFunctionType const psiIn, WaveFunctionTyp
 /*
  *  change the number of Fermions and bosons in the wave-function.
  *  changes are made to the end of the function (determinant with the highest index)
+ *
+ *  The array Determinant has the following structure
+ *    using the following constants in the wave-function
+ *    Psi->N           Total number of determinants
+ *    Psi->NFermion    Total number of Fermions in the basis
+ *    Psi->NBoson      Total number of Bosons in the basis
+ *    NFermionWord = Min(Psi->NFermion, 1 + (Psi->NFermion - 1) / 8)
+ *    NWord = NFermionWord + NBoson
+ *    Psi->NBlok total number of Block's allocated. (Fragmentization of total function)
+ *
+ *    Determinant[0] to Determinant[Psi-NBlok-1] fragmentation of total array
+ *    Determinant[i][NWord j] array of NWord uint8_t bytes listing the determinant
+ *      The first NFermionWord list the fermions
+ *      The last NBoson bytes list the bosons
  */
 uint32_t WaveFunctionChangeNFandNB(WaveFunctionType *psi, uint32_t NFnew, uint32_t NBnew)
 {
   WaveFunctionType psiOld;
   uint8_t det[NBnew + Min(NFnew, 1 + (NFnew - 1) / 8)];
   uint8_t detleft;
-  uint32_t i,detleng;
+  uint32_t i,NFermionWordMin,NFermionMin;
   if((NFnew==psi->NFermion)&&(NBnew==psi->NBoson))return 0;
   if(NFnew+NBnew>65536)
   {
@@ -1614,19 +1628,21 @@ uint32_t WaveFunctionChangeNFandNB(WaveFunctionType *psi, uint32_t NFnew, uint32
   {
     det[i]=0;
   }
-  detleng=Min(psi->NWord-psi->NBoson,psiOld.NWord-psiOld.NBoson);
-  detleft=(127>>((psi->NFermion+7)&7));
+  // smallest number of NFermionWord
+  NFermionWordMin=Min(psi->NWord-psi->NBoson,psiOld.NWord-psiOld.NBoson);
+  NFermionMin=Min(psi->NFermion,psiOld.NFermion);
+  detleft=(127>>((NFermionMin+7)&7));
   detleft=~detleft;
   if(psi->QComplex)
   {
     for(i=1;i<=psiOld.N;i++)
     {
-      memcpy(det, &(psiOld.Determinant[BlokElementDet(i,psiOld.NWord,0)]), detleng);
-      if(detleng!=0)det[detleng-1]&=detleft;
+      memcpy(det, &(psiOld.Determinant[BlokElementDet(i,psiOld.NWord,0)]), NFermionWordMin);
+      if(NFermionWordMin!=0)det[NFermionWordMin-1]&=detleft;
       memcpy(&(det[psi->NWord-psi->NBoson]), &(psiOld.Determinant[BlokElementDet(i,psiOld.NWord,psi->NWord-psi->NBoson)]), psi->NBoson);
       if(ComplexWaveFunctionAddElement(psi, det, psiOld.ValueRe[BlokElement(i)], psiOld.ValueIm[BlokElement(i)]))
       {
-        printf("Error RealWaveFunctionAddElement failed in WaveFunctionChangeNFandNB\n");
+        printf("Error ComplexWaveFunctionAddElement failed in WaveFunctionChangeNFandNB\n");
         return 1;
       }
     }
@@ -1635,8 +1651,8 @@ uint32_t WaveFunctionChangeNFandNB(WaveFunctionType *psi, uint32_t NFnew, uint32
   {
     for(i=1;i<=psiOld.N;i++)
     {
-      memcpy(det, &(psiOld.Determinant[BlokElementDet(i,psiOld.NWord,0)]), detleng);
-      if(detleng!=0)det[detleng-1]&=detleft;
+      memcpy(det, &(psiOld.Determinant[BlokElementDet(i,psiOld.NWord,0)]), NFermionWordMin);
+      if(NFermionWordMin!=0)det[NFermionWordMin-1]&=detleft;
       memcpy(&(det[psi->NWord-psi->NBoson]), &(psiOld.Determinant[BlokElementDet(i,psiOld.NWord,psi->NWord-psi->NBoson)]), psi->NBoson);
       if(RealWaveFunctionAddElement(psi, det, psiOld.ValueRe[BlokElement(i)]))
       {
