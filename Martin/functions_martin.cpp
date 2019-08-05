@@ -1928,6 +1928,7 @@ static const struct luaL_Reg Martin_func[] = {
   {"ReduceOperator",LuaReduceOperator},
   {"CreateContinuumSlaterIntegrals",LuaCreateContinuumSlaterIntegrals},
   {"CreateAugerMeitnerU",LuaCreateAugerMeitnerU},
+  {"CNSE",LuaCoolNewSelfEnergy},
   {NULL, NULL}
 };
 
