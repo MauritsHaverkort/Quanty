@@ -355,6 +355,82 @@ static int LuaCoolNewSelfEnergy(lua_State *L)
 	return 1;
 }
 
+static int LuaCoolNewSelfEnergyDiagonal(lua_State *L)
+{
+	vector<WaveFunctionType> psiCont, phiBound;
+	vector<OperatorType> Uk;
+
+	lua_check(L,1,psiCont);
+	uint32_t npsiCont = (uint32_t)psiCont.size();
+	lua_check(L,2,phiBound);
+	uint32_t nphiBound = (uint32_t)phiBound.size();
+	lua_check(L,3,Uk);
+	uint32_t nUk = (uint32_t)Uk.size();
+	vector<MatrixType> UkMatrix = vector<MatrixType>(nUk);
+
+#pragma omp parallel for
+	for (uint32_t k = 0; k < nUk; k++)
+	{
+		UkMatrix[k].Ni = npsiCont;
+		UkMatrix[k].Nj = nphiBound;
+		UkMatrix[k].QComplex = psiCont[0].QComplex + phiBound[0].QComplex + Uk[k].QComplex;
+		InitMatrix(&UkMatrix[k]);
+		PsiPrimeOperatorPsiMatrix(Uk[k],&psiCont[0],&phiBound[0],&UkMatrix[k]);
+	}
+
+	double wMin, wMax, dw,gammaSE;
+	lua_check(L,4,wMin);
+	lua_check(L,5,wMax);
+	lua_check(L,6,dw);
+	lua_check(L,7,gammaSE);
+	uint32_t Nw = floor((wMax-wMin)/dw) + 1;
+	vector<vector<double> > Fk;
+	lua_check(L,8,Fk);
+	uint32_t nContFuns = (uint32_t) Fk.size();
+	vector<double> Econt, EAuger;
+	lua_check(L,9,Econt);
+	lua_check(L,10,EAuger);
+
+	vector<vector<Complex16> > SelfEnergy = vector<vector<Complex16> >(Nw);
+	printf("Uk calculated, begin with SE\n");
+	fflush(stdout);
+#pragma omp parallel for
+	for (uint32_t i = 0; i < Nw; i++)
+	{
+		double w = wMin + i*dw;
+		SelfEnergy[i] = vector<Complex16>(nphiBound);
+		for (uint32_t a = 0; a < nphiBound; a++)
+		{
+			SelfEnergy[i][a].Re = 0;
+			SelfEnergy[i][a].Im = 0;
+			for (uint32_t iEps = 0; iEps < nContFuns; iEps++)
+			{
+				for (uint32_t ipsi = 0; ipsi < npsiCont; ipsi++)
+				{
+					for (uint32_t k = 0; k < nUk; k++)
+					{
+						for (uint32_t q = 0; q < nUk; q++)
+						{
+							Complex16 denom;
+							denom.Re = w -EAuger[ipsi] - Econt[iEps];
+							denom.Im = gammaSE/2.;
+							double num = Fk[iEps][k] * UkMatrix[k].VRe[ipsi][a] * UkMatrix[q].VRe[ipsi][a] * Fk[iEps][q]; //TODO: complex case coden
+							SelfEnergy[i][a] += num / denom;
+						}
+					}
+				}
+			}
+
+		}
+	}
+	for (uint32_t k = 0; k < nUk; k++)
+	{
+		FreeMatrix(&UkMatrix[k]);
+	}
+	lua_push(L,SelfEnergy);
+	return 1;
+}
+
 static int LuaCreateAugerMeitnerU(lua_State *L)
 {
 	vector<int> indToK;
