@@ -313,7 +313,8 @@ static int LuaCoolNewSelfEnergy(lua_State *L)
 	lua_check(L,10,EAuger);
 
 	vector<CompactMatrixType> SelfEnergy = vector<CompactMatrixType>(Nw);
-
+	printf("Uk calculated, begin with SE\n");
+	fflush(stdout);
 #pragma omp parallel for
 	for (uint32_t i = 0; i < Nw; i++)
 	{
