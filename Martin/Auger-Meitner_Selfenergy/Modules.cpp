@@ -318,7 +318,9 @@ static int LuaCoolNewSelfEnergy(lua_State *L)
 #pragma omp parallel for
 	for (uint32_t i = 0; i < Nw; i++)
 	{
-		double w = wMin + i*dw;
+		Complex16 denom;
+        double num;
+        const double w = wMin + i*dw;
 		SelfEnergy[i].Ni = nphiBound;
 		SelfEnergy[i].Nj = nphiBound;
 		SelfEnergy[i].QComplex = 1;
@@ -335,10 +337,10 @@ static int LuaCoolNewSelfEnergy(lua_State *L)
 						{
 							for (uint32_t q = 0; q < nUk; q++)
 							{
-								Complex16 denom;
+								
 								denom.Re = w -EAuger[ipsi] - Econt[iEps];
 								denom.Im = gammaSE/2.;
-								double num = Fk[iEps][k] * UkMatrix[k].VRe[ipsi][a] * UkMatrix[q].VRe[ipsi][b] * Fk[iEps][q]; //TODO: complex case coden
+								num = Fk[iEps][k] * UkMatrix[k].VRe[ipsi][a] * UkMatrix[q].VRe[ipsi][b] * Fk[iEps][q]; //TODO: complex case coden
 								SelfEnergy[i].V[a*nphiBound + b] += num / denom;
 							}
 						}
@@ -397,7 +399,9 @@ static int LuaCoolNewSelfEnergyDiagonal(lua_State *L)
 #pragma omp parallel for
 	for (uint32_t i = 0; i < Nw; i++)
 	{
-		double w = wMin + i*dw;
+		Complex16 denom;
+        double num;
+        const double w = wMin + i*dw;
 		SelfEnergy[i] = vector<Complex16>(nphiBound);
 		for (uint32_t a = 0; a < nphiBound; a++)
 		{
@@ -411,10 +415,9 @@ static int LuaCoolNewSelfEnergyDiagonal(lua_State *L)
 					{
 						for (uint32_t q = 0; q < nUk; q++)
 						{
-							Complex16 denom;
 							denom.Re = w -EAuger[ipsi] - Econt[iEps];
 							denom.Im = gammaSE/2.;
-							double num = Fk[iEps][k] * UkMatrix[k].VRe[ipsi][a] * UkMatrix[q].VRe[ipsi][a] * Fk[iEps][q]; //TODO: complex case coden
+							num = Fk[iEps][k] * UkMatrix[k].VRe[ipsi][a] * UkMatrix[q].VRe[ipsi][a] * Fk[iEps][q]; //TODO: complex case coden
 							SelfEnergy[i][a] += num / denom;
 						}
 					}
