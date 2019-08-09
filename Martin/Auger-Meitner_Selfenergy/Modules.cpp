@@ -393,10 +393,12 @@ static int LuaCoolNewSelfEnergyDiagonal(lua_State *L)
 	lua_check(L,9,Econt);
 	lua_check(L,10,EAuger);
 
-	vector<vector<Complex16> > SelfEnergy = vector<vector<Complex16> >(Nw);
-	printf("Uk calculated, begin with SE\n");
+	
+	printf("Uk calculated, begin with SEd\n");
 	fflush(stdout);
-#pragma omp parallel for
+/*
+    vector<vector<Complex16> > SelfEnergy = vector<vector<Complex16> >(Nw);
+    #pragma omp parallel for
 	for (uint32_t i = 0; i < Nw; i++)
 	{
 		Complex16 denom;
@@ -425,6 +427,40 @@ static int LuaCoolNewSelfEnergyDiagonal(lua_State *L)
 			}
 
 		}
+	}
+*/
+    vector<vector<Complex16> > SelfEnergy = vector<vector<Complex16> >(nphiBound);
+#pragma omp parallel for
+	for (uint32_t a = 0; a < nphiBound; a++)
+	{
+		Complex16 denom;
+        double num;
+        double w;
+        double Eac;
+		SelfEnergy[a] = vector<Complex16>(Nw);
+        denom.Im = gammaSE/2.;
+
+        for (uint32_t iEps = 0; iEps < nContFuns; iEps++)
+        {
+            for (uint32_t ipsi = 0; ipsi < npsiCont; ipsi++)
+            {
+                Eac = EAuger[ipsi] + Econt[iEps];
+                for (uint32_t k = 0; k < nUk; k++)
+                {
+                    for (uint32_t q = 0; q < nUk; q++)
+                    {  
+                        num = Fk[iEps][k] * UkMatrix[k].VRe[ipsi][a] * UkMatrix[q].VRe[ipsi][a] * Fk[iEps][q]; //TODO: complex case coden
+                        for (uint32_t i = 0; i < Nw; i++)
+                        {
+                            w = wMin + i*dw;
+                            denom.Re = w - Eac;
+                            SelfEnergy[a][i] += num / denom;
+                        }
+                    }
+                }
+            }
+        }
+
 	}
 	for (uint32_t k = 0; k < nUk; k++)
 	{
