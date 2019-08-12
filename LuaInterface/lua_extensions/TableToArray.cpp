@@ -1822,8 +1822,8 @@ OperatorType* luaL_checkarray_OperatorType(lua_State *L, int narg, uint32_t *len
 
 void luaL_setarray_DeterminatRestrictionType(lua_State *L, int narg, DeterminantRestrictionType * buff)
 {
-  uint32_t NFermion,NBoson,i;
-  uint32_t len,len2,detleng,NWord;
+  uint32_t i;
+  uint32_t len,len2,detleng;
   char * detchar;
   if(lua_isnil(L,narg))
   {
@@ -1838,12 +1838,12 @@ void luaL_setarray_DeterminatRestrictionType(lua_State *L, int narg, Determinant
   buff->Max= (uint32_t*)malloc(buff->N*sizeof(uint32_t));
   buff->Determinant= (uint8_t**)malloc(buff->N*sizeof(uint8_t*));
   lua_rawgeti(L, narg, 1);
-  NFermion=(uint32_t)luaL_checkunsigned(L, -1);
+  buff->NFermion=(uint32_t)luaL_checkunsigned(L, -1);
   lua_pop(L, 1);
   lua_rawgeti(L, narg, 2);
-  NBoson=(uint32_t)luaL_checkunsigned(L, -1);
+  buff->NBoson=(uint32_t)luaL_checkunsigned(L, -1);
   lua_pop(L, 1);
-  NWord=NBoson + Min(NFermion, 1 + (NFermion - 1) / 8);
+  buff->NWord=buff->NBoson + Min(buff->NFermion, 1 + (buff->NFermion - 1) / 8);
   for(i=0;i<buff->N;i++)
   {
     lua_rawgeti(L, narg, i+3);
@@ -1856,16 +1856,16 @@ void luaL_setarray_DeterminatRestrictionType(lua_State *L, int narg, Determinant
         if(lua_isstring(L, -1))
         {
           detchar = (char *) luaL_checkstring(L, -1);
-          buff->Determinant[i] = StringToDet(NFermion, NBoson, detchar);
-          detleng = NWord;
+          buff->Determinant[i] = StringToDet(buff->NFermion, buff->NBoson, detchar);
+          detleng = buff->NWord;
         }
         else
         {
           buff->Determinant[i]=luaL_checkarray_unit8_t(L, -1, &detleng);
         }
-        if(detleng!=NWord)
+        if(detleng!=buff->NWord)
         {
-          luaL_error(L, "Error in Restrictions, determinant number %d should be a table of %d words\n",i,NBoson + Min(NFermion, 1 + (NFermion - 1) / 8));
+          luaL_error(L, "Error in Restrictions, determinant number %d should be a table of %d words\n",i,buff->NBoson + Min(buff->NFermion, 1 + (buff->NFermion - 1) / 8));
         }
       }
       lua_pop(L, 1);

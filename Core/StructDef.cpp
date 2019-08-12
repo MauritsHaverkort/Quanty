@@ -171,6 +171,9 @@ WaveFunctionType;
 typedef struct DeterminantRestrictionType
 {
   uint32_t  N;                  /* number of restrictions */
+  uint32_t  NFermion;           /* Number of fermions in the basis */
+  uint32_t  NBoson;             /* Number of bosons in the basis */
+  uint32_t  NWord;              /* NFermionWord+NBoson */
   uint32_t  *Min;               /* minimum number of particles required */
   uint32_t  *Max;               /* maximum number of particles allowed */
   uint8_t   **Determinant;      /* an array of N vectors of length NWord of the wave-function applied to. Containing a bitfield wich filters the particles included in the sum */
