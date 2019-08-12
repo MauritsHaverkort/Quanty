@@ -394,41 +394,10 @@ static int LuaCoolNewSelfEnergyDiagonal(lua_State *L)
 	lua_check(L,10,EAuger);
 
 	
-	printf("Uk calculated, begin with SEd\n");
+	printf("Uk calculated, begin with SEdf\n");
+    printf("%u\t%u\t%u\t%u\t%u\n",nphiBound,nContFuns,npsiCont,nUk,Nw);
 	fflush(stdout);
-/*
-    vector<vector<Complex16> > SelfEnergy = vector<vector<Complex16> >(Nw);
-    #pragma omp parallel for
-	for (uint32_t i = 0; i < Nw; i++)
-	{
-		Complex16 denom;
-        double num;
-        const double w = wMin + i*dw;
-		SelfEnergy[i] = vector<Complex16>(nphiBound);
-		for (uint32_t a = 0; a < nphiBound; a++)
-		{
-			SelfEnergy[i][a].Re = 0;
-			SelfEnergy[i][a].Im = 0;
-			for (uint32_t iEps = 0; iEps < nContFuns; iEps++)
-			{
-				for (uint32_t ipsi = 0; ipsi < npsiCont; ipsi++)
-				{
-					for (uint32_t k = 0; k < nUk; k++)
-					{
-						for (uint32_t q = 0; q < nUk; q++)
-						{
-							denom.Re = w -EAuger[ipsi] - Econt[iEps];
-							denom.Im = gammaSE/2.;
-							num = Fk[iEps][k] * UkMatrix[k].VRe[ipsi][a] * UkMatrix[q].VRe[ipsi][a] * Fk[iEps][q]; //TODO: complex case coden
-							SelfEnergy[i][a] += num / denom;
-						}
-					}
-				}
-			}
 
-		}
-	}
-*/
     vector<vector<Complex16> > SelfEnergy = vector<vector<Complex16> >(nphiBound);
 #pragma omp parallel for
 	for (uint32_t a = 0; a < nphiBound; a++)
@@ -445,18 +414,20 @@ static int LuaCoolNewSelfEnergyDiagonal(lua_State *L)
             for (uint32_t ipsi = 0; ipsi < npsiCont; ipsi++)
             {
                 Eac = EAuger[ipsi] + Econt[iEps];
+                num = 0;
                 for (uint32_t k = 0; k < nUk; k++)
                 {
-                    for (uint32_t q = 0; q < nUk; q++)
-                    {  
-                        num = Fk[iEps][k] * UkMatrix[k].VRe[ipsi][a] * UkMatrix[q].VRe[ipsi][a] * Fk[iEps][q]; //TODO: complex case coden
-                        for (uint32_t i = 0; i < Nw; i++)
-                        {
-                            w = wMin + i*dw;
-                            denom.Re = w - Eac;
-                            SelfEnergy[a][i] += num / denom;
-                        }
-                    }
+                     
+                    num += Fk[iEps][k] * UkMatrix[k].VRe[ipsi][a]; //TODO: complex case coden
+                        
+                    
+                }
+                num *= num;
+                for (uint32_t i = 0; i < Nw; i++)
+                {
+                    w = wMin + i*dw;
+                    denom.Re = w - Eac;
+                    SelfEnergy[a][i] += num / denom;
                 }
             }
         }
