@@ -182,6 +182,7 @@ string normalizedORCAOrbname(const string &orbORCA)
 
 ORCAObject FileReadORCA(const string &filename)
 {
+	double HartreeToeV = 27.211391239;
 	ORCAObject out;
 	ifstream reader;
 	string line;
@@ -255,7 +256,7 @@ ORCAObject FileReadORCA(const string &filename)
 				vector<double> energies = stringToDoubleVec(line);
 				for (uint k = 0; k < (uint) energies.size(); ++k)
 				{
-					out.EigenEnergies.push_back(energies[k]);
+					out.EigenEnergies.push_back(energies[k] * HartreeToeV);
 				}
 			}
 			else if (i == -1)
@@ -279,7 +280,7 @@ ORCAObject FileReadORCA(const string &filename)
 				for (uint k = 0; k < (uint) entries.size(); ++k)
 				{
 					uint j = jOffset + k;
-					out.MolecularOrbitalMatrix.VRe[i * out.MolecularOrbitalMatrix.Nj + j] = entries[k];
+					out.MolecularOrbitalMatrix.VRe[j * out.MolecularOrbitalMatrix.Nj + i] = entries[k]; //we want the matrix to contain row vectors.
 				}
 			}
 
