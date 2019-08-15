@@ -1,32 +1,18 @@
-bas = Chop(Yi.readwavefunction("basup1",{{"NBitsKey",16},{"Binary", "true"}}))
-
-print(bas.NF)
-
-psi = Clone(bas)
-psi.NF = bas.NF +3
 
 
-print(psi)
-print(bas)
-
-print(Chop(psi-bas))
-
-
-
-print(Chop(bas-psi))
-
-psi.NF = bas.NF
-
-
-print(bas)
-
-print(Chop(psi-bas))
+NF = 2
+NB = 0
+H = NewOperator(NF, NB, {{0,-0,-2},{1,-1,-1}})
+T = NewOperator(NF, NB, {{0,-1,2},{1,-0,2}})
+T.Name = "transition"
+restr = {NF,NB,{"11",1,1}}
+psiList = Eigensystem(H,restr,2)
+spec = CreateSpectra(H,T,psiList[1])
+spec.Print({{"file","spec"..(T.Name)..".dat"}})
 
 os.exit()
 
-
-
-dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Reference/Objects/Wavefunction/psi.NF.Quanty")
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Reference/Objects/Operator/O.Chop.Quanty")
 os.exit()
 
 

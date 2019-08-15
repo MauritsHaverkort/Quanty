@@ -20,7 +20,6 @@
 
 // Include the Lua interface
 #include "lua/includeLua.c"
-static void *currentudata = NULL;
 #include "lua_extensions/tools.cpp"
 #include "lua_extensions/luaInOut.cpp"
 #include "lua_extensions/TableToArray.cpp"

@@ -118,11 +118,10 @@ static int LuaSpectraBroadenMethod(lua_State * L)
 {
   uint32_t len,i,j, jList;
   MatrixType *FWHMList;
-  SpectraTypeArray *res;
   double GGaus,GLorentz,*GGausVar,*GLorentzVar;
   len = (uint32_t)lua_gettop(L);
   if(len!=2) return luaL_error(L, "Error Spectra.Broaden called with %d arguments, 2 arguments expected\n",len);
-  res = (SpectraTypeArray*) currentudata;
+  SpectraTypeArray *res = (SpectraTypeArray *) luaL_checkudata(L, lua_upvalueindex(1), "Spectra_Type");
   if(lua_type(L,1)==LUA_TNUMBER)
   {
     GGaus=luaL_checknumber(L, 1);
@@ -274,11 +273,10 @@ static int LuaSpectraShift(lua_State * L)
 static int LuaSpectraShiftMethod(lua_State * L)
 {
   uint32_t len,i;
-  SpectraTypeArray *res;
   double shift;
   len = (uint32_t)lua_gettop(L);
   if(len!=1) return luaL_error(L, "Error Spectra.Shift called with %d arguments, 1 argument expected\n",len);
-  res = (SpectraTypeArray*) currentudata;
+  SpectraTypeArray *res = (SpectraTypeArray *) luaL_checkudata(L, lua_upvalueindex(1), "Spectra_Type");
   if(lua_type(L,1)==LUA_TNUMBER)
   {
     shift=luaL_checknumber(L, 1);
@@ -502,7 +500,7 @@ static int LuaSpectraMultiplyByEnergy(lua_State * L)
 static int LuaSpectraMultiplyByEnergyMethod(lua_State * L)
 {
   uint32_t len,i,j;
-  SpectraTypeArray *res = (SpectraTypeArray*) currentudata;
+  SpectraTypeArray *res = (SpectraTypeArray *) luaL_checkudata(L, lua_upvalueindex(1), "Spectra_Type");
   len = (uint32_t)lua_gettop(L);
   if(len!=0) return luaL_error(L, "Error Spectra.MultiplyByEnergy called with %d arguments, 0 arguments expected\n",len);
   for(i=0;i<res->NSpectra;i++)
@@ -604,7 +602,7 @@ static int LuaSpectraSumMethod(lua_State * L)
   uint32_t i,j,k;
   SpectraTypeArray *res;
   Complex16 alpha;
-  SpectraTypeArray *a = (SpectraTypeArray *)currentudata;
+  SpectraTypeArray *a = (SpectraTypeArray *) luaL_checkudata(L, lua_upvalueindex(1), "Spectra_Type");
   uint32_t len = (uint32_t)lua_gettop(L);
   res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
   luaL_setmetatable(L, "Spectra_Type");
@@ -787,7 +785,7 @@ static int LuaSpectraElement(lua_State * L)
  */
 static int LuaSpectraElementMethod(lua_State * L)
 {
-  SpectraTypeArray *a = (SpectraTypeArray *)currentudata;
+  SpectraTypeArray *a = (SpectraTypeArray *) luaL_checkudata(L, lua_upvalueindex(1), "Spectra_Type");
   uint32_t len = (uint32_t)lua_gettop(L);
   if(len==1)
   {
@@ -912,6 +910,7 @@ static int LuaSpectraPrintMethod(lua_State * L)
     char *stream;
   } Options;
   uint32_t len = (uint32_t)lua_gettop(L);
+  SpectraTypeArray *a = (SpectraTypeArray *) luaL_checkudata(L, lua_upvalueindex(1), "Spectra_Type");
   LuaOptionsType LuaSpectraPrintOptions[]={
     {"file","char*",&(Options.stream)},
     {NULL, NULL, NULL}};
@@ -925,11 +924,11 @@ static int LuaSpectraPrintMethod(lua_State * L)
   }
   if(Options.stream==NULL)
   {
-    PrintSpectra(((SpectraTypeArray *)currentudata)->Spec, ((SpectraTypeArray *)currentudata)->NSpectra);
+    PrintSpectra(((SpectraTypeArray *)a)->Spec, ((SpectraTypeArray *)a)->NSpectra);
   }
   else
   {
-    FilePrintSpectra(((SpectraTypeArray *)currentudata)->Spec, ((SpectraTypeArray *)currentudata)->NSpectra, Options.stream, "w");
+    FilePrintSpectra(((SpectraTypeArray *)a)->Spec, ((SpectraTypeArray *)a)->NSpectra, Options.stream, "w");
     VerbosityPrintf(0x2,"Spectra printed to file: %s\n",Options.stream);
   }
   return 0;
@@ -1873,37 +1872,40 @@ static int LuaSpectraIndex(lua_State * L)
 {
   SpectraTypeArray *a = (SpectraTypeArray*) luaL_checkudata(L, 1, "Spectra_Type");
   const char *str = lua_tostring(L, 2);
-  currentudata = a;
   if (strcmp(str, "Broaden") == 0)
   {
-    lua_pushcfunction(L, LuaSpectraBroadenMethod);
+    lua_pushvalue(L, 1);
+    lua_pushcclosure(L, LuaSpectraBroadenMethod,1);
     return 1;
   }
   if (strcmp(str, "Element") == 0)
   {
-    printf("WARNING: G.Element is deprecated. Please use Spectra.Element instead");
-    lua_pushcfunction(L, LuaSpectraElementMethod);
+    lua_pushvalue(L, 1);
+    lua_pushcclosure(L, LuaSpectraElementMethod,1);
     return 1;
   }
   if (strcmp(str, "Print") == 0)
   {
-    lua_pushcfunction(L, LuaSpectraPrintMethod);
+    lua_pushvalue(L, 1);
+    lua_pushcclosure(L, LuaSpectraPrintMethod,1);
     return 1;
   }
   if (strcmp(str, "Shift") == 0)
   {
-    lua_pushcfunction(L, LuaSpectraShiftMethod);
+    lua_pushvalue(L, 1);
+    lua_pushcclosure(L, LuaSpectraShiftMethod,1);
     return 1;
   }
   if (strcmp(str, "Sum") == 0)
   {
-    printf("WARNING: G.Sum is deprecated. Please use Spectra.Sum instead");
-    lua_pushcfunction(L, LuaSpectraSumMethod);
+    lua_pushvalue(L, 1);
+    lua_pushcclosure(L, LuaSpectraSumMethod,1);
     return 1;
   }
   if (strcmp(str, "MultiplyByEnergy") == 0)
   {
-    lua_pushcfunction(L, LuaSpectraMultiplyByEnergyMethod);
+    lua_pushvalue(L, 1);
+    lua_pushcclosure(L, LuaSpectraMultiplyByEnergyMethod,1);
     return 1;
   }
   if (strcmp(str, "N") == 0)
