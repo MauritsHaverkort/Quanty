@@ -22,6 +22,7 @@ void lua_push(lua_State * L, const MatrixType * const pushkin);
 void lua_push(lua_State * L, const MatrixType &pushkin);
 template<typename keyType, typename valType>void lua_push(lua_State * L, const map<keyType, valType> &pushkin);
 void lua_push(lua_State * L, const bool pushkin);
+void lua_push(lua_State *L, const WaveFunctionType * const pushkin);
 void lua_check(lua_State * L, int arg, string &in);
 void lua_check(lua_State * L, int arg, double &in);
 void lua_check(lua_State * L, int arg, int &in);

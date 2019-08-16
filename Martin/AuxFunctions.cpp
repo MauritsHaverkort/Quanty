@@ -161,3 +161,50 @@ uint32_t GetIndices(lua_State *L,int arg, vector<int> &indToK, uint16_t** &indic
 	}
 	return Nindices;
 }
+
+static int LuaLinCombine(lua_State *L)
+{
+    vector<WaveFunctionType> basis;
+    WaveFunctionType psi;
+    vector<double> vec;
+    lua_check(L,1,basis);
+    lua_check(L,2,vec);
+    psi.NFermion = basis[0].NFermion;
+    psi.NBoson = basis[0].NBoson;
+    psi.QComplex = basis[0].QComplex;
+    psi.NBitsKey = basis[0].NBitsKey;
+    WaveFunctionInit(&psi);
+    for (uint32_t i = 0; i < (uint32_t) vec.size(); i++)
+    {
+        RealWaveFunctionAddMultipliedUnionBasis(&psi,basis[i],vec[i]);
+    }
+    WaveFunctionNormalize(&psi);
+    lua_push(L,&psi);
+    return 1;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
