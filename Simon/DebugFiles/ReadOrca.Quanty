@@ -1,8 +1,8 @@
-print("Reading ORCA output for an isolated H atom...")
-ORCAout = Simon.FileReadORCA("DFT/H_ORCA.out")
+print("Reading Orca output for an isolated H atom...")
+Orcaout = Simon.FileReadOrca("DFT/H_Orca.out")
 
 fields = {"OverlapMatrix", "MolecularOrbitalMatrix", "EigenEnergies", "EigenOccupations", "BasisOrbitalNames"}
 for key,field in pairs(fields) do
     print(field..":")
-    print(ORCAout[field])
+    print(Orcaout[field])
 end

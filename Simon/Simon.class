@@ -6,7 +6,7 @@ typedef struct doubleVecValPair
 }
 doubleVecValPair;
 
-typedef struct ORCAObject
+typedef struct OrcaObject
 {
 	uint NBasis;
 	CompactMatrixType OverlapMatrix;
@@ -15,4 +15,4 @@ typedef struct ORCAObject
 	vector<double> EigenOccupations;
 	vector<string> BasisOrbitalNames;
 }
-ORCAObject;
+OrcaObject;

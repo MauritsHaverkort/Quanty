@@ -1,5 +1,5 @@
-void lua_push(lua_State * L, const ORCAObject &pushkin);
-bool isORCAMatrixLineIgnored(const string &line);
+void lua_push(lua_State * L, const OrcaObject &pushkin);
+bool isOrcaMatrixLineIgnored(const string &line);
 vector<double> stringToDoubleVec(const string &str);
 int stringToLz(const string &str);
 string constructOrbname(const int siteNum, const string &atomName, const uint n, const string &shell, const int lz, const bool addLz);
@@ -7,6 +7,6 @@ string constructOrbname(const int siteNum, const string &atomName, const uint n,
 string constructOrbname(const int siteNum, const string &atomName, const uint n, const string &shell);
 string constructOrbname(const string &atomName, const uint n, const string &shell, const int lz);
 string constructOrbname(const string &atomName, const uint n, const string &shell);
-string normalizedORCAOrbname(const string &orbORCA);
-ORCAObject FileReadORCA(const string &filename);
-static int LuaFileReadORCA(lua_State* L);
+string normalizedOrcaOrbname(const string &orbOrca);
+OrcaObject FileReadOrca(const string &filename);
+static int LuaFileReadOrca(lua_State* L);

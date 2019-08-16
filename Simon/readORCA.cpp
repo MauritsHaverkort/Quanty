@@ -11,12 +11,12 @@ public:
 	}
 };
 
-//void lua_check(lua_State * L, int arg, ORCAObject &in)
+//void lua_check(lua_State * L, int arg, OrcaObject &in)
 //{
 //
 //}
 
-void lua_push(lua_State * L, const ORCAObject &pushkin)
+void lua_push(lua_State * L, const OrcaObject &pushkin)
 {
 	lua_newtable(L);
 	int top = (int) lua_gettop(L);
@@ -46,7 +46,7 @@ void lua_push(lua_State * L, const ORCAObject &pushkin)
 	lua_settable(L, top);
 }
 
-bool isORCAMatrixLineIgnored(const string &line)
+bool isOrcaMatrixLineIgnored(const string &line)
 {
 	if (line.find("OVERLAP MATRIX") != string::npos) return true;
 	if (line.find("MOLECULAR ORBITALS") != string::npos) return true;
@@ -148,7 +148,7 @@ string constructOrbname(const string &atomName, const uint n, const string &shel
 	return constructOrbname(-1, atomName, n, shell, 0, false);
 }
 
-string normalizedORCAOrbname(const string &orbORCA)
+string normalizedOrcaOrbname(const string &orbOrca)
 {
 	const string digits = "0123456789";
 	//	Expects input like " 0Cr 3dxy "
@@ -158,32 +158,32 @@ string normalizedORCAOrbname(const string &orbORCA)
 	string shell;
 	int lz;
 
-	uint lastSiteNumPos = (uint) orbORCA.find_first_of(digits);
-	lastSiteNumPos = (uint) orbORCA.find_first_not_of(digits, lastSiteNumPos) - 1;
-	siteNum = atoi(orbORCA.substr(0, lastSiteNumPos + 1).c_str());
+	uint lastSiteNumPos = (uint) orbOrca.find_first_of(digits);
+	lastSiteNumPos = (uint) orbOrca.find_first_not_of(digits, lastSiteNumPos) - 1;
+	siteNum = atoi(orbOrca.substr(0, lastSiteNumPos + 1).c_str());
 
-	uint lastAtomNamePos = (uint) orbORCA.find_first_of(" ", lastSiteNumPos + 1) - 1;
-	atomName = orbORCA.substr(lastSiteNumPos + 1, lastAtomNamePos - lastSiteNumPos);
+	uint lastAtomNamePos = (uint) orbOrca.find_first_of(" ", lastSiteNumPos + 1) - 1;
+	atomName = orbOrca.substr(lastSiteNumPos + 1, lastAtomNamePos - lastSiteNumPos);
 
-	uint lastNPos = (uint) orbORCA.find_first_of(digits, lastAtomNamePos);
-	lastNPos = (uint) orbORCA.find_first_not_of(digits, lastNPos) - 1;
-	n = atoi(orbORCA.substr(lastAtomNamePos + 1, lastNPos - lastAtomNamePos).c_str());
+	uint lastNPos = (uint) orbOrca.find_first_of(digits, lastAtomNamePos);
+	lastNPos = (uint) orbOrca.find_first_not_of(digits, lastNPos) - 1;
+	n = atoi(orbOrca.substr(lastAtomNamePos + 1, lastNPos - lastAtomNamePos).c_str());
 
-	shell = orbORCA.substr(lastNPos + 1, 1);
+	shell = orbOrca.substr(lastNPos + 1, 1);
 	uint l = (orbToMultiplicity(shell) / 2 - 1) / 2;
-	n += l; //For some reason ORCA always starts at n=1 when a new shell is opened, so that there are 1p orbitals etc.
+	n += l; //For some reason Orca always starts at n=1 when a new shell is opened, so that there are 1p orbitals etc.
 
-	string lzName = orbORCA.substr(lastNPos + 2);
+	string lzName = orbOrca.substr(lastNPos + 2);
 	if (lzName.find(" ") != string::npos) lzName = lzName.substr(0, (uint) lzName.find(" "));
 	lz = stringToLz(lzName);
 
 	return constructOrbname(siteNum, atomName, n, shell, lz);
 }
 
-ORCAObject FileReadORCA(const string &filename)
+OrcaObject FileReadOrca(const string &filename)
 {
 	double HartreeToeV = 27.211391239;
-	ORCAObject out;
+	OrcaObject out;
 	ifstream reader;
 	string line;
 	reader.open(filename.c_str());
@@ -219,7 +219,7 @@ ORCAObject FileReadORCA(const string &filename)
 				const uint firstNumLastPos = line.find_first_of(" ", firstNumFirstPos);
 				jOffset = atoi(line.substr(firstNumFirstPos, firstNumLastPos - firstNumFirstPos).c_str());
 			}
-			else if (!isORCAMatrixLineIgnored(line))
+			else if (!isOrcaMatrixLineIgnored(line))
 			{
 				vector<double> lineVec = stringToDoubleVec(line);
 				i = (int) lineVec[0];
@@ -244,7 +244,7 @@ ORCAObject FileReadORCA(const string &filename)
 			out.MolecularOrbitalMatrix.OnLuaStack = true;
 		}
 
-		if (isReadingMolecularOrbitals && !isORCAMatrixLineIgnored(line))
+		if (isReadingMolecularOrbitals && !isOrcaMatrixLineIgnored(line))
 		{
 			if (i == -3)
 			{
@@ -272,7 +272,7 @@ ORCAObject FileReadORCA(const string &filename)
 				uint orbNameLength = (uint) line.find_first_of(" ", 12);
 				if ((uint) out.BasisOrbitalNames.size() < out.NBasis)
 				{
-					const string orbName = normalizedORCAOrbname(line.substr(0, orbNameLength));
+					const string orbName = normalizedOrcaOrbname(line.substr(0, orbNameLength));
 					out.BasisOrbitalNames.push_back(orbName);
 				}
 
@@ -305,29 +305,31 @@ ORCAObject FileReadORCA(const string &filename)
 	return out;
 }
 
-static int LuaFileReadORCA(lua_State* L)
+static int LuaFileReadOrca(lua_State* L)
 {
 	uint32_t len = (uint32_t) lua_gettop(L);
-	if (len != 1) return luaL_error(L, "ReadORCA called with %d arguments, exactly 1 expected, the path of the ORCA output file.", len);
+	if (len < 1 || len > 2) return luaL_error(L, "ReadOrca called with %d arguments, 1 or 2 expected, the path of the Orca output file and optional Options.", len);
 	string filename;
+
 	lua_check(L, 1, filename);
+
 	try
 	{
-		ORCAObject ORCAout = FileReadORCA(filename);
-		lua_push(L, ORCAout);
+		OrcaObject Orcaout = FileReadOrca(filename);
+		lua_push(L, Orcaout);
 		return 1;
 	}
 	catch (FileOpenException &e)
 	{
-		return luaL_error(L, "Could not open ORCA output file with path %s.", e.filename.c_str());
+		return luaL_error(L, "Could not open Orca output file with path %s.", e.filename.c_str());
 	}
 	catch (ifstream::failure &e)
 	{
-		return luaL_error(L, "Something in FileReadORCA went wrong while reading through the file %s.", filename.c_str());
+		return luaL_error(L, "Something in FileReadOrca went wrong while reading through the file %s.", filename.c_str());
 	}
 	catch (std::exception &e)
 	{
 		cout << "Exception of type " << e.what() << endl;
-		return luaL_error(L, "Something in FileReadORCA went unexpectedly wrong.");
+		return luaL_error(L, "Something in FileReadOrca went unexpectedly wrong.");
 	}
 }
