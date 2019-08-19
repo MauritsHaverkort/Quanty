@@ -1,0 +1,75 @@
+ErrorCount=0
+
+-- this code tests the multiplication of wave-functions
+
+Nf=6
+Nb=0
+
+psi1         = NewWavefunction(Nf,Nb,{{"100010",3/5},      {"110000",4/5}})
+psi1times2   = NewWavefunction(Nf,Nb,{{"100010",6/5},      {"110000",8/5}})
+psi1timesI   = NewWavefunction(Nf,Nb,{{"100010",I*3/5},    {"110000",I*4/5}})
+psi1timesIp1 = NewWavefunction(Nf,Nb,{{"100010",(I+1)*3/5},{"110000",(I+1)*4/5}})
+
+if( (psi1*2==psi1times2) == false )
+then
+  print("psi1*2==psi1times2 returned ",psi1*2==psi1times2)
+  ErrorCount = ErrorCount + 1
+end
+
+if( (2*psi1==psi1times2) == false )
+then
+  print("psi1*2==psi1times2 returned ",2*psi1==psi1times2)
+  ErrorCount = ErrorCount + 1
+end
+
+if( (psi1*I==psi1timesI) == false )
+then
+  print("psi1*I==psi1timesI returned ",psi1*I==psi1timesI)
+  ErrorCount = ErrorCount + 1
+end
+
+if( (I*psi1==psi1timesI) == false )
+then
+  print("I*psi1==psi1timesI returned ",I*psi1==psi1timesI)
+  ErrorCount = ErrorCount + 1
+end
+
+if( (psi1*(I+1)==psi1timesIp1) == false )
+then
+  print("psi1*(I+1)==psi1timesIp1 returned ",psi1*(I+1)==psi1timesIp1)
+  ErrorCount = ErrorCount + 1
+end
+
+if( ((I+1)*psi1==psi1timesIp1) == false )
+then
+  print("(I+1)*psi1==psi1timesIp1 returned ",(I+1)*psi1==psi1timesIp1)
+  ErrorCount = ErrorCount + 1
+end
+
+if( (psi1*psi1==1) == false )
+then
+  print("psi1*psi1==1 returned ",psi1*psi1==1)
+  ErrorCount = ErrorCount + 1
+end
+
+if( (psi1times2*psi1times2==4) == false )
+then
+  print("psi1times2*psi1times2==4 returned ",psi1times2*psi1times2==4)
+  ErrorCount = ErrorCount + 1
+end
+
+if( (psi1timesI*psi1timesI==1) == false )
+then
+  print("psi1timesI*psi1timesI==1 returned ",psi1timesI*psi1timesI-1)
+  ErrorCount = ErrorCount + 1
+end
+
+if( (psi1timesIp1*psi1timesIp1==2) == false )
+then
+  print("psi1timesIp1*psi1timesIp1==2 returned ",psi1timesIp1*psi1timesIp1==2)
+  ErrorCount = ErrorCount + 1
+end
+
+
+os.exit(ErrorCount)
+

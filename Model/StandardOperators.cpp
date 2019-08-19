@@ -3889,8 +3889,8 @@ uint32_t CreateOperatorNumberShell(uint32_t const NFermion, uint32_t const Nelec
     oadd[1] = CrAnMask + index[i];
     oadd[0] = index[i];
     RealOperatorAddLader(OppN, oadd, 2, 1);
-	}
-	return 0;
+  }
+  return 0;
 }
 
 uint32_t CreateOperatorIdentity(uint32_t const NFermion, OperatorType * const OppN)

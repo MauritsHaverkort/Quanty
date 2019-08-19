@@ -1,0 +1,52 @@
+ErrorCount=0
+
+-- this code tests the negative of wave-functions
+
+Nf=6
+Nb=0
+
+psi1       = NewWavefunction(Nf,Nb,{{"100010",3/5},  {"110000",4/5}})
+psi2       = NewWavefunction(Nf,Nb,{{"100010",3/5},  {"110000",I*4/5}})
+
+str1=[[
+
+WaveFunction: Wave Function
+QComplex         =          0 (Real==0 or Complex==1)
+N                =          2 (Number of basis functions used to discribe psi)
+NFermionic modes =          6 (Number of fermions in the one particle basis)
+NBosonic modes   =          0 (Number of bosons in the one particle basis)
+
+#      pre-factor         Determinant
+   1   6.000000000000E-01       100010
+   2   8.000000000000E-01       110000
+
+]]
+str2=[[
+
+WaveFunction: Wave Function
+QComplex         =          1 (Real==0 or Complex==1)
+N                =          2 (Number of basis functions used to discribe psi)
+NFermionic modes =          6 (Number of fermions in the one particle basis)
+NBosonic modes   =          0 (Number of bosons in the one particle basis)
+
+#      pre-factor             +I  pre-factor         Determinant
+   1   6.000000000000E-01         0.000000000000E+00       100010
+   2   0.000000000000E+00         8.000000000000E-01       110000
+
+]]
+
+if( (str1==tostring(psi1)) == false )
+then
+  print("str1==tostring(psi1) returned ",str1==tostring(psi1))
+  ErrorCount = ErrorCount + 1
+end
+
+if( (str2==tostring(psi2)) == false )
+then
+  print("str2==tostring(psi2) returned ",str2==tostring(psi2))
+  ErrorCount = ErrorCount + 1
+end
+
+
+os.exit(ErrorCount)
+

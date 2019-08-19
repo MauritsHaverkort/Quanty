@@ -1,4 +1,9 @@
-﻿dofile("../../definitions.Quanty")
+ErrorCount=0
+
+Nf=6
+Nb=0
+
+psi1 = NewWavefunction(Nf,Nb,{{"100010",sqrt(7/10)},{"110000",sqrt(2/10)},{"101000",sqrt(1/10)}})
 
 print("wavefunction . Print")
 psi1.Print()
@@ -6,4 +11,16 @@ psi1.Print()
 print("print wavefunction")
 print(psi1)
 
+print("print tostring(wavefunction)")
+print(tostring(psi1))
+
+print("wavefunction . Print full")
+psi1.Print({{"Full",true}})
+
+print("wavefunction . Print Binary file")
+psi1.Print({{"Binary",true},{"file","psi1Binary.Print.out"}})
+
+print("wavefunction . Print to file")
 psi1.Print({{"file","psi1.Print.out"}})
+
+os.exit(ErrorCount)

@@ -420,6 +420,24 @@ static int LuaWavefunctionUnm(lua_State * L)
   return 1;
 }
 
+static int LuaWavefunctionEq(lua_State * L)
+{
+  WaveFunctionType *l,*r;
+  l = (WaveFunctionType *) luaL_checkudata(L, 1, "Wavefunction_Type");
+  r = (WaveFunctionType *) luaL_checkudata(L, 2, "Wavefunction_Type");
+  if(QWaveFunctionEqual(l,r,DBL_MIN))
+  {
+    lua_pushboolean (L, 1);
+  }
+  else
+  {
+    lua_pushboolean (L, 0);
+  }
+  return 1;
+}
+
+
+
 static int LuaWavefunctionPrint(lua_State * L)
 {
   struct
@@ -434,13 +452,14 @@ static int LuaWavefunctionPrint(lua_State * L)
     {"Full", "bool", &(Options.Full)},
     {"Binary", "bool", &(Options.Binary)},
     {NULL, NULL, NULL}};
+  WaveFunctionType *a = (WaveFunctionType *) luaL_checkudata(L, lua_upvalueindex(1), "Wavefunction_Type");
   if(!((len==0)||(len==1)))
   {
     return luaL_error(L, "Error in .Print(arg) unrecognized arguments in Print()\n");
   }
   if(len==0)
   {
-    PrintWaveFunctionReadable(*(WaveFunctionType *) currentudata);
+    PrintWaveFunctionReadable(*(WaveFunctionType *) a);
     return 0;
   }
   Options.Full=false;
@@ -453,26 +472,26 @@ static int LuaWavefunctionPrint(lua_State * L)
   {
     if(Options.Full==true)
     {
-      PrintWaveFunctionFullReadable(*(WaveFunctionType *) currentudata);
+      PrintWaveFunctionFullReadable(*(WaveFunctionType *) a);
     }
     else
     {
-      PrintWaveFunctionReadable(*(WaveFunctionType *) currentudata);
+      PrintWaveFunctionReadable(*(WaveFunctionType *) a);
     }
   }
   else
   {
     if(Options.Full==true)
     {
-      FilePrintWaveFunctionFullReadable(*(WaveFunctionType *) currentudata, Options.stream, "w");
+      FilePrintWaveFunctionFullReadable(*(WaveFunctionType *) a, Options.stream, "w");
     }
     else if(Options.Binary==true)
     {
-      FilePrintWaveFunctionPlainBinary(*(WaveFunctionType *) currentudata, Options.stream, "w");
+      FilePrintWaveFunctionPlainBinary(*(WaveFunctionType *) a, Options.stream, "w");
     }
     else
     {
-      FilePrintWaveFunctionReadable(*(WaveFunctionType *) currentudata, Options.stream, "w");
+      FilePrintWaveFunctionReadable(*(WaveFunctionType *) a, Options.stream, "w");
     }
   }
   return 0;
@@ -493,16 +512,18 @@ static int LuaWavefunctionChop(lua_State * L)
     default:
       return luaL_error(L, "Errorr, call to chop with %d arguments, expected 0 or 1\n",len);
   }
-  WaveFunctionTruncateBasis((WaveFunctionType *) currentudata, border);
+  WaveFunctionType *a = (WaveFunctionType *) luaL_checkudata(L, lua_upvalueindex(1), "Wavefunction_Type");
+  WaveFunctionTruncateBasis((WaveFunctionType *) a, border);
   return 0;
 }
 
 static int LuaWavefunctionConjugate(lua_State * L)
 {
   uint32_t len = (uint32_t)lua_gettop(L);
+  WaveFunctionType *a = (WaveFunctionType *) luaL_checkudata(L, lua_upvalueindex(1), "Wavefunction_Type");
   if(len==0)
   {
-    WaveFunctionConjugate(*(WaveFunctionType *)currentudata);
+    WaveFunctionConjugate(*(WaveFunctionType *)a);
   }
   else
   {
@@ -514,9 +535,10 @@ static int LuaWavefunctionConjugate(lua_State * L)
 static int LuaWavefunctionNorm(lua_State * L)
 {
   uint32_t len = (uint32_t)lua_gettop(L);
+  WaveFunctionType *a = (WaveFunctionType *) luaL_checkudata(L, lua_upvalueindex(1), "Wavefunction_Type");
   if(len==0)
   {
-    WaveFunctionNormalize((WaveFunctionType *) currentudata);
+    WaveFunctionNormalize((WaveFunctionType *) a);
   }
   else
   {
@@ -528,9 +550,10 @@ static int LuaWavefunctionNorm(lua_State * L)
 static int LuaWavefunctionRandomize(lua_State * L)
 {
   uint32_t len = (uint32_t)lua_gettop(L);
+  WaveFunctionType *a = (WaveFunctionType *) luaL_checkudata(L, lua_upvalueindex(1), "Wavefunction_Type");
   if(len==0)
   {
-    WaveFunctionRandomize((WaveFunctionType *) currentudata);
+    WaveFunctionRandomize((WaveFunctionType *) a);
   }
   else
   {
@@ -546,7 +569,7 @@ static int LuaWavefunctionRandomize(lua_State * L)
 static int LuaWavefunctionDet(lua_State *L)
 {
   uint32_t len = (uint32_t)lua_gettop(L);
-  WaveFunctionType *a = (WaveFunctionType *)currentudata;
+  WaveFunctionType *a = (WaveFunctionType *) luaL_checkudata(L, lua_upvalueindex(1), "Wavefunction_Type");
   WaveFunctionType *psi;
   uint32_t idet;
   if(len!=1) return luaL_error(L, "Error in .Det(arg) arg should be an integer between 1 and .N (%d)\n",a->N);
@@ -587,7 +610,7 @@ static int LuaWavefunctionDet(lua_State *L)
 static int LuaWavefunctionPrefactorDet(lua_State *L)
 {
   uint32_t len = (uint32_t)lua_gettop(L);
-  WaveFunctionType *a = (WaveFunctionType *)currentudata;
+  WaveFunctionType *a = (WaveFunctionType *) luaL_checkudata(L, lua_upvalueindex(1), "Wavefunction_Type");
   uint32_t idet;
   if(len!=1) return luaL_error(L, "Error in .PrefactorDet(arg) arg should be an integer between 1 and .N (%d) or a string representing the determinant\n",a->N);
   //TODO: read a string representing the determinant
@@ -668,10 +691,10 @@ static int LuaWavefunctionIndex(lua_State * L)
 {
   WaveFunctionType *a = (WaveFunctionType *) luaL_checkudata(L, 1, "Wavefunction_Type");
   const char *str = lua_tostring(L, 2);
-  currentudata = a;
   if (strcmp(str, "Chop") == 0)
   {
-    lua_pushcfunction(L, LuaWavefunctionChop);
+    lua_pushvalue(L, 1);
+    lua_pushcclosure(L, LuaWavefunctionChop,1);
     return 1;
   }
   if (strcmp(str, "Complex") == 0)
@@ -681,27 +704,32 @@ static int LuaWavefunctionIndex(lua_State * L)
   }
   if ((strcmp(str, "Conjugate") == 0)||(strcmp(str, "C")==0))
   {
-    lua_pushcfunction(L, LuaWavefunctionConjugate);
+    lua_pushvalue(L, 1);
+    lua_pushcclosure(L, LuaWavefunctionConjugate,1);
     return 1;
   }
   if (strcmp(str, "Det") == 0)
   {
-    lua_pushcfunction(L, LuaWavefunctionDet);
+    lua_pushvalue(L, 1);
+    lua_pushcclosure(L, LuaWavefunctionDet,1);
     return 1;
   }
   if (strcmp(str, "PrefactorDet") == 0)
   {
-    lua_pushcfunction(L, LuaWavefunctionPrefactorDet);
+    lua_pushvalue(L, 1);
+    lua_pushcclosure(L, LuaWavefunctionPrefactorDet,1);
     return 1;
   }
   if (strcmp(str, "Print") == 0)
   {
-    lua_pushcfunction(L, LuaWavefunctionPrint);
+    lua_pushvalue(L, 1);
+    lua_pushcclosure(L, LuaWavefunctionPrint,1);
     return 1;
   }
   if (strcmp(str, "Randomize") == 0)
   {
-    lua_pushcfunction(L, LuaWavefunctionRandomize);
+    lua_pushvalue(L, 1);
+    lua_pushcclosure(L, LuaWavefunctionRandomize,1);
     return 1;
   }
   if (strcmp(str, "N") == 0)
@@ -731,7 +759,8 @@ static int LuaWavefunctionIndex(lua_State * L)
   }
   if (strcmp(str, "Normalize") == 0)
   {
-    lua_pushcfunction(L, LuaWavefunctionNorm);
+    lua_pushvalue(L, 1);
+    lua_pushcclosure(L, LuaWavefunctionNorm,1);
     return 1;
   }
   return luaL_error(L, "Error operation \".%s()\" not defined on wavefunction\n",str);
@@ -817,6 +846,7 @@ static const struct luaL_Reg Wavefunction_meta[] = {
   {"__mul", LuaWavefunctionMul},
   {"__div", LuaWavefunctionDiv},
   {"__unm", LuaWavefunctionUnm},
+  {"__eq", LuaWavefunctionEq},
   {"__index", LuaWavefunctionIndex},
   {"__newindex", LuaWavefunctionNewIndex},
   {"__tostring", LuaWavefunctionToString},
