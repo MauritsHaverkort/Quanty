@@ -3,8 +3,8 @@ ErrorCount=0
 Nf=6
 Nb=0
 
-psi1 = NewWavefunction(Nf,Nb,{{"100010",sqrt(9/10)},{"110000",sqrt(1/10)}})
-psi2 = NewWavefunction(Nf,Nb,{{"100010",sqrt(9/10)},{"110000",sqrt(I/10)}})
+psi1 = NewWavefunction(Nf,Nb,{{"100010",sqrt(9/10)},{"110000",  sqrt(1/10)}})
+psi2 = NewWavefunction(Nf,Nb,{{"100010",sqrt(9/10)},{"110000",I*sqrt(1/10)}})
 
 if( (psi1.Complex==false) == false )
 then

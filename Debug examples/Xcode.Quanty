@@ -1,6 +1,6 @@
 
 
-dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Reference/Objects/Wavefunction/psi.NBitsKey.Quanty")
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Reference/Objects/Wavefunction/psi.Randomize.Quanty")
 os.exit()
 
 
