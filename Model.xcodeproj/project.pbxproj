@@ -416,7 +416,6 @@
 		4C203CD42087DE95001DCC25 /* PhysicalConstants.me.unit.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = PhysicalConstants.me.unit.Quanty; sourceTree = "<group>"; };
 		4C203CD52087DE95001DCC25 /* PhysicalConstants.me.value.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = PhysicalConstants.me.value.Quanty; sourceTree = "<group>"; };
 		4C203CD62087DE95001DCC25 /* PhysicalConstants.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = PhysicalConstants.Quanty; sourceTree = "<group>"; };
-		4C203CD82087DE95001DCC25 /* definitions.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = definitions.Quanty; sourceTree = "<group>"; };
 		4C203CDA2087DE95001DCC25 /* BlockBandDiagonalize.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = BlockBandDiagonalize.Quanty; sourceTree = "<group>"; };
 		4C203CDB2087DE95001DCC25 /* Braket.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = Braket.Quanty; sourceTree = "<group>"; };
 		4C203CDC2087DE95001DCC25 /* Chop.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = Chop.Quanty; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.lua; };
@@ -549,13 +548,6 @@
 		4C203D642087DE95001DCC25 /* Spectra.Shift.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = Spectra.Shift.Quanty; sourceTree = "<group>"; };
 		4C203D652087DE95001DCC25 /* Spectra.Sum.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = Spectra.Sum.Quanty; sourceTree = "<group>"; };
 		4C203D662087DE95001DCC25 /* Spectra.ToTable.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = Spectra.ToTable.Quanty; sourceTree = "<group>"; };
-		4C203D672087DE95001DCC25 /* SpectraMath.dat */ = {isa = PBXFileReference; lastKnownFileType = text; path = SpectraMath.dat; sourceTree = "<group>"; };
-		4C203D682087DE95001DCC25 /* SpectraMath.eps */ = {isa = PBXFileReference; lastKnownFileType = text; path = SpectraMath.eps; sourceTree = "<group>"; };
-		4C203D692087DE95001DCC25 /* SpectraMath.gnuplot */ = {isa = PBXFileReference; lastKnownFileType = text; path = SpectraMath.gnuplot; sourceTree = "<group>"; };
-		4C203D6A2087DE95001DCC25 /* SpectraMath.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = SpectraMath.pdf; sourceTree = "<group>"; };
-		4C203D6B2087DE95001DCC25 /* SpectraMath.ps */ = {isa = PBXFileReference; lastKnownFileType = text; path = SpectraMath.ps; sourceTree = "<group>"; };
-		4C203D6C2087DE95001DCC25 /* SpectraMath1.dat */ = {isa = PBXFileReference; lastKnownFileType = text; path = SpectraMath1.dat; sourceTree = "<group>"; };
-		4C203D6D2087DE95001DCC25 /* SpectraMath2.dat */ = {isa = PBXFileReference; lastKnownFileType = text; path = SpectraMath2.dat; sourceTree = "<group>"; };
 		4C203D6F2087DE95001DCC25 /* psi.Chop.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = psi.Chop.Quanty; sourceTree = "<group>"; };
 		4C203D702087DE95001DCC25 /* psi.Complex.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = psi.Complex.Quanty; sourceTree = "<group>"; };
 		4C203D712087DE95001DCC25 /* psi.Conjugate.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = psi.Conjugate.Quanty; sourceTree = "<group>"; };
@@ -736,6 +728,12 @@
 		4CA16E3C230AA4D700AABAAD /* Unm.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = Unm.Quanty; sourceTree = "<group>"; };
 		4CA16E3D230AA4EF00AABAAD /* ToString.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = ToString.Quanty; sourceTree = "<group>"; };
 		4CA16E3E230AB53F00AABAAD /* psi.PrefactorDet.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = psi.PrefactorDet.Quanty; sourceTree = "<group>"; };
+		4CA16E3F230AF0EF00AABAAD /* Add.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = Add.Quanty; sourceTree = "<group>"; };
+		4CA16E40230AF10300AABAAD /* Sub.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = Sub.Quanty; sourceTree = "<group>"; };
+		4CA16E41230AF11700AABAAD /* Mul.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = Mul.Quanty; sourceTree = "<group>"; };
+		4CA16E42230AF13000AABAAD /* Div.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = Div.Quanty; sourceTree = "<group>"; };
+		4CA16E43230AF14200AABAAD /* Unm.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = Unm.Quanty; sourceTree = "<group>"; };
+		4CA16E44230AF15400AABAAD /* ToString.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = ToString.Quanty; sourceTree = "<group>"; };
 		4CB3BF20210505150015B8B5 /* MartinsLittleHelper.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = MartinsLittleHelper.cpp; path = Martin/MartinsLittleHelper.cpp; sourceTree = "<group>"; };
 		4CB3BF21210505150015B8B5 /* DiracHamiltonian.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = DiracHamiltonian.cpp; path = Martin/DiracHamiltonian.cpp; sourceTree = "<group>"; };
 		4CB3BF22210505150015B8B5 /* CreateOperators.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = CreateOperators.cpp; path = Martin/CreateOperators.cpp; sourceTree = "<group>"; };
@@ -1225,7 +1223,6 @@
 			isa = PBXGroup;
 			children = (
 				4C203CCA2087DE95001DCC25 /* Constants */,
-				4C203CD82087DE95001DCC25 /* definitions.Quanty */,
 				4C203CD92087DE95001DCC25 /* Functions */,
 				4C203D022087DE95001DCC25 /* Objects */,
 			);
@@ -1403,6 +1400,12 @@
 				4C203D4C2087DE95001DCC25 /* Ty.Quanty */,
 				4C203D4D2087DE95001DCC25 /* Tz.Quanty */,
 				4C203D4E2087DE95001DCC25 /* U.Quanty */,
+				4CA16E3F230AF0EF00AABAAD /* Add.Quanty */,
+				4CA16E40230AF10300AABAAD /* Sub.Quanty */,
+				4CA16E41230AF11700AABAAD /* Mul.Quanty */,
+				4CA16E42230AF13000AABAAD /* Div.Quanty */,
+				4CA16E43230AF14200AABAAD /* Unm.Quanty */,
+				4CA16E44230AF15400AABAAD /* ToString.Quanty */,
 			);
 			path = Operator;
 			sourceTree = "<group>";
@@ -1433,13 +1436,6 @@
 				4C203D642087DE95001DCC25 /* Spectra.Shift.Quanty */,
 				4C203D652087DE95001DCC25 /* Spectra.Sum.Quanty */,
 				4C203D662087DE95001DCC25 /* Spectra.ToTable.Quanty */,
-				4C203D672087DE95001DCC25 /* SpectraMath.dat */,
-				4C203D682087DE95001DCC25 /* SpectraMath.eps */,
-				4C203D692087DE95001DCC25 /* SpectraMath.gnuplot */,
-				4C203D6A2087DE95001DCC25 /* SpectraMath.pdf */,
-				4C203D6B2087DE95001DCC25 /* SpectraMath.ps */,
-				4C203D6C2087DE95001DCC25 /* SpectraMath1.dat */,
-				4C203D6D2087DE95001DCC25 /* SpectraMath2.dat */,
 			);
 			path = Spectra;
 			sourceTree = "<group>";

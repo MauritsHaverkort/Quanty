@@ -1,0 +1,53 @@
+ErrorCount=0
+
+Nf=6
+Nb=0
+
+O1 = NewOperator(Nf, Nb, {{1,-1,0.123},  {0,-0,0.123},{-1,1,1.123}})
+O2 = NewOperator(Nf, Nb, {{0,-1,0.123},  {1,-0,0.123},{-1,1,1.123}})
+O3 = NewOperator(Nf, Nb, {{1,-1,0.123+I},{0,-0,0.123},{-1,1,1.123-I}})
+O4 = NewOperator(Nf, Nb, {{0,-1,0.123+I},{1,-0,0.123},{-1,1,1.123-I}})
+
+O1minO2 = NewOperator(Nf, Nb, {{1,-1,0.123},  {0,-0,0.123},{-1,1,1.123},  {0,-1,-0.123},  {1,-0,-0.123},{-1,1,-1.123}})
+O1minO3 = NewOperator(Nf, Nb, {{1,-1,0.123},  {0,-0,0.123},{-1,1,1.123},  {1,-1,-0.123-I},{0,-0,-0.123},{-1,1,-1.123+I}})
+O3minO4 = NewOperator(Nf, Nb, {{1,-1,0.123+I},{0,-0,0.123},{-1,1,1.123-I},{0,-1,-0.123-I},{1,-0,-0.123},{-1,1,-1.123+I}})
+
+
+if( (O1-O2==O1minO2) == false )
+then
+  print("O1-O2==O1minO2 returned ",O1-O2==O1minO2)
+  ErrorCount = ErrorCount + 1
+end
+
+if( (O1-O2-O1minO2==0*O1) == false )
+then
+  print("O1-O2-O1minO2==0*O1 returned ",O1-O2-O1minO2==0*O1)
+  ErrorCount = ErrorCount + 1
+end
+
+if( (O1-O3==O1minO3) == false )
+then
+  print("O1-O3==O1minO3 returned ",O1-O3==O1minO3)
+  ErrorCount = ErrorCount + 1
+end
+
+if( (O1-O3-O1minO3==0*O1) == false )
+then
+  print("O1-O3-O1minO3==0*O1 returned ",O1-O3-O1minO3==0*O1)
+  ErrorCount = ErrorCount + 1
+end
+
+if( (O3-O4==O3minO4) == false )
+then
+  print("O3-O4==O3minO4 returned ",O3-O4==O3minO4)
+  ErrorCount = ErrorCount + 1
+end
+
+if( (O3-O4-O3minO4==0*O1) == false )
+then
+  print("O3-O4-O3minO4==0*O1 returned ",O3-O4-O3minO4==0*O1)
+  ErrorCount = ErrorCount + 1
+end
+
+os.exit(ErrorCount)
+

@@ -4645,6 +4645,23 @@ static int LuaOperatorUnm(lua_State * L)
   return 1;
 }
 
+static int LuaOperatorEq(lua_State * L)
+{
+  OperatorType *l,*r;
+  l = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
+  r = (OperatorType *) luaL_checkudata(L, 2, "Operator_Type");
+  if(QOperatorEqual(l,r,DBL_MIN))
+  {
+    lua_pushboolean (L, 1);
+  }
+  else
+  {
+    lua_pushboolean (L, 0);
+  }
+  return 1;
+}
+
+
 static int LuaOperatorPrint(lua_State * L)
 {
   OperatorType *a = (OperatorType *) luaL_checkudata(L, lua_upvalueindex(1), "Operator_Type");
@@ -4987,6 +5004,7 @@ static const struct luaL_Reg Operator_meta[] = {
   {"__mul", LuaOperatorMul},
   {"__div", LuaOperatorDiv},
   {"__unm", LuaOperatorUnm},
+  {"__eq", LuaOperatorEq},
   {"__index", LuaOperatorIndex},
   {"__newindex", LuaOperatorNewIndex},
   {"__tostring", LuaOperatorToString},
