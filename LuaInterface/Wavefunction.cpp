@@ -420,6 +420,24 @@ static int LuaWavefunctionUnm(lua_State * L)
   return 1;
 }
 
+static int LuaWavefunctionEq(lua_State * L)
+{
+  WaveFunctionType *l,*r;
+  l = (WaveFunctionType *) luaL_checkudata(L, 1, "Wavefunction_Type");
+  r = (WaveFunctionType *) luaL_checkudata(L, 2, "Wavefunction_Type");
+  if(QWaveFunctionEqual(l,r,DBL_MIN))
+  {
+    lua_pushboolean (L, 1);
+  }
+  else
+  {
+    lua_pushboolean (L, 0);
+  }
+  return 1;
+}
+
+
+
 static int LuaWavefunctionPrint(lua_State * L)
 {
   struct
@@ -828,6 +846,7 @@ static const struct luaL_Reg Wavefunction_meta[] = {
   {"__mul", LuaWavefunctionMul},
   {"__div", LuaWavefunctionDiv},
   {"__unm", LuaWavefunctionUnm},
+  {"__eq", LuaWavefunctionEq},
   {"__index", LuaWavefunctionIndex},
   {"__newindex", LuaWavefunctionNewIndex},
   {"__tostring", LuaWavefunctionToString},

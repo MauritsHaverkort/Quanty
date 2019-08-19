@@ -1,6 +1,22 @@
-﻿dofile("../../definitions.Quanty")
+ErrorCount=0
 
-psi = sqrt(0.5) * psi1 + sqrt(0.5) * I * psi2
-print(psi)
-psi.Conjugate()
-print(psi)
+Nf=6
+Nb=0
+
+psi1 = NewWavefunction(Nf,Nb,{{"100010",sqrt(9/10)},{"110000", I*sqrt(1/10)}})
+psi2 = NewWavefunction(Nf,Nb,{{"100010",sqrt(9/10)},{"110000",-I*sqrt(1/10)}})
+
+if( (psi1==Conjugate(psi2)) == false )
+then
+  print("psi1==Conjugate(psi2) returned ",psi1==Conjugate(psi2))
+  ErrorCount = ErrorCount + 1
+end
+
+psi2.Conjugate()
+if( (psi1==psi2) == false )
+then
+  print("After psi2.Conjugate() psi1==psi2 returned ",psi1==psi2)
+  ErrorCount = ErrorCount + 1
+end
+
+os.exit(ErrorCount)

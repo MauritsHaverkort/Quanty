@@ -1,18 +1,6 @@
 
 
-NF = 2
-NB = 0
-H = NewOperator(NF, NB, {{0,-0,-2},{1,-1,-1}})
-T = NewOperator(NF, NB, {{0,-1,2},{1,-0,2}})
-T.Name = "transition"
-restr = {NF,NB,{"11",1,1}}
-psiList = Eigensystem(H,restr,2)
-spec = CreateSpectra(H,T,psiList[1])
-spec.Print({{"file","spec"..(T.Name)..".dat"}})
-
-os.exit()
-
-dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Reference/Objects/Operator/O.Chop.Quanty")
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Reference/Objects/Wavefunction/psi.NBitsKey.Quanty")
 os.exit()
 
 

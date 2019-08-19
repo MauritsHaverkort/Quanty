@@ -1,9 +1,86 @@
-﻿dofile("../../definitions.Quanty")
+ErrorCount=0
 
-psi=sqrt(0.1)*psi1+sqrt(0.9)*psi2
-print(psi*psi1)
-psi.Print({{"Full",true}})
+Nf=6
+Nb=0
 
-psi.NBitsKey=2
-print(psi*psi1)
+psi1 = NewWavefunction(Nf,Nb,{{"100010",sqrt(9/25)},{"110000",sqrt(16/25)}})
+psi2 = NewWavefunction(Nf,Nb,{{"010010",sqrt(9/25)},{"010001",sqrt(16/25)}})
+psi = sqrt(9/25)*psi1+sqrt(16/25)*psi2
+psiC= sqrt(9/25)*psi1+I*sqrt(16/25)*psi2
+
 psi.Print({{"Full",true}})
+if( (psi.NBitsKey==16) == false )
+then
+  print("psi.NBitsKey==16 returned ",psi.NBitsKey==16)
+  ErrorCount = ErrorCount + 1
+end
+if( (psi*psi1==0.6) == false )
+then
+  print("psi*psi1==0.6 returned ",psi*psi1==0.6,"with a key size of ",psi.NBitsKey)
+  ErrorCount = ErrorCount + 1
+end
+if( (psiC.NBitsKey==16) == false )
+then
+  print("psiC.NBitsKey==16 returned ",psiC.NBitsKey==16)
+  ErrorCount = ErrorCount + 1
+end
+if( (psiC*psi1==0.6) == false )
+then
+  print("psiC*psi1==0.6 returned ",psiC*psi1==0.6,"with a key size of ",psiC.NBitsKey)
+  ErrorCount = ErrorCount + 1
+end
+
+psi.NBitsKey =2
+psiC.NBitsKey=2
+
+psi.Print({{"Full",true}})
+if( (psi.NBitsKey==2) == false )
+then
+  print("psi.NBitsKey==2 returned ",psi.NBitsKey==2)
+  ErrorCount = ErrorCount + 1
+end
+if( (psi*psi1==0.6) == false )
+then
+  print("psi*psi1==0.6 returned ",psi*psi1==0.6,"with a key size of ",psi.NBitsKey)
+  ErrorCount = ErrorCount + 1
+end
+if( (psiC.NBitsKey==2) == false )
+then
+  print("psiC.NBitsKey==2 returned ",psiC.NBitsKey==2)
+  ErrorCount = ErrorCount + 1
+end
+if( (psiC*psi1==0.6) == false )
+then
+  print("psiC*psi1==0.6 returned ",psiC*psi1==0.6,"with a key size of ",psiC.NBitsKey)
+  ErrorCount = ErrorCount + 1
+end
+
+psi.NBitsKey =3
+psiC.NBitsKey=3
+
+psi.Print({{"Full",true}})
+if( (psi.NBitsKey==3) == false )
+then
+  print("psi.NBitsKey==3 returned ",psi.NBitsKey==3)
+  ErrorCount = ErrorCount + 1
+end
+if( (psi*psi1==0.6) == false )
+then
+  print("psi*psi1==0.6 returned ",psi*psi1==0.6,"with a key size of ",psi.NBitsKey)
+  ErrorCount = ErrorCount + 1
+end
+if( (psiC.NBitsKey==3) == false )
+then
+  print("psiC.NBitsKey==3 returned ",psiC.NBitsKey==3)
+  ErrorCount = ErrorCount + 1
+end
+if( (psiC*psi1==0.6) == false )
+then
+  print("psiC*psi1==0.6 returned ",psiC*psi1==0.6,"with a key size of ",psiC.NBitsKey)
+  ErrorCount = ErrorCount + 1
+end
+
+
+
+os.exit(ErrorCount)
+

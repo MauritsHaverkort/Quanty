@@ -1,6 +1,192 @@
 Verbosity(0)
 
-dofile("../../../Shared/All.Quanty")
+-- define function which will print the Term symbol according to L^2 S^2 and J^2
+
+function LSJ2term (L2,S2,J2)
+local L = floor(0.5 * (sqrt(abs(L2) * 4 +1) - 1) + 0.5)
+if     L == 0   then str1="S"
+elseif L == 1   then str1="P"
+elseif L == 2   then str1="D"
+elseif L == 3   then str1="F"
+elseif L == 4   then str1="G"
+elseif L == 5   then str1="H"
+elseif L == 6   then str1="I"
+elseif L == 7   then str1="K"
+elseif L == 8   then str1="L"
+elseif L == 9   then str1="M"
+elseif L == 10  then str1="N"
+elseif L == 11  then str1="O"
+elseif L == 12  then str1="Q"
+elseif L == 13  then str1="R"
+elseif L == 14  then str1="T"
+elseif L == 15  then str1="U"
+elseif L == 16  then str1="V"
+elseif L == 17  then str1="W"
+elseif L == 18  then str1="X"
+elseif L == 19  then str1="Y"
+elseif L == 20  then str1="Z"
+else
+str1="?"
+end
+local mult = floor(sqrt(S2 * 4 +1)+0.5)
+local twoJ = floor((sqrt(abs(J2) * 4 +1) - 1) + 0.5)/2
+return "^"..mult..str1.."_"..twoJ
+end
+
+-- define function which returns a list of operators working on the atomic shell with angular momentum l
+
+function DefineOperatorsAtomicShell(l)
+
+local RetList={}
+RetList["l"]=l
+RetList["NF"]=4*l+2
+RetList["NB"]=0
+
+RetList["IndexDn"]={}
+RetList["IndexUp"]={}
+
+for m=1,2*l+1 do
+RetList["IndexDn"][m] = 2*(m-1)
+RetList["IndexUp"][m] = 2*(m-1)+1
+end
+
+RetList["Lx"]    = NewOperator("Lx",   RetList["NF"],RetList["IndexUp"],RetList["IndexDn"])
+RetList["Ly"]    = NewOperator("Ly",   RetList["NF"],RetList["IndexUp"],RetList["IndexDn"])
+RetList["Lz"]   = NewOperator("Lz",   RetList["NF"],RetList["IndexUp"],RetList["IndexDn"])
+RetList["Lplus"] = NewOperator("Lplus",RetList["NF"],RetList["IndexUp"],RetList["IndexDn"])
+RetList["Lmin"]  = NewOperator("Lmin", RetList["NF"],RetList["IndexUp"],RetList["IndexDn"])
+RetList["Lsqr"]  = NewOperator("Lsqr", RetList["NF"],RetList["IndexUp"],RetList["IndexDn"])
+
+RetList["Sx"]    = NewOperator("Sx",   RetList["NF"],RetList["IndexUp"],RetList["IndexDn"])
+RetList["Sy"]    = NewOperator("Sy",   RetList["NF"],RetList["IndexUp"],RetList["IndexDn"])
+RetList["Sz"]    = NewOperator("Sz",   RetList["NF"],RetList["IndexUp"],RetList["IndexDn"])
+RetList["Splus"] = NewOperator("Splus",RetList["NF"],RetList["IndexUp"],RetList["IndexDn"])
+RetList["Smin"]  = NewOperator("Smin", RetList["NF"],RetList["IndexUp"],RetList["IndexDn"])
+RetList["Ssqr"]  = NewOperator("Ssqr", RetList["NF"],RetList["IndexUp"],RetList["IndexDn"])
+
+RetList["Jx"]    = NewOperator("Jx",   RetList["NF"],RetList["IndexUp"],RetList["IndexDn"])
+RetList["Jy"]    = NewOperator("Jy",   RetList["NF"],RetList["IndexUp"],RetList["IndexDn"])
+RetList["Jz"]    = NewOperator("Jz",   RetList["NF"],RetList["IndexUp"],RetList["IndexDn"])
+RetList["Jplus"] = NewOperator("Jplus",RetList["NF"],RetList["IndexUp"],RetList["IndexDn"])
+RetList["Jmin"]  = NewOperator("Jmin", RetList["NF"],RetList["IndexUp"],RetList["IndexDn"])
+RetList["Jsqr"]  = NewOperator("Jsqr", RetList["NF"],RetList["IndexUp"],RetList["IndexDn"])
+
+RetList["ldots"] = NewOperator("ldots", RetList["NF"],RetList["IndexUp"],RetList["IndexDn"])
+
+RetList["Tx"]    = NewOperator("Tx",   RetList["NF"],RetList["IndexUp"],RetList["IndexDn"])
+RetList["Ty"]    = NewOperator("Ty",   RetList["NF"],RetList["IndexUp"],RetList["IndexDn"])
+RetList["Tz"]    = NewOperator("Tz",   RetList["NF"],RetList["IndexUp"],RetList["IndexDn"])
+RetList["Tplus"] = NewOperator("Tplus",RetList["NF"],RetList["IndexUp"],RetList["IndexDn"])
+RetList["Tmin"]  = NewOperator("Tmin", RetList["NF"],RetList["IndexUp"],RetList["IndexDn"])
+RetList["Tsqr"]  = NewOperator("Tsqr", RetList["NF"],RetList["IndexUp"],RetList["IndexDn"])
+
+if l==0 then
+RetList["F0"]  = NewOperator("U",    RetList["NF"],RetList["IndexUp"],RetList["IndexDn"], {1})
+RetList["U"]   = 0
+elseif l==1 then
+RetList["F0"]  = NewOperator("U",    RetList["NF"],RetList["IndexUp"],RetList["IndexDn"], {1,0})
+RetList["F2"]  = NewOperator("U",    RetList["NF"],RetList["IndexUp"],RetList["IndexDn"], {0,1})
+RetList["U"]   = 10 * RetList["F2"]
+elseif l==2 then
+RetList["F0"]  = NewOperator("U",    RetList["NF"],RetList["IndexUp"],RetList["IndexDn"], {1,0,0})
+RetList["F2"]  = NewOperator("U",    RetList["NF"],RetList["IndexUp"],RetList["IndexDn"], {0,1,0})
+RetList["F4"]  = NewOperator("U",    RetList["NF"],RetList["IndexUp"],RetList["IndexDn"], {0,0,1})
+RetList["U"]   = 10 * RetList["F2"] + 6.25 * RetList["F4"]
+elseif l==3 then
+RetList["F0"]  = NewOperator("U",    RetList["NF"],RetList["IndexUp"],RetList["IndexDn"], {1,0,0,0})
+RetList["F2"]  = NewOperator("U",    RetList["NF"],RetList["IndexUp"],RetList["IndexDn"], {0,1,0,0})
+RetList["F4"]  = NewOperator("U",    RetList["NF"],RetList["IndexUp"],RetList["IndexDn"], {0,0,1,0})
+RetList["F6"]  = NewOperator("U",    RetList["NF"],RetList["IndexUp"],RetList["IndexDn"], {0,0,0,1})
+RetList["U"]   = 10 * RetList["F2"] + 6.25 * RetList["F4"] + 4 * RetList["F6"]
+end
+
+RetList["occstr"] = ""
+for i=1,RetList["NF"] do
+RetList["occstr"] = RetList["occstr"] .. "1"
+end
+
+return RetList
+end
+
+
+-- define a function that loops over all atomic configurations for an s,p,d and f shell and runs fun2() for each shell and fun1() for each configuration.
+-- communication to fun1 and fun2 uses global variables
+-- Opp is a global list containing all settings (print the index in order to find all defined values
+-- nElec and StartRestrictions are global defined variables containing the basic information on the configuration
+
+function LoopOverAllAtomicConfigurations(fun1,fun2)
+for l = 0,2 do
+
+Opp = DefineOperatorsAtomicShell(l)
+
+fun2()
+
+for localnElec = 0, 4*l+2 do
+
+nElec=localnElec
+StartRestrictions = {Opp["NF"], Opp["NB"],  {Opp["occstr"],nElec,nElec}}
+
+fun1()
+end
+end
+end
+
+-- define a function that creaetes an operator of effective angular momentum l_eff=1 for a t_2g shell
+function EffectiveOrbitalAngularMomentum(NF, IndexUp, IndexDn)
+
+local rotmatKd   = {}
+local rotmatKt2g = {}
+for i=1,NF do
+rotmatKd[i]   = {}
+rotmatKt2g[i] = {}
+for j=1,NF do
+rotmatKd[i][j]   = 0
+rotmatKt2g[i][j] = 0
+end
+end
+local t = sqrt(1/2)
+local u = I*sqrt(1/2)
+
+rotmatKd[1+IndexUp[1]][1+IndexUp[1]] = t
+rotmatKd[1+IndexUp[1]][1+IndexUp[5]] = t
+rotmatKd[1+IndexUp[2]][1+IndexUp[3]] = 1
+rotmatKd[1+IndexUp[3]][1+IndexUp[2]] = u
+rotmatKd[1+IndexUp[3]][1+IndexUp[4]] = u
+rotmatKd[1+IndexUp[4]][1+IndexUp[2]] = t
+rotmatKd[1+IndexUp[4]][1+IndexUp[4]] =-t
+rotmatKd[1+IndexUp[5]][1+IndexUp[1]] = u
+rotmatKd[1+IndexUp[5]][1+IndexUp[5]] =-u
+
+rotmatKd[1+IndexDn[1]][1+IndexDn[1]] = t
+rotmatKd[1+IndexDn[1]][1+IndexDn[5]] = t
+rotmatKd[1+IndexDn[2]][1+IndexDn[3]] = 1
+rotmatKd[1+IndexDn[3]][1+IndexDn[2]] = u
+rotmatKd[1+IndexDn[3]][1+IndexDn[4]] = u
+rotmatKd[1+IndexDn[4]][1+IndexDn[2]] = t
+rotmatKd[1+IndexDn[4]][1+IndexDn[4]] =-t
+rotmatKd[1+IndexDn[5]][1+IndexDn[1]] = u
+rotmatKd[1+IndexDn[5]][1+IndexDn[5]] =-u
+
+rotmatKt2g[1+IndexUp[3]][1+IndexUp[2]] = u
+rotmatKt2g[1+IndexUp[3]][1+IndexUp[4]] = u
+rotmatKt2g[1+IndexUp[4]][1+IndexUp[2]] = t
+rotmatKt2g[1+IndexUp[4]][1+IndexUp[4]] =-t
+rotmatKt2g[1+IndexUp[5]][1+IndexUp[1]] = u
+rotmatKt2g[1+IndexUp[5]][1+IndexUp[5]] =-u
+
+rotmatKt2g[1+IndexDn[3]][1+IndexDn[2]] = u
+rotmatKt2g[1+IndexDn[3]][1+IndexDn[4]] = u
+rotmatKt2g[1+IndexDn[4]][1+IndexDn[2]] = t
+rotmatKt2g[1+IndexDn[4]][1+IndexDn[4]] =-t
+rotmatKt2g[1+IndexDn[5]][1+IndexDn[1]] = u
+rotmatKt2g[1+IndexDn[5]][1+IndexDn[5]] =-u
+
+return {-Chop(Rotate(Chop(Rotate(NewOperator("Lx",   NF, IndexUp, IndexDn),rotmatKt2g)),ConjugateTranspose(rotmatKd))),
+  -Chop(Rotate(Chop(Rotate(NewOperator("Ly",   NF, IndexUp, IndexDn),rotmatKt2g)),ConjugateTranspose(rotmatKd))),
+  -Chop(Rotate(Chop(Rotate(NewOperator("Lz",   NF, IndexUp, IndexDn),rotmatKt2g)),ConjugateTranspose(rotmatKd))) }
+
+end
+
 
 function ShellSpecificFun()
   print("Calculations for shell with angular momentum ",Opp["l"])
