@@ -368,76 +368,21 @@ static int LuaCoolNewSelfEnergyDiagonal(lua_State *L)
 	uint32_t nphiBound = (uint32_t)phiBound.size();
 	lua_check(L,3,Uk);
 	uint32_t nUk = (uint32_t)Uk.size();
-	vector<MatrixType> UkMatrix = vector<MatrixType>(nUk);
-
-#pragma omp parallel for
-	for (uint32_t k = 0; k < nUk; k++)
-	{
-		UkMatrix[k].Ni = npsiCont;
-		UkMatrix[k].Nj = nphiBound;
-		UkMatrix[k].QComplex = psiCont[0].QComplex + phiBound[0].QComplex + Uk[k].QComplex;
-		InitMatrix(&UkMatrix[k]);
-		PsiPrimeOperatorPsiMatrix(Uk[k],&psiCont[0],&phiBound[0],&UkMatrix[k]);
-	}
 
 	double wMin, wMax, dw,gammaSE;
 	lua_check(L,4,wMin);
 	lua_check(L,5,wMax);
 	lua_check(L,6,dw);
 	lua_check(L,7,gammaSE);
-	uint32_t Nw = floor((wMax-wMin)/dw) + 1;
 	vector<vector<double> > Fk;
 	lua_check(L,8,Fk);
-	uint32_t nContFuns = (uint32_t) Fk.size();
 	vector<double> Econt, EAuger;
 	lua_check(L,9,Econt);
 	lua_check(L,10,EAuger);
 
-	
-	printf("Uk calculated, begin with SEdf\n");
-    printf("%u\t%u\t%u\t%u\t%u\n",nphiBound,nContFuns,npsiCont,nUk,Nw);
-	fflush(stdout);
-
-    vector<vector<Complex16> > SelfEnergy = vector<vector<Complex16> >(nphiBound);
-#pragma omp parallel for
-	for (uint32_t a = 0; a < nphiBound; a++)
-	{
-		Complex16 denom;
-        double num;
-        double w;
-        double Eac;
-		SelfEnergy[a] = vector<Complex16>(Nw);
-        denom.Im = gammaSE/2.;
-
-        for (uint32_t iEps = 0; iEps < nContFuns; iEps++)
-        {
-            for (uint32_t ipsi = 0; ipsi < npsiCont; ipsi++)
-            {
-                Eac = EAuger[ipsi] + Econt[iEps];
-                num = 0;
-                for (uint32_t k = 0; k < nUk; k++)
-                {
-                     
-                    num += Fk[iEps][k] * UkMatrix[k].VRe[ipsi][a]; //TODO: complex case coden
-                        
-                    
-                }
-                num *= num;
-                for (uint32_t i = 0; i < Nw; i++)
-                {
-                    w = wMin + i*dw;
-                    denom.Re = w - Eac;
-                    SelfEnergy[a][i] += num / denom;
-                }
-            }
-        }
-
-	}
-	for (uint32_t k = 0; k < nUk; k++)
-	{
-		FreeMatrix(&UkMatrix[k]);
-	}
-	lua_push(L,SelfEnergy);
+    vector<vector<Complex16> > SelfEnergy;
+    CalcCNSE(psiCont, phiBound, Uk, wMin, wMax, dw, gammaSE, Fk, Econt, EAuger, SelfEnergy);
+    lua_push(L,SelfEnergy);
 	return 1;
 }
 
