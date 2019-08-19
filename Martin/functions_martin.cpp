@@ -1834,7 +1834,7 @@ static int LuaReduceOperator(lua_State *L)
 	ReduceOperator(*Opp,ReducedOpp,ind);
 	return 1;
 }
-
+/*
 template <typename T>
 void lua_check(lua_State *L, uint32_t n, T* &in)
 {
@@ -1847,18 +1847,31 @@ void lua_check(lua_State *L, uint32_t n, T* &in)
         lua_pop(L,1);
     }
 }
-
+*/
 static int LuaMartinTest(lua_State *L)
 {
     WaveFunctionType** Kryl;
     CompactMatrixType U;
     vector<WaveFunctionType> psi;
     uint32_t n, bs;
-    lua_check(L,1,Kryl);
+    uint32_t len = (uint32_t)lua_objlen(L,1);
+    uint32_t len2;
+    Kryl = (WaveFunctionType**) malloc(len * sizeof(WaveFunctionType*));
+    for (uint32_t i = 0; i < len; i++)
+    {
+        lua_rawgeti(L,1,i+1);
+        len2 = (uint32_t)lua_objlen(L,-1);
+        Kryl[i] = (WaveFunctionType*) malloc(len2 * sizeof(WaveFunctionType));
+        for (uint32_t j = 0; j < len2; j++)
+        {
+            lua_rawgeti(L,-1,j+1);
+            lua_check(L,-1,Kryl[i][j]);
+            lua_pop(L,1);
+        }        
+        lua_pop(L,1);
+    }
     lua_check(L,2,U);
-    lua_check(L,3,n);
-    lua_check(L,4,bs);
-    RotateWaveFunctions(Kryl,n,bs,U,psi);
+    RotateWaveFunctions(Kryl,len,len2,U,psi);
     lua_push(L,psi);
     return 1;
 }
