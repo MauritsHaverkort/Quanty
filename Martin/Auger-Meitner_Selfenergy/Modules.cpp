@@ -457,7 +457,7 @@ void CalcCNSE(const vector<WaveFunctionType> &psiCont, const vector<WaveFunction
         }
     }
     else
-    {
+    {   
     #pragma omp parallel for
         for (uint32_t a = 0; a < nphiBound; a++)
         {

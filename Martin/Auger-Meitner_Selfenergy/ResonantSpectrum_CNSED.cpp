@@ -6,7 +6,7 @@
 uint32_t ResonantSpectrumCNSED(const OperatorType OppH1, const OperatorType OppH2, const OperatorType T1, const OperatorType *T2,
                                uint32_t NT2, const WaveFunctionType psi, TriDiagonalMatrixType **SpecTri2, SpectraType **Spec,
                                double energy1, double energy2, ConvergenceSettingsType *settings,
-                               const vector<vector<OperatorType> > &Uk, const vector<vector<vector<double> > > &Fk)
+                               const vector<vector<OperatorType> > &Uk, const vector<vector<vector<double> > > &Fk, const vector<double> Econt)
 {
   /*Given wavefunction psi (usually ground state, but could be excited)*/
   
@@ -125,6 +125,7 @@ uint32_t ResonantSpectrumCNSED(const OperatorType OppH1, const OperatorType OppH
   
 // Martin start	---------------------------------------------------------------------------------------
 
+    double gammaSE = 1;
     uint32_t Npoles1 = settings->NTri1;
     uint32_t Nw1 = settings->NE1+1;
     uint32_t Nw2 = settings->NE2+1;
@@ -132,7 +133,8 @@ uint32_t ResonantSpectrumCNSED(const OperatorType OppH1, const OperatorType OppH
     uint32_t Nkappa = (uint32_t) Uk.size();
     vector<vector<double> > polesSE1 = vector<vector<double> >(Npoles1 * Nkappa);
     vector<vector<Complex16> > selfen = vector<vector<Complex16> >(Npoles1);
-    WaveFunctionType EigenBasis1[Npoles1], UEb[Npoles1];
+    vector<WaveFunctionType> EigenBasis1;
+    WaveFunctionType UEb[Npoles1];
     RotateWaveFunctions(PsiBasis,Npoles1,EFun,EigenBasis1);
     OperatorType Usum;
     BlockTriDiagonalMatrixType M; 
@@ -142,7 +144,8 @@ uint32_t ResonantSpectrumCNSED(const OperatorType OppH1, const OperatorType OppH
     InitBlockTridiagonalMatrix(&M);
     M.mu=0;
     uint32_t BlockSize[M.N];
-    WaveFunctionType* psiBasis[M.N];
+    WaveFunctionType** KrylBasCont = (WaveFunctionType**) malloc(M.N * sizeof(WaveFunctionType*)); //TODO: free
+    vector<vector<Complex16> > SelfEnergy, SEtemp;
     for (uint32_t i = 0; i < (uint32_t) Uk.size(); i++) // loop over kappa
     {
         InitOperator(&Usum);
@@ -159,8 +162,17 @@ uint32_t ResonantSpectrumCNSED(const OperatorType OppH1, const OperatorType OppH
             WaveFunctionInit(&(UEb[j]));
             OperatorPsi(Usum, EigenBasis1[j], &(UEb[j]) );
         }
+        LanczosBlockTriDiagonalizeKrylov(OppH1, UEb, settings->epsilon,&M, KrylBasCont, BlockSize);
+        vector<double> EAuger = vector<double>(M.N*M.BlockSize);
+        CompactMatrixType fun;  // Should not be allocated acording to Documentation of CompactMatrixMultiply called in BlockTriDiagonalMatrixEigenSystem
+        BlockTriDiagonalMatrixEigenSystem(&M, &(EAuger[0]), &fun);
+        double wMin = settings->Emin1 + energy1;                    //TODO: What is this shift? is it needed here or does it have to be removed?
+        double wMax = settings->Emax1 + energy1;
+        double dw   = (settings->Emax1-settings->Emin1)/((double)settings->NE1);
+        vector<WaveFunctionType> psiCont;
+        RotateWaveFunctions(KrylBasCont,M.N,M.BlockSize,fun,psiCont);
+        CalcCNSE(psiCont, EigenBasis1, Uk[i], wMin, wMax, dw, gammaSE, Fk[i], Econt, EAuger, SEtemp);  
         
-        LanczosBlockTriDiagonalizeKrylov(OppH1, UEb, settings->epsilon,&M, psiBasis, BlockSize);
         /*for (uint32_t j = 0; j < Npoles; j++)
         {
             WaveFunctionFree(&UEb[j]);  // Documentation of LanczosBlockTriDiagonalizeKrylov says that these are already freeed

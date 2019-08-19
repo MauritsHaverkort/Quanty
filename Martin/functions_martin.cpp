@@ -1835,31 +1835,32 @@ static int LuaReduceOperator(lua_State *L)
 	return 1;
 }
 
+template <typename T>
+void lua_check(lua_State *L, uint32_t n, T* &in)
+{
+    uint32_t len = (uint32_t)lua_objlen(L,n);
+    in = (T*) malloc(len * sizeof(T));
+    for (uint32_t i = 0; i < len; i++)
+    {
+        lua_rawgeti(L,n,i+1);
+        lua_check(L,-1,in[i]);
+        lua_pop(L,1);
+    }
+}
+
 static int LuaMartinTest(lua_State *L)
 {
-
-	int    info = 0;
-	const char *jobz = "V";
-	const char *uplo = "U";
-	uint32_t N = 10;
-	uint32_t    lwork = 1 + 6 * N + 2 * Sqr(N);
-	uint32_t    liwork = 3 + 5 * N;
-
-	double *work = (double*)malloc(lwork*sizeof(double));
-	double *m = (double*) malloc(N*N*sizeof(double));
-	double *val = (double*) malloc(N*N*sizeof(double));
-
-	for (uint32_t i = 0; i < N*N; i++)
-	{
-		m[i] = 1;
-		val[i] = 0;
-	}
-	for (uint32_t i = 0; i < lwork; i++)
-	{
-		work[i] = 0;
-	}
-	dsyev(jobz, uplo, &N, m, &N, val, work, &lwork, &info);
-	return 0;
+    WaveFunctionType** Kryl;
+    CompactMatrixType U;
+    vector<WaveFunctionType> psi;
+    uint32_t n, bs;
+    lua_check(L,1,Kryl);
+    lua_check(L,2,U);
+    lua_check(L,3,n);
+    lua_check(L,4,bs);
+    RotateWaveFunctions(Kryl,n,bs,U,psi);
+    lua_push(L,psi);
+    return 1;
 }
 
 static const struct luaL_Reg Martin_meta[] = {
