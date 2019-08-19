@@ -1,0 +1,26 @@
+ErrorCount=0
+
+-- this code tests the division of wave-functions
+
+Nf=6
+Nb=0
+
+psi1       = NewWavefunction(Nf,Nb,{{"100010",3/5},      {"110000",4/5}})
+psi1div2   = NewWavefunction(Nf,Nb,{{"100010",3/10},     {"110000",4/10}})
+psi1divI   = NewWavefunction(Nf,Nb,{{"100010",-I*3/5},   {"110000",-I*4/5}})
+
+if( (psi1/2==psi1div2) == false )
+then
+  print("psi1/2==psi1div2 returned ",psi1/2==psi1div2)
+  ErrorCount = ErrorCount + 1
+end
+
+if( (psi1/I==psi1divI) == false )
+then
+  print("psi1/I==psi1divI returned ",psi1/I==psi1divI)
+  ErrorCount = ErrorCount + 1
+end
+
+os.exit(ErrorCount)
+
+

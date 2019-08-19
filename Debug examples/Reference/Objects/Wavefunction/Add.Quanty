@@ -1,0 +1,44 @@
+ErrorCount=0
+
+-- this code creates two wave-functions and test addition of these
+
+Nf=6
+Nb=0
+
+psi1 = NewWavefunction(Nf,Nb,{{"100010",sqrt(9/10)},{"110000",sqrt(1/10)}})
+psi2 = NewWavefunction(Nf,Nb,{{"010010",1}})
+
+psi1plus2  = NewWavefunction(Nf,Nb,{{"100010",sqrt(9/10)}, {"110000",sqrt(1/10)}, {"010010",1}})
+psi1plusI2 = NewWavefunction(Nf,Nb,{{"100010",sqrt(9/10)}, {"110000",sqrt(1/10)}, {"010010",I}})
+
+if( (psi1+psi2==psi1plus2) == false )
+then
+  print("psi1+psi2==psi1plus2 returned ",psi1+psi2==psi1plus2)
+  ErrorCount = ErrorCount + 1
+end
+
+if( (psi1+psi2-psi1plus2==0*psi1) == false )
+then
+  print("psi1+psi2-psi1plus2==0*psi1 returned ",psi1+psi2-psi1plus2==0*psi1)
+  ErrorCount = ErrorCount + 1
+end
+
+if( (psi1+I*psi2==psi1plusI2) == false )
+then
+print("psi1+I*psi2==psi1plusI2 returned ",psi1+I*psi2==psi1plusI2)
+ErrorCount = ErrorCount + 1
+end
+
+if( (psi1+I*psi2-psi1plusI2==0*psi1) == false )
+then
+print("psi1+I*psi2-psi1plusI2==0*psi1 returned ",psi1+I*psi2-psi1plusI2==0*psi1)
+ErrorCount = ErrorCount + 1
+end
+
+if( (psi1==psi2) == true )
+then
+  print("psi1==psi2 returned ",psi1==psi2)
+  ErrorCount = ErrorCount + 1
+end
+
+os.exit(ErrorCount)

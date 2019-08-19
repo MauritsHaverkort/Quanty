@@ -631,7 +631,7 @@ static int LuaNewOperator(lua_State * L)
         if(Abs(oaddtemp)>O->NFermion+O->NBoson-1) return luaL_error(L, "ERROR: Opperator %d at position %d adding particle with index %d but there are only %d (%d Fermions + %d Bosons in the basis)\n)\n",i,j,(int)oaddtemp,O->NFermion+O->NBoson,O->NFermion,O->NBoson);
         if(Abs((Abs(oaddtemp)-(uint16_t)(Abs(oaddtemp))))>10*DBL_EPSILON) return luaL_error(L, "ERROR: Opperator %d at position %d addign particle with index %f should be integer",i,j,oaddtemp);
         // negative numbers annihilate, positive create, but we also have to capture negative and postive zero
-        if(signbit(oaddtemp))
+        if(std::signbit(oaddtemp))
         {
           oadd[l-j]=(uint16_t)(-oaddtemp);
         }
@@ -1752,6 +1752,56 @@ static int LuaCreateSpectra(lua_State *L)
         LuaReadSingleSelfenergy(L, -1, Sigma.V[i], Sigma.SonGrid[i], Sigma.SasMatrix[i]);
         lua_pop(L, 1);
       }
+    }
+  }
+  /* test if Wave-function, Operator, Transition Operator and Restirctions have the same number of Fermions and Bosons */
+  for(ipsi=1;ipsi<Options.Npsi;ipsi++)
+  {
+    if(psi[ipsi].NFermion!=psi[0].NFermion)
+    {
+      return luaL_error(L, "Wave-function %d has a different number of Fermions (%d) than Wave-function 1 (%d)\n",ipsi,psi[ipsi].NFermion,psi[0].NFermion);
+    }
+    if(psi[ipsi].NBoson!=psi[0].NBoson)
+    {
+      return luaL_error(L, "Wave-function %d has a different number of Bosons (%d) than Wave-function 1 (%d)\n",ipsi,psi[ipsi].NBoson,psi[0].NBoson);
+    }
+  }
+  for(iT=1;iT<Options.NT;iT++)
+  {
+    if(T[iT].NFermion!=T[0].NFermion)
+    {
+      return luaL_error(L, "Transition Operator %d has a different number of Fermions (%d) than Transition Operator 1 (%d)\n",iT,T[iT].NFermion,T[0].NFermion);
+    }
+    if(T[iT].NBoson!=T[0].NBoson)
+    {
+      return luaL_error(L, "Transition Operator %d has a different number of Bosons (%d) than Transition Operator 1 (%d)\n",iT,T[iT].NBoson,T[0].NBoson);
+    }
+  }
+  if(psi[0].NFermion!=T[0].NFermion)
+  {
+    return luaL_error(L, "Wave-functions have different number of Fermions (%d) than transition operators (%d)",psi[0].NFermion,T[0].NFermion);
+  }
+  if(psi[0].NBoson!=T[0].NBoson)
+  {
+    return luaL_error(L, "Wave-functions have different number of Bosons (%d) than transition operators (%d)",psi[0].NBoson,T[0].NBoson);
+  }
+  if(psi[0].NFermion!=H->NFermion)
+  {
+    return luaL_error(L, "Wave-functions have different number of Fermions (%d) than the Hamilton operator used for the propagator (%d)",psi[0].NFermion,H->NFermion);
+  }
+  if(psi[0].NBoson!=H->NBoson)
+  {
+    return luaL_error(L, "Wave-functions have different number of Bosons (%d) than the Hamilton operator used for the propagator (%d)",psi[0].NBoson,H->NBoson);
+  }
+  if(Options.Settings.restrictions.N!=0)
+  {
+    if(Options.Settings.restrictions.NFermion!=psi[0].NFermion)
+    {
+      return luaL_error(L, "Wave-functions have different number of Fermions (%d) than the definitions of the restrictions (%d)",psi[0].NFermion,Options.Settings.restrictions.NFermion);
+    }
+    if(Options.Settings.restrictions.NBoson!=psi[0].NBoson)
+    {
+      return luaL_error(L, "Wave-functions have different number of Bosons (%d) than the definitions of the restrictions (%d)",psi[0].NBoson,Options.Settings.restrictions.NBoson);
     }
   }
   /* test if operator is Hermitian */

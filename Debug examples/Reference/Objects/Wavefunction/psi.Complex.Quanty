@@ -1,9 +1,21 @@
-﻿dofile("../../definitions.Quanty")
+ErrorCount=0
 
-print(psi1)
-print(psi1.Complex)
+Nf=6
+Nb=0
 
-psi=sqrt(0.6)*psi1 + sqrt(0.4)* I * psi2
+psi1 = NewWavefunction(Nf,Nb,{{"100010",sqrt(9/10)},{"110000",  sqrt(1/10)}})
+psi2 = NewWavefunction(Nf,Nb,{{"100010",sqrt(9/10)},{"110000",I*sqrt(1/10)}})
 
-print(psi)
-print(psi.Complex)
+if( (psi1.Complex==false) == false )
+then
+  print("psi1.Complex==false returned ",psi1.Complex==false)
+  ErrorCount = ErrorCount + 1
+end
+
+if( (psi2.Complex==true) == false )
+then
+  print("psi2.Complex==true returned ",psi2.Complex==true)
+  ErrorCount = ErrorCount + 1
+end
+
+os.exit(ErrorCount)

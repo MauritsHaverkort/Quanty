@@ -1,5 +1,40 @@
-﻿dofile("../../definitions.Quanty")
+ErrorCount=0
 
-print(psi1)
-psi1.Name="bla bla"
-print(psi1)
+Nf=6
+Nb=0
+
+psi1 = NewWavefunction(Nf,Nb,{{"100010",sqrt(9/10)},{"110000",sqrt(1/10)}})
+psi2 = NewWavefunction(Nf,Nb,{{"010010",1}})
+
+if( (psi1.Name=="Wave Function") == false )
+then
+  print("psi1.Name==\"Wave Function\" returned ",psi1.Name=="Wave Function")
+  ErrorCount = ErrorCount + 1
+end
+
+psi1.Name="Function 1"
+psi2.Name="Function 2"
+
+if( (psi1.Name=="Function 1") == false )
+then
+  print("psi1.Name==\"Function 1\" returned ",psi1.Name=="Function 1")
+  ErrorCount = ErrorCount + 1
+end
+
+if( (psi2.Name=="Function 2") == false )
+then
+  print("psi2.Name==\"Function 2\" returned ",psi2.Name=="Function 2")
+  ErrorCount = ErrorCount + 1
+end
+
+psi=psi1+psi2
+
+psi.Name = psi1.Name.." plus "..psi2.Name
+
+if( (psi.Name=="Function 1 plus Function 2") == false )
+then
+  print("psi.Name==\"Function 1 plus Function 2\" returned ",psi.Name=="Function 1 plus Function 2")
+  ErrorCount = ErrorCount + 1
+end
+
+os.exit(ErrorCount)

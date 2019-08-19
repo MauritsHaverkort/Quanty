@@ -461,6 +461,19 @@ uint32_t QWaveFunctionSame(WaveFunctionType const * const psiA, WaveFunctionType
   return 0;
 }
 
+uint32_t QWaveFunctionEqual(WaveFunctionType const * const psiA, WaveFunctionType const * const psiB, double epsilon)
+{
+  WaveFunctionType dif;
+  double Norm;
+  if(psiA->NFermion!=psiB->NFermion) return 0;
+  if(psiA->NBoson!=psiB->NBoson) return 0;
+  WaveFunctionCopy(*psiA, &dif);
+  WaveFunctionAddMultipliedUnionBasis(&dif, *psiB, -1);
+  WaveFunctionCalculateNormSqr(dif, &Norm);
+  if(Norm<=epsilon) return 1;
+  return 0;
+}
+
 
 uint32_t WaveFunctionAddElement(WaveFunctionType * const psi, const uint8_t * const det, const double aRe, const double aIm)
 {

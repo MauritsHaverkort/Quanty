@@ -1,4 +1,22 @@
-﻿dofile("../../definitions.Quanty")
+ErrorCount=0
 
-print(psi1)
-print(psi1.N)
+Nf=6
+Nb=0
+
+psi1 = NewWavefunction(Nf,Nb,{{"100010",sqrt(9/10)},{"110000",sqrt(1/10)}})
+psi2 = NewWavefunction(Nf,Nb,{{"010010",1}})
+
+
+if( (psi1.N==2) == false )
+then
+  print("psi1.N==2 returned ",psi1.N==2)
+  ErrorCount = ErrorCount + 1
+end
+
+if( (psi2.N==1) == false )
+then
+  print("psi2.N==1 returned ",psi2.N==1)
+  ErrorCount = ErrorCount + 1
+end
+
+os.exit(ErrorCount)

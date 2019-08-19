@@ -1,78 +1,41 @@
+ErrorCount=0
 
-Nf=6
-Nb=0
+psiA   = NewWavefunction(10,0,{{"1000101111",sqrt(7/10)},{"1100001111",sqrt(2/10)},{"0100001111",sqrt(1/10)}})
 
-psi1 = NewWavefunction(Nf,Nb,{{"100010",sqrt(7/10)},{"110000",sqrt(2/10)},{"010000",sqrt(1/10)}})
-psi2 = NewWavefunction(Nf,Nb,{{"010010",1}})
+psiA20 = NewWavefunction(20,0,{{"10001011110000000000",sqrt(7/10)},{"11000011110000000000",sqrt(2/10)},{"01000011110000000000",sqrt(1/10)}})
+psiA19 = NewWavefunction(19,0,{{"1000101111000000000", sqrt(7/10)},{"1100001111000000000", sqrt(2/10)},{"0100001111000000000",sqrt(1/10)}})
+psiA18 = NewWavefunction(18,0,{{"100010111100000000",  sqrt(7/10)},{"110000111100000000",  sqrt(2/10)},{"010000111100000000",sqrt(1/10)}})
+psiA17 = NewWavefunction(17,0,{{"10001011110000000",   sqrt(7/10)},{"11000011110000000",   sqrt(2/10)},{"01000011110000000",sqrt(1/10)}})
+psiA16 = NewWavefunction(16,0,{{"1000101111000000",    sqrt(7/10)},{"1100001111000000",    sqrt(2/10)},{"0100001111000000",sqrt(1/10)}})
+psiA15 = NewWavefunction(15,0,{{"100010111100000",     sqrt(7/10)},{"110000111100000",     sqrt(2/10)},{"010000111100000",sqrt(1/10)}})
+psiA14 = NewWavefunction(14,0,{{"10001011110000",      sqrt(7/10)},{"11000011110000",      sqrt(2/10)},{"01000011110000",sqrt(1/10)}})
+psiA13 = NewWavefunction(13,0,{{"1000101111000",       sqrt(7/10)},{"1100001111000",       sqrt(2/10)},{"0100001111000",sqrt(1/10)}})
+psiA12 = NewWavefunction(12,0,{{"100010111100",        sqrt(7/10)},{"110000111100",        sqrt(2/10)},{"010000111100",sqrt(1/10)}})
+psiA11 = NewWavefunction(11,0,{{"10001011110",         sqrt(7/10)},{"11000011110",         sqrt(2/10)},{"01000011110",sqrt(1/10)}})
+psiA10 = NewWavefunction(10,0,{{"1000101111",          sqrt(7/10)},{"1100001111",          sqrt(2/10)},{"0100001111",sqrt(1/10)}})
+psiA09 = NewWavefunction( 9,0,{{"100010111",           sqrt(7/10)},{"110000111",           sqrt(2/10)},{"010000111",sqrt(1/10)}})
+psiA08 = NewWavefunction( 8,0,{{"10001011",            sqrt(7/10)},{"11000011",            sqrt(2/10)},{"01000011",sqrt(1/10)}})
+psiA07 = NewWavefunction( 7,0,{{"1000101",             sqrt(7/10)},{"1100001",             sqrt(2/10)},{"0100001",sqrt(1/10)}})
+psiA06 = NewWavefunction( 6,0,{{"100010",              sqrt(7/10)},{"110000",              sqrt(2/10)},{"010000",sqrt(1/10)}})
+psiA05 = NewWavefunction( 5,0,{{"10001",               sqrt(7/10)},{"11000",               sqrt(2/10)},{"01000",sqrt(1/10)}})
+psiA04 = NewWavefunction( 4,0,{{"1000",                sqrt(7/10)},{"1100",                sqrt(2/10)},{"0100",sqrt(1/10)}})
+psiA03 = NewWavefunction( 3,0,{{"100",                 sqrt(7/10)},{"110",                 sqrt(2/10)},{"010",sqrt(1/10)}})
+psiA02 = NewWavefunction( 2,0,{{"10",                  sqrt(7/10)},{"11",                  sqrt(2/10)},{"01",sqrt(1/10)}})
+psiA01 = NewWavefunction( 1,0,{{"1",                   sqrt(7/10)},{"1",                   sqrt(2/10)},{"0",sqrt(1/10)}})
+psiA00 = NewWavefunction( 0,0,{{"",                    sqrt(7/10)},{"",                    sqrt(2/10)},{"",sqrt(1/10)}})
 
-print(psi1)
-print(psi1.NF)
-psi1.NF=3
-print(psi1)
-psi1.NF=17
-print(psi1)
-psi1.NF=8
-print(psi1)
+psilist={psiA20,psiA19,psiA18,psiA17,psiA16,psiA15,psiA14,psiA13,psiA12,psiA11,psiA10,psiA09,psiA08,psiA07,psiA06,psiA05,psiA04,psiA03,psiA02,psiA01,psiA00}
 
-print("=====================")
-psi1 = NewWavefunction(10,0,{{"1000101111",sqrt(7/10)},{"1100001111",sqrt(2/10)},{"0100001111",sqrt(1/10)}})
-print(psi1)
-psi1.NF=10
-print(psi1)
-psi1.NF=9
-print(psi1)
-psi1.NF=8
-print(psi1)
-psi1.NF=7
-print(psi1)
-psi1.NF=6
-print(psi1)
-psi1.NF=5
-print(psi1)
-psi1.NF=4
-print(psi1)
-psi1.NF=3
-print(psi1)
-psi1.NF=2
-print(psi1)
-psi1.NF=1
-print(psi1)
-psi1.NF=0
-print(psi1)
-psi1.NF=8
-print(psi1)
+psi=Copy(psiA)
 
+for NF=20,0,-1
+do
+  psi.NF=NF
+  if( (psi==psilist[21-NF]) == false )
+  then
+    print("psi==psilist[21-NF] returned ",psi==psilist[21-NF],"for NF equal ",NF)
+    ErrorCount = ErrorCount + 1
+  end
+end
 
-print("=====================")
-psi1 = NewWavefunction(10,0,{{"1000101111",sqrt(7/10)},{"1100001111",sqrt(2/10)},{"0100001111",sqrt(1/10)}})
-print(psi1)
-psi1.NF=7
-print(psi1)
-psi1.NF=8
-print(psi1)
-psi1.NF=9
-print(psi1)
-psi1.NF=10
-print(psi1)
-psi1.NF=11
-print(psi1)
-psi1.NF=12
-print(psi1)
-psi1.NF=13
-print(psi1)
-psi1.NF=14
-print(psi1)
-psi1.NF=15
-print(psi1)
-psi1.NF=16
-print(psi1)
-psi1.NF=17
-print(psi1)
-psi1.NF=18
-print(psi1)
-psi1.NF=19
-print(psi1)
-psi1.NF=20
-print(psi1)
-psi1.NF=21
-print(psi1)
+os.exit(ErrorCount)

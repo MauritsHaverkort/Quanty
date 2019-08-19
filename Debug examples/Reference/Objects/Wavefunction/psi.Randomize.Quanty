@@ -1,5 +1,13 @@
-﻿dofile("../../definitions.Quanty")
+ErrorCount=0
+
+Nf=6
+Nb=0
+
+psi1 = NewWavefunction(Nf,Nb,{{"100010",sqrt(7/10)},{"110000",sqrt(2/10)},{"101000",sqrt(1/10)}})
 
 print(psi1)
 psi1.Randomize()
 print(psi1)
+
+os.exit(ErrorCount)
+

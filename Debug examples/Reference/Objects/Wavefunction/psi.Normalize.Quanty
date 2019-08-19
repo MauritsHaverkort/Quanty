@@ -1,6 +1,31 @@
-﻿dofile("../../definitions.Quanty")
+ErrorCount=0
 
-psi = 0.5 * psi2
-print(psi)
-psi.Normalize()
-print(psi)
+Nf=6
+Nb=0
+
+psi1 = NewWavefunction(Nf,Nb,{{"100010",sqrt(7/10)},{"110000",sqrt(2/10)},{"101000",sqrt(1/10)}})
+psi2 = NewWavefunction(Nf,Nb,{{"100010",sqrt(7/10)},{"110000",sqrt(2/10)},{"101000",I*sqrt(1/10)}})
+
+psi1=psi1*1.234
+psi2=psi2*(I+1.234)
+
+psi1.Normalize()
+
+if( (psi1*psi1==1) == false )
+then
+print("psi1*psi1==1 returned ",psi1*psi1==1)
+ErrorCount = ErrorCount + 1
+end
+
+psi2.Normalize()
+
+if( (psi2*psi2==1) == false )
+then
+print("psi2*psi2==1 returned ",psi2*psi2==1)
+ErrorCount = ErrorCount + 1
+end
+
+
+
+
+os.exit(ErrorCount)

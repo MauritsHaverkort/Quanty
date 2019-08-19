@@ -1,6 +1,40 @@
-﻿dofile("../../definitions.Quanty")
+ErrorCount=0
 
-psi = sqrt(0.999) * psi1 + sqrt(0.001) * psi2
-print(psi)
-psi.Chop(0.05)
-print(psi)
+Nf=6
+Nb=0
+
+psi1 = NewWavefunction(Nf,Nb,{{"100010",sqrt(9/10)},{"110000",sqrt(1/10)}})
+psi2 = NewWavefunction(Nf,Nb,{{"010010",1}})
+
+psi=psi1+0.001*psi2
+
+if( (Chop(psi,0.01)==psi1) == false )
+then
+  print("Chop(psi)==psi1 returned ",Chop(psi)==psi1)
+  ErrorCount = ErrorCount + 1
+end
+
+psi.Chop(0.01)
+if( (psi==psi1) == false )
+then
+  print("after psi.Chop(0.01) psi==psi1 returned ",psi==psi1)
+  ErrorCount = ErrorCount + 1
+end
+
+psi=psi1+0.001*(I-1)*psi2
+
+if( (Chop(psi,0.01)==psi1) == false )
+then
+  print("Chop(psi)==psi1 returned ",Chop(psi)==psi1)
+  ErrorCount = ErrorCount + 1
+end
+
+psi.Chop(0.01)
+if( (psi==psi1) == false )
+then
+  print("after psi.Chop(0.01) psi==psi1 returned ",psi==psi1)
+  ErrorCount = ErrorCount + 1
+end
+
+
+os.exit(ErrorCount)

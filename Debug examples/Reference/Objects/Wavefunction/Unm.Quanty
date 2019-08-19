@@ -1,0 +1,37 @@
+ErrorCount=0
+
+-- this code tests the negative of wave-functions
+
+Nf=6
+Nb=0
+
+psi1       = NewWavefunction(Nf,Nb,{{"100010",3/5},  {"110000",4/5}})
+psi2       = NewWavefunction(Nf,Nb,{{"100010",3/5},  {"110000",I*4/5}})
+minpsi1    = NewWavefunction(Nf,Nb,{{"100010",-3/5}, {"110000",-4/5}})
+minpsi2    = NewWavefunction(Nf,Nb,{{"100010",-3/5}, {"110000",-I*4/5}})
+
+if( (psi1==-minpsi1) == false )
+then
+  print("psi1==-minpsi1 returned ",psi1==-minpsi1)
+  ErrorCount = ErrorCount + 1
+end
+
+if( (-psi1==minpsi1) == false )
+then
+  print("-psi1==minpsi1 returned ",-psi1==minpsi1)
+  ErrorCount = ErrorCount + 1
+end
+
+if( (psi2==-minpsi2) == false )
+then
+  print("psi2==-minpsi2 returned ",psi2==-minpsi2)
+  ErrorCount = ErrorCount + 1
+end
+
+if( (-psi2==minpsi2) == false )
+then
+  print("-psi2==minpsi2 returned ",-psi2==minpsi2)
+  ErrorCount = ErrorCount + 1
+end
+
+os.exit(ErrorCount)

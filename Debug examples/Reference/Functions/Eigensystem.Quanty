@@ -1036,7 +1036,7 @@ TimePrint()
 ------------------------------------------------------------
 
 print("============================================")
-print("         Hubbard model 10 sites 1D          ")
+print("         Hubbard model 8 sites 1D           ")
 print("============================================")
 print("                    real                    ")
 print("============================================\n\n")
@@ -1054,9 +1054,9 @@ Htb.Hopping={{"O.s","O.s",{0,0, 1},{{1  ,0},{0,1  }}},
 HlocU = NewOperator("Number",2,0,0)*NewOperator("Number",2,1,1)
 
 U=3.5
-Hamiltonian1 = CreateClusterHamiltonian(Htb,{"periodic",{{1,0,0},{0,1,0},{0,0,10}}},U*HlocU)
+Hamiltonian1 = CreateClusterHamiltonian(Htb,{"periodic",{{1,0,0},{0,1,0},{0,0,8}}},U*HlocU)
 
-StartRestrictions = {20,0,{"10101010101010101010",5,5},{"01010101010101010101",5,5}}
+StartRestrictions = {16,0,{"1010101010101010",4,4},{"0101010101010101",4,4}}
 
 TimeStart("Hubbard Eigensystem 10 states")
 fun1  = Eigensystem(Hamiltonian1,StartRestrictions,10)
@@ -1138,7 +1138,7 @@ TimePrint()
 ------------------------------------------------------------
 
 print("============================================")
-print("        Hubbartd model 10 sites 1D          ")
+print("        Hubbartd model 8 sites 1D           ")
 print("============================================")
 print("                  complex                   ")
 print("============================================\n\n")
@@ -1156,9 +1156,9 @@ Htb.Hopping={{"O.s","O.s",{0,0, 1},{{1  ,0},{0,1  }}},
 HlocU = NewOperator("Number",2,0,0)*NewOperator("Number",2,1,1)
 
 U=3.5
-Hamiltonian1 = CreateClusterHamiltonian(Htb,{"periodic",{{1,0,0},{0,1,0},{0,0,10}}},U*HlocU,{{"k",{0,0,Pi/2}}})
+Hamiltonian1 = CreateClusterHamiltonian(Htb,{"periodic",{{1,0,0},{0,1,0},{0,0,8}}},U*HlocU,{{"k",{0,0,Pi/2}}})
 
-StartRestrictions = {20,0,{"10101010101010101010",5,5},{"01010101010101010101",5,5}}
+StartRestrictions = {16,0,{"1010101010101010",4,4},{"0101010101010101",4,4}}
 
 TimeStart("Hubbard Eigensystem 10 states complex")
 fun1  = Eigensystem(Hamiltonian1,StartRestrictions,10)
@@ -1243,7 +1243,7 @@ TimePrint()
 ------------------------------------------------------------
 
 print("============================================")
-print("         Hubbard model 10 sites 1D          ")
+print("         Hubbard model 8 sites 1D           ")
 print("============================================")
 print("               real psi start               ")
 print("============================================\n\n")
@@ -1261,20 +1261,20 @@ Htb.Hopping={{"Cu.s","Cu.s",{0,0, 1},{{1  ,0},{0,1  }}},
 HlocU = NewOperator("Number",2,0,0)*NewOperator("Number",2,1,1)
 
 U=3.5
-Hamiltonian1 = CreateClusterHamiltonian(Htb,{"periodic",{{1,0,0},{0,1,0},{0,0,10}}},U*HlocU)
+Hamiltonian1 = CreateClusterHamiltonian(Htb,{"periodic",{{1,0,0},{0,1,0},{0,0,8}}},U*HlocU)
 
-funstart10 = { NewWavefunction(20,0,{{"10011001100110011001",1}}),
-  NewWavefunction(20,0,{{"01100110011001100110",1}}),
-  NewWavefunction(20,0,{{"10010110011001100110",1}}),
-  NewWavefunction(20,0,{{"01101001011001100110",1}}),
-  NewWavefunction(20,0,{{"01100110100101100110",1}}),
-  NewWavefunction(20,0,{{"01100110011010010110",1}}),
-  NewWavefunction(20,0,{{"01100110011001101001",1}}),
-  NewWavefunction(20,0,{{"01101001100110011001",1}}),
-  NewWavefunction(20,0,{{"10010110100110011001",1}}),
-  NewWavefunction(20,0,{{"10011001011010011001",1}})}
+funstart10 = { NewWavefunction(16,0,{{"1001100110011001",1}}),
+  NewWavefunction(16,0,{{"0110011001100110",1}}),
+  NewWavefunction(16,0,{{"1001011001100110",1}}),
+  NewWavefunction(16,0,{{"0110100101100110",1}}),
+  NewWavefunction(16,0,{{"0110011010010110",1}}),
+  NewWavefunction(16,0,{{"0110011001101001",1}}),
+  NewWavefunction(16,0,{{"0110011001100110",1}}),
+  NewWavefunction(16,0,{{"0110100110011001",1}}),
+  NewWavefunction(16,0,{{"1001011010011001",1}}),
+  NewWavefunction(16,0,{{"1001100101101001",1}})}
 
-funstart1  = NewWavefunction(20,0,{{"10011001100110011001",sqrt(0.5)},{"01100110011001100110",sqrt(0.5)}})
+funstart1  = NewWavefunction(16,0,{{"1001100110011001",sqrt(0.5)},{"0110011001100110",sqrt(0.5)}})
 
 TimeStart("Hubbard psi Eigensystem 10 states")
 fun1 = Copy(funstart10)
@@ -1364,7 +1364,7 @@ TimePrint()
 ------------------------------------------------------------
 
 print("============================================")
-print("         Hubbard model 10 sites 1D          ")
+print("         Hubbard model 8 sites 1D           ")
 print("============================================")
 print("             complex psi start              ")
 print("============================================\n\n")
@@ -1382,20 +1382,20 @@ Htb.Hopping={{"Cu.s","Cu.s",{0,0, 1},{{1  ,0},{0,1  }}},
 HlocU = NewOperator("Number",2,0,0)*NewOperator("Number",2,1,1)
 
 U=3.5
-Hamiltonian1 = CreateClusterHamiltonian(Htb,{"periodic",{{1,0,0},{0,1,0},{0,0,10}}},U*HlocU,{{"k",{0,0,Pi/2}}})
+Hamiltonian1 = CreateClusterHamiltonian(Htb,{"periodic",{{1,0,0},{0,1,0},{0,0,8}}},U*HlocU,{{"k",{0,0,Pi/2}}})
 
-funstart10 = { NewWavefunction(20,0,{{"10011001100110011001",1}}),
-  NewWavefunction(20,0,{{"01100110011001100110",1}}),
-  NewWavefunction(20,0,{{"10010110011001100110",1}}),
-  NewWavefunction(20,0,{{"01101001011001100110",1}}),
-  NewWavefunction(20,0,{{"01100110100101100110",1}}),
-  NewWavefunction(20,0,{{"01100110011010010110",1}}),
-  NewWavefunction(20,0,{{"01100110011001101001",1}}),
-  NewWavefunction(20,0,{{"01101001100110011001",1}}),
-  NewWavefunction(20,0,{{"10010110100110011001",1}}),
-  NewWavefunction(20,0,{{"10011001011010011001",1}})}
+funstart10 = { NewWavefunction(16,0,{{"1001100110011001",1}}),
+  NewWavefunction(16,0,{{"0110011001100110",1}}),
+  NewWavefunction(16,0,{{"1001011001100110",1}}),
+  NewWavefunction(16,0,{{"0110100101100110",1}}),
+  NewWavefunction(16,0,{{"0110011010010110",1}}),
+  NewWavefunction(16,0,{{"0110011001101001",1}}),
+  NewWavefunction(16,0,{{"0110011001100110",1}}),
+  NewWavefunction(16,0,{{"0110100110011001",1}}),
+  NewWavefunction(16,0,{{"1001011010011001",1}}),
+  NewWavefunction(16,0,{{"1001100101101001",1}})}
 
-funstart1  = NewWavefunction(20,0,{{"10011001100110011001",sqrt(0.5)},{"01100110011001100110",sqrt(0.5)}})
+funstart1  = NewWavefunction(16,0,{{"1001100110011001",sqrt(0.5)},{"0110011001100110",sqrt(0.5)}})
 
 print(Htb)
 

@@ -1,6 +1,17 @@
-﻿dofile("../../definitions.Quanty")
+
+Nf=6
+Nb=0
+IndexDn={0,2,4}
+IndexUp={1,3,5}
+
+OppSx    = NewOperator("Sx",   Nf,IndexUp,IndexDn)
+OppSy    = NewOperator("Sy",   Nf,IndexUp,IndexDn)
 
 Opp = OppSx + 0.00001 * OppSy
+
+print(Opp)
+
+Opp.Chop(0.0002)
 
 print(Opp)
 Opp.Chop(0.0001)
