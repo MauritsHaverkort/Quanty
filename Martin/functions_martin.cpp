@@ -20,6 +20,7 @@
 #include "ReduceOperator.cpp"
 #include "Auger-Meitner_Selfenergy/Modules.cpp"
 #include "Auger-Meitner_Selfenergy/ResonantSpectrum_Selfenergy.cpp"
+#include "Auger-Meitner_Selfenergy/ResonantSpectrum_CNSED.cpp"
 
 
 static int LuaOperatorNewFullCoulomb (lua_State *L)

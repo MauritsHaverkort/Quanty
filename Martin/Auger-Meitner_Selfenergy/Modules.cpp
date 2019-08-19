@@ -441,6 +441,121 @@ static int LuaCoolNewSelfEnergyDiagonal(lua_State *L)
 	return 1;
 }
 
+template <class T>
+uint32_t CheckQComplex(const vector<T> &list)
+{
+    for (uint32_t i = 0; i < (uint32_t) list.size(); i++)
+        if ( list[i].QComplex ) return 1;
+    return 0;
+}
+
+void CalcCNSE(const vector<WaveFunctionType> &psiCont, const vector<WaveFunctionType> &phiBound, const vector<OperatorType> &Uk, double wMin, double wMax, double dw,
+              double gammaSE, const vector<vector<double> > &Fk, const vector<double> &Econt, const vector<double> &EAuger, vector<vector<Complex16> > &SelfEnergy)
+{
+	uint32_t npsiCont = (uint32_t)psiCont.size();
+	uint32_t nphiBound = (uint32_t)phiBound.size();
+	uint32_t nUk = (uint32_t)Uk.size();
+    uint32_t Nw = floor((wMax-wMin)/dw) + 1;
+	uint32_t nContFuns = (uint32_t) Fk.size();
+    
+    vector<MatrixType> UkMatrix = vector<MatrixType>(nUk);
+    SelfEnergy = vector<vector<Complex16> >(nphiBound);
+    uint32_t QComplex = CheckQComplex(psiCont);
+    if (!QComplex ) QComplex = CheckQComplex(phiBound);
+    if (!QComplex ) QComplex = CheckQComplex(Uk);
+
+#pragma omp parallel for
+	for (uint32_t k = 0; k < nUk; k++)
+	{
+		UkMatrix[k].Ni = npsiCont;
+		UkMatrix[k].Nj = nphiBound;
+		UkMatrix[k].QComplex = QComplex;
+		InitMatrix(&UkMatrix[k]);
+		PsiPrimeOperatorPsiMatrix(Uk[k],&psiCont[0],&phiBound[0],&UkMatrix[k]);
+	}
+
+    if (!QComplex)
+    {
+    #pragma omp parallel for
+        for (uint32_t a = 0; a < nphiBound; a++)
+        {
+            Complex16 denom;
+            double num;
+            double w;
+            double Eac;
+            SelfEnergy[a] = vector<Complex16>(Nw);
+            denom.Im = gammaSE/2.;
+
+            for (uint32_t iEps = 0; iEps < nContFuns; iEps++)
+            {
+                for (uint32_t ipsi = 0; ipsi < npsiCont; ipsi++)
+                {
+                    Eac = EAuger[ipsi] + Econt[iEps];
+                    num = 0;
+                    for (uint32_t k = 0; k < nUk; k++)
+                    {
+                        
+                        num += Fk[iEps][k] * UkMatrix[k].VRe[ipsi][a];
+                            
+                        
+                    }
+                    num *= num;
+                    for (uint32_t i = 0; i < Nw; i++)
+                    {
+                        w = wMin + i*dw;
+                        denom.Re = w - Eac;
+                        SelfEnergy[a][i] += num / denom;
+                    }
+                }
+            }
+
+        }
+    }
+    else
+    {
+    #pragma omp parallel for
+        for (uint32_t a = 0; a < nphiBound; a++)
+        {
+            Complex16 denom, amp;
+            double num;
+            double w;
+            double Eac;
+            SelfEnergy[a] = vector<Complex16>(Nw);
+            denom.Im = gammaSE/2.;
+
+            for (uint32_t iEps = 0; iEps < nContFuns; iEps++)
+            {
+                for (uint32_t ipsi = 0; ipsi < npsiCont; ipsi++)
+                {
+                    Eac = EAuger[ipsi] + Econt[iEps];
+                    amp.Re = 0.;
+                    amp.Im = 0.;
+                    for (uint32_t k = 0; k < nUk; k++)
+                    {
+                        
+                        amp.Re += Fk[iEps][k] * UkMatrix[k].VRe[ipsi][a];
+                        amp.Im += Fk[iEps][k] * UkMatrix[k].VIm[ipsi][a];
+                            
+                        
+                    }
+                    num = amp.Re * amp.Re + amp.Im * amp.Im;
+                    for (uint32_t i = 0; i < Nw; i++)
+                    {
+                        w = wMin + i*dw;
+                        denom.Re = w - Eac;
+                        SelfEnergy[a][i] += num / denom;
+                    }
+                }
+            }
+
+        }
+    }
+	for (uint32_t k = 0; k < nUk; k++)
+	{
+		FreeMatrix(&UkMatrix[k]);
+	}
+}
+
 static int LuaCreateAugerMeitnerU(lua_State *L)
 {
 	vector<int> indToK;
