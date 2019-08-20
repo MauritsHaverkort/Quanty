@@ -1,6 +1,14 @@
-﻿dofile("../../definitions.Quanty")
+ErrorCount=0
 
---print(OppSz)
---print("OppSz.NB=",OppSz.NB)
---OppSz.NB=3
---print(OppSz)
+Nf=6
+Nb=0
+
+O1 = NewOperator(Nf, Nb, {{1,-1,1},{0,-0,0.1},{-2,2,0.01}})
+
+if( ( O1.NB==0 ) == false )
+then
+  print("O1.NB==0 returned ",O1.NB==0)
+  ErrorCount = ErrorCount + 1
+end
+
+os.exit(ErrorCount)

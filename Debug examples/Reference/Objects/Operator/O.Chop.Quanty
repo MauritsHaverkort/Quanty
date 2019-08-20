@@ -1,18 +1,38 @@
+ErrorCount=0
 
 Nf=6
 Nb=0
-IndexDn={0,2,4}
-IndexUp={1,3,5}
 
-OppSx    = NewOperator("Sx",   Nf,IndexUp,IndexDn)
-OppSy    = NewOperator("Sy",   Nf,IndexUp,IndexDn)
+O1 = NewOperator(Nf, Nb, {{1,-1,1},{0,-0,0.1},{-2,2,0.01}})
+O2 = NewOperator(Nf, Nb, {{1,-1,1},{0,-0,0.1}})
+O3 = NewOperator(Nf, Nb, {{1,-1,I},{0,-0,0.1},{-2,2,0.01*I}})
+O4 = NewOperator(Nf, Nb, {{1,-1,I},{0,-0,0.1}})
 
-Opp = OppSx + 0.00001 * OppSy
 
-print(Opp)
+if( (Chop(O1,0.05)==O2) == false )
+then
+  print("Chop(O1)==O2 returned ",Chop(O1)==O2)
+  ErrorCount = ErrorCount + 1
+end
 
-Opp.Chop(0.0002)
+O1.Chop(0.05)
+if( (O1==O2) == false )
+then
+  print("After O1.Chop(0.05) O1==O2 returned ",O1==O2)
+  ErrorCount = ErrorCount + 1
+end
 
-print(Opp)
-Opp.Chop(0.0001)
-print(Opp)
+if( (Chop(O3,0.05)==O4) == false )
+then
+  print("Chop(O3)==O4 returned ",Chop(O3)==O4)
+  ErrorCount = ErrorCount + 1
+end
+
+O3.Chop(0.05)
+if( (O3==O4) == false )
+then
+  print("After O3.Chop(0.05) O3==O4 returned ",O3==O4)
+  ErrorCount = ErrorCount + 1
+end
+
+os.exit(ErrorCount)

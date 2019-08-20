@@ -1,38 +1,44 @@
-﻿dofile("../../definitions.Quanty")
+ErrorCount=0
+
+Nf=6
+Nb=0
+OppSplus = NewOperator("Splus",Nf,{1,3,5},{0,2,4})
 
 
-print("OppSx.Restrictions =",OppSx.Restrictions)
+print("OppSplus.Restrictions =",OppSplus.Restrictions)
 
-OppSx.Restrictions={Nf,Nb,{"101010",0,1}}
+OppSplus.Restrictions={Nf,Nb,{"010101",0,1}}
 
-print("OppSx.Restrictions =",OppSx.Restrictions)
+print("OppSplus.Restrictions =",OppSplus.Restrictions)
 
-psitest = NewWavefunction(Nf,Nb,{{"010101",1}})
+psitest = NewWavefunction(Nf,Nb,{{"101010",1}})
 psitest.Name = "|L=0 S=3/2 Lz=0 Sz/3/2>"
 print(psitest)
-psitest = OppSx*psitest
-psitest.Name = "Sx |L=0 S=3/2 Lz=0 Sz/3/2>"
+psitest = OppSplus*psitest
+psitest.Name = "S+ |L=0 S=3/2 Lz=0 Sz/3/2>"
 print(psitest)
-psitest = OppSx*psitest
-psitest.Name = "Sx Sx |L=0 S=3/2 Lz=0 Sz/3/2>"
+psitest = OppSplus*psitest
+psitest.Name = "S+ S+ |L=0 S=3/2 Lz=0 Sz/3/2>"
 print(psitest)
-psitest = OppSx*psitest
-psitest.Name = "Sx Sx Sx |L=0 S=3/2 Lz=0 Sz/3/2>"
+psitest = OppSplus*psitest
+psitest.Name = "S+ S+ S+ |L=0 S=3/2 Lz=0 Sz/3/2>"
 print(psitest)
 
-OppSx.Restrictions = nil
+OppSplus.Restrictions = nil
 
-print("OppSx.Restrictions =",OppSx.Restrictions)
+print("OppSplus.Restrictions =",OppSplus.Restrictions)
 
-psitest = NewWavefunction(Nf,Nb,{{"010101",1}})
+psitest = NewWavefunction(Nf,Nb,{{"101010",1}})
 psitest.Name = "|L=0 S=3/2 Lz=0 Sz/3/2>"
 print(psitest)
-psitest = OppSx*psitest
-psitest.Name = "Sx |L=0 S=3/2 Lz=0 Sz/3/2>"
+psitest = OppSplus*psitest
+psitest.Name = "S+ |L=0 S=3/2 Lz=0 Sz/3/2>"
 print(psitest)
-psitest = OppSx*psitest
-psitest.Name = "Sx Sx |L=0 S=3/2 Lz=0 Sz/3/2>"
+psitest = OppSplus*psitest
+psitest.Name = "S+ S+ |L=0 S=3/2 Lz=0 Sz/3/2>"
 print(psitest)
-psitest = OppSx*psitest
-psitest.Name = "Sx Sx Sx |L=0 S=3/2 Lz=0 Sz/3/2>"
+psitest = OppSplus*psitest
+psitest.Name = "S+ S+ S+ |L=0 S=3/2 Lz=0 Sz/3/2>"
 print(psitest)
+
+os.exit(ErrorCount)
