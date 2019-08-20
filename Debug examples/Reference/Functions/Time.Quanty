@@ -1,11 +1,1 @@
-﻿dofile("../definitions.Quanty")
 
-TimeStart("Eigensystem")
-Eigensystem(Opp1,psi1)
-TimeEnd("Eigensystem")
-
-TimeStart("Spectra")
-spec = CreateSpectra(Opp1,Opp2,psi1)
-TimeEnd("Spectra")
-
-TimePrint()

@@ -2,43 +2,80 @@ ErrorCount=0
 
 Nf=6
 Nb=0
-OppSplus = NewOperator("Splus",Nf,{1,3,5},{0,2,4})
 
+O1 = NewOperator(Nf, Nb, {{1,-0,1},{3,-2,1},{5,-4,1}})
+O2 = O1+1
+O3 = Copy(O1)
 
-print("OppSplus.Restrictions =",OppSplus.Restrictions)
+if( ( O1.Restrictions==nill ) == false )
+then
+  print("O1.Restrictions==nill returned ",O1.Restrictions==nill)
+  ErrorCount = ErrorCount + 1
+end
 
-OppSplus.Restrictions={Nf,Nb,{"010101",0,1}}
+O1.Restrictions={Nf,Nb,{"010101",0,1}}
+O2.Restrictions = O1.Restrictions
 
-print("OppSplus.Restrictions =",OppSplus.Restrictions)
+str="{ 6 , 0 , \n  { 010101 , 0 , 1 } }"
 
-psitest = NewWavefunction(Nf,Nb,{{"101010",1}})
-psitest.Name = "|L=0 S=3/2 Lz=0 Sz/3/2>"
-print(psitest)
-psitest = OppSplus*psitest
-psitest.Name = "S+ |L=0 S=3/2 Lz=0 Sz/3/2>"
-print(psitest)
-psitest = OppSplus*psitest
-psitest.Name = "S+ S+ |L=0 S=3/2 Lz=0 Sz/3/2>"
-print(psitest)
-psitest = OppSplus*psitest
-psitest.Name = "S+ S+ S+ |L=0 S=3/2 Lz=0 Sz/3/2>"
-print(psitest)
+if( ( tostring(O2.Restrictions)==str ) == false )
+then
+  print("tostring(O2.Restrictions)==str returned ",tostring(O2.Restrictions)==str)
+  ErrorCount = ErrorCount + 1
+end
 
-OppSplus.Restrictions = nil
+psi1 = NewWavefunction(Nf,Nb,{{"101010",1}})
+psi2 = NewWavefunction(Nf,Nb,{{"011010",1},{"100110",1},{"101001",1}})
+psi3 = NewWavefunction(Nf,Nb,{{"100101",2},{"011001",2},{"010110",2}})
+psi4 = NewWavefunction(Nf,Nb,{{"010101",6}})
+psi5 = NewWavefunction(Nf,Nb,{ })
 
-print("OppSplus.Restrictions =",OppSplus.Restrictions)
+if( ( O3*psi1==psi2 ) == false )
+then
+  print("O3*psi1==psi2 returned ",O3*psi1==psi2)
+  ErrorCount = ErrorCount + 1
+end
 
-psitest = NewWavefunction(Nf,Nb,{{"101010",1}})
-psitest.Name = "|L=0 S=3/2 Lz=0 Sz/3/2>"
-print(psitest)
-psitest = OppSplus*psitest
-psitest.Name = "S+ |L=0 S=3/2 Lz=0 Sz/3/2>"
-print(psitest)
-psitest = OppSplus*psitest
-psitest.Name = "S+ S+ |L=0 S=3/2 Lz=0 Sz/3/2>"
-print(psitest)
-psitest = OppSplus*psitest
-psitest.Name = "S+ S+ S+ |L=0 S=3/2 Lz=0 Sz/3/2>"
-print(psitest)
+if( ( O3*(O3*psi1)==psi3 ) == false )
+then
+  print("O3*O3*psi1==psi3 returned ",O3*O3*psi1==psi3)
+  ErrorCount = ErrorCount + 1
+end
+
+if( ( O3*(O3*(O3*psi1))==psi4 ) == false )
+then
+  print("O3*O3*O3*psi1==psi4 returned ",O3*O3*O3*psi1==psi4)
+  ErrorCount = ErrorCount + 1
+end
+
+if( ( O3*(O3*(O3*(O3*psi1)))==psi5 ) == false )
+then
+  print("O3*O3*O3*O3*psi1==psi5 returned ",O3*O3*O3*O3*psi1==psi5)
+  ErrorCount = ErrorCount + 1
+end
+
+if( ( O1*psi1==psi2 ) == false )
+then
+  print("O1*psi1==psi2 returned ",O1*psi1==psi2)
+  ErrorCount = ErrorCount + 1
+end
+
+if( ( O1*(O1*psi1)==psi5 ) == false )
+then
+  print("O1*(O1*psi1)==psi5 returned ",O1*(O1*psi1)==psi5)
+  ErrorCount = ErrorCount + 1
+end
+
+if( ( O2*psi1==psi2+psi1 ) == false )
+then
+  print("O2*psi1==psi2+psi1 returned ",O2*psi1==psi2+psi1)
+  ErrorCount = ErrorCount + 1
+end
+
+if( ( O2*(O2*psi1)==2*psi2+psi1 ) == false )
+then
+  print("O2*(O2*psi1)==2*psi2+psi1 returned ",O2*(O2*psi1)==2*psi2+psi1)
+  ErrorCount = ErrorCount + 1
+end
 
 os.exit(ErrorCount)

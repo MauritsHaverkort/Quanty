@@ -428,7 +428,7 @@
 		4C203CE32087DE95001DCC25 /* CreateClusterHamiltonian.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = CreateClusterHamiltonian.Quanty; sourceTree = "<group>"; };
 		4C203CE42087DE95001DCC25 /* CreateFluorescenceYield.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = CreateFluorescenceYield.Quanty; sourceTree = "<group>"; };
 		4C203CE52087DE95001DCC25 /* CreateResonantSpectra.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = CreateResonantSpectra.Quanty; sourceTree = "<group>"; };
-		4C203CE62087DE95001DCC25 /* CreateSpectra.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = CreateSpectra.Quanty; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.lua; };
+		4C203CE62087DE95001DCC25 /* CreateSpectra.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = CreateSpectra.Quanty; sourceTree = "<group>"; };
 		4C203CE72087DE95001DCC25 /* DensityMatrix.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = DensityMatrix.Quanty; sourceTree = "<group>"; };
 		4C203CE82087DE95001DCC25 /* Eigensystem.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = Eigensystem.Quanty; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.simpleColoring; };
 		4C203CEC2087DE95001DCC25 /* Expand.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = Expand.Quanty; sourceTree = "<group>"; };
@@ -442,7 +442,7 @@
 		4C203CF52087DE95001DCC25 /* OperatorToMatrix.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = OperatorToMatrix.Quanty; sourceTree = "<group>"; };
 		4C203CF62087DE95001DCC25 /* Orthonormalize.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = Orthonormalize.Quanty; sourceTree = "<group>"; };
 		4C203CF72087DE95001DCC25 /* PotentialExpandedOnClm.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = PotentialExpandedOnClm.Quanty; sourceTree = "<group>"; };
-		4C203CF82087DE95001DCC25 /* Rotate.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = Rotate.Quanty; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.lua; };
+		4C203CF82087DE95001DCC25 /* Rotate.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = Rotate.Quanty; sourceTree = "<group>"; };
 		4C203CF92087DE95001DCC25 /* Statistics.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = Statistics.Quanty; sourceTree = "<group>"; };
 		4C203CFA2087DE95001DCC25 /* TightBindingDefFromDresdenFPLO.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = TightBindingDefFromDresdenFPLO.Quanty; sourceTree = "<group>"; };
 		4C203CFB2087DE95001DCC25 /* TightBindingDefFromStuttgartTRLHAMR.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = TightBindingDefFromStuttgartTRLHAMR.Quanty; sourceTree = "<group>"; };
