@@ -1852,17 +1852,18 @@ static int LuaMartinTest(lua_State *L)
 {
     WaveFunctionType** Kryl;
     CompactMatrixType U;
-    vector<WaveFunctionType> psi;
-    uint32_t n, bs;
+    //MatrixType U;
+    vector<WaveFunctionType> psi, in;
+    uint32_t n;
     uint32_t len = (uint32_t)lua_objlen(L,1);
-    uint32_t len2;
+    vector<uint32_t> bs= vector<uint32_t>(len);
     Kryl = (WaveFunctionType**) malloc(len * sizeof(WaveFunctionType*));
     for (uint32_t i = 0; i < len; i++)
     {
         lua_rawgeti(L,1,i+1);
-        len2 = (uint32_t)lua_objlen(L,-1);
-        Kryl[i] = (WaveFunctionType*) malloc(len2 * sizeof(WaveFunctionType));
-        for (uint32_t j = 0; j < len2; j++)
+        bs[i] = (uint32_t)lua_objlen(L,-1);
+        Kryl[i] = (WaveFunctionType*) malloc(bs[i] * sizeof(WaveFunctionType));
+        for (uint32_t j = 0; j < bs[i]; j++)
         {
             lua_rawgeti(L,-1,j+1);
             lua_check(L,-1,Kryl[i][j]);
@@ -1870,8 +1871,12 @@ static int LuaMartinTest(lua_State *L)
         }        
         lua_pop(L,1);
     }
+    
+    //lua_check(L,1,in);
     lua_check(L,2,U);
-    RotateWaveFunctions(Kryl,len,len2,U,psi);
+    //U = *(luaL_checkMatrix(L,2));
+    RotateWaveFunctions(Kryl,len,bs,U,psi);
+    //RotateWaveFunctions(&(in[0]),(uint32_t)in.size(),U,psi);
     lua_push(L,psi);
     return 1;
 }
@@ -1935,7 +1940,8 @@ static const struct luaL_Reg Martin_func[] = {
   {"ReadFPLOEnergies",LuaReadFPLOEnergies},
   {"RelativisticDipoleOperator",LuaRelativisticDipoleOperator},
   //{"ResonantSpectrum",LuaCreateResonantSpectraSE},
-  {"ResonantSpectrum",LuaCreateResonantSpectrum},
+  //{"ResonantSpectrum",LuaCreateResonantSpectrum},
+  {"ResonantSpectrum",LuaResSpectCNSED},
   {"ListU",LuaListU},
   {"PlotSpectrum",LuaCDMPlot},
   {"BraketList",LuaBraketList},

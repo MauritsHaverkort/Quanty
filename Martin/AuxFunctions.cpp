@@ -95,9 +95,74 @@ void RotateWaveFunctions(const WaveFunctionType* psi,const uint32_t N,const Comp
 	}
 }
 
-void RotateWaveFunctions(WaveFunctionType** psi,const uint32_t N, const uint32_t BlockSize, const CompactMatrixType &U, vector<WaveFunctionType> &out)
+void RotateWaveFunctions(WaveFunctionType** psi,const uint32_t N, const vector<uint32_t> &BlockSize, const CompactMatrixType &U, vector<WaveFunctionType> &out)
 {
-	if (U.Ni != N*BlockSize || U.Nj != N*BlockSize)
+	uint32_t dim = 0;
+    for (uint32_t i = 0; i < N; i++)
+    {
+        dim += BlockSize[i];
+        printf("BlockSize = %u\n",BlockSize[i]);
+    }
+    printf("dim = %u\nN=%u\n",dim,N);
+    if (U.Ni < dim || U.Nj < dim)
+	{
+		printf("error in RotateWaveFunctions: Dimensions of U and psi do not match\n");
+		return;
+	}
+	out = vector<WaveFunctionType>(U.Ni);
+	for (uint32_t i = 0; i < U.Ni; i++)
+	{
+		out[i].NFermion = psi[0][0].NFermion;
+		out[i].NBoson   = psi[0][0].NBoson;
+		out[i].NBitsKey = psi[0][0].NBitsKey;
+		if (U.QComplex)
+		{
+			out[i].QComplex = 1;
+			if(WaveFunctionInit(&(out[i])))
+			{
+				printf("WaveFunctionInit failed in ResonantSpectra 00\n");
+				return;
+			}
+			uint32_t offset = 0;
+			for (uint32_t j = 0; j < N; j++)
+			{
+                for (uint32_t k = 0; k < BlockSize[j]; k++ )
+                {
+                    WaveFunctionAddComplexMultipliedUnionBasis(&(out[i]),psi[j][k],U.V[i*U.Nj + offset + k].Re,U.V[i*U.Nj + offset + k].Im);
+                }
+                offset+=BlockSize[j];
+			}
+			WaveFunctionTruncateBasis(&(out[i]),DBL_EPSILON);
+
+		}
+		else
+		{
+			out[i].QComplex = psi[0][0].QComplex;
+			if(WaveFunctionInit(&(out[i])))
+			{
+				printf("WaveFunctionInit failed in ResonantSpectra 00");
+				return;
+			}
+			uint32_t offset = 0;
+			for (uint32_t j = 0; j < N; j++)
+			{
+				for (uint32_t k = 0; k < BlockSize[j]; k++ )
+                {
+                    WaveFunctionAddMultipliedUnionBasis(&(out[i]),psi[j][k],U.VRe[i*U.Nj + offset + k]);
+                }
+                offset+=BlockSize[j];
+			}
+			WaveFunctionTruncateBasis(&(out[i]),DBL_EPSILON);
+		}
+	}
+}
+
+void RotateWaveFunctions(WaveFunctionType** psi,const uint32_t N, const uint32_t BlockSize, const vector<uint32_t> &bs, const CompactMatrixType &U, vector<WaveFunctionType> &out)
+{
+	uint32_t dim = N*BlockSize;
+
+    printf("dim = %u\nN=%u\n",dim,N);
+    if (U.Ni < dim || U.Nj < dim)
 	{
 		printf("error in RotateWaveFunctions: Dimensions of U and psi do not match\n");
 		return;
@@ -118,17 +183,18 @@ void RotateWaveFunctions(WaveFunctionType** psi,const uint32_t N, const uint32_t
 			}
 			for (uint32_t j = 0; j < N; j++)
 			{
-                for (uint32_t k = 0; k < BlockSize; k++ )
+                for (uint32_t k = 0; k < bs[j]; k++ )
                 {
                     WaveFunctionAddComplexMultipliedUnionBasis(&(out[i]),psi[j][k],U.V[i*U.Nj + j*BlockSize + k].Re,U.V[i*U.Nj + j*BlockSize + k].Im);
                 }
+                
 			}
 			WaveFunctionTruncateBasis(&(out[i]),DBL_EPSILON);
 
 		}
 		else
 		{
-			out[i].QComplex = (*(psi[i])).QComplex;
+			out[i].QComplex = psi[0][0].QComplex;
 			if(WaveFunctionInit(&(out[i])))
 			{
 				printf("WaveFunctionInit failed in ResonantSpectra 00");
@@ -136,9 +202,9 @@ void RotateWaveFunctions(WaveFunctionType** psi,const uint32_t N, const uint32_t
 			}
 			for (uint32_t j = 0; j < N; j++)
 			{
-				for (uint32_t k = 0; k < BlockSize; k++ )
+				for (uint32_t k = 0; k < bs[j]; k++ )
                 {
-                    WaveFunctionAddMultipliedUnionBasis(&(out[i]),psi[j][k],U.V[i*U.Nj + j*BlockSize + k].Re);
+                    WaveFunctionAddMultipliedUnionBasis(&(out[i]),psi[j][k],U.VRe[i*U.Nj + j*BlockSize + k]);
                 }
 			}
 			WaveFunctionTruncateBasis(&(out[i]),DBL_EPSILON);
@@ -148,7 +214,7 @@ void RotateWaveFunctions(WaveFunctionType** psi,const uint32_t N, const uint32_t
 
 void RotateWaveFunctions(const WaveFunctionType* psi,const uint32_t N,const MatrixType &U, vector<WaveFunctionType> &out)
 {
-	if (U.Ni != N || U.Nj != N)
+    if (U.Ni != N || U.Nj != N)
 	{
 		printf("error in RotateWaveFunctions: Dimensions of U and psi do not match\n");
 		return;
@@ -189,6 +255,65 @@ void RotateWaveFunctions(const WaveFunctionType* psi,const uint32_t N,const Matr
 			WaveFunctionTruncateBasis(&(out[i]),DBL_EPSILON);
 		}
 	}
+}
+
+void BlockTriMatrixToCompact(const BlockTriDiagonalMatrixType &BTM, const vector<uint32_t> &BlockSize, CompactMatrixType &CM)
+{
+    uint32_t dim = 0;
+    for (uint32_t i = 0; i < (uint32_t) BlockSize.size(); i++)
+    {
+        dim += BlockSize[i];
+        printf("BlockSize[%u] = %u\n",i,BlockSize[i]);
+    }
+    CM.QComplex = BTM.QComplex;
+    CM.Ni = dim;
+    CM.Nj = dim;
+    InitCompactMatrix(&CM);
+    if (BTM.QComplex)
+    {
+        for (uint32_t k = 0; k < BTM.N; k++)
+        {
+            uint32_t offset = 0;
+            for (uint32_t i = 0; i < BlockSize[k]; i++)
+            {
+                for (uint32_t j = 0; j < BlockSize[k]; j++)
+                {
+                    CM.V[(i+offset)*dim + (j+offset)] = BTM.a[k*BTM.BlockSize*BTM.BlockSize+i*BTM.BlockSize+j];
+                }
+            }
+            offset += BlockSize[k];
+        }
+    }
+    else
+    {
+        uint32_t offset = 0;
+        for (uint32_t k = 1; k < BTM.N; k++)
+        {
+            for (uint32_t i = 0; i < BlockSize[k-1]; i++)
+            {
+                for (uint32_t j = 0; j < BlockSize[k-1]; j++)
+                {
+                    CM.VRe[(i+offset)*dim + (j+offset)] = BTM.aRe[k*BTM.BlockSize*BTM.BlockSize+i*BTM.BlockSize+j];
+                }
+            }
+            offset += BlockSize[k-1];
+        }
+        uint32_t offseti = BlockSize[0];
+        uint32_t offsetj = 0;
+        for (uint32_t k = 1; k < BTM.N-1; k++)
+        {
+            for (uint32_t i = 0; i < BlockSize[k]; i++)
+            {
+                for (uint32_t j = 0; j < BlockSize[k-1]; j++)
+                {
+                    CM.VRe[(i+offseti)*dim + (j+offsetj)] = BTM.bRe[k*BTM.BlockSize*BTM.BlockSize+j*BTM.BlockSize+i];
+                    CM.VRe[(j+offsetj)*dim + (i+offseti)] = BTM.bRe[k*BTM.BlockSize*BTM.BlockSize+j*BTM.BlockSize+i];
+                }
+            }
+            offseti += BlockSize[k];
+            offsetj += BlockSize[k-1];
+        }
+    }
 }
 
 void CreateSpectrum(const OperatorType &H,const OperatorType &T, WaveFunctionType * const psi, const uint32_t Npsi, double epsilon, BlockTriDiagonalMatrixType &GTri, const uint32_t NTri)
@@ -235,6 +360,22 @@ void CreateSpectrum(const OperatorType &H,const OperatorType &T, WaveFunctionTyp
 	LanczosBlockTriDiagonalize(H, TpsiSameBasis, epsilon, &GTri, NAN);
 
 
+}
+
+template <typename T>
+void AddVectors(vector<T> &u, const vector<T> &v)
+{
+    if (u.size() != v.size())
+    {
+        printf("Error adding Vectors: different lengths: %u != %u\n",(uint32_t) u.size(),(uint32_t) v.size());
+    }
+    else
+    {
+        for (uint32_t i = 0; i < (uint32_t) u.size(); i++)
+        {
+            u[i] += v[i];
+        }
+    }
 }
 
 uint32_t GetIndices(lua_State *L,int arg, vector<int> &indToK, uint16_t** &indices)

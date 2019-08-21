@@ -5,8 +5,8 @@
  */
 uint32_t ResonantSpectrumCNSED(const OperatorType OppH1, const OperatorType OppH2, const OperatorType T1, const OperatorType *T2,
                                uint32_t NT2, const WaveFunctionType psi, TriDiagonalMatrixType **SpecTri2, SpectraType **Spec,
-                               double energy1, double energy2, ConvergenceSettingsType *settings,
-                               const vector<vector<OperatorType> > &Uk, const vector<vector<vector<double> > > &Fk, const vector<double> Econt)
+                               double energy1, double energy2, ConvergenceSettingsType *settings, const vector<vector<OperatorType> > &Uk,
+                               const vector<vector<vector<double> > > &Fk, const vector<vector<double> > &Econt, double gammaSE)
 {
   /*Given wavefunction psi (usually ground state, but could be excited)*/
   
@@ -26,7 +26,7 @@ uint32_t ResonantSpectrumCNSED(const OperatorType OppH1, const OperatorType OppH
    * Emin2, Emax2, NE2, Gamma2 - for automatic determination use DBL_MAX, -DBL_MAX, 0, 0
    * epsilon
    */
-  
+    
   WaveFunctionType Tpsi,GTpsi,TGTpsi, PsiBasis[settings->NTri1];
   TriDiagonalMatrixType SpecTri1;
   MatrixType EFun;
@@ -72,7 +72,7 @@ uint32_t ResonantSpectrumCNSED(const OperatorType OppH1, const OperatorType OppH
   {
     LanczosTriDiagonalizeKrylovRestricted(OppH1, Tpsi, settings->restrictions1, settings->epsilon, &SpecTri1, PsiBasis);
   }
-  
+    
   /*Compute eigenvalues and eigenvectors, then S^-1 = QAQ^T where
    Q are the eigenvectors and A is a matrix with the eigenvalue inverses on the diagonal.
    */
@@ -125,11 +125,9 @@ uint32_t ResonantSpectrumCNSED(const OperatorType OppH1, const OperatorType OppH
   
 // Martin start	---------------------------------------------------------------------------------------
 
-    double gammaSE = 1;
     uint32_t Npoles1 = settings->NTri1;
     uint32_t Nw1 = settings->NE1+1;
     uint32_t Nw2 = settings->NE2+1;
-    uint32_t Npoles2 = settings->NTri2;
     uint32_t Nkappa = (uint32_t) Uk.size();
     vector<vector<double> > polesSE1 = vector<vector<double> >(Npoles1 * Nkappa);
     vector<vector<Complex16> > selfen = vector<vector<Complex16> >(Npoles1);
@@ -139,17 +137,38 @@ uint32_t ResonantSpectrumCNSED(const OperatorType OppH1, const OperatorType OppH
     OperatorType Usum;
     BlockTriDiagonalMatrixType M; 
     M.BlockSize = Npoles1;
-    M.N = settings->NTri2; //TODO: implement NTri3
+    M.N = settings->NTri; 
     M.QComplex = EigenBasis1[0].QComplex + OppH1.QComplex; 
     InitBlockTridiagonalMatrix(&M);
     M.mu=0;
-    uint32_t BlockSize[M.N];
+    vector<uint32_t> BlockSize = vector<uint32_t>(M.N);
     WaveFunctionType** KrylBasCont = (WaveFunctionType**) malloc(M.N * sizeof(WaveFunctionType*)); //TODO: free
     vector<vector<Complex16> > SelfEnergy, SEtemp;
+    SelfEnergy = vector<vector<Complex16> >(Npoles1);
+    
+    double wMin = settings->Emin1;// + energy1;                    //TODO: What is this shift? is it needed here or does it have to be removed?
+    double wMax = settings->Emax1;// + energy1;
+    double dw   = (settings->Emax1-settings->Emin1)/((double)settings->NE1);
+    if (gammaSE < 0 ) 
+    {
+        if (Econt[0].size() > 1)
+        {
+            gammaSE = 3 * (Econt[0][1] - Econt[0][0]);
+        }
+        else
+        {
+            gammaSE = settings->Gamma2;
+        }
+    }
+        
+    for (uint32_t i = 0; i < Npoles1; i++)
+    {
+        SelfEnergy[i] = vector<Complex16>(Nw1);
+    }
     for (uint32_t i = 0; i < (uint32_t) Uk.size(); i++) // loop over kappa
     {
-        InitOperator(&Usum);
-        for (uint32_t k = 0; k < (uint32_t) Uk[i].size(); k++) // sum over slater integrals k
+        OperatorCopy(&Usum,Uk[i][0]);
+        for (uint32_t k = 1; k < (uint32_t) Uk[i].size(); k++) // sum over slater integrals k
         {
                 OperatorAdd(&Usum,Uk[i][k]);
         }
@@ -161,17 +180,62 @@ uint32_t ResonantSpectrumCNSED(const OperatorType OppH1, const OperatorType OppH
             UEb[j].NBitsKey = EigenBasis1[0].NBitsKey;
             WaveFunctionInit(&(UEb[j]));
             OperatorPsi(Usum, EigenBasis1[j], &(UEb[j]) );
+            WaveFunctionTruncateBasis(&(UEb[j]),1E-14);
+            //PrintWaveFunctionReadable(UEb[j]);
         }
-        LanczosBlockTriDiagonalizeKrylov(OppH1, UEb, settings->epsilon,&M, KrylBasCont, BlockSize);
+        LanczosBlockTriDiagonalizeKrylov(OppH1, UEb, settings->epsilon,&M, KrylBasCont, &(BlockSize[0]));
+        printf("a:\n");
+        for (uint32_t k = 1; k < M.N; k++)
+        {
+            for (uint32_t m = 0; m < M.BlockSize; m++)
+            {
+                for (uint32_t n = 0; n < M.BlockSize; n++)
+                {
+                    printf("%E\t",M.aRe[k*M.BlockSize*M.BlockSize + m*M.BlockSize +n]);
+                }
+                printf("\n");
+            }
+            printf("\n");
+        }
+        printf("b:\n");
+        for (uint32_t k = 1; k < M.N-1; k++)
+        {
+            for (uint32_t m = 0; m < M.BlockSize; m++)
+            {
+                for (uint32_t n = 0; n < M.BlockSize; n++)
+                {
+                    printf("%E\t",M.bRe[k*M.BlockSize*M.BlockSize + m*M.BlockSize +n]);
+                }
+                printf("\n");
+            }
+            printf("\n");
+        }
+        CompactMatrixType CM;
+        BlockTriMatrixToCompact(M,BlockSize,CM);
+        printf("*************************************************************************\n");
+        PrintMartix(CM.VRe,CM.Ni);
+        printf("*************************************************************************\n");
         vector<double> EAuger = vector<double>(M.N*M.BlockSize);
         CompactMatrixType fun;  // Should not be allocated acording to Documentation of CompactMatrixMultiply called in BlockTriDiagonalMatrixEigenSystem
         BlockTriDiagonalMatrixEigenSystem(&M, &(EAuger[0]), &fun);
-        double wMin = settings->Emin1 + energy1;                    //TODO: What is this shift? is it needed here or does it have to be removed?
-        double wMax = settings->Emax1 + energy1;
-        double dw   = (settings->Emax1-settings->Emin1)/((double)settings->NE1);
+
         vector<WaveFunctionType> psiCont;
-        RotateWaveFunctions(KrylBasCont,M.N,M.BlockSize,fun,psiCont);
-        CalcCNSE(psiCont, EigenBasis1, Uk[i], wMin, wMax, dw, gammaSE, Fk[i], Econt, EAuger, SEtemp);  
+        RotateWaveFunctions(KrylBasCont,M.N,M.BlockSize,BlockSize,fun,psiCont);
+        printf("psiCont.size = %u, fun.Ni = %u\n",psiCont.size(),fun.Ni);
+        for (uint32_t fu = 0; fu < psiCont.size(); fu++)
+        {
+            for ( uint32_t ba = 0; ba < psiCont.size(); ba++)
+                printf("%E\t",fun.VRe[fu*fun.Nj +ba]);
+            printf("\n");
+            //PrintWaveFunctionReadable(psiCont[fu]);
+        }
+        printf("\n");
+        
+        CalcCNSE(psiCont, EigenBasis1, Uk[i], wMin, wMax, dw, gammaSE, Fk[i], Econt[i], EAuger, SEtemp); 
+        for (uint32_t j = 0; j < Npoles1; j++)
+        {
+            AddVectors(SelfEnergy[j],SEtemp[j]);
+        }
         
         /*for (uint32_t j = 0; j < Npoles; j++)
         {
@@ -179,7 +243,13 @@ uint32_t ResonantSpectrumCNSED(const OperatorType OppH1, const OperatorType OppH
         }*/
         FreeOperator(&Usum);
     }
+    for (uint32_t i = 0; i < Npoles1; i++)
+    {
+        printf("%E\t%E\n",SelfEnergy[i][0].Re,SelfEnergy[i][0].Im);
+    }
+    return -1;
 // Martin end	---------------------------------------------------------------------------------------  
+    
   for(p = 0; p <= settings->NE1; p++)
   {
     /* New method for GT|i>:
@@ -327,7 +397,247 @@ uint32_t ResonantSpectrumCNSED(const OperatorType OppH1, const OperatorType OppH
     TriDiagonalMatrixToSpectrum(energy2, (*SpecTri2)[i], &(*Spec)[i]);
   }
   return 0;
+    
 }
+
+static int LuaResSpectCNSED(lua_State *L)
+{
+    struct
+  {
+    ConvergenceSettingsType Settings;
+    double E0, E01, E02;
+    uint32_t Npsi;
+    uint32_t NT1;
+    uint32_t NT2;
+    double GammaSE;
+    bool Tensor;
+    bool DenseMethod;
+  } Options;
+  Options.Settings=InitConvergenceSettings();
+  Options.E0=DBL_MAX;
+  Options.E01=DBL_MAX;
+  Options.E02=DBL_MAX;
+  Options.Tensor=false;
+  Options.DenseMethod=false;
+  Options.Settings.NTri = 5;
+  Options.GammaSE = -1;
+  ConvergenceSettingsType SettingsNow;
+  SpectraTypeArray *Spec;
+  SpectraType *SpecT1psi;
+  TriDiagonalMatrixType *SpecTri;
+  OperatorType *H1,*H2,*T1, *T2;
+  WaveFunctionType *psi, HTpsiDenseBasis,HTHTpsiDenseBasis,Opsi,TpsiSum;
+  uint32_t iT,ipsi,len,i;
+  LuaOptionsType LuaCreateResonantSpectraOptions[]={
+    {"NTri1","uint32_t",&(Options.Settings.NTri1)},
+    {"NTri2","uint32_t",&(Options.Settings.NTri2)},
+    {"Tensor","bool",&(Options.Tensor)},
+    {"restrictions1", "DeterminantRestrictionType", &(Options.Settings.restrictions1)},
+    {"restrictions2", "DeterminantRestrictionType", &(Options.Settings.restrictions2)},
+    {"Restrictions1", "DeterminantRestrictionType", &(Options.Settings.restrictions1)},
+    {"Restrictions2", "DeterminantRestrictionType", &(Options.Settings.restrictions2)},
+    {"epsilon","double",&(Options.Settings.epsilon)},
+    {"Epsilon","double",&(Options.Settings.epsilon)},
+    {"E0","double",&(Options.E0)},
+    {"E0_1","double",&(Options.E01)},
+    {"E0_2","double",&(Options.E02)},
+    {"Emin1","double",&(Options.Settings.Emin1)},
+    {"Emax1","double",&(Options.Settings.Emax1)},
+    {"NE1","uint32_t",&(Options.Settings.NE1)},
+    {"Gamma1","double",&(Options.Settings.Gamma1)},
+    {"Emin2","double",&(Options.Settings.Emin2)},
+    {"Emax2","double",&(Options.Settings.Emax2)},
+    {"NE2","uint32_t",&(Options.Settings.NE2)},
+    {"Gamma2","double",&(Options.Settings.Gamma2)},
+    {"DenseBorder","uint32_t",&(Options.Settings.DenseBorder)},
+    {"ForceDenseMethod","uint32_t",&(Options.DenseMethod)},
+	{"NTriSE","uint32_t",&(Options.Settings.NTri)},
+	{"GammaSE","double",&(Options.GammaSE)},
+    {NULL, NULL, NULL}};
+  printf("Start ResonantSpectrum\n");
+  /* free garbage full cycle*/
+  if(L->l_G->gcrunning) lua_gc(L, LUA_GCCOLLECT, 0);
+  /* check number of input parameters */
+  len = (uint32_t)lua_gettop(L);
+  if(!((len==9)||(len==8)))
+  {
+    return luaL_error(L, "Error LuaCreateResonantSpectra called with %d arguments,8 or 9 expected (H1, H2, T1, T2^+, psi,Uk,Fk,EnergyContinuum, {options})\n",len);
+  }
+  /* read operator and wavefunctions */
+  H1 = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
+  H2 = (OperatorType *) luaL_checkudata(L, 2, "Operator_Type");
+  if(lua_type(L,3)==LUA_TTABLE)
+  {
+    T1=luaL_checkarray_OperatorType(L, 3, &Options.NT1);
+    if(Options.NT1==0) return luaL_error(L, "Errof CreateResonantSpectra called with a table of transition operators (1) of length 0\n");
+  }
+  else
+  {
+    Options.NT1 = 1;
+    T1 = (OperatorType *) luaL_checkudata(L, 3, "Operator_Type");
+  }
+  if(lua_type(L,4)==LUA_TTABLE)
+  {
+    T2=luaL_checkarray_OperatorType(L, 4, &Options.NT2);
+    if(Options.NT2==0) return luaL_error(L, "Errof CreateResonantSpectra called with a table of transition operators (2) of length 0\n");
+  }
+  else
+  {
+    Options.NT2 = 1;
+    T2 = (OperatorType *) luaL_checkudata(L, 4, "Operator_Type");
+  }
+  if(lua_type(L,5)==LUA_TTABLE)
+  {
+    psi=luaL_checkarray_WaveFunctionType(L, 5, &Options.Npsi);
+    if(Options.Npsi==0) return luaL_error(L, "Errof CreateResonantSpectra called with a table of wave functions of length 0\n");
+  }
+  else
+  {
+    Options.Npsi = 1;
+    psi = (WaveFunctionType *) luaL_checkudata(L, 5, "Wavefunction_Type");
+  }
+  vector<vector<OperatorType> > Uk;
+  vector<vector<vector<double> > > Fk;
+  lua_check(L,6,Uk);
+  vector<vector<double> > EnergyContinuum;
+  lua_check(L,7,Fk);
+  lua_check(L,8,EnergyContinuum);
+
+  /* read options */
+  if (len==9)
+  {
+    LuaCheckOptions(L, -1, LuaCreateResonantSpectraOptions);
+  }
+  if(Options.E01==DBL_MAX)Options.E01=Options.E0;
+  if(Options.E02==DBL_MAX)Options.E02=Options.E0;
+  /* test if operator is Hermitian */
+  switch(QOperatorHermitian(*H1, 0.0001*Options.Settings.zero))
+  {
+    case 3 :
+    {
+      printf("WARNING: QOperatorHermitian failed in LuaCreateResonantSpectra, this should not happen\n");
+      printf("my guess is that you are out of memory and will crash soon\n");
+      break;
+    }
+    case 2 :
+    {
+      luaL_warning(L, "CreateResonantSpectra called with an operator (H1) that is not fully Hermitian\nStrongly sugested to stop the calculation and repair this\n\n\n\nDo it\n\n\nReally Check this\n\n\nDid you?\n\n\n");
+      break;
+    }
+    case 1 :
+    {
+      // all fine H is Hermitian upto zero
+      break;
+    }
+    case 0 :
+    {
+      luaL_error(L, "CreateResonantSpectra called with an operator (H1) that is not Hermitian\n");
+      break;
+    }
+  }
+  switch(QOperatorHermitian(*H2, 0.0001*Options.Settings.zero))
+  {
+    case 3 :
+    {
+      printf("WARNING: QOperatorHermitian failed in LuaCreateResonantSpectra, this should not happen\n");
+      printf("my guess is that you are out of memory and will crash soon\n");
+      break;
+    }
+    case 2 :
+    {
+      luaL_warning(L, "CreateResonantSpectra called with an operator (H2) that is not fully Hermitian\n");
+      break;
+    }
+    case 1 :
+    {
+      // all fine H is Hermitian upto zero
+      break;
+    }
+    case 0 :
+    {
+      luaL_error(L, "CreateResonantSpectra called with an operator (H2) that is not Hermitian\n");
+      break;
+    }
+  }
+  /* allocate spectra and a pointer to return matrix on lua stack */
+  Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+  luaL_setmetatable(L, "Spectra_Type");
+  Spec->NSpectra=0;
+  Spec->Spec=NULL;
+
+    if(Options.Tensor==false)
+    {
+        for(ipsi=0;ipsi<Options.Npsi;ipsi++)
+        {
+        for(iT=0;iT<Options.NT1;iT++)
+        {
+            SettingsNow = Options.Settings;
+            ResonantSpectrumCNSED(*H1, *H2, T1[iT], T2, Options.NT2, psi[ipsi], &SpecTri, &SpecT1psi, Options.E01, Options.E02, &(SettingsNow), Uk, Fk, EnergyContinuum,Options.GammaSE);
+            printf("Stop\n");
+            return 0;
+            Spec->NSpectra+=(SettingsNow.NE1+1)*Options.NT2;
+            Spec->Spec= (SpectraType*)realloc(Spec->Spec, Spec->NSpectra*sizeof(SpectraType));
+            for(i=0;i<(SettingsNow.NE1+1)*Options.NT2;i++)
+            {
+            FreeTriDiagonalMatrix(&(SpecTri[i]));
+            }
+            free(SpecTri);
+            for(i=0;i<(SettingsNow.NE1+1)*Options.NT2;i++)
+            {
+            sprintf(SpecT1psi[i].Name, "%s T1 %i/%i psi %i/%i",SpecT1psi[i].Name,iT,Options.NT1,ipsi,Options.Npsi);
+            Spec->Spec[i+Spec->NSpectra-(SettingsNow.NE1+1)*Options.NT2] = SpecT1psi[i];
+            }
+            free(SpecT1psi);
+        }
+        }
+    }
+    else
+    {
+
+        //ResonantSpectraTensor(*H1, *H2, T1, Options.NT1, T2, Options.NT2, psi, Options.Npsi, &SpecTri, &(Spec->Spec[0]), Options.E01, Options.E02, &Options.Settings);
+        return luaL_error(L,"Tensor form for Resonant spectra not yet available");
+    }
+
+  return 1;
+    
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
