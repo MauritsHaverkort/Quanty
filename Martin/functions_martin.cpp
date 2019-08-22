@@ -1952,6 +1952,7 @@ static const struct luaL_Reg Martin_func[] = {
   {"CNSE",LuaCoolNewSelfEnergy},
   {"CNSEDiag",LuaCoolNewSelfEnergyDiagonal},
   {"LinCombine",LuaLinCombine},
+  {"BasisChange",LuaBasisChange},
   {NULL, NULL}
 };
 

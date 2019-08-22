@@ -420,7 +420,32 @@ static int LuaLinCombine(lua_State *L)
     return 1;
 }
 
+static int LuaBasisChange(lua_State *L)
+{
+    vector<WaveFunctionType> basis, psi;
+    vector<vector<double> >U;
+    lua_check(L,1,basis);
+    lua_check(L,2,U);
+    psi = vector<WaveFunctionType>( basis.size());
+#pragma omp parallel for
+    for (uint32_t j = 0; j < (uint32_t) U.size(); j++)
+    {
+        psi[j].NFermion = basis[0].NFermion;
+        psi[j].NBoson = basis[0].NBoson;
+        psi[j].QComplex = basis[0].QComplex;
+        psi[j].NBitsKey = basis[0].NBitsKey;
+        WaveFunctionInit(&(psi[j]));
+        for (uint32_t i = 0; i < (uint32_t) U[j].size(); i++)
+        {
+            RealWaveFunctionAddMultipliedUnionBasis(&(psi[j]),basis[i],U[j][i]);
+        }
+        WaveFunctionNormalize(&(psi[j]));
+		WaveFunctionTruncateBasis(&(psi[j]),DBL_EPSILON);
 
+    }
+    lua_push(L,psi);
+    return 1;
+}
 
 
 
