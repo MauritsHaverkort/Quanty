@@ -426,7 +426,7 @@ static int LuaBasisChange(lua_State *L)
     vector<vector<double> >U;
     lua_check(L,1,basis);
     lua_check(L,2,U);
-    psi = vector<WaveFunctionType>( basis.size());
+    psi = vector<WaveFunctionType>( U.size());
 #pragma omp parallel for
     for (uint32_t j = 0; j < (uint32_t) U.size(); j++)
     {
