@@ -59,6 +59,7 @@ uint32_t ResonantSpectrumCNSED(const OperatorType OppH1, const OperatorType OppH
   {
     OperatorPsiRestricted(T1, psi, &Tpsi, settings->restrictions1);
   }
+  //PrintWaveFunctionReadable(Tpsi);
   
   /* Use T|i> to transform H to tridiagonal form in Krylov basis */
   /* Using the version which gives back the Krylov basis vectors */
@@ -67,11 +68,20 @@ uint32_t ResonantSpectrumCNSED(const OperatorType OppH1, const OperatorType OppH
   if(settings->restrictions1.N==0)
   {
     LanczosTriDiagonalizeKrylov(OppH1,Tpsi,settings->epsilon,&SpecTri1,PsiBasis);
+    //PrintWaveFunctionReadable(PsiBasis[0]);
+    //printf("settings->epsilon = %E\n",settings->epsilon);
   }
   else
   {
     LanczosTriDiagonalizeKrylovRestricted(OppH1, Tpsi, settings->restrictions1, settings->epsilon, &SpecTri1, PsiBasis);
   }
+  printf("a\tb\n");
+  for (uint32_t j = 0; j < SpecTri1.N; j++)
+  {
+      printf("%E\t%E\n",SpecTri1.a[j],SpecTri1.b[j]);
+  }
+  //PrintWaveFunctionReadable(psi);
+  //PrintOperatorReadable(T1);
     
   /*Compute eigenvalues and eigenvectors, then S^-1 = QAQ^T where
    Q are the eigenvectors and A is a matrix with the eigenvalue inverses on the diagonal.
@@ -80,6 +90,7 @@ uint32_t ResonantSpectrumCNSED(const OperatorType OppH1, const OperatorType OppH
   {
     printf("Problem with TridiagonalMatrixToEigenSystem\n");
   }
+  for (uint32_t j = 0; j < settings->NTri1; j++) printf("%E\t",EVal[j]);printf("\n#Eval = %u\n",settings->NTri1);
   
   /* determine Emin1, Emax1, NE1 and Gamma1 if not set */
   if(settings->Emin1>( 0.001*DBL_MAX) && (settings->Emax1<(-0.001*DBL_MAX)))
@@ -134,6 +145,8 @@ uint32_t ResonantSpectrumCNSED(const OperatorType OppH1, const OperatorType OppH
     vector<WaveFunctionType> EigenBasis1;
     WaveFunctionType UEb[Npoles1];
     RotateWaveFunctions(PsiBasis,Npoles1,EFun,EigenBasis1);
+    //PrintWaveFunctionReadable(EigenBasis1[0]);
+    
     OperatorType Usum;
     
     vector<vector<Complex16> > SelfEnergy, SEtemp;
@@ -242,7 +255,7 @@ uint32_t ResonantSpectrumCNSED(const OperatorType OppH1, const OperatorType OppH
         printf("\n");
  
         // Debug below here -------------------****************************---------------------------------------********************************-----------------<<<<<<<<<<<<<<<<<<<<
-*/        for (uint32_t j = 0; j < EAuger.size(); j++) printf("%E\t",EAuger[j]);printf("\n");
+*/      //for (uint32_t j = 0; j < EAuger.size(); j++) printf("%E\t",EAuger[j]);printf("\n#Eauger = %u\n",EAuger.size());
         printf("wMin = %E\twMax = %E\tdw = %E\t gamma = %E\n",wMin,wMax,dw,gammaSE);
         CalcCNSE(psiCont, EigenBasis1, Uk[i], wMin, wMax, dw, gammaSE, Fk[i], Econt[i], EAuger, SEtemp); 
         for (uint32_t j = 0; j < Npoles1; j++)

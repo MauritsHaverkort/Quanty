@@ -69,6 +69,11 @@ uint32_t ResonantSpectra(const OperatorType OppH1, const OperatorType OppH2, con
   {
     LanczosTriDiagonalizeKrylovRestricted(OppH1, Tpsi, settings->restrictions1, settings->epsilon, &SpecTri1, PsiBasis);
   }
+  printf("a\tb\n");
+  for (uint32_t j = 0; j < SpecTri1.N; j++)
+  {
+      printf("%E\t%E\n",SpecTri1.a[j],SpecTri1.b[j]);
+  }
   
   /*Compute eigenvalues and eigenvectors, then S^-1 = QAQ^T where
    Q are the eigenvectors and A is a matrix with the eigenvalue inverses on the diagonal.
