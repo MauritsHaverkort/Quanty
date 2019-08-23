@@ -164,8 +164,8 @@ void RotateWaveFunctions(WaveFunctionType** psi,const uint32_t N, const uint32_t
     printf("dim = %u\nN=%u\n",dim,N);
     if (U.Ni < dim || U.Nj < dim)
 	{
-		printf("error in RotateWaveFunctions: Dimensions of U and psi do not match\n");
-		return;
+		printf("Warning in RotateWaveFunctions: Dimensions of U and BlockMatrox do not match, probably because of reduction\n");
+		//return;
 	}
 	out = vector<WaveFunctionType>(U.Ni);
 	for (uint32_t i = 0; i < U.Ni; i++)
@@ -200,14 +200,17 @@ void RotateWaveFunctions(WaveFunctionType** psi,const uint32_t N, const uint32_t
 				printf("WaveFunctionInit failed in ResonantSpectra 00");
 				return;
 			}
+			uint32_t offset = 0;
 			for (uint32_t j = 0; j < N; j++)
 			{
 				for (uint32_t k = 0; k < bs[j]; k++ )
                 {
-                    WaveFunctionAddMultipliedUnionBasis(&(out[i]),psi[j][k],U.VRe[i*U.Nj + j*BlockSize + k]);
+                    WaveFunctionAddMultipliedUnionBasis(&(out[i]),psi[j][k],U.VRe[i*U.Nj + offset + k]);
                 }
+                offset += bs[j];
 			}
 			WaveFunctionTruncateBasis(&(out[i]),DBL_EPSILON);
+            //PrintWaveFunctionReadable((out[i]));
 		}
 	}
 }
@@ -426,7 +429,7 @@ static int LuaBasisChange(lua_State *L)
     vector<vector<double> >U;
     lua_check(L,1,basis);
     lua_check(L,2,U);
-    psi = vector<WaveFunctionType>( basis.size());
+    psi = vector<WaveFunctionType>( U.size());
 #pragma omp parallel for
     for (uint32_t j = 0; j < (uint32_t) U.size(); j++)
     {

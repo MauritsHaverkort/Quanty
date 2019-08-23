@@ -135,19 +135,12 @@ uint32_t ResonantSpectrumCNSED(const OperatorType OppH1, const OperatorType OppH
     WaveFunctionType UEb[Npoles1];
     RotateWaveFunctions(PsiBasis,Npoles1,EFun,EigenBasis1);
     OperatorType Usum;
-    BlockTriDiagonalMatrixType M; 
-    M.BlockSize = Npoles1;
-    M.N = settings->NTri; 
-    M.QComplex = EigenBasis1[0].QComplex + OppH1.QComplex; 
-    InitBlockTridiagonalMatrix(&M);
-    M.mu=0;
-    vector<uint32_t> BlockSize = vector<uint32_t>(M.N);
-    WaveFunctionType** KrylBasCont = (WaveFunctionType**) malloc(M.N * sizeof(WaveFunctionType*)); //TODO: free
+    
     vector<vector<Complex16> > SelfEnergy, SEtemp;
     SelfEnergy = vector<vector<Complex16> >(Npoles1);
     
-    double wMin = settings->Emin1;// + energy1;                    //TODO: What is this shift? is it needed here or does it have to be removed?
-    double wMax = settings->Emax1;// + energy1;
+    double wMin = settings->Emin1 + energy1;                    //TODO: What is this shift? is it needed here or does it have to be removed?
+    double wMax = settings->Emax1 + energy1;
     double dw   = (settings->Emax1-settings->Emin1)/((double)settings->NE1);
     if (gammaSE < 0 ) 
     {
@@ -183,8 +176,16 @@ uint32_t ResonantSpectrumCNSED(const OperatorType OppH1, const OperatorType OppH
             WaveFunctionTruncateBasis(&(UEb[j]),1E-14);
             //PrintWaveFunctionReadable(UEb[j]);
         }
+        BlockTriDiagonalMatrixType M; 
+        M.BlockSize = Npoles1;
+        M.N = settings->NTri; 
+        M.QComplex = EigenBasis1[0].QComplex + OppH1.QComplex; 
+        InitBlockTridiagonalMatrix(&M);
+        M.mu=0;
+        vector<uint32_t> BlockSize = vector<uint32_t>(M.N);
+        WaveFunctionType** KrylBasCont = (WaveFunctionType**) malloc(M.N * sizeof(WaveFunctionType*)); //TODO: free
         LanczosBlockTriDiagonalizeKrylov(OppH1, UEb, settings->epsilon,&M, KrylBasCont, &(BlockSize[0]));
-        printf("a:\n");
+/*        printf("a:\n");
         for (uint32_t k = 1; k < M.N; k++)
         {
             for (uint32_t m = 0; m < M.BlockSize; m++)
@@ -209,31 +210,44 @@ uint32_t ResonantSpectrumCNSED(const OperatorType OppH1, const OperatorType OppH
                 printf("\n");
             }
             printf("\n");
-        }
+        }*/
         CompactMatrixType CM;
         BlockTriMatrixToCompact(M,BlockSize,CM);
-        printf("*************************************************************************\n");
+        /*printf("*************************************************************************\n");
         PrintMartix(CM.VRe,CM.Ni);
-        printf("*************************************************************************\n");
-        vector<double> EAuger = vector<double>(M.N*M.BlockSize);
+        printf("*************************************************************************\n");*/
+        vector<double> EAuger = vector<double>(CM.Ni);
         CompactMatrixType fun;  // Should not be allocated acording to Documentation of CompactMatrixMultiply called in BlockTriDiagonalMatrixEigenSystem
-        BlockTriDiagonalMatrixEigenSystem(&M, &(EAuger[0]), &fun);
-
+        //BlockTriDiagonalMatrixEigenSystem(&M, &(EAuger[0]), &fun);
+        CompactMatrixEigensystem(&CM,&fun,&(EAuger[0]));
+        FreeCompactMatrix(&CM);
         vector<WaveFunctionType> psiCont;
         RotateWaveFunctions(KrylBasCont,M.N,M.BlockSize,BlockSize,fun,psiCont);
-        printf("psiCont.size = %u, fun.Ni = %u\n",psiCont.size(),fun.Ni);
-        for (uint32_t fu = 0; fu < psiCont.size(); fu++)
+ /*       for (uint32_t k = 0; k < M.N; k++)
+        {
+            for (uint32_t j = 0; j < BlockSize[k]; j++)
+                WaveFunctionFree(&(KrylBasCont[k])[j]);
+            //free(KrylBasCont[k];
+        }
+        free(KrylBasCont);*/
+        FreeBlockTridiagonalMatrix(&M);
+        /*         printf("psiCont.size = %u, fun.Ni = %u\n",psiCont.size(),fun.Ni);
+        for (uint32_t fu = 0; fu < EigenBasis1.size(); fu++)
         {
             for ( uint32_t ba = 0; ba < psiCont.size(); ba++)
                 printf("%E\t",fun.VRe[fu*fun.Nj +ba]);
             printf("\n");
-            //PrintWaveFunctionReadable(psiCont[fu]);
+            PrintWaveFunctionReadable(EigenBasis1[fu]);
         }
         printf("\n");
-        
+ 
+        // Debug below here -------------------****************************---------------------------------------********************************-----------------<<<<<<<<<<<<<<<<<<<<
+*/        for (uint32_t j = 0; j < EAuger.size(); j++) printf("%E\t",EAuger[j]);printf("\n");
+        printf("wMin = %E\twMax = %E\tdw = %E\t gamma = %E\n",wMin,wMax,dw,gammaSE);
         CalcCNSE(psiCont, EigenBasis1, Uk[i], wMin, wMax, dw, gammaSE, Fk[i], Econt[i], EAuger, SEtemp); 
         for (uint32_t j = 0; j < Npoles1; j++)
         {
+            //printf("%E\t%E\n",SEtemp[j][0].Re,SEtemp[j][0].Im);
             AddVectors(SelfEnergy[j],SEtemp[j]);
         }
         
@@ -243,11 +257,10 @@ uint32_t ResonantSpectrumCNSED(const OperatorType OppH1, const OperatorType OppH
         }*/
         FreeOperator(&Usum);
     }
-    for (uint32_t i = 0; i < Npoles1; i++)
+    /*for (uint32_t i = 0; i < Npoles1; i++)
     {
         printf("%E\t%E\n",SelfEnergy[i][0].Re,SelfEnergy[i][0].Im);
-    }
-    return -1;
+    }*/
 // Martin end	---------------------------------------------------------------------------------------  
     
   for(p = 0; p <= settings->NE1; p++)
@@ -265,8 +278,11 @@ uint32_t ResonantSpectrumCNSED(const OperatorType OppH1, const OperatorType OppH
     wRes = settings->Emin1 + (settings->Emax1-settings->Emin1)*p/((double)settings->NE1) + energy1;
     for(i = 0; i < settings->NTri1; i++)
     {
-      EValInvRe[i] =  (wRes - EVal[i])       / ((wRes - EVal[i])*(wRes - EVal[i])+(settings->Gamma1/2.0)*(settings->Gamma1/2.0));
-      EValInvIm[i] = -(settings->Gamma1/2.0) / ((wRes - EVal[i])*(wRes - EVal[i])+(settings->Gamma1/2.0)*(settings->Gamma1/2.0));
+      //EValInvRe[i] =  (wRes - EVal[i])       / ((wRes - EVal[i])*(wRes - EVal[i])+(settings->Gamma1/2.0)*(settings->Gamma1/2.0));
+      //EValInvIm[i] = -(settings->Gamma1/2.0) / ((wRes - EVal[i])*(wRes - EVal[i])+(settings->Gamma1/2.0)*(settings->Gamma1/2.0));
+      EValInvRe[i] =  (wRes - EVal[i])       / ((wRes - EVal[i])*(wRes - EVal[i]) + SelfEnergy[i][p].Im*SelfEnergy[i][p].Im);
+      //EValInvIm[i] = (SelfEnergy[i][p].Im - settings->Gamma1/2.0)/ ((wRes - EVal[i])*(wRes - EVal[i]) + (SelfEnergy[i][p].Im - settings->Gamma1/2.0)*(SelfEnergy[i][p].Im - settings->Gamma1/2.0));
+      EValInvIm[i] = (SelfEnergy[i][p].Im )/ ((wRes - EVal[i])*(wRes - EVal[i]) + (SelfEnergy[i][p].Im )*(SelfEnergy[i][p].Im));
     }
     
     /* We are trying to calculate Q[0,:]A^(-1)Q^(-1).  Because A is diagonal, we were
@@ -573,8 +589,6 @@ static int LuaResSpectCNSED(lua_State *L)
         {
             SettingsNow = Options.Settings;
             ResonantSpectrumCNSED(*H1, *H2, T1[iT], T2, Options.NT2, psi[ipsi], &SpecTri, &SpecT1psi, Options.E01, Options.E02, &(SettingsNow), Uk, Fk, EnergyContinuum,Options.GammaSE);
-            printf("Stop\n");
-            return 0;
             Spec->NSpectra+=(SettingsNow.NE1+1)*Options.NT2;
             Spec->Spec= (SpectraType*)realloc(Spec->Spec, Spec->NSpectra*sizeof(SpectraType));
             for(i=0;i<(SettingsNow.NE1+1)*Options.NT2;i++)

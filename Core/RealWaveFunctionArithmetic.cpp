@@ -1077,7 +1077,7 @@ uint32_t RealWaveFunctionListSVDOrthogonalizeSameBasis(WaveFunctionType * const 
   for(i=0;i<*Npsi;i++)
   {
     val[i] = sqrt(Max(0,-val[i]));
-    if(val[i]<=SingularValue)
+    if(val[i]<=sqrt(SingularValue))
     {
       val[i]=0;
       NSingular++;
@@ -1217,7 +1217,7 @@ uint32_t RealWaveFunctionListSVDOrthogonalize(WaveFunctionType * const psilist, 
   for(i=0;i<*Npsi;i++)
   {
     val[i] = sqrt(Max(0,-val[i]));
-    if(val[i]<=SingularValue)
+    if(val[i]<=sqrt(SingularValue))
     {
       val[i]=0;
       NSingular++;
