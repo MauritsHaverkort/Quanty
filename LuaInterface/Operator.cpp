@@ -18,7 +18,7 @@ static int LuaOperatorNewCoulomb(lua_State * L)
     {NULL, NULL, NULL}};
   OperatorType *op;
   uint32_t Ntemp,NShell,l,lA,lB,lC,lD;
-  bool jbasis=false;
+  bool jbasis;
   uint32_t NFermion = (uint32_t)luaL_checkunsigned(L, 1);
   uint32_t len = (uint32_t)lua_gettop(L);
   if(lua_isnumber(L,3))
@@ -29,6 +29,7 @@ static int LuaOperatorNewCoulomb(lua_State * L)
   }
   else
   {
+    jbasis=false;
     Options.ibasis=0;
     Options.basis="SphericalHarmonicsY";
   }
@@ -4644,8 +4645,26 @@ static int LuaOperatorUnm(lua_State * L)
   return 1;
 }
 
+static int LuaOperatorEq(lua_State * L)
+{
+  OperatorType *l,*r;
+  l = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
+  r = (OperatorType *) luaL_checkudata(L, 2, "Operator_Type");
+  if(QOperatorEqual(l,r,DBL_MIN))
+  {
+    lua_pushboolean (L, 1);
+  }
+  else
+  {
+    lua_pushboolean (L, 0);
+  }
+  return 1;
+}
+
+
 static int LuaOperatorPrint(lua_State * L)
 {
+  OperatorType *a = (OperatorType *) luaL_checkudata(L, lua_upvalueindex(1), "Operator_Type");
   struct
   {
     char *stream;
@@ -4662,7 +4681,7 @@ static int LuaOperatorPrint(lua_State * L)
   }
   if(len==0)
   {
-    PrintOperatorReadable(*((OperatorType *) currentudata));
+    PrintOperatorReadable(*((OperatorType *) a));
     return 0;
   }
   Options.Full=false;
@@ -4672,22 +4691,22 @@ static int LuaOperatorPrint(lua_State * L)
   {
     if(Options.Full==false)
     {
-      PrintOperatorReadable(*((OperatorType *) currentudata));
+      PrintOperatorReadable(*((OperatorType *) a));
     }
     else
     {
-      PrintOperatorFullReadable(*((OperatorType *) currentudata));
+      PrintOperatorFullReadable(*((OperatorType *) a));
     }
   }
   else
   {
     if(Options.Full==false)
     {
-      FilePrintOperatorReadable(*((OperatorType *) currentudata), Options.stream, "w");
+      FilePrintOperatorReadable(*((OperatorType *) a), Options.stream, "w");
     }
     else
     {
-      FilePrintOperatorFullReadable(*((OperatorType *) currentudata), Options.stream, "w");
+      FilePrintOperatorFullReadable(*((OperatorType *) a), Options.stream, "w");
     }
   }
   return 0;
@@ -4695,6 +4714,7 @@ static int LuaOperatorPrint(lua_State * L)
 
 static int LuaOperatorChop(lua_State * L)
 {
+  OperatorType *a = (OperatorType *) luaL_checkudata(L, lua_upvalueindex(1), "Operator_Type");
   uint32_t len = (uint32_t)lua_gettop(L);
   double border;
   switch (len)
@@ -4709,21 +4729,22 @@ static int LuaOperatorChop(lua_State * L)
       return luaL_error(L, "Errorr, call to chop with %d arguments, expected 0 or 1\n",len);
     break;
   }
-  OperatorChop((OperatorType *) currentudata, border);
-  OperatorSetMaxLength((OperatorType *) currentudata);
+  OperatorChop((OperatorType *) a, border);
+  OperatorSetMaxLength((OperatorType *) a);
   return 0;;
 }
 
 static int LuaOperatorSetName(lua_State * L)
 {
+  OperatorType *a = (OperatorType *) luaL_checkudata(L, lua_upvalueindex(1), "Operator_Type");
   uint32_t len = (uint32_t)lua_gettop(L);
   switch (len)
   {
     case 0:
-      OperatorSetName((OperatorType *) currentudata, "");
+      OperatorSetName((OperatorType *) a, "");
     break;
     case 1:
-      OperatorSetName((OperatorType *) currentudata, luaL_checkstring(L,1));
+      OperatorSetName((OperatorType *) a, luaL_checkstring(L,1));
     break;
     default:
       return luaL_error(L, "Errorr, call to SetName with %d arguments, expected 0 or 1\n",len);
@@ -4734,10 +4755,11 @@ static int LuaOperatorSetName(lua_State * L)
 
 static int LuaOperatorConjugate(lua_State * L)
 {
+  OperatorType *a = (OperatorType *) luaL_checkudata(L, lua_upvalueindex(1), "Operator_Type");
   uint32_t len = (uint32_t)lua_gettop(L);
   if(len==0)
   {
-    OperatorComplexConjugate((OperatorType *)currentudata);
+    OperatorComplexConjugate((OperatorType *)a);
   }
   else
   {
@@ -4749,13 +4771,14 @@ static int LuaOperatorConjugate(lua_State * L)
 static int LuaOperatorConjugateTranspose(lua_State * L)
 {
   //TODO: write the function OperatorTransposeInline
+  OperatorType *a = (OperatorType *) luaL_checkudata(L, lua_upvalueindex(1), "Operator_Type");
   uint32_t len = (uint32_t)lua_gettop(L);
   if(len==0)
   {
     OperatorType OppTemp;
-    OperatorCopy(&OppTemp, *(OperatorType *)currentudata);
-    FreeOperator((OperatorType *)currentudata);
-    OperatorConjugateTransposeNormalOrder(OppTemp, (OperatorType *)currentudata, &QDetNotOrderedFcFaBaBc);
+    OperatorCopy(&OppTemp, *(OperatorType *)a);
+    FreeOperator((OperatorType *)a);
+    OperatorConjugateTransposeNormalOrder(OppTemp, (OperatorType *)a, &QDetNotOrderedFcFaBaBc);
     FreeOperator(&OppTemp);
   }
   else
@@ -4768,13 +4791,14 @@ static int LuaOperatorConjugateTranspose(lua_State * L)
 static int LuaOperatorTranspose(lua_State * L)
 {
   //TODO: write the function OperatorTransposeInline
+  OperatorType *a = (OperatorType *) luaL_checkudata(L, lua_upvalueindex(1), "Operator_Type");
   uint32_t len = (uint32_t)lua_gettop(L);
   if(len==0)
   {
     OperatorType OppTemp;
-    OperatorCopy(&OppTemp, *(OperatorType *)currentudata);
-    FreeOperator((OperatorType *)currentudata);
-    OperatorTransposeNormalOrder(OppTemp, (OperatorType *)currentudata, &QDetNotOrderedFcFaBaBc);
+    OperatorCopy(&OppTemp, *(OperatorType *)a);
+    FreeOperator((OperatorType *)a);
+    OperatorTransposeNormalOrder(OppTemp, (OperatorType *)a, &QDetNotOrderedFcFaBaBc);
     FreeOperator(&OppTemp);
   }
   else
@@ -4788,31 +4812,35 @@ static int LuaOperatorIndex(lua_State * L)
 {
   OperatorType *a = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
   const char *str = lua_tostring(L, 2);
-  currentudata = a;
 
   if (strcmp(str, "Print") == 0)
   {
-    lua_pushcfunction(L, LuaOperatorPrint);
+    lua_pushvalue(L, 1);
+    lua_pushcclosure(L, LuaOperatorPrint,1);
     return 1;
   }
   if (strcmp(str, "Chop") == 0)
   {
-    lua_pushcfunction(L, LuaOperatorChop);
+    lua_pushvalue(L, 1);
+    lua_pushcclosure(L, LuaOperatorChop,1);
     return 1;
   }
   if ((strcmp(str, "Conjugate") == 0)||(strcmp(str, "C") == 0)||(strcmp(str, "Dag") == 0))
   {
-    lua_pushcfunction(L, LuaOperatorConjugate);
+    lua_pushvalue(L, 1);
+    lua_pushcclosure(L, LuaOperatorConjugate, 1);
     return 1;
   }
   if ((strcmp(str, "ConjugateTranspose") == 0)||(strcmp(str, "CT")==0))
   {
-    lua_pushcfunction(L, LuaOperatorConjugateTranspose);
+    lua_pushvalue(L, 1);
+    lua_pushcclosure(L, LuaOperatorConjugateTranspose,1);
     return 1;
   }
   if ((strcmp(str, "Transpose") == 0)||(strcmp(str, "T")==0))
   {
-    lua_pushcfunction(L, LuaOperatorTranspose);
+    lua_pushvalue(L, 1);
+    lua_pushcclosure(L, LuaOperatorTranspose,1);
     return 1;
   }
   if (strcmp(str, "Name") == 0)
@@ -4976,6 +5004,7 @@ static const struct luaL_Reg Operator_meta[] = {
   {"__mul", LuaOperatorMul},
   {"__div", LuaOperatorDiv},
   {"__unm", LuaOperatorUnm},
+  {"__eq", LuaOperatorEq},
   {"__index", LuaOperatorIndex},
   {"__newindex", LuaOperatorNewIndex},
   {"__tostring", LuaOperatorToString},

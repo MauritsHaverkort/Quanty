@@ -1095,6 +1095,7 @@ uint32_t ComplexWaveFunctionResetKeylist(WaveFunctionType * const a, const uint3
     printf("realloc failed in RealWaveFunctionResetKeylist\n");
     return 1;
   }
+  memset(a->KeyList, 0, sizeof(uint32_t)*(1<<NBitsKey));
   a->NBitsKey=NBitsKey;
   a->N = 0;
   for (iBlok = 0; iBlok < a->NBlok - 1; iBlok++)
