@@ -1881,6 +1881,275 @@ static int LuaMartinTest(lua_State *L)
     return 1;
 }
 
+static int LuaOperatorNewAtomicUOccupationConserving(lua_State *L)
+{
+    OperatorType *op;
+    uint32_t Nindices, temp, len, NF;
+    uint16_t **indices;
+    vector<double> x;
+    len = (uint32_t)lua_gettop(L);
+
+    if ( len < 3 ||  len > 5)
+    {
+    	return luaL_error(L,"Error in Martin.NewCoulomb: 3 or 5 arguments expected; got %d",len);
+    }
+
+    NF = (uint32_t)luaL_checkunsigned(L, 1);
+    vector<int> indToK;
+    if (len == 5)
+	{
+		
+        Nindices = (uint32_t)lua_objlen(L,2);
+        lua_check(L,5,indToK);
+        indices = (uint16_t **) malloc(Nindices * sizeof(uint16_t *));
+        if(!indices) printf("malloc fail at indices in LuaOperatorNewFullCoulomb. size = %u\n",Nindices);
+
+        for(uint32_t i = 0; i < Nindices; i++ )
+        {
+            lua_rawgeti(L, 2, i+1);
+            indices[i] = luaL_checkarray_unit16_t(L,-1,&temp);
+            lua_pop(L,1);
+        }
+
+		uint32_t NfunsG = (uint32_t)lua_objlen(L,3);
+
+		if (NfunsG > Nindices)
+		{
+			printf("Warning: Martin.Coulomb() number of basis funs (%d) != number of indices (%d)\n",NfunsG , Nindices);
+			fflush(stdout);
+		}
+		else
+		{
+			if (NfunsG < Nindices)
+			{
+				return luaL_error(L, "Errorr: Martin.Coulomb() number of basis funs (%d) < number of indices (%d)\n",NfunsG , Nindices);
+			}
+		}
+		if (indToK.size() != Nindices) printf("Warning: Martin.Coulomb() number of kappas (%d) != number of indices (%d)\n",(uint32_t)indToK.size() , Nindices);
+
+		vector<Interpolation::InterpolatingFunction *> funsG = vector<Interpolation::InterpolatingFunction *>(NfunsG);
+		for(uint32_t i = 0; i < NfunsG; i++)
+		{
+			lua_rawgeti(L, 3, i+1);
+			funsG[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
+			lua_pop(L,1);
+		}
+
+		uint32_t NfunsF = (uint32_t)lua_objlen(L,4);
+		if (NfunsF != NfunsG)
+		{
+			return luaL_error(L,"Error in LuaOperatorNewCoulombFull: number of functions small part (%d) != large part (%d)\n",NfunsF,NfunsG);
+		}
+		vector<Interpolation::InterpolatingFunction *> funsF = vector<Interpolation::InterpolatingFunction *>(NfunsF);
+		for(uint32_t i = 0; i < NfunsF; i++)
+		{
+			lua_rawgeti(L, 4, i+1);
+			funsF[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
+			lua_pop(L,1);
+		}
+
+		x = funsG[0]->GetX();
+
+		vector<vector<double> > wavefuns = PutRelativisticSplineOnGrid(funsG,funsF,x,0);
+		op = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
+		CreateOperatorAtomicURelativisticOccupationConserving(NF,wavefuns,x,indToK,indices, op);
+    }
+    else
+    {
+    	printf("Error: LuaOperatorNewAtomicUOccupationConserving not implemented for non-relativistic case.");
+        return 0;
+        Nindices = (uint32_t)lua_objlen(L,2);
+
+		indices = (uint16_t **) malloc(Nindices * sizeof(uint16_t *));
+		if(!indices) printf("malloc fail at indices in LuaOperatorNewFullCoulomb. size = %u\n",Nindices);
+
+		for(uint32_t i = 0; i < Nindices; i++ )
+		{
+			lua_rawgeti(L, 2, i+1);
+			indices[i] = luaL_checkarray_unit16_t(L,-1,&temp);
+			if (i%2 == 0)
+			{
+				indToK.push_back(-(((int)temp-1)/2 + 1));
+			}
+			lua_pop(L,1);
+		}
+
+		uint32_t NfunsG = (uint32_t)lua_objlen(L,3);
+
+		if (NfunsG > Nindices/2)
+		{
+			printf("Warning: Martin.Coulomb() number of basis funs (%d) != number of indices (%d)\n",NfunsG , Nindices/2);
+			fflush(stdout);
+		}
+		else
+		{
+			if (NfunsG < Nindices/2)
+			{
+				return luaL_error(L, "Errorr: Martin.Coulomb() number of basis funs (%d) < number of indices (%d)\n",NfunsG , Nindices/2);
+			}
+		}
+
+		vector<Interpolation::InterpolatingFunction *> funsG = vector<Interpolation::InterpolatingFunction *>(NfunsG);
+		for(uint32_t i = 0; i < NfunsG; i++)
+		{
+			lua_rawgeti(L, 3, i+1);
+			funsG[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
+			lua_pop(L,1);
+		}
+
+		op = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
+		CreateOperatorAtomicUNonRel(NF,funsG,indToK,indices,op);
+
+    }
+
+    luaL_setmetatable(L,"Operator_Type");
+
+
+	for(uint32_t i = 0; i < Nindices; i++ )
+	{
+		free(indices[i]);
+	}
+	free(indices);
+
+    return 1;
+}
+
+static int LuaOperatorNewAtomicUOccupationConservingOneShell(lua_State *L)
+{
+    OperatorType *op;
+    uint32_t Nindices, temp, len, NF;
+    uint16_t **indices;
+    vector<double> x;
+    len = (uint32_t)lua_gettop(L);
+
+    if ( len < 4 ||  len > 6)
+    {
+    	return luaL_error(L,"Error in LuaOperatorNewAtomicUOccupationConservingOneShell: 4 to 6 arguments expected; got %d",len);
+    }
+
+    NF = (uint32_t)luaL_checkunsigned(L, 1);
+    vector<int> indToK;
+    if (len == 6)
+	{
+		vector<int> indToK1, indToK2;
+        lua_check(L,5,indToK1);
+        lua_check(L,6,indToK2);
+
+        Nindices = (uint32_t)lua_objlen(L,2);
+
+        indices = (uint16_t **) malloc(Nindices * sizeof(uint16_t *));
+        if(!indices) printf("malloc fail at indices in LuaOperatorNewFullCoulomb. size = %u\n",Nindices);
+
+        for(uint32_t i = 0; i < Nindices; i++ )
+        {
+            lua_rawgeti(L, 2, i+1);
+            indices[i] = luaL_checkarray_unit16_t(L,-1,&temp);
+            lua_pop(L,1);
+        }
+
+		uint32_t NfunsG = (uint32_t)lua_objlen(L,3);
+
+		if (NfunsG > Nindices)
+		{
+			printf("Warning: Martin.Coulomb() number of basis funs (%d) != number of indices (%d)\n",NfunsG , Nindices);
+			fflush(stdout);
+		}
+		else
+		{
+			if (NfunsG < Nindices)
+			{
+				return luaL_error(L, "Errorr: Martin.Coulomb() number of basis funs (%d) < number of indices (%d)\n",NfunsG , Nindices);
+			}
+		}
+		//if (indToK.size() != Nindices) printf("Warning: Martin.Coulomb() number of kappas (%d) != number of indices (%d)\n",(uint32_t)indToK.size() , Nindices);
+
+		vector<Interpolation::InterpolatingFunction *> funsG = vector<Interpolation::InterpolatingFunction *>(NfunsG);
+		for(uint32_t i = 0; i < NfunsG; i++)
+		{
+			lua_rawgeti(L, 3, i+1);
+			funsG[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
+			lua_pop(L,1);
+		}
+
+		uint32_t NfunsF = (uint32_t)lua_objlen(L,4);
+		if (NfunsF != NfunsG)
+		{
+			return luaL_error(L,"Error in LuaOperatorNewCoulombFull: number of functions small part (%d) != large part (%d)\n",NfunsF,NfunsG);
+		}
+		vector<Interpolation::InterpolatingFunction *> funsF = vector<Interpolation::InterpolatingFunction *>(NfunsF);
+		for(uint32_t i = 0; i < NfunsF; i++)
+		{
+			lua_rawgeti(L, 4, i+1);
+			funsF[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
+			lua_pop(L,1);
+		}
+
+		x = funsG[0]->GetX();
+
+		vector<vector<double> > wavefuns = PutRelativisticSplineOnGrid(funsG,funsF,x,0);
+		op = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
+		CreateOperatorAtomicURelativisticOccupationConserving(NF,wavefuns,x,indToK1,indToK2,indices, op);
+    }
+    else
+    {
+    	printf("Error: LuaOperatorNewAtomicUOccupationConserving not implemented for non-relativistic case.");
+        return 0;
+        Nindices = (uint32_t)lua_objlen(L,2);
+
+		indices = (uint16_t **) malloc(Nindices * sizeof(uint16_t *));
+		if(!indices) printf("malloc fail at indices in LuaOperatorNewFullCoulomb. size = %u\n",Nindices);
+
+		for(uint32_t i = 0; i < Nindices; i++ )
+		{
+			lua_rawgeti(L, 2, i+1);
+			indices[i] = luaL_checkarray_unit16_t(L,-1,&temp);
+			if (i%2 == 0)
+			{
+				indToK.push_back(-(((int)temp-1)/2 + 1));
+			}
+			lua_pop(L,1);
+		}
+
+		uint32_t NfunsG = (uint32_t)lua_objlen(L,3);
+
+		if (NfunsG > Nindices/2)
+		{
+			printf("Warning: Martin.Coulomb() number of basis funs (%d) != number of indices (%d)\n",NfunsG , Nindices/2);
+			fflush(stdout);
+		}
+		else
+		{
+			if (NfunsG < Nindices/2)
+			{
+				return luaL_error(L, "Errorr: Martin.Coulomb() number of basis funs (%d) < number of indices (%d)\n",NfunsG , Nindices/2);
+			}
+		}
+
+		vector<Interpolation::InterpolatingFunction *> funsG = vector<Interpolation::InterpolatingFunction *>(NfunsG);
+		for(uint32_t i = 0; i < NfunsG; i++)
+		{
+			lua_rawgeti(L, 3, i+1);
+			funsG[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
+			lua_pop(L,1);
+		}
+
+		op = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
+		CreateOperatorAtomicUNonRel(NF,funsG,indToK,indices,op);
+
+    }
+
+    luaL_setmetatable(L,"Operator_Type");
+
+
+	for(uint32_t i = 0; i < Nindices; i++ )
+	{
+		free(indices[i]);
+	}
+	free(indices);
+
+    return 1;
+}
+
 static const struct luaL_Reg Martin_meta[] = {
   {NULL, NULL}
 };
@@ -1953,6 +2222,8 @@ static const struct luaL_Reg Martin_func[] = {
   {"CNSEDiag",LuaCoolNewSelfEnergyDiagonal},
   {"LinCombine",LuaLinCombine},
   {"BasisChange",LuaBasisChange},
+  {"AUcons",LuaOperatorNewAtomicUOccupationConserving},
+  {"AUconsOs",LuaOperatorNewAtomicUOccupationConservingOneShell},
   {NULL, NULL}
 };
 

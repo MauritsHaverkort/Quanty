@@ -591,6 +591,95 @@ uint32_t CreateOperatorAtomicURelativistic(uint32_t const NFermion,const vector<
   return 0;
 }
 
+uint32_t CreateOperatorAtomicURelativisticOccupationConserving(uint32_t const NFermion,const vector<vector<double> > &basisfuns, const vector<double> &grid, const vector<int> &indToK, uint16_t **indices, OperatorType *op)
+{
+  if(GlobalTimeOn&0x100) BeginTiming("Create Atomic U Relativistic", &GlobalTime);
+  OperatorType optemp;
+    SSlaterIntegral *integrals;
+    uint32_t NIntegrals, i;
+
+    integrals = GetSlaterIntegralsTwoFilled(basisfuns,grid, indToK, NIntegrals);
+
+    int *k;
+    unsigned int *n;
+    double *Fk;
+
+    k = integrals[0].tau.kappa;
+    n = integrals[0].tau.n;
+    Fk = integrals[0].val;
+
+    CreateOperatorAtomicURelativisticOneIntegralOccupationConserving(NFermion,k[0],k[1],k[2],k[3],indices[n[0]],indices[n[1]],indices[n[2]],indices[n[3]],Fk,n[0],n[1],n[2],n[3],op);
+
+    for( i = 1; i < NIntegrals; i++)
+    {
+        k = integrals[i].tau.kappa;
+        n = integrals[i].tau.n;
+        Fk = integrals[i].val;
+
+
+        CreateOperatorAtomicURelativisticOneIntegralOccupationConserving(NFermion,k[0],k[1],k[2],k[3],indices[n[0]],indices[n[1]],indices[n[2]],indices[n[3]],Fk,n[0],n[1],n[2],n[3],&optemp);
+
+        OperatorAdd(op, optemp, 1., 0.);
+
+    }
+    for ( i = 0; i < NIntegrals; i++)
+    {
+    	free(integrals[i].val);
+    	free(integrals[i].k);
+    }
+    free(integrals);
+
+  if(GlobalTimeOn&0x100) EndTiming("Create Atomic U Relativistic", &GlobalTime);
+  return 0;
+}
+
+uint32_t CreateOperatorAtomicURelativisticOccupationConserving(uint32_t const NFermion,const vector<vector<double> > &basisfuns, const vector<double> &grid, const vector<int> &indToK1,const vector<int> &indToK2, uint16_t **indices,  OperatorType *op)
+{
+  if(GlobalTimeOn&0x100) BeginTiming("Create Atomic U Relativistic", &GlobalTime);
+  OperatorType optemp;
+    SSlaterIntegral *integrals;
+    uint32_t NIntegrals, i;
+
+    integrals = GetSlaterIntegralsOneFilled(basisfuns,grid, indToK1,indToK2, NIntegrals);
+
+    int *k;
+    unsigned int *n;
+    double *Fk;
+
+    k = integrals[0].tau.kappa;
+    n = integrals[0].tau.n;
+    Fk = integrals[0].val;
+/*    for (uint32_t j = 0; j < integrals[0].Nval; j++)
+        printf("Fk = %.16E\t",Fk[j]);
+    printf("\n");*/
+
+    CreateOperatorAtomicURelativisticOneIntegralOccupationConservingOneShell(NFermion,k[0],k[1],k[2],k[3],indices[n[0]],indices[n[1]],indices[n[2]],indices[n[3]],Fk,n[0],n[1],n[2],n[3],op);
+
+    for( i = 1; i < NIntegrals; i++)
+    {
+        k = integrals[i].tau.kappa;
+        n = integrals[i].tau.n;
+        Fk = integrals[i].val;
+ /*       for (uint32_t j = 0; j < integrals[i].Nval; j++)
+        printf("Fk = %.16E\t",Fk[j]);
+        printf("\n");*/
+
+        CreateOperatorAtomicURelativisticOneIntegralOccupationConservingOneShell(NFermion,k[0],k[1],k[2],k[3],indices[n[0]],indices[n[1]],indices[n[2]],indices[n[3]],Fk,n[0],n[1],n[2],n[3],&optemp);
+
+        OperatorAdd(op, optemp, 1., 0.);
+
+    }
+    for ( i = 0; i < NIntegrals; i++)
+    {
+    	free(integrals[i].val);
+    	free(integrals[i].k);
+    }
+    free(integrals);
+
+  if(GlobalTimeOn&0x100) EndTiming("Create Atomic U Relativistic", &GlobalTime);
+  return 0;
+}
+
 uint32_t CreateListOperatorAtomicURelativistic(uint32_t const NFermion,const vector<vector<double> > &basisfuns, const vector<double> &grid, const vector<int> &indToK
                                                ,uint16_t **indices, bool Qcontinuum,lua_State *L, bool IntegralsOnly)
 {
@@ -774,6 +863,61 @@ void CreateOperatorAtomicURelativisticOneIntegral(uint32_t const NFermion,int co
                 FreeOperator(&optemp);
             }
         }
+    }
+    //FreeOperator(&optemp);  //TODO if i uncomment this I get an invalid free - otherwhise heap is lost
+
+}
+
+void CreateOperatorAtomicURelativisticOneIntegralOccupationConserving(uint32_t const NFermion,int const kappa1,int const kappa2, int const kappa3,int const kappa4,uint16_t const *Jindex1,
+                                                  uint16_t const *Jindex2,uint16_t const *Jindex3, uint16_t const *Jindex4,double const *Fk, const unsigned int n1,
+												  const unsigned int n2, const unsigned int n3, const unsigned int n4, OperatorType *const op)
+{
+    OperatorType optemp;
+
+    CreateOperatorCoulombFourRelativisticShells(NFermion,kappa1,kappa2,kappa3,kappa4, Jindex1,Jindex2,Jindex3,Jindex4,Fk,op);
+
+
+    if ( (n1 != n2) && (n3 != n4) )
+    {
+        CreateOperatorCoulombFourRelativisticShells(NFermion,kappa2,kappa1,kappa4,kappa3, Jindex2,Jindex1,Jindex4,Jindex3,Fk,&optemp);
+        OperatorAdd(op, optemp, 1., 0.);
+        FreeOperator(&optemp);
+
+    }
+    //FreeOperator(&optemp);  //TODO if i uncomment this I get an invalid free - otherwhise heap is lost
+
+}
+
+void CreateOperatorAtomicURelativisticOneIntegralOccupationConservingOneShell(uint32_t const NFermion,int const kappa1,int const kappa2, int const kappa3,int const kappa4,uint16_t const *Jindex1,
+                                                  uint16_t const *Jindex2,uint16_t const *Jindex3, uint16_t const *Jindex4,double const *Fk, const unsigned int n1,
+												  const unsigned int n2, const unsigned int n3, const unsigned int n4, OperatorType *const op)
+{
+    OperatorType optemp;
+
+    CreateOperatorCoulombFourRelativisticShells(NFermion,kappa1,kappa2,kappa3,kappa4, Jindex1,Jindex2,Jindex3,Jindex4,Fk,op);
+    CreateOperatorCoulombFourRelativisticShells(NFermion,kappa2,kappa1,kappa4,kappa3, Jindex2,Jindex1,Jindex4,Jindex3,Fk,&optemp);
+    OperatorAdd(op, optemp, 1., 0.);
+    FreeOperator(&optemp);
+
+
+    if ( (n3 != n2) && (n1 == n4) )
+    {
+        CreateOperatorCoulombFourRelativisticShells(NFermion,kappa1,kappa3,kappa2,kappa4, Jindex1,Jindex3,Jindex2,Jindex4,Fk,&optemp);
+        OperatorAdd(op, optemp, 1., 0.);
+        FreeOperator(&optemp);
+        CreateOperatorCoulombFourRelativisticShells(NFermion,kappa3,kappa1,kappa4,kappa2, Jindex3,Jindex1,Jindex4,Jindex2,Fk,&optemp);
+        OperatorAdd(op, optemp, 1., 0.);
+        FreeOperator(&optemp);
+
+    }
+    if ( (n4 != n2) && (n1 == n3) )
+    {
+        CreateOperatorCoulombFourRelativisticShells(NFermion,kappa1,kappa4,kappa3,kappa2, Jindex1,Jindex4,Jindex3,Jindex2,Fk,&optemp);
+        OperatorAdd(op, optemp, 1., 0.);
+        FreeOperator(&optemp);
+        CreateOperatorCoulombFourRelativisticShells(NFermion,kappa4,kappa1,kappa2,kappa3, Jindex4,Jindex1,Jindex2,Jindex3,Fk,&optemp);
+        OperatorAdd(op, optemp, 1., 0.);
+        FreeOperator(&optemp);
     }
     //FreeOperator(&optemp);  //TODO if i uncomment this I get an invalid free - otherwhise heap is lost
 

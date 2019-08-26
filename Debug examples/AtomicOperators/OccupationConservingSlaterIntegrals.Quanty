@@ -1,0 +1,73 @@
+function Take(list,n1,n2)
+  local result={}
+  if n2== nil then
+    if n1 > 0 then
+      for i = 1, n1 do
+        result[i]=list[i]
+      end
+    else
+      for i=1,-n1 do
+        result[i]=list[#list+n1+i]
+      end
+    end
+   else
+     for i = n1, n2 do
+       result[i+1-n1] = list[i]
+     end
+   end
+  return result
+end
+
+
+------------------------------create all indices and read wave-functions --------------------------
+
+orbitallabels = {"1s1/2","2s1/2","2p1/2","2p3/2"}
+
+ind, NF = CreateAtomicIndicesList(orbitallabels,{{"Kappas",true}})
+
+
+dirFuns = "./"
+G, F = ReadFPLOBasisFunctions(orbitallabels,dirFuns .."+fval.001.1", dirFuns .."+fval.001.2")
+
+
+------------------------------define which indices shall be conserved-- --------------------------
+
+n0 = 3
+n1 = 4
+
+indConserved = Take(ind,1,n0-1)
+indConserved.kappas = Take(ind.kappas,1,n0-1)
+GConserved = Take(G,1,n0-1)
+FConserved = Take(F,1,n0-1)
+
+indNonCnsrvd = Take(ind,n0,n1)
+indNonCnsrvd.kappas = Take(ind.kappas,n0,n1)
+GNonCnsrvd = Take(G,n0,n1)
+FNonCnsrvd = Take(F,n0,n1)
+
+----------------------create partial operator from full Coulomb U ---------------------------------
+
+UPartial = PartialOperator(NewOperator("AU",NF,ind,G,F),indConserved, "conserve")
+
+--------------------create partial operator from full separated Coulomb U -------------------------
+--------------------for large systems this should be the faster variant ---------------------------
+
+U0 = Martin.AUcons(NF,indConserved,GConserved,FConserved,indConserved.kappas) -- Coulomb interaction between conserved orbitals only (sorry for the stupid function name)
+
+U1 = Martin.AUconsOs(NF,ind,G,F,indConserved.kappas,indNonCnsrvd.kappas) -- Coulomb interaction between conserved orbitals and others (I really need better function names)
+
+U3 = NewOperator("AU",NF,indNonCnsrvd,GNonCnsrvd,FNonCnsrvd) -- Coulomb interaction between non-conserved orbitals
+
+U = U0 + U1 + U3
+
+print(Chop(U-UPartial)) -- check that both approaches yield the same
+
+
+--[[
+
+The reason why I splitted the above calculation in three parts is, that this way one can easily 
+transform U0 and U1 to one-particle operators. However, there is some overhead when using three
+functions. This overhead can in principle be overcome when combining everything in a single 
+function. I think for large systems the overhead is small compared to the full calculation.
+
+]]
