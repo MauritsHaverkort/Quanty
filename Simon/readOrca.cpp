@@ -302,7 +302,97 @@ OrcaObject FileReadOrca(const string &filename)
 		}
 	}
 	reader.close();
+	//	TODO: sort basis according to canonical order of tesseral harmonics (-2,-1,0,1,2)
 	return out;
+}
+
+void OrcaDiagonalizeDegenerateStates(OrcaObject &orca)
+{
+	CompactMatrixType TrafoFull;
+	const uint NFull = orca.NBasis;
+	TrafoFull.Ni = NFull;
+	TrafoFull.Nj = NFull;
+	TrafoFull.QComplex = 0;
+	TrafoFull.OnLuaStack = false;
+	InitCompactMatrix(&TrafoFull);
+	vector<uint> alreadyRotated, allLargestEntries;
+	for (uint k = 0; k < NFull - 1; ++k)
+	{
+		if (!isElementOf(k, alreadyRotated))
+		{
+			vector<uint> degOrbIndices;
+			degOrbIndices.push_back(k);
+			alreadyRotated.push_back(k);
+
+			for (uint l = k + 1; l < NFull; ++l)
+			{
+				if (abs(orca.EigenEnergies[k] - orca.EigenEnergies[l]) < 1e-10 && !isElementOf(l, alreadyRotated))
+				{
+
+					degOrbIndices.push_back(l);
+					alreadyRotated.push_back(l);
+				}
+			}
+
+			vector<uint> largestEntries;
+			for (uint l = 0; l < (uint) degOrbIndices.size(); ++l)
+			{
+				const uint MOindex = degOrbIndices[l];
+				uint iMax = 0;
+				double partMax = 0.;
+				for (uint m = 0; m < NFull; ++m)
+				{
+					double part = abs(orca.MolecularOrbitalMatrix.VRe[MOindex * NFull + m]);
+					if (part > partMax && !isElementOf(m, allLargestEntries))
+					{
+						iMax = m;
+						partMax = part;
+					}
+				}
+				largestEntries.push_back(iMax);
+				allLargestEntries.push_back(iMax);
+			}
+			CompactMatrixType subMat;
+			subMat.Ni = (uint) degOrbIndices.size();
+			subMat.Nj = (uint) degOrbIndices.size();
+			subMat.QComplex = 0;
+			InitCompactMatrix(&subMat);
+
+			for (uint i = 0; i < (uint) degOrbIndices.size(); ++i)
+			{
+				const uint iFull = degOrbIndices[i];
+				for (uint j = 0; j < (uint) largestEntries.size(); ++j)
+				{
+					const uint jFull = largestEntries[j];
+					subMat.VRe[i * subMat.Nj + j] = orca.MolecularOrbitalMatrix.VRe[iFull * NFull + jFull];
+				}
+			}
+
+			CompactMatrixType Trafo = GaussEliminationTransformation(subMat);
+
+			for (uint i = 0; i < (uint) degOrbIndices.size(); ++i)
+			{
+				const uint iFull = degOrbIndices[i];
+				for (uint j = 0; j < (uint) degOrbIndices.size(); ++j)
+				{
+					const uint jFull = degOrbIndices[j];
+					TrafoFull.VRe[iFull * TrafoFull.Nj + jFull] = Trafo.VRe[i * Trafo.Nj + j];
+				}
+			}
+
+			FreeCompactMatrix(&Trafo);
+			FreeCompactMatrix(&subMat);
+		}
+	}
+
+	CompactMatrixType tmpMat;
+	CompactMatrixMultiply('N', 'N', &TrafoFull, &orca.MolecularOrbitalMatrix, &tmpMat);
+	FreeCompactMatrix(&orca.MolecularOrbitalMatrix);
+	CompactMatrixCopy(tmpMat, &orca.MolecularOrbitalMatrix);
+	FreeCompactMatrix(&tmpMat);
+
+	CompactMatrixChop(&orca.MolecularOrbitalMatrix, 1e-14);
+	FreeCompactMatrix(&TrafoFull);
 }
 
 static int LuaFileReadOrca(lua_State* L)
@@ -310,12 +400,24 @@ static int LuaFileReadOrca(lua_State* L)
 	uint32_t len = (uint32_t) lua_gettop(L);
 	if (len < 1 || len > 2) return luaL_error(L, "ReadOrca called with %d arguments, 1 or 2 expected, the path of the Orca output file and optional Options.", len);
 	string filename;
+  struct
+  {
+		bool diagonalizeDegenerateStates = false;
+  } Options;
+  LuaOptionsType LuaFileReadOrcaOptions[]={
+		{"diagonalizeDegenerateStates",   "bool", &(Options.diagonalizeDegenerateStates)},
+    {NULL, NULL, NULL}};
 
 	lua_check(L, 1, filename);
+	if (LuaTestOptionsList(L, -1)) LuaCheckOptions(L, -1, LuaFileReadOrcaOptions);
 
 	try
 	{
 		OrcaObject Orcaout = FileReadOrca(filename);
+		if (Options.diagonalizeDegenerateStates)
+		{
+			OrcaDiagonalizeDegenerateStates(Orcaout);
+		}
 		lua_push(L, Orcaout);
 		return 1;
 	}
@@ -333,3 +435,141 @@ static int LuaFileReadOrca(lua_State* L)
 		return luaL_error(L, "Something in FileReadOrca went unexpectedly wrong.");
 	}
 }
+
+CompactMatrixType GaussEliminationTransformation(const CompactMatrixType &mat)
+{
+	CompactMatrixType out, inCopy, tmp;
+
+	if (mat.Ni != mat.Nj)
+	{
+		cout << "Error: GaussEliminationTransformation only impelemented for quadratic matrices." << endl;
+		throw std::exception();
+	}
+
+	out.Ni = mat.Ni;
+	out.Nj = mat.Nj;
+	out.QComplex = mat.QComplex;
+	InitCompactIdentityMatrix(&out);
+	CompactMatrixCopy(mat, &inCopy);
+	tmp.Ni = mat.Ni;
+	tmp.Nj = mat.Nj;
+	tmp.QComplex = mat.QComplex;
+	InitCompactMatrix(&tmp);
+
+	if (inCopy.VRe[0] == 0)
+	{
+		uint i;
+		for (i = 1; i < inCopy.Ni; ++i)
+		{
+			if (inCopy.VRe[i * inCopy.Nj] != 0) break;
+		}
+		CompactMatrixType perm;
+		perm.Ni = inCopy.Ni;
+		perm.Nj = inCopy.Nj;
+		perm.QComplex = 0;
+		InitCompactIdentityMatrix(&perm);
+
+		perm.VRe[0] = 0;
+		perm.VRe[0 * inCopy.Nj + i] = 1;
+		perm.VRe[i * inCopy.Nj + 0] = 1;
+		perm.VRe[i * inCopy.Nj + i] = 0;
+
+		CompactMatrixMultiplyPreAllocated('N', 'N', &perm, &out, &tmp);
+		FreeCompactMatrix(&out);
+		CompactMatrixCopy(tmp, &out);
+
+		CompactMatrixMultiplyPreAllocated('N', 'N', &perm, &inCopy, &tmp);
+		FreeCompactMatrix(&inCopy);
+		CompactMatrixCopy(tmp, &inCopy);
+
+		FreeCompactMatrix(&perm);
+	}
+
+	if (out.QComplex == 0)
+	{
+		for (uint j = 0; j < mat.Nj - 1; ++j)
+		{
+			for (uint i = j + 1; i < mat.Ni; ++i)
+			{
+				if (inCopy.VRe[j * inCopy.Nj + j] == 0)
+				{
+					cout << "Error in GaussEliminationTransformation: Matrix rows are not linearly independent." << endl;
+					throw std::exception();
+				}
+				double fac = -inCopy.VRe[i * inCopy.Nj + j] / inCopy.VRe[j * inCopy.Nj + j];
+				CompactMatrixType TStep;
+				TStep.Ni = out.Ni;
+				TStep.Nj = out.Nj;
+				TStep.QComplex = out.QComplex;
+				InitCompactIdentityMatrix(&TStep);
+				TStep.VRe[i * TStep.Nj + j] = fac;
+
+				CompactMatrixMultiplyPreAllocated('N', 'N', &TStep, &out, &tmp);
+				FreeCompactMatrix(&out);
+				CompactMatrixCopy(tmp, &out);
+
+				CompactMatrixMultiplyPreAllocated('N', 'N', &TStep, &inCopy, &tmp);
+				FreeCompactMatrix(&inCopy);
+				CompactMatrixCopy(tmp, &inCopy);
+
+				FreeCompactMatrix(&TStep);
+			}
+		}
+		if (inCopy.VRe[(inCopy.Ni - 1) * inCopy.Nj + (inCopy.Nj - 1)] == 0)
+		{
+			cout << "Error in GaussEliminationTransformation: Matrix rows are not linearly independent." << endl;
+			throw std::exception();
+		}
+
+		for (int j = mat.Nj - 1; j > 0; --j)
+		{
+			for (int i = j - 1; i >= 0; --i)
+			{
+				double fac = -inCopy.VRe[i * inCopy.Nj + j] / inCopy.VRe[j * inCopy.Nj + j];
+				CompactMatrixType TStep;
+				TStep.Ni = out.Ni;
+				TStep.Nj = out.Nj;
+				TStep.QComplex = out.QComplex;
+				InitCompactIdentityMatrix(&TStep);
+				TStep.VRe[i * TStep.Nj + j] = fac;
+
+				CompactMatrixMultiplyPreAllocated('N', 'N', &TStep, &out, &tmp);
+				FreeCompactMatrix(&out);
+				CompactMatrixCopy(tmp, &out);
+
+				CompactMatrixMultiplyPreAllocated('N', 'N', &TStep, &inCopy, &tmp);
+				FreeCompactMatrix(&inCopy);
+				CompactMatrixCopy(tmp, &inCopy);
+
+				FreeCompactMatrix(&TStep);
+			}
+		}
+
+		for (uint i = 0; i < out.Ni; ++i)
+		{
+			double newNorm, oldNorm = 0;
+			newNorm = abs(inCopy.VRe[i * inCopy.Nj + i]);
+			for (uint j = 0; j < out.Nj; ++j)
+			{
+				double entry = mat.VRe[i * mat.Nj + j];
+				oldNorm += entry * entry;
+			}
+			oldNorm = sqrt(oldNorm);
+			for (uint j = 0; j < out.Nj; ++j)
+			{
+				out.VRe[i * out.Nj + j] = out.VRe[i * out.Nj + j] * oldNorm / newNorm;
+			}
+		}
+	}
+	else
+	{
+		cout << "Error: GaussEliminationTransformation not yet implemented for complex matrices." << endl;
+		throw std::exception();
+	}
+
+	FreeCompactMatrix(&inCopy);
+	FreeCompactMatrix(&tmp);
+
+	return out;
+}
+

@@ -9,4 +9,6 @@ string constructOrbname(const string &atomName, const uint n, const string &shel
 string constructOrbname(const string &atomName, const uint n, const string &shell);
 string normalizedOrcaOrbname(const string &orbOrca);
 OrcaObject FileReadOrca(const string &filename);
+void OrcaDiagonalizeDegenerateStates(OrcaObject &orca);
 static int LuaFileReadOrca(lua_State* L);
+CompactMatrixType GaussEliminationTransformation(const CompactMatrixType &mat);
