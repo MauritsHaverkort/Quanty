@@ -6,3 +6,8 @@ for key,field in pairs(fields) do
     print(field..":")
     print(Orcaout[field])
 end
+
+print("\nReading Orca output and diagonalizing degenerate states...")
+OrcaoutDiag = Simon.FileReadOrca("DFT/H_Orca.out", {{"diagonalizeDegenerateStates",true}})
+print("MolecularOrbitalMatrix:")
+print(OrcaoutDiag["MolecularOrbitalMatrix"])

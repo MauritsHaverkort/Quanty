@@ -180,6 +180,41 @@ string normalizedOrcaOrbname(const string &orbOrca)
 	return constructOrbname(siteNum, atomName, n, shell, lz);
 }
 
+void SortOrcaBasis(OrcaObject &orca)
+{
+	CompactMatrixType tmp;
+	vector < string > oldOrbs = orca.BasisOrbitalNames;
+	sort(orca.BasisOrbitalNames.begin(), orca.BasisOrbitalNames.end(), atomicStateSorter);
+	vector<int> permVec = permutationVector(oldOrbs, orca.BasisOrbitalNames);
+	CompactMatrixType permMat;
+	permMat.Ni = orca.NBasis;
+	permMat.Nj = orca.NBasis;
+	permMat.QComplex = 0;
+	InitCompactMatrix(&permMat);
+	for (uint i = 0; i < (uint) permVec.size(); ++i)
+	{
+		permMat.VRe[i * permMat.Nj + permVec[i]] = 1;
+	}
+	CompactMatrixMultiply('N', 'N', &orca.MolecularOrbitalMatrix, &permMat, &tmp);
+	bool onStack = orca.MolecularOrbitalMatrix.OnLuaStack;
+	orca.MolecularOrbitalMatrix.OnLuaStack = false;
+	FreeCompactMatrix(&orca.MolecularOrbitalMatrix);
+	orca.MolecularOrbitalMatrix = tmp;
+	orca.MolecularOrbitalMatrix.OnLuaStack = onStack;
+
+	TransformCompactMatrixcT(&orca.OverlapMatrix, &permMat, &tmp);
+	onStack = orca.OverlapMatrix.OnLuaStack;
+	orca.OverlapMatrix.OnLuaStack = false;
+	FreeCompactMatrix(&orca.OverlapMatrix);
+	orca.OverlapMatrix.OnLuaStack = onStack;
+	orca.OverlapMatrix = tmp;
+
+//	TODO: Permute Gaussian Basis, once we read it in.
+	FreeCompactMatrix(&tmp);
+	FreeCompactMatrix(&permMat);
+}
+
+
 OrcaObject FileReadOrca(const string &filename)
 {
 	double HartreeToeV = 27.211391239;
@@ -302,7 +337,7 @@ OrcaObject FileReadOrca(const string &filename)
 		}
 	}
 	reader.close();
-	//	TODO: sort basis according to canonical order of tesseral harmonics (-2,-1,0,1,2)
+	SortOrcaBasis(out);
 	return out;
 }
 
@@ -352,6 +387,7 @@ void OrcaDiagonalizeDegenerateStates(OrcaObject &orca)
 				largestEntries.push_back(iMax);
 				allLargestEntries.push_back(iMax);
 			}
+			sort(largestEntries.begin(), largestEntries.end());
 			CompactMatrixType subMat;
 			subMat.Ni = (uint) degOrbIndices.size();
 			subMat.Nj = (uint) degOrbIndices.size();
@@ -367,9 +403,7 @@ void OrcaDiagonalizeDegenerateStates(OrcaObject &orca)
 					subMat.VRe[i * subMat.Nj + j] = orca.MolecularOrbitalMatrix.VRe[iFull * NFull + jFull];
 				}
 			}
-
 			CompactMatrixType Trafo = GaussEliminationTransformation(subMat);
-
 			for (uint i = 0; i < (uint) degOrbIndices.size(); ++i)
 			{
 				const uint iFull = degOrbIndices[i];
@@ -379,7 +413,6 @@ void OrcaDiagonalizeDegenerateStates(OrcaObject &orca)
 					TrafoFull.VRe[iFull * TrafoFull.Nj + jFull] = Trafo.VRe[i * Trafo.Nj + j];
 				}
 			}
-
 			FreeCompactMatrix(&Trafo);
 			FreeCompactMatrix(&subMat);
 		}
@@ -455,7 +488,6 @@ CompactMatrixType GaussEliminationTransformation(const CompactMatrixType &mat)
 	tmp.Nj = mat.Nj;
 	tmp.QComplex = mat.QComplex;
 	InitCompactMatrix(&tmp);
-
 	if (inCopy.VRe[0] == 0)
 	{
 		uint i;
@@ -548,7 +580,7 @@ CompactMatrixType GaussEliminationTransformation(const CompactMatrixType &mat)
 		for (uint i = 0; i < out.Ni; ++i)
 		{
 			double newNorm, oldNorm = 0;
-			newNorm = abs(inCopy.VRe[i * inCopy.Nj + i]);
+			newNorm = inCopy.VRe[i * inCopy.Nj + i]; //no abs, in order to make all signs positive.
 			for (uint j = 0; j < out.Nj; ++j)
 			{
 				double entry = mat.VRe[i * mat.Nj + j];
@@ -566,7 +598,6 @@ CompactMatrixType GaussEliminationTransformation(const CompactMatrixType &mat)
 		cout << "Error: GaussEliminationTransformation not yet implemented for complex matrices." << endl;
 		throw std::exception();
 	}
-
 	FreeCompactMatrix(&inCopy);
 	FreeCompactMatrix(&tmp);
 
