@@ -171,7 +171,6 @@ string normalizedOrcaOrbname(const string &orbOrca)
 
 	shell = orbOrca.substr(lastNPos + 1, 1);
 	uint l = (orbToMultiplicity(shell) / 2 - 1) / 2;
-	n += l; //For some reason Orca always starts at n=1 when a new shell is opened, so that there are 1p orbitals etc.
 
 	string lzName = orbOrca.substr(lastNPos + 2);
 	if (lzName.find(" ") != string::npos) lzName = lzName.substr(0, (uint) lzName.find(" "));
@@ -184,7 +183,7 @@ void SortOrcaBasis(OrcaObject &orca)
 {
 	CompactMatrixType tmp;
 	vector < string > oldOrbs = orca.BasisOrbitalNames;
-	sort(orca.BasisOrbitalNames.begin(), orca.BasisOrbitalNames.end(), atomicStateSorter);
+	sort(orca.BasisOrbitalNames.begin(), orca.BasisOrbitalNames.end(), atomicStateSorterlnz);
 	vector<int> permVec = permutationVector(oldOrbs, orca.BasisOrbitalNames);
 	CompactMatrixType permMat;
 	permMat.Ni = orca.NBasis;
@@ -195,7 +194,7 @@ void SortOrcaBasis(OrcaObject &orca)
 	{
 		permMat.VRe[i * permMat.Nj + permVec[i]] = 1;
 	}
-	CompactMatrixMultiply('N', 'N', &orca.MolecularOrbitalMatrix, &permMat, &tmp);
+	CompactMatrixMultiply('N', 'T', &orca.MolecularOrbitalMatrix, &permMat, &tmp);
 	bool onStack = orca.MolecularOrbitalMatrix.OnLuaStack;
 	orca.MolecularOrbitalMatrix.OnLuaStack = false;
 	FreeCompactMatrix(&orca.MolecularOrbitalMatrix);
@@ -349,7 +348,7 @@ void OrcaDiagonalizeDegenerateStates(OrcaObject &orca)
 	TrafoFull.QComplex = 0;
 	TrafoFull.OnLuaStack = false;
 	InitCompactMatrix(&TrafoFull);
-	vector<uint> alreadyRotated, allLargestEntries;
+	vector<uint> alreadyRotated;
 	for (uint k = 0; k < NFull - 1; ++k)
 	{
 		if (!isElementOf(k, alreadyRotated))
@@ -367,7 +366,6 @@ void OrcaDiagonalizeDegenerateStates(OrcaObject &orca)
 					alreadyRotated.push_back(l);
 				}
 			}
-
 			vector<uint> largestEntries;
 			for (uint l = 0; l < (uint) degOrbIndices.size(); ++l)
 			{
@@ -377,14 +375,13 @@ void OrcaDiagonalizeDegenerateStates(OrcaObject &orca)
 				for (uint m = 0; m < NFull; ++m)
 				{
 					double part = abs(orca.MolecularOrbitalMatrix.VRe[MOindex * NFull + m]);
-					if (part > partMax && !isElementOf(m, allLargestEntries))
+					if (part > partMax && !isElementOf(m, largestEntries))
 					{
 						iMax = m;
 						partMax = part;
 					}
 				}
 				largestEntries.push_back(iMax);
-				allLargestEntries.push_back(iMax);
 			}
 			sort(largestEntries.begin(), largestEntries.end());
 			CompactMatrixType subMat;
