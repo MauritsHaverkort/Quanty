@@ -52,9 +52,9 @@ UPartial = PartialOperator(NewOperator("AU",NF,ind,G,F),indConserved, "conserve"
 --------------------create partial operator from full separated Coulomb U -------------------------
 --------------------for large systems this should be the faster variant ---------------------------
 
-U0 = Martin.AUcons(NF,indConserved,GConserved,FConserved,indConserved.kappas) -- Coulomb interaction between conserved orbitals only (sorry for the stupid function name)
+U0 = NewOperator("AU",NF,indConserved,GConserved,FConserved,{{"conserve",true}}) -- Coulomb interaction between conserved orbitals only (sorry for the stupid function name)
 
-U1 = Martin.AUconsOs(NF,ind,G,F,indConserved.kappas,indNonCnsrvd.kappas) -- Coulomb interaction between conserved orbitals and others (I really need better function names)
+U1 = NewOperator("AU",NF,ind,G,F,indConserved.kappas,indNonCnsrvd.kappas,{{"conserve",true}}) -- Coulomb interaction between conserved orbitals and others (I really need better function names)
 
 U3 = NewOperator("AU",NF,indNonCnsrvd,GNonCnsrvd,FNonCnsrvd) -- Coulomb interaction between non-conserved orbitals
 

@@ -19,15 +19,25 @@ static int LuaOperatorNewAtomicU (lua_State *L)
     uint16_t **indices;
     vector<double> x;
     len = (uint32_t)lua_gettop(L);
-
-    if ( len < 3 ||  len > 4)
+    
+    struct
     {
-    	return luaL_error(L,"Error in Martin.NewCoulomb: 3 or 4 arguments expected; got %d",len);
+        bool conserve;
+    } Options;
+    LuaOptionsType LuaEDOptions[]={
+        {"conserve","bool",&(Options.conserve)},
+        {NULL, NULL, NULL}};
+    Options.conserve = false;
+    
+    bool QOptions = LuaTestOptionsList(L,-1);
+    if (QOptions)
+    {
+         LuaCheckOptions(L,-1,LuaEDOptions);
     }
 
     NF = (uint32_t)luaL_checkunsigned(L, 1);
     vector<int> indToK;
-    if (len == 4)
+    if ((len == 4 && !QOptions) || (len == 5 && QOptions) )
 	{
 		lua_getfield(L,2,"kappas");
 		if (lua_isnil(L,-1))
@@ -109,9 +119,16 @@ static int LuaOperatorNewAtomicU (lua_State *L)
 
 		vector<vector<double> > wavefuns = PutRelativisticSplineOnGrid(funsG,funsF,x,0);
 		op = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
-		CreateOperatorAtomicURelativistic(NF,wavefuns,x,indToK,indices, op);
+        if (Options.conserve)
+        {
+            CreateOperatorAtomicURelativisticOccupationConserving(NF,wavefuns,x,indToK,indices, op);
+        }
+        else
+        {
+            CreateOperatorAtomicURelativistic(NF,wavefuns,x,indToK,indices, op);
+        }
     }
-    else
+    else if ((len == 3 && !QOptions )||(len == 4 && QOptions))
     {
     	Nindices = (uint32_t)lua_objlen(L,2);
 
@@ -156,6 +173,71 @@ static int LuaOperatorNewAtomicU (lua_State *L)
 		CreateOperatorAtomicUNonRel(NF,funsG,indToK,indices,op);
 
     }
+    else if (len == 7 && QOptions)
+    {
+        vector<int> indToK1, indToK2;
+        lua_check(L,5,indToK1);
+        lua_check(L,6,indToK2);
+
+        Nindices = (uint32_t)lua_objlen(L,2);
+
+        indices = (uint16_t **) malloc(Nindices * sizeof(uint16_t *));
+        if(!indices) printf("malloc fail at indices in LuaOperatorNewFullCoulomb. size = %u\n",Nindices);
+
+        for(uint32_t i = 0; i < Nindices; i++ )
+        {
+            lua_rawgeti(L, 2, i+1);
+            indices[i] = luaL_checkarray_unit16_t(L,-1,&temp);
+            lua_pop(L,1);
+        }
+
+		uint32_t NfunsG = (uint32_t)lua_objlen(L,3);
+
+		if (NfunsG > Nindices)
+		{
+			printf("Warning: Martin.Coulomb() number of basis funs (%d) != number of indices (%d)\n",NfunsG , Nindices);
+			fflush(stdout);
+		}
+		else
+		{
+			if (NfunsG < Nindices)
+			{
+				return luaL_error(L, "Errorr: Martin.Coulomb() number of basis funs (%d) < number of indices (%d)\n",NfunsG , Nindices);
+			}
+		}
+		
+		vector<Interpolation::InterpolatingFunction *> funsG = vector<Interpolation::InterpolatingFunction *>(NfunsG);
+		for(uint32_t i = 0; i < NfunsG; i++)
+		{
+			lua_rawgeti(L, 3, i+1);
+			funsG[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
+			lua_pop(L,1);
+		}
+
+		uint32_t NfunsF = (uint32_t)lua_objlen(L,4);
+		if (NfunsF != NfunsG)
+		{
+			return luaL_error(L,"Error in LuaOperatorNewCoulombFull: number of functions small part (%d) != large part (%d)\n",NfunsF,NfunsG);
+		}
+		vector<Interpolation::InterpolatingFunction *> funsF = vector<Interpolation::InterpolatingFunction *>(NfunsF);
+		for(uint32_t i = 0; i < NfunsF; i++)
+		{
+			lua_rawgeti(L, 4, i+1);
+			funsF[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
+			lua_pop(L,1);
+		}
+
+		x = funsG[0]->GetX();
+
+		vector<vector<double> > wavefuns = PutRelativisticSplineOnGrid(funsG,funsF,x,0);
+		op = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
+		CreateOperatorAtomicURelativisticOccupationConserving(NF,wavefuns,x,indToK1,indToK2,indices, op);
+    }
+    else
+    {
+        return luaL_error(L, "Errorr: NewOperator AtomicU: wrong input parameters\n");
+    }
+        
 
     luaL_setmetatable(L,"Operator_Type");
 
