@@ -44,10 +44,8 @@ void debug(const map<keyType, valType> &m)
 void debug(const CompactMatrixType &M, const string &str)
 {
 	debug(str);
-	cout << "{" << endl;
 	for (int i = 0; i < M.Ni; ++i)
 	{
-		cout << "{\t";
 		for (int j = 0; j < M.Nj; ++j)
 		{
 			if ((bool) M.QComplex)
@@ -58,9 +56,37 @@ void debug(const CompactMatrixType &M, const string &str)
 			else
 				cout << numberToStringMaxWidth(M.VRe[i * M.Nj + j], 6) << "\t";
 		}
-		cout << "}" << endl;
+		cout << endl;
 	}
-	cout << "}" << endl << endl;
+	cout << endl << endl;
+}
+
+void debug(const CompactMatrixType &M, vector<string> vec, const string &str)
+{
+	debug(str);
+	cout << "\t";
+	for (int i = 0; i < (int) vec.size(); ++i)
+	{
+		if ((uint) vec[i].size() > 6) vec[i] = vec[i].substr(vec[i].size() - 6);
+		cout << vec[i] << "\t";
+	}
+	cout << endl;
+	for (int i = 0; i < M.Ni; ++i)
+	{
+		cout << vec[i] << "\t";
+		for (int j = 0; j < M.Nj; ++j)
+		{
+			if ((bool) M.QComplex)
+				if ((abs(M.V[i * M.Nj + j].Re) < 1E-5) && (abs(M.V[i * M.Nj + j].Im) < 1E-5))
+					cout << "0\t";
+				else
+					cout << numberToStringMaxWidth(M.V[i * M.Nj + j].Re, 4) << "+" << numberToStringMaxWidth(M.V[i * M.Nj + j].Im, 4) << "i" << "\t";
+			else
+				cout << numberToStringMaxWidth(M.VRe[i * M.Nj + j], 6) << "\t";
+		}
+		cout << endl;
+	}
+	cout << endl << endl;
 }
 
 void debug(const MatrixType &M, const string &str)
@@ -82,6 +108,11 @@ void debug(const MatrixType &M, const string &str)
 void debug(const CompactMatrixType &M)
 {
 	debug(M, "Matrix-Print");
+}
+
+void debug(const CompactMatrixType &M, vector<string> vec)
+{
+	debug(M, vec, "Matrix- and Vector-Print");
 }
 
 void debug(const MatrixType &M)
