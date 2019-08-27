@@ -206,11 +206,10 @@ void SortOrcaBasis(OrcaObject &orca)
 	onStack = orca.OverlapMatrix.OnLuaStack;
 	orca.OverlapMatrix.OnLuaStack = false;
 	FreeCompactMatrix(&orca.OverlapMatrix);
-	orca.OverlapMatrix.OnLuaStack = onStack;
 	orca.OverlapMatrix = tmp;
+	orca.OverlapMatrix.OnLuaStack = onStack;
 
 //	TODO: Permute Gaussian Basis, once we read it in.
-	FreeCompactMatrix(&tmp);
 	FreeCompactMatrix(&permMat);
 }
 
@@ -420,9 +419,11 @@ void OrcaDiagonalizeDegenerateStates(OrcaObject &orca)
 
 	CompactMatrixType tmpMat;
 	CompactMatrixMultiply('N', 'N', &TrafoFull, &orca.MolecularOrbitalMatrix, &tmpMat);
+	bool onStack = orca.MolecularOrbitalMatrix.OnLuaStack;
+	orca.MolecularOrbitalMatrix.OnLuaStack = false;
 	FreeCompactMatrix(&orca.MolecularOrbitalMatrix);
-	CompactMatrixCopy(tmpMat, &orca.MolecularOrbitalMatrix);
-	FreeCompactMatrix(&tmpMat);
+	orca.MolecularOrbitalMatrix = tmpMat;
+	orca.MolecularOrbitalMatrix.OnLuaStack = onStack;
 
 	CompactMatrixChop(&orca.MolecularOrbitalMatrix, 1e-14);
 	FreeCompactMatrix(&TrafoFull);
@@ -483,11 +484,9 @@ CompactMatrixType GaussEliminationTransformation(const CompactMatrixType &mat)
 	out.Nj = mat.Nj;
 	out.QComplex = mat.QComplex;
 	InitCompactIdentityMatrix(&out);
+	out.OnLuaStack = false;
 	CompactMatrixCopy(mat, &inCopy);
-	tmp.Ni = mat.Ni;
-	tmp.Nj = mat.Nj;
-	tmp.QComplex = mat.QComplex;
-	InitCompactMatrix(&tmp);
+	inCopy.OnLuaStack = false;
 	if (inCopy.VRe[0] == 0)
 	{
 		uint i;
@@ -506,13 +505,13 @@ CompactMatrixType GaussEliminationTransformation(const CompactMatrixType &mat)
 		perm.VRe[i * inCopy.Nj + 0] = 1;
 		perm.VRe[i * inCopy.Nj + i] = 0;
 
-		CompactMatrixMultiplyPreAllocated('N', 'N', &perm, &out, &tmp);
+		CompactMatrixMultiply('N', 'N', &perm, &out, &tmp);
 		FreeCompactMatrix(&out);
-		CompactMatrixCopy(tmp, &out);
+		out = tmp;
 
-		CompactMatrixMultiplyPreAllocated('N', 'N', &perm, &inCopy, &tmp);
+		CompactMatrixMultiply('N', 'N', &perm, &inCopy, &tmp);
 		FreeCompactMatrix(&inCopy);
-		CompactMatrixCopy(tmp, &inCopy);
+		inCopy = tmp;
 
 		FreeCompactMatrix(&perm);
 	}
@@ -536,13 +535,13 @@ CompactMatrixType GaussEliminationTransformation(const CompactMatrixType &mat)
 				InitCompactIdentityMatrix(&TStep);
 				TStep.VRe[i * TStep.Nj + j] = fac;
 
-				CompactMatrixMultiplyPreAllocated('N', 'N', &TStep, &out, &tmp);
+				CompactMatrixMultiply('N', 'N', &TStep, &out, &tmp);
 				FreeCompactMatrix(&out);
-				CompactMatrixCopy(tmp, &out);
+				out = tmp;
 
-				CompactMatrixMultiplyPreAllocated('N', 'N', &TStep, &inCopy, &tmp);
+				CompactMatrixMultiply('N', 'N', &TStep, &inCopy, &tmp);
 				FreeCompactMatrix(&inCopy);
-				CompactMatrixCopy(tmp, &inCopy);
+				inCopy = tmp;
 
 				FreeCompactMatrix(&TStep);
 			}
@@ -565,13 +564,13 @@ CompactMatrixType GaussEliminationTransformation(const CompactMatrixType &mat)
 				InitCompactIdentityMatrix(&TStep);
 				TStep.VRe[i * TStep.Nj + j] = fac;
 
-				CompactMatrixMultiplyPreAllocated('N', 'N', &TStep, &out, &tmp);
+				CompactMatrixMultiply('N', 'N', &TStep, &out, &tmp);
 				FreeCompactMatrix(&out);
-				CompactMatrixCopy(tmp, &out);
+				out = tmp;
 
-				CompactMatrixMultiplyPreAllocated('N', 'N', &TStep, &inCopy, &tmp);
+				CompactMatrixMultiply('N', 'N', &TStep, &inCopy, &tmp);
 				FreeCompactMatrix(&inCopy);
-				CompactMatrixCopy(tmp, &inCopy);
+				inCopy = tmp;
 
 				FreeCompactMatrix(&TStep);
 			}
@@ -599,8 +598,6 @@ CompactMatrixType GaussEliminationTransformation(const CompactMatrixType &mat)
 		throw std::exception();
 	}
 	FreeCompactMatrix(&inCopy);
-	FreeCompactMatrix(&tmp);
-
 	return out;
 }
 
