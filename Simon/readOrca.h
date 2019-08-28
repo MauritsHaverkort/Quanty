@@ -10,6 +10,8 @@ string constructOrbname(const string &atomName, const uint n, const string &shel
 string normalizedOrcaOrbname(const string &orbOrca);
 void SortOrcaBasis(OrcaObject &orca);
 OrcaObject FileReadOrca(const string &filename);
+void ChangeOrcaOverlapMatrixPhases(OrcaObject &orca);
+double OrcaPhaseConventionFactor(const string &orb);
 void OrcaDiagonalizeDegenerateStates(OrcaObject &orca);
 static int LuaFileReadOrca(lua_State* L);
 CompactMatrixType GaussEliminationTransformation(const CompactMatrixType &mat);

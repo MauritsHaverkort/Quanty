@@ -150,7 +150,7 @@ string constructOrbname(const string &atomName, const uint n, const string &shel
 
 string normalizedOrcaOrbname(const string &orbOrca)
 {
-	const string digits = "0123456789";
+	const static string digits = "0123456789";
 	//	Expects input like " 0Cr 3dxy "
 	uint siteNum;
 	string atomName;
@@ -310,10 +310,11 @@ OrcaObject FileReadOrca(const string &filename)
 				}
 
 				vector<double> entries = stringToDoubleVec(line.substr(orbNameLength));
+				double phaseFac = OrcaPhaseConventionFactor(out.BasisOrbitalNames[i]);
 				for (uint k = 0; k < (uint) entries.size(); ++k)
 				{
 					uint j = jOffset + k;
-					out.MolecularOrbitalMatrix.VRe[j * out.MolecularOrbitalMatrix.Nj + i] = entries[k]; //we want the matrix to contain row vectors.
+					out.MolecularOrbitalMatrix.VRe[j * out.MolecularOrbitalMatrix.Nj + i] = phaseFac * entries[k]; //we want the matrix to contain row vectors.
 				}
 			}
 
@@ -335,8 +336,77 @@ OrcaObject FileReadOrca(const string &filename)
 		}
 	}
 	reader.close();
+	ChangeOrcaOverlapMatrixPhases(out);
 	SortOrcaBasis(out);
 	return out;
+}
+
+void ChangeOrcaOverlapMatrixPhases(OrcaObject &orca)
+{
+	for (uint i = 0; i < orca.NBasis; ++i)
+	{
+		for (uint j = 0; j < orca.NBasis; ++j)
+		{
+			const double faci = OrcaPhaseConventionFactor(orca.BasisOrbitalNames[i]);
+			const double facj = OrcaPhaseConventionFactor(orca.BasisOrbitalNames[j]);
+			orca.OverlapMatrix.VRe[i * orca.NBasis + j] = orca.OverlapMatrix.VRe[i * orca.NBasis + j] * faci * facj;
+		}
+	}
+}
+
+double OrcaPhaseConventionFactor(const string &orb)
+{
+	const static string digitsEtc = "+-0123456789";
+	const uint pos = orb.find_last_not_of(digitsEtc);
+	const string llz = orb.substr(pos);
+	if (llz.compare("f-3") == 0)
+	{
+		return -1.;
+	}
+	else if (llz.compare("f3") == 0)
+	{
+		return -1.;
+	}
+	else if (llz.compare("g-4") == 0)
+	{
+		return -1. / sqrt(3);
+	}
+	else if (llz.compare("g-3") == 0)
+	{
+		return -1. / sqrt(3);
+	}
+	else if (llz.compare("g-2") == 0)
+	{
+		return 1. / sqrt(3);
+	}
+	else if (llz.compare("g-1") == 0)
+	{
+		return 1. / sqrt(3);
+	}
+	else if (llz.compare("g0") == 0)
+	{
+		return 1. / sqrt(3);
+	}
+	else if (llz.compare("g1") == 0)
+	{
+		return 1. / sqrt(3);
+	}
+	else if (llz.compare("g2") == 0)
+	{
+		return 1. / sqrt(3);
+	}
+	else if (llz.compare("g3") == 0)
+	{
+		return -1. / sqrt(3);
+	}
+	else if (llz.compare("g4") == 0)
+	{
+		return -1. / sqrt(3);
+	}
+	else
+	{
+		return 1.;
+	}
 }
 
 void OrcaDiagonalizeDegenerateStates(OrcaObject &orca)
