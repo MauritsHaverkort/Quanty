@@ -23,11 +23,14 @@ static int LuaOperatorNewAtomicU (lua_State *L)
     struct
     {
         bool conserve;
+        bool QMF;
     } Options;
     LuaOptionsType LuaEDOptions[]={
         {"conserve","bool",&(Options.conserve)},
+        {"1P-Operator","bool",&(Options.QMF)},
         {NULL, NULL, NULL}};
     Options.conserve = false;
+    Options.QMF = true;
     
     bool QOptions = LuaTestOptionsList(L,-1);
     if (QOptions)
@@ -231,7 +234,38 @@ static int LuaOperatorNewAtomicU (lua_State *L)
 
 		vector<vector<double> > wavefuns = PutRelativisticSplineOnGrid(funsG,funsF,x,0);
 		op = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
-		CreateOperatorAtomicURelativisticOccupationConserving(NF,wavefuns,x,indToK1,indToK2,indices, op);
+        if (!Options.QMF)
+        {
+            CreateOperatorAtomicURelativisticOccupationConserving(NF,wavefuns,x,indToK1,indToK2,indices, op);
+        }
+        else
+        {
+            OperatorType U;
+            WaveFunctionType psi;
+            psi.NFermion = NF;
+            psi.NBoson = 0;
+            psi.QComplex = 0;
+            psi.NBitsKey = 16;
+            WaveFunctionInit(&psi);
+            std::string detstring;
+            for (uint32_t i = 0; i < (uint32_t) indToK1.size(); i++) 
+                for (uint32_t j = 0; j < 2*abs(indToK1[i]); j++) detstring.append("1");
+            for (uint32_t i = 0; i < (uint32_t) indToK2.size(); i++)
+                for (uint32_t j = 0; j < 2*abs(indToK2[i]); j++) detstring.append("0");
+            uint8_t * det = StringToDet(psi.NFermion, psi.NBoson,(char*) detstring.c_str());
+            uint32_t detleng = psi.NBoson + Min(psi.NFermion, 1 + (psi.NFermion - 1) / 8);
+            RealWaveFunctionAddElement(&psi, det, 1);
+            MatrixType Rho;
+            CalculateDensityMatrix(&Rho, psi);
+            CompactMatrixType rho;
+            MatrixToCompactMatrix(&Rho,&rho);
+            CreateOperatorAtomicURelativisticOccupationConserving(NF,wavefuns,x,indToK1,indToK2,indices, &U);
+            MeanFieldOperatorOld(&U,op,rho);
+            WaveFunctionFree(&psi);
+            FreeOperator(&U);
+            //FreeMatrix(&Rho);
+            FreeCompactMatrix(&rho);
+        }
     }
     else
     {

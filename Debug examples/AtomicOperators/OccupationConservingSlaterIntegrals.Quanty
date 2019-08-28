@@ -54,7 +54,7 @@ UPartial = PartialOperator(NewOperator("AU",NF,ind,G,F),indConserved, "conserve"
 
 U0 = NewOperator("AU",NF,indConserved,GConserved,FConserved,{{"conserve",true}}) -- Coulomb interaction between conserved orbitals only (sorry for the stupid function name)
 
-U1 = NewOperator("AU",NF,ind,G,F,indConserved.kappas,indNonCnsrvd.kappas,{{"conserve",true}}) -- Coulomb interaction between conserved orbitals and others (I really need better function names)
+U1 = NewOperator("AU",NF,ind,G,F,indConserved.kappas,indNonCnsrvd.kappas,{{"conserve",true},{"1P-Operator",false}}) -- Coulomb interaction between conserved orbitals and others (I really need better function names)
 
 U3 = NewOperator("AU",NF,indNonCnsrvd,GNonCnsrvd,FNonCnsrvd) -- Coulomb interaction between non-conserved orbitals
 
@@ -62,6 +62,13 @@ U = U0 + U1 + U3
 
 print(Chop(U-UPartial)) -- check that both approaches yield the same
 
+U1mf = NewOperator("AU",NF,ind,G,F,indConserved.kappas,indNonCnsrvd.kappas,{{"conserve",true},{"1P-Operator",true}})
+
+psi0 = NewWavefunction(NF,0, {{DeterminantString(NF,Simon.Flatten(indConserved)),1}})
+
+rho0 = DensityMatrix(psi0)
+U2 = MeanFieldOperator(U1,rho0)
+print(Chop(U2 - U1mf))
 
 --[[
 

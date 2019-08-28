@@ -450,7 +450,25 @@ static int LuaBasisChange(lua_State *L)
     return 1;
 }
 
-
+double CalcOneNorm(const WaveFunctionType &psi)
+{
+    double val = 0;
+    if (psi.QComplex)
+    {
+        for (uint32_t i = 1; i <= psi.N; i++)
+        {
+            val += sqrt(psi.ValueRe[BlokElement(i)]*psi.ValueRe[BlokElement(i)] + psi.ValueIm[BlokElement(i)]*psi.ValueIm[BlokElement(i)]);
+        }
+    }
+    else
+    {
+        for (uint32_t i = 1; i <= psi.N; i++)
+        {
+            val += sqrt(psi.ValueRe[BlokElement(i)]*psi.ValueRe[BlokElement(i)]);
+        }
+    }
+    return val;
+}
 
 
 
