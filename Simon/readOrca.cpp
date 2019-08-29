@@ -419,7 +419,7 @@ void OrcaDiagonalizeDegenerateStates(OrcaObject &orca)
 	TrafoFull.OnLuaStack = false;
 	InitCompactMatrix(&TrafoFull);
 	vector<uint> alreadyRotated;
-	for (uint k = 0; k < NFull - 1; ++k)
+	for (uint k = 0; k < NFull; ++k)
 	{
 		if (!isElementOf(k, alreadyRotated))
 		{
