@@ -2121,3 +2121,21 @@ uint32_t FreeResponsefunction(ResponsefunctionType *M)
     }
   }
 }
+
+/*
+ *
+ */
+uint32_t FreeResponsefunctionIncludingOriginalPointer(ResponsefunctionType *M)
+{
+  if((M->type>='A') && (M->type<='Z'))
+  {
+    uint32_t retval;
+    retval=FreeResponsefunction(M);
+    free(M);
+    return retval;
+  }
+  else
+  {
+    return FreeResponsefunction(M);
+  }
+}
