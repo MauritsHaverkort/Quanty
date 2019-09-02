@@ -1637,7 +1637,7 @@ ResponsefunctionType * luaL_checkResponsefunction(lua_State *L, int narg)
   // Block Matrix stored as lua table read sugested grid, type and allocate structure
   if(lua_istable(L, narg)==0)
   {
-    luaL_error(L, "Error Green's function should be represented by a table");
+    luaL_error(L, "Error Green's function should be represented by a table or udata of \"ResponseFunction_type\"");
   }
   buff= (ResponsefunctionType*)malloc(sizeof(ResponsefunctionType));
   // test if there is a suggested grid present. If present Stored in field SuggestedGrid

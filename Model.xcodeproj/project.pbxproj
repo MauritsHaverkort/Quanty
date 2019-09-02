@@ -201,7 +201,7 @@
 		4C0B558019675377000B8E97 /* lzio.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = lzio.h; sourceTree = "<group>"; };
 		4C0CCABE201AA2670055DC00 /* 1D_Hubbard.Quanty */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = 1D_Hubbard.Quanty; path = "Debug examples/Examples/1D_Hubbard.Quanty"; sourceTree = "<group>"; };
 		4C0CCABF201AA2670055DC00 /* 1D_NoSpin_RIXS.Quanty */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = 1D_NoSpin_RIXS.Quanty; path = "Debug examples/Examples/1D_NoSpin_RIXS.Quanty"; sourceTree = "<group>"; };
-		4C0CCAC0201AA2670055DC00 /* Coulomb.Quanty */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = Coulomb.Quanty; path = "Debug examples/Examples/Coulomb.Quanty"; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.lua; };
+		4C0CCAC0201AA2670055DC00 /* Coulomb.Quanty */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = Coulomb.Quanty; path = "Debug examples/Examples/Coulomb.Quanty"; sourceTree = "<group>"; };
 		4C0CCAC1201AA2670055DC00 /* Effective_Angular_Momentum.Quanty */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = Effective_Angular_Momentum.Quanty; path = "Debug examples/Examples/Effective_Angular_Momentum.Quanty"; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.lua; };
 		4C0CCAC2201AA2670055DC00 /* EigensystemDense.Quanty */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = EigensystemDense.Quanty; path = "Debug examples/Examples/EigensystemDense.Quanty"; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.lua; };
 		4C0CCAC3201AA2670055DC00 /* Impurity.Quanty */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = Impurity.Quanty; path = "Debug examples/Examples/Impurity.Quanty"; sourceTree = "<group>"; };
@@ -689,6 +689,7 @@
 		4C4F54FB20EDE9B80051FF9E /* Tight_Binding_lib.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Tight_Binding_lib.cpp; sourceTree = "<group>"; };
 		4C5CA61716D18BBF00BE1C25 /* DMFT */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = DMFT; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C5D4A8420B58DE8002A5E86 /* Read tigth binding.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; name = "Read tigth binding.Quanty"; path = "Debug examples/Tutorials/Connection to DFT/FPLO/Read tigth binding.Quanty"; sourceTree = "<group>"; };
+		4C64B291230C286B0043E012 /* BlockTridiagonalization.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; name = BlockTridiagonalization.Quanty; path = "Debug examples/External_tests/BlockTridiagonalization.Quanty"; sourceTree = "<group>"; };
 		4C6925BF18D8683700E6FA6F /* CodeMartin.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = CodeMartin.c; sourceTree = "<group>"; };
 		4C6925C418D869FE00E6FA6F /* MartinPESXAS */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = MartinPESXAS; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C79F5D817B53C8000189682 /* Hubart */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Hubart; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -696,6 +697,7 @@
 		4C7AC30020D64457001C84F9 /* Impurity_Meanfield.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; name = Impurity_Meanfield.Quanty; path = "Debug examples/Examples/Impurity_Meanfield.Quanty"; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.lua; };
 		4C7AC30120EA5CD2001C84F9 /* Integral.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; name = Integral.Quanty; path = "Debug examples/Examples/Integral.Quanty"; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.lua; };
 		4C8274D917DC49B000A5F555 /* header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = header.h; sourceTree = "<group>"; };
+		4C8C7AA3231D9C3A0091B74B /* ResponseFunctions.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = ResponseFunctions.Quanty; sourceTree = "<group>"; };
 		4C973444225A7FB4000702B9 /* Typedefs_Martin.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Typedefs_Martin.h; path = Martin/Typedefs_Martin.h; sourceTree = "<group>"; };
 		4C973445225A7FE9000702B9 /* Continuum-Diagonal-Method.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = "Continuum-Diagonal-Method.cpp"; path = "Martin/Continuum-Diagonal-Method.cpp"; sourceTree = "<group>"; };
 		4C973446225A7FE9000702B9 /* Continuum-Diagonal-Method.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "Continuum-Diagonal-Method.h"; path = "Martin/Continuum-Diagonal-Method.h"; sourceTree = "<group>"; };
@@ -1299,6 +1301,7 @@
 		4C203D022087DE95001DCC25 /* Objects */ = {
 			isa = PBXGroup;
 			children = (
+				4C8C7AA2231D9BC30091B74B /* ResponseFunctions */,
 				4CC8D0AB214B1E1C00A9F181 /* Postscript */,
 				4CC8D0862141CDB400A9F181 /* InterpolatingFunction */,
 				4C203D032087DE95001DCC25 /* Complex */,
@@ -1592,6 +1595,7 @@
 				4C426BCD220C69A300A8AD88 /* Eigensystem_bug_3.Quanty */,
 				4CD209E0224AE9B4003E60A8 /* NiO_NIXS_Sumrule.Quanty */,
 				4CE77EA12268CA6F00547544 /* Restrictions_bug.Quanty */,
+				4C64B291230C286B0043E012 /* BlockTridiagonalization.Quanty */,
 			);
 			name = External_tests;
 			sourceTree = "<group>";
@@ -1979,6 +1983,14 @@
 				4C0E139D20C975DD00FA8623 /* lapack.h */,
 			);
 			path = Headers;
+			sourceTree = "<group>";
+		};
+		4C8C7AA2231D9BC30091B74B /* ResponseFunctions */ = {
+			isa = PBXGroup;
+			children = (
+				4C8C7AA3231D9C3A0091B74B /* ResponseFunctions.Quanty */,
+			);
+			path = ResponseFunctions;
 			sourceTree = "<group>";
 		};
 		4CAF2703200032EC00DDA641 /* Examples */ = {

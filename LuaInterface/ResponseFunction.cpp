@@ -503,7 +503,8 @@ static int LuaResponseFunctionCall(lua_State * L)
     luaL_setmetatable(L, "Complex_Type");
   }
   FreeResponsefunction(res);
-  free(res); // added by Martin - otherwise heap is lost becomes obsolete if included in FreeResponsefunction
+  // if response function is read from a table on the lua stack, free the pointer to the newly created user data, if it is a pointer to an object on the lua stack, do nothing
+  if((res->type>='A') && (res->type<='Z')) free(res); // added by Martin - otherwise heap is lost becomes obsolete if included in FreeResponsefunction
   return 1;
 }
 
