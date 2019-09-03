@@ -418,7 +418,7 @@
 		4C203CD62087DE95001DCC25 /* PhysicalConstants.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = PhysicalConstants.Quanty; sourceTree = "<group>"; };
 		4C203CDA2087DE95001DCC25 /* BlockBandDiagonalize.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = BlockBandDiagonalize.Quanty; sourceTree = "<group>"; };
 		4C203CDB2087DE95001DCC25 /* Braket.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = Braket.Quanty; sourceTree = "<group>"; };
-		4C203CDC2087DE95001DCC25 /* Chop.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = Chop.Quanty; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.lua; };
+		4C203CDC2087DE95001DCC25 /* Chop.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = Chop.Quanty; sourceTree = "<group>"; };
 		4C203CDD2087DE95001DCC25 /* Clone.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = Clone.Quanty; sourceTree = "<group>"; };
 		4C203CDE2087DE95001DCC25 /* CloneAuto.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = CloneAuto.Quanty; sourceTree = "<group>"; };
 		4C203CDF2087DE95001DCC25 /* CloneNot.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = CloneNot.Quanty; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.css; };
@@ -698,6 +698,9 @@
 		4C7AC30120EA5CD2001C84F9 /* Integral.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; name = Integral.Quanty; path = "Debug examples/Examples/Integral.Quanty"; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.lua; };
 		4C8274D917DC49B000A5F555 /* header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = header.h; sourceTree = "<group>"; };
 		4C8C7AA3231D9C3A0091B74B /* ResponseFunctions.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = ResponseFunctions.Quanty; sourceTree = "<group>"; };
+		4C8C7AA4231DB5D40091B74B /* BlockResponseFunctions.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = BlockResponseFunctions.Quanty; sourceTree = "<group>"; };
+		4C8C7AA5231DB6120091B74B /* TypeConversion.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = TypeConversion.Quanty; sourceTree = "<group>"; };
+		4C8C7AA6231DB6250091B74B /* BlockTypeConversion.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = BlockTypeConversion.Quanty; sourceTree = "<group>"; };
 		4C973444225A7FB4000702B9 /* Typedefs_Martin.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Typedefs_Martin.h; path = Martin/Typedefs_Martin.h; sourceTree = "<group>"; };
 		4C973445225A7FE9000702B9 /* Continuum-Diagonal-Method.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = "Continuum-Diagonal-Method.cpp"; path = "Martin/Continuum-Diagonal-Method.cpp"; sourceTree = "<group>"; };
 		4C973446225A7FE9000702B9 /* Continuum-Diagonal-Method.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "Continuum-Diagonal-Method.h"; path = "Martin/Continuum-Diagonal-Method.h"; sourceTree = "<group>"; };
@@ -1989,6 +1992,9 @@
 			isa = PBXGroup;
 			children = (
 				4C8C7AA3231D9C3A0091B74B /* ResponseFunctions.Quanty */,
+				4C8C7AA4231DB5D40091B74B /* BlockResponseFunctions.Quanty */,
+				4C8C7AA5231DB6120091B74B /* TypeConversion.Quanty */,
+				4C8C7AA6231DB6250091B74B /* BlockTypeConversion.Quanty */,
 			);
 			path = ResponseFunctions;
 			sourceTree = "<group>";

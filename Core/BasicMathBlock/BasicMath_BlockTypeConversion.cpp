@@ -59,8 +59,8 @@ uint32_t EvaluateBlockListOfPoles(BlockListOfPoles const *A, CompactMatrixType *
     itot=0;
     for(iblock=0;iblock<A->N;iblock++)
     {
-      Lorentzian.Re = (omega-A->V[itot].Re) / (Sqr(Gamma) + Sqr(omega-A->V[itot].Re));
-      Lorentzian.Im = (-Gamma             ) / (Sqr(Gamma) + Sqr(omega-A->V[itot].Re));
+      Lorentzian.Re = (omega-A->V[itot].Re) / (Sqr(Gamma/2.0) + Sqr(omega-A->V[itot].Re));
+      Lorentzian.Im = (-Gamma/2.0         ) / (Sqr(Gamma/2.0) + Sqr(omega-A->V[itot].Re));
       itot++;
       for(i=0;i<A->BlockSize*A->BlockSize;i++)
       {

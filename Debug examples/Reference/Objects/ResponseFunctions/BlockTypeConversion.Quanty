@@ -1,0 +1,28 @@
+
+
+
+print("============")
+print("List of poles")
+print("============")
+print(MListOfPoles)
+print(MListOfPoles(1,2))
+print("============")
+print("============")
+
+print("============")
+print("Tridiagonal from LP")
+print("============")
+ATri = ChangeType(MListOfPoles,"Tri")
+print(Chop(ATri,1E-12))
+print(ATri(1,2))
+print("============")
+print("============")
+
+print("============")
+print("Anderson from LP")
+print("============")
+AAnd = ChangeType(MListOfPoles,"And")
+print(Chop(AAnd,1E-12))
+print(AAnd(1,2))
+print("============")
+print("============")

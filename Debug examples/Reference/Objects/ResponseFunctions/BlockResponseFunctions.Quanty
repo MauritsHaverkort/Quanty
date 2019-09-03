@@ -1,0 +1,44 @@
+A0 = {{0,2,3},{2,5,6},{3,6,9}}
+A1 = {{1,2,3},{2,5,6},{3,6,9}}
+A2 = {{2,2,3},{2,5,6},{3,6,9}}
+A3 = {{3,2,3},{2,5,6},{3,6,9}}
+a1 = -1
+a2 = 0
+a3 = 1
+B0sqrt = {{0,I,3},{-I,5,6},{3,6,9}}
+setmetatable(B0sqrt, MatrixMeta)
+B0 = B0sqrt * B0sqrt
+B1sqrt = {{1,I,3},{-I,5,6},{3,6,9}}
+setmetatable(B1sqrt, MatrixMeta)
+B1 = B1sqrt * B1sqrt
+B2sqrt = {{2,0,3},{0,5,6},{3,6,9}}
+setmetatable(B2sqrt, MatrixMeta)
+B2 = B2sqrt * B2sqrt
+B3sqrt = {{3,0,3},{0,5,6},{3,6,9}}
+setmetatable(B3sqrt, MatrixMeta)
+B3 = B3sqrt * B3sqrt
+
+
+print("============")
+print("List of poles")
+print("============")
+MListOfPoles = { {A0,a1,a2,a3}, {B1,B2,B3}, mu=0, type="ListOfPoles"}
+setmetatable(MListOfPoles, ResponseFunctionMeta)
+print("========= transform it to a userdata for speed        ==========")
+UListOfPoles = ToUserdata(MListOfPoles)
+print("========= transform it back to a table for convininence ==========")
+TListOfPoles = ToTable(UListOfPoles)
+
+print(MListOfPoles(1,1))
+print(UListOfPoles(1,1))
+print(TListOfPoles(1,1))
+
+
+
+
+MTri         = { {A0,A1,A2,A3}, {B0,B1,B2}, mu=0, type="Tri"}
+setmetatable(MTri, ResponseFunctionMeta)
+
+
+
+

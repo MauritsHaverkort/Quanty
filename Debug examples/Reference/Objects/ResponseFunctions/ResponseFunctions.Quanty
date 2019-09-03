@@ -1,6 +1,12 @@
+ErrorCount=0
+zero = 0.00000000000001
+
 -- Response functions represented as a number
 
+--
+
 print("========= defined Green's function as a list of poles ==========")
+print("G(w) = a[1] + Sum_i=1^#b b[i] / (w - a[i+1] + I Gamma/2)")
 a = {1,0,1,2,4}
 b = {0.25,0.2,0.4,0.25}
 M = {a,b, mu=0, type="ListOfPoles"}
@@ -14,10 +20,25 @@ T = ToTable(U)
 print(T)
 print("========= Evaluate M ==========")
 print(M(1,1))
+if ( abs( M(1,1)- (0.79891891891891891891891891891892 - 0.67351351351351351351351351351351 * I) ) > zero )
+then
+  print("Evaluation of M did not get the right value difference is ",M(1,1)- (0.79891891891891891891891891891892 - 0.67351351351351351351351351351351 * I))
+  ErrorCount = ErrorCount + 1
+end
 print("========= Evaluate U ==========")
 print(U(1,1))
+if ( abs( M(1,1)- (0.79891891891891891891891891891892 - 0.67351351351351351351351351351351 * I) ) > zero )
+then
+  print("Evaluation of U did not get the right value difference is ",U(1,1)- (0.79891891891891891891891891891892 - 0.67351351351351351351351351351351 * I))
+  ErrorCount = ErrorCount + 1
+end
 print("========= Evaluate T ==========")
 print(T(1,1))
+if ( abs( T(1,1)- (0.79891891891891891891891891891892 - 0.67351351351351351351351351351351 * I) ) > zero )
+then
+  print("Evaluation of T did not get the right value difference is ",T(1,1)- (0.79891891891891891891891891891892 - 0.67351351351351351351351351351351 * I))
+  ErrorCount = ErrorCount + 1
+end
 print("========= Free response functions ==========")
 M=nil
 U=nil
@@ -39,10 +60,25 @@ T = ToTable(U)
 print(T)
 print("========= Evaluate M ==========")
 print(M(1,1))
+if ( abs( M(1,1)- (1.04766171628720981621004392968216 - 0.02745076970595571919349068486102 * I) ) > zero )
+then
+  print("Evaluation of M did not get the right value difference is ",M(1,1)- (1.04766171628720981621004392968216 - 0.02745076970595571919349068486102 * I))
+  ErrorCount = ErrorCount + 1
+end
 print("========= Evaluate U ==========")
 print(U(1,1))
+if ( abs( U(1,1)- (1.04766171628720981621004392968216 - 0.02745076970595571919349068486102 * I) ) > zero )
+then
+  print("Evaluation of U did not get the right value difference is ",U(1,1)- (1.04766171628720981621004392968216 - 0.02745076970595571919349068486102 * I))
+  ErrorCount = ErrorCount + 1
+end
 print("========= Evaluate T ==========")
 print(T(1,1))
+if ( abs( T(1,1)- (1.04766171628720981621004392968216 - 0.02745076970595571919349068486102 * I) ) > zero )
+then
+  print("Evaluation of T did not get the right value difference is ",T(1,1)- (1.04766171628720981621004392968216 - 0.02745076970595571919349068486102 * I))
+  ErrorCount = ErrorCount + 1
+end
 print("========= Free response functions ==========")
 M=nil
 U=nil
@@ -65,10 +101,25 @@ T = ToTable(U)
 print(T)
 print("========= Evaluate M ==========")
 print(M(1,1))
+if ( abs( M(1,1)- (1.04130175317902761406092649225064 - 0.02328533855616552369254277335780 * I) ) > zero )
+then
+  print("Evaluation of M did not get the right value difference is ",M(1,1)- (1.04130175317902761406092649225064 - 0.02328533855616552369254277335780 * I))
+  ErrorCount = ErrorCount + 1
+end
 print("========= Evaluate U ==========")
 print(U(1,1))
+if ( abs( U(1,1)- (1.04130175317902761406092649225064 - 0.02328533855616552369254277335780 * I) ) > zero )
+then
+  print("Evaluation of U did not get the right value difference is ",U(1,1)- (1.04130175317902761406092649225064 - 0.02328533855616552369254277335780 * I))
+  ErrorCount = ErrorCount + 1
+end
 print("========= Evaluate T ==========")
 print(T(1,1))
+if ( abs( T(1,1)- (1.04130175317902761406092649225064 - 0.02328533855616552369254277335780 * I) ) > zero )
+then
+  print("Evaluation of T did not get the right value difference is ",T(1,1)- (1.04130175317902761406092649225064 - 0.02328533855616552369254277335780 * I))
+  ErrorCount = ErrorCount + 1
+end
 print("========= Free response functions ==========")
 M=nil
 U=nil
@@ -84,7 +135,7 @@ acon = {11,10,11,12,14}
 bcon = {1.25,1.2,1.4,1.25}
 Mval = {aval,bval, mu=0, type="Tri"}
 Mcon = {acon,bcon, mu=0, type="Tri"}
-a0=1
+a0=-17
 b0=1.2
 M = {{a0,b0},val=Mval, con=Mcon, mu=0, type="Nat"}
 setmetatable(M, ResponseFunctionMeta)
@@ -97,10 +148,25 @@ T = ToTable(U)
 print(T)
 print("========= Evaluate M ==========")
 print(M(1,1))
+if ( abs( M(1,1) - (0.095335902812824419970199221160 - 0.054050176924256061369667884711 * I) ) > zero )
+then
+  print("Evaluation of M did not get the right value difference is ",M(1,1) - (0.095335902812824419970199221160 - 0.054050176924256061369667884711 * I))
+  ErrorCount = ErrorCount + 1
+end
 print("========= Evaluate U ==========")
 print(U(1,1))
+if ( abs( U(1,1) - (0.095335902812824419970199221160 - 0.054050176924256061369667884711 * I) ) > zero )
+then
+  print("Evaluation of U did not get the right value difference is ",U(1,1) - (0.095335902812824419970199221160 - 0.054050176924256061369667884711 * I))
+  ErrorCount = ErrorCount + 1
+end
 print("========= Evaluate T ==========")
 print(T(1,1))
+if ( abs( T(1,1) - (0.095335902812824419970199221160 - 0.054050176924256061369667884711 * I) ) > zero )
+then
+  print("Evaluation of T did not get the right value difference is ",T(1,1) - (0.095335902812824419970199221160 - 0.054050176924256061369667884711 * I))
+  ErrorCount = ErrorCount + 1
+end
 print("========= Free response functions ==========")
 M=nil
 U=nil
@@ -110,62 +176,5 @@ print("\n\n\n")
 
 
 
-function matrixmultiply(A,B)
-C={}
-for i=1,#A do
-C[i]={}
-for j=1,#B[1] do
-C[i][j]=0
-for k=1,#B do
-C[i][j]=C[i][j]+A[i][k]*B[k][j]
-end
-end
-end
-return C
-end
 
-A0 = {{0,2,3},{2,5,6},{3,6,9}};
-A1 = {{1,2,3},{2,5,6},{3,6,9}};
-A2 = {{2,2,3},{2,5,6},{3,6,9}};
-A3 = {{3,2,3},{2,5,6},{3,6,9}};
-a1 = -1
-a2 = 0
-a3 = 1
-B0 = matrixmultiply({{0,I,3},{0,5,6},{3,6,9}},{{0,I,3},{0,5,6},{3,6,9}});
-B1 = matrixmultiply({{1,I,3},{-I,5,6},{3,6,9}},{{1,I,3},{-I,5,6},{3,6,9}});
-B2 = matrixmultiply({{2,0,3},{0,5,6},{3,6,9}},{{2,0,3},{0,5,6},{3,6,9}});
-B3 = matrixmultiply({{3,0,3},{0,5,6},{3,6,9}},{{3,0,3},{0,5,6},{3,6,9}});
-
-
-MListOfPoles = { {A0,a1,a2,a3}, {B1,B2,B3}, mu=0, type="ListOfPoles"}
-setmetatable(MListOfPoles, ResponseFunctionMeta)
-MTri         = { {A0,A1,A2,A3}, {B0,B1,B2}, mu=0, type="Tri"}
-setmetatable(MTri, ResponseFunctionMeta)
-
-print("============")
-print("List of poles")
-print("============")
-print(MListOfPoles)
-print(MListOfPoles(1,2))
-print("============")
-print("============")
-
-print("============")
-print("Tridiagonal from LP")
-print("============")
-ATri = ChangeType(MListOfPoles,"Tri")
-print(Chop(ATri,1E-12))
-print(ATri(1,2))
-print("============")
-print("============")
-
-print("============")
-print("Anderson from LP")
-print("============")
-AAnd = ChangeType(MListOfPoles,"And")
-print(Chop(AAnd,1E-12))
-print(AAnd(1,2))
-print("============")
-print("============")
-
-
+os.exit(ErrorCount)

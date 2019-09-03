@@ -586,7 +586,7 @@ static int LuaResponseFunctionToTightBinding(lua_State * L)
       return 0;
     }
   }
-  FreeResponsefunction(M);
+  FreeResponsefunctionIncludingOriginalPointer(M);
   return 1;
 }
 
