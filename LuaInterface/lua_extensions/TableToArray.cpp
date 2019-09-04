@@ -1744,10 +1744,8 @@ ResponsefunctionType * luaL_checkResponsefunction(lua_State *L, int narg)
   if (luaL_testudata(L, narg, "ResponseFunction_Type") != NULL)
   {
     buff = (ResponsefunctionType*)luaL_checkudata(L, narg, "ResponseFunction_Type");
-    if (buff!=NULL)
-    {
-      return buff;
-    }
+    if (buff==NULL) luaL_error(L, "Failed to read a user data of \"ResponseFunction_type\"");
+    return buff;
   }
   // Block Matrix stored as lua table read sugested grid, type and allocate structure
   if(lua_istable(L, narg)==0)
@@ -1857,6 +1855,7 @@ ResponsefunctionType * luaL_checkResponsefunction(lua_State *L, int narg)
     return buff;
   }
   luaL_error(L, "Errorr reading Greens function of unknown type (%s)\nAllowed are:\nTri\nAnd\nNaturalImpurityOrbital\nListOfPoles",type);
+  free(buff);
   return NULL;
 }
 

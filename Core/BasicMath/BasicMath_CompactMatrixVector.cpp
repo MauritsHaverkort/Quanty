@@ -23,6 +23,13 @@ void FreeCompactMatrix(CompactMatrixType * const M)
   }
 }
 
+void FreeCompactMatrixIncludingPointer(CompactMatrixType * const M)
+{
+  if(M->OnLuaStack) return;
+  FreeCompactMatrix(M);
+  free(M);
+}
+
 /* Initiallize a matrix M
  *  M.QComplex, M.Ni, M,Nj must be set
  */

@@ -1583,45 +1583,54 @@ static int LuaSubmatrix(lua_State * L)
 static int LuaMatrixEq(lua_State * L)
 {
 	CompactMatrixType *l, *r;
-	uint32_t elem;
+	uint32_t elem,i,j;
 	// read matrix from stack
 	l = luaL_checkCompactMatrix(L, 1);
 	r = luaL_checkCompactMatrix(L, 2);
 	if ((l->Ni != r->Ni) || (l->Nj != r->Nj) || (l->QComplex != r->QComplex))
 	{
 		lua_push(L, false);
+    FreeCompactMatrixIncludingPointer(l);
+    FreeCompactMatrixIncludingPointer(r);
 		return 1;
 	}
 	if (l->QComplex)
 	{
-		for (uint32_t i = 0; i < l->Ni; ++i)
+		for (i = 0; i < l->Ni; ++i)
 		{
-			for (uint32_t j = 0; j < l->Nj; ++j)
+			for (j = 0; j < l->Nj; ++j)
 			{
 				elem = i * l->Nj + j;
 				if ((l->V[elem].Re != r->V[elem].Re) || (l->V[elem].Im != r->V[elem].Im))
 				{
 					lua_push(L, false);
+          FreeCompactMatrixIncludingPointer(l);
+          FreeCompactMatrixIncludingPointer(r);
 					return 1;
 				}
 			}
 		}
-	} else
+	}
+  else
 	{
-		for (uint32_t i = 0; i < l->Ni; ++i)
+		for (i = 0; i < l->Ni; ++i)
 		{
-			for (uint32_t j = 0; j < l->Nj; ++j)
+			for (j = 0; j < l->Nj; ++j)
 			{
 				elem = i * l->Nj + j;
 				if (l->VRe[elem] != r->VRe[elem])
 				{
 					lua_push(L, false);
+          FreeCompactMatrixIncludingPointer(l);
+          FreeCompactMatrixIncludingPointer(r);
 					return 1;
 				}
 			}
 		}
 	}
 	lua_push(L, true);
+  FreeCompactMatrixIncludingPointer(l);
+  FreeCompactMatrixIncludingPointer(r);
 	return 1;
 }
 

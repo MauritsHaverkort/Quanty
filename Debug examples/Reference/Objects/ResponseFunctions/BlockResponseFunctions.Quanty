@@ -1,4 +1,7 @@
 ErrorCount=0
+
+for rep=1,5000 do
+
 zero = 1e-13
 
 O = {{0,0,0},{0,0,0},{0,0,0}}
@@ -313,7 +316,7 @@ TNat=nil
 collectgarbage()
 
 
-
+end
 
 
 os.exit(ErrorCount)

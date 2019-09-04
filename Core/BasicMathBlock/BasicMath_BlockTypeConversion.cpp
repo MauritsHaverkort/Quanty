@@ -194,8 +194,8 @@ uint32_t EvaluateBlockAndersonMatrix(BlockAndersonMatrixType const *A, CompactMa
     a.VRe=A->aRe;
   }
   CompactMatrixAdd(Gw, &a);
+  FreeCompactMatrix(&Gwi);
   return 0;
-
 }
 
 uint32_t EvaluateBlockAndersonMatrix(void const *A, CompactMatrixType * Gw, const double omega, const double Gamma)
