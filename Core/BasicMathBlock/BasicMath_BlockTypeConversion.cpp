@@ -304,8 +304,18 @@ uint32_t EvaluateBlockTriDiagonalMatrix(void const * A, CompactMatrixType * Gw, 
  */
 uint32_t EvaluateBlockNaturalImpurityOrbital(BlockNaturalImpurityOrbitalMatrixType const *A, CompactMatrixType * Gw, const double omega, const double Gamma)
 {
-  //TODO: all
-  printf("Not implemented EvaluateBlockaturalImpurityOrbital\n");
+  CompactMatrixType con,val;
+  if(CompactMatrixCopy(A->a0, Gw))
+  {
+    printf("CompactMatrixCopy failed in EvaluateBlockNaturalImpurityOrbital\n");
+    return 1;
+  }
+  EvaluateBlockTriDiagonalMatrix(&(A->con), &con, omega, Gamma);
+  CompactMatrixAdd(Gw, &con);
+  FreeCompactMatrix(&con);
+  EvaluateBlockTriDiagonalMatrix(&(A->val), &val, omega, Gamma);
+  CompactMatrixAdd(Gw, &val);
+  FreeCompactMatrix(&val);
   return 0;
 }
 

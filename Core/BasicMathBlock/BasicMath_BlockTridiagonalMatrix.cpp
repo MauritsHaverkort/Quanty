@@ -87,6 +87,36 @@ uint32_t ComplexBlockTridiagonalMatrixToReal(BlockTriDiagonalMatrixType *const A
   return 0;
 }
 
+uint32_t RealBlockTridiagonalMatrixToComplex(BlockTriDiagonalMatrixType *const A)
+{
+  uint32_t i;
+  if(A->QComplex!=0) return 0;
+  A->a= (Complex16*)calloc(A->BlockSize*A->BlockSize*(1+A->N),sizeof(Complex16));
+  if(A->a==NULL)
+  {
+    printf("calloc failed in RealBlockTridiagonalMatrixToComplex\n");
+    return 1;
+  }
+  A->b= (Complex16*)calloc(A->BlockSize*A->BlockSize*(A->N),sizeof(Complex16));
+  if(A->b==NULL)
+  {
+    printf("calloc failed in RealBlockTridiagonalMatrixToComplex\n");
+    return 1;
+  }
+  for(i=0;i<A->BlockSize*A->BlockSize*(A->N+1);i++)
+  {
+    A->a[i].Re=A->aRe[i];
+  }
+  for(i=0;i<A->BlockSize*A->BlockSize*(A->N);i++)
+  {
+    A->b[i].Re=A->bRe[i];
+  }
+  free(A->aRe);
+  free(A->bRe);
+  A->QComplex=1;
+  return 0;
+}
+
 uint32_t BlockTridiagonalMatrixChop(BlockTriDiagonalMatrixType *const A, double const Epsilon)
 {
   uint32_t i,KeepComplex=0;
