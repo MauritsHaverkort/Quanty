@@ -188,6 +188,14 @@ TimeEnd("RIXS Sparse")
 
 TimePrint()
 
+-- Added by Martin -------------------------------------------------------------------------------------------- Added by Martin ------------------------------------------------------------------------------------------
+-- The Code below should print the same tri-diagonal matrix as CreateResonantSpectra but does not
+Spec, tri, kryl = CreateSpectra(XASHamiltonian, TXASx, psiList[1], {{"Emin",-10}, {"Emax",20}, {"NE",3}, {"Gamma",1}, {"NTri",101}, {"E0",0}, {"Tensor",true}, {"denseborder",0},{"KrylovBasis",true},{"epsilon",1.490116E-10}}) 
+for i = 1, #tri[1] do
+    print(tri[1][i][1][1],tri[2][i][1][1])
+end
+os.exit()
+
 RIXSSpectraD.Print({{"file", "RIXSL23M45.dat"}})
 RIXSSpectraD.Print({{"file", "RIXSL23M45Dense.dat"}})
 RIXSSpectraS.Print({{"file", "RIXSL23M45Sparse.dat"}})

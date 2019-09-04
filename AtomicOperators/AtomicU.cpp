@@ -19,15 +19,28 @@ static int LuaOperatorNewAtomicU (lua_State *L)
     uint16_t **indices;
     vector<double> x;
     len = (uint32_t)lua_gettop(L);
-
-    if ( len < 3 ||  len > 4)
+    
+    struct
     {
-    	return luaL_error(L,"Error in Martin.NewCoulomb: 3 or 4 arguments expected; got %d",len);
+        bool conserve;
+        bool QMF;
+    } Options;
+    LuaOptionsType LuaEDOptions[]={
+        {"conserve","bool",&(Options.conserve)},
+        {"1P-Operator","bool",&(Options.QMF)},
+        {NULL, NULL, NULL}};
+    Options.conserve = false;
+    Options.QMF = true;
+    
+    bool QOptions = LuaTestOptionsList(L,-1);
+    if (QOptions)
+    {
+         LuaCheckOptions(L,-1,LuaEDOptions);
     }
 
     NF = (uint32_t)luaL_checkunsigned(L, 1);
     vector<int> indToK;
-    if (len == 4)
+    if ((len == 4 && !QOptions) || (len == 5 && QOptions) )
 	{
 		lua_getfield(L,2,"kappas");
 		if (lua_isnil(L,-1))
@@ -109,9 +122,16 @@ static int LuaOperatorNewAtomicU (lua_State *L)
 
 		vector<vector<double> > wavefuns = PutRelativisticSplineOnGrid(funsG,funsF,x,0);
 		op = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
-		CreateOperatorAtomicURelativistic(NF,wavefuns,x,indToK,indices, op);
+        if (Options.conserve)
+        {
+            CreateOperatorAtomicURelativisticOccupationConserving(NF,wavefuns,x,indToK,indices, op);
+        }
+        else
+        {
+            CreateOperatorAtomicURelativistic(NF,wavefuns,x,indToK,indices, op);
+        }
     }
-    else
+    else if ((len == 3 && !QOptions )||(len == 4 && QOptions))
     {
     	Nindices = (uint32_t)lua_objlen(L,2);
 
@@ -156,6 +176,102 @@ static int LuaOperatorNewAtomicU (lua_State *L)
 		CreateOperatorAtomicUNonRel(NF,funsG,indToK,indices,op);
 
     }
+    else if (len == 7 && QOptions)
+    {
+        vector<int> indToK1, indToK2;
+        lua_check(L,5,indToK1);
+        lua_check(L,6,indToK2);
+
+        Nindices = (uint32_t)lua_objlen(L,2);
+
+        indices = (uint16_t **) malloc(Nindices * sizeof(uint16_t *));
+        if(!indices) printf("malloc fail at indices in LuaOperatorNewFullCoulomb. size = %u\n",Nindices);
+
+        for(uint32_t i = 0; i < Nindices; i++ )
+        {
+            lua_rawgeti(L, 2, i+1);
+            indices[i] = luaL_checkarray_unit16_t(L,-1,&temp);
+            lua_pop(L,1);
+        }
+
+		uint32_t NfunsG = (uint32_t)lua_objlen(L,3);
+
+		if (NfunsG > Nindices)
+		{
+			printf("Warning: Martin.Coulomb() number of basis funs (%d) != number of indices (%d)\n",NfunsG , Nindices);
+			fflush(stdout);
+		}
+		else
+		{
+			if (NfunsG < Nindices)
+			{
+				return luaL_error(L, "Errorr: Martin.Coulomb() number of basis funs (%d) < number of indices (%d)\n",NfunsG , Nindices);
+			}
+		}
+		
+		vector<Interpolation::InterpolatingFunction *> funsG = vector<Interpolation::InterpolatingFunction *>(NfunsG);
+		for(uint32_t i = 0; i < NfunsG; i++)
+		{
+			lua_rawgeti(L, 3, i+1);
+			funsG[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
+			lua_pop(L,1);
+		}
+
+		uint32_t NfunsF = (uint32_t)lua_objlen(L,4);
+		if (NfunsF != NfunsG)
+		{
+			return luaL_error(L,"Error in LuaOperatorNewCoulombFull: number of functions small part (%d) != large part (%d)\n",NfunsF,NfunsG);
+		}
+		vector<Interpolation::InterpolatingFunction *> funsF = vector<Interpolation::InterpolatingFunction *>(NfunsF);
+		for(uint32_t i = 0; i < NfunsF; i++)
+		{
+			lua_rawgeti(L, 4, i+1);
+			funsF[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
+			lua_pop(L,1);
+		}
+
+		x = funsG[0]->GetX();
+
+		vector<vector<double> > wavefuns = PutRelativisticSplineOnGrid(funsG,funsF,x,0);
+		op = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
+        if (!Options.QMF)
+        {
+            CreateOperatorAtomicURelativisticOccupationConserving(NF,wavefuns,x,indToK1,indToK2,indices, op);
+        }
+        else
+        {
+            OperatorType U;
+            WaveFunctionType psi;
+            psi.NFermion = NF;
+            psi.NBoson = 0;
+            psi.QComplex = 0;
+            psi.NBitsKey = 16;
+            WaveFunctionInit(&psi);
+            std::string detstring;
+            for (uint32_t i = 0; i < (uint32_t) indToK1.size(); i++) 
+                for (uint32_t j = 0; j < 2*abs(indToK1[i]); j++) detstring.append("1");
+            for (uint32_t i = 0; i < (uint32_t) indToK2.size(); i++)
+                for (uint32_t j = 0; j < 2*abs(indToK2[i]); j++) detstring.append("0");
+            uint8_t * det = StringToDet(psi.NFermion, psi.NBoson,(char*) detstring.c_str());
+            uint32_t detleng = psi.NBoson + Min(psi.NFermion, 1 + (psi.NFermion - 1) / 8);
+            RealWaveFunctionAddElement(&psi, det, 1);
+            MatrixType Rho;
+            CalculateDensityMatrix(&Rho, psi);
+            CompactMatrixType rho;
+            MatrixToCompactMatrix(&Rho,&rho);
+            CreateOperatorAtomicURelativisticOccupationConserving(NF,wavefuns,x,indToK1,indToK2,indices, &U);
+            MeanFieldOperatorOld(&U,op,rho);
+            WaveFunctionFree(&psi);
+            FreeOperator(&U);
+            //FreeMatrix(&Rho);
+            FreeCompactMatrix(&rho);
+        }
+    }
+    else
+    {
+        return luaL_error(L, "Errorr: NewOperator AtomicU: wrong input parameters\n");
+    }
+        
 
     luaL_setmetatable(L,"Operator_Type");
 
@@ -591,6 +707,95 @@ uint32_t CreateOperatorAtomicURelativistic(uint32_t const NFermion,const vector<
   return 0;
 }
 
+uint32_t CreateOperatorAtomicURelativisticOccupationConserving(uint32_t const NFermion,const vector<vector<double> > &basisfuns, const vector<double> &grid, const vector<int> &indToK, uint16_t **indices, OperatorType *op)
+{
+  if(GlobalTimeOn&0x100) BeginTiming("Create Atomic U Relativistic", &GlobalTime);
+  OperatorType optemp;
+    SSlaterIntegral *integrals;
+    uint32_t NIntegrals, i;
+
+    integrals = GetSlaterIntegralsTwoFilled(basisfuns,grid, indToK, NIntegrals);
+
+    int *k;
+    unsigned int *n;
+    double *Fk;
+
+    k = integrals[0].tau.kappa;
+    n = integrals[0].tau.n;
+    Fk = integrals[0].val;
+
+    CreateOperatorAtomicURelativisticOneIntegralOccupationConserving(NFermion,k[0],k[1],k[2],k[3],indices[n[0]],indices[n[1]],indices[n[2]],indices[n[3]],Fk,n[0],n[1],n[2],n[3],op);
+
+    for( i = 1; i < NIntegrals; i++)
+    {
+        k = integrals[i].tau.kappa;
+        n = integrals[i].tau.n;
+        Fk = integrals[i].val;
+
+
+        CreateOperatorAtomicURelativisticOneIntegralOccupationConserving(NFermion,k[0],k[1],k[2],k[3],indices[n[0]],indices[n[1]],indices[n[2]],indices[n[3]],Fk,n[0],n[1],n[2],n[3],&optemp);
+
+        OperatorAdd(op, optemp, 1., 0.);
+
+    }
+    for ( i = 0; i < NIntegrals; i++)
+    {
+    	free(integrals[i].val);
+    	free(integrals[i].k);
+    }
+    free(integrals);
+
+  if(GlobalTimeOn&0x100) EndTiming("Create Atomic U Relativistic", &GlobalTime);
+  return 0;
+}
+
+uint32_t CreateOperatorAtomicURelativisticOccupationConserving(uint32_t const NFermion,const vector<vector<double> > &basisfuns, const vector<double> &grid, const vector<int> &indToK1,const vector<int> &indToK2, uint16_t **indices,  OperatorType *op)
+{
+  if(GlobalTimeOn&0x100) BeginTiming("Create Atomic U Relativistic", &GlobalTime);
+  OperatorType optemp;
+    SSlaterIntegral *integrals;
+    uint32_t NIntegrals, i;
+
+    integrals = GetSlaterIntegralsOneFilled(basisfuns,grid, indToK1,indToK2, NIntegrals);
+
+    int *k;
+    unsigned int *n;
+    double *Fk;
+
+    k = integrals[0].tau.kappa;
+    n = integrals[0].tau.n;
+    Fk = integrals[0].val;
+/*    for (uint32_t j = 0; j < integrals[0].Nval; j++)
+        printf("Fk = %.16E\t",Fk[j]);
+    printf("\n");*/
+
+    CreateOperatorAtomicURelativisticOneIntegralOccupationConservingOneShell(NFermion,k[0],k[1],k[2],k[3],indices[n[0]],indices[n[1]],indices[n[2]],indices[n[3]],Fk,n[0],n[1],n[2],n[3],op);
+
+    for( i = 1; i < NIntegrals; i++)
+    {
+        k = integrals[i].tau.kappa;
+        n = integrals[i].tau.n;
+        Fk = integrals[i].val;
+ /*       for (uint32_t j = 0; j < integrals[i].Nval; j++)
+        printf("Fk = %.16E\t",Fk[j]);
+        printf("\n");*/
+
+        CreateOperatorAtomicURelativisticOneIntegralOccupationConservingOneShell(NFermion,k[0],k[1],k[2],k[3],indices[n[0]],indices[n[1]],indices[n[2]],indices[n[3]],Fk,n[0],n[1],n[2],n[3],&optemp);
+
+        OperatorAdd(op, optemp, 1., 0.);
+
+    }
+    for ( i = 0; i < NIntegrals; i++)
+    {
+    	free(integrals[i].val);
+    	free(integrals[i].k);
+    }
+    free(integrals);
+
+  if(GlobalTimeOn&0x100) EndTiming("Create Atomic U Relativistic", &GlobalTime);
+  return 0;
+}
+
 uint32_t CreateListOperatorAtomicURelativistic(uint32_t const NFermion,const vector<vector<double> > &basisfuns, const vector<double> &grid, const vector<int> &indToK
                                                ,uint16_t **indices, bool Qcontinuum,lua_State *L, bool IntegralsOnly)
 {
@@ -616,8 +821,8 @@ uint32_t CreateListOperatorAtomicURelativistic(uint32_t const NFermion,const vec
 		{
 			if (InvolvesOrbital(idxs[0]-1,integrals[i].tau.n) && (InvolvesOrbital(idxs[1]-1,integrals[i].tau.n) || InvolvesOrbital(idxs[2]-1,integrals[i].tau.n)) && (InvolvesOrbital(idxs[3]-1,integrals[i].tau.n) || InvolvesOrbital(idxs[4]-1,integrals[i].tau.n)))
 			{
-				//printf("%u, ",i+1);
-				printf("%u\t%u\t%u\t%u\t\t%u\n, ",integrals[i].tau.n[0],integrals[i].tau.n[1],integrals[i].tau.n[2],integrals[i].tau.n[3],integrals[i].k[0]);
+				printf("%u, %u\n ",i+1, integrals[i].Nval);
+				//printf("%u\t%u\t%u\t%u\t\t%u\n, ",integrals[i].tau.n[0],integrals[i].tau.n[1],integrals[i].tau.n[2],integrals[i].tau.n[3],integrals[i].k[0]);
 			}
 			Lua_Push_SlaterIntegral(L,integrals[i].val,integrals[i].Nval);
 			lua_rawseti(L,-2,i+1);
@@ -774,6 +979,61 @@ void CreateOperatorAtomicURelativisticOneIntegral(uint32_t const NFermion,int co
                 FreeOperator(&optemp);
             }
         }
+    }
+    //FreeOperator(&optemp);  //TODO if i uncomment this I get an invalid free - otherwhise heap is lost
+
+}
+
+void CreateOperatorAtomicURelativisticOneIntegralOccupationConserving(uint32_t const NFermion,int const kappa1,int const kappa2, int const kappa3,int const kappa4,uint16_t const *Jindex1,
+                                                  uint16_t const *Jindex2,uint16_t const *Jindex3, uint16_t const *Jindex4,double const *Fk, const unsigned int n1,
+												  const unsigned int n2, const unsigned int n3, const unsigned int n4, OperatorType *const op)
+{
+    OperatorType optemp;
+
+    CreateOperatorCoulombFourRelativisticShells(NFermion,kappa1,kappa2,kappa3,kappa4, Jindex1,Jindex2,Jindex3,Jindex4,Fk,op);
+
+
+    if ( (n1 != n2) && (n3 != n4) )
+    {
+        CreateOperatorCoulombFourRelativisticShells(NFermion,kappa2,kappa1,kappa4,kappa3, Jindex2,Jindex1,Jindex4,Jindex3,Fk,&optemp);
+        OperatorAdd(op, optemp, 1., 0.);
+        FreeOperator(&optemp);
+
+    }
+    //FreeOperator(&optemp);  //TODO if i uncomment this I get an invalid free - otherwhise heap is lost
+
+}
+
+void CreateOperatorAtomicURelativisticOneIntegralOccupationConservingOneShell(uint32_t const NFermion,int const kappa1,int const kappa2, int const kappa3,int const kappa4,uint16_t const *Jindex1,
+                                                  uint16_t const *Jindex2,uint16_t const *Jindex3, uint16_t const *Jindex4,double const *Fk, const unsigned int n1,
+												  const unsigned int n2, const unsigned int n3, const unsigned int n4, OperatorType *const op)
+{
+    OperatorType optemp;
+
+    CreateOperatorCoulombFourRelativisticShells(NFermion,kappa1,kappa2,kappa3,kappa4, Jindex1,Jindex2,Jindex3,Jindex4,Fk,op);
+    CreateOperatorCoulombFourRelativisticShells(NFermion,kappa2,kappa1,kappa4,kappa3, Jindex2,Jindex1,Jindex4,Jindex3,Fk,&optemp);
+    OperatorAdd(op, optemp, 1., 0.);
+    FreeOperator(&optemp);
+
+
+    if ( (n3 != n2) && (n1 == n4) )
+    {
+        CreateOperatorCoulombFourRelativisticShells(NFermion,kappa1,kappa3,kappa2,kappa4, Jindex1,Jindex3,Jindex2,Jindex4,Fk,&optemp);
+        OperatorAdd(op, optemp, 1., 0.);
+        FreeOperator(&optemp);
+        CreateOperatorCoulombFourRelativisticShells(NFermion,kappa3,kappa1,kappa4,kappa2, Jindex3,Jindex1,Jindex4,Jindex2,Fk,&optemp);
+        OperatorAdd(op, optemp, 1., 0.);
+        FreeOperator(&optemp);
+
+    }
+    if ( (n4 != n2) && (n1 == n3) )
+    {
+        CreateOperatorCoulombFourRelativisticShells(NFermion,kappa1,kappa4,kappa3,kappa2, Jindex1,Jindex4,Jindex3,Jindex2,Fk,&optemp);
+        OperatorAdd(op, optemp, 1., 0.);
+        FreeOperator(&optemp);
+        CreateOperatorCoulombFourRelativisticShells(NFermion,kappa4,kappa1,kappa2,kappa3, Jindex4,Jindex1,Jindex2,Jindex3,Fk,&optemp);
+        OperatorAdd(op, optemp, 1., 0.);
+        FreeOperator(&optemp);
     }
     //FreeOperator(&optemp);  //TODO if i uncomment this I get an invalid free - otherwhise heap is lost
 
