@@ -2150,7 +2150,6 @@ static int LuaOperatorNewAtomicUOccupationConservingOneShell(lua_State *L)
 	free(indices);
 
     return 1;
->>>>>>> 8400fd8e19830dc5de0d2458ffbd35fdd993cce3
 }
 
 static const struct luaL_Reg Martin_meta[] = {
@@ -2213,11 +2212,7 @@ static const struct luaL_Reg Martin_func[] = {
   {"RelativisticDipoleOperator",LuaRelativisticDipoleOperator},
   //{"ResonantSpectrum",LuaCreateResonantSpectraSE},
   //{"ResonantSpectrum",LuaCreateResonantSpectrum},
-<<<<<<< HEAD
-//  {"ResonantSpectrum",LuaResSpectCNSED},
-=======
   {"ResonantSpectrum",LuaResSpectCNSEDInput},
->>>>>>> 8400fd8e19830dc5de0d2458ffbd35fdd993cce3
   {"ListU",LuaListU},
   {"PlotSpectrum",LuaCDMPlot},
   {"BraketList",LuaBraketList},
@@ -2229,11 +2224,8 @@ static const struct luaL_Reg Martin_func[] = {
   {"CNSEDiag",LuaCoolNewSelfEnergyDiagonal},
   {"LinCombine",LuaLinCombine},
   {"BasisChange",LuaBasisChange},
-<<<<<<< HEAD
-=======
   {"AUcons",LuaOperatorNewAtomicUOccupationConserving},
   {"AUconsOs",LuaOperatorNewAtomicUOccupationConservingOneShell},
->>>>>>> 8400fd8e19830dc5de0d2458ffbd35fdd993cce3
   {NULL, NULL}
 };
 
