@@ -1851,12 +1851,6 @@ void lua_check(lua_State *L, uint32_t n, T* &in)
 static int LuaMartinTest(lua_State *L)
 {
     
-    WaveFunctionType psi;
-    lua_check(L,1,psi);
-    double norm = CalcOneNorm(psi);
-    lua_push(L,norm);
-    return 1;
-    /*
     WaveFunctionType** Kryl;
     CompactMatrixType U;
     //MatrixType U;
@@ -1885,7 +1879,7 @@ static int LuaMartinTest(lua_State *L)
     RotateWaveFunctions(Kryl,len,bs,U,psi);
     //RotateWaveFunctions(&(in[0]),(uint32_t)in.size(),U,psi);
     lua_push(L,psi);
-    return 1;*/
+    return 1;
 }
 
 static int LuaOperatorNewAtomicUOccupationConserving(lua_State *L)
@@ -2217,7 +2211,7 @@ static const struct luaL_Reg Martin_func[] = {
   {"RelativisticDipoleOperator",LuaRelativisticDipoleOperator},
   //{"ResonantSpectrum",LuaCreateResonantSpectraSE},
   //{"ResonantSpectrum",LuaCreateResonantSpectrum},
-  {"ResonantSpectrum",LuaResSpectCNSED},
+  {"ResonantSpectrum",LuaResSpectCNSEDInput},
   {"ListU",LuaListU},
   {"PlotSpectrum",LuaCDMPlot},
   {"BraketList",LuaBraketList},

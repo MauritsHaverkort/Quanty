@@ -821,8 +821,8 @@ uint32_t CreateListOperatorAtomicURelativistic(uint32_t const NFermion,const vec
 		{
 			if (InvolvesOrbital(idxs[0]-1,integrals[i].tau.n) && (InvolvesOrbital(idxs[1]-1,integrals[i].tau.n) || InvolvesOrbital(idxs[2]-1,integrals[i].tau.n)) && (InvolvesOrbital(idxs[3]-1,integrals[i].tau.n) || InvolvesOrbital(idxs[4]-1,integrals[i].tau.n)))
 			{
-				//printf("%u, ",i+1);
-				printf("%u\t%u\t%u\t%u\t\t%u\n, ",integrals[i].tau.n[0],integrals[i].tau.n[1],integrals[i].tau.n[2],integrals[i].tau.n[3],integrals[i].k[0]);
+				printf("%u, %u\n ",i+1, integrals[i].Nval);
+				//printf("%u\t%u\t%u\t%u\t\t%u\n, ",integrals[i].tau.n[0],integrals[i].tau.n[1],integrals[i].tau.n[2],integrals[i].tau.n[3],integrals[i].k[0]);
 			}
 			Lua_Push_SlaterIntegral(L,integrals[i].val,integrals[i].Nval);
 			lua_rawseti(L,-2,i+1);

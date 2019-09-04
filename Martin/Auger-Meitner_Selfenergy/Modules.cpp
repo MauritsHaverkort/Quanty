@@ -313,42 +313,69 @@ static int LuaCoolNewSelfEnergy(lua_State *L)
 	lua_check(L,10,EAuger);
 
 	vector<CompactMatrixType> SelfEnergy = vector<CompactMatrixType>(Nw);
-	printf("Uk calculated, begin with SE\n");
+    vector<double> numerators = vector<double>(nphiBound*nContFuns*npsiCont);
+    printf("Uk calculated, begin with Nums\n");
+#pragma omp parallel for
+    for (uint32_t a = 0; a < nphiBound; a++)
+    {      
+        for (uint32_t iEps = 0; iEps < nContFuns; iEps++)
+        {
+            for (uint32_t ipsi = 0; ipsi < npsiCont; ipsi++)
+            {
+                for (uint32_t k = 0; k < nUk; k++)
+                {
+                    numerators[a*nContFuns*npsiCont + iEps*npsiCont + ipsi] += Fk[iEps][k] * UkMatrix[k].VRe[ipsi][a]; //TODO: complex case coden                        
+                }
+            }
+        }
+    }
+	printf("Nums calculated, begin with SE\n");
 	fflush(stdout);
 #pragma omp parallel for
 	for (uint32_t i = 0; i < Nw; i++)
 	{
-		Complex16 denom;
-        double num;
-        const double w = wMin + i*dw;
-		SelfEnergy[i].Ni = nphiBound;
-		SelfEnergy[i].Nj = nphiBound;
-		SelfEnergy[i].QComplex = 1;
-		InitCompactMatrix(&SelfEnergy[i]);
-		for (uint32_t a = 0; a < nphiBound; a++)
-		{
-			for (uint32_t b = 0; b < nphiBound; b++)
-			{
-				for (uint32_t iEps = 0; iEps < nContFuns; iEps++)
-				{
-					for (uint32_t ipsi = 0; ipsi < npsiCont; ipsi++)
-					{
-						for (uint32_t k = 0; k < nUk; k++)
-						{
-							for (uint32_t q = 0; q < nUk; q++)
-							{
-								
-								denom.Re = w -EAuger[ipsi] - Econt[iEps];
-								denom.Im = gammaSE/2.;
-								num = Fk[iEps][k] * UkMatrix[k].VRe[ipsi][a] * UkMatrix[q].VRe[ipsi][b] * Fk[iEps][q]; //TODO: complex case coden
-								SelfEnergy[i].V[a*nphiBound + b] += num / denom;
-							}
-						}
-					}
-				}
-			}
-		}
-	}
+        SelfEnergy[i].Ni = nphiBound;
+        SelfEnergy[i].Nj = nphiBound;
+        SelfEnergy[i].QComplex = 1;
+        InitCompactMatrix(&SelfEnergy[i]);
+    }
+#pragma omp parallel for
+    for (uint32_t a = 0; a < nphiBound; a++)
+    {
+        double w;
+        Complex16 denom;
+        denom.Im = gammaSE/2.;
+        double num,num1,num2, Eac;
+        
+        for (uint32_t iEps = 0; iEps < nContFuns; iEps++)
+        {
+            for (uint32_t ipsi = 0; ipsi < npsiCont; ipsi++)
+            {
+                Eac = EAuger[ipsi] + Econt[iEps];
+                num = numerators[a*nContFuns*npsiCont + iEps*npsiCont + ipsi];
+                num *= num;
+                for (uint32_t i = 0; i < Nw; i++)
+                {
+                    w = wMin + i*dw;
+                    denom.Re = w - Eac;
+                    SelfEnergy[i].V[a*nphiBound + a] += num / denom;
+                }
+                for (uint32_t b = a+1; b < nphiBound; b++)
+                {
+                    num = numerators[a*nContFuns*npsiCont + iEps*npsiCont + ipsi] * numerators[b*nContFuns*npsiCont + iEps*npsiCont + ipsi];
+                    for (uint32_t i = 0; i < Nw; i++)
+                    {
+                        w = wMin + i*dw;
+                        denom.Re = w - Eac;
+                        SelfEnergy[i].V[a*nphiBound + b] += num / denom;
+                        SelfEnergy[i].V[b*nphiBound + a] += num / denom;
+                    }
+                }
+
+            }
+        }
+        
+    }
 	for (uint32_t k = 0; k < nUk; k++)
 	{
 		FreeMatrix(&UkMatrix[k]);
