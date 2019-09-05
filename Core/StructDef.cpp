@@ -671,6 +671,7 @@ typedef struct BlockTriDiagonalMatrixType
   char   Name[MAXStrLength];   /* A pointer to a name string that can be used to label functions, good for printing etc. */
   uint32_t N;                  /* number of diagonal blocks */
   uint32_t BlockSize;          /* dimension of square matrices */
+  uint32_t *BlockSizeList;     /* list of length N+1 describing the dimension of each of the blocks. */
   uint32_t QComplex;           /* matrices are complex or real */
   double *aRe;                 /* List of (N+1) * BlockSize*BlockSize values */
   Complex16 *a;

@@ -58,7 +58,7 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
   }
   else
   {
-    return luaL_error(L, "Error in ChangeType, second argument needs to be a string containgin either: \"And\", \"Tri\", \"ListOfPoles\", \"NaturalImpurityOrbital\", \"Userdata\", \"Table\" and not %s\n",convert);
+    return luaL_error(L, "Error in ChangeType, second argument needs to be a string containgin either: \"And\", \"Tri\", \"ListOfPoles\", \"NaturalImpurityOrbital\", \"Nat\", \"Userdata\", \"Table\" and not %s\n",convert);
   }
   if(Min->Block==true)
   {

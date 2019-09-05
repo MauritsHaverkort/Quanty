@@ -1,5 +1,6 @@
 ErrorCount=0
-zero = 0.00000000000001
+
+zero = 1e-14
 
 -- Response functions represented as a number
 
@@ -173,8 +174,5 @@ U=nil
 T=nil
 collectgarbage()
 print("\n\n\n")
-
-
-
 
 os.exit(ErrorCount)
