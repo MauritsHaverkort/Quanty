@@ -2152,6 +2152,75 @@ static int LuaOperatorNewAtomicUOccupationConservingOneShell(lua_State *L)
     return 1;
 }
 
+static int LuaOrthonormalizeContinuum(lua_State *L)
+{
+	uint32_t NGridpoints = 0;
+	SKappaGroup group;
+	
+	double w;
+	vector<double> x;
+	vector<vector<double> > vbasf, vderf,vcontf,vDcont;
+    
+    uint32_t NfunsBound = (uint32_t)lua_objlen(L,1);
+    vector<Interpolation::InterpolatingFunction *> funsBound = vector<Interpolation::InterpolatingFunction *>(NfunsBound);
+    for(uint32_t i = 0; i < NfunsBound; i++)
+    {
+        lua_rawgeti(L, 1, i+1);
+        funsBound[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
+        lua_pop(L,1);
+    }
+    
+    uint32_t NfunsUnbound = (uint32_t)lua_objlen(L,2);
+    vector<Interpolation::InterpolatingFunction *> funsUnbound = vector<Interpolation::InterpolatingFunction *>(NfunsUnbound);
+    for(uint32_t i = 0; i < NfunsUnbound; i++)
+    {
+        lua_rawgeti(L, 2, i+1);
+        funsUnbound[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
+        lua_pop(L,1);
+    }
+    x = funsBound[0]->GetX();
+    vbasf  = vector<vector<double> >(NfunsBound);
+    vderf  = vector<vector<double> >(NfunsBound);
+    vcontf = vector<vector<double> >(NfunsUnbound);
+    vDcont = vector<vector<double> >(NfunsUnbound);
+    for (uint32_t i = 0; i < NfunsBound; i++)
+    {
+        vbasf[i] = (*funsBound[i])(x);
+        vderf[i] = (*funsBound[i])(x,1);
+    }
+    for (uint32_t i = 0; i < NfunsUnbound; i++)
+    {
+        vcontf[i] = (*funsUnbound[i])(x);
+        vDcont[i] = (*funsUnbound[i])(x,1);
+    }
+    lua_check(L,3,group.kappa);
+    group.n = NfunsBound;
+    group.indices = (unsigned int*) malloc(group.n);
+    for (uint32_t i = 0; i < group.n; i++)
+    {
+        group.indices[i] = i;
+    }
+    double Emin,dE;
+    lua_check(L,4,Emin);
+    lua_check(L,5,dE);
+    
+    vector<vector<double> >energiesCont = CreateEigenDifferentialEnergies((uint32_t) vcontf.size(),Emin,dE);
+    double *eigenval = CreateBaseForContinuum(vbasf,vderf,x,group,vcontf,vDcont,energiesCont);
+    
+    lua_push(L,eigenval,NfunsUnbound);
+    
+    lua_createtable(L,0,NfunsUnbound);
+	for (uint32_t i = 0; i < NfunsUnbound; i++)
+	{
+			void* memory = lua_newuserdata(L, sizeof(Interpolation::CubicSpline));
+			new(memory) Interpolation::CubicSpline(x,vcontf[i]);
+			luaL_setmetatable(L, "InterpolatingFunction_Type");
+			lua_rawseti(L,-2,i+1);
+	}
+    
+	return 2;
+}
+
 static const struct luaL_Reg Martin_meta[] = {
   {NULL, NULL}
 };
@@ -2226,6 +2295,7 @@ static const struct luaL_Reg Martin_func[] = {
   {"BasisChange",LuaBasisChange},
   {"AUcons",LuaOperatorNewAtomicUOccupationConserving},
   {"AUconsOs",LuaOperatorNewAtomicUOccupationConservingOneShell},
+  {"OrthonormalizeContinuum",LuaOrthonormalizeContinuum},
   {NULL, NULL}
 };
 
