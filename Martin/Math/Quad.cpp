@@ -19,7 +19,7 @@ void GaussianQuadratureWeights(uint32_t N, vector<double> &x, vector<double> &w,
 	char compz = 'N';
 	int info;
 	uint32_t bar = 1;
-	double *foo;
+	double *foo=NULL;
 	dsteqr(&compz,&N,&x[0],&subdiag[0],foo,&bar,foo,&info);
 	for (uint32_t j = 0; j < N; j++)
 	{

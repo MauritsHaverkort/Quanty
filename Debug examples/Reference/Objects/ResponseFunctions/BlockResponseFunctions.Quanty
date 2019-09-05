@@ -1,0 +1,315 @@
+ErrorCount=0
+
+zero = 1e-13
+
+O = {{0,0,0},{0,0,0},{0,0,0}}
+setmetatable(O, MatrixMeta)
+
+A0 = {{0,2,3},{2,5,6},{3,6,9}}
+A1 = {{1,2,3},{2,5,6},{3,6,9}}
+A2 = {{2,2,3},{2,5,6},{3,6,9}}
+A3 = {{3,2,3},{2,5,6},{3,6,9}}
+Am1= {{-1,2,3},{2,-5,6},{3,6,-9}}
+Am2= {{-2,2,3},{2,-5,6},{3,6,-9}}
+Am3= {{-3,2,3},{2,-5,6},{3,6,-9}}
+a1 = -1
+a2 = 0
+a3 = 1
+B0sqrt = {{0,I,3},{-I,5,6},{3,6,9}}
+setmetatable(B0sqrt, MatrixMeta)
+B0 = B0sqrt * B0sqrt
+B1sqrt = {{1,I,3},{-I,5,6},{3,6,9}}
+setmetatable(B1sqrt, MatrixMeta)
+B1 = B1sqrt * B1sqrt
+B2sqrt = {{2,0,3},{0,5,6},{3,6,9}}
+setmetatable(B2sqrt, MatrixMeta)
+B2 = B2sqrt * B2sqrt
+B3sqrt = {{3,0,3},{0,5,6},{3,6,9}}
+setmetatable(B3sqrt, MatrixMeta)
+B3 = B3sqrt * B3sqrt
+
+MathListOfPoles11 = {{15.576470588235294117647058823529 - 42.494117647058823529411764705882 *I,  25.576470588235294117647058823529 - 42.494117647058823529411764705882 *I,  44.223529411764705882352941176471 -  85.905882352941176470588235294118 *I},
+                     {24.164705882352941176470588235294 - 48.141176470588235294117647058824 *I,  82.97647058823529411764705882353  - 153.69411764705882352941176470588 *I, 112.37647058823529411764705882353  - 212.89411764705882352941176470588  *I},
+                     {42.811764705882352941176470588235 - 91.552941176470588235294117647059 *I, 113.08235294117647058823529411765  - 210.07058823529411764705882352941 *I, 169.09411764705882352941176470588  - 317.22352941176470588235294117647  *I}}
+setmetatable(MathListOfPoles11, MatrixMeta)
+
+MathListOfPoles22 = {{17.5 - 12.7 *I,  24.2 - 12.6 *I,  43.8 -  25.8 *I},
+                     {23.0 - 16.2 *I,  78.5 - 48.9 *I, 106.5 -  68.1 *I},
+                     {42.6 - 29.4 *I, 107.1 - 66.3 *I, 160.2 - 100.8 *I}}
+setmetatable(MathListOfPoles22, MatrixMeta)
+
+MathListOfPoles41 = {{11.2160556596200160556596200160557 - 1.5907947551511907947551511907948 *I,  15.951775385438751775385438751775 - 0.695135958502295135958502295136 *I,  28.858158539346658158539346658159 -  2.367271155389967271155389967271 *I},
+                     {15.714151623062514151623062514152  - 3.071373582264671373582264671374  *I,  52.076396121940676396121940676396 - 6.401943146497601943146497601943 *I,  70.494423745908894423745908894424 -  9.382581667730182581667730182582 *I},
+                     {28.620534776970420534776970420535  - 4.743508779152343508779152343509  *I,  70.613235627097013235627097013236 - 8.194462855848994462855848994463 *I, 105.830744529754430744529754430745 - 13.182783392684382783392684382783 *I}}
+setmetatable(MathListOfPoles41, MatrixMeta)
+
+MathTri11 = {{ -40.074704050990470340081324189489 -  34.401411730596081065038862172174 *I, -196.10902445304297882975639950715 -  43.10363201646393730636177378266  *I,  -269.53726360473673859797827624100 -  51.87831827509597416982063666181 *I},
+             { -62.168555236916157482762020222915 -  76.900393365392240255687889520733 *I, -348.96325354338106531765649843581 -  261.65094085874173464809661081695 *I,  -517.90690500770582044805088117604 - 339.62991778899420552168625327438 *I},
+             {-103.31718117605482877713867287667  - 119.81543949819385352477567784902  *I, -540.31138547454793576203469106550 -  345.52636897018638738566844751164 *I,  -787.42715352888670551204501832471 - 462.25166124240219346036394607497 *I}}
+MathTri22 = {{ -44.456805159653451447128537566406 -  20.076356714300789266357456274546 *I, -158.42336478228341253023250959426 -  20.83043047030879320431938143061  *I,  -231.54262304958617661238938766121 -  27.13040505573784039677986483588 *I},
+             {-110.085184233709654777862549603137 -  66.081045091183386664064639118698 *I, -376.26285108697918028349887237895 - 147.72500372120050001435655032634  *I,  -563.31433539791184693665370549207 - 211.51817016412021606787465736576 *I},
+             {-161.13660873835215825069097875588  -  95.11072877503035900121530260087  *I, -553.36181974552933980539842334960 - 188.54448648459527626785238212444  *I,  -823.93596751565830182139216505454 - 283.19248207697512407879465051754 *I}}
+MathTri41 = {{ -53.425766826755156097011321360352 -  8.902024499337412122616745430167  *I, -167.10924133841343679879718898151 +  21.22385831524302352298372854368  *I,  -252.16688255047107312776026043950 +  14.68086642450160171457739688883 *I},
+             {-152.15443305600560874874774120495  -  65.86618174207379755851778936180  *I, -486.46070550323298947738254702520 -  67.41656225839262003250686273900  *I,  -726.51977374473614637886337533120 - 149.68419878527449200083395504686 *I},
+             {-228.81244442646857067980390415145  -  78.54916169297623806931224099184  *I, -723.62540191288664380838763308355 -  40.39026735770151526324417284403  *I, -1066.83499557973650400638271781890 - 138.51554463694034332158450814541 *I}}
+
+MathAnd11 = {{0.57600066972239235181534608093856 - 0.74504456848372359641241361513131 *I,  2.1548245365373645356971608591345 - 1.1850375187268143434123185837191 *I,  3.3448612264460854794871161996393 - 0.3744702737644466739442983503505 *I},
+             {3.9697353857996225457586431370354  + 0.0453651630354274800670094346665  *I,  7.9124174759931808308450262956735 - 1.7476118008562500795265535959342 *I,  8.6562599870925716718244501986886 - 1.1692616085486054184150947845881 *I},
+             {5.8110169559774110977478963428924  + 1.0659394958168540548624956542966  *I, 11.1942099746725579405422495420075 - 1.5514735877611558301467460698322 *I, 13.1727848501954079843269448842088 - 3.3198807989428905736571024232599 *I}}
+MathAnd22 = {{0.4031002301827176063997053467721  - 1.4149081461903094233597107992996  *I,  1.1706774638491777357690685569033 - 1.4301275630691903652632464220713 *I,  1.5018318595155010285259667454082 + 0.9351543705410186534922608143896 *I},
+             {4.5046672556332709518581610164854  - 0.7649461702189666430570440644815  *I,  6.9756118063144398026462922070967 - 3.1653007572538996963846280748233 *I,  5.7829125761399435309924648722293 - 2.3762566806340265994728166299611 *I},
+             {7.0197240592101974986953381461875  + 1.4235763580952601193853992992972  *I, 12.1095829623209264898032029698896 - 2.3896873888865356107195210629767 *I, 11.7109340216554928021795016820034 - 7.9079840536707292152053528836762 *I}}
+MathAnd41 = {{1.6082649773302036134503903131692  - 0.5454907449372291315384669793721  *I,  3.2305424740130563360848772993458 - 1.6659621730783865698455144571525 *I,  0.5641909807938217865171012056677 - 2.4123325299926329941745363303367 *I},
+             {4.6105315139787554809607371338789  + 0.8639275502048562629004564759793  *I,  7.7406438054309474942420000422232 - 1.3914752186012009703695105851193 *I,  7.7450237242040143478962883554415 - 6.8161826451683661057166647496544 *I},
+             {2.7976546020572997008476581460750  + 3.1616916992091993269961415313867  *I,  9.7674921982660376634908226603731 + 4.5779032186002900879482573988681 *I, 18.228212600961838443554539479054  - 3.354256214183044907442318052236  *I}}
+
+MathNat11 = {{6.5242562946665298236876137539122e6  - 7.4612424764755174984454450670196e6 *I,  1.3301044379244438772820191323920e7 - 2.7203486521052537435014395974234e7  *I,  2.0742553799153410047285887362428e7 - 3.8731900594689382826009777008984e7  *I},
+             {2.5176215507955538260664892046763e7  - 1.6816044320221071557826474672760e7 *I,  6.0866187950712369789517665614834e7 - 6.9652961996760205196854554620821e7  *I,  9.1982288162983190435323824130365e7 - 9.7735417305717648482169544658050e7  *I},
+             {3.5619244042361784310207514147454e7  - 2.5738244663747850510236267295373e7 *I,  8.4562821202419493579669154270261e7 - 1.04286765441268079949863586536084e8 *I,  1.2819582976668859181309168663461e8 - 1.4668473799243039298904114178296e8  *I}}
+MathNat22 = {{1.9645636882860955754982292174030e6  - 2.9952696482837807904320318695496e6 *I,  3.4125038113478250613688035481179e6 - 1.04210858884946600174989089581335e7 *I,  5.500101655577728510358549314669e6  - 1.4923062524119622628896006765306e7  *I},
+             {8.1646710226945996297391102447923e6  - 7.2570685241651195624388686698679e6 *I,  1.8330220467865629325152621666228e7 - 2.7969802627972812291981879694455e7  *I,  2.8054666794654706614779857247257e7 - 3.9565364315888752894282059259608e7  *I},
+             {1.1458537948973968913177168954671e7  - 1.0967220679716412565148560556334e7 *I,  2.5100015466702252150027523816702e7 - 4.1565435777381877206802937062115e7  *I,  3.8589687142262308153570149264297e7 - 5.8911441014897393223363544995029e7  *I}}
+MathNat41 = {{-43019.482859029763419000392476809e1 - 72784.503962974197343717108962371e1 *I, -1.8609369081294544547093544167857e6 - 1.8313246253258295246588501819135e6  *I, -2.6071693256788736186667103323726e6 - 2.7532751148922588743178587077829e6  *I},
+             {-71195.75520135774064197410752379e1  - 2.4683066098669559079182861531043e6 *I, -4.0806954196792269063476724437140e6 - 6.8034367219286316857622760700919e6  *I, -5.5746248352948311162294665371208e6 - 1.00835835956553305111423482407279e7 *I},
+             {-1.1653181278149045943291479630401e6 - 3.5435412636210498411071407258084e6 *I, -6.2859812941088032988736269172526e6 - 9.6534974590966837886200783506447e6  *I, -8.629183634405783219494143970680e6  - 1.4333221217770130436122927306932e7  *I}}
+
+
+print("============")
+print("List of poles")
+print("============")
+MListOfPoles = { {A0,a1,a2,a3}, {B1,B2,B3}, mu=0, type="ListOfPoles"}
+setmetatable(MListOfPoles, ResponseFunctionMeta)
+print("========= transform it to a userdata for speed        ==========")
+UListOfPoles = ToUserdata(MListOfPoles)
+print("========= transform it back to a table for convininence ==========")
+TListOfPoles = ToTable(UListOfPoles)
+
+print("========= Evaluate M ==========")
+print(MListOfPoles(1,1))
+if ( ( Chop(MListOfPoles(1,1)-MathListOfPoles11,zero) ~= O ) or ( Chop(MListOfPoles(2,2)-MathListOfPoles22,zero) ~= O ) or ( Chop(MListOfPoles(4,1)-MathListOfPoles41,zero) ~= O ) )
+then
+  print("Evaluation of M did not get the right value difference is :")
+  print("In point omega = 1 Gamma = 1")
+  print(Chop(MListOfPoles(1,1)-MathListOfPoles11,zero))
+  print("In point omega = 2 Gamma = 2")
+  print(Chop(MListOfPoles(2,2)-MathListOfPoles22,zero))
+  print("In point omega = 4 Gamma = 1")
+  print(Chop(MListOfPoles(4,1)-MathListOfPoles41,zero))
+  ErrorCount = ErrorCount + 1
+end
+
+print("========= Evaluate U ==========")
+print(UListOfPoles(1,1))
+if ( ( Chop(UListOfPoles(1,1)-MathListOfPoles11,zero) ~= O ) or ( Chop(UListOfPoles(2,2)-MathListOfPoles22,zero) ~= O ) or ( Chop(UListOfPoles(4,1)-MathListOfPoles41,zero) ~= O ) )
+then
+  print("Evaluation of U did not get the right value difference is :")
+  print("In point omega = 1 Gamma = 1")
+  print(Chop(UListOfPoles(1,1)-MathListOfPoles11,zero))
+  print("In point omega = 2 Gamma = 2")
+  print(Chop(UListOfPoles(2,2)-MathListOfPoles22,zero))
+  print("In point omega = 4 Gamma = 1")
+  print(Chop(UListOfPoles(4,1)-MathListOfPoles41,zero))
+  ErrorCount = ErrorCount + 1
+end
+
+print("========= Evaluate T ==========")
+print(TListOfPoles(1,1))
+if ( ( Chop(TListOfPoles(1,1)-MathListOfPoles11,zero) ~= O ) or ( Chop(TListOfPoles(2,2)-MathListOfPoles22,zero) ~= O ) or ( Chop(TListOfPoles(4,1)-MathListOfPoles41,zero) ~= O ) )
+then
+  print("Evaluation of T did not get the right value difference is :")
+  print("In point omega = 1 Gamma = 1")
+  print(Chop(TListOfPoles(1,1)-MathListOfPoles11,zero))
+  print("In point omega = 2 Gamma = 2")
+  print(Chop(TListOfPoles(2,2)-MathListOfPoles22,zero))
+  print("In point omega = 4 Gamma = 1")
+  print(Chop(TListOfPoles(4,1)-MathListOfPoles41,zero))
+  ErrorCount = ErrorCount + 1
+end
+print("========= Free response functions ==========")
+MListOfPoles=nil
+UListOfPoles=nil
+TListOfPoles=nil
+collectgarbage()
+print("\n\n")
+
+
+
+zero = 1e-10
+
+print("============")
+print("Tri diagonal matrix")
+print("============")
+MTri         = { {A0,A1,A2,A3}, {B0,B1,B2}, mu=0, type="Tri"}
+setmetatable(MTri, ResponseFunctionMeta)
+print("========= transform it to a userdata for speed        ==========")
+UTri         = ToUserdata(MTri)
+print("========= transform it back to a table for convininence ==========")
+TTri         = ToTable(UTri)
+
+print("========= Evaluate M ==========")
+print(MTri(1,1))
+if ( ( Chop(MTri(1,1)-MathTri11,zero) ~= O ) or ( Chop(MTri(2,2)-MathTri22,zero) ~= O ) or ( Chop(MTri(4,1)-MathTri41,zero) ~= O ) )
+then
+print("Evaluation of M did not get the right value difference is :")
+print("In point omega = 1 Gamma = 1")
+print(Chop(MTri(1,1)-MathTri11,zero))
+print("In point omega = 2 Gamma = 2")
+print(Chop(MTri(2,2)-MathTri22,zero))
+print("In point omega = 4 Gamma = 1")
+print(Chop(MTri(4,1)-MathTri41,zero))
+ErrorCount = ErrorCount + 1
+end
+
+print("========= Evaluate U ==========")
+print(UTri(1,1))
+if ( ( Chop(UTri(1,1)-MathTri11,zero) ~= O ) or ( Chop(UTri(2,2)-MathTri22,zero) ~= O ) or ( Chop(UTri(4,1)-MathTri41,zero) ~= O ) )
+then
+print("Evaluation of U did not get the right value difference is :")
+print("In point omega = 1 Gamma = 1")
+print(Chop(UTri(1,1)-MathTri11,zero))
+print("In point omega = 2 Gamma = 2")
+print(Chop(UTri(2,2)-MathTri22,zero))
+print("In point omega = 4 Gamma = 1")
+print(Chop(UTri(4,1)-MathTri41,zero))
+ErrorCount = ErrorCount + 1
+end
+
+print("========= Evaluate T ==========")
+print(TTri(1,1))
+if ( ( Chop(TTri(1,1)-MathTri11,zero) ~= O ) or ( Chop(TTri(2,2)-MathTri22,zero) ~= O ) or ( Chop(TTri(4,1)-MathTri41,zero) ~= O ) )
+then
+print("Evaluation of T did not get the right value difference is :")
+print("In point omega = 1 Gamma = 1")
+print(Chop(TTri(1,1)-MathTri11,zero))
+print("In point omega = 2 Gamma = 2")
+print(Chop(TTri(2,2)-MathTri22,zero))
+print("In point omega = 4 Gamma = 1")
+print(Chop(TTri(4,1)-MathTri41,zero))
+ErrorCount = ErrorCount + 1
+end
+print("========= Free response functions ==========")
+MTri=nil
+UTri=nil
+TTri=nil
+collectgarbage()
+
+
+zero = 1e-12
+
+print("============")
+print("And erson matrix")
+print("============")
+MAnd         = { {A0,A1,A2,A3}, {B0,B1,B2}, mu=0, type="And"}
+setmetatable(MAnd, ResponseFunctionMeta)
+print("========= transform it to a userdata for speed        ==========")
+UAnd         = ToUserdata(MAnd)
+print("========= transform it back to a table for convininence ==========")
+TAnd         = ToTable(UAnd)
+
+print("========= Evaluate M ==========")
+print(MAnd(1,1))
+if ( ( Chop(MAnd(1,1)-MathAnd11,zero) ~= O ) or ( Chop(MAnd(2,2)-MathAnd22,zero) ~= O ) or ( Chop(MAnd(4,1)-MathAnd41,zero) ~= O ) )
+then
+print("Evaluation of M did not get the right value difference is :")
+print("In point omega = 1 Gamma = 1")
+print(Chop(MAnd(1,1)-MathAnd11,zero))
+print("In point omega = 2 Gamma = 2")
+print(Chop(MAnd(2,2)-MathAnd22,zero))
+print("In point omega = 4 Gamma = 1")
+print(Chop(MAnd(4,1)-MathAnd41,zero))
+ErrorCount = ErrorCount + 1
+end
+
+print("========= Evaluate U ==========")
+print(UAnd(1,1))
+if ( ( Chop(UAnd(1,1)-MathAnd11,zero) ~= O ) or ( Chop(UAnd(2,2)-MathAnd22,zero) ~= O ) or ( Chop(UAnd(4,1)-MathAnd41,zero) ~= O ) )
+then
+print("Evaluation of U did not get the right value difference is :")
+print("In point omega = 1 Gamma = 1")
+print(Chop(UAnd(1,1)-MathAnd11,zero))
+print("In point omega = 2 Gamma = 2")
+print(Chop(UAnd(2,2)-MathAnd22,zero))
+print("In point omega = 4 Gamma = 1")
+print(Chop(UAnd(4,1)-MathAnd41,zero))
+ErrorCount = ErrorCount + 1
+end
+
+print("========= Evaluate T ==========")
+print(TAnd(1,1))
+if ( ( Chop(TAnd(1,1)-MathAnd11,zero) ~= O ) or ( Chop(TAnd(2,2)-MathAnd22,zero) ~= O ) or ( Chop(TAnd(4,1)-MathAnd41,zero) ~= O ) )
+then
+print("Evaluation of T did not get the right value difference is :")
+print("In point omega = 1 Gamma = 1")
+print(Chop(TAnd(1,1)-MathAnd11,zero))
+print("In point omega = 2 Gamma = 2")
+print(Chop(TAnd(2,2)-MathAnd22,zero))
+print("In point omega = 4 Gamma = 1")
+print(Chop(TAnd(4,1)-MathAnd41,zero))
+ErrorCount = ErrorCount + 1
+end
+print("========= Free response functions ==========")
+MAnd=nil
+UAnd=nil
+TAnd=nil
+collectgarbage()
+
+
+zero = 1e-5
+
+print("============")
+print("Natural impurity matrix")
+print("============")
+MNat         = { {A0,B0}, val={ {A0,Am1,Am2,Am3}, {B0,B1,B2}, mu=0, type="Tri"}, con={ {A0,A1,A2,A3}, {B0,B1,B2}, mu=0, type="Tri"}, mu=0, type="Nat"}
+setmetatable(MNat, ResponseFunctionMeta)
+print("========= transform it to a userdata for speed        ==========")
+UNat         = ToUserdata(MNat)
+print("========= transform it back to a table for convininence ==========")
+TNat         = ToTable(UNat)
+print("========= Evaluate M ==========")
+print(MNat(1,1))
+if ( ( Chop(MNat(1,1)-MathNat11,zero) ~= O ) or ( Chop(MNat(2,2)-MathNat22,zero) ~= O ) or ( Chop(MNat(4,1)-MathNat41,zero) ~= O ) )
+then
+print("Evaluation of M did not get the right value difference is :")
+print("In point omega = 1 Gamma = 1")
+print(Chop(MNat(1,1)-MathNat11,zero))
+print("In point omega = 2 Gamma = 2")
+print(Chop(MNat(2,2)-MathNat22,zero))
+print("In point omega = 4 Gamma = 1")
+print(Chop(MNat(4,1)-MathNat41,zero))
+ErrorCount = ErrorCount + 1
+end
+
+print("========= Evaluate U ==========")
+print(UNat(1,1))
+if ( ( Chop(UNat(1,1)-MathNat11,zero) ~= O ) or ( Chop(UNat(2,2)-MathNat22,zero) ~= O ) or ( Chop(UNat(4,1)-MathNat41,zero) ~= O ) )
+then
+print("Evaluation of U did not get the right value difference is :")
+print("In point omega = 1 Gamma = 1")
+print(Chop(UNat(1,1)-MathNat11,zero))
+print("In point omega = 2 Gamma = 2")
+print(Chop(UNat(2,2)-MathNat22,zero))
+print("In point omega = 4 Gamma = 1")
+print(Chop(UNat(4,1)-MathNat41,zero))
+ErrorCount = ErrorCount + 1
+end
+
+print("========= Evaluate T ==========")
+print(TNat(1,1))
+if ( ( Chop(TNat(1,1)-MathNat11,zero) ~= O ) or ( Chop(TNat(2,2)-MathNat22,zero) ~= O ) or ( Chop(TNat(4,1)-MathNat41,zero) ~= O ) )
+then
+print("Evaluation of T did not get the right value difference is :")
+print("In point omega = 1 Gamma = 1")
+print(Chop(TNat(1,1)-MathNat11,zero))
+print("In point omega = 2 Gamma = 2")
+print(Chop(TNat(2,2)-MathNat22,zero))
+print("In point omega = 4 Gamma = 1")
+print(Chop(TNat(4,1)-MathNat41,zero))
+ErrorCount = ErrorCount + 1
+end
+print("========= Free response functions ==========")
+MNat=nil
+UNat=nil
+TNat=nil
+collectgarbage()
+
+os.exit(ErrorCount)

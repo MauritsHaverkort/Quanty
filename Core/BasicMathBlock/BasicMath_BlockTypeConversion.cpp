@@ -59,8 +59,8 @@ uint32_t EvaluateBlockListOfPoles(BlockListOfPoles const *A, CompactMatrixType *
     itot=0;
     for(iblock=0;iblock<A->N;iblock++)
     {
-      Lorentzian.Re = (omega-A->V[itot].Re) / (Sqr(Gamma) + Sqr(omega-A->V[itot].Re));
-      Lorentzian.Im = (-Gamma             ) / (Sqr(Gamma) + Sqr(omega-A->V[itot].Re));
+      Lorentzian.Re = (omega-A->V[itot].Re) / (Sqr(Gamma/2.0) + Sqr(omega-A->V[itot].Re));
+      Lorentzian.Im = (-Gamma/2.0         ) / (Sqr(Gamma/2.0) + Sqr(omega-A->V[itot].Re));
       itot++;
       for(i=0;i<A->BlockSize*A->BlockSize;i++)
       {
@@ -194,8 +194,8 @@ uint32_t EvaluateBlockAndersonMatrix(BlockAndersonMatrixType const *A, CompactMa
     a.VRe=A->aRe;
   }
   CompactMatrixAdd(Gw, &a);
+  FreeCompactMatrix(&Gwi);
   return 0;
-
 }
 
 uint32_t EvaluateBlockAndersonMatrix(void const *A, CompactMatrixType * Gw, const double omega, const double Gamma)
@@ -304,8 +304,18 @@ uint32_t EvaluateBlockTriDiagonalMatrix(void const * A, CompactMatrixType * Gw, 
  */
 uint32_t EvaluateBlockNaturalImpurityOrbital(BlockNaturalImpurityOrbitalMatrixType const *A, CompactMatrixType * Gw, const double omega, const double Gamma)
 {
-  //TODO: all
-  printf("Not implemented EvaluateBlockaturalImpurityOrbital\n");
+  CompactMatrixType con,val;
+  if(CompactMatrixCopy(A->a0, Gw))
+  {
+    printf("CompactMatrixCopy failed in EvaluateBlockNaturalImpurityOrbital\n");
+    return 1;
+  }
+  EvaluateBlockTriDiagonalMatrix(&(A->con), &con, omega, Gamma);
+  CompactMatrixAdd(Gw, &con);
+  FreeCompactMatrix(&con);
+  EvaluateBlockTriDiagonalMatrix(&(A->val), &val, omega, Gamma);
+  CompactMatrixAdd(Gw, &val);
+  FreeCompactMatrix(&val);
   return 0;
 }
 

@@ -1,4 +1,22 @@
-﻿dofile("../../definitions.Quanty")
+ErrorCount=0
 
-print("OppSz.Complex = ",OppSz.Complex)
-print("OppSy.Complex = ",OppSy.Complex)
+Nf=6
+Nb=0
+
+O1 = NewOperator(Nf, Nb, {{1,-1,1},{0,-0,0.1},{-2,2,0.01}})
+O2 = NewOperator(Nf, Nb, {{1,-1,I},{0,-0,0.1},{-2,2,0.01*I}})
+
+
+if( (O1.Complex==false) == false )
+then
+print("O1.Complex==false returned ",O1.Complex==false)
+ErrorCount = ErrorCount + 1
+end
+
+if( (O2.Complex==true) == false )
+then
+print("O2.Complex==true returned ",O2.Complex==true)
+ErrorCount = ErrorCount + 1
+end
+
+os.exit(ErrorCount)

@@ -58,7 +58,7 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
   }
   else
   {
-    return luaL_error(L, "Error in ChangeType, second argument needs to be a string containgin either: \"And\", \"Tri\", \"ListOfPoles\", \"NaturalImpurityOrbital\", \"Userdata\", \"Table\" and not %s\n",convert);
+    return luaL_error(L, "Error in ChangeType, second argument needs to be a string containgin either: \"And\", \"Tri\", \"ListOfPoles\", \"NaturalImpurityOrbital\", \"Nat\", \"Userdata\", \"Table\" and not %s\n",convert);
   }
   if(Min->Block==true)
   {
@@ -80,14 +80,17 @@ static int LuaResponseFunctionToUserdata(lua_State *L)
   uint32_t len = (uint32_t)lua_gettop(L);
   if(len!=1) return luaL_error(L, "Error in ToUserdata expected a single argument, not %d\n",len);
   M = luaL_checkResponsefunction(L,1);
-  if((M->type|32)==M->type) //lowercase, i.e. only pointer stored
+  if((M->type|32)==M->type) //lowercase, copy the response function and push it to the stack
   {
-    LuaPush_ResponseFunction(L, ResponsefunctionCopy(M));
+    M=ResponsefunctionCopy(M);
+    LuaPush_ResponseFunction(L, M);
+    free(M);
   }
-  else // upercase read a table from the stack
+  else // upercase change to lower and push a table to the stack
   {
     M->type+=32;
     LuaPush_ResponseFunction(L, M);
+    free(M);
   }
   return 1;
 }
@@ -502,8 +505,7 @@ static int LuaResponseFunctionCall(lua_State * L)
     *out = EvaluateResponsefunctionType(res, omega, gamma);
     luaL_setmetatable(L, "Complex_Type");
   }
-  FreeResponsefunction(res);
-  free(res); // added by Martin - otherwise heap is lost becomes obsolete if included in FreeResponsefunction
+  FreeResponsefunctionIncludingOriginalPointer(res);
   return 1;
 }
 
@@ -587,7 +589,7 @@ static int LuaResponseFunctionToTightBinding(lua_State * L)
       return 0;
     }
   }
-  FreeResponsefunction(M);
+  FreeResponsefunctionIncludingOriginalPointer(M);
   return 1;
 }
 

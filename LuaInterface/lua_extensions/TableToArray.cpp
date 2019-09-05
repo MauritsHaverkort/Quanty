@@ -241,7 +241,7 @@ MatrixType* luaL_checkMatrix(lua_State *L, int narg)
 }
 
 /*  Check BlockGreensfunction reads a BlockGreensfunction from the stack
- *  it calls the one of the functions
+ *  it calls  one of the functions
  *     check (Block) TriDiagonalMatrixType
  *     check (Block) AndersonMatrixType
  *     check (Block) NaturalImpurityMatrixType
@@ -289,7 +289,7 @@ MatrixType* luaL_checkMatrix(lua_State *L, int narg)
  *  The format of BlockNaturalImpurityMatrixType should be
  *    { {A0, B0}, val=Gval, con=Gcon, mu=0, type="Nat" }
  *    and defines the Green's function
- *    a0 + b0^2 ( Gval(w) + Gcon(w) )
+ *    A0 + B0^* ( Gval(w) + Gcon(w) ) B0^T
  *
  *
  *  The format of ListOfPoles should be:
@@ -623,8 +623,7 @@ BlockTriDiagonalMatrixType* luaL_checkBlockTriDiagonalMatrixType(lua_State *L, i
  *  The format of AndersonMatrixType should be
  *    { {a0,a1,a2,a3,...,an}, {b0,b1,b2,...,bn-1}, mu=0, type="And"}
  *    and defines the Green's function
- *    G0 = a0 + b0^2 . ( G1 )
- *       with Gn = 1/(w - an - bn^2 ( Gn+1 ) )
+ *    G = a0 + b0^2 . ( 1/(w - a1 - sum_{i=1}^{n-1} bi^2 1/(w-ai+1) ) )
  *       and an and bn real
  */
 AndersonMatrixType* luaL_checkAndersonMatrixType(lua_State *L, int narg)
@@ -732,8 +731,8 @@ AndersonMatrixType* luaL_checkAndersonMatrixType(lua_State *L, int narg)
  *  The format of BlockAndersonMatrixType should be
  *    { {A0,A1,A2,A3,...,An}, {B0,B1,B2,...,Bn-1}, mu=0, type="And"}
  *    and defines the Green's function
- *    G0 = A0 + B0^* . ( G1 ) . B0^T
- *       with Gn = 1/(w - An - Bn . ( Gn+1 ) . Bn^+ )
+ *    G = A0 + B0^* . ( 1/(w - A1 - sum_{i=1}^{n-1} Bi . 1/(w-Ai+1) . Bi^+ ) ) . B0^T
+ *
  */
 BlockAndersonMatrixType* luaL_checkBlockAndersonMatrixType(lua_State *L, int narg)
 {
@@ -1050,6 +1049,7 @@ BADoubleTriDiagonalMatrixType * luaL_checkNatrualImpurityOrbitalMatrixType(lua_S
       buff->Epsilon=1000*DBL_EPSILON;
     }
     lua_pop(L,1);
+    /* set aditional values */
     buff->acvB  = Sqr(buff->val.b[0]) * buff->val.a[1] + Sqr(buff->con.b[0]) * buff->con.a[1];
     buff->acvA  = Sqr(buff->val.b[0]) * buff->con.a[1] + Sqr(buff->con.b[0]) * buff->val.a[1];
     buff->acvBA =  buff->val.b[0] * buff->con.b[0] * (buff->val.a[1]-buff->con.a[1]);
@@ -1116,9 +1116,10 @@ BlockNaturalImpurityOrbitalMatrixType * luaL_checkBlockNatrualImpurityOrbitalMat
   if((strcmp(type, "NaturalImpurityOrbital")==0)||(strcmp(type, "Nat")==0))
   {
     BlockTriDiagonalMatrixType *temp;
-    CompactMatrixType *tempM;
+    CompactMatrixType *tempM,tempCM,tempB0,tempA0;
     lua_pop(L, 1);
     buff = (BlockNaturalImpurityOrbitalMatrixType*)malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
+    // read val from stack
     lua_getfield(L, narg, "val");
     if(lua_istable(L,-1)==0)
     {
@@ -1128,6 +1129,7 @@ BlockNaturalImpurityOrbitalMatrixType * luaL_checkBlockNatrualImpurityOrbitalMat
     buff->val = *temp;
     free(temp);
     lua_pop(L,1);
+    // read con from stack
     lua_getfield(L, narg, "con");
     if(lua_istable(L,-1)==0)
     {
@@ -1137,28 +1139,141 @@ BlockNaturalImpurityOrbitalMatrixType * luaL_checkBlockNatrualImpurityOrbitalMat
     buff->con = *temp;
     free(temp);
     lua_pop(L,1);
+    // read A0 and B0 from stack
     lua_rawgeti(L, narg, 1);
     if(lua_istable(L,-1)==0)
     {
       luaL_error(L, "Error Green's function of format NaturalImpurityOrbital should have the table {A0, B0} at position 1");
     }
+    //read A0 from stack
     lua_rawgeti(L, -1, 1);
     tempM = luaL_checkCompactMatrix(L, lua_gettop(L));
     buff->a0 = *tempM;
     free(tempM);
     lua_pop(L,1);
-    // read B0 from stack. if B0 is not the identity matrix scale val and con
+    // read B0 from stack.
     lua_rawgeti(L, -1, 2);
     tempM = luaL_checkCompactMatrix(L, lua_gettop(L));
-    
-    
+    // set A0 of val and con to zero
+    // A0 = A0 + B^* A0con B^T + B^* A0val B^T
+    tempCM.QComplex = buff->val.QComplex;
+    tempCM.Ni = buff->val.BlockSize;
+    tempCM.Nj = buff->val.BlockSize;
+    if(tempCM.QComplex)
+    {
+      tempCM.V = buff->val.a;
+    }
+    else
+    {
+      tempCM.VRe = buff->val.aRe;
+    }
+    TransformCompactMatrixcT(&tempCM, tempM, &tempA0);
+    CompactMatrixAdd(&(buff->a0), &tempA0);
+    FreeCompactMatrix(&tempA0);
+    SetCompactMatrixToZero(&tempCM);
+    tempCM.QComplex = buff->con.QComplex;
+    tempCM.Ni = buff->con.BlockSize;
+    tempCM.Nj = buff->con.BlockSize;
+    if(tempCM.QComplex)
+    {
+      tempCM.V = buff->con.a;
+    }
+    else
+    {
+      tempCM.VRe = buff->con.aRe;
+    }
+    TransformCompactMatrixcT(&tempCM, tempM, &tempA0);
+    CompactMatrixAdd(&(buff->a0), &tempA0);
+    FreeCompactMatrix(&tempA0);
+    SetCompactMatrixToZero(&tempCM);
+    // use B0 to rescale B0con and B0val
+    if(tempM->QComplex)
+    {
+      RealBlockTridiagonalMatrixToComplex(&(buff->con));
+      RealBlockTridiagonalMatrixToComplex(&(buff->val));
+    }
+    tempCM.QComplex = buff->con.QComplex;
+    tempCM.Ni = buff->con.BlockSize;
+    tempCM.Nj = buff->con.BlockSize;
+    if(tempCM.QComplex)
+    {
+      tempCM.V = buff->con.b;
+      CompactMatrixMultiply('N', 'N', &tempCM, tempM, &tempB0);
+      memcpy(buff->con.b, tempB0.V, tempB0.Ni*tempB0.Nj*sizeof(Complex16));
+    }
+    else
+    {
+      tempCM.VRe = buff->con.bRe;
+      CompactMatrixMultiply('N', 'N', &tempCM, tempM, &tempB0);
+      memcpy(buff->con.bRe, tempB0.VRe, tempB0.Ni*tempB0.Nj*sizeof(double));
+    }
+    FreeCompactMatrix(&tempB0);
+    tempCM.QComplex = buff->val.QComplex;
+    tempCM.Ni = buff->val.BlockSize;
+    tempCM.Nj = buff->val.BlockSize;
+    if(tempCM.QComplex)
+    {
+      tempCM.V = buff->val.b;
+      CompactMatrixMultiply('N', 'N', &tempCM, tempM, &tempB0);
+      memcpy(buff->val.b, tempB0.V, tempB0.Ni*tempB0.Nj*sizeof(Complex16));
+    }
+    else
+    {
+      tempCM.VRe = buff->val.bRe;
+      CompactMatrixMultiply('N', 'N', &tempCM, tempM, &tempB0);
+      memcpy(buff->val.bRe, tempB0.VRe, tempB0.Ni*tempB0.Nj*sizeof(double));
+    }
+    FreeCompactMatrix(&tempB0);
+    FreeCompactMatrix(tempM);
     free(tempM);
     lua_pop(L,1);
-    
-    
-    
-    
-    //TODO: set matrix TMT
+    /* read mu */
+    lua_getfield(L, narg, "mu");
+    if(lua_isnumber(L, -1)==1)
+    {
+      buff->mu=(double)luaL_checknumber(L, -1);
+    }
+    else
+    {
+      luaL_error(L, "Reading NaturalImpurityOrbital matrix without mu defined");
+    }
+    lua_pop(L,1);
+    /* read name */
+    lua_getfield(L, narg, "name");
+    if(lua_isstring(L, -1)==1)
+    {
+      strncpy(buff->Name, luaL_checkstring(L, -1), MAXStrLength);
+      buff->Name[MAXStrLength-1]='\0';
+    }
+    else if(lua_isnil(L, -1)==1)
+    {
+      buff->Name[0]='\0';
+    }
+    else
+    {
+      luaL_error(L, "Reading NaturalImpurityOrbital matrix without name correctly defined");
+    }
+    lua_pop(L,1);
+    /* read epsilon */
+    lua_getfield(L, narg, "epsilon");
+    if(lua_isnumber(L, -1)==1)
+    {
+      buff->Epsilon=(double)luaL_checknumber(L, -1);
+    }
+    else
+    {
+      buff->Epsilon=1000*DBL_EPSILON;
+    }
+    lua_pop(L,1);
+    // set QComplex
+    buff->QComplex = buff->a0.QComplex + buff->con.QComplex + buff->val.QComplex;
+    // set blocksize and test consistency
+    buff->BlockSize = buff->a0.Ni;
+    if(buff->a0.Nj!=buff->BlockSize) luaL_error(L, "Reading NaturalImpurityOrbital matrix A0 is not quadratic\n Number of rows   %d\n Number of columns %d",buff->a0.Ni,buff->a0.Nj);
+    if(buff->val.BlockSize!=buff->BlockSize) luaL_error(L, "Reading NaturalImpurityOrbital matrix A0 (%d) has different dimension from matrix val (%d)",buff->BlockSize,buff->val.BlockSize);
+    if(buff->con.BlockSize!=buff->BlockSize) luaL_error(L, "Reading NaturalImpurityOrbital matrix A0 (%d) has different dimension from matrix con (%d)",buff->BlockSize,buff->con.BlockSize);
+    //set matrix TMT
+    SetTMTFromValandConInBlockNaturalImpurityOrbitalMatrixType(buff);
     lua_pop(L,1);
     return buff;
   }
@@ -1629,15 +1744,13 @@ ResponsefunctionType * luaL_checkResponsefunction(lua_State *L, int narg)
   if (luaL_testudata(L, narg, "ResponseFunction_Type") != NULL)
   {
     buff = (ResponsefunctionType*)luaL_checkudata(L, narg, "ResponseFunction_Type");
-    if (buff!=NULL)
-    {
-      return buff;
-    }
+    if (buff==NULL) luaL_error(L, "Failed to read a user data of \"ResponseFunction_type\"");
+    return buff;
   }
   // Block Matrix stored as lua table read sugested grid, type and allocate structure
   if(lua_istable(L, narg)==0)
   {
-    luaL_error(L, "Error Green's function should be represented by a table");
+    luaL_error(L, "Error Green's function should be represented by a table or udata of \"ResponseFunction_type\"");
   }
   buff= (ResponsefunctionType*)malloc(sizeof(ResponsefunctionType));
   // test if there is a suggested grid present. If present Stored in field SuggestedGrid
@@ -1742,6 +1855,7 @@ ResponsefunctionType * luaL_checkResponsefunction(lua_State *L, int narg)
     return buff;
   }
   luaL_error(L, "Errorr reading Greens function of unknown type (%s)\nAllowed are:\nTri\nAnd\nNaturalImpurityOrbital\nListOfPoles",type);
+  free(buff);
   return NULL;
 }
 

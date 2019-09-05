@@ -1,6 +1,16 @@
 
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Reference/Objects/ResponseFunctions/BlockResponseFunctions.Quanty")
+os.exit()
 
-dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Reference/Objects/Wavefunction/psi.Randomize.Quanty")
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Reference/Objects/ResponseFunctions/ResponseFunctions.Quanty")
+os.exit()
+
+
+
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/External_tests/BlockTridiagonalization.Quanty")
+os.exit()
+
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Reference/Objects/Operator/O.Restrictions.Quanty")
 os.exit()
 
 

@@ -1,0 +1,36 @@
+ErrorCount=0
+
+Nf=6
+Nb=0
+
+O1 = NewOperator(Nf, Nb, {{1,-1,1}, {0,-0,2},{-1,1,3}})
+O2 = NewOperator(Nf, Nb, {{1,-1,2}, {0,-0,4},{-1,1,6}})
+O3 = NewOperator(Nf, Nb, {{1,-1,2*I}, {0,-0,4*I},{-1,1,6*I}})
+
+if( (O1*2==O2) == false )
+then
+  print("O1*2==O2 returned ",O1*2==O2)
+  ErrorCount = ErrorCount + 1
+end
+
+if( (O1==O2/2) == false )
+then
+  print("O1==O2/2 returned ",O1==O2/2)
+  ErrorCount = ErrorCount + 1
+end
+
+if( (2*O1*I==O3) == false )
+then
+  print("O1*I==O3 returned ",O1*I==O3)
+  ErrorCount = ErrorCount + 1
+end
+
+if( (O1==O3/(2*I)) == false )
+then
+  print("O1==O3/I returned ",O1==O3/I)
+  ErrorCount = ErrorCount + 1
+end
+
+
+os.exit(ErrorCount)
+

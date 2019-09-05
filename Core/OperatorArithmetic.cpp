@@ -6387,6 +6387,42 @@ bool isOperatorAlmostHermitian(const OperatorType &O, const double epsilon)
 	return (q == 1 || q == 2);
 }
 
+uint32_t QOperatorEqual(const OperatorType *l, const OperatorType *r, const double epsilon)
+{
+  OperatorType diff;
+  uint32_t il;
+  if(OperatorCopy(&diff, *l))
+  {
+    printf("OperatorCopy failed in QOperatorEqual\n");
+    FreeOperator(&diff);
+    fflush(stdout);
+    return 3;
+  }
+  if (OperatorAddNormalOrder(&diff, *r, -1, 0, QDetNotOrderedFcFaBaBc))
+  {
+    printf("OperatorAddNormalOrder failed in QOperatorEqual\n");
+    FreeOperator(&diff);
+    fflush(stdout);
+    return 3;
+  };
+  if (OperatorChop(&diff, epsilon))
+  {
+    printf("OperatorChop failed in QOperatorEqual\n");
+    FreeOperator(&diff);
+    fflush(stdout);
+    return 3;
+  };
+  for (il = 0; il <= diff.MaxLength; il++)
+  {
+    if (diff.l[il].N != 0)
+    {
+      FreeOperator(&diff);
+      return 0;
+    }
+  }
+  FreeOperator(&diff);
+  return 1;
+}
 
 /*
  *

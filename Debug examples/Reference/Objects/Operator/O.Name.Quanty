@@ -1,5 +1,42 @@
-﻿dofile("../../definitions.Quanty")
+ErrorCount=0
 
-print(OppSz.Name)
-OppSz.Name="bla bla"
-print(OppSz.Name)
+Nf=6
+Nb=0
+
+O1 = NewOperator(Nf, Nb, {{1,-1,1},{0,-0,0.1},{-2,2,0.01}})
+O2 = NewOperator(Nf, Nb, {{1,-1,I},{0,-0,0.1},{-2,2,0.01*I}})
+
+if( (O1.Name=="Operator") == false )
+then
+  print("O1.Name==\"Operator\" returned ",O1.Name=="Operator")
+  ErrorCount = ErrorCount + 1
+end
+
+O1.Name="Operator 1"
+O2.Name="Operator 2"
+
+if( (O1.Name=="Operator 1") == false )
+then
+  print("O1.Name==\"Operator 1\" returned ",O1.Name=="Operator 1")
+  ErrorCount = ErrorCount + 1
+end
+
+if( (O2.Name=="Operator 2") == false )
+then
+  print("O2.Name==\"Operator 2\" returned ",O2.Name=="Operator 2")
+  ErrorCount = ErrorCount + 1
+end
+
+
+O=O1+O2
+
+O.Name = O1.Name.." plus "..O2.Name
+
+if( (O.Name=="Operator 1 plus Operator 2") == false )
+then
+  print("O.Name==\"Operator 1 plus Operator 2\" returned ",O.Name=="Operator 1 plus Operator 2")
+  ErrorCount = ErrorCount + 1
+end
+
+
+os.exit(ErrorCount)
