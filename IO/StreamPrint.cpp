@@ -1515,7 +1515,12 @@ uint32_t StreamPrintPlainListOfPoles(ListOfPoles M, FILE * stream)
 uint32_t StreamPrintBlockNaturalImpurityOrbitalMatrix(BlockNaturalImpurityOrbitalMatrixType M, FILE * stream)
 {
   fprintf(stream,"BlockNaturalImpurityOrbitalMatrix: %s\n",M.Name);
-  fprintf(stream,"mu %22.15E\n",M.mu);
+  fprintf(stream,"mu      %22.15E\n",M.mu);
+  fprintf(stream,"epsilon %22.15E\n",M.Epsilon);
+  fprintf(stream,"QComplex  %i\n",M.QComplex);
+  fprintf(stream,"BlockSize %i\n",M.BlockSize);
+  fprintf(stream, "A0\n");
+  PrintCompactMatrixMinimal(M.a0);
   fprintf(stream,"Valence part\n");
   StreamPrintBlockTriDiagonalMatrix(M.val, stream);
   fprintf(stream,"Conduction part\n");

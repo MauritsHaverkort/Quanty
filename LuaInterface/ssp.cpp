@@ -1073,6 +1073,11 @@ static int Luacopy(lua_State * L)
         lua_settable(L, -5);
         lua_pop(L, 1);
       }
+      // test if the table has a meta table. If so give the new table the same metatable
+      if(lua_getmetatable(L,len))
+      {
+        lua_setmetatable(L,-2);
+      }
       break;
     default:
       return luaL_error(L, "Error: copying or cloning an object of unrecognised type\n");
@@ -1185,6 +1190,11 @@ static int LuaChop(lua_State * L)
         lua_settable(L, -6);
         lua_pop(L, 2);
       }
+      // test if the table has a meta table. If so give the new table the same metatable
+      if(lua_getmetatable(L,len))
+      {
+        lua_setmetatable(L,-2);
+      }
       break;
     default:
       return luaL_error(L, "Error: Chop an object of unrecognised type\n");
@@ -1263,6 +1273,11 @@ static int Luaconjugate(lua_State * L)
         lua_insert(L, -2);
         lua_settable(L, -5);
         lua_pop(L, 1);
+      }
+      // test if the table has a meta table. If so give the new table the same metatable
+      if(lua_getmetatable(L,len))
+      {
+        lua_setmetatable(L,-2);
       }
       break;
     default:
@@ -1386,6 +1401,11 @@ static int Luaconjugatetranspose(lua_State * L)
           lua_pop(L, 1);
         }
       }
+      // test if the table has a meta table. If so give the new table the same metatable
+      if(lua_getmetatable(L,len))
+      {
+        lua_setmetatable(L,-2);
+      }
       break;
     default:
       return luaL_error(L, "Error: copying or cloning an object of unrecognised type\n");
@@ -1506,6 +1526,11 @@ static int Luatranspose(lua_State * L)
           lua_settable(L, -5);
           lua_pop(L, 1);
         }
+      }
+      // test if the table has a meta table. If so give the new table the same metatable
+      if(lua_getmetatable(L,len))
+      {
+        lua_setmetatable(L,-2);
       }
       break;
     default:

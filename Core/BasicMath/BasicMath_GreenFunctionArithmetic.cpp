@@ -2061,8 +2061,10 @@ ResponsefunctionType *ResponsefunctionCopy(ResponsefunctionType *M)
   return ConvertResponsefunction(M,M->type,0);
 }
 
-/*
- *
+/*   FreeResponsefunction frees the content of a response function
+ *   Response functions of types with a capital letter are freed
+ *   Response functions of types with small letters are controled by a different instance and not freed
+ *   The original variable of ResponsefunctionType is not freed
  */
 uint32_t FreeResponsefunction(ResponsefunctionType *M)
 {
@@ -2119,5 +2121,26 @@ uint32_t FreeResponsefunction(ResponsefunctionType *M)
       printf("Error in FreeResponsefunction unrecognized type %c",M->type);
       return 1;
     }
+  }
+}
+
+
+/*   FreeResponsefunction frees the content of a response function
+ *   Response functions of types with a capital letter are freed
+ *   Response functions of types with small letters are controled by a different instance and not freed
+ *   The original variable of ResponsefunctionType is freed if the content was freed. Otherwise it is not freed
+ */
+uint32_t FreeResponsefunctionIncludingOriginalPointer(ResponsefunctionType *M)
+{
+  if((M->type>='A') && (M->type<='Z'))
+  {
+    uint32_t retval;
+    retval=FreeResponsefunction(M);
+    free(M);
+    return retval;
+  }
+  else
+  {
+    return FreeResponsefunction(M);
   }
 }

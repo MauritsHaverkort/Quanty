@@ -30,14 +30,16 @@ static void luaMWH_StackDump (lua_State *L)
         break;
 
       case LUA_TUSERDATA:  /* userdata */
-        if (luaL_testudata(L, i, "Complex_Type") != NULL) printf("Complex");
-        else if (luaL_testudata(L, i, "Operator_Type") != NULL) printf("Operator");
-        else if (luaL_testudata(L, i, "Wavefunction_Type") != NULL) printf("Wavefunction");
-        else if (luaL_testudata(L, i, "Spectra_Type") != NULL) printf("Spectra");
-        else if (luaL_testudata(L, i, "TightBinding_Type") != NULL) printf("TightBinding");
-        else if (luaL_testudata(L, i, "StuttgartCTRL_Type") != NULL) printf("StuttgartCTRL");
-        else if (luaL_testudata(L, i, "StuttgartHAMR_Type") != NULL) printf("StuttgartHAMR");
-        else if (luaL_testudata(L, i, "DresdenFPLO_Type") != NULL) printf("DresdenFPLO");
+        if      (luaL_testudata(L, i, "Complex_Type")          != NULL) printf("Complex");
+        else if (luaL_testudata(L, i, "Operator_Type")         != NULL) printf("Operator");
+        else if (luaL_testudata(L, i, "Wavefunction_Type")     != NULL) printf("Wavefunction");
+        else if (luaL_testudata(L, i, "Spectra_Type")          != NULL) printf("Spectra");
+        else if (luaL_testudata(L, i, "TightBinding_Type")     != NULL) printf("TightBinding");
+        else if (luaL_testudata(L, i, "StuttgartCTRL_Type")    != NULL) printf("StuttgartCTRL");
+        else if (luaL_testudata(L, i, "StuttgartHAMR_Type")    != NULL) printf("StuttgartHAMR");
+        else if (luaL_testudata(L, i, "DresdenFPLO_Type")      != NULL) printf("DresdenFPLO");
+        else if (luaL_testudata(L, i, "Matrix_Type")           != NULL) printf("Matrix");
+        else if (luaL_testudata(L, i, "ResponseFunction_Type") != NULL) printf("ResponseFunction");
         else printf("Unrecognized");
         break;
 

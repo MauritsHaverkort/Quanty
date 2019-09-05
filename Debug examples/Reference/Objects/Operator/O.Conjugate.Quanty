@@ -1,5 +1,25 @@
-﻿dofile("../../definitions.Quanty")
+ErrorCount=0
 
-print(OppSy)
-OppSy.Conjugate()
-print(OppSy)
+Nf=6
+Nb=0
+
+O1 = NewOperator(Nf, Nb, {{1,-1,1},{0,-0,0.1},{-2,2,0.01}})
+O2 = NewOperator(Nf, Nb, {{1,-1,I},{0,-0,0.1},{-2,2,0.01*I+0.01}})
+O3 = NewOperator(Nf, Nb, {{1,-1,1},{0,-0,0.1},{-2,2,0.01}})
+O4 = NewOperator(Nf, Nb, {{1,-1,-I},{0,-0,0.1},{-2,2,-0.01*I+0.01}})
+
+O3.Conjugate()
+if( (O1==O3) == false )
+then
+  print("After O3.Conjugate O1==O3 returned ",O1==O3)
+  ErrorCount = ErrorCount + 1
+end
+
+O4.Conjugate()
+if( (O2==O4) == false )
+then
+  print("After O4.Conjugate O2==O4 returned ",O2==O4)
+  ErrorCount = ErrorCount + 1
+end
+
+os.exit(ErrorCount)

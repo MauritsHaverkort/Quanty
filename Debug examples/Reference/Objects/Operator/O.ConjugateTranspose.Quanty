@@ -1,14 +1,26 @@
-﻿dofile("../../definitions.Quanty")
+ErrorCount=0
 
-print(OppSy)
-OppSy.ConjugateTranspose()
-print(OppSy)
+Nf=6
+Nb=0
 
--- the conjugate transpose of an Hermitian operator is it-selves
--- for the example we define a non Hermitian operator
+O1 = NewOperator(Nf, Nb, {{1,-1,1},{0,-0,0.1},{-2,1,0.01}})
+O2 = NewOperator(Nf, Nb, {{1,-1,I},{0,-0,0.1},{-2,1,0.01*I+0.01}})
+O3 = NewOperator(Nf, Nb, {{1,-1,1},{0,-0,0.1},{-1,2,0.01}})
+O4 = NewOperator(Nf, Nb, {{1,-1,-I},{0,-0,0.1},{-1,2,-0.01*I+0.01}})
 
-Opp = Chop(OppSy - I * OppSx)
 
-print(Opp)
-Opp.ConjugateTranspose()
-print(Opp)
+O3.ConjugateTranspose()
+if( (O1==O3) == false )
+then
+  print("After O3.ConjugateTranspose O1==O3 returned ",O1==O3)
+  ErrorCount = ErrorCount + 1
+end
+
+O4.ConjugateTranspose()
+if( (O2==O4) == false )
+then
+  print("After O4.ConjugateTranspose O2==O4 returned ",O2==O4)
+  ErrorCount = ErrorCount + 1
+end
+
+os.exit(ErrorCount)

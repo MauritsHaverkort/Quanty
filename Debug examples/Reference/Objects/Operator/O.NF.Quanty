@@ -1,6 +1,50 @@
-﻿dofile("../../definitions.Quanty")
+ErrorCount=0
 
-print(OppSz)
-print("OppSz.NF=",OppSz.NF)
-OppSz.NF=3
-print(OppSz)
+Nf=6
+Nb=0
+
+O1 = NewOperator(Nf, Nb, {{1,-1,1},{0,-0,0.1},{-2,2,0.01}})
+O2 = NewOperator(2,  Nb, {{0.01},{1,-1,1},{0,-0,0.1}})
+
+if( ( O1.NF==6 ) == false )
+then
+print("O1.NF==6 returned ",O1.NF==6)
+ErrorCount = ErrorCount + 1
+end
+
+O1.NF=2
+if( ( O1==O2 ) == false )
+then
+  print("O1==O2 returned ",O1==O2)
+  ErrorCount = ErrorCount + 1
+end
+
+str1=[[
+
+Operator: Operator
+QComplex         =          0 (Real==0 or Complex==1 or Mixed==2)
+MaxLength        =          2 (largest number of product of lader operators)
+NFermionic modes =         20 (Number of fermionic modes (site, spin, orbital, ...) in the one particle basis)
+NBosonic modes   =          0 (Number of bosonic modes (phonon modes, ...) in the one particle basis)
+
+Operator of Length   0
+QComplex      =          0 (Real==0 or Complex==1)
+N             =          1 (number of operators of length   0)
+|  1.00000000000000E-02
+
+Operator of Length   2
+QComplex      =          0 (Real==0 or Complex==1)
+N             =          2 (number of operators of length   2)
+C  1 A  1 |  1.00000000000000E+00
+C  0 A  0 |  1.00000000000000E-01
+
+]]
+
+O1.NF=20
+if( ( tostring(O1)==str1 ) == false )
+then
+  print("tostring(O1)==str1 returned ",tostring(O1)==str1)
+  ErrorCount = ErrorCount + 1
+end
+
+os.exit(ErrorCount)

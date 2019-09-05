@@ -1,12 +1,1 @@
-﻿dofile("../definitions.Quanty")
 
-print(psi1)
-
-base=2.0
-nstep=10
-
-hist = Statistics(psi1,base,nstep)
-
-for i=1,nstep do
-    io.write(string.format("%7.4f to %7.4f | %7.4f \n",base^-(i-1),base^-(i),hist[i]))
-end

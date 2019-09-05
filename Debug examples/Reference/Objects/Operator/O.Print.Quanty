@@ -1,9 +1,26 @@
-﻿dofile("../../definitions.Quanty")
+ErrorCount=0
 
-print("Operator . print")
-OppSz.Print()
+Nf=6
+Nb=0
 
-print("print Operator")
-print(OppSz)
+O1 = NewOperator(Nf, Nb, {{1,-1,1},{0,-0,0.1},{-2,2,0.01}})
 
-OppSz.Print({{"file","OppSz.Print.out"}})
+print("operator . Print")
+O1.Print()
+
+print("print operator")
+print(O1)
+
+print("print tostring(operator)")
+print(tostring(O1))
+
+print("operator . Print full")
+O1.Print({{"Full",true}})
+
+--print("operator . Print Binary file")
+--O1.Print({{"Binary",true},{"file","O1Binary.Print.out"}})
+
+print("operator . Print to file")
+O1.Print({{"file","O1.Print.out"}})
+
+os.exit(ErrorCount)

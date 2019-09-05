@@ -1,7 +1,1 @@
-﻿dofile("../definitions.Quanty")
 
-Opp = Opp1 + Opp2
-Opp.Name = "I'm the name of operator Opp and different from Opp1 and Opp2"
-print(Opp1.Name)
-print(Opp2.Name)
-print(Opp.Name)

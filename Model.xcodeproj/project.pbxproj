@@ -201,7 +201,7 @@
 		4C0B558019675377000B8E97 /* lzio.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = lzio.h; sourceTree = "<group>"; };
 		4C0CCABE201AA2670055DC00 /* 1D_Hubbard.Quanty */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = 1D_Hubbard.Quanty; path = "Debug examples/Examples/1D_Hubbard.Quanty"; sourceTree = "<group>"; };
 		4C0CCABF201AA2670055DC00 /* 1D_NoSpin_RIXS.Quanty */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = 1D_NoSpin_RIXS.Quanty; path = "Debug examples/Examples/1D_NoSpin_RIXS.Quanty"; sourceTree = "<group>"; };
-		4C0CCAC0201AA2670055DC00 /* Coulomb.Quanty */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = Coulomb.Quanty; path = "Debug examples/Examples/Coulomb.Quanty"; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.lua; };
+		4C0CCAC0201AA2670055DC00 /* Coulomb.Quanty */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = Coulomb.Quanty; path = "Debug examples/Examples/Coulomb.Quanty"; sourceTree = "<group>"; };
 		4C0CCAC1201AA2670055DC00 /* Effective_Angular_Momentum.Quanty */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = Effective_Angular_Momentum.Quanty; path = "Debug examples/Examples/Effective_Angular_Momentum.Quanty"; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.lua; };
 		4C0CCAC2201AA2670055DC00 /* EigensystemDense.Quanty */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = EigensystemDense.Quanty; path = "Debug examples/Examples/EigensystemDense.Quanty"; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.lua; };
 		4C0CCAC3201AA2670055DC00 /* Impurity.Quanty */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = Impurity.Quanty; path = "Debug examples/Examples/Impurity.Quanty"; sourceTree = "<group>"; };
@@ -418,7 +418,7 @@
 		4C203CD62087DE95001DCC25 /* PhysicalConstants.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = PhysicalConstants.Quanty; sourceTree = "<group>"; };
 		4C203CDA2087DE95001DCC25 /* BlockBandDiagonalize.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = BlockBandDiagonalize.Quanty; sourceTree = "<group>"; };
 		4C203CDB2087DE95001DCC25 /* Braket.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = Braket.Quanty; sourceTree = "<group>"; };
-		4C203CDC2087DE95001DCC25 /* Chop.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = Chop.Quanty; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.lua; };
+		4C203CDC2087DE95001DCC25 /* Chop.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = Chop.Quanty; sourceTree = "<group>"; };
 		4C203CDD2087DE95001DCC25 /* Clone.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = Clone.Quanty; sourceTree = "<group>"; };
 		4C203CDE2087DE95001DCC25 /* CloneAuto.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = CloneAuto.Quanty; sourceTree = "<group>"; };
 		4C203CDF2087DE95001DCC25 /* CloneNot.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = CloneNot.Quanty; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.css; };
@@ -428,7 +428,7 @@
 		4C203CE32087DE95001DCC25 /* CreateClusterHamiltonian.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = CreateClusterHamiltonian.Quanty; sourceTree = "<group>"; };
 		4C203CE42087DE95001DCC25 /* CreateFluorescenceYield.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = CreateFluorescenceYield.Quanty; sourceTree = "<group>"; };
 		4C203CE52087DE95001DCC25 /* CreateResonantSpectra.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = CreateResonantSpectra.Quanty; sourceTree = "<group>"; };
-		4C203CE62087DE95001DCC25 /* CreateSpectra.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = CreateSpectra.Quanty; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.lua; };
+		4C203CE62087DE95001DCC25 /* CreateSpectra.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = CreateSpectra.Quanty; sourceTree = "<group>"; };
 		4C203CE72087DE95001DCC25 /* DensityMatrix.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = DensityMatrix.Quanty; sourceTree = "<group>"; };
 		4C203CE82087DE95001DCC25 /* Eigensystem.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = Eigensystem.Quanty; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.simpleColoring; };
 		4C203CEC2087DE95001DCC25 /* Expand.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = Expand.Quanty; sourceTree = "<group>"; };
@@ -442,7 +442,7 @@
 		4C203CF52087DE95001DCC25 /* OperatorToMatrix.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = OperatorToMatrix.Quanty; sourceTree = "<group>"; };
 		4C203CF62087DE95001DCC25 /* Orthonormalize.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = Orthonormalize.Quanty; sourceTree = "<group>"; };
 		4C203CF72087DE95001DCC25 /* PotentialExpandedOnClm.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = PotentialExpandedOnClm.Quanty; sourceTree = "<group>"; };
-		4C203CF82087DE95001DCC25 /* Rotate.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = Rotate.Quanty; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.lua; };
+		4C203CF82087DE95001DCC25 /* Rotate.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = Rotate.Quanty; sourceTree = "<group>"; };
 		4C203CF92087DE95001DCC25 /* Statistics.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = Statistics.Quanty; sourceTree = "<group>"; };
 		4C203CFA2087DE95001DCC25 /* TightBindingDefFromDresdenFPLO.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = TightBindingDefFromDresdenFPLO.Quanty; sourceTree = "<group>"; };
 		4C203CFB2087DE95001DCC25 /* TightBindingDefFromStuttgartTRLHAMR.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = TightBindingDefFromStuttgartTRLHAMR.Quanty; sourceTree = "<group>"; };
@@ -689,6 +689,7 @@
 		4C4F54FB20EDE9B80051FF9E /* Tight_Binding_lib.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Tight_Binding_lib.cpp; sourceTree = "<group>"; };
 		4C5CA61716D18BBF00BE1C25 /* DMFT */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = DMFT; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C5D4A8420B58DE8002A5E86 /* Read tigth binding.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; name = "Read tigth binding.Quanty"; path = "Debug examples/Tutorials/Connection to DFT/FPLO/Read tigth binding.Quanty"; sourceTree = "<group>"; };
+		4C64B291230C286B0043E012 /* BlockTridiagonalization.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; name = BlockTridiagonalization.Quanty; path = "Debug examples/External_tests/BlockTridiagonalization.Quanty"; sourceTree = "<group>"; };
 		4C6925BF18D8683700E6FA6F /* CodeMartin.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = CodeMartin.c; sourceTree = "<group>"; };
 		4C6925C418D869FE00E6FA6F /* MartinPESXAS */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = MartinPESXAS; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C79F5D817B53C8000189682 /* Hubart */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Hubart; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -696,6 +697,10 @@
 		4C7AC30020D64457001C84F9 /* Impurity_Meanfield.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; name = Impurity_Meanfield.Quanty; path = "Debug examples/Examples/Impurity_Meanfield.Quanty"; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.lua; };
 		4C7AC30120EA5CD2001C84F9 /* Integral.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; name = Integral.Quanty; path = "Debug examples/Examples/Integral.Quanty"; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.lua; };
 		4C8274D917DC49B000A5F555 /* header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = header.h; sourceTree = "<group>"; };
+		4C8C7AA3231D9C3A0091B74B /* ResponseFunctions.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = ResponseFunctions.Quanty; sourceTree = "<group>"; };
+		4C8C7AA4231DB5D40091B74B /* BlockResponseFunctions.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = BlockResponseFunctions.Quanty; sourceTree = "<group>"; };
+		4C8C7AA5231DB6120091B74B /* TypeConversion.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = TypeConversion.Quanty; sourceTree = "<group>"; };
+		4C8C7AA6231DB6250091B74B /* BlockTypeConversion.Quanty */ = {isa = PBXFileReference; lastKnownFileType = text; path = BlockTypeConversion.Quanty; sourceTree = "<group>"; };
 		4C973444225A7FB4000702B9 /* Typedefs_Martin.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Typedefs_Martin.h; path = Martin/Typedefs_Martin.h; sourceTree = "<group>"; };
 		4C973445225A7FE9000702B9 /* Continuum-Diagonal-Method.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = "Continuum-Diagonal-Method.cpp"; path = "Martin/Continuum-Diagonal-Method.cpp"; sourceTree = "<group>"; };
 		4C973446225A7FE9000702B9 /* Continuum-Diagonal-Method.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "Continuum-Diagonal-Method.h"; path = "Martin/Continuum-Diagonal-Method.h"; sourceTree = "<group>"; };
@@ -1299,6 +1304,7 @@
 		4C203D022087DE95001DCC25 /* Objects */ = {
 			isa = PBXGroup;
 			children = (
+				4C8C7AA2231D9BC30091B74B /* ResponseFunctions */,
 				4CC8D0AB214B1E1C00A9F181 /* Postscript */,
 				4CC8D0862141CDB400A9F181 /* InterpolatingFunction */,
 				4C203D032087DE95001DCC25 /* Complex */,
@@ -1362,17 +1368,6 @@
 				4C203D262087DE95001DCC25 /* Lz.Quanty */,
 				4C203D272087DE95001DCC25 /* n.Quanty */,
 				4C203D282087DE95001DCC25 /* Number.Quanty */,
-				4C203D292087DE95001DCC25 /* O.Chop.Quanty */,
-				4C203D2A2087DE95001DCC25 /* O.Complex.Quanty */,
-				4C203D2B2087DE95001DCC25 /* O.Conjugate.Quanty */,
-				4C203D2C2087DE95001DCC25 /* O.ConjugateTranspose.Quanty */,
-				4C203D2D2087DE95001DCC25 /* O.N.Quanty */,
-				4C203D2E2087DE95001DCC25 /* O.Name.Quanty */,
-				4C203D2F2087DE95001DCC25 /* O.NB.Quanty */,
-				4C203D302087DE95001DCC25 /* O.NF.Quanty */,
-				4C203D312087DE95001DCC25 /* O.Print.Quanty */,
-				4C203D322087DE95001DCC25 /* O.Restrictions.Quanty */,
-				4C203D332087DE95001DCC25 /* O.Transpose.Quanty */,
 				4C203D342087DE95001DCC25 /* Qx.Quanty */,
 				4C203D352087DE95001DCC25 /* Qxx.Quanty */,
 				4C203D362087DE95001DCC25 /* Qxy.Quanty */,
@@ -1400,6 +1395,17 @@
 				4C203D4C2087DE95001DCC25 /* Ty.Quanty */,
 				4C203D4D2087DE95001DCC25 /* Tz.Quanty */,
 				4C203D4E2087DE95001DCC25 /* U.Quanty */,
+				4C203D292087DE95001DCC25 /* O.Chop.Quanty */,
+				4C203D2A2087DE95001DCC25 /* O.Complex.Quanty */,
+				4C203D2B2087DE95001DCC25 /* O.Conjugate.Quanty */,
+				4C203D2C2087DE95001DCC25 /* O.ConjugateTranspose.Quanty */,
+				4C203D2D2087DE95001DCC25 /* O.N.Quanty */,
+				4C203D2E2087DE95001DCC25 /* O.Name.Quanty */,
+				4C203D2F2087DE95001DCC25 /* O.NB.Quanty */,
+				4C203D302087DE95001DCC25 /* O.NF.Quanty */,
+				4C203D312087DE95001DCC25 /* O.Print.Quanty */,
+				4C203D322087DE95001DCC25 /* O.Restrictions.Quanty */,
+				4C203D332087DE95001DCC25 /* O.Transpose.Quanty */,
 				4CA16E3F230AF0EF00AABAAD /* Add.Quanty */,
 				4CA16E40230AF10300AABAAD /* Sub.Quanty */,
 				4CA16E41230AF11700AABAAD /* Mul.Quanty */,
@@ -1592,6 +1598,7 @@
 				4C426BCD220C69A300A8AD88 /* Eigensystem_bug_3.Quanty */,
 				4CD209E0224AE9B4003E60A8 /* NiO_NIXS_Sumrule.Quanty */,
 				4CE77EA12268CA6F00547544 /* Restrictions_bug.Quanty */,
+				4C64B291230C286B0043E012 /* BlockTridiagonalization.Quanty */,
 			);
 			name = External_tests;
 			sourceTree = "<group>";
@@ -1979,6 +1986,17 @@
 				4C0E139D20C975DD00FA8623 /* lapack.h */,
 			);
 			path = Headers;
+			sourceTree = "<group>";
+		};
+		4C8C7AA2231D9BC30091B74B /* ResponseFunctions */ = {
+			isa = PBXGroup;
+			children = (
+				4C8C7AA3231D9C3A0091B74B /* ResponseFunctions.Quanty */,
+				4C8C7AA4231DB5D40091B74B /* BlockResponseFunctions.Quanty */,
+				4C8C7AA5231DB6120091B74B /* TypeConversion.Quanty */,
+				4C8C7AA6231DB6250091B74B /* BlockTypeConversion.Quanty */,
+			);
+			path = ResponseFunctions;
 			sourceTree = "<group>";
 		};
 		4CAF2703200032EC00DDA641 /* Examples */ = {

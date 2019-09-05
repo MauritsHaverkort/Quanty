@@ -90,9 +90,9 @@ char *DetToString(uint32_t const NFermion, uint32_t const NBoson, uint8_t * det)
   int z;
   uint32_t i,pos=0;
   uint32_t NWord=NBoson + Min(NFermion, 1 + (NFermion - 1) / 8);
-  ret = (char*)malloc((NFermion+NBoson+4)*sizeof(char));
-  ret[0]='"';
-  pos++;
+  ret = (char*)malloc((NFermion+NBoson+2)*sizeof(char));
+  //ret[0]='"';
+  //pos++;
   for(i=0;i<NWord-NBoson;i++)
   {
     for(z=128;z>0;z>>=1)
@@ -103,9 +103,9 @@ char *DetToString(uint32_t const NFermion, uint32_t const NBoson, uint8_t * det)
   }
   if(NBoson==0)
   {
-    pos=NFermion+1;
-    ret[pos]='"';
-    pos++;
+    pos=NFermion;
+    //ret[pos]='"';
+    //pos++;
     ret[pos]='\0';
   }
   else
@@ -117,8 +117,8 @@ char *DetToString(uint32_t const NFermion, uint32_t const NBoson, uint8_t * det)
       sprintf(ret+pos,"%02X",det[NWord-NBoson+i]);
     }
     pos+=2;
-    ret[pos]='"';
-    pos++;
+    //ret[pos]='"';
+    //pos++;
     ret[pos]='\0';
   }
   return ret;

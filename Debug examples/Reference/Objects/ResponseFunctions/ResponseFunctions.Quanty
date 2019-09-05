@@ -1,0 +1,178 @@
+ErrorCount=0
+
+zero = 1e-14
+
+-- Response functions represented as a number
+
+--
+
+print("========= defined Green's function as a list of poles ==========")
+print("G(w) = a[1] + Sum_i=1^#b b[i] / (w - a[i+1] + I Gamma/2)")
+a = {1,0,1,2,4}
+b = {0.25,0.2,0.4,0.25}
+M = {a,b, mu=0, type="ListOfPoles"}
+setmetatable(M, ResponseFunctionMeta)
+print(M)
+print("========= transform it to a userdata for speed        ==========")
+U = ToUserdata(M)
+print(U)
+print("========= transform it back to a table for convininence ==========")
+T = ToTable(U)
+print(T)
+print("========= Evaluate M ==========")
+print(M(1,1))
+if ( abs( M(1,1)- (0.79891891891891891891891891891892 - 0.67351351351351351351351351351351 * I) ) > zero )
+then
+  print("Evaluation of M did not get the right value difference is ",M(1,1)- (0.79891891891891891891891891891892 - 0.67351351351351351351351351351351 * I))
+  ErrorCount = ErrorCount + 1
+end
+print("========= Evaluate U ==========")
+print(U(1,1))
+if ( abs( M(1,1)- (0.79891891891891891891891891891892 - 0.67351351351351351351351351351351 * I) ) > zero )
+then
+  print("Evaluation of U did not get the right value difference is ",U(1,1)- (0.79891891891891891891891891891892 - 0.67351351351351351351351351351351 * I))
+  ErrorCount = ErrorCount + 1
+end
+print("========= Evaluate T ==========")
+print(T(1,1))
+if ( abs( T(1,1)- (0.79891891891891891891891891891892 - 0.67351351351351351351351351351351 * I) ) > zero )
+then
+  print("Evaluation of T did not get the right value difference is ",T(1,1)- (0.79891891891891891891891891891892 - 0.67351351351351351351351351351351 * I))
+  ErrorCount = ErrorCount + 1
+end
+print("========= Free response functions ==========")
+M=nil
+U=nil
+T=nil
+collectgarbage()
+print("\n\n\n")
+
+print("========= defined Green's function as a tri-diagonal matrix ==========")
+a = {1,0,1,2,4}
+b = {0.25,0.2,0.4,0.25}
+M = {a,b, mu=0, type="Tri"}
+setmetatable(M, ResponseFunctionMeta)
+print(M)
+print("========= transform it to a userdata for speed        ==========")
+U = ToUserdata(M)
+print(U)
+print("========= transform it back to a table for convininence ==========")
+T = ToTable(U)
+print(T)
+print("========= Evaluate M ==========")
+print(M(1,1))
+if ( abs( M(1,1)- (1.04766171628720981621004392968216 - 0.02745076970595571919349068486102 * I) ) > zero )
+then
+  print("Evaluation of M did not get the right value difference is ",M(1,1)- (1.04766171628720981621004392968216 - 0.02745076970595571919349068486102 * I))
+  ErrorCount = ErrorCount + 1
+end
+print("========= Evaluate U ==========")
+print(U(1,1))
+if ( abs( U(1,1)- (1.04766171628720981621004392968216 - 0.02745076970595571919349068486102 * I) ) > zero )
+then
+  print("Evaluation of U did not get the right value difference is ",U(1,1)- (1.04766171628720981621004392968216 - 0.02745076970595571919349068486102 * I))
+  ErrorCount = ErrorCount + 1
+end
+print("========= Evaluate T ==========")
+print(T(1,1))
+if ( abs( T(1,1)- (1.04766171628720981621004392968216 - 0.02745076970595571919349068486102 * I) ) > zero )
+then
+  print("Evaluation of T did not get the right value difference is ",T(1,1)- (1.04766171628720981621004392968216 - 0.02745076970595571919349068486102 * I))
+  ErrorCount = ErrorCount + 1
+end
+print("========= Free response functions ==========")
+M=nil
+U=nil
+T=nil
+collectgarbage()
+print("\n\n\n")
+
+
+print("========= defined Green's function as an Anderson impurity matrix ==========")
+a = {1,0,1,2,4}
+b = {0.25,0.2,0.4,0.25}
+M = {a,b, mu=0, type="And"}
+setmetatable(M, ResponseFunctionMeta)
+print(M)
+print("========= transform it to a userdata for speed        ==========")
+U = ToUserdata(M)
+print(U)
+print("========= transform it back to a table for convininence ==========")
+T = ToTable(U)
+print(T)
+print("========= Evaluate M ==========")
+print(M(1,1))
+if ( abs( M(1,1)- (1.04130175317902761406092649225064 - 0.02328533855616552369254277335780 * I) ) > zero )
+then
+  print("Evaluation of M did not get the right value difference is ",M(1,1)- (1.04130175317902761406092649225064 - 0.02328533855616552369254277335780 * I))
+  ErrorCount = ErrorCount + 1
+end
+print("========= Evaluate U ==========")
+print(U(1,1))
+if ( abs( U(1,1)- (1.04130175317902761406092649225064 - 0.02328533855616552369254277335780 * I) ) > zero )
+then
+  print("Evaluation of U did not get the right value difference is ",U(1,1)- (1.04130175317902761406092649225064 - 0.02328533855616552369254277335780 * I))
+  ErrorCount = ErrorCount + 1
+end
+print("========= Evaluate T ==========")
+print(T(1,1))
+if ( abs( T(1,1)- (1.04130175317902761406092649225064 - 0.02328533855616552369254277335780 * I) ) > zero )
+then
+  print("Evaluation of T did not get the right value difference is ",T(1,1)- (1.04130175317902761406092649225064 - 0.02328533855616552369254277335780 * I))
+  ErrorCount = ErrorCount + 1
+end
+print("========= Free response functions ==========")
+M=nil
+U=nil
+T=nil
+collectgarbage()
+print("\n\n\n")
+
+
+print("========= defined Green's function as Natural Orbital impurity matrix ==========")
+aval = {1,0,1,2,4}
+bval = {0.25,0.2,0.4,0.25}
+acon = {11,10,11,12,14}
+bcon = {1.25,1.2,1.4,1.25}
+Mval = {aval,bval, mu=0, type="Tri"}
+Mcon = {acon,bcon, mu=0, type="Tri"}
+a0=-17
+b0=1.2
+M = {{a0,b0},val=Mval, con=Mcon, mu=0, type="Nat"}
+setmetatable(M, ResponseFunctionMeta)
+print(M)
+print("========= transform it to a userdata for speed        ==========")
+U = ToUserdata(M)
+print(U)
+print("========= transform it back to a table for convininence ==========")
+T = ToTable(U)
+print(T)
+print("========= Evaluate M ==========")
+print(M(1,1))
+if ( abs( M(1,1) - (0.095335902812824419970199221160 - 0.054050176924256061369667884711 * I) ) > zero )
+then
+  print("Evaluation of M did not get the right value difference is ",M(1,1) - (0.095335902812824419970199221160 - 0.054050176924256061369667884711 * I))
+  ErrorCount = ErrorCount + 1
+end
+print("========= Evaluate U ==========")
+print(U(1,1))
+if ( abs( U(1,1) - (0.095335902812824419970199221160 - 0.054050176924256061369667884711 * I) ) > zero )
+then
+  print("Evaluation of U did not get the right value difference is ",U(1,1) - (0.095335902812824419970199221160 - 0.054050176924256061369667884711 * I))
+  ErrorCount = ErrorCount + 1
+end
+print("========= Evaluate T ==========")
+print(T(1,1))
+if ( abs( T(1,1) - (0.095335902812824419970199221160 - 0.054050176924256061369667884711 * I) ) > zero )
+then
+  print("Evaluation of T did not get the right value difference is ",T(1,1) - (0.095335902812824419970199221160 - 0.054050176924256061369667884711 * I))
+  ErrorCount = ErrorCount + 1
+end
+print("========= Free response functions ==========")
+M=nil
+U=nil
+T=nil
+collectgarbage()
+print("\n\n\n")
+
+os.exit(ErrorCount)
