@@ -1,28 +1,48 @@
-A = InterpolatingFunction.Spline({1,2,3},{1,4,9})
+x = {1,2,3}
+A = InterpolatingFunction.Spline(x,{1,4,9})
 print(A(2.5))
 
-B = InterpolatingFunction.Spline({1,2,3},{1,4,9},2,18)
+B = InterpolatingFunction.Spline(x,{1,4,9}) --,2,18
 print(2.5*2.5, B(2.5))
 
 C = InterpolatingFunction.Spline({1,3,2},{1,9,4})
 print(C(2.5))
 
+print("A(x):")
+print(A(x))
+print("B(x):")
+print(B(x))
+
+print("unary minus")
 D = -A
-
+print("addition")
 D = A + B
+print(D(x))
+print(D(2.5))
 
+F = InterpolatingFunction.Spline(x,{2,8,18})
+print(F(2.5))
+
+
+print("inverse math")
 D = A - B
-
+print(D(x))
+print("multiplication")
 D = A * B
-
+print(D(x))
+print("division")
 D = A / B
-
+print(D(x))
+print("power")
 D = A^2
-
-D = A..B
-
-D = (A == B)
-
+print(D(x))
+G = InterpolatingFunction.Spline(x,x)
+D = A..G
+print("concat")
+print(D(x))
+print("Egalite")
+print(A == B)
+print("Liberte")
 D = (A < B)
-
+print("Fraternite")
 D = (A <= B)

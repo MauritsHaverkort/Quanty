@@ -105,7 +105,7 @@ static int LuaOperatorNewFullCoulomb (lua_State *L)
     		}
     	}
 
-    	if (indToK.size() != Nindices) printf("Warning: Martin.Coulomb() number of kappas (%d) != number of indices (%d)\n",(int) indToK.size() , (int) Nindices);
+    	if ((uint32_t)indToK.size() != Nindices) printf("Warning: Martin.Coulomb() number of kappas (%d) != number of indices (%d)\n",(int) indToK.size() , (int) Nindices);
     	op = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
     	CreateOperatorFastCoulombRelativistic(NF,wavefunctions->VRe,wavefunctions->Ni,x,NGridpoints,indToK,indices, op);
     }
@@ -308,7 +308,7 @@ static int LuaCreateBaseForContinuum(lua_State *L)
 		eigenval = CreateBaseForContinuum(vbasf,vderf,x,group,vcontf,energiesCont);
 
 		LuaPushArray_double(L,&(eigenval[0]), (int) vcontf.size());
-		for (int i = 0; i < vcontf.size(); i++)
+		for (uint32_t i = 0; i < (uint32_t)vcontf.size(); i++)
 		{
 			contfuns->VRe[i] = &(vcontf[i][0]);
 		}
@@ -326,7 +326,7 @@ static int LuaCreateBaseForContinuum(lua_State *L)
 		eigenval = CreateBaseForContinuum((uint32_t) vbasf.size(), vbasf,vderf,x,NGridpoints,group, (uint32_t) vcontf.size(),vcontf,w);
 
 		LuaPushArray_double(L,&(eigenval[vcontf.size()/2]), (int) vcontf.size()/2);
-		for (uint32_t i = 0; i < vcontf.size()/2; i++)
+		for (uint32_t i = 0; i < (uint32_t)vcontf.size()/2; i++)
 		{
 			contfuns->VRe[i] = &(vcontf[vcontf.size()/2+i][0]);
 		}
@@ -354,7 +354,7 @@ static int LuaCreateBaseForContinuum(lua_State *L)
 		contfuns->VRe = (double**) malloc(contfuns->Ni * sizeof(double*));
 
 		LuaPushArray_double(L,&(eigenval[0]), (int) vcontf.size());
-		for (uint32_t i = 0; i < vcontf.size(); i++)
+		for (uint32_t i = 0; i < (uint32_t) vcontf.size(); i++)
 		{
 			contfuns->VRe[i] = &(vcontf[i][0]);
 		}
@@ -473,7 +473,7 @@ static int LuaPlotSpectrumWithSelfEnergy(lua_State *L)
 	psi = luaL_checkarray_double(L,2);
 	if (H.size() != psi.size())
 	{
-		return luaL_error(L,"PlotSpectrumWithSelfEnergy: Hamiltonian and ground state do not have the same dimensions - dim(H) = %d and dim(psi) = %d\n",H.size(),psi.size());
+		return luaL_error(L,"PlotSpectrumWithSelfEnergy: Hamiltonian and ground state do not have the same dimensions - dim(H) = %u and dim(psi) = %u\n",(uint32_t)H.size(),(uint32_t)psi.size());
 	}
 	luaL_checktype(L, 3, LUA_TTABLE);
 	uint32_t lenSigma = (uint32_t)lua_objlen(L,3);
@@ -484,9 +484,9 @@ static int LuaPlotSpectrumWithSelfEnergy(lua_State *L)
 		SigmaRes.push_back(luaL_checkResponsefunction(L,-1));
 		lua_pop(L,1);
 	}
-	if (((BlockTriDiagonalMatrixType*)SigmaRes[0]->data)->BlockSize != H.size())
+	if (((BlockTriDiagonalMatrixType*)SigmaRes[0]->data)->BlockSize != (uint32_t)H.size())
 	{
-		return luaL_error(L,"PlotSpectrumWithSelfEnergy: self energy and Hamiltonian do not have the same dimensions - dim(H) = %d and dim(Sigma) = %d\n",H.size(),((BlockTriDiagonalMatrixType*)SigmaRes[0]->data)->BlockSize);
+		return luaL_error(L,"PlotSpectrumWithSelfEnergy: self energy and Hamiltonian do not have the same dimensions - dim(H) = %u and dim(Sigma) = %d\n",(uint32_t)H.size(),((BlockTriDiagonalMatrixType*)SigmaRes[0]->data)->BlockSize);
 	}
 	gH   = luaL_checknumber(L,4);
 	gS   = luaL_checknumber(L,5);
@@ -512,7 +512,7 @@ static int LuaPlotSpectrumWithSelfEnergy(lua_State *L)
 	}
 
 	lua_createtable(L,(int)graph.size(),0);
-	for (uint32_t i = 0; i < graph.size(); i++)
+	for (uint32_t i = 0; i < (uint32_t) graph.size(); i++)
 	{
 		LuaPushArray_double(L,&(graph[i][0]),2);
 		lua_rawseti(L,-2,i+1);
@@ -559,7 +559,7 @@ static int LuaEvaluateSelfEnergy(lua_State *L)
 		lua_check(L,7,energyshift);
 		if (energyshift.size() != SigmaRes.size())
 		{
-			return luaL_error(L,"LuaEvaluateSelfEnergy: %d = energyshift.size() != SigmaRes.size() = %d \n",energyshift.size() , SigmaRes.size());
+			return luaL_error(L,"LuaEvaluateSelfEnergy: %u = energyshift.size() != SigmaRes.size() = %u \n",(uint32_t)energyshift.size() , (uint32_t)SigmaRes.size());
 		}
 		for (uint32_t i = 0; i < lenW; i++)
 		{
@@ -650,7 +650,7 @@ static int LuaCalcSpectrumWithSelfEnergy(lua_State *L)
 	psi = luaL_checkarray_double(L,2);
 	if (H.size() != psi.size())
 	{
-		return luaL_error(L,"CalcSpectrumWithSelfEnergy: Hamiltonian and ground state do not have the same dimensions - dim(H) = %d and dim(psi) = %d\n",H.size(),psi.size());
+		return luaL_error(L,"CalcSpectrumWithSelfEnergy: Hamiltonian and ground state do not have the same dimensions - dim(H) = %u and dim(psi) = %u\n",(uint32_t)H.size(),(uint32_t)psi.size());
 	}
 	lua_check(L,3,Sigma);
 
@@ -663,7 +663,7 @@ static int LuaCalcSpectrumWithSelfEnergy(lua_State *L)
 		return luaL_error(L,"CalcSpectrumWithSelfEnergy: cannot plot range [%f,%f] in steps of %f\n",wMin,wMax,dw);
 	}
 	uint32_t lenW = floor((wMax-wMin)/dw) + 1;
-	if (lenW != Sigma.size())
+	if (lenW != (uint32_t)Sigma.size())
 	{
 		return luaL_error(L,"CalcSpectrumWithSelfEnergy: Grids for Sigma and G do not match\n");
 	}
@@ -1217,7 +1217,7 @@ static int LuaRelativisticDipoleOperator(lua_State *L)
 	size_t Norbitals = G.size();
 	if (Norbitals != F.size() || Norbitals != energies.size() || Norbitals != indToK.size() || Norbitals != indices.size())
 	{
-		return luaL_error(L,"Error in LuaRelativisticDipoleOperator: Objects of unequal lenght: G : %d\n F : %d\n energies : %d\n indices: %d\n indices[kappas] : %d\n",Norbitals ,F.size(),energies.size(),indices.size(),indToK.size());
+		return luaL_error(L,"Error in LuaRelativisticDipoleOperator: Objects of unequal lenght: G : %lu\n F : %lu\n energies : %lu\n indices: %lu\n indices[kappas] : %lu\n",Norbitals ,F.size(),energies.size(),indices.size(),indToK.size());
 	}
 
 	OperatorType *op = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
@@ -1641,7 +1641,7 @@ static int LuaListU(lua_State *L)
 				return luaL_error(L, "Errorr: Martin.Coulomb() number of basis funs (%d) < number of indices (%d)\n",NfunsG , Nindices);
 			}
 		}
-		if (indToK.size() != Nindices) printf("Warning: Martin.Coulomb() number of kappas (%d) != number of indices (%d)\n",(uint32_t)indToK.size() , Nindices);
+		if ((uint32_t)indToK.size() != Nindices) printf("Warning: Martin.Coulomb() number of kappas (%u) != number of indices (%d)\n",(uint32_t)indToK.size() , Nindices);
 
 		vector<Interpolation::InterpolatingFunction *> funsG = vector<Interpolation::InterpolatingFunction *>(NfunsG);
 		for(uint32_t i = 0; i < NfunsG; i++)
@@ -1927,7 +1927,7 @@ static int LuaOperatorNewAtomicUOccupationConserving(lua_State *L)
 				return luaL_error(L, "Errorr: Martin.Coulomb() number of basis funs (%d) < number of indices (%d)\n",NfunsG , Nindices);
 			}
 		}
-		if (indToK.size() != Nindices) printf("Warning: Martin.Coulomb() number of kappas (%d) != number of indices (%d)\n",(uint32_t)indToK.size() , Nindices);
+		if ((uint32_t)indToK.size() != Nindices) printf("Warning: Martin.Coulomb() number of kappas (%u) != number of indices (%d)\n",(uint32_t)indToK.size() , Nindices);
 
 		vector<Interpolation::InterpolatingFunction *> funsG = vector<Interpolation::InterpolatingFunction *>(NfunsG);
 		for(uint32_t i = 0; i < NfunsG; i++)

@@ -236,10 +236,10 @@ uint32_t ResonantSpectrumCNSED(const OperatorType OppH1, const OperatorType OppH
         vector<double> EAuger = vector<double>(CM.Ni);
         CompactMatrixType fun;  // Should not be allocated acording to Documentation of CompactMatrixMultiply called in BlockTriDiagonalMatrixEigenSystem
         BlockTriDiagonalMatrixEigenSystem(&M, &(EAuger[0]), &fun);
-        for (uint32_t j = 0; j < EAuger.size(); j++) printf("%E\t",EAuger[j]);printf("\n#Eauger = %u\n",EAuger.size());
+        for (uint32_t j = 0; j < (uint32_t) EAuger.size(); j++) printf("%E\t",EAuger[j]);printf("\n#Eauger = %u\n", (uint32_t)EAuger.size());
         EAuger[0] = 0;
         CompactMatrixEigensystem(&CM,&fun,&(EAuger[0]));
-        for (uint32_t j = 0; j < EAuger.size(); j++) printf("%E\t",EAuger[j]);printf("\n#Eauger = %u\n",EAuger.size());
+        for (uint32_t j = 0; j < (uint32_t) EAuger.size(); j++) printf("%E\t",EAuger[j]);printf("\n#Eauger = %u\n",(uint32_t)EAuger.size());
         FreeCompactMatrix(&CM);
         vector<WaveFunctionType> psiCont;
         RotateWaveFunctions(KrylBasCont,M.N,M.BlockSize,BlockSize,fun,psiCont);

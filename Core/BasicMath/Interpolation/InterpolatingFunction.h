@@ -35,6 +35,15 @@ public:
 
 };
 
+void MergeGrids(const std::vector<double> &x1,const std::vector<double> &x2, std::vector<double> &xout );
+void Add(InterpolatingFunction &f, InterpolatingFunction &g, InterpolatingFunction &fplusg);
+void Mul(InterpolatingFunction &f, InterpolatingFunction &g, InterpolatingFunction &fplusg);
+void Sub(InterpolatingFunction &f, InterpolatingFunction &g, InterpolatingFunction &fplusg);
+void Div(InterpolatingFunction &f, InterpolatingFunction &g, InterpolatingFunction &fplusg);
+void Pow(InterpolatingFunction &f, double n, InterpolatingFunction &g);
+void Concat(InterpolatingFunction &f, InterpolatingFunction &g, InterpolatingFunction &fg);
+bool operator==(InterpolatingFunction &f,InterpolatingFunction &g);
+
 } /* namespace Interpolation */
 
 #endif /* INTERPOLATINGFUNCTION_H_ */

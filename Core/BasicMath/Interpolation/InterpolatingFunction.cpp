@@ -39,7 +39,7 @@ std::vector<double> InterpolatingFunction::operator()(const std::vector<double> 
 
 void InterpolatingFunction::Create(const std::vector<double> &u, const std::vector<double> &v)
 {
-
+    printf("you should not see this message\n");
 }
 
 std::vector<double> InterpolatingFunction::GetX()
@@ -60,6 +60,127 @@ double InterpolatingFunction::GetX(uint32_t i)
 double InterpolatingFunction::GetY(uint32_t i)
 {
 	return y[i];
+}
+
+void Pow(InterpolatingFunction &f, double n, InterpolatingFunction &g)
+{
+    std::vector<double> x,y;
+    x = f.GetX();
+    y = f(x);
+    for (uint32_t i = 0; i < x.size(); i++)
+    {
+        y[i] = pow(y[i],n);
+    }
+    g.Create(x,y);
+}
+
+void Concat(InterpolatingFunction &f, InterpolatingFunction &g, InterpolatingFunction &fg)
+{
+    std::vector<double> x,y;
+    x = f.GetX();
+    y = g(x);
+    for (uint32_t i = 0; i < x.size(); i++)
+    {
+        y[i] = f(y[i]);
+    }
+    fg.Create(x,y);
+}
+
+void Add(InterpolatingFunction &f, InterpolatingFunction &g, InterpolatingFunction &fplusg)
+{
+    std::vector<double> x,y,x1,x2;
+    x1 = f.GetX();
+    x2 = g.GetX();
+    MergeGrids(x1,x2,x);
+    y = std::vector<double>(x.size());
+    for (uint32_t i = 0; i < x.size(); i++)
+    {
+        y[i] = f(x[i]) + g(x[i]);
+    }
+    fplusg.Create(x,y);
+}
+
+void Mul(InterpolatingFunction &f, InterpolatingFunction &g, InterpolatingFunction &fplusg)
+{
+    std::vector<double> x,y,x1,x2;
+    x1 = f.GetX();
+    x2 = g.GetX();
+    MergeGrids(x1,x2,x);
+    y = std::vector<double>(x.size());
+    for (uint32_t i = 0; i < x.size(); i++)
+    {
+        y[i] = f(x[i]) * g(x[i]);
+    }
+    fplusg.Create(x,y);
+}
+
+void Sub(InterpolatingFunction &f, InterpolatingFunction &g, InterpolatingFunction &fplusg)
+{
+    std::vector<double> x,y,x1,x2;
+    x1 = f.GetX();
+    x2 = g.GetX();
+    MergeGrids(x1,x2,x);
+    y = std::vector<double>(x.size());
+    for (uint32_t i = 0; i < x.size(); i++)
+    {
+        y[i] = f(x[i]) - g(x[i]);
+    }
+    fplusg.Create(x,y);
+}
+
+void Div(InterpolatingFunction &f, InterpolatingFunction &g, InterpolatingFunction &fplusg)
+{
+    std::vector<double> x,y,x1,x2;
+    x1 = f.GetX();
+    x2 = g.GetX();
+    MergeGrids(x1,x2,x);
+    y = std::vector<double>(x.size());
+    for (uint32_t i = 0; i < x.size(); i++)
+    {
+        y[i] = f(x[i]) / g(x[i]);
+    }
+    fplusg.Create(x,y);
+}
+
+bool operator==(InterpolatingFunction &f,InterpolatingFunction &g)
+{
+    const double eps = 1E-14;
+    vector<double> x1 = f.GetX();
+    vector<double> x2 = g.GetX();
+    vector<double> y1 = f.GetY();
+    vector<double> y2 = g.GetY();
+    if (x1.size() != x2.size()) return false;
+    for (uint32_t i = 0; i < (uint32_t) x1.size(); i++)
+    {
+        if ( abs(x1[i] - x2[i]) > eps*abs(x1[i]) || abs(y1[i] - y2[i]) > eps*abs(y1[i])) return false;
+    }
+    return true;
+}
+
+void MergeGrids(const std::vector<double> &x1,const std::vector<double> &x2, std::vector<double> &xout )
+{
+    uint32_t n1 = (uint32_t) x1.size();
+    uint32_t n2 = (uint32_t) x2.size();
+    uint32_t nout = n1+n2;
+    xout = std::vector<double>(nout);
+    const double eps = 1E-14;
+    for (uint32_t i = 0; i < n1; i++)
+    {
+        xout[i] = x1[i];
+    }
+    for (uint32_t i = 0; i < n2; i++)
+    {
+        xout[i+n1] = x2[i];
+    }    
+    qsort(&(xout[0]), nout, sizeof(double), &qsortcomparedoubles);
+    for (std::vector<double>::iterator it = xout.end()-1; it != xout.begin(); it--)
+    {
+        if (abs(*it-*(it-1)) < eps * abs(*it))
+        {
+            xout.erase(it);
+        }
+    }
+    printf("new grid # = %lu\told grid # = %lu\n",xout.size(),x1.size());
 }
 
 } /* namespace Interpolation */
