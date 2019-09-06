@@ -479,9 +479,18 @@ static int LuaInterpolateDestroy(lua_State * L)
   return 0;
 }
 
+static int LuaInterpolationIntegrate(lua_State * L)
+{
+	Interpolation::InterpolatingFunction *f = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
+	double value = Interpolation::Integrate(*f);
+	lua_push(L,value);
+	return 1;
+}
+
 static const struct luaL_Reg InterpolatingFunction_func[] = {
   {"Spline", LuaSplineInterpolate},
   {"CubicHermiteSpline", LuaCubicHermiteSplineInterpolate},
+  {"Integrate",LuaInterpolationIntegrate},
   {NULL, NULL}
 };
 

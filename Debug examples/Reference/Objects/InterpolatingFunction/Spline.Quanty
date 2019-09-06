@@ -78,4 +78,6 @@ if A+D ~= Null then
     ErrorCount = ErrorCount +1
 end    
 
+print(InterpolatingFunction.Integrate(A+A))
+
 os.exit(ErrorCount)

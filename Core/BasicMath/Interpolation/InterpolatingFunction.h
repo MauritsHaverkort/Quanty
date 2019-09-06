@@ -46,6 +46,7 @@ void Div(InterpolatingFunction &f, InterpolatingFunction &g, InterpolatingFuncti
 void Pow(InterpolatingFunction &f, double n, InterpolatingFunction &g);
 void Concat(InterpolatingFunction &f, InterpolatingFunction &g, InterpolatingFunction &fg);
 bool operator==(InterpolatingFunction &f,InterpolatingFunction &g);
+double Integrate(InterpolatingFunction &f);
 
 } /* namespace Interpolation */
 

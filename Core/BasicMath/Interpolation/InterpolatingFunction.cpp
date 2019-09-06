@@ -157,6 +157,24 @@ bool operator==(InterpolatingFunction &f,InterpolatingFunction &g)
     return true;
 }
 
+double Integrate(InterpolatingFunction &f)
+{
+	uint32_t N = 4;
+	double val = 0;
+	vector<double> x,w,y;
+	for (uint32_t i = 0; i < (uint32_t) f.x.size()-1; i++)
+	{
+		GaussianQuadratureWeights(N,x,w,f.x[i],f.x[i+1]);
+		y = f(x);
+		for (uint32_t j = 0; j < N; j++)
+		{
+			val += y[i]*w[i];
+		}
+
+	}
+	return val;
+}
+
 void MergeGrids(const std::vector<double> &x1,const std::vector<double> &x2, std::vector<double> &xout )
 {
     uint32_t n1 = (uint32_t) x1.size();
