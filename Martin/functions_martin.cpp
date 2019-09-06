@@ -2152,6 +2152,18 @@ static int LuaOperatorNewAtomicUOccupationConservingOneShell(lua_State *L)
     return 1;
 }
 
+static int LuaThomasAlgorithm(lua_State *L)
+{
+    vector<double> a,b,c,d,x;
+    lua_check(L,1,a);
+    lua_check(L,2,b);
+    lua_check(L,3,c);
+    lua_check(L,4,d);
+    ThomasAlgorithm(a,b,c,d,x);
+    lua_push(L,x);
+    return 1;
+}
+
 static int LuaOrthonormalizeContinuum(lua_State *L)
 {
 	uint32_t NGridpoints = 0;
@@ -2296,6 +2308,7 @@ static const struct luaL_Reg Martin_func[] = {
   {"AUcons",LuaOperatorNewAtomicUOccupationConserving},
   {"AUconsOs",LuaOperatorNewAtomicUOccupationConservingOneShell},
   {"OrthonormalizeContinuum",LuaOrthonormalizeContinuum},
+  {"Thomas",LuaThomasAlgorithm},
   {NULL, NULL}
 };
 

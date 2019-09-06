@@ -149,10 +149,10 @@ bool operator==(InterpolatingFunction &f,InterpolatingFunction &g)
     vector<double> x2 = g.GetX();
     vector<double> y1 = f.GetY();
     vector<double> y2 = g.GetY();
-    if (x1.size() != x2.size()) return false;
+    if (x1.size() != x2.size() || f.type != g.type) return false;
     for (uint32_t i = 0; i < (uint32_t) x1.size(); i++)
     {
-        if ( abs(x1[i] - x2[i]) > eps*abs(x1[i]) || abs(y1[i] - y2[i]) > eps*abs(y1[i])) return false;
+        if ( fabs(x1[i] - x2[i]) > eps*fabs(x1[i]) || fabs(y1[i] - y2[i]) > eps*fabs(y1[i])) return false;
     }
     return true;
 }
@@ -175,12 +175,11 @@ void MergeGrids(const std::vector<double> &x1,const std::vector<double> &x2, std
     qsort(&(xout[0]), nout, sizeof(double), &qsortcomparedoubles);
     for (std::vector<double>::iterator it = xout.end()-1; it != xout.begin(); it--)
     {
-        if (abs(*it-*(it-1)) < eps * abs(*it))
+        if (fabs(((*it)-(*(it-1)))) <= eps * (fabs(*it)+eps))
         {
             xout.erase(it);
         }
     }
-    printf("new grid # = %lu\told grid # = %lu\n",xout.size(),x1.size());
 }
 
 } /* namespace Interpolation */

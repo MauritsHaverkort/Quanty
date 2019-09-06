@@ -14,14 +14,17 @@ namespace Interpolation {
 
 class InterpolatingFunction {
 protected:
-	std::vector<double> x;
-	std::vector<double> y;
+
 public:
 
 	InterpolatingFunction();
 	virtual ~InterpolatingFunction();
 
-	std::vector<double> GetX();
+	std::string type;
+	std::vector<double> x;
+	std::vector<double> y;
+    
+    std::vector<double> GetX();
 	std::vector<double> GetY();
 	double GetX(uint32_t i);
 	double GetY(uint32_t i);

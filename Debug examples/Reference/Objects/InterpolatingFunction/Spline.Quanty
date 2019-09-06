@@ -1,48 +1,81 @@
-x = {1,2,3}
-A = InterpolatingFunction.Spline(x,{1,4,9})
-print(A(2.5))
+ErrorCount = 0
+u = {}
+for i = 1, 21 do
+   u[i] = 1 + (i-1)/10 
+end
 
-B = InterpolatingFunction.Spline(x,{1,4,9}) --,2,18
-print(2.5*2.5, B(2.5))
+x1  = {1,2,3}
+x2 = {1,1.5,2.5,3}
+A = InterpolatingFunction.Spline(x1,{1,4,9})
+B = InterpolatingFunction.Spline(x2,{1,4,4,9})
+vA = A(u)
+vB = B(u)
 
-C = InterpolatingFunction.Spline({1,3,2},{1,9,4})
-print(C(2.5))
+ApB = A + B
+AmB = A - B
 
-print("A(x):")
-print(A(x))
-print("B(x):")
-print(B(x))
+Dp = {}
+Dm = {}
+sum1 = 0
+sum2 = 0
+for i = 1, #vA do
+    Dp[i] = Chop(vA[i] + vB[i] - ApB(u[i]),1E-14)
+    Dm[i] = Chop(vA[i] - vB[i] - AmB(u[i]),1E-14)
+    sum1 = sum1 + abs(Dp[i])
+    sum2 = sum2 + abs(Dm[i])
+end
+if sum1 ~= 0 then 
+    ErrorCount = ErrorCount +1
+    print("Error addition")
+end
+if sum2 ~= 0 then 
+    ErrorCount = ErrorCount +1
+    print("Error subtraction")
+end
 
-print("unary minus")
-D = -A
-print("addition")
-D = A + B
-print(D(x))
-print(D(2.5))
-
-F = InterpolatingFunction.Spline(x,{2,8,18})
-print(F(2.5))
-
-
-print("inverse math")
-D = A - B
-print(D(x))
-print("multiplication")
 D = A * B
-print(D(x))
-print("division")
+Du = { 1 , 2.7254285714286 , 4.432 , 6.1008571428571 , 7.7131428571429 , 9.25 , 10.687428571429 , 11.980857142857 , 13.080571428571 , 13.936857142857 , 14.5 , 14.832857142857 , 15.448571428571 , 16.972857142857 , 20.031428571429 , 25.25 , 33.057142857143 , 43.092857142857 , 54.8 , 67.621428571429 , 81 }
+for i = 1, #Du do
+    if abs(Du[i] - D(u[i])) > 5E-13 then
+        print("Error multiplication",abs(Du[i] - D(u[i])))
+        ErrorCount = ErrorCount +1
+        break
+    end
+end
+
 D = A / B
-print(D(x))
-print("power")
-D = A^2
-print(D(x))
-G = InterpolatingFunction.Spline(x,x)
+Du = { 1 , 0.86982697044335 , 0.75110344827586 , 0.6552789408867 , 0.59380295566502 , 0.578125 , 0.61582266009852 , 0.69898583743842 , 0.81583251231527 , 0.95458066502463 , 1.1034482758621 , 1.2505806650246 , 1.3838325123153 , 1.4909858374384 , 1.5598226600985 , 1.578125 , 1.537802955665 , 1.4472789408867 , 1.3191034482759 , 1.1658269704433 , 1 }
+for i = 1, #Du do
+    if abs(Du[i] - D(u[i])) > 5E-14 then
+        print("Error division",abs(Du[i] - D(u[i])))
+        ErrorCount = ErrorCount +1
+        break
+    end
+end
+
+G = InterpolatingFunction.Spline(x1,x1)
 D = A..G
-print("concat")
-print(D(x))
-print("Egalite")
-print(A == B)
-print("Liberte")
-D = (A < B)
-print("Fraternite")
-D = (A <= B)
+
+C = InterpolatingFunction.Spline(x1,{1,4,9},0,0)
+F1 = InterpolatingFunction.CubicHermiteSpline(x1,{1,4,9})
+F2 = InterpolatingFunction.CubicHermiteSpline(x1,{1,4,9})
+F3 = InterpolatingFunction.CubicHermiteSpline(x1,{1,4,9},{0,1,2})
+
+if A ~= D or A == C or A == F1 or F1 ~= F2 or F2 == F3 then
+    printf("Error Egalite")
+    ErrorCount = ErrorCount +1
+end
+
+if A^2 ~= A*A then
+    printf("Error Power")
+    ErrorCount = ErrorCount +1
+end
+
+D = -A
+Null = InterpolatingFunction.Spline(x1,{0,0,0})
+if A+D ~= Null then
+    printf("Error unary minus")
+    ErrorCount = ErrorCount +1
+end    
+
+os.exit(ErrorCount)

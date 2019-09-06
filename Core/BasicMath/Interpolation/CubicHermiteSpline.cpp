@@ -10,7 +10,7 @@
 namespace Interpolation {
 
 CubicHermiteSpline::CubicHermiteSpline() {
-	// TODO Auto-generated constructor stub
+	type = "CubicHermiteSpline";
 
 }
 
@@ -21,10 +21,12 @@ CubicHermiteSpline::~CubicHermiteSpline() {
 CubicHermiteSpline::CubicHermiteSpline(const std::vector<double> &u, const std::vector<double> &v)
 {
 	Create(u,v);
+    type = "CubicHermiteSpline";
 }
 CubicHermiteSpline::CubicHermiteSpline(const std::vector<double> &u, const std::vector<double> &v, const std::vector<double> &w)
 {
 	Create(u,v,w);
+    type = "CubicHermiteSpline";
 }
 
 void CubicHermiteSpline::Create(const std::vector<double> &u, const std::vector<double> &v)
@@ -194,6 +196,34 @@ std::vector<double> CubicHermiteSpline::operator()(const std::vector<double> &t,
 		}
 	}
 	return val;
+}
+
+void UnaryMinus(CubicHermiteSpline &f,CubicHermiteSpline &g)
+{
+    uint32_t n = (uint32_t) f.x.size();
+    g.x = f.x;
+    g.y = std::vector<double>(n);
+    g.m = std::vector<double>(n);
+    for (uint32_t i = 0; i < n; i++)
+    {
+    	g.y[i]  = -f.y[i];
+    	g.m[i]  = -f.m[i];
+    }
+}
+
+bool operator==(CubicHermiteSpline &f,CubicHermiteSpline &g)
+{
+    const double eps = 1E-14;
+    vector<double> x1 = f.GetX();
+    vector<double> x2 = g.GetX();
+    vector<double> y1 = f.GetY();
+    vector<double> y2 = g.GetY();
+    if (x1.size() != x2.size() || f.type != g.type) return false;
+    for (uint32_t i = 0; i < (uint32_t) x1.size(); i++)
+    {
+        if ( fabs(x1[i] - x2[i]) > eps*fabs(x1[i]) || fabs(y1[i] - y2[i]) > eps*fabs(y1[i])|| fabs(f.m[i] - g.m[i]) > eps*fabs(f.m[i])) return false;
+    }
+    return true;
 }
 
 } /* namespace Interpolation */
