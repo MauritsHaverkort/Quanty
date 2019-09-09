@@ -466,8 +466,40 @@ static int LuaInterpolateCall(lua_State * L)
  */
 static int LuaInterpolateToString(lua_State * L)
 {
-  lua_pushstring(L, "Interpolating Function");
-  return 1;
+	Interpolation::InterpolatingFunction *f = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
+	std::string s;
+	if (f->type == "CubicSpline")
+	{
+		s = "CubicSpline\n\nx:\ty:\ty'':\n";
+		for (uint32_t i = 0; i < (uint32_t) f->x.size(); i++)
+		{
+			s.append(to_string(f->x[i]));
+			s.append("\t");
+			s.append(to_string(f->y[i]));
+			s.append("\t");
+			s.append(to_string(((Interpolation::CubicSpline*)f)->y2[i]));
+			s.append("\n");
+		}
+	}
+	else if (f->type == "CubicHermiteSpline")
+	{
+		s = "CubicHermiteSpline\n\nx:\ty:\ty':\n";
+		for (uint32_t i = 0; i < (uint32_t) f->x.size(); i++)
+		{
+			s.append(to_string(f->x[i]));
+			s.append("\t");
+			s.append(to_string(f->y[i]));
+			s.append("\t");
+			s.append(to_string(((Interpolation::CubicHermiteSpline*)f)->m[i]));
+			s.append("\n");
+		}
+	}
+	else
+	{
+		s = "Interpolating Function";
+	}
+	lua_pushstring(L, s.c_str());
+	return 1;
 }
 /*
  *
@@ -506,7 +538,7 @@ static int LuaInterpolationIntegrate(lua_State * L)
 
 static const struct luaL_Reg InterpolatingFunction_func[] = {
   {"Spline", LuaSplineInterpolate},
-  {"CubicHermiteSpline", LuaCubicHermiteSplineInterpolate},
+  {"HermiteCSpline", LuaCubicHermiteSplineInterpolate},
   {"Integrate",LuaInterpolationIntegrate},
   {NULL, NULL}
 };

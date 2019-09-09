@@ -57,10 +57,11 @@ G = InterpolatingFunction.Spline(x1,x1)
 D = A..G
 
 C = InterpolatingFunction.Spline(x1,{1,4,9},0,0)
-F1 = InterpolatingFunction.CubicHermiteSpline(x1,{1,4,9})
-F2 = InterpolatingFunction.CubicHermiteSpline(x1,{1,4,9})
-F3 = InterpolatingFunction.CubicHermiteSpline(x1,{1,4,9},{0,1,2})
-
+F1 = InterpolatingFunction.HermiteCSpline(x1,{1,4,9})
+F2 = InterpolatingFunction.HermiteCSpline(x1,{1,4,9})
+F3 = InterpolatingFunction.HermiteCSpline(x1,{1,4,9},{0,1,2})
+print(A)
+print(F1)
 if A ~= D or A == C or A == F1 or F1 ~= F2 or F2 == F3 then
     print("Error Egalite")
     ErrorCount = ErrorCount +1
@@ -90,7 +91,6 @@ if abs(InterpolatingFunction.Integrate(A+A,2.5,3)-7.640625) > 5E-15 then
     print("Error Integrate: deviation from true value =",(InterpolatingFunction.Integrate(A+A,2.5,3)-7.640625))
     ErrorCount = ErrorCount +1
 end
-print(InterpolatingFunction.Integrate(A+A,3,1.5))
 if ErrorCount ~= 0 then
     print("Error in Spline.Quanty:",ErrorCount,"errors have been detected")
 else
