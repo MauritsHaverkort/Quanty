@@ -47,6 +47,8 @@ void Pow(InterpolatingFunction &f, double n, InterpolatingFunction &g);
 void Concat(InterpolatingFunction &f, InterpolatingFunction &g, InterpolatingFunction &fg);
 bool operator==(InterpolatingFunction &f,InterpolatingFunction &g);
 double Integrate(InterpolatingFunction &f);
+double Integrate(InterpolatingFunction &f,double a,double b);
+double IntegrateInterval(InterpolatingFunction &f, uint32_t idx);
 
 } /* namespace Interpolation */
 

@@ -91,7 +91,7 @@ double Overlap(uint32_t i, uint32_t j, uint32_t ks, const vector<double> &x)
 		double a = x[iv  ];
 		double b = x[iv+1];
 		vector<double> u, w;
-		GaussianQuadratureWeights(ks+1,u,w,a,b);
+		Quad::GaussianQuadratureWeights(ks+1,u,w,a,b);
 		for (uint32_t m = 0; m < ks+1; m++)
 		{
 			integral += Evaluate(i,ks,x,u[m])*Evaluate(j,ks,x,u[m])*w[m];
@@ -135,7 +135,7 @@ void Components(const vector<Interpolation::InterpolatingFunction*> &funs, uint3
 				double a = x[iv];
 				double b = x[iv+1];
 				vector<double> u,w;
-				GaussianQuadratureWeights(ks+1,u,w,a,b);
+				Quad::GaussianQuadratureWeights(ks+1,u,w,a,b);
 				for (uint32_t m = 0; m < ks+1; m++)
 				{
 					c[i + j*Nspline] += (*funs[j])(u[m]) * Evaluate(i,ks,x,u[m]) * w[m];

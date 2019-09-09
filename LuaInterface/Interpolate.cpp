@@ -482,7 +482,24 @@ static int LuaInterpolateDestroy(lua_State * L)
 static int LuaInterpolationIntegrate(lua_State * L)
 {
 	Interpolation::InterpolatingFunction *f = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
-	double value = Interpolation::Integrate(*f);
+	uint32_t len = (uint32_t)lua_gettop(L);
+	double value;
+	if (len == 1)
+	{
+		value = Interpolation::Integrate(*f);
+	}
+	else if (len ==3)
+	{
+		double a,b;
+		lua_check(L,2,a);
+		lua_check(L,3,b);
+		if ( ((a < f->x[0] || b > f->x.back()) && a < b) || ((b < f->x[0] || a > f->x.back()) && b < a)) return luaL_error(L,"error in InterpolatingFunction.Integrate, integration limits out of interpolation range\n");
+		value = Interpolation::Integrate(*f,a,b);
+	}
+	else
+	{
+		return luaL_error(L,"error in InterpolatingFunction.Integrate, expected 1 or 3 arguments, got %u\n",len);
+	}
 	lua_push(L,value);
 	return 1;
 }

@@ -4,6 +4,7 @@
  *  Created on: Sep 8, 2018
  *      Author: brass
  */
+#include "../../../Martin/Math/Quad.h"
 
 namespace Interpolation {
 
@@ -159,12 +160,12 @@ bool operator==(InterpolatingFunction &f,InterpolatingFunction &g)
 
 double Integrate(InterpolatingFunction &f)
 {
-	uint32_t N = 4;
+	uint32_t N = 2;
 	double val = 0;
 	vector<double> x,w,y;
 	for (uint32_t i = 0; i < (uint32_t) f.x.size()-1; i++)
 	{
-		GaussianQuadratureWeights(N,x,w,f.x[i],f.x[i+1]);
+		Quad::GaussianQuadratureWeights(N,x,w,f.x[i],f.x[i+1]);
 		y = f(x);
 		for (uint32_t j = 0; j < N; j++)
 		{
@@ -173,6 +174,52 @@ double Integrate(InterpolatingFunction &f)
 
 	}
 	return val;
+}
+
+double IntegrateInterval(InterpolatingFunction &f, uint32_t idx)
+{
+	uint32_t N = 2;
+	double val = 0;
+	vector<double> x,w,y;
+	Quad::GaussianQuadratureWeights(N,x,w,f.x[idx],f.x[idx+1]);
+	y = f(x);
+	for (uint32_t j = 0; j < N; j++)
+	{
+		val += y[j]*w[j];
+	}
+	return val;
+}
+
+double Integrate(InterpolatingFunction &f, double a, double b)
+{
+	uint32_t N = 2;
+	double val = 0;
+	double sign = 1;
+	uint32_t i = 0;
+	if (a > b)
+	{
+		sign = a;
+		a = b;
+		b = sign;
+		sign = -1;
+	}
+	while(i < (uint32_t) f.x.size() && a > f.x[i] )
+		 i++;
+	if (b <= f.x[i])
+	{
+		val = Quad::Integrate(f,a,b,2);
+	}
+	else
+	{
+		val = Quad::Integrate(f,a,f.x[i],2);
+		while(i < (uint32_t) f.x.size() -1 && b > f.x[i+1] )
+		{
+			val += Quad::Integrate(f,f.x[i],f.x[i+1],2);
+			i++;
+		}
+		val += Quad::Integrate(f,f.x[i],b,2);
+	}
+	return sign*val;
 }
 
 void MergeGrids(const std::vector<double> &x1,const std::vector<double> &x2, std::vector<double> &xout )
