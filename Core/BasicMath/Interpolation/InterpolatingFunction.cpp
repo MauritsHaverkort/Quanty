@@ -168,7 +168,7 @@ double Integrate(InterpolatingFunction &f)
 		y = f(x);
 		for (uint32_t j = 0; j < N; j++)
 		{
-			val += y[i]*w[i];
+			val += y[j]*w[j];
 		}
 
 	}

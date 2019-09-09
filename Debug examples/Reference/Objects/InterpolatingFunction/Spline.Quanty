@@ -62,22 +62,31 @@ F2 = InterpolatingFunction.CubicHermiteSpline(x1,{1,4,9})
 F3 = InterpolatingFunction.CubicHermiteSpline(x1,{1,4,9},{0,1,2})
 
 if A ~= D or A == C or A == F1 or F1 ~= F2 or F2 == F3 then
-    printf("Error Egalite")
+    print("Error Egalite")
     ErrorCount = ErrorCount +1
 end
 
 if A^2 ~= A*A then
-    printf("Error Power")
+    print("Error Power")
     ErrorCount = ErrorCount +1
 end
 
 D = -A
 Null = InterpolatingFunction.Spline(x1,{0,0,0})
 if A+D ~= Null then
-    printf("Error unary minus")
+    print("Error unary minus")
     ErrorCount = ErrorCount +1
 end    
 
-print(InterpolatingFunction.Integrate(A+A))
+if abs(InterpolatingFunction.Integrate(A+A) - 17.5) > 9E-15 then
+    print("Error Integrate: deviation from true value =",abs(InterpolatingFunction.Integrate(A+A) - 17.5))
+    ErrorCount = ErrorCount +1
+end
+
+if ErrorCount ~= 0 then
+    print("Error in Spline.Quanty:",ErrorCount,"errors have been detected")
+else
+    print("Spline.Quanty completed")
+end
 
 os.exit(ErrorCount)
