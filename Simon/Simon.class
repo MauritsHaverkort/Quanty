@@ -6,6 +6,78 @@ typedef struct doubleVecValPair
 }
 doubleVecValPair;
 
+class GaussianRadial {
+private:
+	uint l;
+	vector<double> amplitudes;
+	vector<double> widths;
+public:
+	GaussianRadial()
+	{
+		this->l = 0;
+	}
+
+	GaussianRadial(uint l)
+	{
+		this->l = l;
+	}
+
+	GaussianRadial(const uint l, const vector<double> &amplitudes, const vector<double> &widths)
+	{
+		if (amplitudes.size() != widths.size())
+		{
+			cout << "Error in GaussianRadial: Size of amplitudes vector (" << amplitudes.size() << ") needs to equal size of widths vector (" << widths.size() << ")." << endl;
+			throw std::exception();
+		}
+		this->l = l;
+		this->amplitudes = amplitudes;
+		this->widths = widths;
+	}
+
+	double operator()(const double r) const
+	{
+		double out = 0;
+		for (uint i = 0; i < (uint) amplitudes.size(); ++i)
+		{
+			out += amplitudes[i]*exp(-widths[i]*r*r);
+		}
+		return out*pow(r,l);
+	}
+
+	vector<double> operator()(const vector<double> &r) const
+	{
+		vector<double> out(r.size());
+		for (uint i = 0; i < (uint) r.size(); ++i)
+		{
+			out[i] = (*this)(r[i]);
+		}
+		return out;
+	}
+
+	void addGaussian(const double amplitude, const double width)
+	{
+		amplitudes.push_back(amplitude);
+		widths.push_back(width);
+	}
+
+	void setGaussian(const uint i, const double amplitude, const double width)
+	{
+		if (i >= amplitudes.size())
+		{
+			cout << "Error in GaussianRadial: Index " << i << " lies outside the range of Gaussian functions (" << amplitudes.size() << ")." << endl;
+			throw std::exception();
+		}
+		amplitudes[i] = amplitude;
+		widths[i] = width;
+	}
+	
+	uint getL() const
+	{
+		return l;
+	}
+
+};
+
 typedef struct OrcaObject
 {
 	uint NBasis;
@@ -14,5 +86,7 @@ typedef struct OrcaObject
 	vector<double> EigenEnergies;
 	vector<double> EigenOccupations;
 	vector<string> BasisOrbitalNames;
+	vector<AtomType> Atoms;
+	map<string, GaussianRadial> RadialFunctions;
 }
 OrcaObject;

@@ -3,7 +3,7 @@ errorCount = 0
 print("Reading Orca output for an isolated H atom...")
 Orcaout = Simon.FileReadOrca("DFT/H_Orca.out")
 
-fields = {"OverlapMatrix", "MolecularOrbitalMatrix", "EigenEnergies", "EigenOccupations", "BasisOrbitalNames", "Atoms"}
+fields = {"NBasis", "OverlapMatrix", "MolecularOrbitalMatrix", "EigenEnergies", "EigenOccupations", "BasisOrbitalNames", "Atoms", "RadialFunctions"}
 for key,field in pairs(fields) do
     print(field..":")
     print(Orcaout[field])

@@ -7,6 +7,7 @@
 #include "CompactMatrix.h"
 #include "ExtendedLigandField.h"
 #include "Flatten.h"
+#include "Gaussian.h"
 #include "Isosurface.h"
 #include "Kappa.h"
 #include "lsCouplingConstant.h"

@@ -6,6 +6,7 @@
 #include "CompactMatrix.cpp"
 #include "ExtendedLigandField.cpp"
 #include "Flatten.cpp"
+#include "Gaussian.cpp"
 #include "Isosurface.cpp"
 #include "Kappa.cpp"
 #include "lsCouplingConstant.cpp"

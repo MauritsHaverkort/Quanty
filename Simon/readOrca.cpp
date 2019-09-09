@@ -44,10 +44,23 @@ void lua_push(lua_State * L, const OrcaObject &pushkin)
 	lua_push(L, "BasisOrbitalNames");
 	lua_push(L, pushkin.BasisOrbitalNames);
 	lua_settable(L, top);
+
+	lua_push(L, "Atoms");
+	lua_push(L, pushkin.Atoms);
+	lua_settable(L, top);
+
+	lua_push(L, "RadialFunctions");
+	lua_push(L, pushkin.RadialFunctions);
+	lua_settable(L, top);
 }
 
-bool isOrcaMatrixLineIgnored(const string &line)
+bool isOrcaLineIgnored(const string &line)
 {
+	if ((uint)line.size() == 0) return true;
+	if (line.find("# Basis set for element") != string::npos) return true;
+	if (line.find("NewGTO") != string::npos) return true;
+	if (line.find("CARTESIAN COORDINATES") != string::npos) return true;
+	if (line.find("MASS") != string::npos) return true;
 	if (line.find("OVERLAP MATRIX") != string::npos) return true;
 	if (line.find("MOLECULAR ORBITALS") != string::npos) return true;
 	if (line.find("---") != string::npos) return true;
@@ -158,22 +171,22 @@ string normalizedOrcaOrbname(const string &orbOrca)
 	string shell;
 	int lz;
 
-	uint lastSiteNumPos = (uint) orbOrca.find_first_of(digits);
-	lastSiteNumPos = (uint) orbOrca.find_first_not_of(digits, lastSiteNumPos) - 1;
+	string::size_type lastSiteNumPos = orbOrca.find_first_of(digits);
+	lastSiteNumPos =  orbOrca.find_first_not_of(digits, lastSiteNumPos) - 1;
 	siteNum = atoi(orbOrca.substr(0, lastSiteNumPos + 1).c_str());
 
-	uint lastAtomNamePos = (uint) orbOrca.find_first_of(" ", lastSiteNumPos + 1) - 1;
+	string::size_type lastAtomNamePos = orbOrca.find_first_of(" ", lastSiteNumPos + 1) - 1;
 	atomName = orbOrca.substr(lastSiteNumPos + 1, lastAtomNamePos - lastSiteNumPos);
 
-	uint lastNPos = (uint) orbOrca.find_first_of(digits, lastAtomNamePos);
-	lastNPos = (uint) orbOrca.find_first_not_of(digits, lastNPos) - 1;
+	string::size_type lastNPos = orbOrca.find_first_of(digits, lastAtomNamePos);
+	lastNPos =  orbOrca.find_first_not_of(digits, lastNPos) - 1;
 	n = atoi(orbOrca.substr(lastAtomNamePos + 1, lastNPos - lastAtomNamePos).c_str());
 
 	shell = orbOrca.substr(lastNPos + 1, 1);
 	uint l = (orbToMultiplicity(shell) / 2 - 1) / 2;
 
 	string lzName = orbOrca.substr(lastNPos + 2);
-	if (lzName.find(" ") != string::npos) lzName = lzName.substr(0, (uint) lzName.find(" "));
+	if (lzName.find(" ") != string::npos) lzName = lzName.substr(0, lzName.find(" "));
 	lz = stringToLz(lzName);
 
 	return constructOrbname(siteNum, atomName, n, shell, lz);
@@ -207,30 +220,137 @@ void SortOrcaBasis(OrcaObject &orca)
 	FreeCompactMatrix(&orca.OverlapMatrix);
 	orca.OverlapMatrix = tmp;
 	orca.OverlapMatrix.OnLuaStack = onStack;
-
-//	TODO: Permute Gaussian Basis, once we read it in.
 	FreeCompactMatrix(&permMat);
 }
 
+double OrcaGaussianNormfactor(const double w, const uint l)
+{
+	double out = sqrt(4 * M_PI);
+	out *= pow(2 * w / M_PI, 3. / 4.);
+	out *= pow(4 * w, (double) l / 2.);
+	if (l > 0)
+	{
+		uint den = 2 * l - 1;
+		uint tmp = den;
+		while (tmp > 1)
+		{
+			tmp -= 2;
+			den *= tmp;
+		}
+		den *= 2 * l + 1;
+		out /= sqrt((double) den);
+	}
+	return out;
+}
 
 OrcaObject FileReadOrca(const string &filename)
 {
-	double HartreeToeV = 27.211391239;
+	const static double HartreeToeV = 27.211391239;
+	const static string letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 	OrcaObject out;
 	ifstream reader;
 	string line;
 	reader.open(filename.c_str());
 	if (!reader.is_open()) throw FileOpenException(filename);
 
+	bool isReadingAtoms = false;
+	bool isReadingRadialFunctions = false;
 	bool isReadingOverlapMatrix = false;
 	bool isReadingMolecularOrbitals = false;
+	string currentAtom;
+	char currentShell;
+	uint shellCounter;
+	GaussianRadial currentGauss;
 	int i, jOffset = 0;
 	while (getline(reader, line))
 	{
 		if (line.find("# of contracted basis functions") != string::npos)
 		{
-			const int lastBlank = (int) line.find_last_of(" ");
+			const string::size_type lastBlank = line.find_last_of(" ");
 			out.NBasis = atoi(line.substr(lastBlank + 1).c_str());
+		}
+
+
+		if (line.find("CARTESIAN COORDINATES (A.U.)") != string::npos)
+		{
+			isReadingAtoms = true;
+		}
+
+		if (isReadingAtoms && line.find("INTERNAL COORDINATES") != string::npos)
+		{
+			isReadingAtoms = false;
+		}
+
+		if (isReadingAtoms && !isOrcaLineIgnored(line))
+		{
+			string::size_type atomFirstPos = line.find_first_of(letters);
+			string::size_type atomLastPos = line.find_first_not_of(letters, atomFirstPos);
+			string atomName = line.substr(atomFirstPos, atomLastPos-atomFirstPos);
+			vector<double> lineVec = stringToDoubleVec(line.substr(atomLastPos)); //ZA, FRAG, MASS, X, Y, Z
+			AtomType atom;
+			strcpy(atom.Name, atomName.c_str());
+			initAtom(atom, vector<string>(), vector<vector<string> >(), false);
+			for (uint i = 0; i < 3; ++i)
+			{
+				atom.Position[i] = lineVec[i+3];
+			}
+			out.Atoms.push_back(atom);
+		}
+
+		if (line.find("# Basis set for element :") != string::npos)
+		{
+			isReadingRadialFunctions = true;
+			string::size_type colonPos = line.find_last_of(':');
+			string::size_type atomFirstPos = line.find_first_not_of(' ', colonPos + 1);
+			string::size_type atomLastPos = line.find_first_not_of(letters, atomFirstPos);
+			currentAtom = line.substr(atomFirstPos, atomLastPos - atomFirstPos);
+			currentShell = 'x';
+			shellCounter = 0;
+//			currentGauss = GaussianRadial();
+		}
+
+		if (isReadingRadialFunctions && !isOrcaLineIgnored(line))
+		{
+			if (line.find_first_of(letters) != string::npos)
+			{
+				if (shellCounter > 0)
+				{
+					std::stringstream strstr;
+					strstr << currentAtom << "_" << shellCounter << currentShell;
+					const string shellNameFull = strstr.str();
+					out.RadialFunctions.insert( { shellNameFull, currentGauss });
+				}
+				if (line.find("end") != string::npos)
+				{
+					isReadingRadialFunctions = false;
+				}
+				else
+				{
+					string::size_type shellFirstPos = line.find_first_of(letters);
+					if (currentShell != tolower(line.at(shellFirstPos)))
+					{
+						shellCounter = 1;
+						currentShell = tolower(line.at(shellFirstPos));
+					}
+					else
+					{
+						shellCounter++;
+					}
+					uint l = 0;
+					if (currentShell == 's') l = 0;
+					if (currentShell == 'p') l = 1;
+					if (currentShell == 'd') l = 2;
+					if (currentShell == 'f') l = 3;
+					if (currentShell == 'g') l = 4;
+					if (currentShell == 'h') l = 5;
+					currentGauss = GaussianRadial(l);
+				}
+			}
+			else
+			{
+				vector<double> lineVec = stringToDoubleVec(line);
+				currentGauss.addGaussian(lineVec[2] * OrcaGaussianNormfactor(lineVec[1], currentGauss.getL()), lineVec[1]);
+			}
 		}
 
 		if (line.find("OVERLAP MATRIX") != string::npos)
@@ -248,11 +368,11 @@ OrcaObject FileReadOrca(const string &filename)
 			const string firstCol = line.substr(0, 10);
 			if (firstCol.compare(blankFill(10)) == 0)
 			{
-				const uint firstNumFirstPos = line.find_first_not_of(" ");
-				const uint firstNumLastPos = line.find_first_of(" ", firstNumFirstPos);
+				const string::size_type firstNumFirstPos = line.find_first_not_of(" ");
+				const string::size_type firstNumLastPos = line.find_first_of(" ", firstNumFirstPos);
 				jOffset = atoi(line.substr(firstNumFirstPos, firstNumLastPos - firstNumFirstPos).c_str());
 			}
-			else if (!isOrcaMatrixLineIgnored(line))
+			else if (!isOrcaLineIgnored(line))
 			{
 				vector<double> lineVec = stringToDoubleVec(line);
 				i = (int) lineVec[0];
@@ -277,7 +397,7 @@ OrcaObject FileReadOrca(const string &filename)
 			out.MolecularOrbitalMatrix.OnLuaStack = true;
 		}
 
-		if (isReadingMolecularOrbitals && !isOrcaMatrixLineIgnored(line))
+		if (isReadingMolecularOrbitals && !isOrcaLineIgnored(line))
 		{
 			if (i == -3)
 			{
@@ -302,7 +422,7 @@ OrcaObject FileReadOrca(const string &filename)
 			}
 			else
 			{
-				uint orbNameLength = (uint) line.find_first_of(" ", 12);
+				string::size_type orbNameLength = line.find_first_of(" ", 12);
 				if ((uint) out.BasisOrbitalNames.size() < out.NBasis)
 				{
 					const string orbName = normalizedOrcaOrbname(line.substr(0, orbNameLength));
@@ -357,7 +477,7 @@ void ChangeOrcaOverlapMatrixPhases(OrcaObject &orca)
 double OrcaPhaseConventionFactor(const string &orb)
 {
 	const static string digitsEtc = "+-0123456789";
-	const uint pos = orb.find_last_not_of(digitsEtc);
+	const string::size_type pos = orb.find_last_not_of(digitsEtc);
 	const string llz = orb.substr(pos);
 	if (llz.compare("f-3") == 0)
 	{
@@ -411,6 +531,7 @@ double OrcaPhaseConventionFactor(const string &orb)
 
 void OrcaDiagonalizeDegenerateStates(OrcaObject &orca)
 {
+
 	CompactMatrixType TrafoFull;
 	const uint NFull = orca.NBasis;
 	TrafoFull.Ni = NFull;
@@ -429,13 +550,14 @@ void OrcaDiagonalizeDegenerateStates(OrcaObject &orca)
 
 			for (uint l = k + 1; l < NFull; ++l)
 			{
-				if (abs(orca.EigenEnergies[k] - orca.EigenEnergies[l]) < 1e-10 && !isElementOf(l, alreadyRotated))
+				if (fabs(orca.EigenEnergies[k] - orca.EigenEnergies[l]) < 1e-10 && !isElementOf(l, alreadyRotated))
 				{
 
 					degOrbIndices.push_back(l);
 					alreadyRotated.push_back(l);
 				}
 			}
+
 			vector<uint> largestEntries;
 			for (uint l = 0; l < (uint) degOrbIndices.size(); ++l)
 			{
@@ -444,7 +566,7 @@ void OrcaDiagonalizeDegenerateStates(OrcaObject &orca)
 				double partMax = 0.;
 				for (uint m = 0; m < NFull; ++m)
 				{
-					double part = abs(orca.MolecularOrbitalMatrix.VRe[MOindex * NFull + m]);
+					double part = fabs(orca.MolecularOrbitalMatrix.VRe[MOindex * NFull + m]);
 					if (part > partMax && !isElementOf(m, largestEntries))
 					{
 						iMax = m;
@@ -453,6 +575,7 @@ void OrcaDiagonalizeDegenerateStates(OrcaObject &orca)
 				}
 				largestEntries.push_back(iMax);
 			}
+
 			sort(largestEntries.begin(), largestEntries.end());
 			CompactMatrixType subMat;
 			subMat.Ni = (uint) degOrbIndices.size();
@@ -469,6 +592,7 @@ void OrcaDiagonalizeDegenerateStates(OrcaObject &orca)
 					subMat.VRe[i * subMat.Nj + j] = orca.MolecularOrbitalMatrix.VRe[iFull * NFull + jFull];
 				}
 			}
+
 			CompactMatrixType Trafo = GaussEliminationTransformation(subMat);
 			for (uint i = 0; i < (uint) degOrbIndices.size(); ++i)
 			{
@@ -554,6 +678,7 @@ CompactMatrixType GaussEliminationTransformation(const CompactMatrixType &mat)
 	out.OnLuaStack = false;
 	CompactMatrixCopy(mat, &inCopy);
 	inCopy.OnLuaStack = false;
+
 	if (inCopy.VRe[0] == 0)
 	{
 		uint i;
@@ -561,6 +686,13 @@ CompactMatrixType GaussEliminationTransformation(const CompactMatrixType &mat)
 		{
 			if (inCopy.VRe[i * inCopy.Nj] != 0) break;
 		}
+
+		if (i == inCopy.Ni)
+		{
+			cout << "Error: GaussEliminationTransformation called with a zero-column." << endl;
+			throw std::exception();
+		}
+
 		CompactMatrixType perm;
 		perm.Ni = inCopy.Ni;
 		perm.Nj = inCopy.Nj;
@@ -646,7 +778,7 @@ CompactMatrixType GaussEliminationTransformation(const CompactMatrixType &mat)
 		for (uint i = 0; i < out.Ni; ++i)
 		{
 			double newNorm, oldNorm = 0;
-			newNorm = inCopy.VRe[i * inCopy.Nj + i]; //no abs, in order to make all signs positive.
+			newNorm = inCopy.VRe[i * inCopy.Nj + i]; //no fabs, in order to make all signs positive.
 			for (uint j = 0; j < out.Nj; ++j)
 			{
 				double entry = mat.VRe[i * mat.Nj + j];
