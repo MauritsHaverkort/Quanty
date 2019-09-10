@@ -1883,6 +1883,24 @@ static int LuaMartinTest(lua_State *L)
 
 }
 
+static int LuaBSpline(lua_State *L)
+{
+	vector<double> x, t, B;
+	lua_check(L,1,t);
+	BSpline::GenerateGrid(t,x,3);
+	//printf("%f\n",BSpline::Evaluate(5,3,x,1));
+	BSpline::GetKnotMatrix(x,3,t,B);
+	lua_push(L,B);
+	/*
+	lua_check(L,2,c);
+	for (uint32_t i = 0; i < 5; i++)
+	{
+		double t = i + 0.5;
+		printf("%f\n",BSpline::deBoor(3+i,t,x,3,c));
+	}*/
+	return 1;
+}
+
 static int LuaOperatorNewAtomicUOccupationConserving(lua_State *L)
 {
     OperatorType *op;
@@ -2309,6 +2327,7 @@ static const struct luaL_Reg Martin_func[] = {
   {"AUconsOs",LuaOperatorNewAtomicUOccupationConservingOneShell},
   {"OrthonormalizeContinuum",LuaOrthonormalizeContinuum},
   {"Thomas",LuaThomasAlgorithm},
+  {"BSpline",LuaBSpline},
   {NULL, NULL}
 };
 
