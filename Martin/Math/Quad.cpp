@@ -7,6 +7,9 @@
 
 #include "Quad.h"
 
+namespace Quad
+{
+
 void GaussianQuadratureWeights(uint32_t N, vector<double> &x, vector<double> &w, double a, double b)
 {
 	x = vector<double>(N);
@@ -35,6 +38,7 @@ double LegendreP(double x, uint32_t n)			// Recursion formula for Legendre polyn
 	double p0 = 1;
 	double p1 = x;
 	double p = 1;
+
 	for (uint32_t i = 2; i <= n; i++)
 	{
 		p = ((2 * i - 1) * x * p1 - (i - 1) * p0 ) / i;
@@ -43,3 +47,20 @@ double LegendreP(double x, uint32_t n)			// Recursion formula for Legendre polyn
 	}
 	return p;
 }
+
+template <typename T>
+double Integrate(T &f, double a, double b, uint32_t N)
+{
+	double val = 0;
+	vector<double> x,w;
+	GaussianQuadratureWeights(N,x,w,a,b);
+	for (uint32_t j = 0; j < N; j++)
+	{
+		val += f(x[j])*w[j];
+	}
+	return val;
+}
+
+} // namespace Quad
+
+

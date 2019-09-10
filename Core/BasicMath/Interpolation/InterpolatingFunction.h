@@ -14,14 +14,17 @@ namespace Interpolation {
 
 class InterpolatingFunction {
 protected:
-	std::vector<double> x;
-	std::vector<double> y;
+
 public:
 
 	InterpolatingFunction();
 	virtual ~InterpolatingFunction();
 
-	std::vector<double> GetX();
+	std::string type;
+	std::vector<double> x;
+	std::vector<double> y;
+    
+    std::vector<double> GetX();
 	std::vector<double> GetY();
 	double GetX(uint32_t i);
 	double GetY(uint32_t i);
@@ -34,6 +37,18 @@ public:
 	virtual std::vector<double> operator()(const std::vector<double> &t, unsigned int k);
 
 };
+
+void MergeGrids(const std::vector<double> &x1,const std::vector<double> &x2, std::vector<double> &xout );
+void Add(InterpolatingFunction &f, InterpolatingFunction &g, InterpolatingFunction &fplusg);
+void Mul(InterpolatingFunction &f, InterpolatingFunction &g, InterpolatingFunction &fplusg);
+void Sub(InterpolatingFunction &f, InterpolatingFunction &g, InterpolatingFunction &fplusg);
+void Div(InterpolatingFunction &f, InterpolatingFunction &g, InterpolatingFunction &fplusg);
+void Pow(InterpolatingFunction &f, double n, InterpolatingFunction &g);
+void Concat(InterpolatingFunction &f, InterpolatingFunction &g, InterpolatingFunction &fg);
+bool operator==(InterpolatingFunction &f,InterpolatingFunction &g);
+double Integrate(InterpolatingFunction &f);
+double Integrate(InterpolatingFunction &f,double a,double b);
+double IntegrateInterval(InterpolatingFunction &f, uint32_t idx);
 
 } /* namespace Interpolation */
 

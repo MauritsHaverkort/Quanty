@@ -19,6 +19,9 @@ void CreateContinuumSlaterIntegrals(vector<Interpolation::InterpolatingFunction 
 
 void CreateAugerMeitnerU(vector<int> &indToK, uint32_t NF, uint16_t **indices, vector<OperatorType> &UList, bool QRelativistic=true);
 
+void CalcCNSE(const vector<WaveFunctionType> &psiCont, const vector<WaveFunctionType> &phiBound, const vector<OperatorType> &Uk, double wMin, double wMax, double dw,
+              double gammaSE, const vector<vector<double> > &Fk, const vector<double> &Econt, const vector<double> &EAuger, vector<vector<Complex16> > &SelfEnergy);
+
 static int LuaCreateContinuumSlaterIntegrals (lua_State *L);
 static int LuaCreateAugerMeitnerU(lua_State *L);
 

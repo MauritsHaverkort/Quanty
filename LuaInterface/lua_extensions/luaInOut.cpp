@@ -66,6 +66,20 @@ void lua_push(lua_State *L, const OperatorType * const pushkin)
 	luaL_setmetatable(L, "Operator_Type");
 }
 
+void lua_push(lua_State *L, const WaveFunctionType * const pushkin)
+{
+	WaveFunctionType * O = (WaveFunctionType *) lua_newuserdata(L, sizeof(WaveFunctionType));
+	*O = *pushkin;
+	luaL_setmetatable(L, "Wavefunction_Type");
+}
+
+void lua_push(lua_State *L, const WaveFunctionType pushkin)
+{
+	WaveFunctionType * O = (WaveFunctionType *) lua_newuserdata(L, sizeof(WaveFunctionType));
+	*O = pushkin;
+	luaL_setmetatable(L, "Wavefunction_Type");
+}
+
 void lua_push(lua_State *L, const OperatorType &pushkin)
 {
 	lua_push(L, &pushkin);

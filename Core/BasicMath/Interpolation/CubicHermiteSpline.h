@@ -14,12 +14,14 @@ namespace Interpolation {
 
 class CubicHermiteSpline: public InterpolatingFunction {
 private:
-	std::vector<double> m;
+
 public:
 	CubicHermiteSpline();
 	CubicHermiteSpline(const std::vector<double> &u, const std::vector<double> &v);
 	CubicHermiteSpline(const std::vector<double> &u, const std::vector<double> &v, const std::vector<double> &w);
 	virtual ~CubicHermiteSpline();
+
+	std::vector<double> m;
 
 	void Create(const std::vector<double> &u, const std::vector<double> &v);
 	void Create(const std::vector<double> &u, const std::vector<double> &v, const std::vector<double> &w);
@@ -29,6 +31,9 @@ public:
 	std::vector<double> operator()(const std::vector<double> &t);
 	std::vector<double> operator()(const std::vector<double> &t, unsigned int k);
 };
+
+bool operator==(CubicHermiteSpline &f,CubicHermiteSpline &g);
+void UnaryMinus(CubicHermiteSpline &f,CubicHermiteSpline &g);
 
 } /* namespace Interpolation */
 

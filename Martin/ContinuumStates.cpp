@@ -397,11 +397,11 @@ vector<double> KineticEnergyCB(vector<vector<double> > basisfuns, vector<vector<
 }
 
 double *MetricCB(double **basisfuns, double **dualfuns, const unsigned int *indices,
-		const unsigned int Nindices, double **dualcont, const int NcontFuns, unsigned int NGridPoints)
+		const unsigned int Nindices, double **dualcont, const int NcontFuns, unsigned int NGridPoints,bool QRelativistic)
 {
 	int dim,i,j,n;
 	unsigned int eins = 1;
-	n = 2* NGridPoints;
+	n = QRelativistic ? 2* NGridPoints : NGridPoints;
 	dim = Nindices + NcontFuns;
 	double *g = (double *) malloc(dim*dim*sizeof(double));
 	if (!g) printf("malloc fail at g in MetricCB. size = %d\n",dim*dim);
@@ -442,11 +442,11 @@ double *MetricCB(double **basisfuns, double **dualfuns, const unsigned int *indi
 }
 
 vector<double> MetricCB(vector<vector<double> > basisfuns, vector<vector<double> > dualfuns, const unsigned int *indices,
-		const unsigned int Nindices, vector<vector<double> > dualcont, const int NcontFuns, unsigned int NGridPoints)
+		const unsigned int Nindices, vector<vector<double> > dualcont, const int NcontFuns, unsigned int NGridPoints,bool QRelativistic)
 {
 	int dim,i,j,n;
 	unsigned int eins = 1;
-	n = 2* NGridPoints;
+	n = QRelativistic ? 2* NGridPoints : NGridPoints;
 	dim = Nindices + NcontFuns;
 	vector<double> g;
 	for ( i = 0; i < dim*dim; i++)
@@ -663,7 +663,7 @@ double *CreateBaseForContinuum(vector<vector<double> > basisfuns,vector<vector<d
 		SKappaGroup group, vector<vector<double> > &contfuns, vector<vector<double> > h0Cont)
 {
 	int l,k,dim,info;
-
+    bool QRelativistic = true;
 	//unsigned int NBasisFuns = (unsigned int) basisfuns.size();
 	unsigned int Ncont = (unsigned int) contfuns.size();
 	uint32_t NGridpoints = (uint32_t) x.size();
@@ -678,7 +678,7 @@ double *CreateBaseForContinuum(vector<vector<double> > basisfuns,vector<vector<d
 
 	double *tau,*d,*e;
 	vector<double> T, g, Tsub;
-	vector<vector<double> > dualfuns, dualcont;
+	vector<vector<double> > dualfuns, dualcont, Ddualfuns, Ddualcont;
 
 	k = group.kappa;
 	l = 0;
@@ -686,13 +686,14 @@ double *CreateBaseForContinuum(vector<vector<double> > basisfuns,vector<vector<d
 	dim = Ncont + group.n;
 
 
-	CreateDualFunctions(basisfuns,x,dualfuns);
+	CreateDualFunctions(basisfuns,x,dualfuns,QRelativistic);
 
-	CreateDualFunctions(contfuns,x,dualcont);
+	CreateDualFunctions(contfuns,x,dualcont,QRelativistic);
 
-	T = CreateEKinCB(basisfuns,derivfuns, dualfuns,dualcont, group.indices, group.n,x,k,h0Cont);
+    T = CreateEKinCB(basisfuns,derivfuns, dualfuns,dualcont, group.indices, group.n,x,k,h0Cont);
 
-	g = MetricCB(basisfuns,dualfuns,group.indices, group.n,dualcont,Ncont,NGridpoints);
+
+	g = MetricCB(basisfuns,dualfuns,group.indices, group.n,dualcont,Ncont,NGridpoints,QRelativistic);
 
 	//char cU = 'U';
 	char cL = 'L';
@@ -736,6 +737,101 @@ double *CreateBaseForContinuum(vector<vector<double> > basisfuns,vector<vector<d
 	return d;
 
 }
+
+double *CreateBaseForContinuum(vector<vector<double> > basisfuns,vector<vector<double> > derivfuns,vector<double> x,
+		SKappaGroup group, vector<vector<double> > &contfuns, vector<vector<double> > &Dcontfuns, vector<vector<double> > h0Cont)
+{
+	int k,dim,info;
+    bool QRelativistic = false;
+
+	//unsigned int NBasisFuns = (unsigned int) basisfuns.size();
+	unsigned int Ncont = (unsigned int) contfuns.size();
+	uint32_t NGridpoints = (uint32_t) x.size();
+
+	char blasRight = 'R';
+	char blasLeft  = 'L';
+	//char blasUpper = 'U';
+	char blasLower = 'L';
+	char blasTrans = 'T';
+	char blasNoTrans = 'N';
+	char blasNonUnit = 'N';
+
+	double *tau,*d,*e;
+	vector<double> T, g, Tsub;
+	vector<vector<double> > dualfuns, dualcont, Ddualfuns, Ddualcont;
+
+	k = group.kappa;
+	
+    uint32_t l;
+    if ( k > 0 )
+	{
+		l = (uint32_t) k;
+	}
+	else
+	{
+		l = (uint32_t)(-k -1);
+	}
+    
+
+	dim = Ncont + group.n;
+
+
+	CreateDualFunctions(basisfuns,x,dualfuns,QRelativistic);
+
+	CreateDualFunctions(contfuns,x,dualcont,QRelativistic);
+    
+    CreateDualFunctions(Dcontfuns,x,Ddualcont,QRelativistic);
+    
+    CreateDualFunctions(derivfuns,x,Ddualfuns,QRelativistic);
+
+    CreateEKinCBNonRelativistic(dualcont,Ddualcont, basisfuns,derivfuns,dualfuns,Ddualfuns, x,l,h0Cont,T);
+
+
+	g = MetricCB(basisfuns,dualfuns,group.indices, group.n,dualcont,Ncont,NGridpoints,QRelativistic);
+
+	//char cU = 'U';
+	char cL = 'L';
+	char cN = 'N';
+	char cV = 'V';
+	double EINS = 1;
+	info = 1;
+	dpotrf(&cL,(unsigned int *) &dim,&(g[0]),(unsigned int *) &dim,&info);
+	dtrtri(&cL,&cN,(unsigned int *) &dim,&(g[0]),(unsigned int *) &dim,&info);
+	//dtrmm(&blasLeft,&blasUpper,&blasTrans,&blasNonUnit,(unsigned int *) &dim,(unsigned int *) &dim,&EINS,&(g[0]),(unsigned int *) &dim,&(T[0]),(unsigned int *) &dim);
+	//dtrmm(&blasRight,&blasUpper,&blasNoTrans,&blasNonUnit,(unsigned int *) &dim, (unsigned int *) &dim,&EINS,&(g[0]),(unsigned int *) &dim,&(T[0]),(unsigned int *) &dim);
+	dtrmm(&blasLeft,&blasLower,&blasNoTrans,&blasNonUnit,(unsigned int *) &dim,(unsigned int *) &dim,&EINS,&(g[0]),(unsigned int *) &dim,&(T[0]),(unsigned int *) &dim);
+	dtrmm(&blasRight,&blasLower,&blasTrans,&blasNonUnit,(unsigned int *) &dim, (unsigned int *) &dim,&EINS,&(g[0]),(unsigned int *) &dim,&(T[0]),(unsigned int *) &dim);
+
+	Tsub = SubMatrix(T,dim,group.n,dim-1,group.n,dim-1);
+
+	d = (double *) malloc(Ncont*sizeof(double));
+	if (!d) printf("malloc fail at d in CreateBaseForContinuum. size = %d\n",Ncont);
+	e = (double *) malloc((Ncont-1)*sizeof(double));
+	if (!e) printf("malloc fail at e in CreateBaseForContinuum. size = %d\n",Ncont-1);
+	tau = (double *) malloc((Ncont-1)*sizeof(double));
+	if (!tau) printf("malloc fail at tau in CreateBaseForContinuum. size = %d\n",Ncont-1);
+
+	double *work = (double *) malloc((2*Ncont-2)*sizeof(double));
+	if (!work) printf("malloc fail at work in CreateBaseForContinuum. size = %d\n",Ncont);
+	unsigned int lwork = (unsigned int) (2*Ncont-2);
+
+	dsytrd(&cL,(unsigned int *) &Ncont,&(Tsub[0]),(unsigned int *) &Ncont,d,e,tau,work, &lwork,&info);
+	if ( 0 != info) printf("error: argument %d of LAPACKE_dsytrd",-info);
+	dorgtr(&cL,(unsigned int *) &Ncont,&(Tsub[0]),(unsigned int *) &Ncont,tau,work,&lwork,&info);
+	if ( 0 != info) printf("error: argument %d of LAPACKE_dorgtr",-info);
+	dsteqr(&cV,(unsigned int *) &Ncont,d,e,&(Tsub[0]),(unsigned int *) &Ncont,work,&info);
+	if ( 0 != info) printf("error: argument %d of LAPACKE_dsteqr",-info);
+
+	CalcContinuumWFs(basisfuns, group.indices, group.n, contfuns, Ncont, NGridpoints, g, Tsub);
+
+	free(work);
+	free(tau);
+	free(e);
+
+	return d;
+
+}
+
 
 vector<double> CreateEKinCB(vector<vector<double> > basisfuns, vector<vector<double> > derivativefuns, vector<vector<double> > dualfuns,
 		vector<vector<double> > dualcont, const unsigned int *indices, const unsigned int Nindices, vector<double> x, const int kappa,vector<vector<double> > h0cont)
@@ -783,6 +879,93 @@ vector<double> CreateEKinCB(vector<vector<double> > basisfuns, vector<vector<dou
 		for ( j = Nindices; j < dim; j++)
 		{
 			T[i*dim + j] = h0cont[i-Nindices][j-Nindices];
+		}
+	}
+
+	return T;
+}
+
+void CalculateH0MatrixElements(const vector<vector<double> > &psi, const vector<vector<double> > &dpsi,const vector<vector<double> > &phi,const vector<vector<double> > &dphi, vector<double> x,uint32_t l, const int Z, vector<vector<double> > &T)
+{
+    T = vector<vector<double> >(psi.size());
+    #pragma omp parallel for
+	for (uint32_t i = 0; i < (uint32_t) psi.size(); i++ )
+	{
+		T[i] = vector<double>(phi.size());
+		for (uint32_t j = 0; j < (uint32_t) phi.size(); j++)
+		{
+			T[i][j] = H0nonRelativistic(psi[i],dpsi[i],phi[j],dphi[j], x, l, Z);
+		}
+	}
+}
+
+double H0nonRelativistic(const vector<double> psi,const vector<double> &dpsi,const vector<double> &phi,const vector<double> &dphi,vector<double> x,const uint32_t l, const int Z)
+{
+	vector<double> Tphi, Vphi;
+    
+
+	uint32_t i, eins, n;
+	eins = 1;
+    n = (uint32_t) x.size();
+    Tphi = vector<double>(x.size());
+    Vphi = vector<double>(x.size());
+	if ( x[0] == 0. )
+	{
+		i = 1;
+	}
+	else
+	{
+		i = 0;
+	}
+	while ( i < (uint32_t) x.size())
+	{
+		double r = x[i];
+		Vphi[i] = (l*(l+1)/(2*r)-Z)/r * phi[i];
+		Tphi[i] = dphi[i]/2;
+		i++;
+	}
+	return ddot(&n,&(dpsi[0]),&eins,&(Tphi[0]),&eins) + ddot(&n,&(psi[0]),&eins,&(Vphi[0]),&eins);
+}
+
+vector<double> CreateEKinCBNonRelativistic(const vector<vector<double> > &dualcont, const vector<vector<double> > &Ddualcont, const vector<vector<double> > &phi,const vector<vector<double> > &dphi
+        , const vector<vector<double> > &dualphi,const vector<vector<double> > &Ddualphi, const vector<double> &x, const uint32_t l, const vector<vector<double> > &h0cont, vector<double> &T)
+{
+	const uint32_t NcontFuns = (uint32_t) dualcont.size();
+	uint32_t NGridPoints = (uint32_t) x.size();
+
+	vector<vector<double> >  Tbb;
+	vector<vector<double> >  Tcb;
+	uint32_t i,j, dim, Nbound;
+
+	const int Z = 0;
+
+	CalculateH0MatrixElements(dualphi,Ddualphi,phi,dphi,x,l,Z,Tbb);
+	CalculateH0MatrixElements(dualcont,Ddualcont,phi,dphi,x,l,Z,Tcb);
+    
+    Nbound = (uint32_t) Tbb.size();
+    
+	dim = Nbound + NcontFuns;
+	T = vector<double>(dim*dim);
+
+	for ( i = 0; i < Nbound; i++)
+	{
+
+		for ( j = i; j < Nbound; j++)
+		{
+			T[i*dim + j] = Tbb[i][j];
+			T[j*dim + i] = Tbb[i][j];
+		}
+	}
+	for ( i = Nbound; i < dim; i++)
+	{
+		for ( j = 0; j < (uint32_t) Tcb[i-Nbound].size(); j++)
+		{
+			T[i*dim + j] = Tcb[i-Nbound][j];
+			T[j*dim + i] = Tcb[i-Nbound][j];
+		}
+		for ( j = Nbound; j < dim; j++)
+		{
+			T[i*dim + j] = h0cont[i-Nbound][j-Nbound];
 		}
 	}
 

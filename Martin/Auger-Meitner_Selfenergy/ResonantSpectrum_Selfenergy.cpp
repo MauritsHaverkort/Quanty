@@ -464,17 +464,33 @@ uint32_t ResonantSpectrumWithSelfEnergy(const OperatorType OppH1, const Operator
   }
 
 // Martin start	-------------------------------------------------------------------------
+
+    uint32_t Npoles1 = settings->NTri1;
 	uint32_t Nw1 = settings->NE1+1;
 	uint32_t Nw2 = settings->NE2+1;
 	uint32_t Npoles2 = settings->NTri2;
 	uint32_t Nkappa = (uint32_t) U.size();
+	vector<vector<double> > polesSE1 = vector<vector<double> >(Npoles1 * Nkappa);
+	vector<CompactMatrixType> SelfEnergySMatrix1 = vector<CompactMatrixType>(Npoles1 * Nkappa);
+    WaveFunctionType EigenBasis1[Npoles1];
+  	RotateWaveFunctions(PsiBasis,Npoles1,EFun,EigenBasis1);
+    for (uint32_t j = 0; j < Npoles1; j++)
+    {
+  	  for (uint32_t k = 0; k < Nkappa; k++)
+  	  {
+  		  CalculateEnergyIndependentSelfEnergy(OppH1,EigenBasis1[j],U[k],SelfEnergySMatrix1[j*Nkappa + k],polesSE1[j*Nkappa + k]);
+  	  }
+  	  WaveFunctionFree(&EigenBasis1[j]);
+    }
+
+
 	vector<vector<double> > poles2 = vector<vector<double> >(Nw1 * NT2);
 	vector<vector<double> > residues2 = vector<vector<double> >(Nw1 * NT2);
 	CompactMatrixType EigenVecs2;
 	vector<double> T2G1T1psi = vector<double>(1);
 
 	vector<vector<double> > polesSE = vector<vector<double> >(Nw1 * NT2 * Npoles2 * Nkappa);
-	vector<CompactMatrixType> SelfEnergySMatrix = vector<CompactMatrixType>(Nw1 * NT2 * Npoles2 * Nkappa);
+	vector<CompactMatrixType> SelfEnergySMatrix2 = vector<CompactMatrixType>(Nw1 * NT2 * Npoles2 * Nkappa);
 // Martin end	-------------------------------------------------------------------------
 
   for(p = 0; p <= settings->NE1; p++)
@@ -582,7 +598,7 @@ uint32_t ResonantSpectrumWithSelfEnergy(const OperatorType OppH1, const Operator
       {
     	  for (uint32_t k = 0; k < Nkappa; k++)
     	  {
-    		  CalculateEnergyIndependentSelfEnergy(OppH2,EigenBasis2[j],U[k],SelfEnergySMatrix[(p*NT2*Npoles2 + i*Npoles2 + j)*Nkappa + k],polesSE[(p*NT2*Npoles2 + i*Npoles2 + j)*Nkappa + k]);
+    		  CalculateEnergyIndependentSelfEnergy(OppH2,EigenBasis2[j],U[k],SelfEnergySMatrix2[(p*NT2*Npoles2 + i*Npoles2 + j)*Nkappa + k],polesSE[(p*NT2*Npoles2 + i*Npoles2 + j)*Nkappa + k]);
     	  }
     	  WaveFunctionFree(&EigenBasis2[j]);
     	  WaveFunctionFree(&PhiBasis2[j]);
@@ -676,7 +692,7 @@ uint32_t ResonantSpectrumWithSelfEnergy(const OperatorType OppH1, const Operator
 				  uint32_t NContStates = (uint32_t) Fk[k].size();
 				  for (uint32_t e = 0; e < NContStates; e++)
 				  {
-					  CalcSpectrumFromPolesAdd(0,gammaSE,ECont[k][e],polesSE[(p*NT2*Npoles2 + i*Npoles2 + j)*Nkappa + k],Fk[k][e],&(SelfEnergySMatrix[(p*NT2*Npoles2 + i*Npoles2 + j)*Nkappa + k]),SelfEnergiesEvaluated[j]);
+					  CalcSpectrumFromPolesAdd(0,gammaSE,ECont[k][e],polesSE[(p*NT2*Npoles2 + i*Npoles2 + j)*Nkappa + k],Fk[k][e],&(SelfEnergySMatrix2[(p*NT2*Npoles2 + i*Npoles2 + j)*Nkappa + k]),SelfEnergiesEvaluated[j]);
 					  //PrintArray(&polesSE[(p*NT2*Npoles2 + i*Npoles2 + j)*Nkappa + k][0],polesSE[(p*NT2*Npoles2 + i*Npoles2 + j)*Nkappa + k].size());
 					  //int foo; std::cin >> foo;
 				  }

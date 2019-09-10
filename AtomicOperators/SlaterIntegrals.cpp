@@ -31,6 +31,68 @@ SSlaterIntegral *GetSlaterIntegrals(const vector<vector<double> > &basisfuns,con
     return si;
 }
 
+SSlaterIntegral *GetSlaterIntegralsTwoFilled(const vector<vector<double> > &basisfuns,const vector<double> &x,const vector<int> &indToK, unsigned int &NIntegrals)
+{
+
+  if(GlobalTimeOn&0x100) BeginTiming("Slater Integrals", &GlobalTime);
+    SSlaterIntegral *si;
+    unsigned int kMax, n, i;
+    double **kernels;
+    vector<vector<double> > dualfuns;
+    unsigned int NGridPoints = (unsigned int)x.size();
+
+
+    n = 2* NGridPoints;
+
+    CreateDualFunctions(basisfuns,x,dualfuns);
+
+    si = InitializeIntegralsTwoFilled(indToK, NIntegrals,&kMax);
+
+    kernels = CreateAllKernels(kMax, NGridPoints, &x[0]);
+
+    CalculateSlaterIntegrals(NIntegrals, si,n,kernels,basisfuns,dualfuns);
+
+    for ( i = 0; i <= kMax; i++)
+    {
+    	free(kernels[i]);
+    }
+    free(kernels);
+
+  if(GlobalTimeOn&0x100) EndTiming("Slater Integrals", &GlobalTime);
+    return si;
+}
+
+SSlaterIntegral *GetSlaterIntegralsOneFilled(const vector<vector<double> > &basisfuns,const vector<double> &x,const vector<int> &indToK1,const vector<int> &indToK2, unsigned int &NIntegrals)
+{
+
+  if(GlobalTimeOn&0x100) BeginTiming("Slater Integrals", &GlobalTime);
+    SSlaterIntegral *si;
+    unsigned int kMax, n, i;
+    double **kernels;
+    vector<vector<double> > dualfuns;
+    unsigned int NGridPoints = (unsigned int)x.size();
+
+
+    n = 2* NGridPoints;
+
+    CreateDualFunctions(basisfuns,x,dualfuns);
+
+    si = InitializeIntegralsOneFilled(indToK1,indToK2, NIntegrals,&kMax);
+
+    kernels = CreateAllKernels(kMax, NGridPoints, &x[0]);
+
+    CalculateSlaterIntegrals(NIntegrals, si,n,kernels,basisfuns,dualfuns);
+
+    for ( i = 0; i <= kMax; i++)
+    {
+    	free(kernels[i]);
+    }
+    free(kernels);
+
+  if(GlobalTimeOn&0x100) EndTiming("Slater Integrals", &GlobalTime);
+    return si;
+}
+
 SSlaterIntegral *GetSlaterIntegrals(const vector<Interpolation::InterpolatingFunction *> &ipolfuns,const vector<int> &indToK, unsigned int &NIntegrals, bool Qcontinuum)
 {
 
@@ -375,6 +437,92 @@ SSlaterIntegral *InitializeIntegrals(const vector<int> &indToK, unsigned int &NI
     	integrals[i].tau.kappa[2] = it->second.val[2];
     	integrals[i].tau.kappa[3] = it->second.val[3];
     													// TODO i could be larger than NIntegrals ???
+    	i++;
+    }
+
+    *kMax = 0;
+    for( i = 0; i < NIntegrals; i++ )
+    {
+        integrals[i].k = GetK(integrals[i].tau.kappa, &integrals[i].Nval);
+        k = integrals[i].k[integrals[i].Nval-1];
+        if (k > *kMax)
+        {
+            *kMax = k;
+        }
+        integrals[i].val = (double *) malloc(integrals[i].Nval*sizeof(double));
+    }
+
+    return integrals;
+}
+
+SSlaterIntegral *InitializeIntegralsTwoFilled(const vector<int> &indToK, unsigned int &NIntegrals, unsigned int *kMax)
+{
+    unsigned int i, k;
+    SSlaterIntegral *integrals;
+
+    std::map<myarray,myarray> tupel;
+   
+    tupel = CreateSlaterTupleTwoFilled(indToK);
+    NIntegrals = (unsigned int)tupel.size();
+
+    integrals = (SSlaterIntegral *) malloc((NIntegrals)*sizeof(SSlaterIntegral));
+    i = 0;
+    for( std::map<myarray,myarray>::iterator it = tupel.begin(); it != tupel.end(); ++it)
+    {
+    	integrals[i].tau.n[0] = it->first.val[0];
+    	integrals[i].tau.n[1] = it->first.val[1];
+    	integrals[i].tau.n[2] = it->first.val[2];
+    	integrals[i].tau.n[3] = it->first.val[3];
+
+
+    	integrals[i].tau.kappa[0] = it->second.val[0];
+    	integrals[i].tau.kappa[1] = it->second.val[1];
+    	integrals[i].tau.kappa[2] = it->second.val[2];
+    	integrals[i].tau.kappa[3] = it->second.val[3];
+
+    	i++;
+    }
+
+    *kMax = 0;
+    for( i = 0; i < NIntegrals; i++ )
+    {
+        integrals[i].k = GetK(integrals[i].tau.kappa, &integrals[i].Nval);
+        k = integrals[i].k[integrals[i].Nval-1];
+        if (k > *kMax)
+        {
+            *kMax = k;
+        }
+        integrals[i].val = (double *) malloc(integrals[i].Nval*sizeof(double));
+    }
+
+    return integrals;
+}
+
+SSlaterIntegral *InitializeIntegralsOneFilled(const vector<int> &indToK1,const vector<int> &indToK2, unsigned int &NIntegrals, unsigned int *kMax)
+{
+    unsigned int i, k;
+    SSlaterIntegral *integrals;
+
+    std::map<myarray,myarray> tupel;
+   
+    tupel = CreateSlaterTupleOneFilled(indToK1,indToK2);
+    NIntegrals = (unsigned int)tupel.size();
+
+    integrals = (SSlaterIntegral *) malloc((NIntegrals)*sizeof(SSlaterIntegral));
+    i = 0;
+    for( std::map<myarray,myarray>::iterator it = tupel.begin(); it != tupel.end(); ++it)
+    {
+    	integrals[i].tau.n[0] = it->first.val[0];
+    	integrals[i].tau.n[1] = it->first.val[1];
+    	integrals[i].tau.n[2] = it->first.val[2];
+    	integrals[i].tau.n[3] = it->first.val[3];
+
+
+    	integrals[i].tau.kappa[0] = it->second.val[0];
+    	integrals[i].tau.kappa[1] = it->second.val[1];
+    	integrals[i].tau.kappa[2] = it->second.val[2];
+    	integrals[i].tau.kappa[3] = it->second.val[3];
+
     	i++;
     }
 
