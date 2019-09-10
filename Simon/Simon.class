@@ -6,6 +6,7 @@ typedef struct doubleVecValPair
 }
 doubleVecValPair;
 
+// Each Gaussian is of the form A*r^l exp(-w*r^2), with A such that integral_0^inf r^2 G^2(r) = 1
 class GaussianRadial {
 private:
 	uint l;
@@ -74,6 +75,41 @@ public:
 	uint getL() const
 	{
 		return l;
+	}
+	
+	void setL(const uint l)
+	{
+		this-> l = l;
+	}
+	
+	vector<double> getAmplitudes() const
+	{
+		return amplitudes;
+	}
+	
+	void setAmplitudes(const vector<double> &amplitudes)
+	{
+		if (amplitudes.size() != widths.size())
+		{
+			cout << "Error in GaussianRadial: Size of amplitudes vector (" << amplitudes.size() << ") needs to equal size of widths vector (" << widths.size() << ")." << endl;
+			throw std::exception();
+		}
+		this-> amplitudes = amplitudes;
+	}
+	
+	vector<double> getWidths() const
+	{
+		return widths;
+	}
+	
+	void setWidths(const vector<double> &widths)
+	{
+		if (amplitudes.size() != widths.size())
+		{
+			cout << "Error in GaussianRadial: Size of amplitudes vector (" << amplitudes.size() << ") needs to equal size of widths vector (" << widths.size() << ")." << endl;
+			throw std::exception();
+		}
+		this-> widths = widths;
 	}
 
 };

@@ -132,17 +132,29 @@ void lua_push(lua_State *L, const GaussianRadial &pushkin)
 	*G = pushkin;
 	luaL_setmetatable(L, "GaussianRadialFunction_Type");
 }
+//
+//void lua_push(lua_State *L, const GaussianRadial * const pushkin)
+//{
+//	GaussianRadial * G = (GaussianRadial *) lua_newuserdata(L, sizeof(GaussianRadial));
+//	*G = *pushkin;
+//	luaL_setmetatable(L, "GaussianRadialFunction_Type");
+//}
 
-void lua_push(lua_State *L, const GaussianRadial * const pushkin)
+void lua_push(lua_State *L, GaussianRadial * const pushkin)
 {
 	GaussianRadial * G = (GaussianRadial *) lua_newuserdata(L, sizeof(GaussianRadial));
-	*G = *pushkin;
+	G = pushkin;
 	luaL_setmetatable(L, "GaussianRadialFunction_Type");
 }
 
 void lua_check(lua_State *L, int arg, GaussianRadial &in)
 {
 	in = *(GaussianRadial *) luaL_checkudata(L, arg, "GaussianRadialFunction_Type");
+}
+
+void lua_check(lua_State *L, int arg, GaussianRadial * in)
+{
+	in = (GaussianRadial *) luaL_checkudata(L, arg, "GaussianRadialFunction_Type");
 }
 
 static int LuaNewGaussianRadial(lua_State *L)
@@ -156,9 +168,109 @@ static int LuaNewGaussianRadial(lua_State *L)
 	return 1;
 }
 
+vector<double> GaussianRadialToInterpolationYValsTimesR(const GaussianRadial &g, const vector<double> &grid)
+{
+	vector<double> yVals(grid.size());
+	for (uint i = 0; i < (uint) grid.size(); ++i)
+	{
+		yVals[i] = g(grid[i]) * grid[i];
+	}
+	return yVals;
+}
+
+static int LuaGaussianRadialToCubicSplineTimesR(lua_State *L)
+{
+	vector<double> grid;
+	uint32_t len = (uint32_t) lua_gettop(L);
+	if (len < 1 || len > 2)
+	{
+		return luaL_error(L, "Error: GaussianRadialToCubicSpline called with %d arguments. 1 or 2 expected, GaussianRadialFunction and optional grid.", len);
+	}
+	GaussianRadial g;
+	lua_check(L, 1, g);
+	if (len == 2)
+	{
+		lua_check(L, 2, grid);
+	}
+	else
+	{
+		for (uint i = 0; i < 200; ++i)
+		{
+			grid.push_back((double) (i*i*i) * 2.5 /1000000.);
+		}
+	}
+	void *memory = lua_newuserdata(L, sizeof(Interpolation::CubicSpline));
+	Interpolation::CubicSpline *fun = new (memory) Interpolation::CubicSpline;
+	luaL_setmetatable(L, "InterpolatingFunction_Type");
+	const vector<double> yVals = GaussianRadialToInterpolationYValsTimesR(g, grid);
+	fun->Create(grid, yVals);
+	return 1;
+}
+
+static int LuaGaussianRadialIndex(lua_State *L)
+{
+	GaussianRadial g;
+	lua_check(L, 1, g);
+	string ind;
+	lua_check(L, 2, ind);
+	if (ind.compare("l") == 0)
+	{
+		lua_push(L, g.getL());
+		return 1;
+	}
+	else if (ind.compare("amplitudes") == 0)
+	{
+		lua_push(L, g.getAmplitudes());
+		return 1;
+	}
+	else if (ind.compare("widths") == 0)
+	{
+		lua_push(L, g.getWidths());
+		return 1;
+	}
+	else
+	{
+		return luaL_error(L, "Error: GaussianRadialFunctions have no property or method with name \"%s\".", ind.c_str());
+	}
+}
+
+static int LuaGaussianRadialNewIndex(lua_State *L)
+{
+	GaussianRadial *g;
+	lua_check(L, 1, g);
+	string ind;
+	lua_check(L, 2, ind);
+//	if (ind.compare("l") == 0)
+//	{
+//		uint l;
+//		lua_check(L, 3, l);
+//		g->setL(l);
+//		return 0;
+//	}
+//	else if (ind.compare("amplitudes") == 0)
+//	{
+//		vector<double> amplitudes;
+//		lua_check(L, 3, amplitudes);
+//		g->setAmplitudes(amplitudes);
+//		return 0;
+//	}
+//	else if (ind.compare("widths") == 0)
+//	{
+//		vector<double> widths;
+//		lua_check(L, 3, widths);
+//		g->setWidths(widths);
+//		return 0;
+//	}
+//	else
+	{
+		return luaL_error(L, "Error: GaussianRadialFunctions have no property of method with name \"%s\".", ind.c_str());
+	}
+}
+
 
 static const struct luaL_Reg GaussianRadialFunction_func[] = {
   {"NewGaussianRadialFunction", LuaNewGaussianRadial},
+	{"ToInterpolationTimesR", LuaGaussianRadialToCubicSplineTimesR},
   {NULL, NULL}
 };
 
@@ -177,5 +289,7 @@ static const struct luaL_Reg GaussianRadialFunction_meta[] = {
   {"__call", LuaGaussianRadialCall},
   {"__tostring", LuaGaussianRadialToString},
   {"__gc", LuaGaussianRadialDestroy},
+	{"__index", LuaGaussianRadialIndex},
+	{"__newindex", LuaGaussianRadialNewIndex},
   {NULL, NULL}
 };

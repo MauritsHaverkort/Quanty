@@ -1,0 +1,47 @@
+errorCount = 0
+
+function test(val1, val2, tolerance)
+    if tolerance == nil then
+       tolerance = 1e-13 
+    end
+    if Chop(val1 - val2, tolerance) ~= 0 then
+        print("Something went wrong!")
+        errorCount = errorCount + 1
+    end
+end
+
+
+for l=0,4 do
+    for amp = 1,3 do
+        for width = 1,3 do
+            g = GaussianRadialFunction.NewGaussianRadialFunction(l, amp, width)
+            
+            N = 50
+            for i=1,N do
+                local x = i*2/N
+                test(g(x), amp*pow(x,l)*exp(-width*x*x))
+            end
+            
+            f = GaussianRadialFunction.ToInterpolationTimesR(g)
+
+            N = 200
+            for i=1,N do
+                local x = i*19/N
+                test(g(x)*x, f(x), 1e-5) --Some accuracy loss is expected when converting to Interpolating Functions
+            end
+        end
+    end
+end
+
+g = GaussianRadialFunction.NewGaussianRadialFunction(1, {2,3}, {0.4, 0.5})
+
+print(g.l)
+print(g.amplitudes)
+print(g.widths)
+print(g.gaussian(2))
+
+if errorCount == 0 then
+    print("No errors detected.")
+end
+
+os.exit(errorCount)
