@@ -257,10 +257,13 @@ OrcaObject FileReadOrca(const string &filename)
 	bool isReadingRadialFunctions = false;
 	bool isReadingOverlapMatrix = false;
 	bool isReadingMolecularOrbitals = false;
+	struct
+	{
 	string currentAtom;
 	char currentShell;
 	uint shellCounter;
 	GaussianRadial currentGauss;
+	} basisAux;
 	int i, jOffset = 0;
 	while (getline(reader, line))
 	{
@@ -269,7 +272,6 @@ OrcaObject FileReadOrca(const string &filename)
 			const string::size_type lastBlank = line.find_last_of(" ");
 			out.NBasis = atoi(line.substr(lastBlank + 1).c_str());
 		}
-
 
 		if (line.find("CARTESIAN COORDINATES (A.U.)") != string::npos)
 		{
@@ -285,14 +287,14 @@ OrcaObject FileReadOrca(const string &filename)
 		{
 			string::size_type atomFirstPos = line.find_first_of(letters);
 			string::size_type atomLastPos = line.find_first_not_of(letters, atomFirstPos);
-			string atomName = line.substr(atomFirstPos, atomLastPos-atomFirstPos);
+			string atomName = line.substr(atomFirstPos, atomLastPos - atomFirstPos);
 			vector<double> lineVec = stringToDoubleVec(line.substr(atomLastPos)); //ZA, FRAG, MASS, X, Y, Z
 			AtomType atom;
 			strcpy(atom.Name, atomName.c_str());
 			initAtom(atom, vector<string>(), vector<vector<string> >(), false);
 			for (uint i = 0; i < 3; ++i)
 			{
-				atom.Position[i] = lineVec[i+3];
+				atom.Position[i] = lineVec[i + 3];
 			}
 			out.Atoms.push_back(atom);
 		}
@@ -303,22 +305,21 @@ OrcaObject FileReadOrca(const string &filename)
 			string::size_type colonPos = line.find_last_of(':');
 			string::size_type atomFirstPos = line.find_first_not_of(' ', colonPos + 1);
 			string::size_type atomLastPos = line.find_first_not_of(letters, atomFirstPos);
-			currentAtom = line.substr(atomFirstPos, atomLastPos - atomFirstPos);
-			currentShell = 'x';
-			shellCounter = 0;
-//			currentGauss = GaussianRadial();
+			basisAux.currentAtom = line.substr(atomFirstPos, atomLastPos - atomFirstPos);
+			basisAux.currentShell = 'x';
+			basisAux.shellCounter = 0;
 		}
 
 		if (isReadingRadialFunctions && !isOrcaLineIgnored(line))
 		{
 			if (line.find_first_of(letters) != string::npos)
 			{
-				if (shellCounter > 0)
+				if (basisAux.shellCounter > 0)
 				{
 					std::stringstream strstr;
-					strstr << currentAtom << "_" << shellCounter << currentShell;
+					strstr << basisAux.currentAtom << "_" << basisAux.shellCounter << basisAux.currentShell;
 					const string shellNameFull = strstr.str();
-					out.RadialFunctions.insert( { shellNameFull, currentGauss });
+					out.RadialFunctions.insert( { shellNameFull, basisAux.currentGauss });
 				}
 				if (line.find("end") != string::npos)
 				{
@@ -327,29 +328,29 @@ OrcaObject FileReadOrca(const string &filename)
 				else
 				{
 					string::size_type shellFirstPos = line.find_first_of(letters);
-					if (currentShell != tolower(line.at(shellFirstPos)))
+					if (basisAux.currentShell != tolower(line.at(shellFirstPos)))
 					{
-						shellCounter = 1;
-						currentShell = tolower(line.at(shellFirstPos));
+						basisAux.shellCounter = 1;
+						basisAux.currentShell = tolower(line.at(shellFirstPos));
 					}
 					else
 					{
-						shellCounter++;
+						basisAux.shellCounter++;
 					}
 					uint l = 0;
-					if (currentShell == 's') l = 0;
-					if (currentShell == 'p') l = 1;
-					if (currentShell == 'd') l = 2;
-					if (currentShell == 'f') l = 3;
-					if (currentShell == 'g') l = 4;
-					if (currentShell == 'h') l = 5;
-					currentGauss = GaussianRadial(l);
+					if (basisAux.currentShell == 's') l = 0;
+					if (basisAux.currentShell == 'p') l = 1;
+					if (basisAux.currentShell == 'd') l = 2;
+					if (basisAux.currentShell == 'f') l = 3;
+					if (basisAux.currentShell == 'g') l = 4;
+					if (basisAux.currentShell == 'h') l = 5;
+					basisAux.currentGauss = GaussianRadial(l);
 				}
 			}
 			else
 			{
 				vector<double> lineVec = stringToDoubleVec(line);
-				currentGauss.addGaussian(lineVec[2] * OrcaGaussianNormfactor(lineVec[1], currentGauss.getL()), lineVec[1]);
+				basisAux.currentGauss.addGaussian(lineVec[2] * OrcaGaussianNormfactor(lineVec[1], basisAux.currentGauss.getL()), lineVec[1]);
 			}
 		}
 
