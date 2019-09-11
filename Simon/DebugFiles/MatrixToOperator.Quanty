@@ -1,3 +1,5 @@
+errorCount = 0
+
 MRe = {{3,14},
        {7,8}}
 ORe = Simon.MatrixToOperator(MRe)
@@ -5,9 +7,7 @@ print("Real Matrix:")
 print(MRe)
 print("Real Operator:")
 print(ORe)
-print("Test:")
-print( Chop( OperatorToMatrix(ORe) - MRe) )
-print("\n\n\n")
+if Matrix.ToUserdata( Chop( OperatorToMatrix(ORe) - MRe) ) ~= Matrix.ToUserdata( Matrix.Zero(#MRe) ) then errorCount = errorCount + 1 end
 
 MIm = {{2*I, 12.5*I},
        {17*I, 24.4*I}}
@@ -16,9 +16,7 @@ print("Imaginary Matrix:")
 print(MIm)
 print("Imaginary Operator:")
 print(OIm)
-print("Test:")
-print( Chop( OperatorToMatrix(OIm) - MIm) )
-print("\n\n\n")
+if Matrix.ToUserdata( Chop( OperatorToMatrix(OIm) - MIm) ) ~= Matrix.ToUserdata( Matrix.Zero(#MIm) ) then errorCount = errorCount + 1 end
 
 MCom = {{13,12*I,-4},
         {2+7*I,7,91*I},
@@ -28,6 +26,6 @@ print("Complex Matrix:")
 print(MCom)
 print("Complex Operator:")
 print(OCom)
-print("Test:")
-print( Chop( OperatorToMatrix(OCom) - MCom) )
-print("\n\n\n")
+if Matrix.ToUserdata( Chop( OperatorToMatrix(OCom) - MCom) ) ~= Matrix.ToUserdata( Matrix.Zero(#MCom) ) then errorCount = errorCount + 1 end
+
+os.exit(errorCount)

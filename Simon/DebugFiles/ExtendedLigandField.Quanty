@@ -1,23 +1,4 @@
-function errormessage(arg1, arg2)
-    local bar = "================================"
-    print(bar,bar,bar)
-    print()
-    print(bar,bar,bar)
-    print()
-    print(bar,bar,bar)
-    print()
-    print("Oh no! Something went seriously wrong here!!!")
-    print()
-    print(bar,bar,bar)
-    print()
-    print(bar,bar,bar)
-    print()
-    print(bar,bar,bar)
-    print( arg1 )
-    print("is unequal to")
-    print( arg2 )       
-    os.exit()
-end
+errorCount = 0
 
 function testM(M1, M2)
     MTable = Matrix.ToTable(M1)
@@ -25,14 +6,14 @@ function testM(M1, M2)
     if Chop( M1 - M2 , 1e-13) == zero then
         print("All fine.")
     else
-        errormessage( M1, M2 )
+        errorCount = errorCount + 1
     end
 end
 
 function testOrb(orbs1, orbs2)
     for key,orb in pairs(orbs1) do
         if orb ~= orbs2[key] then
-            errormessage( orbs1, orbs2 )
+            errorCount = errorCount + 1
         end
     end
     print("All fine.")
@@ -81,4 +62,5 @@ for key,system in pairs(systems) do
         end
     end
 end
-print("Everything worked! Hooray!")
+
+os.exit(errorCount)
