@@ -34,11 +34,50 @@ for l=0,4 do
 end
 
 g = GaussianRadialFunction.NewGaussianRadialFunction(1, {2,3}, {0.4, 0.5})
+g.l = 6
+g.amplitudes = {7,8}
+g.widths = {1/9, 1/10}
+test(g.l, 6)
+test(g.amplitudes[1], 7)
+test(g.amplitudes[2],8)
+test(g.widths[1],1/9)
+test(g.widths[2],1/10)
+test(g.N,2)
+g[1] = {11,1/12}
+test(g[1][1],11)
+test(g[1][2],1/12)
+g[3] = {13,1/14}
+test(g[3][1],13)
+test(g[3][2],1/14)
+test(g.N,3)
 
-print(g.l)
-print(g.amplitudes)
-print(g.widths)
-print(g.gaussian(2))
+f = -g
+test(f.l,6)
+test(f.N,3)
+test(f[1][1],-11)
+test(f[1][2],1/12)
+test(f[2][1],-8)
+test(f[2][2],1/10)
+test(f[3][1],-13)
+test(f[3][2],1/14)
+
+g = GaussianRadialFunction.NewGaussianRadialFunction(1, {2}, {0.3})
+f = GaussianRadialFunction.NewGaussianRadialFunction(1, {4}, {0.5})
+h = g + f
+test(h.l,1)
+test(h.N,2)
+test(h[1][1],2)
+test(h[1][2],0.3)
+test(h[2][1],4)
+test(h[2][2],0.5)
+
+h = g - f
+test(h.l,1)
+test(h.N,2)
+test(h[1][1],2)
+test(h[1][2],0.3)
+test(h[2][1],-4)
+test(h[2][2],0.5)
 
 if errorCount == 0 then
     print("No errors detected.")

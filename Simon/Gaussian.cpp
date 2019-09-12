@@ -4,24 +4,57 @@
  */
 static int LuaGaussianRadialUnm(lua_State * L)
 {
-	cout << endl << "Warning: Unary minus not yet implemented for Gaussian functions." << endl;
-  return 0;
+	GaussianRadial g;
+	lua_check(L, 1, g);
+	vector<double> amplitudes = g.getAmplitudes();
+	for (uint i = 0; i < (uint) amplitudes.size(); ++i)
+	{
+		amplitudes[i] = -amplitudes[i];
+	}
+	lua_push(L, GaussianRadial(g.getL(), amplitudes, g.getWidths()));
+	return 1;
 }
 /*
  *
  */
-static int LuaGaussianRadialAdd(lua_State * L)
+static int LuaGaussianRadialAdd(lua_State *L)
 {
-	cout << endl << "Warning: Addition not yet implemented for Gaussian functions." << endl;
-  return 0;
+	GaussianRadial g1, g2, gOut;
+	lua_check(L, 1, g1);
+	lua_check(L, 2, g2);
+	if (g1.getL() != g2.getL())
+	{
+		return luaL_error(L, "Error while adding two Gaussian Functions: l1 (%d) and l2 (%d) need to be the same.", g1.getL(), g2.getL());
+	}
+	gOut = g1;
+	for (uint i = 0; i < g2.getN(); ++i)
+	{
+		gOut.addGaussian(g2.getGaussian(i));
+	}
+	lua_push(L, gOut);
+	return 1;
 }
 /*
  *
  */
-static int LuaGaussianRadialSub(lua_State * L)
+static int LuaGaussianRadialSub(lua_State *L)
 {
-	cout << endl << "Warning: Subtraction not yet implemented for Gaussian functions." << endl;
-  return 0;
+	GaussianRadial g1, g2, gOut;
+	lua_check(L, 1, g1);
+	lua_check(L, 2, g2);
+	if (g1.getL() != g2.getL())
+	{
+		return luaL_error(L, "Error while subtracting two Gaussian Functions: l1 (%d) and l2 (%d) need to be the same.", g1.getL(), g2.getL());
+	}
+	gOut = g1;
+	for (uint i = 0; i < g2.getN(); ++i)
+	{
+		vector<double> primitiveGaussian = g2.getGaussian(i);
+		primitiveGaussian[0] = -primitiveGaussian[0];
+		gOut.addGaussian(primitiveGaussian);
+	}
+	lua_push(L, gOut);
+	return 1;
 }
 /*
  *
@@ -132,18 +165,11 @@ void lua_push(lua_State *L, const GaussianRadial &pushkin)
 	*G = pushkin;
 	luaL_setmetatable(L, "GaussianRadialFunction_Type");
 }
-//
-//void lua_push(lua_State *L, const GaussianRadial * const pushkin)
-//{
-//	GaussianRadial * G = (GaussianRadial *) lua_newuserdata(L, sizeof(GaussianRadial));
-//	*G = *pushkin;
-//	luaL_setmetatable(L, "GaussianRadialFunction_Type");
-//}
 
-void lua_push(lua_State *L, GaussianRadial * const pushkin)
+void lua_push(lua_State *L, const GaussianRadial * const pushkin)
 {
 	GaussianRadial * G = (GaussianRadial *) lua_newuserdata(L, sizeof(GaussianRadial));
-	G = pushkin;
+	*G = *pushkin;
 	luaL_setmetatable(L, "GaussianRadialFunction_Type");
 }
 
@@ -152,7 +178,7 @@ void lua_check(lua_State *L, int arg, GaussianRadial &in)
 	in = *(GaussianRadial *) luaL_checkudata(L, arg, "GaussianRadialFunction_Type");
 }
 
-void lua_check(lua_State *L, int arg, GaussianRadial * in)
+void lua_check(lua_State *L, int arg, GaussianRadial * &in)
 {
 	in = (GaussianRadial *) luaL_checkudata(L, arg, "GaussianRadialFunction_Type");
 }
@@ -211,9 +237,26 @@ static int LuaGaussianRadialIndex(lua_State *L)
 {
 	GaussianRadial g;
 	lua_check(L, 1, g);
-	string ind;
+	uint i = 0;
+	string ind = "";
+	if (luaL_isType(L,2,i))
+	{
+		lua_check(L,2,i);
+	}
+	else if (luaL_isType(L,2,ind))
+	{
 	lua_check(L, 2, ind);
-	if (ind.compare("l") == 0)
+	}
+	if (i > 0)
+	{
+		if (i - 1 >= g.getN())
+		{
+			return luaL_error(L, "Error: Index %d lies out of range (%d) of entries of GaussianRadialFunction.", i, g.getN());
+		}
+		lua_push(L, g.getGaussian(i - 1));
+		return 1;
+	}
+	else if (ind.compare("l") == 0)
 	{
 		lua_push(L, g.getL());
 		return 1;
@@ -228,6 +271,11 @@ static int LuaGaussianRadialIndex(lua_State *L)
 		lua_push(L, g.getWidths());
 		return 1;
 	}
+	else if (ind.compare("N") == 0)
+	{
+		lua_push(L, g.getN());
+		return 1;
+	}
 	else
 	{
 		return luaL_error(L, "Error: GaussianRadialFunctions have no property or method with name \"%s\".", ind.c_str());
@@ -238,30 +286,63 @@ static int LuaGaussianRadialNewIndex(lua_State *L)
 {
 	GaussianRadial *g;
 	lua_check(L, 1, g);
-	string ind;
-	lua_check(L, 2, ind);
-//	if (ind.compare("l") == 0)
-//	{
-//		uint l;
-//		lua_check(L, 3, l);
-//		g->setL(l);
-//		return 0;
-//	}
-//	else if (ind.compare("amplitudes") == 0)
-//	{
-//		vector<double> amplitudes;
-//		lua_check(L, 3, amplitudes);
-//		g->setAmplitudes(amplitudes);
-//		return 0;
-//	}
-//	else if (ind.compare("widths") == 0)
-//	{
-//		vector<double> widths;
-//		lua_check(L, 3, widths);
-//		g->setWidths(widths);
-//		return 0;
-//	}
-//	else
+	uint i = 0;
+	string ind = "";
+	if (luaL_isType(L, 2, i))
+	{
+		lua_check(L, 2, i);
+	}
+	else if (luaL_isType(L, 2, ind))
+	{
+		lua_check(L, 2, ind);
+	}
+	if (i > 0)
+	{
+		vector<double> newGauss;
+		lua_check(L, 3, newGauss);
+		if ((uint) newGauss.size() > 2)
+		{
+			return luaL_error(L, "Error: Setting individual Gaussians needs the input format {amplitude, width}.");
+		}
+		if (i - 1 < g->getN())
+		{
+			g->setGaussian(i - 1, newGauss[0], newGauss[1]);
+		}
+		else if (i - 1 == g->getN())
+		{
+			g->addGaussian(newGauss[0], newGauss[1]);
+		}
+		else
+		{
+			return luaL_error(L, "Error: Index %d lies out of range (%d) of entries of GaussianRadialFunction.", i, g->getN());
+		}
+	}
+	else if (ind.compare("l") == 0)
+	{
+		uint l;
+		lua_check(L, 3, l);
+		g->setL(l);
+		return 0;
+	}
+	else if (ind.compare("amplitudes") == 0)
+	{
+		vector<double> amplitudes;
+		lua_check(L, 3, amplitudes);
+		g->setAmplitudes(amplitudes);
+		return 0;
+	}
+	else if (ind.compare("widths") == 0)
+	{
+		vector<double> widths;
+		lua_check(L, 3, widths);
+		g->setWidths(widths);
+		return 0;
+	}
+	else if (ind.compare("N") == 0)
+	{
+		return luaL_error(L, "Error: You should not manually change the number of primitive Gaussians. If you want add some, just call g[g.N]={amplitude, width}.");
+	}
+	else
 	{
 		return luaL_error(L, "Error: GaussianRadialFunctions have no property of method with name \"%s\".", ind.c_str());
 	}

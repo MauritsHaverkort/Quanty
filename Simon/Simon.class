@@ -60,6 +60,17 @@ public:
 		amplitudes.push_back(amplitude);
 		widths.push_back(width);
 	}
+	
+	void addGaussian(const vector<double> &gaussian)
+	{
+		if ((uint)gaussian.size() != 2)
+		{
+			cout << "Error in GaussianRadial: New primitive Gaussian needs to be entered as a vector of length 2, with entries amplitude and width." << endl;
+			throw std::exception();
+		}
+		amplitudes.push_back(gaussian[0]);
+		widths.push_back(gaussian[1]);
+	}
 
 	void setGaussian(const uint i, const double amplitude, const double width)
 	{
@@ -70,6 +81,35 @@ public:
 		}
 		amplitudes[i] = amplitude;
 		widths[i] = width;
+	}
+	
+	void setGaussian(const uint i, const vector<double> &gaussian)
+	{
+		if ((uint)gaussian.size() != 2)
+		{
+			cout << "Error in GaussianRadial: New primitive Gaussian needs to be entered as a vector of length 2, with entries amplitude and width." << endl;
+			throw std::exception();
+		}
+		if (i >= amplitudes.size())
+		{
+			cout << "Error in GaussianRadial: Index " << i << " lies outside the range of Gaussian functions (" << amplitudes.size() << ")." << endl;
+			throw std::exception();
+		}
+		amplitudes[i] = gaussian[0];
+		widths[i] = gaussian[1];
+	}
+	
+	vector<double> getGaussian(const uint i) const
+	{
+		if (i >= amplitudes.size())
+		{
+			cout << "Error in GaussianRadial: Index " << i << " lies outside the range of Gaussian functions (" << amplitudes.size() << ")." << endl;
+			throw std::exception();
+		}
+		vector<double> out(2);
+		out[0] = amplitudes[i];
+		out[1] = widths[i];
+		return out;
 	}
 	
 	uint getL() const
@@ -110,6 +150,11 @@ public:
 			throw std::exception();
 		}
 		this-> widths = widths;
+	}
+	
+	uint getN() const
+	{
+		return (uint)amplitudes.size();
 	}
 
 };
