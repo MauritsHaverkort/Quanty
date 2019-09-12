@@ -18,7 +18,7 @@ double Evaluate(uint32_t i, uint32_t n, const vector<double> &x, double t)
 
 	if (n==0)
 	{
-		if (x[i] <= t && t < x[i+1])
+		if ( (x[i] <= t && t < x[i+1]) || (t == x[i+1] && t == x[x.size()-1] ) ) //TODO: Find a better way for this
 		{
 			return 1.;
 		}
@@ -65,9 +65,62 @@ double deBoor(uint32_t idx, double t, const vector<double> &x, uint32_t n, const
 	return d[n];
 }
 
+double EvalDerivative(uint32_t i, uint32_t n, const vector<double> &x,  double t, uint32_t k)
+{
+	if (k > 0)
+	{
+		double E1 =  EvalDerivative(i,n-1,x,t,k-1);
+		double E2 = EvalDerivative(i+1,n-1,x,t,k-1);
+		double dx1 = (x[i + n] -x[i]);
+		double dx2 = (x[i + n +1] -x[i+1]);
+		if (dx1 == 0)
+		{
+			if (dx2 == 0)
+			{
+				return 0;
+			}
+			else
+			{
+				return - (n / dx2 * E2);
+			}
+		}
+		else
+		{
+			if (dx2 == 0)
+			{
+				return n / dx1 * E1;
+			}
+			else
+			{
+				return n / dx1 * E1 - (n / dx2 * E2);
+			}
+		}
+
+	}
+	else
+	{
+		return Evaluate(i,n,x,t);
+	}
+}
+
+double Derivative(uint32_t idx, double t, const vector<double> &x, uint32_t n, const vector<double> &c, uint32_t k)
+{
+	double val = 0;
+	for (uint32_t i = 0; i <= (uint32_t)c.size()-1; i++) //Max(0,(int)(idx-2*n)) Min(idx +k-n,(uint32_t)c.size()-1)
+	{
+		val += c[i] * EvalDerivative(i,n,x,t,k);
+	}
+	return val;
+}
+
 void GenerateGrid(const std::vector<double> &t,std::vector<double> &x, uint32_t n)
 {
 	uint32_t d = (uint32_t) t.size();
+	if (d < (n+1))
+	{
+		printf("Error BSpline::GenerateGrid: number of points = %u < %u = n+1\n",d,n+1);
+		return;
+	}
 	x = vector<double>(d+n+1);
 	for (uint32_t i = 0; i <= n; i++)
 	{
@@ -101,10 +154,10 @@ void GetKnotMatrix(const std::vector<double> &x, const uint32_t n, const std::ve
 	{
 		for (uint32_t j = 0; j < d; j++)
 		{
-			B[i*d +j] = Evaluate(j,n,x,t[i]);
+			B[i +j*d] = Evaluate(j,n,x,t[i]);
 		}
 	}
-	if (t[d-1] == x[N-1]) B[d*d-1] = 1;	//TODO: Find a better way for this
+	//if (t[d-1] == x[N-1]) B[d*d-1] = 1;
 }
 
 #define TriIdx(i,j) (i + j*(j+1)/2)

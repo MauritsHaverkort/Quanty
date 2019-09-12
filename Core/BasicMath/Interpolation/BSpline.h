@@ -22,6 +22,10 @@ namespace BSpline
 
 double Evaluate(uint32_t i, uint32_t n, const vector<double> &x, double t);
 
+double EvalDerivative(uint32_t i, uint32_t n, const vector<double> &x,  double t, uint32_t k);
+
+double Derivative(uint32_t idx, double t, const vector<double> &x, uint32_t n, const vector<double> &c, uint32_t k);
+
 double deBoor(uint32_t idx, double t, const vector<double> &x, uint32_t n, const vector<double> &c);
 
 void GenerateGrid(const std::vector<double> &t,std::vector<double> &x, uint32_t n);

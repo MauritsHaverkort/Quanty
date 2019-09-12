@@ -16,7 +16,7 @@
 #include "ResonantSpectraSelfEnergy.cpp"
 #include "Continuum-Diagonal-Method.cpp"
 #include "Math/Quad.cpp"
-#include "Math/BSpline.cpp"
+//#include "Math/BSpline.cpp"
 #include "ReduceOperator.cpp"
 #include "Auger-Meitner_Selfenergy/Modules.cpp"
 #include "Auger-Meitner_Selfenergy/ResonantSpectrum_Selfenergy.cpp"
@@ -1882,6 +1882,7 @@ static int LuaMartinTest(lua_State *L)
     return 1;
 
 }
+
 
 static int LuaBSpline(lua_State *L)
 {

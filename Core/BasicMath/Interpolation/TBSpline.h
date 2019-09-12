@@ -9,7 +9,7 @@
 #define MARTIN_MATH_TBSPLINE_H_
 
 #include "BSpline.h"
-#include "../../Core/BasicMath/Interpolation/InterpolatingFunction.h"
+#include "InterpolatingFunction.h"
 
 namespace BSpline {
 
