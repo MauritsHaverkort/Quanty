@@ -154,6 +154,20 @@ void initAtom(AtomType &a, const vector<string> &shellNames, const vector<vector
 	}
 }
 
+vector<string> orbsAddLz(const vector<string> &in)
+{
+	vector < string > out;
+	for (uint i = 0; i < (uint) in.size(); ++i)
+	{
+		int l = (orbToMultiplicity(in[i], false) - 1) / 2;
+		for (int lz = -l; lz <= l; ++lz)
+		{
+			out.push_back(in[i] + to_string(lz));
+		}
+	}
+	return out;
+}
+
 void initAtom(AtomType &a, const vector<string> &shellNames, const vector<vector<string> > &orbitNames)
 {
 	initAtom(a, shellNames, orbitNames, false);
@@ -161,16 +175,45 @@ void initAtom(AtomType &a, const vector<string> &shellNames, const vector<vector
 
 vector<AtomType> OrbsToAtoms(const vector<string> &orbs, const bool hasSpin)
 {
-	vector < AtomType > out = vector < AtomType > (orbs.size());
+	uint lastNum = 0;
+	vector < string > atomNames;
+	vector < vector<string> > shellNames;
+	vector < vector<vector<string> > > orbitNames;
 	for (uint i = 0; i < (uint) orbs.size(); ++i)
 	{
-		out[i] = AtomType();
 		uint atomNum, n;
 		string atomName, shell;
 		int lz;
 		deconstructOrbname(orbs[i], atomNum, atomName, n, shell, lz);
-		strcpy(out[i].Name, atomName.c_str());
-		initAtom(out[i], vector < string > (1, to_string(n) + shell), vector<vector<string> >(), hasSpin);
+		if ((uint) atomNames.size() == 0 || atomNum != lastNum || atomNames[atomNames.size() - 1].compare(atomName) != 0)
+		{
+			lastNum = atomNum;
+			atomNames.push_back(atomName);
+			shellNames.push_back(vector<string>());
+			orbitNames.push_back(vector<vector<string> >());
+		}
+		string shellName;
+		if (shell.compare("") == 0)
+		{
+			shellName = "";
+		}
+		else
+		{
+			shellName = to_string(n) + shell;
+		}
+		if ((uint) shellNames[(uint) shellNames.size() - 1].size() == 0 || shellNames[(uint) shellNames.size() - 1][(uint) shellNames[(uint) shellNames.size() - 1].size() - 1].compare(shellName) != 0)
+		{
+			shellNames[(uint) shellNames.size() - 1].push_back(shellName);
+			orbitNames[(uint) orbitNames.size() - 1].push_back(vector<string>());
+		}
+		orbitNames[(uint) orbitNames.size() - 1][(uint) orbitNames[(uint) orbitNames.size() - 1].size() - 1].push_back(to_string(lz));
+	}
+	vector < AtomType > out = vector < AtomType > (atomNames.size());
+	for (uint i = 0; i < (uint) atomNames.size(); ++i)
+	{
+		out[i] = AtomType();
+		strcpy(out[i].Name, atomNames[i].c_str());
+		initAtom(out[i], shellNames[i], orbitNames[i], hasSpin);
 	}
 	return out;
 }

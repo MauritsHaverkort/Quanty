@@ -1,5 +1,5 @@
 void lua_push(lua_State * L, const OrcaObject &pushkin);
-bool isOrcaMatrixLineIgnored(const string &line);
+bool isOrcaLineIgnored(const string &line);
 vector<double> stringToDoubleVec(const string &str);
 int stringToLz(const string &str);
 string constructOrbname(const int siteNum, const string &atomName, const uint n, const string &shell, const int lz, const bool addLz);
@@ -9,6 +9,7 @@ string constructOrbname(const string &atomName, const uint n, const string &shel
 string constructOrbname(const string &atomName, const uint n, const string &shell);
 string normalizedOrcaOrbname(const string &orbOrca);
 void SortOrcaBasis(OrcaObject &orca);
+double OrcaGaussianNormfactor(const double w, const uint l);
 OrcaObject FileReadOrca(const string &filename);
 void ChangeOrcaOverlapMatrixPhases(OrcaObject &orca);
 double OrcaPhaseConventionFactor(const string &orb);

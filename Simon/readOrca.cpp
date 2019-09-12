@@ -257,6 +257,7 @@ OrcaObject FileReadOrca(const string &filename)
 	bool isReadingRadialFunctions = false;
 	bool isReadingOverlapMatrix = false;
 	bool isReadingMolecularOrbitals = false;
+	vector < vector<double> > atomPositions;
 	struct
 	{
 	string currentAtom;
@@ -285,18 +286,15 @@ OrcaObject FileReadOrca(const string &filename)
 
 		if (isReadingAtoms && !isOrcaLineIgnored(line))
 		{
-			string::size_type atomFirstPos = line.find_first_of(letters);
-			string::size_type atomLastPos = line.find_first_not_of(letters, atomFirstPos);
-			string atomName = line.substr(atomFirstPos, atomLastPos - atomFirstPos);
-			vector<double> lineVec = stringToDoubleVec(line.substr(atomLastPos)); //ZA, FRAG, MASS, X, Y, Z
-			AtomType atom;
-			strcpy(atom.Name, atomName.c_str());
-			initAtom(atom, vector<string>(), vector<vector<string> >(), false);
+			string::size_type pos = line.find_first_of(letters);
+			pos = line.find_first_not_of(letters, pos);
+			vector<double> lineVec = stringToDoubleVec(line.substr(pos)); //ZA, FRAG, MASS, X, Y, Z
+			vector<double> atomPos(3);
 			for (uint i = 0; i < 3; ++i)
 			{
-				atom.Position[i] = lineVec[i + 3];
+				atomPos[i] = lineVec[lineVec.size()-3+i];
 			}
-			out.Atoms.push_back(atom);
+			atomPositions.push_back(atomPos);
 		}
 
 		if (line.find("# Basis set for element :") != string::npos)
@@ -459,6 +457,14 @@ OrcaObject FileReadOrca(const string &filename)
 	reader.close();
 	ChangeOrcaOverlapMatrixPhases(out);
 	SortOrcaBasis(out);
+	out.Atoms = OrbsToAtoms(out.BasisOrbitalNames, false);
+	for (uint i = 0; i < (uint) atomPositions.size(); ++i)
+	{
+		for (uint j = 0; j < 3; ++j)
+		{
+			out.Atoms[i].Position[j] = atomPositions[i][j];
+		}
+	}
 	return out;
 }
 

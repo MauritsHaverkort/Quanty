@@ -23,10 +23,11 @@ string cutBorderSpaces(string in)
 void deconstructOrbname(const string &orb, uint &siteNum, string &atomName, uint &n, string &shell, int &lz)
 {
 	//	Expects input like 2_Fe_3p1 or Fe_3p1
-	size_t pos;
+	string::size_type pos, pos2;
 	pos = orb.find('_');
+	pos2 = orb.find('_',pos+1);
 	siteNum = (uint) strtol(orb.substr(0, pos).c_str(), NULL, 10);
-	if (siteNum == 0)
+	if (pos2 == string::npos)
 	{
 		atomName = orb.substr(0, pos);
 	}

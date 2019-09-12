@@ -221,6 +221,7 @@ TightBindingDef extendedLigandFieldForTightBinding(TightBindingDef &tb, CompactM
 	hMatRed = extendedLigandFieldForMatrix(hMatCompact, rotMat, constOrbs, filledLig, emptyLig, newNames, hasSpin);
 	CompactMatrixMultiply('T', 'T', &permMat, &rotMat, &T);
 	CompactMatrixTranspose(&T);
+	newNames = orbsAddLz(newNames);
 	TightBindingReadyForRotate(tbSorted, out, OrbsToAtoms(newNames));
 	RotateTightBinding(&tbSorted, &rotMat, &out);
 	FreeTightBindingDef(&tbSorted);
