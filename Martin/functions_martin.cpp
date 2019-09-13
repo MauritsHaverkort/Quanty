@@ -21,6 +21,7 @@
 #include "Auger-Meitner_Selfenergy/Modules.cpp"
 #include "Auger-Meitner_Selfenergy/ResonantSpectrum_Selfenergy.cpp"
 #include "Auger-Meitner_Selfenergy/ResonantSpectrum_CNSED.cpp"
+#include "BreitInteraction.cpp"
 
 
 static int LuaOperatorNewFullCoulomb (lua_State *L)
@@ -2252,6 +2253,15 @@ static int LuaOrthonormalizeContinuum(lua_State *L)
 	return 2;
 }
 
+static int LuaBreit(lua_State *L)
+{
+	vector<Interpolation::InterpolatingFunction *> G,F;
+	lua_check(L,1,G);
+	lua_check(L,2,F);
+	CalcBreitInteraction(G,F,4);
+	return 0;
+}
+
 static const struct luaL_Reg Martin_meta[] = {
   {NULL, NULL}
 };
@@ -2329,6 +2339,7 @@ static const struct luaL_Reg Martin_func[] = {
   {"OrthonormalizeContinuum",LuaOrthonormalizeContinuum},
   {"Thomas",LuaThomasAlgorithm},
   {"BSpline",LuaBSpline},
+  {"Breit",LuaBreit},
   {NULL, NULL}
 };
 

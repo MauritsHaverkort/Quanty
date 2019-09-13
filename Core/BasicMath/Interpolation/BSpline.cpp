@@ -116,6 +116,11 @@ double Derivative(uint32_t idx, double t, const vector<double> &x, uint32_t n, c
 void GenerateGrid(const std::vector<double> &t,std::vector<double> &x, uint32_t n)
 {
 	uint32_t d = (uint32_t) t.size();
+	if (n == 0)
+	{
+		printf("Error BSpline: Interpolation with n = 0 not implemented\n");
+		return;
+	}
 	if (d < (n+1))
 	{
 		printf("Error BSpline::GenerateGrid: number of points = %u < %u = n+1\n",d,n+1);

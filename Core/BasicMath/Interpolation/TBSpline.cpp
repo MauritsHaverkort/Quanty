@@ -20,17 +20,26 @@ TBSpline::~TBSpline() {
 
 void TBSpline::Create(const std::vector<double> &u, const std::vector<double> &v,uint32_t n)
 {
-	x = u;
 	y = v;
 	degree = n;
-	GenerateGrid(x,knots,n);
+	GenerateGrid(u,knots,n);
+	uint32_t nx = (uint32_t) knots.size()-2*n;
+	x = std::vector<double>(nx);
+	for (uint32_t i = 0; i < nx; i++)
+	{
+		x[i] = knots[i+n];
+	}
 	std::vector<double> B;
-	GetKnotMatrix(knots,n,x,B);
-	uint32_t N = (uint32_t) x.size();
+	GetKnotMatrix(knots,n,u,B);
+	uint32_t N = (uint32_t) u.size();
 	uint32_t NRHS = 1;
 	vector<int> IPIV = vector<int>(N);
 	int info = 0;
 	dgesv(&N,&NRHS,&(B[0]),&N,&(IPIV[0]),&(y[0]),&N,&info);
+	if (info)
+	{
+		printf("Error TBSpline.Create: dgesv info = %i\n",info);
+	}
 
 }
 
