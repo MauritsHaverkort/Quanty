@@ -1,4 +1,5 @@
 void lua_push(lua_State * L, const OrcaObject &pushkin);
+void lua_check(lua_State *L, int arg, OrcaObject &in);
 bool isOrcaLineIgnored(const string &line);
 vector<double> stringToDoubleVec(const string &str);
 int stringToLz(const string &str);

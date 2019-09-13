@@ -4,6 +4,7 @@
 #include "AtomToMap.cpp"
 #include "AtomicToWannierMatrix.cpp"
 #include "CompactMatrix.cpp"
+#include "CorthogonalShells.cpp"
 #include "ExtendedLigandField.cpp"
 #include "Flatten.cpp"
 #include "Gaussian.cpp"

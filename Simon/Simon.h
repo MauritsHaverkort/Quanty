@@ -5,6 +5,7 @@
 #include "AtomToMap.h"
 #include "AtomicToWannierMatrix.h"
 #include "CompactMatrix.h"
+#include "CorthogonalShells.h"
 #include "ExtendedLigandField.h"
 #include "Flatten.h"
 #include "Gaussian.h"

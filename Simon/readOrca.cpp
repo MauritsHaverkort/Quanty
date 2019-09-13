@@ -54,6 +54,41 @@ void lua_push(lua_State * L, const OrcaObject &pushkin)
 	lua_settable(L, top);
 }
 
+void lua_check(lua_State *L, int arg, OrcaObject &in)
+{
+	lua_getfield(L, arg, "NBasis");
+	lua_check(L, -1, in.NBasis);
+	lua_pop(L, 1);
+
+	lua_getfield(L, arg, "OverlapMatrix");
+	lua_check(L, -1, in.OverlapMatrix);
+	lua_pop(L, 1);
+
+	lua_getfield(L, arg, "MolecularOrbitalMatrix");
+	lua_check(L, -1, in.MolecularOrbitalMatrix);
+	lua_pop(L, 1);
+
+	lua_getfield(L, arg, "EigenEnergies");
+	lua_check(L, -1, in.EigenEnergies);
+	lua_pop(L, 1);
+
+	lua_getfield(L, arg, "EigenOccupations");
+	lua_check(L, -1, in.EigenOccupations);
+	lua_pop(L, 1);
+
+	lua_getfield(L, arg, "BasisOrbitalNames");
+	lua_check(L, -1, in.BasisOrbitalNames);
+	lua_pop(L, 1);
+
+	lua_getfield(L, arg, "Atoms");
+	lua_check(L, -1, in.Atoms);
+	lua_pop(L, 1);
+
+	lua_getfield(L, arg, "RadialFunctions");
+	lua_check(L, -1, in.RadialFunctions);
+	lua_pop(L, 1);
+}
+
 bool isOrcaLineIgnored(const string &line)
 {
 	if ((uint)line.size() == 0) return true;
