@@ -12,3 +12,4 @@ CompactMatrixType SubspaceRotationMatrix(const uint dim1, const CompactMatrixTyp
 CompactMatrixType MatrixTypeToCompactMatrixType(const MatrixType &M);
 CompactMatrixType removeSpin(const CompactMatrixType &M);
 static int LuaRemoveSpin(lua_State *L);
+CompactMatrixType Submatrix(const CompactMatrixType &M, const vector<uint> &rows, const vector<uint> &cols);
