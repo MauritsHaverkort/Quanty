@@ -16,11 +16,12 @@
 #include "ResonantSpectraSelfEnergy.cpp"
 #include "Continuum-Diagonal-Method.cpp"
 #include "Math/Quad.cpp"
-#include "Math/BSpline.cpp"
+//#include "Math/BSpline.cpp"
 #include "ReduceOperator.cpp"
 #include "Auger-Meitner_Selfenergy/Modules.cpp"
 #include "Auger-Meitner_Selfenergy/ResonantSpectrum_Selfenergy.cpp"
 #include "Auger-Meitner_Selfenergy/ResonantSpectrum_CNSED.cpp"
+#include "BreitInteraction.cpp"
 
 
 static int LuaOperatorNewFullCoulomb (lua_State *L)
@@ -1883,6 +1884,25 @@ static int LuaMartinTest(lua_State *L)
 
 }
 
+
+static int LuaBSpline(lua_State *L)
+{
+	vector<double> x, t, B;
+	lua_check(L,1,t);
+	BSpline::GenerateGrid(t,x,3);
+	//printf("%f\n",BSpline::Evaluate(5,3,x,1));
+	BSpline::GetKnotMatrix(x,3,t,B);
+	lua_push(L,B);
+	/*
+	lua_check(L,2,c);
+	for (uint32_t i = 0; i < 5; i++)
+	{
+		double t = i + 0.5;
+		printf("%f\n",BSpline::deBoor(3+i,t,x,3,c));
+	}*/
+	return 1;
+}
+
 static int LuaOperatorNewAtomicUOccupationConserving(lua_State *L)
 {
     OperatorType *op;
@@ -2233,6 +2253,15 @@ static int LuaOrthonormalizeContinuum(lua_State *L)
 	return 2;
 }
 
+static int LuaBreit(lua_State *L)
+{
+	vector<Interpolation::InterpolatingFunction *> G,F;
+	lua_check(L,1,G);
+	lua_check(L,2,F);
+	CalcBreitInteraction(G,F,4);
+	return 0;
+}
+
 static const struct luaL_Reg Martin_meta[] = {
   {NULL, NULL}
 };
@@ -2309,6 +2338,8 @@ static const struct luaL_Reg Martin_func[] = {
   {"AUconsOs",LuaOperatorNewAtomicUOccupationConservingOneShell},
   {"OrthonormalizeContinuum",LuaOrthonormalizeContinuum},
   {"Thomas",LuaThomasAlgorithm},
+  {"BSpline",LuaBSpline},
+  {"Breit",LuaBreit},
   {NULL, NULL}
 };
 

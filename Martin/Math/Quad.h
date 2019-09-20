@@ -13,6 +13,8 @@ namespace Quad
 
 void GaussianQuadratureWeights(uint32_t N, vector<double> &x, vector<double> &w, double a=-1, double b=1);
 
+void GaussianQuadratureWeights(uint32_t N, const vector<double> &x0, vector<double> &x, vector<double> &w);
+
 double LegendreP(double x, uint32_t n);
 
 template <typename T>

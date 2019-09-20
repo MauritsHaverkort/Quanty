@@ -22,6 +22,8 @@
 #include "Interpolation/InterpolatingFunction.h"
 #include "Interpolation/CubicSpline.h"
 #include "Interpolation/CubicHermiteSpline.h"
+#include "Interpolation/BSpline.h"
+#include "Interpolation/TBSpline.h"
 
 
 

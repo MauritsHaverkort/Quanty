@@ -31,6 +31,22 @@ void GaussianQuadratureWeights(uint32_t N, vector<double> &x, vector<double> &w,
 		x[j] = (b*(x[j]+1.)+a*(1.-x[j]))/2.;
 	}
 }
+void GaussianQuadratureWeights(uint32_t N, const vector<double> &x0, vector<double> &x, vector<double> &w)
+{
+	uint32_t n = (uint32_t) x0.size() -1;
+	x = vector<double>(n*N);
+	w = vector<double>(n*N);
+	vector<double> x1, w1;
+	for (uint32_t i = 0; i < n; i++)
+	{
+		GaussianQuadratureWeights(N,x1,w1,x0[i],x0[i+1]);
+		for (uint32_t j = 0; j < N; j++)
+		{
+			x[i*N + j] = x1[j];
+			w[i*N + j] = w1[j];
+		}
+	}
+}
 
 double LegendreP(double x, uint32_t n)			// Recursion formula for Legendre polynomials
 {

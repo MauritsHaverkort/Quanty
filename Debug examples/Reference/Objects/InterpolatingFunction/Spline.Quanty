@@ -91,6 +91,37 @@ if abs(InterpolatingFunction.Integrate(A+A,2.5,3)-7.640625) > 5E-15 then
     print("Error Integrate: deviation from true value =",(InterpolatingFunction.Integrate(A+A,2.5,3)-7.640625))
     ErrorCount = ErrorCount +1
 end
+
+BS = InterpolatingFunction.BSpline({1,1.5,2,2.5,3},{1,2,4,3,9},2)
+BSu = { 1 , 1.0422857142857 , 1.1634285714286 , 1.3634285714286 , 1.6422857142857 , 2 , 2.4365714285714 , 2.952 , 3.5074285714286 , 3.8697142857143 , 4 , 3.8982857142857 , 3.5645714285714 , 3.072 , 2.8594285714286 , 3 , 3.4937142857143 , 4.3405714285714 , 5.5405714285714 , 7.0937142857143 , 9 }
+for i = 1, #BSu do
+    if abs(BSu[i] - BS(u[i])) > 9E-14 then
+        print("Error BSpline",abs(BSu[i] - BS(u[i])))
+        ErrorCount = ErrorCount +1
+        break
+    end
+end
+BS = InterpolatingFunction.BSpline({1,1.5,2,2.5,3},{1,2,4,3,9},2)
+BSu = { 0.028571428571428 , 0.81714285714286 , 1.6057142857143 , 2.3942857142857 , 3.1828571428571 , 3.9714285714286 , 4.76 , 5.5485714285714 , 4.7828571428571 , 2.4628571428571 , 0.14285714285714 , -2.1771428571429 , -4.4971428571429 , -3.8914285714286 , -0.36 , 3.1714285714286 , 6.7028571428571 , 10.234285714286 , 13.765714285714 , 17.297142857143 , 20.828571428571 }
+for i = 1, #BSu do
+    if abs(BSu[i] - BS(u[i],1)) > 5E-13 then
+        print("Error BSpline derivative",abs(BSu[i] - BS(u[i],1)))
+        ErrorCount = ErrorCount +1
+        break
+    end
+end
+BS = InterpolatingFunction.BSpline({1,1.5,2,2.5,3},{1,2,4,3,9},2)
+BSu = { 7.8857142857143 , 7.8857142857143 , 7.8857142857143 , 7.8857142857143 , 7.8857142857143 , 7.8857142857143 , 7.8857142857143 , 7.8857142857143 , -23.2 , -23.2 , -23.2 , -23.2 , -23.2 , 35.314285714286 , 35.314285714286 , 35.314285714286 , 35.314285714286 , 35.314285714286 , 35.314285714286 , 35.314285714286 , 35.314285714286 }
+for i = 1, #BSu do
+    if abs(BSu[i] - BS(u[i],2)) > 5E-13 then
+        print("Error BSpline 2nd derivative",abs(BSu[i] - BS(u[i],2)))
+        ErrorCount = ErrorCount +1
+        break
+    end
+end
+
+
+
 if ErrorCount ~= 0 then
     print("Error in Spline.Quanty:",ErrorCount,"errors have been detected")
 else

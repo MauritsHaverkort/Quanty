@@ -50,6 +50,7 @@
 #include "Interpolation/CubicSpline.cpp"
 #include "Interpolation/CubicHermiteSpline.cpp"
 #include "Interpolation/InterpolatingFunction.cpp"
+#include "Interpolation/BSpline.cpp"
 
 
 /*
