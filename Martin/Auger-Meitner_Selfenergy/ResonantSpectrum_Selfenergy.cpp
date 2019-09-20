@@ -465,14 +465,14 @@ uint32_t ResonantSpectrumWithSelfEnergy(const OperatorType OppH1, const Operator
 
 // Martin start	-------------------------------------------------------------------------
 
-    uint32_t Npoles1 = settings->NTri1;
+  uint32_t Npoles1 = settings->NTri1;
 	uint32_t Nw1 = settings->NE1+1;
-	uint32_t Nw2 = settings->NE2+1;
+	// mwh not used uint32_t Nw2 = settings->NE2+1;
 	uint32_t Npoles2 = settings->NTri2;
 	uint32_t Nkappa = (uint32_t) U.size();
 	vector<vector<double> > polesSE1 = vector<vector<double> >(Npoles1 * Nkappa);
 	vector<CompactMatrixType> SelfEnergySMatrix1 = vector<CompactMatrixType>(Npoles1 * Nkappa);
-    WaveFunctionType EigenBasis1[Npoles1];
+  WaveFunctionType EigenBasis1[Npoles1];
   	RotateWaveFunctions(PsiBasis,Npoles1,EFun,EigenBasis1);
     for (uint32_t j = 0; j < Npoles1; j++)
     {
@@ -593,6 +593,7 @@ uint32_t ResonantSpectrumWithSelfEnergy(const OperatorType OppH1, const Operator
       T2G1T1psi[0] = b0;
       //printf("b0 = %.16E\n",b0);
       CalculateResidues(T2G1T1psi,&EigenVecs2,Npoles2,residues2[i*Nw1 + p]);
+      // mwh you need to pass EigenBasis2 by refernce and not by value as you want to change its value
       RotateWaveFunctions(PhiBasis2,Npoles2,EigenVecs2,EigenBasis2);
       for (uint32_t j = 0; j < Npoles2; j++)
       {

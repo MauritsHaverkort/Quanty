@@ -124,7 +124,7 @@ static int LuaGaussianRadialMode(lua_State * L)
  */
 static int LuaGaussianRadialCall(lua_State * L)
 {
-	uint32_t len = (uint32_t) lua_gettop(L);
+	// mwh not used uint32_t len = (uint32_t) lua_gettop(L);
 	GaussianRadial *fun = (GaussianRadial *) luaL_checkudata(L, 1, "GaussianRadialFunction_Type");
 	if (lua_istable(L, 2))
 	{
@@ -137,7 +137,6 @@ static int LuaGaussianRadialCall(lua_State * L)
 		double x = luaL_checknumber(L, 2);
 		lua_pushnumber(L, (*fun)(x));
 	}
-
 	return 1;
 }
 /*
@@ -316,6 +315,9 @@ static int LuaGaussianRadialNewIndex(lua_State *L)
 		{
 			return luaL_error(L, "Error: Index %d lies out of range (%d) of entries of GaussianRadialFunction.", i, g->getN());
 		}
+    //mwh
+    //TODO: check if I understood the function right
+    return 0;
 	}
 	else if (ind.compare("l") == 0)
 	{

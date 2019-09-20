@@ -218,7 +218,7 @@ string normalizedOrcaOrbname(const string &orbOrca)
 	n = atoi(orbOrca.substr(lastAtomNamePos + 1, lastNPos - lastAtomNamePos).c_str());
 
 	shell = orbOrca.substr(lastNPos + 1, 1);
-	uint l = (orbToMultiplicity(shell) / 2 - 1) / 2;
+	// mwh unused uint l = (orbToMultiplicity(shell) / 2 - 1) / 2;
 
 	string lzName = orbOrca.substr(lastNPos + 2);
 	if (lzName.find(" ") != string::npos) lzName = lzName.substr(0, lzName.find(" "));
@@ -300,7 +300,7 @@ OrcaObject FileReadOrca(const string &filename)
 	uint shellCounter;
 	GaussianRadial currentGauss;
 	} basisAux;
-	int i, jOffset = 0;
+	int i=0, jOffset = 0;
 	while (getline(reader, line))
 	{
 		if (line.find("# of contracted basis functions") != string::npos)

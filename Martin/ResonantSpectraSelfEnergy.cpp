@@ -22,7 +22,7 @@ uint32_t ResonantSpectraSelfEnergy(const OperatorType OppH1, const OperatorType 
    */
 
 //settings->NTri1 = 4; // TODO Remove that ---------------------------------------------------------------------------------------------------
-  WaveFunctionType Tpsi,GTpsi,TGTpsi, PsiBasis[settings->NTri1],*EigenBasis;
+  WaveFunctionType Tpsi,GTpsi,TGTpsi, PsiBasis[settings->NTri1],EigenBasis[settings->NTri]; //mwh set Eigenbasis as an array instead of a pointer
   TriDiagonalMatrixType SpecTri1;
   MatrixType EFun;
   double EVal[settings->NTri1],  tempDoubleRe,tempDoubleIm, EVal2[settings->NTri2], Norm; // EValInvRe[settings->NTri1],EValInvIm[settings->NTri1],
@@ -83,7 +83,11 @@ uint32_t ResonantSpectraSelfEnergy(const OperatorType OppH1, const OperatorType 
 
   printf("NumberOf stuff : %d\nEV[0] = %f\n",settings->NTri1, EVal[0]);
   //PrintMatrix(EFun);
+  // mwh EigenBasis was not initialized here
+  // mwh I solved it by making EigenBasis an array instead of a pointer
+  // mwh If you want pointers, pass the address to the pointer to RotateWaveFunctions and alloc inside that function
   RotateWaveFunctions(PsiBasis,settings->NTri1,EFun,EigenBasis);
+  // mwh Could it be tath you need to free EigenBasis at some point
   BlockTriDiagonalMatrixType SE[NSelfEnergy];
   for (i = 0; i < NSelfEnergy; i++)
   {

@@ -177,7 +177,7 @@ static int LuaInterpolateUnm(lua_State * L)
 {
 	void* memory;
 	Interpolation::InterpolatingFunction *f = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
-	double n;
+	// mwh unsued double n;
 	if (f->type == "CubicSpline")
 	{
 		memory = lua_newuserdata(L, sizeof(Interpolation::CubicSpline));

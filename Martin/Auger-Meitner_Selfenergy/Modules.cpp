@@ -345,7 +345,7 @@ static int LuaCoolNewSelfEnergy(lua_State *L)
         double w;
         Complex16 denom;
         denom.Im = gammaSE/2.;
-        double num,num1,num2, Eac;
+        double num, Eac; //mwh not used ,num1,num2
         
         for (uint32_t iEps = 0; iEps < nContFuns; iEps++)
         {
@@ -390,11 +390,11 @@ static int LuaCoolNewSelfEnergyDiagonal(lua_State *L)
 	vector<OperatorType> Uk;
 
 	lua_check(L,1,psiCont);
-	uint32_t npsiCont = (uint32_t)psiCont.size();
+	// mwh not used uint32_t npsiCont = (uint32_t)psiCont.size();
 	lua_check(L,2,phiBound);
-	uint32_t nphiBound = (uint32_t)phiBound.size();
+	// mwh not used uint32_t nphiBound = (uint32_t)phiBound.size();
 	lua_check(L,3,Uk);
-	uint32_t nUk = (uint32_t)Uk.size();
+	// mwh not used uint32_t nUk = (uint32_t)Uk.size();
 
 	double wMin, wMax, dw,gammaSE;
 	lua_check(L,4,wMin);

@@ -192,7 +192,7 @@ double IntegrateInterval(InterpolatingFunction &f, uint32_t idx)
 
 double Integrate(InterpolatingFunction &f, double a, double b)
 {
-	uint32_t N = 2;
+	// mwh not used uint32_t N = 2;
 	double val = 0;
 	double sign = 1;
 	uint32_t i = 0;

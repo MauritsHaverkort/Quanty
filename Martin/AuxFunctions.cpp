@@ -5,14 +5,16 @@
  *      Author: brass
  */
 
-void RotateWaveFunctions(const WaveFunctionType* psi,const uint32_t N,const MatrixType &U, WaveFunctionType* out)
+
+void RotateWaveFunctions(const WaveFunctionType* psi,const uint32_t N,const MatrixType &U, WaveFunctionType *out)
 {
 	if (U.Ni != N || U.Nj != N)
 	{
 		printf("error in RotateWaveFunctions: Dimensions of U and psi do not match\n");
 		return;
 	}
-	out = (WaveFunctionType*) malloc(N*sizeof(WaveFunctionType));
+  // mwh out needs to be initialized ouside the loop, otherwise you need to pass by refference (**out and use (*out) inside function)
+	//out = (WaveFunctionType*) malloc(N*sizeof(WaveFunctionType));
 	for (uint32_t i = 0; i < N; i++)
 	{
 		out[i].NFermion = psi[i].NFermion;
@@ -31,7 +33,7 @@ void RotateWaveFunctions(const WaveFunctionType* psi,const uint32_t N,const Matr
 				WaveFunctionAddComplexMultipliedUnionBasis(&(out[i]),psi[j],U.VRe[i][j],U.VIm[i][j]);
 			}
 			WaveFunctionTruncateBasis(&(out[i]),DBL_EPSILON);
-            WaveFunctionNormalize(&(out[i]));
+      WaveFunctionNormalize(&(out[i]));
 
 		}
 		else
@@ -47,12 +49,12 @@ void RotateWaveFunctions(const WaveFunctionType* psi,const uint32_t N,const Matr
 				WaveFunctionAddMultipliedUnionBasis(&(out[i]),psi[j],U.VRe[i][j]);
 			}
 			WaveFunctionTruncateBasis(&(out[i]),DBL_EPSILON);
-            WaveFunctionNormalize(&(out[i]));
+      WaveFunctionNormalize(&(out[i]));
 		}
 	}
 }
 
-void RotateWaveFunctions(const WaveFunctionType* psi,const uint32_t N,const CompactMatrixType &U, WaveFunctionType* out)
+void RotateWaveFunctions(const WaveFunctionType* psi,const uint32_t N,const CompactMatrixType &U, WaveFunctionType *out)
 {
 	if (U.Ni != N || U.Nj != N)
 	{

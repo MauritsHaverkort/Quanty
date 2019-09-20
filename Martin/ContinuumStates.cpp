@@ -931,7 +931,7 @@ vector<double> CreateEKinCBNonRelativistic(const vector<vector<double> > &dualco
         , const vector<vector<double> > &dualphi,const vector<vector<double> > &Ddualphi, const vector<double> &x, const uint32_t l, const vector<vector<double> > &h0cont, vector<double> &T)
 {
 	const uint32_t NcontFuns = (uint32_t) dualcont.size();
-	uint32_t NGridPoints = (uint32_t) x.size();
+	// mwh not used uint32_t NGridPoints = (uint32_t) x.size();
 
 	vector<vector<double> >  Tbb;
 	vector<vector<double> >  Tcb;

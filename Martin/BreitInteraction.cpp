@@ -113,7 +113,7 @@ double CReducedJBasis(int k_a, int k_b, int L)
 
 void CalcBreitInteraction(const std::vector<Interpolation::InterpolatingFunction*> &G,const std::vector<Interpolation::InterpolatingFunction*> &F, uint32_t N)
 {
-	double U, M1, M2, N1, O1, O2, O31, O32, O41, O42;
+	double M1, M2, N1, O1, O2, O31, O32, O41, O42; // mwh unused U
 	vector<double> x,w, Q1, P1, Q2, P2, V1,V2;
 	vector<vector<double> > g,f, ker;
 	uint32_t Nfuns = (uint32_t) G.size();
@@ -151,7 +151,7 @@ void CalcBreitInteraction(const std::vector<Interpolation::InterpolatingFunction
 		f[ifun] = (*F[ifun])(x);
 	}
 	EndTiming("funs", &GlobalTime);
-	uint32_t d = (uint32_t) g[0].size();
+	// mwh unused uint32_t d = (uint32_t) g[0].size();
 
 	Lmin = 1;
 	Lmax = 1; //TODO: remove these 2 lines

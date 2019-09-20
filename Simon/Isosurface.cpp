@@ -471,7 +471,7 @@ static int LuaRealspaceDensity(lua_State * L)
 
 void saveIsosurface(const vector<vector<double> > &iso, const vector<vector<double> > &spinDensitiyVals, const char *file)
 {
-	int maxWidth = 10;
+	// mwh unsued int maxWidth = 10;
 	std::ofstream writer;
 	writer.open(file);
 	writer << "# x\t\t\ty\t\t\tz\t\t\t";

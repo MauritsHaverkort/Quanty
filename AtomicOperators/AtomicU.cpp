@@ -253,7 +253,7 @@ static int LuaOperatorNewAtomicU (lua_State *L)
             for (uint32_t i = 0; i < (uint32_t) indToK2.size(); i++)
                 for (uint32_t j = 0; j < 2*abs(indToK2[i]); j++) detstring.append("0");
             uint8_t * det = StringToDet(psi.NFermion, psi.NBoson,(char*) detstring.c_str());
-            uint32_t detleng = psi.NBoson + Min(psi.NFermion, 1 + (psi.NFermion - 1) / 8);
+            // mwh not used uint32_t detleng = psi.NBoson + Min(psi.NFermion, 1 + (psi.NFermion - 1) / 8);
             RealWaveFunctionAddElement(&psi, det, 1);
             MatrixType Rho;
             CalculateDensityMatrix(&Rho, psi);
