@@ -26,6 +26,49 @@ B3sqrt = {{3,0,3},{0,5,6},{3,6,9}}
 setmetatable(B3sqrt, MatrixMeta)
 B3 = B3sqrt * B3sqrt
 
+
+
+
+
+
+--[[
+
+O = {{0,0,0},{0,0,0},{0,0,0}}
+setmetatable(O, MatrixMeta)
+
+A0 = {{0,2,3},{2,5,6},{3,6,9}}
+A1 = {{1,2,3},{2,5,6},{3,6,9}}
+A2 = {{2,2,3},{2,5,6},{3,6,9}}
+A3 = {{3,2,3},{2,5,6},{3,6,9}}
+Am1= {{-1,2,3},{2,-5,6},{3,6,-9}}
+Am2= {{-2,2,3},{2,-5,6},{3,6,-9}}
+Am3= {{-3,2,3},{2,-5,6},{3,6,-9}}
+a1 = -1
+a2 = 0
+a3 = 1
+B0sqrt = {{0,1,3},{1,5,6},{3,6,9}}
+B0sqrt = {{1,0,0},{0,1,0},{0,0,1}}
+setmetatable(B0sqrt, MatrixMeta)
+B0 = B0sqrt * B0sqrt
+B1sqrt = {{1,1,3},{1,5,6},{3,6,9}}
+setmetatable(B1sqrt, MatrixMeta)
+B1 = B1sqrt * B1sqrt
+B2sqrt = {{2,0,3},{0,5,6},{3,6,9}}
+setmetatable(B2sqrt, MatrixMeta)
+B2 = B2sqrt * B2sqrt
+B3sqrt = {{3,0,3},{0,5,6},{3,6,9}}
+setmetatable(B3sqrt, MatrixMeta)
+B3 = B3sqrt * B3sqrt
+
+]]--
+
+
+
+
+
+
+
+
 MathListOfPoles11 = {{15.576470588235294117647058823529 - 42.494117647058823529411764705882 *I,  25.576470588235294117647058823529 - 42.494117647058823529411764705882 *I,  44.223529411764705882352941176471 -  85.905882352941176470588235294118 *I},
                      {24.164705882352941176470588235294 - 48.141176470588235294117647058824 *I,  82.97647058823529411764705882353  - 153.69411764705882352941176470588 *I, 112.37647058823529411764705882353  - 212.89411764705882352941176470588  *I},
                      {42.811764705882352941176470588235 - 91.552941176470588235294117647059 *I, 113.08235294117647058823529411765  - 210.07058823529411764705882352941 *I, 169.09411764705882352941176470588  - 317.22352941176470588235294117647  *I}}
@@ -71,6 +114,451 @@ MathNat41 = {{-43019.482859029763419000392476809e1 - 72784.503962974197343717108
              {-71195.75520135774064197410752379e1  - 2.4683066098669559079182861531043e6 *I, -4.0806954196792269063476724437140e6 - 6.8034367219286316857622760700919e6  *I, -5.5746248352948311162294665371208e6 - 1.00835835956553305111423482407279e7 *I},
              {-1.1653181278149045943291479630401e6 - 3.5435412636210498411071407258084e6 *I, -6.2859812941088032988736269172526e6 - 9.6534974590966837886200783506447e6  *I, -8.629183634405783219494143970680e6  - 1.4333221217770130436122927306932e7  *I}}
 
+MathAll = {LP={MathListOfPoles11,MathListOfPoles22,MathListOfPoles41},And={MathAnd11,MathAnd22,MathAnd41},Tri={MathTri11,MathTri22,MathTri41},Nat={MathNat11,MathNat22,MathNat41}}
+
+function Check(resfun,type,zero)
+  if ( ( Chop(resfun(1,1)-MathAll[type][1],zero) ~= O ) or ( Chop(resfun(2,2)-MathAll[type][2],zero) ~= O ) or ( Chop(resfun(4,1)-MathAll[type][3],zero) ~= O ) )
+  then
+    print("Evaluation did not get the right value difference is :")
+    print("In point omega = 1 Gamma = 1")
+    print(Chop(resfun(1,1)-MathAll[type][1],zero))
+    print("In point omega = 2 Gamma = 2")
+    print(Chop(resfun(2,2)-MathAll[type][2],zero))
+    print("In point omega = 4 Gamma = 1")
+    print(Chop(resfun(4,1)-MathAll[type][3],zero))
+    ErrorCount = ErrorCount + 1
+  end
+end
+
+print("============")
+print("List of poles")
+print("============")
+MListOfPoles = { {A0,a1,a2,a3}, {B1,B2,B3}, mu=0, type="ListOfPoles"}
+setmetatable(MListOfPoles, ResponseFunctionMeta)
+print("========= transform it to a userdata for speed        ==========")
+UListOfPoles = ToUserdata(MListOfPoles)
+print("========= transform it back to a table for convininence ==========")
+TListOfPoles = ToTable(UListOfPoles)
+
+print("============")
+print("Tri diagonal matrix")
+print("============")
+MTri         = { {A0,A1,A2,A3}, {B0,B1,B2}, mu=0, type="Tri"}
+setmetatable(MTri, ResponseFunctionMeta)
+print("========= transform it to a userdata for speed        ==========")
+UTri         = ToUserdata(MTri)
+print("========= transform it back to a table for convininence ==========")
+TTri         = ToTable(UTri)
+
+print("============")
+print("And erson matrix")
+print("============")
+MAnd         = { {A0,A1,A2,A3}, {B0,B1,B2}, mu=0, type="And"}
+setmetatable(MAnd, ResponseFunctionMeta)
+print("========= transform it to a userdata for speed        ==========")
+UAnd         = ToUserdata(MAnd)
+print("========= transform it back to a table for convininence ==========")
+TAnd         = ToTable(UAnd)
+
+print("============")
+print("Natural impurity matrix")
+print("============")
+MNat         = { {A0,B0}, val={ {A0,Am1,Am2,Am3}, {B0,B1,B2}, mu=0, type="Tri"}, con={ {A0,A1,A2,A3}, {B0,B1,B2}, mu=0, type="Tri"}, mu=0, type="Nat"}
+setmetatable(MNat, ResponseFunctionMeta)
+print("========= transform it to a userdata for speed        ==========")
+UNat         = ToUserdata(MNat)
+print("========= transform it back to a table for convininence ==========")
+TNat         = ToTable(UNat)
+
+
+
+print("");
+print("=======================")
+print("Transform List of poles")
+print("=======================")
+
+zero=1e-12
+
+print("========= transform it to list of poles form        ==========")
+print("M")
+MListOfPolesLP  = ChangeType(MListOfPoles,"LP")
+Check(MListOfPolesLP,"LP",zero)
+print("U")
+UListOfPolesLP  = ChangeType(UListOfPoles,"LP")
+Check(UListOfPolesLP,"LP",zero)
+print("T")
+TListOfPolesLP  = ChangeType(TListOfPoles,"LP")
+Check(TListOfPolesLP,"LP",zero)
+print("========= transform it to a tridiagonal form        ==========")
+print("M")
+MListOfPolesTri = ChangeType(MListOfPoles,"Tri")
+Check(MListOfPolesTri,"LP",zero)
+print("U")
+UListOfPolesTri = ChangeType(UListOfPoles,"Tri")
+Check(UListOfPolesTri,"LP",zero)
+print("T")
+TListOfPolesTri = ChangeType(TListOfPoles,"Tri")
+Check(TListOfPolesTri,"LP",zero)
+print("========= transform it to a Anderson form        ==========")
+print("M")
+MListOfPolesAnd = ChangeType(MListOfPoles,"And")
+Check(MListOfPolesAnd,"LP",zero)
+print("U")
+UListOfPolesAnd = ChangeType(UListOfPoles,"And")
+Check(UListOfPolesAnd,"LP",zero)
+print("T")
+TListOfPolesAnd = ChangeType(TListOfPoles,"And")
+Check(TListOfPolesAnd,"LP",zero)
+print("========= transform it to a Natural Impurity orbital form        ==========")
+print("M")
+MListOfPolesNat = ChangeType(MListOfPoles,"Nat")
+Check(MListOfPolesNat,"LP",zero)
+print("U")
+UListOfPolesNat = ChangeType(UListOfPoles,"Nat")
+Check(UListOfPolesNat,"LP",zero)
+print("T")
+TListOfPolesNat = ChangeType(TListOfPoles,"Nat")
+Check(TListOfPolesNat,"LP",zero)
+
+
+print("");
+print("=======================")
+print("Transform Tridiagonal matrix")
+print("=======================")
+
+zero=1e-9
+
+print("========= transform it to list of poles form        ==========")
+print("M")
+MTriLP  = ChangeType(MTri,"LP")
+Check(MTriLP,"Tri",zero)
+print("U")
+UTriLP  = ChangeType(UTri,"LP")
+Check(UTriLP,"Tri",zero)
+print("T")
+TTriLP  = ChangeType(TTri,"LP")
+Check(TTriLP,"Tri",zero)
+print("========= transform it to a tridiagonal form        ==========")
+print("M")
+MTriTri = ChangeType(MTri,"Tri")
+Check(MTriTri,"Tri",zero)
+print("U")
+UTriTri = ChangeType(UTri,"Tri")
+Check(UTriTri,"Tri",zero)
+print("T")
+TTriTri = ChangeType(TTri,"Tri")
+Check(TTriTri,"Tri",zero)
+print("========= transform it to a Anderson form        ==========")
+print("M")
+MTriAnd = ChangeType(MTri,"And")
+Check(MTriAnd,"Tri",zero)
+print("U")
+UTriAnd = ChangeType(UTri,"And")
+Check(UTriAnd,"Tri",zero)
+print("T")
+TTriAnd = ChangeType(TTri,"And")
+Check(TTriAnd,"Tri",zero)
+print("========= transform it to a Natural Impurity orbital form        ==========")
+print("M")
+MTriNat = ChangeType(MTri,"Nat")
+Check(MTriNat,"Tri",zero)
+print("U")
+UTriNat = ChangeType(UTri,"Nat")
+Check(UTriNat,"Tri",zero)
+print("T")
+TTriNat = ChangeType(TTri,"Nat")
+Check(TTriNat,"Tri",zero)
+
+print("");
+print("=======================")
+print("Transform Anderson matrix")
+print("=======================")
+zero=1e-13
+print("========= transform it to list of poles form        ==========")
+print("M")
+MAndLP  = ChangeType(MAnd,"LP")
+Check(MAndLP,"LP",zero)
+print("U")
+UAndLP  = ChangeType(UAnd,"LP")
+Check(UAndLP,"LP",zero)
+print("T")
+TAndLP  = ChangeType(TAnd,"LP")
+Check(TAndLP,"LP",zero)
+print("========= transform it to a tridiagonal form        ==========")
+print("M")
+MAndTri = ChangeType(MAnd,"Tri")
+Check(MAndTri,"LP",zero)
+print("U")
+UAndTri = ChangeType(UAnd,"Tri")
+Check(UAndTri,"LP",zero)
+print("T")
+TAndTri = ChangeType(TAnd,"Tri")
+Check(TAndTri,"LP",zero)
+print("========= transform it to a Anderson form        ==========")
+print("M")
+MAndAnd = ChangeType(MAnd,"And")
+Check(MAndAnd,"LP",zero)
+print("U")
+UAndAnd = ChangeType(UAnd,"And")
+Check(UAndAnd,"LP",zero)
+print("T")
+TAndAnd = ChangeType(TAnd,"And")
+Check(TAndAnd,"LP",zero)
+print("========= transform it to a Natural Impurity orbital form        ==========")
+print("M")
+MAndNat = ChangeType(MAnd,"Nat")
+Check(MAndNat,"LP",zero)
+print("U")
+UAndNat = ChangeType(UAnd,"Nat")
+Check(UAndNat,"LP",zero)
+print("T")
+TAndNat = ChangeType(TAnd,"Nat")
+Check(TAndNat,"LP",zero)
+
+print("");
+print("=======================")
+print("Transform Natural impurity orbital matrix")
+print("=======================")
+zero=1e-13
+print("========= transform it to list of poles form        ==========")
+print("M")
+MNatLP  = ChangeType(MNat,"LP")
+Check(MNatLP,"LP",zero)
+print("U")
+UNatLP  = ChangeType(UNat,"LP")
+Check(UNatLP,"LP",zero)
+print("T")
+TNatLP  = ChangeType(TNat,"LP")
+Check(TNatLP,"LP",zero)
+print("========= transform it to a tridiagonal form        ==========")
+print("M")
+MNatTri = ChangeType(MNat,"Tri")
+Check(MNatTri,"LP",zero)
+print("U")
+UNatTri = ChangeType(UNat,"Tri")
+Check(UNatTri,"LP",zero)
+print("T")
+TNatTri = ChangeType(TNat,"Tri")
+Check(TNatTri,"LP",zero)
+print("========= transform it to a Anderson form        ==========")
+print("M")
+MNatAnd = ChangeType(MNat,"And")
+Check(MNatAnd,"LP",zero)
+print("U")
+UTriAnd = ChangeType(UNat,"And")
+Check(UTriAnd,"LP",zero)
+print("T")
+TNatAnd = ChangeType(TNat,"And")
+Check(TNatAnd,"LP",zero)
+print("========= transform it to a Natural Impurity orbital form        ==========")
+print("M")
+MNatNat = ChangeType(MNat,"Nat")
+Check(MNatNat,"LP",zero)
+print("U")
+UNatNat = ChangeType(UNat,"Nat")
+Check(UNatNat,"LP",zero)
+print("T")
+TNatNat = ChangeType(TNat,"Nat")
+Check(TNatNat,"LP",zero)
+
+print("");
+print("========= Free response functions ==========")
+
+MListOfPoles=nil
+UListOfPoles=nil
+TListOfPoles=nil
+
+MTri=nil
+UTri=nil
+TTri=nil
+
+MAnd=nil
+UAnd=nil
+TAnd=nil
+
+MNat=nil
+UNat=nil
+TNat=nil
+
+collectgarbage()
+
+print("========= Free response functions ==========")
+
+MListOfPolesLP=nil
+UListOfPolesLP=nil
+TListOfPolesLP=nil
+
+MListOfPolesTri=nil
+UListOfPolesTri=nil
+TListOfPolesTri=nil
+
+MListOfPolesAnd=nil
+UListOfPolesAnd=nil
+TListOfPolesAnd=nil
+
+MListOfPolesNat=nil
+UListOfPolesNat=nil
+TListOfPolesNat=nil
+
+collectgarbage()
+
+print("========= Free response functions ==========")
+
+MTriLP=nil
+UTriLP=nil
+TTriLP=nil
+
+MTriTri=nil
+UTriTri=nil
+TTriTri=nil
+
+MTriAnd=nil
+UTriAnd=nil
+TTriAnd=nil
+
+MTriNat=nil
+UTriNat=nil
+TTriNat=nil
+
+collectgarbage()
+
+print("========= Free response functions ==========")
+
+MAndLP=nil
+UAndLP=nil
+TAndLP=nil
+
+MAndTri=nil
+UAndTri=nil
+TAndTri=nil
+
+MAndAnd=nil
+UAndAnd=nil
+TAndAnd=nil
+
+MAndNat=nil
+UAndNat=nil
+TAndNat=nil
+
+collectgarbage()
+
+print("========= Free response functions ==========")
+
+MNatLP=nil
+UNatLP=nil
+TNatLP=nil
+
+MNatTri=nil
+UNatTri=nil
+TNatTri=nil
+
+MNatAnd=nil
+UNatAnd=nil
+TNatAnd=nil
+
+MNatNat=nil
+UNatNat=nil
+TNatNat=nil
+
+collectgarbage()
+
+
+print("")
+print("===================================================================================================================")
+print("===================================================================================================================")
+print("                                              ==============================================")
+print("==============================================   And now the same test for real matrices    =======================")
+print("============================================================================================")
+print("===================================================================================================================")
+print("===================================================================================================================")
+
+
+A0 = {{0,2,3},{2,5,6},{3,6,9}}
+A1 = {{1,2,3},{2,5,6},{3,6,9}}
+A2 = {{2,2,3},{2,5,6},{3,6,9}}
+A3 = {{3,2,3},{2,5,6},{3,6,9}}
+Am1= {{-1,2,3},{2,-5,6},{3,6,-9}}
+Am2= {{-2,2,3},{2,-5,6},{3,6,-9}}
+Am3= {{-3,2,3},{2,-5,6},{3,6,-9}}
+a1 = -1
+a2 = 0
+a3 = 1
+B0sqrt = {{0,1,3},{1,5,6},{3,6,9}}
+setmetatable(B0sqrt, MatrixMeta)
+B0 = B0sqrt * B0sqrt
+B1sqrt = {{1,1,3},{1,5,6},{3,6,9}}
+setmetatable(B1sqrt, MatrixMeta)
+B1 = B1sqrt * B1sqrt
+B2sqrt = {{2,0,3},{0,5,6},{3,6,9}}
+setmetatable(B2sqrt, MatrixMeta)
+B2 = B2sqrt * B2sqrt
+B3sqrt = {{3,0,3},{0,5,6},{3,6,9}}
+setmetatable(B3sqrt, MatrixMeta)
+B3 = B3sqrt * B3sqrt
+
+MathListOfPoles11 = {{15.576470588235294117647058823529 - 42.494117647058823529411764705882 *I,  25.576470588235294117647058823529 - 42.494117647058823529411764705882 *I,  44.223529411764705882352941176471 -  85.905882352941176470588235294118 *I},
+  {24.164705882352941176470588235294 - 48.141176470588235294117647058824 *I,  82.97647058823529411764705882353  - 153.69411764705882352941176470588 *I, 112.37647058823529411764705882353  - 212.89411764705882352941176470588  *I},
+{42.811764705882352941176470588235 - 91.552941176470588235294117647059 *I, 113.08235294117647058823529411765  - 210.07058823529411764705882352941 *I, 169.09411764705882352941176470588  - 317.22352941176470588235294117647  *I}}
+setmetatable(MathListOfPoles11, MatrixMeta)
+
+MathListOfPoles22 = {{17.5 - 12.7 *I,  24.2 - 12.6 *I,  43.8 -  25.8 *I},
+  {23.0 - 16.2 *I,  78.5 - 48.9 *I, 106.5 -  68.1 *I},
+{42.6 - 29.4 *I, 107.1 - 66.3 *I, 160.2 - 100.8 *I}}
+setmetatable(MathListOfPoles22, MatrixMeta)
+
+MathListOfPoles41 = {{11.2160556596200160556596200160557 - 1.5907947551511907947551511907948 *I,  15.951775385438751775385438751775 - 0.695135958502295135958502295136 *I,  28.858158539346658158539346658159 -  2.367271155389967271155389967271 *I},
+  {15.714151623062514151623062514152  - 3.071373582264671373582264671374  *I,  52.076396121940676396121940676396 - 6.401943146497601943146497601943 *I,  70.494423745908894423745908894424 -  9.382581667730182581667730182582 *I},
+{28.620534776970420534776970420535  - 4.743508779152343508779152343509  *I,  70.613235627097013235627097013236 - 8.194462855848994462855848994463 *I, 105.830744529754430744529754430745 - 13.182783392684382783392684382783 *I}}
+setmetatable(MathListOfPoles41, MatrixMeta)
+
+MathTri11 = {{ -40.074704050990470340081324189489 -  34.401411730596081065038862172174 *I, -196.10902445304297882975639950715 -  43.10363201646393730636177378266  *I,  -269.53726360473673859797827624100 -  51.87831827509597416982063666181 *I},
+  { -62.168555236916157482762020222915 -  76.900393365392240255687889520733 *I, -348.96325354338106531765649843581 -  261.65094085874173464809661081695 *I,  -517.90690500770582044805088117604 - 339.62991778899420552168625327438 *I},
+{-103.31718117605482877713867287667  - 119.81543949819385352477567784902  *I, -540.31138547454793576203469106550 -  345.52636897018638738566844751164 *I,  -787.42715352888670551204501832471 - 462.25166124240219346036394607497 *I}}
+MathTri22 = {{ -44.456805159653451447128537566406 -  20.076356714300789266357456274546 *I, -158.42336478228341253023250959426 -  20.83043047030879320431938143061  *I,  -231.54262304958617661238938766121 -  27.13040505573784039677986483588 *I},
+  {-110.085184233709654777862549603137 -  66.081045091183386664064639118698 *I, -376.26285108697918028349887237895 - 147.72500372120050001435655032634  *I,  -563.31433539791184693665370549207 - 211.51817016412021606787465736576 *I},
+{-161.13660873835215825069097875588  -  95.11072877503035900121530260087  *I, -553.36181974552933980539842334960 - 188.54448648459527626785238212444  *I,  -823.93596751565830182139216505454 - 283.19248207697512407879465051754 *I}}
+MathTri41 = {{ -53.425766826755156097011321360352 -  8.902024499337412122616745430167  *I, -167.10924133841343679879718898151 +  21.22385831524302352298372854368  *I,  -252.16688255047107312776026043950 +  14.68086642450160171457739688883 *I},
+  {-152.15443305600560874874774120495  -  65.86618174207379755851778936180  *I, -486.46070550323298947738254702520 -  67.41656225839262003250686273900  *I,  -726.51977374473614637886337533120 - 149.68419878527449200083395504686 *I},
+{-228.81244442646857067980390415145  -  78.54916169297623806931224099184  *I, -723.62540191288664380838763308355 -  40.39026735770151526324417284403  *I, -1066.83499557973650400638271781890 - 138.51554463694034332158450814541 *I}}
+
+MathAnd11 = {{0.57600066972239235181534608093856 - 0.74504456848372359641241361513131 *I,  2.1548245365373645356971608591345 - 1.1850375187268143434123185837191 *I,  3.3448612264460854794871161996393 - 0.3744702737644466739442983503505 *I},
+  {3.9697353857996225457586431370354  + 0.0453651630354274800670094346665  *I,  7.9124174759931808308450262956735 - 1.7476118008562500795265535959342 *I,  8.6562599870925716718244501986886 - 1.1692616085486054184150947845881 *I},
+{5.8110169559774110977478963428924  + 1.0659394958168540548624956542966  *I, 11.1942099746725579405422495420075 - 1.5514735877611558301467460698322 *I, 13.1727848501954079843269448842088 - 3.3198807989428905736571024232599 *I}}
+MathAnd22 = {{0.4031002301827176063997053467721  - 1.4149081461903094233597107992996  *I,  1.1706774638491777357690685569033 - 1.4301275630691903652632464220713 *I,  1.5018318595155010285259667454082 + 0.9351543705410186534922608143896 *I},
+  {4.5046672556332709518581610164854  - 0.7649461702189666430570440644815  *I,  6.9756118063144398026462922070967 - 3.1653007572538996963846280748233 *I,  5.7829125761399435309924648722293 - 2.3762566806340265994728166299611 *I},
+{7.0197240592101974986953381461875  + 1.4235763580952601193853992992972  *I, 12.1095829623209264898032029698896 - 2.3896873888865356107195210629767 *I, 11.7109340216554928021795016820034 - 7.9079840536707292152053528836762 *I}}
+MathAnd41 = {{1.6082649773302036134503903131692  - 0.5454907449372291315384669793721  *I,  3.2305424740130563360848772993458 - 1.6659621730783865698455144571525 *I,  0.5641909807938217865171012056677 - 2.4123325299926329941745363303367 *I},
+  {4.6105315139787554809607371338789  + 0.8639275502048562629004564759793  *I,  7.7406438054309474942420000422232 - 1.3914752186012009703695105851193 *I,  7.7450237242040143478962883554415 - 6.8161826451683661057166647496544 *I},
+{2.7976546020572997008476581460750  + 3.1616916992091993269961415313867  *I,  9.7674921982660376634908226603731 + 4.5779032186002900879482573988681 *I, 18.228212600961838443554539479054  - 3.354256214183044907442318052236  *I}}
+
+MathNat11 = {{6.5242562946665298236876137539122e6  - 7.4612424764755174984454450670196e6 *I,  1.3301044379244438772820191323920e7 - 2.7203486521052537435014395974234e7  *I,  2.0742553799153410047285887362428e7 - 3.8731900594689382826009777008984e7  *I},
+  {2.5176215507955538260664892046763e7  - 1.6816044320221071557826474672760e7 *I,  6.0866187950712369789517665614834e7 - 6.9652961996760205196854554620821e7  *I,  9.1982288162983190435323824130365e7 - 9.7735417305717648482169544658050e7  *I},
+{3.5619244042361784310207514147454e7  - 2.5738244663747850510236267295373e7 *I,  8.4562821202419493579669154270261e7 - 1.04286765441268079949863586536084e8 *I,  1.2819582976668859181309168663461e8 - 1.4668473799243039298904114178296e8  *I}}
+MathNat22 = {{1.9645636882860955754982292174030e6  - 2.9952696482837807904320318695496e6 *I,  3.4125038113478250613688035481179e6 - 1.04210858884946600174989089581335e7 *I,  5.500101655577728510358549314669e6  - 1.4923062524119622628896006765306e7  *I},
+  {8.1646710226945996297391102447923e6  - 7.2570685241651195624388686698679e6 *I,  1.8330220467865629325152621666228e7 - 2.7969802627972812291981879694455e7  *I,  2.8054666794654706614779857247257e7 - 3.9565364315888752894282059259608e7  *I},
+{1.1458537948973968913177168954671e7  - 1.0967220679716412565148560556334e7 *I,  2.5100015466702252150027523816702e7 - 4.1565435777381877206802937062115e7  *I,  3.8589687142262308153570149264297e7 - 5.8911441014897393223363544995029e7  *I}}
+MathNat41 = {{-43019.482859029763419000392476809e1 - 72784.503962974197343717108962371e1 *I, -1.8609369081294544547093544167857e6 - 1.8313246253258295246588501819135e6  *I, -2.6071693256788736186667103323726e6 - 2.7532751148922588743178587077829e6  *I},
+  {-71195.75520135774064197410752379e1  - 2.4683066098669559079182861531043e6 *I, -4.0806954196792269063476724437140e6 - 6.8034367219286316857622760700919e6  *I, -5.5746248352948311162294665371208e6 - 1.00835835956553305111423482407279e7 *I},
+{-1.1653181278149045943291479630401e6 - 3.5435412636210498411071407258084e6 *I, -6.2859812941088032988736269172526e6 - 9.6534974590966837886200783506447e6  *I, -8.629183634405783219494143970680e6  - 1.4333221217770130436122927306932e7  *I}}
+
+MathAll = {LP={MathListOfPoles11,MathListOfPoles22,MathListOfPoles41},And={MathAnd11,MathAnd22,MathAnd41},Tri={MathTri11,MathTri22,MathTri41},Nat={MathNat11,MathNat22,MathNat41}}
+
+function Check(resfun,type,zero)
+if ( ( Chop(resfun(1,1)-MathAll[type][1],zero) ~= O ) or ( Chop(resfun(2,2)-MathAll[type][2],zero) ~= O ) or ( Chop(resfun(4,1)-MathAll[type][3],zero) ~= O ) )
+then
+print("Evaluation did not get the right value difference is :")
+print("In point omega = 1 Gamma = 1")
+print(Chop(resfun(1,1)-MathAll[type][1],zero))
+print("In point omega = 2 Gamma = 2")
+print(Chop(resfun(2,2)-MathAll[type][2],zero))
+print("In point omega = 4 Gamma = 1")
+print(Chop(resfun(4,1)-MathAll[type][3],zero))
+ErrorCount = ErrorCount + 1
+end
+end
+
+
+
 print("============")
 print("List of poles")
 print("============")
@@ -114,9 +602,195 @@ TNat         = ToTable(UNat)
 
 
 
-zero = 1e-12
 
 
+
+
+print("");
+print("=======================")
+print("Transform List of poles")
+print("=======================")
+zero=1e-13
+print("========= transform it to list of poles form        ==========")
+print("M")
+MListOfPolesLP  = ChangeType(MListOfPoles,"LP")
+Check(MListOfPolesLP,"LP",zero)
+print("U")
+UListOfPolesLP  = ChangeType(UListOfPoles,"LP")
+Check(UListOfPolesLP,"LP",zero)
+print("T")
+TListOfPolesLP  = ChangeType(TListOfPoles,"LP")
+Check(TListOfPolesLP,"LP",zero)
+print("========= transform it to a tridiagonal form        ==========")
+print("M")
+MListOfPolesTri = ChangeType(MListOfPoles,"Tri")
+Check(MListOfPolesTri,"LP",zero)
+print("U")
+UListOfPolesTri = ChangeType(UListOfPoles,"Tri")
+Check(UListOfPolesTri,"LP",zero)
+print("T")
+TListOfPolesTri = ChangeType(TListOfPoles,"Tri")
+Check(TListOfPolesTri,"LP",zero)
+print("========= transform it to a Anderson form        ==========")
+print("M")
+MListOfPolesAnd = ChangeType(MListOfPoles,"And")
+Check(MListOfPolesAnd,"LP",zero)
+print("U")
+UListOfPolesAnd = ChangeType(UListOfPoles,"And")
+Check(UListOfPolesAnd,"LP",zero)
+print("T")
+TListOfPolesAnd = ChangeType(TListOfPoles,"And")
+Check(TListOfPolesAnd,"LP",zero)
+print("========= transform it to a Natural Impurity orbital form        ==========")
+print("M")
+MListOfPolesNat = ChangeType(MListOfPoles,"Nat")
+Check(MListOfPolesNat,"LP",zero)
+print("U")
+UListOfPolesNat = ChangeType(UListOfPoles,"Nat")
+Check(UListOfPolesNat,"LP",zero)
+print("T")
+TListOfPolesNat = ChangeType(TListOfPoles,"Nat")
+Check(TListOfPolesNat,"LP",zero)
+
+print("");
+print("=======================")
+print("Transform Tridiagonal matrix")
+print("=======================")
+zero=1e-13
+print("========= transform it to list of poles form        ==========")
+print("M")
+MTriLP  = ChangeType(MTri,"LP")
+Check(MTriLP,"LP",zero)
+print("U")
+UTriLP  = ChangeType(UTri,"LP")
+Check(UTriLP,"LP",zero)
+print("T")
+TTriLP  = ChangeType(TTri,"LP")
+Check(TTriLP,"LP",zero)
+print("========= transform it to a tridiagonal form        ==========")
+print("M")
+MTriTri = ChangeType(MTri,"Tri")
+Check(MTriTri,"LP",zero)
+print("U")
+UTriTri = ChangeType(UTri,"Tri")
+Check(UTriTri,"LP",zero)
+print("T")
+TTriTri = ChangeType(TTri,"Tri")
+Check(TTriTri,"LP",zero)
+print("========= transform it to a Anderson form        ==========")
+print("M")
+MTriAnd = ChangeType(MTri,"And")
+Check(MTriAnd,"LP",zero)
+print("U")
+UTriAnd = ChangeType(UTri,"And")
+Check(UTriAnd,"LP",zero)
+print("T")
+TTriAnd = ChangeType(TTri,"And")
+Check(TTriAnd,"LP",zero)
+print("========= transform it to a Natural Impurity orbital form        ==========")
+print("M")
+MTriNat = ChangeType(MTri,"Nat")
+Check(MTriNat,"LP",zero)
+print("U")
+UTriNat = ChangeType(UTri,"Nat")
+Check(UTriNat,"LP",zero)
+print("T")
+TTriNat = ChangeType(TTri,"Nat")
+Check(TTriNat,"LP",zero)
+
+print("");
+print("=======================")
+print("Transform Anderson matrix")
+print("=======================")
+zero=1e-13
+print("========= transform it to list of poles form        ==========")
+print("M")
+MAndLP  = ChangeType(MAnd,"LP")
+Check(MAndLP,"LP",zero)
+print("U")
+UAndLP  = ChangeType(UAnd,"LP")
+Check(UAndLP,"LP",zero)
+print("T")
+TAndLP  = ChangeType(TAnd,"LP")
+Check(TAndLP,"LP",zero)
+print("========= transform it to a tridiagonal form        ==========")
+print("M")
+MAndTri = ChangeType(MAnd,"Tri")
+Check(MAndTri,"LP",zero)
+print("U")
+UAndTri = ChangeType(UAnd,"Tri")
+Check(UAndTri,"LP",zero)
+print("T")
+TAndTri = ChangeType(TAnd,"Tri")
+Check(TAndTri,"LP",zero)
+print("========= transform it to a Anderson form        ==========")
+print("M")
+MAndAnd = ChangeType(MAnd,"And")
+Check(MAndAnd,"LP",zero)
+print("U")
+UAndAnd = ChangeType(UAnd,"And")
+Check(UAndAnd,"LP",zero)
+print("T")
+TAndAnd = ChangeType(TAnd,"And")
+Check(TAndAnd,"LP",zero)
+print("========= transform it to a Natural Impurity orbital form        ==========")
+print("M")
+MAndNat = ChangeType(MAnd,"Nat")
+Check(MAndNat,"LP",zero)
+print("U")
+UAndNat = ChangeType(UAnd,"Nat")
+Check(UAndNat,"LP",zero)
+print("T")
+TAndNat = ChangeType(TAnd,"Nat")
+Check(TAndNat,"LP",zero)
+
+print("");
+print("=======================")
+print("Transform Natural impurity orbital matrix")
+print("=======================")
+zero=1e-13
+print("========= transform it to list of poles form        ==========")
+print("M")
+MNatLP  = ChangeType(MNat,"LP")
+Check(MNatLP,"LP",zero)
+print("U")
+UNatLP  = ChangeType(UNat,"LP")
+Check(UNatLP,"LP",zero)
+print("T")
+TNatLP  = ChangeType(TNat,"LP")
+Check(TNatLP,"LP",zero)
+print("========= transform it to a tridiagonal form        ==========")
+print("M")
+MNatTri = ChangeType(MNat,"Tri")
+Check(MNatTri,"LP",zero)
+print("U")
+UNatTri = ChangeType(UNat,"Tri")
+Check(UNatTri,"LP",zero)
+print("T")
+TNatTri = ChangeType(TNat,"Tri")
+Check(TNatTri,"LP",zero)
+print("========= transform it to a Anderson form        ==========")
+print("M")
+MNatAnd = ChangeType(MNat,"And")
+Check(MNatAnd,"LP",zero)
+print("U")
+UTriAnd = ChangeType(UNat,"And")
+Check(UTriAnd,"LP",zero)
+print("T")
+TNatAnd = ChangeType(TNat,"And")
+Check(TNatAnd,"LP",zero)
+print("========= transform it to a Natural Impurity orbital form        ==========")
+print("M")
+MNatNat = ChangeType(MNat,"Nat")
+Check(MNatNat,"LP",zero)
+print("U")
+UNatNat = ChangeType(UNat,"Nat")
+Check(UNatNat,"LP",zero)
+print("T")
+TNatNat = ChangeType(TNat,"Nat")
+Check(TNatNat,"LP",zero)
+
+print("");
 print("========= Free response functions ==========")
 
 MListOfPoles=nil
@@ -134,6 +808,86 @@ TAnd=nil
 MNat=nil
 UNat=nil
 TNat=nil
+
+collectgarbage()
+
+print("========= Free response functions ==========")
+
+MListOfPolesLP=nil
+UListOfPolesLP=nil
+TListOfPolesLP=nil
+
+MListOfPolesTri=nil
+UListOfPolesTri=nil
+TListOfPolesTri=nil
+
+MListOfPolesAnd=nil
+UListOfPolesAnd=nil
+TListOfPolesAnd=nil
+
+MListOfPolesNat=nil
+UListOfPolesNat=nil
+TListOfPolesNat=nil
+
+collectgarbage()
+
+print("========= Free response functions ==========")
+
+MTriLP=nil
+UTriLP=nil
+TTriLP=nil
+
+MTriTri=nil
+UTriTri=nil
+TTriTri=nil
+
+MTriAnd=nil
+UTriAnd=nil
+TTriAnd=nil
+
+MTriNat=nil
+UTriNat=nil
+TTriNat=nil
+
+collectgarbage()
+
+print("========= Free response functions ==========")
+
+MAndLP=nil
+UAndLP=nil
+TAndLP=nil
+
+MAndTri=nil
+UAndTri=nil
+TAndTri=nil
+
+MAndAnd=nil
+UAndAnd=nil
+TAndAnd=nil
+
+MAndNat=nil
+UAndNat=nil
+TAndNat=nil
+
+collectgarbage()
+
+print("========= Free response functions ==========")
+
+MNatLP=nil
+UNatLP=nil
+TNatLP=nil
+
+MNatTri=nil
+UNatTri=nil
+TNatTri=nil
+
+MNatAnd=nil
+UNatAnd=nil
+TNatAnd=nil
+
+MNatNat=nil
+UNatNat=nil
+TNatNat=nil
 
 collectgarbage()
 
@@ -156,43 +910,4 @@ collectgarbage()
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-print("============")
-print("List of poles")
-print("============")
-print(MListOfPoles)
-print(MListOfPoles(1,2))
-print("============")
-print("============")
-
-print("============")
-print("Tridiagonal from LP")
-print("============")
-ATri = ChangeType(MListOfPoles,"Tri")
-print(Chop(ATri,1E-12))
-print(ATri(1,2))
-print("============")
-print("============")
-
-print("============")
-print("Anderson from LP")
-print("============")
-AAnd = ChangeType(MListOfPoles,"And")
-print(Chop(AAnd,1E-12))
-print(AAnd(1,2))
-print("============")
-print("============")
+os.exit(ErrorCount)

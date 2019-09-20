@@ -1,5 +1,5 @@
 
-dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Reference/Objects/ResponseFunctions/BlockResponseFunctions.Quanty")
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Reference/Objects/ResponseFunctions/BlockTypeConversion.Quanty")
 os.exit()
 
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Reference/Objects/ResponseFunctions/ResponseFunctions.Quanty")

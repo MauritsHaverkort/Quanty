@@ -36,6 +36,6 @@ Complex16 EvaluateAndersonMatrix(void const * A, const double omega, const doubl
 Complex16 EvaluateBADoubleTriDiagonalMatrix(BADoubleTriDiagonalMatrixType const * A, const double omega, const double Gamma);
 Complex16 EvaluateBADoubleTriDiagonalMatrix(void const * A, const double omega, const double Gamma);
 Complex16 EvaluateResponsefunctionType(ResponsefunctionType const *A, const double omega, const double Gamma);
-ResponsefunctionType *ConvertResponsefunction(ResponsefunctionType *M, const char type, double T);
+ResponsefunctionType *ConvertResponsefunction(ResponsefunctionType *M, const char type, double T, double SingularValue);
 ResponsefunctionType *ResponsefunctionCopy(ResponsefunctionType *M);
 uint32_t FreeResponsefunction(ResponsefunctionType *M);

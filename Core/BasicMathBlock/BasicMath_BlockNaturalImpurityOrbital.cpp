@@ -266,7 +266,7 @@ uint32_t SetTMTFromValandConInBlockNaturalImpurityOrbitalMatrixType(BlockNatural
   CompactMatrixType M,T;
   uint32_t i,j;
   
-  T.QComplex=B->QComplex;
+  T.QComplex=(B->val.QComplex+B->con.QComplex)?1:0;
   T.Ni=4*B->BlockSize;
   T.Nj=4*B->BlockSize;
   if(InitCompactIdentityMatrix(&T))
@@ -274,7 +274,7 @@ uint32_t SetTMTFromValandConInBlockNaturalImpurityOrbitalMatrixType(BlockNatural
     printf("InitCompactIdentityMatrix(T) failed in SetTMTFromValandConInBlockNaturalImpurityOrbitalMatrixType");
     return 1;
   }
-  M.QComplex=B->QComplex;
+  M.QComplex=T.QComplex;
   M.Ni=4*B->BlockSize;
   M.Nj=4*B->BlockSize;
   if(InitCompactMatrix(&M))
@@ -283,7 +283,133 @@ uint32_t SetTMTFromValandConInBlockNaturalImpurityOrbitalMatrixType(BlockNatural
     printf("InitCompactIdentityMatrix(M) failed in SetTMTFromValandConInBlockNaturalImpurityOrbitalMatrixType");
     return 1;
   }
-  if(B->QComplex)
+  if((B->val.QComplex==0)&&(B->con.QComplex==0))
+  {
+    for(i=0;i<B->BlockSize;i++)
+    {
+      for(j=0;j<B->BlockSize;j++)
+      {
+        // copy bv_0
+        T.VRe[i*T.Nj+j] = B->val.bRe[i*B->BlockSize+j];
+        // copy -bv_0
+        T.VRe[(i+B->BlockSize)*T.Nj+j+B->BlockSize] = -B->val.bRe[i*B->BlockSize+j];
+        // copy bc_0
+        T.VRe[(i+B->BlockSize)*T.Nj+j] = B->con.bRe[i*B->BlockSize+j];
+        // copy bc_0
+        T.VRe[i*T.Nj+j+B->BlockSize] = B->con.bRe[i*B->BlockSize+j];
+        
+        // copy av_1
+        M.VRe[i*M.Nj+j] = B->val.aRe[i*B->BlockSize+j+B->BlockSize*B->BlockSize];
+        // copy ac_1
+        M.VRe[(i+B->BlockSize)*M.Nj+j+B->BlockSize] = B->con.aRe[i*B->BlockSize+j+B->BlockSize*B->BlockSize];
+        // copy av_2
+        M.VRe[(i+2*B->BlockSize)*M.Nj+j+2*B->BlockSize] = B->val.aRe[i*B->BlockSize+j+2*B->BlockSize*B->BlockSize];
+        // copy ac_2
+        M.VRe[(i+3*B->BlockSize)*M.Nj+j+3*B->BlockSize] = B->con.aRe[i*B->BlockSize+j+2*B->BlockSize*B->BlockSize];
+        // copy bv_1
+        M.VRe[i*T.Nj+j+2*B->BlockSize] = B->val.bRe[i*B->BlockSize+j+B->BlockSize*B->BlockSize];
+        // copy bv_1^+
+        M.VRe[(i+2*B->BlockSize)*T.Nj+j] = B->val.bRe[j*B->BlockSize+i+B->BlockSize*B->BlockSize];
+        // copy bc_1
+        M.VRe[(i+B->BlockSize)*T.Nj+j+3*B->BlockSize] = B->con.bRe[i*B->BlockSize+j+B->BlockSize*B->BlockSize];
+        // copy bc_1^+
+        M.VRe[(i+3*B->BlockSize)*T.Nj+j+B->BlockSize] = B->con.bRe[j*B->BlockSize+i+B->BlockSize*B->BlockSize];
+      }
+    }
+  }
+  else if(B->val.QComplex==0)
+  {
+    for(i=0;i<B->BlockSize;i++)
+    {
+      for(j=0;j<B->BlockSize;j++)
+      {
+        // copy bv_0
+        T.V[i*T.Nj+j].Re = B->val.bRe[i*B->BlockSize+j];
+        T.V[i*T.Nj+j].Im = 0;
+        // copy -bv_0
+        T.V[(i+B->BlockSize)*T.Nj+j+B->BlockSize].Re = -B->val.bRe[i*B->BlockSize+j];
+        T.V[(i+B->BlockSize)*T.Nj+j+B->BlockSize].Im = 0;
+        // copy bc_0
+        T.V[(i+B->BlockSize)*T.Nj+j].Re = B->con.b[i*B->BlockSize+j].Re;
+        T.V[(i+B->BlockSize)*T.Nj+j].Im = B->con.b[i*B->BlockSize+j].Im;
+        // copy bc_0
+        T.V[i*T.Nj+j+B->BlockSize].Re = B->con.b[i*B->BlockSize+j].Re;
+        T.V[i*T.Nj+j+B->BlockSize].Im = B->con.b[i*B->BlockSize+j].Im;
+        
+        // copy av_1
+        M.V[i*M.Nj+j].Re = B->val.aRe[i*B->BlockSize+j+B->BlockSize*B->BlockSize];
+        M.V[i*M.Nj+j].Im = 0;
+        // copy ac_1
+        M.V[(i+B->BlockSize)*M.Nj+j+B->BlockSize].Re = B->con.a[i*B->BlockSize+j+B->BlockSize*B->BlockSize].Re;
+        M.V[(i+B->BlockSize)*M.Nj+j+B->BlockSize].Im = B->con.a[i*B->BlockSize+j+B->BlockSize*B->BlockSize].Im;
+        // copy av_2
+        M.V[(i+2*B->BlockSize)*M.Nj+j+2*B->BlockSize].Re = B->val.aRe[i*B->BlockSize+j+2*B->BlockSize*B->BlockSize];
+        M.V[(i+2*B->BlockSize)*M.Nj+j+2*B->BlockSize].Im = 0;
+        // copy ac_2
+        M.V[(i+3*B->BlockSize)*M.Nj+j+3*B->BlockSize].Re = B->con.a[i*B->BlockSize+j+2*B->BlockSize*B->BlockSize].Re;
+        M.V[(i+3*B->BlockSize)*M.Nj+j+3*B->BlockSize].Im = B->con.a[i*B->BlockSize+j+2*B->BlockSize*B->BlockSize].Im;
+        // copy bv_1
+        M.V[i*T.Nj+j+2*B->BlockSize].Re = B->val.bRe[i*B->BlockSize+j+B->BlockSize*B->BlockSize];
+        M.V[i*T.Nj+j+2*B->BlockSize].Im = 0;
+        // copy bv_1^+
+        M.V[(i+2*B->BlockSize)*T.Nj+j].Re =  B->val.bRe[j*B->BlockSize+i+B->BlockSize*B->BlockSize];
+        M.V[(i+2*B->BlockSize)*T.Nj+j].Im = -0;
+        // copy bc_1
+        M.V[(i+B->BlockSize)*T.Nj+j+3*B->BlockSize].Re = B->con.b[i*B->BlockSize+j+B->BlockSize*B->BlockSize].Re;
+        M.V[(i+B->BlockSize)*T.Nj+j+3*B->BlockSize].Im = B->con.b[i*B->BlockSize+j+B->BlockSize*B->BlockSize].Im;
+        // copy bc_1^+
+        M.V[(i+3*B->BlockSize)*T.Nj+j+B->BlockSize].Re =  B->con.b[j*B->BlockSize+i+B->BlockSize*B->BlockSize].Re;
+        M.V[(i+3*B->BlockSize)*T.Nj+j+B->BlockSize].Im = -B->con.b[j*B->BlockSize+i+B->BlockSize*B->BlockSize].Im;
+      }
+    }
+  }
+  else if(B->con.QComplex==0)
+  {
+    for(i=0;i<B->BlockSize;i++)
+    {
+      for(j=0;j<B->BlockSize;j++)
+      {
+        // copy bv_0
+        T.V[i*T.Nj+j].Re = B->val.b[i*B->BlockSize+j].Re;
+        T.V[i*T.Nj+j].Im = B->val.b[i*B->BlockSize+j].Im;
+        // copy -bv_0
+        T.V[(i+B->BlockSize)*T.Nj+j+B->BlockSize].Re = -B->val.b[i*B->BlockSize+j].Re;
+        T.V[(i+B->BlockSize)*T.Nj+j+B->BlockSize].Im = -B->val.b[i*B->BlockSize+j].Im;
+        // copy bc_0
+        T.V[(i+B->BlockSize)*T.Nj+j].Re = B->con.bRe[i*B->BlockSize+j];
+        T.V[(i+B->BlockSize)*T.Nj+j].Im = 0;
+        // copy bc_0
+        T.V[i*T.Nj+j+B->BlockSize].Re = B->con.bRe[i*B->BlockSize+j];
+        T.V[i*T.Nj+j+B->BlockSize].Im = 0;
+        
+        // copy av_1
+        M.V[i*M.Nj+j].Re = B->val.a[i*B->BlockSize+j+B->BlockSize*B->BlockSize].Re;
+        M.V[i*M.Nj+j].Im = B->val.a[i*B->BlockSize+j+B->BlockSize*B->BlockSize].Im;
+        // copy ac_1
+        M.V[(i+B->BlockSize)*M.Nj+j+B->BlockSize].Re = B->con.aRe[i*B->BlockSize+j+B->BlockSize*B->BlockSize];
+        M.V[(i+B->BlockSize)*M.Nj+j+B->BlockSize].Im = 0;
+        // copy av_2
+        M.V[(i+2*B->BlockSize)*M.Nj+j+2*B->BlockSize].Re = B->val.a[i*B->BlockSize+j+2*B->BlockSize*B->BlockSize].Re;
+        M.V[(i+2*B->BlockSize)*M.Nj+j+2*B->BlockSize].Im = B->val.a[i*B->BlockSize+j+2*B->BlockSize*B->BlockSize].Im;
+        // copy ac_2
+        M.V[(i+3*B->BlockSize)*M.Nj+j+3*B->BlockSize].Re = B->con.aRe[i*B->BlockSize+j+2*B->BlockSize*B->BlockSize];
+        M.V[(i+3*B->BlockSize)*M.Nj+j+3*B->BlockSize].Im = 0;
+        // copy bv_1
+        M.V[i*T.Nj+j+2*B->BlockSize].Re = B->val.b[i*B->BlockSize+j+B->BlockSize*B->BlockSize].Re;
+        M.V[i*T.Nj+j+2*B->BlockSize].Im = B->val.b[i*B->BlockSize+j+B->BlockSize*B->BlockSize].Im;
+        // copy bv_1^+
+        M.V[(i+2*B->BlockSize)*T.Nj+j].Re =  B->val.b[j*B->BlockSize+i+B->BlockSize*B->BlockSize].Re;
+        M.V[(i+2*B->BlockSize)*T.Nj+j].Im = -B->val.b[j*B->BlockSize+i+B->BlockSize*B->BlockSize].Im;
+        // copy bc_1
+        M.V[(i+B->BlockSize)*T.Nj+j+3*B->BlockSize].Re = B->con.bRe[i*B->BlockSize+j+B->BlockSize*B->BlockSize];
+        M.V[(i+B->BlockSize)*T.Nj+j+3*B->BlockSize].Im = 0;
+        // copy bc_1^+
+        M.V[(i+3*B->BlockSize)*T.Nj+j+B->BlockSize].Re =  B->con.bRe[j*B->BlockSize+i+B->BlockSize*B->BlockSize];
+        M.V[(i+3*B->BlockSize)*T.Nj+j+B->BlockSize].Im = -0;
+      }
+    }
+  }
+  else
   {
     for(i=0;i<B->BlockSize;i++)
     {
@@ -329,40 +455,7 @@ uint32_t SetTMTFromValandConInBlockNaturalImpurityOrbitalMatrixType(BlockNatural
       }
     }
   }
-  else
-  {
-    for(i=0;i<B->BlockSize;i++)
-    {
-      for(j=0;j<B->BlockSize;j++)
-      {
-        // copy bv_0
-        T.VRe[i*T.Nj+j] = B->val.bRe[i*B->BlockSize+j];
-        // copy -bv_0
-        T.VRe[(i+B->BlockSize)*T.Nj+j+B->BlockSize] = -B->val.bRe[i*B->BlockSize+j];
-        // copy bc_0
-        T.VRe[(i+B->BlockSize)*T.Nj+j] = B->con.bRe[i*B->BlockSize+j];
-        // copy bc_0
-        T.VRe[i*T.Nj+j+B->BlockSize] = B->con.bRe[i*B->BlockSize+j];
-        
-        // copy av_1
-        M.VRe[i*M.Nj+j] = B->val.aRe[i*B->BlockSize+j+B->BlockSize*B->BlockSize];
-        // copy ac_1
-        M.VRe[(i+B->BlockSize)*M.Nj+j+B->BlockSize] = B->con.aRe[i*B->BlockSize+j+B->BlockSize*B->BlockSize];
-        // copy av_2
-        M.VRe[(i+2*B->BlockSize)*M.Nj+j+2*B->BlockSize] = B->val.aRe[i*B->BlockSize+j+2*B->BlockSize*B->BlockSize];
-        // copy ac_2
-        M.VRe[(i+3*B->BlockSize)*M.Nj+j+3*B->BlockSize] = B->con.aRe[i*B->BlockSize+j+2*B->BlockSize*B->BlockSize];
-        // copy bv_1
-        M.VRe[i*T.Nj+j+2*B->BlockSize] = B->val.bRe[i*B->BlockSize+j+B->BlockSize*B->BlockSize];
-        // copy bv_1^+
-        M.VRe[(i+2*B->BlockSize)*T.Nj+j] = B->val.bRe[j*B->BlockSize+i+B->BlockSize*B->BlockSize];
-        // copy bc_1
-        M.VRe[(i+B->BlockSize)*T.Nj+j+3*B->BlockSize] = B->con.bRe[i*B->BlockSize+j+B->BlockSize*B->BlockSize];
-        // copy bc_1^+
-        M.VRe[(i+3*B->BlockSize)*T.Nj+j+B->BlockSize] = B->con.bRe[j*B->BlockSize+i+B->BlockSize*B->BlockSize];
-      }
-    }
-  }
+  
   CompactMatrixGramSchmidtOrthogonalizeRow(&T, 1000*DBL_EPSILON, true);
   CompactMatrixMultiply3('N', 'N', 'C', &T, &M, &T, &(B->TMT));
   FreeCompactMatrix(&T);

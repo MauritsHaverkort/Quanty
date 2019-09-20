@@ -1097,7 +1097,7 @@ BlockNaturalImpurityOrbitalMatrixType * luaL_checkBlockNatrualImpurityOrbitalMat
     lua_pop(L, 1);
     temp = luaL_checkBlockTriDiagonalMatrixType(L, narg);
     buff = (BlockNaturalImpurityOrbitalMatrixType*)malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
-    BlockTriDiagonalMatrixToBlockNaturalImpurityMatrix(*temp, buff);
+    BlockTriDiagonalMatrixToBlockNaturalImpurityMatrix(*temp, buff, 1000 * DBL_MIN);
     FreeBlockTridiagonalMatrix(temp);
     free(temp);
     return buff;

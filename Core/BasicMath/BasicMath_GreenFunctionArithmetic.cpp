@@ -1859,10 +1859,10 @@ Complex16 EvaluateResponsefunctionType(ResponsefunctionType const *A, const doub
 /*
  *
  */
-ResponsefunctionType *ConvertResponsefunction(ResponsefunctionType *M, const char type, double T)
+ResponsefunctionType *ConvertResponsefunction(ResponsefunctionType *M, const char type, double T, double SingularValue)
 {
   ResponsefunctionType *res;
-  if(M->Block==true) return ConvertBlockMatrix(M,type,T);
+  if(M->Block==true) return ConvertBlockMatrix(M,type,T,SingularValue);
   res = (ResponsefunctionType*)malloc(sizeof(ResponsefunctionType));
   res->NSuggestedGridPoints = 0;
   res->type = type;
@@ -1904,7 +1904,7 @@ ResponsefunctionType *ConvertResponsefunction(ResponsefunctionType *M, const cha
         case 'n':
         {
           res->data = (void*) malloc(sizeof(BADoubleTriDiagonalMatrixType));
-          ListOfPolesToBADoubleTridiagonalMatrix(*(ListOfPoles*)M->data, (BADoubleTriDiagonalMatrixType*)res->data, ((BlockListOfPoles*)(M->data))->N+1, ((BlockListOfPoles*)(M->data))->N+1, ((BlockListOfPoles*)(M->data))->mu, 1000*DBL_EPSILON);
+          ListOfPolesToBADoubleTridiagonalMatrix(*(ListOfPoles*)M->data, (BADoubleTriDiagonalMatrixType*)res->data, ((BlockListOfPoles*)(M->data))->N+1, ((BlockListOfPoles*)(M->data))->N+1, ((BlockListOfPoles*)(M->data))->mu, T);
         }
         break;
         default:
@@ -1947,7 +1947,7 @@ ResponsefunctionType *ConvertResponsefunction(ResponsefunctionType *M, const cha
         case 'n':
         {
           res->data = (void*) malloc(sizeof(BADoubleTriDiagonalMatrixType));
-          TriDiagonalMatrixToBADoubleTriDiagonalMatrix(*(TriDiagonalMatrixType*)M->data, (BADoubleTriDiagonalMatrixType*)res->data, ((TriDiagonalMatrixType*)M->data)->N, ((TriDiagonalMatrixType*)M->data)->N, ((TriDiagonalMatrixType*)M->data)->mu, 1000*DBL_EPSILON);
+          TriDiagonalMatrixToBADoubleTriDiagonalMatrix(*(TriDiagonalMatrixType*)M->data, (BADoubleTriDiagonalMatrixType*)res->data, ((TriDiagonalMatrixType*)M->data)->N, ((TriDiagonalMatrixType*)M->data)->N, ((TriDiagonalMatrixType*)M->data)->mu, T);
         }
         break;
         default:
@@ -1989,7 +1989,7 @@ ResponsefunctionType *ConvertResponsefunction(ResponsefunctionType *M, const cha
         case 'n':
         {
           res->data = (void*) malloc(sizeof(BADoubleTriDiagonalMatrixType));
-          AndersonMatrixToBADoubleTriDiagonalMatrix(*(AndersonMatrixType*)M->data, (BADoubleTriDiagonalMatrixType*)res->data, ((AndersonMatrixType*)M->data)->N, ((AndersonMatrixType*)M->data)->N, ((AndersonMatrixType*)M->data)->mu, 1000*DBL_EPSILON);
+          AndersonMatrixToBADoubleTriDiagonalMatrix(*(AndersonMatrixType*)M->data, (BADoubleTriDiagonalMatrixType*)res->data, ((AndersonMatrixType*)M->data)->N, ((AndersonMatrixType*)M->data)->N, ((AndersonMatrixType*)M->data)->mu, T);
         }
         break;
         default:
@@ -2058,7 +2058,7 @@ ResponsefunctionType *ConvertResponsefunction(ResponsefunctionType *M, const cha
  */
 ResponsefunctionType *ResponsefunctionCopy(ResponsefunctionType *M)
 {
-  return ConvertResponsefunction(M,M->type,0);
+  return ConvertResponsefunction(M,M->type,0,0);
 }
 
 /*   FreeResponsefunction frees the content of a response function

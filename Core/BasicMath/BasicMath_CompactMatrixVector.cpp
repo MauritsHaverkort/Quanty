@@ -3241,7 +3241,7 @@ uint32_t HermitianCompactMatrixToListOfPolesWithEigenstates(CompactMatrixType co
   return 0;
 }
 
-/*  Given a compact matrix A calculates vec[j]^* . (w-A)^-1 . vec[i]
+/*  Given a compact matrix A calculates vec[j]^* . (w-A)^-1 . vec[i]^T
  *  returns a BlockListOfPoles of Blockdimension vec.Ni
  *  algorithm assumes A to be Hermitian
  */
@@ -3354,6 +3354,80 @@ uint32_t HermitianCompactMatrixToBlockListOfPolesWithEigenstates(CompactMatrixTy
   FreeCompactMatrix(&funvec);
   return 0;
 }
+
+
+/*  convert a response function to a compact matrix
+ *  A0 and B0 are neglected
+ *
+ */
+uint32_t ResponseFunctionToCompactMatrix(ResponsefunctionType const * A, CompactMatrixType * const B, const bool deflate)
+{
+  if(A->Block==true)
+  { // block version
+    if((32&A->type)=='t')
+    { // convert block tridiagonal matrix to compact matrix
+      //TODO: all
+      if(deflate==true)
+      {
+        BlockTriDiagonalMatrixToCompactMatrixWithDeflation((BlockTriDiagonalMatrixType*)A->data, B);
+      }
+      else
+      {
+        BlockTriDiagonalMatrixToCompactMatrix((BlockTriDiagonalMatrixType*)A->data, B);
+      }
+      return 0;
+    }
+    if((32&A->type)=='a')
+    { // convert block anderson matrix to compact matrix
+      //TODO: all
+      
+      return 0;
+    }
+    if((32&A->type)=='l')
+    { // convert block list of poles response function to compact matrix
+      //TODO: all
+      
+      return 0;
+    }
+    if((32&A->type)=='n')
+    { // convert block natural impurity matrix to compact matrix
+      //TODO: all
+      
+      return 0;
+    }
+  }
+  else
+  { // non-block version
+    if((32&A->type)=='t')
+    { // convert block tridiagonal matrix to compact matrix
+      //TODO: all
+      
+      return 0;
+    }
+    if((32&A->type)=='a')
+    { // convert block anderson matrix to compact matrix
+      //TODO: all
+      
+      return 0;
+    }
+    if((32&A->type)=='l')
+    { // convert block list of poles response function to compact matrix
+      //TODO: all
+      
+      return 0;
+    }
+    if((32&A->type)=='n')
+    { // convert block natural impurity matrix to compact matrix
+      //TODO: all
+      
+      return 0;
+    }
+  }
+  printf("Error: Unidentified type of response function %c in ResponseFunctionToCompactMatrix\n",A->type);
+  return 1;
+}
+
+
 
 /*
  *
@@ -3525,6 +3599,93 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToCompactMatrix(BlockNaturalImpurityOr
 /*
  *
  */
+uint32_t BlockNaturalImpurityOrbitalMatrixToCompactMatrixWithDeflation(BlockNaturalImpurityOrbitalMatrixType const * A, CompactMatrixType * const B)
+{
+  //TODO: all
+  printf("BlockNaturalImpurityOrbitalMatrixToCompactMatrixWithDeflation not yet implemented");
+  return 1;
+}
+
+/*
+ *
+ */
+uint32_t BlockAndersonMatrixToCompactMatrix(BlockAndersonMatrixType const * A, CompactMatrixType * const B)
+{
+  uint32_t i,j,k,Ai,BBi,BAi,BBdagi,BBdagiold,BBiold;
+  
+  
+  B->QComplex=A->QComplex;
+  B->Ni = (A->N) * A->BlockSize;
+  B->Nj = (A->N) * A->BlockSize;
+  InitCompactMatrix(B);
+  B->mu=A->mu;
+  strcpy(B->Name, A->Name);
+  Ai     = A->BlockSize*A->BlockSize;
+  BBi    = A->BlockSize;
+  BBdagi = A->BlockSize * B->Nj;
+  BAi    = 0;
+  if(A->QComplex)
+  {
+    for(k=0;k<A->N;k++)
+    {
+      BBiold = BBi;
+      for(i=0;i<A->BlockSize;i++)
+      {
+        BBdagiold = BBdagi;
+        for(j=0;j<A->BlockSize;j++)
+        {
+          B->V[BAi]     = A->a[Ai];
+          B->V[BBi]     = A->b[Ai];
+          B->V[BBdagi]  = A->b[Ai];
+          BBi++;
+          BAi++;
+          BBdagi+=B->Nj;
+          Ai++;
+        }
+        BAi    += B->Nj-A->BlockSize;
+        BBi    += B->Nj-A->BlockSize;
+        BBdagi  = BBdagiold+1;
+      }
+      BAi    += A->BlockSize;
+      BBi     = BBiold + A->BlockSize;
+      BBdagi -= A->BlockSize;
+    }
+  }
+  else
+  {
+    for(k=0;k<A->N;k++)
+    {
+      BBiold = BBi;
+      for(i=0;i<A->BlockSize;i++)
+      {
+        BBdagiold = BBdagi;
+        for(j=0;j<A->BlockSize;j++)
+        {
+          B->VRe[BAi]     = A->aRe[Ai];
+          B->VRe[BBi]     = A->bRe[Ai];
+          B->VRe[BBdagi]  = A->bRe[Ai];
+          BBi++;
+          BAi++;
+          BBdagi+=B->Nj;
+          Ai++;
+        }
+        BAi    += B->Nj-A->BlockSize;
+        BBi    += B->Nj-A->BlockSize;
+        BBdagi  = BBdagiold+1;
+      }
+      BAi    += A->BlockSize;
+      BBi     = BBiold + A->BlockSize;
+      BBdagi -= A->BlockSize;
+    }
+  }
+  
+  return 0;
+}
+
+
+/*
+ *
+ */
 uint32_t BlockTriDiagonalMatrixToCompactMatrix(BlockTriDiagonalMatrixType const * A, CompactMatrixType * const B)
 {
   int i,j,k,apos,bpos,bposL,bposR;
@@ -3621,18 +3782,18 @@ uint32_t BlockTriDiagonalMatrixToCompactMatrix(BlockTriDiagonalMatrixType const 
 }
 
 /*  Turn a BlockTriDiagonalMatrix into a compact dense matrix
- *  The array Blocksize contains the dimension of each Block used
+ *  The array BlockSizeList in A contains a list with the size of all sub matrices on the diagonal A[0] to A[N+1]
  *  A0 and B0 are neglected
  *
  */
-uint32_t BlockTriDiagonalMatrixToCompactMatrixWithDeflation(BlockTriDiagonalMatrixType const * A, CompactMatrixType * const B, uint32_t * Blocksize)
+uint32_t BlockTriDiagonalMatrixToCompactMatrixWithDeflation(BlockTriDiagonalMatrixType const * A, CompactMatrixType * const B)
 {
   uint32_t i,j,k,apos,bpos,bposL,bposR;
   B->QComplex=A->QComplex;
   B->Ni=0;
-  for(i=0;i<A->N;i++)
+  for(i=1;i<=A->N;i++)
   {
-    B->Ni+=Blocksize[i];
+    B->Ni+=A->BlockSizeList[i];
   }
   B->Nj=B->Ni;
   if(InitCompactMatrix(B))
@@ -3645,31 +3806,31 @@ uint32_t BlockTriDiagonalMatrixToCompactMatrixWithDeflation(BlockTriDiagonalMatr
   apos=A->BlockSize*A->BlockSize; // start A at position A.a[1]
   if(A->QComplex)
   {
-    for(k=0;k<A->N;k++)
+    for(k=1;k<=A->N;k++)
     {
-      for(i=0;i<Blocksize[k];i++)
+      for(i=0;i<A->BlockSizeList[k];i++)
       {
-        for(j=0;j<Blocksize[k];j++) // loop i and j over the block with the correct size for the dense matrix
+        for(j=0;j<A->BlockSizeList[k];j++) // loop i and j over the block with the correct size for the dense matrix
         {
           B->V[bpos]=A->a[apos];
           bpos++;
           apos++;
         }
-        apos+=A->BlockSize-Blocksize[k]; // at the end of a row for the deflated block move A to the end of the row of the undeflated block
-        bpos+=B->Nj-Blocksize[k];        // move B to the begining of the next row
+        apos+=A->BlockSize-A->BlockSizeList[k]; // at the end of a row for the deflated block move A to the end of the row of the undeflated block
+        bpos+=B->Nj-A->BlockSizeList[k];        // move B to the begining of the next row
       }
-      apos+=(A->BlockSize-Blocksize[k])*A->BlockSize; // at the end of the block (rows and columns) move A to the next block (skipe Ndeflated rows)
-      bpos+=Blocksize[k];  // move B to the begining of the next Block
+      apos+=(A->BlockSize-A->BlockSizeList[k])*A->BlockSize; // at the end of the block (rows and columns) move A to the next block (skipe Ndeflated rows)
+      bpos+=A->BlockSizeList[k];  // move B to the begining of the next Block
     }
     // set matrix B
     apos=A->BlockSize*A->BlockSize; // Start A at position A.b[1]
-    bposL=Blocksize[0]; // you must love this naming. Set bposL to the first right top block
-    bposR=Blocksize[0]*B->Nj; // Set bposR to the first left botom block
+    bposL=A->BlockSizeList[1]; // you must love this naming. Set bposL to the first right top block
+    bposR=A->BlockSizeList[1]*B->Nj; // Set bposR to the first left botom block
     for(k=1;k<A->N;k++)
     {
-      for(i=0;i<Blocksize[k-1];i++)  // the right top block has BlockSize[k-1] rows
+      for(i=0;i<A->BlockSizeList[k];i++)  // the right top block has BlockSize[k-1] rows
       {
-        for(j=0;j<Blocksize[k];j++)  // the right top block has BlockSize[k] columns
+        for(j=0;j<A->BlockSizeList[k+1];j++)  // the right top block has BlockSize[k] columns
         {
           B->V[bposL].Re= A->b[apos].Re;
           B->V[bposR].Re= A->b[apos].Re;
@@ -3690,29 +3851,32 @@ uint32_t BlockTriDiagonalMatrixToCompactMatrixWithDeflation(BlockTriDiagonalMatr
   {
     for(k=1;k<=A->N;k++)
     {
-      for(i=0;i<A->BlockSize;i++)
+      for(i=0;i<A->BlockSizeList[k];i++)
       {
-        for(j=0;j<A->BlockSize;j++)
+        for(j=0;j<A->BlockSizeList[k];j++) // loop i and j over the block with the correct size for the dense matrix
         {
           B->VRe[bpos]=A->aRe[apos];
           bpos++;
           apos++;
         }
-        bpos+=B->Nj-A->BlockSize;
+        apos+=A->BlockSize-A->BlockSizeList[k]; // at the end of a row for the deflated block move A to the end of the row of the undeflated block
+        bpos+=B->Nj-A->BlockSizeList[k];        // move B to the begining of the next row
       }
-      bpos+=A->BlockSize;
+      apos+=(A->BlockSize-A->BlockSizeList[k])*A->BlockSize; // at the end of the block (rows and columns) move A to the next block (skipe Ndeflated rows)
+      bpos+=A->BlockSizeList[k];  // move B to the begining of the next Block
     }
-    apos=A->BlockSize*A->BlockSize;
-    bposL=A->BlockSize;
-    bposR=A->BlockSize*B->Nj;
+    // set matrix B
+    apos=A->BlockSize*A->BlockSize; // Start A at position A.b[1]
+    bposL=A->BlockSizeList[1]; // you must love this naming. Set bposL to the first right top block
+    bposR=A->BlockSizeList[1]*B->Nj; // Set bposR to the first left botom block
     for(k=1;k<A->N;k++)
     {
-      for(i=0;i<A->BlockSize;i++)
+      for(i=0;i<A->BlockSizeList[k];i++)  // the right top block has BlockSize[k-1] rows
       {
-        for(j=0;j<A->BlockSize;j++)
+        for(j=0;j<A->BlockSizeList[k+1];j++)  // the right top block has BlockSize[k] columns
         {
-          B->VRe[bposL]=A->bRe[apos];
-          B->VRe[bposR]=A->bRe[apos];
+          B->VRe[bposL]= A->bRe[apos];
+          B->VRe[bposR]= A->bRe[apos];
           bposL++;
           bposR+=B->Nj;
           apos++;
