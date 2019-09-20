@@ -110,7 +110,7 @@ uint32_t FreeBlockMatrixFromLua(ResponsefunctionType *M)
 /*
  * change the type of a Block response function from M->type to type
  */
-ResponsefunctionType *ConvertBlockMatrix(ResponsefunctionType *M, const char type, double T)
+ResponsefunctionType *ConvertBlockMatrix(ResponsefunctionType *M, const char type, double T, double SingularValue)
 {
   ResponsefunctionType *res;
   if(M->Block!=true) printf("ERROR: called ConvertBlockMatrix on a ResponsefunctionType that is not in Block Form.\n");
@@ -143,7 +143,7 @@ ResponsefunctionType *ConvertBlockMatrix(ResponsefunctionType *M, const char typ
         case 't':
         {
           res->data = (void*) malloc(sizeof(BlockTriDiagonalMatrixType));
-          BlockListOfPolesToBlockTridiagonalMatrix(*(BlockListOfPoles*)M->data, (BlockTriDiagonalMatrixType*)res->data, ((BlockListOfPoles*)(M->data))->N+1, 1000*DBL_EPSILON);
+          BlockListOfPolesToBlockTridiagonalMatrix(*(BlockListOfPoles*)M->data, (BlockTriDiagonalMatrixType*)res->data, ((BlockListOfPoles*)(M->data))->N, SingularValue);
         }
         break;
         case 'a':
@@ -201,7 +201,7 @@ ResponsefunctionType *ConvertBlockMatrix(ResponsefunctionType *M, const char typ
         case 'n':
         {
           res->data = (void*) malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
-          BlockTriDiagonalMatrixToBlockNaturalImpurityMatrix(*(BlockTriDiagonalMatrixType*)M->data,(BlockNaturalImpurityOrbitalMatrixType*)res->data);
+          BlockTriDiagonalMatrixToBlockNaturalImpurityMatrix(*(BlockTriDiagonalMatrixType*)M->data,(BlockNaturalImpurityOrbitalMatrixType*)res->data,T);
         }
         break;
         default:

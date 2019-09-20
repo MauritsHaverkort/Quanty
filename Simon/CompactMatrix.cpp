@@ -1,3 +1,7 @@
+/* mwh this function already excisted
+  under the same name, using slightly different formatting
+   please use the excisting function
+
 CompactMatrixType BlockTriDiagonalMatrixToCompactMatrix(const BlockTriDiagonalMatrixType &M, const double zero)
 {
 	vector < vector<CompactMatrixType> > outMatMat = CompactnullMatrixMatrix(M.N - 1, M.N - 1);
@@ -62,7 +66,7 @@ CompactMatrixType BlockTriDiagonalMatrixToCompactMatrix(const BlockTriDiagonalMa
 {
 	return BlockTriDiagonalMatrixToCompactMatrix(M, 0);
 }
-
+*/
 
 bool isRowZero(const CompactMatrixType &M, const uint row, const double precision)
 {

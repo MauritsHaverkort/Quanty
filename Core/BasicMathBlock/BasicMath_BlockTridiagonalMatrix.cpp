@@ -212,12 +212,20 @@ void ShiftBlockTridiagonalMatrix(BlockTriDiagonalMatrixType *const A, double con
 uint32_t CopyBlockTridiagonalMatrix(BlockTriDiagonalMatrixType A, BlockTriDiagonalMatrixType *B)
 {
   *B=A;
+  if( (B->BlockSizeList = (uint32_t*)malloc((B->N+1)*sizeof(uint32_t))) == NULL )
+  {
+    printf("malloc failed in CopyBlockTridiagonalMatrix");
+    return 1;
+  }
+  memcpy(B->BlockSizeList, A.BlockSizeList, (B->N+1)*sizeof(uint32_t));
+  
   if(B->QComplex==0)
   {
     B->aRe = (double*)malloc((B->N+1)*B->BlockSize*B->BlockSize*sizeof(double));
     if(B->aRe==NULL)
     {
       printf("malloc failed in CopyBlockTridiagonalMatrix");
+      free(B->BlockSizeList);
       return 1;
     }
     memcpy(B->aRe, A.aRe, (B->N+1)*B->BlockSize*B->BlockSize*sizeof(double));
@@ -225,6 +233,7 @@ uint32_t CopyBlockTridiagonalMatrix(BlockTriDiagonalMatrixType A, BlockTriDiagon
     if(B->bRe==NULL)
     {
       free(B->aRe);
+      free(B->BlockSizeList);
       printf("malloc failed in CopyBlockTridiagonalMatrix");
       return 1;
     }
@@ -235,6 +244,7 @@ uint32_t CopyBlockTridiagonalMatrix(BlockTriDiagonalMatrixType A, BlockTriDiagon
     B->a = (Complex16*)malloc((B->N+1)*B->BlockSize*B->BlockSize*sizeof(Complex16));
     if(B->a==NULL)
     {
+      free(B->BlockSizeList);
       printf("malloc failed in CopyBlockTridiagonalMatrix");
       return 1;
     }
@@ -243,6 +253,7 @@ uint32_t CopyBlockTridiagonalMatrix(BlockTriDiagonalMatrixType A, BlockTriDiagon
     if(B->b==NULL)
     {
       free(B->a);
+      free(B->BlockSizeList);
       printf("malloc failed in CopyBlockTridiagonalMatrix");
       return 1;
     }

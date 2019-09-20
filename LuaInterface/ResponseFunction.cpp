@@ -21,6 +21,9 @@
  *   parameters on lua stack (responsefunction, typedef)
  *   typedef being a string of the form:
  *   Tri, And, ListOfPoles, NaturalImpurityOrbital, Userdata, Table
+ *
+ *   SingularValue is an option used to determine if the block size needs to be reduced in a tridiagonalization routine
+ *   EffectivekBT is used to determine if a state belongs to the valence or conduction bands (occupied or empty using Fermi Dirac statistics)
  */
 static int LuaChangeTypeResponseFunction(lua_State *L)
 {
@@ -28,11 +31,50 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
   char const * convert;
   char type;
   double T=sqrt(DBL_MIN);
+  double SingularValue=1000*DBL_EPSILON;
+  bool deflate=true;
+  //TODO: implement deflation when possible and deflate=true
   uint32_t len = (uint32_t)lua_gettop(L);
-  if(len!=2) return luaL_error(L, "Error in ChangeType expected 2 arguments, not %d\n",len);
+  LuaOptionsType LuaChangeTypeResponseFunctionOptions[]={
+    {"SingularValue","double",&(SingularValue)},
+    {"EffectivekBT","double",&(T)},
+    {"Deflate","bool",&deflate},
+    {NULL, NULL, NULL}};
+  if(!(len==2)||(len==3)) return luaL_error(L, "Error in ChangeType expected 2 arguments and possible a third arguments specifing options, not %d\n",len);
+  if(len==3)
+  {
+    LuaCheckOptions(L, -1, LuaChangeTypeResponseFunctionOptions);
+  }
   Min = luaL_checkResponsefunction(L,1);
   convert = luaL_checkstring(L, 2);
-  if(strcmp(convert, "Tri")==0)
+  if(strcmp(convert, "Dense")==0)
+  {
+    // check if we push table or userdata type
+    if(Min->type>64)
+    { // upercase push table on stack
+      CompactMatrixType MCompactOut;
+      
+      
+      
+      
+      
+      LuaPushTable_CompactMatrixType(L, &MCompactOut);
+      FreeCompactMatrix(&MCompactOut);
+    }
+    else
+    { // lowercase push userdata on stack
+      CompactMatrixType *MCompactOut;
+      MCompactOut = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+      luaL_setmetatable(L, "Matrix_Type");
+      MCompactOut->OnLuaStack=true;
+      
+      
+    }
+    
+    
+    return 1;
+  }
+  else if(strcmp(convert, "Tri")==0)
   {
     type='T'|(32&Min->type);  // t = T & 32, i.e. keep capital or not from input, but change letter to t/T
   }
@@ -40,7 +82,7 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
   {
     type='A'|(32&Min->type);
   }
-  else if(strcmp(convert, "ListOfPoles")==0)
+  else if((strcmp(convert, "ListOfPoles")==0)||(strcmp(convert, "LP")==0))
   {
     type='L'|(32&Min->type);
   }
@@ -62,11 +104,11 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
   }
   if(Min->Block==true)
   {
-    Mout = ConvertBlockMatrix(Min, type, T);
+    Mout = ConvertBlockMatrix(Min, type, T, SingularValue);
   }
   else
   {
-    Mout = ConvertResponsefunction(Min, type, T);
+    Mout = ConvertResponsefunction(Min, type, T, SingularValue);
   }
   LuaPush_ResponseFunction(L, Mout);
   FreeResponsefunction(Mout);
@@ -307,7 +349,7 @@ static int LuaResponseFunctionUnm(lua_State * L)
 {
   ResponsefunctionType *res, *M;
 
-  M = ConvertBlockMatrix(luaL_checkResponsefunction(L,1), 'l', 0);
+  M = ConvertBlockMatrix(luaL_checkResponsefunction(L,1), 'l', 0, 0);
   res = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
   luaL_setmetatable(L, "ResponseFunction_Type");
   res->NSuggestedGridPoints = 0;
@@ -330,8 +372,8 @@ static int LuaResponseFunctionAdd(lua_State * L)
   uint32_t len = (uint32_t)lua_gettop(L);
   if(len!=2) return luaL_error(L, "Error in ResponseFunctionAdd: %d argument(s), 2 expected.\n", len);
 
-  Ma = ConvertBlockMatrix(luaL_checkResponsefunction(L,1), 'l', 0);
-  Mb = ConvertBlockMatrix(luaL_checkResponsefunction(L,2), 'l', 0);
+  Ma = ConvertBlockMatrix(luaL_checkResponsefunction(L,1), 'l', 0, 0);
+  Mb = ConvertBlockMatrix(luaL_checkResponsefunction(L,2), 'l', 0, 0);
   AddBlockListOfPoles((BlockListOfPoles*)(Ma->data), *(BlockListOfPoles*)(Mb->data));
 
   res = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
@@ -358,8 +400,8 @@ static int LuaResponseFunctionSub(lua_State * L)
   uint32_t len = (uint32_t)lua_gettop(L);
   if(len!=2) return luaL_error(L, "Error in ResponseFunctionAdd: %d argument(s), 2 expected.\n", len);
 
-  Ma = ConvertBlockMatrix(luaL_checkResponsefunction(L,1), 'l', 0);
-  Mb = ConvertBlockMatrix(luaL_checkResponsefunction(L,2), 'l', 0);
+  Ma = ConvertBlockMatrix(luaL_checkResponsefunction(L,1), 'l', 0, 0);
+  Mb = ConvertBlockMatrix(luaL_checkResponsefunction(L,2), 'l', 0, 0);
   SubtractBlockListOfPoles((BlockListOfPoles*)(Ma->data), *(BlockListOfPoles*)(Mb->data));
 
   res = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));

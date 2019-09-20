@@ -817,6 +817,22 @@ uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(BlockListOfPoles co
   }
   CopyBlockListOfPolesCon(*A, &Acon, A->mu, kbT);
   CopyBlockListOfPolesVal(*A, &Aval, A->mu, kbT);
+  if(Acon.QComplex)
+  {
+    memset(Acon.a0, 0, Acon.BlockSize*Acon.BlockSize*sizeof(Complex16));
+  }
+  else
+  {
+    memset(Acon.a0Re, 0, Acon.BlockSize*Acon.BlockSize*sizeof(double));
+  }
+  if(Aval.QComplex)
+  {
+    memset(Aval.a0, 0, Aval.BlockSize*Aval.BlockSize*sizeof(Complex16));
+  }
+  else
+  {
+    memset(Aval.a0Re, 0, Aval.BlockSize*Aval.BlockSize*sizeof(double));
+  }
   BlockListOfPolesToBlockTridiagonalMatrix(Acon, &(B->con), NBlockMaxCon, 1000*DBL_EPSILON);
   BlockListOfPolesToBlockTridiagonalMatrix(Aval, &(B->val), NBlockMaxVal, 1000*DBL_EPSILON);
   SetTMTFromValandConInBlockNaturalImpurityOrbitalMatrixType(B);
@@ -938,12 +954,14 @@ uint32_t BlockAndersonMatrixToSpectra(BlockAndersonMatrixType const A, SpectraTy
 uint32_t BlockAndersonMatrixEigenValues(const BlockAndersonMatrixType * const A, double * val)
 {
   //TODO all
-  return 0;
+  printf("Not implemented BlockAndersonMatrixEigenValues\n");
+  return 1;
 }
 uint32_t BlockAndersonMatrixEigenSystem(const BlockAndersonMatrixType * const A, double * val, CompactMatrixType * fun)
 {
-  //TODO all
-  return 0;
+  
+  printf("Not implemented BlockAndersonMatrixEigenSystem\n");
+  return 1;
 }
 
 
@@ -1330,10 +1348,6 @@ uint32_t BlockTriDiagonalMatrixEigenSystem(const BlockTriDiagonalMatrixType * co
       return 1;
     }
   }
-  
-  
-  
-  
   TriDiagonalMatrixToEigensystemCompact(&M, val, &funQ);
   CompactMatrixMultiply('N', 'N', &funQ, &Q, fun);
   CompactMatrixConjugate(fun);
@@ -1499,9 +1513,56 @@ uint32_t BlockTriDiagonalMatrixEigenSystemWithDeflation(const BlockTriDiagonalMa
 
 uint32_t BlockTriDiagonalMatrixToBlockListOfPoles(BlockTriDiagonalMatrixType const * A, BlockListOfPoles * const G)
 {
-  //TODO: all
-  printf("not yet implemented BlockTriDiagonalMatrixToBlockListOfPoles\n");
-  return 1;
+  uint32_t i,j;
+  CompactMatrixType Afull, vec;
+  if(BlockTriDiagonalMatrixToCompactMatrix(A,&Afull))
+  {
+    printf("BlockTriDiagonalMatrixToCompactMatrix failed in BlockTriDiagonalMatrixToBlockListOfPoles\n");
+    return 1;
+  }
+  vec.Ni=A->BlockSize;
+  vec.Nj=Afull.Nj;
+  vec.QComplex=A->QComplex;
+  InitCompactMatrix(&vec);
+  if(A->QComplex)
+  {
+    for(i=0;i<A->BlockSize;i++)
+    {
+      for(j=0;j<A->BlockSize;j++)
+      {
+        vec.V[i*vec.Nj+j] = A->b[i*A->BlockSize+j];
+      }
+    }
+  }
+  else
+  {
+    for(i=0;i<A->BlockSize;i++)
+    {
+      for(j=0;j<A->BlockSize;j++)
+      {
+        vec.VRe[i*vec.Nj+j] = A->bRe[i*A->BlockSize+j];
+      }
+    }
+  }
+  if(HermitianCompactMatrixToBlockListOfPoles(&Afull, G, &vec))
+  {
+    printf("HermitianCompactMatrixToListOfPoles failed in BlockTriDiagonalMatrixToBlockListOfPoles\n");
+    return 1;
+  }
+  FreeCompactMatrix(&Afull);
+  FreeCompactMatrix(&vec);
+  // set A0
+  if(A->QComplex)
+  {
+    memcpy(G->a0,A->a,G->BlockSize*G->BlockSize*sizeof(Complex16));
+  }
+  else
+  {
+    memcpy(G->a0Re,A->aRe,G->BlockSize*G->BlockSize*sizeof(double));
+  }
+  //
+  G->mu=A->mu;
+  return 0;
 }
 
 uint32_t BlockTriDiagonalMatrixToBlockListOfPolesVariableGrid(BlockTriDiagonalMatrixType const * A, BlockListOfPoles * const G, const double * const Grid, const uint32_t NGridPoints)
@@ -1850,8 +1911,9 @@ uint32_t BlockTriDiagonalMatrixToBlockAndersonMatrix(BlockTriDiagonalMatrixType 
     bpos = B->BlockSize*B->BlockSize;
     for(i = 0; i < B->BlockSize*B->BlockSize; i++)
     {
-      C.V[i].Re = ATri.b[bpos++].Re;
-      C.V[i].Im = ATri.b[bpos++].Im;
+      C.V[i].Re = ATri.b[bpos].Re;
+      C.V[i].Im = ATri.b[bpos].Im;
+      bpos++;
     }
     D.QComplex = B->QComplex;
     D.Ni = B->BlockSize;
@@ -1861,7 +1923,7 @@ uint32_t BlockTriDiagonalMatrixToBlockAndersonMatrix(BlockTriDiagonalMatrixType 
     {
       for(j = 0; j < B->BlockSize*(B->N-1); j++)
       {
-        D.V[i*B->BlockSize*(B->N-1)+ j].Re = Afun.V[j*B->BlockSize*(B->N-1)+i].Re;
+        D.V[i*B->BlockSize*(B->N-1) + j].Re = Afun.V[j*B->BlockSize*(B->N-1)+i].Re;
         D.V[i*B->BlockSize*(B->N-1) + j].Im = Afun.V[j*B->BlockSize*(B->N-1)+i].Im;
       }
     }
@@ -1876,8 +1938,9 @@ uint32_t BlockTriDiagonalMatrixToBlockAndersonMatrix(BlockTriDiagonalMatrixType 
       {
         for(j = 0; j < B->BlockSize; j++)
         {
-          B->b[bpos].Re   = E.V[i*B->BlockSize*(B->N-1)+k*B->BlockSize+j].Re;
-          B->b[bpos++].Im = E.V[i*B->BlockSize*(B->N-1)+k*B->BlockSize+j].Im;
+          B->b[bpos].Re = E.V[i*B->BlockSize*(B->N-1)+k*B->BlockSize+j].Re;
+          B->b[bpos].Im = E.V[i*B->BlockSize*(B->N-1)+k*B->BlockSize+j].Im;
+          bpos++;
         }
       }
     }
@@ -1947,7 +2010,8 @@ uint32_t BlockTriDiagonalMatrixToBlockAndersonMatrix(BlockTriDiagonalMatrixType 
       {
         for(j = 0; j < B->BlockSize; j++)
         {
-          B->bRe[bpos++] = E.VRe[i*(B->N-1)*B->BlockSize+k*B->BlockSize+j];
+          B->bRe[bpos] = E.VRe[i*(B->N-1)*B->BlockSize+k*B->BlockSize+j];
+          bpos++;
         }
       }
     }
@@ -1961,11 +2025,17 @@ uint32_t BlockTriDiagonalMatrixToBlockAndersonMatrix(BlockTriDiagonalMatrixType 
   return 0;
 }
 
-uint32_t BlockTriDiagonalMatrixToBlockNaturalImpurityMatrix(BlockTriDiagonalMatrixType const ATri, BlockNaturalImpurityOrbitalMatrixType * const B)
+uint32_t BlockTriDiagonalMatrixToBlockNaturalImpurityMatrix(BlockTriDiagonalMatrixType const ATri, BlockNaturalImpurityOrbitalMatrixType * const B, const double kBT)
 {
-  //TODO: all
-  printf("Not implemented BlockTriDiagonalMatrixToBlockNaturalImpurityMatrix\n");
-  return 1;
+  BlockListOfPoles ABlock;
+  if(BlockTriDiagonalMatrixToBlockListOfPoles(&ATri, &ABlock))
+  {
+    printf("BlockTriDiagonalMatrixToBlockListOfPoles failed in BlockTriDiagonalMatrixToBlockNaturalImpurityMatrix\n");
+    return 1;
+  }
+  BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(&ABlock, B, kBT, ATri.N, ATri.N);
+  FreeBlockListOfPoles(&ABlock);
+  return 0;
 }
 
 
@@ -3609,8 +3679,7 @@ uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType co
   int i,ii,j,k,oldindex,newindex,ipos,iipos,ia,ib,jcol,icol,allzero;
   double norm,dot,dotRe,dotIm;
   CompactMatrixType Tnow;
-
-  
+  /*
   printf("In DiagonalMatrixBlockTridiagonalize\n");
   PrintCompactMatrixMinimal(*psi);
   for(i=0;i<psi->Nj;i++)
@@ -3618,9 +3687,7 @@ uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType co
     printf("A[%2i] = %22.15E\n",i,A[i]);
   }
   printf("\n\n\n %g \n",NBlock);
-  
-  
-  
+  */
   ABlock->N=NBlock;
   ABlock->BlockSize=psi->Ni;
   ABlock->QComplex=psi->QComplex;
@@ -3648,6 +3715,10 @@ uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType co
     /* orthonormalize Tnow */
     CompactMatrixGramSchmidtOrthogonalizeRow(&Tnow, SingularValue, true);
     zgemm(charC,charN,&ABlock->BlockSize,&ABlock->BlockSize,&psi->Nj,&one,Tnow.V,&psi->Nj,psi->V,&psi->Nj,&zero,ABlock->b,&ABlock->BlockSize);
+    for(i=0;i<ABlock->BlockSize*ABlock->BlockSize;i++)
+    {
+      ABlock->b[i].Im=-ABlock->b[i].Im;
+    }
     /* loop over psi_{n+1} = A psi_{n} and orthonormalization */
     oldindex=0;
     newindex=psi->Ni*psi->Nj;
@@ -3714,8 +3785,7 @@ uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType co
         ABlock->N=k;
       }
     }
-    
-    
+    /*
     printf("transformation matrix T\n");
     PrintCompactMatrixMinimal(*T);
     CompactMatrixType test1, test2;
@@ -3723,12 +3793,11 @@ uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType co
     CompactMatrixChop(&test1, 1000*DBL_EPSILON);
     printf("matrix T T^C = test1 should be identity matrix\n");
     PrintCompactMatrixMinimal(test1);
-    TransformDiagonalMatrixByCompactMatrixTconATtran(A, T, &test2);
+    TransformDiagonalMatrixByCompactMatrixTATdag(A, T, &test2);
     CompactMatrixChop(&test2, 1000*DBL_EPSILON);
-    printf("matrix T^C A T = test2\n");
+    printf("matrix T A T^dag = test2\n");
     PrintCompactMatrixMinimal(test2);
-    
-
+    */
     /*  calculate ABlock = T^dag A T
      *  ABlock(i,j) = sum_k T(k,i)^* A(k,k) T(k,j)
      */
