@@ -1,0 +1,80 @@
+errorCount = 0
+
+atom = "C_Orca"
+molecs = {"CO2x_Orca","CO2y_Orca","CO2z_Orca","CO2xyz_Orca"}
+EsLower = {-100,-10,0}
+EsUpper = {2,10,100}
+iAtomFirst = 3
+iAtomLast = 5
+
+function test(res1,res2)
+    if (Chop( Matrix.ToUserdata(res1) - Matrix.ToUserdata(res2), 1e-5) ~= Matrix.ToUserdata(Matrix.Zero(#res1))) then
+       print("Something went wrong!")
+       errorCount = errorCount + 1
+    end
+end
+
+for key1,molec in pairs(molecs) do
+    for key2,ELower in pairs(EsLower) do
+        for key3, EUpper in pairs(EsUpper) do
+            OrcaAtom = Simon.FileReadOrca("DFT/"..atom..".out", {{"diagonalizeDegenerateStates",true}}) 
+            OrcaMolec = Simon.FileReadOrca("DFT/"..molec..".out", {{"diagonalizeDegenerateStates",true}})
+
+            iLower = 1
+            iUpper = #(OrcaMolec["EigenEnergies"])
+
+            for key,En in pairs(OrcaMolec["EigenEnergies"]) do
+                if En < ELower and key >= iLower then
+                    iLower = key + 1
+                end
+                if En > EUpper then
+                    iUpper = key-1
+                    break
+                end
+            end
+
+            MOAtomFull = OrcaAtom["MolecularOrbitalMatrix"]
+            dAtomic = Matrix.Sub(MOAtomFull, {iAtomFirst, iAtomLast}, {1,#MOAtomFull})
+            MOMolecFull = OrcaMolec["MolecularOrbitalMatrix"]
+            MOMolec = Matrix.Sub(MOMolecFull, {iLower, iUpper}, {1,#MOMolecFull})
+            Overlap = OrcaMolec["OverlapMatrix"]
+            Overlap = Matrix.Sub( Overlap, #MOMolecFull, #MOAtomFull)
+
+            dAtomicOnMOMolec = Matrix.Transpose( MOMolec * Overlap * Matrix.Transpose(dAtomic) )
+            dAtomicOnMOMolec = Matrix.ToTable( dAtomicOnMOMolec )
+            dAtomicOnMOMolecOrtho = Orthonormalize(dAtomicOnMOMolec , {{"Method","Lowdin"}})
+
+            unitMatrix = Matrix.Identity(iUpper-iLower+1, {{"Userdata", false}})
+
+            newBasis = Copy( dAtomicOnMOMolecOrtho )
+            for i=1,#unitMatrix do
+                newBasis[#newBasis + 1] = Copy( unitMatrix[i] )
+            end
+            newBasis = Orthonormalize(newBasis, {{"Method", "GramSchmidt"}})
+            Trafo = Matrix.ToUserdata(newBasis) --The matrix representation of the old basis is an identity matrix
+
+            HamMOMolec = Matrix.ToTable(unitMatrix)
+            for i=iLower,iUpper do
+                HamMOMolec[i-iLower+1][i-iLower+1] = OrcaMolec["EigenEnergies"][i]
+            end
+            HamMOMolec = Matrix.ToUserdata(HamMOMolec)
+            HTBMat = Rotate(HamMOMolec, Trafo)
+       
+            H, T = Simon.CorthogonalShells(OrcaMolec, OrcaAtom, ELower, EUpper, {3,4,5})
+            test(H,HTBMat)
+            test(T,Trafo)
+            H, T =  Simon.CorthogonalShells(OrcaMolec, OrcaAtom, ELower, EUpper, iAtomFirst, iAtomLast)
+            test(H,HTBMat)
+            test(T,Trafo)
+        end
+    end
+end
+
+
+if errorCount == 0 then
+    print("No errors detected.")
+else
+    print(errorCount.." errors detected.")
+end
+
+os.exit(errorCount) 

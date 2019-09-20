@@ -2272,7 +2272,7 @@ int nonRelAngularMomentumZNumbersWithSpin(const string &orb)
 {
 	if (orb.length() < 1)
 		return -1;
-	char lastChar = orb.at(orb.length() - 1);
+	char lastChar = tolower(orb.at(orb.length() - 1));
 	switch (lastChar)
 	{
 	case 's':

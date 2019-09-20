@@ -23,10 +23,11 @@ string cutBorderSpaces(string in)
 void deconstructOrbname(const string &orb, uint &siteNum, string &atomName, uint &n, string &shell, int &lz)
 {
 	//	Expects input like 2_Fe_3p1 or Fe_3p1
-	size_t pos;
+	string::size_type pos, pos2;
 	pos = orb.find('_');
+	pos2 = orb.find('_',pos+1);
 	siteNum = (uint) strtol(orb.substr(0, pos).c_str(), NULL, 10);
-	if (siteNum == 0)
+	if (pos2 == string::npos)
 	{
 		atomName = orb.substr(0, pos);
 	}
@@ -54,7 +55,7 @@ void deconstructOrbname(const string &orb, uint &siteNum, string &atomName, uint
 		lz = 0;
 }
 
-bool atomicStateSorter(string s1, string s2)
+bool atomicStateSorternlz(string s1, string s2)
 {
 	uint siteNum1, siteNum2;
 	string atomName1, atomName2, shell1, shell2;
@@ -73,6 +74,28 @@ bool atomicStateSorter(string s1, string s2)
 	mult2 = orbToMultiplicity(shell2);
 	if (mult1 != mult2)
 		return mult1 < mult2;
+	return lz1 < lz2;
+}
+
+bool atomicStateSorterlnz(string s1, string s2)
+{
+	uint siteNum1, siteNum2;
+	string atomName1, atomName2, shell1, shell2;
+	uint n1, n2, mult1, mult2;
+	int lz1, lz2;
+	deconstructOrbname(s1, siteNum1, atomName1, n1, shell1, lz1);
+	deconstructOrbname(s2, siteNum2, atomName2, n2, shell2, lz2);
+	if (siteNum1 != siteNum2 && siteNum1 != 0 && siteNum2 != 0)
+		return siteNum1 < siteNum2;
+//	TODO: this sorts lexicographically. Should we rather sort according to the periodic system?
+	if (strcmp(atomName1.c_str(), atomName2.c_str()) != 0)
+		return strcmp(atomName1.c_str(), atomName2.c_str()) < 0;
+	mult1 = orbToMultiplicity(shell1);
+	mult2 = orbToMultiplicity(shell2);
+	if (mult1 != mult2)
+		return mult1 < mult2;
+	if (n1 != n2)
+		return n1 < n2;
 	return lz1 < lz2;
 }
 
@@ -137,7 +160,7 @@ vector<map<string, double> > getWF_coefficients_Filecontent(const string &filena
 		}
 	}
 	out.push_back(orbWeightsMap);
-	sort(orbitalNames.begin(), orbitalNames.end(), atomicStateSorter);
+	sort(orbitalNames.begin(), orbitalNames.end(), atomicStateSorternlz);
 	return out;
 }
 

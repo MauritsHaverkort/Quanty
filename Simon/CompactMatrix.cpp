@@ -256,3 +256,46 @@ static int LuaRemoveSpin(lua_State *L)
 	return 1;
 }
 
+CompactMatrixType Submatrix(const CompactMatrixType &M, const vector<uint> &rows, const vector<uint> &cols)
+{
+	for (uint i = 0; i < (uint) rows.size(); ++i)
+	{
+		if (rows[i] < 0 || rows[i] >= M.Ni)
+		{
+			cout << "Error in Submatrix: Row entry " << rows[i] << " lies outside range [0," << (M.Ni - 1) << "]." << endl;
+			throw std::exception();
+		}
+	}
+	for (uint i = 0; i < (uint) cols.size(); ++i)
+	{
+		if (cols[i] < 0 || cols[i] >= M.Nj)
+		{
+			cout << "Error in Submatrix: Column entry " << cols[i] << " lies outside range [0," << (M.Nj - 1) << "]." << endl;
+			throw std::exception();
+		}
+	}
+	CompactMatrixType Msub;
+	Msub.Ni = (uint) rows.size();
+	Msub.Nj = (uint) cols.size();
+	Msub.QComplex = M.QComplex;
+	InitCompactMatrix(&Msub);
+	Msub.OnLuaStack = M.OnLuaStack;
+	for (int k = 0; k < (uint) rows.size(); ++k)
+	{
+		uint i = rows[k];
+		for (int l = 0; l < (uint) cols.size(); ++l)
+		{
+			uint j = cols[l];
+			if (M.QComplex == 0)
+			{
+				Msub.VRe[k * Msub.Nj + l] = M.VRe[i * M.Nj + j];
+			}
+			else
+			{
+				Msub.V[k * Msub.Nj + l] = M.V[i * M.Nj + j];
+			}
+		}
+	}
+	return Msub;
+}
+

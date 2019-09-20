@@ -5,3 +5,169 @@ typedef struct doubleVecValPair
   double val;
 }
 doubleVecValPair;
+
+// Each Gaussian is of the form A*r^l exp(-w*r^2), with A such that integral_0^inf r^2 G^2(r) = 1
+class GaussianRadial {
+private:
+	uint l;
+	vector<double> amplitudes;
+	vector<double> widths;
+public:
+	GaussianRadial()
+	{
+		this->l = 0;
+	}
+
+	GaussianRadial(uint l)
+	{
+		this->l = l;
+	}
+
+	GaussianRadial(const uint l, const vector<double> &amplitudes, const vector<double> &widths)
+	{
+		if (amplitudes.size() != widths.size())
+		{
+			cout << "Error in GaussianRadial: Size of amplitudes vector (" << amplitudes.size() << ") needs to equal size of widths vector (" << widths.size() << ")." << endl;
+			throw std::exception();
+		}
+		this->l = l;
+		this->amplitudes = amplitudes;
+		this->widths = widths;
+	}
+
+	double operator()(const double r) const
+	{
+		double out = 0;
+		for (uint i = 0; i < (uint) amplitudes.size(); ++i)
+		{
+			out += amplitudes[i]*exp(-widths[i]*r*r);
+		}
+		return out*pow(r,l);
+	}
+
+	vector<double> operator()(const vector<double> &r) const
+	{
+		vector<double> out(r.size());
+		for (uint i = 0; i < (uint) r.size(); ++i)
+		{
+			out[i] = (*this)(r[i]);
+		}
+		return out;
+	}
+
+	void addGaussian(const double amplitude, const double width)
+	{
+		amplitudes.push_back(amplitude);
+		widths.push_back(width);
+	}
+	
+	void addGaussian(const vector<double> &gaussian)
+	{
+		if ((uint)gaussian.size() != 2)
+		{
+			cout << "Error in GaussianRadial: New primitive Gaussian needs to be entered as a vector of length 2, with entries amplitude and width." << endl;
+			throw std::exception();
+		}
+		amplitudes.push_back(gaussian[0]);
+		widths.push_back(gaussian[1]);
+	}
+
+	void setGaussian(const uint i, const double amplitude, const double width)
+	{
+		if (i >= amplitudes.size())
+		{
+			cout << "Error in GaussianRadial: Index " << i << " lies outside the range of Gaussian functions (" << amplitudes.size() << ")." << endl;
+			throw std::exception();
+		}
+		amplitudes[i] = amplitude;
+		widths[i] = width;
+	}
+	
+	void setGaussian(const uint i, const vector<double> &gaussian)
+	{
+		if ((uint)gaussian.size() != 2)
+		{
+			cout << "Error in GaussianRadial: New primitive Gaussian needs to be entered as a vector of length 2, with entries amplitude and width." << endl;
+			throw std::exception();
+		}
+		if (i >= amplitudes.size())
+		{
+			cout << "Error in GaussianRadial: Index " << i << " lies outside the range of Gaussian functions (" << amplitudes.size() << ")." << endl;
+			throw std::exception();
+		}
+		amplitudes[i] = gaussian[0];
+		widths[i] = gaussian[1];
+	}
+	
+	vector<double> getGaussian(const uint i) const
+	{
+		if (i >= amplitudes.size())
+		{
+			cout << "Error in GaussianRadial: Index " << i << " lies outside the range of Gaussian functions (" << amplitudes.size() << ")." << endl;
+			throw std::exception();
+		}
+		vector<double> out(2);
+		out[0] = amplitudes[i];
+		out[1] = widths[i];
+		return out;
+	}
+	
+	uint getL() const
+	{
+		return l;
+	}
+	
+	void setL(const uint l)
+	{
+		this-> l = l;
+	}
+	
+	vector<double> getAmplitudes() const
+	{
+		return amplitudes;
+	}
+	
+	void setAmplitudes(const vector<double> &amplitudes)
+	{
+		if (amplitudes.size() != widths.size())
+		{
+			cout << "Error in GaussianRadial: Size of amplitudes vector (" << amplitudes.size() << ") needs to equal size of widths vector (" << widths.size() << ")." << endl;
+			throw std::exception();
+		}
+		this-> amplitudes = amplitudes;
+	}
+	
+	vector<double> getWidths() const
+	{
+		return widths;
+	}
+	
+	void setWidths(const vector<double> &widths)
+	{
+		if (amplitudes.size() != widths.size())
+		{
+			cout << "Error in GaussianRadial: Size of amplitudes vector (" << amplitudes.size() << ") needs to equal size of widths vector (" << widths.size() << ")." << endl;
+			throw std::exception();
+		}
+		this-> widths = widths;
+	}
+	
+	uint getN() const
+	{
+		return (uint)amplitudes.size();
+	}
+
+};
+
+typedef struct OrcaObject
+{
+	uint NBasis;
+	CompactMatrixType OverlapMatrix;
+	CompactMatrixType MolecularOrbitalMatrix;
+	vector<double> EigenEnergies;
+	vector<double> EigenOccupations;
+	vector<string> BasisOrbitalNames;
+	vector<AtomType> Atoms;
+	map<string, GaussianRadial> RadialFunctions;
+}
+OrcaObject;

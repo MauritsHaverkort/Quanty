@@ -159,6 +159,64 @@ std::map<myarray,myarray> CreateSlaterTuple(vector<int> indToK)
 	return result;
 }
 
+std::map<myarray,myarray> CreateSlaterTupleTwoFilled(const vector<int> &indToK)
+{
+	uint32_t i,j,m,l;
+	myarray k;
+	vector<myarray> tau = vector<myarray>(8);
+  std::map<myarray,myarray> result;
+
+	for ( i = 0; i < (uint32_t) indToK.size(); i++)
+		for ( j = i; j < (uint32_t) indToK.size(); j++)	
+        {
+            k.Assign(indToK[i],indToK[j],indToK[i],indToK[j]);
+            if (TupleContributes(k))
+            {
+
+                tau[0].Assign(i, j, i, j);
+                result[tau[0]] = k;
+                
+            }
+            k.Assign(indToK[i],indToK[j],indToK[j],indToK[i]);
+            if (TupleContributes(k))
+            {
+                tau[1].Assign(i, j, j, i);
+                result[tau[1]] = k;
+            }
+        }
+
+
+	return result;
+}
+
+std::map<myarray,myarray> CreateSlaterTupleOneFilled(const vector<int> &indToKFilled, const vector<int> &indToKOther)
+{
+	uint32_t i,j,m,l;
+	myarray k;
+	vector<myarray> tau = vector<myarray>(8);
+    std::map<myarray,myarray> result;
+    uint32_t NFilled = (uint32_t) indToKFilled.size();
+
+	for ( i = 0; i < (uint32_t) indToKFilled.size(); i++)
+		for ( j = 0; j < (uint32_t) indToKOther.size(); j++)
+			for ( m = j; m < (uint32_t) indToKOther.size(); m++)
+            {
+                k.Assign(indToKFilled[i],indToKOther[j],indToKFilled[i],indToKOther[m]);
+                if (TupleContributes(k))
+                {
+                    tau[0].Assign(i, j+NFilled, i, m+NFilled);
+                    result[tau[0]] = k;
+                }
+                k.Assign(indToKFilled[i],indToKOther[j],indToKOther[m],indToKFilled[i]);
+                if (TupleContributes(k))
+                {
+                    tau[0].Assign(i, j+NFilled, m+NFilled, i);
+                    result[tau[0]] = k;
+                }
+            }
+	return result;
+}
+
 std::map<myarray,myarray> CreateContinuumTuple(vector<int> indToK)
 {
 	uint32_t i,j,m,l;

@@ -9,9 +9,9 @@ for key,mat in pairs(Mats) do
     for key2, size in pairs(Sizes) do
         print("\nMatrix:")
         print(mat)
-        print("\nExpansion Factor:")
+        print("\nEnlarged Size:")
         print(size)
-        print("\nExpanded Matrix:")
-        print( Matrix.Expand(mat,size) )
+        print("\nEnlarged Matrix:")
+        print( Matrix.Enlarge(mat,size) )
     end
 end

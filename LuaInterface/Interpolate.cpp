@@ -12,7 +12,7 @@ static int LuaSplineInterpolate(lua_State * L)
 {
   uint32_t i;
   Interpolation::CubicSpline *fun;
-  double yp1,ypn,*xy;
+  double yp0,ypn,*xy;
   uint32_t len = (uint32_t)lua_gettop(L);;
   if(len<2)
   {
@@ -59,9 +59,11 @@ static int LuaSplineInterpolate(lua_State * L)
   }
   if(len==4)
   {
-    yp1 = (double)luaL_checknumber(L, 3);
+    yp0 = (double)luaL_checknumber(L, 3);
     ypn = (double)luaL_checknumber(L, 4);
-    fun->Create(u,v); // TODO implement that whatever it does
+ //   printf("Error in LuaSplineInterpolate: Hermite boundary not yet implemented\n");
+   // return 0;
+    fun->Create(u,v,yp0,ypn); // TODO implement that whatever it does
     return 1;
     
   }
@@ -173,64 +175,270 @@ static int LuaCubicHermiteSplineInterpolate(lua_State * L)
  */
 static int LuaInterpolateUnm(lua_State * L)
 {
-	cout << endl << "Warning: Unary minus not yet implemented for interpolating functions." << endl;
-  return 0;
+	void* memory;
+	Interpolation::InterpolatingFunction *f = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
+	double n;
+	if (f->type == "CubicSpline")
+	{
+		memory = lua_newuserdata(L, sizeof(Interpolation::CubicSpline));
+		luaL_setmetatable(L, "InterpolatingFunction_Type");
+		Interpolation::CubicSpline *fplusg = new(memory)Interpolation::CubicSpline;
+		Interpolation::UnaryMinus(*((Interpolation::CubicSpline *)f),*fplusg);
+	}
+	else if (f->type == "CubicHermiteSpline")
+	{
+		memory = lua_newuserdata(L, sizeof(Interpolation::CubicHermiteSpline));
+		luaL_setmetatable(L, "InterpolatingFunction_Type");
+		Interpolation::CubicHermiteSpline *fplusg = new(memory)Interpolation::CubicHermiteSpline;
+		Interpolation::UnaryMinus(*((Interpolation::CubicHermiteSpline *)f),*fplusg);
+	}
+	else if (f->type == "BSpline")
+	{
+		printf("Error: Arithmetics for BSplines not yet implemented\n");
+		return 0;
+	}
+	else
+	{
+		printf("Error in InterpolateAdd: unrecognized type of Interpolation\n");
+		return 0;
+	}
+
+  return 1;
 }
 /*
  *
  */
+
+
 static int LuaInterpolateAdd(lua_State * L)
 {
-	cout << endl << "Warning: Addition not yet implemented for interpolating functions." << endl;
-  return 0;
+	void* memory;
+    Interpolation::InterpolatingFunction *f = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
+    Interpolation::InterpolatingFunction *g = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 2, "InterpolatingFunction_Type");
+    if (f->type == "CubicSpline")
+    {
+        memory = lua_newuserdata(L, sizeof(Interpolation::CubicSpline));
+        luaL_setmetatable(L, "InterpolatingFunction_Type");
+        Interpolation::CubicSpline *fplusg = new(memory)Interpolation::CubicSpline;
+        Interpolation::Add(*f,*g,*fplusg);
+    }
+    else if (f->type == "CubicHermiteSpline")
+    {
+        memory = lua_newuserdata(L, sizeof(Interpolation::CubicHermiteSpline));
+        luaL_setmetatable(L, "InterpolatingFunction_Type");
+        Interpolation::CubicHermiteSpline *fplusg = new(memory)Interpolation::CubicHermiteSpline;
+        Interpolation::Add(*f,*g,*fplusg);
+    }
+	else if (f->type == "BSpline")
+	{
+		printf("Error: Arithmetics for BSplines not yet implemented\n");
+		return 0;
+	}
+    else
+    {
+        printf("Error in InterpolateAdd: unrecognized type of Interpolation\n");
+        return 0;
+    }
+  return 1;
 }
 /*
  *
  */
 static int LuaInterpolateSub(lua_State * L)
 {
-	cout << endl << "Warning: Subtraction not yet implemented for interpolating functions." << endl;
-  return 0;
+	void* memory;
+    Interpolation::InterpolatingFunction *f = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
+    Interpolation::InterpolatingFunction *g = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 2, "InterpolatingFunction_Type");
+    if (f->type == "CubicSpline")
+    {
+        memory = lua_newuserdata(L, sizeof(Interpolation::CubicSpline));
+        luaL_setmetatable(L, "InterpolatingFunction_Type");
+        Interpolation::CubicSpline *fplusg = new(memory)Interpolation::CubicSpline;
+        Interpolation::Sub(*f,*g,*fplusg);
+    }
+    else if (f->type == "CubicHermiteSpline")
+    {
+        memory = lua_newuserdata(L, sizeof(Interpolation::CubicHermiteSpline));
+        luaL_setmetatable(L, "InterpolatingFunction_Type");
+        Interpolation::CubicHermiteSpline *fplusg = new(memory)Interpolation::CubicHermiteSpline;
+        Interpolation::Sub(*f,*g,*fplusg);
+    }
+	else if (f->type == "BSpline")
+	{
+		printf("Error: Arithmetics for BSplines not yet implemented\n");
+		return 0;
+	}
+    else
+    {
+        printf("Error in InterpolateAdd: unrecognized type of Interpolation\n");
+        return 0;
+    }
+    
+  return 1;
 }
 /*
  *
  */
 static int LuaInterpolateMul(lua_State * L)
 {
-	cout << endl << "Warning: Multiplication not yet implemented for interpolating functions." << endl;
-  return 0;
+	void* memory;
+    Interpolation::InterpolatingFunction *f = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
+    Interpolation::InterpolatingFunction *g = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 2, "InterpolatingFunction_Type");
+    if (f->type == "CubicSpline")
+    {
+        memory = lua_newuserdata(L, sizeof(Interpolation::CubicSpline));
+        luaL_setmetatable(L, "InterpolatingFunction_Type");
+        Interpolation::CubicSpline *fplusg = new(memory)Interpolation::CubicSpline;
+        Interpolation::Mul(*f,*g,*fplusg);
+    }
+    else if (f->type == "CubicHermiteSpline")
+    {
+        memory = lua_newuserdata(L, sizeof(Interpolation::CubicHermiteSpline));
+        luaL_setmetatable(L, "InterpolatingFunction_Type");
+        Interpolation::CubicHermiteSpline *fplusg = new(memory)Interpolation::CubicHermiteSpline;
+        Interpolation::Mul(*f,*g,*fplusg);
+    }
+	else if (f->type == "BSpline")
+	{
+		printf("Error: Arithmetics for BSplines not yet implemented\n");
+		return 0;
+	}
+    else
+    {
+        printf("Error in InterpolateAdd: unrecognized type of Interpolation\n");
+        return 0;
+    }
+  return 1;
 }
 /*
  *
  */
 static int LuaInterpolateDiv(lua_State * L)
 {
-	cout << endl << "Warning: Division not yet implemented for interpolating functions." << endl;
-  return 0;
+	void* memory;
+    Interpolation::InterpolatingFunction *f = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
+    Interpolation::InterpolatingFunction *g = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 2, "InterpolatingFunction_Type");
+    if (f->type == "CubicSpline")
+    {
+        memory = lua_newuserdata(L, sizeof(Interpolation::CubicSpline));
+        luaL_setmetatable(L, "InterpolatingFunction_Type");
+        Interpolation::CubicSpline *fplusg = new(memory)Interpolation::CubicSpline;
+        Interpolation::Div(*f,*g,*fplusg);
+    }
+    else if (f->type == "CubicHermiteSpline")
+    {
+        memory = lua_newuserdata(L, sizeof(Interpolation::CubicHermiteSpline));
+        luaL_setmetatable(L, "InterpolatingFunction_Type");
+        Interpolation::CubicHermiteSpline *fplusg = new(memory)Interpolation::CubicHermiteSpline;
+        Interpolation::Div(*f,*g,*fplusg);
+    }
+	else if (f->type == "BSpline")
+	{
+		printf("Error: Arithmetics for BSplines not yet implemented\n");
+		return 0;
+	}
+    else
+    {
+        printf("Error in InterpolateAdd: unrecognized type of Interpolation\n");
+        return 0;
+    }
+    
+  return 1;
 }
 /*
  *
  */
 static int LuaInterpolatePow(lua_State * L)
 {
-	cout << endl << "Warning: Power not yet implemented for interpolating functions." << endl;
-  return 0;
+	void* memory;
+    Interpolation::InterpolatingFunction *f = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
+    double n;
+    lua_check(L,2,n);
+    if (f->type == "CubicSpline")
+    {
+        memory = lua_newuserdata(L, sizeof(Interpolation::CubicSpline));
+        luaL_setmetatable(L, "InterpolatingFunction_Type");
+        Interpolation::CubicSpline *fplusg = new(memory)Interpolation::CubicSpline;
+        Interpolation::Pow(*f,n,*fplusg);
+    }
+    else if (f->type == "CubicHermiteSpline")
+    {
+        memory = lua_newuserdata(L, sizeof(Interpolation::CubicHermiteSpline));
+        luaL_setmetatable(L, "InterpolatingFunction_Type");
+        Interpolation::CubicHermiteSpline *fplusg = new(memory)Interpolation::CubicHermiteSpline;
+        Interpolation::Pow(*f,n,*fplusg);
+    }
+	else if (f->type == "BSpline")
+	{
+		printf("Error: Arithmetics for BSplines not yet implemented\n");
+		return 0;
+	}
+    else
+    {
+        printf("Error in InterpolateAdd: unrecognized type of Interpolation\n");
+        return 0;
+    }
+    
+  return 1;
 }
 /*
  *
  */
 static int LuaInterpolateConcat(lua_State * L)
 {
-	cout << endl << "Warning: Concatination not yet implemented for interpolating functions." << endl;
-  return 0;
+	void* memory;
+    Interpolation::InterpolatingFunction *f = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
+    Interpolation::InterpolatingFunction *g = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 2, "InterpolatingFunction_Type");
+    if (f->type == "CubicSpline")
+    {
+        memory = lua_newuserdata(L, sizeof(Interpolation::CubicSpline));
+        luaL_setmetatable(L, "InterpolatingFunction_Type");
+        Interpolation::CubicSpline *fplusg = new(memory)Interpolation::CubicSpline;
+        Interpolation::Concat(*f,*g,*fplusg);
+    }
+    else if (f->type == "CubicHermiteSpline")
+    {
+        memory = lua_newuserdata(L, sizeof(Interpolation::CubicHermiteSpline));
+        luaL_setmetatable(L, "InterpolatingFunction_Type");
+        Interpolation::CubicHermiteSpline *fplusg = new(memory)Interpolation::CubicHermiteSpline;
+        Interpolation::Concat(*f,*g,*fplusg);
+    }
+	else if (f->type == "BSpline")
+	{
+		printf("Error: Arithmetics for BSplines not yet implemented\n");
+		return 0;
+	}
+    else
+    {
+        printf("Error in InterpolateAdd: unrecognized type of Interpolation\n");
+        return 0;
+    }
+  return 1;
 }
 /*
  *
  */
 static int LuaInterpolateEq(lua_State * L)
 {
-	cout << endl << "Warning: Equality comparison not yet implemented for interpolating functions." << endl;
-  return 0;
+    Interpolation::InterpolatingFunction *f = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
+    Interpolation::InterpolatingFunction *g = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 2, "InterpolatingFunction_Type");
+
+    bool equal = false;
+    if (f->type == "CubicSpline" && f->type == g->type)
+    {
+    	equal = (*((Interpolation::CubicSpline*)f) == (*((Interpolation::CubicSpline*)g)));
+    }
+    else if (f->type == "CubicHermiteSpline" && f->type == g->type)
+    {
+    	equal = (*((Interpolation::CubicHermiteSpline*)f) == (*((Interpolation::CubicHermiteSpline*)g)));
+    }
+	else if (f->type == "BSpline")
+	{
+		printf("Error: Arithmetics for BSplines not yet implemented\n");
+		return 0;
+	}
+    lua_push(L,equal);
+  return 1;
 }
 /*
  *
@@ -298,8 +506,40 @@ static int LuaInterpolateCall(lua_State * L)
  */
 static int LuaInterpolateToString(lua_State * L)
 {
-  lua_pushstring(L, "Interpolating Function");
-  return 1;
+	Interpolation::InterpolatingFunction *f = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
+	std::string s;
+	if (f->type == "CubicSpline")
+	{
+		s = "CubicSpline\n\nx:\ty:\ty'':\n";
+		for (uint32_t i = 0; i < (uint32_t) f->x.size(); i++)
+		{
+			s.append(to_string(f->x[i]));
+			s.append("\t");
+			s.append(to_string(f->y[i]));
+			s.append("\t");
+			s.append(to_string(((Interpolation::CubicSpline*)f)->y2[i]));
+			s.append("\n");
+		}
+	}
+	else if (f->type == "CubicHermiteSpline")
+	{
+		s = "CubicHermiteSpline\n\nx:\ty:\ty':\n";
+		for (uint32_t i = 0; i < (uint32_t) f->x.size(); i++)
+		{
+			s.append(to_string(f->x[i]));
+			s.append("\t");
+			s.append(to_string(f->y[i]));
+			s.append("\t");
+			s.append(to_string(((Interpolation::CubicHermiteSpline*)f)->m[i]));
+			s.append("\n");
+		}
+	}
+	else
+	{
+		s = "Interpolating Function";
+	}
+	lua_pushstring(L, s.c_str());
+	return 1;
 }
 /*
  *
@@ -311,9 +551,70 @@ static int LuaInterpolateDestroy(lua_State * L)
   return 0;
 }
 
+static int LuaInterpolationIntegrate(lua_State * L)
+{
+	Interpolation::InterpolatingFunction *f = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
+	uint32_t len = (uint32_t)lua_gettop(L);
+	double value;
+	if (len == 1)
+	{
+		value = Interpolation::Integrate(*f);
+	}
+	else if (len ==3)
+	{
+		double a,b;
+		lua_check(L,2,a);
+		lua_check(L,3,b);
+		if ( ((a < f->x[0] || b > f->x.back()) && a < b) || ((b < f->x[0] || a > f->x.back()) && b < a)) return luaL_error(L,"error in InterpolatingFunction.Integrate, integration limits out of interpolation range\n");
+		value = Interpolation::Integrate(*f,a,b);
+	}
+	else
+	{
+		return luaL_error(L,"error in InterpolatingFunction.Integrate, expected 1 or 3 arguments, got %u\n",len);
+	}
+	lua_push(L,value);
+	return 1;
+}
+
+static int LuaBSplineInterpolate(lua_State *L)
+{
+	double* xy=(double*)malloc(2*lua_objlen(L, 1)*sizeof(double));
+	for(uint32_t i=0;i<lua_objlen(L, 1);i++)
+	{
+		lua_rawgeti(L, 1, i+1);
+		xy[2*i]=(double)luaL_checknumber(L, -1);
+		lua_pop(L, 1);
+	}
+	for(uint32_t i=0;i<lua_objlen(L, 1);i++)
+	{
+		lua_rawgeti(L, 2, i+1);
+		xy[2*i+1]=(double)luaL_checknumber(L, -1);
+		lua_pop(L, 1);
+	}
+	qsort(xy, lua_objlen(L, 1), 2*sizeof(double), &qsortcomparedoubles);
+	// add the values to an Interpolating function type
+	void* memory = lua_newuserdata(L, sizeof(BSpline::TBSpline));
+	BSpline::TBSpline *fun = new(memory)BSpline::TBSpline;
+	luaL_setmetatable(L, "InterpolatingFunction_Type");
+	std::vector<double> u = std::vector<double>(lua_objlen(L, 1));
+	std::vector<double> v = std::vector<double>(lua_objlen(L, 1));
+	for(uint32_t i=0;i<lua_objlen(L, 1);i++)
+	{
+		u[i]=xy[2*i];
+		v[i]=xy[2*i+1];
+	}
+	free(xy);
+	uint32_t n;
+	lua_check(L,3,n);
+	fun->Create(u,v,n);
+	return 1;
+}
+
 static const struct luaL_Reg InterpolatingFunction_func[] = {
   {"Spline", LuaSplineInterpolate},
-  {"CubicHermiteSpline", LuaCubicHermiteSplineInterpolate},
+  {"HermiteCSpline", LuaCubicHermiteSplineInterpolate},
+  {"Integrate",LuaInterpolationIntegrate},
+  {"BSpline",LuaBSplineInterpolate},
   {NULL, NULL}
 };
 

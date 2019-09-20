@@ -9,3 +9,4 @@ Makefile
 .project
 Martin/QuickTest.cpp
 Martin/quicktest
+.settings/

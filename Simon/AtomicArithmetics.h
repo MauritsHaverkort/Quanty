@@ -4,6 +4,7 @@ string multiplicityToNonRelOrb(const int mult, const bool hasSpin);
 string multiplicityToNonRelOrb(const int mult);
 TightBindingDef sortTbAtomToFirstPosition(TightBindingDef &tb, const AtomType &atom, CompactMatrixType &R);
 void initAtom(AtomType &a, const vector<string> &shellNames, const vector<vector<string> > &orbitNames, const bool hasSpin);
+vector<string> orbsAddLz(const vector<string> &in);
 void initAtom(AtomType &a, const vector<string> &shellNames, const vector<vector<string> > &orbitNames);
 vector<AtomType> OrbsToAtoms(const vector<string> &orbs, const bool hasSpin);
 vector<AtomType> OrbsToAtoms(const vector<string> &orbs);

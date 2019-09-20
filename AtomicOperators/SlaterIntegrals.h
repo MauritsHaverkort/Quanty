@@ -5,6 +5,9 @@ SSlaterIntegral *GetSlaterIntegrals(const vector<vector<double> > &basisfuns,con
 
 SSlaterIntegral *GetSlaterIntegrals(const vector<Interpolation::InterpolatingFunction *> &ipolfuns,const vector<int> &indToK, unsigned int &NIntegrals, bool Qcontinuum=false);
 
+SSlaterIntegral *GetSlaterIntegralsTwoFilled(const vector<vector<double> > &basisfuns,const vector<double> &x,const vector<int> &indToK, unsigned int &NIntegrals);
+SSlaterIntegral *GetSlaterIntegralsOneFilled(const vector<vector<double> > &basisfuns,const vector<double> &x,const vector<int> &indToK1,const vector<int> &indToK2, unsigned int &NIntegrals);
+
 void CalculateSlaterIntegrals(const int NIntegrals, SSlaterIntegral *integrals, const int dim,
                               double **kernels,const vector<vector<double> > &basisfuns,const vector<vector<double> > &dualfuns);
 
@@ -29,6 +32,9 @@ vector<double> Dual(const vector<double> &f, const vector<double> &w);
 void CreateDualFunctions(const vector<vector<double> > &basisfuns,const vector<double> &x, vector<vector<double> > &dualfuns,bool QRelativistic=true);
 
 SSlaterIntegral *InitializeIntegrals(const vector<int> &indToK, unsigned int &NIntegrals, unsigned int *kMax, bool Qcontinuum=false);
+
+SSlaterIntegral *InitializeIntegralsTwoFilled(const vector<int> &indToK, unsigned int &NIntegrals, unsigned int *kMax);
+SSlaterIntegral *InitializeIntegralsOneFilled(const vector<int> &indToK1,const vector<int> &indToK2, unsigned int &NIntegrals, unsigned int *kMax);
 
 unsigned int *GetK(const int *kappa, int *n);
 
