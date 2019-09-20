@@ -229,7 +229,12 @@ uint32_t ResonantSpectrumCNSED(const OperatorType OppH1, const OperatorType OppH
             printf("\n");
         }*/
         CompactMatrixType CM;
-        BlockTriMatrixToCompact(M,BlockSize,CM);
+      printf("\n\n\nmwh test if the chagne I made is ok\n\n\n");
+      // mwh this function is double
+      // BlockTriMatrixToCompact(M,BlockSize,CM);
+      // mwh please use
+      // and test if BlockSize is set correctly in M
+      BlockTriDiagonalMatrixToCompactMatrixWithDeflation(&M, &CM);
         /*printf("*************************************************************************\n");
         PrintMartix(CM.VRe,CM.Ni);
         printf("*************************************************************************\n");*/

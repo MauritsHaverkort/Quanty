@@ -271,6 +271,10 @@ void RotateWaveFunctions(const WaveFunctionType* psi,const uint32_t N,const Matr
 	}
 }
 
+
+
+// mwh this function already excist as BlockTriDiagToCompactMatrix and BlockTriDiagToCompactMatrixWithDeflation in BasicMath_CompactMatrixVector.cpp
+/*
 void BlockTriMatrixToCompact(const BlockTriDiagonalMatrixType &BTM, const vector<uint32_t> &BlockSize, CompactMatrixType &CM)
 {
     uint32_t dim = 0;
@@ -330,6 +334,7 @@ void BlockTriMatrixToCompact(const BlockTriDiagonalMatrixType &BTM, const vector
         }
     }
 }
+*/
 
 void CreateSpectrum(const OperatorType &H,const OperatorType &T, WaveFunctionType * const psi, const uint32_t Npsi, double epsilon, BlockTriDiagonalMatrixType &GTri, const uint32_t NTri)
 {
