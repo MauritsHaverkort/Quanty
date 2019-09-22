@@ -73,11 +73,15 @@ uint32_t HermitianCompactMatrixToListOfPoles(CompactMatrixType const *A, ListOfP
 uint32_t HermitianCompactMatrixToListOfPolesWithEigenstates(CompactMatrixType const *A, ListOfPoles *L, CompactMatrixType *vec, CompactMatrixType *fun);
 uint32_t HermitianCompactMatrixToBlockListOfPoles(CompactMatrixType const *A, BlockListOfPoles *L, CompactMatrixType *vec);
 uint32_t HermitianCompactMatrixToBlockListOfPolesWithEigenstates(CompactMatrixType const *A, BlockListOfPoles *L, CompactMatrixType *vec, CompactMatrixType *fun);
+uint32_t ResponseFunctionToCompactMatrix(ResponsefunctionType const * A, CompactMatrixType * const B, const bool deflate, const double SingularValue);
+uint32_t BlockListOfPolesToCompactMatrix(BlockListOfPoles const *A, CompactMatrixType * const B, const double SingularValue);
+uint32_t BlockListOfPolesToCompactMatrixWithDeflation(BlockListOfPoles const *A, CompactMatrixType * const B, const double SingularValue);
 uint32_t BlockNaturalImpurityOrbitalMatrixToCompactMatrix(BlockNaturalImpurityOrbitalMatrixType const * A, CompactMatrixType * const B);
+uint32_t BlockNaturalImpurityOrbitalMatrixToCompactMatrixWithDeflation(BlockNaturalImpurityOrbitalMatrixType const * A, CompactMatrixType * const B);
+uint32_t BlockAndersonMatrixToCompactMatrix(BlockAndersonMatrixType const * A, CompactMatrixType * const B);
 uint32_t BlockTriDiagonalMatrixToCompactMatrix(BlockTriDiagonalMatrixType const * A, CompactMatrixType * const B);
 uint32_t BlockTriDiagonalMatrixToCompactMatrixWithDeflation(BlockTriDiagonalMatrixType const * A, CompactMatrixType * const B);
 uint32_t BlockTriDiagonalMatrixPartToCompactMatrix(BlockTriDiagonalMatrixType const * A, CompactMatrixType * const B, const uint32_t iStart, const uint32_t iEnd);
-
 uint32_t CompactMatrixBlockBandTridiagonalizeHermitianNoReorthogonalization(CompactMatrixType const *A, BlockTriDiagonalMatrixType *const B, double const SingularValue, uint32_t NBlockMax, uint32_t BlockSize);
 uint32_t CompactMatrixBlockBandDiagonalizeReal(CompactMatrixType const * const A, CompactMatrixType * vec, BlockTriDiagonalMatrixType *const B, double const SingularValue, uint32_t const NTri, uint32_t const NOrtho, bool const ReOrthogonalize, bool const ReturnT);
 uint32_t CompactMatrixBlockBandDiagonalizeComplex(CompactMatrixType const * const A, CompactMatrixType * vec, BlockTriDiagonalMatrixType *const B, double const SingularValue, uint32_t const NTri, uint32_t const NOrtho, bool const ReOrthogonalize,bool const ReturnT);

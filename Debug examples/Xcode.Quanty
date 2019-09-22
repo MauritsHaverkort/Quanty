@@ -5,7 +5,8 @@ os.exit()
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Reference/Objects/ResponseFunctions/ResponseFunctions.Quanty")
 os.exit()
 
-
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Reference/Objects/Matrix/Matrix.Quanty")
+os.exit()
 
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/External_tests/BlockTridiagonalization.Quanty")
 os.exit()

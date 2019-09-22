@@ -20,10 +20,10 @@ uint32_t BlockListOfPolesToBlockAndersonMatrixReduceDimension(BlockListOfPoles c
 uint32_t BlockAndersonMatrixToSpectra(BlockAndersonMatrixType const A, SpectraType *G, double Emin, double Emax, uint32_t N);
 uint32_t BlockAndersonMatrixEigenValues(const BlockAndersonMatrixType * const A, double * val);
 uint32_t BlockAndersonMatrixEigenSystem(const BlockAndersonMatrixType * const A, double * val, CompactMatrixType * fun);
-uint32_t BlockAndersonMatrixToBlockListOfPoles(BlockAndersonMatrixType const AAnd, BlockListOfPoles * const B);
+uint32_t BlockAndersonMatrixToBlockListOfPoles(BlockAndersonMatrixType const * AAnd, BlockListOfPoles * const B);
 uint32_t BlockAndersonMatrixToBlockListOfPolesVariableGrid(BlockAndersonMatrixType const AAnd, BlockListOfPoles * const B, const double * const Grid, const uint32_t NGridPoints);
-uint32_t BlockAndersonMatrixToBlockTridiagonalMatrix(BlockAndersonMatrixType const AAnd, BlockTriDiagonalMatrixType * const B);
-uint32_t BlockAndersonMatrixToBlockNaturalImpurityOrbitalMatrix(BlockAndersonMatrixType const AAnd, BlockNaturalImpurityOrbitalMatrixType * const B);
+uint32_t BlockAndersonMatrixToBlockTridiagonalMatrix(BlockAndersonMatrixType const * A, BlockTriDiagonalMatrixType * const B, const double SingularValue);
+uint32_t BlockAndersonMatrixToBlockNaturalImpurityOrbitalMatrix(BlockAndersonMatrixType const * A, BlockNaturalImpurityOrbitalMatrixType * const B, const double kbT);
 uint32_t BlockTriDiagonalMatrixToSpectra(const double Energy, BlockTriDiagonalMatrixType const * A, SpectraType *const G, double const Emin, double const Emax, uint32_t const N, double const Gamma);
 uint32_t BlockTriDiagonalMatrixEigenValues(const BlockTriDiagonalMatrixType * const A, double * val);
 uint32_t BlockTriDiagonalMatrixEigenSystem(const BlockTriDiagonalMatrixType * const A, double * val, CompactMatrixType * fun);
@@ -36,10 +36,10 @@ uint32_t BlockTriDiagonalMatrixToBlockNaturalImpurityMatrix(BlockTriDiagonalMatr
 uint32_t BlockNaturalImpurityOrbitalToSpectra(BlockNaturalImpurityOrbitalMatrixType const * A, SpectraType *const G, double const Emin, double const Emax, uint32_t const N, double const Gamma);
 uint32_t BlockNaturalImpurityOrbitalMatrixEigenValues(const BlockNaturalImpurityOrbitalMatrixType * const A, double * val);
 uint32_t BlockNaturalImpurityOrbitalMatrixEigenSystem(const BlockNaturalImpurityOrbitalMatrixType * const A, double * val, CompactMatrixType * fun);
-uint32_t BlockNaturalImpurityOrbitalMatrixToBlockAndersonMatrix(BlockNaturalImpurityOrbitalMatrixType const AAnd, BlockAndersonMatrixType * const B);
-uint32_t BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles(BlockNaturalImpurityOrbitalMatrixType const AAnd, BlockListOfPoles * const B);
+uint32_t BlockNaturalImpurityOrbitalMatrixToBlockAndersonMatrix(BlockNaturalImpurityOrbitalMatrixType const * A, BlockAndersonMatrixType * const B);
+uint32_t BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles(BlockNaturalImpurityOrbitalMatrixType const * A, BlockListOfPoles * const B);
 uint32_t BlockNaturalImpurityOrbitalMatrixToBlockListOfPolesVariableGrid(BlockNaturalImpurityOrbitalMatrixType const AAnd, BlockListOfPoles * const B, const double * const Grid, const uint32_t NGridPoints);
-uint32_t BlockNaturalImpurityOrbitalMatrixToBlockTridiagonalMatrix(BlockNaturalImpurityOrbitalMatrixType const AAnd, BlockTriDiagonalMatrixType * const B);
+uint32_t BlockNaturalImpurityOrbitalMatrixToBlockTridiagonalMatrix(BlockNaturalImpurityOrbitalMatrixType const * A, BlockTriDiagonalMatrixType * const B, const double SingularValue);
 uint32_t BlockListOfPolesInversedToCompactMatrix(BlockListOfPoles const * const A, CompactMatrixType * const B);
 uint32_t TightBindingHamiltonianToDensityMatrix(TightBindingDef const * const A, int Nk[3], CompactMatrixType *rho, double mu, double kbT);
 uint32_t TightBindingHamiltonianToBlockListOfPoles(TightBindingDef const A, int Nk[3], BlockListOfPoles * const G, double const Emin, double const Emax, uint32_t const NE);

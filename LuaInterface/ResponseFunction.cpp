@@ -49,30 +49,39 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
   convert = luaL_checkstring(L, 2);
   if(strcmp(convert, "Dense")==0)
   {
+    // Dense versions of response functions return 3 matrices, The response function, A0 and B0
     // check if we push table or userdata type
     if(Min->type>64)
     { // upercase push table on stack
-      CompactMatrixType MCompactOut;
-      
-      
-      
-      
-      
+      CompactMatrixType MCompactOut,A0,B0;
+      ResponseFunctionToCompactMatrix(Min, &MCompactOut, deflate, SingularValue);
       LuaPushTable_CompactMatrixType(L, &MCompactOut);
       FreeCompactMatrix(&MCompactOut);
+      BlockResponseFunctionGetA0(Min, &A0);
+      LuaPushTable_CompactMatrixType(L, &A0);
+      FreeCompactMatrix(&A0);
+      BlockResponseFunctionGetB0(Min, &B0);
+      LuaPushTable_CompactMatrixType(L, &B0);
+      FreeCompactMatrix(&B0);
+      FreeResponsefunction(Min);
     }
     else
     { // lowercase push userdata on stack
-      CompactMatrixType *MCompactOut;
+      CompactMatrixType *MCompactOut,*A0,*B0;
       MCompactOut = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
       luaL_setmetatable(L, "Matrix_Type");
+      ResponseFunctionToCompactMatrix(Min, MCompactOut, deflate, SingularValue);
       MCompactOut->OnLuaStack=true;
-      
-      
+      A0 = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+      luaL_setmetatable(L, "Matrix_Type");
+      BlockResponseFunctionGetA0(Min, A0);
+      A0->OnLuaStack=true;
+      B0 = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+      luaL_setmetatable(L, "Matrix_Type");
+      BlockResponseFunctionGetB0(Min, B0);
+      B0->OnLuaStack=true;
     }
-    
-    
-    return 1;
+    return 3;
   }
   else if(strcmp(convert, "Tri")==0)
   {
@@ -102,6 +111,7 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
   {
     return luaL_error(L, "Error in ChangeType, second argument needs to be a string containgin either: \"And\", \"Tri\", \"ListOfPoles\", \"NaturalImpurityOrbital\", \"Nat\", \"Userdata\", \"Table\" and not %s\n",convert);
   }
+  
   if(Min->Block==true)
   {
     Mout = ConvertBlockMatrix(Min, type, T, SingularValue);

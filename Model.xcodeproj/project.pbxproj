@@ -2258,7 +2258,7 @@
 		4C2AAA101632655300138620 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 1020;
+				LastUpgradeCheck = 1100;
 				ORGANIZATIONNAME = "Maurits Haverkort";
 				TargetAttributes = {
 					4C2AAA181632655300138620 = {

@@ -15,7 +15,7 @@ uint32_t InitBlockTridiagonalMatrix(BlockTriDiagonalMatrixType *const A)
     printf("malloc failed in InitBlockTridiagonalMatrix\n");
     return 1;
   }
-  for(i=0;i<A->N;i++)
+  for(i=0;i<=A->N;i++)
   {
     A->BlockSizeList[i]=A->BlockSize;
   }

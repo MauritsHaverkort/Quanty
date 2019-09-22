@@ -3355,18 +3355,155 @@ uint32_t HermitianCompactMatrixToBlockListOfPolesWithEigenstates(CompactMatrixTy
   return 0;
 }
 
+/*
+ *
+ */
+uint32_t BlockResponseFunctionGetA0(ResponsefunctionType const *A, CompactMatrixType * const A0)
+{
+  if(A->Block==false) return 1;
+  if((32|A->type)=='t')
+  {
+    A0->QComplex=((BlockTriDiagonalMatrixType*)A->data)->QComplex;
+    A0->Ni=((BlockTriDiagonalMatrixType*)A->data)->BlockSize;
+    A0->Nj=A0->Ni;
+    InitCompactMatrix(A0);
+    A0->mu=((BlockTriDiagonalMatrixType*)A->data)->mu;
+    if(A0->QComplex)
+    {
+      memcpy(A0->V, ((BlockTriDiagonalMatrixType*)A->data)->a, A0->Ni*A0->Nj*sizeof(Complex16));
+    }
+    else
+    {
+      memcpy(A0->VRe, ((BlockTriDiagonalMatrixType*)A->data)->aRe, A0->Ni*A0->Nj*sizeof(double));
+    }
+  }
+  else if((32|A->type)=='a')
+  {
+    A0->QComplex=((BlockAndersonMatrixType*)A->data)->QComplex;
+    A0->Ni=((BlockAndersonMatrixType*)A->data)->BlockSize;
+    A0->Nj=A0->Ni;
+    InitCompactMatrix(A0);
+    A0->mu=((BlockAndersonMatrixType*)A->data)->mu;
+    if(A0->QComplex)
+    {
+      memcpy(A0->V, ((BlockAndersonMatrixType*)A->data)->a, A0->Ni*A0->Nj*sizeof(Complex16));
+    }
+    else
+    {
+      memcpy(A0->VRe, ((BlockAndersonMatrixType*)A->data)->aRe, A0->Ni*A0->Nj*sizeof(double));
+    }
+  }
+  else if((32|A->type)=='l')
+  {
+    A0->QComplex=((BlockListOfPoles*)A->data)->QComplex;
+    A0->Ni=((BlockListOfPoles*)A->data)->BlockSize;
+    A0->Nj=A0->Ni;
+    InitCompactMatrix(A0);
+    A0->mu=((BlockListOfPoles*)A->data)->mu;
+    if(A0->QComplex)
+    {
+      memcpy(A0->V, ((BlockListOfPoles*)A->data)->a0, A0->Ni*A0->Nj*sizeof(Complex16));
+    }
+    else
+    {
+      memcpy(A0->VRe, ((BlockListOfPoles*)A->data)->a0Re, A0->Ni*A0->Nj*sizeof(double));
+    }
+  }
+  else if((32|A->type)=='n')
+  {
+    uint32_t i;
+    CompactMatrixCopy(((BlockNaturalImpurityOrbitalMatrixType*)A->data)->a0, A0);
+    //TODO: test if this is correct
+    if(A0->QComplex)
+    {
+      for(i=0;i<A0->Ni*A0->Nj;i++)
+      {
+        A0->V[i].Re += ((BlockNaturalImpurityOrbitalMatrixType*)A->data)->val.a[i].Re;
+        A0->V[i].Re += ((BlockNaturalImpurityOrbitalMatrixType*)A->data)->con.a[i].Re;
+        A0->V[i].Im += ((BlockNaturalImpurityOrbitalMatrixType*)A->data)->val.a[i].Im;
+        A0->V[i].Im += ((BlockNaturalImpurityOrbitalMatrixType*)A->data)->con.a[i].Im;
+      }
+    }
+    else
+    {
+      for(i=0;i<A0->Ni*A0->Nj;i++)
+      {
+        A0->VRe[i] += ((BlockNaturalImpurityOrbitalMatrixType*)A->data)->val.aRe[i];
+        A0->VRe[i] += ((BlockNaturalImpurityOrbitalMatrixType*)A->data)->con.aRe[i];
+      }
+    }
+  }
+  return 0;
+}
 
+/*
+ *
+ */
+uint32_t BlockResponseFunctionGetB0(ResponsefunctionType const *A, CompactMatrixType * const B0)
+{
+  if(A->Block==false) return 1;
+  if((32|A->type)=='t')
+  {
+    B0->QComplex=((BlockTriDiagonalMatrixType*)A->data)->QComplex;
+    B0->Ni=((BlockTriDiagonalMatrixType*)A->data)->BlockSize;
+    B0->Nj=B0->Ni;
+    InitCompactMatrix(B0);
+    B0->mu=((BlockTriDiagonalMatrixType*)A->data)->mu;
+    if(B0->QComplex)
+    {
+      memcpy(B0->V, ((BlockTriDiagonalMatrixType*)A->data)->b, B0->Ni*B0->Nj*sizeof(Complex16));
+    }
+    else
+    {
+      memcpy(B0->VRe, ((BlockTriDiagonalMatrixType*)A->data)->bRe, B0->Ni*B0->Nj*sizeof(double));
+    }
+  }
+  else if((32|A->type)=='a')
+  {
+    B0->QComplex=((BlockAndersonMatrixType*)A->data)->QComplex;
+    B0->Ni=((BlockAndersonMatrixType*)A->data)->BlockSize;
+    B0->Nj=B0->Ni;
+    InitCompactMatrix(B0);
+    B0->mu=((BlockAndersonMatrixType*)A->data)->mu;
+    if(B0->QComplex)
+    {
+      memcpy(B0->V, ((BlockAndersonMatrixType*)A->data)->b, B0->Ni*B0->Nj*sizeof(Complex16));
+    }
+    else
+    {
+      memcpy(B0->VRe, ((BlockAndersonMatrixType*)A->data)->bRe, B0->Ni*B0->Nj*sizeof(double));
+    }
+  }
+  else if((32|A->type)=='l')
+  {
+    B0->QComplex=((BlockListOfPoles*)A->data)->QComplex;
+    B0->Ni=((BlockListOfPoles*)A->data)->BlockSize;
+    B0->Nj=B0->Ni;
+    InitCompactMatrix(B0);
+    B0->mu=((BlockListOfPoles*)A->data)->mu;
+    //TODO: get B0 from list of poles, see transformation to tridiagonal form
+  }
+  else if((32|A->type)=='n')
+  {
+    B0->QComplex=((BlockNaturalImpurityOrbitalMatrixType*)A->data)->QComplex;
+    B0->Ni=((BlockNaturalImpurityOrbitalMatrixType*)A->data)->BlockSize;
+    B0->Nj=B0->Ni;
+    InitCompactMatrix(B0);
+    B0->mu=((BlockNaturalImpurityOrbitalMatrixType*)A->data)->mu;
+    //TODO: get B0 from BlockNaturalImpurityOrbitalMatrixType, see transformation to tridiagonal form
+  }
+  return 0;
+}
 /*  convert a response function to a compact matrix
  *  A0 and B0 are neglected
  *
  */
-uint32_t ResponseFunctionToCompactMatrix(ResponsefunctionType const * A, CompactMatrixType * const B, const bool deflate)
+uint32_t ResponseFunctionToCompactMatrix(ResponsefunctionType const * A, CompactMatrixType * const B, const bool deflate, const double SingularValue)
 {
   if(A->Block==true)
   { // block version
-    if((32&A->type)=='t')
+    if((32|A->type)=='t')
     { // convert block tridiagonal matrix to compact matrix
-      //TODO: all
       if(deflate==true)
       {
         BlockTriDiagonalMatrixToCompactMatrixWithDeflation((BlockTriDiagonalMatrixType*)A->data, B);
@@ -3377,56 +3514,86 @@ uint32_t ResponseFunctionToCompactMatrix(ResponsefunctionType const * A, Compact
       }
       return 0;
     }
-    if((32&A->type)=='a')
+    if((32|A->type)=='a')
     { // convert block anderson matrix to compact matrix
-      //TODO: all
-      
+      BlockAndersonMatrixToCompactMatrix((BlockAndersonMatrixType*)A->data, B);      
       return 0;
     }
-    if((32&A->type)=='l')
+    if((32|A->type)=='l')
     { // convert block list of poles response function to compact matrix
-      //TODO: all
-      
+      if(deflate==true)
+      {
+        BlockListOfPolesToCompactMatrixWithDeflation((BlockListOfPoles*)A->data, B, SingularValue);
+      }
+      else
+      {
+        BlockListOfPolesToCompactMatrix((BlockListOfPoles*)A->data, B, SingularValue);
+      }
       return 0;
     }
-    if((32&A->type)=='n')
+    if((32|A->type)=='n')
     { // convert block natural impurity matrix to compact matrix
-      //TODO: all
-      
+      if(deflate==true)
+      {
+        BlockNaturalImpurityOrbitalMatrixToCompactMatrixWithDeflation((BlockNaturalImpurityOrbitalMatrixType*)A->data, B);
+      }
+      else
+      {
+        BlockNaturalImpurityOrbitalMatrixToCompactMatrix((BlockNaturalImpurityOrbitalMatrixType*)A->data, B);
+      }
       return 0;
     }
   }
   else
   { // non-block version
-    if((32&A->type)=='t')
+    if((32|A->type)=='t')
     { // convert block tridiagonal matrix to compact matrix
       //TODO: all
       
-      return 0;
+      return 1;
     }
-    if((32&A->type)=='a')
+    if((32|A->type)=='a')
     { // convert block anderson matrix to compact matrix
       //TODO: all
       
-      return 0;
+      return 1;
     }
-    if((32&A->type)=='l')
+    if((32|A->type)=='l')
     { // convert block list of poles response function to compact matrix
       //TODO: all
       
-      return 0;
+      return 1;
     }
-    if((32&A->type)=='n')
+    if((32|A->type)=='n')
     { // convert block natural impurity matrix to compact matrix
       //TODO: all
       
-      return 0;
+      return 1;
     }
   }
   printf("Error: Unidentified type of response function %c in ResponseFunctionToCompactMatrix\n",A->type);
   return 1;
 }
 
+/*
+ *
+ */
+uint32_t BlockListOfPolesToCompactMatrix(BlockListOfPoles const *A, CompactMatrixType * const B, const double SingularValue)
+{
+  BlockTriDiagonalMatrixType temp;
+  BlockListOfPolesToBlockTridiagonalMatrix(*A, &temp, A->N, SingularValue);
+  BlockTriDiagonalMatrixToCompactMatrix(&temp, B);
+  FreeBlockTridiagonalMatrix(&temp);
+  return 0;
+}
+uint32_t BlockListOfPolesToCompactMatrixWithDeflation(BlockListOfPoles const *A, CompactMatrixType * const B, const double SingularValue)
+{
+  BlockTriDiagonalMatrixType temp;
+  BlockListOfPolesToBlockTridiagonalMatrix(*A, &temp, A->N, SingularValue);
+  BlockTriDiagonalMatrixToCompactMatrixWithDeflation(&temp, B);
+  FreeBlockTridiagonalMatrix(&temp);
+  return 0;
+}
 
 
 /*
@@ -3601,8 +3768,8 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToCompactMatrix(BlockNaturalImpurityOr
  */
 uint32_t BlockNaturalImpurityOrbitalMatrixToCompactMatrixWithDeflation(BlockNaturalImpurityOrbitalMatrixType const * A, CompactMatrixType * const B)
 {
-  //TODO: all
-  printf("BlockNaturalImpurityOrbitalMatrixToCompactMatrixWithDeflation not yet implemented");
+  //TODO: BlockNaturalImpurityOrbitalMatrixToCompactMatrixWithDeflation not yet implemented use function without deflation
+  BlockNaturalImpurityOrbitalMatrixToCompactMatrix(A,B);
   return 1;
 }
 
@@ -3612,8 +3779,6 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToCompactMatrixWithDeflation(BlockNatu
 uint32_t BlockAndersonMatrixToCompactMatrix(BlockAndersonMatrixType const * A, CompactMatrixType * const B)
 {
   uint32_t i,j,k,Ai,BBi,BAi,BBdagi,BBdagiold,BBiold;
-  
-  
   B->QComplex=A->QComplex;
   B->Ni = (A->N) * A->BlockSize;
   B->Nj = (A->N) * A->BlockSize;
@@ -3626,7 +3791,7 @@ uint32_t BlockAndersonMatrixToCompactMatrix(BlockAndersonMatrixType const * A, C
   BAi    = 0;
   if(A->QComplex)
   {
-    for(k=0;k<A->N;k++)
+    for(k=0;k<A->N-1;k++)
     {
       BBiold = BBi;
       for(i=0;i<A->BlockSize;i++)
@@ -3636,7 +3801,8 @@ uint32_t BlockAndersonMatrixToCompactMatrix(BlockAndersonMatrixType const * A, C
         {
           B->V[BAi]     = A->a[Ai];
           B->V[BBi]     = A->b[Ai];
-          B->V[BBdagi]  = A->b[Ai];
+          B->V[BBdagi].Re  = A->b[Ai].Re;
+          B->V[BBdagi].Im  =-A->b[Ai].Im;
           BBi++;
           BAi++;
           BBdagi+=B->Nj;
@@ -3648,12 +3814,28 @@ uint32_t BlockAndersonMatrixToCompactMatrix(BlockAndersonMatrixType const * A, C
       }
       BAi    += A->BlockSize;
       BBi     = BBiold + A->BlockSize;
-      BBdagi -= A->BlockSize;
+      BBdagi += A->BlockSize * B->Nj - A->BlockSize;
+    }
+    for(k=A->N-1;k<A->N;k++)
+    {
+      BBiold = BBi;
+      for(i=0;i<A->BlockSize;i++)
+      {
+        BBdagiold = BBdagi;
+        for(j=0;j<A->BlockSize;j++)
+        {
+          B->V[BAi]     = A->a[Ai];
+          BAi++;
+          Ai++;
+        }
+        BAi    += B->Nj-A->BlockSize;
+      }
+      BAi    += A->BlockSize;
     }
   }
   else
   {
-    for(k=0;k<A->N;k++)
+    for(k=0;k<A->N-1;k++)
     {
       BBiold = BBi;
       for(i=0;i<A->BlockSize;i++)
@@ -3675,10 +3857,25 @@ uint32_t BlockAndersonMatrixToCompactMatrix(BlockAndersonMatrixType const * A, C
       }
       BAi    += A->BlockSize;
       BBi     = BBiold + A->BlockSize;
-      BBdagi -= A->BlockSize;
+      BBdagi += A->BlockSize * B->Nj - A->BlockSize;
+    }
+    for(k=A->N-1;k<A->N;k++)
+    {
+      BBiold = BBi;
+      for(i=0;i<A->BlockSize;i++)
+      {
+        BBdagiold = BBdagi;
+        for(j=0;j<A->BlockSize;j++)
+        {
+          B->VRe[BAi]     = A->aRe[Ai];
+          BAi++;
+          Ai++;
+        }
+        BAi    += B->Nj-A->BlockSize;
+      }
+      BAi    += A->BlockSize;
     }
   }
-  
   return 0;
 }
 

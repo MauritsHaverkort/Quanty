@@ -91,8 +91,7 @@ uint32_t TriDiagonalMatrixToAndersonImpurityOperator(OperatorType * O, TriDiagon
  *  The spin up bath is from i=2       to i=Mup.N
  *  The spin dn bath is from i=Mup.N+1 to i=Mup.N+Mdn.N-1
  */
-uint32_t AndersonMatrixToAndersonImpurityOperator(OperatorType * O, AndersonMatrixType Mup, AndersonMatrixType Mdn,
-                                                  double U, double mu)
+uint32_t AndersonMatrixToAndersonImpurityOperator(OperatorType * O, AndersonMatrixType Mup, AndersonMatrixType Mdn, double U, double mu)
 {
   uint32_t i;
   uint16_t oadd[4];
@@ -173,10 +172,7 @@ uint32_t AndersonMatrixToAndersonImpurityOperator(OperatorType * O, AndersonMatr
  *  The spin up bath is from i=4                     to i=Mup.val.N+Mup.con.N+3
  *  The spin dn bath is from i=Mup.val.N+Mup.con.N+4 to i=Mup.val.N+Mup.con.N+Mdn.val.N+Mdn.con.N+3
  */
-uint32_t SecondDoubleTriDiagonalMatrixToAndersonImpurityOperator(OperatorType * O,
-                                                                 SecondDoubleTriDiagonalMatrixType Mup,
-                                                                 SecondDoubleTriDiagonalMatrixType Mdn, double U,
-                                                                 double mu)
+uint32_t SecondDoubleTriDiagonalMatrixToAndersonImpurityOperator(OperatorType * O,SecondDoubleTriDiagonalMatrixType Mup,SecondDoubleTriDiagonalMatrixType Mdn, double U,double mu)
 {
   uint32_t i;
   uint16_t oadd[4];

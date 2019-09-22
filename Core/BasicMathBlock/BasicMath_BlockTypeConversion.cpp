@@ -966,11 +966,58 @@ uint32_t BlockAndersonMatrixEigenSystem(const BlockAndersonMatrixType * const A,
 
 
 
-uint32_t BlockAndersonMatrixToBlockListOfPoles(BlockAndersonMatrixType const AAnd, BlockListOfPoles * const B)
+uint32_t BlockAndersonMatrixToBlockListOfPoles(BlockAndersonMatrixType const * A, BlockListOfPoles * const G)
 {
-  //TODO: all
-  printf("Not implemented BlockAndersonMatrixToBlockListOfPoles\n");
-  return 1;
+  uint32_t i,j;
+  CompactMatrixType Afull, vec;
+  if(BlockAndersonMatrixToCompactMatrix(A,&Afull))
+  {
+    printf("BlockTriDiagonalMatrixToCompactMatrix failed in BlockTriDiagonalMatrixToBlockListOfPoles\n");
+    return 1;
+  }
+  vec.Ni=A->BlockSize;
+  vec.Nj=Afull.Nj;
+  vec.QComplex=A->QComplex;
+  InitCompactMatrix(&vec);
+  if(A->QComplex)
+  {
+    for(i=0;i<A->BlockSize;i++)
+    {
+      for(j=0;j<A->BlockSize;j++)
+      {
+        vec.V[i*vec.Nj+j] = A->b[i*A->BlockSize+j];
+      }
+    }
+  }
+  else
+  {
+    for(i=0;i<A->BlockSize;i++)
+    {
+      for(j=0;j<A->BlockSize;j++)
+      {
+        vec.VRe[i*vec.Nj+j] = A->bRe[i*A->BlockSize+j];
+      }
+    }
+  }
+  if(HermitianCompactMatrixToBlockListOfPoles(&Afull, G, &vec))
+  {
+    printf("HermitianCompactMatrixToListOfPoles failed in BlockTriDiagonalMatrixToBlockListOfPoles\n");
+    return 1;
+  }
+  FreeCompactMatrix(&Afull);
+  FreeCompactMatrix(&vec);
+  // set A0
+  if(A->QComplex)
+  {
+    memcpy(G->a0,A->a,G->BlockSize*G->BlockSize*sizeof(Complex16));
+  }
+  else
+  {
+    memcpy(G->a0Re,A->aRe,G->BlockSize*G->BlockSize*sizeof(double));
+  }
+  //
+  G->mu=A->mu;
+  return 0;
 }
 uint32_t BlockAndersonMatrixToBlockListOfPolesVariableGrid(BlockAndersonMatrixType const AAnd, BlockListOfPoles * const B, const double * const Grid, const uint32_t NGridPoints)
 {
@@ -978,17 +1025,27 @@ uint32_t BlockAndersonMatrixToBlockListOfPolesVariableGrid(BlockAndersonMatrixTy
   printf("Not implemented BlockAndersonMatrixToBlockListOfPoles\n");
   return 1;
 }
-uint32_t BlockAndersonMatrixToBlockTridiagonalMatrix(BlockAndersonMatrixType const AAnd, BlockTriDiagonalMatrixType * const B)
+uint32_t BlockAndersonMatrixToBlockTridiagonalMatrix(BlockAndersonMatrixType const * A, BlockTriDiagonalMatrixType * const B, const double SingularValue)
 {
-  //TODO: all
-  printf("Not implemented BlockAndersonMatrixToBlockTridiagonalMatrix\n");
-  return 1;
+  BlockListOfPoles G;
+  BlockAndersonMatrixToBlockListOfPoles(A, &G);
+  //TODO: here there should not be a +1 for the dimension
+  //TODO: test what is wrong here
+  BlockListOfPolesToBlockTridiagonalMatrix(G, B, A->N+1, SingularValue);
+  FreeBlockListOfPoles(&G);
+  return 0;
 }
-uint32_t BlockAndersonMatrixToBlockNaturalImpurityOrbitalMatrix(BlockAndersonMatrixType const AAnd, BlockNaturalImpurityOrbitalMatrixType * const B)
+uint32_t BlockAndersonMatrixToBlockNaturalImpurityOrbitalMatrix(BlockAndersonMatrixType const * A, BlockNaturalImpurityOrbitalMatrixType * const B, const double kbT)
 {
-  //TODO: all
-  printf("Not implemented BlockAndersonMatrixToBlockNaturalImpurityOrbitalMatrix\n");
-  return 1;
+  BlockListOfPoles G;
+  BlockAndersonMatrixToBlockListOfPoles(A, &G);
+  //TODO: here there should not be a +1 for the dimension
+  //TODO: test what is wrong here
+  
+  BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(&G, B, kbT, A->N+1, A->N+1);
+  
+  FreeBlockListOfPoles(&G);
+  return 0;
 }
 
 
@@ -2115,17 +2172,56 @@ uint32_t BlockNaturalImpurityOrbitalMatrixEigenSystem(const BlockNaturalImpurity
   return 0;
 }
 
-uint32_t BlockNaturalImpurityOrbitalMatrixToBlockAndersonMatrix(BlockNaturalImpurityOrbitalMatrixType const AAnd, BlockAndersonMatrixType * const B)
+uint32_t BlockNaturalImpurityOrbitalMatrixToBlockAndersonMatrix(BlockNaturalImpurityOrbitalMatrixType const * A, BlockAndersonMatrixType * const B)
 {
-  //TODO: all
-  printf("Not implemented BlockNaturalImpurityOrbitalMatrixToBlockAndersonMatrix\n");
-  return 1;
+  //TODO: algorithm can be optimized
+  BlockListOfPoles ALP;
+  BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles(A,&ALP);
+  //TODO: the plus one should not be here
+  BlockListOfPolesToBlockAndersonMatrix(ALP, B, ALP.N+1);
+  FreeBlockListOfPoles(&ALP);
+  return 0;
 }
-uint32_t BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles(BlockNaturalImpurityOrbitalMatrixType const AAnd, BlockListOfPoles * const B)
+
+
+uint32_t BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles(BlockNaturalImpurityOrbitalMatrixType const * A, BlockListOfPoles * const B)
 {
-  //TODO: all
-  printf("Not implemented BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles\n");
-  return 1;
+  uint32_t i;
+  BlockListOfPoles Bval;
+  BlockTriDiagonalMatrixToBlockListOfPoles(&(A->con), B);
+  BlockTriDiagonalMatrixToBlockListOfPoles(&(A->val), &Bval);
+  AddBlockListOfPoles(B, Bval);
+  FreeBlockListOfPoles(&Bval);
+  if((B->QComplex==0)&&(A->a0.QComplex==0))
+  { // all real
+    for(i=0;i<Sqr(B->BlockSize);i++)
+    {
+      B->a0Re[i]+=A->a0.VRe[i];
+    }
+  }
+  else if(A->a0.QComplex==0)
+  { // B Complex but A->a0 real
+    for(i=0;i<Sqr(B->BlockSize);i++)
+    {
+      B->a0[i].Re+=A->a0.VRe[i];
+    }
+  }
+  else if(B->QComplex==0)
+  { // B real, but A->a0 complex
+    MakeRealBlockListOfPolesComplex(B);
+    for(i=0;i<Sqr(B->BlockSize);i++)
+    {
+      B->a0[i]+=A->a0.V[i];
+    }
+  }
+  else
+  { // all complex
+    for(i=0;i<Sqr(B->BlockSize);i++)
+    {
+      B->a0[i]+=A->a0.V[i];
+    }
+  }
+  return 0;
 }
 uint32_t BlockNaturalImpurityOrbitalMatrixToBlockListOfPolesVariableGrid(BlockNaturalImpurityOrbitalMatrixType const AAnd, BlockListOfPoles * const B, const double * const Grid, const uint32_t NGridPoints)
 {
@@ -2134,11 +2230,15 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToBlockListOfPolesVariableGrid(BlockNa
   return 1;
 }
 
-uint32_t BlockNaturalImpurityOrbitalMatrixToBlockTridiagonalMatrix(BlockNaturalImpurityOrbitalMatrixType const AAnd, BlockTriDiagonalMatrixType * const B)
+uint32_t BlockNaturalImpurityOrbitalMatrixToBlockTridiagonalMatrix(BlockNaturalImpurityOrbitalMatrixType const * A, BlockTriDiagonalMatrixType * const B, const double SingularValue)
 {
-  //TODO: all
-  printf("Not implemented BlockNaturalImpurityOrbitalMatrixToBlockTridiagonalMatrix\n");
-  return 1;
+  //TODO: algorithm can be optimized use that one needs to tridiagonalize an already banded matrix
+  BlockListOfPoles ALP;
+  BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles(A,&ALP);
+  //TODO: the plus one should not be here
+  BlockListOfPolesToBlockTridiagonalMatrix(ALP, B, ALP.N+1, SingularValue);
+  FreeBlockListOfPoles(&ALP);
+  return 0;
 }
 
 

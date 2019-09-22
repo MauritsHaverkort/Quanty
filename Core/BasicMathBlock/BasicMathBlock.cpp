@@ -157,8 +157,7 @@ ResponsefunctionType *ConvertBlockMatrix(ResponsefunctionType *M, const char typ
           res->data = (void*) malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
           //TODO: get res->data->N right for block list of poles
           //TODO: allow flexible set of states in tri-diag form with options
-         // BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix((BlockListOfPoles*)(M->data), (BlockNaturalImpurityOrbitalMatrixType*)(res->data), T, ((BlockListOfPoles*)(M->data))->N+1, ((BlockListOfPoles*)(M->data))->N+1);
-          BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix((BlockListOfPoles*)(M->data), (BlockNaturalImpurityOrbitalMatrixType*)(res->data), T, 10, 10);
+          BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix((BlockListOfPoles*)(M->data), (BlockNaturalImpurityOrbitalMatrixType*)(res->data), T, ((BlockListOfPoles*)(M->data))->N+1, ((BlockListOfPoles*)(M->data))->N+1);
         }
         break;
         default:
@@ -225,25 +224,26 @@ ResponsefunctionType *ConvertBlockMatrix(ResponsefunctionType *M, const char typ
           }
           else
           {
-            BlockAndersonMatrixToBlockListOfPoles(*(BlockAndersonMatrixType*)M->data, (BlockListOfPoles*)res->data);
+            BlockAndersonMatrixToBlockListOfPoles((BlockAndersonMatrixType*)M->data, (BlockListOfPoles*)res->data);
           }
         }
         break;
         case 't':
         {
           res->data = (void*) malloc(sizeof(BlockTriDiagonalMatrixType));
-          BlockAndersonMatrixToBlockTridiagonalMatrix(*(BlockAndersonMatrixType*)M->data, (BlockTriDiagonalMatrixType*)res->data);
+          BlockAndersonMatrixToBlockTridiagonalMatrix((BlockAndersonMatrixType*)M->data, (BlockTriDiagonalMatrixType*)res->data, SingularValue);
         }
         break;
         case 'a':
         {
+          res->data = (void*) malloc(sizeof(BlockAndersonMatrixType));
           CopyBlockAndersonMatrix(*(BlockAndersonMatrixType*)M->data, (BlockAndersonMatrixType*)res->data);
         }
         break;
         case 'n':
         {
           res->data = (void*) malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
-          BlockAndersonMatrixToBlockNaturalImpurityOrbitalMatrix(*(BlockAndersonMatrixType*)M->data,(BlockNaturalImpurityOrbitalMatrixType*)res->data);
+          BlockAndersonMatrixToBlockNaturalImpurityOrbitalMatrix((BlockAndersonMatrixType*)M->data,(BlockNaturalImpurityOrbitalMatrixType*)res->data,T);
         }
         break;
         default:
@@ -256,7 +256,7 @@ ResponsefunctionType *ConvertBlockMatrix(ResponsefunctionType *M, const char typ
     break;
     case 'n': // original natural impurity orbitals
     {
-      switch (M->type|32)
+      switch (type|32)
       {
         case 'l':
         {
@@ -267,20 +267,20 @@ ResponsefunctionType *ConvertBlockMatrix(ResponsefunctionType *M, const char typ
           }
           else
           {
-            BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles(*(BlockNaturalImpurityOrbitalMatrixType*)M->data, (BlockListOfPoles*)res->data);
+            BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles((BlockNaturalImpurityOrbitalMatrixType*)M->data, (BlockListOfPoles*)res->data);
           }
         }
         break;
         case 't':
         {
           res->data = (void*) malloc(sizeof(BlockTriDiagonalMatrixType));
-          BlockNaturalImpurityOrbitalMatrixToBlockTridiagonalMatrix(*(BlockNaturalImpurityOrbitalMatrixType*)M->data, (BlockTriDiagonalMatrixType*)res->data);
+          BlockNaturalImpurityOrbitalMatrixToBlockTridiagonalMatrix((BlockNaturalImpurityOrbitalMatrixType*)M->data, (BlockTriDiagonalMatrixType*)res->data, SingularValue);
         }
         break;
         case 'a':
         {
           res->data = (void*) malloc(sizeof(BlockAndersonMatrixType));
-          BlockNaturalImpurityOrbitalMatrixToBlockAndersonMatrix(*(BlockNaturalImpurityOrbitalMatrixType*)M->data, (BlockAndersonMatrixType*)res->data);
+          BlockNaturalImpurityOrbitalMatrixToBlockAndersonMatrix((BlockNaturalImpurityOrbitalMatrixType*)M->data, (BlockAndersonMatrixType*)res->data);
 
         }
         break;

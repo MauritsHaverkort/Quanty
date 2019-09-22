@@ -1,7 +1,7 @@
 errorCount = 0
 
 function test(res1,res2)
-    local chopval = 1e-13
+    local chopval = 1e-12
     local rows = #res1
     local cols = #(Matrix.ToTable(res1)[1])
     if  Chop( Matrix.ToUserdata(res1) - Matrix.ToUserdata(res2), chopval) ~= Matrix.ToUserdata( Matrix.Sub( Matrix.Zero(100), rows, cols ) ) then
