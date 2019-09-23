@@ -18,8 +18,6 @@ CompactMatrixType extendedLigandFieldMatrix(const CompactMatrixType &H, const Co
 	CompactMatrixBlockBandDiagonalize(&HReduced, &BlockBandTrafo, &HTriReduced, 1E-6, ligNum + 2, UINT32_MAX, true, true);
 	CompactMatrixMultiply('T', 'T', &fullRotMat, &BlockBandTrafo, &BlockBandTrafoToDiag);
 	CompactMatrixTranspose(&BlockBandTrafoToDiag);
-  // mwh need to modify this as you redifined a function that was already there
-	// out = BlockTriDiagonalMatrixToCompactMatrix(HTriReduced, 100 * DBL_EPSILON);
   BlockTriDiagonalMatrixToCompactMatrix(&HTriReduced,&out);
 	CompactMatrixCutDimensions(out);
 	T = Submatrix(BlockBandTrafoToDiag, out.Ni, BlockBandTrafoToDiag.Nj);

@@ -218,7 +218,6 @@ string normalizedOrcaOrbname(const string &orbOrca)
 	n = atoi(orbOrca.substr(lastAtomNamePos + 1, lastNPos - lastAtomNamePos).c_str());
 
 	shell = orbOrca.substr(lastNPos + 1, 1);
-	// mwh unused uint l = (orbToMultiplicity(shell) / 2 - 1) / 2;
 
 	string lzName = orbOrca.substr(lastNPos + 2);
 	if (lzName.find(" ") != string::npos) lzName = lzName.substr(0, lzName.find(" "));
