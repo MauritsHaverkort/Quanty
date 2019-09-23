@@ -226,8 +226,6 @@ void CreateAllKernels(const unsigned int kMax,const vector<double> &x, vector<ve
 {
     kernels = vector<vector<double> >(kMax+1);
 
-    //uint32_t n = (uint32_t)x.size(); mwh n not used
-
     for (uint32_t k = 0; k <= kMax; k++ )
     {
     	CreateNonRelKernel(x, k, kernels[k]);

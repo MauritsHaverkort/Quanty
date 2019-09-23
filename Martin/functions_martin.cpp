@@ -1856,7 +1856,6 @@ static int LuaMartinTest(lua_State *L)
     CompactMatrixType U;
     //MatrixType U;
     vector<WaveFunctionType> psi, in;
-    // mwh unused uint32_t n;
     uint32_t len = (uint32_t)lua_objlen(L,1);
     vector<uint32_t> bs= vector<uint32_t>(len);
     Kryl = (WaveFunctionType**) malloc(len * sizeof(WaveFunctionType*));
@@ -2186,10 +2185,7 @@ static int LuaThomasAlgorithm(lua_State *L)
 
 static int LuaOrthonormalizeContinuum(lua_State *L)
 {
-	// mwh unused uint32_t NGridpoints = 0;
 	SKappaGroup group;
-	
-	// mwh unused double w;
 	vector<double> x;
 	vector<vector<double> > vbasf, vderf,vcontf,vDcont;
     

@@ -6,15 +6,14 @@
  */
 
 
-void RotateWaveFunctions(const WaveFunctionType* psi,const uint32_t N,const MatrixType &U, WaveFunctionType *out)
+void RotateWaveFunctions(const WaveFunctionType* psi,const uint32_t N,const MatrixType &U, WaveFunctionType * &out)
 {
 	if (U.Ni != N || U.Nj != N)
 	{
 		printf("error in RotateWaveFunctions: Dimensions of U and psi do not match\n");
 		return;
 	}
-  // mwh out needs to be initialized ouside the loop, otherwise you need to pass by refference (**out and use (*out) inside function)
-	//out = (WaveFunctionType*) malloc(N*sizeof(WaveFunctionType));
+	out = (WaveFunctionType*) malloc(N*sizeof(WaveFunctionType));
 	for (uint32_t i = 0; i < N; i++)
 	{
 		out[i].NFermion = psi[i].NFermion;

@@ -66,7 +66,6 @@ double DipoleMatrixElement(double deltaE, double grg, double frf, uint32_t mu, i
 	double resultG,resultF;
 	switch (mu) {
 		case 0:
-      //mwh
       printf("Case 0 not yet implemented");
       //TODO: implement mu=0
       return NAN;

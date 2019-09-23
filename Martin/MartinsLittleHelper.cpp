@@ -86,7 +86,6 @@ void PrintDeterminant(const WaveFunctionType &psi, uint32_t idx)
 {
 	printf("NWord = %u\n",psi.NWord);
 	double prefactor = psi.ValueRe[BlokElement(idx)];
-	// mwh not used uint8_t Det[psi.NWord];
 	for (uint32_t d = 0; d <psi.NWord; d++)
 	{
 		printf("%X",psi.Determinant[BlokElementDet(idx,psi.NWord,d)]);

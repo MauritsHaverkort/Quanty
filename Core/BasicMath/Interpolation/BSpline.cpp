@@ -274,7 +274,7 @@ void Components(const vector<Interpolation::InterpolatingFunction*> &funs, uint3
 		printf("%.16f, ",c[i]);
 	}
 	printf("}\n");
-  /* mwh not used
+  /*
 	uint32_t eins = 1;
 	double one = 1.;
 	double null = 0.;

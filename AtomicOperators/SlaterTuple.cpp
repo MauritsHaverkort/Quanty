@@ -161,10 +161,10 @@ std::map<myarray,myarray> CreateSlaterTuple(vector<int> indToK)
 
 std::map<myarray,myarray> CreateSlaterTupleTwoFilled(const vector<int> &indToK)
 {
-  uint32_t i,j; // mwh not used ,m,l
+	uint32_t i,j;
 	myarray k;
 	vector<myarray> tau = vector<myarray>(8);
-  std::map<myarray,myarray> result;
+	std::map<myarray,myarray> result;
 
 	for ( i = 0; i < (uint32_t) indToK.size(); i++)
 		for ( j = i; j < (uint32_t) indToK.size(); j++)	
@@ -191,7 +191,7 @@ std::map<myarray,myarray> CreateSlaterTupleTwoFilled(const vector<int> &indToK)
 
 std::map<myarray,myarray> CreateSlaterTupleOneFilled(const vector<int> &indToKFilled, const vector<int> &indToKOther)
 {
-  uint32_t i,j,m; // mwh not used ,l
+	uint32_t i,j,m;
 	myarray k;
 	vector<myarray> tau = vector<myarray>(8);
     std::map<myarray,myarray> result;
