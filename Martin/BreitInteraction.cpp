@@ -219,7 +219,8 @@ uint32_t CreateOperatorBreitFourShells(uint32_t const NFermion, int const kappa1
            *  jz1+jz2-j4 <= jz3 <= j44+jz1+jz2
            */
           twojz4 = twojz1 + twojz2 - twojz3;
-          val = 0.5*CRed2 * ThreeJSymbolHalf(twoj1,-twojz1,2*k,twojz1-twojz3,twoj3,twojz3) * ThreeJSymbolHalf(twoj2,-twojz2,2*k,twojz3-twojz1,twoj4,twojz4);
+          //TODO: Check this minus sign!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+          val = -0.5*CRed2 * ThreeJSymbolHalf(twoj1,-twojz1,2*k,twojz1-twojz3,twoj3,twojz3) * ThreeJSymbolHalf(twoj2,-twojz2,2*k,twojz3-twojz1,twoj4,twojz4);
           if (((twoj1+twoj2+2*k-twojz1-twojz2-(twojz1-twojz3))/2) %2) val *= -1;
           if (Abs(val) > DBL_EPSILON)
           {
