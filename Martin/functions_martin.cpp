@@ -2254,8 +2254,41 @@ static int LuaBreit(lua_State *L)
 	vector<Interpolation::InterpolatingFunction *> G,F;
 	lua_check(L,1,G);
 	lua_check(L,2,F);
-	CalcBreitInteraction(G,F,4);
-	return 0;
+	vector<vector<uint16_t> >indices;
+	lua_check(L,3,indices);
+	lua_getfield(L,3,"kappas");
+	vector<int> kappas;
+	lua_check(L,-1,kappas);
+	lua_pop(L,1);
+	uint32_t NF;
+	lua_check(L,4,NF);
+	OperatorType *BreitOp = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
+	luaL_setmetatable(L,"Operator_Type");
+	CalcBreitInteraction(G,F,4,indices,NF,kappas,BreitOp);
+	return 1;
+}
+
+static int LuaBreitFourShells(lua_State *L)
+{
+	vector<uint16_t> ind1,ind2,ind3,ind4;
+	int k1, k2, k3, k4;
+	vector<double> MO, N1;
+	uint32_t NF;
+	lua_check(L,1,NF);
+	lua_check(L,2,k1);
+	lua_check(L,3,ind1);
+	lua_check(L,4,k2);
+	lua_check(L,5,ind2);
+	lua_check(L,6,k3);
+	lua_check(L,7,ind3);
+	lua_check(L,8,k4);
+	lua_check(L,9,ind4);
+	lua_check(L,10,MO);
+	lua_check(L,11,N1);
+	OperatorType *BreitOp = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
+	luaL_setmetatable(L,"Operator_Type");
+	CreateOperatorBreitFourShells(NF,k1,k2,k3,k4,&(ind1[0]),&(ind2[0]),&(ind3[0]),&(ind4[0]),&(MO[0]),&(N1[0]),BreitOp);
+	return 1;
 }
 
 static const struct luaL_Reg Martin_meta[] = {
@@ -2336,6 +2369,7 @@ static const struct luaL_Reg Martin_func[] = {
   {"Thomas",LuaThomasAlgorithm},
   {"BSpline",LuaBSpline},
   {"Breit",LuaBreit},
+  {"Breit4S",LuaBreitFourShells},
   {NULL, NULL}
 };
 
