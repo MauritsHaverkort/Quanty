@@ -302,7 +302,7 @@ OrcaObject FileReadOrca(const string &filename)
 	int i=0, jOffset = 0;
 	while (getline(reader, line))
 	{
-		if (line.find("# of contracted basis functions") != string::npos)
+		if (line.find("# of contracted basis functions") != string::npos || line.find("Number of basis functions") != string::npos)
 		{
 			const string::size_type lastBlank = line.find_last_of(" ");
 			out.NBasis = atoi(line.substr(lastBlank + 1).c_str());
