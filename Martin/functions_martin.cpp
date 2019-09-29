@@ -22,6 +22,7 @@
 #include "Auger-Meitner_Selfenergy/ResonantSpectrum_Selfenergy.cpp"
 #include "Auger-Meitner_Selfenergy/ResonantSpectrum_CNSED.cpp"
 #include "BreitInteraction.cpp"
+#include "Hartree-Fock/Hartree-Fock.cpp"
 
 
 static int LuaOperatorNewFullCoulomb (lua_State *L)
@@ -2291,6 +2292,62 @@ static int LuaBreitFourShells(lua_State *L)
 	return 1;
 }
 
+static int LuaHartreeFock(lua_State *L)
+{
+	vector<double> x, S, Lap, V, H, ev, es;
+	uint32_t n = 3;
+	uint32_t Nknots, powGrid;
+	double R;
+	lua_check(L,1,R);
+	lua_check(L,2,Nknots);
+	lua_check(L,3,powGrid);
+	int l;
+	lua_check(L,4,l);
+	HartreeFock::CreateGrid(Nknots,n,R,powGrid,x);
+	uint32_t Nspline = (uint32_t) x.size()-n-1;
+	uint32_t dim = Nspline-2;
+	HartreeFock::CreateOverlapMatrix(x,n,S);
+	HartreeFock::CreateLaplacian(x,n,Lap);
+	HartreeFock::CreatePotentialMatrix(x,n,V,1,l);
+	H = vector<double>(S.size());
+	for (uint32_t i = 0; i < (uint32_t) V.size(); i++)
+	{
+		H[i] = Lap[i]/2 + V[i];
+	}
+	HartreeFock::SolveCatOwnerEquation(H,S,dim,n,ev,es);
+	lua_push(L,ev);
+	return 1;
+}
+
+static int LuaSlater(lua_State *L)
+{
+	BSpline::TBSpline *A, *B;
+	A = (BSpline::TBSpline*) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
+	B = (BSpline::TBSpline*) luaL_checkudata(L, 2, "InterpolatingFunction_Type");
+	vector<double> rk1, rk2, rkD;
+	int k;
+	uint32_t  idx;
+	uint32_t n  = A->degree;
+	uint32_t Nsplines = (uint32_t) A->knots.size() - n-1;
+	lua_check(L,3,k);
+	HartreeFock::CalcOffDiagSlaterInts(A->knots,rk1,rk2,k,n);
+	HartreeFock::CalcDiagSlaterInts(A->knots,rkD,k,n);
+	double Fk = HartreeFock::AssembleSlaterInts(A->y,A->y,B->y,B->y,rk1,rk2,rkD,n);
+	lua_push(L,Fk);
+	return 1;
+
+//	for (uint32_t i = 1; i < Nsplines; i++)
+//	{
+//		for (uint32_t j = 1; j < Nsplines; j++)
+//		{
+//			double val = HartreeFock::AssembleSlaterInts(i,idx,idx,j,rk1,rk2,rkD,n);
+//			printf("%.6E\t",val);
+//		}
+//		printf("\n");
+//	}
+//	return 0;
+}
+
 static const struct luaL_Reg Martin_meta[] = {
   {NULL, NULL}
 };
@@ -2370,6 +2427,8 @@ static const struct luaL_Reg Martin_func[] = {
   {"BSpline",LuaBSpline},
   {"Breit",LuaBreit},
   {"Breit4S",LuaBreitFourShells},
+  {"HF",LuaHartreeFock},
+  {"Slater",LuaSlater},
   {NULL, NULL}
 };
 
