@@ -59,18 +59,44 @@ static int LuaGaussianRadialSub(lua_State *L)
 /*
  *
  */
-static int LuaGaussianRadialMul(lua_State * L)
+static int LuaGaussianRadialMul(lua_State *L)
 {
-	cout << endl << "Warning: Multiplication not yet implemented for Gaussian functions." << endl;
-  return 0;
+	GaussianRadial g;
+	double d;
+	if (luaL_isType(L, 1, g))
+	{
+		lua_check(L, 1, g);
+		lua_check(L, 2, d);
+	}
+	else
+	{
+		lua_check(L, 1, d);
+		lua_check(L, 2, g);
+	}
+	vector<double> amplitudes = g.getAmplitudes();
+	for (uint i = 0; i < (uint) amplitudes.size(); ++i)
+	{
+		amplitudes[i] = d * amplitudes[i];
+	}
+	lua_push(L, GaussianRadial(g.getL(), amplitudes, g.getWidths()));
+	return 1;
 }
 /*
  *
  */
-static int LuaGaussianRadialDiv(lua_State * L)
+static int LuaGaussianRadialDiv(lua_State *L)
 {
-	cout << endl << "Warning: Division not yet implemented for Gaussian functions." << endl;
-  return 0;
+	GaussianRadial g;
+	double d;
+	lua_check(L, 1, g);
+	lua_check(L, 2, d);
+	vector<double> amplitudes = g.getAmplitudes();
+	for (uint i = 0; i < (uint) amplitudes.size(); ++i)
+	{
+		amplitudes[i] = amplitudes[i] / d;
+	}
+	lua_push(L, GaussianRadial(g.getL(), amplitudes, g.getWidths()));
+	return 1;
 }
 /*
  *
@@ -179,6 +205,11 @@ void lua_check(lua_State *L, int arg, GaussianRadial &in)
 void lua_check(lua_State *L, int arg, GaussianRadial * &in)
 {
 	in = (GaussianRadial *) luaL_checkudata(L, arg, "GaussianRadialFunction_Type");
+}
+
+bool luaL_isType(lua_State *L, int arg, const GaussianRadial &example)
+{
+	return luaL_isudata(L, arg, "GaussianRadialFunction_Type");
 }
 
 static int LuaNewGaussianRadial(lua_State *L)
