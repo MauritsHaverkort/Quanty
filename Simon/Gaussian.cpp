@@ -73,12 +73,19 @@ static int LuaGaussianRadialMul(lua_State *L)
 		lua_check(L, 1, d);
 		lua_check(L, 2, g);
 	}
-	vector<double> amplitudes = g.getAmplitudes();
-	for (uint i = 0; i < (uint) amplitudes.size(); ++i)
+	if (d == 0)
 	{
-		amplitudes[i] = d * amplitudes[i];
+		lua_push(L, GaussianRadial(g.getL(), vector<double>(0), vector<double>(0)));
 	}
-	lua_push(L, GaussianRadial(g.getL(), amplitudes, g.getWidths()));
+	else
+	{
+		vector<double> amplitudes = g.getAmplitudes();
+		for (uint i = 0; i < (uint) amplitudes.size(); ++i)
+		{
+			amplitudes[i] = d * amplitudes[i];
+		}
+		lua_push(L, GaussianRadial(g.getL(), amplitudes, g.getWidths()));
+	}
 	return 1;
 }
 /*
