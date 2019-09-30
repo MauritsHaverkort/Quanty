@@ -73,6 +73,12 @@ test(h[1][2],0.3)
 test(h[2][1],4)
 test(h[2][2],0.5)
 
+h = g + g
+test(h.l,1)
+test(h.N,1)
+test(h[1][1],4)
+test(h[1][2],0.3)
+
 h = g - f
 test(h.l,1)
 test(h.N,2)
