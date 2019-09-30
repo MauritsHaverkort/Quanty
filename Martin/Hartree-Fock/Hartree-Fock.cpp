@@ -319,24 +319,139 @@ double AssembleSlaterInts(const vector<double> &Ci1,const vector<double> &Cj1,co
 
 }
 
-void CreateFockMatrix(const vector<double> &rk1, const vector<double> &rk2, const vector<double> &rkD, uint32_t n,
-					  const vector<double> &eigVec, uint32_t dim, vector<double> &F)
+void CreateFockMatrix(const uint32_t la, const vector<vector<double> > &rk1, const vector<vector<double> > &rk2, const vector<vector<double> > &rkD,
+					  uint32_t n, const vector<vector<double> > &eigVec, uint32_t dim, const vector<uint32_t> &Nocc, vector<double> &F)
 {
 	F = vector<double>(dim*dim);
 	for (uint32_t nu = 1; nu <= dim; nu++)
 	{
 		for (uint32_t mu = nu; mu <= dim; mu++)
 		{
-			uint32_t i0 = mu > n ? mu-n : 1;
-			uint32_t i1 = nu+n < dim ? nu+n : dim;
-			for (uint32_t i = i0; i <= i1; i++)
+			uint32_t alpha0 = mu > n ? mu-n : 1;
+			uint32_t alpha1 = mu+n < dim ? mu+n : dim;
+			uint32_t beta0 = nu > n ? nu-n : 1;
+			uint32_t beta1 = nu+n < dim ? nu+n : dim;
+			for (uint32_t alpha = alpha0; alpha <= alpha1; alpha++)
 			{
+				for (uint32_t beta = beta0; beta <= beta1; beta++)
+				{
+					for (uint32_t lb = 0; lb < (uint32_t) Nocc.size(); lb++)
+					{
+						uint32_t k0 = Abs(la - lb);
+						uint32_t k1 = la + lb;
+						if ((k1 +k0) % 2) k0++;
+						double Fk = 0;
+						for (uint32_t k = k0; k <= k1; k +=2)
+						{
+							double cred = ThreeJSymbol(la,0,lb,0,k,0);
+							Fk += AssembleSlaterInts(nu,alpha,beta,mu,rk1[k],rk2[k],rkD[k],n)*cred*cred;
+						}
+						for (uint32_t  j = 0; j < Nocc[lb]; j++)
+						{
+							F[(nu-1) * dim + (mu-1)] += Fk* eigVec[lb][j * dim+(alpha-1)] * eigVec[lb][j * dim+(beta-1)]/4/M_PI*(2*lb+1);
+							//TODO: Col Major ?
+						}
 
+					}
+				}
 			}
+			F[(nu-1) + dim * (mu-1)] = F[(nu-1) * dim + (mu-1)];
 		}
 	}
 }
 
+void CreateHartreeMatrix(const uint32_t la, const vector<double> &rk1, const vector<double> &rk2, const vector<double> &rkD,
+					  uint32_t n, const vector<vector<double> > &eigVec, uint32_t dim, const vector<uint32_t> &Nocc, vector<double> &H)
+{
+	H = vector<double>(dim*dim);
+	for (uint32_t nu = 1; nu <= dim; nu++)
+	{
+		uint32_t mu1 = nu+n < dim ? nu+n : dim;
+		for (uint32_t mu = nu; mu <= mu1; mu++)
+		{
+			for (uint32_t alpha = 1; alpha <= dim; alpha++)
+			{
+				uint32_t beta0 = alpha > n ? alpha-n : 1;
+				uint32_t beta1 = alpha+n < dim ? alpha+n : dim;
+				for (uint32_t beta = beta0; beta <= beta1; beta++) //TODO: alpha <= beta
+				{
+					for (uint32_t lb = 0; lb < (uint32_t) Nocc.size(); lb++)
+					{
+
+						double Fk = AssembleSlaterInts(nu,alpha,mu,beta,rk1,rk2,rkD,n);
+						for (uint32_t  j = 0; j < Nocc[lb]; j++)
+						{
+							H[(nu-1) * dim + (mu-1)] += Fk* eigVec[lb][j * dim+(alpha-1)] * eigVec[lb][j * dim+(beta-1)]*(2*lb+1);
+							//TODO: Col Major ?
+						}
+
+					}
+				}
+			}
+			H[(nu-1) + dim * (mu-1)] = H[(nu-1) * dim + (mu-1)];
+		}
+	}
+}
+
+void SCScheme(const vector<double> &x, uint32_t n, int Z, vector<vector<double> > &eigVal,vector<vector<double> > &eigVec)
+{
+	uint32_t itype = 1;
+	char jobz = 'V';
+	char uplo = 'U';
+	uint32_t lwork;
+	int info;
+	uint32_t lMax = (uint32_t) eigVec.size()-1;
+	uint32_t kMax = lMax * 2;
+	vector<vector<double> > rk1 = vector<vector<double> >(kMax+1);
+	vector<vector<double> > rk2 = vector<vector<double> >(kMax+1);
+	vector<vector<double> > rkD = vector<vector<double> >(kMax+1);
+	for (uint32_t k = 0; k <= kMax; k++)
+	{
+		CalcOffDiagSlaterInts(x,rk1[k],rk2[k],k,n);
+		CalcDiagSlaterInts(x,rkD[k],k,n);
+	}
+	uint32_t Nsplines = (uint32_t) x.size() - n-1;
+	uint32_t dim = Nsplines-2;
+	double work[dim*dim];
+	lwork = dim*dim; //TODO: find something that is not stupid
+	vector<double> Lap, S, Sb;
+	vector<vector<double> > V = vector<vector<double> >(lMax+1);
+	CreateOverlapMatrix(x,n,Sb);
+	S = vector<double>(dim*dim);
+	for (int j = 0; j < dim; j++)
+	{
+		for ( int i = j; i <= std::min(dim-1,j+n); i++)  // n = #sub-diagonals
+		{
+			S[i*dim+j] = S[(i-j) + j*dim];
+			S[j*dim+i] = S[i*dim+j];
+		}
+	}
+	CreateLaplacian(x,n,Lap);
+	for (uint32_t  l = 0; l <= lMax; l++)
+		CreatePotentialMatrix(x,n,V[l],Z,l);
+	vector<uint32_t> Nocc; //TODO: init
+	for (uint32_t  l = 0; l <= lMax; l++)
+	{
+		vector<double> H = vector<double>(dim*dim);
+		vector<double> K, F;
+		CreateFockMatrix(l,rk1,rk2,rkD,n,eigVec,dim,Nocc,F);
+		CreateHartreeMatrix(l,rk1[0],rk2[0],rkD[0],n,eigVec,dim,Nocc,K);
+
+		for (int j = 0; j < dim; j++)
+		{
+			for ( int i = j; i <= std::min(dim-1,j+n); i++)  // n = #sub-diagonals
+			{
+				H[i*dim+j] = Lap[(i-j) + j*dim]/2. + V[l][(i-j) + j*dim];
+				H[j*dim+i] = H[i*dim+j];
+			}
+		}
+		for (uint32_t i = 0; i < dim*dim; i++)
+		{
+			H[i] += K[i] - F[i];
+		}
+		dsygv(&itype,&jobz,&uplo,&dim,&(H[0]),&dim,&(S[0]),&dim,&(eigVal[l][0]),work,&lwork,&info); //TODO: be careful with EV update during loop
+	}
+}
 }
 
 

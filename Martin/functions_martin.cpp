@@ -2314,8 +2314,73 @@ static int LuaHartreeFock(lua_State *L)
 	{
 		H[i] = Lap[i]/2 + V[i];
 	}
+	PrintMartix(&H[0],4);
 	HartreeFock::SolveCatOwnerEquation(H,S,dim,n,ev,es);
 	lua_push(L,ev);
+	lua_push(L,es);
+	return 2;
+}
+
+static int LuaHFMatrix(lua_State *L)
+{
+	BSpline::TBSpline *A, *B;
+	A = (BSpline::TBSpline*) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
+	vector<vector<double> > eigVec;
+	vector<double> F,K, H, V, Lap;
+	eigVec.push_back(A->y);
+	eigVec[0].pop_back();
+	eigVec[0].erase(eigVec[0].begin());
+	vector<uint32_t> Nocc;
+	Nocc.push_back(1);
+	vector<vector<double> > rk1, rk2, rkD;
+	rk1 = vector<vector<double> >(1);
+	rk2 = vector<vector<double> >(1);
+	rkD = vector<vector<double> >(1);
+	int k = 0;
+	uint32_t  idx;
+	uint32_t n  = A->degree;
+	uint32_t Nsplines = (uint32_t) A->knots.size() - n-1;
+	HartreeFock::CalcOffDiagSlaterInts(A->knots,rk1[k],rk2[k],k,n);
+	HartreeFock::CalcDiagSlaterInts(A->knots,rkD[k],k,n);
+	uint32_t dim = (uint32_t) A->y.size()-2;
+	HartreeFock::CreateFockMatrix(0,rk1,rk2,rkD,n,eigVec,dim,Nocc,F);
+	HartreeFock::CreateHartreeMatrix(0,rk1[0],rk2[0],rkD[0],n,eigVec,dim,Nocc,K);
+	HartreeFock::CreateLaplacian(A->knots,n,Lap);
+	int l = 0;
+	HartreeFock::CreatePotentialMatrix(A->knots,n,V,1,l);
+
+	H = vector<double>(dim*dim);
+	for (int j = 0; j < dim; j++)
+	{
+		for ( int i = j; i <= std::min(dim-1,j+n); i++)  // n = #sub-diagonals
+		{
+			H[i*dim+j] = Lap[(i-j) + j*dim]/2. + V[(i-j) + j*dim];
+			H[j*dim+i] = H[i*dim+j];
+		}
+	}
+
+	for (uint32_t i = 0; i < dim*dim; i++)
+	{
+		H[i] += K[i] - F[i];
+	}
+
+	PrintMartix(&H[0],dim);
+	lua_push(L,A->knots);
+	return 1;
+}
+
+static int LuaHartreeFockSC(lua_State *L)
+{
+	vector<double> x;
+	uint32_t n = 7;
+	int Z = 1;
+	uint32_t lMax = 0;
+	vector<vector<double> > eigVal = vector<vector<double> >(lMax+1);
+	vector<vector<double> > eigVec = vector<vector<double> >(lMax+1); // TODO: init stuff
+
+	BSpline::GenerateFisherGrid(3,0.375,20,1,n+1,x);
+	HartreeFock::SCScheme(x,n,Z,eigVal,eigVec);
+	lua_push(L,eigVal[0]);
 	return 1;
 }
 
@@ -2429,6 +2494,8 @@ static const struct luaL_Reg Martin_func[] = {
   {"Breit4S",LuaBreitFourShells},
   {"HF",LuaHartreeFock},
   {"Slater",LuaSlater},
+  {"HFMatrix",LuaHFMatrix},
+  {"HFSC",LuaHartreeFockSC},
   {NULL, NULL}
 };
 

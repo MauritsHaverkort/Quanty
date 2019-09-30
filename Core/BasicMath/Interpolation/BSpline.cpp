@@ -143,6 +143,35 @@ void GenerateGrid(const std::vector<double> &t,std::vector<double> &x, uint32_t 
 	}
 
 }
+void GenerateFisherGrid(int m, double hMax,double rMax, int Z, uint32_t n,std::vector<double> &x)
+{
+	double h = pow(2.,-m);
+	uint32_t ks = n+1;
+	uint32_t i;
+	for (i = 1; i <= ks; i++)
+	{
+		x.push_back(0.);
+	}
+	for (i = ks; i <= ks + m; i++)
+	{
+		x.push_back(x[i-1] + h);
+	}
+	while (h * x[i-1] < hMax)
+	{
+		x.push_back(x[i-1]*(1.+h));
+		i++;
+	}
+	while (x[i-1] < rMax)
+	{
+		x.push_back(x[i-1] + hMax);
+		i++;
+	}
+	for (uint32_t j = 0; j < (uint32_t) x.size(); j++)
+	{
+		x[j] /= (double) Z;
+	}
+
+}
 
 
 void GetKnotMatrix(const std::vector<double> &x, const uint32_t n, const std::vector<double> &t, std::vector<double> &B)
