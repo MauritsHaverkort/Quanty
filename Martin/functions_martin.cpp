@@ -1852,34 +1852,96 @@ void lua_check(lua_State *L, uint32_t n, T* &in)
 */
 static int LuaMartinTest(lua_State *L)
 {
+	int Nelec = 66;
+	int lMax = 3;
+	vector<uint32_t> curr = vector<uint32_t>(lMax+1);
+	vector<vector<uint32_t> >Nocc = vector<vector<uint32_t> >(lMax+1);
+	vector<vector<double> > eigVal = vector<vector<double> >(lMax+1);
+	eigVal[0].push_back(1);
+	eigVal[0].push_back(2);
+	eigVal[0].push_back(4);
+	eigVal[0].push_back(6);
+	eigVal[0].push_back(9);
+	eigVal[0].push_back(12);
+	eigVal[0].push_back(120);
+	eigVal[1].push_back(3);
+	eigVal[1].push_back(5);
+	eigVal[1].push_back(8);
+	eigVal[1].push_back(11);
+	eigVal[1].push_back(120);
+	eigVal[2].push_back(7);
+	eigVal[2].push_back(10);
+	eigVal[2].push_back(120);
+	eigVal[3].push_back(13);
+	eigVal[3].push_back(120);
+	int Nrest = Nelec;
+	while (Nrest > 0)
+	{
+		uint32_t idxLow = 0;
+		double e0 = eigVal[0][curr[0]];
+		for (uint32_t  l = 1; l <= lMax; l++)
+		{
+			if (curr[l] >= (uint32_t) eigVal[l].size())continue;
+			if (eigVal[l][curr[l]] < e0)
+			{
+				idxLow = l;
+				e0 = eigVal[l][curr[l]];
+			}
+		}
+		while ((int) Nocc[idxLow].size()-1 < (int) curr[idxLow])
+			Nocc[idxLow].push_back(0);
+		if (Nrest >= 2*(2*idxLow +1))
+		{
+			Nocc[idxLow][curr[idxLow]] = 2*(2*idxLow +1);
+			Nrest -= 2*(2*idxLow +1);
+		}
+		else
+		{
+			Nocc[idxLow][curr[idxLow]] = Nrest;
+			Nrest = 0;
+		}
+		curr[idxLow]++;
 
-    WaveFunctionType** Kryl;
-    CompactMatrixType U;
-    //MatrixType U;
-    vector<WaveFunctionType> psi, in;
-    uint32_t len = (uint32_t)lua_objlen(L,1);
-    vector<uint32_t> bs= vector<uint32_t>(len);
-    Kryl = (WaveFunctionType**) malloc(len * sizeof(WaveFunctionType*));
-    for (uint32_t i = 0; i < len; i++)
-    {
-        lua_rawgeti(L,1,i+1);
-        bs[i] = (uint32_t)lua_objlen(L,-1);
-        Kryl[i] = (WaveFunctionType*) malloc(bs[i] * sizeof(WaveFunctionType));
-        for (uint32_t j = 0; j < bs[i]; j++)
-        {
-            lua_rawgeti(L,-1,j+1);
-            lua_check(L,-1,Kryl[i][j]);
-            lua_pop(L,1);
-        }        
-        lua_pop(L,1);
-    }
-    
-    //lua_check(L,1,in);
-    lua_check(L,2,U);
-    //U = *(luaL_checkMatrix(L,2));
-    RotateWaveFunctions(Kryl,len,bs,U,psi);
-    //RotateWaveFunctions(&(in[0]),(uint32_t)in.size(),U,psi);
-    lua_push(L,psi);
+		printf("Nrest = %d\n",Nrest);
+		for (int l = 0; l <= lMax; l++)
+		{
+			printf("l = %d \n",l);
+			for (int j = 0; j < Nocc[l].size(); j++)
+			{
+				printf("%d\t",Nocc[l][j]);
+			}
+			printf("\n");
+		}
+	}
+
+
+//    WaveFunctionType** Kryl;
+//    CompactMatrixType U;
+//    //MatrixType U;
+//    vector<WaveFunctionType> psi, in;
+//    uint32_t len = (uint32_t)lua_objlen(L,1);
+//    vector<uint32_t> bs= vector<uint32_t>(len);
+//    Kryl = (WaveFunctionType**) malloc(len * sizeof(WaveFunctionType*));
+//    for (uint32_t i = 0; i < len; i++)
+//    {
+//        lua_rawgeti(L,1,i+1);
+//        bs[i] = (uint32_t)lua_objlen(L,-1);
+//        Kryl[i] = (WaveFunctionType*) malloc(bs[i] * sizeof(WaveFunctionType));
+//        for (uint32_t j = 0; j < bs[i]; j++)
+//        {
+//            lua_rawgeti(L,-1,j+1);
+//            lua_check(L,-1,Kryl[i][j]);
+//            lua_pop(L,1);
+//        }
+//        lua_pop(L,1);
+//    }
+//
+//    //lua_check(L,1,in);
+//    lua_check(L,2,U);
+//    //U = *(luaL_checkMatrix(L,2));
+//    RotateWaveFunctions(Kryl,len,bs,U,psi);
+//    //RotateWaveFunctions(&(in[0]),(uint32_t)in.size(),U,psi);
+//    lua_push(L,psi);
     return 1;
 
 }
@@ -2295,7 +2357,7 @@ static int LuaBreitFourShells(lua_State *L)
 static int LuaHartreeFock(lua_State *L)
 {
 	vector<double> x, S, Lap, V, H, ev, es;
-	uint32_t n = 3;
+	uint32_t n = 7;//7 3
 	uint32_t Nknots, powGrid;
 	double R;
 	lua_check(L,1,R);
@@ -2303,7 +2365,8 @@ static int LuaHartreeFock(lua_State *L)
 	lua_check(L,3,powGrid);
 	int l;
 	lua_check(L,4,l);
-	HartreeFock::CreateGrid(Nknots,n,R,powGrid,x);
+	//HartreeFock::CreateGrid(Nknots,n,R,powGrid,x);
+	BSpline::GenerateFisherGrid(3,0.375,20,1,n,x);
 	uint32_t Nspline = (uint32_t) x.size()-n-1;
 	uint32_t dim = Nspline-2;
 	HartreeFock::CreateOverlapMatrix(x,n,S);
@@ -2317,7 +2380,8 @@ static int LuaHartreeFock(lua_State *L)
 	PrintMartix(&H[0],4);
 	HartreeFock::SolveCatOwnerEquation(H,S,dim,n,ev,es);
 	lua_push(L,ev);
-	lua_push(L,es);
+	//lua_push(L,es);
+	lua_push(L,x);
 	return 2;
 }
 
@@ -2330,8 +2394,8 @@ static int LuaHFMatrix(lua_State *L)
 	eigVec.push_back(A->y);
 	eigVec[0].pop_back();
 	eigVec[0].erase(eigVec[0].begin());
-	vector<uint32_t> Nocc;
-	Nocc.push_back(1);
+	vector<vector<uint32_t> >Nocc = vector<vector<uint32_t> >(1);
+	Nocc[0].push_back(1);
 	vector<vector<double> > rk1, rk2, rkD;
 	rk1 = vector<vector<double> >(1);
 	rk2 = vector<vector<double> >(1);
@@ -2373,15 +2437,30 @@ static int LuaHartreeFockSC(lua_State *L)
 {
 	vector<double> x;
 	uint32_t n = 7;
-	int Z = 1;
+	int Z ,Nelec;
+	uint32_t NSCmax = 4;
 	uint32_t lMax = 0;
+
+	double R;
+	lua_check(L,1,Z);
+	lua_check(L,2,Nelec);
+	lua_check(L,3,lMax);
+	lua_check(L,4,R);
+	lua_check(L,5,NSCmax);
+	BSpline::GenerateFisherGrid(3,0.375,R,1,n,x);
+	uint32_t Nsplines = (uint32_t) x.size() - n-1;
+	uint32_t dim = Nsplines-2;
 	vector<vector<double> > eigVal = vector<vector<double> >(lMax+1);
 	vector<vector<double> > eigVec = vector<vector<double> >(lMax+1); // TODO: init stuff
-
-	BSpline::GenerateFisherGrid(3,0.375,20,1,n+1,x);
-	HartreeFock::SCScheme(x,n,Z,eigVal,eigVec);
+	for (uint32_t l = 0; l <= lMax; l++)
+	{
+		eigVal[l] = vector<double>(dim);
+		eigVec[l] = vector<double>(dim*dim);
+	}
+	HartreeFock::SCScheme(x,n,Z,Nelec,NSCmax,eigVal,eigVec);
 	lua_push(L,eigVal[0]);
-	return 1;
+	lua_push(L,eigVec[0]);
+	return 2;
 }
 
 static int LuaSlater(lua_State *L)

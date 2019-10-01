@@ -166,6 +166,11 @@ void GenerateFisherGrid(int m, double hMax,double rMax, int Z, uint32_t n,std::v
 		x.push_back(x[i-1] + hMax);
 		i++;
 	}
+	double last = x[i-1];
+	for (i = 1; i <= ks-1; i++)
+	{
+		x.push_back(last);
+	}
 	for (uint32_t j = 0; j < (uint32_t) x.size(); j++)
 	{
 		x[j] /= (double) Z;

@@ -23,7 +23,7 @@ void PrintMartix(double *M, int n)
 	{
 		for ( j = 0; j < n; j++)
 		{
-			printf("%.4E\t",M[i*n + j]);
+			printf("%.2E\t",M[i*n + j]);
 		}
 		printf("\n");
 	}
