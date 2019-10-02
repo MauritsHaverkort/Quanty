@@ -320,9 +320,10 @@ double AssembleSlaterInts(const vector<double> &Ci1,const vector<double> &Cj1,co
 }
 
 void CreateFockMatrix(const uint32_t la, const vector<vector<double> > &rk1, const vector<vector<double> > &rk2, const vector<vector<double> > &rkD,
-					  uint32_t n, const vector<vector<double> > &eigVec, uint32_t dim, const vector<vector<uint32_t> > &Nocc, vector<double> &F)
+					  uint32_t n, const vector<vector<double> > &eigVec, uint32_t dim, const vector<vector<uint32_t> > &Nocc, vector<double> &F, vector<double> &FE)
 {
 	F = vector<double>(dim*dim);
+	FE = vector<double>(dim*dim);
 	for (uint32_t nu = 1; nu <= dim; nu++)
 	{
 		for (uint32_t mu = nu; mu <= dim; mu++)
@@ -348,7 +349,9 @@ void CreateFockMatrix(const uint32_t la, const vector<vector<double> > &rk1, con
 						}
 						for (uint32_t  j = 0; j < (uint32_t) Nocc[lb].size(); j++)
 						{
-							F[(nu-1) * dim + (mu-1)] += Fk* eigVec[lb][j * dim+(alpha-1)] * eigVec[lb][j * dim+(beta-1)]*(2*lb+1)*Nocc[lb][j]/2.;
+							//F[(nu-1) * dim + (mu-1)]  += Fk* eigVec[lb][j * dim+(alpha-1)] * eigVec[lb][j * dim+(beta-1)]*(2*lb+1)*Nocc[lb][j]/2.;
+							F[(nu-1) * dim + (mu-1)]  += Fk* eigVec[lb][j * dim+(alpha-1)] * eigVec[lb][j * dim+(beta-1)]*Nocc[lb][j]/2.;
+							FE[(nu-1) * dim + (mu-1)] += Fk* eigVec[lb][j * dim+(alpha-1)] * eigVec[lb][j * dim+(beta-1)]*Nocc[lb][j]/2.;
 							//TODO: check facotr  /2 since only spin parallel interaction
 							//TODO: Lapack has Col Major and stores eigenvectors collumnwise, hence the j-th ev should be at [j*dim + i]
 							// but is that really true or does Lapack do some strange stuff?
@@ -357,15 +360,17 @@ void CreateFockMatrix(const uint32_t la, const vector<vector<double> > &rk1, con
 					}
 				}
 			}
-			F[(nu-1) + dim * (mu-1)] = F[(nu-1) * dim + (mu-1)];
+			F[(nu-1) + dim * (mu-1)]  = F[(nu-1) * dim + (mu-1)];
+			FE[(nu-1) + dim * (mu-1)] = FE[(nu-1) * dim + (mu-1)];
 		}
 	}
 }
 
 void CreateHartreeMatrix(const uint32_t la, const vector<double> &rk1, const vector<double> &rk2, const vector<double> &rkD,
-					  uint32_t n, const vector<vector<double> > &eigVec, uint32_t dim, const vector<vector<uint32_t> > &Nocc, vector<double> &H)
+					  uint32_t n, const vector<vector<double> > &eigVec, uint32_t dim, const vector<vector<uint32_t> > &Nocc, vector<double> &H, vector<double> &HE)
 {
 	H = vector<double>(dim*dim);
+	HE = vector<double>(dim*dim);
 	for (uint32_t nu = 1; nu <= dim; nu++)
 	{
 		uint32_t mu1 = nu+n < dim ? nu+n : dim;
@@ -383,7 +388,9 @@ void CreateHartreeMatrix(const uint32_t la, const vector<double> &rk1, const vec
 						double Fk = AssembleSlaterInts(nu,alpha,mu,beta,rk1,rk2,rkD,n);
 						for (uint32_t  j = 0; j < (uint32_t) Nocc[lb].size(); j++)
 						{
-							H[(nu-1) * dim + (mu-1)] += Fk* eigVec[lb][j * dim+(alpha-1)] * eigVec[lb][j * dim+(beta-1)]*(2*lb+1)*Nocc[lb][j];
+//							H[(nu-1) * dim + (mu-1)] += Fk* eigVec[lb][j * dim+(alpha-1)] * eigVec[lb][j * dim+(beta-1)]*(2*lb+1)*Nocc[lb][j];
+							H[(nu-1) * dim + (mu-1)]  += Fk* eigVec[lb][j * dim+(alpha-1)] * eigVec[lb][j * dim+(beta-1)]*Nocc[lb][j];
+							HE[(nu-1) * dim + (mu-1)] += Fk* eigVec[lb][j * dim+(alpha-1)] * eigVec[lb][j * dim+(beta-1)]*Nocc[lb][j];
 							//TODO: Lapack has Col Major and stores eigenvectors collumnwise, hence the j-th ev should be at [j*dim + i]
 							// but is that really true or does Lapack do some strange stuff?
 						}
@@ -392,11 +399,12 @@ void CreateHartreeMatrix(const uint32_t la, const vector<double> &rk1, const vec
 				}
 			}
 			H[(nu-1) + dim * (mu-1)] = H[(nu-1) * dim + (mu-1)];
+			HE[(nu-1) + dim * (mu-1)] = HE[(nu-1) * dim + (mu-1)];
 		}
 	}
 }
 
-double CalcGSEnergy(const vector<vector<uint32_t> > &Nocc, const vector<vector<double> > &eigVal, const vector<vector<double> > &eigVec, const vector<vector<double> > &H)
+double CalcGSEnergy(const vector<vector<uint32_t> > &Nocc, const vector<vector<double> > &eigVal, const vector<vector<double> > &eigVec, const vector<vector<double> > &H, uint32_t n)
 {
 	double e0 = 0;
 	uint32_t dim = (uint32_t) eigVal[0].size();
@@ -407,14 +415,15 @@ double CalcGSEnergy(const vector<vector<uint32_t> > &Nocc, const vector<vector<d
 			e0 += Nocc[l][i] * eigVal[l][i];
 			for (uint32_t mu = 0; mu < dim; mu++)
 			{
-				e0 -= Nocc[l][i] * H[l][mu*dim + mu]*eigVec[l][i*dim +mu]*eigVec[l][i*dim +mu];
+				for (uint32_t nu = 0; nu < dim; nu++)
+					e0 -= Nocc[l][i] * H[l][mu*dim + nu]*eigVec[l][i*dim +mu]*eigVec[l][i*dim +nu];
 			}
 		}
 	}
 	return e0;
 }
 
-void SCScheme(const vector<double> &x, uint32_t n, int Z,int Nelec, uint32_t NSCmax, vector<vector<double> > &eigVal,vector<vector<double> > &eigVec)
+void SCScheme(const vector<double> &x, uint32_t n, int Z,int Nelec, uint32_t NSCmax, double eps, vector<vector<double> > &eigVal,vector<vector<double> > &eigVec)
 {
 	uint32_t itype = 1;
 	char jobz = 'V';
@@ -447,8 +456,12 @@ void SCScheme(const vector<double> &x, uint32_t n, int Z,int Nelec, uint32_t NSC
 	CreateOverlapMatrix(x,n,Sb);
 	S = vector<double>(dim*dim);
 	vector<vector<double> > H = vector<vector<double> >(lMax+1);
+	vector<vector<double> > HE = vector<vector<double> >(lMax+1);
 	for (uint32_t  l = 0; l <= lMax; l++)
+	{
 		H[l] = vector<double>(dim*dim);
+		HE[l] = vector<double>(dim*dim);
+	}
 	BeginTiming("1P", &GlobalTime);
 	for (int j = 0; j < dim; j++)
 	{
@@ -464,9 +477,12 @@ void SCScheme(const vector<double> &x, uint32_t n, int Z,int Nelec, uint32_t NSC
 		CreatePotentialMatrix(x,n,V[l],Z,l);
 	EndTiming("1P", &GlobalTime);
 	BeginTiming("SC", &GlobalTime);
+
+	double gsEnergy0 = 0;
+	double gsEnergy1 = 0;
 	for (uint32_t idxSC = 1; idxSC <= NSCmax; idxSC++)
 	{
-		vector<double> K, F;
+		vector<double> K, F, KE, FE;
 		for (uint32_t  l = 0; l <= lMax; l++)
 		{
 			for (int j = 0; j < dim; j++)
@@ -497,12 +513,13 @@ void SCScheme(const vector<double> &x, uint32_t n, int Z,int Nelec, uint32_t NSC
 				{
 					eigVec[l][i] = H[l][i];
 				}
-				CreateFockMatrix(l,rk1,rk2,rkD,n,eigVec,dim,Nocc,F);
-				CreateHartreeMatrix(l,rk1[0],rk2[0],rkD[0],n,eigVec,dim,Nocc,K);
+				CreateFockMatrix(l,rk1,rk2,rkD,n,eigVec,dim,Nocc,F,FE);
+				CreateHartreeMatrix(l,rk1[0],rk2[0],rkD[0],n,eigVec,dim,Nocc,K,KE);
 
 				for (uint32_t i = 0; i < dim*dim; i++)
 				{
 					H[l][i] = K[i] - F[i];
+					HE[l][i] = (KE[i] - FE[i])/2.;
 				}
 			}
 		}
@@ -515,12 +532,13 @@ void SCScheme(const vector<double> &x, uint32_t n, int Z,int Nelec, uint32_t NSC
 					//eigVec[l][i] = (eigVec[l][i] + H[l][i])/2.;
 					eigVec[l][i] = H[l][i];
 				}
-				CreateFockMatrix(l,rk1,rk2,rkD,n,eigVec,dim,Nocc,F);
-				CreateHartreeMatrix(l,rk1[0],rk2[0],rkD[0],n,eigVec,dim,Nocc,K);
+				CreateFockMatrix(l,rk1,rk2,rkD,n,eigVec,dim,Nocc,F,FE);
+				CreateHartreeMatrix(l,rk1[0],rk2[0],rkD[0],n,eigVec,dim,Nocc,K,KE);
 
 				for (uint32_t i = 0; i < dim*dim; i++)
 				{
-					H[l][i] = K[i] - F[i];
+					H[l][i]  = K[i]  - F[i];
+					HE[l][i] = (KE[i] - FE[i])/2.;
 				}
 			}
 		}
@@ -534,7 +552,7 @@ void SCScheme(const vector<double> &x, uint32_t n, int Z,int Nelec, uint32_t NSC
 			for (uint32_t  l = 1; l <= lMax; l++)
 			{
 				if (curr[l] >= (uint32_t) eigVal[l].size())continue;
-				if (eigVal[l][curr[l]] < e0)
+				if (eigVal[l][curr[l]] < e0 - Abs(e0)*1E-10)
 				{
 					idxLow = l;
 					e0 = eigVal[l][curr[l]];
@@ -555,13 +573,103 @@ void SCScheme(const vector<double> &x, uint32_t n, int Z,int Nelec, uint32_t NSC
 			curr[idxLow]++;
 
 		}
-		double gsEnergy = CalcGSEnergy(Nocc,eigVal,eigVec,H);
-		printf("GS Energy = %f\n",gsEnergy);
+		gsEnergy1 = CalcGSEnergy(Nocc,eigVal,eigVec,HE,n);
+		printf("GS Energy = %f\n",gsEnergy1);
+		if (Abs(1-gsEnergy0/gsEnergy1)<eps)
+		{
+			printf("Hartree-Fock Converged to precision of %.1E with ground-state energy = %f\n",eps,gsEnergy1);
+			break;
+		}
+		gsEnergy0 = gsEnergy1;
 
 
 	}
 	EndTiming("SC", &GlobalTime);
 }
+}
+
+static int LuaAtomicHartreeFock(lua_State *L)
+{
+    struct{
+    	uint32_t n = 7;
+    	uint32_t NSCmax = 20;
+    	uint32_t lMax = 0;
+    	double R = 20;
+    	int m = 3;
+    	double hMax = 0.375;
+    	double eps = 1E-6;
+    	double scale = 1;
+  	} Options;
+  	LuaOptionsType LuaCreateResonantSpectraOptions[]={
+  	    {"BSpline_degree","uint32_t",&(Options.n)},
+		{"NSCmax","uint32_t",&(Options.NSCmax)},
+		{"lMax","uint32_t",&(Options.lMax)},
+		{"Grid_R","double",&(Options.R)},
+		{"Grid_m","int",&(Options.m)},
+		{"Grid_scale","double",&(Options.scale)},
+		{"Grid_hMax","double",&(Options.hMax)},
+		{"Precision","double",&(Options.eps)},
+  	    {NULL, NULL, NULL}};
+  	int Z ,Nelec;
+  	vector<double> x;
+  	uint32_t len = (uint32_t)lua_gettop(L);
+	lua_check(L,1,Z);
+	lua_check(L,2,Nelec);
+	if (Nelec <= 4)
+	{
+		Options.lMax = 0;
+	}
+	else if (Nelec <= 18)
+	{
+		Options.lMax = 1;
+	}
+	else if (Nelec <= 36)
+	{
+		Options.lMax = 2;
+	}
+	else
+	{
+		Options.lMax = 3;
+	}
+	Options.scale = Z;
+	Options.R = 15 * Options.scale;
+	if (len == 3) LuaCheckOptions(L, -1, LuaCreateResonantSpectraOptions);
+	BSpline::GenerateFisherGrid(Options.m,Options.hMax,Options.R,Options.scale,Options.n,x);
+	uint32_t Nsplines = (uint32_t) x.size() - Options.n-1;
+	uint32_t dim = Nsplines-2;
+	vector<vector<double> > eigVal = vector<vector<double> >(Options.lMax+1);
+	vector<vector<double> > eigVec = vector<vector<double> >(Options.lMax+1);
+	for (uint32_t l = 0; l <= Options.lMax; l++)
+	{
+		eigVal[l] = vector<double>(dim);
+		eigVec[l] = vector<double>(dim*dim);
+	}
+	HartreeFock::SCScheme(x,Options.n,Z,Nelec,Options.NSCmax,Options.eps,eigVal,eigVec);
+	lua_createtable(L,Options.lMax+1,0);
+	vector<vector<BSpline::TBSpline*> > funs = vector<vector<BSpline::TBSpline*> >(Options.lMax+1);
+	for (uint32_t l = 0; l <= Options.lMax; l++)
+	{
+		lua_createtable(L,0,dim);
+		funs[l] = vector<BSpline::TBSpline*>(dim);
+		for (uint32_t i = 0; i < dim; i++)
+		{
+			void* memory = lua_newuserdata(L, sizeof(BSpline::TBSpline));
+			funs[l][i] = new(memory) BSpline::TBSpline();
+			luaL_setmetatable(L, "InterpolatingFunction_Type");
+			lua_rawseti(L,-2,i+1);
+			funs[l][i]->knots = x;
+			funs[l][i]->degree = Options.n;
+			funs[l][i]->y.push_back(0);
+			for (uint32_t mu = 1; mu <= dim; mu++)
+				funs[l][i]->y.push_back(eigVec[l][i*dim + (mu-1)]);
+			funs[l][i]->y.push_back(0);
+
+		}
+		lua_rawseti(L,-2,l+1);
+	}
+
+
+	return 1;
 }
 
 

@@ -143,7 +143,7 @@ void GenerateGrid(const std::vector<double> &t,std::vector<double> &x, uint32_t 
 	}
 
 }
-void GenerateFisherGrid(int m, double hMax,double rMax, int Z, uint32_t n,std::vector<double> &x)
+void GenerateFisherGrid(int m, double hMax,double rMax, double Z, uint32_t n,std::vector<double> &x)
 {
 	double h = pow(2.,-m);
 	uint32_t ks = n+1;

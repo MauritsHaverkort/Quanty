@@ -2390,7 +2390,7 @@ static int LuaHFMatrix(lua_State *L)
 	BSpline::TBSpline *A, *B;
 	A = (BSpline::TBSpline*) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
 	vector<vector<double> > eigVec;
-	vector<double> F,K, H, V, Lap;
+	vector<double> F,K, H, V, Lap,Bums;
 	eigVec.push_back(A->y);
 	eigVec[0].pop_back();
 	eigVec[0].erase(eigVec[0].begin());
@@ -2407,8 +2407,8 @@ static int LuaHFMatrix(lua_State *L)
 	HartreeFock::CalcOffDiagSlaterInts(A->knots,rk1[k],rk2[k],k,n);
 	HartreeFock::CalcDiagSlaterInts(A->knots,rkD[k],k,n);
 	uint32_t dim = (uint32_t) A->y.size()-2;
-	HartreeFock::CreateFockMatrix(0,rk1,rk2,rkD,n,eigVec,dim,Nocc,F);
-	HartreeFock::CreateHartreeMatrix(0,rk1[0],rk2[0],rkD[0],n,eigVec,dim,Nocc,K);
+	HartreeFock::CreateFockMatrix(0,rk1,rk2,rkD,n,eigVec,dim,Nocc,F,Bums);
+	HartreeFock::CreateHartreeMatrix(0,rk1[0],rk2[0],rkD[0],n,eigVec,dim,Nocc,K,Bums);
 	HartreeFock::CreateLaplacian(A->knots,n,Lap);
 	int l = 0;
 	HartreeFock::CreatePotentialMatrix(A->knots,n,V,1,l);
@@ -2447,7 +2447,7 @@ static int LuaHartreeFockSC(lua_State *L)
 	lua_check(L,3,lMax);
 	lua_check(L,4,R);
 	lua_check(L,5,NSCmax);
-	BSpline::GenerateFisherGrid(3,0.375,R,1,n,x);
+	BSpline::GenerateFisherGrid(3,0.375,R,Z,n,x);
 	uint32_t Nsplines = (uint32_t) x.size() - n-1;
 	uint32_t dim = Nsplines-2;
 	vector<vector<double> > eigVal = vector<vector<double> >(lMax+1);
@@ -2457,9 +2457,9 @@ static int LuaHartreeFockSC(lua_State *L)
 		eigVal[l] = vector<double>(dim);
 		eigVec[l] = vector<double>(dim*dim);
 	}
-	HartreeFock::SCScheme(x,n,Z,Nelec,NSCmax,eigVal,eigVec);
-	lua_push(L,eigVal[0]);
-	lua_push(L,eigVec[0]);
+	HartreeFock::SCScheme(x,n,Z,Nelec,NSCmax,1E-6,eigVal,eigVec);
+	lua_push(L,eigVal);
+	lua_push(L,eigVec);
 	return 2;
 }
 
@@ -2575,6 +2575,7 @@ static const struct luaL_Reg Martin_func[] = {
   {"Slater",LuaSlater},
   {"HFMatrix",LuaHFMatrix},
   {"HFSC",LuaHartreeFockSC},
+  {"AtomicHartreeFock",LuaAtomicHartreeFock},
   {NULL, NULL}
 };
 
