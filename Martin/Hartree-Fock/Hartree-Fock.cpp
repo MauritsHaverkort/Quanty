@@ -169,6 +169,32 @@ void CreateGrid(unsigned int Nknots, int n, double R, int powGrid, vector<double
 	}
 }
 
+void PutBSplinesOnQuadGrid(const vector<double> &x, uint32_t n, vector<double> &BSval)
+{
+	uint32_t ks = n + 1;
+	uint32_t nv = (uint32_t) x.size() - 1;
+	uint32_t Nspline = (uint32_t) x.size() - n - 1;
+	uint32_t Nweights = ks +3;
+	BSval = vector<double>(nv *ks*Nweights);
+#pragma omp parallel for
+	for (uint32_t iv = n; iv < nv; iv++)
+	{
+		vector<double> u,w;
+		Quad::GaussianQuadratureWeights(Nweights,u,w,x[iv],x[iv+1]);
+		uint32_t lowerIdx = iv > n ? iv-n : 0;
+		for (uint32_t i = lowerIdx; i <= Min(iv,Nspline-1); i++)
+		{
+
+			for (uint32_t idx = 0; idx < (uint32_t) u.size(); idx++)
+			{
+				BSval[iv*ks*Nweights + (i-lowerIdx)*Nweights + idx] = BSpline::Evaluate(i,n,x,u[idx]);
+
+			}
+
+		}
+	}
+}
+
 void CalcOffDiagSlaterInts(const vector<double> &x, vector<double> &rk1, vector<double> &rk2, int k, uint32_t n)
 {
 	uint32_t ks = n + 1;
@@ -193,6 +219,38 @@ void CalcOffDiagSlaterInts(const vector<double> &x, vector<double> &rk1, vector<
 				{
 					rk1[iv*ks*ks + (i-lowerIdx)*ks +j-lowerIdx] += std::pow(u[idx],k) * w[idx] * BSpline::Evaluate(i,n,x,u[idx])* BSpline::Evaluate(j,n,x,u[idx]);
 					rk2[iv*ks*ks + (i-lowerIdx)*ks +j-lowerIdx] += std::pow(u[idx],-k-1) * w[idx] * BSpline::Evaluate(i,n,x,u[idx])* BSpline::Evaluate(j,n,x,u[idx]);
+				}
+				rk1[iv*ks*ks + (j-lowerIdx)*ks +i-lowerIdx] = rk1[iv*ks*ks + (i-lowerIdx)*ks +j-lowerIdx];
+				rk2[iv*ks*ks + (j-lowerIdx)*ks +i-lowerIdx] = rk2[iv*ks*ks + (i-lowerIdx)*ks +j-lowerIdx];
+			}
+		}
+	}
+}
+
+void CalcOffDiagSlaterInts(const vector<double> &x, const vector<double> &BSval, vector<double> &rk1, vector<double> &rk2, int k, uint32_t n)
+{
+	uint32_t ks = n + 1;
+	uint32_t nv = (uint32_t) x.size() - 1;
+	uint32_t Nspline = (uint32_t) x.size() - n - 1;
+	rk1 = vector<double>(nv *ks*ks);
+	rk2 = vector<double>(nv *ks*ks);
+	uint32_t Nweights = ks +3;
+#pragma omp parallel for
+	for (uint32_t iv = n; iv < nv; iv++)
+	{
+		vector<double> u,w;
+		Quad::GaussianQuadratureWeights(Nweights,u,w,x[iv],x[iv+1]);
+		uint32_t lowerIdx = iv > n ? iv-n : 0;
+		for (uint32_t i = lowerIdx; i <= Min(iv,Nspline-1); i++)
+		{
+			for (uint32_t j = i; j <= Min(iv,Nspline-1); j++)
+			{
+				rk1[iv*ks*ks + (i-lowerIdx)*ks +j-lowerIdx] = 0;
+				rk2[iv*ks*ks + (i-lowerIdx)*ks +j-lowerIdx] = 0;
+				for (uint32_t idx = 0; idx < (uint32_t) u.size(); idx++)
+				{
+					rk1[iv*ks*ks + (i-lowerIdx)*ks +j-lowerIdx] += std::pow(u[idx],k)    * w[idx] * BSval[iv*ks*Nweights + (i-lowerIdx)*Nweights + idx]* BSval[iv*ks*Nweights + (j-lowerIdx)*Nweights + idx];
+					rk2[iv*ks*ks + (i-lowerIdx)*ks +j-lowerIdx] += std::pow(u[idx],-k-1) * w[idx] * BSval[iv*ks*Nweights + (i-lowerIdx)*Nweights + idx]* BSval[iv*ks*Nweights + (j-lowerIdx)*Nweights + idx];
 				}
 				rk1[iv*ks*ks + (j-lowerIdx)*ks +i-lowerIdx] = rk1[iv*ks*ks + (i-lowerIdx)*ks +j-lowerIdx];
 				rk2[iv*ks*ks + (j-lowerIdx)*ks +i-lowerIdx] = rk2[iv*ks*ks + (i-lowerIdx)*ks +j-lowerIdx];
@@ -235,6 +293,56 @@ void CalcDiagSlaterInts(const vector<double> &x, vector<double> &rkD, int k, uin
 								I2 += w2[idx2] * std::pow(u2[idx2],k) * BSpline::Evaluate(j1,n,x,u2[idx2])* BSpline::Evaluate(j2,n,x,u2[idx2]);
 							}
 							Itot += I2 * w1[idx1] * std::pow(u1[idx1],-k-1) * BSpline::Evaluate(i1,n,x,u1[idx1])* BSpline::Evaluate(i2,n,x,u1[idx1]);
+						}
+						rkD[iv*ks4 +(i1-lowerIdx)*ks3 + (j1-lowerIdx)*ks2 + (i2-lowerIdx)*ks +(j2-lowerIdx)] = Itot;
+						rkD[iv*ks4 +(i2-lowerIdx)*ks3 + (j1-lowerIdx)*ks2 + (i1-lowerIdx)*ks +(j2-lowerIdx)] = Itot;
+						rkD[iv*ks4 +(i1-lowerIdx)*ks3 + (j2-lowerIdx)*ks2 + (i2-lowerIdx)*ks +(j1-lowerIdx)] = Itot;
+						rkD[iv*ks4 +(i2-lowerIdx)*ks3 + (j2-lowerIdx)*ks2 + (i1-lowerIdx)*ks +(j1-lowerIdx)] = Itot;
+//						rkD[iv*ks4 +(j1-lowerIdx)*ks3 + (i1-lowerIdx)*ks2 + (j2-lowerIdx)*ks +(i2-lowerIdx)] = Itot;
+//						rkD[iv*ks4 +(j2-lowerIdx)*ks3 + (i1-lowerIdx)*ks2 + (j1-lowerIdx)*ks +(i2-lowerIdx)] = Itot;
+//						rkD[iv*ks4 +(j1-lowerIdx)*ks3 + (i2-lowerIdx)*ks2 + (j2-lowerIdx)*ks +(i1-lowerIdx)] = Itot;
+//						rkD[iv*ks4 +(j2-lowerIdx)*ks3 + (i2-lowerIdx)*ks2 + (j1-lowerIdx)*ks +(i1-lowerIdx)] = Itot;
+					}
+				}
+			}
+		}
+	}
+}
+
+void CalcDiagSlaterInts(const vector<double> &x, const vector<double> &BSval, vector<double> &rkD, int k, uint32_t n)
+{
+	uint32_t ks = n + 1;
+	uint32_t nv = (uint32_t) x.size() - 1;
+	uint32_t Nspline = (uint32_t) x.size() - n - 1;
+	uint32_t ks2 = ks*ks;
+	uint32_t ks3 = ks2*ks;
+	uint32_t ks4 = ks3*ks;
+	uint32_t Nweights = ks +3;
+	rkD = vector<double>(nv*ks4);
+#pragma omp parallel for
+	for (uint32_t iv = n; iv < nv; iv++)
+	{
+		vector<double> u1,w1, u2, w2;
+		Quad::GaussianQuadratureWeights(Nweights,u1,w1,x[iv],x[iv+1]);
+		uint32_t lowerIdx = iv > n ? iv-n : 0;
+		for (uint32_t i1 = lowerIdx; i1 <= Min(iv,Nspline-1); i1++)
+		{
+			for (uint32_t j1 = lowerIdx; j1 <= Min(iv,Nspline-1); j1++) //TODO: Check symmetry
+			{
+				for (uint32_t i2 = i1; i2 <= Min(iv,Nspline-1); i2++)
+				{
+					for (uint32_t j2 = j1; j2 <= Min(iv,Nspline-1); j2++)
+					{
+						double Itot = 0;
+						for (uint32_t idx1 = 0; idx1 < u1.size(); idx1++)
+						{
+							Quad::GaussianQuadratureWeights(Nweights,u2,w2,x[iv],u1[idx1]);
+							double I2 = 0;
+							for (uint32_t idx2 = 0; idx2 < u2.size(); idx2++)
+							{
+								I2 += w2[idx2] * std::pow(u2[idx2],k) * BSpline::Evaluate(j1,n,x,u2[idx2])* BSpline::Evaluate(j2,n,x,u2[idx2]);
+							}
+							Itot += I2 * w1[idx1] * std::pow(u1[idx1],-k-1) * BSval[iv*ks*Nweights + (i1-lowerIdx)*Nweights + idx1]* BSval[iv*ks*Nweights + (i2-lowerIdx)*Nweights + idx1];
 						}
 						rkD[iv*ks4 +(i1-lowerIdx)*ks3 + (j1-lowerIdx)*ks2 + (i2-lowerIdx)*ks +(j2-lowerIdx)] = Itot;
 						rkD[iv*ks4 +(i2-lowerIdx)*ks3 + (j1-lowerIdx)*ks2 + (i1-lowerIdx)*ks +(j2-lowerIdx)] = Itot;
@@ -439,12 +547,15 @@ void SCScheme(const vector<double> &x, uint32_t n, int Z,int Nelec, uint32_t NSC
 	vector<vector<double> > rk1 = vector<vector<double> >(kMax+1);
 	vector<vector<double> > rk2 = vector<vector<double> >(kMax+1);
 	vector<vector<double> > rkD = vector<vector<double> >(kMax+1);
+	vector<vector<double> > SlaterFk = vector<vector<double> >(kMax+1);
 	vector<vector<uint32_t> > Nocc = vector<vector<uint32_t> >(lMax+1); //TODO: init
 	BeginTiming("SI", &GlobalTime);
+	vector<double> BSval;
+	PutBSplinesOnQuadGrid(x,n,BSval);
 	for (uint32_t k = 0; k <= kMax; k++)
 	{
-		CalcOffDiagSlaterInts(x,rk1[k],rk2[k],k,n);
-		CalcDiagSlaterInts(x,rkD[k],k,n);
+		CalcOffDiagSlaterInts(x,BSval,rk1[k],rk2[k],k,n);
+		CalcDiagSlaterInts(x,BSval,rkD[k],k,n);
 	}
 	EndTiming("SI", &GlobalTime);
 	uint32_t Nsplines = (uint32_t) x.size() - n-1;
