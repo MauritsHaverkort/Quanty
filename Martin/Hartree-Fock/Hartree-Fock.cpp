@@ -453,7 +453,7 @@ void CreateFockMatrix(const uint32_t la, const vector<vector<double> > &rk1, con
 						for (uint32_t k = k0; k <= k1; k +=2)
 						{
 							double cred = ThreeJSymbol(la,0,lb,0,k,0);
-							Fk += AssembleSlaterInts(nu,alpha,beta,mu,rk1[k],rk2[k],rkD[k],n)*cred*cred;
+							Fk += AssembleSlaterInts(nu,alpha,beta,mu,rk1[k],rk2[k],rkD[k],n)*cred*cred; // *(2*k+1)
 						}
 						for (uint32_t  j = 0; j < (uint32_t) Nocc[lb].size(); j++)
 						{
@@ -525,6 +525,24 @@ double CalcGSEnergy(const vector<vector<uint32_t> > &Nocc, const vector<vector<d
 			{
 				for (uint32_t nu = 0; nu < dim; nu++)
 					e0 -= Nocc[l][i] * H[l][mu*dim + nu]*eigVec[l][i*dim +mu]*eigVec[l][i*dim +nu];
+			}
+		}
+	}
+	return e0;
+}
+double TestGSEnergy(const vector<vector<uint32_t> > &Nocc, const vector<vector<double> > &eigVal, const vector<vector<double> > &eigVec, const vector<double> &H, uint32_t n)
+{
+	double e0 = 0;
+	uint32_t dim = (uint32_t) eigVal[0].size();
+	for (uint32_t  l = 0; l < (uint32_t) Nocc.size(); l++)
+	{
+		for (uint32_t i = 0; i < (uint32_t) Nocc[l].size(); i++)
+		{
+
+			for (uint32_t mu = 0; mu < dim; mu++)
+			{
+				for (uint32_t nu = 0; nu < dim; nu++)
+					e0 -= Nocc[l][i] * H[mu*dim + nu]*eigVec[l][i*dim +mu]*eigVec[l][i*dim +nu];
 			}
 		}
 	}

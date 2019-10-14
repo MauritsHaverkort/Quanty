@@ -2394,23 +2394,30 @@ static int LuaHFMatrix(lua_State *L)
 	eigVec.push_back(A->y);
 	eigVec[0].pop_back();
 	eigVec[0].erase(eigVec[0].begin());
-	vector<vector<uint32_t> >Nocc = vector<vector<uint32_t> >(1);
-	Nocc[0].push_back(1);
+	eigVec.push_back(A->y);
+	eigVec[1].pop_back();
+	eigVec[1].erase(eigVec[1].begin());
+	vector<vector<uint32_t> >Nocc = vector<vector<uint32_t> >(2);
+	Nocc[0].push_back(0);
+	Nocc[1].push_back(6);
 	vector<vector<double> > rk1, rk2, rkD;
-	rk1 = vector<vector<double> >(1);
-	rk2 = vector<vector<double> >(1);
-	rkD = vector<vector<double> >(1);
-	int k = 0;
+	rk1 = vector<vector<double> >(3);
+	rk2 = vector<vector<double> >(3);
+	rkD = vector<vector<double> >(3);
 	uint32_t  idx;
 	uint32_t n  = A->degree;
 	uint32_t Nsplines = (uint32_t) A->knots.size() - n-1;
-	HartreeFock::CalcOffDiagSlaterInts(A->knots,rk1[k],rk2[k],k,n);
-	HartreeFock::CalcDiagSlaterInts(A->knots,rkD[k],k,n);
+	for (int k = 0; k < 3; k++)
+	{
+		HartreeFock::CalcOffDiagSlaterInts(A->knots,rk1[k],rk2[k],k,n);
+		HartreeFock::CalcDiagSlaterInts(A->knots,rkD[k],k,n);
+	}
 	uint32_t dim = (uint32_t) A->y.size()-2;
-	HartreeFock::CreateFockMatrix(0,rk1,rk2,rkD,n,eigVec,dim,Nocc,F,Bums);
-	HartreeFock::CreateHartreeMatrix(0,rk1[0],rk2[0],rkD[0],n,eigVec,dim,Nocc,K,Bums);
+	int l = 1;
+	HartreeFock::CreateFockMatrix(l,rk1,rk2,rkD,n,eigVec,dim,Nocc,F,Bums);
+	HartreeFock::CreateHartreeMatrix(l,rk1[0],rk2[0],rkD[0],n,eigVec,dim,Nocc,K,Bums);
 	HartreeFock::CreateLaplacian(A->knots,n,Lap);
-	int l = 0;
+
 	HartreeFock::CreatePotentialMatrix(A->knots,n,V,1,l);
 
 	H = vector<double>(dim*dim);
@@ -2425,10 +2432,20 @@ static int LuaHFMatrix(lua_State *L)
 
 	for (uint32_t i = 0; i < dim*dim; i++)
 	{
-		H[i] += K[i] - F[i];
+		H[i] = K[i] - F[i];
 	}
-
-	PrintMartix(&H[0],dim);
+	vector<vector<double> > null = vector<vector<double> >(2);
+	null[0].push_back(0);
+	null[0].push_back(0);
+	null[0].push_back(0);
+	null[1].push_back(0);
+	double e0 = HartreeFock::TestGSEnergy(Nocc,null,eigVec,H,n);
+	PrintMartix(&K[0],dim);
+	printf("\n");
+	PrintMartix(&F[0],dim);
+	printf("\n");
+	PrintArray(&(A->y[0]),A->y.size());
+	printf("\n%E\n",e0);
 	lua_push(L,A->knots);
 	return 1;
 }
