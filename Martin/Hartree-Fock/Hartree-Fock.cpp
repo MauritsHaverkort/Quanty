@@ -453,14 +453,12 @@ void CreateFockMatrix(const uint32_t la, const vector<vector<double> > &rk1, con
 						for (uint32_t k = k0; k <= k1; k +=2)
 						{
 							double cred = ThreeJSymbol(la,0,lb,0,k,0);
+							//if (k ==1) printf("ThreeJSymbol(%d,0,%d,0,%d,0)^2 = %f\n",la,lb,k,cred*cred);
 							Fk += AssembleSlaterInts(nu,alpha,beta,mu,rk1[k],rk2[k],rkD[k],n)*cred*cred; // *(2*k+1)
 						}
 						for (uint32_t  j = 0; j < (uint32_t) Nocc[lb].size(); j++)
 						{
-							//F[(nu-1) * dim + (mu-1)]  += Fk* eigVec[lb][j * dim+(alpha-1)] * eigVec[lb][j * dim+(beta-1)]*(2*lb+1)*Nocc[lb][j]/2.;
-							F[(nu-1) * dim + (mu-1)]  += Fk* eigVec[lb][j * dim+(alpha-1)] * eigVec[lb][j * dim+(beta-1)]*Nocc[lb][j]/2.;
-							FE[(nu-1) * dim + (mu-1)] += Fk* eigVec[lb][j * dim+(alpha-1)] * eigVec[lb][j * dim+(beta-1)]*Nocc[lb][j]/2.;
-							//TODO: check facotr  /2 since only spin parallel interaction
+							F[(nu-1) * dim + (mu-1)]  += Fk* eigVec[lb][j * dim+(alpha-1)] * eigVec[lb][j * dim+(beta-1)]*(2*lb+1);
 							//TODO: Lapack has Col Major and stores eigenvectors collumnwise, hence the j-th ev should be at [j*dim + i]
 							// but is that really true or does Lapack do some strange stuff?
 						}
@@ -469,7 +467,6 @@ void CreateFockMatrix(const uint32_t la, const vector<vector<double> > &rk1, con
 				}
 			}
 			F[(nu-1) + dim * (mu-1)]  = F[(nu-1) * dim + (mu-1)];
-			FE[(nu-1) + dim * (mu-1)] = FE[(nu-1) * dim + (mu-1)];
 		}
 	}
 }
@@ -496,9 +493,7 @@ void CreateHartreeMatrix(const uint32_t la, const vector<double> &rk1, const vec
 						double Fk = AssembleSlaterInts(nu,alpha,mu,beta,rk1,rk2,rkD,n);
 						for (uint32_t  j = 0; j < (uint32_t) Nocc[lb].size(); j++)
 						{
-//							H[(nu-1) * dim + (mu-1)] += Fk* eigVec[lb][j * dim+(alpha-1)] * eigVec[lb][j * dim+(beta-1)]*(2*lb+1)*Nocc[lb][j];
-							H[(nu-1) * dim + (mu-1)]  += Fk* eigVec[lb][j * dim+(alpha-1)] * eigVec[lb][j * dim+(beta-1)]*Nocc[lb][j];
-							HE[(nu-1) * dim + (mu-1)] += Fk* eigVec[lb][j * dim+(alpha-1)] * eigVec[lb][j * dim+(beta-1)]*Nocc[lb][j];
+							H[(nu-1) * dim + (mu-1)]  += Fk* eigVec[lb][j * dim+(alpha-1)] * eigVec[lb][j * dim+(beta-1)]*(2*lb+1);
 							//TODO: Lapack has Col Major and stores eigenvectors collumnwise, hence the j-th ev should be at [j*dim + i]
 							// but is that really true or does Lapack do some strange stuff?
 						}
@@ -507,7 +502,6 @@ void CreateHartreeMatrix(const uint32_t la, const vector<double> &rk1, const vec
 				}
 			}
 			H[(nu-1) + dim * (mu-1)] = H[(nu-1) * dim + (mu-1)];
-			HE[(nu-1) + dim * (mu-1)] = HE[(nu-1) * dim + (mu-1)];
 		}
 	}
 }
@@ -520,17 +514,17 @@ double CalcGSEnergy(const vector<vector<uint32_t> > &Nocc, const vector<vector<d
 	{
 		for (uint32_t i = 0; i < (uint32_t) Nocc[l].size(); i++)
 		{
-			e0 += Nocc[l][i] * eigVal[l][i];
+			e0 += (2*l+1) * eigVal[l][i];
 			for (uint32_t mu = 0; mu < dim; mu++)
 			{
 				for (uint32_t nu = 0; nu < dim; nu++)
-					e0 -= Nocc[l][i] * H[l][mu*dim + nu]*eigVec[l][i*dim +mu]*eigVec[l][i*dim +nu];
+					e0 += (2*l+1) * H[l][mu*dim + nu]*eigVec[l][i*dim +mu]*eigVec[l][i*dim +nu];
 			}
 		}
 	}
 	return e0;
 }
-double TestGSEnergy(const vector<vector<uint32_t> > &Nocc, const vector<vector<double> > &eigVal, const vector<vector<double> > &eigVec, const vector<double> &H, uint32_t n)
+double TestGSEnergy(const vector<vector<uint32_t> > &Nocc, const vector<vector<double> > &eigVal, const vector<vector<double> > &eigVec, const vector<vector<double> > &H, uint32_t n)
 {
 	double e0 = 0;
 	uint32_t dim = (uint32_t) eigVal[0].size();
@@ -542,7 +536,7 @@ double TestGSEnergy(const vector<vector<uint32_t> > &Nocc, const vector<vector<d
 			for (uint32_t mu = 0; mu < dim; mu++)
 			{
 				for (uint32_t nu = 0; nu < dim; nu++)
-					e0 -= Nocc[l][i] * H[mu*dim + nu]*eigVec[l][i*dim +mu]*eigVec[l][i*dim +nu];
+					e0 += (2*l+1) * H[l][mu*dim + nu]*eigVec[l][i*dim +mu]*eigVec[l][i*dim +nu];
 			}
 		}
 	}
@@ -634,6 +628,40 @@ void SCScheme(const vector<double> &x, uint32_t n, int Z,int Nelec, uint32_t NSC
 			if (info) printf("dsygv info = %d\n",info);
 			dtrsm( &side, &uplo, &trans, &diag, &dim, &dim, &one, &(S[0]), &dim, &(H[l][0]), &dim );
 		}
+		vector<uint32_t> curr = vector<uint32_t>(lMax+1);
+		Nocc = vector<vector<uint32_t> >(lMax+1);
+		Nocc[0].push_back(2);
+		Nocc[0].push_back(2);
+		if (lMax > 0)Nocc[1].push_back(6);
+//		int Nrest = Nelec;
+//		while (Nrest > 0)
+//		{
+//			uint32_t idxLow = 0;
+//			double e0 = eigVal[0][curr[0]];
+//			for (uint32_t  l = 1; l <= lMax; l++)
+//			{
+//				if (curr[l] >= (uint32_t) eigVal[l].size())continue;
+//				if (eigVal[l][curr[l]] < e0 - Abs(e0)*1E-10)
+//				{
+//					idxLow = l;
+//					e0 = eigVal[l][curr[l]];
+//				}
+//			}
+//			while ((int) Nocc[idxLow].size()-1 < (int) curr[idxLow])
+//				Nocc[idxLow].push_back(0);
+//			if (Nrest >= 2*(2*idxLow +1))
+//			{
+//				Nocc[idxLow][curr[idxLow]] = 2*(2*idxLow +1);
+//				Nrest -= 2*(2*idxLow +1);
+//			}
+//			else
+//			{
+//				Nocc[idxLow][curr[idxLow]] = Nrest;
+//				Nrest = 0;
+//			}
+//			curr[idxLow]++;
+//
+//		}
 		if (idxSC == 1)
 		{
 			for (uint32_t  l = 0; l <= lMax; l++)
@@ -647,8 +675,8 @@ void SCScheme(const vector<double> &x, uint32_t n, int Z,int Nelec, uint32_t NSC
 
 				for (uint32_t i = 0; i < dim*dim; i++)
 				{
-					H[l][i] = K[i] - F[i];
-					HE[l][i] = (KE[i] - FE[i])/2.;
+					H[l][i] = 2*K[i] - F[i];
+					HE[l][i] = 0;//(KE[i] - FE[i])/2.;
 				}
 			}
 		}
@@ -666,53 +694,35 @@ void SCScheme(const vector<double> &x, uint32_t n, int Z,int Nelec, uint32_t NSC
 
 				for (uint32_t i = 0; i < dim*dim; i++)
 				{
-					H[l][i]  = K[i]  - F[i];
-					HE[l][i] = (KE[i] - FE[i])/2.;
+					H[l][i]  = 2*K[i]  - F[i];
+					HE[l][i] = 0;//(KE[i] - FE[i])/2.;
 				}
 			}
 		}
-		vector<uint32_t> curr = vector<uint32_t>(lMax+1);
-		Nocc = vector<vector<uint32_t> >(lMax+1);
-		int Nrest = Nelec;
-		while (Nrest > 0)
+
+		for (uint32_t  l = 0; l <= lMax; l++)
 		{
-			uint32_t idxLow = 0;
-			double e0 = eigVal[0][curr[0]];
-			for (uint32_t  l = 1; l <= lMax; l++)
+			for (int j = 0; j < dim; j++)
 			{
-				if (curr[l] >= (uint32_t) eigVal[l].size())continue;
-				if (eigVal[l][curr[l]] < e0 - Abs(e0)*1E-10)
+				for ( int i = j; i <= std::min(dim-1,j+n); i++)  // n = #sub-diagonals
 				{
-					idxLow = l;
-					e0 = eigVal[l][curr[l]];
+					HE[l][i*dim+j] = Lap[(i-j) + j*dim]/2. + V[l][(i-j) + j*dim];
+					HE[l][j*dim+i] = HE[l][i*dim+j];
 				}
 			}
-			while ((int) Nocc[idxLow].size()-1 < (int) curr[idxLow])
-				Nocc[idxLow].push_back(0);
-			if (Nrest >= 2*(2*idxLow +1))
-			{
-				Nocc[idxLow][curr[idxLow]] = 2*(2*idxLow +1);
-				Nrest -= 2*(2*idxLow +1);
-			}
-			else
-			{
-				Nocc[idxLow][curr[idxLow]] = Nrest;
-				Nrest = 0;
-			}
-			curr[idxLow]++;
-
 		}
 		gsEnergy1 = CalcGSEnergy(Nocc,eigVal,eigVec,HE,n);
 		printf("GS Energy = %f\n",gsEnergy1);
-		if (Abs(1-gsEnergy0/gsEnergy1)<eps)
-		{
-			printf("Hartree-Fock Converged to precision of %.1E with ground-state energy = %f\n",eps,gsEnergy1);
-			break;
-		}
+//		if (Abs(1-gsEnergy0/gsEnergy1)<eps)
+//		{
+//			printf("Hartree-Fock Converged to precision of %.1E with ground-state energy = %f\n",eps,gsEnergy1);
+//			break;
+//		}
 		gsEnergy0 = gsEnergy1;
 
 
 	}
+	printf("Coulomb0 = %f\n",TestGSEnergy(Nocc,eigVal,eigVec,H,n));
 	EndTiming("SC", &GlobalTime);
 }
 }
@@ -787,6 +797,12 @@ static int LuaAtomicHartreeFock(lua_State *L)
 			luaL_setmetatable(L, "InterpolatingFunction_Type");
 			lua_rawseti(L,-2,i+1);
 			funs[l][i]->knots = x;
+			funs[l][i]->x = x;
+			for (int foo = 0; foo < Options.n; foo++)
+			{
+				funs[l][i]->x.pop_back();
+				funs[l][i]->x.erase(funs[l][i]->x.begin());
+			}
 			funs[l][i]->degree = Options.n;
 			funs[l][i]->y.push_back(0);
 			for (uint32_t mu = 1; mu <= dim; mu++)

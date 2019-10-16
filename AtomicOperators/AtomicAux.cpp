@@ -112,6 +112,24 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
 
 	uint32_t Norbitals;
 	uint32_t len = (uint32_t)lua_gettop(L);
+    struct
+    {
+		char * Method;
+		uint32_t degree;
+    } Options;
+    LuaOptionsType LuaEDOptions[]={
+        {"Method","char*",&(Options.Method)},
+		{"Degree","uint32_t",&(Options.degree)},
+        {NULL, NULL, NULL}};
+    Options.Method = "CubicSpline";
+    Options.degree = 8;
+
+    bool QOptions = LuaTestOptionsList(L,-1);
+    if (QOptions)
+    {
+         LuaCheckOptions(L,-1,LuaEDOptions);
+         len--;
+    }
 	if (len < 2)
 	{
 		return luaL_error(L,"Error in ReadFPLOBasisFunctions: 2 or 3 arguments expected, got %d",len);
@@ -148,28 +166,64 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
 
 	splinesG = vector<Interpolation::CubicSpline*>(Norbitals);
 
-	// Push large part on stack
-	lua_createtable(L,0,Norbitals);
-	for (uint32_t i = 0; i < Norbitals; i++)
+	vector<double> knots, B;
+	char TRANS = 'N';
+	uint32_t NRHS = 1;
+	uint32_t N = (uint32_t) x.size();
+	vector<int> IPIV = vector<int>(N);
+	int info = 0;
+	if (strcmp(Options.Method,"BSpline")==0)
 	{
-		string charTostring(orbitalNames[i]);
-		if (funsG.find(charTostring) != funsG.end())
+		BSpline::GenerateGrid(x,knots,Options.degree);
+		BSpline::GetKnotMatrix(knots,Options.degree,x,B);
+		dgetrf(&N,&N,&(B[0]),&N,&(IPIV[0]),&info);
+		lua_createtable(L,0,Norbitals);
+		for (uint32_t i = 0; i < Norbitals; i++)
 		{
-			void* memory = lua_newuserdata(L, sizeof(Interpolation::CubicSpline));
-			splinesG[i] = new(memory) Interpolation::CubicSpline(x,funsG[charTostring]);
-			luaL_setmetatable(L, "InterpolatingFunction_Type");
-			lua_rawseti(L,-2,i+1);
-		}
-		else
-		{
-			printf("LuaReadFPLOBasis: Couldn't find ");
-			printf("%s\n", orbitalNames[i]);
-			fflush(stdout);
+			string charTostring(orbitalNames[i]);
+			if (funsG.find(charTostring) != funsG.end())
+			{
+				void* memory = lua_newuserdata(L, sizeof(BSpline::TBSpline));
+				dgetrs(&TRANS,&N,&NRHS,&(B[0]),&N,&(IPIV[0]),&(funsG[charTostring][0]),&N,&info);
+				new(memory) BSpline::TBSpline(x,knots,funsG[charTostring],Options.degree);
+				luaL_setmetatable(L, "InterpolatingFunction_Type");
+				lua_rawseti(L,-2,i+1);
+			}
+			else
+			{
+				printf("LuaReadFPLOBasis: Couldn't find ");
+				printf("%s\n", orbitalNames[i]);
+				fflush(stdout);
+			}
+
 		}
 
 	}
+	else
+	{
+		// Push large part on stack
+		lua_createtable(L,0,Norbitals);
+		for (uint32_t i = 0; i < Norbitals; i++)
+		{
+			string charTostring(orbitalNames[i]);
+			if (funsG.find(charTostring) != funsG.end())
+			{
+				void* memory = lua_newuserdata(L, sizeof(Interpolation::CubicSpline));
+				splinesG[i] = new(memory) Interpolation::CubicSpline(x,funsG[charTostring]);
+				luaL_setmetatable(L, "InterpolatingFunction_Type");
+				lua_rawseti(L,-2,i+1);
+			}
+			else
+			{
+				printf("LuaReadFPLOBasis: Couldn't find ");
+				printf("%s\n", orbitalNames[i]);
+				fflush(stdout);
+			}
+
+		}
+	}
 	//Read small part
-	if (len == 3)
+	if (len == 3 )
 	{
 		name2 = luaL_checkstring(L,3);
 		file2.open(name2);
@@ -190,24 +244,50 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
 		splinesF = vector<Interpolation::CubicSpline*>(Norbitals);
 
 		// Push small part on stack
-		lua_createtable(L,0,Norbitals);
-		for (uint32_t i = 0; i < Norbitals; i++)
+		if (strcmp(Options.Method,"BSpline")==0)
 		{
-			string charTostring(orbitalNames[i]);
-			if (funsF.find(charTostring) != funsF.end())
+			lua_createtable(L,0,Norbitals);
+			for (uint32_t i = 0; i < Norbitals; i++)
 			{
-				void* memory = lua_newuserdata(L, sizeof(Interpolation::CubicSpline));
-				splinesF[i] = new(memory) Interpolation::CubicSpline(x,funsF[charTostring]);
-				luaL_setmetatable(L, "InterpolatingFunction_Type");
-				lua_rawseti(L,-2,i+1);
-			}
-			else
-			{
-				printf("LuaReadFPLOBasis: Couldn't find ");
-				printf("%s\n", orbitalNames[i]);
-				fflush(stdout);
-			}
+				string charTostring(orbitalNames[i]);
+				if (funsG.find(charTostring) != funsG.end())
+				{
+					void* memory = lua_newuserdata(L, sizeof(BSpline::TBSpline));
+					dgetrs(&TRANS,&N,&NRHS,&(B[0]),&N,&(IPIV[0]),&(funsF[charTostring][0]),&N,&info);
+					new(memory) BSpline::TBSpline(x,knots,funsF[charTostring],Options.degree);
+					luaL_setmetatable(L, "InterpolatingFunction_Type");
+					lua_rawseti(L,-2,i+1);
+				}
+				else
+				{
+					printf("LuaReadFPLOBasis: Couldn't find ");
+					printf("%s\n", orbitalNames[i]);
+					fflush(stdout);
+				}
 
+			}
+		}
+		else
+		{
+			lua_createtable(L,0,Norbitals);
+			for (uint32_t i = 0; i < Norbitals; i++)
+			{
+				string charTostring(orbitalNames[i]);
+				if (funsF.find(charTostring) != funsF.end())
+				{
+					void* memory = lua_newuserdata(L, sizeof(Interpolation::CubicSpline));
+					splinesF[i] = new(memory) Interpolation::CubicSpline(x,funsF[charTostring]);
+					luaL_setmetatable(L, "InterpolatingFunction_Type");
+					lua_rawseti(L,-2,i+1);
+				}
+				else
+				{
+					printf("LuaReadFPLOBasis: Couldn't find ");
+					printf("%s\n", orbitalNames[i]);
+					fflush(stdout);
+				}
+
+			}
 		}
 		LuaPushArray_double(L,&x[0],(int)x.size());
 		free(orbitalNames);

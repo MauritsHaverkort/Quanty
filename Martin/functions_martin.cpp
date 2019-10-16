@@ -2439,7 +2439,7 @@ static int LuaHFMatrix(lua_State *L)
 	null[0].push_back(0);
 	null[0].push_back(0);
 	null[1].push_back(0);
-	double e0 = HartreeFock::TestGSEnergy(Nocc,null,eigVec,H,n);
+	double e0 = 0;//HartreeFock::TestGSEnergy(Nocc,null,eigVec,H,n);
 	PrintMartix(&K[0],dim);
 	printf("\n");
 	PrintMartix(&F[0],dim);
@@ -2493,9 +2493,11 @@ static int LuaSlater(lua_State *L)
 	lua_check(L,3,k);
 	HartreeFock::CalcOffDiagSlaterInts(A->knots,rk1,rk2,k,n);
 	HartreeFock::CalcDiagSlaterInts(A->knots,rkD,k,n);
-	double Fk = HartreeFock::AssembleSlaterInts(A->y,A->y,B->y,B->y,rk1,rk2,rkD,n);
+	double Fk = HartreeFock::AssembleSlaterInts(A->y,B->y,A->y,B->y,rk1,rk2,rkD,n);
+	double Gk = HartreeFock::AssembleSlaterInts(A->y,B->y,B->y,A->y,rk1,rk2,rkD,n);
 	lua_push(L,Fk);
-	return 1;
+	lua_push(L,Gk);
+	return 2;
 
 //	for (uint32_t i = 1; i < Nsplines; i++)
 //	{

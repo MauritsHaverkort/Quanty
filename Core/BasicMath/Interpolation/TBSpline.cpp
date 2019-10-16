@@ -18,6 +18,14 @@ TBSpline::~TBSpline() {
 	// TODO Auto-generated destructor stub
 }
 
+TBSpline::TBSpline(const std::vector<double> &u,const std::vector<double> &k,const std::vector<double> &v, uint32_t n)
+{
+	y = v;
+	degree = n;
+	knots = k;
+	x = u;
+}
+
 void TBSpline::Create(const std::vector<double> &u, const std::vector<double> &v,uint32_t n)
 {
 	y = v;
