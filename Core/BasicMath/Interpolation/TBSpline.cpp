@@ -24,6 +24,7 @@ TBSpline::TBSpline(const std::vector<double> &u,const std::vector<double> &k,con
 	degree = n;
 	knots = k;
 	x = u;
+	type = "BSpline";
 }
 
 void TBSpline::Create(const std::vector<double> &u, const std::vector<double> &v,uint32_t n)
@@ -48,6 +49,7 @@ void TBSpline::Create(const std::vector<double> &u, const std::vector<double> &v
 	{
 		printf("Error TBSpline.Create: dgesv info = %i\n",info);
 	}
+	type = "BSpline";
 
 }
 
