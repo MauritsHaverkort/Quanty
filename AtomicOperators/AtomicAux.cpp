@@ -177,6 +177,7 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
 		BSpline::GenerateGrid(x,knots,Options.degree);
 		BSpline::GetKnotMatrix(knots,Options.degree,x,B);
 		dgetrf(&N,&N,&(B[0]),&N,&(IPIV[0]),&info);
+		if (info) printf("Error LuaReadFPLOBasisFunctions: dgetrf info = %d\n",info);
 		lua_createtable(L,0,Norbitals);
 		for (uint32_t i = 0; i < Norbitals; i++)
 		{
@@ -185,6 +186,7 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
 			{
 				void* memory = lua_newuserdata(L, sizeof(BSpline::TBSpline));
 				dgetrs(&TRANS,&N,&NRHS,&(B[0]),&N,&(IPIV[0]),&(funsG[charTostring][0]),&N,&info);
+				if (info) printf("Error LuaReadFPLOBasisFunctions: dgetrs info = %d\n",info);
 				new(memory) BSpline::TBSpline(x,knots,funsG[charTostring],Options.degree);
 				luaL_setmetatable(L, "InterpolatingFunction_Type");
 				lua_rawseti(L,-2,i+1);
@@ -254,6 +256,7 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
 				{
 					void* memory = lua_newuserdata(L, sizeof(BSpline::TBSpline));
 					dgetrs(&TRANS,&N,&NRHS,&(B[0]),&N,&(IPIV[0]),&(funsF[charTostring][0]),&N,&info);
+					if (info) printf("Error LuaReadFPLOBasisFunctions: dgetrs info = %d\n",info);
 					new(memory) BSpline::TBSpline(x,knots,funsF[charTostring],Options.degree);
 					luaL_setmetatable(L, "InterpolatingFunction_Type");
 					lua_rawseti(L,-2,i+1);
