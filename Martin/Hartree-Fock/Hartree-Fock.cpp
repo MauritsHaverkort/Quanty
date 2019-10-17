@@ -325,33 +325,37 @@ void CalcDiagSlaterInts(const vector<double> &x, const vector<double> &BSval,uin
 		vector<double> u1,w1, u2, w2;
 		Quad::GaussianQuadratureWeights(Nweights,u1,w1,x[iv],x[iv+1]);
 		uint32_t lowerIdx = iv > n ? iv-n : 0;
-		for (uint32_t i1 = lowerIdx; i1 <= Min(iv,Nspline-1); i1++)
+		double BSval2[Nweights*ks];
+		for (uint32_t idx1 = 0; idx1 < u1.size(); idx1++)
 		{
-			for (uint32_t j1 = lowerIdx; j1 <= Min(iv,Nspline-1); j1++) //TODO: Check symmetry
+			Quad::GaussianQuadratureWeights(Nweights,u2,w2,x[iv],u1[idx1]);
+			for (uint32_t i1 = lowerIdx; i1 <= Min(iv,Nspline-1); i1++)
 			{
-				for (uint32_t i2 = i1; i2 <= Min(iv,Nspline-1); i2++)
+				for (uint32_t idx2 = 0; idx2 < u2.size(); idx2++)
 				{
-					for (uint32_t j2 = j1; j2 <= Min(iv,Nspline-1); j2++)
+					BSval2[(i1-lowerIdx)* Nweights + idx2] = BSpline::Evaluate(i1,n,x,u2[idx2]);
+				}
+			}
+			for (uint32_t i1 = lowerIdx; i1 <= Min(iv,Nspline-1); i1++)
+			{
+				for (uint32_t j1 = lowerIdx; j1 <= Min(iv,Nspline-1); j1++) //TODO: Check symmetry
+				{
+					for (uint32_t i2 = i1; i2 <= Min(iv,Nspline-1); i2++)
 					{
-						double Itot = 0;
-						for (uint32_t idx1 = 0; idx1 < u1.size(); idx1++)
+						for (uint32_t j2 = j1; j2 <= Min(iv,Nspline-1); j2++)
 						{
-							Quad::GaussianQuadratureWeights(Nweights,u2,w2,x[iv],u1[idx1]);
 							double I2 = 0;
 							for (uint32_t idx2 = 0; idx2 < u2.size(); idx2++)
 							{
-								I2 += w2[idx2] * std::pow(u2[idx2],k) * BSpline::Evaluate(j1,n,x,u2[idx2])* BSpline::Evaluate(j2,n,x,u2[idx2]);
+								I2 += w2[idx2] * std::pow(u2[idx2],k) * BSval2[(j1-lowerIdx)* Nweights + idx2]* BSval2[(j2-lowerIdx)* Nweights + idx2];
 							}
-							Itot += I2 * w1[idx1] * std::pow(u1[idx1],-k-1) * BSval[iv*ks*Nweights + (i1-lowerIdx)*Nweights + idx1]* BSval[iv*ks*Nweights + (i2-lowerIdx)*Nweights + idx1];
+							double Itot = I2 * w1[idx1] * std::pow(u1[idx1],-k-1) * BSval[iv*ks*Nweights + (i1-lowerIdx)*Nweights + idx1]* BSval[iv*ks*Nweights + (i2-lowerIdx)*Nweights + idx1];
+
+							rkD[iv*ks4 +(i1-lowerIdx)*ks3 + (j1-lowerIdx)*ks2 + (i2-lowerIdx)*ks +(j2-lowerIdx)] += Itot;
+							if (i1 != i2) rkD[iv*ks4 +(i2-lowerIdx)*ks3 + (j1-lowerIdx)*ks2 + (i1-lowerIdx)*ks +(j2-lowerIdx)] += Itot;
+							if (j1 != j2) rkD[iv*ks4 +(i1-lowerIdx)*ks3 + (j2-lowerIdx)*ks2 + (i2-lowerIdx)*ks +(j1-lowerIdx)] += Itot;
+							if (i1 != i2 && j1 != j2) rkD[iv*ks4 +(i2-lowerIdx)*ks3 + (j2-lowerIdx)*ks2 + (i1-lowerIdx)*ks +(j1-lowerIdx)] += Itot;
 						}
-						rkD[iv*ks4 +(i1-lowerIdx)*ks3 + (j1-lowerIdx)*ks2 + (i2-lowerIdx)*ks +(j2-lowerIdx)] = Itot;
-						rkD[iv*ks4 +(i2-lowerIdx)*ks3 + (j1-lowerIdx)*ks2 + (i1-lowerIdx)*ks +(j2-lowerIdx)] = Itot;
-						rkD[iv*ks4 +(i1-lowerIdx)*ks3 + (j2-lowerIdx)*ks2 + (i2-lowerIdx)*ks +(j1-lowerIdx)] = Itot;
-						rkD[iv*ks4 +(i2-lowerIdx)*ks3 + (j2-lowerIdx)*ks2 + (i1-lowerIdx)*ks +(j1-lowerIdx)] = Itot;
-//						rkD[iv*ks4 +(j1-lowerIdx)*ks3 + (i1-lowerIdx)*ks2 + (j2-lowerIdx)*ks +(i2-lowerIdx)] = Itot;
-//						rkD[iv*ks4 +(j2-lowerIdx)*ks3 + (i1-lowerIdx)*ks2 + (j1-lowerIdx)*ks +(i2-lowerIdx)] = Itot;
-//						rkD[iv*ks4 +(j1-lowerIdx)*ks3 + (i2-lowerIdx)*ks2 + (j2-lowerIdx)*ks +(i1-lowerIdx)] = Itot;
-//						rkD[iv*ks4 +(j2-lowerIdx)*ks3 + (i2-lowerIdx)*ks2 + (j1-lowerIdx)*ks +(i1-lowerIdx)] = Itot;
 					}
 				}
 			}
@@ -413,16 +417,80 @@ double AssembleSlaterInts(uint32_t i1, uint32_t j1,uint32_t i2, uint32_t j2, con
 	return val;
 }
 
+double AssembleSlaterInts2(const vector<double> &Ci1,const vector<double> &Cj1,const vector<double> &Ci2,const vector<double> &Cj2,
+						  const vector<double> &rk1, const vector<double> &rk2, const vector<double> &rkD, uint32_t n)
+{
+	double val = 0;
+	uint32_t ks = n + 1;
+	uint32_t ks2 = ks*ks;
+	uint32_t ks3 = ks2*ks;
+	uint32_t ks4 = ks3*ks;
+	uint32_t nv = (uint32_t) rk1.size() /ks /ks;
+	uint32_t Nspline = nv - n;
+	for (uint32_t iv = 0; iv < nv; iv++)
+	{
+		uint32_t lowerIdx = iv > n ? iv-n : 0;
+		uint32_t iMax = lowerIdx + ks <= Nspline ? ks : Nspline -lowerIdx;
+		for (uint32_t i1 = 0; i1 < iMax; i1++)
+			for (uint32_t j1 = 0; j1 < iMax; j1++)
+				for (uint32_t i2 = 0; i2 < iMax; i2++)
+					for (uint32_t j2 = 0; j2 < iMax; j2++)
+					{
+						val += (rkD[iv*ks4 +(i1)*ks3 + (j1)*ks2 + (i2)*ks +(j2)] + rkD[iv*ks4 +(j1)*ks3 + (i1)*ks2 + (j2)*ks +(i2)])
+							* Ci1[i1+lowerIdx] * Ci2[i2+lowerIdx] * Cj1[j1+lowerIdx] * Cj2[j2+lowerIdx] ;
+					}
+	}
+
+	for (uint32_t iv = 0; iv < nv; iv++)
+	{
+		uint32_t lowerIdx = iv > n ? iv-n : 0;
+		uint32_t iMax = lowerIdx + ks <= Nspline ? ks : Nspline -lowerIdx;
+		double I11 = 0;
+		double I21 = 0;
+		for (uint32_t i1 = 0; i1 < iMax; i1++)
+			for (uint32_t i2 = 0; i2 < iMax; i2++)
+			{
+				I11 += rk1[iv*ks*ks + (i1)*ks +i2] * Ci1[i1+lowerIdx] * Ci2[i2+lowerIdx];
+				I21 += rk1[iv*ks*ks + (i1)*ks +i2] * Cj1[i1+lowerIdx] * Cj2[i2+lowerIdx];
+			}
+		double I12 = 0;
+		double I22 = 0;
+		for (uint32_t jv = iv+1; jv < nv; jv++)
+		{
+			uint32_t lowerIdxj = jv > n ? jv-n : 0;
+			uint32_t jMax = lowerIdxj + ks <= Nspline ? ks : Nspline -lowerIdxj;
+			for (uint32_t j1 = 0; j1 < jMax; j1++)
+				for (uint32_t j2 = 0; j2 < jMax; j2++)
+				{
+					I12 += rk2[jv*ks*ks + (j1)*ks +j2] * Cj1[j1+lowerIdxj] * Cj2[j2+lowerIdxj];
+					I22 += rk2[jv*ks*ks + (j1)*ks +j2] * Ci1[j1+lowerIdxj] * Ci2[j2+lowerIdxj];
+				}
+		}
+		val += I11*I12 + I21*I22;
+
+	}
+	return val;
+}
+
 double AssembleSlaterInts(const vector<double> &Ci1,const vector<double> &Cj1,const vector<double> &Ci2,const vector<double> &Cj2,
 						  const vector<double> &rk1, const vector<double> &rk2, const vector<double> &rkD, uint32_t n)
 {
 	double val = 0;
+	uint32_t ks = n +1;
 	uint32_t Nc = (uint32_t) Ci1.size();
 	for (uint32_t i1 = 0; i1 < Nc; i1++)
+	{
+		uint32_t imin = i1 > ks ? i1 -ks : 0;
+		uint32_t imax = Min(i1+ks,Nc);
 		for (uint32_t j1 = 0; j1 < Nc; j1++)
-			for (uint32_t i2 = 0; i2 < Nc; i2++)
-				for (uint32_t j2 = 0; j2 < Nc; j2++)
+		{
+			uint32_t jmin = j1 > ks ? j1 -ks : 0;
+			uint32_t jmax = Min(j1+ks,Nc);
+			for (uint32_t i2 = imin; i2 < imax; i2++)
+				for (uint32_t j2 = jmin; j2 < jmax; j2++)
 					val += AssembleSlaterInts(i1,j1,i2,j2,rk1,rk2,rkD,n)*Ci1[i1]*Cj1[j1]*Ci2[i2]*Cj2[j2];
+		}
+	}
 	return val;
 
 }

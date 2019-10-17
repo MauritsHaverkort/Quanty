@@ -122,7 +122,7 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
 		{"Degree","uint32_t",&(Options.degree)},
         {NULL, NULL, NULL}};
     Options.Method = "CubicSpline";
-    Options.degree = 8;
+    Options.degree = 7;
 
     bool QOptions = LuaTestOptionsList(L,-1);
     if (QOptions)

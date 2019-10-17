@@ -151,7 +151,7 @@ void GetSlaterIntegrals(const vector<BSpline::TBSpline *> &G,const vector<BSplin
 		HartreeFock::CalcDiagSlaterInts(G[0]->knots,BSval,Nweights,rkD[k],k,n);
 	}
 	EndTiming("Slater Init", &GlobalTime);
-	printf("init done\n");
+	//printf("init done\n");
 	BeginTiming("Slater Calculate", &GlobalTime);
 	for (uint32_t i1 = 0; i1 < Nfuns; i1++)
 	{
@@ -189,10 +189,10 @@ void GetSlaterIntegrals(const vector<BSpline::TBSpline *> &G,const vector<BSplin
 						{
 							uint32_t idx = (k - k0)/2;
 							Integral.k[idx] = k;
-							Integral.val[idx] = HartreeFock::AssembleSlaterInts(G[i1]->y,G[j1]->y,G[i2]->y,G[j1]->y,rk1[k],rk2[k],rkD[k],n)
-											  + HartreeFock::AssembleSlaterInts(G[i1]->y,G[j1]->y,F[i2]->y,F[j1]->y,rk1[k],rk2[k],rkD[k],n)
-											  + HartreeFock::AssembleSlaterInts(F[i1]->y,F[j1]->y,G[i2]->y,G[j1]->y,rk1[k],rk2[k],rkD[k],n)
-											  + HartreeFock::AssembleSlaterInts(F[i1]->y,F[j1]->y,F[i2]->y,F[j1]->y,rk1[k],rk2[k],rkD[k],n);
+							Integral.val[idx] = HartreeFock::AssembleSlaterInts2(G[i1]->y,G[j1]->y,G[i2]->y,G[j2]->y,rk1[k],rk2[k],rkD[k],n)
+											  + HartreeFock::AssembleSlaterInts2(G[i1]->y,G[j1]->y,F[i2]->y,F[j2]->y,rk1[k],rk2[k],rkD[k],n)
+											  + HartreeFock::AssembleSlaterInts2(F[i1]->y,F[j1]->y,G[i2]->y,G[j2]->y,rk1[k],rk2[k],rkD[k],n)
+											  + HartreeFock::AssembleSlaterInts2(F[i1]->y,F[j1]->y,F[i2]->y,F[j2]->y,rk1[k],rk2[k],rkD[k],n);
 						}
 						si.push_back(Integral);
 				    }
@@ -227,7 +227,7 @@ void GetSlaterIntegrals(const vector<BSpline::TBSpline *> &G, const vector<int> 
 		HartreeFock::CalcDiagSlaterInts(G[0]->knots,BSval,Nweights,rkD[k],k,n);
 	}
 	EndTiming("Slater Init", &GlobalTime);
-	printf("init done\n");
+//	printf("init done\n Nfuns = %u\n",Nfuns);
 	BeginTiming("Slater Calculate", &GlobalTime);
 	for (uint32_t i1 = 0; i1 < Nfuns; i1++)
 	{
@@ -250,7 +250,8 @@ void GetSlaterIntegrals(const vector<BSpline::TBSpline *> &G, const vector<int> 
 				    }
 				    if (k0 <= k1)
 				    {
-						Integral.tau.kappa[0] = k_i1;
+						//printf("i1 = %u\t21 = %u\ti2 = %u\tj2 = %u\tk0 %u\tk1 = %u\n",i1,j1,i2,j2,k0,k1);
+				    	Integral.tau.kappa[0] = k_i1;
 						Integral.tau.kappa[1] = k_j1;
 						Integral.tau.kappa[2] = k_i2;
 						Integral.tau.kappa[3] = k_j2;
@@ -265,7 +266,7 @@ void GetSlaterIntegrals(const vector<BSpline::TBSpline *> &G, const vector<int> 
 						{
 							uint32_t idx = (k - k0)/2;
 							Integral.k[idx] = k;
-							Integral.val[idx] = HartreeFock::AssembleSlaterInts(G[i1]->y,G[j1]->y,G[i2]->y,G[j1]->y,rk1[k],rk2[k],rkD[k],n);
+							Integral.val[idx] = HartreeFock::AssembleSlaterInts2(G[i1]->y,G[j1]->y,G[i2]->y,G[j2]->y,rk1[k],rk2[k],rkD[k],n);
 						}
 						si.push_back(Integral);
 				    }
