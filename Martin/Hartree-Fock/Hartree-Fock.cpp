@@ -169,12 +169,12 @@ void CreateGrid(unsigned int Nknots, int n, double R, int powGrid, vector<double
 	}
 }
 
-void PutBSplinesOnQuadGrid(const vector<double> &x, uint32_t n, vector<double> &BSval)
+void PutBSplinesOnQuadGrid(const vector<double> &x, uint32_t n,uint32_t Nweights, vector<double> &BSval)
 {
 	uint32_t ks = n + 1;
 	uint32_t nv = (uint32_t) x.size() - 1;
 	uint32_t Nspline = (uint32_t) x.size() - n - 1;
-	uint32_t Nweights = ks +3;
+//	uint32_t Nweights = ks +3;
 	BSval = vector<double>(nv *ks*Nweights);
 #pragma omp parallel for
 	for (uint32_t iv = n; iv < nv; iv++)
@@ -227,14 +227,14 @@ void CalcOffDiagSlaterInts(const vector<double> &x, vector<double> &rk1, vector<
 	}
 }
 
-void CalcOffDiagSlaterInts(const vector<double> &x, const vector<double> &BSval, vector<double> &rk1, vector<double> &rk2, int k, uint32_t n)
+void CalcOffDiagSlaterInts(const vector<double> &x, const vector<double> &BSval,uint32_t Nweights, vector<double> &rk1, vector<double> &rk2, int k, uint32_t n)
 {
 	uint32_t ks = n + 1;
 	uint32_t nv = (uint32_t) x.size() - 1;
 	uint32_t Nspline = (uint32_t) x.size() - n - 1;
 	rk1 = vector<double>(nv *ks*ks);
 	rk2 = vector<double>(nv *ks*ks);
-	uint32_t Nweights = ks +3;
+//	uint32_t Nweights = ks +3;
 #pragma omp parallel for
 	for (uint32_t iv = n; iv < nv; iv++)
 	{
@@ -309,7 +309,7 @@ void CalcDiagSlaterInts(const vector<double> &x, vector<double> &rkD, int k, uin
 	}
 }
 
-void CalcDiagSlaterInts(const vector<double> &x, const vector<double> &BSval, vector<double> &rkD, int k, uint32_t n)
+void CalcDiagSlaterInts(const vector<double> &x, const vector<double> &BSval,uint32_t Nweights, vector<double> &rkD, int k, uint32_t n)
 {
 	uint32_t ks = n + 1;
 	uint32_t nv = (uint32_t) x.size() - 1;
@@ -317,7 +317,7 @@ void CalcDiagSlaterInts(const vector<double> &x, const vector<double> &BSval, ve
 	uint32_t ks2 = ks*ks;
 	uint32_t ks3 = ks2*ks;
 	uint32_t ks4 = ks3*ks;
-	uint32_t Nweights = ks +3;
+//	uint32_t Nweights = ks +3;
 	rkD = vector<double>(nv*ks4);
 #pragma omp parallel for
 	for (uint32_t iv = n; iv < nv; iv++)
@@ -524,6 +524,7 @@ double CalcGSEnergy(const vector<vector<uint32_t> > &Nocc, const vector<vector<d
 	}
 	return e0;
 }
+
 double TestGSEnergy(const vector<vector<uint32_t> > &Nocc, const vector<vector<double> > &eigVal, const vector<vector<double> > &eigVec, const vector<vector<double> > &H, uint32_t n)
 {
 	double e0 = 0;
@@ -563,11 +564,12 @@ void SCScheme(const vector<double> &x, uint32_t n, int Z,int Nelec, uint32_t NSC
 	vector<vector<uint32_t> > Nocc = vector<vector<uint32_t> >(lMax+1); //TODO: init
 	BeginTiming("SI", &GlobalTime);
 	vector<double> BSval;
-	PutBSplinesOnQuadGrid(x,n,BSval);
+	uint32_t Nweights = n +4;
+	PutBSplinesOnQuadGrid(x,n,Nweights,BSval);
 	for (uint32_t k = 0; k <= kMax; k++)
 	{
-		CalcOffDiagSlaterInts(x,BSval,rk1[k],rk2[k],k,n);
-		CalcDiagSlaterInts(x,BSval,rkD[k],k,n);
+		CalcOffDiagSlaterInts(x,BSval,Nweights,rk1[k],rk2[k],k,n);
+		CalcDiagSlaterInts(x,BSval,Nweights,rkD[k],k,n);
 	}
 	EndTiming("SI", &GlobalTime);
 	uint32_t Nsplines = (uint32_t) x.size() - n-1;

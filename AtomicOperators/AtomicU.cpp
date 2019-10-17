@@ -449,8 +449,24 @@ static int LuaGetSlaterIntegrals (lua_State *L)
     SSlaterIntegral *integrals;
     vector<string> orbitalNames;
     vector<int> indToK;
+    struct
+    {
+		uint32_t Nweights;
+    } Options;
+    LuaOptionsType LuaEDOptions[]={
+        {"Nweights","uint32_t",&(Options.Nweights)},
+        {NULL, NULL, NULL}};
+    Options.Nweights = 20;
 
-    if ( len < 2 ||  len > 3)
+    bool QOptions = LuaTestOptionsList(L,-1);
+    if (QOptions)
+    {
+         LuaCheckOptions(L,-1,LuaEDOptions);
+         len--;
+    }
+
+//    if ( len < 2 ||  len > 3)
+    if ( len < 2)
     {
     	return luaL_error(L,"Error in LuaGetSlaterIntegrals: 2 or 3 arguments expected; got %d",len);
     }
@@ -458,7 +474,7 @@ static int LuaGetSlaterIntegrals (lua_State *L)
     orbitalNames = luaL_checkarray_string(L, 1);
     indToK = NamesToKappa(orbitalNames);
 
-    if (len == 3)
+    if (len >= 3)
 	{
 		uint32_t NfunsG = (uint32_t)lua_objlen(L,2);
 
@@ -495,12 +511,57 @@ static int LuaGetSlaterIntegrals (lua_State *L)
 			funsF[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
 			lua_pop(L,1);
 		}
+		if (funsG[0]->type == "BSpline")
+		{
+			vector<SSlaterIntegral> si;
+			vector<BSpline::TBSpline*> G = vector<BSpline::TBSpline*>(NfunsF);
+			vector<BSpline::TBSpline*> F = vector<BSpline::TBSpline*>(NfunsF);
+			for(uint32_t i = 0; i < NfunsF; i++)
+			{
+				lua_rawgeti(L, 2, i+1);
+				G[i] = (BSpline::TBSpline*) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
+				lua_pop(L,1);
+				lua_rawgeti(L, 3, i+1);
+				F[i] = (BSpline::TBSpline*) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
+				lua_pop(L,1);
+			}
+			GetSlaterIntegrals(G,F,indToK,Options.Nweights,si);
+			lua_createtable(L,(uint32_t) si.size(),0);
+			for(uint32_t i = 0; i < (uint32_t) si.size(); i++)
+			{
 
-		x = funsG[0]->GetX();
+				uint32_t *n = si[i].tau.n;
+				double *Rk = si[i].val;
+				uint32_t N = si[i].Nval;
+				uint32_t *k = si[i].k;
 
-		vector<vector<double> > wavefuns = PutRelativisticSplineOnGrid(funsG,funsF,x,0);
+				string orb1 = orbitalNames[n[0]];
+				string orb2 = orbitalNames[n[1]];
+				string orb3 = orbitalNames[n[2]];
+				string orb4 = orbitalNames[n[3]];
 
-		integrals = GetSlaterIntegrals(wavefuns,x, indToK, NIntegrals);
+				Lua_Push_SlaterIntegral(L,Rk,k,N,orb1,orb2,orb3,orb4);
+				Lua_Push_SlaterIntegral(L,Rk,k,N,orb3,orb2,orb1,orb4);
+				Lua_Push_SlaterIntegral(L,Rk,k,N,orb1,orb4,orb3,orb2);
+				Lua_Push_SlaterIntegral(L,Rk,k,N,orb3,orb4,orb1,orb2);
+
+				Lua_Push_SlaterIntegral(L,Rk,k,N,orb2,orb1,orb4,orb3);
+				Lua_Push_SlaterIntegral(L,Rk,k,N,orb2,orb3,orb4,orb1);
+				Lua_Push_SlaterIntegral(L,Rk,k,N,orb4,orb1,orb2,orb3);
+				Lua_Push_SlaterIntegral(L,Rk,k,N,orb4,orb3,orb2,orb1);
+
+
+			}
+			return 1;
+		}
+		else
+		{
+			x = funsG[0]->GetX();
+
+			vector<vector<double> > wavefuns = PutRelativisticSplineOnGrid(funsG,funsF,x,0);
+
+			integrals = GetSlaterIntegrals(wavefuns,x, indToK, NIntegrals);
+		}
     }
     else
     {
@@ -526,6 +587,46 @@ static int LuaGetSlaterIntegrals (lua_State *L)
 			lua_rawgeti(L, 2, i+1);
 			funsG[i] = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
 			lua_pop(L,1);
+		}
+		if (funsG[0]->type == "BSpline")
+		{
+			vector<SSlaterIntegral> si;
+			vector<BSpline::TBSpline*> G = vector<BSpline::TBSpline*>(NfunsG);
+			for(uint32_t i = 0; i < NfunsG; i++)
+			{
+				lua_rawgeti(L, 2, i+1);
+				G[i] = (BSpline::TBSpline*) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
+				lua_pop(L,1);
+
+			}
+			GetSlaterIntegrals(G,indToK,Options.Nweights,si);
+			lua_createtable(L,(uint32_t) si.size(),0);
+			for(uint32_t i = 0; i < (uint32_t) si.size(); i++)
+			{
+
+				uint32_t *n = si[i].tau.n;
+				double *Rk = si[i].val;
+				uint32_t N = si[i].Nval;
+				uint32_t *k = si[i].k;
+
+				string orb1 = orbitalNames[n[0]];
+				string orb2 = orbitalNames[n[1]];
+				string orb3 = orbitalNames[n[2]];
+				string orb4 = orbitalNames[n[3]];
+
+				Lua_Push_SlaterIntegral(L,Rk,k,N,orb1,orb2,orb3,orb4);
+				Lua_Push_SlaterIntegral(L,Rk,k,N,orb3,orb2,orb1,orb4);
+				Lua_Push_SlaterIntegral(L,Rk,k,N,orb1,orb4,orb3,orb2);
+				Lua_Push_SlaterIntegral(L,Rk,k,N,orb3,orb4,orb1,orb2);
+
+				Lua_Push_SlaterIntegral(L,Rk,k,N,orb2,orb1,orb4,orb3);
+				Lua_Push_SlaterIntegral(L,Rk,k,N,orb2,orb3,orb4,orb1);
+				Lua_Push_SlaterIntegral(L,Rk,k,N,orb4,orb1,orb2,orb3);
+				Lua_Push_SlaterIntegral(L,Rk,k,N,orb4,orb3,orb2,orb1);
+
+
+			}
+			return 1;
 		}
 		integrals = GetSlaterIntegrals(funsG, indToK, NIntegrals);
     }

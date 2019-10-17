@@ -434,3 +434,14 @@ bool InvolvesOrbital(uint32_t m, uint32_t *orbs, uint32_t N)
 	return false;
 }
 
+template <typename T>
+T MaxAbs(const std::vector<T> &list)
+{
+	T val = list[0];
+	for (uint32_t i = 1; i < (uint32_t) list.size(); i++)
+	{
+		val = (Abs(val) < Abs(list[i])) ? list[i] : val;
+	}
+	return val;
+}
+
