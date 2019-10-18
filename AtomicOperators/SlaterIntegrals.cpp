@@ -135,7 +135,7 @@ void GetSlaterIntegrals(const vector<BSpline::TBSpline *> &G,const vector<BSplin
 	vector<vector<double> > kernels;
 	uint32_t Nfuns = (uint32_t) G.size();
 	uint32_t n = G[0]->degree;
-	SSlaterIntegral Integral;
+
 
 	kMax = 2 * Abs(MaxAbs(indToK)) -1;
 	vector<vector<double> > rk1 = vector<vector<double> >(kMax+1);
@@ -153,8 +153,10 @@ void GetSlaterIntegrals(const vector<BSpline::TBSpline *> &G,const vector<BSplin
 	EndTiming("Slater Init", &GlobalTime);
 	//printf("init done\n");
 	BeginTiming("Slater Calculate", &GlobalTime);
+#pragma omp parallel for
 	for (uint32_t i1 = 0; i1 < Nfuns; i1++)
 	{
+		SSlaterIntegral Integral;
 		int k_i1 = indToK[i1];
 		for (uint32_t j1 = i1; j1 < Nfuns; j1++)
 		{
@@ -190,10 +192,11 @@ void GetSlaterIntegrals(const vector<BSpline::TBSpline *> &G,const vector<BSplin
 							uint32_t idx = (k - k0)/2;
 							Integral.k[idx] = k;
 							Integral.val[idx] = HartreeFock::AssembleSlaterInts2(G[i1]->y,G[j1]->y,G[i2]->y,G[j2]->y,rk1[k],rk2[k],rkD[k],n)
-											  + HartreeFock::AssembleSlaterInts2(G[i1]->y,G[j1]->y,F[i2]->y,F[j2]->y,rk1[k],rk2[k],rkD[k],n)
-											  + HartreeFock::AssembleSlaterInts2(F[i1]->y,F[j1]->y,G[i2]->y,G[j2]->y,rk1[k],rk2[k],rkD[k],n)
+											  + HartreeFock::AssembleSlaterInts2(G[i1]->y,F[j1]->y,G[i2]->y,F[j2]->y,rk1[k],rk2[k],rkD[k],n)
+											  + HartreeFock::AssembleSlaterInts2(F[i1]->y,G[j1]->y,F[i2]->y,G[j2]->y,rk1[k],rk2[k],rkD[k],n)
 											  + HartreeFock::AssembleSlaterInts2(F[i1]->y,F[j1]->y,F[i2]->y,F[j2]->y,rk1[k],rk2[k],rkD[k],n);
 						}
+#pragma omp critical
 						si.push_back(Integral);
 				    }
 				}

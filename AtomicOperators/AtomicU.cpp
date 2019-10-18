@@ -12,7 +12,7 @@ using std::string;
 using std::ifstream;
 using std::map;
 
-static int LuaOperatorNewAtomicU (lua_State *L)
+static int LuaOperatorNewAtomicUGeneralFunction (lua_State *L)
 {
     OperatorType *op;
     uint32_t Nindices, temp, len, NF;
@@ -282,6 +282,94 @@ static int LuaOperatorNewAtomicU (lua_State *L)
 	free(indices);
 
     return 1;
+}
+
+static int LuaOperatorNewAtomicUBSpline (lua_State *L)
+{
+    OperatorType *op;
+    uint32_t Nindices, temp, len, NF;
+    uint16_t **indices;
+    vector<double> x;
+    len = (uint32_t)lua_gettop(L);
+    struct
+    {
+        bool conserve;
+        bool QMF;
+        uint32_t Nweights;
+    } Options;
+    LuaOptionsType LuaEDOptions[]={
+        {"conserve","bool",&(Options.conserve)},
+        {"1P-Operator","bool",&(Options.QMF)},
+		{"Nweights","uint32_t",&(Options.Nweights)},
+        {NULL, NULL, NULL}};
+    Options.conserve = false;
+    Options.QMF = true;
+    Options.Nweights = 11; // 8 + 3
+
+    bool QOptions = LuaTestOptionsList(L,-1);
+    if (QOptions)
+    {
+         LuaCheckOptions(L,-1,LuaEDOptions);
+         len--;
+    }
+    NF = (uint32_t)luaL_checkunsigned(L, 1);
+    vector<int> indToK;
+    vector<BSpline::TBSpline*> G, F;
+    if (len == 4)
+    {
+    	lua_getfield(L,2,"kappas");
+    	if (lua_isnil(L,-1)) return luaL_error(L,"error in LuaOperatorNewAtomicBSpline : indices on position 3 need to include field \"kappas\"\n");
+    	lua_check(L,-1,indToK);
+    	lua_pop(L,1);
+    	Nindices = (uint32_t)lua_objlen(L,2);
+		indices = (uint16_t **) malloc(Nindices * sizeof(uint16_t *));
+		if(!indices) return luaL_error(L,"malloc failed at indices in LuaOperatorNewFullCoulomb. size = %u\n",Nindices);
+		for(uint32_t i = 0; i < Nindices; i++ )
+		{
+			lua_rawgeti(L, 2, i+1);
+			indices[i] = luaL_checkarray_unit16_t(L,-1,&temp);
+			lua_pop(L,1);
+		}
+		lua_check(L,3,G);
+		lua_check(L,4,F);
+
+		op = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
+        if (Options.conserve)
+        {
+            printf("BSplie witch conserved Operator not yet implemented\n");
+        	//CreateOperatorAtomicURelativisticOccupationConserving(NF,G,F,indToK,indices, op);
+        }
+        else
+        {
+            CreateOperatorAtomicURelativistic(NF,G,F,indToK,indices,Options.Nweights, op);
+        }
+
+    }
+    luaL_setmetatable(L,"Operator_Type");
+
+
+	for(uint32_t i = 0; i < Nindices; i++ )
+	{
+		free(indices[i]);
+	}
+	free(indices);
+	return 1;
+}
+
+static int LuaOperatorNewAtomicU (lua_State *L)
+{
+	luaL_checktype(L, 3, LUA_TTABLE);
+	lua_rawgeti(L, 3, 1);
+	if ( ((Interpolation::InterpolatingFunction *)luaL_checkudata(L, -1, "InterpolatingFunction_Type"))->type == "BSpline")
+	{
+		lua_pop(L,1);
+		return LuaOperatorNewAtomicUBSpline(L);
+	}
+	else
+	{
+		lua_pop(L,1);
+		return LuaOperatorNewAtomicUGeneralFunction(L);
+	}
 }
 
 static int LuaOperatorNewContinuumU (lua_State *L)
@@ -766,6 +854,47 @@ vector<int> NamesToKappa(const vector<string> &orbitalNames)
 	return kappas;
 }
 
+uint32_t CreateOperatorAtomicURelativistic(uint32_t const NFermion,const vector<BSpline::TBSpline*> &G, const vector<BSpline::TBSpline*> &F, const vector<int> &indToK, uint16_t **indices, uint32_t Nweights, OperatorType *op)
+{
+  if(GlobalTimeOn&0x100) BeginTiming("Create Atomic U Relativistic", &GlobalTime);
+  OperatorType optemp;
+    vector<SSlaterIntegral> integrals;
+    uint32_t NIntegrals, i;
+
+    GetSlaterIntegrals(G,F,indToK,Nweights,integrals);
+    NIntegrals = (uint32_t) integrals.size();
+    int *k;
+    unsigned int *n;
+    double *Fk;
+
+    k = integrals[0].tau.kappa;
+    n = integrals[0].tau.n;
+    Fk = integrals[0].val;
+
+    CreateOperatorAtomicURelativisticOneIntegralBspline(NFermion,k[0],k[1],k[2],k[3],indices[n[0]],indices[n[1]],indices[n[2]],indices[n[3]],Fk,n[0],n[1],n[2],n[3],op);
+
+    for( i = 1; i < NIntegrals; i++)
+    {
+        k = integrals[i].tau.kappa;
+        n = integrals[i].tau.n;
+        Fk = integrals[i].val;
+        //printf("Fk[0] = %f\t%u %u %u %u\n",Fk[0],n[0],n[1],n[2],n[3]);
+
+        CreateOperatorAtomicURelativisticOneIntegralBspline(NFermion,k[0],k[1],k[2],k[3],indices[n[0]],indices[n[1]],indices[n[2]],indices[n[3]],Fk,n[0],n[1],n[2],n[3],&optemp);
+
+        OperatorAdd(op, optemp, 1., 0.);
+
+    }
+    for ( i = 0; i < NIntegrals; i++)
+    {
+    	free(integrals[i].val);
+    	free(integrals[i].k);
+    }
+
+  if(GlobalTimeOn&0x100) EndTiming("Create Atomic U Relativistic", &GlobalTime);
+  return 0;
+}
+
 uint32_t CreateOperatorAtomicURelativistic(uint32_t const NFermion,const vector<vector<double> > &basisfuns, const vector<double> &grid, const vector<int> &indToK, uint16_t **indices, OperatorType *op, bool Qcontinuum)
 {
   if(GlobalTimeOn&0x100) BeginTiming("Create Atomic U Relativistic", &GlobalTime);
@@ -1055,6 +1184,65 @@ void CreateOperatorAtomicURelativisticOneIntegral(uint32_t const NFermion,int co
     }
 
     if ( (n1 != n2) || (n3 != n4) )
+    {
+        CreateOperatorCoulombFourRelativisticShells(NFermion,kappa2,kappa1,kappa4,kappa3, Jindex2,Jindex1,Jindex4,Jindex3,Fk,&optemp);
+        OperatorAdd(op, optemp, 1., 0.);
+        FreeOperator(&optemp);
+
+        if (n1 != n3)
+        {
+            CreateOperatorCoulombFourRelativisticShells(NFermion,kappa2,kappa3,kappa4,kappa1, Jindex2,Jindex3,Jindex4,Jindex1,Fk,&optemp);
+            OperatorAdd(op, optemp, 1., 0.);
+            FreeOperator(&optemp);
+        }
+
+        if (n2 != n4)
+        {
+            CreateOperatorCoulombFourRelativisticShells(NFermion,kappa4,kappa1,kappa2,kappa3, Jindex4,Jindex1,Jindex2,Jindex3,Fk,&optemp);
+            OperatorAdd(op, optemp, 1., 0.);
+            FreeOperator(&optemp);
+            if (n1 != n3)
+            {
+                CreateOperatorCoulombFourRelativisticShells(NFermion,kappa4,kappa3,kappa2,kappa1, Jindex4,Jindex3,Jindex2,Jindex1,Fk,&optemp);
+                OperatorAdd(op, optemp, 1., 0.);
+                FreeOperator(&optemp);
+            }
+        }
+    }
+    //FreeOperator(&optemp);  //TODO if i uncomment this I get an invalid free - otherwhise heap is lost
+
+}
+
+void CreateOperatorAtomicURelativisticOneIntegralBspline(uint32_t const NFermion,int const kappa1,int const kappa2, int const kappa3,int const kappa4,uint16_t const *Jindex1,
+                                                  uint16_t const *Jindex2,uint16_t const *Jindex3, uint16_t const *Jindex4,double const *Fk, const unsigned int n1,
+												  const unsigned int n2, const unsigned int n3, const unsigned int n4, OperatorType *const op)
+{
+    OperatorType optemp;
+
+    CreateOperatorCoulombFourRelativisticShells(NFermion,kappa1,kappa2,kappa3,kappa4, Jindex1,Jindex2,Jindex3,Jindex4,Fk,op);
+
+    if (n1 != n3)
+    {
+        CreateOperatorCoulombFourRelativisticShells(NFermion,kappa3,kappa2,kappa1,kappa4, Jindex3,Jindex2,Jindex1,Jindex4,Fk,&optemp);
+        OperatorAdd(op, optemp, 1., 0.);
+        FreeOperator(&optemp);
+    }
+
+    if (n2 != n4)
+    {
+        CreateOperatorCoulombFourRelativisticShells(NFermion,kappa1,kappa4,kappa3,kappa2, Jindex1,Jindex4,Jindex3,Jindex2,Fk,&optemp);
+        OperatorAdd(op, optemp, 1., 0.);
+        FreeOperator(&optemp);
+
+        if (n1 != n3)
+        {
+            CreateOperatorCoulombFourRelativisticShells(NFermion,kappa3,kappa4,kappa1,kappa2, Jindex3,Jindex4,Jindex1,Jindex2,Fk,&optemp);
+            OperatorAdd(op, optemp, 1., 0.);
+            FreeOperator(&optemp);
+        }
+    }
+
+    if ( (n1 != n2)  ) //&& (n3 != n4)
     {
         CreateOperatorCoulombFourRelativisticShells(NFermion,kappa2,kappa1,kappa4,kappa3, Jindex2,Jindex1,Jindex4,Jindex3,Fk,&optemp);
         OperatorAdd(op, optemp, 1., 0.);

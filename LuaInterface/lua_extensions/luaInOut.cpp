@@ -548,3 +548,8 @@ bool luaL_isType(lua_State *L, int arg, const map<keyType, vector<valType> > &ex
 	}
 	return luaL_isType(L, arg, example);
 }
+
+void lua_check(lua_State *L, int arg, BSpline::TBSpline* &fun)
+{
+	fun = (BSpline::TBSpline*) luaL_checkudata(L, -1, "InterpolatingFunction_Type");
+}
