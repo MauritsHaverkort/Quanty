@@ -2413,7 +2413,7 @@ static int LuaHFMatrix(lua_State *L)
 		HartreeFock::CalcDiagSlaterInts(A->knots,rkD[k],k,n);
 	}
 	uint32_t dim = (uint32_t) A->y.size()-2;
-	int l = 1;
+	int l = 0;
 	HartreeFock::CreateFockMatrix(l,rk1,rk2,rkD,n,eigVec,dim,Nocc,F,Bums);
 	HartreeFock::CreateHartreeMatrix(l,rk1[0],rk2[0],rkD[0],n,eigVec,dim,Nocc,K,Bums);
 	HartreeFock::CreateLaplacian(A->knots,n,Lap);

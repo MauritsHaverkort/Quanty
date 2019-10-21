@@ -359,8 +359,8 @@ static int LuaOperatorNewAtomicUBSpline (lua_State *L)
 static int LuaOperatorNewAtomicU (lua_State *L)
 {
 	luaL_checktype(L, 3, LUA_TTABLE);
-	lua_rawgeti(L, 3, 1);
-	if ( ((Interpolation::InterpolatingFunction *)luaL_checkudata(L, -1, "InterpolatingFunction_Type"))->type == "BSpline")
+	lua_rawgeti(L, 3, 1); //TODO: remove > 4 in line below and implememnt non rel stuff
+	if ( ((Interpolation::InterpolatingFunction *)luaL_checkudata(L, -1, "InterpolatingFunction_Type"))->type == "BSpline" && (uint32_t)lua_gettop(L) > 4)
 	{
 		lua_pop(L,1);
 		return LuaOperatorNewAtomicUBSpline(L);

@@ -495,6 +495,75 @@ double AssembleSlaterInts(const vector<double> &Ci1,const vector<double> &Cj1,co
 
 }
 
+void CreateSuperMatrix(const vector<vector<double> > &rk1, const vector<vector<double> > &rk2, const vector<vector<double> > &rkD,
+					  uint32_t n, const vector<vector<double> > &eigVec, uint32_t dim, uint32_t lMax, vector<double> &P, vector<double> &Q)
+{
+	uint32_t nl = lMax+1;
+	uint32_t superdim = dim*dim*nl;
+	P = vector<double>(superdim*superdim);
+	Q = vector<double>(superdim*superdim);
+	for (uint32_t nu = 1; nu <= dim; nu++)
+	{
+		for (uint32_t mu = nu; mu <= dim; mu++)
+		{
+			uint32_t alpha0 = mu > n ? mu-n : 1;
+			uint32_t alpha1 = mu+n < dim ? mu+n : dim;
+			uint32_t beta0 = nu > n ? nu-n : 1;
+			uint32_t beta1 = nu+n < dim ? nu+n : dim;
+			for (uint32_t alpha = alpha0; alpha <= alpha1; alpha++)
+			{
+				for (uint32_t beta = beta0; beta <= beta1; beta++)
+				{
+					for (uint32_t la = 0; la < nl; la++)
+					{
+						for (uint32_t lb = 0; lb < nl; lb++)
+						{
+							uint32_t k0 = Abs((int)la - (int)lb);
+							uint32_t k1 = la + lb;
+							if ((k1 +k0) % 2) k0++;
+							double Fk = 0;
+							for (uint32_t k = k0; k <= k1; k +=2)
+							{
+								double cred = ThreeJSymbol(la,0,lb,0,k,0);
+								Fk += AssembleSlaterInts(nu,alpha,beta,mu,rk1[k],rk2[k],rkD[k],n)*cred*cred;
+							}
+							P[nu*superdim*dim*nl + mu*superdim*nl + la*superdim + alpha*dim*nl + beta*nl +lb] = -(2*lb+1)*Fk;
+							P[mu*superdim*dim*nl + nu*superdim*nl + la*superdim + alpha*dim*nl + beta*nl +lb] = -(2*lb+1)*Fk;
+
+						}
+					}
+				}
+			}
+		}
+	}
+	for (uint32_t nu = 1; nu <= dim; nu++)
+		{
+			uint32_t mu1 = nu+n < dim ? nu+n : dim;
+			for (uint32_t mu = nu; mu <= mu1; mu++)
+			{
+				for (uint32_t alpha = 1; alpha <= dim; alpha++)
+				{
+					uint32_t beta0 = alpha > n ? alpha-n : 1;
+					uint32_t beta1 = alpha+n < dim ? alpha+n : dim;
+					for (uint32_t beta = beta0; beta <= beta1; beta++) //TODO: alpha <= beta
+					{
+						for (uint32_t la = 0; la < nl; la++)
+						{
+							for (uint32_t lb = 0; lb < nl; lb++)
+							{
+
+								double Fk = AssembleSlaterInts(nu,alpha,mu,beta,rk1[0],rk2[0],rkD[0],n);
+								P[nu*superdim*dim*nl + mu*superdim*nl + la*superdim + alpha*dim*nl + beta*nl +lb] += 2*(2*lb+1)*Fk;
+								P[mu*superdim*dim*nl + nu*superdim*nl + la*superdim + alpha*dim*nl + beta*nl +lb] += 2*(2*lb+1)*Fk;
+
+							}
+						}
+					}
+				}
+			}
+		}
+}
+
 void CreateFockMatrix(const uint32_t la, const vector<vector<double> > &rk1, const vector<vector<double> > &rk2, const vector<vector<double> > &rkD,
 					  uint32_t n, const vector<vector<double> > &eigVec, uint32_t dim, const vector<vector<uint32_t> > &Nocc, vector<double> &F, vector<double> &FE)
 {
@@ -514,7 +583,7 @@ void CreateFockMatrix(const uint32_t la, const vector<vector<double> > &rk1, con
 				{
 					for (uint32_t lb = 0; lb < (uint32_t) Nocc.size(); lb++)
 					{
-						uint32_t k0 = Abs(la - lb);
+						uint32_t k0 = Abs((int)la - (int)lb);
 						uint32_t k1 = la + lb;
 						if ((k1 +k0) % 2) k0++;
 						double Fk = 0;
@@ -882,9 +951,9 @@ static int LuaAtomicHartreeFock(lua_State *L)
 		}
 		lua_rawseti(L,-2,l+1);
 	}
+	lua_push(L,eigVal);
 
-
-	return 1;
+	return 2;
 }
 
 
