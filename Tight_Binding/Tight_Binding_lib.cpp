@@ -2287,6 +2287,20 @@ int nonRelAngularMomentumZNumbersWithSpin(const string &orb)
 		return 2 * (2 * 4 + 1);
 	case 'h':
 		return 2 * (2 * 5 + 1);
+	case 'i':
+		return 2 * (2 * 6 + 1);
+	case 'j':
+		return 2 * (2 * 7 + 1);
+	case 'k':
+		return 2 * (2 * 8 + 1);
+	case 'l':
+			return 2 * (2 * 9 + 1);
+	case 'm':
+			return 2 * (2 * 10 + 1);
+	case 'n':
+			return 2 * (2 * 11 + 1);
+	case 'o':
+			return 2 * (2 * 12 + 1);
 	default:
 		return -1;
 	}
