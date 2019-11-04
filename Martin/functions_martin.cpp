@@ -2389,15 +2389,89 @@ static int LuaHFMatrix(lua_State *L)
 {
 	BSpline::TBSpline *A, *B;
 	A = (BSpline::TBSpline*) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
+	B = (BSpline::TBSpline*) luaL_checkudata(L, 2, "InterpolatingFunction_Type");
 	vector<vector<double> > eigVec;
-	vector<double> F,K, H, V, Lap,Bums;
+	vector<double> F,K, H, V, Lap,Bums, D, P, Q;
 	eigVec.push_back(A->y);
 	eigVec[0].pop_back();
 	eigVec[0].erase(eigVec[0].begin());
-	eigVec.push_back(A->y);
+	eigVec[0].reserve(eigVec[0].size()*2);
+	eigVec[0].insert(eigVec[0].end(),eigVec[0].begin(),eigVec[0].end());
+	eigVec.push_back(B->y);
 	eigVec[1].pop_back();
 	eigVec[1].erase(eigVec[1].begin());
 	vector<vector<uint32_t> >Nocc = vector<vector<uint32_t> >(2);
+	Nocc[0].push_back(0);
+	Nocc[0].push_back(0);
+	Nocc[1].push_back(6);
+	vector<vector<double> > rk1, rk2, rkD;
+	rk1 = vector<vector<double> >(3);
+	rk2 = vector<vector<double> >(3);
+	rkD = vector<vector<double> >(3);
+	uint32_t  idx;
+	uint32_t n  = A->degree;
+	uint32_t Nsplines = (uint32_t) A->knots.size() - n-1;
+	for (int k = 0; k < 3; k++)
+	{
+		HartreeFock::CalcOffDiagSlaterInts(A->knots,rk1[k],rk2[k],k,n);
+		HartreeFock::CalcDiagSlaterInts(A->knots,rkD[k],k,n);
+	}
+	uint32_t dim = (uint32_t) A->y.size()-2;
+	int l = 1;
+	HartreeFock::CreateFockMatrix(l,rk1,rk2,rkD,n,eigVec,dim,Nocc,F,Bums);
+	HartreeFock::CreateHartreeMatrix(l,rk1[0],rk2[0],rkD[0],n,eigVec,dim,Nocc,K,Bums);
+	HartreeFock::CreateLaplacian(A->knots,n,Lap);
+
+	HartreeFock::CreatePotentialMatrix(A->knots,n,V,1,l);
+	uint32_t lMax = 1;
+	vector<uint32_t> nocc = vector<uint32_t>(lMax+1);
+	nocc[0] = 2;
+	nocc[1] = 1;
+	HartreeFock::CreateSuperDensity(eigVec,nocc,dim,D);
+	HartreeFock::CreateSuperMatrix(rk1,rk2,rkD,n,dim,lMax,P,Q);
+	vector<vector<double> > HF;
+	HartreeFock::CreateHartreeFockOperator(P,D,dim,lMax,HF);
+
+	H = vector<double>(dim*dim);
+	for (int j = 0; j < dim; j++)
+	{
+		for ( int i = j; i <= std::min(dim-1,j+n); i++)  // n = #sub-diagonals
+		{
+			H[i*dim+j] = Lap[(i-j) + j*dim]/2. + V[(i-j) + j*dim];
+			H[j*dim+i] = H[i*dim+j];
+		}
+	}
+
+	for (uint32_t i = 0; i < dim*dim; i++)
+	{
+		H[i] = 2*K[i] - F[i];
+	}
+	vector<vector<double> > null = vector<vector<double> >(2);
+	null[0].push_back(0);
+	null[0].push_back(0);
+	null[0].push_back(0);
+	null[1].push_back(0);
+	double e0 = 0;//HartreeFock::TestGSEnergy(Nocc,null,eigVec,H,n);
+	PrintMartix(&H[0],dim);
+	printf("\n");
+	PrintMartix(&(HF[1][0]),dim);
+	printf("\n");
+//	PrintArray(&(A->y[0]),A->y.size());
+//	printf("\n%E\n",e0);
+//	lua_push(L,A->knots);
+	return 1;
+}
+
+static int LuaHFMatrix2(lua_State *L)
+{
+	BSpline::TBSpline *A, *B;
+	A = (BSpline::TBSpline*) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
+	B = (BSpline::TBSpline*) luaL_checkudata(L, 2, "InterpolatingFunction_Type");
+	vector<vector<double> > eigVec;
+	lua_check(L,3,eigVec);
+	vector<double> F,K, H, V, Lap,Bums, D, P, Q;
+	vector<vector<uint32_t> >Nocc = vector<vector<uint32_t> >(2);
+	Nocc[0].push_back(0);
 	Nocc[0].push_back(0);
 	Nocc[1].push_back(6);
 	vector<vector<double> > rk1, rk2, rkD;
@@ -2419,6 +2493,23 @@ static int LuaHFMatrix(lua_State *L)
 	HartreeFock::CreateLaplacian(A->knots,n,Lap);
 
 	HartreeFock::CreatePotentialMatrix(A->knots,n,V,1,l);
+	uint32_t lMax = 1;
+	vector<uint32_t> nocc = vector<uint32_t>(lMax+1);
+	nocc[0] = 2;
+	nocc[1] = 1;
+	HartreeFock::CreateSuperDensity(eigVec,nocc,dim,D);
+	HartreeFock::CreateSuperMatrix(rk1,rk2,rkD,n,dim,lMax,P,Q);
+	vector<vector<double> > HF;
+	HartreeFock::CreateHartreeFockOperator(P,D,dim,lMax,HF);
+
+	vector<vector<double> > rho;
+	lua_check(L,4,rho);
+	if (rho[0].size() != HF[0].size()) printf("crap\n");
+	if (rho[1].size() != HF[1].size()) printf("crap\n");
+	if (rho[1].size() != HF[0].size()) printf("crap\n");
+	printf("HF\n");
+	for (uint32_t i = 0; i < (uint32_t) rho[0].size(); i++) if (Abs(HF[0][i]-rho[0][i]) > 1E-15) printf("diff = %.2E\n",HF[0][i]-rho[0][i]);
+	for (uint32_t i = 0; i < (uint32_t) rho[1].size(); i++) if (Abs(HF[1][i]-rho[1][i]) > 1E-15) printf("diff = %.2E\n",HF[1][i]-rho[1][i]);
 
 	H = vector<double>(dim*dim);
 	for (int j = 0; j < dim; j++)
@@ -2429,10 +2520,11 @@ static int LuaHFMatrix(lua_State *L)
 			H[j*dim+i] = H[i*dim+j];
 		}
 	}
-
+	printf("diff\n");
 	for (uint32_t i = 0; i < dim*dim; i++)
 	{
-		H[i] = K[i] - F[i];
+		H[i] = 2*K[i] - F[i];
+		if (Abs(H[i]-HF[l][i]) > 1E-15) printf("diff = %.2E\n",H[i]-HF[l][i]);
 	}
 	vector<vector<double> > null = vector<vector<double> >(2);
 	null[0].push_back(0);
@@ -2440,13 +2532,13 @@ static int LuaHFMatrix(lua_State *L)
 	null[0].push_back(0);
 	null[1].push_back(0);
 	double e0 = 0;//HartreeFock::TestGSEnergy(Nocc,null,eigVec,H,n);
-	PrintMartix(&K[0],dim);
-	printf("\n");
-	PrintMartix(&F[0],dim);
-	printf("\n");
-	PrintArray(&(A->y[0]),A->y.size());
-	printf("\n%E\n",e0);
-	lua_push(L,A->knots);
+//	PrintMartix(&H[0],dim);
+//	printf("\n");
+//	PrintMartix(&(HF[1][0]),dim);
+//	printf("\n");
+//	PrintArray(&(A->y[0]),A->y.size());
+//	printf("\n%E\n",e0);
+//	lua_push(L,A->knots);
 	return 1;
 }
 
@@ -2474,7 +2566,7 @@ static int LuaHartreeFockSC(lua_State *L)
 		eigVal[l] = vector<double>(dim);
 		eigVec[l] = vector<double>(dim*dim);
 	}
-	HartreeFock::SCScheme(x,n,Z,Nelec,NSCmax,1E-6,eigVal,eigVec);
+	//HartreeFock::SCScheme(x,n,Z,Nelec,NSCmax,1E-6,eigVal,eigVec);
 	lua_push(L,eigVal);
 	lua_push(L,eigVec);
 	return 2;
@@ -2592,7 +2684,7 @@ static const struct luaL_Reg Martin_func[] = {
   {"Breit4S",LuaBreitFourShells},
   {"HF",LuaHartreeFock},
   {"Slater",LuaSlater},
-  {"HFMatrix",LuaHFMatrix},
+  {"HFMatrix",LuaHFMatrix2},
   {"HFSC",LuaHartreeFockSC},
   {"AtomicHartreeFock",LuaAtomicHartreeFock},
   {NULL, NULL}
