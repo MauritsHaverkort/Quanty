@@ -19,14 +19,17 @@ using std::ifstream;
 void PrintMartix(double *M, int n)
 {
 	int i,j;
+	printf("{");
 	for ( i = 0; i < n; i++)
 	{
+		printf("\n{");
 		for ( j = 0; j < n; j++)
 		{
-			printf("%.4E\t",M[i*n + j]);
+			printf("%f, ",M[i*n + j]);
 		}
-		printf("\n");
+		printf("\b\b},");
 	}
+	printf("\b}\n");
 	fflush(stdout);
 }
 void PrintMartix(Complex16 *M, int n)

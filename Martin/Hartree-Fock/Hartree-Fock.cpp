@@ -528,10 +528,10 @@ void CreateSuperMatrix(const vector<vector<double> > &rk1, const vector<vector<d
 								Fk += AssembleSlaterInts(nu,alpha,beta,mu,rk1[k],rk2[k],rkD[k],n)*cred*cred;
 							}
 							P[(nu-1)*superdim*dim*nl + (mu-1)*superdim*nl + la*superdim + (alpha-1)*dim*nl + (beta-1)*nl +lb] = -Fk * (double)(2*lb+1);
-							P[(mu-1)*superdim*dim*nl + (nu-1)*superdim*nl + la*superdim + (alpha-1)*dim*nl + (beta-1)*nl +lb] = -Fk * (double)(2*lb+1);
+							P[(mu-1)*superdim*dim*nl + (nu-1)*superdim*nl + la*superdim + (beta-1)*dim*nl + (alpha-1)*nl +lb] = -Fk * (double)(2*lb+1);
 
 							Q[(nu-1)*superdim*dim*nl + (mu-1)*superdim*nl + la*superdim + (alpha-1)*dim*nl + (beta-1)*nl +lb] = -Fk * Beta * (double)(2*lb+1);
-							Q[(mu-1)*superdim*dim*nl + (nu-1)*superdim*nl + la*superdim + (alpha-1)*dim*nl + (beta-1)*nl +lb] = -Fk * Beta * (double)(2*lb+1);
+							Q[(mu-1)*superdim*dim*nl + (nu-1)*superdim*nl + la*superdim + (beta-1)*dim*nl + (alpha-1)*nl +lb] = -Fk * Beta * (double)(2*lb+1);
 
 						}
 					}
@@ -591,6 +591,7 @@ void CreateSuperDensity(const vector<vector<double> > &eigVec, const vector<vect
 	{
 		uint32_t l = Nopen[j][0];
 		uint32_t i = Nopen[j][1];
+		//printf("Density\tl = %u\t i = %u\t f = %f\n",l,i,f);
 		for (uint32_t nu = 0; nu < dim; nu++)
 		{
 			for (uint32_t mu = 0; mu < dim; mu++)
@@ -669,18 +670,19 @@ void CreateRSuperMatrix(uint32_t la, const vector<double> &QSM,const vector<doub
 			{
 				for (uint32_t beta = 0; beta < dim; beta++)
 				{
-					RSM[mu*dim + nu] += S[mu*dim + alpha] * (Do[alpha*dim*nl + beta*nl + la]+Dc[alpha*dim*nl + beta*nl + la]) * QSM[beta*dim +nu];
+					RSM[mu*dim + nu] += S[mu*dim + alpha] * (Do[alpha*dim*nl + beta*nl + la]+Dc[alpha*dim*nl + beta*nl + la]) * QSM[beta*dim +nu]
+									  + QSM[mu*dim + alpha] * (Do[alpha*dim*nl + beta*nl + la]+Dc[alpha*dim*nl + beta*nl + la]) * S[beta*dim +nu];
 				}
 			}
 		}
 	}
-	for (uint32_t mu = 0; mu < dim; mu++)
-	{
-		for (uint32_t nu = 0; nu < dim; nu++)
-		{
-			RSM[mu*dim + nu] += RSM[nu*dim + mu];
-		}
-	}
+//	for (uint32_t mu = 0; mu < dim; mu++)
+//	{
+//		for (uint32_t nu = 0; nu < dim; nu++)
+//		{
+//			RSM[mu*dim + nu] += RSM[nu*dim + mu];
+//		}
+//	}
 }
 
 void CreateHartreeFockOperator(uint32_t la, const vector<double> &P,const vector<double> &Q,const vector<double> &S, const vector<double> &Dc, const vector<double> &Do, uint32_t dim, uint32_t lMax, vector<double> &H)
@@ -795,9 +797,11 @@ void CreateHartreeMatrix(const uint32_t la, const vector<double> &rk1, const vec
 }
 
 double CalcGSEnergy(const vector<double> &Dc, const vector<double> &Do,const vector<vector<double> > &H,const vector<vector<double> > &F,
-		const vector<vector<double> > &QSM, uint32_t dim, uint32_t lMax, double f)
+		const vector<vector<double> > &QSM, uint32_t dim, uint32_t lMax, double f,const vector<vector<double> > &RSM)
 {
 	double e0 = 0;
+	double eR = 0;
+	double eQ = 0;
 	uint32_t nl = lMax + 1;
 	uint32_t superdim = dim*dim*nl;
 	for (uint32_t  l = 0; l < nl; l++)
@@ -805,11 +809,17 @@ double CalcGSEnergy(const vector<double> &Dc, const vector<double> &Do,const vec
 		for (uint32_t mu = 0; mu < dim; mu++)
 		{
 			for (uint32_t nu = 0; nu < dim; nu++)
+			{
 				e0 += (2*l+1) * ( (2*H[l][mu*dim + nu]+F[l][mu*dim + nu])*(Dc[nu*dim*nl + mu*nl + l] + Do[nu*dim*nl + mu*nl + l])
 								- QSM[l][mu*dim + nu] * (Dc[nu*dim*nl + mu*nl + l] + f*Do[nu*dim*nl + mu*nl + l]) );
+				eR += (2*l+1) * RSM[l][mu*dim + nu] * (Dc[nu*dim*nl + mu*nl + l] + Do[nu*dim*nl + mu*nl + l]);
+				eQ += (2*l+1) * QSM[l][mu*dim + nu] * (Dc[nu*dim*nl + mu*nl + l] + f*Do[nu*dim*nl + mu*nl + l]);
+			}
+
 		}
 
 	}
+	//printf("R = %.2E\tQ = %.2E\n",eR,eQ);
 	return e0;
 }
 
@@ -863,22 +873,24 @@ void SCScheme(const vector<double> &x, uint32_t n, int Z,int Nelec, const vector
 	EndTiming("SI", &GlobalTime);
 	uint32_t Nsplines = (uint32_t) x.size() - n-1;
 	uint32_t dim = Nsplines-2;
-	vector<double> P, Q, Dc, Do;
+	vector<double> P, Q, Dc, Do, DcOld, DoOld;
 	BeginTiming("SM", &GlobalTime);
 	double alpha = (1-a)/(1-f);
 	double beta = (1-b)/(1-f);
+//	double alpha = 1;
+//	double beta  = 1;
 
-	f = 1;
 	CreateSuperMatrix(rk1,rk2,rkD,n,dim,lMax,alpha,beta,P,Q);
 	EndTiming("SM", &GlobalTime);
 	double work[dim*dim];
 	lwork = dim*dim; //TODO: find something that is not stupid
-	vector<double> Lap, S, Sb;
+	vector<double> Lap, S, Sb, SOrig;
 	vector<vector<double> > V = vector<vector<double> >(lMax+1);
 	CreateOverlapMatrix(x,n,Sb);
 	S = vector<double>(dim*dim);
 	vector<vector<double> > H = vector<vector<double> >(lMax+1);
 	vector<vector<double> > QSM = vector<vector<double> >(lMax+1);
+	vector<vector<double> > RSM = vector<vector<double> >(lMax+1);
 	vector<vector<double> > HE = vector<vector<double> >(lMax+1);
 	for (uint32_t  l = 0; l <= lMax; l++)
 	{
@@ -894,7 +906,9 @@ void SCScheme(const vector<double> &x, uint32_t n, int Z,int Nelec, const vector
 			S[j*dim+i] = S[i*dim+j];
 		}
 	}
+	SOrig = S;
 	dpotrf( &uplo, &dim, &(S[0]), &dim, &info );
+	if (info) printf("dpotrf info = %d\n",info);
 	CreateLaplacian(x,n,Lap);
 	for (uint32_t  l = 0; l <= lMax; l++)
 		CreatePotentialMatrix(x,n,V[l],Z,l);
@@ -907,6 +921,9 @@ void SCScheme(const vector<double> &x, uint32_t n, int Z,int Nelec, const vector
 //	vector<uint32_t> nocc = vector<uint32_t>(lMax+1);
 //	nocc[0] = 2;
 //	if (lMax > 0)nocc[1] = 1;
+
+	double del = 1;
+
 	for (uint32_t idxSC = 1; idxSC <= NSCmax; idxSC++)
 	{
 		vector<double> K, F, KE, FE;
@@ -922,6 +939,7 @@ void SCScheme(const vector<double> &x, uint32_t n, int Z,int Nelec, const vector
 			}
 
 			dsygst( &itype, &uplo, &dim, &(H[l][0]), &dim, &(S[0]), &dim, &info );
+			if (info) printf("dsygst info = %d\n",info);
 			dsyev( &jobz, &uplo, &dim, &(H[l][0]), &dim, &(eigVal[l][0]),work,&lwork,&info);
 			//dsygv(&itype,&jobz,&uplo,&dim,&(H[l][0]),&dim,&(S[0]),&dim,&(eigVal[l][0]),work,&lwork,&info); //TODO: be careful with EV update during loop
 			if (info) printf("dsygv info = %d\n",info);
@@ -943,7 +961,30 @@ void SCScheme(const vector<double> &x, uint32_t n, int Z,int Nelec, const vector
 					eigVec[l][i] = H[l][i];
 				}
 				CreateSuperDensity(eigVec,Nclosed,Nopen,lMax,dim,Dc,Do,f);
-				CreateHartreeFockOperator(l,P,Q,S,Dc,Do,dim,lMax,H[l]);
+				CreateSuperDensity(eigVec,Nclosed,Nopen,lMax,dim,DcOld,DoOld,f);
+				CreateHartreeFockOperator(l,P,Q,SOrig,Dc,Do,dim,lMax,H[l]);
+				double tr = 0;
+				uint32_t nl = lMax+1;
+				for (uint32_t mu = 0; mu < dim; mu++)
+				{
+					for (uint32_t nu = 0; nu < dim; nu++)
+						tr += Dc[mu*dim*nl +nu*nl +l]*SOrig[mu*dim+nu];
+				}
+//				printf("tr Dc = %f\n",tr);
+//				tr = 0;
+//				printf("{");
+//				for (uint32_t mu = 0; mu < dim; mu++)
+//				{
+//					for (uint32_t nu = 0; nu < dim; nu++)
+//						tr += Do[mu*dim*nl +nu*nl +l]*SOrig[mu*dim+nu];
+//					printf("%f, ",eigVec[0][mu]);
+//				}
+//				printf("\b\b}\n");
+//				printf("S\n");
+//				//PrintMartix(&S[0],dim);
+//				printf("\n");
+//				printf("tr Do = %f\n",tr);
+				CreateHartreeFockOperator(l,P,Q,SOrig,Dc,Do,dim,lMax,H[l]);
 
 			}
 
@@ -954,13 +995,36 @@ void SCScheme(const vector<double> &x, uint32_t n, int Z,int Nelec, const vector
 			{
 				for (uint32_t i = 0; i < dim*dim; i++)
 				{
-					double del = 0.0;
-					//if ( l!= 0) del = 0.9;
-					//eigVec[l][i] = eigVec[l][i]*del + H[l][i]*(1-del);
 					eigVec[l][i] = H[l][i];
 				}
 				CreateSuperDensity(eigVec,Nclosed,Nopen,lMax,dim,Dc,Do,f);
-				CreateHartreeFockOperator(l,P,Q,S,Dc,Do,dim,lMax,H[l]);
+
+				if (idxSC == 5 ) del = 0.1;
+				if (idxSC == 15 ) del = 0.05;
+				if (idxSC == 35 ) del = 0.01;
+				for (uint32_t i = 0; i < dim*dim*(lMax+1); i++)
+				{
+					Dc[i] = Dc[i] * del + DcOld[i] * (1-del);
+					Do[i] = Do[i] * del + DoOld[i] * (1-del);
+					DcOld[i] = Dc[i];
+					DoOld[i] = Do[i];
+				}
+//				double tr = 0;
+//				uint32_t nb = lMax+1;
+//				for (uint32_t mu = 0; mu < dim; mu++)
+//				{
+//					for (uint32_t nu = 0; nu < dim; nu++)
+//						tr += Dc[mu*dim*nb +nu*nb +l]*SOrig[mu*dim+nu];
+//				}
+//				printf("tr Dc = %f\n",tr);
+//				tr = 0;
+//				for (uint32_t mu = 0; mu < dim; mu++)
+//				{
+//					for (uint32_t nu = 0; nu < dim; nu++)
+//						tr += Do[mu*dim*nb +nu*nb +l]*SOrig[mu*dim+nu];
+//				}
+//				printf("tr Do = %f\n",tr);
+				CreateHartreeFockOperator(l,P,Q,SOrig,Dc,Do,dim,lMax,H[l]);
 
 			}
 
@@ -977,10 +1041,12 @@ void SCScheme(const vector<double> &x, uint32_t n, int Z,int Nelec, const vector
 				}
 			}
 			CreateQSuperMatrix(l,Q,Do,dim,lMax,QSM[l]);
+			CreateRSuperMatrix(l,QSM[l],SOrig,Dc,Do,dim,lMax,RSM[l]);
 		}
 
-		gsEnergy1 = CalcGSEnergy(Dc,Do,HE,H,QSM,dim,lMax,f);
+		gsEnergy1 = CalcGSEnergy(Dc,Do,HE,H,QSM,dim,lMax,f,RSM);
 		printf("GS Energy = %f\n",gsEnergy1);
+		//printf("GS Energy = %f\tf = %f\talpha = %f\tbeta = %f\n",gsEnergy1,f,alpha,beta);
 		if (Abs(1-gsEnergy0/gsEnergy1)<eps)
 		{
 			printf("Hartree-Fock Converged to precision of %.1E with ground-state energy = %f\n",eps,gsEnergy1);
@@ -1008,15 +1074,18 @@ void InitializeAtom(const string &atom, int  &Z, int &Nelec, vector<uint32_t> &n
 		Z = 2;
 		Nelec = 2;
 		nocc.push_back(1);
+		Nclosed = vector<vector<uint32_t> >(1);
+		Nclosed[0].push_back(0);
+		Nclosed[0].push_back(0);
 	}
 	else if (atom == "Li")
 	{
 		Z = 3;
 		Nelec = 3;
 		nocc.push_back(2);
-		a = 1;
-		b = 2;
-		f = 1/2.;
+		a = 1.;
+		b = 2.;
+		f = 1./2.;
 		Nclosed = vector<vector<uint32_t> >(1);
 		Nclosed[0].push_back(0);
 		Nclosed[0].push_back(0);
@@ -1094,6 +1163,13 @@ void InitializeAtom(const string &atom, int  &Z, int &Nelec, vector<uint32_t> &n
 		Nelec = 10;
 		nocc.push_back(2);
 		nocc.push_back(1);
+		Nclosed = vector<vector<uint32_t> >(3);
+		Nclosed[0].push_back(0);
+		Nclosed[0].push_back(0);
+		Nclosed[1].push_back(0);
+		Nclosed[1].push_back(1);
+		Nclosed[2].push_back(1);
+		Nclosed[2].push_back(0);
 	}
 	else if (atom == "Na")
 	{

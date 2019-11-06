@@ -2542,6 +2542,159 @@ static int LuaHFMatrix2(lua_State *L)
 	return 1;
 }
 
+static int LuaTestHF(lua_State *L)
+{
+		BSpline::TBSpline *A, *B;
+		A = (BSpline::TBSpline*) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
+		B = (BSpline::TBSpline*) luaL_checkudata(L, 2, "InterpolatingFunction_Type");
+
+		vector<vector<double> > eigVec;
+		vector<double> F,K, H, V, Bums, Dc,Do,Dt, P, Q,D;
+		vector<vector<double> > PSM, QSM, RSM,FSM;
+
+		eigVec.push_back(A->y);
+		eigVec[0].pop_back();
+		eigVec[0].erase(eigVec[0].begin());
+		eigVec.push_back(B->y);
+		eigVec[1].pop_back();
+		eigVec[1].erase(eigVec[1].begin());
+
+		vector<vector<uint32_t> > Nclosed = vector<vector<uint32_t> >(1);
+		Nclosed[0].push_back(0);
+		Nclosed[0].push_back(0);
+		vector<vector<uint32_t> > Nopen = vector<vector<uint32_t> >(1);
+		Nopen[0].push_back(1);
+		Nopen[0].push_back(0);
+
+		uint32_t lMax = 1;
+		PSM = vector<vector<double> >(lMax+1);
+		QSM = vector<vector<double> >(lMax+1);
+		RSM = vector<vector<double> >(lMax+1);
+		FSM = vector<vector<double> >(lMax+1);
+
+		double f = 1/4.;
+		HartreeFock::CreateSuperDensity(eigVec,Nclosed,Nopen,lMax,(uint32_t) eigVec[0].size(),Dc,Do,f);
+
+
+		vector<vector<double> > rk1 = vector<vector<double> >(3);
+		vector<vector<double> > rk2 = vector<vector<double> >(3);
+		vector<vector<double> > rkD = vector<vector<double> >(3);
+		uint32_t  idx;
+		uint32_t n  = A->degree;
+		uint32_t Nsplines = (uint32_t) A->knots.size() - n-1;
+		for (int k = 0; k < 3; k++)
+		{
+			HartreeFock::CalcOffDiagSlaterInts(A->knots,rk1[k],rk2[k],k,n);
+			HartreeFock::CalcDiagSlaterInts(A->knots,rkD[k],k,n);
+		}
+		uint32_t dim = (uint32_t) A->y.size()-2;
+		uint32_t l = 0;
+
+		vector<vector<uint32_t> >Nocc = vector<vector<uint32_t> >(2);
+		Nocc[0].push_back(7);
+		Nocc[1].push_back(6);
+		HartreeFock::CreateFockMatrix(l,rk1,rk2,rkD,n,eigVec,dim,Nocc,F,Bums);
+		HartreeFock::CreateHartreeMatrix(l,rk1[0],rk2[0],rkD[0],n,eigVec,dim,Nocc,K,Bums);
+
+		Dt = vector<double>(Dc.size());
+		for (int i = 0; i < Dt.size(); i++) Dt[i] = Dc[i] + Do[i];
+
+		double alpha = 1;
+		double beta = 1;
+		HartreeFock::CreateSuperMatrix(rk1,rk2,rkD,n,dim,lMax,alpha,beta,P,Q);
+
+		vector<double> Lap, S, Sb;
+		HartreeFock::CreateOverlapMatrix(A->knots,n,Sb);
+		S = vector<double>(dim*dim);
+		for (int j = 0; j < dim; j++)
+		{
+			printf("%f\t",eigVec[0][j]);
+			for ( int i = j; i <= std::min(dim-1,j+n); i++)  // n = #sub-diagonals
+			{
+				S[i*dim+j] = Sb[(i-j) + j*dim];
+				S[j*dim+i] = S[i*dim+j];
+			}
+		}
+		printf("\n");
+
+		for (l = 0; l < 2; l++)
+		{
+			HartreeFock::CreateQSuperMatrix(l,Q,Do,dim,lMax,QSM[l]);
+			HartreeFock::CreateQSuperMatrix(l,Q,Dt,dim,lMax,PSM[l]);
+			HartreeFock::CreateRSuperMatrix(l,QSM[l],S,Dc,Do,dim,lMax,RSM[l]);
+			HartreeFock::CreateHartreeFockOperator(l,P,Q,S,Dc,Do,dim,lMax,FSM[l]);
+//			printf("S\n");
+//			PrintMartix(&S[0],dim);
+//			printf("\n");
+//			printf("QSM\n");
+//			PrintMartix(&(QSM[l][0]),dim);
+//			printf("\n");
+//			printf("RSM\n");
+//			PrintMartix(&(RSM[l][0]),dim);
+//			printf("\n");
+//			printf("PSM\n");
+//			PrintMartix(&(PSM[l][0]),dim);
+//			printf("\n");
+//			printf("FSM\n");
+//			PrintMartix(&(FSM[l][0]),dim);
+//			printf("\n");
+
+			uint32_t nl = lMax + 1;
+			uint32_t superdim = dim*dim*nl;
+
+			printf("Dc\n");
+			printf("{");
+			for (uint32_t mu = 0; mu < dim; mu++)
+			{
+				printf("\n{");
+				for (uint32_t nu = 0; nu < dim; nu++)
+				{
+					printf("%f, ",Dc[mu*dim*nl + nu*nl + l]);
+				}
+				printf("\b\b},");
+			}
+			printf("\b}\n\n");
+
+			printf("Do\n");
+			printf("{");
+			for (uint32_t mu = 0; mu < dim; mu++)
+			{
+				printf("\n{");
+				for (uint32_t nu = 0; nu < dim; nu++)
+				{
+					printf("%f, ",Do[mu*dim*nl + nu*nl + l]);
+				}
+				printf("\b\b},");
+			}
+			printf("\b}\n\n");
+
+			printf("traces:\n");
+			double tr = 0;
+			uint32_t nb = lMax+1;
+			for (uint32_t mu = 0; mu < dim; mu++)
+			{
+				for (uint32_t nu = 0; nu < dim; nu++)
+					tr += Dc[mu*dim*nb +nu*nb +l]*S[mu*dim+nu];
+			}
+			printf("tr = %f\n",tr);
+			tr = 0;
+			for (uint32_t mu = 0; mu < dim; mu++)
+			{
+				for (uint32_t nu = 0; nu < dim; nu++)
+					tr += Do[mu*dim*nb +nu*nb +l]*S[mu*dim+nu];
+			}
+			printf("tr = %f\n",tr);
+
+		}
+		vector<vector<double> > H0 = vector<vector<double> >(2);
+		H0[0] = vector<double>(dim*dim);
+		H0[1] = vector<double>(dim*dim);
+		printf("E0 = %f\n",HartreeFock::CalcGSEnergy(Dc,Do,H0,PSM,QSM,dim,lMax,f,RSM));
+//		for (int i = 0; i < F.size(); i++)
+//			if (Abs(2*alpha*K[i]-beta*F[i] - QSM[i]) > 1E-15) printf("dev = %.1E\n",Abs(2*alpha*K[i]-beta*F[i] - QSM[i]));
+//		printf("done\n");
+}
+
 static int LuaHartreeFockSC(lua_State *L)
 {
 	vector<double> x;
@@ -2687,6 +2840,7 @@ static const struct luaL_Reg Martin_func[] = {
   {"HFMatrix",LuaHFMatrix2},
   {"HFSC",LuaHartreeFockSC},
   {"AtomicHartreeFock",LuaAtomicHartreeFock},
+  {"TestHF",LuaTestHF},
   {NULL, NULL}
 };
 
