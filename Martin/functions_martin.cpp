@@ -2622,7 +2622,7 @@ static int LuaTestHF(lua_State *L)
 			HartreeFock::CreateQSuperMatrix(l,Q,Do,dim,lMax,QSM[l]);
 			HartreeFock::CreateQSuperMatrix(l,Q,Dt,dim,lMax,PSM[l]);
 			HartreeFock::CreateRSuperMatrix(l,QSM[l],S,Dc,Do,dim,lMax,RSM[l]);
-			HartreeFock::CreateHartreeFockOperator(l,P,Q,S,Dc,Do,dim,lMax,FSM[l]);
+//			HartreeFock::CreateHartreeFockOperator(l,P,Q,S,Dc,Do,dim,lMax,FSM[l]);
 //			printf("S\n");
 //			PrintMartix(&S[0],dim);
 //			printf("\n");
