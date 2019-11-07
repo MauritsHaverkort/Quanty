@@ -919,6 +919,8 @@ void SCScheme(const vector<double> &x, uint32_t n, int Z,int Nelec, const vector
 			{
 				H0[l][i*dim+j] += Lap[(i-j) + j*dim]/2. + V[l][(i-j) + j*dim];
 				H0[l][j*dim+i] = H0[l][i*dim+j];
+				H[l][i*dim+j]= H0[l][i*dim+j];
+				H[l][j*dim+i]= H0[l][i*dim+j];
 			}
 		}
 	}
