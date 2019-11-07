@@ -5,6 +5,8 @@
  *      Author: brass
  */
 
+#include <list>
+
 namespace HartreeFock
 {
 
@@ -837,8 +839,108 @@ double TestGSEnergy(const vector<vector<uint32_t> > &Nocc, const vector<vector<d
 	return e0;
 }
 
-void SCScheme(const vector<double> &x, uint32_t n, int Z,int Nelec, const vector<vector<uint32_t> > &Nclosed, const vector<vector<uint32_t> > &Nopen,
-			  uint32_t NSCmax, double eps, vector<vector<double> > &eigVal,vector<vector<double> > &eigVec, double a, double b, double f)
+void CreateDIISErrorMatrix(const vector<vector<double> > &F, const vector<double> Dc, const vector<double> Do,
+						   const vector<double> S, uint32_t dim, uint32_t lMax, vector<vector<double> > &E)
+{
+	uint32_t nl = lMax + 1;
+	//E = vector<vector<double> >(nl);
+	for (uint32_t l = 0; l < nl; l++)
+	{
+		E[l] = vector<double>(dim*dim);
+		for (uint32_t mu = 0; mu < dim; mu++)
+		{
+			for (uint32_t nu = 0; nu < dim; nu++)
+			{
+				for (uint32_t alpha = 0; alpha < dim; alpha++)
+				{
+					for (uint32_t beta = 0; beta < dim; beta++)
+					{
+						E[l][mu*dim + nu] += F[l][mu*dim + beta] * (Dc[beta*dim*nl + alpha*nl +l] + Do[beta*dim*nl + alpha*nl +l]) * S[alpha*dim + nu]
+										   - S[mu*dim + beta] * (Dc[beta*dim*nl + alpha*nl +l] + Do[beta*dim*nl + alpha*nl +l]) * F[l][alpha*dim + nu];
+					}
+				}
+			}
+		}
+	}
+}
+
+double MatrixSkalarProduct(const vector<double> &A, const vector<double> &B, uint32_t dim)
+{
+	double tr = 0;
+	for (uint32_t i = 0; i < dim; i++)
+	{
+		for (uint32_t j = 0; j < dim; j++)
+		{
+			tr += A[i +j*dim]*B[j +i*dim];
+		}
+	}
+	return tr;
+}
+
+void CreateDIISFockMatrix(std::list<vector<vector<double> > > &F, std::list<vector<vector<double> > > &E, uint32_t dim, uint32_t lMax, vector<vector<double> > &Fout)
+{
+
+
+	uint32_t nl = lMax + 1;
+	uint32_t N  = (uint32_t) E.size()+1;
+	vector<double> B = vector<double>(N*N);
+	vector<double> c = vector<double>(N);
+	c[0] = 1;
+
+	char uplo = 'U';
+	uint32_t NRHS  = 1;
+	uint32_t lwork = N*N;
+	int info, ipiv[N];
+	double work[N*N];
+
+	Fout = vector<vector<double> >(nl);
+
+	for (uint32_t l = 0; l < nl; l++)
+	{
+		B[0] = 0;
+		Fout[l] = vector<double>(dim*dim);
+		std::list<vector<vector<double> > >::iterator itEi = E.end();
+		for (uint32_t i = 1; i < N; i++)
+		{
+			itEi--;
+			std::list<vector<vector<double> > >::iterator itEj = E.end();
+			for (uint32_t j = 1; j < N; j++)
+			{
+				itEj--;
+				B[i + N*j] = MatrixSkalarProduct((*itEi)[l],(*itEj)[l],dim);
+			}
+			B[i]   = 1;
+			B[N*i] = 1;
+		}
+		info = 1;
+		uint32_t dN = N+1;
+		while (info && dN > 1)
+		{
+			dN--;
+			dsysv(&uplo,&dN,&NRHS,&B[0],&N,ipiv,&c[0],&N,work,&lwork,&info);
+		}
+		if (info) printf("Error in CreateDIISFockMatrix : dsysv info = %d\n",info);
+
+		for(uint32_t j = 0; j < dim*dim; j++)
+		{
+			std::list<vector<vector<double> > >::iterator itF = F.end();
+			for (uint32_t i = 1; i < dN; i++)
+			{
+				itF--;
+				Fout[l][j] += c[i] * (*itF)[l][j];
+			}
+		}
+
+
+	}
+}
+
+
+
+void SCLoop(const vector<vector<uint32_t> > &Nclosed, const vector<vector<uint32_t> > &Nopen,
+			  uint32_t NSCmax, double eps, double del, uint32_t dim, const vector<vector<double> > &H0,
+			  vector<double> &S_Cholesky, const vector<double> &S, const vector<double> &P, const vector<double> &Q,
+			  vector<vector<double> > &eigVal,vector<vector<double> > &eigVec, double f, vector<vector<double> > &H)
 {
 	uint32_t itype = 1;
 	char jobz = 'V';
@@ -849,91 +951,27 @@ void SCScheme(const vector<double> &x, uint32_t n, int Z,int Nelec, const vector
 	double one = 1;
 	uint32_t lwork;
 	int info;
-	uint32_t lMax = (uint32_t) eigVec.size()-1;
-	vector<vector<double> > H0 = vector<vector<double> >(lMax+1);
-	vector<vector<double> > V = vector<vector<double> >(lMax+1);
-	vector<vector<double> > H = vector<vector<double> >(lMax+1);
-	vector<vector<double> > QSM = vector<vector<double> >(lMax+1);
-	vector<vector<double> > RSM = vector<vector<double> >(lMax+1);
-	vector<vector<double> > HE = vector<vector<double> >(lMax+1);
-	uint32_t kMax = lMax * 2;
-	vector<vector<double> > rk1 = vector<vector<double> >(kMax+1);
-	vector<vector<double> > rk2 = vector<vector<double> >(kMax+1);
-	vector<vector<double> > rkD = vector<vector<double> >(kMax+1);
-	vector<vector<double> > SlaterFk = vector<vector<double> >(kMax+1);
-	vector<double> BSval, Lap, S, Sb, SOrig;
-	uint32_t Nweights = n +4;
-	vector<double> P, Q, Dc, Do, DcOld, DoOld;
-	double alpha = (1-a)/(1-f);
-	double beta = (1-b)/(1-f);
-	double gsEnergy0 = 0;
-	double gsEnergy1 = 0;
-	double del = 1;
-	uint32_t Nsplines, dim;
-
-
-	PutBSplinesOnQuadGrid(x,n,Nweights,BSval);
-	for (uint32_t k = 0; k <= kMax; k++)
-	{
-		CalcOffDiagSlaterInts(x,BSval,Nweights,rk1[k],rk2[k],k,n);
-		CalcDiagSlaterInts(x,BSval,Nweights,rkD[k],k,n);
-	}
-	Nsplines = (uint32_t) x.size() - n-1;
-	dim = Nsplines-2;
 	double work[dim*dim];
 	lwork = dim*dim; //TODO: find something that is not stupid
 
-	CreateSuperMatrix(rk1,rk2,rkD,n,dim,lMax,alpha,beta,P,Q);
+	uint32_t lMax = (uint32_t) eigVec.size()-1;
 
+	double gsEnergy0 = 0;
+	double gsEnergy1 = 0;
 
-	CreateOverlapMatrix(x,n,Sb);
-	S = vector<double>(dim*dim);
-
-	for (uint32_t  l = 0; l <= lMax; l++)
-	{
-		H[l] = vector<double>(dim*dim);
-		HE[l] = vector<double>(dim*dim);
-		H0[l] = vector<double>(dim*dim);
-	}
-
-	for (int j = 0; j < dim; j++)
-	{
-		for ( int i = j; i <= std::min(dim-1,j+n); i++)  // n = #sub-diagonals
-		{
-			S[i*dim+j] = Sb[(i-j) + j*dim];
-			S[j*dim+i] = S[i*dim+j];
-		}
-	}
-	SOrig = S;
-	dpotrf( &uplo, &dim, &(S[0]), &dim, &info );
-	if (info) printf("dpotrf info = %d\n",info);
-	CreateLaplacian(x,n,Lap);
-	for (uint32_t  l = 0; l <= lMax; l++)
-		CreatePotentialMatrix(x,n,V[l],Z,l);
-
-	for (uint32_t  l = 0; l <= lMax; l++)
-	{
-		for (int j = 0; j < dim; j++)
-		{
-			for ( int i = j; i <= std::min(dim-1,j+n); i++)  // n = #sub-diagonals
-			{
-				H0[l][i*dim+j] += Lap[(i-j) + j*dim]/2. + V[l][(i-j) + j*dim];
-				H0[l][j*dim+i] = H0[l][i*dim+j];
-				H[l][i*dim+j]= H0[l][i*dim+j];
-				H[l][j*dim+i]= H0[l][i*dim+j];
-			}
-		}
-	}
+	vector<double> Dc, Do, DcOld, DoOld;
+	vector<vector<double> > QSM = vector<vector<double> >(lMax+1);
+	vector<vector<double> > RSM = vector<vector<double> >(lMax+1);
 
 	for (uint32_t idxSC = 1; idxSC <= NSCmax; idxSC++)
 	{
 		for (uint32_t  l = 0; l <= lMax; l++)
 		{
-			dsygst( &itype, &uplo, &dim, &(H[l][0]), &dim, &(S[0]), &dim, &info );
+			dsygst( &itype, &uplo, &dim, &(H[l][0]), &dim, &(S_Cholesky[0]), &dim, &info );
 			if (info) printf("dsygst info = %d\n",info);
 			dsyev( &jobz, &uplo, &dim, &(H[l][0]), &dim, &(eigVal[l][0]),work,&lwork,&info);
 			if (info) printf("dsygv info = %d\n",info);
-			dtrsm( &side, &uplo, &trans, &diag, &dim, &dim, &one, &(S[0]), &dim, &(H[l][0]), &dim ); //these three mimic dsygv
+			dtrsm( &side, &uplo, &trans, &diag, &dim, &dim, &one, &(S_Cholesky[0]), &dim, &(H[l][0]), &dim ); //these three mimic dsygv
 		}
 
 		if (idxSC == 1)
@@ -946,8 +984,7 @@ void SCScheme(const vector<double> &x, uint32_t n, int Z,int Nelec, const vector
 				}
 				CreateSuperDensity(eigVec,Nclosed,Nopen,lMax,dim,Dc,Do,f);
 				CreateSuperDensity(eigVec,Nclosed,Nopen,lMax,dim,DcOld,DoOld,f);
-				CreateHartreeFockOperator(l,P,Q,SOrig,H0[l],Dc,Do,dim,lMax,H[l]);
-//				CreateHartreeFockOperator(l,P,Q,SOrig,Dc,Do,dim,lMax,H[l]);
+				CreateHartreeFockOperator(l,P,Q,S,H0[l],Dc,Do,dim,lMax,H[l]);
 			}
 
 		}
@@ -961,9 +998,6 @@ void SCScheme(const vector<double> &x, uint32_t n, int Z,int Nelec, const vector
 				}
 				CreateSuperDensity(eigVec,Nclosed,Nopen,lMax,dim,Dc,Do,f);
 
-//				if (idxSC == 5 ) del = 0.1;
-//				if (idxSC == 15 ) del = 0.05;
-				//if (idxSC == 35 ) del = 0.01;
 				for (uint32_t i = 0; i < dim*dim*(lMax+1); i++)
 				{
 					Dc[i] = Dc[i] * del + DcOld[i] * (1-del);
@@ -971,7 +1005,7 @@ void SCScheme(const vector<double> &x, uint32_t n, int Z,int Nelec, const vector
 					DcOld[i] = Dc[i];
 					DoOld[i] = Do[i];
 				}
-				CreateHartreeFockOperator(l,P,Q,SOrig,H0[l],Dc,Do,dim,lMax,H[l]);
+				CreateHartreeFockOperator(l,P,Q,S,H0[l],Dc,Do,dim,lMax,H[l]);
 
 			}
 
@@ -979,16 +1013,8 @@ void SCScheme(const vector<double> &x, uint32_t n, int Z,int Nelec, const vector
 
 		for (uint32_t  l = 0; l <= lMax; l++)
 		{
-			for (int j = 0; j < dim; j++)
-			{
-				for ( int i = j; i <= std::min(dim-1,j+n); i++)  // n = #sub-diagonals
-				{
-					HE[l][i*dim+j] = Lap[(i-j) + j*dim]/2. + V[l][(i-j) + j*dim];
-					HE[l][j*dim+i] = HE[l][i*dim+j];
-				}
-			}
 			CreateQSuperMatrix(l,Q,Do,dim,lMax,QSM[l]);
-			CreateRSuperMatrix(l,QSM[l],SOrig,Dc,Do,dim,lMax,RSM[l]);
+			CreateRSuperMatrix(l,QSM[l],S,Dc,Do,dim,lMax,RSM[l]);
 		}
 
 		gsEnergy1 = CalcGSEnergy(Dc,Do,H0,H,QSM,dim,lMax,f,RSM);
@@ -1002,6 +1028,95 @@ void SCScheme(const vector<double> &x, uint32_t n, int Z,int Nelec, const vector
 
 
 	}
+}
+
+void SCScheme(const vector<double> &x, uint32_t n, int Z,int Nelec, const vector<vector<uint32_t> > &Nclosed, const vector<vector<uint32_t> > &Nopen,
+			  uint32_t NSCmax, double eps, vector<vector<double> > &eigVal,vector<vector<double> > &eigVec, double a, double b, double f)
+{
+	int info;
+	char uplo = 'U';
+	uint32_t lMax = (uint32_t) eigVec.size()-1;
+	vector<vector<double> > H;
+	vector<vector<double> > H0 = vector<vector<double> >(lMax+1);
+	vector<vector<double> > V = vector<vector<double> >(lMax+1);
+
+	uint32_t kMax = lMax * 2;
+	vector<vector<double> > rk1 = vector<vector<double> >(kMax+1);
+	vector<vector<double> > rk2 = vector<vector<double> >(kMax+1);
+	vector<vector<double> > rkD = vector<vector<double> >(kMax+1);
+	vector<vector<double> > SlaterFk = vector<vector<double> >(kMax+1);
+	vector<double> BSval, Lap, S_Cholesky, S_band, S;
+	uint32_t Nweights = n +4;
+	vector<double> P, Q;
+
+	double alpha = (1-a)/(1-f);
+	double beta = (1-b)/(1-f);
+
+	double del = 1;
+	uint32_t Nsplines, dim;
+
+
+	PutBSplinesOnQuadGrid(x,n,Nweights,BSval);
+	for (uint32_t k = 0; k <= kMax; k++)
+	{
+		CalcOffDiagSlaterInts(x,BSval,Nweights,rk1[k],rk2[k],k,n);
+		CalcDiagSlaterInts(x,BSval,Nweights,rkD[k],k,n);
+	}
+	Nsplines = (uint32_t) x.size() - n-1;
+	dim = Nsplines-2;
+
+	CreateSuperMatrix(rk1,rk2,rkD,n,dim,lMax,alpha,beta,P,Q);
+
+
+	CreateOverlapMatrix(x,n,S_band);
+	S = vector<double>(dim*dim);
+
+	for (uint32_t  l = 0; l <= lMax; l++)
+	{
+		H0[l] = vector<double>(dim*dim);
+	}
+
+	for (int j = 0; j < dim; j++)
+	{
+		for ( int i = j; i <= std::min(dim-1,j+n); i++)  // n = #sub-diagonals
+		{
+			S[i*dim+j] = S_band[(i-j) + j*dim];
+			S[j*dim+i] = S[i*dim+j];
+		}
+	}
+	S_Cholesky = S;
+	dpotrf( &uplo, &dim, &(S_Cholesky[0]), &dim, &info );
+	if (info) printf("dpotrf info = %d\n",info);
+	CreateLaplacian(x,n,Lap);
+
+	int dZmax = 6;
+
+	for (int dZ = dZmax; dZ >= 0; dZ--)
+	{
+		for (uint32_t  l = 0; l <= lMax; l++)
+			CreatePotentialMatrix(x,n,V[l],Z+dZ,l);
+
+		for (uint32_t  l = 0; l <= lMax; l++)
+		{
+			for (int j = 0; j < dim; j++)
+			{
+				for ( int i = j; i <= std::min(dim-1,j+n); i++)  // n = #sub-diagonals
+				{
+					H0[l][i*dim+j] = Lap[(i-j) + j*dim]/2. + V[l][(i-j) + j*dim];
+					H0[l][j*dim+i] = H0[l][i*dim+j];
+
+				}
+			}
+		}
+		printf("Start Loop wit Z = %d\n",Z+dZ);
+		if ( dZ == dZmax)
+			H = H0;
+		if (dZ == 0)
+			SCLoop(Nclosed,Nopen,NSCmax,eps,0.5,dim,H0,S_Cholesky,S,P,Q,eigVal,eigVec,f,H);
+		else
+			SCLoop(Nclosed,Nopen,10,0,0.5,dim,H0,S_Cholesky,S,P,Q,eigVal,eigVec,f,H);
+	}
+
 }
 
 void InitializeAtom(const string &atom, int  &Z, int &Nelec, vector<vector<uint32_t> > &Nclosed, vector<vector<uint32_t> > &Nopen,double &a, double &b, double &f)
