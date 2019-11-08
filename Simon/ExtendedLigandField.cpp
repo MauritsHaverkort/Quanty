@@ -95,41 +95,47 @@ CompactMatrixType extendedLigandFieldForMatrix(const CompactMatrixType &H, Compa
 		const bool hasSpin)
 {
 	CompactMatrixType out, HLigand, eigenfunsLigand, HRedFilled, Tfilled, HRedEmpty, Tempty;
+	uint numNegVals = 0;
 	uint LigandMatSize = H.Ni - constOrbs;
 	orbNames = vector<string>();
 	orbNames.push_back("unchanged_" + multiplicityToNonRelOrb(constOrbs, hasSpin));
-	HLigand = Submatrix(H, constOrbs, LigandMatSize, constOrbs, LigandMatSize);
-	vector<double> eigenvals = vector<double>(LigandMatSize, 0);
-	CompactMatrixEigensystem(&HLigand, &eigenfunsLigand, &eigenvals[0]);
-	uint numNegVals = LigandMatSize;
-	for (uint i = 0; i < (uint) eigenvals.size(); ++i)
+	if (LigandMatSize > 0)
 	{
-		if (eigenvals[i] > 0)
+		HLigand = Submatrix(H, constOrbs, LigandMatSize, constOrbs, LigandMatSize);
+		vector<double> eigenvals = vector<double>(LigandMatSize, 0);
+		CompactMatrixEigensystem(&HLigand, &eigenfunsLigand, &eigenvals[0]);
+		numNegVals = LigandMatSize;
+		for (uint i = 0; i < (uint) eigenvals.size(); ++i)
 		{
-			numNegVals = i;
-			break;
+			if (eigenvals[i] > 0)
+			{
+				numNegVals = i;
+				break;
+			}
 		}
 	}
-	if (numNegVals > 0 && filledLig > 0)
+	if (filledLig > 0 && numNegVals > 0)
 	{
 		CompactMatrixType filledLigRotMatToDiag = Submatrix(eigenfunsLigand, 0, numNegVals, 0, eigenfunsLigand.Ni);
 		HRedFilled = extendedLigandFieldMatrix(H, filledLigRotMatToDiag, Tfilled, constOrbs, filledLig);
 		CompactMatrixChop(&HRedFilled, 100 * DBL_EPSILON);
 		addLigandNames(HRedFilled, "Lval", orbNames, constOrbs, hasSpin);
 		FreeCompactMatrix(&filledLigRotMatToDiag);
-	} else
+	}
+	else
 	{
 		HRedFilled = CompactnullMatrix();
 		Tfilled = CompactnullMatrix();
 	}
-	if (numNegVals < eigenfunsLigand.Ni && emptyLig > 0)
+	if (emptyLig > 0 && numNegVals < eigenfunsLigand.Ni)
 	{
 		CompactMatrixType emptyLigRotMatToDiag = Submatrix(eigenfunsLigand, numNegVals, eigenfunsLigand.Ni - numNegVals, 0, eigenfunsLigand.Ni);
 		HRedEmpty = extendedLigandFieldMatrix(H, emptyLigRotMatToDiag, Tempty, constOrbs, emptyLig);
 		CompactMatrixChop(&HRedEmpty, 100 * DBL_EPSILON);
 		addLigandNames(HRedEmpty, "Lcon", orbNames, constOrbs, hasSpin);
 		FreeCompactMatrix(&emptyLigRotMatToDiag);
-	} else
+	}
+	else
 	{
 		HRedEmpty = CompactnullMatrix();
 		Tempty = CompactnullMatrix();
@@ -139,8 +145,11 @@ CompactMatrixType extendedLigandFieldForMatrix(const CompactMatrixType &H, Compa
 	else
 		out = extendedLigandFieldFilledAndEmpty(HRedFilled, HRedEmpty, constOrbs);
 	T = extendedLigandFieldRotMatFilledAndEmpty(Tfilled, Tempty, constOrbs, H.Nj);
-	FreeCompactMatrix(&HLigand);
-	FreeCompactMatrix(&eigenfunsLigand);
+	if (LigandMatSize > 0)
+	{
+		FreeCompactMatrix(&HLigand);
+		FreeCompactMatrix(&eigenfunsLigand);
+	}
 	FreeCompactMatrix(&HRedFilled);
 	FreeCompactMatrix(&Tfilled);
 	FreeCompactMatrix(&HRedEmpty);
@@ -289,6 +298,7 @@ static int LuaExtendedLigandField(lua_State * L)
 		uint unchangedStates;
 		vector < string > orbNames;
 		lua_check(L, 2, unchangedStates);
+		if (unchangedStates > op.NWord) return luaL_error(L, "Error: Number of unchanged states (%d) cannot be larger than dimension of Hilbert space (%d).", unchangedStates, op.NWord);
 		lua_push(L, extendedLigandFieldForOperator(op, T, unchangedStates, Options.filledLigands, Options.emptyLigands, orbNames, Options.hasSpin));
 		lua_push(L, T);
 		lua_push(L, orbNames);
@@ -303,7 +313,7 @@ static int LuaExtendedLigandField(lua_State * L)
 		uint unchangedStates;
 		vector < string > orbNames;
 		lua_check(L, 2, unchangedStates);
-		if (unchangedStates >= mat.Ni) return luaL_error(L, "Error: Number of unchanged states (%d) must be smaller than dimension of matrix (%d).", unchangedStates, mat.Ni);
+		if (unchangedStates > mat.Ni) return luaL_error(L, "Error: Number of unchanged states (%d) cannot be larger than dimension of matrix (%d).", unchangedStates, mat.Ni);
 		outMat = extendedLigandFieldForMatrix(mat, T, unchangedStates, Options.filledLigands, Options.emptyLigands, orbNames, Options.hasSpin);
 		lua_push(L, outMat);
 		lua_push(L, T);
