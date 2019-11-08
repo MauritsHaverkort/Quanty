@@ -807,6 +807,9 @@ void CreateDIISFockMatrix(std::list<vector<vector<double> > > &F, std::list<vect
 
 	for (uint32_t l = 0; l < nl; l++)
 	{
+		for (uint32_t i = 1; i < N; i++)
+			c[i] = 0;
+		c[0] = 1;
 		B[0] = 0;
 		Fout[l] = vector<double>(dim*dim);
 		std::list<vector<vector<double> > >::iterator itEi = E.end();
@@ -822,6 +825,7 @@ void CreateDIISFockMatrix(std::list<vector<vector<double> > > &F, std::list<vect
 			B[i]   = 1;
 			B[N*i] = 1;
 		}
+		//PrintMartix(&B[0],N);
 		info = 1;
 		uint32_t dN = N+1;
 		while (info && dN > 1)
@@ -831,6 +835,11 @@ void CreateDIISFockMatrix(std::list<vector<vector<double> > > &F, std::list<vect
 		}
 		if (info) printf("Error in CreateDIISFockMatrix : dsysv info = %d\n",info);
 
+		double ctot = 0;
+//		for (uint32_t i = 1; i < dN; i++)
+//			ctot += c[i];
+//		printf("ctot = %f\n",ctot);
+
 		for(uint32_t j = 0; j < dim*dim; j++)
 		{
 			std::list<vector<vector<double> > >::iterator itF = F.end();
@@ -838,6 +847,7 @@ void CreateDIISFockMatrix(std::list<vector<vector<double> > > &F, std::list<vect
 			{
 				itF--;
 				Fout[l][j] += c[i] * (*itF)[l][j];
+
 			}
 		}
 
@@ -923,7 +933,7 @@ void SCLoop(const vector<vector<uint32_t> > &Nclosed, const vector<vector<uint32
 }
 
 void SCScheme(const vector<double> &x, uint32_t n, int Z,int Nelec, const vector<vector<uint32_t> > &Nclosed, const vector<vector<uint32_t> > &Nopen,
-			  uint32_t NSCmax, double eps, vector<vector<double> > &eigVal,vector<vector<double> > &eigVec, double a, double b, double f)
+			  uint32_t NSCmax,uint32_t N_DIIS, double eps, vector<vector<double> > &eigVal,vector<vector<double> > &eigVec, double a, double b, double f)
 {
 	int info;
 	char uplo = 'U';
@@ -999,7 +1009,7 @@ void SCScheme(const vector<double> &x, uint32_t n, int Z,int Nelec, const vector
 		}
 	}
 	F = H0;
-	SCLoop(Nclosed,Nopen,10,0,false,dim,H0,S_Cholesky,S,P,Q,eigVal,eigVec,f,F,F_list,E_list);
+	SCLoop(Nclosed,Nopen,N_DIIS,0,false,dim,H0,S_Cholesky,S,P,Q,eigVal,eigVec,f,F,F_list,E_list);
 	SCLoop(Nclosed,Nopen,NSCmax,eps,true,dim,H0,S_Cholesky,S,P,Q,eigVal,eigVec,f,F,F_list,E_list);
 
 }
@@ -1010,6 +1020,9 @@ void InitializeAtom(const string &atom, int  &Z, int &Nelec, vector<vector<uint3
 	{
 		Z = 1;
 		Nelec = 1;
+		Nclosed = vector<vector<uint32_t> >(1);
+		Nclosed[0].push_back(0);
+		Nclosed[0].push_back(0);
 	}
 	else if (atom == "He")
 	{
@@ -1064,24 +1077,68 @@ void InitializeAtom(const string &atom, int  &Z, int &Nelec, vector<vector<uint3
 	{
 		Z = 6;
 		Nelec = 6;
+		a = 3/4.;
+		b = 3/2.;
+		f = 1/3.;
+		Nclosed = vector<vector<uint32_t> >(2);
+		Nclosed[0].push_back(0);
+		Nclosed[0].push_back(0);
+		Nclosed[1].push_back(0);
+		Nclosed[1].push_back(1);
+		Nopen = vector<vector<uint32_t> >(1);
+		Nopen[0].push_back(1);
+		Nopen[0].push_back(0);
 
 	}
 	else if (atom == "N")
 	{
 		Z = 7;
 		Nelec = 7;
+		a = 1;
+		b = 2;
+		f = 1/2.;
+		Nclosed = vector<vector<uint32_t> >(2);
+		Nclosed[0].push_back(0);
+		Nclosed[0].push_back(0);
+		Nclosed[1].push_back(0);
+		Nclosed[1].push_back(1);
+		Nopen = vector<vector<uint32_t> >(1);
+		Nopen[0].push_back(1);
+		Nopen[0].push_back(0);
 
 	}
 	else if (atom == "O")
 	{
 		Z = 8;
 		Nelec = 8;
+		a = 15/16.;
+		b = 9/8.;
+		f = 2/3.;
+		Nclosed = vector<vector<uint32_t> >(2);
+		Nclosed[0].push_back(0);
+		Nclosed[0].push_back(0);
+		Nclosed[1].push_back(0);
+		Nclosed[1].push_back(1);
+		Nopen = vector<vector<uint32_t> >(1);
+		Nopen[0].push_back(1);
+		Nopen[0].push_back(0);
 
 	}
 	else if (atom == "F")
 	{
 		Z = 9;
 		Nelec = 9;
+		a = 24/25.;
+		b = 24/25.;
+		f = 5/6.;
+		Nclosed = vector<vector<uint32_t> >(2);
+		Nclosed[0].push_back(0);
+		Nclosed[0].push_back(0);
+		Nclosed[1].push_back(0);
+		Nclosed[1].push_back(1);
+		Nopen = vector<vector<uint32_t> >(1);
+		Nopen[0].push_back(1);
+		Nopen[0].push_back(0);
 
 	}
 	else if (atom == "Ne")
@@ -1100,6 +1157,21 @@ void InitializeAtom(const string &atom, int  &Z, int &Nelec, vector<vector<uint3
 	{
 		Z = 11;
 		Nelec = 11;
+		a = 1;
+		b = 2;
+		f = 1/2.;
+		Nclosed = vector<vector<uint32_t> >(3);
+		Nclosed[0].push_back(0);
+		Nclosed[0].push_back(0);
+		Nclosed[1].push_back(0);
+		Nclosed[1].push_back(1);
+		Nclosed[2].push_back(1);
+		Nclosed[2].push_back(0);
+
+		Nopen = vector<vector<uint32_t> >(1);
+		Nopen[0].push_back(0);
+		Nopen[0].push_back(2);
+
 
 	}
 	else if (atom == "Mg")
@@ -1120,35 +1192,126 @@ void InitializeAtom(const string &atom, int  &Z, int &Nelec, vector<vector<uint3
 	{
 		Z = 13;
 		Nelec = 13;
+		a = 0;
+		b = 0;
+		f = 1/6.;
+		Nclosed = vector<vector<uint32_t> >(4);
+		Nclosed[0].push_back(0);
+		Nclosed[0].push_back(0);
+		Nclosed[1].push_back(0);
+		Nclosed[1].push_back(1);
+		Nclosed[2].push_back(0);
+		Nclosed[2].push_back(2);
+		Nclosed[3].push_back(1);
+		Nclosed[3].push_back(0);
+
+		Nopen = vector<vector<uint32_t> >(1);
+		Nopen[0].push_back(1);
+		Nopen[0].push_back(1);
 
 	}
 	else if (atom == "Si")
 	{
 		Z = 14;
 		Nelec = 14;
+		a = 3/4.;
+		b = 3/2.;
+		f = 1/3.;
+		Nclosed = vector<vector<uint32_t> >(4);
+		Nclosed[0].push_back(0);
+		Nclosed[0].push_back(0);
+		Nclosed[1].push_back(0);
+		Nclosed[1].push_back(1);
+		Nclosed[2].push_back(0);
+		Nclosed[2].push_back(2);
+		Nclosed[3].push_back(1);
+		Nclosed[3].push_back(0);
+
+		Nopen = vector<vector<uint32_t> >(1);
+		Nopen[0].push_back(1);
+		Nopen[0].push_back(1);
 
 	}
 	else if (atom == "P")
 	{
 		Z = 15;
 		Nelec = 15;
+		a = 1;
+		b = 2;
+		f = 1/2.;
+		Nclosed = vector<vector<uint32_t> >(4);
+		Nclosed[0].push_back(0);
+		Nclosed[0].push_back(0);
+		Nclosed[1].push_back(0);
+		Nclosed[1].push_back(1);
+		Nclosed[2].push_back(0);
+		Nclosed[2].push_back(2);
+		Nclosed[3].push_back(1);
+		Nclosed[3].push_back(0);
+
+		Nopen = vector<vector<uint32_t> >(1);
+		Nopen[0].push_back(1);
+		Nopen[0].push_back(1);
 	}
 	else if (atom == "S")
 	{
 		Z = 16;
 		Nelec = 16;
+		a = 15/16.;
+		b = 9/8.;
+		f = 2/3.;
+		Nclosed = vector<vector<uint32_t> >(4);
+		Nclosed[0].push_back(0);
+		Nclosed[0].push_back(0);
+		Nclosed[1].push_back(0);
+		Nclosed[1].push_back(1);
+		Nclosed[2].push_back(0);
+		Nclosed[2].push_back(2);
+		Nclosed[3].push_back(1);
+		Nclosed[3].push_back(0);
+
+		Nopen = vector<vector<uint32_t> >(1);
+		Nopen[0].push_back(1);
+		Nopen[0].push_back(1);
 
 	}
 	else if (atom == "Cl")
 	{
 		Z = 17;
 		Nelec = 17;
+		a = 24/25.;
+		b = 24/25.;
+		f = 5/6.;
+		Nclosed = vector<vector<uint32_t> >(4);
+		Nclosed[0].push_back(0);
+		Nclosed[0].push_back(0);
+		Nclosed[1].push_back(0);
+		Nclosed[1].push_back(1);
+		Nclosed[2].push_back(0);
+		Nclosed[2].push_back(2);
+		Nclosed[3].push_back(1);
+		Nclosed[3].push_back(0);
+
+		Nopen = vector<vector<uint32_t> >(1);
+		Nopen[0].push_back(1);
+		Nopen[0].push_back(1);
 
 	}
 	else if (atom == "Ar")
 	{
 		Z = 18;
 		Nelec = 18;
+		Nclosed = vector<vector<uint32_t> >(5);
+		Nclosed[0].push_back(0);
+		Nclosed[0].push_back(0);
+		Nclosed[1].push_back(0);
+		Nclosed[1].push_back(1);
+		Nclosed[2].push_back(0);
+		Nclosed[2].push_back(2);
+		Nclosed[3].push_back(1);
+		Nclosed[3].push_back(0);
+		Nclosed[4].push_back(1);
+		Nclosed[4].push_back(1);
 
 	}
 	else
@@ -1165,7 +1328,8 @@ static int LuaAtomicHartreeFock(lua_State *L)
 {
     struct{
     	uint32_t n = 7;
-    	uint32_t NSCmax = 40;
+    	uint32_t NSCmax = 100;
+    	uint32_t N_DIIS = 5;
     	uint32_t lMax = 0;
     	double R = 20;
     	int m = 3;
@@ -1176,6 +1340,7 @@ static int LuaAtomicHartreeFock(lua_State *L)
   	LuaOptionsType LuaCreateResonantSpectraOptions[]={
   	    {"BSpline_degree","uint32_t",&(Options.n)},
 		{"NSCmax","uint32_t",&(Options.NSCmax)},
+		{"N_DIIS","uint32_t",&(Options.N_DIIS)},
 		{"lMax","uint32_t",&(Options.lMax)},
 		{"Grid_R","double",&(Options.R)},
 		{"Grid_m","int",&(Options.m)},
@@ -1222,7 +1387,7 @@ static int LuaAtomicHartreeFock(lua_State *L)
 		eigVal[l] = vector<double>(dim);
 		eigVec[l] = vector<double>(dim*dim);
 	}
-	HartreeFock::SCScheme(x,Options.n,Z,Nelec,Nclosed,Nopen,Options.NSCmax,Options.eps,eigVal,eigVec,a,b,f);
+	HartreeFock::SCScheme(x,Options.n,Z,Nelec,Nclosed,Nopen,Options.NSCmax,Options.N_DIIS,Options.eps,eigVal,eigVec,a,b,f);
 	lua_createtable(L,Options.lMax+1,0);
 	vector<vector<BSpline::TBSpline*> > funs = vector<vector<BSpline::TBSpline*> >(Options.lMax+1);
 	for (uint32_t l = 0; l <= Options.lMax; l++)
