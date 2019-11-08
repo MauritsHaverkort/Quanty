@@ -298,7 +298,7 @@ static int LuaExtendedLigandField(lua_State * L)
 		uint unchangedStates;
 		vector < string > orbNames;
 		lua_check(L, 2, unchangedStates);
-		if (unchangedStates > op.NWord) return luaL_error(L, "Error: Number of unchanged states (%d) cannot be larger than dimension of Hilbert space (%d).", unchangedStates, op.NWord);
+		if (unchangedStates > op.NFermion) return luaL_error(L, "Error: Number of unchanged states (%d) cannot be larger than number of Fermionic states (%d).", unchangedStates, op.NFermion);
 		lua_push(L, extendedLigandFieldForOperator(op, T, unchangedStates, Options.filledLigands, Options.emptyLigands, orbNames, Options.hasSpin));
 		lua_push(L, T);
 		lua_push(L, orbNames);
