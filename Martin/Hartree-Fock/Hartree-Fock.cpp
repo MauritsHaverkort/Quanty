@@ -833,7 +833,12 @@ void CreateDIISFockMatrix(std::list<vector<vector<double> > > &F, std::list<vect
 			dN--;
 			dsysv(&uplo,&dN,&NRHS,&B[0],&N,ipiv,&c[0],&N,work,&lwork,&info);
 		}
-		if (info) printf("Error in CreateDIISFockMatrix : dsysv info = %d\n",info);
+		if (info)
+		{
+			printf("Error in CreateDIISFockMatrix : dsysv info = %d\n",info);
+			printf("dN = %d\nl = %d\nB = \n",dN,l);
+			PrintMartix(&B[0],N);
+		}
 
 		double ctot = 0;
 //		for (uint32_t i = 1; i < dN; i++)
@@ -970,7 +975,9 @@ void SCScheme(const vector<double> &x, uint32_t n, int Z,int Nelec, const vector
 
 	CreateSuperMatrix(rk1,rk2,rkD,n,dim,lMax,alpha,beta,P,Q);
 
-
+	rk1.clear();
+	rk2.clear();
+	rkD.clear();
 	CreateOverlapMatrix(x,n,S_band);
 	S = vector<double>(dim*dim);
 
@@ -1312,6 +1319,49 @@ void InitializeAtom(const string &atom, int  &Z, int &Nelec, vector<vector<uint3
 		Nclosed[3].push_back(0);
 		Nclosed[4].push_back(1);
 		Nclosed[4].push_back(1);
+
+	}
+	else if (atom == "K")
+	{
+		Z = 19;
+		Nelec = 19;
+		a = 1;
+		b = 2;
+		f = 1/2.;
+		Nclosed = vector<vector<uint32_t> >(5);
+		Nclosed[0].push_back(0);
+		Nclosed[0].push_back(0);
+		Nclosed[1].push_back(0);
+		Nclosed[1].push_back(1);
+		Nclosed[2].push_back(0);
+		Nclosed[2].push_back(2);
+		Nclosed[3].push_back(1);
+		Nclosed[3].push_back(0);
+		Nclosed[4].push_back(1);
+		Nclosed[4].push_back(1);
+
+		Nopen = vector<vector<uint32_t> >(1);
+		Nopen[0].push_back(0);
+		Nopen[0].push_back(3);
+
+	}
+	else if (atom == "Ca")
+	{
+		Z = 20;
+		Nelec = 20;
+		Nclosed = vector<vector<uint32_t> >(6);
+		Nclosed[0].push_back(0);
+		Nclosed[0].push_back(0);
+		Nclosed[1].push_back(0);
+		Nclosed[1].push_back(1);
+		Nclosed[2].push_back(0);
+		Nclosed[2].push_back(2);
+		Nclosed[3].push_back(1);
+		Nclosed[3].push_back(0);
+		Nclosed[4].push_back(1);
+		Nclosed[4].push_back(1);
+		Nclosed[5].push_back(0);
+		Nclosed[5].push_back(3);
 
 	}
 	else
