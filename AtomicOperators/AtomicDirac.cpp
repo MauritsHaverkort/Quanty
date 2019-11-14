@@ -102,6 +102,95 @@ void Print(const vector<SKappaGroup> &group)
 	}
 }
 
+static int LuaOperatorNewAtomicH0(lua_State *L)
+{
+	OperatorType *op;
+	uint16_t **indices;
+	uint32_t NF, Nindices, temp;
+	uint32_t lMax = 0;
+	int Z,l;
+	vector<int> indToK;
+	vector<BSpline::TBSpline*> G;
+	lua_check(L,1,NF);
+	lua_check(L,2,Z);
+	Nindices = (uint32_t)lua_objlen(L,3);
+	indices = (uint16_t **) malloc(Nindices * sizeof(uint16_t *));
+	if(!indices) printf("malloc fail at indices in LuaOperatorNewAtomicH0. size = %u\n",Nindices);
+
+	for(uint32_t i = 0; i < Nindices; i++ )
+	{
+		lua_rawgeti(L, 3, i+1);
+		indices[i] = luaL_checkarray_unit16_t(L,-1,&temp);
+		if (i%2 == 0)
+		{
+			l = ((int)temp-1)/2;
+			indToK.push_back(-(l + 1));
+			if (l > lMax) lMax = l;
+
+		}
+		lua_pop(L,1);
+	}
+	vector<vector<uint32_t> > groupedIdx = vector<vector<uint32_t> >(lMax+1);
+	for (uint32_t i = 0; i < (uint32_t) indToK.size(); i++)
+	{
+		l = -indToK[i] - 1;
+		groupedIdx[l].push_back(i);
+	}
+	lua_check(L,4,G);
+
+	vector<double> Lap;
+	vector<vector<double> > H0 = vector<vector<double> >(lMax+1);
+	vector<vector<double> > V = vector<vector<double> >(lMax+1);
+	HartreeFock::CreateLaplacian(G[0]->knots,G[0]->degree,Lap);
+	uint32_t dim = (uint32_t) G[0]->y.size()-2;
+	for (l = 0; l <= lMax; l++)
+		HartreeFock::CreatePotentialMatrix(G[0]->knots,G[0]->degree,V[l],Z,l);
+
+	op = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
+	luaL_setmetatable(L,"Operator_Type");
+	InitOperator(op);
+	InitOperatorFixedLength(op,2,8);
+	op->NFermion = NF;
+	op->NWord = Min(op->NFermion, 1 + (op->NFermion - 1) / 8);
+	uint16_t oadd[2] = { 0, 0 };
+	for (l = 0; l <= lMax; l++)
+	{
+		H0[l] = vector<double>(dim*dim);
+		for (uint32_t a = 0; a < (uint32_t) groupedIdx[l].size(); a++)
+		{
+			uint32_t idx1 = groupedIdx[l][a];
+			for (uint32_t b = 0; b < (uint32_t) groupedIdx[l].size(); b++)
+			{
+				double h0 = 0;
+				uint32_t idx2 = groupedIdx[l][b];
+				for (int j = 0; j < dim; j++)
+				{
+					for ( int i = j; i <= std::min(dim-1,j+G[0]->degree); i++)  // n = #sub-diagonals
+					{
+						h0 += G[idx1]->y[i+1] * (Lap[(i-j) + j*dim]/2. + V[l][(i-j) + j*dim]) * G[idx2]->y[j+1];
+						if (i != j)
+							h0 += G[idx1]->y[j+1] * (Lap[(i-j) + j*dim]/2. + V[l][(i-j) + j*dim]) * G[idx2]->y[i+1];
+					}
+				}
+				for (uint32_t k = 0; k < 2*l+1; k++)
+				{
+					oadd[1] = CrAnMask +  (uint16_t)indices[2*idx1][k];
+					oadd[0] = (uint16_t) indices[2*idx2][k];
+					RealOperatorAddLaderNormalOrder(op, oadd, 2, h0, &QDetNotOrderedFcFaBcBa);
+
+					oadd[1] = CrAnMask +  (uint16_t)indices[2*idx1+1][k];
+					oadd[0] = (uint16_t) indices[2*idx2+1][k];
+					RealOperatorAddLaderNormalOrder(op, oadd, 2, h0, &QDetNotOrderedFcFaBcBa);
+				}
+
+			}
+		}
+
+	}
+
+	return 1;
+}
+
 static int LuaOperatorNewAtomicDirac(lua_State *L)
 {
 	OperatorType *op;

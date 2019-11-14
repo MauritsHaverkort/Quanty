@@ -684,6 +684,11 @@ static int LuaNewOperator(lua_State * L)
     lua_remove(L, 1);
     return LuaOperatorNewAtomicDirac(L);
   }
+  if ((strcmp(OT, "H0") == 0)) // ||(strcmp(OT, "H0") == 0)
+  {
+    lua_remove(L, 1);
+    return LuaOperatorNewAtomicH0(L);
+  }
   if (strcmp(OT, "Sx") == 0)
   {
     lua_remove(L, 1);

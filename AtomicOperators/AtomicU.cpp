@@ -345,6 +345,35 @@ static int LuaOperatorNewAtomicUBSpline (lua_State *L)
         }
 
     }
+    else if (len == 3)
+    {
+    	Nindices = (uint32_t)lua_objlen(L,2);
+
+		indices = (uint16_t **) malloc(Nindices * sizeof(uint16_t *));
+		if(!indices) printf("malloc fail at indices in LuaOperatorNewFullCoulomb. size = %u\n",Nindices);
+
+		for(uint32_t i = 0; i < Nindices; i++ )
+		{
+			lua_rawgeti(L, 2, i+1);
+			indices[i] = luaL_checkarray_unit16_t(L,-1,&temp);
+			if (i%2 == 0)
+			{
+				indToK.push_back(-(((int)temp-1)/2 + 1));
+			}
+			lua_pop(L,1);
+		}
+		lua_check(L,3,G);
+		op = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
+		if (Options.conserve)
+		{
+			printf("BSplie witch conserved Operator not yet implemented\n");
+			//CreateOperatorAtomicURelativisticOccupationConserving(NF,G,F,indToK,indices, op);
+		}
+		else
+		{
+			CreateOperatorAtomicUNonRelativistic(NF,G,indToK,indices,Options.Nweights, op);
+		}
+    }
     luaL_setmetatable(L,"Operator_Type");
 
 
@@ -360,7 +389,7 @@ static int LuaOperatorNewAtomicU (lua_State *L)
 {
 	luaL_checktype(L, 3, LUA_TTABLE);
 	lua_rawgeti(L, 3, 1); //TODO: remove > 4 in line below and implememnt non rel stuff
-	if ( ((Interpolation::InterpolatingFunction *)luaL_checkudata(L, -1, "InterpolatingFunction_Type"))->type == "BSpline" && (uint32_t)lua_gettop(L) > 4)
+	if ( ((Interpolation::InterpolatingFunction *)luaL_checkudata(L, -1, "InterpolatingFunction_Type"))->type == "BSpline" )
 	{
 		lua_pop(L,1);
 		return LuaOperatorNewAtomicUBSpline(L);
@@ -881,6 +910,55 @@ uint32_t CreateOperatorAtomicURelativistic(uint32_t const NFermion,const vector<
         //printf("Fk[0] = %f\t%u %u %u %u\n",Fk[0],n[0],n[1],n[2],n[3]);
 
         CreateOperatorAtomicURelativisticOneIntegralBspline(NFermion,k[0],k[1],k[2],k[3],indices[n[0]],indices[n[1]],indices[n[2]],indices[n[3]],Fk,n[0],n[1],n[2],n[3],&optemp);
+
+        OperatorAdd(op, optemp, 1., 0.);
+
+    }
+    for ( i = 0; i < NIntegrals; i++)
+    {
+    	free(integrals[i].val);
+    	free(integrals[i].k);
+    }
+
+  if(GlobalTimeOn&0x100) EndTiming("Create Atomic U Relativistic", &GlobalTime);
+  return 0;
+}
+
+uint32_t CreateOperatorAtomicUNonRelativistic(uint32_t const NFermion,const vector<BSpline::TBSpline*> &G, const vector<int> &indToK, uint16_t **indices, uint32_t Nweights, OperatorType *op)
+{
+  if(GlobalTimeOn&0x100) BeginTiming("Create Atomic U Relativistic", &GlobalTime);
+  OperatorType optemp;
+    vector<SSlaterIntegral> integrals;
+    uint32_t NIntegrals, i;
+
+    GetSlaterIntegrals(G,indToK,Nweights,integrals);
+    NIntegrals = (uint32_t) integrals.size();
+    int *k;
+    unsigned int *n;
+    double *Fk;
+
+    k = integrals[0].tau.kappa;
+    int l[4];
+    l[0] = -k[0]-1;
+    l[1] = -k[1]-1;
+    l[2] = -k[2]-1;
+    l[3] = -k[3]-1;
+    n = integrals[0].tau.n;
+    Fk = integrals[0].val;
+
+    CreateOperatorAtomicUNonRelOneIntegral(NFermion,l[0],l[1],l[2],l[3],indices[2*n[0]],indices[2*n[0]+1],indices[2*n[1]],indices[2*n[1]+1],indices[2*n[2]],indices[2*n[2]+1],indices[2*n[3]],indices[2*n[3]+1],Fk,n[0],n[1],n[2],n[3],op);
+
+    for( i = 1; i < NIntegrals; i++)
+    {
+        k = integrals[i].tau.kappa;
+        l[0] = -k[0]-1;
+        l[1] = -k[1]-1;
+        l[2] = -k[2]-1;
+        l[3] = -k[3]-1;
+        n = integrals[i].tau.n;
+        Fk = integrals[i].val;
+
+        CreateOperatorAtomicUNonRelOneIntegral(NFermion,l[0],l[1],l[2],l[3],indices[2*n[0]],indices[2*n[0]+1],indices[2*n[1]],indices[2*n[1]+1],indices[2*n[2]],indices[2*n[2]+1],indices[2*n[3]],indices[2*n[3]+1],Fk,n[0],n[1],n[2],n[3],&optemp);
 
         OperatorAdd(op, optemp, 1., 0.);
 

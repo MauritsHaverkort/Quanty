@@ -630,6 +630,46 @@ void CreateQSuperMatrix(uint32_t la, const vector<double> &Q, const vector<doubl
 	}
 }
 
+void CreatePQSuperMatrix(uint32_t la, const vector<vector<double> > &rk1, const vector<vector<double> > &rk2, const vector<vector<double> > &rkD,
+		  uint32_t n, double Alpha, double Beta, const vector<double> &Dc, const vector<double> &Do, uint32_t dim, uint32_t lMax,
+		  vector<double> &PSM, vector<double> &QSM)
+{
+	uint32_t nl = lMax + 1;
+	uint32_t superdim = dim*dim*nl;
+	QSM = vector<double>(dim*dim);
+	PSM = vector<double>(dim*dim);
+#pragma omp parallel for
+	for (uint32_t mu = 0; mu < dim; mu++)
+	{
+		for (uint32_t nu = mu; nu < dim; nu++)
+		{
+			for (uint32_t lb = 0; lb < nl; lb++)
+			{
+				for (uint32_t alpha = 0; alpha < dim; alpha++)
+				{
+					for (uint32_t beta = 0; beta < dim; beta++)
+					{
+						double Fk = AssembleSlaterInts(nu+1,alpha+1,mu+1,beta+1,rk1[0],rk2[0],rkD[0],n);
+						uint32_t k0 = Abs((int)la - (int)lb);
+						uint32_t k1 = la + lb;
+						if ((k1 +k0) % 2) k0++;
+						double Gk = 0;
+						for (uint32_t k = k0; k <= k1; k +=2)
+						{
+							double cred = ThreeJSymbol(la,0,lb,0,k,0);
+							Gk += AssembleSlaterInts(nu+1,alpha+1,beta+1,mu+1,rk1[k],rk2[k],rkD[k],n)*cred*cred;
+						}
+						QSM[mu*dim + nu] += (2*(2*lb+1)*Fk * Alpha - Gk * Beta * (double)(2*lb+1)) * Do[alpha*dim*nl + beta*nl + lb];
+						PSM[mu*dim + nu] += (2*(2*lb+1)*Fk  - Gk * (double)(2*lb+1)) * (Do[alpha*dim*nl + beta*nl + lb]+Dc[alpha*dim*nl + beta*nl + lb]);
+					}
+				}
+			}
+			QSM[nu*dim + mu] = QSM[mu*dim + nu];
+			PSM[nu*dim + mu] = PSM[mu*dim + nu];
+		}
+	}
+}
+
 void CreateRSuperMatrix(uint32_t la, const vector<double> &QSM,const vector<double> &S, const vector<double> &Dc, const vector<double> &Do, uint32_t dim, uint32_t lMax, vector<double> &RSM)
 {
 	uint32_t nl = lMax + 1;
@@ -719,6 +759,24 @@ void CreateHartreeFockOperator(const vector<double> &P,const vector<double> &Q,c
 					}
 				}
 				F[la][mu*dim + nu] += RSM[mu*dim + nu] + H0[la][mu*dim + nu];
+				F[la][nu*dim + mu] = F[la][mu*dim + nu];
+			}
+		}
+	}
+
+}
+void CreateHartreeFockOperator(const vector<vector<double> > &H0,const vector<vector<double> > &PSM,const vector<vector<double> > &QSM,
+		const vector<vector<double> > &RSM, uint32_t dim, uint32_t lMax, vector<vector<double> > &F)
+{
+	uint32_t nl = lMax + 1;
+	for (uint32_t la = 0; la < nl; la++)
+	{
+		F[la] = vector<double>(dim*dim);
+		for (uint32_t mu = 0; mu < dim; mu++)
+		{
+			for (uint32_t nu = mu; nu < dim; nu++)
+			{
+				F[la][mu*dim + nu] = H0[la][mu*dim + nu] + PSM[la][mu*dim + nu] - QSM[la][mu*dim + nu] + RSM[la][mu*dim + nu];
 				F[la][nu*dim + mu] = F[la][mu*dim + nu];
 			}
 		}
@@ -836,8 +894,10 @@ void CreateDIISFockMatrix(std::list<vector<vector<double> > > &F, std::list<vect
 		if (info)
 		{
 			printf("Error in CreateDIISFockMatrix : dsysv info = %d\n",info);
-			printf("dN = %d\nl = %d\nB = \n",dN,l);
-			PrintMartix(&B[0],N);
+//			printf("dN = %d\nl = %d\nB = \n",dN,l);
+//			PrintMartix(&B[0],N);
+			std::list<vector<vector<double> > >::iterator itF = F.end();
+			Fout = *(--itF);
 		}
 
 		double ctot = 0;
@@ -862,8 +922,9 @@ void CreateDIISFockMatrix(std::list<vector<vector<double> > > &F, std::list<vect
 
 void SCLoop(const vector<vector<uint32_t> > &Nclosed, const vector<vector<uint32_t> > &Nopen,
 			  uint32_t NSCmax, double eps, bool QDIIS, uint32_t dim, const vector<vector<double> > &H0,
-			  vector<double> &S_Cholesky, const vector<double> &S, const vector<double> &P, const vector<double> &Q,
-			  vector<vector<double> > &eigVal,vector<vector<double> > &eigVec, double f, vector<vector<double> > &F, std::list<vector<vector<double> > > &F_list, std::list<vector<vector<double> > > &E_list)
+			  vector<double> &S_Cholesky, const vector<double> &S,const vector<vector<double> > &rk1, const vector<vector<double> > &rk2,
+			  const vector<vector<double> > &rkD, uint32_t n, double Alpha, double Beta, vector<vector<double> > &eigVal,vector<vector<double> > &eigVec,
+			  double f, vector<vector<double> > &F, std::list<vector<vector<double> > > &F_list, std::list<vector<vector<double> > > &E_list)
 {
 	uint32_t itype = 1;
 	char jobz = 'V';
@@ -873,8 +934,6 @@ void SCLoop(const vector<vector<uint32_t> > &Nclosed, const vector<vector<uint32
 	char diag = 'N';
 	double one = 1;
 	uint32_t lwork;
-	int info;
-	double work[dim*dim];
 	lwork = dim*dim; //TODO: find something that is not stupid
 
 	uint32_t lMax = (uint32_t) eigVec.size()-1;
@@ -883,21 +942,25 @@ void SCLoop(const vector<vector<uint32_t> > &Nclosed, const vector<vector<uint32
 	double gsEnergy1 = 0;
 
 	vector<double> Dc, Do, DcOld, DoOld;
+	vector<vector<double> > PSM = vector<vector<double> >(lMax+1);
 	vector<vector<double> > QSM = vector<vector<double> >(lMax+1);
 	vector<vector<double> > RSM = vector<vector<double> >(lMax+1);
 	vector<vector<double> > E   = vector<vector<double> >(lMax+1);
 
 	for (uint32_t idxSC = 1; idxSC <= NSCmax; idxSC++)
 	{
+#pragma omp parallel for
 		for (uint32_t  l = 0; l <= lMax; l++)
 		{
+			int info;
+			double work[dim*dim];
 			dsygst( &itype, &uplo, &dim, &(F[l][0]), &dim, &(S_Cholesky[0]), &dim, &info );
 			if (info) printf("dsygst info = %d\n",info);
 			dsyev( &jobz, &uplo, &dim, &(F[l][0]), &dim, &(eigVal[l][0]),work,&lwork,&info);
 			if (info) printf("dsygv info = %d\n",info);
 			dtrsm( &side, &uplo, &trans, &diag, &dim, &dim, &one, &(S_Cholesky[0]), &dim, &(F[l][0]), &dim ); //these three mimic dsygv
 		}
-
+#pragma omp parallel for
 		for (uint32_t  l = 0; l <= lMax; l++)
 		{
 			for (uint32_t i = 0; i < dim*dim; i++)
@@ -906,14 +969,13 @@ void SCLoop(const vector<vector<uint32_t> > &Nclosed, const vector<vector<uint32
 			}
 		}
 		CreateSuperDensity(eigVec,Nclosed,Nopen,lMax,dim,Dc,Do,f);
-		CreateHartreeFockOperator(P,Q,S,H0,Dc,Do,dim,lMax,F);
-		CreateDIISErrorMatrix(F,Dc,Do,S,dim,lMax,E);
-
 		for (uint32_t  l = 0; l <= lMax; l++)
 		{
-			CreateQSuperMatrix(l,Q,Do,dim,lMax,QSM[l]);
+			CreatePQSuperMatrix(l,rk1,rk2,rkD,n,Alpha,Beta,Dc,Do,dim,lMax,PSM[l],QSM[l]);
 			CreateRSuperMatrix(l,QSM[l],S,Dc,Do,dim,lMax,RSM[l]);
 		}
+		CreateHartreeFockOperator(H0,PSM,QSM,RSM,dim,lMax,F);
+		CreateDIISErrorMatrix(F,Dc,Do,S,dim,lMax,E);
 
 		F_list.push_back(F);
 		E_list.push_back(E);
@@ -973,11 +1035,6 @@ void SCScheme(const vector<double> &x, uint32_t n, int Z,int Nelec, const vector
 	Nsplines = (uint32_t) x.size() - n-1;
 	dim = Nsplines-2;
 
-	CreateSuperMatrix(rk1,rk2,rkD,n,dim,lMax,alpha,beta,P,Q);
-
-	rk1.clear();
-	rk2.clear();
-	rkD.clear();
 	CreateOverlapMatrix(x,n,S_band);
 	S = vector<double>(dim*dim);
 
@@ -1016,8 +1073,20 @@ void SCScheme(const vector<double> &x, uint32_t n, int Z,int Nelec, const vector
 		}
 	}
 	F = H0;
-	SCLoop(Nclosed,Nopen,N_DIIS,0,false,dim,H0,S_Cholesky,S,P,Q,eigVal,eigVec,f,F,F_list,E_list);
-	SCLoop(Nclosed,Nopen,NSCmax,eps,true,dim,H0,S_Cholesky,S,P,Q,eigVal,eigVec,f,F,F_list,E_list);
+	SCLoop(Nclosed,Nopen,N_DIIS,0,false,dim,H0,S_Cholesky,S,rk1,rk2,rkD,n,alpha,beta,eigVal,eigVec,f,F,F_list,E_list);
+	SCLoop(Nclosed,Nopen,NSCmax,eps,true,dim,H0,S_Cholesky,S,rk1,rk2,rkD,n,alpha,beta,eigVal,eigVec,f,F,F_list,E_list);
+
+//	double h00 = 0;
+//	double h01 = 0;
+//	double hpp = 0;
+//	for (uint32_t mu = 0; mu < dim; mu++)
+//		for (uint32_t nu = 0; nu < dim; nu++)
+//		{
+//			h00 += eigVec[0][0*dim + mu] * H0[0][mu*dim+nu] * eigVec[0][0*dim + nu];
+//			h01 += eigVec[0][0*dim + mu] * H0[0][mu*dim+nu] * eigVec[0][1*dim + nu];
+//			hpp += eigVec[1][0*dim + mu] * H0[1][mu*dim+nu] * eigVec[1][0*dim + nu];
+//		}
+//	printf("h00 = %E\th01 = %E\thpp = %E\n",h00,h01,hpp);
 
 }
 
@@ -1450,6 +1519,7 @@ static int LuaAtomicHartreeFock(lua_State *L)
 			funs[l][i] = new(memory) BSpline::TBSpline();
 			luaL_setmetatable(L, "InterpolatingFunction_Type");
 			lua_rawseti(L,-2,i+1);
+			funs[l][i]->type = "BSpline";
 			funs[l][i]->knots = x;
 			funs[l][i]->x = x;
 			for (int foo = 0; foo < Options.n; foo++)
@@ -1467,9 +1537,8 @@ static int LuaAtomicHartreeFock(lua_State *L)
 		lua_rawseti(L,-2,l+1);
 	}
 	lua_push(L,eigVal);
-	lua_push(L,eigVec);
 
-	return 3;
+	return 2;
 }
 
 

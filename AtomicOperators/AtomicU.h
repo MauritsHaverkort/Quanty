@@ -28,6 +28,7 @@ void CreateOperatorAtomicURelativisticOneIntegralBspline(uint32_t const NFermion
 
 uint32_t CreateOperatorAtomicUNonRel(uint32_t const NFermion,const vector<Interpolation::InterpolatingFunction *> &ipolfuns,const vector<int> &indToK
                                                ,uint16_t **indices, OperatorType *op, bool Qcontinuum=false);
+uint32_t CreateOperatorAtomicUNonRelativistic(uint32_t const NFermion,const vector<BSpline::TBSpline*> &G, const vector<int> &indToK, uint16_t **indices, uint32_t Nweights, OperatorType *op);
 
 void CreateOperatorAtomicUNonRelOneIntegral(uint32_t const NFermion,int const l1,int const l2, int const l3,int const l4,
 		uint16_t const *Lindex1Up, uint16_t const *Lindex1Dn, uint16_t const *Lindex2Up, uint16_t const *Lindex2Dn,
