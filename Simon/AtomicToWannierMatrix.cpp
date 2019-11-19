@@ -63,7 +63,7 @@ bool atomicStateSorternlz(string s1, string s2)
 	int lz1, lz2;
 	deconstructOrbname(s1, siteNum1, atomName1, n1, shell1, lz1);
 	deconstructOrbname(s2, siteNum2, atomName2, n2, shell2, lz2);
-	if (siteNum1 != siteNum2 && siteNum1 != 0 && siteNum2 != 0)
+	if (siteNum1 != siteNum2)
 		return siteNum1 < siteNum2;
 //	TODO: this sorts lexicographically. Should we rather sort according to the periodic system?
 	if (strcmp(atomName1.c_str(), atomName2.c_str()) != 0)
@@ -85,7 +85,7 @@ bool atomicStateSorterlnz(string s1, string s2)
 	int lz1, lz2;
 	deconstructOrbname(s1, siteNum1, atomName1, n1, shell1, lz1);
 	deconstructOrbname(s2, siteNum2, atomName2, n2, shell2, lz2);
-	if (siteNum1 != siteNum2 && siteNum1 != 0 && siteNum2 != 0)
+	if (siteNum1 != siteNum2)
 		return siteNum1 < siteNum2;
 //	TODO: this sorts lexicographically. Should we rather sort according to the periodic system?
 	if (strcmp(atomName1.c_str(), atomName2.c_str()) != 0)
