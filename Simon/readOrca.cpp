@@ -277,6 +277,25 @@ double OrcaGaussianNormfactor(const double w, const uint l)
 	return out;
 }
 
+void OrcaSetFermiEnergy(OrcaObject &orca, const double ef)
+{
+	uint i = 0;
+	while (orca.EigenOccupations[i] > 0)
+	{
+		++i;
+	}
+	if (i == 0 || i == (uint) orca.EigenOccupations.size())
+	{
+		cout << "Warning: Could not set Fermi Energy!" << endl;
+		return;
+	}
+	double offset = ef - orca.EigenEnergies[i] + (orca.EigenEnergies[i] - orca.EigenEnergies[i - 1]) / 2;
+	for (uint j = 0; j < (uint) orca.EigenEnergies.size(); ++j)
+	{
+		orca.EigenEnergies[j] += offset;
+	}
+}
+
 OrcaObject FileReadOrca(const string &filename)
 {
 	const static double HartreeToeV = 27.211391239;
@@ -499,6 +518,7 @@ OrcaObject FileReadOrca(const string &filename)
 			out.Atoms[i].Position[j] = atomPositions[i][j];
 		}
 	}
+	OrcaSetFermiEnergy(out, 0);
 	return out;
 }
 
