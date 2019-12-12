@@ -252,6 +252,7 @@ static int LuaOperatorNewAtomicUGeneralFunction (lua_State *L)
                 for (uint32_t j = 0; j < 2*abs(indToK1[i]); j++) detstring.append("1");
             for (uint32_t i = 0; i < (uint32_t) indToK2.size(); i++)
                 for (uint32_t j = 0; j < 2*abs(indToK2[i]); j++) detstring.append("0");
+            while (detstring.length() < NF) detstring.append("0");
             uint8_t * det = StringToDet(psi.NFermion, psi.NBoson,(char*) detstring.c_str());
             RealWaveFunctionAddElement(&psi, det, 1);
             MatrixType Rho;
