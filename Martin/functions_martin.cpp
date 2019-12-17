@@ -1740,6 +1740,11 @@ static int LuaCDMPlot(lua_State *L)
 	}
 
 	lua_push(L,spectrum);
+	if (!M->OnLuaStack)
+	{
+		FreeCompactMatrix(M);
+		free(M);
+	}
 	return 1;
 
 }
