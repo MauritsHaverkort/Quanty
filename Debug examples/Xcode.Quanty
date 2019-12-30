@@ -1,4 +1,112 @@
 
+NF=20
+NB=0
+IndexDn_3d={ 0, 2, 4, 6, 8}
+IndexUp_3d={ 1, 3, 5, 7, 9}
+IndexDn_Ld={10,12,14,16,18}
+IndexUp_Ld={11,13,15,17,19}
+
+-- number of electrons (formal valence)
+nd = 9
+
+-- parameters from experiment (core level PES)
+-- J. Ghijsen, L. H. Tjeng, J. van Elp, H. Eskes, J. Westerink, G. A. Sawatzky, and M. T. Czyzyk, Phys. Rev. B 38, 11322 (1988).
+-- H. Eskes, L. H. Tjeng, and G. A. Sawatzky, Phys. Rev. B 41, 288 (1990).
+
+U       =  6.0
+Delta   =  2.2
+-- Slater integrals for multipole part of Coulomb interaction
+F2dd    = 10.00
+F4dd    =  6.25
+
+-- Onsite splitting of the 3d shell (numbers from the references above)
+Eda1g   =  0
+Edb1g   =  0
+Edb2g   =  0
+Edeg    =  0
+
+-- Onsite splitting of the Ligand d shell (numbers from the references above)
+ELa1g   =   1.25
+ELb1g   =  -1.25
+ELb2g   =   1.25
+ELeg    =   0
+
+-- Hopping between the Ligand and 3d shell (numbers from the references above)
+TdLa1g   =  2.3 / sqrt(3.0)
+TdLb1g   =  2.3
+TdLb2g   =  2.3 / 2
+TdLeg    =  2.3 / (2*sqrt(2))
+ 
+-- turning U and Delta to onsite energies (Including the transformation from U to F0)
+ 
+ed      = (10*Delta-nd*(19+nd)*U/2)/(10+nd)
+eL      = nd*((1+nd)*U/2-Delta)/(10+nd)
+F0dd    = U+(F2dd+F4dd)*2/63
+
+-- expansion of a potential on shperical Harmonics
+-- Format for D4h symmetry copied from
+-- http://quanty.org/physics_chemistry/point_groups/d4h/orientation_zxy
+-- we set A(k=0,m=0) to zero such that the center of Gravity is at zero and Delta determines
+-- the energy difference between d^n L^10 and d^n+1 L^9
+
+
+Akmd  = {{0, 0, ed},
+         {2, 0, Eda1g + (-1)*(Edb1g) + (-1)*(Edb2g) + Edeg} ,
+         {4, 0, (3/10)*((6)*(Eda1g) + Edb1g + Edb2g + (-8)*(Edeg))} ,
+         {4,-4, (3/2)*((sqrt(7/10))*(Edb1g + (-1)*(Edb2g)))} ,
+         {4, 4, (3/2)*((sqrt(7/10))*(Edb1g + (-1)*(Edb2g)))} }
+
+AkmL  = {{0, 0, eL},
+         {2, 0, ELa1g + (-1)*(ELb1g) + (-1)*(ELb2g) + ELeg} ,
+         {4, 0, (3/10)*((6)*(ELa1g) + ELb1g + ELb2g + (-8)*(ELeg))} ,
+         {4,-4, (3/2)*((sqrt(7/10))*(ELb1g + (-1)*(ELb2g)))} ,
+         {4, 4, (3/2)*((sqrt(7/10))*(ELb1g + (-1)*(ELb2g)))} }
+
+AkmLd = {{0, 0, (1/5)*(TdLa1g + TdLb1g + TdLb2g + (2)*(TdLeg))} ,
+         {2, 0, TdLa1g + (-1)*(TdLb1g) + (-1)*(TdLb2g) + TdLeg} ,
+         {4, 0, (3/10)*((6)*(TdLa1g) + TdLb1g + TdLb2g + (-8)*(TdLeg))} ,
+         {4,-4, (3/2)*((sqrt(7/10))*(TdLb1g + (-1)*(TdLb2g)))} ,
+         {4, 4, (3/2)*((sqrt(7/10))*(TdLb1g + (-1)*(TdLb2g)))} }
+
+
+
+OppOnsite3d = NewOperator("CF", NF, IndexUp_3d, IndexDn_3d, Akmd)
+OppOnsiteLd = NewOperator("CF", NF, IndexUp_Ld, IndexDn_Ld, AkmL)
+OppHopLd3d  = NewOperator("CF", NF, IndexUp_3d,IndexDn_3d, IndexUp_Ld,IndexDn_Ld,AkmLd) +  NewOperator("CF", NF, IndexUp_Ld,IndexDn_Ld, IndexUp_3d,IndexDn_3d,AkmLd)
+
+
+OppU =NewOperator("U", NF, IndexUp_3d, IndexDn_3d, {F0dd,F2dd,F4dd})
+
+
+Hamiltonian =  OppU + OppOnsite3d + OppOnsiteLd + OppHopLd3d
+             
+ 
+-- we now can create the lowest Npsi eigenstates:
+Npsi=20
+-- in order to make sure we have a filling of nd electrons we need to define some restrictions
+StartRestrictions = {NF, NB, {"1111111111 0000000000",nd,nd}, {"0000000000 1111111111",10,10}}
+ 
+psiList = Eigensystem(Hamiltonian, StartRestrictions, Npsi)
+oppList={Hamiltonian, OppOnsite3d, OppOnsiteLd, OppHopLd3d}
+
+-- print of some expectation values
+ 
+print("  #    <E>      <E3d>    <ELd>    <Ehyb> ");
+for i = 1,#psiList do
+  io.write(string.format("%3i ",i))
+  for j = 1,#oppList do
+    expectationvalue = Chop(psiList[i]*oppList[j]*psiList[i])
+    io.write(string.format("%8.3f ",expectationvalue))
+  end
+  io.write("\n")
+end
+
+os.exit()
+
+
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/External_tests/Eigensystem_bug_3.Quanty")
+os.exit()
+
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Reference/Objects/ResponseFunctions/BlockTypeConversion.Quanty")
 os.exit()
 
