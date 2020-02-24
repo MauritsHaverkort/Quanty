@@ -190,9 +190,12 @@ static int LuaComplexAdd(lua_State * L)
             uint32_t i,j;
             SpectraTypeArray *res, *b;
             b = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
-            res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
+            res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
             res->NSpectra = b->NSpectra;
             res->Spec= (SpectraType*)malloc(res->NSpectra*sizeof(SpectraType));
+            res->Name=(char*)malloc((strlen(b->Name)+1)*sizeof(char));
+            if(res->Name==NULL){return luaL_error(L, "malloc failed in add complex number to a spectrum for Name\n");}
+            strcpy(res->Name, b->Name);
             for(i=0;i<res->NSpectra;i++)
             {
               if(SpectrumAllocate(b->Spec[i], &(res->Spec[i])))
@@ -363,9 +366,12 @@ static int LuaComplexSub(lua_State * L)
             uint32_t i,j;
             SpectraTypeArray *res, *b;
             b = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
-            res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
+            res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
             res->NSpectra = b->NSpectra;
             res->Spec= (SpectraType*)malloc(res->NSpectra*sizeof(SpectraType));
+            res->Name=(char*)malloc((strlen(b->Name)+1)*sizeof(char));
+            if(res->Name==NULL){return luaL_error(L, "malloc failed in add complex number to a spectrum for Name\n");}
+            strcpy(res->Name, b->Name);
             for(i=0;i<res->NSpectra;i++)
             {
               if(SpectrumAllocate(b->Spec[i], &(res->Spec[i])))
@@ -542,7 +548,6 @@ static int LuaComplexMul(lua_State * L)
             SpectraTypeArray *res, *b;
             b = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
             res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
-            
             if(CopySpectraArray(b, res)) return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
             for(i=0;i<res->NSpectra;i++)
             {
@@ -711,9 +716,12 @@ static int LuaComplexDiv(lua_State * L)
             uint32_t i,j;
             SpectraTypeArray *res, *b;
             b = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
-            res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
+            res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
             res->NSpectra = b->NSpectra;
             res->Spec = (SpectraType*)malloc(res->NSpectra * sizeof(SpectraType));
+            res->Name=(char*)malloc((strlen(b->Name)+1)*sizeof(char));
+            if(res->Name==NULL){return luaL_error(L, "malloc failed in add complex number to a spectrum for Name\n");}
+            strcpy(res->Name, b->Name);
             for(i=0;i<res->NSpectra;i++)
             {
               if(SpectrumAllocate(b->Spec[i], &(res->Spec[i])))

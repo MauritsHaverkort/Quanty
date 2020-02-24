@@ -170,6 +170,11 @@ static int LuaCalculateDOS(lua_State *L)
 
   DOS = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
   luaL_setmetatable(L, "Spectra_Type");
+  DOS->Name=(char*)malloc(4*sizeof(char));
+  DOS->Name[0]='D';
+  DOS->Name[1]='O';
+  DOS->Name[2]='S';
+  DOS->Name[3]='\0';
   if(strcicmp(Options.Character, "Full")==0)
   {
     DOS->NSpectra = 1;
