@@ -5062,6 +5062,7 @@ static const struct luaL_Reg global_functions[] = {
   {"PlotFermi", LuaPlotFermi},
 	{"PrintExpectationValues",LuaPrintExpectationValues},
 	{"ReadFPLOBasisFunctions",LuaReadFPLOBasisFunctions},
+	{"ReadLenaBasisFunctions",LuaReadLenaBasisFunctions},
 	{"RelToNonRelOrbitals", LuaRelToNonRelOrbitals},
   {"Rotate", Luarotate},
   {"Statistics",LuaStatistics},
