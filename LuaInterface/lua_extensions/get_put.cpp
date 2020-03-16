@@ -345,11 +345,11 @@ uint32_t LuaASCIIStreamPrint(lua_State *L, int narg, FILE * stream)
         }
         if((Abs((n->Im-round(n->Im))/n->Im)<10*DBL_EPSILON)&&(n->Im<INT32_MAX)&&(n->Im>INT32_MIN))
         {
-          fprintf(stream,"%d",(int32_t)n->Im);
+          fprintf(stream,"%d",(int32_t)Abs(n->Im));
         }
         else
         {
-          fprintf(stream,"%.16G",n->Im);
+          fprintf(stream,"%.16G",Abs(n->Im));
         }
         fprintf(stream," )");
       }
