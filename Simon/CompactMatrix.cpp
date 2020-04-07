@@ -229,3 +229,39 @@ CompactMatrixType Submatrix(const CompactMatrixType &M, const vector<uint> &rows
 	return Msub;
 }
 
+double RealMatrixTrace(const CompactMatrixType const *M)
+{
+	double trace = 0;
+	for (uint i = 0; i < M->Ni; ++i)
+		trace += M->VRe[i * M->Nj + i];
+	return trace;
+}
+
+Complex16 ComplexMatrixTrace(const CompactMatrixType const *M)
+{
+	Complex16 trace;
+	trace.Re = 0;
+	trace.Im = 0;
+	for (uint i = 0; i < M->Ni; ++i)
+	{
+		trace.Re += M->V[i * M->Nj + i].Re;
+		trace.Im += M->V[i * M->Nj + i].Im;
+	}
+	return trace;
+}
+
+static int LuaMatrixTrace(lua_State * L)
+{
+  CompactMatrixType *M;
+  uint32_t len = (uint32_t)lua_gettop(L);
+  if(len!=1) luaL_error(L, "Matrix.Trace called with %d arguments, only one expected.",len);
+  lua_check(L, 1, M);
+  if (M->Ni != M->Nj)
+  	return luaL_error(L, "Error: Matrix.Trace called with a non-quadratic matrix.");
+	if (M->QComplex == 0)
+		lua_push(L, RealMatrixTrace(M));
+	else
+		lua_push(L, ComplexMatrixTrace(M));
+	return 1;
+}
+
