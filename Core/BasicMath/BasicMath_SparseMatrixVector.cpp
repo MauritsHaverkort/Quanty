@@ -439,6 +439,7 @@ uint32_t ComplexSparseMatrixAddElement(SparseMatrixType * const M, uint32_t i, u
       {                         /* i,j already in the opperator, add and leave loop */
         ThereIsANext = 0;
         M->VRe[NextIndex] += VRe;
+        M->VIm[NextIndex] += VIm;
       }
       else
       {                         /* i,j not equal to the i,j found which has the same index in the keylist, if there is a next continue, otherwise add the element */
