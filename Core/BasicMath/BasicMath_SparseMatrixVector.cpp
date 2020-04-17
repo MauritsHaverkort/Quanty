@@ -1086,7 +1086,7 @@ uint32_t SparseMatrixAdd(SparseMatrixType * const M, const SparseMatrixType B, d
   int    i;
   if ((M->QComplex == 0) && (B.QComplex == 0) && (alphaIm == 0))
   {                             /* all real */
-    for (i = 0; i < M->N; i++)
+    for (i = 0; i < B.N; i++)
     {
       if (RealSparseMatrixAddElement(M, B.i[i], B.j[i], alphaRe * B.VRe[i]))
         return 1;
@@ -1098,7 +1098,7 @@ uint32_t SparseMatrixAdd(SparseMatrixType * const M, const SparseMatrixType B, d
       return 1;
   if (B.QComplex == 0)
   {                             /* B real, rest complex */
-    for (i = 0; i < M->N; i++)
+    for (i = 0; i < B.N; i++)
     {
       if (ComplexSparseMatrixAddElement(M, B.i[i], B.j[i], alphaRe * B.VRe[i], alphaIm * B.VRe[i]))
         return 1;
@@ -1106,7 +1106,7 @@ uint32_t SparseMatrixAdd(SparseMatrixType * const M, const SparseMatrixType B, d
     return 0;
   }
   /* all complex */
-  for (i = 0; i < M->Ni; i++)
+  for (i = 0; i < B.N; i++)
   {
     if (ComplexSparseMatrixAddElement
         (M, B.i[i], B.j[i], alphaRe * B.VRe[i] - alphaIm * B.VIm[i], alphaIm * B.VRe[i] + alphaRe * B.VIm[i]))
@@ -1638,7 +1638,6 @@ uint32_t SparseMatrixCopy(SparseMatrixType * const M, SparseMatrixType const A)
     {
       M->Next[i] = A.Next[i];
       M->VRe[i] = A.VRe[i];
-      M->VIm[i] = A.VIm[i];
       M->i[i] = A.i[i];
       M->j[i] = A.j[i];
     }
