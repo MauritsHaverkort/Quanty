@@ -1392,9 +1392,13 @@ uint32_t SparseMatrixMultiply(SparseMatrixType * const M, SparseMatrixType const
             }
             else
             {                   /* i,j not equal to the i,j found which has the same index in the keylist, if there is a next continue, otherwise add the element */
-              if (M->Next[NextIndex])
+              if (B.Next[NextIndex])
               {                 /* The key is in use and there are more opperators with this key */
-                NextIndex = M->Next[NextIndex] - 1;
+                NextIndex = B.Next[NextIndex] - 1;
+              }
+              else
+              {
+              	ThereIsANext = 0;
               }
             }
           }
@@ -1429,9 +1433,13 @@ uint32_t SparseMatrixMultiply(SparseMatrixType * const M, SparseMatrixType const
             }
             else
             {                   /* i,j not equal to the i,j found which has the same index in the keylist, if there is a next continue, otherwise add the element */
-              if (M->Next[NextIndex])
+              if (B.Next[NextIndex])
               {                 /* The key is in use and there are more opperators with this key */
-                NextIndex = M->Next[NextIndex] - 1;
+                NextIndex = B.Next[NextIndex] - 1;
+              }
+              else
+              {
+              	ThereIsANext = 0;
               }
             }
           }
@@ -1466,9 +1474,13 @@ uint32_t SparseMatrixMultiply(SparseMatrixType * const M, SparseMatrixType const
             }
             else
             {                   /* i,j not equal to the i,j found which has the same index in the keylist, if there is a next continue, otherwise add the element */
-              if (M->Next[NextIndex])
+              if (B.Next[NextIndex])
               {                 /* The key is in use and there are more opperators with this key */
-                NextIndex = M->Next[NextIndex] - 1;
+                NextIndex = B.Next[NextIndex] - 1;
+              }
+              else
+              {
+              	ThereIsANext = 0;
               }
             }
           }
@@ -1502,9 +1514,13 @@ uint32_t SparseMatrixMultiply(SparseMatrixType * const M, SparseMatrixType const
           }
           else
           {                     /* i,j not equal to the i,j found which has the same index in the keylist, if there is a next continue, otherwise add the element */
-            if (M->Next[NextIndex])
+            if (B.Next[NextIndex])
             {                   /* The key is in use and there are more opperators with this key */
-              NextIndex = M->Next[NextIndex] - 1;
+              NextIndex = B.Next[NextIndex] - 1;
+            }
+            else
+            {
+            	ThereIsANext = 0;
             }
           }
         }
