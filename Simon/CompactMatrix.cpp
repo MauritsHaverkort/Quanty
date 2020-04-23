@@ -250,18 +250,34 @@ Complex16 ComplexMatrixTrace(const CompactMatrixType const *M)
 	return trace;
 }
 
-static int LuaMatrixTrace(lua_State * L)
+static int LuaMatrixTrace(lua_State *L)
 {
-  CompactMatrixType *M;
-  uint32_t len = (uint32_t)lua_gettop(L);
-  if(len!=1) luaL_error(L, "Matrix.Trace called with %d arguments, only one expected.",len);
-  lua_check(L, 1, M);
-  if (M->Ni != M->Nj)
-  	return luaL_error(L, "Error: Matrix.Trace called with a non-quadratic matrix.");
-	if (M->QComplex == 0)
-		lua_push(L, RealMatrixTrace(M));
+	CompactMatrixType *M;
+	SparseMatrixType *S;
+	uint32_t len = (uint32_t) lua_gettop(L);
+	if (len != 1) luaL_error(L, "Matrix.Trace called with %d arguments, only one expected.", len);
+	if (luaL_isType(L, 1, *M))
+	{
+		lua_check(L, 1, M);
+		if (M->Ni != M->Nj) return luaL_error(L, "Error: Matrix.Trace called with a non-quadratic matrix.");
+		if (M->QComplex == 0)
+			lua_push(L, RealMatrixTrace(M));
+		else
+			lua_push(L, ComplexMatrixTrace(M));
+	}
+	else if (luaL_isType(L, 1, *S))
+	{
+		lua_check(L, 1, S);
+		if (S->Ni != S->Nj) return luaL_error(L, "Error: Matrix.Trace called with a non-quadratic matrix.");
+		if (S->QComplex == 0)
+			lua_push(L, RealSparseMatrixTrace(S));
+		else
+			lua_push(L, ComplexSparseMatrixTrace(S));
+	}
 	else
-		lua_push(L, ComplexMatrixTrace(M));
+	{
+		return luaL_error(L, "MatrixTrace called with an unrecognised type!");
+	}
 	return 1;
 }
 

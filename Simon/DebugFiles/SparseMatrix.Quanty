@@ -9,6 +9,7 @@ M[2][1][1] = -1
 M[2][1][2] = 3
 M[2][1][4] = 14
 M[2][4][3] = 17
+M[2][3][3] = 3.45
 
 M[3] = Copy(M0)
 M[3][3][4] = -1
@@ -19,6 +20,10 @@ M[4][4][2] = -I
 M[5] = Copy(M0)
 M[5][1][2] = 0.756
 M[5][1][2] = 14 - I
+
+M[6] = Copy(M0)
+M[6][1][1] = 0.756
+M[6][2][2] = 14 - I
 
 S = {}
 for key,mat in pairs(M) do
@@ -38,8 +43,7 @@ function test(MDense,MSparse)
         print("Something went wrong!")
         print(MDense)
         print("is not equal to")
-        print(MSparse)
-        os.exit()        
+        print(MSparse)      
     end
 end
 
@@ -50,6 +54,11 @@ print(S[2]-S[2])
 for i=1,#M do
     
     test(M[i], S[i])
+    
+    if Simon.MatrixTrace(M[i]) ~= Simon.MatrixTrace(S[i]) then
+        errorCount = errorCount + 1
+        print("Something went wrong!")
+    end
     
     for j=1,#M do
         test(M[i]+M[j], S[i]+S[j])

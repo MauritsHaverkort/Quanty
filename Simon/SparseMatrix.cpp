@@ -144,6 +144,30 @@ static int LuaSparseMatrixToMatrix(lua_State * L)
 	return 1;
 }
 
+double RealSparseMatrixTrace(const SparseMatrixType const *M)
+{
+	double trace = 0;
+	for (uint k = 0; k < M->N; ++k)
+		if (M->i[k] == M->j[k]) trace += M->VRe[k];
+	return trace;
+}
+
+Complex16 ComplexSparseMatrixTrace(const SparseMatrixType const *M)
+{
+	Complex16 trace;
+	trace.Re = 0;
+	trace.Im = 0;
+	for (uint k = 0; k < M->N; ++k)
+	{
+		if (M->i[k] == M->j[k])
+		{
+			trace.Re += M->VRe[k];
+			trace.Im += M->VIm[k];
+		}
+	}
+	return trace;
+}
+
 static int LuaSparseMatrixUnm(lua_State *L)
 {
 	cout << "TODO" << endl;
