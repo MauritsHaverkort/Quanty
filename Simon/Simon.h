@@ -14,4 +14,5 @@
 #include "lsCouplingConstant.h"
 #include "MatrixToOperator.h"
 #include "readOrca.h"
+#include "SparseMatrix.h"
 #include "TightBindingCopy.h"
