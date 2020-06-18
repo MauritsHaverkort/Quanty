@@ -54,7 +54,7 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
   char ReadLine[1024];
   char *phrase[1024] = {NULL}, tmpstr[1024];
   double tmpvec[3];
-  uint32_t Nphrase, Nwandef, Nimag=0, i, j, ihop=0, iatom;
+  uint32_t Nphrase, Nwandef, i, j, ihop=0, iatom;
   const int NhopMax=1024;
   O->Lattice.Molecule=false;
   ReadLine[1023] = '\0';
@@ -207,9 +207,11 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
       }
 
       // Read the hopping matrix.
+      O->Wannier.QComplex  = (uint32_t)false;
       O->Wannier.Nhop   = (int*)calloc(Nwandef*Nwandef,sizeof(int));
       O->Wannier.HopVec = (double***)malloc(Nwandef*Nwandef*sizeof(double**));
       O->Wannier.HopVal = (double**)malloc(Nwandef*Nwandef*sizeof(double*));
+      O->Wannier.HopValIm = (double**)malloc(Nwandef*Nwandef*sizeof(double*));
       i = -1;
       while((fgets(ReadLine, 1023, stream)!=NULL) && (!strstr(ReadLine, "END   calculating WF")))
       {
@@ -222,6 +224,7 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
           }
           O->Wannier.HopVec[i] = (double**)malloc(NhopMax*sizeof(double*));
           O->Wannier.HopVal[i] = (double*)malloc(NhopMax*sizeof(double));
+          O->Wannier.HopValIm[i] = (double*)malloc(NhopMax*sizeof(double));
           ihop = 0;
         }
         if(strncmp(ReadLine, "T=", 2) ==0)
@@ -243,7 +246,11 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
             TransVecNorm(tmpvec, O->Lattice.gLattVec, O->Wannier.HopVec[i][ihop]);
           }
           O->Wannier.HopVal[i][ihop] = strtod(phrase[5], NULL);
-          if(Abs(strtod(phrase[Nphrase-1], NULL))>(1000*DBL_MIN)) Nimag+=1;
+          O->Wannier.HopValIm[i][ihop] = strtod(phrase[Nphrase-1], NULL);
+					if (not O->Wannier.QComplex and Abs(O->Wannier.HopValIm[i][ihop]) > (1000 * DBL_MIN))
+					{
+						O->Wannier.QComplex = (uint32_t)true;
+					}
 
           ihop = ihop+1;
           if(ihop > NhopMax)
@@ -260,10 +267,6 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
       {
         printf("\nError: The length of hoppings is not compatible with the number of Wannier orbitals.\n");
         return 1;
-      }
-      if(Nimag>0)
-      {
-        printf("Warning: There are %d hopping elements with non-zero imaginary part.\nThey are NOT read in.\n", Nimag);
       }
     }
   }

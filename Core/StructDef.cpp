@@ -1489,9 +1489,11 @@ typedef struct DresdenFPLO
     int *Site;
     int **Orbital;     // n,l,m
     double **PosCenter;
+    uint32_t QComplex;
     int *Nhop;
     double ***HopVec;  // Translating+Connecting, as direct output of fplo.
-    double **HopVal;
+    double **HopVal; //Real values
+    double **HopValIm; //Imaginary values are allocated even if QComplex = 0.
   }
   Wannier;
 

@@ -2062,5 +2062,5 @@ static const struct luaL_Reg StuttgartHAMR_meta[] = {
 };
 
 static const struct luaL_Reg DresdenFPLO_meta[] = {
-  {NULL, NULL}
+  {NULL, NULL} //TODO: Destructor for DrsdenFPLOType
 };

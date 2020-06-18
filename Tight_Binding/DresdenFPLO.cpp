@@ -315,6 +315,7 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
     }
   }
 
+
   // Orbital index within each shell.
   OrbInd = (int*)calloc(Nwandef, sizeof(int));
   for(i=1;i<Nwandef;i++)
@@ -453,7 +454,7 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
           HTB->H[ihtb].TransVecs[1] = 0;
           HTB->H[ihtb].TransVecs[2] = 0;
         }
-        HTB->H[ihtb].Hop.QComplex = 0;
+        HTB->H[ihtb].Hop.QComplex = FPLO.Wannier.QComplex;
         HTB->H[ihtb].Hop.Ni = Norb[ish];
         HTB->H[ihtb].Hop.Nj = Norb[jsh];
         InitMatrix(&(HTB->H[ihtb].Hop));
@@ -465,28 +466,55 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
                 ShellName[jsh],
                 HTB->H[ihtb].Atompos2
               );
-        for(i=0;i<Nwandef;i++)
-        {
-          for(j=0;j<Nwandef;j++)
-          {
-            // Fill in the matrix elements.
-            indwan = i*Nwandef+j;
-            if(ShellInd[i]==ish&&ShellInd[j]==jsh)
-            {
-              for(k=0;k<FPLO.Wannier.Nhop[indwan];k++)
-              {
-                if( EqualFloat(FPLO.Wannier.HopVec[indwan][k][0], HopVec[indsh][ihtb-NHopStart[ish][jsh]][0],AtomPositionAccuracy) &&
-                    EqualFloat(FPLO.Wannier.HopVec[indwan][k][1], HopVec[indsh][ihtb-NHopStart[ish][jsh]][1],AtomPositionAccuracy) &&
-                    EqualFloat(FPLO.Wannier.HopVec[indwan][k][2], HopVec[indsh][ihtb-NHopStart[ish][jsh]][2],AtomPositionAccuracy)   )
-                  {
-                    HTB->H[ihtb].Hop.VRe[OrbInd[i]][OrbInd[j]] = FPLO.Wannier.HopVal[indwan][k];
-                  }
-              }
-            }
-          }
-        }
-      }
-    }
+				if ((bool) FPLO.Wannier.QComplex)
+				{
+					for (i = 0; i < Nwandef; i++)
+					{
+						for (j = 0; j < Nwandef; j++)
+						{
+							// Fill in the matrix elements.
+							indwan = i * Nwandef + j;
+							if (ShellInd[i] == ish && ShellInd[j] == jsh)
+							{
+								for (k = 0; k < FPLO.Wannier.Nhop[indwan]; k++)
+								{
+									if (EqualFloat(FPLO.Wannier.HopVec[indwan][k][0], HopVec[indsh][ihtb - NHopStart[ish][jsh]][0], AtomPositionAccuracy)
+											&& EqualFloat(FPLO.Wannier.HopVec[indwan][k][1], HopVec[indsh][ihtb - NHopStart[ish][jsh]][1], AtomPositionAccuracy)
+											&& EqualFloat(FPLO.Wannier.HopVec[indwan][k][2], HopVec[indsh][ihtb - NHopStart[ish][jsh]][2], AtomPositionAccuracy))
+									{
+										HTB->H[ihtb].Hop.VRe[OrbInd[i]][OrbInd[j]] = FPLO.Wannier.HopVal[indwan][k];
+										HTB->H[ihtb].Hop.VIm[OrbInd[i]][OrbInd[j]] = FPLO.Wannier.HopValIm[indwan][k];
+									}
+								}
+							}
+						}
+					}
+				}
+				else //Hopping real
+				{
+					for (i = 0; i < Nwandef; i++)
+					{
+						for (j = 0; j < Nwandef; j++)
+						{
+							// Fill in the matrix elements.
+							indwan = i * Nwandef + j;
+							if (ShellInd[i] == ish && ShellInd[j] == jsh)
+							{
+								for (k = 0; k < FPLO.Wannier.Nhop[indwan]; k++)
+								{
+									if (EqualFloat(FPLO.Wannier.HopVec[indwan][k][0], HopVec[indsh][ihtb - NHopStart[ish][jsh]][0], AtomPositionAccuracy)
+											&& EqualFloat(FPLO.Wannier.HopVec[indwan][k][1], HopVec[indsh][ihtb - NHopStart[ish][jsh]][1], AtomPositionAccuracy)
+											&& EqualFloat(FPLO.Wannier.HopVec[indwan][k][2], HopVec[indsh][ihtb - NHopStart[ish][jsh]][2], AtomPositionAccuracy))
+									{
+										HTB->H[ihtb].Hop.VRe[OrbInd[i]][OrbInd[j]] = FPLO.Wannier.HopVal[indwan][k];
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
   }
   return 0;
 }
