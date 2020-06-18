@@ -155,6 +155,7 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
       O->Wannier.Site      = (int*)malloc(Nwandef*sizeof(int));
       O->Wannier.Orbital   = (int**)malloc(Nwandef*sizeof(int*));
       O->Wannier.PosCenter = (double**)malloc(Nwandef*sizeof(double*));
+      O->Wannier.QRelativistic = (uint32_t)(-1);
       i = 0;
       while((fgets(ReadLine, 1023, stream)!=NULL) && (!strstr(ReadLine, "START calculating WF")))
       {
@@ -189,11 +190,28 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
             {
               O->Wannier.Orbital[i] = (int*)malloc(3*sizeof(int));
               Nphrase = SplitStringToArray(phrase, ReadLine, " :\n");
-              O->Wannier.Orbital[i][0] = atoi(&(phrase[1][0]));
-              O->Wannier.Orbital[i][1] = ShellNameToL(phrase[1][1]);
-              strcpy(tmpstr, phrase[1]);
-              O->Wannier.Orbital[i][2] = atoi(tmpstr+2);
-              break;
+							O->Wannier.Orbital[i][0] = atoi(&(phrase[1][0]));
+							if (O->Wannier.QRelativistic == (uint32_t)(-1))
+							{
+								if (strstr(phrase[1], "/2") != NULL)
+									O->Wannier.QRelativistic = (uint32_t) true;
+								else
+									O->Wannier.QRelativistic = (uint32_t) false;
+							}
+							if ((bool) O->Wannier.QRelativistic)
+							{
+								int l = ShellNameToL(phrase[1][1]);
+								O->Wannier.Orbital[i][1] = l + (atoi(&(phrase[1][2])) - 1) / 2;
+								strcpy(tmpstr, phrase[1]);
+								O->Wannier.Orbital[i][2] = (atoi(tmpstr + 5) + 1)/2;
+							}
+							else
+							{
+								O->Wannier.Orbital[i][1] = ShellNameToL(phrase[1][1]);
+								strcpy(tmpstr, phrase[1]);
+								O->Wannier.Orbital[i][2] = atoi(tmpstr + 2);
+							}
+							break;
             }
           }
 

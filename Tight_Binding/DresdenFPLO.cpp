@@ -76,6 +76,43 @@ int LMToOrbitalName(int l, int m, char **name)
   return 0;
 }
 
+std::string LPlusJToShellName(int lPlusJ)
+{
+	switch (lPlusJ)
+	{
+	case 0:
+		return "s1/2";
+	case 1:
+		return "p1/2";
+	case 2:
+		return "p3/2";
+	case 3:
+		return "d3/2";
+	case 4:
+		return "d5/2";
+	case 5:
+		return "f5/2";
+	case 6:
+		return "f7/2";
+	case 7:
+		return "g7/2";
+	case 8:
+		return "g9/2";
+	default:
+		return "??";
+	}
+}
+
+int LPlusJAndJzToOrbitalName(int lPlusJ, int jz, char **name)
+{
+	*name = (char*) malloc(16 * sizeof(char));
+	std::string tmpStr = LPlusJToShellName(lPlusJ);
+	if (jz > 0) tmpStr += "+";
+	tmpStr = tmpStr + std::to_string(2 * jz - 1) + "/2";
+	strcpy(*name, tmpStr.c_str());
+	return 0;
+}
+
 int EqualFloat(double a, double b, double epsilon)
 {
   if(fabs(a-b)<epsilon) // pricision defined by the fplo output (coordinates).
@@ -120,6 +157,7 @@ uint32_t CrystalStructureFromDresdenFPLO(DresdenFPLO FPLO, CrystalStructureType 
       Cell->Atom[iatom].Nshell = 0;
       inl = 0;
       is  = 0;
+
       for(i=0;i<FPLO.Wannier.Nwandef;i++)
       {
         if(FPLO.Wannier.ActMap[FPLO.Wannier.Site[i]-1]==iatom)
@@ -153,12 +191,24 @@ uint32_t CrystalStructureFromDresdenFPLO(DresdenFPLO FPLO, CrystalStructureType 
         Cell->Atom[iatom].OrbitalName    = (char***)malloc(Cell->Atom[iatom].Nshell*sizeof(char**));
 
         // shell degeneracy
-        for(i=0;i<Cell->Atom[iatom].Nshell;i++)
-        {
-          Cell->Atom[iatom].ShellName[i] = (char*)malloc(4*sizeof(char));
-          Cell->Atom[iatom].ShellName[i][0] = (char)(nlIndex[iatom][i]/10+'0');
-          Cell->Atom[iatom].ShellName[i][1] = LToShellName(nlIndex[iatom][i]%10);
-          Cell->Atom[iatom].ShellName[i][2] = 0;
+				for (i = 0; i < Cell->Atom[iatom].Nshell; i++)
+				{
+					Cell->Atom[iatom].ShellName[i] = (char*) malloc(6 * sizeof(char));
+					Cell->Atom[iatom].ShellName[i][0] = (char) (nlIndex[iatom][i] / 10 + '0');
+					if ((bool) FPLO.Wannier.QRelativistic)
+					{
+						std::string tmp = LPlusJToShellName(nlIndex[iatom][i] % 10);
+						Cell->Atom[iatom].ShellName[i][1] = tmp.c_str()[0];
+						Cell->Atom[iatom].ShellName[i][2] = tmp.c_str()[1];
+						Cell->Atom[iatom].ShellName[i][3] = '/';
+						Cell->Atom[iatom].ShellName[i][4] = '2';
+						Cell->Atom[iatom].ShellName[i][5] = 0;
+					}
+					else
+					{
+						Cell->Atom[iatom].ShellName[i][1] = LToShellName(nlIndex[iatom][i] % 10);
+						Cell->Atom[iatom].ShellName[i][2] = 0;
+					}
 
           Cell->Atom[iatom].shelldegeneracy[i] = 0;
           for(j=0;j<is;j++)
@@ -176,7 +226,10 @@ uint32_t CrystalStructureFromDresdenFPLO(DresdenFPLO FPLO, CrystalStructureType 
           {
             if( (10*FPLO.Wannier.Orbital[siteIndex[iatom][j]][0]+FPLO.Wannier.Orbital[siteIndex[iatom][j] ][1])==nlIndex[iatom][i] )
             {
-              LMToOrbitalName(FPLO.Wannier.Orbital[siteIndex[iatom][j]][1], FPLO.Wannier.Orbital[siteIndex[iatom][j]][2], &(Cell->Atom[iatom].OrbitalName[i][k++]));
+            	if ((bool)FPLO.Wannier.QRelativistic)
+            		LPlusJAndJzToOrbitalName(FPLO.Wannier.Orbital[siteIndex[iatom][j]][1], FPLO.Wannier.Orbital[siteIndex[iatom][j]][2], &(Cell->Atom[iatom].OrbitalName[i][k++]));
+            	else
+            		LMToOrbitalName(FPLO.Wannier.Orbital[siteIndex[iatom][j]][1], FPLO.Wannier.Orbital[siteIndex[iatom][j]][2], &(Cell->Atom[iatom].OrbitalName[i][k++]));
             }
           }
         }
@@ -249,10 +302,22 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
   // Index the l values of Wannier orbitals by numbers [0, 1, ..., Nshell-1]
   ShellInd    = (int*)calloc(Nwandef, sizeof(int));
   ShellName   = (char**)malloc(Nshell*sizeof(char*));
-  ShellName[0]= (char*)malloc(4*sizeof(char));
+  ShellName[0]= (char*)malloc(6*sizeof(char));
   ShellName[0][0]=(char)(FPLO.Wannier.Orbital[0][0]+'0');
-  ShellName[0][1]=LToShellName(FPLO.Wannier.Orbital[0][1]);
-  ShellName[0][2]=0;
+	if ((bool) FPLO.Wannier.QRelativistic)
+	{
+		std::string tmp = LPlusJToShellName(FPLO.Wannier.Orbital[0][1]);
+		ShellName[0][1] = tmp.c_str()[0];
+		ShellName[0][2] = tmp.c_str()[1];
+		ShellName[0][3] = '/';
+		ShellName[0][4] = '2';
+		ShellName[0][5] = 0;
+	}
+	else
+	{
+		ShellName[0][1] = LToShellName(FPLO.Wannier.Orbital[0][1]);
+		ShellName[0][2] = 0;
+	}
 
   l = 1;
   for(i=1;i<Nwandef;i++)
@@ -265,11 +330,24 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
         break;
       }
       else if(j+1==i)
-      {
-        ShellName[l]= (char*)malloc(4*sizeof(char));
-        ShellName[l][0]=(char)(FPLO.Wannier.Orbital[i][0]+'0');
-        ShellName[l][1]=LToShellName(FPLO.Wannier.Orbital[i][1]);
-        ShellName[l][2]=0;
+			{
+				ShellName[l] = (char*) malloc(6 * sizeof(char));
+				ShellName[l][0] = (char) (FPLO.Wannier.Orbital[i][0] + '0');
+				if ((bool) FPLO.Wannier.QRelativistic)
+				{
+					std::string tmp = LPlusJToShellName(FPLO.Wannier.Orbital[i][1]);
+					ShellName[l][1] = tmp.c_str()[0];
+					ShellName[l][2] = tmp.c_str()[1];
+					ShellName[l][3] = '/';
+					ShellName[l][4] = '2';
+					ShellName[l][5] = 0;
+				}
+				else
+				{
+					ShellName[l][1] = LToShellName(FPLO.Wannier.Orbital[i][1]);
+					ShellName[l][2] = 0;
+				}
+
         ShellInd[i] = l++;
       }
     }

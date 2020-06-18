@@ -1487,7 +1487,8 @@ typedef struct DresdenFPLO
     int NActAtom;
     int *ActMap;
     int *Site;
-    int **Orbital;     // n,l,m
+    uint32_t QRelativistic;
+    int **Orbital;     // n,l,m if non-relativistic, n,l+j+1/2,m+1/2 else.
     double **PosCenter;
     uint32_t QComplex;
     int *Nhop;
