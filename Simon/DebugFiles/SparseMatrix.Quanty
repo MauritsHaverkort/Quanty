@@ -25,6 +25,8 @@ M[6] = Copy(M0)
 M[6][1][1] = 0.756
 M[6][2][2] = 14 - I
 
+M[7] = Copy(M0)
+
 S = {}
 for key,mat in pairs(M) do
     S[key] = Simon.MatrixToSparseMatrix(mat)
@@ -54,6 +56,7 @@ print(S[2]-S[2])
 for i=1,#M do
     
     test(M[i], S[i])
+    test(-M[i], -S[i])
     
     if Simon.MatrixTrace(M[i]) ~= Simon.MatrixTrace(S[i]) then
         errorCount = errorCount + 1
@@ -69,7 +72,14 @@ for i=1,#M do
     for j=1,#nums do
         test(M[i]*nums[j], S[i]*nums[j])
 --         test(nums[j]*M[i], nums[j]*S[i])
---         test(M[i]/nums[j], S[i]/nums[j])
+        if nums[j] ~= 0 then
+            if Complex.Im(nums[j]) == 0 then --TODO: If both object are userdata, division calls the function __div of the denominator, so here I'd have to meddle with the code of Complex16.
+                print(nums[j])
+                print(M[i]/nums[j])
+                print(S[i]/nums[j])
+                test(M[i]/nums[j], S[i]/nums[j])
+            end
+        end
     end
 end
 

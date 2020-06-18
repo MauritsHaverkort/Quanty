@@ -170,8 +170,27 @@ Complex16 ComplexSparseMatrixTrace(const SparseMatrixType const *M)
 
 static int LuaSparseMatrixUnm(lua_State *L)
 {
-	cout << "TODO" << endl;
-	return 0;
+	SparseMatrixType *Sin, *Sout;
+	lua_check(L, 1, Sin);
+	Sout = (SparseMatrixType*) lua_newuserdata(L, sizeof(SparseMatrixType));
+	luaL_setmetatable(L, "SparseMatrix_Type");
+	SparseMatrixCopy(Sout, *Sin);
+	if ((bool) Sout->QComplex)
+	{
+		for (uint k = 0; k < Sout->N; ++k)
+		{
+			Sout->VRe[k] = -Sout->VRe[k];
+			Sout->VIm[k] = -Sout->VIm[k];
+		}
+	}
+	else
+	{
+		for (uint k = 0; k < Sout->N; ++k)
+		{
+			Sout->VRe[k] = -Sout->VRe[k];
+		}
+	}
+	return 1;
 }
 
 static int LuaSparseMatrixAdd(lua_State *L)
@@ -273,8 +292,31 @@ static int LuaSparseMatrixMul(lua_State *L)
 
 static int LuaSparseMatrixDiv(lua_State *L)
 {
-	cout << "TODO" << endl;
-	return 0;
+	SparseMatrixType *Sin, *Sout;
+	double d;
+	Complex16 c, cinv;
+
+	lua_check(L, 1, Sin);
+	Sout = (SparseMatrixType*) lua_newuserdata(L, sizeof(SparseMatrixType));
+	luaL_setmetatable(L, "SparseMatrix_Type");
+	SparseMatrixCopy(Sout, *Sin);
+	if (luaL_isType(L, 2, d))
+	{
+		lua_check(L, 2, d);
+		SparseMatrixScalarMultiply(Sout, 1 / d, 0);
+	}
+	else if (luaL_isType(L, 2, c))
+	{
+		lua_check(L, 2, c);
+		cinv.Re = c.Re / (Sqr(c.Re) + Sqr(c.Im));
+		cinv.Im = c.Im / (Sqr(c.Re) + Sqr(c.Im));
+		SparseMatrixScalarMultiply(Sout, cinv.Re, cinv.Im);
+	}
+	else
+	{
+		return luaL_error(L, "Error: Sparse Matrix Division called with an unknown type!");
+	}
+	return 1;
 }
 
 static int LuaSparseMatrixPow(lua_State *L)
