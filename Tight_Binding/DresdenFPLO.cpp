@@ -106,10 +106,12 @@ std::string LPlusJToShellName(int lPlusJ)
 int LPlusJAndJzToOrbitalName(int lPlusJ, int jz, char **name)
 {
 	*name = (char*) malloc(16 * sizeof(char));
-	std::string tmpStr = LPlusJToShellName(lPlusJ);
-	if (jz > 0) tmpStr += "+";
-	tmpStr = tmpStr + std::to_string(2 * jz - 1) + "/2";
-	strcpy(*name, tmpStr.c_str());
+	std::stringstream ss;
+	ss << LPlusJToShellName(lPlusJ);
+	if (jz > 0) ss << "+";
+	ss << (2 * jz - 1);
+	ss << "/2";
+	strcpy(*name, ss.str().c_str());
 	return 0;
 }
 
