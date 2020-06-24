@@ -2043,6 +2043,13 @@ static int LuaTightBindingDestroy(lua_State * L)
 }
 
 
+static int LuaDresdenFPLODestroy(lua_State * L)
+{
+	DresdenFPLO *a = (DresdenFPLO *) luaL_checkudata(L, 1, "DresdenFPLO_Type");
+  FreeDresdenFPLO(a);
+  return 0;
+}
+
 
 
 static const struct luaL_Reg TightBinding_meta[] = {
@@ -2062,5 +2069,6 @@ static const struct luaL_Reg StuttgartHAMR_meta[] = {
 };
 
 static const struct luaL_Reg DresdenFPLO_meta[] = {
-  {NULL, NULL} //TODO: Destructor for DrsdenFPLOType
+	{"__gc", LuaDresdenFPLODestroy},
+  {NULL, NULL}
 };

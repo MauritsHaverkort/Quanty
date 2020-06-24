@@ -598,3 +598,41 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
   }
   return 0;
 }
+
+int FreeDresdenFPLO(DresdenFPLO *FPLO)
+{
+	for (int i = 0; i < FPLO->Atoms.Natom; ++i)
+	{
+		free(FPLO->Atoms.Atom[i]);
+		free(FPLO->Atoms.Pos[i]);
+	}
+	free(FPLO->Atoms.Atom);
+	free(FPLO->Atoms.Pos);
+	for (int i = 0; i < FPLO->Wannier.Nwandef; ++i)
+	{
+		free(FPLO->Wannier.Name[i]);
+		free(FPLO->Wannier.Orbital[i]);
+		free(FPLO->Wannier.PosCenter[i]);
+	}
+	for (int i = 0; i < FPLO->Wannier.Nwandef * FPLO->Wannier.Nwandef; ++i)
+	{
+		for (int j = 0; j < FPLO->Wannier.Nhop[i]; ++j)
+		{
+			free(FPLO->Wannier.HopVec[i][j]);
+		}
+		free(FPLO->Wannier.HopVec[i]);
+		free(FPLO->Wannier.HopVal[i]);
+		free(FPLO->Wannier.HopValIm[i]);
+	}
+	free(FPLO->Wannier.Name);
+	free(FPLO->Wannier.Site);
+	free(FPLO->Wannier.Orbital);
+	free(FPLO->Wannier.PosCenter);
+	free(FPLO->Wannier.Nhop);
+	free(FPLO->Wannier.HopVec);
+	free(FPLO->Wannier.HopVal);
+	free(FPLO->Wannier.HopValIm);
+	free(FPLO->Wannier.ActMap);
+	return 0;
+}
+

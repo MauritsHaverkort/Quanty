@@ -5,3 +5,4 @@ int LPlusJAndJzToOrbitalName(int lPlusJ, int jz, char **name);
 int EqualFloat(double a, double b, double epsilon);
 uint32_t CrystalStructureFromDresdenFPLO(DresdenFPLO FPLO, CrystalStructureType *Cell);
 uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB);
+int FreeDresdenFPLO(DresdenFPLO *FPLO);
