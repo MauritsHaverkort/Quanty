@@ -249,6 +249,7 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
   int Nshell, *Norb, *NshellOfSite, *ShellLabel, *SiteInd, *ShellInd, **ShellOfSite, *OrbInd, **NVecShell, **NHopStart;
   char **SiteName, **ShellName;
   double ***HopVec, **SitePos;
+	vector < vector<uint> > HopVecJVals; //for freeing the memory in the end.
   const int NhopMax=2048;
   double AtomPositionAccuracy = 0.001;
 
@@ -415,6 +416,7 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
     for(j=0;j<Nshell;j++)
     {
       HopVec[i*Nshell+j] = (double**)malloc(NhopMax*sizeof(double*));
+			HopVecJVals.push_back(vector<uint>());
     }
   }
 
@@ -436,6 +438,7 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
         if(NVecShell[ish][jsh]==0)
         {
           HopVec[indsh][0]    = (double*)malloc(3*sizeof(double));
+          HopVecJVals[indsh].push_back(0);
           HopVec[indsh][0][0] = FPLO.Wannier.HopVec[indwan][k][0];
           HopVec[indsh][0][1] = FPLO.Wannier.HopVec[indwan][k][1];
           HopVec[indsh][0][2] = FPLO.Wannier.HopVec[indwan][k][2];
@@ -456,6 +459,7 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
           if(l==NVecShell[ish][jsh] && diffQ)
           {
             HopVec[indsh][l]    = (double*)malloc(3*sizeof(double));
+            HopVecJVals[indsh].push_back(l);
             HopVec[indsh][l][0] = FPLO.Wannier.HopVec[indwan][k][0];
             HopVec[indsh][l][1] = FPLO.Wannier.HopVec[indwan][k][1];
             HopVec[indsh][l][2] = FPLO.Wannier.HopVec[indwan][k][2];
@@ -596,6 +600,41 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
 			}
 		}
   }
+
+	free(ShellLabel);
+	free(SiteInd);
+	for (uint i = 0; i < FPLO.Wannier.NActAtom; ++i)
+	{
+		free(SiteName[i]);
+		free(SitePos[i]);
+	}
+	free(SiteName);
+	free(SitePos);
+	free(ShellInd);
+	free(NshellOfSite);
+	for (uint i = 0; i < Nshell; ++i)
+	{
+		free(ShellName[i]);
+		free(ShellOfSite[i]);
+		free(NVecShell[i]);
+		free(NHopStart[i]);
+	}
+	free(ShellName);
+	free(ShellOfSite);
+	free(NVecShell);
+	free(NHopStart);
+	free(Norb);
+	free(OrbInd);
+	for (uint i = 0; i < Nshell * Nshell; ++i)
+	{
+		for (uint j = 0;  j < HopVecJVals[i].size(); ++j)
+		{
+			free(HopVec[i][HopVecJVals[i][j]]);
+		}
+		free(HopVec[i]);
+	}
+	free(HopVec);
+
   return 0;
 }
 

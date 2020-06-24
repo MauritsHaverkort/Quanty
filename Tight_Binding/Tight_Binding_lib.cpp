@@ -66,8 +66,8 @@ int FreeTightBindingDef(TightBindingDef * A)
     }
     if(A->Cell.NAtoms!=0) free(A->FermionIndex);
   }
-  A->Cell.NAtoms=0;
   FreeCrystalStructureType(&(A->Cell));
+  A->Cell.NAtoms=0;
   return 0;
 }
 
