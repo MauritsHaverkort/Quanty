@@ -2401,6 +2401,7 @@ uint32_t TightBindingHamiltonianToDensityMatrix(TightBindingDef const * const A,
           }
         }
         FreeMatrix(&H);
+        FreeCompactMatrix(&T);
       }
     }
   }
