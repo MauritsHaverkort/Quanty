@@ -2783,10 +2783,21 @@ bool isOrbElementOf(const string &orb, vector<string> set)
 {
 	if (isElementOf(orb, set)) return true;
 	if (isRelOrbital(orb))
+	{
 		set = nonRelToRelOrbs(set);
+		return isElementOf(orb, set);
+	}
 	else
-		set = relToNonRelOrbs(set);
-	return isElementOf(orb, set);
+	{
+		vector < string > orbsRel;
+		orbsRel.push_back(orb);
+		orbsRel = nonRelToRelOrbs(orbsRel);
+		for (uint i = 0; i < (uint) orbsRel.size(); ++i)
+		{
+			if (!isElementOf(orbsRel[i], set)) return false;
+		}
+		return true;
+	}
 }
 
 // input e.g. {"2p32","2s12","2p12"}, {"2s","2p"}
