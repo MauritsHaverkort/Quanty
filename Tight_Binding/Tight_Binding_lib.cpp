@@ -2781,6 +2781,7 @@ vector<string> nonRelToRelOrbs(const vector<string> &in)
 
 bool isOrbElementOf(const string &orb, vector<string> set)
 {
+	if (isElementOf(orb, set)) return true;
 	if (isRelOrbital(orb))
 		set = nonRelToRelOrbs(set);
 	else
