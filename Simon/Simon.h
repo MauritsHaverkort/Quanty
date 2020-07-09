@@ -16,3 +16,4 @@
 #include "readOrca.h"
 #include "SparseMatrix.h"
 #include "TightBindingCopy.h"
+#include "WaveFunction.h"

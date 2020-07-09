@@ -15,3 +15,4 @@
 #include "readOrca.cpp"
 #include "SparseMatrix.cpp"
 #include "TightBindingCopy.cpp"
+#include "WaveFunction.cpp"

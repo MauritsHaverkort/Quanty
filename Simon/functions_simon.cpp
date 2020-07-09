@@ -152,6 +152,7 @@ static const struct luaL_Reg Simon_func[] = {
 	{"RemoveSpin", LuaRemoveSpin},
 	{"SortByKappa",LuaSortByKappa},
 	{"SparseMatrixToMatrix",LuaSparseMatrixToMatrix},
+	{"TensorProduct", LuaTensorProduct},
 	{"test", LuaSimontest},
 	{NULL, NULL}
 };
