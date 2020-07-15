@@ -631,7 +631,7 @@ static int LuaNewOperator(lua_State * L)
         if(Abs(oaddtemp)>O->NFermion+O->NBoson-1) return luaL_error(L, "ERROR: Opperator %d at position %d adding particle with index %d but there are only %d (%d Fermions + %d Bosons in the basis)\n)\n",i,j,(int)oaddtemp,O->NFermion+O->NBoson,O->NFermion,O->NBoson);
         if(Abs((Abs(oaddtemp)-(uint16_t)(Abs(oaddtemp))))>10*DBL_EPSILON) return luaL_error(L, "ERROR: Opperator %d at position %d addign particle with index %f should be integer",i,j,oaddtemp);
         // negative numbers annihilate, positive create, but we also have to capture negative and postive zero
-        if(signbit(oaddtemp))
+        if(std::signbit(oaddtemp))
         {
           oadd[l-j]=(uint16_t)(-oaddtemp);
         }
@@ -5115,11 +5115,16 @@ int luaopen_ssp(lua_State * L)
   
   
   luaL_newlib(L, PostScript_func);
-  lua_setglobal(L, "PostScript");
-  
-  luaL_newmetatable(L, "InterpolatingFunction_Type");
-  luaL_setfuncs(L, InterpolatingFunction_meta, 0);
-  luaL_newlib(L, InterpolatingFunction_func);
+	lua_setglobal(L, "PostScript");
+
+	luaL_newmetatable(L, "GaussianRadialFunction_Type");
+	luaL_setfuncs(L, GaussianRadialFunction_meta, 0);
+	luaL_newlib(L, GaussianRadialFunction_func);
+	lua_setglobal(L, "GaussianRadialFunction");
+
+	luaL_newmetatable(L, "InterpolatingFunction_Type");
+	luaL_setfuncs(L, InterpolatingFunction_meta, 0);
+	luaL_newlib(L, InterpolatingFunction_func);
   lua_setglobal(L, "InterpolatingFunction");
   
   luaL_newmetatable(L, "TightBinding_Type");
@@ -5139,6 +5144,9 @@ int luaopen_ssp(lua_State * L)
   lua_newtable(L);
   luaL_setfuncs(L, MatrixTable_meta, 0);
   lua_setglobal(L, "MatrixMeta");
+
+  luaL_newmetatable(L, "SparseMatrix_Type");
+  luaL_setfuncs(L, SparseMatrix_meta, 0);
 
   luaL_newmetatable(L, "StuttgartCTRL_Type");
   luaL_setfuncs(L, StuttgartCTRL_meta, 0);

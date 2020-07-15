@@ -11,6 +11,7 @@ string constructOrbname(const string &atomName, const uint n, const string &shel
 string normalizedOrcaOrbname(const string &orbOrca);
 void SortOrcaBasis(OrcaObject &orca);
 double OrcaGaussianNormfactor(const double w, const uint l);
+void OrcaSetFermiEnergy(OrcaObject &orca, const double ef);
 OrcaObject FileReadOrca(const string &filename);
 void ChangeOrcaOverlapMatrixPhases(OrcaObject &orca);
 double OrcaPhaseConventionFactor(const string &orb);

@@ -384,6 +384,7 @@ static int LuaCalculateRho(lua_State *L)
   luaL_setmetatable(L, "Matrix_Type");
   rho->OnLuaStack=true;
   TightBindingHamiltonianToDensityMatrix(a, Options.Nk, rho, Options.mu, Options.kbT);
+  free(Options.Nk);
   
   return 1;
 }
@@ -2043,6 +2044,13 @@ static int LuaTightBindingDestroy(lua_State * L)
 }
 
 
+static int LuaDresdenFPLODestroy(lua_State * L)
+{
+	DresdenFPLO *a = (DresdenFPLO *) luaL_checkudata(L, 1, "DresdenFPLO_Type");
+  FreeDresdenFPLO(a);
+  return 0;
+}
+
 
 
 static const struct luaL_Reg TightBinding_meta[] = {
@@ -2062,5 +2070,6 @@ static const struct luaL_Reg StuttgartHAMR_meta[] = {
 };
 
 static const struct luaL_Reg DresdenFPLO_meta[] = {
+	{"__gc", LuaDresdenFPLODestroy},
   {NULL, NULL}
 };

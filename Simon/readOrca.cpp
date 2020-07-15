@@ -218,7 +218,6 @@ string normalizedOrcaOrbname(const string &orbOrca)
 	n = atoi(orbOrca.substr(lastAtomNamePos + 1, lastNPos - lastAtomNamePos).c_str());
 
 	shell = orbOrca.substr(lastNPos + 1, 1);
-	// mwh unused uint l = (orbToMultiplicity(shell) / 2 - 1) / 2;
 
 	string lzName = orbOrca.substr(lastNPos + 2);
 	if (lzName.find(" ") != string::npos) lzName = lzName.substr(0, lzName.find(" "));
@@ -278,6 +277,25 @@ double OrcaGaussianNormfactor(const double w, const uint l)
 	return out;
 }
 
+void OrcaSetFermiEnergy(OrcaObject &orca, const double ef)
+{
+	uint i = 0;
+	while (orca.EigenOccupations[i] > 0)
+	{
+		++i;
+	}
+	if (i == 0 || i == (uint) orca.EigenOccupations.size())
+	{
+		cout << "Warning: Could not set Fermi Energy!" << endl;
+		return;
+	}
+	double offset = ef - orca.EigenEnergies[i] + (orca.EigenEnergies[i] - orca.EigenEnergies[i - 1]) / 2;
+	for (uint j = 0; j < (uint) orca.EigenEnergies.size(); ++j)
+	{
+		orca.EigenEnergies[j] += offset;
+	}
+}
+
 OrcaObject FileReadOrca(const string &filename)
 {
 	const static double HartreeToeV = 27.211391239;
@@ -303,7 +321,7 @@ OrcaObject FileReadOrca(const string &filename)
 	int i=0, jOffset = 0;
 	while (getline(reader, line))
 	{
-		if (line.find("# of contracted basis functions") != string::npos)
+		if (line.find("# of contracted basis functions") != string::npos || line.find("Number of basis functions") != string::npos)
 		{
 			const string::size_type lastBlank = line.find_last_of(" ");
 			out.NBasis = atoi(line.substr(lastBlank + 1).c_str());
@@ -500,6 +518,7 @@ OrcaObject FileReadOrca(const string &filename)
 			out.Atoms[i].Position[j] = atomPositions[i][j];
 		}
 	}
+	OrcaSetFermiEnergy(out, 0);
 	return out;
 }
 

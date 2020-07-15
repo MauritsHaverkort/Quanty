@@ -54,7 +54,7 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
   char ReadLine[1024];
   char *phrase[1024] = {NULL}, tmpstr[1024];
   double tmpvec[3];
-  uint32_t Nphrase, Nwandef, Nimag=0, i, j, ihop=0, iatom;
+  uint32_t Nphrase, Nwandef, i, j, ihop=0, iatom;
   const int NhopMax=1024;
   O->Lattice.Molecule=false;
   ReadLine[1023] = '\0';
@@ -80,6 +80,7 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
       Nphrase = SplitStringToArray(phrase, ReadLine, " :\n");
       strncpy(O->Compound, phrase[1], 15);
       O->Compound[15]=0;
+      for (uint p = 0; p < Nphrase; ++p) free(phrase[p]);
     }
     if(strstr(ReadLine, "lattice constants") != NULL)
     {
@@ -88,6 +89,7 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
       {
         O->Lattice.LattConst[i] = strtod(phrase[Nphrase-3+i],NULL);
       }
+      for (uint p = 0; p < Nphrase; ++p) free(phrase[p]);
     }
     if(strstr(ReadLine, "axis angles") != NULL)
     {
@@ -96,6 +98,7 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
       {
         O->Lattice.Angles[i] = strtod(phrase[Nphrase-3+i],NULL);
       }
+      for (uint p = 0; p < Nphrase; ++p) free(phrase[p]);
     }
     if(strstr(ReadLine, "reciprocial lattice vectors") != NULL)
     {
@@ -107,6 +110,7 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
         {
           O->Lattice.gLattVec[i][j] = strtod(phrase[Nphrase-3+j],NULL);
         }
+        for (uint p = 0; p < Nphrase; ++p) free(phrase[p]);
       }
     }
     else if(strstr(ReadLine, "lattice vectors") != NULL)
@@ -119,6 +123,7 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
         {
           O->Lattice.LattVec[i][j] = strtod(phrase[Nphrase-3+j],NULL);
         }
+        for (uint p = 0; p < Nphrase; ++p) free(phrase[p]);
       }
     }
     // Read elements in the unit cell.
@@ -126,6 +131,7 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
     {
       Nphrase = SplitStringToArray(phrase, ReadLine, " :\n");
       O->Atoms.Natom = atoi(phrase[3]);
+      for (uint p = 0; p < Nphrase; ++p) free(phrase[p]);
     }
     if(strstr(ReadLine, "No.  Element WPS CPA-Block") != NULL)
     {
@@ -142,6 +148,7 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
         {
           O->Atoms.Pos[i][j] = strtod(phrase[4+j],NULL);
         }
+        for (uint p = 0; p < Nphrase; ++p) free(phrase[p]);
       }
     }
     // Read the constructed Wannier orbitals.
@@ -149,12 +156,14 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
     {
       Nphrase = SplitStringToArray(phrase, ReadLine, " :\n");
       Nwandef = atoi(phrase[Nphrase-1]);
+      for (uint p = 0; p < Nphrase; ++p) free(phrase[p]);
       O->Wannier.Nwandef   = Nwandef;
       O->Wannier.NActAtom  = 1;
       O->Wannier.Name      = (char**)malloc(Nwandef*sizeof(char*));
       O->Wannier.Site      = (int*)malloc(Nwandef*sizeof(int));
       O->Wannier.Orbital   = (int**)malloc(Nwandef*sizeof(int*));
       O->Wannier.PosCenter = (double**)malloc(Nwandef*sizeof(double*));
+      O->Wannier.QRelativistic = (uint32_t)(-1);
       i = 0;
       while((fgets(ReadLine, 1023, stream)!=NULL) && (!strstr(ReadLine, "START calculating WF")))
       {
@@ -165,6 +174,7 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
           strcpy(O->Wannier.Name[i], phrase[1]);
           for(j=2;j<Nphrase;j++)
             strcat(strcat(O->Wannier.Name[i], " "), phrase[j]);
+          for (uint p = 0; p < Nphrase; ++p) free(phrase[p]);
           while(fgets(ReadLine, 1023, stream) != NULL)
           {
             if(strstr(ReadLine, "center") != NULL)
@@ -176,6 +186,7 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
                 tmpvec[j] = strtod(phrase[Nphrase-3+j],NULL);
               }
               TransVecNorm(tmpvec, O->Lattice.gLattVec, O->Wannier.PosCenter[i]);
+              for (uint p = 0; p < Nphrase; ++p) free(phrase[p]);
             }
             if(strstr(ReadLine, "site") != NULL)
             {
@@ -184,16 +195,35 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
               j=0;
               while(j<i && O->Wannier.Site[i]!=O->Wannier.Site[j]) j++;
               if(i>=1&&j==i&& O->Wannier.Site[i]!=O->Wannier.Site[i-1]) O->Wannier.NActAtom += 1;
+              for (uint p = 0; p < Nphrase; ++p) free(phrase[p]);
             }
             if(strstr(ReadLine, "orbital") != NULL)
             {
               O->Wannier.Orbital[i] = (int*)malloc(3*sizeof(int));
               Nphrase = SplitStringToArray(phrase, ReadLine, " :\n");
-              O->Wannier.Orbital[i][0] = atoi(&(phrase[1][0]));
-              O->Wannier.Orbital[i][1] = ShellNameToL(phrase[1][1]);
-              strcpy(tmpstr, phrase[1]);
-              O->Wannier.Orbital[i][2] = atoi(tmpstr+2);
-              break;
+							O->Wannier.Orbital[i][0] = atoi(&(phrase[1][0]));
+							if (O->Wannier.QRelativistic == (uint32_t)(-1))
+							{
+								if (strstr(phrase[1], "/2") != NULL)
+									O->Wannier.QRelativistic = (uint32_t) true;
+								else
+									O->Wannier.QRelativistic = (uint32_t) false;
+							}
+							if ((bool) O->Wannier.QRelativistic)
+							{
+								int l = ShellNameToL(phrase[1][1]);
+								O->Wannier.Orbital[i][1] = l + (atoi(&(phrase[1][2])) - 1) / 2;
+								strcpy(tmpstr, phrase[1]);
+								O->Wannier.Orbital[i][2] = (atoi(tmpstr + 5) + 1)/2;
+							}
+							else
+							{
+								O->Wannier.Orbital[i][1] = ShellNameToL(phrase[1][1]);
+								strcpy(tmpstr, phrase[1]);
+								O->Wannier.Orbital[i][2] = atoi(tmpstr + 2);
+							}
+							for (uint p = 0; p < Nphrase; ++p) free(phrase[p]);
+							break;
             }
           }
 
@@ -207,9 +237,11 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
       }
 
       // Read the hopping matrix.
+      O->Wannier.QComplex  = (uint32_t)false;
       O->Wannier.Nhop   = (int*)calloc(Nwandef*Nwandef,sizeof(int));
       O->Wannier.HopVec = (double***)malloc(Nwandef*Nwandef*sizeof(double**));
       O->Wannier.HopVal = (double**)malloc(Nwandef*Nwandef*sizeof(double*));
+      O->Wannier.HopValIm = (double**)malloc(Nwandef*Nwandef*sizeof(double*));
       i = -1;
       while((fgets(ReadLine, 1023, stream)!=NULL) && (!strstr(ReadLine, "END   calculating WF")))
       {
@@ -222,6 +254,7 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
           }
           O->Wannier.HopVec[i] = (double**)malloc(NhopMax*sizeof(double*));
           O->Wannier.HopVal[i] = (double*)malloc(NhopMax*sizeof(double));
+          O->Wannier.HopValIm[i] = (double*)malloc(NhopMax*sizeof(double));
           ihop = 0;
         }
         if(strncmp(ReadLine, "T=", 2) ==0)
@@ -243,7 +276,11 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
             TransVecNorm(tmpvec, O->Lattice.gLattVec, O->Wannier.HopVec[i][ihop]);
           }
           O->Wannier.HopVal[i][ihop] = strtod(phrase[5], NULL);
-          if(Abs(strtod(phrase[Nphrase-1], NULL))>(1000*DBL_MIN)) Nimag+=1;
+          O->Wannier.HopValIm[i][ihop] = strtod(phrase[Nphrase-1], NULL);
+					if (not O->Wannier.QComplex and Abs(O->Wannier.HopValIm[i][ihop]) > (1000 * DBL_MIN))
+					{
+						O->Wannier.QComplex = (uint32_t)true;
+					}
 
           ihop = ihop+1;
           if(ihop > NhopMax)
@@ -254,16 +291,13 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
           {
             O->Wannier.Nhop[i] = ihop;
           }
+          for (uint p = 0; p < Nphrase; ++p) free(phrase[p]);
         }
       }
       if(i<Nwandef*Nwandef-1)
       {
         printf("\nError: The length of hoppings is not compatible with the number of Wannier orbitals.\n");
         return 1;
-      }
-      if(Nimag>0)
-      {
-        printf("Warning: There are %d hopping elements with non-zero imaginary part.\nThey are NOT read in.\n", Nimag);
       }
     }
   }

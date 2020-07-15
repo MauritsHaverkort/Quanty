@@ -63,7 +63,7 @@ bool atomicStateSorternlz(string s1, string s2)
 	int lz1, lz2;
 	deconstructOrbname(s1, siteNum1, atomName1, n1, shell1, lz1);
 	deconstructOrbname(s2, siteNum2, atomName2, n2, shell2, lz2);
-	if (siteNum1 != siteNum2 && siteNum1 != 0 && siteNum2 != 0)
+	if (siteNum1 != siteNum2)
 		return siteNum1 < siteNum2;
 //	TODO: this sorts lexicographically. Should we rather sort according to the periodic system?
 	if (strcmp(atomName1.c_str(), atomName2.c_str()) != 0)
@@ -85,7 +85,7 @@ bool atomicStateSorterlnz(string s1, string s2)
 	int lz1, lz2;
 	deconstructOrbname(s1, siteNum1, atomName1, n1, shell1, lz1);
 	deconstructOrbname(s2, siteNum2, atomName2, n2, shell2, lz2);
-	if (siteNum1 != siteNum2 && siteNum1 != 0 && siteNum2 != 0)
+	if (siteNum1 != siteNum2)
 		return siteNum1 < siteNum2;
 //	TODO: this sorts lexicographically. Should we rather sort according to the periodic system?
 	if (strcmp(atomName1.c_str(), atomName2.c_str()) != 0)
@@ -114,6 +114,7 @@ vector<map<string, double> > getWF_coefficients_Filecontent(const string &filena
 	int lz;
 	double weight;
 	size_t pos1, pos2;
+	bool isPrimaryOverlap, isWarningPrinted = false;
 	M orbWeightsMap = M();
 	while (getline(file, line))
 	{
@@ -141,13 +142,19 @@ vector<map<string, double> > getWF_coefficients_Filecontent(const string &filena
 		}
     else if (line.find("vec=") != string::npos)
 		{
-//			Do nothing
+    		uint overlapNumber = (uint) strtol(line.substr(0, line.find("vec")).c_str(), NULL, 10);
+    		isPrimaryOverlap = (overlapNumber == 1);
+    		if (!isPrimaryOverlap && !isWarningPrinted)
+    		{
+    			cout << "Warning in getWF_coefficients_Filecontent: It seems like you are reading a coefficient file for a crystal. Any overlap with atoms other than the first will NOT be read in." << endl;
+    			isWarningPrinted = true;
+    		}
 		}
-    else if (line.length() <= 3 && line.length() >= 2)
+    else if (line.length() <= 3 && line.length() >= 2 && isPrimaryOverlap)
 		{
 			orb = line;
 		}
-    else if (line.find(":") != string::npos)
+    else if (line.find(":") != string::npos && isPrimaryOverlap)
 		{
 			pos1 = 0;
 			pos2 = line.find(":");

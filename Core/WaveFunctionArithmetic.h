@@ -1,5 +1,5 @@
 uint32_t CheckDetPhysical(uint8_t *det, uint32_t const NFermion, uint32_t const NBoson);
-uint8_t *StringToDet(uint32_t const NFermion, uint32_t const NBoson, char *s);
+uint8_t *StringToDet(uint32_t const NFermion, uint32_t const NBoson, char const *s);
 char *DetToString(uint32_t const NFermion, uint32_t const NBoson, uint8_t * det);
 uint32_t WaveFunctionInit(WaveFunctionType * Psi);
 void WavefunctionSetName(WaveFunctionType * const Psi, const char * const name);
@@ -11,6 +11,7 @@ void WaveFunctionFree(WaveFunctionType * const psi);
 void WaveFunctionFreeValues(WaveFunctionType * const psi);
 uint32_t QWaveFunctionSameBasis(WaveFunctionType const * const psiA, WaveFunctionType const * const psiB);
 uint32_t QWaveFunctionSame(WaveFunctionType const * const psiA, WaveFunctionType const * const psiB);
+uint32_t QWaveFunctionEqual(WaveFunctionType const * const psiA, WaveFunctionType const * const psiB, double epsilon);
 uint32_t WaveFunctionAddElement(WaveFunctionType * const psi, const uint8_t * const det, const double aRe, const double aIm);
 uint32_t WaveFunctionAddElementConserveBasis(WaveFunctionType * const psi, const uint8_t * const det, const double aRe, const double aIm);
 void WaveFunctionPrefactorDet(const WaveFunctionType psi, const uint8_t * const det, double *aRe, double *aIm);

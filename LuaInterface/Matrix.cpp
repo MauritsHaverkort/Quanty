@@ -1236,7 +1236,7 @@ static int LuaMatrixToString(lua_State * L)
 			if (A->QComplex)
 			{
 				colWidth = 12;
-				string tmpStr = numberToStringMaxWidth(A->V[j + i * (A->Nj)].Re, colWidth / 2);
+				string tmpStr = numberToStringMaxWidth(A->V[j + i * (A->Nj)].Re, colWidth / 2 - 1);
 				if (A->V[j + i * (A->Nj)].Im < 0)
 					tmpStr += " -";
 				else

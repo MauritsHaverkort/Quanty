@@ -1,0 +1,29 @@
+errorCount = 0
+
+function test(a,b)
+    if Chop(a-b,1e-10) ~= 0 then
+        print("Something went wrong!")
+        errorCount = errorCount + 1
+    end
+end
+
+testnumbers = {0,1,-1,0.4,0+I,0-I,1+0.4*I}
+for key1,i in pairs (testnumbers) do
+    for key2,j in pairs (testnumbers) do
+        for key3,k in pairs (testnumbers) do
+            for key4,l in pairs (testnumbers) do
+                M = {{i,j},{k,l}}
+                luaTrace = i+l
+                test(Simon.MatrixTrace(M),luaTrace)
+                MU = Matrix.ToUserdata(M)
+                test(Simon.MatrixTrace(MU),luaTrace)
+            end
+        end
+    end
+end
+
+if errorCount == 0 then
+    print("No errors detected.")
+end
+
+os.exit(errorCount)
