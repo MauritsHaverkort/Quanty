@@ -4242,7 +4242,7 @@ static int LuaOperatorNewCF(lua_State * L)
       {
         return luaL_error(L, "Error in LuaOperatorNewCF, Index of jmin and jmax should relate to the same angular momentum (%d+2 != %d)\n",NShell,Ntemp);
       }
-      if(4*lCr+2!=NShell+Ntemp)
+      if(4*lAn+2!=NShell+Ntemp)
       {
         return luaL_error(L, "Error in LuaOperatorNewCF, Lenght of Index (%d + %d) is not equal to 4l+2 (%d)\n",NShell,Ntemp,lCr);
       }
@@ -4254,7 +4254,7 @@ static int LuaOperatorNewCF(lua_State * L)
       {
         return luaL_error(L, "Error in LuaOperatorNewCF, Index of spin up and spin down should relate to the same angular momentum (%d != %d)\n",NShell,Ntemp);
       }
-      if(2*lCr+1!=NShell)
+      if(2*lAn+1!=NShell)
       {
         return luaL_error(L, "Error in LuaOperatorNewCF, Lenght of Index (%d) is not equal to 2l+1 (%d)\n",NShell,lCr);
       }
