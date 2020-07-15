@@ -119,6 +119,9 @@ uint32_t CopySpectraArray(SpectraTypeArray *In, SpectraTypeArray *Out)
     }
     CopySpectra(In->Spec[i], &(Out->Spec[i]));
   }
+  Out->Name=(char*)malloc((strlen(In->Name)+1)*sizeof(char));
+  if(Out->Name==NULL){printf("malloc failed in CopySpectraArray for Name\n");return 1;}
+  strcpy(Out->Name, In->Name);
   return 0;
 }
 

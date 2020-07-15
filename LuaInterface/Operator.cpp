@@ -7,7 +7,8 @@ static int LuaOperatorNewCoulomb(lua_State * L)
   struct
   {
     const char *basis;
-    uint32_t ibasis;   //  0  000 SphericalHarmonicY, alternating dn,up from m=-l to m=l
+    uint32_t ibasis;
+    //  0  000 SphericalHarmonicY, alternating dn,up from m=-l to m=l
     //  1  001 TesseralHarmonicZ,  alternating dn,up sin first, than cos
     //  2  010 KubicHarmonicK,     alternating dn,up order according to irep a,b,e,t
     //  3  011 PyramidalHarmonicP, alternating dn,up order rotating around z axis
@@ -72,6 +73,10 @@ static int LuaOperatorNewCoulomb(lua_State * L)
     LindexUp = luaL_checkarray_unit16_t(L, 3, &Ntemp);
     if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
     if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
+    if(Options.ibasis==4)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Orbitals formatted according to Harmonics basis, but options state it is a jjz basis\n");
+    }
     if(NShell!=Ntemp)
     {
       return luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
@@ -103,6 +108,10 @@ static int LuaOperatorNewCoulomb(lua_State * L)
     LindexUpA = luaL_checkarray_unit16_t(L, 3, &Ntemp);
     if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUpA, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
     if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDnA, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
+    if(Options.ibasis==4)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Orbitals formatted according to Harmonics basis, but options state it is a jjz basis\n");
+    }
     if(NShell!=Ntemp)
     {
       return luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
@@ -155,6 +164,10 @@ static int LuaOperatorNewCoulomb(lua_State * L)
     LindexUpA = luaL_checkarray_unit16_t(L, 3, &Ntemp);
     if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUpA, NShell)==false) return luaL_error(L, "Index up of first shell contains a refference outside the range [0,%d]",NFermion-1);
     if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDnA, Ntemp )==false) return luaL_error(L, "Index dn of first shell contains a refference outside the range [0,%d]",NFermion-1);
+    if(Options.ibasis==4)
+    {
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Orbitals formatted according to Harmonics basis, but options state it is a jjz basis\n");
+    }
     if(NShell!=Ntemp)
     {
       return luaL_error(L, "Error in LuaOperatorNewCoulomb, For first shell lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
@@ -240,7 +253,7 @@ static int LuaOperatorNewCoulomb(lua_State * L)
     double *F;
     if(Options.ibasis!=4)
     {
-      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Orbitals formatted according to l lz s sz basis, but options state it is a j jz basis\n");
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Orbitals formatted according to j jz basis, but options state it is an Harmonics basis (ibasis = %d)\n",Options.ibasis);
     }
     Jindex = luaL_checkarray_unit16_t(L, 2, &NShell);
     if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), Jindex, NShell)==false) return luaL_error(L, "Index of Jshell contains a refference outside the range [0,%d]",NFermion-1);
@@ -281,7 +294,7 @@ static int LuaOperatorNewCoulomb(lua_State * L)
     double *F, *G;
     if(Options.ibasis!=4)
     {
-      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Orbitals formatted according to l lz s sz basis, but options state it is a j jz basis\n");
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Orbitals formatted according to j jz basis, but options state it is an Harmonics basis (ibasis = %d)\n",Options.ibasis);
     }
     JindexA = luaL_checkarray_unit16_t(L, 2, &NShell);
     if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), JindexA, NShell)==false) return luaL_error(L, "Index of first J shell contains a refference outside the range [0,%d]",NFermion-1);
@@ -339,7 +352,7 @@ static int LuaOperatorNewCoulomb(lua_State * L)
     double *R;
     if(Options.ibasis!=4)
     {
-      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Orbitals formatted according to l lz s sz basis, but options state it is a j jz basis\n");
+      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Orbitals formatted according to j jz basis, but options state it is an Harmonics basis (ibasis = %d)\n",Options.ibasis);
     }
     JindexA = luaL_checkarray_unit16_t(L, 2, &NShell);
     if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), JindexA, NShell)==false) return luaL_error(L, "Index of first J shell contains a refference outside the range [0,%d]",NFermion-1);
@@ -417,10 +430,10 @@ static int LuaOperatorNewSx(lua_State * L)
   {
     const char *basis;
     uint32_t ibasis;   //  0  000 SphericalHarmonicY, alternating dn,up from m=-l to m=l
-    //  1  001 TesseralHarmonicZ,  alternating dn,up sin first, than cos
-    //  2  010 KubicHarmonicK,     alternating dn,up order according to irep a,b,e,t
-    //  3  011 PyramidalHarmonicP, alternating dn,up order rotating around z axis
-    //  4  100 jjz basis,          j=l-1/2 first, than j=l+1/2 from m=-j to m=j
+                       //  1  001 TesseralHarmonicZ,  alternating dn,up sin first, than cos
+                       //  2  010 KubicHarmonicK,     alternating dn,up order according to irep a,b,e,t
+                       //  3  011 PyramidalHarmonicP, alternating dn,up order rotating around z axis
+                       //  4  100 jjz basis,          j=l-1/2 first, than j=l+1/2 from m=-j to m=j
   } Options;
   Options.ibasis=0;
   OperatorType *op;
@@ -4041,6 +4054,16 @@ static int LuaOperatorNewldots(lua_State * L)
 
 static int LuaOperatorNewCF(lua_State * L)
 {
+  struct
+  {
+    const char *basis;
+    uint32_t ibasis;   //  0  000 SphericalHarmonicY, alternating dn,up from m=-l to m=l
+                       //  1  001 TesseralHarmonicZ,  alternating dn,up sin first, than cos
+                       //  2  010 KubicHarmonicK,     alternating dn,up order according to irep a,b,e,t
+                       //  3  011 PyramidalHarmonicP, alternating dn,up order rotating around z axis
+                       //  4  100 jjz basis,          j=l-1/2 first, than j=l+1/2 from m=-j to m=j
+  } Options;
+  Options.ibasis=999; // need to test length of indices to set it to either 0 or 4. But this depends on the number of shells in the input
   OperatorType *op;
   uint32_t i;
   uint32_t len = (uint32_t)lua_gettop(L);
@@ -4048,9 +4071,43 @@ static int LuaOperatorNewCF(lua_State * L)
   uint32_t NShell,Ntemp,lCr,lAn;
   uint16_t *LindexUpCr, *LindexUpAn, *LindexDnCr, *LindexDnAn;
   HarmonicsExpansion *Akm;
+  LuaOptionsType LuaOperatorOptions[]={
+    {"basis","char*",&(Options.basis)},
+    {NULL, NULL, NULL}};
   if(NFermion==0) return luaL_error(L, "Crystal-field operator acting on zero fermions is not defined");
+  // set basis used
+  if(LuaTestOptionsList(L, -1))
+  {
+    LuaCheckOptions(L, -1, LuaOperatorOptions);
+    len--;
+    if((strcmp(Options.basis, "SphericalHarmonicsY")==0)||(strcmp(Options.basis, "SphericalHarmonics")==0)||(strcmp(Options.basis, "BasisY")==0)||(strcmp(Options.basis, "Y")==0))
+    {
+      Options.ibasis=0;
+    }
+    else if((strcmp(Options.basis, "TesseralHarmonicsZ")==0)||(strcmp(Options.basis, "TesseralHarmonics")==0)||(strcmp(Options.basis, "BasisZ")==0)||(strcmp(Options.basis, "Z")==0))
+    {
+      Options.ibasis=1;
+    }
+    else if((strcmp(Options.basis, "KubicHarmonicsK")==0)||(strcmp(Options.basis, "KubicHarmonics")==0)||(strcmp(Options.basis, "BasisK")==0)||(strcmp(Options.basis, "K")==0)||(strcmp(Options.basis, "CubicHarmonicsK")==0)||(strcmp(Options.basis, "CubicHarmonics")==0))
+    {
+      Options.ibasis=2;
+    }
+    else if((strcmp(Options.basis, "PyramidalHarmonicsP")==0)||(strcmp(Options.basis, "PyramidalHarmonics")==0)||(strcmp(Options.basis, "BasisP")==0)||(strcmp(Options.basis, "P")==0))
+    {
+      Options.ibasis=3;
+    }
+    else if((strcmp(Options.basis, "jjz")==0)||(strcmp(Options.basis, "Basisjjz")==0)||(strcmp(Options.basis, "Basisj")==0)||(strcmp(Options.basis, "j")==0))
+    {
+      Options.ibasis=4;
+    }
+    else
+    {
+      return luaL_error(L, "Unrecognized value for basis %s, use SphericalHarmonicsY, TesseralHarmonicsZ, KubicHarmonicsK, PyramidalHarmonicsP, or jjz\n",Options.basis);
+    }
+  }
   if(len==3)
   {
+    // single shell defined, i.e. add only a crystal field to spin up or down states. (or a sinlge j shell in which case lCr = 2jCr)
     LindexUpCr = luaL_checkarray_unit16_t(L, 2, &NShell);
     if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUpCr, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
     LindexUpAn = LindexUpCr;
@@ -4058,9 +4115,25 @@ static int LuaOperatorNewCF(lua_State * L)
     LindexDnCr = LindexUpCr;
     lCr=(NShell-1)/2;
     lAn=lCr;
-    if(2*lCr+1!=NShell)
+    if(Options.ibasis==999)
     {
-      return luaL_error(L, "Error in LuaOperatorNewCF, Lenght of Index (%d) is not equal to 2l+1 (%d)\n",NShell,lCr);
+      if(2*lCr+1!=NShell)
+      {
+        Options.ibasis=4;
+        lCr=(NShell-1);
+        lAn=lCr;
+      }
+      else
+      {
+        Options.ibasis=0;
+      }
+    }
+    if(Options.ibasis!=4)
+    {
+      if(2*lCr+1!=NShell)
+      {
+        return luaL_error(L, "Error in LuaOperatorNewCF, Lenght of Index (%d) is not equal to 2l+1 (%d)\n",NShell,lCr);
+      }
     }
   }
   else if(len==4)
@@ -4071,15 +4144,46 @@ static int LuaOperatorNewCF(lua_State * L)
     LindexDnAn = LindexDnCr;
     if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUpCr, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
     if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDnCr, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
-    lCr=(NShell-1)/2;
-    lAn=lCr;
-    if(NShell!=Ntemp)
+    if(Options.ibasis==999)
     {
-      return luaL_error(L, "Error in LuaOperatorNewCF, Index of spin up and spin down should relate to the same angular momentum (%d != %d)\n",NShell,Ntemp);
+      if(NShell==Ntemp)
+      {
+        Options.ibasis=0;
+      }
+      else if(NShell+2==Ntemp)
+      {
+        Options.ibasis=4;
+      }
+      else
+      {
+        return luaL_error(L, "Error in LuaOperatorNewCF, The two indices should be of the same lenght (angular momentum (l) basis with spin) or the second array should be 2 longer (total angular momentum j) lengths are %d and %d\n",NShell,Ntemp);
+      }
     }
-    if(2*lCr+1!=NShell)
+    if(Options.ibasis==4)
     {
-      return luaL_error(L, "Error in LuaOperatorNewCF, Lenght of Index (%d) is not equal to 2l+1 (%d)\n",NShell,lCr);
+      lCr=(NShell+Ntemp-2)/4;
+      lAn=lCr;
+      if(NShell+2!=Ntemp)
+      {
+        return luaL_error(L, "Error in LuaOperatorNewCF, Index of jmin and jmax should relate to the same angular momentum (%d+2 != %d)\n",NShell,Ntemp);
+      }
+      if(4*lCr+2!=NShell+Ntemp)
+      {
+        return luaL_error(L, "Error in LuaOperatorNewCF, Lenght of Index (%d + %d) is not equal to 4l+2 (%d)\n",NShell,Ntemp,lCr);
+      }
+    }
+    else
+    {
+      lCr=(NShell-1)/2;
+      lAn=lCr;
+      if(NShell!=Ntemp)
+      {
+        return luaL_error(L, "Error in LuaOperatorNewCF, Index of spin up and spin down should relate to the same angular momentum (%d != %d)\n",NShell,Ntemp);
+      }
+      if(2*lCr+1!=NShell)
+      {
+        return luaL_error(L, "Error in LuaOperatorNewCF, Lenght of Index (%d) is not equal to 2l+1 (%d)\n",NShell,lCr);
+      }
     }
   }
   else if(len==6)
@@ -4088,27 +4192,72 @@ static int LuaOperatorNewCF(lua_State * L)
     LindexDnCr = luaL_checkarray_unit16_t(L, 3, &Ntemp);
     if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUpCr, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
     if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDnCr, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
-    lCr=(NShell-1)/2;
-    if(NShell!=Ntemp)
+    if(Options.ibasis==999)
     {
-      return luaL_error(L, "Error in LuaOperatorNewCF, Index of spin up and spin down should relate to the same angular momentum (%d != %d)\n",NShell,Ntemp);
+      if(NShell==Ntemp)
+      {
+        Options.ibasis=0;
+      }
+      else if(NShell+2==Ntemp)
+      {
+        Options.ibasis=4;
+      }
+      else
+      {
+        return luaL_error(L, "Error in LuaOperatorNewCF, The two indices should be of the same lenght (angular momentum (l) basis with spin) or the second array should be 2 longer (total angular momentum j) lengths are %d and %d\n",NShell,Ntemp);
+      }
     }
-    if(2*lCr+1!=NShell)
+    if(Options.ibasis==4)
     {
-      return luaL_error(L, "Error in LuaOperatorNewCF, Lenght of Index (%d) is not equal to 2l+1 (%d)\n",NShell,lCr);
+      lCr=(NShell+Ntemp-2)/4;
+      if(NShell+2!=Ntemp)
+      {
+        return luaL_error(L, "Error in LuaOperatorNewCF, Index of jmin and jmax should relate to the same angular momentum (%d+2 != %d)\n",NShell,Ntemp);
+      }
+      if(4*lCr+2!=NShell+Ntemp)
+      {
+        return luaL_error(L, "Error in LuaOperatorNewCF, Lenght of Index (%d + %d) is not equal to 4l+2 (%d)\n",NShell,Ntemp,lCr);
+      }
+    }
+    else
+    {
+      lCr=(NShell-1)/2;
+      if(NShell!=Ntemp)
+      {
+        return luaL_error(L, "Error in LuaOperatorNewCF, Index of spin up and spin down should relate to the same angular momentum (%d != %d)\n",NShell,Ntemp);
+      }
+      if(2*lCr+1!=NShell)
+      {
+        return luaL_error(L, "Error in LuaOperatorNewCF, Lenght of Index (%d) is not equal to 2l+1 (%d)\n",NShell,lCr);
+      }
     }
     LindexUpAn = luaL_checkarray_unit16_t(L, 4, &NShell);
     LindexDnAn = luaL_checkarray_unit16_t(L, 5, &Ntemp);
     if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUpAn, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
     if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDnAn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
-    lAn=(NShell-1)/2;
-    if(NShell!=Ntemp)
+    if(Options.ibasis==4)
     {
-      return luaL_error(L, "Error in LuaOperatorNewCF, Index of spin up and spin down should relate to the same angular momentum (%d != %d)\n",NShell,Ntemp);
+      lAn=(NShell+Ntemp-2)/4;
+      if(NShell+2!=Ntemp)
+      {
+        return luaL_error(L, "Error in LuaOperatorNewCF, Index of jmin and jmax should relate to the same angular momentum (%d+2 != %d)\n",NShell,Ntemp);
+      }
+      if(4*lAn+2!=NShell+Ntemp)
+      {
+        return luaL_error(L, "Error in LuaOperatorNewCF, Lenght of Index (%d + %d) is not equal to 4l+2 (%d)\n",NShell,Ntemp,lCr);
+      }
     }
-    if(2*lAn+1!=NShell)
+    else
     {
-      return luaL_error(L, "Error in LuaOperatorNewCF, Lenght of Index (%d) is not equal to 2l+1 (%d)\n",NShell,lAn);
+      lAn=(NShell-1)/2;
+      if(NShell!=Ntemp)
+      {
+        return luaL_error(L, "Error in LuaOperatorNewCF, Index of spin up and spin down should relate to the same angular momentum (%d != %d)\n",NShell,Ntemp);
+      }
+      if(2*lAn+1!=NShell)
+      {
+        return luaL_error(L, "Error in LuaOperatorNewCF, Lenght of Index (%d) is not equal to 2l+1 (%d)\n",NShell,lCr);
+      }
     }
   }
   else
@@ -4124,11 +4273,33 @@ static int LuaOperatorNewCF(lua_State * L)
       if(Akm->QComplex) Akm->Im[i]*=0.5;
     }
   }
-
   op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-  CreateOperatorCF(NFermion, lCr, lAn, LindexUpCr, LindexDnCr, LindexUpAn, LindexDnAn, *Akm, op);
+  switch (Options.ibasis)
+  {
+    case 0:
+      CreateOperatorCF(NFermion, lCr, lAn, LindexUpCr, LindexDnCr, LindexUpAn, LindexDnAn, *Akm, op);
+      break;
+    case 1:
+      CreateOperatorCFZ(NFermion, lCr, lAn, LindexUpCr, LindexDnCr, LindexUpAn, LindexDnAn, *Akm, op);
+      break;
+    case 2:
+      CreateOperatorCFK(NFermion, lCr, lAn, LindexUpCr, LindexDnCr, LindexUpAn, LindexDnAn, *Akm, op);
+      break;
+    case 3:
+      CreateOperatorCFP(NFermion, lCr, lAn, LindexUpCr, LindexDnCr, LindexUpAn, LindexDnAn, *Akm, op);
+      break;
+    case 4:
+      if(len==3)
+      {
+        CreateOperatorCFjjz(NFermion, lCr, LindexUpCr, LindexUpAn, *Akm, op); // lCr==2jCr, LindexUpCr==JindexCr, LindexUpAn==JIndexAn
+      }
+      else
+      {
+        CreateOperatorCFjjz(NFermion, lCr, lAn, LindexUpCr, LindexDnCr, LindexUpAn, LindexDnAn, *Akm, op); // LindexUpCr==JindexMinCr, LindexDnCr==JindexMaxCr, LindexUpAn==JindexMinAn, LindexDnAn==JindexMaxAn
+      }
+      break;
+  }
   luaL_setmetatable(L, "Operator_Type");
-
   free(Akm->l);
   free(Akm->m);
   free(Akm->Re);

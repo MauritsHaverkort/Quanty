@@ -3294,6 +3294,12 @@ uint32_t CreateOperatorCFjjz(uint32_t const NFermion, uint32_t LCr, uint32_t LAn
   //TODO:
   return 0;
 }
+uint32_t CreateOperatorCFjjz(uint32_t const NFermion, uint32_t twoJ, uint16_t * JCrindexmin, uint16_t * JAnindexmin, HarmonicsExpansion const Akm, OperatorType * const CF)
+{
+  printf("not yet implemented\n");
+  //TODO:
+  return 0;
+}
 
 
 /*  CreateOperatorQ*** creates the operators Qxx, Qyy, Qzz, Qxy, Qxz, Qyz as special cases of the Crystal-Field operator

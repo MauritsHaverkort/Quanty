@@ -344,6 +344,8 @@ static int LuaTableToSpectra(lua_State * L)
   luaL_setmetatable(L, "Spectra_Type");
   res->NSpectra = 0;
   res->Spec= (SpectraType*)malloc(lua_objlen(L, 1)*sizeof(SpectraType));
+  res->Name=(char*)malloc(2*sizeof(char));
+  res->Name[0]='\0';
   for(i=0;i<(uint32_t)lua_objlen(L, 1);i++)
   {
     lua_rawgeti(L, 1, i+1);
@@ -523,8 +525,10 @@ static int LuaSpectraSum(lua_State * L)
   if(len<2) return luaL_error(L, "Error Spectra.Sum called with %d arguments, 2 or more arguments expected\n",len);
   if(!((lua_type(L,1)==LUA_TUSERDATA)&&(luaL_testudata(L, 1, "Spectra_Type") != NULL))) return luaL_error(L, "Error Spectra.Sum first element should be of spectra type\n");
   a = (SpectraTypeArray *) luaL_checkudata(L, 1, "Spectra_Type");
-  res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
+  res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
   luaL_setmetatable(L, "Spectra_Type");
+  res->Name=(char*)malloc(2*sizeof(char));
+  res->Name[0]='\0';
   res->NSpectra = len-1;
   res->Spec= (SpectraType*)malloc(res->NSpectra*sizeof(SpectraType));
   res->Spec[0].Emin    = a->Spec[0].Emin;
@@ -604,8 +608,10 @@ static int LuaSpectraSumMethod(lua_State * L)
   Complex16 alpha;
   SpectraTypeArray *a = (SpectraTypeArray *) luaL_checkudata(L, lua_upvalueindex(1), "Spectra_Type");
   uint32_t len = (uint32_t)lua_gettop(L);
-  res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
+  res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
   luaL_setmetatable(L, "Spectra_Type");
+  res->Name=(char*)malloc(2*sizeof(char));
+  res->Name[0]='\0';
   res->NSpectra = len;
   res->Spec= (SpectraType*)malloc(res->NSpectra*sizeof(SpectraType));
   res->Spec[0].Emin    = a->Spec[0].Emin;
@@ -707,8 +713,11 @@ static int LuaSpectraElement(lua_State * L)
       {
         return luaL_error(L, "Error: no element %d in spectra array with %d elements\n",i,a->NSpectra);
       }
-      res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
+      res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
       res->NSpectra = 1;
+      res->Name=(char*)malloc(sizeof(char)*(1+strlen(a->Spec[i-1].Name)));
+      if(res->Name==NULL){return luaL_error(L, "Error: malloc failed for name of spectrum\n");}
+      strcpy(res->Name,a->Spec[i-1].Name);
       res->Spec= (SpectraType*)malloc(res->NSpectra*sizeof(SpectraType));
       if(SpectrumAllocate(a->Spec[i-1], &(res->Spec[0])))
       {
@@ -752,7 +761,9 @@ static int LuaSpectraElement(lua_State * L)
     {
       uint32_t i,j;
       SpectraTypeArray *res;
-      res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
+      res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+      res->Name=(char*)malloc(2*sizeof(char));
+      res->Name[0]='\0';
       res->NSpectra = (uint32_t) lua_objlen(L, len);
       res->Spec= (SpectraType*)malloc(res->NSpectra*sizeof(SpectraType));
       for(j=0;j<res->NSpectra;j++)
@@ -816,7 +827,9 @@ static int LuaSpectraElementMethod(lua_State * L)
         {
           return luaL_error(L, "Error: no element %d in spectra array with %d elements\n",i,a->NSpectra);
         }
-        res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
+        res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+        res->Name=(char*)malloc(2*sizeof(char));
+        res->Name[0]='\0';
         res->NSpectra = 1;
         res->Spec= (SpectraType*)malloc(res->NSpectra*sizeof(SpectraType));
         if(SpectrumAllocate(a->Spec[i-1], &(res->Spec[0])))
@@ -861,7 +874,9 @@ static int LuaSpectraElementMethod(lua_State * L)
       {
         uint32_t i,j;
         SpectraTypeArray *res;
-        res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
+        res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+        res->Name=(char*)malloc(2*sizeof(char));
+        res->Name[0]='\0';
         res->NSpectra = (uint32_t) lua_objlen(L, len);
         res->Spec= (SpectraType*)malloc(res->NSpectra*sizeof(SpectraType));
         for(j=0;j<res->NSpectra;j++)
@@ -1443,7 +1458,9 @@ static int LuaSpectraMul(lua_State * L)
             SpectraTypeArray *res, *b;
             b = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
             if(a->NSpectra!=b->NSpectra) return luaL_error(L, "Error: Multiplying to sets of spectra with different number of elements (%d) + (%d)\n",a->NSpectra,b->NSpectra);
-            res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
+            res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+            res->Name=(char*)malloc(2*sizeof(char));
+            res->Name[0]='\0';
             res->NSpectra = a->NSpectra;
             res->Spec = (SpectraType*)malloc(res->NSpectra * sizeof(SpectraType));
             for(i=0;i<res->NSpectra;i++)
@@ -1523,7 +1540,9 @@ static int LuaSpectraDiv(lua_State * L)
       SpectraTypeArray *res, *b;
       a = luaL_checknumber(L, 1);
       b = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
-      res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
+      res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+      res->Name=(char*)malloc(2*sizeof(char));
+      res->Name[0]='\0';
       res->NSpectra = b->NSpectra;
       res->Spec = (SpectraType*)malloc(res->NSpectra * sizeof(SpectraType));
       for(i=0;i<res->NSpectra;i++)
@@ -1643,7 +1662,7 @@ static int LuaSpectraDiv(lua_State * L)
             SpectraTypeArray *res, *b;
             b = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
             if(a->NSpectra!=b->NSpectra) return luaL_error(L, "Error: Dividing to sets of spectra with different number of elements (%d) + (%d)\n",a->NSpectra,b->NSpectra);
-            res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
+            res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
             res->NSpectra = a->NSpectra;
             res->Spec = (SpectraType*)malloc(res->NSpectra * sizeof(SpectraType));
             for(i=0;i<res->NSpectra;i++)
@@ -1771,7 +1790,7 @@ static int LuaSpectraPow(lua_State * L)
           Complex16 c, ac;
           SpectraTypeArray *res;
           b = luaL_checknumber(L, len);
-          res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
+          res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
           res->NSpectra = a->NSpectra;
           res->Spec = (SpectraType*)malloc(res->NSpectra * sizeof(SpectraType));
           for(i=0;i<res->NSpectra;i++)
@@ -1807,7 +1826,7 @@ static int LuaSpectraPow(lua_State * L)
             Complex16 *b,c,ac;
             SpectraTypeArray *res;
             b = (Complex16 *) luaL_checkudata(L, len, "Complex_Type");
-            res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(Complex16));
+            res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
             res->NSpectra = a->NSpectra;
             res->Spec = (SpectraType*)malloc(res->NSpectra * sizeof(SpectraType));
             for(i=0;i<res->NSpectra;i++)
@@ -2015,16 +2034,35 @@ static int LuaSpectraIndex(lua_State * L)
   if (strcmp(str, "Name") == 0)
   {
     uint32_t i;
+    lua_pushstring(L, a->Name);
     lua_createtable(L, a->NSpectra, 0);
     for(i=0;i<a->NSpectra;i++)
     {
       lua_pushstring(L, a->Spec[i].Name);
       lua_rawseti(L, -2, i+1);
     }
-    return 1;
+    return 2;
   }
   return luaL_error(L, "Error operation \".%s()\" not defined on spectra\n",str);
 }
+
+
+static int LuaSpectraNewIndex(lua_State * L)
+{
+  SpectraTypeArray *spec = (SpectraTypeArray*) luaL_checkudata(L, 1, "Spectra_Type");
+  const char *str = lua_tostring(L, 2);
+  if(strcmp(str, "Name")==0)
+  {
+    size_t len;
+    const char *strname = lua_tolstring(L,3,&len);
+    if(strname==NULL){return luaL_error(L,"Error, could not set name of spectra\n");}
+    spec->Name=(char*)realloc(spec->Name,(len+1)*sizeof(char));
+    strcpy(spec->Name,strname);
+    return 0;
+  }
+  return luaL_error(L, "Error index %s not found in Spectra Object\n",str);
+}
+
 
 static int LuaSpectraToString(lua_State * L)
 {
@@ -2045,6 +2083,7 @@ static int LuaSpectraDestroy(lua_State * L)
     SpectrumFree(&spec->Spec[i]);
   }
   free(spec->Spec);
+  free(spec->Name);
   return 0;
 }
 
@@ -2057,6 +2096,7 @@ static const struct luaL_Reg Spectra_meta[] = {
   {"__div", LuaSpectraDiv},
   {"__pow", LuaSpectraPow},
   {"__index", LuaSpectraIndex},
+  {"__newindex", LuaSpectraNewIndex},
   {"__tostring", LuaSpectraToString},
   {"__gc", LuaSpectraDestroy},
   {NULL, NULL}
