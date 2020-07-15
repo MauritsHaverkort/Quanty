@@ -877,6 +877,7 @@ typedef struct SpectraTypeArray
 {
   uint32_t NSpectra;
   SpectraType *Spec;
+  char *Name;
 }
 SpectraTypeArray;
 

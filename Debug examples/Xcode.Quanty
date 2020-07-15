@@ -1,4 +1,64 @@
 
+NF=10
+NB=0
+
+
+IndexDn={0,2,4,6,8}
+IndexUp={1,3,5,7,9}
+
+psi0 =NewWavefunction(NF,NB,{{"0000000000",1}})
+psi1 =NewWavefunction(NF,NB,{{"1000000000",1}})
+psi2 =NewWavefunction(NF,NB,{{"1100000000",1}})
+psi3 =NewWavefunction(NF,NB,{{"1110000000",1}})
+psi4 =NewWavefunction(NF,NB,{{"1111000000",1}})
+psi5 =NewWavefunction(NF,NB,{{"1111100000",1}})
+psi6 =NewWavefunction(NF,NB,{{"1111110000",1}})
+psi7 =NewWavefunction(NF,NB,{{"1111111000",1}})
+psi8 =NewWavefunction(NF,NB,{{"1111111100",1}})
+psi9 =NewWavefunction(NF,NB,{{"1111111110",1}})
+psi10=NewWavefunction(NF,NB,{{"1111111111",1}})
+
+
+psilist={psi0,psi1,psi2,psi3,psi4,psi5,psi6,psi7,psi8,psi9,psi10}
+
+OppN   = NewOperator("Number",NF,{0,1,2,3,4,5,6,7,8,9},{0,1,2,3,4,5,6,7,8,9},{1,1,1,1,1,1,1,1,1,1})
+OppCr  = NewOperator("Cr",NF,{0,1,2,3,4,5,6,7,8,9},{1,1,1,1,1,1,1,1,1,1})
+OppAn  = NewOperator("An",NF,{0,1,2,3,4,5,6,7,8,9},{1,1,1,1,1,1,1,1,1,1})
+
+
+print("Operator N:")
+for i=1,11 do
+ for j=1,11 do
+  io.write(string.format("%7.2f",psilist[i]*OppN*psilist[j]))
+  end
+  io.write("\n")
+end
+print("")
+  
+print("Operator Cr:")
+for i=1,11 do
+ for j=1,11 do
+  io.write(string.format("%7.2f",psilist[i]*OppCr*psilist[j]))
+  end
+  io.write("\n")
+end
+print("")
+
+print("Operator An:")
+for i=1,11 do
+ for j=1,11 do
+  io.write(string.format("%7.2f",psilist[i]*OppAn*psilist[j]))
+  end
+  io.write("\n")
+end
+print("")
+
+os.exit()
+
+
+dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/External_tests/Eigensystem_bug_3.Quanty")
+os.exit()
+
 dofile("/Users/haverkort/Documents/Programs/quanty/Debug examples/Reference/Objects/ResponseFunctions/BlockTypeConversion.Quanty")
 os.exit()
 

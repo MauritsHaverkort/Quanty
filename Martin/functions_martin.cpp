@@ -1403,6 +1403,8 @@ static int LuaCreateResonantSpectraSE(lua_State *L)
   /* allocate spectra and a pointer to return matrix on lua stack */
   Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
   luaL_setmetatable(L, "Spectra_Type");
+  Spec->Name=(char*)malloc(sizeof(char));
+  Spec->Name[0]='\0';
   Spec->NSpectra=0;
   Spec->Spec=NULL;
   /* test if dense methods can be used */

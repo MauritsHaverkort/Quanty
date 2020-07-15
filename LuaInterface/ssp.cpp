@@ -2050,6 +2050,8 @@ static int LuaCreateSpectra(lua_State *L)
       /* transform list of poles form to spectral form and push to stack */
       Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
       luaL_setmetatable(L, "Spectra_Type");
+      Spec->Name=(char*)malloc(sizeof(char));
+      Spec->Name[0]='\0';
       Spec->NSpectra=Options.NT*Options.Npsi;
       Spec->Spec= (SpectraType*)malloc(Spec->NSpectra*sizeof(SpectraType));
       Spec->Spec[0].N=Options.Settings.NE;
@@ -2133,6 +2135,8 @@ static int LuaCreateSpectra(lua_State *L)
       /* transform list of poles form to spectral form and push to stack */
       Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
       luaL_setmetatable(L, "Spectra_Type");
+      Spec->Name=(char*)malloc(sizeof(char));
+      Spec->Name[0]='\0';
       Spec->NSpectra=Sqr(Options.NT*Options.Npsi);
       Spec->Spec= (SpectraType*)malloc(Spec->NSpectra*sizeof(SpectraType));
       BlockListOfPolesToSpectraWithBroadening(SpecLP, Spec->Spec, Options.Settings.Emin, Options.Settings.Emax, Options.Settings.NE, Options.Settings.Gamma);
@@ -2299,6 +2303,8 @@ static int LuaCreateSpectra(lua_State *L)
       /* transform tridiagonal form to spectral form and push to stack */
       Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
       luaL_setmetatable(L, "Spectra_Type");
+      Spec->Name=(char*)malloc(sizeof(char));
+      Spec->Name[0]='\0';
       Spec->NSpectra=Options.NT*Options.Npsi;
       Spec->Spec= (SpectraType*)malloc(Spec->NSpectra*sizeof(SpectraType));
       Spec->Spec[0].N=Options.Settings.NE;
@@ -2461,6 +2467,8 @@ static int LuaCreateSpectra(lua_State *L)
       /* transform tridiagonal form to spectral form and push to stack */
       Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
       luaL_setmetatable(L, "Spectra_Type");
+      Spec->Name=(char*)malloc(sizeof(char));
+      Spec->Name[0]='\0';
       Spec->NSpectra=Sqr(Options.NT*Options.Npsi);
       Spec->Spec= (SpectraType*)malloc(Spec->NSpectra*sizeof(SpectraType));
       BlockTriDiagonalMatrixToSpectra(psiEn[0], &GTri, Spec->Spec, Options.Settings.Emin, Options.Settings.Emax, Options.Settings.NE, Options.Settings.Gamma);
@@ -2672,6 +2680,8 @@ static int LuaCreateResonantSpectra(lua_State *L)
   /* allocate spectra and a pointer to return matrix on lua stack */
   Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
   luaL_setmetatable(L, "Spectra_Type");
+  Spec->Name=(char*)malloc(sizeof(char));
+  Spec->Name[0]='\0';
   Spec->NSpectra=0;
   Spec->Spec=NULL;
   /* test if dense methods can be used */
@@ -2921,6 +2931,8 @@ static int LuaCreateFluorescenceYield(lua_State *L)
   luaL_setmetatable(L, "Spectra_Type");
   Spec->NSpectra=Options.NT1*Options.NT2*Options.Npsi;
   Spec->Spec= (SpectraType*)malloc(Spec->NSpectra*sizeof(SpectraType));
+  Spec->Name=(char*)malloc(sizeof(char));
+  Spec->Name[0]='\0';
   /* test if H is Hermitian */
   switch(QOperatorHermitian(*H, 0.0001*Options.Settings.zero))
   {
@@ -4911,7 +4923,8 @@ static int LuaYtoKMatrix(lua_State * L)
 	if (!lua_istable(L, 1))
 	{
 		isInputInteger = lua_isnumber(L, 1);
-	} else
+	}
+  else
 	{
 		lua_rawgeti(L, 1, 1);
 		isInputInteger = lua_isnumber(L, -1);
