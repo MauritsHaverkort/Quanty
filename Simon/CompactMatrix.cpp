@@ -250,6 +250,60 @@ Complex16 ComplexMatrixTrace(const CompactMatrixType const *M)
 	return trace;
 }
 
+CompactMatrixType GSOrthogonalizeWithNonOrthoBasis(const CompactMatrixType &in, const CompactMatrixType &Overlap)
+{
+	if ((bool) in.QComplex or (bool) Overlap.QComplex)
+	{
+		cout << "Function not implemented for Complex Vectors or Overlap Matrices!" << endl;
+		return CompactnullMatrix();
+	}
+	CompactMatrixType out;
+	CompactMatrixCopy(in, &out);
+	for (uint i = 0; i < (uint) out.Ni; ++i)
+	{
+		for (uint j = 0; j < i; ++j)
+		{
+			double overl = 0;
+			for (uint k = 0; k < out.Nj; ++k)
+			{
+				for (uint l = 0; l < out.Nj; ++l)
+				{
+					overl += out.VRe[j * out.Nj + k] * Overlap.VRe[k * Overlap.Nj + l] * out.VRe[i * in.Nj + l];
+				}
+			}
+			for (uint k = 0; k < out.Nj; ++k)
+			{
+				out.VRe[i * out.Nj + k] -= overl * out.VRe[j * out.Nj + k];
+			}
+		}
+		double norm = 0;
+		for (uint k = 0; k < out.Nj; ++k)
+		{
+			for (uint l = 0; l < out.Nj; ++l)
+			{
+				norm += out.VRe[i * out.Nj + k] * Overlap.VRe[k * Overlap.Nj + l] * out.VRe[i * out.Nj + l];
+			}
+		}
+		norm = 1.0 / sqrt(norm);
+		for (uint j = 0; j < (uint) out.Nj; ++j)
+			out.VRe[i * out.Ni + j] = out.VRe[i * out.Ni + j] * norm;
+	}
+	return out;
+}
+
+/*I did not want to touch Orthonormalize, although I think that on the long run this function and the one it calls should
+ * be merged with the existing functions.
+ * This is why this Lua Interface Function is written rather sloppily
+*/
+static int LuaOrthogonalizeWithNonOrthoBasis(lua_State *L)
+{
+	CompactMatrixType in, Overlap;
+	lua_check(L, 1, in);
+	lua_check(L, 2, Overlap);
+	lua_push(L, GSOrthogonalizeWithNonOrthoBasis(in, Overlap));
+	return 1;
+}
+
 static int LuaMatrixTrace(lua_State *L)
 {
 	CompactMatrixType *M;

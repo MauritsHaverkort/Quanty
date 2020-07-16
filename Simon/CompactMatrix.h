@@ -13,4 +13,6 @@ static int LuaRemoveSpin(lua_State *L);
 CompactMatrixType Submatrix(const CompactMatrixType &M, const vector<uint> &rows, const vector<uint> &cols);
 double RealMatrixTrace(const CompactMatrixType const *M);
 Complex16 ComplexMatrixTrace(const CompactMatrixType const *M);
-static int LuaMatrixTrace(lua_State * L);
+CompactMatrixType GSOrthogonalizeWithNonOrthoBasis(const CompactMatrixType &in, const CompactMatrixType &Overlap);
+static int LuaOrthogonalizeWithNonOrthoBasis(lua_State *L);
+static int LuaMatrixTrace(lua_State *L);
