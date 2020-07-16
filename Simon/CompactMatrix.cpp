@@ -259,34 +259,41 @@ CompactMatrixType GSOrthogonalizeWithNonOrthoBasis(const CompactMatrixType &in, 
 	}
 	CompactMatrixType out;
 	CompactMatrixCopy(in, &out);
+	uint Nj = out.Nj;
 	for (uint i = 0; i < (uint) out.Ni; ++i)
 	{
 		for (uint j = 0; j < i; ++j)
 		{
 			double overl = 0;
-			for (uint k = 0; k < out.Nj; ++k)
+			for (uint k = 0; k < Nj; ++k)
 			{
-				for (uint l = 0; l < out.Nj; ++l)
+				for (uint l = 0; l < Nj; ++l)
 				{
-					overl += out.VRe[j * out.Nj + k] * Overlap.VRe[k * Overlap.Nj + l] * out.VRe[i * in.Nj + l];
+					overl += out.VRe[j * Nj + k] * Overlap.VRe[k * Nj + l] * out.VRe[i * Nj + l];
 				}
 			}
-			for (uint k = 0; k < out.Nj; ++k)
+			if (overl != 0)
 			{
-				out.VRe[i * out.Nj + k] -= overl * out.VRe[j * out.Nj + k];
+				for (uint k = 0; k < Nj; ++k)
+				{
+					out.VRe[i * Nj + k] -= overl * out.VRe[j * Nj + k];
+				}
 			}
 		}
 		double norm = 0;
-		for (uint k = 0; k < out.Nj; ++k)
+		for (uint k = 0; k < Nj; ++k)
 		{
-			for (uint l = 0; l < out.Nj; ++l)
+			for (uint l = 0; l < Nj; ++l)
 			{
-				norm += out.VRe[i * out.Nj + k] * Overlap.VRe[k * Overlap.Nj + l] * out.VRe[i * out.Nj + l];
+				norm += out.VRe[i * Nj + k] * Overlap.VRe[k * Nj + l] * out.VRe[i * Nj + l];
 			}
 		}
-		norm = 1.0 / sqrt(norm);
-		for (uint j = 0; j < (uint) out.Nj; ++j)
-			out.VRe[i * out.Ni + j] = out.VRe[i * out.Ni + j] * norm;
+		if (norm != 1.0)
+		{
+			norm = 1.0 / sqrt(norm);
+			for (uint j = 0; j < (uint) Nj; ++j)
+				out.VRe[i * Nj + j] = out.VRe[i * Nj + j] * norm;
+		}
 	}
 	return out;
 }
