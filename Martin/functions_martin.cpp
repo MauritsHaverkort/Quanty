@@ -1860,12 +1860,18 @@ void lua_check(lua_State *L, uint32_t n, T* &in)
 */
 static int LuaMartinTest(lua_State *L)
 {
-	vector<Interpolation::InterpolatingFunction *> G;
+	vector<Interpolation::InterpolatingFunction *> G,F;
 	lua_check(L,1,G);
+	lua_check(L,2,F);
 
-	double Fk = Slater_Integrate(0,(G[1])->x,(G[0])->y,(G[1])->y,(G[2])->y,(G[3])->y);
-	printf("%.16E\n",Fk);
-    return 1;
+	double Fk = Slater_Integrate(0,(G[1])->x,(G[0])->y,(G[1])->y,(G[2])->y,(G[3])->y,(F[0])->y,(F[1])->y,(F[2])->y,(F[3])->y);
+	printf("%.16f\n",Fk);
+	Fk = Slater_Integrate(0,(G[1])->x,(G[0])->y,(G[1])->y,(G[2])->y,(G[3])->y);
+	Fk +=Slater_Integrate(0,(G[1])->x,(F[0])->y,(F[1])->y,(F[2])->y,(F[3])->y);
+	Fk +=Slater_Integrate(0,(G[1])->x,(F[0])->y,(G[1])->y,(F[2])->y,(G[3])->y);
+	Fk +=Slater_Integrate(0,(G[1])->x,(G[0])->y,(F[1])->y,(G[2])->y,(F[3])->y);
+	printf("%.16f\n",Fk);
+    return 0;
 
 }
 
