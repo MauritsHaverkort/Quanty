@@ -24,6 +24,7 @@
 #include "BreitInteraction.cpp"
 #include "Hartree-Fock/Hartree-Fock.cpp"
 #include "Slater_Rework/Slater_Integrals.cpp"
+#include "Slater_Rework/Coulomb_Operator.cpp"
 
 
 static int LuaOperatorNewFullCoulomb (lua_State *L)
@@ -1864,13 +1865,13 @@ static int LuaMartinTest(lua_State *L)
 	lua_check(L,1,G);
 	lua_check(L,2,F);
 
-	double Fk = Slater_Integrate(0,(G[1])->x,(G[0])->y,(G[1])->y,(G[2])->y,(G[3])->y,(F[0])->y,(F[1])->y,(F[2])->y,(F[3])->y);
+	double Fk = Slater_Integrate(0,(G[0])->x,(G[0])->y,(G[0])->y,(G[1])->y,(G[0])->y,(F[0])->y,(F[0])->y,(F[1])->y,(F[0])->y);
 	printf("%.16f\n",Fk);
-	Fk = Slater_Integrate(0,(G[1])->x,(G[0])->y,(G[1])->y,(G[2])->y,(G[3])->y);
+/*	Fk = Slater_Integrate(0,(G[1])->x,(G[0])->y,(G[1])->y,(G[2])->y,(G[3])->y);
 	Fk +=Slater_Integrate(0,(G[1])->x,(F[0])->y,(F[1])->y,(F[2])->y,(F[3])->y);
 	Fk +=Slater_Integrate(0,(G[1])->x,(F[0])->y,(G[1])->y,(F[2])->y,(G[3])->y);
 	Fk +=Slater_Integrate(0,(G[1])->x,(G[0])->y,(F[1])->y,(G[2])->y,(F[3])->y);
-	printf("%.16f\n",Fk);
+	printf("%.16f\n",Fk);*/
     return 0;
 
 }
@@ -2719,7 +2720,8 @@ static const struct luaL_Reg Martin_meta[] = {
  */
 
 static const struct luaL_Reg Martin_func[] = {
-  {"NewCoulomb", LuaOperatorNewFullCoulomb},
+  //{"NewCoulomb", LuaOperatorNewFullCoulomb},
+  {"NewCoulomb", LuaCreate_Relativistic_Coulomb_Operator},
   {"NewDirac", LuaOperatorNewDirac},
   {"ContinuumBase",LuaCreateBaseForContinuum},
   {"ReadFPLOBasis",LuaReadFPLOBasis},
