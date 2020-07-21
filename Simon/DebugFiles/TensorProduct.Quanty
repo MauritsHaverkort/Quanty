@@ -5,22 +5,25 @@ function errorHappened()
     errorCount = errorCount + 1
 end
 
-function test(p1, p2, pNew)
+function test(i, j)
+    psiNew = Simon.TensorProduct(psi[i],psi[j])
     --TODO: I don't know better criteria...
-    if pNew.NF ~= p1.NF + p2.NF then
+    if psiNew.NF ~= psi[i].NF + psi[j].NF then
         errorHappened()
-    elseif pNew.N ~= p1.N * p2.N then
+    elseif psiNew.N ~= psi[i].N * psi[j].N then
         errorHappened()
-    elseif ((p1.Complex or p2.Complex) and not pNew.Complex) or ((not p1.Complex and not p2.Complex) and pNew.Complex) then
+    elseif ((psi[i].Complex or psi[j].Complex) and not psiNew.Complex) or ((not psi[i].Complex and not psi[j].Complex) and psiNew.Complex) then
         errorHappened()
-    elseif Chop( pNew*pNew - 1, 1e-10) ~= 0 then
+    elseif Chop( psiNew*psiNew - 1, 1e-10) ~= 0 then
+        errorHappened()
+    elseif (i ~= j) and ( Chop( psiNew - Simon.TensorProduct(psi[j],psi[i]) ).N == 0 ) then
         errorHappened()
     end
 end
 
 psi = {}
 psi[#psi+1] = NewWavefunction(1, 0, {{"1",1}})
-psi[#psi+1] = NewWavefunction(1, 0, {{"1",I}})
+psi[#psi+1] = NewWavefunction(2, 0, {{"10",I}})
 psi[#psi+1] = NewWavefunction(6, 0, {{"100000",math.sqrt(1/2)}, {"000001",math.sqrt(1/2)}})
 psi[#psi+1] = NewWavefunction(4, 0, {{"0100",5}, {"0001",1}})
 psi[#psi+1] = NewWavefunction(4, 0, {{"0100",5}, {"0001",1 + I}})
@@ -31,17 +34,16 @@ for i = 1,#psi do
     psi[i].Normalize()
 end
 
-for key1, psi1 in pairs(psi) do
-    for key2, psi2 in pairs(psi) do
-        psiNew = Simon.TensorProduct( psi1, psi2 )
-        test(psi1,psi2,psiNew)
-        psiNew = nil
-        collectgarbage()
+for i= 1,#psi do
+    for j =1,#psi do
+        test(i,j)
     end
 end
 
 if errorCount == 0 then
     print("Everything went according to plan.")
+else
+    print(errorCount.." errors detected.")
 end
 
 os.exit(errorCount)
