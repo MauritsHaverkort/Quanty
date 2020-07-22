@@ -6650,6 +6650,7 @@ void extractPartialOperator(OperatorType * const O, OperatorType * const OPartia
   {
 		extractPartialOperatorFixedLength(O, OPartial, indices, criterion, length, changeInput);
   }
+	SetQComplexOperator(OPartial);
 }
 
 void extractPartialOperator(OperatorType * const O, OperatorType * const OPartial, const vector<vector<uint16_t> > &indices, bool (*criterion)(const uint16_t * const, const uint, const vector<vector<uint16_t> >&))
