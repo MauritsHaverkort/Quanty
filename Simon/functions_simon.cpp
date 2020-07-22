@@ -149,6 +149,7 @@ static const struct luaL_Reg Simon_func[] = {
 	{"OrthogonalizeWithNonOrthoBasis", LuaOrthogonalizeWithNonOrthoBasis},
 	{"lsCouplingConstants", LuaLSCouplingConstants},
 	{"FileReadOrca", LuaFileReadOrca},
+	{"PrepareOperatorForEmptyOrbitals",LuaPrepareOperatorForEmptyOrbitals},
 	{"RealspaceDensity", LuaRealspaceDensity},
 	{"RemoveSpin", LuaRemoveSpin},
 	{"SortByKappa",LuaSortByKappa},
