@@ -1,0 +1,20 @@
+errorCount = 0
+
+function test(a,b)
+    if (Chop(a-b).N ~= 0) then
+        print("Oh no, something went wrong!")
+        errorCount = errorCount + 1
+    end
+end
+
+O = NewOperator(2, 0, {{0,-0,I},{0,1,-0,-1,  1}})
+psi = NewWavefunction(2, 0, {{"11",1}})
+Opsi = NewWavefunction(2,0,{{"11",-1+I}})
+--O = Chop(O)
+test(O*psi, Opsi)
+
+if errorCount == 0 then
+    print("Everything went according to plan.")
+end
+
+os.exit(errorCount)

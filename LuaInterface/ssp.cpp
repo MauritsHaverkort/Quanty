@@ -657,6 +657,7 @@ static int LuaNewOperator(lua_State * L)
       lua_pop(L,1);
     }
     free(oadd);
+    SetQComplexOperator(O);
     return 1;
   }
   if(lua_type(L, 1)!=LUA_TSTRING)

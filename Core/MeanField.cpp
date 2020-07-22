@@ -1313,6 +1313,7 @@ uint32_t partialMeanFieldOperator(const OperatorType * const O, OperatorType * c
 		OperatorAdd(OPartialMF, MeanFieldPart);
 		OperatorChop(OPartialMF, 0);
 	}
+	SetQComplexOperator(OPartialMF);
 	FreeOperator(&MeanFieldPartTmp);
 	FreeOperator(&MeanFieldPart);
 	return 0;
