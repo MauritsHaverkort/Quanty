@@ -1,0 +1,3 @@
+O = NewOperator(2, 0, {{0,-0,I},{0,1,-0,-1,  1}})
+psi = NewWavefunction(2, 0, {{"11",1}})
+print(O*psi) 
