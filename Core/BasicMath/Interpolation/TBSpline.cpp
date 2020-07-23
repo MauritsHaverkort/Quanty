@@ -18,6 +18,15 @@ TBSpline::~TBSpline() {
 	// TODO Auto-generated destructor stub
 }
 
+TBSpline::TBSpline(const std::vector<double> &u,const std::vector<double> &k,const std::vector<double> &v, uint32_t n)
+{
+	y = v;
+	degree = n;
+	knots = k;
+	x = u;
+	type = "BSpline";
+}
+
 void TBSpline::Create(const std::vector<double> &u, const std::vector<double> &v,uint32_t n)
 {
 	y = v;
@@ -40,6 +49,7 @@ void TBSpline::Create(const std::vector<double> &u, const std::vector<double> &v
 	{
 		printf("Error TBSpline.Create: dgesv info = %i\n",info);
 	}
+	type = "BSpline";
 
 }
 

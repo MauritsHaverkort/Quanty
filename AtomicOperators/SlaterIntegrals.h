@@ -7,7 +7,7 @@ SSlaterIntegral *GetSlaterIntegrals(const vector<Interpolation::InterpolatingFun
 
 SSlaterIntegral *GetSlaterIntegralsTwoFilled(const vector<vector<double> > &basisfuns,const vector<double> &x,const vector<int> &indToK, unsigned int &NIntegrals);
 SSlaterIntegral *GetSlaterIntegralsOneFilled(const vector<vector<double> > &basisfuns,const vector<double> &x,const vector<int> &indToK1,const vector<int> &indToK2, unsigned int &NIntegrals);
-
+void GetSlaterIntegrals(const vector<BSpline::TBSpline *> &G,const vector<BSpline::TBSpline *> &F, const vector<int> &indToK,uint32_t Nweights, vector<SSlaterIntegral> &si);
 void CalculateSlaterIntegrals(const int NIntegrals, SSlaterIntegral *integrals, const int dim,
                               double **kernels,const vector<vector<double> > &basisfuns,const vector<vector<double> > &dualfuns);
 

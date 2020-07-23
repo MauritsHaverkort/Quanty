@@ -506,4 +506,3 @@ double CalcOneNorm(const WaveFunctionType &psi)
 
 
 
-

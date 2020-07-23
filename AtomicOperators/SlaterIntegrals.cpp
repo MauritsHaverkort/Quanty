@@ -1,4 +1,5 @@
 #include "../AtomicOperators/SlaterIntegrals.h"
+#include "../Martin/Hartree-Fock/Hartree-Fock.h"
 
 SSlaterIntegral *GetSlaterIntegrals(const vector<vector<double> > &basisfuns,const vector<double> &x,const vector<int> &indToK, unsigned int &NIntegrals, bool Qcontinuum)
 {
@@ -124,6 +125,159 @@ SSlaterIntegral *GetSlaterIntegrals(const vector<Interpolation::InterpolatingFun
     //cout << "CalcSlater: " << (clock()-t)*1.0/CLOCKS_PER_SEC << endl;
 
     return si;
+}
+
+void GetSlaterIntegrals(const vector<BSpline::TBSpline *> &G,const vector<BSpline::TBSpline *> &F, const vector<int> &indToK,uint32_t Nweights, vector<SSlaterIntegral> &si)
+{
+
+	uint32_t quadDegree = 3;
+	uint32_t kMax = 0;
+	vector<vector<double> > kernels;
+	uint32_t Nfuns = (uint32_t) G.size();
+	uint32_t n = G[0]->degree;
+
+
+	kMax = 2 * Abs(MaxAbs(indToK)) -1;
+	vector<vector<double> > rk1 = vector<vector<double> >(kMax+1);
+	vector<vector<double> > rk2 = vector<vector<double> >(kMax+1);
+	vector<vector<double> > rkD = vector<vector<double> >(kMax+1);
+	vector<double> BSval;
+	BeginTiming("Slater Init", &GlobalTime);
+//	uint32_t Nweights = n +10;
+	HartreeFock::PutBSplinesOnQuadGrid(G[0]->knots,n,Nweights,BSval);
+	for (uint32_t k = 0; k <= kMax; k++)
+	{
+		HartreeFock::CalcOffDiagSlaterInts(G[0]->knots,BSval,Nweights,rk1[k],rk2[k],k,n);
+		HartreeFock::CalcDiagSlaterInts(G[0]->knots,BSval,Nweights,rkD[k],k,n);
+	}
+	EndTiming("Slater Init", &GlobalTime);
+	//printf("init done\n");
+	BeginTiming("Slater Calculate", &GlobalTime);
+#pragma omp parallel for
+	for (uint32_t i1 = 0; i1 < Nfuns; i1++)
+	{
+		SSlaterIntegral Integral;
+		int k_i1 = indToK[i1];
+		for (uint32_t j1 = i1; j1 < Nfuns; j1++)
+		{
+			int k_j1 = indToK[j1];
+			for (uint32_t i2 = i1; i2 < Nfuns; i2++)
+			{
+				int k_i2 = indToK[i2];
+				for (uint32_t j2 = j1; j2 < Nfuns; j2++)
+				{
+					int k_j2 = indToK[j2];
+				    uint32_t k0 = (uint32_t) fmax( abs( abs(k_i1)-abs(k_i2) ), abs( abs(k_j1)-abs(k_j2) ) );
+				    uint32_t k1 = (uint32_t) fmin( abs(k_i1)+abs(k_i2), abs(k_j1)+abs(k_j2) ) -1;
+
+				    if ( (abs(k_i1)+abs(k_i2) + (Sign(k_i1)+Sign(k_i2))/2 + k0) % 2 == 0)
+				    {
+				        k0++;
+				    }
+				    if (k0 <= k1)
+				    {
+						Integral.tau.kappa[0] = k_i1;
+						Integral.tau.kappa[1] = k_j1;
+						Integral.tau.kappa[2] = k_i2;
+						Integral.tau.kappa[3] = k_j2;
+						Integral.tau.n[0] = i1;
+						Integral.tau.n[1] = j1;
+						Integral.tau.n[2] = i2;
+						Integral.tau.n[3] = j2;
+						Integral.Nval = (k1-k0)/2 +1;
+						Integral.val = (double*) malloc(Integral.Nval * sizeof(double)) ;
+						Integral.k = (unsigned int*) malloc(Integral.Nval * sizeof(unsigned int)) ;
+						for (uint32_t k = k0; k <= k1; k +=2)
+						{
+							uint32_t idx = (k - k0)/2;
+							Integral.k[idx] = k;
+							Integral.val[idx] = HartreeFock::AssembleSlaterInts2(G[i1]->y,G[j1]->y,G[i2]->y,G[j2]->y,rk1[k],rk2[k],rkD[k],n)
+											  + HartreeFock::AssembleSlaterInts2(G[i1]->y,F[j1]->y,G[i2]->y,F[j2]->y,rk1[k],rk2[k],rkD[k],n)
+											  + HartreeFock::AssembleSlaterInts2(F[i1]->y,G[j1]->y,F[i2]->y,G[j2]->y,rk1[k],rk2[k],rkD[k],n)
+											  + HartreeFock::AssembleSlaterInts2(F[i1]->y,F[j1]->y,F[i2]->y,F[j2]->y,rk1[k],rk2[k],rkD[k],n);
+						}
+#pragma omp critical
+						si.push_back(Integral);
+				    }
+				}
+			}
+		}
+	}
+	EndTiming("Slater Calculate", &GlobalTime);
+}
+
+void GetSlaterIntegrals(const vector<BSpline::TBSpline *> &G, const vector<int> &indToK,uint32_t Nweights, vector<SSlaterIntegral> &si)
+{
+
+	uint32_t quadDegree = 3;
+	uint32_t kMax = 0;
+	vector<vector<double> > kernels;
+	uint32_t Nfuns = (uint32_t) G.size();
+	uint32_t n = G[0]->degree;
+	SSlaterIntegral Integral;
+
+	kMax = 2 * Abs(MaxAbs(indToK)) -1;
+	vector<vector<double> > rk1 = vector<vector<double> >(kMax+1);
+	vector<vector<double> > rk2 = vector<vector<double> >(kMax+1);
+	vector<vector<double> > rkD = vector<vector<double> >(kMax+1);
+	vector<double> BSval;
+	BeginTiming("Slater Init", &GlobalTime);
+//	uint32_t Nweights = n +10;
+	HartreeFock::PutBSplinesOnQuadGrid(G[0]->knots,n,Nweights,BSval);
+	for (uint32_t k = 0; k <= kMax; k++)
+	{
+		HartreeFock::CalcOffDiagSlaterInts(G[0]->knots,BSval,Nweights,rk1[k],rk2[k],k,n);
+		HartreeFock::CalcDiagSlaterInts(G[0]->knots,BSval,Nweights,rkD[k],k,n);
+	}
+	EndTiming("Slater Init", &GlobalTime);
+//	printf("init done\n Nfuns = %u\n",Nfuns);
+	BeginTiming("Slater Calculate", &GlobalTime);
+	for (uint32_t i1 = 0; i1 < Nfuns; i1++)
+	{
+		int k_i1 = indToK[i1];
+		for (uint32_t j1 = i1; j1 < Nfuns; j1++)
+		{
+			int k_j1 = indToK[j1];
+			for (uint32_t i2 = i1; i2 < Nfuns; i2++)
+			{
+				int k_i2 = indToK[i2];
+				for (uint32_t j2 = j1; j2 < Nfuns; j2++)
+				{
+					int k_j2 = indToK[j2];
+				    uint32_t k0 = (uint32_t) fmax( abs( abs(k_i1)-abs(k_i2) ), abs( abs(k_j1)-abs(k_j2) ) );
+				    uint32_t k1 = (uint32_t) fmin( abs(k_i1)+abs(k_i2), abs(k_j1)+abs(k_j2) ) -1;
+
+				    if ( (abs(k_i1)+abs(k_i2) + (Sign(k_i1)+Sign(k_i2))/2 + k0) % 2 == 0)
+				    {
+				        k0++;
+				    }
+				    if (k0 <= k1)
+				    {
+						//printf("i1 = %u\t21 = %u\ti2 = %u\tj2 = %u\tk0 %u\tk1 = %u\n",i1,j1,i2,j2,k0,k1);
+				    	Integral.tau.kappa[0] = k_i1;
+						Integral.tau.kappa[1] = k_j1;
+						Integral.tau.kappa[2] = k_i2;
+						Integral.tau.kappa[3] = k_j2;
+						Integral.tau.n[0] = i1;
+						Integral.tau.n[1] = j1;
+						Integral.tau.n[2] = i2;
+						Integral.tau.n[3] = j2;
+						Integral.Nval = (k1-k0)/2 +1;
+						Integral.val = (double*) malloc(Integral.Nval * sizeof(double)) ;
+						Integral.k = (unsigned int*) malloc(Integral.Nval * sizeof(unsigned int)) ;
+						for (uint32_t k = k0; k <= k1; k +=2)
+						{
+							uint32_t idx = (k - k0)/2;
+							Integral.k[idx] = k;
+							Integral.val[idx] = HartreeFock::AssembleSlaterInts2(G[i1]->y,G[j1]->y,G[i2]->y,G[j2]->y,rk1[k],rk2[k],rkD[k],n);
+						}
+						si.push_back(Integral);
+				    }
+				}
+			}
+		}
+	}
+	EndTiming("Slater Calculate", &GlobalTime);
 }
 
 void CalculateSlaterIntegrals(const int NIntegrals, SSlaterIntegral *integrals, const int dim,
