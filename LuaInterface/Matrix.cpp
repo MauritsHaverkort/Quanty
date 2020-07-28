@@ -1261,6 +1261,41 @@ static int LuaMatrixToString(lua_State * L)
 	return 1;
 }
 
+static int LuaMatrixElem(lua_State *L)
+{
+	CompactMatrixType M;
+	int i, j;
+	int len = lua_gettop(L);
+	if (len != 2) return luaL_error(L, "Error: Matrix.Elem called with %d arguments, 2 expected: i and j.", len);
+	if (!luaL_isType(L, 1, i)) return luaL_error(L, "Error: First element in Matrix.Elem should be an integer!");
+	if (!luaL_isType(L, 2, j)) return luaL_error(L, "Error: Second element in Matrix.Elem should be an integer!");
+	lua_check(L, lua_upvalueindex(1), M);
+	lua_check(L, 1, i);
+	lua_check(L, 2, j);
+	if (abs(i) > M.Ni || i == 0)
+	{
+		return luaL_error(L, "Error in Matrix.Elem: Index i=%d lies outside of range +-[1,%d].", i, M.Ni);
+	}
+	if (abs(j) > M.Nj || j == 0)
+	{
+		return luaL_error(L, "Error in Matrix.Elem: Index j=%d lies outside of range +-[1,%d].", j, M.Nj);
+	}
+	if (i < 0)
+		i = M.Ni + i;
+	else
+		--i;
+	if (j < 0)
+		j = M.Nj + j;
+	else
+		--j;
+	if ((bool) M.QComplex)
+		lua_push(L, M.V[i * M.Nj + j]);
+	else
+		lua_push(L, M.VRe[i * M.Nj + j]);
+	return 1;
+}
+
+
 
 /*
  *
@@ -1275,6 +1310,7 @@ static int LuaMatrixIndex(lua_State *L)
 	A = (CompactMatrixType*) luaL_checkCompactMatrix(L, 1);
 	if (luaL_isType(L, 2, n))
 	{
+
 		n = luaL_checknumber(L, 2);
 		i = (uint32_t) n;
 		if (Abs(n - (double) i) > (1 + Abs(n)) * DBL_EPSILON * 10) return luaL_error(L, "Index of an Array should be an integer\n");
@@ -1330,6 +1366,12 @@ static int LuaMatrixIndex(lua_State *L)
 			dim.push_back(A->Ni);
 			dim.push_back(A->Nj);
 			lua_push(L, dim);
+			return 1;
+		}
+		else if (str.compare("elem") == 0 || str.compare("Elem") == 0)
+		{
+			lua_pushvalue(L, 1);
+			lua_pushcclosure(L, LuaMatrixElem, 1);
 			return 1;
 		}
 		else
