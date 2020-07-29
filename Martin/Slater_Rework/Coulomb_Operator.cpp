@@ -5,6 +5,8 @@
  *      Author: brass
  */
 
+#define sgn(x) ((x > 0) - (x < 0))
+
 void Create_Relativistic_Coulomb_Operator(const vector<Interpolation::InterpolatingFunction*> &G,
 										  const vector<Interpolation::InterpolatingFunction*> &F,
 										  const vector<vector<uint16_t> > &indices,
@@ -34,7 +36,7 @@ void Create_Relativistic_Coulomb_Operator(const vector<Interpolation::Interpolat
 				int k4 = list_of_kappas[i4];
 				int L0 = Max( abs( abs(k1)-abs(k3) ), abs( abs(k2)-abs(k4) ) );
 				int L1 = Min( abs(k1)+abs(k3), abs(k2)+abs(k4) ) -1;
-				if ( (abs(k1)+abs(k3) + (Sign(k1)+Sign(k3))/2 + L0) % 2 == 0)
+				if ( (abs(k1)+abs(k3) + (sgn(k1)+sgn(k3))/2 + L0) % 2 == 0)
 				{
 					L0++;
 				}
