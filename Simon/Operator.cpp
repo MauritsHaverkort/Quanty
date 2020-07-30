@@ -2,10 +2,10 @@
  * If the operator is only ever to be multiplied with wavefunctions that have some empty orbitals, any annihilation term
  * acting on them can be deleted to save time. This is very specific. I need it.
  */
-void PrepareOperatorForEmptyOrbitals(OperatorType *O, const vector<uint16_t> &ind)
+void PrepareOperatorForEmptyOrbitals(OperatorType *O, const vector<uint16_t> &ind, uint minLength)
 {
 	uint16_t *oadd;
-	for (uint length = 1; length <= O->MaxLength; ++length)
+	for (uint length = minLength; length <= O->MaxLength; ++length)
 	{
 		for (uint i = 0; i < (O->l[length].N); ++i)
 		{
@@ -39,15 +39,20 @@ static int LuaPrepareOperatorForEmptyOrbitals(lua_State *L)
 {
 	OperatorType in, *out;
 	vector < uint16_t > inds;
+	uint minLength;
 	uint32_t len = (uint32_t) lua_gettop(L);
-	if (len != 2) return luaL_error(L, "Error: PrepareOperatorForEmptyOrbitals called with %d arguments, 2 expected, Operator and list of indices!", len);
+	if (len < 2 || len > 3) return luaL_error(L, "Error: PrepareOperatorForEmptyOrbitals called with %d arguments, 2 or 3 expected, Operator, list of indices and optional minimal length!", len);
 	if (!luaL_isType(L, 1, in)) return luaL_error(L, "Error in PrepareOperatorForEmptyOrbitals: First argument should be an operator!");
 	if (!luaL_isType(L, 2, inds)) return luaL_error(L, "Error in PrepareOperatorForEmptyOrbitals: Second argument should be an list of indices!");
 	lua_check(L, 1, in);
 	lua_check(L, 2, inds);
+	if (len == 3)
+		lua_check(L, 3, minLength);
+	else
+		minLength = 1;
 	out = (OperatorType*) lua_newuserdata(L, sizeof(OperatorType));
 	OperatorCopy(out, in);
-	PrepareOperatorForEmptyOrbitals(out, inds);
+	PrepareOperatorForEmptyOrbitals(out, inds, minLength);
   luaL_setmetatable(L, "Operator_Type");
 	return 1;
 }

@@ -1,7 +1,7 @@
 errorCount = 0
 
 function test(a,b)
-    if Chop(a-b).N[0] ~= 0 then
+    if #Chop(a-b).N ~= 0 then
         print("Oh no, something went wrong!")
         errorCount = errorCount + 1
     end
@@ -17,6 +17,12 @@ O = NewOperator(4,0,{{1,-0, I},{0,1,-2,-3,1},{3,1,-2,-0,1}})
 O = O + ConjugateTranspose(O)
 O2 = Simon.PrepareOperatorForEmptyOrbitals( O, {1,3} )
 O3 = NewOperator(4,0,{{1,-0,I}, {-0,-2,1,3,1}})
+test(O2,O3)
+
+O = NewOperator(4,0,{{1,-0, I},{0,1,-2,-3,1},{3,1,-2,-0,1}})
+O = O + ConjugateTranspose(O)
+O2 = Simon.PrepareOperatorForEmptyOrbitals( O, {1,3}, 4 )
+O3 = NewOperator(4,0,{{1,-0,I},{0,-1,-I}, {-0,-2,1,3,1}})
 test(O2,O3)
 
 if errorCount == 0 then
