@@ -1576,7 +1576,7 @@ static int LuaSubmatrix(lua_State * L)
 	if (len != 2 && len != 3 && len != 5)
 	{
 		return luaL_error(L,
-				"Submatrix called with %d arguments. Expected either 2 (matrix and size of submatrix), 3 (matrix, number of rows and number of columns of submatrix, or alternatively matrix, table with first and last index of row, table with first and last index of column) or 5 (matrix, first row index, number of rows, first column index, number of columns).\n",
+				"Submatrix called with %d arguments. Expected either 2 (matrix and size of submatrix, or alternatively matrix and list of indices), 3 (matrix, number of rows and number of columns of submatrix, or alternatively matrix, table with first and last index of row, table with first and last index of column) or 5 (matrix, first row index, number of rows, first column index, number of columns).\n",
 				len);
 	}
   // read matrix from stack
@@ -1595,8 +1595,24 @@ static int LuaSubmatrix(lua_State * L)
   }
 	if (len == 2)
 	{
-		int size = (int) luaL_checkinteger(L, 2);
-		*Msub = Submatrix(*M, size);
+		int size;
+		vector < uint32_t > inds;
+		if (luaL_isType(L, 2, size))
+		{
+			size = (int) luaL_checkinteger(L, 2);
+			*Msub = Submatrix(*M, size);
+		}
+		else if (luaL_isType(L, 2, inds))
+		{
+			lua_check(L, 2, inds);
+			for (uint i = 0; i < (uint) inds.size(); ++i)
+				--inds[i];
+			*Msub = Submatrix(*M, inds);
+		}
+		else
+		{
+			return luaL_error(L, "Error: Submatrix called with unknown type for second argument!");
+		}
 	}
   else if (len == 3)
 	{

@@ -4935,6 +4935,39 @@ CompactMatrixType CompactidentityMatrix(const int size)
   return CompactidentityMatrix(size, size);
 }
 
+CompactMatrixType Submatrix(const CompactMatrixType &M, const vector<uint32_t> &inds)
+{
+	for (uint i = 0; i < (uint) inds.size(); ++i)
+	{
+		if (inds[i] < 0 || inds[i] >= M.Ni || inds[i] >= M.Nj)
+		{
+			cout << "Error in Submatrix: index " << inds[i] << " out of range.";
+			return CompactnullMatrix();
+		}
+	}
+	CompactMatrixType Msub;
+	Msub.Ni = (uint32_t) inds.size();
+	Msub.Nj = (uint32_t) inds.size();
+	Msub.QComplex = M.QComplex;
+	InitCompactMatrix(&Msub);
+	Msub.OnLuaStack = M.OnLuaStack;
+	for (int i = 0; i < (uint) inds.size(); ++i)
+	{
+		for (int j = 0; j < (uint) inds.size(); ++j)
+		{
+			uint ind = inds[i] * M.Nj + inds[j];
+			if (M.QComplex == 0)
+			{
+				Msub.VRe[i * Msub.Nj + j] = M.VRe[ind];
+			}
+			else
+			{
+				Msub.V[i * Msub.Nj + j] = M.V[ind];
+			}
+		}
+	}
+	return Msub;
+}
 
 CompactMatrixType Submatrix(const CompactMatrixType &M, int rowStart, int rows, int colStart, int cols)
 {
