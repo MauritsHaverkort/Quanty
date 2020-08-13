@@ -1605,8 +1605,6 @@ static int LuaSubmatrix(lua_State * L)
 		else if (luaL_isType(L, 2, inds))
 		{
 			lua_check(L, 2, inds);
-			for (uint i = 0; i < (uint) inds.size(); ++i)
-				--inds[i];
 			*Msub = Submatrix(*M, inds);
 		}
 		else

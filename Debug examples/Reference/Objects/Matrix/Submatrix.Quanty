@@ -64,7 +64,7 @@ result = Matrix.ToUserdata( { {  13    ,  14    } ,
                             {  23    ,  24    } } )
 test()
 
-Msub = Matrix.ToUserdata( Matrix.Sub( M, {1,3,5} ) )
+Msub = Matrix.ToUserdata( Matrix.Sub( M, {1-1,3-1,5-1} ) )
 result = Matrix.ToUserdata( { { 11, 13, 15},
                               { 31, 33, 35},
                               { 51, 53, 55}} )
