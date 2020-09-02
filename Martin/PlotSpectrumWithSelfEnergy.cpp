@@ -101,19 +101,25 @@ CompactMatrixType *EvaluateSelfEnergy(double w, double gS, const std::vector<Res
 void WriteDataToFile(CompactMatrixType * M, const char *filename)
 {
 	FILE *f = fopen(filename,"wb");
-
-	fwrite(&(M->QComplex),sizeof(uint32_t),1,f);
-	fwrite(&(M->Ni),sizeof(uint32_t),1,f);
-	fwrite(&(M->Nj),sizeof(uint32_t),1,f);
-	if (M->QComplex)
+	if (f)
 	{
-		fwrite(M->V,sizeof(Complex16),M->Ni*M->Nj,f);
+		fwrite(&(M->QComplex),sizeof(uint32_t),1,f);
+		fwrite(&(M->Ni),sizeof(uint32_t),1,f);
+		fwrite(&(M->Nj),sizeof(uint32_t),1,f);
+		if (M->QComplex)
+		{
+			fwrite(M->V,sizeof(Complex16),M->Ni*M->Nj,f);
+		}
+		else
+		{
+			fwrite(M->VRe,sizeof(double),M->Ni*M->Nj,f);
+		}
+		fclose(f);
 	}
 	else
 	{
-		fwrite(M->VRe,sizeof(double),M->Ni*M->Nj,f);
+		std::cout << "Error in WriteDataToFile: cannot open file" << filename << std::endl;
 	}
-	fclose(f);
 
 }
 
@@ -121,18 +127,24 @@ template<typename F>
 void WriteDataToFile(LinAlg::CSRMatrix<F> *M, const char *filename)
 {
 	FILE *f = fopen(filename,"wb");
-
-	fwrite(&(M->Ncol), sizeof(uint32_t), 1, f);
-	size_t N = M->A.size();
-	fwrite(&N, sizeof(size_t), 1, f);
-	fwrite(&(M->A[0]), sizeof(F), N, f);
-	N = M->AI.size();
-	fwrite(&N, sizeof(size_t), 1, f);
-	fwrite(&(M->AI[0]), sizeof(uint32_t), N, f);
-	N = M->AJ.size();
-	fwrite(&N, sizeof(size_t), 1, f);
-	fwrite(&(M->AJ[0]), sizeof(uint32_t), N, f);
-	fclose(f);
+	if (f)
+	{
+		fwrite(&(M->Ncol), sizeof(uint32_t), 1, f);
+		size_t N = M->A.size();
+		fwrite(&N, sizeof(size_t), 1, f);
+		fwrite(&(M->A[0]), sizeof(F), N, f);
+		N = M->AI.size();
+		fwrite(&N, sizeof(size_t), 1, f);
+		fwrite(&(M->AI[0]), sizeof(uint32_t), N, f);
+		N = M->AJ.size();
+		fwrite(&N, sizeof(size_t), 1, f);
+		fwrite(&(M->AJ[0]), sizeof(uint32_t), N, f);
+		fclose(f);
+	}
+	else
+	{
+		std::cout << "Error in WriteDataToFile: cannot open file" << filename << std::endl;
+	}
 
 }
 // M has to be allocated at input as M = (LinAlg::CSRMatrix<F> *) malloc(sizeof(LinAlg::CSRMatrix<F>));
@@ -215,23 +227,30 @@ void ReadDataFromFile(CompactMatrixType * M, const char *filename)
 void WriteDataToFile(std::vector<CompactMatrixType *> Ms, const char *filename)
 {
 	FILE *f = fopen(filename,"wb");
-	size_t N = Ms.size();
-	fwrite(&N,sizeof(size_t),1,f);
-	for (uint32_t i = 0; i < N; i++)
+	if (f)
 	{
-		fwrite(&(Ms[i]->QComplex),sizeof(uint32_t),1,f);
-		fwrite(&(Ms[i]->Ni),sizeof(uint32_t),1,f);
-		fwrite(&(Ms[i]->Nj),sizeof(uint32_t),1,f);
-		if (Ms[i]->QComplex)
+		size_t N = Ms.size();
+		fwrite(&N,sizeof(size_t),1,f);
+		for (uint32_t i = 0; i < N; i++)
 		{
-			fwrite(Ms[i]->V,sizeof(Complex16),Ms[i]->Ni*Ms[i]->Nj,f);
+			fwrite(&(Ms[i]->QComplex),sizeof(uint32_t),1,f);
+			fwrite(&(Ms[i]->Ni),sizeof(uint32_t),1,f);
+			fwrite(&(Ms[i]->Nj),sizeof(uint32_t),1,f);
+			if (Ms[i]->QComplex)
+			{
+				fwrite(Ms[i]->V,sizeof(Complex16),Ms[i]->Ni*Ms[i]->Nj,f);
+			}
+			else
+			{
+				fwrite(Ms[i]->VRe,sizeof(double),Ms[i]->Ni*Ms[i]->Nj,f);
+			}
 		}
-		else
-		{
-			fwrite(Ms[i]->VRe,sizeof(double),Ms[i]->Ni*Ms[i]->Nj,f);
-		}
+		fclose(f);
 	}
-	fclose(f);
+	else
+	{
+		std::cout << "Error in WriteDataToFile: cannot open file" << filename << std::endl;
+	}
 }
 
 void ReadDataFromFile(std::vector<CompactMatrixType *> &Ms, const char *filename)
