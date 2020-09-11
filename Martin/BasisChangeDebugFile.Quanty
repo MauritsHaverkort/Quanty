@@ -1,0 +1,31 @@
+NF = 2
+psiR1 = NewWavefunction(NF, 0, {{"10",1}})
+psiR2 = NewWavefunction(NF, 0, {{"01",1}})
+psiC1 = NewWavefunction(NF, 0, {{"10",1 + I}})
+psiC2 = NewWavefunction(NF, 0, {{"01",1 + I}})
+
+psiRList = {psiR1, psiR2}
+psiCList = {psiC1, psiC2}
+psiMList = {psiR1, psiC2}
+
+UR = {{1,2},{3,4}}
+UC = {{1,2},{3+I,4}}
+
+function test(list,U)
+    local res = Martin.BasisChange(list,U)
+end
+
+print("Real List, Real Matrix")
+test(psiRList, UR)
+print("Real List, Complex Matrix")
+test(psiRList, UC)
+print("Complex List, Real Matrix")
+test(psiCList, UR)
+print("Complex List, Complex Matrix")
+test(psiCList, UC)
+print("Mixed List, Real Matrix")
+test(psiMList, UR)
+print("Mixed List, Complex Matrix")
+test(psiMList, UC)
+
+print("No error - That's nice!")
