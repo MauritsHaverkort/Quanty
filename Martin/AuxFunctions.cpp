@@ -454,7 +454,7 @@ static int LuaBasisChange(lua_State *L)
         psi[j].QComplex = basis[0].QComplex;
         psi[j].NBitsKey = basis[0].NBitsKey;
         WaveFunctionInit(&(psi[j]));
-        if (psi.size() < U[j].size()) printf("error in LuaBasisChange, not enough wave-functions in list\n");
+        if (basis.size() < U[j].size()) printf("error in LuaBasisChange, not enough wave-functions in list\n");
         for (uint32_t i = 0; i < (uint32_t) U[j].size(); i++)
         {
             RealWaveFunctionAddMultipliedUnionBasis(&(psi[j]),basis[i],U[j][i]);
