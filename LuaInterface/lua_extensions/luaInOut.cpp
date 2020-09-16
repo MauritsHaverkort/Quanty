@@ -399,8 +399,7 @@ bool luaL_isType(lua_State *L, int arg, const CompactMatrixType &example)
 	if (lua_istable(L, arg))
 	{
 		uint len = (uint) lua_objlen(L, arg);
-		if (len == 0)
-			return false;
+		if (len == 0) return false;
 
 		lua_rawgeti(L, arg, 1);
 		uint len_row = (uint) lua_objlen(L, -1);
@@ -432,6 +431,7 @@ bool luaL_isType(lua_State *L, int arg, const vector<T> &example)
 	if (lua_istable(L, arg))
 	{
 		uint len = (uint) lua_objlen(L, arg);
+		if (len == 0) return false;
 		for (uint i = 1; i <= len; ++i)
 		{
 			lua_rawgeti(L, arg, i);
@@ -486,6 +486,7 @@ bool luaL_isType(lua_State *L, int arg, const map<keyType, valType> &example)
 	} else
 	{
 		uint len = (uint) lua_objlen(L, arg);
+		if (len == 0) return false;
 		for (uint i = 1; i <= len; ++i)
 		{
 			lua_rawgeti(L, arg, i);
@@ -531,6 +532,7 @@ bool luaL_isType(lua_State *L, int arg, const map<keyType, vector<valType> > &ex
 	} else
 	{
 		uint len = (uint) lua_objlen(L, arg);
+		if (len == 0) return false;
 		for (uint i = 1; i <= len; ++i)
 		{
 			lua_rawgeti(L, arg, i);
