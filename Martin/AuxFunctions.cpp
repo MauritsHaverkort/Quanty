@@ -498,7 +498,10 @@ static int LuaBasisChange(lua_State *L)
 	vector<WaveFunctionType> basis, psi;
 	vector < vector<double> > U;
 	vector < vector<Complex16> > UC;
-	lua_check(L, 1, basis);
+	if (luaL_isType(L, 1, basis))
+		lua_check(L, 1, basis);
+	else
+		return luaL_error(L, "Error in BasisChange: First argument should be a list of wavefunctions!");
 	if (luaL_isType(L, 2, U))
 	{
 		lua_check(L, 2, U);
