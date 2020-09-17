@@ -107,15 +107,34 @@ WaveFunctionType WaveFunctionTensorProduct(const WaveFunctionType &psi1, const W
 static int LuaTensorProduct(lua_State *L)
 {
 	WaveFunctionType psi1, psi2;
+	vector<WaveFunctionType> psi1vec, psi2vec;
 	uint32_t len = (uint32_t) lua_gettop(L);
 	if (len != 2) return luaL_error(L, "Error: TensorProduct called with %d arguments, exactly 2 expected.", len);
-	if (luaL_isType(L, 1, psi1))
+	if (luaL_isType(L, 1, psi1) && luaL_isType(L, 2, psi2))
 	{
-		if (!luaL_isType(L, 2, psi2)) return luaL_error(L, "Error in TensorProduct: First argument is of type Wavefunction, second argument is not.");
 		lua_check(L, 1, psi1);
 		lua_check(L, 2, psi2);
 		if (psi1.NBoson != 0 || psi2.NBoson != 0) return luaL_error(L, "One of the Wavefunctions contains bosonic states, this is not yet implemented.");
 		lua_push(L, WaveFunctionTensorProduct(psi1, psi2));
+	}
+	else if (luaL_isType(L, 1, psi1vec) && luaL_isType(L, 2, psi2vec))
+	{
+		lua_check(L, 1, psi1vec);
+		lua_check(L, 2, psi2vec);
+		for (uint i = 0; i < (uint) psi1vec.size(); ++i)
+			if (psi1vec[i].NBoson != 0) return luaL_error(L, "One of the Wavefunctions contains bosonic states, this is not yet implemented.");
+		for (uint i = 0; i < (uint) psi2vec.size(); ++i)
+			if (psi2vec[i].NBoson != 0) return luaL_error(L, "One of the Wavefunctions contains bosonic states, this is not yet implemented.");
+		vector < WaveFunctionType > out(psi1vec.size() * psi2vec.size());
+#pragma omp parallel for
+		for (uint ij = 0; ij < (uint) out.size(); ++ij)
+		{
+			uint i, j;
+			j = ij % (uint) psi1vec.size();
+			i = (ij - j) / (uint) psi2vec.size();
+			out[ij] = WaveFunctionTensorProduct(psi1vec[i], psi2vec[j]);
+		}
+		lua_push(L, out);
 	}
 	else
 	{

@@ -5,23 +5,22 @@ function errorHappened()
     errorCount = errorCount + 1
 end
 
-function test(i, j)
-    psiNew = Simon.TensorProduct(psi[i],psi[j])
-    if psiNew.NF ~= psi[i].NF + psi[j].NF then
+function test(psiNew, psi1, psi2)
+    if psiNew.NF ~= psi1.NF + psi2.NF then
         errorHappened()
-    elseif psiNew.N ~= psi[i].N * psi[j].N then
+    elseif psiNew.N ~= psi1.N * psi2.N then
         errorHappened()
-    elseif ((psi[i].Complex or psi[j].Complex) and not psiNew.Complex) or ((not psi[i].Complex and not psi[j].Complex) and psiNew.Complex) then
+    elseif ((psi1.Complex or psi2.Complex) and not psiNew.Complex) or ((not psi1.Complex and not psi2.Complex) and psiNew.Complex) then
         errorHappened()
     elseif Chop( psiNew*psiNew - 1, 1e-10) ~= 0 then
         errorHappened()
-    elseif (i ~= j) and ( Chop( psiNew - Simon.TensorProduct(psi[j],psi[i]) ).N == 0 ) then
+    elseif (i ~= j) and ( Chop( psiNew - Simon.TensorProduct(psi2,psi1) ).N == 0 ) then
         errorHappened()
     else
-        for k = 1,psi[i].N do
-            for l = 1,psi[j].N do
-                local ind = (k-1)*psi[j].N + l
-                psiTest = Chop( psiNew.Det(ind) - Simon.TensorProduct( psi[i].Det(k), psi[j].Det(l) ) )
+        for k = 1,psi1.N do
+            for l = 1,psi2.N do
+                local ind = (k-1)*psi2.N + l
+                psiTest = Chop( psiNew.Det(ind) - Simon.TensorProduct( psi1.Det(k), psi2.Det(l) ) )
                 if psiTest.N ~= 0 then
                     errorHappened()
                 end
@@ -36,16 +35,22 @@ psi[#psi+1] = NewWavefunction(2, 0, {{"10",I}})
 psi[#psi+1] = NewWavefunction(6, 0, {{"100000",math.sqrt(1/2)}, {"000001",math.sqrt(1/2)}})
 psi[#psi+1] = NewWavefunction(4, 0, {{"0100",5}, {"0001",1}})
 psi[#psi+1] = NewWavefunction(4, 0, {{"0100",5}, {"0001",1 + I}})
-psi[#psi+1] = NewWavefunction(8, 0, {{"10011000",I}, {"00100101",-30*I}})
+psi[#psi+1] = NewWavefunction(8, 0, {{"1001 1000",I}, {"0010 0101",-30*I}})
 psi[#psi+1] = NewWavefunction(4, 0, {{"0001",1}, {"0010",1}, {"0011",1}, {"0100",1}, {"0101",1}, {"0110",1}, {"0111",1}, {"1000",1}, {"1001",1}, {"1010",1}, {"1011",1}, {"1100",1}, {"1101",1}, {"1110",1}, {"1111",1}})
+psi[#psi+1] = NewWavefunction(16, 0, {{"0100 0100 0100 0100",1}, {"0001 0001 0001 0001",2}}, {{"NBitsKey",1}})
+psi[#psi+1] = NewWavefunction(16, 0, {{"0100 0100 0100 0100",3 + 4*I}, {"0001 0001 0001 0001",5}}, {{"NBitsKey",1}})
 
 for i = 1,#psi do
     psi[i].Normalize()
 end
 
+psiPsi = Simon.TensorProduct(psi,psi)
 for i= 1,#psi do
     for j =1,#psi do
-        test(i,j)
+        local psiProd = Simon.TensorProduct(psi[i],psi[j])
+        test(psiProd,psi[i],psi[j])
+        local ij = (i-1) * #psi + j
+        test(psiPsi[ij],psi[i],psi[j])
     end
 end
 
