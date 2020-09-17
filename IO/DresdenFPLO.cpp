@@ -55,7 +55,7 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
   char *phrase[1024] = {NULL}, tmpstr[1024];
   double tmpvec[3];
   uint32_t Nphrase, Nwandef, Nimag=0, i, j, ihop=0, iatom;
-  const int NhopMax=1024;
+  int NhopMax=1024;
   O->Lattice.Molecule=false;
   ReadLine[1023] = '\0';
   for(i=0;i<3;i++)
@@ -248,8 +248,16 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
           ihop = ihop+1;
           if(ihop > NhopMax)
           {
-            printf("Warning: The length of matrix element is larger than the allocated matrix (%d).\nThe rest of the hoppings are ignored.\n", NhopMax);
-          }
+						NhopMax *= 2;
+						O->Wannier.HopVec[i] = (double**) realloc(O->Wannier.HopVec[i], NhopMax * sizeof(double*));
+						O->Wannier.HopVal[i] = (double*) realloc(O->Wannier.HopVal[i], NhopMax * sizeof(double));
+						O->Wannier.HopValIm[i] = (double*) realloc(O->Wannier.HopValIm[i], NhopMax * sizeof(double));
+						if (O->Wannier.HopVec[i] == NULL || O->Wannier.HopVal[i] == NULL || O->Wannier.HopValIm[i] == NULL)
+						{
+							cout << "\nError in ReadDresdenFPLO: Could not allocate memory for hopping to and from site " << (i + 1) << endl;
+							return 1;
+						}
+					}
           else
           {
             O->Wannier.Nhop[i] = ihop;
