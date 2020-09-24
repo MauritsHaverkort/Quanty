@@ -483,7 +483,7 @@ vector<WaveFunctionType> rotatePsiList(const vector<WaveFunctionType> &basis, co
 		psi[j].NBitsKey = basis[0].NBitsKey;
 		WaveFunctionInit (&(psi[j]));
 		if (basis.size() < U[j].size()) printf("error in LuaBasisChange, not enough wave-functions in list\n");
-		for (uint32_t i = 0; i < (uint32_t) U[j].size(); i++)
+		for (uint32_t i = 0; i < (uint32_t) basis.size(); i++)
 		{
 			WaveFunctionAddAnyMultipliedUnionBasis(&(psi[j]), basis[i], U[j][i]);
 		}
