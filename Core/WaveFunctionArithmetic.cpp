@@ -98,6 +98,7 @@ char *DetToString(uint32_t const NFermion, uint32_t const NBoson, uint8_t * det)
     for(z=128;z>0;z>>=1)
     {
       ret[pos]=((det[i]&z)==z) ? '1' : '0';
+      if (pos >= NFermion+NBoson) break;
       pos++;
     }
   }
