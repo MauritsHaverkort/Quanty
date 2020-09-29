@@ -280,6 +280,7 @@ void ReadDataFromFile(std::vector<CompactMatrixType *> &Ms, const char *filename
 			fread(&(Ms[i]->QComplex),sizeof(uint32_t),1,f);
 			fread(&(Ms[i]->Ni),sizeof(uint32_t),1,f);
 			fread(&(Ms[i]->Nj),sizeof(uint32_t),1,f);
+			Ms[i]->OnLuaStack = true;
 			if (Ms[i]->QComplex)
 			{
 				Ms[i]->V = (Complex16 *) malloc(Ms[i]->Ni*Ms[i]->Nj*sizeof(Complex16));
