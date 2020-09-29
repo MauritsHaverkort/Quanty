@@ -130,7 +130,7 @@ static int LuaTensorProduct(lua_State *L)
 		for (uint ij = 0; ij < (uint) out.size(); ++ij)
 		{
 			uint i, j;
-			j = ij % (uint) psi1vec.size();
+			j = ij % (uint) psi2vec.size();
 			i = (ij - j) / (uint) psi2vec.size();
 			out[ij] = WaveFunctionTensorProduct(psi1vec[i], psi2vec[j]);
 		}
