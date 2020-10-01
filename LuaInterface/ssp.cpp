@@ -3036,10 +3036,12 @@ static int LuaMeanFieldOperator(lua_State *L)
   struct
   {
     bool AddDFTSelfInteraction=false;
+    bool OffsetAsTrace=false;
   } Options;
   uint32_t len = (uint32_t)lua_gettop(L);
   LuaOptionsType LuaOptions[]={
     {"AddDFTSelfInteraction","bool",&(Options.AddDFTSelfInteraction)},
+		{"OffsetAsTrace","bool",&(Options.OffsetAsTrace)},
     {NULL, NULL, NULL}};
   if(len<2 || len>3)
     return luaL_error(L, "MeanFieldOperator called with %d arguments. Two or three expected, Operator, Density Matrix and optional Options.\n",len);
@@ -3051,18 +3053,30 @@ static int LuaMeanFieldOperator(lua_State *L)
     return luaL_error(L, "Error in MeanFieldOperator, length of operator (NF=%d, NB=%d) is not equal to length of density matrix (%d)\n",H->NFermion,H->NBoson,Rho->Ni);
   HMF = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   //TODO: Why is MeanFieldOperator different from MeanFieldOperatorOld ...
-  //MeanFieldOperator(H, HMF, *Rho, Options.AddDFTSelfInteraction);
-  if(Options.AddDFTSelfInteraction==true)
-  {
-    MeanFieldOperatorWithDFTInteractionOld(H, HMF, *Rho);
-  }
-  else
-  {
-    MeanFieldOperatorOld(H, HMF, *Rho);
-  }
-  
-  
-  
+	/* Answer: Because HF gives a constant offset. MeanFieldOperatorOld has a matrix as output which it then transforms back to an operator.
+	 * Matrixes have no such thing as constant offsets, so it is added as an average shift in trace. This has the counterintuitive effects that
+	 * A: The MF version of an operator acting on a subspace suddenly acts on every fermionic index.
+	 * B: The result of MeanFieldOperator depends on NFermion.
+	 * The new MeanFieldOperator function adds the offset as an operator of length 0.
+	 * I am implementing the LuaOption to choose between the two behaviours.
+	 * Because the new function does exactly what is described on the Quanty website, I think it should be the standard.
+	 * On the other hand this does change the behaviour or older Scripts, so this is debatable.
+	 */
+	if (Options.OffsetAsTrace)
+	{
+		if (Options.AddDFTSelfInteraction)
+		{
+			MeanFieldOperatorWithDFTInteractionOld(H, HMF, *Rho);
+		}
+		else
+		{
+			MeanFieldOperatorOld(H, HMF, *Rho);
+		}
+	}
+	else
+	{
+		MeanFieldOperator(H, HMF, *Rho, Options.AddDFTSelfInteraction);
+	}
   
   luaL_setmetatable(L, "Operator_Type");
   strncpy(HMF->Name, "", MAXStrLength-1); //An appropriate Name can be given in Lua.
