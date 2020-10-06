@@ -2759,10 +2759,16 @@ uint32_t CompactMatrixEigensystem(CompactMatrixType const *A, CompactMatrixType 
         printf("also zheevd failed in CompactMatrixEigensystem with info value %i\n", info);
         printf("ERORR!!!!!!!!!!\n");
         fflush(stdout);
+        free(iwork);	// Added by Simon, otherwhise heap is lost
+        free(cwork);
+        free(work);
         return 1;
       }
     }
     CompactMatrixConjugate(fun);
+    free(iwork);	// Added by Simon, otherwhise heap is lost
+    free(cwork);
+    free(work);
     return 0;
   }
   return 0;
