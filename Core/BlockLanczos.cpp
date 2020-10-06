@@ -5445,9 +5445,14 @@ uint32_t BlockGroundState(OperatorType *H, uint32_t const Npsi, ConvergenceSetti
   VerbosityPrintf(0x0002,"Start of BlockGroundState. Converge %i states to an energy with relative variance smaller than %22.15E\n\n",Npsi,Settings->zero);
 
   // loop until converged
-  while((!Qconverged)&&(iloop<100))
+  while((!Qconverged))
   {
     iloop++;
+		if (iloop >= 100)
+		{
+			cout << endl << endl << endl << "Error in BlockGroundState: Reached maximum number of Loops. The algorithm did NOT converge!" << endl << endl << endl;
+			return 1;
+		}
     // expand basis depending on Restrictions.N use either restrictions or don't use them
     while( (Restrictions.N) ? BlockOperatorPsiSerialRestricted(*H, psi, Opsi, Npsi, Restrictions) : BlockOperatorPsiSerial(*H, psi, Opsi, Npsi))
     {
