@@ -1697,13 +1697,6 @@ uint32_t ComplexMappedDetToWaveFunction(WaveFunctionType * const A, uint8_t *Det
   uint8_t DetZero[A->NWord];
   uint16_t oadd[1];
   uint32_t i,j;
-  OperatorType O;
-  InitOperator(&O);
-  O.NFermion=A->NFermion;
-  O.NBoson=A->NBoson;
-  O.NWord=A->NWord;
-  
-  InitOperatorFixedLength(&O, 1, 8);
   
   
   for(i=0;i<A->NWord;i++)
@@ -1715,25 +1708,33 @@ uint32_t ComplexMappedDetToWaveFunction(WaveFunctionType * const A, uint8_t *Det
   
   for(i=0;i<A->NFermion;i++)
   {
-    oadd[0]=CrAnMask | (uint16_t)i;
-    ComplexOperatorAddLader(&O, oadd, 1, 0.0, 0.0);
   }
 
   for(i=0;i<A->NFermion;i++)
   {
     /* test if Fermion i is occupied */
-    if(Det[i >> 3] & (128 >> (i & 7)))
-    {
-      for(j=0;j<A->NFermion;j++)
-      {
-        O.l[1].V[j].Re=U.VRe[j][i];
-        O.l[1].V[j].Im=-U.VIm[j][i];
-      }
-      OperatorPsiCC(O, *A, &Temp);
-      ComplexWaveFunctionTruncateBasis(&Temp, 10*DBL_EPSILON);
-      WaveFunctionFree(A);
-      *A=Temp;
-    }
+		if (Det[i >> 3] & (128 >> (i & 7)))
+		{
+			OperatorType O;
+			InitOperator(&O);
+			O.NFermion = A->NFermion;
+			O.NBoson = A->NBoson;
+			O.NWord = A->NWord;
+
+			InitOperatorFixedLength(&O, 1, 8);
+			for (j = 0; j < A->NFermion; j++)
+			{
+				if (fabs(U.VRe[j][i]) + fabs(U.VIm[j][i]) > 10 * DBL_EPSILON)
+				{
+					oadd[0] = CrAnMask | (uint16_t) j;
+					ComplexOperatorAddLader(&O, oadd, 1, U.VRe[j][i], -U.VIm[j][i]);
+				}
+			}
+			OperatorPsiCC(O, *A, &Temp);
+			FreeOperator(&O);
+			WaveFunctionFree(A);
+			*A = Temp;
+		}
     
   }
   for(i=A->NFermion;i<A->NFermion+A->NBoson;i++)
@@ -1742,7 +1743,6 @@ uint32_t ComplexMappedDetToWaveFunction(WaveFunctionType * const A, uint8_t *Det
     return 1;
   }
   
-  FreeOperator(&O);
   return 0;
 }
 
