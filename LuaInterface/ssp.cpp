@@ -1567,6 +1567,8 @@ static int Luarotate(lua_State *L)
     RotateWaveFunction(psiNew, *psi, *U);
     luaL_setmetatable(L, "Wavefunction_Type");
     WaveFunctionTruncateBasis(psiNew, Options.zero);
+    FreeMatrix(U);
+		free(U);
     return 1;
   }
   if (luaL_testudata(L, 1, "Operator_Type") != NULL)
@@ -1581,6 +1583,8 @@ static int Luarotate(lua_State *L)
     RotateOperatorNormalOrder(ONew, *O, *U,&QDetNotOrderedFcFaBaBc);
     luaL_setmetatable(L, "Operator_Type");
     OperatorChop(ONew, Options.zero);
+		FreeMatrix(U);
+		free(U);
     return 1;
   }
   if (luaL_testudata(L, 1, "TightBinding_Type") != NULL)
