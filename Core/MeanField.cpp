@@ -943,26 +943,26 @@ uint32_t MeanFieldOperator(const OperatorType * const O, OperatorType * const OM
 				OVRe = O->l[4].V[m].Re;
 				OVIm = O->l[4].V[m].Im;
 
-				oadd[0] = CrAnMask | i;
-				oadd[1] = k;
+				oadd[1] = CrAnMask | i;
+				oadd[0] = k;
 				OMFVRe = -(OVRe * Rho.VRe[j][l] - OVIm * Rho.VIm[j][l]);
 				OMFVIm = -(OVIm * Rho.VRe[j][l] + OVRe * Rho.VIm[j][l]);
 				OperatorAddLaderNormalOrder(OMF, oadd, 2, OMFVRe, OMFVIm, &QDetNotOrderedFcFaBcBa);
 
-				oadd[0] = CrAnMask | i;
-				oadd[1] = l;
+				oadd[1] = CrAnMask | i;
+				oadd[0] = l;
 				OMFVRe = (OVRe * Rho.VRe[j][k] - OVIm * Rho.VIm[j][k]);
 				OMFVIm = (OVIm * Rho.VRe[j][k] + OVRe * Rho.VIm[j][k]);
 				OperatorAddLaderNormalOrder(OMF, oadd, 2, OMFVRe, OMFVIm, &QDetNotOrderedFcFaBcBa);
 
-				oadd[0] = CrAnMask | j;
-				oadd[1] = k;
+				oadd[1] = CrAnMask | j;
+				oadd[0] = k;
 				OMFVRe = (OVRe * Rho.VRe[i][l] - OVIm * Rho.VIm[i][l]);
 				OMFVIm = (OVIm * Rho.VRe[i][l] + OVRe * Rho.VIm[i][l]);
 				OperatorAddLaderNormalOrder(OMF, oadd, 2, OMFVRe, OMFVIm, &QDetNotOrderedFcFaBcBa);
 
-				oadd[0] = CrAnMask | j;
-				oadd[1] = l;
+				oadd[1] = CrAnMask | j;
+				oadd[0] = l;
 				OMFVRe = -(OVRe * Rho.VRe[i][k] - OVIm * Rho.VIm[i][k]);
 				OMFVIm = -(OVIm * Rho.VRe[i][k] + OVRe * Rho.VIm[i][k]);
 				OperatorAddLaderNormalOrder(OMF, oadd, 2, OMFVRe, OMFVIm, &QDetNotOrderedFcFaBcBa);
@@ -990,26 +990,26 @@ uint32_t MeanFieldOperator(const OperatorType * const O, OperatorType * const OM
 				OVRe = O->l[4].V[m].Re;
 				OVIm = O->l[4].V[m].Im;
 
-				oadd[0] = CrAnMask || i;
-				oadd[1] = k;
+				oadd[1] = CrAnMask | i;
+				oadd[0] = k;
 				OMFVRe = -(OVRe * Rho.VRe[j][l]);
 				OMFVIm = -(OVIm * Rho.VRe[j][l]);
 				OperatorAddLaderNormalOrder(OMF, oadd, 2, OMFVRe, OMFVIm, &QDetNotOrderedFcFaBcBa);
 
-				oadd[0] = CrAnMask | i;
-				oadd[1] = l;
+				oadd[1] = CrAnMask | i;
+				oadd[0] = l;
 				OMFVRe = (OVRe * Rho.VRe[j][k]);
 				OMFVIm = (OVIm * Rho.VRe[j][k]);
 				OperatorAddLaderNormalOrder(OMF, oadd, 2, OMFVRe, OMFVIm, &QDetNotOrderedFcFaBcBa);
 
-				oadd[0] = CrAnMask | j;
-				oadd[1] = k;
+				oadd[1] = CrAnMask | j;
+				oadd[0] = k;
 				OMFVRe = (OVRe * Rho.VRe[i][l]);
 				OMFVIm = (OVIm * Rho.VRe[i][l]);
 				OperatorAddLaderNormalOrder(OMF, oadd, 2, OMFVRe, OMFVIm, &QDetNotOrderedFcFaBcBa);
 
-				oadd[0] = CrAnMask | j;
-				oadd[1] = l;
+				oadd[1] = CrAnMask | j;
+				oadd[0] = l;
 				OMFVRe = -(OVRe * Rho.VRe[i][k]);
 				OMFVIm = -(OVIm * Rho.VRe[i][k]);
 				OperatorAddLaderNormalOrder(OMF, oadd, 2, OMFVRe, OMFVIm, &QDetNotOrderedFcFaBcBa);
@@ -1060,26 +1060,26 @@ uint32_t MeanFieldOperator(const OperatorType * const O, OperatorType * const OM
 				l = O->l[4].o[4 * m];
 				OVRe = O->l[4].VRe[m];
 
-				oadd[0] = CrAnMask | i;
-				oadd[1] = k;
+				oadd[1] = CrAnMask | i;
+				oadd[0] = k;
 				OMFVRe = -(OVRe * Rho.VRe[j][l]);
 				OMFVIm = -(OVRe * Rho.VIm[j][l]);
 				OperatorAddLaderNormalOrder(OMF, oadd, 2, OMFVRe, OMFVIm, &QDetNotOrderedFcFaBcBa);
 
-				oadd[0] = CrAnMask | i;
-				oadd[1] = l;
+				oadd[1] = CrAnMask | i;
+				oadd[0] = l;
 				OMFVRe = (OVRe * Rho.VRe[j][k]);
 				OMFVIm = (OVRe * Rho.VIm[j][k]);
 				OperatorAddLaderNormalOrder(OMF, oadd, 2, OMFVRe, OMFVIm, &QDetNotOrderedFcFaBcBa);
 
-				oadd[0] = CrAnMask | j;
-				oadd[1] = k;
+				oadd[1] = CrAnMask | j;
+				oadd[0] = k;
 				OMFVRe = (OVRe * Rho.VRe[i][l]);
 				OMFVIm = (OVRe * Rho.VIm[i][l]);
 				OperatorAddLaderNormalOrder(OMF, oadd, 2, OMFVRe, OMFVIm, &QDetNotOrderedFcFaBcBa);
 
-				oadd[0] = CrAnMask | j;
-				oadd[1] = l;
+				oadd[1] = CrAnMask | j;
+				oadd[0] = l;
 				OMFVRe = -(OVRe * Rho.VRe[i][k]);
 				OMFVIm = -(OVRe * Rho.VIm[i][k]);
 				OperatorAddLaderNormalOrder(OMF, oadd, 2, OMFVRe, OMFVIm, &QDetNotOrderedFcFaBcBa);
@@ -1105,23 +1105,23 @@ uint32_t MeanFieldOperator(const OperatorType * const O, OperatorType * const OM
 				OVRe = O->l[4].VRe[m];
 				OMFVIm = 0;
 
-				oadd[0] = CrAnMask | i;
-				oadd[1] = k;
+				oadd[1] = CrAnMask | i;
+				oadd[0] = k;
 				OMFVRe = -(OVRe * Rho.VRe[j][l]);
 				OperatorAddLaderNormalOrder(OMF, oadd, 2, OMFVRe, OMFVIm, &QDetNotOrderedFcFaBcBa);
 
-				oadd[0] = CrAnMask | i;
-				oadd[1] = l;
+				oadd[1] = CrAnMask | i;
+				oadd[0] = l;
 				OMFVRe = (OVRe * Rho.VRe[j][k]);
 				OperatorAddLaderNormalOrder(OMF, oadd, 2, OMFVRe, OMFVIm, &QDetNotOrderedFcFaBcBa);
 
-				oadd[0] = CrAnMask | j;
-				oadd[1] = k;
+				oadd[1] = CrAnMask | j;
+				oadd[0] = k;
 				OMFVRe = (OVRe * Rho.VRe[i][l]);
 				OperatorAddLaderNormalOrder(OMF, oadd, 2, OMFVRe, OMFVIm, &QDetNotOrderedFcFaBcBa);
 
-				oadd[0] = CrAnMask | j;
-				oadd[1] = l;
+				oadd[1] = CrAnMask | j;
+				oadd[0] = l;
 				OMFVRe = -(OVRe * Rho.VRe[i][k]);
 				OperatorAddLaderNormalOrder(OMF, oadd, 2, OMFVRe, OMFVIm, &QDetNotOrderedFcFaBcBa);
 
