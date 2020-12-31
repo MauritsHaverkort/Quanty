@@ -12,6 +12,7 @@
 #include "Kappa.cpp"
 #include "lsCouplingConstant.cpp"
 #include "MatrixToOperator.cpp"
+#include "OneparticleResponsefunction.cpp"
 #include "Operator.cpp"
 #include "readOrca.cpp"
 #include "SparseMatrix.cpp"

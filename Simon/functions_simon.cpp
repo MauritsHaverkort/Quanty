@@ -146,6 +146,7 @@ static const struct luaL_Reg Simon_func[] = {
 	{"MatrixToOperator", LuaMatrixToOperator},
 	{"MatrixToSparseMatrix", LuaMatrixToSparseMatrix},
 	{"MatrixTrace", LuaMatrixTrace},
+	{"OneparticleResponsefunctionDiagonal", LuaOneparticleResponsefunctionDiagonal},
 	{"OrthogonalizeWithNonOrthoBasis", LuaOrthogonalizeWithNonOrthoBasis},
 	{"lsCouplingConstants", LuaLSCouplingConstants},
 	{"FileReadOrca", LuaFileReadOrca},
