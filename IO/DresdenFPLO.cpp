@@ -251,8 +251,7 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
 						NhopMax *= 2;
 						O->Wannier.HopVec[i] = (double**) realloc(O->Wannier.HopVec[i], NhopMax * sizeof(double*));
 						O->Wannier.HopVal[i] = (double*) realloc(O->Wannier.HopVal[i], NhopMax * sizeof(double));
-						O->Wannier.HopValIm[i] = (double*) realloc(O->Wannier.HopValIm[i], NhopMax * sizeof(double));
-						if (O->Wannier.HopVec[i] == NULL || O->Wannier.HopVal[i] == NULL || O->Wannier.HopValIm[i] == NULL)
+						if (O->Wannier.HopVec[i] == NULL || O->Wannier.HopVal[i] == NULL)
 						{
 							cout << "\nError in ReadDresdenFPLO: Could not allocate memory for hopping to and from site " << (i + 1) << endl;
 							return 1;
