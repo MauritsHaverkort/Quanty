@@ -488,5 +488,34 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
       }
     }
   }
+	for (ish = 0; ish < Nshell; ish++)
+	{
+		free(ShellOfSite[ish]);
+		free(NVecShell[ish]);
+		free(NHopStart[ish]);
+		free(ShellName[ish]);
+	}
+	for (i = 0; i < Nshell * Nshell; i++)
+	{
+//		free(HopVec[i]); //this doesn't work yet.
+	}
+	for (i = 0; i < FPLO.Wannier.NActAtom; i++)
+	{
+		free(SiteName[i]);
+		free(SitePos[i]);
+	}
+	free(Norb);
+	free(NshellOfSite);
+	free(ShellLabel);
+	free(SiteInd);
+	free(ShellInd);
+	free(ShellOfSite);
+	free(OrbInd);
+	free(NVecShell);
+	free(NHopStart);
+	free(SiteName);
+	free(ShellName);
+	free(HopVec);
+	free(SitePos);
   return 0;
 }
