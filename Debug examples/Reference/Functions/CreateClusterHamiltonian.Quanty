@@ -1,0 +1,58 @@
+errorCount = 0
+
+function test(H,A,B,C,D)
+    if Matrix.ToUserdata( Chop( Matrix.Flatten({{A,B},{C,D}}) - OperatorToMatrix(H) , 1e-10) ) ~= Matrix.Zero(#A+#D,{{"userdata",true}}) then
+        print("Oh no, something went wrong!")
+        errorCount = errorCount + 1
+    end
+end
+
+--Test for open Cluster
+Ms = {}
+Ms[#Ms+1] = Matrix.Zero(3,{{"userdata",false}})
+Ms[#Ms+1] = Matrix.Identity(3,{{"userdata",false}})
+Ms[#Ms+1] = Matrix.ToTable({{1,2,3},{4,5,6},{-1,-2,3}})
+Ms[#Ms+1] = I*Ms[2]
+Ms[#Ms+1] = Ms[3]+I*Ms[3]*Ms[3]
+
+for key1, A in pairs(Ms) do
+    for key2, B in pairs(Ms) do
+        for key3, C in pairs(Ms) do
+            for key4, D in pairs(Ms) do
+                
+                --Orbitals with same name
+                local TB = NewTightBinding()
+                TB.Cell = {{inf,0,0},{0,inf,0},{0,0,inf}}
+                TB.Atoms = { {"C", {0,0,-1/2}, { {"p",{"x","y","z"}} } },
+                            {"C", {0,0, 1/2}, { {"p",{"x","y","z"}} } } }
+                TB.Hopping = { {{"C.p",{0,0,-1/2}},{"C.p",{0,0,-1/2}}, {0,0,0}, A },
+                                {{"C.p",{0,0,-1/2}},{"C.p",{0,0,1/2}}, {0,0,1}, B },
+                                {{"C.p",{0,0,1/2}},{"C.p",{0,0,-1/2}}, {0,0,-1}, C },
+                                {{"C.p",{0,0,1/2}},{"C.p",{0,0,1/2}}, {0,0,0}, D } }
+                local Hamiltonian = CreateClusterHamiltonian(TB, {"open", TB.Atoms})
+                test(Hamiltonian,A,B,C,D)
+                
+                --orbitals with different names
+                local TB2 = NewTightBinding()
+                TB2.Cell = {{inf,0,0},{0,inf,0},{0,0,inf}}
+                TB2.Atoms = { {"C", {0,0,-1/2}, { {"2p",{"x","y","z"}} } },
+                            {"C", {0,0, 1/2}, { {"3p",{"x","y","z"}} } } }
+                TB2.Hopping = { {{"C.2p",{0,0,-1/2}},{"C.2p",{0,0,-1/2}}, {0,0,0}, A },
+                                {{"C.2p",{0,0,-1/2}},{"C.3p",{0,0,1/2}}, {0,0,1}, B },
+                                {{"C.3p",{0,0,1/2}},{"C.2p",{0,0,-1/2}}, {0,0,-1}, C },
+                                {{"C.3p",{0,0,1/2}},{"C.3p",{0,0,1/2}}, {0,0,0}, D } }
+                --Hamiltonian = CreateClusterHamiltonian(TB2, {"open", TB2.Atoms})
+                test(Hamiltonian,A,B,C,D)
+                
+            end
+        end
+    end
+end
+
+--TODO: Test for periodic cluster
+
+if errorCount == 0 then
+    print("Everything went according to plan!")
+end
+
+os.exit(errorCount)
