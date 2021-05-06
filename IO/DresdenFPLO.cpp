@@ -181,6 +181,22 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
             {
               Nphrase = SplitStringToArray(phrase, ReadLine, " :\n");
               O->Wannier.Site[i] = atoi(phrase[1]);
+              bool siteCameBefore = false;
+							for (j = 0; j < i; ++j)
+							{
+								if (O->Wannier.Site[j] == O->Wannier.Site[i])
+								{
+									siteCameBefore = true;
+								}
+								else if (siteCameBefore)
+								{
+									std::cout << "Error: In its current structure Quanty expects all Wannier functions belonging to the same site to be clustered together." << endl;
+									std::cout << "Currently, a definition on site " << O->Wannier.Site[i] << " is followed by a definition on site " << O->Wannier.Site[j] << ", but a bit later another definition on site "
+											<< O->Wannier.Site[i] << " follows." << endl;
+									std::cout << "The Quanty team is terribly sorry that you will have to do the downfolding anew." << endl;
+									return 1;
+								}
+							}
               j=0;
               while(j<i && O->Wannier.Site[i]!=O->Wannier.Site[j]) j++;
               if(i>=1&&j==i&& O->Wannier.Site[i]!=O->Wannier.Site[i-1]) O->Wannier.NActAtom += 1;
