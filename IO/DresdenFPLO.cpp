@@ -197,6 +197,13 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
 									return 1;
 								}
 							}
+							if (i > 0 && O->Wannier.Site[i] < O->Wannier.Site[i - 1])
+							{
+								std::cout << "Error: In its current structure Quanty expects the sites of all Wannier functions to be in ascending order." << endl;
+								std::cout << "Currently, a definition on site " << O->Wannier.Site[i - 1] << " is followed by a definition on site " << O->Wannier.Site[i] << "." << endl;
+								std::cout << "The Quanty team is terribly sorry that you will have to do the downfolding anew." << endl;
+								return 1;
+							}
               j=0;
               while(j<i && O->Wannier.Site[i]!=O->Wannier.Site[j]) j++;
               if(i>=1&&j==i&& O->Wannier.Site[i]!=O->Wannier.Site[i-1]) O->Wannier.NActAtom += 1;
