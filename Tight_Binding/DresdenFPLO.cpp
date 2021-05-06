@@ -269,16 +269,6 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
 		ShellInd[i] = ish;
 		++Norb[ish];
 
-		debug("i, site, n, l");
-		debug(i);
-		debug(FPLO.Wannier.Site[i]);
-		debug(FPLO.Wannier.Orbital[i][0]);
-		debug(FPLO.Wannier.Orbital[i][1]);
-		debug("ish, iatom. siteSpecificShellCounter");
-		debug(ish);
-		debug(iatom);
-		debug(siteSpecificShellCounter);
-
 		lastSite = FPLO.Wannier.Site[i];
 		lastN = FPLO.Wannier.Orbital[i][0];
 		lastShell = FPLO.Wannier.Orbital[i][1];
@@ -294,14 +284,6 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
       HopVec[i*Nshell+j] = (double**)malloc(NhopMax*sizeof(double*));
     }
   }
-
-//  for (ish = 0; ish < Nshell; ++ish)
-//  {
-//  	debug("Hö");
-//  	debug(ish);
-//  	debug(ShellOfSite[ish][0]);
-//  	debug(ShellOfSite[ish][1]);
-//  }
 
   // Determine the unique translational vectors for each shell.
   // The vectors will be used to label the HTB list.
