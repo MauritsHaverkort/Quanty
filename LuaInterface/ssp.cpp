@@ -2203,6 +2203,7 @@ static int LuaCreateSpectra(lua_State *L)
   else
   {
     /* start calculating the spectra using Lanczos */
+  	WaveFunctionFree(&psiDenseBasis);
     if(Options.Tensor==false)
     {
       TriDiagonalMatrixType *GTri;
@@ -2276,6 +2277,7 @@ static int LuaCreateSpectra(lua_State *L)
         if((val[0]-psiEn[i])<Eminpole)Eminpole=val[0]-psiEn[i];
         if((val[Options.Settings.NTri-1]-psiEn[i])>Emaxpole)Emaxpole=val[Options.Settings.NTri-1]-psiEn[i];
       }
+      free(val);
       /* if Emin=DBL_MAX or Emax=-DBL_MAX or Gamma==0 determine these */
       if(Eminpole==Emaxpole)
       {
