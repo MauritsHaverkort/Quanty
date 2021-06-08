@@ -219,9 +219,7 @@ void lua_check(lua_State *L, int arg, bool &in)
 
 void lua_check(lua_State *L, int arg, CompactMatrixType &in)
 {
-	CompactMatrixType *p = luaL_checkCompactMatrix(L, arg);
-	in = *p;
-	free(p);
+	in = *luaL_checkCompactMatrix(L, arg);
 }
 
 void lua_check(lua_State *L, int arg, CompactMatrixType* &in)
