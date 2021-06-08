@@ -4842,20 +4842,32 @@ CompactMatrixType ExpandNumberToCompactMatrix(int size, double Re, double Im = 0
 
 CompactMatrixType MatrixEnlarge(CompactMatrixType M, int size)
 {
-  vector < vector<CompactMatrixType> > fullM(M.Ni);
-  for (int i = 0; i < M.Ni; ++i)
-  {
-    vector < CompactMatrixType > col(M.Nj);
-    fullM[i] = col;
-    for (int j = 0; j < M.Nj; ++j)
-    {
-      if (M.QComplex)
-        fullM[i][j] = ExpandNumberToCompactMatrix(size, M.V[i*M.Nj+j].Re, M.V[i*M.Nj+j].Im);
-      else
-        fullM[i][j] = ExpandNumberToCompactMatrix(size, M.VRe[i*M.Nj+j]);
-    }
-  }
-  return MatrixFlatten(fullM);
+	CompactMatrixType out;
+	out.Ni = M.Ni * size;
+	out.Nj = M.Nj * size;
+	out.QComplex = M.QComplex;
+	InitCompactMatrix(&out);
+	for (uint i = 0; i < M.Ni; ++i)
+	{
+		for (uint j = 0; j < M.Nj; ++j)
+		{
+			for (uint k = 0; k < size; ++k)
+			{
+				uint iNew = i * size + k;
+				uint jNew = j * size + k;
+				if ((bool) out.QComplex)
+				{
+					out.V[iNew * out.Nj + jNew].Re = M.V[i * M.Nj + j].Re;
+					out.V[iNew * out.Nj + jNew].Im = M.V[i * M.Nj + j].Im;
+				}
+				else
+				{
+					out.VRe[iNew * out.Nj + jNew] = M.VRe[i * M.Nj + j];
+				}
+			}
+		}
+	}
+	return out;
 }
 
 CompactMatrixType MatrixExpand(const CompactMatrixType M, const int size, const Complex16 newEntries)

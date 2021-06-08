@@ -1495,6 +1495,7 @@ static int LuaMatrixAddSpin(lua_State * L)
     *fullM = MatrixEnlarge(*M, 2);
     fullM->OnLuaStack=true;
   }
+  FreeCompactMatrix(M);
 	return 1;
 }
 
@@ -1656,6 +1657,7 @@ static int LuaSubmatrix(lua_State * L)
   {
     LuaPushTable_CompactMatrixType(L, Msub);
     FreeCompactMatrix(Msub);
+    free(Msub);
   }
   return 1;
 }
