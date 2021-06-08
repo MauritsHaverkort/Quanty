@@ -1577,6 +1577,7 @@ static int LuaSubmatrix(lua_State * L)
   {
     LuaPushTable_CompactMatrixType(L, Msub);
     FreeCompactMatrix(Msub);
+    free(Msub);
   }
   return 1;
 }
