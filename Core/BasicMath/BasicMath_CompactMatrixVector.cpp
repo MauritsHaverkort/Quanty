@@ -4868,22 +4868,6 @@ CompactMatrixType MatrixEnlarge(CompactMatrixType M, int size)
 		}
 	}
 	return out;
-
-
-//  vector < vector<CompactMatrixType> > fullM(M.Ni);
-//  for (int i = 0; i < M.Ni; ++i)
-//  {
-//    vector < CompactMatrixType > col(M.Nj);
-//    fullM[i] = col;
-//    for (int j = 0; j < M.Nj; ++j)
-//    {
-//      if (M.QComplex)
-//        fullM[i][j] = ExpandNumberToCompactMatrix(size, M.V[i*M.Nj+j].Re, M.V[i*M.Nj+j].Im);
-//      else
-//        fullM[i][j] = ExpandNumberToCompactMatrix(size, M.VRe[i*M.Nj+j]);
-//    }
-//  }
-//  return MatrixFlatten(fullM);
 }
 
 CompactMatrixType MatrixExpand(const CompactMatrixType M, const int size, const Complex16 newEntries)
