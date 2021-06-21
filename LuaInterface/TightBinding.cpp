@@ -1029,49 +1029,38 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
 			{
 				AtomShellOrbitalMap[i][ishell].QComplex = 0;
 				AtomShellOrbitalMap[i][ishell].Ni = ClusterDef->Cell.Atom[i].shelldegeneracy[ishell];
-				for (j = 0; j < a->Cell.NAtoms; j++)
+				j = FindAtomPosModulusUnitCell(&(ClusterDef->Cell.Atom[i]), &(a->Cell), AtomPositionAccuracy);
+				if (j > a->Cell.NAtoms - 1)
+					return luaL_error(L, "Atom %s at position (%f,%f,%f) not found in tight binding definition!\n", ClusterDef->Cell.Atom[i].Name, ClusterDef->Cell.Atom[i].Position[0],
+							ClusterDef->Cell.Atom[i].Position[1], ClusterDef->Cell.Atom[i].Position[2]);
+				for (jshell = 0; jshell < a->Cell.Atom[j].Nshell; jshell++)
 				{
-					bool sameAtomName = strcmp(ClusterDef->Cell.Atom[i].Name, a->Cell.Atom[j].Name) == 0;
-					bool samexPos = EqualFloat(ClusterDef->Cell.Atom[i].Position[0], a->Cell.Atom[j].Position[0], AtomPositionAccuracy) == 1;
-					bool sameyPos = EqualFloat(ClusterDef->Cell.Atom[i].Position[1], a->Cell.Atom[j].Position[1], AtomPositionAccuracy) == 1;
-					bool samezPos = EqualFloat(ClusterDef->Cell.Atom[i].Position[2], a->Cell.Atom[j].Position[2], AtomPositionAccuracy) == 1;
-					if (sameAtomName && samexPos && sameyPos && samezPos)
+					bool sameShellName = strcmp(ClusterDef->Cell.Atom[i].ShellName[ishell], a->Cell.Atom[j].ShellName[jshell]) == 0;
+					if (sameShellName)
 					{
-						for (jshell = 0; jshell < a->Cell.Atom[j].Nshell; jshell++)
+						AtomShellOrbitalMap[i][ishell].Nj = a->Cell.Atom[j].shelldegeneracy[jshell];
+						InitMatrix(&(AtomShellOrbitalMap[i][ishell]));
+						for (iorb = 0; iorb < AtomShellOrbitalMap[i][ishell].Ni; iorb++)
 						{
-							bool sameShellName = strcmp(ClusterDef->Cell.Atom[i].ShellName[ishell], a->Cell.Atom[j].ShellName[jshell]) == 0;
-							if (sameShellName)
+							for (jorb = 0; jorb < AtomShellOrbitalMap[i][ishell].Nj; jorb++)
 							{
-								AtomShellOrbitalMap[i][ishell].Nj = a->Cell.Atom[j].shelldegeneracy[jshell];
-								InitMatrix(&(AtomShellOrbitalMap[i][ishell]));
-								for (iorb = 0; iorb < AtomShellOrbitalMap[i][ishell].Ni; iorb++)
+								if (strcmp(ClusterDef->Cell.Atom[i].OrbitalName[ishell][iorb], a->Cell.Atom[j].OrbitalName[jshell][jorb]) == 0)
 								{
-									for (jorb = 0; jorb < AtomShellOrbitalMap[i][ishell].Nj; jorb++)
-									{
-										if (strcmp(ClusterDef->Cell.Atom[i].OrbitalName[ishell][iorb], a->Cell.Atom[j].OrbitalName[jshell][jorb]) == 0)
-										{
-											AtomShellOrbitalMap[i][ishell].VRe[iorb][jorb] = 1;
-											break;
-										}
-										else if (jorb == AtomShellOrbitalMap[i][ishell].Nj - 1)
-										{
-											return luaL_error(L, "Orbital %s of shell %s of atom %s not found in tight binding definition!\n", ClusterDef->Cell.Atom[i].OrbitalName[ishell][iorb],
-													ClusterDef->Cell.Atom[i].ShellName[ishell], ClusterDef->Cell.Atom[i].Name);
-										}
-									}
+									AtomShellOrbitalMap[i][ishell].VRe[iorb][jorb] = 1;
+									break;
 								}
-								break;
-							}
-							else if (jshell == a->Cell.Atom[j].Nshell - 1)
-							{
-								return luaL_error(L, "Shell %s of atom %s not found in tight binding definition!\n", ClusterDef->Cell.Atom[i].ShellName[ishell], ClusterDef->Cell.Atom[i].Name);
+								else if (jorb == AtomShellOrbitalMap[i][ishell].Nj - 1)
+								{
+									return luaL_error(L, "Orbital %s of shell %s of atom %s not found in tight binding definition!\n", ClusterDef->Cell.Atom[i].OrbitalName[ishell][iorb],
+											ClusterDef->Cell.Atom[i].ShellName[ishell], ClusterDef->Cell.Atom[i].Name);
+								}
 							}
 						}
 						break;
 					}
-					else if (j == a->Cell.NAtoms - 1)
+					else if (jshell == a->Cell.Atom[j].Nshell - 1)
 					{
-						return luaL_error(L, "Atom %s at position (%f,%f,%f) not found in tight binding definition!\n", ClusterDef->Cell.Atom[i].Name,ClusterDef->Cell.Atom[i].Position[0],ClusterDef->Cell.Atom[i].Position[1],ClusterDef->Cell.Atom[i].Position[2]);
+						return luaL_error(L, "Shell %s of atom %s not found in tight binding definition!\n", ClusterDef->Cell.Atom[i].ShellName[ishell], ClusterDef->Cell.Atom[i].Name);
 					}
 				}
 			}

@@ -41,9 +41,27 @@ for key1, A in pairs(Ms) do
                                 {{"C.2p",{0,0,-1/2}},{"C.3p",{0,0,1/2}}, {0,0,1}, B },
                                 {{"C.3p",{0,0,1/2}},{"C.2p",{0,0,-1/2}}, {0,0,-1}, C },
                                 {{"C.3p",{0,0,1/2}},{"C.3p",{0,0,1/2}}, {0,0,0}, D } }
-                --Hamiltonian = CreateClusterHamiltonian(TB2, {"open", TB2.Atoms})
+                Hamiltonian = CreateClusterHamiltonian(TB2, {"open", TB2.Atoms})
                 test(Hamiltonian,A,B,C,D)
                 
+                --periodic boundary conditions in TB definition
+                local TB3 = NewTightBinding()
+                TB3.Cell = {{1,0,0},{0,2,0},{0,0,3}}
+                TB3.Atoms = { {"C", {0,0,0}, { {"2p",{"x","y","z"}} } },
+                            {"O", {0,0, 1}, { {"3p",{"x","y","z"}} } } }
+                TB3.Hopping = { {{"C.2p",{0,0,0}},{"C.2p",{0,0,0}}, {0,0,0}, A },
+                                {{"O.3p",{0,0,1}},{"O.3p",{0,0,1}}, {0,0,0}, D } }
+                --[[
+                --TODO: I'd like to do this but it doesn't work and I don't quite understand why.
+                TB3.Hopping = { {{"C.2p",{0,0,0}},{"C.2p",{0,0,0}}, {0,0,0}, A },
+                                {{"O.3p",{0,0,1}},{"O.3p",{0,0,1}}, {0,0,0}, D },
+                                {{"C.2p",{0,0,0}},{"C.2p",{1,0,0}}, {1,0,0}, B },
+                                {{"C.2p",{1,0,0}},{"C.2p",{0,0,0}}, {-1,0,0}, C } }
+                --]]
+                local Cluster3 = { {"C", {0,0,0}, { {"2p",{"x","y","z"}} } },
+                                {"C", {1,0, 0}, { {"2p",{"x","y","z"}} } } }
+                Hamiltonian = CreateClusterHamiltonian(TB3, {"open", Cluster3})
+                test(Hamiltonian,A,Matrix.Zero(#B),Matrix.Zero(#C),A)
             end
         end
     end
