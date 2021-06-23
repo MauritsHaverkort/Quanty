@@ -1924,16 +1924,19 @@ static int LuaCreateSpectra(lua_State *L)
   /* set DenseMethod to true if Hilbert space smaller then DensBoarder and calculate Basis at the same time create psiBasis */
   /* create psiBasis = sum_{i,j} T_i psi_j */
   WaveFunctionCopy(Tpsi[0], &psiDenseBasis);
-  for(i=1;i<Options.NT*Options.Npsi;i++)
+  for(i=0;i<Options.NT*Options.Npsi;i++)
   {
     if((Options.DenseMethod==false)&&(psiDenseBasis.N>Options.Settings.DenseBorder))
     {
       WaveFunctionFree(&psiDenseBasis);
       break;
     }
-    if(WaveFunctionAddMultipliedUnionBasis(&psiDenseBasis, Tpsi[i], (double)(1+rand())/(double)RAND_MAX))
+		if (i > 0)
     {
-      luaL_error(L, "WaveFunctionAddMultipliedUnionBasis failed in calculation of spectra\n Out of memory?\nTry to split the call to several calls for different wave-functions or transition operators\n");
+			if(WaveFunctionAddMultipliedUnionBasis(&psiDenseBasis, Tpsi[i], (double)(1+rand())/(double)RAND_MAX))
+			{
+				luaL_error(L, "WaveFunctionAddMultipliedUnionBasis failed in calculation of spectra\n Out of memory?\nTry to split the call to several calls for different wave-functions or transition operators\n");
+			}
     }
   }
   /* expand psiBasis to represent H^n psiBasis for all n */
