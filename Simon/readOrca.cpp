@@ -99,6 +99,7 @@ bool isOrcaLineIgnored(const string &line)
 	if (line.find("OVERLAP MATRIX") != string::npos) return true;
 	if (line.find("MOLECULAR ORBITALS") != string::npos) return true;
 	if (line.find("---") != string::npos) return true;
+	if (line.substr(0,1) == "*") return true;
 	return false;
 }
 
@@ -303,7 +304,7 @@ OrcaObject FileReadOrca(const string &filename)
 	int i=0, jOffset = 0;
 	while (getline(reader, line))
 	{
-		if (line.find("# of contracted basis functions") != string::npos)
+		if (line.find("Basis Dimension") != string::npos)
 		{
 			const string::size_type lastBlank = line.find_last_of(" ");
 			out.NBasis = atoi(line.substr(lastBlank + 1).c_str());
@@ -321,6 +322,7 @@ OrcaObject FileReadOrca(const string &filename)
 
 		if (isReadingAtoms && !isOrcaLineIgnored(line))
 		{
+			line.erase (std::remove(line.begin(), line.end(), '*'), line.end());
 			string::size_type pos = line.find_first_of(letters);
 			pos = line.find_first_not_of(letters, pos);
 			vector<double> lineVec = stringToDoubleVec(line.substr(pos)); //ZA, FRAG, MASS, X, Y, Z
