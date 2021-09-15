@@ -333,7 +333,8 @@ uint32_t CreateStartingFunctions(const OperatorType H, uint32_t const Npsi, Dete
   // print warning if there are not enough starting determinant
   if(psi[0].N<Npsi)
   {
-    VerbosityPrintf(0x0002, "Warning: Number of states to find smaller than number of determinants in random starting vector\n");
+    VerbosityPrintf(0x0002, "Warning: Number of states to find larger than number of determinants in random starting vector\n");
+    //TODO: Explain to the user (and the other programmers debugging this) why exactly this could be a problem.
   }
   // init other functions
   for(i=1;i<Npsi;i++)
