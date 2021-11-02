@@ -229,7 +229,7 @@ CompactMatrixType Submatrix(const CompactMatrixType &M, const vector<uint> &rows
 	return Msub;
 }
 
-double RealMatrixTrace(const CompactMatrixType const *M)
+double RealMatrixTrace(const CompactMatrixType *M)
 {
 	double trace = 0;
 	for (uint i = 0; i < M->Ni; ++i)
@@ -237,7 +237,7 @@ double RealMatrixTrace(const CompactMatrixType const *M)
 	return trace;
 }
 
-Complex16 ComplexMatrixTrace(const CompactMatrixType const *M)
+Complex16 ComplexMatrixTrace(const CompactMatrixType *M)
 {
 	Complex16 trace;
 	trace.Re = 0;

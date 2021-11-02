@@ -144,7 +144,7 @@ static int LuaSparseMatrixToMatrix(lua_State * L)
 	return 1;
 }
 
-double RealSparseMatrixTrace(const SparseMatrixType const *M)
+double RealSparseMatrixTrace(const SparseMatrixType *M)
 {
 	double trace = 0;
 	for (uint k = 0; k < M->N; ++k)
@@ -152,7 +152,7 @@ double RealSparseMatrixTrace(const SparseMatrixType const *M)
 	return trace;
 }
 
-Complex16 ComplexSparseMatrixTrace(const SparseMatrixType const *M)
+Complex16 ComplexSparseMatrixTrace(const SparseMatrixType *M)
 {
 	Complex16 trace;
 	trace.Re = 0;
