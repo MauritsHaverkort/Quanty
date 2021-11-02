@@ -109,6 +109,12 @@ void OrthogonalizeVecWrtSet(F (&SkalarProd)(const V&,const V&), void (&VecAdd)(c
 }
 
 template<typename F, typename V>
+void FunLanczos(LinAlg::LinearMap<F, V, V> &LinMap,F (&SkalarProd)(const V&,const V&), void (&VecAdd)(const V&, V&, F), void (&VecMul)(V&, F),const V &startvec)
+{
+  printf("fun");
+}
+
+template<typename F, typename V>
 void Lanczos(LinAlg::LinearMap<F, V, V> &LinMap,F (&SkalarProd)(const V&,const V&), void (&VecAdd)(const V&, V&, F), void (&VecMul)(V&, F),const V &startvec, const uint32_t N, std::vector<double> &a, std::vector<double> &b, std::vector<V> &T)
 {
 	if (a.size()+b.size()+T.size() != 0)

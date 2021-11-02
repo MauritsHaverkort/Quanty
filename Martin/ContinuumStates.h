@@ -74,9 +74,9 @@ void CalculateH0MatrixElements(const vector<vector<double> > &psi, const vector<
 double H0nonRelativistic(const vector<double> psi,const vector<double> &dpsi,const vector<double> &phi,const vector<double> &dphi,vector<double> x,const uint32_t l, const int Z);
 
 vector<double> CreateEKinCBNonRelativistic(const vector<vector<double> > &dualcont, const vector<vector<double> > &Ddualcont, const vector<vector<double> > &phi,const vector<vector<double> > &dphi
-        , const vector<vector<double> > &dualphi,const vector<vector<double> > &Ddualphi, const vector<double> &x, const uint32_t l, const vector<vector<double> > &h0cont, vector<double> &T);
+        , const vector<vector<double> > &dualphi,const vector<vector<double> > &Ddualphi, const vector<double> &x, const uint32_t l, const vector<vector<double> > &h0cont, vector<double> &T,const int Z);
 
 double *CreateBaseForContinuum(vector<vector<double> > basisfuns,vector<vector<double> > derivfuns,vector<double> x,
-		SKappaGroup group, vector<vector<double> > &contfuns, vector<vector<double> > &Dcontfuns, vector<vector<double> > h0Cont);
+		SKappaGroup group, vector<vector<double> > &contfuns, vector<vector<double> > &Dcontfuns, vector<vector<double> > h0Cont, const int Z);
 
 #endif /* MARTIN_CONTINUUMSTATES_H_ */
