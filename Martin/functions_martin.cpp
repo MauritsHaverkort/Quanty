@@ -25,6 +25,9 @@
 #include "Hartree-Fock/Hartree-Fock.cpp"
 #include "Slater_Rework/Slater_Integrals.cpp"
 #include "Slater_Rework/Coulomb_Operator.cpp"
+#define AT_QUANTY
+#include "Hartree-Fock-Potential.cpp"
+#include "Math/Wigner9j.cpp"
 
 
 static int LuaOperatorNewFullCoulomb (lua_State *L)
@@ -803,6 +806,35 @@ static int LuaEigenDifferential(lua_State *L)
 }
 
 static int LuaSparseTridiagonalize(lua_State *L)
+{
+	OperatorType *H = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
+	WaveFunctionType* psi;
+	WaveFunctionType *dets;
+	std::vector<double> psiTransformed, A,B;
+	std::vector<std::vector<double> > T;
+	LinAlg::CSRMatrix<double> Hsparse;
+	uint32_t N;
+	lua_check(L,2,psi);
+	lua_check(L,3,dets);
+	lua_check(L,4,N);
+
+	OperatorToSparseMatrix(H,dets,Hsparse);
+	printf("Matrix created with %lu nve\n",Hsparse.A.size());
+	WaveFunctionToVector(psi,psiTransformed,dets);
+
+
+	double epsSV = 100*DBL_EPSILON;
+
+	void (*va)(const std::vector<double> &, std::vector<double> &, double) = VectorAdd;
+	void (*vm)(std::vector<double> &, double) = VectorMul;
+	Lanczos<double,std::vector<double> >(Hsparse,SkalarProdukt,VectorAdd,VectorMul,psiTransformed,N,A,B,T); // ,&SkalarProdukt,&VectorAdd,&VectorMul,psiTransformed,N,A,B,T
+
+
+	return 0;
+
+}
+
+static int LuaSparseBlockTridiagonalize(lua_State *L)
 {
 	OperatorType *H = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
 	std::vector<WaveFunctionType*> psi;
@@ -1861,18 +1893,42 @@ void lua_check(lua_State *L, uint32_t n, T* &in)
 */
 static int LuaMartinTest(lua_State *L)
 {
+	cout << Wigner9J(9, 9, 8, 7, 4, 3, 8, 11, 5) << endl;
+	return 0;
+
 	vector<Interpolation::InterpolatingFunction *> G,F;
+	vector<double> x, occ;
+	vector<int> kappa;
 	lua_check(L,1,G);
 	lua_check(L,2,F);
+	lua_check(L,3,x);
+	lua_check(L,4,occ);
+	lua_check(L,5,kappa);
 
-//	double Fk = Slater_Integrate(0,(G[0])->x,(G[0])->y,(G[0])->y,(G[1])->y,(G[0])->y,(F[0])->y,(F[0])->y,(F[1])->y,(F[0])->y);
-	//printf("%.16f\n",Fk);
-/*	Fk = Slater_Integrate(0,(G[1])->x,(G[0])->y,(G[1])->y,(G[2])->y,(G[3])->y);
-	Fk +=Slater_Integrate(0,(G[1])->x,(F[0])->y,(F[1])->y,(F[2])->y,(F[3])->y);
-	Fk +=Slater_Integrate(0,(G[1])->x,(F[0])->y,(G[1])->y,(F[2])->y,(G[3])->y);
-	Fk +=Slater_Integrate(0,(G[1])->x,(G[0])->y,(F[1])->y,(G[2])->y,(F[3])->y);
-	printf("%.16f\n",Fk);*/
-    return 0;
+	int idx;
+	lua_check(L,6,idx);
+
+	uint32_t n = (uint32_t) x.size();
+	uint32_t N = (uint32_t) G.size();
+
+	double Gval[N*n];
+	double Fval[N*n];
+	for (int i = 0; i < N; i++)
+	{
+		for (int j = 0; j < n; j++)
+		{
+			Gval[n*i+j] = G[i]->y[j];
+			Fval[n*i+j] = F[i]->y[j];
+		}
+	}
+	vector<double> V = vector<double>(n);
+
+	Calc_HF_Potential(&(x[0]),n,Gval,Fval,&(occ[0]),&(kappa[0]),N,&(V[0]),1E-16);
+	cout << V[idx] << endl;
+	//cout << "ThreeJ = " << ThreeJSymbolHalf(3,-1,4,0,3,1) << endl;
+
+	lua_push(L,V);
+    return 1;
 
 }
 
@@ -2224,9 +2280,11 @@ static int LuaOrthonormalizeContinuum(lua_State *L)
     double Emin,dE;
     lua_check(L,4,Emin);
     lua_check(L,5,dE);
-    
+    int Z = 0;
+    if ((uint32_t)lua_gettop(L) == 6) lua_check(L,6,Z);
+    printf("Z = %d\n",Z);
     vector<vector<double> >energiesCont = CreateEigenDifferentialEnergies((uint32_t) vcontf.size(),Emin,dE);
-    double *eigenval = CreateBaseForContinuum(vbasf,vderf,x,group,vcontf,vDcont,energiesCont);
+    double *eigenval = CreateBaseForContinuum(vbasf,vderf,x,group,vcontf,vDcont,energiesCont,Z);
     
     lua_push(L,eigenval,NfunsUnbound);
     
@@ -2740,6 +2798,7 @@ static const struct luaL_Reg Martin_func[] = {
   {"ED",LuaEigenDifferential},
   {"SparseOperator",LuaSparseOperator},
   {"SparseTri",LuaSparseTridiagonalize},
+  {"SparseBlockTri",LuaSparseBlockTridiagonalize},
   {"OperatorToCSRMatrix",LuaOperatorToCSRMatrix},
   {"CSRTridiagonalize",LuaCSRTridiagonalize},
   {"Export",LuaExport},
