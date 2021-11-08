@@ -1,0 +1,3 @@
+g++ -g quanty/LuaInterface/main.cpp -DBLASunderscore -D LUA_USE_LINUX -O0 -xHOST -fopenmp -lm -lblas -llapack -lpthread -ldl -o Quanty
+
+

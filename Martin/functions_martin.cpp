@@ -28,6 +28,7 @@
 #define AT_QUANTY
 #include "Hartree-Fock-Potential.cpp"
 #include "Math/Wigner9j.cpp"
+#include "Effective_Hamiltonian/Effective_Hamiltonian.cpp"
 
 
 static int LuaOperatorNewFullCoulomb (lua_State *L)
@@ -2831,6 +2832,7 @@ static const struct luaL_Reg Martin_func[] = {
   {"HFSC",LuaHartreeFockSC},
   {"AtomicHartreeFock",LuaAtomicHartreeFock},
   {"TestHF",LuaTestHF},
+  {"EffectiveHamiltonian",LuaCreateEffectiveHamiltonian},
   {NULL, NULL}
 };
 
