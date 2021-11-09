@@ -147,7 +147,66 @@ void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunct
 										{
 											for (int L1 = L1_start; L1 <= L1_end; L1 +=2)
 											{
-												double angular_prefactor = (2*K+1)*Wigner9J(twoj2, twoj2v, 2*L1, twoj3, 2*L2, twoj1v, 2*K, twoj4, twoj1);
+												double angular_prefactor = (2*K+1)*Wigner9J(twoj2, twoj2v, 2*L1, twoj3, 2*L2, twoj1v, 2*K, twoj4, twoj1)/4.;//  1/4 is the prefactor according to Effective_Hamiltonian_2.pdf
+												reduced_matrix_ements[K-K_start] += angular_prefactor * Fk1[(L1 - L1_start)/2] * Fk2[(L2 - L2_start)/2];
+											}
+										}
+									}
+								}
+							}
+							// three active, one virtual
+							for (uint32_t n2 = 0; n2 < N_active_orbitals; n2++)
+							{
+								int k2v = list_of_kappas_active[n2];
+								int twoj2v = 2*std::abs(k2v)-1;
+								double e2v = energies[n2];
+
+								int L1_start = std::max( abs(twoj1-twoj1v), abs(twoj2-twoj2v))/2;
+								int L1_end = std::min( twoj1+twoj1v, twoj2+twoj2v)/2;
+
+								int L2_start = std::max(  abs(twoj3-twoj1v), abs(twoj4-twoj2v))/2;
+								int L2_end = std::min( twoj3+twoj1v, twoj4+twoj2v )/2;
+
+								if ( (abs(k1)+abs(k1v) + (Sign(k1)+Sign(k1v))/2 + L1_start ) % 2 == 0)
+								{
+									L1_start++;
+								}
+								if ( (abs(k3)+abs(k1v) + (Sign(k3)+Sign(k1v))/2 + L2_start ) % 2 == 0)
+								{
+									L2_start++;
+								}
+								if ((L1_start <= L1_end) && (L2_start <= L2_end))
+								{
+									double Fk1[(L1_end-L1_start)/2 +1];
+									//int sign = L1_start % 2 == 0 ? 1 : -1; Cancelled in the end
+									for (int L = L1_start; L <= L1_end; L +=2)
+									{
+										double c_reduced_11 = sqrt((twoj1+1)*(twoj1v+1))*ThreeJSymbolHalf(twoj1, -1, twoj1v, 1, 2*L, 0);
+										//Cancelled if (((twoj1+1)/2)%2==1) c_reduced_11 *= -1; //TODO: move this to the outermoost possible loop
+										double c_reduced_22 = sqrt((twoj2+1)*(twoj2v+1))*ThreeJSymbolHalf(twoj2, -1, twoj2v, 1, 2*L, 0);
+										//Cancelled if (((twoj2+1)/2)%2==1) c_reduced_22 *= -1; //TODO: move this to the outermoost possible loop
+										Fk1[(L - L1_start)/2] = Slater_Integrate(G[0]->x,powx,L,G[i1]->y,G[i2]->y,G[n1+N_active_orbitals]->y,G[n2]->y,F[i1]->y,F[i2]->y,F[n1+N_active_orbitals]->y,F[n2]->y);
+										Fk1[(L - L1_start)/2] *=  c_reduced_11 * c_reduced_22;
+
+									}
+									double Fk2[(L2_end-L2_start)/2 +1];
+									//sign = L2_start % 2 == 0 ? 1 : -1; Cancelled  in the end
+									for (int L = L2_start; L <= L2_end; L +=2)
+									{
+										double c_reduced_13 = sqrt((twoj3+1)*(twoj1v+1))*ThreeJSymbolHalf(twoj1v, -1, twoj3, 1, 2*L, 0);
+										//Cancelled if (((twoj1v+1)/2)%2==1) c_reduced_13 *= -1; //TODO: move this to the outermoost possible loop
+										double c_reduced_24 = sqrt((twoj2v+1)*(twoj4+1))*ThreeJSymbolHalf(twoj2v, -1, twoj4, 1, 2*L, 0);
+										//Cancelled if (((twoj2v+1)/2)%2==1) c_reduced_24 *= -1; //TODO: move this to the outermoost possible loop
+										Fk2[(L - L2_start)/2] = Slater_Integrate(G[0]->x,powx,L,G[n1+N_active_orbitals]->y,G[n2]->y,G[i3]->y,G[i4]->y,F[n1+N_active_orbitals]->y,F[n2]->y,F[i3]->y,F[i4]->y);
+										Fk2[(L - L2_start)/2] *= c_reduced_13 * c_reduced_24;
+									}
+									for (int K = K_start; K <= K_end; K++)
+									{
+										for (int L2 = L2_start; L2 <= L2_end; L2 +=2)
+										{
+											for (int L1 = L1_start; L1 <= L1_end; L1 +=2)
+											{
+												double angular_prefactor = (2*K+1)*Wigner9J(twoj2, twoj2v, 2*L1, twoj3, 2*L2, twoj1v, 2*K, twoj4, twoj1)/2.; //  1/2 is the prefactor according to Effective_Hamiltonian_2.pdf
 												reduced_matrix_ements[K-K_start] += angular_prefactor * Fk1[(L1 - L1_start)/2] * Fk2[(L2 - L2_start)/2];
 											}
 										}
@@ -155,7 +214,6 @@ void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunct
 								}
 							}
 						}
-						//TODO: Assemble
 						for (int K = K_start; K <= K_end; K++)
 						{
 							for (int two_m1 = -twoj1; two_m1 <= twoj1; two_m1 += 2)
