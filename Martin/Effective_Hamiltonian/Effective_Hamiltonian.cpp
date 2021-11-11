@@ -39,13 +39,14 @@ void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunct
 										  const vector<double> &energies,
 										  const vector<vector<uint16_t> > &indices_active,
 										  const vector<int> &list_of_kappas_active,
-										  const vector<vector<uint16_t> > &indices_virtual,
 										  const vector<int> &list_of_kappas_virtual,
 										  const uint32_t NF,
 										  OperatorType &U)
 {
 	uint32_t N_active_orbitals  = (uint32_t) indices_active.size();
-	uint32_t N_virtual_orbitals = (uint32_t) indices_virtual.size();
+	uint32_t N_virtual_orbitals = (uint32_t) list_of_kappas_virtual.size();
+	uint32_t N_funs = N_active_orbitals + N_virtual_orbitals;
+	uint32_t N_x = (uint32_t) G[0]->x.size();
 
 	InitNamedOperator(&U, "Effective H");
 	U.NFermion = NF;
@@ -59,7 +60,11 @@ void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunct
 	list_of_kappas.insert(list_of_kappas.end(), list_of_kappas_virtual.begin(), list_of_kappas_virtual.end());
 	Init_Slater_Kernel(list_of_kappas,G[0]->x,powx);
 
-#pragma omp parallel for
+	double GFpairs[N_funs*N_funs*N_x];
+	double *x = &(G[0]->x[0]);
+	Init_Slater_Function_Pairs(N_x, G, F, GFpairs);
+
+//#pragma omp parallel for
 	for (uint32_t i1 = 0; i1 < N_active_orbitals; i1++)
 	{
 		int k1 = list_of_kappas_active[i1];
@@ -102,6 +107,8 @@ void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunct
 								int twoj2v = 2*std::abs(k2v)-1;
 								double e2v = energies[n2+N_active_orbitals];
 
+								double denom = e1v + e2v - e3 - e4;
+
 								int L1_start = std::max( abs(twoj1-twoj1v), abs(twoj2-twoj2v))/2;
 								int L1_end = std::min( twoj1+twoj1v, twoj2+twoj2v)/2;
 
@@ -126,7 +133,8 @@ void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunct
 										//Cancelled if (((twoj1+1)/2)%2==1) c_reduced_11 *= -1; //TODO: move this to the outermoost possible loop
 										double c_reduced_22 = sqrt((twoj2+1)*(twoj2v+1))*ThreeJSymbolHalf(twoj2, -1, twoj2v, 1, 2*L, 0);
 										//Cancelled if (((twoj2+1)/2)%2==1) c_reduced_22 *= -1; //TODO: move this to the outermoost possible loop
-										Fk1[(L - L1_start)/2] = Slater_Integrate(G[0]->x,powx,L,G[i1]->y,G[i2]->y,G[n1+N_active_orbitals]->y,G[n2+N_active_orbitals]->y,F[i1]->y,F[i2]->y,F[n1+N_active_orbitals]->y,F[n2+N_active_orbitals]->y);
+										// This is working but slow: Fk1[(L - L1_start)/2] = Slater_Integrate(G[0]->x,powx,L,G[i1]->y,G[i2]->y,G[n1+N_active_orbitals]->y,G[n2+N_active_orbitals]->y,F[i1]->y,F[i2]->y,F[n1+N_active_orbitals]->y,F[n2+N_active_orbitals]->y);
+										Fk1[(L - L1_start)/2] = Slater_Integrate_optimize(N_x, x, &(powx[0]), L, &(GFpairs[(i1*N_funs+(n1+N_active_orbitals))*N_x]), &(GFpairs[(i2*N_funs + n2+N_active_orbitals)*N_x]));
 										Fk1[(L - L1_start)/2] *=  c_reduced_11 * c_reduced_22;
 
 									}
@@ -138,7 +146,8 @@ void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunct
 										//Cancelled if (((twoj1v+1)/2)%2==1) c_reduced_13 *= -1; //TODO: move this to the outermoost possible loop
 										double c_reduced_24 = sqrt((twoj2v+1)*(twoj4+1))*ThreeJSymbolHalf(twoj2v, -1, twoj4, 1, 2*L, 0);
 										//Cancelled if (((twoj2v+1)/2)%2==1) c_reduced_24 *= -1; //TODO: move this to the outermoost possible loop
-										Fk2[(L - L2_start)/2] = Slater_Integrate(G[0]->x,powx,L,G[n1+N_active_orbitals]->y,G[n2+N_active_orbitals]->y,G[i3]->y,G[i4]->y,F[n1+N_active_orbitals]->y,F[n2+N_active_orbitals]->y,F[i3]->y,F[i4]->y);
+										// This is working but slow: Fk2[(L - L2_start)/2] = Slater_Integrate(G[0]->x,powx,L,G[n1+N_active_orbitals]->y,G[n2+N_active_orbitals]->y,G[i3]->y,G[i4]->y,F[n1+N_active_orbitals]->y,F[n2+N_active_orbitals]->y,F[i3]->y,F[i4]->y);
+										Fk2[(L - L2_start)/2] = Slater_Integrate_optimize(N_x, x, &(powx[0]), L, &(GFpairs[((n1+N_active_orbitals)*N_funs+i3)*N_x]), &(GFpairs[((n2+N_active_orbitals)*N_funs + i4)*N_x]));
 										Fk2[(L - L2_start)/2] *= c_reduced_13 * c_reduced_24;
 									}
 									for (int K = K_start; K <= K_end; K++)
@@ -148,7 +157,7 @@ void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunct
 											for (int L1 = L1_start; L1 <= L1_end; L1 +=2)
 											{
 												double angular_prefactor = (2*K+1)*Wigner9J(twoj2, twoj2v, 2*L1, twoj3, 2*L2, twoj1v, 2*K, twoj4, twoj1)/4.;//  1/4 is the prefactor according to Effective_Hamiltonian_2.pdf
-												reduced_matrix_ements[K-K_start] += angular_prefactor * Fk1[(L1 - L1_start)/2] * Fk2[(L2 - L2_start)/2];
+												reduced_matrix_ements[K-K_start] += angular_prefactor * Fk1[(L1 - L1_start)/2] * Fk2[(L2 - L2_start)/2]/denom;
 											}
 										}
 									}
@@ -161,6 +170,8 @@ void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunct
 								int twoj2v = 2*std::abs(k2v)-1;
 								double e2v = energies[n2];
 
+								double denom = e1v + e2v - e3 - e4;
+
 								int L1_start = std::max( abs(twoj1-twoj1v), abs(twoj2-twoj2v))/2;
 								int L1_end = std::min( twoj1+twoj1v, twoj2+twoj2v)/2;
 
@@ -185,7 +196,8 @@ void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunct
 										//Cancelled if (((twoj1+1)/2)%2==1) c_reduced_11 *= -1; //TODO: move this to the outermoost possible loop
 										double c_reduced_22 = sqrt((twoj2+1)*(twoj2v+1))*ThreeJSymbolHalf(twoj2, -1, twoj2v, 1, 2*L, 0);
 										//Cancelled if (((twoj2+1)/2)%2==1) c_reduced_22 *= -1; //TODO: move this to the outermoost possible loop
-										Fk1[(L - L1_start)/2] = Slater_Integrate(G[0]->x,powx,L,G[i1]->y,G[i2]->y,G[n1+N_active_orbitals]->y,G[n2]->y,F[i1]->y,F[i2]->y,F[n1+N_active_orbitals]->y,F[n2]->y);
+										// This is working but slow: Fk1[(L - L1_start)/2] = Slater_Integrate(G[0]->x,powx,L,G[i1]->y,G[i2]->y,G[n1+N_active_orbitals]->y,G[n2]->y,F[i1]->y,F[i2]->y,F[n1+N_active_orbitals]->y,F[n2]->y);
+										Fk1[(L - L1_start)/2] = Slater_Integrate_optimize(N_x, x, &(powx[0]), L, &(GFpairs[(i1*N_funs+(n1+N_active_orbitals))*N_x]), &(GFpairs[(i2*N_funs + n2)*N_x]));
 										Fk1[(L - L1_start)/2] *=  c_reduced_11 * c_reduced_22;
 
 									}
@@ -197,7 +209,8 @@ void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunct
 										//Cancelled if (((twoj1v+1)/2)%2==1) c_reduced_13 *= -1; //TODO: move this to the outermoost possible loop
 										double c_reduced_24 = sqrt((twoj2v+1)*(twoj4+1))*ThreeJSymbolHalf(twoj2v, -1, twoj4, 1, 2*L, 0);
 										//Cancelled if (((twoj2v+1)/2)%2==1) c_reduced_24 *= -1; //TODO: move this to the outermoost possible loop
-										Fk2[(L - L2_start)/2] = Slater_Integrate(G[0]->x,powx,L,G[n1+N_active_orbitals]->y,G[n2]->y,G[i3]->y,G[i4]->y,F[n1+N_active_orbitals]->y,F[n2]->y,F[i3]->y,F[i4]->y);
+										// This is working but slow: Fk2[(L - L2_start)/2] = Slater_Integrate(G[0]->x,powx,L,G[n1+N_active_orbitals]->y,G[n2]->y,G[i3]->y,G[i4]->y,F[n1+N_active_orbitals]->y,F[n2]->y,F[i3]->y,F[i4]->y);
+										Fk2[(L - L2_start)/2] = Slater_Integrate_optimize(N_x, x, &(powx[0]), L, &(GFpairs[((n1+N_active_orbitals)*N_funs+i3)*N_x]), &(GFpairs[((n2)*N_funs + i4)*N_x]));
 										Fk2[(L - L2_start)/2] *= c_reduced_13 * c_reduced_24;
 									}
 									for (int K = K_start; K <= K_end; K++)
@@ -207,13 +220,14 @@ void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunct
 											for (int L1 = L1_start; L1 <= L1_end; L1 +=2)
 											{
 												double angular_prefactor = (2*K+1)*Wigner9J(twoj2, twoj2v, 2*L1, twoj3, 2*L2, twoj1v, 2*K, twoj4, twoj1)/2.; //  1/2 is the prefactor according to Effective_Hamiltonian_2.pdf
-												reduced_matrix_ements[K-K_start] += angular_prefactor * Fk1[(L1 - L1_start)/2] * Fk2[(L2 - L2_start)/2];
+												reduced_matrix_ements[K-K_start] += angular_prefactor * Fk1[(L1 - L1_start)/2] * Fk2[(L2 - L2_start)/2]/denom;
 											}
 										}
 									}
 								}
 							}
 						}
+						cout << i1 << "\t"<< i2 << "\t"<< i3 << "\t"<< i4 << "\n";
 						for (int K = K_start; K <= K_end; K++)
 						{
 							for (int two_m1 = -twoj1; two_m1 <= twoj1; two_m1 += 2)
@@ -253,7 +267,6 @@ static int LuaCreateEffectiveHamiltonian(lua_State *L)
 	vector<double> energies;
 	vector<vector<uint16_t> > indices_active;
 	vector<int> list_of_kappas_active;
-	vector<vector<uint16_t> > indices_virtual;
 	vector<int> list_of_kappas_virtual;
 	uint32_t NF;
 
@@ -271,19 +284,7 @@ static int LuaCreateEffectiveHamiltonian(lua_State *L)
 		lua_pop(L,1);
 		if (indices_active.size() != list_of_kappas_active.size()) return luaL_error(L,"Error in LuaCreate_Relativistic_Coulomb_Operator: Argument 2 : indices.kappas and indices do not have same size.\n");
 	}
-	lua_check(L,3,indices_virtual);
-	lua_getfield(L,3,"kappas");
-	if (lua_isnil(L,-1))
-	{
-		lua_pop(L,1);
-		return luaL_error(L,"Error in LuaCreate_Relativistic_Coulomb_Operator: Argument 3: indices.kappas does not exist.\n");
-	}
-	else
-	{
-		lua_check(L,-1,list_of_kappas_virtual);
-		lua_pop(L,1);
-		if (indices_virtual.size() != list_of_kappas_virtual.size()) return luaL_error(L,"Error in LuaCreate_Relativistic_Coulomb_Operator: Argument 2 : indices.kappas and indices do not have same size.\n");
-	}
+	lua_check(L,3,list_of_kappas_virtual);
 	lua_check(L,4,G);
 	lua_check(L,5,F);
 	lua_check(L,6,energies);
@@ -291,7 +292,7 @@ static int LuaCreateEffectiveHamiltonian(lua_State *L)
 	OperatorType *U = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
 	luaL_setmetatable(L,"Operator_Type");
 
-	Create_Effective_Hamiltonian(G, F, energies, indices_active, list_of_kappas_active, indices_virtual, list_of_kappas_virtual, NF, *U);
+	Create_Effective_Hamiltonian(G, F, energies, indices_active, list_of_kappas_active, list_of_kappas_virtual, NF, *U);
 	return 1;
 }
 

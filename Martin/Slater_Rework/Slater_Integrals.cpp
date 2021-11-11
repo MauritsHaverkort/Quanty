@@ -62,6 +62,50 @@ double Slater_Integrate(const vector<double> &x, const vector<double> &powx, con
 	return val;
 }
 
+double Slater_Integrate_optimize(const uint32_t N_x, const double *x,
+												 const double *powx, const int K,
+										 	 	 const double *G13,
+												 const double *G24)
+{
+	double w1, w2, gg, g13, g24;
+	double val = 0.;
+	for (uint32_t i = 1; i < N_x-1; i++)
+	{
+		w1 = (x[i+1]-x[i-1])/2.;
+		g13 = G13[i]; //G1[i]*G3[i] + F1[i]*F3[i];
+		g24 = G24[i]; //G2[i]*G4[i] + F2[i]*F4[i];
+		val += w1 * w1 * g13 * g24 / x[i];
+		w1 = w1 * powx[K*N_x + i];
+		for (uint32_t j = i+1; j < N_x-1; j++)
+		{
+			w2 = (x[j+1]-x[j-1])/2.;
+			gg = g13 * G24[j];
+			gg +=G13[j] * g24;
+			val += w1 * w2 * gg / powx[(K+1)*N_x + j] ;
+		}
+	}
+	return val;
+}
+
+void Init_Slater_Function_Pairs(const uint32_t N_x,
+								const vector<Interpolation::InterpolatingFunction*> &G,
+								const vector<Interpolation::InterpolatingFunction*> &F, double *GFpairs)
+{
+	uint32_t N_funs = (uint32_t) G.size();
+	for (uint32_t i = 0; i < N_funs; i++)
+	{
+		for (uint32_t j = i; j < N_funs; j++)
+		{
+			for (uint32_t k = 0; k < N_x; k++)
+			{
+				GFpairs[(i*N_funs +j)*N_x + k] = G[i]->y[k]*G[j]->y[k]+F[i]->y[k]*F[j]->y[k];
+				GFpairs[(j*N_funs +i)*N_x + k] = GFpairs[(i*N_funs +j)*N_x + k];
+			}
+
+		}
+	}
+}
+
 void Init_Slater_Kernel(const vector<int> &list_of_kappas, const vector<double> &x,
 							  vector<double> &powx)
 {
