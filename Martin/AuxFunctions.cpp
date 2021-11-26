@@ -439,32 +439,85 @@ static int LuaLinCombine(lua_State *L)
     return 1;
 }
 
+uint32_t WaveFunctionAddAnyMultipliedUnionBasis(WaveFunctionType *const a, const WaveFunctionType b, const double alpha)
+{
+	return WaveFunctionAddMultipliedUnionBasis(a, b, alpha);
+}
+
+uint32_t WaveFunctionAddAnyMultipliedUnionBasis(WaveFunctionType *const a, const WaveFunctionType b, const Complex16 alpha)
+{
+	return WaveFunctionAddComplexMultipliedUnionBasis(a, b, alpha.Re, alpha.Im);
+}
+
+template<typename T>
+vector<WaveFunctionType> rotatePsiList(const vector<WaveFunctionType> &basis, const vector<vector<T> > &U)
+{
+	vector < WaveFunctionType > psi;
+	uint32_t QComplex = basis[0].QComplex;
+	for (uint32_t i = 0; i < (uint32_t) basis.size(); ++i)
+	{
+		if (basis[i].QComplex != QComplex)
+		{
+			vector < WaveFunctionType > basisC = vector < WaveFunctionType > (basis.size());
+			for (uint32_t j = 0; j < (uint32_t) basis.size(); ++j)
+			{
+				WaveFunctionCopy(basis[j], &basisC[j]);
+				if (!(bool) basis[j].QComplex)
+				{
+					MakeComplexWaveFunctionFromReal(&basisC[j], basisC[j]);
+				}
+			}
+			psi = rotatePsiList(basisC, U);
+			for (uint32_t j = 0; j < (uint32_t) basisC.size(); ++j)
+				WaveFunctionFree (&basisC[j]);
+			return psi;
+		}
+	}
+	psi = vector < WaveFunctionType > (U.size());
+#pragma omp parallel for
+	for (uint32_t j = 0; j < (uint32_t) U.size(); j++)
+	{
+		psi[j].NFermion = basis[0].NFermion;
+		psi[j].NBoson = basis[0].NBoson;
+		psi[j].QComplex = QComplex;
+		psi[j].NBitsKey = basis[0].NBitsKey;
+		WaveFunctionInit (&(psi[j]));
+		if (basis.size() < U[j].size()) printf("error in LuaBasisChange, not enough wave-functions in list\n");
+		for (uint32_t i = 0; i < (uint32_t) basis.size(); i++)
+		{
+			WaveFunctionAddAnyMultipliedUnionBasis(&(psi[j]), basis[i], U[j][i]);
+		}
+		WaveFunctionNormalize(&(psi[j]));
+		WaveFunctionTruncateBasis(&(psi[j]), DBL_EPSILON);
+	}
+	return psi;
+}
+
 static int LuaBasisChange(lua_State *L)
 {
-    vector<WaveFunctionType> basis, psi;
-    vector<vector<double> >U;
-    lua_check(L,1,basis);
-    lua_check(L,2,U);
-    psi = vector<WaveFunctionType>( U.size());
-#pragma omp parallel for
-    for (uint32_t j = 0; j < (uint32_t) U.size(); j++)
-    {
-        psi[j].NFermion = basis[0].NFermion;
-        psi[j].NBoson = basis[0].NBoson;
-        psi[j].QComplex = basis[0].QComplex;
-        psi[j].NBitsKey = basis[0].NBitsKey;
-        WaveFunctionInit(&(psi[j]));
-        if (basis.size() < U[j].size()) printf("error in LuaBasisChange, not enough wave-functions in list\n");
-        for (uint32_t i = 0; i < (uint32_t) U[j].size(); i++)
-        {
-            RealWaveFunctionAddMultipliedUnionBasis(&(psi[j]),basis[i],U[j][i]);
-        }
-        WaveFunctionNormalize(&(psi[j]));
-		WaveFunctionTruncateBasis(&(psi[j]),DBL_EPSILON);
-
-    }
-    lua_push(L,psi);
-    return 1;
+	vector<WaveFunctionType> basis, psi;
+	vector < vector<double> > U;
+	vector < vector<Complex16> > UC;
+	if (luaL_isType(L, 1, basis))
+		lua_check(L, 1, basis);
+	else
+		return luaL_error(L, "Error in BasisChange: First argument should be a list of wavefunctions!");
+	if (luaL_isType(L, 2, U))
+	{
+		lua_check(L, 2, U);
+		psi = rotatePsiList(basis, U);
+	}
+	else if (luaL_isType(L, 2, UC))
+	{
+		lua_check(L, 2, UC);
+		psi = rotatePsiList(basis, UC);
+	}
+	else
+	{
+		return luaL_error(L, "Error in LuaBasisChange: Unrecognised type of rotation matrix!");
+	}
+	lua_push(L, psi);
+	return 1;
 }
 
 double CalcOneNorm(const WaveFunctionType &psi)

@@ -2759,10 +2759,16 @@ uint32_t CompactMatrixEigensystem(CompactMatrixType const *A, CompactMatrixType 
         printf("also zheevd failed in CompactMatrixEigensystem with info value %i\n", info);
         printf("ERORR!!!!!!!!!!\n");
         fflush(stdout);
+        free(iwork);	// Added by Simon, otherwhise heap is lost
+        free(cwork);
+        free(work);
         return 1;
       }
     }
     CompactMatrixConjugate(fun);
+    free(iwork);	// Added by Simon, otherwhise heap is lost
+    free(cwork);
+    free(work);
     return 0;
   }
   return 0;
@@ -4836,20 +4842,32 @@ CompactMatrixType ExpandNumberToCompactMatrix(int size, double Re, double Im = 0
 
 CompactMatrixType MatrixEnlarge(CompactMatrixType M, int size)
 {
-  vector < vector<CompactMatrixType> > fullM(M.Ni);
-  for (int i = 0; i < M.Ni; ++i)
-  {
-    vector < CompactMatrixType > col(M.Nj);
-    fullM[i] = col;
-    for (int j = 0; j < M.Nj; ++j)
-    {
-      if (M.QComplex)
-        fullM[i][j] = ExpandNumberToCompactMatrix(size, M.V[i*M.Nj+j].Re, M.V[i*M.Nj+j].Im);
-      else
-        fullM[i][j] = ExpandNumberToCompactMatrix(size, M.VRe[i*M.Nj+j]);
-    }
-  }
-  return MatrixFlatten(fullM);
+	CompactMatrixType out;
+	out.Ni = M.Ni * size;
+	out.Nj = M.Nj * size;
+	out.QComplex = M.QComplex;
+	InitCompactMatrix(&out);
+	for (uint i = 0; i < M.Ni; ++i)
+	{
+		for (uint j = 0; j < M.Nj; ++j)
+		{
+			for (uint k = 0; k < size; ++k)
+			{
+				uint iNew = i * size + k;
+				uint jNew = j * size + k;
+				if ((bool) out.QComplex)
+				{
+					out.V[iNew * out.Nj + jNew].Re = M.V[i * M.Nj + j].Re;
+					out.V[iNew * out.Nj + jNew].Im = M.V[i * M.Nj + j].Im;
+				}
+				else
+				{
+					out.VRe[iNew * out.Nj + jNew] = M.VRe[i * M.Nj + j];
+				}
+			}
+		}
+	}
+	return out;
 }
 
 CompactMatrixType MatrixExpand(const CompactMatrixType M, const int size, const Complex16 newEntries)
@@ -4935,6 +4953,39 @@ CompactMatrixType CompactidentityMatrix(const int size)
   return CompactidentityMatrix(size, size);
 }
 
+CompactMatrixType Submatrix(const CompactMatrixType &M, const vector<uint32_t> &inds)
+{
+	for (uint i = 0; i < (uint) inds.size(); ++i)
+	{
+		if (inds[i] < 0 || inds[i] >= M.Ni || inds[i] >= M.Nj)
+		{
+			cout << "Error in Submatrix: index " << inds[i] << " out of range.";
+			return CompactnullMatrix();
+		}
+	}
+	CompactMatrixType Msub;
+	Msub.Ni = (uint32_t) inds.size();
+	Msub.Nj = (uint32_t) inds.size();
+	Msub.QComplex = M.QComplex;
+	InitCompactMatrix(&Msub);
+	Msub.OnLuaStack = M.OnLuaStack;
+	for (int i = 0; i < (uint) inds.size(); ++i)
+	{
+		for (int j = 0; j < (uint) inds.size(); ++j)
+		{
+			uint ind = inds[i] * M.Nj + inds[j];
+			if (M.QComplex == 0)
+			{
+				Msub.VRe[i * Msub.Nj + j] = M.VRe[ind];
+			}
+			else
+			{
+				Msub.V[i * Msub.Nj + j] = M.V[ind];
+			}
+		}
+	}
+	return Msub;
+}
 
 CompactMatrixType Submatrix(const CompactMatrixType &M, int rowStart, int rows, int colStart, int cols)
 {

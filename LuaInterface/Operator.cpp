@@ -5077,6 +5077,19 @@ static int LuaOperatorIndex(lua_State * L)
     }
     return 1;
   }
+	if (strcmp(str, "Offset") == 0)
+	{
+		if (a->l[0].N == 0)
+			lua_push(L, 0);
+		else
+		{
+			if ((bool) a->l[0].QComplex)
+				lua_push(L, a->l[0].V[0]);
+			else
+				lua_push(L, a->l[0].VRe[0]);
+		}
+		return 1;
+	}
   return luaL_error(L, "Error operator variable not found");;
 }
 

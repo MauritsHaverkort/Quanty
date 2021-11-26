@@ -36,30 +36,19 @@ WaveFunctionType WaveFunctionTensorProduct(const WaveFunctionType &psi1, const W
 			}
 		}
 	}
-	else if ((bool) psi1.QComplex || (bool) psi2.QComplex) //one complex, one real
+	else if ((bool) psi1.QComplex && !(bool) psi2.QComplex)
 	{
-		WaveFunctionType tmp1, tmp2;
-		if ((bool) psi2.QComplex)
+		for (uint32_t i = 1; i <= psi1.N; ++i)
 		{
-			tmp1 = psi2;
-			tmp2 = psi1;
-		}
-		else
-		{
-			tmp1 = psi1;
-			tmp2 = psi2;
-		}
-		for (uint32_t i = 1; i <= tmp1.N; ++i)
-		{
-			for (uint32_t j = 1; j <= tmp2.N; ++j)
+			for (uint32_t j = 1; j <= psi2.N; ++j)
 			{
-				double valRe = tmp1.ValueRe[BlokElement(i)] * tmp2.ValueRe[BlokElement(j)];
-				double valIm = tmp1.ValueIm[BlokElement(i)] * tmp2.ValueRe[BlokElement(j)];
+				double valRe = psi1.ValueRe[BlokElement(i)] * psi2.ValueRe[BlokElement(j)];
+				double valIm = psi1.ValueIm[BlokElement(i)] * psi2.ValueRe[BlokElement(j)];
 				std::stringstream ss;
 				char *det1, *det2;
 				uint8_t *detNew;
-				det1 = DetToString(tmp1.NFermion, tmp1.NBoson, &tmp1.Determinant[BlokElementDet(i, tmp1.NWord, 0)]);
-				det2 = DetToString(tmp2.NFermion, tmp2.NBoson, &tmp2.Determinant[BlokElementDet(j, tmp2.NWord, 0)]);
+				det1 = DetToString(psi1.NFermion, psi1.NBoson, &psi1.Determinant[BlokElementDet(i, psi1.NWord, 0)]);
+				det2 = DetToString(psi2.NFermion, psi2.NBoson, &psi2.Determinant[BlokElementDet(j, psi2.NWord, 0)]);
 				ss << det1 << det2;
 				detNew = StringToDet(out.NFermion, out.NBoson, ss.str().c_str());
 				ComplexWaveFunctionAddElement(&out, detNew, valRe, valIm);
@@ -69,6 +58,28 @@ WaveFunctionType WaveFunctionTensorProduct(const WaveFunctionType &psi1, const W
 			}
 		}
 	}
+	else if (!(bool) psi1.QComplex && (bool) psi2.QComplex)
+		{
+			for (uint32_t i = 1; i <= psi1.N; ++i)
+			{
+				for (uint32_t j = 1; j <= psi2.N; ++j)
+				{
+					double valRe = psi1.ValueRe[BlokElement(i)] * psi2.ValueRe[BlokElement(j)];
+					double valIm = psi1.ValueRe[BlokElement(i)] * psi2.ValueIm[BlokElement(j)];
+					std::stringstream ss;
+					char *det1, *det2;
+					uint8_t *detNew;
+					det1 = DetToString(psi1.NFermion, psi1.NBoson, &psi1.Determinant[BlokElementDet(i, psi1.NWord, 0)]);
+					det2 = DetToString(psi2.NFermion, psi2.NBoson, &psi2.Determinant[BlokElementDet(j, psi2.NWord, 0)]);
+					ss << det1 << det2;
+					detNew = StringToDet(out.NFermion, out.NBoson, ss.str().c_str());
+					ComplexWaveFunctionAddElement(&out, detNew, valRe, valIm);
+					free(det1);
+					free(det2);
+					free(detNew);
+				}
+			}
+		}
 	else //all real
 	{
 		for (uint32_t i = 1; i <= psi1.N; ++i)
@@ -96,15 +107,34 @@ WaveFunctionType WaveFunctionTensorProduct(const WaveFunctionType &psi1, const W
 static int LuaTensorProduct(lua_State *L)
 {
 	WaveFunctionType psi1, psi2;
+	vector<WaveFunctionType> psi1vec, psi2vec;
 	uint32_t len = (uint32_t) lua_gettop(L);
 	if (len != 2) return luaL_error(L, "Error: TensorProduct called with %d arguments, exactly 2 expected.", len);
-	if (luaL_isType(L, 1, psi1))
+	if (luaL_isType(L, 1, psi1) && luaL_isType(L, 2, psi2))
 	{
-		if (!luaL_isType(L, 2, psi2)) return luaL_error(L, "Error in TensorProduct: First argument is of type Wavefunction, second argument is not.");
 		lua_check(L, 1, psi1);
 		lua_check(L, 2, psi2);
 		if (psi1.NBoson != 0 || psi2.NBoson != 0) return luaL_error(L, "One of the Wavefunctions contains bosonic states, this is not yet implemented.");
 		lua_push(L, WaveFunctionTensorProduct(psi1, psi2));
+	}
+	else if (luaL_isType(L, 1, psi1vec) && luaL_isType(L, 2, psi2vec))
+	{
+		lua_check(L, 1, psi1vec);
+		lua_check(L, 2, psi2vec);
+		for (uint i = 0; i < (uint) psi1vec.size(); ++i)
+			if (psi1vec[i].NBoson != 0) return luaL_error(L, "One of the Wavefunctions contains bosonic states, this is not yet implemented.");
+		for (uint i = 0; i < (uint) psi2vec.size(); ++i)
+			if (psi2vec[i].NBoson != 0) return luaL_error(L, "One of the Wavefunctions contains bosonic states, this is not yet implemented.");
+		vector < WaveFunctionType > out(psi1vec.size() * psi2vec.size());
+#pragma omp parallel for
+		for (uint ij = 0; ij < (uint) out.size(); ++ij)
+		{
+			uint i, j;
+			j = ij % (uint) psi2vec.size();
+			i = (ij - j) / (uint) psi2vec.size();
+			out[ij] = WaveFunctionTensorProduct(psi1vec[i], psi2vec[j]);
+		}
+		lua_push(L, out);
 	}
 	else
 	{

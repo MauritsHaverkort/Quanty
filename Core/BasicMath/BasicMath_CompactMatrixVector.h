@@ -1,4 +1,5 @@
 void FreeCompactMatrix(CompactMatrixType * const M);
+void FreeCompactMatrixIncludingPointer(CompactMatrixType * const M);
 uint32_t InitCompactMatrix(CompactMatrixType * const M);
 uint32_t ResizeCompactMatrix(CompactMatrixType * const M, uint32_t Ni, uint32_t Nj);
 uint32_t SetCompactMatrixToZero(CompactMatrixType * const M);
@@ -73,6 +74,8 @@ uint32_t HermitianCompactMatrixToListOfPoles(CompactMatrixType const *A, ListOfP
 uint32_t HermitianCompactMatrixToListOfPolesWithEigenstates(CompactMatrixType const *A, ListOfPoles *L, CompactMatrixType *vec, CompactMatrixType *fun);
 uint32_t HermitianCompactMatrixToBlockListOfPoles(CompactMatrixType const *A, BlockListOfPoles *L, CompactMatrixType *vec);
 uint32_t HermitianCompactMatrixToBlockListOfPolesWithEigenstates(CompactMatrixType const *A, BlockListOfPoles *L, CompactMatrixType *vec, CompactMatrixType *fun);
+uint32_t BlockResponseFunctionGetA0(ResponsefunctionType const *A, CompactMatrixType * const A0);
+uint32_t BlockResponseFunctionGetB0(ResponsefunctionType const *A, CompactMatrixType * const B0);
 uint32_t ResponseFunctionToCompactMatrix(ResponsefunctionType const * A, CompactMatrixType * const B, const bool deflate, const double SingularValue);
 uint32_t BlockListOfPolesToCompactMatrix(BlockListOfPoles const *A, CompactMatrixType * const B, const double SingularValue);
 uint32_t BlockListOfPolesToCompactMatrixWithDeflation(BlockListOfPoles const *A, CompactMatrixType * const B, const double SingularValue);
@@ -102,6 +105,7 @@ void MatrixAbsAverage(CompactMatrixType M, double *AbsAverage);
 vector<vector<CompactMatrixType> > CompactnullMatrixMatrix(const uint32_t rows, const uint32_t cols);
 CompactMatrixType CompactidentityMatrix(const int rowSize, const int colSize);
 CompactMatrixType CompactidentityMatrix(const int size);
+CompactMatrixType Submatrix(const CompactMatrixType &M, const vector<uint32_t> &inds);
 CompactMatrixType Submatrix(const CompactMatrixType &M, int rowStart, int rows, int colStart, int cols);
 CompactMatrixType Submatrix(const CompactMatrixType &M, int rows, int cols);
 CompactMatrixType Submatrix(const CompactMatrixType &M, int size);

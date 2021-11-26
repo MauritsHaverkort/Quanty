@@ -150,7 +150,7 @@ vector<map<string, double> > getWF_coefficients_Filecontent(const string &filena
     			isWarningPrinted = true;
     		}
 		}
-    else if (line.length() <= 3 && line.length() >= 2 && isPrimaryOverlap)
+    else if (line.length() <= 10 && line.length() >= 2 && isPrimaryOverlap)
 		{
 			orb = line;
 		}

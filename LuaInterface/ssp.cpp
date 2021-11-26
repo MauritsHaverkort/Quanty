@@ -657,6 +657,7 @@ static int LuaNewOperator(lua_State * L)
       lua_pop(L,1);
     }
     free(oadd);
+    SetQComplexOperator(O);
     return 1;
   }
   if(lua_type(L, 1)!=LUA_TSTRING)
@@ -1571,6 +1572,8 @@ static int Luarotate(lua_State *L)
     RotateWaveFunction(psiNew, *psi, *U);
     luaL_setmetatable(L, "Wavefunction_Type");
     WaveFunctionTruncateBasis(psiNew, Options.zero);
+    FreeMatrix(U);
+		free(U);
     return 1;
   }
   if (luaL_testudata(L, 1, "Operator_Type") != NULL)
@@ -1585,6 +1588,8 @@ static int Luarotate(lua_State *L)
     RotateOperatorNormalOrder(ONew, *O, *U,&QDetNotOrderedFcFaBaBc);
     luaL_setmetatable(L, "Operator_Type");
     OperatorChop(ONew, Options.zero);
+		FreeMatrix(U);
+		free(U);
     return 1;
   }
   if (luaL_testudata(L, 1, "TightBinding_Type") != NULL)
@@ -1919,49 +1924,60 @@ static int LuaCreateSpectra(lua_State *L)
   /* set DenseMethod to true if Hilbert space smaller then DensBoarder and calculate Basis at the same time create psiBasis */
   /* create psiBasis = sum_{i,j} T_i psi_j */
   WaveFunctionCopy(Tpsi[0], &psiDenseBasis);
-  for(i=1;i<Options.NT*Options.Npsi;i++)
+  for(i=0;i<Options.NT*Options.Npsi;i++)
   {
     if((Options.DenseMethod==false)&&(psiDenseBasis.N>Options.Settings.DenseBorder))
     {
       WaveFunctionFree(&psiDenseBasis);
       break;
     }
-    if(WaveFunctionAddMultipliedUnionBasis(&psiDenseBasis, Tpsi[i], (double)(1+rand())/(double)RAND_MAX))
+		if (i > 0)
     {
-      luaL_error(L, "WaveFunctionAddMultipliedUnionBasis failed in calculation of spectra\n Out of memory?\nTry to split the call to several calls for different wave-functions or transition operators\n");
+			if(WaveFunctionAddMultipliedUnionBasis(&psiDenseBasis, Tpsi[i], (double)(1+rand())/(double)RAND_MAX))
+			{
+				luaL_error(L, "WaveFunctionAddMultipliedUnionBasis failed in calculation of spectra\n Out of memory?\nTry to split the call to several calls for different wave-functions or transition operators\n");
+			}
     }
   }
   /* expand psiBasis to represent H^n psiBasis for all n */
-  len=0;
-  if((Options.DenseMethod==true)||(psiDenseBasis.N<=Options.Settings.DenseBorder))
-  {
-    while(len!=psiDenseBasis.N)
-    {
-      len=psiDenseBasis.N;
-      if((Options.Settings.restrictions.N==0)?(OperatorPsi(*H, psiDenseBasis, &OpsiDenseBasis)):(OperatorPsiRestricted(*H, psiDenseBasis, &OpsiDenseBasis, Options.Settings.restrictions)))
-      {
-        luaL_error(L, "OperatorPsi failed in calculation of spectra\n Out of memory?\nTry to split the call to several calls for different wave-functions or transition operators\n");
-      }
-      if((Options.DenseMethod==false)&&(OpsiDenseBasis.N>Options.Settings.DenseBorder))
-      {
-        WaveFunctionFree(&OpsiDenseBasis);
-        WaveFunctionFree(&psiDenseBasis);
-        break;
-      }
-      WaveFunctionNormalize(&OpsiDenseBasis);
-      if(WaveFunctionAddUnionBasis(&psiDenseBasis, OpsiDenseBasis))
-      {
-        luaL_error(L, "WaveFunctionAddUnionBasis failed in calculation of spectra\n Out of memory?\nTry to split the call to several calls for different wave-functions or transition operators\n");
-      }
-      WaveFunctionFree(&OpsiDenseBasis);
-      if((Options.DenseMethod==false)&&(psiDenseBasis.N>Options.Settings.DenseBorder))
-      {
-        WaveFunctionFree(&psiDenseBasis);
-        break;
-      }
-      if(len==psiDenseBasis.N) Options.DenseMethod=true;
-    }
-  }
+	if (psiDenseBasis.N == 0)
+	{
+		Options.DenseMethod = false;
+		WaveFunctionFree(&psiDenseBasis);
+	}
+	else
+	{
+		len = 0;
+		if ((Options.DenseMethod == true) || (psiDenseBasis.N <= Options.Settings.DenseBorder))
+		{
+			while (len != psiDenseBasis.N)
+			{
+				len = psiDenseBasis.N;
+				if ((Options.Settings.restrictions.N == 0) ? (OperatorPsi(*H, psiDenseBasis, &OpsiDenseBasis)) : (OperatorPsiRestricted(*H, psiDenseBasis, &OpsiDenseBasis, Options.Settings.restrictions)))
+				{
+					luaL_error(L, "OperatorPsi failed in calculation of spectra\n Out of memory?\nTry to split the call to several calls for different wave-functions or transition operators\n");
+				}
+				if ((Options.DenseMethod == false) && (OpsiDenseBasis.N > Options.Settings.DenseBorder))
+				{
+					WaveFunctionFree(&OpsiDenseBasis);
+					WaveFunctionFree(&psiDenseBasis);
+					break;
+				}
+				WaveFunctionNormalize(&OpsiDenseBasis);
+				if (WaveFunctionAddUnionBasis(&psiDenseBasis, OpsiDenseBasis))
+				{
+					luaL_error(L, "WaveFunctionAddUnionBasis failed in calculation of spectra\n Out of memory?\nTry to split the call to several calls for different wave-functions or transition operators\n");
+				}
+				WaveFunctionFree(&OpsiDenseBasis);
+				if ((Options.DenseMethod == false) && (psiDenseBasis.N > Options.Settings.DenseBorder))
+				{
+					WaveFunctionFree(&psiDenseBasis);
+					break;
+				}
+				if (len == psiDenseBasis.N) Options.DenseMethod = true;
+			}
+		}
+	}
   /* If DenseMethod is true calculate spectra using dense methods */
   if(Options.DenseMethod==true)
   {
@@ -2276,6 +2292,7 @@ static int LuaCreateSpectra(lua_State *L)
         if((val[0]-psiEn[i])<Eminpole)Eminpole=val[0]-psiEn[i];
         if((val[Options.Settings.NTri-1]-psiEn[i])>Emaxpole)Emaxpole=val[Options.Settings.NTri-1]-psiEn[i];
       }
+      free(val);
       /* if Emin=DBL_MAX or Emax=-DBL_MAX or Gamma==0 determine these */
       if(Eminpole==Emaxpole)
       {
@@ -3035,10 +3052,12 @@ static int LuaMeanFieldOperator(lua_State *L)
   struct
   {
     bool AddDFTSelfInteraction=false;
+    bool OffsetAsTrace=false;
   } Options;
   uint32_t len = (uint32_t)lua_gettop(L);
   LuaOptionsType LuaOptions[]={
     {"AddDFTSelfInteraction","bool",&(Options.AddDFTSelfInteraction)},
+		{"OffsetAsTrace","bool",&(Options.OffsetAsTrace)},
     {NULL, NULL, NULL}};
   if(len<2 || len>3)
     return luaL_error(L, "MeanFieldOperator called with %d arguments. Two or three expected, Operator, Density Matrix and optional Options.\n",len);
@@ -3050,18 +3069,30 @@ static int LuaMeanFieldOperator(lua_State *L)
     return luaL_error(L, "Error in MeanFieldOperator, length of operator (NF=%d, NB=%d) is not equal to length of density matrix (%d)\n",H->NFermion,H->NBoson,Rho->Ni);
   HMF = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
   //TODO: Why is MeanFieldOperator different from MeanFieldOperatorOld ...
-  //MeanFieldOperator(H, HMF, *Rho, Options.AddDFTSelfInteraction);
-  if(Options.AddDFTSelfInteraction==true)
-  {
-    MeanFieldOperatorWithDFTInteractionOld(H, HMF, *Rho);
-  }
-  else
-  {
-    MeanFieldOperatorOld(H, HMF, *Rho);
-  }
-  
-  
-  
+	/* Answer: Because HF gives a constant offset. MeanFieldOperatorOld has a matrix as output which it then transforms back to an operator.
+	 * Matrixes have no such thing as constant offsets, so it is added as an average shift in trace. This has the counterintuitive effects that
+	 * A: The MF version of an operator acting on a subspace suddenly acts on every fermionic index.
+	 * B: The result of MeanFieldOperator depends on NFermion.
+	 * The new MeanFieldOperator function adds the offset as an operator of length 0.
+	 * I am implementing the LuaOption to choose between the two behaviours.
+	 * Because the new function does exactly what is described on the Quanty website, I think it should be the standard.
+	 * On the other hand this does change the behaviour or older Scripts, so this is debatable.
+	 */
+	if (Options.OffsetAsTrace)
+	{
+		if (Options.AddDFTSelfInteraction)
+		{
+			MeanFieldOperatorWithDFTInteractionOld(H, HMF, *Rho);
+		}
+		else
+		{
+			MeanFieldOperatorOld(H, HMF, *Rho);
+		}
+	}
+	else
+	{
+		MeanFieldOperator(H, HMF, *Rho, Options.AddDFTSelfInteraction);
+	}
   
   luaL_setmetatable(L, "Operator_Type");
   strncpy(HMF->Name, "", MAXStrLength-1); //An appropriate Name can be given in Lua.

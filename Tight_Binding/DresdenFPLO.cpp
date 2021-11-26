@@ -246,10 +246,10 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
 {
   int i, j, k, l, iatom, ihtb, ish, jsh, indwan, indsh, diffQ;
   int Nwandef=FPLO.Wannier.Nwandef;
-  int Nshell, *Norb, *NshellOfSite, *ShellLabel, *SiteInd, *ShellInd, **ShellOfSite, *OrbInd, **NVecShell, **NHopStart;
+  int Nshell, *Norb, *ShellInd, **ShellOfSite, *OrbInd, **NVecShell, **NHopStart;
   char **SiteName, **ShellName;
   double ***HopVec, **SitePos;
-	vector < vector<uint> > HopVecJVals; //for freeing the memory in the end.
+  vector < vector<uint> > HopVecJVals; //for freeing the memory in the end.
   const int NhopMax=2048;
   double AtomPositionAccuracy = 0.001;
 
@@ -259,154 +259,88 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
   CrystalStructureFromDresdenFPLO(FPLO, &(HTB->Cell));
   SetNFermionIndexTightBindingDef(HTB);
 
-  // Determine the total number of shells.
-  Nshell = 0;
-  for(iatom=0;iatom<FPLO.Wannier.NActAtom;iatom++)
-  {
-    Nshell += HTB->Cell.Atom[iatom].Nshell;
-  }
-
-  ShellLabel  = (int*)calloc(Nwandef, sizeof(int));
-  for(i=0;i<Nwandef;i++)
-  {
-    // Compress the shell indicies {site, n, l, l+m} to one number
-    ShellLabel[i] = 1000*FPLO.Wannier.Site[i] + 100*FPLO.Wannier.Orbital[i][0] + 11*FPLO.Wannier.Orbital[i][1] + FPLO.Wannier.Orbital[i][2];
-  }
-
-  // Index the sites by number [0, 1, 2, ...]
-  SiteInd = (int*)calloc(Nwandef, sizeof(int));
-  SiteName= (char**)malloc(FPLO.Wannier.NActAtom*sizeof(char*));
-  SiteName[0] = (char*)malloc(16*sizeof(char));
-  strcpy(SiteName[0], FPLO.Atoms.Atom[FPLO.Wannier.Site[0]-1]); //FPLO prints site starting from 1.
-  SitePos = (double**)malloc(FPLO.Wannier.NActAtom*sizeof(double*));
-  for(i=0;i<FPLO.Wannier.NActAtom;i++) SitePos[i] = (double*)calloc(3, sizeof(double));
-  for(k=0;k<3;k++) SitePos[0][k] = FPLO.Wannier.PosCenter[0][k];
-
-  l = 1;
-  for(i=1;i<Nwandef;i++)
-  {
-    for(j=0;j<i;j++)
-    {
-      if(FPLO.Wannier.Site[i]==FPLO.Wannier.Site[j])
-      {
-        SiteInd[i] = SiteInd[j];
-        break;
-      }
-      else if(j+1==i)
-      {
-        SiteName[l] = (char*)malloc(MAXStrLength*sizeof(char));
-        strcpy(SiteName[l], FPLO.Atoms.Atom[FPLO.Wannier.Site[i]-1]);
-        for(k=0;k<3;k++) SitePos[l][k] = FPLO.Wannier.PosCenter[i][k];
-        SiteInd[i] = l++;
-      }
-    }
-  }
-
-  // Index the l values of Wannier orbitals by numbers [0, 1, ..., Nshell-1]
-  ShellInd    = (int*)calloc(Nwandef, sizeof(int));
-  ShellName   = (char**)malloc(Nshell*sizeof(char*));
-  ShellName[0]= (char*)malloc(6*sizeof(char));
-  ShellName[0][0]=(char)(FPLO.Wannier.Orbital[0][0]+'0');
-	if ((bool) FPLO.Wannier.QRelativistic)
+	// Determine the total number of shells.
+	Nshell = 0;
+	for (iatom = 0; iatom < FPLO.Wannier.NActAtom; iatom++)
 	{
-		std::string tmp = LPlusJToShellName(FPLO.Wannier.Orbital[0][1]);
-		ShellName[0][1] = tmp.c_str()[0];
-		ShellName[0][2] = tmp.c_str()[1];
-		ShellName[0][3] = '/';
-		ShellName[0][4] = '2';
-		ShellName[0][5] = 0;
-	}
-	else
-	{
-		ShellName[0][1] = LToShellName(FPLO.Wannier.Orbital[0][1]);
-		ShellName[0][2] = 0;
+		Nshell += HTB->Cell.Atom[iatom].Nshell;
 	}
 
-  l = 1;
-  for(i=1;i<Nwandef;i++)
-  {
-    for(j=0;j<i;j++)
-    {
-      if(ShellLabel[i]/10==ShellLabel[j]/10)
-      {
-        ShellInd[i] = ShellInd[j];
-        break;
-      }
-      else if(j+1==i)
+	int lastSite = FPLO.Wannier.Site[0];
+	int lastN = FPLO.Wannier.Orbital[0][0];
+	int lastShell = FPLO.Wannier.Orbital[0][1];
+	iatom = 0;
+	ish = 0;
+	int siteSpecificShellCounter = 0;
+	ShellInd = (int*) malloc(Nwandef * sizeof(int));
+	SiteName = (char**) malloc(FPLO.Wannier.NActAtom * sizeof(char*));
+	SitePos = (double**) malloc(FPLO.Wannier.NActAtom * sizeof(double*));
+	ShellName = (char**) malloc(Nshell * sizeof(char*));
+	ShellOfSite = (int**) malloc(Nshell * sizeof(int*));
+	Norb = (int*) calloc(Nshell, sizeof(int));
+	OrbInd = (int*) calloc(Nwandef, sizeof(int));
+	for (i = 0; i < Nwandef; i++)
+	{
+		bool siteChanged = lastSite != FPLO.Wannier.Site[i];
+		bool NChanged = lastN != FPLO.Wannier.Orbital[i][0];
+		bool shellChanged = lastShell != FPLO.Wannier.Orbital[i][1];
+
+		if (i == 0 || siteChanged)
+		{
+			if (siteChanged) ++iatom;
+
+			SiteName[iatom] = (char*) malloc(MAXStrLength * sizeof(char));
+			strcpy(SiteName[iatom], FPLO.Atoms.Atom[FPLO.Wannier.Site[i] - 1]);
+
+			SitePos[iatom] = (double*) calloc(3, sizeof(double));
+			for (k = 0; k < 3; k++)
+				SitePos[iatom][k] = FPLO.Wannier.PosCenter[i][k];
+		}
+
+		if (i == 0 || siteChanged || NChanged || shellChanged)
+		{
+			if (siteChanged || NChanged || shellChanged) ++ish;
+			if (siteChanged)
 			{
-				ShellName[l] = (char*) malloc(6 * sizeof(char));
-				ShellName[l][0] = (char) (FPLO.Wannier.Orbital[i][0] + '0');
-				if ((bool) FPLO.Wannier.QRelativistic)
-				{
-					std::string tmp = LPlusJToShellName(FPLO.Wannier.Orbital[i][1]);
-					ShellName[l][1] = tmp.c_str()[0];
-					ShellName[l][2] = tmp.c_str()[1];
-					ShellName[l][3] = '/';
-					ShellName[l][4] = '2';
-					ShellName[l][5] = 0;
-				}
-				else
-				{
-					ShellName[l][1] = LToShellName(FPLO.Wannier.Orbital[i][1]);
-					ShellName[l][2] = 0;
-				}
+				siteSpecificShellCounter = 0;
+			}
+			else if (i != 0)
+			{
+				++siteSpecificShellCounter;
+			}
+			ShellName[ish] = (char*) malloc(4 * sizeof(char));
+			ShellName[ish][0] = (char) (FPLO.Wannier.Orbital[i][0] + '0');
+			if ((bool) FPLO.Wannier.QRelativistic)
+			{
+				std::string tmp = LPlusJToShellName(FPLO.Wannier.Orbital[i][1]);
+				ShellName[ish][1] = tmp.c_str()[0];
+				ShellName[ish][2] = tmp.c_str()[1];
+				ShellName[ish][3] = '/';
+				ShellName[ish][4] = '2';
+				ShellName[ish][5] = 0;
+			}
+			else
+			{
+				ShellName[ish][1] = LToShellName(FPLO.Wannier.Orbital[i][1]);
+				ShellName[ish][2] = 0;
+			}
 
-        ShellInd[i] = l++;
-      }
-    }
-  }
+			ShellOfSite[ish] = (int*) calloc(2, sizeof(int));
+			ShellOfSite[ish][0] = iatom;
+			ShellOfSite[ish][1] = siteSpecificShellCounter;
+		}
+		else
+		{
+			OrbInd[i] = OrbInd[i - 1] + 1;
+		}
 
-  // Shell degeneracy of each site.
-  // Map shell ish to the j-th shell of i-th atom.
-  NshellOfSite = (int*)calloc(Nshell, sizeof(int));
-  ShellOfSite  = (int**)malloc(Nshell*sizeof(int*));
-  for(ish=0;ish<Nshell;ish++)
-  {
-    ShellOfSite[ish] = (int*)calloc(2, sizeof(int));
-    ShellOfSite[ish][1] = -1;
-  }
-  ShellOfSite[ ShellInd[0] ][0] = SiteInd[0]; // i-th atom
-  ShellOfSite[ ShellInd[0] ][1] = 0;          // j-th shell of the atom
-  NshellOfSite[SiteInd[0]  ] = 1;
-  for(i=1;i<Nwandef;i++)
-  {
-    for(j=0;j<i;j++)
-    {
-      if(ShellInd[i]==ShellInd[j])
-        break;
-      else if(j+1==i)
-      {
-        ShellOfSite[ ShellInd[i] ][0] = SiteInd[i];
-        ShellOfSite[ ShellInd[i] ][1] = NshellOfSite[ SiteInd[i] ]++;
-      }
-    }
-  }
+		ShellInd[i] = ish;
+		++Norb[ish];
 
-  // Orbital degeneracy of each shell.
-  Norb  = (int*)calloc(Nshell, sizeof(int));
-  Norb[0]  = 1;
-  for(i=1;i<Nwandef;i++)
-  {
-    for(j=0;j<i;j++)
-    {
-      if(ShellLabel[i]==ShellLabel[j])
-        break;
-      else if(j+1==i)
-        Norb[ ShellInd[i] ]++;
-    }
-  }
-
-
-  // Orbital index within each shell.
-  OrbInd = (int*)calloc(Nwandef, sizeof(int));
-  for(i=1;i<Nwandef;i++)
-  {
-    for(j=0;j<i;j++)
-    {
-      if(ShellLabel[i]/10==ShellLabel[j]/10)
-        OrbInd[i] = Max(OrbInd[i], OrbInd[j]+1);
-    }
-  }
+		lastSite = FPLO.Wannier.Site[i];
+		lastN = FPLO.Wannier.Orbital[i][0];
+		lastShell = FPLO.Wannier.Orbital[i][1];
+	}
 
   NVecShell = (int**)malloc(Nshell*sizeof(int*));
   HopVec    = (double***)malloc(Nshell*Nshell*sizeof(double**));
@@ -416,7 +350,7 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
     for(j=0;j<Nshell;j++)
     {
       HopVec[i*Nshell+j] = (double**)malloc(NhopMax*sizeof(double*));
-			HopVecJVals.push_back(vector<uint>());
+      HopVecJVals.push_back(vector<uint>());
     }
   }
 
@@ -600,42 +534,37 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
 			}
 		}
   }
-
-	free(ShellLabel);
-	free(SiteInd);
-	for (uint i = 0; i < FPLO.Wannier.NActAtom; ++i)
+	for (ish = 0; ish < Nshell; ish++)
 	{
-		free(SiteName[i]);
-		free(SitePos[i]);
+		free(ShellOfSite[ish]);
+		free(NVecShell[ish]);
+		free(NHopStart[ish]);
+		free(ShellName[ish]);
 	}
-	free(SiteName);
-	free(SitePos);
-	free(ShellInd);
-	free(NshellOfSite);
-	for (uint i = 0; i < Nshell; ++i)
-	{
-		free(ShellName[i]);
-		free(ShellOfSite[i]);
-		free(NVecShell[i]);
-		free(NHopStart[i]);
-	}
-	free(ShellName);
-	free(ShellOfSite);
-	free(NVecShell);
-	free(NHopStart);
-	free(Norb);
-	free(OrbInd);
 	for (uint i = 0; i < Nshell * Nshell; ++i)
 	{
-		for (uint j = 0;  j < HopVecJVals[i].size(); ++j)
+		for (uint j = 0; j < HopVecJVals[i].size(); ++j)
 		{
 			free(HopVec[i][HopVecJVals[i][j]]);
 		}
 		free(HopVec[i]);
 	}
 	free(HopVec);
-
-  return 0;
+	for (i = 0; i < FPLO.Wannier.NActAtom; i++)
+	{
+		free(SiteName[i]);
+		free(SitePos[i]);
+	}
+	free(Norb);
+	free(ShellInd);
+	free(ShellOfSite);
+	free(OrbInd);
+	free(NVecShell);
+	free(NHopStart);
+	free(SiteName);
+	free(ShellName);
+	free(SitePos);
+	return 0;
 }
 
 int FreeDresdenFPLO(DresdenFPLO *FPLO)

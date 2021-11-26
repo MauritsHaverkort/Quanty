@@ -1261,62 +1261,128 @@ static int LuaMatrixToString(lua_State * L)
 	return 1;
 }
 
+static int LuaMatrixElem(lua_State *L)
+{
+	CompactMatrixType M;
+	int i, j;
+	int len = lua_gettop(L);
+	if (len != 2) return luaL_error(L, "Error: Matrix.Elem called with %d arguments, 2 expected: i and j.", len);
+	if (!luaL_isType(L, 1, i)) return luaL_error(L, "Error: First element in Matrix.Elem should be an integer!");
+	if (!luaL_isType(L, 2, j)) return luaL_error(L, "Error: Second element in Matrix.Elem should be an integer!");
+	lua_check(L, lua_upvalueindex(1), M);
+	lua_check(L, 1, i);
+	lua_check(L, 2, j);
+	if (abs(i) > M.Ni || i == 0)
+	{
+		return luaL_error(L, "Error in Matrix.Elem: Index i=%d lies outside of range +-[1,%d].", i, M.Ni);
+	}
+	if (abs(j) > M.Nj || j == 0)
+	{
+		return luaL_error(L, "Error in Matrix.Elem: Index j=%d lies outside of range +-[1,%d].", j, M.Nj);
+	}
+	if (i < 0)
+		i = M.Ni + i;
+	else
+		--i;
+	if (j < 0)
+		j = M.Nj + j;
+	else
+		--j;
+	if ((bool) M.QComplex)
+		lua_push(L, M.V[i * M.Nj + j]);
+	else
+		lua_push(L, M.VRe[i * M.Nj + j]);
+	return 1;
+}
+
+
 
 /*
  *
  */
-static int LuaMatrixIndex(lua_State * L)
+static int LuaMatrixIndex(lua_State *L)
 {
-  uint32_t i,j;
-  double n;
-  CompactMatrixType *A, *B;
-  Complex16 * res;
-  A = (CompactMatrixType *) luaL_checkCompactMatrix(L, 1);
-  n =  luaL_checknumber(L, 2);
-  i = (uint32_t) n;
-  if(Abs(n-(double)i)>(1+Abs(n))*DBL_EPSILON*10) return luaL_error(L, "Index of an Array should be an integer\n");
-  if(i==0) return luaL_error(L, "Index of an Array should be positive (non-zero)\n");
-  if(A->Ni==1)
-  {
-    if(i>A->Nj) luaL_error(L, "Index %i larger then size of Array %i\n",i,A->Nj);
-    if(A->QComplex==0)
-    {
-      lua_pushnumber(L, A->VRe[i-1]);
-    }
-    else
-    {
-      res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
-      res->Re=A->V[i-1].Re;
-      res->Im=A->V[i-1].Im;
-      luaL_setmetatable(L, "Complex_Type");
-    }
-  }
-  else
-  {
-    if(i>A->Ni) luaL_error(L, "Index %i larger then size of Array %i\n",i,A->Ni);
-    B = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
-    luaL_setmetatable(L, "Matrix_Type");
-    B->Ni=1;
-    B->Nj=A->Nj;
-    B->QComplex=A->QComplex;
-    InitCompactMatrix(B);
-    B->OnLuaStack=true;
-    if(A->QComplex==0)
-    {
-      for(j=0;j<A->Nj;j++)
-      {
-        B->VRe[j]=A->VRe[(i-1)*A->Nj+j];
-      }
-    }
-    else
-    {
-      for(j=0;j<A->Nj;j++)
-      {
-        B->V[j]=A->V[(i-1)*A->Nj+j];
-      }
-    }
-  }
-  return 1;
+	uint32_t i, j;
+	double n;
+	string str;
+	CompactMatrixType *A, *B;
+	Complex16 *res;
+	A = (CompactMatrixType*) luaL_checkCompactMatrix(L, 1);
+	if (luaL_isType(L, 2, n))
+	{
+
+		n = luaL_checknumber(L, 2);
+		i = (uint32_t) n;
+		if (Abs(n - (double) i) > (1 + Abs(n)) * DBL_EPSILON * 10) return luaL_error(L, "Index of an Array should be an integer\n");
+		if (i == 0) return luaL_error(L, "Index of an Array should be positive (non-zero)\n");
+		if (A->Ni == 1)
+		{
+			if (i > A->Nj) luaL_error(L, "Index %i larger then size of Array %i\n", i, A->Nj);
+			if (A->QComplex == 0)
+			{
+				lua_pushnumber(L, A->VRe[i - 1]);
+			}
+			else
+			{
+				res = (Complex16*) lua_newuserdata(L, sizeof(Complex16));
+				res->Re = A->V[i - 1].Re;
+				res->Im = A->V[i - 1].Im;
+				luaL_setmetatable(L, "Complex_Type");
+			}
+		}
+		else
+		{
+			if (i > A->Ni) luaL_error(L, "Index %i larger then size of Array %i\n", i, A->Ni);
+			B = (CompactMatrixType*) lua_newuserdata(L, sizeof(CompactMatrixType));
+			luaL_setmetatable(L, "Matrix_Type");
+			B->Ni = 1;
+			B->Nj = A->Nj;
+			B->QComplex = A->QComplex;
+			InitCompactMatrix(B);
+			B->OnLuaStack = true;
+			if (A->QComplex == 0)
+			{
+				for (j = 0; j < A->Nj; j++)
+				{
+					B->VRe[j] = A->VRe[(i - 1) * A->Nj + j];
+				}
+			}
+			else
+			{
+				for (j = 0; j < A->Nj; j++)
+				{
+					B->V[j] = A->V[(i - 1) * A->Nj + j];
+				}
+			}
+		}
+		return 1;
+	}
+	else if (luaL_isType(L, 2, str))
+	{
+		lua_check(L, 2, str);
+		if (str.compare("dim") == 0 || str.compare("Dim") == 0)
+		{
+			vector < uint32_t > dim;
+			dim.push_back(A->Ni);
+			dim.push_back(A->Nj);
+			lua_push(L, dim);
+			return 1;
+		}
+		else if (str.compare("elem") == 0 || str.compare("Elem") == 0)
+		{
+			lua_pushvalue(L, 1);
+			lua_pushcclosure(L, LuaMatrixElem, 1);
+			return 1;
+		}
+		else
+		{
+			return luaL_error(L, "Error: Matrix indexed with unrecognised string \"%s\"", str.c_str());
+		}
+	}
+	else
+	{
+		return luaL_error(L, "Error: Matrix indexed with unrecognised type!");
+	}
 }
 
 /*
@@ -1429,6 +1495,7 @@ static int LuaMatrixAddSpin(lua_State * L)
     *fullM = MatrixEnlarge(*M, 2);
     fullM->OnLuaStack=true;
   }
+  FreeCompactMatrix(M);
 	return 1;
 }
 
@@ -1510,7 +1577,7 @@ static int LuaSubmatrix(lua_State * L)
 	if (len != 2 && len != 3 && len != 5)
 	{
 		return luaL_error(L,
-				"Submatrix called with %d arguments. Expected either 2 (matrix and size of submatrix), 3 (matrix, number of rows and number of columns of submatrix, or alternatively matrix, table with first and last index of row, table with first and last index of column) or 5 (matrix, first row index, number of rows, first column index, number of columns).\n",
+				"Submatrix called with %d arguments. Expected either 2 (matrix and size of submatrix, or alternatively matrix and list of indices), 3 (matrix, number of rows and number of columns of submatrix, or alternatively matrix, table with first and last index of row, table with first and last index of column) or 5 (matrix, first row index, number of rows, first column index, number of columns).\n",
 				len);
 	}
   // read matrix from stack
@@ -1529,8 +1596,22 @@ static int LuaSubmatrix(lua_State * L)
   }
 	if (len == 2)
 	{
-		int size = (int) luaL_checkinteger(L, 2);
-		*Msub = Submatrix(*M, size);
+		int size;
+		vector < uint32_t > inds;
+		if (luaL_isType(L, 2, size))
+		{
+			size = (int) luaL_checkinteger(L, 2);
+			*Msub = Submatrix(*M, size);
+		}
+		else if (luaL_isType(L, 2, inds))
+		{
+			lua_check(L, 2, inds);
+			*Msub = Submatrix(*M, inds);
+		}
+		else
+		{
+			return luaL_error(L, "Error: Submatrix called with unknown type for second argument!");
+		}
 	}
   else if (len == 3)
 	{
@@ -1576,6 +1657,7 @@ static int LuaSubmatrix(lua_State * L)
   {
     LuaPushTable_CompactMatrixType(L, Msub);
     FreeCompactMatrix(Msub);
+    free(Msub);
   }
   return 1;
 }
