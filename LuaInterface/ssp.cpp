@@ -4285,6 +4285,7 @@ static int LuaBlockBandDiagonalize(lua_State *L)
           RTB->Cell.Atom[j].OrbitalName[0][l]=(char*)malloc(10*sizeof(char));
           sprintf(RTB->Cell.Atom[j].OrbitalName[0][l], "X%d",l);
         }
+        j++; // added by Martin as possible fix for bug reported by Charles
       }
     }
     SetNFermionIndexTightBindingDef(RTB);
