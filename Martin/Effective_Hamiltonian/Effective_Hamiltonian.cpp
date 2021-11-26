@@ -107,7 +107,7 @@ void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunct
 								int twoj2v = 2*std::abs(k2v)-1;
 								double e2v = energies[n2+N_active_orbitals];
 
-								double denom = e1v + e2v - e3 - e4;
+								double energy_factor = 1/(e1v + e2v - e3 - e4) + 1/(e1v + e2v - e1 - e2);
 
 								int L1_start = std::max( abs(twoj1-twoj1v), abs(twoj2-twoj2v))/2;
 								int L1_end = std::min( twoj1+twoj1v, twoj2+twoj2v)/2;
@@ -157,7 +157,7 @@ void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunct
 											for (int L1 = L1_start; L1 <= L1_end; L1 +=2)
 											{
 												double angular_prefactor = (2*K+1)*Wigner9J(twoj2, twoj2v, 2*L1, twoj3, 2*L2, twoj1v, 2*K, twoj4, twoj1)/4.;//  1/4 is the prefactor according to Effective_Hamiltonian_2.pdf
-												reduced_matrix_ements[K-K_start] += angular_prefactor * Fk1[(L1 - L1_start)/2] * Fk2[(L2 - L2_start)/2]/denom;
+												reduced_matrix_ements[K-K_start] += angular_prefactor * Fk1[(L1 - L1_start)/2] * Fk2[(L2 - L2_start)/2]*energy_factor;
 											}
 										}
 									}
@@ -170,7 +170,7 @@ void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunct
 								int twoj2v = 2*std::abs(k2v)-1;
 								double e2v = energies[n2];
 
-								double denom = e1v + e2v - e3 - e4;
+								double energy_factor = 1/(e1v + e2v - e3 - e4) + 1/(e1v + e2v - e1 - e2);
 
 								int L1_start = std::max( abs(twoj1-twoj1v), abs(twoj2-twoj2v))/2;
 								int L1_end = std::min( twoj1+twoj1v, twoj2+twoj2v)/2;
@@ -220,7 +220,7 @@ void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunct
 											for (int L1 = L1_start; L1 <= L1_end; L1 +=2)
 											{
 												double angular_prefactor = (2*K+1)*Wigner9J(twoj2, twoj2v, 2*L1, twoj3, 2*L2, twoj1v, 2*K, twoj4, twoj1)/2.; //  1/2 is the prefactor according to Effective_Hamiltonian_2.pdf
-												reduced_matrix_ements[K-K_start] += angular_prefactor * Fk1[(L1 - L1_start)/2] * Fk2[(L2 - L2_start)/2]/denom;
+												reduced_matrix_ements[K-K_start] += angular_prefactor * Fk1[(L1 - L1_start)/2] * Fk2[(L2 - L2_start)/2]* energy_factor;
 											}
 										}
 									}
@@ -248,6 +248,17 @@ void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunct
 											oadd[1] =            indices_active[i3][(twoj3+two_m3)/2];
 											oadd[0] =            indices_active[i4][(twoj4+two_m4)/2];
 											RealOperatorAddLaderNormalOrder(&U, oadd, 4, angular_prefactor * reduced_matrix_ements[K-K_start], &QDetNotOrderedFcFaBcBa);
+											// plus hermitian conjugate, even if already hermitian
+											//cout << indices_active[i1][(twoj1+two_m1)/2] << "\t"<< indices_active[i2][(twoj2+two_m2)/2] << "\t"<< indices_active[i3][(twoj3+two_m3)/2] << "\t"<< indices_active[i4][(twoj4+two_m4)/2] << "\n";
+											if (i1 != i3 || i2 != i4)
+											{
+												oadd[3] = CrAnMask + indices_active[i3][(twoj3+two_m3)/2];
+												oadd[2] = CrAnMask + indices_active[i4][(twoj4+two_m4)/2];
+												oadd[1] =            indices_active[i1][(twoj1+two_m1)/2];
+												oadd[0] =            indices_active[i2][(twoj2+two_m2)/2];
+												RealOperatorAddLaderNormalOrder(&U, oadd, 4, angular_prefactor * reduced_matrix_ements[K-K_start], &QDetNotOrderedFcFaBcBa);
+											}
+
 										}
 									}
 								}
