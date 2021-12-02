@@ -75,12 +75,12 @@ void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunct
 			int k2 = list_of_kappas_active[i2];
 			int twoj2 = 2*std::abs(k2)-1;
 			double e2 = energies[i2];
-			for (uint32_t i3 = i1; i3 < N_active_orbitals; i3++)
+			for (uint32_t i3 = 0; i3 < N_active_orbitals; i3++)
 			{
 				int k3 = list_of_kappas_active[i3];
 				int twoj3 = 2*std::abs(k3)-1;
 				double e3 = energies[i3];
-				for (uint32_t i4 = i2; i4 < N_active_orbitals; i4++)
+				for (uint32_t i4 = 0; i4 < N_active_orbitals; i4++)
 				{
 					int k4 = list_of_kappas_active[i4];
 					int twoj4 = 2*std::abs(k4)-1;
@@ -250,14 +250,14 @@ void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunct
 											RealOperatorAddLaderNormalOrder(&U, oadd, 4, angular_prefactor * reduced_matrix_ements[K-K_start], &QDetNotOrderedFcFaBcBa);
 											// plus hermitian conjugate, even if already hermitian
 											//cout << indices_active[i1][(twoj1+two_m1)/2] << "\t"<< indices_active[i2][(twoj2+two_m2)/2] << "\t"<< indices_active[i3][(twoj3+two_m3)/2] << "\t"<< indices_active[i4][(twoj4+two_m4)/2] << "\n";
-											if (i1 != i3 || i2 != i4)
+/*											if (i1 != i3 || i2 != i4)
 											{
 												oadd[3] = CrAnMask + indices_active[i3][(twoj3+two_m3)/2];
 												oadd[2] = CrAnMask + indices_active[i4][(twoj4+two_m4)/2];
 												oadd[1] =            indices_active[i1][(twoj1+two_m1)/2];
 												oadd[0] =            indices_active[i2][(twoj2+two_m2)/2];
 												RealOperatorAddLaderNormalOrder(&U, oadd, 4, angular_prefactor * reduced_matrix_ements[K-K_start], &QDetNotOrderedFcFaBcBa);
-											}
+											}*/
 
 										}
 									}
