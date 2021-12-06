@@ -183,43 +183,42 @@ void Create_Effective_Hamiltonian_Six_Orbitals(const double Fk1[], int L1_start,
 		int i1, int i2, int i3, int i4, int twoj1,int twoj2, int twoj3, int twoj4, int twoj1v, int twoj2v, int K_start, int K_end,
 		const vector<vector<uint16_t> > &indices_active, OperatorType &U)
 {
-	if ((L1_start <= L1_end) && (L2_start <= L2_end))
+
+	for (int K = K_start; K <= K_end; K++)
 	{
-		for (int K = K_start; K <= K_end; K++)
+		double reduced_matrix_ement = 0;
+		for (int L2 = L2_start; L2 <= L2_end; L2 +=2)
 		{
-			double reduced_matrix_ement = 0;
-			for (int L2 = L2_start; L2 <= L2_end; L2 +=2)
+			for (int L1 = L1_start; L1 <= L1_end; L1 +=2)
 			{
-				for (int L1 = L1_start; L1 <= L1_end; L1 +=2)
-				{
-					double angular_prefactor = (2*K+1)*Wigner9J(twoj2, twoj2v, 2*L1, twoj3, 2*L2, twoj1v, 2*K, twoj4, twoj1)/4.;//  1/4 is the prefactor according to Effective_Hamiltonian_2.pdf
-					reduced_matrix_ement += angular_prefactor * Fk1[(L1 - L1_start)/2] * Fk2[(L2 - L2_start)/2]*energy_factor;
-				}
+				double angular_prefactor = (2*K+1)*Wigner9J(twoj2, twoj2v, 2*L1, twoj3, 2*L2, twoj1v, 2*K, twoj4, twoj1);//  1/4 is the prefactor according to Effective_Hamiltonian_2.pdf
+				reduced_matrix_ement += angular_prefactor * Fk1[(L1 - L1_start)/2] * Fk2[(L2 - L2_start)/2]*energy_factor; // it must be moved to the energy factor, because different for different terms
 			}
-			for (int two_m1 = -twoj1; two_m1 <= twoj1; two_m1 += 2)
+		}
+		for (int two_m1 = -twoj1; two_m1 <= twoj1; two_m1 += 2)
+		{
+			for (int two_m2 = -twoj2; two_m2 <= twoj2; two_m2 += 2)
 			{
-				for (int two_m2 = -twoj2; two_m2 <= twoj2; two_m2 += 2)
+				for (int two_m3 = -twoj3; two_m3 <= twoj3; two_m3 += 2)
 				{
-					for (int two_m3 = -twoj3; two_m3 <= twoj3; two_m3 += 2)
+					int two_m4 = two_m1 + two_m2 - two_m3;
+					// note the minus sign below, due to ordering of creation/annihilation operators
+					double angular_prefactor = -ThreeJSymbolHalf(twoj1, -two_m1, K, -two_m3+two_m1, twoj3, two_m3)*ThreeJSymbolHalf(twoj2, -two_m2, K, two_m3-two_m1, twoj4, two_m4);
+					if (((two_m2-two_m4)/2)%2==1) angular_prefactor *= -1.;
+					if (Abs(angular_prefactor) > DBL_EPSILON)
 					{
-						int two_m4 = two_m1 + two_m2 - two_m3;
-						// note the minus sign below, due to ordering of creation/annihilation operators
-						double angular_prefactor = -ThreeJSymbolHalf(twoj1, -two_m1, K, -two_m3+two_m1, twoj3, two_m3)*ThreeJSymbolHalf(twoj2, -two_m2, K, two_m3-two_m1, twoj4, two_m4);
-						if (((two_m2-two_m4)/2)%2==1) angular_prefactor *= -1.;
-						if (Abs(angular_prefactor) > DBL_EPSILON)
-						{
-							uint16_t oadd[4];
-							oadd[3] = CrAnMask + indices_active[i1][(twoj1+two_m1)/2];
-							oadd[2] = CrAnMask + indices_active[i2][(twoj2+two_m2)/2];
-							oadd[1] =            indices_active[i3][(twoj3+two_m3)/2];
-							oadd[0] =            indices_active[i4][(twoj4+two_m4)/2];
-							RealOperatorAddLaderNormalOrder(&U, oadd, 4, angular_prefactor * reduced_matrix_ement, &QDetNotOrderedFcFaBcBa);
-						}
+						uint16_t oadd[4];
+						oadd[3] = CrAnMask + indices_active[i1][(twoj1+two_m1)/2];
+						oadd[2] = CrAnMask + indices_active[i2][(twoj2+two_m2)/2];
+						oadd[1] =            indices_active[i3][(twoj3+two_m3)/2];
+						oadd[0] =            indices_active[i4][(twoj4+two_m4)/2];
+						RealOperatorAddLaderNormalOrder(&U, oadd, 4, angular_prefactor * reduced_matrix_ement, &QDetNotOrderedFcFaBcBa);
 					}
 				}
 			}
 		}
 	}
+
 }
 
 void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunction*> &G,
@@ -265,126 +264,128 @@ void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunct
 			int k2 = list_of_kappas_active[i2];
 			int twoj2 = 2*std::abs(k2)-1;
 			double e2 = energies[i2];
-			for (uint32_t i3 = 0; i3 < N_active_orbitals; i3++)
+			for (uint32_t n1 = 0; n1 < N_virtual_orbitals; n1++)
 			{
-				int k3 = list_of_kappas_active[i3];
-				int twoj3 = 2*std::abs(k3)-1;
-				double e3 = energies[i3];
-				for (uint32_t i4 = 0; i4 < N_active_orbitals; i4++)
+				int k1v = list_of_kappas_virtual[n1];
+				int twoj1v = 2*std::abs(k1v)-1;
+				double e1v = energies[n1+N_active_orbitals];
+
+				for (uint32_t n2 = 0; n2 < N_virtual_orbitals; n2++)
 				{
-					//if (i4 == i1 && i2==i1 && i3 == i1) continue; //TODO remove
-					int k4 = list_of_kappas_active[i4];
-					int twoj4 = 2*std::abs(k4)-1;
-					double e4 = energies[i4];
-					double pre_factor = 0;
-
-					int K_start = std::max( abs(twoj1-twoj3), abs(twoj2-twoj4))/2;
-					int K_end = std::min( twoj1+twoj3, twoj2+twoj4)/2;
-					if ( K_start<= K_end)
+					int k2v = list_of_kappas_virtual[n2];
+					int twoj2v = 2*std::abs(k2v)-1;
+					double e2v = energies[n2+N_active_orbitals];
+					int L1_start = std::max( abs(twoj1-twoj1v), abs(twoj2-twoj2v))/2;
+					int L1_end = std::min( twoj1+twoj1v, twoj2+twoj2v)/2;
+					if ( (abs(k1)+abs(k1v) + (Sign(k1)+Sign(k1v))/2 + L1_start ) % 2 == 0)
 					{
-						double reduced_matrix_ements[K_end-K_start +1];
-						for (int K = K_start; K <= K_end; K++)
+						L1_start++;
+					}
+					double Fk1[(L1_end-L1_start)/2 +1];
+					//int sign = L1_start % 2 == 0 ? 1 : -1; Cancelled in the end
+					Calculate_slater_integrals_with_reduced_prefactor(N_x, x, &(powx[0]), &(GFpairs[(i1*N_funs+(n1+N_active_orbitals))*N_x]), &(GFpairs[(i2*N_funs + n2+N_active_orbitals)*N_x]), twoj1, twoj2, twoj1v, twoj2v, L1_start, L1_end, Fk1);
+					for (uint32_t i3 = 0; i3 < N_active_orbitals; i3++)
+					{
+						int k3 = list_of_kappas_active[i3];
+						int twoj3 = 2*std::abs(k3)-1;
+						double e3 = energies[i3];
+						for (uint32_t i4 = 0; i4 < N_active_orbitals; i4++)
 						{
-							reduced_matrix_ements[K_end-K_start +1] = 0.;
-						}
-						for (uint32_t n1 = 0; n1 < N_virtual_orbitals; n1++)
-						{
-							int k1v = list_of_kappas_virtual[n1];
-							int twoj1v = 2*std::abs(k1v)-1;
-							double e1v = energies[n1+N_active_orbitals];
-							for (uint32_t n2 = 0; n2 < N_virtual_orbitals; n2++)
+							//if (i4 == i1 && i2==i1 && i3 == i1) continue; //TODO remove
+							int k4 = list_of_kappas_active[i4];
+							int twoj4 = 2*std::abs(k4)-1;
+							double e4 = energies[i4];
+							double pre_factor = 0;
+
+							int K_start = std::max( abs(twoj1-twoj3), abs(twoj2-twoj4))/2;
+							int K_end = std::min( twoj1+twoj3, twoj2+twoj4)/2;
+							if ( K_start<= K_end)
 							{
-								int k2v = list_of_kappas_virtual[n2];
-								int twoj2v = 2*std::abs(k2v)-1;
-								double e2v = energies[n2+N_active_orbitals];
-
+								double reduced_matrix_ements[K_end-K_start +1];
+								for (int K = K_start; K <= K_end; K++)
+								{
+									reduced_matrix_ements[K_end-K_start +1] = 0.;
+								}
 								double energy_factor = 1/(e1v + e2v - e3 - e4) + 1/(e1v + e2v - e1 - e2);
-
-								int L1_start = std::max( abs(twoj1-twoj1v), abs(twoj2-twoj2v))/2;
-								int L1_end = std::min( twoj1+twoj1v, twoj2+twoj2v)/2;
 
 								int L2_start = std::max(  abs(twoj3-twoj1v), abs(twoj4-twoj2v))/2;
 								int L2_end = std::min( twoj3+twoj1v, twoj4+twoj2v )/2;
 
-								if ( (abs(k1)+abs(k1v) + (Sign(k1)+Sign(k1v))/2 + L1_start ) % 2 == 0)
-								{
-									L1_start++;
-								}
+
 								if ( (abs(k3)+abs(k1v) + (Sign(k3)+Sign(k1v))/2 + L2_start ) % 2 == 0)
 								{
 									L2_start++;
 								}
 								if ((L1_start <= L1_end) && (L2_start <= L2_end))
 								{
-									double Fk1[(L1_end-L1_start)/2 +1];
-									//int sign = L1_start % 2 == 0 ? 1 : -1; Cancelled in the end
-									Calculate_slater_integrals_with_reduced_prefactor(N_x, x, &(powx[0]), &(GFpairs[(i1*N_funs+(n1+N_active_orbitals))*N_x]), &(GFpairs[(i2*N_funs + n2+N_active_orbitals)*N_x]), twoj1, twoj2, twoj1v, twoj2v, L1_start, L1_end, Fk1);
+
 									double Fk2[(L2_end-L2_start)/2 +1];
 									//sign = L2_start % 2 == 0 ? 1 : -1; Cancelled  in the end
 									Calculate_slater_integrals_with_reduced_prefactor(N_x, x, &(powx[0]), &(GFpairs[((n1+N_active_orbitals)*N_funs+i3)*N_x]), &(GFpairs[((n2+N_active_orbitals)*N_funs + i4)*N_x]), twoj1v, twoj2v, twoj3, twoj4, L2_start, L2_end, Fk2);
-									for (int K = K_start; K <= K_end; K++)
-									{
-										for (int L2 = L2_start; L2 <= L2_end; L2 +=2)
-										{
-											for (int L1 = L1_start; L1 <= L1_end; L1 +=2)
-											{
-												double angular_prefactor = (2*K+1)*Wigner9J(twoj2, twoj2v, 2*L1, twoj3, 2*L2, twoj1v, 2*K, twoj4, twoj1)/4.;//  1/4 is the prefactor according to Effective_Hamiltonian_2.pdf
-												reduced_matrix_ements[K-K_start] += angular_prefactor * Fk1[(L1 - L1_start)/2] * Fk2[(L2 - L2_start)/2]*energy_factor;
-											}
-										}
-									}
+									Create_Effective_Hamiltonian_Six_Orbitals(Fk1, L1_start, L1_end, Fk2, L2_start, L2_end, energy_factor/4., i1, i2, i3, i4, twoj1, twoj2, twoj3, twoj4, twoj1v, twoj2v, K_start, K_end, indices_active, U);
 								}
 							}
-							// three active, one virtual
-							for (uint32_t n2 = 0; n2 < N_active_orbitals; n2++)
-							{
-								int k2v = list_of_kappas_active[n2];
-								int twoj2v = 2*std::abs(k2v)-1;
-								double e2v = energies[n2];
+						}
+					}
+				}
+				// three active, one virtual
+				for (uint32_t n2 = 0; n2 < N_active_orbitals; n2++)
+				{
+					int k2v = list_of_kappas_active[n2];
+					int twoj2v = 2*std::abs(k2v)-1;
+					double e2v = energies[n2];
+					int L1_start = std::max( abs(twoj1-twoj1v), abs(twoj2-twoj2v))/2;
+					int L1_end = std::min( twoj1+twoj1v, twoj2+twoj2v)/2;
+					if ( (abs(k1)+abs(k1v) + (Sign(k1)+Sign(k1v))/2 + L1_start ) % 2 == 0)
+					{
+						L1_start++;
+					}
+					double Fk1[(L1_end-L1_start)/2 +1];
+					//int sign = L1_start % 2 == 0 ? 1 : -1; Cancelled in the end
+					Calculate_slater_integrals_with_reduced_prefactor(N_x, x, &(powx[0]), &(GFpairs[(i1*N_funs+(n1+N_active_orbitals))*N_x]), &(GFpairs[(i2*N_funs + n2)*N_x]), twoj1, twoj2, twoj1v, twoj2v, L1_start, L1_end, Fk1);
 
+					for (uint32_t i3 = 0; i3 < N_active_orbitals; i3++)
+					{
+						int k3 = list_of_kappas_active[i3];
+						int twoj3 = 2*std::abs(k3)-1;
+						double e3 = energies[i3];
+						for (uint32_t i4 = 0; i4 < N_active_orbitals; i4++)
+						{
+							//if (i4 == i1 && i2==i1 && i3 == i1) continue; //TODO remove
+							int k4 = list_of_kappas_active[i4];
+							int twoj4 = 2*std::abs(k4)-1;
+							double e4 = energies[i4];
+							double pre_factor = 0;
+
+							int K_start = std::max( abs(twoj1-twoj3), abs(twoj2-twoj4))/2;
+							int K_end = std::min( twoj1+twoj3, twoj2+twoj4)/2;
+							if ( K_start<= K_end)
+							{
 								double energy_factor = 1/(e1v + e2v - e3 - e4) + 1/(e1v + e2v - e1 - e2);
 
-								int L1_start = std::max( abs(twoj1-twoj1v), abs(twoj2-twoj2v))/2;
-								int L1_end = std::min( twoj1+twoj1v, twoj2+twoj2v)/2;
 
 								int L2_start = std::max(  abs(twoj3-twoj1v), abs(twoj4-twoj2v))/2;
 								int L2_end = std::min( twoj3+twoj1v, twoj4+twoj2v )/2;
 
-								if ( (abs(k1)+abs(k1v) + (Sign(k1)+Sign(k1v))/2 + L1_start ) % 2 == 0)
-								{
-									L1_start++;
-								}
+
 								if ( (abs(k3)+abs(k1v) + (Sign(k3)+Sign(k1v))/2 + L2_start ) % 2 == 0)
 								{
 									L2_start++;
 								}
 								if ((L1_start <= L1_end) && (L2_start <= L2_end))
 								{
-									double Fk1[(L1_end-L1_start)/2 +1];
-									//int sign = L1_start % 2 == 0 ? 1 : -1; Cancelled in the end
-									Calculate_slater_integrals_with_reduced_prefactor(N_x, x, &(powx[0]), &(GFpairs[(i1*N_funs+(n1+N_active_orbitals))*N_x]), &(GFpairs[(i2*N_funs + n2)*N_x]), twoj1, twoj2, twoj1v, twoj2v, L1_start, L1_end, Fk1);
+
 
 									double Fk2[(L2_end-L2_start)/2 +1];
 									//sign = L2_start % 2 == 0 ? 1 : -1; Cancelled  in the end
 									Calculate_slater_integrals_with_reduced_prefactor(N_x, x, &(powx[0]), &(GFpairs[((n1+N_active_orbitals)*N_funs+i3)*N_x]), &(GFpairs[((n2)*N_funs + i4)*N_x]), twoj1v, twoj2v, twoj3, twoj4, L2_start, L2_end, Fk2);
-									for (int K = K_start; K <= K_end; K++)
-									{
-										for (int L2 = L2_start; L2 <= L2_end; L2 +=2)
-										{
-											for (int L1 = L1_start; L1 <= L1_end; L1 +=2)
-											{
-												double angular_prefactor = (2*K+1)*Wigner9J(twoj2, twoj2v, 2*L1, twoj3, 2*L2, twoj1v, 2*K, twoj4, twoj1)/2.; //  1/2 is the prefactor according to Effective_Hamiltonian_2.pdf
-												reduced_matrix_ements[K-K_start] += angular_prefactor * Fk1[(L1 - L1_start)/2] * Fk2[(L2 - L2_start)/2]* energy_factor;
-											}
-										}
-									}
+									Create_Effective_Hamiltonian_Six_Orbitals(Fk1, L1_start, L1_end, Fk2, L2_start, L2_end, energy_factor/2., i1, i2, i3, i4, twoj1, twoj2, twoj3, twoj4, twoj1v, twoj2v, K_start, K_end, indices_active, U);
 								} // if L_start
 							} // n2 loop
-						}// n1 loop
-						Add_Effective_Hamiltonian_Terms(indices_active, i1, i2, i3, i4, twoj1, twoj2, twoj3, twoj4, reduced_matrix_ements, U);
-					}// if K_start
-				}// i4 loop
-			}// i3 loop
+						}// if K_start
+					}// i4
+				}// i3 loop
+			}// N1 loop
 		}// i2 loop
 	}// i1 loop
 }
