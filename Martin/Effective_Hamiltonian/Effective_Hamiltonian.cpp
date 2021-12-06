@@ -295,17 +295,12 @@ void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunct
 							int k4 = list_of_kappas_active[i4];
 							int twoj4 = 2*std::abs(k4)-1;
 							double e4 = energies[i4];
-							double pre_factor = 0;
 
 							int K_start = std::max( abs(twoj1-twoj3), abs(twoj2-twoj4))/2;
 							int K_end = std::min( twoj1+twoj3, twoj2+twoj4)/2;
 							if ( K_start<= K_end)
 							{
-								double reduced_matrix_ements[K_end-K_start +1];
-								for (int K = K_start; K <= K_end; K++)
-								{
-									reduced_matrix_ements[K_end-K_start +1] = 0.;
-								}
+
 								double energy_factor = 1/(e1v + e2v - e3 - e4) + 1/(e1v + e2v - e1 - e2);
 
 								int L2_start = std::max(  abs(twoj3-twoj1v), abs(twoj4-twoj2v))/2;
@@ -318,6 +313,7 @@ void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunct
 								}
 								if ((L1_start <= L1_end) && (L2_start <= L2_end))
 								{
+
 
 									double Fk2[(L2_end-L2_start)/2 +1];
 									//sign = L2_start % 2 == 0 ? 1 : -1; Cancelled  in the end
