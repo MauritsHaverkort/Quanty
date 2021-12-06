@@ -31,7 +31,36 @@ void Calculate_Xk(const vector<double> &x, const vector<double> &powx, const int
 	}
 }
 
-
+void Add_Effective_Hamiltonian_Terms(const vector<vector<uint16_t> > &indices_active, int i1, int i2, int i3, int i4, int twoj1, int twoj2, int twoj3, int twoj4, const double *reduced_matrix_ements, OperatorType &U)
+{
+	int K_start = std::max( abs(twoj1-twoj3), abs(twoj2-twoj4))/2;
+	int K_end = std::min( twoj1+twoj3, twoj2+twoj4)/2;
+	for (int K = K_start; K <= K_end; K++)
+	{
+		for (int two_m1 = -twoj1; two_m1 <= twoj1; two_m1 += 2)
+		{
+			for (int two_m2 = -twoj2; two_m2 <= twoj2; two_m2 += 2)
+			{
+				for (int two_m3 = -twoj3; two_m3 <= twoj3; two_m3 += 2)
+				{
+					int two_m4 = two_m1 + two_m2 - two_m3;
+					// note the minus sign below, due to ordering of creation/annihilation operators
+					double angular_prefactor = -ThreeJSymbolHalf(twoj1, -two_m1, K, -two_m3+two_m1, twoj3, two_m3)*ThreeJSymbolHalf(twoj2, -two_m2, K, two_m3-two_m1, twoj4, two_m4);
+					if (((two_m2-two_m4)/2)%2==1) angular_prefactor *= -1.;
+					if (Abs(angular_prefactor) > DBL_EPSILON)
+					{
+						uint16_t oadd[4];
+						oadd[3] = CrAnMask + indices_active[i1][(twoj1+two_m1)/2];
+						oadd[2] = CrAnMask + indices_active[i2][(twoj2+two_m2)/2];
+						oadd[1] =            indices_active[i3][(twoj3+two_m3)/2];
+						oadd[0] =            indices_active[i4][(twoj4+two_m4)/2];
+						RealOperatorAddLaderNormalOrder(&U, oadd, 4, angular_prefactor * reduced_matrix_ements[K-K_start], &QDetNotOrderedFcFaBcBa);
+					}
+				}
+			}
+		}
+	}
+}
 
 
 void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunction*> &G,
@@ -187,40 +216,15 @@ void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunct
 											}
 										}
 									}
-								}
-							}
-						}
-						cout << i1 << "\t"<< i2 << "\t"<< i3 << "\t"<< i4 << "\n";
-						for (int K = K_start; K <= K_end; K++)
-						{
-							for (int two_m1 = -twoj1; two_m1 <= twoj1; two_m1 += 2)
-							{
-								for (int two_m2 = -twoj2; two_m2 <= twoj2; two_m2 += 2)
-								{
-									for (int two_m3 = -twoj3; two_m3 <= twoj3; two_m3 += 2)
-									{
-										int two_m4 = two_m1 + two_m2 - two_m3;
-										// note the minus sign below, due to ordering of creation/annihilation operators
-										double angular_prefactor = -ThreeJSymbolHalf(twoj1, -two_m1, K, -two_m3+two_m1, twoj3, two_m3)*ThreeJSymbolHalf(twoj2, -two_m2, K, two_m3-two_m1, twoj4, two_m4);
-										if (((two_m2-two_m4)/2)%2==1) angular_prefactor *= -1.;
-										if (Abs(angular_prefactor) > DBL_EPSILON)
-										{
-											uint16_t oadd[4];
-											oadd[3] = CrAnMask + indices_active[i1][(twoj1+two_m1)/2];
-											oadd[2] = CrAnMask + indices_active[i2][(twoj2+two_m2)/2];
-											oadd[1] =            indices_active[i3][(twoj3+two_m3)/2];
-											oadd[0] =            indices_active[i4][(twoj4+two_m4)/2];
-											RealOperatorAddLaderNormalOrder(&U, oadd, 4, angular_prefactor * reduced_matrix_ements[K-K_start], &QDetNotOrderedFcFaBcBa);
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	}
+								} // if L_start
+							} // n2 loop
+						}// n1 loop
+						Add_Effective_Hamiltonian_Terms(indices_active, i1, i2, i3, i4, twoj1, twoj2, twoj3, twoj4, reduced_matrix_ements, U);
+					}// if K_start
+				}// i4 loop
+			}// i3 loop
+		}// i2 loop
+	}// i1 loop
 }
 
 static int LuaCreateEffectiveHamiltonian(lua_State *L)
