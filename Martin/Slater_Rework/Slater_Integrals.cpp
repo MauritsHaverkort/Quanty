@@ -127,6 +127,22 @@ void Init_Slater_Kernel(const vector<int> &list_of_kappas, const vector<double> 
 	}
 }
 
+void Calculate_slater_integrals_with_reduced_prefactor(const uint32_t N_x, const double *x,
+		 const double *powx, const double *G13, const double *G24,
+		 const int twoj1, const int twoj2, const int twoj3, const int twoj4,
+		 const int L_start, const int L_end, double *Fk)
+{
+	for (int L = L_start; L <= L_end; L +=2)
+	{
+		double c_reduced_11 = sqrt((twoj1+1)*(twoj3+1))*ThreeJSymbolHalf(twoj1, -1, twoj3, 1, 2*L, 0);
+		//Cancelled if (((twoj1+1)/2)%2==1) c_reduced_11 *= -1; //TODO: move this to the outermoost possible loop
+		double c_reduced_22 = sqrt((twoj2+1)*(twoj4+1))*ThreeJSymbolHalf(twoj2, -1, twoj4, 1, 2*L, 0);
+		//Cancelled if (((twoj2+1)/2)%2==1) c_reduced_22 *= -1; //TODO: move this to the outermoost possible loop
+		// This is working but slow: Fk1[(L - L1_start)/2] = Slater_Integrate(G[0]->x,powx,L,G[i1]->y,G[i2]->y,G[n1+N_active_orbitals]->y,G[n2+N_active_orbitals]->y,F[i1]->y,F[i2]->y,F[n1+N_active_orbitals]->y,F[n2+N_active_orbitals]->y);
+		Fk[(L - L_start)/2] = Slater_Integrate_optimize(N_x, x, &(powx[0]), L, G13, G24);
+		Fk[(L - L_start)/2] *=  c_reduced_11 * c_reduced_22;
 
+	}
+}
 
 

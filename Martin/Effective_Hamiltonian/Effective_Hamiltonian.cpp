@@ -127,29 +127,10 @@ void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunct
 								{
 									double Fk1[(L1_end-L1_start)/2 +1];
 									//int sign = L1_start % 2 == 0 ? 1 : -1; Cancelled in the end
-									for (int L = L1_start; L <= L1_end; L +=2)
-									{
-										double c_reduced_11 = sqrt((twoj1+1)*(twoj1v+1))*ThreeJSymbolHalf(twoj1, -1, twoj1v, 1, 2*L, 0);
-										//Cancelled if (((twoj1+1)/2)%2==1) c_reduced_11 *= -1; //TODO: move this to the outermoost possible loop
-										double c_reduced_22 = sqrt((twoj2+1)*(twoj2v+1))*ThreeJSymbolHalf(twoj2, -1, twoj2v, 1, 2*L, 0);
-										//Cancelled if (((twoj2+1)/2)%2==1) c_reduced_22 *= -1; //TODO: move this to the outermoost possible loop
-										// This is working but slow: Fk1[(L - L1_start)/2] = Slater_Integrate(G[0]->x,powx,L,G[i1]->y,G[i2]->y,G[n1+N_active_orbitals]->y,G[n2+N_active_orbitals]->y,F[i1]->y,F[i2]->y,F[n1+N_active_orbitals]->y,F[n2+N_active_orbitals]->y);
-										Fk1[(L - L1_start)/2] = Slater_Integrate_optimize(N_x, x, &(powx[0]), L, &(GFpairs[(i1*N_funs+(n1+N_active_orbitals))*N_x]), &(GFpairs[(i2*N_funs + n2+N_active_orbitals)*N_x]));
-										Fk1[(L - L1_start)/2] *=  c_reduced_11 * c_reduced_22;
-
-									}
+									Calculate_slater_integrals_with_reduced_prefactor(N_x, x, &(powx[0]), &(GFpairs[(i1*N_funs+(n1+N_active_orbitals))*N_x]), &(GFpairs[(i2*N_funs + n2+N_active_orbitals)*N_x]), twoj1, twoj2, twoj1v, twoj2v, L1_start, L1_end, Fk1);
 									double Fk2[(L2_end-L2_start)/2 +1];
 									//sign = L2_start % 2 == 0 ? 1 : -1; Cancelled  in the end
-									for (int L = L2_start; L <= L2_end; L +=2)
-									{
-										double c_reduced_13 = sqrt((twoj3+1)*(twoj1v+1))*ThreeJSymbolHalf(twoj1v, -1, twoj3, 1, 2*L, 0);
-										//Cancelled if (((twoj1v+1)/2)%2==1) c_reduced_13 *= -1; //TODO: move this to the outermoost possible loop
-										double c_reduced_24 = sqrt((twoj2v+1)*(twoj4+1))*ThreeJSymbolHalf(twoj2v, -1, twoj4, 1, 2*L, 0);
-										//Cancelled if (((twoj2v+1)/2)%2==1) c_reduced_24 *= -1; //TODO: move this to the outermoost possible loop
-										// This is working but slow: Fk2[(L - L2_start)/2] = Slater_Integrate(G[0]->x,powx,L,G[n1+N_active_orbitals]->y,G[n2+N_active_orbitals]->y,G[i3]->y,G[i4]->y,F[n1+N_active_orbitals]->y,F[n2+N_active_orbitals]->y,F[i3]->y,F[i4]->y);
-										Fk2[(L - L2_start)/2] = Slater_Integrate_optimize(N_x, x, &(powx[0]), L, &(GFpairs[((n1+N_active_orbitals)*N_funs+i3)*N_x]), &(GFpairs[((n2+N_active_orbitals)*N_funs + i4)*N_x]));
-										Fk2[(L - L2_start)/2] *= c_reduced_13 * c_reduced_24;
-									}
+									Calculate_slater_integrals_with_reduced_prefactor(N_x, x, &(powx[0]), &(GFpairs[((n1+N_active_orbitals)*N_funs+i3)*N_x]), &(GFpairs[((n2+N_active_orbitals)*N_funs + i4)*N_x]), twoj1v, twoj2v, twoj3, twoj4, L2_start, L2_end, Fk2);
 									for (int K = K_start; K <= K_end; K++)
 									{
 										for (int L2 = L2_start; L2 <= L2_end; L2 +=2)
@@ -190,29 +171,11 @@ void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunct
 								{
 									double Fk1[(L1_end-L1_start)/2 +1];
 									//int sign = L1_start % 2 == 0 ? 1 : -1; Cancelled in the end
-									for (int L = L1_start; L <= L1_end; L +=2)
-									{
-										double c_reduced_11 = sqrt((twoj1+1)*(twoj1v+1))*ThreeJSymbolHalf(twoj1, -1, twoj1v, 1, 2*L, 0);
-										//Cancelled if (((twoj1+1)/2)%2==1) c_reduced_11 *= -1; //TODO: move this to the outermoost possible loop
-										double c_reduced_22 = sqrt((twoj2+1)*(twoj2v+1))*ThreeJSymbolHalf(twoj2, -1, twoj2v, 1, 2*L, 0);
-										//Cancelled if (((twoj2+1)/2)%2==1) c_reduced_22 *= -1; //TODO: move this to the outermoost possible loop
-										// This is working but slow: Fk1[(L - L1_start)/2] = Slater_Integrate(G[0]->x,powx,L,G[i1]->y,G[i2]->y,G[n1+N_active_orbitals]->y,G[n2]->y,F[i1]->y,F[i2]->y,F[n1+N_active_orbitals]->y,F[n2]->y);
-										Fk1[(L - L1_start)/2] = Slater_Integrate_optimize(N_x, x, &(powx[0]), L, &(GFpairs[(i1*N_funs+(n1+N_active_orbitals))*N_x]), &(GFpairs[(i2*N_funs + n2)*N_x]));
-										Fk1[(L - L1_start)/2] *=  c_reduced_11 * c_reduced_22;
+									Calculate_slater_integrals_with_reduced_prefactor(N_x, x, &(powx[0]), &(GFpairs[(i1*N_funs+(n1+N_active_orbitals))*N_x]), &(GFpairs[(i2*N_funs + n2)*N_x]), twoj1, twoj2, twoj1v, twoj2v, L1_start, L1_end, Fk1);
 
-									}
 									double Fk2[(L2_end-L2_start)/2 +1];
 									//sign = L2_start % 2 == 0 ? 1 : -1; Cancelled  in the end
-									for (int L = L2_start; L <= L2_end; L +=2)
-									{
-										double c_reduced_13 = sqrt((twoj3+1)*(twoj1v+1))*ThreeJSymbolHalf(twoj1v, -1, twoj3, 1, 2*L, 0);
-										//Cancelled if (((twoj1v+1)/2)%2==1) c_reduced_13 *= -1; //TODO: move this to the outermoost possible loop
-										double c_reduced_24 = sqrt((twoj2v+1)*(twoj4+1))*ThreeJSymbolHalf(twoj2v, -1, twoj4, 1, 2*L, 0);
-										//Cancelled if (((twoj2v+1)/2)%2==1) c_reduced_24 *= -1; //TODO: move this to the outermoost possible loop
-										// This is working but slow: Fk2[(L - L2_start)/2] = Slater_Integrate(G[0]->x,powx,L,G[n1+N_active_orbitals]->y,G[n2]->y,G[i3]->y,G[i4]->y,F[n1+N_active_orbitals]->y,F[n2]->y,F[i3]->y,F[i4]->y);
-										Fk2[(L - L2_start)/2] = Slater_Integrate_optimize(N_x, x, &(powx[0]), L, &(GFpairs[((n1+N_active_orbitals)*N_funs+i3)*N_x]), &(GFpairs[((n2)*N_funs + i4)*N_x]));
-										Fk2[(L - L2_start)/2] *= c_reduced_13 * c_reduced_24;
-									}
+									Calculate_slater_integrals_with_reduced_prefactor(N_x, x, &(powx[0]), &(GFpairs[((n1+N_active_orbitals)*N_funs+i3)*N_x]), &(GFpairs[((n2)*N_funs + i4)*N_x]), twoj1v, twoj2v, twoj3, twoj4, L2_start, L2_end, Fk2);
 									for (int K = K_start; K <= K_end; K++)
 									{
 										for (int L2 = L2_start; L2 <= L2_end; L2 +=2)
@@ -248,17 +211,6 @@ void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunct
 											oadd[1] =            indices_active[i3][(twoj3+two_m3)/2];
 											oadd[0] =            indices_active[i4][(twoj4+two_m4)/2];
 											RealOperatorAddLaderNormalOrder(&U, oadd, 4, angular_prefactor * reduced_matrix_ements[K-K_start], &QDetNotOrderedFcFaBcBa);
-											// plus hermitian conjugate, even if already hermitian
-											//cout << indices_active[i1][(twoj1+two_m1)/2] << "\t"<< indices_active[i2][(twoj2+two_m2)/2] << "\t"<< indices_active[i3][(twoj3+two_m3)/2] << "\t"<< indices_active[i4][(twoj4+two_m4)/2] << "\n";
-/*											if (i1 != i3 || i2 != i4)
-											{
-												oadd[3] = CrAnMask + indices_active[i3][(twoj3+two_m3)/2];
-												oadd[2] = CrAnMask + indices_active[i4][(twoj4+two_m4)/2];
-												oadd[1] =            indices_active[i1][(twoj1+two_m1)/2];
-												oadd[0] =            indices_active[i2][(twoj2+two_m2)/2];
-												RealOperatorAddLaderNormalOrder(&U, oadd, 4, angular_prefactor * reduced_matrix_ements[K-K_start], &QDetNotOrderedFcFaBcBa);
-											}*/
-
 										}
 									}
 								}
