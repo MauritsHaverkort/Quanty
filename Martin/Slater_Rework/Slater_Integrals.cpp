@@ -145,4 +145,35 @@ void Calculate_slater_integrals_with_reduced_prefactor(const uint32_t N_x, const
 	}
 }
 
+double Average_Coulomb_energy_one_shell(const uint32_t N_x, const double *x, const double *powx, const double *G13, const int twoj)
+{
+	double result = Slater_Integrate_optimize(N_x, x, powx, 0, G13, G13);
+
+	for (int L = 2; L<= twoj; L+=2)
+	{
+		double tjs = ThreeJSymbolHalf(twoj, -1, twoj, 1, 2*L, 0);
+		result -= (twoj+1.)/(2.*twoj + 1.) * tjs * tjs * Slater_Integrate_optimize(N_x, x, powx, L, G13, G13);
+	}
+
+	return result;
+}
+
+double Average_Coulomb_energy_two_shells(const uint32_t N_x, const double *x, const double *powx, const double *G11, const double *G22, const double *G12, const int twoj1, const int twoj2, int k1, int k2)
+{
+	double result = Slater_Integrate_optimize(N_x, x, powx, 0, G11, G22);
+	int L_start = abs(twoj1-twoj2)/2;
+	int L_end = (twoj1+twoj2)/2;
+	if ( (abs(k1)+abs(k2) + (Sign(k1)+Sign(k2))/2 + L_start ) % 2 == 0)
+	{
+		L_start++;
+	}
+	for (int L = L_start; L<= L_end; L+=2)
+	{
+		double tjs = ThreeJSymbolHalf(twoj1, -1, twoj2, 1, 2*L, 0);
+		result -= tjs * tjs * Slater_Integrate_optimize(N_x, x, powx, L, G12, G12)/2.;
+	}
+
+	return result;
+}
+
 

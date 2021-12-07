@@ -1,3 +1,5 @@
+#include "ReducedCoulombmatrixelement.cpp"
+
 void Calculate_Xk(const vector<double> &x, const vector<double> &powx, const int k1, const int k2, const int k3, const int k4,
 	 	 const vector<double> &G1,
 		 const vector<double> &G2,
@@ -251,130 +253,204 @@ void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunct
 	double *x = &(G[0]->x[0]);
 	Init_Slater_Function_Pairs(N_x, G, F, GFpairs);
 
-//#pragma omp parallel for
-	for (uint32_t i1 = 0; i1 < N_active_orbitals; i1++)
+	double Q_av[N_funs*N_funs];
+	#pragma omp parallel for
+	for (int i = 0; i < N_funs; i++)
 	{
-		int k1 = list_of_kappas_active[i1];
+		int k1 = list_of_kappas[i];
 		int twoj1 = 2*std::abs(k1)-1;
-		double e1 = energies[i1];
+		Q_av[i*N_funs + i] = Average_Coulomb_energy_one_shell(N_x, x, &(powx[0]), &(GFpairs[(i*N_funs+i)*N_x]), twoj1);
 
-		//Create_Effective_Hamiltonian_One_Orbital(i1, twoj1, k1, e1, N_virtual_orbitals, N_active_orbitals, N_funs, energies, list_of_kappas_active, list_of_kappas_virtual, x, N_x, powx, GFpairs, indices_active, U);
-		for (uint32_t i2 = 0; i2 < N_active_orbitals; i2++)
+		for (int j = i+1; j < N_funs; j++)
 		{
-			int k2 = list_of_kappas_active[i2];
+			int k2 = list_of_kappas[j];
 			int twoj2 = 2*std::abs(k2)-1;
-			double e2 = energies[i2];
-			for (uint32_t n1 = 0; n1 < N_virtual_orbitals; n1++)
-			{
-				int k1v = list_of_kappas_virtual[n1];
-				int twoj1v = 2*std::abs(k1v)-1;
-				double e1v = energies[n1+N_active_orbitals];
+			Q_av[i*N_funs + j] = Average_Coulomb_energy_two_shells(N_x, x, &(powx[0]), &(GFpairs[(i*N_funs+i)*N_x]), &(GFpairs[(j*N_funs+j)*N_x]), &(GFpairs[(i*N_funs+j)*N_x]), twoj1, twoj2, k1, k2);
+			Q_av[j*N_funs + i] = Q_av[i*N_funs + j];
+		}
+	}
+	//cout << energies[0]+Q_av[0*N_funs + 0] << "\t" << energies[1]+2*Q_av[0*N_funs + 1] << "\t" << energies[2]+2*Q_av[0*N_funs + 2] << "\n";
+	for (uint32_t n1 = 0; n1 < N_virtual_orbitals; n1++)
+	{
+		int k1v = list_of_kappas_virtual[n1];
+		int twoj1v = 2*std::abs(k1v)-1;
+		double e1v = energies[n1+N_active_orbitals];
 
-				for (uint32_t n2 = 0; n2 < N_virtual_orbitals; n2++)
+		for (uint32_t n2 = 0; n2 < N_virtual_orbitals; n2++)
+		{
+			int k2v = list_of_kappas_virtual[n2];
+			int twoj2v = 2*std::abs(k2v)-1;
+			double e2v = energies[n2+N_active_orbitals] + Q_av[(n1+N_active_orbitals)*N_funs + n2+N_active_orbitals];
+
+			Reduced_Coulomb_matrixelement X_mat[N_active_orbitals*N_active_orbitals];
+			#pragma omp parallel for
+			for (uint32_t i1 = 0; i1 < N_active_orbitals; i1++)
+			{
+				int k1 = list_of_kappas_active[i1];
+				int twoj1 = 2*std::abs(k1)-1;
+
+				for (uint32_t i2 = 0; i2 < N_active_orbitals; i2++)
 				{
-					int k2v = list_of_kappas_virtual[n2];
-					int twoj2v = 2*std::abs(k2v)-1;
-					double e2v = energies[n2+N_active_orbitals];
+					int k2 = list_of_kappas_active[i2];
+					int twoj2 = 2*std::abs(k2)-1;
+
 					int L1_start = std::max( abs(twoj1-twoj1v), abs(twoj2-twoj2v))/2;
 					int L1_end = std::min( twoj1+twoj1v, twoj2+twoj2v)/2;
 					if ( (abs(k1)+abs(k1v) + (Sign(k1)+Sign(k1v))/2 + L1_start ) % 2 == 0)
 					{
 						L1_start++;
 					}
-					double Fk1[(L1_end-L1_start)/2 +1];
+					X_mat[i1*N_active_orbitals + i2] = Reduced_Coulomb_matrixelement(L1_start,L1_end);
 					//int sign = L1_start % 2 == 0 ? 1 : -1; Cancelled in the end
-					Calculate_slater_integrals_with_reduced_prefactor(N_x, x, &(powx[0]), &(GFpairs[(i1*N_funs+(n1+N_active_orbitals))*N_x]), &(GFpairs[(i2*N_funs + n2+N_active_orbitals)*N_x]), twoj1, twoj2, twoj1v, twoj2v, L1_start, L1_end, Fk1);
+					// TODO: rewrite function below as X_mat contains info about L_start / L__end
+					Calculate_slater_integrals_with_reduced_prefactor(N_x, x, &(powx[0]), &(GFpairs[(i1*N_funs+(n1+N_active_orbitals))*N_x]), &(GFpairs[(i2*N_funs + n2+N_active_orbitals)*N_x]), twoj1, twoj2, twoj1v, twoj2v, L1_start, L1_end, X_mat[i1*N_active_orbitals + i2].Fk);
+				}
+			}
+			for (uint32_t i1 = 0; i1 < N_active_orbitals; i1++)
+			{
+				int k1 = list_of_kappas_active[i1];
+				int twoj1 = 2*std::abs(k1)-1;
+				double e1 = energies[i1];
+				if (i1 == 0) e1 += Q_av[(n1+N_active_orbitals)*N_funs + i1] + Q_av[(n2+N_active_orbitals)*N_funs + i1];
+
+				for (uint32_t i2 = 0; i2 < N_active_orbitals; i2++)
+				{
+					int k2 = list_of_kappas_active[i2];
+					int twoj2 = 2*std::abs(k2)-1;
+					double e2 = energies[i2];
+					if (i2 == 0) {
+						e2 += Q_av[(n1+N_active_orbitals)*N_funs + i2] + Q_av[(n2+N_active_orbitals)*N_funs + i2];
+						if (i1 == 0) e2 -= Q_av[i1*N_funs + i2];
+					}
+
+					int L1_start = X_mat[i1*N_active_orbitals + i2].L_start;
+					int L1_end = X_mat[i1*N_active_orbitals + i2].L_end;
+
+					double *Fk1 = X_mat[i1*N_active_orbitals + i2].Fk;
+
 					for (uint32_t i3 = 0; i3 < N_active_orbitals; i3++)
 					{
 						int k3 = list_of_kappas_active[i3];
 						int twoj3 = 2*std::abs(k3)-1;
 						double e3 = energies[i3];
+						if (i3==0) e3 += Q_av[(n1+N_active_orbitals)*N_funs + i3] + Q_av[(n2+N_active_orbitals)*N_funs + i3];
 						for (uint32_t i4 = 0; i4 < N_active_orbitals; i4++)
 						{
 							//if (i4 == i1 && i2==i1 && i3 == i1) continue; //TODO remove
 							int k4 = list_of_kappas_active[i4];
 							int twoj4 = 2*std::abs(k4)-1;
 							double e4 = energies[i4];
+							if (i4 ==0){
+								e4 += Q_av[(n1+N_active_orbitals)*N_funs + i4] + Q_av[(n2+N_active_orbitals)*N_funs + i4];
+								if (i3 ==0) e4 -= Q_av[i3*N_funs + i4];
+							}
 
 							int K_start = std::max( abs(twoj1-twoj3), abs(twoj2-twoj4))/2;
 							int K_end = std::min( twoj1+twoj3, twoj2+twoj4)/2;
 							if ( K_start<= K_end)
 							{
 
-								double energy_factor = 1/(e1v + e2v - e3 - e4) + 1/(e1v + e2v - e1 - e2);
+								//double energy_factor = 1/(e1v + e2v - e3 - e4) + 1/(e1v + e2v - e1 - e2);
+								double energy_factor = 1/(e1v + e2v - (e3 + e4 ));
 
-								int L2_start = std::max(  abs(twoj3-twoj1v), abs(twoj4-twoj2v))/2;
-								int L2_end = std::min( twoj3+twoj1v, twoj4+twoj2v )/2;
+								int L2_start = X_mat[i3*N_active_orbitals + i4].L_start;
+								int L2_end = X_mat[i3*N_active_orbitals + i4].L_end;
 
+								double *Fk2 = X_mat[i3*N_active_orbitals + i4].Fk;
 
-								if ( (abs(k3)+abs(k1v) + (Sign(k3)+Sign(k1v))/2 + L2_start ) % 2 == 0)
-								{
-									L2_start++;
-								}
 								if ((L1_start <= L1_end) && (L2_start <= L2_end))
 								{
-
-
-									double Fk2[(L2_end-L2_start)/2 +1];
-									//sign = L2_start % 2 == 0 ? 1 : -1; Cancelled  in the end
-									Calculate_slater_integrals_with_reduced_prefactor(N_x, x, &(powx[0]), &(GFpairs[((n1+N_active_orbitals)*N_funs+i3)*N_x]), &(GFpairs[((n2+N_active_orbitals)*N_funs + i4)*N_x]), twoj1v, twoj2v, twoj3, twoj4, L2_start, L2_end, Fk2);
 									Create_Effective_Hamiltonian_Six_Orbitals(Fk1, L1_start, L1_end, Fk2, L2_start, L2_end, energy_factor/4., i1, i2, i3, i4, twoj1, twoj2, twoj3, twoj4, twoj1v, twoj2v, K_start, K_end, indices_active, U);
 								}
 							}
 						}
 					}
-				}
+				} // i2
+			} // i1
+		}// n2
 				// three active, one virtual
-				for (uint32_t n2 = 0; n2 < N_active_orbitals; n2++)
+		for (uint32_t n2 = 0; n2 < N_active_orbitals; n2++)
+		{
+			int k2v = list_of_kappas_active[n2];
+			int twoj2v = 2*std::abs(k2v)-1;
+			double e2v = energies[n2] + Q_av[(n1+N_active_orbitals)*N_funs + n2];
+			Reduced_Coulomb_matrixelement X_mat[N_active_orbitals*N_active_orbitals];
+			#pragma omp parallel for
+			for (uint32_t i1 = 0; i1 < N_active_orbitals; i1++)
+			{
+				int k1 = list_of_kappas_active[i1];
+				int twoj1 = 2*std::abs(k1)-1;
+
+				for (uint32_t i2 = 0; i2 < N_active_orbitals; i2++)
 				{
-					int k2v = list_of_kappas_active[n2];
-					int twoj2v = 2*std::abs(k2v)-1;
-					double e2v = energies[n2];
+					int k2 = list_of_kappas_active[i2];
+					int twoj2 = 2*std::abs(k2)-1;
+
 					int L1_start = std::max( abs(twoj1-twoj1v), abs(twoj2-twoj2v))/2;
 					int L1_end = std::min( twoj1+twoj1v, twoj2+twoj2v)/2;
 					if ( (abs(k1)+abs(k1v) + (Sign(k1)+Sign(k1v))/2 + L1_start ) % 2 == 0)
 					{
 						L1_start++;
 					}
-					double Fk1[(L1_end-L1_start)/2 +1];
+					X_mat[i1*N_active_orbitals + i2] = Reduced_Coulomb_matrixelement(L1_start,L1_end);
 					//int sign = L1_start % 2 == 0 ? 1 : -1; Cancelled in the end
-					Calculate_slater_integrals_with_reduced_prefactor(N_x, x, &(powx[0]), &(GFpairs[(i1*N_funs+(n1+N_active_orbitals))*N_x]), &(GFpairs[(i2*N_funs + n2)*N_x]), twoj1, twoj2, twoj1v, twoj2v, L1_start, L1_end, Fk1);
+					Calculate_slater_integrals_with_reduced_prefactor(N_x, x, &(powx[0]), &(GFpairs[(i1*N_funs+(n1+N_active_orbitals))*N_x]), &(GFpairs[(i2*N_funs + n2)*N_x]), twoj1, twoj2, twoj1v, twoj2v, L1_start, L1_end, X_mat[i1*N_active_orbitals + i2].Fk);
+				}
+			}
+			for (uint32_t i1 = 0; i1 < N_active_orbitals; i1++)
+			{
+				int k1 = list_of_kappas_active[i1];
+				int twoj1 = 2*std::abs(k1)-1;
+				double e1 = energies[i1];
+				if (i1 ==0) e1 += Q_av[(n1+N_active_orbitals)*N_funs + i1] + Q_av[(n2)*N_funs + i1];
+
+				for (uint32_t i2 = 0; i2 < N_active_orbitals; i2++)
+				{
+					int k2 = list_of_kappas_active[i2];
+					int twoj2 = 2*std::abs(k2)-1;
+					double e2 = energies[i2];
+					if (i2==0) {
+						e2 += Q_av[(n1+N_active_orbitals)*N_funs + i2] + Q_av[(n2)*N_funs + i2];
+						if (i1 ==0) e2 -= Q_av[i1*N_funs + i2];
+					}
+
+					int L1_start = X_mat[i1*N_active_orbitals + i2].L_start;
+					int L1_end = X_mat[i1*N_active_orbitals + i2].L_end;
+
+					double *Fk1 = X_mat[i1*N_active_orbitals + i2].Fk;
 
 					for (uint32_t i3 = 0; i3 < N_active_orbitals; i3++)
 					{
 						int k3 = list_of_kappas_active[i3];
 						int twoj3 = 2*std::abs(k3)-1;
 						double e3 = energies[i3];
+						if (i3 ==0) e3 += Q_av[(n1+N_active_orbitals)*N_funs + i3] + Q_av[(n2)*N_funs + i3];
 						for (uint32_t i4 = 0; i4 < N_active_orbitals; i4++)
 						{
 							//if (i4 == i1 && i2==i1 && i3 == i1) continue; //TODO remove
 							int k4 = list_of_kappas_active[i4];
 							int twoj4 = 2*std::abs(k4)-1;
 							double e4 = energies[i4];
-							double pre_factor = 0;
+							if (i4 ==0){
+								e4 += Q_av[(n1+N_active_orbitals)*N_funs + i4] + Q_av[(n2)*N_funs + i4];
+								if (i3==0) e4 -= Q_av[i3*N_funs + i4];
+							}
 
 							int K_start = std::max( abs(twoj1-twoj3), abs(twoj2-twoj4))/2;
 							int K_end = std::min( twoj1+twoj3, twoj2+twoj4)/2;
 							if ( K_start<= K_end)
 							{
 								double energy_factor = 1/(e1v + e2v - e3 - e4) + 1/(e1v + e2v - e1 - e2);
+								//double energy_factor = 1/(e1v + e2v - (e3 + e4 ));
 
 
-								int L2_start = std::max(  abs(twoj3-twoj1v), abs(twoj4-twoj2v))/2;
-								int L2_end = std::min( twoj3+twoj1v, twoj4+twoj2v )/2;
+								int L2_start = X_mat[i3*N_active_orbitals + i4].L_start;
+								int L2_end = X_mat[i3*N_active_orbitals + i4].L_end;
 
+								double *Fk2 = X_mat[i3*N_active_orbitals + i4].Fk;
 
-								if ( (abs(k3)+abs(k1v) + (Sign(k3)+Sign(k1v))/2 + L2_start ) % 2 == 0)
-								{
-									L2_start++;
-								}
 								if ((L1_start <= L1_end) && (L2_start <= L2_end))
 								{
-
-
-									double Fk2[(L2_end-L2_start)/2 +1];
-									//sign = L2_start % 2 == 0 ? 1 : -1; Cancelled  in the end
-									Calculate_slater_integrals_with_reduced_prefactor(N_x, x, &(powx[0]), &(GFpairs[((n1+N_active_orbitals)*N_funs+i3)*N_x]), &(GFpairs[((n2)*N_funs + i4)*N_x]), twoj1v, twoj2v, twoj3, twoj4, L2_start, L2_end, Fk2);
 									Create_Effective_Hamiltonian_Six_Orbitals(Fk1, L1_start, L1_end, Fk2, L2_start, L2_end, energy_factor/2., i1, i2, i3, i4, twoj1, twoj2, twoj3, twoj4, twoj1v, twoj2v, K_start, K_end, indices_active, U);
 								} // if L_start
 							} // n2 loop
@@ -385,6 +461,8 @@ void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunct
 		}// i2 loop
 	}// i1 loop
 }
+
+
 
 static int LuaCreateEffectiveHamiltonian(lua_State *L)
 {

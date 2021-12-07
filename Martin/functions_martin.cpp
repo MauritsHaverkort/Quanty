@@ -1894,6 +1894,37 @@ void lua_check(lua_State *L, uint32_t n, T* &in)
 */
 static int LuaMartinTest(lua_State *L)
 {
+	vector<Interpolation::InterpolatingFunction*> G;
+	vector<Interpolation::InterpolatingFunction*> F;
+	vector<int> list_of_kappas;
+	lua_check(L,1,list_of_kappas);
+	lua_check(L,2,G);
+	lua_check(L,3,F);
+
+	uint32_t N_funs = G.size();
+	uint32_t N_x = (uint32_t) G[0]->x.size();
+
+	vector<double> powx;
+	Init_Slater_Kernel(list_of_kappas,G[0]->x,powx);
+
+	double GFpairs[N_funs*N_funs*N_x];
+	double *x = &(G[0]->x[0]);
+	Init_Slater_Function_Pairs(N_x, G, F, GFpairs);
+
+	int i = 0;
+	int k1 = list_of_kappas[i];
+	int twoj1 = 1;
+	cout << Average_Coulomb_energy_one_shell(N_x, x, &(powx[0]), &(GFpairs[(i*N_funs+i)*N_x]), twoj1) << "\n";
+	int j = 1;
+	int twoj2 = 1;
+	int k2 = list_of_kappas[j];
+	cout << Average_Coulomb_energy_two_shells(N_x, x, &(powx[0]), &(GFpairs[(i*N_funs+i)*N_x]), &(GFpairs[(j*N_funs+j)*N_x]), &(GFpairs[(i*N_funs+j)*N_x]), twoj1, twoj2, k1, k2) << "\n";
+	j = 3;
+	twoj2 = 3;
+	k2 = list_of_kappas[j];
+	cout << Average_Coulomb_energy_two_shells(N_x, x, &(powx[0]), &(GFpairs[(i*N_funs+i)*N_x]), &(GFpairs[(j*N_funs+j)*N_x]), &(GFpairs[(i*N_funs+j)*N_x]), twoj1, twoj2, k1, k2) << "\n";
+	return 0;
+/*
 	cout << Wigner9J(9, 9, 8, 7, 4, 3, 8, 11, 5) << endl;
 	return 0;
 
@@ -1930,7 +1961,7 @@ static int LuaMartinTest(lua_State *L)
 
 	lua_push(L,V);
     return 1;
-
+*/
 }
 
 
