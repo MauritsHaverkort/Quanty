@@ -1894,6 +1894,18 @@ void lua_check(lua_State *L, uint32_t n, T* &in)
 */
 static int LuaMartinTest(lua_State *L)
 {
+	cout << ThreeJSymbolHalf(1, 1, 2*0, 0, 1, -1) << endl;
+	cout << ThreeJSymbolHalf(1, 1, 2*0, -1*2, 1, 1) << endl;
+	cout << ThreeJSymbolHalf(1, -1, 2*0, 1*2, 1, -1) << endl;
+	cout << ThreeJSymbolHalf(1, -1, 2*0, 0, 1, 1) << endl;
+
+	cout << ThreeJSymbolHalf(1, 1, 1*1, 0, 1, -1) << endl;
+	cout << ThreeJSymbolHalf(1, 1, 1*1, -1*2, 1, 1) << endl;
+	cout << ThreeJSymbolHalf(1, -1, 1*1, 1*2, 1, -1) << endl;
+	cout << ThreeJSymbolHalf(1, -1, 1*1, 0, 1, 1) << endl;
+
+	return 0;
+
 	vector<Interpolation::InterpolatingFunction*> G;
 	vector<Interpolation::InterpolatingFunction*> F;
 	vector<int> list_of_kappas;

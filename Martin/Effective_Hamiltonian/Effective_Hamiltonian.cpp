@@ -186,6 +186,7 @@ void Create_Effective_Hamiltonian_Six_Orbitals(const double Fk1[], int L1_start,
 		const vector<vector<uint16_t> > &indices_active, OperatorType &U)
 {
 
+	//cout << "K_start = " << K_start << "\t" << K_end <<endl;
 	for (int K = K_start; K <= K_end; K++)
 	{
 		double reduced_matrix_ement = 0;
@@ -205,7 +206,9 @@ void Create_Effective_Hamiltonian_Six_Orbitals(const double Fk1[], int L1_start,
 				{
 					int two_m4 = two_m1 + two_m2 - two_m3;
 					// note the minus sign below, due to ordering of creation/annihilation operators
-					double angular_prefactor = -ThreeJSymbolHalf(twoj1, -two_m1, K, -two_m3+two_m1, twoj3, two_m3)*ThreeJSymbolHalf(twoj2, -two_m2, K, two_m3-two_m1, twoj4, two_m4);
+					//double angular_prefactor = -ThreeJSymbolHalf(twoj1, -two_m1, 2*K, -two_m3+two_m1, twoj3, two_m3)*ThreeJSymbolHalf(twoj2, -two_m2, 2*K, two_m3-two_m1, twoj4, two_m4);
+					double angular_prefactor = -ThreeJSymbolHalf(twoj1, -two_m1, 2*K, -two_m4+two_m1, twoj4, two_m4)*ThreeJSymbolHalf(twoj2, -two_m2, 2*K, two_m4-two_m1, twoj3, two_m3);
+					//if (((two_m2-two_m4)/2)%2==1) angular_prefactor *= -1.;
 					if (((two_m2-two_m4)/2)%2==1) angular_prefactor *= -1.;
 					if (Abs(angular_prefactor) > DBL_EPSILON)
 					{
@@ -284,17 +287,17 @@ void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunct
 //			cout << energies[i] << endl;
 	}
 	//cout << energies[0]+Q_av[0*N_funs + 0] << "\t" << energies[1]+2*Q_av[0*N_funs + 1] << "\t" << energies[2]+2*Q_av[0*N_funs + 2] << "\n";
-	for (uint32_t n1 = 0; n1 < N_virtual_orbitals; n1++)
+	for (uint32_t n1 = 0; n1 < N_funs; n1++)
 	{
-		int k1v = list_of_kappas_virtual[n1];
+		int k1v = list_of_kappas[n1];
 		int twoj1v = 2*std::abs(k1v)-1;
-		double e1v = energies[n1+N_active_orbitals];
+		double e1v = energies[n1];
 
 		for (uint32_t n2 = 0; n2 < N_virtual_orbitals; n2++)
 		{
 			int k2v = list_of_kappas_virtual[n2];
 			int twoj2v = 2*std::abs(k2v)-1;
-			double e2v = energies[n2+N_active_orbitals] + Q_av[(n1+N_active_orbitals)*N_funs + n2+N_active_orbitals];
+			double e2v = energies[n2+N_active_orbitals] + Q_av[(n1)*N_funs + n2+N_active_orbitals];
 
 			Reduced_Coulomb_matrixelement X_mat[N_active_orbitals*N_active_orbitals];
 			#pragma omp parallel for
@@ -317,7 +320,7 @@ void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunct
 					X_mat[i1*N_active_orbitals + i2] = Reduced_Coulomb_matrixelement(L1_start,L1_end);
 					//int sign = L1_start % 2 == 0 ? 1 : -1; Cancelled in the end
 					// TODO: rewrite function below as X_mat contains info about L_start / L__end
-					Calculate_slater_integrals_with_reduced_prefactor(N_x, x, &(powx[0]), &(GFpairs[(i1*N_funs+(n1+N_active_orbitals))*N_x]), &(GFpairs[(i2*N_funs + n2+N_active_orbitals)*N_x]), twoj1, twoj2, twoj1v, twoj2v, L1_start, L1_end, X_mat[i1*N_active_orbitals + i2].Fk);
+					Calculate_slater_integrals_with_reduced_prefactor(N_x, x, &(powx[0]), &(GFpairs[(i1*N_funs+(n1))*N_x]), &(GFpairs[(i2*N_funs + n2+N_active_orbitals)*N_x]), twoj1, twoj2, twoj1v, twoj2v, L1_start, L1_end, X_mat[i1*N_active_orbitals + i2].Fk);
 				}
 			}
 			for (uint32_t i1 = 0; i1 < N_active_orbitals; i1++)
@@ -325,14 +328,14 @@ void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunct
 				int k1 = list_of_kappas_active[i1];
 				int twoj1 = 2*std::abs(k1)-1;
 				double e1 = energies[i1];
-				e1 += Q_av[(n1+N_active_orbitals)*N_funs + i1] + Q_av[(n2+N_active_orbitals)*N_funs + i1]; // plus since e1 gets subtracted, hence opposite sign
+				e1 += Q_av[(n1)*N_funs + i1] + Q_av[(n2+N_active_orbitals)*N_funs + i1]; // plus since e1 gets subtracted, hence opposite sign
 
 				for (uint32_t i2 = 0; i2 < N_active_orbitals; i2++)
 				{
 					int k2 = list_of_kappas_active[i2];
 					int twoj2 = 2*std::abs(k2)-1;
 					double e2 = energies[i2];
-					e2 += Q_av[(n1+N_active_orbitals)*N_funs + i2] + Q_av[(n2+N_active_orbitals)*N_funs + i2] - Q_av[i1*N_funs + i2];
+					e2 += Q_av[(n1)*N_funs + i2] + Q_av[(n2+N_active_orbitals)*N_funs + i2] - Q_av[i1*N_funs + i2];
 
 
 					int L1_start = X_mat[i1*N_active_orbitals + i2].L_start;
@@ -345,14 +348,13 @@ void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunct
 						int k3 = list_of_kappas_active[i3];
 						int twoj3 = 2*std::abs(k3)-1;
 						double e3 = energies[i3];
-						e3 += Q_av[(n1+N_active_orbitals)*N_funs + i3] + Q_av[(n2+N_active_orbitals)*N_funs + i3];
+						e3 += Q_av[(n1)*N_funs + i3] + Q_av[(n2+N_active_orbitals)*N_funs + i3];
 						for (uint32_t i4 = 0; i4 < N_active_orbitals; i4++)
 						{
-							//if (i4 == i1 && i2==i1 && i3 == i1) continue; //TODO remove
 							int k4 = list_of_kappas_active[i4];
 							int twoj4 = 2*std::abs(k4)-1;
 							double e4 = energies[i4];
-							e4 += Q_av[(n1+N_active_orbitals)*N_funs + i4] + Q_av[(n2+N_active_orbitals)*N_funs + i4] - Q_av[i3*N_funs + i4];
+							e4 += Q_av[(n1)*N_funs + i4] + Q_av[(n2+N_active_orbitals)*N_funs + i4] - Q_av[i3*N_funs + i4];
 
 							int K_start = std::max( abs(twoj1-twoj3), abs(twoj2-twoj4))/2;
 							int K_end = std::min( twoj1+twoj3, twoj2+twoj4)/2;
@@ -370,7 +372,10 @@ void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunct
 
 								if ((L1_start <= L1_end) && (L2_start <= L2_end))
 								{
-									Create_Effective_Hamiltonian_Six_Orbitals(Fk1, L1_start, L1_end, Fk2, L2_start, L2_end, energy_factor/4., i1, i2, i3, i4, twoj1, twoj2, twoj3, twoj4, twoj1v, twoj2v, K_start, K_end, indices_active, U);
+									if (n1 < N_active_orbitals)
+										Create_Effective_Hamiltonian_Six_Orbitals(Fk1, L1_start, L1_end, Fk2, L2_start, L2_end, energy_factor/2., i1, i2, i3, i4, twoj1, twoj2, twoj3, twoj4, twoj1v, twoj2v, K_start, K_end, indices_active, U);
+									else
+										Create_Effective_Hamiltonian_Six_Orbitals(Fk1, L1_start, L1_end, Fk2, L2_start, L2_end, energy_factor/4., i1, i2, i3, i4, twoj1, twoj2, twoj3, twoj4, twoj1v, twoj2v, K_start, K_end, indices_active, U);
 									//cout << "Fk1: " << Fk1[0] << "\t" << "Fk2: " << Fk2[0] << endl;
 								}
 							}
