@@ -225,15 +225,17 @@ void Create_Effective_Hamiltonian_Six_Orbitals(const double Fk1[], int L1_start,
 
 void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunction*> &G,
 										  const vector<Interpolation::InterpolatingFunction*> &F,
-										  const vector<double> &energies,
+										  vector<double> &energies,
 										  const vector<vector<uint16_t> > &indices_active,
 										  const vector<int> &list_of_kappas_active,
 										  const vector<int> &list_of_kappas_virtual,
+										  const vector<double> &occupations,
 										  const uint32_t NF,
 										  OperatorType &U)
 {
 	uint32_t N_active_orbitals  = (uint32_t) indices_active.size();
 	uint32_t N_virtual_orbitals = (uint32_t) list_of_kappas_virtual.size();
+	uint32_t N_occupied_shells = (uint32_t) occupations.size();
 	uint32_t N_funs = N_active_orbitals + N_virtual_orbitals;
 	uint32_t N_x = (uint32_t) G[0]->x.size();
 
@@ -268,6 +270,18 @@ void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunct
 			Q_av[i*N_funs + j] = Average_Coulomb_energy_two_shells(N_x, x, &(powx[0]), &(GFpairs[(i*N_funs+i)*N_x]), &(GFpairs[(j*N_funs+j)*N_x]), &(GFpairs[(i*N_funs+j)*N_x]), twoj1, twoj2, k1, k2);
 			Q_av[j*N_funs + i] = Q_av[i*N_funs + j];
 		}
+	}
+	//#pragma omp parallel for
+	for (int i = 0; i < N_funs; i++)
+	{
+		for (int j = 0; j < N_occupied_shells; j++)
+		{
+			energies[i] += occupations[j]*Q_av[i*N_funs+j];
+		}
+//		if (i==0)
+//			cout << energies[0] -Q_av[0] << endl;
+//		else
+//			cout << energies[i] << endl;
 	}
 	//cout << energies[0]+Q_av[0*N_funs + 0] << "\t" << energies[1]+2*Q_av[0*N_funs + 1] << "\t" << energies[2]+2*Q_av[0*N_funs + 2] << "\n";
 	for (uint32_t n1 = 0; n1 < N_virtual_orbitals; n1++)
@@ -311,17 +325,15 @@ void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunct
 				int k1 = list_of_kappas_active[i1];
 				int twoj1 = 2*std::abs(k1)-1;
 				double e1 = energies[i1];
-				if (i1 == 0) e1 += Q_av[(n1+N_active_orbitals)*N_funs + i1] + Q_av[(n2+N_active_orbitals)*N_funs + i1];
+				e1 += Q_av[(n1+N_active_orbitals)*N_funs + i1] + Q_av[(n2+N_active_orbitals)*N_funs + i1]; // plus since e1 gets subtracted, hence opposite sign
 
 				for (uint32_t i2 = 0; i2 < N_active_orbitals; i2++)
 				{
 					int k2 = list_of_kappas_active[i2];
 					int twoj2 = 2*std::abs(k2)-1;
 					double e2 = energies[i2];
-					if (i2 == 0) {
-						e2 += Q_av[(n1+N_active_orbitals)*N_funs + i2] + Q_av[(n2+N_active_orbitals)*N_funs + i2];
-						if (i1 == 0) e2 -= Q_av[i1*N_funs + i2];
-					}
+					e2 += Q_av[(n1+N_active_orbitals)*N_funs + i2] + Q_av[(n2+N_active_orbitals)*N_funs + i2] - Q_av[i1*N_funs + i2];
+
 
 					int L1_start = X_mat[i1*N_active_orbitals + i2].L_start;
 					int L1_end = X_mat[i1*N_active_orbitals + i2].L_end;
@@ -333,25 +345,23 @@ void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunct
 						int k3 = list_of_kappas_active[i3];
 						int twoj3 = 2*std::abs(k3)-1;
 						double e3 = energies[i3];
-						if (i3==0) e3 += Q_av[(n1+N_active_orbitals)*N_funs + i3] + Q_av[(n2+N_active_orbitals)*N_funs + i3];
+						e3 += Q_av[(n1+N_active_orbitals)*N_funs + i3] + Q_av[(n2+N_active_orbitals)*N_funs + i3];
 						for (uint32_t i4 = 0; i4 < N_active_orbitals; i4++)
 						{
 							//if (i4 == i1 && i2==i1 && i3 == i1) continue; //TODO remove
 							int k4 = list_of_kappas_active[i4];
 							int twoj4 = 2*std::abs(k4)-1;
 							double e4 = energies[i4];
-							if (i4 ==0){
-								e4 += Q_av[(n1+N_active_orbitals)*N_funs + i4] + Q_av[(n2+N_active_orbitals)*N_funs + i4];
-								if (i3 ==0) e4 -= Q_av[i3*N_funs + i4];
-							}
+							e4 += Q_av[(n1+N_active_orbitals)*N_funs + i4] + Q_av[(n2+N_active_orbitals)*N_funs + i4] - Q_av[i3*N_funs + i4];
 
 							int K_start = std::max( abs(twoj1-twoj3), abs(twoj2-twoj4))/2;
 							int K_end = std::min( twoj1+twoj3, twoj2+twoj4)/2;
 							if ( K_start<= K_end)
 							{
 
-								//double energy_factor = 1/(e1v + e2v - e3 - e4) + 1/(e1v + e2v - e1 - e2);
-								double energy_factor = 1/(e1v + e2v - (e3 + e4 ));
+								double energy_factor = 1/(e1v + e2v - e3 - e4) + 1/(e1v + e2v - e1 - e2);
+								//double energy_factor = 1/(e1v + e2v - (e3 + e4 ));
+								//energy_factor = 2.; // TODO: remove that
 
 								int L2_start = X_mat[i3*N_active_orbitals + i4].L_start;
 								int L2_end = X_mat[i3*N_active_orbitals + i4].L_end;
@@ -361,6 +371,7 @@ void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunct
 								if ((L1_start <= L1_end) && (L2_start <= L2_end))
 								{
 									Create_Effective_Hamiltonian_Six_Orbitals(Fk1, L1_start, L1_end, Fk2, L2_start, L2_end, energy_factor/4., i1, i2, i3, i4, twoj1, twoj2, twoj3, twoj4, twoj1v, twoj2v, K_start, K_end, indices_active, U);
+									//cout << "Fk1: " << Fk1[0] << "\t" << "Fk2: " << Fk2[0] << endl;
 								}
 							}
 						}
@@ -369,96 +380,89 @@ void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunct
 			} // i1
 		}// n2
 				// three active, one virtual
-		for (uint32_t n2 = 0; n2 < N_active_orbitals; n2++)
-		{
-			int k2v = list_of_kappas_active[n2];
-			int twoj2v = 2*std::abs(k2v)-1;
-			double e2v = energies[n2] + Q_av[(n1+N_active_orbitals)*N_funs + n2];
-			Reduced_Coulomb_matrixelement X_mat[N_active_orbitals*N_active_orbitals];
-			#pragma omp parallel for
-			for (uint32_t i1 = 0; i1 < N_active_orbitals; i1++)
-			{
-				int k1 = list_of_kappas_active[i1];
-				int twoj1 = 2*std::abs(k1)-1;
-
-				for (uint32_t i2 = 0; i2 < N_active_orbitals; i2++)
-				{
-					int k2 = list_of_kappas_active[i2];
-					int twoj2 = 2*std::abs(k2)-1;
-
-					int L1_start = std::max( abs(twoj1-twoj1v), abs(twoj2-twoj2v))/2;
-					int L1_end = std::min( twoj1+twoj1v, twoj2+twoj2v)/2;
-					if ( (abs(k1)+abs(k1v) + (Sign(k1)+Sign(k1v))/2 + L1_start ) % 2 == 0)
-					{
-						L1_start++;
-					}
-					X_mat[i1*N_active_orbitals + i2] = Reduced_Coulomb_matrixelement(L1_start,L1_end);
-					//int sign = L1_start % 2 == 0 ? 1 : -1; Cancelled in the end
-					Calculate_slater_integrals_with_reduced_prefactor(N_x, x, &(powx[0]), &(GFpairs[(i1*N_funs+(n1+N_active_orbitals))*N_x]), &(GFpairs[(i2*N_funs + n2)*N_x]), twoj1, twoj2, twoj1v, twoj2v, L1_start, L1_end, X_mat[i1*N_active_orbitals + i2].Fk);
-				}
-			}
-			for (uint32_t i1 = 0; i1 < N_active_orbitals; i1++)
-			{
-				int k1 = list_of_kappas_active[i1];
-				int twoj1 = 2*std::abs(k1)-1;
-				double e1 = energies[i1];
-				if (i1 ==0) e1 += Q_av[(n1+N_active_orbitals)*N_funs + i1] + Q_av[(n2)*N_funs + i1];
-
-				for (uint32_t i2 = 0; i2 < N_active_orbitals; i2++)
-				{
-					int k2 = list_of_kappas_active[i2];
-					int twoj2 = 2*std::abs(k2)-1;
-					double e2 = energies[i2];
-					if (i2==0) {
-						e2 += Q_av[(n1+N_active_orbitals)*N_funs + i2] + Q_av[(n2)*N_funs + i2];
-						if (i1 ==0) e2 -= Q_av[i1*N_funs + i2];
-					}
-
-					int L1_start = X_mat[i1*N_active_orbitals + i2].L_start;
-					int L1_end = X_mat[i1*N_active_orbitals + i2].L_end;
-
-					double *Fk1 = X_mat[i1*N_active_orbitals + i2].Fk;
-
-					for (uint32_t i3 = 0; i3 < N_active_orbitals; i3++)
-					{
-						int k3 = list_of_kappas_active[i3];
-						int twoj3 = 2*std::abs(k3)-1;
-						double e3 = energies[i3];
-						if (i3 ==0) e3 += Q_av[(n1+N_active_orbitals)*N_funs + i3] + Q_av[(n2)*N_funs + i3];
-						for (uint32_t i4 = 0; i4 < N_active_orbitals; i4++)
-						{
-							//if (i4 == i1 && i2==i1 && i3 == i1) continue; //TODO remove
-							int k4 = list_of_kappas_active[i4];
-							int twoj4 = 2*std::abs(k4)-1;
-							double e4 = energies[i4];
-							if (i4 ==0){
-								e4 += Q_av[(n1+N_active_orbitals)*N_funs + i4] + Q_av[(n2)*N_funs + i4];
-								if (i3==0) e4 -= Q_av[i3*N_funs + i4];
-							}
-
-							int K_start = std::max( abs(twoj1-twoj3), abs(twoj2-twoj4))/2;
-							int K_end = std::min( twoj1+twoj3, twoj2+twoj4)/2;
-							if ( K_start<= K_end)
-							{
-								double energy_factor = 1/(e1v + e2v - e3 - e4) + 1/(e1v + e2v - e1 - e2);
-								//double energy_factor = 1/(e1v + e2v - (e3 + e4 ));
-
-
-								int L2_start = X_mat[i3*N_active_orbitals + i4].L_start;
-								int L2_end = X_mat[i3*N_active_orbitals + i4].L_end;
-
-								double *Fk2 = X_mat[i3*N_active_orbitals + i4].Fk;
-
-								if ((L1_start <= L1_end) && (L2_start <= L2_end))
-								{
-									Create_Effective_Hamiltonian_Six_Orbitals(Fk1, L1_start, L1_end, Fk2, L2_start, L2_end, energy_factor/2., i1, i2, i3, i4, twoj1, twoj2, twoj3, twoj4, twoj1v, twoj2v, K_start, K_end, indices_active, U);
-								} // if L_start
-							} // n2 loop
-						}// if K_start
-					}// i4
-				}// i3 loop
-			}// N1 loop
-		}// i2 loop
+//		for (uint32_t n2 = 0; n2 < N_active_orbitals; n2++)
+//		{
+//			int k2v = list_of_kappas_active[n2];
+//			int twoj2v = 2*std::abs(k2v)-1;
+//			double e2v = energies[n2] + Q_av[(n1+N_active_orbitals)*N_funs + n2];
+//			Reduced_Coulomb_matrixelement X_mat[N_active_orbitals*N_active_orbitals];
+//			#pragma omp parallel for
+//			for (uint32_t i1 = 0; i1 < N_active_orbitals; i1++)
+//			{
+//				int k1 = list_of_kappas_active[i1];
+//				int twoj1 = 2*std::abs(k1)-1;
+//
+//				for (uint32_t i2 = 0; i2 < N_active_orbitals; i2++)
+//				{
+//					int k2 = list_of_kappas_active[i2];
+//					int twoj2 = 2*std::abs(k2)-1;
+//
+//					int L1_start = std::max( abs(twoj1-twoj1v), abs(twoj2-twoj2v))/2;
+//					int L1_end = std::min( twoj1+twoj1v, twoj2+twoj2v)/2;
+//					if ( (abs(k1)+abs(k1v) + (Sign(k1)+Sign(k1v))/2 + L1_start ) % 2 == 0)
+//					{
+//						L1_start++;
+//					}
+//					X_mat[i1*N_active_orbitals + i2] = Reduced_Coulomb_matrixelement(L1_start,L1_end);
+//					//int sign = L1_start % 2 == 0 ? 1 : -1; Cancelled in the end
+//					Calculate_slater_integrals_with_reduced_prefactor(N_x, x, &(powx[0]), &(GFpairs[(i1*N_funs+(n1+N_active_orbitals))*N_x]), &(GFpairs[(i2*N_funs + n2)*N_x]), twoj1, twoj2, twoj1v, twoj2v, L1_start, L1_end, X_mat[i1*N_active_orbitals + i2].Fk);
+//				}
+//			}
+//			for (uint32_t i1 = 0; i1 < N_active_orbitals; i1++)
+//			{
+//				int k1 = list_of_kappas_active[i1];
+//				int twoj1 = 2*std::abs(k1)-1;
+//				double e1 = energies[i1];
+//				e1 += Q_av[(n1+N_active_orbitals)*N_funs + i1] + Q_av[(n2)*N_funs + i1];
+//
+//				for (uint32_t i2 = 0; i2 < N_active_orbitals; i2++)
+//				{
+//					int k2 = list_of_kappas_active[i2];
+//					int twoj2 = 2*std::abs(k2)-1;
+//					double e2 = energies[i2] + Q_av[(n1+N_active_orbitals)*N_funs + i2] + Q_av[(n2)*N_funs + i2] - Q_av[i1*N_funs + i2];
+//
+//					int L1_start = X_mat[i1*N_active_orbitals + i2].L_start;
+//					int L1_end = X_mat[i1*N_active_orbitals + i2].L_end;
+//
+//					double *Fk1 = X_mat[i1*N_active_orbitals + i2].Fk;
+//
+//					for (uint32_t i3 = 0; i3 < N_active_orbitals; i3++)
+//					{
+//						int k3 = list_of_kappas_active[i3];
+//						int twoj3 = 2*std::abs(k3)-1;
+//						double e3 = energies[i3];
+//						e3 += Q_av[(n1+N_active_orbitals)*N_funs + i3] + Q_av[(n2)*N_funs + i3];
+//						for (uint32_t i4 = 0; i4 < N_active_orbitals; i4++)
+//						{
+//							int k4 = list_of_kappas_active[i4];
+//							int twoj4 = 2*std::abs(k4)-1;
+//							double e4 = energies[i4] + Q_av[(n1+N_active_orbitals)*N_funs + i4] + Q_av[(n2)*N_funs + i4] - Q_av[i3*N_funs + i4];
+//
+//							int K_start = std::max( abs(twoj1-twoj3), abs(twoj2-twoj4))/2;
+//							int K_end = std::min( twoj1+twoj3, twoj2+twoj4)/2;
+//							if ( K_start<= K_end)
+//							{
+//								double energy_factor = 1/(e1v + e2v - e3 - e4) + 1/(e1v + e2v - e1 - e2);
+//								//double energy_factor = 1/(e1v + e2v - (e3 + e4 ));
+//								energy_factor = 1.; // TODO: remove that
+//
+//
+//								int L2_start = X_mat[i3*N_active_orbitals + i4].L_start;
+//								int L2_end = X_mat[i3*N_active_orbitals + i4].L_end;
+//
+//								double *Fk2 = X_mat[i3*N_active_orbitals + i4].Fk;
+//
+//								if ((L1_start <= L1_end) && (L2_start <= L2_end))
+//								{
+//									Create_Effective_Hamiltonian_Six_Orbitals(Fk1, L1_start, L1_end, Fk2, L2_start, L2_end, energy_factor/2., i1, i2, i3, i4, twoj1, twoj2, twoj3, twoj4, twoj1v, twoj2v, K_start, K_end, indices_active, U);
+//									//cout << "Fk1: " << Fk1[0] << "\t" << "Fk2: " << Fk2[0] << endl;
+//								} // if L_start
+//							} // n2 loop
+//						}// if K_start
+//					}// i4
+//				}// i3 loop
+//			}// N1 loop
+//		}// i2 loop
 	}// i1 loop
 }
 
@@ -472,6 +476,7 @@ static int LuaCreateEffectiveHamiltonian(lua_State *L)
 	vector<vector<uint16_t> > indices_active;
 	vector<int> list_of_kappas_active;
 	vector<int> list_of_kappas_virtual;
+	vector<double> occupations;
 	uint32_t NF;
 
 	lua_check(L,1,NF);
@@ -492,11 +497,12 @@ static int LuaCreateEffectiveHamiltonian(lua_State *L)
 	lua_check(L,4,G);
 	lua_check(L,5,F);
 	lua_check(L,6,energies);
+	lua_check(L,7,occupations);
 
 	OperatorType *U = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
 	luaL_setmetatable(L,"Operator_Type");
 
-	Create_Effective_Hamiltonian(G, F, energies, indices_active, list_of_kappas_active, list_of_kappas_virtual, NF, *U);
+	Create_Effective_Hamiltonian(G, F, energies, indices_active, list_of_kappas_active, list_of_kappas_virtual,occupations, NF, *U);
 	return 1;
 }
 

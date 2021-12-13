@@ -1914,16 +1914,22 @@ static int LuaMartinTest(lua_State *L)
 	int i = 0;
 	int k1 = list_of_kappas[i];
 	int twoj1 = 1;
-	cout << Average_Coulomb_energy_one_shell(N_x, x, &(powx[0]), &(GFpairs[(i*N_funs+i)*N_x]), twoj1) << "\n";
+	double U0 = Average_Coulomb_energy_one_shell(N_x, x, &(powx[0]), &(GFpairs[(i*N_funs+i)*N_x]), twoj1) ;
+	//cout << << "\n";
 	int j = 1;
 	int twoj2 = 1;
 	int k2 = list_of_kappas[j];
-	cout << Average_Coulomb_energy_two_shells(N_x, x, &(powx[0]), &(GFpairs[(i*N_funs+i)*N_x]), &(GFpairs[(j*N_funs+j)*N_x]), &(GFpairs[(i*N_funs+j)*N_x]), twoj1, twoj2, k1, k2) << "\n";
+	double U1 = Average_Coulomb_energy_two_shells(N_x, x, &(powx[0]), &(GFpairs[(i*N_funs+i)*N_x]), &(GFpairs[(j*N_funs+j)*N_x]), &(GFpairs[(i*N_funs+j)*N_x]), twoj1, twoj2, k1, k2) ;
+	double U2 = Average_Coulomb_energy_one_shell(N_x, x, &(powx[0]), &(GFpairs[(j*N_funs+j)*N_x]), twoj2) ;
+	//cout << << "\n";
 	j = 3;
 	twoj2 = 3;
 	k2 = list_of_kappas[j];
-	cout << Average_Coulomb_energy_two_shells(N_x, x, &(powx[0]), &(GFpairs[(i*N_funs+i)*N_x]), &(GFpairs[(j*N_funs+j)*N_x]), &(GFpairs[(i*N_funs+j)*N_x]), twoj1, twoj2, k1, k2) << "\n";
-	return 0;
+	//cout << Average_Coulomb_energy_two_shells(N_x, x, &(powx[0]), &(GFpairs[(i*N_funs+i)*N_x]), &(GFpairs[(j*N_funs+j)*N_x]), &(GFpairs[(i*N_funs+j)*N_x]), twoj1, twoj2, k1, k2) << "\n";
+	lua_push(L, U0);
+	lua_push(L, U1);
+	lua_push(L, U2);
+	return 3;
 /*
 	cout << Wigner9J(9, 9, 8, 7, 4, 3, 8, 11, 5) << endl;
 	return 0;
