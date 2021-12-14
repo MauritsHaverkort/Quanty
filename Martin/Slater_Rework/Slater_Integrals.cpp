@@ -170,7 +170,7 @@ double Average_Coulomb_energy_two_shells(const uint32_t N_x, const double *x, co
 	for (int L = L_start; L<= L_end; L+=2)
 	{
 		double tjs = ThreeJSymbolHalf(twoj1, -1, twoj2, 1, 2*L, 0);
-		result -= tjs * tjs * Slater_Integrate_optimize(N_x, x, powx, L, G12, G12)/2.;
+		result -= tjs * tjs * Slater_Integrate_optimize(N_x, x, powx, L, G12, G12);
 	}
 
 	return result;

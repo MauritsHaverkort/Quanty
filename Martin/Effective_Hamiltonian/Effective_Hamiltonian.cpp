@@ -226,6 +226,32 @@ void Create_Effective_Hamiltonian_Six_Orbitals(const double Fk1[], int L1_start,
 
 }
 
+double Coulomb_energy_difference_of_excitation(const double *Q_av, const uint32_t N_funs, const vector<double> &occupations, int ind[], int N_excitations)
+{
+	double result = 0.;
+	int N_occ = (int) occupations.size();
+	for (int a = 0; a < N_excitations; a++)
+	{
+		for (int b = 0; b < N_excitations; b++)
+		{
+			result += Q_av[ind[a]*N_funs + ind[b]]/2.;
+			result -= Q_av[ind[a]*N_funs + ind[b+N_excitations]]/2.;
+		}
+		for (int b = 0; b < N_excitations; b++)
+		{
+			result -= Q_av[ind[a+N_excitations]*N_funs + ind[b]]/2.;
+			result += Q_av[ind[a+N_excitations]*N_funs + ind[b+N_excitations]]/2.;
+		}
+		for (int i = 0; i < N_occ; i++)
+		{
+			result += occupations[i] * Q_av[ind[a]*N_funs + i];
+			result -= occupations[i] * Q_av[ind[a+N_excitations]*N_funs + i];
+		}
+	}
+
+	return result;
+}
+
 void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunction*> &G,
 										  const vector<Interpolation::InterpolatingFunction*> &F,
 										  vector<double> &energies,
@@ -264,7 +290,7 @@ void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunct
 	{
 		int k1 = list_of_kappas[i];
 		int twoj1 = 2*std::abs(k1)-1;
-		Q_av[i*N_funs + i] = Average_Coulomb_energy_one_shell(N_x, x, &(powx[0]), &(GFpairs[(i*N_funs+i)*N_x]), twoj1);
+		Q_av[i*N_funs + i] = Average_Coulomb_energy_two_shells(N_x, x, &(powx[0]), &(GFpairs[(i*N_funs+i)*N_x]), &(GFpairs[(i*N_funs+i)*N_x]), &(GFpairs[(i*N_funs+i)*N_x]), twoj1, twoj1, k1, k1);
 
 		for (int j = i+1; j < N_funs; j++)
 		{
@@ -274,19 +300,22 @@ void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunct
 			Q_av[j*N_funs + i] = Q_av[i*N_funs + j];
 		}
 	}
+	cout << "En: " << energies[0] << "\t" << energies[1] << endl;
+	cout << "En-diff: " <<  2*(energies[1]) - 2*(energies[0]) + 2*Q_av[1*N_funs + 1] - 2*Q_av[0*N_funs + 0] << "\n";
+	cout << "En-diff: " <<  (energies[1]+energies[0]) - 2*(energies[0]) + Q_av[1*N_funs + 0] - 2*Q_av[0*N_funs + 0]<< "\n";
 	//#pragma omp parallel for
-	for (int i = 0; i < N_funs; i++)
-	{
-		for (int j = 0; j < N_occupied_shells; j++)
-		{
-			energies[i] += occupations[j]*Q_av[i*N_funs+j];
-		}
-//		if (i==0)
-//			cout << energies[0] -Q_av[0] << endl;
-//		else
-//			cout << energies[i] << endl;
-	}
-	//cout << energies[0]+Q_av[0*N_funs + 0] << "\t" << energies[1]+2*Q_av[0*N_funs + 1] << "\t" << energies[2]+2*Q_av[0*N_funs + 2] << "\n";
+//	for (int i = 0; i < N_funs; i++)
+//	{
+//		for (int j = 0; j < N_occupied_shells; j++)
+//		{
+//			energies[i] += occupations[j]*Q_av[i*N_funs+j];
+//		}
+////		if (i==0)
+////			cout << energies[0] -Q_av[0] << endl;
+////		else
+////			cout << energies[i] << endl;
+//	}
+
 	for (uint32_t n1 = 0; n1 < N_funs; n1++)
 	{
 		int k1v = list_of_kappas[n1];
@@ -297,7 +326,7 @@ void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunct
 		{
 			int k2v = list_of_kappas_virtual[n2];
 			int twoj2v = 2*std::abs(k2v)-1;
-			double e2v = energies[n2+N_active_orbitals] + Q_av[(n1)*N_funs + n2+N_active_orbitals];
+			double e2v = energies[n2+N_active_orbitals];// + 2*Q_av[(n1)*N_funs + n2+N_active_orbitals];
 
 			Reduced_Coulomb_matrixelement X_mat[N_active_orbitals*N_active_orbitals];
 			#pragma omp parallel for
@@ -328,14 +357,14 @@ void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunct
 				int k1 = list_of_kappas_active[i1];
 				int twoj1 = 2*std::abs(k1)-1;
 				double e1 = energies[i1];
-				e1 += Q_av[(n1)*N_funs + i1] + Q_av[(n2+N_active_orbitals)*N_funs + i1]; // plus since e1 gets subtracted, hence opposite sign
+				//e1 += Q_av[(n1)*N_funs + i1] + Q_av[(n2+N_active_orbitals)*N_funs + i1]; // plus since e1 gets subtracted, hence opposite sign
 
 				for (uint32_t i2 = 0; i2 < N_active_orbitals; i2++)
 				{
 					int k2 = list_of_kappas_active[i2];
 					int twoj2 = 2*std::abs(k2)-1;
 					double e2 = energies[i2];
-					e2 += Q_av[(n1)*N_funs + i2] + Q_av[(n2+N_active_orbitals)*N_funs + i2] - Q_av[i1*N_funs + i2];
+					//e2 += Q_av[(n1)*N_funs + i2] + Q_av[(n2+N_active_orbitals)*N_funs + i2] - 2*Q_av[i1*N_funs + i2];
 
 
 					int L1_start = X_mat[i1*N_active_orbitals + i2].L_start;
@@ -348,22 +377,57 @@ void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunct
 						int k3 = list_of_kappas_active[i3];
 						int twoj3 = 2*std::abs(k3)-1;
 						double e3 = energies[i3];
-						e3 += Q_av[(n1)*N_funs + i3] + Q_av[(n2+N_active_orbitals)*N_funs + i3];
+						//e3 += Q_av[(n1)*N_funs + i3] + Q_av[(n2+N_active_orbitals)*N_funs + i3];
 						for (uint32_t i4 = 0; i4 < N_active_orbitals; i4++)
 						{
 							int k4 = list_of_kappas_active[i4];
 							int twoj4 = 2*std::abs(k4)-1;
 							double e4 = energies[i4];
-							e4 += Q_av[(n1)*N_funs + i4] + Q_av[(n2+N_active_orbitals)*N_funs + i4] - Q_av[i3*N_funs + i4];
+							//e4 += Q_av[(n1)*N_funs + i4] + Q_av[(n2+N_active_orbitals)*N_funs + i4] - 2*Q_av[i3*N_funs + i4];
 
 							int K_start = std::max( abs(twoj1-twoj3), abs(twoj2-twoj4))/2;
 							int K_end = std::min( twoj1+twoj3, twoj2+twoj4)/2;
 							if ( K_start<= K_end)
 							{
 
-								double energy_factor = 1/(e1v + e2v - e3 - e4) + 1/(e1v + e2v - e1 - e2);
+								double denom1, denom2;
+								if (n1 == i3)
+								{
+									int ind[4] = {n2+N_active_orbitals,i4};
+									denom1 = e1v + e2v - e3 - e4 + Coulomb_energy_difference_of_excitation(Q_av, N_funs, occupations, ind, 1);
+								}
+								else if (n1 == i4)
+								{
+									int ind[4] = {n2+N_active_orbitals,i3};
+									denom1 = e1v + e2v - e3 - e4 + Coulomb_energy_difference_of_excitation(Q_av, N_funs, occupations, ind, 1);
+								}
+								else
+								{
+									int ind[4] = {n1,n2+N_active_orbitals,i3,i4};
+									denom1 = e1v + e2v - e3 - e4 + Coulomb_energy_difference_of_excitation(Q_av, N_funs, occupations, ind, 2);
+								}
+								if (n1 == i1)
+								{
+									int ind[4] = {n2+N_active_orbitals,i2};
+									denom2 = e1v + e2v - e1 - e2 + Coulomb_energy_difference_of_excitation(Q_av, N_funs, occupations, ind, 1);
+								}
+								else if (n1 == i2)
+								{
+									int ind[4] = {n2+N_active_orbitals,i1};
+									denom2 = e1v + e2v - e1 - e2 + Coulomb_energy_difference_of_excitation(Q_av, N_funs, occupations, ind, 1);
+								}
+								else
+								{
+									int ind[4] = {n1,n2+N_active_orbitals,i1,i2};
+									denom2 = e1v + e2v - e1 - e2 + Coulomb_energy_difference_of_excitation(Q_av, N_funs, occupations, ind, 2);
+								}
+
+								double energy_factor = 1/denom1 + 1/denom2;
 								//double energy_factor = 1/(e1v + e2v - (e3 + e4 ));
 								//energy_factor = 2.; // TODO: remove that
+								cout << n1 << ", "<< n2+N_active_orbitals << ", " << i1 << ", "<< i2 << ": " << denom2 << endl;
+								cout << n1 << ", "<< n2+N_active_orbitals << ", " << i3 << ", "<< i4 << ": " << denom1 << endl;
+								cout << "-------------------------\n";
 
 								int L2_start = X_mat[i3*N_active_orbitals + i4].L_start;
 								int L2_end = X_mat[i3*N_active_orbitals + i4].L_end;
