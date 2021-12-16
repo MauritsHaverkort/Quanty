@@ -1894,17 +1894,7 @@ void lua_check(lua_State *L, uint32_t n, T* &in)
 */
 static int LuaMartinTest(lua_State *L)
 {
-	cout << ThreeJSymbolHalf(1, 1, 2*0, 0, 1, -1) << endl;
-	cout << ThreeJSymbolHalf(1, 1, 2*0, -1*2, 1, 1) << endl;
-	cout << ThreeJSymbolHalf(1, -1, 2*0, 1*2, 1, -1) << endl;
-	cout << ThreeJSymbolHalf(1, -1, 2*0, 0, 1, 1) << endl;
 
-	cout << ThreeJSymbolHalf(1, 1, 1*1, 0, 1, -1) << endl;
-	cout << ThreeJSymbolHalf(1, 1, 1*1, -1*2, 1, 1) << endl;
-	cout << ThreeJSymbolHalf(1, -1, 1*1, 1*2, 1, -1) << endl;
-	cout << ThreeJSymbolHalf(1, -1, 1*1, 0, 1, 1) << endl;
-
-	return 0;
 
 	vector<Interpolation::InterpolatingFunction*> G;
 	vector<Interpolation::InterpolatingFunction*> F;
@@ -1922,6 +1912,49 @@ static int LuaMartinTest(lua_State *L)
 	double GFpairs[N_funs*N_funs*N_x];
 	double *x = &(G[0]->x[0]);
 	Init_Slater_Function_Pairs(N_x, G, F, GFpairs);
+
+	double Q_av[N_funs*N_funs];
+	for (int i = 0; i < N_funs; i++)
+	{
+		int k1 = list_of_kappas[i];
+		int twoj1 = 2*std::abs(k1)-1;
+		Q_av[i*N_funs + i] = Average_Coulomb_energy_two_shells(N_x, x, &(powx[0]), &(GFpairs[(i*N_funs+i)*N_x]), &(GFpairs[(i*N_funs+i)*N_x]), &(GFpairs[(i*N_funs+i)*N_x]), twoj1, twoj1, k1, k1);
+
+		for (int j = i+1; j < N_funs; j++)
+		{
+			int k2 = list_of_kappas[j];
+			int twoj2 = 2*std::abs(k2)-1;
+			Q_av[i*N_funs + j] = Average_Coulomb_energy_two_shells(N_x, x, &(powx[0]), &(GFpairs[(i*N_funs+i)*N_x]), &(GFpairs[(j*N_funs+j)*N_x]), &(GFpairs[(i*N_funs+j)*N_x]), twoj1, twoj2, k1, k2);
+			Q_av[j*N_funs + i] = Q_av[i*N_funs + j];
+		}
+	}
+	vector<double> occupations = {2.,2.,2.,3.};
+	int ind[4];
+	int d_occ[4];
+	int N_ex;
+
+	int ind1[2] = {3,1};
+	int d_occ1[2] = {1,-1};
+	cout << Average_Coulomb_energy_difference_of_excitation(Q_av, N_funs, occupations, ind1,d_occ1, 2,list_of_kappas) << "\t";
+	N_ex = Determine_excitations(3, 0, 1, 0, ind, d_occ);
+	cout << Average_Coulomb_energy_difference_of_excitation(Q_av, N_funs, occupations, ind,d_occ, N_ex,list_of_kappas) << "\t";
+	int ind2[2] = {4,1};
+	int d_occ2[2] = {2,-2};
+	cout << Average_Coulomb_energy_difference_of_excitation(Q_av, N_funs, occupations, ind2,d_occ2, 2,list_of_kappas) << "\t";
+	N_ex = Determine_excitations(4, 4, 1, 1, ind, d_occ);
+	cout << Average_Coulomb_energy_difference_of_excitation(Q_av, N_funs, occupations, ind,d_occ, N_ex,list_of_kappas) << "\t";
+	int ind3[3] = {4,1,2};
+	int d_occ3[3] = {2,-1,-1};
+	cout << Average_Coulomb_energy_difference_of_excitation(Q_av, N_funs, occupations, ind3,d_occ3, 3,list_of_kappas) << "\t";
+	N_ex = Determine_excitations(4, 4, 1, 2, ind, d_occ);
+	cout << Average_Coulomb_energy_difference_of_excitation(Q_av, N_funs, occupations, ind,d_occ, N_ex,list_of_kappas) << "\t";
+	int ind4[3] = {3,4,1};
+	int d_occ4[3] = {1,1,-2};
+	cout << Average_Coulomb_energy_difference_of_excitation(Q_av, N_funs, occupations, ind4,d_occ4, 3,list_of_kappas) << "\t";
+	N_ex = Determine_excitations(3, 4, 1, 1, ind, d_occ);
+	cout << Average_Coulomb_energy_difference_of_excitation(Q_av, N_funs, occupations, ind,d_occ, N_ex,list_of_kappas) << "\t";
+
+	return 0;
 
 	int i = 0;
 	int k1 = list_of_kappas[i];
