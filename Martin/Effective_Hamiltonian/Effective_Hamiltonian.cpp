@@ -402,10 +402,10 @@ void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunct
 			Q_av[j*N_funs + i] = Q_av[i*N_funs + j];
 		}
 	}
-	cout << "En: " << energies[0] << "\t" << energies[1] << endl;
-	cout << "En-diff: " <<  2*(energies[1]) - 2*(energies[0]) + 2*Q_av[1*N_funs + 1] - 2*Q_av[0*N_funs + 0] << "\n";
-	cout << "En-diff: " <<  (energies[1]+energies[0]) - 2*(energies[0]) + Q_av[1*N_funs + 0] - 2*Q_av[0*N_funs + 0]<< "\n";
-	cout << "En-diff wrong: " <<  (energies[1]+energies[0]) - 2*(energies[0]) + Q_av[1*N_funs + 0] - 2*Q_av[0*N_funs + 0]+Q_av[0*N_funs + 0]/2.+Q_av[1*N_funs + 1]/2.<< "\n";
+//	cout << "En: " << energies[0] << "\t" << energies[1] << endl;
+//	cout << "En-diff: " <<  2*(energies[1]) - 2*(energies[0]) + 2*Q_av[1*N_funs + 1] - 2*Q_av[0*N_funs + 0] << "\n";
+//	cout << "En-diff: " <<  (energies[1]+energies[0]) - 2*(energies[0]) + Q_av[1*N_funs + 0] - 2*Q_av[0*N_funs + 0]<< "\n";
+//	cout << "En-diff wrong: " <<  (energies[1]+energies[0]) - 2*(energies[0]) + Q_av[1*N_funs + 0] - 2*Q_av[0*N_funs + 0]+Q_av[0*N_funs + 0]/2.+Q_av[1*N_funs + 1]/2.<< "\n";
 	//#pragma omp parallel for
 //	for (int i = 0; i < N_funs; i++)
 //	{

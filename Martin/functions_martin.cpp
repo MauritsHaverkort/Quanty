@@ -1936,8 +1936,13 @@ static int LuaMartinTest(lua_State *L)
 	int ind1[2] = {3,1};
 	int d_occ1[2] = {1,-1};
 	cout << Average_Coulomb_energy_difference_of_excitation(Q_av, N_funs, occupations, ind1,d_occ1, 2,list_of_kappas) << "\t";
-	N_ex = Determine_excitations(3, 0, 1, 0, ind, d_occ);
+	N_ex = Determine_excitations(0, 3, 1, 0, ind, d_occ);
 	cout << Average_Coulomb_energy_difference_of_excitation(Q_av, N_funs, occupations, ind,d_occ, N_ex,list_of_kappas) << "\t";
+
+//	N_ex = Determine_excitations(3, 0, 1, 4, ind, d_occ);
+//	cout << Average_Coulomb_energy_difference_of_excitation(Q_av, N_funs, occupations, ind,d_occ, N_ex,list_of_kappas) << "\t";
+//	return 0;
+
 	int ind2[2] = {4,1};
 	int d_occ2[2] = {2,-2};
 	cout << Average_Coulomb_energy_difference_of_excitation(Q_av, N_funs, occupations, ind2,d_occ2, 2,list_of_kappas) << "\t";
