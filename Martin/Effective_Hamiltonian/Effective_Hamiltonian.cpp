@@ -48,7 +48,7 @@ void Add_Effective_Hamiltonian_Terms(const vector<vector<uint16_t> > &indices_ac
 					int two_m4 = two_m1 + two_m2 - two_m3;
 					// note the minus sign below, due to ordering of creation/annihilation operators
 					double angular_prefactor = -ThreeJSymbolHalf(twoj1, -two_m1, K, -two_m3+two_m1, twoj3, two_m3)*ThreeJSymbolHalf(twoj2, -two_m2, K, two_m3-two_m1, twoj4, two_m4);
-					if (((two_m2-two_m4)/2)%2==1) angular_prefactor *= -1.;
+					if (((two_m2-two_m4)/2)%2!=0) angular_prefactor *= -1.;
 					if (Abs(angular_prefactor) > DBL_EPSILON)
 					{
 						uint16_t oadd[4];
@@ -196,6 +196,7 @@ void Create_Effective_Hamiltonian_Six_Orbitals(const double Fk1[], int L1_start,
 			{
 				double angular_prefactor = (2*K+1)*Wigner9J(twoj2, twoj2v, 2*L1, twoj3, 2*L2, twoj1v, 2*K, twoj4, twoj1);//  1/4 is the prefactor according to Effective_Hamiltonian_2.pdf
 				reduced_matrix_ement += angular_prefactor * Fk1[(L1 - L1_start)/2] * Fk2[(L2 - L2_start)/2]*energy_factor; // it must be moved to the energy factor, because different for different terms
+				//cout << "I'm here\t" << angular_prefactor << endl;
 			}
 		}
 		for (int two_m1 = -twoj1; two_m1 <= twoj1; two_m1 += 2)
@@ -209,14 +210,16 @@ void Create_Effective_Hamiltonian_Six_Orbitals(const double Fk1[], int L1_start,
 					//double angular_prefactor = -ThreeJSymbolHalf(twoj1, -two_m1, 2*K, -two_m3+two_m1, twoj3, two_m3)*ThreeJSymbolHalf(twoj2, -two_m2, 2*K, two_m3-two_m1, twoj4, two_m4);
 					double angular_prefactor = -ThreeJSymbolHalf(twoj1, -two_m1, 2*K, -two_m4+two_m1, twoj4, two_m4)*ThreeJSymbolHalf(twoj2, -two_m2, 2*K, two_m4-two_m1, twoj3, two_m3);
 					//if (((two_m2-two_m4)/2)%2==1) angular_prefactor *= -1.;
-					if (((two_m2-two_m4)/2)%2==1) angular_prefactor *= -1.;
+					if (((two_m2-two_m4)/2)%2!=0) angular_prefactor *= -1.;
 					if (Abs(angular_prefactor) > DBL_EPSILON)
 					{
+						//cout << "Adding\t" << angular_prefactor << "\t" << reduced_matrix_ement << endl;
 						uint16_t oadd[4];
 						oadd[3] = CrAnMask + indices_active[i1][(twoj1+two_m1)/2];
 						oadd[2] = CrAnMask + indices_active[i2][(twoj2+two_m2)/2];
 						oadd[1] =            indices_active[i3][(twoj3+two_m3)/2];
 						oadd[0] =            indices_active[i4][(twoj4+two_m4)/2];
+						//cout << oadd[3] - CrAnMask << "\t" << oadd[2] - CrAnMask << "\t" << oadd[1] << "\t" << oadd[0] << "\tmod : " << ((two_m2-two_m4)/2)%2 << endl;
 						RealOperatorAddLaderNormalOrder(&U, oadd, 4, angular_prefactor * reduced_matrix_ement, &QDetNotOrderedFcFaBcBa);
 					}
 				}
@@ -225,6 +228,50 @@ void Create_Effective_Hamiltonian_Six_Orbitals(const double Fk1[], int L1_start,
 	}
 
 }
+//void Create_Effective_Hamiltonian_Six_Orbitals_rework(const double Fk1[], int L1_start, int L1_end,const double Fk2[], int L2_start, int L2_end, double energy_factor,
+//		int i1, int i2, int i3, int i4, int twoj1,int twoj2, int twoj3, int twoj4, int twoj1v, int twoj2v, const vector<vector<uint16_t> > &indices_active, OperatorType &U)
+//{
+//
+//	//cout << "K_start = " << K_start << "\t" << K_end <<endl;
+//	for (int K = K_start; K <= K_end; K++)
+//	{
+//
+//
+//		for (int two_m1 = -twoj1; two_m1 <= twoj1; two_m1 += 2)
+//		{
+//			for (int two_m2 = -twoj2; two_m2 <= twoj2; two_m2 += 2)
+//			{
+//				for (int two_m3 = -twoj3; two_m3 <= twoj3; two_m3 += 2)
+//				{
+//					int two_m4 = two_m1 + two_m2 - two_m3;
+//					double reduced_matrix_ement = 0;
+//
+//					for (int L2 = L2_start; L2 <= L2_end; L2 +=2)
+//					{
+//						for (int L1 = L1_start; L1 <= L1_end; L1 +=2)
+//						{
+//							double angular_prefactor = (2*K+1)*Wigner9J(twoj2, twoj2v, 2*L1, twoj3, 2*L2, twoj1v, 2*K, twoj4, twoj1);//  1/4 is the prefactor according to Effective_Hamiltonian_2.pdf
+//							reduced_matrix_ement += angular_prefactor * Fk1[(L1 - L1_start)/2] * Fk2[(L2 - L2_start)/2]*energy_factor; // it must be moved to the energy factor, because different for different terms
+//						}
+//					}
+//
+//					double angular_prefactor = -ThreeJSymbolHalf(twoj1, -two_m1, 2*K, -two_m4+two_m1, twoj4, two_m4)*ThreeJSymbolHalf(twoj2, -two_m2, 2*K, two_m4-two_m1, twoj3, two_m3);
+//					if (((two_m2-two_m4)/2)%2==1) angular_prefactor *= -1.;
+//					if (Abs(angular_prefactor) > DBL_EPSILON)
+//					{
+//						uint16_t oadd[4];
+//						oadd[3] = CrAnMask + indices_active[i1][(twoj1+two_m1)/2];
+//						oadd[2] = CrAnMask + indices_active[i2][(twoj2+two_m2)/2];
+//						oadd[1] =            indices_active[i3][(twoj3+two_m3)/2];
+//						oadd[0] =            indices_active[i4][(twoj4+two_m4)/2];
+//						RealOperatorAddLaderNormalOrder(&U, oadd, 4, angular_prefactor * reduced_matrix_ement, &QDetNotOrderedFcFaBcBa);
+//					}
+//				}
+//			}
+//		}
+//	}
+//
+//}
 
 double Average_Coulomb_energy_difference_of_excitation(const double *Q_av, const uint32_t N_funs, const vector<double> &occupations, int ind[], int delta_occ[], int N_excitations, const vector<int> &list_of_kappas)
 {
@@ -423,12 +470,14 @@ void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunct
 	{
 		int k1v = list_of_kappas[n1];
 		int twoj1v = 2*std::abs(k1v)-1;
+		int l1v = (twoj1v + Sgn(k1v))/2;
 		double e1v = energies[n1];
 
 		for (uint32_t n2 = 0; n2 < N_virtual_orbitals; n2++)
 		{
 			int k2v = list_of_kappas_virtual[n2];
 			int twoj2v = 2*std::abs(k2v)-1;
+			int l2v = (twoj2v + Sgn(k2v))/2;
 			double e2v = energies[n2+N_active_orbitals];// + 2*Q_av[(n1)*N_funs + n2+N_active_orbitals];
 
 			Reduced_Coulomb_matrixelement X_mat[N_active_orbitals*N_active_orbitals];
@@ -437,22 +486,33 @@ void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunct
 			{
 				int k1 = list_of_kappas_active[i1];
 				int twoj1 = 2*std::abs(k1)-1;
+				int l1 = (twoj1 + Sgn(k1))/2;
 
 				for (uint32_t i2 = 0; i2 < N_active_orbitals; i2++)
 				{
 					int k2 = list_of_kappas_active[i2];
 					int twoj2 = 2*std::abs(k2)-1;
+					int l2 = (twoj2 + Sgn(k2))/2;
 
 					int L1_start = std::max( abs(twoj1-twoj1v), abs(twoj2-twoj2v))/2;
 					int L1_end = std::min( twoj1+twoj1v, twoj2+twoj2v)/2;
-					if ( (abs(k1)+abs(k1v) + (Sign(k1)+Sign(k1v))/2 + L1_start ) % 2 == 0)
+					if ( (l1 + l1v + L1_start ) % 2 == 1)
 					{
 						L1_start++;
 					}
-					X_mat[i1*N_active_orbitals + i2] = Reduced_Coulomb_matrixelement(L1_start,L1_end);
-					//int sign = L1_start % 2 == 0 ? 1 : -1; Cancelled in the end
-					// TODO: rewrite function below as X_mat contains info about L_start / L__end
-					Calculate_slater_integrals_with_reduced_prefactor(N_x, x, &(powx[0]), &(GFpairs[(i1*N_funs+(n1))*N_x]), &(GFpairs[(i2*N_funs + n2+N_active_orbitals)*N_x]), twoj1, twoj2, twoj1v, twoj2v, L1_start, L1_end, X_mat[i1*N_active_orbitals + i2].Fk);
+					if ( (l2 + l2v + L1_start ) % 2 == 1)
+					{
+						X_mat[i1*N_active_orbitals + i2].L_start = 0;
+						X_mat[i1*N_active_orbitals + i2].L_end = -1;
+					}
+					else
+					{
+						X_mat[i1*N_active_orbitals + i2] = Reduced_Coulomb_matrixelement(L1_start,L1_end);
+
+						//int sign = L1_start % 2 == 0 ? 1 : -1; Cancelled in the end
+						// TODO: rewrite function below as X_mat contains info about L_start / L__end
+						Calculate_slater_integrals_with_reduced_prefactor(N_x, x, &(powx[0]), &(GFpairs[(i1*N_funs+(n1))*N_x]), &(GFpairs[(i2*N_funs + n2+N_active_orbitals)*N_x]), twoj1, twoj2, twoj1v, twoj2v, L1_start, L1_end, X_mat[i1*N_active_orbitals + i2].Fk);
+					}
 				}
 			}
 			for (uint32_t i1 = 0; i1 < N_active_orbitals; i1++)
@@ -505,9 +565,9 @@ void Create_Effective_Hamiltonian(const vector<Interpolation::InterpolatingFunct
 								double energy_factor = 1/denom1 + 1/denom2;
 								//double energy_factor = 1/(e1v + e2v - (e3 + e4 ));
 								//energy_factor = 2.; // TODO: remove that
-//								cout << n1 << ", "<< n2+N_active_orbitals << ", " << i1 << ", "<< i2 << ": " << denom2 << endl;
-//								cout << n1 << ", "<< n2+N_active_orbitals << ", " << i3 << ", "<< i4 << ": " << denom1 << endl;
-//								cout << "-------------------------\n";
+								//cout << n1 << ", "<< n2+N_active_orbitals << ", " << i1 << ", "<< i2 << ": " << denom2 << endl;
+								//cout << n1 << ", "<< n2+N_active_orbitals << ", " << i3 << ", "<< i4 << ": " << denom1 << endl;
+								//cout << "-------------------------\n";
 
 								int L2_start = X_mat[i3*N_active_orbitals + i4].L_start;
 								int L2_end = X_mat[i3*N_active_orbitals + i4].L_end;
