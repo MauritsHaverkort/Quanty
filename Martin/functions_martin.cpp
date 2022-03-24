@@ -27,6 +27,7 @@
 #include "Slater_Rework/Coulomb_Operator.cpp"
 #define AT_QUANTY
 #include "Hartree-Fock-Potential.cpp"
+#include "QMC/CPMC_core.cpp"
 //#include "Math/Wigner9j.cpp"
 //#include "Effective_Hamiltonian/Effective_Hamiltonian.cpp"
 
