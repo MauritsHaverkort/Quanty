@@ -32,6 +32,22 @@ void PrintMartix(double *M, int n)
 	printf("\b}\n");
 	fflush(stdout);
 }
+void PrintMartix(double *M, int n, int m)
+{
+	int i,j;
+	printf("{");
+	for ( i = 0; i < n; i++)
+	{
+		printf("\n{");
+		for ( j = 0; j < m; j++)
+		{
+			printf("%f, ",M[i + j*n]);
+		}
+		printf("\b\b},");
+	}
+	printf("\b}\n");
+	fflush(stdout);
+}
 void PrintMartix(Complex16 *M, int n)
 {
 	int i,j;

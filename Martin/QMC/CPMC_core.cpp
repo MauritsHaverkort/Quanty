@@ -28,14 +28,17 @@ void Initialize_determinants(double **dets,int n_determinants, int n_single_part
 double Determinant(double *A, int *ipiv, unsigned int N)
 {
 	double result = A[0];
-	for (int i=0; i < N; i++)
+	for (int i=1; i < N; i++)
 	{
 		if(i+1==ipiv[i])
-			result *= A[i*(1+*N)];
+			result *= A[i*(1+N)];
 		else
-			result *= -A[i*(1+*N)];
+			result *= -A[i*(1+N)];
 	}
-	return result;
+	if (ipiv[0]==1)
+		return result;
+	else
+		return -result;
 	//TODO: test this
 
 }
@@ -48,7 +51,7 @@ void Propagate_free(double *&det, int n_single_particle_basis, int n_partilces, 
 	double zero = 0;
 
 	unsigned int M = n_single_particle_basis;	// number of rows of det
-	unsigned int N = n_single_particle_basis;	// number of cols of det
+	unsigned int N = n_partilces;	// number of cols of det
 	unsigned int K = M;	// number of rows of det
 
 	double *C = (double*) malloc(M*N*sizeof(double));
@@ -56,22 +59,25 @@ void Propagate_free(double *&det, int n_single_particle_basis, int n_partilces, 
 	dgemm(&NoTranspose,&NoTranspose,&M,&N,&K,&one,propagator_free,&K,det,&K,&zero,C,&M);
 	free(det);
 	det = C;
-
+	PrintMartix(det, M, N);
 	dgemm(&Transpose,&NoTranspose,&N,&M,&M,&one,trial_det,&M,det,&M,&zero,inverse_olap_matrix,&N);
-
+	PrintMartix(inverse_olap_matrix, N);
  	int ipiv[N];
 	unsigned int LWORK = N*N;
 	double WORK[LWORK];
 	int info;
 
 	dgetrf(&N,&N,inverse_olap_matrix,&N,ipiv,&info);
+	if (info != 0) printf("Error in Propagate_free, dgetrf info = %d",info);
 	double olap_new = Determinant(inverse_olap_matrix, ipiv, N);
 
 	dgetri(&N,inverse_olap_matrix,&N,ipiv,WORK,&LWORK,&info);
-
-	Inverse_matrix(inverse_olap_matrix, N);
+	if (info != 0) printf("Error in Propagate_free, dgetri info = %d",info);
+	//Inverse_matrix(inverse_olap_matrix, N);
+	PrintMartix(inverse_olap_matrix, N);
 
 	//TODO: test this
+	cout << "Det = " << olap_new << endl;
 }
 
 void Propagate_dets(double **dets, double *weights, double *propagator_free, double *olaps, double **inverse_olap_matrix,

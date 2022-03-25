@@ -1895,7 +1895,25 @@ void lua_check(lua_State *L, uint32_t n, T* &in)
 */
 static int LuaMartinTest(lua_State *L)
 {
+	int n_single_particle_basis, n_partilces;
+	lua_check(L,4,n_single_particle_basis);
+	lua_check(L,5,n_partilces);
 
+	double *det = (double*) malloc(n_single_particle_basis*n_partilces*sizeof(double));
+
+	vector<double> temp, propagator_free, trial_det;
+	lua_check(L,1,temp);
+	if (temp.size() != n_single_particle_basis*n_partilces) printf("error: foobar\n");
+	for (int i = 0; i < n_single_particle_basis*n_partilces; i++)
+		det[i] = temp[i];
+	PrintMartix(det, n_single_particle_basis, n_partilces);
+	cout << endl << endl;
+	lua_check(L,2,propagator_free);
+	lua_check(L,3,trial_det);
+
+	double olap = 100.;
+	double *inverse_olap_matrix = (double*) malloc(n_partilces*n_partilces*sizeof(double));
+	QMC::Propagate_free(det, n_single_particle_basis, n_partilces, olap, inverse_olap_matrix, &propagator_free[0], &trial_det[0]);
 
 	return 0;
 /*
