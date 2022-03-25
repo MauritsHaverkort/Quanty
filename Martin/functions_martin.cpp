@@ -1912,8 +1912,9 @@ static int LuaMartinTest(lua_State *L)
 	lua_check(L,3,trial_det);
 
 	double olap = 100.;
+	double weight = 1.;
 	double *inverse_olap_matrix = (double*) malloc(n_partilces*n_partilces*sizeof(double));
-	QMC::Propagate_free(det, n_single_particle_basis, n_partilces, olap, inverse_olap_matrix, &propagator_free[0], &trial_det[0]);
+	QMC::Propagate_free(det, n_single_particle_basis, n_partilces, olap, inverse_olap_matrix, &propagator_free[0], &trial_det[0],weight);
 
 	return 0;
 /*
