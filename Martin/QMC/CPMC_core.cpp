@@ -60,7 +60,7 @@ void Propagate_free(double *&det, int n_single_particle_basis, int n_partilces, 
 	free(det);
 	det = C;
 	PrintMartix(det, M, N);
-	dgemm(&Transpose,&NoTranspose,&N,&M,&M,&one,trial_det,&M,det,&M,&zero,inverse_olap_matrix,&N);
+	dgemm(&Transpose,&NoTranspose,&N,&N,&M,&one,trial_det,&M,det,&M,&zero,inverse_olap_matrix,&N);
 	PrintMartix(inverse_olap_matrix, N);
  	int ipiv[N];
 	unsigned int LWORK = N*N;
