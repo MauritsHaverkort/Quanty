@@ -1488,11 +1488,14 @@ typedef struct DresdenFPLO
     int NActAtom;
     int *ActMap;
     int *Site;
-    int **Orbital;     // n,l,m
+    uint32_t QRelativistic;
+    int **Orbital;     // n,l,m if non-relativistic, n,l+j+1/2,m+1/2 else.
     double **PosCenter;
+    uint32_t QComplex;
     int *Nhop;
     double ***HopVec;  // Translating+Connecting, as direct output of fplo.
-    double **HopVal;
+    double **HopVal; //Real values
+    double **HopValIm; //Imaginary values are allocated even if QComplex = 0.
   }
   Wannier;
 

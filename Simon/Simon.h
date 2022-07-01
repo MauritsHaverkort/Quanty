@@ -13,5 +13,8 @@
 #include "Kappa.h"
 #include "lsCouplingConstant.h"
 #include "MatrixToOperator.h"
+#include "Operator.h"
 #include "readOrca.h"
+#include "SparseMatrix.h"
 #include "TightBindingCopy.h"
+#include "WaveFunction.h"

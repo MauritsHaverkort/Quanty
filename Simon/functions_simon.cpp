@@ -144,11 +144,17 @@ static const struct luaL_Reg Simon_func[] = {
 	{"IsosurfaceFixedInt", LuaIsosurfaceFixedInt},
 	{"IsosurfaceFixedVal", LuaIsosurfaceFixedVal},
 	{"MatrixToOperator", LuaMatrixToOperator},
+	{"MatrixToSparseMatrix", LuaMatrixToSparseMatrix},
+	{"MatrixTrace", LuaMatrixTrace},
+	{"OrthogonalizeWithNonOrthoBasis", LuaOrthogonalizeWithNonOrthoBasis},
 	{"lsCouplingConstants", LuaLSCouplingConstants},
 	{"FileReadOrca", LuaFileReadOrca},
+	{"PrepareOperatorForEmptyOrbitals",LuaPrepareOperatorForEmptyOrbitals},
 	{"RealspaceDensity", LuaRealspaceDensity},
 	{"RemoveSpin", LuaRemoveSpin},
 	{"SortByKappa",LuaSortByKappa},
+	{"SparseMatrixToMatrix",LuaSparseMatrixToMatrix},
+	{"TensorProduct", LuaTensorProduct},
 	{"test", LuaSimontest},
 	{NULL, NULL}
 };

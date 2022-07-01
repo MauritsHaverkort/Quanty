@@ -287,9 +287,12 @@ uint32_t InitOperatorCopySettings(OperatorType * const O, const OperatorType Ose
   O->NBoson = Oset.NBoson;
   O->NWord = Oset.NWord;
   O->Res.N = Oset.Res.N;
-  O->Res.Min = (uint32_t*)malloc(Oset.Res.N*sizeof(uint32_t));
-  O->Res.Max = (uint32_t*)malloc(Oset.Res.N*sizeof(uint32_t));
-  O->Res.Determinant = (uint8_t**)malloc(Oset.Res.N*sizeof(uint8_t*));
+	if (O->Res.N > 0)
+	{
+		O->Res.Min = (uint32_t*) malloc(Oset.Res.N * sizeof(uint32_t));
+		O->Res.Max = (uint32_t*) malloc(Oset.Res.N * sizeof(uint32_t));
+		O->Res.Determinant = (uint8_t**) malloc(Oset.Res.N * sizeof(uint8_t*));
+	}
   for(i=0;i<Oset.Res.N;i++)
   {
     O->Res.Min[i]=Oset.Res.Min[i];
@@ -6650,6 +6653,7 @@ void extractPartialOperator(OperatorType * const O, OperatorType * const OPartia
   {
 		extractPartialOperatorFixedLength(O, OPartial, indices, criterion, length, changeInput);
   }
+	SetQComplexOperator(OPartial);
 }
 
 void extractPartialOperator(OperatorType * const O, OperatorType * const OPartial, const vector<vector<uint16_t> > &indices, bool (*criterion)(const uint16_t * const, const uint, const vector<vector<uint16_t> >&))

@@ -111,38 +111,150 @@ double CReducedJBasis(int k_a, int k_b, int L)
 	}
 }
 
-void CalcBreitInteraction(const std::vector<Interpolation::InterpolatingFunction*> &G,const std::vector<Interpolation::InterpolatingFunction*> &F, uint32_t N)
+//uint32_t CreateOperatorBreitFourShells(uint32_t const NFermion, int const kappa1, int const kappa2, int const kappa3, int const kappa4, uint16_t const *Jindex1, uint16_t const *Jindex2, uint16_t const *Jindex3, uint16_t const *Jindex4, double const *R, OperatorType * const U)
+//{
+//  uint16_t oadd[4];
+//  double val;
+//  int const twoj1 = 2*Abs(kappa1)-1;
+//  int const twoj2 = 2*Abs(kappa2)-1;
+//  int const twoj3 = 2*Abs(kappa3)-1;
+//  int const twoj4 = 2*Abs(kappa4)-1;
+//  int const l1=(twoj1+Sgn(kappa1))/2; // l of the large component, l of the small component is j-Sgn(kappa)/2
+//  int const l2=(twoj2+Sgn(kappa2))/2; // l of the large component, l of the small component is j-Sgn(kappa)/2
+//  int const l3=(twoj3+Sgn(kappa3))/2; // l of the large component, l of the small component is j-Sgn(kappa)/2
+//  int const l4=(twoj4+Sgn(kappa4))/2; // l of the large component, l of the small component is j-Sgn(kappa)/2
+//  int ik,k,twojz1,twojz2,twojz3,twojz4;
+//  InitNamedOperator(U, "Breit Operator");
+//  U->NFermion = NFermion;
+//  U->NWord = Min(U->NFermion, 1 + (U->NFermion - 1) / 8);
+//  InitOperatorFixedLength(U, 2, 8);
+//  InitOperatorFixedLength(U, 4, 8);
+//  ik=-1;
+//
+//  for (k=Max(Abs(l1-l3),Abs(l2-l4)); k<=Min(l1+l3,l2+l4); k+=2)
+//  {
+//    if ((2*k)<Max(Abs(twoj1-twoj3),Abs(twoj2-twoj4))) continue;
+//    if ((2*k)>Min(twoj1+twoj3,twoj2+twoj4)) continue;
+//    ik++;
+//    double CRed2 = CReducedJBasis(kappa1,kappa3,k) * CReducedJBasis(kappa2,kappa4,k);
+//    for (twojz1 = -twoj1; twojz1 <= twoj1; twojz1+=2)
+//    {
+//      for (twojz2 = -twoj2; twojz2 <= twoj2; twojz2+=2)
+//      {
+//        for (twojz3 = Max(-twoj3, twojz1 + twojz2 - twoj4); twojz3 <= Min(twoj3, twojz1 + twojz2 + twoj4); twojz3+=2)
+//        {
+//          /* -j4 <= jz4 <= j4
+//           * -j4 <= jz1+jz2-jz3 <= j4
+//           * thus
+//           * -j4-jz1-jz2 <= -jz3 <= j4-jz1-jz2
+//           * or
+//           *  jz1+jz2-j4 <= jz3 <= j44+jz1+jz2
+//           */
+//          twojz4 = twojz1 + twojz2 - twojz3;
+//          val = 0.5*CRed2 * ThreeJSymbolHalf(twoj1,-twojz1,2*k,twojz1-twojz3,twoj3,twojz3) * ThreeJSymbolHalf(twoj2,-twojz2,2*k,twojz3-twojz1,twoj4,twojz4);
+//          if (((twoj1+twoj2+2*k-twojz1-twojz2-(twojz1-twojz3))/2) %2) val *= -1;
+//          if (Abs(val) > DBL_EPSILON)
+//          {
+//            oadd[3] = CrAnMask + Jindex1[(twoj1+twojz1)/2];
+//            oadd[2] = CrAnMask + Jindex2[(twoj2+twojz2)/2];
+//            oadd[1] =            Jindex3[(twoj3+twojz3)/2];
+//            oadd[0] =            Jindex4[(twoj4+twojz4)/2];
+//            RealOperatorAddLaderNormalOrder(U, oadd, 4, val * R[ik], &QDetNotOrderedFcFaBcBa);
+//          }
+//        }
+//      }
+//    }
+//  }
+//  OperatorChop(U, 100 * DBL_EPSILON);
+//  return 0;
+//}
+
+uint32_t CreateOperatorBreitFourShells(uint32_t const NFermion, int const kappa1, int const kappa2, int const kappa3, int const kappa4, uint16_t const *Jindex1, uint16_t const *Jindex2, uint16_t const *Jindex3, uint16_t const *Jindex4, double const *MO, double const *N1, OperatorType * const U)
 {
-	double M1, M2, N1, O1, O2, O31, O32, O41, O42; // mwh unused U
-	vector<double> x,w, Q1, P1, Q2, P2, V1,V2;
+  uint16_t oadd[4];
+  double val, currentIntegral, CRed2;
+  int const twoj1 = 2*Abs(kappa1)-1;
+  int const twoj2 = 2*Abs(kappa2)-1;
+  int const twoj3 = 2*Abs(kappa3)-1;
+  int const twoj4 = 2*Abs(kappa4)-1;
+  int const l1=(twoj1+Sgn(kappa1))/2; // l of the large component, l of the small component is j-Sgn(kappa)/2
+  int const l2=(twoj2+Sgn(kappa2))/2; // l of the large component, l of the small component is j-Sgn(kappa)/2
+  int const l3=(twoj3+Sgn(kappa3))/2; // l of the large component, l of the small component is j-Sgn(kappa)/2
+  int const l4=(twoj4+Sgn(kappa4))/2; // l of the large component, l of the small component is j-Sgn(kappa)/2
+  int ikM,ikN, k,twojz1,twojz2,twojz3,twojz4;
+  InitNamedOperator(U, "Breit Operator");
+  U->NFermion = NFermion;
+  U->NWord = Min(U->NFermion, 1 + (U->NFermion - 1) / 8);
+  InitOperatorFixedLength(U, 2, 8);
+  InitOperatorFixedLength(U, 4, 8);
+  ikM=-1;
+  ikN=-1;
+  //printf("Nk = %d\n",Min(twoj1+twoj3,twoj2+twoj4)-Max(Abs(twoj1-twoj3),Abs(twoj2-twoj4))/2);
+  for (k=Max(Abs(twoj1-twoj3),Abs(twoj2-twoj4))/2; k<=Min(twoj1+twoj3,twoj2+twoj4)/2; k++)
+  {
+    if ((l1+l3+k)%2)
+    {
+    	ikN++;
+    	currentIntegral = N1[ikN];
+    	CRed2 = CReducedJBasis(-kappa1,kappa3,k) * CReducedJBasis(-kappa2,kappa4,k);
+    }
+    else
+    {
+    	ikM++;
+    	currentIntegral = MO[ikM];
+    	CRed2 = CReducedJBasis(kappa1,kappa3,k) * CReducedJBasis(kappa2,kappa4,k);
+    }
+
+    for (twojz1 = -twoj1; twojz1 <= twoj1; twojz1+=2)
+    {
+      for (twojz2 = -twoj2; twojz2 <= twoj2; twojz2+=2)
+      {
+        for (twojz3 = Max(-twoj3, twojz1 + twojz2 - twoj4); twojz3 <= Min(twoj3, twojz1 + twojz2 + twoj4); twojz3+=2)
+        {
+          /* -j4 <= jz4 <= j4
+           * -j4 <= jz1+jz2-jz3 <= j4
+           * thus
+           * -j4-jz1-jz2 <= -jz3 <= j4-jz1-jz2
+           * or
+           *  jz1+jz2-j4 <= jz3 <= j44+jz1+jz2
+           */
+          twojz4 = twojz1 + twojz2 - twojz3;
+          //TODO: Check this minus sign!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+          val = -0.5*CRed2 * ThreeJSymbolHalf(twoj1,-twojz1,2*k,twojz1-twojz3,twoj3,twojz3) * ThreeJSymbolHalf(twoj2,-twojz2,2*k,twojz3-twojz1,twoj4,twojz4);
+          if (((twoj1+twoj2+2*k-twojz1-twojz2-(twojz1-twojz3))/2) %2) val *= -1;
+          if (Abs(val) > DBL_EPSILON)
+          {
+            oadd[3] = CrAnMask + Jindex1[(twoj1+twojz1)/2];
+            oadd[2] = CrAnMask + Jindex2[(twoj2+twojz2)/2];
+            oadd[1] =            Jindex3[(twoj3+twojz3)/2];
+            oadd[0] =            Jindex4[(twoj4+twojz4)/2];
+            RealOperatorAddLaderNormalOrder(U, oadd, 4, val * currentIntegral, &QDetNotOrderedFcFaBcBa);
+          }
+        }
+      }
+    }
+  }
+  OperatorChop(U, 100 * DBL_EPSILON);
+  return 0;
+}
+
+void CalcBreitInteraction(const std::vector<Interpolation::InterpolatingFunction*> &G,const std::vector<Interpolation::InterpolatingFunction*> &F, uint32_t N,
+		const vector<vector<uint16_t> > &indices,const uint32_t NF, const vector<int> &kappas, OperatorType *BreitOp)
+{
+	vector<double> x,w;
 	vector<vector<double> > g,f, ker;
 	uint32_t Nfuns = (uint32_t) G.size();
-	BeginTiming("w", &GlobalTime);
 	Quad::GaussianQuadratureWeights(N,G[0]->x,x,w);
-	EndTiming("w", &GlobalTime);
 
-	uint32_t i,j,k,l;
-	int k_k, k_i, k_j, k_l, Lmin,Lmax;
-	//printf("%f\t%f\t%f\n",CReducedJBasis(-1,1,1),CReducedJBasis(-1,2,1),CReducedJBasis(-1,2,2));
-	i = 0;
-	j = 0;
-	k = 1;
-	l = 1;
-	k_i = -1;
-	k_j = -1;
-	k_k = -2;
-	k_l = -2; //TODO: remove these 8 lines
-
-	Lmin = 0;
-	Lmax = 3; //TODO: remove these 2 lines
+	int kMax = MaxAbs(kappas);
+	int Lmax = kMax > 0 ? 2*kMax +2 : 2*(-kMax -1) + 2;
+	int Lmin = 0;
+	//printf("kMax = %d\tLmax = %d\n",kMax,Lmax);
 	ker = vector<vector<double> >(Lmax+1);
-	BeginTiming("ker", &GlobalTime);
-	for (int L = Max(Lmin,1); L <= Lmax; L++)
+	for (int L = 1; L <= Lmax; L++)
 	{
 		CreateKernel(x,w,L,ker[L]);
 	}
-	EndTiming("ker", &GlobalTime);
-	BeginTiming("funs", &GlobalTime);
 	g = vector<vector<double> >(Nfuns);
 	f = vector<vector<double> >(Nfuns);
 	for (uint32_t ifun = 0; ifun < Nfuns; ifun++)
@@ -150,69 +262,178 @@ void CalcBreitInteraction(const std::vector<Interpolation::InterpolatingFunction
 		g[ifun] = (*G[ifun])(x);
 		f[ifun] = (*F[ifun])(x);
 	}
-	EndTiming("funs", &GlobalTime);
-	// mwh unused uint32_t d = (uint32_t) g[0].size();
 
-	Lmin = 1;
-	Lmax = 1; //TODO: remove these 2 lines
-	BeginTiming("Int", &GlobalTime);
-	for (int L = Lmin; L <= Lmax; L += 2)
+	OperatorType OpBuff[Nfuns];
+	for (uint32_t i = 0; i < Nfuns; i++)
 	{
-		CreateIntegrands(g[i],f[i],g[j],f[j],g[k],f[k],g[l],f[l],k_i,k_j,k_k,k_l,L,Q1,P1,Q2,P2);
-
-		M1 = GeneralizedSlaterIntegral(ker[L+2],Q1,Q2);
-		O1 = M1;
-		M1 *= ((double)L+1.)/(2.*(double)L-1.); //TODO: check if this is really division by double
-		//printf("M1 = %.16f\n",M1);
-		O1 *= ((double)L+1.)*((double)L+1.)/(2.*(double)L+1.)/(2.*(double)L+3.);
-		if ( L == 0)
-		{
-			M2  = 0;
-			O2  = 0;
-			O31 = 0;
-			O32 = 0;
-			O41 = 0;
-			O42 = 0;
-		}
-		else //TODO: check these; above integrals are tested
-		{
-			M2 = GeneralizedSlaterIntegral(ker[L],P1,P2);
-			O2 = M2;
-			M2 *= (double)L/(2.*(double)L-1.);
-			O2 *= (double)L*L/(2.*(double)L-1.)/(2.*(double)L+1.);
-			O31 = GeneralizedSlaterIntegral(ker[L],Q1,P2);
-			O31 *= (double)L*((double)L+1.)/2./(2.*(double)L+1);
-			O32 = -GeneralizedSlaterIntegral(ker[L+2],Q1,P2);
-			O32 *= (double)L*((double)L+1.)/2./(2.*(double)L+1);
-			//printf("O32 = %.16f\n",O32);
-			O41 = GeneralizedSlaterIntegral(ker[L],P1,Q2);
-			O41 *= (double)L*((double)L+1.)/2./(2.*(double)L+1);
-			O42 = -GeneralizedSlaterIntegral(ker[L+2],P1,Q2);
-			O42 *= (double)L*((double)L+1.)/2./(2.*(double)L+1);
-			//printf("O42 = %.16f\n",O42);
-		}
-		double MO = M1 + M2 - (O1 + O2 + O31 + O32 + O41 + O42);
-		if (L%2)
-			MO *= -1;
-		MO *= CReducedJBasis(k_i,k_k,L) * CReducedJBasis(k_j,k_l,L);
-		printf("M  = %.16f\n",CReducedJBasis(k_i,k_k,L) * CReducedJBasis(k_j,k_l,L)*(M1 + M2)*(L%2?-1:1));
-		printf("O  = %.16f\n",-CReducedJBasis(k_i,k_k,L) * CReducedJBasis(k_j,k_l,L)*(O1 + O2 + O31 + O32 + O41 + O42)*(L%2?-1:1));
-		printf("MO = %.16f\n",MO);
+		double F[] = {0};
+		CreateOperatorCoulombSingleRelativisticShell(NF,-1,&(indices[0][0]),F,&(OpBuff[i]));
 	}
-	Lmin = 2;
-	Lmax = 2; //TODO: remove these 2 lines
-	for (int L = Lmin; L <= Lmax; L += 2)
+#pragma omp parallel for
+	for (uint32_t i = 0; i < Nfuns; i++)
 	{
-		CreateIntegrands(g[i],f[i],g[k],f[k],L,V1);
-		CreateIntegrands(g[j],f[j],g[l],f[l],L,V2);
-		N1 = GeneralizedSlaterIntegral(ker[L+1],V1,V2); //TODO: immer anderes L als der rest
-		N1 *= (double)(k_i+k_k)*(k_j+k_l)/(double)L/((double)L+1.) * CReducedJBasis(-k_i,k_k,L) * CReducedJBasis(-k_j,k_l,L) * (L%2 ? 1 : -1);
-		printf("N1 = %.16f\n",N1);
+		double M1, M2, O1, O2, O31, O32, O41, O42;
+		double MO[(Lmax - Lmin)/2 +1];
+		double N1[(Lmax - Lmin)/2 +1];
+		vector<double> Q1, P1, Q2, P2, V1,V2;
+		OperatorType OpTemp;
+		for (uint32_t j = i; j < Nfuns; j++)
+		{
+			for (uint32_t k = i; k < Nfuns; k++)
+			{
+				for (uint32_t l = j; l < Nfuns; l++)
+				{
+					int k_i = kappas[i];
+					int k_j = kappas[j];
+					int k_k = kappas[k];
+					int k_l = kappas[l];
+
+					int j2_i = 2*Abs(k_i) -1;
+					int j2_j = 2*Abs(k_j) -1;
+					int j2_k = 2*Abs(k_k) -1;
+					int j2_l = 2*Abs(k_l) -1;
+
+					int l_i = k_i > 0 ? k_i : -k_i - 1;
+					int l_j = k_j > 0 ? k_j : -k_j - 1;
+					int l_k = k_k > 0 ? k_k : -k_k - 1;
+					int l_l = k_l > 0 ? k_l : -k_l - 1;
+
+					uint32_t iL = 0;
+					int LminLocal = Max(Abs(j2_i-j2_k),Abs(j2_j-j2_l))/2;
+					int LmaxLocal = Min(j2_i + j2_k, j2_j + j2_l)/2;
+					if ((l_i + l_k + LminLocal)%2) LminLocal++;
+					//printf("MO :\tLminLocal = %d\t%d\n",LminLocal,LmaxLocal);
+					for (int L = LminLocal; L <= LmaxLocal; L += 2)
+					{
+						CreateIntegrands(g[i],f[i],g[j],f[j],g[k],f[k],g[l],f[l],k_i,k_j,k_k,k_l,L,Q1,P1,Q2,P2);
+
+						M1 = GeneralizedSlaterIntegral(ker[L+2],Q1,Q2);
+						O1 = M1;
+						M1 *= ((double)L+1.)/(2.*(double)L-1.);
+						O1 *= ((double)L+1.)*((double)L+1.)/(2.*(double)L+1.)/(2.*(double)L+3.);
+						if ( L == 0)
+						{
+							M2  = 0;
+							O2  = 0;
+							O31 = 0;
+							O32 = 0;
+							O41 = 0;
+							O42 = 0;
+						}
+						else //TODO: check these; above integrals are tested
+						{
+							M2 = GeneralizedSlaterIntegral(ker[L],P1,P2);
+							O2 = M2;
+							M2 *= (double)L/(2.*(double)L-1.);
+							O2 *= (double)L*L/(2.*(double)L-1.)/(2.*(double)L+1.);
+							O31 = GeneralizedSlaterIntegral(ker[L],Q1,P2);
+							O31 *= (double)L*((double)L+1.)/2./(2.*(double)L+1);
+							O32 = -GeneralizedSlaterIntegral(ker[L+2],Q1,P2);
+							O32 *= (double)L*((double)L+1.)/2./(2.*(double)L+1);
+							//printf("O32 = %.16f\n",O32);
+							O41 = GeneralizedSlaterIntegral(ker[L],P1,Q2);
+							O41 *= (double)L*((double)L+1.)/2./(2.*(double)L+1);
+							O42 = -GeneralizedSlaterIntegral(ker[L+2],P1,Q2);
+							O42 *= (double)L*((double)L+1.)/2./(2.*(double)L+1);
+							//printf("O42 = %.16f\n",O42);
+						}
+						MO[iL] = M1 + M2 - (O1 + O2 + O31 + O32 + O41 + O42);
+						if (L%2)
+							MO[iL] *= -1;
+
+						//MO *= CReducedJBasis(k_i,k_k,L) * CReducedJBasis(k_j,k_l,L); included in CreateOperatorBreitFourShells
+				//		printf("M  = %.16f\n",CReducedJBasis(k_i,k_k,L) * CReducedJBasis(k_j,k_l,L)*(M1 + M2)*(L%2?-1:1));
+				//		printf("O  = %.16f\n",-CReducedJBasis(k_i,k_k,L) * CReducedJBasis(k_j,k_l,L)*(O1 + O2 + O31 + O32 + O41 + O42)*(L%2?-1:1));
+				//		printf("MO = %.16f\n",MO[iL]);
+						iL++;
+					}
+
+					iL = 0;
+					LminLocal = Max(Abs(j2_i-j2_k),Abs(j2_j-j2_l))/2;
+					//printf("LminLocal = %d\t%d\n",LminLocal,LmaxLocal);
+					if (!((l_i + l_k + LminLocal)%2)) LminLocal++;
+					//printf("N1 :\tLminLocal = %d\t%d\n",LminLocal,LmaxLocal);
+					if (LminLocal == 0)
+					{
+						N1[iL] = 0;
+						iL++;
+						LminLocal +=2;
+					}
+					for (int L = LminLocal; L <= LmaxLocal; L += 2)
+					{
+						CreateIntegrands(g[i],f[i],g[k],f[k],L,V1);
+						CreateIntegrands(g[j],f[j],g[l],f[l],L,V2);
+						N1[iL] = GeneralizedSlaterIntegral(ker[L+1],V1,V2); //TODO: immer anderes L als der rest
+						N1[iL] *= (double)(k_i+k_k)*(k_j+k_l)/(double)L/((double)L+1.) * (L%2 ? 1 : -1);
+						//printf("N1 = %.16f\tL = %d\n",N1[iL],L);
+						iL++;
+					}
+					//printf("MO[%d][%d][%d][%d] = {%E}\nN1[%d][%d][%d][%d] = {%E}\n",i,j,k,l,MO[0],i,j,k,l,N1[0]);
+//					for (uint32_t idx = 0; idx < (Lmax - Lmin)/2 +1; idx++)  //TODO: remove
+//					{
+//						MO[idx] = 20+idx;
+//						N1[idx] = 1+idx;
+//					}
+					CreateOperatorBreitFourShells(NF,k_i,k_j,k_k,k_l,&(indices[i][0]),&(indices[j][0]),&(indices[k][0]),&(indices[l][0]),MO,N1,&OpTemp);
+					OperatorAdd(&(OpBuff[i]), OpTemp, 1., 0.);
+					FreeOperator(&OpTemp);
+					if (i != k)
+					{
+						CreateOperatorBreitFourShells(NF,k_k,k_j,k_i,k_l,&(indices[k][0]),&(indices[j][0]),&(indices[i][0]),&(indices[l][0]),MO,N1,&OpTemp);
+						OperatorAdd(&(OpBuff[i]), OpTemp, 1., 0.);
+						FreeOperator(&OpTemp);
+					}
+					if (j != l)
+					{
+						CreateOperatorBreitFourShells(NF,k_i,k_l,k_k,k_j,&(indices[i][0]),&(indices[l][0]),&(indices[k][0]),&(indices[j][0]),MO,N1,&OpTemp);
+						OperatorAdd(&(OpBuff[i]), OpTemp, 1., 0.);
+						FreeOperator(&OpTemp);
+
+						if (i != k)
+						{
+							CreateOperatorBreitFourShells(NF,k_k,k_l,k_i,k_j,&(indices[k][0]),&(indices[l][0]),&(indices[i][0]),&(indices[j][0]),MO,N1,&OpTemp);
+							OperatorAdd(&(OpBuff[i]), OpTemp, 1., 0.);
+							FreeOperator(&OpTemp);
+						}
+					}
+
+					if ( (i != j) || (k != l) )
+					{
+						CreateOperatorBreitFourShells(NF,k_j,k_i,k_l,k_k,&(indices[j][0]),&(indices[i][0]),&(indices[l][0]),&(indices[k][0]),MO,N1,&OpTemp);
+						OperatorAdd(&(OpBuff[i]), OpTemp, 1., 0.);
+						FreeOperator(&OpTemp);
+
+						if (i != k)
+						{
+
+							CreateOperatorBreitFourShells(NF,k_j,k_k,k_l,k_i,&(indices[j][0]),&(indices[k][0]),&(indices[l][0]),&(indices[i][0]),MO,N1,&OpTemp);
+							OperatorAdd(&(OpBuff[i]), OpTemp, 1., 0.);
+							FreeOperator(&OpTemp);
+						}
+
+						if (j != l)
+						{
+							CreateOperatorBreitFourShells(NF,k_l,k_i,k_j,k_k,&(indices[l][0]),&(indices[i][0]),&(indices[j][0]),&(indices[k][0]),MO,N1,&OpTemp);
+							OperatorAdd(&(OpBuff[i]), OpTemp, 1., 0.);
+							FreeOperator(&OpTemp);
+							if (i != k)
+							{
+								CreateOperatorBreitFourShells(NF,k_l,k_k,k_j,k_i,&(indices[l][0]),&(indices[k][0]),&(indices[j][0]),&(indices[i][0]),MO,N1,&OpTemp);
+								OperatorAdd(&(OpBuff[i]), OpTemp, 1., 0.);
+								FreeOperator(&OpTemp);
+							}
+						}
+					}
+				}
+			}
+		}
 	}
-	EndTiming("Int", &GlobalTime);
-
-	//printf("Fk = %.16f\n",GeneralizedSlaterIntegral(ker,Q,P));
-
+	*BreitOp = OpBuff[0];
+	for (uint32_t i = 1; i < Nfuns; i++)
+	{
+		OperatorAdd(BreitOp, OpBuff[i], 1., 0.);
+		FreeOperator(&(OpBuff[i]));
+	}
 }
 
 

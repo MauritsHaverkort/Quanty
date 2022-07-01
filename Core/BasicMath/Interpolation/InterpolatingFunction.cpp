@@ -192,7 +192,7 @@ double IntegrateInterval(InterpolatingFunction &f, uint32_t idx)
 
 double Integrate(InterpolatingFunction &f, double a, double b)
 {
-	// mwh not used uint32_t N = 2;
+	const uint32_t N = 2;
 	double val = 0;
 	double sign = 1;
 	uint32_t i = 0;
@@ -207,17 +207,17 @@ double Integrate(InterpolatingFunction &f, double a, double b)
 		 i++;
 	if (b <= f.x[i])
 	{
-		val = Quad::Integrate(f,a,b,2);
+		val = Quad::Integrate(f,a,b,N);
 	}
 	else
 	{
-		val = Quad::Integrate(f,a,f.x[i],2);
+		val = Quad::Integrate(f,a,f.x[i],N);
 		while(i < (uint32_t) f.x.size() -1 && b > f.x[i+1] )
 		{
-			val += Quad::Integrate(f,f.x[i],f.x[i+1],2);
+			val += Quad::Integrate(f,f.x[i],f.x[i+1],N);
 			i++;
 		}
-		val += Quad::Integrate(f,f.x[i],b,2);
+		val += Quad::Integrate(f,f.x[i],b,N);
 	}
 	return sign*val;
 }

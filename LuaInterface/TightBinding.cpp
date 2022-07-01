@@ -389,6 +389,7 @@ static int LuaCalculateRho(lua_State *L)
   luaL_setmetatable(L, "Matrix_Type");
   rho->OnLuaStack=true;
   TightBindingHamiltonianToDensityMatrix(a, Options.Nk, rho, Options.mu, Options.kbT);
+  free(Options.Nk);
   
   return 1;
 }
@@ -1020,53 +1021,51 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
     // search for connecting vector in TD definition
     // set Operator as matrix
     ClusterDef->nH = 0;
-    AtomShellOrbitalMap=(MatrixType**)malloc(ClusterDef->Cell.NAtoms*sizeof(MatrixType*));
-    for(i=0;i<ClusterDef->Cell.NAtoms;i++)
-    {
-      AtomShellOrbitalMap[i]=NULL;
-      for(j=0;j<a->Cell.NAtoms;j++)
-      {
-        if(strcmp(ClusterDef->Cell.Atom[i].Name,a->Cell.Atom[j].Name)==0)
-        {
-          ClusterDef->nH+=ClusterDef->Cell.Atom[i].Nshell;
-          AtomShellOrbitalMap[i]=(MatrixType*)malloc(ClusterDef->Cell.Atom[i].Nshell*sizeof(MatrixType));
-          // set the matrix AtomShellOrbitalMap[i][ishell] such that it maps the order of the orbitals in the TB structure to the order in the Cluster structure
-          for(ishell=0;ishell<ClusterDef->Cell.Atom[i].Nshell;ishell++)
-          {
-            AtomShellOrbitalMap[i][ishell].QComplex=0;
-            AtomShellOrbitalMap[i][ishell].Ni=ClusterDef->Cell.Atom[i].shelldegeneracy[ishell];
-            // find the position of Atom ClusterDef->Cell.Atom[i].Name and shell ClusterDef->Cell.Atom[i].ShellName[ishell] in a->Cell
-            for(jshell=0;jshell<a->Cell.Atom[j].Nshell;jshell++)
-            {
-              if(strcmp(ClusterDef->Cell.Atom[i].ShellName[ishell],a->Cell.Atom[j].ShellName[jshell])==0)
-              {
-                AtomShellOrbitalMap[i][ishell].Nj=a->Cell.Atom[j].shelldegeneracy[jshell];
-                InitMatrix(&(AtomShellOrbitalMap[i][ishell]));
-                for(iorb=0;iorb<AtomShellOrbitalMap[i][ishell].Ni;iorb++)
-                {
-                  for(jorb=0;jorb<AtomShellOrbitalMap[i][ishell].Nj;jorb++)
-                  {
-                    if(strcmp(ClusterDef->Cell.Atom[i].OrbitalName[ishell][iorb],a->Cell.Atom[j].OrbitalName[jshell][jorb])==0)
-                    {
-                      AtomShellOrbitalMap[i][ishell].VRe[iorb][jorb]=1;
-                      goto orbfound;
-                    }
-                  }
-                  luaL_error(L, "Orbital %s not found in tight binding definition for shell %s of atom %s\n",ClusterDef->Cell.Atom[i].OrbitalName[ishell][iorb],ClusterDef->Cell.Atom[i].ShellName[ishell],ClusterDef->Cell.Atom[i].Name);
-                  orbfound:;
-                }
-                goto shellfound;
-              }
-            }
-            luaL_error(L, "Shell %s not found in tight binding definition for shell %s of atom %s\n",ClusterDef->Cell.Atom[i].ShellName[ishell],ClusterDef->Cell.Atom[i].ShellName[ishell],ClusterDef->Cell.Atom[i].Name);
-            shellfound:;
-          }
-          goto atomfound;
-        }
-      }
-      luaL_error(L, "Atom not found in tight binding definition for atom %s\n",ClusterDef->Cell.Atom[i].Name);
-      atomfound:;
-    }
+		AtomShellOrbitalMap = (MatrixType**) malloc(ClusterDef->Cell.NAtoms * sizeof(MatrixType*));
+		for (i = 0; i < ClusterDef->Cell.NAtoms; i++)
+		{
+			ClusterDef->nH += ClusterDef->Cell.Atom[i].Nshell;
+			AtomShellOrbitalMap[i] = (MatrixType*) malloc(ClusterDef->Cell.Atom[i].Nshell * sizeof(MatrixType));
+			for (ishell = 0; ishell < ClusterDef->Cell.Atom[i].Nshell; ishell++)
+			{
+				AtomShellOrbitalMap[i][ishell].QComplex = 0;
+				AtomShellOrbitalMap[i][ishell].Ni = ClusterDef->Cell.Atom[i].shelldegeneracy[ishell];
+				j = FindAtomPosModulusUnitCell(&(ClusterDef->Cell.Atom[i]), &(a->Cell), AtomPositionAccuracy);
+				if (j > a->Cell.NAtoms - 1)
+					return luaL_error(L, "Atom %s at position (%f,%f,%f) not found in tight binding definition!\n", ClusterDef->Cell.Atom[i].Name, ClusterDef->Cell.Atom[i].Position[0],
+							ClusterDef->Cell.Atom[i].Position[1], ClusterDef->Cell.Atom[i].Position[2]);
+				for (jshell = 0; jshell < a->Cell.Atom[j].Nshell; jshell++)
+				{
+					bool sameShellName = strcmp(ClusterDef->Cell.Atom[i].ShellName[ishell], a->Cell.Atom[j].ShellName[jshell]) == 0;
+					if (sameShellName)
+					{
+						AtomShellOrbitalMap[i][ishell].Nj = a->Cell.Atom[j].shelldegeneracy[jshell];
+						InitMatrix(&(AtomShellOrbitalMap[i][ishell]));
+						for (iorb = 0; iorb < AtomShellOrbitalMap[i][ishell].Ni; iorb++)
+						{
+							for (jorb = 0; jorb < AtomShellOrbitalMap[i][ishell].Nj; jorb++)
+							{
+								if (strcmp(ClusterDef->Cell.Atom[i].OrbitalName[ishell][iorb], a->Cell.Atom[j].OrbitalName[jshell][jorb]) == 0)
+								{
+									AtomShellOrbitalMap[i][ishell].VRe[iorb][jorb] = 1;
+									break;
+								}
+								else if (jorb == AtomShellOrbitalMap[i][ishell].Nj - 1)
+								{
+									return luaL_error(L, "Orbital %s of shell %s of atom %s not found in tight binding definition!\n", ClusterDef->Cell.Atom[i].OrbitalName[ishell][iorb],
+											ClusterDef->Cell.Atom[i].ShellName[ishell], ClusterDef->Cell.Atom[i].Name);
+								}
+							}
+						}
+						break;
+					}
+					else if (jshell == a->Cell.Atom[j].Nshell - 1)
+					{
+						return luaL_error(L, "Shell %s of atom %s not found in tight binding definition!\n", ClusterDef->Cell.Atom[i].ShellName[ishell], ClusterDef->Cell.Atom[i].Name);
+					}
+				}
+			}
+		}
     ClusterDef->nH*=ClusterDef->nH;
     ClusterDef->H=(TightBindingDefHopping*)malloc(ClusterDef->nH * sizeof(TightBindingDefHopping));
     ClusterDef->nH=0;
@@ -2048,6 +2047,13 @@ static int LuaTightBindingDestroy(lua_State * L)
 }
 
 
+static int LuaDresdenFPLODestroy(lua_State * L)
+{
+	DresdenFPLO *a = (DresdenFPLO *) luaL_checkudata(L, 1, "DresdenFPLO_Type");
+  FreeDresdenFPLO(a);
+  return 0;
+}
+
 
 
 static const struct luaL_Reg TightBinding_meta[] = {
@@ -2067,5 +2073,6 @@ static const struct luaL_Reg StuttgartHAMR_meta[] = {
 };
 
 static const struct luaL_Reg DresdenFPLO_meta[] = {
+	{"__gc", LuaDresdenFPLODestroy},
   {NULL, NULL}
 };

@@ -19,14 +19,33 @@ using std::ifstream;
 void PrintMartix(double *M, int n)
 {
 	int i,j;
+	printf("{");
 	for ( i = 0; i < n; i++)
 	{
+		printf("\n{");
 		for ( j = 0; j < n; j++)
 		{
-			printf("%.4E\t",M[i*n + j]);
+			printf("%f, ",M[i*n + j]);
 		}
-		printf("\n");
+		printf("\b\b},");
 	}
+	printf("\b}\n");
+	fflush(stdout);
+}
+void PrintMartix(double *M, int n, int m)
+{
+	int i,j;
+	printf("{");
+	for ( i = 0; i < n; i++)
+	{
+		printf("\n{");
+		for ( j = 0; j < m; j++)
+		{
+			printf("%f, ",M[i + j*n]);
+		}
+		printf("\b\b},");
+	}
+	printf("\b}\n");
 	fflush(stdout);
 }
 void PrintMartix(Complex16 *M, int n)
@@ -86,7 +105,6 @@ void PrintDeterminant(const WaveFunctionType &psi, uint32_t idx)
 {
 	printf("NWord = %u\n",psi.NWord);
 	double prefactor = psi.ValueRe[BlokElement(idx)];
-	// mwh not used uint8_t Det[psi.NWord];
 	for (uint32_t d = 0; d <psi.NWord; d++)
 	{
 		printf("%X",psi.Determinant[BlokElementDet(idx,psi.NWord,d)]);

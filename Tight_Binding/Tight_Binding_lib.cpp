@@ -66,8 +66,8 @@ int FreeTightBindingDef(TightBindingDef * A)
     }
     if(A->Cell.NAtoms!=0) free(A->FermionIndex);
   }
-  A->Cell.NAtoms=0;
   FreeCrystalStructureType(&(A->Cell));
+  A->Cell.NAtoms=0;
   return 0;
 }
 
@@ -2287,6 +2287,20 @@ int nonRelAngularMomentumZNumbersWithSpin(const string &orb)
 		return 2 * (2 * 4 + 1);
 	case 'h':
 		return 2 * (2 * 5 + 1);
+	case 'i':
+		return 2 * (2 * 6 + 1);
+	case 'j':
+		return 2 * (2 * 7 + 1);
+	case 'k':
+		return 2 * (2 * 8 + 1);
+	case 'l':
+			return 2 * (2 * 9 + 1);
+	case 'm':
+			return 2 * (2 * 10 + 1);
+	case 'n':
+			return 2 * (2 * 11 + 1);
+	case 'o':
+			return 2 * (2 * 12 + 1);
 	default:
 		return -1;
 	}
@@ -2767,11 +2781,23 @@ vector<string> nonRelToRelOrbs(const vector<string> &in)
 
 bool isOrbElementOf(const string &orb, vector<string> set)
 {
+	if (isElementOf(orb, set)) return true;
 	if (isRelOrbital(orb))
+	{
 		set = nonRelToRelOrbs(set);
+		return isElementOf(orb, set);
+	}
 	else
-		set = relToNonRelOrbs(set);
-	return isElementOf(orb, set);
+	{
+		vector < string > orbsRel;
+		orbsRel.push_back(orb);
+		orbsRel = nonRelToRelOrbs(orbsRel);
+		for (uint i = 0; i < (uint) orbsRel.size(); ++i)
+		{
+			if (!isElementOf(orbsRel[i], set)) return false;
+		}
+		return true;
+	}
 }
 
 // input e.g. {"2p32","2s12","2p12"}, {"2s","2p"}

@@ -139,7 +139,7 @@ uint32_t ResonantSpectrumCNSED(const OperatorType OppH1, const OperatorType OppH
 
     uint32_t Npoles1 = settings->NTri1;
     uint32_t Nw1 = settings->NE1+1;
-    // mwh not used uint32_t Nw2 = settings->NE2+1;
+    // uint32_t Nw2 = settings->NE2+1;
     uint32_t Nkappa = (uint32_t) Uk.size();
     vector<vector<double> > polesSE1 = vector<vector<double> >(Npoles1 * Nkappa);
     vector<vector<Complex16> > selfen = vector<vector<Complex16> >(Npoles1);
@@ -753,7 +753,7 @@ static int LuaResSpectCNSED(lua_State *L)
   SpectraType *SpecT1psi;
   TriDiagonalMatrixType *SpecTri;
   OperatorType *H1,*H2,*T1, *T2;
-  WaveFunctionType *psi; //mwh not used HTpsiDenseBasis,HTHTpsiDenseBasis,Opsi,TpsiSum;
+  WaveFunctionType *psi;
   uint32_t iT,ipsi,len,i;
   LuaOptionsType LuaCreateResonantSpectraOptions[]={
     {"NTri1","uint32_t",&(Options.Settings.NTri1)},
@@ -954,7 +954,7 @@ static int LuaResSpectCNSEDInput(lua_State *L)
   SpectraType *SpecT1psi;
   TriDiagonalMatrixType *SpecTri;
   OperatorType *H1,*H2,*T1, *T2;
-  WaveFunctionType *psi; // mwh not used, HTpsiDenseBasis,HTHTpsiDenseBasis,Opsi,TpsiSum;
+  WaveFunctionType *psi;
   uint32_t iT,ipsi,len,i;
   LuaOptionsType LuaCreateResonantSpectraOptions[]={
     {"NTri1","uint32_t",&(Options.Settings.NTri1)},

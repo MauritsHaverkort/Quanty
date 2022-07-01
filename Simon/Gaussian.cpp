@@ -59,18 +59,51 @@ static int LuaGaussianRadialSub(lua_State *L)
 /*
  *
  */
-static int LuaGaussianRadialMul(lua_State * L)
+static int LuaGaussianRadialMul(lua_State *L)
 {
-	cout << endl << "Warning: Multiplication not yet implemented for Gaussian functions." << endl;
-  return 0;
+	GaussianRadial g;
+	double d;
+	if (luaL_isType(L, 1, g))
+	{
+		lua_check(L, 1, g);
+		lua_check(L, 2, d);
+	}
+	else
+	{
+		lua_check(L, 1, d);
+		lua_check(L, 2, g);
+	}
+	if (d == 0)
+	{
+		lua_push(L, GaussianRadial(g.getL(), vector<double>(0), vector<double>(0)));
+	}
+	else
+	{
+		vector<double> amplitudes = g.getAmplitudes();
+		for (uint i = 0; i < (uint) amplitudes.size(); ++i)
+		{
+			amplitudes[i] = d * amplitudes[i];
+		}
+		lua_push(L, GaussianRadial(g.getL(), amplitudes, g.getWidths()));
+	}
+	return 1;
 }
 /*
  *
  */
-static int LuaGaussianRadialDiv(lua_State * L)
+static int LuaGaussianRadialDiv(lua_State *L)
 {
-	cout << endl << "Warning: Division not yet implemented for Gaussian functions." << endl;
-  return 0;
+	GaussianRadial g;
+	double d;
+	lua_check(L, 1, g);
+	lua_check(L, 2, d);
+	vector<double> amplitudes = g.getAmplitudes();
+	for (uint i = 0; i < (uint) amplitudes.size(); ++i)
+	{
+		amplitudes[i] = amplitudes[i] / d;
+	}
+	lua_push(L, GaussianRadial(g.getL(), amplitudes, g.getWidths()));
+	return 1;
 }
 /*
  *
@@ -124,7 +157,6 @@ static int LuaGaussianRadialMode(lua_State * L)
  */
 static int LuaGaussianRadialCall(lua_State * L)
 {
-	// mwh not used uint32_t len = (uint32_t) lua_gettop(L);
 	GaussianRadial *fun = (GaussianRadial *) luaL_checkudata(L, 1, "GaussianRadialFunction_Type");
 	if (lua_istable(L, 2))
 	{
@@ -180,6 +212,11 @@ void lua_check(lua_State *L, int arg, GaussianRadial &in)
 void lua_check(lua_State *L, int arg, GaussianRadial * &in)
 {
 	in = (GaussianRadial *) luaL_checkudata(L, arg, "GaussianRadialFunction_Type");
+}
+
+bool luaL_isType(lua_State *L, int arg, const GaussianRadial &example)
+{
+	return luaL_isudata(L, arg, "GaussianRadialFunction_Type");
 }
 
 static int LuaNewGaussianRadial(lua_State *L)
@@ -299,7 +336,7 @@ static int LuaGaussianRadialNewIndex(lua_State *L)
 	{
 		vector<double> newGauss;
 		lua_check(L, 3, newGauss);
-		if ((uint) newGauss.size() > 2)
+		if ((uint) newGauss.size() != 2)
 		{
 			return luaL_error(L, "Error: Setting individual Gaussians needs the input format {amplitude, width}.");
 		}
@@ -342,7 +379,7 @@ static int LuaGaussianRadialNewIndex(lua_State *L)
 	}
 	else if (ind.compare("N") == 0)
 	{
-		return luaL_error(L, "Error: You should not manually change the number of primitive Gaussians. If you want add some, just call g[g.N]={amplitude, width}.");
+		return luaL_error(L, "Error: You should not manually change the number of primitive Gaussians. If you want to add some, just call g[g.N]={amplitude, width}.");
 	}
 	else
 	{

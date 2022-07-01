@@ -143,6 +143,40 @@ void GenerateGrid(const std::vector<double> &t,std::vector<double> &x, uint32_t 
 	}
 
 }
+void GenerateFisherGrid(int m, double hMax,double rMax, double Z, uint32_t n,std::vector<double> &x)
+{
+	double h = pow(2.,-m);
+	uint32_t ks = n+1;
+	uint32_t i;
+	for (i = 1; i <= ks; i++)
+	{
+		x.push_back(0.);
+	}
+	for (i = ks; i <= ks + m; i++)
+	{
+		x.push_back(x[i-1] + h);
+	}
+	while (h * x[i-1] < hMax)
+	{
+		x.push_back(x[i-1]*(1.+h));
+		i++;
+	}
+	while (x[i-1] < rMax)
+	{
+		x.push_back(x[i-1] + hMax);
+		i++;
+	}
+	double last = x[i-1];
+	for (i = 1; i <= ks-1; i++)
+	{
+		x.push_back(last);
+	}
+	for (uint32_t j = 0; j < (uint32_t) x.size(); j++)
+	{
+		x[j] /= (double) Z;
+	}
+
+}
 
 
 void GetKnotMatrix(const std::vector<double> &x, const uint32_t n, const std::vector<double> &t, std::vector<double> &B)
@@ -274,7 +308,7 @@ void Components(const vector<Interpolation::InterpolatingFunction*> &funs, uint3
 		printf("%.16f, ",c[i]);
 	}
 	printf("}\n");
-  /* mwh not used
+  /*
 	uint32_t eins = 1;
 	double one = 1.;
 	double null = 0.;

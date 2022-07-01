@@ -177,7 +177,6 @@ static int LuaInterpolateUnm(lua_State * L)
 {
 	void* memory;
 	Interpolation::InterpolatingFunction *f = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
-	// mwh unsued double n;
 	if (f->type == "CubicSpline")
 	{
 		memory = lua_newuserdata(L, sizeof(Interpolation::CubicSpline));
@@ -541,6 +540,38 @@ static int LuaInterpolateToString(lua_State * L)
 	lua_pushstring(L, s.c_str());
 	return 1;
 }
+
+/*
+ *
+ */
+static int LuaInterpolateIndex(lua_State *L)
+{
+	string str;
+	Interpolation::InterpolatingFunction *f = (Interpolation::InterpolatingFunction*) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
+	if (luaL_isType(L, 2, str))
+	{
+		lua_check(L, 2, str);
+		if (str.compare("x") == 0 || str.compare("X") == 0)
+		{
+			lua_push(L, f->GetX());
+			return 1;
+		}
+		else if (str.compare("y") == 0 || str.compare("Y") == 0)
+		{
+			lua_push(L, f->GetY());
+			return 1;
+		}
+		else
+		{
+			return luaL_error(L, "Error: Interpolation function indexed with unrecognised string \"%s\"", str.c_str());
+		}
+	}
+	else
+	{
+		return luaL_error(L, "Error: Interpolation function indexed with unrecognised type!");
+	}
+}
+
 /*
  *
  */
@@ -632,6 +663,7 @@ static const struct luaL_Reg InterpolatingFunction_meta[] = {
   {"__mode", LuaInterpolateMode},
   {"__call", LuaInterpolateCall},
   {"__tostring", LuaInterpolateToString},
+  {"__index", LuaInterpolateIndex},
   {"__gc", LuaInterpolateDestroy},
   {NULL, NULL}
 };

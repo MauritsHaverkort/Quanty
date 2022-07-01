@@ -1,0 +1,29 @@
+ErrorCount=0
+
+function errorHappened()
+    print("Oh no, something went wrong!")
+    ErrorCount = ErrorCount + 1
+end
+
+Nf=6
+Nb=0
+
+ops = {}
+ops[# ops + 1] = NewOperator(Nf, Nb, {{1,-1,1},{0,-0,0.1},{2,-2,0.01}})
+ops[# ops + 1] = NewOperator(Nf, Nb, {{1,-1,I},{0,-0,0.1},{2,-2,0.01*I}})
+
+offsets = {}
+offsets[# offsets + 1] = 0
+offsets[# offsets + 1] = 2
+offsets[# offsets + 1] = 3 * I
+offsets[# offsets + 1] = -300 + 1e-5* I
+
+for key1, op in pairs(ops) do
+    if op.Offset ~= 0 then errorHappened() end
+    for key2, offset in pairs(offsets) do
+        newOp = op + offset
+        if newOp.Offset ~= offset then errorHappened() end
+    end
+end
+
+os.exit(ErrorCount)

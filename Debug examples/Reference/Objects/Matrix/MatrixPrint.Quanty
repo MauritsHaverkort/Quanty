@@ -5,7 +5,7 @@ for i = 1,7 do
     MComplex[i] = {}
     for j = 1,9 do
         MReal[i][j] = (-1)^(i+j)*7/j*10^(i -j)
-        MComplex[i][j] = i - j + (-1)^(i+j)*7/j*10^(i -j)*I
+        MComplex[i][j] = i - j/i + (-1)^(i+j)*7/j*10^(i -j)*I
     end
 end
 

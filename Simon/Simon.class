@@ -57,8 +57,20 @@ public:
 
 	void addGaussian(const double amplitude, const double width)
 	{
-		amplitudes.push_back(amplitude);
-		widths.push_back(width);
+		uint i = 0;
+		for (i = 0; i < (uint)widths.size(); ++i)
+		{
+			if (widths[i] == width) break;
+		}
+		if (i < (uint)widths.size())
+		{
+			amplitudes[i] += amplitude;
+		}
+		else
+		{
+			amplitudes.push_back(amplitude);
+			widths.push_back(width);
+		}
 	}
 	
 	void addGaussian(const vector<double> &gaussian)
@@ -68,8 +80,7 @@ public:
 			cout << "Error in GaussianRadial: New primitive Gaussian needs to be entered as a vector of length 2, with entries amplitude and width." << endl;
 			throw std::exception();
 		}
-		amplitudes.push_back(gaussian[0]);
-		widths.push_back(gaussian[1]);
+		addGaussian(gaussian[0],gaussian[1]);
 	}
 
 	void setGaussian(const uint i, const double amplitude, const double width)

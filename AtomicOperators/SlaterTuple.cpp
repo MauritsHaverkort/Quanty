@@ -33,7 +33,7 @@ public:
 	{
 		;
 	}
-	void Assign(int n1,int n2,int n3,int n4)
+	void Assign(const int n1, const int n2, const int n3, const int n4)
 	{
 		if (val.size()==4)
 		{
@@ -44,7 +44,7 @@ public:
 		}
 	}
 
-	int &operator[](int i)
+	const int &operator[](int i) const
 	{
 		return val[i];
 	}
@@ -65,7 +65,7 @@ int SSign(const int x)
     return (x > 0) - (x < 0);
 }
 
-int TupleContributes(myarray k)
+int TupleContributes(const myarray &k)
 {
 	int k0,k1,l1,l2,l3,l4, lsum;
 
@@ -85,7 +85,7 @@ int TupleContributes(myarray k)
 
 }
 
-vector<myarray> CreateKappaTuple(vector<int> kappas)
+vector<myarray> CreateKappaTuple(const vector<int> &kappas)
 {
 	uint32_t i,j,m,l;
 	myarray k;
@@ -104,7 +104,7 @@ vector<myarray> CreateKappaTuple(vector<int> kappas)
 	return result;
 }
 
-int NotContains(vector<myarray> tau,std::map<myarray,myarray> tuple)
+int NotContains(const vector<myarray> &tau, const std::map<myarray,myarray> &tuple)
 {
 	for (uint32_t i = 0; i < (uint32_t) tau.size(); i++)
 	{
@@ -116,7 +116,7 @@ int NotContains(vector<myarray> tau,std::map<myarray,myarray> tuple)
 	return 1;
 }
 
-std::map<myarray,myarray> CreateSlaterTuple(vector<int> indToK)
+std::map<myarray,myarray> CreateSlaterTuple(const vector<int> &indToK)
 {
 	uint32_t i,j,m,l;
 	myarray k;
@@ -161,10 +161,10 @@ std::map<myarray,myarray> CreateSlaterTuple(vector<int> indToK)
 
 std::map<myarray,myarray> CreateSlaterTupleTwoFilled(const vector<int> &indToK)
 {
-  uint32_t i,j; // mwh not used ,m,l
+	uint32_t i,j;
 	myarray k;
 	vector<myarray> tau = vector<myarray>(8);
-  std::map<myarray,myarray> result;
+	std::map<myarray,myarray> result;
 
 	for ( i = 0; i < (uint32_t) indToK.size(); i++)
 		for ( j = i; j < (uint32_t) indToK.size(); j++)	
@@ -191,7 +191,7 @@ std::map<myarray,myarray> CreateSlaterTupleTwoFilled(const vector<int> &indToK)
 
 std::map<myarray,myarray> CreateSlaterTupleOneFilled(const vector<int> &indToKFilled, const vector<int> &indToKOther)
 {
-  uint32_t i,j,m; // mwh not used ,l
+	uint32_t i,j,m;
 	myarray k;
 	vector<myarray> tau = vector<myarray>(8);
     std::map<myarray,myarray> result;
@@ -217,7 +217,7 @@ std::map<myarray,myarray> CreateSlaterTupleOneFilled(const vector<int> &indToKFi
 	return result;
 }
 
-std::map<myarray,myarray> CreateContinuumTuple(vector<int> indToK)
+std::map<myarray,myarray> CreateContinuumTuple(const vector<int> &indToK)
 {
 	uint32_t i,j,m,l;
 	myarray k;

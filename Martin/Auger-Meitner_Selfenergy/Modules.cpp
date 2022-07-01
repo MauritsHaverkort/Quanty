@@ -345,7 +345,7 @@ static int LuaCoolNewSelfEnergy(lua_State *L)
         double w;
         Complex16 denom;
         denom.Im = gammaSE/2.;
-        double num, Eac; //mwh not used ,num1,num2
+        double num, Eac;
         
         for (uint32_t iEps = 0; iEps < nContFuns; iEps++)
         {
@@ -390,11 +390,8 @@ static int LuaCoolNewSelfEnergyDiagonal(lua_State *L)
 	vector<OperatorType> Uk;
 
 	lua_check(L,1,psiCont);
-	// mwh not used uint32_t npsiCont = (uint32_t)psiCont.size();
 	lua_check(L,2,phiBound);
-	// mwh not used uint32_t nphiBound = (uint32_t)phiBound.size();
 	lua_check(L,3,Uk);
-	// mwh not used uint32_t nUk = (uint32_t)Uk.size();
 
 	double wMin, wMax, dw,gammaSE;
 	lua_check(L,4,wMin);
@@ -617,7 +614,7 @@ Complex16 Resolvent(Complex16 z, const std::vector<double> &poles, const std::ve
 	result.Im = 0;
 	if (poles.size() < residues.size() || poles.size() != selfenergy.size())
 	{
-		printf("error in Resolvent: poles.size() = %u < %u = residues.size()\n",(uint32_t)poles.size(),(uint32_t)residues.size());
+		printf("error in Resolvent: poles.size() = %u < %u = residues.size() !+ %u = selfenergy.size()\n",(uint32_t)poles.size(),(uint32_t)residues.size(),(uint32_t)selfenergy.size());
 		fflush(stdout);
 		return result;
 	}

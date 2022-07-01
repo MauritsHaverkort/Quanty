@@ -1,0 +1,90 @@
+M0 = Matrix.Zero(4)
+M = {}
+
+M[1] = Copy(M0)
+M[1][1][1] = 1
+
+M[2] = Copy(M0)
+M[2][1][1] = -1
+M[2][1][2] = 3
+M[2][1][4] = 14
+M[2][4][3] = 17
+M[2][3][3] = 3.45
+
+M[3] = Copy(M0)
+M[3][3][4] = -1
+
+M[4] = Copy(M0)
+M[4][4][2] = -I
+
+M[5] = Copy(M0)
+M[5][1][2] = 0.756
+M[5][1][2] = 14 - I
+
+M[6] = Copy(M0)
+M[6][1][1] = 0.756
+M[6][2][2] = 14 - I
+
+M[7] = Copy(M0)
+
+S = {}
+for key,mat in pairs(M) do
+    S[key] = Simon.MatrixToSparseMatrix(mat)
+end
+
+nums = {}
+nums[1] = 0
+nums[2] = -1.3
+nums[3] = I
+nums[4] = 14 - I
+
+errorCount = 0
+function test(MDense,MSparse)
+    if MDense ~= Simon.SparseMatrixToMatrix(MSparse) then
+        errorCount = errorCount + 1
+        print("Something went wrong!")
+        print(MDense)
+        print("is not equal to")
+        print(MSparse)      
+    end
+end
+
+print("Chopping this gives a segmentation fault:")
+print(S[2]-S[2])
+
+
+for i=1,#M do
+    
+    test(M[i], S[i])
+    test(-M[i], -S[i])
+    
+    if Simon.MatrixTrace(M[i]) ~= Simon.MatrixTrace(S[i]) then
+        errorCount = errorCount + 1
+        print("Something went wrong!")
+    end
+    
+    for j=1,#M do
+        test(M[i]+M[j], S[i]+S[j])
+        test(M[i]-M[j], S[i]-S[j])
+        test(M[i]*M[j], S[i]*S[j])
+    end
+    
+    for j=1,#nums do
+        test(M[i]*nums[j], S[i]*nums[j])
+--         test(nums[j]*M[i], nums[j]*S[i])
+        if nums[j] ~= 0 then
+            if Complex.Im(nums[j]) == 0 then --TODO: If both object are userdata, division calls the function __div of the denominator, so here I'd have to meddle with the code of Complex16.
+                print(nums[j])
+                print(M[i]/nums[j])
+                print(S[i]/nums[j])
+                test(M[i]/nums[j], S[i]/nums[j])
+            end
+        end
+    end
+end
+
+if errorCount == 0 then
+    print("Everything went according to plan.")
+end
+    
+os.exit(errorCount)

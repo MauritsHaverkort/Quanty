@@ -739,7 +739,7 @@ double *CreateBaseForContinuum(vector<vector<double> > basisfuns,vector<vector<d
 }
 
 double *CreateBaseForContinuum(vector<vector<double> > basisfuns,vector<vector<double> > derivfuns,vector<double> x,
-		SKappaGroup group, vector<vector<double> > &contfuns, vector<vector<double> > &Dcontfuns, vector<vector<double> > h0Cont)
+		SKappaGroup group, vector<vector<double> > &contfuns, vector<vector<double> > &Dcontfuns, vector<vector<double> > h0Cont, const int Z = 0)
 {
 	int k,dim,info;
     bool QRelativistic = false;
@@ -784,7 +784,7 @@ double *CreateBaseForContinuum(vector<vector<double> > basisfuns,vector<vector<d
     
     CreateDualFunctions(derivfuns,x,Ddualfuns,QRelativistic);
 
-    CreateEKinCBNonRelativistic(dualcont,Ddualcont, basisfuns,derivfuns,dualfuns,Ddualfuns, x,l,h0Cont,T);
+    CreateEKinCBNonRelativistic(dualcont,Ddualcont, basisfuns,derivfuns,dualfuns,Ddualfuns, x,l,h0Cont,T,Z);
 
 
 	g = MetricCB(basisfuns,dualfuns,group.indices, group.n,dualcont,Ncont,NGridpoints,QRelativistic);
@@ -928,16 +928,14 @@ double H0nonRelativistic(const vector<double> psi,const vector<double> &dpsi,con
 }
 
 vector<double> CreateEKinCBNonRelativistic(const vector<vector<double> > &dualcont, const vector<vector<double> > &Ddualcont, const vector<vector<double> > &phi,const vector<vector<double> > &dphi
-        , const vector<vector<double> > &dualphi,const vector<vector<double> > &Ddualphi, const vector<double> &x, const uint32_t l, const vector<vector<double> > &h0cont, vector<double> &T)
+        , const vector<vector<double> > &dualphi,const vector<vector<double> > &Ddualphi, const vector<double> &x, const uint32_t l, const vector<vector<double> > &h0cont, vector<double> &T,const int Z = 0)
 {
 	const uint32_t NcontFuns = (uint32_t) dualcont.size();
-	// mwh not used uint32_t NGridPoints = (uint32_t) x.size();
+	//uint32_t NGridPoints = (uint32_t) x.size();
 
 	vector<vector<double> >  Tbb;
 	vector<vector<double> >  Tcb;
 	uint32_t i,j, dim, Nbound;
-
-	const int Z = 0;
 
 	CalculateH0MatrixElements(dualphi,Ddualphi,phi,dphi,x,l,Z,Tbb);
 	CalculateH0MatrixElements(dualcont,Ddualcont,phi,dphi,x,l,Z,Tcb);

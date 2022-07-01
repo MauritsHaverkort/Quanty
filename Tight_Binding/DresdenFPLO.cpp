@@ -76,6 +76,45 @@ int LMToOrbitalName(int l, int m, char **name)
   return 0;
 }
 
+std::string LPlusJToShellName(int lPlusJ)
+{
+	switch (lPlusJ)
+	{
+	case 0:
+		return "s1/2";
+	case 1:
+		return "p1/2";
+	case 2:
+		return "p3/2";
+	case 3:
+		return "d3/2";
+	case 4:
+		return "d5/2";
+	case 5:
+		return "f5/2";
+	case 6:
+		return "f7/2";
+	case 7:
+		return "g7/2";
+	case 8:
+		return "g9/2";
+	default:
+		return "??";
+	}
+}
+
+int LPlusJAndJzToOrbitalName(int lPlusJ, int jz, char **name)
+{
+	*name = (char*) malloc(16 * sizeof(char));
+	std::stringstream ss;
+	ss << LPlusJToShellName(lPlusJ);
+	if (jz > 0) ss << "+";
+	ss << (2 * jz - 1);
+	ss << "/2";
+	strcpy(*name, ss.str().c_str());
+	return 0;
+}
+
 int EqualFloat(double a, double b, double epsilon)
 {
   if(fabs(a-b)<epsilon) // pricision defined by the fplo output (coordinates).
@@ -120,6 +159,7 @@ uint32_t CrystalStructureFromDresdenFPLO(DresdenFPLO FPLO, CrystalStructureType 
       Cell->Atom[iatom].Nshell = 0;
       inl = 0;
       is  = 0;
+
       for(i=0;i<FPLO.Wannier.Nwandef;i++)
       {
         if(FPLO.Wannier.ActMap[FPLO.Wannier.Site[i]-1]==iatom)
@@ -153,12 +193,24 @@ uint32_t CrystalStructureFromDresdenFPLO(DresdenFPLO FPLO, CrystalStructureType 
         Cell->Atom[iatom].OrbitalName    = (char***)malloc(Cell->Atom[iatom].Nshell*sizeof(char**));
 
         // shell degeneracy
-        for(i=0;i<Cell->Atom[iatom].Nshell;i++)
-        {
-          Cell->Atom[iatom].ShellName[i] = (char*)malloc(4*sizeof(char));
-          Cell->Atom[iatom].ShellName[i][0] = (char)(nlIndex[iatom][i]/10+'0');
-          Cell->Atom[iatom].ShellName[i][1] = LToShellName(nlIndex[iatom][i]%10);
-          Cell->Atom[iatom].ShellName[i][2] = 0;
+				for (i = 0; i < Cell->Atom[iatom].Nshell; i++)
+				{
+					Cell->Atom[iatom].ShellName[i] = (char*) malloc(6 * sizeof(char));
+					Cell->Atom[iatom].ShellName[i][0] = (char) (nlIndex[iatom][i] / 10 + '0');
+					if ((bool) FPLO.Wannier.QRelativistic)
+					{
+						std::string tmp = LPlusJToShellName(nlIndex[iatom][i] % 10);
+						Cell->Atom[iatom].ShellName[i][1] = tmp.c_str()[0];
+						Cell->Atom[iatom].ShellName[i][2] = tmp.c_str()[1];
+						Cell->Atom[iatom].ShellName[i][3] = '/';
+						Cell->Atom[iatom].ShellName[i][4] = '2';
+						Cell->Atom[iatom].ShellName[i][5] = 0;
+					}
+					else
+					{
+						Cell->Atom[iatom].ShellName[i][1] = LToShellName(nlIndex[iatom][i] % 10);
+						Cell->Atom[iatom].ShellName[i][2] = 0;
+					}
 
           Cell->Atom[iatom].shelldegeneracy[i] = 0;
           for(j=0;j<is;j++)
@@ -176,7 +228,10 @@ uint32_t CrystalStructureFromDresdenFPLO(DresdenFPLO FPLO, CrystalStructureType 
           {
             if( (10*FPLO.Wannier.Orbital[siteIndex[iatom][j]][0]+FPLO.Wannier.Orbital[siteIndex[iatom][j] ][1])==nlIndex[iatom][i] )
             {
-              LMToOrbitalName(FPLO.Wannier.Orbital[siteIndex[iatom][j]][1], FPLO.Wannier.Orbital[siteIndex[iatom][j]][2], &(Cell->Atom[iatom].OrbitalName[i][k++]));
+            	if ((bool)FPLO.Wannier.QRelativistic)
+            		LPlusJAndJzToOrbitalName(FPLO.Wannier.Orbital[siteIndex[iatom][j]][1], FPLO.Wannier.Orbital[siteIndex[iatom][j]][2], &(Cell->Atom[iatom].OrbitalName[i][k++]));
+            	else
+            		LMToOrbitalName(FPLO.Wannier.Orbital[siteIndex[iatom][j]][1], FPLO.Wannier.Orbital[siteIndex[iatom][j]][2], &(Cell->Atom[iatom].OrbitalName[i][k++]));
             }
           }
         }
@@ -191,9 +246,10 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
 {
   int i, j, k, l, iatom, ihtb, ish, jsh, indwan, indsh, diffQ;
   int Nwandef=FPLO.Wannier.Nwandef;
-  int Nshell, *Norb, *NshellOfSite, *ShellLabel, *SiteInd, *ShellInd, **ShellOfSite, *OrbInd, **NVecShell, **NHopStart;
+  int Nshell, *Norb, *ShellInd, **ShellOfSite, *OrbInd, **NVecShell, **NHopStart;
   char **SiteName, **ShellName;
   double ***HopVec, **SitePos;
+  vector < vector<uint> > HopVecJVals; //for freeing the memory in the end.
   const int NhopMax=2048;
   double AtomPositionAccuracy = 0.001;
 
@@ -203,128 +259,88 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
   CrystalStructureFromDresdenFPLO(FPLO, &(HTB->Cell));
   SetNFermionIndexTightBindingDef(HTB);
 
-  // Determine the total number of shells.
-  Nshell = 0;
-  for(iatom=0;iatom<FPLO.Wannier.NActAtom;iatom++)
-  {
-    Nshell += HTB->Cell.Atom[iatom].Nshell;
-  }
+	// Determine the total number of shells.
+	Nshell = 0;
+	for (iatom = 0; iatom < FPLO.Wannier.NActAtom; iatom++)
+	{
+		Nshell += HTB->Cell.Atom[iatom].Nshell;
+	}
 
-  ShellLabel  = (int*)calloc(Nwandef, sizeof(int));
-  for(i=0;i<Nwandef;i++)
-  {
-    // Compress the shell indicies {site, n, l, l+m} to one number
-    ShellLabel[i] = 1000*FPLO.Wannier.Site[i] + 100*FPLO.Wannier.Orbital[i][0] + 11*FPLO.Wannier.Orbital[i][1] + FPLO.Wannier.Orbital[i][2];
-  }
+	int lastSite = FPLO.Wannier.Site[0];
+	int lastN = FPLO.Wannier.Orbital[0][0];
+	int lastShell = FPLO.Wannier.Orbital[0][1];
+	iatom = 0;
+	ish = 0;
+	int siteSpecificShellCounter = 0;
+	ShellInd = (int*) malloc(Nwandef * sizeof(int));
+	SiteName = (char**) malloc(FPLO.Wannier.NActAtom * sizeof(char*));
+	SitePos = (double**) malloc(FPLO.Wannier.NActAtom * sizeof(double*));
+	ShellName = (char**) malloc(Nshell * sizeof(char*));
+	ShellOfSite = (int**) malloc(Nshell * sizeof(int*));
+	Norb = (int*) calloc(Nshell, sizeof(int));
+	OrbInd = (int*) calloc(Nwandef, sizeof(int));
+	for (i = 0; i < Nwandef; i++)
+	{
+		bool siteChanged = lastSite != FPLO.Wannier.Site[i];
+		bool NChanged = lastN != FPLO.Wannier.Orbital[i][0];
+		bool shellChanged = lastShell != FPLO.Wannier.Orbital[i][1];
 
-  // Index the sites by number [0, 1, 2, ...]
-  SiteInd = (int*)calloc(Nwandef, sizeof(int));
-  SiteName= (char**)malloc(FPLO.Wannier.NActAtom*sizeof(char*));
-  SiteName[0] = (char*)malloc(16*sizeof(char));
-  strcpy(SiteName[0], FPLO.Atoms.Atom[FPLO.Wannier.Site[0]-1]); //FPLO prints site starting from 1.
-  SitePos = (double**)malloc(FPLO.Wannier.NActAtom*sizeof(double*));
-  for(i=0;i<FPLO.Wannier.NActAtom;i++) SitePos[i] = (double*)calloc(3, sizeof(double));
-  for(k=0;k<3;k++) SitePos[0][k] = FPLO.Wannier.PosCenter[0][k];
+		if (i == 0 || siteChanged)
+		{
+			if (siteChanged) ++iatom;
 
-  l = 1;
-  for(i=1;i<Nwandef;i++)
-  {
-    for(j=0;j<i;j++)
-    {
-      if(FPLO.Wannier.Site[i]==FPLO.Wannier.Site[j])
-      {
-        SiteInd[i] = SiteInd[j];
-        break;
-      }
-      else if(j+1==i)
-      {
-        SiteName[l] = (char*)malloc(MAXStrLength*sizeof(char));
-        strcpy(SiteName[l], FPLO.Atoms.Atom[FPLO.Wannier.Site[i]-1]);
-        for(k=0;k<3;k++) SitePos[l][k] = FPLO.Wannier.PosCenter[i][k];
-        SiteInd[i] = l++;
-      }
-    }
-  }
+			SiteName[iatom] = (char*) malloc(MAXStrLength * sizeof(char));
+			strcpy(SiteName[iatom], FPLO.Atoms.Atom[FPLO.Wannier.Site[i] - 1]);
 
-  // Index the l values of Wannier orbitals by numbers [0, 1, ..., Nshell-1]
-  ShellInd    = (int*)calloc(Nwandef, sizeof(int));
-  ShellName   = (char**)malloc(Nshell*sizeof(char*));
-  ShellName[0]= (char*)malloc(4*sizeof(char));
-  ShellName[0][0]=(char)(FPLO.Wannier.Orbital[0][0]+'0');
-  ShellName[0][1]=LToShellName(FPLO.Wannier.Orbital[0][1]);
-  ShellName[0][2]=0;
+			SitePos[iatom] = (double*) calloc(3, sizeof(double));
+			for (k = 0; k < 3; k++)
+				SitePos[iatom][k] = FPLO.Wannier.PosCenter[i][k];
+		}
 
-  l = 1;
-  for(i=1;i<Nwandef;i++)
-  {
-    for(j=0;j<i;j++)
-    {
-      if(ShellLabel[i]/10==ShellLabel[j]/10)
-      {
-        ShellInd[i] = ShellInd[j];
-        break;
-      }
-      else if(j+1==i)
-      {
-        ShellName[l]= (char*)malloc(4*sizeof(char));
-        ShellName[l][0]=(char)(FPLO.Wannier.Orbital[i][0]+'0');
-        ShellName[l][1]=LToShellName(FPLO.Wannier.Orbital[i][1]);
-        ShellName[l][2]=0;
-        ShellInd[i] = l++;
-      }
-    }
-  }
+		if (i == 0 || siteChanged || NChanged || shellChanged)
+		{
+			if (siteChanged || NChanged || shellChanged) ++ish;
+			if (siteChanged)
+			{
+				siteSpecificShellCounter = 0;
+			}
+			else if (i != 0)
+			{
+				++siteSpecificShellCounter;
+			}
+			ShellName[ish] = (char*) malloc(4 * sizeof(char));
+			ShellName[ish][0] = (char) (FPLO.Wannier.Orbital[i][0] + '0');
+			if ((bool) FPLO.Wannier.QRelativistic)
+			{
+				std::string tmp = LPlusJToShellName(FPLO.Wannier.Orbital[i][1]);
+				ShellName[ish][1] = tmp.c_str()[0];
+				ShellName[ish][2] = tmp.c_str()[1];
+				ShellName[ish][3] = '/';
+				ShellName[ish][4] = '2';
+				ShellName[ish][5] = 0;
+			}
+			else
+			{
+				ShellName[ish][1] = LToShellName(FPLO.Wannier.Orbital[i][1]);
+				ShellName[ish][2] = 0;
+			}
 
-  // Shell degeneracy of each site.
-  // Map shell ish to the j-th shell of i-th atom.
-  NshellOfSite = (int*)calloc(Nshell, sizeof(int));
-  ShellOfSite  = (int**)malloc(Nshell*sizeof(int*));
-  for(ish=0;ish<Nshell;ish++)
-  {
-    ShellOfSite[ish] = (int*)calloc(2, sizeof(int));
-    ShellOfSite[ish][1] = -1;
-  }
-  ShellOfSite[ ShellInd[0] ][0] = SiteInd[0]; // i-th atom
-  ShellOfSite[ ShellInd[0] ][1] = 0;          // j-th shell of the atom
-  NshellOfSite[SiteInd[0]  ] = 1;
-  for(i=1;i<Nwandef;i++)
-  {
-    for(j=0;j<i;j++)
-    {
-      if(ShellInd[i]==ShellInd[j])
-        break;
-      else if(j+1==i)
-      {
-        ShellOfSite[ ShellInd[i] ][0] = SiteInd[i];
-        ShellOfSite[ ShellInd[i] ][1] = NshellOfSite[ SiteInd[i] ]++;
-      }
-    }
-  }
+			ShellOfSite[ish] = (int*) calloc(2, sizeof(int));
+			ShellOfSite[ish][0] = iatom;
+			ShellOfSite[ish][1] = siteSpecificShellCounter;
+		}
+		else
+		{
+			OrbInd[i] = OrbInd[i - 1] + 1;
+		}
 
-  // Orbital degeneracy of each shell.
-  Norb  = (int*)calloc(Nshell, sizeof(int));
-  Norb[0]  = 1;
-  for(i=1;i<Nwandef;i++)
-  {
-    for(j=0;j<i;j++)
-    {
-      if(ShellLabel[i]==ShellLabel[j])
-        break;
-      else if(j+1==i)
-        Norb[ ShellInd[i] ]++;
-    }
-  }
+		ShellInd[i] = ish;
+		++Norb[ish];
 
-  // Orbital index within each shell.
-  OrbInd = (int*)calloc(Nwandef, sizeof(int));
-  for(i=1;i<Nwandef;i++)
-  {
-    for(j=0;j<i;j++)
-    {
-      if(ShellLabel[i]/10==ShellLabel[j]/10)
-        OrbInd[i] = Max(OrbInd[i], OrbInd[j]+1);
-    }
-  }
+		lastSite = FPLO.Wannier.Site[i];
+		lastN = FPLO.Wannier.Orbital[i][0];
+		lastShell = FPLO.Wannier.Orbital[i][1];
+	}
 
   NVecShell = (int**)malloc(Nshell*sizeof(int*));
   HopVec    = (double***)malloc(Nshell*Nshell*sizeof(double**));
@@ -334,6 +350,7 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
     for(j=0;j<Nshell;j++)
     {
       HopVec[i*Nshell+j] = (double**)malloc(NhopMax*sizeof(double*));
+      HopVecJVals.push_back(vector<uint>());
     }
   }
 
@@ -355,6 +372,7 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
         if(NVecShell[ish][jsh]==0)
         {
           HopVec[indsh][0]    = (double*)malloc(3*sizeof(double));
+          HopVecJVals[indsh].push_back(0);
           HopVec[indsh][0][0] = FPLO.Wannier.HopVec[indwan][k][0];
           HopVec[indsh][0][1] = FPLO.Wannier.HopVec[indwan][k][1];
           HopVec[indsh][0][2] = FPLO.Wannier.HopVec[indwan][k][2];
@@ -375,6 +393,7 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
           if(l==NVecShell[ish][jsh] && diffQ)
           {
             HopVec[indsh][l]    = (double*)malloc(3*sizeof(double));
+            HopVecJVals[indsh].push_back(l);
             HopVec[indsh][l][0] = FPLO.Wannier.HopVec[indwan][k][0];
             HopVec[indsh][l][1] = FPLO.Wannier.HopVec[indwan][k][1];
             HopVec[indsh][l][2] = FPLO.Wannier.HopVec[indwan][k][2];
@@ -453,7 +472,7 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
           HTB->H[ihtb].TransVecs[1] = 0;
           HTB->H[ihtb].TransVecs[2] = 0;
         }
-        HTB->H[ihtb].Hop.QComplex = 0;
+        HTB->H[ihtb].Hop.QComplex = FPLO.Wannier.QComplex;
         HTB->H[ihtb].Hop.Ni = Norb[ish];
         HTB->H[ihtb].Hop.Nj = Norb[jsh];
         InitMatrix(&(HTB->H[ihtb].Hop));
@@ -465,28 +484,123 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
                 ShellName[jsh],
                 HTB->H[ihtb].Atompos2
               );
-        for(i=0;i<Nwandef;i++)
-        {
-          for(j=0;j<Nwandef;j++)
-          {
-            // Fill in the matrix elements.
-            indwan = i*Nwandef+j;
-            if(ShellInd[i]==ish&&ShellInd[j]==jsh)
-            {
-              for(k=0;k<FPLO.Wannier.Nhop[indwan];k++)
-              {
-                if( EqualFloat(FPLO.Wannier.HopVec[indwan][k][0], HopVec[indsh][ihtb-NHopStart[ish][jsh]][0],AtomPositionAccuracy) &&
-                    EqualFloat(FPLO.Wannier.HopVec[indwan][k][1], HopVec[indsh][ihtb-NHopStart[ish][jsh]][1],AtomPositionAccuracy) &&
-                    EqualFloat(FPLO.Wannier.HopVec[indwan][k][2], HopVec[indsh][ihtb-NHopStart[ish][jsh]][2],AtomPositionAccuracy)   )
-                  {
-                    HTB->H[ihtb].Hop.VRe[OrbInd[i]][OrbInd[j]] = FPLO.Wannier.HopVal[indwan][k];
-                  }
-              }
-            }
-          }
-        }
-      }
-    }
+				if ((bool) FPLO.Wannier.QComplex)
+				{
+					for (i = 0; i < Nwandef; i++)
+					{
+						for (j = 0; j < Nwandef; j++)
+						{
+							// Fill in the matrix elements.
+							indwan = i * Nwandef + j;
+							if (ShellInd[i] == ish && ShellInd[j] == jsh)
+							{
+								for (k = 0; k < FPLO.Wannier.Nhop[indwan]; k++)
+								{
+									if (EqualFloat(FPLO.Wannier.HopVec[indwan][k][0], HopVec[indsh][ihtb - NHopStart[ish][jsh]][0], AtomPositionAccuracy)
+											&& EqualFloat(FPLO.Wannier.HopVec[indwan][k][1], HopVec[indsh][ihtb - NHopStart[ish][jsh]][1], AtomPositionAccuracy)
+											&& EqualFloat(FPLO.Wannier.HopVec[indwan][k][2], HopVec[indsh][ihtb - NHopStart[ish][jsh]][2], AtomPositionAccuracy))
+									{
+										HTB->H[ihtb].Hop.VRe[OrbInd[i]][OrbInd[j]] = FPLO.Wannier.HopVal[indwan][k];
+										HTB->H[ihtb].Hop.VIm[OrbInd[i]][OrbInd[j]] = FPLO.Wannier.HopValIm[indwan][k];
+									}
+								}
+							}
+						}
+					}
+				}
+				else //Hopping real
+				{
+					for (i = 0; i < Nwandef; i++)
+					{
+						for (j = 0; j < Nwandef; j++)
+						{
+							// Fill in the matrix elements.
+							indwan = i * Nwandef + j;
+							if (ShellInd[i] == ish && ShellInd[j] == jsh)
+							{
+								for (k = 0; k < FPLO.Wannier.Nhop[indwan]; k++)
+								{
+									if (EqualFloat(FPLO.Wannier.HopVec[indwan][k][0], HopVec[indsh][ihtb - NHopStart[ish][jsh]][0], AtomPositionAccuracy)
+											&& EqualFloat(FPLO.Wannier.HopVec[indwan][k][1], HopVec[indsh][ihtb - NHopStart[ish][jsh]][1], AtomPositionAccuracy)
+											&& EqualFloat(FPLO.Wannier.HopVec[indwan][k][2], HopVec[indsh][ihtb - NHopStart[ish][jsh]][2], AtomPositionAccuracy))
+									{
+										HTB->H[ihtb].Hop.VRe[OrbInd[i]][OrbInd[j]] = FPLO.Wannier.HopVal[indwan][k];
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
   }
-  return 0;
+	for (ish = 0; ish < Nshell; ish++)
+	{
+		free(ShellOfSite[ish]);
+		free(NVecShell[ish]);
+		free(NHopStart[ish]);
+		free(ShellName[ish]);
+	}
+	for (uint i = 0; i < Nshell * Nshell; ++i)
+	{
+		for (uint j = 0; j < HopVecJVals[i].size(); ++j)
+		{
+			free(HopVec[i][HopVecJVals[i][j]]);
+		}
+		free(HopVec[i]);
+	}
+	free(HopVec);
+	for (i = 0; i < FPLO.Wannier.NActAtom; i++)
+	{
+		free(SiteName[i]);
+		free(SitePos[i]);
+	}
+	free(Norb);
+	free(ShellInd);
+	free(ShellOfSite);
+	free(OrbInd);
+	free(NVecShell);
+	free(NHopStart);
+	free(SiteName);
+	free(ShellName);
+	free(SitePos);
+	return 0;
 }
+
+int FreeDresdenFPLO(DresdenFPLO *FPLO)
+{
+	for (int i = 0; i < FPLO->Atoms.Natom; ++i)
+	{
+		free(FPLO->Atoms.Atom[i]);
+		free(FPLO->Atoms.Pos[i]);
+	}
+	free(FPLO->Atoms.Atom);
+	free(FPLO->Atoms.Pos);
+	for (int i = 0; i < FPLO->Wannier.Nwandef; ++i)
+	{
+		free(FPLO->Wannier.Name[i]);
+		free(FPLO->Wannier.Orbital[i]);
+		free(FPLO->Wannier.PosCenter[i]);
+	}
+	for (int i = 0; i < FPLO->Wannier.Nwandef * FPLO->Wannier.Nwandef; ++i)
+	{
+		for (int j = 0; j < FPLO->Wannier.Nhop[i]; ++j)
+		{
+			free(FPLO->Wannier.HopVec[i][j]);
+		}
+		free(FPLO->Wannier.HopVec[i]);
+		free(FPLO->Wannier.HopVal[i]);
+		free(FPLO->Wannier.HopValIm[i]);
+	}
+	free(FPLO->Wannier.Name);
+	free(FPLO->Wannier.Site);
+	free(FPLO->Wannier.Orbital);
+	free(FPLO->Wannier.PosCenter);
+	free(FPLO->Wannier.Nhop);
+	free(FPLO->Wannier.HopVec);
+	free(FPLO->Wannier.HopVal);
+	free(FPLO->Wannier.HopValIm);
+	free(FPLO->Wannier.ActMap);
+	return 0;
+}
+

@@ -1,73 +1,3 @@
-/* mwh this function already excisted
-  under the same name, using slightly different formatting
-   please use the excisting function
-
-CompactMatrixType BlockTriDiagonalMatrixToCompactMatrix(const BlockTriDiagonalMatrixType &M, const double zero)
-{
-	vector < vector<CompactMatrixType> > outMatMat = CompactnullMatrixMatrix(M.N - 1, M.N - 1);
-	for (uint i = 1; i < M.N; ++i)
-	{
-		CompactMatrixType Atmp, Btmp, BtmpT;
-		Atmp.QComplex = M.QComplex;
-		Btmp.QComplex = M.QComplex;
-		Atmp.Ni = M.BlockSize;
-		Atmp.Nj = M.BlockSize;
-		Btmp.Ni = M.BlockSize;
-		Btmp.Nj = M.BlockSize;
-		InitCompactMatrix(&Atmp);
-		InitCompactMatrix(&Btmp);
-		for (uint k = 0; k < M.BlockSize; ++k)
-		{
-			for (uint l = 0; l < M.BlockSize; ++l)
-			{
-				uint indOld = i * M.BlockSize * M.BlockSize + k * M.BlockSize + l;
-				uint indNew = k * M.BlockSize + l;
-				if ((bool) M.QComplex)
-				{
-					Atmp.V[indNew].Re = M.a[indOld].Re;
-					Atmp.V[indNew].Im = M.a[indOld].Im;
-					Btmp.V[indNew].Re = M.b[indOld].Re;
-					Btmp.V[indNew].Im = M.b[indOld].Im;
-				} else
-				{
-					Atmp.VRe[indNew] = M.aRe[indOld];
-					Btmp.VRe[indNew] = M.bRe[indOld];
-				}
-			}
-		}
-		FreeCompactMatrix(&(outMatMat[i - 1][i - 1]));
-		outMatMat[i - 1][i - 1] = Atmp;
-		if (isZeroMatrix(Btmp, zero))
-		{
-			FreeCompactMatrix(&Btmp);
-			break;
-		}
-		if (i < M.N - 1)
-		{
-			FreeCompactMatrix(&(outMatMat[i - 1][i]));
-			outMatMat[i - 1][i] = Btmp;
-			CompactMatrixCopy(Btmp, &BtmpT);
-			if ((bool) Btmp.QComplex)
-				CompactMatrixConjugateTranspose(&BtmpT);
-			else
-				CompactMatrixTranspose(&BtmpT);
-			FreeCompactMatrix(&(outMatMat[i][i - 1]));
-			outMatMat[i][i - 1] = BtmpT;
-		}
-	}
-	CompactMatrixType out = MatrixFlatten(outMatMat);
-	strcpy(out.Name, M.Name);
-	out.mu = M.mu;
-	FreeCompactMatrixMatrix(outMatMat);
-	return out;
-}
-
-CompactMatrixType BlockTriDiagonalMatrixToCompactMatrix(const BlockTriDiagonalMatrixType &M)
-{
-	return BlockTriDiagonalMatrixToCompactMatrix(M, 0);
-}
-*/
-
 bool isRowZero(const CompactMatrixType &M, const uint row, const double precision)
 {
 	if ((bool) M.QComplex)
@@ -297,5 +227,118 @@ CompactMatrixType Submatrix(const CompactMatrixType &M, const vector<uint> &rows
 		}
 	}
 	return Msub;
+}
+
+double RealMatrixTrace(const CompactMatrixType *M)
+{
+	double trace = 0;
+	for (uint i = 0; i < M->Ni; ++i)
+		trace += M->VRe[i * M->Nj + i];
+	return trace;
+}
+
+Complex16 ComplexMatrixTrace(const CompactMatrixType *M)
+{
+	Complex16 trace;
+	trace.Re = 0;
+	trace.Im = 0;
+	for (uint i = 0; i < M->Ni; ++i)
+	{
+		trace.Re += M->V[i * M->Nj + i].Re;
+		trace.Im += M->V[i * M->Nj + i].Im;
+	}
+	return trace;
+}
+
+CompactMatrixType GSOrthogonalizeWithNonOrthoBasis(const CompactMatrixType &in, const CompactMatrixType &Overlap)
+{
+	if ((bool) in.QComplex or (bool) Overlap.QComplex)
+	{
+		cout << "Function not implemented for Complex Vectors or Overlap Matrices!" << endl;
+		return CompactnullMatrix();
+	}
+	CompactMatrixType out;
+	CompactMatrixCopy(in, &out);
+	uint Nj = out.Nj;
+	for (uint i = 0; i < (uint) out.Ni; ++i)
+	{
+		for (uint j = 0; j < i; ++j)
+		{
+			double overl = 0;
+			for (uint k = 0; k < Nj; ++k)
+			{
+				for (uint l = 0; l < Nj; ++l)
+				{
+					overl += out.VRe[j * Nj + k] * Overlap.VRe[k * Nj + l] * out.VRe[i * Nj + l];
+				}
+			}
+			if (overl != 0)
+			{
+				for (uint k = 0; k < Nj; ++k)
+				{
+					out.VRe[i * Nj + k] -= overl * out.VRe[j * Nj + k];
+				}
+			}
+		}
+		double norm = 0;
+		for (uint k = 0; k < Nj; ++k)
+		{
+			for (uint l = 0; l < Nj; ++l)
+			{
+				norm += out.VRe[i * Nj + k] * Overlap.VRe[k * Nj + l] * out.VRe[i * Nj + l];
+			}
+		}
+		if (norm != 1.0)
+		{
+			norm = 1.0 / sqrt(norm);
+			for (uint j = 0; j < (uint) Nj; ++j)
+				out.VRe[i * Nj + j] = out.VRe[i * Nj + j] * norm;
+		}
+	}
+	return out;
+}
+
+/*I did not want to touch Orthonormalize, although I think that on the long run this function and the one it calls should
+ * be merged with the existing functions.
+ * This is why this Lua Interface Function is written rather sloppily
+*/
+static int LuaOrthogonalizeWithNonOrthoBasis(lua_State *L)
+{
+	CompactMatrixType in, Overlap;
+	lua_check(L, 1, in);
+	lua_check(L, 2, Overlap);
+	lua_push(L, GSOrthogonalizeWithNonOrthoBasis(in, Overlap));
+	return 1;
+}
+
+static int LuaMatrixTrace(lua_State *L)
+{
+	CompactMatrixType *M;
+	SparseMatrixType *S;
+	uint32_t len = (uint32_t) lua_gettop(L);
+	if (len != 1) luaL_error(L, "Matrix.Trace called with %d arguments, only one expected.", len);
+	if (luaL_isType(L, 1, *M))
+	{
+		lua_check(L, 1, M);
+		if (M->Ni != M->Nj) return luaL_error(L, "Error: Matrix.Trace called with a non-quadratic matrix.");
+		if (M->QComplex == 0)
+			lua_push(L, RealMatrixTrace(M));
+		else
+			lua_push(L, ComplexMatrixTrace(M));
+	}
+	else if (luaL_isType(L, 1, *S))
+	{
+		lua_check(L, 1, S);
+		if (S->Ni != S->Nj) return luaL_error(L, "Error: Matrix.Trace called with a non-quadratic matrix.");
+		if (S->QComplex == 0)
+			lua_push(L, RealSparseMatrixTrace(S));
+		else
+			lua_push(L, ComplexSparseMatrixTrace(S));
+	}
+	else
+	{
+		return luaL_error(L, "MatrixTrace called with an unrecognised type!");
+	}
+	return 1;
 }
 

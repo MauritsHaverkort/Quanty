@@ -1,6 +1,3 @@
-// mwh these functions were already defined 
-//CompactMatrixType BlockTriDiagonalMatrixToCompactMatrix(const BlockTriDiagonalMatrixType &M, const double zero);
-//CompactMatrixType BlockTriDiagonalMatrixToCompactMatrix(const BlockTriDiagonalMatrixType &M);
 bool isRowZero(const CompactMatrixType &M, const uint row, const double precision);
 bool isRowZero(const CompactMatrixType &M, const uint row);
 bool isColZero(const CompactMatrixType &M, const uint col, const double precision);
@@ -14,3 +11,9 @@ CompactMatrixType MatrixTypeToCompactMatrixType(const MatrixType &M);
 CompactMatrixType removeSpin(const CompactMatrixType &M);
 static int LuaRemoveSpin(lua_State *L);
 CompactMatrixType Submatrix(const CompactMatrixType &M, const vector<uint> &rows, const vector<uint> &cols);
+double RealMatrixTrace(const CompactMatrixType *M);
+Complex16 ComplexMatrixTrace(const CompactMatrixType *M);
+CompactMatrixType GSOrthogonalizeWithNonOrthoBasis(const CompactMatrixType &in, const CompactMatrixType &Overlap);
+static int LuaOrthogonalizeWithNonOrthoBasis(lua_State *L);
+static int LuaMatrixTrace(lua_State *L);
+

@@ -63,6 +63,8 @@ test(f[3][2],1/14)
 
 g = GaussianRadialFunction.NewGaussianRadialFunction(1, {2}, {0.3})
 f = GaussianRadialFunction.NewGaussianRadialFunction(1, {4}, {0.5})
+n = GaussianRadialFunction.NewGaussianRadialFunction(1, {}, {})
+
 h = g + f
 test(h.l,1)
 test(h.N,2)
@@ -71,6 +73,12 @@ test(h[1][2],0.3)
 test(h[2][1],4)
 test(h[2][2],0.5)
 
+h = g + g
+test(h.l,1)
+test(h.N,1)
+test(h[1][1],4)
+test(h[1][2],0.3)
+
 h = g - f
 test(h.l,1)
 test(h.N,2)
@@ -78,6 +86,40 @@ test(h[1][1],2)
 test(h[1][2],0.3)
 test(h[2][1],-4)
 test(h[2][2],0.5)
+
+h = g + n
+test(h.l,1)
+test(h.N,1)
+test(h[1][1],2)
+test(h[1][2],0.3)
+
+h = g - n
+test(h.l,1)
+test(h.N,1)
+test(h[1][1],2)
+test(h[1][2],0.3)
+
+h = g*2
+test(h.l,1)
+test(h.N,1)
+test(h[1][1],4)
+test(h[1][2],0.3)
+
+h = -2*f
+test(h.l,1)
+test(h.N,1)
+test(h[1][1],-8)
+test(h[1][2],0.5)
+
+h = g*0
+test(h.l,1)
+test(h.N,0)
+
+h = g/2
+test(h.l,1)
+test(h.N,1)
+test(h[1][1],1)
+test(h[1][2],0.3)
 
 if errorCount == 0 then
     print("No errors detected.")

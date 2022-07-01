@@ -16,6 +16,7 @@ namespace BSpline {
 class TBSpline: public Interpolation::InterpolatingFunction {
 public:
 	TBSpline();
+	TBSpline(const std::vector<double> &u,const std::vector<double> &k,const std::vector<double> &v, uint32_t n);
 	virtual ~TBSpline();
 
 	std::vector<double> knots;

@@ -45,4 +45,7 @@ static int LuaGetMultipoleIntegral(lua_State *L);
 
 bool InvolvesOrbital(uint32_t m, uint32_t *orbs, uint32_t N = 4);
 
+template <typename T>
+T MaxAbs(const std::vector<T> &list);
+
 #endif /* ATOMICOPERATORS_ATOMICAUX_H_ */

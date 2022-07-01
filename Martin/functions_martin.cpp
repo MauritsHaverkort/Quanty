@@ -22,6 +22,14 @@
 #include "Auger-Meitner_Selfenergy/ResonantSpectrum_Selfenergy.cpp"
 #include "Auger-Meitner_Selfenergy/ResonantSpectrum_CNSED.cpp"
 #include "BreitInteraction.cpp"
+#include "Hartree-Fock/Hartree-Fock.cpp"
+#include "Slater_Rework/Slater_Integrals.cpp"
+#include "Slater_Rework/Coulomb_Operator.cpp"
+#define AT_QUANTY
+#include "Hartree-Fock-Potential.cpp"
+#include "QMC/CPMC_core.cpp"
+//#include "Math/Wigner9j.cpp"
+//#include "Effective_Hamiltonian/Effective_Hamiltonian.cpp"
 
 
 static int LuaOperatorNewFullCoulomb (lua_State *L)
@@ -800,6 +808,35 @@ static int LuaEigenDifferential(lua_State *L)
 }
 
 static int LuaSparseTridiagonalize(lua_State *L)
+{
+	OperatorType *H = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
+	WaveFunctionType* psi;
+	WaveFunctionType *dets;
+	std::vector<double> psiTransformed, A,B;
+	std::vector<std::vector<double> > T;
+	LinAlg::CSRMatrix<double> Hsparse;
+	uint32_t N;
+	lua_check(L,2,psi);
+	lua_check(L,3,dets);
+	lua_check(L,4,N);
+
+	OperatorToSparseMatrix(H,dets,Hsparse);
+	printf("Matrix created with %lu nve\n",Hsparse.A.size());
+	WaveFunctionToVector(psi,psiTransformed,dets);
+
+
+	double epsSV = 100*DBL_EPSILON;
+
+	void (*va)(const std::vector<double> &, std::vector<double> &, double) = VectorAdd;
+	void (*vm)(std::vector<double> &, double) = VectorMul;
+	Lanczos<double,std::vector<double> >(Hsparse,SkalarProdukt,VectorAdd,VectorMul,psiTransformed,N,A,B,T); // ,&SkalarProdukt,&VectorAdd,&VectorMul,psiTransformed,N,A,B,T
+
+
+	return 0;
+
+}
+
+static int LuaSparseBlockTridiagonalize(lua_State *L)
 {
 	OperatorType *H = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
 	std::vector<WaveFunctionType*> psi;
@@ -1741,6 +1778,11 @@ static int LuaCDMPlot(lua_State *L)
 	}
 
 	lua_push(L,spectrum);
+	if (!M->OnLuaStack)
+	{
+		FreeCompactMatrix(M);
+		free(M);
+	}
 	return 1;
 
 }
@@ -1853,37 +1895,66 @@ void lua_check(lua_State *L, uint32_t n, T* &in)
 */
 static int LuaMartinTest(lua_State *L)
 {
+	int n_single_particle_basis, n_partilces;
+	lua_check(L,4,n_single_particle_basis);
+	lua_check(L,5,n_partilces);
 
-    WaveFunctionType** Kryl;
-    CompactMatrixType U;
-    //MatrixType U;
-    vector<WaveFunctionType> psi, in;
-    // mwh unused uint32_t n;
-    uint32_t len = (uint32_t)lua_objlen(L,1);
-    vector<uint32_t> bs= vector<uint32_t>(len);
-    Kryl = (WaveFunctionType**) malloc(len * sizeof(WaveFunctionType*));
-    for (uint32_t i = 0; i < len; i++)
-    {
-        lua_rawgeti(L,1,i+1);
-        bs[i] = (uint32_t)lua_objlen(L,-1);
-        Kryl[i] = (WaveFunctionType*) malloc(bs[i] * sizeof(WaveFunctionType));
-        for (uint32_t j = 0; j < bs[i]; j++)
-        {
-            lua_rawgeti(L,-1,j+1);
-            lua_check(L,-1,Kryl[i][j]);
-            lua_pop(L,1);
-        }        
-        lua_pop(L,1);
-    }
-    
-    //lua_check(L,1,in);
-    lua_check(L,2,U);
-    //U = *(luaL_checkMatrix(L,2));
-    RotateWaveFunctions(Kryl,len,bs,U,psi);
-    //RotateWaveFunctions(&(in[0]),(uint32_t)in.size(),U,psi);
-    lua_push(L,psi);
+	double *det = (double*) malloc(n_single_particle_basis*n_partilces*sizeof(double));
+
+	vector<double> temp, propagator_free, trial_det;
+	lua_check(L,1,temp);
+	if (temp.size() != n_single_particle_basis*n_partilces) printf("error: foobar\n");
+	for (int i = 0; i < n_single_particle_basis*n_partilces; i++)
+		det[i] = temp[i];
+	PrintMartix(det, n_single_particle_basis, n_partilces);
+	cout << endl << endl;
+	lua_check(L,2,propagator_free);
+	lua_check(L,3,trial_det);
+
+	double olap = 100.;
+	double weight = 1.;
+	double *inverse_olap_matrix = (double*) malloc(n_partilces*n_partilces*sizeof(double));
+	QMC::Propagate_free(det, n_single_particle_basis, n_partilces, olap, inverse_olap_matrix, &propagator_free[0], &trial_det[0],weight);
+
+	return 0;
+/*
+	cout << Wigner9J(9, 9, 8, 7, 4, 3, 8, 11, 5) << endl;
+	return 0;
+
+	vector<Interpolation::InterpolatingFunction *> G,F;
+	vector<double> x, occ;
+	vector<int> kappa;
+	lua_check(L,1,G);
+	lua_check(L,2,F);
+	lua_check(L,3,x);
+	lua_check(L,4,occ);
+	lua_check(L,5,kappa);
+
+	int idx;
+	lua_check(L,6,idx);
+
+	uint32_t n = (uint32_t) x.size();
+	uint32_t N = (uint32_t) G.size();
+
+	double Gval[N*n];
+	double Fval[N*n];
+	for (int i = 0; i < N; i++)
+	{
+		for (int j = 0; j < n; j++)
+		{
+			Gval[n*i+j] = G[i]->y[j];
+			Fval[n*i+j] = F[i]->y[j];
+		}
+	}
+	vector<double> V = vector<double>(n);
+
+	Calc_HF_Potential(&(x[0]),n,Gval,Fval,&(occ[0]),&(kappa[0]),N,&(V[0]),1E-16);
+	cout << V[idx] << endl;
+	//cout << "ThreeJ = " << ThreeJSymbolHalf(3,-1,4,0,3,1) << endl;
+
+	lua_push(L,V);
     return 1;
-
+*/
 }
 
 
@@ -2188,10 +2259,7 @@ static int LuaThomasAlgorithm(lua_State *L)
 
 static int LuaOrthonormalizeContinuum(lua_State *L)
 {
-	// mwh unused uint32_t NGridpoints = 0;
 	SKappaGroup group;
-	
-	// mwh unused double w;
 	vector<double> x;
 	vector<vector<double> > vbasf, vderf,vcontf,vDcont;
     
@@ -2237,9 +2305,11 @@ static int LuaOrthonormalizeContinuum(lua_State *L)
     double Emin,dE;
     lua_check(L,4,Emin);
     lua_check(L,5,dE);
-    
+    int Z = 0;
+    if ((uint32_t)lua_gettop(L) == 6) lua_check(L,6,Z);
+    printf("Z = %d\n",Z);
     vector<vector<double> >energiesCont = CreateEigenDifferentialEnergies((uint32_t) vcontf.size(),Emin,dE);
-    double *eigenval = CreateBaseForContinuum(vbasf,vderf,x,group,vcontf,vDcont,energiesCont);
+    double *eigenval = CreateBaseForContinuum(vbasf,vderf,x,group,vcontf,vDcont,energiesCont,Z);
     
     lua_push(L,eigenval,NfunsUnbound);
     
@@ -2260,8 +2330,443 @@ static int LuaBreit(lua_State *L)
 	vector<Interpolation::InterpolatingFunction *> G,F;
 	lua_check(L,1,G);
 	lua_check(L,2,F);
-	CalcBreitInteraction(G,F,4);
-	return 0;
+	vector<vector<uint16_t> >indices;
+	lua_check(L,3,indices);
+	lua_getfield(L,3,"kappas");
+	vector<int> kappas;
+	lua_check(L,-1,kappas);
+	lua_pop(L,1);
+	uint32_t NF;
+	lua_check(L,4,NF);
+	OperatorType *BreitOp = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
+	luaL_setmetatable(L,"Operator_Type");
+	CalcBreitInteraction(G,F,4,indices,NF,kappas,BreitOp);
+	return 1;
+}
+
+static int LuaBreitFourShells(lua_State *L)
+{
+	vector<uint16_t> ind1,ind2,ind3,ind4;
+	int k1, k2, k3, k4;
+	vector<double> MO, N1;
+	uint32_t NF;
+	lua_check(L,1,NF);
+	lua_check(L,2,k1);
+	lua_check(L,3,ind1);
+	lua_check(L,4,k2);
+	lua_check(L,5,ind2);
+	lua_check(L,6,k3);
+	lua_check(L,7,ind3);
+	lua_check(L,8,k4);
+	lua_check(L,9,ind4);
+	lua_check(L,10,MO);
+	lua_check(L,11,N1);
+	OperatorType *BreitOp = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
+	luaL_setmetatable(L,"Operator_Type");
+	CreateOperatorBreitFourShells(NF,k1,k2,k3,k4,&(ind1[0]),&(ind2[0]),&(ind3[0]),&(ind4[0]),&(MO[0]),&(N1[0]),BreitOp);
+	return 1;
+}
+
+static int LuaHartreeFock(lua_State *L)
+{
+	vector<double> x, S, Lap, V, H, ev, es;
+	uint32_t n = 7;//7 3
+	uint32_t Nknots, powGrid;
+	double R;
+	lua_check(L,1,R);
+	lua_check(L,2,Nknots);
+	lua_check(L,3,powGrid);
+	int l;
+	lua_check(L,4,l);
+	//HartreeFock::CreateGrid(Nknots,n,R,powGrid,x);
+	BSpline::GenerateFisherGrid(3,0.375,20,1,n,x);
+	uint32_t Nspline = (uint32_t) x.size()-n-1;
+	uint32_t dim = Nspline-2;
+	HartreeFock::CreateOverlapMatrix(x,n,S);
+	HartreeFock::CreateLaplacian(x,n,Lap);
+	HartreeFock::CreatePotentialMatrix(x,n,V,1,l);
+	H = vector<double>(S.size());
+	for (uint32_t i = 0; i < (uint32_t) V.size(); i++)
+	{
+		H[i] = Lap[i]/2 + V[i];
+	}
+	PrintMartix(&H[0],4);
+	HartreeFock::SolveCatOwnerEquation(H,S,dim,n,ev,es);
+	lua_push(L,ev);
+	//lua_push(L,es);
+	lua_push(L,x);
+	return 2;
+}
+
+static int LuaHFMatrix(lua_State *L)
+{
+//	BSpline::TBSpline *A, *B;
+//	A = (BSpline::TBSpline*) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
+//	B = (BSpline::TBSpline*) luaL_checkudata(L, 2, "InterpolatingFunction_Type");
+//	vector<vector<double> > eigVec;
+//	vector<double> F,K, H, V, Lap,Bums, D, P, Q;
+//	eigVec.push_back(A->y);
+//	eigVec[0].pop_back();
+//	eigVec[0].erase(eigVec[0].begin());
+//	eigVec[0].reserve(eigVec[0].size()*2);
+//	eigVec[0].insert(eigVec[0].end(),eigVec[0].begin(),eigVec[0].end());
+//	eigVec.push_back(B->y);
+//	eigVec[1].pop_back();
+//	eigVec[1].erase(eigVec[1].begin());
+//	vector<vector<uint32_t> >Nocc = vector<vector<uint32_t> >(2);
+//	Nocc[0].push_back(0);
+//	Nocc[0].push_back(0);
+//	Nocc[1].push_back(6);
+//	vector<vector<double> > rk1, rk2, rkD;
+//	rk1 = vector<vector<double> >(3);
+//	rk2 = vector<vector<double> >(3);
+//	rkD = vector<vector<double> >(3);
+//	uint32_t  idx;
+//	uint32_t n  = A->degree;
+//	uint32_t Nsplines = (uint32_t) A->knots.size() - n-1;
+//	for (int k = 0; k < 3; k++)
+//	{
+//		HartreeFock::CalcOffDiagSlaterInts(A->knots,rk1[k],rk2[k],k,n);
+//		HartreeFock::CalcDiagSlaterInts(A->knots,rkD[k],k,n);
+//	}
+//	uint32_t dim = (uint32_t) A->y.size()-2;
+//	int l = 1;
+//	HartreeFock::CreateFockMatrix(l,rk1,rk2,rkD,n,eigVec,dim,Nocc,F,Bums);
+//	HartreeFock::CreateHartreeMatrix(l,rk1[0],rk2[0],rkD[0],n,eigVec,dim,Nocc,K,Bums);
+//	HartreeFock::CreateLaplacian(A->knots,n,Lap);
+//
+//	HartreeFock::CreatePotentialMatrix(A->knots,n,V,1,l);
+//	uint32_t lMax = 1;
+//	vector<uint32_t> nocc = vector<uint32_t>(lMax+1);
+//	nocc[0] = 2;
+//	nocc[1] = 1;
+//	HartreeFock::CreateSuperDensity(eigVec,nocc,dim,D);
+//	HartreeFock::CreateSuperMatrix(rk1,rk2,rkD,n,dim,lMax,P,Q);
+//	vector<vector<double> > HF;
+//	HartreeFock::CreateHartreeFockOperator(P,D,dim,lMax,HF);
+//
+//	H = vector<double>(dim*dim);
+//	for (int j = 0; j < dim; j++)
+//	{
+//		for ( int i = j; i <= std::min(dim-1,j+n); i++)  // n = #sub-diagonals
+//		{
+//			H[i*dim+j] = Lap[(i-j) + j*dim]/2. + V[(i-j) + j*dim];
+//			H[j*dim+i] = H[i*dim+j];
+//		}
+//	}
+//
+//	for (uint32_t i = 0; i < dim*dim; i++)
+//	{
+//		H[i] = 2*K[i] - F[i];
+//	}
+//	vector<vector<double> > null = vector<vector<double> >(2);
+//	null[0].push_back(0);
+//	null[0].push_back(0);
+//	null[0].push_back(0);
+//	null[1].push_back(0);
+//	double e0 = 0;//HartreeFock::TestGSEnergy(Nocc,null,eigVec,H,n);
+//	PrintMartix(&H[0],dim);
+//	printf("\n");
+//	PrintMartix(&(HF[1][0]),dim);
+//	printf("\n");
+//	PrintArray(&(A->y[0]),A->y.size());
+//	printf("\n%E\n",e0);
+//	lua_push(L,A->knots);
+	return 1;
+}
+
+static int LuaHFMatrix2(lua_State *L)
+{
+//	BSpline::TBSpline *A, *B;
+//	A = (BSpline::TBSpline*) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
+//	B = (BSpline::TBSpline*) luaL_checkudata(L, 2, "InterpolatingFunction_Type");
+//	vector<vector<double> > eigVec;
+//	lua_check(L,3,eigVec);
+//	vector<double> F,K, H, V, Lap,Bums, D, P, Q;
+//	vector<vector<uint32_t> >Nocc = vector<vector<uint32_t> >(2);
+//	Nocc[0].push_back(0);
+//	Nocc[0].push_back(0);
+//	Nocc[1].push_back(6);
+//	vector<vector<double> > rk1, rk2, rkD;
+//	rk1 = vector<vector<double> >(3);
+//	rk2 = vector<vector<double> >(3);
+//	rkD = vector<vector<double> >(3);
+//	uint32_t  idx;
+//	uint32_t n  = A->degree;
+//	uint32_t Nsplines = (uint32_t) A->knots.size() - n-1;
+//	for (int k = 0; k < 3; k++)
+//	{
+//		HartreeFock::CalcOffDiagSlaterInts(A->knots,rk1[k],rk2[k],k,n);
+//		HartreeFock::CalcDiagSlaterInts(A->knots,rkD[k],k,n);
+//	}
+//	uint32_t dim = (uint32_t) A->y.size()-2;
+//	int l = 0;
+//	HartreeFock::CreateFockMatrix(l,rk1,rk2,rkD,n,eigVec,dim,Nocc,F,Bums);
+//	HartreeFock::CreateHartreeMatrix(l,rk1[0],rk2[0],rkD[0],n,eigVec,dim,Nocc,K,Bums);
+//	HartreeFock::CreateLaplacian(A->knots,n,Lap);
+//
+//	HartreeFock::CreatePotentialMatrix(A->knots,n,V,1,l);
+//	uint32_t lMax = 1;
+//	vector<uint32_t> nocc = vector<uint32_t>(lMax+1);
+//	nocc[0] = 2;
+//	nocc[1] = 1;
+//	HartreeFock::CreateSuperDensity(eigVec,nocc,dim,D);
+//	HartreeFock::CreateSuperMatrix(rk1,rk2,rkD,n,dim,lMax,P,Q);
+//	vector<vector<double> > HF;
+//	HartreeFock::CreateHartreeFockOperator(P,D,dim,lMax,HF);
+//
+//	vector<vector<double> > rho;
+//	lua_check(L,4,rho);
+//	if (rho[0].size() != HF[0].size()) printf("crap\n");
+//	if (rho[1].size() != HF[1].size()) printf("crap\n");
+//	if (rho[1].size() != HF[0].size()) printf("crap\n");
+//	printf("HF\n");
+//	for (uint32_t i = 0; i < (uint32_t) rho[0].size(); i++) if (Abs(HF[0][i]-rho[0][i]) > 1E-15) printf("diff = %.2E\n",HF[0][i]-rho[0][i]);
+//	for (uint32_t i = 0; i < (uint32_t) rho[1].size(); i++) if (Abs(HF[1][i]-rho[1][i]) > 1E-15) printf("diff = %.2E\n",HF[1][i]-rho[1][i]);
+//
+//	H = vector<double>(dim*dim);
+//	for (int j = 0; j < dim; j++)
+//	{
+//		for ( int i = j; i <= std::min(dim-1,j+n); i++)  // n = #sub-diagonals
+//		{
+//			H[i*dim+j] = Lap[(i-j) + j*dim]/2. + V[(i-j) + j*dim];
+//			H[j*dim+i] = H[i*dim+j];
+//		}
+//	}
+//	printf("diff\n");
+//	for (uint32_t i = 0; i < dim*dim; i++)
+//	{
+//		H[i] = 2*K[i] - F[i];
+//		if (Abs(H[i]-HF[l][i]) > 1E-15) printf("diff = %.2E\n",H[i]-HF[l][i]);
+//	}
+//	vector<vector<double> > null = vector<vector<double> >(2);
+//	null[0].push_back(0);
+//	null[0].push_back(0);
+//	null[0].push_back(0);
+//	null[1].push_back(0);
+//	double e0 = 0;//HartreeFock::TestGSEnergy(Nocc,null,eigVec,H,n);
+////	PrintMartix(&H[0],dim);
+////	printf("\n");
+////	PrintMartix(&(HF[1][0]),dim);
+////	printf("\n");
+////	PrintArray(&(A->y[0]),A->y.size());
+////	printf("\n%E\n",e0);
+////	lua_push(L,A->knots);
+	return 1;
+}
+
+static int LuaTestHF(lua_State *L)
+{
+		BSpline::TBSpline *A, *B;
+		A = (BSpline::TBSpline*) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
+		B = (BSpline::TBSpline*) luaL_checkudata(L, 2, "InterpolatingFunction_Type");
+
+		vector<vector<double> > eigVec;
+		vector<double> F,K, H, V, Bums, Dc,Do,Dt, P, Q,D;
+		vector<vector<double> > PSM, QSM, RSM,FSM;
+
+		eigVec.push_back(A->y);
+		eigVec[0].pop_back();
+		eigVec[0].erase(eigVec[0].begin());
+		eigVec.push_back(B->y);
+		eigVec[1].pop_back();
+		eigVec[1].erase(eigVec[1].begin());
+
+		vector<vector<uint32_t> > Nclosed = vector<vector<uint32_t> >(1);
+		Nclosed[0].push_back(0);
+		Nclosed[0].push_back(0);
+		vector<vector<uint32_t> > Nopen = vector<vector<uint32_t> >(1);
+		Nopen[0].push_back(1);
+		Nopen[0].push_back(0);
+
+		uint32_t lMax = 1;
+		PSM = vector<vector<double> >(lMax+1);
+		QSM = vector<vector<double> >(lMax+1);
+		RSM = vector<vector<double> >(lMax+1);
+		FSM = vector<vector<double> >(lMax+1);
+
+		double f = 1/4.;
+		HartreeFock::CreateSuperDensity(eigVec,Nclosed,Nopen,lMax,(uint32_t) eigVec[0].size(),Dc,Do,f);
+
+
+		vector<vector<double> > rk1 = vector<vector<double> >(3);
+		vector<vector<double> > rk2 = vector<vector<double> >(3);
+		vector<vector<double> > rkD = vector<vector<double> >(3);
+		uint32_t  idx;
+		uint32_t n  = A->degree;
+		uint32_t Nsplines = (uint32_t) A->knots.size() - n-1;
+		for (int k = 0; k < 3; k++)
+		{
+			HartreeFock::CalcOffDiagSlaterInts(A->knots,rk1[k],rk2[k],k,n);
+			HartreeFock::CalcDiagSlaterInts(A->knots,rkD[k],k,n);
+		}
+		uint32_t dim = (uint32_t) A->y.size()-2;
+		uint32_t l = 0;
+
+		vector<vector<uint32_t> >Nocc = vector<vector<uint32_t> >(2);
+		Nocc[0].push_back(7);
+		Nocc[1].push_back(6);
+		HartreeFock::CreateFockMatrix(l,rk1,rk2,rkD,n,eigVec,dim,Nocc,F,Bums);
+		HartreeFock::CreateHartreeMatrix(l,rk1[0],rk2[0],rkD[0],n,eigVec,dim,Nocc,K,Bums);
+
+		Dt = vector<double>(Dc.size());
+		for (int i = 0; i < Dt.size(); i++) Dt[i] = Dc[i] + Do[i];
+
+		double alpha = 1;
+		double beta = 1;
+		HartreeFock::CreateSuperMatrix(rk1,rk2,rkD,n,dim,lMax,alpha,beta,P,Q);
+
+		vector<double> Lap, S, Sb;
+		HartreeFock::CreateOverlapMatrix(A->knots,n,Sb);
+		S = vector<double>(dim*dim);
+		for (int j = 0; j < dim; j++)
+		{
+			printf("%f\t",eigVec[0][j]);
+			for ( int i = j; i <= std::min(dim-1,j+n); i++)  // n = #sub-diagonals
+			{
+				S[i*dim+j] = Sb[(i-j) + j*dim];
+				S[j*dim+i] = S[i*dim+j];
+			}
+		}
+		printf("\n");
+
+		for (l = 0; l < 2; l++)
+		{
+			HartreeFock::CreateQSuperMatrix(l,Q,Do,dim,lMax,QSM[l]);
+			HartreeFock::CreateQSuperMatrix(l,Q,Dt,dim,lMax,PSM[l]);
+			HartreeFock::CreateRSuperMatrix(l,QSM[l],S,Dc,Do,dim,lMax,RSM[l]);
+//			HartreeFock::CreateHartreeFockOperator(l,P,Q,S,Dc,Do,dim,lMax,FSM[l]);
+//			printf("S\n");
+//			PrintMartix(&S[0],dim);
+//			printf("\n");
+//			printf("QSM\n");
+//			PrintMartix(&(QSM[l][0]),dim);
+//			printf("\n");
+//			printf("RSM\n");
+//			PrintMartix(&(RSM[l][0]),dim);
+//			printf("\n");
+//			printf("PSM\n");
+//			PrintMartix(&(PSM[l][0]),dim);
+//			printf("\n");
+//			printf("FSM\n");
+//			PrintMartix(&(FSM[l][0]),dim);
+//			printf("\n");
+
+			uint32_t nl = lMax + 1;
+			uint32_t superdim = dim*dim*nl;
+
+			printf("Dc\n");
+			printf("{");
+			for (uint32_t mu = 0; mu < dim; mu++)
+			{
+				printf("\n{");
+				for (uint32_t nu = 0; nu < dim; nu++)
+				{
+					printf("%f, ",Dc[mu*dim*nl + nu*nl + l]);
+				}
+				printf("\b\b},");
+			}
+			printf("\b}\n\n");
+
+			printf("Do\n");
+			printf("{");
+			for (uint32_t mu = 0; mu < dim; mu++)
+			{
+				printf("\n{");
+				for (uint32_t nu = 0; nu < dim; nu++)
+				{
+					printf("%f, ",Do[mu*dim*nl + nu*nl + l]);
+				}
+				printf("\b\b},");
+			}
+			printf("\b}\n\n");
+
+			printf("traces:\n");
+			double tr = 0;
+			uint32_t nb = lMax+1;
+			for (uint32_t mu = 0; mu < dim; mu++)
+			{
+				for (uint32_t nu = 0; nu < dim; nu++)
+					tr += Dc[mu*dim*nb +nu*nb +l]*S[mu*dim+nu];
+			}
+			printf("tr = %f\n",tr);
+			tr = 0;
+			for (uint32_t mu = 0; mu < dim; mu++)
+			{
+				for (uint32_t nu = 0; nu < dim; nu++)
+					tr += Do[mu*dim*nb +nu*nb +l]*S[mu*dim+nu];
+			}
+			printf("tr = %f\n",tr);
+
+		}
+		vector<vector<double> > H0 = vector<vector<double> >(2);
+		H0[0] = vector<double>(dim*dim);
+		H0[1] = vector<double>(dim*dim);
+		printf("E0 = %f\n",HartreeFock::CalcGSEnergy(Dc,Do,H0,PSM,QSM,dim,lMax,f,RSM));
+//		for (int i = 0; i < F.size(); i++)
+//			if (Abs(2*alpha*K[i]-beta*F[i] - QSM[i]) > 1E-15) printf("dev = %.1E\n",Abs(2*alpha*K[i]-beta*F[i] - QSM[i]));
+//		printf("done\n");
+}
+
+static int LuaHartreeFockSC(lua_State *L)
+{
+	vector<double> x;
+	uint32_t n = 7;
+	int Z ,Nelec;
+	uint32_t NSCmax = 4;
+	uint32_t lMax = 0;
+
+	double R;
+	lua_check(L,1,Z);
+	lua_check(L,2,Nelec);
+	lua_check(L,3,lMax);
+	lua_check(L,4,R);
+	lua_check(L,5,NSCmax);
+	BSpline::GenerateFisherGrid(3,0.375,R,Z,n,x);
+	uint32_t Nsplines = (uint32_t) x.size() - n-1;
+	uint32_t dim = Nsplines-2;
+	vector<vector<double> > eigVal = vector<vector<double> >(lMax+1);
+	vector<vector<double> > eigVec = vector<vector<double> >(lMax+1); // TODO: init stuff
+	for (uint32_t l = 0; l <= lMax; l++)
+	{
+		eigVal[l] = vector<double>(dim);
+		eigVec[l] = vector<double>(dim*dim);
+	}
+	//HartreeFock::SCScheme(x,n,Z,Nelec,NSCmax,1E-6,eigVal,eigVec);
+	lua_push(L,eigVal);
+	lua_push(L,eigVec);
+	return 2;
+}
+
+static int LuaSlater(lua_State *L)
+{
+	BSpline::TBSpline *A, *B;
+	A = (BSpline::TBSpline*) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
+	B = (BSpline::TBSpline*) luaL_checkudata(L, 2, "InterpolatingFunction_Type");
+	vector<double> rk1, rk2, rkD;
+	int k;
+	uint32_t  idx;
+	uint32_t n  = A->degree;
+	uint32_t Nsplines = (uint32_t) A->knots.size() - n-1;
+	lua_check(L,3,k);
+	HartreeFock::CalcOffDiagSlaterInts(A->knots,rk1,rk2,k,n);
+	HartreeFock::CalcDiagSlaterInts(A->knots,rkD,k,n);
+	double Fk = HartreeFock::AssembleSlaterInts(A->y,B->y,A->y,B->y,rk1,rk2,rkD,n);
+	double Gk = HartreeFock::AssembleSlaterInts(A->y,B->y,B->y,A->y,rk1,rk2,rkD,n);
+	lua_push(L,Fk);
+	lua_push(L,Gk);
+	return 2;
+
+//	for (uint32_t i = 1; i < Nsplines; i++)
+//	{
+//		for (uint32_t j = 1; j < Nsplines; j++)
+//		{
+//			double val = HartreeFock::AssembleSlaterInts(i,idx,idx,j,rk1,rk2,rkD,n);
+//			printf("%.6E\t",val);
+//		}
+//		printf("\n");
+//	}
+//	return 0;
 }
 
 static const struct luaL_Reg Martin_meta[] = {
@@ -2298,7 +2803,8 @@ static const struct luaL_Reg Martin_meta[] = {
  */
 
 static const struct luaL_Reg Martin_func[] = {
-  {"NewCoulomb", LuaOperatorNewFullCoulomb},
+  //{"NewCoulomb", LuaOperatorNewFullCoulomb},
+  {"NewCoulomb", LuaCreate_Relativistic_Coulomb_Operator},
   {"NewDirac", LuaOperatorNewDirac},
   {"ContinuumBase",LuaCreateBaseForContinuum},
   {"ReadFPLOBasis",LuaReadFPLOBasis},
@@ -2317,6 +2823,7 @@ static const struct luaL_Reg Martin_func[] = {
   {"ED",LuaEigenDifferential},
   {"SparseOperator",LuaSparseOperator},
   {"SparseTri",LuaSparseTridiagonalize},
+  {"SparseBlockTri",LuaSparseBlockTridiagonalize},
   {"OperatorToCSRMatrix",LuaOperatorToCSRMatrix},
   {"CSRTridiagonalize",LuaCSRTridiagonalize},
   {"Export",LuaExport},
@@ -2342,6 +2849,14 @@ static const struct luaL_Reg Martin_func[] = {
   {"Thomas",LuaThomasAlgorithm},
   {"BSpline",LuaBSpline},
   {"Breit",LuaBreit},
+  {"Breit4S",LuaBreitFourShells},
+  {"HF",LuaHartreeFock},
+  {"Slater",LuaSlater},
+  {"HFMatrix",LuaHFMatrix2},
+  {"HFSC",LuaHartreeFockSC},
+  {"AtomicHartreeFock",LuaAtomicHartreeFock},
+  {"TestHF",LuaTestHF},
+  //{"EffectiveHamiltonian",LuaCreateEffectiveHamiltonian},
   {NULL, NULL}
 };
 
