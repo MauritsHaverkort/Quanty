@@ -2706,6 +2706,8 @@ static int LuaTestHF(lua_State *L)
 //		for (int i = 0; i < F.size(); i++)
 //			if (Abs(2*alpha*K[i]-beta*F[i] - QSM[i]) > 1E-15) printf("dev = %.1E\n",Abs(2*alpha*K[i]-beta*F[i] - QSM[i]));
 //		printf("done\n");
+  // mwh add return value
+  return 1;
 }
 
 static int LuaHartreeFockSC(lua_State *L)

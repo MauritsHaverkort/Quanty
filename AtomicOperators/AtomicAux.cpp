@@ -171,7 +171,7 @@ static int LuaReadLenaBasisFunctions(lua_State *L)
 		{"Degree","uint32_t",&(Options.degree)},
 		{"ReduceGrid","bool",&(Options.ReduceGrid)},
         {NULL, NULL, NULL}};
-    Options.Method = "CubicSpline";
+    Options.Method = (char*)"CubicSpline";
     Options.degree = 7;
     Options.ReduceGrid = false;
 
@@ -259,7 +259,7 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
         {"Method","char*",&(Options.Method)},
 		{"Degree","uint32_t",&(Options.degree)},
         {NULL, NULL, NULL}};
-    Options.Method = "CubicSpline";
+    Options.Method = (char*)"CubicSpline";
     Options.degree = 7;
 
     bool QOptions = LuaTestOptionsList(L,-1);
