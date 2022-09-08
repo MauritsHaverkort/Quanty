@@ -3,6 +3,7 @@
  */
 int sprintfAdd(char ** A, const char *fmt, ...)
 {
+  // The function strlen makes this function slow. It can be used once, but not to consequitive build a long string
   char * Atemp;
   int retval;
   unsigned long lenA, lenAlocA;
@@ -78,63 +79,143 @@ uint32_t StringPrintOperatorReadable(OperatorType O, char **Buffer)
  */
 uint32_t StringPrintWaveFunctionReadable(WaveFunctionType psi, char **Buffer)
 {
-  uint32_t i, j;
-  *Buffer = (char*)malloc(4048);
+  uint32_t i, j, StringLength,DecaLengNpsi;
+  // Determine the needed size of the Buffer
+  // Changing text in the header means one needs to change the allocation size
+  i=1;
+  for(DecaLengNpsi=1;DecaLengNpsi<=10;DecaLengNpsi++)
+  {
+    i*=10;
+    if(psi.N<i) break;
+  }
+  StringLength = MAXStrLength+304; // Length of Header
+  if(psi.QComplex)
+  {
+    StringLength+=56+DecaLengNpsi;
+    StringLength+=psi.N*(4+40+DecaLengNpsi+psi.NFermion+3*psi.NBoson+1);
+  }
+  else
+  {
+    StringLength+=35+DecaLengNpsi;
+    StringLength+=psi.N*(3+20+DecaLengNpsi+psi.NFermion+3*psi.NBoson+1);
+  }
+  *Buffer = (char*)malloc(StringLength);
   if(*Buffer==NULL)
   {
     printf("ERROR: malloc failed in StringPrintOperatorReadable\n");
     return 1;
   }
   *Buffer[0]='\0';
+  StringLength=0;
   psi.Name[MAXStrLength - 1] = '\0';
-  sprintfAdd(Buffer, "\nWaveFunction: %s\n", psi.Name);
-  sprintfAdd(Buffer, "QComplex         = %10i (Real==0 or Complex==1)\n", psi.QComplex);
-  sprintfAdd(Buffer, "N                = %10i (Number of basis functions used to discribe psi)\n", psi.N);
-  sprintfAdd(Buffer, "NFermionic modes = %10i (Number of fermions in the one particle basis)\n", psi.NFermion);
-  sprintfAdd(Buffer, "NBosonic modes   = %10i (Number of bosons in the one particle basis)\n", psi.NBoson);
+  sprintf(*Buffer+StringLength, "\nWaveFunction: %s\n", psi.Name);
+  StringLength+=16+strlen(psi.Name);
+  sprintf(*Buffer+StringLength, "QComplex         = %10i (Real==0 or Complex==1)\n", psi.QComplex);
+  StringLength+=54;
+  sprintf(*Buffer+StringLength, "N                = %10i (Number of basis functions used to discribe psi)\n", psi.N);
+  StringLength+=79;
+  sprintf(*Buffer+StringLength, "NFermionic modes = %10i (Number of fermions in the one particle basis)\n", psi.NFermion);
+  StringLength+=77;
+  sprintf(*Buffer+StringLength, "NBosonic modes   = %10i (Number of bosons in the one particle basis)\n", psi.NBoson);
+  StringLength+=75;
+  
   if (psi.QComplex)
   {
-    sprintfAdd(Buffer, "\n#      pre-factor             +I  pre-factor         Determinant\n");
+    sprintf(*Buffer+StringLength, "\n");
+    StringLength+=1;
+    for (i = 1; i<=DecaLengNpsi; i++ )
+    {
+      sprintf(*Buffer+StringLength, "#");
+      StringLength++;
+    }
+    sprintf(*Buffer+StringLength, "   pre-factor           pre-factor          Determinant\n");
+    StringLength+=56;
+    
     for (i = 1; i <= psi.N; i++)
     {
-      sprintfAdd(Buffer, "%4i %20.12E       %20.12E       ", i, psi.ValueRe[BlokElement(i)], psi.ValueIm[BlokElement(i)]);
+      switch(DecaLengNpsi)
+      {
+        case 1  : sprintf(*Buffer+StringLength,  "%1i %20.12E %20.12E  ", i, psi.ValueRe[BlokElement(i)], psi.ValueIm[BlokElement(i)]); break;
+        case 2  : sprintf(*Buffer+StringLength,  "%2i %20.12E %20.12E  ", i, psi.ValueRe[BlokElement(i)], psi.ValueIm[BlokElement(i)]); break;
+        case 3  : sprintf(*Buffer+StringLength,  "%3i %20.12E %20.12E  ", i, psi.ValueRe[BlokElement(i)], psi.ValueIm[BlokElement(i)]); break;
+        case 4  : sprintf(*Buffer+StringLength,  "%4i %20.12E %20.12E  ", i, psi.ValueRe[BlokElement(i)], psi.ValueIm[BlokElement(i)]); break;
+        case 5  : sprintf(*Buffer+StringLength,  "%5i %20.12E %20.12E  ", i, psi.ValueRe[BlokElement(i)], psi.ValueIm[BlokElement(i)]); break;
+        case 6  : sprintf(*Buffer+StringLength,  "%6i %20.12E %20.12E  ", i, psi.ValueRe[BlokElement(i)], psi.ValueIm[BlokElement(i)]); break;
+        case 7  : sprintf(*Buffer+StringLength,  "%7i %20.12E %20.12E  ", i, psi.ValueRe[BlokElement(i)], psi.ValueIm[BlokElement(i)]); break;
+        case 8  : sprintf(*Buffer+StringLength,  "%8i %20.12E %20.12E  ", i, psi.ValueRe[BlokElement(i)], psi.ValueIm[BlokElement(i)]); break;
+        case 9  : sprintf(*Buffer+StringLength,  "%9i %20.12E %20.12E  ", i, psi.ValueRe[BlokElement(i)], psi.ValueIm[BlokElement(i)]); break;
+        case 10 : sprintf(*Buffer+StringLength, "%10i %20.12E %20.12E  ", i, psi.ValueRe[BlokElement(i)], psi.ValueIm[BlokElement(i)]); break;
+      }
+      StringLength+=44+DecaLengNpsi;
+      //sprintfAdd(Buffer, "%9i %20.12E  %20.12E  ", i, psi.ValueRe[BlokElement(i)], psi.ValueIm[BlokElement(i)]);
       //for (j = 0; j < psi.NWord; j++)
       //{
       //  sprintfAdd(Buffer, "%2.2X", psi.Determinant[BlokElementDet(i, psi.NWord, j)]);
       //}
+      
       for(j=0;j<psi.NFermion;j++)
       {
-        sprintfAdd(Buffer, "%c",(psi.Determinant[BlokElementDet(i, psi.NWord, (j >> 3))] & (128 >> (j & 7)))?'1':'0');
+        sprintf(*Buffer+StringLength, "%c",(psi.Determinant[BlokElementDet(i, psi.NWord, (j >> 3))] & (128 >> (j & 7)))?'1':'0');
+        StringLength++;
       }
       for(j=psi.NWord-psi.NBoson;j<psi.NWord;j++)
       {
-        sprintfAdd(Buffer, " %2.2X", psi.Determinant[BlokElementDet(i, psi.NWord, j)]);
+        sprintf(*Buffer+StringLength, " %2.2X", psi.Determinant[BlokElementDet(i, psi.NWord, j)]);
+        StringLength+=3;
       }
-      sprintfAdd(Buffer, "\n");
+      sprintf(*Buffer+StringLength, "\n");
+      StringLength++;
     }
-    sprintfAdd(Buffer, "\n");
+    sprintf(*Buffer+StringLength, "\n");
+    StringLength++;
   }
   else
   {
-    sprintfAdd(Buffer, "\n#      pre-factor         Determinant\n");
+    sprintf(*Buffer+StringLength, "\n");
+    StringLength+=1;
+    for (i = 1; i<=DecaLengNpsi; i++ )
+    {
+      sprintf(*Buffer+StringLength, "#");
+      StringLength++;
+    }
+    sprintf(*Buffer+StringLength, "   pre-factor          Determinant\n");
+    StringLength+=35;
     for (i = 1; i <= psi.N; i++)
     {
-      sprintfAdd(Buffer, "%4i %20.12E       ", i, psi.ValueRe[BlokElement(i)]);
+      switch(DecaLengNpsi)
+      {
+        case 1  : sprintf(*Buffer+StringLength,  "%1i %20.12E  ", i, psi.ValueRe[BlokElement(i)]); break;
+        case 2  : sprintf(*Buffer+StringLength,  "%2i %20.12E  ", i, psi.ValueRe[BlokElement(i)]); break;
+        case 3  : sprintf(*Buffer+StringLength,  "%3i %20.12E  ", i, psi.ValueRe[BlokElement(i)]); break;
+        case 4  : sprintf(*Buffer+StringLength,  "%4i %20.12E  ", i, psi.ValueRe[BlokElement(i)]); break;
+        case 5  : sprintf(*Buffer+StringLength,  "%5i %20.12E  ", i, psi.ValueRe[BlokElement(i)]); break;
+        case 6  : sprintf(*Buffer+StringLength,  "%6i %20.12E  ", i, psi.ValueRe[BlokElement(i)]); break;
+        case 7  : sprintf(*Buffer+StringLength,  "%7i %20.12E  ", i, psi.ValueRe[BlokElement(i)]); break;
+        case 8  : sprintf(*Buffer+StringLength,  "%8i %20.12E  ", i, psi.ValueRe[BlokElement(i)]); break;
+        case 9  : sprintf(*Buffer+StringLength,  "%9i %20.12E  ", i, psi.ValueRe[BlokElement(i)]); break;
+        case 10 : sprintf(*Buffer+StringLength, "%10i %20.12E  ", i, psi.ValueRe[BlokElement(i)]); break;
+      }
+      StringLength+=23+DecaLengNpsi;
+      
       //for (j = 0; j < psi.NWord; j++)
       //{
       //  sprintfAdd(Buffer, "%2.2X", psi.Determinant[BlokElementDet(i, psi.NWord, j)]);
       //}
       for(j=0;j<psi.NFermion;j++)
       {
-        sprintfAdd(Buffer, "%c",(psi.Determinant[BlokElementDet(i, psi.NWord, (j >> 3))] & (128 >> (j & 7)))?'1':'0');
+        sprintf(*Buffer+StringLength, "%c",(psi.Determinant[BlokElementDet(i, psi.NWord, (j >> 3))] & (128 >> (j & 7)))?'1':'0');
+        StringLength++;
       }
       for(j=psi.NWord-psi.NBoson;j<psi.NWord;j++)
       {
-        sprintfAdd(Buffer, " %2.2X", psi.Determinant[BlokElementDet(i, psi.NWord, j)]);
+        sprintf(*Buffer+StringLength, " %2.2X", psi.Determinant[BlokElementDet(i, psi.NWord, j)]);
+        StringLength+=3;
       }
-      sprintfAdd(Buffer, "\n");
+      sprintf(*Buffer+StringLength, "\n");
+      StringLength++;
     }
-    sprintfAdd(Buffer, "\n");
+    sprintf(*Buffer+StringLength, "\n");
+    StringLength++;
   }
   return 0;
 }
