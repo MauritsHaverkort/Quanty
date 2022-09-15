@@ -27,7 +27,7 @@
 #include "Slater_Rework/Coulomb_Operator.cpp"
 #define AT_QUANTY
 #include "Hartree-Fock-Potential.cpp"
-#include "QMC/CPMC_core.cpp"
+//#include "QMC/CPMC_core.cpp"
 //#include "Math/Wigner9j.cpp"
 //#include "Effective_Hamiltonian/Effective_Hamiltonian.cpp"
 
@@ -1914,7 +1914,7 @@ static int LuaMartinTest(lua_State *L)
 	double olap = 100.;
 	double weight = 1.;
 	double *inverse_olap_matrix = (double*) malloc(n_partilces*n_partilces*sizeof(double));
-	QMC::Propagate_free(det, n_single_particle_basis, n_partilces, olap, inverse_olap_matrix, &propagator_free[0], &trial_det[0],weight);
+	//QMC::Propagate_free(det, n_single_particle_basis, n_partilces, olap, inverse_olap_matrix, &propagator_free[0], &trial_det[0],weight);
 
 	return 0;
 /*
