@@ -1384,7 +1384,7 @@ uint32_t OperatorPsiRR(const OperatorType &O, const WaveFunctionType &psi, WaveF
           {
             memcpy(&(MiniDet[NMini * Opsi->NWord]), &(psi.Determinant[ii][ij]), Opsi->NWord);
             phase = OperatorLader(&(MiniDet[NMini * Opsi->NWord]), &(O.l[l].o[j * l]), l, O.NFermion);
-            if (fabs(phase) > (10 * DBL_MIN))
+           if (fabs(phase) > (10 * DBL_MIN))
             {
               MiniValue[NMini] = phase * O.l[l].VRe[j] * psi.ValueRe[ii][ik];
               NMini++;

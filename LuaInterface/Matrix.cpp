@@ -1264,7 +1264,7 @@ static int LuaMatrixToString(lua_State * L)
 static int LuaMatrixElem(lua_State *L)
 {
 	CompactMatrixType M;
-	int i, j;
+	int i=0, j=0;
 	int len = lua_gettop(L);
 	if (len != 2) return luaL_error(L, "Error: Matrix.Elem called with %d arguments, 2 expected: i and j.", len);
 	if (!luaL_isType(L, 1, i)) return luaL_error(L, "Error: First element in Matrix.Elem should be an integer!");
@@ -1303,7 +1303,7 @@ static int LuaMatrixElem(lua_State *L)
 static int LuaMatrixIndex(lua_State *L)
 {
 	uint32_t i, j;
-	double n;
+	double n=0;
 	string str;
 	CompactMatrixType *A, *B;
 	Complex16 *res;
@@ -1596,7 +1596,7 @@ static int LuaSubmatrix(lua_State * L)
   }
 	if (len == 2)
 	{
-		int size;
+		int size=0;
 		vector < uint32_t > inds;
 		if (luaL_isType(L, 2, size))
 		{
