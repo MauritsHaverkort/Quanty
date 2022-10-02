@@ -48,5 +48,11 @@ void Lua_Push_SlaterIntegral(lua_State *L, double *Rk, uint32_t *k, uint32_t N,s
 
 uint32_t CreateListOperatorAtomicURelativistic(uint32_t const NFermion,const vector<vector<double> > &basisfuns, const vector<double> &grid, const vector<int> &indToK
                                                ,uint16_t **indices, bool Qcontinuum,lua_State *L, bool IntegralsOnly);
+void Create_Relativistic_Coulomb_Operator(const vector<Interpolation::InterpolatingFunction*> &G,
+										  const vector<Interpolation::InterpolatingFunction*> &F,
+										  const vector<vector<uint16_t> > &indices,
+										  const vector<int> &list_of_kappas,
+										  const uint32_t NF,
+										  OperatorType &U);
 
 #endif /* ATOMICOPERATORS_ATOMICU_H_ */
