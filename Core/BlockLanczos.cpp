@@ -446,7 +446,7 @@ uint32_t BlockLanczosGroundStateConserveBasisDense(const OperatorType H, WaveFun
     }
     WaveFunctionFreeValues(&Hpsi);
   }
-  if(GlobalVerbosity&0x1000000)
+  if(GlobalVerbosity&0x80000000)
   {
     printf("matrix to diagonalize\n");
     PrintCompactMatrixMinimal(Hdens);
@@ -5548,7 +5548,7 @@ uint32_t BlockGroundState(OperatorType *H, uint32_t const Npsi, ConvergenceSetti
         Settings->epsilon*=2;
         BlockWaveFunctionTruncateBasis(psi,Npsi,Settings->epsilon);
       }
-      // undo shift
+      // undo shift of the Hamiltonian
       if(H->l[0].QComplex==0)
       {
         H->l[0].VRe[0] = HE0;

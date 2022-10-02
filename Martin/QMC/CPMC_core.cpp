@@ -110,7 +110,8 @@ void Propagate_dets(double **dets, double *weights, double *propagator_free, dou
 			{
 				if (weights[i] > 0)
 				{
-					Propagate_interaction();
+          // mwh added arguments to the function to scilence compiler
+					Propagate_interaction(dets[i],n_single_particle_basis, n_partilces, olaps[i],inverse_olap_matrix[i],propagator_free,trial_det,weights[i]);
 				}
 			}
 		}

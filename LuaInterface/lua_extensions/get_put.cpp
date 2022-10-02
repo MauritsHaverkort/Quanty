@@ -121,7 +121,7 @@ uint32_t LuaPut(lua_State *L, const char * const FileName, const char * const Va
   else
   {
     // FileName points to a file
-    return luaL_error(L, "Tried to open file %s for reading with get, but filetype not recognized\n",FileName);
+    return luaL_error(L, "Tried to open file %s for writing with put, but filetype not recognized\n",FileName);
     //TODO: recognize filetype and put variable in it
   }
   return 0;
@@ -427,14 +427,10 @@ uint32_t LuaASCIIStreamPrint(lua_State *L, int narg, FILE * stream)
       {
         fprintf(stream, ",%d",a->l[i].NBitsKey);
       }
-      fprintf(stream, "}}, {\"Restrictions\",");
-      if(a->Res.N==0)
+      fprintf(stream, "}}");
+      if(a->Res.N!=0)
       {
-        fprintf(stream, "nil}})");
-      }
-      else
-      {
-        fprintf(stream, "{ %d, %d",a->NFermion,a->NBoson);
+        fprintf(stream, ", {\"Restrictions\",{ %d, %d",a->NFermion,a->NBoson);
         for(i=0;i<a->Res.N;i++)
         {
           fprintf(stream,", {\"");
@@ -447,9 +443,10 @@ uint32_t LuaASCIIStreamPrint(lua_State *L, int narg, FILE * stream)
           {
             fprintf(stream,"%1u",(a->Res.Determinant[i][j>>3])&(128>>(j&7)));
           }
-          fprintf(stream,"\",%u,%u}}}})",a->Res.Min[i],a->Res.Max[i]);
+          fprintf(stream,"\",%u,%u}}}",a->Res.Min[i],a->Res.Max[i]);
         }
       }
+      fprintf(stream,"})");
       return 0;
     }
     if (luaL_testudata(L, narg, "Wavefunction_Type") != NULL)

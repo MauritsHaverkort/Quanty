@@ -1165,7 +1165,7 @@ uint32_t BlockOperatorPsiSerialRestricted(const OperatorType H, WaveFunctionType
   if(Npsi==0) return 0;
   if(OperatorPsiRestricted(H, psi[0], &(Opsi[0]), Restrictions))
   {
-    printf("OperatorPsi failed in BlockOperatorPsiSerial\n");
+    printf("OperatorPsi failed in BlockOperatorPsiSerialRestricted\n");
     return 1;
   }
   WaveFunctionAddMultipliedUnionBasis(&(Opsi[0]), psi[0], 0);
@@ -1990,7 +1990,7 @@ void RealBlockWaveFunctionTruncateBasis(WaveFunctionType *const psi, uint32_t co
   }
   for (iBlok = 0; iBlok < psi[0].NBlok - 1; iBlok++)
   {
-    for (iElement = 0; iElement < BlokSize; iElement++)
+    for (iElement = ((iBlok==0) ? 1 : 0); iElement < BlokSize; iElement++)
     {
       psi[0].Next[iBlok][iElement] = 0;
       KeepDeterminant=0;
@@ -2016,7 +2016,7 @@ void RealBlockWaveFunctionTruncateBasis(WaveFunctionType *const psi, uint32_t co
     }
   }
   iBlok = psi[0].NBlok - 1;
-  for (iElement = 0; iElement < 1 + startN - iBlok * BlokSize; ++iElement)
+  for (iElement = ((iBlok==0) ? 1 : 0); iElement < 1 + startN - iBlok * BlokSize; ++iElement)
   {
     psi[0].Next[iBlok][iElement] = 0;
     KeepDeterminant=0;
@@ -2082,7 +2082,7 @@ void ComplexBlockWaveFunctionTruncateBasis(WaveFunctionType *const psi, uint32_t
   }
   for (iBlok = 0; iBlok < psi[0].NBlok - 1; iBlok++)
   {
-    for (iElement = 0; iElement < BlokSize; iElement++)
+    for (iElement = ((iBlok==0) ? 1 : 0); iElement < BlokSize; iElement++)
     {
       psi[0].Next[iBlok][iElement] = 0;
       KeepDeterminant=0;
@@ -2110,7 +2110,7 @@ void ComplexBlockWaveFunctionTruncateBasis(WaveFunctionType *const psi, uint32_t
     }
   }
   iBlok = psi[0].NBlok - 1;
-  for (iElement = 0; iElement < 1 + startN - iBlok * BlokSize; ++iElement)
+  for (iElement = ((iBlok==0) ? 1 : 0); iElement < 1 + startN - iBlok * BlokSize; ++iElement)
   {
     psi[0].Next[iBlok][iElement] = 0;
     KeepDeterminant=0;
