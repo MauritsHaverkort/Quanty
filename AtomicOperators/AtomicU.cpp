@@ -40,7 +40,36 @@ static int LuaOperatorNewAtomicUGeneralFunction (lua_State *L)
 
     NF = (uint32_t)luaL_checkunsigned(L, 1);
     vector<int> indToK;
-    if ((len == 4 && !QOptions) || (len == 5 && QOptions) )
+    if (len == 4 && !QOptions)
+	{
+		vector<vector<uint16_t> > indices;
+		vector<int> list_of_kappas;
+		vector<Interpolation::InterpolatingFunction*> G,F;
+		lua_check(L,1,NF);
+		lua_check(L,2,indices);
+		lua_getfield(L,2,"kappas");
+		if (lua_isnil(L,-1))
+		{
+			lua_pop(L,1);
+			return luaL_error(L,"Error in LuaOperatorNewAtomicUGeneralFunction: Argument 2: indices.kappas does not exist.\n");
+		}
+		else
+		{
+			lua_check(L,-1,list_of_kappas);
+			lua_pop(L,1);
+			if (indices.size() != list_of_kappas.size()) return luaL_error(L,"Error in LuaOperatorNewAtomicUGeneralFunction: Argument 2 : indices.kappas and indices do not have same size.\n");
+		}
+		lua_check(L,3,G);
+		lua_check(L,4,F);
+		if (G.size() != F.size()) return luaL_error(L,"Error in LuaOperatorNewAtomicUGeneralFunction: Argument 3 & 4 (1-Particle wave-functions) do not have same size.\n");
+		if (G.size() != indices.size()) return luaL_error(L,"Error in LuaOperatorNewAtomicUGeneralFunction: Argument 2 & 3 do not have same size.\n");
+
+		OperatorType* U = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
+		luaL_setmetatable(L,"Operator_Type");
+		Create_Relativistic_Coulomb_Operator(G,F,indices,list_of_kappas,NF,*U);
+		return 1;
+	}
+	if ( (len == 5 && QOptions) )
 	{
 		lua_getfield(L,2,"kappas");
 		if (lua_isnil(L,-1))
