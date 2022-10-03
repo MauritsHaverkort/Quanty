@@ -234,7 +234,7 @@ static int LuaBraKet(lua_State * L)
         }
         LuaPushArray_Complex16(L, res.V, res.Ni);
         free(res.V);
-        free(psiB);
+        free(psiA);
         return 1;
       }
     }
