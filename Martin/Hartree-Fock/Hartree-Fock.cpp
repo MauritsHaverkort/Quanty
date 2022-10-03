@@ -130,7 +130,7 @@ void CreatePotentialMatrix(const vector<double> &x, const uint32_t n, vector<dou
 void SolveCatOwnerEquation(vector<double> &H, vector<double> &S, uint32_t dim, uint32_t bandsize, vector<double> &eigVal,vector<double> &eigVec)
 {
 	if ((H.size() != S.size()) || ((uint32_t) H.size() != dim*dim))
-		printf("error in SolveCatOwnerEquation: dimensions do not match: #H = %du, #S = %du, dim = %du",H.size(), S.size(), dim);
+		printf("error in SolveCatOwnerEquation: dimensions do not match: #H = %lu, #S = %lu, dim = %du",H.size(), S.size(), dim);
 
 	vector<double> X = vector<double>(H.size());
 	vector<double> e = vector<double>(dim-1);

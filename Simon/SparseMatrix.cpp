@@ -293,7 +293,7 @@ static int LuaSparseMatrixMul(lua_State *L)
 static int LuaSparseMatrixDiv(lua_State *L)
 {
 	SparseMatrixType *Sin, *Sout;
-	double d;
+	double d=0;
 	Complex16 c, cinv;
 
 	lua_check(L, 1, Sin);
