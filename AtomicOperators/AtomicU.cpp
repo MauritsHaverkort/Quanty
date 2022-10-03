@@ -316,98 +316,99 @@ static int LuaOperatorNewAtomicUGeneralFunction (lua_State *L)
 
 static int LuaOperatorNewAtomicUBSpline (lua_State *L)
 {
-    OperatorType *op;
-    uint32_t Nindices, temp, len, NF;
-    uint16_t **indices;
-    vector<double> x;
-    len = (uint32_t)lua_gettop(L);
-    struct
-    {
-        bool conserve;
-        bool QMF;
-        uint32_t Nweights;
-    } Options;
-    LuaOptionsType LuaEDOptions[]={
+  OperatorType *op;
+  uint32_t Nindices, temp, len, NF;
+  uint16_t **indices;
+  vector<double> x;
+  len = (uint32_t)lua_gettop(L);
+  struct
+  {
+    bool conserve;
+    bool QMF;
+    uint32_t Nweights;
+  } Options;
+  LuaOptionsType LuaEDOptions[]={
         {"conserve","bool",&(Options.conserve)},
         {"1P-Operator","bool",&(Options.QMF)},
-		{"Nweights","uint32_t",&(Options.Nweights)},
+		    {"Nweights","uint32_t",&(Options.Nweights)},
         {NULL, NULL, NULL}};
-    Options.conserve = false;
-    Options.QMF = true;
-    Options.Nweights = 11; // 8 + 3
+  Options.conserve = false;
+  Options.QMF = true;
+  Options.Nweights = 11; // 8 + 3
 
-    bool QOptions = LuaTestOptionsList(L,-1);
-    if (QOptions)
+  bool QOptions = LuaTestOptionsList(L,-1);
+  if (QOptions)
+  {
+    LuaCheckOptions(L,-1,LuaEDOptions);
+    len--;
+  }
+  NF = (uint32_t)luaL_checkunsigned(L, 1);
+  vector<int> indToK;
+  vector<BSpline::TBSpline*> G, F;
+  if (len == 4)
+  {
+    lua_getfield(L,2,"kappas");
+    if (lua_isnil(L,-1)) return luaL_error(L,"error in LuaOperatorNewAtomicBSpline : indices on position 3 need to include field \"kappas\"\n");
+    lua_check(L,-1,indToK);
+    lua_pop(L,1);
+    Nindices = (uint32_t)lua_objlen(L,2);
+    indices = (uint16_t **) malloc(Nindices * sizeof(uint16_t *));
+    if(!indices) return luaL_error(L,"malloc failed at indices in LuaOperatorNewFullCoulomb. size = %u\n",Nindices);
+    for(uint32_t i = 0; i < Nindices; i++ )
     {
-         LuaCheckOptions(L,-1,LuaEDOptions);
-         len--;
+      lua_rawgeti(L, 2, i+1);
+      indices[i] = luaL_checkarray_unit16_t(L,-1,&temp);
+      lua_pop(L,1);
     }
-    NF = (uint32_t)luaL_checkunsigned(L, 1);
-    vector<int> indToK;
-    vector<BSpline::TBSpline*> G, F;
-    if (len == 4)
+    lua_check(L,3,G);
+    lua_check(L,4,F);
+
+    op = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
+    if (Options.conserve)
     {
-    	lua_getfield(L,2,"kappas");
-    	if (lua_isnil(L,-1)) return luaL_error(L,"error in LuaOperatorNewAtomicBSpline : indices on position 3 need to include field \"kappas\"\n");
-    	lua_check(L,-1,indToK);
-    	lua_pop(L,1);
-    	Nindices = (uint32_t)lua_objlen(L,2);
-		indices = (uint16_t **) malloc(Nindices * sizeof(uint16_t *));
-		if(!indices) return luaL_error(L,"malloc failed at indices in LuaOperatorNewFullCoulomb. size = %u\n",Nindices);
-		for(uint32_t i = 0; i < Nindices; i++ )
-		{
-			lua_rawgeti(L, 2, i+1);
-			indices[i] = luaL_checkarray_unit16_t(L,-1,&temp);
-			lua_pop(L,1);
-		}
-		lua_check(L,3,G);
-		lua_check(L,4,F);
-
-		op = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
-        if (Options.conserve)
-        {
-            printf("BSplie witch conserved Operator not yet implemented\n");
-        	//CreateOperatorAtomicURelativisticOccupationConserving(NF,G,F,indToK,indices, op);
-        }
-        else
-        {
-            CreateOperatorAtomicURelativistic(NF,G,F,indToK,indices,Options.Nweights, op);
-        }
-
+      printf("BSplie witch conserved Operator not yet implemented\n");
+      //CreateOperatorAtomicURelativisticOccupationConserving(NF,G,F,indToK,indices, op);
     }
-    else if (len == 3)
+    else
     {
-    	Nindices = (uint32_t)lua_objlen(L,2);
-
-		indices = (uint16_t **) malloc(Nindices * sizeof(uint16_t *));
-		if(!indices) printf("malloc fail at indices in LuaOperatorNewFullCoulomb. size = %u\n",Nindices);
-
-		for(uint32_t i = 0; i < Nindices; i++ )
-		{
-			lua_rawgeti(L, 2, i+1);
-			indices[i] = luaL_checkarray_unit16_t(L,-1,&temp);
-			if (i%2 == 0)
-			{
-				indToK.push_back(-(((int)temp-1)/2 + 1));
-			}
-			lua_pop(L,1);
-		}
-		lua_check(L,3,G);
-		op = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
-		if (Options.conserve)
-		{
-			printf("BSplie witch conserved Operator not yet implemented\n");
-			//CreateOperatorAtomicURelativisticOccupationConserving(NF,G,F,indToK,indices, op);
-		}
-		else
-		{
-			CreateOperatorAtomicUNonRelativistic(NF,G,indToK,indices,Options.Nweights, op);
-		}
+      CreateOperatorAtomicURelativistic(NF,G,F,indToK,indices,Options.Nweights, op);
     }
-    luaL_setmetatable(L,"Operator_Type");
+  }
+  else if (len == 3)
+  {
+    Nindices = (uint32_t)lua_objlen(L,2);
 
+    indices = (uint16_t **) malloc(Nindices * sizeof(uint16_t *));
+    if(!indices) printf("malloc fail at indices in LuaOperatorNewFullCoulomb. size = %u\n",Nindices);
 
-	for(uint32_t i = 0; i < Nindices; i++ )
+    for(uint32_t i = 0; i < Nindices; i++ )
+    {
+      lua_rawgeti(L, 2, i+1);
+      indices[i] = luaL_checkarray_unit16_t(L,-1,&temp);
+      if (i%2 == 0)
+      {
+        indToK.push_back(-(((int)temp-1)/2 + 1));
+      }
+      lua_pop(L,1);
+    }
+    lua_check(L,3,G);
+    op = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
+    if (Options.conserve)
+    {
+      printf("BSplie witch conserved Operator not yet implemented\n");
+    //CreateOperatorAtomicURelativisticOccupationConserving(NF,G,F,indToK,indices, op);
+    }
+    else
+    {
+      CreateOperatorAtomicUNonRelativistic(NF,G,indToK,indices,Options.Nweights, op);
+    }
+  }
+  else
+  {
+    return luaL_error(L, "Error in : Expected 3 or 4 parameters, not %i", len);
+  }
+  luaL_setmetatable(L,"Operator_Type");
+  for(uint32_t i = 0; i < Nindices; i++ )
 	{
 		free(indices[i]);
 	}

@@ -313,8 +313,8 @@ static int LuaOrthogonalizeWithNonOrthoBasis(lua_State *L)
 
 static int LuaMatrixTrace(lua_State *L)
 {
-	CompactMatrixType *M;
-	SparseMatrixType *S;
+	CompactMatrixType *M=NULL;
+	SparseMatrixType *S=NULL;
 	uint32_t len = (uint32_t) lua_gettop(L);
 	if (len != 1) luaL_error(L, "Matrix.Trace called with %d arguments, only one expected.", len);
 	if (luaL_isType(L, 1, *M))

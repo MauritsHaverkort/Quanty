@@ -232,7 +232,7 @@ static int LuaSparseMatrixSub(lua_State *L)
 static int LuaSparseMatrixMul(lua_State *L)
 {
 	SparseMatrixType S1, S2, *Sout;
-	double d;
+	double d=0;
 	Complex16 c;
 	bool isTimesMat = false, isTimesDouble = false, isTimesComplex = false;
 	if (luaL_isType(L, 1, S1) && luaL_isType(L, 2, S2))

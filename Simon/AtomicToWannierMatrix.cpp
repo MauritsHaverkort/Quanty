@@ -114,7 +114,7 @@ vector<map<string, double> > getWF_coefficients_Filecontent(const string &filena
 	int lz;
 	double weight;
 	size_t pos1, pos2;
-	bool isPrimaryOverlap, isWarningPrinted = false;
+	bool isPrimaryOverlap = false, isWarningPrinted = false;
 	M orbWeightsMap = M();
 	while (getline(file, line))
 	{
