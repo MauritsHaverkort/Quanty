@@ -87,6 +87,7 @@ private:
   {
     cout << endl;
     cout << blankFill(colWidth);
+    cout << " ";
     for (uint i = 0; i < (uint) headers.size(); ++i)
     {
       string name(headers[i]);
