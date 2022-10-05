@@ -3178,7 +3178,7 @@ static int LuaOperatorToMatrix(lua_State *L)
     Rho->Nj=H->NFermion;
     Rho->QComplex=0;
     InitCompactMatrix(Rho);
-    MeanFieldOperatorOneElectronMatrix(H, &HMat, *Rho);
+    if(MeanFieldOperatorOneElectronMatrix(H, &HMat, *Rho)) return luaL_error(L, "Mean-field operator failed\n");
     LuaPushTable_CompactMatrixType(L, &HMat);
     FreeCompactMatrix(&HMat);
     FreeCompactMatrix(Rho);
@@ -3233,11 +3233,11 @@ static int LuaOperatorToMatrix(lua_State *L)
           Rho = (CompactMatrixType *) luaL_checkCompactMatrix(L, 2);
           if(Options.AddDFTSelfInteraction==true)
           {
-            MeanFieldOperatorOneElectronMatrixWithDFTInteraction(H, &HMat, *Rho);
+            if (MeanFieldOperatorOneElectronMatrixWithDFTInteraction(H, &HMat, *Rho)) return luaL_error(L, "Mean-field operator failed\n");
           }
           else
           {
-            MeanFieldOperatorOneElectronMatrix(H, &HMat, *Rho);
+            if (MeanFieldOperatorOneElectronMatrix(H, &HMat, *Rho)) return luaL_error(L, "Mean-field operator failed\n");
           }
           LuaPushTable_CompactMatrixType(L, &HMat);
           FreeCompactMatrix(Rho);

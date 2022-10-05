@@ -201,7 +201,7 @@ static int LuaReadLenaBasisFunctions(lua_State *L)
 		//for (int i = 0; i < G[orbitalname].size(); i++) printf("%E\n",G[orbitalname][i]);
 	}
 
-	lua_createtable(L,0,Norbitals);
+	lua_createtable(L,Norbitals,0);
 	for (uint32_t i = 0; i < Norbitals; i++)
 	{
 		string charTostring(orbitalNames[i]);
@@ -220,7 +220,7 @@ static int LuaReadLenaBasisFunctions(lua_State *L)
 		}
 
 	}
-	lua_createtable(L,0,Norbitals);
+	lua_createtable(L,Norbitals,0);
 	for (uint32_t i = 0; i < Norbitals; i++)
 	{
 		string charTostring(orbitalNames[i]);
@@ -257,7 +257,7 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
     } Options;
     LuaOptionsType LuaEDOptions[]={
         {"Method","char*",&(Options.Method)},
-		{"Degree","uint32_t",&(Options.degree)},
+		    {"Degree","uint32_t",&(Options.degree)},
         {NULL, NULL, NULL}};
     Options.Method = (char*)"CubicSpline";
     Options.degree = 7;
@@ -316,7 +316,7 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
 		BSpline::GetKnotMatrix(knots,Options.degree,x,B);
 		dgetrf(&N,&N,&(B[0]),&N,&(IPIV[0]),&info);
 		if (info) printf("Error LuaReadFPLOBasisFunctions: dgetrf info = %d\n",info);
-		lua_createtable(L,0,Norbitals);
+		lua_createtable(L,Norbitals,0);
 		for (uint32_t i = 0; i < Norbitals; i++)
 		{
 			string charTostring(orbitalNames[i]);
@@ -342,7 +342,7 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
 	else
 	{
 		// Push large part on stack
-		lua_createtable(L,0,Norbitals);
+		lua_createtable(L,Norbitals,0);
 		for (uint32_t i = 0; i < Norbitals; i++)
 		{
 			string charTostring(orbitalNames[i]);
@@ -386,7 +386,7 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
 		// Push small part on stack
 		if (strcmp(Options.Method,"BSpline")==0)
 		{
-			lua_createtable(L,0,Norbitals);
+			lua_createtable(L,Norbitals,0);
 			for (uint32_t i = 0; i < Norbitals; i++)
 			{
 				string charTostring(orbitalNames[i]);
@@ -410,7 +410,7 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
 		}
 		else
 		{
-			lua_createtable(L,0,Norbitals);
+			lua_createtable(L,Norbitals,0);
 			for (uint32_t i = 0; i < Norbitals; i++)
 			{
 				string charTostring(orbitalNames[i]);

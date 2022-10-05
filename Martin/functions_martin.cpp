@@ -714,7 +714,7 @@ static int LuaCreateEigenDifferentials(lua_State *L)
 		if (Qrelativistic)
 		{
 			std::vector<Interpolation::CubicSpline*> eigendifferentialsG = std::vector<Interpolation::CubicSpline*>(NeigenDiffs);
-			lua_createtable(L,0,NeigenDiffs);
+			lua_createtable(L,NeigenDiffs,0);
 			for (uint32_t i = 0; i < NeigenDiffs; i++)
 			{
 				void* memory = lua_newuserdata(L, sizeof(Interpolation::CubicSpline));
@@ -724,7 +724,7 @@ static int LuaCreateEigenDifferentials(lua_State *L)
 
 			}
 			std::vector<Interpolation::CubicSpline*> eigendifferentialsF = std::vector<Interpolation::CubicSpline*>(NeigenDiffs);
-			lua_createtable(L,0,NeigenDiffs);
+			lua_createtable(L,NeigenDiffs,0);
 			for (uint32_t i = 0; i < NeigenDiffs; i++)
 			{
 				void* memory = lua_newuserdata(L, sizeof(Interpolation::CubicSpline));
@@ -739,7 +739,7 @@ static int LuaCreateEigenDifferentials(lua_State *L)
 	}
 
 	eigendifferentials = std::vector<Interpolation::CubicSpline*>(NeigenDiffs);
-	lua_createtable(L,0,NeigenDiffs);
+	lua_createtable(L,NeigenDiffs,0);
 	for (uint32_t i = 0; i < NeigenDiffs; i++)
 	{
 		void* memory = lua_newuserdata(L, sizeof(Interpolation::CubicSpline));
@@ -2313,7 +2313,7 @@ static int LuaOrthonormalizeContinuum(lua_State *L)
     
     lua_push(L,eigenval,NfunsUnbound);
     
-    lua_createtable(L,0,NfunsUnbound);
+    lua_createtable(L,NfunsUnbound,0);
 	for (uint32_t i = 0; i < NfunsUnbound; i++)
 	{
 			void* memory = lua_newuserdata(L, sizeof(Interpolation::CubicSpline));

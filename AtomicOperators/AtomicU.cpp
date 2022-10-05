@@ -114,17 +114,17 @@ static int LuaOperatorNewAtomicUGeneralFunction (lua_State *L)
 
 		if (NfunsG > Nindices)
 		{
-			printf("Warning: Martin.Coulomb() number of basis funs (%d) != number of indices (%d)\n",NfunsG , Nindices);
+			printf("Warning: NewOperator(\"AtomicU\",...) number of basis funs (%d) != number of indices (%d)\n",NfunsG , Nindices);
 			fflush(stdout);
 		}
 		else
 		{
 			if (NfunsG < Nindices)
 			{
-				return luaL_error(L, "Errorr: Martin.Coulomb() number of basis funs (%d) < number of indices (%d)\n",NfunsG , Nindices);
+				return luaL_error(L, "Errorr: NewOperator(\"AtomicU\",...) number of basis funs (%d) < number of indices (%d)\n",NfunsG , Nindices);
 			}
 		}
-		if (indToK.size() != Nindices) printf("Warning: Martin.Coulomb() number of kappas (%d) != number of indices (%d)\n",(uint32_t)indToK.size() , Nindices);
+		if (indToK.size() != Nindices) printf("Warning: NewOperator(\"AtomicU\",...) number of kappas (%d) != number of indices (%d)\n",(uint32_t)indToK.size() , Nindices);
 
 		vector<Interpolation::InterpolatingFunction *> funsG = vector<Interpolation::InterpolatingFunction *>(NfunsG);
 		for(uint32_t i = 0; i < NfunsG; i++)
@@ -182,14 +182,14 @@ static int LuaOperatorNewAtomicUGeneralFunction (lua_State *L)
 
 		if (NfunsG > Nindices/2)
 		{
-			printf("Warning: Martin.Coulomb() number of basis funs (%d) != number of indices (%d)\n",NfunsG , Nindices/2);
+			printf("Warning: NewOperator(\"AtomicU\",...) number of basis funs (%d) != number of indices (%d)\n",NfunsG , Nindices/2);
 			fflush(stdout);
 		}
 		else
 		{
 			if (NfunsG < Nindices/2)
 			{
-				return luaL_error(L, "Errorr: Martin.Coulomb() number of basis funs (%d) < number of indices (%d)\n",NfunsG , Nindices/2);
+				return luaL_error(L, "Errorr: NewOperator(\"AtomicU\",...) number of basis funs (%d) < number of indices (%d)\n",NfunsG , Nindices/2);
 			}
 		}
 
@@ -227,14 +227,14 @@ static int LuaOperatorNewAtomicUGeneralFunction (lua_State *L)
 
 		if (NfunsG > Nindices)
 		{
-			printf("Warning: Martin.Coulomb() number of basis funs (%d) != number of indices (%d)\n",NfunsG , Nindices);
+			printf("Warning: NewOperator(\"AtomicU\",...) number of basis funs (%d) != number of indices (%d)\n",NfunsG , Nindices);
 			fflush(stdout);
 		}
 		else
 		{
 			if (NfunsG < Nindices)
 			{
-				return luaL_error(L, "Errorr: Martin.Coulomb() number of basis funs (%d) < number of indices (%d)\n",NfunsG , Nindices);
+				return luaL_error(L, "Errorr: NewOperator(\"AtomicU\",...) number of basis funs (%d) < number of indices (%d)\n",NfunsG , Nindices);
 			}
 		}
 		
@@ -442,7 +442,7 @@ static int LuaOperatorNewContinuumU (lua_State *L)
 
     if ( len < 3 ||  len > 4)
     {
-    	return luaL_error(L,"Error in Martin.NewCoulomb: 3 or 4 arguments expected; got %d",len);
+    	return luaL_error(L,"Error in NewOperator(\"ContinuumU\",...): 3 or 4 arguments expected; got %d",len);
     }
 
     NF = (uint32_t)luaL_checkunsigned(L, 1);
@@ -492,17 +492,17 @@ static int LuaOperatorNewContinuumU (lua_State *L)
 
 		if (NfunsG > Nindices)
 		{
-			printf("Warning: Martin.Coulomb() number of basis funs (%d) != number of indices (%d)\n",NfunsG , Nindices);
+			printf("Warning: NewOperator(\"ContinuumU\",...) number of basis funs (%d) != number of indices (%d)\n",NfunsG , Nindices);
 			fflush(stdout);
 		}
 		else
 		{
 			if (NfunsG < Nindices)
 			{
-				return luaL_error(L, "Errorr: Martin.Coulomb() number of basis funs (%d) < number of indices (%d)\n",NfunsG , Nindices);
+				return luaL_error(L, "Errorr: NewOperator(\"ContinuumU\",...) number of basis funs (%d) < number of indices (%d)\n",NfunsG , Nindices);
 			}
 		}
-		if (indToK.size() != Nindices) printf("Warning: Martin.Coulomb() number of kappas (%d) != number of indices (%d)\n",(uint32_t)indToK.size() , Nindices);
+		if (indToK.size() != Nindices) printf("Warning: NewOperator(\"ContinuumU\",...) number of kappas (%d) != number of indices (%d)\n",(uint32_t)indToK.size() , Nindices);
 
 		vector<Interpolation::InterpolatingFunction *> funsG = vector<Interpolation::InterpolatingFunction *>(NfunsG);
 		for(uint32_t i = 0; i < NfunsG; i++)
@@ -553,14 +553,14 @@ static int LuaOperatorNewContinuumU (lua_State *L)
 
 		if (NfunsG > Nindices/2)
 		{
-			printf("Warning: Martin.Coulomb() number of basis funs (%d) != number of indices (%d)\n",NfunsG , Nindices/2);
+			printf("Warning: NewOperator(\"ContinuumU\",...) number of basis funs (%d) != number of indices (%d)\n",NfunsG , Nindices/2);
 			fflush(stdout);
 		}
 		else
 		{
 			if (NfunsG < Nindices/2)
 			{
-				return luaL_error(L, "Errorr: Martin.Coulomb() number of basis funs (%d) < number of indices (%d)\n",NfunsG , Nindices/2);
+				return luaL_error(L, "Errorr: NewOperator(\"ContinuumU\",...) number of basis funs (%d) < number of indices (%d)\n",NfunsG , Nindices/2);
 			}
 		}
 

@@ -22,7 +22,7 @@
                        printf("====    www.quanty.org                                   ====\n");\
                        printf("====    Beta version, be critical and report errors!!!   ====\n");\
                        printf("=============================================================\n");\
-                       printf("====    Version 0.7                                      ====\n");\
+                       printf("====    Version 0.7 beta                                 ====\n");\
                        printf("====            compiled at: %s at %s     ====\n",__DATE__,__TIME__);\
                        printf("=============================================================\n");\
                        printf("====    When used in scientific publications please cite ====\n");\
