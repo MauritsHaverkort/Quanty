@@ -1388,7 +1388,7 @@ static int LuaCreateResonantSpectraSE(lua_State *L)
   if(Options.E02==DBL_MAX)Options.E02=Options.E0;
 
   /* test if operator is Hermitian */
-  switch(QOperatorHermitian(*H1, 0.0001*Options.Settings.zero))
+  switch(QOperatorHermitian(*H1, Options.Settings.zero))
   {
     case 3 :
     {
@@ -1412,7 +1412,7 @@ static int LuaCreateResonantSpectraSE(lua_State *L)
       break;
     }
   }
-  switch(QOperatorHermitian(*H2, 0.0001*Options.Settings.zero))
+  switch(QOperatorHermitian(*H2, Options.Settings.zero))
   {
     case 3 :
     {

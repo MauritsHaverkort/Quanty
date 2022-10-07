@@ -1840,7 +1840,7 @@ static int LuaCreateSpectra(lua_State *L)
     }
   }
   /* test if operator is Hermitian */
-  switch(QOperatorHermitian(*H, 0.0001*Options.Settings.zero))
+  switch(QOperatorHermitian(*H, Options.Settings.zero))
   {
     case 3 :
     {
@@ -1850,7 +1850,7 @@ static int LuaCreateSpectra(lua_State *L)
     }
     case 2 :
     {
-      luaL_warning(L, "CreateSpectra called with an operator that is not fully Hermitian\nStrongly sugested to stop the calculation and repair this\n\n\n\nDo it\n\n\nReally Check this\n\n\nDid you?\n\n\n");
+      VerbosityPrintf(0x10, "CreateSpectra called with an operator that is not fully Hermitian\nStrongly sugested to stop the calculation and repair this\n\n\n\nDo it\n\n\nReally Check this\n\n\nDid you?\n\n\n");
       break;
     }
     case 1 :
@@ -2670,7 +2670,7 @@ static int LuaCreateResonantSpectra(lua_State *L)
       break;
     }
   }
-  switch(QOperatorHermitian(*H2, 0.0001*Options.Settings.zero))
+  switch(QOperatorHermitian(*H2, Options.Settings.zero))
   {
     case 3 :
     {
@@ -2951,7 +2951,7 @@ static int LuaCreateFluorescenceYield(lua_State *L)
   Spec->Name=(char*)malloc(sizeof(char));
   Spec->Name[0]='\0';
   /* test if H is Hermitian */
-  switch(QOperatorHermitian(*H, 0.0001*Options.Settings.zero))
+  switch(QOperatorHermitian(*H, Options.Settings.zero))
   {
     case 3 :
     {
@@ -3494,7 +3494,7 @@ static int LuaEigensystem(lua_State * L)
     }
   }
   /* test if operator is Hermitian */
-  switch(QOperatorHermitian(*Opp, 0.0001*Options.Settings.zero))
+  switch(QOperatorHermitian(*Opp, Options.Settings.zero))
   {
     case 3 :
     {
