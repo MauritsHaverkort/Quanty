@@ -1398,7 +1398,7 @@ static int LuaCreateResonantSpectraSE(lua_State *L)
     }
     case 2 :
     {
-      luaL_warning(L, "CreateResonantSpectra called with an operator (H1) that is not fully Hermitian\nStrongly sugested to stop the calculation and repair this\n\n\n\nDo it\n\n\nReally Check this\n\n\nDid you?\n\n\n");
+      VerbosityPrintf(0x10, "CreateResonantSpectra called with an operator that is not fully Hermitian\nStrongly sugested to stop the calculation and repair this\n\n\n\nDo it\n\n\nReally Check this\n\n\nDid you?\n\n\n");
       break;
     }
     case 1 :
@@ -1422,7 +1422,7 @@ static int LuaCreateResonantSpectraSE(lua_State *L)
     }
     case 2 :
     {
-      luaL_warning(L, "CreateResonantSpectra called with an operator (H2) that is not fully Hermitian\nStrongly sugested to stop the calculation and repair this\n\n\n\nDo it\n\n\nReally Check this\n\n\nDid you?\n\n\n");
+      VerbosityPrintf(0x10, "CreateResonantSpectra called with an operator that is not fully Hermitian\nStrongly sugested to stop the calculation and repair this\n\n\n\nDo it\n\n\nReally Check this\n\n\nDid you?\n\n\n");
       break;
     }
     case 1 :
