@@ -100,7 +100,7 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
       }
       for (uint p = 0; p < Nphrase; ++p) free(phrase[p]);
     }
-    if(strstr(ReadLine, "reciprocial lattice vectors") != NULL)
+    if( (strstr(ReadLine, "reciprocial lattice vectors") != NULL) || (strstr(ReadLine, "reciprocal lattice vectors") != NULL) )
     {
       for(i=0;i<3;i++)
       {

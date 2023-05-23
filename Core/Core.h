@@ -26,3 +26,5 @@
 #include "WaveFunctionArithmetic.h"
 #include "WaveFunctionPerturbationArithmetic.h"
 
+
+#include "FiniteTemperatureLanczos.h"
