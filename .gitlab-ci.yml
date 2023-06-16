@@ -1,1 +1,9 @@
+build-job:
+  stage: build
+  script:
+  - icc LuaInterface/main.cpp -D LUA_USE_LINUX -O3 -xHOST -no-multibyte-chars -std=c++11 -qopenmp -I/opt/intel_2020/compilers_and_libraries_2020.0.166/linux/mkl/include  -Wl,--start-group /opt/intel_2020/compilers_and_libraries_2020.0.166/linux/mkl/lib/intel64/libmkl_intel_lp64.a /opt/intel_2020/compilers_and_libraries_2020.0.166/linux/mkl/lib/intel64/libmkl_core.a /opt/intel_2020/compilers_and_libraries_2020.0.166/linux/mkl/lib/intel64/libmkl_intel_thread.a -Wl,--end-group -lpthread -lm -ldl -o Quanty.exe
 
+test-job1:
+  stage: test
+  script:
+  - Quanty.exe
