@@ -2,7 +2,7 @@
 test-job0:
   stage: build
   script:
-  - home/haverkort/programs/Quanty/bin/Quanty
+  - /home/haverkort/programs/Quanty/bin/Quanty
   
 build-job:
   stage: test
