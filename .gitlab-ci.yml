@@ -12,4 +12,6 @@ build-job:
 test-job1:
   stage: test
   script:
-  - Quanty.exe "Debug examples/Reference/Functions/BlockBandDiagonalize.Quanty"
+  - ./Quanty.exe "Debug examples/Reference/Functions/BlockBandDiagonalize.Quanty"
+  dependencies:
+  - build-job
