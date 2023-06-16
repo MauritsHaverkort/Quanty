@@ -1,4 +1,10 @@
-build-job:
+
+test-job0:
+  stage: test
+  script:
+  - Quanty
+  
+  build-job:
   stage: build
   script:
   - module load compiler/2022.1.0
