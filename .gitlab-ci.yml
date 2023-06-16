@@ -1,11 +1,11 @@
 
 test-job0:
-  stage: test
+  stage: build
   script:
   - Quanty
   
 build-job:
-  stage: build
+  stage: test
   script:
   - module load compiler/2022.1.0
   - module load mkl/2022.1.0
