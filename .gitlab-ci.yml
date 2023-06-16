@@ -8,10 +8,12 @@ build-job:
   artifacts:
     paths:
     - Quanty.exe
+    expire_in: 1 week
 
 test-job1:
   stage: test
   script:
+  - export OMP_NUM_THREADS=8
   - ./Quanty.exe "Debug examples/Reference/Functions/BlockBandDiagonalize.Quanty"
   dependencies:
   - build-job
