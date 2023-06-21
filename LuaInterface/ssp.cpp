@@ -3443,6 +3443,8 @@ static int LuaEigensystem(lua_State * L)
       // Note that this means that when we change the wave-function the original function is not changed (except for the values it points to
       // we need to copy the changed function back into the original at the end.
       psi=luaL_checkarray_WaveFunctionType(L, 2, &Npsi);
+      // all functions must be different, i.e. point ot a different location in memory
+      // here we check this
       for(i=0;i<Npsi;i++)
       {
         for(j=0;j<i;j++)
@@ -3461,12 +3463,19 @@ static int LuaEigensystem(lua_State * L)
           return luaL_error(L, "Out of memory in Eigensystem");
         }
       }
+      // normalize the wave-functions
+      for(i=0;i<Npsi;i++)
+      {
+        WaveFunctionNormalize(&(psi[i]));
+      }
     }
   }
   else
   {
     Npsi = 1;
     psi = (WaveFunctionType *) luaL_checkudata(L, 2, "Wavefunction_Type");
+    // normalize the wavefunction
+    WaveFunctionNormalize(psi);
   }
   if((len==2)&&(QStartRestrictions))
   {

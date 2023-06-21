@@ -5261,13 +5261,53 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylovComplex(OperatorType * H, Wav
 
 uint32_t BlockLanczosGroundStateConserveBasisKrylov(OperatorType *H, WaveFunctionType * const v, uint32_t const Npsi, ConvergenceSettingsType * Settings)
 {
+  uint32_t i,psiComplex=0;
   if(H->QComplex)
   {
+    // Hamiltonian is complex, the functions might be real.
+    // Turn all functions complex by adding a zero complex vector to it
+    for(i=0;i<Npsi;i++)
+    {
+      if(v[i].QComplex==0)
+      {
+        if (MakeComplexWaveFunctionFromReal( &(v[i]) , v[i]) )
+        {
+          printf("BlockLanczosGroundStateConserveBasisKrylov called with allocation of v[i] being real.\nAllocation faild when tried to expand real to complex\n");
+          return 1;
+        }
+      }
+    }
     return BlockLanczosGroundStateConserveBasisKrylovComplex(H, v, Npsi, Settings);
   }
   else
   {
-    return BlockLanczosGroundStateConserveBasisKrylovReal(H, v, Npsi, Settings);
+    // The Hamiltonian is real, the functions might be complex
+    // First test if one of the functions is complex
+    for(i=0;i<Npsi;i++)
+    {
+      if(v[i].QComplex==1) psiComplex=1;
+    }
+    if(psiComplex==0)
+    {
+      // all functions and Hamiltonian are real
+      return BlockLanczosGroundStateConserveBasisKrylovReal(H, v, Npsi, Settings);
+    }
+    // The Hamiltonian is real, some functions are complex
+    // TODO: here we should generate more real functions as a starting point by splitting the functions to their real and imaginary part
+    //       and then run a full real calculation
+    //       For now we run a complex calculation
+    for(i=0;i<Npsi;i++)
+    {
+      if(v[i].QComplex==0)
+      {
+        if (MakeComplexWaveFunctionFromReal( &(v[i]) , v[i]) )
+        {
+          printf("BlockLanczosGroundStateConserveBasisKrylov called with allocation of v[i] being real.\nAllocation faild when tried to expand real to complex\n");
+          return 1;
+        }
+      }
+    }
+    return BlockLanczosGroundStateConserveBasisKrylovComplex(H, v, Npsi, Settings);
   }
 }
 
@@ -5316,8 +5356,19 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylovRecalculate(OperatorType * H,
 uint32_t BlockLanczosGroundStateConserveBasis(OperatorType * H, WaveFunctionType * const psi, uint32_t const Npsi, ConvergenceSettingsType * Settings)
 {
   uint32_t i,MaxAlloc=2*Npsi+Settings->NKrylovMax, StartAlloc=2*Npsi+Settings->NKrylovStart;
+  double Norm;
   WaveFunctionType *v;
   VerbosityPrintf(0x10000000,"Start of BlockLanczosGroundStateConserveBasis\n");
+  VerbosityPrintf(0x10000000,"Norm  ");
+  for(i=0;i<Npsi;i++)
+  {
+    WaveFunctionCalculateNorm(psi[i], &Norm);
+    VerbosityPrintf(0x10000000,"%22.15E ",Norm);
+  }
+  VerbosityPrintf(0x10000000,"\n");
+  
+  
+  
   // for small basises do a dense calculation
   if(psi[0].N<=Settings->DenseBorder) return BlockLanczosGroundStateConserveBasisDense(*H,psi, Npsi);
   // create the vectors v in memory.
