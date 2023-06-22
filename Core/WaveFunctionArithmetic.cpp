@@ -362,21 +362,13 @@ void WaveFunctionReset(WaveFunctionType * psi)
 
 
 /* Add the complex values (and allocs)
- *  
+ * Note that this function generates a complex function that points to the same arrays as the old real function.
+ * you either call it with the function and a pointer to the same funciton or you need to take care on deallocating the real function.
  */
-uint32_t MakeComplexWaveFunctionFromReal(WaveFunctionType * Cpsi, WaveFunctionType psi)
+uint32_t MakeComplexWaveFunctionFromReal(WaveFunctionType * Cpsi, const WaveFunctionType psi)
 {
   uint32_t i, j;
-  Cpsi->N = psi.N;
-  Cpsi->NBlok = psi.NBlok;
-  Cpsi->NFermion = psi.NFermion;
-  Cpsi->NBoson = psi.NBoson;
-  Cpsi->NWord = psi.NWord;
-  Cpsi->ValueRe = psi.ValueRe;
-  Cpsi->Next = psi.Next;
-  Cpsi->Determinant = psi.Determinant;
-  Cpsi->NBitsKey = psi.NBitsKey;
-  Cpsi->KeyList = psi.KeyList;
+  *Cpsi = psi;
   Cpsi->ValueIm = (double **)malloc(Cpsi->NBlok * sizeof(double *));
   if (Cpsi->ValueIm == NULL)
   {
@@ -401,28 +393,66 @@ uint32_t MakeComplexWaveFunctionFromReal(WaveFunctionType * Cpsi, WaveFunctionTy
 }
 
 /* free the complex values, keep the real
- *
+ * Note that this function destroys the original psi, which still is complex but has no allocation of the complex part.
  */
-uint32_t MakeRealWaveFunctionFromComplex(WaveFunctionType Cpsi, WaveFunctionType * psi)
+uint32_t MakeRealWaveFunctionFromComplex(const WaveFunctionType Cpsi, WaveFunctionType * psi)
 {
   uint32_t i;
-  psi->N = Cpsi.N;
-  psi->NBlok = Cpsi.NBlok;
-  psi->NFermion = Cpsi.NFermion;
-  psi->NBoson = Cpsi.NBoson;
-  psi->NWord = Cpsi.NWord;
-  psi->ValueRe = Cpsi.ValueRe;
-  psi->ValueIm = Cpsi.ValueIm;
-  psi->Next = Cpsi.Next;
-  psi->Determinant = Cpsi.Determinant;
-  psi->NBitsKey = Cpsi.NBitsKey;
-  psi->KeyList = Cpsi.KeyList;
+  *psi = Cpsi;
   for (i = 0; i < psi->NBlok; i++)
   {
     free(psi->ValueIm[i]);
   }
   free(psi->ValueIm);
   psi->QComplex = 0;
+  return 0;
+}
+
+
+/* Rotate the complex function to maximize the real part
+ * then discard the complex part.
+ * Note that this function destroys the original psi, which still is complex but has no allocation of the complex part.
+ */
+uint32_t MakeRealWaveFunctionFromComplexAccordingToNorm(const WaveFunctionType Cpsi, WaveFunctionType * psi)
+{
+  uint32_t i;
+  *psi = Cpsi;
+  double ReRe, ReIm, ImIm, a, b;
+  ComplexWaveFunctionCalculateNormReandImseperate(&Cpsi, &ReRe, &ImIm, &ReIm);
+  if(ReRe>ImIm)
+  {
+    if(abs(ReIm) < sqrt(DBL_EPSILON) * (ReRe-ImIm) )
+    {
+      a = 1;
+      b = 0;
+    }
+    else
+    {
+      a = ReRe - ImIm + sqrt(4 * ReIm * ReIm + (ReRe - ImIm) * (ReRe - ImIm) );
+      b = 2 * ReIm;
+    }
+  }
+  else
+  {
+    if(abs(ReIm) < sqrt(DBL_EPSILON) * (ImIm-ReRe) )
+    {
+      a = 0;
+      b = 1;
+    }
+    else
+    {
+      b = ImIm - ReRe + sqrt(4 * ReIm * ReIm + (ImIm - ReRe) * (ImIm - ReRe) );
+      a = 2 * ReIm;
+    }
+  }
+  ComplexWaveFunctionComplexMultiply(psi, a, b);
+  for (i = 0; i < psi->NBlok; i++)
+  {
+    free(psi->ValueIm[i]);
+  }
+  free(psi->ValueIm);
+  psi->QComplex = 0;
+  RealWaveFunctionNormalize(psi);
   return 0;
 }
 

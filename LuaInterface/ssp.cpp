@@ -3513,7 +3513,45 @@ static int LuaEigensystem(lua_State * L)
     }
     case 2 :
     {
-      VerbosityPrintf(0x10, "Eigensystem called with an operator that is not fully Hermitian\nStrongly sugested to stop the calculation and repair this\n\n\n\nDo it\n\n\nReally Check this\n\n\nDid you?\n\n\n");
+      VerbosityPrintf(0x1, "===========Warning===================\n");
+      VerbosityPrintf(0x1, "Eigensystem called with an operator that is not fully Hermitian\n");
+      VerbosityPrintf(0x1, "I now will try to repair this.\n");
+      VerbosityPrintf(0x1, "Replace Opp by NormalOrder ( 0.5(Opp + ConjugateTranspose(Opp) ), chop at the level DBL_epsilon * zero and repeat once.\n");
+      OperatorType OT;
+      if (OperatorConjugateTransposeNormalOrder(*Opp, &OT, QDetNotOrderedFcFaBaBc))
+      {
+        printf("WARNING: OperatorConjugateTransposeNormalOrder failed in LuaEigensystem, this should not happen\n");
+        printf("my guess is that you are out of memory and will crash soon\n");
+        FreeOperator(&OT);
+        break;
+      };
+      if (OperatorAddNormalOrder(&OT, *Opp, 1, 0, QDetNotOrderedFcFaBaBc))
+      {
+        printf("WARNING: OperatorAddNormalOrder failed in LuaEigensystem, this should not happen\n");
+        printf("my guess is that you are out of memory and will crash soon\n");
+        FreeOperator(&OT);
+        break;
+      };
+      OperatorScale(&OT, 0.5, 0);
+      OperatorChop(&OT, DBL_EPSILON * Options.Settings.zero);
+      FreeOperator(Opp);
+      if (OperatorConjugateTransposeNormalOrder(OT, Opp, QDetNotOrderedFcFaBaBc))
+      {
+        printf("WARNING: OperatorConjugateTransposeNormalOrder failed in LuaEigensystem, this should not happen\n");
+        printf("my guess is that you are out of memory and will crash soon\n");
+        FreeOperator(&OT);
+        return 1;
+      };
+      if (OperatorAddNormalOrder(Opp, OT, 1, 0, QDetNotOrderedFcFaBaBc))
+      {
+        printf("WARNING: OperatorAddNormalOrder failed in LuaEigensystem, this should not happen\n");
+        printf("my guess is that you are out of memory and will crash soon\n");
+        FreeOperator(&OT);
+        break;
+      };
+      OperatorScale(Opp, 0.5, 0);
+      OperatorChop(Opp, DBL_EPSILON * Options.Settings.zero);
+      FreeOperator(&OT);
       break;
     }
     case 1 :

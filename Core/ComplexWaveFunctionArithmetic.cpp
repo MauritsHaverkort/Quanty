@@ -891,6 +891,40 @@ double ComplexWaveFunctionCalculateNorm(const WaveFunctionType a)
   return Norm;
 }
 
+
+/*
+*   calculate a.Re a.Re, a.Im a.Im, and a.Re a.Im
+*/
+void ComplexWaveFunctionCalculateNormReandImseperate(const WaveFunctionType * const a,  double *ReRe, double *ImIm,  double *ReIm)
+{
+  uint32_t iBlok, iElement;
+  int    iOMP;
+  iBlok = a->NBlok - 1;
+  double NormReReA = 0, NormReReB = 0, NormReImA = 0, NormReImB = 0, NormImImA = 0, NormImImB = 0;
+#pragma omp parallel for private(iElement) reduction(+ : NormReReA, NormReImA, NormImImA)
+  for (iOMP = 0; iOMP <= (int)(a->N - iBlok * BlokSize); ++iOMP)
+  {
+    iElement = (uint32_t) iOMP;
+    NormReReA += a->ValueRe[iBlok][iElement] * a->ValueRe[iBlok][iElement];
+    NormReImA += a->ValueRe[iBlok][iElement] * a->ValueIm[iBlok][iElement];
+    NormImImA += a->ValueIm[iBlok][iElement] * a->ValueIm[iBlok][iElement];
+  }
+#pragma omp parallel for private(iElement,iBlok) reduction(+ : NormReReB, NormReImB, NormImImB)
+  for (iOMP = 0; iOMP < (int)(a->NBlok - 1); iOMP++)
+  {
+    iBlok = (uint32_t) iOMP;
+    for (iElement = 0; iElement < BlokSize; ++iElement)
+    {
+      NormReReB += a->ValueRe[iBlok][iElement] * a->ValueRe[iBlok][iElement];
+      NormReImB += a->ValueRe[iBlok][iElement] * a->ValueIm[iBlok][iElement];
+      NormImImB += a->ValueIm[iBlok][iElement] * a->ValueIm[iBlok][iElement];
+    }
+  }
+  *ReRe = NormReReA + NormReReB;
+  *ReIm = NormReImA + NormReImB;
+  *ImIm = NormImImA + NormImImB;
+}
+
 /*
  *   <-|a|
  */

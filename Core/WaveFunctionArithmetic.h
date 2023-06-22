@@ -7,6 +7,7 @@ uint32_t WaveFunctionInitCopyBasis(WaveFunctionType * Psi, WaveFunctionType cons
 void WaveFunctionReset(WaveFunctionType * psi);
 uint32_t MakeComplexWaveFunctionFromReal(WaveFunctionType * Cpsi, WaveFunctionType psi);
 uint32_t MakeRealWaveFunctionFromComplex(WaveFunctionType Cpsi, WaveFunctionType * psi);
+uint32_t MakeRealWaveFunctionFromComplexAccordingToNorm(const WaveFunctionType Cpsi, WaveFunctionType * psi);
 void WaveFunctionFree(WaveFunctionType * const psi);
 void WaveFunctionFreeValues(WaveFunctionType * const psi);
 uint32_t QWaveFunctionSameBasis(WaveFunctionType const * const psiA, WaveFunctionType const * const psiB);

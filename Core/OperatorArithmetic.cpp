@@ -190,8 +190,7 @@ uint32_t MakeRealOperatorFixedLengthComplex(OperatorType * const O, const uint32
     return 0;
   if (O->l[length].NAloc == 0)
   {
-    O->l[length].QComplex = 1;
-    SetQComplexOperator(O);
+    // Operators of length 0 stay real.
     return 0;
   }
   if ((O->l[length].V = (Complex16*)malloc(O->l[length].NAloc * sizeof(Complex16))) == NULL)
@@ -1188,6 +1187,12 @@ Complex16 ComplexOperatorPrefactorLader(const OperatorType * const O, const uint
  */
 uint32_t OperatorAddLader(OperatorType * const O, const uint16_t * const oadd, const uint32_t length, const double VRe, const double VIm)
 {
+  // Operators that have no space allocated must be real
+  // This should be garanteed at other places in the code.
+  // If not this function returns junk.
+  // One can make the function safe with against this misuse at other places with the following adition.
+  // Only do this if you want to debug.
+  // if (O->l[length].NAloc==0) O->l[length].QComplex=0;
   if (O->l[length].QComplex)
   {
     return ComplexOperatorAddLader(O, oadd, length, VRe, VIm);

@@ -5293,21 +5293,19 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylov(OperatorType *H, WaveFunctio
       return BlockLanczosGroundStateConserveBasisKrylovReal(H, v, Npsi, Settings);
     }
     // The Hamiltonian is real, some functions are complex
-    // TODO: here we should generate more real functions as a starting point by splitting the functions to their real and imaginary part
-    //       and then run a full real calculation
-    //       For now we run a complex calculation
+    // Make the functions real such that we maximize the norm of the function
+    // If we have more than one function we need to be a bit carefull the states up + I down and up - I down could reduce to up up.
+    // In order to prevent this we loop over the states and orthogonalize the real part of state i to the real part of states 0 to i-1.
     for(i=0;i<Npsi;i++)
     {
-      if(v[i].QComplex==0)
+      if(v[i].QComplex==1)
       {
-        if (MakeComplexWaveFunctionFromReal( &(v[i]) , v[i]) )
-        {
-          printf("BlockLanczosGroundStateConserveBasisKrylov called with allocation of v[i] being real.\nAllocation faild when tried to expand real to complex\n");
-          return 1;
-        }
+        // The wave function v[i] is complex, we however want to orthogonalize the real part to the previous known functions
+        if(i!=0) RealWaveFunctionOrthogonalizeSameBasis(&(v[i]), v, i-1);
+        MakeRealWaveFunctionFromComplexAccordingToNorm(v[i], &(v[i]));
       }
     }
-    return BlockLanczosGroundStateConserveBasisKrylovComplex(H, v, Npsi, Settings);
+    return BlockLanczosGroundStateConserveBasisKrylovReal(H, v, Npsi, Settings);
   }
 }
 
@@ -5356,19 +5354,8 @@ uint32_t BlockLanczosGroundStateConserveBasisKrylovRecalculate(OperatorType * H,
 uint32_t BlockLanczosGroundStateConserveBasis(OperatorType * H, WaveFunctionType * const psi, uint32_t const Npsi, ConvergenceSettingsType * Settings)
 {
   uint32_t i,MaxAlloc=2*Npsi+Settings->NKrylovMax, StartAlloc=2*Npsi+Settings->NKrylovStart;
-  double Norm;
   WaveFunctionType *v;
   VerbosityPrintf(0x10000000,"Start of BlockLanczosGroundStateConserveBasis\n");
-  VerbosityPrintf(0x10000000,"Norm  ");
-  for(i=0;i<Npsi;i++)
-  {
-    WaveFunctionCalculateNorm(psi[i], &Norm);
-    VerbosityPrintf(0x10000000,"%22.15E ",Norm);
-  }
-  VerbosityPrintf(0x10000000,"\n");
-  
-  
-  
   // for small basises do a dense calculation
   if(psi[0].N<=Settings->DenseBorder) return BlockLanczosGroundStateConserveBasisDense(*H,psi, Npsi);
   // create the vectors v in memory.
