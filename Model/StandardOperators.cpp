@@ -3970,3 +3970,58 @@ uint32_t CreateRandomTwoParticleOperator(uint32_t const NFermion, uint32_t const
   return 0;
 }
 
+int CreateOperatorHarmonicOscillatorOnStandingWaves(double const a, uint32_t const nmax, OperatorType * const op1)
+{
+  // generates the potential and kinetic energy terms of an harmonic oscillator on a basis of plane waves.
+  // The box for the plane waves is of size a
+  // .......
+  // Order of spins is {dn, up, dn, up, dn, up,...}
+  uint16_t i,j;
+  uint16_t oadd[2];
+  uint32_t iSqr;
+  double val;
+  double const aSqr = Sqr(a);
+  InitNamedOperator(op1, "Harmonic Oscillator Kin+Pot");
+  op1->NFermion = 2*nmax;
+  op1->NWord = Min(op1->NFermion, 1 + (op1->NFermion - 1) / 8);
+  InitOperatorFixedLength(op1, 2, 8);
+  for(i=0;i<nmax;i++)
+  {
+    iSqr = i*i;
+    for(j=0;j<nmax;j++)
+    {
+      if(i==j)
+      {
+        val = (iSqr*PiSqr / (2*aSqr) + (aSqr/24) * (1 - 6/(iSqr*PiSqr)));
+      }
+      else
+      {
+        val = ((4*aSqr*i*j)/(Sqr(iSqr-Sqr(j))*PiSqr));
+      }
+      oadd[1] = CrAnMask + 2*i;
+      oadd[0] = 2*j;
+      RealOperatorAddLader(op1, oadd, 2, val);
+      oadd[1] = CrAnMask + 2*i+1;
+      oadd[0] = 2*j+1;
+      RealOperatorAddLader(op1, oadd, 2, val);
+    }
+  }
+  
+  
+  return 0;
+}
+
+int CreateOperatorHarmonicOscillatorOnStandingWavesPointInteraction(double const a, uint32_t const nmax, OperatorType * const op2)
+{
+  return 0;
+}
+
+int CreateOperatorHarmonicOscillatorOnStandingWavesOnBasis(double const a, uint32_t const nmax, CompactMatrixType const * const vec ,OperatorType * const op1)
+{
+  return 0;
+}
+
+int CreateOperatorHarmonicOscillatorOnStandingWavesPointInteractionOnBasis(double const a, uint32_t const nmax, CompactMatrixType const * const vec ,OperatorType * const op2)
+{
+  return 0;
+}

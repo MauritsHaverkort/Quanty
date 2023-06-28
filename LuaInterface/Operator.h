@@ -35,6 +35,7 @@ static int LuaOperatorNewCreate(lua_State * L);
 static int LuaOperatorNewAnnihilate(lua_State * L);
 static int LuaOperatorNewIdentity(lua_State * L);
 static int LuaOperatorNewNumber(lua_State * L);
+static int LuaOperatorNewHarmonicOscillatorOnStandingWaves(lua_State * L);
 static int LuaOperatorExp(lua_State * L);
 static int LuaOperatorAdd(lua_State * L);
 static int LuaOperatorSub(lua_State * L);

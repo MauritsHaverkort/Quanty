@@ -59,3 +59,11 @@ uint32_t CreateOperatorNumberShell(uint32_t const NFermion, uint32_t const Nelec
 uint32_t CreateOperatorIdentity(uint32_t const NFermion, OperatorType * const OppN);
 uint32_t CreateOperatorNumberShellSqr(uint32_t const NFermion, uint32_t const Nelectron, const uint16_t * const index, OperatorType * const OppNSqr);
 uint32_t CreateRandomTwoParticleOperator(uint32_t const NFermion, uint32_t const QComplex, OperatorType * const Opp);
+int CreateOperatorHarmonicOscillatorOnStandingWaves(double const a, uint32_t const nmax, OperatorType * const op1);
+int CreateOperatorHarmonicOscillatorOnStandingWavesPointInteraction(double const a, uint32_t const nmax, OperatorType * const op2);
+int CreateOperatorHarmonicOscillatorOnStandingWavesOnBasis(double const a, uint32_t const nmax, CompactMatrixType const * const vec ,OperatorType * const op1);
+int CreateOperatorHarmonicOscillatorOnStandingWavesPointInteractionOnBasis(double const a, uint32_t const nmax, CompactMatrixType const * const vec ,OperatorType * const op2);
+
+
+
+

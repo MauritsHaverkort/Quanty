@@ -870,6 +870,12 @@ static int LuaNewOperator(lua_State * L)
     lua_remove(L, 1);
     return LuaOperatorNewIdentity(L);
   }
+  if ((strcmp(OT, "HarmonicOscillatorOnStandingWaves") == 0)||(strcmp(OT, "HOSW") == 0))
+  {
+    lua_remove(L, 1);
+    return LuaOperatorNewHarmonicOscillatorOnStandingWaves(L);
+  }
+  
   return luaL_error(L, "ERROR: first argument in NewOperator (%s) is not recognized as a known operatortype\n See Help(\"NewOperator\") for more information\n",OT);
 }
 

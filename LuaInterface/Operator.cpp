@@ -2,6 +2,10 @@
  *  depending on the first argument of NewOperator different types of standard operators are created. Here the implementation
  */
 
+
+
+
+
 static int LuaOperatorNewCoulomb(lua_State * L)
 {
   struct
@@ -4477,6 +4481,52 @@ static int LuaOperatorNewNumber(lua_State * L)
   }
   return 1;
 }
+
+
+
+static int LuaOperatorNewHarmonicOscillatorOnStandingWaves(lua_State * L)
+{
+  OperatorType *op1, *op2;
+  uint32_t len = (uint32_t)lua_gettop(L);
+  if(len==2)
+  {
+    double a = (double)luaL_checknumber(L, 1);
+    uint32_t nmax = (uint32_t)luaL_checkunsigned(L, 2);
+    if(a<0) return luaL_error(L, "Error in LuaOperatorNewHarmonicOscillatorOnStandingWaves, a should be positive not %f\n",a);
+    op1 = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+    CreateOperatorHarmonicOscillatorOnStandingWaves(a,nmax,op1);
+    luaL_setmetatable(L, "Operator_Type");
+    op2 = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+    CreateOperatorHarmonicOscillatorOnStandingWavesPointInteraction(a,nmax,op2);
+    luaL_setmetatable(L, "Operator_Type");
+  }
+  else if(len==3)
+  {
+    double a = (double)luaL_checknumber(L, 1);
+    uint32_t nmax = (uint32_t)luaL_checkunsigned(L, 2);
+    CompactMatrixType *vec;
+    vec = luaL_checkCompactMatrix(L, 3);
+    if(a<0) return luaL_error(L, "Error in LuaOperatorNewHarmonicOscillatorOnStandingWaves, a should be positive not %f\n",a);
+    if(!((vec->Nj==nmax)||(vec->Nj==2*nmax))) return luaL_error(L, "Error in LuaOperatorNewHarmonicOscillatorOnStandingWaves. The dimension of the matrix defining the basis (%d) should be equal to nmax (%d) or 2*nmax.\n",vec->Nj,nmax);
+    op1 = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+    CreateOperatorHarmonicOscillatorOnStandingWavesOnBasis(a,nmax,vec,op1);
+    luaL_setmetatable(L, "Operator_Type");
+    op2 = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+    CreateOperatorHarmonicOscillatorOnStandingWavesPointInteractionOnBasis(a,nmax,vec,op2);
+    luaL_setmetatable(L, "Operator_Type");
+  }
+  else
+  {
+    return luaL_error(L, "Error in LuaOperatorNewHarmonicOscillatorOnStandingWaves, expected 2 or 3 arguments, not %d\n",len);
+  }
+  return 2;
+}
+
+
+
+
+
+
 
 static int LuaOperatorExp(lua_State * L)
 {
