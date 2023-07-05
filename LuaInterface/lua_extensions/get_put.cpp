@@ -362,9 +362,9 @@ uint32_t LuaASCIIStreamPrint(lua_State *L, int narg, FILE * stream)
       OperatorType *a = (OperatorType *) luaL_checkudata(L, narg, "Operator_Type");
       fprintf(stream, "NewOperator( %d, %d,{\n",a->NFermion,a->NBoson);
       komma=false;
-      if(a->QComplex)
+      for(l=0;l<=a->MaxLength;l++)
       {
-        for(l=0;l<=a->MaxLength;l++)
+        if(a->l[l].QComplex)
         {
           for(i=0;i<a->l[l].N;i++)
           {
@@ -393,10 +393,7 @@ uint32_t LuaASCIIStreamPrint(lua_State *L, int narg, FILE * stream)
             fprintf(stream,"%22.15E }",Abs(a->l[l].V[i].Im));
           }
         }
-      }
-      else
-      {
-        for(l=0;l<=a->MaxLength;l++)
+        else
         {
           for(i=0;i<a->l[l].N;i++)
           {
