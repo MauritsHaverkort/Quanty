@@ -3970,58 +3970,1140 @@ uint32_t CreateRandomTwoParticleOperator(uint32_t const NFermion, uint32_t const
   return 0;
 }
 
-int CreateOperatorHarmonicOscillatorOnStandingWaves(double const a, uint32_t const nmax, OperatorType * const op1)
+int CreateOperatorHarmonicOscillatorOnStandingWaves(double const a, uint32_t const nmax, OperatorType *const op1)
 {
-  // generates the potential and kinetic energy terms of an harmonic oscillator on a basis of plane waves.
+  // generates the potential and kinetic energy terms for the problem of particles in a harmonic-oscillator trap on a basis of standing waves.
   // The box for the plane waves is of size a
-  // .......
+  // nmax is the total number of standing waves to be used (here NF = 2*nmax)
   // Order of spins is {dn, up, dn, up, dn, up,...}
-  uint16_t i,j;
+
+  uint16_t i, j;
+  uint16_t n1, n2;
+  // Variable for the indecies of Cr and An operator
   uint16_t oadd[2];
-  uint32_t iSqr;
+  uint16_t tmp;
+  uint32_t n1Sqr;
+  // Variable for the matrix elements of the Hamiltonain (here H is a square matrix since it is a one particle part op)
   double val;
   double const aSqr = Sqr(a);
+  // Defining name for op1
   InitNamedOperator(op1, "Harmonic Oscillator Kin+Pot");
-  op1->NFermion = 2*nmax;
+  op1->NFermion = 2 * nmax;
+  // number of words (meaning the number of 8-bit blocks needed for storing bitstrings)
   op1->NWord = Min(op1->NFermion, 1 + (op1->NFermion - 1) / 8);
-  InitOperatorFixedLength(op1, 2, 8);
-  for(i=0;i<nmax;i++)
+  InitOperatorFixedLength(op1, 2, (uint32_t)floor(log(nmax * nmax * nmax) / log(2.0)));
+
+  // first adding the diagonal elements
+  for (i = 0; i < nmax; i++)
   {
-    iSqr = i*i;
-    for(j=0;j<nmax;j++)
+    n1 = i + 1;
+    n1Sqr = n1 * n1;
+    val = (n1Sqr * PiSqr / (2 * aSqr) + (aSqr / 24) * (1 - 6 / (n1Sqr * PiSqr)));
+
+    oadd[1] = CrAnMask + 2 * i;
+    oadd[0] = 2 * i;
+    RealOperatorAddLaderNormalOrder(op1, oadd, 2, val, &QDetNotOrderedFcFaBcBa);
+    oadd[1] = CrAnMask + 2 * i + 1;
+    oadd[0] = 2 * i + 1;
+    RealOperatorAddLaderNormalOrder(op1, oadd, 2, val, &QDetNotOrderedFcFaBcBa);
+  }
+
+  // now adding the off-diagonal elements (going over only half of the elements since H is hermitian)
+  for (i = 0; i < nmax; i++)
+  {
+    n1 = i + 1;
+    n1Sqr = n1 * n1;
+    for (j = i + 2; j < nmax; j += 2)
     {
-      if(i==j)
-      {
-        val = (iSqr*PiSqr / (2*aSqr) + (aSqr/24) * (1 - 6/(iSqr*PiSqr)));
-      }
-      else
-      {
-        val = ((4*aSqr*i*j)/(Sqr(iSqr-Sqr(j))*PiSqr));
-      }
-      oadd[1] = CrAnMask + 2*i;
-      oadd[0] = 2*j;
-      RealOperatorAddLader(op1, oadd, 2, val);
-      oadd[1] = CrAnMask + 2*i+1;
-      oadd[0] = 2*j+1;
-      RealOperatorAddLader(op1, oadd, 2, val);
+      n2 = j + 1;
+      val = ((4 * aSqr * n1 * n2) / (Sqr(n1Sqr - Sqr(n2)) * PiSqr));
+
+      oadd[1] = CrAnMask + 2 * i;
+      oadd[0] = 2 * j;
+      //       printf("In CreateOperatorHarmonicOscillatorOnStandingWaves we have oadd[1] = %i oadd[0] = %i and CrAnMask = %i\n", oadd[1], oadd[0], CrAnMask);
+      RealOperatorAddLaderNormalOrder(op1, oadd, 2, val, &QDetNotOrderedFcFaBcBa);
+      // and complex conjugate of the above operator
+      tmp = CrAnMask + oadd[1];
+      oadd[1] = CrAnMask + oadd[0];
+      oadd[0] = tmp;
+      RealOperatorAddLaderNormalOrder(op1, oadd, 2, val, &QDetNotOrderedFcFaBcBa);
+
+      oadd[1] = CrAnMask + 2 * i + 1;
+      oadd[0] = 2 * j + 1;
+      RealOperatorAddLaderNormalOrder(op1, oadd, 2, val, &QDetNotOrderedFcFaBcBa);
+      // and complex conjugate of the above operator
+      tmp = CrAnMask + oadd[1];
+      oadd[1] = CrAnMask + oadd[0];
+      oadd[0] = tmp;
+      RealOperatorAddLaderNormalOrder(op1, oadd, 2, val, &QDetNotOrderedFcFaBcBa);
     }
   }
-  
-  
+
   return 0;
 }
 
-int CreateOperatorHarmonicOscillatorOnStandingWavesPointInteraction(double const a, uint32_t const nmax, OperatorType * const op2)
+int CreateOperatorHarmonicOscillatorOnStandingWavesPointInteraction(double const a, uint32_t const nmax, OperatorType *const op2)
 {
+  // generates the point-contact interaction part of the Hamiltonian for
+  // the problem of particles in a harmonic-oscillator trap on a basis of standing waves.
+  // Here the two particle terms are of the form:
+  // Sum_{n1,n2,n3,n4} V_{n1,n2,n3,n4} a^{+}_{n1,Dn} a^{+}_{n2,Up} a_{n3,Up} a_{n4,Dn}
+  // where n1+n2+n3+n4 must be an even number.
+  // The box for the stadning waves is of size a
+  // nmax is the total number of standing waves to be used (here NF = 2*nmax)
+  // Order of spins is {dn, up, dn, up, dn, up,...}
+
+  // Defining name for op2
+  InitNamedOperator(op2, "Harmonic Oscillator Point-Contact");
+  op2->NFermion = 2 * nmax;
+  // number of words (meaning the number of 8-bit blocks needed for storing bitstrings)
+  op2->NWord = Min(op2->NFermion, 1 + (op2->NFermion - 1) / 8);
+  InitOperatorFixedLength(op2, 4, (uint32_t)floor(log(nmax * nmax * nmax) / log(2.0)));
+
+  uint16_t n2, n3, n4;
+  int n1;
+  // Variable for the indecies of Cr and An operator
+  uint16_t oadd[4];
+  // Variable for the coefficients of the terms in the Hamiltonain (i.e. here we have a sum of two-particle operators)
+  double ainv = 1 / (2 * a);
+
+  // simple examples illustrating the order of Cr and An ops when defining the op
+  /*oadd[0] = CrAnMask + 8;
+  oadd[1] = CrAnMask + 9;
+  oadd[2] = 1;
+  oadd[3] = 2;
+  RealOperatorAddLader(op2, oadd, 4, 1.);
+
+  oadd[0] = 6;
+  oadd[1] = 5;
+  oadd[2] = CrAnMask + 4;
+  oadd[3] = CrAnMask + 2;
+  RealOperatorAddLader(op2, oadd, 4, -2.);
+
+  oadd[3] = CrAnMask + 1;
+  oadd[2] = CrAnMask + 2;
+  oadd[1] = 3;
+  oadd[0] = 4;
+  RealOperatorAddLader(op2, oadd, 4, -3.5);*/
+
+  /*
+    Operator of Length   4
+    QComplex      =          0 (Real==0 or Complex==1)
+    N             =          3 (number of operators of length   4)
+    A  2 A  1 C  9 C  8 |  1.00000000000000E+00
+    C  2 C  4 A  5 A  6 | -2.00000000000000E+00
+    C  1 C  2 A  3 A  4 | -3.50000000000000E+00
+   */
+
+  for (n2 = 0; n2 < nmax; n2++)
+  {
+    for (n3 = 0; n3 < nmax; n3++)
+    {
+      for (n4 = 0; n4 < nmax; n4++)
+      {
+        oadd[0] = 2 * n4;
+        oadd[1] = 2 * n3 + 1;
+        oadd[2] = CrAnMask + 2 * n2 + 1;
+
+        // Below the +3 is because for standing waves ni = 1,2,3,..., so that one must consider ni -> ni+1.
+        n1 = n2 + n3 + n4 + 3;
+        if (n1 <= nmax)
+        {
+          oadd[3] = CrAnMask + 2 * (n1 - 1);
+          RealOperatorAddLaderNormalOrder(op2, oadd, 4, -ainv, &QDetNotOrderedFcFaBcBa);
+        }
+
+        n1 = -n2 + n3 + n4 + 1;
+        if (n1 > 0 && n1 <= nmax)
+        {
+          oadd[3] = CrAnMask + 2 * (n1 - 1);
+          RealOperatorAddLaderNormalOrder(op2, oadd, 4, ainv, &QDetNotOrderedFcFaBcBa);
+        }
+
+        n1 = n2 - n3 + n4 + 1;
+        if (n1 > 0 && n1 <= nmax)
+        {
+          oadd[3] = CrAnMask + 2 * (n1 - 1);
+          RealOperatorAddLaderNormalOrder(op2, oadd, 4, ainv, &QDetNotOrderedFcFaBcBa);
+        }
+
+        n1 = n2 + n3 - n4 + 1;
+        if (n1 > 0 && n1 <= nmax)
+        {
+          oadd[3] = CrAnMask + 2 * (n1 - 1);
+          RealOperatorAddLaderNormalOrder(op2, oadd, 4, ainv, &QDetNotOrderedFcFaBcBa);
+        }
+
+        n1 = -n2 - n3 + n4 - 1;
+        if (n1 > 0 && n1 <= nmax)
+        {
+          oadd[3] = CrAnMask + 2 * (n1 - 1);
+          RealOperatorAddLaderNormalOrder(op2, oadd, 4, -ainv, &QDetNotOrderedFcFaBcBa);
+        }
+
+        n1 = -n2 + n3 - n4 - 1;
+        if (n1 > 0 && n1 <= nmax)
+        {
+          oadd[3] = CrAnMask + 2 * (n1 - 1);
+          RealOperatorAddLaderNormalOrder(op2, oadd, 4, -ainv, &QDetNotOrderedFcFaBcBa);
+        }
+
+        n1 = n2 - n3 - n4 - 1;
+        if (n1 > 0 && n1 <= nmax)
+        {
+          oadd[3] = CrAnMask + 2 * (n1 - 1);
+          RealOperatorAddLaderNormalOrder(op2, oadd, 4, -ainv, &QDetNotOrderedFcFaBcBa);
+        }
+      }
+    }
+  }
+
   return 0;
 }
 
-int CreateOperatorHarmonicOscillatorOnStandingWavesOnBasis(double const a, uint32_t const nmax, CompactMatrixType const * const vec ,OperatorType * const op1)
+/*
+int CreateOperatorHarmonicOscillatorOnStandingWavesPointInteractionFast(double const a, uint32_t const nmax, OperatorType * const op2)
 {
+  // generates the point-contact interaction part of the Hamiltonian for
+  // the problem of particles in a harmonic-oscillator trap on a basis of standing waves.
+  // Here the two particle terms are of the form:
+  // Sum_{n1,n2,n3,n4} V_{n1,n2,n3,n4} a^{+}_{n1,Dn} a^{+}_{n2,Up} a_{n3,Up} a_{n4,Dn}
+  // where n1+n2+n3+n4 must be an even number.
+  // The box for the stadning waves is of size a
+  // nmax is the total number of standing waves to be used (here NF = 2*nmax)
+  // Order of spins is {dn, up, dn, up, dn, up,...}
+
+  // Defining name for op2
+  InitNamedOperator(op2, "Harmonic Oscillator Point-Contact");
+  op2->NFermion = 2*nmax;
+  // number of words (meaning the number of 8-bit blocks needed for storing bitstrings)
+  op2->NWord = Min(op2->NFermion, 1 + (op2->NFermion - 1) / 8);
+  InitOperatorFixedLength(op2, 4, 8);
+
+  uint16_t n2, n3, n4;
+  int n1;
+  // Variable for the indecies of Cr and An operator
+  uint16_t oadd[4];
+  uint16_t tmp1, tmp2, tmpn3;
+  // Variable for the coefficients of the terms in the Hamiltonain (i.e. here we have a sum of two-particle operators)
+  double ainv = 1/(2*a);
+
+  for (n1=0;n1<nmax;n1++)
+  {
+    for (n3=n2;n3<nmax;n3++)
+    {
+      n2 = n1;
+      oadd[1] = 2*n3+1;
+      oadd[2] = CrAnMask + 2*n2+1;
+      oadd[3] = CrAnMask + 2*(n1-1);
+
+      // Below the +3 is because for standing waves ni = 1,2,3,..., so that one must consider ni -> ni+1.
+//       n1 = n2+n3+n4+3;
+      n4 = -n2-n3+n1-1
+      if (n4>0 && n4<=nmax && n4>n1)
+      {
+        oadd[0] = 2*n4;
+        RealOperatorAddLader(op2, oadd, 4, -ainv);
+      }
+
+//       n1 = -n2+n3+n4+1;
+      n4 = n2-n3+n1+1;
+      if (n4>0 && n4<=nmax && n4>n1)
+      {
+        oadd[0] = 2*n4;
+        RealOperatorAddLader(op2, oadd, 4, ainv);
+      }
+
+//       n1 = n2-n3+n4+1;
+      n4 = -n2+n3+n1+1;
+      if (n4>0 && n4<=nmax && n4>n1)
+      {
+        oadd[0] = 2*n4;
+        RealOperatorAddLader(op2, oadd, 4, ainv);
+      }
+
+//       n1 = n2+n3-n4+1;
+      n4 = n2+n3-n1+1;
+      if (n4>0 && n4<=nmax && n4>n1)
+      {
+        oadd[0] = 2*n4;
+        RealOperatorAddLader(op2, oadd, 4, ainv);
+      }
+
+//       n1 = -n2-n3+n4-1;
+      n4 = n2+n3+n1+3;
+      if (n4<=nmax && n4>n1)
+      {
+        ooadd[0] = 2*n4;
+        RealOperatorAddLader(op2, oadd, 4, -ainv);
+      }
+
+//       n1 = -n2+n3-n4-1;
+      n4 = -n2+n3-n1-1;
+      if (n4>0 && n4<=nmax && n4>n1)
+      {
+        ooadd[0] = 2*n4;
+        RealOperatorAddLader(op2, oadd, 4, -ainv);
+      }
+
+//       n1 = n2-n3-n4-1;
+      n4 = n2-n3-n1-1;
+      if (n4>0 && n4<=nmax && n4>n1)
+      {
+        oadd[0] = 2*n4;
+        RealOperatorAddLader(op2, oadd, 4, -ainv);
+      }
+
+    }
+  }
+
+  // REMINDER: change the for loops from this way to first, n1, then n2, then n3 and than tailor the consditions for n4 instead of n1. Then bring adding n1 outside of the if statements and bring adding n4 inside the if clauses. Then you can think of going over n1 and n2 with n3>=n2 and n4>=n1.
+  for (n1=0;n1<nmax;n1++)
+  {
+   for (n2=0;n2<nmax;n2++)
+   {
+    for (n3=n2;n3<nmax;n3++)
+    {
+      oadd[1] = 2*n3+1;
+      oadd[2] = CrAnMask + 2*n2+1;
+      oadd[3] = CrAnMask + 2*(n1-1);
+      tmpn1 = CrAnMask + oadd[3];
+      tmpn2 = CrAnMask + oadd[2];
+      tmpn3 = CrAnMask + oadd[1];
+
+      // Below the +3 is because for standing waves ni = 1,2,3,..., so that one must consider ni -> ni+1.
+//       n1 = n2+n3+n4+3;
+      n4 = -n2-n3+n1-1
+      if (n4>0 && n4<=nmax && n4>=n1)
+      {
+        oadd[0] = 2*n4;
+        RealOperatorAddLader(op2, oadd, 4, -ainv);
+
+        oadd[3] = CrAnMask + oadd[0];
+        oadd[2] = tmpn3;
+        oadd[1] = tmpn2;
+        oadd[0] = tmpn1;
+        RealOperatorAddLader(op2, oadd, 4, -ainv);
+      }
+
+//       n1 = -n2+n3+n4+1;
+      n4 = n2-n3+n1+1;
+      if (n4>0 && n4<=nmax && n4>=n1)
+      {
+        oadd[0] = 2*n4;
+        RealOperatorAddLader(op2, oadd, 4, -ainv);
+
+        oadd[3] = CrAnMask + oadd[0];
+        oadd[2] = tmpn3;
+        oadd[1] = tmpn2;
+        oadd[0] = tmpn1;
+        RealOperatorAddLader(op2, oadd, 4, -ainv);
+      }
+
+//       n1 = n2-n3+n4+1;
+      n4 = -n2+n3+n1+1;
+      if (n4>0 && n4<=nmax && n4>=n1)
+      {
+        oadd[0] = 2*n4;
+        RealOperatorAddLader(op2, oadd, 4, -ainv);
+
+        oadd[3] = CrAnMask + oadd[0];
+        oadd[2] = tmpn3;
+        oadd[1] = tmpn2;
+        oadd[0] = tmpn1;
+        RealOperatorAddLader(op2, oadd, 4, -ainv);
+      }
+
+//       n1 = n2+n3-n4+1;
+      n4 = n2+n3-n1+1;
+      if (n4>0 && n4<=nmax && n4>=n1)
+      {
+        oadd[0] = 2*n4;
+        RealOperatorAddLader(op2, oadd, 4, -ainv);
+
+        oadd[3] = CrAnMask + oadd[0];
+        oadd[2] = tmpn3;
+        oadd[1] = tmpn2;
+        oadd[0] = tmpn1;
+        RealOperatorAddLader(op2, oadd, 4, -ainv);
+      }
+
+//       n1 = -n2-n3+n4-1;
+      n4 = n2+n3+n1+3;
+      if (n4<=nmax && n4>=n1)
+      {
+        oadd[0] = 2*n4;
+        RealOperatorAddLader(op2, oadd, 4, -ainv);
+
+        oadd[3] = CrAnMask + oadd[0];
+        oadd[2] = tmpn3;
+        oadd[1] = tmpn2;
+        oadd[0] = tmpn1;
+        RealOperatorAddLader(op2, oadd, 4, -ainv);
+      }
+
+//       n1 = -n2+n3-n4-1;
+      n4 = -n2+n3-n1-1;
+      if (n4>0 && n4<=nmax && n4>=n1)
+      {
+        oadd[0] = 2*n4;
+        RealOperatorAddLader(op2, oadd, 4, -ainv);
+
+        oadd[3] = CrAnMask + oadd[0];
+        oadd[2] = tmpn3;
+        oadd[1] = tmpn2;
+        oadd[0] = tmpn1;
+        RealOperatorAddLader(op2, oadd, 4, -ainv);
+      }
+
+//       n1 = n2-n3-n4-1;
+      n4 = n2-n3-n1-1;
+      if (n4>0 && n4<=nmax && n4>=n1)
+      {
+        oadd[0] = 2*n4;
+        RealOperatorAddLader(op2, oadd, 4, -ainv);
+
+        oadd[3] = CrAnMask + oadd[0];
+        oadd[2] = tmpn3;
+        oadd[1] = tmpn2;
+        oadd[0] = tmpn1;
+        RealOperatorAddLader(op2, oadd, 4, -ainv);
+      }
+
+    }
+   }
+  }
+
+
+  return 0;
+}
+*/
+
+int CreateOperatorHarmonicOscillatorOnStandingWavesOnBasis(double const a, uint32_t const nmax, CompactMatrixType const *const vec, OperatorType *const op1)
+{
+  // generates the potential and kinetic energy terms for the problem of particles in a harmonic-oscillator trap on a basis of orbitals given by the rows in the matrix vec in terms of standing waves.
+  // The box for the plane waves is of size a
+  // nmax is the total number of standing waves to be used (here NF = 2*nmax)
+  // Note that the basis of the orbitals must have the same a and nmax, otherwise ends in problematic results and there is no way to check this automatically.
+  // Order of spins is {dn, up, dn, up, dn, up,...}
+
+  uint16_t i, j;
+  uint16_t n1, n2;
+  uint16_t a1, a2;
+  // Variable for the indecies of Cr and An operator
+  uint16_t oadd[2];
+  uint16_t tmp, a1T2, a2T2;
+  uint32_t n1Sqr;
+  // Variable for the matrix elements of the Hamiltonain (here H is a square matrix since it is a one particle part op)
+  double val;
+  double const aSqr = Sqr(a);
+
+  // The number of orbitals (without spin)
+  uint16_t const NOrbs = (uint16_t)vec->Ni / 2;
+
+  // Defining name for op1
+  InitNamedOperator(op1, "Harmonic Oscillator Kin+Pot");
+  op1->NFermion = vec->Ni;
+  // number of words (meaning the number of 8-bit blocks needed for storing bitstrings)
+  op1->NWord = Min(op1->NFermion, 1 + (op1->NFermion - 1) / 8);
+  InitOperatorFixedLength(op1, 2, (uint32_t)floor(log(nmax * nmax * nmax) / log(2.0)));
+
+  // Creating the matrix of orbs without spins
+  CompactMatrixType *vecWithoutSpin /*= new CompactMatrixType()*/;
+  vecWithoutSpin = (CompactMatrixType *)malloc(sizeof(CompactMatrixType));
+  vecWithoutSpin->Ni = (uint32_t)NOrbs;
+  vecWithoutSpin->Nj = nmax;
+  vecWithoutSpin->QComplex = 0;
+  //   vecWithoutSpin->VRe = (double*) malloc(sizeof(double)*(vecWithoutSpin->Ni)*(vecWithoutSpin->Nj));
+  InitCompactMatrix(vecWithoutSpin);
+  for (i = 0; i < NOrbs; i++)
+  {
+    for (j = 0; j < nmax; j++)
+    {
+      //         vecWithoutSpin->VRe[i][j] = vec->VRe[2*i-1][2*j-1];
+      vecWithoutSpin->VRe[i * vecWithoutSpin->Nj + j] = vec->VRe[(2 * i) * vec->Nj + 2 * j];
+    }
+  }
+
+  // first adding the diagonal elements H1_{a1,a2} (with a1=a2)
+  for (a1 = 0; a1 < NOrbs; a1++)
+  {
+    val = 0;
+
+    // Performing the sum to find the rotated (diagonal) matrix elements
+    // H1_{a1,a2} = Sum_{n1,n2} alpha_{a1,n1} alpha_{a2,n2} H1_{n1,n2} (here a1=a2)
+
+    // Now first only the terms with n1=n2
+    for (i = 0; i < nmax; i++)
+    {
+
+      n1 = i + 1;
+      n1Sqr = n1 * n1;
+
+      val = val + vecWithoutSpin->VRe[a1 * vecWithoutSpin->Nj + i] * vecWithoutSpin->VRe[a1 * vecWithoutSpin->Nj + i] * (n1Sqr * PiSqr / (2 * aSqr) + (aSqr / 24) * (1 - 6 / (n1Sqr * PiSqr)));
+    }
+
+    // and now terms with n1!=n2 (splitted into two for-loops in order to avoid terms with n1=n2)
+    for (i = 0; i < nmax; i++)
+    {
+      n1 = i + 1;
+      n1Sqr = n1 * n1;
+      for (j = i + 2; j < nmax; j += 2)
+      {
+        n2 = j + 1;
+        val = val + vecWithoutSpin->VRe[a1 * vecWithoutSpin->Nj + i] * vecWithoutSpin->VRe[a1 * vecWithoutSpin->Nj + j] * ((4 * aSqr * n1 * n2) / (Sqr(n1Sqr - Sqr(n2)) * PiSqr));
+      }
+    }
+
+    for (i = 0; i < nmax; i++)
+    {
+      n1 = i + 1;
+      n1Sqr = n1 * n1;
+      for (j = i % 2; j < i; j += 2)
+      {
+        n2 = j + 1;
+        val = val + vecWithoutSpin->VRe[a1 * vecWithoutSpin->Nj + i] * vecWithoutSpin->VRe[a1 * vecWithoutSpin->Nj + j] * ((4 * aSqr * n1 * n2) / (Sqr(n1Sqr - Sqr(n2)) * PiSqr));
+      }
+    }
+    // Now adding the terms to the operator
+    a1T2 = 2 * a1;
+
+    // spin dn
+    oadd[1] = CrAnMask + a1T2;
+    oadd[0] = a1T2;
+    RealOperatorAddLaderNormalOrder(op1, oadd, 2, val, &QDetNotOrderedFcFaBcBa);
+    // spin up
+    oadd[1] = CrAnMask + a1T2 + 1;
+    oadd[0] = a1T2 + 1;
+    RealOperatorAddLaderNormalOrder(op1, oadd, 2, val, &QDetNotOrderedFcFaBcBa);
+  }
+
+  // now adding the off-diagonal elements (going over only half of the elements since H is hermitian)
+  for (a1 = 0; a1 < NOrbs; a1++)
+  {
+    for (a2 = a1 + 2; a2 < NOrbs; a2 += 2)
+    {
+      val = 0;
+
+      // Performing the sum to find the rotated (diagonal) matrix elements
+      // H1_{a1,a2} = Sum_{n1,n2} alpha_{a1,n1} alpha_{a2,n2} H1_{n1,n2} (here a1!=a2)
+
+      // Now first only the terms with n1=n2
+      for (i = 0; i < nmax; i++)
+      {
+
+        n1 = i + 1;
+        n1Sqr = n1 * n1;
+
+        val = val + vecWithoutSpin->VRe[a1 * vecWithoutSpin->Nj + i] * vecWithoutSpin->VRe[a2 * vecWithoutSpin->Nj + i] * (n1Sqr * PiSqr / (2 * aSqr) + (aSqr / 24) * (1 - 6 / (n1Sqr * PiSqr)));
+      }
+
+      // and now terms with n1!=n2 (splitted into two for-loops)
+      for (i = 0; i < nmax; i++)
+      {
+        n1 = i + 1;
+        n1Sqr = n1 * n1;
+        for (j = i + 2; j < nmax; j += 2)
+        {
+          n2 = j + 1;
+          val = val + vecWithoutSpin->VRe[a1 * vecWithoutSpin->Nj + i] * vecWithoutSpin->VRe[a2 * vecWithoutSpin->Nj + j] * ((4 * aSqr * n1 * n2) / (Sqr(n1Sqr - Sqr(n2)) * PiSqr));
+        }
+      }
+
+      for (i = 0; i < nmax; i++)
+      {
+        n1 = i + 1;
+        n1Sqr = n1 * n1;
+        for (j = i % 2; j < i; j += 2)
+        {
+          n2 = j + 1;
+          val = val + vecWithoutSpin->VRe[a1 * vecWithoutSpin->Nj + i] * vecWithoutSpin->VRe[a2 * vecWithoutSpin->Nj + j] * ((4 * aSqr * n1 * n2) / (Sqr(n1Sqr - Sqr(n2)) * PiSqr));
+        }
+      }
+
+      // Now adding the terms to the operator
+      a1T2 = 2 * a1;
+      a2T2 = 2 * a2;
+
+      // spin dn
+      oadd[1] = CrAnMask + a1T2;
+      oadd[0] = a2T2;
+      RealOperatorAddLaderNormalOrder(op1, oadd, 2, val, &QDetNotOrderedFcFaBcBa);
+      // and complex conjugate of the above operator
+      tmp = CrAnMask + oadd[1];
+      oadd[1] = CrAnMask + oadd[0];
+      oadd[0] = tmp;
+      RealOperatorAddLaderNormalOrder(op1, oadd, 2, val, &QDetNotOrderedFcFaBcBa);
+
+      // spin up
+      oadd[1] = CrAnMask + a1T2 + 1;
+      oadd[0] = a2T2 + 1;
+      RealOperatorAddLaderNormalOrder(op1, oadd, 2, val, &QDetNotOrderedFcFaBcBa);
+      // and complex conjugate of the above operator
+      tmp = CrAnMask + oadd[1];
+      oadd[1] = CrAnMask + oadd[0];
+      oadd[0] = tmp;
+      RealOperatorAddLaderNormalOrder(op1, oadd, 2, val, &QDetNotOrderedFcFaBcBa);
+    }
+  }
+
+  FreeCompactMatrixIncludingPointer(vecWithoutSpin);
+
   return 0;
 }
 
-int CreateOperatorHarmonicOscillatorOnStandingWavesPointInteractionOnBasis(double const a, uint32_t const nmax, CompactMatrixType const * const vec ,OperatorType * const op2)
+int CreateOperatorHarmonicOscillatorOnStandingWavesPointInteractionOnBasis(double const a, uint32_t const nmax, CompactMatrixType const *const vec, OperatorType *const op2)
 {
+  // generates the point-contact interaction part of the Hamiltonian for
+  // the problem of particles in a harmonic-oscillator trap on a basis of orbitals given by the rows in the matrix vec in terms of standing waves.
+  // Note that the basis of the orbitals must have the same a and nmax, otherwise ends in problematic results and there is no way to check this automatically.
+  // Here the two particle terms are of the form:
+  // Sum_{n1,n2,n3,n4} V_{n1,n2,n3,n4} a^{+}_{n1,Dn} a^{+}_{n2,Up} a_{n3,Up} a_{n4,Dn}
+  // where n1+n2+n3+n4 must be an even number.
+  // The box for the stadning waves is of size a
+  // nmax is the total number of standing waves to be used (here NF = 2*nmax)
+  // Order of spins is {dn, up, dn, up, dn, up,...}
+
+  // The number of orbitals (without spin)
+  uint16_t const NOrbs = (uint16_t)vec->Ni / 2;
+
+  // Defining name for op2
+  InitNamedOperator(op2, "Harmonic Oscillator Point-Contact");
+  op2->NFermion = vec->Ni;
+  // number of words (meaning the number of 8-bit blocks needed for storing bitstrings)
+  op2->NWord = Min(op2->NFermion, 1 + (op2->NFermion - 1) / 8);
+  InitOperatorFixedLength(op2, 4, (uint32_t)floor(log(nmax * nmax * nmax) / log(2.0)));
+
+  uint16_t n2, n3, n4;
+  int n1;
+  uint16_t a1, a2, a3, a4;
+  // Variable for the indecies of Cr and An operator
+  uint16_t oadd[4];
+  // Variable for the coefficients of the terms in the Hamiltonain (i.e. here we have a sum of two-particle operators)
+  double ainv = 1 / (2 * a);
+  double val;
+
+  // Creating the matrix of orbs without spins
+  CompactMatrixType *vecWithoutSpin2;
+  vecWithoutSpin2 = (CompactMatrixType *)malloc(sizeof(CompactMatrixType));
+  vecWithoutSpin2->Ni = (uint32_t)NOrbs;
+  vecWithoutSpin2->Nj = nmax;
+  vecWithoutSpin2->QComplex = 0;
+  InitCompactMatrix(vecWithoutSpin2);
+  for (n1 = 0; n1 < NOrbs; n1++)
+  {
+    for (n2 = 0; n2 < nmax; n2++)
+    {
+      vecWithoutSpin2->VRe[n1 * (vecWithoutSpin2->Nj) + n2] = vec->VRe[(2 * n1) * (vec->Nj) + 2 * n2];
+    }
+  }
+
+  // Calculating all matrix elements of the Hamiltonian on the given orbs with indecies a1, a2, a3, and a4 (i.e. H1_{a1,a2,a3,a4})
+  // n1, n2, n3, and n4 play the role of dummy indecies in the sum
+  // H1_{a1,a2,a3,a4} = Sum_{n1,n2,n3,n4} alpha_{a1,n1} alpha_{a2,n2} alpha_{a3,n3} alpha_{a4,n4} H1_{n1,n2,n3,n4}
+  // where alpha are the elments of the matrix vecWithoutSpin2.
+  for (a1 = 0; a1 < NOrbs; a1++)
+  {
+    for (a2 = 0; a2 < NOrbs; a2++)
+    {
+      for (a3 = 0; a3 < NOrbs; a3++)
+      {
+        for (a4 = (a1 + a2 + a3) % 2; a4 < NOrbs; a4++)
+        {
+          val = 0;
+          for (n2 = 0; n2 < nmax; n2++)
+          {
+            for (n3 = 0; n3 < nmax; n3++)
+            {
+              for (n4 = 0; n4 < nmax; n4++)
+              {
+                n1 = n2 + n3 + n4 + 3;
+                if (n1 <= nmax)
+                {
+                  val = val - (vecWithoutSpin2->VRe[a1 * (vecWithoutSpin2->Nj) + ((uint16_t)n1) - 1]) * (vecWithoutSpin2->VRe[a2 * (vecWithoutSpin2->Nj) + n2]) * (vecWithoutSpin2->VRe[a3 * (vecWithoutSpin2->Nj) + n3]) * (vecWithoutSpin2->VRe[a4 * (vecWithoutSpin2->Nj) + n4]) * ainv;
+                }
+
+                n1 = -n2 + n3 + n4 + 1;
+                if (n1 > 0 && n1 <= nmax)
+                {
+                  val = val + (vecWithoutSpin2->VRe[a1 * (vecWithoutSpin2->Nj) + ((uint16_t)n1) - 1]) * (vecWithoutSpin2->VRe[a2 * (vecWithoutSpin2->Nj) + n2]) * (vecWithoutSpin2->VRe[a3 * (vecWithoutSpin2->Nj) + n3]) * (vecWithoutSpin2->VRe[a4 * (vecWithoutSpin2->Nj) + n4]) * ainv;
+                }
+
+                n1 = n2 - n3 + n4 + 1;
+                if (n1 > 0 && n1 <= nmax)
+                {
+                  val = val + (vecWithoutSpin2->VRe[a1 * (vecWithoutSpin2->Nj) + ((uint16_t)n1) - 1]) * (vecWithoutSpin2->VRe[a2 * (vecWithoutSpin2->Nj) + n2]) * (vecWithoutSpin2->VRe[a3 * (vecWithoutSpin2->Nj) + n3]) * (vecWithoutSpin2->VRe[a4 * (vecWithoutSpin2->Nj) + n4]) * ainv;
+                }
+
+                n1 = n2 + n3 - n4 + 1;
+                if (n1 > 0 && n1 <= nmax)
+                {
+                  val = val + (vecWithoutSpin2->VRe[a1 * (vecWithoutSpin2->Nj) + ((uint16_t)n1) - 1]) * (vecWithoutSpin2->VRe[a2 * (vecWithoutSpin2->Nj) + n2]) * (vecWithoutSpin2->VRe[a3 * (vecWithoutSpin2->Nj) + n3]) * (vecWithoutSpin2->VRe[a4 * (vecWithoutSpin2->Nj) + n4]) * ainv;
+                }
+
+                n1 = -n2 - n3 + n4 - 1;
+                if (n1 > 0 && n1 <= nmax)
+                {
+                  val = val - (vecWithoutSpin2->VRe[a1 * (vecWithoutSpin2->Nj) + ((uint16_t)n1) - 1]) * (vecWithoutSpin2->VRe[a2 * (vecWithoutSpin2->Nj) + n2]) * (vecWithoutSpin2->VRe[a3 * (vecWithoutSpin2->Nj) + n3]) * (vecWithoutSpin2->VRe[a4 * (vecWithoutSpin2->Nj) + n4]) * ainv;
+                }
+
+                n1 = -n2 + n3 - n4 - 1;
+                if (n1 > 0 && n1 <= nmax)
+                {
+                  val = val - (vecWithoutSpin2->VRe[a1 * (vecWithoutSpin2->Nj) + ((uint16_t)n1) - 1]) * (vecWithoutSpin2->VRe[a2 * (vecWithoutSpin2->Nj) + n2]) * (vecWithoutSpin2->VRe[a3 * (vecWithoutSpin2->Nj) + n3]) * (vecWithoutSpin2->VRe[a4 * (vecWithoutSpin2->Nj) + n4]) * ainv;
+                }
+
+                n1 = n2 - n3 - n4 - 1;
+                if (n1 > 0 && n1 <= nmax)
+                {
+                  val = val - (vecWithoutSpin2->VRe[a1 * (vecWithoutSpin2->Nj) + ((uint16_t)n1) - 1]) * (vecWithoutSpin2->VRe[a2 * (vecWithoutSpin2->Nj) + n2]) * (vecWithoutSpin2->VRe[a3 * (vecWithoutSpin2->Nj) + n3]) * (vecWithoutSpin2->VRe[a4 * (vecWithoutSpin2->Nj) + n4]) * ainv;
+                }
+              }
+            }
+          }
+          oadd[3] = CrAnMask + 2 * a1;
+          oadd[2] = CrAnMask + 2 * a2 + 1;
+          oadd[1] = 2 * a3 + 1;
+          oadd[0] = 2 * a4;
+          RealOperatorAddLaderNormalOrder(op2, oadd, 4, val, &QDetNotOrderedFcFaBcBa);
+        }
+      }
+    }
+  }
+
+  FreeCompactMatrixIncludingPointer(vecWithoutSpin2);
+
+  return 0;
+}
+
+int CreateOperatorHarmonicOscillatorOnStandingWavesPointInteractionOnBasisParallel(double const a, uint32_t const nmax, CompactMatrixType const *const vec, OperatorType *const op2)
+{
+  // generates the point-contact interaction part of the Hamiltonian for
+  // the problem of particles in a harmonic-oscillator trap on a basis of orbitals given by the rows in the matrix vec in terms of standing waves.
+  // Note that the basis of the orbitals must have the same a and nmax, otherwise ends in problematic results and there is no way to check this automatically.
+  // Here the two particle terms are of the form:
+  // Sum_{n1,n2,n3,n4} V_{n1,n2,n3,n4} a^{+}_{n1,Dn} a^{+}_{n2,Up} a_{n3,Up} a_{n4,Dn}
+  // where n1+n2+n3+n4 must be an even number.
+  // The box for the stadning waves is of size a
+  // nmax is the total number of standing waves to be used (here NF = 2*nmax)
+  // Order of spins is {dn, up, dn, up, dn, up,...}
+
+  // The number of orbitals (without spin)
+  uint16_t const NOrbs = (uint16_t)vec->Ni / 2;
+
+  // Defining name for op2
+  InitNamedOperator(op2, "Harmonic Oscillator Point-Contact");
+  op2->NFermion = vec->Ni;
+  // number of words (meaning the number of 8-bit blocks needed for storing bitstrings)
+  op2->NWord = Min(op2->NFermion, 1 + (op2->NFermion - 1) / 8);
+  InitOperatorFixedLength(op2, 4, (uint32_t)floor(log(nmax * nmax * nmax) / log(2.0)));
+
+  // n2 here also needs to be an integter since we parallelize on n2
+  int n2;
+  uint16_t a1, a2, a3, a4, i, j;
+  // Variable for the indecies of Cr and An operator
+  uint16_t oadd[4];
+  // Variable for the coefficients of the terms in the Hamiltonain (i.e. here we have a sum of two-particle operators)
+  double ainv = 1 / (2 * a);
+  double valTotal = 0.0;
+
+  // Creating the matrix of orbs without spins
+  CompactMatrixType *vecWithoutSpin2;
+  vecWithoutSpin2 = (CompactMatrixType *)malloc(sizeof(CompactMatrixType));
+  vecWithoutSpin2->Ni = (uint32_t)NOrbs;
+  vecWithoutSpin2->Nj = nmax;
+  vecWithoutSpin2->QComplex = 0;
+  InitCompactMatrix(vecWithoutSpin2);
+  for (i = 0; i < NOrbs; i++)
+  {
+    for (j = 0; j < nmax; j++)
+    {
+      vecWithoutSpin2->VRe[i * (vecWithoutSpin2->Nj) + j] = vec->VRe[(2 * i) * (vec->Nj) + 2 * j];
+    }
+  }
+
+  // Calculating all matrix elements of the Hamiltonian on the given orbs with indecies a1, a2, a3, and a4 (i.e. H1_{a1,a2,a3,a4})
+  // n1, n2, n3, and n4 play the role of dummy indecies in the sum
+  // H1_{a1,a2,a3,a4} = Sum_{n1,n2,n3,n4} alpha_{a1,n1} alpha_{a2,n2} alpha_{a3,n3} alpha_{a4,n4} H1_{n1,n2,n3,n4}
+  // where alpha are the elments of the matrix vecWithoutSpin2.
+  for (a1 = 0; a1 < NOrbs; a1++)
+  {
+    for (a2 = 0; a2 < NOrbs; a2++)
+    {
+      for (a3 = 0; a3 < NOrbs; a3++)
+      {
+        for (a4 = (a1 + a2 + a3) % 2; a4 < NOrbs; a4++)
+        {
+          valTotal = 0.;
+#pragma omp parallel private(n2)
+          {
+            double val = 0.0;
+            int id = omp_get_thread_num();
+            int numthreads = omp_get_num_threads();
+
+            uint16_t n3, n4;
+            int n1;
+
+            for (n2 = id; n2 < nmax; n2 += numthreads)
+            {
+              for (n3 = 0; n3 < nmax; n3++)
+              {
+                for (n4 = 0; n4 < nmax; n4++)
+                {
+                  n1 = n2 + n3 + n4 + 3;
+                  if (n1 <= nmax)
+                  {
+                    val = val - (vecWithoutSpin2->VRe[a1 * (vecWithoutSpin2->Nj) + ((uint16_t)n1) - 1]) * (vecWithoutSpin2->VRe[a2 * (vecWithoutSpin2->Nj) + n2]) * (vecWithoutSpin2->VRe[a3 * (vecWithoutSpin2->Nj) + n3]) * (vecWithoutSpin2->VRe[a4 * (vecWithoutSpin2->Nj) + n4]) * ainv;
+                  }
+
+                  n1 = -n2 + n3 + n4 + 1;
+                  if (n1 > 0 && n1 <= nmax)
+                  {
+                    val = val + (vecWithoutSpin2->VRe[a1 * (vecWithoutSpin2->Nj) + ((uint16_t)n1) - 1]) * (vecWithoutSpin2->VRe[a2 * (vecWithoutSpin2->Nj) + n2]) * (vecWithoutSpin2->VRe[a3 * (vecWithoutSpin2->Nj) + n3]) * (vecWithoutSpin2->VRe[a4 * (vecWithoutSpin2->Nj) + n4]) * ainv;
+                  }
+
+                  n1 = n2 - n3 + n4 + 1;
+                  if (n1 > 0 && n1 <= nmax)
+                  {
+                    val = val + (vecWithoutSpin2->VRe[a1 * (vecWithoutSpin2->Nj) + ((uint16_t)n1) - 1]) * (vecWithoutSpin2->VRe[a2 * (vecWithoutSpin2->Nj) + n2]) * (vecWithoutSpin2->VRe[a3 * (vecWithoutSpin2->Nj) + n3]) * (vecWithoutSpin2->VRe[a4 * (vecWithoutSpin2->Nj) + n4]) * ainv;
+                  }
+
+                  n1 = n2 + n3 - n4 + 1;
+                  if (n1 > 0 && n1 <= nmax)
+                  {
+                    val = val + (vecWithoutSpin2->VRe[a1 * (vecWithoutSpin2->Nj) + ((uint16_t)n1) - 1]) * (vecWithoutSpin2->VRe[a2 * (vecWithoutSpin2->Nj) + n2]) * (vecWithoutSpin2->VRe[a3 * (vecWithoutSpin2->Nj) + n3]) * (vecWithoutSpin2->VRe[a4 * (vecWithoutSpin2->Nj) + n4]) * ainv;
+                  }
+
+                  n1 = -n2 - n3 + n4 - 1;
+                  if (n1 > 0 && n1 <= nmax)
+                  {
+                    val = val - (vecWithoutSpin2->VRe[a1 * (vecWithoutSpin2->Nj) + ((uint16_t)n1) - 1]) * (vecWithoutSpin2->VRe[a2 * (vecWithoutSpin2->Nj) + n2]) * (vecWithoutSpin2->VRe[a3 * (vecWithoutSpin2->Nj) + n3]) * (vecWithoutSpin2->VRe[a4 * (vecWithoutSpin2->Nj) + n4]) * ainv;
+                  }
+
+                  n1 = -n2 + n3 - n4 - 1;
+                  if (n1 > 0 && n1 <= nmax)
+                  {
+                    val = val - (vecWithoutSpin2->VRe[a1 * (vecWithoutSpin2->Nj) + ((uint16_t)n1) - 1]) * (vecWithoutSpin2->VRe[a2 * (vecWithoutSpin2->Nj) + n2]) * (vecWithoutSpin2->VRe[a3 * (vecWithoutSpin2->Nj) + n3]) * (vecWithoutSpin2->VRe[a4 * (vecWithoutSpin2->Nj) + n4]) * ainv;
+                  }
+
+                  n1 = n2 - n3 - n4 - 1;
+                  if (n1 > 0 && n1 <= nmax)
+                  {
+                    val = val - (vecWithoutSpin2->VRe[a1 * (vecWithoutSpin2->Nj) + ((uint16_t)n1) - 1]) * (vecWithoutSpin2->VRe[a2 * (vecWithoutSpin2->Nj) + n2]) * (vecWithoutSpin2->VRe[a3 * (vecWithoutSpin2->Nj) + n3]) * (vecWithoutSpin2->VRe[a4 * (vecWithoutSpin2->Nj) + n4]) * ainv;
+                  }
+                }
+              }
+            }
+
+#pragma omp critical
+            valTotal += val;
+          }
+          oadd[3] = CrAnMask + 2 * a1;
+          oadd[2] = CrAnMask + 2 * a2 + 1;
+          oadd[1] = 2 * a3 + 1;
+          oadd[0] = 2 * a4;
+          RealOperatorAddLaderNormalOrder(op2, oadd, 4, valTotal, &QDetNotOrderedFcFaBcBa);
+        }
+      }
+    }
+  }
+
+  FreeCompactMatrixIncludingPointer(vecWithoutSpin2);
+
+  return 0;
+}
+
+int CreateOperatorHarmonicOscillatorOnStandingWavesPointInteractionOnBasisParallel2(double const a, uint32_t const nmax, CompactMatrixType const *const vec, OperatorType *const op2)
+{
+  // generates the point-contact interaction part of the Hamiltonian for
+  // the problem of particles in a harmonic-oscillator trap on a basis of orbitals given by the rows in the matrix vec in terms of standing waves.
+  // Note that the basis of the orbitals must have the same a and nmax, otherwise ends in problematic results and there is no way to check this automatically.
+  // Here the two particle terms are of the form:
+  // Sum_{n1,n2,n3,n4} V_{n1,n2,n3,n4} a^{+}_{n1,Dn} a^{+}_{n2,Up} a_{n3,Up} a_{n4,Dn}
+  // where n1+n2+n3+n4 must be an even number.
+  // The box for the stadning waves is of size a
+  // nmax is the total number of standing waves to be used (here NF = 2*nmax)
+  // Order of spins is {dn, up, dn, up, dn, up,...}
+
+  // The number of orbitals (without spin)
+  uint16_t const NOrbs = (uint16_t)vec->Ni / 2;
+
+  // Defining name for op2
+  InitNamedOperator(op2, "Harmonic Oscillator Point-Contact");
+  op2->NFermion = vec->Ni;
+  // number of words (meaning the number of 8-bit blocks needed for storing bitstrings)
+  op2->NWord = Min(op2->NFermion, 1 + (op2->NFermion - 1) / 8);
+  InitOperatorFixedLength(op2, 4, (uint32_t)floor(log(nmax * nmax * nmax) / log(2.0)));
+
+  // n2 here also needs to be an integter since we parallelize on n2
+  int n2;
+  uint16_t a1, a2, a3, a4, i, j;
+  // Variable for the indecies of Cr and An operator
+  uint16_t oadd[4];
+  // Variable for the coefficients of the terms in the Hamiltonain (i.e. here we have a sum of two-particle operators)
+  double ainv = 1 / (2 * a);
+  double valTotal = 0.0;
+
+  // Creating the matrix of orbs without spins
+  CompactMatrixType *vecWithoutSpin2;
+  vecWithoutSpin2 = (CompactMatrixType *)malloc(sizeof(CompactMatrixType));
+  vecWithoutSpin2->Ni = (uint32_t)NOrbs;
+  vecWithoutSpin2->Nj = nmax;
+  vecWithoutSpin2->QComplex = 0;
+  InitCompactMatrix(vecWithoutSpin2);
+  for (i = 0; i < NOrbs; i++)
+  {
+    for (j = 0; j < nmax; j++)
+    {
+      vecWithoutSpin2->VRe[i * (vecWithoutSpin2->Nj) + j] = vec->VRe[(2 * i) * (vec->Nj) + 2 * j];
+    }
+  }
+
+  // Calculating all matrix elements of the Hamiltonian on the given orbs with indecies a1, a2, a3, and a4 (i.e. H1_{a1,a2,a3,a4})
+  // n1, n2, n3, and n4 play the role of dummy indecies in the sum
+  // H1_{a1,a2,a3,a4} = Sum_{n1,n2,n3,n4} alpha_{a1,n1} alpha_{a2,n2} alpha_{a3,n3} alpha_{a4,n4} H1_{n1,n2,n3,n4}
+  // where alpha are the elments of the matrix vecWithoutSpin2.
+  for (a1 = 0; a1 < NOrbs; a1++)
+  {
+    for (a2 = 0; a2 < NOrbs; a2++)
+    {
+      for (a3 = 0; a3 < NOrbs; a3++)
+      {
+        for (a4 = (a1 + a2 + a3) % 2; a4 < NOrbs; a4++)
+        {
+          valTotal = 0.;
+#pragma omp parallel
+          {
+            double val = 0.0;
+            //                 int id = omp_get_thread_num();
+            //                 int numthreads = omp_get_num_threads();
+            uint16_t n3, n4;
+            int n1, n2;
+#pragma omp for nowait
+            for (n2 = 0; n2 < nmax; n2++)
+            {
+              for (n3 = 0; n3 < nmax; n3++)
+              {
+                for (n4 = 0; n4 < nmax; n4++)
+                {
+                  n1 = n2 + n3 + n4 + 3;
+                  if (n1 <= nmax)
+                  {
+                    val = val - (vecWithoutSpin2->VRe[a1 * (vecWithoutSpin2->Nj) + ((uint16_t)n1) - 1]) * (vecWithoutSpin2->VRe[a2 * (vecWithoutSpin2->Nj) + n2]) * (vecWithoutSpin2->VRe[a3 * (vecWithoutSpin2->Nj) + n3]) * (vecWithoutSpin2->VRe[a4 * (vecWithoutSpin2->Nj) + n4]) * ainv;
+                  }
+
+                  n1 = -n2 + n3 + n4 + 1;
+                  if (n1 > 0 && n1 <= nmax)
+                  {
+                    val = val + (vecWithoutSpin2->VRe[a1 * (vecWithoutSpin2->Nj) + ((uint16_t)n1) - 1]) * (vecWithoutSpin2->VRe[a2 * (vecWithoutSpin2->Nj) + n2]) * (vecWithoutSpin2->VRe[a3 * (vecWithoutSpin2->Nj) + n3]) * (vecWithoutSpin2->VRe[a4 * (vecWithoutSpin2->Nj) + n4]) * ainv;
+                  }
+
+                  n1 = n2 - n3 + n4 + 1;
+                  if (n1 > 0 && n1 <= nmax)
+                  {
+                    val = val + (vecWithoutSpin2->VRe[a1 * (vecWithoutSpin2->Nj) + ((uint16_t)n1) - 1]) * (vecWithoutSpin2->VRe[a2 * (vecWithoutSpin2->Nj) + n2]) * (vecWithoutSpin2->VRe[a3 * (vecWithoutSpin2->Nj) + n3]) * (vecWithoutSpin2->VRe[a4 * (vecWithoutSpin2->Nj) + n4]) * ainv;
+                  }
+
+                  n1 = n2 + n3 - n4 + 1;
+                  if (n1 > 0 && n1 <= nmax)
+                  {
+                    val = val + (vecWithoutSpin2->VRe[a1 * (vecWithoutSpin2->Nj) + ((uint16_t)n1) - 1]) * (vecWithoutSpin2->VRe[a2 * (vecWithoutSpin2->Nj) + n2]) * (vecWithoutSpin2->VRe[a3 * (vecWithoutSpin2->Nj) + n3]) * (vecWithoutSpin2->VRe[a4 * (vecWithoutSpin2->Nj) + n4]) * ainv;
+                  }
+
+                  n1 = -n2 - n3 + n4 - 1;
+                  if (n1 > 0 && n1 <= nmax)
+                  {
+                    val = val - (vecWithoutSpin2->VRe[a1 * (vecWithoutSpin2->Nj) + ((uint16_t)n1) - 1]) * (vecWithoutSpin2->VRe[a2 * (vecWithoutSpin2->Nj) + n2]) * (vecWithoutSpin2->VRe[a3 * (vecWithoutSpin2->Nj) + n3]) * (vecWithoutSpin2->VRe[a4 * (vecWithoutSpin2->Nj) + n4]) * ainv;
+                  }
+
+                  n1 = -n2 + n3 - n4 - 1;
+                  if (n1 > 0 && n1 <= nmax)
+                  {
+                    val = val - (vecWithoutSpin2->VRe[a1 * (vecWithoutSpin2->Nj) + ((uint16_t)n1) - 1]) * (vecWithoutSpin2->VRe[a2 * (vecWithoutSpin2->Nj) + n2]) * (vecWithoutSpin2->VRe[a3 * (vecWithoutSpin2->Nj) + n3]) * (vecWithoutSpin2->VRe[a4 * (vecWithoutSpin2->Nj) + n4]) * ainv;
+                  }
+
+                  n1 = n2 - n3 - n4 - 1;
+                  if (n1 > 0 && n1 <= nmax)
+                  {
+                    val = val - (vecWithoutSpin2->VRe[a1 * (vecWithoutSpin2->Nj) + ((uint16_t)n1) - 1]) * (vecWithoutSpin2->VRe[a2 * (vecWithoutSpin2->Nj) + n2]) * (vecWithoutSpin2->VRe[a3 * (vecWithoutSpin2->Nj) + n3]) * (vecWithoutSpin2->VRe[a4 * (vecWithoutSpin2->Nj) + n4]) * ainv;
+                  }
+                }
+              }
+            }
+
+#pragma omp atomic
+            valTotal += val;
+          }
+          oadd[3] = CrAnMask + 2 * a1;
+          oadd[2] = CrAnMask + 2 * a2 + 1;
+          oadd[1] = 2 * a3 + 1;
+          oadd[0] = 2 * a4;
+          RealOperatorAddLaderNormalOrder(op2, oadd, 4, valTotal, &QDetNotOrderedFcFaBcBa);
+        }
+      }
+    }
+  }
+
+  FreeCompactMatrixIncludingPointer(vecWithoutSpin2);
+
+  return 0;
+}
+
+int CreateOperatorHarmonicOscillatorOnStandingWavesPointInteractionOnBasisParallel3(double const a, uint32_t const nmax, CompactMatrixType const *const vec, OperatorType *const op2)
+{
+  // generates the point-contact interaction part of the Hamiltonian for
+  // the problem of particles in a harmonic-oscillator trap on a basis of orbitals given by the rows in the matrix vec in terms of standing waves.
+  // Note that the basis of the orbitals must have the same a and nmax, otherwise ends in problematic results and there is no way to check this automatically.
+  // Here the two particle terms are of the form:
+  // Sum_{n1,n2,n3,n4} V_{n1,n2,n3,n4} a^{+}_{n1,Dn} a^{+}_{n2,Up} a_{n3,Up} a_{n4,Dn}
+  // where n1+n2+n3+n4 must be an even number.
+  // The box for the stadning waves is of size a
+  // nmax is the total number of standing waves to be used (here NF = 2*nmax)
+  // Order of spins is {dn, up, dn, up, dn, up,...}
+
+  // pre-parallelization process
+  double *vectorization;
+  int threads;
+  bool flag = true;
+#pragma omp parallel
+  {
+#pragma omp master
+    threads = omp_get_num_threads();
+
+    vectorization = (double *)_mm_malloc(threads * sizeof(double), 64);
+    if (vectorization == NULL)
+    {
+      flag = false;
+    }
+  }
+
+  if (!flag)
+  {
+    printf("\nError in CreateOperatorHarmonicOscillatorOnStandingWavesPointInteractionOnBasisParallel3: vectorization == NULL was true\n");
+    return 1;
+  }
+
+  // The number of orbitals (without spin)
+  uint16_t const NOrbs = (uint16_t)vec->Ni / 2;
+
+  // Defining name for op2
+  InitNamedOperator(op2, "Harmonic Oscillator Point-Contact");
+  op2->NFermion = vec->Ni;
+  // number of words (meaning the number of 8-bit blocks needed for storing bitstrings)
+  op2->NWord = Min(op2->NFermion, 1 + (op2->NFermion - 1) / 8);
+  InitOperatorFixedLength(op2, 4, (uint32_t)floor(log(nmax * nmax * nmax) / log(2.0)));
+
+  // n2 here also needs to be an integter since we parallelize on n2
+  int n2;
+  uint16_t a1, a2, a3, a4, i, j;
+  // Variable for the indecies of Cr and An operator
+  uint16_t oadd[4];
+  // Variable for the coefficients of the terms in the Hamiltonain (i.e. here we have a sum of two-particle operators)
+  double ainv = 1 / (2 * a);
+  double valTotal = 0.0;
+
+  // Creating the matrix of orbs without spins
+  CompactMatrixType *vecWithoutSpin2;
+  vecWithoutSpin2 = (CompactMatrixType *)malloc(sizeof(CompactMatrixType));
+  vecWithoutSpin2->Ni = (uint32_t)NOrbs;
+  vecWithoutSpin2->Nj = nmax;
+  vecWithoutSpin2->QComplex = 0;
+  InitCompactMatrix(vecWithoutSpin2);
+  for (i = 0; i < NOrbs; i++)
+  {
+    for (j = 0; j < nmax; j++)
+    {
+      vecWithoutSpin2->VRe[i * (vecWithoutSpin2->Nj) + j] = vec->VRe[(2 * i) * (vec->Nj) + 2 * j];
+    }
+  }
+
+  // Calculating all matrix elements of the Hamiltonian on the given orbs with indecies a1, a2, a3, and a4 (i.e. H1_{a1,a2,a3,a4})
+  // n1, n2, n3, and n4 play the role of dummy indecies in the sum
+  // H1_{a1,a2,a3,a4} = Sum_{n1,n2,n3,n4} alpha_{a1,n1} alpha_{a2,n2} alpha_{a3,n3} alpha_{a4,n4} H1_{n1,n2,n3,n4}
+  // where alpha are the elments of the matrix vecWithoutSpin2.
+  for (a1 = 0; a1 < NOrbs; a1++)
+  {
+    for (a2 = 0; a2 < NOrbs; a2++)
+    {
+      for (a3 = 0; a3 < NOrbs; a3++)
+      {
+        for (a4 = (a1 + a2 + a3) % 2; a4 < NOrbs; a4++)
+        {
+          valTotal = 0.;
+#pragma omp parallel
+          {
+            double val = 0.0;
+            //                 int id = omp_get_thread_num();
+            //                 int numthreads = omp_get_num_threads();
+            uint16_t n3, n4;
+            int n1, n2;
+#pragma omp for nowait
+            for (n2 = 0; n2 < nmax; n2++)
+            {
+              for (n3 = 0; n3 < nmax; n3++)
+              {
+                for (n4 = 0; n4 < nmax; n4++)
+                {
+                  n1 = n2 + n3 + n4 + 3;
+                  if (n1 <= nmax)
+                  {
+                    val = val - (vecWithoutSpin2->VRe[a1 * (vecWithoutSpin2->Nj) + ((uint16_t)n1) - 1]) * (vecWithoutSpin2->VRe[a2 * (vecWithoutSpin2->Nj) + n2]) * (vecWithoutSpin2->VRe[a3 * (vecWithoutSpin2->Nj) + n3]) * (vecWithoutSpin2->VRe[a4 * (vecWithoutSpin2->Nj) + n4]) * ainv;
+                  }
+
+                  n1 = -n2 + n3 + n4 + 1;
+                  if (n1 > 0 && n1 <= nmax)
+                  {
+                    val = val + (vecWithoutSpin2->VRe[a1 * (vecWithoutSpin2->Nj) + ((uint16_t)n1) - 1]) * (vecWithoutSpin2->VRe[a2 * (vecWithoutSpin2->Nj) + n2]) * (vecWithoutSpin2->VRe[a3 * (vecWithoutSpin2->Nj) + n3]) * (vecWithoutSpin2->VRe[a4 * (vecWithoutSpin2->Nj) + n4]) * ainv;
+                  }
+
+                  n1 = n2 - n3 + n4 + 1;
+                  if (n1 > 0 && n1 <= nmax)
+                  {
+                    val = val + (vecWithoutSpin2->VRe[a1 * (vecWithoutSpin2->Nj) + ((uint16_t)n1) - 1]) * (vecWithoutSpin2->VRe[a2 * (vecWithoutSpin2->Nj) + n2]) * (vecWithoutSpin2->VRe[a3 * (vecWithoutSpin2->Nj) + n3]) * (vecWithoutSpin2->VRe[a4 * (vecWithoutSpin2->Nj) + n4]) * ainv;
+                  }
+
+                  n1 = n2 + n3 - n4 + 1;
+                  if (n1 > 0 && n1 <= nmax)
+                  {
+                    val = val + (vecWithoutSpin2->VRe[a1 * (vecWithoutSpin2->Nj) + ((uint16_t)n1) - 1]) * (vecWithoutSpin2->VRe[a2 * (vecWithoutSpin2->Nj) + n2]) * (vecWithoutSpin2->VRe[a3 * (vecWithoutSpin2->Nj) + n3]) * (vecWithoutSpin2->VRe[a4 * (vecWithoutSpin2->Nj) + n4]) * ainv;
+                  }
+
+                  n1 = -n2 - n3 + n4 - 1;
+                  if (n1 > 0 && n1 <= nmax)
+                  {
+                    val = val - (vecWithoutSpin2->VRe[a1 * (vecWithoutSpin2->Nj) + ((uint16_t)n1) - 1]) * (vecWithoutSpin2->VRe[a2 * (vecWithoutSpin2->Nj) + n2]) * (vecWithoutSpin2->VRe[a3 * (vecWithoutSpin2->Nj) + n3]) * (vecWithoutSpin2->VRe[a4 * (vecWithoutSpin2->Nj) + n4]) * ainv;
+                  }
+
+                  n1 = -n2 + n3 - n4 - 1;
+                  if (n1 > 0 && n1 <= nmax)
+                  {
+                    val = val - (vecWithoutSpin2->VRe[a1 * (vecWithoutSpin2->Nj) + ((uint16_t)n1) - 1]) * (vecWithoutSpin2->VRe[a2 * (vecWithoutSpin2->Nj) + n2]) * (vecWithoutSpin2->VRe[a3 * (vecWithoutSpin2->Nj) + n3]) * (vecWithoutSpin2->VRe[a4 * (vecWithoutSpin2->Nj) + n4]) * ainv;
+                  }
+
+                  n1 = n2 - n3 - n4 - 1;
+                  if (n1 > 0 && n1 <= nmax)
+                  {
+                    val = val - (vecWithoutSpin2->VRe[a1 * (vecWithoutSpin2->Nj) + ((uint16_t)n1) - 1]) * (vecWithoutSpin2->VRe[a2 * (vecWithoutSpin2->Nj) + n2]) * (vecWithoutSpin2->VRe[a3 * (vecWithoutSpin2->Nj) + n3]) * (vecWithoutSpin2->VRe[a4 * (vecWithoutSpin2->Nj) + n4]) * ainv;
+                  }
+                }
+              }
+            }
+
+            *(vectorization + omp_get_thread_num()) = val;
+          }
+          for (i = 0; i < threads; ++i)
+            valTotal += *(vectorization + i);
+          oadd[3] = CrAnMask + 2 * a1;
+          oadd[2] = CrAnMask + 2 * a2 + 1;
+          oadd[1] = 2 * a3 + 1;
+          oadd[0] = 2 * a4;
+          RealOperatorAddLaderNormalOrder(op2, oadd, 4, valTotal, &QDetNotOrderedFcFaBcBa);
+        }
+      }
+    }
+  }
+
+  FreeCompactMatrixIncludingPointer(vecWithoutSpin2);
+
   return 0;
 }

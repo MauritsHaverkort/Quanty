@@ -4493,6 +4493,7 @@ static int LuaOperatorNewHarmonicOscillatorOnStandingWaves(lua_State * L)
     double a = (double)luaL_checknumber(L, 1);
     uint32_t nmax = (uint32_t)luaL_checkunsigned(L, 2);
     if(a<0) return luaL_error(L, "Error in LuaOperatorNewHarmonicOscillatorOnStandingWaves, a should be positive not %f\n",a);
+    if(nmax<=0) return luaL_error(L, "Error in LuaOperatorNewHarmonicOscillatorOnStandingWaves, nmax should be positive not %f\n",nmax);
     op1 = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
     CreateOperatorHarmonicOscillatorOnStandingWaves(a,nmax,op1);
     luaL_setmetatable(L, "Operator_Type");
@@ -4508,6 +4509,7 @@ static int LuaOperatorNewHarmonicOscillatorOnStandingWaves(lua_State * L)
     vec = luaL_checkCompactMatrix(L, 3);
     if(a<0) return luaL_error(L, "Error in LuaOperatorNewHarmonicOscillatorOnStandingWaves, a should be positive not %f\n",a);
     if(!((vec->Nj==nmax)||(vec->Nj==2*nmax))) return luaL_error(L, "Error in LuaOperatorNewHarmonicOscillatorOnStandingWaves. The dimension of the matrix defining the basis (%d) should be equal to nmax (%d) or 2*nmax.\n",vec->Nj,nmax);
+    if(nmax<=0) return luaL_error(L, "Error in LuaOperatorNewHarmonicOscillatorOnStandingWaves, nmax should be positive not %f\n",nmax);
     op1 = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
     CreateOperatorHarmonicOscillatorOnStandingWavesOnBasis(a,nmax,vec,op1);
     luaL_setmetatable(L, "Operator_Type");
@@ -4515,6 +4517,41 @@ static int LuaOperatorNewHarmonicOscillatorOnStandingWaves(lua_State * L)
     CreateOperatorHarmonicOscillatorOnStandingWavesPointInteractionOnBasis(a,nmax,vec,op2);
     luaL_setmetatable(L, "Operator_Type");
   }
+  else if(len==4)
+  {
+    // Here the 4th argument is the method for creating the point-contact potential with
+    // method = 1: no parallelization
+    // method = 2: my 1st parallelization method
+    // method = 3 and 4: my 2nd and 3rd parallelization methods
+    // Respectively, each method uses the following functions in Model/StandardOperator.cpp:
+    // CreateOperatorHarmonicOscillatorOnStandingWavesPointInteractionOnBasis
+    // CreateOperatorHarmonicOscillatorOnStandingWavesPointInteractionOnBasisParallel(...)
+    // CreateOperatorHarmonicOscillatorOnStandingWavesPointInteractionOnBasisParallel(...)
+    // CreateOperatorHarmonicOscillatorOnStandingWavesPointInteractionOnBasisParallel2(...)
+    // CreateOperatorHarmonicOscillatorOnStandingWavesPointInteractionOnBasisParallel3(...)
+    double a = (double)luaL_checknumber(L, 1);
+    uint32_t nmax = (uint32_t)luaL_checkunsigned(L, 2);
+    uint32_t method = (uint32_t)luaL_checkunsigned(L, 4);
+    CompactMatrixType *vec;
+    vec = luaL_checkCompactMatrix(L, 3);
+    if(a<0) return luaL_error(L, "Error in LuaOperatorNewHarmonicOscillatorOnStandingWaves, a should be positive not %f\n",a);
+    if(nmax<=0) return luaL_error(L, "Error in LuaOperatorNewHarmonicOscillatorOnStandingWaves, nmax should be positive not %f\n",nmax);
+    if(!((vec->Nj==nmax)||(vec->Nj==2*nmax))) return luaL_error(L, "Error in LuaOperatorNewHarmonicOscillatorOnStandingWaves. The dimension of the matrix defining the basis (%d) should be equal to nmax (%d) or 2*nmax.\n",vec->Nj,nmax);
+    op1 = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+    CreateOperatorHarmonicOscillatorOnStandingWavesOnBasis(a,nmax,vec,op1);
+    luaL_setmetatable(L, "Operator_Type");
+    op2 = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+    // no parallelization
+    if (method == 1) CreateOperatorHarmonicOscillatorOnStandingWavesPointInteractionOnBasis(a,nmax,vec,op2);
+    // parallelization method 1
+    else if (method == 2) CreateOperatorHarmonicOscillatorOnStandingWavesPointInteractionOnBasisParallel(a,nmax,vec,op2);
+    // parallelization method 2
+    else if (method == 3) CreateOperatorHarmonicOscillatorOnStandingWavesPointInteractionOnBasisParallel2(a,nmax,vec,op2);
+    else if (method == 4) CreateOperatorHarmonicOscillatorOnStandingWavesPointInteractionOnBasisParallel3(a,nmax,vec,op2);
+    else luaL_error(L, "Error in LuaOperatorNewHarmonicOscillatorOnStandingWaves, method should be 1, 2, 3 or 4 not %i\n", method);
+    luaL_setmetatable(L, "Operator_Type");
+    return 2;
+  } 
   else
   {
     return luaL_error(L, "Error in LuaOperatorNewHarmonicOscillatorOnStandingWaves, expected 2 or 3 arguments, not %d\n",len);
