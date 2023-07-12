@@ -4192,9 +4192,6 @@ static int LuaBlockBandDiagonalize(lua_State *L)
     {
       return luaL_error(L, "CompactMatrixBlockBandDiagonalize failed that should not happen\n");
     }
-    
-    PrintBlockTriDiagonalMatrix(B);
-    
     // chop vec
     CompactMatrixChop(&vec, 1E-14);
     // Determine the dimension of the different Blocks
@@ -4345,8 +4342,6 @@ static int LuaBlockBandDiagonalize(lua_State *L)
       }
     }
     //mwh depbug print
-    PrintTightBindingDef(*RTB);
-    
     SetNFermionIndexTightBindingDef(RTB);
     // free the list of atoms from memory
     for(i=0;i<NAtomsInStartBlock;i++)

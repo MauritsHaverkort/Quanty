@@ -1374,6 +1374,7 @@ static int LuaReadAtomWithDefault(lua_State *L, int narg, AtomType *a, CrystalSt
         else
         {
           // shell given by a string specifing its name, all orbitals taken from def
+          a->ShellName[i]= (char*)malloc(MAXStrLength*sizeof(char));
           strncpy(a->ShellName[i], luaL_checkstring(L, -1), MAXStrLength-1);
           // find atom and shell in def and set the list of orbitals
           if(*AtomIndexInCrystalStructure!=INT_MAX)

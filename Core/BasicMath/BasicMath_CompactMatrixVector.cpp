@@ -4320,7 +4320,7 @@ uint32_t CompactMatrixBlockBandDiagonalizeReal(CompactMatrixType const * const A
   strncpy(B->Name, A->Name, MAXStrLength);
   b=B->bRe;
   a=B->aRe;
-  veclist= (CompactMatrixType*)malloc((B->N+1)*sizeof(CompactMatrixType));
+  veclist= (CompactMatrixType*)malloc((B->N+2)*sizeof(CompactMatrixType));
   veclist[0]=*vec;
   CompactMatrixCopy(veclist[0], &veclist[1]);
   CompactMatrixSVDOrthogonalizeRow(&veclist[1], SingularValue, true);
@@ -4334,7 +4334,7 @@ uint32_t CompactMatrixBlockBandDiagonalizeReal(CompactMatrixType const * const A
     CompactMatrixGramSchmidtOrthogonalizeRow(&veclist[1], SingularValue, false);
   }
   dgemm(charT,charN,&veclist[1].Ni,&veclist[0].Ni,&veclist[0].Nj,&one,veclist[1].VRe,&veclist[1].Nj,veclist[0].VRe,&veclist[0].Nj,&zero,b,&B->BlockSize); // b = v[0] . v[1]^T
-  for(i=1;i<NTri;i++)
+  for(i=1;i<=NTri;i++)
   {
     veclist[i+1].Ni=veclist[i].Ni;
     veclist[i+1].Nj=veclist[i].Nj;
@@ -4353,6 +4353,7 @@ uint32_t CompactMatrixBlockBandDiagonalizeReal(CompactMatrixType const * const A
       b+=B->BlockSize*B->BlockSize;
       dgemm(charT,charN,&veclist[i+1].Ni,&veclist[i-1].Ni,&veclist[i-1].Nj,&one,veclist[i+1].VRe,&veclist[i+1].Nj,veclist[i-1].VRe,&veclist[i-1].Nj,&zero,b,&B->BlockSize); // b = v[i-1] . v[i+1]^T
     }
+    if(i==NTri) break;
     NSingular=1;
     while(NSingular!=0)
     {
@@ -4406,7 +4407,7 @@ uint32_t CompactMatrixBlockBandDiagonalizeReal(CompactMatrixType const * const A
       Ni=Ni+veclist[j].Ni;
     }
   }
-  for(j=1;j<=Min(i+1,NTri);j++)
+  for(j=1;j<=Min(i+1,NTri+1);j++)
   {
     FreeCompactMatrix(&veclist[j]);
   }
@@ -4437,7 +4438,7 @@ uint32_t CompactMatrixBlockBandDiagonalizeComplex(CompactMatrixType const * cons
   strncpy(B->Name, A->Name, MAXStrLength);
   b=B->b;
   a=B->a;
-  veclist= (CompactMatrixType*)malloc((B->N+1)*sizeof(CompactMatrixType));
+  veclist= (CompactMatrixType*)malloc((B->N+2)*sizeof(CompactMatrixType));
   veclist[0]=*vec;
   CompactMatrixCopy(veclist[0], &veclist[1]);
   CompactMatrixSVDOrthogonalizeRow(&veclist[1], SingularValue, true);
@@ -4451,7 +4452,7 @@ uint32_t CompactMatrixBlockBandDiagonalizeComplex(CompactMatrixType const * cons
     CompactMatrixGramSchmidtOrthogonalizeRow(&veclist[1], SingularValue, false);
   }
   zgemm(charC,charN,&veclist[1].Ni,&veclist[0].Ni,&veclist[0].Nj,&one,veclist[1].V,&veclist[1].Nj,veclist[0].V,&veclist[0].Nj,&zero,b,&B->BlockSize); // b = v[0] . v[1]^+
-  for(i=1;i<NTri;i++)
+  for(i=1;i<=NTri;i++)
   {
     veclist[i+1].Ni=veclist[i].Ni;
     veclist[i+1].Nj=veclist[i].Nj;
@@ -4478,6 +4479,7 @@ uint32_t CompactMatrixBlockBandDiagonalizeComplex(CompactMatrixType const * cons
         b[j].Im=-b[j].Im;
       }
     }
+    if(i==NTri) break;
     NSingular=1;
     while(NSingular!=0)
     {
@@ -4531,7 +4533,7 @@ uint32_t CompactMatrixBlockBandDiagonalizeComplex(CompactMatrixType const * cons
       Ni=Ni+veclist[j].Ni;
     }
   }
-  for(j=1;j<=Min(i+1,NTri);j++)
+  for(j=1;j<=Min(i+1,NTri+1);j++)
   {
     FreeCompactMatrix(&veclist[j]);
   }
