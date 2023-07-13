@@ -63,6 +63,9 @@ int CreateOperatorHarmonicOscillatorOnStandingWaves(double const a, uint32_t con
 int CreateOperatorHarmonicOscillatorOnStandingWavesPointInteraction(double const a, uint32_t const nmax, OperatorType * const op2);
 int CreateOperatorHarmonicOscillatorOnStandingWavesOnBasis(double const a, uint32_t const nmax, CompactMatrixType const * const vec ,OperatorType * const op1);
 int CreateOperatorHarmonicOscillatorOnStandingWavesPointInteractionOnBasis(double const a, uint32_t const nmax, CompactMatrixType const * const vec ,OperatorType * const op2);
+int CreateOperatorHarmonicOscillatorOnStandingWavesPointInteractionOnBasisParallel(double const a, uint32_t const nmax, CompactMatrixType const * const vec ,OperatorType * const op2);
+int CreateOperatorHarmonicOscillatorOnStandingWavesPointInteractionOnBasisParallel2(double const a, uint32_t const nmax, CompactMatrixType const * const vec ,OperatorType * const op2);
+int CreateOperatorHarmonicOscillatorOnStandingWavesPointInteractionOnBasisParallel3(double const a, uint32_t const nmax, CompactMatrixType const * const vec ,OperatorType * const op2);
 
 
 
