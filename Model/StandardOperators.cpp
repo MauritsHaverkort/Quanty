@@ -4405,37 +4405,37 @@ int CreateOperatorHarmonicOscillatorOnStandingWavesPointInteractionOnBasis(doubl
                 }
 
                 n1 = -n2 + n3 + n4 + 1;
-                if (n1 > 0 && n1 <= nmax)
+                if ((n1 > 0) && (n1 <= nmax))
                 {
                   val = val + (vecWithoutSpin2->VRe[a1 * (vecWithoutSpin2->Nj) + ((uint16_t)n1) - 1]) * (vecWithoutSpin2->VRe[a2 * (vecWithoutSpin2->Nj) + n2]) * (vecWithoutSpin2->VRe[a3 * (vecWithoutSpin2->Nj) + n3]) * (vecWithoutSpin2->VRe[a4 * (vecWithoutSpin2->Nj) + n4]) * ainv;
                 }
 
                 n1 = n2 - n3 + n4 + 1;
-                if (n1 > 0 && n1 <= nmax)
+                if ((n1 > 0) && (n1 <= nmax))
                 {
                   val = val + (vecWithoutSpin2->VRe[a1 * (vecWithoutSpin2->Nj) + ((uint16_t)n1) - 1]) * (vecWithoutSpin2->VRe[a2 * (vecWithoutSpin2->Nj) + n2]) * (vecWithoutSpin2->VRe[a3 * (vecWithoutSpin2->Nj) + n3]) * (vecWithoutSpin2->VRe[a4 * (vecWithoutSpin2->Nj) + n4]) * ainv;
                 }
 
                 n1 = n2 + n3 - n4 + 1;
-                if (n1 > 0 && n1 <= nmax)
+                if ((n1 > 0) && (n1 <= nmax))
                 {
                   val = val + (vecWithoutSpin2->VRe[a1 * (vecWithoutSpin2->Nj) + ((uint16_t)n1) - 1]) * (vecWithoutSpin2->VRe[a2 * (vecWithoutSpin2->Nj) + n2]) * (vecWithoutSpin2->VRe[a3 * (vecWithoutSpin2->Nj) + n3]) * (vecWithoutSpin2->VRe[a4 * (vecWithoutSpin2->Nj) + n4]) * ainv;
                 }
 
                 n1 = -n2 - n3 + n4 - 1;
-                if (n1 > 0 && n1 <= nmax)
+                if ((n1 > 0) && (n1 <= nmax))
                 {
                   val = val - (vecWithoutSpin2->VRe[a1 * (vecWithoutSpin2->Nj) + ((uint16_t)n1) - 1]) * (vecWithoutSpin2->VRe[a2 * (vecWithoutSpin2->Nj) + n2]) * (vecWithoutSpin2->VRe[a3 * (vecWithoutSpin2->Nj) + n3]) * (vecWithoutSpin2->VRe[a4 * (vecWithoutSpin2->Nj) + n4]) * ainv;
                 }
 
                 n1 = -n2 + n3 - n4 - 1;
-                if (n1 > 0 && n1 <= nmax)
+                if ((n1 > 0) && (n1 <= nmax))
                 {
                   val = val - (vecWithoutSpin2->VRe[a1 * (vecWithoutSpin2->Nj) + ((uint16_t)n1) - 1]) * (vecWithoutSpin2->VRe[a2 * (vecWithoutSpin2->Nj) + n2]) * (vecWithoutSpin2->VRe[a3 * (vecWithoutSpin2->Nj) + n3]) * (vecWithoutSpin2->VRe[a4 * (vecWithoutSpin2->Nj) + n4]) * ainv;
                 }
 
                 n1 = n2 - n3 - n4 - 1;
-                if (n1 > 0 && n1 <= nmax)
+                if ((n1 > 0) && (n1 <= nmax))
                 {
                   val = val - (vecWithoutSpin2->VRe[a1 * (vecWithoutSpin2->Nj) + ((uint16_t)n1) - 1]) * (vecWithoutSpin2->VRe[a2 * (vecWithoutSpin2->Nj) + n2]) * (vecWithoutSpin2->VRe[a3 * (vecWithoutSpin2->Nj) + n3]) * (vecWithoutSpin2->VRe[a4 * (vecWithoutSpin2->Nj) + n4]) * ainv;
                 }
