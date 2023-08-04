@@ -3948,7 +3948,7 @@ static int LuaBlockBandDiagonalize(lua_State *L)
     bool ReturnT;
   } Options;
   LuaOptionsType LuaBlockBandDiagonalizeOptions[]={
-    {"SingularValue",   "char*",    &(Options.SingularValue)},
+    {"SingularValue",   "double",    &(Options.SingularValue)},
     {"NTri",            "uint32_t", &(Options.NTri)},
     {"NOrtho",          "uint32_t", &(Options.NOrtho)},
     {"ReOrthogonalize", "bool",     &(Options.ReOrthogonalize)},

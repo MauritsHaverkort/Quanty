@@ -408,10 +408,11 @@ int CreateHamiltonianOperatorFromTightBindingDef(TightBindingDef A, double k[3],
   double alphaRe, alphaIm, HVRe, HVIm;
   double vector[3];
   uint16_t oadd[2];
+  uint32_t const NBitsKey = Max(8,Min(24,floor(log(A.nH * A.nH) / log(2.0))));
   InitOperator(H);
   H->NFermion = A.NFermion;
   H->NWord = Min(H->NFermion, 1 + (H->NFermion - 1) / 8);
-  InitOperatorFixedLength(H, 2, (uint32_t)floor(log(A.nH * A.nH) / log(2.0)) );
+  InitOperatorFixedLength(H, 2, NBitsKey );
   for (iH = 0; iH < A.nH; iH++)
   {
     i = A.FermionIndex[A.H[iH].Atompos1][A.H[iH].Shellpos1];
@@ -469,10 +470,11 @@ int CreateHamiltonianOperatorFromTightBindingDefPlusSpin(TightBindingDef A, doub
   double alphaRe, alphaIm, HVRe, HVIm;
   double vector[3];
   uint16_t oadd[2];
+  uint32_t const NBitsKey = Max(8,Min(24,floor(log(A.nH * A.nH) / log(2.0))));
   InitOperator(H);
   H->NFermion = 2*A.NFermion;
   H->NWord = Min(H->NFermion, 1 + (H->NFermion - 1) / 8);
-  InitOperatorFixedLength(H, 2, 10);
+  InitOperatorFixedLength(H, 2, NBitsKey);
   for (iH = 0; iH < A.nH; iH++)
   {
     i = A.FermionIndex[A.H[iH].Atompos1][A.H[iH].Shellpos1];
