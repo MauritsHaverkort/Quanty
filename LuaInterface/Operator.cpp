@@ -5031,6 +5031,23 @@ static int LuaOperatorTranspose(lua_State * L)
   return 0;
 }
 
+static int LuaOperatorShiftIndices(lua_State *L)
+{
+  OperatorType *a = (OperatorType *) luaL_checkudata(L, lua_upvalueindex(1), "Operator_Type");
+  uint32_t len = (uint32_t)lua_gettop(L);
+  if(len==1)
+  {
+    int di = (int)luaL_checkinteger(L, 1);
+    
+  }
+  else
+  {
+    return luaL_error(L, "Error in .ShiftIndex(arg) unrecognized arguments (expected one integer)\n");
+  }
+  return 0;
+}
+
+
 static int LuaOperatorIndex(lua_State * L)
 {
   OperatorType *a = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
@@ -5142,7 +5159,12 @@ static int LuaOperatorIndex(lua_State * L)
 		}
 		return 1;
 	}
-  return luaL_error(L, "Error operator variable not found");;
+  if (strcmp(str, "IndexShift") == 0)
+  {
+    //TODO
+    return luaL_error(L, "IndexShift not yet implemented as method");
+  }
+  return luaL_error(L, "Error operator variable not found");
 }
 
 static int LuaOperatorNewIndex(lua_State * L)

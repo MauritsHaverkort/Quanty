@@ -1819,6 +1819,7 @@ uint32_t CompactMatrixSVDOrthogonalizeRow(CompactMatrixType * A, const double Si
     {
       if(S[i]<=SingularValue)
       {
+        VerbosityPrintf(0x10000,"Singular value found at position %d with value %e \n",i,S[i]);
         S[i]=0;
         NSingular++;
       }

@@ -1464,6 +1464,8 @@ uint32_t OperatorSetMaxLength(OperatorType * const O)
   return 0;
 }
 
+
+
 /* Functions that determine if two particles are ordered or not.
  *  returns 0 if A is left of B
  *  returns 6 if A and B are fermions and A==B
@@ -6145,6 +6147,21 @@ uint32_t RotateOperatorNormalOrder(OperatorType * const OA, const OperatorType O
   return MappedOperatorAddNormalOrder(OA, OB, U, QDetNotOrdered);
 }
 
+// shift the indices of the operator from i to i + di
+// this function generates a new operator
+uint32_t ShiftOperator(OperatorType * const OA, const OperatorType OB, int di)
+{
+  
+  return 0;
+}
+
+// shift the indices of the operator from i to i + di
+// This function modifies the operator
+uint32_t ShiftOperatorInline(OperatorType * const OA, int di)
+{
+  
+  return 0;
+}
 
 /*  OT == O^{T}
  */
