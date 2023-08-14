@@ -1872,6 +1872,7 @@ uint32_t CompactMatrixSVDOrthogonalizeRow(CompactMatrixType * A, const double Si
       qsort(Spos, NSingular, sizeof(uint32_t), cmpuint32t);
       for(i=0;i<NSingular;i++)
       {
+        VerbosityPrintf(0x10000,"Singular value removed at position %d \n",Spos[i]);
         CompactMatrixRemoveRow(A, Spos[i]);
       }
     }
