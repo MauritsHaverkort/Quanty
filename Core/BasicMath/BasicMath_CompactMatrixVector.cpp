@@ -1765,12 +1765,9 @@ uint32_t CompactMatrixSVDOrthogonalizeRow(CompactMatrixType * A, const double Si
     
     if((NSingular!=0)&&(ReduceDimension==true))
     {
-      uint32_t Spos[NSingular];
-      double Smin[NSingular],Snow;
-      for(i=0;i<NSingular;i++)
-      {
-        Smin[i]=DBL_MAX;
-      }
+      uint32_t Spos =0; // position of vector with smallest norm
+      double Smin = 0.0,Snow; // norm of the vector at Spos and norm of the next vector we test
+      Smin=DBL_MAX;
       for(i=0;i<A->Ni;i++)
       {
         Snow=0;
@@ -1778,26 +1775,15 @@ uint32_t CompactMatrixSVDOrthogonalizeRow(CompactMatrixType * A, const double Si
         {
           Snow+=A->V[i*A->Nj+j].Re*A->V[i*A->Nj+j].Re+A->V[i*A->Nj+j].Im*A->V[i*A->Nj+j].Im;
         }
-        for(j=0;j<NSingular;j++)
+        VerbosityPrintf(0x30000,"Determining which vector to remove, norm found at %d is %24.16e \n",i,Snow);
+        if (Snow <= Smin)
         {
-          if(Snow<Smin[j])
-          {
-            for(k=NSingular-1;k>j+1;k--)
-            {
-              Smin[k]=Smin[k-1];
-              Spos[k]=Spos[k-1];
-            }
-            Smin[j]=Snow;
-            Spos[j]=i;
-            break;
-          }
+          Smin = Snow;
+          Spos = i;
         }
       }
-      qsort(Spos, NSingular, sizeof(uint32_t), cmpuint32t);
-      for(i=0;i<NSingular;i++)
-      {
-        CompactMatrixRemoveRow(A, Spos[i]);
-      }
+      VerbosityPrintf(0x10000,"Singular value removed at position %d \n",Spos);
+      CompactMatrixRemoveRow(A, Spos);
     }
   }
   else
@@ -1841,12 +1827,10 @@ uint32_t CompactMatrixSVDOrthogonalizeRow(CompactMatrixType * A, const double Si
     
     if((NSingular!=0)&&(ReduceDimension==true))
     {
-      uint32_t Spos[NSingular]; // position of sigular vectors
-      double Smin[NSingular],Snow; // norm that gives boundary between singular and non-singular
+      uint32_t Spos = 0; // position of vector with smallest norm
+      double Smin = 0.0,Snow; // norm of the vector at Spos and norm of the next vector we test
       for(i=0;i<NSingular;i++)
-      {
-        Smin[i]=DBL_MAX;
-      }
+      Smin=DBL_MAX;
       for(i=0;i<A->Ni;i++)
       {
         Snow=0;
@@ -1854,27 +1838,15 @@ uint32_t CompactMatrixSVDOrthogonalizeRow(CompactMatrixType * A, const double Si
         {
           Snow+=A->VRe[i*A->Nj+j]*A->VRe[i*A->Nj+j];
         }
-        for(j=0;j<NSingular;j++)
+        VerbosityPrintf(0x30000,"Determining which vector to remove, norm found at %d is %24.16e \n",i,Snow);
+        if (Snow <= Smin)
         {
-          if(Snow<Smin[j])
-          {
-            for(k=NSingular-1;k>j;k--)
-            {
-              Smin[k]=Smin[k-1];
-              Spos[k]=Spos[k-1];
-            }
-            Smin[j]=Snow;
-            Spos[j]=i;
-            break;
-          }
+          Smin = Snow;
+          Spos = i;
         }
       }
-      qsort(Spos, NSingular, sizeof(uint32_t), cmpuint32t);
-      for(i=0;i<NSingular;i++)
-      {
-        VerbosityPrintf(0x10000,"Singular value removed at position %d \n",Spos[i]);
-        CompactMatrixRemoveRow(A, Spos[i]);
-      }
+      VerbosityPrintf(0x10000,"Singular value removed at position %d \n",Spos);
+      CompactMatrixRemoveRow(A, Spos);
     }
   }
   free(S);
