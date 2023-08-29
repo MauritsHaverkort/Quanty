@@ -3173,13 +3173,19 @@ static int LuaOperatorSetOnsiteEnergy(lua_State *L)
   if(O->l[2].QComplex==0)
   {
   	RealOperatorAddDiagonalOffset(O, OrbitalsToInclude, len, OldOnsiteEnergy.Re);
+    lua_pushnumber(L, OldOnsiteEnergy.Re);
   }
   else
   {
   	ComplexOperatorAddDiagonalOffset(O, OrbitalsToInclude, len, OldOnsiteEnergy);
+    Complex16 * res;
+    res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
+    res->Re = OldOnsiteEnergy.Re;
+    res->Im = OldOnsiteEnergy.Im;
+    luaL_setmetatable(L, "Complex_Type");
   }
-  
-  return 0;
+  // we return the shift of the onsite energy
+  return 1;
 }
 
 
