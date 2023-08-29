@@ -3101,7 +3101,7 @@ static int LuaMeanFieldOperator(lua_State *L)
     return luaL_error(L, "MeanFieldOperator called with %d arguments. Two or three expected, Operator, Density Matrix and optional Options.\n",len);
   if(len==3)
     LuaCheckOptions(L, -1, LuaOptions);
-  if((Options.OffsetAsTrace=true) && (Options.Offset=false))
+  if((Options.OffsetAsTrace==true) && (Options.Offset==false))
   {
     return luaL_error(L, "MeanFieldOperator can not both have the option Offset = false and OffsetAsTrace = true\n");
   }
