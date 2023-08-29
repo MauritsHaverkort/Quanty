@@ -1111,6 +1111,19 @@ static int LuaChop(lua_State * L)
   double epsilon=10*DBL_EPSILON;
   double temp;
   uint32_t len = (uint32_t)lua_gettop(L);
+  struct
+  {
+    bool Distance;
+  } Options;
+  LuaOptionsType LuaChopOptions[]={
+    {"Distance" ,        "bool",                      &(Options.Distance)},
+    {NULL, NULL, NULL}};
+  Options.Distance=false;
+  if(LuaTestOptionsList(L, -1))
+  {
+    LuaCheckOptions(L, len, LuaChopOptions);
+    len=len-1;
+  }
   if(len!=1)
   {
     epsilon=luaL_checknumber(L,len);
@@ -1187,6 +1200,23 @@ static int LuaChop(lua_State * L)
         CompactMatrixChop(Mnew, epsilon);
         luaL_setmetatable(L, "Matrix_Type");
         Mnew->OnLuaStack=true;
+        return 1;
+      }
+      if (luaL_testudata(L, len, "TightBinding_Type") != NULL)
+      {
+        TightBindingDef *TB = (TightBindingDef *) luaL_checkudata(L, 1, "TightBinding_Type");
+        TightBindingDef *TBnew;
+        TBnew = (TightBindingDef*) lua_newuserdata(L, sizeof(TightBindingDef));
+        CopyTightBindingDef(TB, TBnew);
+        if (Options.Distance)
+        {
+          ChopTightBindingDefDistance(TBnew, epsilon);
+        }
+        else
+        {
+          ChopTightBindingDefSize(TBnew, epsilon);
+        }
+        luaL_setmetatable(L, "TightBinding_Type");
         return 1;
       }
       return luaL_error(L, "Error: Chop an object of unrecognised type\n");

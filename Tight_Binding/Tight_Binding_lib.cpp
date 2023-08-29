@@ -71,6 +71,116 @@ int FreeTightBindingDef(TightBindingDef * A)
   return 0;
 }
 
+
+// B <- A
+int CopyTightBindingDef(TightBindingDef const *const A, TightBindingDef *const B)
+{
+  uint32_t i;
+  strncpy(B->Name, A->Name, sizeof(B->Name));
+  B->Cell = A->Cell;
+  B->Cell.Atom = (AtomType*)malloc(A->Cell.NAtoms*sizeof(AtomType));
+  for (i=0;i<B->Cell.NAtoms;i++)
+  {
+    CopyAtomType(&(A->Cell.Atom[i]),&(B->Cell.Atom[i]));
+  }
+  B->nH = A->nH;
+  B->H = (TightBindingDefHopping*)malloc(B->nH * sizeof(TightBindingDefHopping));
+  for(i=0;i<A->nH;i++)
+  {
+    B->H[i] = A->H[i];
+    MatrixCopy(&(B->H[i].Hop),A->H[i].Hop);
+  }
+  B->NFermion = A->NFermion;
+  SetNFermionIndexTightBindingDef(B);
+  return 0;
+}
+
+// remove all elements whose norm is smaller than epsilon
+int ChopTightBindingDefSize(TightBindingDef *const A,  double const epsilon)
+{
+  double const Sqrepsilon = Sqr(epsilon);
+  bool RemoveHopping;
+  int i,j;
+  for (i=0;i<A->nH;i++)
+  {
+    RemoveHopping=true;
+    if(A->H[i].Hop.QComplex) //complex
+    {
+      for(j=0;j<A->H[i].Hop.Ni * A->H[i].Hop.Nj;j++)
+      {
+        if( Sqr( A->H[i].Hop.VRe[0][j] ) + Sqr( A->H[i].Hop.VRe[0][j] ) < Sqrepsilon)
+        {
+          A->H[i].Hop.VRe[0][j] = 0;
+          A->H[i].Hop.VIm[0][j] = 0;
+        }
+        else
+        {
+          RemoveHopping = false;
+        }
+      }
+      if(RemoveHopping == true)
+      {
+        FreeMatrix(&(A->H[i].Hop));
+        for (j=i;j<A->nH-1;j++)
+        {
+          A->H[j] = A->H[j+1];
+        }
+        i=i-1;
+        A->nH = A->nH-1;
+      }
+    }
+    else // real
+    {
+      for(j=0;j<A->H[i].Hop.Ni * A->H[i].Hop.Nj;j++)
+      {
+        if(abs( A->H[i].Hop.VRe[0][j] ) < epsilon)
+        {
+          A->H[i].Hop.VRe[0][j] = 0;
+        }
+        else
+        {
+          RemoveHopping = false;
+        }
+      }
+      if(RemoveHopping == true)
+      {
+        FreeMatrix(&(A->H[i].Hop));
+        for (j=i;j<A->nH-1;j++)
+        {
+          A->H[j] = A->H[j+1];
+        }
+        i=i-1;
+        A->nH = A->nH-1;
+      }
+    }
+  }
+  return 0;
+}
+
+// remove all deffinitions with a hopping distance larger than distance
+int ChopTightBindingDefDistance(TightBindingDef *const A,  double const distance)
+{
+  double const Sqrdistance = Sqr(distance);
+  int i,j;
+  for (i=0;i<A->nH;i++)
+  {
+    if( Sqr(A->H[i].ConnectingVector[0]) + Sqr(A->H[i].ConnectingVector[1]) + Sqr(A->H[i].ConnectingVector[2]) > Sqrdistance)
+    {
+      FreeMatrix(&(A->H[i].Hop));
+      for (j=i;j<A->nH-1;j++)
+      {
+        A->H[j] = A->H[j+1];
+      }
+      i=i-1;
+      A->nH = A->nH-1;
+    }
+  }
+  return 0;
+}
+
+
+
+
 int CopyAtomType(const AtomType *const A, AtomType *B)
 {
   int ishell,iorb;
