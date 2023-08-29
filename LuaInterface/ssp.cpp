@@ -3089,16 +3089,22 @@ static int LuaMeanFieldOperator(lua_State *L)
   {
     bool AddDFTSelfInteraction=false;
     bool OffsetAsTrace=false;
+    bool Offset=true;
   } Options;
   uint32_t len = (uint32_t)lua_gettop(L);
   LuaOptionsType LuaOptions[]={
     {"AddDFTSelfInteraction","bool",&(Options.AddDFTSelfInteraction)},
-		{"OffsetAsTrace","bool",&(Options.OffsetAsTrace)},
+    {"OffsetAsTrace","bool",&(Options.OffsetAsTrace)},
+    {"Offset","bool",&(Options.Offset)},
     {NULL, NULL, NULL}};
   if(len<2 || len>3)
     return luaL_error(L, "MeanFieldOperator called with %d arguments. Two or three expected, Operator, Density Matrix and optional Options.\n",len);
   if(len==3)
     LuaCheckOptions(L, -1, LuaOptions);
+  if((Options.OffsetAsTrace=true) && (Options.Offset=false))
+  {
+    return luaL_error(L, "MeanFieldOperator can not both have the option Offset = false and OffsetAsTrace = true\n");
+  }
   H = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
   Rho = luaL_checkCompactMatrix(L, 2);
   if((H->NFermion+H->NBoson)!=Rho->Ni)
@@ -3129,7 +3135,21 @@ static int LuaMeanFieldOperator(lua_State *L)
 	{
 		MeanFieldOperator(H, HMF, *Rho, Options.AddDFTSelfInteraction);
 	}
-  
+  if(Options.Offset==false)
+  {
+    if (HMF->l[0].N != 0)
+    {
+      if (HMF->l[0].QComplex)
+      {
+        HMF->l[0].V[0].Re = 0;
+        HMF->l[0].V[0].Re = 0;
+      }
+      else
+      {
+        HMF->l[0].VRe[0]=0;
+      }
+    }
+  }
   luaL_setmetatable(L, "Operator_Type");
   strncpy(HMF->Name, "", MAXStrLength-1); //An appropriate Name can be given in Lua.
   FreeCompactMatrix(Rho);
