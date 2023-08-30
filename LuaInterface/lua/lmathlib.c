@@ -37,6 +37,46 @@ static int math_abs (lua_State *L)
   return 1;
 }
 
+// Implementation according to
+// https://en.wikipedia.org/wiki/Sign_function
+static int math_sign (lua_State *L)
+{
+  if (luaL_testudata(L, 1, "Complex_Type") != NULL)
+  {
+    Complex16 *s = (Complex16 *) luaL_checkudata(L, 1, "Complex_Type");
+    double Ns = sqrt( Sqr(s->Re) + Sqr(s->Im) );
+    if (Ns < 10 * DBL_MIN)
+    {
+      lua_pushnumber(L, 0);
+    }
+    else
+    {
+      Complex16 *res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
+      res->Re = s->Re / Ns;
+      res->Im = s->Im / Ns;
+      luaL_setmetatable(L, "Complex_Type");
+    }
+  }
+  else
+  {
+    double s=luaL_checknumber(L, 1);
+    if (s<0)
+    {
+      lua_pushnumber(L, -1);
+    }
+    else if (s>0)
+    {
+      lua_pushnumber(L, 1);
+    }
+    else
+    {
+      lua_pushnumber(L, 0);
+    }
+  }
+  return 1;
+}
+
+
 static int math_sin (lua_State *L)
 {
   if (luaL_testudata(L, 1, "Complex_Type") != NULL)
@@ -186,9 +226,53 @@ static int math_modf (lua_State *L) {
 }
 
 static int math_sqrt (lua_State *L) {
-  double s=luaL_checknumber(L, 1);
-  if(s<0) luaL_error(L, "Calculating sqrt(%d). Can not take the root of a negative number\n",s);
-  lua_pushnumber(L, l_mathop(sqrt)(s));
+  if (luaL_testudata(L, 1, "Complex_Type") != NULL)
+  {
+    Complex16 *s = (Complex16 *) luaL_checkudata(L, 1, "Complex_Type");
+    Complex16 *res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
+    double r, theta;
+    r = sqrt( Sqr(s->Re) + Sqr(s->Im) );
+    if(s->Re<0)
+    {
+      theta = atan2(Abs(s->Im), -s->Re);
+      theta = theta/2;
+      r = sqrt(r);
+      if(signbit(s->Im))
+      {
+        res->Re =  r * sin(theta);
+        res->Im = -r * cos(theta);
+      }
+      else
+      {
+        res->Re = r * sin(theta);
+        res->Im = r * cos(theta);
+      }
+    }
+    else
+    {
+      theta = atan2(s->Im, s->Re);
+      theta = theta/2;
+      r = sqrt(r);
+      res->Re = r * cos(theta);
+      res->Im = r * sin(theta);
+    }
+    luaL_setmetatable(L, "Complex_Type");
+  }
+  else
+  {
+    double s=luaL_checknumber(L, 1);
+    if(s<0)
+    {
+      Complex16 *res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
+      res->Re = 0;
+      res->Im = sqrt(-s);
+      luaL_setmetatable(L, "Complex_Type");
+    }
+    else
+    {
+      lua_pushnumber(L, l_mathop(sqrt)(s));
+    }
+  }
   return 1;
 }
 
@@ -876,6 +960,7 @@ static const luaL_Reg mathlib[] = {
   {"rad",   math_rad},{"Rad",   math_rad},
   {"random",     math_random},{"Random",     math_random},
   {"randomseed", math_randomseed},{"RandomSeed", math_randomseed},
+  {"sign",   math_sign},{"Sign",   math_sign},
   {"sinh",   math_sinh},{"Sinh",   math_sinh},
   {"sin",   math_sin},{"Sin",   math_sin},
   {"sqrt",  math_sqrt},{"Sqrt",  math_sqrt},
