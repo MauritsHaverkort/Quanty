@@ -17,11 +17,12 @@ uint32_t AddAditionalInformationToSuperCell(CrystalStructureSuperCellType * A)
   }
   ReciprocalLatticeVector(UnitCellDouble, A->gSuperCell,A->Crystal.Units);
   l = 0;
-  for (i = -(int32_t) A->NCell; i < (int32_t) A->NCell; i++)
+  // TODO: Search for all k-vectors within supercell in a smarter way that always works and not only works most of the time
+  for (i = -2*((int32_t) A->NCell); i < 2*((int32_t) A->NCell); i++)
   {
-    for (j = -(int32_t) A->NCell; j < (int32_t) A->NCell; j++)
+    for (j = -2*((int32_t) A->NCell); j < 2*((int32_t) A->NCell); j++)
     {
-      for (k = -(int32_t) A->NCell; k < (int32_t) A->NCell; k++)
+      for (k = -2*((int32_t) A->NCell); k < 2*((int32_t) A->NCell); k++)
       {
         a = A->gSuperCell[0][0] * i + A->gSuperCell[1][0] * j + A->gSuperCell[2][0] * k;
         b = A->gSuperCell[0][1] * i + A->gSuperCell[1][1] * j + A->gSuperCell[2][1] * k;
