@@ -2677,7 +2677,7 @@ uint32_t CompactMatrixEigensystem(CompactMatrixType const *A, CompactMatrixType 
     dsyev(jobz, uplo, &A->Ni, fun->VRe, &A->Ni, val, work, &lwork, &info);
     if (info)
     {
-      printf("dsyv failed in CompactMatrixEigensystem with info value %i\n", info);
+      printf("dsyev failed in CompactMatrixEigensystem with info value %i\n", info);
       printf("While working on matrix %s\n", A->Name);
       printf("continue diagonalization with dsyvd\n");
       fflush(stdout);
@@ -2689,7 +2689,7 @@ uint32_t CompactMatrixEigensystem(CompactMatrixType const *A, CompactMatrixType 
       dsyevd(jobz, uplo, &A->Ni, fun->VRe, &A->Ni, val, work, &lwork, iwork, &liwork, &info);
       if (info)
       {
-        printf("also dsyvd failed in CompactMatrixEigensystem with info value %i\n", info);
+        printf("also dsyevd failed in CompactMatrixEigensystem with info value %i\n", info);
         printf("ERORR!!!!!!!!!!\n");
         fflush(stdout);
         return 1;

@@ -31,3 +31,4 @@
 #include "lundump.c"
 #include "lvm.c"
 #include "lzio.c"
+#include "lua.c"

@@ -55,13 +55,8 @@ int main(int argc, char *argv[])
 
   TimeStampAll();
 
-  int result;
-  if (argc < 2)
-  {
-    printf("Usage: %s luafile [list of arguments]\n", argv[0]);
-    return 1;
-  }
-
+  int status,result;
+  
   lua_State *L = luaL_newstate();
   luaL_openlibs(L);
   luaopen_units(L);
@@ -73,25 +68,36 @@ int main(int argc, char *argv[])
   lua_gc(L, LUA_GCSETPAUSE, 100); //do not weight between garbage cycles
   //lua_gc(L, LUA_GCGEN, 0); //use generation mode, i.e. visit new data more often
   //lua_gc(L, LUA_GCSETSTEPMUL, 500);
-
-  result = luaL_loadfile(L, argv[1]);
-  if (result)
+  
+  if (argc < 2)
   {
-    printf("Error while loading the script:\n%s\n\n", lua_tostring(L, -1));
-    lua_close(L);
-    return 1;
+    // run Quanty interactively
+    dotty(L);
+    status = lua_pcall(L, 2, 1, 0);
+    result = lua_toboolean(L, -1);  /* get result */
+    finalreport(L, status);
   }
-  if (argc > 2)
+  else
   {
-    lua_push(L,&(argv[2]),argc-2);
-    lua_setglobal(L,"args");
-  }
-  result = lua_pcall(L, 0, 0, 0);
-  if (result)
-  {
-    fprintf(stderr, "Error while executing the script:\n%s\n\n", lua_tostring(L, -1));
-    lua_close(L);
-    return 1;
+    result = luaL_loadfile(L, argv[1]);
+    if (result)
+    {
+      printf("Error while loading the script:\n%s\n\n", lua_tostring(L, -1));
+      lua_close(L);
+      return 1;
+    }
+    if (argc > 2)
+    {
+      lua_push(L,&(argv[2]),argc-2);
+      lua_setglobal(L,"args");
+    }
+    result = lua_pcall(L, 0, 0, 0);
+    if (result)
+    {
+      fprintf(stderr, "Error while executing the script:\n%s\n\n", lua_tostring(L, -1));
+      lua_close(L);
+      return 1;
+    }
   }
   lua_close(L);
   return 0;
