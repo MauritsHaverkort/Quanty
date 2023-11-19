@@ -31,7 +31,7 @@ void FreeCompactMatrixIncludingPointer(CompactMatrixType * const M)
 }
 
 /* Initiallize a matrix M
- *  M.QComplex, M.Ni, M,Nj must be set
+ *  M.QComplex, M.Ni, M.Nj must be set
  */
 uint32_t InitCompactMatrix(CompactMatrixType * const M)
 {

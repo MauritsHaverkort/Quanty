@@ -10,3 +10,4 @@
 #include "StringPrint.h"
 #include "StuttgartNMTO.h"
 #include "postscript.h"
+#include "Wannier90.h"

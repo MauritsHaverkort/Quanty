@@ -1502,6 +1502,65 @@ typedef struct DresdenFPLO
 }
 DresdenFPLO;
 
+typedef struct Wannier90Win
+{
+  int num_wan;
+  int num_bands;
+  double unit_cell_cart[3][3];
+  struct
+  {
+    double r[3];
+  }
+  *atoms_cart;
+  struct
+  {
+    double r[3];
+  }
+  *atoms_frac;
+  
+  
+  
+  
+  
+}
+Wannier90Win;
+
+typedef struct Wannier90Hr
+{
+  int num_wan;
+  int nrpts;
+  int *degWSGridPoint;
+  int *Rx;
+  int *Ry;
+  int *Rz;
+  int *m;
+  int *n;
+  double *HRe;
+  double *HIm;
+}
+Wannier90Hr;
+
+
+typedef struct Wannier90Wout
+{
+  int NWanFun;
+  CrystalStructureType structure;
+  struct
+  {
+    double centre[3];
+    double spread;
+  }
+  *WF;
+}
+Wannier90Wout;
+
+typedef struct Wannier90
+{
+  Wannier90Win  win;
+  Wannier90Hr   hr;
+  Wannier90Wout wout;
+}
+Wannier90;
 
 
 // Obsolete structures that are replaced by new versions, use is discuraged and need to be faded out

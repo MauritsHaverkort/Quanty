@@ -598,6 +598,7 @@ static int LuaNewOperator(lua_State * L)
     O->NFermion=(uint32_t)luaL_checkunsigned(L, 1);
     O->NBoson  =(uint32_t)luaL_checkunsigned(L, 2);
     O->NWord   = O->NBoson + Min(O->NFermion, 1 + (O->NFermion - 1) / 8);
+    if(O->NWord > 4096) return luaL_error(L, "ERROR: LuaNewOperator called with to many particles in he one particle basis NF= %d, NB=%d\n",O->NFermion,O->NBoson);
     for(i=0;i<Options.NBitsKeyDouble.Ni;i++)
     {
       if(Abs(Options.NBitsKeyDouble.VRe[i])>0.5)
@@ -874,6 +875,11 @@ static int LuaNewOperator(lua_State * L)
   {
     lua_remove(L, 1);
     return LuaOperatorNewHarmonicOscillatorOnStandingWaves(L);
+  }
+  if ((strcmp(OT, "HarmonicOscillatorOnGrid") == 0)||(strcmp(OT, "HOGrid") == 0))
+  {
+    lua_remove(L, 1);
+    return LuaOperatorNewHarmonicOscillatorOnGrid(L);
   }
   
   return luaL_error(L, "ERROR: first argument in NewOperator (%s) is not recognized as a known operatortype\n See Help(\"NewOperator\") for more information\n",OT);

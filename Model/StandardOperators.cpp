@@ -4457,3 +4457,461 @@ int CreateOperatorHarmonicOscillatorOnStandingWavesPointInteractionOnBasis(doubl
   return 0;
 }
 
+
+
+
+
+int CreateOperatorHarmonicOscillatorOnGrid(double const a, int const nmax, OperatorType *const op1)
+{
+  // the grid points are -d to d in steps of d/nmax
+  // there are thus 2nmax+1 grid points
+  uint16_t oadd[2];
+  int i;
+  double const dx = a / (double)nmax;
+  double const t = 1 / Sqr(dx);
+  double val;
+  
+  InitNamedOperator(op1, "Harmonic Oscillator Kin+Pot");
+  op1->NFermion = 2 * (2*nmax+1);
+  // number of words (meaning the number of 8-bit blocks needed for storing bitstrings)
+  op1->NWord = Min(op1->NFermion, 1 + (op1->NFermion - 1) / 8);
+  InitOperatorFixedLength(op1, 2, (uint32_t)floor(log(nmax * nmax * nmax) / log(2.0)));
+  
+  // first adding the diagonal elements in position
+  for (i = 0; i < 2*nmax+1; i++)
+  {
+    val = t + 0.5 * Sqr(dx * (i-nmax)) ;
+    oadd[1] = CrAnMask + 2 * i;
+    oadd[0] = 2 * i;
+    RealOperatorAddLaderNormalOrder(op1, oadd, 2, val, &QDetNotOrderedFcFaBcBa);
+    oadd[1] = CrAnMask + 2 * i + 1;
+    oadd[0] = 2 * i + 1;
+    RealOperatorAddLaderNormalOrder(op1, oadd, 2, val, &QDetNotOrderedFcFaBcBa);
+  }
+  
+  // now adding the elements between site i and i+1
+  val = -t/2;
+  for (i = 0; i < 2*nmax; i++)
+  {
+    oadd[1] = CrAnMask + 2 * i;
+    oadd[0] = 2 * (i+1);
+    RealOperatorAddLaderNormalOrder(op1, oadd, 2, val, &QDetNotOrderedFcFaBcBa);
+    oadd[1] = CrAnMask + 2 * i + 1;
+    oadd[0] = 2 * (i+1) + 1;
+    RealOperatorAddLaderNormalOrder(op1, oadd, 2, val, &QDetNotOrderedFcFaBcBa);
+    oadd[1] = CrAnMask + 2 * (i+1);
+    oadd[0] = 2 * i;
+    RealOperatorAddLaderNormalOrder(op1, oadd, 2, val, &QDetNotOrderedFcFaBcBa);
+    oadd[1] = CrAnMask + 2 * (i+1) + 1;
+    oadd[0] = 2 * i + 1;
+    RealOperatorAddLaderNormalOrder(op1, oadd, 2, val, &QDetNotOrderedFcFaBcBa);
+  }
+  return 0;
+}
+
+int CreateOperatorHarmonicOscillatorOnGridInteraction(double const a, uint32_t const nmax, OperatorType *const op2)
+{
+  // the grid points are -d to d in steps of d/nmax
+  // there are thus 2nmax+1 grid points
+  uint16_t i,oadd[4];
+  double const dx = a / nmax;
+  double const g = 1 / dx;
+  
+  InitNamedOperator(op2, "Harmonic Oscillator Point Contact Interaction");
+  op2->NFermion = 2 * (2*nmax+1);
+  // number of words (meaning the number of 8-bit blocks needed for storing bitstrings)
+  op2->NWord = Min(op2->NFermion, 1 + (op2->NFermion - 1) / 8);
+  InitOperatorFixedLength(op2, 4, (uint32_t)floor(log(nmax * nmax * nmax) / log(2.0)));
+  // first adding the diagonal elements in position
+  for (i = 0; i < 2*nmax+1; i++)
+  {
+    oadd[3] = CrAnMask + 2 * i;
+    oadd[2] = 2 * i;
+    oadd[1] = CrAnMask + 2 * i + 1;
+    oadd[0] = 2 * i + 1;
+    RealOperatorAddLaderNormalOrder(op2, oadd, 4, g, &QDetNotOrderedFcFaBcBa);
+  }
+  return 0;
+}
+
+
+int CreateOperatorHarmonicOscillatorOnGridOnBasis(double const a, int const nmax, CompactMatrixType const *const vec, OperatorType *const op1)
+{
+  // generates the potential and kinetic energy terms for the problem of particles in a harmonic-oscillator trap on a basis of orbitals given by the rows in the matrix vec in terms of grid points.
+  // The box for the plane waves is of size -a to a
+  // 2*nmax + 1 is the total number of grid-points
+  // Note that the basis of the orbitals must have the same a and nmax, otherwise ends in problematic results and there is no way to check this automatically.
+  // Order of spins is {dn, up, dn, up, dn, up,...}
+  
+  // The basis vec is assumed to be without spin
+
+  uint16_t i, j;
+  int n;
+  // Variable for the indecies of Cr and An operator
+  uint16_t oadd[2];
+  // Variable for the matrix elements of the Hamiltonain (here H is a square matrix since it is a one particle part op)
+  double val;
+  double const dx = a/nmax;
+  double const t  = 1/Sqr(dx);
+  uint16_t const NOrbs = (uint16_t)vec->Ni;
+  
+  // Defining name for op1
+  InitNamedOperator(op1, "Harmonic Oscillator Kin+Pot");
+  op1->NFermion = 2*NOrbs;
+  // number of words (meaning the number of 8-bit blocks needed for storing bitstrings)
+  op1->NWord = Min(op1->NFermion, 1 + (op1->NFermion - 1) / 8);
+  InitOperatorFixedLength(op1, 2, (uint32_t)floor(log(nmax * nmax * nmax) / log(2.0)));
+  if(vec->QComplex)
+  {
+    printf("Sorry complex basis rotations not yet implemented in CreateOperatorHarmonicOscillatorOnGridOnBasis");
+    return 1;
+  }
+  for (i=0; i<NOrbs; i++)
+  {
+    for (j=0; j<NOrbs; j++)
+    {
+      val = 0;
+      for (n=0; n<2*nmax+1; n++)
+      {
+        val += (t + 0.5*Sqr(dx * (n-nmax))) * vec->VRe[i * vec->Nj + n] * vec->VRe[j * vec->Nj + n];
+      }
+      for (n=0; n<2*nmax; n++)
+      {
+        val += (-0.5*t) * ( vec->VRe[i * vec->Nj + n] * vec->VRe[j * vec->Nj + n + 1] + vec->VRe[i * vec->Nj + n + 1] * vec->VRe[j * vec->Nj + n] );
+      }
+      // spin dn
+      oadd[1] = CrAnMask + 2*i;
+      oadd[0] = 2*j;
+      RealOperatorAddLaderNormalOrder(op1, oadd, 2, val, &QDetNotOrderedFcFaBcBa);
+      // spin up
+      oadd[1] = CrAnMask + 2*i + 1;
+      oadd[0] = 2*j + 1;
+      RealOperatorAddLaderNormalOrder(op1, oadd, 2, val, &QDetNotOrderedFcFaBcBa);
+    }
+  }
+  return 0;
+}
+
+
+
+int CreateOperatorHarmonicOscillatorOnGridInteractionOnBasis(double const a, uint32_t const nmax, CompactMatrixType const *const vec, OperatorType *const op2)
+{
+  // the grid points are -a to a in steps of a/nmax
+  // there are thus 2nmax+1 grid points
+  uint16_t i,j,k,l,oadd[4];
+  int n;
+  double const dx = a / nmax;
+  double const g = 1 / dx;
+  uint16_t const NOrbs = (uint16_t)vec->Ni;
+  double val;
+  
+  InitNamedOperator(op2, "Harmonic Oscillator Point Contact Interaction");
+  op2->NFermion = 2 * NOrbs;
+  // number of words (meaning the number of 8-bit blocks needed for storing bitstrings)
+  op2->NWord = Min(op2->NFermion, 1 + (op2->NFermion - 1) / 8);
+  InitOperatorFixedLength(op2, 4, (uint32_t)floor(log(nmax * nmax * nmax) / log(2.0)));
+
+  if(vec->QComplex)
+  {
+    printf("Sorry complex basis rotations not yet implemented in CreateOperatorHarmonicOscillatorOnGridOnBasis");
+    return 1;
+  }
+
+  for (i=0; i<NOrbs; i++)
+  {
+    for (j=0; j<NOrbs; j++)
+    {
+      for (k=0; k<NOrbs; k++)
+      {
+        for (l=0; l<NOrbs; l++)
+        {
+          val = 0;
+          for (n=0; n<2*nmax+1; n++)
+          {
+            val += g * vec->VRe[i * vec->Nj + n] * vec->VRe[j * vec->Nj + n] * vec->VRe[k * vec->Nj + n] * vec->VRe[l * vec->Nj + n];
+          }
+          oadd[3] = CrAnMask + 2*l;
+          oadd[2] = 2*k;
+          oadd[1] = CrAnMask + 2*j+1;
+          oadd[0] = 2*i+1;
+          RealOperatorAddLaderNormalOrder(op2, oadd, 4, val, &QDetNotOrderedFcFaBcBa);
+        }
+      }
+    }
+  }
+  return 0;
+}
+
+
+
+
+int CreateOverlapMatrixHarmonicOscillatorOnSplineWaveletA(uint32_t const nmax, CompactMatrixType *S)
+{
+  // the basis functions are
+  // g1[x] = (Sqrt[35/13]*Piecewise[{{1 - (3*x^2)/4 - x^3/4, x > -2 && x <= 0}, {1 - (3*x^2)/4 + x^3/4, x > 0 && x < 2}}, 0])/2
+  // g2[x] = (Sqrt[105]*Piecewise[{{x*(2 + x)^2, x > -2 && x <= 0}, {(2 - x)^2*x, x > 0 && x < 2}}, 0])/16
+  // f1[x,n,d] = sqrt[2/d] g1[2x/d-2n]
+  // f2[x,n,d] = sqrt[2/d] g2[2x/d-2n]
+  // The basis is ordered from n = -nmax to n = nmax
+  // For each n there are 4 states 1down, 1up, 2down, 2up
+  int i;
+  S->QComplex = 0;
+  S->Ni = 4 * (2 * nmax + 1);
+  S->Nj = 4 * (2 * nmax + 1);
+  InitCompactMatrix(S);
+  for (i = 0; i < 2*nmax+1; i++)
+  {
+    S->VRe[4*i+0 + S->Nj * (4*i+0)] = 1;
+    S->VRe[4*i+1 + S->Nj * (4*i+1)] = 1;
+    S->VRe[4*i+2 + S->Nj * (4*i+2)] = 1;
+    S->VRe[4*i+3 + S->Nj * (4*i+3)] = 1;
+  }
+  
+  for (i = 0; i < 2*nmax; i++)
+  {
+    S->VRe[4*(i+1)+0 + S->Nj * (4*(i+0)+0)] = 9./52.;
+    S->VRe[4*(i+0)+0 + S->Nj * (4*(i+1)+0)] = 9./52.;
+    S->VRe[4*(i+1)+1 + S->Nj * (4*(i+0)+1)] = 9./52.;
+    S->VRe[4*(i+0)+1 + S->Nj * (4*(i+1)+1)] = 9./52.;
+    
+    S->VRe[4*(i+1)+2 + S->Nj * (4*(i+0)+2)] =-3./8.;
+    S->VRe[4*(i+0)+2 + S->Nj * (4*(i+1)+2)] =-3./8.;
+    S->VRe[4*(i+1)+3 + S->Nj * (4*(i+0)+3)] =-3./8.;
+    S->VRe[4*(i+0)+3 + S->Nj * (4*(i+1)+3)] =-3./8.;
+    
+    S->VRe[4*(i+1)+0 + S->Nj * (4*(i+0)+2)] = sqrt(13./3.)/8.;
+    S->VRe[4*(i+0)+2 + S->Nj * (4*(i+1)+0)] = sqrt(13./3.)/8.;
+    S->VRe[4*(i+1)+2 + S->Nj * (4*(i+0)+0)] =-sqrt(13./3.)/8.;
+    S->VRe[4*(i+0)+0 + S->Nj * (4*(i+1)+2)] =-sqrt(13./3.)/8.;
+    S->VRe[4*(i+1)+1 + S->Nj * (4*(i+0)+3)] = sqrt(13./3.)/8.;
+    S->VRe[4*(i+0)+3 + S->Nj * (4*(i+1)+1)] = sqrt(13./3.)/8.;
+    S->VRe[4*(i+1)+3 + S->Nj * (4*(i+0)+1)] =-sqrt(13./3.)/8.;
+    S->VRe[4*(i+0)+1 + S->Nj * (4*(i+1)+3)] =-sqrt(13./3.)/8.;
+    
+  }
+  return 0;
+}
+
+int CreateOperatorHarmonicOscillatorOnSplineWaveletA(double const d, uint32_t const nmax, OperatorType *const op1)
+{
+  // the basis functions are
+  // g1[x] = (Sqrt[35/13]*Piecewise[{{1 - (3*x^2)/4 - x^3/4, x > -2 && x <= 0}, {1 - (3*x^2)/4 + x^3/4, x > 0 && x < 2}}, 0])/2
+  // g2[x] = (Sqrt[105]*Piecewise[{{x*(2 + x)^2, x > -2 && x <= 0}, {(2 - x)^2*x, x > 0 && x < 2}}, 0])/16
+  // f1[x,n,d] = sqrt[2/d] g1[2x/d-2n]
+  // f2[x,n,d] = sqrt[2/d] g2[2x/d-2n]
+  uint16_t i,oadd[2];
+  double const Ekin110 = 21/(d*d*13);
+  double const Ekin11p =-21/(d*d*26);
+  double const Ekin220 = 7/(d*d);
+  double const Ekin22p =-7/(d*d*8);
+  double const Ekin12p = 7*sqrt(3./13.)/(d*d*8);
+  double const Ekin12m =-7*sqrt(3./13.)/(d*d*8);
+  double val;
+  
+  InitNamedOperator(op1, "Harmonic Oscillator Kin+Pot");
+  op1->NFermion = 4 * (2*nmax+1);
+  // number of words (meaning the number of 8-bit blocks needed for storing bitstrings)
+  op1->NWord = Min(op1->NFermion, 1 + (op1->NFermion - 1) / 8);
+  InitOperatorFixedLength(op1, 2, (uint32_t)floor(log(nmax * nmax * nmax) / log(2.0)));
+  
+  // first adding the diagonal elements in position
+  for (i = 0; i < 2*nmax+1; i++)
+  {
+    val = Ekin110 + Sqr(d) * (19/468. + Sqr(i-nmax)/2. );
+    oadd[1] = CrAnMask + 4 * i;
+    oadd[0] = 4 * i;
+    RealOperatorAddLaderNormalOrder(op1, oadd, 2, val, &QDetNotOrderedFcFaBcBa);
+    oadd[1] = CrAnMask + 4 * i + 1;
+    oadd[0] = 4 * i + 1;
+    RealOperatorAddLaderNormalOrder(op1, oadd, 2, val, &QDetNotOrderedFcFaBcBa);
+    
+    val = Ekin220 + Sqr(d) * (1/12.) * (1 + 6 * Sqr(i-nmax));
+    oadd[1] = CrAnMask + 4 * i + 2;
+    oadd[0] = 4 * i + 2;
+    RealOperatorAddLaderNormalOrder(op1, oadd, 2, val, &QDetNotOrderedFcFaBcBa);
+    oadd[1] = CrAnMask + 4 * i + 3;
+    oadd[0] = 4 * i + 3;
+    RealOperatorAddLaderNormalOrder(op1, oadd, 2, val, &QDetNotOrderedFcFaBcBa);
+    
+    val = Sqr(d) * 7 * (i-nmax) / (4 * sqrt(39.));
+    oadd[1] = CrAnMask + 4 * i + 0;
+    oadd[0] = 4 * i + 2;
+    RealOperatorAddLaderNormalOrder(op1, oadd, 2, val, &QDetNotOrderedFcFaBcBa);
+    oadd[1] = CrAnMask + 4 * i + 1;
+    oadd[0] = 4 * i + 3;
+    RealOperatorAddLaderNormalOrder(op1, oadd, 2, val, &QDetNotOrderedFcFaBcBa);
+    oadd[1] = CrAnMask + 4 * i + 2;
+    oadd[0] = 4 * i + 0;
+    RealOperatorAddLaderNormalOrder(op1, oadd, 2, val, &QDetNotOrderedFcFaBcBa);
+    oadd[1] = CrAnMask + 4 * i + 3;
+    oadd[0] = 4 * i + 1;
+    RealOperatorAddLaderNormalOrder(op1, oadd, 2, val, &QDetNotOrderedFcFaBcBa);
+    
+  }
+  
+  // now adding the elements between site i and i+1
+  for (i = 0; i < 2*nmax; i++)
+  {
+    val = Ekin11p + Sqr(d) * (23 + 81 * (i-nmax) * (1 + i - nmax))/936.;
+    oadd[1] = CrAnMask + 4 * i;
+    oadd[0] = 4 * (i+1);
+    RealOperatorAddLaderNormalOrder(op1, oadd, 2, val, &QDetNotOrderedFcFaBcBa);
+    oadd[1] = CrAnMask + 4 * i + 1;
+    oadd[0] = 4 * (i+1) + 1;
+    RealOperatorAddLaderNormalOrder(op1, oadd, 2, val, &QDetNotOrderedFcFaBcBa);
+    oadd[1] = CrAnMask + 4 * (i+1);
+    oadd[0] = 4 * i;
+    RealOperatorAddLaderNormalOrder(op1, oadd, 2, val, &QDetNotOrderedFcFaBcBa);
+    oadd[1] = CrAnMask + 4 * (i+1) + 1;
+    oadd[0] = 4 * i + 1;
+    RealOperatorAddLaderNormalOrder(op1, oadd, 2, val, &QDetNotOrderedFcFaBcBa);
+    
+    
+    val = Ekin22p + Sqr(d) * (-5 - 18 * (i-nmax) * (1 + i - nmax))/96.;
+    oadd[1] = CrAnMask + 4 * i;
+    oadd[0] = 4 * (i+1);
+    RealOperatorAddLaderNormalOrder(op1, oadd, 2, val, &QDetNotOrderedFcFaBcBa);
+    oadd[1] = CrAnMask + 4 * i + 1;
+    oadd[0] = 4 * (i+1) + 1;
+    RealOperatorAddLaderNormalOrder(op1, oadd, 2, val, &QDetNotOrderedFcFaBcBa);
+    oadd[1] = CrAnMask + 4 * (i+1);
+    oadd[0] = 4 * i;
+    RealOperatorAddLaderNormalOrder(op1, oadd, 2, val, &QDetNotOrderedFcFaBcBa);
+    oadd[1] = CrAnMask + 4 * (i+1) + 1;
+    oadd[0] = 4 * i + 1;
+    RealOperatorAddLaderNormalOrder(op1, oadd, 2, val, &QDetNotOrderedFcFaBcBa);
+    
+    val = Ekin12p - Sqr(d) * (19 + 72 * (i-nmax) + 78 * Sqr(i-nmax) ) / (4 * sqrt(39));
+    oadd[1] = CrAnMask + 4 * i;
+    oadd[0] = 4 * (i+1) + 2;
+    RealOperatorAddLaderNormalOrder(op1, oadd, 2, val, &QDetNotOrderedFcFaBcBa);
+    oadd[1] = CrAnMask + 4 * i + 1;
+    oadd[0] = 4 * (i+1) + 3;
+    RealOperatorAddLaderNormalOrder(op1, oadd, 2, val, &QDetNotOrderedFcFaBcBa);
+    oadd[1] = CrAnMask + 4 * (i+1) + 2;
+    oadd[0] = 4 * i;
+    RealOperatorAddLaderNormalOrder(op1, oadd, 2, val, &QDetNotOrderedFcFaBcBa);
+    oadd[1] = CrAnMask + 4 * (i+1) + 3;
+    oadd[0] = 4 * i + 1;
+    RealOperatorAddLaderNormalOrder(op1, oadd, 2, val, &QDetNotOrderedFcFaBcBa);
+    
+    val = Ekin12m + Sqr(d) * (25 + 84 * (i-nmax) + 78 * Sqr(i-nmax) ) / (96 * sqrt(39));
+    oadd[1] = CrAnMask + 4 * i + 2;
+    oadd[0] = 4 * (i+1) ;
+    RealOperatorAddLaderNormalOrder(op1, oadd, 2, val, &QDetNotOrderedFcFaBcBa);
+    oadd[1] = CrAnMask + 4 * i + 3;
+    oadd[0] = 4 * (i+1) + 1;
+    RealOperatorAddLaderNormalOrder(op1, oadd, 2, val, &QDetNotOrderedFcFaBcBa);
+    oadd[1] = CrAnMask + 4 * (i+1);
+    oadd[0] = 4 * i + 2;
+    RealOperatorAddLaderNormalOrder(op1, oadd, 2, val, &QDetNotOrderedFcFaBcBa);
+    oadd[1] = CrAnMask + 4 * (i+1) + 1;
+    oadd[0] = 4 * i + 3;
+    RealOperatorAddLaderNormalOrder(op1, oadd, 2, val, &QDetNotOrderedFcFaBcBa);
+  }
+  return 0;
+}
+
+
+int CreateOperatorHarmonicOscillatorOnSplineWaveletAInteraction(double const d, uint32_t const nmax, OperatorType *const op2)
+{
+  // the basis functions are
+  // g1[x] = (Sqrt[35/13]*Piecewise[{{1 - (3*x^2)/4 - x^3/4, x > -2 && x <= 0}, {1 - (3*x^2)/4 + x^3/4, x > 0 && x < 2}}, 0])/2
+  // g2[x] = (Sqrt[105]*Piecewise[{{x*(2 + x)^2, x > -2 && x <= 0}, {(2 - x)^2*x, x > 0 && x < 2}}, 0])/16
+  // f1[x,n,d] = sqrt[2/d] g1[2x/d-2n]
+  // f2[x,n,d] = sqrt[2/d] g2[2x/d-2n]
+  // index for interaction {f1[n], f2[n], f1[n+1], f2[n+1]}
+  const double Uijkl[4][4][4][4] = {{{{ 0.96815905987503620639715314271527,   0,                                   0.072503310299168287333967807340588, -0.12596148731355991815742427845580},
+                                      { 0,                                    0.65895642818719741796664873587951,  0.090035298959854471542591724341260, -0.15238367401828940290478752017214},
+                                      { 0.072503310299168287333967807340588,  0.090035298959854471542591724341260, 0.043990772541068399056564737038110, -0.067141775087606857397300699909875},
+                                      {-0.12596148731355991815742427845580,  -0.15238367401828940290478752017214, -0.067141775087606857397300699909875,  0.10511923973462435000896539358078}},
+                                     {{ 0,                                    0.65895642818719741796664873587951,  0.090035298959854471542591724341260, -0.15238367401828940290478752017214},
+                                      { 0.65895642818719741796664873587951,   0,                                   0.11923973462435000896539358077820,  -0.19718578380499693994277413224233},
+                                      { 0.090035298959854471542591724341260,  0.11923973462435000896539358077820,  0.067141775087606857397300699909875, -0.10002017213555675094136632598171},
+                                      {-0.15238367401828940290478752017214,  -0.19718578380499693994277413224233, -0.10002017213555675094136632598171,   0.15309455264363116455184327037448}},
+                                     {{ 0.072503310299168287333967807340588,  0.090035298959854471542591724341260, 0.043990772541068399056564737038110, -0.067141775087606857397300699909875},
+                                      { 0.090035298959854471542591724341260,  0.11923973462435000896539358077820,  0.067141775087606857397300699909875, -0.10002017213555675094136632598171},
+                                      { 0.043990772541068399056564737038110,  0.067141775087606857397300699909875, 0.072503310299168287333967807340588, -0.090035298959854471542591724341260},
+                                      {-0.067141775087606857397300699909875, -0.10002017213555675094136632598171, -0.090035298959854471542591724341260,  0.11923973462435000896539358077820}},
+                                     {{-0.12596148731355991815742427845580,  -0.15238367401828940290478752017214, -0.067141775087606857397300699909875,  0.10511923973462435000896539358078},
+                                      {-0.15238367401828940290478752017214,  -0.19718578380499693994277413224233, -0.10002017213555675094136632598171,   0.15309455264363116455184327037448},
+                                      {-0.067141775087606857397300699909875, -0.10002017213555675094136632598171, -0.090035298959854471542591724341260,  0.11923973462435000896539358077820},
+                                      { 0.10511923973462435000896539358078,   0.15309455264363116455184327037448,  0.11923973462435000896539358077820,  -0.16534211685512165771599073200444}}},
+                                    {{{ 0,                                    0.65895642818719741796664873587951,  0.090035298959854471542591724341260, -0.15238367401828940290478752017214},
+                                      { 0.65895642818719741796664873587951,   0,                                   0.11923973462435000896539358077820,  -0.19718578380499693994277413224233},
+                                      { 0.090035298959854471542591724341260,  0.11923973462435000896539358077820,  0.067141775087606857397300699909875, -0.10002017213555675094136632598171},
+                                      {-0.15238367401828940290478752017214,  -0.19718578380499693994277413224233, -0.10002017213555675094136632598171,   0.15309455264363116455184327037448}},
+                                     {{ 0.65895642818719741796664873587951,   0,                                   0.11923973462435000896539358077820,  -0.19718578380499693994277413224233},
+                                      { 0,                                    0.85664335664335664335664335664336,  0.16534211685512165771599073200444,  -0.26770104895104895104895104895105},
+                                      { 0.11923973462435000896539358077820,   0.16534211685512165771599073200444,  0.10511923973462435000896539358078,  -0.15309455264363116455184327037448},
+                                      {-0.19718578380499693994277413224233,  -0.26770104895104895104895104895105, -0.15309455264363116455184327037448,   0.22945804195804195804195804195804}},
+                                     {{ 0.090035298959854471542591724341260,  0.11923973462435000896539358077820,  0.067141775087606857397300699909875, -0.10002017213555675094136632598171},
+                                      { 0.11923973462435000896539358077820,   0.16534211685512165771599073200444,  0.10511923973462435000896539358078,  -0.15309455264363116455184327037448},
+                                      { 0.067141775087606857397300699909875,  0.10511923973462435000896539358078,  0.12596148731355991815742427845580,  -0.15238367401828940290478752017214},
+                                      {-0.10002017213555675094136632598171,  -0.15309455264363116455184327037448, -0.15238367401828940290478752017214,   0.19718578380499693994277413224233}},
+                                     {{-0.15238367401828940290478752017214,  -0.19718578380499693994277413224233, -0.10002017213555675094136632598171,   0.15309455264363116455184327037448},
+                                      {-0.19718578380499693994277413224233,  -0.26770104895104895104895104895105, -0.15309455264363116455184327037448,   0.22945804195804195804195804195804},
+                                      {-0.10002017213555675094136632598171,  -0.15309455264363116455184327037448, -0.15238367401828940290478752017214,   0.19718578380499693994277413224233},
+                                      { 0.15309455264363116455184327037448,   0.22945804195804195804195804195804,  0.19718578380499693994277413224233,  -0.26770104895104895104895104895105}}},
+                                    {{{ 0.072503310299168287333967807340588,  0.090035298959854471542591724341260, 0.043990772541068399056564737038110, -0.067141775087606857397300699909875},
+                                      { 0.090035298959854471542591724341260,  0.11923973462435000896539358077820,  0.067141775087606857397300699909875, -0.10002017213555675094136632598171},
+                                      { 0.043990772541068399056564737038110,  0.067141775087606857397300699909875, 0.072503310299168287333967807340588, -0.090035298959854471542591724341260},
+                                      {-0.067141775087606857397300699909875, -0.10002017213555675094136632598171, -0.090035298959854471542591724341260,  0.11923973462435000896539358077820}},
+                                     {{ 0.090035298959854471542591724341260,  0.11923973462435000896539358077820,  0.067141775087606857397300699909875, -0.10002017213555675094136632598171},
+                                      { 0.11923973462435000896539358077820,   0.16534211685512165771599073200444,  0.10511923973462435000896539358078,  -0.15309455264363116455184327037448},
+                                      { 0.067141775087606857397300699909875,  0.10511923973462435000896539358078,  0.12596148731355991815742427845580,  -0.15238367401828940290478752017214},
+                                      {-0.10002017213555675094136632598171,  -0.15309455264363116455184327037448, -0.15238367401828940290478752017214,   0.19718578380499693994277413224233}},
+                                     {{ 0.043990772541068399056564737038110,  0.067141775087606857397300699909875, 0.072503310299168287333967807340588, -0.090035298959854471542591724341260},
+                                      { 0.067141775087606857397300699909875,  0.10511923973462435000896539358078,  0.12596148731355991815742427845580,  -0.15238367401828940290478752017214},
+                                      { 0.072503310299168287333967807340588,  0.12596148731355991815742427845580,  0.96815905987503620639715314271527,   0},
+                                      {-0.090035298959854471542591724341260, -0.15238367401828940290478752017214,  0,                                    0.65895642818719741796664873587951}},
+                                     {{-0.067141775087606857397300699909875, -0.10002017213555675094136632598171, -0.090035298959854471542591724341260,  0.11923973462435000896539358077820},
+                                      {-0.10002017213555675094136632598171,  -0.15309455264363116455184327037448, -0.15238367401828940290478752017214,   0.19718578380499693994277413224233},
+                                      {-0.090035298959854471542591724341260, -0.15238367401828940290478752017214,  0,                                    0.65895642818719741796664873587951},
+                                      { 0.11923973462435000896539358077820,   0.19718578380499693994277413224233,  0.65895642818719741796664873587951,   0}}},
+                                    {{{-0.12596148731355991815742427845580,  -0.15238367401828940290478752017214, -0.067141775087606857397300699909875,  0.10511923973462435000896539358078},
+                                      {-0.15238367401828940290478752017214,  -0.19718578380499693994277413224233, -0.10002017213555675094136632598171,   0.15309455264363116455184327037448},
+                                      {-0.067141775087606857397300699909875, -0.10002017213555675094136632598171, -0.090035298959854471542591724341260,  0.11923973462435000896539358077820},
+                                      { 0.10511923973462435000896539358078,   0.15309455264363116455184327037448,  0.11923973462435000896539358077820,  -0.16534211685512165771599073200444}},
+                                     {{-0.15238367401828940290478752017214,  -0.19718578380499693994277413224233, -0.10002017213555675094136632598171,   0.15309455264363116455184327037448},
+                                      {-0.19718578380499693994277413224233,  -0.26770104895104895104895104895105, -0.15309455264363116455184327037448,   0.22945804195804195804195804195804},
+                                      {-0.10002017213555675094136632598171,  -0.15309455264363116455184327037448, -0.15238367401828940290478752017214,   0.19718578380499693994277413224233},
+                                      { 0.15309455264363116455184327037448,   0.22945804195804195804195804195804,  0.19718578380499693994277413224233,  -0.26770104895104895104895104895105}},
+                                     {{-0.067141775087606857397300699909875, -0.10002017213555675094136632598171, -0.090035298959854471542591724341260,  0.11923973462435000896539358077820},
+                                      {-0.10002017213555675094136632598171,  -0.15309455264363116455184327037448, -0.15238367401828940290478752017214,   0.19718578380499693994277413224233},
+                                      {-0.090035298959854471542591724341260, -0.15238367401828940290478752017214,  0,                                    0.65895642818719741796664873587951},
+                                      { 0.11923973462435000896539358077820,   0.19718578380499693994277413224233,  0.65895642818719741796664873587951,   0}},
+                                     {{ 0.10511923973462435000896539358078,   0.15309455264363116455184327037448,  0.11923973462435000896539358077820,  -0.16534211685512165771599073200444},
+                                      { 0.15309455264363116455184327037448,   0.22945804195804195804195804195804,  0.19718578380499693994277413224233,  -0.26770104895104895104895104895105},
+                                      { 0.11923973462435000896539358077820,   0.19718578380499693994277413224233,  0.65895642818719741796664873587951,   0},
+                                      {-0.16534211685512165771599073200444,  -0.26770104895104895104895104895105,  0,                                    0.85664335664335664335664335664336}}}};
+  uint16_t i,j,k,l,n,oadd[4];
+  InitNamedOperator(op2, "Harmonic Oscillator Point-Contact");
+  op2->NFermion = 2 * (4*nmax+2);
+  // number of words (meaning the number of 8-bit blocks needed for storing bitstrings)
+  op2->NWord = Min(op2->NFermion, 1 + (op2->NFermion - 1) / 8);
+  InitOperatorFixedLength(op2, 4, (uint32_t)floor(log(nmax * nmax * nmax) / log(2.0)));
+  // interaction on site n
+  for (n = 0; n < 2*nmax+1; n++)
+  {
+    for (i=0; i<2; i++)
+    {
+      for (j=0; j<2; j++)
+      {
+        for (k=0; k<2; k++)
+        {
+          for (l=0; l<2; l++)
+          {
+            oadd[3] = CrAnMask + 4 * n + 2*i;
+            oadd[2] = 4 * n + 2*j;
+            oadd[1] = CrAnMask + 4 * n + 2*k + 1;
+            oadd[0] = 4 * n + 2*l + 1;
+            RealOperatorAddLaderNormalOrder(op2, oadd, 2, Uijkl[i][j][k][l], &QDetNotOrderedFcFaBcBa);
+          }
+        }
+      }
+    }
+  }
+  
+  return 0;
+}
