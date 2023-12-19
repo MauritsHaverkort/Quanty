@@ -4464,7 +4464,8 @@ int CreateOperatorHarmonicOscillatorOnStandingWavesPointInteractionOnBasis(doubl
 int CreateOperatorHarmonicOscillatorOnGrid(double const a, int const nmax, OperatorType *const op1)
 {
   // the grid points are -d to d in steps of d/nmax
-  // there are thus 2nmax+1 grid points
+  // there are  2nmax+1 grid points
+  // the function on the first and the last grid point is zero we  only return 2nmax-1 points
   uint16_t oadd[2];
   int i;
   double const dx = a / (double)nmax;
@@ -4472,15 +4473,15 @@ int CreateOperatorHarmonicOscillatorOnGrid(double const a, int const nmax, Opera
   double val;
   
   InitNamedOperator(op1, "Harmonic Oscillator Kin+Pot");
-  op1->NFermion = 2 * (2*nmax+1);
+  op1->NFermion = 2 * (2*nmax-1);
   // number of words (meaning the number of 8-bit blocks needed for storing bitstrings)
   op1->NWord = Min(op1->NFermion, 1 + (op1->NFermion - 1) / 8);
   InitOperatorFixedLength(op1, 2, (uint32_t)floor(log(nmax * nmax * nmax) / log(2.0)));
   
   // first adding the diagonal elements in position
-  for (i = 0; i < 2*nmax+1; i++)
+  for (i = 0; i < 2*nmax-1; i++)
   {
-    val = t + 0.5 * Sqr(dx * (i-nmax)) ;
+    val = t + 0.5 * Sqr(dx * (1+i-nmax)) ;
     oadd[1] = CrAnMask + 2 * i;
     oadd[0] = 2 * i;
     RealOperatorAddLaderNormalOrder(op1, oadd, 2, val, &QDetNotOrderedFcFaBcBa);
@@ -4491,7 +4492,7 @@ int CreateOperatorHarmonicOscillatorOnGrid(double const a, int const nmax, Opera
   
   // now adding the elements between site i and i+1
   val = -t/2;
-  for (i = 0; i < 2*nmax; i++)
+  for (i = 0; i < 2*nmax-2; i++)
   {
     oadd[1] = CrAnMask + 2 * i;
     oadd[0] = 2 * (i+1);
@@ -4512,18 +4513,19 @@ int CreateOperatorHarmonicOscillatorOnGrid(double const a, int const nmax, Opera
 int CreateOperatorHarmonicOscillatorOnGridInteraction(double const a, uint32_t const nmax, OperatorType *const op2)
 {
   // the grid points are -d to d in steps of d/nmax
-  // there are thus 2nmax+1 grid points
+  // there are 2nmax+1 grid points
+  // the function on the first and the last grid point is zero we  only return 2nmax-1 points
   uint16_t i,oadd[4];
   double const dx = a / nmax;
   double const g = 1 / dx;
   
   InitNamedOperator(op2, "Harmonic Oscillator Point Contact Interaction");
-  op2->NFermion = 2 * (2*nmax+1);
+  op2->NFermion = 2 * (2*nmax-1);
   // number of words (meaning the number of 8-bit blocks needed for storing bitstrings)
   op2->NWord = Min(op2->NFermion, 1 + (op2->NFermion - 1) / 8);
   InitOperatorFixedLength(op2, 4, (uint32_t)floor(log(nmax * nmax * nmax) / log(2.0)));
-  // first adding the diagonal elements in position
-  for (i = 0; i < 2*nmax+1; i++)
+  // adding the diagonal elements in position
+  for (i = 0; i < 2*nmax-1; i++)
   {
     oadd[3] = CrAnMask + 2 * i;
     oadd[2] = 2 * i;
@@ -4540,6 +4542,7 @@ int CreateOperatorHarmonicOscillatorOnGridOnBasis(double const a, int const nmax
   // generates the potential and kinetic energy terms for the problem of particles in a harmonic-oscillator trap on a basis of orbitals given by the rows in the matrix vec in terms of grid points.
   // The box for the plane waves is of size -a to a
   // 2*nmax + 1 is the total number of grid-points
+  // 2*nmax - 1 is the total number of grid-points returned as the functions are zero on the boundary
   // Note that the basis of the orbitals must have the same a and nmax, otherwise ends in problematic results and there is no way to check this automatically.
   // Order of spins is {dn, up, dn, up, dn, up,...}
   
@@ -4571,11 +4574,11 @@ int CreateOperatorHarmonicOscillatorOnGridOnBasis(double const a, int const nmax
     for (j=0; j<NOrbs; j++)
     {
       val = 0;
-      for (n=0; n<2*nmax+1; n++)
+      for (n=0; n<2*nmax-1; n++)
       {
-        val += (t + 0.5*Sqr(dx * (n-nmax))) * vec->VRe[i * vec->Nj + n] * vec->VRe[j * vec->Nj + n];
+        val += (t + 0.5*Sqr(dx * (1+n-nmax))) * vec->VRe[i * vec->Nj + n] * vec->VRe[j * vec->Nj + n];
       }
-      for (n=0; n<2*nmax; n++)
+      for (n=0; n<2*nmax-1; n++)
       {
         val += (-0.5*t) * ( vec->VRe[i * vec->Nj + n] * vec->VRe[j * vec->Nj + n + 1] + vec->VRe[i * vec->Nj + n + 1] * vec->VRe[j * vec->Nj + n] );
       }
@@ -4598,6 +4601,7 @@ int CreateOperatorHarmonicOscillatorOnGridInteractionOnBasis(double const a, uin
 {
   // the grid points are -a to a in steps of a/nmax
   // there are thus 2nmax+1 grid points
+  // 2*nmax - 1 is the total number of grid-points returned as the functions are zero on the boundary
   uint16_t i,j,k,l,oadd[4];
   int n;
   double const dx = a / nmax;
@@ -4626,7 +4630,7 @@ int CreateOperatorHarmonicOscillatorOnGridInteractionOnBasis(double const a, uin
         for (l=0; l<NOrbs; l++)
         {
           val = 0;
-          for (n=0; n<2*nmax+1; n++)
+          for (n=0; n<2*nmax-1; n++)
           {
             val += g * vec->VRe[i * vec->Nj + n] * vec->VRe[j * vec->Nj + n] * vec->VRe[k * vec->Nj + n] * vec->VRe[l * vec->Nj + n];
           }

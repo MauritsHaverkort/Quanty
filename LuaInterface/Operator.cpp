@@ -4533,8 +4533,8 @@ static int LuaOperatorNewHarmonicOscillatorOnGrid(lua_State * L)
   {
     double a = (double)luaL_checknumber(L, 1);
     uint32_t nmax = (uint32_t)luaL_checkunsigned(L, 2);
-    if(a<0) return luaL_error(L, "Error in LuaOperatorNewHarmonicOscillatorOnStandingWaves, a should be positive not %f\n",a);
-    if(nmax<=0) return luaL_error(L, "Error in LuaOperatorNewHarmonicOscillatorOnStandingWaves, nmax should be positive not %f\n",nmax);
+    if(a<0) return luaL_error(L, "Error in LuaOperatorNewHarmonicOscillatorOnGird, a should be positive not %f\n",a);
+    if(nmax<=0) return luaL_error(L, "Error in LuaOperatorNewHarmonicOscillatorOnGrid, nmax should be positive not %f\n",nmax);
     op1 = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
     CreateOperatorHarmonicOscillatorOnGrid(a,nmax,op1);
     luaL_setmetatable(L, "Operator_Type");
@@ -4548,9 +4548,9 @@ static int LuaOperatorNewHarmonicOscillatorOnGrid(lua_State * L)
     uint32_t nmax = (uint32_t)luaL_checkunsigned(L, 2);
     CompactMatrixType *vec;
     vec = luaL_checkCompactMatrix(L, 3);
-    if(a<0) return luaL_error(L, "Error in LuaOperatorNewHarmonicOscillatorOnStandingWaves, a should be positive not %f\n",a);
-    if(!(vec->Nj==2*nmax+1)) return luaL_error(L, "Error in LuaOperatorNewHarmonicOscillatorOnStandingWaves. The dimension of the matrix defining the basis (%d) should be equal to 2*nmax+1 (nmax=%d).\n",vec->Nj,nmax);
-    if(nmax<=0) return luaL_error(L, "Error in LuaOperatorNewHarmonicOscillatorOnStandingWaves, nmax should be positive not %f\n",nmax);
+    if(a<0) return luaL_error(L, "Error in LuaOperatorNewHarmonicOscillatorOnGrid, a should be positive not %f\n",a);
+    if(!(vec->Nj==2*nmax-1)) return luaL_error(L, "Error in LuaOperatorNewHarmonicOscillatorOnGrid. The dimension of the matrix defining the basis (%d) should be equal to 2*nmax-1 (nmax=%d).\n",vec->Nj,nmax);
+    if(nmax<=0) return luaL_error(L, "Error in LuaOperatorNewHarmonicOscillatorOnGrid, nmax should be positive not %f\n",nmax);
     op1 = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
     CreateOperatorHarmonicOscillatorOnGridOnBasis(a,nmax,vec,op1);
     luaL_setmetatable(L, "Operator_Type");
@@ -4560,7 +4560,7 @@ static int LuaOperatorNewHarmonicOscillatorOnGrid(lua_State * L)
   }
   else
   {
-    return luaL_error(L, "Error in LuaOperatorNewHarmonicOscillatorOnStandingWaves, expected 2 or 3 arguments, not %d\n",len);
+    return luaL_error(L, "Error in LuaOperatorNewHarmonicOscillatorOnGrid, expected 2 or 3 arguments, not %d\n",len);
   }
   return 2;
 }
