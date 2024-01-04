@@ -1,5 +1,7 @@
 build-job:
   stage: build
+  variables:
+   FF_POSIXLY_CORRECT_ESCAPES: "true"
   script:
   - set -x
   - echo "Start"
