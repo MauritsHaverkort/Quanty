@@ -1,6 +1,7 @@
 build-job:
   stage: build
   script:
+  - set -x
   - echo "Start"
   - module load compiler/2022.1.0
   - module load mkl/2022.1.0
