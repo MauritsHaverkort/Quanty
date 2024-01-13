@@ -501,6 +501,48 @@ static int math_randomseed (lua_State *L) {
   return 0;
 }
 
+static int math_mt_random_int (lua_State *L)
+{
+  // reads two integer numbers from disk and returns an integer in the range [min, ..., max]
+  if(lua_gettop(L)!=2) luaL_error(L, "wrong number of arguments");
+  lua_Integer l = luaL_checkinteger(L, 1);
+  lua_Integer u = luaL_checkinteger(L, 2);
+  luaL_argcheck(L, l < u, 2, "interval is empty");
+  lua_Integer r = (lua_Integer) ( (mt_genrand_int32() % (u + 1 - l) ) + l );
+  lua_pushinteger(L, r);
+  return 1;
+}
+
+static int math_mt_random_real1 (lua_State *L)
+{
+  // returns a double in the range [0,1]
+  // assumes lua_Number == double
+  if(lua_gettop(L)!=0) luaL_error(L, "wrong number of arguments");
+  lua_Number r = (lua_Number)(mt_genrand_real1());
+  lua_pushnumber(L, r);
+  return 1;
+}
+
+static int math_mt_random_real2 (lua_State *L)
+{
+  // returns a double in the range [0,1)
+  // assumes lua_Number == double
+  if(lua_gettop(L)!=0) luaL_error(L, "wrong number of arguments");
+  lua_Number r = (lua_Number)(mt_genrand_real2());
+  lua_pushnumber(L, r);
+  return 1;
+}
+
+static int math_mt_random_real3 (lua_State *L)
+{
+  // returns a double in the range (0,1)
+  // assumes lua_Number == double
+  if(lua_gettop(L)!=0) luaL_error(L, "wrong number of arguments");
+  lua_Number r = (lua_Number)(mt_genrand_real3());
+  lua_pushnumber(L, r);
+  return 1;
+}
+
 
 
 /* on stack l,m,theta,phi
@@ -959,6 +1001,10 @@ static const luaL_Reg mathlib[] = {
   {"pow",   math_pow},{"Pow",   math_pow},
   {"rad",   math_rad},{"Rad",   math_rad},
   {"random",     math_random},{"Random",     math_random},
+  {"mt_random_int",     math_mt_random_int},{"MT_Random_Int",     math_mt_random_int},
+  {"mt_random_real1",     math_mt_random_real1},{"MT_Random_Real1",     math_mt_random_real1},
+  {"mt_random_real2",     math_mt_random_real2},{"MT_Random_Real2",     math_mt_random_real2},
+  {"mt_random_real3",     math_mt_random_real3},{"MT_Random_Real3",     math_mt_random_real3},
   {"randomseed", math_randomseed},{"RandomSeed", math_randomseed},
   {"sign",   math_sign},{"Sign",   math_sign},
   {"sinh",   math_sinh},{"Sinh",   math_sinh},

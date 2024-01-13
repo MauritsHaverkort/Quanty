@@ -91,7 +91,7 @@ Complex16* luaL_checkarray_complex16(lua_State *L, int narg, uint32_t *len_out)
     }
     else
     {
-      luaL_error(L, "Error in reading complex table\n");
+      luaL_error(L, "Error in reading complex table in luaL_checkarray_complex16\n");
     }
   }
   return buff;
@@ -488,7 +488,7 @@ BlockTriDiagonalMatrixType* luaL_checkBlockTriDiagonalMatrixType(lua_State *L, i
                   }
                   else
                   {
-                    luaL_error(L, "Error in reading complex table\n");
+                    luaL_error(L, "Error in reading complex table in luaL_checkBlockTriDiagonalMatrixType\n");
                   }
                 }
                 lua_pop(L, 1);

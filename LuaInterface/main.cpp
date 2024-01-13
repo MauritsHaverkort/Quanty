@@ -69,6 +69,22 @@ int main(int argc, char *argv[])
   //lua_gc(L, LUA_GCGEN, 0); //use generation mode, i.e. visit new data more often
   //lua_gc(L, LUA_GCSETSTEPMUL, 500);
   
+  // Initiallize Mersenne Twister random generator
+  // note that the standard rand functions use system libraries and are
+  // not perfectly homogeneous.
+  // lua replaces integers by doubles. For small values this is fine, for larger
+  // ranges there are massive problems with random numbers
+  
+  srand((unsigned int)time(NULL)); rand(); rand(); rand();
+  unsigned long init[4];
+  init[0] = (unsigned long) rand();
+  init[1] = (unsigned long) rand();
+  init[2] = (unsigned long) rand();
+  init[3] = (unsigned long) rand();
+  mt_genrand_int32();
+  mt_init_by_array(init, 4);
+  mt_genrand_int32();
+  
   if (argc < 2)
   {
     // run Quanty interactively
