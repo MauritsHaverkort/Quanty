@@ -492,16 +492,13 @@ static int LuaWavefunctionPrint(lua_State * L)
     {
       FilePrintWaveFunctionPlainBinary(*(WaveFunctionType *) a, Options.stream, "w");
     }
+    else if(Options.Plain==true)
+    {
+      FilePrintWaveFunctionPlain(*(WaveFunctionType *) a, Options.stream, "w");
+    }
     else
     {
-      if(Options.Plain)
-      {
-        FilePrintWaveFunctionPlain(*(WaveFunctionType *) a, Options.stream, "w");
-      }
-      else
-      {
-        FilePrintWaveFunctionReadable(*(WaveFunctionType *) a, Options.stream, "w");
-      }
+      FilePrintWaveFunctionReadable(*(WaveFunctionType *) a, Options.stream, "w");
     }
   }
   return 0;
