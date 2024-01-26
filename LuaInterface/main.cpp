@@ -16,7 +16,9 @@
 #include "../Martin/functions_martin.cpp"
 #include "../Simon/Simon.cpp"
 
-
+// Include Plot functions
+#include "../Plot/Plot.cpp"
+#include "../Plot/LuaBinding.cpp"
 
 // Include the Lua interface
 #include "lua/includeLua.c"
@@ -34,7 +36,7 @@
 #include "TightBinding.cpp"
 #include "ResponseFunction.cpp"
 #include "Plot.cpp"
-#include "PostScript.cpp"
+//#include "PostScript.cpp"
 #include "BraKet.cpp"
 #include "eval.cpp"
 #include "ssp.cpp"
@@ -73,7 +75,7 @@ int main(int argc, char *argv[])
   // note that the standard rand functions use system libraries and are
   // not perfectly homogeneous.
   // lua replaces integers by doubles. For small values this is fine, for larger
-  // ranges there are massive problems with random numbers
+  // ranges there are massive problems with random numbers, i.e. the distribution is not flat or homogeneous
   
   srand((unsigned int)time(NULL)); rand(); rand(); rand();
   unsigned long init[4];

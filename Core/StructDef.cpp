@@ -55,6 +55,28 @@ typedef struct Complex16
 }
 Complex16;
 
+// the pointer str contains the string
+// str[lenght-1] = \0 (or should be)
+// str[allocated-1] is the last allocated byte.
+typedef struct DynamicString
+{
+  char *str;
+  size_t length;   // Current length of the string
+  size_t allocated; // Total allocated size
+} DynamicString;
+
+DynamicString InitDynamicString()
+{
+  DynamicString ret = {NULL,0,0};
+  return ret;
+}
+
+void FreeDynamicString(DynamicString *S)
+{
+  free(S->str);
+  *S = InitDynamicString();
+}
+
 /*
  *
  */

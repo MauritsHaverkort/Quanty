@@ -1,3 +1,23 @@
+// c++ like implementation
+//TODO: Anyone have a better idea where to put this?
+template <typename T>
+string to_string(const T value)
+{
+  std::ostringstream os ;
+  os << value ;
+  return os.str() ;
+}
+
+// c implementation
+// sprintfAdd takes a string and prints to the end of this string
+//
+// you find 3 implementation.
+//
+// if you do not know the length of the string, nor the amount of bytes allocated you need to
+// determine the length and reallocate -- 2 times slow
+//
+
+
 /*
  *
  */
@@ -23,29 +43,79 @@ int sprintfAdd(char ** A, const char *fmt, ...)
   return retval;
 }
 
-//TODO: Anyone have a better idea where to put this?
-template <typename T>
-string to_string(const T value)
+// We have string A->str of length A->length
+// We add the string defined by *fmt of length extralen
+//    ... It is the users respomnsibility to make sure that this is ok
+// If A->length + extralen is smaller than a->allocated we need to realloc the string
+int sprintfAdd(DynamicString *A, int extralen, const char *fmt, ...)
 {
-	std::ostringstream os ;
-	os << value ;
-	return os.str() ;
+  char * Atemp;
+  int retval;
+  va_list args;
+  va_start ( args, fmt );
+  if(A->allocated < A->length+extralen)
+  {
+    A->allocated = ( A->allocated + extralen ) * 2;
+    Atemp = (char*)realloc(A->str, A->allocated+1);
+    if(Atemp==NULL)
+    {
+      printf("ERROR: realloc failed in sprintfAdd\n");
+      return 1;
+    }
+    A->str = Atemp;
+  }
+  retval = vsnprintf(A->str+A->length,extralen,fmt,args);
+  A->length = A->length + extralen;
+  va_end(args);
+  return retval;
 }
+
+
+int sprintfAdd(DynamicString *A, const char *fmt, ...)
+{
+  const int MaxBuffSize = 1024;
+  char * Atemp;
+  int extralen;
+  va_list args;
+  va_start ( args, fmt );
+  if(A->allocated < A->length+MaxBuffSize)
+  {
+    A->allocated = Max(A->length+MaxBuffSize,2*(A->allocated));
+    Atemp = (char*)realloc(A->str, A->allocated+1);
+    if(Atemp==NULL)
+    {
+      printf("ERROR: realloc failed in sprintfAdd\n");
+      return 1;
+    }
+    A->str = Atemp;
+  }
+  extralen = vsnprintf(A->str+A->length,MaxBuffSize,fmt,args);
+  A->length = A->length + extralen;
+  va_end(args);
+  return 0;
+}
+
+
+
 
 /*
  *   Prints the values of the operator.
- *   Buffer needs to be a pointer to a list of characters that is not allocated.
+ *   StrAdrr needs to be a pointer to a list of characters that is not allocated.
  */
-uint32_t StringPrintOperatorReadable(OperatorType O, char **Buffer)
+uint32_t StringPrintOperatorReadable(OperatorType O, char **StrAdrr)
 {
   int32_t i, j, k;
-  *Buffer = (char*)malloc(4048);
-  if(*Buffer==NULL)
-  {
-    printf("ERROR: malloc failed in StringPrintOperatorReadable\n");
-    return 1;
-  }
-  *Buffer[0]='\0';
+  DynamicString temp;
+  DynamicString *Buffer;
+  temp = InitDynamicString();
+  Buffer = &temp;
+//  *Buffer = (char*)malloc(4048);
+//  if(*Buffer==NULL)
+//  {
+//    printf("ERROR: malloc failed in StringPrintOperatorReadable\n");
+//    return 1;
+//  }
+//  *Buffer[0]='\0';
   O.Name[MAXStrLength - 1] = '\0';
   sprintfAdd(Buffer, "\nOperator: %s\n", O.Name);
   sprintfAdd(Buffer, "QComplex         = %10i (Real==0 or Complex==1 or Mixed==2)\n", O.QComplex);
@@ -71,6 +141,7 @@ uint32_t StringPrintOperatorReadable(OperatorType O, char **Buffer)
     }
   }
   sprintfAdd(Buffer, "\n");
+  *StrAdrr = Buffer->str;
   return 0;
 }
 

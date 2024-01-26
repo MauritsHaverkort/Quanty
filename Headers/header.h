@@ -108,6 +108,9 @@ using std::vector;
 #include "../AtomicOperators/AtomicAux.h"
 #include "../AtomicOperators/AtomicU.h"
 
+#include "../Plot/Plot.h"
+#include "../Plot/LuaBinding.h"
+
 #include "../Martin/MartinHeaders.h"
 #include "../Simon/Simon.h"
 #include "../Yi/functions_yi.h"

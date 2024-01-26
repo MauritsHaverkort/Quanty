@@ -5274,9 +5274,10 @@ int luaopen_ssp(lua_State * L)
   luaL_newlib(L, Spectra_func);
   lua_setglobal(L, "Spectra");
   
-  
-  luaL_newlib(L, PostScript_func);
-	lua_setglobal(L, "PostScript");
+  luaL_newmetatable(L, "Graphics_Type");
+  luaL_setfuncs(L, Graphics_meta, 0);
+  luaL_newlib(L, Graphics_func);
+  lua_setglobal(L, "Graphics");
 
 	luaL_newmetatable(L, "GaussianRadialFunction_Type");
 	luaL_setfuncs(L, GaussianRadialFunction_meta, 0);

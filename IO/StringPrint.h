@@ -1,4 +1,6 @@
 int sprintfAdd(char ** A, const char *fmt, ...);
+int sprintfAdd(DynamicString *A, int extralen, const char *fmt, ...);
+int sprintfAdd(DynamicString *A, const char *fmt, ...);
 template <typename T>string to_string(const T value);
 uint32_t StringPrintOperatorReadable(OperatorType O, char **Buffer);
 uint32_t StringPrintWaveFunctionReadable(WaveFunctionType psi, char **Buffer);

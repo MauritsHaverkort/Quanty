@@ -52,14 +52,12 @@ uint32_t BinomialCoefficient(uint32_t n, uint32_t k)
 double BinomialCoefficientDouble(uint32_t n, uint32_t k)
 {
   if(n<k) return 0;
-  double result = 1, i;
+  double result = 1, i, j=0;
   for (i = 1 + Max(k, n - k); i < n+0.5; i++)
   {
+    j++;
     result *= i;
-  }
-  for (i = 1; i < Min(k, n - k)+0.5; i++)
-  {
-    result /= i;
+    result /= j;
   }
   return result;
 }
