@@ -73,6 +73,7 @@ const char* AvailableFontTypes[] = { "ArialMT",
 // and these can normaly scale a page. We thus can freely redifine the number of pixels per mm
 // To keep numbers recognizable we can scale by a factor of 10.
 #define POSTSCIPT_PIXELS_PER_MM 28.3464566929133858267717
+#define SVG_PIXELS_PER_MM       28.3464566929133858267717
 
 typedef struct TextType
 {
@@ -87,15 +88,24 @@ typedef struct TextType
 
 typedef struct BitMapType
 {
-  PointType LB;              // left top position in fraction of the canvas
-  PointType RT;              // right bottom position in fraction of the canvas
+  PointType LB;              // left bottom position in fraction of the canvas
+  PointType RT;              // right top position in fraction of the canvas
   int NpointsX;              // number of pixels in the x direction
   int NpointsY;              // number of pixels in the y direction
-  uint32_t *Pixels;          // pixels in format RGBalpha of size NpointsX * NpointsY
-  uint32_t TransparantColor; // if (TransparantColor & 1) == 1 the first 24 bit contain the RGB color that is transparant
+  uint32_t *Pixels;          // pixels in format alphaRGB of size NpointsX * NpointsY
 } BitMapType;
 
 
+
+// The left botom coordinates of the canvas are ( CanvasOrigin.X, CanvasOrigin.Y )
+// The right top coordinates of the canvas are ( CanvasOrigin.X + CanvasSize.X , CanvasOrigin.Y + CanvasSize.Y )
+// X moves from left to right
+// Y moves from bottom to top
+// all units for the canvas are in mm
+// when converted to PS or SVG the units are in 0.1 points a.k.a. 1/720 inch using integers.
+// all layers use the same absolute coordinate system
+// All elements on a layer are in relative coordinates with values between 0 and 1
+// i.e. point (x,y) is found at absolute position ( CanvasOrigin.X + x CanvasSize.X, CanvasOrigin.Y + y CanvasSize.Y )
 typedef struct GraphicsType
 {
   PointType CanvasSize;    // Size of the Canvas in mm.

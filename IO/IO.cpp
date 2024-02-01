@@ -12,6 +12,39 @@
 //#include "postscript.cpp"
 #include "Wannier90.cpp"
 
+int EncodeStringBase64(const DynamicString *in, DynamicString *out)
+{
+  int i,j;
+  uint32_t a,b,c, abc;
+  out->length = 4 * ((in->length + 2) / 3);
+  out->allocated = out->length+1;
+  out->str = (char *)malloc(out->allocated*sizeof(char));
+  out->str[out->length] = '\0';
+  if (out->str == NULL) return 1;
+  j=0;
+  for (i = 0; i < in->length;)
+  {
+    a = i < in->length ? (unsigned char)in->str[i++] : 0;
+    b = i < in->length ? (unsigned char)in->str[i++] : 0;
+    c = i < in->length ? (unsigned char)in->str[i++] : 0;
+    abc = (a << 0x10) + (b << 0x08) + c;
+    out->str[j++] = BASE64_CHARS[(abc >> 3 * 6) & 0x3F];
+    out->str[j++] = BASE64_CHARS[(abc >> 2 * 6) & 0x3F];
+    out->str[j++] = BASE64_CHARS[(abc >> 1 * 6) & 0x3F];
+    out->str[j++] = BASE64_CHARS[(abc >> 0 * 6) & 0x3F];
+  }
+  switch(in->length % 3)
+  {
+    case 1:
+      // One leftover byte -> two padding characters
+      out->str[out->length - 2] = '=';
+    case 2:
+      // Two leftover bytes -> one padding character
+      out->str[out->length - 1] = '=';
+  }
+  return 0;
+}
+
 
 class ExpectationValues
 {

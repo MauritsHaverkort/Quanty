@@ -46,6 +46,8 @@
 #define CrAnMask ((uint16_t)1<<15)
 #define NotCrAnMask (((uint16_t)1<<15)-1)
 
+static const char *BASE64_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
 typedef int (*compfn) (const void *, const void *);
 
 typedef struct Complex16

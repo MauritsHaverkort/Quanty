@@ -1,4 +1,5 @@
 #include "StructDef.cpp"
+#include "BitMap.h"
 #include "GraphicsToPS.h"
 #include "GraphicsToSVG.h"
 #include "ScientificPlots.h"
@@ -34,6 +35,9 @@ int AddTextInherentMemory(GraphicsType* Graphics, TextType* Text);
 int AddText(GraphicsType* Graphics, TextType* Text);
 int AddBitMapInherentMemory(GraphicsType *Graphics, BitMapType * BitMap);
 int AddBitMap(GraphicsType *Graphics, BitMapType * BitMap);
+int CopyGraphics(GraphicsType *Graphics, GraphicsType *Copy);
+int AddLayerInherentMemory(GraphicsType *Graphics, GraphicsType *Layer);
+int AddLayer(GraphicsType *Graphics, GraphicsType *Layer);
 
 
 

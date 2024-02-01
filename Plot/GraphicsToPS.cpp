@@ -162,8 +162,8 @@ int AddBitMapToPS(DynamicString *Buff, BitMapType *BitMap, int X0, int Y0, doubl
   double BscaleX, BscaleY, BX0, BY0;
   BscaleX = BitMap->NpointsX / ((BitMap->RT.X-BitMap->LB.X)*scaleX);
   BscaleY = BitMap->NpointsY / ((BitMap->RT.Y-BitMap->LB.Y)*scaleY);
-  BX0 = -X0 - BitMap->LB.X * scaleX * BscaleX;
-  BY0 = -Y0 - BitMap->LB.Y * scaleY * BscaleY;
+  BX0 = ( -X0 - BitMap->LB.X * scaleX ) * BscaleX;
+  BY0 = ( -Y0 - BitMap->LB.Y * scaleY ) * BscaleY;
   sprintfAdd(Buff,"gsave\n");
   sprintfAdd(Buff,"%d %d 8\n",BitMap->NpointsX,BitMap->NpointsY);
   sprintfAdd(Buff,"[%.6f 0 0 %.6f %.6f %.6f]\n",BscaleX, BscaleY, BX0, BY0);
@@ -211,14 +211,14 @@ int AddTextToPS(DynamicString *Buff, TextType *Text, int X0, int Y0, double scal
 }
 
 
-int AddLayers(DynamicString *Buff, GraphicsType *G)
+int AddLayersToPS(DynamicString *Buff, GraphicsType *G)
 {
   int i;
   
   int XMax,YMax,X0,Y0;
   double const scaleX =  POSTSCIPT_PIXELS_PER_MM * G->CanvasSize.X ;
   double const scaleY =  POSTSCIPT_PIXELS_PER_MM * G->CanvasSize.Y ;
-  double const scaleV = sqrt(scaleX * scaleY);
+  double const scaleV = sqrt(abs(scaleX * scaleY));
   
   X0 = round(POSTSCIPT_PIXELS_PER_MM * G->CanvasOrigin.X);
   Y0 = round(POSTSCIPT_PIXELS_PER_MM * G->CanvasOrigin.Y);
@@ -246,14 +246,10 @@ int AddLayers(DynamicString *Buff, GraphicsType *G)
   {
     AddTextToPS(Buff, &(G->Text[i]), X0, Y0, scaleX, scaleY, scaleV);
   }
-  
-  
-  
   for(i=1;i<G->NLayer;i++)
   {
-    AddLayers(Buff, G->Layer[i]);
+    AddLayersToPS(Buff, G->Layer[i]);
   }
-  
   return 0;
 }
 
@@ -276,7 +272,7 @@ int GraphicsToPS(GraphicsType *G, DynamicString *PS)
   
   AddPrologToPS(PS, X0, Y0, XMax, YMax);
 
-  AddLayers(PS, G);
+  AddLayersToPS(PS, G);
 
   AddCloseToPS(PS);
   return 0;

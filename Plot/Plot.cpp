@@ -1,7 +1,10 @@
 
+#include "BitMap.cpp"
 #include "GraphicsToPS.cpp"
 #include "GraphicsToSVG.cpp"
 #include "ScientificPlots.cpp"
+
+
 
 // Functions to initialize Graphics and Graphics elements (Line, Curve, Arc, Text, BitMap)
 
@@ -175,7 +178,6 @@ void InitBitMap(BitMapType* BitMap)
   BitMap->NpointsX=0;
   BitMap->NpointsY=0;
   BitMap->Pixels=NULL;
-  BitMap->TransparantColor=0;
 }
 
 BitMapType* NewBitMap()
@@ -453,16 +455,73 @@ int AddBitMap(GraphicsType *Graphics, BitMapType * BitMap)
   return 0;
 }
 
+
+int CopyGraphics(GraphicsType *Graphics, GraphicsType *Copy)
+{
+  int i;
+  InitGraphics(Copy);
+  Copy->CanvasOrigin.X=Graphics->CanvasOrigin.X;
+  Copy->CanvasOrigin.Y=Graphics->CanvasOrigin.Y;
+  Copy->CanvasSize.X=Graphics->CanvasSize.X;
+  Copy->CanvasSize.Y=Graphics->CanvasSize.Y;
+  
+  for(i=0;i<Graphics->NLine;i++)
+  {
+    if( AddLine(Copy, &(Graphics->Line[i])) ) return 1;
+  }
+  for(i=0;i<Graphics->NCurve;i++)
+  {
+    if( AddCurve(Copy, &(Graphics->Curve[i])) ) return 1;
+  }
+  for(i=0;i<Graphics->NArc;i++)
+  {
+    if( AddArc(Copy, &(Graphics->Arc[i])) ) return 1;
+  }
+  for(i=0;i<Graphics->NText;i++)
+  {
+    if( AddText(Copy, &(Graphics->Text[i])) ) return 1;
+  }
+  for(i=0;i<Graphics->NBitMap;i++)
+  {
+    if( AddBitMap(Copy, &(Graphics->BitMap[i])) ) return 1;
+  }
+  for(i=1;i<Graphics->NLayer;i++)
+  {
+    if( AddLayer(Copy, Graphics->Layer[i]) ) return 1;
+  }
+  return 0;
+}
+
+
 int AddLayerInherentMemory(GraphicsType *Graphics, GraphicsType *Layer)
 {
-  
+  // Graphics->Layer is an array of pointers to type GraphicsType.
+  // The first element points to itselve.
+  // InitGraphics allocated the array
+  GraphicsType** Temp = Graphics->Layer;
+  // test if NLayer == 2^n
+  if( ( Graphics->NLayer & ( Graphics->NLayer-1 ) ) == 0 )
+  {
+    Temp = (GraphicsType**)realloc(Graphics->Layer, 2*Graphics->NLayer *sizeof(GraphicsType*) );
+  }
+  if(Temp==NULL)
+  {
+    printf("Error in AddLayerInherentMemory, malloc failed\n");
+    return 1;
+  }
+  Graphics->Layer = Temp;
+  Graphics->Layer[Graphics->NLayer] = Layer;
+  Graphics->NLayer = Graphics->NLayer + 1;
   return 0;
 }
 
 
 int AddLayer(GraphicsType *Graphics, GraphicsType *Layer)
 {
-  
+  GraphicsType *Copy;
+  Copy = (GraphicsType*)malloc(sizeof(GraphicsType));
+  if( CopyGraphics(Layer, Copy) ) return 1;
+  if( AddLayerInherentMemory(Graphics, Copy) ) return 1;
   return 0;
 }
 

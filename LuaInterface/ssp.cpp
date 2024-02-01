@@ -5278,6 +5278,11 @@ int luaopen_ssp(lua_State * L)
   luaL_setfuncs(L, Graphics_meta, 0);
   luaL_newlib(L, Graphics_func);
   lua_setglobal(L, "Graphics");
+  
+  luaL_newmetatable(L, "BitMap_Type");
+  luaL_setfuncs(L, BitMap_meta, 0);
+  luaL_newlib(L, BitMap_func);
+  lua_setglobal(L, "BitMap");
 
 	luaL_newmetatable(L, "GaussianRadialFunction_Type");
 	luaL_setfuncs(L, GaussianRadialFunction_meta, 0);

@@ -3106,7 +3106,7 @@ int32_t LuaCheckOptions(lua_State *L, int narg, LuaOptionsType *Options)
         }
         else if(strcmp(Options[j].type, "uint8_t") == 0)
         {
-          *(uint32_t*)Options[j].variable=*(uint32_t*)LuaReturnVariableType(L, -1, Options[j].type);
+          *(uint8_t*)Options[j].variable=*(uint8_t*)LuaReturnVariableType(L, -1, Options[j].type);
         }
         else if(strcmp(Options[j].type, "double") == 0)
         {
