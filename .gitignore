@@ -10,3 +10,7 @@ Makefile
 Martin/QuickTest.cpp
 Martin/quicktest
 .settings/
+compile.sh
+Quanty_PsiPrimeOPsi
+SinaCompile.txt
+.vscode/settings.json
