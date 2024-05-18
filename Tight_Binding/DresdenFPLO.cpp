@@ -567,15 +567,26 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
 	return 0;
 }
 
+uint32_t HybridizationFunctionFromFPLO(DresdenFPLO *FPLO, BlockListOfPoles *LP, int *OrbitalList)
+{
+  
+  return 0;
+}
+
 int FreeDresdenFPLO(DresdenFPLO *FPLO)
 {
+  // Atoms
 	for (int i = 0; i < FPLO->Atoms.Natom; ++i)
 	{
 		free(FPLO->Atoms.Atom[i]);
 		free(FPLO->Atoms.Pos[i]);
 	}
-	free(FPLO->Atoms.Atom);
-	free(FPLO->Atoms.Pos);
+  if(FPLO->Atoms.Natom!=0)
+  {
+    free(FPLO->Atoms.Atom);
+    free(FPLO->Atoms.Pos);
+  }
+  // Wannier
 	for (int i = 0; i < FPLO->Wannier.Nwandef; ++i)
 	{
 		free(FPLO->Wannier.Name[i]);
@@ -592,15 +603,33 @@ int FreeDresdenFPLO(DresdenFPLO *FPLO)
 		free(FPLO->Wannier.HopVal[i]);
 		free(FPLO->Wannier.HopValIm[i]);
 	}
-	free(FPLO->Wannier.Name);
-	free(FPLO->Wannier.Site);
-	free(FPLO->Wannier.Orbital);
-	free(FPLO->Wannier.PosCenter);
-	free(FPLO->Wannier.Nhop);
-	free(FPLO->Wannier.HopVec);
-	free(FPLO->Wannier.HopVal);
-	free(FPLO->Wannier.HopValIm);
-	free(FPLO->Wannier.ActMap);
+  if(FPLO->Wannier.Nwandef !=0)
+  {
+    free(FPLO->Wannier.Name);
+    free(FPLO->Wannier.Site);
+    free(FPLO->Wannier.Orbital);
+    free(FPLO->Wannier.PosCenter);
+    free(FPLO->Wannier.Nhop);
+    free(FPLO->Wannier.HopVec);
+    free(FPLO->Wannier.HopVal);
+    free(FPLO->Wannier.HopValIm);
+    free(FPLO->Wannier.ActMap);
+  }
+  // lDOS
+  if(FPLO->lDOS.N!=0)
+  {
+    free(FPLO->lDOS.sort);
+    free(FPLO->lDOS.n);
+    free(FPLO->lDOS.l);
+    free(FPLO->lDOS.nl);
+    free(FPLO->lDOS.m);
+    free(FPLO->lDOS.spin);
+    for(int i=0;i<FPLO->lDOS.N;i++)
+    {
+      free(FPLO->lDOS.V[i]);
+    }
+    free(FPLO->lDOS.V);
+  }
 	return 0;
 }
 

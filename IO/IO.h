@@ -13,3 +13,6 @@
 #include "Wannier90.h"
 
 int EncodeStringBase64(const DynamicString *in, DynamicString *out);
+void RemoveSpacesAndNewlines(char *str);
+void RemoveDoubleSpacesAndNewlines(char *str);
+void RemoveCommentLines(char *str, char comment_char);

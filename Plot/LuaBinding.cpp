@@ -540,8 +540,285 @@ int LuaAddToGraphics(lua_State * L)
 
 int LuaPlotGraphics(lua_State * L)
 {
-  //TODO: make scientific plot of data
-  return 0;
+  //First element on stack is either a
+  // * Spectra Type
+  // * Interpolation function
+  // * Array of values {{x1,y1},{x2,y2},...,{xn,yn}} with x real and y real or complex
+  // * Response function type
+  // or a two dimensional array of these
+  
+  // second element can be a list of options
+  int i;
+  GraphicsType* Graphics;
+  const char* ScaleFormat = "%.0f";
+  const char* EmptyString = "";
+  uint32_t len = (uint32_t) lua_gettop(L);
+  Graphics = (GraphicsType*) lua_newuserdata(L, sizeof(GraphicsType));
+  luaL_setmetatable(L, "Graphics_Type");
+  InitGraphics(Graphics);
+  struct
+  {
+    FramePlotOptions Frame;
+    LinePlotOptionsArray Style;
+    
+    bool     PlotIm;
+    bool     PlotRe;
+    double   Negate;
+    int      Nrow;
+    int      Ncolumn;
+    
+    double   ScaleOffDiagonal;
+    double   ShiftOffDiagonal;
+  } Options;
+  Options.Frame.PlotRange[0].X=-INFINITY;
+  Options.Frame.PlotRange[0].Y=-INFINITY;
+  Options.Frame.PlotRange[1].X=INFINITY;
+  Options.Frame.PlotRange[1].Y=INFINITY;
+  Options.Frame.Margins[0].X=0.08;
+  Options.Frame.Margins[0].Y=0.08*sqrt(2.0);
+  Options.Frame.Margins[1].X=0.01;
+  Options.Frame.Margins[1].Y=0.01*sqrt(2.0);
+  Options.Frame.LineWidth=0.001;
+  Options.Frame.LineColor[0]=0;
+  Options.Frame.LineColor[1]=0;
+  Options.Frame.LineColor[2]=0;
+  Options.Frame.LineColor[3]=0xFF;
+  Options.Frame.FontSize=0.04;
+  Options.Frame.Font=TIMES_NEW_ROMAN;
+  Options.Frame.XLabel=(char*)EmptyString;
+  Options.Frame.YLabel=(char*)EmptyString;
+  Options.Frame.FirstXTick=-INFINITY;
+  Options.Frame.dXTick=1.0;
+  Options.Frame.NMinorXTick=9;
+  Options.Frame.FirstYTick=-INFINITY;
+  Options.Frame.dYTick=1.0;
+  Options.Frame.NMinorYTick=9;
+  Options.Frame.PlotXScaleFormat=(char*)ScaleFormat;
+  Options.Frame.PlotYScaleFormat=(char*)ScaleFormat;
+  Options.Frame.XAxis=0;
+  Options.Frame.YAxis=0;
+  Options.Style.NAllocLine=3;
+  Options.Style.Line = (LinePlotOptions*)malloc(sizeof(LinePlotOptions)*Options.Style.NAllocLine);
+  Options.Style.Line[0].LineWidth=0.002;
+  Options.Style.Line[0].LineColor[0]=0;
+  Options.Style.Line[0].LineColor[1]=0;
+  Options.Style.Line[0].LineColor[2]=0;
+  Options.Style.Line[0].LineColor[3]=0xFF;
+  Options.Style.Line[0].PointSize=0;
+  Options.Style.Line[0].PointColor[0]=0;
+  Options.Style.Line[0].PointColor[1]=0;
+  Options.Style.Line[0].PointColor[2]=0;
+  Options.Style.Line[0].PointColor[3]=0xFF;
+  Options.Style.Line[1].LineWidth=0.002;
+  Options.Style.Line[1].LineColor[0]=0xFF;
+  Options.Style.Line[1].LineColor[1]=0;
+  Options.Style.Line[1].LineColor[2]=0;
+  Options.Style.Line[1].LineColor[3]=0xFF;
+  Options.Style.Line[1].PointSize=0;
+  Options.Style.Line[1].PointColor[0]=0xFF;
+  Options.Style.Line[1].PointColor[1]=0;
+  Options.Style.Line[1].PointColor[2]=0;
+  Options.Style.Line[1].PointColor[3]=0xFF;
+  Options.Style.Line[2].LineWidth=0.002;
+  Options.Style.Line[2].LineColor[0]=0;
+  Options.Style.Line[2].LineColor[1]=0;
+  Options.Style.Line[2].LineColor[2]=0xFF;
+  Options.Style.Line[2].LineColor[3]=0xFF;
+  Options.Style.Line[2].PointSize=0;
+  Options.Style.Line[2].PointColor[0]=0;
+  Options.Style.Line[2].PointColor[1]=0;
+  Options.Style.Line[2].PointColor[2]=0xFF;
+  Options.Style.Line[2].PointColor[3]=0xFF;
+  
+  Options.PlotIm=true;
+  Options.PlotRe=true;
+  Options.Negate=false;
+  Options.Nrow=1;
+  Options.Ncolumn=1;
+  Options.ScaleOffDiagonal=1;
+  Options.ShiftOffDiagonal=0;
+  LuaOptionsType LuaGraphicsOptions[]={
+    {"Frame","FramePlotOptions",&(Options.Frame)},
+    {"Axis", "FramePlotOptions",&(Options.Frame)},
+    {"LineStyle", "LinePlotOptionsArray",&(Options.Style)},
+
+    {"plotIm","bool",&(Options.PlotIm)},
+    {"plotRe","bool",&(Options.PlotRe)},
+    {"Negate","bool",&(Options.Negate)},
+    {"Nrow","int",&(Options.Nrow)},
+    {"Ncolumn","int",&(Options.Ncolumn)},
+    {"ScaleOffDiagonal","double",&(Options.ScaleOffDiagonal)},
+    {"ShiftOffDiagonal","double",&(Options.ShiftOffDiagonal)},
+    
+    {NULL, NULL, NULL}};
+  if(LuaTestOptionsList(L, len))
+  {
+    LuaCheckOptions(L, len, LuaGraphicsOptions);
+    len=len-1;
+  }
+  // select the type of graph to plot
+  if(lua_type(L,1)==LUA_TTABLE)
+  {
+    // TODO:
+    return luaL_error(L, "TODO\n");
+  }
+  else if (lua_type(L,1)==LUA_TUSERDATA)
+  {
+    if (luaL_testudata(L, 1, "Spectra_Type") != NULL)
+    {
+      SpectraTypeArray *a = (SpectraTypeArray *) luaL_checkudata(L, 1, "Spectra_Type");
+      
+      if(Options.Frame.PlotRange[0].X==-INFINITY) Options.Frame.PlotRange[0].X = a->Spec[0].Emin;
+      if(Options.Frame.PlotRange[1].X== INFINITY) Options.Frame.PlotRange[1].X = a->Spec[0].Emax;
+      if(Options.Frame.PlotRange[0].Y==-INFINITY) Options.Frame.PlotRange[0].Y = -1;
+      if(Options.Frame.PlotRange[1].Y== INFINITY) Options.Frame.PlotRange[1].Y =  1;
+      if(Options.Frame.FirstXTick==-INFINITY) Options.Frame.FirstXTick = Options.Frame.PlotRange[0].X;
+      if(Options.Frame.FirstYTick==-INFINITY) Options.Frame.FirstYTick = Options.Frame.PlotRange[0].Y;
+      
+      if((Options.Nrow==1)&&(Options.Ncolumn==1))
+      {
+        // make a single graph with possible multiple spectra
+        LinePlotOptions *LPORe = (LinePlotOptions*) malloc(sizeof(LinePlotOptions) * a->NSpectra);
+        LinePlotOptions *LPOIm = (LinePlotOptions*) malloc(sizeof(LinePlotOptions) * a->NSpectra);
+        if(a->NSpectra==1)
+        {
+          if((Options.PlotIm==true) && (Options.PlotRe==false))
+          {
+            LPORe[0] = Options.Style.Line[0];
+            LPOIm[0] = Options.Style.Line[0];
+            LPORe[0].LineWidth=0;
+            LPORe[0].LineColor[3]=0;
+            LPORe[0].PointSize=0;
+            LPORe[0].PointColor[3]=0;
+          }
+          else if((Options.PlotIm==false) && (Options.PlotRe==true))
+          {
+            LPORe[0] = Options.Style.Line[0];
+            LPOIm[0] = Options.Style.Line[0];
+            LPOIm[0].LineWidth=0;
+            LPOIm[0].LineColor[3]=0;
+            LPOIm[0].PointSize=0;
+            LPOIm[0].PointColor[3]=0;
+          }
+          else if((Options.PlotIm==true) && (Options.PlotRe==true))
+          {
+            LPORe[0] = Options.Style.Line[1];
+            LPOIm[0] = Options.Style.Line[2];
+          }
+          else
+          {
+            return luaL_error(L, "Plot a spectrum but both PlotRe and PlotIm are set to false so there is nothing to do here\n");
+          }
+        }
+        else
+        { // plot multiple spectra at once, set the styles for Re and Im
+          if((Options.PlotIm==true) && (Options.PlotRe==false))
+          {
+            for(i=0;i<a->NSpectra;i++)
+            {
+              LPORe[i] = Options.Style.Line[1+(i%(Options.Style.NAllocLine-1))];
+              LPOIm[i] = Options.Style.Line[1+(i%(Options.Style.NAllocLine-1))];
+              LPORe[i].LineWidth=0;
+              LPORe[i].LineColor[3]=0;
+              LPORe[i].PointSize=0;
+              LPORe[i].PointColor[3]=0;
+            }
+          }
+          else if((Options.PlotIm==false) && (Options.PlotRe==true))
+          {
+            for(i=0;i<a->NSpectra;i++)
+            {
+              LPORe[i] = Options.Style.Line[1+(i%(Options.Style.NAllocLine-1))];
+              LPOIm[i] = Options.Style.Line[1+(i%(Options.Style.NAllocLine-1))];
+              LPOIm[i].LineWidth=0;
+              LPOIm[i].LineColor[3]=0;
+              LPOIm[i].PointSize=0;
+              LPOIm[i].PointColor[3]=0;
+            }
+          }
+          else if((Options.PlotIm==true) && (Options.PlotRe==true))
+          {
+            for(i=0;i<a->NSpectra;i++)
+            {
+              LPORe[i] = Options.Style.Line[1+(i%(Options.Style.NAllocLine-1))];
+              LPOIm[i] = Options.Style.Line[1+(i%(Options.Style.NAllocLine-1))];
+            }
+          }
+          else
+          {
+            return luaL_error(L, "Plot a spectrum but both PlotRe and PlotIm are set to false so there is nothing to do here\n");
+          }
+        }
+        PlotSpectraTypeArrayToGraphics(Graphics, a, LPORe, LPOIm, &(Options.Frame), Options.Negate);
+        free(LPORe);
+        free(LPOIm);
+      }
+      else
+      {
+        // plot a matrix of spectra
+        if ( (Options.Nrow * Options.Ncolumn) != a->NSpectra ) return luaL_error(L, "plotting a spectrum array with %d rows and %d columns, but the data array has %d elements\n",Options.Nrow,Options.Ncolumn,a->NSpectra);
+        LinePlotOptions LPORe, LPOIm;
+        if((Options.PlotIm==true) && (Options.PlotRe==false))
+        {
+          LPORe = Options.Style.Line[0];
+          LPOIm = Options.Style.Line[0];
+          LPORe.LineWidth=0;
+          LPORe.LineColor[3]=0;
+          LPORe.PointSize=0;
+          LPORe.PointColor[3]=0;
+        }
+        else if((Options.PlotIm==false) && (Options.PlotRe==true))
+        {
+          LPORe = Options.Style.Line[0];
+          LPOIm = Options.Style.Line[0];
+          LPOIm.LineWidth=0;
+          LPOIm.LineColor[3]=0;
+          LPOIm.PointSize=0;
+          LPOIm.PointColor[3]=0;
+        }
+        else if((Options.PlotIm==true) && (Options.PlotRe==true))
+        {
+          LPORe = Options.Style.Line[1];
+          LPOIm = Options.Style.Line[2];
+        }
+        else
+        {
+          return luaL_error(L, "Plot a spectrum but both PlotRe and PlotIm are set to false so there is nothing to do here\n");
+        }
+        PlotSpectraTypeArrayToGraphicsArray(Graphics, a, Options.Nrow, Options.Ncolumn, &LPORe, &LPOIm, &(Options.Frame),  Options.Negate, Options.ScaleOffDiagonal, Options.ShiftOffDiagonal);
+      }
+    }
+    else if (luaL_testudata(L, 1, "GaussianRadialFunction_Type") != NULL)
+    {
+      // TODO:
+      return luaL_error(L, "TODO\n");
+    }
+    else if (luaL_testudata(L, 1, "InterpolatingFunction_Type") != NULL)
+    {
+      // TODO:
+      return luaL_error(L, "TODO\n");
+    }
+    else if (luaL_testudata(L, 1, "ResponseFunction_Type") != NULL)
+    {
+      // TODO:
+      return luaL_error(L, "TODO\n");
+    }
+    else if (luaL_testudata(L, 1, "Matrix_Type") != NULL)
+    {
+      // TODO:
+      return luaL_error(L, "TODO\n");
+    }
+    else
+    {
+      return luaL_error(L, "called Graphics.Plot with unkown userdata type for first variable\n");
+    }
+  }
+  else
+  {
+    return luaL_error(L, "called Graphics.Plot with unkown first variable\n");
+  }
+  free(Options.Style.Line);
+  return 1;
 }
 
 int LuaGraphicsToPS(lua_State * L)
@@ -813,52 +1090,6 @@ int LuaBitMapToFile(lua_State * L)
   BitMapType *BitMap = (BitMapType *) luaL_checkudata(L, 1, "BitMap_Type");
   const char *filename = lua_tostring(L, 2);
   BitMapToFile(BitMap, filename);
-  return 0;
-  
-  
-  
-  
-  unsigned char *str;
-  FILE *fp;
-  int i,j,k;
-  uint32_t filesize = 54 + 4 * BitMap->NpointsX * BitMap->NpointsY;
-  str = (unsigned char *)calloc(filesize,sizeof(char));
-  str[0]='B';
-  str[1]='M';
-  str[2] = (unsigned char)(filesize);
-  str[3] = (unsigned char)(filesize >> 8);
-  str[4] = (unsigned char)(filesize >> 16);
-  str[5] = (unsigned char)(filesize >> 24);
-  str[10]=54;
-  str[14]=40;
-  str[18] = (unsigned char)(BitMap->NpointsX);
-  str[19] = (unsigned char)(BitMap->NpointsX >> 8);
-  str[20] = (unsigned char)(BitMap->NpointsX >> 16);
-  str[21] = (unsigned char)(BitMap->NpointsX >> 24);
-  str[22] = (unsigned char)(BitMap->NpointsY);
-  str[23] = (unsigned char)(BitMap->NpointsY >> 8);
-  str[24] = (unsigned char)(BitMap->NpointsY >> 16);
-  str[25] = (unsigned char)(BitMap->NpointsY >> 24);
-  str[26]=1;
-  str[28]=32;
-  k=54;
-  for(i=BitMap->NpointsY-1;i>=0;i--)
-  {
-    for(j=0;j<BitMap->NpointsX;j++)
-    {
-      str[k]=(unsigned char)( BitMap->Pixels[j+i*BitMap->NpointsX] );
-      k++;
-      str[k]=(unsigned char)( BitMap->Pixels[j+i*BitMap->NpointsX]>>8 );
-      k++;
-      str[k]=(unsigned char)( BitMap->Pixels[j+i*BitMap->NpointsX]>>16 );
-      k++;
-      str[k]=(unsigned char)( BitMap->Pixels[j+i*BitMap->NpointsX]>>24 );
-      k++;
-    }
-  }
-  fp = fopen( filename , "wb" );
-  fwrite(str , 1 , filesize , fp );
-  fclose(fp);
   return 0;
 }
 

@@ -45,6 +45,64 @@ int EncodeStringBase64(const DynamicString *in, DynamicString *out)
   return 0;
 }
 
+void RemoveSpacesAndNewlines(char *str) 
+{
+  if (str==NULL) return;
+  char *src = str, *dst = str;
+  while (*src != '\0')
+  {
+    if (!isspace((unsigned char)*src))
+    {
+      *dst++ = *src;
+    }
+    src++;
+  }
+  *dst = '\0';
+}
+
+void RemoveDoubleSpacesAndNewlines(char *str) 
+{
+  if (str==NULL) return;
+  char *src = str, *dst = str;
+  while (*src != '\0')
+  {
+    if ((!isspace((unsigned char)*src))||((*src==' ')&&((!isspace((unsigned char)*(src+1))))))
+    {
+      *dst++ = *src;
+    }
+    src++;
+  }
+  *dst = '\0';
+}
+
+void RemoveCommentLines(char *str, const char comment_char)
+{
+  char *src = str, *dst = str;
+  while (*src != '\0')
+  {
+    // Check if the current line is a comment line
+    if (*src == comment_char)
+    {
+      // Skip until the end of the line
+      while (*src != '\0' && *src != '\n')
+      {
+        src++;
+      }
+      // If at the end of a line, skip the newline character too
+      if (*src == '\n')
+      {
+        src++;
+      }
+    }
+    else
+    {
+      *dst++ = *src++;
+    }
+  }
+  // Null-terminate the modified string
+  *dst = '\0';
+}
+
 
 class ExpectationValues
 {

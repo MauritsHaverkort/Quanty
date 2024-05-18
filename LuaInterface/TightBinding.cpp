@@ -65,6 +65,18 @@ static int LuaFileReadDresdenFPLO(lua_State * L)
   return 1;
 }
 
+static int LuaReadFPLO(lua_State * L)
+{
+  DresdenFPLO *FPLO = NULL;
+  uint32_t len = (uint32_t)lua_gettop(L);
+  if(len!=1) return luaL_error(L, "Error in ReadFPLO(arg).\n The argument should be the folder where the FPLO calculation is done");
+  const char *dirname = luaL_checkstring(L, 1);
+  FPLO = (DresdenFPLO*) lua_newuserdata(L, sizeof(DresdenFPLO));
+  if(ReadFPLO(FPLO, dirname)) return luaL_error(L, "Error while reading or opening files in directory %s in ReadFPLO(arg).",dirname);
+  luaL_setmetatable(L, "DresdenFPLO_Type");
+  return 1;
+}
+
 static int LuaTightBindingDefFromStuttgartCTRLHAMR(lua_State * L)
 {
   TightBindingDef *TB;
@@ -104,6 +116,49 @@ static int LuaTightBindingDefFromDresdenFPLO(lua_State * L)
 
   return 1;
 }
+
+/*  On stack is a Dresden FPLO type and a list or string of orbitals to include
+ *  The list can be a single string of the form "3d"
+ *  Or a list giving the orbitals more selectively
+ */
+static int LuaHybridizationFunctionFromFPLO(lua_State * L)
+{
+  int *OrbitalList=NULL;
+  DresdenFPLO *FPLO = NULL;
+  ResponsefunctionType *Hyb;
+  BlockListOfPoles *LP;
+  uint32_t len = (uint32_t)lua_gettop(L);
+  // possible read options from the stack at position 3
+  if(len==3)
+  {
+    //TODO: read options
+    len--;
+  }
+  if(len!=2) luaL_error(L, "Error in HybridizationFunctionFromFPLO, expected on stack an FPLO input, a definition of the orbitals to include and possible a list of options\n");
+  // read the FPLO input from the first position of the stack
+  FPLO = (DresdenFPLO *) luaL_checkudata(L, 1, "DresdenFPLO_Type");
+  // read the list of orbitals to include from the second position of the stack
+  
+
+  // push Hybridizaton function to the stack
+  Hyb = (ResponsefunctionType*) lua_newuserdata(L, sizeof(ResponsefunctionType));
+  // fill the hybridization function with data
+  Hyb->type = 'l';
+  Hyb->Block=true;
+  LP = (BlockListOfPoles*)malloc(sizeof(BlockListOfPoles));
+  Hyb->SuggestedGrid=NULL;
+  Hyb->NSuggestedGridPoints=0;
+  // set the dimension in LP to the number of orbitals;
+  LP->N=0;
+  HybridizationFunctionFromFPLO(FPLO, LP, OrbitalList);
+  luaL_setmetatable(L, "ResponseFunction_Type");
+  free(OrbitalList);
+  return 1;
+}
+
+
+
+
 /* on stack:
  *   TB : TightBinding_Type
  *

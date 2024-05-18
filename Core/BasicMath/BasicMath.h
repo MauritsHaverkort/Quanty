@@ -1,8 +1,8 @@
 // #include "BasicMath_Constants.h" no header file for constants, only defines
 #include "BasicMath_Complex.h"
 #include "BasicMath_StandardFunctions.h"
-#include "BasicMath_InterpolatingFunction.h"
-#include "BasicMath_Spline.h"
+//#include "BasicMath_InterpolatingFunction.h"
+//#include "BasicMath_Spline.h"
 #include "BasicMath_Combinatorial.h"
 #include "BasicMath_VectorLinearAlgabra.h"
 #include "BasicMath_MatrixVector.h"

@@ -227,7 +227,7 @@ void FreeGraphics(GraphicsType* Graphics)
   {
     FreeGraphics( Graphics->Layer[i] );
   }
-  if(Graphics->NLayer!=1) free(Graphics->Layer);
+  free(Graphics->Layer);
   for(i=0;i<Graphics->NLine;i++) FreeLine(&(Graphics->Line[i]));
   free(Graphics->Line);
   for(i=0;i<Graphics->NCurve;i++) FreeCurve(&(Graphics->Curve[i]));

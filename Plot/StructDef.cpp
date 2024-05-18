@@ -111,7 +111,7 @@ typedef struct GraphicsType
   PointType CanvasSize;    // Size of the Canvas in mm.
   PointType CanvasOrigin;  // Origin of the Canvas in mm -- mostly used for embedding
   int NLayer;              //Allocation size of Layer is NLayer
-  GraphicsType** Layer;
+  GraphicsType** Layer;    // a list of NLayer pointers  -- the first pointer points to the Graphics self.
   int NLine;               //Allocation size of Line   is 2^n with n the smallest integer such that the number of actual layers present fit
   LineType* Line;
   int NCurve;              //Allocation size of Curve  is 2^n with n the smallest integer such that the number of actual layers present fit
@@ -124,6 +124,7 @@ typedef struct GraphicsType
   BitMapType* BitMap;
 } GraphicsType;
 
+// if you make changes here you also need to make changes in LuaCheckOptions
 typedef struct LinePlotOptions
 {
   double   LineWidth;
@@ -132,6 +133,13 @@ typedef struct LinePlotOptions
   uint8_t  PointColor[4];
 } LinePlotOptions;
 
+typedef struct LinePlotOptionsArray
+{
+  LinePlotOptions *Line;
+  int NAllocLine;
+} LinePlotOptionsArray;
+
+// if you make changes here you also need to make changes in LuaCheckOptions
 typedef struct FramePlotOptions
 {
   PointType PlotRange[2];
@@ -150,4 +158,6 @@ typedef struct FramePlotOptions
   int      NMinorYTick;
   char*    PlotXScaleFormat;
   char*    PlotYScaleFormat;
+  double   XAxis;
+  double   YAxis;
 } FramePlotOptions;

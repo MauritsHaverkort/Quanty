@@ -3139,6 +3139,89 @@ int32_t LuaCheckOptions(lua_State *L, int narg, LuaOptionsType *Options)
         {
           *(DeterminantRestrictionType*)Options[j].variable=*(DeterminantRestrictionType*)LuaReturnVariableType(L, -1, Options[j].type);
         }
+        else if(strcmp(Options[j].type, "FramePlotOptions") == 0)
+        {
+          LuaOptionsType LuaFramePlotOptions[]={
+            {"Xmin","double",&(((FramePlotOptions*)Options[j].variable)->PlotRange[0].X)},
+            {"Xmax","double",&(((FramePlotOptions*)Options[j].variable)->PlotRange[1].X)},
+            {"Ymin","double",&(((FramePlotOptions*)Options[j].variable)->PlotRange[0].Y)},
+            {"Ymax","double",&(((FramePlotOptions*)Options[j].variable)->PlotRange[1].Y)},
+            {"XLMargin","double",&(((FramePlotOptions*)Options[j].variable)->Margins[0].X)},
+            {"XRMargin","double",&(((FramePlotOptions*)Options[j].variable)->Margins[1].X)},
+            {"YLMargin","double",&(((FramePlotOptions*)Options[j].variable)->Margins[0].Y)},
+            {"YRMargin","double",&(((FramePlotOptions*)Options[j].variable)->Margins[1].Y)},
+            {"LineWidth","double",&(((FramePlotOptions*)Options[j].variable)->LineWidth)},
+            {"Color","uint32_t",&(((FramePlotOptions*)Options[j].variable)->LineColor[0])},
+            {"FontSize","double",&(((FramePlotOptions*)Options[j].variable)->FontSize)},
+            {"Font","char*",&(((FramePlotOptions*)Options[j].variable)->Font)},
+            {"XLabel","char*",&(((FramePlotOptions*)Options[j].variable)->XLabel)},
+            {"YLabel","char*",&(((FramePlotOptions*)Options[j].variable)->YLabel)},
+            {"FirstXTick","double",&(((FramePlotOptions*)Options[j].variable)->FirstXTick)},
+            {"dXTick","double",&(((FramePlotOptions*)Options[j].variable)->dXTick)},
+            {"NMinorXTick","int",&(((FramePlotOptions*)Options[j].variable)->NMinorXTick)},
+            {"FirstYTick","double",&(((FramePlotOptions*)Options[j].variable)->FirstYTick)},
+            {"dYTick","double",&(((FramePlotOptions*)Options[j].variable)->dYTick)},
+            {"NMinorYTick","int",&(((FramePlotOptions*)Options[j].variable)->NMinorYTick)},
+            {"XFormat","char*",&(((FramePlotOptions*)Options[j].variable)->PlotXScaleFormat)},
+            {"YFormat","char*",&(((FramePlotOptions*)Options[j].variable)->PlotYScaleFormat)},
+            {"XAxis","double",&(((FramePlotOptions*)Options[j].variable)->XAxis)},
+            {"YAxis","double",&(((FramePlotOptions*)Options[j].variable)->YAxis)},
+            {NULL, NULL, NULL}};
+          
+          LuaCheckOptions(L, -1, LuaFramePlotOptions);
+          
+        }
+        else if(strcmp(Options[j].type, "LinePlotOptionsArray") == 0)
+        {
+          int NAlocOld, k;
+          luaL_checktype(L, -1, LUA_TTABLE);
+          // find largest index
+          NAlocOld = ((LinePlotOptionsArray*)Options[j].variable)->NAllocLine;
+          lua_pushnil(L);
+          while (lua_next(L, -2))
+          {
+            lua_pop(L, 1);
+            if (lua_isnumber(L,-1)==0) return luaL_error(L, "Error Options array for line types should only have integer keys\n");
+            lua_pushvalue(L, -1);
+            k = (int)luaL_checkinteger(L, -1);
+            if(k>((LinePlotOptionsArray*)Options[j].variable)->NAllocLine) ((LinePlotOptionsArray*)Options[j].variable)->NAllocLine = k;
+            lua_pop(L, 1);
+          }
+          // reallocate
+          if(NAlocOld < ((LinePlotOptionsArray*)Options[j].variable)->NAllocLine )
+          {
+            ((LinePlotOptionsArray*)Options[j].variable)->Line = (LinePlotOptions*)realloc(((LinePlotOptionsArray*)Options[j].variable)->Line,sizeof(LinePlotOptions)*((LinePlotOptionsArray*)Options[j].variable)->NAllocLine);
+            if(((LinePlotOptionsArray*)Options[j].variable)->Line==NULL) return luaL_error(L, "Error realloc failed\nThis should not happen\n");
+            // set standard values
+            for(k=NAlocOld;k<((LinePlotOptionsArray*)Options[j].variable)->NAllocLine;k++)
+            {
+              ((LinePlotOptionsArray*)Options[j].variable)->Line[k] = ((LinePlotOptionsArray*)Options[j].variable)->Line[0];
+            }
+          }
+          // read table
+          lua_pushnil(L);
+          LuaOptionsType LuaLinePlotOptions[]={
+            {"LineWidth","double",NULL},
+            {"LineColor","uint32_t",NULL},
+            {"PointSize","double",NULL},
+            {"PointColor","uint32_t",NULL},
+            {NULL, NULL, NULL}};
+          while (lua_next(L, -2))
+          {
+            // get the key
+            lua_pushvalue(L, -2);
+            k = (int)luaL_checkinteger(L, -1);
+            lua_pop(L, 1);
+            // get the value
+            LuaLinePlotOptions[0].variable = &(((LinePlotOptionsArray*)Options[j].variable)->Line[k].LineWidth);
+            LuaLinePlotOptions[1].variable = &(((LinePlotOptionsArray*)Options[j].variable)->Line[k].LineColor[0]);
+            LuaLinePlotOptions[2].variable = &(((LinePlotOptionsArray*)Options[j].variable)->Line[k].PointSize);
+            LuaLinePlotOptions[3].variable = &(((LinePlotOptionsArray*)Options[j].variable)->Line[k].PointColor[0]);
+            LuaCheckOptions(L, -1, LuaLinePlotOptions);
+            // pop
+            lua_pop(L, 1);
+          }
+        }
         else
         {
           printf("ERROR: unrecognized type in LuaCheckOptions [%s]\n",Options[j].type);

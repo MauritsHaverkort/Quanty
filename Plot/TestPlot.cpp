@@ -83,7 +83,7 @@ int main(int argc, char *argv[])
     Data[i].Y = sin(Data[i].X * 0.5);
   }
   
-  AddPlotAxisToGraphics(&G,PlotRange,Margins,Color,0.001);
+  AddPlotAxisToGraphics(&G,PlotRange,Margins,Color,0.001,0,0);
   AddXTicksToGraphics(&G, PlotRange, Margins, Color, 0.001, Color, 0.5, -1, 1, 0.01 * sqrt(2), 9);
   AddYTicksToGraphics(&G, PlotRange, Margins, Color, 0.001, Color, 0.5, -2, 0.5, 0.01, 4);
   AddDataPointsToGraphics(&G, PlotRange, Margins, Data, 20, 0.001, Color, 0.002, Color);

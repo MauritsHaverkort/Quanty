@@ -44,8 +44,8 @@
 #include "BasicMath_ListOfPoles.cpp"
 #include "BasicMath_MatrixTypeConversion.cpp"
 #include "BasicMath_GreenFunctionArithmetic.cpp"
-#include "BasicMath_InterpolatingFunction.cpp"
-#include "BasicMath_Spline.cpp"
+//#include "BasicMath_InterpolatingFunction.cpp"
+//#include "BasicMath_Spline.cpp"
 
 #include "Interpolation/CubicSpline.cpp"
 #include "Interpolation/CubicHermiteSpline.cpp"

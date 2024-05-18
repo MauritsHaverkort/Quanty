@@ -28,10 +28,24 @@ int ShellNameToL(char name)
     case 'f':
     case 'F':
       return 3;
+    case 'g':
+    case 'G':
+      return 4;
+    case 'h':
+    case 'H':
+      return 5;
+    case 'i':
+    case 'I':
+      return 6;
+    case 'k':
+    case 'K':
+      return 7;
     default:
       return -1;
   }
 }
+
+
 
 // pricision defined by the fplo output (coordinates).
 double RoundToDigit(double x, int n)
@@ -57,6 +71,7 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
   uint32_t Nphrase, Nwandef, i, j, ihop=0, iatom;
   int NhopMax=1024;
   O->Lattice.Molecule=false;
+  O->Lattice.Units=0; // Use Angstrom, g.r = 1, and atom positions witin the unit cell are in angstrom units
   ReadLine[1023] = '\0';
   for(i=0;i<3;i++)
   {
@@ -70,7 +85,6 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
   }
   while(fgets(ReadLine, 1023, stream) != NULL)
   {
-    // Read structure information.
     if(strstr(ReadLine, "Structure type: Molecule") != NULL)
     {
       O->Lattice.Molecule = true;
@@ -374,6 +388,400 @@ uint32_t FileReadDresdenFPLO(DresdenFPLO * O, const char *const flname)
   }
   retval = StreamReadDresdenFPLO(O, stream);
   fclose(stream);
+
+  return retval;
+}
+
+/*  Reads information form the FPLO =.in file
+ *  Only selects information needed for the implemented featueres :-)
+ *  The code starts general, but the lowest leavel reading is not
+ */
+uint32_t StreamReadDresdenFPLOisdotin(DresdenFPLO * O, FILE * stream)
+{
+  const int MAXSECTIONS = 32;
+  char *sectionbuffertemp;
+  char *sectionbuffer[MAXSECTIONS];
+  char *variable;
+  int isection;
+  // Get the file size
+  fseek(stream, 0, SEEK_END);
+  long file_size = ftell(stream);
+  rewind(stream);
+
+  // Allocate memory for the file content
+  char *buffer = (char *)malloc((file_size + 1) * sizeof(char));
+  if (buffer==NULL)
+  {
+    printf("Could not allocate memory for buffer\n");
+    return 1;
+  }
+
+  // Read the file into the buffer
+  fread(buffer, sizeof(char), file_size, stream);
+  buffer[file_size] = '\0';
+  
+  // loop over all sections and split the string according to the sections found
+  // The result are MAXSECTIONS strings that point to the sections with the name in
+  // sections[isections] and starting at the addres in sectionbuffer[isections]
+  const char *sections[]={
+    "pretext",
+    "header",
+    "structure_information",
+    "structure_dependend",
+    "mesh",
+    "brillouin",
+    "bandstructure_plot",
+    "iteration_control",
+    "forces",
+    "options",
+    "cpa",
+    "LSDA_U",
+    "OPC",
+    "Advanced_output",
+    "BasisSettings",
+    "dHvA",
+    "numerics",
+    NULL};
+  sectionbuffertemp = buffer;
+  for(isection=1;isection<MAXSECTIONS;isection++)
+  {
+    sectionbuffer[isection]=NULL;
+  }
+  sectionbuffer[0]=buffer;
+  while((sectionbuffertemp=strstr(sectionbuffertemp,"section "))!=NULL)
+  {
+    isection=0;
+    while((sections[isection]!=NULL))
+    {
+      if(strncmp(sectionbuffertemp+8,sections[isection],strlen(sections[isection]))==0)
+      {
+        goto FoundSection;
+      }
+      isection++;
+    }
+    // Section not found
+    {
+      printf("Warning: Found a section with unkown name in file \"=.in\"\n");
+      printf("%.40s\n",sectionbuffertemp);
+      sectionbuffertemp[0]='\0';
+      sectionbuffertemp++;
+      continue;
+    }
+    FoundSection:
+    // split the string and set the sectionbuffer pointer
+    sectionbuffer[isection]=strchr(sectionbuffertemp,'{');
+    if((sectionbuffer[isection])==NULL)
+    {
+      printf("ERROR, this should not happen\n");
+      printf("Section %s found, but the contentents in \"=.in\" does not contain a {\n",sections[isection]);
+      printf("You will now crash\n");
+      sectionbuffertemp[0]='\0';
+    }
+    else
+    {
+      sectionbuffertemp[0]='\0';
+      sectionbuffertemp++;
+    }
+  }
+  // we now have splitted the file =.in into sections
+  // next we need to split the sections into different variables
+  isection=0;
+  while((sections[isection]!=NULL))
+  {
+    RemoveCommentLines(sectionbuffer[isection], '#');
+    RemoveDoubleSpacesAndNewlines(sectionbuffer[isection]);
+    // the rest is coded without being general
+    if(strcmp(sections[isection], "options")==0)
+    {
+      variable=strstr(sectionbuffer[isection]," spin =");
+      if(variable!=NULL) sscanf(variable, "%*[^=] ={%d,", &(O->Options.MSpin));
+      variable=strstr(sectionbuffer[isection]," xc_potential =");
+      if(variable!=NULL) sscanf(variable, "%*[^=] ={%d,", &(O->Options.XCPotential));
+      variable=strstr(sectionbuffer[isection]," relativistic =");
+      if(variable!=NULL) sscanf(variable, "%*[^=] ={%d,", &(O->Options.Relativistic));
+      variable=strstr(sectionbuffer[isection]," nuclear_model =");
+      if(variable!=NULL) sscanf(variable, "%*[^=] ={%d,", &(O->Options.NuclearModel));
+      variable=strstr(sectionbuffer[isection]," quantization_axis[3]");
+      if(variable!=NULL) sscanf(variable, "%*[^=]={%lf,%lf,%lf", &(O->Options.QuantizationAxis[0]),&(O->Options.QuantizationAxis[1]),&(O->Options.QuantizationAxis[2]));
+    }
+    if(strcmp(sections[isection], "structure_information")==0)
+    {
+      int tempint=0;
+      variable=strstr(sectionbuffer[isection]," structure_type =");
+      if(variable!=NULL) sscanf(variable, "%*[^=] ={%d,", &tempint);
+      O->Lattice.Molecule=false;
+      if(tempint!=1)
+      {
+        O->Lattice.Molecule=true;
+        O->Lattice.LattVec[0][0]=INFINITY; O->Lattice.LattVec[0][1]=0;        O->Lattice.LattVec[0][2]=0;
+        O->Lattice.LattVec[1][0]=0;        O->Lattice.LattVec[1][1]=INFINITY; O->Lattice.LattVec[1][2]=0;
+        O->Lattice.LattVec[2][0]=0;        O->Lattice.LattVec[2][1]=0;        O->Lattice.LattVec[2][2]=INFINITY;
+        
+        O->Lattice.gLattVec[0][0]=0;       O->Lattice.gLattVec[0][1]=0;       O->Lattice.gLattVec[0][2]=0;
+        O->Lattice.gLattVec[1][0]=0;       O->Lattice.gLattVec[1][1]=0;       O->Lattice.gLattVec[1][2]=0;
+        O->Lattice.gLattVec[2][0]=0;       O->Lattice.gLattVec[2][1]=0;       O->Lattice.gLattVec[2][2]=0;
+      }
+      // lattice vectors are not stored in =.in
+      variable=strstr(sectionbuffer[isection]," lengthunit =");
+      if(variable!=NULL) sscanf(variable, "%*[^=] ={%d,", &tempint);
+      O->Lattice.Units=2;                  /* **** ***x 0 r.g = 1 | 1 r.g = 2 Pi */
+      if(tempint==2) O->Lattice.Units=0;   /* **** *xx* 00 Angstrom | 01 a0 | 10 nm | 11 ?? */
+                                           /* **** x*** 0 Positions in units described above | 1 Postions in terms of r[0] ,r[1] and r[2] */
+      variable=strstr(sectionbuffer[isection]," lattice_constants[3]");
+      if(variable!=NULL) sscanf(variable, "%*[^=]={%lf,%lf,%lf", &(O->Lattice.LattConst[0]),&(O->Lattice.LattConst[1]),&(O->Lattice.LattConst[2]));
+      variable=strstr(sectionbuffer[isection]," axis_angles[3]");
+      if(variable!=NULL) sscanf(variable, "%*[^=]={%lf,%lf,%lf", &(O->Lattice.Angles[0]),&(O->Lattice.Angles[1]),&(O->Lattice.Angles[2]));
+    }
+    if(strcmp(sections[isection], "bandstructure_plot")==0)
+    {
+      variable=strstr(sectionbuffer[isection]," bandplot_control =");
+      if(variable!=NULL)
+      {
+        if(sscanf(variable, " bandplot_control ={%*c,%*c,%*d,%lf,%lf,%d,", &(O->lDOS.Emin),&(O->lDOS.Emax),&(O->lDOS.NE))!=3)
+        {
+          printf("Error in parsing bandplot_control\n");
+        }
+      }
+    }
+    isection++;
+  }
+  free(buffer);
+  return 0;
+}
+
+/*  Read the structureal data from =.str_template
+ *
+ */
+uint32_t StreamReadDresdenFPLOisdotstrtemplate(DresdenFPLO * O, FILE * stream)
+{
+  int i;
+  const int buffSize = 1024;
+  char ReadLine[buffSize];
+
+  // Skip the first two lines
+  if((fgets(ReadLine, buffSize, stream)==NULL) ||
+     (fgets(ReadLine, buffSize, stream)==NULL)    )
+  {
+    perror("ERROR in reading =.str_template\nNot able to read the first two lines\n");
+    return 1;
+  }
+  // Read the rUnitCell
+  for(i=0;i<3;i++)
+  {
+    if(fgets(ReadLine, buffSize, stream)==NULL)
+    {
+      perror("ERROR in reading =.str_template\nNot able to read unit cell\n");
+      return 1;
+    }
+    if(sscanf(ReadLine, "%lf %lf %lf", &(O->Lattice.LattVec[i][0]), &(O->Lattice.LattVec[i][1]), &(O->Lattice.LattVec[i][2]) )!=3)
+    {
+      perror("ERROR in reading =.str_template\nNot able to parse unit cell\n");
+      return 1;
+    }
+  }
+  // Generate the reciprocal Cell
+  ReciprocalLatticeVector(O->Lattice.LattVec, O->Lattice.gLattVec, O->Lattice.Units);
+  // Read the number of atoms
+  if (fgets(ReadLine, buffSize, stream)==NULL)
+  {
+    perror("ERROR in reading =.str_template\nFailed to read NAtoms");
+    return 1;
+  }
+  if (sscanf(ReadLine, "%d", &(O->Atoms.Natom)) != 1)
+  {
+    perror("ERROR in reading =.str_template\nFailed to parse NAtoms");
+    return 1;
+  }
+  // allocate memory for atom description
+  O->Atoms.Atom = (char**)malloc(O->Atoms.Natom * sizeof(char*));
+  O->Atoms.Pos  = (double**)malloc(O->Atoms.Natom * sizeof(double*));
+  for(i=0;i<O->Atoms.Natom;i++)
+  {
+    O->Atoms.Atom[i] = (char*)malloc(4 * sizeof(char));
+    O->Atoms.Pos[i]  = (double*)malloc(3 * sizeof(double));
+  }
+  // skip line 7
+  if(fgets(ReadLine, buffSize, stream)==NULL)
+  {
+    perror("ERROR in reading =.str_template\nNot able to read line 7\n");
+    return 1;
+  }
+  for(i=0;i<O->Atoms.Natom;i++)
+  {
+    if(fgets(ReadLine, buffSize, stream)==NULL)
+    {
+      perror("ERROR in reading =.str_template\nNot able to read atomic positions\n");
+      return 1;
+    }
+    if (sscanf(ReadLine, "%2s %*d %lf %lf %lf", O->Atoms.Atom[i],&(O->Atoms.Pos[i][0]),&(O->Atoms.Pos[i][0]),&(O->Atoms.Pos[i][0])) != 4)
+    {
+      perror("ERROR in reading =.str_template\nFailed to parse atom data\n");
+      return 1;
+    }
+  }
+  return 0;
+}
+
+
+
+uint32_t ReadDresdenFPLOlDOS(DresdenFPLO * O, const char *const dirname)
+{
+  const int buffSize = 1024;
+  char ReadLine[buffSize];
+  const int b = (int)strlen(dirname)+128;
+  char flname[b];
+  FILE  *stream;
+  int i,isite,inl,iE;
+  int site,n,m,l,spin;
+  char lc;
+  int MallocSize = 128;
+  O->lDOS.sort = (int*)malloc(MallocSize*sizeof(int));
+  O->lDOS.n    = (int*)malloc(MallocSize*sizeof(int));
+  O->lDOS.l    = (int*)malloc(MallocSize*sizeof(int));
+  O->lDOS.nl   = (int*)malloc(MallocSize*sizeof(int));
+  O->lDOS.m    = (int*)malloc(MallocSize*sizeof(int));
+  O->lDOS.spin = (int*)malloc(MallocSize*sizeof(int));
+  O->lDOS.N = 0;
+  for(isite=1;isite<=O->Atoms.Natom;isite++)
+  {
+    inl=1;
+    sprintf(flname, "%s/+ldos.site%03d.nl%03d",dirname,isite,inl);
+    while ((stream = fopen(flname, "r")) != NULL)
+    {
+      while(fgets(ReadLine, buffSize, stream) != NULL)
+      {
+        if(ReadLine[0]=='#')
+        {
+          if (sscanf(ReadLine, "# site = %d nl = %d%c m = %d spin = %d", &site,&n,&lc,&m,&spin) != 5)
+          {
+            perror("ERROR in reading lDOS\n");
+            printf("ERROR: %s\n",ReadLine);
+            return 1;
+          }
+          l=ShellNameToL(lc);
+          if(site!=isite)
+          {
+            printf("ERROR in reading lDOS\n");
+            printf("%s\n",ReadLine);
+            printf("But istite is %d\n",isite);
+          }
+          O->lDOS.sort[O->lDOS.N] = site;
+          O->lDOS.n[O->lDOS.N]=n;
+          O->lDOS.l[O->lDOS.N]=l;
+          O->lDOS.nl[O->lDOS.N]=inl;
+          O->lDOS.m[O->lDOS.N]=m;
+          O->lDOS.spin[O->lDOS.N]=spin;
+          O->lDOS.N++;
+          if(O->lDOS.N==MallocSize)
+          {
+            MallocSize+=MallocSize;
+            O->lDOS.sort = (int*)realloc(O->lDOS.sort, MallocSize*sizeof(int));
+            O->lDOS.n    = (int*)realloc(O->lDOS.n,    MallocSize*sizeof(int));
+            O->lDOS.l    = (int*)realloc(O->lDOS.l,    MallocSize*sizeof(int));
+            O->lDOS.nl   = (int*)realloc(O->lDOS.nl,   MallocSize*sizeof(int));
+            O->lDOS.m    = (int*)realloc(O->lDOS.m,    MallocSize*sizeof(int));
+            O->lDOS.spin = (int*)realloc(O->lDOS.spin, MallocSize*sizeof(int));
+          }
+        }
+      }
+      fclose(stream);
+      inl++;
+      sprintf(flname, "%s/+ldos.site%03d.nl%03d",dirname,isite,inl);
+    }
+  }
+  if(O->lDOS.N == 0)
+  {
+    free(O->lDOS.sort);
+    free(O->lDOS.n);
+    free(O->lDOS.l);
+    free(O->lDOS.m);
+    free(O->lDOS.spin);
+    return 0;
+  }
+  O->lDOS.V = (double**)malloc(O->lDOS.N*sizeof(double*));
+  for(i=0;i<O->lDOS.N;i++)
+  {
+    O->lDOS.V[i] = (double*)malloc(O->lDOS.NE*sizeof(double));
+  }
+  i=0;
+  for(isite=1;isite<=O->Atoms.Natom;isite++)
+  {
+    inl=1;
+    sprintf(flname, "%s/+ldos.site%03d.nl%03d",dirname,isite,inl);
+    while ((stream = fopen(flname, "r")) != NULL)
+    {
+      while(fgets(ReadLine, buffSize, stream) != NULL)
+      {
+        if(ReadLine[0]=='#')
+        {
+          for(iE=0;iE<O->lDOS.NE;iE++)
+          {
+            fscanf(stream,"%*lf %lf",&(O->lDOS.V[i][iE]));
+          }
+          i++;
+        }
+      }
+      fclose(stream);
+      inl++;
+      sprintf(flname, "%s/+ldos.site%03d.nl%03d",dirname,isite,inl);
+    }
+  }
+  return 0;
+}
+
+uint32_t ReadFPLO(DresdenFPLO * O, const char *const dirname)
+{
+  O->Atoms.Natom=0;
+  O->Wannier.Nwandef=0;
+  O->Wannier.NActAtom=0;
+  O->lDOS.N=0;
+  const int b = (int)strlen(dirname)+128;
+  char flname[b];
+  FILE  *stream;
+  uint32_t retval=0;
+  // read =.in file needs to be present
+  sprintf(flname, "%s/=.in", dirname);
+  if ((stream = fopen(flname, "r")) == NULL)
+  {
+    printf("ERROR\nCan't open %s for reading.\n", flname);
+    printf("fopen failed with error number %d (%s)\n", errno, strerror(errno));
+    return 1;
+  }
+  if(StreamReadDresdenFPLOisdotin(O, stream)==1)
+  {
+    printf("ERROR: Reading =.in failed\n");
+    return 1;
+  }
+  fclose(stream);
+  
+  // read =.str_template file needs to be present
+  sprintf(flname, "%s/=.str_template", dirname);
+  if ((stream = fopen(flname, "r")) == NULL)
+  {
+    printf("ERROR\nCan't open %s for reading.\n", flname);
+    printf("fopen failed with error number %d (%s)\n", errno, strerror(errno));
+    return 1;
+  }
+  if(StreamReadDresdenFPLOisdotstrtemplate(O, stream)==1)
+  {
+    printf("ERROR: Reading =.str_template failed\n");
+    return 1;
+  }
+  fclose(stream);
+  // read +ldos.sortxxx.nlyyy if present
+  ReadDresdenFPLOlDOS(O, dirname);
+
+  
+  
+  
+  // read +fval.xxx.y if present
+  
+  // read +fcor.xxx.y if present
+
+  // read +hamdata if present
+  
+  
+  
 
   return retval;
 }

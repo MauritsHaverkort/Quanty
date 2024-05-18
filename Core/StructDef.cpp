@@ -1494,6 +1494,10 @@ typedef struct DresdenFPLO
     double LattVec[3][3];
     double gLattVec[3][3];
     bool Molecule;
+    uint32_t Units;               /* **** ***x 0 r.g = 1 | 1 r.g = 2 Pi
+                                   * **** *xx* 00 Angstrom | 01 a0 | 10 nm | 11 ??
+                                   * **** x*** 0 Positions in units described above | 1 Postions in terms of r[0] ,r[1] and r[2]
+                                   */
   }
   Lattice;
 
@@ -1522,6 +1526,33 @@ typedef struct DresdenFPLO
     double **HopValIm; //Imaginary values are allocated even if QComplex = 0.
   }
   Wannier;
+  
+  struct
+  {
+    int MSpin;
+    int XCPotential;
+    int Relativistic;
+    int NuclearModel;
+    double QuantizationAxis[3];
+    bool UseDataDirectories;
+  }
+  Options;
+  
+  struct
+  {
+    double Emin;
+    double Emax;
+    int    NE;
+    int    N;
+    int    *sort;
+    int    *n;
+    int    *l;
+    int    *nl;
+    int    *m;
+    int    *spin;
+    double **V;
+  }
+  lDOS;
 
 }
 DresdenFPLO;
@@ -1705,26 +1736,28 @@ typedef struct TemperatureSettings
 }
 TemperatureSettings;
 
+// Replaced by C++ vectors
+// should be changed back to arrays
+/*
+ *
+ */
+//
+//typedef struct CubicSplineType
+//{
+//  double *x;                    /* list of x values */
+//  double *y;                    /* list of y values */
+//  double *y2;                   /* list of second derivatives */
+//  uint32_t N;                   /* number of points in list */
+//}
+//CubicSplineType;
 
 /*
  *
  */
-typedef struct CubicSplineType
-{
-  double *x;                    /* list of x values */
-  double *y;                    /* list of y values */
-  double *y2;                   /* list of second derivatives */
-  uint32_t N;                   /* number of points in list */
-}
-CubicSplineType;
-
-/*
- *
- */
-typedef struct InterpolatingFunctionType
-{
-  char type;                    /* Character determining the type of interpolation (i.e. pointer type) */
-                                /*   C  Cubic spline */
-  void *f;                      /* Pointer to struct of type type */
-}
-InterpolatingFunctionType;
+//typedef struct InterpolatingFunctionType
+//{
+//  char type;                    /* Character determining the type of interpolation (i.e. pointer type) */
+//                                /*   C  Cubic spline */
+//  void *f;                      /* Pointer to struct of type type */
+//}
+//InterpolatingFunctionType;

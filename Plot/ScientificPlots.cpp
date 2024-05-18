@@ -226,7 +226,7 @@ int AddYLabelToGraphics(GraphicsType* Graphics, PointType *Margins, TextType *Te
 // LineWidth width in fraction of canvas size (sqrt(Xsize*Ysize)
 // LineColor RBGalpha color def
 //
-int AddPlotAxisToGraphics(GraphicsType* Graphics, PointType *PlotRange, PointType *Margins, uint8_t *Color, double Width )
+int AddPlotAxisToGraphics(GraphicsType* Graphics, PointType *PlotRange, PointType *Margins, uint8_t *Color, double Width, double XAxis, double YAxis )
 {
   if((Width==0) || (Color[3]==0) ) return 0;
   LineType Line;
@@ -246,7 +246,40 @@ int AddPlotAxisToGraphics(GraphicsType* Graphics, PointType *PlotRange, PointTyp
   Line.Point[2].Y = 1-Margins[1].Y;
   Line.Point[3].X = 1-Margins[1].X;
   Line.Point[3].Y = Margins[0].Y;
-  return AddLineInherentLineMemory(Graphics, &Line);
+  if( AddLineInherentLineMemory(Graphics, &Line) ) return 1;
+  if( (XAxis > PlotRange[0].Y) && (XAxis < PlotRange[1].Y) )
+  {
+    if( InitLine(&Line, 2) ) return 1;
+    Line.Color[0] = Color[0];
+    Line.Color[1] = Color[1];
+    Line.Color[2] = Color[2];
+    Line.Color[3] = Color[3];
+    Line.FillColor[3] = 0; // no filling while filling fully transparent.
+    Line.CloseAndFill = false;
+    Line.Width = Width;
+    Line.Point[0].X = Margins[0].X;
+    Line.Point[0].Y = Margins[0].Y + (1-Margins[1].Y-Margins[0].Y) * ( XAxis - PlotRange[0].Y) / (PlotRange[1].Y - PlotRange[0].Y);
+    Line.Point[1].X = 1-Margins[1].X;
+    Line.Point[1].Y = Margins[0].Y + (1-Margins[1].Y-Margins[0].Y) * ( XAxis - PlotRange[0].Y) / (PlotRange[1].Y - PlotRange[0].Y);
+    if( AddLineInherentLineMemory(Graphics, &Line) ) return 1;
+  }
+  if( (YAxis > PlotRange[0].X) && (YAxis < PlotRange[1].X) )
+  {
+    if( InitLine(&Line, 2) ) return 1;
+    Line.Color[0] = Color[0];
+    Line.Color[1] = Color[1];
+    Line.Color[2] = Color[2];
+    Line.Color[3] = Color[3];
+    Line.FillColor[3] = 0; // no filling while filling fully transparent.
+    Line.CloseAndFill = false;
+    Line.Width = Width;
+    Line.Point[0].X = Margins[0].X + (1-Margins[1].X-Margins[0].X) * ( YAxis - PlotRange[0].X) / (PlotRange[1].X - PlotRange[0].X);
+    Line.Point[0].Y = Margins[0].X;
+    Line.Point[1].X = Margins[0].X + (1-Margins[1].X-Margins[0].X) * ( YAxis - PlotRange[0].X) / (PlotRange[1].X - PlotRange[0].X);
+    Line.Point[1].Y = 1-Margins[1].X;
+    if( AddLineInherentLineMemory(Graphics, &Line) ) return 1;
+  }
+  return 0;
 }
 
 void FindBoundaryPoint(PointType *Boundary, PointType *In, PointType *Out, PointType *OnBoundary)
@@ -384,7 +417,7 @@ int AddSpectraTypeToGraphics(GraphicsType* Graphics, PointType *PlotRange, Point
 int PlotAllButDataToGraphics(GraphicsType* Graphics, FramePlotOptions *FPO)
 {
   TextType Text;
-  AddPlotAxisToGraphics(Graphics,FPO->PlotRange,FPO->Margins,FPO->LineColor,FPO->LineWidth);
+  AddPlotAxisToGraphics(Graphics,FPO->PlotRange,FPO->Margins,FPO->LineColor,FPO->LineWidth, FPO->XAxis, FPO->YAxis);
   AddXTicksToGraphics(Graphics, FPO->PlotRange, FPO->Margins, FPO->LineColor, FPO->LineWidth, FPO->LineColor, 0.5, FPO->FirstXTick, FPO->dXTick, 0.01 * sqrt(2), FPO->NMinorXTick);
   AddYTicksToGraphics(Graphics, FPO->PlotRange, FPO->Margins, FPO->LineColor, FPO->LineWidth, FPO->LineColor, 0.5, FPO->FirstYTick, FPO->dYTick, 0.01          , FPO->NMinorXTick);
   AddXTicksLabelToGraphics(Graphics, FPO->PlotRange, FPO->Margins, FPO->LineColor, FPO->FontSize, FPO->Font, FPO->FirstXTick, FPO->dXTick, FPO->PlotXScaleFormat);
@@ -397,6 +430,10 @@ int PlotAllButDataToGraphics(GraphicsType* Graphics, FramePlotOptions *FPO)
   Text.Alignment='c';
   Text.Font=FPO->Font;
   Text.Size=FPO->FontSize;
+  Text.Color[0]=FPO->LineColor[0];
+  Text.Color[1]=FPO->LineColor[1];
+  Text.Color[2]=FPO->LineColor[2];
+  Text.Color[3]=FPO->LineColor[3];
   AddXLabelToGraphics(Graphics, FPO->Margins, &Text);
   Text.String = FPO->YLabel;
   Text.Angle=0.5*Pi;
@@ -429,42 +466,94 @@ int PlotSpectraTypeArrayToGraphics(GraphicsType* Graphics, SpectraTypeArray *Dat
   return 0;
 }
 
-int PlotSpectraTypeArrayToGraphicsArray(GraphicsType* Graphics, SpectraTypeArray *Data, int NXPlots, int NYPlots, LinePlotOptions *LPORe, LinePlotOptions *LPOIm, FramePlotOptions *FPO, bool Negate, double ScaleOffDiagonal)
+int PlotSpectraTypeArrayToGraphicsArray(GraphicsType* Graphics, SpectraTypeArray *Data, int NXPlots, int NYPlots, LinePlotOptions *LPORe, LinePlotOptions *LPOIm, FramePlotOptions *FPO, bool Negate, double ScaleOffDiagonal, double ShiftOffDiagonal)
 {
   int i;
   FramePlotOptions FPOInset;
+  // plot graphs to layer 1 to NXPlots * NYPlots
+  // scale and shift the off diagonal plots
+  // margin 0 is used for the left and botom margins, as one would for a single plot
+  // margin 1 is used for the left and right or bottom and top margin
   FPOInset = *FPO;
   FPOInset.Margins[0] = FPOInset.Margins[1];
   FPOInset.FontSize = 0;
   FPOInset.Font = NULL;
+  FPOInset.PlotRange[0].Y -= ShiftOffDiagonal;
   FPOInset.PlotRange[0].Y *= ScaleOffDiagonal;
+  FPOInset.PlotRange[1].Y -= ShiftOffDiagonal;
   FPOInset.PlotRange[1].Y *= ScaleOffDiagonal;
+  FPOInset.FirstYTick -= ShiftOffDiagonal;
+  FPOInset.FirstYTick *= ScaleOffDiagonal;
+  FPOInset.dYTick *= ScaleOffDiagonal;
   Graphics->NLayer = 1 + NXPlots * NYPlots;
   Graphics->Layer = (GraphicsType**)malloc(Graphics->NLayer * sizeof(GraphicsType*));
   Graphics->Layer[0] = Graphics;
-  Graphics->Layer[1] = (GraphicsType*)malloc(Graphics->NLayer * sizeof(GraphicsType));
   for(i=1;i<Graphics->NLayer;i++)
   {
-    Graphics->Layer[i] = &(Graphics->Layer[0][i]);
+    Graphics->Layer[i] = (GraphicsType*)malloc(sizeof(GraphicsType));
     InitGraphics(Graphics->Layer[i]);
-    // TODO: test order in which the plots are plottet with repsect to the order where CreateSpectra with Tensor True Saves them.
     Graphics->Layer[i]->CanvasOrigin.X = Graphics->CanvasSize.X * ( FPO->Margins[0].X + ( (i-1) % NXPlots ) * (1-FPO->Margins[0].X) / NXPlots );
-    Graphics->Layer[i]->CanvasOrigin.Y = Graphics->CanvasSize.Y * ( FPO->Margins[0].Y + ( (i-1) / NXPlots ) * (1-FPO->Margins[0].Y) / NYPlots );
+    Graphics->Layer[i]->CanvasOrigin.Y = Graphics->CanvasSize.Y * ( FPO->Margins[0].Y + ( NYPlots - ((i-1) / NXPlots ) -1 ) * (1-FPO->Margins[0].Y) / NYPlots );
     Graphics->Layer[i]->CanvasSize.X = Graphics->CanvasSize.X * (1-FPO->Margins[0].X) / NXPlots;
     Graphics->Layer[i]->CanvasSize.Y = Graphics->CanvasSize.Y * (1-FPO->Margins[0].Y) / NYPlots;
     if(( (i-1) % NXPlots ) == ( (i-1) / NXPlots ))
     {
+      FPOInset.FirstYTick /= ScaleOffDiagonal;
+      FPOInset.FirstYTick += ShiftOffDiagonal;
+      FPOInset.dYTick /= ScaleOffDiagonal;
       FPOInset.PlotRange[0].Y /= ScaleOffDiagonal;
+      FPOInset.PlotRange[0].Y += ShiftOffDiagonal;
       FPOInset.PlotRange[1].Y /= ScaleOffDiagonal;
+      FPOInset.PlotRange[1].Y += ShiftOffDiagonal;
     }
     PlotSpectraTypeToGraphics(Graphics->Layer[i], &(Data->Spec[i-1]), LPORe, LPOIm, &FPOInset, Negate);
     if(( (i-1) % NXPlots ) == ( (i-1) / NXPlots ))
     {
+      FPOInset.FirstYTick -= ShiftOffDiagonal;
+      FPOInset.FirstYTick *= ScaleOffDiagonal;
+      FPOInset.dYTick *= ScaleOffDiagonal;
+      FPOInset.PlotRange[0].Y -= ShiftOffDiagonal;
       FPOInset.PlotRange[0].Y *= ScaleOffDiagonal;
+      FPOInset.PlotRange[1].Y -= ShiftOffDiagonal;
       FPOInset.PlotRange[1].Y *= ScaleOffDiagonal;
     }
   }
-  // TODO: plot the axes and labels to layer 0
+  // plot tick and axis labels to layer 0
+  FPOInset = *FPO;
+  const double InsetXWidth   = (1 - FPO->Margins[0].X) / NXPlots;
+  const double InsetXMargins = FPO->Margins[1].X * InsetXWidth;
+  const double InsetYWidth   = (1 - FPO->Margins[0].Y) / NYPlots;
+  const double InsetYMargins = FPO->Margins[1].Y * InsetYWidth;
+  for (i=0;i<NXPlots;i++)
+  {
+    FPOInset.Margins[0].X = FPO->Margins[0].X + InsetXMargins + i * InsetXWidth;
+    FPOInset.Margins[1].X = 1 - FPO->Margins[0].X + InsetXMargins - (i+1) * InsetXWidth;
+    AddXTicksLabelToGraphics(Graphics, FPOInset.PlotRange, FPOInset.Margins, FPOInset.LineColor, FPOInset.FontSize, FPOInset.Font, FPOInset.FirstXTick, FPOInset.dXTick, FPOInset.PlotXScaleFormat);
+  }
+  FPOInset.Margins[0].X = FPO->Margins[0].X;
+  for (i=0;i<NYPlots;i++)
+  {
+    FPOInset.Margins[0].Y = FPO->Margins[0].Y + InsetYMargins + i * InsetYWidth;
+    FPOInset.Margins[1].Y = 1 - FPO->Margins[0].Y + InsetYMargins - (i+1) * InsetYWidth;
+    AddYTicksLabelToGraphics(Graphics, FPOInset.PlotRange, FPOInset.Margins, FPOInset.LineColor, FPOInset.FontSize, FPOInset.Font, FPOInset.FirstYTick, FPOInset.dYTick, FPOInset.PlotYScaleFormat);
+  }
+  TextType Text;
+  InitText(&Text);
+  Text.String = FPO->XLabel;
+  Text.Point.X=0;
+  Text.Point.Y=0;
+  Text.Angle=0;
+  Text.Alignment='c';
+  Text.Font=FPO->Font;
+  Text.Size=FPO->FontSize;
+  Text.Color[0]=FPO->LineColor[0];
+  Text.Color[1]=FPO->LineColor[1];
+  Text.Color[2]=FPO->LineColor[2];
+  Text.Color[3]=FPO->LineColor[3];
+  AddXLabelToGraphics(Graphics, FPO->Margins, &Text);
+  Text.String = FPO->YLabel;
+  Text.Angle=0.5*Pi;
+  AddYLabelToGraphics(Graphics, FPO->Margins, &Text);
   return 0;
 }
 
