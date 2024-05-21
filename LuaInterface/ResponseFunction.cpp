@@ -588,7 +588,7 @@ static int LuaResponseFunctionToTightBinding(lua_State * L)
     {
       if(M->Block==true)
       {
-        BlockMatrixToTightBinding((BlockListOfPoles *)(M->data),TB);
+        BlockListOfPolesToTightBinding((BlockListOfPoles *)(M->data),TB);
       }
       else
       {
@@ -601,7 +601,7 @@ static int LuaResponseFunctionToTightBinding(lua_State * L)
     {
       if(M->Block==true)
       {
-        BlockMatrixToTightBinding((BlockAndersonMatrixType *)(M->data),TB);
+        BlockAndersonMatrixToTightBinding((BlockAndersonMatrixType *)(M->data),TB);
       }
       else
       {
@@ -614,7 +614,7 @@ static int LuaResponseFunctionToTightBinding(lua_State * L)
     {
       if(M->Block==true)
       {
-        BlockMatrixToTightBinding((BlockTriDiagonalMatrixType *)(M->data),TB);
+        BlockTriDiagonalMatrixToTightBinding((BlockTriDiagonalMatrixType *)(M->data),TB);
       }
       else
       {
@@ -627,7 +627,7 @@ static int LuaResponseFunctionToTightBinding(lua_State * L)
     {
       if(M->Block==true)
       {
-        BlockMatrixToTightBinding((BlockNaturalImpurityOrbitalMatrixType *)(M->data),TB);
+        BlockNaturalImpurityOrbitalMatrixToTightBinding((BlockNaturalImpurityOrbitalMatrixType *)(M->data),TB);
       }
       else
       {

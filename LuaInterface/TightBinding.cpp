@@ -117,40 +117,146 @@ static int LuaTightBindingDefFromDresdenFPLO(lua_State * L)
   return 1;
 }
 
+
+int ReturnIndex(DresdenFPLO *FPLO, int sort, int n, int l, int m ,int spin)
+{
+  int i;
+  for(i=0;i<FPLO->lDOS.N;i++)
+  {
+    if( (FPLO->lDOS.sort[i] == sort ) &&
+        (FPLO->lDOS.n[i]    == n    ) &&
+        (FPLO->lDOS.l[i]    == l    ) &&
+        (FPLO->lDOS.m[i]    == m    ) &&
+        (FPLO->lDOS.spin[i] == spin )    ) return i;
+  }
+  printf("Error: sort nlmsigma Index not found\n %d %d %d %d %d\n",sort,n,l,m,spin);
+  return -1;
+}
+
+
 /*  On stack is a Dresden FPLO type and a list or string of orbitals to include
  *  The list can be a single string of the form "3d"
  *  Or a list giving the orbitals more selectively
  */
 static int LuaHybridizationFunctionFromFPLO(lua_State * L)
 {
+  int i;
+  int site;
   int *OrbitalList=NULL;
+  int NOrbitals;
+  const char *nlms;
+  int n,l,m,s;
+  bool hasm,hass;
   DresdenFPLO *FPLO = NULL;
   ResponsefunctionType *Hyb;
   BlockListOfPoles *LP;
   uint32_t len = (uint32_t)lua_gettop(L);
   // possible read options from the stack at position 3
-  if(len==3)
+  struct
   {
-    //TODO: read options
+    bool Normalize=true;
+    bool SetNegativeToZero=true;
+    bool MergeNegativeToNeighbour=false;
+  }Options;
+  LuaOptionsType LuaOptions[]={
+    {"Normalize",                "bool", &(Options.Normalize)},
+    {"SetNegativeToZero",        "bool", &(Options.SetNegativeToZero)},
+    {"MergeNegativeToNeighbour", "bool", &(Options.MergeNegativeToNeighbour)},
+    {NULL, NULL, NULL}};
+  if(len==4)
+  {
+    LuaCheckOptions(L, 4, LuaOptions);
+    return luaL_error(L, "Error in HybridizationFunctionFromFPLO(arg).\nOptions not yet implemented.\n");
     len--;
   }
-  if(len!=2) luaL_error(L, "Error in HybridizationFunctionFromFPLO, expected on stack an FPLO input, a definition of the orbitals to include and possible a list of options\n");
+  if(len!=3) luaL_error(L, "Error in HybridizationFunctionFromFPLO, expected on stack an FPLO input, the site number and a definition of the orbitals to include and possible a list of options\n");
   // read the FPLO input from the first position of the stack
   FPLO = (DresdenFPLO *) luaL_checkudata(L, 1, "DresdenFPLO_Type");
+  // read the site from the stack
+  site = (uint32_t)luaL_checkinteger(L,2);
   // read the list of orbitals to include from the second position of the stack
-  
-
+  // Options are nl in the form of "1s" or "3d"
+  // A specific nlm value in the form of "1s0" "2p-1", "2p1" or "2p+1"
+  // A specific nlsigma value in the form of "1s_1" or "1s_2"
+  // A specific nlmsigna falue in the form of "1s0_1" or "2p-1_2"
+  // Or a table of these strings
+  if( lua_istable(L,3) )
+  {
+    return luaL_error(L, "ERROR: currently no tables as input for orbitals suported\n");
+  }
+  else
+  {
+    nlms = lua_tostring(L,3);
+    ReadNonRelativisticOrbital(nlms, &n, &l, &m, &s, &hasm, &hass);
+    if(hasm==true)
+    {
+      NOrbitals = 2;
+      if( (FPLO->Options.MSpin==1) || (hass==true) ) NOrbitals=1;
+    }
+    else
+    {
+      NOrbitals = 2 * l + 1;
+      if( (FPLO->Options.MSpin==2) && (hass==false) ) NOrbitals*=2;
+    }
+    OrbitalList=(int*)malloc(NOrbitals*sizeof(int));
+    if(hasm==true)
+    {
+      if (hass==true)
+      {
+        OrbitalList[0] = ReturnIndex(FPLO, site, n, l, m, s);
+      }
+      else if (FPLO->Options.MSpin==1)
+      {
+        OrbitalList[0] = ReturnIndex(FPLO, site, n, l, m, 1);
+      }
+      else
+      {
+        OrbitalList[0] = ReturnIndex(FPLO, site, n, l, m, 1);
+        OrbitalList[1] = ReturnIndex(FPLO, site, n, l, m, 2);
+      }
+    }
+    else
+    {
+      if (hass==true)
+      {
+        for(m=-l;m<=l;m++)
+        {
+          OrbitalList[l+m] = ReturnIndex(FPLO, site, n, l, m, s);
+        }
+      }
+      else if (FPLO->Options.MSpin==1)
+      {
+        for(m=-l;m<=l;m++)
+        {
+          OrbitalList[l+m] = ReturnIndex(FPLO, site, n, l, m, 1);
+        }
+      }
+      else
+      {
+        for(m=-l;m<=l;m++)
+        {
+          OrbitalList[2*l+0+2*m] = ReturnIndex(FPLO, site, n, l, m, 1);
+          OrbitalList[2*l+1+2*m] = ReturnIndex(FPLO, site, n, l, m, 2);
+        }
+      }
+    }
+  }
+  for(i=0;i<NOrbitals;i++)
+  {
+    if (OrbitalList[i]==-1) return luaL_error(L, "ERROR: orbital index not found\n");
+  }
   // push Hybridizaton function to the stack
   Hyb = (ResponsefunctionType*) lua_newuserdata(L, sizeof(ResponsefunctionType));
   // fill the hybridization function with data
   Hyb->type = 'l';
   Hyb->Block=true;
   LP = (BlockListOfPoles*)malloc(sizeof(BlockListOfPoles));
+  Hyb->data = LP;
   Hyb->SuggestedGrid=NULL;
   Hyb->NSuggestedGridPoints=0;
   // set the dimension in LP to the number of orbitals;
-  LP->N=0;
-  HybridizationFunctionFromFPLO(FPLO, LP, OrbitalList);
+  LP->BlockSize=NOrbitals;
+  HybridizationFunctionFromFPLO(FPLO, LP, OrbitalList, Options.MergeNegativeToNeighbour, Options.SetNegativeToZero, Options.Normalize);
   luaL_setmetatable(L, "ResponseFunction_Type");
   free(OrbitalList);
   return 1;
@@ -2102,6 +2208,11 @@ static int LuaTightBindingDestroy(lua_State * L)
   return 0;
 }
 
+static int LuaDresdenFPLOToString(lua_State * L)
+{
+  lua_pushstring(L, "FPLO input");
+  return 1;
+}
 
 static int LuaDresdenFPLODestroy(lua_State * L)
 {
@@ -2130,5 +2241,6 @@ static const struct luaL_Reg StuttgartHAMR_meta[] = {
 
 static const struct luaL_Reg DresdenFPLO_meta[] = {
 	{"__gc", LuaDresdenFPLODestroy},
+  {"__tostring", LuaDresdenFPLOToString},
   {NULL, NULL}
 };

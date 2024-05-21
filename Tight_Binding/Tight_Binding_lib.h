@@ -64,6 +64,7 @@ uint32_t RemoveCrystalInformationFromTightBinding(TightBindingDef *TB, TightBind
 uint32_t AddCrystalInformationFromTightBinding(TightBindingDef *StripedTB, TightBindingDef *TB);
 uint32_t RotateStripedTightBinding(TightBindingDef * TB, CompactMatrixType * rotmat, TightBindingDef * RTB);
 uint32_t RotateTightBinding(TightBindingDef * TB, CompactMatrixType * rotmat, TightBindingDef * RTB);
+uint32_t ReadNonRelativisticOrbital(char *nlms, int n, int l, int m, int s, bool hasm, bool hass);
 vector<string> groupedRelOrbitals(const vector<string> &in);
 bool isRelOrbital(const string &orb);
 bool QOrbsBelongTogether(string orb1, string orb2);

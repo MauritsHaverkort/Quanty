@@ -627,10 +627,26 @@ uint32_t BlockListOfPolesToSpectraWithBroadening(BlockListOfPoles const A, Spect
   return 0;
 }
 
-
+/*  val needs to be allocated befor the function is called
+ *
+ */
 uint32_t BlockListOfPolesEigenValues(const BlockListOfPoles * const A, double * val)
 {
-  //TODO all
+  int i;
+  if(A->QComplex==0)
+  {
+    for(i=0;i<A->N;i++)
+    {
+      val[i] = A->VRe[(i-1)*(1+A->BlockSize*A->BlockSize)];
+    }
+  }
+  else
+  {
+    for(i=0;i<A->N;i++)
+    {
+      val[i] = A->V[(i-1)*(1+A->BlockSize*A->BlockSize)].Re;
+    }
+  }
   return 0;
 }
 uint32_t BlockListOfPolesEigenSystem(const BlockListOfPoles * const A, double * val, CompactMatrixType * fun)
@@ -4078,15 +4094,21 @@ uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType co
  * Each atom has M->BlockSize orbitals
  */
 
-uint32_t BlockMatrixToTightBinding(BlockListOfPoles const * const M, TightBindingDef * TB)
+/*   G(w) = A0 + B0 ( sum_i B_i 1/(w-A_i) B_i^T ) B0^T
+ *   only accept: A0 = 0 && B0 = 1
+ *
+ */
+uint32_t BlockListOfPolesToTightBinding(BlockListOfPoles const * const M, TightBindingDef * TB)
 {
   //TODO: BlockListOfPoles to TB
+  
   return 0;
 }
+
 /* The onsite energy of each atom is given by A_i
  * The hopping between atom i and i+1 is given by B_i
  */
-uint32_t BlockMatrixToTightBinding(BlockTriDiagonalMatrixType const * const M, TightBindingDef * TB)
+uint32_t BlockTriDiagonalMatrixToTightBinding(BlockTriDiagonalMatrixType const * const M, TightBindingDef * TB)
 {
   uint32_t i,iH,j,iorb,jorb;
   strcpy(TB->Name,M->Name);
@@ -4253,7 +4275,7 @@ uint32_t BlockMatrixToTightBinding(BlockTriDiagonalMatrixType const * const M, T
   return 0;
 }
 
-uint32_t BlockMatrixToTightBinding(BlockAndersonMatrixType const * const M, TightBindingDef * TB)
+uint32_t BlockAndersonMatrixToTightBinding(BlockAndersonMatrixType const * const M, TightBindingDef * TB)
 {
   uint32_t i,iH,j,iorb,jorb;
   strcpy(TB->Name,M->Name);
@@ -4420,7 +4442,7 @@ uint32_t BlockMatrixToTightBinding(BlockAndersonMatrixType const * const M, Tigh
   return 0;
 }
 
-uint32_t BlockMatrixToTightBinding(BlockNaturalImpurityOrbitalMatrixType const * const M, TightBindingDef * TB)
+uint32_t BlockNaturalImpurityOrbitalMatrixToTightBinding(BlockNaturalImpurityOrbitalMatrixType const * const M, TightBindingDef * TB)
 {
   //TODO: BlockNaturalImpurityOrbitalMatrixType to TB
   return 0;

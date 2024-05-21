@@ -567,9 +567,67 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
 	return 0;
 }
 
-uint32_t HybridizationFunctionFromFPLO(DresdenFPLO *FPLO, BlockListOfPoles *LP, int *OrbitalList)
+uint32_t HybridizationFunctionFromFPLO(DresdenFPLO *FPLO, BlockListOfPoles *LP, int *OrbitalList, bool MergeNegativeToNeighbour, bool SetNegativeToZero, bool Normalize)
 {
-  
+  int i,j;
+  int const stepsize = 1 + Sqr( LP->BlockSize );
+  ListOfPoles lDOSin;
+  LP->N=FPLO->lDOS.NE;
+  if(SetNegativeToZero==true)
+  {
+    LP->QComplex=0;
+  }
+  else
+  {
+    LP->QComplex=1;
+  }
+  InitBlockListOfPoles(LP);
+  lDOSin.N=LP->N;
+  InitListOfPoles(&lDOSin);
+  // set energy
+  for(j=0;j<LP->N;j++)
+  {
+    lDOSin.a[j] = (((double) j ) /  (LP->N-1) ) * FPLO->lDOS.Emax + (((double) (LP->N-1-j) ) /  (LP->N-1) ) * FPLO->lDOS.Emin;
+    LP->VRe[j * stepsize] = lDOSin.a[j];
+  }
+  //loop over all lDOSes
+  for(i=0;i<LP->BlockSize;i++)
+  {
+    // read lDOS to lDOSin
+    for(j=0;j<FPLO->lDOS.NE;j++)
+    {
+      lDOSin.b[j]=FPLO->lDOS.V[OrbitalList[i]][j];
+    }
+    // reglarize
+    if(MergeNegativeToNeighbour==true) MergeNegativeToNeighbourListOfPolesSorted(&lDOSin);
+    if(SetNegativeToZero==true) SetNegativeToZeroListOfPoles(&lDOSin);
+    if(Normalize==true) NormalizeListOfPoles(&lDOSin);
+    // set the correct elements of Block List Of Poles
+    if(LP->QComplex==0)
+    {
+      for(j=0;j<LP->N;j++)
+      {
+        LP->VRe[j * stepsize + 1 + i * ( 1 + LP->BlockSize)] = sqrt( lDOSin.b[j] );
+      }
+    }
+    else
+    {
+      for(j=0;j<LP->N;j++)
+      {
+        if(lDOSin.b[j] >= 0)
+        {
+          LP->V[j * stepsize + 1 + i * ( 1 + LP->BlockSize)].Im = 0;
+          LP->V[j * stepsize + 1 + i * ( 1 + LP->BlockSize)].Re = sqrt( lDOSin.b[j] );
+        }
+        else
+        {
+          LP->V[j * stepsize + 1 + i * ( 1 + LP->BlockSize)].Re = 0;
+          LP->V[j * stepsize + 1 + i * ( 1 + LP->BlockSize)].Im = sqrt( lDOSin.b[j] );
+        }
+      }
+    }
+  }
+  FreeListOfPoles(&lDOSin);
   return 0;
 }
 

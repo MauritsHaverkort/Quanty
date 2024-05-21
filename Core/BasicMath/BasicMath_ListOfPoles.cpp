@@ -46,6 +46,106 @@ void ScaleListOfPoles(ListOfPoles * const A, double const scale)
   }
 }
 
+double CalcNormListOfPoles(ListOfPoles * const A)
+{
+  double norm=0;
+  for(int i=0;i<A->N;i++)
+  {
+    norm+=A->b[i];
+  }
+  return norm;
+}
+
+void NormalizeListOfPoles(ListOfPoles * const A)
+{
+  double norm=0;
+  norm = CalcNormListOfPoles(A);
+  if(norm!=0) norm=1/norm;
+  ScaleListOfPoles(A, norm);
+}
+
+void SetNegativeToZeroListOfPoles(ListOfPoles * const A)
+{
+  for(int i=0;i<A->N;i++)
+  {
+    if(A->b[i]<0)A->b[i]=0;
+  }
+}
+
+// This function can leave negative spectral weight at the edges
+// otherwise it removes the negative spectral weight weilst keeping locally
+// the frist moments correct.
+void MergeNegativeToNeighbourListOfPolesSorted(ListOfPoles * const A)
+{
+  int i,j;
+  int muindex;
+  double WeightLeft,WeightRight,dE;
+  muindex=0;
+  while((muindex<A->N)&&(A->b[muindex]<A->mu))
+  {
+    muindex++;
+  }
+  muindex--;
+  // left of chemical potential
+  for(i=muindex-1;i>0;i--)
+  {
+    if(A->b[i]>=0) continue;
+    for(j=i+1;j<=muindex;j++)
+    {
+      if(A->b[j]==0) continue;
+      dE = A->a[j] - A->a[i-1];
+      WeightRight = ( A->a[i] - A->a[i-1] ) / dE;
+      WeightLeft = ( A->a[j] - A->a[i] ) / dE;
+      if(-(WeightRight * A->b[i]) > A->b[j] )
+      {
+        // WeigthToShiftRigth = A->b[j] / WeightRight;
+        A->b[i]   += (WeightLeft+1) * A->b[j] / WeightRight;
+        A->b[i-1] -= WeightLeft  * A->b[j] / WeightRight;
+        A->b[j] = 0;
+        continue;
+      }
+      else
+      {
+        A->b[i-1] += WeightLeft  * A->b[i];
+        A->b[j]   += WeightRight * A->b[i];
+        A->b[i] = 0;
+        break;
+      }
+    }
+  }
+  // right of chemical potential
+  muindex++;
+  if(muindex==A->N) return;
+  if(A->mu == A->b[muindex]) muindex++;
+  if(muindex==A->N) return;
+  for(i=muindex+1;i<A->N-1;i++)
+  {
+    if(A->b[i]>=0) continue;
+    for(j=i-1;j>=muindex;j--)
+    {
+      if(A->b[j]==0) continue;
+      dE = A->a[i-1] - A->a[j];
+      WeightLeft  = ( A->a[i] - A->a[i-1] ) / dE;
+      WeightRight = ( A->a[j] - A->a[i] ) / dE;
+      if(-(WeightLeft * A->b[i]) > A->b[j] )
+      {
+        // WeigthToShiftLeft = A->b[j] / WeightRight;
+        A->b[i]   += (WeightRight+1) * A->b[j] / WeightLeft;
+        A->b[i+1] -= WeightRight  * A->b[j] / WeightLeft;
+        A->b[j] = 0;
+        continue;
+      }
+      else
+      {
+        A->b[i+1] += WeightRight * A->b[i];
+        A->b[j]   += WeightLeft  * A->b[i];
+        A->b[i] = 0;
+        break;
+      }
+    }
+  }
+}
+
 uint32_t AddListOfPoles(ListOfPoles * const A, ListOfPoles B)
 {
   double *temp;

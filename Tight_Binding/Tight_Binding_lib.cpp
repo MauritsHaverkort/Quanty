@@ -732,8 +732,7 @@ uint32_t CalculateChemicalPotentialFromListOfEigenvalues(const double * const va
  *  output:
  *     Fermi[Ei].Re[ki][kj] is incremented by the DOS at the given k-points and energies.
  */
-int TightBindingFermi(TightBindingDef A, double Emin, double Emax, int NE, double k0[3], double k1[3], double k2[3],
-                      MatrixType Fermi[])
+int TightBindingFermi(TightBindingDef A, double Emin, double Emax, int NE, double k0[3], double k1[3], double k2[3], MatrixType Fermi[])
 {
   MatrixType H, T;
   double q[3], val[A.NFermion];
@@ -2784,6 +2783,62 @@ uint32_t RotateTightBinding(TightBindingDef * TB, CompactMatrixType * rotmat, Ti
   AddCrystalInformationFromTightBinding(&StripedRTB,RTB);
   FreeTightBindingDef(&StripedRTB);
   FreeTightBindingDef(&StripedTB);
+  return 0;
+}
+
+
+uint32_t ReadNonRelativisticOrbital(const char *nlms, int *n, int *l, int *m, int *s, bool *hasm, bool *hass)
+{
+  const char *ms;
+  char lchar;
+  if(sscanf(nlms, "%d%c",n,&lchar)!=2)
+  {
+    printf("ERROR: Failed to read principle quantum number and angular momentum form string \"%s\"\n",nlms);
+    return 1;
+  }
+  *l = ShellNameToL(lchar);
+  if(*l==-1)
+  {
+    printf("ERROR: Failed to read angular momentum form string \"%s\", found '%c'\n",nlms,lchar);
+    return 1;
+  }
+  ms=strchr(nlms,lchar)+1;
+  if(ms[0]=='\0')
+  {
+    *hasm=false;
+    *hass=false;
+    return 0;
+  }
+  if(strchr(nlms,'_')==NULL)
+  {
+    *hasm=true;
+    *hass=false;
+    if(sscanf(ms, "%d",m)!=1)
+    {
+      printf("ERROR: Failed to read m form string \"%s\"\n",nlms);
+      return 1;
+    }
+    if(abs(*m)>*l)
+    {
+      printf("ERROR: abs(m) larger than l in orbital \"%s\"",nlms);
+      return 1;
+    }
+  }
+  else
+  {
+    *hasm=true;
+    *hass=true;
+    if(sscanf(ms, "%d_%d",m,s)!=2)
+    {
+      printf("ERROR: Failed to read m and s form string \"%s\"",nlms);
+      return 1;
+    }
+    if(abs(*m)>*l)
+    {
+      printf("ERROR: abs(m) larger than l in orbital \"%s\"",nlms);
+      return 1;
+    }
+  }
   return 0;
 }
 

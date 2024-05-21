@@ -652,7 +652,7 @@ uint32_t ReadDresdenFPLOlDOS(DresdenFPLO * O, const char *const dirname)
       {
         if(ReadLine[0]=='#')
         {
-          if (sscanf(ReadLine, "# site = %d nl = %d%c m = %d spin = %d", &site,&n,&lc,&m,&spin) != 5)
+          if (sscanf(ReadLine, "# site = %d nl = %d%c m =  %d spin = %d", &site,&n,&lc,&m,&spin) != 5)
           {
             perror("ERROR in reading lDOS\n");
             printf("ERROR: %s\n",ReadLine);
