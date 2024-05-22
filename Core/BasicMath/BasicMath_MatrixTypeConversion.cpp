@@ -72,6 +72,7 @@ uint32_t AndersonMatrixToTriDiagonalMatrixNonOrthogonal(AndersonMatrixType const
     fflush(stdout);
     return 1;
   };
+  strncpy(H->Name, M.Name, MAXStrLength);
   for (i = 0; i < M.N; i++)
   {
     vec[0][i] = 0;
@@ -113,8 +114,7 @@ uint32_t AndersonMatrixToTriDiagonalMatrixNonOrthogonal(AndersonMatrixType const
  *  M=T.H.T^{\dag}
  *  input M defined, H and T not initiallized
  */
-uint32_t AndersonMatrixToTriDiagonalMatrixPlusT(AndersonMatrixType const M, MatrixType * const T,
-                                                TriDiagonalMatrixType * const H, uint32_t NTriDiag)
+uint32_t AndersonMatrixToTriDiagonalMatrixPlusT(AndersonMatrixType const M, MatrixType * const T, TriDiagonalMatrixType * const H, uint32_t NTriDiag)
 {
   uint32_t i, j;
   double tempRe;
@@ -134,10 +134,9 @@ uint32_t AndersonMatrixToTriDiagonalMatrixPlusT(AndersonMatrixType const M, Matr
     printf("InitTriDiagonalMatrix failed in AndersonMatrixToTriDiagonalMatrix\n");
     return 1;
   }
+  strncpy(H->Name, M.Name, MAXStrLength);
   strcpy(T->Name, "TriDiagonalizer of ");
   strncat(T->Name, M.Name, Max(0, MAXStrLength - 20));
-  strcpy(H->Name, "TriDiagonal form of ");
-  strncat(H->Name, M.Name, Max(0, MAXStrLength - 22));
   H->a[0] = M.a[0];
   H->b[0] = M.b[0];
   H->mu = M.mu;
@@ -228,9 +227,7 @@ uint32_t AndersonMatrixToDoubleTriDiagonalMatrixNonOrthogonal(AndersonMatrixType
 *  diagonal energies in the AndersonMatrix smaller then Ef-epsilon belong to the valence    part of the double tri diagonal matrix
 *  diagonal energies in the AndersonMatrix in the interval Ef-epsilon to Ef+epsilon contribute partly to the valence, partly to the conductin part, weighted according to distance with Ef
 */
-uint32_t AndersonMatrixToDoubleTriDiagonalMatrixPlusT(AndersonMatrixType const M, MatrixType * const T,
-                                                      DoubleTriDiagonalMatrixType * const H, double const mu,
-                                                      double const epsilon)
+uint32_t AndersonMatrixToDoubleTriDiagonalMatrixPlusT(AndersonMatrixType const M, MatrixType * const T, DoubleTriDiagonalMatrixType * const H, double const mu, double const epsilon)
 {
   AndersonMatrixType MV, MC;
   TriDiagonalMatrixType MVTri, MCTri;
@@ -495,6 +492,7 @@ uint32_t AndersonMatrixToListOfPoles(AndersonMatrixType const M, ListOfPoles * c
   }
   FreeMatrix(&T);
   A->mu=M.mu;
+  strncpy(A->Name, M.Name, MAXStrLength);
   return 0;
 }
 
@@ -525,8 +523,7 @@ uint32_t TriDiagonalMatrixFindOnsiteOccupation(TriDiagonalMatrixType const M, do
  *   output:
  *     double *       onsiteshift : the shift that brings the eigensystem of M to have an occupation of "occupation" on the impurity
  */
-uint32_t AndersonMatrixFindOnsiteEnergyShift(AndersonMatrixType const M, double const occupation,
-                                             double *const onsiteshift)
+uint32_t AndersonMatrixFindOnsiteEnergyShift(AndersonMatrixType const M, double const occupation, double *const onsiteshift)
 {
   uint32_t const maxit = 30;
   uint32_t i;
@@ -565,8 +562,7 @@ uint32_t AndersonMatrixFindOnsiteEnergyShift(AndersonMatrixType const M, double 
   return 0;
 }
 
-uint32_t EigenstateToTridiagonalMatrix(double const *psi0, double const *val, uint32_t const N,
-                                       TriDiagonalMatrixType * const H)
+uint32_t EigenstateToTridiagonalMatrix(double const *psi0, double const *val, uint32_t const N, TriDiagonalMatrixType * const H)
 {
   uint32_t i, j;
   MatrixType T;
@@ -640,8 +636,7 @@ uint32_t EigenstateToTridiagonalMatrix(double const *psi0, double const *val, ui
 /*
  *
  */
-uint32_t AndersonMatrixToBADoubleTriDiagonalMatrixSimple(AndersonMatrixType const M,
-                                                         BADoubleTriDiagonalMatrixType * const A)
+uint32_t AndersonMatrixToBADoubleTriDiagonalMatrixSimple(AndersonMatrixType const M, BADoubleTriDiagonalMatrixType * const A)
 {
   TriDiagonalMatrixType MTri;
   SecondDoubleTriDiagonalMatrixType MSecTri;
@@ -1349,6 +1344,7 @@ uint32_t TriDiagonalMatrixToAndersonMatrix(TriDiagonalMatrixType const M, Anders
   FreeTriDiagonalMatrix(&Mminor);
   
   A->mu = M.mu;
+  strncpy(A->Name, M.Name, MAXStrLength);
   return 0;
 }
 
@@ -3637,6 +3633,7 @@ uint32_t ListOfPolesToTridiagonalMatrixNonOrthogonal(const ListOfPoles A, TriDia
     fflush(stdout);
     return 1;
   };
+  strncpy(AM.Name, A.Name, MAXStrLength);
   AM.a[0] = 0;
   AM.a[1] = 0;
   AM.b[0] = 1;
@@ -3671,6 +3668,7 @@ uint32_t ListOfPolesToTridiagonalMatrix(const ListOfPoles A, TriDiagonalMatrixTy
     fflush(stdout);
     return 1;
   };
+  snprintf(AM.Name, MAXStrLength, "%s",A.Name);
   AM.a[0] = 0;
   AM.a[1] = A.a0;
   AM.b[0] = 1;
@@ -3719,6 +3717,7 @@ uint32_t ListOfPolesToBADoubleTridiagonalMatrix(const ListOfPoles A, BADoubleTri
   M->a0 = A.a0;
   M->mu = mu;
   M->Epsilon = Epsilon;
+  snprintf(M->Name, MAXStrLength, "%s",A.Name);
   SetBADoubleTriDiagonalMatrixConVal(M);
   FreeListOfPoles(&LPval);
   FreeListOfPoles(&LPcon);

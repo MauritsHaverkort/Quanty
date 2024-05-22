@@ -949,7 +949,6 @@ uint32_t BlockListOfPolesToBlockAndersonMatrixReduceDimension(BlockListOfPoles c
 }
 
 
-
 /*  =========================================================================
  *  BlockAndersonMatrixType to __
  *  ========================================================================= */
@@ -2184,6 +2183,7 @@ uint32_t BlockNaturalImpurityOrbitalMatrixEigenValues(const BlockNaturalImpurity
 }
 uint32_t BlockNaturalImpurityOrbitalMatrixEigenSystem(const BlockNaturalImpurityOrbitalMatrixType * const A, double * val, CompactMatrixType * fun)
 {
+  printf("ToDo BlockNaturalImpurityOrbitalMatrixEigenSystem\n");
   //TODO all
   return 0;
 }

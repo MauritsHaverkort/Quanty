@@ -179,6 +179,9 @@ static int LuaMatrixEigensystem(lua_State * L)
   if(H->Ni!=H->Nj) return luaL_error(L,"Matrix Eigensystem only works on square matrices\n");
   if(QCompactMatrixHermitian(*H, 10*DBL_EPSILON)==0)
   {
+    printf("WARNING: non hermitian matrix found\n");
+    printf("Using left and right handed eigensystem\n");
+    printf("With potential complex eigenvalues\n");
     if (luaL_testudata(L, 1, "Matrix_Type") == NULL)
     {
       CompactMatrixType funL, funR;
@@ -206,6 +209,7 @@ static int LuaMatrixEigensystem(lua_State * L)
       funR->OnLuaStack=true;
       NonHermitianCompactMatrixEigensystem(H,funL, funR,val);
       LuaPushArray_Complex16(L, val, funL->Ni);
+      lua_insert (L, -3);
       free(val);
     }
     return 3;
@@ -1235,7 +1239,7 @@ static int LuaMatrixToString(lua_State * L)
 				sstream << ", ";
 			if (A->QComplex)
 			{
-				colWidth = 12;
+				colWidth = 16;
 				string tmpStr = numberToStringMaxWidth(A->V[j + i * (A->Nj)].Re, colWidth / 2 - 1);
 				if (A->V[j + i * (A->Nj)].Im < 0)
 					tmpStr += " -";
@@ -1246,7 +1250,7 @@ static int LuaMatrixToString(lua_State * L)
 				sstream << blankFill(colWidth, tmpStr.length());
 			} else
 			{
-				colWidth = 7;
+				colWidth = 8;
 				string tmpStr = numberToStringMaxWidth(A->VRe[j + i * (A->Nj)], colWidth - 1);
 				sstream << tmpStr;
 				sstream << blankFill(colWidth, tmpStr.length());

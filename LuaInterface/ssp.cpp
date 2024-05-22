@@ -5301,10 +5301,12 @@ int luaopen_ssp(lua_State * L)
 
   luaL_newmetatable(L, "ResponseFunction_Type");
   luaL_setfuncs(L, ResponseFunction_meta, 0);
+  luaL_newlib(L, ResponseFunction_func);
+  lua_setglobal(L, "ResponseFunction");
   lua_newtable(L);
   luaL_setfuncs(L, ResponseFunctionTable_meta, 0);
   lua_setglobal(L, "ResponseFunctionMeta");
-  luaMWH_RegisterGlobalFunctions(L, ResponseFunction_func);
+  //luaMWH_RegisterGlobalFunctions(L, ResponseFunction_func);
 
   luaL_newmetatable(L, "Matrix_Type");
   luaL_setfuncs(L, Matrix_meta, 0);

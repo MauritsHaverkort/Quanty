@@ -20,7 +20,7 @@
  *   change between representation as table or usertype (table capital, user data small)
  *   parameters on lua stack (responsefunction, typedef)
  *   typedef being a string of the form:
- *   Tri, And, ListOfPoles, NaturalImpurityOrbital, Userdata, Table
+ *   Tri, And, ListOfPoles, NaturalImpurityOrbital, Userdata, Table, Dense
  *
  *   SingularValue is an option used to determine if the block size needs to be reduced in a tridiagonalization routine
  *   EffectivekBT is used to determine if a state belongs to the valence or conduction bands (occupied or empty using Fermi Dirac statistics)
@@ -645,6 +645,33 @@ static int LuaResponseFunctionToTightBinding(lua_State * L)
   return 1;
 }
 
+static int LuaResponseFunctionToCompactMatrix(lua_State *L)
+{
+  ResponsefunctionType *A;
+  CompactMatrixType *B;
+  struct {
+    bool   Deflate;
+    double SingularValue;
+  } Options;
+  Options.Deflate = false;
+  Options.SingularValue = DBL_MIN;
+  LuaOptionsType LuaOptions[]={
+    {"Deflate",      "bool",  &(Options.Deflate)},
+    {"SingularValue","double",&(Options.SingularValue)},
+    {NULL, NULL, NULL}};
+  if(LuaTestOptionsList(L, -1))
+  {
+    LuaCheckOptions(L, -1, LuaOptions);
+  }
+  B = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+  luaL_setmetatable(L, "Matrix_Type");
+  B->OnLuaStack=true;
+  A = luaL_checkResponsefunction(L,1);
+  ResponseFunctionToCompactMatrix(A, B, Options.Deflate, Options.SingularValue);
+  return 1;
+}
+
+
 /*
  *
  */
@@ -662,6 +689,7 @@ static const struct luaL_Reg ResponseFunction_func[] = {
   {"ReducePoles", LuaReducePolesResponseFunction},
   {"PlaceOnMesh", LuaPlaceOnMeshResponseFunction},
   {"ToTable", LuaResponseFunctionToTable},
+  {"ToMatrix", LuaResponseFunctionToCompactMatrix},
   {"ToUserdata", LuaResponseFunctionToUserdata},
   {"ToTightBinding", LuaResponseFunctionToTightBinding},
   {NULL, NULL}
