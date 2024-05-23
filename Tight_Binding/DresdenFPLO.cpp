@@ -607,23 +607,15 @@ uint32_t HybridizationFunctionFromFPLO(DresdenFPLO *FPLO, BlockListOfPoles *LP, 
     {
       for(j=0;j<LP->N;j++)
       {
-        LP->VRe[j * stepsize + 1 + i * ( 1 + LP->BlockSize)] = sqrt( lDOSin.b[j] );
+        LP->VRe[j * stepsize + 1 + i * ( 1 + LP->BlockSize)] = lDOSin.b[j] ;
       }
     }
     else
     {
       for(j=0;j<LP->N;j++)
       {
-        if(lDOSin.b[j] >= 0)
-        {
-          LP->V[j * stepsize + 1 + i * ( 1 + LP->BlockSize)].Im = 0;
-          LP->V[j * stepsize + 1 + i * ( 1 + LP->BlockSize)].Re = sqrt( lDOSin.b[j] );
-        }
-        else
-        {
-          LP->V[j * stepsize + 1 + i * ( 1 + LP->BlockSize)].Re = 0;
-          LP->V[j * stepsize + 1 + i * ( 1 + LP->BlockSize)].Im = sqrt( lDOSin.b[j] );
-        }
+        LP->V[j * stepsize + 1 + i * ( 1 + LP->BlockSize)].Im = 0;
+        LP->V[j * stepsize + 1 + i * ( 1 + LP->BlockSize)].Re = lDOSin.b[j] ;
       }
     }
   }
