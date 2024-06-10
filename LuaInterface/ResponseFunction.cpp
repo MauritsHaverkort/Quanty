@@ -223,7 +223,7 @@ static int LuaResponseFunctionToTable(lua_State *L)
  */
 static int LuaReducePolesResponseFunction(lua_State *L)
 {
-  ResponsefunctionType *M;
+  ResponsefunctionType *M, *MRed;
   int Nred;
 
   uint32_t len = (uint32_t)lua_gettop(L);
@@ -233,10 +233,11 @@ static int LuaReducePolesResponseFunction(lua_State *L)
   if(!lua_isnumber(L, 2)) return luaL_error(L, "Error in ReducePoles: 2nd argument should be the desired number of poles.\n");
   Nred = (int)lua_tointeger(L, 2);
   if((M->type|32)!='l') return luaL_error(L, "Error in ReducePoles: The input Green's function is of %c type, it should be a ListOfPoles", M->type);
-
-  ReduceBlockListOfPoles((BlockListOfPoles*)(M->data), Nred, ((BlockListOfPoles*)(M->data))->mu);
-  LuaPush_ResponseFunction(L, M);
-
+  MRed = ResponsefunctionCopy(M);
+  ReduceBlockListOfPoles((BlockListOfPoles*)(MRed->data), Nred, ((BlockListOfPoles*)(MRed->data))->mu);
+  LuaPush_ResponseFunction(L, MRed);
+  FreeResponsefunction(M);
+  FreeResponsefunction(MRed);
   return 1;
 }
 
@@ -245,7 +246,7 @@ static int LuaReducePolesResponseFunction(lua_State *L)
  */
 static int LuaPlaceOnMeshResponseFunction(lua_State *L)
 {
-  ResponsefunctionType *M;
+  ResponsefunctionType *M, *MRed;
   uint32_t NE;
   double *mesh;
 
@@ -259,9 +260,11 @@ static int LuaPlaceOnMeshResponseFunction(lua_State *L)
     return luaL_error(L, "Error in PlaceOnMesh: The first argument should be of type 'L'/'l' (ListOfPoles).\n");
   }
   mesh = luaL_checkarray_double(L, 2, &NE);
-  BlockListOfPolesPlaceOnMesh((BlockListOfPoles*)M->data, mesh, NE);
-  LuaPush_ResponseFunction(L, M);
-
+  MRed = ResponsefunctionCopy(M);
+  BlockListOfPolesPlaceOnMesh((BlockListOfPoles*)MRed->data, mesh, NE);
+  LuaPush_ResponseFunction(L, MRed);
+  FreeResponsefunction(M);
+  FreeResponsefunction(MRed);
   return 1;
 }
 
@@ -671,6 +674,40 @@ static int LuaResponseFunctionToCompactMatrix(lua_State *L)
   return 1;
 }
 
+static int LuaResponseFunctionToSpectra(lua_State *L)
+{
+  SpectraTypeArray *Spec;
+  ResponsefunctionType *A;
+  struct {
+    double Emin;
+    double Emax;
+    double GammaG;
+    double GammaL;
+    int    NE;
+  } Options;
+  LuaOptionsType LuaOptions[]={
+    {"Emin","double",&(Options.Emin)},
+    {"Emax","double",&(Options.Emax)},
+    {"NE","uint32_t",&(Options.NE)},
+    {"GammaG","double",&(Options.GammaG)},
+    {"GammaL","double",&(Options.GammaL)},
+    {NULL, NULL, NULL}};
+  Options.Emin   =  DBL_MAX;
+  Options.Emax   = -DBL_MAX;
+  Options.GammaG = 0;
+  Options.GammaL = 0;
+  Options.NE     = 0;
+  if(LuaTestOptionsList(L, -1))
+  {
+    LuaCheckOptions(L, -1, LuaOptions);
+  }
+  A = luaL_checkResponsefunction(L,1);
+  Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+  luaL_setmetatable(L, "Spectra_Type");
+  ResponseFunctionToSpectra(A,Spec,Options.Emin,Options.Emax,Options.GammaG,Options.GammaL,Options.NE);
+  return 1;
+}
+
 
 /*
  *
@@ -690,6 +727,7 @@ static const struct luaL_Reg ResponseFunction_func[] = {
   {"PlaceOnMesh", LuaPlaceOnMeshResponseFunction},
   {"ToTable", LuaResponseFunctionToTable},
   {"ToMatrix", LuaResponseFunctionToCompactMatrix},
+  {"ToSpectra", LuaResponseFunctionToSpectra},
   {"ToUserdata", LuaResponseFunctionToUserdata},
   {"ToTightBinding", LuaResponseFunctionToTightBinding},
   {NULL, NULL}

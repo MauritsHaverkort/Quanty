@@ -306,3 +306,4 @@ ResponsefunctionType *ConvertBlockMatrix(ResponsefunctionType *M, const char typ
   }
   return res;
 }
+

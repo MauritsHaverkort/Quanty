@@ -25,6 +25,7 @@
 #include "TimeStamp.h"
 #include "WaveFunctionArithmetic.h"
 #include "WaveFunctionPerturbationArithmetic.h"
+#include "ResponseFunction.h"
 
 
 #include "FiniteTemperatureLanczos.h"

@@ -23,6 +23,7 @@
 // #include "TimeStamp.cpp" included in headers.h needs to be before all other functions
 #include "WaveFunctionArithmetic.cpp"
 #include "WaveFunctionPerturbationArithmetic.cpp"
+#include "ResponseFunction.cpp"
 
 
 #include "FiniteTemperatureLanczos.cpp"
