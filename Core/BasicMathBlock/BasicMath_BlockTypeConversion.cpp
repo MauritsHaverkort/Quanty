@@ -960,9 +960,11 @@ uint32_t BlockListOfPolesToBlockAndersonMatrixReduceDimension(BlockListOfPoles c
  */
 uint32_t BlockAndersonMatrixToSpectra(double Energy, const BlockAndersonMatrixType * const A, SpectraType *G, double Emin, double Emax, uint32_t N)
 {
-  //TODO: all
-  printf("Not implemented BlockAndersonMatrixToSpectra\n");
-  return 1;
+  BlockListOfPoles ALP;
+  BlockAndersonMatrixToBlockListOfPoles(A, &ALP);
+  BlockListOfPolesToSpectra(Energy, &ALP, G, Emin, Emax, N);
+  FreeBlockListOfPoles(&ALP);
+  return 0;
 }
 
 
@@ -971,9 +973,41 @@ uint32_t BlockAndersonMatrixToSpectra(double Energy, const BlockAndersonMatrixTy
  */
 uint32_t BlockAndersonMatrixToSpectraWithBroadening(double Energy, const BlockAndersonMatrixType * const A, SpectraType *G, double Emin, double Emax, uint32_t N, double const Gamma)
 {
-  //TODO: all
-  printf("Not implemented BlockAndersonMatrixToSpectraWithBroadening\n");
-  return 1;
+  int i,j,iE;
+  double omega;
+  G[0].N=N;
+  G[0].Emin=Emin;
+  G[0].Emax=Emax;
+  G[0].EminPole=Emin;
+  G[0].EmaxPole=Emax;
+  G[0].dE=(Emax-Emin)/((double)N);
+  G[0].Gamma=Gamma;
+  G[0].ResonantEnergy=NAN;
+  strcpy(G[0].Name, A->Name);
+  for(i=0;i<A->BlockSize*A->BlockSize;i++)
+  {
+    SpectrumAllocate(G[0], &(G[i]));
+  }
+  #pragma omp parallel
+  {
+    CompactMatrixType Gw;
+    #pragma omp for private(omega,i,j)
+    for(iE=0;iE<=N;iE++)
+    {
+      omega = ((double)iE/(double)N)*(Emax-Emin)+Emin-Energy;
+      EvaluateBlockAndersonMatrix(A, &Gw, omega, Gamma);
+      for(i=0;i<A->BlockSize;i++)
+      {
+        for(j=0;j<A->BlockSize;j++)
+        {
+          G[i*A->BlockSize+j].Re[iE] = Gw.V[i*A->BlockSize+j].Re;
+          G[i*A->BlockSize+j].Im[iE] = Gw.V[i*A->BlockSize+j].Im;
+        }
+      }
+      FreeCompactMatrix(&Gw);
+    }
+  }
+  return 0;
 }
 
 
@@ -1185,6 +1219,14 @@ uint32_t BlockTriDiagonalMatrixToSpectraWithBroadening(const double Energy, Bloc
   return 0;
 }
 
+uint32_t BlockTriDiagonalMatrixToSpectra(const double Energy, BlockTriDiagonalMatrixType const * A, SpectraType *const G, double const Emin, double const Emax, uint32_t const N)
+{
+  BlockListOfPoles ALP;
+  BlockTriDiagonalMatrixToBlockListOfPoles(A, &ALP);
+  BlockListOfPolesToSpectra(Energy, &ALP, G, Emin, Emax, N);
+  FreeBlockListOfPoles(&ALP);
+  return 0;
+}
 
 
 // Given a matrix in BlockTriDiagonal form calculate the Eigenvalues
@@ -2137,13 +2179,13 @@ uint32_t BlockTriDiagonalMatrixToBlockNaturalImpurityMatrix(BlockTriDiagonalMatr
  *
  *  G = bc0 gc bc0^+ + bv0 gv bv0^+
  */
-uint32_t BlockNaturalImpurityOrbitalToSpectra(BlockNaturalImpurityOrbitalMatrixType const * A, SpectraType *const G, double const Emin, double const Emax, uint32_t const N, double const Gamma)
+uint32_t BlockNaturalImpurityOrbitalMatrixToSpectraWithBroadening(double GroundStateEnergy, BlockNaturalImpurityOrbitalMatrixType const * A, SpectraType *const G, double const Emin, double const Emax, uint32_t const N, double const Gamma)
 {
   SpectraType Gval[A->BlockSize*A->BlockSize], Gcon[A->BlockSize*A->BlockSize];
   uint32_t i,j;
 
-  BlockTriDiagonalMatrixToSpectraWithBroadening(0, &(A->val), Gval, Emin, Emax, N, Gamma);
-  BlockTriDiagonalMatrixToSpectraWithBroadening(0, &(A->con), Gcon, Emin, Emax, N, Gamma);
+  BlockTriDiagonalMatrixToSpectraWithBroadening(GroundStateEnergy, &(A->val), Gval, Emin, Emax, N, Gamma);
+  BlockTriDiagonalMatrixToSpectraWithBroadening(GroundStateEnergy, &(A->con), Gcon, Emin, Emax, N, Gamma);
 
   G[0].N=N;
   G[0].Emin=Emin;
@@ -2186,6 +2228,58 @@ uint32_t BlockNaturalImpurityOrbitalToSpectra(BlockNaturalImpurityOrbitalMatrixT
   }
   return 0;
 }
+
+
+uint32_t BlockNaturalImpurityOrbitalMatrixToSpectra(double GroundStateEnergy, BlockNaturalImpurityOrbitalMatrixType const * A, SpectraType *const G, double const Emin, double const Emax, uint32_t const N)
+{
+ SpectraType Gval[A->BlockSize*A->BlockSize], Gcon[A->BlockSize*A->BlockSize];
+ uint32_t i,j;
+
+ BlockTriDiagonalMatrixToSpectra(GroundStateEnergy, &(A->val), Gval, Emin, Emax, N);
+ BlockTriDiagonalMatrixToSpectra(GroundStateEnergy, &(A->con), Gcon, Emin, Emax, N);
+
+ G[0].N=N;
+ G[0].Emin=Emin;
+ G[0].Emax=Emax;
+ G[0].EminPole=Emin;
+ G[0].EmaxPole=Emax;
+ G[0].dE=(Emax-Emin)/((double)N);
+ G[0].Gamma=0;
+ for(i=0;i<A->BlockSize*A->BlockSize;i++)
+ {
+   SpectrumAllocate(G[0], &(G[i]));
+ }
+
+ if(A->QComplex)
+ {
+   for(i=0;i<A->BlockSize*A->BlockSize;i++)
+   {
+     for(j=0;j<=N;j++)
+     {
+       G[i].Re[j] = Gval[i].Re[j] + Gcon[i].Re[j];
+       G[i].Im[j] = Gval[i].Im[j] + Gcon[i].Im[j];
+     }
+   }
+ }
+ else
+ {
+   for(i=0;i<A->BlockSize*A->BlockSize;i++)
+   {
+     for(j=0;j<=N;j++)
+     {
+       G[i].Re[j] = Gval[i].Re[j] + Gcon[i].Re[j];
+     }
+   }
+ }
+
+ for(i=0;i<A->BlockSize*A->BlockSize;i++)
+ {
+   SpectrumFree(&Gval[i]);
+   SpectrumFree(&Gcon[i]);
+ }
+ return 0;
+}
+
 
 uint32_t BlockNaturalImpurityOrbitalMatrixEigenValues(const BlockNaturalImpurityOrbitalMatrixType * const A, double * val)
 {

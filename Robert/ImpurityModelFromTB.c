@@ -1266,7 +1266,7 @@ uint32_t ImpurityHFromTB(OperatorType *const Himp, ModelSettings O)
       OperatorChop(Himp, 1000*DBL_EPSILON);
       PrintOperatorReadable(*Himp);
       SpecNat = (SpectraType*)malloc(rawBlockSize*rawBlockSize*sizeof(SpectraType));
-      BlockNaturalImpurityOrbitalToSpectra(&GNat, SpecNat, O.DOSMin, O.DOSMax, O.NPoles, 0.1);
+      BlockNaturalImpurityOrbitalMatrixToSpectraWithBroadening(&GNat, SpecNat, O.DOSMin, O.DOSMax, O.NPoles, 0.1);
       FilePrintSpectra(SpecNat, impBlockSize*impBlockSize, "SpecNat", "w");
       free(SpecNat);
     

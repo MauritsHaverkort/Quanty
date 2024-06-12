@@ -1176,6 +1176,16 @@ static int LuaChop(lua_State * L)
 
         return 1;
       }
+      if (luaL_testudata(L, len, "Spectra_Type") != NULL)
+      {
+        SpectraTypeArray *a = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
+        SpectraTypeArray *res;
+        res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+        CopySpectraArray(a, res);
+        ChopSpectraArray(res,epsilon);
+        luaL_setmetatable(L, "Spectra_Type");
+        return 1;
+      }
       if (luaL_testudata(L, len, "Wavefunction_Type") != NULL)
       {
         WaveFunctionType *psi = (WaveFunctionType*) luaL_checkudata(L, len, "Wavefunction_Type");

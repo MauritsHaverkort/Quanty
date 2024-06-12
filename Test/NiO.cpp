@@ -262,7 +262,7 @@ void TestNiO()
 //  BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(&HAF, &GAFNat, NBlockVal, NBlockCon, 0, 0, 0);
 //  OperatorChop(&HAF, 1000*DBL_EPSILON);
     //PrintOperatorReadable(HAF);
-    BlockNaturalImpurityOrbitalToSpectra(&GAFNat, SpecNat, EFermi-10, EFermi+5, 1500, 0.01);
+    BlockNaturalImpurityOrbitalMatrixToSpectraWithBroadening(&GAFNat, SpecNat, EFermi-10, EFermi+5, 1500, 0.01);
     FilePrintSpectra(SpecNat, 10*10, "NiO/GAFd2", "w");
     EndTiming("Create HAF", &Time);
   }

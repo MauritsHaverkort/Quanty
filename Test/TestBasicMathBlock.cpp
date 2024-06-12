@@ -719,7 +719,7 @@ void TestBasicMathBlock()
     SpectrumFree(&G1[i]);
   }
   
-  BlockNaturalImpurityOrbitalToSpectra(&BNA, G1, -0.5, 0.5, 10000, 0.001);
+  BlockNaturalImpurityOrbitalMatrixToSpectraWithBroadening(&BNA, G1, -0.5, 0.5, 10000, 0.001);
   FilePrintSpectra(G1, 9,"G21","w");
   for(i=0;i<9;i++)
   {
@@ -779,7 +779,7 @@ void TestBasicMathBlock()
     SpectrumFree(&G1[i]);
   }
   
-  BlockNaturalImpurityOrbitalToSpectra(&BNA, G1, -0.5, 0.5, 10000, 0.001);
+  BlockNaturalImpurityOrbitalMatrixToSpectraWithBroadening(&BNA, G1, -0.5, 0.5, 10000, 0.001);
   FilePrintSpectra(G1, 9,"G21","w");
   for(i=0;i<9;i++)
   {

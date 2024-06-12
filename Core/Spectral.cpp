@@ -125,6 +125,27 @@ uint32_t CopySpectraArray(SpectraTypeArray *In, SpectraTypeArray *Out)
   return 0;
 }
 
+void ChopSpectra(SpectraType * G, const double epsilon)
+{
+  int i;
+  for(i=0;i<=G->N;i++)
+  {
+    if( (Abs(G->Re[i])<epsilon) && (Abs(G->Im[i])<epsilon) )
+    {
+      G->Re[i]=0;
+      G->Im[i]=0;
+    }
+  }
+}
+
+void ChopSpectraArray(SpectraTypeArray * G, const double epsilon)
+{
+  int i;
+  for(i=0;i<G->NSpectra;i++)
+  {
+    ChopSpectra(&(G->Spec[i]), epsilon);
+  }
+}
 
 int SpectraScalarMultiply(SpectraType * const A, double const aRe, double const aIm)
 {

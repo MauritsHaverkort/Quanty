@@ -39,6 +39,7 @@ uint32_t ResponseFunctionToSpectra(const ResponsefunctionType *M, SpectraTypeArr
 uint32_t BlockResponseFunctionToSpectra(const ResponsefunctionType *M, SpectraTypeArray *A, double GroundStateEnergy, double Emin, double Emax, double GammaG, double GammaL, uint32_t NE)
 {
   int i;
+  
   if(GammaL==0) // transform to spectrum with zero Gamma
   {
     switch (M->type|32)
@@ -46,24 +47,37 @@ uint32_t BlockResponseFunctionToSpectra(const ResponsefunctionType *M, SpectraTy
       case 'l':
       {
         A->Name=(char*)malloc(MAXStrLength*sizeof(char));
+        A->NSpectra = Sqr((((BlockListOfPoles*)(M->data))->BlockSize));
+        A->Spec = (SpectraType*)malloc( A->NSpectra*sizeof(SpectraType));
         strncpy(A->Name, ((BlockListOfPoles*)M->data)->Name, MAXStrLength);
-        A->Spec = (SpectraType*)malloc( Sqr((((BlockListOfPoles*)(M->data))->BlockSize))*sizeof(SpectraType));
         BlockListOfPolesToSpectra(GroundStateEnergy, (BlockListOfPoles*)(M->data), A->Spec, Emin, Emax, NE);
       }
       break;
       case 't':
       {
-        printf("TODO: Block Tridiagonal matrix to spectrum without broadening\n");
+        A->Name=(char*)malloc(MAXStrLength*sizeof(char));
+        A->NSpectra = Sqr((((BlockTriDiagonalMatrixType*)(M->data))->BlockSize));
+        A->Spec = (SpectraType*)malloc( A->NSpectra*sizeof(SpectraType));
+        strncpy(A->Name, ((BlockTriDiagonalMatrixType*)M->data)->Name, MAXStrLength);
+        BlockTriDiagonalMatrixToSpectra(GroundStateEnergy,(BlockTriDiagonalMatrixType*)(M->data), A->Spec, Emin, Emax, NE);
       }
       break;
       case 'a':
       {
-        printf("TODO: Block Anderson matrix to spectrum without broadening\n");
+        A->Name=(char*)malloc(MAXStrLength*sizeof(char));
+        A->NSpectra = Sqr((((BlockAndersonMatrixType*)(M->data))->BlockSize));
+        A->Spec = (SpectraType*)malloc( A->NSpectra*sizeof(SpectraType));
+        strncpy(A->Name, ((BlockAndersonMatrixType*)M->data)->Name, MAXStrLength);
+        BlockAndersonMatrixToSpectra(GroundStateEnergy,(BlockAndersonMatrixType*)(M->data), A->Spec, Emin, Emax, NE);
       }
       break;
       case 'n':
       {
-        printf("TODO: Block Natural Impurity matrix to spectrum without broadening\n");
+        A->Name=(char*)malloc(MAXStrLength*sizeof(char));
+        A->NSpectra = Sqr((((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->BlockSize));
+        A->Spec = (SpectraType*)malloc( A->NSpectra*sizeof(SpectraType));
+        strncpy(A->Name, ((BlockNaturalImpurityOrbitalMatrixType*)M->data)->Name, MAXStrLength);
+        BlockNaturalImpurityOrbitalMatrixToSpectra(GroundStateEnergy,(BlockNaturalImpurityOrbitalMatrixType*)(M->data), A->Spec, Emin, Emax, NE);
       }
       break;
     }
@@ -75,37 +89,44 @@ uint32_t BlockResponseFunctionToSpectra(const ResponsefunctionType *M, SpectraTy
       case 'l':
       {
         A->Name=(char*)malloc(MAXStrLength*sizeof(char));
+        A->NSpectra = Sqr((((BlockListOfPoles*)(M->data))->BlockSize));
+        A->Spec = (SpectraType*)malloc( A->NSpectra*sizeof(SpectraType));
         strncpy(A->Name, ((BlockListOfPoles*)M->data)->Name, MAXStrLength);
-        A->Spec = (SpectraType*)malloc( Sqr((((BlockListOfPoles*)(M->data))->BlockSize))*sizeof(SpectraType));
         BlockListOfPolesToSpectraWithBroadening(GroundStateEnergy, (BlockListOfPoles*)(M->data), A->Spec, Emin, Emax, NE, GammaL);
       }
       break;
       case 't':
       {
         A->Name=(char*)malloc(MAXStrLength*sizeof(char));
+        A->NSpectra = Sqr((((BlockTriDiagonalMatrixType*)(M->data))->BlockSize));
+        A->Spec = (SpectraType*)malloc( A->NSpectra*sizeof(SpectraType));
         strncpy(A->Name, ((BlockTriDiagonalMatrixType*)M->data)->Name, MAXStrLength);
-        A->Spec = (SpectraType*)malloc( Sqr((((BlockTriDiagonalMatrixType*)(M->data))->BlockSize))*sizeof(SpectraType));
         BlockTriDiagonalMatrixToSpectraWithBroadening(GroundStateEnergy,(BlockTriDiagonalMatrixType*)(M->data), A->Spec, Emin, Emax, NE, GammaL);
       }
       break;
       case 'a':
       {
         A->Name=(char*)malloc(MAXStrLength*sizeof(char));
+        A->NSpectra = Sqr((((BlockAndersonMatrixType*)(M->data))->BlockSize));
+        A->Spec = (SpectraType*)malloc( A->NSpectra*sizeof(SpectraType));
         strncpy(A->Name, ((BlockAndersonMatrixType*)M->data)->Name, MAXStrLength);
-        A->Spec = (SpectraType*)malloc( Sqr((((BlockAndersonMatrixType*)(M->data))->BlockSize))*sizeof(SpectraType));
         BlockAndersonMatrixToSpectraWithBroadening(GroundStateEnergy,(BlockAndersonMatrixType*)(M->data), A->Spec, Emin, Emax, NE, GammaL);
       }
       break;
       case 'n':
       {
-        printf("TODO: Block Natural Impurity matrix to spectrum\n");
+        A->Name=(char*)malloc(MAXStrLength*sizeof(char));
+        A->NSpectra = Sqr((((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->BlockSize));
+        A->Spec = (SpectraType*)malloc( A->NSpectra*sizeof(SpectraType));
+        strncpy(A->Name, ((BlockNaturalImpurityOrbitalMatrixType*)M->data)->Name, MAXStrLength);
+        BlockNaturalImpurityOrbitalMatrixToSpectraWithBroadening(GroundStateEnergy,(BlockNaturalImpurityOrbitalMatrixType*)(M->data), A->Spec, Emin, Emax, NE, GammaL);
       }
       break;
     }
   }
   if(GammaG!=0)
   {
-    for(i=0;i<=A->NSpectra;i++)
+    for(i=0;i<A->NSpectra;i++)
     {
       BroadenG(&(A->Spec[i]), GammaG);
     }
