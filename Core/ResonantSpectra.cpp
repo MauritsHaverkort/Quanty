@@ -620,8 +620,16 @@ uint32_t ResonantSpectraDense(WaveFunctionType * H1psiBasis, WaveFunctionType * 
           } // end loop over all final states
         } // end loop over energy loss photon energies index m
         (*Spec)[n].b[0] = sqrt((*Spec)[n].b[0]);
-        (*Spec)[n].EmaxPole = Valf[H2psiBasis->N-1] -  energy2List[j/NT1];
-        (*Spec)[n].EminPole = Valf[0] -  energy2List[j/NT1];
+        if(H2psiBasis->N==0)
+        {
+          (*Spec)[n].EmaxPole=0;
+          (*Spec)[n].EminPole=0;
+        }
+        else
+        {
+          (*Spec)[n].EmaxPole = Valf[H2psiBasis->N-1] -  energy2List[j/NT1];
+          (*Spec)[n].EminPole = Valf[0] -  energy2List[j/NT1];
+        }
       } // end loop over T1psi indexed by j
       FreeCompactMatrix(&D);
     } // end loop over decay operators index k

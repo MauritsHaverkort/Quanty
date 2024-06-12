@@ -976,6 +976,7 @@ uint32_t TransformComplexDiagonalMatrixByCompactMatrixTRtranATLcon(Complex16 con
  */
 uint32_t CompactMatrixAddMultiply(char const TransA, char const TransB, CompactMatrixType const *A, CompactMatrixType const *B, CompactMatrixType *C, double alphaRe, double alphaIm, double betaRe, double betaIm)
 {
+  if((C->Ni==0)||(C->Nj==0))return 0;
   CompactMatrixType *Ap,*Bp,*Cp;
   char TransAp=TransA, TransBp=TransB;
   uint32_t Nk,LDA,LDB,LDC,i;
@@ -2639,6 +2640,13 @@ uint32_t NonHermitianCompactMatrixEigensystem(CompactMatrixType const *A, Compac
  */
 uint32_t CompactMatrixEigensystem(CompactMatrixType const *A, CompactMatrixType * const fun, double *val)
 {
+  if(A->Ni==0)
+  {
+    CompactMatrixCopy(*A, fun);
+    return 0;
+  }
+  
+  
   int    info;
   const char *jobz = "V";
   const char *uplo = "U";
