@@ -1203,7 +1203,7 @@ uint32_t ImpurityHFromTB(OperatorType *const Himp, ModelSettings O)
     
     GSpec = (SpectraType*)malloc(rawBlockSize*rawBlockSize*sizeof(SpectraType));
     BeginTiming("BlockListOfPolesToSpectra", &Time);
-    BlockListOfPolesToSpectra(G, GSpec, O.DOSMin, O.DOSMax, O.NPoles);
+    BlockListOfPolesToSpectra(0, &G, GSpec, O.DOSMin, O.DOSMax, O.NPoles);
     EndTiming("BlockListOfPolesToSpectra", &Time);
     FilePrintSpectra(GSpec, TB.NFermion*TB.NFermion, "TBDOS_BlockListOfPoles", "w");
     free(GSpec);

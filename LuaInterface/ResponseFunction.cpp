@@ -679,6 +679,7 @@ static int LuaResponseFunctionToSpectra(lua_State *L)
   SpectraTypeArray *Spec;
   ResponsefunctionType *A;
   struct {
+    double EnergyShift;
     double Emin;
     double Emax;
     double GammaG;
@@ -686,12 +687,14 @@ static int LuaResponseFunctionToSpectra(lua_State *L)
     int    NE;
   } Options;
   LuaOptionsType LuaOptions[]={
+    {"EnergyShift","double",&(Options.EnergyShift)},
     {"Emin","double",&(Options.Emin)},
     {"Emax","double",&(Options.Emax)},
     {"NE","uint32_t",&(Options.NE)},
     {"GammaG","double",&(Options.GammaG)},
     {"GammaL","double",&(Options.GammaL)},
     {NULL, NULL, NULL}};
+  Options.EnergyShift = 0;
   Options.Emin   =  DBL_MAX;
   Options.Emax   = -DBL_MAX;
   Options.GammaG = 0;
@@ -704,7 +707,7 @@ static int LuaResponseFunctionToSpectra(lua_State *L)
   A = luaL_checkResponsefunction(L,1);
   Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
   luaL_setmetatable(L, "Spectra_Type");
-  ResponseFunctionToSpectra(A,Spec,Options.Emin,Options.Emax,Options.GammaG,Options.GammaL,Options.NE);
+  ResponseFunctionToSpectra(A,Spec, Options.EnergyShift, Options.Emin,Options.Emax,Options.GammaG,Options.GammaL,Options.NE);
   return 1;
 }
 

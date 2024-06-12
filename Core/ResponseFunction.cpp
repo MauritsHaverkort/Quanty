@@ -3,9 +3,9 @@
  *  Otherwise we broaden with a Lorenzian
  *  We broaden afterwards with a Gaussian
  */
-uint32_t ResponseFunctionToSpectra(const ResponsefunctionType *M, SpectraTypeArray *A, double Emin, double Emax, double GammaG, double GammaL, uint32_t NE)
+uint32_t ResponseFunctionToSpectra(const ResponsefunctionType *M, SpectraTypeArray *A, double GroundStateEnergy, double Emin, double Emax, double GammaG, double GammaL, uint32_t NE)
 {
-  if(M->Block==true) return BlockResponseFunctionToSpectra(M, A, Emin, Emax, GammaG, GammaL, NE);
+  if(M->Block==true) return BlockResponseFunctionToSpectra(M, A, GroundStateEnergy, Emin, Emax, GammaG, GammaL, NE);
   A->NSpectra=1;
   A->Spec = (SpectraType*)malloc(sizeof(SpectraType));
   A->Name=(char*)malloc(MAXStrLength*sizeof(char));
@@ -32,11 +32,11 @@ uint32_t ResponseFunctionToSpectra(const ResponsefunctionType *M, SpectraTypeArr
     }
     break;
   }
-  return NoneBlockResponseFunctionToSpectra(M, A->Spec, Emin, Emax, GammaG, GammaL, NE);
+  return NoneBlockResponseFunctionToSpectra(M, A->Spec, GroundStateEnergy, Emin, Emax, GammaG, GammaL, NE);
 }
 
 
-uint32_t BlockResponseFunctionToSpectra(const ResponsefunctionType *M, SpectraTypeArray *A, double Emin, double Emax, double GammaG, double GammaL, uint32_t NE)
+uint32_t BlockResponseFunctionToSpectra(const ResponsefunctionType *M, SpectraTypeArray *A, double GroundStateEnergy, double Emin, double Emax, double GammaG, double GammaL, uint32_t NE)
 {
   int i;
   if(GammaL==0) // transform to spectrum with zero Gamma
@@ -48,7 +48,7 @@ uint32_t BlockResponseFunctionToSpectra(const ResponsefunctionType *M, SpectraTy
         A->Name=(char*)malloc(MAXStrLength*sizeof(char));
         strncpy(A->Name, ((BlockListOfPoles*)M->data)->Name, MAXStrLength);
         A->Spec = (SpectraType*)malloc( Sqr((((BlockListOfPoles*)(M->data))->BlockSize))*sizeof(SpectraType));
-        BlockListOfPolesToSpectra(*(BlockListOfPoles*)(M->data), A->Spec, Emin, Emax, NE);
+        BlockListOfPolesToSpectra(GroundStateEnergy, (BlockListOfPoles*)(M->data), A->Spec, Emin, Emax, NE);
       }
       break;
       case 't':
@@ -77,7 +77,7 @@ uint32_t BlockResponseFunctionToSpectra(const ResponsefunctionType *M, SpectraTy
         A->Name=(char*)malloc(MAXStrLength*sizeof(char));
         strncpy(A->Name, ((BlockListOfPoles*)M->data)->Name, MAXStrLength);
         A->Spec = (SpectraType*)malloc( Sqr((((BlockListOfPoles*)(M->data))->BlockSize))*sizeof(SpectraType));
-        BlockListOfPolesToSpectraWithBroadening(*(BlockListOfPoles*)(M->data), A->Spec, Emin, Emax, NE, GammaL);
+        BlockListOfPolesToSpectraWithBroadening(GroundStateEnergy, (BlockListOfPoles*)(M->data), A->Spec, Emin, Emax, NE, GammaL);
       }
       break;
       case 't':
@@ -85,14 +85,15 @@ uint32_t BlockResponseFunctionToSpectra(const ResponsefunctionType *M, SpectraTy
         A->Name=(char*)malloc(MAXStrLength*sizeof(char));
         strncpy(A->Name, ((BlockTriDiagonalMatrixType*)M->data)->Name, MAXStrLength);
         A->Spec = (SpectraType*)malloc( Sqr((((BlockTriDiagonalMatrixType*)(M->data))->BlockSize))*sizeof(SpectraType));
-        BlockTriDiagonalMatrixToSpectra(0, (BlockTriDiagonalMatrixType*)(M->data), A->Spec, Emin, Emax, NE, GammaL);
+        BlockTriDiagonalMatrixToSpectraWithBroadening(GroundStateEnergy,(BlockTriDiagonalMatrixType*)(M->data), A->Spec, Emin, Emax, NE, GammaL);
       }
       break;
       case 'a':
       {
-        printf("TODO: Block Anderson matrix to spectrum\n");
-
-      
+        A->Name=(char*)malloc(MAXStrLength*sizeof(char));
+        strncpy(A->Name, ((BlockAndersonMatrixType*)M->data)->Name, MAXStrLength);
+        A->Spec = (SpectraType*)malloc( Sqr((((BlockAndersonMatrixType*)(M->data))->BlockSize))*sizeof(SpectraType));
+        BlockAndersonMatrixToSpectraWithBroadening(GroundStateEnergy,(BlockAndersonMatrixType*)(M->data), A->Spec, Emin, Emax, NE, GammaL);
       }
       break;
       case 'n':
@@ -112,7 +113,7 @@ uint32_t BlockResponseFunctionToSpectra(const ResponsefunctionType *M, SpectraTy
   return 0;
 }
 
-uint32_t NoneBlockResponseFunctionToSpectra(const ResponsefunctionType *M, SpectraType *A, double Emin, double Emax, double GammaG, double GammaL, uint32_t NE)
+uint32_t NoneBlockResponseFunctionToSpectra(const ResponsefunctionType *M, SpectraType *A, double GroundStateEnergy, double Emin, double Emax, double GammaG, double GammaL, uint32_t NE)
 {
   printf("TODO: NoneBlockResponseFunctionToSpectra\n");
   if(GammaL==0) // transform to spectrum with zero Gamma

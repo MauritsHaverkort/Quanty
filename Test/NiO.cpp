@@ -165,7 +165,7 @@ void TestNiO()
     Nk[1]=130;
     Nk[2]=130;
     TightBindingHamiltonianToBlockListOfPoles(HTB, Nk, &G0, EFermi-10, EFermi+5, 1500);
-    BlockListOfPolesToSpectra(G0, G0Spec, EFermi-10, EFermi+5, 1500);
+    BlockListOfPolesToSpectra(0, &G0, G0Spec, EFermi-10, EFermi+5, 1500);
     FilePrintSpectra(G0Spec, HTB.NFermion*HTB.NFermion, "NiO/G0", "w");
     EndTiming("Create G0", &Time);
     PrintTiming(Time);
@@ -181,7 +181,7 @@ void TestNiO()
     Nk[1]=61;
     Nk[2]=62;
     TightBindingHamiltonianToBlockListOfPoles(HTBAF, Nk, &G0AF, EFermi-10, EFermi+5, 1500);
-    BlockListOfPolesToSpectra(G0AF, G0AFSpec, EFermi-10, EFermi+5, 1500);
+    BlockListOfPolesToSpectra(0, &G0AF, G0AFSpec, EFermi-10, EFermi+5, 1500);
     FilePrintSpectra(G0AFSpec, HTBAF.NFermion*HTBAF.NFermion, "NiO/G0AF", "w");
     EndTiming("Create G0AF", &Time);
     PrintTiming(Time);
@@ -197,7 +197,7 @@ void TestNiO()
     Nk[1]=130;
     Nk[2]=130;
     TightBindingHamiltonianAddSpinPlusSelfEnergyToBlockListOfPoles(HTBAF, Nk, Sigma, &GAF, EFermi-10, EFermi+5, 1500); //change 250 to 1500 for consistence (does not work with debuger on)
-    BlockListOfPolesToSpectra(GAF, GAFSpec, EFermi-10, EFermi+5, 1500);
+    BlockListOfPolesToSpectra(0, &GAF, GAFSpec, EFermi-10, EFermi+5, 1500);
     FilePrintSpectra(GAFSpec, 4*HTBAF.NFermion*HTBAF.NFermion, "NiO/GAF", "w");
     EndTiming("Create GAF", &Time);
     PrintTiming(Time);
@@ -250,7 +250,7 @@ void TestNiO()
     
     
     BlockListOfPolesReduceDimcT(&GAF, &GAFd, &AT);
-    BlockListOfPolesToSpectra(GAFd, Specd, EFermi-10, EFermi+5, 1500);
+    BlockListOfPolesToSpectra(0, &GAFd, Specd, EFermi-10, EFermi+5, 1500);
     FilePrintSpectra(Specd, 10*10, "NiO/GAFd", "w");
     
     

@@ -137,7 +137,7 @@ void TestBasicMathBlock()
   
   PrintBlockTriDiagonalMatrix(BTD);
   
-  BlockTriDiagonalMatrixToSpectra(0, &BTD, G1, -1, 5, 6000, 0.1);
+  BlockTriDiagonalMatrixToSpectraWithBroadening(0, &BTD, G1, -1, 5, 6000, 0.1);
   
   FilePrintSpectra(G1, 4,"G1","w");
   for(i=0;i<9;i++)
@@ -183,7 +183,7 @@ void TestBasicMathBlock()
   printf("\n============= BlockListOfPolesToSpectra ============\n");
   
   PrintBlockListOfPoles(BLP);
-  BlockListOfPolesToSpectra(BLP, G1, -5, 5, 100);
+  BlockListOfPolesToSpectra(0, &BLP, G1, -5, 5, 100);
   FilePrintSpectra(G1, 9,"G1","w");
   for(i=0;i<9;i++)
   {
@@ -234,7 +234,7 @@ void TestBasicMathBlock()
   Nk[1]=1;
   Nk[2]=1;
   TightBindingHamiltonianToBlockListOfPoles(TB, Nk, &BLP, -2, 2, 4000);
-  BlockListOfPolesToSpectra(BLP, G1, -2, 2, 4000);
+  BlockListOfPolesToSpectra(0, &BLP, G1, -2, 2, 4000);
   FilePrintSpectra(G1, 4,"G2","w");
   for(i=0;i<4;i++)
   {
@@ -245,7 +245,7 @@ void TestBasicMathBlock()
   printf("\n============= TightBindingHamiltonianMultiSiteToBlockListOfPoles ============\n");
   int vec[9]={0,0,0,1,0,0,0,0,0};
   TightBindingHamiltonianMultiSiteToBlockListOfPoles(TB, Nk, 2, vec, &BLP, -2, 2, 4000);
-  BlockListOfPolesToSpectra(BLP, G1, -2, 2, 4000);
+  BlockListOfPolesToSpectra(0, &BLP, G1, -2, 2, 4000);
   FilePrintSpectra(G1, 16,"G3","w");
   for(i=0;i<16;i++)
   {
@@ -262,7 +262,7 @@ void TestBasicMathBlock()
   Sigma.a0Re[0]=-0.25;
   Sigma.a0Re[3]= 0.25;
   TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles(TB, Nk, Sigma, &BLP, -2, 2, 4000);
-  BlockListOfPolesToSpectra(BLP, G1, -2, 2, 4000);
+  BlockListOfPolesToSpectra(0, &BLP, G1, -2, 2, 4000);
   FilePrintSpectra(G1, 4,"G4","w");
   for(i=0;i<4;i++)
   {
@@ -282,7 +282,7 @@ void TestBasicMathBlock()
   printf("The self energy is:\n");
   PrintBlockListOfPoles(Sigma);
   TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles(TB, Nk, Sigma, &BLP, -2, 2, 4000);
-  BlockListOfPolesToSpectra(BLP, G1, -2, 2, 4000);
+  BlockListOfPolesToSpectra(0, &BLP, G1, -2, 2, 4000);
   FilePrintSpectra(G1, 4,"G5","w");
   for(i=0;i<4;i++)
   {
@@ -301,7 +301,7 @@ void TestBasicMathBlock()
   Sigma.a0Re[ 3]= 0.25;
   TightBindingHamiltonianPlusSelfEnergyMultiSiteToBlockListOfPoles(TB, Nk, 2, vec, Sigma, &BLP, -2, 2, 4000);
   
-  BlockListOfPolesToSpectra(BLP, G1, -2, 2, 4000);
+  BlockListOfPolesToSpectra(0, &BLP, G1, -2, 2, 4000);
   FilePrintSpectra(G1, 16,"G6","w");
   for(i=0;i<16;i++)
   {
@@ -323,7 +323,7 @@ void TestBasicMathBlock()
   Sigma.a0Re[13]= 0.25;
   TightBindingHamiltonianAddSpinPlusSelfEnergyToBlockListOfPoles(TB, Nk, Sigma, &BLP, -2, 2, 4000);
   
-  BlockListOfPolesToSpectra(BLP, G1, -2, 2, 4000);
+  BlockListOfPolesToSpectra(0, &BLP, G1, -2, 2, 4000);
   FilePrintSpectra(G1, 16,"G7","w");
   for(i=0;i<16;i++)
   {
@@ -344,7 +344,7 @@ void TestBasicMathBlock()
   Sigma.a0Re[15]= 0.25;
   TightBindingHamiltonianAddSpinPlusSelfEnergyMultiSiteToBlockListOfPoles(TB, Nk, 2, vec, Sigma, &BLP, -2, 2, 4000);
   
-  BlockListOfPolesToSpectra(BLP, G1, -2, 2, 4000);
+  BlockListOfPolesToSpectra(0, &BLP, G1, -2, 2, 4000);
   FilePrintSpectra(G1, 64,"G8","w");
   for(i=0;i<64;i++)
   {
@@ -476,13 +476,13 @@ void TestBasicMathBlock()
     printf("%22.15E\n",val[i]);
   }
   
-  BlockListOfPolesToSpectra(BLP, G1, -0.5, 0.5, 100);
+  BlockListOfPolesToSpectra(0, &BLP, G1, -0.5, 0.5, 100);
   FilePrintSpectra(G1, 16,"G9","w");
   for(i=0;i<16;i++)
   {
     SpectrumFree(&G1[i]);
   }
-  BlockTriDiagonalMatrixToSpectra(0, &BTD, G1, -0.5, 0.5, 1000, 0.01);
+  BlockTriDiagonalMatrixToSpectraWithBroadening(0, &BTD, G1, -0.5, 0.5, 1000, 0.01);
   FilePrintSpectra(G1, 16,"G10","w");
   for(i=0;i<16;i++)
   {
@@ -537,13 +537,13 @@ void TestBasicMathBlock()
   }
   
   
-  BlockListOfPolesToSpectra(BLP, G1, -0.5, 0.5, 100);
+  BlockListOfPolesToSpectra(0, &BLP, G1, -0.5, 0.5, 100);
   FilePrintSpectra(G1, 16,"G11","w");
   for(i=0;i<16;i++)
   {
     SpectrumFree(&G1[i]);
   }
-  BlockTriDiagonalMatrixToSpectra(0, &BTD, G1, -0.5, 0.5, 1000, 0.01);
+  BlockTriDiagonalMatrixToSpectraWithBroadening(0, &BTD, G1, -0.5, 0.5, 1000, 0.01);
   FilePrintSpectra(G1, 16,"G12","w");
   for(i=0;i<16;i++)
   {
@@ -613,13 +613,13 @@ void TestBasicMathBlock()
     printf("%22.15E\n",val[i]);
   }
   
-  BlockListOfPolesToSpectra(BLP, G1, -0.5, 0.5, 100);
+  BlockListOfPolesToSpectra(0, &BLP, G1, -0.5, 0.5, 100);
   FilePrintSpectra(G1, 16,"G14","w");
   for(i=0;i<16;i++)
   {
     SpectrumFree(&G1[i]);
   }
-  BlockTriDiagonalMatrixToSpectra(0, &BTD, G1, -0.5, 0.5, 1000, 0.01);
+  BlockTriDiagonalMatrixToSpectraWithBroadening(0, &BTD, G1, -0.5, 0.5, 1000, 0.01);
   FilePrintSpectra(G1, 9,"G15","w");
   for(i=0;i<9;i++)
   {
@@ -712,7 +712,7 @@ void TestBasicMathBlock()
   BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(&BLP, &BNA, 0.0001, 4, 4);
   PrintBlockNaturalImpurityOrbitalMatrix(BNA);
   
-  BlockListOfPolesToSpectra(BLP, G1, -0.5, 0.5, 1000);
+  BlockListOfPolesToSpectra(0, &BLP, G1, -0.5, 0.5, 1000);
   FilePrintSpectra(G1, 9,"G20","w");
   for(i=0;i<9;i++)
   {
@@ -772,7 +772,7 @@ void TestBasicMathBlock()
   BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(&BLP, &BNA, 0.0001, 4, 4);
   PrintBlockNaturalImpurityOrbitalMatrix(BNA);
   
-  BlockListOfPolesToSpectra(BLP, G1, -0.5, 0.5, 1000);
+  BlockListOfPolesToSpectra(0, &BLP, G1, -0.5, 0.5, 1000);
   FilePrintSpectra(G1, 9,"G20","w");
   for(i=0;i<9;i++)
   {

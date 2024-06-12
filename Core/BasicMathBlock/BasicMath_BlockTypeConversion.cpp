@@ -380,7 +380,7 @@ uint32_t EvaluateBlockResponsefunctionType(ResponsefunctionType const *A, Compac
  *
  *      after this is done for all poles the real part of lim_{n->0^+} 1/(w - a_i + I n) is added.
  */
-uint32_t BlockListOfPolesToSpectra(BlockListOfPoles const A, SpectraType *G, double Emin, double Emax, uint32_t N)
+uint32_t BlockListOfPolesToSpectra(double GroundStateEnergy, BlockListOfPoles const *A, SpectraType *G, double Emin, double Emax, uint32_t N)
 {
   int i,j,k;
   uint32_t iEmin,iEplus;
@@ -394,30 +394,30 @@ uint32_t BlockListOfPolesToSpectra(BlockListOfPoles const A, SpectraType *G, dou
   G[0].dE=(Emax-Emin)/((double)N);
   G[0].Gamma=0;
   G[0].ResonantEnergy=NAN;
-  strcpy(G[0].Name, A.Name);
-  for(i=0;i<A.BlockSize*A.BlockSize;i++)
+  strcpy(G[0].Name, A->Name);
+  for(i=0;i<A->BlockSize*A->BlockSize;i++)
   {
     SpectrumAllocate(G[0], &(G[i]));
   }
-  if(A.QComplex)
+  if(A->QComplex)
   {
-    Gtemp= (SpectraType*)malloc(A.BlockSize*A.BlockSize*sizeof(SpectraType));
-    for(i=0;i<A.BlockSize*A.BlockSize;i++)
+    Gtemp= (SpectraType*)malloc(A->BlockSize*A->BlockSize*sizeof(SpectraType));
+    for(i=0;i<A->BlockSize*A->BlockSize;i++)
     {
       SpectrumAllocate(G[0], &(Gtemp[i]));
     }
     /* j loops over all blocks in A */
-    for(j=0;j<(A.BlockSize*A.BlockSize+1)*A.N;j+=A.BlockSize*A.BlockSize+1)
+    for(j=0;j<(A->BlockSize*A->BlockSize+1)*A->N;j+=A->BlockSize*A->BlockSize+1)
     {
       /* the poles have energy A.V[j].Re */
-      if(A.V[j].Re<=Emin)
+      if(A->V[j].Re<=Emin)
       {
         iEmin=0;
         iEplus=0;
         wmin=1;
         wplus=0;
       }
-      else if(A.V[j].Re>=Emax)
+      else if(A->V[j].Re>=Emax)
       {
         iEmin=N;
         iEplus=N;
@@ -426,35 +426,35 @@ uint32_t BlockListOfPolesToSpectra(BlockListOfPoles const A, SpectraType *G, dou
       }
       else
       {
-        iEmin=(uint32_t)((A.V[j].Re-Emin)/G[0].dE);
+        iEmin=(uint32_t)((A->V[j].Re-Emin)/G[0].dE);
         iEplus=iEmin+1;
-        wplus=((A.V[j].Re-Emin)/G[0].dE)-iEmin;
+        wplus=((A->V[j].Re-Emin)/G[0].dE)-iEmin;
         wmin=1-wplus;
       }
       /* add the im part of the lorenzian to energy iEmin and iEplus */
-      for(i=0;i<A.BlockSize*A.BlockSize;i++)
+      for(i=0;i<A->BlockSize*A->BlockSize;i++)
       {
-        Gtemp[i].Im[iEmin]-=wmin*A.V[j+i+1].Re;
-        Gtemp[i].Re[iEmin]+=wmin*A.V[j+i+1].Im;
-        Gtemp[i].Im[iEplus]-=wplus*A.V[j+i+1].Re;
-        Gtemp[i].Re[iEplus]+=wplus*A.V[j+i+1].Im;
+        Gtemp[i].Im[iEmin]-=wmin*A->V[j+i+1].Re;
+        Gtemp[i].Re[iEmin]+=wmin*A->V[j+i+1].Im;
+        Gtemp[i].Im[iEplus]-=wplus*A->V[j+i+1].Re;
+        Gtemp[i].Re[iEplus]+=wplus*A->V[j+i+1].Im;
       }
     }
   }
   else
   {
     Gtemp=G;
-    for(j=0;j<(A.BlockSize*A.BlockSize+1)*A.N;j+=A.BlockSize*A.BlockSize+1)
+    for(j=0;j<(A->BlockSize*A->BlockSize+1)*A->N;j+=A->BlockSize*A->BlockSize+1)
     {
       /* the poles have energy A.V[j].Re */
-      if(A.VRe[j]<=Emin)
+      if(A->VRe[j]<=Emin)
       {
         iEmin=0;
         iEplus=0;
         wmin=1;
         wplus=0;
       }
-      else if(A.VRe[j]>=Emax)
+      else if(A->VRe[j]>=Emax)
       {
         iEmin=N;
         iEplus=N;
@@ -463,23 +463,23 @@ uint32_t BlockListOfPolesToSpectra(BlockListOfPoles const A, SpectraType *G, dou
       }
       else
       {
-        iEmin=(uint32_t)((A.VRe[j]-Emin)/G[0].dE);
+        iEmin=(uint32_t)((A->VRe[j]-Emin)/G[0].dE);
         iEplus=iEmin+1;
-        wplus=((A.VRe[j]-Emin)/G[0].dE)-iEmin;
+        wplus=((A->VRe[j]-Emin)/G[0].dE)-iEmin;
         wmin=1-wplus;
       }
       /* add the im part of the lorenzian to energy iEmin and iEplus */
-      for(i=0;i<A.BlockSize*A.BlockSize;i++)
+      for(i=0;i<A->BlockSize*A->BlockSize;i++)
       {
-        Gtemp[i].Im[iEmin]-=wmin*A.VRe[j+i+1];
-        Gtemp[i].Im[iEplus]-=wplus*A.VRe[j+i+1];
+        Gtemp[i].Im[iEmin]-=wmin*A->VRe[j+i+1];
+        Gtemp[i].Im[iEplus]-=wplus*A->VRe[j+i+1];
       }
     }
   }
   /* the im part of the lorenzians is there, we now need to add the real part */
   /* note that in the complex case some lorenzians have a complex pre-factor */
   /* weight w_i at energy E_i contributes w_i / (w - E_i) to all energies w, except at w=E_i */
-  for(i=0;i<A.BlockSize*A.BlockSize;i++)
+  for(i=0;i<A->BlockSize*A->BlockSize;i++)
   {
     for(j=0;j<=N;j++)
     {
@@ -493,9 +493,9 @@ uint32_t BlockListOfPolesToSpectra(BlockListOfPoles const A, SpectraType *G, dou
       }
     }
   }
-  if(A.QComplex)
+  if(A->QComplex)
   {
-    for(i=0;i<A.BlockSize*A.BlockSize;i++)
+    for(i=0;i<A->BlockSize*A->BlockSize;i++)
     {
       for(j=0;j<=N;j++)
       {
@@ -517,7 +517,7 @@ uint32_t BlockListOfPolesToSpectra(BlockListOfPoles const A, SpectraType *G, dou
     }
     free(Gtemp);
   }
-  for(i=0;i<A.BlockSize*A.BlockSize;i++)
+  for(i=0;i<A->BlockSize*A->BlockSize;i++)
   {
     for(j=0;j<=N;j++)
     {
@@ -526,30 +526,30 @@ uint32_t BlockListOfPolesToSpectra(BlockListOfPoles const A, SpectraType *G, dou
     }
   }
   /* add a0 */
-  if(A.QComplex)
+  if(A->QComplex)
   {
-    for(i=0;i<A.BlockSize*A.BlockSize;i++)
+    for(i=0;i<A->BlockSize*A->BlockSize;i++)
     {
       for(j=0;j<=N;j++)
       {
-        G[i].Re[j]+=A.a0[i].Re;
-        G[i].Im[j]+=A.a0[i].Im;
+        G[i].Re[j]+=A->a0[i].Re;
+        G[i].Im[j]+=A->a0[i].Im;
       }
     }
   }
   else
   {
-    for(i=0;i<A.BlockSize*A.BlockSize;i++)
+    for(i=0;i<A->BlockSize*A->BlockSize;i++)
     {
       for(j=0;j<=N;j++)
       {
-        G[i].Re[j]+=A.a0Re[i];
+        G[i].Re[j]+=A->a0Re[i];
       }
     }
   }
   return 0;
 }
-uint32_t BlockListOfPolesToSpectraWithBroadening(BlockListOfPoles const A, SpectraType *G, double Emin, double Emax, uint32_t N, double Gamma)
+uint32_t BlockListOfPolesToSpectraWithBroadening(double GroundStateEnergy, BlockListOfPoles const *A, SpectraType *G, double Emin, double Emax, uint32_t N, double Gamma)
 {
   int iE;
   uint32_t i,iblock,itot;
@@ -563,34 +563,34 @@ uint32_t BlockListOfPolesToSpectraWithBroadening(BlockListOfPoles const A, Spect
   G[0].dE=(Emax-Emin)/((double)N);
   G[0].Gamma=Gamma;
   G[0].ResonantEnergy=NAN;
-  strcpy(G[0].Name, A.Name);
-  for(i=0;i<A.BlockSize*A.BlockSize;i++)
+  strcpy(G[0].Name, A->Name);
+  for(i=0;i<A->BlockSize*A->BlockSize;i++)
   {
     SpectrumAllocate(G[0], &(G[i]));
   }
-  if(A.QComplex==0)
+  if(A->QComplex==0)
   {// real
 #pragma omp parallel for private(omega,i,itot,iblock,Lorentzian)
     for(iE=0;iE<=N;iE++)
     {
       omega = ((double)iE/(double)N)*(Emax-Emin)+Emin;
       // add A0
-      for(i=0;i<A.BlockSize*A.BlockSize;i++)
+      for(i=0;i<A->BlockSize*A->BlockSize;i++)
       {
-        G[i].Re[iE]=A.VRe[A.N*(1+A.BlockSize*A.BlockSize)+i];
+        G[i].Re[iE]=A->VRe[A->N*(1+A->BlockSize*A->BlockSize)+i];
         G[i].Im[iE]=0;
       }
       // loop over all poles
       itot=0;
-      for(iblock=0;iblock<A.N;iblock++)
+      for(iblock=0;iblock<A->N;iblock++)
       {
-        Lorentzian.Re = (omega-A.VRe[itot]) / (Sqr(Gamma/2.0) + Sqr(omega-A.VRe[itot]));
-        Lorentzian.Im = (-Gamma/2.0       ) / (Sqr(Gamma/2.0) + Sqr(omega-A.VRe[itot]));
+        Lorentzian.Re = (omega-A->VRe[itot]) / (Sqr(Gamma/2.0) + Sqr(omega-A->VRe[itot]));
+        Lorentzian.Im = (-Gamma/2.0        ) / (Sqr(Gamma/2.0) + Sqr(omega-A->VRe[itot]));
         itot++;
-        for(i=0;i<A.BlockSize*A.BlockSize;i++)
+        for(i=0;i<A->BlockSize*A->BlockSize;i++)
         {
-          G[i].Re[iE] += A.VRe[itot] * Lorentzian.Re;
-          G[i].Im[iE] += A.VRe[itot] * Lorentzian.Im;
+          G[i].Re[iE] += A->VRe[itot] * Lorentzian.Re;
+          G[i].Im[iE] += A->VRe[itot] * Lorentzian.Im;
           itot++;
         }
       }
@@ -603,22 +603,22 @@ uint32_t BlockListOfPolesToSpectraWithBroadening(BlockListOfPoles const A, Spect
     {
       omega = ((double)iE/(double)N)*(Emax-Emin)+Emin;
       // add A0
-      for(i=0;i<A.BlockSize*A.BlockSize;i++)
+      for(i=0;i<A->BlockSize*A->BlockSize;i++)
       {
-        G[i].Re[iE]=A.V[A.N*(1+A.BlockSize*A.BlockSize)+i].Re;
-        G[i].Im[iE]=A.V[A.N*(1+A.BlockSize*A.BlockSize)+i].Im;
+        G[i].Re[iE]=A->V[A->N*(1+A->BlockSize*A->BlockSize)+i].Re;
+        G[i].Im[iE]=A->V[A->N*(1+A->BlockSize*A->BlockSize)+i].Im;
       }
       // loop over all poles
       itot=0;
-      for(iblock=0;iblock<A.N;iblock++)
+      for(iblock=0;iblock<A->N;iblock++)
       {
-        Lorentzian.Re = (omega-A.V[itot].Re) / (Sqr(Gamma/2.0) + Sqr(omega-A.V[itot].Re));
-        Lorentzian.Im = (-Gamma/2.         ) / (Sqr(Gamma/2.0) + Sqr(omega-A.V[itot].Re));
+        Lorentzian.Re = (omega-A->V[itot].Re) / (Sqr(Gamma/2.0) + Sqr(omega-A->V[itot].Re));
+        Lorentzian.Im = (-Gamma/2.          ) / (Sqr(Gamma/2.0) + Sqr(omega-A->V[itot].Re));
         itot++;
-        for(i=0;i<A.BlockSize*A.BlockSize;i++)
+        for(i=0;i<A->BlockSize*A->BlockSize;i++)
         {
-          G[i].Re[iE] += A.V[itot].Re * Lorentzian.Re - A.V[itot].Im * Lorentzian.Im;
-          G[i].Im[iE] += A.V[itot].Re * Lorentzian.Im + A.V[itot].Im * Lorentzian.Re;
+          G[i].Re[iE] += A->V[itot].Re * Lorentzian.Re - A->V[itot].Im * Lorentzian.Im;
+          G[i].Im[iE] += A->V[itot].Re * Lorentzian.Im + A->V[itot].Im * Lorentzian.Re;
           itot++;
         }
       }
@@ -958,10 +958,21 @@ uint32_t BlockListOfPolesToBlockAndersonMatrixReduceDimension(BlockListOfPoles c
 /*
  *
  */
-uint32_t BlockAndersonMatrixToSpectra(BlockAndersonMatrixType const A, SpectraType *G, double Emin, double Emax, uint32_t N)
+uint32_t BlockAndersonMatrixToSpectra(double Energy, const BlockAndersonMatrixType * const A, SpectraType *G, double Emin, double Emax, uint32_t N)
 {
   //TODO: all
   printf("Not implemented BlockAndersonMatrixToSpectra\n");
+  return 1;
+}
+
+
+/*
+ *
+ */
+uint32_t BlockAndersonMatrixToSpectraWithBroadening(double Energy, const BlockAndersonMatrixType * const A, SpectraType *G, double Emin, double Emax, uint32_t N, double const Gamma)
+{
+  //TODO: all
+  printf("Not implemented BlockAndersonMatrixToSpectraWithBroadening\n");
   return 1;
 }
 
@@ -1083,7 +1094,7 @@ uint32_t BlockAndersonMatrixToBlockNaturalImpurityOrbitalMatrix(BlockAndersonMat
  *    G = a0 + b0 (1/( w + i Gamma/2 - a1 - b1  ( w + i Gamma/2 - a2 - b2 ( ... ) b2^+ ) b1^+ )) b0^+
  *
  */
-uint32_t BlockTriDiagonalMatrixToSpectra(const double Energy, BlockTriDiagonalMatrixType const * A, SpectraType *const G, double const Emin, double const Emax, uint32_t const N, double const Gamma)
+uint32_t BlockTriDiagonalMatrixToSpectraWithBroadening(const double Energy, BlockTriDiagonalMatrixType const * A, SpectraType *const G, double const Emin, double const Emax, uint32_t const N, double const Gamma)
 {
   int i,iw,iblock;
   double omega;
@@ -2131,8 +2142,8 @@ uint32_t BlockNaturalImpurityOrbitalToSpectra(BlockNaturalImpurityOrbitalMatrixT
   SpectraType Gval[A->BlockSize*A->BlockSize], Gcon[A->BlockSize*A->BlockSize];
   uint32_t i,j;
 
-  BlockTriDiagonalMatrixToSpectra(0, &(A->val), Gval, Emin, Emax, N, Gamma);
-  BlockTriDiagonalMatrixToSpectra(0, &(A->con), Gcon, Emin, Emax, N, Gamma);
+  BlockTriDiagonalMatrixToSpectraWithBroadening(0, &(A->val), Gval, Emin, Emax, N, Gamma);
+  BlockTriDiagonalMatrixToSpectraWithBroadening(0, &(A->con), Gcon, Emin, Emax, N, Gamma);
 
   G[0].N=N;
   G[0].Emin=Emin;

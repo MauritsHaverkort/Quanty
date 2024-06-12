@@ -2197,7 +2197,7 @@ static int LuaCreateSpectra(lua_State *L)
       Spec->Name[0]='\0';
       Spec->NSpectra=Sqr(Options.NT*Options.Npsi);
       Spec->Spec= (SpectraType*)malloc(Spec->NSpectra*sizeof(SpectraType));
-      BlockListOfPolesToSpectraWithBroadening(SpecLP, Spec->Spec, Options.Settings.Emin, Options.Settings.Emax, Options.Settings.NE, Options.Settings.Gamma);
+      BlockListOfPolesToSpectraWithBroadening(0, &SpecLP, Spec->Spec, Options.Settings.Emin, Options.Settings.Emax, Options.Settings.NE, Options.Settings.Gamma);
       for(i=0;i<Spec->NSpectra;i++)
       {
         Spec->Spec[i].EminPole=Eminpole;
@@ -2530,7 +2530,7 @@ static int LuaCreateSpectra(lua_State *L)
       Spec->Name[0]='\0';
       Spec->NSpectra=Sqr(Options.NT*Options.Npsi);
       Spec->Spec= (SpectraType*)malloc(Spec->NSpectra*sizeof(SpectraType));
-      BlockTriDiagonalMatrixToSpectra(psiEn[0], &GTri, Spec->Spec, Options.Settings.Emin, Options.Settings.Emax, Options.Settings.NE, Options.Settings.Gamma);
+      BlockTriDiagonalMatrixToSpectraWithBroadening(psiEn[0], &GTri, Spec->Spec, Options.Settings.Emin, Options.Settings.Emax, Options.Settings.NE, Options.Settings.Gamma);
       for(i=0;i<Spec->NSpectra;i++)
       {
         Spec->Spec[i].EminPole=Eminpole;

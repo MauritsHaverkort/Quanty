@@ -41,7 +41,7 @@ void TestLanczosDyson3()
   
   
   BeginTiming("BlockListOfPolesToSpectra", &Time);
-  BlockListOfPolesToSpectra(G, Gspec, -4, 6, 500);
+  BlockListOfPolesToSpectra(0, &G, Gspec, -4, 6, 500);
   EndTiming("BlockListOfPolesToSpectra", &Time);
   
   FilePrintSpectra(Gspec, TB.NFermion*TB.NFermion, "TBDOS2", "w");
@@ -55,14 +55,14 @@ void TestLanczosDyson3()
   
   
   TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles(TB, Nk, Sigma, &Gfull, -3, 5.5, 1000);
-  BlockListOfPolesToSpectra(Gfull, Gspecfull, -4, 6, 500);
+  BlockListOfPolesToSpectra(0, &Gfull, Gspecfull, -4, 6, 500);
   
   FilePrintSpectra(Gspecfull, TB.NFermion*TB.NFermion, "TBDOS2full", "w");
   
   exit(0);
   
   TightBindingHamiltonianMultiSiteToBlockListOfPoles(TB, Nk, Nvec, vec, &Gdouble, -5, 15, 500);
-  BlockListOfPolesToSpectra(Gdouble, Gdoublespec, -4, 6, 100);
+  BlockListOfPolesToSpectra(0, &Gdouble, Gdoublespec, -4, 6, 100);
   FilePrintSpectra(Gdoublespec, TB.NFermion*TB.NFermion*Nvec*Nvec, "TBDOSdouble", "w");
   
   
@@ -81,7 +81,7 @@ void TestLanczosDyson3()
   
   
   BlockListOfPolesG0plusSigmaToGFixedEGrid(&Gdouble, &Sigma, &GdoubleFull, -5, 15, 500);
-  BlockListOfPolesToSpectra(GdoubleFull, GdoubleFullspec, -5, 15, 500);
+  BlockListOfPolesToSpectra(0, &GdoubleFull, GdoubleFullspec, -5, 15, 500);
   FilePrintSpectra(GdoubleFullspec, TB.NFermion*TB.NFermion*Nvec*Nvec, "TBDOSdoubleFull", "w");
   
   
@@ -129,9 +129,9 @@ void TestLanczosDyson3()
   
   
   
-  BeginTiming("BlockTriDiagonalMatrixToSpectra", &Time);
-  BlockTriDiagonalMatrixToSpectra(0, &Gtri, GTriSpec, -4.0, 6.0, 1000, 0.05);
-  EndTiming("BlockTriDiagonalMatrixToSpectra", &Time);
+  BeginTiming("BlockTriDiagonalMatrixToSpectraWithBroadening", &Time);
+  BlockTriDiagonalMatrixToSpectraWithBroadening(0, &Gtri, GTriSpec, -4.0, 6.0, 1000, 0.05);
+  EndTiming("BlockTriDiagonalMatrixToSpectraWithBroadening", &Time);
   
   
   FilePrintSpectra(GTriSpec, TB.NFermion*TB.NFermion, "TBDOS3", "w");
@@ -145,7 +145,7 @@ void TestLanczosDyson3()
   
   
   BeginTiming("BlockListOfPolesToSpectra", &Time);
-  BlockListOfPolesToSpectra(GLP2, Gspec2, -4, 6, 100);
+  BlockListOfPolesToSpectra(0, &GLP2, Gspec2, -4, 6, 100);
   EndTiming("BlockListOfPolesToSpectra", &Time);
   
   FilePrintSpectra(Gspec2, TB.NFermion*TB.NFermion, "TBDOS4", "w");
@@ -162,9 +162,9 @@ void TestLanczosDyson3()
   BlockListOfPolesToBlockTridiagonalMatrixReduceDimension(G, &Gtrireduced, &AT, 500, DBL_EPSILON);
   EndTiming("BlockListOfPolesToBlockTridiagonalMatrixReduced", &Time);
   
-  BeginTiming("BlockTriDiagonalMatrixToSpectra", &Time);
-  BlockTriDiagonalMatrixToSpectra(0, &Gtrireduced, GTriSpecreduced, -4.0, 6.0, 1000, 0.05);
-  EndTiming("BlockTriDiagonalMatrixToSpectra", &Time);
+  BeginTiming("BlockTriDiagonalMatrixToSpectraWithBroadening", &Time);
+  BlockTriDiagonalMatrixToSpectraWithBroadening(0, &Gtrireduced, GTriSpecreduced, -4.0, 6.0, 1000, 0.05);
+  EndTiming("BlockTriDiagonalMatrixToSpectraWithBroadening", &Time);
   
   
   FilePrintSpectra(GTriSpecreduced, TB.NFermion*TB.NFermion, "TBDOS3reduced", "w");
