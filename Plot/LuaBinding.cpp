@@ -659,6 +659,22 @@ int LuaPlotGraphics(lua_State * L)
   // select the type of graph to plot
   if(lua_type(L,1)==LUA_TTABLE)
   {
+    // test if the table has a metatable related to a response function
+    // if this is the case jump to the processing of response functions
+    if (lua_getmetatable(L, 1)) // Get the table's metatable and push it on the stack if excists
+    {
+      lua_getglobal(L, "ResponseFunctionMeta");
+      if (lua_rawequal(L, -1, -2))
+      {
+        lua_pop(L, 2);
+        goto LabelResponseFunctionPlot;
+      }
+      lua_pop(L, 2);
+    }
+    
+    
+    
+    
     // TODO:
     return luaL_error(L, "Plotting of tables of objects not yet suported\n");
   }
@@ -800,8 +816,148 @@ int LuaPlotGraphics(lua_State * L)
     }
     else if (luaL_testudata(L, 1, "ResponseFunction_Type") != NULL)
     {
-      // TODO:
-      return luaL_error(L, "TODO\n");
+      LabelResponseFunctionPlot:
+      SpectraTypeArray Spec;
+      ResponsefunctionType *A;
+      double GammaL=0;
+      double GammaG=0;
+      double Emin,Emax;
+      int NE=0;
+      A = luaL_checkResponsefunction(L,1);
+      if(len>1) GammaL=(double)luaL_checknumber(L, 2);
+      if(len>2) GammaG=(double)luaL_checknumber(L, 3);
+      if(len>3) NE=(int)luaL_checkinteger(L, 3);
+      if(len>4) return luaL_error(L, "For plotting a resonse function I expect the first argument to be a response function and the 2nd, 3rd and 4th are optional the Lorentzian and Gaussian broadingings and the number of points in the spectrum.\n In this case I got %d argumens\n",len);
+      
+      if(Options.Frame.PlotRange[0].X==-INFINITY) Options.Frame.PlotRange[0].X = -1;
+      if(Options.Frame.PlotRange[1].X== INFINITY) Options.Frame.PlotRange[1].X =  1;
+      if(Options.Frame.PlotRange[0].Y==-INFINITY) Options.Frame.PlotRange[0].Y = -1;
+      if(Options.Frame.PlotRange[1].Y== INFINITY) Options.Frame.PlotRange[1].Y =  1;
+      if(Options.Frame.FirstXTick==-INFINITY) Options.Frame.FirstXTick = Options.Frame.PlotRange[0].X;
+      if(Options.Frame.FirstYTick==-INFINITY) Options.Frame.FirstYTick = Options.Frame.PlotRange[0].Y;
+      
+      if(Options.Nrow!=1) return luaL_error(L, "Invalid option Nrow when plotting response functions\n");
+      if(Options.Ncolumn!=1) return luaL_error(L, "Invalid option Ncolumn when plotting response functions\n");
+          
+      Emin=Options.Frame.PlotRange[0].X;
+      Emax=Options.Frame.PlotRange[1].X;
+      if(NE==0)
+      {
+        if(GammaL==0)
+        {
+          if(GammaG==0)
+          {
+            NE = 600;
+          }
+          else
+          {
+            NE = 1+10*abs((Emax-Emin) / GammaG);
+          }
+        }
+        else
+        {
+          NE = 1+10*abs((Emax-Emin) / GammaL);
+        }
+      }
+      ResponseFunctionToSpectra(A, &Spec, 0, Emin, Emax, GammaG, GammaL, NE);
+      
+      if(A->Block==false)
+      {
+        // make a single graph with possible multiple spectra
+        LinePlotOptions *LPORe = (LinePlotOptions*) malloc(sizeof(LinePlotOptions) * Spec.NSpectra);
+        LinePlotOptions *LPOIm = (LinePlotOptions*) malloc(sizeof(LinePlotOptions) * Spec.NSpectra);
+        if((Options.PlotIm==true) && (Options.PlotRe==false))
+        {
+          LPORe[0] = Options.Style.Line[0];
+          LPOIm[0] = Options.Style.Line[0];
+          LPORe[0].LineWidth=0;
+          LPORe[0].LineColor[3]=0;
+          LPORe[0].PointSize=0;
+          LPORe[0].PointColor[3]=0;
+        }
+        else if((Options.PlotIm==false) && (Options.PlotRe==true))
+        {
+          LPORe[0] = Options.Style.Line[0];
+          LPOIm[0] = Options.Style.Line[0];
+          LPOIm[0].LineWidth=0;
+          LPOIm[0].LineColor[3]=0;
+          LPOIm[0].PointSize=0;
+          LPOIm[0].PointColor[3]=0;
+        }
+        else if((Options.PlotIm==true) && (Options.PlotRe==true))
+        {
+          LPORe[0] = Options.Style.Line[1];
+          LPOIm[0] = Options.Style.Line[2];
+        }
+        else
+        {
+          return luaL_error(L, "Plot a spectrum but both PlotRe and PlotIm are set to false so there is nothing to do here\n");
+        }
+        PlotSpectraTypeArrayToGraphics(Graphics, &Spec, LPORe, LPOIm, &(Options.Frame), Options.Negate);
+        free(LPORe);
+        free(LPOIm);
+      }
+      else
+      {
+        switch (A->type|32)
+        {
+          case 'l':
+          {
+            Options.Nrow    = ((BlockListOfPoles*)(A->data))->BlockSize;
+            Options.Ncolumn = ((BlockListOfPoles*)(A->data))->BlockSize;
+          }
+          break;
+          case 't':
+          {
+            Options.Nrow    = ((BlockTriDiagonalMatrixType*)(A->data))->BlockSize;
+            Options.Ncolumn = ((BlockTriDiagonalMatrixType*)(A->data))->BlockSize;
+          }
+          break;
+          case 'a':
+          {
+            Options.Nrow    = ((BlockAndersonMatrixType*)(A->data))->BlockSize;
+            Options.Ncolumn = ((BlockAndersonMatrixType*)(A->data))->BlockSize;         }
+          break;
+          case 'n':
+          {
+            Options.Nrow    = ((BlockNaturalImpurityOrbitalMatrixType*)(A->data))->BlockSize;
+            Options.Ncolumn = ((BlockNaturalImpurityOrbitalMatrixType*)(A->data))->BlockSize;          }
+          break;
+        }
+        // plot a matrix of spectra
+        if ( (Options.Nrow * Options.Ncolumn) != Spec.NSpectra ) return luaL_error(L, "plotting a spectrum array with %d rows and %d columns, but the data array has %d elements\n",Options.Nrow,Options.Ncolumn,Spec.NSpectra);
+        LinePlotOptions LPORe, LPOIm;
+        if((Options.PlotIm==true) && (Options.PlotRe==false))
+        {
+          LPORe = Options.Style.Line[0];
+          LPOIm = Options.Style.Line[0];
+          LPORe.LineWidth=0;
+          LPORe.LineColor[3]=0;
+          LPORe.PointSize=0;
+          LPORe.PointColor[3]=0;
+        }
+        else if((Options.PlotIm==false) && (Options.PlotRe==true))
+        {
+          LPORe = Options.Style.Line[0];
+          LPOIm = Options.Style.Line[0];
+          LPOIm.LineWidth=0;
+          LPOIm.LineColor[3]=0;
+          LPOIm.PointSize=0;
+          LPOIm.PointColor[3]=0;
+        }
+        else if((Options.PlotIm==true) && (Options.PlotRe==true))
+        {
+          LPORe = Options.Style.Line[1];
+          LPOIm = Options.Style.Line[2];
+        }
+        else
+        {
+          return luaL_error(L, "Plot a spectrum but both PlotRe and PlotIm are set to false so there is nothing to do here\n");
+        }
+        PlotSpectraTypeArrayToGraphicsArray(Graphics, &Spec, Options.Nrow, Options.Ncolumn, &LPORe, &LPOIm, &(Options.Frame),  Options.Negate, Options.ScaleOffDiagonal, Options.ShiftOffDiagonal);
+      }
+      FreeResponsefunction(A);
+      FreeSpectraTypeArray(&Spec);
     }
     else if (luaL_testudata(L, 1, "Matrix_Type") != NULL)
     {

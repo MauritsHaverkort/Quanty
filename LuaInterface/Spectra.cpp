@@ -2078,12 +2078,7 @@ static int LuaSpectraDestroy(lua_State * L)
 {
   uint32_t i;
   SpectraTypeArray *spec = (SpectraTypeArray*) luaL_checkudata(L, 1, "Spectra_Type");
-  for(i=0;i<spec->NSpectra;i++)
-  {
-    SpectrumFree(&spec->Spec[i]);
-  }
-  free(spec->Spec);
-  free(spec->Name);
+  FreeSpectraTypeArray(spec);
   return 0;
 }
 

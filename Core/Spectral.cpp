@@ -69,6 +69,18 @@ void SpectrumFree(SpectraType * const G)
   free(G->Im);
 }
 
+void FreeSpectraTypeArray(SpectraTypeArray * const G)
+{
+  int i;
+  for(i=0;i<G->NSpectra;i++)
+  {
+    SpectrumFree(&(G->Spec[i]));
+    free(G->Name);
+    G->NSpectra=0;
+  }
+}
+
+
 
 /* Copy a spectrum
 *
