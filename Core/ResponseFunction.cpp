@@ -39,7 +39,17 @@ uint32_t ResponseFunctionToSpectra(const ResponsefunctionType *M, SpectraTypeArr
 uint32_t BlockResponseFunctionToSpectra(const ResponsefunctionType *M, SpectraTypeArray *A, double GroundStateEnergy, double Emin, double Emax, double GammaG, double GammaL, uint32_t NE)
 {
   int i;
-  
+  int ExtraPoints = 0;
+  double EboarderShift =0;
+  const double dE = (Emax - Emin) / NE;
+  if(GammaG!=0)
+  {
+    ExtraPoints = ( 4 * GammaG ) / dE ;
+    EboarderShift = ExtraPoints * dE;
+    Emin -= EboarderShift;
+    Emax += EboarderShift;
+    NE   += 2*ExtraPoints;
+  }
   if(GammaL==0) // transform to spectrum with zero Gamma
   {
     switch (M->type|32)
@@ -130,6 +140,7 @@ uint32_t BlockResponseFunctionToSpectra(const ResponsefunctionType *M, SpectraTy
     {
       BroadenG(&(A->Spec[i]), GammaG);
     }
+    RemovePointsSpectraArray(A, ExtraPoints, ExtraPoints);
   }
   return 0;
 }

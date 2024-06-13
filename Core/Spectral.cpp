@@ -147,6 +147,32 @@ void ChopSpectraArray(SpectraTypeArray * G, const double epsilon)
   }
 }
 
+int RemovePointsSpectra(SpectraType * A, const int Nmin, const int Nmax)
+{  if((Nmin + Nmax) >= A->N) return 1;
+  if(Nmin<0) return 1;
+  if(Nmax<0) return 1;
+  memmove(A->Re, &(A->Re[Nmin]), (A->N+1-Nmin)*sizeof(double));
+  memmove(A->Im, &(A->Im[Nmin]), (A->N+1-Nmin)*sizeof(double));
+  A->Re=(double*)realloc(A->Re, (A->N+1-Nmin-Nmax)*sizeof(double));
+  A->Im=(double*)realloc(A->Im, (A->N+1-Nmin-Nmax)*sizeof(double));
+  A->N-=(Nmin+Nmax);
+  A->Emax-=Nmax*A->dE;
+  A->Emin+=Nmin*A->dE;
+  return 0;
+}
+
+
+int RemovePointsSpectraArray(SpectraTypeArray * A, const int Nmin, const int Nmax)
+{
+  int i;
+  int retval=0;
+  for(i=0;i<A->NSpectra;i++)
+  {
+    retval += RemovePointsSpectra(&(A->Spec[i]), Nmin, Nmax);
+  }
+  return retval;
+}
+
 int SpectraScalarMultiply(SpectraType * const A, double const aRe, double const aIm)
 {
   int    i;

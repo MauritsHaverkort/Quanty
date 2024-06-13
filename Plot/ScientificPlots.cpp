@@ -401,7 +401,7 @@ int AddSpectraTypeToGraphics(GraphicsType* Graphics, PointType *PlotRange, Point
   }
   for(i=0;i<NPoints;i++)
   {
-    DataPoints[i].X = i * Data->Emax / NPoints + (NPoints-i) * Data->Emin / NPoints;
+    DataPoints[i].X = i * Data->Emax / (NPoints-1) + (NPoints-i-1) * Data->Emin / (NPoints-1);
     DataPoints[i].Y = datasign * Data->Re[i];
   }
   AddDataPointsToGraphics(Graphics, PlotRange, Margins, DataPoints, NPoints, LineWidthRe, LineColorRe, PointSizeRe, PointColorRe);

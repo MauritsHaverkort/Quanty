@@ -660,7 +660,7 @@ int LuaPlotGraphics(lua_State * L)
   if(lua_type(L,1)==LUA_TTABLE)
   {
     // TODO:
-    return luaL_error(L, "TODO\n");
+    return luaL_error(L, "Plotting of tables of objects not yet suported\n");
   }
   else if (lua_type(L,1)==LUA_TUSERDATA)
   {
@@ -805,8 +805,7 @@ int LuaPlotGraphics(lua_State * L)
     }
     else if (luaL_testudata(L, 1, "Matrix_Type") != NULL)
     {
-      // TODO:
-      return luaL_error(L, "TODO\n");
+      return luaL_error(L, "Use the function MatrixPlot to plot matrices instead of the function Plot\n");
     }
     else
     {
