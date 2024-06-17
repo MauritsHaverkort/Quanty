@@ -521,8 +521,9 @@ double ListOfPolesNormFlatWeightDistanceComplex(Complex16 * b, uint32_t Ntau, do
 /*  reduce the number of poles to N
  *
  */
-uint32_t ReduceBlockListOfPoles(BlockListOfPoles * const A, uint32_t N, double const Ef )
+uint32_t ReduceBlockListOfPoles(BlockListOfPoles * const A, uint32_t N)
 {
+  double const Ef = A->mu;
   double SmallestNorm=0,Normi,Normiplus,Normimin,a,amin,aplus;
   uint32_t iSmallestNorm=0,i;
   if(N==0) {printf("Reducing a list of poles to zero poles does not make sence\n");return 1;};
@@ -799,18 +800,20 @@ uint32_t ReduceBlockListOfPoles(BlockListOfPoles * const A, uint32_t N, double c
   return 0;
 }
 
-uint32_t BlockListOfPolesMoveNegativeEnergyToMu(BlockListOfPoles * const A)
+
+uint32_t ReduceBlockListOfPoles(BlockListOfPoles * const A, uint32_t Nval, uint32_t Ncon)
 {
-  //TODO: full implementation
+  BlockListOfPoles Aval, Acon;
+  CopyBlockListOfPolesCon(*A, &Acon, A->mu, 0);
+  CopyBlockListOfPolesVal(*A, &Aval, A->mu, 0);
+  ReduceBlockListOfPoles(&Aval, Nval);
+  ReduceBlockListOfPoles(&Acon, Ncon);
+  FreeBlockListOfPoles(A);
+  CopyBlockListOfPoles(Aval, A);
+  AddBlockListOfPoles(A, Acon);
   return 0;
 }
 
-uint32_t BlockListOfPolesMovePositiveEnergyToMu(BlockListOfPoles * const A)
-{
-  //TODO: full implementation
-
-  return 0;
-}
 
 uint32_t BlockListOfPolesPlaceOnMesh(BlockListOfPoles * const A, double const *mesh, int const NE)
 {

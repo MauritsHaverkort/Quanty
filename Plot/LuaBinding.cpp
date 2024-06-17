@@ -1004,8 +1004,16 @@ int LuaGraphicsToSVG(lua_State * L)
 // G1+G2 results in a new graphics with 2 layers containing G1 and G2.
 int LuaGraphicsAdd(lua_State * L)
 {
-  //TODO: G1+G2
-  return 0;
+  GraphicsType * GraphicsA = (GraphicsType *) luaL_checkudata(L, 1, "Graphics_Type");
+  GraphicsType * GraphicsB = (GraphicsType *) luaL_checkudata(L, 2, "Graphics_Type");
+  
+  GraphicsType * GraphicsAplusB = (GraphicsType*) lua_newuserdata(L, sizeof(GraphicsType));
+  luaL_setmetatable(L, "Graphics_Type");
+  
+  CopyGraphics(GraphicsA, GraphicsAplusB);
+  AddLayer(GraphicsAplusB, GraphicsB);
+  
+  return 1;
 }
 
 // returns a table with elements Layers, Line, Curve, Arc, Text and BitMap and values corresponding to the number of elements present in the graph

@@ -224,17 +224,35 @@ static int LuaResponseFunctionToTable(lua_State *L)
 static int LuaReducePolesResponseFunction(lua_State *L)
 {
   ResponsefunctionType *M, *MRed;
-  int Nred;
+  int Nred, Nredcon=0;
 
   uint32_t len = (uint32_t)lua_gettop(L);
-  if(len!=2) return luaL_error(L, "Error in ReducePoles: %d argument(s), 2 expected (ListOfPoles, desired number of poles).\n", len);
+  if(len>3) return luaL_error(L, "Error in ReducePoles: %d argument(s), 2 or 3 expected (response function, desired number of poles or ResponseFunction, desiered number of poles for val, desired number of poles for con).\n", len);
 
   M = luaL_checkResponsefunction(L,1);
   if(!lua_isnumber(L, 2)) return luaL_error(L, "Error in ReducePoles: 2nd argument should be the desired number of poles.\n");
   Nred = (int)lua_tointeger(L, 2);
-  if((M->type|32)!='l') return luaL_error(L, "Error in ReducePoles: The input Green's function is of %c type, it should be a ListOfPoles", M->type);
-  MRed = ResponsefunctionCopy(M);
-  ReduceBlockListOfPoles((BlockListOfPoles*)(MRed->data), Nred, ((BlockListOfPoles*)(MRed->data))->mu);
+  if (len==3)
+  {
+    if(!lua_isnumber(L, 3)) return luaL_error(L, "Error in ReducePoles: 3rd argument should be the desired number of poles in the conduction band.\n");
+    Nredcon = (int)lua_tointeger(L, 3);
+  }
+  if((M->type|32)=='l')
+  {
+    MRed = ResponsefunctionCopy(M);
+  }
+  else
+  {
+    MRed = ConvertResponsefunction(M, 'l', 0, 0);
+  }
+  if(len==2)
+  {
+    ReduceBlockListOfPoles((BlockListOfPoles*)(MRed->data), Nred);
+  }
+  else
+  {
+    ReduceBlockListOfPoles((BlockListOfPoles*)(MRed->data), Nred, Nredcon);
+  }
   LuaPush_ResponseFunction(L, MRed);
   FreeResponsefunction(M);
   FreeResponsefunction(MRed);
@@ -361,7 +379,7 @@ static int LuaResponseFunctionEigensystem(lua_State *L)
 static int LuaResponseFunctionUnm(lua_State * L)
 {
   ResponsefunctionType *res, *M;
-
+  //TODO: this has memory loss
   M = ConvertBlockMatrix(luaL_checkResponsefunction(L,1), 'l', 0, 0);
   res = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
   luaL_setmetatable(L, "ResponseFunction_Type");
@@ -384,7 +402,7 @@ static int LuaResponseFunctionAdd(lua_State * L)
 
   uint32_t len = (uint32_t)lua_gettop(L);
   if(len!=2) return luaL_error(L, "Error in ResponseFunctionAdd: %d argument(s), 2 expected.\n", len);
-
+  //TODO: this has memory loss
   Ma = ConvertBlockMatrix(luaL_checkResponsefunction(L,1), 'l', 0, 0);
   Mb = ConvertBlockMatrix(luaL_checkResponsefunction(L,2), 'l', 0, 0);
   AddBlockListOfPoles((BlockListOfPoles*)(Ma->data), *(BlockListOfPoles*)(Mb->data));
@@ -411,8 +429,8 @@ static int LuaResponseFunctionSub(lua_State * L)
   ResponsefunctionType *Ma, *Mb, *res;
 
   uint32_t len = (uint32_t)lua_gettop(L);
-  if(len!=2) return luaL_error(L, "Error in ResponseFunctionAdd: %d argument(s), 2 expected.\n", len);
-
+  if(len!=2) return luaL_error(L, "Error in ResponseFunctionSub: %d argument(s), 2 expected.\n", len);
+  // TODO: this has memory loss
   Ma = ConvertBlockMatrix(luaL_checkResponsefunction(L,1), 'l', 0, 0);
   Mb = ConvertBlockMatrix(luaL_checkResponsefunction(L,2), 'l', 0, 0);
   SubtractBlockListOfPoles((BlockListOfPoles*)(Ma->data), *(BlockListOfPoles*)(Mb->data));
@@ -648,6 +666,102 @@ static int LuaResponseFunctionToTightBinding(lua_State * L)
   return 1;
 }
 
+
+/*
+ *
+ */
+static int LuaResponseFunctionToOperator(lua_State * L)
+{
+  OperatorType *O;
+  ResponsefunctionType *M;
+  struct
+  {
+    bool AddSpin;
+    uint32_t FermionShift;
+  } Options;
+  Options.AddSpin=false;
+  Options.FermionShift=0;
+  LuaOptionsType LuaOptions[]={
+    {"AddSpin","bool",&(Options.AddSpin)},
+    {"FermionShift","uint32_t",&(Options.FermionShift)},
+    {NULL, NULL, NULL}};
+  uint32_t len = (uint32_t) lua_gettop(L);
+  if(LuaTestOptionsList(L, -1))
+  {
+    LuaCheckOptions(L, -1, LuaOptions);
+    len--;
+  }
+  if(len!=1) return luaL_error(L, "Error in ResponseFunction.ToOperator() It should be called with 1 argument, not with %d\n",len);
+  M = luaL_checkResponsefunction(L,1);
+  O = (OperatorType*) lua_newuserdata(L, sizeof(OperatorType));
+  luaL_setmetatable(L, "Operator_Type");
+
+  
+  switch(M->type)
+  {
+    case 'L':
+    case 'l':
+    {
+      if(M->Block==true)
+      {
+        
+      }
+      else
+      {
+        
+      }
+      break;
+    }
+    case 'A':
+    case 'a':
+    {
+      if(M->Block==true)
+      {
+        BlockAndersonMatrixToImpurityHamiltonian(O, (BlockAndersonMatrixType*)(M->data), Options.AddSpin, Options.FermionShift, 0);
+      }
+      else
+      {
+        
+      }
+      break;
+    }
+    case 'T':
+    case 't':
+    {
+      if(M->Block==true)
+      {
+        BlockTridiagonalMatrixToImpurityHamiltonian(O, (BlockTriDiagonalMatrixType*)(M->data), Options.AddSpin, Options.FermionShift, 0);
+      }
+      else
+      {
+        
+      }
+      break;
+    }
+    case 'N':
+    case 'n':
+    {
+      if(M->Block==true)
+      {
+        BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(O, (BlockNaturalImpurityOrbitalMatrixType*)(M->data), Options.AddSpin, Options.FermionShift, 0);
+      }
+      else
+      {
+        
+      }
+      break;
+    }
+    default:
+    {
+      return luaL_error(L, "Error in Responsefunction.ToOperator() unrecognized type for conversion (%s)\n",M->type);
+      return 0;
+    }
+  }
+  FreeResponsefunctionIncludingOriginalPointer(M);
+  return 1;
+}
+
+
 static int LuaResponseFunctionToCompactMatrix(lua_State *L)
 {
   ResponsefunctionType *A;
@@ -733,6 +847,7 @@ static const struct luaL_Reg ResponseFunction_func[] = {
   {"ToSpectra", LuaResponseFunctionToSpectra},
   {"ToUserdata", LuaResponseFunctionToUserdata},
   {"ToTightBinding", LuaResponseFunctionToTightBinding},
+  {"ToOperator", LuaResponseFunctionToOperator},
   {NULL, NULL}
 };
 
