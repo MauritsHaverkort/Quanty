@@ -588,11 +588,7 @@ static int LuaMatrixToTable(lua_State * L)
   CompactMatrixType *A;
   A = (CompactMatrixType *) luaL_checkCompactMatrix(L, 1);
   LuaPushTable_CompactMatrixType(L, A);
-  if (luaL_testudata(L, 1, "Matrix_Type") == NULL)
-  {
-    FreeCompactMatrix(A);
-    free(A);
-  }
+  FreeCompactMatrix(A);
   return 1;
 }
 

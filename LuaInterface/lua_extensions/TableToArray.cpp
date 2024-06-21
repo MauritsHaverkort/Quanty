@@ -3,6 +3,30 @@
  *  found in the lua stack at position narg
  */
 
+
+bool* luaL_checkarray_bool(lua_State *L, int narg, uint32_t *len_out)
+{
+  int i;
+  luaL_checktype(L, narg, LUA_TTABLE);
+  uint32_t len = (uint32_t)lua_objlen(L, narg);
+  *len_out = len;
+  bool *buff = (bool*)malloc(len*sizeof(bool));
+  for(i=0;i<len;i++)
+  {
+    lua_rawgeti(L, narg, i+1);
+    if(lua_toboolean(L, -1)==1)
+    {
+      buff[i]=true;
+    }
+    else
+    {
+      buff[i]=false;
+    }
+    lua_pop(L, 1);
+  }
+  return buff;
+}
+
 uint8_t* luaL_checkarray_unit8_t(lua_State *L, int narg, uint32_t *len_out)
 {
   int i;
@@ -66,6 +90,60 @@ double* luaL_checkarray_double(lua_State *L, int narg, uint32_t *len_out)
   }
   return buff;
 }
+
+/*
+ *  Expects a table at position narg of length expectedLength[0]
+ *
+ *  If the table consists of complex numbers then element i to i+expectedLength[0]-1 are filled
+ *  the variable i is increased to point to the next not set value in T
+ *
+ *  If the table consists of tables then we call the same function on the elements of the table
+ *  The expected length of the child is found at &(expectedLength[1])
+ */
+void luaL_checkTableOfTables_complex16(lua_State *L, uint32_t narg, uint32_t* expectedLength, Complex16* T, int* i)
+{
+  int j;
+  luaL_checktype(L, narg, LUA_TTABLE);
+  if(lua_objlen(L, narg) != expectedLength[0]) luaL_error(L, "Errorr reading table of tables. Expected a table of length %d, got a table of length %d\n",expectedLength[0],lua_objlen(L, narg));
+  lua_rawgeti(L, narg, 1);
+  if(lua_istable(L, -1)==1)
+  {
+    lua_pop(L, 1);
+    for(j=1;j<=expectedLength[0];j++)
+    {
+      lua_rawgeti(L, narg,j);
+      luaL_checkTableOfTables_complex16(L, -1, &(expectedLength[1]), T, i);
+      lua_pop(L, 1);
+    }
+  }
+  else
+  {
+    lua_pop(L, 1);
+    for(j=1;j<=expectedLength[0];j++)
+    {
+      lua_rawgeti(L, narg,j);
+      if(lua_isnumber(L, -1))
+      {
+        T[*i].Re=(double)luaL_checknumber(L, -1);
+        lua_pop(L, 1);
+        T[*i].Im=0;
+        (*i)++;
+      }
+      else if (luaL_testudata(L, -1, "Complex_Type") != NULL)
+      {
+        T[*i] = *(Complex16 *)luaL_checkudata(L, -1, "Complex_Type");
+        lua_pop(L, 1);
+        (*i)++;
+      }
+      else
+      {
+        luaL_error(L, "Error in reading table of tables all elements should either be numbers or complex numbers\n");
+      }
+    }
+  }
+  
+}
+
 
 
 Complex16* luaL_checkarray_complex16(lua_State *L, int narg, uint32_t *len_out)
@@ -199,6 +277,88 @@ CompactMatrixType* luaL_checkCompactMatrix(lua_State *L, int narg)
   if(makereal==1) MakeCompactComplexMatrixReal(buff);
   return buff;
 }
+
+CompactTensorType* luaL_checkCompactTensor(lua_State *L, int narg)
+{
+  CompactTensorType *buff;
+  // Matrix stored as pointer to structure on lua stack
+  if (luaL_testudata(L, narg, "Tensor_Type") != NULL)
+  {
+    buff = (CompactTensorType*)luaL_checkudata(L, narg, "Tensor_Type");
+    if (buff!=NULL)
+    {
+      buff->OnLuaStack = true;
+      return buff;
+    }
+  }
+  // tensor stored as table. Need to do some work
+  bool makereal=true;
+  uint32_t rank;
+  char const * name;
+  int i;
+  
+  // data object on stack needs to be a table
+  luaL_checktype(L, narg, LUA_TTABLE);
+  
+  buff= (CompactTensorType*)malloc(sizeof(CompactTensorType));
+  buff->QComplex=1;
+  buff->OnLuaStack = false;
+  // get rank
+  lua_getfield(L, narg, "rank");
+  if(lua_isnil(L, -1)==1) luaL_error(L, "Errorr reading tensor. Field rank must be present\n");
+  buff->rank=(uint32_t)luaL_checkinteger(L, -1);
+  lua_pop(L, 1);
+  // get dimension
+  lua_getfield(L, narg, "dimensions");
+  if(lua_isnil(L, -1)==1) luaL_error(L, "Errorr reading tensor. Field dimensions must be present\n");
+  buff->dimensions=luaL_checkarray_unit32_t(L, -1, &rank);
+  if(rank!=buff->rank) luaL_error(L, "Errorr reading tensor. Field dimensions must be a list of rank = %d positive integers\n",buff->rank);
+  lua_pop(L, 1);
+  // get variant
+  lua_getfield(L, narg, "variant");
+  if(lua_isnil(L, -1)==1) luaL_error(L, "Errorr reading tensor. Field variant must be present\n");
+  buff->variant=luaL_checkarray_bool(L, -1, &rank);
+  if(rank!=buff->rank) luaL_error(L, "Errorr reading tensor. Field variant must be a list of rank = %d booleans\n",buff->rank);
+  lua_pop(L, 1);
+  // init data container
+  InitCompactTensor(buff);
+  buff->OnLuaStack = false;
+  // get name
+  lua_getfield(L, narg, "name");
+  if(lua_isnil(L, -1)==1)
+  {
+    // no name nothing to do as the name is set to Tensor in the function InitCompactTensor
+  }
+  else
+  {
+    if(lua_isstring(L,-1)==0)
+    {
+      luaL_error(L, "Error reading tensor. Field name should be a string\n");
+    }
+    name = lua_tolstring(L, -1, NULL);
+    free(buff->Name);
+    buff->Name=(char*)malloc((strlen(name)+1)*sizeof(char));
+    strcpy(buff->Name, name);
+  }
+  lua_pop(L,1);
+  // get data
+  i=0;
+  luaL_checkTableOfTables_complex16(L, narg, buff->dimensions, buff->V, &i);
+  for(i=0;i<buff->N;i++)
+  {
+    if(buff->V[i].Im!=0)
+    {
+      makereal=false;
+      break;
+    }
+  }
+  if(makereal==true)
+  {
+    MakeCompactComplexTensorReal(buff);
+  }
+  return buff;
+}
+
 
 
 MatrixType* luaL_checkMatrix(lua_State *L, int narg)
@@ -2086,6 +2246,28 @@ void LuaPushArray_uint32_t(lua_State *L, uint32_t const * const val, int const N
   }
 }
 
+void LuaPushArray_bool(lua_State *L, bool const * const val, int const N)
+{
+  uint32_t i;
+  lua_createtable(L, N, 0);
+  for(i=0;i<N;i++)
+  {
+    if(val[i]==true)
+    {
+      lua_pushboolean(L,1);
+    }
+    else
+    {
+      lua_pushboolean(L,0);
+    }
+    lua_rawseti(L, -2, i+1);
+  }
+}
+
+
+
+
+
 void LuaPushArray_Complex16(lua_State *L, Complex16 const * const val, int const N)
 {
   uint32_t i;
@@ -2257,6 +2439,63 @@ void LuaPushTable_CompactMatrixType(lua_State* L, CompactMatrixType const * cons
   /* set metatable */
   lua_getglobal(L, "MatrixMeta");
   lua_setmetatable(L, -2);
+}
+
+
+void LuaPushTable_CompactTensorType(lua_State* L, CompactTensorType const * const M)
+{
+  int *indices = (int *)calloc(M->rank, sizeof(int));
+  int i,j;
+  Complex16 *res;
+  // loop over all ellements
+  for(i=0;i<M->N;i++)
+  {
+    // if one of the indices is zero we push a new table to the stack
+    for(j=M->rank-1;j>=0;j--)
+    {
+      if(indices[j]!=0)break;
+      lua_createtable(L,M->dimensions[j],0);
+    }
+    // push the element
+    if(M->QComplex)
+    {
+      if(M->V[i].Im==0)
+      {
+        lua_pushnumber(L, M->V[i].Re);
+      }
+      else
+      {
+        res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
+        res->Re = M->V[i].Re;
+        res->Im = M->V[i].Im;
+        luaL_setmetatable(L, "Complex_Type");
+      }
+    }
+    else
+    {
+      lua_pushnumber(L, M->VRe[i]);
+    };
+    lua_rawseti(L, -2, indices[M->rank-1]+1);
+    // update the indices and close the table when needed
+    for(j=M->rank-1;j>=0;j--)
+    {
+      indices[j]++;
+      if(indices[j] < M->dimensions[j]) break;
+      indices[j]=0;
+      if(j!=0) lua_rawseti(L, -2, indices[j-1]+1);
+    }
+  }
+  lua_pushnumber(L, M->rank);
+  lua_setfield(L,-2,"rank");
+  lua_pushstring(L, M->Name);
+  lua_setfield(L,-2,"name");
+  LuaPushArray_uint32_t(L, M->dimensions, M->rank);
+  lua_setfield(L,-2,"dimensions");
+  LuaPushArray_bool(L, M->variant, M->rank);
+  lua_setfield(L,-2,"variant");
+  lua_getglobal(L, "TensorMeta");
+  lua_setmetatable(L, -2);
+  free(indices);
 }
 
 void LuaPushTable_TriDiagonalMatrixType(lua_State* L, TriDiagonalMatrixType const * const M)

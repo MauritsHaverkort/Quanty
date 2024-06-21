@@ -33,6 +33,7 @@
 #include "Wavefunction.cpp"
 #include "Spectra.cpp"
 #include "Matrix.cpp"
+#include "Tensor.cpp"
 #include "TightBinding.cpp"
 #include "ResponseFunction.cpp"
 //#include "Plot.cpp"

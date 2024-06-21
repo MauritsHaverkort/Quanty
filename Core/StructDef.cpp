@@ -367,6 +367,33 @@ typedef struct CompactMatrixType
 }
 CompactMatrixType;
 
+/*
+ *   element (i,j,k,l,...) is found at position [((((i*Nj) + j)*Nk + k )*Nl + l)*...
+ *   with Ni=dimension[0], Nj=dimension[1], ...
+ *   and i in [0,Ni-1], j in [0,Nj-1] etc.
+ *   varant relates to the question if the rank is co or contra variant, i.e. refers to creation or annihilation operators
+ */
+typedef struct CompactTensorType
+{
+  char *Name;
+  uint32_t rank;
+  uint32_t *dimensions;    // vector of length rank determining the dimension of each rank
+  uint32_t N;              // dimension[0]*dimension[1]*...*dimension[rank-1]
+  bool     *variant;       // true covariant / creation -- false contra variant annihilation
+  uint32_t QComplex;
+  union
+  {
+    double *VRe;
+    Complex16 *V;
+  };
+  bool   OnLuaStack;       // if set to true a call to free will not relase the data as this is done by lua
+}
+CompactTensorType;
+
+
+
+
+
 typedef struct CompactVectorType
 {
   uint32_t Ni;                  /* Length of vector */
@@ -715,6 +742,8 @@ BlockTriDiagonalMatrixType;
  *
  *   matrix k can be found at position [k*BlockSize*BlockSize]
  *   element [i,j] of matrix k can be found at position [k*BlockSize*BlockSize+i*BlockSize+j]
+ *
+ *  G(w) = A0 + B0^* ( 1 / ( w - A1 - \sum_i ( B_i 1 / ( w - A_{i+1} ) . B_i^+ ) ) ) . B0^T
  */
 typedef struct BlockAndersonMatrixType
 {

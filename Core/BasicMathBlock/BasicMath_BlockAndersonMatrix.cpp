@@ -162,3 +162,32 @@ uint32_t CopyBlockAndersonMatrix(BlockAndersonMatrixType A, BlockAndersonMatrixT
   }
   return 0;
 }
+
+/*   
+ *  The Green's function representation on an Anderson matrix type is defined as
+ *  G(w) = A0 + B0^* ( 1 / ( w - A1 - \sum_i ( B_i 1 / ( w - A_{i+1} ) . B_i^+ ) ) ) . B0^T
+ *
+ *  if A0=0 the inverse is
+ *  (B0^T)^-1 . ( w - A1 - \sum_i ( B_i 1 / ( w - A_{i+1} ) . B_i^+ ) ) . (B0^*)^-1
+ *
+ *  For Block list of poles we now need to transform the matrix A_{i+1} to its eigenbases and split to NBlock different matrices
+ *
+ *  Take the matrix T_{i+1} as the eigenvectors of A_{i+1} such that
+ *  DiagonalMatrix({ a^{i+1}_0, a^{i+1}_1, ..., a^{i+1}_{BlockSize-1} }) = T_{i+1}^* . A_{i+1} . T_{i+1}^T
+ *
+ */
+int BlockAndersonMatrixInverseToListOfPoles(BlockAndersonMatrixType *A, BlockListOfPoles *B)
+{
+  int i;
+  // we assume a0=0 and b0=1
+  B->N=Max(0,-1+A->N);
+  B->QComplex=A->QComplex;
+  B->BlockSize=A->BlockSize;
+  if(InitBlockListOfPoles(B)) {printf("InitBlockListOfPoles failed in CopyBlockListOfPoles\n");return 1;}
+  strcpy(B->Name, A->Name);
+  
+  
+  
+  
+  return 0;
+}

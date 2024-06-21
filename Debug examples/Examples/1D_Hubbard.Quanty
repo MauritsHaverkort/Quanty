@@ -29,14 +29,7 @@ print(Hamiltonian)
 print(xpos)
 print(kvec)
 
-strdn = ""
-strup = ""
-for i=1,NCell do
-  strdn = strdn .. "10"
-  strup = strup .. "01"
-end
 
-StartRestrictions = {NF, NB,  {strdn,Occdn,Occdn}, {strup,Occup,Occup}}
 
 psi = Eigensystem(Hamiltonian,StartRestrictions,1)
 

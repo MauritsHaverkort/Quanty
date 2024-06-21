@@ -33,6 +33,7 @@
 #include "BasicMath_VectorLinearAlgabra.cpp"
 #include "BasicMath_MatrixVector.cpp"
 #include "BasicMath_CompactMatrixVector.cpp"
+#include "BasicMath_CompactTensor.cpp"
 #include "BasicMath_SparseMatrixVector.cpp"
 #include "BasicMath_TriDiagonalMatrixVector.cpp"
 #include "BasicMath_DoubleTriDiagonalMatrixVector.cpp"

@@ -239,3 +239,12 @@ ResponsefunctionType *ConvertResponseFunction(ResponsefunctionType *M, const cha
   printf("ERROR: unrecognized type in response function\n");
   return NULL;
 }
+
+int CalculateSelfEnergy(ResponsefunctionType *G0, ResponsefunctionType *G, ResponsefunctionType *Sigma)
+{
+  ResponsefunctionType *G0And = ConvertResponseFunction(G0, 'a',0,0);
+  ResponsefunctionType *GAnd  = ConvertResponseFunction(G,  'a',0,0);
+  
+  
+  return 0;
+}

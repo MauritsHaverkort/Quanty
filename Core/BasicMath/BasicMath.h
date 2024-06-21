@@ -7,6 +7,7 @@
 #include "BasicMath_VectorLinearAlgabra.h"
 #include "BasicMath_MatrixVector.h"
 #include "BasicMath_CompactMatrixVector.h"
+#include "BasicMath_CompactTensor.h"
 #include "BasicMath_SparseMatrixVector.h"
 #include "BasicMath_TriDiagonalMatrixVector.h"
 #include "BasicMath_DoubleTriDiagonalMatrixVector.h"

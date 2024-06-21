@@ -89,9 +89,10 @@ using std::vector;
 #include "../LuaInterface/BraKet.h"
 #include "../LuaInterface/ComplexHeader.h"
 #include "../LuaInterface/Matrix.h"
+#include "../LuaInterface/Tensor.h"
 #include "../LuaInterface/Operator.h"
-//#include "../LuaInterface/Plot.h"
-//#include "../LuaInterface/PostScript.h"
+//#include "../LuaInterface/Plot.h"         // moved to Plot directory
+//#include "../LuaInterface/PostScript.h"   // moved to Plot directoy
 #include "../LuaInterface/ResponseFunction.h"
 #include "../LuaInterface/Spectra.h"
 #include "../LuaInterface/TightBinding.h"
@@ -101,7 +102,7 @@ using std::vector;
 #include "../LuaInterface/lua_extensions/TableToArray.h"
 #include "../LuaInterface/lua_extensions/get_put.h"
 #include "../LuaInterface/lua_extensions/tools.h"
-// #include "../LuaInterface/main.h"
+// #include "../LuaInterface/main.h"      // moved here
 #include "../LuaInterface/ssp.h"
 #include "../LuaInterface/units.h"
 
