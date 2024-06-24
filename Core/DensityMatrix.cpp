@@ -1,7 +1,8 @@
 /*
- *  Calculate the density matrix of a wave-function
+ *  Calculate the one particle density matrix of a wave-function
  *  On input psi contains a wave-function and Rho points to a not allocated matrix
  *  On excite Rho contains an psi.NFermion + psi.NBoson by psi.NFermion + psi.NBoson matrix
+ *  < psi | a^dag_t` a_t | psi >
  */
 uint32_t CalculateDensityMatrix(MatrixType * const Rho, const WaveFunctionType psi)
 {
@@ -84,6 +85,98 @@ uint32_t CalculateDensityMatrix(MatrixType * const Rho, const WaveFunctionType p
   }
   return 0;
 }
+
+
+/*
+ *  Calculate the density matrix of a wave-function for a selected number of particles
+ *  The total number of particles is given by Nparticles
+ *  The index of these particles is given by the vector jindex
+ *  On input psi contains a wave-function and Rho points to a not allocated matrix
+ *  On excite Rho contains an Nparticles by Nparticles matrix
+ */
+uint32_t CalculatePartialDensityMatrix(MatrixType * const Rho, const WaveFunctionType psi, const uint32_t Nparticles, const uint16_t * const jindex)
+{
+  uint32_t i, j;
+  OperatorType O;
+  Rho->QComplex = psi.QComplex;
+  Rho->Ni = Nparticles;
+  Rho->Nj = Nparticles;
+  if (InitMatrix(Rho))
+  {
+    printf("InitMatrix failed in CalculateDensityMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
+  strcpy(O.Name, "Calc. Den. Mat. Int. Opp. ");
+  strcpy(Rho->Name, "Density Matrix.");
+  O.QComplex = 0;
+  O.NFermion = psi.NFermion;
+  O.NBoson = psi.NBoson;
+  O.NWord = psi.NWord;
+  O.MaxLength = 2;
+  O.Res.N=0;
+  O.l = (OperatorFixedLengthType*)malloc(3 * sizeof(OperatorFixedLengthType));
+  if (O.l == NULL)
+  {
+    printf("alloc of O.l failed in CalculateDensityMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
+  O.l[0].N = 0;
+  O.l[0].NBitsKey = 0;
+  O.l[0].NAloc = 0;
+  O.l[0].QComplex = 0;
+  O.l[1].N = 0;
+  O.l[1].NBitsKey = 0;
+  O.l[1].NAloc = 0;
+  O.l[1].QComplex = 0;
+  O.l[2].N = 1;
+  O.l[2].NBitsKey = 0;
+  O.l[2].NAloc = 1;
+  O.l[2].QComplex = 0;
+  O.l[2].VRe = (double*)malloc(sizeof(double));
+  O.l[2].VRe[0] = 1;
+  if (O.l[2].VRe == NULL)
+  {
+    printf("alloc of O.l[2].VRe failed in CalculateDensityMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
+  O.l[2].o = (uint16_t*)malloc(2 * sizeof(uint16_t));
+  if (O.l[2].o == NULL)
+  {
+    printf("alloc of O.l[2].o failed in CalculateDensityMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
+  if (psi.QComplex)
+  {
+    for (i = 0; i < Nparticles; i++)
+    {
+      O.l[2].o[1] = (jindex[i] | CrAnMask);
+      for (j = 0; j < Nparticles; j++)
+      {
+        O.l[2].o[0] = jindex[j];
+        PsiOperatorPsiRC(O, psi, &(Rho->VRe[i][j]), &(Rho->VIm[i][j]));
+      }
+    }
+  }
+  else
+  {
+    for (i = 0; i < Nparticles; i++)
+    {
+      O.l[2].o[1] = (jindex[i] | CrAnMask);
+      for (j = 0; j < Nparticles; j++)
+      {
+        O.l[2].o[0] = jindex[j];
+        PsiOperatorPsiRR(O, psi, &(Rho->VRe[i][j]));
+      }
+    }
+  }
+  return 0;
+}
+
+
 
 /*  Calculate the density matrix of a set of wave-functions
  *  On input psi contains a wave-function and Rho is a pointer to an array of NPsi*NPsi not allocated matrices
@@ -188,6 +281,275 @@ uint32_t CalculateDensityMatrixWithOffDiagonals(MatrixType * const Rho, uint32_t
   }
   return CalculatePartialDensityMatrixWithOffDiagonals(Rho,NPsi,psi,psi[0].NFermion+psi[0].NBoson,FermionIncluded);
 }
+
+/*
+ *  Calculate the two particle density matrix of a wave-function
+ *  On input psi contains a wave-function or a array of wave functions and Rho points to a not initiallized tensor or an array of wave functions
+ *  On excite Rho[i] contains a rank 4 tensor with each rank of dimension psi.NFermion + psi.NBoson or NFermionIncluded
+ *  < psi | a^dag_t``` a^dag_t`` a_t` a_t | psi >
+ */
+uint32_t CalculateTwoParticleDensityMatrix(CompactTensorType * const Rho, const WaveFunctionType * const psi)
+{
+  uint32_t NFermionIncluded = psi->NFermion+psi->NBoson;
+  uint16_t FermionIncluded[NFermionIncluded];
+  int i;
+  for(i=0;i<NFermionIncluded;i++)
+  {
+    FermionIncluded[i]=i;
+  }
+  return CalculateTwoParticleReducedDensityMatrix(Rho, psi, NFermionIncluded, FermionIncluded);
+}
+uint32_t CalculateTwoParticleReducedDensityMatrix(CompactTensorType * const Rho, const WaveFunctionType * const psi, uint32_t const Nparticles, uint16_t const * jindex)
+{
+  uint32_t i, j,k,l,ijkl;
+  OperatorType O;
+  Rho->QComplex = psi->QComplex;
+  Rho->N = Nparticles*Nparticles*Nparticles*Nparticles;
+  Rho->rank=4;
+  Rho->dimensions = (uint32_t*)malloc(4*sizeof(uint32_t));
+  Rho->dimensions[0]=Nparticles; Rho->dimensions[1]=Nparticles; Rho->dimensions[2]=Nparticles; Rho->dimensions[3]=Nparticles;
+  Rho->variant = (bool*)malloc(4*sizeof(bool));
+  Rho->variant[0] = true; Rho->variant[1] = true; Rho->variant[2] = false; Rho->variant[3] = false;
+  if (InitCompactTensor(Rho))
+  {
+    printf("InitCompactTensor failed in CalculateTwoParticleReducedDensityMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
+  strcpy(O.Name, "Calc. Den. Mat. Int. Opp. ");
+  strcpy(Rho->Name, "Two Particle Density Matrix.");
+  O.QComplex = 0;
+  O.NFermion = psi->NFermion;
+  O.NBoson = psi->NBoson;
+  O.NWord = psi->NWord;
+  O.MaxLength = 4;
+  O.Res.N=0;
+  O.l = (OperatorFixedLengthType*)malloc(5 * sizeof(OperatorFixedLengthType));
+  if (O.l == NULL)
+  {
+    printf("alloc of O.l failed in CalculateTwoParticleReducedDensityMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
+  O.l[0].N = 0;
+  O.l[0].NBitsKey = 0;
+  O.l[0].NAloc = 0;
+  O.l[0].QComplex = 0;
+  O.l[1].N = 0;
+  O.l[1].NBitsKey = 0;
+  O.l[1].NAloc = 0;
+  O.l[1].QComplex = 0;
+  O.l[2].N = 0;
+  O.l[2].NBitsKey = 0;
+  O.l[2].NAloc = 0;
+  O.l[2].QComplex = 0;
+  O.l[3].N = 0;
+  O.l[3].NBitsKey = 0;
+  O.l[3].NAloc = 0;
+  O.l[3].QComplex = 0;
+  O.l[4].N = 1;
+  O.l[4].NBitsKey = 0;
+  O.l[4].NAloc = 1;
+  O.l[4].QComplex = 0;
+  O.l[4].VRe = (double*)malloc(sizeof(double));
+  O.l[4].VRe[0] = 1;
+  if (O.l[4].VRe == NULL)
+  {
+    printf("alloc of O.l[4].VRe failed in CalculateTwoParticleReducedDensityMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
+  O.l[4].o = (uint16_t*)malloc(4 * sizeof(uint16_t));
+  if (O.l[4].o == NULL)
+  {
+    printf("alloc of O.l[4].o failed in CalculateTwoParticleReducedDensityMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
+  ijkl=0;
+  if (psi->QComplex)
+  {
+    for (i = 0; i < Nparticles; i++)
+    {
+      O.l[4].o[3] = (jindex[i] | CrAnMask);
+      for (j = 0; j < Nparticles; j++)
+      {
+        O.l[4].o[2] = (jindex[j] | CrAnMask);
+        for (k = 0; k < Nparticles; k++)
+        {
+          O.l[4].o[1] = jindex[k];
+          for (l = 0; l < Nparticles; l++)
+          {
+            O.l[4].o[0] = jindex[l];
+            PsiOperatorPsiRC(O, *psi, &(Rho->V[ijkl].Re), &(Rho->V[ijkl].Im));
+            ijkl++;
+          }
+        }
+      }
+    }
+  }
+  else
+  {
+    for (i = 0; i < Nparticles; i++)
+    {
+      O.l[4].o[3] = (jindex[i] | CrAnMask);
+      for (j = 0; j < Nparticles; j++)
+      {
+        O.l[4].o[2] = (jindex[j] | CrAnMask);
+        for (k = 0; k < Nparticles; k++)
+        {
+          O.l[4].o[1] = jindex[k];
+          for (l = 0; l < Nparticles; l++)
+          {
+            O.l[4].o[0] = jindex[l];
+            PsiOperatorPsiRR(O, *psi, &(Rho->VRe[ijkl]));
+            ijkl++;
+          }
+        }
+      }
+    }
+  }
+  return 0;
+}
+uint32_t CalculateTwoParticleDensityMatrixWithOffDiagonals(CompactTensorType * const Rho, uint32_t const NPsi, const WaveFunctionType * const psi)
+{
+  uint32_t NFermionIncluded = psi->NFermion+psi->NBoson;
+  uint16_t FermionIncluded[NFermionIncluded];
+  int i;
+  for(i=0;i<NFermionIncluded;i++)
+  {
+    FermionIncluded[i]=i;
+  }
+  return CalculateTwoParticleReducedDensityMatrixWithOffDiagonals(Rho, NPsi, psi, NFermionIncluded, FermionIncluded);
+
+}
+uint32_t CalculateTwoParticleReducedDensityMatrixWithOffDiagonals(CompactTensorType * const Rho, uint32_t const NPsi, const WaveFunctionType * const psi, uint32_t const Nparticles, uint16_t const * jindex)
+{
+  uint32_t i,j,k,l,ipsi,jpsi,ijkl;
+  MatrixType aDaga;
+  OperatorType O;
+  /* init matrix aDaga and init all elements of array Rho*/
+  aDaga.QComplex=0;
+  for(ipsi=0;ipsi<NPsi;ipsi++)
+  {
+    for(jpsi=0;jpsi<NPsi;jpsi++)
+    {
+      Rho[jpsi+NPsi*ipsi].QComplex = psi[0].QComplex;
+      Rho[jpsi+NPsi*ipsi].N = Nparticles*Nparticles*Nparticles*Nparticles;
+      Rho[jpsi+NPsi*ipsi].rank=4;
+      Rho[jpsi+NPsi*ipsi].dimensions = (uint32_t*)malloc(4*sizeof(uint32_t));
+      Rho[jpsi+NPsi*ipsi].dimensions[0]=Nparticles; Rho[jpsi+NPsi*ipsi].dimensions[1]=Nparticles; Rho[jpsi+NPsi*ipsi].dimensions[2]=Nparticles; Rho[jpsi+NPsi*ipsi].dimensions[3]=Nparticles;
+      Rho[jpsi+NPsi*ipsi].variant = (bool*)malloc(4*sizeof(bool));
+      Rho[jpsi+NPsi*ipsi].variant[0] = true; Rho[jpsi+NPsi*ipsi].variant[1] = true; Rho[jpsi+NPsi*ipsi].variant[2] = false; Rho[jpsi+NPsi*ipsi].variant[3] = false;
+      if (InitCompactTensor(&(Rho[jpsi+NPsi*ipsi])))
+      {
+        printf("InitCompactTensor failed in CalculateTwoParticleReducedDensityMatrix\n");
+        fflush(stdout);
+        return 1;
+      }
+      sprintf(Rho[jpsi+NPsi*ipsi].Name, "Two Particle Density Matrix <%d|a^+a^+aa|%d>",ipsi,jpsi);
+      aDaga.QComplex += Rho[jpsi+NPsi*ipsi].QComplex;
+    }
+  }
+  aDaga.Ni=NPsi;
+  aDaga.Nj=NPsi;
+  InitMatrix(&aDaga);
+  /* init number operatro */
+  strcpy(O.Name, "Calc. Den. Mat. Int. Opp. ");
+  O.QComplex = 0;
+  O.NFermion = psi[0].NFermion;
+  O.NBoson = psi[0].NBoson;
+  O.NWord = psi[0].NWord;
+  O.MaxLength = 4;
+  O.Res.N=0;
+  O.l = (OperatorFixedLengthType*)malloc(5 * sizeof(OperatorFixedLengthType));
+  if (O.l == NULL)
+  {
+    printf("alloc of O.l failed in CalculateDensityMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
+  O.l[0].N = 0;
+  O.l[0].NBitsKey = 0;
+  O.l[0].NAloc = 0;
+  O.l[0].QComplex = 0;
+  O.l[1].N = 0;
+  O.l[1].NBitsKey = 0;
+  O.l[1].NAloc = 0;
+  O.l[1].QComplex = 0;
+  O.l[2].N = 0;
+  O.l[2].NBitsKey = 0;
+  O.l[2].NAloc = 0;
+  O.l[2].QComplex = 0;
+  O.l[3].N = 0;
+  O.l[3].NBitsKey = 0;
+  O.l[3].NAloc = 0;
+  O.l[3].QComplex = 0;
+  O.l[4].N = 1;
+  O.l[4].NBitsKey = 0;
+  O.l[4].NAloc = 1;
+  O.l[4].QComplex = 0;
+  O.l[4].VRe = (double*)malloc(sizeof(double));
+  O.l[4].VRe[0] = 1;
+  if (O.l[4].VRe == NULL)
+  {
+    printf("alloc of O.l[2].VRe failed in CalculateDensityMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
+  O.l[4].o = (uint16_t*)malloc(4 * sizeof(uint16_t));
+  if (O.l[4].o == NULL)
+  {
+    printf("alloc of O.l[4].o failed in CalculateDensityMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
+  /* loop over all included fermions */
+  ijkl=0;
+  for(i=0;i<Nparticles;i++)
+  {
+    O.l[4].o[3] = (jindex[i] | CrAnMask);
+    for(j=0;j<Nparticles;j++)
+    {
+      O.l[4].o[2] = (jindex[j] | CrAnMask);
+      for(k=0;k<Nparticles;k++)
+      {
+        O.l[4].o[1] = jindex[k];
+        for(l=0;l<Nparticles;l++)
+        {
+          O.l[4].o[0] = jindex[l];
+          PsiOperatorPsiMatrix(O, psi, &aDaga);
+          for(ipsi=0;i<NPsi;i++)
+          {
+            for(jpsi=0;j<NPsi;j++)
+            {
+              if(Rho[j+NPsi*i].QComplex)
+              {
+                Rho[jpsi+NPsi*ipsi].V[ijkl].Re=aDaga.VRe[ipsi][jpsi];
+                Rho[jpsi+NPsi*ipsi].V[ijkl].Im=aDaga.VIm[ipsi][jpsi];
+              }
+              else
+              {
+                Rho[jpsi+NPsi*ipsi].VRe[ijkl]=aDaga.VRe[ipsi][jpsi];
+              }
+              ijkl++;
+            }
+          }
+        }
+      }
+    }
+  }
+  FreeMatrix(&aDaga);
+  return 0;
+}
+
+
+
+
+
+
+
+
 
 
 /*
@@ -552,96 +914,6 @@ uint32_t CalculateSpinCorrelationMatrix(MatrixType * const Rho, const WaveFuncti
         printf("B\n");
         fflush(stdout);*/
         PsiOperatorPsiRR(O, psi, &(Rho->VRe[i / 2][j / 2]));
-      }
-    }
-  }
-  return 0;
-}
-
-
-/*
- *  Calculate the density matrix of a wave-function for a selected number of particles
- *  The total number of particles is given by Nparticles
- *  The index of these particles is given by the vector jindex
- *  On input psi contains a wave-function and Rho points to a not allocated matrix
- *  On excite Rho contains an Nparticles by Nparticles matrix
- */
-uint32_t CalculatePartialDensityMatrix(MatrixType * const Rho, const WaveFunctionType psi, const uint32_t Nparticles, const uint16_t * const jindex)
-{
-  uint32_t i, j;
-  OperatorType O;
-  Rho->QComplex = psi.QComplex;
-  Rho->Ni = Nparticles;
-  Rho->Nj = Nparticles;
-  if (InitMatrix(Rho))
-  {
-    printf("InitMatrix failed in CalculateDensityMatrix\n");
-    fflush(stdout);
-    return 1;
-  }
-  strcpy(O.Name, "Calc. Den. Mat. Int. Opp. ");
-  strcpy(Rho->Name, "Density Matrix.");
-  O.QComplex = 0;
-  O.NFermion = psi.NFermion;
-  O.NBoson = psi.NBoson;
-  O.NWord = psi.NWord;
-  O.MaxLength = 2;
-  O.Res.N=0;
-  O.l = (OperatorFixedLengthType*)malloc(3 * sizeof(OperatorFixedLengthType));
-  if (O.l == NULL)
-  {
-    printf("alloc of O.l failed in CalculateDensityMatrix\n");
-    fflush(stdout);
-    return 1;
-  }
-  O.l[0].N = 0;
-  O.l[0].NBitsKey = 0;
-  O.l[0].NAloc = 0;
-  O.l[0].QComplex = 0;
-  O.l[1].N = 0;
-  O.l[1].NBitsKey = 0;
-  O.l[1].NAloc = 0;
-  O.l[1].QComplex = 0;
-  O.l[2].N = 1;
-  O.l[2].NBitsKey = 0;
-  O.l[2].NAloc = 1;
-  O.l[2].QComplex = 0;
-  O.l[2].VRe = (double*)malloc(sizeof(double));
-  O.l[2].VRe[0] = 1;
-  if (O.l[2].VRe == NULL)
-  {
-    printf("alloc of O.l[2].VRe failed in CalculateDensityMatrix\n");
-    fflush(stdout);
-    return 1;
-  }
-  O.l[2].o = (uint16_t*)malloc(2 * sizeof(uint16_t));
-  if (O.l[2].o == NULL)
-  {
-    printf("alloc of O.l[2].o failed in CalculateDensityMatrix\n");
-    fflush(stdout);
-    return 1;
-  }
-  if (psi.QComplex)
-  {
-    for (i = 0; i < Nparticles; i++)
-    {
-      O.l[2].o[1] = (jindex[i] | CrAnMask);
-      for (j = 0; j < Nparticles; j++)
-      {
-        O.l[2].o[0] = jindex[j];
-        PsiOperatorPsiRC(O, psi, &(Rho->VRe[i][j]), &(Rho->VIm[i][j]));
-      }
-    }
-  }
-  else
-  {
-    for (i = 0; i < Nparticles; i++)
-    {
-      O.l[2].o[1] = (jindex[i] | CrAnMask);
-      for (j = 0; j < Nparticles; j++)
-      {
-        O.l[2].o[0] = jindex[j];
-        PsiOperatorPsiRR(O, psi, &(Rho->VRe[i][j]));
       }
     }
   }

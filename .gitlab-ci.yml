@@ -21,3 +21,11 @@ test-job1:
   - ./Quanty.exe "Debug examples/Reference/Functions/BlockBandDiagonalize.Quanty"
   dependencies:
   - build-job
+
+test-job-functions-DensityMatrix:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/DensityMatrix.Quanty"
+  dependencies:
+  - build-job

@@ -1,6 +1,10 @@
 uint32_t CalculateDensityMatrix(MatrixType * const Rho, const WaveFunctionType psi);
 uint32_t CalculatePartialDensityMatrixWithOffDiagonals(MatrixType * const Rho, uint32_t const NPsi, const WaveFunctionType * const psi, uint32_t const NFermionIncluded, uint16_t const * FermionIncluded);
 uint32_t CalculateDensityMatrixWithOffDiagonals(MatrixType * const Rho, uint32_t const NPsi, const WaveFunctionType * const psi);
+uint32_t CalculateTwoParticleDensityMatrix(CompactTensorType * const Rho, const WaveFunctionType * const psi);
+uint32_t CalculateTwoParticleReducedDensityMatrix(CompactTensorType * const Rho, const WaveFunctionType * const psi, uint32_t const NFermionIncluded, uint16_t const * FermionIncluded);
+uint32_t CalculateTwoParticleDensityMatrixWithOffDiagonals(CompactTensorType * const Rho, uint32_t const NPsi, const WaveFunctionType * const psi);
+uint32_t CalculateTwoParticleReducedDensityMatrixWithOffDiagonals(CompactTensorType * const Rho, uint32_t const NPsi, const WaveFunctionType * const psi, uint32_t const NFermionIncluded, uint16_t const * FermionIncluded);
 uint32_t CalculateDensityCorrelationMatrix(MatrixType * const Rho, const WaveFunctionType psi);
 uint32_t CalculatePartialDensityCorrelationTensor(Complex16 * Rho, const WaveFunctionType psi, uint32_t const NFermionIncluded, uint16_t const * FermionIncluded);
 uint32_t CalculateSpinCorrelationMatrix(MatrixType * const Rho, const WaveFunctionType psi);
