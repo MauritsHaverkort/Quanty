@@ -1242,7 +1242,7 @@ static int LuaMatrixToString(lua_State * L)
 				else
 					tmpStr += " +";
 				tmpStr += numberToStringMaxWidth(Abs(A->V[j + i * (A->Nj)].Im), colWidth - (int)tmpStr.length() - 1);
-				sstream << tmpStr << " i";
+				sstream << tmpStr << " I";
 				sstream << blankFill(colWidth, tmpStr.length());
 			} else
 			{
