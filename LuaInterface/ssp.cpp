@@ -3566,20 +3566,6 @@ static int LuaEigensystem(lua_State * L)
     if(Options.DeterminantRestrictions.N!=0)Options.restrictions=true;
     Options.Settings.DenseBorder = Max(Options.Settings.DenseBorder,Npsi);
   }
-  if(QStartRestrictions)
-  {
-    Npsi=(uint32_t)luaL_checkunsigned(L, 3);
-    // allocate psi
-    if(Npsi==1)
-    {
-      psi = (WaveFunctionType*) lua_newuserdata(L, sizeof(WaveFunctionType));
-      luaL_setmetatable(L, "Wavefunction_Type");
-    }
-    else
-    {
-      psi= (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
-    }
-  }
   /* test if operator is Hermitian */
   switch(QOperatorHermitian(*Opp, Options.Settings.zero))
   {
@@ -3639,8 +3625,23 @@ static int LuaEigensystem(lua_State * L)
     }
     case 0 :
     {
-      luaL_error(L, "Eigensystem called with an operator that is not Hermitian\n");
+      return luaL_error(L, "Eigensystem called with an operator that is not Hermitian\n");
       break;
+    }
+  }
+  /* create the wave functions on the lua stack if they do not yet exist */
+  if(QStartRestrictions)
+  {
+    Npsi=(uint32_t)luaL_checkunsigned(L, 3);
+    // allocate psi
+    if(Npsi==1)
+    {
+      psi = (WaveFunctionType*) lua_newuserdata(L, sizeof(WaveFunctionType));
+      luaL_setmetatable(L, "Wavefunction_Type");
+    }
+    else
+    {
+      psi= (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
     }
   }
   /* calculate groundstate */
