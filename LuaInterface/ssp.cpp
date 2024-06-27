@@ -5013,6 +5013,50 @@ static int LuaPrintExpectationValues(lua_State * L)
 	return 0;
 }
 
+
+
+static int LuaTensorProduct(lua_State *L)
+{
+  WaveFunctionType psi1, psi2, psiout;
+  vector<WaveFunctionType> psi1vec, psi2vec;
+  uint32_t len = (uint32_t) lua_gettop(L);
+  if (len != 2) return luaL_error(L, "Error: TensorProduct called with %d arguments, exactly 2 expected.", len);
+  if (luaL_isType(L, 1, psi1) && luaL_isType(L, 2, psi2))
+  {
+    lua_check(L, 1, psi1);
+    lua_check(L, 2, psi2);
+    if (psi1.NBoson != 0 || psi2.NBoson != 0) return luaL_error(L, "One of the Wavefunctions contains bosonic states, this is not yet implemented.");
+    WaveFunctionTensorProduct(psi1, psi2, &psiout);
+    lua_push(L, psiout);
+  }
+  else if (luaL_isType(L, 1, psi1vec) && luaL_isType(L, 2, psi2vec))
+  {
+    lua_check(L, 1, psi1vec);
+    lua_check(L, 2, psi2vec);
+    for (uint i = 0; i < (uint) psi1vec.size(); ++i)
+      if (psi1vec[i].NBoson != 0) return luaL_error(L, "One of the Wavefunctions contains bosonic states, this is not yet implemented.");
+    for (uint i = 0; i < (uint) psi2vec.size(); ++i)
+      if (psi2vec[i].NBoson != 0) return luaL_error(L, "One of the Wavefunctions contains bosonic states, this is not yet implemented.");
+    vector < WaveFunctionType > out(psi1vec.size() * psi2vec.size());
+#pragma omp parallel for
+    for (uint ij = 0; ij < (uint) out.size(); ++ij)
+    {
+      uint i, j;
+      j = ij % (uint) psi2vec.size();
+      i = (ij - j) / (uint) psi2vec.size();
+      WaveFunctionTensorProduct(psi1vec[i], psi2vec[j], &(out[ij]));
+    }
+    lua_push(L, out);
+  }
+  else
+  {
+    return luaL_error(L, "Error: TensorProduct called with unknown or unimplemented type.");
+  }
+  return 1;
+}
+
+
+
 static int LuaRelToNonRelOrbitals(lua_State * L)
 {
 	uint32_t len = (uint32_t) lua_gettop(L);
@@ -5262,6 +5306,7 @@ static const struct luaL_Reg global_functions[] = {
 	{"RelToNonRelOrbitals", LuaRelToNonRelOrbitals},
   {"Rotate", Luarotate},
   {"Statistics",LuaStatistics},
+  {"TensorProduct", LuaTensorProduct},
   {"TimeEnd",LuaTimeEnd},
   {"TimePrint",LuaTimePrint},
   {"TimeSet",LuaTimeSet},

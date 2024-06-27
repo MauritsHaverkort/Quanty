@@ -1,0 +1,30 @@
+--- Define some functions
+
+NF=5
+NB=0
+psi1 = NewWavefunction(NF,NB,{ {"11100",1}, {"11010",2}, {"10110",4}, {"01110",8}, {"11001",16} })
+psi2 = NewWavefunction(NF,NB,{ {"10101",1}, {"01101",2}, {"10011",4}, {"01011",8}, {"00111",16} })
+psi3 = NewWavefunction(NF,NB,{ {"11100",1}, {"10110",2}, {"11001",4}, {"01101",8}, {"01011",16} })
+
+psiList={psi1,psi2,psi3}
+
+psi1.Normalize()
+psi2.Normalize()
+psi12 = TensorProduct(psi1,psi2)
+print(psi12)
+print(psi12*psi12)
+
+
+psiListConf = TensorProduct(psiList,psiList)
+
+print(#psiListConf)
+
+psiList1List = TensorProduct(psi1,psiList)
+
+print(psiList1List)
+
+
+psiList2List = TensorProduct(psiList,psi1)
+
+print(psiList2List)
+

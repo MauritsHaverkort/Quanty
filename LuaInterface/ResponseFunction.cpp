@@ -378,19 +378,7 @@ static int LuaResponseFunctionEigensystem(lua_State *L)
  */
 static int LuaResponseFunctionUnm(lua_State * L)
 {
-  ResponsefunctionType *res, *M;
-  //TODO: this has memory loss
-  M = ConvertBlockMatrix(luaL_checkResponsefunction(L,1), 'l', 0, 0);
-  res = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
-  luaL_setmetatable(L, "ResponseFunction_Type");
-  res->NSuggestedGridPoints = 0;
-  res->type = 'L';
-  res->data = (BlockListOfPoles*)malloc(sizeof(BlockListOfPoles));
-  CopyBlockListOfPoles(*(BlockListOfPoles*)(M->data),res->data);
-  ScaleBlockListOfPoles(res->data, -1);
-  LuaPush_ResponseFunction(L, res);
-
-  return 1;
+  return luaL_error(L, "Responsefunctions can only store physical response functions. We know that Im[G]<=0 for all omega. For -G one would have Im[-G]>=0 and this would thus correspond to an unphisical response function\n");
 }
 
 /*

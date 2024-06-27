@@ -22,10 +22,18 @@ test-job1:
   dependencies:
   - build-job
 
-test-job-functions-DensityMatrix:
+test-job-DensityMatrix:
   stage: test
   script:
   - export OMP_NUM_THREADS=8
   - ./Quanty.exe "TestScripts/DensityMatrix.Quanty"
+  dependencies:
+  - build-job
+
+test-job-TensorProduct:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/TensorProduct.Quanty"
   dependencies:
   - build-job
