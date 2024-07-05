@@ -4338,6 +4338,11 @@ static int LuaOperatorNewCreate(lua_State * L)
   {
     uint32_t NFermion = (uint32_t)luaL_checkunsigned(L, 1);
     uint16_t Crindex = (uint16_t)luaL_checkunsigned(L, 2);
+        // Check if Crindex is larger than NFermion
+    if (Crindex > (NFermion-1))
+    {
+      return luaL_error(L, "Error in LuaOperatorNewCreate, index of the fermion cannot be larger than NFermion-1\n");
+    }
     op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
     CreateOperatorCreate(NFermion, Crindex, op);
     luaL_setmetatable(L, "Operator_Type");
@@ -4380,6 +4385,11 @@ static int LuaOperatorNewAnnihilate(lua_State * L)
   {
     uint32_t NFermion = (uint32_t)luaL_checkunsigned(L, 1);
     uint16_t Crindex = (uint16_t)luaL_checkunsigned(L, 2);
+            // Check if Crindex is larger than NFermion
+    if (Crindex > (NFermion-1))
+    {
+      return luaL_error(L, "Error in LuaOperatorNewAnnihilate, index of the fermion cannot be larger than NFermion-1\n");
+    }
     op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
     CreateOperatorAnnihilate(NFermion, Crindex, op);
     luaL_setmetatable(L, "Operator_Type");
