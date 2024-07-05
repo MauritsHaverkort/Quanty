@@ -1,11 +1,3 @@
-/*
-*   MatrixToSparseMatrix         (MatrixType const M, SparseMatrixType * const U, double const epsilon)          M=U for M[i,j]>epsilon
-*   MatrixToTriDiagonalMatrix    (MatrixType const M, MatrixType *const T, TriDiagonalMatrixType *const H)       M=T H T^{\dag}
-*   MatrixToAndersonMatrix       (MatrixType const M, MatrixType *const T, AndersonMatrixType *const H)          M=T H T^{\dag}
-*   MatrixToBlokTriDiagonalMatrix(MatrixType const M, MatrixType *const T, BlokTriDiagonalMatrixType *const H)   M=T H T^{\dag}
-*   MatrixToBlokAndersonMatrix   (MatrixType const M, MatrixType *const T, BlokAndersonMatrixType *const H)      M=T H T^{\dag}
-*   MatrixToEigensystem          (MatrixType const M, MatrixType *const T, double *val)                          M=T H T^{\dag} with H diagonal and elements val on the diagonal
-*/
 
 
 /****************************************************************************/
@@ -24,6 +16,9 @@ uint32_t AndersonMatrixToMatrix(AndersonMatrixType const M, MatrixType * const M
     printf("Could not initiallize Matrix in AndersonMatrixToMatrix\n");
     return 1;
   };
+  Mfull->mu = M.mu;
+  Mfull->a0 = M.a[0];
+  Mfull->b0 = M.b[0];
   strcpy(Mfull->Name, M.Name);
   for (i = 0; i < M.N; i++)
   {
@@ -33,6 +28,33 @@ uint32_t AndersonMatrixToMatrix(AndersonMatrixType const M, MatrixType * const M
   {
     Mfull->VRe[i][0] = M.b[i];
     Mfull->VRe[0][i] = M.b[i];
+  }
+  return 0;
+}
+
+uint32_t AndersonMatrixToCompactMatrix(AndersonMatrixType * const M, CompactMatrixType * const Mfull)
+{
+  int    i;
+  Mfull->QComplex = 0;
+  Mfull->Ni = M->N;
+  Mfull->Nj = M->N;
+  if (InitCompactMatrix(Mfull))
+  {
+    printf("Could not initiallize CompactMatrix in AndersonMatrixToCompactMatrix\n");
+    return 1;
+  };
+  Mfull->mu = M->mu;
+  Mfull->a0 = M->a[0];
+  Mfull->b0 = M->b[0];
+  strcpy(Mfull->Name, M->Name);
+  for (i = 0; i < M->N; i++)
+  {
+    Mfull->VRe[i * M->N + i] = M->a[i + 1];
+  }
+  for (i = 1; i < M->N; i++)
+  {
+    Mfull->VRe[i * M->N] = M->b[i];
+    Mfull->VRe[       i] = M->b[i];
   }
   return 0;
 }
@@ -111,7 +133,7 @@ uint32_t AndersonMatrixToTriDiagonalMatrixNonOrthogonal(AndersonMatrixType const
 }
 
 /*
- *  M=T.H.T^{\dag}
+ *  M=T.H.T^T
  *  input M defined, H and T not initiallized
  */
 uint32_t AndersonMatrixToTriDiagonalMatrixPlusT(AndersonMatrixType const M, MatrixType * const T, TriDiagonalMatrixType * const H, uint32_t NTriDiag)
@@ -1029,8 +1051,7 @@ uint32_t AndersonMatrixToBADoubleTriDiagonalMatrixTemperature(AndersonMatrixType
 /*
  *  Determine mu such that the occupation of the first state in Eigenfun is equal to Nelec
  */
-uint32_t DetermineMuFromEigensystem(MatrixType const Eigenfun, double const *Eigenval, double const Nelec,
-                                    double const kbT, double *const mu)
+uint32_t DetermineMuFromEigensystem(MatrixType const Eigenfun, double const *Eigenval, double const Nelec, double const kbT, double *const mu)
 {
   uint32_t const maxitter = 30;
   uint32_t i, converged = 0, itter = 0;
@@ -1076,9 +1097,7 @@ uint32_t DetermineMuFromEigensystem(MatrixType const Eigenfun, double const *Eig
 /*
  *
  */
-uint32_t AndersonMatrixToBADoubleTriDiagonalMatrixWrong(AndersonMatrixType const M,
-                                                        BADoubleTriDiagonalMatrixType * const A, uint32_t NTriDiagVal,
-                                                        uint32_t NTriDiagCon, double Ef, double Epsilon)
+uint32_t AndersonMatrixToBADoubleTriDiagonalMatrixWrong(AndersonMatrixType const M,BADoubleTriDiagonalMatrixType * const A, uint32_t NTriDiagVal,uint32_t NTriDiagCon, double Ef, double Epsilon)
 {
   ListOfPoles LP;
   if (AndersonMatrixToListOfPoles(M, &LP))
@@ -1095,14 +1114,6 @@ uint32_t AndersonMatrixToBADoubleTriDiagonalMatrixWrong(AndersonMatrixType const
   strcpy(A->Name, "GBath");
   return 0;
 }
-
-/****************************************************************************/
-/********************         Matrix conversions         ********************/
-/********************         BlokAndersonMatrix To ...  ********************/
-/****************************************************************************/
-
-
-
 
 
 
@@ -1349,8 +1360,7 @@ uint32_t TriDiagonalMatrixToAndersonMatrix(TriDiagonalMatrixType const M, Anders
 }
 
 
-uint32_t TriDiagonalMatrixToAndersonMatrixPlusT(TriDiagonalMatrixType const M, MatrixType * const T,
-                                                AndersonMatrixType * const A)
+uint32_t TriDiagonalMatrixToAndersonMatrixPlusT(TriDiagonalMatrixType const M, MatrixType * const T, AndersonMatrixType * const A)
 {
   TriDiagonalMatrixType Mminor;
   MatrixType Tminor;
@@ -1431,9 +1441,7 @@ uint32_t TriDiagonalMatrixToSecondDoubleTriDiagonalMatrix(TriDiagonalMatrixType 
   return TriDiagonalMatrixToDoubleTriDiagonalMatrix(SecTri, &(A->Dt), Ef, epsilon);
 }
 
-uint32_t TriDiagonalMatrixToDoubleTriDiagonalMatrixPlusT(TriDiagonalMatrixType const M, MatrixType * const T,
-                                                         DoubleTriDiagonalMatrixType * const A, double Ef,
-                                                         double epsilon)
+uint32_t TriDiagonalMatrixToDoubleTriDiagonalMatrixPlusT(TriDiagonalMatrixType const M, MatrixType * const T, DoubleTriDiagonalMatrixType * const A, double Ef,  double epsilon)
 {
   AndersonMatrixType An;
   MatrixType Tone, Ttwo;
@@ -1462,9 +1470,7 @@ uint32_t TriDiagonalMatrixToDoubleTriDiagonalMatrixPlusT(TriDiagonalMatrixType c
 }
 
 
-uint32_t TriDiagonalMatrixToSecondDoubleTriDiagonalMatrixPlusT(TriDiagonalMatrixType const M, MatrixType * const T,
-                                                               SecondDoubleTriDiagonalMatrixType * const A, double Ef,
-                                                               double epsilon)
+uint32_t TriDiagonalMatrixToSecondDoubleTriDiagonalMatrixPlusT(TriDiagonalMatrixType const M, MatrixType * const T,  SecondDoubleTriDiagonalMatrixType * const A, double Ef, double epsilon)
 {
   TriDiagonalMatrixType SecTri;
   if (M.N < 2)
@@ -1503,6 +1509,33 @@ uint32_t TriDiagonalMatrixToMatrix(TriDiagonalMatrixType const M, MatrixType * c
   return 0;
 }
 
+
+uint32_t TriDiagonalMatrixToCompactMatrix(TriDiagonalMatrixType * const M, CompactMatrixType * const A)
+{
+  uint32_t i;
+  A->QComplex = 0;
+  A->Ni = M->N;
+  A->Nj = M->N;
+  if (InitCompactMatrix(A))
+  {
+    printf("InitMatrix failed in TriDiagonalMatrixToMatrix\n");
+    return 1;
+  }
+  A->a0 = M->a[0];
+  A->b0 = M->b[0];
+  A->mu = M->mu;
+  for (i = 1; i < M->N; i++)
+  {
+    A->VRe[(i - 1)*M->N + i - 1] = M->a[i];
+    A->VRe[(i    )*M->N + i - 1] = M->b[i];
+    A->VRe[(i - 1)*M->N + i    ] = M->b[i];
+  }
+  A->VRe[(M->N - 1) * M->N + M->N - 1] = M->a[M->N];
+  return 0;
+}
+
+
+
 /*
  *  Transform a tridiagonal matrix to Natural orbital format using chemical potential Ef / mu with the soft edge given by
  *  the interval Ef-Epsilon to Ef+Epsilon, scaled by ( Epole - (Ef-Epsilon) ) / (2 Epsilon))
@@ -1532,10 +1565,7 @@ uint32_t TriDiagonalMatrixToBADoubleTriDiagonalMatrix(TriDiagonalMatrixType cons
 /*
  *
  */
-uint32_t TriDiagonalMatrixToBADoubleTriDiagonalMatrixOccupation(TriDiagonalMatrixType const M,
-                                                                BADoubleTriDiagonalMatrixType * const A,
-                                                                uint32_t NTriDiagVal, uint32_t NTriDiagCon, double Ef,
-                                                                double Occupation)
+uint32_t TriDiagonalMatrixToBADoubleTriDiagonalMatrixOccupation(TriDiagonalMatrixType const M,BADoubleTriDiagonalMatrixType * const A,uint32_t NTriDiagVal, uint32_t NTriDiagCon, double Ef,double Occupation)
 {
   ListOfPoles LP;
   if (TriDiagonalMatrixToListOfPoles(M, &LP))
@@ -1552,12 +1582,6 @@ uint32_t TriDiagonalMatrixToBADoubleTriDiagonalMatrixOccupation(TriDiagonalMatri
   strcpy(A->Name, M.Name);
   return 0;
 }
-
-/******************************************************************************/
-/********************         Matrix conversions           ********************/
-/********************         BlokTriDiagonalMatrix To ... ********************/
-/******************************************************************************/
-
 
 
 
@@ -1637,6 +1661,56 @@ uint32_t DoubleTriDiagonalMatrixToTriDiagonalMatrix(DoubleTriDiagonalMatrixType 
   return 0;
 }
 
+uint32_t BADoubleTriDiagonalMatrixTypeToCompactMatrix(const BADoubleTriDiagonalMatrixType * const M, CompactMatrixType * const A)
+{
+  uint32_t i,j;
+  A->QComplex = 0;
+  A->Ni = M->val.N+M->con.N+2;
+  A->Nj = M->val.N+M->con.N+2;
+  if (InitCompactMatrix(A))
+  {
+    printf("InitMatrix failed in TriDiagonalMatrixToMatrix\n");
+    return 1;
+  }
+  A->a0 = M->a0;
+  A->b0 = M->b0;
+  A->mu = M->mu;
+  A->VRe[0*A->Nj + 0] = M->acvB;
+  A->VRe[0*A->Nj + 1] = M->acvBA;
+  A->VRe[1*A->Nj + 0] = M->acvBA;
+  A->VRe[1*A->Nj + 1] = M->acvA;
+  
+  A->VRe[0*A->Nj + 2] = M->bvB0;
+  A->VRe[1*A->Nj + 2] = M->bvA0;
+  A->VRe[2*A->Nj + 0] = M->bvB0;
+  A->VRe[2*A->Nj + 1] = M->bvA0;
+  
+  A->VRe[0*A->Nj + M->val.N+2] = M->bcB0;
+  A->VRe[1*A->Nj + M->val.N+2] = M->bcA0;
+  A->VRe[(M->val.N+2)*A->Nj + 0] = M->bcB0;
+  A->VRe[(M->val.N+2)*A->Nj + 1] = M->bcA0;
+  
+  for (i = 1; i < M->val.N; i++)
+  {
+    j=i+2;
+    A->VRe[(j - 1)*A->Nj + j - 1] = M->val.a[i];
+    A->VRe[(j    )*A->Nj + j - 1] = M->val.b[i];
+    A->VRe[(j - 1)*A->Nj + j    ] = M->val.b[i];
+  }
+  A->VRe[(M->val.N +1 ) * A->Nj + M->val.N +1] = M->val.a[M->val.N];
+  
+  for (i = 1; i < M->con.N; i++)
+  {
+    j=i+M->val.N+2;
+    A->VRe[(j - 1)*A->Nj + j - 1] = M->con.a[i];
+    A->VRe[(j    )*A->Nj + j - 1] = M->con.b[i];
+    A->VRe[(j - 1)*A->Nj + j    ] = M->con.b[i];
+  }
+  A->VRe[(M->con.N +M->val.N + 1) * A->Nj + M->con.N + M->val.N +1] = M->con.a[M->con.N];
+  
+  return 0;
+}
+
 uint32_t BADoubleTriDiagonalMatrixTypeToEigenSystemCompact(const BADoubleTriDiagonalMatrixType * const M, double * val, CompactMatrixType * const T)
 {
   //TODO: all
@@ -1671,8 +1745,7 @@ uint32_t BADoubleTriDiagonalMatrixToAndersonMatrix(BADoubleTriDiagonalMatrixType
 /********************         SecondDoubleTriDiagonalMatrix To ... ********************/
 /**************************************************************************************/
 
-uint32_t SecondDoubleTriDiagonalMatrixToTriDiagonalMatrix(SecondDoubleTriDiagonalMatrixType const M,
-                                                          TriDiagonalMatrixType * const H, uint32_t const NTriDiag)
+uint32_t SecondDoubleTriDiagonalMatrixToTriDiagonalMatrix(SecondDoubleTriDiagonalMatrixType const M, TriDiagonalMatrixType * const H, uint32_t const NTriDiag)
 {
   uint32_t i;
   TriDiagonalMatrixType Hlow;
@@ -1695,13 +1768,6 @@ uint32_t SecondDoubleTriDiagonalMatrixToTriDiagonalMatrix(SecondDoubleTriDiagona
   FreeTriDiagonalMatrix(&Hlow);
   return 0;
 }
-
-
-
-/************************************************************************************/
-/********************         Matrix conversions                 ********************/
-/********************         BlokDoubleTriDiagonalMatrix To ... ********************/
-/************************************************************************************/
 
 
 
@@ -1960,7 +2026,12 @@ uint32_t MatrixToTriDiagonalMatrixNonOrthogonal(MatrixType const M, TriDiagonalM
   return 1;
 }
 
-/*
+
+
+
+/*  This function is outdated use the functions acting on compact matrix instead
+ *  you find them in the file BasicMatch_CompactMatrixVector
+ *
 *  M=T^{*}.H.T^{T} with H a diagonal matrix with the values val on the diagonal
 *  input M defined, T not initiallized
 *
@@ -2083,13 +2154,17 @@ uint32_t Eigensystem(MatrixType const M, MatrixType * const T, double *val)
   free(iwork);
   return 0;
 }
-
+/*  This function is outdated use the functions acting on compact matrix instead
+ *  you find them in the file BasicMatch_CompactMatrixVector
+ */
 uint32_t MatrixToEigensystem(MatrixType const M, MatrixType * const T, double *val)
 {
   return Eigensystem(M, T, val);
 }
 
-
+/*  This function is outdated use the functions acting on compact matrix instead
+ *  you find them in the file BasicMatch_CompactMatrixVector
+ */
 /*  Calculates the eigen values (val) and eigen functions (T) of matrix M
  *  H=T^*.M.T^T with H a diagonal matrix with the values val on the diagonal
  *  input M defined, H and T not initiallized
@@ -2170,6 +2245,10 @@ uint32_t EigensystemToCompact(MatrixType const M, CompactMatrixType * const T, d
   return 0;
 }
 
+
+/*  This function is outdated use the functions acting on compact matrix instead
+ *  you find them in the file BasicMatch_CompactMatrixVector
+ */
 /*  Returns the Generalized Eigensystem of a non-orthnormal matrix.
  *  Given a basis psi_i
  *  Matrix M contains the values psi_i^* . H . psi_j
@@ -3606,6 +3685,20 @@ uint32_t MatrixToBlokDoubleTriDiagonalMatrixNoOverlap(MatrixType const M, Matrix
 /********************         Matrix conversions         ********************/
 /********************         ListOfPoles To ...         ********************/
 /****************************************************************************/
+
+
+/*
+ *
+ */
+uint32_t ListOfPolesToCompactMatrix(const ListOfPoles * const A, CompactMatrixType * const AM)
+{
+  TriDiagonalMatrixType ATri;
+  ListOfPolesToTridiagonalMatrix(*A, &ATri, A->N);
+  TriDiagonalMatrixToCompactMatrix(&ATri, AM);
+  FreeTriDiagonalMatrix(&ATri);
+  return 0;
+}
+
 
 /*
  *

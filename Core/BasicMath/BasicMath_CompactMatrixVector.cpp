@@ -2756,7 +2756,90 @@ uint32_t CompactMatrixEigensystem(CompactMatrixType const *A, CompactMatrixType 
   return 0;
 }
 
-/*  On entrance 
+
+/*  Generates a tridiagonal form of matrix H.
+ *  We assume Ni==Nj
+ *  H needs to be Hermitian, only the upper rigth part of H is read, Hermiticy is not tested
+ *  If on entry T==NULL only the resulting tri-diagonal matrix is returned
+ *  If T != NULL we assume it points to a compact matrix structure and this structure is filled with the matrix T such that
+ *  HTri = T^* H T^T
+ */
+int CompactMatrixTriDiagonalize(CompactMatrixType *H, CompactMatrixType *T, TriDiagonalMatrixType *HTri)
+{
+  CompactMatrixType *HCopy;
+  double *work=NULL, *tau=NULL;
+  Complex16 *Cwork=NULL, *Ctau=NULL;
+  int info;
+  uint32_t lwork= 1 + 6 * H->Ni + 2 * Sqr(H->Ni);
+  uint32_t lda=H->Nj;
+  char UPLO='L';
+  if(T==NULL)
+  {
+    HCopy = (CompactMatrixType*)malloc(sizeof(CompactMatrixType));
+  }
+  else
+  {
+    HCopy = T;
+  }
+  CompactMatrixCopy(*H, HCopy);
+  HTri->N=H->Nj;
+  InitTriDiagonalMatrix(HTri);
+  if(H->QComplex)
+  {
+    CompactMatrixConjugate(HCopy);
+    Cwork = (Complex16*)malloc(lwork*sizeof(Complex16));
+    Ctau = (Complex16*)malloc(H->Nj*sizeof(Complex16));
+    zhetrd(&UPLO, &lda, HCopy->V, &lda, &(HTri->a[1]) ,&(HTri->b[1]), Ctau, Cwork, &lwork, &info);
+  }
+  else
+  {
+    work = (double*)malloc(lwork*sizeof(double));
+    tau  = (double*)malloc(H->Nj*sizeof(double));
+    dsytrd(&UPLO, &lda, HCopy->VRe, &lda, &(HTri->a[1]), &(HTri->b[1]), tau, work, &lwork, &info);
+  }
+  if(T==NULL)
+  { // no need to calculate the matrix T. Cleanup and finish.
+    if(H->QComplex)
+    {
+      free(Cwork);
+      free(Ctau);
+    }
+    else
+    {
+      free(work);
+      free(tau);
+    }
+    FreeCompactMatrix(HCopy);
+    return 0;
+  }
+  // next step, calculte T == HCopy
+  if(H->QComplex)
+  {
+    zungtr(&UPLO, &lda, T->V, &lda, Ctau, Cwork, &lwork, &info);
+  }
+  else
+  {
+    dorgtr(&UPLO, &lda, T->VRe, &lda, tau, work, &lwork, &info);
+  }
+  //Cleanup and finish.
+  if(H->QComplex)
+  {
+    free(Cwork);
+    free(Ctau);
+  }
+  else
+  {
+    free(work);
+    free(tau);
+  }
+  return 0;
+}
+
+
+
+
+
+/*  On entrance
  *  A is a matrix
  *  SingularValue is the smallest positive eigenvalue of the matrix A^dag A that is considered non-singular
  *
@@ -3343,6 +3426,32 @@ uint32_t HermitianCompactMatrixToBlockListOfPolesWithEigenstates(CompactMatrixTy
   return 0;
 }
 
+
+/*
+ *
+ */
+uint32_t ResponseFunctionGetA0(ResponsefunctionType const *A, double *a0)
+{
+  if(A->Block==false) return 1;
+  if((32|A->type)=='t')
+  {
+    *a0 = ((TriDiagonalMatrixType*)(A->data))->a[0];
+  }
+  else if((32|A->type)=='a')
+  {
+    *a0 = ((AndersonMatrixType*)(A->data))->a[0];
+  }
+  else if((32|A->type)=='l')
+  {
+    *a0 = ((ListOfPoles*)(A->data))->a0;
+  }
+  else if((32|A->type)=='n')
+  {
+    *a0 = ((BADoubleTriDiagonalMatrixType*)(A->data))->a0;
+  }
+  return 0;
+}
+
 /*
  *
  */
@@ -3420,6 +3529,37 @@ uint32_t BlockResponseFunctionGetA0(ResponsefunctionType const *A, CompactMatrix
         A0->VRe[i] += ((BlockNaturalImpurityOrbitalMatrixType*)A->data)->con.aRe[i];
       }
     }
+  }
+  return 0;
+}
+
+
+/*
+ *
+ */
+uint32_t ResponseFunctionGetB0(ResponsefunctionType const *A, double *b0)
+{
+  if(A->Block==false) return 1;
+  if((32|A->type)=='t')
+  {
+    *b0 = ((TriDiagonalMatrixType*)(A->data))->b[0];
+  }
+  else if((32|A->type)=='a')
+  {
+    *b0 = ((AndersonMatrixType*)(A->data))->b[0];
+  }
+  else if((32|A->type)=='l')
+  {
+    *b0 = 0;
+    for(int i=0;i<((ListOfPoles*)(A->data))->N;i++)
+    {
+      *b0+=((ListOfPoles*)(A->data))->b[i];
+    }
+    *b0 = sqrt(*b0);
+  }
+  else if((32|A->type)=='n')
+  {
+    *b0 = ((BADoubleTriDiagonalMatrixType*)(A->data))->b0;
   }
   return 0;
 }
@@ -3535,28 +3675,24 @@ uint32_t ResponseFunctionToCompactMatrix(ResponsefunctionType const * A, Compact
   else
   { // non-block version
     if((32|A->type)=='t')
-    { // convert block tridiagonal matrix to compact matrix
-      //TODO: all
-      
-      return 1;
+    { // convert tridiagonal matrix to compact matrix
+      TriDiagonalMatrixToCompactMatrix( (TriDiagonalMatrixType*)(A->data), B);
+      return 0;
     }
     if((32|A->type)=='a')
-    { // convert block anderson matrix to compact matrix
-      //TODO: all
-      
-      return 1;
+    { // convert anderson matrix to compact matrix
+      AndersonMatrixToCompactMatrix((AndersonMatrixType*)(A->data), B);
+      return 0;
     }
     if((32|A->type)=='l')
-    { // convert block list of poles response function to compact matrix
-      //TODO: all
-      
-      return 1;
+    { // convert list of poles response function to compact matrix
+      ListOfPolesToCompactMatrix((ListOfPoles*)(A->data), B);
+      return 0;
     }
     if((32|A->type)=='n')
-    { // convert block natural impurity matrix to compact matrix
-      //TODO: all
-      
-      return 1;
+    { // convert natural impurity matrix to compact matrix
+      BADoubleTriDiagonalMatrixTypeToCompactMatrix((BADoubleTriDiagonalMatrixType*)(A->data), B);
+      return 0;
     }
   }
   printf("Error: Unidentified type of response function %c in ResponseFunctionToCompactMatrix\n",A->type);
@@ -3599,6 +3735,7 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToCompactMatrix(BlockNaturalImpurityOr
     printf("InitCompactMatrix failed in BlockNaturalImpurityOrbitalMatrixToCompactMatrix\n");
     return 1;
   }
+  B->mu=A->mu;
   if(A->QComplex)
   {
     for(i=0;i<3*A->BlockSize;i++)
@@ -3882,6 +4019,7 @@ uint32_t BlockTriDiagonalMatrixToCompactMatrix(BlockTriDiagonalMatrixType const 
     printf("InitCompactMatrix failed in BlockTriDiagonalMatrixToCompactMatrix\n");
     return 1;
   }
+  B->mu=A->mu;
   bpos=0;
   apos=A->BlockSize*A->BlockSize;
   if(A->QComplex)
@@ -3986,6 +4124,7 @@ uint32_t BlockTriDiagonalMatrixToCompactMatrixWithDeflation(BlockTriDiagonalMatr
     printf("InitCompactMatrix failed in BlockTriDiagonalMatrixToCompactMatrix\n");
     return 1;
   }
+  B->mu=A->mu;
   // set matrix A
   bpos=0;
   apos=A->BlockSize*A->BlockSize; // start A at position A.a[1]
@@ -4557,6 +4696,7 @@ uint32_t CompactMatrixBlockBandDiagonalize(CompactMatrixType const * const A, Co
 
 /* returns 1 if O=O^dag, zero otherwise
  * epsilon gives the accuracy
+ * test if | O[i][j] - O[j][i] | > epsilon * | O[i][j] + O[j][i] |
  */
 
 uint32_t QCompactMatrixHermitian(const CompactMatrixType O, const double epsilon)

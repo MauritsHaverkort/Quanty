@@ -1909,7 +1909,7 @@ ResponsefunctionType *ConvertResponsefunction(ResponsefunctionType *M, const cha
         break;
         default:
         {
-          printf("Error in ConvertResponsefunction unrecognized type to convert to: %c", type);
+          printf("Error in ConvertResponsefunction unrecognized type to convert to: %c\n", type);
         }
         break;
       }
@@ -1922,14 +1922,7 @@ ResponsefunctionType *ConvertResponsefunction(ResponsefunctionType *M, const cha
         case 'l':
         {
           res->data = (void*) malloc(sizeof(ListOfPoles));
-          if(M->NSuggestedGridPoints!=0)
-          {
-            //TODO: TriDiagonalMatrixToListOfPolesVariableGrid
-          }
-          else
-          {
-            TriDiagonalMatrixToListOfPoles(*(TriDiagonalMatrixType*)M->data, (ListOfPoles*)res->data);
-          }
+          TriDiagonalMatrixToListOfPoles(*(TriDiagonalMatrixType*)M->data, (ListOfPoles*)res->data);
         }
         break;
         case 't':
@@ -1952,7 +1945,7 @@ ResponsefunctionType *ConvertResponsefunction(ResponsefunctionType *M, const cha
         break;
         default:
         {
-          printf("Error in ConvertResponsefunction unrecognized type to convert to: %c",type);
+          printf("Error in ConvertResponsefunction unrecognized type to convert to: %c\n",type);
         }
         break;
       }
@@ -1965,14 +1958,7 @@ ResponsefunctionType *ConvertResponsefunction(ResponsefunctionType *M, const cha
         case 'l':
         {
           res->data = (void*) malloc(sizeof(ListOfPoles));
-          if(M->NSuggestedGridPoints!=0)
-          {
-            //TODO: AndersonMatrixToListOfPolesVariableGrid
-          }
-          else
-          {
-            AndersonMatrixToListOfPoles(*(AndersonMatrixType*)M->data, (ListOfPoles*)res->data);
-          }
+          AndersonMatrixToListOfPoles(*(AndersonMatrixType*)M->data, (ListOfPoles*)res->data);
         }
         break;
         case 't':
@@ -1983,6 +1969,7 @@ ResponsefunctionType *ConvertResponsefunction(ResponsefunctionType *M, const cha
         break;
         case 'a':
         {
+          res->data = (void*) malloc(sizeof(AndersonMatrixType));
           AndersonMatrixCopy((AndersonMatrixType*)res->data,*(AndersonMatrixType*)M->data);
         }
         break;
@@ -2007,14 +1994,7 @@ ResponsefunctionType *ConvertResponsefunction(ResponsefunctionType *M, const cha
         case 'l':
         {
           res->data = (void*) malloc(sizeof(ListOfPoles));
-          if(M->NSuggestedGridPoints!=0)
-          {
-            //TODO: BADoubleTriDiagonalMatrixToListOfPolesVariableGrid(*(NaturalImpurityOrbitalMatrixType*)M->data, (ListOfPoles*)res->data, M->SuggestedGrid, M->NSuggestedGridPoints);
-          }
-          else
-          {
-            BADoubleTriDiagonalMatrixToListOfPoles(*(BADoubleTriDiagonalMatrixType*)M->data, (ListOfPoles*)res->data);
-          }
+          BADoubleTriDiagonalMatrixToListOfPoles(*(BADoubleTriDiagonalMatrixType*)M->data, (ListOfPoles*)res->data);
         }
         break;
         case 't':
@@ -2037,7 +2017,7 @@ ResponsefunctionType *ConvertResponsefunction(ResponsefunctionType *M, const cha
         break;
         default:
         {
-          printf("Error in ConvertResponsefunction unrecognized type to convert to: %c",type);
+          printf("Error in ConvertResponsefunction unrecognized type to convert to: %c\n",type);
         }
         break;
       }
@@ -2045,7 +2025,7 @@ ResponsefunctionType *ConvertResponsefunction(ResponsefunctionType *M, const cha
     break;
     default:
     {
-      printf("Error in ConvertResponsefunction unrecognized type of M: %c",M->type);
+      printf("Error in ConvertResponsefunction unrecognized type of M: %c\n",M->type);
     }
     break;
   }

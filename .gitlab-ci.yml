@@ -22,6 +22,14 @@ test-job1:
   dependencies:
   - build-job
 
+
+
+# =========================================================================
+# ===== Test single functions acting on different objects
+# ===== These functions are registered in ssp.cpp 
+#
+
+
 test-job-DensityMatrix:
   stage: test
   script:

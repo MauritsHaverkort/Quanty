@@ -123,9 +123,7 @@ static int LuaMatrixSqrt(lua_State * L)
   if(len!=1) luaL_error(L, "Matrix.Sqrt called with %d arguments, only one expected",len);
   if(QCompactMatrixHermitian(*A, DBL_EPSILON)==0)
   {
-    //TODO: matrix sqrt on non hermitian matrices
     return luaL_error(L,"Matrix sqrt only works on Hermitian matrices\n");
-    //remove the line above
     if (luaL_testudata(L, 1, "Matrix_Type") == NULL)
     { // matrix on stack as table
       B= (CompactMatrixType*)malloc(sizeof(CompactMatrixType));
@@ -244,6 +242,121 @@ static int LuaMatrixEigensystem(lua_State * L)
     return 2;
   }
 }
+
+
+
+/*
+ *
+ */
+static int LuaMatrixTridiagonalize(lua_State * L)
+{
+  CompactMatrixType *H,*T;
+  ResponsefunctionType *HTri;
+  uint32_t len = (uint32_t)lua_gettop(L);
+  
+  struct
+  {
+    CompactMatrixType StartingVectors;
+    uint32_t BlockSize;
+    uint32_t NTri;
+    double   SingularValue;
+    bool     Reorthogonalize;
+    bool     ReturnU;
+  } Options;
+  Options.StartingVectors.Ni=0;
+  Options.BlockSize=1;
+  Options.NTri=UINT32_MAX;
+  Options.SingularValue=sqrt(DBL_EPSILON);
+  Options.Reorthogonalize=true;
+  Options.ReturnU=true;
+  LuaOptionsType LuaFunctionOptions[]={
+ //   {"StartingVectors"}, "CompactMatrix", &(Options.StartingVectors)},
+    {"BlockSize",        "uint32_t",      &(Options.BlockSize)},
+    {"NTri",             "uint32_t",      &(Options.NTri)},
+    {"SingularValue",    "double",        &(Options.SingularValue)},
+    {NULL, NULL, NULL}};
+  if(LuaTestOptionsList(L,-1)==1)
+  {
+    LuaCheckOptions(L, -1, LuaFunctionOptions);
+    len=len-1;
+  }
+  if(len!=1) luaL_error(L, "Matrix.TriDiagonalize called with %d arguments, only one expected (with possible options on the second position)\n",len);
+  H=luaL_checkCompactMatrix(L, 1);
+  if(H->Ni!=H->Nj) return luaL_error(L,"Matrix.TriDiagonalize only works on square matrices\n");
+  if(QCompactMatrixHermitian(*H, 10*DBL_EPSILON)==0)
+  {
+    return luaL_error(L,"Matrix.TriDiagonalize only works on Hermitian matrices\nIf the matrix should be Hermitian, but only has a small deviation you can use Chop( (M + ConjugateTranspose(M) )/2 ) as input\n");
+  }
+  if((Options.StartingVectors.Ni==0)&&(Options.BlockSize==1))
+  { // use dense method from Lapack
+    HTri = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
+    luaL_setmetatable(L, "ResponseFunction_Type");
+    HTri->type='t';
+    HTri->Block=false;
+    HTri->data=(void*)malloc(sizeof(TriDiagonalMatrixType));
+    if(Options.ReturnU)
+    {
+      T = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+      luaL_setmetatable(L, "Matrix_Type");
+      T->OnLuaStack=true;
+    }
+    else
+    {
+      T=NULL;
+    }
+    if(CompactMatrixTriDiagonalize(H, T, (TriDiagonalMatrixType*)(HTri->data)))
+    {
+      return luaL_error(L,"CompactMatrixTriDiagonalize failed\n");
+    }
+    if(Options.ReturnU)
+    {
+      return 2;
+    }
+    else
+    {
+      return 1;
+    }
+  }
+  else
+  { // use sparse method, i.e. Lanczos
+    HTri = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
+    luaL_setmetatable(L, "ResponseFunction_Type");
+    HTri->type='t';
+    HTri->Block=true;
+    HTri->data=(void*)malloc(sizeof(BlockTriDiagonalMatrixType));
+    if(Options.NTri==UINT32_MAX) Options.NTri=H->Ni;
+    if(Options.StartingVectors.Ni==0)
+    {
+      Options.StartingVectors.Ni=Options.BlockSize;
+      Options.StartingVectors.Nj=H->Nj;
+      Options.StartingVectors.QComplex=0;
+      InitCompactIdentityMatrix(&(Options.StartingVectors));
+    }
+    if(CompactMatrixBlockBandDiagonalize(H, &(Options.StartingVectors), (BlockTriDiagonalMatrixType *)(HTri->data), Options.SingularValue, Options.NTri, Options.NTri, Options.Reorthogonalize, Options.ReturnU))
+    {
+      return luaL_error(L,"CompactMatrixBlockBandDiagonalize failed\n");
+    }
+    if(Options.ReturnU)
+    {
+      T = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+      luaL_setmetatable(L, "Matrix_Type");
+      *T=Options.StartingVectors;
+      T->OnLuaStack=true;
+      return 2;
+    }
+    else
+    {
+      return 1;
+    }
+  }
+}
+
+
+
+
+
+
+
 
 /*  on stack Matrix A and Matrix B
  *  computes B^* . A . B^T
@@ -1746,6 +1859,8 @@ static const struct luaL_Reg Matrix_func[] = {
   {"ToUserdata", LuaMatrixToUserdata},
   {"Transpose", LuaMatrixTranspose},
   {"Zero", LuaMatrixZero},
+  {"Eigensystem", LuaMatrixEigensystem},
+  {"Tridiagonalize", LuaMatrixTridiagonalize},
   {NULL, NULL}
 };
 

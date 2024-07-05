@@ -44,7 +44,11 @@
 
 
 
-
+/**
+ * The main function of the Lua interface to Quanty.
+ * If Quanty is called without an input file you get an interactive prompt
+ * If Quanty is called with an input file the file is run as a script
+ */
 int main(int argc, char *argv[])
 {
   // PrintDebugInfo prints additional information to the standard output

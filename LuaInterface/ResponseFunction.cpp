@@ -24,6 +24,7 @@
  *
  *   SingularValue is an option used to determine if the block size needs to be reduced in a tridiagonalization routine
  *   EffectivekBT is used to determine if a state belongs to the valence or conduction bands (occupied or empty using Fermi Dirac statistics)
+ *   Deflate is a boolean option to determine if the final dimension should be the same (adding zero coupling) or is allowed to be reduced
  */
 static int LuaChangeTypeResponseFunction(lua_State *L)
 {
@@ -51,19 +52,30 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
   {
     // Dense versions of response functions return 3 matrices, The response function, A0 and B0
     // check if we push table or userdata type
-    if(Min->type>64)
+    if(Min->type<94)
     { // upercase push table on stack
       CompactMatrixType MCompactOut,A0,B0;
       ResponseFunctionToCompactMatrix(Min, &MCompactOut, deflate, SingularValue);
       LuaPushTable_CompactMatrixType(L, &MCompactOut);
       FreeCompactMatrix(&MCompactOut);
-      BlockResponseFunctionGetA0(Min, &A0);
-      LuaPushTable_CompactMatrixType(L, &A0);
-      FreeCompactMatrix(&A0);
-      BlockResponseFunctionGetB0(Min, &B0);
-      LuaPushTable_CompactMatrixType(L, &B0);
-      FreeCompactMatrix(&B0);
-      FreeResponsefunction(Min);
+      if(Min->Block==true)
+      {
+        BlockResponseFunctionGetA0(Min, &A0);
+        LuaPushTable_CompactMatrixType(L, &A0);
+        FreeCompactMatrix(&A0);
+        BlockResponseFunctionGetB0(Min, &B0);
+        LuaPushTable_CompactMatrixType(L, &B0);
+        FreeCompactMatrix(&B0);
+        FreeResponsefunction(Min);
+      }
+      else
+      {
+        double a0,b0;
+        ResponseFunctionGetA0(Min, &a0);
+        ResponseFunctionGetB0(Min, &b0);
+        lua_pushnumber(L, a0);
+        lua_pushnumber(L, b0);
+      }
     }
     else
     { // lowercase push userdata on stack
@@ -72,14 +84,25 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
       luaL_setmetatable(L, "Matrix_Type");
       ResponseFunctionToCompactMatrix(Min, MCompactOut, deflate, SingularValue);
       MCompactOut->OnLuaStack=true;
-      A0 = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
-      luaL_setmetatable(L, "Matrix_Type");
-      BlockResponseFunctionGetA0(Min, A0);
-      A0->OnLuaStack=true;
-      B0 = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
-      luaL_setmetatable(L, "Matrix_Type");
-      BlockResponseFunctionGetB0(Min, B0);
-      B0->OnLuaStack=true;
+      if(Min->Block==true)
+      {
+        A0 = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+        luaL_setmetatable(L, "Matrix_Type");
+        BlockResponseFunctionGetA0(Min, A0);
+        A0->OnLuaStack=true;
+        B0 = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+        luaL_setmetatable(L, "Matrix_Type");
+        BlockResponseFunctionGetB0(Min, B0);
+        B0->OnLuaStack=true;
+      }
+      else
+      {
+        double a0,b0;
+        ResponseFunctionGetA0(Min, &a0);
+        ResponseFunctionGetB0(Min, &b0);
+        lua_pushnumber(L, a0);
+        lua_pushnumber(L, b0);
+      }
     }
     return 3;
   }
@@ -101,7 +124,7 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
   }
   else if(strcmp(convert, "Userdata")==0)
   {
-    type=(32)&Min->type; // to lower case
+    type=(32)|Min->type; // to lower case
   }
   else if(strcmp(convert, "Table")==0)
   {

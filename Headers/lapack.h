@@ -2062,9 +2062,9 @@ void zherfs(const char * const uplo, const uint32_t * const n, uint32_t *nrhs, C
 void zhesv(const char * const uplo, const uint32_t * const n, uint32_t *nrhs, Complex16 *a, const uint32_t * const lda, int *ipiv, Complex16 *b, const uint32_t * const ldb, Complex16 *work, const uint32_t * const lwork, int *info);
 void zhesvx(const char * const fact, const char * const uplo, const uint32_t * const n, uint32_t *nrhs, Complex16 *a, const uint32_t * const lda, Complex16 *af, const uint32_t * const ldaf, int *ipiv, Complex16 *b, const uint32_t * const ldb, Complex16 *x, const uint32_t * const ldx, Complex16 *rcond, Complex16 *ferr, Complex16 *berr, Complex16 *work, const uint32_t * const lwork, double *rwork, int *info);
 void zheswapr(const char * const uplo, const uint32_t * const n, Complex16 *a, const uint32_t * const lda, uint32_t *i1, uint32_t *i2);
-void zhetd2(const char * const uplo, const uint32_t * const n, Complex16 *a, const uint32_t * const lda, Complex16 *d, Complex16 *e, Complex16 *tau, int *info);
+void zhetd2(const char * const uplo, const uint32_t * const n, Complex16 *a, const uint32_t * const lda, double *d, double *e, Complex16 *tau, int *info);
 void zhetf2(const char * const uplo, const uint32_t * const n, Complex16 *a, const uint32_t * const lda, int *ipiv, int *info);
-void zhetrd(const char * const uplo, const uint32_t * const n, Complex16 *a, const uint32_t * const lda, Complex16 *d, Complex16 *e, Complex16 *tau, Complex16 *work, const uint32_t * const lwork, int *info);
+void zhetrd(const char * const uplo, const uint32_t * const n, Complex16 *a, const uint32_t * const lda, double *d, double *e, Complex16 *tau, Complex16 *work, const uint32_t * const lwork, int *info);
 void zhetrf(const char * const uplo, const uint32_t * const n, Complex16 *a, const uint32_t * const lda, int *ipiv, Complex16 *work, const uint32_t * const lwork, int *info);
 void zhetri(const char * const uplo, const uint32_t * const n, Complex16 *a, const uint32_t * const lda, int *ipiv, Complex16 *work, int *info);
 void zhetri2(const char * const uplo, const uint32_t * const n, Complex16 *a, const uint32_t * const lda, int *ipiv, Complex16 *work, const uint32_t * const lwork, int *info);

@@ -61,6 +61,7 @@ int SortNonHermitianEigensystemOrder(const void * elem1, const void * elem2);
 uint32_t NonHermitianEigensystemOrder(Complex16 * val, CompactMatrixType * const funL, CompactMatrixType * const funR);
 uint32_t NonHermitianCompactMatrixEigensystem(CompactMatrixType const *A, CompactMatrixType * const funL, CompactMatrixType * const funR, Complex16 *val);
 uint32_t CompactMatrixEigensystem(CompactMatrixType const *A, CompactMatrixType * const fun, double *val);
+int CompactMatrixTriDiagonalize(CompactMatrixType *H, CompactMatrixType *T, TriDiagonalMatrixType *HTri);
 uint32_t CompactMatrixQRDecompositionEigenHermitian(CompactMatrixType const *A, double const SingularValue, CompactMatrixType *q, CompactMatrixType *r);
 uint32_t CompactMatrixSqrPreAllocated(CompactMatrixType const *A, CompactMatrixType * const SqrA);
 uint32_t CompactMatrixSqr(CompactMatrixType const *A, CompactMatrixType * const SqrA);
