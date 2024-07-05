@@ -4420,7 +4420,7 @@ uint32_t CompactMatrixBlockBandTridiagonalizeHermitianNoReorthogonalization(Comp
  */
 uint32_t CompactMatrixBlockBandDiagonalizeReal(CompactMatrixType const * const A, CompactMatrixType * vec, BlockTriDiagonalMatrixType *const B, double const SingularValue, uint32_t const NTri, uint32_t const NOrtho, bool const ReOrthogonalize, bool const ReturnT)
 {
-  uint32_t i,j,Ni;
+  uint32_t i,j,k,Ni;
   char const *charN="N";
   char const *charT="T";
   double one=1;
@@ -4449,6 +4449,7 @@ uint32_t CompactMatrixBlockBandDiagonalizeReal(CompactMatrixType const * const A
   if(NSingular!=0)
   {
     VerbosityPrintf(0x0001,"Reduce dimension from %u to %u in block %u\n",veclist[0].Ni,veclist[1].Ni,0);
+    for(k=1;k<=B->N;k++) B->BlockSizeList[k] =veclist[1].Ni;
   }
   if(ReOrthogonalize==true)
   {
@@ -4504,6 +4505,7 @@ uint32_t CompactMatrixBlockBandDiagonalizeReal(CompactMatrixType const * const A
       if(NSingular!=0)
       {
         VerbosityPrintf(0x0001,"Reduce dimension from %u to %u in block %u\n",veclist[i].Ni,veclist[i+1].Ni,i);
+        for(k=i+1;k<=B->N;k++) B->BlockSizeList[k] =veclist[i+1].Ni;
         if(veclist[i+1].Ni==0) break;
       }
     }
@@ -4537,7 +4539,7 @@ uint32_t CompactMatrixBlockBandDiagonalizeReal(CompactMatrixType const * const A
 }
 uint32_t CompactMatrixBlockBandDiagonalizeComplex(CompactMatrixType const * const A, CompactMatrixType * vec, BlockTriDiagonalMatrixType *const B, double const SingularValue, uint32_t const NTri, uint32_t const NOrtho, bool const ReOrthogonalize,bool const ReturnT)
 {
-  uint32_t i,j,Ni;
+  uint32_t i,j,k,Ni;
   char const *charN="N";
   char const *charT="T";
   char const *charC="C";
@@ -4567,6 +4569,7 @@ uint32_t CompactMatrixBlockBandDiagonalizeComplex(CompactMatrixType const * cons
   if(NSingular!=0)
   {
     VerbosityPrintf(0x0001,"Reduce dimension from %u to %u in block %u\n",veclist[0].Ni,veclist[1].Ni,0);
+    for(k=1;k<=B->N;k++) B->BlockSizeList[k] = veclist[1].Ni;
   }
   if(ReOrthogonalize==true)
   {
@@ -4630,6 +4633,7 @@ uint32_t CompactMatrixBlockBandDiagonalizeComplex(CompactMatrixType const * cons
       if(NSingular!=0)
       {
         VerbosityPrintf(0x0001,"Reduce dimension from %u to %u in block %u\n",veclist[i].Ni,veclist[i+1].Ni,i);
+        for(k=i+1;k<=B->N;k++) B->BlockSizeList[k] =veclist[i+1].Ni;
         if(veclist[i+1].Ni==0) break;
       }
     }

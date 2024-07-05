@@ -2641,6 +2641,14 @@ void LuaPushTable_BlockTriDiagonalMatrixType(lua_State* L, BlockTriDiagonalMatri
   /* push name */
   lua_pushstring(L, M->Name);
   lua_setfield(L,-2,"name");
+  /* push dimensions */
+  lua_createtable(L, MNtrunc+1, 0);
+  for(k=0;k<=MNtrunc;k++)
+  {
+    lua_pushinteger(L,M->BlockSizeList[k]);
+    lua_rawseti(L, -2, k+1);
+  }
+  lua_setfield(L,-2,"BlockSize");
   /* set metatable */
   lua_getglobal(L, "ResponseFunctionMeta");
   lua_setmetatable(L, -2);

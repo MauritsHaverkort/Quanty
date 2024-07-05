@@ -710,6 +710,11 @@ BlockListOfPoles;
  *
  *
  *   in order to be consistent and easily allow to create H from G^{-1}
+ *
+ *   BlockSizeList is a list of integers in the range [0,...,BlockSize]. If BlockSizeList[i] < BlockSize than
+ *                   the elements [i,{BlockSizeList[i],...,BlockSize-1}] and
+ *                   the elements [{BlockSizeList[i],...,BlockSize-1},i] of A[i] are zero and the elements
+ *                   the elements [i,{BlockSizeList[i],...,BlockSize-1}] of B[i-1] are zero
  */
 typedef struct BlockTriDiagonalMatrixType
 {
