@@ -311,8 +311,7 @@ void BADoubleTriDiagonalMatrixScalarMultiply(BADoubleTriDiagonalMatrixType * con
  * and is a copy of a part of A
  * M not allocated on call of the subroutine
  */
-uint32_t BADoubleTriDiagonalMatrixPart(BADoubleTriDiagonalMatrixType * const M, BADoubleTriDiagonalMatrixType A,
-                                       const uint32_t iEndval, const uint32_t iEndcon)
+uint32_t BADoubleTriDiagonalMatrixPart(BADoubleTriDiagonalMatrixType * const M, BADoubleTriDiagonalMatrixType A, const uint32_t iEndval, const uint32_t iEndcon)
 {
   TriDiagonalMatrixPart(&(M->val), A.val, 1, iEndval);
   TriDiagonalMatrixPart(&(M->con), A.con, 1, iEndcon);
@@ -327,6 +326,7 @@ uint32_t BADoubleTriDiagonalMatrixPart(BADoubleTriDiagonalMatrixType * const M, 
   M->bvA0 = A.bvA0;
   M->bcB0 = A.bcB0;
   M->bcA0 = A.bcA0;
+  strcpy(M->Name, A.Name);
   return 0;
 }
 

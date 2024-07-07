@@ -1690,7 +1690,7 @@ uint32_t CompactMatrixAddShifted(CompactMatrixType * const M, const CompactMatri
  */
 uint32_t CompactMatrixSVDOrthogonalizeRow(CompactMatrixType * A, const double SingularValue, const bool ReduceDimension)
 {
-  uint32_t i,j,k,NSingular;
+  uint32_t i,j,NSingular;
   char const *JOBU ="O";  /* in SVD A = U S V^T return the first min(Ni,Nj) collumns of U in matrix A, which is over written */
   char const *JOBVT="A";  /* in SVD A = U S V^T return full array VT */
   char const *TRANSA="N";
@@ -3236,6 +3236,42 @@ uint32_t CompactMatrixToSpectra(CompactMatrixType const *A, SpectraType * const 
   }
   return 0;
 }
+
+/*  Given a compact matrix A calculates  (w-A)^-1 _[[0,0]]
+ *  algorithm assumes A to be Hermitian
+ */
+uint32_t HermitianCompactMatrixToListOfPoles(CompactMatrixType const *A, ListOfPoles *L)
+{
+  uint32_t i;
+  CompactMatrixType fun;
+  double *val;
+  val= (double*)malloc(A->Ni*sizeof(double));
+  CompactMatrixEigensystem(A, &fun, val);
+  L->N=A->Ni;
+  InitListOfPoles(L);
+  L->mu=A->mu;
+  L->a0=A->a0;
+  memcpy(L->a, val, A->Ni*sizeof(double));
+  if(fun.QComplex==0)
+  {
+    for(i=0;i<A->Nj;i++)
+    {
+      L->b[i]=Sqr(A->b0)*Sqr(fun.VRe[i*fun.Nj]);
+    }
+  }
+  else
+  {
+    for(i=0;i<A->Nj;i++)
+    {
+      L->b[i]=Sqr(A->b0)*(Sqr(fun.V[i*fun.Nj].Re)+Sqr(fun.V[i*fun.Nj].Im));
+    }
+  }
+  free(val);
+  FreeCompactMatrix(&fun);
+  return 0;
+}
+
+
 
 /*  Given a compact matrix A calculates vec[i]^* . (w-A)^-1 . vec[i]
  *  returns a list of vec.Ni ListOfPoles

@@ -1136,7 +1136,7 @@ uint32_t ListOfPolesCopyVal(ListOfPoles * M, ListOfPoles B, double Ef, double Ep
     }
     else if (M->a[i] > Ef - Epsilon)
     {
-      M->b[i] *= ((Ef + Epsilon) - M->a[i]) / (2 * Epsilon);
+      M->b[i] *= ((Ef - M->a[i] ) + Epsilon ) / (2 * Epsilon);
     }
   }
   ReduceListOfPolesNumber(M, npoles);
@@ -1166,7 +1166,7 @@ uint32_t ListOfPolesCopyCon(ListOfPoles * M, ListOfPoles B, double Ef, double Ep
     }
     else if (M->a[i] < Ef + Epsilon)
     {
-      M->b[i] *= (M->a[i] - (Ef - Epsilon)) / (2 * Epsilon);
+      M->b[i] *= ( ( M->a[i] - Ef ) + Epsilon ) / (2 * Epsilon);
     }
   }
   ReduceListOfPolesNumber(M, npoles);

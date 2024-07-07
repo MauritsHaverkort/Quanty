@@ -553,7 +553,7 @@ TriDiagonalMatrixType* luaL_checkTriDiagonalMatrixType(lua_State *L, int narg)
     lua_pop(L, 1);
     temp = luaL_checkNatrualImpurityOrbitalMatrixType(L, narg);
     buff = (TriDiagonalMatrixType*)malloc(sizeof(TriDiagonalMatrixType));
-    BADoubleTriDiagonalMatrixToTriDiagonalMatrix(*temp, buff);
+    BADoubleTriDiagonalMatrixToTriDiagonalMatrix(temp, buff);
     FreeBADoubleTriDiagonalMatrix(temp);
     free(temp);
     return buff;
@@ -867,7 +867,7 @@ AndersonMatrixType* luaL_checkAndersonMatrixType(lua_State *L, int narg)
     lua_pop(L, 1);
     temp = luaL_checkNatrualImpurityOrbitalMatrixType(L, narg);
     buff = (AndersonMatrixType*)malloc(sizeof(AndersonMatrixType));
-    BADoubleTriDiagonalMatrixToAndersonMatrix(*temp, buff);
+    BADoubleTriDiagonalMatrixToAndersonMatrix(temp, buff);
     FreeBADoubleTriDiagonalMatrix(temp);
     free(temp);
     return buff;
@@ -1509,7 +1509,7 @@ ListOfPoles * luaL_checkListOfPoles(lua_State *L, int narg)
     lua_pop(L, 1);
     temp = luaL_checkNatrualImpurityOrbitalMatrixType(L, narg);
     buff = (ListOfPoles*)malloc(sizeof(ListOfPoles));
-    BADoubleTriDiagonalMatrixToListOfPoles(*temp, buff);
+    BADoubleTriDiagonalMatrixToListOfPoles(temp, buff);
     FreeBADoubleTriDiagonalMatrix(temp);
     free(temp);
     return buff;

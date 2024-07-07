@@ -1989,24 +1989,24 @@ ResponsefunctionType *ConvertResponsefunction(ResponsefunctionType *M, const cha
     break;
     case 'n': // original natural impurity orbitals (BADoubleTriDiagonalMatrixType)
     {
-      switch (M->type|32)
+      switch (type|32)
       {
         case 'l':
         {
           res->data = (void*) malloc(sizeof(ListOfPoles));
-          BADoubleTriDiagonalMatrixToListOfPoles(*(BADoubleTriDiagonalMatrixType*)M->data, (ListOfPoles*)res->data);
+          BADoubleTriDiagonalMatrixToListOfPoles((BADoubleTriDiagonalMatrixType*)M->data, (ListOfPoles*)res->data);
         }
         break;
         case 't':
         {
           res->data = (void*) malloc(sizeof(TriDiagonalMatrixType));
-          BADoubleTriDiagonalMatrixToTriDiagonalMatrix(*(BADoubleTriDiagonalMatrixType*)M->data, (TriDiagonalMatrixType*)res->data);
+          BADoubleTriDiagonalMatrixToTriDiagonalMatrix((BADoubleTriDiagonalMatrixType*)M->data, (TriDiagonalMatrixType*)res->data);
         }
         break;
         case 'a':
         {
           res->data = (void*) malloc(sizeof(AndersonMatrixType));
-          BADoubleTriDiagonalMatrixToAndersonMatrix(*(BADoubleTriDiagonalMatrixType*)M->data, (AndersonMatrixType*)res->data);
+          BADoubleTriDiagonalMatrixToAndersonMatrix((BADoubleTriDiagonalMatrixType*)M->data, (AndersonMatrixType*)res->data);
         }
         break;
         case 'n':
