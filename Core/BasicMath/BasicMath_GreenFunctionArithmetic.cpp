@@ -1892,7 +1892,7 @@ ResponsefunctionType *ConvertResponsefunction(ResponsefunctionType *M, const cha
         case 't':
         {
           res->data = (void*) malloc(sizeof(TriDiagonalMatrixType));
-          ListOfPolesToTridiagonalMatrix(*(ListOfPoles*)M->data, (TriDiagonalMatrixType*)res->data, ((BlockListOfPoles*)(M->data))->N+1);
+          ListOfPolesToTridiagonalMatrix(*(ListOfPoles*)M->data, (TriDiagonalMatrixType*)res->data, ((BlockListOfPoles*)(M->data))->N);
         }
         break;
         case 'a':
