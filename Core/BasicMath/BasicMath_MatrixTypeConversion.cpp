@@ -3907,6 +3907,14 @@ uint32_t ListOfPolesToBADoubleTridiagonalMatrix(const ListOfPoles A, BADoubleTri
   M->a0 = A.a0;
   M->mu = mu;
   M->Epsilon = Epsilon;
+  if(M->con.N > LPcon.N)
+  {
+    if(M->con.N>1) M->con.N--;
+  }
+  if(M->val.N > LPval.N)
+  {
+    if(M->val.N>1) M->val.N--;
+  }
   snprintf(M->Name, MAXStrLength, "%s",A.Name);
   SetBADoubleTriDiagonalMatrixConVal(M);
   FreeListOfPoles(&LPval);

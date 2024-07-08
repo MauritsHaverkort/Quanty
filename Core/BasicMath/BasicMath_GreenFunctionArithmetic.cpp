@@ -1904,7 +1904,7 @@ ResponsefunctionType *ConvertResponsefunction(ResponsefunctionType *M, const cha
         case 'n':
         {
           res->data = (void*) malloc(sizeof(BADoubleTriDiagonalMatrixType));
-          ListOfPolesToBADoubleTridiagonalMatrix(*(ListOfPoles*)M->data, (BADoubleTriDiagonalMatrixType*)res->data, ((BlockListOfPoles*)(M->data))->N+1, ((BlockListOfPoles*)(M->data))->N+1, ((BlockListOfPoles*)(M->data))->mu, T);
+          ListOfPolesToBADoubleTridiagonalMatrix(*(ListOfPoles*)M->data, (BADoubleTriDiagonalMatrixType*)res->data, ((BlockListOfPoles*)(M->data))->N, ((BlockListOfPoles*)(M->data))->N, ((BlockListOfPoles*)(M->data))->mu, T);
         }
         break;
         default:
