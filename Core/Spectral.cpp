@@ -75,9 +75,9 @@ void FreeSpectraTypeArray(SpectraTypeArray * const G)
   for(i=0;i<G->NSpectra;i++)
   {
     SpectrumFree(&(G->Spec[i]));
-    free(G->Name);
-    G->NSpectra=0;
   }
+  free(G->Name);
+  G->NSpectra=0;
 }
 
 

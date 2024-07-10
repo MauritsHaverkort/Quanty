@@ -552,6 +552,11 @@ int LuaPlotGraphics(lua_State * L)
   GraphicsType* Graphics;
   const char* ScaleFormat = "%.0f";
   const char* EmptyString = "";
+  SpectraTypeArray *a,aa;
+  aa.NSpectra=0;
+  aa.Spec=NULL;
+  aa.Name=NULL;
+  a=&aa;
   uint32_t len = (uint32_t) lua_gettop(L);
   Graphics = (GraphicsType*) lua_newuserdata(L, sizeof(GraphicsType));
   luaL_setmetatable(L, "Graphics_Type");
@@ -670,19 +675,29 @@ int LuaPlotGraphics(lua_State * L)
       }
       lua_pop(L, 2);
     }
-    
-    
-    
-    
-    // TODO:
-    return luaL_error(L, "Plotting of tables of objects not yet suported\n");
+    // test if we can turn the table to a SpectraTypeArray and then jump to the corresponding section
+    a->NSpectra = (uint32_t)lua_objlen(L, 1);
+    a->Spec = (SpectraType*)malloc(a->NSpectra*sizeof(SpectraType));
+    a->Name=NULL;
+    for(i=0;i<a->NSpectra;i++)
+    {
+      // read element i of the table and see if we can convert it to a spectrum
+      lua_rawgeti(L, 1, i+1);
+      
+      return luaL_error(L, "TODO: plot array of objects\n");
+
+      
+      
+      lua_pop(L, 1);
+    }
+    goto labelSpectraTypeArrayPlot;
   }
   else if (lua_type(L,1)==LUA_TUSERDATA)
   {
     if (luaL_testudata(L, 1, "Spectra_Type") != NULL)
     {
-      SpectraTypeArray *a = (SpectraTypeArray *) luaL_checkudata(L, 1, "Spectra_Type");
-      
+      a = (SpectraTypeArray *) luaL_checkudata(L, 1, "Spectra_Type");
+      labelSpectraTypeArrayPlot:
       if(Options.Frame.PlotRange[0].X==-INFINITY) Options.Frame.PlotRange[0].X = a->Spec[0].Emin;
       if(Options.Frame.PlotRange[1].X== INFINITY) Options.Frame.PlotRange[1].X = a->Spec[0].Emax;
       if(Options.Frame.PlotRange[0].Y==-INFINITY) Options.Frame.PlotRange[0].Y = -1;
@@ -806,12 +821,12 @@ int LuaPlotGraphics(lua_State * L)
     else if (luaL_testudata(L, 1, "GaussianRadialFunction_Type") != NULL)
     {
       // TODO:
-      return luaL_error(L, "TODO\n");
+      return luaL_error(L, "TODO: Plot of Gaussian Radial function\n");
     }
     else if (luaL_testudata(L, 1, "InterpolatingFunction_Type") != NULL)
     {
       // TODO:
-      return luaL_error(L, "TODO\n");
+      return luaL_error(L, "TODO plot of Interpolating Function\n");
     }
     else if (luaL_testudata(L, 1, "ResponseFunction_Type") != NULL)
     {
@@ -972,6 +987,7 @@ int LuaPlotGraphics(lua_State * L)
     return luaL_error(L, "called Graphics.Plot with unkown first variable\n");
   }
   free(Options.Style.Line);
+  FreeSpectraTypeArray(&aa);
   return 1;
 }
 
