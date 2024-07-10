@@ -523,7 +523,7 @@ uint32_t LuaASCIIStreamPrint(lua_State *L, int narg, FILE * stream)
         }
         if(strcmp("", n->Spec[i].Name)!=0)
         {
-          fprintf(stream,"[\"Name\"]=%s,",n->Spec[i].Name);
+          fprintf(stream,"[\"Name\"]=\"%s\",",n->Spec[i].Name);
         }
         fprintf(stream,"[\"EminPole\"]=%22.15E,",n->Spec[i].EminPole);
         fprintf(stream,"[\"EmaxPole\"]=%22.15E,",n->Spec[i].EmaxPole);
