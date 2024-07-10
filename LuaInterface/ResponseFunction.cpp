@@ -482,7 +482,7 @@ static int LuaResponseFunctionUnm(lua_State * L)
  */
 static int LuaResponseFunctionAdd(lua_State * L)
 {
-  ResponsefunctionType *Ma, *Mb, *res;
+  ResponsefunctionType *Ma, *Mb, res;
   uint32_t len = (uint32_t)lua_gettop(L);
   if(len!=2) return luaL_error(L, "Error in ResponseFunctionAdd: %d argument(s), 2 expected.\n", len);
   Ma = luaL_checkResponsefunction(L,1);
@@ -490,12 +490,11 @@ static int LuaResponseFunctionAdd(lua_State * L)
   if(Ma->Block != Mb->Block) return luaL_error(L, "Error in ResponseFunctionAdd: Block type of both functions needs to be the same\n");
   //TODO: if the functions are of Block type test dimensions
   
-  
-  res = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
-  luaL_setmetatable(L, "ResponseFunction_Type");
-  ResponseFunctionAdd(Ma, Mb, res);
+  ResponseFunctionAdd(Ma, Mb, &res);
+  LuaPush_ResponseFunction(L, &res);
   FreeResponsefunction(Ma);
   FreeResponsefunction(Mb);
+  FreeResponsefunction(&res);
   return 1;
 }
 
@@ -504,26 +503,19 @@ static int LuaResponseFunctionAdd(lua_State * L)
  */
 static int LuaResponseFunctionSub(lua_State * L)
 {
-  ResponsefunctionType Ma, Mb, *res;
-
+  ResponsefunctionType *Ma, *Mb, res;
   uint32_t len = (uint32_t)lua_gettop(L);
-  if(len!=2) return luaL_error(L, "Error in ResponseFunctionSub: %d argument(s), 2 expected.\n", len);
-  // TODO: this has memory loss
-  ConvertBlockMatrix(luaL_checkResponsefunction(L,1), &Ma, 'l', 0, 0);
-  ConvertBlockMatrix(luaL_checkResponsefunction(L,2), &Mb, 'l', 0, 0);
-  SubtractBlockListOfPoles((BlockListOfPoles*)(Ma.data), *(BlockListOfPoles*)(Mb.data));
-
-  res = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
-  luaL_setmetatable(L, "ResponseFunction_Type");
-  res->NSuggestedGridPoints = 0;
-  res->type = 'L';
-  res->data = (BlockListOfPoles*)malloc(sizeof(BlockListOfPoles));
-  CopyBlockListOfPoles(*(BlockListOfPoles*)(Ma.data),res->data);
-  LuaPush_ResponseFunction(L, res);
-
-  FreeBlockMatrixFromLua(&Ma);
-  FreeBlockMatrixFromLua(&Mb);
-
+  if(len!=2) return luaL_error(L, "Error in ResponseFunctionAdd: %d argument(s), 2 expected.\n", len);
+  Ma = luaL_checkResponsefunction(L,1);
+  Mb = luaL_checkResponsefunction(L,2);
+  if(Ma->Block != Mb->Block) return luaL_error(L, "Error in ResponseFunctionAdd: Block type of both functions needs to be the same\n");
+  //TODO: if the functions are of Block type test dimensions
+  
+  ResponseFunctionSubtract(Ma, Mb, &res);
+  LuaPush_ResponseFunction(L, &res);
+  FreeResponsefunction(Ma);
+  FreeResponsefunction(Mb);
+  FreeResponsefunction(&res);
   return 1;
 }
 

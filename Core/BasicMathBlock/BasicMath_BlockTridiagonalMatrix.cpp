@@ -202,7 +202,7 @@ void ShiftBlockTridiagonalMatrix(BlockTriDiagonalMatrixType *const A, double con
       }
     }
   }
-  A->mu+=delta;
+  //A->mu+=delta;
 }
 
 /*

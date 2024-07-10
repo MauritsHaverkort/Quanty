@@ -1401,7 +1401,7 @@ uint32_t ShiftListOfPolesToMakeChemPotZero(ListOfPoles * const M, double const o
 uint32_t ShiftListOfPoles(ListOfPoles * const M, double const munew)
 {
   uint32_t i;
-  M->mu -= munew;
+  //M->mu -= munew;
   for (i = 0; i < M->N; i++)
   {
     M->a[i] += munew;

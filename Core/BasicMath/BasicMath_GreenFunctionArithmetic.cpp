@@ -956,6 +956,28 @@ int ResponseFunctionAdd(ResponsefunctionType * const GA, ResponsefunctionType * 
   return 0;
 }
 
+
+int ResponseFunctionSubtract(ResponsefunctionType * const GA, ResponsefunctionType * const GB, ResponsefunctionType * const Gdif)
+{
+  ResponsefunctionType GBLP;
+  ConvertResponsefunction(GA, Gdif, 'L', 0, 0);
+  ConvertResponsefunction(GB, &GBLP, 'L', 0, 0);
+  
+  if(GA->Block)
+  {
+    SubtractBlockListOfPoles((BlockListOfPoles*)(Gdif->data), *(BlockListOfPoles*)(GBLP.data));
+  }
+  else
+  {
+    SubtractListOfPoles((ListOfPoles*)(Gdif->data), *(ListOfPoles*)(GBLP.data));
+  }
+  FreeResponsefunction(&GBLP);
+  return 0;
+}
+
+
+
+
 int CalculateGBath(ResponsefunctionType  * const G0, ResponsefunctionType  * const Sigma, ResponsefunctionType * const G)
 {
  if(G0->Block==false)

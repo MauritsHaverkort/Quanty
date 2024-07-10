@@ -1202,7 +1202,7 @@ uint32_t ShiftBlockListOfPoles(BlockListOfPoles * const A, double delta)
       A->V[i].Re+=delta;
     }
   }
-  A->mu+=delta;
+  //A->mu+=delta;
   return 0;
 }
 
